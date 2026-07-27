@@ -17,6 +17,7 @@ import {
   totalGastosAnio,
   calcularEstadoRenta,
   detectarNudgesRenta,
+  repartirPorcentajes,
 } from '../../modules/dominio/analisis/logic.js';
 import { UVT, TOPES_RENTA_UVT } from '../../modules/core/constants.js';
 import { renderAnalisis } from '../../modules/dominio/analisis/view.js';
@@ -1620,17 +1621,30 @@ describe('renderAnalisis() - PERF.3 detalle de gastos diferido', () => {
     expect(detalle()).toBeNull();
   });
 
-  it('cada render vuelve a diferir el cuerpo (el estado no persiste entre renders)', () => {
+  it('sin abrirlo, cada render vuelve a diferir el cuerpo', () => {
+    S.gastos = [gasto({ id: 'g1', categoria: 'Alimentación', monto: 200_000, fecha: fechaMesActual(3) })];
+    renderAnalisis();
+    renderAnalisis();
+
+    const grupo = detalle();
+    expect(grupo.open).toBe(false);
+    expect(grupo.dataset.cargado).toBeUndefined();
+    expect(grupo.querySelector('.analisis-grupo__body').innerHTML.trim()).toBe('');
+  });
+
+  it('DIS.10 (C11): lo que el usuario abrió sigue abierto y cargado tras un re-render', () => {
     S.gastos = [gasto({ id: 'g1', categoria: 'Alimentación', monto: 200_000, fecha: fechaMesActual(3) })];
     renderAnalisis();
     abrir(detalle());
     expect(detalle().dataset.cargado).toBe('1');
 
-    // Un segundo render recrea el <details> diferido desde cero.
+    // Registrar un gasto estando en Análisis repinta el panel: antes el grupo
+    // se cerraba solo y se descartaba el cómputo diferido de PERF.3.
     renderAnalisis();
     const grupo = detalle();
-    expect(grupo.dataset.cargado).toBeUndefined();
-    expect(grupo.querySelector('.analisis-grupo__body').innerHTML.trim()).toBe('');
+    expect(grupo.open).toBe(true);
+    expect(grupo.dataset.cargado).toBe('1');
+    expect(grupo.querySelector('.analisis-grupo__body').innerHTML).toContain('Vs mes anterior');
   });
 });
 
@@ -1640,13 +1654,17 @@ describe('renderAnalisis() - PERF.7d Estado de tu renta memoizado, sin quedar ob
   const anioActual = new Date().getFullYear();
 
   // Los otros 4 criterios (patrimonio, consumos, consumosTC, consignaciones)
-  // no se tocan en este describe: acotar la búsqueda al artículo de "Ingresos
-  // brutos" evita falsos negativos/positivos por el badge "Sin datos en
-  // Finko" que consumosTC/consignaciones siguen mostrando siempre aquí.
+  // no se tocan en este describe: acotar la búsqueda a "Ingresos brutos" evita
+  // falsos negativos/positivos con consumosTC/consignaciones, que aquí siempre
+  // están sin dato.
   const criterioIngresos = () => {
     const articulos = [...document.querySelectorAll('.renta-criterio')];
     return articulos.find(a => a.querySelector('.renta-criterio__label')?.textContent === 'Ingresos brutos');
   };
+  // DIS.10 (C7): un criterio sin dato ya no es una ficha con valor "N/D": es
+  // una línea de la lista compacta, con su tope al lado.
+  const ingresosSinDato = () => [...document.querySelectorAll('.renta-sindatos__row')]
+    .find(r => r.querySelector('.renta-sindatos__label')?.textContent === 'Ingresos brutos');
 
   beforeEach(() => {
     document.body.innerHTML = '<div id="panel-analisis"></div>';
@@ -1660,15 +1678,16 @@ describe('renderAnalisis() - PERF.7d Estado de tu renta memoizado, sin quedar ob
 
   it('sin datos fiscales del año, el criterio de ingresos brutos aparece sin datos', () => {
     renderAnalisis();
-    const art = criterioIngresos();
-    expect(art).not.toBeNull();
-    expect(art.querySelector('.renta-criterio__badge').textContent).toBe('Sin datos en Finko');
+    expect(criterioIngresos()).toBeUndefined();
+    const fila = ingresosSinDato();
+    expect(fila).not.toBeUndefined();
+    expect(fila.querySelector('.renta-sindatos__tope').textContent).toContain('tope ');
   });
 
   it('editar datosFiscales entre dos renders refleja el valor nuevo (no sirve caché obsoleta)', () => {
     // 1er render: sin datos fiscales, memoiza el resultado "sin-datos".
     renderAnalisis();
-    expect(criterioIngresos().querySelector('.renta-criterio__badge').textContent).toBe('Sin datos en Finko');
+    expect(ingresosSinDato()).not.toBeUndefined();
 
     // Simula exactamente lo que hace config/index.js al guardar el formulario:
     // reemplaza la entrada del año con un objeto NUEVO, sin pasar por EventBus.
@@ -1676,8 +1695,10 @@ describe('renderAnalisis() - PERF.7d Estado de tu renta memoizado, sin quedar ob
     renderAnalisis();
 
     const art = criterioIngresos();
+    expect(art).not.toBeUndefined();
     expect(art.querySelector('.renta-criterio__badge').textContent).not.toBe('Sin datos en Finko');
     expect(art.querySelector('.renta-criterio__valor').textContent).toContain('$50.000.000');
+    expect(ingresosSinDato()).toBeUndefined();
   });
 
   it('borrar los datos fiscales del año también se refleja (vuelve a sin-datos)', () => {
@@ -1689,7 +1710,8 @@ describe('renderAnalisis() - PERF.7d Estado de tu renta memoizado, sin quedar ob
     delete S.config.datosFiscales[anioActual];
     renderAnalisis();
 
-    expect(criterioIngresos().querySelector('.renta-criterio__badge').textContent).toBe('Sin datos en Finko');
+    expect(criterioIngresos()).toBeUndefined();
+    expect(ingresosSinDato()).not.toBeUndefined();
   });
 
   it('un segundo render sin ningún cambio no rompe (cache hit correcto)', () => {
@@ -1788,7 +1810,7 @@ describe('renderAnalisis() - ANL.2a score de salud como héroe', () => {
     expect(hero.querySelector('.score-hero__explicacion').textContent).toContain('Vas muy bien');
   });
 
-  it('escribe el mes actual en el chip del header (D6)', () => {
+  it('escribe el mes y el año actuales en el chip del header (D6, DIS.10 C12)', () => {
     document.body.innerHTML = `
       <span id="analisis-chip-mes"><span id="analisis-chip-mes-label"></span></span>
       <div id="panel-analisis"></div>`;
@@ -1796,7 +1818,9 @@ describe('renderAnalisis() - ANL.2a score de salud como héroe', () => {
 
     const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-    const esperado = MESES[new Date().getMonth()];
+    // El año importa porque el monitor de renta al final de la página habla de
+    // un año completo: el chip decía "Julio" y el panel mezclaba 5 ventanas.
+    const esperado = `${MESES[new Date().getMonth()]} ${new Date().getFullYear()}`;
     expect(document.getElementById('analisis-chip-mes-label').textContent).toBe(esperado);
   });
 });
@@ -2047,5 +2071,230 @@ describe('renderAnalisis() - ANL.2d filas colapsables limpias + empty state úni
     const badge = document.querySelector('.analisis-grupo__badge');
     expect(badge).not.toBeNull();
     expect(badge.textContent.trim()).toMatch(/^1/);
+  });
+});
+
+// ── renderAnalisis() - DIS.10: auditoría de diseño de Análisis ─────
+// Cubre lo que cada corrección cambió en el marcado. C1 (el filete ámbar del
+// aviso) y C3 (la frase a ancho completo) son CSS puro y no tienen test aquí.
+
+describe('renderAnalisis() - DIS.10 auditoría de diseño', () => {
+  const anioActual = new Date().getFullYear();
+  const fechaMesActual = (dia) => {
+    const ahora = new Date();
+    const mm = String(ahora.getMonth() + 1).padStart(2, '0');
+    return `${ahora.getFullYear()}-${mm}-${String(dia).padStart(2, '0')}`;
+  };
+  const fechaMesAnterior = (dia) => {
+    const ahora = new Date();
+    const d = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    return `${d.getFullYear()}-${mm}-${String(dia).padStart(2, '0')}`;
+  };
+  const abrirDetalle = () => {
+    const g = document.querySelector('.analisis-grupo--detalle');
+    g.open = true;
+    g.dispatchEvent(new Event('toggle'));
+    return g;
+  };
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-analisis"></div>';
+    S.gastos = []; S.compromisos = []; S.cuentas = [];
+    S.metas = []; S.apartados = []; S.inversiones = []; S.personales = [];
+    S.config = {};
+  });
+
+  // ── C2b + C8: el cuerpo del colapsable en lenguaje v2 ───────────
+
+  it('C2b: la comparación es una lista rankeada, no una tabla', () => {
+    S.gastos = [
+      gasto({ id: 'g1', categoria: 'Mercado',    monto: 300_000, fecha: fechaMesActual(2) }),
+      gasto({ id: 'g2', categoria: 'Mercado',    monto: 500_000, fecha: fechaMesAnterior(2) }),
+      gasto({ id: 'g3', categoria: 'Transporte', monto: 200_000, fecha: fechaMesActual(3) }),
+    ];
+    renderAnalisis();
+    const cuerpo = abrirDetalle().querySelector('.analisis-grupo__body');
+
+    expect(cuerpo.querySelector('table')).toBeNull();
+    const filas = [...cuerpo.querySelectorAll('.comparacion__fila')];
+    expect(filas.length).toBeGreaterThan(0);
+    const mercado = filas.find(fl => fl.querySelector('.comparacion__fila-cat').textContent === 'Mercado');
+    expect(mercado.querySelector('.comparacion__fila-monto').textContent).toBe('$300.000');
+    // Bajó el gasto: verde, con el ícono de tendencia a la baja (ADR 019).
+    const delta = mercado.querySelector('.comparacion__fila-delta');
+    expect(delta.classList.contains('comparacion__fila-delta--baja')).toBe(true);
+    expect(delta.querySelector('use').getAttribute('href')).toBe('#i-trending-down');
+    expect(delta.textContent).toContain('bajó');
+  });
+
+  it('C8: el cuerpo del colapsable no deja un solo emoji y su título trae el ícono del sprite', () => {
+    S.gastos = [
+      gasto({ id: 'g1', categoria: 'Mercado', monto: 300_000, fecha: fechaMesActual(2) }),
+      gasto({ id: 'g2', categoria: 'Mercado', monto: 500_000, fecha: fechaMesAnterior(2) }),
+    ];
+    renderAnalisis();
+    const cuerpo = abrirDetalle().querySelector('.analisis-grupo__body');
+
+    expect(cuerpo.textContent).not.toMatch(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u);
+    const titulo = cuerpo.querySelector('#analisis-comparacion-title');
+    expect(titulo.tagName).toBe('H3');
+    expect(titulo.querySelector('use').getAttribute('href')).toBe('#i-bar-chart');
+  });
+
+  it('C8: los dos colapsables llevan el chevron del sprite, no el carácter de texto', () => {
+    S.gastos = [gasto({ fecha: fechaMesActual(2) })];
+    renderAnalisis();
+    const grupos = [...document.querySelectorAll('.analisis-grupo--fila')];
+    expect(grupos.length).toBe(2);
+    for (const g of grupos) {
+      const chevron = g.querySelector('.analisis-grupo__summary .analisis-grupo__chevron');
+      expect(chevron).not.toBeNull();
+      expect(chevron.querySelector('use').getAttribute('href')).toBe('#i-chevron-right');
+    }
+  });
+
+  // ── C6: un rótulo, un mensaje ───────────────────────────────────
+
+  it('C6: con activos pero sin gastos, el grupo pone un solo vacío', () => {
+    S.cuentas = [cuenta({ saldo: 500_000 })];
+    renderAnalisis();
+    const grupo = document.querySelector('.analisis__group');
+
+    const vacios = grupo.querySelectorAll('.analisis__empty');
+    expect(vacios.length).toBe(1);
+    expect(vacios[0].textContent).toContain('Aún no registras gastos este mes');
+    expect(grupo.querySelector('.tend-card')).toBeNull();
+    expect(grupo.querySelector('.catg-card')).toBeNull();
+  });
+
+  // ── C7: lo que Finko no puede medir ─────────────────────────────
+
+  it('C7: los criterios sin dato salen de la grilla y van a la lista compacta con su tope', () => {
+    S.cuentas = [cuenta({ saldo: 500_000 })];
+    renderAnalisis();
+
+    const fichas = [...document.querySelectorAll('.renta-criterio')];
+    expect(fichas.length).toBeGreaterThan(0);
+    expect(fichas.every(a => !a.classList.contains('renta-criterio--sin-datos'))).toBe(true);
+
+    const lista = document.querySelector('.renta-sindatos');
+    expect(lista).not.toBeNull();
+    const filas = [...lista.querySelectorAll('.renta-sindatos__row')];
+    expect(filas.length).toBe(3);
+    for (const fila of filas) {
+      expect(fila.querySelector('.renta-sindatos__tope').textContent).toMatch(/^tope \$/);
+    }
+    // El enlace a Ajustes es uno solo, no uno por criterio.
+    expect(lista.querySelectorAll('a[href="#config"]').length).toBe(1);
+  });
+
+  // ── C9: la estructura de encabezados ────────────────────────────
+
+  it('C9: el rótulo del grupo es un encabezado y sus cards cuelgan de él', () => {
+    S.gastos = [gasto({ fecha: fechaMesActual(2) })];
+    renderAnalisis();
+
+    expect(document.querySelector('.analisis__group-label').tagName).toBe('H2');
+    expect(document.querySelector('#analisis-tendencia-title').tagName).toBe('H3');
+    expect(document.querySelector('#analisis-cat-title').tagName).toBe('H3');
+  });
+
+  it('C9: el título de cada colapsable es un encabezado, no un span', () => {
+    S.gastos = [gasto({ fecha: fechaMesActual(2) })];
+    renderAnalisis();
+    const titulos = [...document.querySelectorAll('.analisis-grupo--fila .analisis-grupo__title')];
+    expect(titulos.length).toBe(2);
+    for (const t of titulos) expect(t.tagName).toBe('H2');
+  });
+
+  // ── C10: región viva solo para lo que responde a una acción ─────
+
+  it('C10: el panel no deja ningún role="status"', () => {
+    S.config  = { perfilFiscal: { declaranteObligado: true } };
+    S.cuentas = [cuenta({ saldo: 500_000 })];
+    renderAnalisis();
+
+    expect(document.querySelectorAll('#panel-analisis [role="status"]').length).toBe(0);
+    // El contenido sigue ahí: solo se retiró el rol.
+    expect(document.querySelector('.nudge-info')).not.toBeNull();
+  });
+
+  it('C8: el nudge de perfil fiscal usa el sprite, no un emoji', () => {
+    S.config  = { perfilFiscal: { declaranteObligado: true } };
+    S.cuentas = [cuenta({ saldo: 500_000 })];
+    renderAnalisis();
+    const nudge = document.querySelector('.nudge-info');
+    expect(nudge.querySelector('.nudge__icon use').getAttribute('href')).toBe('#i-info');
+  });
+
+  // ── C12: cada card declara su ventana de tiempo ─────────────────
+
+  it('C12: la card de categorías declara que es de este mes', () => {
+    S.gastos = [gasto({ fecha: fechaMesActual(2) })];
+    renderAnalisis();
+    expect(document.querySelector('.catg-card__sub').textContent).toBe('Este mes');
+  });
+
+  it('C12: el monitor de renta nombra el año corriente', () => {
+    S.cuentas = [cuenta({ saldo: 500_000 })];
+    renderAnalisis();
+    const renta = document.querySelector('.analisis-grupo--renta .analisis-grupo__title');
+    expect(renta.textContent).toBe(`Estado de tu renta (${anioActual})`);
+  });
+
+  // ── C4 y C5: el gráfico y el reparto de porcentajes ─────────────
+
+  it('C4: la sparkline se genera a 360 de ancho, no a 600', () => {
+    S.gastos = [
+      gasto({ id: 'g1', monto: 100_000, fecha: fechaMesActual(2) }),
+      gasto({ id: 'g2', monto: 200_000, fecha: fechaMesAnterior(2) }),
+    ];
+    renderAnalisis();
+    expect(document.querySelector('.sparkline').getAttribute('viewBox')).toBe('0 0 360 80');
+  });
+
+  it('C5: la composición de activos reparte 100% exactos', () => {
+    S.cuentas     = [cuenta({ saldo: 1_000_000 })];
+    S.metas       = [meta({ montoActual: 1_000_000 })];
+    S.inversiones = [inversion({ montoInvertido: 1_000_000 })];
+    renderAnalisis();
+
+    const segs = [...document.querySelectorAll('.patri-card__seg')];
+    expect(segs.length).toBe(3);
+    const suma = segs.reduce((acc, s) => acc + Number(s.getAttribute('style').match(/(\d+)%/)[1]), 0);
+    expect(suma).toBe(100);
+  });
+});
+
+// ── repartirPorcentajes() - DIS.10 (C5, regla R28) ─────────────────
+
+describe('repartirPorcentajes()', () => {
+  it('reparte 100 exactos donde el redondeo por separado daba 99', () => {
+    // Los datos de la auditoría: 31+18+16+13+8+7+6 = 99 con Math.round suelto.
+    const valores = [720_000, 430_000, 385_000, 310_000, 195_000, 160_000, 150_000];
+    const pcts = repartirPorcentajes(valores);
+    expect(pcts.reduce((a, b) => a + b, 0)).toBe(100);
+  });
+
+  it('conserva el orden por tamaño: el mayor nunca queda por debajo del menor', () => {
+    const pcts = repartirPorcentajes([720_000, 430_000, 150_000]);
+    expect(pcts[0]).toBeGreaterThanOrEqual(pcts[1]);
+    expect(pcts[1]).toBeGreaterThanOrEqual(pcts[2]);
+  });
+
+  it('reparte tercios como 34/33/33', () => {
+    expect(repartirPorcentajes([1, 1, 1]).reduce((a, b) => a + b, 0)).toBe(100);
+    expect(repartirPorcentajes([1, 1, 1]).sort((a, b) => b - a)).toEqual([34, 33, 33]);
+  });
+
+  it('un solo valor se lleva el 100', () => {
+    expect(repartirPorcentajes([500])).toEqual([100]);
+  });
+
+  it('sin valores, o con total cero, no inventa porcentajes', () => {
+    expect(repartirPorcentajes([])).toEqual([]);
+    expect(repartirPorcentajes([0, 0])).toEqual([0, 0]);
+    expect(repartirPorcentajes(null)).toEqual([]);
   });
 });

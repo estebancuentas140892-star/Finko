@@ -15,8 +15,16 @@ import {
   generarResumen, serieGastosMensual, seriePorCategoria,
   calcularScoreSalud, clasificarScore,
   calcularComparacionCategorias, detectarPatronGastoSemanal,
-  calcularEstadoRenta, detectarNudgesRenta,
+  calcularEstadoRenta, detectarNudgesRenta, repartirPorcentajes,
 } from './logic.js';
+
+/**
+ * DIS.10 (C8): chevron real del sprite para los dos colapsables del panel.
+ * El carácter '▾' del `::after` no hereda trazo ni tamaño del sistema de
+ * íconos. Mismo recurso y misma clase que el desglose de Límites de gasto,
+ * que ya hizo el cambio; acá se acota a `.analisis-grupo--fila`.
+ */
+const _CHEVRON_GRUPO = '<svg class="icon analisis-grupo__chevron" aria-hidden="true"><use href="#i-chevron-right"/></svg>';
 
 // ── PANEL PRINCIPAL ──────────────────────────────────────────────
 
@@ -127,8 +135,20 @@ export function renderAnalisis() {
 
   // ANL.2a (ADR 038 D6): el chip del header ancla el periodo del análisis.
   // Vive en el shell estático (index.html); aquí solo se escribe el mes.
+  // DIS.10 (C12): con el año, porque el monitor de renta al final de la página
+  // habla de un año completo y el chip decía solo "Julio".
   const chipMes = document.getElementById('analisis-chip-mes-label');
-  if (chipMes) chipMes.textContent = _MESES[mes - 1] ?? '';
+  if (chipMes) chipMes.textContent = _MESES[mes - 1] ? `${_MESES[mes - 1]} ${anio}` : '';
+
+  // DIS.10 (C11): cada render reescribe `innerHTML`, así que los dos
+  // `<details>` se recrean y lo que el usuario abrió se cerraba solo (y con
+  // ello se descartaba el cómputo diferido de PERF.3). Se leen los dos estados
+  // ANTES de reescribir y se reaplican después. `null` = no había nodo previo
+  // (primer render): ahí manda la apertura automática por alerta.
+  const previoDetalle  = el.querySelector('.analisis-grupo--detalle');
+  const previoRenta    = el.querySelector('.analisis-grupo--renta');
+  const abiertoDetalle = previoDetalle ? previoDetalle.open : null;
+  const abiertoRenta   = previoRenta   ? previoRenta.open   : null;
 
   const { resumen, serieGastos, segmentosCat } = _calcularDatosAnalisisMemo(
     S.gastos, S.compromisos, S.cuentas, S.metas, S.apartados, S.inversiones, S.personales, anio, mes,
@@ -167,17 +187,30 @@ export function renderAnalisis() {
     mostrarDetalle = cuerpoDetalle.trim() !== '';
   }
 
+  // DIS.10 (C6, regla R18): tendencia y categorías emitían cada una su propio
+  // vacío bajo el mismo rótulo, con dos redacciones distintas. Ahora las dos
+  // devuelven '' sin datos y el grupo pone un solo mensaje, con la superficie
+  // de card que tienen sus hermanos.
+  const tendenciaHtml  = _renderTendencia(serieGastos);
+  const categoriasHtml = _renderPorCategoria(resumen.gastoMes, segmentosCat);
+  const grupoCuerpo = `${tendenciaHtml}${categoriasHtml}`.trim() !== ''
+    ? `${tendenciaHtml}${categoriasHtml}`
+    : `<p class="analisis__empty">Aún no registras gastos este mes. Cuando lo hagas verás en qué se va tu dinero y cómo cambia mes a mes.</p>`;
+
   // Orden de lectura (F8): primero "cómo estoy" (salud + patrimonio), luego
   // "a dónde va mi dinero" (tendencia + categorías, agrupadas bajo un rótulo,
   // ANL.2c / ADR 038 D3). El detalle fino de gastos y lo fiscal quedan
   // colapsados para no enterrar lo importante.
+  //
+  // DIS.10 (C9, regla R29): el rótulo del grupo es un encabezado, no un
+  // párrafo: agrupa dos bloques que sí lo tenían. El tamaño lo sigue dando la
+  // clase, así que el cambio de etiqueta no se ve.
   el.innerHTML = `
     ${_renderScoreSalud(resumen)}
     ${_renderPatrimonio(resumen)}
     <div class="analisis__group">
-      <p class="analisis__group-label">A dónde va tu dinero</p>
-      ${_renderTendencia(serieGastos)}
-      ${_renderPorCategoria(resumen.gastoMes, segmentosCat)}
+      <h2 class="analisis__group-label">A dónde va tu dinero</h2>
+      ${grupoCuerpo}
     </div>
     ${mostrarDetalle ? _renderGrupoDetalle(cuerpoDetalle) : ''}
     ${_renderEstadoRenta(anio)}
@@ -189,13 +222,26 @@ export function renderAnalisis() {
   // sin listeners duplicados). `data-cargado` evita recomputar en aperturas y
   // cierres sucesivos sobre el mismo nodo.
   const detalle = el.querySelector('.analisis-grupo--detalle');
+  const cargarDetalle = () => {
+    if (!detalle || detalle.dataset.cargado === '1') return;
+    detalle.dataset.cargado = '1';
+    const cuerpo = detalle.querySelector('.analisis-grupo__body');
+    if (cuerpo) cuerpo.innerHTML = _renderDetalleGastos(resumen.hormigas, anio, mes, fechaHoy);
+  };
   if (detalle && detalle.dataset.cargado !== '1') {
     detalle.addEventListener('toggle', () => {
-      if (!detalle.open || detalle.dataset.cargado === '1') return;
-      detalle.dataset.cargado = '1';
-      const cuerpo = detalle.querySelector('.analisis-grupo__body');
-      if (cuerpo) cuerpo.innerHTML = _renderDetalleGastos(resumen.hormigas, anio, mes, fechaHoy);
+      if (detalle.open) cargarDetalle();
     });
+  }
+
+  // DIS.10 (C11): se reaplica lo que el usuario tenía abierto o cerrado. El
+  // detalle se llena en el acto porque asignar `open` no dispara `toggle` de
+  // forma síncrona, y `data-cargado` sigue evitando el recálculo.
+  const renta = el.querySelector('.analisis-grupo--renta');
+  if (renta && abiertoRenta !== null) renta.open = abiertoRenta;
+  if (detalle && abiertoDetalle === true) {
+    detalle.open = true;
+    cargarDetalle();
   }
 }
 
@@ -208,7 +254,8 @@ export function renderAnalisis() {
  * vez y marca el grupo como cargado (`data-cargado`), evitando el recálculo.
  *
  * ANL.2d (ADR 038 D5): el summary es una fila limpia (teja pizarra + título +
- * subtítulo con el contenido + chevron). El cuerpo interno no se rediseña.
+ * subtítulo con el contenido + chevron). DIS.10 (C2) completa lo que esa
+ * decisión dejó pendiente: el cuerpo interno también habla el lenguaje v2.
  *
  * @param {string|null} cuerpo  HTML del cuerpo, o `null` si está diferido.
  * @returns {string}
@@ -220,9 +267,10 @@ function _renderGrupoDetalle(cuerpo) {
       <summary class="analisis-grupo__summary">
         <span class="analisis-grupo__teja" aria-hidden="true">${icon('bar-chart')}</span>
         <span class="analisis-grupo__texto">
-          <span class="analisis-grupo__title">Más detalle de tus gastos</span>
+          <h2 class="analisis-grupo__title">Más detalle de tus gastos</h2>
           <span class="analisis-grupo__sub">Vs mes anterior · patrón semanal · hormigas</span>
         </span>
+        ${_CHEVRON_GRUPO}
       </summary>
       <div class="analisis-grupo__body">${diferido ? '' : cuerpo}</div>
     </details>`;
@@ -290,9 +338,13 @@ function _renderRecomendacionFiscal() {
     ? motivos[0]
     : `${motivos.slice(0, -1).join(', ')} y ${motivos[motivos.length - 1]}`;
 
+  // DIS.10 (C10, regla R24): sin `role="status"`. Es un aviso estable, no la
+  // respuesta a una acción, y `renderAnalisis()` lo reescribe en cada
+  // `state:change`: el lector de pantalla lo volvía a anunciar al registrar
+  // un gasto sin salir de la sección. DIS.10 (C8): el ícono sale del sprite.
   return `
-    <div class="nudge nudge-info" role="status">
-      <span class="nudge__icon" aria-hidden="true">📋</span>
+    <div class="nudge nudge-info">
+      <span class="nudge__icon" aria-hidden="true">${icon('info')}</span>
       <div class="nudge__body">
         <p class="nudge__title">Tu perfil fiscal puede requerir atención</p>
         <p class="nudge__desc">Indicaste que eres ${_esc(lista)}. Estas situaciones
@@ -318,7 +370,14 @@ function _renderEstadoRenta(anio) {
   const nudges = detectarNudgesRenta(estado, pf);
   const vig    = estadoVigenciaLegal();
 
-  const filas    = estado.criterios.map(_renderCriterioRenta).join('');
+  // DIS.10 (C7): los criterios que Finko puede medir conservan su ficha; los
+  // que dependen de un dato manual pasan a una lista compacta con su tope al
+  // lado. El objetivo declarado se conserva (el límite sigue visible y el
+  // enlace a Ajustes sigue ahí): lo que cambia es que dejan de competir cinco
+  // fichas iguales cuando solo dos o tres tienen algo que decir.
+  const conDato  = estado.criterios.filter(c => c.estado !== 'sin-datos');
+  const sinDato  = estado.criterios.filter(c => c.estado === 'sin-datos');
+  const filas    = conDato.map(_renderCriterioRenta).join('');
   const tieneAlerta = nudges.some(n => n.nivel === 'nudge-high' || n.nivel === 'nudge-medium');
   const bannerNudges = tieneAlerta
     ? nudges.filter(n => n.nivel !== 'nudge-info').map(_renderNudgeRenta).join('')
@@ -328,8 +387,8 @@ function _renderEstadoRenta(anio) {
   // valores oficiales, los topes salen de la UVT del año anterior. Se avisa.
   const avisoVigencia = vig.desactualizado
     ? `
-      <div class="nudge nudge-medium" role="status">
-        <span class="nudge__icon" aria-hidden="true">📅</span>
+      <div class="nudge nudge-medium">
+        <span class="nudge__icon" aria-hidden="true">${icon('agenda')}</span>
         <div class="nudge__body">
           <p class="nudge__title">Topes calculados con la UVT de ${vig.anioVigente}</p>
           <p class="nudge__desc">El año en curso es ${vig.anioActual}, pero Finko todavía usa la UVT de ${vig.anioVigente}: los valores oficiales de ${vig.anioActual} aún no se han cargado. Toma estos topes como referencia provisional y confírmalos con un contador.</p>
@@ -351,14 +410,15 @@ function _renderEstadoRenta(anio) {
     : '';
 
   return `
-    <details class="analisis-grupo analisis-grupo--fila"${abierto ? ' open' : ''}>
+    <details class="analisis-grupo analisis-grupo--fila analisis-grupo--renta"${abierto ? ' open' : ''}>
       <summary class="analisis-grupo__summary">
         <span class="analisis-grupo__teja" aria-hidden="true">${icon('percent')}</span>
         <span class="analisis-grupo__texto">
-          <span class="analisis-grupo__title">Estado de tu renta (${anio})</span>
+          <h2 class="analisis-grupo__title">Estado de tu renta (${anio})</h2>
           <span class="analisis-grupo__sub">${estado.criterios.length} criterios DIAN · topes por UVT</span>
         </span>
         ${badgeAlerta}
+        ${_CHEVRON_GRUPO}
       </summary>
       <div class="analisis-grupo__body">
         ${recomFiscal}
@@ -368,11 +428,41 @@ function _renderEstadoRenta(anio) {
         </p>
         ${avisoVigencia}
         ${bannerNudges}
-        <div class="renta-criterios">
-          ${filas}
-        </div>
+        ${filas !== '' ? `<div class="renta-criterios">${filas}</div>` : ''}
+        ${_renderCriteriosSinDato(sinDato)}
       </div>
     </details>`;
+}
+
+/**
+ * DIS.10 (C7): lista compacta de los criterios que Finko no puede medir por sí
+ * mismo (dependen de un dato que el usuario registra a mano en Ajustes). El
+ * tope sigue visible, que es el objetivo de la decisión original, pero en una
+ * línea por criterio en vez de una ficha con valor "N/D", barra al 0% y un tip
+ * que repetía la misma instrucción con otra redacción.
+ *
+ * @param {Array<{etiqueta:string, tope:number}>} criterios
+ * @returns {string} HTML, o '' si no hay criterios sin dato.
+ */
+function _renderCriteriosSinDato(criterios) {
+  if (criterios.length === 0) return '';
+
+  const filas = criterios.map(c => `
+    <li class="renta-sindatos__row">
+      <span class="renta-sindatos__label">${_esc(c.etiqueta)}</span>
+      <span class="renta-sindatos__tope">tope ${f(c.tope)}</span>
+    </li>`).join('');
+
+  return `
+    <div class="renta-sindatos">
+      <p class="renta-sindatos__title">
+        ${criterios.length} ${criterios.length === 1 ? 'criterio que Finko no puede medir' : 'criterios que Finko no puede medir'}
+      </p>
+      <ul class="renta-sindatos__list">${filas}</ul>
+      <p class="analisis__hint">
+        Regístralos en <a href="#config" class="link">Ajustes, Datos de renta</a> y entran al monitor con su tope.
+      </p>
+    </div>`;
 }
 
 function _renderCriterioRenta(c) {
@@ -408,9 +498,12 @@ function _renderCriterioRenta(c) {
 }
 
 function _renderNudgeRenta(n) {
+  // DIS.10 (C8 + C10): el ícono viene del sprite (`detectarNudgesRenta`
+  // devuelve su nombre) y el bloque deja de ser región viva: es un aviso
+  // estable que se repinta en cada `state:change`, no una respuesta.
   return `
-    <div class="nudge ${n.nivel}" role="status">
-      <span class="nudge__icon" aria-hidden="true">${n.icono}</span>
+    <div class="nudge ${n.nivel}">
+      <span class="nudge__icon" aria-hidden="true">${icon(n.icono)}</span>
       <div class="nudge__body">
         <p class="nudge__title">${_esc(n.etiqueta)}</p>
         <p class="nudge__desc">${_esc(n.mensaje)}</p>
@@ -478,6 +571,12 @@ function _renderScoreSalud(resumen) {
       </p>`
     : '';
 
+  // DIS.10 (C3): la frase de `_fraseScore()` sale de la columna del anillo y
+  // baja a ancho completo, justo encima de la grilla de factores. Medido: la
+  // columna daba 162,7px de medida y cuatro renglones de unos veinte
+  // caracteres para la única línea del panel que interpreta un número. El
+  // anillo no se toca (ADR 038 D1 midió su contraste contra el wash).
+  //
   // ANL.2a (ADR 038 D1): las mini-barras toman el color de la banda (dentro
   // del hero el dato semántico manda; las barras por dominio de IV.2b siguen
   // vigentes fuera de él). El número acompaña siempre a la barra (SC 1.4.11).
@@ -514,9 +613,9 @@ function _renderScoreSalud(resumen) {
               ${icon(iconoBanda, 'icon score-hero__pill-icon')}
               ${label}
             </span>
-            <p class="score-hero__explicacion">${_esc(_fraseScore(banda, score.factors))}</p>
           </div>
         </div>
+        <p class="score-hero__explicacion">${_esc(_fraseScore(banda, score.factors))}</p>
         <div class="score-hero__factors">${factoresHtml}</div>
       </div>
       ${nudgeFondo}
@@ -553,12 +652,15 @@ function _renderPatrimonio({ activos, pasivos, patrimonioNeto }) {
   // expone, sin cálculo nuevo. La barra es decorativa (aria-hidden); los
   // porcentajes en texto portan la información (SC 1.4.11) y no revelan
   // montos, así que no se enmascaran (igual que la barra del hero de agenda).
-  const buckets = activos.total > 0
+  // DIS.10 (C5): el reparto es por resto mayor, así que la fila de porcentajes
+  // suma 100 (con un `Math.round` por bucket daba 99 o 101).
+  const bucketsConValor = activos.total > 0
     ? _BUCKETS_ACTIVOS
         .map(b => ({ ...b, valor: activos[b.key] }))
         .filter(b => b.valor > 0)
-        .map(b => ({ ...b, pct: Math.round((b.valor / activos.total) * 100) }))
     : [];
+  const pctBuckets = repartirPorcentajes(bucketsConValor.map(b => b.valor));
+  const buckets    = bucketsConValor.map((b, i) => ({ ...b, pct: pctBuckets[i] }));
   const compBarra = buckets.length > 0
     ? `<div class="patri-card__comp" aria-hidden="true">
         ${buckets.map(b => `<div class="patri-card__seg patri-card__seg--${b.mod}" style="width:${b.pct}%"></div>`).join('')}
@@ -629,12 +731,9 @@ function _renderPatrimonio({ activos, pasivos, patrimonioNeto }) {
  * @param {ReturnType<import('../../infra/svg.js').colorearSegmentos>} segmentos
  */
 function _renderPorCategoria(gastoMes, segmentos = []) {
-  if (segmentos.length === 0) {
-    return `
-      <section class="analisis__section" aria-label="Gastos por categoría">
-        <p class="analisis__empty">Sin gastos registrados este mes.</p>
-      </section>`;
-  }
+  // DIS.10 (C6): sin datos no emite su propio vacío; el rótulo del grupo pone
+  // un solo mensaje para tendencia y categorías juntas.
+  if (segmentos.length === 0) return '';
 
   // seriePorCategoria ordena desc y agrega "Otros" al final: el primer
   // segmento siempre es la categoría real con más gasto.
@@ -652,7 +751,10 @@ function _renderPorCategoria(gastoMes, segmentos = []) {
     <section class="analisis__section" aria-labelledby="analisis-cat-title">
       <div class="catg-card">
         <div class="catg-card__head">
-          <h2 class="catg-card__title" id="analisis-cat-title">Por categoría</h2>
+          <div class="catg-card__head-texto">
+            <h3 class="catg-card__title" id="analisis-cat-title">Por categoría</h3>
+            <p class="catg-card__sub">Este mes</p>
+          </div>
           <span class="catg-card__total">${f(gastoMes)}</span>
         </div>
         <div class="catg-card__layout">
@@ -676,12 +778,8 @@ function _renderTendencia(serie) {
   const valores = serie.map(p => p.total);
   const hayDatos = valores.some(v => v > 0);
 
-  if (!hayDatos) {
-    return `
-      <section class="analisis__section" aria-label="Tendencia de gastos">
-        <p class="analisis__empty">El análisis aparece cuando tengas gastos registrados. ¡Todo empieza con el primer apunte!</p>
-      </section>`;
-  }
+  // DIS.10 (C6): igual que categorías, el vacío lo pone el grupo una sola vez.
+  if (!hayDatos) return '';
 
   const max     = Math.max(...valores);
   const min     = Math.min(...valores);
@@ -710,8 +808,13 @@ function _renderTendencia(serie) {
 
   // La serie es contexto, no dato semántico: pizarra de sección (ADR 038 D3),
   // variante -text para pasar el umbral no textual en tema claro.
+  // DIS.10 (C4, regla R27): 360 y no 600. El SVG rinde ~323px de ancho, así
+  // que un viewBox de 600 lo comprimía a la mitad (anisotropía 1,86:1) y el
+  // trazo salía más delgado en los tramos planos que en las subidas. Con 360
+  // el residuo queda en 1,12:1 y el `non-scaling-stroke` de `sparkline()`
+  // cubre el resto.
   const svg = sparkline(valores, {
-    width: 600, height: 80, color: 'var(--fk-dom-analisis-text, #8f9bb3)',
+    width: 360, height: 80, color: 'var(--fk-dom-analisis-text, #8f9bb3)',
     padding: 6, area: true,
     ariaLabel: `Gastos mensuales últimos ${serie.length} meses, máximo ${f(max)}, actual ${f(actual)}`,
   });
@@ -737,7 +840,7 @@ function _renderTendencia(serie) {
       <div class="tend-card">
         <div class="tend-card__head">
           <div class="tend-card__head-texto">
-            <h2 class="tend-card__title" id="analisis-tendencia-title">Tendencia de gastos</h2>
+            <h3 class="tend-card__title" id="analisis-tendencia-title">Tendencia de gastos</h3>
             <p class="tend-card__sub">Últimos ${serie.length} meses</p>
           </div>
           <span class="tend-card__chip${chipClase}">${chipIcono}<span>${chipTexto}</span></span>
@@ -758,7 +861,7 @@ function _renderHormigas(hormigas) {
 
   const items = hormigas.map(h => `
     <li class="hormiga-item">
-      <p class="hormiga-item__cat">🐜 ${_esc(h.categoria)}</p>
+      <p class="hormiga-item__cat">${icon('alert')}${_esc(h.categoria)}</p>
       <p class="hormiga-item__detalle">
         ${h.cantidad} compras · promedio ${f(h.promedio)} c/u · total <strong>${f(h.total)}</strong>
       </p>
@@ -766,7 +869,7 @@ function _renderHormigas(hormigas) {
 
   return `
     <section class="analisis__section" aria-labelledby="analisis-hormiga-title">
-      <h2 class="analisis__section-title" id="analisis-hormiga-title">⚠️ Alertas de gasto hormiga</h2>
+      <h3 class="analisis__section-title" id="analisis-hormiga-title">${icon('alert')}Alertas de gasto hormiga</h3>
       <p class="analisis__desc">Categorías con muchas compras pequeñas que suman montos significativos este mes.</p>
       <ul class="hormiga-list" aria-label="Alertas de gasto hormiga">${items}</ul>
     </section>`;
@@ -791,50 +894,39 @@ function _renderComparacionCategorias(comparacion) {
     : `${f(deltaTotal)} vs mes anterior`;
   const deltaClase = deltaTotal >= 0 ? 'comparacion__delta--sube' : 'comparacion__delta--baja';
 
-  const hilightHtml = highlights.map(h => {
-    const icono = h.tipo === 'mejora' ? '✅' : '⚠️';
-    return `<li class="comparacion__highlight comparacion__highlight--${h.tipo}">
-      ${icono} ${_esc(h.mensaje)}
-    </li>`;
-  }).join('');
+  // DIS.10 (C8): los dos glifos del sistema salen del sprite.
+  const hilightHtml = highlights.map(h => `
+    <li class="comparacion__highlight comparacion__highlight--${h.tipo}">
+      ${icon(h.tipo === 'mejora' ? 'check-circle' : 'alert')}<span>${_esc(h.mensaje)}</span>
+    </li>`).join('');
 
+  // DIS.10 (C2b, regla R20): la tabla de cuatro columnas de dinero a 12px pasa
+  // a la misma anatomía de fila que ya usa la card de categorías: nombre,
+  // monto del mes en negrita y tabular, y la variación como chip con su ícono
+  // de tendencia. El monto del mes anterior sale de la fila: el delta total
+  // del bloque ya lo resume. Verde solo al bajar (ADR 019 / IV.3).
   const filasHtml = categorias.map(c => {
-    const icono = c.direccion === 'bajo' || c.direccion === 'desaparecio' ? '↓'
-      : c.direccion === 'subio' || c.direccion === 'nueva'                ? '↑'
-      :                                                                      '→';
-    const clase = c.direccion === 'bajo' || c.direccion === 'desaparecio'
-      ? 'comparacion__row--baja'
-      : c.direccion === 'subio' || c.direccion === 'nueva'
-      ? 'comparacion__row--sube'
-      : 'comparacion__row--igual';
+    const baja  = c.direccion === 'bajo' || c.direccion === 'desaparecio';
+    const sube  = c.direccion === 'subio' || c.direccion === 'nueva';
+    const iconoDelta = baja ? icon('trending-down') : sube ? icon('trending-up') : '';
+    const dirTexto   = baja ? 'bajó' : sube ? 'subió' : 'sin cambio';
     return `
-      <tr class="comparacion__row ${clase}">
-        <td class="comparacion__cat">${_esc(c.cat)}</td>
-        <td class="comparacion__monto comparacion__monto--actual">${f(c.actual)}</td>
-        <td class="comparacion__monto">${f(c.anterior)}</td>
-        <td class="comparacion__dir">${icono} ${c.deltaPct > 0 ? '+' : ''}${c.deltaPct}%</td>
-      </tr>`;
+      <li class="comparacion__fila">
+        <span class="comparacion__fila-cat">${_esc(c.cat)}</span>
+        <span class="comparacion__fila-monto">${f(c.actual)}</span>
+        <span class="comparacion__fila-delta${baja ? ' comparacion__fila-delta--baja' : ''}">
+          ${iconoDelta}<span class="sr-only">${dirTexto} </span>${Math.abs(c.deltaPct)}%
+        </span>
+      </li>`;
   }).join('');
 
   return `
     <section class="analisis__section" aria-labelledby="analisis-comparacion-title">
-      <h2 class="analisis__section-title" id="analisis-comparacion-title">📊 Vs mes anterior</h2>
+      <h3 class="analisis__section-title" id="analisis-comparacion-title">${icon('bar-chart')}Vs mes anterior</h3>
       <p class="analisis__desc">Comparación de gastos por categoría respecto al mes pasado.</p>
       <p class="comparacion__delta ${deltaClase}">${deltaLabel}</p>
       ${highlights.length > 0 ? `<ul class="comparacion__highlights" aria-label="Cambios destacados">${hilightHtml}</ul>` : ''}
-      <div class="comparacion__tabla-wrap">
-        <table class="comparacion__tabla" aria-label="Gastos por categoría">
-          <thead>
-            <tr>
-              <th class="comparacion__th">Categoría</th>
-              <th class="comparacion__th">Este mes</th>
-              <th class="comparacion__th">Mes ant.</th>
-              <th class="comparacion__th">Cambio</th>
-            </tr>
-          </thead>
-          <tbody>${filasHtml}</tbody>
-        </table>
-      </div>
+      <ul class="comparacion__lista" aria-label="Gastos por categoría">${filasHtml}</ul>
     </section>`;
 }
 
@@ -863,8 +955,8 @@ function _renderPatronSemanal(patron) {
 
   return `
     <section class="analisis__section" aria-labelledby="analisis-patron-title">
-      <h2 class="analisis__section-title" id="analisis-patron-title">📅 Patrón de gasto semanal</h2>
-      <p class="analisis__desc">Días donde gastas consistentemente más que el promedio (análisis de los últimos 90 días, ${gastosAnalizados} transacciones).</p>
+      <h3 class="analisis__section-title" id="analisis-patron-title">${icon('agenda')}Patrón de gasto semanal</h3>
+      <p class="analisis__desc">Últimos 90 días, ${gastosAnalizados} transacciones. Días donde gastas consistentemente más que el promedio.</p>
       <ul class="patron__lista" aria-label="Días con mayor gasto">${itemsHtml}</ul>
       <p class="analisis__hint">Promedio por día activo: <strong>${f(promedioGlobalDia)}</strong></p>
     </section>`;

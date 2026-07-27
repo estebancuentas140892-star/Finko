@@ -21,6 +21,41 @@ import { UVT, TOPES_RENTA_UVT, UMBRAL_ALERTA_RENTA }    from '../../core/constan
 // Regex reutilizada en funciones de deteccion.
 const _RX_FECHA_ANA = /^(\d{4})-(\d{2})-(\d{2})/;
 
+/**
+ * Reparte 100 puntos porcentuales entre un conjunto de valores por el método
+ * del resto mayor.
+ *
+ * DIS.10 (C5, regla R28): redondear cada porcentaje por separado hacía que la
+ * columna sumara 99 o 101 (medido: 31+18+16+13+8+7+6 = 99 en la card de
+ * categorías). El reparto por resto mayor entrega la parte entera a cada uno y
+ * asigna el sobrante a los que tienen la fracción más alta, así que la suma
+ * siempre da 100 y el orden por tamaño se conserva.
+ *
+ * @param {number[]} valores  Valores no negativos.
+ * @returns {number[]} Porcentajes enteros en el mismo orden; suman 100 (o
+ *                     todos 0 si el total no es positivo).
+ */
+export function repartirPorcentajes(valores) {
+  if (!Array.isArray(valores) || valores.length === 0) return [];
+
+  const total = valores.reduce((acc, v) => acc + (Number(v) || 0), 0);
+  if (total <= 0) return valores.map(() => 0);
+
+  const exactos = valores.map(v => ((Number(v) || 0) / total) * 100);
+  const pcts    = exactos.map(Math.floor);
+  let sobrante  = 100 - pcts.reduce((acc, v) => acc + v, 0);
+
+  const porFraccion = exactos
+    .map((v, i) => ({ i, frac: v - Math.floor(v) }))
+    .sort((a, b) => b.frac - a.frac);
+
+  for (let k = 0; sobrante > 0 && k < porFraccion.length; k++, sobrante--) {
+    pcts[porFraccion[k].i] += 1;
+  }
+
+  return pcts;
+}
+
 // ── PATRIMONIO NETO Y PROYECCIÓN ─────────────────────────────────
 
 /**
@@ -402,24 +437,22 @@ export function seriePorCategoria(gastosDelMes, maxSegmentos = 6) {
     .map(([categoria, t]) => ({ categoria, total: t }))
     .sort((a, b) => b.total - a.total);
 
-  const conPct = (s) => ({ ...s, pct: Math.round((s.total / total) * 100) });
-
-  if (ordenadas.length <= maxSegmentos) {
-    return ordenadas.map(conPct);
+  let segmentos = ordenadas;
+  if (ordenadas.length > maxSegmentos) {
+    const resto = ordenadas.slice(maxSegmentos - 1);
+    segmentos = [
+      ...ordenadas.slice(0, maxSegmentos - 1),
+      {
+        categoria: 'Otros',
+        total:     resto.reduce((acc, s) => acc + s.total, 0),
+      },
+    ];
   }
 
-  const top         = ordenadas.slice(0, maxSegmentos - 1).map(conPct);
-  const resto       = ordenadas.slice(maxSegmentos - 1);
-  const restoTotal  = resto.reduce((acc, s) => acc + s.total, 0);
-
-  return [
-    ...top,
-    {
-      categoria: 'Otros',
-      total:     restoTotal,
-      pct:       Math.round((restoTotal / total) * 100),
-    },
-  ];
+  // DIS.10 (C5): el porcentaje se reparte al final sobre los segmentos ya
+  // formados, por resto mayor, para que la columna sume 100.
+  const pcts = repartirPorcentajes(segmentos.map(s => s.total));
+  return segmentos.map((s, i) => ({ ...s, pct: pcts[i] }));
 }
 
 // ── COMPARACIÓN DE CATEGORÍAS MES ACTUAL vs MES ANTERIOR (G.2) ───
@@ -780,6 +813,12 @@ export function calcularEstadoRenta(state, anio) {
  *   - Si `perfilFiscal.declaranteObligado === true` y no hay nudges críticos:
  *     se añade un nudge informativo recordando preparar la declaración.
  *
+ * DIS.10 (C8): `icono` devuelve el NOMBRE de un símbolo del sprite ('alert',
+ * 'info'), no un emoji. El glifo del sistema operativo no hereda el color del
+ * texto ni la métrica del ícono, y ADR 037/038 fijaron "cero íconos nuevos"
+ * justamente porque el sprite ya tiene los que hacen falta. La vista lo
+ * resuelve con `icon(n.icono)`.
+ *
  * @param {ReturnType<calcularEstadoRenta>} estadoRenta
  * @param {{ declaranteObligado?: boolean } | null} [perfilFiscal=null]
  * @returns {Array<{
@@ -800,7 +839,7 @@ export function detectarNudgesRenta(estadoRenta, perfilFiscal = null) {
       nudges.push({
         id:       `renta-supera-${c.id}`,
         nivel:    'nudge-high',
-        icono:    '🚨',
+        icono:    'alert',
         criterio: c.id,
         etiqueta: c.etiqueta,
         mensaje:  `Superas el tope de "${c.etiqueta}" (${Math.round(c.porcentaje)} % del límite). Confirma con un contador.`,
@@ -809,7 +848,7 @@ export function detectarNudgesRenta(estadoRenta, perfilFiscal = null) {
       nudges.push({
         id:       `renta-cerca-${c.id}`,
         nivel:    'nudge-medium',
-        icono:    '⚠️',
+        icono:    'alert',
         criterio: c.id,
         etiqueta: c.etiqueta,
         mensaje:  `Estás cerca del tope de "${c.etiqueta}" (${Math.round(c.porcentaje)} % del límite).`,
@@ -822,7 +861,7 @@ export function detectarNudgesRenta(estadoRenta, perfilFiscal = null) {
     nudges.push({
       id:       'renta-declarante',
       nivel:    'nudge-info',
-      icono:    '📋',
+      icono:    'info',
       criterio: 'declaranteObligado',
       etiqueta: 'Declarante notificado por la DIAN',
       mensaje:  'La DIAN te tiene registrado como declarante. Prepara la declaración aunque no superes los topes.',

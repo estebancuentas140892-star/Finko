@@ -73,10 +73,18 @@ export function sparkline(valores, opts = {}) {
   // Marcador en el último punto.
   const [lastPx, lastPy] = points[points.length - 1];
 
+  // DIS.10 (C4, regla R27): el SVG se estira al ancho del contenedor, así que
+  // el trazo y el marcador se declaran inmunes a la escala. Sin
+  // `non-scaling-stroke` la línea salía más delgada en los tramos planos que
+  // en las subidas (medido: 1,08px contra 2px) y el marcador, un `<circle>`
+  // relleno, salía como elipse. El punto es ahora un subpath de longitud cero
+  // con tapa redonda: el diámetro lo fija `stroke-width`, no la escala.
+  const marcador = `M${lastPx.toFixed(1)},${lastPy.toFixed(1)}L${lastPx.toFixed(1)},${lastPy.toFixed(1)}`;
+
   return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${_esc(ariaLabel)}" class="sparkline" preserveAspectRatio="none">
     ${area ? `<path d="${areaPath}" fill="${color}" fill-opacity="0.15" stroke="none"/>` : ''}
-    <path d="${linePath}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    <circle cx="${lastPx.toFixed(1)}" cy="${lastPy.toFixed(1)}" r="2.5" fill="${color}"/>
+    <path d="${linePath}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+    <path d="${marcador}" fill="none" stroke="${color}" stroke-width="5" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
   </svg>`;
 }
 
@@ -183,14 +191,21 @@ export function progressRing(porcentaje, opts = {}) {
 /**
  * Paleta fija de 7 colores accesibles para categorías.
  * El último (slate) se reserva semánticamente para "Otros".
+ *
+ * DIS.10 (C5, regla R28): ningún color con significado de dirección de dinero
+ * entra a la paleta. Salieron el verde de la marca (`#00dc82`, que pintaba
+ * siempre la categoría con más gasto) y el rojo de peligro (`#ef4444`, que
+ * aparecía desde la cuarta categoría): en el resto de la app el verde es
+ * ingreso o logro y el rojo es deuda o exceso, y esta misma sección declara
+ * que subir el gasto nunca se pinta de rojo (ADR 019 / IV.3 / ANL.2c).
  */
 export const PALETA_CATEGORIAS = [
-  '#00dc82', // verde accent - finko brand
   '#3b82f6', // azul
-  '#f59e0b', // ámbar
-  '#ef4444', // rojo
   '#a855f7', // violeta
   '#06b6d4', // cyan
+  '#f59e0b', // ámbar
+  '#14b8a6', // teal
+  '#ec4899', // rosa
   '#94a3b8', // slate - "Otros" / fallback
 ];
 

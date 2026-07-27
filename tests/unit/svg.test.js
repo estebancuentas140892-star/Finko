@@ -65,14 +65,25 @@ describe('sparkline()', () => {
 
   it('permite desactivar el área de relleno', () => {
     const out = sparkline([1, 2, 3], { area: false });
-    // Solo debe haber un path (la línea), no dos (línea + área).
+    // Sin área quedan dos paths: la línea y el marcador del último punto
+    // (DIS.10 C4: el marcador dejó de ser un <circle>). Con área serían tres.
     const matches = out.match(/<path/g) ?? [];
-    expect(matches.length).toBe(1);
+    expect(matches.length).toBe(2);
+    expect(sparkline([1, 2, 3]).match(/<path/g)).toHaveLength(3);
   });
 
-  it('incluye marcador en el último punto', () => {
+  it('incluye marcador en el último punto, como punto de trazo no deformable', () => {
     const out = sparkline([1, 2, 3]);
-    expect(out).toContain('<circle');
+    // DIS.10 (C4, regla R27): un <circle> se deformaba en elipse porque el SVG
+    // se estira al ancho del contenedor. El marcador es un subpath de longitud
+    // cero con tapa redonda y trazo inmune a la escala.
+    expect(out).toContain('stroke-linecap="round" vector-effect="non-scaling-stroke"');
+    expect(out).toMatch(/<path d="M([\d.]+),([\d.]+)L\1,\2"/);
+  });
+
+  it('el trazo de la línea no depende de la escala del contenedor', () => {
+    const out = sparkline([1, 2, 3]);
+    expect(out).toContain('stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"');
   });
 });
 

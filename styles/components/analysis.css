@@ -31,16 +31,21 @@
   color: var(--fk-text-muted);
   margin-bottom: var(--fk-space-3);
 }
+/* DIS.10 (C1, regla R25): declaración ÚNICA. Esta clase estaba escrita dos
+   veces en este mismo archivo: acá como caja (fondo elevado, borde y filete
+   izquierdo de 3px en --fk-warning) y más abajo como texto suelto. Misma capa
+   y misma especificidad, así que la segunda solo ganaba en las tres
+   propiedades que declaraba: el filete ámbar sobrevivía y los cuatro avisos
+   informativos de Análisis (UVT vigente, promedio por día activo, deudas sin
+   saldo y fondo de emergencia) se veían como advertencias. La caja de
+   advertencia ya existe y se llama `.nudge`. */
 .analisis__hint {
-  font-size: var(--fk-text-sm);
+  font-size: var(--fk-text-xs);
   color: var(--fk-text-muted);
-  background: var(--fk-bg-elevated);
-  border: 1px solid var(--fk-border-subtle);
-  border-left: 3px solid var(--fk-warning);
-  border-radius: var(--fk-radius-md);
-  padding: var(--fk-space-3) var(--fk-space-4);
-  margin-bottom: var(--fk-space-4);
+  line-height: var(--fk-leading-relaxed);
+  margin: 0;
 }
+.analisis-grupo__body > .analisis__hint { margin-bottom: var(--fk-space-3); }
 .analisis__empty {
   font-size: var(--fk-text-sm);
   color: var(--fk-text-muted);
@@ -116,11 +121,28 @@
   flex-direction: column;
   gap: 2px;
 }
+/* DIS.10 (C9, regla R29): el título del summary es un `h2` para que la
+   navegación por encabezados alcance los dos colapsables. El tamaño lo sigue
+   dando esta clase, así que el cambio de etiqueta no se ve; solo hay que
+   anular el margen que el navegador le da a un encabezado. */
 .analisis-grupo__title {
   font-size: var(--fk-text-sm);
   font-weight: var(--fk-font-semibold);
   color: var(--fk-text-primary);
+  margin: 0;
 }
+/* DIS.10 (C8): chevron real del sprite en los dos grupos del panel, igual que
+   el desglose de Límites. Acotado a `--fila`: la base `.analisis-grupo`
+   conserva su `::after` para el resto de consumidores. */
+.analisis-grupo--fila > .analisis-grupo__summary::after { content: none; }
+.analisis-grupo--fila > .analisis-grupo__summary .analisis-grupo__chevron {
+  flex-shrink: 0;
+  --fk-icon-size: var(--fk-icon-sm);
+  color: var(--fk-text-muted);
+  rotate: 90deg;
+  transition: rotate var(--fk-transition-fast);
+}
+.analisis-grupo--fila[open] > .analisis-grupo__summary .analisis-grupo__chevron { rotate: -90deg; }
 .analisis-grupo__sub {
   font-size: var(--fk-text-xs);
   font-weight: var(--fk-font-regular);
@@ -141,6 +163,43 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+/* ── DIS.10 (C2, regla R26): el cuerpo del colapsable habla el lenguaje v2 ──
+   ANL.2d rediseñó el summary y dejó el interior intacto (decisión D5): una
+   fila v2 encima de tres bloques del vocabulario anterior, sin superficie
+   propia y con títulos de 18px. Los sub-bloques toman ahora la misma receta
+   que `.tend-card` / `.catg-card` (superficie, radio xl, sombra, padding 4).
+   Acotado a `--fila`: la base `.analisis-grupo` la reusa el desglose de
+   Límites de gasto y no cambia. */
+.analisis-grupo--fila .analisis-grupo__body .analisis__section {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-xl);
+  padding: var(--fk-space-4);
+  box-shadow: var(--fk-shadow-sm);
+  margin-bottom: var(--fk-space-3);
+}
+.analisis-grupo--fila .analisis-grupo__body .analisis__section:last-child {
+  margin-bottom: 0;
+}
+.analisis-grupo--fila .analisis-grupo__body .analisis__section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-bold);
+  margin-bottom: var(--fk-space-1);
+}
+.analisis-grupo--fila .analisis-grupo__body .analisis__section-title .icon {
+  --fk-icon-size: var(--fk-icon-sm);
+  flex-shrink: 0;
+  color: var(--fk-dom-analisis-text);
+}
+.analisis-grupo--fila .analisis-grupo__body .analisis__desc {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  margin-bottom: var(--fk-space-3);
 }
 
 /* ── ANL.2d: empty state único del panel (ADR 038 D7) ────────
@@ -282,6 +341,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  justify-content: center;
   gap: var(--fk-space-2);
 }
 .score-hero__kicker {
@@ -313,11 +373,15 @@
   --fk-icon-size: var(--fk-icon-sm);
   color: var(--score-banda-ink);
 }
+/* DIS.10 (C3): la frase sale de la columna del anillo y ocupa el ancho de la
+   card, entre el bloque superior y la grilla de factores. Medido: pasa de
+   162,7px de medida y cuatro renglones a 314,7px y dos. El margen negativo
+   recorta el gap del hero para que la frase quede pegada a lo que explica. */
 .score-hero__explicacion {
   font-size: var(--fk-text-sm);
   color: var(--fk-text-secondary);
   line-height: var(--fk-leading-relaxed);
-  margin: 0;
+  margin: calc(var(--fk-space-1) - var(--fk-space-4)) 0 0;
 }
 
 /* Reutilizado por el score (mini-barras vía --score-banda-ink) y por los
@@ -1266,6 +1330,20 @@
   margin: 0;
 }
 .analisis__group .analisis__section { margin-bottom: 0; }
+/* DIS.10 (C6, regla R18): el vacío del grupo es uno solo y tiene la superficie
+   de card de sus hermanos, no dos párrafos sueltos sobre el fondo base.
+   Acotado al grupo: `.analisis__empty` también lo usa la vista previa del
+   importador. */
+.analisis__group .analisis__empty {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-xl);
+  padding: var(--fk-space-5) var(--fk-space-4);
+  box-shadow: var(--fk-shadow-sm);
+  text-align: center;
+  color: var(--fk-text-secondary);
+  margin: 0;
+}
 
 .tend-card,
 .catg-card {
@@ -1359,6 +1437,15 @@
   font-weight: var(--fk-font-bold);
   color: var(--fk-text-primary);
   margin: 0;
+}
+/* DIS.10 (C12): cada card declara su ventana de tiempo donde se lee. La
+   tendencia ya lo hacía con "Últimos 12 meses"; faltaba categorías, que es de
+   este mes mientras el chip del header nombra el periodo del panel. Misma
+   receta que `.tend-card__sub`. */
+.catg-card__sub {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  margin: var(--fk-space-1) 0 0;
 }
 .catg-card__total {
   font-family: var(--fk-font-mono);
@@ -1466,10 +1553,19 @@
   padding: var(--fk-space-3) var(--fk-space-4);
 }
 .hormiga-item__cat {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
   font-size: var(--fk-text-sm);
   font-weight: var(--fk-font-semibold);
   color: var(--fk-text-primary);
   margin-bottom: var(--fk-space-1);
+}
+/* DIS.10 (C8): el emoji de cada fila salió del sprite. */
+.hormiga-item__cat .icon {
+  --fk-icon-size: var(--fk-icon-sm);
+  flex-shrink: 0;
+  color: var(--fk-warning-text);
 }
 .hormiga-item__detalle {
   font-size: var(--fk-text-xs);
@@ -1496,56 +1592,79 @@
   gap: var(--fk-space-1);
 }
 .comparacion__highlight {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fk-space-2);
   font-size: var(--fk-text-xs);
   padding: var(--fk-space-1) var(--fk-space-2);
   border-radius: var(--fk-radius-sm);
 }
+/* DIS.10 (C8): el check y el aviso salen del sprite. */
+.comparacion__highlight .icon {
+  --fk-icon-size: var(--fk-icon-sm);
+  flex-shrink: 0;
+}
 .comparacion__highlight--mejora { background: var(--fk-success-bg); color: var(--fk-success-text); }
 .comparacion__highlight--alerta { background: var(--fk-warning-bg); color: var(--fk-warning-text); }
 
-.comparacion__tabla-wrap {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+/* ── DIS.10 (C2b, regla R20): la comparación deja de ser tabla ─────────────
+   Era la única tabla de datos que la app le mostraba a un teléfono: cuatro
+   columnas de dinero a 12px comprimidas en 322,7px (medido: no desbordaba, se
+   apretaba). Pasa a la misma anatomía de fila rankeada que la card de
+   categorías dos bloques más arriba: nombre, monto del mes en negrita y
+   tabular, y la variación como chip. El monto del mes anterior sale de la
+   fila; el delta total del bloque ya lo resume. */
+.comparacion__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
 }
-.comparacion__tabla {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--fk-text-xs);
+.comparacion__fila {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: var(--fk-space-2);
+  font-size: var(--fk-text-sm);
 }
-.comparacion__th {
-  text-align: left;
-  padding: var(--fk-space-2) var(--fk-space-2);
-  color: var(--fk-text-muted);
-  font-weight: var(--fk-font-regular);
-  border-bottom: 1px solid var(--fk-border-subtle);
+.comparacion__fila-cat {
+  min-width: 0;
+  color: var(--fk-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
-.comparacion__row { border-bottom: 1px solid var(--fk-border-subtle); }
-/* "Subir" el gasto de una categoría no lleva tinte de alarma (ADR 019);
-   solo "bajar" se refuerza con fondo de éxito. */
-.comparacion__row--baja { background: color-mix(in srgb, var(--fk-success) 5%, transparent); }
-.comparacion__cat {
-  padding: var(--fk-space-2);
-  color: var(--fk-text-primary);
-}
-.comparacion__monto {
-  padding: var(--fk-space-2);
-  text-align: right;
+/* Los tabular-nums los pone el bloque centralizado de `base.css`. */
+.comparacion__fila-monto {
   font-family: var(--fk-font-mono);
-  color: var(--fk-text-secondary);
-  white-space: nowrap;
-}
-.comparacion__monto--actual {
-  font-weight: var(--fk-font-semibold);
+  font-weight: var(--fk-font-bold);
   color: var(--fk-text-primary);
-}
-.comparacion__dir {
-  padding: var(--fk-space-2);
-  text-align: right;
   white-space: nowrap;
-  font-weight: var(--fk-font-semibold);
 }
-.comparacion__row--baja .comparacion__dir { color: var(--fk-success-text); }
+.comparacion__fila-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fk-space-1);
+  min-width: 62px;
+  justify-content: flex-end;
+  padding: 2px var(--fk-space-2);
+  border-radius: var(--fk-radius-full);
+  background: color-mix(in srgb, var(--fk-text-primary) 4%, transparent);
+  border: 1px solid var(--fk-border-default);
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+/* Verde solo al bajar: mismo criterio que .tend-card__chip--baja (ADR 019). */
+.comparacion__fila-delta--baja {
+  background: color-mix(in srgb, var(--fk-success) 12%, transparent);
+  border-color: color-mix(in srgb, var(--fk-success) 28%, transparent);
+  color: var(--fk-success-text);
+}
+.comparacion__fila-delta .icon { --fk-icon-size: var(--fk-icon-sm); }
 
 /* ── Patrón semanal (G.2) ────────────────────────────────── */
 .patron__lista {
@@ -1582,11 +1701,8 @@
   color: var(--fk-text-secondary);
   flex: 1;
 }
-.analisis__hint {
-  font-size: var(--fk-text-xs);
-  color: var(--fk-text-muted);
-  margin: 0;
-}
+/* La segunda declaración de `.analisis__hint` que vivía acá se fusionó con la
+   del inicio del archivo (DIS.10, C1). */
 
 /* ── ANL.2b: Patrimonio neto como card-héroe (ADR 038 D2) ──
    Una sola card reemplaza al hero + 2 metric-cards: cifra grande, barra de
@@ -1808,5 +1924,52 @@
   color: var(--fk-text-secondary);
   margin: 0;
   line-height: 1.4;
+}
+
+/* ── DIS.10 (C7): lo que Finko no puede medir, como pendiente ──────────────
+   De los 5 criterios de la DIAN, Finko mide 2 por sí mismo; los otros
+   dependen de un dato que el usuario registra a mano. Cada uno ocupaba una
+   ficha completa con valor "N/D", barra al 0% y un tip que repetía la misma
+   instrucción: 779,3px de grilla donde tres fichas no decían nada. El tope
+   sigue visible (objetivo de la decisión original) en una línea por criterio,
+   con un solo enlace a Ajustes. Borde punteado, igual que los vacíos que la
+   app usa para lo que todavía no tiene dato. */
+.renta-sindatos {
+  margin-top: var(--fk-space-3);
+  padding: var(--fk-space-3) var(--fk-space-4);
+  border-radius: var(--fk-radius-md);
+  background: var(--fk-bg-surface);
+  border: 1px dashed var(--fk-border-default);
+}
+.renta-sindatos__title {
+  margin: 0 0 var(--fk-space-2);
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--fk-text-secondary);
+}
+.renta-sindatos__list {
+  list-style: none;
+  margin: 0 0 var(--fk-space-2);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+}
+.renta-sindatos__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--fk-space-2);
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-primary);
+}
+.renta-sindatos__tope {
+  font-family: var(--fk-font-mono);
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 

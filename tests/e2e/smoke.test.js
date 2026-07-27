@@ -4210,7 +4210,14 @@ test.describe('Análisis v2 - score hero + chip de mes (ANL.2a)', () => {
 
     const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-    await expect(page.locator('#analisis-chip-mes-label')).toHaveText(MESES[new Date().getMonth()]);
+    // DIS.10 (C12): el chip lleva el año, porque el panel mezcla cinco
+    // ventanas de tiempo y el monitor de renta habla de un año completo.
+    const periodo = `${MESES[new Date().getMonth()]} ${new Date().getFullYear()}`;
+    await expect(page.locator('#analisis-chip-mes-label')).toHaveText(periodo);
+
+    // DIS.10 (C3): la frase interpretativa vive a ancho completo, fuera de la
+    // columna del anillo, entre el bloque superior y la grilla de factores.
+    await expect(hero.locator(':scope > .score-hero__explicacion')).toBeVisible();
   });
 
   test('el ojo del patrimonio enmascara neto, activos y pasivos (ANL.2b)', async ({ page }) => {
@@ -4261,6 +4268,56 @@ test.describe('Análisis v2 - score hero + chip de mes (ANL.2a)', () => {
     await expect(grupo.locator('.tend-card__stat')).toHaveCount(3);
     await expect(grupo.locator('.catg-card__centro-cat')).toHaveText('Mercado');
     await expect(grupo.locator('.catg-card__total')).toHaveText('$300.000');
+  });
+
+  test('DIS.10: el cuerpo del colapsable es v2 (cards, sprite, lista) y sobrevive a registrar un gasto', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const d = new Date();
+      const fecha = (offset, dia) => {
+        const x = new Date(d.getFullYear(), d.getMonth() + offset, dia);
+        return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+      };
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.cuentas = [{ id: 'cu1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 2_000_000, activa: true }];
+      st.gastos = [
+        { id: 'g1', descripcion: 'Mercado', monto: 500_000, categoria: 'Mercado', fecha: fecha(-1, 2), cuentaId: 'cu1' },
+        { id: 'g2', descripcion: 'Mercado', monto: 300_000, categoria: 'Mercado', fecha: fecha(0, 2), cuentaId: 'cu1' },
+        { id: 'g3', descripcion: 'Bus', monto: 120_000, categoria: 'Transporte', fecha: fecha(0, 3), cuentaId: 'cu1' },
+      ];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+    await page.goto('/#analisis');
+    await page.waitForSelector('#sec-analisis.active', { timeout: 10_000 });
+
+    const grupo = page.locator('.analisis-grupo--detalle');
+    // C8: chevron del sprite, no el carácter de texto.
+    await expect(grupo.locator('.analisis-grupo__summary .analisis-grupo__chevron')).toHaveCount(1);
+    await grupo.locator('summary').click();
+
+    const cuerpo = grupo.locator('.analisis-grupo__body');
+    // C2b: la comparación es lista, no tabla. C2: cada bloque es una card v2.
+    await expect(cuerpo.locator('table')).toHaveCount(0);
+    await expect(cuerpo.locator('.comparacion__fila').first()).toBeVisible();
+    await expect(cuerpo.locator('#analisis-comparacion-title')).toHaveJSProperty('tagName', 'H3');
+    await expect(cuerpo.locator('.analisis__section').first()).toHaveCSS('border-radius', '24px');
+
+    // C11: registrar un gasto SIN salir de Análisis no cierra lo que se abrió.
+    // A 390px, que es donde vive el botón Registrar de la barra inferior.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.click('[data-action="registrar-abrir-hoja"]');
+    await page.waitForSelector('#modal-registrar[data-open]');
+    await page.click('[data-action="registrar-abrir"][data-target-action="nuevo-gasto"]');
+    await page.waitForSelector('#modal-gasto[data-open]');
+
+    const form = page.locator('#modal-gasto-body form');
+    await elegirCategoriaGasto(form);
+    await form.locator('[name="monto"]').fill('25000');
+    await form.locator('button[type="submit"]').click();
+    await expect(page.locator(modalCerrado('modal-gasto'))).toBeAttached({ timeout: 3_000 });
+
+    await expect(page.locator('.analisis-grupo--detalle')).toHaveJSProperty('open', true);
+    await expect(page.locator('.analisis-grupo--detalle .comparacion__fila').first()).toBeVisible();
   });
 
   test('sin ningún dato, Análisis muestra un único empty state y su CTA abre el registro de gasto (ANL.2d)', async ({ page }) => {
