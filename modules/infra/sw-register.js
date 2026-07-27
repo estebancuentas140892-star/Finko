@@ -1,6 +1,11 @@
 // En desarrollo (localhost / IP local) NO registramos el SW: el cache viejo
 // hace que veas CSS/JS mezclado de distintas versiones mientras iterás. En
 // produccion el SW sigue habilitado y la app es offline-first.
+// Piso entre dos chequeos de versión nueva al volver a la app. Un minuto:
+// cambiar de app y volver es un gesto que se repite muchas veces por sesión y
+// no tiene sentido pedir el SW en cada uno.
+const CHEQUEO_MIN_MS = 60 * 1000;
+
 const _hostname = location.hostname;
 const _esDesarrollo =
   _hostname === 'localhost' ||
@@ -66,12 +71,30 @@ if ('serviceWorker' in navigator) {
       location.reload();
     });
 
+    // updateViaCache: 'none' obliga al navegador a pedir service-worker.js a la
+    // red y no al HTTP cache. La cabecera `no-store` ya lo pide (vercel.json),
+    // pero en movil el HTTP cache es mas agresivo y esto no depende del server.
     navigator.serviceWorker
-      .register('./service-worker.js')
+      .register('./service-worker.js', { updateViaCache: 'none' })
       .then(function (reg) {
         // Chequear si hay una versión nueva del SW al arrancar. Sin esto el
         // navegador puede demorar hasta 24h en re-fetchear el SW.
         reg.update().catch(function () { /* offline o sin red: ignorar */ });
+
+        // Y chequear también al volver a la app. Esto es lo que arregla el
+        // móvil: una PWA instalada casi nunca "navega". El usuario la manda al
+        // fondo y la vuelve a traer, y sin navegación el navegador no vuelve a
+        // pedir service-worker.js, así que no descubre la versión nueva ni en
+        // días. En escritorio un F5 basta; en el teléfono, volver a la app es
+        // el equivalente y es el momento correcto de mirar.
+        let _ultimoChequeo = Date.now();
+        document.addEventListener('visibilitychange', function () {
+          if (document.visibilityState !== 'visible') return;
+          // Cambiar de app rápido varias veces no debe disparar N chequeos.
+          if (Date.now() - _ultimoChequeo < CHEQUEO_MIN_MS) return;
+          _ultimoChequeo = Date.now();
+          reg.update().catch(function () { /* offline o sin red: ignorar */ });
+        });
       })
       .catch(function (err) {
         console.error('[SW] Error al registrar:', err);
