@@ -833,12 +833,15 @@
   color: var(--fk-text-secondary);
 }
 
+/* DIS.11 C7: 44px, el piso táctil que fijan DESIGN_SYSTEM.md y
+   responsive.css. Es el control más usado de la sección después del día, y
+   medía 36px. */
 .cal-card__nav {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: var(--fk-radius-full);
   border: 1px solid var(--fk-border-default);
   background: var(--fk-bg-elevated);
@@ -921,6 +924,22 @@
   pointer-events: none;
 }
 
+/* Día con al menos un pago vencido y sin registrar (DIS.11 C2/V-5). Familia
+   warning, nunca danger: deber un pago no es un error del usuario (ADR 019),
+   y es la misma familia de la tarjeta de lote que propone pagarlos. Va antes
+   que --today y --selected a propósito: con la misma especificidad, el orden
+   deja que "hoy" (orientación) y la selección índigo (respuesta a un toque)
+   ganen sobre el estado del pago, que la celda igual comunica con sus dots. */
+.cal-day--vencido {
+  border-color: color-mix(in srgb, var(--fk-warning) 55%, transparent);
+  background: var(--fk-warning-bg);
+}
+
+.cal-day--vencido .cal-day__num {
+  color: var(--fk-warning-text);
+  font-weight: var(--fk-font-bold);
+}
+
 .cal-day--today {
   border-color: var(--fk-accent);
   background: var(--fk-accent-subtle);
@@ -931,9 +950,16 @@
   font-weight: var(--fk-font-bold);
 }
 
-.cal-day--past:not(.cal-day--today) {
+/* DIS.11 C2: la atenuación de "pasado" dice "esto ya no aplica", así que
+   solo cubre los días pasados SIN eventos. Antes cubría el 77% del mes a
+   fin de mes, incluidos los pagos vencidos: el número bajaba de 14,46:1 a
+   4,55:1 y los puntos a 2,14 - 2,52:1, bajo el umbral no textual de 3:1
+   (SC 1.4.11). La grilla pintaba como lo más tenue justo lo que la tarjeta
+   de lote de arriba señala como urgente. */
+.cal-day--past:not(.cal-day--today):not(.cal-day--has-events) {
   opacity: 0.5;
 }
+
 
 .cal-day--has-events {
   font-weight: var(--fk-font-semibold);
@@ -994,7 +1020,19 @@
    color van al MISMO tono a propósito: es un punto sólido de 6px, sin
    glifo dentro. Inicio ya no reutiliza este bloque (pintaba el ícono
    del color de su propio fondo): usa `.prioridades-card__icon--*`. */
-.cal-dot--ingreso        { background: var(--fk-dom-ingresos-text);    color: var(--fk-dom-ingresos-text); }
+/* DIS.11 C6: el ingreso se codifica por FORMA, no solo por color (SC 1.4.1).
+   La distinción que cambia una decisión es una sola: entra dinero o sale
+   dinero, así que el día de cobro pasa a anillo y los pagos se quedan como
+   punto sólido. Entidad y personal siguen distinguiéndose solo por color
+   porque en la grilla no cambian ninguna decisión (en las dos hay que pagar)
+   y el detalle las nombra en texto. */
+.cal-dot--ingreso {
+  width: 8px;
+  height: 8px;
+  background: transparent;
+  border: 2px solid var(--fk-dom-ingresos-text);
+  color: var(--fk-dom-ingresos-text);
+}
 .cal-dot--fijo           { background: var(--fk-dom-agenda-text);      color: var(--fk-dom-agenda-text); }
 .cal-dot--deuda-entidad  { background: var(--fk-dom-compromisos-text); color: var(--fk-dom-compromisos-text); }
 .cal-dot--deuda-personal { background: var(--fk-dom-personales-text);  color: var(--fk-dom-personales-text); }
@@ -1011,24 +1049,25 @@
   font-weight: var(--fk-font-semibold);
 }
 
-/* AG.6: la leyenda vive entre el calendario y el detalle del día, y es
-   sticky para seguir consultable mientras se recorre un día con muchos
-   registros. Fondo y borde propios: al quedar pegada, el contenido pasa
-   por debajo y no debe transparentarse. Requiere que ningún ancestro sea
-   scroll container (ver overflow-x de .main-content en layout.css). */
+/* DIS.11 C6 (revisa AG.6): la leyenda pasa a pie de la tarjeta del
+   calendario, separada por una línea sutil y sin superficie propia. AG.6 la
+   había puesto entre el calendario y el detalle, y sticky, para seguir
+   consultable al recorrer un día cargado; medido a 390px eso costaba 65,7px
+   de chrome permanente que ni siquiera entraban en el primer pantallazo
+   (arrancaba en 834,1px de una pantalla de 844px), y cuando sí se pegaba al
+   tope era mientras el usuario recorría la lista del día, o sea explicando
+   una grilla que ya no estaba en pantalla sobre un detalle que nombra cada
+   tipo en texto. Ahora queda junto a lo que explica y el panel del día sube.
+   `.main-content` conserva `overflow-x: clip` (layout.css): recorta igual y
+   no crea scroll container. */
 .cal-legend {
-  position: sticky;
-  top: var(--fk-space-2);
-  z-index: 1;
   display: flex;
   gap: var(--fk-space-4);
   flex-wrap: wrap;
   justify-content: center;
   margin-top: var(--fk-space-3);
-  padding: var(--fk-space-2) var(--fk-space-4);
-  background: var(--fk-bg-surface);
-  border: 1px solid var(--fk-border-subtle);
-  border-radius: var(--fk-radius-lg);
+  padding-top: var(--fk-space-2);
+  border-top: 1px solid var(--fk-border-subtle);
   font-size: var(--fk-text-xs);
   color: var(--fk-text-secondary);
 }
@@ -1039,11 +1078,16 @@
   gap: var(--fk-space-2);
 }
 
-/* Detalle del día seleccionado: panel expandible entre la grilla y la leyenda. */
+/* Detalle del día seleccionado: panel expandible inmediatamente debajo de la
+   tarjeta del calendario (DIS.11 C1). Toma el borde índigo de la sección para
+   leerse como parte del mes que lo abrió, no como un bloque suelto. El
+   trabajo grueso de este hallazgo lo hace el foco (agenda/index.js), no el
+   CSS: el panel no cabe sobre el pliegue a 390px, pero entrar a pantalla solo
+   sí depende de que algo mueva el foco. */
 .cal-detail {
-  margin-top: var(--fk-space-3);
+  margin-top: var(--fk-space-2);
   background: var(--fk-bg-surface);
-  border: 1px solid var(--fk-border-subtle);
+  border: 1px solid color-mix(in srgb, var(--fk-dom-agenda) 30%, transparent);
   border-radius: var(--fk-radius-lg);
   padding: var(--fk-space-4);
   animation: cal-detail-fadein var(--fk-transition-fast) ease-out;
@@ -1073,6 +1117,16 @@
   color: var(--fk-text-primary);
 }
 
+/* El título recibe el foco al abrir un día (DIS.11 C1/V-1): se le quita el
+   anillo de foco de programa, porque el usuario no tabuló hasta acá, y se
+   conserva :focus-visible para quien sí navega con teclado. */
+.cal-detail__title:focus { outline: none; }
+
+.cal-detail__title:focus-visible {
+  outline: 2px solid var(--fk-border-focus);
+  outline-offset: 2px;
+}
+
 .cal-detail__subtitle {
   margin: var(--fk-space-1) 0 0;
   font-size: var(--fk-text-xs);
@@ -1090,12 +1144,13 @@
   font-weight: var(--fk-font-bold);
 }
 
+/* DIS.11 C7: 44px, el piso táctil del sistema (medía 32px). */
 .cal-detail__close {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--fk-space-8);
-  height: var(--fk-space-8);
+  width: 44px;
+  height: 44px;
   border-radius: var(--fk-radius-full);
   border: 1px solid var(--fk-border-default);
   background: var(--fk-bg-elevated);
@@ -1296,15 +1351,23 @@
 }
 
 /* Fila de acciones (Editar / Eliminar / CTA por tipo). Antes en
-   domain.css; vive junto al resto de la familia .cal-detail__*. */
+   domain.css; vive junto al resto de la familia .cal-detail__*.
+   DIS.11 C3: el destructivo queda en el extremo opuesto al CTA principal y
+   toda la fila sube al piso táctil de 44px. El juego de acciones en sí (cuáles
+   y con qué gesto) es EDIT.1 en el tablero: acá solo cambian reparto y altura. */
 .cal-detail__actions {
   grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
+  justify-content: space-between;
   gap: var(--fk-space-2);
   margin-top: var(--fk-space-2);
   padding-top: var(--fk-space-2);
   border-top: 1px solid var(--fk-border-subtle);
+}
+
+.cal-detail__actions .btn-sm {
+  min-height: 44px;
 }
 
 /* CTA principal del item con la identidad de su tipo (CAL.4c, ADR 037
@@ -1312,13 +1375,14 @@
    "ingreso" y esto es un pago; mismo criterio y anatomía que
    .deuda-card__abonar (ADR 036 D5). */
 .cal-detail__cta {
-  flex: 1;
+  flex: 0 1 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--fk-space-1);
-  min-height: 2.375rem;   /* 38px, hit target AA con margen */
-  padding: var(--fk-space-2) var(--fk-space-3);
+  min-height: 44px;       /* DIS.11 C7: piso táctil del sistema (medía 38,6px) */
+  padding: var(--fk-space-2) var(--fk-space-4);
+  white-space: nowrap;
   border-radius: var(--fk-radius-md);
   border: 1.5px solid transparent;
   font-family: var(--fk-font-sans);
@@ -1401,6 +1465,20 @@
   max-width: 34ch;
 }
 
+/* DIS.11 C8: con la app en cero, el CTA del encabezado y el de esta card
+   decían lo mismo en dos .btn-primary a la vez. El primario de la sección es
+   uno solo, el del encabezado; acá el mismo destino baja a secundario. */
+.cal-empty .btn-primary {
+  background: transparent;
+  border: 1px solid var(--fk-border-strong);
+  color: var(--fk-text-primary);
+}
+
+.cal-empty .btn-primary:hover {
+  background: var(--fk-bg-hover);
+  border-color: var(--fk-dom-agenda);
+}
+
 /* ── CAL.5a: pago en lote de lo vencido ──────────────────────── */
 
 /* Tarjeta bajo el hero. Usa la familia warning (no danger): son pagos que ya
@@ -1408,7 +1486,7 @@
 .cal-lote {
   display: flex;
   align-items: center;
-  gap: var(--fk-space-4);
+  gap: var(--fk-space-3);
   flex-wrap: wrap;
   margin-block-end: var(--fk-space-5);
   padding: var(--fk-space-4) var(--fk-space-5);
@@ -1426,6 +1504,21 @@
   color: var(--fk-text-primary);
 }
 
+/* DIS.11 C5: cuánto suma lo que la tarjeta propone pagar. Va antes de abrir
+   el flujo: la cifra más cercana era "Falta $X" del hero, que mezcla lo
+   vencido con lo que aún no vence, así que la decisión se tomaba sin el dato
+   que la define. Mono tabular como el resto de los montos protagonistas. */
+.cal-lote__monto {
+  display: block;
+  margin: var(--fk-space-1) 0 var(--fk-space-2);
+  font-family: var(--fk-font-mono);
+  font-size: var(--fk-text-2xl);
+  font-weight: var(--fk-font-extrabold);
+  color: var(--fk-text-primary);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
 .cal-lote__desc {
   margin: 0;
   font-size: var(--fk-text-sm);
@@ -1435,8 +1528,10 @@
 
 /* Mismo criterio que .cal-detail__cta--fijo: el indigo de la seccion, no el
    verde de "entra dinero" (ADR 036 D5). Piso tactil 44px. */
+/* DIS.11 C5: el CTA baja a su propio renglón a lo ancho (hoy ya caía ahí por
+   wrap, sin quererlo) para dejarle el primer renglón al monto. */
 .cal-lote__cta {
-  flex: 0 0 auto;
+  flex: 1 1 100%;
   min-height: 44px;
   padding: 0 var(--fk-space-5);
   border-radius: var(--fk-radius-md);
@@ -1475,7 +1570,13 @@
   min-height: 44px;
   padding: var(--fk-space-3);
   border-radius: var(--fk-radius-md);
-  border: 1px solid var(--fk-border);
+  /* DIS.11 C4: era var(--fk-border), un token que no existe (los reales son
+     --fk-border-subtle / -default / -strong / -accent / -focus). Una var()
+     sin valor invalida la declaración entera, así que border-style resolvía
+     a `none` y border-width a 0px: las filas no tenían borde y el
+     :hover/:focus-within de abajo no pintaba nada, en la pantalla donde el
+     usuario confirma mover dinero. */
+  border: 1px solid var(--fk-border-default);
   background: var(--fk-bg-elevated);
   cursor: pointer;
 }
@@ -1547,36 +1648,57 @@
     width: 5px;
     height: 5px;
   }
+  /* El anillo del ingreso (DIS.11 C6) no se compacta: con 5px y 2px de borde
+     dejaría de leerse como anillo y volvería a ser un punto. */
+  .cal-dot--ingreso {
+    width: 8px;
+    height: 8px;
+  }
   .cal-legend {
     gap: var(--fk-space-3);
   }
   .cal-detail {
     padding: var(--fk-space-3);
   }
+  /* DIS.11 C3: el monto vuelve al primer renglón, a la derecha. Estas reglas
+     lo mandaban a la segunda línea, a 12px y en gris secundario: el dato de
+     dinero era el texto más pequeño y más apagado de una fila que existe
+     justo para decir cuánto hay que pagar. Las acciones ocupan el renglón de
+     abajo (grid-column 1 / -1, regla base). */
   .cal-detail__item {
-    grid-template-columns: auto 1fr;
+    grid-template-columns: auto 1fr auto;
     grid-template-rows: auto auto;
-    padding: var(--fk-space-2);
-    gap: var(--fk-space-2);
+    padding: var(--fk-space-3);
+    column-gap: var(--fk-space-3);
+    row-gap: var(--fk-space-2);
+    align-items: start;
   }
-  /* Recalcula el padding compensado de la franja (AG.7) contra el padding
-     base de mobile, más chico que el de desktop. */
+  /* IV.2c quitó la franja lateral de 3px y su compensación quedó huérfana:
+     la fila rendía con 5px a la izquierda y 8px a la derecha. Padding
+     simétrico. */
   .cal-detail__item--ingreso,
   .cal-detail__item--fijo,
   .cal-detail__item--deuda-entidad,
   .cal-detail__item--deuda-personal {
-    padding-left: calc(var(--fk-space-2) - 3px);
+    padding-left: var(--fk-space-3);
   }
   .cal-detail__icon {
-    grid-row: 1 / span 2;
+    grid-column: 1;
+    grid-row: 1;
     width: var(--fk-space-8);
     height: var(--fk-space-8);
   }
-  .cal-detail__amount {
+  .cal-detail__body {
     grid-column: 2;
-    grid-row: 2;
-    justify-self: start;
-    font-size: var(--fk-text-xs);
-    color: var(--fk-text-secondary);
+    grid-row: 1;
+  }
+  .cal-detail__amount {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-bold);
+    color: var(--fk-text-primary);
+    font-variant-numeric: tabular-nums;
   }
 }

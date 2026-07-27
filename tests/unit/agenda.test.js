@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { eventosDelMes, eventosIngresosDelMes, totalEventosDelMes, totalDia, eventosDeHoy, eventosEnProximos, tiposPresentesEnMes, totalesDelMes, pendientesDePagoDelMes } from '../../modules/dominio/agenda/logic.js';
-import { renderFormGastoFijo, renderFormPagoLote, textoBannerGastoFijo, renderAgenda, mostrarDia, navegarMes, resetearVistaAlMesActual, marcarEntradaSeccion } from '../../modules/dominio/agenda/view.js';
+import { renderFormGastoFijo, renderFormPagoLote, textoBannerGastoFijo, renderAgenda, mostrarDia, navegarMes, resetearVistaAlMesActual, marcarEntradaSeccion, resumenMesVisible, diaSeleccionado } from '../../modules/dominio/agenda/view.js';
 import { S } from '../../modules/core/state.js';
 import { CATEGORIAS_AGENDA, CATEGORIA_AGENDA_ICONO } from '../../modules/core/constants.js';
 
@@ -938,17 +938,29 @@ describe('renderAgenda() - leyenda bajo el calendario', () => {
     expect(leyenda.querySelector('.cal-dot--deuda-personal')).not.toBeNull();
   });
 
-  it('con un día abierto, la leyenda queda antes del detalle en el DOM', () => {
+  // DIS.11 C6/V-3 (revisa AG.6): la leyenda es el pie de la tarjeta que
+  // explica, y el detalle del día nace pegado a la grilla que lo abrió.
+  it('la leyenda vive dentro de la tarjeta del calendario, como su pie', () => {
+    S.compromisos = [compromisoBase({ diaPago: 15, frecuencia: 'Mensual', monto: 300_000 })];
+    renderAgenda();
+    const card = document.querySelector('.cal-card');
+    expect(card.querySelector('.cal-legend')).not.toBeNull();
+    // Último hijo de la tarjeta: va después de la grilla, no antes.
+    expect(card.lastElementChild.classList.contains('cal-legend')).toBe(true);
+  });
+
+  it('con un día abierto, el detalle queda justo después de la tarjeta del calendario', () => {
     S.compromisos = [compromisoBase({ diaPago: 15, frecuencia: 'Mensual', monto: 300_000 })];
     renderAgenda();
     mostrarDia(15);
     renderAgenda();
     const hijos    = [...document.getElementById('panel-agenda').children];
-    const iLeyenda = hijos.findIndex(el => el.classList.contains('cal-legend'));
+    const iCard    = hijos.findIndex(el => el.classList.contains('cal-card'));
     const iDetalle = hijos.findIndex(el => el.classList.contains('cal-detail'));
-    expect(iLeyenda).toBeGreaterThan(-1);
-    expect(iDetalle).toBeGreaterThan(-1);
-    expect(iLeyenda).toBeLessThan(iDetalle);
+    expect(iCard).toBeGreaterThan(-1);
+    expect(iDetalle).toBe(iCard + 1);
+    // La leyenda ya no es hermana del detalle: quedó dentro de la tarjeta.
+    expect(hijos.some(el => el.classList.contains('cal-legend'))).toBe(false);
   });
 
   // CAL.2: la leyenda es dinámica, solo lista los tipos que el usuario ya usa.
@@ -1411,7 +1423,12 @@ describe('renderAgenda() - hero del mes (CAL.4a)', () => {
     expect(hero.querySelector('.hero-agenda__barra-fill').style.width).toBe('60%');
   });
 
-  it('sin pagos programados muestra la variante de guía, sin cifra ni ojo', () => {
+  // DIS.11 C8/V-8: la variante de guía tiene sentido cuando el mes SÍ tiene
+  // algo (ej. solo ingresos) pero nada que pagar. Con el mes completamente
+  // vacío el hero desaparece: la card .cal-empty ya guía, y con el banner de
+  // propósito arriba eran tres bloques diciendo lo mismo.
+  it('un mes solo con ingresos muestra la variante de guía, sin cifra ni ojo', () => {
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 2_000_000, frecuencia: 'Mensual', diaPago: 15, activo: true }];
     renderAgenda();
     const hero = document.querySelector('.hero-agenda');
     expect(hero).not.toBeNull();
@@ -1422,11 +1439,11 @@ describe('renderAgenda() - hero del mes (CAL.4a)', () => {
     expect(hero.querySelector('.hero-agenda__barra')).toBeNull();
   });
 
-  it('un mes solo con ingresos también es "sin pagos programados" (sin ojo)', () => {
-    S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 2_000_000, frecuencia: 'Mensual', diaPago: 15, activo: true }];
+  it('DIS.11 C8: un mes sin ningún evento no renderiza el hero', () => {
     renderAgenda();
-    expect(document.querySelector('.hero-agenda__titulo').textContent).toBe('Sin pagos programados');
-    expect(document.querySelector('.hero-agenda__ojo')).toBeNull();
+    expect(document.querySelector('.hero-agenda')).toBeNull();
+    // El único mensaje queda en la card de vacío.
+    expect(document.querySelector('.cal-empty')).not.toBeNull();
   });
 
   it('con ocultarSaldo enmascara total, pagado y falta (IN.2/ADR 037 D7)', () => {
@@ -1469,9 +1486,11 @@ describe('renderAgenda() - hero del mes (CAL.4a)', () => {
     expect(document.querySelector('.hero-agenda__label').textContent).toBe('Compromisos de junio');
     navegarMes(+1);
     renderAgenda();
-    // Julio no tiene ese pago único: variante sin pagos programados.
-    expect(document.querySelector('.hero-agenda__titulo').textContent).toBe('Sin pagos programados');
-    expect(document.querySelector('.hero-agenda__label').textContent).toBe('Julio 2026');
+    // Julio no tiene ese pago único ni ningún otro evento: sin hero (C8) y
+    // con la card de vacío como único mensaje.
+    expect(document.querySelector('.hero-agenda')).toBeNull();
+    expect(document.querySelector('.cal-card__title').textContent).toBe('Julio 2026');
+    expect(document.querySelector('.cal-empty__title').textContent).toBe('Julio está despejado');
   });
 });
 
@@ -1517,7 +1536,7 @@ describe('renderAgenda() - subtítulo y empty state del mes (CAL.4b)', () => {
     expect(empty.querySelector('.cal-empty__title').textContent).toBe('Junio está despejado');
     expect(empty.querySelector('[data-action="nuevo-gasto-fijo"]')).not.toBeNull();
     // La grilla sigue visible: el mes se puede navegar (CAL.3 intacta).
-    expect(document.querySelector('.cal-grid[role="grid"]')).not.toBeNull();
+    expect(document.querySelector('.cal-grid')).not.toBeNull();
   });
 
   it('con cualquier evento (aunque sea solo un ingreso) no hay empty state', () => {
@@ -1542,6 +1561,143 @@ describe('renderAgenda() - subtítulo y empty state del mes (CAL.4b)', () => {
     const filas = document.querySelectorAll('.cal-day .cal-day__dots');
     expect(dias.length).toBe(30); // junio 2026
     expect(filas.length).toBe(30);
+  });
+});
+
+// ── DIS.11 (auditoría de diseño) - grilla del mes ────────────────
+
+describe('renderAgenda() - grilla del mes (DIS.11 C2/V-5, V-6)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-agenda"></div>';
+    S.compromisos = [];
+    S.gastos      = [];
+    S.ingresos    = [];
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15)); // 15 jun 2026
+    resetearVistaAlMesActual();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  // V-6: un grid sin filas y sin teclado de flechas promete algo que no
+  // cumple. Queda la lista de botones, cada uno con su aria-label completo.
+  it('V-6: la grilla no declara role=grid ni role=gridcell', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', diaPago: 5 })];
+    renderAgenda();
+    expect(document.querySelector('[role="grid"]')).toBeNull();
+    expect(document.querySelector('[role="gridcell"]')).toBeNull();
+    const grid = document.querySelector('.cal-grid:not(.cal-grid--header)');
+    expect(grid.getAttribute('role')).toBe('group');
+    expect(grid.getAttribute('aria-label')).toBe('Días del mes');
+  });
+
+  // C2/V-5: lo vencido deja de ser lo más tenue del mes.
+  it('C2: el día con un pago vencido y sin registrar lleva .cal-day--vencido', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', descripcion: 'Arriendo', diaPago: 5, monto: 900_000 })];
+    renderAgenda();
+    const dia5 = document.querySelector('[data-action="agenda-mostrar-dia"][data-day="5"]');
+    expect(dia5.classList.contains('cal-day--vencido')).toBe(true);
+    expect(dia5.getAttribute('aria-label')).toBe('Día 5, 1 compromiso, 1 vencido');
+  });
+
+  it('C2: el día con el pago ya registrado no se marca como vencido', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', descripcion: 'Arriendo', diaPago: 5, monto: 900_000 })];
+    S.gastos = [{ id: 'g1', compromisoId: 'f1', fecha: '2026-06-05', monto: 900_000 }];
+    renderAgenda();
+    const dia5 = document.querySelector('[data-action="agenda-mostrar-dia"][data-day="5"]');
+    expect(dia5.classList.contains('cal-day--vencido')).toBe(false);
+    expect(dia5.getAttribute('aria-label')).toBe('Día 5, 1 compromiso');
+  });
+
+  it('C2: un día futuro del mes no está vencido todavía', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', diaPago: 25, monto: 900_000 })];
+    renderAgenda();
+    const dia25 = document.querySelector('[data-action="agenda-mostrar-dia"][data-day="25"]');
+    expect(dia25.classList.contains('cal-day--vencido')).toBe(false);
+  });
+
+  it('C2: el conteo de vencidos del día es el mismo de la tarjeta de lote', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'a', descripcion: 'Arriendo', diaPago: 5, monto: 900_000 }),
+      compromisoBase({ id: 'b', descripcion: 'Agua',     diaPago: 5, monto: 60_000 }),
+    ];
+    renderAgenda();
+    const dia5 = document.querySelector('[data-action="agenda-mostrar-dia"][data-day="5"]');
+    expect(dia5.getAttribute('aria-label')).toBe('Día 5, 2 compromisos, 2 vencidos');
+    expect(document.querySelector('.cal-lote__title').textContent).toBe('2 pagos ya vencieron');
+  });
+});
+
+// ── DIS.11 V-4 - resumen hablado del mes visible ─────────────────
+
+describe('resumenMesVisible() (DIS.11 V-4)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-agenda"></div>';
+    S.compromisos = [];
+    S.gastos      = [];
+    S.ingresos    = [];
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15)); // 15 jun 2026
+    resetearVistaAlMesActual();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('nombra el mes, los compromisos y los ingresos', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'a', diaPago: 5 }),
+      compromisoBase({ id: 'b', diaPago: 20 }),
+    ];
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 1_000_000, frecuencia: 'Mensual', diaPago: 15, activo: true }];
+    expect(resumenMesVisible()).toBe('Junio 2026, 2 compromisos y 1 ingreso');
+  });
+
+  it('sin ingresos no los menciona, y el singular concuerda', () => {
+    S.compromisos = [compromisoBase({ id: 'a', diaPago: 5 })];
+    expect(resumenMesVisible()).toBe('Junio 2026, 1 compromiso');
+  });
+
+  it('un mes vacío también se anuncia', () => {
+    expect(resumenMesVisible()).toBe('Junio 2026, sin compromisos');
+  });
+
+  it('sigue al mes visible tras navegar', () => {
+    navegarMes(+1);
+    expect(resumenMesVisible()).toBe('Julio 2026, sin compromisos');
+  });
+});
+
+// ── DIS.11 V-1 - a dónde va el foco después de repintar ──────────
+
+describe('diaSeleccionado() (DIS.11 V-1)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15));
+    resetearVistaAlMesActual();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  // index.js lo consulta tras renderAgenda() para decidir si el foco va al
+  // título del panel (día abierto) o de vuelta a la celda (día cerrado).
+  it('refleja el día abierto y vuelve a null con el toggle', () => {
+    expect(diaSeleccionado()).toBeNull();
+    mostrarDia(15);
+    expect(diaSeleccionado()).toBe(15);
+    mostrarDia(15);
+    expect(diaSeleccionado()).toBeNull();
+  });
+
+  it('navegar de mes cierra el día abierto', () => {
+    mostrarDia(15);
+    navegarMes(+1);
+    expect(diaSeleccionado()).toBeNull();
   });
 });
 
@@ -1855,6 +2011,27 @@ describe('renderAgenda() - tarjeta de pago en lote (CAL.5a)', () => {
     expect(lote.querySelector('.cal-lote__desc').textContent).toContain('Arriendo y Netflix');
     const cta = lote.querySelector('[data-action="agenda-pagar-lote"]');
     expect(cta.dataset.mes).toBe('2026-06');
+  });
+
+  // DIS.11 C5/V-7: la tarjeta propone mover dinero, así que dice cuánto
+  // antes de abrir el flujo (el modal ya no es el primer lugar donde aparece).
+  it('DIS.11 C5: la tarjeta muestra el total de lo que propone pagar', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'a', descripcion: 'Arriendo', diaPago: 5, monto: 900_000 }),
+      compromisoBase({ id: 'b', descripcion: 'Netflix',  diaPago: 12, monto: 40_000 }),
+    ];
+    renderAgenda();
+    expect(document.querySelector('.cal-lote__monto').textContent).toContain('940.000');
+  });
+
+  it('DIS.11 C5: el total no se enmascara con el ojo (es el precio de la acción)', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'a', descripcion: 'Arriendo', diaPago: 5, monto: 900_000 }),
+      compromisoBase({ id: 'b', descripcion: 'Netflix',  diaPago: 12, monto: 40_000 }),
+    ];
+    S.config.ocultarSaldo = true;
+    renderAgenda();
+    expect(document.querySelector('.cal-lote__monto').textContent).toContain('940.000');
   });
 
   it('con más de dos vencidos resume la lista con "y N más"', () => {

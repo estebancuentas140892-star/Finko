@@ -2840,6 +2840,11 @@ button.chip:focus-visible {
 }
 
 /* Color de acento por sección. */
+/* DIS.11 C9: Calendario era la única sección con banner sin su propia regla,
+   así que caía al --fk-accent del bloque base: el verde que el sistema
+   reserva para dinero disponible y logro, en la sección que estrenó el índigo
+   (IV.2c). */
+.banner-proposito[data-seccion="agenda"]      { border-left-color: var(--fk-dom-agenda); }
 .banner-proposito[data-seccion="apartados"]   { border-left-color: var(--fk-dom-ahorro); }
 .banner-proposito[data-seccion="gast"]        { border-left-color: var(--fk-dom-gastos); }
 .banner-proposito[data-seccion="compromisos"] { border-left-color: var(--fk-dom-compromisos); }

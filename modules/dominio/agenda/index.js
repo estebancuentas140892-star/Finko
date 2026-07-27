@@ -40,18 +40,34 @@ import { CATEGORIAS_AGENDA } from '../../core/constants.js';
 import { wireIconoPicker, setIconoPickerValor } from '../../infra/icon-picker.js';
 import { iconoCategoria } from '../../infra/icons.js';
 import { eventosDelMes, pendientesDePagoDelMes } from './logic.js';
-import { renderAgenda, renderFormGastoFijo, renderFormPagoLote, textoBannerGastoFijo, navegarMes, mostrarDia, marcarEntradaSeccion } from './view.js';
+import { renderAgenda, renderFormGastoFijo, renderFormPagoLote, textoBannerGastoFijo, navegarMes, mostrarDia, marcarEntradaSeccion, resumenMesVisible, diaSeleccionado } from './view.js';
 
 // ── HANDLERS DE NAVEGACIÓN ───────────────────────────────────────
+
+/**
+ * DIS.11 V-1/V-4: `renderAgenda()` reemplaza el innerHTML entero de
+ * `#panel-agenda`, así que el control que el usuario acababa de activar deja
+ * de existir y el foco cae al body. Tras cada repintado se devuelve el foco a
+ * su equivalente en el DOM nuevo. No-op si el selector no existe (los tests
+ * unitarios repintan sin haber tocado nada).
+ * @param {string} selector
+ */
+function _devolverFoco(selector) {
+  document.querySelector(`#panel-agenda ${selector}`)?.focus();
+}
 
 function _prevMes() {
   navegarMes(-1);
   renderAgenda();
+  _devolverFoco('[data-action="agenda-prev-mes"]');
+  announce(resumenMesVisible());
 }
 
 function _nextMes() {
   navegarMes(+1);
   renderAgenda();
+  _devolverFoco('[data-action="agenda-next-mes"]');
+  announce(resumenMesVisible());
 }
 
 function _mostrarDia(el) {
@@ -59,6 +75,11 @@ function _mostrarDia(el) {
   if (!Number.isInteger(dia)) return;
   mostrarDia(dia);
   renderAgenda();
+  // Día abierto: el foco va al título del panel (lo trae a pantalla y lo
+  // anuncia). Día cerrado (toggle): vuelve a la celda que lo cerró.
+  _devolverFoco(diaSeleccionado() === dia
+    ? '.cal-detail__title'
+    : `[data-action="agenda-mostrar-dia"][data-day="${dia}"]`);
 }
 
 // ── HANDLERS DEL MODAL "GASTO FIJO" (nuevo + edición) ────────────

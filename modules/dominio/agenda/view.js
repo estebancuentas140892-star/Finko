@@ -149,9 +149,10 @@ export function renderAgenda() {
     ? _renderDetalleDia(eventos[_diaSeleccionado] ?? [], _viewYear, _viewMonth, _diaSeleccionado)
     : '';
 
-  // AG.6: la leyenda va entre el calendario y el detalle del día (no al
-  // final), y es sticky vía CSS: con un día cargado de registros sigue
-  // visible mientras se recorre la lista.
+  // DIS.11 C1/V-3 (revisa AG.6): la leyenda pasa a pie de la tarjeta del
+  // calendario (dentro de .cal-card, sin sticky) y el detalle del día queda
+  // inmediatamente después de la tarjeta: nace pegado al mes que lo abrió y
+  // 78px más arriba, que es el presupuesto vertical que le faltaba.
   // CAL.4a (ADR 037 D1): el hero del mes encabeza la sección con el total a
   // pagar y el progreso pagado/falta del mes visible.
   const prefijoMes = `${_viewYear}-${String(_viewMonth + 1).padStart(2, '0')}`;
@@ -168,17 +169,61 @@ export function renderAgenda() {
   const gastosS   = Array.isArray(S.gastos) ? S.gastos : [];
   const pendientes = pendientesDePagoDelMes(eventos, gastosS, prefijoMes, hoy());
 
+  // DIS.11 C2/V-5: cuántos pagos vencidos y sin registrar tiene cada día. Se
+  // reusa `pendientes` (ya calculado para la tarjeta de lote), no se
+  // recalcula nada: la grilla y la tarjeta cuentan lo mismo.
+  /** @type {Record<number, number>} */
+  const vencidosPorDia = {};
+  for (const p of pendientes) {
+    vencidosPorDia[p.dia] = (vencidosPorDia[p.dia] ?? 0) + 1;
+  }
+
   el.innerHTML = `
     ${_renderHeroMes(eventos, _viewYear, _viewMonth, prefijoMes)}
     ${_renderLoteCard(pendientes, prefijoMes)}
     <article class="cal-card">
       ${_renderCabecera(_viewYear, _viewMonth, eventosComp, eventosIng)}
       ${_renderDiasSemana()}
-      ${_renderGrid(_viewYear, _viewMonth, eventos)}
+      ${_renderGrid(_viewYear, _viewMonth, eventos, vencidosPorDia)}
+      ${_renderLeyenda(eventos)}
     </article>
-    ${_renderLeyenda(eventos)}
     ${detalleHtml}
     ${emptyMesHtml}`;
+}
+
+/**
+ * Resumen hablado del mes visible, para `announce()` tras repintar
+ * (DIS.11 V-4, regla "repintar también se anuncia"): "Julio 2026, 9
+ * compromisos y 1 ingreso". Recorre los mismos mapas de eventos que
+ * `renderAgenda()`; index.js no conoce `_viewYear`/`_viewMonth`, que son
+ * privados de la vista.
+ * @returns {string}
+ */
+export function resumenMesVisible() {
+  _ensureFecha();
+  const compromisos = Array.isArray(S.compromisos) ? S.compromisos : [];
+  const ingresos    = Array.isArray(S.ingresos) ? S.ingresos : [];
+  const nComp = totalEventosDelMes(eventosDelMes(compromisos, _viewYear, _viewMonth));
+  const nIng  = totalEventosDelMes(eventosIngresosDelMes(ingresos, _viewYear, _viewMonth));
+
+  const partes = [
+    nComp === 0 ? 'sin compromisos'
+      : nComp === 1 ? '1 compromiso'
+      : `${nComp} compromisos`,
+  ];
+  if (nIng > 0) partes.push(nIng === 1 ? '1 ingreso' : `${nIng} ingresos`);
+
+  return `${MONTHS[_viewMonth]} ${_viewYear}, ${partes.join(' y ')}`;
+}
+
+/**
+ * Día con detalle abierto, o `null`. Lo consulta agenda/index.js después de
+ * repintar para decidir a dónde va el foco (DIS.11 V-1): al título del panel
+ * si el día se abrió, de vuelta a la celda si se cerró.
+ * @returns {number|null}
+ */
+export function diaSeleccionado() {
+  return _diaSeleccionado;
 }
 
 // ── PARTES ───────────────────────────────────────────────────────
@@ -192,8 +237,12 @@ export function renderAgenda() {
  * - Enmascarado con `SALDO_MASCARA`/`SALDO_MASCARA_CUENTA` cuando
  *   `S.config.ocultarSaldo` es true (mismo flag que el ojo de Inicio, Mis
  *   cuentas y Deudas: un solo control, IN.2).
- * - Mes sin pagos programados (puede tener ingresos): variante de guía sin
- *   cifra, sin barra y sin ojo (nada que enmascarar, disciplina ADR 034/035).
+ * - Mes sin pagos programados pero con algún evento (ej. solo ingresos):
+ *   variante de guía sin cifra, sin barra y sin ojo (nada que enmascarar,
+ *   disciplina ADR 034/035).
+ * - Mes sin ningún evento (DIS.11 C8/V-8): no se renderiza. La card
+ *   `.cal-empty` ya dice lo mismo y con el banner de propósito arriba eran
+ *   tres bloques con un solo mensaje.
  * - La barra es decorativa (`aria-hidden`); los montos en texto portan la
  *   información (SC 1.4.11).
  *
@@ -209,6 +258,8 @@ function _renderHeroMes(eventos, year, month, prefijoMes) {
   const oculto = S.config?.ocultarSaldo === true;
 
   if (total <= 0) {
+    // DIS.11 C8/V-8: mes completamente vacío → guía una sola vez, en la card.
+    if (totalEventosDelMes(eventos) === 0) return '';
     return `
       <div class="hero-agenda">
         <p class="hero-agenda__label">${MONTHS[month]} ${year}</p>
@@ -253,9 +304,12 @@ function _renderHeroMes(eventos, year, month, prefijoMes) {
  * nada (el CTA "Marcar pagado" del detalle del día ya resuelve ese caso) y la
  * tarjeta sería ruido que compite con el hero.
  *
- * No se enmascara con el ojo de privacidad porque no muestra ningún saldo ni
- * total: solo cuántos pagos quedan pendientes. El monto aparece dentro del
- * modal, ya en contexto de "voy a pagar esto".
+ * DIS.11 C5/V-7: la tarjeta dice **cuánto** suma antes de abrir el flujo (una
+ * tarjeta que propone mover dinero muestra el monto antes, no dentro). El
+ * total no se enmascara con el ojo de privacidad: no es un saldo, es el precio
+ * de la acción que se está ofreciendo, mismo criterio que los montos del modal.
+ * La descripción se queda con la lista de nombres; el "eligiendo la cuenta una
+ * sola vez" ya lo explica el modal.
  *
  * @param {Array<{id:string, descripcion:string, monto:number, dia:number}>} pendientes
  * @param {string} prefijoMes 'YYYY-MM' del mes visible (viaja al handler, que
@@ -271,12 +325,14 @@ function _renderLoteCard(pendientes, prefijoMes) {
   const lista   = resto > 0
     ? `${nombres.join(', ')} y ${resto} más`
     : nombres.join(' y ');
+  const total   = pendientes.reduce((acc, p) => acc + (Number(p.monto) || 0), 0);
 
   return `
     <section class="cal-lote" aria-label="Pagos pendientes del mes">
       <div class="cal-lote__body">
         <p class="cal-lote__title">${n} pagos ya vencieron</p>
-        <p class="cal-lote__desc">${lista}. Regístralos juntos eligiendo la cuenta una sola vez.</p>
+        <p class="cal-lote__monto">${f(total)}</p>
+        <p class="cal-lote__desc">${lista}.</p>
       </div>
       <button type="button" class="cal-lote__cta"
               data-action="agenda-pagar-lote" data-mes="${_esc(prefijoMes)}"
@@ -361,7 +417,24 @@ function _renderDiasSemana() {
     </div>`;
 }
 
-function _renderGrid(year, month, eventos) {
+/**
+ * Grilla del mes.
+ *
+ * DIS.11 V-6: sin `role="grid"` ni `role="gridcell"`. El patrón grid exige
+ * filas (`role="row"`) y un teclado de flechas; acá hay una lista de botones,
+ * cada uno con su aria-label completo, y eso es lo que se anuncia. `role
+ * ="group"` conserva el nombre accesible del conjunto sin prometer una
+ * navegación que no existe.
+ *
+ * @param {number} year
+ * @param {number} month 0-indexed.
+ * @param {Record<number, any[]>} eventos
+ * @param {Record<number, number>} [vencidosPorDia] Pagos vencidos y sin
+ *   registrar por día (DIS.11 C2/V-5), calculados una sola vez en
+ *   `renderAgenda()` a partir de `pendientesDePagoDelMes`.
+ * @returns {string}
+ */
+function _renderGrid(year, month, eventos, vencidosPorDia = {}) {
   const diasEnMes  = new Date(year, month + 1, 0).getDate();
   const firstDay   = new Date(year, month, 1).getDay();        // 0=Dom
   const startOffset = firstDay === 0 ? 6 : firstDay - 1;        // si dom, ponemos en col 7
@@ -370,7 +443,7 @@ function _renderGrid(year, month, eventos) {
   const esMesActual   = hoy.getFullYear() === year && hoy.getMonth() === month;
   const diaHoy        = hoy.getDate();
 
-  let html = '<div class="cal-grid" role="grid" aria-label="Días del mes">';
+  let html = '<div class="cal-grid" role="group" aria-label="Días del mes">';
 
   for (let i = 0; i < startOffset; i++) {
     html += '<div class="cal-day cal-day--empty" aria-hidden="true"></div>';
@@ -382,6 +455,11 @@ function _renderGrid(year, month, eventos) {
     const esHoy     = esMesActual && d === diaHoy;
     const esPasado  = esMesActual && d < diaHoy;
     const esSelecc  = d === _diaSeleccionado;
+    // DIS.11 C2/V-5: día con pagos ya vencidos y sin registrar. Toma el
+    // amarillo de aviso (familia warning, nunca danger: deber un pago no es
+    // un error del usuario, ADR 019) y queda fuera de la atenuación de
+    // "pasado", que pintaba lo que hay que atender como lo más tenue del mes.
+    const nVencidos = vencidosPorDia?.[d] ?? 0;
 
     const cls = [
       'cal-day',
@@ -389,6 +467,7 @@ function _renderGrid(year, month, eventos) {
       hayEvs   && 'cal-day--has-events',
       esSelecc && 'cal-day--selected',
       esPasado && !esHoy && 'cal-day--past',
+      nVencidos > 0 && 'cal-day--vencido',
     ].filter(Boolean).join(' ');
 
     // ADR 021: el aria-label distingue día de ingreso de compromisos a pagar.
@@ -397,6 +476,7 @@ function _renderGrid(year, month, eventos) {
     const partes = [];
     if (nIng > 0)  partes.push('día de ingreso');
     if (nComp > 0) partes.push(`${nComp} ${nComp === 1 ? 'compromiso' : 'compromisos'}`);
+    if (nVencidos > 0) partes.push(`${nVencidos} ${nVencidos === 1 ? 'vencido' : 'vencidos'}`);
     const aria = hayEvs
       ? `Día ${d}, ${partes.join(', ')}`
       : `Día ${d}, sin compromisos`;
@@ -409,7 +489,6 @@ function _renderGrid(year, month, eventos) {
     // grid centrado.
     html += `
       <button type="button" class="${cls}"
-              role="gridcell"
               aria-label="${aria}"
               data-action="agenda-mostrar-dia" data-day="${d}">
         <span class="cal-day__num">${d}</span>
@@ -454,6 +533,10 @@ const _LABEL_LEYENDA = {
  * cada tipo (`cal-dot--*`, ya usados en los puntos del calendario); esta
  * función solo decide qué entradas mostrar, no cómo se ven.
  *
+ * DIS.11 C6/V-3 (revisa AG.6): se emite DENTRO de `.cal-card`, como pie de la
+ * tarjeta que explica, y sin sticky. La clave queda junto al mapa y el panel
+ * del día sube 78px.
+ *
  * @param {ReturnType<import('./logic.js').eventosDelMes>} eventos
  */
 function _renderLeyenda(eventos) {
@@ -490,6 +573,12 @@ function _renderEmptyMes(month) {
 
 // ── DETALLE DEL DÍA ──────────────────────────────────────────────
 
+/**
+ * Panel del día seleccionado. El título lleva `tabindex="-1"` porque
+ * agenda/index.js le manda el foco después de abrir un día (DIS.11 C1/V-1):
+ * el navegador lo trae a pantalla y el lector lo anuncia. Sin eso, tocar un
+ * día no cambiaba nada visible: el panel nacía fuera del viewport.
+ */
 function _renderDetalleDia(evs, year, month, dia) {
   const fecha   = new Date(year, month, dia);
   const dow     = DOW_LARGO[fecha.getDay()];
@@ -503,7 +592,7 @@ function _renderDetalleDia(evs, year, month, dia) {
       <section class="cal-detail" aria-label="Compromisos del ${titulo}">
         <header class="cal-detail__header">
           <div class="cal-detail__title-wrap">
-            <h3 class="cal-detail__title">${titulo}</h3>
+            <h3 class="cal-detail__title" tabindex="-1">${titulo}</h3>
             <p class="cal-detail__subtitle">Sin compromisos ni ingresos este día</p>
           </div>
           <button type="button" class="cal-detail__close"
@@ -548,7 +637,7 @@ function _renderDetalleDia(evs, year, month, dia) {
     <section class="cal-detail" aria-label="Compromisos del ${titulo}">
       <header class="cal-detail__header">
         <div class="cal-detail__title-wrap">
-          <h3 class="cal-detail__title">${titulo}</h3>
+          <h3 class="cal-detail__title" tabindex="-1">${titulo}</h3>
           <p class="cal-detail__subtitle">${resumen}</p>
           ${totalPagarHtml}
         </div>

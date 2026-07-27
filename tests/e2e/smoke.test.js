@@ -1639,8 +1639,10 @@ test.describe('Agenda', () => {
     await expect(page.locator('.cal-card__title')).toBeVisible();
     await expect(page.locator('.cal-card__subtitle')).toBeVisible();
 
-    // Grilla con al menos un día visible
-    await expect(page.locator('[role="grid"]').first()).toBeVisible();
+    // Grilla con al menos un día visible. DIS.11 V-6: es una lista de
+    // botones, sin role=grid (que exigiría filas y teclado de flechas).
+    await expect(page.locator('.cal-grid').first()).toBeVisible();
+    await expect(page.locator('[role="grid"]')).toHaveCount(0);
   });
 
   test('CAL.2: sin compromisos ni ingresos este mes, la leyenda no se dibuja', async ({ page }) => {
@@ -1904,7 +1906,39 @@ test.describe('Agenda - hero del mes (CAL.4a)', () => {
     ).toBe(true);
   });
 
-  test('mes sin pagos programados muestra la variante de guía sin ojo', async ({ page }) => {
+  // DIS.11 C8/V-8: la variante de guía queda para el mes que tiene algo (un
+  // ingreso) pero nada que pagar. Con el mes del todo vacío el hero
+  // desaparece: el banner de propósito, el hero y la card de vacío decían lo
+  // mismo, con dos primarios a la vez.
+  test('un mes solo con ingresos muestra la variante de guía sin ojo', async ({ page }) => {
+    await page.addInitScript(() => {
+      const estado = {
+        version:   1,
+        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas:   [],
+        ingresos:  [{
+          id: 'ing-guia-e2e', descripcion: 'Salario Guía E2E', monto: 2000000,
+          frecuencia: 'Mensual', diaPago: 15, activo: true,
+        }],
+        gastos:    [],
+        compromisos: [],
+        metas:     [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    });
+
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+
+    const hero = page.locator('.hero-agenda');
+    await expect(hero).toBeVisible();
+    await expect(hero.locator('.hero-agenda__titulo')).toHaveText('Sin pagos programados');
+    await expect(hero.locator('.hero-agenda__ojo')).toHaveCount(0);
+    await expect(hero.locator('.hero-agenda__valor')).toHaveCount(0);
+  });
+
+  test('DIS.11 C8: con el mes vacío el único mensaje es la card, con un solo primario', async ({ page }) => {
     await page.addInitScript(() => {
       const estado = {
         version:   1,
@@ -1922,11 +1956,15 @@ test.describe('Agenda - hero del mes (CAL.4a)', () => {
     await page.goto('/#agenda');
     await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
 
-    const hero = page.locator('.hero-agenda');
-    await expect(hero).toBeVisible();
-    await expect(hero.locator('.hero-agenda__titulo')).toHaveText('Sin pagos programados');
-    await expect(hero.locator('.hero-agenda__ojo')).toHaveCount(0);
-    await expect(hero.locator('.hero-agenda__valor')).toHaveCount(0);
+    await expect(page.locator('.hero-agenda')).toHaveCount(0);
+    await expect(page.locator('.cal-empty')).toBeVisible();
+
+    // El CTA de la card baja a secundario: fondo transparente, no el verde
+    // del primario del encabezado.
+    const fondo = await page.evaluate(
+      () => window.getComputedStyle(document.querySelector('.cal-empty .btn-primary')).backgroundColor,
+    );
+    expect(fondo).toBe('rgba(0, 0, 0, 0)');
   });
 });
 
@@ -2423,21 +2461,22 @@ test.describe('Agenda - CAL.3 selección automática del día actual', () => {
   });
 });
 
-// ── Agenda - leyenda sticky (AG.6) ───────────────────────────────────────────
-// La leyenda va justo debajo del calendario y es sticky: con un día cargado
-// de registros debe seguir dentro del viewport al desplazarse hasta el final
-// del detalle. Cubre también la regresión de overflow en .main-content
-// (un ancestro con overflow-x: hidden anularía el sticky).
+// ── Agenda - leyenda al pie de la tarjeta (DIS.11 C6, revisa AG.6) ──────────
+// AG.6 la puso entre el calendario y el detalle, y sticky. Medido a 390px eso
+// costaba 65,7px de chrome permanente que arrancaban en 834,1px (fuera del
+// primer pantallazo) y se pegaba justo mientras el usuario recorría el día,
+// explicando una grilla que ya no estaba en pantalla. Ahora es el pie de la
+// tarjeta que explica y el panel del día ocupa ese espacio.
 
-test.describe('Agenda - leyenda sticky', () => {
-  test('la leyenda sigue visible tras desplazarse al fondo del detalle', async ({ page }) => {
+test.describe('Agenda - leyenda al pie de la tarjeta', () => {
+  test('la leyenda vive dentro de la tarjeta y el detalle nace pegado a la grilla', async ({ page }) => {
     const diaPago = 15;
 
     await page.addInitScript(({ diaPago }) => {
       const compromisos = [];
       for (let i = 1; i <= 10; i++) {
         compromisos.push({
-          id: `sticky-e2e-${i}`, tipo: 'fijo', descripcion: `Fijo sticky ${i}`,
+          id: `leyenda-e2e-${i}`, tipo: 'fijo', descripcion: `Fijo leyenda ${i}`,
           monto: 50000, frecuencia: 'Mensual', diaPago,
         });
       }
@@ -2457,22 +2496,83 @@ test.describe('Agenda - leyenda sticky', () => {
     await page.goto('/#agenda');
     await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
 
+    await expect(page.locator('.cal-card .cal-legend')).toHaveCount(1);
+    const posicion = await page.evaluate(
+      () => window.getComputedStyle(document.querySelector('.cal-legend')).position,
+    );
+    expect(posicion).toBe('static');
+
     await page.locator(`[data-action="agenda-mostrar-dia"][data-day="${diaPago}"]`).click();
     await expect(page.locator('.cal-detail')).toBeVisible({ timeout: 3_000 });
 
-    // Desplazarse al final del documento. El guard de scrollY > 0 evita que
-    // el test pase trivialmente si el contenido no alcanzara a desbordar.
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await page.waitForTimeout(100);
-    const scrollY = await page.evaluate(() => window.scrollY);
-    expect(scrollY).toBeGreaterThan(0);
+    // El panel del día es el hermano inmediato de la tarjeta del calendario.
+    const esHermanoInmediato = await page.evaluate(() => {
+      const card = document.querySelector('#panel-agenda .cal-card');
+      return card?.nextElementSibling?.classList.contains('cal-detail') === true;
+    });
+    expect(esHermanoInmediato).toBe(true);
+  });
 
-    // Sin sticky, la leyenda quedaría fuera del viewport por arriba.
-    const box      = await page.locator('.cal-legend').boundingBox();
-    const viewport = page.viewportSize();
-    expect(box).not.toBeNull();
-    expect(box.y).toBeGreaterThanOrEqual(0);
-    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+  test('DIS.11 C1/V-1: abrir un día lleva el foco al título del panel', async ({ page }) => {
+    const diaPago = 15;
+
+    await page.addInitScript(({ diaPago }) => {
+      const estado = {
+        version:   1,
+        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas:   [],
+        ingresos:  [],
+        gastos:    [],
+        compromisos: [{
+          id: 'foco-e2e-1', tipo: 'fijo', descripcion: 'Arriendo foco',
+          monto: 900000, frecuencia: 'Mensual', diaPago,
+        }],
+        metas:     [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    }, { diaPago });
+
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+
+    const celda = page.locator(`[data-action="agenda-mostrar-dia"][data-day="${diaPago}"]`).first();
+    await celda.click();
+    await expect(page.locator('.cal-detail')).toBeVisible({ timeout: 3_000 });
+
+    // Sin esto el panel se pinta fuera de la pantalla y nada avisa que pasó algo.
+    await expect(page.locator('.cal-detail__title')).toBeFocused();
+
+    // Al cerrar, el foco vuelve a la celda que lo abrió.
+    await page.locator('.cal-detail__close').click();
+    await expect(page.locator('.cal-detail')).toHaveCount(0);
+    await expect(celda).toBeFocused();
+  });
+
+  test('DIS.11 V-4: navegar de mes conserva el foco en la flecha y anuncia el mes', async ({ page }) => {
+    await page.addInitScript(() => {
+      const estado = {
+        version:   1,
+        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas:   [],
+        ingresos:  [],
+        gastos:    [],
+        compromisos: [],
+        metas:     [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    });
+
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+
+    await page.locator('[data-action="agenda-next-mes"]').click();
+    // El innerHTML se reemplaza entero: sin devolver el foco caería al body.
+    await expect(page.locator('[data-action="agenda-next-mes"]')).toBeFocused();
+
+    const mes = await page.locator('.cal-card__title').textContent();
+    await expect(page.locator('#fk-live-polite')).toContainText(mes.trim(), { timeout: 3_000 });
   });
 });
 
@@ -4384,6 +4484,11 @@ test.describe('Agenda - pago en lote (CAL.5a)', () => {
     const lote = page.locator('.cal-lote');
     await expect(lote).toBeVisible({ timeout: 3_000 });
     await expect(lote.locator('.cal-lote__title')).toHaveText('2 pagos ya vencieron');
+    // DIS.11 C5: cuánto suma, antes de abrir el flujo.
+    await expect(lote.locator('.cal-lote__monto')).toHaveText('$150.000');
+    // DIS.11 C2: el día de esos pagos deja de ser el más tenue del mes.
+    await expect(page.locator('[data-action="agenda-mostrar-dia"][data-day="1"]').first())
+      .toHaveClass(/cal-day--vencido/);
 
     await lote.locator('[data-action="agenda-pagar-lote"]').click();
 
