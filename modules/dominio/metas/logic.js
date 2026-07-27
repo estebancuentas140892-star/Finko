@@ -46,6 +46,19 @@ export function metasActivas(metas) {
 }
 
 /**
+ * Filtra las metas ya cumplidas, hermana de `metasActivas()` (DIS.13, MT.d).
+ * Hasta esta auditoría una meta cumplida salía de la lista y no había ninguna
+ * otra pantalla donde verla: no se podía revisar, ni editar, ni eliminar,
+ * porque el DOM de la fila ni se pintaba. El corte de las dos funciones es el
+ * mismo campo (`completada`), así que ninguna meta puede caer en las dos ni
+ * quedarse fuera de ambas.
+ * @param {import('../../core/state.js').Meta[]} metas
+ */
+export function metasCumplidas(metas) {
+  return metas.filter(m => m.completada === true);
+}
+
+/**
  * Calcula el progreso de una meta de ahorro.
  * @param {import('../../core/state.js').Meta} meta
  * @returns {{ porcentaje: number, faltante: number, completada: boolean }}

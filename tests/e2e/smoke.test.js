@@ -615,8 +615,11 @@ test.describe('Metas - abono con selector de cuenta compartido (MT.5)', () => {
     await page.locator('#form-abono-meta button[type="submit"]').click();
     await page.waitForSelector(modalCerrado('modal-abono-meta'), { timeout: 5_000 });
 
-    // Progreso de la meta actualizado en la lista.
-    await expect(page.locator('#lista-metas')).toContainText('$200.000 / $3.000.000');
+    // Progreso de la meta actualizado en la lista. DIS.13 (FM2): el acumulado
+    // y el objetivo viven en la columna de monto, no concatenados en el
+    // subtítulo.
+    await expect(page.locator('#lista-metas .list-item__amount')).toHaveText('$200.000');
+    await expect(page.locator('#lista-metas .meta-item__de')).toHaveText('de $3.000.000');
 
     // Saldo de la cuenta descontado (1.000.000 - 200.000).
     await page.goto('/#tesoreria');
@@ -689,9 +692,12 @@ test.describe('Metas - ritmo de ahorro según frecuencia (MT.4)', () => {
     await form.locator('button[type="submit"]').click();
     await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
 
-    const subtitulo = page.locator('#lista-metas .list-item__subtitle');
-    await expect(subtitulo).toContainText('por quincena');
-    await expect(subtitulo).not.toContainText('/día');
+    // DIS.13 (FM3): el ritmo de ahorro dejó el subtítulo y pasó a su propia
+    // línea, donde el consejo se lee como consejo.
+    const ritmo = page.locator('#lista-metas .list-item__progress-label');
+    await expect(ritmo).toContainText('por quincena');
+    await expect(ritmo).toContainText('para llegar a tiempo');
+    await expect(ritmo).not.toContainText('/día');
   });
 });
 
@@ -4675,7 +4681,8 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
 
     const item = page.locator('#lista-metas .list-item');
     await expect(item.locator('.list-item__title')).toContainText('Viaje a Cartagena');
-    await expect(item).toContainText('$0 / $2.500.000');
+    await expect(item.locator('.list-item__amount')).toHaveText('$0');
+    await expect(item.locator('.meta-item__de')).toHaveText('de $2.500.000');
   });
 
   test('editar conserva el progreso ya aportado: no lo resetea a 0', async ({ page }) => {
@@ -4699,7 +4706,7 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
     await page.locator('#abono-meta-monto').fill('500000');
     await page.locator('#form-abono-meta button[type="submit"]').click();
     await page.waitForSelector(modalCerrado('modal-abono-meta'), { timeout: 5_000 });
-    await expect(page.locator('#lista-metas')).toContainText('$500.000 / $3.000.000');
+    await expect(page.locator('#lista-metas .list-item__amount')).toHaveText('$500.000');
 
     // Editar solo el nombre (corregir un typo): el progreso debe seguir intacto.
     await page.click('[data-action="editar-meta"]');
@@ -4711,7 +4718,8 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
     await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
 
     await expect(page.locator('#lista-metas')).toContainText('Laptop nueva (corregido)');
-    await expect(page.locator('#lista-metas')).toContainText('$500.000 / $3.000.000');
+    await expect(page.locator('#lista-metas .list-item__amount')).toHaveText('$500.000');
+    await expect(page.locator('#lista-metas .meta-item__de')).toHaveText('de $3.000.000');
 
     // El saldo de la cuenta tampoco se tocó al editar (solo el abono lo movió).
     await page.goto('/#tesoreria');
@@ -4741,8 +4749,14 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
     await formEdit.locator('button[type="submit"]').click();
     await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
 
-    // Meta completada: sale de la lista de metas activas y no ofrece "Abonar".
-    await expect(page.locator('#lista-metas')).not.toContainText('Fondo cámara');
+    // Meta completada. DIS.13 (FM4): ya no desaparece de la app. Baja al bloque
+    // "Metas cumplidas", sigue siendo editable y deja de ofrecer "Abonar".
+    await expect(page.locator('#lista-metas .metas-cumplidas__label')).toBeVisible();
+    const cumplida = page.locator('#lista-metas .list-item--cumplida');
+    await expect(cumplida).toContainText('Fondo cámara');
+    await expect(cumplida.locator('[data-action="abonar-meta"]')).toHaveCount(0);
+    await expect(cumplida.locator('[data-action="editar-meta"]')).toHaveCount(1);
+    await expect(page.locator('#lista-metas .list-item:not(.list-item--cumplida)')).toHaveCount(0);
   });
 
   test('editar preserva la categoría e ícono elegidos', async ({ page }) => {

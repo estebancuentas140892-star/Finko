@@ -5,14 +5,15 @@
 
 import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
-import { icon, emptyArt, iconoCategoria } from '../../infra/icons.js';
+import { emptyArt, iconoCategoria } from '../../infra/icons.js';
 import { progressRing } from '../../infra/svg.js';
+import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
 import { CATEGORIAS_META, CATEGORIA_META_ICONO, ICONOS_CATEGORIA_PERSONALIZADA } from '../../core/constants.js';
 import {
-  metasActivas, calcularProgreso, calcularAhorroPorPeriodo,
-  frecuenciaPrincipalIngresos, diasHastaFecha,
+  metasActivas, metasCumplidas, calcularProgreso, calcularAhorroPorPeriodo,
+  frecuenciaPrincipalIngresos,
 } from './logic.js';
 
 // ── LISTA DE METAS ───────────────────────────────────────────────
@@ -20,60 +21,119 @@ import {
 /**
  * Renderiza la lista de metas en `#lista-metas`.
  * No-op si el contenedor no existe.
+ *
+ * DIS.13 (MT.d, FM4): las metas cumplidas dejan de desaparecer. Van en un
+ * bloque propio al final, apagadas pero presentes: el logro queda a la vista
+ * y la fila sigue siendo editable y eliminable (antes su DOM ni se pintaba).
+ * El estado vacío solo aparece cuando no hay ninguna meta, de ningún tipo:
+ * "Sin metas de ahorro" encima de una lista de metas cumplidas se
+ * contradiría (regla R51).
+ *
+ * DIS.13 (MT.b, FM5): toda cifra en pesos de la sección respeta
+ * `S.config.ocultarSaldo`, el mismo flag del ojo de Inicio (regla R20). El
+ * porcentaje del anillo no se enmascara: muestra proporción, no magnitud.
  */
 export function renderListaMetas() {
   const el = document.getElementById('lista-metas');
   if (!el) return;
 
-  const activas = metasActivas(S.metas);
+  const activas   = metasActivas(S.metas);
+  const cumplidas = metasCumplidas(S.metas);
+
+  if (activas.length === 0 && cumplidas.length === 0) {
+    el.innerHTML = _renderEmptyState();
+    return;
+  }
+
   // MT.4: el ritmo de ahorro sugerido usa la frecuencia real de ingreso del
   // usuario (quincenal, mensual...), no "por día" fijo. Se calcula una sola
   // vez para toda la lista: es la misma frecuencia para todas las metas.
   const frecuenciaIngresos = frecuenciaPrincipalIngresos(S.ingresos);
-  el.innerHTML = activas.length === 0
-    ? _renderEmptyState()
-    : activas.map(m => _renderMetaItem(m, frecuenciaIngresos)).join('');
+  const oculto = S.config?.ocultarSaldo === true;
+
+  const cumplidasHtml = cumplidas.length > 0
+    ? `<p class="metas-cumplidas__label">Metas cumplidas</p>
+       ${cumplidas.map(m => _renderMetaItem(m, frecuenciaIngresos, oculto)).join('')}`
+    : '';
+
+  el.innerHTML = `
+    ${activas.map(m => _renderMetaItem(m, frecuenciaIngresos, oculto)).join('')}
+    ${cumplidasHtml}`;
 }
 
 /**
+ * DIS.13 (MT.a, FM1 y FM2): la fila emite `.list-item__meta`, la columna de
+ * monto que el resto de la app ya usa. No es cosmética: es la clase que
+ * activa el layout móvil de dos filas de `responsive.css` (regla R56), cuyo
+ * comentario decía cubrir Metas desde siempre. Sin ella el cuerpo se quedaba
+ * en 51px de 315 medidos a 374px, el nombre se partía a mitad de palabra en
+ * 5 líneas y la fila medía 506px de alto.
+ *
+ * DIS.13 (MT.c, FM3): el subtítulo baja de cuatro datos a dos. El acumulado y
+ * el objetivo suben a su columna (donde se comparan de un vistazo), el ritmo
+ * de ahorro (el consejo) pasa a su propia línea y los "N días restantes" se
+ * van: la fecha límite dice lo mismo y no envejece.
+ *
+ * DIS.13 (MT.e, FM6, regla R11): el contenedor del anillo pierde su
+ * `aria-hidden`, que borraba el subárbol entero y con él la etiqueta del SVG.
+ * En Metas el porcentaje solo vive ahí: sin etiqueta no había forma de
+ * conocerlo con lector de pantalla.
+ *
  * @param {import('../../core/state.js').Meta} meta
  * @param {string} frecuenciaIngresos - una de FRECUENCIAS_AHORRO (MT.4).
+ * @param {boolean} [oculto=false] `S.config.ocultarSaldo` (MT.b, regla R20).
  */
-function _renderMetaItem(meta, frecuenciaIngresos) {
+function _renderMetaItem(meta, frecuenciaIngresos, oculto = false) {
   const nombre  = _esc(meta.nombre);
   const icono   = _iconoMeta(meta);
   const { porcentaje, faltante, completada } = calcularProgreso(meta);
   const ahorro  = calcularAhorroPorPeriodo(meta, frecuenciaIngresos);
-  const dias    = diasHastaFecha(meta.fechaLimite);
+  const m       = (n) => oculto ? SALDO_MASCARA_CUENTA : f(n);
 
-  const claseAnillo = completada ? 'complete' : porcentaje >= 80 ? 'near' : 'default';
+  // El corte del bloque manda sobre el recálculo: una meta marcada como
+  // cumplida se pinta como cumplida aunque su objetivo haya cambiado después.
+  const cumplida    = meta.completada === true || completada;
+  const claseAnillo = cumplida ? 'complete' : porcentaje >= 80 ? 'near' : 'default';
 
-  const subtitleParts = [`${f(meta.montoActual ?? 0)} / ${f(meta.montoObjetivo ?? 0)}`];
-  if (meta.fechaLimite) {
-    subtitleParts.push(`Límite: ${fechaLegible(meta.fechaLimite)}`);
-  }
-  if (dias !== null && dias > 0 && !completada) {
-    subtitleParts.push(`${dias} días restantes`);
-  }
-  if (ahorro) {
-    subtitleParts.push(`${f(ahorro.montoPorPeriodo)} ${ahorro.etiqueta}`);
+  const subtitleParts = [];
+  if (cumplida) {
+    subtitleParts.push('Meta cumplida');
+  } else {
+    if (faltante > 0) subtitleParts.push(`Faltan ${m(faltante)}`);
+    subtitleParts.push(meta.fechaLimite ? fechaLegible(meta.fechaLimite) : 'sin fecha límite');
   }
 
-  return `
-    <article class="list-item" data-id="${_esc(meta.id)}">
-      <div class="list-item__icon list-item__icon--ring progress-ring-wrap progress-ring-wrap--${claseAnillo}" data-dom="metas" aria-hidden="true">
-        ${progressRing(porcentaje, { size: 56, strokeWidth: 5, ariaLabel: `Progreso de ${nombre}: ${porcentaje}%` })}
-      </div>
-      <div class="list-item__body">
-        <p class="list-item__title">${icono} ${nombre}${completada ? ` ${icon('check-circle', 'icon icon--pop')}` : ''}</p>
-        <p class="list-item__subtitle">${subtitleParts.join(' · ')}</p>
-        ${faltante > 0 ? `<p class="list-item__progress-label">Falta: ${f(faltante)}</p>` : ''}
-      </div>
-      <div class="list-item__action">
-        ${!completada ? `<button class="btn btn-ghost btn-sm"
+  const ritmoHtml = (ahorro && !cumplida)
+    ? `<p class="list-item__progress-label">${m(ahorro.montoPorPeriodo)} ${ahorro.etiqueta} para llegar a tiempo</p>`
+    : '';
+
+  const abonarHtml = !cumplida
+    ? `<button class="btn btn-ghost btn-sm"
                 data-action="abonar-meta"
                 data-id="${_esc(meta.id)}"
-                aria-label="Abonar a ${nombre}">+ Abonar</button>` : ''}
+                aria-label="Abonar a ${nombre}">+ Abonar</button>`
+    : '';
+
+  return `
+    <article class="list-item${cumplida ? ' list-item--cumplida' : ''}" data-id="${_esc(meta.id)}">
+      <div class="list-item__icon list-item__icon--ring progress-ring-wrap progress-ring-wrap--${claseAnillo}" data-dom="metas">
+        ${progressRing(porcentaje, {
+          size: 56,
+          strokeWidth: 5,
+          ariaLabel: cumplida ? `${nombre}: meta cumplida` : `${nombre}: ${porcentaje}% de tu objetivo`,
+        })}
+      </div>
+      <div class="list-item__body">
+        <p class="list-item__title">${icono} ${nombre}</p>
+        <p class="list-item__subtitle">${subtitleParts.join(' · ')}</p>
+        ${ritmoHtml}
+      </div>
+      <div class="list-item__meta">
+        <p class="list-item__amount">${m(meta.montoActual ?? 0)}</p>
+        <p class="meta-item__de">${cumplida ? 'completa' : `de ${m(meta.montoObjetivo ?? 0)}`}</p>
+        ${abonarHtml}
+      </div>
+      <div class="list-item__action">
         <button class="btn btn-ghost btn-icon"
                 data-action="editar-meta"
                 data-id="${_esc(meta.id)}"

@@ -5,7 +5,7 @@
 
 import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
-import { icon, emptyArt } from '../../infra/icons.js';
+import { icon, emptyArt, tejaCategoria } from '../../infra/icons.js';
 import { progressRing } from '../../infra/svg.js';
 import {
   calcularObjetivoFondo,
@@ -18,12 +18,19 @@ import {
   META_MESES_MAX,
 } from './logic.js';
 
-// Mapa clave de vehículo → sección de destino + emoji. Solo routing/UI, no lógica.
+// Mapa clave de vehículo → sección de destino + símbolo del sprite. Solo
+// routing/UI, no lógica.
+//
+// DIS.12 (hallazgo A2): antes eran emoji del sistema operativo
+// (🛡️🎯📦📈), glifos que traen su propio color fuera de los tokens, su propio
+// peso y su propia caja, y que no responden al tema. El sprite ya tiene los
+// cuatro símbolos exactos: los mismos que usan la pestaña del hub y la teja de
+// cada sección. El color de cada uno lo pone `domain.css` por `data-vehiculo`.
 const _VEHICULO_META = {
-  fondo:       { seccion: 'ahorro',    emoji: '🛡️' },
-  metas:       { seccion: 'metas',     emoji: '🎯' },
-  apartados:   { seccion: 'apartados', emoji: '📦' },
-  inversiones: { seccion: 'inversion', emoji: '📈' },
+  fondo:       { seccion: 'ahorro',    icono: 'ahorro' },
+  metas:       { seccion: 'metas',     icono: 'metas' },
+  apartados:   { seccion: 'apartados', icono: 'apartados' },
+  inversiones: { seccion: 'inversion', icono: 'inversion' },
 };
 
 // ── RENDER PRINCIPAL ─────────────────────────────────────────────
@@ -117,13 +124,13 @@ export function renderResumenAhorroConsolidado() {
  */
 function _htmlConsolidado(total, desglose, seccionActual) {
   const filas = desglose.map(d => {
-    const meta = _VEHICULO_META[d.clave] ?? { seccion: 'ahorro', emoji: '💰' };
+    const meta = _VEHICULO_META[d.clave] ?? { seccion: 'ahorro', icono: 'ahorro' };
     const enlace = meta.seccion === seccionActual
       ? ''
       : `<a href="#${meta.seccion}" class="ahorro-total__link" aria-label="Ir a ${_esc(d.label)}">Ver →</a>`;
     return `
-      <li class="ahorro-total__item">
-        <span class="ahorro-total__nombre">${meta.emoji} ${_esc(d.label)}</span>
+      <li class="ahorro-total__item" data-vehiculo="${_esc(d.clave)}">
+        <span class="ahorro-total__nombre">${icon(meta.icono, 'icon ahorro-total__ico')} ${_esc(d.label)}</span>
         <span class="ahorro-total__barra" aria-hidden="true">
           <span class="ahorro-total__barra-fill" style="width:${d.pct}%"></span>
         </span>
@@ -174,6 +181,11 @@ function _renderHero(fondo, gastosFijosMensuales, tasaAhorro, sugerencia = null)
   const colchon    = mesesDeColchon(montoTotal, gastosFijosMensuales);
   const { porcentaje, faltante, completado } = progreso;
 
+  // DIS.12 (hallazgo A4, regla R52): el contenedor NO lleva `aria-hidden`. El
+  // SVG de `progressRing()` ya sale con `role="img"` y su etiqueta, así que
+  // ocultar el envoltorio borraba el subárbol entero y el dato principal del
+  // hero (el porcentaje) no se anunciaba. Mismo patrón que `score-hero__ring`
+  // en Análisis. `role="img"` deja el `<text>` del número como presentacional.
   const claseAnillo = completado ? 'complete' : porcentaje >= 80 ? 'near' : 'default';
 
   const subColchon = colchon === null
@@ -199,8 +211,8 @@ function _renderHero(fondo, gastosFijosMensuales, tasaAhorro, sugerencia = null)
   return `
     <article class="fondo-hero" aria-label="Fondo de emergencia">
       <header class="fondo-hero__header">
-        <div class="progress-ring-wrap progress-ring-wrap--${claseAnillo}" data-dom="ahorro" aria-hidden="true">
-          ${progressRing(porcentaje, { size: 88, strokeWidth: 7, ariaLabel: `Fondo de emergencia: ${porcentaje}%` })}
+        <div class="progress-ring-wrap progress-ring-wrap--${claseAnillo}" data-dom="ahorro">
+          ${progressRing(porcentaje, { size: 88, strokeWidth: 7, ariaLabel: `Fondo de emergencia: ${porcentaje}% de tu objetivo` })}
         </div>
         <div class="fondo-hero__title-wrap">
           <p class="fondo-hero__label">Fondo de emergencia</p>
@@ -238,9 +250,14 @@ function _renderHabitoSection(aportes, compromisoMensual, tasaAhorro, sugerencia
     ? ` Según tus números, ${f(sugerencia.monto)} es un buen punto de partida.`
     : '';
 
+  // DIS.12 (hallazgo A6): el compromiso usaba `i-deudas`, el símbolo que
+  // identifica la sección Deudas en la navegación y en cada tarjeta de crédito.
+  // La metáfora era la contraria: lo que debes marcando lo que apartas.
+  // `i-recurring` es el mismo símbolo de recurrencia que ya marca los gastos
+  // fijos en Calendario e Inicio, que es exactamente lo que esto es.
   const compromisoHtml = compromisoMensual > 0
     ? `<div class="ahorro-habito__compromiso">
-        <span>${icon('deudas')} Compromiso mensual: <strong>${f(compromisoMensual)}</strong></span>
+        <span>${icon('recurring')} Compromiso mensual: <strong>${f(compromisoMensual)}</strong></span>
         <button class="btn btn-ghost btn-sm" data-action="ahorro-editar-compromiso"
                 aria-label="Editar compromiso mensual">Editar</button>
       </div>`
@@ -271,14 +288,29 @@ function _renderHabitoSection(aportes, compromisoMensual, tasaAhorro, sugerencia
     </section>`;
 }
 
-/** @param {{id:string, monto:number, fecha:string, nota?:string}} aporte */
+/**
+ * Fila de un aporte al fondo.
+ *
+ * DIS.12 (hallazgo A5, regla R2): antes el monto era el `list-item__title` y la
+ * fecha el subtítulo, sin teja y sin `list-item__amount`. Quedaba una columna
+ * de cifras grandes sin sujeto, alineadas a la izquierda, imposibles de
+ * comparar de un vistazo. Acá vale la anatomía del resto de la app
+ * (Movimientos, Deudas, Me deben): el título es el sujeto (la fecha), la nota
+ * acompaña como subtítulo y el monto vive en su columna derecha, tabular.
+ *
+ * @param {{id:string, monto:number, fecha:string, nota?:string}} aporte
+ */
 function _renderAporteItem(aporte) {
-  const nota = aporte.nota ? ` · ${_esc(aporte.nota)}` : '';
+  const nota = aporte.nota ? _esc(aporte.nota) : 'Aporte al fondo';
   return `
     <li class="list-item" data-id="${_esc(aporte.id)}">
+      <div class="list-item__icon" aria-hidden="true">${tejaCategoria('i-ahorro', 'ahorro')}</div>
       <div class="list-item__body">
-        <p class="list-item__title">${f(aporte.monto)}</p>
-        <p class="list-item__subtitle">${fechaLegible(aporte.fecha)}${nota}</p>
+        <p class="list-item__title">${fechaLegible(aporte.fecha)}</p>
+        <p class="list-item__subtitle">${nota}</p>
+      </div>
+      <div class="list-item__meta">
+        <p class="list-item__amount">+${f(aporte.monto)}</p>
       </div>
       <div class="list-item__action">
         <button class="btn btn-ghost btn-icon"
@@ -316,8 +348,13 @@ function _renderNudgeTasa(tasaAhorro) {
     desc   = 'Antes de tocar el ahorro, reduce gastos de estilo de vida. Si no alcanza, revisa tus gastos fijos.';
   }
 
+  // DIS.12 (hallazgo A7, regla R55): el nivel alto (los gastos del mes superan
+  // los ingresos) interrumpe; `status` es un aviso cortés y el lector espera
+  // una pausa. Mismo criterio que `_renderNudge()` en Límites de gasto.
+  const rol = nivel === 'nudge-high' ? 'alert' : 'status';
+
   return `
-    <div class="nudge ${nivel}" role="status">
+    <div class="nudge ${nivel}" role="${rol}">
       <span class="nudge__icon" aria-hidden="true">${icono}</span>
       <div class="nudge__body">
         <p class="nudge__title">${titulo}</p>
@@ -344,6 +381,16 @@ export function renderFormFondo({ editando, metaMeses, montoActual, gastosFijosM
     ? `<p class="form-hint">Con esa meta tu objetivo sería <strong>${f(objetivoPreview)}</strong>: ${metaMeses} ${metaMeses === 1 ? 'mes' : 'meses'} × ${f(gastosFijosMensuales)}, que es lo que suman al mes tus gastos fijos de Calendario (arriendo, servicios, cuotas...).</p>`
     : `<p class="form-hint">Aún no hay gastos fijos registrados. Cuando los agregues desde Calendario, Finko calcula automáticamente el objetivo.</p>`;
 
+  // DIS.12 (hallazgo A3, regla R53): al editar, "Desactivar fondo" ocupaba el
+  // sitio de Cancelar con el mismo `btn-ghost` y el mismo aspecto, y Cancelar
+  // no existía: en todos los demás formularios de Finko ese lugar es la salida
+  // sin consecuencias. Ahora Cancelar vuelve a su sitio y la acción destructiva
+  // baja a su propia fila, separada por un filete y con `.btn-danger`.
+  const desactivarHtml = `
+      <div class="modal__footer-secundario">
+        <button type="button" class="btn btn-danger btn-sm" data-action="ahorro-desactivar">Desactivar fondo</button>
+      </div>`;
+
   return `
     <form id="form-fondo" novalidate>
       <div class="form-group">
@@ -367,11 +414,11 @@ export function renderFormFondo({ editando, metaMeses, montoActual, gastosFijosM
       ${previewHtml}
 
       <div class="modal__footer">
-        ${editando
-          ? `<button type="button" class="btn btn-ghost" data-action="ahorro-desactivar">Desactivar fondo</button>`
-          : `<button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>`}
+        <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">${editando ? 'Guardar cambios' : 'Activar fondo'}</button>
       </div>
+
+      ${editando ? desactivarHtml : ''}
     </form>`;
 }
 

@@ -880,18 +880,11 @@
   gap: var(--fk-space-md);
 }
 
-.fondo-hero__icon {
-  width: var(--fk-space-12);
-  height: var(--fk-space-12);
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--fk-dom-ahorro) 14%, transparent);
-  color: var(--fk-dom-ahorro-text);
-}
-.fondo-hero__icon .icon {
-  --fk-icon-size: var(--fk-icon-xl);
-}
+/* DIS.12 (hallazgo A9): acá vivían `.fondo-hero__icon` y `.fondo-hero__icon
+   .icon`, la teja redonda que el anillo de progreso reemplazó, sin un solo
+   consumidor en el proyecto. `.inversion-hero__icon` es idéntica y sí está
+   viva, así que dos patrones para el mismo componente convivían en el archivo
+   sin forma de saber cuál era el vigente sin abrir el JS. */
 
 .fondo-hero__title-wrap {
   display: flex;
@@ -925,9 +918,8 @@
   font-weight: var(--fk-fw-semibold);
 }
 
-.fondo-hero__progress {
-  margin: 0;
-}
+/* DIS.12 (hallazgo A9): `.fondo-hero__progress` y `.fondo-hero__pct` tampoco
+   se emitieron nunca desde `_renderHero()`. */
 
 .fondo-hero__meta {
   display: flex;
@@ -935,11 +927,6 @@
   gap: var(--fk-space-sm);
   margin: 0;
   font-size: var(--fk-fs-sm);
-}
-.fondo-hero__pct {
-  font-weight: var(--fk-fw-bold);
-  color: var(--fk-text-primary);
-  font-variant-numeric: tabular-nums;
 }
 .fondo-hero__meta-label {
   color: var(--fk-text-muted);
@@ -1045,6 +1032,18 @@
   display: flex;
   flex-direction: column;
   gap: var(--fk-space-1);
+}
+
+/* DIS.12 (hallazgo A5, regla R2): el monto del aporte deja de ser el título de
+   la fila y pasa a su columna derecha, tabular y en el menta de ahorro, como
+   en Movimientos y Deudas. Un paso por debajo del `--fk-text-base` de la clase
+   base: acá el sujeto es la fecha y el aporte es una suma, no un saldo. */
+.ahorro-habito__lista .list-item__amount {
+  font-size: var(--fk-fs-sm);
+  font-weight: var(--fk-fw-semibold);
+  color: var(--fk-dom-ahorro-text);
+  font-variant-numeric: tabular-nums;
+  margin: 0;
 }
 
 /* ── J.2a: Inversión (hero total invertido + lista de holdings) ─── */

@@ -42,10 +42,14 @@ Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (si
 
 ## Índice de pendientes
 
-Las 50 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+Las 54 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
+| TX.12b | El chip de gasto frecuente prellena el monto real | Gastos | alta | nada |
+| MC.13f | Confirmación explícita cuando el cobro no es datable | Mis cuentas | alta | nada; informa al ADR 052 |
+| MT.7 | Prellenar el monto del abono con la cuota del período | Metas | alta | nada |
+| INV.1 | Origen del dinero al registrar una inversión | Inversión | alta | ADR 053 (aceptado) |
 | CAL.5b | El lote también cubre deudas, y se ofrece desde Inicio | Calendario | media | ARQ.2 (deudas); Inicio no depende de nada |
 | MC.13 | Distribución v2: contextual por fecha, guiada y con origen real | Mis cuentas | alta | nada |
 | MC.13e-2b | Quitar "Abonar extra a deudas" del asistente | Mis cuentas | media | conviene antes de MC.13e-2f |
@@ -106,6 +110,22 @@ Las 50 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 > **Dos hallazgos siguen cuestionando una decisión vigente y no se ejecutan sin la palabra de Esteban** (regla 2.7: un ADR no se revierte en silencio): la propuesta de distribución de un toque frente a MC.13e-2g, y MC.17f frente al cierre de MC.17 como "completa". Cada tarjeta lo dice en su Estado.
 >
 > **Alcance honesto del triaje:** se trió todo lo que el informe entregó enumerado. Su tabla "hallazgos por módulo" vino como vista filtrable y las fichas individuales no llegaron en texto: si Esteban quiere ese detalle triado uno por uno, hay que recuperarlo de la fuente.
+
+### Gastos (dominio `gastos`)
+
+#### TX.12b - El chip de gasto frecuente prellena el monto real, no el redondeado
+- Prioridad  : alta (una línea de código en el flujo más repetido de la app)
+- Estado     : pendiente, **solución ya decidida por Esteban** (2026-07-25). Continúa **TX.12** (cerrada, ver CHANGELOG). Hallazgo de la auditoría integral del 2026-07-25.
+- Área       : code
+- Objetivo   : `gastosFrecuentes()` agrupa por monto redondeado a $1.000 y prellena **esa** clave: 6 cafés de $6.500 producen el chip "Café $7.000" y al tocarlo escriben $7.000. El redondeo sigue siendo correcto **como clave de agrupación** (es lo que hace que $6.500 y $7.000 sean el mismo café) y no se toca; lo que cambia es el monto ofrecido.
+- Solución   : conservar el monto del **registro más reciente** del grupo, dentro del bloque `if (g.fecha >= grupo.ultimaFecha)` que ya existe y que hoy hace exactamente esto con `cuentaId`. **Descartada** la alternativa de calcular la moda del grupo: más código, concepto estadístico nuevo en una función que solo agrupa y cuenta, y se queda anclada al pasado cuando un precio sube (el criterio general está en `CLAUDE.md` sección 2, "Criterio ante dos soluciones válidas").
+- Secciones  : Gastos
+- Archivos   : `modules/dominio/gastos/logic.js` (`gastosFrecuentes()`, campo `monto` del grupo)
+- Riesgo     : los tests de TX.12 fijan la salida actual. Al actualizarlos, separar los que verifican la **agrupación** (no cambian) de los que verifican el **monto ofrecido** (sí cambian): confundirlos rompe la semántica del chip sin que nadie lo note.
+- Depende de : nada
+- Modelo     : Ligero (cambio de una línea + curación de tests)
+
+---
 
 ### Calendario (dominio `agenda`)
 
@@ -187,6 +207,19 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 - Depende de : conviene última (reestructura el contenedor donde viven las demás rebanadas); depende de la decisión de handoff de diseño y de la tensión de arriba
 - Modelo     : si hay handoff, Equilibrado - Alto (implementación de mockup, mismo patrón que FORM.1/CAL.4/GAS.1); si no, Alta capacidad - Alto (diseño + implementación sin mockup)
 
+#### MC.13f - Confirmación explícita cuando el cobro no es datable por creación tardía
+- Prioridad  : alta
+- Estado     : pendiente. Hallazgo de la auditoría integral del 2026-07-25, confirmado en `estadoDistribucion`.
+- Área       : code
+- Objetivo   : `estadoDistribucion` descarta cobros anteriores a la fecha de creación del ingreso (anti falso "ya recibiste", correcto). Efecto lateral: un ingreso registrado a mitad de período (ej. quincena ya cobrada, se crea el ingreso ese mismo día) queda en estado `pendiente` sin salida hasta el **siguiente** cobro, y el CTA "Distribuir →" del detalle del día en Calendario sigue ofreciéndose sobre ese cobro pasado, abriendo un asistente que no deja avanzar.
+- Solución   : `estadoDistribucion` debe distinguir "sin cobro datable" de "hay un cobro datable anterior a la creación, candidato a confirmar" y devolver esa fecha candidata. La UI pregunta explícitamente ("¿Ya recibiste el pago del [fecha]? Distribúyelo") en vez de asumir. **No es solo UX**: la confirmación es lo que produce el `periodoISO` que el guard de de-duplicación necesita (`_confirmarDistribucion` solo sella `ultimaDistribucionPeriodo` si `periodoISO` existe). Desbloquear el botón sin esta pieza permite distribuir el mismo período más de una vez.
+- Secciones  : Mis cuentas (asistente), Calendario (CTA del detalle del día)
+- Archivos   : `modules/dominio/tesoreria/logic/distribucion.js` (`estadoDistribucion`), `modules/dominio/tesoreria/acciones/distribucion.js` (`_confirmarDistribucion`), `modules/dominio/tesoreria/views/distribucion.js` (mensajes de estado `pendiente`, líneas ~400 y ~569), vista del detalle del día en Calendario
+- Riesgo     : `estadoDistribucion` está cubierto por buena parte de los 139 tests del motor de vencimientos (MC.13a/b). Revisar **BUG-017** (Quincenal pierde cobro con `diaPago > 16`) en la misma pasada: ambos tocan la datación de cobros y conviene no tocar la función dos veces por separado.
+- Aviso      : no revierte ni anticipa el **ADR 052** (pagos automáticos). Preguntar antes de actuar es compatible con cualquier dirección que tome ese ADR; sí sirve como evidencia para esa discusión.
+- Depende de : nada duro. Coordinar con BUG-017 (mismo código)
+- Modelo     : Alta capacidad - Alto (toca el guard de de-duplicación del motor compartido)
+
 #### MC.13c-3 - Datar el cobro de todas las frecuencias (`ultimoPagoHasta`)
 - Prioridad  : baja
 - Estado     : pendiente, **no bloquea nada** (separada de MC.13c-2 al cerrarla, que descubrió que no la necesitaba).
@@ -231,6 +264,16 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 ---
 
 ### Metas (dominio `metas`)
+
+#### MT.7 - Prellenar el monto del abono con la cuota del período
+- Prioridad  : alta (una línea, sin schema, sin riesgo)
+- Estado     : pendiente. Hallazgo de la auditoría integral del 2026-07-25.
+- Área       : code
+- Objetivo   : la tarjeta de la meta ya muestra "$X por quincena/mes" (motor MC.13b), pero `renderFormAbonoMeta` abre el campo monto vacío. Apartados (AP.5a) y Fondo (AH.5a) sí prellenan con el mismo criterio de cuota del período; Metas quedó atrás.
+- Secciones  : Metas
+- Archivos   : `modules/dominio/metas/view.js` (`renderFormAbonoMeta`, input `abono-meta-monto`, ~línea 129)
+- Depende de : nada
+- Modelo     : Ligero
 
 #### MT.6 - Metas v2: subcategorías inteligentes + plan de aportes generado automáticamente
 - Prioridad  : media-alta
@@ -287,6 +330,23 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Riesgo     : el bump de schema toca préstamos ya existentes en dispositivos reales; la migración debe conservar el acumulado `pagado` (ADR 047 D3)
 - Modelo     : Alta capacidad - Alto (intereses acumulados con pagos parciales; el resto de rebanadas puede bajar)
 - Rebanadas  : PE.6a intereses+desglose, PE.6b historial+schema, PE.6c rendimiento, PE.6d estados visuales, PE.6e confianza
+
+---
+
+### Inversión (dominio `inversiones`)
+
+#### INV.1 - Origen del dinero al registrar una inversión
+- Prioridad  : alta
+- Estado     : pendiente. Ejecuta la consecuencia inmediata del **[ADR 053](DECISIONS/053-invariante-de-patrimonio.md)** (Aceptada). Hallazgo H5 de la auditoría integral del 2026-07-25.
+- Área       : code
+- Objetivo   : hoy `inversiones` no toca cuentas, mientras `analisis` asume que ese dinero ya salió de ellas: comprar un CDT con saldo de una cuenta registrada infla patrimonio y Score de forma permanente. Preguntar el origen con dos ramas explícitas (cuenta propia / preexistente o externa), descontar cuando aplique y persistir `cuentaId`. Default sugerido según `fecha de inicio` (hoy o reciente sugiere cuenta; pasada sugiere preexistente).
+- Alcance    : **indivisible**: alta con descuento + reversa al eliminar + regla de cuenta origen ya borrada. I3 del ADR prohíbe entregar solo el alta.
+- Secciones  : Inversión, Mis cuentas (saldo)
+- Archivos   : `modules/dominio/inversiones/` (index, logic, view), `modules/core/state.js` (`cuentaId` opcional en el typedef de Inversion)
+- Riesgo     : `inversiones` pasa a mover dinero real; debe hacerlo vía `editar('cuentas', ...)` de `infra/crud.js`, nunca importando tesorería (ADN 10, precedente PE.7). Definir antes de codificar qué pasa al eliminar una inversión cuya cuenta origen ya no existe (recomendación del análisis: no revertir y avisar, nunca revertir a una cuenta arbitraria).
+- No hacer   : no se toca `calcularActivos()` (I4 del ADR: cambiar la regla de suma borraría del patrimonio las inversiones ya registradas). Sin bump de `SCHEMA_VERSION`: campo opcional `undefined`-safe.
+- Depende de : ADR 053 (aceptado). **Precede** a la rebanada de Inversión de EDIT.1
+- Modelo     : Alta capacidad - Alto (un dominio empieza a mover saldo; la reversa mal hecha descuadra el patrimonio)
 
 ---
 
@@ -367,7 +427,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 #### CFG.6 - Revisión general de la sección Ajustes
 - Prioridad  : sin definir
 - Área       : design (auditoría visual y de layout, sin lógica nueva)
-- Estado     : pendiente de análisis (no iniciar)
+- Estado     : **parcialmente ejecutada (2026-07-25).** La auditoría de diseño de la sección entregó 13 hallazgos y se aplicaron los 11 que no dependen de otra sección: agrupación y reorden del panel, un solo primario, confirmación visible al guardar, importador accesible, pesos con separador de miles, botones de datos por ámbito, instrucción ramificada por PWA, Centro Legal con jerarquía, "Acerca de" sin jerga y teja + sprite en el encabezado (ver CHANGELOG 2026-07-25). **Lo que sigue abierto en esta tarjeta:** (1) el inventario de qué configuraciones *faltan* en Ajustes, que es lo que la ata a CFG.1 a CFG.5; (2) el pase de **escritorio y tablet**, que la auditoría no revisó (solo móvil 390px, solo tema oscuro), incluidos el Bento Grid y los botones que hoy ocupan todo el ancho; (3) tema claro, sin verificar.
 - Objetivo   : el usuario pidió revisar si faltan configuraciones que deberían vivir en Ajustes, con el objetivo de que la sección se convierta en el centro de configuración de Finko (seguridad, personalización, notificaciones, respaldo y cualquier otra opción relevante), con interfaz clara y organizada. **Ampliado por triaje del 4.º lote (2026-07-08, brief de Ajustes punto 2):** rediseño visual de la sección con tarjetas de tamaño uniforme, Bento Grid donde aporte, bloques compactos y alineados, sin botones que ocupen todo el ancho en desktop (hoy: "Instalar aplicación", "Recordatorios"); misma sensación de orden que el resto de la app (coordina con IV.2). **7.º lote:** el layout debe reservar el bloque del **Centro Legal** (iniciativa LEG, Transversal).
 - Secciones  : Configuración (Ajustes)
 - Archivos   : `modules/dominio/config/view.js`, `styles/components/config.css`
@@ -509,6 +569,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Objetivo   : tres secciones todavía no permiten **editar** lo ya creado: corregir un nombre mal escrito, un objetivo, una fecha o una tasa obliga a **eliminar y recrear**, perdiendo en el camino el progreso, los aportes y los intereses acumulados. Es destrucción de datos como precio de una corrección tipográfica. Aplicar el mismo patrón que **EDIT.1a** ya validó para Metas (formulario reinyectado con `meta = null` para crear y con el registro existente para editar; `normalizarX(datos, existente = null)` conserva el histórico acumulado y recalcula solo lo que depende del campo editado) a Apartados, Inversión y Me deben, en una rebanada por sección. **Decisión ya tomada en EDIT.1a, válida para las tres que faltan:** se conserva el histórico tal cual (no se recalcula ni se toca), y el estado derivado (completada/vencida/lo que aplique) se recalcula contra el dato nuevo.
 - Secciones  : Apartados, Inversión, Me deben
 - Archivos   : `apartados/`, `inversiones/`, `personales/` (form + acciones de cada uno), patrón de referencia ahora en `metas/` (EDIT.1a) y en `compromisos` (D.15b, para Deudas)
+- **Rebanada Inversión, condición añadida (ADR 053, 2026-07-25):** debe ir **después de INV.1** y, además de editar los campos, ajustar el **delta de saldo** cuando cambie el monto de una inversión que tiene `cuentaId`. Es la mitad que falta de I3 del [ADR 053](DECISIONS/053-invariante-de-patrimonio.md) (alta y baja las cubre INV.1; la edición, esta). Sin ella, corregir un monto obliga a eliminar y recrear, o sea dos movimientos de saldo que deben cancelarse exactamente.
 - Depende de : nada duro. Coordina con **ARQ.1** (si las 4 bolsas comparten componente, el formulario de edición se simplifica): decidir si conviene antes de las 3 rebanadas que faltan, aunque EDIT.1a ya demostró que escribir la rebanada de un dominio no es tan costoso como se temía (Metas no comparte prácticamente nada de formulario con Apartados/Inversión/Personales, los campos difieren)
 - Modelo     : Equilibrado - Alto por rebanada (patrón ya probado en D.15b y EDIT.1a; sin lógica financiera nueva salvo la decisión de progreso, ya resuelta)
 
@@ -516,6 +577,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Prioridad  : baja
 - Estado     : pendiente de análisis. Hallazgo de la auditoría de UX/producto, patrón P7. **No es un rediseño de pantallas.** Duplicación medida y detalle en [`contexto/transversal.md`](contexto/transversal.md).
 - Objetivo   : fondo de emergencia, metas, apartados e inversión son 4 implementaciones del mismo concepto (bolsa con objetivo, acumulado, progreso y aportes). Unificar la infraestructura compartida en `infra/`, sin fusionar las pantallas.
+- **Añadido por el [ADR 053](DECISIONS/053-invariante-de-patrimonio.md) (2026-07-25):** el modelo unificado debe exponer explícitamente la propiedad **"descuenta saldo sí/no"** por bolsa, hoy folclore de cada dominio (Metas y Apartados siempre descuentan; el Fondo nunca, ADR 020; Inversión tras INV.1 depende del origen). Sumar un test de invariante que calcule los activos por dos caminos y compare: es el test que habría detectado H5 sin auditoría manual.
 - Secciones  : Transversal (`infra/`), consumidores en Ahorro, Metas, Apartados, Inversión
 - Depende de : nada. EDIT.1a (cerrada) ya demostró que unificar después de escribir los 4 editores es viable
 - Modelo     : Alta capacidad - Extra (refactor cross-dominio con red de regresión en 4 suites; el riesgo real es el redondeo distinto de `diasHastaFecha`, que hoy da resultados diferentes por sección)
@@ -606,7 +668,7 @@ Se listan solo para que una idea nueva de estas secciones no vuelva a generar un
 | Sección | Dónde vive su trabajo futuro |
 |---|---|
 | Inicio | Iniciativa "Inicio v2" completa ([ADR 034](DECISIONS/034-inicio-v2.md)). Las recomendaciones anticipadas de "Próximas prioridades" son el punto 4 de **LIM.1** y del [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md) |
-| Gastos | Iniciativa "Gastos v2" completa ([ADR 039](DECISIONS/039-gastos-v2-visual.md)), con 3 decisiones diferidas anotadas en el ADR: FAB, búsqueda en el header y comparación tangible del insight hormiga. La taxonomía de categorías es **CAT.1**; el motor de sugerencia por categoría, la fusión LIM.1 / ANL.1 / ADR 029 |
+| Gastos | Iniciativa "Gastos v2" completa ([ADR 039](DECISIONS/039-gastos-v2-visual.md)), con 3 decisiones diferidas anotadas en el ADR: FAB, búsqueda en el header y comparación tangible del insight hormiga. La taxonomía de categorías es **CAT.1**; el motor de sugerencia por categoría, la fusión LIM.1 / ANL.1 / ADR 029. _(Excepción: **TX.12b** está abierta, ver arriba.)_ |
 | Movimientos | Ledger accionable, con búsqueda y filtros, completo. Los huecos que quedan son **MC.17f** (deshacer transferencia) y **EDIT.1** (editar donde el dominio dueño todavía no sabe) |
 | Deudas | Iniciativa "Deudas v2" completa ([ADR 036](DECISIONS/036-deudas-v2-visual.md)). Que un pago de deuda descuente de la cuenta ya existe desde el [ADR 002](DECISIONS/002-abono-deudas.md): si aparece un caso donde NO ocurra, es un bug para [`BUGS.md`](BUGS.md), no una feature |
 | Inversión | Sin pendientes propios. Su "editar sin destruir" es una rebanada de **EDIT.1**; su infraestructura compartida, **ARQ.1** |

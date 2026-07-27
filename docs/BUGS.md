@@ -3,7 +3,7 @@
 > Errores detectados durante el desarrollo, con toda la información necesaria para resolverlos sin tener que volver a buscar dónde están.
 > Al solucionarse, el error se **elimina** de este archivo y el fix queda documentado en [`CHANGELOG.md`](CHANGELOG.md) con referencia al ID.
 > Solo entra lo **verificado** contra el código (archivo, función, línea). Una sospecha no es un error: es una tarjeta de investigación en [`BOARD.md`](BOARD.md).
-> Última actualización: 2026-07-24. **3 errores abiertos:** BUG-016 (cuatro mensajes en voseo), BUG-013 (el pase de accesibilidad mide contraste durante el fundido del modal) y BUG-017 (el modelo Quincenal pierde un cobro al mes). Ninguno afecta el uso diario de la app salvo con `diaPago > 16` en frecuencia Quincenal.
+> Última actualización: 2026-07-25. **4 errores abiertos:** BUG-016 (cuatro mensajes en voseo), BUG-013 (el pase de accesibilidad mide contraste durante el fundido del modal), BUG-017 (el modelo Quincenal pierde un cobro al mes) y BUG-018 (fecha por defecto del abono a deuda usa UTC, no hora Colombia). BUG-018 afecta el uso diario desde las 7 p.m. hora Colombia en adelante.
 
 ---
 
@@ -48,6 +48,17 @@ Numerar `BUG-001`, `BUG-002`... de forma consecutiva y sin reutilizar números a
 - Líneas    : ~85-110 (el patrón se repite por modal)
 - Secciones : ninguna de la app (solo la suite E2E). Afecta la confianza en el pase A11Y.5.
 - **Arreglo sugerido**: esperar a que el fundido termine antes de medir, no dormir un tiempo fijo. Opciones: esperar la promesa de `element.getAnimations()` en el overlay, o afirmar `opacity === '1'` con `expect.poll` antes de llamar a axe. Conviene hacerlo en el helper compartido para que cubra todos los modales de una vez.
+
+### BUG-018 - La fecha por defecto del abono a deuda usa UTC, no hora Colombia
+- Estado    : pendiente
+- Prioridad : alta (corrompe datos financieros; sin decisión de producto, un tecleo por sitio)
+- Problema  : el formulario de abono a deuda inicializa la fecha con `new Date().toISOString().slice(0,10)`. Colombia es UTC-5: desde las 7 p.m. hora local, esa fecha ya es "mañana". Reproducido: abono registrado el 24 de julio a las 11:50 p.m. quedó guardado y visible en Movimientos como "25 de julio".
+- Causa     : uso de fecha UTC en vez de fecha local. El proyecto ya tiene el helper correcto, `isoFecha()` en `modules/dominio/tesoreria/logic/ingresos.js:184`, pero vive dentro de un dominio y nadie más lo busca ahí.
+- Archivo   : `modules/dominio/compromisos/views/formularios.js`
+- Función   : valor por defecto del campo fecha en el formulario de abono
+- Líneas    : ~54
+- Secciones : Deudas (abono). Variantes cosméticas del mismo patrón, sin persistencia de dato incorrecto: `modules/dominio/compromisos/views/alertas.js:29` (umbral de meses, no se mueve por horas) y `modules/dominio/config/index.js:32,109` (nombre de archivo de backup) — no requieren fix urgente, solo quedan atrapadas si se promueve el helper.
+- **Arreglo sugerido**: mover `isoFecha()` a `infra/utils.js` como única fuente de "hoy en ISO", reemplazar el uso en `formularios.js:54` (obligatorio) y opcionalmente los otros dos (cosmético). Test unitario que fije un huso UTC-5 nocturno.
 
 ### BUG-017 - El modelo Quincenal pierde el segundo cobro del mes si `diaPago > 16`
 - Estado    : pendiente

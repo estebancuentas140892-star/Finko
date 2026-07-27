@@ -587,6 +587,57 @@ button.chip:focus-visible {
 }
 
 /* ════════════════════════════════════════════════════════════
+   METAS - lista de metas de ahorro (DIS.13).
+   ════════════════════════════════════════════════════════════ */
+
+/* La lista separa sus items desde el contenedor (corolario de la regla R21),
+   como `.lista-apartados`, `.personales-lista` e `.inversion-lista`.
+   `#lista-metas` no tenia ninguna regla: las filas iban borde contra borde y
+   los dos bordes de 1px formaban una costura doble. La clase la emite
+   index.html; el id se queda como ancla de `getElementById`. */
+.lista-metas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+}
+
+/* FM2 (hallazgos MT.a y MT.c): el objetivo acompaña al acumulado en la
+   columna de monto, un peldano por debajo. Mismo tratamiento que
+   `.personal-item__de` en Me deben: el ancla es lo que el usuario lleva y el
+   objetivo es contra que se compara. */
+.meta-item__de {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* FM4 (hallazgo MT.d): la meta cumplida deja de desaparecer de la app. Sigue
+   siendo la misma fila con menos peso, para que el logro quede a la vista y
+   siga siendo editable. Reutiliza el verde de logro que ya usa el anillo
+   `--complete`, sin tokens nuevos: no compite con las metas activas, que son
+   las que piden accion. */
+.list-item--cumplida {
+  background: transparent;
+  border-color: color-mix(in srgb, var(--fk-success) 22%, transparent);
+}
+
+.list-item--cumplida .list-item__title {
+  color: var(--fk-text-secondary);
+}
+
+.metas-cumplidas__label {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--fk-text-muted);
+  margin: var(--fk-space-3) 0 0;
+  padding-left: 2px;
+}
+
+/* ════════════════════════════════════════════════════════════
    APARTADOS - plantillas rápidas y sugerencia de aporte.
    ════════════════════════════════════════════════════════════ */
 
@@ -2780,7 +2831,25 @@ button.chip:focus-visible {
 .ahorro-total__nombre {
   font-size: var(--fk-text-sm);
   color: var(--fk-text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  min-width: 0;
 }
+
+/* DIS.12 (hallazgo A2): los cuatro vehículos se identificaban con emoji del
+   sistema operativo. Con el símbolo del sprite el color sale del token de cada
+   dominio, así que el consolidado repite la misma clave de color que las
+   pestañas del hub y la teja de cada sección. Apartados comparte el token de
+   ahorro: no tiene uno propio. */
+.ahorro-total__ico {
+  --fk-icon-size: var(--fk-icon-sm);
+  flex-shrink: 0;
+}
+[data-vehiculo="fondo"]       .ahorro-total__ico { color: var(--fk-dom-ahorro-text); }
+[data-vehiculo="metas"]       .ahorro-total__ico { color: var(--fk-dom-metas-text); }
+[data-vehiculo="apartados"]   .ahorro-total__ico { color: var(--fk-dom-ahorro-text); }
+[data-vehiculo="inversiones"] .ahorro-total__ico { color: var(--fk-dom-inversion-text); }
 
 .ahorro-total__barra {
   height: 6px;
@@ -2809,11 +2878,19 @@ button.chip:focus-visible {
   font-weight: var(--fk-font-regular);
 }
 
+/* DIS.12 (hallazgo A8, regla R4): el enlace medía 18px de zona activa, el alto
+   de su propia línea, y es lo que se usa para saltar entre los cuatro
+   vehículos de ahorro. El margen negativo deja el dibujo intacto: solo crece
+   la zona sensible. */
 .ahorro-total__link {
   font-size: var(--fk-text-xs);
   color: var(--fk-text-accent);
   text-decoration: none;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-block: -13px;
 }
 
 /* Apartado recurrente con el dinero ya reunido, esperando ser usado. */

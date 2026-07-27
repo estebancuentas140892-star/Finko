@@ -102,7 +102,14 @@
 .list-item__body,
 .list-item__content { flex: 1; min-width: 0; }
 
-/* meta: columna derecha solo con texto (monto), sin botones */
+/* meta: columna de monto de la fila, y la guarda del layout móvil de dos
+   filas (`@media (max-width: 539px)` en responsive.css, regla R56).
+   Casi siempre es solo texto. Admite además el CTA que acompaña al monto,
+   como el "+ Abonar" de Metas (DIS.13, FM1): es lo que describe el
+   comentario de responsive.css ("__meta (monto + btn Abonar) pasa a la fila
+   2") y este decía lo contrario ("sin botones"), así que la contradicción
+   entre los dos archivos se resuelve acá. Los botones de acción de la fila
+   (editar, eliminar, repetir) siguen yendo a `.list-item__action`. */
 .list-item__meta {
   display: flex;
   flex-direction: column;

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   metasActivas,
+  metasCumplidas,
   calcularProgreso,
   calcularAhorroPorPeriodo,
   frecuenciaPrincipalIngresos,
@@ -70,6 +71,30 @@ describe('metasActivas()', () => {
 
   it('devuelve array vacío si no hay metas', () => {
     expect(metasActivas([])).toEqual([]);
+  });
+});
+
+// ── metasCumplidas() (DIS.13, MT.d) ───────────────────────────────
+
+describe('metasCumplidas()', () => {
+  it('devuelve solo las marcadas como completadas', () => {
+    const metas = [metaBase(), metaBase({ id: 'm2', completada: true })];
+    expect(metasCumplidas(metas)).toHaveLength(1);
+    expect(metasCumplidas(metas)[0].id).toBe('m2');
+  });
+
+  it('excluye las metas sin campo completada (undefined ≠ true)', () => {
+    const { completada: _, ...sinCompletada } = metaBase();
+    expect(metasCumplidas([sinCompletada])).toEqual([]);
+  });
+
+  it('junto con metasActivas() reparte todas las metas sin dejar ninguna fuera', () => {
+    const metas = [metaBase(), metaBase({ id: 'm2', completada: true }), metaBase({ id: 'm3' })];
+    expect(metasActivas(metas).length + metasCumplidas(metas).length).toBe(metas.length);
+  });
+
+  it('devuelve array vacío si no hay metas', () => {
+    expect(metasCumplidas([])).toEqual([]);
   });
 });
 
@@ -508,10 +533,15 @@ describe('renderListaMetas() - ícono de categoría en la lista', () => {
 });
 
 // ── renderListaMetas() - ritmo de ahorro según frecuencia (MT.4) ──
+//
+// DIS.13 (MT.c, FM3): el ritmo de ahorro dejó de ser el cuarto fragmento del
+// subtítulo y pasó a su propia línea (`.list-item__progress-label`), que es
+// donde el consejo se lee como consejo.
 
 describe('renderListaMetas() - ritmo de ahorro según frecuencia', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="lista-metas"></div>';
+    S.config = {};
   });
 
   it('con ingreso Quincenal, la meta muestra el monto "por quincena", no "por día"', () => {
@@ -525,9 +555,10 @@ describe('renderListaMetas() - ritmo de ahorro según frecuencia', () => {
     }];
 
     renderListaMetas();
-    const subtitulo = document.querySelector('.list-item__subtitle').textContent;
-    expect(subtitulo).toContain('por quincena');
-    expect(subtitulo).not.toContain('/día');
+    const ritmo = document.querySelector('.list-item__progress-label').textContent;
+    expect(ritmo).toContain('por quincena');
+    expect(ritmo).toContain('para llegar a tiempo');
+    expect(ritmo).not.toContain('/día');
   });
 
   it('sin ingresos registrados, cae a "al mes" (Mensual por defecto)', () => {
@@ -541,7 +572,7 @@ describe('renderListaMetas() - ritmo de ahorro según frecuencia', () => {
     }];
 
     renderListaMetas();
-    expect(document.querySelector('.list-item__subtitle').textContent).toContain('al mes');
+    expect(document.querySelector('.list-item__progress-label').textContent).toContain('al mes');
   });
 
   it('sin fecha límite, no muestra ninguna línea de ritmo de ahorro', () => {
@@ -549,8 +580,140 @@ describe('renderListaMetas() - ritmo de ahorro según frecuencia', () => {
     S.metas = [{ ...normalizarMeta(datosFormValidos), id: 'm1', fechaLimite: null }];
 
     renderListaMetas();
+    expect(document.querySelector('.list-item__progress-label')).toBeNull();
+  });
+});
+
+// ── renderListaMetas() - fila v2 de la auditoría de diseño (DIS.13) ──
+
+describe('renderListaMetas() - fila de meta (DIS.13)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-metas" class="lista-metas"></div>';
+    S.config   = {};
+    S.ingresos = [];
+    S.metas    = [];
+  });
+
+  // FM1 (MT.a, regla R56): la clase que activa el layout móvil de dos filas.
+  it('la fila emite .list-item__meta, la columna que activa el layout móvil', () => {
+    S.metas = [metaBase({ id: 'm1', nombre: 'Viaje', montoActual: 1_200_000, montoObjetivo: 3_500_000 })];
+    renderListaMetas();
+    expect(document.querySelector('.list-item .list-item__meta')).not.toBeNull();
+  });
+
+  // FM2 (MT.a y MT.c): el monto sube a su columna, el objetivo debajo.
+  it('el acumulado va en .list-item__amount y el objetivo en .meta-item__de', () => {
+    S.metas = [metaBase({ id: 'm1', montoActual: 1_200_000, montoObjetivo: 3_500_000 })];
+    renderListaMetas();
+    expect(document.querySelector('.list-item__meta .list-item__amount').textContent).toContain('1.200.000');
+    expect(document.querySelector('.list-item__meta .meta-item__de').textContent).toContain('3.500.000');
+  });
+
+  it('"+ Abonar" vive en la columna de monto, no entre los botones de acción', () => {
+    S.metas = [metaBase({ id: 'm1' })];
+    renderListaMetas();
+    expect(document.querySelector('.list-item__meta [data-action="abonar-meta"]')).not.toBeNull();
+    expect(document.querySelector('.list-item__action [data-action="abonar-meta"]')).toBeNull();
+  });
+
+  // FM3 (MT.c): dos datos, no cuatro, y ningún número repetido.
+  it('el subtítulo dice el faltante y la fecha, sin "días restantes" ni "X / Y"', () => {
+    S.metas = [metaBase({ id: 'm1', montoActual: 1_200_000, montoObjetivo: 3_500_000, fechaLimite: isoEnDias(120) })];
+    renderListaMetas();
     const subtitulo = document.querySelector('.list-item__subtitle').textContent;
-    expect(subtitulo).not.toMatch(/por día|por semana|por quincena|al mes/);
+    expect(subtitulo).toContain('Faltan');
+    expect(subtitulo).toContain('2.300.000');
+    expect(subtitulo).not.toContain('días restantes');
+    expect(subtitulo).not.toContain('/');
+  });
+
+  it('sin fecha límite el subtítulo lo dice en palabras', () => {
+    S.metas = [metaBase({ id: 'm1', fechaLimite: null })];
+    renderListaMetas();
+    expect(document.querySelector('.list-item__subtitle').textContent).toContain('sin fecha límite');
+  });
+
+  // FM6 (MT.e, regla R11): el envoltorio no oculta lo que envuelve.
+  it('el contenedor del anillo ya no lleva aria-hidden y la etiqueta nombra la meta', () => {
+    S.metas = [metaBase({ id: 'm1', nombre: 'Viaje', montoActual: 1_000_000, montoObjetivo: 5_000_000 })];
+    renderListaMetas();
+    const wrap = document.querySelector('.list-item__icon--ring');
+    expect(wrap.getAttribute('aria-hidden')).toBeNull();
+    expect(wrap.querySelector('svg').getAttribute('aria-label')).toBe('Viaje: 20% de tu objetivo');
+  });
+
+  // FM5 (MT.b, regla R20): el ojo de privacidad también rige en Metas.
+  it('con el saldo oculto enmascara montos y conserva el porcentaje del anillo', () => {
+    S.config = { ocultarSaldo: true };
+    S.metas  = [metaBase({ id: 'm1', nombre: 'Viaje', montoActual: 1_000_000, montoObjetivo: 5_000_000 })];
+    renderListaMetas();
+    expect(document.querySelector('.list-item__amount').textContent).not.toContain('1.000.000');
+    expect(document.querySelector('.meta-item__de').textContent).not.toContain('5.000.000');
+    expect(document.querySelector('.list-item__subtitle').textContent).not.toContain('4.000.000');
+    expect(document.querySelector('.progress-ring').getAttribute('aria-label')).toContain('20%');
+  });
+
+  it('sin el flag activo los montos se ven completos', () => {
+    S.metas = [metaBase({ id: 'm1', montoActual: 1_000_000, montoObjetivo: 5_000_000 })];
+    renderListaMetas();
+    expect(document.querySelector('.list-item__amount').textContent).toContain('1.000.000');
+  });
+});
+
+// ── renderListaMetas() - bloque de metas cumplidas (DIS.13, FM4) ──
+
+describe('renderListaMetas() - metas cumplidas (DIS.13)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-metas" class="lista-metas"></div>';
+    S.config   = {};
+    S.ingresos = [];
+    S.metas    = [];
+  });
+
+  it('una meta cumplida deja de desaparecer: se lista bajo su propio rótulo', () => {
+    S.metas = [
+      metaBase({ id: 'm1', nombre: 'Viaje' }),
+      metaBase({ id: 'm2', nombre: 'Regalo', montoActual: 180_000, montoObjetivo: 180_000, completada: true }),
+    ];
+    renderListaMetas();
+    expect(document.querySelector('.metas-cumplidas__label').textContent).toContain('Metas cumplidas');
+    expect(document.querySelectorAll('.list-item')).toHaveLength(2);
+    expect(document.querySelector('.list-item--cumplida').dataset.id).toBe('m2');
+  });
+
+  it('las cumplidas van después de las activas', () => {
+    S.metas = [
+      metaBase({ id: 'm2', nombre: 'Regalo', montoActual: 180_000, montoObjetivo: 180_000, completada: true }),
+      metaBase({ id: 'm1', nombre: 'Viaje' }),
+    ];
+    renderListaMetas();
+    const ids = [...document.querySelectorAll('.list-item')].map(a => a.dataset.id);
+    expect(ids).toEqual(['m1', 'm2']);
+  });
+
+  it('la meta cumplida sigue siendo editable y eliminable, y ya no ofrece abonar', () => {
+    S.metas = [metaBase({ id: 'm2', nombre: 'Regalo', montoActual: 180_000, montoObjetivo: 180_000, completada: true })];
+    renderListaMetas();
+    const fila = document.querySelector('.list-item--cumplida');
+    expect(fila.querySelector('[data-action="editar-meta"]')).not.toBeNull();
+    expect(fila.querySelector('[data-action="eliminar-meta"]')).not.toBeNull();
+    expect(fila.querySelector('[data-action="abonar-meta"]')).toBeNull();
+    expect(fila.querySelector('.list-item__subtitle').textContent).toContain('Meta cumplida');
+    expect(fila.querySelector('.meta-item__de').textContent).toContain('completa');
+  });
+
+  it('sin metas activas pero con cumplidas no aparece el estado vacío', () => {
+    S.metas = [metaBase({ id: 'm2', montoActual: 180_000, montoObjetivo: 180_000, completada: true })];
+    renderListaMetas();
+    expect(document.querySelector('.empty-state')).toBeNull();
+    expect(document.querySelector('.list-item--cumplida')).not.toBeNull();
+  });
+
+  it('sin ninguna meta sigue apareciendo el estado vacío', () => {
+    S.metas = [];
+    renderListaMetas();
+    expect(document.querySelector('.empty-state')).not.toBeNull();
+    expect(document.querySelector('.metas-cumplidas__label')).toBeNull();
   });
 });
 

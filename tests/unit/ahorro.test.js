@@ -29,7 +29,12 @@ import {
   calcularAporteSugerido,
   HORIZONTE_FONDO_MESES,
 } from '../../modules/dominio/ahorro/logic.js';
-import { renderFormAporte } from '../../modules/dominio/ahorro/view.js';
+import {
+  renderFormAporte,
+  renderFormFondo,
+  renderAhorro,
+  renderResumenAhorroConsolidado,
+} from '../../modules/dominio/ahorro/view.js';
 
 // ── calcularObjetivoFondo ────────────────────────────────────────
 
@@ -620,5 +625,141 @@ describe('AH.5a: "Registrar aporte" abre el form ya prellenado', () => {
     const input = document.getElementById('aporte-monto');
     expect(input.readOnly).toBe(false);
     expect(input.disabled).toBe(false);
+  });
+});
+
+// ── DIS.12: auditoría de diseño de Fondo de emergencia ───────────
+// Hallazgos A1 a A9 del informe "Auditoría Fondo de emergencia". Todo es
+// markup y CSS: ni logic.js ni el schema cambian.
+
+describe('DIS.12 - consolidado del hub (A2, A1)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div data-hub-consolidado="ahorro"></div>';
+    S.ahorro       = { fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 2_000_000 }, aportes: [] };
+    S.metas        = [{ id: 'm1', montoActual: 1_000_000 }];
+    S.apartados    = [{ id: 'a1', montoActual: 600_000 }];
+    S.inversiones  = [{ id: 'i1', monto: 400_000 }];
+    renderResumenAhorroConsolidado();
+  });
+
+  it('A2: ningún vehículo se identifica con un emoji del sistema operativo', () => {
+    expect(document.body.innerHTML).not.toMatch(/\u{1F6E1}|\u{1F3AF}|\u{1F4E6}|\u{1F4C8}/u);
+  });
+
+  it('A2: cada fila usa el símbolo del sprite que le corresponde', () => {
+    const usos = [...document.querySelectorAll('.ahorro-total__ico use')]
+      .map(u => u.getAttribute('href'));
+    expect(usos).toEqual(['#i-ahorro', '#i-metas', '#i-apartados', '#i-inversion']);
+  });
+
+  it('A2: la fila declara su vehículo, que es de donde el CSS toma el color del dominio', () => {
+    const claves = [...document.querySelectorAll('.ahorro-total__item')]
+      .map(li => li.dataset.vehiculo);
+    expect(claves).toEqual(['fondo', 'metas', 'apartados', 'inversiones']);
+  });
+
+  it('A1: la barra sigue siendo la única que dibuja la proporción, con su porcentaje al lado', () => {
+    const primera = document.querySelector('.ahorro-total__item');
+    expect(primera.querySelector('.ahorro-total__barra-fill').getAttribute('style')).toContain('width:50%');
+    expect(primera.querySelector('.ahorro-total__pct').textContent).toBe('50%');
+  });
+});
+
+describe('DIS.12 - hero del fondo (A4)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-ahorro"></div>';
+    S.ahorro = { fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 1_800_000 }, aportes: [] };
+    renderAhorro(1_000_000, null, null);
+  });
+
+  it('A4: el contenedor del anillo ya no oculta su propio subárbol', () => {
+    const wrap = document.querySelector('.progress-ring-wrap');
+    expect(wrap).not.toBeNull();
+    expect(wrap.getAttribute('aria-hidden')).toBeNull();
+  });
+
+  it('A4: el anillo conserva su rol y su etiqueta dice qué significa el número', () => {
+    const svg = document.querySelector('.progress-ring-wrap .progress-ring');
+    expect(svg.getAttribute('role')).toBe('img');
+    expect(svg.getAttribute('aria-label')).toBe('Fondo de emergencia: 60% de tu objetivo');
+  });
+});
+
+describe('DIS.12 - lista de aportes y compromiso (A5, A6)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-ahorro"></div>';
+    S.ahorro = {
+      fondoEmergencia:   { activo: true, metaMeses: 3, montoActual: 1_000_000 },
+      compromisoMensual: 250_000,
+      aportes: [
+        { id: 'ap1', monto: 250_000, fecha: '2026-07-22' },
+        { id: 'ap2', monto: 184_000, fecha: '2026-07-15', nota: 'Distribución de ingreso' },
+      ],
+    };
+    renderAhorro(1_000_000, null, null);
+  });
+
+  it('A5: el título de la fila es la fecha, no el monto', () => {
+    const primera = document.querySelector('.ahorro-habito__lista .list-item');
+    expect(primera.querySelector('.list-item__title').textContent).toMatch(/22 de julio/i);
+    expect(primera.querySelector('.list-item__title').textContent).not.toContain('$');
+  });
+
+  it('A5: el monto vive en su columna derecha, como en el resto de las listas', () => {
+    const montos = [...document.querySelectorAll('.ahorro-habito__lista .list-item__meta .list-item__amount')]
+      .map(p => p.textContent);
+    expect(montos).toEqual(['+$250.000', '+$184.000']);
+  });
+
+  it('A5: la fila tiene teja de identidad y la nota baja a subtítulo', () => {
+    const filas = [...document.querySelectorAll('.ahorro-habito__lista .list-item')];
+    expect(filas[0].querySelector('.list-item__icon .cat-teja')).not.toBeNull();
+    expect(filas[0].querySelector('.list-item__subtitle').textContent).toBe('Aporte al fondo');
+    expect(filas[1].querySelector('.list-item__subtitle').textContent).toBe('Distribución de ingreso');
+  });
+
+  it('A6: el compromiso mensual deja el ícono de Deudas y toma el de recurrencia', () => {
+    const uso = document.querySelector('.ahorro-habito__compromiso use');
+    expect(uso.getAttribute('href')).toBe('#i-recurring');
+  });
+});
+
+describe('DIS.12 - rol ARIA del aviso de tasa (A7)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-ahorro"></div>';
+    S.ahorro = { fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 1_000_000 }, aportes: [] };
+  });
+
+  it('el nivel alto (gastos por encima de ingresos) interrumpe: role="alert"', () => {
+    renderAhorro(1_000_000, -12, null);
+    expect(document.querySelector('.nudge-high').getAttribute('role')).toBe('alert');
+  });
+
+  it('los demás niveles siguen siendo avisos corteses: role="status"', () => {
+    renderAhorro(1_000_000, 25, null);
+    expect(document.querySelector('.nudge-success').getAttribute('role')).toBe('status');
+  });
+});
+
+describe('DIS.12 - formulario del fondo (A3)', () => {
+  const opts = { metaMeses: 3, montoActual: 1_800_000, gastosFijosMensuales: 1_000_000 };
+
+  it('al editar, Cancelar vuelve a su sitio en el pie del formulario', () => {
+    const html = renderFormFondo({ editando: true, ...opts });
+    expect(html).toMatch(/<div class="modal__footer">[\s\S]*data-action="modal-close"[\s\S]*Cancelar/);
+  });
+
+  it('al editar, desactivar baja a su propia fila y viste btn-danger', () => {
+    const html = renderFormFondo({ editando: true, ...opts });
+    expect(html).toContain('modal__footer-secundario');
+    expect(html).toMatch(/class="btn btn-danger btn-sm" data-action="ahorro-desactivar"/);
+    expect(html).not.toMatch(/btn-ghost" data-action="ahorro-desactivar"/);
+  });
+
+  it('al activar no hay acción destructiva: solo Cancelar y el primario', () => {
+    const html = renderFormFondo({ editando: false, ...opts });
+    expect(html).not.toContain('modal__footer-secundario');
+    expect(html).not.toContain('ahorro-desactivar');
+    expect(html).toContain('Activar fondo');
   });
 });

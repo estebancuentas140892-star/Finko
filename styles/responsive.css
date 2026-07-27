@@ -468,6 +468,21 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+
+  /* ── Fila de meta (DIS.13, hallazgo MT.a, regla R56) ────────────────
+     Cuarto caso de la misma familia, y el peor medido: a 374px el cuerpo se
+     quedaba en 51px de 315, el nombre se partía a mitad de palabra en 5
+     líneas, el subtítulo en 15 y la fila medía 506px de alto (tres metas,
+     1,86 pantallas). La grilla genérica de arriba lo arregla sola y su
+     comentario dice desde siempre que cubre "gastos, deudas, personales,
+     metas": lo que faltaba era que la vista emitiera `.list-item__meta`, la
+     clase que la activa. Eso ya lo hace `_renderMetaItem`.
+     Lo único que el grid genérico no cubre es el ancho de la columna del
+     ícono: nació para tejas de 40px y el anillo de progreso de Metas mide 56.
+     Una línea, y la fila baja a 259px medidos. */
+  .lista-metas .list-item:has(.list-item__meta) {
+    grid-template-columns: 56px 1fr auto;
+  }
 }
 
 /* ── MÓVIL (< 768px): grid 1-col, fluid type, layouts compactos ─ */
@@ -538,6 +553,29 @@
   .modal__header {
     padding: var(--fk-space-4) var(--fk-space-5);
   }
+
+  /* ── DIS.12 (hallazgo A1, regla R54): la barra del consolidado recupera su
+     pista ──────────────────────────────────────────────────────────────────
+     `.ahorro-total__item` reparte la fila en `minmax(7rem, auto) 1fr auto auto`
+     y la barra es la columna elástica: se queda con el sobrante. Medido a
+     390px, las cuatro pistas salían de 13, 35, 48 y 52px, porque cada fila
+     tiene un nombre y un monto de largo distinto. Consecuencia: el relleno del
+     16% (8px) se dibujaba MÁS LARGO que el del 51% (7px), o sea que la barra
+     que existe para mostrar la proporción mostraba lo contrario. En dos
+     renglones la pista es la misma para las cuatro filas y la proporción
+     vuelve a coincidir con el porcentaje escrito. Desktop no cambia: allí el
+     `1fr` tiene ancho de sobra. */
+  .ahorro-total__item {
+    grid-template-columns: 1fr auto auto;
+    grid-template-areas:
+      "nombre monto link"
+      "barra  barra barra";
+    row-gap: var(--fk-space-1);
+  }
+  .ahorro-total__nombre { grid-area: nombre; }
+  .ahorro-total__monto  { grid-area: monto; }
+  .ahorro-total__link   { grid-area: link; }
+  .ahorro-total__barra  { grid-area: barra; }
 }
 
 /* ── MÓVIL PEQUEÑO (< 360px) - iPhone SE 1ª gen, dispositivos legacy ─ */
