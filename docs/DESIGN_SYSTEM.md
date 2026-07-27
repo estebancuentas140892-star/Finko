@@ -40,6 +40,10 @@
 
 **R35 · Todo consejo tiene puerta:** si la interfaz sugiere una acción sobre un elemento listado, ese elemento **es** el control que la ejecuta; y no se sugiere lo que el formulario de destino no puede hacer. Origen: Límites listaba "Domicilios · $42.000" y remataba con "Asígnales un límite para hacer seguimiento mensual", pero el selector del formulario recorría solo `CATEGORIAS_GASTO_USUARIO` y no incluía ninguna categoría creada por el usuario: el consejo era un callejón sin salida para cualquiera que hubiera creado una categoría propia en Gastos.
 
+**R36 · Nada se recorta a medias:** un elemento con margen negativo necesita que su contenedor lo deje salir, y una caja de texto nunca es más baja que su caja de línea. Donde haya `overflow: hidden`, se verifica qué queda afuera. Origen: la pastilla de Registrar nacía 2px por encima del borde de la barra (`padding-top: 4px` contra `margin-top: -6px`) y dos `overflow: hidden` encadenados (`.sidebar` en `layout.css` y `.sidebar__nav` en `responsive.css`) se los comían: con `border-radius: 16px` el corte caía sobre las esquinas y las dejaba en filo recto, y la sombra de marca, que alcanza 10px por encima (blur 16 menos offset 6), se recortaba entera, así que el relieve nunca se renderizó. En el mismo slot, `flex: 1` dejaba la etiqueta en una caja de 11,17px para una línea de 14,17px: `scrollHeight` 18 contra `clientHeight` 11, y el trazo bajo de la "g" de "Registrar" desaparecía.
+
+**R37 · El ícono no trabaja solo:** un glifo genérico (`+`, tres puntos) siempre lleva etiqueta de texto, con el **mismo peso** que sus vecinas, y su `aria-label` nombra lo que la acción ofrece, no su categoría. Origen: el slot central de la barra era el único cuyo ícono no nombra su dominio, y además el único con la etiqueta en peso normal, porque no entra al cálculo de `.active` que da `--fk-font-semibold` a la pestaña activa: el control más prominente de la app tenía la etiqueta tipográficamente más débil.
+
 ---
 
 ## Fuentes

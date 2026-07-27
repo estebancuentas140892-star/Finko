@@ -52,6 +52,16 @@
     border-right: none;
     border-top: 1px solid var(--fk-border-subtle);
     z-index: var(--fk-z-sidebar);
+    /* DIS.8/C1 (hallazgo H1, regla R36): la pastilla de Registrar nace 2px
+       por encima del borde superior (padding-top 4 - margin-top 6) y la
+       sombra de marca alcanza 10px (blur 16 - offset 6). El
+       `overflow: hidden` de layout.css los recortaba: el corte caía sobre
+       las esquinas de 16px y las dejaba en filo recto, y el relieve de
+       NAV2.1c no llegó a renderizarse nunca. En móvil la barra es fija y
+       no desplaza nada, así que dejarla salir no tiene costo; el hidden de
+       layout.css sigue vigente en el sidebar de escritorio, que sí
+       desplaza. */
+    overflow: visible;
   }
 
   .sidebar__logo { display: none; }
@@ -64,7 +74,10 @@
     gap: 0;
     justify-content: space-around;
     align-items: stretch;
-    overflow: hidden;
+    /* Igual que en .sidebar (DIS.8/C1): este contenedor también recortaba
+       la pastilla y su sombra. Los labels siguen truncando con su propio
+       overflow (más abajo), así que nada horizontal se escapa. */
+    overflow: visible;
   }
 
   /* Aplanar cadena nav: sidebar__nav > nav-group > div[role=group] → fila única */
@@ -127,9 +140,33 @@
   }
 
   /* Botón central "Registrar" (NAV.A2): FAB de acento en el slot medio. Es una
-     acción, no una sección: no muestra el indicador activo. */
-  .nav-item--registrar { justify-content: flex-start; padding-top: var(--fk-space-1); }
+     acción, no una sección: no muestra el indicador activo.
+     DIS.8/C2 (hallazgo H2, regla R36): el slot se ancla por abajo en vez de
+     por arriba. Con flex-start la etiqueta quedaba detrás de la pastilla,
+     4px más abajo que las otras cuatro, y la caja de línea se le comía a
+     11,17px para un texto de 14,17px (scrollHeight 18 contra clientHeight
+     11): se perdía el trazo bajo de la "g". Anclando por abajo la pastilla
+     sube desde ahí, que es lo que C1 ahora permite.
+     space-1 y no space-2 de padding: con la caja de línea natural de 18px
+     el texto queda ópticamente alineado con las otras cuatro etiquetas. */
+  .nav-item--registrar {
+    justify-content: flex-end;
+    padding-top: 0;
+    padding-bottom: var(--fk-space-1);
+    gap: var(--fk-space-1);
+  }
   .nav-item--registrar::before { content: none; }
+  /* Fuera del reparto de `flex: 1` (layout.css) para conservar su caja de
+     línea natural, sin el recorte vertical que la truncaba.
+     DIS.8/C3 (hallazgo H3, regla R37): y al mismo peso que sus vecinas. Era
+     la única etiqueta de la barra en peso normal, porque el slot central no
+     entra al cálculo de `.active` que da semibold a la pestaña activa: el
+     control más prominente tenía la etiqueta tipográficamente más débil. */
+  .nav-item--registrar .nav-item__label {
+    flex: 0 0 auto;
+    overflow: visible;
+    font-weight: var(--fk-font-semibold);
+  }
   /* Pastilla con degradado de acento (NAV2.1c, ADR 040 D5): reemplaza el
      círculo; más área táctil horizontal y sombra teñida de marca (mismo
      degradado que la marca "F" del sidebar). */
@@ -144,6 +181,10 @@
     color: var(--fk-text-on-accent);
     box-shadow: 0 6px 16px var(--fk-accent-border);
     margin-top: -6px;
+    /* Sin esto la pastilla se encoge de 38 a 35,2px: al anclar el slot por
+       abajo (C2) queda como ítem flex encogible en una columna que ya no le
+       sobra alto. */
+    flex-shrink: 0;
   }
   .nav-item__fab .icon { --fk-icon-size: var(--fk-icon-lg); stroke-width: 2.6; }
   .nav-item--registrar:active .nav-item__fab { transform: scale(0.94); }
