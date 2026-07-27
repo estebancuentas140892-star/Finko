@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-26. Última tarea cerrada: DIS.7, las 9 correcciones aplicables de la auditoría de diseño de Límites de gasto (VL1 revisa el ADR 019 D4 y espera tu palabra; ver [`contexto/limites.md`](contexto/limites.md)).
+> Última actualización: 2026-07-27. Última tarea cerrada: DIS.9, las 9 correcciones aplicables de la auditoría de diseño de Mis cuentas (4 quedan abiertas: dos por transversales, una sin propuesta y H12 porque revisa el ADR 035 D6; ver [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md)).
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, GMF).
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 3106/3106 verdes |
-| Tests E2E | 231/231 verdes en 11 suites (verificado el 2026-07-26 corriendo `npx playwright test`). El desglose por suite no se transcribe acá: lo reporta la propia corrida. |
+| Tests unitarios + integración | 3122/3122 verdes |
+| Tests E2E | 173/173 verdes en las 4 suites corridas el 2026-07-27 (`smoke`, `a11y-forms`, `reflow-320`, `navegacion-render`). La última corrida completa de las 11 suites fue 231/231 el 2026-07-26. El desglose no se transcribe acá: lo reporta la propia corrida. |
 | Schema version (localStorage) | v27 |
 | Lighthouse Performance | 100 |
 | Lighthouse Accessibility | 100 |
@@ -39,6 +39,12 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, GMF).
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(mis-cuentas): DIS.9, 9 correcciones de la auditoría de diseño sobre Mis cuentas · 2026-07-27
+
+Auditoría de diseño de la sección más larga de la app (13 hallazgos): se aplican 9. Lo grande: el chip de datos de transferencia **se salía de la tarjeta y pasaba por debajo de editar y eliminar** (medido, 377,8px dentro de un contenedor de 222,7); ahora muestra un solo dato, el que sirve para que a uno le consignen, y la etiqueta trunca con elipsis en su propio elemento (169,5px; 219,2px con un número de 21 dígitos; R40 nueva). La barra de composición pintaba **cuatro segmentos del mismo azul y los dos últimos no se veían** (5,74 · 3,01 · 1,77 · 1,36), mientras el texto de abajo contaba cuentas en vez de repartir el dinero: tres segmentos con "otras", 5,74 · 4,22 · 3,01, y el resumen pasa a "Bancolombia 64% · Davivienda 23% · otras 14%" (R39 nueva). **El piso de opacidad es 0,62 y no el 0,55 que pedía el informe:** medido sobre el fondo real, 0,55 rinde 2,65:1. "Transferir entre cuentas", el único control que mueve dinero real, era el más discreto de la sección y nacía 56px bajo el pliegue: pasa de 165,5x36 ghost a 358,9x44 con borde e ícono, sin volverse primario (R38 nueva). Los dos estados vacíos de ingresos se funden en uno, los cinco emoji salen del sprite, el botón de invertir y las acciones de la tarjeta llegan a 44x44, la mitad de la sección gana su encabezado (`sr-only`) y se retiran dos `role="status"` que se reanunciaban en cada repintado. `DESIGN_SYSTEM.md` gana R38, R39 y R40 (el informe traía seis: dos ya existían y una pertenece a una corrección transversal). **Sin aplicar:** C2 (la anatomía de fila, toca Gastos, Deudas, Personales y Metas a la vez), C8 (el ojo en los selectores de cuenta: `cuenta-helper.js` es transversal, y **es una violación de la R20 ya escrita**, no una regla nueva), H10 (el formulario de 1.270,4px, sin propuesta a propósito) y **H12** (el orden de la sección, revisa el ADR 035 D6 y espera tu palabra). 3122/3122 unit + lint verdes; smoke, a11y-forms, reflow-320 y navegacion-render 173/173. SW v426→v427.
+
+---
 
 ### fix(limites): DIS.7, 9 correcciones de la auditoría de diseño sobre Límites de gasto · 2026-07-26
 
@@ -64,13 +70,7 @@ Auditoría de diseño de la sección (12 hallazgos): se aplican 10. Lo grande: e
 
 ---
 
-### fix(me-deben): DIS.3, 11 correcciones de la auditoría de diseño sobre Me deben · 2026-07-26
-
-Auditoría de diseño de la sección (12 hallazgos): se aplican 11. Lo grande: la fila anclaba **lo prestado** ($1.200.000) y dejaba **lo pendiente** ($859.067) en 12px gris al fondo de la tarjeta, así que la pregunta por la que se abre la sección era el texto más pequeño; ahora el pendiente es la cifra grande y el histórico acompaña debajo (regla R19 nueva). El chip de estado salía del `<p>` del nombre y cruzaba por debajo de "Me pagaron", que lo tapaba: baja a su propia línea y puede partir en dos (R22). Me deben era **la única sección con dinero que ignoraba el ojo de privacidad**, en la lista más sensible de la app: ya lo lee (R20). Los liquidados se van al final (R21), el foco aterriza en la tarjeta tras guardar o cobrar en vez de caer al `body`, el resumen pasa de una torre de 370px a 224px con "Pendiente" al frente, y el formulario pregunta lo esencial antes que la tasa. `DESIGN_SYSTEM.md` gana R19 a R22. **Sin aplicar:** C5 (`.modal__intro` sin CSS, tocaría también Metas), V2 (colapsar los opcionales del form, va a CAT.4) y V3 (copy corto de chips, va a PE.6d). 3048/3048 unit + lint verdes; smoke, reflow-320, a11y-forms y navegacion-render verdes. SW v418→v419.
-
----
-
-> Para tareas anteriores (fix(deudas) DIS.2 las 8 correcciones de la auditoría de diseño sobre Deudas, fix(inicio) V1 el acento de marca deja de medir el gasto semanal, docs(reorg) Fases 1 y 2 de la reorganización documental, feat(metas) EDIT.1a editar sin destruir el progreso, feat(gastos) TX.12 gastos frecuentes y "Repetir", feat(agenda) CAL.5a pagar en lote lo que ya venció, feat(movimientos) MOV.2 búsqueda y filtros en el ledger, feat(movimientos) MOV.1 el ledger deja de ser solo lectura, feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
+> Para tareas anteriores (fix(me-deben) DIS.3 las 11 correcciones de la auditoría de diseño sobre Me deben, fix(deudas) DIS.2 las 8 correcciones de la auditoría de diseño sobre Deudas, fix(inicio) V1 el acento de marca deja de medir el gasto semanal, docs(reorg) Fases 1 y 2 de la reorganización documental, feat(metas) EDIT.1a editar sin destruir el progreso, feat(gastos) TX.12 gastos frecuentes y "Repetir", feat(agenda) CAL.5a pagar en lote lo que ya venció, feat(movimientos) MOV.2 búsqueda y filtros en el ledger, feat(movimientos) MOV.1 el ledger deja de ser solo lectura, feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
 
 ---
 
