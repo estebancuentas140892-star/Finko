@@ -24,25 +24,52 @@ if ('serviceWorker' in navigator) {
       }).catch(function () { /* ignorar */ });
     }
   } else {
-    // IMPORTANTE: no recargamos la página automáticamente.
+    // UPD.1: una versión nueva entra con una sola recarga.
     //
-    // Antes había un listener de 'controllerchange' que llamaba a
-    // location.reload() para forzar la versión nueva. El problema: en la PRIMERA
-    // visita (sin SW previo), cuando el SW recién instalado hacía clients.claim()
-    // el controlador pasaba de null a SW y 'controllerchange' se disparaba,
-    // recargando la página justo cuando el usuario nuevo estaba escribiendo su
-    // nombre en el onboarding. Resultado: la pantalla "saltaba" sola a los pocos
-    // segundos (el tiempo que tarda el SW en cachear los assets).
+    // El SW nuevo ya se activa solo (skipWaiting en service-worker.js), pero
+    // activarse no cambia lo que la página tiene en memoria: sin esta recarga
+    // el usuario ve los assets viejos hasta que vuelva a entrar. Con ella, un
+    // F5 alcanza: el SW nuevo toma el control, dispara 'controllerchange' y la
+    // página se recarga una vez contra el cache nuevo.
     //
-    // Ahora el SW ya no usa skipWaiting (ver service-worker.js): una versión
-    // nueva queda en "waiting" y se aplica sola en la próxima apertura limpia de
-    // la app. Nunca se recarga en medio de una interacción (onboarding, modales,
-    // formularios). El offline-first se mantiene intacto.
+    // El bug que hay que NO repetir: antes existía un listener de
+    // 'controllerchange' que recargaba SIEMPRE. En la primera visita (sin SW
+    // previo) clients.claim() dispara el evento, así que la pantalla saltaba
+    // sola a los pocos segundos, justo cuando el usuario nuevo estaba
+    // escribiendo su nombre en el onboarding. De ahí las tres guardas:
+    // solo si YA había un controlador (o sea, es actualización y no primera
+    // instalación), solo una vez por carga, y solo si no hay nada abierto que
+    // el usuario pueda perder.
+    let _yaRecargado = false;
+    const _habiaControlador = Boolean(navigator.serviceWorker.controller);
+
+    // Declarada dentro del bloque a proposito: en un <script> clasico una
+    // funcion de nivel superior seria window.esSeguroRecargar, y la regla 8 del
+    // ADN prohibe cualquier window.X. El precio es que no se puede importar en
+    // un test; de todos modos el ciclo del SW no corre en localhost (rama de
+    // arriba), asi que este archivo nunca tuvo cobertura automatizada.
+    const esSeguroRecargar = function () {
+      // Un modal abierto (`.modal-overlay[data-open]`, contrato de
+      // ui/modales.js) o un campo con foco significan que el usuario esta en
+      // medio de algo. Ahi NO se recarga: la version nueva ya quedo activa, asi
+      // que entra sola en la proxima recarga natural. Se pierde inmediatez,
+      // nunca datos.
+      if (document.querySelector('.modal-overlay[data-open]')) return false;
+      const foco = document.activeElement;
+      return !(foco && /^(INPUT|TEXTAREA|SELECT)$/.test(foco.tagName));
+    };
+
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (_yaRecargado || !_habiaControlador) return;
+      if (!esSeguroRecargar()) return;
+      _yaRecargado = true;
+      location.reload();
+    });
+
     navigator.serviceWorker
       .register('./service-worker.js')
       .then(function (reg) {
-        // Chequear si hay una versión nueva del SW al arrancar, para que quede
-        // pre-cacheada y lista de activar en la próxima apertura. Sin esto el
+        // Chequear si hay una versión nueva del SW al arrancar. Sin esto el
         // navegador puede demorar hasta 24h en re-fetchear el SW.
         reg.update().catch(function () { /* offline o sin red: ignorar */ });
       })

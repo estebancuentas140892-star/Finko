@@ -10,7 +10,7 @@
  *     o los usuarios seguirán viendo la versión vieja.
  */
 
-const CACHE_NAME = 'finko-v424';
+const CACHE_NAME = 'finko-v425';
 
 // ── Assets críticos - si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [
@@ -211,11 +211,29 @@ self.addEventListener('install', (event) => {
     })
   );
 
-  // NO usamos skipWaiting(): un SW nuevo NO debe tomar el control en caliente
-  // mientras el usuario está usando la app (escribiendo en el onboarding, en un
-  // formulario, etc.). Sin skipWaiting el SW nuevo queda en estado "waiting" y
-  // se activa solo en la próxima apertura limpia de la app, sin recargar la
-  // página en medio de una interacción. (Ver sw-register.js.)
+  // skipWaiting() SÍ, y acá está el porqué (UPD.1, revisa la decisión anterior
+  // de este mismo bloque, que decía lo contrario).
+  //
+  // Sin skipWaiting el SW nuevo queda en "waiting" hasta que no quede NINGUNA
+  // página controlada por el viejo. Eso no es "la próxima recarga": es cerrar
+  // todas las pestañas de la app, y en una PWA instalada puede no pasar en
+  // días. Medido en producción: con la v423 activa, un F5 instalaba la v424 y
+  // seguía sirviendo la v423, así que un fix publicado no llegaba nunca.
+  //
+  // Peor, el arreglo no podía vivir del lado de la página: `sw-register.js` lo
+  // sirve el SW viejo desde su propio cache, así que cualquier lógica nueva de
+  // actualización queda atrapada detrás de la versión que intenta reemplazar.
+  // Este archivo es el único que el navegador vuelve a pedir a la red en cada
+  // carga (byte-compare + `Cache-Control: no-store`), así que es el único lugar
+  // donde el desbloqueo funciona de verdad.
+  //
+  // El riesgo que la decisión anterior quería evitar (recargar la página en
+  // medio de una interacción) NO lo causaba skipWaiting: lo causaba el listener
+  // de 'controllerchange' que recargaba siempre, incluso en la primera visita.
+  // La recarga vive ahora en sw-register.js con tres guardas, y un SW nuevo
+  // tomando el control sin recargar no interrumpe nada: los assets ya cargados
+  // siguen en memoria.
+  self.skipWaiting();
 });
 
 // ── ACTIVATE ───────────────────────────────────────────────────────────────
@@ -234,9 +252,10 @@ self.addEventListener('activate', (event) => {
 
   // clients.claim() hace que este SW controle la página apenas se activa.
   // En la PRIMERA instalación (no había SW antes) eso habilita el modo offline
-  // de inmediato. En una ACTUALIZACIÓN, como no usamos skipWaiting, este SW solo
-  // se activa cuando ya no quedan páginas controladas por el SW viejo (próxima
-  // apertura), así que claim nunca interrumpe una sesión en curso.
+  // de inmediato. En una ACTUALIZACIÓN, junto con el skipWaiting del install,
+  // es lo que hace que la página en curso pase a este SW y que se dispare
+  // 'controllerchange': la señal que sw-register.js usa para recargar una sola
+  // vez y con guardas.
   self.clients.claim();
 });
 
