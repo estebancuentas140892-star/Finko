@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-26. Última tarea cerrada: DIS.6, las 7 correcciones aplicables de la auditoría de diseño de la Interfaz, o sea la capa global de navegación (V1 a V4 son decisiones de producto y esperan tu palabra; ver [`contexto/sistema-visual.md`](contexto/sistema-visual.md)).
+> Última actualización: 2026-07-26. Última tarea cerrada: DIS.7, las 9 correcciones aplicables de la auditoría de diseño de Límites de gasto (VL1 revisa el ADR 019 D4 y espera tu palabra; ver [`contexto/limites.md`](contexto/limites.md)).
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, GMF).
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 3085/3085 verdes |
+| Tests unitarios + integración | 3106/3106 verdes |
 | Tests E2E | 231/231 verdes en 11 suites (verificado el 2026-07-26 corriendo `npx playwright test`). El desglose por suite no se transcribe acá: lo reporta la propia corrida. |
 | Schema version (localStorage) | v27 |
 | Lighthouse Performance | 100 |
@@ -39,6 +39,12 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, GMF).
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(limites): DIS.7, 9 correcciones de la auditoría de diseño sobre Límites de gasto · 2026-07-26
+
+Auditoría de diseño de la sección (10 hallazgos): se aplican 9. Lo grande: la barra de Necesidades **pintaba el 90% consumido con el acento de marca** (`rgb(31,209,148)` medido), el color que el sistema reserva para dinero disponible y logro, justo encima de la barra con la que Ahorro celebra superar su meta; el ADR 019 pidió que ese grupo se viera neutro y el código cumplía la letra con `claseBarra = ''`, que cae al acento porque ninguna sección declara `data-dom` (R34 nueva, `rgb(136,143,166)` después). La sección listaba "Domicilios · $42.000" y remataba con "Asígnales un límite", pero el formulario **no ofrecía ninguna categoría creada por el usuario**: callejón sin salida; ahora cada fila es el botón que abre el modal con su categoría precargada y los chips incluyen las propias (R35 nueva). El formulario adopta FORM.1b y al hacerlo se destapó que **editar un tope nunca guardaba**: el `<select disabled>` del modo edición no entra en `FormData`, así que la validación fallaba con "Debes elegir una categoría"; la categoría fija viaja ahora en un campo oculto. Los tres nudges apilados bajan a su propio sobre, con el copy del ADR 019 D3 intacto. Los cuatro emoji de estado salen del sprite, los tres grupos pasan a `<h3>`, dos controles llegan a 44px, un solo verbo "+ Límite" y el modal por fin dice si creas o editas. Ficha nueva: [`contexto/limites.md`](contexto/limites.md); `DESIGN_SYSTEM.md` gana R34 y R35. **Sin aplicar, espera tu decisión:** VL1 (que Estilo de vida abra la sección en móvil, revisa el ADR 019 D4; hoy sus topes empiezan a 1.290px, 1,53 pantallas). 3106/3106 unit + lint verdes; smoke 156/156, a11y-forms, reflow-320 y navegacion-render verdes. SW v422→v423.
+
+---
 
 ### fix(interfaz): DIS.6, 7 correcciones de la auditoría de diseño sobre la Interfaz · 2026-07-26
 
@@ -64,13 +70,7 @@ Auditoría de diseño de la sección (12 hallazgos): se aplican 11. Lo grande: l
 
 ---
 
-### fix(deudas): DIS.2, 8 correcciones de la auditoría de diseño sobre Deudas · 2026-07-25
-
-Auditoría de diseño de la sección (10 hallazgos): se aplican las 7 correcciones listas más D9. Lo grande: una deuda **saldada** dejaba su chip "Vence hoy" en rojo junto al "Saldada" en verde, porque el chip se calculaba antes de saber si la deuda seguía viva; ahora se apaga y el subtítulo se fecha con el último abono ("Saldada el 22 de julio"). Los tres "Aplicar" del simulador dejan `.btn-primary` y visten frambuesa como Abonar, así que queda **un solo verde por sección** (extiende el ADR 036 D6 a todo confirmador). El chip de vencimiento baja del nombre a la fila de chips (nombre de 62px a 36px), Abonar sube a 44px, el estado vacío y el encabezado comparten un solo verbo y un solo botón, y el hero explicita "en 3 deudas por pagar · 1 saldada". `DESIGN_SYSTEM.md` gana R7 (estado terminal) y R8 (una acción principal). **Sin aplicar, esperan tu decisión:** VD1 (plegar el detalle del plan, revisa el ADR 011 rev D.7) y D10 (el CSS muerto que VD1 reutilizaría). 3028/3028 unit + 231/231 E2E verdes. SW v417→v418.
-
----
-
-> Para tareas anteriores (fix(inicio) V1 el acento de marca deja de medir el gasto semanal, docs(reorg) Fases 1 y 2 de la reorganización documental, feat(metas) EDIT.1a editar sin destruir el progreso, feat(gastos) TX.12 gastos frecuentes y "Repetir", feat(agenda) CAL.5a pagar en lote lo que ya venció, feat(movimientos) MOV.2 búsqueda y filtros en el ledger, feat(movimientos) MOV.1 el ledger deja de ser solo lectura, feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
+> Para tareas anteriores (fix(deudas) DIS.2 las 8 correcciones de la auditoría de diseño sobre Deudas, fix(inicio) V1 el acento de marca deja de medir el gasto semanal, docs(reorg) Fases 1 y 2 de la reorganización documental, feat(metas) EDIT.1a editar sin destruir el progreso, feat(gastos) TX.12 gastos frecuentes y "Repetir", feat(agenda) CAL.5a pagar en lote lo que ya venció, feat(movimientos) MOV.2 búsqueda y filtros en el ledger, feat(movimientos) MOV.1 el ledger deja de ser solo lectura, feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
 
 ---
 

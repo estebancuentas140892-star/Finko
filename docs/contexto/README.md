@@ -104,7 +104,7 @@ Una ficha por sección de la app (mismo agrupamiento que [`BOARD.md`](../BOARD.m
 | Metas | [`metas.md`](metas.md) | activa (metas de ahorro, EDIT.1a editar sin destruir el progreso) |
 | Ahorro | [`ahorro.md`](ahorro.md) | activa (fondo de emergencia, AH.5a monto prellenado en Registrar aporte) |
 | Inversión | `inversion.md` | sin crear |
-| Límites de gasto | `limites.md` | sin crear |
+| Límites de gasto | [`limites.md`](limites.md) | activa (tres grupos por rol, DIS.7 auditoría de diseño) |
 | Me deben | [`me-deben.md`](me-deben.md) | activa (préstamos conectados a cuentas y patrimonio, PE.7) |
 | Movimientos | [`movimientos.md`](movimientos.md) | activa (ledger unificado, accionable y con búsqueda/filtros, MOV.1/MOV.2) |
 | Análisis | [`analisis.md`](analisis.md) | activa (panel de análisis, PERF.2) |

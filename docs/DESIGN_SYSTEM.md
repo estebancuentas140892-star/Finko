@@ -1,7 +1,7 @@
 # Design System - Finko Claude
 
 > Documento vivo. Se actualiza al agregar nuevos tokens o componentes.
-> Última revisión: 2026-07-26 (R29 a R33, auditoría de diseño de la Interfaz: la capa global de navegación. La numeración salta de R28 a R29 porque la auditoría de Análisis, que reservaba R25 a R29, sigue sin aplicarse; antes R23 a R28, auditoría de diseño de Apartados; R9 a R11 de la de Gastos, R19 a R22 de la de Me deben, R7 y R8 de la de Deudas, R1 a R6 de la de Inicio, radio protagonista y [ADR 054](DECISIONS/054-el-acento-no-mide-gasto.md)).
+> Última revisión: 2026-07-26 (R34 y R35, auditoría de diseño de Límites de gasto; el informe las numeraba R9 y R10 y se renumeran al primer hueco real. Antes R29 a R33, auditoría de la Interfaz: la capa global de navegación, con salto de R28 a R29 porque la auditoría de Análisis, que reservaba R25 a R29, sigue sin aplicarse; R23 a R28 de la de Apartados, R9 a R11 de la de Gastos, R19 a R22 de la de Me deben, R7 y R8 de la de Deudas, R1 a R6 de la de Inicio, radio protagonista y [ADR 054](DECISIONS/054-el-acento-no-mide-gasto.md)).
 > Fuente de verdad: los archivos CSS. Si este doc y `tokens.css` difieren, manda `tokens.css` (y hay que actualizar este doc).
 
 ---
@@ -35,6 +35,10 @@
 **R32 · Toda sección tiene entrada:** ninguna sección depende de un enlace dentro del contenido para existir, y menos de uno que puede estar oculto. Un "volver" es una comodidad, nunca la única vía. Origen: a Movimientos se llegaba solo por "Ver todo" de Actividad reciente, un enlace que vive en una celda que arranca `[hidden]` hasta que hay movimientos registrados: quien registraba su primer gasto no tenía por dónde ver el historial.
 
 **R33 · Un encabezado, una anatomía:** teja de dominio + título en todas las secciones. Una excepción es válida solo si está decidida y escrita (Inicio lo está: IN.8d, [ADR 034](DECISIONS/034-inicio-v2.md) D8). Origen: Movimientos era la única sección sin teja y sin decisión detrás, contra doce que sí la llevan.
+
+**R34 · Neutro se dibuja neutro:** cuando una decisión pide "sin alarma", el control no puede quedarse con el color por defecto si ese color significa algo. El neutro es un tono explícito (`--fk-text-muted`), no la ausencia de modificador. Origen: el [ADR 019](DECISIONS/019-limites-por-rol.md) pidió que Necesidades se viera neutra y el código cumplió la letra (`claseBarra = ''`), pero `.progress-bar` sin modificador cae a `--fk-section-accent, --fk-accent` y ninguna sección declara `data-dom` en su cuerpo: medido `rgb(31,209,148)`, el acento de marca. Así, el 90% de las necesidades consumidas se pintaba con el mismo verde con el que Ahorro celebra superar su meta, y las dos barras quedan una debajo de la otra.
+
+**R35 · Todo consejo tiene puerta:** si la interfaz sugiere una acción sobre un elemento listado, ese elemento **es** el control que la ejecuta; y no se sugiere lo que el formulario de destino no puede hacer. Origen: Límites listaba "Domicilios · $42.000" y remataba con "Asígnales un límite para hacer seguimiento mensual", pero el selector del formulario recorría solo `CATEGORIAS_GASTO_USUARIO` y no incluía ninguna categoría creada por el usuario: el consejo era un callejón sin salida para cualquiera que hubiera creado una categoría propia en Gastos.
 
 ---
 
