@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-27. Última tarea cerrada: MC.16, la tarjeta de crédito queda decidida como producto de Deudas ([ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md) aceptado, alternativa B) y re-cortada en 5 rebanadas.
+> Última actualización: 2026-07-27. Última tarea cerrada: CAT.1c, el catálogo de Metas adopta la taxonomía global y la iniciativa CAT.1 queda completa.
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, GMF).
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 3201/3201 verdes |
+| Tests unitarios + integración | 3208/3208 verdes |
 | Tests E2E | 235/235 verdes en las 11 suites, corrida completa el 2026-07-27. El desglose no se transcribe acá: lo reporta la propia corrida. |
 | Schema version (localStorage) | v27 |
 | Lighthouse Performance | 100 |
@@ -39,6 +39,12 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, GMF).
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(metas): CAT.1c, el catálogo de Metas adopta la taxonomía global · 2026-07-27
+
+Última rebanada de CAT.1: la iniciativa de taxonomía global queda completa. Ejecuta lo validado en el [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md) el 2026-07-13: **Cumpleaños** sale del formulario de metas (gasto esporádico anual, ya es plantilla de Apartados desde CAT.1b) y **Vacaciones** se fusiona con **Viajes**. El catálogo se parte como en CAT.1a: `CATEGORIAS_META` sigue completo (y con él `CATEGORIA_META_ICONO`, que conserva la palmera de las metas viejas), el formulario lee `CATEGORIAS_META_USUARIO`. **Filtrar el formulario no bastaba y el ADR no podía saberlo, porque EDIT.1a cerró después:** con el selector curado a secas, editar una meta vieja de Vacaciones caía en "Sin categoría", así que corregir el nombre le borraba la categoría y le cambiaba el ícono. El selector ahora reinyecta la categoría retirada **solo si la meta ya la tenía**. Sin bump de schema: es curación de constantes. 7 tests nuevos. 3208/3208 unit + lint verdes. SW v434 → v435.
+
+---
 
 ### docs(tesoreria): MC.16, la tarjeta de crédito se decide como producto de Deudas · 2026-07-27
 
@@ -64,13 +70,7 @@ Hallazgo de la auditoría integral del 2026-07-25. La tarjeta de la meta ya most
 
 ---
 
-### fix(metas): DIS.13, 6 correcciones de la auditoría de diseño sobre Metas · 2026-07-27
-
-Auditoría de diseño de una sección bien pensada y mal armada en móvil (8 hallazgos): se aplican 6. Lo grande: **la fila de una meta se rompía y el arreglo ya estaba escrito**. `responsive.css` tiene un grid móvil de dos renglones cuyo comentario dice desde siempre que cubre Metas, pero su guarda es `:has(.list-item__meta)` y la vista nunca emitía esa clase: metía el monto en el subtítulo y los tres botones en la columna de acciones. Medido a 390px, el cuerpo recibía 60px, el nombre se partía a mitad de palabra en 4 líneas y la fila medía 426px de alto; ahora el cuerpo pasa a 148px, el nombre a 2 líneas y la fila a 263px (-38%), con **una línea** de CSS nuevo, la que sube la columna del ícono de 40 a los 56px que mide el anillo (R56 nueva). El monto sube a su columna con el objetivo debajo y "+ Abonar" se muda con ellos, y el subtítulo baja de cuatro datos a dos: el progreso se decía tres veces en la misma fila (el anillo, el subtítulo y la línea de abajo) y el ritmo de ahorro, que es el consejo, pasa a su propia línea. **Una meta cumplida ya no desaparece de la app**: hasta hoy salía de la lista y no había ninguna pantalla donde verla, editarla ni borrarla, porque su DOM ni se pintaba; ahora baja a un bloque "Metas cumplidas", apagada pero presente y editable. **El ojo de privacidad por fin rige en Metas** (el porcentaje se conserva: el ojo esconde pesos, no progreso) y el `aria-hidden` del contenedor del anillo se va, que borraba la etiqueta del único sitio donde vive el porcentaje. De paso, `#lista-metas` recupera la separación entre filas: no tenía una sola regla en `styles/`. `DESIGN_SYSTEM.md` gana R56. **Sin aplicar:** la máscara del ojo en el consolidado "Tu ahorro total" y los emoji de ese bloque (lo renderiza `ahorro/view.js` y lo comparten las cuatro secciones del hub; los emoji ya los arregló DIS.12), el `btn-sm` a 36px contra la R4 (misma decisión abierta desde el Fondo, cuarta sección que la reporta) y el selector de categoría, que el propio informe pide dejar para MT.6 porque el ADR 048 va a tocar ese control. 3188/3188 unit + lint verdes; 235/235 E2E. SW v430 a v431.
-
----
-
-> Para tareas anteriores (fix(fondo) DIS.12 las 9 correcciones de la auditoria de diseno sobre Fondo de emergencia, fix(calendario) DIS.11 las 11 correcciones de la auditoria de diseno sobre Calendario, fix(analisis) DIS.10 las 12 correcciones de la auditoria de diseno sobre Analisis, fix(mis-cuentas) DIS.9 las 9 correcciones de la auditoria de diseno sobre Mis cuentas, fix(limites) DIS.7 las 9 correcciones de la auditoria de diseno sobre Limites de gasto, fix(interfaz) DIS.6 las 7 correcciones de la auditoria de diseno sobre la Interfaz, fix(apartados) DIS.5 las 11 correcciones de la auditoría de diseño sobre Apartados, fix(gastos) DIS.4 las 10 correcciones de la auditoría de diseño sobre Gastos, fix(me-deben) DIS.3 las 11 correcciones de la auditoría de diseño sobre Me deben, fix(deudas) DIS.2 las 8 correcciones de la auditoría de diseño sobre Deudas, fix(inicio) V1 el acento de marca deja de medir el gasto semanal, docs(reorg) Fases 1 y 2 de la reorganización documental, feat(metas) EDIT.1a editar sin destruir el progreso, feat(gastos) TX.12 gastos frecuentes y "Repetir", feat(agenda) CAL.5a pagar en lote lo que ya venció, feat(movimientos) MOV.2 búsqueda y filtros en el ledger, feat(movimientos) MOV.1 el ledger deja de ser solo lectura, feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
+> Para tareas anteriores (fix(metas) DIS.13 las 6 correcciones de la auditoria de diseno sobre Metas, fix(fondo) DIS.12 las 9 correcciones de la auditoria de diseno sobre Fondo de emergencia, fix(calendario) DIS.11 las 11 correcciones de la auditoria de diseno sobre Calendario, fix(analisis) DIS.10 las 12 correcciones de la auditoria de diseno sobre Analisis, fix(mis-cuentas) DIS.9 las 9 correcciones de la auditoria de diseno sobre Mis cuentas, fix(limites) DIS.7 las 9 correcciones de la auditoria de diseno sobre Limites de gasto, fix(interfaz) DIS.6 las 7 correcciones de la auditoria de diseno sobre la Interfaz, fix(apartados) DIS.5 las 11 correcciones de la auditoría de diseño sobre Apartados, fix(gastos) DIS.4 las 10 correcciones de la auditoría de diseño sobre Gastos, fix(me-deben) DIS.3 las 11 correcciones de la auditoría de diseño sobre Me deben, fix(deudas) DIS.2 las 8 correcciones de la auditoría de diseño sobre Deudas, fix(inicio) V1 el acento de marca deja de medir el gasto semanal, docs(reorg) Fases 1 y 2 de la reorganización documental, feat(metas) EDIT.1a editar sin destruir el progreso, feat(gastos) TX.12 gastos frecuentes y "Repetir", feat(agenda) CAL.5a pagar en lote lo que ya venció, feat(movimientos) MOV.2 búsqueda y filtros en el ledger, feat(movimientos) MOV.1 el ledger deja de ser solo lectura, feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
 
 ---
 

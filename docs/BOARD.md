@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-27 (MC.16 deja de estar bloqueada: el ADR 051 se acepta y la tarjeta se re-corta en MC.16a a MC.16e). Antes: Fase 2 de la reorganización documental, purga de narrativa cerrada, ver [`MIGRACION.md`](MIGRACION.md). La historia de lo ya cerrado vive en [`CHANGELOG.md`](CHANGELOG.md) y en las fichas de [`contexto/`](contexto/README.md), no aquí.
+> Última actualización: 2026-07-27 (CAT.1 cierra: la taxonomía global queda implementada en las tres secciones y su tarjeta sale del tablero). Antes: MC.16 deja de estar bloqueada, el ADR 051 se acepta y la tarjeta se re-corta en MC.16a a MC.16e. Antes: Fase 2 de la reorganización documental, purga de narrativa cerrada, ver [`MIGRACION.md`](MIGRACION.md). La historia de lo ya cerrado vive en [`CHANGELOG.md`](CHANGELOG.md) y en las fichas de [`contexto/`](contexto/README.md), no aquí.
 
 ---
 
@@ -42,7 +42,7 @@ Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (si
 
 ## Índice de pendientes
 
-Las 55 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+Las 54 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
@@ -62,7 +62,7 @@ Las 55 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | MC.16d | "¿A cuántas cuotas?" al registrar el consumo | Mis cuentas | media | MC.16b |
 | MC.16e | Nudges de costo: avance, otra red, pago mínimo | Mis cuentas | media | MC.16b |
 | MC.17f | Deshacer o editar una transferencia | Mis cuentas | media | coordinar con MOV.1 |
-| AP.5 | Apartados v2: formulario consistente, recurrencia como toggle | Apartados | media | CAT.1 (catálogo) |
+| AP.5 | Apartados v2: formulario consistente, recurrencia como toggle | Apartados | media | nada (CAT.1 cerró) |
 | MT.6 | Metas v2: subcategorías inteligentes + plan de aportes | Metas | media-alta | MC.13 (motor); ADR 029 D3 |
 | AH.5 | Fondo v2: rediseño UX educativo + aportes por distribución | Ahorro | media | motor de MC.13; rediseño conviene tras IV.2 |
 | LIM.1 | Límites v2: asistente preventivo de estilo de vida | Límites | sin definir | ADR 045 (base de cálculo); ADR 044 (sugerencias) |
@@ -85,8 +85,7 @@ Las 55 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | IV.4 | Iconografía dirigida post-color | Transversal | tras IV.2 | IV.2 en producción + revisión visual |
 | PERF.7c | Warm-up de derivaciones pesadas en idle | Transversal | media | conviene después de PERF.7b |
 | PERF.8 | Columna "arranque" en el harness + limpieza de CSS muerto | Transversal | media | nada |
-| CAT.1 | Taxonomía global de categorías: Gastos↔Fijos y Apartados↔Metas | Transversal | alta | nada (validación ya hecha) |
-| CAT.3 | Categorías personalizadas globales | Transversal | media | CAT.1 y CAT.2 |
+| CAT.3 | Categorías personalizadas globales | Transversal | media | CAT.2 (el picker) |
 | CAT.4 | Auditoría de consistencia de formularios | Transversal | media | nada; coordinar con Deudas v2 y MC.15d |
 | EDIT.1 | Editar sin destruir: Apartados, Inversión y Me deben | Transversal | media-alta | nada duro; coordina con ARQ.1 |
 | ARQ.1 | `infra/bolsas.js`: un solo modelo para las cuatro bolsas | Transversal | baja | nada |
@@ -264,7 +263,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 
 ### Apartados (dominio `apartados`)
 
-> **Iniciativa "Apartados v2: colchón para gastos esporádicos"** (brief de Esteban del 2026-07-08, 6 puntos). El criterio Apartados vs Metas (un apartado es una obligación previsible, una meta es un deseo) es del [ADR 007](DECISIONS/007-dominio-apartados.md); su aplicación al catálogo, del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). **Derivados a fuentes únicas:** categorías que en realidad son Metas → **CAT.1**; picker de icono → **CAT.2** (nota: el `icono` de apartados hoy es emoji como dato del usuario, exento de TX.4, y pasaría a símbolo del sprite: decidir la migración en CAT.3); "Otro" con nombre+icono → **CAT.3**.
+> **Iniciativa "Apartados v2: colchón para gastos esporádicos"** (brief de Esteban del 2026-07-08, 6 puntos). El criterio Apartados vs Metas (un apartado es una obligación previsible, una meta es un deseo) es del [ADR 007](DECISIONS/007-dominio-apartados.md); su aplicación al catálogo, del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). **Derivados a fuentes únicas:** categorías que en realidad son Metas y picker de icono ya los resolvieron **CAT.1** y **CAT.2** (cerradas; el `icono` de apartados sigue siendo emoji como dato del usuario, exento de TX.4, y su paso a símbolo del sprite se decide en CAT.3); "Otro" con nombre+icono → **CAT.3**.
 
 #### AP.5 - Apartados v2: formulario consistente, recurrencia como toggle
 - Prioridad  : media
@@ -272,7 +271,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 - Objetivo   : (1) el form de nuevo apartado adopta el patrón estándar de captura. **Ojo (triaje 2026-07-15):** el brief pedía dropdown "Seleccionar categoría..." que autocompleta, pero el [ADR 042](DECISIONS/042-formularios-v2-visual.md) (Formularios v2, D9) fijó después los **chips de ícono** como lenguaje de la app; decidir con Esteban al iniciar (recomendación: chips, por consistencia); (4) la pregunta "¿este gasto se repite?" sale del registro inicial y pasa a ser un **toggle "Recurrente"** en el apartado ya creado (activa/desactiva la recurrencia v14 existente; el form inicial queda más simple).
 - Secciones  : Apartados
 - Archivos   : `modules/dominio/apartados/` (form, view, logic)
-- Depende de : CAT.1 (categorías nuevas de la filosofía redefinida) para el catálogo; el toggle y el form pueden ir antes
+- Depende de : nada. CAT.1 cerró, así que el catálogo de la filosofía redefinida ya está en `PLANTILLAS_APARTADO`
 - Modelo     : Equilibrado - Alto (re-corte en rebanadas al iniciar)
 
 ---
@@ -541,22 +540,14 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 ---
 
-> **Iniciativa CAT: taxonomía de categorías Gastos↔Gastos fijos + picker de icono compartido** (triaje 2026-07-08, briefs "Auditoría Gastos" y parte de "Auditoría Calendario"). Fuente única para todo lo de categorías entre secciones. Relación fuerte con el [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md): la taxonomía D3 que ese ADR espera validar de Esteban debe decidirse JUNTO con CAT.1 (una sola clasificación de categorías, no dos).
-
-#### CAT.1 - Taxonomía global de categorías: Gastos↔Fijos y Apartados↔Metas
-- Prioridad  : alta
-- Estado     : taxonomía **validada y decidida**, registrada íntegra en el [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md) (Aceptada) y el [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md) D3. Solo queda pendiente **CAT.1c** (Metas: sale Cumpleaños, fusión Vacaciones/Viajes, render legado vía `CATEGORIA_META_ICONO`, tests); CAT.1a y CAT.1b ya cerradas, ver [CHANGELOG](CHANGELOG.md). Ficha: bloque "Taxonomía global de categorías" en [`contexto/transversal.md`](contexto/transversal.md).
-- Objetivo   : implementar CAT.1c con las decisiones ya registradas en el ADR 014, sin reabrir ninguna.
-- Secciones  : Metas
-- Depende de : nada (la validación ya está hecha)
-- Modelo     : Equilibrado - Medio (curación de constantes + tests, sin schema ni migración)
+> **Iniciativa CAT: taxonomía de categorías + picker de icono compartido** (triaje 2026-07-08, briefs "Auditoría Gastos" y parte de "Auditoría Calendario"). Fuente única para todo lo de categorías entre secciones. **CAT.1 (taxonomía) y CAT.2 (picker) están cerradas**, con la D3 del [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md) validada en la misma pasada; el estado y las reglas heredadas viven en [`contexto/transversal.md`](contexto/transversal.md). Quedan CAT.3 y CAT.4.
 
 #### CAT.3 - Categorías personalizadas globales (mismo estatus que las nativas, en toda la app)
 - Prioridad  : media
 - Estado     : pendiente
 - Objetivo   : las categorías personalizadas valen hoy solo para Gastos; extenderlas a Gastos fijos y a TODAS las superficies con el mismo estatus que las nativas. Detalle y modelo de datos a decidir en [`contexto/transversal.md`](contexto/transversal.md).
 - Secciones  : transversal
-- Depende de : CAT.1 (la taxonomía define a qué sección pertenece una personalizada) y CAT.2 (el picker es cómo se crea)
+- Depende de : nada: CAT.1 (a qué sección pertenece una categoría) y CAT.2 (cómo se crea) ya cerraron. Hereda de CAT.1c la regla de retiro con edición segura (ficha)
 - Modelo     : Alta capacidad - Alto (modelo de datos + propagación transversal)
 
 #### CAT.4 - Auditoría de consistencia de formularios: orden de campos + fecha por defecto
@@ -672,7 +663,7 @@ Se listan solo para que una idea nueva de estas secciones no vuelva a generar un
 | Sección | Dónde vive su trabajo futuro |
 |---|---|
 | Inicio | Iniciativa "Inicio v2" completa ([ADR 034](DECISIONS/034-inicio-v2.md)). Las recomendaciones anticipadas de "Próximas prioridades" son el punto 4 de **LIM.1** y del [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md) |
-| Gastos | Iniciativa "Gastos v2" completa ([ADR 039](DECISIONS/039-gastos-v2-visual.md)), con 3 decisiones diferidas anotadas en el ADR: FAB, búsqueda en el header y comparación tangible del insight hormiga. La taxonomía de categorías es **CAT.1**; el motor de sugerencia por categoría, la fusión LIM.1 / ANL.1 / ADR 029 |
+| Gastos | Iniciativa "Gastos v2" completa ([ADR 039](DECISIONS/039-gastos-v2-visual.md)), con 3 decisiones diferidas anotadas en el ADR: FAB, búsqueda en el header y comparación tangible del insight hormiga. La taxonomía de categorías ya cerró (**CAT.1**, [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md)); lo que queda de categorías es **CAT.3** (personalizadas globales) y el motor de sugerencia por categoría, la fusión LIM.1 / ANL.1 / ADR 029 |
 | Movimientos | Ledger accionable, con búsqueda y filtros, completo. Los huecos que quedan son **MC.17f** (deshacer transferencia) y **EDIT.1** (editar donde el dominio dueño todavía no sabe) |
 | Deudas | Iniciativa "Deudas v2" completa ([ADR 036](DECISIONS/036-deudas-v2-visual.md)). Que un pago de deuda descuente de la cuenta ya existe desde el [ADR 002](DECISIONS/002-abono-deudas.md): si aparece un caso donde NO ocurra, es un bug para [`BUGS.md`](BUGS.md), no una feature |
 | Inversión | Sin pendientes propios. Su "editar sin destruir" es una rebanada de **EDIT.1**; su infraestructura compartida, **ARQ.1** |

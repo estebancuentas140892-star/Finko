@@ -10,6 +10,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(metas): CAT.1c, el catálogo de Metas adopta la taxonomía global · 2026-07-27
+
+Última rebanada de **CAT.1**: la iniciativa de taxonomía global queda completa y su tarjeta sale del tablero. Ejecuta lo que Esteban validó el 2026-07-13 ([ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md), sección "Validación 2026-07-13") sin reabrir nada: **Cumpleaños** sale del formulario de metas (es un gasto esporádico anual y vive en Apartados, donde CAT.1b ya lo dejó como plantilla) y **Vacaciones** se fusiona con **Viajes** (un concepto, una etiqueta: decisión 3 del ADR). Ficha: [`contexto/transversal.md`](contexto/transversal.md).
+
+- **El catálogo se parte en dos, como en CAT.1a.** `CATEGORIAS_META` sigue siendo la lista completa y `CATEGORIA_META_ICONO` sigue derivándose de ella, así que una meta guardada con Vacaciones conserva su palmera; el formulario lee `CATEGORIAS_META_USUARIO`, el catálogo curado. Se prefirió el par base/usuario a borrar las dos entradas y admitir huérfanas en el mapa de íconos: es la convención que `CATEGORIAS_GASTO`/`CATEGORIAS_GASTO_USUARIO` ya escribió en el mismo archivo, y deja intacto el guardarraíl TX.4 (que compara etiquetas entre catálogos leyendo el mapa completo).
+- **Filtrar el formulario no bastaba, y el ADR no podía saberlo: EDIT.1a cerró después de esa validación.** Con el selector curado a secas, editar una meta vieja de Vacaciones caía en "Sin categoría" porque ninguna opción coincidía, así que corregir el nombre le **borraba la categoría y le cambiaba el ícono**: destrucción de datos como precio de una corrección tipográfica, justo lo que EDIT.1a vino a evitar. `_renderOpcionesCategoria()` ahora reinyecta la categoría retirada al final de la lista **solo cuando la meta editada ya la tenía**: nunca se ofrece para metas nuevas. El caso no existe en Gastos porque allí la categoría es obligatoria y el usuario re-elige; en Metas es opcional y la pérdida era silenciosa.
+- **Sin bump de schema**: es curación de constantes, no modelo de datos (decisión 6 del ADR 014). Ninguna meta guardada se migra ni se reetiqueta.
+- Verificado en la app con dos metas sembradas (una de Vacaciones, otra de Viajes): la lista mantiene `#c-palmera` y `#c-avion`, el formulario nuevo ofrece 10 categorías sin Cumpleaños ni Vacaciones, y editar la meta legada guarda `categoria: 'Vacaciones'` con su progreso intacto. 7 tests nuevos (4 de catálogo en `constants.test.js`, 3 del selector en `metas.test.js`). **3208/3208 unit + lint verdes.** SW v434 → v435.
+
+**Fuera de alcance, y por qué.** No se toca `ICONOS_CATEGORIA_PERSONALIZADA`, que conserva su símbolo "Vacaciones" 🌴: es el catálogo del picker de la categoría "Otra", no taxonomía de secciones. **CAT.3** (categorías personalizadas globales) hereda la regla de retiro con edición segura, anotada en la ficha, pero sigue pendiente de su modelo de datos.
+
 ### docs(tesoreria): MC.16, la tarjeta de crédito se decide como producto de Deudas · 2026-07-27
 
 [ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md) pasa de **Abierta** a **Aceptada** con la **alternativa B** elegida por Esteban, y MC.16 deja de ser una tarjeta bloqueada para quedar re-cortada en 5 rebanadas ejecutables. Sin una línea de código: es el paso que el propio ADR exigía antes de escribir la primera ("Esteban elige entre A, B y C"). Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md).
