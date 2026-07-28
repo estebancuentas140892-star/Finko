@@ -46,7 +46,6 @@ Las 54 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
-| TX.12b | El chip de gasto frecuente prellena el monto real | Gastos | alta | nada |
 | MC.13f | Confirmación explícita cuando el cobro no es datable | Mis cuentas | alta | nada; informa al ADR 052 |
 | INV.1 | Origen del dinero al registrar una inversión | Inversión | alta | ADR 053 (aceptado) |
 | CAL.5b | El lote también cubre deudas, y se ofrece desde Inicio | Calendario | media | ARQ.2 (deudas); Inicio no depende de nada |
@@ -109,22 +108,6 @@ Las 54 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 > **Dos hallazgos siguen cuestionando una decisión vigente y no se ejecutan sin la palabra de Esteban** (regla 2.7: un ADR no se revierte en silencio): la propuesta de distribución de un toque frente a MC.13e-2g, y MC.17f frente al cierre de MC.17 como "completa". Cada tarjeta lo dice en su Estado.
 >
 > **Alcance honesto del triaje:** se trió todo lo que el informe entregó enumerado. Su tabla "hallazgos por módulo" vino como vista filtrable y las fichas individuales no llegaron en texto: si Esteban quiere ese detalle triado uno por uno, hay que recuperarlo de la fuente.
-
-### Gastos (dominio `gastos`)
-
-#### TX.12b - El chip de gasto frecuente prellena el monto real, no el redondeado
-- Prioridad  : alta (una línea de código en el flujo más repetido de la app)
-- Estado     : pendiente, **solución ya decidida por Esteban** (2026-07-25). Continúa **TX.12** (cerrada, ver CHANGELOG). Hallazgo de la auditoría integral del 2026-07-25.
-- Área       : code
-- Objetivo   : `gastosFrecuentes()` agrupa por monto redondeado a $1.000 y prellena **esa** clave: 6 cafés de $6.500 producen el chip "Café $7.000" y al tocarlo escriben $7.000. El redondeo sigue siendo correcto **como clave de agrupación** (es lo que hace que $6.500 y $7.000 sean el mismo café) y no se toca; lo que cambia es el monto ofrecido.
-- Solución   : conservar el monto del **registro más reciente** del grupo, dentro del bloque `if (g.fecha >= grupo.ultimaFecha)` que ya existe y que hoy hace exactamente esto con `cuentaId`. **Descartada** la alternativa de calcular la moda del grupo: más código, concepto estadístico nuevo en una función que solo agrupa y cuenta, y se queda anclada al pasado cuando un precio sube (el criterio general está en `CLAUDE.md` sección 2, "Criterio ante dos soluciones válidas").
-- Secciones  : Gastos
-- Archivos   : `modules/dominio/gastos/logic.js` (`gastosFrecuentes()`, campo `monto` del grupo)
-- Riesgo     : los tests de TX.12 fijan la salida actual. Al actualizarlos, separar los que verifican la **agrupación** (no cambian) de los que verifican el **monto ofrecido** (sí cambian): confundirlos rompe la semántica del chip sin que nadie lo note.
-- Depende de : nada
-- Modelo     : Ligero (cambio de una línea + curación de tests)
-
----
 
 ### Calendario (dominio `agenda`)
 
@@ -657,7 +640,7 @@ Se listan solo para que una idea nueva de estas secciones no vuelva a generar un
 | Sección | Dónde vive su trabajo futuro |
 |---|---|
 | Inicio | Iniciativa "Inicio v2" completa ([ADR 034](DECISIONS/034-inicio-v2.md)). Las recomendaciones anticipadas de "Próximas prioridades" son el punto 4 de **LIM.1** y del [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md) |
-| Gastos | Iniciativa "Gastos v2" completa ([ADR 039](DECISIONS/039-gastos-v2-visual.md)), con 3 decisiones diferidas anotadas en el ADR: FAB, búsqueda en el header y comparación tangible del insight hormiga. La taxonomía de categorías es **CAT.1**; el motor de sugerencia por categoría, la fusión LIM.1 / ANL.1 / ADR 029. _(Excepción: **TX.12b** está abierta, ver arriba.)_ |
+| Gastos | Iniciativa "Gastos v2" completa ([ADR 039](DECISIONS/039-gastos-v2-visual.md)), con 3 decisiones diferidas anotadas en el ADR: FAB, búsqueda en el header y comparación tangible del insight hormiga. La taxonomía de categorías es **CAT.1**; el motor de sugerencia por categoría, la fusión LIM.1 / ANL.1 / ADR 029 |
 | Movimientos | Ledger accionable, con búsqueda y filtros, completo. Los huecos que quedan son **MC.17f** (deshacer transferencia) y **EDIT.1** (editar donde el dominio dueño todavía no sabe) |
 | Deudas | Iniciativa "Deudas v2" completa ([ADR 036](DECISIONS/036-deudas-v2-visual.md)). Que un pago de deuda descuente de la cuenta ya existe desde el [ADR 002](DECISIONS/002-abono-deudas.md): si aparece un caso donde NO ocurra, es un bug para [`BUGS.md`](BUGS.md), no una feature |
 | Inversión | Sin pendientes propios. Su "editar sin destruir" es una rebanada de **EDIT.1**; su infraestructura compartida, **ARQ.1** |

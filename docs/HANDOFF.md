@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-27. Última tarea cerrada: MT.7, prellenar el monto del abono de Metas con la cuota del período (mismo criterio que ya usan Apartados y Fondo; ver [`contexto/metas.md`](contexto/metas.md)).
+> Última actualización: 2026-07-27. Última tarea cerrada: TX.12b, el chip de gasto frecuente ofrece el monto real y no el redondeado que sirve de clave de agrupación (ver [`contexto/gastos.md`](contexto/gastos.md)).
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, GMF).
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 3190/3190 verdes |
+| Tests unitarios + integración | 3193/3193 verdes |
 | Tests E2E | 235/235 verdes en las 11 suites, corrida completa el 2026-07-27. El desglose no se transcribe acá: lo reporta la propia corrida. |
 | Schema version (localStorage) | v27 |
 | Lighthouse Performance | 100 |
@@ -39,6 +39,12 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, GMF).
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(gastos): TX.12b, el chip de gasto frecuente ofrece el monto real · 2026-07-27
+
+Hallazgo de la auditoría integral del 2026-07-25. `gastosFrecuentes()` agrupa por monto redondeado a $1.000 para detectar el patrón (6 cafés de $6.500 son "el mismo café"), pero el chip prellenaba ese monto redondeado en vez del real: tocar "Café $7.000" escribía $7.000 para un gasto de $6.500. El redondeo sigue siendo la clave de agrupación; el grupo ahora expone el monto del registro más reciente, sin redondear, en el mismo bloque que ya actualizaba la cuenta con ese criterio. 3 tests nuevos, separados de los que fijan la agrupación. 3193/3193 unit + lint verdes. SW v432 → v433.
+
+---
 
 ### fix(metas): MT.7, prellenar el monto del abono con la cuota del período · 2026-07-27
 
@@ -64,13 +70,7 @@ Auditoría de diseño de la sección más completa de la app (13 hallazgos): se 
 
 ---
 
-### fix(analisis): DIS.10, 12 correcciones de la auditoría de diseño sobre Análisis · 2026-07-27
-
-Auditoría de diseño de la página más larga de la app (13 hallazgos): se aplican 12. Lo grande: `.analisis__hint` estaba **declarada dos veces en el mismo archivo** y el filete ámbar de la primera sobrevivía a la segunda, así que los cuatro avisos neutros de la sección (UVT vigente, promedio por día activo, deudas sin saldo, fondo de emergencia) se veían como advertencias, 258,8px de ámbar que no avisa nada, al lado de un nudge real del mismo color; ahora 39px sin borde (R41 nueva). El **cuerpo de los dos colapsables** seguía en el lenguaje anterior a v2, 1.175,8px detrás de una fila v2: entra a superficie, radio 24 y títulos 16/700 con ícono, y la comparación deja de ser **la única tabla de datos que la app le mostraba a un teléfono** ([ADR 055](DECISIONS/055-cuerpo-de-los-colapsables-de-analisis.md), R42 nueva). La **sparkline se estiraba 1,86:1**, así que la línea salía más delgada donde la tendencia es plana: viewBox 360 más `non-scaling-stroke`, residuo 1,11:1 (R43 nueva). La **dona pintaba la categoría con más gasto del verde de la marca y otra de rojo**, dos bloques debajo de la card donde la propia sección declara que el gasto no se pinta de rojo, y la columna de porcentajes sumaba 99: paleta sin colores de dirección y reparto por resto mayor (R44 nueva). La frase que interpreta el score sale de una columna de 162,7px a ancho completo, el grupo sin gastos pone un solo mensaje, los criterios de renta que Finko no puede medir pasan de ficha completa a lista compacta con su tope, los nueve emoji y el chevron salen del sprite, cuatro saltos de encabezado cubren la sección entera (R45 nueva), se retiran tres `role="status"` y **el colapsable que el usuario abre ya no se cierra solo al registrar un gasto**. `DESIGN_SYSTEM.md` gana R41 a R45. **Sin aplicar:** la mitad de V1 (el chip del header como selector de mes real: obliga a decidir qué hacen la tendencia de 12 meses y el monitor anual al cambiar de mes). 3142/3142 unit + lint verdes; 232/232 E2E en las 11 suites. SW v427→v428.
-
----
-
-> Para tareas anteriores (fix(mis-cuentas) DIS.9 las 9 correcciones de la auditoria de diseno sobre Mis cuentas, fix(limites) DIS.7 las 9 correcciones de la auditoria de diseno sobre Limites de gasto, fix(interfaz) DIS.6 las 7 correcciones de la auditoria de diseno sobre la Interfaz, fix(apartados) DIS.5 las 11 correcciones de la auditoría de diseño sobre Apartados, fix(gastos) DIS.4 las 10 correcciones de la auditoría de diseño sobre Gastos, fix(me-deben) DIS.3 las 11 correcciones de la auditoría de diseño sobre Me deben, fix(deudas) DIS.2 las 8 correcciones de la auditoría de diseño sobre Deudas, fix(inicio) V1 el acento de marca deja de medir el gasto semanal, docs(reorg) Fases 1 y 2 de la reorganización documental, feat(metas) EDIT.1a editar sin destruir el progreso, feat(gastos) TX.12 gastos frecuentes y "Repetir", feat(agenda) CAL.5a pagar en lote lo que ya venció, feat(movimientos) MOV.2 búsqueda y filtros en el ledger, feat(movimientos) MOV.1 el ledger deja de ser solo lectura, feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
+> Para tareas anteriores (fix(analisis) DIS.10 las 12 correcciones de la auditoria de diseno sobre Analisis, fix(mis-cuentas) DIS.9 las 9 correcciones de la auditoria de diseno sobre Mis cuentas, fix(limites) DIS.7 las 9 correcciones de la auditoria de diseno sobre Limites de gasto, fix(interfaz) DIS.6 las 7 correcciones de la auditoria de diseno sobre la Interfaz, fix(apartados) DIS.5 las 11 correcciones de la auditoría de diseño sobre Apartados, fix(gastos) DIS.4 las 10 correcciones de la auditoría de diseño sobre Gastos, fix(me-deben) DIS.3 las 11 correcciones de la auditoría de diseño sobre Me deben, fix(deudas) DIS.2 las 8 correcciones de la auditoría de diseño sobre Deudas, fix(inicio) V1 el acento de marca deja de medir el gasto semanal, docs(reorg) Fases 1 y 2 de la reorganización documental, feat(metas) EDIT.1a editar sin destruir el progreso, feat(gastos) TX.12 gastos frecuentes y "Repetir", feat(agenda) CAL.5a pagar en lote lo que ya venció, feat(movimientos) MOV.2 búsqueda y filtros en el ledger, feat(movimientos) MOV.1 el ledger deja de ser solo lectura, feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
 
 ---
 

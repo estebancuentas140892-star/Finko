@@ -131,8 +131,8 @@
 ## Gastos frecuentes y "Repetir" (TX.12)
 
 - **Objetivo**          : el gasto cotidiano (almuerzo, café, Uber) es el registro más repetido de la app y se tecleaba entero cada vez. Dos entradas al mismo problema, patrón P2 de la auditoría de UX/producto: (1) chips derivados del historial en el formulario de "Nuevo gasto", que prellenan monto/categoría/cuenta y dejan solo confirmar; (2) botón "Repetir" en cada fila de la lista, que abre el formulario en modo creación prellenado con esa fila exacta (incluida su nota) y fecha de hoy.
-- **Estado actual**     : cerrado el 2026-07-23. Sin dato nuevo ni schema (mismo patrón que AP.5a/AH.5a): todo sale de `S.gastos` ya existente.
-- **Verificado contra** : TX.12 (2026-07-23).
+- **Estado actual**     : cerrado el 2026-07-23. Sin dato nuevo ni schema (mismo patrón que AP.5a/AH.5a): todo sale de `S.gastos` ya existente. **TX.12b** (2026-07-27) corrigió el monto que ofrece el chip.
+- **Verificado contra** : TX.12b (2026-07-27).
 
 **Dónde vive**
 
@@ -145,7 +145,7 @@
 | Handlers | `modules/dominio/gastos/index.js` | `_repetirFrecuente()`, `_repetirGasto()` |
 | Estilos de los chips | `styles/components/domain.css` | `.gastos-frecuentes__*` |
 
-**Criterio de agrupación** (`gastosFrecuentes`): categoría + monto redondeado a $1.000 (mismo `step` del campo monto, absorbe variaciones menores sin fusionar montos distintos) + descripción normalizada (sin tildes/mayúsculas). Se repite 3 o más veces (`minRepeticiones`) dentro de los últimos 60 días (`diasVentana`), máximo 4 resultados (`maxResultados`), ordenados por más repetido y, en empate, por más reciente. **Excluye gastos con `compromisoId`** (pagos de fijo del Calendario o abonos de deuda, categorías internas 'Gastos fijos'/'Deudas' de TX.8b): los repite su propio dominio dueño; ofrecerlos aquí invitaría a duplicar un pago que ya tiene su mecanismo.
+**Criterio de agrupación** (`gastosFrecuentes`): categoría + monto redondeado a $1.000 (mismo `step` del campo monto, absorbe variaciones menores sin fusionar montos distintos) + descripción normalizada (sin tildes/mayúsculas). Se repite 3 o más veces (`minRepeticiones`) dentro de los últimos 60 días (`diasVentana`), máximo 4 resultados (`maxResultados`), ordenados por más repetido y, en empate, por más reciente. **Excluye gastos con `compromisoId`** (pagos de fijo del Calendario o abonos de deuda, categorías internas 'Gastos fijos'/'Deudas' de TX.8b): los repite su propio dominio dueño; ofrecerlos aquí invitaría a duplicar un pago que ya tiene su mecanismo. **El monto redondeado es solo la clave de agrupación (TX.12b)**: el `monto` que el grupo expone (y que el chip ofrece/prellena) es el del registro más reciente, sin redondear.
 
 **Decisión de diseño: la nota NO se prellena desde el chip de frecuente, pero SÍ desde "Repetir" de una fila.** El chip sintetiza una plantilla a partir de varios registros del historial; su nota (si alguno la tuviera) sería ambigua entre instancias del grupo, así que se omite. "Repetir" en cambio apunta a una fila concreta y conocida: su nota se copia tal cual, junto con monto/categoría/cuenta, porque no hay ambigüedad posible.
 
@@ -154,9 +154,10 @@
 - **`renderFormGasto({ sugerencias })` cambia de firma**: acepta un objeto de opciones en vez de ningún argumento. Todos los call-sites existentes (incluidos los de los tests) seguían funcionando sin cambios porque el parámetro tiene default vacío; cualquier caller nuevo que quiera ocultar los chips (modo edición, "Repetir") debe pasar `sugerencias: false` explícitamente.
 - **El botón "Repetir" vive en Gastos, no en Movimientos**: MOV.1 delega `editar-gasto`/`eliminar-gasto` desde el ledger al dominio dueño, pero `repetir-gasto` no se sumó ahí (fuera de alcance de esta tarjeta). Si se pide "repetir" también desde el ledger, es una entrada más en `_ACCIONES_POR_TIPO` de `movimientos/logic.js`, sin lógica nueva.
 
-**Cambios pendientes**: **TX.12b** (el chip ofrece el monto redondeado de la clave de agrupación, no el real), en `docs/BOARD.md`.
+**Cambios pendientes**: ninguno conocido para esta pieza.
 
 **Cambios realizados**:
 
+- 2026-07-27 (TX.12b, hallazgo de la auditoría integral del 2026-07-25): el grupo de `gastosFrecuentes()` conserva el `monto` real del registro más reciente, no el redondeado a $1.000 que solo sirve de clave de agrupación (6 cafés de $6.500 ofrecían el chip "Café $7.000"). El bloque que ya actualizaba `cuentaId` con el registro más reciente ahora hace lo mismo con `monto`. 3 tests nuevos (2 en `gastosFrecuentes`, 1 en el chip del formulario, cubriendo el monto ofrecido con precio estable y con precio subiendo). 3193/3193 unit + lint verdes. SW v432 → v433.
 - 2026-07-26 (DIS.4/G9 y G3): los chips bajan **debajo** del monto hero (el label pasa a "O repite un gasto frecuente") y `.gastos-frecuentes__lista` cambia el scroll horizontal oculto por `flex-wrap`. Ver CHANGELOG.
 - 2026-07-23 (TX.12, patrón P2 de la auditoría de UX/producto): ver detalle arriba. 23 tests unitarios nuevos (`gastosFrecuentes`: agrupación, ventana de días, redondeo, exclusión de `compromisoId`, orden; chips del form; botón "Repetir" en la fila) más 2 E2E nuevos (chip prellena y registra; "Repetir" abre en modo creación sin chips de frecuentes, con nota copiada y fecha de hoy). 2965/2965 unit + 227/227 E2E + lint verdes. SW v413 a v414.

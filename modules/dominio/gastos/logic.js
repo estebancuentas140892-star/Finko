@@ -246,7 +246,7 @@ export function gastosFrecuentes(gastos, hoyISO, opciones = {}) {
     if (!grupo) {
       grupo = {
         categoria:   g.categoria,
-        monto:       montoRedondeado,
+        monto:       monto,
         descripcion: g.descripcion?.trim() || '',
         cuentaId:    g.cuentaId ?? null,
         veces:       0,
@@ -255,11 +255,14 @@ export function gastosFrecuentes(gastos, hoyISO, opciones = {}) {
       grupos.set(key, grupo);
     }
     grupo.veces += 1;
-    // Conserva la cuenta y la fecha del registro MÁS reciente del grupo: es
-    // la mejor apuesta de "desde dónde paga esto normalmente" hoy.
+    // Conserva el monto real (TX.12b), la cuenta y la fecha del registro MÁS
+    // reciente del grupo: montoRedondeado sigue siendo la clave de
+    // agrupación, pero el chip ofrece lo que de verdad se pagó la última vez,
+    // no el ancla de $1.000 que solo sirve para reconocer el patrón.
     if (g.fecha >= grupo.ultimaFecha) {
       grupo.ultimaFecha = g.fecha;
       grupo.cuentaId    = g.cuentaId ?? null;
+      grupo.monto       = monto;
     }
   }
 

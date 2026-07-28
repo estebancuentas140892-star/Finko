@@ -57,7 +57,7 @@ Numerar `BUG-001`, `BUG-002`... de forma consecutiva y sin reutilizar números a
 - Archivo   : `modules/dominio/compromisos/views/formularios.js`
 - Función   : valor por defecto del campo fecha en el formulario de abono
 - Líneas    : ~54
-- Secciones : Deudas (abono). Variantes cosméticas del mismo patrón, sin persistencia de dato incorrecto: `modules/dominio/compromisos/views/alertas.js:29` (umbral de meses, no se mueve por horas) y `modules/dominio/config/index.js:32,109` (nombre de archivo de backup) — no requieren fix urgente, solo quedan atrapadas si se promueve el helper.
+- Secciones : Deudas (abono). Variantes cosméticas del mismo patrón, sin persistencia de dato incorrecto: `modules/dominio/compromisos/views/alertas.js:29` (umbral de meses, no se mueve por horas) y `modules/dominio/config/index.js:32,109` (nombre de archivo de backup). No requieren fix urgente, solo quedan atrapadas si se promueve el helper.
 - **Arreglo sugerido**: mover `isoFecha()` a `infra/utils.js` como única fuente de "hoy en ISO", reemplazar el uso en `formularios.js:54` (obligatorio) y opcionalmente los otros dos (cosmético). Test unitario que fije un huso UTC-5 nocturno.
 
 ### BUG-017 - El modelo Quincenal pierde el segundo cobro del mes si `diaPago > 16`

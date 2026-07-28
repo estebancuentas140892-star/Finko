@@ -1461,6 +1461,28 @@ describe('gastosFrecuentes', () => {
     expect(r[0]).toMatchObject({ cuentaId: 'nueva', ultimaFecha: '2026-06-10' });
   });
 
+  it('TX.12b: ofrece el monto real del registro más reciente, no el redondeado de agrupación', () => {
+    // 6 cafés de $6.500 agrupan bajo la clave redondeada $7.000, pero el
+    // chip debe prellenar $6.500 (lo que de verdad se pagó), no el ancla.
+    const gastos = [
+      g({ id: 'a', monto: 6_500, fecha: '2026-06-01' }),
+      g({ id: 'b', monto: 6_500, fecha: '2026-06-05' }),
+      g({ id: 'c', monto: 6_500, fecha: '2026-06-10' }),
+    ];
+    const r = gastosFrecuentes(gastos, '2026-06-15');
+    expect(r[0].monto).toBe(6_500);
+  });
+
+  it('TX.12b: si el precio sube, el monto ofrecido sigue al registro más reciente', () => {
+    const gastos = [
+      g({ id: 'a', monto: 6_500, fecha: '2026-06-01' }),
+      g({ id: 'b', monto: 6_500, fecha: '2026-06-05' }),
+      g({ id: 'c', monto: 6_800, fecha: '2026-06-10' }),
+    ];
+    const r = gastosFrecuentes(gastos, '2026-06-15');
+    expect(r[0].monto).toBe(6_800);
+  });
+
   it('ordena por más repetido primero; empate por más reciente', () => {
     const gastos = [
       // Café: 3 veces, última el 01.
@@ -1524,6 +1546,17 @@ describe('renderFormGasto() - chips de gastos frecuentes (TX.12)', () => {
     expect(html).toContain('data-categoria="Alimentación"');
     expect(html).toContain('data-monto="15000"');
     expect(html).toContain('data-cuenta-id="c1"');
+  });
+
+  it('TX.12b: el chip usa el monto real del gasto más reciente, no el redondeado a $1.000', () => {
+    S.gastos = [
+      g({ id: 'a', monto: 6_500, fecha: '2026-06-01' }),
+      g({ id: 'b', monto: 6_500, fecha: '2026-06-05' }),
+      g({ id: 'c', monto: 6_500, fecha: '2026-06-10' }),
+    ];
+    const html = renderFormGasto();
+    expect(html).toContain('data-monto="6500"');
+    expect(html).not.toContain('data-monto="7000"');
   });
 
   it('sugerencias: false omite los chips aunque haya patrones', () => {
