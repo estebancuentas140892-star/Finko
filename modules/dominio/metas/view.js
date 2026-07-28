@@ -177,6 +177,14 @@ export function renderFormAbonoMeta(meta) {
   const cuentasActivas = (S.cuentas ?? []).filter(c => c.activa !== false);
   const cuentaHtml     = renderSelectorCuenta(cuentasActivas, { label: '¿De qué cuenta sale el abono?' });
 
+  const frecuenciaIngresos = frecuenciaPrincipalIngresos(S.ingresos);
+  const ahorro        = calcularAhorroPorPeriodo(meta, frecuenciaIngresos);
+  const montoSugerido = ahorro?.montoPorPeriodo > 0 ? ahorro.montoPorPeriodo : null;
+  const valorHtml      = montoSugerido ? ` value="${montoSugerido}"` : '';
+  const hintPrefill    = montoSugerido
+    ? `<p class="form-hint">Es lo que te toca abonar ${_esc(ahorro.etiqueta)} para llegar a tiempo. Puedes cambiarlo.</p>`
+    : '';
+
   return `
     <form id="form-abono-meta" novalidate>
       <input type="hidden" name="metaId" value="${_esc(meta.id)}" />
@@ -187,9 +195,10 @@ export function renderFormAbonoMeta(meta) {
       <div class="form-group">
         <label for="abono-meta-monto" class="label">Monto del abono (COP)</label>
         <input id="abono-meta-monto" name="monto" class="input" type="number"
-               min="1" step="10000" placeholder="0"
+               min="1" step="10000" placeholder="0"${valorHtml}
                required aria-required="true"
                autocomplete="off" inputmode="numeric" />
+        ${hintPrefill}
       </div>
       ${cuentaHtml}
       <div class="modal__footer">

@@ -48,7 +48,6 @@ Las 54 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 |---|---|---|---|---|
 | TX.12b | El chip de gasto frecuente prellena el monto real | Gastos | alta | nada |
 | MC.13f | Confirmación explícita cuando el cobro no es datable | Mis cuentas | alta | nada; informa al ADR 052 |
-| MT.7 | Prellenar el monto del abono con la cuota del período | Metas | alta | nada |
 | INV.1 | Origen del dinero al registrar una inversión | Inversión | alta | ADR 053 (aceptado) |
 | CAL.5b | El lote también cubre deudas, y se ofrece desde Inicio | Calendario | media | ARQ.2 (deudas); Inicio no depende de nada |
 | MC.13 | Distribución v2: contextual por fecha, guiada y con origen real | Mis cuentas | alta | nada |
@@ -264,16 +263,6 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 ---
 
 ### Metas (dominio `metas`)
-
-#### MT.7 - Prellenar el monto del abono con la cuota del período
-- Prioridad  : alta (una línea, sin schema, sin riesgo)
-- Estado     : pendiente. Hallazgo de la auditoría integral del 2026-07-25.
-- Área       : code
-- Objetivo   : la tarjeta de la meta ya muestra "$X por quincena/mes" (motor MC.13b), pero `renderFormAbonoMeta` abre el campo monto vacío. Apartados (AP.5a) y Fondo (AH.5a) sí prellenan con el mismo criterio de cuota del período; Metas quedó atrás.
-- Secciones  : Metas
-- Archivos   : `modules/dominio/metas/view.js` (`renderFormAbonoMeta`, input `abono-meta-monto`, ~línea 129)
-- Depende de : nada
-- Modelo     : Ligero
 
 #### MT.6 - Metas v2: subcategorías inteligentes + plan de aportes generado automáticamente
 - Prioridad  : media-alta

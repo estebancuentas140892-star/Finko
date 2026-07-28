@@ -10,6 +10,10 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### fix(metas): MT.7, prellenar el monto del abono con la cuota del periodo · 2026-07-27
+
+Hallazgo de la auditoría integral del 2026-07-25. La tarjeta de la meta ya mostraba "$X por quincena/mes" (motor MC.13b), pero `renderFormAbonoMeta` abría el campo de monto vacío: Apartados (AP.5a) y Fondo (AH.5a) sí prellenaban con el mismo criterio de cuota del período y Metas había quedado atrás. `renderFormAbonoMeta` ahora calcula `calcularAhorroPorPeriodo(meta, frecuenciaPrincipalIngresos(S.ingresos))` y, si hay una cuota sugerida (requiere fecha límite), prellena el campo con ese monto y muestra el mismo texto de ayuda que usan Apartados y Fondo. Sin fecha límite el motor devuelve `null` y el campo sigue vacío, igual que antes. Ficha: [`contexto/metas.md`](contexto/metas.md). Ni `calcularAhorroPorPeriodo` ni el schema se tocan. 2 tests unitarios nuevos. 3190/3190 unit + lint verdes. SW v431 → v432.
+
 ### fix(metas): DIS.13, 6 correcciones de la auditoria de diseno sobre Metas · 2026-07-27
 
 Auditoría de diseño de la sección Metas a 390px, tema oscuro (8 hallazgos, MT.a a MT.h). Es una sección bien pensada y mal armada en móvil: la lógica es cuidadosa (editar no destruye el progreso, el ritmo de ahorro usa la frecuencia real de ingresos) y la fila que muestra cada meta se rompía. Se aplican las 6 correcciones que viven dentro de la sección; 2 hallazgos quedan fuera porque su arreglo es de otras secciones o de una decisión ya abierta. Ficha: [`contexto/metas.md`](contexto/metas.md). El schema no se toca, `calcularProgreso` y `calcularAhorroPorPeriodo` no cambian una línea: todo lo nuevo es markup, una función de consulta y CSS.

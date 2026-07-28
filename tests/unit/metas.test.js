@@ -773,6 +773,23 @@ describe('renderFormAbonoMeta()', () => {
     expect(html).not.toContain('<script>');
     expect(html).toContain('&lt;script&gt;');
   });
+
+  it('sin fecha límite no prellena el monto (no hay ritmo que sugerir)', () => {
+    const html = renderFormAbonoMeta(metaBase({ fechaLimite: null }));
+    expect(html).not.toMatch(/id="abono-meta-monto"[^>]*value=/);
+  });
+
+  it('con fecha límite prellena el monto con la cuota del período (MT.7)', () => {
+    S.ingresos = [{ id: 'i1', frecuencia: 'Mensual', monto: 3_000_000 }];
+    const meta = metaBase({
+      montoActual: 0, montoObjetivo: 1_200_000, fechaLimite: isoEnDias(60),
+    });
+    const ahorro = calcularAhorroPorPeriodo(meta, frecuenciaPrincipalIngresos(S.ingresos));
+    const html = renderFormAbonoMeta(meta);
+    expect(ahorro).not.toBeNull();
+    expect(html).toContain(`value="${ahorro.montoPorPeriodo}"`);
+    expect(html).toContain(ahorro.etiqueta);
+  });
 });
 
 // ── renderFormAbonoMeta() - selector de cuenta compartido (MT.5) ──
