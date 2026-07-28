@@ -110,6 +110,44 @@ let _snackbarTimer = null;
 const _SLICES_DISTRIBUCION = ['cuentas', 'gastos', 'ahorro', 'metas', 'apartados', 'compromisos', 'inversiones', 'logros', 'config'];
 
 /**
+ * Respuesta a la pregunta de MC.13f ("¿ya recibiste el pago del [fecha]?"):
+ * marca ese cobro como recibido y sigue derecho al asistente, porque confirmar
+ * es querer repartirlo.
+ *
+ * `cobroConfirmadoPeriodo` vive en `S.config` como campo opcional sin declarar
+ * ni migrar, igual que `ultimaDistribucionPeriodo` y `presetDistribucion`: es
+ * `undefined`-safe en todo lector, así que no hay bump de schema.
+ *
+ * @param {HTMLElement} el
+ */
+function _confirmarCobroRecibido(el) {
+  const periodoISO = el.dataset.periodo;
+  if (!periodoISO) return;
+
+  if (!S.config) S.config = {};
+  S.config.cobroConfirmadoPeriodo = periodoISO;
+  save();
+
+  renderDistribucionIngreso();
+
+  // Con el asistente ya abierto la pregunta llegó desde un caller externo (el
+  // CTA del detalle del día de Calendario, ADR 021): re-inyectar el contenido
+  // la reemplaza por los pasos, sin cerrar y reabrir el modal en la cara del
+  // usuario. Desde la tarjeta compacta, en cambio, hay que abrirlo.
+  const overlay = document.getElementById('modal-distribuir');
+  if (overlay && 'open' in overlay.dataset) {
+    if (renderAsistenteDistribucion()) {
+      const panel = document.getElementById('distribuir-ingreso-panel');
+      if (panel) _irAPasoDistribucion(panel, 0, { moverFoco: false });
+    }
+  } else {
+    abrirAsistenteDistribucion();
+  }
+
+  announce('Pago confirmado. Ya puedes distribuirlo.');
+}
+
+/**
  * CTA del nudge de Inicio (CAL.1, ADR 028 D4): emite el mismo `distribuir:abrir`
  * que ya usa el recordatorio de día de ingreso del Calendario (ADR 021), sin
  * payload (flujo normal, el asistente resuelve la cuenta). El listener de
@@ -523,8 +561,16 @@ async function _confirmarDistribucion() {
   // Snapshot antes de tocar nada, para un "Deshacer" atómico.
   _snapshotDistribucion = _clonarSlices(_SLICES_DISTRIBUCION);
 
-  // Marcar el periodo como distribuido (guard de de-duplicación, MC.4d).
-  const estado = estadoDistribucion(S.ingresos ?? [], S.config?.ultimaDistribucionPeriodo ?? null);
+  // Marcar el periodo como distribuido (guard de de-duplicación, MC.4d). El
+  // cobro confirmado a mano (MC.13f) entra acá con la misma llave: es lo que
+  // hace que un periodo desbloqueado por confirmación no se pueda distribuir
+  // dos veces.
+  const estado = estadoDistribucion(
+    S.ingresos ?? [],
+    S.config?.ultimaDistribucionPeriodo ?? null,
+    new Date(),
+    S.config?.cobroConfirmadoPeriodo ?? null,
+  );
   if (estado.periodoISO) {
     if (!S.config) S.config = {};
     S.config.ultimaDistribucionPeriodo = estado.periodoISO;
@@ -614,6 +660,7 @@ export function initAccionesDistribucion() {
   registrarAccion('confirmar-distribucion',    _confirmarDistribucion);
   registrarAccion('deshacer-distribucion',     _deshacerDistribucion);
   registrarAccion('distribuir-desde-inicio',   _distribuirDesdeInicio);
+  registrarAccion('confirmar-cobro-recibido',  _confirmarCobroRecibido);
 
   // Recalculo en vivo (sin re-render completo, igual que el extra mensual de
   // deudas en ADR 011 S1): el editor personalizado y el panel "Distribuir mi

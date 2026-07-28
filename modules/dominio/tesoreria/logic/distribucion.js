@@ -112,25 +112,52 @@ export function construirDesgloseNecesidades(compromisos = [], gastos = [], hoy 
  * (Mensual / Quincenal). Esa fecha ISO es la clave de de-duplicación.
  *
  * Estados:
- *   'sin-fecha'   : ningún ingreso activo tiene un cobro datable → el caller
- *                   mantiene la acción disponible (no se puede aplicar el guard).
- *   'pendiente'   : hay cobros datables pero el de este periodo aún no llega
- *                   (primer pago futuro tras crear el ingreso) → acción oculta.
- *   'listo'       : ya llegó el cobro de este periodo y no se ha distribuido.
- *   'distribuido' : el cobro de este periodo ya se distribuyó (mismo periodoISO).
+ *   'sin-fecha'     : ningún ingreso activo tiene un cobro datable → el caller
+ *                     mantiene la acción disponible (no se puede aplicar el guard).
+ *   'por-confirmar' : hay un cobro datable pero es ANTERIOR a la fecha de
+ *                     creación del ingreso, así que Finko no puede afirmar que
+ *                     se recibió (MC.13f). `periodoISO` trae esa fecha
+ *                     candidata para que la UI pregunte en vez de asumir.
+ *   'listo'         : ya llegó el cobro de este periodo y no se ha distribuido.
+ *   'distribuido'   : el cobro de este periodo ya se distribuyó (mismo periodoISO).
+ *
+ * **Por qué el candidato existe siempre en 'por-confirmar' (MC.13f)**: a esta
+ * rama solo se llega si algún ingreso produjo una fecha de cobro válida y TODAS
+ * quedaron descartadas por creación tardía. Antes se devolvía `periodoISO: null`
+ * y el estado se llamaba 'pendiente', lo que dejaba a quien registraba un
+ * ingreso a mitad de periodo (la quincena ya cobrada) sin poder distribuir hasta
+ * el cobro siguiente. La fecha candidata no es cosmética: es la que produce el
+ * `periodoISO` que el guard de de-duplicación necesita para sellar
+ * `ultimaDistribucionPeriodo`; sin ella, habilitar el botón permitiría
+ * distribuir el mismo periodo más de una vez.
+ *
+ * `cobroConfirmadoPeriodo` es la respuesta del usuario a esa pregunta (vive en
+ * `S.config`, junto a `ultimaDistribucionPeriodo` y con el mismo trato de campo
+ * opcional sin bump de schema): si coincide con el candidato, el cobro pasa a
+ * contar como recibido y el estado sigue el camino normal ('listo' /
+ * 'distribuido'). Una confirmación vieja no estorba a un cobro datado después,
+ * porque solo se consulta en la rama del candidato.
  *
  * @param {import('../../../core/state.js').Ingreso[]} ingresos
  * @param {string|null} ultimaDistribucionPeriodo - periodoISO de la última distribución.
  * @param {Date} [hoy]
- * @returns {{ estado:'sin-fecha'|'pendiente'|'listo'|'distribuido', periodoISO: string|null, esHoy: boolean }}
+ * @param {string|null} [cobroConfirmadoPeriodo] - periodoISO que el usuario ya
+ *   confirmó haber recibido (MC.13f).
+ * @returns {{ estado:'sin-fecha'|'por-confirmar'|'listo'|'distribuido', periodoISO: string|null, esHoy: boolean }}
  */
-export function estadoDistribucion(ingresos, ultimaDistribucionPeriodo = null, hoy = new Date()) {
+export function estadoDistribucion(
+  ingresos,
+  ultimaDistribucionPeriodo = null,
+  hoy = new Date(),
+  cobroConfirmadoPeriodo = null,
+) {
   const base = { estado: 'sin-fecha', periodoISO: null, esHoy: false };
   if (!Array.isArray(ingresos)) return base;
 
   const activos = ingresos.filter(i => i.activo !== false && i.diaPago);
   let hayDatable = false;  // algún ingreso con frecuencia datable (Mensual/Quincenal)
   let mejorCobro = null;   // periodoISO más reciente de un cobro ya recibido
+  let candidato  = null;   // el más reciente descartado por creación tardía (MC.13f)
 
   for (const i of activos) {
     const ultISO = ultimoPagoHasta(i.frecuencia, i.diaPago, hoy);
@@ -138,13 +165,25 @@ export function estadoDistribucion(ingresos, ultimaDistribucionPeriodo = null, h
     hayDatable = true;
     // No datar cobros anteriores a la creación del ingreso: evita el falso
     // "ya recibiste" al registrar hoy un ingreso cuyo día de pago ya pasó.
+    // El descartado no se tira: queda como candidato a confirmar (MC.13f).
     const creadoISO = typeof i.fechaCreacion === 'string' ? i.fechaCreacion.slice(0, 10) : null;
-    if (creadoISO && ultISO < creadoISO) continue;
+    if (creadoISO && ultISO < creadoISO) {
+      if (!candidato || ultISO > candidato) candidato = ultISO;
+      continue;
+    }
     if (!mejorCobro || ultISO > mejorCobro) mejorCobro = ultISO;
   }
 
   if (!hayDatable) return base;                                          // 'sin-fecha'
-  if (!mejorCobro) return { estado: 'pendiente', periodoISO: null, esHoy: false };
+
+  // Sin cobro datado, el candidato manda: confirmado por el usuario cuenta como
+  // recibido; sin confirmar, la UI pregunta antes de dejar repartir.
+  if (!mejorCobro) {
+    if (cobroConfirmadoPeriodo !== candidato) {
+      return { estado: 'por-confirmar', periodoISO: candidato, esHoy: false };
+    }
+    mejorCobro = candidato;
+  }
 
   const hoyISO = isoFecha(new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()));
   return {

@@ -47,7 +47,16 @@ export function renderNudgeDistribucionInicio() {
   const el = document.getElementById('panel-distribuir-inicio');
   if (!el) return;
 
-  const estado = estadoDistribucion(S.ingresos ?? [], S.config?.ultimaDistribucionPeriodo ?? null);
+  // MC.13f: un cobro ya confirmado por el usuario cuenta como recibido, así que
+  // el nudge aparece igual que con uno datado. Sin confirmar el estado es
+  // 'por-confirmar' y el nudge sigue oculto: la pregunta vive en Mis cuentas,
+  // Inicio no la duplica.
+  const estado = estadoDistribucion(
+    S.ingresos ?? [],
+    S.config?.ultimaDistribucionPeriodo ?? null,
+    new Date(),
+    S.config?.cobroConfirmadoPeriodo ?? null,
+  );
   if (estado.estado !== 'listo') {
     el.innerHTML = '';
     el.hidden = true;
@@ -112,6 +121,8 @@ function _construirDatosDistribucion() {
   const estadoDist = estadoDistribucion(
     S.ingresos ?? [],
     S.config?.ultimaDistribucionPeriodo ?? null,
+    new Date(),
+    S.config?.cobroConfirmadoPeriodo ?? null,
   );
 
   // El cobro que se está repartiendo (MC.13c-2): su fecha la data
@@ -344,6 +355,44 @@ function _filaNecesidad(it) {
 }
 
 /**
+ * Pregunta de MC.13f, compartida por la tarjeta compacta y el asistente: hay un
+ * cobro datable anterior a la fecha en que se registró el ingreso, así que
+ * Finko no sabe si llegó. En vez de asumir que sí (el falso "ya recibiste" que
+ * el descarte por creación evita) o asumir que no (lo que dejaba a quien
+ * registra un ingreso a mitad de periodo esperando al cobro siguiente),
+ * pregunta y deja que el usuario responda.
+ *
+ * Responder no es solo un permiso visual: es lo que produce el `periodoISO` que
+ * el guard de de-duplicación sella al confirmar la distribución. Por eso el
+ * botón confirma una fecha concreta y la lleva en `data-periodo`.
+ *
+ * @param {string|null} periodoISO Fecha candidata del cobro.
+ * @returns {string}
+ */
+function _preguntaCobroRecibido(periodoISO) {
+  // Sin fecha candidata no hay nada que confirmar: se conserva el aviso de
+  // espera, que es lo que este estado mostraba antes de MC.13f.
+  if (!periodoISO) {
+    return `<p class="distribuir__pendiente form-hint form-hint--muted">${icon('saldo', 'icon icon--sm')} Podrás distribuir tu ingreso cuando recibas tu próximo pago.</p>`;
+  }
+
+  // Sin clases nuevas: el párrafo y el CTA ya traen su separación
+  // (`.distribuir__pendiente` y `.distribuir-card__cta`), así que un envoltorio
+  // solo agregaría una clase sin regla. El gancho estable es el `data-action`.
+  const fecha = fechaCorta(periodoISO);
+  return `
+    <p class="distribuir__pendiente form-hint form-hint--muted">
+      ${icon('saldo', 'icon icon--sm')} Registraste este ingreso después del ${fecha}, así que no sabemos si ese pago te llegó.
+    </p>
+    <button type="button" class="btn btn-primary distribuir-card__cta"
+            data-action="confirmar-cobro-recibido"
+            data-periodo="${_esc(periodoISO)}">
+      Sí, recibí el pago del ${fecha}
+      ${icon('chevron-right')}
+    </button>`;
+}
+
+/**
  * Asistente por pasos (ADR 012, MC.4a/b/d/e; ADR 018, MC.7d: shell paginado
  * con confirmación única al final; MC.7e: Paso 3 accionable con 2+ cuentas).
  * Desde ADR 035 D6 vive dentro de `#modal-distribuir-body`, inyectado por
@@ -375,7 +424,10 @@ function _filaNecesidad(it) {
  * o 'sin-fecha' (ver `_renderTarjetaDistribuir`); este chequeo se conserva
  * aquí para los callers externos que abren el asistente sin pasar por ese
  * botón (recordatorio de Calendario ADR 021, oferta tras ingreso puntual
- * NAV.A2b s2).
+ * NAV.A2b s2). **En 'por-confirmar' ese guard ya no es un callejón sin salida**
+ * (MC.13f): el CTA "Distribuir" del detalle del día de Calendario abre acá, y
+ * antes se encontraba un asistente que no dejaba avanzar; ahora encuentra la
+ * pregunta que lo desbloquea sin que Calendario tenga que saber nada de esto.
  *
  * @param {{montoIngreso:number, ahorroPct:number, estiloVidaPct:number, ahorroBudget:number, evBudget:number, destinosAhorro:Array, destinosDeudas:Array, destinosInversiones:Array, destinosCuentas?:Array, itemsNecesidades?:Array, estado:{estado:string, periodoISO:string|null, esHoy:boolean}}} d
  * @returns {string}
@@ -395,9 +447,10 @@ function _renderPanelDistribuir(d) {
   if (est === 'distribuido') {
     return `<p class="distribuir__hecho" role="status">✓ Ya distribuiste tu ingreso de este periodo.</p>`;
   }
-  // El cobro de este periodo aún no llega: la acción se habilita al recibirlo.
-  if (est === 'pendiente') {
-    return `<p class="distribuir__pendiente form-hint form-hint--muted">💸 Podrás distribuir tu ingreso cuando recibas tu próximo pago.</p>`;
+  // Hay un cobro anterior a la creación del ingreso: Finko no puede afirmar que
+  // llegó, así que pregunta en vez de bloquear (MC.13f).
+  if (est === 'por-confirmar') {
+    return _preguntaCobroRecibido(d.estado?.periodoISO ?? null);
   }
 
   // Paso 1 (R1): checklist de Necesidades, marcadas por defecto salvo las ya
@@ -571,8 +624,8 @@ function _renderTarjetaDistribuir({ dist, estado, hayDestinos, distribuir }) {
   // texto). El `role="status"` del pie sí se conserva: cambia al distribuir.
   const pie = est === 'distribuido'
     ? `<p class="distribuir__hecho" role="status">${icon('check-circle', 'icon icon--sm')} Ya distribuiste tu ingreso de este periodo.</p>`
-    : est === 'pendiente'
-      ? `<p class="distribuir__pendiente form-hint form-hint--muted">${icon('saldo', 'icon icon--sm')} Podrás distribuir tu ingreso cuando recibas tu próximo pago.</p>`
+    : est === 'por-confirmar'
+      ? _preguntaCobroRecibido(estado?.periodoISO ?? null)
       : hayDestinos
         ? `<button type="button" class="btn btn-primary distribuir-card__cta" data-action="toggle-distribuir-ingreso">
             Distribuir mi ingreso

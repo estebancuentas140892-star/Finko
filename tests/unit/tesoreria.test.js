@@ -2341,12 +2341,65 @@ describe('estadoDistribucion()', () => {
     expect(r.periodoISO).toBe('2026-06-30');
   });
 
-  it('pendiente: ingreso creado después del último cobro → aún no llega', () => {
-    // Creado el 2 jul; el último día 30 (30 jun) es anterior a la creación.
+  it('por-confirmar: ingreso creado después del último cobro, con la fecha candidata (MC.13f)', () => {
+    // Creado el 2 jul; el último día 30 (30 jun) es anterior a la creación, así
+    // que no se data solo: se ofrece como candidato para que el usuario confirme.
     const ingresos = [{ id: 'i1', descripcion: 'Salario', frecuencia: 'Mensual', activo: true, diaPago: 30, fechaCreacion: '2026-07-02T00:00:00.000Z' }];
     const r = estadoDistribucion(ingresos, null, hoy);
-    expect(r.estado).toBe('pendiente');
-    expect(r.periodoISO).toBeNull();
+    expect(r.estado).toBe('por-confirmar');
+    expect(r.periodoISO).toBe('2026-06-30');
+    expect(r.esHoy).toBe(false);
+  });
+
+  it('MC.13f: confirmar el candidato lo vuelve un cobro recibido (listo)', () => {
+    const ingresos = [{ id: 'i1', descripcion: 'Salario', frecuencia: 'Mensual', activo: true, diaPago: 30, fechaCreacion: '2026-07-02T00:00:00.000Z' }];
+    const r = estadoDistribucion(ingresos, null, hoy, '2026-06-30');
+    expect(r.estado).toBe('listo');
+    expect(r.periodoISO).toBe('2026-06-30');
+  });
+
+  it('MC.13f: confirmar otra fecha no desbloquea el candidato vigente', () => {
+    const ingresos = [{ id: 'i1', descripcion: 'Salario', frecuencia: 'Mensual', activo: true, diaPago: 30, fechaCreacion: '2026-07-02T00:00:00.000Z' }];
+    const r = estadoDistribucion(ingresos, null, hoy, '2026-05-30');
+    expect(r.estado).toBe('por-confirmar');
+    expect(r.periodoISO).toBe('2026-06-30');
+  });
+
+  it('MC.13f: un cobro confirmado y ya distribuido no se puede repartir dos veces', () => {
+    const ingresos = [{ id: 'i1', descripcion: 'Salario', frecuencia: 'Mensual', activo: true, diaPago: 30, fechaCreacion: '2026-07-02T00:00:00.000Z' }];
+    const r = estadoDistribucion(ingresos, '2026-06-30', hoy, '2026-06-30');
+    expect(r.estado).toBe('distribuido');
+    expect(r.periodoISO).toBe('2026-06-30');
+  });
+
+  it('MC.13f: una confirmación vieja no estorba a un cobro datado después', () => {
+    // Creado el 1 ene: el cobro del 30 jun se data solo. La confirmación de un
+    // periodo anterior no debe cambiar ni el estado ni la llave de de-dup.
+    const ingresos = [{ id: 'i1', descripcion: 'Salario', frecuencia: 'Mensual', activo: true, diaPago: 30, fechaCreacion: '2026-01-01T00:00:00.000Z' }];
+    const r = estadoDistribucion(ingresos, null, hoy, '2026-05-30');
+    expect(r.estado).toBe('listo');
+    expect(r.periodoISO).toBe('2026-06-30');
+  });
+
+  it('MC.13f: con varios candidatos descartados se ofrece el más reciente', () => {
+    const ingresos = [
+      { id: 'i1', descripcion: 'Arriendo', frecuencia: 'Mensual', activo: true, diaPago: 1, fechaCreacion: '2026-07-04T00:00:00.000Z' },
+      { id: 'i2', descripcion: 'Salario',  frecuencia: 'Mensual', activo: true, diaPago: 3, fechaCreacion: '2026-07-04T00:00:00.000Z' },
+    ];
+    // hoy=5 jul: candidatos 1 jul y 3 jul, ambos anteriores a la creación (4 jul).
+    const r = estadoDistribucion(ingresos, null, hoy);
+    expect(r.estado).toBe('por-confirmar');
+    expect(r.periodoISO).toBe('2026-07-03');
+  });
+
+  it('MC.13f: un cobro datable convive con un candidato descartado sin preguntar', () => {
+    const ingresos = [
+      { id: 'i1', descripcion: 'Salario', frecuencia: 'Mensual', activo: true, diaPago: 30, fechaCreacion: '2026-01-01T00:00:00.000Z' },
+      { id: 'i2', descripcion: 'Extra',   frecuencia: 'Mensual', activo: true, diaPago: 3,  fechaCreacion: '2026-07-04T00:00:00.000Z' },
+    ];
+    const r = estadoDistribucion(ingresos, null, hoy);
+    expect(r.estado).toBe('listo');
+    expect(r.periodoISO).toBe('2026-06-30');
   });
 
   it('toma el cobro más reciente entre varios ingresos', () => {
@@ -2514,6 +2567,34 @@ describe('renderDistribucionIngreso() - tarjeta sin accesos cruzados (punto 11)'
       expect(a.innerHTML).toContain('#i-alert');
       expect(a.textContent).not.toContain('⚠');
     });
+  });
+
+  // MC.13f: registrar un ingreso a mitad de periodo (la quincena ya cobrada)
+  // dejaba la tarjeta en un aviso de espera sin salida hasta el cobro siguiente.
+  it('MC.13f: con un cobro anterior a la creación, la tarjeta pregunta en vez de hacer esperar', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 6, 10)); // 10 jul
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true, diaPago: 5, fechaCreacion: '2026-07-08T00:00:00.000Z' }];
+    renderDistribucionIngreso();
+
+    const cta = elCard().querySelector('[data-action="confirmar-cobro-recibido"]');
+    expect(cta).not.toBeNull();
+    expect(cta.dataset.periodo).toBe('2026-07-05');
+    expect(elCard().textContent).toContain('no sabemos si ese pago te llegó');
+    expect(elCard().textContent).not.toContain('cuando recibas tu próximo pago');
+    vi.useRealTimers();
+  });
+
+  it('MC.13f: confirmado el cobro, la tarjeta vuelve a ofrecer distribuir', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 6, 10));
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true, diaPago: 5, fechaCreacion: '2026-07-08T00:00:00.000Z' }];
+    S.config = { ...S.config, cobroConfirmadoPeriodo: '2026-07-05' };
+    renderDistribucionIngreso();
+
+    expect(elCard().querySelector('[data-action="confirmar-cobro-recibido"]')).toBeNull();
+    expect(elCard().querySelector('.distribuir-aviso').textContent).toContain('Recibiste tu ingreso el');
+    vi.useRealTimers();
   });
 
   it('un ingreso quincenal muestra UNA quincena, no el mes (BUG-2)', () => {
