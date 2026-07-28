@@ -134,11 +134,14 @@ Además: rediseño visual ADR 035 completo. Ver "Transferencias" y "Distribució
 | Motor mitad B (frecuencia + aporte) | `modules/infra/vencimientos.js` | `FRECUENCIAS_APORTE`, `frecuenciaPrincipalIngresos`, `normalizarFrecuenciaAporte`, `diasPorPeriodo`, `etiquetaPeriodo`, `aportePorPeriodo` |
 | Composición "qué toca con este cobro" | `modules/infra/vencimientos.js` | `obligacionesYAportesDelCobro` |
 | La checklist consume el motor (MC.13c-2) | `modules/dominio/tesoreria/logic/distribucion.js`, `views/distribucion.js` | `construirDesgloseNecesidades` (4.º param `cobro`), armado del cobro en `construirContextoDistribucion` |
+| Confirmar un cobro no datable (MC.13f) | `modules/dominio/tesoreria/logic/distribucion.js`, `views/distribucion.js`, `acciones/distribucion.js` | `estadoDistribucion` (4.º param `cobroConfirmadoPeriodo`, estado `'por-confirmar'`), `_preguntaCobroRecibido`, `_confirmarCobroRecibido` |
 | Cuenta de destino del ingreso fijo (MC.13d) | `modules/core/state.js`, `modules/core/storage.js` | `@typedef Ingreso` → `[cuentaId]`; `SCHEMA_VERSION = 27` (migración no-op) |
 | Captura de la cuenta en el form | `modules/dominio/tesoreria/views/ingresos.js`, `logic/ingresos.js` | `_renderGrupoCuentaIngreso`, `normalizarIngreso` |
 | Agenda consume el motor | `modules/dominio/agenda/logic.js` | `eventosDelMes`, `eventosIngresosDelMes` (import de `ocurrenciasEnMes`) |
 | Metas consume el motor | `modules/dominio/metas/logic.js` | `calcularAhorroPorPeriodo` (envoltorio), `FRECUENCIAS_AHORRO` y `etiquetaPeriodoAhorro` (alias re-exportados) |
 | Apartados consume el motor | `modules/dominio/apartados/logic.js` | `calcularAporteSugerido` (envoltorio), `FRECUENCIAS_APORTE`/`etiquetaPeriodo`/`frecuenciaPrincipalIngresos` (re-exports) |
+
+**Trampa de MC.13f**: los tres estados que NO son `'listo'` no son intercambiables y cada uno tiene su motivo. `'sin-fecha'` deja la acción disponible (no hay guard que aplicar); `'por-confirmar'` la reemplaza por la pregunta; `'distribuido'` la cierra. Y `periodoISO` en `'por-confirmar'` **no es informativo**: es la llave que `_confirmarDistribucion` sella en `ultimaDistribucionPeriodo`. Un cambio futuro que habilite el botón en ese estado sin pasar por la confirmación (o que devuelva `periodoISO: null` ahí) reabre la puerta a distribuir el mismo periodo dos veces, que es justo lo que el descarte por creación tardía protegía.
 
 **Trampa para el futuro**: el motor habla un vocabulario neutro (`montoPorPeriodo`, `etiqueta`) y cada dominio conserva el suyo en la frontera (Metas: `montoPorPeriodo`/`etiqueta`; Apartados: `aportePorPeriodo`/`etiquetaPeriodo` + `dias`). Los envoltorios existen para traducir esos nombres, no por ceremonia: si se borran, cambia la API pública que ya consumen las vistas y sus tests.
 
@@ -148,6 +151,7 @@ Además: rediseño visual ADR 035 completo. Ver "Transferencias" y "Distribució
 
 **Cambios realizados**:
 
+- 2026-07-27 (**MC.13f**, hallazgo de la auditoria integral del 2026-07-25): `estadoDistribucion` deja de tirar el cobro que descarta por creacion tardia y lo devuelve como candidato; el estado `'pendiente'` pasa a llamarse `'por-confirmar'` y la UI pregunta en vez de hacer esperar hasta el cobro siguiente. La respuesta vive en `S.config.cobroConfirmadoPeriodo` y es la que produce el `periodoISO` del guard de de-duplicacion.
 - 2026-07-21 (**BUG-014**, auditoria de UX/producto): el asistente repartia el mensual-equivalente en vez de lo recibido en ESTE cobro y acreditaba de mas al confirmar; `montoCobroPrincipal()` nuevo en `infra/vencimientos.js`.
 - 2026-07-15 (MC.13e-2a, primera rebanada del rediseno del asistente): 4 puntos de bajo riesgo del brief (11, 12, 13, 17): se retiran los `ctas` de la tarjeta, el aviso de ingreso pasa a parrafo propio, copy del legend y flechas por iconos del sprite.
 - 2026-07-15 (MC.13e-1, decision (a) confirmada por Esteban): un ingreso esporadico ya no ofrece distribuirlo, y se elimina el modo "ya acreditado" completo (revierte NAV.A2b s2 del ADR 024, formalmente).

@@ -42,11 +42,10 @@ Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (si
 
 ## Índice de pendientes
 
-Las 54 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+Las 51 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
-| MC.13f | Confirmación explícita cuando el cobro no es datable | Mis cuentas | alta | nada; informa al ADR 052 |
 | INV.1 | Origen del dinero al registrar una inversión | Inversión | alta | ADR 053 (aceptado) |
 | CAL.5b | El lote también cubre deudas, y se ofrece desde Inicio | Calendario | media | ARQ.2 (deudas); Inicio no depende de nada |
 | MC.13 | Distribución v2: contextual por fecha, guiada y con origen real | Mis cuentas | alta | nada |
@@ -188,19 +187,6 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 - **Tensión señalada por el triaje de la auditoría (2026-07-21), pendiente de la decisión de Esteban:** esta rebanada quiere **más** pasos (educación financiera antes de repartir), mientras que la auditoría propone lo contrario para el mismo asistente: una **propuesta pre-armada de un toque** (todo calculado y marcado por defecto, el usuario solo confirma) para bajar la fricción del flujo más repetido de la app. No son necesariamente incompatibles (la educación puede ser opcional, colapsable o de primera vez), pero el orden importa y decide el diseño: **¿la educación va al frente o detrás de la acción?** Resolverlo antes de encargar el handoff, o el mockup fijará la respuesta sin que nadie la haya decidido.
 - Depende de : conviene última (reestructura el contenedor donde viven las demás rebanadas); depende de la decisión de handoff de diseño y de la tensión de arriba
 - Modelo     : si hay handoff, Equilibrado - Alto (implementación de mockup, mismo patrón que FORM.1/CAL.4/GAS.1); si no, Alta capacidad - Alto (diseño + implementación sin mockup)
-
-#### MC.13f - Confirmación explícita cuando el cobro no es datable por creación tardía
-- Prioridad  : alta
-- Estado     : pendiente. Hallazgo de la auditoría integral del 2026-07-25, confirmado en `estadoDistribucion`.
-- Área       : code
-- Objetivo   : `estadoDistribucion` descarta cobros anteriores a la fecha de creación del ingreso (anti falso "ya recibiste", correcto). Efecto lateral: un ingreso registrado a mitad de período (ej. quincena ya cobrada, se crea el ingreso ese mismo día) queda en estado `pendiente` sin salida hasta el **siguiente** cobro, y el CTA "Distribuir →" del detalle del día en Calendario sigue ofreciéndose sobre ese cobro pasado, abriendo un asistente que no deja avanzar.
-- Solución   : `estadoDistribucion` debe distinguir "sin cobro datable" de "hay un cobro datable anterior a la creación, candidato a confirmar" y devolver esa fecha candidata. La UI pregunta explícitamente ("¿Ya recibiste el pago del [fecha]? Distribúyelo") en vez de asumir. **No es solo UX**: la confirmación es lo que produce el `periodoISO` que el guard de de-duplicación necesita (`_confirmarDistribucion` solo sella `ultimaDistribucionPeriodo` si `periodoISO` existe). Desbloquear el botón sin esta pieza permite distribuir el mismo período más de una vez.
-- Secciones  : Mis cuentas (asistente), Calendario (CTA del detalle del día)
-- Archivos   : `modules/dominio/tesoreria/logic/distribucion.js` (`estadoDistribucion`), `modules/dominio/tesoreria/acciones/distribucion.js` (`_confirmarDistribucion`), `modules/dominio/tesoreria/views/distribucion.js` (mensajes de estado `pendiente`, líneas ~400 y ~569), vista del detalle del día en Calendario
-- Riesgo     : `estadoDistribucion` está cubierto por buena parte de los 139 tests del motor de vencimientos (MC.13a/b). Revisar **BUG-017** (Quincenal pierde cobro con `diaPago > 16`) en la misma pasada: ambos tocan la datación de cobros y conviene no tocar la función dos veces por separado.
-- Aviso      : no revierte ni anticipa el **ADR 052** (pagos automáticos). Preguntar antes de actuar es compatible con cualquier dirección que tome ese ADR; sí sirve como evidencia para esa discusión.
-- Depende de : nada duro. Coordinar con BUG-017 (mismo código)
-- Modelo     : Alta capacidad - Alto (toca el guard de de-duplicación del motor compartido)
 
 #### MC.13c-3 - Datar el cobro de todas las frecuencias (`ultimoPagoHasta`)
 - Prioridad  : baja

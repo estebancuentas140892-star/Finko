@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-27. Última tarea cerrada: TX.12b, el chip de gasto frecuente ofrece el monto real y no el redondeado que sirve de clave de agrupación (ver [`contexto/gastos.md`](contexto/gastos.md)).
+> Última actualización: 2026-07-27. Última tarea cerrada: MC.13f, el asistente de distribución pregunta por el cobro que no puede datar en vez de hacer esperar al siguiente (ver [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md)).
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, GMF).
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 3193/3193 verdes |
+| Tests unitarios + integración | 3201/3201 verdes |
 | Tests E2E | 235/235 verdes en las 11 suites, corrida completa el 2026-07-27. El desglose no se transcribe acá: lo reporta la propia corrida. |
 | Schema version (localStorage) | v27 |
 | Lighthouse Performance | 100 |
@@ -39,6 +39,12 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, GMF).
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(tesoreria): MC.13f, confirmar el cobro que Finko no puede datar · 2026-07-27
+
+Hallazgo de la auditoría integral del 2026-07-25. `estadoDistribucion` descarta los cobros anteriores a la creación del ingreso (bien: evita un falso "ya recibiste"), pero eso dejaba a quien registra un ingreso **a mitad de periodo**, con la quincena ya cobrada, sin poder distribuir hasta el cobro siguiente; y el CTA "Distribuir" del detalle del día de Calendario abría un asistente que no dejaba avanzar. **El estado `'pendiente'` ya era exactamente ese caso** (no había otro camino a esa rama), así que en vez de un quinto estado se renombró a `'por-confirmar'` y ahora devuelve la fecha candidata en vez de `null`: la tarjeta pregunta "Registraste este ingreso después del 5 de jul, así que no sabemos si ese pago te llegó" con el botón "Sí, recibí el pago del 5 de jul". **La fecha no es cosmética:** es el `periodoISO` que el guard de de-duplicación sella al confirmar, así que limitarse a habilitar el botón habría permitido distribuir el mismo periodo dos veces. La respuesta vive en `S.config.cobroConfirmadoPeriodo`, campo opcional sin declarar ni migrar como los dos que ya conviven ahí, **sin bump de schema**. Calendario no se toca: el guard del asistente ya cubría a sus callers externos, así que su CTA ahora encuentra la pregunta. Cero CSS nuevo. **Sin aplicar:** BUG-017 (el Quincenal que pierde un cobro), que se revisó como pedía la tarjeta y resultó vivir en otro archivo (`ocurrenciasEnMes`) y necesitar tu decisión porque cambia lo que muestra el Calendario. 8 tests nuevos. 3201/3201 unit + 235/235 E2E + lint verdes. SW v433 → v434.
+
+---
 
 ### fix(gastos): TX.12b, el chip de gasto frecuente ofrece el monto real · 2026-07-27
 
@@ -64,13 +70,7 @@ Auditoría de diseño de la sección con el mejor motor de consejo de la app y e
 
 ---
 
-### fix(calendario): DIS.11, 11 correcciones de la auditoría de diseño sobre Calendario · 2026-07-27
-
-Auditoría de diseño de la sección más completa de la app (13 hallazgos): se aplican 11. Lo grande: **tocar un día no cambiaba nada de lo que se ve**, porque `renderAgenda()` pintaba el panel del día en 911,7px de una pantalla de 844 y ni el scroll ni el foco se movían; ahora el detalle se emite junto a la grilla y el foco va a su título, que es lo que lo trae a pantalla y lo anuncia (R46 nueva). **Lo vencido era lo más tenue del mes**: la opacidad 0,5 de "pasado" cubría también los días con pagos vencidos y hundía el número de 14,46:1 a 4,55:1 y los puntos hasta 2,14:1, mientras la tarjeta de arriba decía "5 pagos ya vencieron"; la atenuación queda solo para los días pasados sin eventos y el día con un fijo vencido toma la familia warning, nunca danger (R47 nueva). **Las filas del modal de lote no tenían borde**: `.lote-row` pedía `var(--fk-border)`, un token que no existe, y una `var()` inválida invalida la declaración entera, así que la pantalla donde se confirma mover dinero no tenía señal de foco por fila. En la fila del día **el monto era el texto más pequeño y más apagado** (12px gris en la segunda línea): vuelve al primer renglón a la derecha, en 14px/700 tabular. La tarjeta que propone pagar N ahora dice cuánto suman antes de abrir el flujo (R50 nueva), el mes en cero deja de decir lo mismo tres veces y con dos primarios (R51 nueva), la nav de mes conserva el foco y anuncia el mes nuevo (R48 nueva), el punto del día de ingreso pasa a anillo para no depender solo del color (R49 nueva), cuatro controles llegan a 44px y el banner de propósito toma por fin el índigo de la sección. **Por decisión tuya:** la leyenda pasa a pie de la tarjeta y deja de ser sticky (revisa AG.6: eran 65,7px de chrome que ni se veían en el primer pantallazo) y la grilla abandona `role="grid"` en vez de simular filas. `DESIGN_SYSTEM.md` gana R46 a R51. **Sin aplicar:** el alto del formulario de gasto fijo (900,4px en una hoja de 776; lo fijó el ADR 042 D3 y se decide junto con la V2 de Gastos) y la marca de vencido en deudas (entra con CAL.5b, que ya va a tocar ese filtro). 3156/3156 unit + lint verdes; 235/235 E2E. SW v428 a v429.
-
----
-
-> Para tareas anteriores (fix(analisis) DIS.10 las 12 correcciones de la auditoria de diseno sobre Analisis, fix(mis-cuentas) DIS.9 las 9 correcciones de la auditoria de diseno sobre Mis cuentas, fix(limites) DIS.7 las 9 correcciones de la auditoria de diseno sobre Limites de gasto, fix(interfaz) DIS.6 las 7 correcciones de la auditoria de diseno sobre la Interfaz, fix(apartados) DIS.5 las 11 correcciones de la auditoría de diseño sobre Apartados, fix(gastos) DIS.4 las 10 correcciones de la auditoría de diseño sobre Gastos, fix(me-deben) DIS.3 las 11 correcciones de la auditoría de diseño sobre Me deben, fix(deudas) DIS.2 las 8 correcciones de la auditoría de diseño sobre Deudas, fix(inicio) V1 el acento de marca deja de medir el gasto semanal, docs(reorg) Fases 1 y 2 de la reorganización documental, feat(metas) EDIT.1a editar sin destruir el progreso, feat(gastos) TX.12 gastos frecuentes y "Repetir", feat(agenda) CAL.5a pagar en lote lo que ya venció, feat(movimientos) MOV.2 búsqueda y filtros en el ledger, feat(movimientos) MOV.1 el ledger deja de ser solo lectura, feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
+> Para tareas anteriores (fix(calendario) DIS.11 las 11 correcciones de la auditoria de diseno sobre Calendario, fix(analisis) DIS.10 las 12 correcciones de la auditoria de diseno sobre Analisis, fix(mis-cuentas) DIS.9 las 9 correcciones de la auditoria de diseno sobre Mis cuentas, fix(limites) DIS.7 las 9 correcciones de la auditoria de diseno sobre Limites de gasto, fix(interfaz) DIS.6 las 7 correcciones de la auditoria de diseno sobre la Interfaz, fix(apartados) DIS.5 las 11 correcciones de la auditoría de diseño sobre Apartados, fix(gastos) DIS.4 las 10 correcciones de la auditoría de diseño sobre Gastos, fix(me-deben) DIS.3 las 11 correcciones de la auditoría de diseño sobre Me deben, fix(deudas) DIS.2 las 8 correcciones de la auditoría de diseño sobre Deudas, fix(inicio) V1 el acento de marca deja de medir el gasto semanal, docs(reorg) Fases 1 y 2 de la reorganización documental, feat(metas) EDIT.1a editar sin destruir el progreso, feat(gastos) TX.12 gastos frecuentes y "Repetir", feat(agenda) CAL.5a pagar en lote lo que ya venció, feat(movimientos) MOV.2 búsqueda y filtros en el ledger, feat(movimientos) MOV.1 el ledger deja de ser solo lectura, feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
 
 ---
 
