@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-24 (Fase 2 de la reorganización documental: purga de narrativa cerrada, ver [`MIGRACION.md`](MIGRACION.md)). La historia de lo ya cerrado vive en [`CHANGELOG.md`](CHANGELOG.md) y en las fichas de [`contexto/`](contexto/README.md), no aquí.
+> Última actualización: 2026-07-27 (MC.16 deja de estar bloqueada: el ADR 051 se acepta y la tarjeta se re-corta en MC.16a a MC.16e). Antes: Fase 2 de la reorganización documental, purga de narrativa cerrada, ver [`MIGRACION.md`](MIGRACION.md). La historia de lo ya cerrado vive en [`CHANGELOG.md`](CHANGELOG.md) y en las fichas de [`contexto/`](contexto/README.md), no aquí.
 
 ---
 
@@ -42,7 +42,7 @@ Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (si
 
 ## Índice de pendientes
 
-Las 51 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+Las 55 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
@@ -56,7 +56,11 @@ Las 51 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | MC.13e-2f | Integración con la cuenta del ingreso fijo + decisión del remanente | Mis cuentas | alta | conviene después de MC.13e-2b; bloqueada por UX |
 | MC.13e-2g | Rediseño en 2 pasos con educación financiera | Mis cuentas | media | última; depende del handoff de diseño |
 | MC.13c-3 | Datar el cobro de todas las frecuencias | Mis cuentas | baja | nada |
-| MC.16 | Tarjeta de crédito como producto integrado | Mis cuentas | alta | ADR 051 (Abierta); coordinar ADR 029 D3 |
+| MC.16a | Cupo de la tarjeta de crédito (`cupoTotal`) | Mis cuentas | alta | ADR 051 D1 (aceptado) |
+| MC.16b | Pagar con la tarjeta: el consumo sube la deuda | Mis cuentas | alta | MC.16a |
+| MC.16c | Bloque de tarjetas en Mis cuentas | Mis cuentas | media | MC.16b |
+| MC.16d | "¿A cuántas cuotas?" al registrar el consumo | Mis cuentas | media | MC.16b |
+| MC.16e | Nudges de costo: avance, otra red, pago mínimo | Mis cuentas | media | MC.16b |
 | MC.17f | Deshacer o editar una transferencia | Mis cuentas | media | coordinar con MOV.1 |
 | AP.5 | Apartados v2: formulario consistente, recurrencia como toggle | Apartados | media | CAT.1 (catálogo) |
 | MT.6 | Metas v2: subcategorías inteligentes + plan de aportes | Metas | media-alta | MC.13 (motor); ADR 029 D3 |
@@ -125,7 +129,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 
 ### Mis cuentas (dominio `tesoreria`)
 
-> **Iniciativa "Mis Cuentas v2: centro de administración del dinero"** (briefs de Esteban del 2026-07-08). Fuente única de la sección. De sus 4 frentes siguen abiertos **MC.13** (Distribución v2) y **MC.16** (tarjeta de crédito, requiere ADR); **MC.17** (transferencias) y **MC.18** (rediseño visual, [ADR 035](DECISIONS/035-mis-cuentas-v2.md)) están cerrados. **Conflicto (b) del brief, abierto:** "el dinero del ingreso fijo se abona solo a la cuenta en la fecha de pago" es un movimiento automático sin confirmación, exactamente el problema de filosofía de PA.1, así que se decide en el MISMO ADR de pagos automáticos y no por separado. El conflicto (a) quedó resuelto el 2026-07-15.
+> **Iniciativa "Mis Cuentas v2: centro de administración del dinero"** (briefs de Esteban del 2026-07-08). Fuente única de la sección. De sus 4 frentes siguen abiertos **MC.13** (Distribución v2) y **MC.16** (tarjeta de crédito, [ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md) aceptado el 2026-07-27, alternativa B, re-cortado en MC.16a a MC.16e); **MC.17** (transferencias) y **MC.18** (rediseño visual, [ADR 035](DECISIONS/035-mis-cuentas-v2.md)) están cerrados. **Conflicto (b) del brief, abierto:** "el dinero del ingreso fijo se abona solo a la cuenta en la fecha de pago" es un movimiento automático sin confirmación, exactamente el problema de filosofía de PA.1, así que se decide en el MISMO ADR de pagos automáticos y no por separado. El conflicto (a) quedó resuelto el 2026-07-15.
 
 #### MC.13 - Distribución v2: contextual por fecha, guiada y con origen real del dinero
 - Prioridad  : alta
@@ -196,15 +200,57 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 - Depende de : nada
 - Modelo     : Alta capacidad - Alto (toca la clave de de-duplicación y, si se corrige el quincenal, el Calendario)
 
-#### MC.16 - Tarjeta de crédito como producto integrado (cuentas ↔ deudas)
-- Prioridad  : alta (concepto nuevo de dominio)
-- Estado     : **no iniciar**: la decisión de modelado sigue sin tomar. Ver **[ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md)** (Abierta), su dueño.
-- Objetivo   : modelar la tarjeta de crédito como lo que es (no es dinero disponible, es cupo+deuda): al pagar con ella se crea la deuda con sus cuotas, y se propaga a Calendario, Análisis y pendientes.
-- Secciones  : Mis cuentas, Deudas, Calendario, Análisis (transversal vía EventBus, ADN 10)
-- Depende de : las 3 alternativas del ADR 051 sin elegir; coordinar con ADR 029 D3 y con la iniciativa Deudas v2
-- Riesgo     : el cupo disponible nunca puede sumarse al patrimonio. La opción "tipo de cuenta nuevo" revisa de hecho la migración v11, que eliminó 'Inversión' para separar dominios
-- Desbloquea : `consumosTC` del monitor de renta deja de ser captura manual (CFG.2a)
-- Modelo     : Máxima capacidad - Alto para el ADR (concepto de dominio nuevo multidominio); implementación por rebanadas
+> **MC.16 - Tarjeta de crédito como producto integrado.** El ADR quedó **aceptado el 2026-07-27**: la tarjeta es un producto de Deudas (alternativa B), con saldo revolvente y una sola deuda por tarjeta. Diseño completo, invariantes y las 4 alternativas rechazadas en **[ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md)**, su dueño: leerlo antes de iniciar cualquier rebanada. **Ninguna rebanada crea un tipo de cuenta ni una `Cuenta` para la tarjeta** (D5, I5 del [ADR 053](DECISIONS/053-invariante-de-patrimonio.md)). Desbloquea `consumosTC` del monitor de renta (CFG.2a) en cuanto MC.16b esté en producción.
+
+#### MC.16a - Cupo de la tarjeta de crédito (`cupoTotal`)
+- Prioridad  : alta
+- Área       : code
+- Estado     : pendiente, ejecutable ya. Es el dato base: sin cupo no hay producto operable.
+- Objetivo   : el formulario de deuda con categoría 'Tarjeta de crédito' gana el campo `cupoTotal`, y la fila de Deudas muestra el disponible (`cupoTotal - saldoTotal`), derivado, nunca almacenado. `cupoTotal` es además el discriminador de "tarjeta operable" (ADR 051 D1).
+- Secciones  : Deudas
+- Archivos   : `modules/dominio/compromisos/views/formularios.js` (campo condicionado a la categoría, patrón `_wireToggleFiado`), `logic.js` (validación/normalización), `views/lista.js`, `modules/core/state.js` (typedef), `modules/core/storage.js` (bump a v28, migración no-op, precedente v26 → v27)
+- Depende de : nada (ADR 051 aceptado)
+- Modelo     : Equilibrado - Alto (campo nuevo + bump; sin dinero en movimiento)
+
+#### MC.16b - Pagar con la tarjeta: el consumo sube la deuda
+- Prioridad  : alta
+- Área       : code
+- Estado     : pendiente. **Indivisible** por la I3 del ADR 053: el alta, la edición y la eliminación del consumo entran juntas o no entra ninguna.
+- Objetivo   : el corazón del ADR (D3 y D4). Un gasto pagado con tarjeta no descuenta cuenta, apunta a la tarjeta (`compromisoId`) y sube su `saldoTotal`; `Gasto.consumoTC` fija el sentido, porque el abono a la propia tarjeta lleva el mismo `compromisoId`. `_ajustarSaldoDeuda` ya sincroniza al editar y eliminar: solo cambia el signo.
+- Secciones  : Gastos, Deudas (saldo), Análisis y Límites (los reciben gratis: un consumo es un gasto normal)
+- Archivos   : `modules/dominio/gastos/index.js` (`_ajustarSaldoDeuda`, alta/edición/eliminación), `gastos/view.js`, `modules/infra/cuenta-helper.js` (`renderSelectorCuenta` acepta tarjetas por parámetro, nunca lee `S.compromisos`), `modules/core/state.js` (typedef de Gasto)
+- Riesgo     : el signo invertido en la edición descuadra la deuda en silencio. La tarjeta solo se ofrece en Gastos: no se ahorra ni se transfiere con cupo (D4)
+- Depende de : MC.16a
+- Modelo     : Alta capacidad - Alto (mueve saldo de deuda con reversa exacta en tres operaciones)
+
+#### MC.16c - Bloque de tarjetas en Mis cuentas
+- Prioridad  : media
+- Área       : ambos
+- Estado     : pendiente
+- Objetivo   : Mis cuentas muestra las tarjetas en un bloque propio, **fuera** del total de dinero disponible, con cupo usado y disponible, y enlace a Deudas para operar. Solo lectura: la dueña es Deudas (D6).
+- Secciones  : Mis cuentas
+- Archivos   : `modules/dominio/tesoreria/views/cuentas.js` (lee `S.compromisos`, como ya hacen `views/distribucion.js` y `acciones/cuentas.js`; nunca importa el dominio), CSS del bloque
+- Depende de : MC.16b (que exista una tarjeta con consumos que mostrar)
+- Modelo     : Equilibrado - Alto (vista de solo lectura sobre datos ya existentes)
+
+#### MC.16d - "¿A cuántas cuotas?" al registrar el consumo
+- Prioridad  : media
+- Área       : code
+- Estado     : pendiente. Refina MC.16b; sin ella el consumo ya funciona.
+- Objetivo   : al registrar un consumo, preguntar el número de cuotas y subir `cuotaMensual` en `monto / N`. **No crea un plan por compra** (D2): el saldo es revolvente y el pago anticipado opera sobre el total de la tarjeta.
+- Secciones  : Gastos, Deudas
+- Archivos   : `modules/dominio/gastos/view.js` (campo condicionado a que el pago sea con tarjeta), `gastos/index.js`
+- Depende de : MC.16b
+- Modelo     : Equilibrado - Alto (un cálculo simple sobre un flujo ya construido)
+
+#### MC.16e - Nudges de costo: avance en efectivo, retiro en otra red, pago mínimo
+- Prioridad  : media
+- Área       : ambos
+- Estado     : pendiente, última. Educa sobre un flujo que ya debe existir y funcionar.
+- Objetivo   : avisar el costo real en esas tres situaciones concretas y en el momento de la operación (D7). Prohibido comentar cada consumo o calificar la compra: el aviso explica el costo, no juzga ([ADR 003](DECISIONS/003-tono-neutral-profesional.md), ADN 11).
+- Secciones  : Gastos, Deudas
+- Depende de : MC.16b
+- Modelo     : Alta capacidad - Alto (el contenido es producto y tono, no cálculo)
 
 #### MC.17f - Deshacer o editar una transferencia (hueco de integridad)
 - Prioridad  : media
