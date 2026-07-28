@@ -12,7 +12,7 @@ import {
   normalizarMeta,
 } from '../../modules/dominio/metas/logic.js';
 import { renderFormAbonoMeta, renderFormMeta, renderListaMetas } from '../../modules/dominio/metas/view.js';
-import { CATEGORIAS_META } from '../../modules/core/constants.js';
+import { CATEGORIAS_META_USUARIO } from '../../modules/core/constants.js';
 import { S } from '../../modules/core/state.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -440,11 +440,29 @@ describe('renderFormMeta() - selector de categoría', () => {
     expect(html).toContain('<option value="">Sin categoría</option>');
   });
 
-  it('lista todas las CATEGORIAS_META en texto plano (ID.3)', () => {
+  it('lista todas las CATEGORIAS_META_USUARIO en texto plano (ID.3)', () => {
     const html = renderFormMeta();
-    for (const cat of CATEGORIAS_META) {
+    for (const cat of CATEGORIAS_META_USUARIO) {
       expect(html).toContain(`<option value="${cat}">${cat}</option>`);
     }
+  });
+
+  it('CAT.1c: no ofrece Cumpleaños ni Vacaciones en una meta nueva', () => {
+    const html = renderFormMeta();
+    expect(html).not.toContain('>Cumpleaños<');
+    expect(html).not.toContain('>Vacaciones<');
+    expect(html).toContain('>Viajes<');
+  });
+
+  it('CAT.1c: al editar una meta con categoría retirada, la conserva seleccionada', () => {
+    const html = renderFormMeta(metaBase({ categoria: 'Vacaciones' }));
+    expect(html).toContain('<option value="Vacaciones" selected>Vacaciones</option>');
+  });
+
+  it('CAT.1c: la categoría retirada no se duplica ni desordena el catálogo vigente', () => {
+    const html = renderFormMeta(metaBase({ categoria: 'Cumpleaños' }));
+    expect(html.match(/>Cumpleaños</g)).toHaveLength(1);
+    expect(html.indexOf('>Viajes<')).toBeLessThan(html.indexOf('>Cumpleaños<'));
   });
 
   it('conserva el campo de emoji libre, oculto por defecto (MT.3)', () => {

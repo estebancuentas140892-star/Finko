@@ -18,6 +18,7 @@ import {
   CATEGORIA_DEUDA_ICONO,
   CATEGORIA_DEUDA_PERSONAL_ICONO,
   CATEGORIAS_META,
+  CATEGORIAS_META_USUARIO,
   CATEGORIA_META_ICONO,
   GRUPOS_FINANCIEROS,
   LABEL_GRUPO_FINANCIERO,
@@ -198,6 +199,33 @@ describe('CATEGORIAS_META / CATEGORIA_META_ICONO', () => {
 
   it('sin categorías duplicadas', () => {
     expect(new Set(CATEGORIAS_META).size).toBe(CATEGORIAS_META.length);
+  });
+});
+
+// ── CAT.1c: taxonomía Apartados↔Metas en el catálogo de Metas (ADR 014) ──
+
+describe('CATEGORIAS_META_USUARIO (taxonomía CAT.1c)', () => {
+  it('no ofrece Cumpleaños (gasto esporádico anual: vive en Apartados)', () => {
+    expect(CATEGORIAS_META_USUARIO).not.toContain('Cumpleaños');
+  });
+
+  it('no ofrece Vacaciones (fusionada en Viajes: un concepto, una etiqueta)', () => {
+    expect(CATEGORIAS_META_USUARIO).not.toContain('Vacaciones');
+    expect(CATEGORIAS_META_USUARIO).toContain('Viajes');
+  });
+
+  it('las retiradas siguen en el catálogo base y con ícono (render legado)', () => {
+    for (const cat of ['Cumpleaños', 'Vacaciones']) {
+      expect(CATEGORIAS_META, `${cat} en el catálogo base`).toContain(cat);
+      expect(CATEGORIA_META_ICONO[cat], `ícono de ${cat}`).toBeTruthy();
+    }
+  });
+
+  it('conserva el resto del catálogo y su orden', () => {
+    expect(CATEGORIAS_META_USUARIO).toEqual(
+      CATEGORIAS_META.filter(c => c !== 'Cumpleaños' && c !== 'Vacaciones'),
+    );
+    expect(CATEGORIAS_META_USUARIO).toContain('Otra');
   });
 });
 

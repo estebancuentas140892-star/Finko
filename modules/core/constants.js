@@ -682,10 +682,12 @@ export const CATEGORIA_DEUDA_PERSONAL_ICONO = {
 };
 
 /**
- * Categorías predefinidas para metas de ahorro (Compromiso libre, no recurrente).
- * Foco en objetivos de alto costo (MT.1). El orden define el del selector en
- * el formulario "Nueva meta". Al elegir 'Otra', el usuario nombra la meta
- * libremente y elige su propio ícono (ver MT.3).
+ * Todas las categorías de meta reconocidas por el sistema, incluyendo las que
+ * la taxonomía CAT.1c retiró del formulario ('Cumpleaños', 'Vacaciones'). No
+ * se deben eliminar: `CATEGORIA_META_ICONO` se deriva de esta lista y es lo
+ * que resuelve el ícono de las metas ya guardadas con esas categorías.
+ * Foco en objetivos de alto costo (MT.1). Al elegir 'Otra', el usuario nombra
+ * la meta libremente y elige su propio ícono (ver MT.3).
  */
 export const CATEGORIAS_META = [
   'Viajes',
@@ -703,11 +705,28 @@ export const CATEGORIAS_META = [
 ];
 
 /**
+ * Categorías visibles en el formulario de meta. Excluye las que la taxonomía
+ * CAT.1c (ADR 014, validado el 2026-07-13) reclasificó: 'Cumpleaños' es un
+ * gasto esporádico anual y vive en Apartados, y 'Vacaciones' se fusiona con
+ * 'Viajes' (un solo concepto, una sola etiqueta). Se mantienen en
+ * `CATEGORIAS_META` (no aquí) para que `CATEGORIA_META_ICONO` siga
+ * resolviendo el ícono de las metas ya guardadas con esas categorías.
+ * Mismo patrón que `CATEGORIAS_GASTO_USUARIO` (CAT.1a).
+ */
+export const CATEGORIAS_META_USUARIO = CATEGORIAS_META.filter(
+  c => c !== 'Cumpleaños' && c !== 'Vacaciones',
+);
+
+/**
  * Ícono del sprite por categoría de meta. Solo UI; nunca en el valor
  * almacenado (el campo `icono` de la meta guarda únicamente el emoji que el
  * usuario elige a mano con la categoría 'Otra', MT.3/ID.3). Con el paso a
  * sprite, 'Vacaciones' y 'Emprendimiento' ganan metáfora propia (palmera y
  * cohete): la reconciliación de emojis de MT.1 ya no las limita.
+ *
+ * Cubre `CATEGORIAS_META` completo, no solo lo que hoy ofrece el formulario:
+ * las entradas retiradas por CAT.1c ('Cumpleaños', 'Vacaciones') se conservan
+ * para que una meta vieja siga mostrando su ícono de siempre.
  */
 export const CATEGORIA_META_ICONO = {
   'Viajes':         'c-avion',

@@ -10,7 +10,7 @@ import { progressRing } from '../../infra/svg.js';
 import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
-import { CATEGORIAS_META, CATEGORIA_META_ICONO, ICONOS_CATEGORIA_PERSONALIZADA } from '../../core/constants.js';
+import { CATEGORIAS_META_USUARIO, CATEGORIA_META_ICONO, ICONOS_CATEGORIA_PERSONALIZADA } from '../../core/constants.js';
 import {
   metasActivas, metasCumplidas, calcularProgreso, calcularAhorroPorPeriodo,
   frecuenciaPrincipalIngresos,
@@ -273,13 +273,25 @@ export function renderFormMeta(meta = null) {
 // ── HELPERS ──────────────────────────────────────────────────────
 
 /**
- * Devuelve las `<option>` de CATEGORIAS_META en el orden del catálogo
+ * Devuelve las `<option>` de CATEGORIAS_META_USUARIO en el orden del catálogo
  * (texto plano: un <option> nativo no renderiza SVG, ADR 025).
+ *
+ * CAT.1c: si se edita una meta guardada con una categoría ya retirada
+ * ('Cumpleaños', 'Vacaciones'), esa categoría se agrega al final como opción
+ * propia. Sin eso el select caería en "Sin categoría" y corregir el nombre de
+ * la meta le borraría la categoría y le cambiaría el ícono, que es
+ * exactamente lo que EDIT.1 vino a evitar. La opción retirada no se ofrece
+ * para metas nuevas: solo sobrevive donde ya estaba elegida.
+ *
  * @param {string} [seleccionada] categoría a marcar `selected` (edición).
  * @returns {string}
  */
 function _renderOpcionesCategoria(seleccionada = '') {
-  return CATEGORIAS_META
+  const catalogo = seleccionada && !CATEGORIAS_META_USUARIO.includes(seleccionada)
+    ? [...CATEGORIAS_META_USUARIO, seleccionada]
+    : CATEGORIAS_META_USUARIO;
+
+  return catalogo
     .map(cat => `<option value="${_esc(cat)}"${cat === seleccionada ? ' selected' : ''}>${_esc(cat)}</option>`)
     .join('');
 }
