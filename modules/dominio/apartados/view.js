@@ -9,6 +9,7 @@ import { iconoCategoria, emptyArt } from '../../infra/icons.js';
 import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
+import { htmlComparador, pieComparador } from '../../ui/comparador.js';
 import { ICONOS_CATEGORIA_PERSONALIZADA } from '../../core/constants.js';
 import {
   apartadosActivos,
@@ -83,9 +84,103 @@ export function renderListaApartados() {
   const activos = apartadosActivos(S.apartados);
   const oculto  = S.config?.ocultarSaldo === true;
 
-  el.innerHTML = activos.length === 0
-    ? _renderEmptyState()
-    : activos.map(a => _renderApartadoCard(a, oculto)).join('');
+  if (activos.length === 0) {
+    el.innerHTML = _renderEmptyState();
+    return;
+  }
+
+  el.innerHTML = _renderComparador(activos) + activos.map(a => _renderApartadoCard(a, oculto)).join('');
+}
+
+/**
+ * El comparador, encima de la lista (DIS.19, item 5 del informe de gráficos).
+ *
+ * Cada tarjeta responde bien "¿cómo va este apartado?" y ninguna responde "de
+ * los cuatro, ¿cuál va mal?": para saberlo hay que recorrer la lista y recordar
+ * lo que decía la anterior. El comparador pone las columnas contra la misma
+ * escala y esa pregunta se contesta de un vistazo. Las tarjetas de abajo no
+ * cambian: la vista de conjunto y el detalle hacen trabajos distintos.
+ *
+ * No es interactivo. Tocar una columna no tendría a dónde llevar (las tarjetas
+ * ya están debajo, en el mismo orden), así que el gráfico va `aria-hidden` y su
+ * lectura la da el pie en palabras, que además nombra a los atrasados.
+ *
+ * Con un solo apartado no se dibuja: comparar una columna con nada es ruido, y
+ * su tarjeta ya dice todo lo que el gráfico diría.
+ *
+ * @param {Array<import('../../core/state.js').Apartado>} activos
+ * @returns {string}
+ */
+function _renderComparador(activos) {
+  if (activos.length < 2) return '';
+
+  const columnas = activos.map(a => _columnaComparador(a));
+
+  return `
+    <div class="apartados-comparador">
+      ${htmlComparador(columnas, {
+        titulo: 'Todos, uno al lado del otro',
+        medida: 'altura = lo reunido',
+        pie:    pieComparador(columnas),
+      })}
+    </div>`;
+}
+
+/**
+ * Traduce un apartado a la columna que el comparador sabe dibujar.
+ *
+ * La altura es el dinero reunido y la marca es el plan, las dos en porcentaje de
+ * su propio objetivo: así una bolsa de $800.000 y otra de $1.900.000 se comparan
+ * por qué tan cerca están de lo suyo, que es la pregunta, y no por su tamaño.
+ *
+ * Un apartado ya reunido lleva su marca al 100%: el plan está cumplido aunque el
+ * calendario no haya corrido entero (se pueden adelantar cuotas), el mismo
+ * criterio que la segunda carrera de su tarjeta.
+ *
+ * @param {import('../../core/state.js').Apartado} apartado
+ * @returns {Object} columna para `htmlComparador()`.
+ */
+function _columnaComparador(apartado) {
+  const hoyISO = hoy();
+  const { porcentaje, completado } = calcularProgreso(apartado);
+  const plan = planDeReferencia(apartado, hoyISO);
+  const dias = diasHastaFecha(apartado.fechaObjetivo, hoyISO);
+
+  // La columna se pinta como terminada en cuanto el dinero está reunido, sea
+  // recurrente o no: es lo que la altura al 100% ya está diciendo.
+  // `estaListoParaReiniciar()` es más estrecho (solo recurrentes) porque
+  // gobierna una acción, no un dibujo.
+  const reunido = completado || estaListoParaReiniciar(apartado);
+
+  const planPct = plan === null
+    ? null
+    : reunido ? 100 : Math.round((plan.aportesEsperados / plan.totalAportes) * 100);
+
+  const estado = reunido
+    ? 'listo'
+    : (planPct !== null && porcentaje < planPct) ? 'atras' : '';
+
+  return {
+    id:        apartado.id,
+    nombre:    apartado.nombre,
+    iconoHtml: _iconoApartado(apartado),
+    pct:       porcentaje,
+    plan:      planPct,
+    nota:      _notaColumna({ reunido, dias }),
+    estado,
+  };
+}
+
+/**
+ * La nota bajo el nombre de la columna: el plazo en la unidad más corta que
+ * quepa. Sin fecha no se inventa un plazo, se dice que falta.
+ */
+function _notaColumna({ reunido, dias }) {
+  if (reunido)       return 'listo';
+  if (dias === null) return 'sin fecha';
+  if (dias > 0)      return dias === 1 ? '1 día' : `${dias} días`;
+  if (dias === 0)    return 'es hoy';
+  return 'vencido';
 }
 
 /**

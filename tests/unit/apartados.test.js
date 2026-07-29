@@ -860,6 +860,101 @@ describe('renderFormAporteApartado() - contexto del progreso (T10)', () => {
 
 // ── T2, T5, T6: anatomía de la tarjeta (DIS.5, revisada en DIS.15) ─
 
+// ── renderListaApartados() - el comparador encima de la lista (DIS.19) ──
+
+describe('renderListaApartados() - comparador de conjunto', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-apartados"></div>';
+    S.apartados = [];
+  });
+
+  const conFecha = (over = {}) => apartadoBase({
+    fechaObjetivo:    '2026-12-31',
+    fechaCreacion:    '2026-01-01T00:00:00.000Z',
+    frecuenciaAporte: 'Mensual',
+    ...over,
+  });
+
+  it('con un solo apartado no se dibuja: su tarjeta ya dice todo', () => {
+    S.apartados = [conFecha()];
+    renderListaApartados();
+    expect(document.querySelector('.apartados-comparador')).toBeNull();
+    expect(document.querySelectorAll('.apartado-card')).toHaveLength(1);
+  });
+
+  it('desde dos apartados aparece, y va antes de las tarjetas', () => {
+    S.apartados = [conFecha({ id: 'a1' }), conFecha({ id: 'a2', nombre: 'Impuestos' })];
+    renderListaApartados();
+    const cmp = document.querySelector('.apartados-comparador');
+    expect(cmp).not.toBeNull();
+    // 4 = DOCUMENT_POSITION_FOLLOWING: la tarjeta viene despues del comparador.
+    expect(cmp.compareDocumentPosition(document.querySelector('.apartado-card'))).toBe(4);
+  });
+
+  it('una columna por apartado, en el orden de la lista', () => {
+    S.apartados = [
+      conFecha({ id: 'a1', nombre: 'SOAT' }),
+      conFecha({ id: 'a2', nombre: 'Impuestos' }),
+      conFecha({ id: 'a3', nombre: 'Matrícula' }),
+    ];
+    renderListaApartados();
+    const nombres = [...document.querySelectorAll('.apartados-comparador .cmp__lb')].map(n => n.textContent);
+    expect(nombres).toEqual(['SOAT', 'Impuestos', 'Matrícula']);
+  });
+
+  it('la altura de la columna es el porcentaje reunido de su propio objetivo', () => {
+    S.apartados = [
+      conFecha({ id: 'a1', montoObjetivo: 400_000, montoActual: 100_000 }),
+      conFecha({ id: 'a2', montoObjetivo: 4_000_000, montoActual: 3_000_000 }),
+    ];
+    renderListaApartados();
+    const alturas = [...document.querySelectorAll('.apartados-comparador .cmp__fill')]
+      .map(f => f.style.height);
+    // Se comparan por que tan cerca estan de lo suyo, no por su tamano.
+    expect(alturas).toEqual(['25%', '75%']);
+  });
+
+  it('el apartado ya reunido se pinta terminado y lleva su marca al 100%', () => {
+    S.apartados = [
+      conFecha({ id: 'a1', montoObjetivo: 400_000, montoActual: 400_000 }),
+      conFecha({ id: 'a2', montoObjetivo: 400_000, montoActual: 10_000 }),
+    ];
+    renderListaApartados();
+    const primera = document.querySelector('.apartados-comparador .cmp__col');
+    expect(primera.querySelector('.cmp__fill').classList.contains('cmp__fill--listo')).toBe(true);
+    expect(primera.querySelector('.cmp__plan').style.bottom).toBe('100%');
+    expect(primera.querySelector('.cmp__dias').textContent).toBe('listo');
+  });
+
+  it('un apartado sin fecha no recibe marca de plan ni finge un plazo', () => {
+    S.apartados = [conFecha({ id: 'a1' }), apartadoBase({ id: 'a2', fechaObjetivo: null })];
+    renderListaApartados();
+    const cols = [...document.querySelectorAll('.apartados-comparador .cmp__col')];
+    expect(cols[1].querySelector('.cmp__plan')).toBeNull();
+    expect(cols[1].querySelector('.cmp__dias').textContent).toBe('sin fecha');
+  });
+
+  it('el gráfico no es la fuente: va aria-hidden y el pie lo dice en palabras', () => {
+    S.apartados = [conFecha({ id: 'a1' }), conFecha({ id: 'a2' })];
+    renderListaApartados();
+    expect(document.querySelector('.apartados-comparador .cmp__cols').getAttribute('aria-hidden')).toBe('true');
+    const hints = document.querySelectorAll('.apartados-comparador .cmp__hint');
+    expect(hints[hints.length - 1].textContent).toContain('línea punteada');
+  });
+
+  it('las columnas no son botones: tocar una no tendría a dónde llevar', () => {
+    S.apartados = [conFecha({ id: 'a1' }), conFecha({ id: 'a2' })];
+    renderListaApartados();
+    expect(document.querySelectorAll('.apartados-comparador button')).toHaveLength(0);
+  });
+
+  it('el estado vacío no dibuja comparador', () => {
+    S.apartados = [];
+    renderListaApartados();
+    expect(document.querySelector('.apartados-comparador')).toBeNull();
+  });
+});
+
 describe('renderListaApartados() - anatomía de la tarjeta', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="lista-apartados"></div>';

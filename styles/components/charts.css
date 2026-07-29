@@ -59,6 +59,135 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────
+   COMPARADOR DE BOLSAS (DIS.19, item 5 del informe de graficos)
+   ─────────────────────────────────────────────────────────────────
+   Cada bolsa con fecha es una columna: la altura es el dinero reunido y la
+   linea punteada marca donde deberia ir hoy segun su plan. La comparacion se
+   hace por longitud contra una escala compartida, asi que una columna que no
+   llega a su linea se ve antes de leer un nombre.
+
+   Los rotulos bajan de --fk-text-xs porque son cuatro columnas en 375px y el
+   nombre completo tiene que caber (mismo criterio que .nav-item en
+   responsive.css). El HTML lo genera ui/comparador.js. */
+.cmp {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+}
+.cmp__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--fk-space-2);
+}
+.cmp__title {
+  margin: 0;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
+.cmp__hint {
+  margin: 0;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  line-height: var(--fk-leading-snug);
+}
+/* Columnas de ancho igual sin importar cuantas sean: la escala horizontal no
+   debe cambiar la lectura de las alturas. */
+.cmp__cols {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: var(--fk-space-2);
+  align-items: end;
+}
+.cmp__col {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  background: none;
+  border: 0;
+  padding: 0;
+  text-align: center;
+}
+button.cmp__col {
+  cursor: pointer;
+  min-height: 44px; /* regla R4 */
+}
+.cmp__riel {
+  position: relative;
+  height: 108px;
+  border-radius: var(--fk-radius-sm) var(--fk-radius-sm) 0 0;
+  background: var(--fk-bg-elevated);
+  display: flex;
+  align-items: flex-end;
+  overflow: visible;
+}
+.cmp__fill {
+  width: 100%;
+  background: var(--fk-dom-ahorro);
+  border-radius: var(--fk-radius-sm) var(--fk-radius-sm) 0 0;
+}
+/* Ir atrasado no se pinta de rojo (ADR 019): lo dice la columna que no llega a
+   su linea, y el color se reserva para el estado terminal. */
+.cmp__fill--atras { background: var(--fk-dom-ahorro); }
+.cmp__fill--listo { background: var(--fk-success); }
+/* La marca sobresale 3px a cada lado para que se lea como referencia externa a
+   la columna y no como parte del relleno. */
+.cmp__plan {
+  position: absolute;
+  left: -3px;
+  right: -3px;
+  height: 0;
+  border-top: 2px dashed var(--fk-text-secondary);
+}
+.cmp__base {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 2px 0;
+  border-top: 2px solid var(--fk-border-default);
+}
+.cmp__base .icon {
+  --fk-icon-size: var(--fk-icon-sm);
+  color: var(--fk-text-secondary);
+}
+.cmp__lb {
+  font-size: 10px;
+  line-height: 1.2;
+  color: var(--fk-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.cmp__dias {
+  font-size: 10px;
+  color: var(--fk-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.cmp__col[aria-pressed="true"] .cmp__lb {
+  color: var(--fk-text-primary);
+  font-weight: var(--fk-font-semibold);
+}
+.cmp__col[aria-pressed="true"] .cmp__base {
+  border-top-color: var(--fk-dom-ahorro);
+}
+
+/* Version compacta para el carril de la casa de Ahorro: el grafico cabe en la
+   altura de una fila y los rotulos los pone el carril, no cada columna. */
+.cmp--mini .cmp__riel { height: 60px; }
+.cmp--mini .cmp__base { padding-top: 4px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .cmp__fill {
+    transition: height var(--fk-transition-slow) ease;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────
    IMPORT CSV - Modal de importación (D.2)
    ───────────────────────────────────────────────────────────────── */
 

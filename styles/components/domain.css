@@ -868,6 +868,18 @@ button.chip:focus-visible {
   gap: var(--fk-space-3);
 }
 
+/* DIS.19: la vista de conjunto encima de la lista. Toma la misma superficie que
+   una tarjeta para que se lea como un bloque hermano y no como un encabezado
+   suelto, pero sin sombra: no compite por el primer plano con las tarjetas que
+   si son accionables. El grafico en si lo estiliza .cmp en charts.css. */
+.apartados-comparador {
+  border-radius: var(--fk-radius-lg);
+  padding: var(--fk-space-4);
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  margin-bottom: var(--fk-space-3);
+}
+
 .apartado-card__head {
   display: flex;
   align-items: center;
