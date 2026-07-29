@@ -4,10 +4,11 @@
  */
 
 import { S } from '../../core/state.js';
-import { f, fechaLegible, formateadorFecha, esc as _esc } from '../../infra/utils.js';
+import { f, fechaLegible, formateadorFecha, hoy, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt } from '../../infra/icons.js';
 import { ipcObservadoVigente } from '../../core/constants.js';
 import { calcularRegla72 } from '../../infra/financiero.js';
+import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import {
   calcularTotalInvertido,
   ordenarInversionesPorMonto,
@@ -15,6 +16,7 @@ import {
   calcularRentabilidadRealPortafolio,
   columnasPortafolio,
   momentoInversion,
+  origenSugerido,
   fechaVencimientoInversion,
   rasgoTipo,
   TIPOS_INVERSION,
@@ -419,11 +421,73 @@ export function renderFormInversion({ fechaInicio }) {
                value="${_esc(fechaInicio)}" required aria-required="true" />
       </div>
 
+      ${_renderOrigen(fechaInicio)}
+
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">Guardar inversión</button>
       </div>
     </form>`;
+}
+
+/**
+ * La pregunta del origen del dinero (INV.1, [ADR 053](../../../docs/DECISIONS/053-invariante-de-patrimonio.md)).
+ *
+ * Hasta INV.1 el dominio Inversión no tocaba cuentas mientras `analisis` daba por
+ * hecho que sí: comprar un CDT con saldo de una cuenta registrada sumaba el mismo
+ * dinero dos veces al patrimonio, en la cuenta y en la inversión, de forma
+ * permanente y silenciosa. Esta pregunta es donde se cierra ese hueco, y va en la
+ * **captura** y no en el análisis: la app no puede deducir la respuesta y
+ * cambiarla después sería inventarla.
+ *
+ * **Dos ramas explícitas, no una casilla.** No hay default seguro: descontar de
+ * más borra dinero real y descontar de menos infla el patrimonio, así que el
+ * usuario elige. Lo que sí se puede es sugerir, y la sugerencia sale de la fecha
+ * de inicio que el formulario ya pide (`origenSugerido()`): así la pregunta nueva
+ * se vive como una confirmación y no como un campo más.
+ *
+ * **Sin cuentas activas no se pregunta.** La rama "salió de una de mis cuentas"
+ * no existiría, y ofrecer una sola opción es ruido: el `origen` llega ausente y
+ * `validarOrigenInversion()` lo trata como preexistente, que es la rama que no
+ * mueve dinero.
+ *
+ * Reusa los chips de fecha de Gastos (ADR 042 D1, `.fecha-chips` + `.chip-fecha`)
+ * y su bloque revelable: es el mismo patrón de "dos atajos y una sección que
+ * aparece con uno de ellos", así que no hace falta CSS nuevo. El cableado del
+ * revelado vive en `index.js`.
+ *
+ * @param {string} fechaInicio YYYY-MM-DD prellenado en el formulario.
+ * @returns {string} '' si el usuario no tiene ninguna cuenta activa.
+ */
+function _renderOrigen(fechaInicio) {
+  const activas = (S.cuentas ?? []).filter(c => c.activa !== false);
+  if (activas.length === 0) return '';
+
+  const sugerido  = origenSugerido(fechaInicio, hoy());
+  const esCuenta  = sugerido === 'cuenta';
+  const cuentaHtml = renderSelectorCuenta(activas, {
+    label: '¿De qué cuenta salió?',
+  });
+
+  return `
+      <div class="form-group">
+        <span class="label" id="inv-origen-label">¿De dónde sale este dinero?</span>
+        <div class="fecha-chips" role="radiogroup" aria-labelledby="inv-origen-label">
+          <label class="chip-fecha">
+            <input type="radio" name="origen" class="chip-cat__radio" value="cuenta"${esCuenta ? ' checked' : ''} />
+            Salió de mi cuenta
+          </label>
+          <label class="chip-fecha">
+            <input type="radio" name="origen" class="chip-cat__radio" value="preexistente"${esCuenta ? '' : ' checked'} />
+            Ya la tenía
+          </label>
+        </div>
+        <p class="form-hint">Si salió de una cuenta tuya, Finko le descuenta ese dinero: ya no está disponible, está invertido. Si ya la tenías (o el dinero vino de otra parte), los saldos no se tocan.</p>
+      </div>
+
+      <div class="fecha-otra" id="inv-origen-cuenta"${esCuenta ? '' : ' hidden'}>
+        ${cuentaHtml}
+      </div>`;
 }
 
 // ── HELPERS ──────────────────────────────────────────────────────

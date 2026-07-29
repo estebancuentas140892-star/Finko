@@ -302,6 +302,14 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT } from './constants.js';
  * @property {number} tasaEA          Tasa efectiva anual estimada (%). 0 = variable.
  * @property {number} plazoMeses      Plazo en meses. 0 = sin plazo fijo.
  * @property {string} fechaInicio     ISO 8601 (YYYY-MM-DD).
+ * @property {string} [cuentaId]      Cuenta de la que salió el dinero (INV.1). Ausente = la
+ *                                    inversión ya existía o el dinero vino de fuera de la app,
+ *                                    y entonces ninguna cuenta se descontó al registrarla.
+ *                                    Opcional y `undefined`-safe a propósito: hay cuatro casos
+ *                                    legítimos sin origen (preexistente, descuento de nómina,
+ *                                    rendimiento reinvertido, dinero externo) y adivinarlo para
+ *                                    los registros viejos seria inventar el dato
+ *                                    ([ADR 053](../../docs/DECISIONS/053-invariante-de-patrimonio.md) I4).
  * @property {string} fechaCreacion   ISO 8601 timestamp.
  */
 

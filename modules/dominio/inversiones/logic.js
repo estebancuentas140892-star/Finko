@@ -51,6 +51,62 @@ export const TASA_EA_MAX = 100;
 /** Plazo máximo razonable en meses (50 años). Evita valores absurdos. */
 export const PLAZO_MESES_MAX = 600;
 
+// ── ORIGEN DEL DINERO (INV.1, ADR 053) ───────────────────────────
+
+/**
+ * Las dos ramas del origen del dinero.
+ *
+ * `cuenta`: salió de una cuenta que Finko ya conoce, así que registrar la
+ * inversión tiene que descontar ese saldo. `preexistente`: la inversión ya
+ * existía cuando el usuario empezó a usar la app, o el dinero nunca estuvo en
+ * una cuenta registrada (nómina, rendimiento reinvertido, efectivo, regalo).
+ *
+ * Se pregunta con dos ramas explícitas y no con una casilla silenciosa: la
+ * corrección del patrimonio depende de la respuesta y no hay un default seguro
+ * para ambos casos ([ADR 053](../../../docs/DECISIONS/053-invariante-de-patrimonio.md)).
+ */
+export const ORIGENES_INVERSION = ['cuenta', 'preexistente'];
+
+/**
+ * Días hacia atrás dentro de los que una fecha de inicio se considera reciente.
+ *
+ * No es un umbral financiero, es una apuesta sobre el dato: si la inversión
+ * arrancó este último mes, lo más probable es que el usuario ya estuviera usando
+ * Finko y que el saldo que la app tiene registrado todavía incluya ese dinero,
+ * así que hay que descontarlo. Con una fecha más vieja lo más probable es lo
+ * contrario: el saldo que el usuario tecleó al registrar sus cuentas ya excluía
+ * la inversión, y descontarla otra vez le borraría dinero que no tiene.
+ */
+export const DIAS_ORIGEN_RECIENTE = 30;
+
+/**
+ * Rama de origen que se sugiere para una fecha de inicio (INV.1).
+ *
+ * Convierte la pregunta nueva en una confirmación: el formulario ya pide la
+ * fecha de inicio, así que la respuesta probable se deduce de un dato que el
+ * usuario está escribiendo de todos modos. Es una **sugerencia**, no una
+ * decisión: las dos ramas quedan visibles y el usuario puede cambiarla.
+ *
+ * Una fecha futura cuenta como reciente: es una inversión que se está haciendo
+ * ahora y el dinero sale de una cuenta viva.
+ *
+ * @param {string} fechaInicio YYYY-MM-DD.
+ * @param {string} hoyISO      YYYY-MM-DD (inyectable, para tests deterministas).
+ * @returns {'cuenta'|'preexistente'} `preexistente` ante cualquier dato inválido:
+ *   es la rama que no mueve dinero, así que un dato roto no descuenta un saldo.
+ */
+export function origenSugerido(fechaInicio, hoyISO) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(fechaInicio ?? ''))) return 'preexistente';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(hoyISO ?? '')))      return 'preexistente';
+
+  const inicio = new Date(`${fechaInicio}T12:00:00Z`);
+  const hoy    = new Date(`${hoyISO}T12:00:00Z`);
+  if (isNaN(inicio) || isNaN(hoy)) return 'preexistente';
+
+  const dias = Math.round((hoy - inicio) / 86_400_000);
+  return dias <= DIAS_ORIGEN_RECIENTE ? 'cuenta' : 'preexistente';
+}
+
 // ── CONSULTAS ────────────────────────────────────────────────────
 
 /**
@@ -153,9 +209,37 @@ export function validarFechaInicio(raw) {
 }
 
 /**
+ * Valida el origen del dinero y su cuenta (INV.1).
+ *
+ * `origen` puede faltar: el formulario no dibuja la pregunta cuando el usuario no
+ * tiene ninguna cuenta activa, porque la rama "salió de una de mis cuentas" no
+ * existiría. Ausente equivale a `preexistente`, que es la rama que no mueve
+ * dinero.
+ *
+ * Con la rama de cuenta elegida, la cuenta es obligatoria: sin ella el descuento
+ * no tiene destino y la inversión entraría al patrimonio sin haber salido de
+ * ninguna parte, que es justo lo que el ADR 053 vino a cerrar.
+ *
+ * @param {string|undefined} origen
+ * @param {string|undefined} cuentaId
+ * @returns {string[]}
+ */
+export function validarOrigenInversion(origen, cuentaId) {
+  if (origen === undefined || origen === null || origen === '') return [];
+  if (!ORIGENES_INVERSION.includes(origen)) {
+    return ['Elige de dónde sale el dinero de esta inversión.'];
+  }
+  if (origen === 'cuenta' && String(cuentaId ?? '').trim() === '') {
+    return ['Elige la cuenta de la que sale el dinero.'];
+  }
+  return [];
+}
+
+/**
  * Valida todos los campos del formulario de inversión de una sola pasada.
  * @param {{tipo:string, nombre:string, monto:string|number,
- *          tasaEA:string|number, plazoMeses:string|number, fechaInicio:string}} datos
+ *          tasaEA:string|number, plazoMeses:string|number, fechaInicio:string,
+ *          origen?:string, cuentaId?:string}} datos
  * @returns {string[]} todos los errores acumulados (vacío = válido).
  */
 export function validarInversion(datos) {
@@ -167,6 +251,7 @@ export function validarInversion(datos) {
     ...validarTasaEAInversion(d.tasaEA),
     ...validarPlazoMeses(d.plazoMeses),
     ...validarFechaInicio(d.fechaInicio),
+    ...validarOrigenInversion(d.origen, d.cuentaId),
   ];
 }
 
@@ -199,14 +284,21 @@ export function normalizarPlazoMeses(raw) {
  * Construye un objeto inversión normalizado a partir de los datos crudos del
  * formulario. No asigna `id` ni `fechaCreacion`: eso lo hace crud.guardar().
  *
+ * `cuentaId` solo se escribe cuando el usuario eligió la rama de cuenta (INV.1).
+ * En la otra rama la propiedad **no se agrega**, ni siquiera vacía: su presencia
+ * es lo que dice "esta inversión descontó un saldo", y guardar `cuentaId: ''`
+ * dejaría un dato que parece origen y no lo es. Mismo criterio que
+ * `normalizarPersonal()` con el `cuentaId` de PE.7.
+ *
  * @param {{tipo:string, nombre:string, monto:string|number,
- *          tasaEA:string|number, plazoMeses:string|number, fechaInicio:string}} datos
+ *          tasaEA:string|number, plazoMeses:string|number, fechaInicio:string,
+ *          origen?:string, cuentaId?:string}} datos
  * @returns {{tipo:string, nombre:string, monto:number, tasaEA:number,
- *           plazoMeses:number, fechaInicio:string}}
+ *           plazoMeses:number, fechaInicio:string, cuentaId?:string}}
  */
 export function normalizarInversion(datos) {
   const d = datos ?? {};
-  return {
+  const inv = {
     tipo:        TIPOS_INVERSION.includes(d.tipo) ? d.tipo : 'Otro',
     nombre:      String(d.nombre ?? '').trim(),
     monto:       normalizarMontoInversion(d.monto),
@@ -214,6 +306,11 @@ export function normalizarInversion(datos) {
     plazoMeses:  normalizarPlazoMeses(d.plazoMeses),
     fechaInicio: String(d.fechaInicio ?? '').trim(),
   };
+
+  const cuentaId = String(d.cuentaId ?? '').trim();
+  if (d.origen === 'cuenta' && cuentaId !== '') inv.cuentaId = cuentaId;
+
+  return inv;
 }
 
 // ── PROYECCIÓN AL VENCIMIENTO (J.2b) ─────────────────────────────

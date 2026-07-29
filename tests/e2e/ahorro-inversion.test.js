@@ -362,3 +362,213 @@ test.describe('Inversión - portafolio real (J.2)', () => {
     await expect(page.locator('.inversion-momento__monto')).toHaveText('$8.000.000');
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// INV.1 - EL ORIGEN DEL DINERO (ADR 053, invariante de patrimonio)
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Los tests de arriba corren con `cuentas: []`, así que la pregunta del origen
+// no se dibuja y siguen valiendo tal cual. Este bloque siembra una cuenta con
+// saldo, que es la única forma de que la pregunta aparezca, y verifica lo que la
+// invariante exige: que el mismo peso no se cuente dos veces en el patrimonio.
+
+/**
+ * Estado con una cuenta de $6.000.000 y sin inversiones. Igual que
+ * `estadoBaseV8` pero con la cuenta, para que el formulario de inversión pueda
+ * preguntar de dónde sale el dinero.
+ */
+async function estadoConCuenta(page) {
+  await page.addInitScript(() => {
+    if (localStorage.getItem('fk_v1')) return;
+    const estado = {
+      _version:    8,
+      perfil:      { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded:   true,
+      cuentas: [{
+        id: 'cta-e2e', nombre: 'Ahorros E2E', banco: 'Bancolombia',
+        tipo: 'Ahorros', saldo: 6000000, activa: true,
+      }],
+      ingresos:    [],
+      gastos:      [],
+      compromisos: [],
+      metas:       [],
+      prestamos:   [],
+      presupuestos: [],
+      ahorro: {
+        fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0, completado: false },
+        aportes:         [],
+        compromisoMensual: 0,
+      },
+      inversiones: [],
+    };
+    localStorage.setItem('fk_v1', JSON.stringify(estado));
+  });
+}
+
+/** Saldo de la cuenta sembrada, leído de localStorage. */
+async function saldoCuenta(page) {
+  return page.evaluate(() => {
+    const st = JSON.parse(localStorage.getItem('fk_v1'));
+    return st.cuentas.find(c => c.id === 'cta-e2e').saldo;
+  });
+}
+
+/** Abre el formulario de inversión y devuelve su locator. */
+async function abrirFormInversion(page) {
+  await page.click('[data-action="inversion-nueva"]');
+  await page.waitForSelector('#modal-inversion[data-open]', { timeout: 5_000 });
+  return page.locator('#modal-inversion-body form#form-inversion');
+}
+
+test.describe('Inversión - origen del dinero (INV.1)', () => {
+  test.beforeEach(async ({ page }) => {
+    await estadoConCuenta(page);
+    await irADash(page);
+    await page.click('a[href="#inversion"]');
+    await expect(page.locator('#sec-inversion.active')).toBeVisible({ timeout: 5_000 });
+  });
+
+  // C.1 - La pregunta aparece y viene sugerida ------------------------------
+
+  test('con una cuenta activa el formulario pregunta el origen, con la rama sugerida por la fecha', async ({ page }) => {
+    const form = await abrirFormInversion(page);
+
+    // Fecha de hoy (la que prellena el formulario): sugiere la cuenta.
+    await expect(form.locator('input[name="origen"][value="cuenta"]')).toBeChecked();
+    await expect(form.locator('#inv-origen-cuenta')).toBeVisible();
+    await expect(form.locator('input[name="cuentaId"][value="cta-e2e"]')).toBeChecked();
+
+    // Una fecha vieja mueve la sugerencia a preexistente y esconde el selector.
+    await form.locator('[name="fechaInicio"]').fill('2019-03-01');
+    await expect(form.locator('input[name="origen"][value="preexistente"]')).toBeChecked();
+    await expect(form.locator('#inv-origen-cuenta')).toBeHidden();
+  });
+
+  test('elegir la rama a mano gana sobre la sugerencia de la fecha', async ({ page }) => {
+    const form = await abrirFormInversion(page);
+
+    // El usuario contesta: preexistente.
+    await form.locator('input[name="origen"][value="preexistente"]').check();
+    await expect(form.locator('#inv-origen-cuenta')).toBeHidden();
+
+    // Cambiar la fecha ya no le pisa la respuesta.
+    await form.locator('[name="fechaInicio"]').fill(hoyLocal());
+    await expect(form.locator('input[name="origen"][value="preexistente"]')).toBeChecked();
+    await expect(form.locator('#inv-origen-cuenta')).toBeHidden();
+  });
+
+  // C.2 - Alta con cuenta de origen: descuenta ------------------------------
+
+  test('registrar con cuenta de origen descuenta ese saldo: el patrimonio no se duplica', async ({ page }) => {
+    expect(await saldoCuenta(page)).toBe(6_000_000);
+
+    const form = await abrirFormInversion(page);
+    await form.locator('select[name="tipo"]').selectOption('CDT');
+    await form.locator('[name="nombre"]').fill('CDT con origen E2E');
+    await form.locator('[name="monto"]').fill('2000000');
+    await form.locator('[name="fechaInicio"]').fill(hoyLocal());
+    await form.locator('input[name="origen"][value="cuenta"]').check();
+    await form.locator('input[name="cuentaId"][value="cta-e2e"]').check();
+    await form.locator('button[type="submit"]').click();
+
+    await expect(page.locator(modalCerrado('modal-inversion'))).toBeAttached({ timeout: 3_000 });
+    await expect(page.locator('.inversion-lista__items')).toContainText('CDT con origen E2E', { timeout: 3_000 });
+
+    await page.waitForTimeout(400); // debounce de save()
+    expect(await saldoCuenta(page)).toBe(4_000_000);
+  });
+
+  // C.3 - Alta preexistente: no toca saldos --------------------------------
+
+  test('registrar una inversión que ya existía no toca ningún saldo', async ({ page }) => {
+    const form = await abrirFormInversion(page);
+    await form.locator('select[name="tipo"]').selectOption('Fondo');
+    await form.locator('[name="nombre"]').fill('Fondo preexistente E2E');
+    await form.locator('[name="monto"]').fill('2000000');
+    await form.locator('[name="fechaInicio"]').fill('2018-05-20');
+    await form.locator('input[name="origen"][value="preexistente"]').check();
+    await form.locator('button[type="submit"]').click();
+
+    await expect(page.locator(modalCerrado('modal-inversion'))).toBeAttached({ timeout: 3_000 });
+    await expect(page.locator('.inversion-lista__items')).toContainText('Fondo preexistente E2E', { timeout: 3_000 });
+
+    await page.waitForTimeout(400);
+    expect(await saldoCuenta(page)).toBe(6_000_000);
+  });
+
+  // C.4 - Reversa al eliminar (ADR 053 I3) ---------------------------------
+
+  test('eliminar una inversión con cuenta de origen devuelve el dinero a esa cuenta', async ({ page }) => {
+    const form = await abrirFormInversion(page);
+    await form.locator('select[name="tipo"]').selectOption('CDT');
+    await form.locator('[name="nombre"]').fill('CDT reversible E2E');
+    await form.locator('[name="monto"]').fill('1500000');
+    await form.locator('[name="fechaInicio"]').fill(hoyLocal());
+    await form.locator('input[name="origen"][value="cuenta"]').check();
+    await form.locator('input[name="cuentaId"][value="cta-e2e"]').check();
+    await form.locator('button[type="submit"]').click();
+
+    await expect(page.locator('.inversion-lista__items')).toContainText('CDT reversible E2E', { timeout: 3_000 });
+    await page.waitForTimeout(400);
+    expect(await saldoCuenta(page)).toBe(4_500_000);
+
+    const item = page.locator('.inversion-lista__items .list-item')
+      .filter({ hasText: 'CDT reversible E2E' });
+    await item.locator('[data-action="inversion-eliminar"]').click();
+
+    // El diálogo dice a dónde vuelve el dinero antes de confirmar.
+    await expect(page.locator('.modal--confirm')).toContainText('Se devolverán $1.500.000 a Ahorros E2E');
+    await page.locator('[data-role="confirmar"]').click();
+
+    await expect(page.locator('#panel-inversion .empty-state__title'))
+      .toHaveText('Registra tus inversiones', { timeout: 3_000 });
+    await page.waitForTimeout(400);
+    expect(await saldoCuenta(page)).toBe(6_000_000);
+  });
+
+  test('eliminar una inversión preexistente no devuelve nada, porque nada salió', async ({ page }) => {
+    const form = await abrirFormInversion(page);
+    await form.locator('select[name="tipo"]').selectOption('Cripto');
+    await form.locator('[name="nombre"]').fill('Cripto vieja E2E');
+    await form.locator('[name="monto"]').fill('900000');
+    await form.locator('[name="fechaInicio"]').fill('2017-11-02');
+    await form.locator('input[name="origen"][value="preexistente"]').check();
+    await form.locator('button[type="submit"]').click();
+
+    await expect(page.locator('.inversion-lista__items')).toContainText('Cripto vieja E2E', { timeout: 3_000 });
+
+    const item = page.locator('.inversion-lista__items .list-item')
+      .filter({ hasText: 'Cripto vieja E2E' });
+    await item.locator('[data-action="inversion-eliminar"]').click();
+
+    // Sin cuenta de origen el diálogo no promete ninguna devolución.
+    await expect(page.locator('.modal--confirm')).not.toContainText('Se devolverán');
+    await page.locator('[data-role="confirmar"]').click();
+
+    await expect(page.locator('#panel-inversion .empty-state__title'))
+      .toHaveText('Registra tus inversiones', { timeout: 3_000 });
+    await page.waitForTimeout(400);
+    expect(await saldoCuenta(page)).toBe(6_000_000);
+  });
+
+  // C.5 - Sobregiro: se confirma, no se bloquea ----------------------------
+
+  test('si el saldo no alcanza avisa que quedará en negativo y deja decidir', async ({ page }) => {
+    const form = await abrirFormInversion(page);
+    await form.locator('select[name="tipo"]').selectOption('Otro');
+    await form.locator('[name="nombre"]').fill('Finca raiz E2E');
+    await form.locator('[name="monto"]').fill('9000000');
+    await form.locator('[name="fechaInicio"]').fill(hoyLocal());
+    await form.locator('input[name="origen"][value="cuenta"]').check();
+    await form.locator('input[name="cuentaId"][value="cta-e2e"]').check();
+    await form.locator('button[type="submit"]').click();
+
+    await expect(page.locator('.modal--confirm')).toContainText('quedará en negativo');
+    await page.locator('[data-role="confirmar"]').click();
+
+    await expect(page.locator('.inversion-lista__items')).toContainText('Finca raiz E2E', { timeout: 3_000 });
+    await page.waitForTimeout(400);
+    expect(await saldoCuenta(page)).toBe(-3_000_000);
+  });
+});
+

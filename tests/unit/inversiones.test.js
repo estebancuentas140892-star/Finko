@@ -1,11 +1,18 @@
 /**
  * tests/unit/inversiones.test.js - cobertura de inversiones/logic.js (J.2a + J.2b).
  *
- * Solo lógica pura (logic.js). La vista y el cableado (index.js) se verifican
- * manualmente en la app y vía E2E.
+ * Casi todo es lógica pura (logic.js). La excepción es el formulario: INV.1 le
+ * agregó la pregunta del origen del dinero, y qué rama se dibuja y cuál viene
+ * sugerida depende de `S.cuentas`, así que se prueba el HTML que genera
+ * `renderFormInversion()`. El movimiento de saldo en sí (descuento al registrar,
+ * devolución al eliminar) vive en index.js y se verifica en
+ * `tests/e2e/ahorro-inversion.test.js`, que es donde se puede recorrer el modal
+ * y el diálogo de confirmación de verdad.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { S } from '../../modules/core/state.js';
+import { renderFormInversion } from '../../modules/dominio/inversiones/view.js';
 import {
   TIPOS_INVERSION, TASA_EA_MAX, PLAZO_MESES_MAX,
   calcularTotalInvertido, calcularPorTipo, ordenarInversionesPorMonto,
@@ -18,6 +25,7 @@ import {
   detectarNudgesInversion, UMBRAL_CONCENTRACION_PCT, UMBRAL_VARIABLE_PCT,
   TOTAL_MOMENTOS, rasgoTipo, explicacionTipo, fechaVencimientoInversion,
   columnasPortafolio, momentoInversion,
+  ORIGENES_INVERSION, DIAS_ORIGEN_RECIENTE, origenSugerido, validarOrigenInversion,
 } from '../../modules/dominio/inversiones/logic.js';
 
 // ── Constantes ─────────────────────────────────────────────────────
@@ -672,5 +680,181 @@ describe('momentoInversion()', () => {
   it('el fondo incompleto también sale como aviso', () => {
     const m = momentoInversion([cdt, fic], { fondoActivo: true, fondoCompletado: false });
     expect(m.aviso.id).toBe('fondo-incompleto');
+  });
+});
+
+// ── ORIGEN DEL DINERO (INV.1, ADR 053) ─────────────────────────────
+
+describe('ORIGENES_INVERSION', () => {
+  it('son exactamente dos ramas: la que mueve dinero y la que no', () => {
+    expect(ORIGENES_INVERSION).toEqual(['cuenta', 'preexistente']);
+  });
+});
+
+describe('origenSugerido()', () => {
+  const HOY = '2026-07-29';
+
+  it('la misma fecha de hoy sugiere la cuenta: la inversión se está haciendo ahora', () => {
+    expect(origenSugerido(HOY, HOY)).toBe('cuenta');
+  });
+
+  it('una fecha dentro del último mes sugiere la cuenta', () => {
+    expect(origenSugerido('2026-07-15', HOY)).toBe('cuenta');
+    expect(origenSugerido('2026-06-29', HOY)).toBe('cuenta'); // 30 dias exactos
+  });
+
+  it('pasado el umbral sugiere preexistente: ese saldo ya lo excluía', () => {
+    expect(origenSugerido('2026-06-28', HOY)).toBe('preexistente'); // 31 dias
+    expect(origenSugerido('2024-01-10', HOY)).toBe('preexistente');
+  });
+
+  it('una fecha futura cuenta como reciente: el dinero sale de una cuenta viva', () => {
+    expect(origenSugerido('2026-08-15', HOY)).toBe('cuenta');
+  });
+
+  it('el umbral es el que declara la constante, no un número suelto', () => {
+    expect(DIAS_ORIGEN_RECIENTE).toBe(30);
+  });
+
+  it('ante un dato inválido sugiere la rama que no mueve dinero', () => {
+    expect(origenSugerido('', HOY)).toBe('preexistente');
+    expect(origenSugerido('julio', HOY)).toBe('preexistente');
+    expect(origenSugerido(null, HOY)).toBe('preexistente');
+    expect(origenSugerido(HOY, '')).toBe('preexistente');
+    expect(origenSugerido(HOY, 'hoy')).toBe('preexistente');
+  });
+});
+
+describe('validarOrigenInversion()', () => {
+  it('sin origen no exige nada: el formulario no dibuja la pregunta sin cuentas activas', () => {
+    expect(validarOrigenInversion(undefined, undefined)).toEqual([]);
+    expect(validarOrigenInversion(null, null)).toEqual([]);
+    expect(validarOrigenInversion('', '')).toEqual([]);
+  });
+
+  it('preexistente no necesita cuenta', () => {
+    expect(validarOrigenInversion('preexistente', '')).toEqual([]);
+    expect(validarOrigenInversion('preexistente', undefined)).toEqual([]);
+  });
+
+  it('la rama de cuenta sin cuenta elegida es un error: el descuento no tendría destino', () => {
+    expect(validarOrigenInversion('cuenta', '')).toHaveLength(1);
+    expect(validarOrigenInversion('cuenta', '   ')).toHaveLength(1);
+    expect(validarOrigenInversion('cuenta', undefined)[0]).toContain('cuenta de la que sale');
+  });
+
+  it('la rama de cuenta con cuenta elegida es válida', () => {
+    expect(validarOrigenInversion('cuenta', 'cta1')).toEqual([]);
+  });
+
+  it('una rama que no existe se rechaza en vez de tratarse como preexistente', () => {
+    expect(validarOrigenInversion('otra-cosa', 'cta1')).toHaveLength(1);
+  });
+});
+
+describe('normalizarInversion() - cuentaId (INV.1)', () => {
+  const base = {
+    tipo: 'CDT', nombre: 'CDT Bancolombia', monto: '5000000',
+    tasaEA: '10', plazoMeses: '12', fechaInicio: '2026-07-29',
+  };
+
+  it('la rama de cuenta persiste el cuentaId', () => {
+    const inv = normalizarInversion({ ...base, origen: 'cuenta', cuentaId: 'cta1' });
+    expect(inv.cuentaId).toBe('cta1');
+  });
+
+  it('la rama preexistente no agrega la propiedad, ni vacía', () => {
+    const inv = normalizarInversion({ ...base, origen: 'preexistente', cuentaId: 'cta1' });
+    expect('cuentaId' in inv).toBe(false);
+  });
+
+  it('sin origen tampoco la agrega: su presencia es lo que dice que descontó un saldo', () => {
+    const inv = normalizarInversion(base);
+    expect('cuentaId' in inv).toBe(false);
+  });
+
+  it('la rama de cuenta con cuentaId en blanco no guarda un origen falso', () => {
+    const inv = normalizarInversion({ ...base, origen: 'cuenta', cuentaId: '  ' });
+    expect('cuentaId' in inv).toBe(false);
+  });
+
+  it('recorta los espacios del cuentaId', () => {
+    const inv = normalizarInversion({ ...base, origen: 'cuenta', cuentaId: ' cta9 ' });
+    expect(inv.cuentaId).toBe('cta9');
+  });
+});
+
+describe('validarInversion() - incluye el origen', () => {
+  const base = {
+    tipo: 'CDT', nombre: 'CDT', monto: 1_000_000,
+    tasaEA: 10, plazoMeses: 12, fechaInicio: '2026-07-29',
+  };
+
+  it('un formulario válido sin origen sigue siendo válido', () => {
+    expect(validarInversion(base)).toEqual([]);
+  });
+
+  it('la rama de cuenta sin cuenta acumula su error con los demás', () => {
+    const errores = validarInversion({ ...base, origen: 'cuenta' });
+    expect(errores).toHaveLength(1);
+    expect(errores[0]).toContain('cuenta');
+  });
+});
+
+// ── renderFormInversion() - la pregunta del origen (INV.1) ─────────
+
+describe('renderFormInversion() - origen del dinero', () => {
+  beforeEach(() => {
+    S.cuentas = [
+      { id: 'cta1', nombre: 'Ahorros Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 3_000_000, activa: true },
+      { id: 'cta2', nombre: 'Nequi',               banco: 'Nequi',       tipo: 'Ahorros', saldo:   500_000, activa: true },
+    ];
+  });
+
+  it('con cuentas activas dibuja las dos ramas, no una casilla', () => {
+    const html = renderFormInversion({ fechaInicio: '2026-07-29' });
+    expect(html).toContain('name="origen"');
+    expect(html).toContain('value="cuenta"');
+    expect(html).toContain('value="preexistente"');
+    expect(html).toContain('¿De dónde sale este dinero?');
+  });
+
+  it('sin ninguna cuenta activa no pregunta: la rama de cuenta no existiría', () => {
+    S.cuentas = [{ id: 'cta1', nombre: 'Cerrada', saldo: 0, activa: false }];
+    const html = renderFormInversion({ fechaInicio: '2026-07-29' });
+    expect(html).not.toContain('name="origen"');
+  });
+
+  it('sin cuentas del todo tampoco pregunta', () => {
+    S.cuentas = [];
+    expect(renderFormInversion({ fechaInicio: '2026-07-29' })).not.toContain('name="origen"');
+  });
+
+  it('el selector de cuenta viene visible cuando la rama sugerida es la cuenta', () => {
+    document.body.innerHTML = renderFormInversion({ fechaInicio: '2026-07-29' });
+    const bloque = document.getElementById('inv-origen-cuenta');
+    expect(bloque).not.toBeNull();
+    expect(bloque.hidden).toBe(false);
+    expect(document.querySelector('input[name="origen"][value="cuenta"]').checked).toBe(true);
+    expect(document.querySelector('input[name="cuentaId"]')).not.toBeNull();
+  });
+
+  it('con una fecha vieja la rama sugerida es preexistente y el selector arranca oculto', () => {
+    document.body.innerHTML = renderFormInversion({ fechaInicio: '2020-01-15' });
+    expect(document.getElementById('inv-origen-cuenta').hidden).toBe(true);
+    expect(document.querySelector('input[name="origen"][value="preexistente"]').checked).toBe(true);
+  });
+
+  it('el selector ofrece las cuentas activas con su saldo, para elegir con el dato a la vista', () => {
+    document.body.innerHTML = renderFormInversion({ fechaInicio: '2026-07-29' });
+    const radios = [...document.querySelectorAll('#inv-origen-cuenta input[name="cuentaId"]')];
+    expect(radios.map(r => r.value)).toEqual(['cta1', 'cta2']);
+    expect(document.getElementById('inv-origen-cuenta').textContent).toContain('$3.000.000');
+  });
+
+  it('dice qué pasa con cada rama, en pesos y no en jerga', () => {
+    const html = renderFormInversion({ fechaInicio: '2026-07-29' });
+    expect(html).toContain('le descuenta ese dinero');
+    expect(html).toContain('los saldos no se tocan');
   });
 });
