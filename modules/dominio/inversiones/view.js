@@ -4,27 +4,34 @@
  */
 
 import { S } from '../../core/state.js';
-import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
+import { f, fechaLegible, formateadorFecha, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt } from '../../infra/icons.js';
-import { INFLACION_OBJETIVO, ipcObservadoVigente } from '../../core/constants.js';
+import { ipcObservadoVigente } from '../../core/constants.js';
 import { calcularRegla72 } from '../../infra/financiero.js';
 import {
   calcularTotalInvertido,
-  calcularPorTipo,
   ordenarInversionesPorMonto,
   proyectarInversion,
-  proyectarPortafolio,
   calcularRentabilidadRealPortafolio,
-  detectarNudgesInversion,
+  columnasPortafolio,
+  momentoInversion,
+  fechaVencimientoInversion,
+  rasgoTipo,
   TIPOS_INVERSION,
+  TOTAL_MOMENTOS,
 } from './logic.js';
-
-/** Meta de inflación de BanRep (%), referencia de largo plazo en el copy. */
-const INFLACION_META_PCT = INFLACION_OBJETIVO * 100;
 
 /** IPC observado más reciente (E.5): el descuento real de poder adquisitivo. */
 const IPC_VIGENTE = ipcObservadoVigente();
 const IPC_PCT     = IPC_VIGENTE.valor * 100;
+
+/** "marzo de 2027": la etiqueta de vencimiento, sin día, que es lo que importa. */
+const MES_ANIO = formateadorFecha('es-CO', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+
+/** @param {string} iso 'YYYY-MM-DD' @returns {string} 'marzo de 2027'. */
+function _mesAnio(iso) {
+  return MES_ANIO.format(new Date(`${iso}T12:00:00Z`));
+}
 
 // ── RENDER PRINCIPAL ─────────────────────────────────────────────
 
@@ -44,11 +51,8 @@ export function renderInversion() {
   }
 
   el.innerHTML = `
-    ${_renderHero(inversiones)}
-    ${_renderProyeccion(inversiones)}
-    ${_renderNudges(inversiones)}
-    ${_renderLista(inversiones)}
-    ${_renderTipHorizonte()}`;
+    ${_renderMomento(inversiones)}
+    ${_renderLista(inversiones)}`;
 }
 
 // ── EMPTY STATE ──────────────────────────────────────────────────
@@ -64,162 +68,230 @@ function _renderEmptyState() {
     </div>`;
 }
 
-// ── HERO (total invertido) ───────────────────────────────────────
+// ── LA TARJETA DEL MOMENTO (DIS.17) ──────────────────────────────
 
-function _renderHero(inversiones) {
-  const total    = calcularTotalInvertido(inversiones);
-  const cantidad = inversiones.length;
-  const porTipo  = calcularPorTipo(inversiones);
+/**
+ * DIS.17 (arquitectura O con el gráfico de N): la cabecera de la sección deja
+ * de ser un total y pasa a ser **la etapa en la que está el usuario**. El total
+ * invertido no enseñaba nada por sí solo: no decía de qué está hecho ni qué le
+ * aporta el tiempo, que es la única razón para invertir.
+ *
+ * Tres piezas hacen el trabajo que antes repartían el hero, la card de
+ * proyección, la lista de porcentajes, los nudges y el tip permanente:
+ *
+ * - **La etapa y su frase** dicen quién es el usuario hoy, y la lección cambia
+ *   cuando él cambia: con una inversión se explica qué compró, con varias se
+ *   explica por qué conviene repartir. Una explicación que se repite para
+ *   siempre deja de educar.
+ * - **El gráfico de dos columnas** compara hoy contra al vencer, con la primera
+ *   partida por tipo: diversificación y rendimiento en una sola figura.
+ * - **El anticipo** dice qué va a ver después, no cuánto va a ganar. Es la
+ *   única forma honesta de motivar en una sección de inversión.
+ *
+ * Ninguna barra de progreso: una inversión no tiene meta, y ponerle una sería
+ * inventársela.
+ */
+function _renderMomento(inversiones) {
+  // La vista puede leer S (no muta). Lee el estado del fondo sin importar el
+  // dominio Ahorro (regla ADN #10): solo consulta el slice de estado.
+  const fondo   = S.ahorro?.fondoEmergencia;
+  const momento = momentoInversion(inversiones, {
+    fondoActivo:     fondo?.activo === true,
+    fondoCompletado: fondo?.completado === true,
+  });
+  if (!momento) return '';
 
-  const desgloseHtml = porTipo.length > 0
-    ? `<ul class="inversion-hero__tipos" role="list">
-        ${porTipo.map(t => `
-          <li class="inversion-hero__tipo">
-            <span class="inversion-hero__tipo-label">${_esc(t.tipo)}</span>
-            <span class="inversion-hero__tipo-pct">${t.pct}%</span>
-          </li>`).join('')}
-      </ul>`
+  const total = calcularTotalInvertido(inversiones);
+  const cols  = columnasPortafolio(inversiones);
+
+  // En el momento 1 la segunda columna se rotula con el vencimiento real de la
+  // única inversión ("marzo de 2027"), que dice mucho más que "al vencer".
+  const unica       = momento.numero === 1
+    ? inversiones.find(i => Number(i?.monto) > 0)
+    : null;
+  const vencimiento = unica ? fechaVencimientoInversion(unica) : null;
+
+  const sumaHtml = cols && cols.rendimiento > 0
+    ? `<p class="inversion-momento__suma">y el tiempo le suma <strong>${f(cols.rendimiento)}</strong> más</p>`
+    : '';
+
+  const avisoHtml = momento.aviso
+    ? `<p class="inversion-momento__aviso"><strong>${_esc(momento.aviso.titulo)}.</strong> ${_esc(momento.aviso.desc)}</p>`
+    : '';
+
+  const pieHtml = cols && cols.proyectables > 0
+    ? `<p class="inversion-momento__pie">Es un cálculo con la tasa y el plazo que registraste, no una promesa: confírmalo con tu entidad.</p>`
     : '';
 
   return `
-    <article class="inversion-hero" aria-label="Total invertido">
-      <header class="inversion-hero__header">
-        <div class="inversion-hero__icon" aria-hidden="true">
-          <svg class="icon" aria-hidden="true"><use href="#i-inversion"/></svg>
-        </div>
-        <div class="inversion-hero__title-wrap">
-          <p class="inversion-hero__label">Total invertido</p>
-          <p class="inversion-hero__title">${f(total)}</p>
-          <span class="inversion-hero__sub">${cantidad} ${cantidad === 1 ? 'inversión registrada' : 'inversiones registradas'}</span>
-        </div>
-      </header>
-      ${desgloseHtml}
+    <article class="inversion-momento" data-dom="inversion" aria-label="Tu momento como inversionista">
+      <div class="inversion-momento__cabecera">
+        <span class="inversion-momento__kicker">Momento ${momento.numero} de ${TOTAL_MOMENTOS}</span>
+        <span class="inversion-momento__chip">${_esc(momento.chip)}</span>
+      </div>
+
+      <div class="inversion-momento__intro">
+        <p class="inversion-momento__titulo">${_esc(momento.titulo)}</p>
+        <p class="inversion-momento__frase">${_esc(momento.frase)}</p>
+      </div>
+
+      ${_renderDuo(cols, vencimiento ? _mesAnio(vencimiento) : 'al vencer', Boolean(unica))}
+
+      <div class="inversion-momento__construido">
+        <p class="inversion-momento__kicker">Lo que has construido</p>
+        <p class="inversion-momento__monto">${f(total)}</p>
+        ${sumaHtml}
+      </div>
+
+      ${_renderNotaMomento(inversiones, cols, momento)}
+
+      <div class="inversion-momento__anticipo">
+        <p class="inversion-momento__kicker">${_esc(momento.anticipoKicker)}</p>
+        <p class="inversion-momento__frase">${_esc(momento.anticipo)}</p>
+      </div>
+
+      ${avisoHtml}
+      ${pieHtml}
+      ${_renderAcciones(momento)}
     </article>`;
 }
 
-// ── PROYECCIÓN DEL PORTAFOLIO (J.2b) ─────────────────────────────
+/**
+ * El gráfico: dos columnas de altura comparada. La de hoy está partida por tipo
+ * de inversión, así que la composición se ve sin nombrarla; la de al vencer
+ * repite ese cuerpo y le añade encima lo que pone el tiempo. Ese segmento es
+ * pequeño en un portafolio joven, y es honesto: invertir no es rápido, y quien
+ * lo vea crecer con los años entiende el interés compuesto sin que se lo
+ * expliquen.
+ *
+ * Sin nada proyectable (todo de retorno variable) la segunda columna no se
+ * dibuja: repetir la primera fingiría una comparación que no existe.
+ */
+function _renderDuo(cols, etiquetaFuturo, esUnica) {
+  if (!cols || cols.segmentos.length === 0) return '';
 
-function _renderProyeccion(inversiones) {
-  const proy = proyectarPortafolio(inversiones);
+  const segs = cols.segmentos.map((s, i) => `
+            <span class="inversion-momento__seg" data-seg="${Math.min(i, 4)}" style="height:${s.alto}%"></span>`).join('');
 
-  // Sin holdings proyectables (todos sin tasa o sin plazo): no mostramos la card,
-  // pero sí una nota suave invitando a completar tasa/plazo para proyectar.
-  if (proy.proyectables === 0) {
-    return `
-      <section class="inversion-proy inversion-proy--vacia" aria-label="Proyección">
-        <p class="inversion-proy__nota">
-          📅 Agrega la <strong>tasa EA</strong> y el <strong>plazo</strong> de tus inversiones de renta fija (CDT, fondos) para ver cuánto valdrían al vencimiento.
-        </p>
-      </section>`;
+  const colFuturo = cols.altoTiempo > 0
+    ? `
+        <div class="inversion-momento__col" aria-hidden="true">
+          <div class="inversion-momento__stack">
+            <span class="inversion-momento__seg inversion-momento__seg--tiempo" style="height:${cols.altoTiempo}%"></span>${segs}
+          </div>
+          <span class="inversion-momento__col-lb">${_esc(etiquetaFuturo)}</span>
+        </div>`
+    : '';
+
+  // La leyenda es la que lleva el dato: por eso las columnas van ocultas al
+  // lector de pantalla y esta lista no.
+  const leyenda = [];
+  if (cols.altoTiempo > 0) leyenda.push({ seg: 'tiempo', tx: 'lo pone el tiempo' });
+  if (esUnica) {
+    leyenda.push({ seg: '0', tx: 'lo pusiste tú' });
+  } else {
+    cols.segmentos.forEach((s, i) => {
+      const rasgo = rasgoTipo(s.tipo);
+      leyenda.push({
+        seg: String(Math.min(i, 4)),
+        tx:  `${s.tipo} · ${s.pct}%${rasgo ? ` · ${rasgo}` : ''}`,
+      });
+    });
   }
 
-  // E.5: la rentabilidad real se descuenta con el IPC observado (dato DANE),
-  // no con la meta de BanRep: es la pérdida de poder adquisitivo real de hoy.
-  const real = calcularRentabilidadRealPortafolio(inversiones, IPC_PCT);
-
-  const gananciaPositiva = proy.rendimientoEsperado >= 0;
-  const notaNoProy = proy.noProyectables > 0
-    ? `<p class="inversion-proy__hint">${proy.noProyectables} ${proy.noProyectables === 1 ? 'inversión de retorno variable no se proyecta' : 'inversiones de retorno variable no se proyectan'} (sin tasa o plazo fijo).</p>`
-    : '';
-
-  const r72Html  = real ? _renderInsightR72(real.tasaNominalPct) : '';
-
-  const realHtml = real
-    ? `<div class="inversion-proy__real">
-        <p class="inversion-proy__real-line">
-          Rentabilidad nominal <strong>${_fmtTasa(real.tasaNominalPct)}%</strong> EA →
-          real <strong class="${real.tasaRealPct >= 0 ? 'is-pos' : 'is-neg'}">${_fmtTasa(real.tasaRealPct)}%</strong>
-        </p>
-        <p class="inversion-proy__real-nota">Ya descontada la inflación observada de ${IPC_VIGENTE.anio}: ${_fmtTasa(IPC_PCT)}% anual (DANE, IPC). La meta de largo plazo del Banco de la República es ${_fmtTasa(INFLACION_META_PCT)}%.</p>
-      </div>`
-    : '';
+  const leyendaHtml = leyenda.map(l => `
+          <span class="inversion-momento__leg">
+            <span class="inversion-momento__leg-sw" data-seg="${l.seg}" aria-hidden="true"></span>
+            <span>${_esc(l.tx)}</span>
+          </span>`).join('');
 
   return `
-    <section class="inversion-proy" aria-label="Proyección al vencimiento">
-      <h2 class="inversion-proy__title">Proyección al vencimiento</h2>
-      <div class="inversion-proy__grid">
-        <div class="inversion-proy__metric">
-          <p class="inversion-proy__metric-label">Valor proyectado</p>
-          <p class="inversion-proy__metric-value">${f(proy.totalProyectado)}</p>
+      <div class="inversion-momento__duo">
+        <div class="inversion-momento__col" aria-hidden="true">
+          <div class="inversion-momento__stack">${segs}</div>
+          <span class="inversion-momento__col-lb">hoy</span>
         </div>
-        <div class="inversion-proy__metric">
-          <p class="inversion-proy__metric-label">Ganancia esperada</p>
-          <p class="inversion-proy__metric-value ${gananciaPositiva ? 'is-pos' : 'is-neg'}">
-            ${gananciaPositiva ? '+' : ''}${f(proy.rendimientoEsperado)}
-          </p>
-        </div>
-      </div>
-      ${realHtml}
-      ${r72Html}
-      ${notaNoProy}
-      <p class="inversion-proy__hint">Proyección estimada con la tasa y el plazo que registraste; no es garantía de rentabilidad, confírmala con tu entidad.</p>
-    </section>`;
+        ${colFuturo}
+        <div class="inversion-momento__leyenda">${leyendaHtml}</div>
+      </div>`;
 }
-
-// ── INSIGHT REGLA DEL 72 ─────────────────────────────────────────
 
 /**
- * Insight pasivo: cuántos años tarda el portafolio en duplicarse a su tasa
- * promedio ponderada. Solo se muestra cuando hay holdings proyectables.
+ * El matiz de la inflación, en palabras (E.5, el cálculo no cambia). La frase
+ * de banco ("rentabilidad nominal 10,1% EA a real 4,7%") era la más difícil de
+ * la app para quien está aprendiendo, y decía lo mismo.
+ */
+function _renderNotaMomento(inversiones, cols, momento) {
+  if (!cols) return '';
+
+  if (cols.proyectables === 0) {
+    return `
+      <p class="inversion-momento__nota">Agrega la tasa y el plazo de tus inversiones de plazo fijo (CDT, fondos) para ver cuánto tendrías al final.</p>`;
+  }
+
+  const partes = [];
+  const real   = calcularRentabilidadRealPortafolio(inversiones, IPC_PCT);
+
+  if (real) {
+    partes.push(`Tu dinero crece ${_fmtTasa(real.tasaNominalPct)}% al año. Como los precios suben ${_fmtTasa(IPC_PCT)}%, lo que de verdad ganas es ${_fmtTasa(real.tasaRealPct)}%.`);
+    // La regla del 72 solo en el momento 1: con una sola inversión duplicar es
+    // una idea nueva; con varias, la nota ya dice bastante.
+    if (momento.numero === 1) {
+      const r72 = _fraseRegla72(real.tasaNominalPct);
+      if (r72) partes.push(r72);
+    }
+  }
+
+  if (cols.noProyectables > 0) {
+    partes.push(cols.noProyectables === 1
+      ? 'Una de tus inversiones no tiene una ganancia fija, así que no entra en ese cálculo.'
+      : `${cols.noProyectables} de tus inversiones no tienen una ganancia fija, así que no entran en ese cálculo.`);
+  }
+
+  if (partes.length === 0) return '';
+  return `
+      <p class="inversion-momento__nota">${partes.join(' ')}</p>`;
+}
+
+/**
+ * Cuánto tarda el dinero en duplicarse a esa tasa (regla del 72, ya
+ * implementada en `infra/financiero.js`).
  *
  * @param {number} tasaNominalPct - Tasa EA en % (ej. 12).
- * @returns {string} HTML del insight, o '' si la tasa no es válida.
+ * @returns {string} '' si la tasa no da un plazo que valga la pena contar.
  */
-function _renderInsightR72(tasaNominalPct) {
+function _fraseRegla72(tasaNominalPct) {
   if (!(tasaNominalPct > 0)) return '';
   const r = calcularRegla72(tasaNominalPct);
-  if (!Number.isFinite(r.aniosExactos)) return '';
-  const anios = r.aniosExactos < 100
-    ? `~${_fmtTasa(r.aniosExactos)} años`
-    : 'más de 100 años';
-  return `
-    <p class="inversion-proy__r72">
-      ⚡ A esta tasa, tu dinero se duplica en ${anios}.
-    </p>`;
+  if (!Number.isFinite(r.aniosExactos) || r.aniosExactos >= 100) return '';
+  const anios = Math.max(1, Math.round(r.aniosExactos));
+  return `Si no lo tocas, este dinero se duplica en unos ${anios} ${anios === 1 ? 'año' : 'años'}.`;
 }
 
-// ── NUDGES EDUCATIVOS (J.2c) ─────────────────────────────────────
+/**
+ * La acción principal del conjunto, a lo ancho. En el momento 1, si el fondo de
+ * emergencia todavía no existe, lo que la sección ofrece primero es ir al
+ * fondo: registrar otra inversión sigue disponible, un peldaño más abajo.
+ */
+function _renderAcciones(momento) {
+  const irAlFondo = momento.numero === 1 && momento.aviso?.id === 'fondo-primero';
 
-function _renderNudges(inversiones) {
-  // La vista puede leer S (no muta). Lee el estado del fondo sin importar el
-  // dominio Ahorro (regla ADN #10): solo consulta el slice de estado.
-  const fondo = S.ahorro?.fondoEmergencia;
-  const contexto = {
-    fondoActivo:     fondo?.activo === true,
-    fondoCompletado: fondo?.completado === true,
-  };
-
-  const nudges = detectarNudgesInversion(inversiones, contexto);
-  if (nudges.length === 0) return '';
+  if (irAlFondo) {
+    return `
+      <div class="inversion-momento__acciones">
+        <a class="inversion-momento__principal" href="#ahorro">Ir al Fondo de emergencia</a>
+        <button class="btn btn-ghost btn-sm inversion-momento__secundaria" type="button" data-action="inversion-nueva">
+          ${_esc(momento.accion)}
+        </button>
+      </div>`;
+  }
 
   return `
-    <section class="inversion-nudges" aria-label="Recomendaciones">
-      ${nudges.map(_renderNudge).join('')}
-    </section>`;
-}
-
-/** @param {{nivel:string, icono:string, titulo:string, desc:string}} n */
-function _renderNudge(n) {
-  // El nudge de fondo enlaza al Fondo de emergencia como llamada a la acción.
-  const cta = (n.id === 'fondo-primero' || n.id === 'fondo-incompleto')
-    ? ` <a href="#ahorro" class="link">Ir al Fondo de emergencia</a>`
-    : '';
-  return `
-    <div class="nudge ${_esc(n.nivel)}" role="status">
-      <span class="nudge__icon" aria-hidden="true">${n.icono}</span>
-      <div class="nudge__body">
-        <p class="nudge__title">${_esc(n.titulo)}</p>
-        <p class="nudge__desc">${_esc(n.desc)}${cta}</p>
-      </div>
-    </div>`;
-}
-
-/** Tip educativo evergreen sobre el horizonte de la inversión. */
-function _renderTipHorizonte() {
-  return `
-    <p class="inversion-tip">
-      ${icon('lightbulb')} Invertir da frutos a largo plazo: el interés compuesto necesita tiempo. Define un horizonte y evita retirar antes del plazo salvo una emergencia.
-    </p>`;
+      <div class="inversion-momento__acciones">
+        <button class="inversion-momento__principal" type="button" data-action="inversion-nueva">
+          ${_esc(momento.accion)}
+        </button>
+      </div>`;
 }
 
 // ── LISTA DE HOLDINGS ────────────────────────────────────────────
@@ -227,11 +299,13 @@ function _renderTipHorizonte() {
 function _renderLista(inversiones) {
   const ordenadas = ordenarInversionesPorMonto(inversiones);
 
+  // DIS.17: el botón de registrar se fue de este encabezado. La acción principal
+  // de la sección vive en la tarjeta del momento, a ancho completo, y tenerla
+  // dos veces en la misma pantalla la volvía ruido (regla R1: un primario).
   return `
     <section class="inversion-lista" aria-label="Mis inversiones">
       <div class="inversion-lista__header">
         <h2 class="inversion-lista__title">Mis inversiones</h2>
-        <button class="btn btn-sm btn-primary" data-action="inversion-nueva">+ Registrar</button>
       </div>
       <ul class="inversion-lista__items" role="list">
         ${ordenadas.map(_renderItem).join('')}
@@ -245,21 +319,24 @@ function _renderLista(inversiones) {
  */
 function _renderItem(inv) {
   const tasaHtml = Number(inv.tasaEA) > 0
-    ? `<span class="inversion-item__chip">${_fmtTasa(inv.tasaEA)}% EA</span>`
+    ? `<span class="inversion-item__chip">Crece ${_fmtTasa(inv.tasaEA)}% al año</span>`
     : '';
   const plazoHtml = Number(inv.plazoMeses) > 0
-    ? `<span class="inversion-item__chip">${inv.plazoMeses} ${inv.plazoMeses === 1 ? 'mes' : 'meses'}</span>`
+    ? `<span class="inversion-item__chip">termina en ${inv.plazoMeses} ${inv.plazoMeses === 1 ? 'mes' : 'meses'}</span>`
     : '';
   const fechaHtml = inv.fechaInicio
     ? `<span class="inversion-item__fecha">Desde ${fechaLegible(inv.fechaInicio)}</span>`
     : '';
 
-  // Proyección al vencimiento (solo holdings con tasa + plazo).
-  const proy = proyectarInversion(inv);
+  // Proyección al vencimiento (solo holdings con tasa + plazo). La línea nombra
+  // el mes en el que pasa y separa lo que puso el usuario de lo que pone el
+  // tiempo: es la primera vez que la app explica de dónde sale una ganancia.
+  const proy  = proyectarInversion(inv);
+  const vence = proy ? fechaVencimientoInversion(inv) : null;
   const proyHtml = proy
     ? `<p class="inversion-item__proy">
-        Al vencimiento: <strong>${f(proy.valorFuturo)}</strong>
-        <span class="inversion-item__proy-gain">(+${f(proy.rendimiento)})</span>
+        ${vence ? `En ${_esc(_mesAnio(vence))} tendrías` : 'Al vencer tendrías'} <strong>${f(proy.valorFuturo)}</strong>.
+        De eso, <strong>${f(proy.rendimiento)}</strong> los pone el tiempo.
       </p>`
     : '';
 

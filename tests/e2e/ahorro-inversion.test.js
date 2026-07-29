@@ -216,9 +216,9 @@ test.describe('Inversión - portafolio real (J.2)', () => {
     await expect(page.locator('[data-action="inversion-nueva"]').first()).toBeVisible();
   });
 
-  // B.2 - Alta inversión: lista + hero ----------------------------------------
+  // B.2 - Alta inversión: lista + tarjeta del momento ------------------------
 
-  test('registrar inversión: aparece en lista y el hero muestra el total', async ({ page }) => {
+  test('registrar inversión: aparece en lista y la tarjeta muestra el total', async ({ page }) => {
     await page.click('a[href="#inversion"]');
     await expect(page.locator('#sec-inversion.active')).toBeVisible({ timeout: 5_000 });
 
@@ -241,8 +241,9 @@ test.describe('Inversión - portafolio real (J.2)', () => {
       page.locator('.inversion-lista__items')
     ).toContainText('CDT Bancolombia E2E', { timeout: 3_000 });
 
-    // El hero muestra el total invertido
-    await expect(page.locator('.inversion-hero__title')).toHaveText('$5.000.000', { timeout: 3_000 });
+    // La tarjeta del momento muestra lo que el usuario ha construido (DIS.17)
+    await expect(page.locator('.inversion-momento__monto')).toHaveText('$5.000.000', { timeout: 3_000 });
+    await expect(page.locator('.inversion-momento__kicker').first()).toHaveText('Momento 1 de 3');
   });
 
   // B.3 - CDT con tasa y plazo: proyección visible en el item ----------------
@@ -272,8 +273,10 @@ test.describe('Inversión - portafolio real (J.2)', () => {
     const item = page.locator('.inversion-lista__items .list-item')
       .filter({ hasText: 'CDT Davivienda E2E' });
     await expect(item.locator('.inversion-item__proy')).toBeVisible({ timeout: 3_000 });
-    await expect(item.locator('.inversion-item__proy')).toContainText('Al vencimiento:');
     await expect(item.locator('.inversion-item__proy')).toContainText('$10.930.000');
+    // DIS.17: la linea separa lo que puso el usuario de lo que pone el tiempo.
+    await expect(item.locator('.inversion-item__proy')).toContainText('los pone el tiempo');
+    await expect(item.locator('.inversion-item__proy')).toContainText('$930.000');
   });
 
   // B.4 - Eliminar inversión -------------------------------------------------
@@ -331,7 +334,7 @@ test.describe('Inversión - portafolio real (J.2)', () => {
     const hoy = hoyLocal();
     await form.locator('[name="fechaInicio"]').fill(hoy);
     await form.locator('button[type="submit"]').click();
-    await expect(page.locator('.inversion-hero__title')).toHaveText('$8.000.000', { timeout: 3_000 });
+    await expect(page.locator('.inversion-momento__monto')).toHaveText('$8.000.000', { timeout: 3_000 });
 
     // Esperar el debounce de save() (200ms)
     await page.waitForTimeout(400);
@@ -344,6 +347,6 @@ test.describe('Inversión - portafolio real (J.2)', () => {
     await expect(
       page.locator('.inversion-lista__items')
     ).toContainText('Acciones Colombia E2E', { timeout: 3_000 });
-    await expect(page.locator('.inversion-hero__title')).toHaveText('$8.000.000');
+    await expect(page.locator('.inversion-momento__monto')).toHaveText('$8.000.000');
   });
 });

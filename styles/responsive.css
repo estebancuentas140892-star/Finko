@@ -237,6 +237,11 @@
      especificidad (mismo motivo que G2 en Gastos). */
   .apartado-card__secundaria { min-height: 44px; }
 
+  /* DIS.17, mismo motivo de capa: "Registrar otra inversión" baja a secundaria
+     cuando la tarjeta del momento ofrece primero ir al Fondo de emergencia, y
+     como `.btn-sm` mediría 36px. */
+  .inversion-momento__secundaria { min-height: 44px; }
+
   /* DIS.7 (hallazgo L7, regla R4): el "+ Límite" de la tarjeta de Estilo de
      vida medía 36px y es el único control de creación que queda dentro de la
      tarjeta, a 1,3 pantallas del primario del encabezado. Mismo motivo de capa

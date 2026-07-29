@@ -497,3 +497,199 @@ export function detectarNudgesInversion(inversiones, contexto = {}) {
 
   return nudges;
 }
+
+// ── LOS TRES MOMENTOS (DIS.17) ───────────────────────────────────
+
+/**
+ * El recorrido del inversionista tiene tres momentos y la sección solo puede
+ * construir dos. El tercero ("tu dinero ya trabaja para ti") necesita el valor
+ * real de cada inversión en el tiempo, y Finko solo guarda el monto que se puso
+ * y la tasa que el usuario escribió: sin ese dato la frase no tiene con qué
+ * probarse. Queda diseñado y fuera del código. El conteo sí lo nombra ("momento
+ * 1 de 3"), porque el usuario merece saber que hay camino por delante.
+ */
+export const TOTAL_MOMENTOS = 3;
+
+/**
+ * Qué es cada tipo de inversión, en una frase. Solo se muestra en el momento 1,
+ * cuando hay una sola inversión registrada, y desaparece después: una
+ * explicación que se repite para siempre deja de educar y pasa a ser ruido.
+ */
+export const EXPLICACION_TIPO = {
+  CDT:      'Un CDT es dinero que le prestas al banco por un plazo fijo. Sabes desde el primer día cuánto te va a devolver, y no puedes sacarlo antes sin perder la ganancia.',
+  Fondo:    'Un fondo reúne el dinero de muchas personas y lo invierte por ti. No te promete una cifra exacta, pero suele moverse menos que las acciones.',
+  Acciones: 'Al comprar acciones te vuelves dueño de un pedazo de una empresa. Puede subir o bajar, y nadie te garantiza cuánto.',
+  Cripto:   'Las criptomonedas suben y bajan mucho en poco tiempo. Nadie responde por su precio, así que aquí solo va dinero que puedas dejar quieto.',
+  Otro:     'Registraste una inversión por fuera de los tipos que Finko conoce. Los cálculos usan la tasa y el plazo que escribiste.',
+};
+
+/**
+ * El rasgo de cada tipo en dos o tres palabras: qué esperar de ese dinero.
+ * Es la leyenda del gráfico, donde la lista de porcentajes tenía sentido
+ * pedagógico solo si cada parte decía qué es.
+ */
+export const RASGO_TIPO = {
+  CDT:      'plazo fijo',
+  Fondo:    'riesgo bajo',
+  Acciones: 'sube o baja',
+  Cripto:   'sube o baja',
+  Otro:     '',
+};
+
+/** @param {string} tipo @returns {string} '' si el tipo no tiene rasgo propio. */
+export function rasgoTipo(tipo) {
+  return RASGO_TIPO[tipo] ?? '';
+}
+
+/** @param {string} tipo @returns {string} explicación del instrumento. */
+export function explicacionTipo(tipo) {
+  return EXPLICACION_TIPO[tipo] ?? EXPLICACION_TIPO.Otro;
+}
+
+/**
+ * Fecha en la que vence una inversión: `fechaInicio` más `plazoMeses`, con el
+ * día acotado al último del mes destino (31 ene + 1 mes = 28/29 feb), mismo
+ * criterio que `_addMeses` de `infra/vencimientos.js`.
+ *
+ * @param {{fechaInicio:string, plazoMeses:number}} inv
+ * @returns {string|null} 'YYYY-MM-DD', o null si no hay plazo o fecha válida.
+ */
+export function fechaVencimientoInversion(inv) {
+  const plazo  = Number(inv?.plazoMeses);
+  const inicio = String(inv?.fechaInicio ?? '').trim();
+  if (!Number.isFinite(plazo) || plazo <= 0) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(inicio)) return null;
+
+  const [anio, mes, dia] = inicio.split('-').map(Number);
+  const base   = new Date(anio, mes - 1 + plazo, 1);
+  const ultimo = new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate();
+  const fin    = new Date(base.getFullYear(), base.getMonth(), Math.min(dia, ultimo));
+  return `${fin.getFullYear()}-${String(fin.getMonth() + 1).padStart(2, '0')}-${String(fin.getDate()).padStart(2, '0')}`;
+}
+
+/** Porcentaje con 2 decimales, para alturas de gráfico que deben sumar exacto. */
+function _alto(parte, total) {
+  if (!(total > 0)) return 0;
+  return Math.round((parte / total) * 10000) / 100;
+}
+
+/**
+ * Geometría del gráfico de dos columnas: hoy contra al vencer (DIS.17).
+ *
+ * La primera columna es el dinero que puso el usuario, partido por tipo de
+ * inversión, así que la diversificación se ve sin nombrarla. La segunda repite
+ * ese mismo cuerpo y le añade un segmento encima: eso es lo que pone el tiempo.
+ * Una figura enseña dos cosas porque una es la partición de la otra.
+ *
+ * Las alturas van en % de la columna más alta (la de al vencer, que vale 100),
+ * así las dos comparten escala y se comparan por longitud sin leer una cifra.
+ *
+ * @param {Array} inversiones
+ * @returns {{
+ *   segmentos: Array<{tipo:string, monto:number, pct:number, alto:number}>,
+ *   altoCuerpo: number,
+ *   altoTiempo: number,
+ *   rendimiento: number,
+ *   totalInvertido: number,
+ *   totalProyectado: number,
+ *   proyectables: number,
+ *   noProyectables: number,
+ * } | null} null si no hay capital registrado.
+ */
+export function columnasPortafolio(inversiones) {
+  const proy = proyectarPortafolio(inversiones);
+  if (proy.totalInvertido <= 0) return null;
+
+  // El rendimiento nunca resta altura: una proyección negativa no existe con
+  // las tasas que acepta el formulario, y dibujarla invertiría la lectura.
+  const rendimiento = Math.max(0, proy.rendimientoEsperado);
+  const escala      = proy.totalInvertido + rendimiento;
+  const altoTiempo  = _alto(rendimiento, escala);
+  const altoCuerpo  = Math.round((100 - altoTiempo) * 100) / 100;
+
+  const segmentos = calcularPorTipo(inversiones).map(t => ({
+    tipo:  t.tipo,
+    monto: t.total,
+    pct:   t.pct,
+    alto:  _alto(t.total, escala),
+  }));
+
+  return {
+    segmentos,
+    altoCuerpo,
+    altoTiempo,
+    rendimiento,
+    totalInvertido:  proy.totalInvertido,
+    totalProyectado: proy.totalProyectado,
+    proyectables:    proy.proyectables,
+    noProyectables:  proy.noProyectables,
+  };
+}
+
+/**
+ * El momento en el que está el usuario (DIS.17, arquitectura O).
+ *
+ * La cabecera de la sección deja de ser un total y pasa a ser la etapa: lo que
+ * se enseña cambia cuando el usuario cambia. Con una inversión la sección
+ * explica qué compró; con dos o más muestra el conjunto y de qué está hecho.
+ *
+ * Los nudges no se apilan: se absorben aquí. La concentración y el refuerzo
+ * positivo entran en la frase del momento, y el del fondo de emergencia sale
+ * como `aviso` porque además cambia la acción principal.
+ *
+ * @param {Array} inversiones
+ * @param {{ fondoActivo?: boolean, fondoCompletado?: boolean }} [contexto]
+ * @returns {{
+ *   numero: number, chip: string, titulo: string, frase: string,
+ *   anticipoKicker: string, anticipo: string, accion: string,
+ *   aviso: {id:string, nivel:string, titulo:string, desc:string} | null,
+ * } | null} null si no hay ninguna inversión con monto.
+ */
+export function momentoInversion(inversiones, contexto = {}) {
+  const lista = Array.isArray(inversiones)
+    ? inversiones.filter(i => Number(i?.monto) > 0)
+    : [];
+  if (lista.length === 0) return null;
+
+  const nudges = detectarNudgesInversion(lista, contexto);
+  const aviso  = nudges.find(n => n.id === 'fondo-primero' || n.id === 'fondo-incompleto') ?? null;
+
+  if (lista.length === 1) {
+    return {
+      numero:         1,
+      chip:           'aprendiendo',
+      titulo:         'Diste tu primer paso',
+      frase:          explicacionTipo(lista[0].tipo),
+      anticipoKicker: 'Siguiente momento',
+      anticipo:       'Cuando tengas dos o más inversiones distintas, vas a ver cómo se reparte el riesgo entre ellas.',
+      accion:         'Registrar otra inversión',
+      aviso,
+    };
+  }
+
+  const porTipo     = calcularPorTipo(lista);
+  const concentrado = nudges.find(n => n.id === 'concentracion') ?? null;
+  const baseSana    = nudges.some(n => n.id === 'base-sana');
+
+  let frase;
+  if (concentrado && porTipo.length > 0) {
+    frase = `El ${porTipo[0].pct}% de lo que tienes invertido está en ${porTipo[0].tipo}. Repartirlo entre varios tipos suaviza los altibajos: si a uno le va mal, no te afecta todo.`;
+  } else {
+    frase = `Tienes ${lista.length} inversiones repartidas en ${porTipo.length} tipos distintos. Eso reparte el riesgo: si a uno le va mal, no te afecta todo.`;
+    if (baseSana) frase += ' Con tu fondo de emergencia completo, esa es una base sólida.';
+  }
+
+  return {
+    numero:         2,
+    chip:           'construyendo',
+    titulo:         'Estás construyendo patrimonio',
+    frase,
+    // El momento 3 no se puede prometer: necesita un dato que Finko no guarda.
+    // El anticipo dice lo que sí es verdad hoy y no compromete una pantalla que
+    // no existe.
+    anticipoKicker: 'Lo que sigue',
+    anticipo:       'Cada año que dejas quieta una inversión, el pedazo que pone el tiempo se hace más grande. Ese es el interés compuesto, y solo se ve con paciencia.',
+    accion:         'Registrar una inversión',
+    aviso,
+  };
+}

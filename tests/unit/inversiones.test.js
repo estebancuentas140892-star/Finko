@@ -16,6 +16,8 @@ import {
   esProyectable, proyectarInversion, proyectarPortafolio,
   tasaPromedioPonderada, calcularRentabilidadRealPortafolio,
   detectarNudgesInversion, UMBRAL_CONCENTRACION_PCT, UMBRAL_VARIABLE_PCT,
+  TOTAL_MOMENTOS, rasgoTipo, explicacionTipo, fechaVencimientoInversion,
+  columnasPortafolio, momentoInversion,
 } from '../../modules/dominio/inversiones/logic.js';
 
 // ── Constantes ─────────────────────────────────────────────────────
@@ -500,5 +502,175 @@ describe('detectarNudgesInversion()', () => {
   it('los umbrales se exportan como números', () => {
     expect(typeof UMBRAL_CONCENTRACION_PCT).toBe('number');
     expect(typeof UMBRAL_VARIABLE_PCT).toBe('number');
+  });
+});
+
+// ── DIS.17: los tres momentos ──────────────────────────────────────
+
+describe('rasgoTipo() y explicacionTipo()', () => {
+  it('cada tipo con rasgo devuelve dos o tres palabras', () => {
+    expect(rasgoTipo('CDT')).toBe('plazo fijo');
+    expect(rasgoTipo('Fondo')).toBe('riesgo bajo');
+    expect(rasgoTipo('Acciones')).toBe('sube o baja');
+    expect(rasgoTipo('Cripto')).toBe('sube o baja');
+  });
+
+  it('"Otro" y los tipos desconocidos no tienen rasgo', () => {
+    expect(rasgoTipo('Otro')).toBe('');
+    expect(rasgoTipo('Finca raiz')).toBe('');
+    expect(rasgoTipo(undefined)).toBe('');
+  });
+
+  it('cada tipo conocido tiene su explicación', () => {
+    for (const tipo of TIPOS_INVERSION) {
+      expect(explicacionTipo(tipo).length).toBeGreaterThan(40);
+    }
+  });
+
+  it('un tipo desconocido cae a la explicación de "Otro"', () => {
+    expect(explicacionTipo('Finca raiz')).toBe(explicacionTipo('Otro'));
+  });
+});
+
+// ── fechaVencimientoInversion ──────────────────────────────────────
+
+describe('fechaVencimientoInversion()', () => {
+  it('suma el plazo en meses a la fecha de inicio', () => {
+    expect(fechaVencimientoInversion({ fechaInicio: '2026-03-15', plazoMeses: 12 }))
+      .toBe('2027-03-15');
+    expect(fechaVencimientoInversion({ fechaInicio: '2026-03-15', plazoMeses: 6 }))
+      .toBe('2026-09-15');
+  });
+
+  it('acota el día al último del mes destino', () => {
+    expect(fechaVencimientoInversion({ fechaInicio: '2026-01-31', plazoMeses: 1 }))
+      .toBe('2026-02-28');
+    expect(fechaVencimientoInversion({ fechaInicio: '2028-01-31', plazoMeses: 1 }))
+      .toBe('2028-02-29');
+  });
+
+  it('devuelve null sin plazo, sin fecha o con formato inválido', () => {
+    expect(fechaVencimientoInversion({ fechaInicio: '2026-03-15', plazoMeses: 0 })).toBeNull();
+    expect(fechaVencimientoInversion({ fechaInicio: '', plazoMeses: 12 })).toBeNull();
+    expect(fechaVencimientoInversion({ fechaInicio: '15/03/2026', plazoMeses: 12 })).toBeNull();
+    expect(fechaVencimientoInversion(null)).toBeNull();
+  });
+});
+
+// ── columnasPortafolio ─────────────────────────────────────────────
+
+describe('columnasPortafolio()', () => {
+  const cdt = { tipo: 'CDT', monto: 6_000_000, tasaEA: 10, plazoMeses: 12 };
+  const btc = { tipo: 'Cripto', monto: 4_000_000, tasaEA: 0, plazoMeses: 0 };
+
+  it('devuelve null sin capital registrado', () => {
+    expect(columnasPortafolio([])).toBeNull();
+    expect(columnasPortafolio(null)).toBeNull();
+    expect(columnasPortafolio([{ tipo: 'CDT', monto: 0 }])).toBeNull();
+  });
+
+  it('las dos columnas comparten escala: cuerpo + tiempo suman 100', () => {
+    const c = columnasPortafolio([cdt, btc]);
+    expect(c.altoCuerpo + c.altoTiempo).toBeCloseTo(100, 2);
+  });
+
+  it('los segmentos del cuerpo suman la altura del cuerpo', () => {
+    const c = columnasPortafolio([cdt, btc]);
+    const suma = c.segmentos.reduce((s, seg) => s + seg.alto, 0);
+    expect(suma).toBeCloseTo(c.altoCuerpo, 1);
+  });
+
+  it('un segmento por tipo, de mayor a menor monto', () => {
+    const c = columnasPortafolio([btc, cdt]);
+    expect(c.segmentos.map(s => s.tipo)).toEqual(['CDT', 'Cripto']);
+    expect(c.segmentos[0].pct).toBe(60);
+  });
+
+  it('sin nada proyectable el tiempo no aporta altura', () => {
+    const c = columnasPortafolio([btc]);
+    expect(c.altoTiempo).toBe(0);
+    expect(c.altoCuerpo).toBe(100);
+    expect(c.proyectables).toBe(0);
+    expect(c.noProyectables).toBe(1);
+  });
+
+  it('el rendimiento proyectado se refleja en el segmento del tiempo', () => {
+    const c = columnasPortafolio([cdt]);
+    expect(c.rendimiento).toBeGreaterThan(0);
+    expect(c.altoTiempo).toBeGreaterThan(0);
+    expect(c.altoTiempo).toBeLessThan(20); // un portafolio joven aporta poco
+  });
+});
+
+// ── momentoInversion ───────────────────────────────────────────────
+
+describe('momentoInversion()', () => {
+  const cdt = { tipo: 'CDT', monto: 5_000_000, tasaEA: 11.5, plazoMeses: 12 };
+  const fic = { tipo: 'Fondo', monto: 5_000_000, tasaEA: 8, plazoMeses: 24 };
+  const listo = { fondoActivo: true, fondoCompletado: true };
+
+  it('el recorrido tiene tres momentos', () => {
+    expect(TOTAL_MOMENTOS).toBe(3);
+  });
+
+  it('devuelve null sin inversiones con monto', () => {
+    expect(momentoInversion([], listo)).toBeNull();
+    expect(momentoInversion(null)).toBeNull();
+    expect(momentoInversion([{ tipo: 'CDT', monto: 0 }], listo)).toBeNull();
+  });
+
+  it('con una inversión es el momento 1 y explica el instrumento', () => {
+    const m = momentoInversion([cdt], listo);
+    expect(m.numero).toBe(1);
+    expect(m.chip).toBe('aprendiendo');
+    expect(m.frase).toBe(explicacionTipo('CDT'));
+    expect(m.accion).toBe('Registrar otra inversión');
+  });
+
+  it('el momento 1 anticipa el momento 2, que sí se puede construir', () => {
+    const m = momentoInversion([cdt], listo);
+    expect(m.anticipoKicker).toBe('Siguiente momento');
+    expect(m.anticipo).toContain('dos o más inversiones');
+  });
+
+  it('con dos o más inversiones es el momento 2', () => {
+    const m = momentoInversion([cdt, fic], listo);
+    expect(m.numero).toBe(2);
+    expect(m.chip).toBe('construyendo');
+    expect(m.frase).toContain('2 inversiones');
+    expect(m.frase).toContain('2 tipos distintos');
+  });
+
+  it('el momento 2 no promete el momento 3, que no se puede construir', () => {
+    const m = momentoInversion([cdt, fic], listo);
+    expect(m.anticipo).not.toMatch(/rindieron|de verdad/);
+    expect(m.anticipo).toContain('interés compuesto');
+  });
+
+  it('el refuerzo positivo se absorbe en la frase del momento 2', () => {
+    const m = momentoInversion([cdt, fic], listo);
+    expect(m.frase).toContain('fondo de emergencia completo');
+  });
+
+  it('la concentración se absorbe en la frase, no se apila como nudge', () => {
+    const m = momentoInversion(
+      [{ ...cdt, monto: 9_000_000 }, { ...fic, monto: 1_000_000 }],
+      listo,
+    );
+    expect(m.frase).toContain('90% de lo que tienes invertido está en CDT');
+  });
+
+  it('el nudge del fondo de emergencia sale como aviso', () => {
+    const m = momentoInversion([cdt], { fondoActivo: false });
+    expect(m.aviso.id).toBe('fondo-primero');
+  });
+
+  it('sin aviso cuando el fondo ya está completo', () => {
+    expect(momentoInversion([cdt], listo).aviso).toBeNull();
+  });
+
+  it('el fondo incompleto también sale como aviso', () => {
+    const m = momentoInversion([cdt, fic], { fondoActivo: true, fondoCompletado: false });
+    expect(m.aviso.id).toBe('fondo-incompleto');
   });
 });

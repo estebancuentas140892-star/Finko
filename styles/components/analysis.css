@@ -1046,92 +1046,255 @@
   margin: 0;
 }
 
-/* ── J.2a: Inversión (hero total invertido + lista de holdings) ─── */
+/* ── DIS.17: Inversión, la tarjeta del momento ───────────────────
+   Arquitectura O con el grafico de N. `.inversion-hero` (el total invertido) y
+   `.inversion-proy` (la card de proyeccion) se retiraron enteras: se fusionan
+   en una sola cabecera por etapa. La lista de porcentajes por tipo dejo de ser
+   lista y paso a ser la leyenda del grafico, y el tip permanente desaparecio
+   porque lo que ensena tiene que cambiar cuando el usuario cambia. */
 
-.inversion-hero {
-  background: var(--fk-bg-elevated);
+.inversion-momento {
+  background: var(--fk-bg-surface);
   border: 1px solid var(--fk-border-subtle);
   border-radius: var(--fk-radius-lg);
-  padding: var(--fk-space-lg);
+  box-shadow: var(--fk-shadow-sm);
+  padding: var(--fk-space-4);
   margin-bottom: var(--fk-space-lg);
   display: flex;
   flex-direction: column;
-  gap: var(--fk-space-md);
+  gap: var(--fk-space-3);
 }
 
-.inversion-hero__header {
-  display: grid;
-  grid-template-columns: auto 1fr;
+.inversion-momento__cabecera {
+  display: flex;
   align-items: center;
-  gap: var(--fk-space-md);
-}
-
-.inversion-hero__icon {
-  width: var(--fk-space-12);
-  height: var(--fk-space-12);
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--fk-dom-inversion) 14%, transparent);
-  color: var(--fk-dom-inversion-text);
-}
-.inversion-hero__icon .icon {
-  --fk-icon-size: var(--fk-icon-xl);
-}
-
-.inversion-hero__title-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.inversion-hero__label {
-  font-size: var(--fk-fs-xs);
-  color: var(--fk-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin: 0;
-}
-
-.inversion-hero__title {
-  font-size: var(--fk-fs-xl);
-  font-weight: var(--fk-fw-bold);
-  color: var(--fk-text-primary);
-  margin: 0;
-  font-variant-numeric: tabular-nums;
-}
-
-.inversion-hero__sub {
-  font-size: var(--fk-fs-sm);
-  color: var(--fk-text-muted);
-}
-
-.inversion-hero__tipos {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-wrap: wrap;
+  justify-content: space-between;
   gap: var(--fk-space-2);
 }
-.inversion-hero__tipo {
-  display: flex;
-  align-items: baseline;
-  gap: var(--fk-space-1);
-  padding: var(--fk-space-1) var(--fk-space-3);
-  border-radius: var(--fk-radius-full);
-  background: color-mix(in srgb, var(--fk-dom-inversion) 8%, transparent);
-  border: 1px solid color-mix(in srgb, var(--fk-dom-inversion) 22%, transparent);
-  font-size: var(--fk-fs-sm);
+
+.inversion-momento__kicker {
+  font-size: var(--fk-text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fk-text-muted);
+  margin: 0;
 }
-.inversion-hero__tipo-label {
+
+/* El nombre de la etapa: no es un estado del sistema, es como se llama el
+   usuario a si mismo en este momento. */
+.inversion-momento__chip {
+  flex: none;
+  padding: 2px var(--fk-space-2);
+  border: 1px solid color-mix(in srgb, var(--fk-dom-inversion) 34%, transparent);
+  border-radius: var(--fk-radius-full);
+  font-size: var(--fk-text-xs);
+  color: var(--fk-dom-inversion-text);
+  white-space: nowrap;
+}
+
+.inversion-momento__intro,
+.inversion-momento__anticipo,
+.inversion-momento__construido {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.inversion-momento__titulo {
+  margin: 0;
+  font-size: var(--fk-text-xl);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  line-height: 1.15;
+}
+
+.inversion-momento__frase {
+  margin: 0;
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  line-height: 1.45;
+}
+
+.inversion-momento__monto {
+  margin: 0;
+  font-size: var(--fk-text-2xl);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
+.inversion-momento__suma {
+  margin: 0;
+  font-size: var(--fk-text-sm);
   color: var(--fk-text-secondary);
 }
-.inversion-hero__tipo-pct {
-  font-weight: var(--fk-fw-semibold);
-  color: var(--fk-dom-inversion-text);
+.inversion-momento__suma strong {
+  color: var(--fk-text-primary);
   font-variant-numeric: tabular-nums;
+}
+
+/* El grafico: dos columnas de altura comparada, la primera partida por tipo.
+   Se comparan por longitud, asi que el ojo entiende antes de leer. */
+.inversion-momento__duo {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--fk-space-3);
+}
+
+.inversion-momento__col {
+  flex: none;
+  width: 3.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--fk-space-1);
+}
+
+.inversion-momento__stack {
+  width: 100%;
+  height: 6.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+/* Sin `gap`: las alturas van en % de la columna y las dos columnas tienen que
+   sumar exacto para que se comparen por longitud. La linea que separa los
+   segmentos es una sombra, que no ocupa espacio. */
+.inversion-momento__seg {
+  display: block;
+  width: 100%;
+  background: var(--fk-bg-elevated);
+}
+.inversion-momento__seg + .inversion-momento__seg {
+  box-shadow: 0 -1px 0 var(--fk-bg-surface);
+}
+.inversion-momento__seg:first-child {
+  border-top-left-radius: 2px;
+  border-top-right-radius: 2px;
+}
+.inversion-momento__seg:last-child {
+  border-bottom-left-radius: 2px;
+  border-bottom-right-radius: 2px;
+}
+
+/* Cinco tintas del turquesa de dominio, de mayor a menor peso: es el orden en
+   el que `calcularPorTipo` devuelve los tipos, de mas dinero a menos. */
+.inversion-momento__seg[data-seg="0"],
+.inversion-momento__leg-sw[data-seg="0"] { background: color-mix(in srgb, var(--fk-dom-inversion) 62%, var(--fk-bg-elevated)); }
+.inversion-momento__seg[data-seg="1"],
+.inversion-momento__leg-sw[data-seg="1"] { background: color-mix(in srgb, var(--fk-dom-inversion) 46%, var(--fk-bg-elevated)); }
+.inversion-momento__seg[data-seg="2"],
+.inversion-momento__leg-sw[data-seg="2"] { background: color-mix(in srgb, var(--fk-dom-inversion) 32%, var(--fk-bg-elevated)); }
+.inversion-momento__seg[data-seg="3"],
+.inversion-momento__leg-sw[data-seg="3"] { background: color-mix(in srgb, var(--fk-dom-inversion) 22%, var(--fk-bg-elevated)); }
+.inversion-momento__seg[data-seg="4"],
+.inversion-momento__leg-sw[data-seg="4"] { background: color-mix(in srgb, var(--fk-dom-inversion) 14%, var(--fk-bg-elevated)); }
+
+/* Lo que pone el tiempo es el unico segmento a tinta plena: es la leccion de la
+   seccion, y es pequeno a proposito en un portafolio joven. */
+.inversion-momento__seg--tiempo,
+.inversion-momento__leg-sw[data-seg="tiempo"] { background: var(--fk-dom-inversion); }
+
+.inversion-momento__col-lb {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.inversion-momento__leyenda {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+  padding-bottom: var(--fk-space-4);
+}
+
+.inversion-momento__leg {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  line-height: 1.3;
+}
+
+.inversion-momento__leg-sw {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+}
+
+.inversion-momento__nota {
+  margin: 0;
+  padding-left: var(--fk-space-3);
+  border-left: 2px solid var(--fk-dom-inversion);
+  font-size: var(--fk-text-sm);
+  line-height: 1.45;
+  color: var(--fk-text-secondary);
+}
+
+/* El nudge del fondo de emergencia: el unico que sobrevive como bloque propio,
+   porque ademas cambia cual es la accion principal de la tarjeta. */
+.inversion-momento__aviso {
+  margin: 0;
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  background: var(--fk-bg-elevated);
+  font-size: var(--fk-text-xs);
+  line-height: 1.45;
+  color: var(--fk-text-secondary);
+}
+.inversion-momento__aviso strong { color: var(--fk-text-primary); }
+
+/* La letra pequena de la proyeccion (ADR 009): es contexto, no un dato. */
+.inversion-momento__pie {
+  margin: 0;
+  padding-top: var(--fk-space-2);
+  border-top: 1px solid var(--fk-border-subtle);
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  line-height: 1.5;
+}
+
+.inversion-momento__acciones {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+}
+
+/* Accion principal con la identidad del dominio, mismo patron que
+   `.fondo-card__principal` y `.apartado-card__principal`. */
+.inversion-momento__principal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  border: 1.5px solid color-mix(in srgb, var(--fk-dom-inversion) 40%, transparent);
+  background: var(--fk-dom-inversion-bg);
+  color: var(--fk-dom-inversion-text);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  font-family: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--fk-transition-fast), border-color var(--fk-transition-fast);
+}
+.inversion-momento__principal:hover {
+  background: color-mix(in srgb, var(--fk-dom-inversion) 20%, transparent);
+  border-color: color-mix(in srgb, var(--fk-dom-inversion) 60%, transparent);
+}
+
+.inversion-momento__secundaria {
+  align-self: center;
+  min-height: 2.75rem;
 }
 
 .inversion-lista {
@@ -1169,13 +1332,17 @@
   font-weight: var(--fk-fw-semibold);
   color: var(--fk-dom-inversion-text);
 }
-.inversion-item__chip {
-  margin-left: var(--fk-space-2);
-  color: var(--fk-text-muted);
-}
+/* DIS.17: los datos del holding dejaron de ser siglas ("11,5% EA · 12 meses")
+   y pasaron a ser frases ("Crece 11,5% al ano · termina en 12 meses"), asi que
+   necesitan un separador propio para no leerse como una sola linea corrida. */
+.inversion-item__chip,
 .inversion-item__fecha {
   margin-left: var(--fk-space-2);
   color: var(--fk-text-muted);
+}
+.inversion-item__chip::before,
+.inversion-item__fecha::before {
+  content: '· ';
 }
 
 /* Etiqueta "opcional" junto al label de un campo de formulario. */
@@ -1187,94 +1354,12 @@
   font-size: var(--fk-fs-xs);
 }
 
-/* ── J.2b: Proyección al vencimiento (card + por holding) ──── */
-
-.inversion-proy {
-  background: var(--fk-bg-elevated);
-  border: 1px solid var(--fk-border-subtle);
-  border-radius: var(--fk-radius-lg);
-  padding: var(--fk-space-md) var(--fk-space-lg);
-  margin-bottom: var(--fk-space-lg);
-  display: flex;
-  flex-direction: column;
-  gap: var(--fk-space-3);
-}
-
-.inversion-proy--vacia {
-  padding: var(--fk-space-3) var(--fk-space-md);
-}
-
-.inversion-proy__title {
-  font-size: var(--fk-fs-sm);
-  font-weight: var(--fk-fw-semibold);
-  color: var(--fk-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin: 0;
-}
-
-.inversion-proy__grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--fk-space-md);
-}
-
-.inversion-proy__metric-label {
-  font-size: var(--fk-fs-xs);
-  color: var(--fk-text-muted);
-  margin: 0 0 2px;
-}
-.inversion-proy__metric-value {
-  font-size: var(--fk-fs-lg);
-  font-weight: var(--fk-fw-bold);
-  color: var(--fk-text-primary);
-  margin: 0;
-  font-variant-numeric: tabular-nums;
-}
-
-.inversion-proy__real {
-  border-top: 1px solid var(--fk-border-subtle);
-  padding-top: var(--fk-space-3);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.inversion-proy__real-line {
-  font-size: var(--fk-fs-sm);
-  color: var(--fk-text-secondary);
-  margin: 0;
-}
-.inversion-proy__real-line strong {
-  font-variant-numeric: tabular-nums;
-}
-.inversion-proy__real-nota,
-.inversion-proy__hint {
-  font-size: var(--fk-fs-xs);
-  color: var(--fk-text-muted);
-  margin: 0;
-}
-
-.inversion-proy__nota {
-  font-size: var(--fk-fs-sm);
-  color: var(--fk-text-muted);
-  margin: 0;
-}
-
-/* Insight pasivo Regla del 72: "A esta tasa, tu dinero se duplica en ~N años." */
-.inversion-proy__r72 {
-  font-size: var(--fk-fs-sm);
-  color: var(--fk-text-secondary);
-  margin: var(--fk-space-2) 0 0;
-  padding: var(--fk-space-2) var(--fk-space-3);
-  background: var(--fk-bg-elevated);
-  border-radius: var(--fk-radius-sm);
-}
-
-/* Colores de signo, locales a inversión (no globales). */
-.inversion-proy .is-pos { color: var(--fk-success); }
-.inversion-proy .is-neg { color: var(--fk-danger); }
-
-/* Proyección por holding dentro de cada item de la lista. */
+/* Proyección por holding dentro de cada item de la lista.
+   DIS.17: `.inversion-proy` (la card de proyeccion del portafolio),
+   `.inversion-nudges` (la pila de recomendaciones) y `.inversion-tip` (el tip
+   permanente) se retiraron con sus emisores. La proyeccion del conjunto vive
+   en la tarjeta del momento, los nudges se absorbieron en la frase de cada
+   momento y el tip lo reemplazo el grafico, que ensena lo mismo sin texto. */
 .inversion-item__proy {
   font-size: var(--fk-fs-sm);
   color: var(--fk-text-secondary);
@@ -1283,29 +1368,6 @@
 .inversion-item__proy strong {
   color: var(--fk-text-primary);
   font-variant-numeric: tabular-nums;
-}
-.inversion-item__proy-gain {
-  color: var(--fk-success);
-  margin-left: var(--fk-space-1);
-  font-variant-numeric: tabular-nums;
-}
-
-/* ── J.2c: nudges educativos + tip de horizonte ────────────── */
-
-.inversion-nudges {
-  display: flex;
-  flex-direction: column;
-  gap: var(--fk-space-2);
-  margin-bottom: var(--fk-space-lg);
-}
-
-.inversion-tip {
-  font-size: var(--fk-fs-sm);
-  color: var(--fk-text-muted);
-  margin: var(--fk-space-md) 0 0;
-  padding: var(--fk-space-3);
-  border: 1px dashed var(--fk-border-subtle);
-  border-radius: var(--fk-radius-md);
 }
 
 /* ── ANL.2c: grupo "A dónde va tu dinero" (ADR 038 D3/D4) ──
