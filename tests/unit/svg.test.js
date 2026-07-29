@@ -3,6 +3,7 @@ import {
   sparkline,
   donut,
   progressRing,
+  arcoProgreso,
   colorearSegmentos,
   PALETA_CATEGORIAS,
 } from '../../modules/infra/svg.js';
@@ -241,6 +242,73 @@ describe('progressRing()', () => {
 
   it('no fija colores inline: el color vive en CSS', () => {
     expect(progressRing(50)).not.toContain('stroke="#');
+  });
+});
+
+// ── arcoProgreso() (DIS.14) ──────────────────────────────────────
+
+describe('arcoProgreso()', () => {
+  it('genera un SVG con role img y la clase progress-arc', () => {
+    const out = arcoProgreso(50);
+    expect(out).toContain('<svg');
+    expect(out).toContain('role="img"');
+    expect(out).toContain('class="progress-arc"');
+  });
+
+  it('incluye el track y el arco con sus clases', () => {
+    const out = arcoProgreso(50);
+    expect(out).toContain('progress-arc__track');
+    expect(out).toContain('progress-arc__bar');
+  });
+
+  it('con 0% no emite el arco (linecap round dibujaría un punto)', () => {
+    const out = arcoProgreso(0);
+    expect(out).toContain('progress-arc__track');
+    expect(out).not.toContain('progress-arc__bar');
+  });
+
+  it('normaliza el semicírculo con pathLength=100, igual que el anillo', () => {
+    const out = arcoProgreso(34);
+    expect(out).toContain('pathLength="100"');
+    expect(out).toContain('stroke-dasharray="100"');
+    expect(out).toContain('stroke-dashoffset="66.00"');
+  });
+
+  it('100% cierra el arco (dashoffset 0)', () => {
+    expect(arcoProgreso(100)).toContain('stroke-dashoffset="0.00"');
+  });
+
+  it('recorta porcentajes fuera de rango y trata NaN como 0', () => {
+    expect(arcoProgreso(-20)).not.toContain('progress-arc__bar');
+    expect(arcoProgreso(150)).toContain('>100%<');
+    expect(arcoProgreso(NaN)).toContain('>0%<');
+  });
+
+  it('track y arco comparten la misma geometría (un solo semicírculo)', () => {
+    const out = arcoProgreso(50);
+    expect(out.match(/d="M 18 120 A 102 102 0 0 1 222 120"/g)).toHaveLength(2);
+    expect(out).toContain('viewBox="0 0 240 132"');
+  });
+
+  it('el porcentaje va aria-hidden: lo anuncia el aria-label del SVG (regla R11)', () => {
+    const out = arcoProgreso(34, { ariaLabel: 'Viaje: 34% de tu objetivo' });
+    expect(out).toContain('aria-label="Viaje: 34% de tu objetivo"');
+    expect(out).toMatch(/<text[^>]*aria-hidden="true"/);
+  });
+
+  it('conLabel:false quita el porcentaje dibujado', () => {
+    expect(arcoProgreso(75, { conLabel: false })).not.toContain('<text');
+  });
+
+  it('aria-label por defecto y custom escapado', () => {
+    expect(arcoProgreso(40)).toContain('aria-label="Progreso: 40%"');
+    expect(arcoProgreso(40, { ariaLabel: 'Meta <viaje>' })).toContain('aria-label="Meta &lt;viaje&gt;"');
+  });
+
+  it('no fija ancho ni colores inline: los decide el contenedor y el CSS', () => {
+    const out = arcoProgreso(50);
+    expect(out).not.toContain('stroke="#');
+    expect(out).not.toMatch(/<svg[^>]*\swidth=/);
   });
 });
 

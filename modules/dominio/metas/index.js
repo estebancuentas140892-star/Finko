@@ -142,7 +142,7 @@ function _abrirAbonoMeta(el) {
   if (!overlay) return;
 
   const titulo = overlay.querySelector('.modal__title');
-  if (titulo) titulo.textContent = `Abonar: ${meta.nombre}`;
+  if (titulo) titulo.textContent = `Aportar a ${meta.nombre}`;
 
   const body = overlay.querySelector('.modal__body');
   if (body) {
@@ -158,11 +158,15 @@ function _abrirAbonoMeta(el) {
 }
 
 /**
- * Guarda el abono a una meta. MT.5: mismo patrón que `_guardarAporte` de
+ * Guarda el aporte a una meta. MT.5: mismo patrón que `_guardarAporte` de
  * Apartados (AP.1): resuelve la cuenta con `resolverPagoConPreferida`
  * (usa la elegida en el selector de tarjetas y, si no alcanza y hay más
  * cuentas, reparte sin dejar ninguna en negativo). Con 0 cuentas activas
- * el abono vale como seguimiento y no descuenta nada.
+ * el aporte vale como seguimiento y no descuenta nada.
+ *
+ * DIS.14: solo cambió el copy visible ("aporte" en vez de "abono", la palabra
+ * que ya usan Apartados y Fondo). Los ids del DOM y las `data-action` siguen
+ * llamándose `abono`/`abonar-meta`.
  */
 async function _guardarAbonoMeta() {
   const form = document.getElementById('form-abono-meta');
@@ -187,7 +191,7 @@ async function _guardarAbonoMeta() {
       S.cuentas,
       abono,
       datos.cuentaId,
-      `registrar el abono a "${meta.nombre}"`,
+      `registrar el aporte a "${meta.nombre}"`,
     );
     if (splits === null) return; // canceló o fue redirigido a Mis Cuentas
 
@@ -197,9 +201,9 @@ async function _guardarAbonoMeta() {
       const saldoCuenta = c?.saldo ?? 0;
       if (saldoCuenta < splits[0].monto) {
         const ok = await confirmar({
-          titulo:         'Registrar abono',
-          mensaje:        `¿Registrar abono de ${f(abono)} a "${meta.nombre}" desde ${c?.nombre ?? 'la cuenta'}? El saldo disponible es ${f(saldoCuenta)}: quedará en negativo.`,
-          confirmarTexto: 'Registrar abono',
+          titulo:         'Registrar aporte',
+          mensaje:        `¿Registrar aporte de ${f(abono)} a "${meta.nombre}" desde ${c?.nombre ?? 'la cuenta'}? El saldo disponible es ${f(saldoCuenta)}: quedará en negativo.`,
+          confirmarTexto: 'Registrar aporte',
           peligroso:      true,
         });
         if (!ok) return;
@@ -223,7 +227,7 @@ async function _guardarAbonoMeta() {
   updSaldo();
   announce(completada
     ? `¡Meta "${meta.nombre}" completada! 🎉`
-    : `Abono de ${f(abono)} registrado.`
+    : `Aporte de ${f(abono)} registrado.`
   );
 }
 

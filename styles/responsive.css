@@ -255,6 +255,14 @@
      Acotado a la tarjeta de cuenta: el ancho y el ícono no cambian. */
   .cuenta-card__actions .btn-icon { min-height: 44px; }
 
+  /* DIS.14 (hallazgo MT.g, regla R4): Editar y Eliminar de la tarjeta de meta
+     son botones de texto en el renglón de menor peso, y con `.btn-sm` medían
+     36px de alto. Mismo motivo de capa que las tres líneas de arriba: compite
+     con `.btn-sm` de este archivo, así que desde `domain.css` no se aplicaría.
+     Acotado a la tarjeta de meta: `.btn-sm` sigue midiendo 36px en el resto de
+     la app, que es una decisión abierta desde la auditoría del Fondo. */
+  .meta-card__secundaria { min-height: 44px; }
+
   /* Controles de Inicio por debajo del mínimo (ojo 40, ajustes 40, pill ~34,
      links de header ~18): el recuadro visual no cambia, se expande solo la
      zona sensible con un pseudo-elemento centrado. Crecer el control de
@@ -469,20 +477,11 @@
     text-overflow: ellipsis;
   }
 
-  /* ── Fila de meta (DIS.13, hallazgo MT.a, regla R56) ────────────────
-     Cuarto caso de la misma familia, y el peor medido: a 374px el cuerpo se
-     quedaba en 51px de 315, el nombre se partía a mitad de palabra en 5
-     líneas, el subtítulo en 15 y la fila medía 506px de alto (tres metas,
-     1,86 pantallas). La grilla genérica de arriba lo arregla sola y su
-     comentario dice desde siempre que cubre "gastos, deudas, personales,
-     metas": lo que faltaba era que la vista emitiera `.list-item__meta`, la
-     clase que la activa. Eso ya lo hace `_renderMetaItem`.
-     Lo único que el grid genérico no cubre es el ancho de la columna del
-     ícono: nació para tejas de 40px y el anillo de progreso de Metas mide 56.
-     Una línea, y la fila baja a 259px medidos. */
-  .lista-metas .list-item:has(.list-item__meta) {
-    grid-template-columns: 56px 1fr auto;
-  }
+  /* Metas ya no tiene fila: DIS.14 la convirtió en `.meta-card`, una tarjeta
+     vertical con medidor semicircular, así que su línea de esta familia (la
+     que subía la columna del ícono de 40 a 56px por el diámetro del anillo)
+     quedó sin sujeto y se retiró. El caso de Metas sigue documentado en la
+     regla R56, que nació de él. */
 }
 
 /* ── MÓVIL (< 768px): grid 1-col, fluid type, layouts compactos ─ */

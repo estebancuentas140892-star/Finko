@@ -186,6 +186,58 @@ export function progressRing(porcentaje, opts = {}) {
   </svg>`;
 }
 
+// ── ARCO DE PROGRESO (medidor semicircular) ──────────────────────
+
+/** Geometría del semicírculo: un solo path, reutilizado por track y arco. */
+const _ARCO_D    = 'M 18 120 A 102 102 0 0 1 222 120';
+const _ARCO_GROSOR = 14;
+
+/**
+ * Medidor semicircular de progreso 0-100 (DIS.14, arquitectura A2 de Metas).
+ *
+ * Hermano de `progressRing()` y con las mismas reglas: track completo, arco
+ * con `pathLength="100"` para que `dashoffset = 100 - pct` sirva a cualquier
+ * escala, colores por CSS (`.progress-arc__track` / `.progress-arc__bar`, con
+ * el arco en `currentColor`, así el contexto decide el color) y sin arco con
+ * `pct = 0`, porque `stroke-linecap="round"` dibujaría un punto visible con
+ * longitud cero.
+ *
+ * La diferencia con el anillo no es de estilo: el centro del semicírculo
+ * queda libre, y ahí va el ícono de lo que se persigue. El objetivo deja de
+ * ser un número que compite con lo acumulado y pasa a ser el extremo derecho
+ * de la escala, que la vista rotula fuera del SVG.
+ *
+ * El `<text>` del porcentaje va `aria-hidden` (regla R11): lo anuncia el
+ * `aria-label` del SVG, con el nombre de la meta incluido.
+ *
+ * @param {number} porcentaje - 0 a 100; fuera de rango se recorta.
+ * @param {Object} [opts]
+ * @param {boolean} [opts.conLabel=true] - Porcentaje bajo el centro del arco.
+ * @param {string}  [opts.ariaLabel]     - Default: "Progreso: N%".
+ * @returns {string} SVG completo.
+ */
+export function arcoProgreso(porcentaje, opts = {}) {
+  const { conLabel = true } = opts;
+
+  const pct       = Math.max(0, Math.min(100, Number(porcentaje) || 0));
+  const pctLabel  = Math.round(pct);
+  const ariaLabel = opts.ariaLabel ?? `Progreso: ${pctLabel}%`;
+
+  const barHtml = pct > 0
+    ? `<path class="progress-arc__bar" d="${_ARCO_D}" fill="none" stroke-width="${_ARCO_GROSOR}" stroke-linecap="round" pathLength="100" stroke-dasharray="100" stroke-dashoffset="${(100 - pct).toFixed(2)}"/>`
+    : '';
+
+  const labelHtml = conLabel
+    ? `<text class="progress-arc__label" x="120" y="114" text-anchor="middle" font-size="17" aria-hidden="true">${pctLabel}%</text>`
+    : '';
+
+  return `<svg viewBox="0 0 240 132" role="img" aria-label="${_esc(ariaLabel)}" class="progress-arc">
+    <path class="progress-arc__track" d="${_ARCO_D}" fill="none" stroke-width="${_ARCO_GROSOR}" stroke-linecap="round"/>
+    ${barHtml}
+    ${labelHtml}
+  </svg>`;
+}
+
 // ── PALETA ───────────────────────────────────────────────────────
 
 /**

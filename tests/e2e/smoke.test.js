@@ -493,7 +493,9 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
     await expect(page.locator('#sec-metas.active')).toBeVisible();
   });
 
-  test('crear una meta con categoría "Boda" muestra el anillo del sprite junto al nombre (ID.3)', async ({ page }) => {
+  // DIS.14 (arquitectura A2): el ícono pasó al centro del arco y el nombre
+  // vive en su propia línea, arriba de la tarjeta.
+  test('crear una meta con categoría "Boda" muestra el anillo del sprite en el arco (ID.3)', async ({ page }) => {
     await page.click('[data-action="nueva-meta"]');
     await page.waitForSelector('#modal-meta[data-open]');
 
@@ -505,9 +507,8 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
 
     await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
 
-    const titulo = page.locator('#lista-metas .list-item__title');
-    await expect(titulo.locator('use[href="#c-anillo"]')).toHaveCount(1);
-    await expect(titulo).toContainText('Fiesta de matrimonio');
+    await expect(page.locator('#lista-metas .meta-card__arco-icono use[href="#c-anillo"]')).toHaveCount(1);
+    await expect(page.locator('#lista-metas .meta-card__nombre')).toContainText('Fiesta de matrimonio');
   });
 
   test('MT.3: el campo de emoji está oculto salvo con categoría "Otra"', async ({ page }) => {
@@ -542,8 +543,8 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
 
     await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
 
-    const titulo = page.locator('#lista-metas .list-item__title');
-    await expect(titulo.locator('use[href="#c-torta"]')).toHaveCount(1);
+    const glifo = page.locator('#lista-metas .meta-card__arco-icono');
+    await expect(glifo.locator('use[href="#c-torta"]')).toHaveCount(1);
   });
 
   test('CAT.2b: volver de "Otra" a otra categoría limpia el ícono elegido a mano', async ({ page }) => {
@@ -565,9 +566,9 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
     await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
 
     // El ícono mostrado es la casa de Vivienda (sprite), no el elegido con "Otra".
-    const titulo = page.locator('#lista-metas .list-item__title');
-    await expect(titulo.locator('use[href="#i-home"]')).toHaveCount(1);
-    await expect(titulo.locator('use[href="#c-torta"]')).toHaveCount(0);
+    const glifo = page.locator('#lista-metas .meta-card__arco-icono');
+    await expect(glifo.locator('use[href="#i-home"]')).toHaveCount(1);
+    await expect(glifo.locator('use[href="#c-torta"]')).toHaveCount(0);
   });
 });
 
@@ -615,11 +616,11 @@ test.describe('Metas - abono con selector de cuenta compartido (MT.5)', () => {
     await page.locator('#form-abono-meta button[type="submit"]').click();
     await page.waitForSelector(modalCerrado('modal-abono-meta'), { timeout: 5_000 });
 
-    // Progreso de la meta actualizado en la lista. DIS.13 (FM2): el acumulado
-    // y el objetivo viven en la columna de monto, no concatenados en el
-    // subtítulo.
-    await expect(page.locator('#lista-metas .list-item__amount')).toHaveText('$200.000');
-    await expect(page.locator('#lista-metas .meta-item__de')).toHaveText('de $3.000.000');
+    // Progreso de la meta actualizado en la lista. DIS.14: el acumulado es la
+    // cifra grande de la tarjeta y el objetivo, el extremo de la escala del
+    // arco (deja de ser un número que compite con lo logrado).
+    await expect(page.locator('#lista-metas .meta-card__monto')).toHaveText('$200.000');
+    await expect(page.locator('#lista-metas .meta-card__escala')).toContainText('$3.000.000');
 
     // Saldo de la cuenta descontado (1.000.000 - 200.000).
     await page.goto('/#tesoreria');
@@ -640,7 +641,7 @@ test.describe('Metas - abono con selector de cuenta compartido (MT.5)', () => {
     await page.locator('#form-abono-meta button[type="submit"]').click();
 
     // Con una sola cuenta y sin alcanzar, se pide confirmar el sobregiro.
-    await expect(page.locator('.modal--confirm .modal__title')).toHaveText('Registrar abono');
+    await expect(page.locator('.modal--confirm .modal__title')).toHaveText('Registrar aporte');
     await expect(page.locator('.confirm__mensaje')).toContainText('quedará en negativo');
 
     await page.click('.modal--confirm [data-role="confirmar"]');
@@ -692,11 +693,10 @@ test.describe('Metas - ritmo de ahorro según frecuencia (MT.4)', () => {
     await form.locator('button[type="submit"]').click();
     await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
 
-    // DIS.13 (FM3): el ritmo de ahorro dejó el subtítulo y pasó a su propia
-    // línea, donde el consejo se lee como consejo.
-    const ritmo = page.locator('#lista-metas .list-item__progress-label');
+    // DIS.14: el ritmo de ahorro se cuenta en aportes y vive entre los datos
+    // de la tarjeta ("N aportes de $X por quincena").
+    const ritmo = page.locator('#lista-metas .meta-card__dato', { hasText: 'aportes de' });
     await expect(ritmo).toContainText('por quincena');
-    await expect(ritmo).toContainText('para llegar a tiempo');
     await expect(ritmo).not.toContainText('/día');
   });
 });
@@ -4665,7 +4665,7 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
     await form.locator('button[type="submit"]').click();
     await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
 
-    await page.click('[data-action="editar-meta"]');
+    await page.click('.meta-card__secundaria[data-action="editar-meta"]');
     await page.waitForSelector('#modal-meta[data-open]');
     await expect(page.locator('#modal-meta-title')).toHaveText('Editar meta');
 
@@ -4679,10 +4679,12 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
     await formEdit.locator('button[type="submit"]').click();
     await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
 
-    const item = page.locator('#lista-metas .list-item');
-    await expect(item.locator('.list-item__title')).toContainText('Viaje a Cartagena');
-    await expect(item.locator('.list-item__amount')).toHaveText('$0');
-    await expect(item.locator('.meta-item__de')).toHaveText('de $2.500.000');
+    // DIS.14: la meta sigue en cero, así que la cifra grande cede su línea a la
+    // frase del primer aporte; el objetivo es el extremo de la escala.
+    const item = page.locator('#lista-metas .meta-card');
+    await expect(item.locator('.meta-card__nombre')).toContainText('Viaje a Cartagena');
+    await expect(item.locator('.meta-card__frase')).toContainText('Tu primer aporte');
+    await expect(item.locator('.meta-card__escala')).toContainText('$2.500.000');
   });
 
   test('editar conserva el progreso ya aportado: no lo resetea a 0', async ({ page }) => {
@@ -4706,10 +4708,10 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
     await page.locator('#abono-meta-monto').fill('500000');
     await page.locator('#form-abono-meta button[type="submit"]').click();
     await page.waitForSelector(modalCerrado('modal-abono-meta'), { timeout: 5_000 });
-    await expect(page.locator('#lista-metas .list-item__amount')).toHaveText('$500.000');
+    await expect(page.locator('#lista-metas .meta-card__monto')).toHaveText('$500.000');
 
     // Editar solo el nombre (corregir un typo): el progreso debe seguir intacto.
-    await page.click('[data-action="editar-meta"]');
+    await page.click('.meta-card__secundaria[data-action="editar-meta"]');
     await page.waitForSelector('#modal-meta[data-open]');
     const formEdit = page.locator('#modal-meta-body form');
     await expect(formEdit.locator('#meta-objetivo')).toHaveValue('3000000');
@@ -4718,8 +4720,8 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
     await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
 
     await expect(page.locator('#lista-metas')).toContainText('Laptop nueva (corregido)');
-    await expect(page.locator('#lista-metas .list-item__amount')).toHaveText('$500.000');
-    await expect(page.locator('#lista-metas .meta-item__de')).toHaveText('de $3.000.000');
+    await expect(page.locator('#lista-metas .meta-card__monto')).toHaveText('$500.000');
+    await expect(page.locator('#lista-metas .meta-card__escala')).toContainText('$3.000.000');
 
     // El saldo de la cuenta tampoco se tocó al editar (solo el abono lo movió).
     await page.goto('/#tesoreria');
@@ -4742,7 +4744,7 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
     await page.waitForSelector(modalCerrado('modal-abono-meta'), { timeout: 5_000 });
 
     // Bajar el objetivo a 1.000.000: el aporte de 1.500.000 ya lo supera.
-    await page.click('[data-action="editar-meta"]');
+    await page.click('.meta-card__secundaria[data-action="editar-meta"]');
     await page.waitForSelector('#modal-meta[data-open]');
     const formEdit = page.locator('#modal-meta-body form');
     await formEdit.locator('#meta-objetivo').fill('1000000');
@@ -4750,13 +4752,14 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
     await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
 
     // Meta completada. DIS.13 (FM4): ya no desaparece de la app. Baja al bloque
-    // "Metas cumplidas", sigue siendo editable y deja de ofrecer "Abonar".
+    // "Metas cumplidas" y sigue siendo editable. DIS.14: conserva su forma de
+    // tarjeta (arco cerrado) y deja de ofrecer la acción de aportar.
     await expect(page.locator('#lista-metas .metas-cumplidas__label')).toBeVisible();
-    const cumplida = page.locator('#lista-metas .list-item--cumplida');
+    const cumplida = page.locator('#lista-metas .meta-card--cumplida');
     await expect(cumplida).toContainText('Fondo cámara');
     await expect(cumplida.locator('[data-action="abonar-meta"]')).toHaveCount(0);
     await expect(cumplida.locator('[data-action="editar-meta"]')).toHaveCount(1);
-    await expect(page.locator('#lista-metas .list-item:not(.list-item--cumplida)')).toHaveCount(0);
+    await expect(page.locator('#lista-metas .meta-card:not(.meta-card--cumplida)')).toHaveCount(0);
   });
 
   test('editar preserva la categoría e ícono elegidos', async ({ page }) => {
@@ -4769,7 +4772,7 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
     await form.locator('button[type="submit"]').click();
     await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
 
-    await page.click('[data-action="editar-meta"]');
+    await page.click('.meta-card__secundaria[data-action="editar-meta"]');
     await page.waitForSelector('#modal-meta[data-open]');
     const formEdit = page.locator('#modal-meta-body form');
     await expect(formEdit.locator('#meta-categoria')).toHaveValue('Boda');
@@ -4780,7 +4783,7 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
     await formEdit.locator('button[type="submit"]').click();
     await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
 
-    const titulo = page.locator('#lista-metas .list-item__title');
-    await expect(titulo.locator('use[href="#c-anillo"]')).toHaveCount(1);
+    const glifo = page.locator('#lista-metas .meta-card__arco-icono');
+    await expect(glifo.locator('use[href="#c-anillo"]')).toHaveCount(1);
   });
 });

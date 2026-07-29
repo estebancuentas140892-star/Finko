@@ -502,6 +502,28 @@
   font-weight: var(--fk-font-bold);
 }
 
+/* Medidor semicircular (DIS.14, arquitectura A2 de Metas). Hermano del anillo:
+   mismo track, mismo `pathLength="100"` y mismo keyframe de llenado, con el
+   arco en currentColor para que el wrapper decida el color. La diferencia es
+   que deja el centro libre, y ahi va el icono de lo que se persigue.
+   El SVG no declara width/height: se estira al ancho que le da su contenedor
+   (`.meta-card__arco`) conservando la proporcion del viewBox. */
+.progress-arc {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.progress-arc__track { stroke: var(--fk-bg-elevated); }
+.progress-arc__bar {
+  stroke: currentColor;
+  animation: ring-fill var(--fk-transition-slow) both;
+}
+.progress-arc__label {
+  fill: var(--fk-text-muted);
+  font-family: var(--fk-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Color del arco via currentColor: una clase en el wrapper, sin inline styles.
    IV.2b (ADR 031): el estado por defecto ("aún en progreso") se tiñe con el
    acento de sección (`--fk-section-accent`, de un `[data-dom="X"]` ancestro);

@@ -6,14 +6,14 @@
 import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
 import { emptyArt, iconoCategoria } from '../../infra/icons.js';
-import { progressRing } from '../../infra/svg.js';
+import { arcoProgreso } from '../../infra/svg.js';
 import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
 import { CATEGORIAS_META_USUARIO, CATEGORIA_META_ICONO, ICONOS_CATEGORIA_PERSONALIZADA } from '../../core/constants.js';
 import {
   metasActivas, metasCumplidas, calcularProgreso, calcularAhorroPorPeriodo,
-  frecuenciaPrincipalIngresos,
+  etiquetaPeriodoAhorro, frecuenciaPrincipalIngresos,
 } from './logic.js';
 
 // ── LISTA DE METAS ───────────────────────────────────────────────
@@ -53,95 +53,140 @@ export function renderListaMetas() {
 
   const cumplidasHtml = cumplidas.length > 0
     ? `<p class="metas-cumplidas__label">Metas cumplidas</p>
-       ${cumplidas.map(m => _renderMetaItem(m, frecuenciaIngresos, oculto)).join('')}`
+       ${cumplidas.map(m => _renderMetaCard(m, frecuenciaIngresos, oculto)).join('')}`
     : '';
 
   el.innerHTML = `
-    ${activas.map(m => _renderMetaItem(m, frecuenciaIngresos, oculto)).join('')}
+    ${activas.map(m => _renderMetaCard(m, frecuenciaIngresos, oculto)).join('')}
     ${cumplidasHtml}`;
 }
 
 /**
- * DIS.13 (MT.a, FM1 y FM2): la fila emite `.list-item__meta`, la columna de
- * monto que el resto de la app ya usa. No es cosmética: es la clase que
- * activa el layout móvil de dos filas de `responsive.css` (regla R56), cuyo
- * comentario decía cubrir Metas desde siempre. Sin ella el cuerpo se quedaba
- * en 51px de 315 medidos a 374px, el nombre se partía a mitad de palabra en
- * 5 líneas y la fila medía 506px de alto.
+ * DIS.14 (arquitectura A2): la meta deja de ser una fila horizontal y pasa a
+ * ser una tarjeta vertical con medidor semicircular. El cambio no es de
+ * estilo, es de arquitectura de información:
  *
- * DIS.13 (MT.c, FM3): el subtítulo baja de cuatro datos a dos. El acumulado y
- * el objetivo suben a su columna (donde se comparan de un vistazo), el ritmo
- * de ahorro (el consejo) pasa a su propia línea y los "N días restantes" se
- * van: la fecha límite dice lo mismo y no envejece.
+ * - **El objetivo deja de competir con lo acumulado.** Antes eran dos cifras
+ *   enfrentadas ("$1.200.000" contra "de $3.500.000") y la grande era la de lo
+ *   que falta. Ahora el objetivo es el extremo derecho de la escala del arco y
+ *   la única cifra grande es la que el usuario ya logró.
+ * - **El ícono de la meta vive en el centro del arco**, no junto al nombre: el
+ *   progreso rodea a lo que se persigue, y a 44px la meta se reconoce sin leer.
+ *   Va sobrepuesto y no dentro del SVG porque `meta.icono` puede ser un emoji
+ *   heredado (CAT.2b), que dentro de `<text>` conviviría mal con el símbolo del
+ *   sprite (mismo criterio que `.apartado__anillo-icono`).
+ * - **Un dato que no existe se ofrece, no se rellena:** sin fecha límite no hay
+ *   plan de aportes, así que el hueco lo ocupa la invitación a ponerle fecha.
+ * - **Un estado terminal conserva su forma:** la meta cumplida mantiene la
+ *   tarjeta y cambia su contenido (arco cerrado, sin acción de aportar).
+ * - La acción principal ocupa el ancho completo y las dos secundarias caen a un
+ *   renglón de menor peso, ambas con los 44px de la regla R4 (antes "+ Abonar"
+ *   era un `btn-sm` de 36px, el hallazgo MT.g).
  *
- * DIS.13 (MT.e, FM6, regla R11): el contenedor del anillo pierde su
- * `aria-hidden`, que borraba el subárbol entero y con él la etiqueta del SVG.
- * En Metas el porcentaje solo vive ahí: sin etiqueta no había forma de
- * conocerlo con lector de pantalla.
+ * Se conserva de DIS.13 lo que la arquitectura no reemplaza: la máscara del ojo
+ * de privacidad en toda cifra en pesos (regla R20; el porcentaje, el número de
+ * aportes y las fechas no se enmascaran, que no son magnitudes de dinero) y el
+ * anillo accesible sin `aria-hidden` en su contenedor (regla R11).
  *
  * @param {import('../../core/state.js').Meta} meta
  * @param {string} frecuenciaIngresos - una de FRECUENCIAS_AHORRO (MT.4).
  * @param {boolean} [oculto=false] `S.config.ocultarSaldo` (MT.b, regla R20).
  */
-function _renderMetaItem(meta, frecuenciaIngresos, oculto = false) {
+function _renderMetaCard(meta, frecuenciaIngresos, oculto = false) {
   const nombre  = _esc(meta.nombre);
-  const icono   = _iconoMeta(meta);
+  const id      = _esc(meta.id);
+  const icono   = _iconoMeta(meta, 'icon meta-card__glifo');
   const { porcentaje, faltante, completada } = calcularProgreso(meta);
   const ahorro  = calcularAhorroPorPeriodo(meta, frecuenciaIngresos);
   const m       = (n) => oculto ? SALDO_MASCARA_CUENTA : f(n);
 
   // El corte del bloque manda sobre el recálculo: una meta marcada como
   // cumplida se pinta como cumplida aunque su objetivo haya cambiado después.
-  const cumplida    = meta.completada === true || completada;
-  const claseAnillo = cumplida ? 'complete' : porcentaje >= 80 ? 'near' : 'default';
+  const cumplida  = meta.completada === true || completada;
+  const claseArco = cumplida ? 'complete' : porcentaje >= 80 ? 'near' : 'default';
+  const acumulado = meta.montoActual ?? 0;
+  const enCero    = acumulado <= 0;
 
-  const subtitleParts = [];
+  // Con la meta en cero la cifra grande sería "$0" bajo un arco vacío: doble
+  // señal de ausencia justo en el momento más frágil. Cede su línea a la frase
+  // que nombra el primer paso, y el objetivo pasa a encabezar los datos.
+  const heroHtml = (!cumplida && enCero)
+    ? `<p class="meta-card__frase">Tu primer aporte arranca el camino</p>`
+    : `<p class="meta-card__monto">${m(acumulado)}</p>`;
+
+  const datos = [];
   if (cumplida) {
-    subtitleParts.push('Meta cumplida');
+    datos.push({ texto: 'Meta cumplida', tono: 'fuerte' });
   } else {
-    if (faltante > 0) subtitleParts.push(`Faltan ${m(faltante)}`);
-    subtitleParts.push(meta.fechaLimite ? fechaLegible(meta.fechaLimite) : 'sin fecha límite');
+    datos.push({
+      texto: enCero ? `Objetivo: ${m(meta.montoObjetivo ?? 0)}` : `Faltan ${m(faltante)}`,
+      tono:  'fuerte',
+    });
+    if (ahorro) {
+      const plural = ahorro.numPeriodos === 1 ? 'aporte' : 'aportes';
+      datos.push({ texto: `${ahorro.numPeriodos} ${plural} de ${m(ahorro.montoPorPeriodo)} ${_esc(ahorro.etiqueta)}` });
+    }
+    datos.push({
+      texto: meta.fechaLimite ? `Meta: ${fechaLegible(meta.fechaLimite)}` : 'Sin fecha límite',
+      tono:  'suave',
+    });
   }
 
-  const ritmoHtml = (ahorro && !cumplida)
-    ? `<p class="list-item__progress-label">${m(ahorro.montoPorPeriodo)} ${ahorro.etiqueta} para llegar a tiempo</p>`
+  const datosHtml = datos
+    .map(d => `<p class="meta-card__dato${d.tono ? ` meta-card__dato--${d.tono}` : ''}">${d.texto}</p>`)
+    .join('');
+
+  // El hueco que deja el plan de aportes ausente no se rellena: se pide lo que
+  // falta, en el mismo lugar donde iría. La invitación abre el formulario de
+  // edición, que es donde vive el campo de fecha.
+  const nudgeFechaHtml = (!cumplida && !meta.fechaLimite)
+    ? `<p class="meta-card__nudge">Ponle una fecha y Finko calcula cuánto guardar ${_esc(etiquetaPeriodoAhorro(frecuenciaIngresos))}.
+         <button class="meta-card__nudge-cta"
+                 data-action="editar-meta"
+                 data-id="${id}"
+                 aria-label="Ponerle fecha límite a ${nombre}">Elegir fecha</button></p>`
     : '';
 
-  const abonarHtml = !cumplida
-    ? `<button class="btn btn-ghost btn-sm"
+  const aportarHtml = !cumplida
+    ? `<button class="meta-card__aportar"
+                type="button"
                 data-action="abonar-meta"
-                data-id="${_esc(meta.id)}"
-                aria-label="Abonar a ${nombre}">+ Abonar</button>`
+                data-id="${id}"
+                aria-label="Aportar a ${nombre}">+ ${enCero ? 'Hacer el primer aporte' : 'Aportar'}</button>`
     : '';
 
   return `
-    <article class="list-item${cumplida ? ' list-item--cumplida' : ''}" data-id="${_esc(meta.id)}">
-      <div class="list-item__icon list-item__icon--ring progress-ring-wrap progress-ring-wrap--${claseAnillo}" data-dom="metas">
-        ${progressRing(porcentaje, {
-          size: 56,
-          strokeWidth: 5,
-          ariaLabel: cumplida ? `${nombre}: meta cumplida` : `${nombre}: ${porcentaje}% de tu objetivo`,
-        })}
+    <article class="meta-card${cumplida ? ' meta-card--cumplida' : ''}" data-id="${id}" data-dom="metas">
+      <p class="meta-card__nombre">${nombre}</p>
+      <div class="meta-card__medidor progress-ring-wrap progress-ring-wrap--${claseArco}">
+        <div class="meta-card__arco">
+          ${arcoProgreso(porcentaje, {
+            ariaLabel: cumplida ? `${nombre}: meta cumplida` : `${nombre}: ${porcentaje}% de tu objetivo`,
+          })}
+          <span class="meta-card__arco-icono" aria-hidden="true">${icono}</span>
+        </div>
+        <p class="meta-card__escala">
+          <span>${f(0)}</span>
+          <span>${m(meta.montoObjetivo ?? 0)}</span>
+        </p>
       </div>
-      <div class="list-item__body">
-        <p class="list-item__title">${icono} ${nombre}</p>
-        <p class="list-item__subtitle">${subtitleParts.join(' · ')}</p>
-        ${ritmoHtml}
-      </div>
-      <div class="list-item__meta">
-        <p class="list-item__amount">${m(meta.montoActual ?? 0)}</p>
-        <p class="meta-item__de">${cumplida ? 'completa' : `de ${m(meta.montoObjetivo ?? 0)}`}</p>
-        ${abonarHtml}
-      </div>
-      <div class="list-item__action">
-        <button class="btn btn-ghost btn-icon"
-                data-action="editar-meta"
-                data-id="${_esc(meta.id)}"
-                aria-label="Editar meta ${nombre}"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></button>
-        <button class="btn btn-ghost btn-icon"
-                data-action="eliminar-meta"
-                data-id="${_esc(meta.id)}"
-                aria-label="Eliminar meta ${nombre}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
+      ${heroHtml}
+      <div class="meta-card__datos">${datosHtml}</div>
+      ${nudgeFechaHtml}
+      <div class="meta-card__acciones">
+        ${aportarHtml}
+        <div class="meta-card__secundarias">
+          <button class="btn btn-ghost btn-sm meta-card__secundaria"
+                  type="button"
+                  data-action="editar-meta"
+                  data-id="${id}"
+                  aria-label="Editar meta ${nombre}">Editar</button>
+          <button class="btn btn-ghost btn-sm meta-card__secundaria"
+                  type="button"
+                  data-action="eliminar-meta"
+                  data-id="${id}"
+                  aria-label="Eliminar meta ${nombre}">Eliminar</button>
+        </div>
       </div>
     </article>`;
 }
@@ -160,11 +205,18 @@ function _renderEmptyState() {
 // ── FORMULARIO DEL MODAL ─────────────────────────────────────────
 
 /**
- * Devuelve el HTML del formulario de abono a una meta existente.
+ * Devuelve el HTML del formulario de aporte a una meta existente.
  * Si hay cuentas activas, incluye el selector de tarjetas compartido
  * (MT.5, mismo patrón que Apartados/AP.1): preselecciona la cuenta de
  * mayor saldo; `index.js` resuelve el reparto real con
  * `resolverPagoConPreferida` al guardar.
+ *
+ * DIS.14: el copy visible dice "aporte", no "abono". La arquitectura A2 cuenta
+ * el avance en aportes ("9 aportes de $242.000 por quincena") y el botón de la
+ * tarjeta dice "+ Aportar", que además es la palabra que ya usan las otras
+ * bolsas de ahorro (Apartados, Fondo). Los identificadores del DOM y las
+ * `data-action` conservan su nombre: renombrarlos sería un refactor sin efecto
+ * para el usuario.
  * @param {import('../../core/state.js').Meta} meta
  * @returns {string}
  */
@@ -175,14 +227,14 @@ export function renderFormAbonoMeta(meta) {
     : '';
 
   const cuentasActivas = (S.cuentas ?? []).filter(c => c.activa !== false);
-  const cuentaHtml     = renderSelectorCuenta(cuentasActivas, { label: '¿De qué cuenta sale el abono?' });
+  const cuentaHtml     = renderSelectorCuenta(cuentasActivas, { label: '¿De qué cuenta sale el aporte?' });
 
   const frecuenciaIngresos = frecuenciaPrincipalIngresos(S.ingresos);
   const ahorro        = calcularAhorroPorPeriodo(meta, frecuenciaIngresos);
   const montoSugerido = ahorro?.montoPorPeriodo > 0 ? ahorro.montoPorPeriodo : null;
   const valorHtml      = montoSugerido ? ` value="${montoSugerido}"` : '';
   const hintPrefill    = montoSugerido
-    ? `<p class="form-hint">Es lo que te toca abonar ${_esc(ahorro.etiqueta)} para llegar a tiempo. Puedes cambiarlo.</p>`
+    ? `<p class="form-hint">Es lo que te toca aportar ${_esc(ahorro.etiqueta)} para llegar a tiempo. Puedes cambiarlo.</p>`
     : '';
 
   return `
@@ -193,7 +245,7 @@ export function renderFormAbonoMeta(meta) {
         <strong>${f(meta.montoActual ?? 0)} de ${f(meta.montoObjetivo ?? 0)}</strong> (${porcentaje}%)${faltanteHtml}
       </p>
       <div class="form-group">
-        <label for="abono-meta-monto" class="label">Monto del abono (COP)</label>
+        <label for="abono-meta-monto" class="label">Monto del aporte (COP)</label>
         <input id="abono-meta-monto" name="monto" class="input" type="number"
                min="1" step="10000" placeholder="0"${valorHtml}
                required aria-required="true"
@@ -203,7 +255,7 @@ export function renderFormAbonoMeta(meta) {
       ${cuentaHtml}
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Registrar abono</button>
+        <button type="submit" class="btn btn-primary">Registrar aporte</button>
       </div>
     </form>`;
 }
@@ -312,13 +364,15 @@ function _valorIconoEditable(meta) {
 }
 
 /**
- * Ícono inline del título de una meta (ID.3). Con categoría predefinida
- * (cualquiera salvo 'Otra'), el glifo del sprite (icon--sm, en línea con
- * el texto: el slot de ícono de la fila ya lo ocupa el anillo de
- * progreso); las metas viejas guardaban el emoji de su categoría en
- * `icono`, y como aquí la categoría manda, migran solas al sprite al
- * re-renderizar. Con 'Otra' o sin categoría gana lo que haya en `meta.icono`;
- * sin nada, la caja c-otros o la diana i-metas.
+ * Ícono de una meta (ID.3). Con categoría predefinida (cualquiera salvo
+ * 'Otra'), el glifo del sprite; las metas viejas guardaban el emoji de su
+ * categoría en `icono`, y como aquí la categoría manda, migran solas al
+ * sprite al re-renderizar. Con 'Otra' o sin categoría gana lo que haya en
+ * `meta.icono`; sin nada, la caja c-otros o la diana i-metas.
+ *
+ * DIS.14: el ícono dejó de ir en línea con el nombre y pasó al centro del
+ * arco, así que la clase del glifo la decide quien llama (el tamaño ya no es
+ * el mismo en los dos sitios).
  *
  * `meta.icono` puede tener dos formatos (CAT.2b, sin bump de schema): un id
  * de símbolo del sprite ('c-pesa', elegido con el picker compartido desde
@@ -327,17 +381,18 @@ function _valorIconoEditable(meta) {
  * `letra-` que ningún emoji real produce.
  *
  * @param {import('../../core/state.js').Meta} meta
+ * @param {string} [cls='icon icon--sm'] clase del `<svg>` del sprite.
  * @returns {string}
  */
-function _iconoMeta(meta) {
+function _iconoMeta(meta, cls = 'icon icon--sm') {
   if (meta.categoria && meta.categoria !== 'Otra') {
     const simbolo = CATEGORIA_META_ICONO[meta.categoria];
-    if (simbolo) return iconoCategoria(simbolo, 'icon icon--sm');
+    if (simbolo) return iconoCategoria(simbolo, cls);
   }
   if (meta.icono) {
     return /^[a-z]-/.test(meta.icono)
-      ? iconoCategoria(meta.icono, 'icon icon--sm')
+      ? iconoCategoria(meta.icono, cls)
       : _esc(meta.icono);
   }
-  return iconoCategoria(meta.categoria === 'Otra' ? 'c-otros' : 'i-metas', 'icon icon--sm');
+  return iconoCategoria(meta.categoria === 'Otra' ? 'c-otros' : 'i-metas', cls);
 }

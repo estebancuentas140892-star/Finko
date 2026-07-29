@@ -482,20 +482,23 @@ describe('renderFormMeta() - selector de categoría', () => {
 
 // ── renderListaMetas() - ícono de categoría en la lista (MT.1/ID.3) ──
 
+// DIS.14 (arquitectura A2): el ícono dejó de ir en línea con el nombre y pasó
+// al centro del arco (`.meta-card__arco-icono`), donde el progreso lo rodea.
+// El nombre vive ahora en `.meta-card__nombre`.
+
 describe('renderListaMetas() - ícono de categoría en la lista', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="lista-metas"></div>';
   });
 
-  it('una meta creada con categoría "Boda" muestra el anillo del sprite junto al nombre', () => {
+  it('una meta creada con categoría "Boda" muestra el anillo del sprite en el centro del arco', () => {
     S.metas = [{
       ...normalizarMeta({ ...datosFormValidos, nombre: 'Fiesta de bodas', categoria: 'Boda', icono: '' }),
       id: 'm1',
     }];
     renderListaMetas();
-    const titulo = document.querySelector('.list-item__title');
-    expect(titulo.innerHTML).toContain('#c-anillo');
-    expect(titulo.textContent).toContain('Fiesta de bodas');
+    expect(document.querySelector('.meta-card__arco-icono').innerHTML).toContain('#c-anillo');
+    expect(document.querySelector('.meta-card__nombre').textContent).toContain('Fiesta de bodas');
   });
 
   it('una meta vieja con categoría y emoji almacenado migra sola al glifo del sprite', () => {
@@ -504,9 +507,9 @@ describe('renderListaMetas() - ícono de categoría en la lista', () => {
       montoObjetivo: 1_000_000, montoActual: 0, fechaLimite: null, completada: false,
     }];
     renderListaMetas();
-    const titulo = document.querySelector('.list-item__title');
-    expect(titulo.innerHTML).toContain('#c-avion');
-    expect(titulo.textContent).not.toContain('✈️');
+    const glifo = document.querySelector('.meta-card__arco-icono');
+    expect(glifo.innerHTML).toContain('#c-avion');
+    expect(glifo.textContent).not.toContain('✈️');
   });
 
   it('el emoji elegido a mano (categoría "Otra") se conserva como dato del usuario', () => {
@@ -515,9 +518,9 @@ describe('renderListaMetas() - ícono de categoría en la lista', () => {
       id: 'm1',
     }];
     renderListaMetas();
-    const titulo = document.querySelector('.list-item__title');
-    expect(titulo.textContent).toContain('🕹️');
-    expect(titulo.innerHTML).not.toContain('#c-otros');
+    const glifo = document.querySelector('.meta-card__arco-icono');
+    expect(glifo.textContent).toContain('🕹️');
+    expect(glifo.innerHTML).not.toContain('#c-otros');
   });
 
   it('categoría "Otra" sin emoji manual cae a la caja c-otros', () => {
@@ -526,7 +529,7 @@ describe('renderListaMetas() - ícono de categoría en la lista', () => {
       id: 'm1',
     }];
     renderListaMetas();
-    expect(document.querySelector('.list-item__title').innerHTML).toContain('#c-otros');
+    expect(document.querySelector('.meta-card__arco-icono').innerHTML).toContain('#c-otros');
   });
 
   it('una meta sin categoría ni emoji muestra la diana i-metas', () => {
@@ -535,7 +538,7 @@ describe('renderListaMetas() - ícono de categoría en la lista', () => {
       id: 'm1',
     }];
     renderListaMetas();
-    expect(document.querySelector('.list-item__title').innerHTML).toContain('#i-metas');
+    expect(document.querySelector('.meta-card__arco-icono').innerHTML).toContain('#i-metas');
   });
 
   it('CAT.2b: categoría "Otra" con ícono elegido del picker (id de sprite) renderiza el glifo, no texto crudo', () => {
@@ -544,17 +547,21 @@ describe('renderListaMetas() - ícono de categoría en la lista', () => {
       id: 'm1',
     }];
     renderListaMetas();
-    const titulo = document.querySelector('.list-item__title');
-    expect(titulo.innerHTML).toContain('#c-carro');
-    expect(titulo.textContent).not.toContain('c-carro');
+    const glifo = document.querySelector('.meta-card__arco-icono');
+    expect(glifo.innerHTML).toContain('#c-carro');
+    expect(glifo.textContent).not.toContain('c-carro');
   });
 });
 
 // ── renderListaMetas() - ritmo de ahorro según frecuencia (MT.4) ──
 //
-// DIS.13 (MT.c, FM3): el ritmo de ahorro dejó de ser el cuarto fragmento del
-// subtítulo y pasó a su propia línea (`.list-item__progress-label`), que es
-// donde el consejo se lee como consejo.
+// DIS.14 (arquitectura A2): el ritmo de ahorro se cuenta en aportes ("N aportes
+// de $X por quincena") y vive entre los datos de la tarjeta, bajo el arco. La
+// sugerencia automática deja de ser un dato suelto: es lo que mide un aporte.
+
+/** Texto de las líneas de datos de la primera tarjeta. */
+const datosTarjeta = () =>
+  [...document.querySelectorAll('.meta-card__dato')].map(p => p.textContent);
 
 describe('renderListaMetas() - ritmo de ahorro según frecuencia', () => {
   beforeEach(() => {
@@ -573,10 +580,23 @@ describe('renderListaMetas() - ritmo de ahorro según frecuencia', () => {
     }];
 
     renderListaMetas();
-    const ritmo = document.querySelector('.list-item__progress-label').textContent;
+    const ritmo = datosTarjeta().find(t => t.includes('aporte'));
     expect(ritmo).toContain('por quincena');
-    expect(ritmo).toContain('para llegar a tiempo');
     expect(ritmo).not.toContain('/día');
+  });
+
+  it('el plan dice cuántos aportes faltan, no solo cuánto guardar', () => {
+    S.ingresos = [{ id: 'i1', descripcion: 'Nómina', monto: 1_500_000, frecuencia: 'Quincenal', activo: true, fechaCreacion: '2026-01-01' }];
+    S.metas = [{
+      ...normalizarMeta(datosFormValidos),
+      id: 'm1',
+      montoObjetivo: 600_000,
+      montoActual: 0,
+      fechaLimite: isoEnDias(90),
+    }];
+
+    renderListaMetas();
+    expect(datosTarjeta().find(t => t.includes('aporte'))).toMatch(/^\d+ aportes? de /);
   });
 
   it('sin ingresos registrados, cae a "al mes" (Mensual por defecto)', () => {
@@ -590,7 +610,7 @@ describe('renderListaMetas() - ritmo de ahorro según frecuencia', () => {
     }];
 
     renderListaMetas();
-    expect(document.querySelector('.list-item__progress-label').textContent).toContain('al mes');
+    expect(datosTarjeta().find(t => t.includes('aporte'))).toContain('al mes');
   });
 
   it('sin fecha límite, no muestra ninguna línea de ritmo de ahorro', () => {
@@ -598,13 +618,18 @@ describe('renderListaMetas() - ritmo de ahorro según frecuencia', () => {
     S.metas = [{ ...normalizarMeta(datosFormValidos), id: 'm1', fechaLimite: null }];
 
     renderListaMetas();
-    expect(document.querySelector('.list-item__progress-label')).toBeNull();
+    expect(datosTarjeta().some(t => t.includes('aportes de'))).toBe(false);
   });
 });
 
-// ── renderListaMetas() - fila v2 de la auditoría de diseño (DIS.13) ──
+// ── renderListaMetas() - tarjeta v2, arquitectura A2 (DIS.14) ──────
+//
+// La meta dejó de ser una fila horizontal y pasó a ser una tarjeta vertical
+// con medidor semicircular: el objetivo es el extremo de la escala del arco y
+// no un número que compita con lo acumulado, el ícono vive en el centro del
+// arco y la acción principal ocupa el ancho completo.
 
-describe('renderListaMetas() - fila de meta (DIS.13)', () => {
+describe('renderListaMetas() - tarjeta de meta (DIS.14)', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="lista-metas" class="lista-metas"></div>';
     S.config   = {};
@@ -612,75 +637,102 @@ describe('renderListaMetas() - fila de meta (DIS.13)', () => {
     S.metas    = [];
   });
 
-  // FM1 (MT.a, regla R56): la clase que activa el layout móvil de dos filas.
-  it('la fila emite .list-item__meta, la columna que activa el layout móvil', () => {
+  it('la meta se pinta como .meta-card, no como fila de lista', () => {
     S.metas = [metaBase({ id: 'm1', nombre: 'Viaje', montoActual: 1_200_000, montoObjetivo: 3_500_000 })];
     renderListaMetas();
-    expect(document.querySelector('.list-item .list-item__meta')).not.toBeNull();
+    expect(document.querySelector('.meta-card')).not.toBeNull();
+    expect(document.querySelector('.list-item')).toBeNull();
   });
 
-  // FM2 (MT.a y MT.c): el monto sube a su columna, el objetivo debajo.
-  it('el acumulado va en .list-item__amount y el objetivo en .meta-item__de', () => {
+  it('el acumulado es la cifra grande y el objetivo, el extremo de la escala', () => {
     S.metas = [metaBase({ id: 'm1', montoActual: 1_200_000, montoObjetivo: 3_500_000 })];
     renderListaMetas();
-    expect(document.querySelector('.list-item__meta .list-item__amount').textContent).toContain('1.200.000');
-    expect(document.querySelector('.list-item__meta .meta-item__de').textContent).toContain('3.500.000');
+    expect(document.querySelector('.meta-card__monto').textContent).toContain('1.200.000');
+    const escala = [...document.querySelectorAll('.meta-card__escala span')].map(s => s.textContent);
+    expect(escala[0]).toContain('0');
+    expect(escala[1]).toContain('3.500.000');
   });
 
-  it('"+ Abonar" vive en la columna de monto, no entre los botones de acción', () => {
+  it('"+ Aportar" es la acción principal, a ancho completo y fuera del renglón secundario', () => {
     S.metas = [metaBase({ id: 'm1' })];
     renderListaMetas();
-    expect(document.querySelector('.list-item__meta [data-action="abonar-meta"]')).not.toBeNull();
-    expect(document.querySelector('.list-item__action [data-action="abonar-meta"]')).toBeNull();
+    const aportar = document.querySelector('.meta-card__aportar');
+    expect(aportar).not.toBeNull();
+    expect(aportar.dataset.action).toBe('abonar-meta');
+    expect(aportar.textContent).toContain('Aportar');
+    expect(document.querySelector('.meta-card__secundarias [data-action="abonar-meta"]')).toBeNull();
   });
 
-  // FM3 (MT.c): dos datos, no cuatro, y ningún número repetido.
-  it('el subtítulo dice el faltante y la fecha, sin "días restantes" ni "X / Y"', () => {
+  it('los datos dicen el faltante y la fecha, sin "días restantes" ni "X / Y"', () => {
     S.metas = [metaBase({ id: 'm1', montoActual: 1_200_000, montoObjetivo: 3_500_000, fechaLimite: isoEnDias(120) })];
     renderListaMetas();
-    const subtitulo = document.querySelector('.list-item__subtitle').textContent;
-    expect(subtitulo).toContain('Faltan');
-    expect(subtitulo).toContain('2.300.000');
-    expect(subtitulo).not.toContain('días restantes');
-    expect(subtitulo).not.toContain('/');
+    const datos = datosTarjeta().join(' | ');
+    expect(datos).toContain('Faltan');
+    expect(datos).toContain('2.300.000');
+    expect(datos).not.toContain('días restantes');
+    expect(datos).toContain('Meta: ');
   });
 
-  it('sin fecha límite el subtítulo lo dice en palabras', () => {
+  // Un dato que no existe se ofrece, no se rellena.
+  it('sin fecha límite lo dice y ofrece ponerla, en el hueco del plan de aportes', () => {
     S.metas = [metaBase({ id: 'm1', fechaLimite: null })];
     renderListaMetas();
-    expect(document.querySelector('.list-item__subtitle').textContent).toContain('sin fecha límite');
+    expect(datosTarjeta().join(' | ')).toContain('Sin fecha límite');
+    const nudge = document.querySelector('.meta-card__nudge');
+    expect(nudge.textContent).toContain('Ponle una fecha');
+    expect(nudge.querySelector('.meta-card__nudge-cta').dataset.action).toBe('editar-meta');
   });
 
-  // FM6 (MT.e, regla R11): el envoltorio no oculta lo que envuelve.
-  it('el contenedor del anillo ya no lleva aria-hidden y la etiqueta nombra la meta', () => {
+  it('con fecha límite no aparece la invitación a ponerla', () => {
+    S.metas = [metaBase({ id: 'm1', fechaLimite: isoEnDias(120) })];
+    renderListaMetas();
+    expect(document.querySelector('.meta-card__nudge')).toBeNull();
+  });
+
+  // Meta recién creada: el arco vacío enmarca la meta, y la cifra en cero cede
+  // su línea a la frase que nombra el primer paso.
+  it('con la meta en cero la cifra grande cede a una frase y el botón nombra el primer paso', () => {
+    S.metas = [metaBase({ id: 'm1', montoActual: 0, montoObjetivo: 30_000_000 })];
+    renderListaMetas();
+    expect(document.querySelector('.meta-card__monto')).toBeNull();
+    expect(document.querySelector('.meta-card__frase').textContent).toContain('Tu primer aporte');
+    expect(document.querySelector('.meta-card__aportar').textContent).toContain('Hacer el primer aporte');
+    expect(datosTarjeta().join(' | ')).toContain('Objetivo: ');
+  });
+
+  // Regla R11: el envoltorio no oculta lo que envuelve.
+  it('el contenedor del arco no lleva aria-hidden y la etiqueta nombra la meta', () => {
     S.metas = [metaBase({ id: 'm1', nombre: 'Viaje', montoActual: 1_000_000, montoObjetivo: 5_000_000 })];
     renderListaMetas();
-    const wrap = document.querySelector('.list-item__icon--ring');
+    const wrap = document.querySelector('.meta-card__medidor');
     expect(wrap.getAttribute('aria-hidden')).toBeNull();
     expect(wrap.querySelector('svg').getAttribute('aria-label')).toBe('Viaje: 20% de tu objetivo');
   });
 
-  // FM5 (MT.b, regla R20): el ojo de privacidad también rige en Metas.
-  it('con el saldo oculto enmascara montos y conserva el porcentaje del anillo', () => {
+  // Regla R20: el ojo esconde pesos, no progreso.
+  it('con el saldo oculto enmascara montos y conserva el porcentaje del arco', () => {
     S.config = { ocultarSaldo: true };
     S.metas  = [metaBase({ id: 'm1', nombre: 'Viaje', montoActual: 1_000_000, montoObjetivo: 5_000_000 })];
     renderListaMetas();
-    expect(document.querySelector('.list-item__amount').textContent).not.toContain('1.000.000');
-    expect(document.querySelector('.meta-item__de').textContent).not.toContain('5.000.000');
-    expect(document.querySelector('.list-item__subtitle').textContent).not.toContain('4.000.000');
-    expect(document.querySelector('.progress-ring').getAttribute('aria-label')).toContain('20%');
+    expect(document.querySelector('.meta-card__monto').textContent).not.toContain('1.000.000');
+    expect(document.querySelector('.meta-card__escala').textContent).not.toContain('5.000.000');
+    expect(datosTarjeta().join(' | ')).not.toContain('4.000.000');
+    expect(document.querySelector('.progress-arc').getAttribute('aria-label')).toContain('20%');
   });
 
   it('sin el flag activo los montos se ven completos', () => {
     S.metas = [metaBase({ id: 'm1', montoActual: 1_000_000, montoObjetivo: 5_000_000 })];
     renderListaMetas();
-    expect(document.querySelector('.list-item__amount').textContent).toContain('1.000.000');
+    expect(document.querySelector('.meta-card__monto').textContent).toContain('1.000.000');
   });
 });
 
 // ── renderListaMetas() - bloque de metas cumplidas (DIS.13, FM4) ──
+//
+// DIS.14: un estado terminal conserva su forma. La meta cumplida mantiene la
+// tarjeta y cambia su contenido (arco cerrado, sin acción de aportar).
 
-describe('renderListaMetas() - metas cumplidas (DIS.13)', () => {
+describe('renderListaMetas() - metas cumplidas', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="lista-metas" class="lista-metas"></div>';
     S.config   = {};
@@ -695,8 +747,8 @@ describe('renderListaMetas() - metas cumplidas (DIS.13)', () => {
     ];
     renderListaMetas();
     expect(document.querySelector('.metas-cumplidas__label').textContent).toContain('Metas cumplidas');
-    expect(document.querySelectorAll('.list-item')).toHaveLength(2);
-    expect(document.querySelector('.list-item--cumplida').dataset.id).toBe('m2');
+    expect(document.querySelectorAll('.meta-card')).toHaveLength(2);
+    expect(document.querySelector('.meta-card--cumplida').dataset.id).toBe('m2');
   });
 
   it('las cumplidas van después de las activas', () => {
@@ -705,26 +757,33 @@ describe('renderListaMetas() - metas cumplidas (DIS.13)', () => {
       metaBase({ id: 'm1', nombre: 'Viaje' }),
     ];
     renderListaMetas();
-    const ids = [...document.querySelectorAll('.list-item')].map(a => a.dataset.id);
+    const ids = [...document.querySelectorAll('.meta-card')].map(a => a.dataset.id);
     expect(ids).toEqual(['m1', 'm2']);
   });
 
-  it('la meta cumplida sigue siendo editable y eliminable, y ya no ofrece abonar', () => {
+  it('la meta cumplida sigue siendo editable y eliminable, y ya no ofrece aportar', () => {
     S.metas = [metaBase({ id: 'm2', nombre: 'Regalo', montoActual: 180_000, montoObjetivo: 180_000, completada: true })];
     renderListaMetas();
-    const fila = document.querySelector('.list-item--cumplida');
-    expect(fila.querySelector('[data-action="editar-meta"]')).not.toBeNull();
-    expect(fila.querySelector('[data-action="eliminar-meta"]')).not.toBeNull();
-    expect(fila.querySelector('[data-action="abonar-meta"]')).toBeNull();
-    expect(fila.querySelector('.list-item__subtitle').textContent).toContain('Meta cumplida');
-    expect(fila.querySelector('.meta-item__de').textContent).toContain('completa');
+    const tarjeta = document.querySelector('.meta-card--cumplida');
+    expect(tarjeta.querySelector('[data-action="editar-meta"]')).not.toBeNull();
+    expect(tarjeta.querySelector('[data-action="eliminar-meta"]')).not.toBeNull();
+    expect(tarjeta.querySelector('[data-action="abonar-meta"]')).toBeNull();
+    expect(tarjeta.querySelector('.meta-card__dato').textContent).toContain('Meta cumplida');
+  });
+
+  it('la meta cumplida conserva su forma: arco cerrado y cifra lograda', () => {
+    S.metas = [metaBase({ id: 'm2', nombre: 'Regalo', montoActual: 180_000, montoObjetivo: 180_000, completada: true })];
+    renderListaMetas();
+    expect(document.querySelector('.meta-card__monto').textContent).toContain('180.000');
+    expect(document.querySelector('.progress-ring-wrap--complete')).not.toBeNull();
+    expect(document.querySelector('.progress-arc').getAttribute('aria-label')).toBe('Regalo: meta cumplida');
   });
 
   it('sin metas activas pero con cumplidas no aparece el estado vacío', () => {
     S.metas = [metaBase({ id: 'm2', montoActual: 180_000, montoObjetivo: 180_000, completada: true })];
     renderListaMetas();
     expect(document.querySelector('.empty-state')).toBeNull();
-    expect(document.querySelector('.list-item--cumplida')).not.toBeNull();
+    expect(document.querySelector('.meta-card--cumplida')).not.toBeNull();
   });
 
   it('sin ninguna meta sigue apareciendo el estado vacío', () => {
@@ -774,9 +833,9 @@ describe('renderFormAbonoMeta()', () => {
     expect(html).not.toContain('Faltante');
   });
 
-  it('incluye botón "Registrar abono"', () => {
+  it('incluye botón "Registrar aporte"', () => {
     const html = renderFormAbonoMeta(metaBase());
-    expect(html).toContain('Registrar abono');
+    expect(html).toContain('Registrar aporte');
   });
 
   it('incluye botón Cancelar con data-action="modal-close"', () => {
@@ -976,7 +1035,7 @@ describe('renderListaMetas() - botón Editar (EDIT.1)', () => {
   it('cada meta trae un botón "editar-meta" con su id', () => {
     S.metas = [metaBase({ id: 'm1', nombre: 'Viaje' })];
     renderListaMetas();
-    const btn = document.querySelector('[data-action="editar-meta"]');
+    const btn = document.querySelector('.meta-card__secundaria[data-action="editar-meta"]');
     expect(btn).not.toBeNull();
     expect(btn.dataset.id).toBe('m1');
     expect(btn.getAttribute('aria-label')).toBe('Editar meta Viaje');
@@ -988,7 +1047,7 @@ describe('renderListaMetas() - botón Editar (EDIT.1)', () => {
       metaBase({ id: 'm2', nombre: 'Laptop' }),
     ];
     renderListaMetas();
-    const ids = [...document.querySelectorAll('[data-action="editar-meta"]')].map(b => b.dataset.id);
+    const ids = [...document.querySelectorAll('.meta-card__secundaria[data-action="editar-meta"]')].map(b => b.dataset.id);
     expect(ids).toEqual(['m1', 'm2']);
   });
 });
