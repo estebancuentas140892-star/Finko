@@ -1031,6 +1031,11 @@
 }
 .cov__pie span:last-child { font-variant-numeric: tabular-nums; }
 
+/* En el carril del hub la franja compite con otros tres graficos, asi que baja
+   de alto y suelta los rotulos de mes: el eje de niveles es el que la hace
+   legible, y el mes exacto lo dice la seccion a la que lleva. */
+.cov--mini .cov__mes { height: 32px; }
+
 @media (prefers-reduced-motion: no-preference) {
   .cov__fill { transition: height var(--fk-transition-slow) ease; }
 }

@@ -3184,118 +3184,294 @@ button.chip:focus-visible {
   padding: 0 var(--fk-space-3) var(--fk-space-3);
 }
 
-/* ── CASA DE AHORRO (DIS.18, ADR 009 restaurado) ───────────────
-   Reemplaza a `.ahorro-total`, el consolidado de solo lectura que se repetía
-   en las cuatro secciones hijas del hub. Acá las filas son la navegación, así
-   que se van las barras de participación (el reparto en porcentaje no ayuda a
-   decidir a dónde entrar) y el enlace "Ver" de 18px: la fila entera es el
-   destino. */
-.casa-ahorro__header {
-  margin-bottom: var(--fk-space-4);
-}
-
-.casa-ahorro__label {
-  font-size: var(--fk-text-sm);
-  color: var(--fk-text-secondary);
-  margin: 0;
-}
-
-.casa-ahorro__valor {
-  font-family: var(--fk-font-mono);
-  font-size: var(--fk-text-3xl);
-  font-weight: var(--fk-font-bold);
-  color: var(--fk-text-primary);
-  margin: 2px 0 0;
-}
-
-.casa-ahorro__lista {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+/* ── CASA DE AHORRO: LOS CUATRO CARRILES (DIS.19, arquitectura 1c) ──
+   DIS.18 dio a las cuatro modalidades una pantalla padre, pero las filas eran
+   monto y estado en texto: la decision de a donde entrar se tomaba sin
+   informacion. Ahora cada carril trae su grafico y cada grafico mide en su
+   propia unidad, que es lo que hace que las cuatro dejen de parecer lo mismo.
+   El total baja al pie: era la unica cifra grande y no servia para decidir. */
+.hub {
   display: flex;
   flex-direction: column;
+  gap: var(--fk-space-3);
+}
+
+.hub__intro {
+  margin: 0;
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  line-height: var(--fk-leading-snug);
+}
+.hub__intro strong { color: var(--fk-text-primary); }
+
+.hub__total {
+  margin: 0;
+  text-align: right;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+}
+.hub__total strong {
+  color: var(--fk-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Los chips saltan de carril dentro de la misma pantalla. La fila desborda en
+   horizontal en vez de envolverse: envuelta, empuja el primer carril fuera de
+   la vista y el hub arranca con dos filas de botones. */
+.hub .chips {
+  display: flex;
+  gap: var(--fk-space-2);
+  overflow-x: auto;
+  padding-bottom: 3px;
+  scrollbar-width: none;
+}
+.hub .chips::-webkit-scrollbar { display: none; }
+.hub .chips .chip {
+  white-space: nowrap;
+  cursor: pointer;
+  min-height: 36px;
+}
+
+/* Un carril. Toma la superficie de una tarjeta porque es una unidad de
+   decision completa: que es, como va y que se puede hacer. */
+.lane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-4);
+  border-radius: var(--fk-radius-lg);
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  box-shadow: var(--fk-shadow-sm);
+  /* El chip deja el titulo del carril pegado al borde superior sin este margen. */
+  scroll-margin-top: var(--fk-space-4);
+}
+
+.lane__hd {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: var(--fk-space-2);
 }
 
-/* La fila completa es el enlace (regla R4: área táctil real). El grid deja el
-   propósito y el estado en la segunda línea de cada columna, así que la fila
-   dice cuatro cosas sin cuatro controles: qué es, para qué sirve, cuánto hay y
-   en qué va. */
-.casa-ahorro__fila {
-  display: grid;
-  grid-template-columns: auto 1fr auto auto;
-  align-items: center;
-  gap: var(--fk-space-3);
-  min-height: 44px;
-  padding: var(--fk-space-3);
-  background: var(--fk-bg-surface);
-  border: 1px solid var(--fk-border-subtle);
-  border-radius: var(--fk-radius-lg);
-  text-decoration: none;
-  transition:
-    background var(--fk-transition-fast),
-    border-color var(--fk-transition-fast);
-}
-.casa-ahorro__fila:hover,
-.casa-ahorro__fila:focus-visible {
-  background: var(--fk-bg-hover);
-  border-color: var(--fk-border-strong);
-}
-
-/* Cada modalidad se identifica con el símbolo y el color de su propio dominio,
-   la misma clave que su teja de sección. Apartados comparte el token de
-   ahorro: no tiene uno propio. */
-.casa-ahorro__ico {
-  --fk-icon-size: var(--fk-icon-md);
-  flex-shrink: 0;
-}
-[data-vehiculo="fondo"]       .casa-ahorro__ico { color: var(--fk-dom-ahorro-text); }
-[data-vehiculo="metas"]       .casa-ahorro__ico { color: var(--fk-dom-metas-text); }
-[data-vehiculo="apartados"]   .casa-ahorro__ico { color: var(--fk-dom-ahorro-text); }
-[data-vehiculo="inversiones"] .casa-ahorro__ico { color: var(--fk-dom-inversion-text); }
-
-.casa-ahorro__cuerpo,
-.casa-ahorro__cifras {
+.lane__txt {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
 }
 
-.casa-ahorro__cifras {
-  align-items: flex-end;
-  text-align: right;
-}
-
-.casa-ahorro__nombre {
-  font-size: var(--fk-text-base);
-  font-weight: var(--fk-font-semibold);
-  color: var(--fk-text-primary);
-}
-
-.casa-ahorro__proposito {
-  font-size: var(--fk-text-xs);
+/* El momento de uso, no el nombre, es lo que explica la diferencia entre las
+   cuatro bolsas. Va encima y en mayusculas pequenas: encabeza sin competir. */
+.lane__cuando {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--fk-text-muted);
-  line-height: 1.35;
 }
 
-.casa-ahorro__monto {
-  font-family: var(--fk-font-mono);
-  font-size: var(--fk-text-sm);
-  font-weight: var(--fk-font-medium);
+.lane__nombre {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-fw-semibold);
   color: var(--fk-text-primary);
-  white-space: nowrap;
 }
 
-.casa-ahorro__estado {
+.lane__ico {
+  --fk-icon-size: var(--fk-icon-md);
+  flex-shrink: 0;
+  color: var(--fk-section-accent, var(--fk-accent));
+}
+
+/* El estado en palabras. El grafico va aria-hidden, asi que esta linea es la
+   que lee el lector de pantalla (regla R11). */
+.lane__estado {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 44px de zona activa (regla R4): el enlace "Ver" de DIS.12 medía 18px. */
+.lane__ver {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: var(--fk-space-2);
   font-size: var(--fk-text-xs);
   color: var(--fk-text-secondary);
 }
+.lane__ver:hover,
+.lane__ver:focus-visible { color: var(--fk-text-primary); }
+.lane__ver::after { content: ' \2192'; }
 
-.casa-ahorro__chevron {
-  --fk-icon-size: var(--fk-icon-sm);
+.lane__nota,
+.lane__hint {
+  margin: 0;
+  font-size: var(--fk-text-xs);
   color: var(--fk-text-muted);
+  line-height: var(--fk-leading-snug);
+}
+.lane__hint strong { color: var(--fk-text-secondary); }
+
+/* La accion del carril ocupa el ancho completo: en una pantalla con cuatro
+   carriles, un boton alineado a un lado se pierde entre los graficos. */
+.lane__cta {
+  width: 100%;
+  min-height: 44px;
+  padding: var(--fk-space-3);
+  border: 1px solid var(--fk-border-default);
+  border-radius: var(--fk-radius-md);
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-primary);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-fw-semibold);
+  font-family: inherit;
+  cursor: pointer;
+}
+.lane__cta:hover {
+  border-color: var(--fk-section-accent, var(--fk-accent));
+  color: var(--fk-section-accent, var(--fk-accent));
+}
+
+/* ── SILUETAS DE METAS EN EL CARRIL (DIS.19) ────────────────────
+   La silueta hace de grafico y de boton a la vez: cada una abre el aporte a su
+   meta. Un toque en vez de dos, y sin estado de seleccion que mantener. */
+/* Desborda en horizontal en vez de comprimirse: con cinco o seis metas cada
+   silueta caia por debajo de 56px y el nombre quedaba en tres letras y puntos.
+   Asi cada una conserva su ancho legible y la fila se desliza. */
+.silrow {
+  display: flex;
+  gap: var(--fk-space-2);
+  overflow-x: auto;
+  padding-bottom: 3px;
+  scrollbar-width: none;
+}
+.silrow::-webkit-scrollbar { display: none; }
+
+.silbtn {
+  flex: 0 0 auto;
+  width: 68px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 4px;
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: var(--fk-radius-md);
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+  color: var(--fk-dom-metas);
+}
+.silbtn:hover {
+  border-color: var(--fk-dom-metas);
+  background: var(--fk-dom-metas-bg);
+}
+
+.silbtn__fig {
+  width: 44px;
+  height: 44px;
+}
+
+/* Dos lineas antes de recortar: "Viaje a Cartagena" en una linea de 68px son
+   cuatro letras y puntos suspensivos, que no identifica ninguna meta. */
+.silbtn__lb {
+  font-size: 10px;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--fk-text-secondary);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  max-width: 100%;
+}
+
+.silbtn__pct {
+  font-size: 10px;
+  color: var(--fk-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── CRECIMIENTO DE LA INVERSION EN EL CARRIL (DIS.19) ──────────
+   Version compacta del grafico de DIS.17: la segunda columna repite el cuerpo
+   de la primera y le anade encima lo que pone el tiempo, asi que una figura
+   ensena dos cosas porque una es la particion de la otra. */
+.grow {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--fk-space-4);
+}
+
+.grow__col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 40px;
   flex-shrink: 0;
+}
+
+.grow__stack {
+  width: 100%;
+  height: 88px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  border-radius: 3px 3px 0 0;
+  overflow: hidden;
+}
+
+.grow__seg { width: 100%; background: var(--fk-dom-inversion); }
+.grow__seg[data-seg="1"] {
+  background: color-mix(in srgb, var(--fk-dom-inversion) 55%, var(--fk-bg-elevated));
+}
+/* Rayado y no un color propio: el rendimiento es esperado, no dinero que ya
+   esta ahi, y la trama lo dice sin una nota al pie. */
+.grow__seg--tiempo {
+  background: repeating-linear-gradient(135deg,
+    var(--fk-dom-inversion) 0 3px,
+    color-mix(in srgb, var(--fk-dom-inversion) 45%, transparent) 3px 6px);
+}
+
+.grow__lb {
+  font-size: 10px;
+  color: var(--fk-text-muted);
+}
+
+.grow__leyenda {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  font-size: 10px;
+  color: var(--fk-text-secondary);
+}
+
+.grow__leg {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+}
+
+.grow__sw {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  background: var(--fk-dom-inversion);
+}
+.grow__sw--tiempo {
+  background: repeating-linear-gradient(135deg,
+    var(--fk-dom-inversion) 0 2px, transparent 2px 4px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .grow__seg { transition: height var(--fk-transition-slow) ease; }
 }
 
 /* `.list-item--listo` se retiro en DIS.15: el apartado listo ya no es una fila

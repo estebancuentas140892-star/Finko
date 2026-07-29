@@ -10,6 +10,7 @@ import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
 import { htmlComparador, pieComparador } from '../../ui/comparador.js';
+import { estadoDeBolsa } from '../../infra/bolsas.js';
 import { ICONOS_CATEGORIA_PERSONALIZADA } from '../../core/constants.js';
 import {
   apartadosActivos,
@@ -141,33 +142,16 @@ function _renderComparador(activos) {
  * @returns {Object} columna para `htmlComparador()`.
  */
 function _columnaComparador(apartado) {
-  const hoyISO = hoy();
-  const { porcentaje, completado } = calcularProgreso(apartado);
-  const plan = planDeReferencia(apartado, hoyISO);
-  const dias = diasHastaFecha(apartado.fechaObjetivo, hoyISO);
-
-  // La columna se pinta como terminada en cuanto el dinero está reunido, sea
-  // recurrente o no: es lo que la altura al 100% ya está diciendo.
-  // `estaListoParaReiniciar()` es más estrecho (solo recurrentes) porque
-  // gobierna una acción, no un dibujo.
-  const reunido = completado || estaListoParaReiniciar(apartado);
-
-  const planPct = plan === null
-    ? null
-    : reunido ? 100 : Math.round((plan.aportesEsperados / plan.totalAportes) * 100);
-
-  const estado = reunido
-    ? 'listo'
-    : (planPct !== null && porcentaje < planPct) ? 'atras' : '';
+  const e = estadoDeBolsa(apartado, hoy());
 
   return {
     id:        apartado.id,
     nombre:    apartado.nombre,
     iconoHtml: _iconoApartado(apartado),
-    pct:       porcentaje,
-    plan:      planPct,
-    nota:      _notaColumna({ reunido, dias }),
-    estado,
+    pct:       e.pct,
+    plan:      e.planPct,
+    nota:      _notaColumna(e),
+    estado:    e.reunido ? 'listo' : e.atrasada ? 'atras' : '',
   };
 }
 

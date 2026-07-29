@@ -123,6 +123,51 @@ export function planDeReferencia(bolsa, hoyISO) {
   };
 }
 
+// ── ESTADO COMPARABLE DE UNA BOLSA ───────────────────────────────
+
+/**
+ * Lo que hace falta para dibujar una bolsa como columna comparable (DIS.19).
+ *
+ * Traduce una bolsa a tres números y un estado, sin una palabra de copy: eso lo
+ * pone cada pantalla en su propio vocabulario. Está acá porque el comparador
+ * tiene dos consumidores (la lista de Apartados y el carril de la casa de
+ * Ahorro) y calcular esto dos veces habría vuelto a duplicar el plan.
+ *
+ * `reunido` es más ancho que "listo para reiniciar" del dominio Apartados: acá
+ * describe un **dibujo** (la columna llena) y allá gobierna una **acción** (usar
+ * el dinero y arrancar el ciclo), que solo tiene sentido en las recurrentes.
+ *
+ * @param {import('../core/state.js').Apartado} bolsa
+ * @param {string} hoyISO - YYYY-MM-DD.
+ * @returns {{
+ *   pct: number,
+ *   planPct: number|null,
+ *   dias: number|null,
+ *   reunido: boolean,
+ *   atrasada: boolean,
+ * }}
+ */
+export function estadoDeBolsa(bolsa, hoyISO) {
+  const objetivo = Number(bolsa?.montoObjetivo) || 0;
+  const actual   = Number(bolsa?.montoActual) || 0;
+
+  const pct     = objetivo > 0 ? Math.min(100, Math.round((actual / objetivo) * 100)) : 0;
+  const reunido = objetivo > 0 && actual >= objetivo;
+
+  const plan    = planDeReferencia(bolsa, hoyISO);
+  const planPct = plan === null
+    ? null
+    : reunido ? 100 : Math.min(100, Math.round((plan.aportesEsperados / plan.totalAportes) * 100));
+
+  return {
+    pct,
+    planPct,
+    dias:     diasHastaFecha(bolsa?.fechaObjetivo, hoyISO),
+    reunido,
+    atrasada: !reunido && planPct !== null && pct < planPct,
+  };
+}
+
 /** Recorta un entero al rango [0, max]. */
 function _acotar(n, max) {
   if (!Number.isFinite(n) || n < 0) return 0;

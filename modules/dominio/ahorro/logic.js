@@ -116,18 +116,22 @@ export function calcularTasaAhorro(ingresos, gastos) {
 export const MODALIDADES_AHORRO = [
   {
     clave: 'fondo', seccion: 'fondo', icono: 'ahorro', label: 'Fondo de emergencia',
+    cuando: 'Ojalá nunca lo uses',
     proposito: 'Para cuando algo se dañe o te quedes sin ingresos',
   },
   {
-    clave: 'metas', seccion: 'metas', icono: 'metas', label: 'Metas',
-    proposito: 'Para algo que quieres comprar o hacer',
-  },
-  {
     clave: 'apartados', seccion: 'apartados', icono: 'apartados', label: 'Apartados',
+    cuando: 'En una fecha que no elegiste',
     proposito: 'Para pagos que ya sabes que llegan',
   },
   {
+    clave: 'metas', seccion: 'metas', icono: 'metas', label: 'Metas',
+    cuando: 'Algún día, cuando quieras',
+    proposito: 'Para algo que quieres comprar o hacer',
+  },
+  {
     clave: 'inversiones', seccion: 'inversion', icono: 'inversion', label: 'Inversión',
+    cuando: 'Además, creciendo',
     proposito: 'Dinero que pusiste a crecer',
   },
 ];
@@ -139,8 +143,15 @@ export const MODALIDADES_AHORRO = [
  * Antes de DIS.18 esto era `consolidarAhorro()`, que ordenaba por monto y
  * escondía las modalidades en cero: servía para un desglose de solo lectura
  * repetido en cuatro pantallas. Acá las filas **son la navegación**, así que el
- * orden es fijo (el que enseña la taxonomía, del más urgente al más lejano) y
- * ninguna se esconde: una modalidad que no aparece no se puede descubrir.
+ * orden es fijo y ninguna se esconde: una modalidad que no aparece no se puede
+ * descubrir.
+ *
+ * DIS.19 (item 2): el orden lo fija **una sola pregunta**, ¿cuándo vas a usar
+ * este dinero? Ojalá nunca (fondo), en una fecha que no elegiste (apartados),
+ * algún día (metas), y además creciendo (inversión). Antes el orden era "del más
+ * urgente al más lejano", que decía casi lo mismo sin poder explicarse: el
+ * rótulo `cuando` es lo que vuelve legible la secuencia, y sin él dos personas
+ * podían ordenar distinto y las dos tener razón.
  *
  * El estado en la unidad de cada sección (meses cubiertos, metas en curso, días
  * al próximo cobro, inversiones abiertas) es lo que permite decidir a dónde

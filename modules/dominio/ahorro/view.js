@@ -5,9 +5,13 @@
 
 import { S } from '../../core/state.js';
 import { f, fechaLegible, formateadorFecha, hoy, esc as _esc } from '../../infra/utils.js';
-import { icon, emptyArt, tejaCategoria } from '../../infra/icons.js';
+import { icon, iconoCategoria, emptyArt, tejaCategoria } from '../../infra/icons.js';
 import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { siluetaMeta } from '../../infra/svg.js';
+import { estadoDeBolsa } from '../../infra/bolsas.js';
+import { columnasPortafolio } from '../../infra/portafolio.js';
+import { htmlComparador, pieComparador } from '../../ui/comparador.js';
+import { CATEGORIA_META_SILUETA } from '../../core/constants.js';
 import {
   calcularObjetivoFondo,
   calcularProgresoFondo,
@@ -56,44 +60,61 @@ export function renderAhorro(gastosFijosMensuales, tasaAhorro = null, sugerencia
   el.innerHTML = _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia);
 }
 
-// ── CASA DE AHORRO (DIS.18, ADR 009 restaurado) ──────────────────
+// ── CASA DE AHORRO: LOS CUATRO CARRILES (DIS.19, arquitectura 1c) ─
 
 /**
- * Renderiza la casa de Ahorro en `#panel-casa-ahorro`: el total guardado y las
- * cuatro modalidades como filas navegables.
+ * Renderiza la casa de Ahorro en `#panel-casa-ahorro`: los cuatro carriles, cada
+ * uno con su gráfico propio y su acción.
  *
- * Antes de DIS.18 este contenido era `renderResumenAhorroConsolidado()`, que
- * llenaba un slot idéntico en las cuatro secciones hijas. El bloque no tenía
- * dónde vivir: es el resumen de un padre que Finko nunca construyó, así que se
- * repetía 316px en cada hija y arrastraba una barra de pestañas que existía solo
- * para saltar de lado sin poder subir. Ahora se muestra **una vez y como
- * destino**: las filas dejan de ser un desglose de solo lectura con un enlace de
- * 18px y pasan a ser la navegación, con área táctil de fila completa.
+ * DIS.18 dio a las cuatro modalidades una pantalla padre y resolvió la
+ * navegación, pero las filas seguían siendo monto y estado en texto: la decisión
+ * de a dónde entrar se tomaba **sin información**, y las cuatro se sentían la
+ * misma cosa cuatro veces aunque el código ya las hubiera diferenciado. La
+ * diferencia estaba adentro de cada sección y la decisión se toma afuera.
+ *
+ * DIS.19 (items 1 y 2 del informe de gráficos) cambia eso con dos movimientos:
+ *
+ * - **Cada carril trae su gráfico, y cada gráfico mide en su propia unidad.** El
+ *   fondo en meses cubiertos, los apartados en columnas comparadas contra la
+ *   marca de su plan, las metas en siluetas que se llenan y la inversión en dos
+ *   columnas donde se ve lo que pone el tiempo. Cuatro unidades distintas es lo
+ *   que hace que las cuatro dejen de parecer lo mismo: no se distinguen por el
+ *   título, se distinguen por la forma.
+ * - **El rótulo del momento de uso encabeza cada carril.** "Ojalá nunca lo uses"
+ *   sobre el fondo y "En una fecha que no elegiste" sobre los apartados explican
+ *   la diferencia entre las dos bolsas mejor que cualquier definición, y ordenan
+ *   los cuatro carriles con una sola pregunta.
+ *
+ * El total baja al pie en una línea. Era la única cifra grande de la pantalla y
+ * no servía para decidir nada: nadie hace algo distinto por saber que tiene
+ * $12.884.000 repartidos en cuatro sitios.
  *
  * Lee S directamente (permitido para un view), pero NO importa otros dominios:
- * suma inline los montos de cada slice, igual que compromisos/views/dashboard.js
- * lee S.personales y S.apartados sin importar esos módulos (regla ADN #10).
+ * suma inline los montos de cada slice y saca los cálculos compartidos de
+ * `infra/bolsas.js` y `infra/portafolio.js`, que existen justamente para eso
+ * (regla ADN #10).
  *
- * Las cuatro filas se muestran siempre, también en cero: una modalidad que no
- * aparece no se puede descubrir, y esta es la única pantalla donde los cuatro
- * nombres conviven. Respeta el ojo de privacidad de Inicio (IN.2).
- *
- * @param {number} gastosFijosMensuales COP/mes calculado por index.js: el estado
- *                                      del fondo se mide en meses cubiertos.
+ * @param {number} gastosFijosMensuales COP/mes calculado por index.js: el fondo
+ *                                      se mide en meses cubiertos.
  */
 export function renderCasaAhorro(gastosFijosMensuales = 0) {
   const el = document.getElementById('panel-casa-ahorro');
   if (!el) return;
 
-  const fondo = S.ahorro?.fondoEmergencia ?? { activo: false };
-  const fondoTotal = fondo.activo
-    ? calcularMontoTotalFondo(fondo.montoActual, Array.isArray(S.ahorro?.aportes) ? S.ahorro.aportes : [])
-    : 0;
+  const hoyISO = hoy();
+  const fondo  = S.ahorro?.fondoEmergencia ?? { activo: false };
+  const aportes = Array.isArray(S.ahorro?.aportes) ? S.ahorro.aportes : [];
+  const fondoTotal = fondo.activo ? calcularMontoTotalFondo(fondo.montoActual, aportes) : 0;
 
   const metas = (Array.isArray(S.metas) ? S.metas : []).filter(m => m.completada !== true);
   const metasTotal = metas.reduce((sum, m) => sum + (Number(m.montoActual) || 0), 0);
 
-  const apartados = Array.isArray(S.apartados) ? S.apartados : [];
+  // Mismo filtro que `apartadosActivos()`: un apartado completado sigue vivo si
+  // es recurrente (espera que lo usen para arrancar el ciclo siguiente). Va
+  // replicado y no importado porque ADN #10 lo impide, igual que
+  // `_gastosFijosMensuales()` replica el factor de frecuencia de compromisos.
+  const apartados = (Array.isArray(S.apartados) ? S.apartados : [])
+    .filter(a => a && (a.completado !== true || a.recurrente === true));
   const apartadosTotal = apartados.reduce((sum, a) => sum + (Number(a.montoActual) || 0), 0);
 
   const inversiones = Array.isArray(S.inversiones) ? S.inversiones : [];
@@ -108,55 +129,278 @@ export function renderCasaAhorro(gastosFijosMensuales = 0) {
     },
     mesesCubiertos:      fondo.activo ? mesesDeColchon(fondoTotal, gastosFijosMensuales) : null,
     metasEnCurso:        metas.length,
-    diasProximoApartado: diasAlProximoApartado(apartados, hoy()),
+    diasProximoApartado: diasAlProximoApartado(apartados, hoyISO),
     inversionesAbiertas: inversiones.length,
   });
 
-  el.innerHTML = _htmlCasaAhorro(total, filas);
+  const graficos = {
+    fondo:       _graficoFondo(fondo, fondoTotal, gastosFijosMensuales, hoyISO),
+    apartados:   _graficoApartados(apartados, hoyISO),
+    metas:       _graficoMetas(metas),
+    inversiones: _graficoInversion(inversiones),
+  };
+
+  el.innerHTML = _htmlHub(total, filas, graficos);
 }
 
 /**
- * HTML de la casa: cabecera con el total y una fila por modalidad.
+ * El hub completo: la frase que enseña la diferencia, los chips para saltar de
+ * carril, los cuatro carriles y el total al pie.
  *
- * El título dice "Todo lo que tienes guardado" y ya no necesita el subtítulo que
- * enumeraba las cuatro fuentes: las cuatro filas están justo debajo. La fila
- * entera es el enlace, así que el chevron es decorativo y el nombre accesible lo
- * arma el `aria-label` con la modalidad y su estado.
+ * Los chips no son navegación de sección: mueven el scroll dentro de la misma
+ * pantalla. Por eso son botones con acción y no enlaces con hash, que el router
+ * leería como una sección inexistente.
  *
  * @param {number} total
- * @param {Array<{clave:string, seccion:string, icono:string, label:string, proposito:string, monto:number, estado:string}>} filas
+ * @param {Array<Object>} filas Salida de `casaAhorro()`, en orden de carril.
+ * @param {Object<string, {html: string, accion: string}>} graficos
  */
-function _htmlCasaAhorro(total, filas) {
+function _htmlHub(total, filas, graficos) {
+  const oculto = S.config?.ocultarSaldo === true;
+
+  const chipsHtml = filas.map(fila => `
+        <button class="chip" type="button" data-action="ahorro-ir-a-carril" data-id="${_esc(fila.clave)}">
+          ${_esc(fila.label)}
+        </button>`).join('');
+
+  const carrilesHtml = filas.map(fila => _htmlCarril(fila, graficos[fila.clave])).join('');
+
+  return `
+    <div class="hub">
+      <p class="hub__intro">Cuatro formas de guardar. La diferencia es <strong>cuándo vas a usar este dinero</strong>.</p>
+      <div class="chips" role="group" aria-label="Saltar a una modalidad">${chipsHtml}</div>
+      ${carrilesHtml}
+      <p class="hub__total">
+        Todo lo que tienes guardado:
+        <strong id="casa-ahorro-total">${oculto ? SALDO_MASCARA_CUENTA : f(total)}</strong>
+      </p>
+    </div>`;
+}
+
+/**
+ * Un carril: el momento de uso, el nombre, la salida a la sección, el gráfico y
+ * la acción.
+ *
+ * El gráfico va `aria-hidden` y el estado en palabras lo dice el subtítulo, que
+ * es la misma frase que la fila de DIS.18 ya usaba ("1 mes y 3 semanas
+ * cubiertos", "el más próximo, en 12 días"): el dibujo no es la fuente de la
+ * información, la duplica en una forma más rápida de leer (regla R11).
+ *
+ * @param {{clave:string, seccion:string, icono:string, label:string, cuando:string, proposito:string, monto:number, estado:string}} fila
+ * @param {{html:string, accion:string}} grafico
+ */
+function _htmlCarril(fila, grafico) {
   const oculto = S.config?.ocultarSaldo === true;
   const m = (n) => oculto ? SALDO_MASCARA_CUENTA : f(n);
 
-  const html = filas.map(fila => `
-      <li>
-        <a class="casa-ahorro__fila" href="#${_esc(fila.seccion)}" data-vehiculo="${_esc(fila.clave)}"
-           aria-label="${_esc(fila.label)}: ${_esc(fila.estado)}">
-          ${icon(fila.icono, 'icon casa-ahorro__ico')}
-          <span class="casa-ahorro__cuerpo">
-            <span class="casa-ahorro__nombre">${_esc(fila.label)}</span>
-            <span class="casa-ahorro__proposito">${_esc(fila.proposito)}</span>
-          </span>
-          <span class="casa-ahorro__cifras">
-            <span class="casa-ahorro__monto">${m(fila.monto)}</span>
-            <span class="casa-ahorro__estado">${_esc(fila.estado)}</span>
-          </span>
-          ${icon('chevron-right', 'icon casa-ahorro__chevron')}
-        </a>
-      </li>`).join('');
-
   return `
-    <section class="casa-ahorro" aria-labelledby="casa-ahorro-total">
-      <header class="casa-ahorro__header">
-        <p class="casa-ahorro__label">Todo lo que tienes guardado</p>
-        <p class="casa-ahorro__valor" id="casa-ahorro-total">${oculto ? SALDO_MASCARA_CUENTA : f(total)}</p>
-      </header>
-      <ul class="casa-ahorro__lista" role="list">
-        ${html}
-      </ul>
-    </section>`;
+      <section class="lane" id="carril-${_esc(fila.clave)}" data-dom="${_esc(fila.clave === 'inversiones' ? 'inversion' : fila.clave === 'metas' ? 'metas' : 'ahorro')}"
+               aria-labelledby="carril-${_esc(fila.clave)}-nombre">
+        <header class="lane__hd">
+          <div class="lane__txt">
+            <span class="lane__cuando">${_esc(fila.cuando)}</span>
+            <span class="lane__nombre" id="carril-${_esc(fila.clave)}-nombre">
+              ${icon(fila.icono, 'icon lane__ico')} ${_esc(fila.label)}
+            </span>
+            <span class="lane__estado">${m(fila.monto)} · ${_esc(fila.estado)}</span>
+          </div>
+          <a class="lane__ver" href="#${_esc(fila.seccion)}"
+             aria-label="Ver todo en ${_esc(fila.label)}">Ver todo</a>
+        </header>
+        ${grafico.html}
+        ${grafico.accion}
+      </section>`;
+}
+
+// ── UN GRÁFICO POR CARRIL, CADA UNO EN SU UNIDAD ─────────────────
+
+/**
+ * Fondo: los meses cubiertos, en la misma franja que su sección (item 6).
+ *
+ * Repetir el gráfico y no una versión distinta es deliberado: el carril tiene que
+ * enseñar a leer la sección a la que lleva. Va en versión compacta porque acá
+ * compite con otros tres.
+ */
+function _graficoFondo(fondo, fondoTotal, gastosFijosMensuales, hoyISO) {
+  if (!fondo.activo) {
+    return {
+      html: `<p class="lane__nota">Un fondo de emergencia es dinero apartado para cuando algo se dañe o dejes de recibir. Es el primer paso de los cuatro.</p>`,
+      accion: `<button class="lane__cta" type="button" data-action="ahorro-activar-fondo">Empezar mi fondo</button>`,
+    };
+  }
+
+  const colchon = mesesDeColchon(fondoTotal, gastosFijosMensuales);
+  if (colchon === null) {
+    return {
+      html: `<p class="lane__nota">Registra tus gastos fijos desde Calendario y Finko calcula cuánto tiempo te cubre el fondo.</p>`,
+      accion: `<button class="lane__cta" type="button" data-action="ahorro-nuevo-aporte">+ Aportar al fondo</button>`,
+    };
+  }
+
+  const { bloques, eje } = franjaCobertura(colchon, fondo.metaMeses ?? 3, hoyISO);
+
+  const bloquesHtml = bloques.map(b => `
+            <span class="cov__mes${b.futuro ? ' cov__mes--futuro' : ''}"><span class="cov__fill" style="height:${b.pct}%"></span></span>`).join('');
+  const ejeHtml = eje.map(e => `
+            <span class="cov__eje-seg">${e.rotulo ? `<span class="cov__nivel cov__nivel--${e.estado}">${_esc(e.rotulo)}</span>` : ''}</span>`).join('');
+
+  return {
+    html: `
+        <div class="cov cov--mini" aria-hidden="true">
+          <div class="cov__meses">${bloquesHtml}</div>
+          <div class="cov__eje">${ejeHtml}</div>
+        </div>`,
+    accion: `<button class="lane__cta" type="button" data-action="ahorro-nuevo-aporte">${fondoTotal <= 0 ? '+ Hacer mi primer aporte' : '+ Aportar al fondo'}</button>`,
+  };
+}
+
+/**
+ * Apartados: las columnas comparadas contra la marca de su plan (item 5).
+ *
+ * Acá el gráfico **sí** es interactivo, al contrario que en la lista de
+ * Apartados: allá tocar una columna no tenía a dónde llevar porque la tarjeta ya
+ * estaba debajo, y acá cada columna es el aporte a ese apartado. Un toque en vez
+ * de dos (elegir y luego pulsar un botón), y sin estado de selección que
+ * mantener entre renders.
+ */
+function _graficoApartados(apartados, hoyISO) {
+  if (apartados.length === 0) {
+    return {
+      html: `<p class="lane__nota">Ponle nombre, monto y fecha a un gasto que ya viene, y Finko te dice cuánto separar en cada pago.</p>`,
+      accion: `<button class="lane__cta" type="button" data-action="nuevo-apartado">+ Crear un apartado</button>`,
+    };
+  }
+
+  const columnas = apartados.map(a => {
+    const e = estadoDeBolsa(a, hoyISO);
+    return {
+      id:        a.id,
+      nombre:    a.nombre,
+      iconoHtml: _iconoDeApartado(a),
+      pct:       e.pct,
+      plan:      e.planPct,
+      nota:      _notaDePlazo(e),
+      estado:    e.reunido ? 'listo' : e.atrasada ? 'atras' : '',
+      etiquetaAccesible: e.reunido
+        ? `${a.nombre}: ya lo reuniste, marcar como usado`
+        : `Aportar a ${a.nombre}: ${e.pct}% reunido, ${_notaDePlazo(e)}`,
+    };
+  });
+
+  return {
+    html: htmlComparador(columnas, {
+      clase:  'cmp--mini',
+      accion: 'aportar-apartado',
+      pie:    pieComparador(columnas),
+    }),
+    accion: '',
+  };
+}
+
+/**
+ * Metas: las siluetas que se llenan (item 3).
+ *
+ * La silueta hace de gráfico y de botón a la vez: cada una abre el aporte a su
+ * meta. Es el mismo dibujo del centro del arco en la sección de Metas, así que el
+ * carril enseña a leerla.
+ */
+function _graficoMetas(metas) {
+  if (metas.length === 0) {
+    return {
+      html: `<p class="lane__nota">Crea tu primera meta: un viaje, un computador, la vivienda. Tú le pones el nombre y Finko le pone la forma.</p>`,
+      accion: `<button class="lane__cta" type="button" data-action="nueva-meta">+ Crear una meta</button>`,
+    };
+  }
+
+  const botones = metas.map(meta => {
+    const objetivo = Number(meta.montoObjetivo) || 0;
+    const actual   = Number(meta.montoActual) || 0;
+    const pct      = objetivo > 0 ? Math.min(100, Math.round((actual / objetivo) * 100)) : 0;
+    const forma    = CATEGORIA_META_SILUETA[meta.categoria] ?? 'caja';
+
+    return `
+          <button class="silbtn" type="button" data-action="abonar-meta" data-id="${_esc(meta.id)}"
+                  aria-label="Aportar a ${_esc(meta.nombre)}: ${pct}% de tu objetivo">
+            <span class="silbtn__fig" aria-hidden="true">
+              ${siluetaMeta(pct, { forma, clave: `carril-${meta.id}`, decorativa: true })}
+            </span>
+            <span class="silbtn__lb">${_esc(meta.nombre)}</span>
+            <span class="silbtn__pct">${pct}%</span>
+          </button>`;
+  }).join('');
+
+  return {
+    html: `<div class="silrow">${botones}</div>
+        <p class="lane__hint">Toca una silueta para aportar. Se llena con lo que ya reuniste.</p>`,
+    accion: '',
+  };
+}
+
+/**
+ * Inversión: las dos columnas donde se ve lo que pone el tiempo.
+ *
+ * Es el mismo gráfico de DIS.17, en versión compacta y con la geometría que
+ * `infra/portafolio.js` ya calcula. La franja rayada es el rendimiento esperado:
+ * lo único de las cuatro modalidades que crece sin que el usuario aporte.
+ */
+function _graficoInversion(inversiones) {
+  const cols = columnasPortafolio(inversiones);
+  if (!cols) {
+    return {
+      html: `<p class="lane__nota">Aquí llevas el registro de lo que inviertes y ves cuánto le suma el tiempo. Antes de empezar, cubre tu fondo de emergencia.</p>`,
+      accion: `<button class="lane__cta" type="button" data-action="inversion-nueva">+ Registrar una inversión</button>`,
+    };
+  }
+
+  const oculto = S.config?.ocultarSaldo === true;
+  const m = (n) => oculto ? SALDO_MASCARA_CUENTA : f(n);
+
+  const cuerpo = cols.segmentos.map((s, i) => `
+              <span class="grow__seg" data-seg="${i % 2}" style="height:${s.alto}%"></span>`).join('');
+
+  return {
+    html: `
+        <div class="grow" aria-hidden="true">
+          <span class="grow__col">
+            <span class="grow__stack">${cuerpo}</span>
+            <span class="grow__lb">hoy</span>
+          </span>
+          <span class="grow__col">
+            <span class="grow__stack">
+              <span class="grow__seg grow__seg--tiempo" style="height:${cols.altoTiempo}%"></span>
+              ${cuerpo}
+            </span>
+            <span class="grow__lb">al vencer</span>
+          </span>
+          <span class="grow__leyenda">
+            <span class="grow__leg"><span class="grow__sw grow__sw--tiempo"></span>lo pone el tiempo</span>
+          </span>
+        </div>
+        <p class="lane__hint">El tiempo le suma <strong>${m(cols.rendimiento)}</strong> a lo que ya pusiste.</p>`,
+    accion: `<button class="lane__cta" type="button" data-action="inversion-nueva">+ Registrar otra inversión</button>`,
+  };
+}
+
+// ── HELPERS DE LOS CARRILES ──────────────────────────────────────
+
+/**
+ * Ícono de un apartado. Réplica de `_iconoApartado()` de Apartados: los dos
+ * formatos de `apartado.icono` (id de sprite o emoji crudo, CAT.2c) hay que
+ * distinguirlos igual acá, y ADN #10 impide importar ese view. Se distingue por
+ * el patrón `letra-` que ningún emoji real produce.
+ */
+function _iconoDeApartado(apartado) {
+  const valor = apartado.icono ?? '📦';
+  return /^[a-z]-/.test(valor) ? iconoCategoria(valor, 'icon') : _esc(valor);
+}
+
+/** El plazo de una bolsa, en la unidad más corta que quepa bajo la columna. */
+function _notaDePlazo({ reunido, dias }) {
+  if (reunido)       return 'listo';
+  if (dias === null) return 'sin fecha';
+  if (dias > 0)      return dias === 1 ? '1 día' : `${dias} días`;
+  if (dias === 0)    return 'es hoy';
+  return 'vencido';
 }
 
 // ── EMPTY STATE ──────────────────────────────────────────────────

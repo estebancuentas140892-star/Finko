@@ -494,6 +494,30 @@ function _renderSegunSeccion() {
   renderSmart(() => renderCasaAhorro(_gastosFijosMensuales()), 'ahorro');
 }
 
+/**
+ * Salta a un carril de la casa de Ahorro (DIS.19).
+ *
+ * Los chips mueven el scroll dentro de la misma pantalla, no navegan a otra
+ * sección: con cuatro carriles y sus gráficos la pantalla es larga, y el chip es
+ * lo que permite ir directo al que interesa sin recorrerla. Por eso son botones
+ * con acción y no enlaces con hash, que el router leería como una sección
+ * inexistente y llevaría a Inicio.
+ *
+ * `scrollIntoView` y no un cálculo de offset: el contenedor que hace scroll
+ * cambia entre móvil y desktop, y el navegador ya sabe cuál es. La animación la
+ * decide `behavior: 'smooth'`, que el navegador anula solo cuando el sistema pide
+ * menos movimiento.
+ *
+ * @param {HTMLElement} el Elemento con `data-id` = clave de la modalidad.
+ */
+function _irACarril(el) {
+  const clave = el?.dataset?.id;
+  if (!clave) return;
+  const destino = document.getElementById(`carril-${clave}`);
+  if (!destino) return;
+  destino.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 export function initAhorro() {
   registrarAccion('ahorro-activar-fondo',     _activarFondo);
   registrarAccion('ahorro-editar',            _editarFondo);
@@ -502,6 +526,7 @@ export function initAhorro() {
   registrarAccion('ahorro-eliminar-aporte',   _eliminarAporte);
   registrarAccion('ahorro-editar-compromiso', _editarCompromisoMensual);
   registrarAccion('ahorro-usar-sugerido',     _usarAporteSugerido);
+  registrarAccion('ahorro-ir-a-carril',       _irACarril);
 
   // El objetivo del fondo depende de gastos fijos: re-render ante cambios en
   // ahorro, compromisos, ingresos o gastos (la tasa de ahorro usa los 3 últimos).

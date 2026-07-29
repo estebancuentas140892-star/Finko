@@ -526,20 +526,14 @@
      dos columnas de texto. El chevron cede su columna (la fila entera ya es el
      enlace, así que no informa nada que la flecha de vuelta no diga) y el
      propósito pasa a ocupar el ancho completo bajo el nombre. */
-  .casa-ahorro__fila {
-    grid-template-columns: auto 1fr auto;
-    grid-template-areas:
-      "ico nombre    cifras"
-      "ico proposito cifras";
-    column-gap: var(--fk-space-3);
-    row-gap: 2px;
+  /* DIS.19: la fila de la casa se retiro con el hub de carriles. Lo que queda
+     por resolver en movil es el carril de Inversion: dos columnas mas leyenda
+     no caben a 375px, asi que la leyenda se apila debajo del grafico. */
+  .grow {
+    flex-wrap: wrap;
+    gap: var(--fk-space-3);
   }
-  .casa-ahorro__ico       { grid-area: ico; }
-  .casa-ahorro__cuerpo    { display: contents; }
-  .casa-ahorro__nombre    { grid-area: nombre; }
-  .casa-ahorro__proposito { grid-area: proposito; }
-  .casa-ahorro__cifras    { grid-area: cifras; }
-  .casa-ahorro__chevron   { display: none; }
+  .grow__leyenda { flex-basis: 100%; }
 }
 
 /* ── MÓVIL PEQUEÑO (< 360px) - iPhone SE 1ª gen, dispositivos legacy ─ */
