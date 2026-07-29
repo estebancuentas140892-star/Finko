@@ -396,6 +396,151 @@ export function bloquesCobertura(mesesCubiertos, metaMeses, hoyISO) {
   });
 }
 
+/**
+ * Meses que la franja dibuja como mínimo: los del último nivel de la escalera.
+ *
+ * DIS.19 (item 6): la lista de tres niveles que vivía aparte se retira y los
+ * niveles pasan a rotular el eje de la franja. Eso obliga a que la franja llegue
+ * hasta el último nivel: un eje que marca "6 meses" sobre una franja de tres
+ * pondría el rótulo fuera del dibujo.
+ */
+export const MESES_FRANJA_MIN = NIVELES_FONDO[NIVELES_FONDO.length - 1].meses;
+
+/**
+ * Pasados estos bloques se dejan de rotular los meses.
+ *
+ * Con la meta en el máximo (12 meses) cada bloque baja a unos 26px en un
+ * teléfono de 375px, y "sept" en 9px ya no cabe sin recortarse. El eje de
+ * niveles sí se conserva: es el que hace legible la franja, y el mes exacto ya
+ * lo dice el pie con la fecha de cobertura.
+ */
+export const MAX_ROTULOS_MES = 8;
+
+/**
+ * Todo lo que la franja de cobertura necesita dibujar (DIS.19, item 6).
+ *
+ * La franja hace dos trabajos que antes estaban en dos componentes: los bloques
+ * son la **prueba** (cuánto tiempo aguantas de verdad) y el eje es el **camino**
+ * (los tres niveles y dónde caen). Juntarlos ahorra la lista de niveles y hace
+ * que el avance hacia el siguiente se lea como distancia, no como porcentaje.
+ *
+ * Un bloque sin nada cubierto se marca `futuro`: se dibuja con contorno y sin
+ * relleno, así que la franja completa siempre está a la vista. Una franja que
+ * solo dibujara lo cubierto no diría hacia dónde va.
+ *
+ * @param {number|null} mesesCubiertos Salida de `mesesDeColchon()`.
+ * @param {number} metaMeses           Meses que el usuario apunta a cubrir.
+ * @param {string} hoyISO              YYYY-MM-DD.
+ * El eje conserva lo único que la lista de niveles decía y el dibujo no: **cuál
+ * ya está logrado**. Va como estado del rótulo, no como texto aparte, así que se
+ * lee sin sumar una línea.
+ *
+ * @param {number|null} mesesCubiertos Salida de `mesesDeColchon()`.
+ * @param {number} metaMeses           Meses que el usuario apunta a cubrir.
+ * @param {string} hoyISO              YYYY-MM-DD.
+ * @returns {{
+ *   bloques: Array<{mesISO: string, pct: number, futuro: boolean}>,
+ *   eje: Array<{rotulo: string, estado: string}>,
+ *   conRotulos: boolean,
+ * }} `bloques` vacío si no hay franja que dibujar.
+ */
+export function franjaCobertura(mesesCubiertos, metaMeses, hoyISO) {
+  const meta   = Math.round(Number(metaMeses));
+  const cuantos = Number.isFinite(meta) && meta > 0
+    ? Math.max(meta, MESES_FRANJA_MIN)
+    : MESES_FRANJA_MIN;
+
+  const crudos = bloquesCobertura(mesesCubiertos, cuantos, hoyISO);
+  if (crudos.length === 0) return { bloques: [], eje: [], conRotulos: false };
+
+  const niveles = nivelesFondo(mesesCubiertos);
+
+  return {
+    bloques: crudos.map(b => ({ ...b, futuro: b.pct <= 0 })),
+    // El rótulo del nivel va al final del bloque que lo completa: "3 meses" cae
+    // en el borde derecho del tercero, que es donde el nivel se alcanza.
+    eje: crudos.map((_, i) => {
+      const nivel = niveles.find(n => n.meses === i + 1) ?? null;
+      return {
+        rotulo: nivel ? nivel.titulo.toLowerCase() : '',
+        estado: nivel ? nivel.estado : '',
+      };
+    }),
+    conRotulos: crudos.length <= MAX_ROTULOS_MES,
+  };
+}
+
+// ── COMPROMISO DEL MES ───────────────────────────────────────────
+
+/**
+ * Cuánto se aportó al fondo dentro del mes de `hoyISO`.
+ *
+ * El compromiso mensual es una promesa que se renueva: el 1 vuelve a cero. Por
+ * eso el corte es el mes calendario y no los últimos 30 días, que dejarían el
+ * medidor a media agua el día que arranca el mes nuevo.
+ *
+ * @param {Array<{monto:number, fecha:string}>} aportes
+ * @param {string} hoyISO YYYY-MM-DD.
+ * @returns {number} COP. 0 si no hay aportes del mes o el input no sirve.
+ */
+export function aportadoEnMes(aportes, hoyISO) {
+  if (!Array.isArray(aportes)) return 0;
+  if (!hoyISO || !/^\d{4}-\d{2}-\d{2}$/.test(hoyISO)) return 0;
+
+  const prefijo = hoyISO.slice(0, 7);
+  return aportes.reduce((sum, a) => {
+    if (typeof a?.fecha !== 'string' || a.fecha.slice(0, 7) !== prefijo) return sum;
+    const monto = Number(a.monto);
+    return sum + (Number.isFinite(monto) && monto > 0 ? monto : 0);
+  }, 0);
+}
+
+/**
+ * El estado del compromiso de este mes, para el medidor (DIS.19, item 7).
+ *
+ * La fila de texto que decía "Compromiso mensual: $420.000" informaba sin medir:
+ * no había forma de saber si el mes iba cumplido sin abrir la lista de aportes y
+ * sumar a mano. El medidor mide, y para eso hacen falta las tres cifras juntas:
+ * lo prometido, lo hecho y lo que queda de mes.
+ *
+ * @param {number} compromisoMensual
+ * @param {number} aportadoMes
+ * @param {string} hoyISO YYYY-MM-DD.
+ * @returns {{
+ *   pct: number, aportado: number, objetivo: number, faltante: number,
+ *   diasRestantes: number, completo: boolean,
+ * } | null} null sin compromiso definido: no hay promesa que medir.
+ */
+export function progresoCompromiso(compromisoMensual, aportadoMes, hoyISO) {
+  const objetivo = Number(compromisoMensual);
+  if (!Number.isFinite(objetivo) || objetivo <= 0) return null;
+
+  const aportado = Math.max(0, Number(aportadoMes) || 0);
+  const pct      = Math.min(100, Math.round((aportado / objetivo) * 100));
+
+  return {
+    pct,
+    aportado,
+    objetivo,
+    faltante:      Math.max(0, objetivo - aportado),
+    diasRestantes: _diasRestantesDelMes(hoyISO),
+    completo:      aportado >= objetivo,
+  };
+}
+
+/**
+ * Días que quedan del mes contando hoy: el último día del mes todavía cuenta
+ * como un día para cumplir.
+ * @param {string} hoyISO YYYY-MM-DD.
+ * @returns {number} 0 si la fecha no sirve.
+ */
+function _diasRestantesDelMes(hoyISO) {
+  if (!hoyISO || !/^\d{4}-\d{2}-\d{2}$/.test(hoyISO)) return 0;
+  const [anio, mes, dia] = hoyISO.split('-').map(Number);
+  const ultimo = new Date(Date.UTC(anio, mes, 0)).getUTCDate();
+  return Math.max(0, ultimo - dia + 1);
+}
+
 // ── VALIDACIÓN ───────────────────────────────────────────────────
 
 /**

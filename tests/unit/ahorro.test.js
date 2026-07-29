@@ -36,6 +36,11 @@ import {
   mesesEnPalabras,
   fechaCobertura,
   bloquesCobertura,
+  franjaCobertura,
+  aportadoEnMes,
+  progresoCompromiso,
+  MESES_FRANJA_MIN,
+  MAX_ROTULOS_MES,
   NIVELES_FONDO,
 } from '../../modules/dominio/ahorro/logic.js';
 import {
@@ -774,6 +779,7 @@ describe('DIS.18 - la casa de Ahorro (A2, A8)', () => {
 describe('DIS.16 - la tarjeta del fondo ya no usa anillo', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="panel-ahorro"></div>';
+    S.config = {};
     S.ahorro = { fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 1_800_000 }, aportes: [] };
     renderAhorro(1_000_000, null, null);
   });
@@ -783,9 +789,14 @@ describe('DIS.16 - la tarjeta del fondo ya no usa anillo', () => {
     expect(document.querySelector('.progress-ring-wrap')).toBeNull();
   });
 
-  it('el porcentaje sobrevive como rótulo al pie de los bloques, sin aria-hidden encima', () => {
-    const pie = document.querySelector('.fondo-card__bloques-pie');
-    expect(pie.textContent).toContain('60%');
+  // DIS.19 (item 6): el pie deja el porcentaje y pasa a decir el tiempo cubierto
+  // y lo guardado. El porcentaje era el ultimo resto de la medida vieja, y la
+  // seccion se mide en tiempo desde DIS.16.
+  it('el pie de la franja dice el tiempo cubierto y lo guardado, sin aria-hidden encima', () => {
+    const pie = document.querySelector('.cov__pie');
+    expect(pie.textContent).toContain('1 mes y 3 semanas de 3 meses');
+    expect(pie.textContent).toContain('$1.800.000');
+    expect(pie.textContent).not.toContain('60%');
     expect(pie.closest('[aria-hidden="true"]')).toBeNull();
   });
 });
@@ -823,9 +834,20 @@ describe('DIS.12 - lista de aportes y compromiso (A5, A6)', () => {
     expect(filas[1].querySelector('.list-item__subtitle').textContent).toBe('Distribución de ingreso');
   });
 
-  it('A6: el compromiso mensual deja el ícono de Deudas y toma el de recurrencia', () => {
-    const uso = document.querySelector('.ahorro-habito__compromiso use');
-    expect(uso.getAttribute('href')).toBe('#i-recurring');
+  // DIS.19 (item 7): la fila de texto pasa a medidor, asi que el simbolo de
+  // recurrencia sale con ella. Lo que A6 vino a evitar sigue en pie: el
+  // compromiso no toma prestado el simbolo de Deudas en ninguna parte.
+  it('A6: el compromiso mensual no toma prestado el símbolo de Deudas', () => {
+    const bloque = document.querySelector('.ahorro-habito__compromiso');
+    expect(bloque.innerHTML).not.toContain('#i-deudas');
+  });
+
+  it('el compromiso se mide con la gota, no se informa con una fila de texto', () => {
+    const bloque = document.querySelector('.ahorro-habito__compromiso');
+    expect(bloque.querySelector('.liq .silueta')).not.toBeNull();
+    expect(bloque.querySelector('.liq__pct').textContent).toBe('100%');
+    expect(bloque.querySelector('.ahorro-habito__compromiso-nota').textContent)
+      .toContain('El 1 vuelve a empezar');
   });
 });
 
@@ -1000,53 +1022,61 @@ describe('renderAhorro() - tarjeta del fondo (DIS.16)', () => {
     expect(document.querySelector('.fondo-card__nivel-nombre').textContent).toBe('Un mes cubierto');
   });
 
-  it('la cobertura se prueba con los bloques del calendario y una fecha hipotética', () => {
+  // DIS.19 (item 6): la franja llega hasta el ultimo nivel (6 meses) aunque la
+  // meta sea de 3, porque el eje rotula los niveles y "seis meses" sobre una
+  // franja de tres caeria fuera del dibujo.
+  it('la cobertura se prueba con la franja de meses y una fecha hipotética', () => {
     renderAhorro(1_000_000, null, null);
-    expect(document.querySelectorAll('.fondo-card__bloque')).toHaveLength(3);
+    expect(document.querySelectorAll('.cov__mes')).toHaveLength(6);
     expect(document.querySelector('.fondo-card__frase').textContent).toContain('Si hoy dejaras de recibir ingresos');
+  });
+
+  it('los meses sin nada cubierto se dibujan igual, con contorno: la franja es la promesa', () => {
+    renderAhorro(1_000_000, null, null);
+    const futuros = [...document.querySelectorAll('.cov__mes')].filter(b => b.className.includes('--futuro'));
+    // 1,8 meses cubiertos: los dos primeros bloques llevan relleno y los cuatro
+    // restantes son promesa.
+    expect(futuros).toHaveLength(4);
   });
 
   it('los meses cubiertos se dicen en palabras, sin decimales', () => {
     renderAhorro(1_000_000, null, null);
-    const pie = document.querySelector('.fondo-card__bloques-pie').textContent;
+    const pie = document.querySelector('.cov__pie').textContent;
     expect(pie).toContain('1 mes y 3 semanas de 3 meses');
     expect(pie).not.toContain('1,8');
   });
 
-  it('la escalera muestra los tres niveles con su estado', () => {
+  it('los tres niveles rotulan el eje, y el logrado se distingue del que falta', () => {
     renderAhorro(1_000_000, null, null);
-    const filas = [...document.querySelectorAll('.fondo-card__nivel-fila')];
-    expect(filas).toHaveLength(3);
-    expect(filas[0].className).toContain('--logrado');
-    expect(filas[1].className).toContain('--actual');
-    expect(filas[1].textContent).toContain('vas en 40%');
-    expect(filas[2].className).toContain('--lejano');
+    const niveles = [...document.querySelectorAll('.cov__nivel')];
+    expect(niveles.map(n => n.textContent)).toEqual(['un mes', 'tres meses', 'seis meses']);
+    expect(niveles[0].className).toContain('--logrado');
+    expect(niveles[1].className).toContain('--actual');
+    expect(niveles[2].className).toContain('--lejano');
+  });
+
+  it('la lista de niveles ya no vive aparte en la tarjeta activa', () => {
+    renderAhorro(1_000_000, null, null);
+    expect(document.querySelector('.fondo-card__nivel-fila')).toBeNull();
   });
 
   it('con la meta cubierta el pie no repite la cifra: dice completos', () => {
     S.ahorro.fondoEmergencia.montoActual = 3_000_000;
     renderAhorro(1_000_000, null, null);
-    const pie = document.querySelector('.fondo-card__bloques-pie').textContent;
+    const pie = document.querySelector('.cov__pie').textContent;
     expect(pie).toContain('3 meses completos');
     expect(pie).not.toContain('3 meses de 3 meses');
-    expect(pie).toContain('100%');
+    expect(pie).toContain('$3.000.000');
   });
 
   it('con la meta cumplida el siguiente nivel sigue a la vista: la tarjeta no se apaga', () => {
     S.ahorro.fondoEmergencia.montoActual = 3_000_000;
     renderAhorro(1_000_000, null, null);
     expect(document.querySelector('.fondo-card__kicker').textContent).toContain('Lo lograste');
-    const filas = [...document.querySelectorAll('.fondo-card__nivel-fila')];
-    expect(filas[2].className).toContain('--actual');
+    const niveles = [...document.querySelectorAll('.cov__nivel')];
+    expect(niveles[1].className).toContain('--logrado');
+    expect(niveles[2].className).toContain('--actual');
     expect(document.querySelector('.fondo-card__veredicto').textContent).toContain('Cumpliste tu meta');
-  });
-
-  it('recién cruzada la meta, el avance del nivel siguiente se dice con palabras', () => {
-    S.ahorro.fondoEmergencia.montoActual = 3_000_000;
-    renderAhorro(1_000_000, null, null);
-    const fila = document.querySelectorAll('.fondo-card__nivel-fila')[2];
-    expect(fila.textContent).toContain('apenas empiezas');
-    expect(fila.textContent).not.toMatch(/vas en \d+%/);
   });
 
   it('con la meta cumplida la acción secundaria ofrece subirla y nombra el destino', () => {
@@ -1071,14 +1101,14 @@ describe('renderAhorro() - tarjeta del fondo (DIS.16)', () => {
     expect(document.querySelector('.fondo-card__principal').textContent).toContain('Hacer mi primer aporte');
   });
 
-  it('en cero el nivel próximo se nombra, no se le pone porcentaje ni reproche', () => {
+  it('en cero el primer nivel es el que sigue, y ninguno aparece logrado', () => {
     S.ahorro.fondoEmergencia.montoActual = 0;
     renderAhorro(1_000_000, null, null);
-    const fila = document.querySelectorAll('.fondo-card__nivel-fila')[0];
-    expect(fila.className).toContain('--actual');
-    expect(fila.textContent).toContain('próximo');
-    expect(fila.textContent).not.toContain('apenas empiezas');
-    expect(fila.textContent).not.toMatch(/vas en \d+%/);
+    const niveles = [...document.querySelectorAll('.cov__nivel')];
+    expect(niveles[0].className).toContain('--actual');
+    expect(document.querySelector('.cov__nivel--logrado')).toBeNull();
+    // Ningun bloque con relleno: la franja completa es promesa.
+    expect([...document.querySelectorAll('.cov__mes')].every(b => b.className.includes('--futuro'))).toBe(true);
   });
 
   it('en cero el veredicto apunta al primer nivel, no a la meta completa', () => {
@@ -1133,8 +1163,10 @@ describe('renderAhorro() - tarjeta del fondo (DIS.16)', () => {
     expect(textoDatos()).not.toContain('1.800.000');
     expect(textoDatos()).not.toContain('3.000.000');
     expect(document.querySelector('.fondo-card__nivel-nombre').textContent).toBe('Un mes cubierto');
-    expect(document.querySelectorAll('.fondo-card__bloque')).toHaveLength(3);
-    expect(document.querySelector('.fondo-card__bloques-pie').textContent).toContain('60%');
+    expect(document.querySelectorAll('.cov__mes')).toHaveLength(6);
+    // El tiempo cubierto no es una magnitud de dinero, asi que no se enmascara;
+    // el monto del pie si.
+    expect(document.querySelector('.cov__pie').textContent).toContain('1 mes y 3 semanas de 3 meses');
     // Una proporción no revela cuánto dinero hay.
     expect(textoDatos()).toContain('guardas $23');
   });
@@ -1178,5 +1210,125 @@ describe('renderAhorro() - sin fondo activo (DIS.16, estado 1)', () => {
   it('la acción de arranque conserva su data-action', () => {
     renderAhorro(1_000_000, null, null);
     expect(document.querySelector('[data-action="ahorro-activar-fondo"]').textContent).toContain('Empezar mi fondo');
+  });
+});
+
+// ── franjaCobertura() (DIS.19, item 6) ───────────────────────────
+
+describe('franjaCobertura()', () => {
+  it('llega hasta el último nivel aunque la meta sea menor: el eje lo rotula', () => {
+    const { bloques } = franjaCobertura(1, 3, '2026-07-29');
+    expect(bloques).toHaveLength(MESES_FRANJA_MIN);
+    expect(MESES_FRANJA_MIN).toBe(6);
+  });
+
+  it('con una meta mayor que el último nivel manda la meta: es su situación real', () => {
+    const { bloques } = franjaCobertura(9, 12, '2026-07-29');
+    expect(bloques).toHaveLength(12);
+  });
+
+  it('los bloques sin nada cubierto se marcan futuro, no se omiten', () => {
+    const { bloques } = franjaCobertura(1.8, 3, '2026-07-29');
+    expect(bloques.map(b => b.futuro)).toEqual([false, false, true, true, true, true]);
+    expect(bloques[0].pct).toBe(100);
+    expect(bloques[1].pct).toBe(80);
+  });
+
+  it('el rótulo del nivel cae en el bloque que lo completa', () => {
+    const { eje } = franjaCobertura(1, 3, '2026-07-29');
+    expect(eje.map(e => e.rotulo)).toEqual(['un mes', '', 'tres meses', '', '', 'seis meses']);
+  });
+
+  it('el eje dice qué nivel ya está logrado: es lo único que la lista decía y el dibujo no', () => {
+    const { eje } = franjaCobertura(3.5, 3, '2026-07-29');
+    expect(eje[0].estado).toBe('logrado');
+    expect(eje[2].estado).toBe('logrado');
+    expect(eje[5].estado).toBe('actual');
+    // Los bloques sin nivel no llevan estado: no hay nada que decir de ellos.
+    expect(eje[1].estado).toBe('');
+  });
+
+  it('pasados los ocho bloques se dejan de rotular los meses, no los niveles', () => {
+    expect(franjaCobertura(1, 8, '2026-07-29').conRotulos).toBe(true);
+    expect(franjaCobertura(1, 9, '2026-07-29').conRotulos).toBe(false);
+    expect(MAX_ROTULOS_MES).toBe(8);
+    // El eje sobrevive: es el que hace legible la franja.
+    expect(franjaCobertura(1, 12, '2026-07-29').eje.filter(e => e.rotulo)).toHaveLength(3);
+  });
+
+  it('sin meta válida dibuja la franja mínima en vez de nada', () => {
+    expect(franjaCobertura(0, 0, '2026-07-29').bloques).toHaveLength(MESES_FRANJA_MIN);
+    expect(franjaCobertura(0, null, '2026-07-29').bloques).toHaveLength(MESES_FRANJA_MIN);
+  });
+
+  it('sin fecha válida no hay franja', () => {
+    expect(franjaCobertura(2, 3, '').bloques).toEqual([]);
+    expect(franjaCobertura(2, 3, 'julio').bloques).toEqual([]);
+  });
+});
+
+// ── aportadoEnMes() + progresoCompromiso() (DIS.19, item 7) ──────
+
+describe('aportadoEnMes()', () => {
+  const aportes = [
+    { id: '1', monto: 120_000, fecha: '2026-07-03' },
+    { id: '2', monto: 140_000, fecha: '2026-07-28' },
+    { id: '3', monto: 500_000, fecha: '2026-06-30' },
+    { id: '4', monto: 900_000, fecha: '2026-08-01' },
+  ];
+
+  it('suma solo los aportes del mes calendario de hoy', () => {
+    expect(aportadoEnMes(aportes, '2026-07-29')).toBe(260_000);
+  });
+
+  it('el 1 vuelve a cero: la promesa se renueva, no arrastra los últimos 30 días', () => {
+    expect(aportadoEnMes(aportes, '2026-08-01')).toBe(900_000);
+  });
+
+  it('ignora montos que no son números positivos y fechas que no son texto', () => {
+    expect(aportadoEnMes([
+      { monto: -100, fecha: '2026-07-05' },
+      { monto: 'x', fecha: '2026-07-05' },
+      { monto: 50_000, fecha: null },
+      { monto: 50_000, fecha: '2026-07-05' },
+    ], '2026-07-29')).toBe(50_000);
+  });
+
+  it('sin aportes o con input inválido devuelve 0', () => {
+    expect(aportadoEnMes([], '2026-07-29')).toBe(0);
+    expect(aportadoEnMes(null, '2026-07-29')).toBe(0);
+    expect(aportadoEnMes(aportes, 'hoy')).toBe(0);
+  });
+});
+
+describe('progresoCompromiso()', () => {
+  it('sin compromiso definido no hay promesa que medir', () => {
+    expect(progresoCompromiso(0, 100_000, '2026-07-29')).toBeNull();
+    expect(progresoCompromiso(null, 100_000, '2026-07-29')).toBeNull();
+  });
+
+  it('mide lo aportado contra lo prometido y dice lo que falta', () => {
+    const p = progresoCompromiso(400_000, 260_000, '2026-07-29');
+    expect(p.pct).toBe(65);
+    expect(p.faltante).toBe(140_000);
+    expect(p.completo).toBe(false);
+  });
+
+  it('pasarse de la promesa no pasa del 100% ni deja faltante negativo', () => {
+    const p = progresoCompromiso(400_000, 900_000, '2026-07-29');
+    expect(p.pct).toBe(100);
+    expect(p.faltante).toBe(0);
+    expect(p.completo).toBe(true);
+  });
+
+  it('los días restantes cuentan hoy: el último día del mes todavía sirve', () => {
+    expect(progresoCompromiso(400_000, 0, '2026-07-31').diasRestantes).toBe(1);
+    expect(progresoCompromiso(400_000, 0, '2026-07-29').diasRestantes).toBe(3);
+    expect(progresoCompromiso(400_000, 0, '2026-07-01').diasRestantes).toBe(31);
+  });
+
+  it('cuenta bien un mes de 30 días y febrero de año bisiesto', () => {
+    expect(progresoCompromiso(400_000, 0, '2026-06-01').diasRestantes).toBe(30);
+    expect(progresoCompromiso(400_000, 0, '2028-02-01').diasRestantes).toBe(29);
   });
 });

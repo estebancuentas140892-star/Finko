@@ -7,6 +7,7 @@ import { S } from '../../core/state.js';
 import { f, fechaLegible, formateadorFecha, hoy, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt, tejaCategoria } from '../../infra/icons.js';
 import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
+import { siluetaMeta } from '../../infra/svg.js';
 import {
   calcularObjetivoFondo,
   calcularProgresoFondo,
@@ -18,7 +19,9 @@ import {
   nivelesFondo,
   mesesEnPalabras,
   fechaCobertura,
-  bloquesCobertura,
+  franjaCobertura,
+  aportadoEnMes,
+  progresoCompromiso,
   NIVELES_FONDO,
   META_MESES_MIN,
   META_MESES_MAX,
@@ -223,7 +226,7 @@ function _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia = 
   const montoTotal = calcularMontoTotalFondo(montoBase, aportes);
   const objetivo   = calcularObjetivoFondo(gastosFijosMensuales, metaMeses);
   const colchon    = mesesDeColchon(montoTotal, gastosFijosMensuales);
-  const { porcentaje, faltante, completado } = calcularProgresoFondo(montoTotal, objetivo);
+  const { faltante, completado } = calcularProgresoFondo(montoTotal, objetivo);
 
   const oculto = S.config?.ocultarSaldo === true;
   const m      = (n) => oculto ? SALDO_MASCARA_CUENTA : f(n);
@@ -242,8 +245,7 @@ function _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia = 
   return `
     <article class="fondo-card" data-dom="ahorro" aria-label="Fondo de emergencia">
       ${_renderNivelActual({ enCero, completado, ultimoLogrado, actual })}
-      ${_renderCobertura({ colchon, metaMeses, porcentaje, enCero })}
-      ${_renderEscalera(niveles, completado, enCero)}
+      ${_renderCobertura({ colchon, metaMeses, montoTotal, enCero, m })}
       ${_renderVeredictoFondo({ completado, faltante, objetivo, montoTotal, metaMeses, actual, sugerencia, enCero, m })}
       ${_renderDatosFondo({ montoTotal, objetivo, gastosFijosMensuales, compromisoMensual, tasaAhorro, metaMeses, enCero, m })}
       <p class="fondo-card__nota">Este dinero sigue en tus cuentas. Solo queda apartado para emergencias: a diferencia de Metas y Apartados, no descuenta saldo.</p>
@@ -288,24 +290,43 @@ function _renderNivelActual({ enCero, completado, ultimoLogrado, actual }) {
 }
 
 /**
- * La prueba: la fecha hasta la que alcanza el fondo y los meses del calendario
- * que cubre. La frase dice **"si hoy dejaras"** a propósito: la fecha es
- * hipotética y sin esa apertura parecería un pronóstico.
+ * La franja de cobertura (DIS.19, item 6): la prueba y el camino en un dibujo.
+ *
+ * Hasta DIS.16 esto eran dos componentes. Los bloques de mes probaban cuánto
+ * aguantas ("cubres un mes" es una afirmación que hay que creer; agosto entero y
+ * casi todo septiembre se ve) y una lista aparte enumeraba los tres niveles con
+ * su porcentaje. La lista costaba unos 90px de alto para decir algo que la
+ * propia franja puede decir con un eje: **los niveles son posiciones en el
+ * tiempo**, así que su sitio natural es debajo del mes en que caen.
+ *
+ * Los bloques crecen de abajo hacia arriba y no de izquierda a derecha: en
+ * vertical los seis se comparan entre sí de un vistazo, que es lo que convierte
+ * la franja en un gráfico y no en seis barras sueltas. Un mes sin nada cubierto
+ * se dibuja con contorno punteado: la franja completa siempre está a la vista,
+ * porque también es la promesa.
+ *
+ * La frase dice **"si hoy dejaras"** a propósito: la fecha es hipotética y sin
+ * esa apertura parecería un pronóstico.
  */
-function _renderCobertura({ colchon, metaMeses, porcentaje, enCero }) {
+function _renderCobertura({ colchon, metaMeses, montoTotal, enCero, m }) {
   if (colchon === null) {
     return `
       <p class="fondo-card__frase">Registra tus gastos fijos desde Calendario y Finko calcula cuánto tiempo te cubre el fondo.</p>`;
   }
 
-  const bloques = bloquesCobertura(colchon, metaMeses, hoy());
+  const { bloques, eje, conRotulos } = franjaCobertura(colchon, metaMeses, hoy());
+  if (bloques.length === 0) return '';
+
   const mesCorto = formateadorFecha('es-CO', { month: 'short', timeZone: 'UTC' });
 
   const bloquesHtml = bloques.map(b => `
-          <span class="fondo-card__bloque">
-            <span class="fondo-card__bloque-fill" style="width:${b.pct}%"></span>
-            <span class="fondo-card__bloque-mes">${_esc(mesCorto.format(new Date(`${b.mesISO}T12:00:00Z`)))}</span>
+          <span class="cov__mes${b.futuro ? ' cov__mes--futuro' : ''}">
+            <span class="cov__fill" style="height:${b.pct}%"></span>
+            ${conRotulos ? `<span class="cov__lb">${_esc(mesCorto.format(new Date(`${b.mesISO}T12:00:00Z`)))}</span>` : ''}
           </span>`).join('');
+
+  const ejeHtml = eje.map(e => `
+          <span class="cov__eje-seg">${e.rotulo ? `<span class="cov__nivel cov__nivel--${e.estado}">${_esc(e.rotulo)}</span>` : ''}</span>`).join('');
 
   const hasta = fechaCobertura(colchon, hoy());
   const frase = enCero || !hasta
@@ -315,11 +336,14 @@ function _renderCobertura({ colchon, metaMeses, porcentaje, enCero }) {
   return `
       <div class="fondo-card__cobertura">
         <p class="fondo-card__frase">${frase}</p>
-        <div class="fondo-card__bloques" aria-hidden="true">${bloquesHtml}</div>
-        <p class="fondo-card__bloques-pie">
-          <span>${_pieCobertura(colchon, metaMeses)}</span>
-          <span>${porcentaje}%</span>
-        </p>
+        <div class="cov">
+          <div class="cov__meses" aria-hidden="true">${bloquesHtml}</div>
+          <div class="cov__eje" aria-hidden="true">${ejeHtml}</div>
+          <p class="cov__pie">
+            <span>${_pieCobertura(colchon, metaMeses)}</span>
+            <span>${m(montoTotal)}</span>
+          </p>
+        </div>
       </div>`;
 }
 
@@ -336,40 +360,6 @@ function _pieCobertura(colchon, metaMeses) {
   return colchon >= metaMeses
     ? `${metaMeses} ${plural} completos`
     : `${mesesEnPalabras(colchon)} de ${metaMeses} ${plural}`;
-}
-
-/**
- * La escalera de niveles. Un porcentaje muy bajo se dice con palabras: recién
- * cruzada la meta, el avance hacia el nivel siguiente es del 3%, y mostrarlo
- * justo en el momento de celebrar convierte el logro en una cuenta pendiente.
- *
- * En cero no se dice ni un porcentaje ni "apenas empiezas": el nivel todavía no
- * se empezó, así que la palabra es **próximo**. Decir "apenas empiezas" cuando
- * no se ha puesto un peso suena a reproche.
- */
-function _renderEscalera(niveles, completado, enCero) {
-  const filas = niveles.map(n => {
-    let estadoHtml = '';
-    if (n.estado === 'logrado') {
-      estadoHtml = '<span class="fondo-card__nivel-estado">logrado</span>';
-    } else if (n.estado === 'actual') {
-      if (enCero) {
-        estadoHtml = '<span class="fondo-card__nivel-estado">próximo</span>';
-      } else {
-        estadoHtml = (completado || n.pct < 10)
-          ? '<span class="fondo-card__nivel-estado">apenas empiezas</span>'
-          : `<span class="fondo-card__nivel-estado">vas en ${n.pct}%</span>`;
-      }
-    }
-    return `
-        <li class="fondo-card__nivel-fila fondo-card__nivel-fila--${n.estado}">
-          <span class="fondo-card__punto" aria-hidden="true"></span>
-          <span class="fondo-card__nivel-tx">${_esc(n.titulo)} · ${_esc(n.consecuencia)}</span>
-          ${estadoHtml}
-        </li>`;
-  }).join('');
-
-  return `<ul class="fondo-card__niveles" role="list">${filas}</ul>`;
 }
 
 /**
@@ -455,11 +445,7 @@ function _renderHabitoSection(aportes, compromisoMensual, tasaAhorro, sugerencia
   // `i-recurring` es el mismo símbolo de recurrencia que ya marca los gastos
   // fijos en Calendario e Inicio, que es exactamente lo que esto es.
   const compromisoHtml = compromisoMensual > 0
-    ? `<div class="ahorro-habito__compromiso">
-        <span>${icon('recurring')} Compromiso mensual: <strong>${f(compromisoMensual)}</strong></span>
-        <button class="btn btn-ghost btn-sm" data-action="ahorro-editar-compromiso"
-                aria-label="Editar compromiso mensual">Editar</button>
-      </div>`
+    ? _renderMedidorCompromiso(compromisoMensual, aportes)
     : `<p class="ahorro-habito__sin-compromiso">
         ¿Cuánto quieres apartar cada mes?${hintSugerido}
         <button class="btn btn-ghost btn-sm" data-action="ahorro-editar-compromiso">Definir →</button>
@@ -487,6 +473,56 @@ function _renderHabitoSection(aportes, compromisoMensual, tasaAhorro, sugerencia
       ${listaHtml}
       ${tasaHtml}
     </section>`;
+}
+
+/**
+ * El medidor del compromiso del mes (DIS.19, item 7).
+ *
+ * "Compromiso mensual: $420.000" informaba sin medir: para saber si el mes iba
+ * cumplido había que abrir la lista de aportes y sumar a mano, y el compromiso
+ * quedaba como un recordatorio que nadie contesta. El medidor contesta: la gota
+ * se llena con lo aportado este mes, y al lado va la cuenta en pesos y lo que
+ * queda de mes para cerrarla.
+ *
+ * Se llena con `siluetaMeta()`, el mismo componente de las metas: el relleno por
+ * altura tiene una sola implementación en la app y no dos que se parecen.
+ *
+ * El dibujo es decorativo: lo que dice está escrito al lado en palabras y en
+ * pesos, y el porcentaje sobrepuesto es texto real que el lector ya anuncia.
+ *
+ * @param {number} compromisoMensual
+ * @param {Array<{monto:number, fecha:string}>} aportes
+ */
+function _renderMedidorCompromiso(compromisoMensual, aportes) {
+  const hoyISO = hoy();
+  const p = progresoCompromiso(compromisoMensual, aportadoEnMes(aportes, hoyISO), hoyISO);
+  if (!p) return '';
+
+  const oculto = S.config?.ocultarSaldo === true;
+  const m = (n) => oculto ? SALDO_MASCARA_CUENTA : f(n);
+
+  // El 1 el medidor vuelve a cero, así que el mes cumplido no dice "te faltan
+  // $0": dice que se renueva. Y con el mes corriendo la nota es una cuenta
+  // concreta, no un ánimo.
+  const nota = p.completo
+    ? 'Mes cumplido. El 1 vuelve a empezar.'
+    : p.diasRestantes <= 1
+      ? `Hoy cierra el mes. Con ${m(p.faltante)} lo completas.`
+      : `Quedan ${p.diasRestantes} días del mes. Con ${m(p.faltante)} lo completas.`;
+
+  return `
+      <div class="ahorro-habito__compromiso">
+        <span class="liq">
+          ${siluetaMeta(p.pct, { forma: 'gota', clave: 'compromiso', decorativa: true })}
+          <span class="liq__pct">${p.pct}%</span>
+        </span>
+        <div class="ahorro-habito__compromiso-txt">
+          <p class="ahorro-habito__compromiso-monto">${m(p.aportado)} de ${m(p.objetivo)}</p>
+          <p class="ahorro-habito__compromiso-nota">${nota}</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" data-action="ahorro-editar-compromiso"
+                aria-label="Editar compromiso mensual">Editar</button>
+      </div>`;
 }
 
 /**

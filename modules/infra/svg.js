@@ -261,6 +261,10 @@ export const SILUETAS = {
   biberon:    'M9.6 2.7h4.8v1.7a2.2 2.2 0 0 1-.9 1.77l-.4.3v1.36h1.3a2.3 2.3 0 0 1 2.3 2.3v9.4a2.3 2.3 0 0 1-2.3 2.3H9.6a2.3 2.3 0 0 1-2.3-2.3v-9.4a2.3 2.3 0 0 1 2.3-2.3h1.3V6.44l-.4-.3a2.2 2.2 0 0 1-.9-1.77z',
   cohete:     'M12 2.4c2.6 2.6 4.1 6 4.1 9.7l2.4 2.9v3.1l-3.3-1.6-.9 3.4h-4.6l-.9-3.4-3.3 1.6v-3.1l2.4-2.9c0-3.7 1.5-7.1 4.1-9.7z',
   caja:       'M7.33 4.05h9.34A1.7 1.7 0 0 1 18.2 5L20 8.6v10.2a1.9 1.9 0 0 1-1.9 1.9H5.9A1.9 1.9 0 0 1 4 18.8V8.6L5.8 5a1.7 1.7 0 0 1 1.53-.95z',
+  // La gota no es categoría de meta: mide el compromiso del mes en el fondo
+  // (DIS.19, item 7). Vive acá porque se llena igual que las otras y así hay
+  // una sola implementación del relleno por altura, no dos.
+  gota:       'M12 2.5c4.2 4.6 6.8 8.4 6.8 11.6a6.8 6.8 0 0 1-13.6 0c0-3.2 2.6-7 6.8-11.6z',
 };
 
 /** Lado del lienzo de las siluetas. El mismo del sprite. */

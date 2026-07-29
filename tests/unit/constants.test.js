@@ -219,9 +219,12 @@ describe('CATEGORIA_META_SILUETA', () => {
     }
   });
 
-  it('las diez formas del inventario se usan todas: ninguna queda sin categoría', () => {
+  it('las diez formas de meta se usan todas: ninguna queda sin categoría', () => {
     const usadas = new Set(Object.values(CATEGORIA_META_SILUETA));
-    expect(usadas).toEqual(new Set(Object.keys(SILUETAS)));
+    // 'gota' mide el compromiso mensual del fondo, no es categoría de meta.
+    const formasDeMeta = new Set(Object.keys(SILUETAS).filter(k => k !== 'gota'));
+    expect(usadas).toEqual(formasDeMeta);
+    expect(usadas.size).toBe(10);
   });
 
   it('las dos categorías que CAT.1c retiró heredan donde la taxonomía las mandó', () => {

@@ -940,40 +940,88 @@
 }
 .fondo-card__frase strong { color: var(--fk-text-primary); }
 
-/* Los bloques de mes: cada uno es un mes del calendario, relleno con la
-   fraccion que el fondo alcanza a cubrir. Son la prueba del nivel, asi que se
-   cuentan de un vistazo y llevan su rotulo dentro. */
-.fondo-card__bloques {
-  display: flex;
-  gap: var(--fk-space-1);
-  align-items: stretch;
-  height: 2.25rem;
-}
+/* DIS.19 (item 6): LA FRANJA DE COBERTURA. Los bloques de mes pasan de
+   horizontales a verticales y el eje de niveles se les pone debajo, asi que la
+   franja hace los dos trabajos que antes hacian dos componentes: la prueba
+   (cuanto aguantas) y el camino (los tres niveles y donde caen). La lista de
+   niveles que vivia aparte se retira y con ella unos 90px de alto.
 
-.fondo-card__bloque {
-  position: relative;
+   En vertical los seis meses se comparan entre si de un vistazo, que es lo que
+   convierte la franja en un grafico y no en seis barras sueltas. */
+.cov {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cov__meses {
+  display: flex;
+  gap: 3px;
+  align-items: stretch;
+}
+.cov__mes {
   flex: 1;
   min-width: 0;
-  border-radius: var(--fk-radius-sm);
+  position: relative;
+  height: 46px;
   background: var(--fk-bg-elevated);
+  border-radius: 3px;
   overflow: hidden;
+  display: flex;
+  align-items: flex-end;
 }
-
-.fondo-card__bloque-fill {
-  position: absolute;
-  inset: 0 auto 0 0;
+/* Un mes sin nada cubierto no desaparece: se dibuja con contorno punteado, asi
+   que la franja completa sigue a la vista. Tambien es la promesa. */
+.cov__mes--futuro {
+  background: transparent;
+  border: 1px dashed var(--fk-border-default);
+}
+.cov__fill {
+  width: 100%;
   background: var(--fk-dom-ahorro);
 }
-
-.fondo-card__bloque-mes {
+.cov__lb {
   position: absolute;
-  left: 4px;
-  bottom: 2px;
-  font-size: 0.625rem;
+  inset: auto 0 3px 0;
+  text-align: center;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fk-text-primary);
+}
+.cov__mes--futuro .cov__lb { color: var(--fk-text-muted); }
+
+/* El eje: cada segmento se alinea con su bloque y el rotulo del nivel cae en el
+   borde derecho del mes que lo completa, que es donde el nivel se alcanza. */
+.cov__eje {
+  display: flex;
+  gap: 3px;
+}
+.cov__eje-seg {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+.cov__nivel {
+  font-size: 9px;
   color: var(--fk-text-muted);
+  border-left: 1px solid var(--fk-border-default);
+  padding-left: 4px;
+  white-space: nowrap;
+}
+/* Lo unico que la lista de niveles decia y el dibujo no: cual ya esta logrado.
+   Va como estado del rotulo y no como texto aparte, asi que se lee sin sumar
+   una linea. Un nivel logrado no se retira aunque suban los gastos fijos. */
+.cov__nivel--logrado {
+  color: var(--fk-dom-ahorro-text);
+  border-left-color: var(--fk-dom-ahorro);
+}
+.cov__nivel--actual {
+  color: var(--fk-text-secondary);
+  border-left-color: var(--fk-border-strong);
 }
 
-.fondo-card__bloques-pie {
+.cov__pie {
   display: flex;
   justify-content: space-between;
   gap: var(--fk-space-2);
@@ -981,7 +1029,11 @@
   font-size: var(--fk-text-xs);
   color: var(--fk-text-muted);
 }
-.fondo-card__bloques-pie span:last-child { font-variant-numeric: tabular-nums; }
+.cov__pie span:last-child { font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .cov__fill { transition: height var(--fk-transition-slow) ease; }
+}
 
 /* La escalera de niveles: lo logrado, lo proximo y lo posible. El tercer
    peldano existe para que completar no se lea como terminar. */
@@ -1134,12 +1186,15 @@
   margin: 0;
 }
 
+/* DIS.19 (item 7): el compromiso deja de ser una fila de texto y pasa a ser un
+   medidor. La gota se llena con lo aportado este mes, y al lado va la cuenta en
+   pesos con lo que queda de mes para cerrarla: antes habia que abrir la lista de
+   aportes y sumar a mano para saber si el mes iba cumplido. */
 .ahorro-habito__compromiso {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--fk-space-3);
-  padding: var(--fk-space-2) var(--fk-space-3);
+  padding: var(--fk-space-3);
   border-radius: var(--fk-radius-md);
   background: color-mix(in srgb, var(--fk-dom-ahorro) 8%, transparent);
   border: 1px solid color-mix(in srgb, var(--fk-dom-ahorro) 25%, transparent);
@@ -1148,6 +1203,49 @@
 }
 .ahorro-habito__compromiso strong {
   color: var(--fk-dom-ahorro-text);
+  font-variant-numeric: tabular-nums;
+}
+/* El texto se queda con el espacio sobrante y el boton no se comprime. */
+.ahorro-habito__compromiso-txt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ahorro-habito__compromiso-monto {
+  margin: 0;
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-fw-semibold);
+  color: var(--fk-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.ahorro-habito__compromiso-nota {
+  margin: 0;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  line-height: var(--fk-leading-snug);
+}
+
+/* La gota del medidor. El relleno lo dibuja siluetaMeta() con las clases
+   .silueta__*; aca solo va la caja y el porcentaje sobrepuesto, que es texto
+   real y no parte del SVG (asi lo lee el lector de pantalla). El color lo toma
+   del dominio: este medidor solo existe en el fondo. */
+.liq {
+  position: relative;
+  flex: none;
+  width: 68px;
+  height: 68px;
+  color: var(--fk-dom-ahorro);
+}
+.liq__pct {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
   font-variant-numeric: tabular-nums;
 }
 
