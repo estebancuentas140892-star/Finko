@@ -5,6 +5,7 @@ import {
   calcularProgreso,
   diasHastaFecha,
   calcularAporteSugerido,
+  planDeReferencia,
   etiquetaPeriodo,
   etiquetaPeriodoMeses,
   avanzarMeses,
@@ -730,19 +731,18 @@ describe('renderListaApartados() - ícono con dos formatos (CAT.2c)', () => {
     document.body.innerHTML = '<div id="lista-apartados"></div>';
   });
 
-  // T2b (A7, regla R28): la identidad vive en el slot del ícono, o sea al
-  // centro del anillo, no dentro del `<p>` del título.
+  // DIS.15: el anillo se retiró con la fila, así que la identidad pasó al
+  // glifo de la cabecera, junto al nombre.
   it('un apartado con emoji crudo (plantilla o dato viejo) lo muestra tal cual', () => {
     S.apartados = [apartadoBase({ icono: '🚗' })];
     renderListaApartados();
-    expect(document.querySelector('.apartado__anillo-icono').textContent).toContain('🚗');
-    expect(document.querySelector('.list-item__title').textContent).not.toContain('🚗');
+    expect(document.querySelector('.apartado-card__glifo').textContent).toContain('🚗');
   });
 
   it('un apartado con id de sprite (elegido con el picker) renderiza el glifo, no texto crudo', () => {
     S.apartados = [apartadoBase({ icono: 'c-carro' })];
     renderListaApartados();
-    const slot = document.querySelector('.apartado__anillo-icono');
+    const slot = document.querySelector('.apartado-card__glifo');
     expect(slot.innerHTML).toContain('#c-carro');
     expect(slot.textContent).not.toContain('c-carro');
   });
@@ -750,7 +750,7 @@ describe('renderListaApartados() - ícono con dos formatos (CAT.2c)', () => {
   it('sin icono, cae al default (emoji de caja) sin romper', () => {
     S.apartados = [{ ...apartadoBase(), icono: undefined }];
     renderListaApartados();
-    expect(document.querySelector('.apartado__anillo-icono').textContent).toContain(ICONO_APARTADO_DEFAULT);
+    expect(document.querySelector('.apartado-card__glifo').textContent).toContain(ICONO_APARTADO_DEFAULT);
   });
 });
 
@@ -858,34 +858,35 @@ describe('renderFormAporteApartado() - contexto del progreso (T10)', () => {
   });
 });
 
-// ── T2, T2b, T5, T6: anatomía de la fila ──────────────────────────
+// ── T2, T5, T6: anatomía de la tarjeta (DIS.5, revisada en DIS.15) ─
 
-describe('renderListaApartados() - anatomía de la fila (T2, T2b, T5, T6)', () => {
+describe('renderListaApartados() - anatomía de la tarjeta', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="lista-apartados"></div>';
     S.apartados = [];
   });
 
-  it('el porcentaje vive en .list-item__meta, no en el centro del anillo', () => {
+  it('el porcentaje rotula la carrera del dinero, no el centro de un anillo', () => {
     S.apartados = [apartadoBase({ montoActual: 90_000, montoObjetivo: 360_000 })];
     renderListaApartados();
-    expect(document.querySelector('.list-item__meta .list-item__amount').textContent.trim()).toBe('25%');
-    expect(document.querySelector('.progress-ring__label')).toBeNull();
+    const head = document.querySelector('.apartado-card__carrera-head');
+    expect(head.textContent).toContain('Dinero reunido');
+    expect(head.textContent).toContain('25%');
+    expect(document.querySelector('.progress-ring')).toBeNull();
   });
 
-  it('la fila baja a tres líneas: se va el renglón "Falta" (T5)', () => {
+  it('la tarjeta no repite el progreso: sin renglón "Falta" suelto (T5)', () => {
     S.apartados = [apartadoBase({ montoActual: 90_000, montoObjetivo: 360_000 })];
     renderListaApartados();
-    expect(document.querySelector('.list-item__progress-label')).toBeNull();
     expect(document.body.textContent).not.toContain('Falta:');
   });
 
-  it('la sugerencia deja de decir "antes de la fecha" y cabe en una línea', () => {
-    S.apartados = [apartadoBase({ montoObjetivo: 360_000, fechaObjetivo: '2099-12-10' })];
+  it('el plan de aportes vive entre los datos del pie, no en un aviso propio', () => {
+    S.apartados = [apartadoBase({ montoActual: 90_000, montoObjetivo: 360_000, fechaObjetivo: '2099-12-10' })];
     renderListaApartados();
-    const sug = document.querySelector('.apartado__sugerencia');
-    expect(sug).not.toBeNull();
-    expect(sug.textContent).not.toContain('antes de la fecha');
+    const datos = [...document.querySelectorAll('.apartado-card__dato')].map(p => p.textContent).join(' | ');
+    expect(datos).toMatch(/\d+ aportes? de /);
+    expect(document.querySelector('.apartado__sugerencia')).toBeNull();
   });
 
   it('ninguna región viva en el contenido de la lista (T6, regla R24)', () => {
@@ -895,7 +896,7 @@ describe('renderListaApartados() - anatomía de la fila (T2, T2b, T5, T6)', () =
     ];
     renderListaApartados();
     expect(document.querySelectorAll('[role="status"]')).toHaveLength(0);
-    expect(document.querySelector('.apartado__listo')).not.toBeNull();
+    expect(document.querySelector('.apartado-card--listo')).not.toBeNull();
   });
 });
 
@@ -981,5 +982,306 @@ describe('renderListaApartados() - estado vacío (T11, T12)', () => {
     renderListaApartados();
     expect(document.querySelectorAll('.empty-state__tip')).toHaveLength(1);
     expect(document.body.textContent).toContain('Límites de gasto');
+  });
+});
+
+// ════════════════════════════════════════════════════════════════
+// DIS.15 - arquitectura E, "las dos carreras"
+// ════════════════════════════════════════════════════════════════
+
+// ── planDeReferencia(): la segunda carrera ────────────────────────
+
+describe('planDeReferencia()', () => {
+  const conPlan = (overrides = {}) => apartadoBase({
+    fechaCreacion:    '2026-01-01T10:00:00.000Z',
+    fechaObjetivo:    '2026-05-01',   // 120 días: 8 quincenas
+    frecuenciaAporte: 'Quincenal',
+    montoObjetivo:    480_000,
+    ...overrides,
+  });
+
+  it('parte el objetivo en aportes del período, desde la creación hasta la fecha', () => {
+    const p = planDeReferencia(conPlan(), '2026-01-01');
+    expect(p.totalAportes).toBe(8);
+    expect(p.cuotaPrevista).toBe(60_000);
+    expect(p.aportesEsperados).toBe(0);
+  });
+
+  it('cuenta un aporte esperado por período completo corrido, no por día', () => {
+    expect(planDeReferencia(conPlan(), '2026-01-14').aportesEsperados).toBe(0);
+    expect(planDeReferencia(conPlan(), '2026-01-16').aportesEsperados).toBe(1);
+    expect(planDeReferencia(conPlan(), '2026-04-16').aportesEsperados).toBe(7);
+  });
+
+  it('el dinero se traduce a aportes completos: ahí sale el atraso', () => {
+    const p = planDeReferencia(conPlan({ montoActual: 360_000 }), '2026-04-16');
+    expect(p.aportesEquivalentes).toBe(6);
+    expect(p.aportesEsperados).toBe(7);
+    expect(p.delta).toBe(-1);
+  });
+
+  it('quien aporta de más va adelante, que es lo que ninguna tarjeta sabía decir', () => {
+    // 90 días corridos: tocaban 6 aportes y el dinero ya vale 7.
+    const p = planDeReferencia(conPlan({ montoActual: 420_000 }), '2026-04-01');
+    expect(p.aportesEsperados).toBe(6);
+    expect(p.aportesEquivalentes).toBe(7);
+    expect(p.delta).toBe(1);
+  });
+
+  it('quien aporta puntualmente no aparece atrasado (el error que corrigió la propuesta)', () => {
+    // Una quincena corrida, un aporte hecho: al día, no atrasado.
+    const p = planDeReferencia(conPlan({ montoActual: 60_000 }), '2026-01-16');
+    expect(p.delta).toBe(0);
+  });
+
+  it('ni los esperados ni los equivalentes se salen del plan', () => {
+    const p = planDeReferencia(conPlan({ montoActual: 999_000_000 }), '2027-01-01');
+    expect(p.aportesEsperados).toBe(p.totalAportes);
+    expect(p.aportesEquivalentes).toBe(p.totalAportes);
+  });
+
+  it('sin fecha objetivo no hay plan que dibujar', () => {
+    expect(planDeReferencia(conPlan({ fechaObjetivo: null }), '2026-02-01')).toBeNull();
+  });
+
+  it('sin objetivo válido tampoco', () => {
+    expect(planDeReferencia(conPlan({ montoObjetivo: 0 }), '2026-02-01')).toBeNull();
+  });
+
+  it('una fecha objetivo anterior al arranque del plan no produce plan', () => {
+    expect(planDeReferencia(conPlan({ fechaObjetivo: '2025-06-01' }), '2026-02-01')).toBeNull();
+  });
+
+  it('un apartado sin fechaCreacion (lectura defensiva) devuelve null', () => {
+    const sinCreacion = conPlan();
+    delete sinCreacion.fechaCreacion;
+    expect(planDeReferencia(sinCreacion, '2026-02-01')).toBeNull();
+  });
+
+  it('fechaInicioPlan manda sobre fechaCreacion: el ciclo nuevo arranca donde se reinició', () => {
+    const reiniciado = conPlan({
+      fechaInicioPlan: '2026-03-01',
+      fechaObjetivo:   '2026-05-01',   // 61 días: 5 quincenas
+    });
+    const p = planDeReferencia(reiniciado, '2026-03-16');
+    expect(p.inicio).toBe('2026-03-01');
+    expect(p.totalAportes).toBe(5);
+    expect(p.aportesEsperados).toBe(1);
+  });
+});
+
+// ── reiniciarCiclo() anota el arranque del ciclo nuevo ────────────
+
+describe('reiniciarCiclo() - arranque del plan (DIS.15)', () => {
+  it('sella fechaInicioPlan con el día del reinicio', () => {
+    const r = reiniciarCiclo(
+      apartadoBase({ recurrente: true, periodoMeses: 12, fechaObjetivo: '2026-08-20', montoActual: 360_000 }),
+      '2026-08-21',
+    );
+    expect(r.fechaInicioPlan).toBe('2026-08-21');
+  });
+
+  it('sin ese sello, el apartado reiniciado mediría su plan desde que se creó', () => {
+    // Contra-prueba de por qué existe el campo: con el arranque viejo, el ciclo
+    // que acaba de empezar heredaría 39 aportes de atraso el mismo día uno.
+    const viejo = apartadoBase({
+      recurrente: true, periodoMeses: 12,
+      fechaCreacion: '2025-01-01T00:00:00.000Z',
+      fechaObjetivo: '2027-08-20',
+      montoObjetivo: 480_000,
+    });
+    const sinSello = planDeReferencia(viejo, '2026-08-21');
+    expect(sinSello.aportesEsperados).toBeGreaterThan(0);
+
+    const conSello = planDeReferencia({ ...viejo, fechaInicioPlan: '2026-08-21' }, '2026-08-21');
+    expect(conSello.aportesEsperados).toBe(0);
+  });
+});
+
+// ── La tarjeta y sus estados ─────────────────────────────────────
+
+/**
+ * YYYY-MM-DD a N días de hoy (negativo hacia atrás), en hora local. `hoy()`
+ * de infra también es local: con `toISOString()` el día se corre en Colombia
+ * (UTC-5) a partir de las 7 p. m. y los tests salen flakey por eso.
+ */
+const enDias = (d) => {
+  const x = new Date();
+  x.setDate(x.getDate() + d);
+  const mm = String(x.getMonth() + 1).padStart(2, '0');
+  const dd = String(x.getDate()).padStart(2, '0');
+  return `${x.getFullYear()}-${mm}-${dd}`;
+};
+
+describe('renderListaApartados() - tarjeta E (DIS.15)', () => {
+  /** Apartado con plan vivo: creado hoy mismo, objetivo a 120 días. */
+  const conFecha = (overrides = {}) => apartadoBase({
+    fechaCreacion:    enDias(0),
+    fechaObjetivo:    enDias(120),
+    frecuenciaAporte: 'Quincenal',
+    montoObjetivo:    480_000,
+    ...overrides,
+  });
+
+  const textoDatos = () =>
+    [...document.querySelectorAll('.apartado-card__dato')].map(p => p.textContent).join(' | ');
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-apartados"></div>';
+    S.config    = {};
+    S.apartados = [];
+  });
+
+  it('el apartado se pinta como .apartado-card, no como fila de lista', () => {
+    S.apartados = [conFecha()];
+    renderListaApartados();
+    expect(document.querySelector('.apartado-card')).not.toBeNull();
+    expect(document.querySelector('.list-item')).toBeNull();
+  });
+
+  it('el protagonista es el plazo: los días al centro, no el porcentaje', () => {
+    S.apartados = [conFecha()];
+    renderListaApartados();
+    expect(document.querySelector('.apartado-card__foco-dato').textContent).toBe('120');
+    expect(document.querySelector('.apartado-card__foco-nota').textContent).toContain('días para el');
+  });
+
+  it('dibuja las dos carreras: dinero reunido y plan en casillas', () => {
+    S.apartados = [conFecha({ montoActual: 240_000 })];
+    renderListaApartados();
+    const heads = [...document.querySelectorAll('.apartado-card__carrera-head')].map(p => p.textContent);
+    expect(heads[0]).toContain('Dinero reunido');
+    expect(heads[1]).toContain('Deberías llevar');
+    expect(heads[1]).toContain('de 8 aportes');
+    expect(document.querySelectorAll('.apartado-card__casilla')).toHaveLength(8);
+  });
+
+  it('sin fecha objetivo se cae la segunda carrera y la tarjeta ofrece lo que falta', () => {
+    S.apartados = [apartadoBase({ montoActual: 90_000, fechaObjetivo: null })];
+    renderListaApartados();
+    expect(document.querySelectorAll('.apartado-card__carrera')).toHaveLength(1);
+    expect(document.querySelector('.apartado-card__casilla')).toBeNull();
+    expect(textoDatos()).toContain('Sin fecha objetivo');
+    expect(document.querySelector('.apartado-card__nota').textContent).toContain('Con una fecha objetivo');
+  });
+
+  it('sin fecha, el monto reunido sube al lugar protagonista', () => {
+    S.apartados = [apartadoBase({ montoActual: 90_000, montoObjetivo: 360_000, fechaObjetivo: null })];
+    renderListaApartados();
+    expect(document.querySelector('.apartado-card__foco-dato').textContent).toContain('90.000');
+    expect(document.querySelector('.apartado-card__foco-nota').textContent).toContain('de $360.000 reunidos');
+  });
+
+  it('el veredicto habla cuando hay un aporte completo de atraso', () => {
+    S.apartados = [apartadoBase({
+      fechaCreacion: enDias(-105), fechaObjetivo: enDias(15),
+      montoObjetivo: 480_000, montoActual: 360_000, frecuenciaAporte: 'Quincenal',
+    })];
+    renderListaApartados();
+    const v = document.querySelector('.apartado-card__veredicto').textContent;
+    expect(v).toContain('atrás del plan');
+    expect(v).toContain('60.000');
+  });
+
+  it('y reconoce a quien va adelante, con el paso siguiente incluido', () => {
+    S.apartados = [apartadoBase({
+      fechaCreacion: enDias(-90), fechaObjetivo: enDias(30),
+      montoObjetivo: 480_000, montoActual: 420_000, frecuenciaAporte: 'Quincenal',
+    })];
+    renderListaApartados();
+    expect(document.querySelector('.apartado-card__veredicto').textContent).toContain('adelante');
+  });
+
+  it('quien va al día no recibe ningún juicio: las barras hablan solas', () => {
+    S.apartados = [apartadoBase({
+      fechaCreacion: enDias(-30), fechaObjetivo: enDias(90),
+      montoObjetivo: 480_000, montoActual: 120_000, frecuenciaAporte: 'Quincenal',
+    })];
+    renderListaApartados();
+    expect(document.querySelector('.apartado-card__veredicto')).toBeNull();
+  });
+
+  it('recién creado: el plan se rotula como camino y el botón nombra el primer paso', () => {
+    S.apartados = [conFecha({ montoActual: 0 })];
+    renderListaApartados();
+    const heads = [...document.querySelectorAll('.apartado-card__carrera-head')];
+    expect(heads[1].textContent).toContain('Tu plan');
+    expect(document.querySelector('.apartado-card__principal').textContent).toContain('Hacer el primer aporte');
+    expect(textoDatos()).toContain('Objetivo ');
+  });
+
+  it('con plan vivo, el botón trae el monto del aporte ya decidido', () => {
+    S.apartados = [conFecha({ montoActual: 120_000 })];
+    renderListaApartados();
+    expect(document.querySelector('.apartado-card__principal').textContent).toMatch(/\+ Aportar \$/);
+  });
+
+  it('listo para usar: cambia el dato protagonista y la acción, no solo el botón', () => {
+    S.apartados = [conFecha({ montoActual: 480_000, recurrente: true, periodoMeses: 12 })];
+    renderListaApartados();
+    const card = document.querySelector('.apartado-card--listo');
+    expect(card).not.toBeNull();
+    expect(card.querySelector('.apartado-card__foco-dato').textContent).toBe('Ya lo reuniste');
+    expect(card.querySelector('.apartado-card__foco-nota').textContent).toContain('de sobra');
+    expect(card.querySelector('[data-action="reiniciar-apartado"]')).not.toBeNull();
+    expect(card.querySelector('[data-action="aportar-apartado"]')).toBeNull();
+  });
+
+  it('listo para usar: las dos carreras se igualan aunque el calendario no haya corrido', () => {
+    S.apartados = [conFecha({ montoActual: 480_000, recurrente: true, periodoMeses: 12 })];
+    renderListaApartados();
+    const heads = [...document.querySelectorAll('.apartado-card__carrera-head')];
+    expect(heads[1].textContent).toContain('Deberían estar hechos');
+    expect(heads[1].textContent).toContain('8 de 8 aportes');
+    expect(document.querySelectorAll('.apartado-card__casilla--on')).toHaveLength(8);
+  });
+
+  it('la recurrencia deja de ser cola del subtítulo y se marca en la cabecera', () => {
+    S.apartados = [conFecha({ recurrente: true, periodoMeses: 12 })];
+    renderListaApartados();
+    expect(document.querySelector('.apartado-card__head .apartado-card__chip').textContent).toContain('cada año');
+  });
+
+  it('un apartado sin recurrencia no lleva chip', () => {
+    S.apartados = [conFecha()];
+    renderListaApartados();
+    expect(document.querySelector('.apartado-card__chip')).toBeNull();
+  });
+
+  it('un plan largo no dibuja cien casillas: cae a barra continua', () => {
+    S.apartados = [apartadoBase({
+      fechaCreacion: enDias(0), fechaObjetivo: enDias(720),
+      frecuenciaAporte: 'Semanal', montoObjetivo: 5_000_000,
+    })];
+    renderListaApartados();
+    expect(document.querySelector('.apartado-card__casilla')).toBeNull();
+    expect(document.querySelectorAll('.apartado-card__barra')).toHaveLength(2);
+  });
+
+  // Regla R20: el ojo esconde pesos, no progreso.
+  it('con el saldo oculto enmascara los pesos y conserva barras, días y aportes', () => {
+    S.config    = { ocultarSaldo: true };
+    S.apartados = [conFecha({ montoActual: 240_000 })];
+    renderListaApartados();
+    expect(textoDatos()).not.toContain('240.000');
+    expect(textoDatos()).not.toContain('480.000');
+    expect(document.querySelector('.apartado-card__principal').textContent.trim()).toBe('+ Aportar');
+    expect(document.querySelector('.apartado-card__foco-dato').textContent).toBe('120');
+    expect(document.querySelectorAll('.apartado-card__casilla')).toHaveLength(8);
+    expect(document.querySelector('.apartado-card__carrera-head').textContent).toContain('50%');
+  });
+
+  it('sin el flag activo los montos se ven completos', () => {
+    S.apartados = [conFecha({ montoActual: 240_000 })];
+    renderListaApartados();
+    expect(textoDatos()).toContain('240.000');
+  });
+
+  it('el aviso de apartados próximos también respeta el ojo (regla R20)', () => {
+    document.body.innerHTML = '<div id="apartados-nudge-proximos"></div>';
+    S.config    = { ocultarSaldo: true };
+    S.apartados = [apartadoBase({ fechaObjetivo: enDias(10), montoObjetivo: 360_000, montoActual: 60_000 })];
+    renderNudgeApartadosProximos();
+    expect(document.body.textContent).not.toContain('300.000');
   });
 });

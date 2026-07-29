@@ -229,16 +229,13 @@
   .btn-lg      { min-height: 52px; }
   .btn-icon    { min-width: 44px; }
 
-  /* T3 (DIS.5, hallazgo A5, regla R26): excepción a la línea de arriba.
-     "Ya lo usé" pone el apartado en su excedente (normalmente $0) y mueve la
-     fecha un periodo completo: es la acción más destructiva de la fila, medía
-     78x36px y estaba a 8px de una papelera de 44x44. La zona táctil de una
-     acción nunca es menor que la de sus vecinas. Va acá y no en domain.css
+  /* T3 (DIS.5, hallazgo A5, regla R26) y DIS.15: la zona táctil de una acción
+     nunca es menor que la de sus vecinas. "Ya lo usé" y "+ Aportar" ya declaran
+     sus 44px como `.apartado-card__principal`; lo que queda acá es Eliminar,
+     que sigue siendo `.btn-sm` y con él mediría 36. Va acá y no en domain.css
      porque esta capa gana por orden a la de componentes, sin importar la
-     especificidad (mismo motivo que G2 en Gastos). Acotado a la lista de
-     apartados: `.btn-sm` dentro de `.list-item__action` también lo emiten
-     Metas y Fondo, que no están en el alcance de esta auditoría. */
-  .lista-apartados .list-item__action .btn-sm { min-height: 44px; }
+     especificidad (mismo motivo que G2 en Gastos). */
+  .apartado-card__secundaria { min-height: 44px; }
 
   /* DIS.7 (hallazgo L7, regla R4): el "+ Límite" de la tarjeta de Estilo de
      vida medía 36px y es el único control de creación que queda dentro de la
@@ -431,51 +428,10 @@
     text-overflow: ellipsis;
   }
 
-  /* ── Fila de apartado (DIS.5, bloque T2, hallazgos A2 y A7) ─────────
-     Tercer caso de la misma familia que Me deben y Gastos, y el peor
-     medido: a 390px la fila mide 356x344,6px y se reparte
-     56 (anillo) | 110 (contenido) | 133 (acciones), o sea que la columna
-     de botones es MAS ancha que la de informacion. Con 110px el subtitulo
-     (monto, fecha y recurrencia) envolvia en 6 lineas y la sugerencia de
-     aporte en otras 6: un solo apartado se comia el 41% de una pantalla de
-     844px y ninguno entraba completo en la primera vista.
-     Acá el primer renglon lee [anillo · nombre y detalle · %] y las
-     acciones bajan a su propio renglon (regla R19). Medido despues: el
-     contenido pasa de 110px a 206px, el subtitulo a 2 lineas y la fila a
-     214,7px (-38%).
-     Las áreas tienen que ser rectangulares: un área en L invalida y
-     descarta TODO el `grid-template-areas` en silencio. */
-  .lista-apartados .list-item:has(.list-item__meta) {
-    grid-template-columns: 56px minmax(0, 1fr) auto;
-    grid-template-areas:
-      "icon body   meta"
-      "icon action action";
-    column-gap: var(--fk-space-3);
-    row-gap: var(--fk-space-2);
-  }
-
-  .lista-apartados .list-item:has(.list-item__meta) .list-item__icon {
-    align-self: center;
-    margin-top: 0;
-  }
-
-  .lista-apartados .list-item:has(.list-item__meta) .list-item__meta {
-    align-items: flex-end;
-  }
-
-  .lista-apartados .list-item:has(.list-item__meta) .list-item__action {
-    justify-self: end;
-    align-self: center;
-    margin-top: 0;
-  }
-
-  /* El nombre ya no comparte el `<p>` con el emoji (T2b), así que puede
-     truncar limpio: el alto de la fila deja de depender de su largo. */
-  .lista-apartados .list-item__title {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+  /* Apartados ya no tiene fila: DIS.15 la convirtió en `.apartado-card`, una
+     tarjeta vertical con dos barras, así que las cuatro reglas que reordenaban
+     su grilla móvil (DIS.5, bloque T2) quedaron sin sujeto y se retiraron. El
+     caso sigue documentado en la regla R56, que nació de esta familia. */
 
   /* Metas ya no tiene fila: DIS.14 la convirtió en `.meta-card`, una tarjeta
      vertical con medidor semicircular, así que su línea de esta familia (la

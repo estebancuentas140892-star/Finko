@@ -235,6 +235,9 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT } from './constants.js';
  * @property {number|null} periodoMeses      Cada cuántos meses se repite (12 anual, 6 semestral). v14.
  * @property {boolean}     completado
  * @property {string}      fechaCreacion     ISO 8601.
+ * @property {string}      [fechaInicioPlan] YYYY-MM-DD: arranque del ciclo vigente, lo anota
+ *   `reiniciarCiclo()` al cerrar uno (DIS.15). Opcional y sin migración: quien no lo tenga
+ *   mide su plan de referencia desde `fechaCreacion`, que es su primer ciclo.
  */
 
 /**

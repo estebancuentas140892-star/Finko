@@ -22,8 +22,10 @@
 import {
   FRECUENCIAS_APORTE,
   aportePorPeriodo,
+  diasPorPeriodo,
   etiquetaPeriodo,
   frecuenciaPrincipalIngresos,
+  normalizarFrecuenciaAporte,
 } from '../../infra/vencimientos.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
@@ -235,6 +237,98 @@ export function calcularAporteSugerido(apartado, hoyISO) {
 }
 
 /**
+ * Plan de referencia de un apartado (DIS.15, arquitectura E "las dos carreras").
+ *
+ * Es la **segunda carrera** de la tarjeta: cuántos aportes preveía el plan y
+ * cuántos ya deberían estar hechos a día de hoy. Sin esto, la tarjeta solo
+ * puede decir cuánto llevas; con esto puede decir si vas al día, atrasado o
+ * adelantado, que es el logro real de un apartado (no quedar corto el día del
+ * cobro).
+ *
+ * **El referente son aportes, no el reloj.** `calcularAporteSugerido()` no
+ * sirve como referencia porque se recalcula desde el faltante de hoy: siempre
+ * dice "te faltan N aportes desde ahora", así que comparado consigo mismo el
+ * usuario siempre va al día. Y comparar contra el tiempo transcurrido tampoco
+ * vale: el dinero entra a saltos (un aporte por período) mientras el calendario
+ * corre continuo, así que quien aporta puntualmente aparecería atrasado durante
+ * casi todo el período (con una cuota mensual a seis meses el error llega a 17
+ * puntos). Por eso el plan se mide en aportes completos y en unidades enteras.
+ *
+ * **De dónde sale el arranque del plan, sin campo nuevo que migrar.** Del
+ * `fechaInicioPlan` que escribe `reiniciarCiclo()` al cerrar un ciclo, y si no
+ * existe (todo apartado anterior a DIS.15, y todo primer ciclo) de la
+ * `fechaCreacion` que `crud.guardar()` estampa desde siempre. Sin ese fallback
+ * un apartado recurrente reiniciado mediría su plan desde el día que se creó y
+ * daría "8 de 8" para siempre: acusaría de atraso a quien va al día.
+ *
+ * Devuelve `null` cuando no hay plan que dibujar: sin fecha objetivo, sin
+ * objetivo válido o si la fecha de arranque no es anterior a la de vencimiento.
+ *
+ * @param {import('../../core/state.js').Apartado} apartado
+ * @param {string} hoyISO - YYYY-MM-DD (día de referencia, inyectable).
+ * @returns {{
+ *   totalAportes: number,
+ *   aportesEsperados: number,
+ *   aportesEquivalentes: number,
+ *   cuotaPrevista: number,
+ *   delta: number,
+ *   inicio: string,
+ * } | null}
+ */
+export function planDeReferencia(apartado, hoyISO) {
+  const objetivo = Number(apartado?.montoObjetivo) || 0;
+  if (objetivo <= 0) return null;
+
+  const inicio = _inicioDelPlan(apartado);
+  if (!inicio || !hoyISO || !/^\d{4}-\d{2}-\d{2}$/.test(hoyISO)) return null;
+
+  const diasTotales = diasHastaFecha(apartado?.fechaObjetivo, inicio);
+  if (diasTotales === null || diasTotales <= 0) return null;
+
+  const dias = diasPorPeriodo(normalizarFrecuenciaAporte(apartado?.frecuenciaAporte));
+  const totalAportes = Math.max(1, Math.ceil(diasTotales / dias));
+  const cuotaPrevista = Math.round(objetivo / totalAportes);
+
+  // Períodos completos corridos desde el arranque: al día 0 no toca ninguno.
+  const diasCorridos     = diasHastaFecha(hoyISO, inicio) ?? 0;
+  const aportesEsperados = _acotar(Math.floor(diasCorridos / dias), totalAportes);
+
+  // Cuántos aportes "vale" el dinero reunido. Se compara en aportes completos
+  // para que las dos carreras se midan con la misma unidad.
+  const acumulado = Number(apartado?.montoActual) || 0;
+  const aportesEquivalentes = _acotar(Math.floor(acumulado / cuotaPrevista), totalAportes);
+
+  return {
+    totalAportes,
+    aportesEsperados,
+    aportesEquivalentes,
+    cuotaPrevista,
+    delta: aportesEquivalentes - aportesEsperados,
+    inicio,
+  };
+}
+
+/** Recorta un entero al rango [0, max]. */
+function _acotar(n, max) {
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return Math.min(max, Math.trunc(n));
+}
+
+/**
+ * Día en que arrancó el plan vigente: el cierre del último ciclo si lo hubo,
+ * y si no la creación del apartado. `fechaCreacion` es ISO 8601 completo
+ * (`crud.guardar`), así que se recorta a YYYY-MM-DD.
+ * @param {import('../../core/state.js').Apartado} apartado
+ * @returns {string|null}
+ */
+function _inicioDelPlan(apartado) {
+  const candidato = apartado?.fechaInicioPlan ?? apartado?.fechaCreacion ?? null;
+  if (typeof candidato !== 'string') return null;
+  const fecha = candidato.slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(fecha) ? fecha : null;
+}
+
+/**
  * Etiqueta legible de cada cuánto se repite un apartado recurrente.
  * @param {number} meses
  * @returns {string} ej. "cada año", "cada 3 meses".
@@ -282,6 +376,10 @@ export function avanzarMeses(fechaISO, meses) {
  * - Vuelve a `completado: false`.
  * - Avanza `fechaObjetivo` por `periodoMeses` hasta que quede en el futuro (cubre
  *   el caso de reiniciar mucho después del vencimiento).
+ * - Anota `fechaInicioPlan` (DIS.15): el ciclo nuevo arranca hoy, así que el
+ *   plan de referencia se mide desde aquí y no desde que se creó el apartado.
+ *   Sin esta anotación, `planDeReferencia()` diría "8 de 8 aportes" para
+ *   siempre en cuanto el apartado cumpliera un ciclo.
  *
  * No-op (devuelve el apartado intacto) si no es recurrente.
  *
@@ -310,9 +408,10 @@ export function reiniciarCiclo(apartado, hoyISO) {
 
   return {
     ...apartado,
-    montoActual:   excedente,
-    completado:    false,
-    fechaObjetivo: nuevaFecha,
+    montoActual:    excedente,
+    completado:     false,
+    fechaObjetivo:  nuevaFecha,
+    fechaInicioPlan: hoyISO,
   };
 }
 

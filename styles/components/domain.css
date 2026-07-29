@@ -831,21 +831,243 @@ button.chip:focus-visible {
 
 /* T2b (DIS.5, hallazgo A7, regla R28): el icono que identifica el apartado
    vivia dentro del `<p>` del titulo y el slot del icono lo ocupaba una
-   metrica ("33%") que el subtitulo ya implica. Ahora el anillo cuenta el
-   progreso con el arco y su centro dice QUE apartado es; el porcentaje pasa
-   a `.list-item__meta`. Va sobrepuesto y no como `etiqueta` de
-   `progressRing()` porque `apartado.icono` tiene dos formatos (CAT.2c): un
-   emoji, que si cabe en el `<text>` del SVG, o un id del sprite, que es
-   marcado y dentro de `<text>` se imprimiria escapado. El wrapper ya trae
-   `position: relative` de `.list-item__icon`. */
-.apartado__anillo-icono {
-  position: absolute;
-  inset: 0;
+   metrica ("33%") que el subtitulo ya implica. DIS.15 retiro el anillo entero:
+   la tarjeta nueva no mide el apartado con un arco sino con dos carreras, y el
+   icono paso a la cabecera junto al nombre. */
+
+/* ── APARTADO-CARD (DIS.15, arquitectura E) ────────────────────────
+   El apartado deja de ser una fila de Metas con datos anadidos. Un apartado no
+   es una meta: su fecha es un vencimiento externo y su logro es no quedar corto
+   el dia del cobro, no llegar al 100% algun dia. Por eso el protagonista es el
+   plazo y no el dinero, y por eso hay dos barras en vez de un anillo.
+   La tarjeta se ve distinta a `.meta-card` a proposito: son objetos distintos, y
+   tratarlos igual fue lo que produjo la fila anterior. */
+.apartado-card {
+  border-radius: var(--fk-radius-lg);
+  padding: var(--fk-space-4);
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  box-shadow: var(--fk-shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+}
+
+.apartado-card__head {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 1.25rem;
+  justify-content: space-between;
+  gap: var(--fk-space-2);
+}
+
+.apartado-card__nombre {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  margin: 0;
+  min-width: 0;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
   color: var(--fk-text-primary);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.apartado-card__glifo {
+  flex-shrink: 0;
+  display: inline-flex;
+  color: var(--fk-text-secondary);
+}
+.apartado-card__glifo .icon { --fk-icon-size: var(--fk-icon-md); }
+
+/* La recurrencia es lo unico que distingue esta seccion, asi que deja de ser
+   cola de una linea de metadatos y se marca en la cabecera. */
+.apartado-card__chip {
+  flex-shrink: 0;
+  border: 1px solid var(--fk-border-default);
+  border-radius: var(--fk-radius-sm);
+  padding: 2px var(--fk-space-2);
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  white-space: nowrap;
+}
+
+/* El bloque protagonista: cuantos dias faltan, cuanto sobro o cuanto llevas.
+   Cambia de dato segun el estado, no solo de formato. */
+.apartado-card__foco {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--fk-space-1) 0;
+}
+
+.apartado-card__foco-dato {
+  margin: 0;
+  font-size: var(--fk-text-4xl);
+  font-weight: var(--fk-font-bold);
+  line-height: 1;
+  color: var(--fk-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.apartado-card__foco-dato--texto  { font-size: var(--fk-text-lg); }
+.apartado-card__foco-dato--monto  { font-size: var(--fk-text-2xl); }
+
+.apartado-card__foco-nota {
+  margin: 0;
+  text-align: center;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  line-height: 1.35;
+}
+
+.apartado-card__carreras {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+}
+
+.apartado-card__carrera {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.apartado-card__carrera-head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--fk-space-2);
+  margin: 0;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+}
+.apartado-card__carrera-head span:last-child { font-variant-numeric: tabular-nums; }
+
+/* Las dos carreras existen para compararse por longitud, asi que usan la misma
+   tinta: una para lo hecho y una para lo pendiente, en las dos filas. Si una se
+   dibujara mas vistosa que la otra ganaria el vistazo y la comparacion se
+   invertiria. Por eso no hay color semantico aca: el juicio lo emite el
+   veredicto con palabras, no la barra con un rojo. */
+.apartado-card__barra {
+  height: 11px;
+  border-radius: var(--fk-radius-sm);
+  background: var(--fk-bg-elevated);
+  overflow: hidden;
+}
+
+.apartado-card__barra-fill {
+  height: 100%;
+  background: var(--fk-dom-ahorro);
+}
+
+.apartado-card__casillas {
+  display: grid;
+  grid-template-columns: repeat(var(--fk-casillas, 8), 1fr);
+  gap: 3px;
+  height: 11px;
+}
+
+.apartado-card__casilla {
+  border-radius: 1px;
+  background: var(--fk-bg-elevated);
+}
+.apartado-card__casilla--on { background: var(--fk-dom-ahorro); }
+
+/* La unica linea de la tarjeta que emite un juicio, y solo aparece cuando hay
+   algo que decir. */
+.apartado-card__veredicto {
+  margin: 0;
+  padding-left: var(--fk-space-3);
+  border-left: 2px solid var(--fk-dom-ahorro);
+  font-size: var(--fk-text-sm);
+  line-height: 1.45;
+  color: var(--fk-text-primary);
+}
+
+.apartado-card__datos {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.apartado-card__dato {
+  margin: 0;
+  font-size: var(--fk-text-xs);
+  line-height: 1.45;
+  color: var(--fk-text-secondary);
+}
+.apartado-card__dato--fuerte { color: var(--fk-text-primary); }
+.apartado-card__dato--suave  { color: var(--fk-text-muted); }
+
+/* Sin fecha objetivo no hay plan: el hueco dice que ganaria el usuario con una
+   fecha en vez de rellenarse con adorno (regla R57). */
+.apartado-card__nota {
+  margin: 0;
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border: 1px dashed var(--fk-border-subtle);
+  border-radius: var(--fk-radius-md);
+  font-size: var(--fk-text-xs);
+  line-height: 1.45;
+  color: var(--fk-text-secondary);
+}
+
+.apartado-card__acciones {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+}
+
+/* Accion principal con la identidad del hub de ahorro, mismo patron que
+   `.meta-card__aportar` y `.deuda-card__abonar`: boton propio y no
+   `.btn-primary`, porque el verde del acento significa ingreso. */
+.apartado-card__principal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fk-space-1);
+  width: 100%;
+  min-height: 2.75rem;
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  border: 1.5px solid color-mix(in srgb, var(--fk-dom-ahorro) 40%, transparent);
+  background: var(--fk-dom-ahorro-bg);
+  color: var(--fk-dom-ahorro-text);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color var(--fk-transition-fast), border-color var(--fk-transition-fast);
+}
+.apartado-card__principal:hover {
+  background: color-mix(in srgb, var(--fk-dom-ahorro) 20%, transparent);
+  border-color: color-mix(in srgb, var(--fk-dom-ahorro) 60%, transparent);
+}
+
+/* Eliminar cae al extremo derecho del renglon de menor peso: deja de competir
+   con la accion que la tarjeta quiere que hagas. Los 44px de la regla R4 no se
+   declaran aca (ver `.meta-card__secundaria`): `.btn-sm` los fija en 36px desde
+   `responsive.css`, que gana por capa. */
+.apartado-card__secundarias {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.apartado-card__secundaria { color: var(--fk-text-muted); }
+.apartado-card__secundaria:hover { color: var(--fk-text-secondary); }
+
+/* Apartado recurrente con el dinero ya reunido, esperando ser usado: el estado
+   terminal conserva su forma y cambia su contenido (regla R58). */
+.apartado-card--listo {
+  border-color: color-mix(in srgb, var(--fk-success) 35%, transparent);
+  background: var(--fk-success-bg);
+}
+.apartado-card--listo .apartado-card__barra-fill,
+.apartado-card--listo .apartado-card__casilla--on { background: var(--fk-success); }
+.apartado-card--listo .apartado-card__veredicto { border-left-color: var(--fk-success); }
+.apartado-card--listo .apartado-card__principal {
+  border-color: color-mix(in srgb, var(--fk-success) 45%, transparent);
+  background: transparent;
+  color: var(--fk-success-text);
 }
 
 .apartado-plantillas {
@@ -862,30 +1084,10 @@ button.chip:focus-visible {
   margin-bottom: var(--fk-space-2);
 }
 
-.apartado__sugerencia {
-  margin-top: var(--fk-space-2);
-  padding: var(--fk-space-2) var(--fk-space-3);
-  background: var(--fk-info-bg);
-  border-radius: var(--fk-radius-md);
-  color: var(--fk-text-secondary);
-  font-size: var(--fk-text-sm);
-  line-height: 1.4;
-}
-
-.apartado__sugerencia-detalle {
-  color: var(--fk-text-muted);
-  font-size: var(--fk-text-xs);
-}
-
-.apartado__listo {
-  margin-top: var(--fk-space-2);
-  padding: var(--fk-space-2) var(--fk-space-3);
-  background: var(--fk-success-bg);
-  color: var(--fk-success-text);
-  border-radius: var(--fk-radius-md);
-  font-size: var(--fk-text-sm);
-  line-height: 1.4;
-}
+/* `.apartado__sugerencia` y `.apartado__listo` se retiraron en DIS.15: la
+   sugerencia dejo de ser un aviso suelto y es ahora la segunda carrera mas la
+   linea de plan, y el estado "listo" dejo de ser un parrafo verde para cambiar
+   el bloque protagonista de la tarjeta. */
 
 /* ════════════════════════════════════════════════════════════
    ABONO A DEUDAS (ADR 002) - botón Abonar, badge Saldada
@@ -3070,14 +3272,8 @@ button.chip:focus-visible {
   margin-block: -13px;
 }
 
-/* Apartado recurrente con el dinero ya reunido, esperando ser usado. */
-.list-item--listo {
-  border-color: var(--fk-success);
-  background: var(--fk-success-bg);
-}
-.list-item--listo:hover {
-  background: color-mix(in srgb, var(--fk-success) 15%, transparent);
-}
+/* `.list-item--listo` se retiro en DIS.15: el apartado listo ya no es una fila
+   de lista, es `.apartado-card--listo`. */
 
 /* ════════════════════════════════════════════════════════════
    BANNER-PROPOSITO - mensaje de propósito de sección.

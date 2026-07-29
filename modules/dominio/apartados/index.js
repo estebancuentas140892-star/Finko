@@ -124,9 +124,10 @@ async function _reiniciarApartado(el) {
   if (!ok) return;
 
   editar('apartados', id, {
-    montoActual:   reiniciado.montoActual,
-    completado:    reiniciado.completado,
-    fechaObjetivo: reiniciado.fechaObjetivo,
+    montoActual:     reiniciado.montoActual,
+    completado:      reiniciado.completado,
+    fechaObjetivo:   reiniciado.fechaObjetivo,
+    fechaInicioPlan: reiniciado.fechaInicioPlan,
   });
 
   renderListaApartados();
