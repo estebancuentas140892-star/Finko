@@ -88,7 +88,7 @@
 | Estilos del wizard de bienvenida (DIS.6/C1) | `styles/modals.css` | `.modal--onboarding`, `.onboarding__*` | ~444 |
 | Marca "F" del wizard (DIS.6/C2) | `modules/ui/onboarding.js` | `_renderPaso1()`, `.onboarding__hero` | ~80 |
 | Marca "F" en el perfil de Inicio (DIS.6/C4) | `styles/components/domain.css` + `index.html` | `.perfil-inicio__marca` | ~870 |
-| Zonas táctiles de 44px de la capa (DIS.6/C5) | `styles/modals.css` + `styles/layout.css` | `.modal__close.mas-sheet__close`, `.hub-tabs__tab` | ~242, ~415 |
+| Zonas táctiles de 44px de la capa (DIS.6/C5) | `styles/modals.css` | `.modal__close.mas-sheet__close` | ~242 (la mitad de `.hub-tabs__tab` se fue con DIS.18) |
 
 **Dependencias y relaciones**: los tiles heredan `--fk-nav-text` del mapeo global `[data-section]` de `layout.css` (IV.2a): cero mapeo nuevo. Las clases `.menu-mas__*` NO se tocaron: siguen siendo el launcher vertical de la hoja "Registrar" (NAV.A2) y de los accesos de Inicio (IN.4a). `.modal-overlay--sheet`/`.modal--sheet` nacen reutilizables para futuros sheets.
 
@@ -108,7 +108,7 @@
 - 2026-07-14 (NAV2.1b): marca `.sidebar__logo-mark` nueva en `layout.css`; rotulo "Diario" retirado.
 - 2026-07-14 (NAV2.1a): hoja agrupada completa.
 
-**Observaciones**: ADR [040](../DECISIONS/040-navegacion-v2-visual.md); revisa el D5 del [ADR 024](../DECISIONS/024-reorganizacion-navegacion-movil.md) (el hub Ahorros NAV.B queda intacto: pestañas y consolidado siguen en las secciones).
+**Observaciones**: ADR [040](../DECISIONS/040-navegacion-v2-visual.md); revisa el D5 del [ADR 024](../DECISIONS/024-reorganizacion-navegacion-movil.md), cuyo D4 (pestañas y consolidado repetido) lo supersede el [ADR 056](../DECISIONS/056-la-casa-de-ahorro.md): desde DIS.18 no hay pestañas y el grupo "Ahorros" de la hoja "Más" es una sola teja.
 
 ---
 
@@ -116,8 +116,8 @@
 
 ## Identidad de color por sección: nav + tejas de encabezado (IV.1/IV.2a/IV.2d, ADR 031)
 
-- **Objetivo**          : la sección activa se identifica por el color de SU dominio (nav sidebar/bottom-nav, pestañas del hub Ahorros) y cada encabezado de sección lleva una teja con el icono y el acento del dominio, para reconocer dónde se está sin leer el texto.
-- **Estado actual**     : IV.1 (tokens `--fk-dom-*`) cerrada 2026-07-07. **IV.2a cerrada 2026-07-09**: despliegue en nav + hub-tabs + encabezados. **IV.2d, IV.2b e IV.2c cerradas el 2026-07-10** (misma jornada): migración `-text`, franja de modales + progreso por dominio, y calendario/Inicio (fijo→índigo, fondo teñido en vez de franja lateral, etiqueta de tipo en Inicio). **IV.2 completa.** Sigue IV.3 (números y estados) e IV.4 (iconografía dirigida post-color, condicionada a revisión visual), ver BOARD. **DV.1 cerrada el 2026-07-10**: el [ADR 033](../DECISIONS/033-direccion-visual-premium.md) (Dirección Visual premium, estado Propuesta) extiende este sistema con elevación en 4 niveles, `--fk-section-color` + `--fk-grad-identity` sobre el mismo mapeo `[data-dom]`/`[data-section]`, decoración/ilustraciones (pipeline ADR 026) y catálogo de movimiento cerrado; nada se implementa sin la validación de Esteban (rebanadas DV.2a-d en BOARD).
+- **Objetivo**          : la sección activa se identifica por el color de SU dominio (nav sidebar/bottom-nav, tejas de la hoja "Más") y cada encabezado de sección lleva una teja con el icono y el acento del dominio, para reconocer dónde se está sin leer el texto.
+- **Estado actual**     : IV.1 (tokens `--fk-dom-*`) cerrada 2026-07-07. **IV.2a cerrada 2026-07-09**: despliegue en nav + encabezados (su capa de pestañas del hub la retiró DIS.18). **IV.2d, IV.2b e IV.2c cerradas el 2026-07-10** (misma jornada): migración `-text`, franja de modales + progreso por dominio, y calendario/Inicio (fijo→índigo, fondo teñido en vez de franja lateral, etiqueta de tipo en Inicio). **IV.2 completa.** Sigue IV.3 (números y estados) e IV.4 (iconografía dirigida post-color, condicionada a revisión visual), ver BOARD. **DV.1 cerrada el 2026-07-10**: el [ADR 033](../DECISIONS/033-direccion-visual-premium.md) (Dirección Visual premium, estado Propuesta) extiende este sistema con elevación en 4 niveles, `--fk-section-color` + `--fk-grad-identity` sobre el mismo mapeo `[data-dom]`/`[data-section]`, decoración/ilustraciones (pipeline ADR 026) y catálogo de movimiento cerrado; nada se implementa sin la validación de Esteban (rebanadas DV.2a-d en BOARD).
 - **Verificado contra** : commit de IV.2c (2026-07-10).
 
 **Dónde vive**
@@ -126,12 +126,12 @@
 |---|---|---|---|
 | Mapeo `--fk-nav-bg`/`--fk-nav-text` por sección | `styles/layout.css` | bloque `[data-section="X"]` | ~198 |
 | Nav activo (sidebar + bottom-nav) teñido | `styles/layout.css` | `.nav-item.active`, `.nav-item[aria-current="page"]` | ~134 |
-| Pestañas del hub Ahorros teñidas | `styles/layout.css` | `.hub-tabs__tab[aria-current="page"]` | ~359 |
+| Acento por sección, incluida la ruta nueva del fondo (DIS.18) | `styles/layout.css` | `[data-section="fondo"]`, mapeo `--fk-nav-bg`/`--fk-nav-text` | ~230 |
 | Teja de encabezado de sección (reusa `.cat-teja`) | `styles/components/atoms.css` | `.section__icon.cat-teja` | ~249 |
 | `.cat-teja` con color de texto correcto (`-text`) | `styles/components/atoms.css` | `.cat-teja`, `[data-dom="X"]` | ~221 |
 | Iconos del launcher `.menu-mas__*` con color correcto (`-text`; desde NAV2.1a lo usan Registrar y accesos de Inicio, ya no el menú "Más") | `styles/modals.css` | `.menu-mas__item[data-section="X"] .icon` | ~144 |
 | Markup de los 11 encabezados con teja | `index.html` | `.section__title-group` + `.section__icon` por sección | ~490-777 |
-| Pestañas del hub con `data-section` | `index.html` | `.hub-tabs__tab[data-section="X"]` (4 copias, una por página del hub) | ~649-726 |
+| Tejas de la hoja "Más" con `data-section` | `index.html` | `.mas-tile[data-section="X"]` | ~1370-1400 |
 | Iconos/textos de Análisis (fondo, inversión) con `-text` (IV.2d) | `styles/components/analysis.css` | `.fondo-hero__icon`, `.fondo-hero__sub--ok`, `.fondo-hero__banner`, `.ahorro-habito__compromiso strong`, `.inversion-hero__icon`, `.inversion-hero__tipo-pct`, `.inversion-item__tipo` | ~604-885 |
 | Iconos del tile de Registrar con `-text` (IV.2d) | `styles/modals.css` | `.registrar__tile[data-kind="X"] .icon` | ~220 |
 | Título de nudge alto con `-text` (IV.2d) | `styles/components/nudges.css` | `.nudge-high .nudge__title` | ~91 |

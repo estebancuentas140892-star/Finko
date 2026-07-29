@@ -42,7 +42,7 @@
 - **`inversiones` no toca cuentas** (tarjeta **INV.1** y [ADR 053](../DECISIONS/053-invariante-de-patrimonio.md)): comprar un CDT con saldo de una cuenta registrada infla el patrimonio de forma permanente. DIS.17 no lo toca, y su tarjeta sigue siendo dueña de preguntar de dónde sale el dinero al registrar.
 - **La retención del 7% solo se modela en el CDT.** `proyectarInversion()` devuelve valor neto para CDT y bruto para el resto (la retención de fondos varía y no se modela). Cualquier cifra que se compare entre tipos arrastra esa asimetría.
 
-**Cambios pendientes**: **el momento 3** y el dato que lo habilita (valor real en el tiempo), que pasa por triaje antes de ser tarjeta. **Editar una inversión** (rebanada de **EDIT.1**): el mockup pone Editar al lado de Eliminar en la tarjeta de cada holding y no se implementó porque el flujo no existe. **INV.1** (de dónde sale el dinero al registrar), ya en [`BOARD.md`](../BOARD.md). El **consolidado del hub Ahorros** (hallazgo A13 de la auditoría de diseño) sigue viviendo en `ahorro/view.js` y afecta por igual a las cuatro secciones del hub.
+**Cambios pendientes**: **el momento 3** y el dato que lo habilita (valor real en el tiempo), que pasa por triaje antes de ser tarjeta. **Editar una inversión** (rebanada de **EDIT.1**): el mockup pone Editar al lado de Eliminar en la tarjeta de cada holding y no se implementó porque el flujo no existe. **INV.1** (de dónde sale el dinero al registrar), ya en [`BOARD.md`](../BOARD.md). El **consolidado del hub** (hallazgo A13) ya no vive acá: DIS.18 lo mudó a la casa de Ahorro y esta sección abre con `.section__volver` ([ADR 056](../DECISIONS/056-la-casa-de-ahorro.md)).
 
 **Cambios realizados**:
 

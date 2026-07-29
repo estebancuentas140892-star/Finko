@@ -290,7 +290,16 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 
 ---
 
-### Ahorro (dominio `ahorro`, fondo de emergencia)
+### Ahorro (dominio `ahorro`, casa de Ahorro + fondo de emergencia)
+
+#### AH.7 - Los dos temas que DIS.18 señaló y no resolvió
+- Prioridad  : baja
+- Área       : design (los dos son de arquitectura y lenguaje de producto, no de lógica)
+- Estado     : registrado, sin analizar. Origen: informe "Arquitectura Tu ahorro total", pendientes 1 y 3 ([ADR 056](DECISIONS/056-la-casa-de-ahorro.md)).
+- Objetivo   : (1) decidir si **"Ahorro" sube a la barra inferior**, lo que implica desplazar Calendario: es una decisión de la barra completa y no se toma desde una sección. (2) el nombre **"Apartados"** colisiona con "apartar", el verbo genérico de ahorrar en toda la app: renombrarlo toca varias pantallas, microcopy y la ficha de su dominio.
+- Secciones  : Ahorro (casa), Apartados, Barra de navegación
+- Depende de : nada duro. El punto 1 conviene decidirlo junto a cualquier revisión futura de la barra inferior; el punto 2, antes de escribir más copy que use la palabra.
+- Modelo     : Equilibrado - Medio (dos decisiones de producto con barrido de copy acotado)
 
 #### AH.5 - Fondo v2: rediseño UX educativo + aportes por el flujo de distribución
 - Prioridad  : media
@@ -573,7 +582,8 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Estado     : pendiente de análisis. Hallazgo de la auditoría de UX/producto, patrón P7. **No es un rediseño de pantallas.** Duplicación medida y detalle en [`contexto/transversal.md`](contexto/transversal.md).
 - Objetivo   : fondo de emergencia, metas, apartados e inversión son 4 implementaciones del mismo concepto (bolsa con objetivo, acumulado, progreso y aportes). Unificar la infraestructura compartida en `infra/`, sin fusionar las pantallas.
 - **Añadido por el [ADR 053](DECISIONS/053-invariante-de-patrimonio.md) (2026-07-25):** el modelo unificado debe exponer explícitamente la propiedad **"descuenta saldo sí/no"** por bolsa, hoy folclore de cada dominio (Metas y Apartados siempre descuentan; el Fondo nunca, ADR 020; Inversión tras INV.1 depende del origen). Sumar un test de invariante que calcule los activos por dos caminos y compare: es el test que habría detectado H5 sin auditoría manual.
-- Secciones  : Transversal (`infra/`), consumidores en Ahorro, Metas, Apartados, Inversión
+- **Añadido por DIS.18 (2026-07-28):** la fila de Inversión de la casa de Ahorro muestra un conteo ("2 inversiones") en vez de su etapa ("construyendo"), porque `momentoInversion()` vive en el dominio Inversión: importarlo rompe ADN 10 y replicarlo duplica justo lo que esta tarjeta unifica. Con el modelo en `infra/`, la fila lee la etapa sin duplicar nada. Es un consumidor concreto que antes no existía.
+- Secciones  : Transversal (`infra/`), consumidores en Ahorro (casa y fondo), Metas, Apartados, Inversión
 - Depende de : nada. EDIT.1a (cerrada) ya demostró que unificar después de escribir los 4 editores es viable
 - Modelo     : Alta capacidad - Extra (refactor cross-dominio con red de regresión en 4 suites; el riesgo real es el redondeo distinto de `diasHastaFecha`, que hoy da resultados diferentes por sección)
 

@@ -10,6 +10,25 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(ahorro): DIS.18, Ahorro pasa de encabezado repetido a pantalla propia · 2026-07-28
+
+Quinta y última pasada de la auditoría por secciones, y la primera que no analiza una pantalla sino **la relación entre cinco**. El bloque "Tu ahorro total" no tenía dónde vivir: era el resumen de una sección que Finko nunca construyó, así que se repetía en las cuatro hijas y arrastraba una barra de pestañas que existía para tapar ese hueco. Decisión completa en el [ADR 056](DECISIONS/056-la-casa-de-ahorro.md). Ficha: [`contexto/ahorro.md`](contexto/ahorro.md).
+
+- **El padre existía como encabezado y ahora existe como dirección (regla R70).** `#ahorro` es la casa de las cuatro modalidades; el fondo de emergencia se muda a `#fondo`. Restaura la intención del [ADR 009](DECISIONS/009-consolidado-de-ahorro.md), que pedía **una** card "en el tope de la sección Ahorro", en singular, y supersede el D4 del [ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md), que la había convertido en cabecera de cuatro secciones.
+- **Un bloque idéntico no se repite entre hermanas (regla R71).** Se retiran la franja `.hub-tabs` y el slot `[data-hub-consolidado]` de Fondo, Metas, Apartados e Inversión: 316px de encabezado idéntico antes del contenido propio, medidos a 390px. El título de Metas pasa de 365px a 68px del tope y su primera tarjeta de 433px a 128px.
+- **Las filas del desglose se vuelven la navegación.** Ya lo eran a medias con un enlace "Ver" de 18px; ahora la fila entera es el destino. Y desaparecen las barras de participación: el reparto en porcentaje no ayuda a decidir a dónde entrar.
+- **Un destino, un camino (regla R72).** Había tres caminos a una modalidad hermana (pestañas, "Ver" y el menú "Más") y ninguno canónico. En "Más", las cuatro tejas del grupo "Ahorros" pasan a una a ancho completo. El sidebar de desktop conserva las cuatro entradas directas como atajos declarados: el problema medido era de móvil.
+- **La taxonomía se enseña donde los términos conviven (regla R73).** Cada fila lleva una línea de para qué sirve ("Para pagos que ya sabes que llegan"). Ese texto no es nuevo: hoy vive disperso en los estados vacíos de Metas y Apartados, que se remiten entre sí, o sea en la pantalla a la que el usuario llegó equivocado.
+- **Un resumen sirve para decidir sin entrar (regla R74).** Cada fila muestra su estado en la unidad de su sección: meses cubiertos, metas en curso, días al próximo cobro, inversiones abiertas.
+- **Las cuatro filas se muestran siempre, también en cero.** `consolidarAhorro()` ordenaba por monto y escondía las bolsas vacías: correcto para un desglose, erróneo para una puerta. Lo reemplaza `casaAhorro()` con orden fijo de taxonomía. Una modalidad que no aparece no se puede descubrir.
+- **Cada hija abre con "volver a Ahorro"** (`.section__volver`, el patrón que ya usaba Movimientos): en la PWA instalada no hay botón "atrás" del navegador, así que desde Metas no había salida vertical, solo lateral.
+- **El título pasa a "Todo lo que tienes guardado"** y pierde el subtítulo que enumeraba las cuatro fuentes: las cuatro filas están justo debajo.
+- Verificado en la app a 375px con los datos del mockup: total $22.264.000, las cuatro filas con sus montos y estados ("el más próximo, en 23 días"), fila de 84px, sin scroll horizontal ni errores de consola, y `#ahorro` → fila del fondo → `#fondo` → volver. 26 tests unitarios nuevos, `hub-ahorros.test.js` reescrito. **3337/3337 unit + 236/236 E2E + lint verdes.** SW v440 → v441.
+
+**Fuera de alcance, y por qué.** **La fila de Inversión cuenta inversiones en vez de decir su etapa** ("construyendo" en el mockup): esa etapa sale de `momentoInversion()` en el dominio Inversión, importarlo rompe la regla ADN 10 y replicarlo duplicaría el cálculo que **ARQ.1** existe para unificar. **Promover "Ahorro" a la barra inferior** queda sin decidir: implicaría mover Calendario, que es decisión de otra sección. **El nombre "Apartados"**, que colisiona con "apartar" (el verbo genérico de ahorrar en toda la app), queda señalado y sin resolver: es lenguaje de producto y toca varias pantallas. **`#ahorro` no redirige a `#fondo`**: un bookmark viejo llega a la casa, que enlaza al fondo en su primera fila, así que sube un nivel en vez de perderse.
+
+---
+
 ### feat(fondo): DIS.16, el fondo se mide en tiempo y no en porcentaje · 2026-07-28
 
 Tercera sección del hub de ahorro en la pasada de arquitectura, y la que tenía dos problemas que ninguna otra tiene: **el objetivo se mueve solo** (si suben los gastos fijos el porcentaje cae sin que el usuario haya gastado un peso) y **no hay final** (llegar a tres meses no es terminar). Arquitectura **I con la prueba de H**, la mezcla que Esteban sugirió. Ficha: [`contexto/ahorro.md`](contexto/ahorro.md).

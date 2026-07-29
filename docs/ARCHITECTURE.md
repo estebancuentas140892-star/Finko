@@ -127,7 +127,7 @@ Los barrels mantienen la API estable: tests y consumidores siguen importando de 
 |---|---|---|
 | `accesos/` | Accesos rápidos personalizables de Inicio (IN.4a, [ADR 028](DECISIONS/028-inicio-centro-de-control.md) D2) | sin colección propia en `S`: lee y escribe `S.config.accesosInicio` (array de ids) |
 | `agenda/` | Gastos fijos y calendario de pagos (sección visible "Calendario") | |
-| `ahorro/` | Fondo de emergencia + hábito de aportar | |
+| `ahorro/` | Fondo de emergencia + hábito de aportar, **más la casa de Ahorro** (la pantalla `#ahorro` que reúne las cuatro modalidades, DIS.18) | el fondo vive en `#fondo` desde DIS.18: `#ahorro` es la casa ([ADR 056](DECISIONS/056-la-casa-de-ahorro.md)) |
 | `analisis/` | Salud financiera, patrimonio neto, gráficos, comparaciones | |
 | `apartados/` | Sobres para gastos previsibles (SOAT, impuestos, etc.) | |
 | `compromisos/` | Gastos fijos + deudas (Avalancha/Bola de nieve) + agenda de pagos | `view.js` partido en `views/` (alertas, dashboard, estrategia, estrategia-impacto, formularios, lista); `logic.js` partido en `logic/` (modelo, alertas, estrategia, abonos), ambos con barrel |
@@ -403,7 +403,7 @@ El dashboard (`#dash`) no tiene carpeta propia en `modules/dominio/`: es una com
 | Deudas | `compromisos/` | entrar por `logic/` o `views/` según el corte de la 2.4; `index.js` es el wiring | `charts.css` (chooser entidad/personal, estrategia de pago), `domain.css` (abono-btn, cal-detail) | `compromisos.test.js`, `estrategia-pago.test.js` (e2e) |
 | Mis cuentas | `tesoreria/` | entrar por `logic/`, `views/` o `acciones/` según el subsistema (ver 2.4); `index.js` es el coordinador | `domain.css` (ingresos-card, distribucion-rows/clasicos) | `tesoreria.test.js`, `cuenta-helper.test.js`, `distribuir-pago.test.js` |
 | Apartados | `apartados/` | los 3 estándar | `domain.css` (bloque APARTADOS línea 530, form rediseño línea 1305) | `apartados.test.js` |
-| Ahorro | `ahorro/` | los 3 estándar | `domain.css` (consolidado de ahorro línea 1348), `analysis.css` (bloque J.1/J.1b) | `ahorro.test.js`, `ahorro-inversion.test.js` (e2e) |
+| Ahorro (la casa, `#ahorro`) y Fondo de emergencia (`#fondo`) | `ahorro/` | los 3 estándar | `domain.css` (`.casa-ahorro__*`), `analysis.css` (bloque J.1/J.1b) | `ahorro.test.js`, `hub-ahorros.test.js` (e2e), `ahorro-inversion.test.js` (e2e) |
 | Presupuesto | `presupuesto/` | los 3 estándar | `analysis.css` (D.5 envelope budgeting, MC.8b) | `presupuesto.test.js` |
 | Metas | `metas/` | los 3 estándar | `analysis.css` | `metas.test.js` |
 | Me deben | `personales/` | los 3 estándar | `domain.css` (personales-resumen) | `personales.test.js` |
@@ -427,7 +427,7 @@ Estos archivos **no están organizados por dominio**, sino por tipo de widget o 
 | `buttons.css` | Botones y cards genéricas |
 | `charts.css` | Sparkline + donut, modal de importar CSV, chooser entidad/personal, estrategia de pago de deudas |
 | `config.css` | Configuración (perfil, notificaciones, datos, acerca de), install PWA, Agenda/Calendario |
-| `domain.css` | Grupo grande y heterogéneo: calculadoras (posible código muerto, ver nota abajo), herramienta-inline, ingresos-card, mes-nav, filtros-bar/chip, distribución de ingreso, gastos-resumen, apartados, abono a deudas, cuenta-picker/multi/sel (compartido por Gastos/Deudas/Apartados/Metas), widgets de Inicio (hero-saldo, vencidos-card, prioridades-card, actividad-reciente, resumen-card, balance-tira, limites-card), personales-resumen, form de apartados, ahorro consolidado, banner-propósito (compartido por las 10 secciones) |
+| `domain.css` | Grupo grande y heterogéneo: calculadoras (posible código muerto, ver nota abajo), herramienta-inline, ingresos-card, mes-nav, filtros-bar/chip, distribución de ingreso, gastos-resumen, apartados, abono a deudas, cuenta-picker/multi/sel (compartido por Gastos/Deudas/Apartados/Metas), widgets de Inicio (hero-saldo, vencidos-card, prioridades-card, actividad-reciente, resumen-card, balance-tira, limites-card), personales-resumen, form de apartados, casa de Ahorro, banner-propósito (compartido por las 10 secciones) |
 | `forms.css` | Sistema de íconos SVG de línea, inputs/formularios |
 | `nudges.css` | Sistema de nudges (5 niveles), logro toast, bank avatar/picker, badges de dominio |
 | `analysis.css` | Todo el panel de Análisis: bento, métricas, salud financiera, presupuesto, ahorro, inversión, gastos, patrimonio |
