@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-28. Última tarea cerrada: DIS.17, la sección Inversión pasa a los tres momentos (arquitectura O, la que cierra las cuatro secciones del hub de ahorro).
+> Última actualización: 2026-07-28. Última tarea cerrada: DIS.16, el fondo de emergencia se mide en tiempo y no en porcentaje (arquitectura I con la prueba de H).
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, GMF).
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 3278/3278 verdes en `main`. En el árbol de trabajo son 3317: los 39 de diferencia son de DIS.16 (Fondo de emergencia), que sigue sin commitear. |
+| Tests unitarios + integración | 3323/3323 verdes |
 | Tests E2E | 235/235 verdes en las 11 suites, corrida completa el 2026-07-28. El desglose no se transcribe acá: lo reporta la propia corrida. |
 | Schema version (localStorage) | v27 |
 | Lighthouse Performance | 100 |
@@ -39,6 +39,12 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, GMF).
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(fondo): DIS.16, el fondo se mide en tiempo y no en porcentaje · 2026-07-28
+
+Arquitectura **I con la prueba de H**. El fondo tenía dos problemas que ninguna otra sección tiene: **el objetivo se mueve solo** (si suben los gastos fijos el porcentaje cae sin que el usuario haya gastado un peso) y **no hay final** (tres meses no es terminar). La unidad deja de ser el porcentaje y pasa a ser el **tiempo**: el anillo se retira y entran el nombre del nivel, los bloques de mes con la fecha hasta la que alcanza el fondo, la escalera de tres niveles y el veredicto. Un logro no se retira cuando la meta sube (R66), el siguiente tramo siempre está a la vista (R67), un porcentaje diminuto se dice con palabras (R68) y ninguna cifra obliga a una cuenta mental (R69: "1,8 meses" pasa a "1 mes y 3 semanas"). En cero la tarjeta apunta al primer nivel y no a la meta completa, que es la lectura que desanima en el momento más frágil. La sección entra al ojo de privacidad y queda con un solo primario. **Sin aplicar:** los estados 4 y 5 del mockup ("tardaste 14 meses", la explicación del retroceso por subida de gastos), que necesitan dos datos que `S.ahorro` no guarda; y "Desactivar" no vuelve a la tarjeta porque DIS.12 lo bajó al modal con `.btn-danger` (R53), decisión posterior al mockup. Cuatro reglas nuevas de diseño (R66 a R69). 3323/3323 unit + 235/235 E2E + lint verdes. SW v439 → v440.
+
+---
 
 ### feat(inversion): DIS.17, la sección pasa a los tres momentos · 2026-07-28
 
@@ -64,13 +70,7 @@ Arquitectura **A2** de la auditoría de diseño por secciones (carpeta "Diseño 
 
 ---
 
-### docs(tesoreria): MC.16, la tarjeta de crédito se decide como producto de Deudas · 2026-07-27
-
-[ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md) pasa de Abierta a **Aceptada** con la alternativa **B**: la tarjeta es un producto de Deudas con `cupoTotal`, no un tipo de cuenta. Lo decidió el análisis del modelo actual: la deuda de tarjeta ya existe en `CATEGORIAS_DEUDA` con su tasa EA, `Gasto.compromisoId` ya mueve el saldo de una deuda y lo sincroniza al editar y eliminar, y `calcularActivos()` no lee `compromisos`, así que la I5 del ADR 053 (el cupo nunca es un activo) se cumple sin tocar Análisis. El consumo con tarjeta es un gasto sin cuenta, con `consumoTC` fijando el signo. Saldo revolvente, una deuda por tarjeta. MC.16 queda re-cortada en 5 rebanadas (MC.16a a MC.16e). Sin código: es el paso que el ADR exigía antes de escribir la primera línea. Sin tocar `modules/`, no hay tests que correr ni SW que bumpear.
-
----
-
-> Para tareas anteriores (fix(tesoreria) MC.13f confirmar el cobro que Finko no puede datar, fix(gastos) TX.12b el chip de gasto frecuente ofrece el monto real, fix(metas) MT.7 prellenar el monto del aporte con la cuota del periodo, fix(metas) DIS.13 las 6 correcciones de la auditoria de diseno sobre Metas, fix(fondo) DIS.12 las 9 correcciones de la auditoria de diseno sobre Fondo de emergencia, fix(calendario) DIS.11 las 11 correcciones de la auditoria de diseno sobre Calendario, fix(analisis) DIS.10 las 12 correcciones de la auditoria de diseno sobre Analisis, fix(mis-cuentas) DIS.9 las 9 correcciones de la auditoria de diseno sobre Mis cuentas, fix(limites) DIS.7 las 9 correcciones de la auditoria de diseno sobre Limites de gasto, fix(interfaz) DIS.6 las 7 correcciones de la auditoria de diseno sobre la Interfaz, fix(apartados) DIS.5 las 11 correcciones de la auditoría de diseño sobre Apartados, fix(gastos) DIS.4 las 10 correcciones de la auditoría de diseño sobre Gastos, fix(me-deben) DIS.3 las 11 correcciones de la auditoría de diseño sobre Me deben, fix(deudas) DIS.2 las 8 correcciones de la auditoría de diseño sobre Deudas, fix(inicio) V1 el acento de marca deja de medir el gasto semanal, docs(reorg) Fases 1 y 2 de la reorganización documental, feat(metas) EDIT.1a editar sin destruir el progreso, feat(gastos) TX.12 gastos frecuentes y "Repetir", feat(agenda) CAL.5a pagar en lote lo que ya venció, feat(movimientos) MOV.2 búsqueda y filtros en el ledger, feat(movimientos) MOV.1 el ledger deja de ser solo lectura, feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
+> Para tareas anteriores (docs(tesoreria) MC.16 la tarjeta de credito se decide como producto de Deudas, fix(tesoreria) MC.13f confirmar el cobro que Finko no puede datar, fix(gastos) TX.12b el chip de gasto frecuente ofrece el monto real, fix(metas) MT.7 prellenar el monto del aporte con la cuota del periodo, fix(metas) DIS.13 las 6 correcciones de la auditoria de diseno sobre Metas, fix(fondo) DIS.12 las 9 correcciones de la auditoria de diseno sobre Fondo de emergencia, fix(calendario) DIS.11 las 11 correcciones de la auditoria de diseno sobre Calendario, fix(analisis) DIS.10 las 12 correcciones de la auditoria de diseno sobre Analisis, fix(mis-cuentas) DIS.9 las 9 correcciones de la auditoria de diseno sobre Mis cuentas, fix(limites) DIS.7 las 9 correcciones de la auditoria de diseno sobre Limites de gasto, fix(interfaz) DIS.6 las 7 correcciones de la auditoria de diseno sobre la Interfaz, fix(apartados) DIS.5 las 11 correcciones de la auditoría de diseño sobre Apartados, fix(gastos) DIS.4 las 10 correcciones de la auditoría de diseño sobre Gastos, fix(me-deben) DIS.3 las 11 correcciones de la auditoría de diseño sobre Me deben, fix(deudas) DIS.2 las 8 correcciones de la auditoría de diseño sobre Deudas, fix(inicio) V1 el acento de marca deja de medir el gasto semanal, docs(reorg) Fases 1 y 2 de la reorganización documental, feat(metas) EDIT.1a editar sin destruir el progreso, feat(gastos) TX.12 gastos frecuentes y "Repetir", feat(agenda) CAL.5a pagar en lote lo que ya venció, feat(movimientos) MOV.2 búsqueda y filtros en el ledger, feat(movimientos) MOV.1 el ledger deja de ser solo lectura, feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
 
 ---
 
