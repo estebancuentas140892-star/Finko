@@ -313,13 +313,24 @@
           </div>
         </div>
 
-        <!-- GRUPO 3: Ahorros (hub NAV.B, ADR 024 D4/D6). En desktop hay espacio:
-             las 4 entradas directas se conservan bajo el nombre paraguas. -->
+        <!-- GRUPO 3: Ahorro (DIS.18). El rótulo paraguas ya no es solo un
+             nombre: la casa encabeza el grupo y es la que responde "cuánto
+             tengo guardado en total y dónde". Las 4 modalidades se conservan
+             como entradas directas SOLO en el sidebar de desktop (nav-item--no-
+             mobile), donde hay espacio: son atajos declarados a destinos que la
+             casa también ofrece, no rutas paralelas con otro aspecto. En móvil,
+             donde el hueco era el problema, la única entrada es la casa. -->
         <div class="nav-group" role="listitem">
-          <span class="nav-group__label" id="nav-label-ahorros">Ahorros</span>
+          <span class="nav-group__label" id="nav-label-ahorros">Ahorro</span>
           <div role="group" aria-labelledby="nav-label-ahorros">
 
             <a class="nav-item nav-item--no-mobile" href="#ahorro" data-section="ahorro"
+               aria-label="Ahorro: fondo, metas, apartados e inversión">
+              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-ahorro"/></svg>
+              <span class="nav-item__label">Ahorro</span>
+            </a>
+
+            <a class="nav-item nav-item--no-mobile" href="#fondo" data-section="fondo"
                aria-label="Fondo de emergencia">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-ahorro"/></svg>
               <span class="nav-item__label">Fondo de emergencia</span>
@@ -761,25 +772,37 @@
         </div>
       </section>
 
-      <!-- AHORRO (J.1) - Fondo de emergencia + hábito de apartar -->
+      <!-- AHORRO (DIS.18, ADR 009 restaurado) - la casa de las cuatro
+           modalidades. Hasta DIS.18 este contenido era la card consolidada
+           repetida en Fondo, Metas, Apartados e Inversión, con una barra de
+           pestañas encima: el resumen de un padre que no existía. Ahora el
+           padre tiene dirección propia (#ahorro) y el bloque se muestra una
+           sola vez, donde significa algo. Las cuatro filas son la navegación. -->
       <section class="section" id="sec-ahorro" tabindex="-1" aria-labelledby="title-ahorro">
-        <!-- HUB AHORROS (NAV.B, ADR 024 D4): franja de pestañas compartida por
-             Fondo/Metas/Apartados/Inversión. Son enlaces entre las secciones
-             existentes presentados como tabs: cero cambios de router. Cada
-             sección lleva su copia estática con su tab marcada aria-current. -->
-        <nav class="hub-tabs" aria-label="Ahorros">
-          <a class="hub-tabs__tab" href="#ahorro" data-section="ahorro" aria-current="page">Fondo</a>
-          <a class="hub-tabs__tab" href="#metas" data-section="metas">Metas</a>
-          <a class="hub-tabs__tab" href="#apartados" data-section="apartados">Apartados</a>
-          <a class="hub-tabs__tab" href="#inversion" data-section="inversion">Inversión</a>
-        </nav>
-        <!-- Consolidado (F6, ADR 009): cabecera común del hub. ahorro/view.js
-             llena cada slot [data-hub-consolidado]; [hidden] si el total es 0. -->
-        <div class="hub-consolidado" data-hub-consolidado="ahorro" hidden></div>
         <header class="section__header">
           <div class="section__title-group">
             <span class="cat-teja section__icon" data-dom="ahorro" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-ahorro"/></svg></span>
-            <h1 class="section__title" id="title-ahorro">Fondo de emergencia</h1>
+            <h1 class="section__title" id="title-ahorro">Ahorro</h1>
+          </div>
+        </header>
+        <div id="panel-casa-ahorro">
+          <!-- DIS.18: ahorro/view.js renderiza aquí (renderCasaAhorro) -->
+        </div>
+      </section>
+
+      <!-- FONDO DE EMERGENCIA (J.1). Su ruta pasó de #ahorro a #fondo en
+           DIS.18: #ahorro es la casa. -->
+      <section class="section" id="sec-fondo" tabindex="-1" aria-labelledby="title-fondo">
+        <!-- Volver a la casa (DIS.18): antes desde acá no se podía subir, solo
+             saltar de lado con las pestañas. En la PWA instalada no hay botón
+             "atrás" del navegador. Mismo patrón que #sec-movimientos. -->
+        <a class="section__volver" href="#ahorro" aria-label="Volver a Ahorro">
+          <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>Ahorro
+        </a>
+        <header class="section__header">
+          <div class="section__title-group">
+            <span class="cat-teja section__icon" data-dom="ahorro" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-ahorro"/></svg></span>
+            <h1 class="section__title" id="title-fondo">Fondo de emergencia</h1>
           </div>
         </header>
         <div id="proposito-ahorro">
@@ -792,14 +815,10 @@
 
       <!-- INVERSIÓN (J.2) - Portafolio real -->
       <section class="section" id="sec-inversion" tabindex="-1" aria-labelledby="title-inversion">
-        <!-- HUB AHORROS (NAV.B, ADR 024 D4): ver nota en #sec-ahorro. -->
-        <nav class="hub-tabs" aria-label="Ahorros">
-          <a class="hub-tabs__tab" href="#ahorro" data-section="ahorro">Fondo</a>
-          <a class="hub-tabs__tab" href="#metas" data-section="metas">Metas</a>
-          <a class="hub-tabs__tab" href="#apartados" data-section="apartados">Apartados</a>
-          <a class="hub-tabs__tab" href="#inversion" data-section="inversion" aria-current="page">Inversión</a>
-        </nav>
-        <div class="hub-consolidado" data-hub-consolidado="inversion" hidden></div>
+        <!-- Volver a la casa (DIS.18): ver nota en #sec-fondo. -->
+        <a class="section__volver" href="#ahorro" aria-label="Volver a Ahorro">
+          <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>Ahorro
+        </a>
         <header class="section__header">
           <div class="section__title-group">
             <span class="cat-teja section__icon" data-dom="inversion" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-inversion"/></svg></span>
@@ -816,14 +835,10 @@
 
       <!-- METAS -->
       <section class="section" id="sec-metas" tabindex="-1" aria-labelledby="title-metas">
-        <!-- HUB AHORROS (NAV.B, ADR 024 D4): ver nota en #sec-ahorro. -->
-        <nav class="hub-tabs" aria-label="Ahorros">
-          <a class="hub-tabs__tab" href="#ahorro" data-section="ahorro">Fondo</a>
-          <a class="hub-tabs__tab" href="#metas" data-section="metas" aria-current="page">Metas</a>
-          <a class="hub-tabs__tab" href="#apartados" data-section="apartados">Apartados</a>
-          <a class="hub-tabs__tab" href="#inversion" data-section="inversion">Inversión</a>
-        </nav>
-        <div class="hub-consolidado" data-hub-consolidado="metas" hidden></div>
+        <!-- Volver a la casa (DIS.18): ver nota en #sec-fondo. -->
+        <a class="section__volver" href="#ahorro" aria-label="Volver a Ahorro">
+          <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>Ahorro
+        </a>
         <header class="section__header">
           <div class="section__title-group">
             <span class="cat-teja section__icon" data-dom="metas" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-metas"/></svg></span>
@@ -845,14 +860,10 @@
 
       <!-- APARTADOS -->
       <section class="section" id="sec-apartados" tabindex="-1" aria-labelledby="title-apartados">
-        <!-- HUB AHORROS (NAV.B, ADR 024 D4): ver nota en #sec-ahorro. -->
-        <nav class="hub-tabs" aria-label="Ahorros">
-          <a class="hub-tabs__tab" href="#ahorro" data-section="ahorro">Fondo</a>
-          <a class="hub-tabs__tab" href="#metas" data-section="metas">Metas</a>
-          <a class="hub-tabs__tab" href="#apartados" data-section="apartados" aria-current="page">Apartados</a>
-          <a class="hub-tabs__tab" href="#inversion" data-section="inversion">Inversión</a>
-        </nav>
-        <div class="hub-consolidado" data-hub-consolidado="apartados" hidden></div>
+        <!-- Volver a la casa (DIS.18): ver nota en #sec-fondo. -->
+        <a class="section__volver" href="#ahorro" aria-label="Volver a Ahorro">
+          <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>Ahorro
+        </a>
         <header class="section__header">
           <div class="section__title-group">
             <span class="cat-teja section__icon" data-dom="ahorro" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-apartados"/></svg></span>
@@ -1399,25 +1410,16 @@
           </a>
         </div>
 
-        <span class="mas-sheet__group-label" id="mas-label-ahorros">Ahorros</span>
-        <div class="mas-sheet__grid" role="group" aria-labelledby="mas-label-ahorros">
-          <a class="mas-tile" href="#ahorro" data-section="ahorro">
-            <span class="mas-tile__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-ahorro"/></svg></span>
-            <span class="mas-tile__label">Fondo de emergencia</span>
-          </a>
-          <a class="mas-tile" href="#metas" data-section="metas">
-            <span class="mas-tile__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-metas"/></svg></span>
-            <span class="mas-tile__label">Metas</span>
-          </a>
-          <a class="mas-tile" href="#apartados" data-section="apartados">
-            <span class="mas-tile__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-apartados"/></svg></span>
-            <span class="mas-tile__label">Apartados</span>
-          </a>
-          <a class="mas-tile" href="#inversion" data-section="inversion">
-            <span class="mas-tile__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-inversion"/></svg></span>
-            <span class="mas-tile__label">Inversión</span>
-          </a>
-        </div>
+        <!-- DIS.18: las 4 tejas del grupo "Ahorros" se reducen a una. Un
+             destino, una entrada: elegir entre fondo, metas, apartados e
+             inversión deja de ser una decisión de menú global y se toma dentro
+             de la casa, que es el único lugar donde los cuatro nombres
+             conviven y se pueden comparar. Va a ancho completo, como Ajustes:
+             no es una más de la grilla, es la puerta de un tema. -->
+        <a class="mas-tile mas-tile--full" href="#ahorro" data-section="ahorro">
+          <span class="mas-tile__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-ahorro"/></svg></span>
+          <span class="mas-tile__label">Ahorro</span>
+        </a>
 
         <div class="mas-sheet__footer">
           <a class="mas-tile mas-tile--full" href="#config" data-section="config">

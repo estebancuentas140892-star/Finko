@@ -146,7 +146,7 @@
 /* IV.2a (ADR 031): la sección activa se tiñe con el color de SU dominio,
    no con el acento genérico de marca. `--fk-nav-bg`/`--fk-nav-text` los
    declara el mapeo de abajo vía `[data-section="X"]` (compartido con
-   .hub-tabs__tab, misma convención); Inicio y Ajustes no son dominios
+   .mas-tile, misma convención); Inicio y Ajustes no son dominios
    financieros (ADR 025 D6) y no los declaran, así que caen al acento
    genérico. `-text` es la variante seleccionada para texto sobre fondo
    claro (AA verificado, tokens.css/themes.css): el token crudo
@@ -214,7 +214,7 @@
 
 /* ── MAPEO DE ACENTO POR SECCIÓN (IV.2a, ADR 031) ──────────────
    Declara --fk-nav-bg/--fk-nav-text en cualquier elemento con
-   data-section="X" (nav-item, hub-tabs__tab): un solo lugar para toda
+   data-section="X" (nav-item, mas-tile): un solo lugar para toda
    la navegación. Apartados comparte la familia menta de Ahorro (ADR
    031 P4, hub Ahorros); Inicio y Ajustes no son dominios financieros
    y no aparecen aquí (caen al acento genérico por defecto).
@@ -235,6 +235,7 @@
 [data-section="presupuesto"] { --fk-nav-bg: color-mix(in srgb, var(--fk-dom-presupuesto) 6%, transparent); --fk-nav-text: var(--fk-dom-presupuesto-text); }
 [data-section="analisis"]    { --fk-nav-bg: color-mix(in srgb, var(--fk-dom-analisis) 6%, transparent);    --fk-nav-text: var(--fk-dom-analisis-text); }
 [data-section="ahorro"]      { --fk-nav-bg: color-mix(in srgb, var(--fk-dom-ahorro) 6%, transparent);      --fk-nav-text: var(--fk-dom-ahorro-text); }
+[data-section="fondo"]       { --fk-nav-bg: color-mix(in srgb, var(--fk-dom-ahorro) 6%, transparent);      --fk-nav-text: var(--fk-dom-ahorro-text); }
 [data-section="metas"]       { --fk-nav-bg: color-mix(in srgb, var(--fk-dom-metas) 6%, transparent);       --fk-nav-text: var(--fk-dom-metas-text); }
 [data-section="apartados"]   { --fk-nav-bg: color-mix(in srgb, var(--fk-dom-ahorro) 6%, transparent);      --fk-nav-text: var(--fk-dom-ahorro-text); }
 [data-section="inversion"]   { --fk-nav-bg: color-mix(in srgb, var(--fk-dom-inversion) 6%, transparent);   --fk-nav-text: var(--fk-dom-inversion-text); }
@@ -396,52 +397,10 @@
   flex-shrink: 0;
 }
 
-/* ── HUB AHORROS (NAV.B, ADR 024 D4) ─────────────────────────
-   Franja de pestañas compartida por Fondo/Metas/Apartados/Inversión.
-   Son enlaces entre secciones (no tabs ARIA): la actual se marca con
-   aria-current="page" en el HTML estático de cada sección. */
-.hub-tabs {
-  display: flex;
-  gap: var(--fk-space-1);
-  margin-bottom: var(--fk-space-4);
-  border-bottom: 1px solid var(--fk-border-subtle);
-  /* En anchos mínimos (320px) la franja se desplaza en vez de desbordar. */
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.hub-tabs::-webkit-scrollbar {
-  display: none;
-}
-/* DIS.6/C5 (hallazgo H8, reglas R4/R8): medían 66,1x38,6 y son el control
-   con el que se navega entre las cuatro secciones del hub. inline-flex +
-   align-items suben la caja al piso de 44px sin mover el texto ni la
-   línea inferior. */
-.hub-tabs__tab {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding: var(--fk-space-2) var(--fk-space-3);
-  font-size: var(--fk-text-sm);
-  font-weight: var(--fk-font-semibold);
-  color: var(--fk-text-secondary);
-  text-decoration: none;
-  white-space: nowrap;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  transition:
-    color var(--fk-transition-fast),
-    border-color var(--fk-transition-fast);
-}
-.hub-tabs__tab:hover {
-  color: var(--fk-text-primary);
-}
-/* IV.2a: cada pestaña se tiñe con SU propio dominio (Fondo/Ahorro menta,
-   Metas púrpura, Apartados menta compartida, Inversión turquesa), vía el
-   mismo mapeo `--fk-nav-accent` de [data-section="X"] de arriba. */
-.hub-tabs__tab[aria-current="page"] {
-  color: var(--fk-nav-text, var(--fk-text-accent));
-  border-bottom-color: var(--fk-nav-text, var(--fk-text-accent));
-}
+/* La franja `.hub-tabs` (NAV.B, ADR 024 D4) se retiró en DIS.18: existía para
+   saltar entre las cuatro secciones de ahorro sin poder subir, porque el padre
+   no tenía pantalla. Con la casa `#ahorro` construida, cada hija abre con
+   `.section__volver` y saltar de lado deja de ser necesario. */
 .section__sub-header .section__subtitle {
   font-size: var(--fk-text-lg);
   font-weight: var(--fk-font-bold);

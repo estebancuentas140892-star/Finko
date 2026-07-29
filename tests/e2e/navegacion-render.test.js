@@ -62,11 +62,15 @@ test.describe('Render tras navegación (regresión hashchange)', () => {
     ).toHaveText('Sin metas de ahorro', { timeout: 3_000 });
   });
 
-  test('Ahorro muestra empty state al navegar desde Dashboard', async ({ page }) => {
+  test('Fondo de emergencia muestra empty state al entrar desde la casa de Ahorro', async ({ page }) => {
     await saltearOnboardingYIrADash(page);
 
     await page.click('a[href="#ahorro"]');
     await expect(page.locator('#sec-ahorro.active')).toBeVisible();
+
+    // DIS.18: la casa es el destino, y sus filas son la navegación.
+    await page.click('.casa-ahorro__fila[data-vehiculo="fondo"]');
+    await expect(page.locator('#sec-fondo.active')).toBeVisible();
 
     await expect(
       page.locator('#panel-ahorro .fondo-card__pregunta')

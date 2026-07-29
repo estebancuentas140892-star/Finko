@@ -567,7 +567,7 @@ function _renderScoreSalud(resumen) {
   const nudgeFondo = !ahorroData.activo
     ? `<p class="analisis__hint">
         Sin fondo de emergencia: tu base financiera esta expuesta.
-        <a href="#ahorro" class="link">Activarlo suma hasta 25 pts al score.</a>
+        <a href="#fondo" class="link">Activarlo suma hasta 25 pts al score.</a>
       </p>`
     : '';
 

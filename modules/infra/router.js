@@ -4,6 +4,10 @@
  * Contract: sections have id="sec-{hash}" and use .active class.
  */
 
+// `ahorro` es la casa de las cuatro modalidades (DIS.18) y `fondo` el fondo de
+// emergencia, que hasta entonces ocupaba `ahorro`. Un bookmark viejo a #ahorro
+// llega a la casa, que enlaza al fondo en su primera fila: no se pierde, sube
+// un nivel. Por eso no hay REDIRECTS para este cambio.
 const SECTIONS = new Map([
   ['dash',        'sec-dash'],
   ['movimientos', 'sec-movimientos'],
@@ -13,6 +17,7 @@ const SECTIONS = new Map([
   ['personales',  'sec-personales'],
   ['tesoreria',   'sec-tesoreria'],
   ['ahorro',      'sec-ahorro'],
+  ['fondo',       'sec-fondo'],
   ['metas',       'sec-metas'],
   ['apartados',   'sec-apartados'],
   ['inversion',   'sec-inversion'],

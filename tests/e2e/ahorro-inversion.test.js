@@ -97,8 +97,11 @@ test.describe('Ahorro - fondo de emergencia (J.1)', () => {
   // A.1 - Empty state --------------------------------------------------------
 
   test('muestra el empty state al navegar desde Dashboard', async ({ page }) => {
+    // DIS.18: se entra por la casa de Ahorro, y el fondo es su primera fila.
     await page.click('a[href="#ahorro"]');
     await expect(page.locator('#sec-ahorro.active')).toBeVisible({ timeout: 5_000 });
+    await page.click('.casa-ahorro__fila[data-vehiculo="fondo"]');
+    await expect(page.locator('#sec-fondo.active')).toBeVisible({ timeout: 5_000 });
 
     await expect(
       page.locator('#panel-ahorro .fondo-card__pregunta')
@@ -111,8 +114,11 @@ test.describe('Ahorro - fondo de emergencia (J.1)', () => {
   // A.2 - Activar fondo: modal → form → hero --------------------------------
 
   test('activar fondo: modal abre, form se envía, hero muestra el monto base', async ({ page }) => {
+    // DIS.18: se entra por la casa de Ahorro, y el fondo es su primera fila.
     await page.click('a[href="#ahorro"]');
     await expect(page.locator('#sec-ahorro.active')).toBeVisible({ timeout: 5_000 });
+    await page.click('.casa-ahorro__fila[data-vehiculo="fondo"]');
+    await expect(page.locator('#sec-fondo.active')).toBeVisible({ timeout: 5_000 });
 
     // Abrir modal de activación
     await page.click('[data-action="ahorro-activar-fondo"]');
@@ -137,8 +143,11 @@ test.describe('Ahorro - fondo de emergencia (J.1)', () => {
 
   test('registrar aporte: aparece en historial y el hero suma el monto', async ({ page }) => {
     // Precondición: activar fondo con $500.000 de base
+    // DIS.18: se entra por la casa de Ahorro, y el fondo es su primera fila.
     await page.click('a[href="#ahorro"]');
     await expect(page.locator('#sec-ahorro.active')).toBeVisible({ timeout: 5_000 });
+    await page.click('.casa-ahorro__fila[data-vehiculo="fondo"]');
+    await expect(page.locator('#sec-fondo.active')).toBeVisible({ timeout: 5_000 });
     await page.click('[data-action="ahorro-activar-fondo"]');
     await page.waitForSelector('#modal-ahorro[data-open]', { timeout: 5_000 });
     const formFondo = page.locator('#modal-ahorro-body form#form-fondo');
@@ -170,8 +179,11 @@ test.describe('Ahorro - fondo de emergencia (J.1)', () => {
 
   test('fondo persiste tras recarga de página', async ({ page }) => {
     // Activar fondo con $300.000
+    // DIS.18: se entra por la casa de Ahorro, y el fondo es su primera fila.
     await page.click('a[href="#ahorro"]');
     await expect(page.locator('#sec-ahorro.active')).toBeVisible({ timeout: 5_000 });
+    await page.click('.casa-ahorro__fila[data-vehiculo="fondo"]');
+    await expect(page.locator('#sec-fondo.active')).toBeVisible({ timeout: 5_000 });
     await page.click('[data-action="ahorro-activar-fondo"]');
     await page.waitForSelector('#modal-ahorro[data-open]', { timeout: 5_000 });
     const formFondo = page.locator('#modal-ahorro-body form#form-fondo');
@@ -183,10 +195,10 @@ test.describe('Ahorro - fondo de emergencia (J.1)', () => {
     // Esperar que el debounce de save() (200ms) complete
     await page.waitForTimeout(400);
 
-    // Recargar: el hash #ahorro se conserva, la sección se reactiva al bootear.
+    // Recargar: el hash #fondo se conserva, la sección se reactiva al bootear.
     // No esperamos #saldo-total porque vive en el dashboard (no activo aquí).
     await page.reload();
-    await expect(page.locator('#sec-ahorro.active')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#sec-fondo.active')).toBeVisible({ timeout: 10_000 });
 
     // El hero debe mostrar los mismos datos
     await expect(page.locator('.fondo-card')).toBeVisible({ timeout: 3_000 });

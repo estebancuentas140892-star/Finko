@@ -519,28 +519,27 @@
     padding: var(--fk-space-4) var(--fk-space-5);
   }
 
-  /* ── DIS.12 (hallazgo A1, regla R54): la barra del consolidado recupera su
-     pista ──────────────────────────────────────────────────────────────────
-     `.ahorro-total__item` reparte la fila en `minmax(7rem, auto) 1fr auto auto`
-     y la barra es la columna elástica: se queda con el sobrante. Medido a
-     390px, las cuatro pistas salían de 13, 35, 48 y 52px, porque cada fila
-     tiene un nombre y un monto de largo distinto. Consecuencia: el relleno del
-     16% (8px) se dibujaba MÁS LARGO que el del 51% (7px), o sea que la barra
-     que existe para mostrar la proporción mostraba lo contrario. En dos
-     renglones la pista es la misma para las cuatro filas y la proporción
-     vuelve a coincidir con el porcentaje escrito. Desktop no cambia: allí el
-     `1fr` tiene ancho de sobra. */
-  .ahorro-total__item {
-    grid-template-columns: 1fr auto auto;
+  /* ── DIS.18: la fila de la casa de Ahorro en móvil ────────────────────────
+     Las barras de participación se retiraron con `.ahorro-total` (la regla R54
+     que las medía a 390px ya no tiene sujeto). Lo que queda por cuidar es el
+     ancho: nombre + propósito y monto + estado en la misma línea aprietan las
+     dos columnas de texto. El chevron cede su columna (la fila entera ya es el
+     enlace, así que no informa nada que la flecha de vuelta no diga) y el
+     propósito pasa a ocupar el ancho completo bajo el nombre. */
+  .casa-ahorro__fila {
+    grid-template-columns: auto 1fr auto;
     grid-template-areas:
-      "nombre monto link"
-      "barra  barra barra";
-    row-gap: var(--fk-space-1);
+      "ico nombre    cifras"
+      "ico proposito cifras";
+    column-gap: var(--fk-space-3);
+    row-gap: 2px;
   }
-  .ahorro-total__nombre { grid-area: nombre; }
-  .ahorro-total__monto  { grid-area: monto; }
-  .ahorro-total__link   { grid-area: link; }
-  .ahorro-total__barra  { grid-area: barra; }
+  .casa-ahorro__ico       { grid-area: ico; }
+  .casa-ahorro__cuerpo    { display: contents; }
+  .casa-ahorro__nombre    { grid-area: nombre; }
+  .casa-ahorro__proposito { grid-area: proposito; }
+  .casa-ahorro__cifras    { grid-area: cifras; }
+  .casa-ahorro__chevron   { display: none; }
 }
 
 /* ── MÓVIL PEQUEÑO (< 360px) - iPhone SE 1ª gen, dispositivos legacy ─ */

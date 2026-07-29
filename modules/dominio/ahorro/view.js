@@ -13,7 +13,8 @@ import {
   mesesDeColchon,
   calcularMontoTotalFondo,
   ordenarAportesPorFecha,
-  consolidarAhorro,
+  casaAhorro,
+  diasAlProximoApartado,
   nivelesFondo,
   mesesEnPalabras,
   fechaCobertura,
@@ -22,21 +23,6 @@ import {
   META_MESES_MIN,
   META_MESES_MAX,
 } from './logic.js';
-
-// Mapa clave de vehículo → sección de destino + símbolo del sprite. Solo
-// routing/UI, no lógica.
-//
-// DIS.12 (hallazgo A2): antes eran emoji del sistema operativo
-// (🛡️🎯📦📈), glifos que traen su propio color fuera de los tokens, su propio
-// peso y su propia caja, y que no responden al tema. El sprite ya tiene los
-// cuatro símbolos exactos: los mismos que usan la pestaña del hub y la teja de
-// cada sección. El color de cada uno lo pone `domain.css` por `data-vehiculo`.
-const _VEHICULO_META = {
-  fondo:       { seccion: 'ahorro',    icono: 'ahorro' },
-  metas:       { seccion: 'metas',     icono: 'metas' },
-  apartados:   { seccion: 'apartados', icono: 'apartados' },
-  inversiones: { seccion: 'inversion', icono: 'inversion' },
-};
 
 // ── RENDER PRINCIPAL ─────────────────────────────────────────────
 
@@ -67,92 +53,105 @@ export function renderAhorro(gastosFijosMensuales, tasaAhorro = null, sugerencia
   el.innerHTML = _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia);
 }
 
-// ── CONSOLIDADO DE AHORRO (F6, cabecera del hub Ahorros en NAV.B) ─
+// ── CASA DE AHORRO (DIS.18, ADR 009 restaurado) ──────────────────
 
 /**
- * Renderiza el total de ahorro repartido entre los cuatro vehículos (fondo,
- * metas, apartados, inversiones) en cada slot `[data-hub-consolidado]`: es la
- * cabecera común del hub Ahorros (ADR 024 D4), visible en las secciones
- * Fondo de emergencia, Metas, Apartados e Inversión. Solo lectura.
+ * Renderiza la casa de Ahorro en `#panel-casa-ahorro`: el total guardado y las
+ * cuatro modalidades como filas navegables.
+ *
+ * Antes de DIS.18 este contenido era `renderResumenAhorroConsolidado()`, que
+ * llenaba un slot idéntico en las cuatro secciones hijas. El bloque no tenía
+ * dónde vivir: es el resumen de un padre que Finko nunca construyó, así que se
+ * repetía 316px en cada hija y arrastraba una barra de pestañas que existía solo
+ * para saltar de lado sin poder subir. Ahora se muestra **una vez y como
+ * destino**: las filas dejan de ser un desglose de solo lectura con un enlace de
+ * 18px y pasan a ser la navegación, con área táctil de fila completa.
  *
  * Lee S directamente (permitido para un view), pero NO importa otros dominios:
  * suma inline los montos de cada slice, igual que compromisos/views/dashboard.js
  * lee S.personales y S.apartados sin importar esos módulos (regla ADN #10).
- * Los slots viven en el shell (index.html), no dentro de otro dominio.
  *
- * Cada slot declara en `data-hub-consolidado` la sección donde vive: la fila
- * de ese vehículo omite su enlace "Ver" (ya estás ahí). Se oculta cuando el
- * total es 0 (patrón [hidden] del resto de paneles). No-op sin slots.
+ * Las cuatro filas se muestran siempre, también en cero: una modalidad que no
+ * aparece no se puede descubrir, y esta es la única pantalla donde los cuatro
+ * nombres conviven. Respeta el ojo de privacidad de Inicio (IN.2).
+ *
+ * @param {number} gastosFijosMensuales COP/mes calculado por index.js: el estado
+ *                                      del fondo se mide en meses cubiertos.
  */
-export function renderResumenAhorroConsolidado() {
-  const slots = document.querySelectorAll('[data-hub-consolidado]');
-  if (slots.length === 0) return;
+export function renderCasaAhorro(gastosFijosMensuales = 0) {
+  const el = document.getElementById('panel-casa-ahorro');
+  if (!el) return;
 
   const fondo = S.ahorro?.fondoEmergencia ?? { activo: false };
   const fondoTotal = fondo.activo
     ? calcularMontoTotalFondo(fondo.montoActual, Array.isArray(S.ahorro?.aportes) ? S.ahorro.aportes : [])
     : 0;
 
-  const metasTotal = (Array.isArray(S.metas) ? S.metas : [])
-    .filter(m => m.completada !== true)
-    .reduce((sum, m) => sum + (Number(m.montoActual) || 0), 0);
+  const metas = (Array.isArray(S.metas) ? S.metas : []).filter(m => m.completada !== true);
+  const metasTotal = metas.reduce((sum, m) => sum + (Number(m.montoActual) || 0), 0);
 
-  const apartadosTotal = (Array.isArray(S.apartados) ? S.apartados : [])
-    .reduce((sum, a) => sum + (Number(a.montoActual) || 0), 0);
+  const apartados = Array.isArray(S.apartados) ? S.apartados : [];
+  const apartadosTotal = apartados.reduce((sum, a) => sum + (Number(a.montoActual) || 0), 0);
 
-  const inversionesTotal = (Array.isArray(S.inversiones) ? S.inversiones : [])
-    .reduce((sum, i) => sum + (Number(i.monto) || 0), 0);
+  const inversiones = Array.isArray(S.inversiones) ? S.inversiones : [];
+  const inversionesTotal = inversiones.reduce((sum, i) => sum + (Number(i.monto) || 0), 0);
 
-  const { total, desglose } = consolidarAhorro({
-    fondo:       fondoTotal,
-    metas:       metasTotal,
-    apartados:   apartadosTotal,
-    inversiones: inversionesTotal,
+  const { total, filas } = casaAhorro({
+    montos: {
+      fondo:       fondoTotal,
+      metas:       metasTotal,
+      apartados:   apartadosTotal,
+      inversiones: inversionesTotal,
+    },
+    mesesCubiertos:      fondo.activo ? mesesDeColchon(fondoTotal, gastosFijosMensuales) : null,
+    metasEnCurso:        metas.length,
+    diasProximoApartado: diasAlProximoApartado(apartados, hoy()),
+    inversionesAbiertas: inversiones.length,
   });
 
-  for (const el of slots) {
-    if (total <= 0) {
-      el.innerHTML = '';
-      el.hidden = true;
-      continue;
-    }
-    el.hidden = false;
-    el.innerHTML = _htmlConsolidado(total, desglose, el.dataset.hubConsolidado);
-  }
+  el.innerHTML = _htmlCasaAhorro(total, filas);
 }
 
 /**
- * HTML del consolidado para un slot del hub.
+ * HTML de la casa: cabecera con el total y una fila por modalidad.
+ *
+ * El título dice "Todo lo que tienes guardado" y ya no necesita el subtítulo que
+ * enumeraba las cuatro fuentes: las cuatro filas están justo debajo. La fila
+ * entera es el enlace, así que el chevron es decorativo y el nombre accesible lo
+ * arma el `aria-label` con la modalidad y su estado.
+ *
  * @param {number} total
- * @param {Array<{clave:string, label:string, monto:number, pct:number}>} desglose
- * @param {string} seccionActual - sección donde vive el slot (omite su enlace).
+ * @param {Array<{clave:string, seccion:string, icono:string, label:string, proposito:string, monto:number, estado:string}>} filas
  */
-function _htmlConsolidado(total, desglose, seccionActual) {
-  const filas = desglose.map(d => {
-    const meta = _VEHICULO_META[d.clave] ?? { seccion: 'ahorro', icono: 'ahorro' };
-    const enlace = meta.seccion === seccionActual
-      ? ''
-      : `<a href="#${meta.seccion}" class="ahorro-total__link" aria-label="Ir a ${_esc(d.label)}">Ver →</a>`;
-    return `
-      <li class="ahorro-total__item" data-vehiculo="${_esc(d.clave)}">
-        <span class="ahorro-total__nombre">${icon(meta.icono, 'icon ahorro-total__ico')} ${_esc(d.label)}</span>
-        <span class="ahorro-total__barra" aria-hidden="true">
-          <span class="ahorro-total__barra-fill" style="width:${d.pct}%"></span>
-        </span>
-        <span class="ahorro-total__monto">${f(d.monto)} <span class="ahorro-total__pct">${d.pct}%</span></span>
-        ${enlace}
-      </li>`;
-  }).join('');
+function _htmlCasaAhorro(total, filas) {
+  const oculto = S.config?.ocultarSaldo === true;
+  const m = (n) => oculto ? SALDO_MASCARA_CUENTA : f(n);
+
+  const html = filas.map(fila => `
+      <li>
+        <a class="casa-ahorro__fila" href="#${_esc(fila.seccion)}" data-vehiculo="${_esc(fila.clave)}"
+           aria-label="${_esc(fila.label)}: ${_esc(fila.estado)}">
+          ${icon(fila.icono, 'icon casa-ahorro__ico')}
+          <span class="casa-ahorro__cuerpo">
+            <span class="casa-ahorro__nombre">${_esc(fila.label)}</span>
+            <span class="casa-ahorro__proposito">${_esc(fila.proposito)}</span>
+          </span>
+          <span class="casa-ahorro__cifras">
+            <span class="casa-ahorro__monto">${m(fila.monto)}</span>
+            <span class="casa-ahorro__estado">${_esc(fila.estado)}</span>
+          </span>
+          ${icon('chevron-right', 'icon casa-ahorro__chevron')}
+        </a>
+      </li>`).join('');
 
   return `
-    <section class="ahorro-total" aria-label="Tu ahorro total">
-      <header class="ahorro-total__header">
-        <p class="ahorro-total__label">Tu ahorro total</p>
-        <p class="ahorro-total__valor">${f(total)}</p>
-        <p class="ahorro-total__sub">Suma de fondo, metas, apartados e inversiones.</p>
+    <section class="casa-ahorro" aria-labelledby="casa-ahorro-total">
+      <header class="casa-ahorro__header">
+        <p class="casa-ahorro__label">Todo lo que tienes guardado</p>
+        <p class="casa-ahorro__valor" id="casa-ahorro-total">${oculto ? SALDO_MASCARA_CUENTA : f(total)}</p>
       </header>
-      <ul class="ahorro-total__lista" role="list">
-        ${filas}
+      <ul class="casa-ahorro__lista" role="list">
+        ${html}
       </ul>
     </section>`;
 }

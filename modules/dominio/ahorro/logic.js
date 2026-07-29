@@ -99,35 +99,161 @@ export function calcularTasaAhorro(ingresos, gastos) {
   return Math.round(((ing - gas) / ing) * 100);
 }
 
-// ── CONSOLIDADO DE AHORRO (F6) ───────────────────────────────────
+// ── CASA DE AHORRO (DIS.18, ADR 009 restaurado) ──────────────────
 
 /**
- * Consolida en una sola vista cuánto tiene el usuario guardado a través de los
- * cuatro vehículos que Finko ya rastrea: fondo de emergencia, metas, apartados
- * e inversiones. Función pura: recibe los totales ya sumados (el caller los lee
- * de S sin que este dominio importe a otro, regla ADN #10).
+ * Las cuatro modalidades de ahorro, con su propósito y su unidad.
  *
- * @param {{ fondo?: number, metas?: number, apartados?: number, inversiones?: number }} [montos]
+ * El propósito no es decoración: la casa es **la única pantalla donde los cuatro
+ * nombres conviven**, así que es el único lugar donde la diferencia se puede
+ * enseñar comparando. Hoy esa explicación vive repartida en los estados vacíos
+ * de Metas y Apartados, que se remiten entre sí, o sea en la pantalla a la que
+ * el usuario llegó equivocado.
+ *
+ * `seccion` es el hash de destino, no la clave del dominio: el fondo vive en
+ * `#fondo` desde DIS.18, porque `#ahorro` pasó a ser esta casa.
+ */
+export const MODALIDADES_AHORRO = [
+  {
+    clave: 'fondo', seccion: 'fondo', icono: 'ahorro', label: 'Fondo de emergencia',
+    proposito: 'Para cuando algo se dañe o te quedes sin ingresos',
+  },
+  {
+    clave: 'metas', seccion: 'metas', icono: 'metas', label: 'Metas',
+    proposito: 'Para algo que quieres comprar o hacer',
+  },
+  {
+    clave: 'apartados', seccion: 'apartados', icono: 'apartados', label: 'Apartados',
+    proposito: 'Para pagos que ya sabes que llegan',
+  },
+  {
+    clave: 'inversiones', seccion: 'inversion', icono: 'inversion', label: 'Inversión',
+    proposito: 'Dinero que pusiste a crecer',
+  },
+];
+
+/**
+ * Las cuatro filas de la casa de Ahorro: cuánto hay en cada modalidad, para qué
+ * sirve y en qué va, cada una en **su propia unidad**.
+ *
+ * Antes de DIS.18 esto era `consolidarAhorro()`, que ordenaba por monto y
+ * escondía las modalidades en cero: servía para un desglose de solo lectura
+ * repetido en cuatro pantallas. Acá las filas **son la navegación**, así que el
+ * orden es fijo (el que enseña la taxonomía, del más urgente al más lejano) y
+ * ninguna se esconde: una modalidad que no aparece no se puede descubrir.
+ *
+ * El estado en la unidad de cada sección (meses cubiertos, metas en curso, días
+ * al próximo cobro, inversiones abiertas) es lo que permite decidir a dónde
+ * entrar sin entrar. Función pura: recibe totales y conteos ya calculados, así
+ * que este dominio no importa a ninguno de los otros tres (regla ADN #10).
+ *
+ * @param {{
+ *   montos?: { fondo?: number, metas?: number, apartados?: number, inversiones?: number },
+ *   mesesCubiertos?: number|null,
+ *   metasEnCurso?: number,
+ *   diasProximoApartado?: number|null,
+ *   inversionesAbiertas?: number,
+ * }} [datos]
  * @returns {{
  *   total: number,
- *   desglose: Array<{ clave: string, label: string, monto: number, pct: number }>,
+ *   filas: Array<{
+ *     clave: string, seccion: string, icono: string, label: string,
+ *     proposito: string, monto: number, estado: string,
+ *   }>,
  * }}
- *   - desglose excluye los vehículos en 0 y se ordena de mayor a menor monto.
- *   - pct es la participación de cada vehículo en el total (entero 0-100).
  */
-export function consolidarAhorro({ fondo = 0, metas = 0, apartados = 0, inversiones = 0 } = {}) {
-  const items = [
-    { clave: 'fondo',       label: 'Fondo de emergencia', monto: Math.max(0, Number(fondo)       || 0) },
-    { clave: 'metas',       label: 'Metas',               monto: Math.max(0, Number(metas)       || 0) },
-    { clave: 'apartados',   label: 'Apartados',           monto: Math.max(0, Number(apartados)   || 0) },
-    { clave: 'inversiones', label: 'Inversiones',         monto: Math.max(0, Number(inversiones) || 0) },
-  ];
-  const total = items.reduce((sum, i) => sum + i.monto, 0);
-  const desglose = items
-    .filter(i => i.monto > 0)
-    .map(i => ({ ...i, pct: total > 0 ? Math.round((i.monto / total) * 100) : 0 }))
-    .sort((a, b) => b.monto - a.monto);
-  return { total, desglose };
+export function casaAhorro({
+  montos = {}, mesesCubiertos = null, metasEnCurso = 0,
+  diasProximoApartado = null, inversionesAbiertas = 0,
+} = {}) {
+  const limpio = (n) => Math.max(0, Number(n) || 0);
+  const porClave = {
+    fondo:       limpio(montos.fondo),
+    metas:       limpio(montos.metas),
+    apartados:   limpio(montos.apartados),
+    inversiones: limpio(montos.inversiones),
+  };
+
+  const estados = {
+    fondo:       _estadoFondo(mesesCubiertos),
+    metas:       _estadoMetas(metasEnCurso),
+    apartados:   _estadoApartados(diasProximoApartado, porClave.apartados),
+    inversiones: _estadoInversion(inversionesAbiertas),
+  };
+
+  const filas = MODALIDADES_AHORRO.map(m => ({
+    ...m, monto: porClave[m.clave], estado: estados[m.clave],
+  }));
+
+  return { total: filas.reduce((sum, fila) => sum + fila.monto, 0), filas };
+}
+
+/**
+ * Días que faltan para el apartado que se cobra primero.
+ *
+ * Recibe la lista de apartados como dato (no importa el dominio Apartados,
+ * regla ADN #10, igual que `_gastosFijosMensuales()` en index.js replica el
+ * factor de frecuencia de compromisos). Solo mira los que tienen fecha: un
+ * apartado sin `fechaObjetivo` no tiene próximo cobro que anunciar.
+ *
+ * @param {Array<{ fechaObjetivo?: string, activo?: boolean }>} apartados
+ * @param {string} hoyISO YYYY-MM-DD.
+ * @returns {number|null} negativo si el más próximo ya venció; null si ninguno tiene fecha.
+ */
+export function diasAlProximoApartado(apartados, hoyISO) {
+  if (!Array.isArray(apartados) || !hoyISO || !/^\d{4}-\d{2}-\d{2}$/.test(hoyISO)) return null;
+  const base = new Date(`${hoyISO}T12:00:00Z`);
+  if (isNaN(base)) return null;
+
+  let minimo = null;
+  for (const a of apartados) {
+    if (!a || a.activo === false) continue;
+    const fecha = a.fechaObjetivo;
+    if (typeof fecha !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) continue;
+    const d = new Date(`${fecha}T12:00:00Z`);
+    if (isNaN(d)) continue;
+    const dias = Math.round((d - base) / 86_400_000);
+    if (minimo === null || dias < minimo) minimo = dias;
+  }
+  return minimo;
+}
+
+/** Estado del fondo, en la unidad de su sección: tiempo cubierto (DIS.16). */
+function _estadoFondo(mesesCubiertos) {
+  const meses = Number(mesesCubiertos);
+  if (!Number.isFinite(meses) || meses <= 0) return 'sin empezar';
+  return `${mesesEnPalabras(meses)} cubiertos`;
+}
+
+/** Estado de Metas: cuántas están en curso (las cumplidas ya no piden nada). */
+function _estadoMetas(metasEnCurso) {
+  const n = Math.max(0, Math.round(Number(metasEnCurso) || 0));
+  if (n === 0) return 'ninguna todavía';
+  return n === 1 ? '1 en curso' : `${n} en curso`;
+}
+
+/**
+ * Estado de Apartados: cuándo llega el próximo cobro, que es su unidad (DIS.15).
+ * Con dinero apartado pero sin fecha por delante, se dice eso y no un plazo
+ * inventado. `dias` negativo significa vencido: eso es lo que hay que ver.
+ */
+function _estadoApartados(diasProximoApartado, monto) {
+  // `Number(null)` es 0, y 0 días significa "vence hoy": el chequeo de tipo
+  // tiene que ir antes que la conversión o un apartado sin fecha se anuncia
+  // como si venciera hoy.
+  const dias = typeof diasProximoApartado === 'number' ? diasProximoApartado : NaN;
+  if (!Number.isFinite(dias)) return monto > 0 ? 'sin fecha próxima' : 'ninguno todavía';
+  if (dias < 0)   return 'uno ya venció';
+  if (dias === 0) return 'uno vence hoy';
+  if (dias === 1) return 'el más próximo, mañana';
+  return `el más próximo, en ${dias} días`;
+}
+
+/** Estado de Inversión: cuántas hay abiertas. */
+function _estadoInversion(inversionesAbiertas) {
+  const n = Math.max(0, Math.round(Number(inversionesAbiertas) || 0));
+  if (n === 0) return 'ninguna todavía';
+  return n === 1 ? '1 inversión' : `${n} inversiones`;
 }
 
 // ── NIVELES DE PROTECCIÓN (DIS.16, arquitectura I+H) ─────────────

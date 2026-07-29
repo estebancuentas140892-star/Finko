@@ -33,7 +33,7 @@ import {
 import {
   renderAhorro, renderFormFondo,
   renderFormAporte, renderFormCompromisoMensual,
-  renderResumenAhorroConsolidado, renderCajaSugerencia,
+  renderCasaAhorro, renderCajaSugerencia,
 } from './view.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 
@@ -477,21 +477,21 @@ function _guardarCompromisoMensual(form) {
  */
 function _renderAhorroBound() {
   renderAhorro(_gastosFijosMensuales(), _calcularTasaAhorro(), _construirSugerenciaAporte());
-  renderResumenAhorroConsolidado();
+  renderCasaAhorro(_gastosFijosMensuales());
 }
 
 /**
- * Render condicionado a la sección visible. El panel del fondo solo existe en
- * #ahorro, pero el consolidado es la cabecera común del hub Ahorros (NAV.B,
- * ADR 024 D4): sus slots [data-hub-consolidado] viven también en Metas,
- * Apartados e Inversión, así que se dibuja al estar en cualquiera de las 4.
+ * Render condicionado a la sección visible. Este dominio dibuja dos pantallas:
+ * la tarjeta del fondo en `#fondo` y la casa de Ahorro en `#ahorro` (DIS.18),
+ * que reemplazó al consolidado repetido en las cuatro hijas del hub.
  */
 function _renderSegunSeccion() {
+  // El banner de propósito conserva la clave 'ahorro': su copy es el del fondo
+  // (el dominio no cambió de nombre, cambió su ruta) y su slot es
+  // #proposito-ahorro, que sigue viviendo dentro de la sección del fondo.
   renderBannerProposito('ahorro', _tieneDatosAhorro());
-  renderSmart(_renderAhorroBound, 'ahorro');
-  renderSmart(renderResumenAhorroConsolidado, 'metas');
-  renderSmart(renderResumenAhorroConsolidado, 'apartados');
-  renderSmart(renderResumenAhorroConsolidado, 'inversion');
+  renderSmart(_renderAhorroBound, 'fondo');
+  renderSmart(() => renderCasaAhorro(_gastosFijosMensuales()), 'ahorro');
 }
 
 export function initAhorro() {
@@ -505,7 +505,7 @@ export function initAhorro() {
 
   // El objetivo del fondo depende de gastos fijos: re-render ante cambios en
   // ahorro, compromisos, ingresos o gastos (la tasa de ahorro usa los 3 últimos).
-  // metas/apartados/inversiones alimentan el consolidado de ahorro (F6).
+  // metas/apartados/inversiones alimentan las filas de la casa de Ahorro (DIS.18).
   EventBus.on('state:change', ({ section }) => {
     if (
       section === 'ahorro'      ||

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { S } from '../../modules/core/state.js';
 import { initAhorro } from '../../modules/dominio/ahorro/index.js';
 import { dispatch } from '../../modules/ui/actions.js';
+import { SALDO_MASCARA_CUENTA } from '../../modules/infra/render.js';
 import {
   calcularObjetivoFondo,
   calcularProgresoFondo,
@@ -23,8 +24,10 @@ import {
   normalizarMontoAporte,
   validarCompromisoMensual,
   normalizarCompromisoMensual,
-  // F6
-  consolidarAhorro,
+  // F6 + DIS.18
+  casaAhorro,
+  diasAlProximoApartado,
+  MODALIDADES_AHORRO,
   // AH.2
   calcularAporteSugerido,
   HORIZONTE_FONDO_MESES,
@@ -39,7 +42,7 @@ import {
   renderFormAporte,
   renderFormFondo,
   renderAhorro,
-  renderResumenAhorroConsolidado,
+  renderCasaAhorro,
 } from '../../modules/dominio/ahorro/view.js';
 
 // ── calcularObjetivoFondo ────────────────────────────────────────
@@ -418,34 +421,101 @@ describe('normalizarCompromisoMensual', () => {
   });
 });
 
-// ── consolidarAhorro (F6) ────────────────────────────────────────
+// ── casaAhorro (F6 + DIS.18) ─────────────────────────────────────
 
-describe('consolidarAhorro', () => {
-  it('suma los cuatro vehículos y calcula porcentajes', () => {
-    const r = consolidarAhorro({ fondo: 500_000, metas: 300_000, apartados: 100_000, inversiones: 100_000 });
+describe('casaAhorro', () => {
+  it('suma las cuatro modalidades', () => {
+    const r = casaAhorro({ montos: { fondo: 500_000, metas: 300_000, apartados: 100_000, inversiones: 100_000 } });
     expect(r.total).toBe(1_000_000);
-    // Ordenado de mayor a menor: fondo (50%), metas (30%), apartados (10%), inversiones (10%)
-    expect(r.desglose.map(d => d.clave)).toEqual(['fondo', 'metas', 'apartados', 'inversiones']);
-    expect(r.desglose[0].pct).toBe(50);
-    expect(r.desglose[1].pct).toBe(30);
+    expect(r.filas.map(fila => fila.monto)).toEqual([500_000, 300_000, 100_000, 100_000]);
   });
 
-  it('excluye los vehículos en 0 del desglose', () => {
-    const r = consolidarAhorro({ fondo: 200_000, metas: 0, apartados: 0, inversiones: 50_000 });
-    expect(r.total).toBe(250_000);
-    expect(r.desglose.map(d => d.clave)).toEqual(['fondo', 'inversiones']);
+  it('mantiene el orden fijo de la taxonomía, no el de los montos', () => {
+    const r = casaAhorro({ montos: { fondo: 1, metas: 999_999, apartados: 500, inversiones: 700 } });
+    expect(r.filas.map(fila => fila.clave)).toEqual(['fondo', 'metas', 'apartados', 'inversiones']);
   });
 
-  it('devuelve total 0 y desglose vacío sin montos', () => {
-    const r = consolidarAhorro();
+  it('muestra las cuatro filas también en cero: una modalidad que no aparece no se descubre', () => {
+    const r = casaAhorro();
     expect(r.total).toBe(0);
-    expect(r.desglose).toEqual([]);
+    expect(r.filas).toHaveLength(4);
+    expect(r.filas.map(fila => fila.estado)).toEqual([
+      'sin empezar', 'ninguna todavía', 'ninguno todavía', 'ninguna todavía',
+    ]);
+  });
+
+  it('cada fila lleva su propósito y su destino', () => {
+    const r = casaAhorro();
+    expect(r.filas.every(fila => fila.proposito.length > 0)).toBe(true);
+    expect(r.filas.map(fila => fila.seccion)).toEqual(['fondo', 'metas', 'apartados', 'inversion']);
   });
 
   it('trata negativos y no-numéricos como 0', () => {
-    const r = consolidarAhorro({ fondo: -100, metas: 'abc', apartados: NaN, inversiones: 80_000 });
+    const r = casaAhorro({ montos: { fondo: -100, metas: 'abc', apartados: NaN, inversiones: 80_000 } });
     expect(r.total).toBe(80_000);
-    expect(r.desglose.map(d => d.clave)).toEqual(['inversiones']);
+    expect(r.filas[0].monto).toBe(0);
+  });
+
+  it('el estado del fondo se dice en tiempo cubierto (DIS.16)', () => {
+    const r = casaAhorro({ montos: { fondo: 400_000 }, mesesCubiertos: 1.75 });
+    expect(r.filas[0].estado).toBe('1 mes y 3 semanas cubiertos');
+  });
+
+  it('el estado de Metas cuenta las que están en curso', () => {
+    expect(casaAhorro({ metasEnCurso: 1 }).filas[1].estado).toBe('1 en curso');
+    expect(casaAhorro({ metasEnCurso: 3 }).filas[1].estado).toBe('3 en curso');
+  });
+
+  it('el estado de Apartados es el próximo cobro, y avisa si ya venció', () => {
+    expect(casaAhorro({ diasProximoApartado: 23 }).filas[2].estado).toBe('el más próximo, en 23 días');
+    expect(casaAhorro({ diasProximoApartado: 1 }).filas[2].estado).toBe('el más próximo, mañana');
+    expect(casaAhorro({ diasProximoApartado: 0 }).filas[2].estado).toBe('uno vence hoy');
+    expect(casaAhorro({ diasProximoApartado: -4 }).filas[2].estado).toBe('uno ya venció');
+  });
+
+  it('con dinero apartado pero sin fecha por delante no inventa un plazo', () => {
+    const r = casaAhorro({ montos: { apartados: 300_000 }, diasProximoApartado: null });
+    expect(r.filas[2].estado).toBe('sin fecha próxima');
+  });
+
+  it('el estado de Inversión cuenta las inversiones abiertas', () => {
+    expect(casaAhorro({ inversionesAbiertas: 1 }).filas[3].estado).toBe('1 inversión');
+    expect(casaAhorro({ inversionesAbiertas: 2 }).filas[3].estado).toBe('2 inversiones');
+  });
+
+  it('MODALIDADES_AHORRO apunta al fondo en #fondo, no en #ahorro (la casa)', () => {
+    expect(MODALIDADES_AHORRO.find(m => m.clave === 'fondo').seccion).toBe('fondo');
+  });
+});
+
+// ── diasAlProximoApartado (DIS.18) ───────────────────────────────
+
+describe('diasAlProximoApartado', () => {
+  it('devuelve los días al apartado con la fecha más cercana', () => {
+    const dias = diasAlProximoApartado([
+      { fechaObjetivo: '2026-09-10' },
+      { fechaObjetivo: '2026-08-20' },
+    ], '2026-08-01');
+    expect(dias).toBe(19);
+  });
+
+  it('ignora los apartados sin fecha y los inactivos', () => {
+    const dias = diasAlProximoApartado([
+      { fechaObjetivo: '2026-08-05', activo: false },
+      { montoActual: 100 },
+      { fechaObjetivo: '2026-08-30' },
+    ], '2026-08-01');
+    expect(dias).toBe(29);
+  });
+
+  it('devuelve negativo si el más próximo ya venció', () => {
+    expect(diasAlProximoApartado([{ fechaObjetivo: '2026-07-25' }], '2026-08-01')).toBe(-7);
+  });
+
+  it('devuelve null sin fechas, sin lista o con hoy inválido', () => {
+    expect(diasAlProximoApartado([{ montoActual: 5 }], '2026-08-01')).toBe(null);
+    expect(diasAlProximoApartado(null, '2026-08-01')).toBe(null);
+    expect(diasAlProximoApartado([{ fechaObjetivo: '2026-08-05' }], 'ayer')).toBe(null);
   });
 });
 
@@ -638,36 +708,62 @@ describe('AH.5a: "Registrar aporte" abre el form ya prellenado', () => {
 // Hallazgos A1 a A9 del informe "Auditoría Fondo de emergencia". Todo es
 // markup y CSS: ni logic.js ni el schema cambian.
 
-describe('DIS.12 - consolidado del hub (A2, A1)', () => {
+// DIS.18 reemplaza el consolidado repetido del hub por la casa de Ahorro. Los
+// hallazgos A2 (nada de emoji del sistema) y A8 (el enlace de 18px) del informe
+// de DIS.12 siguen verificados acá: el símbolo del sprite viaja a la fila nueva
+// y el enlace desaparece porque la fila entera es el destino.
+describe('DIS.18 - la casa de Ahorro (A2, A8)', () => {
   beforeEach(() => {
-    document.body.innerHTML = '<div data-hub-consolidado="ahorro"></div>';
+    document.body.innerHTML = '<div id="panel-casa-ahorro"></div>';
+    S.config       = {};
     S.ahorro       = { fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 2_000_000 }, aportes: [] };
     S.metas        = [{ id: 'm1', montoActual: 1_000_000 }];
     S.apartados    = [{ id: 'a1', montoActual: 600_000 }];
     S.inversiones  = [{ id: 'i1', monto: 400_000 }];
-    renderResumenAhorroConsolidado();
+    renderCasaAhorro(1_000_000);
   });
 
-  it('A2: ningún vehículo se identifica con un emoji del sistema operativo', () => {
+  it('el total se muestra una vez, sin el subtítulo que enumeraba las cuatro fuentes', () => {
+    expect(document.querySelectorAll('.casa-ahorro').length).toBe(1);
+    expect(document.querySelector('.casa-ahorro__label').textContent).toBe('Todo lo que tienes guardado');
+    expect(document.body.innerHTML).not.toContain('Suma de fondo, metas, apartados e inversiones');
+  });
+
+  it('A2: ninguna modalidad se identifica con un emoji del sistema operativo', () => {
     expect(document.body.innerHTML).not.toMatch(/\u{1F6E1}|\u{1F3AF}|\u{1F4E6}|\u{1F4C8}/u);
   });
 
   it('A2: cada fila usa el símbolo del sprite que le corresponde', () => {
-    const usos = [...document.querySelectorAll('.ahorro-total__ico use')]
+    const usos = [...document.querySelectorAll('.casa-ahorro__ico use')]
       .map(u => u.getAttribute('href'));
     expect(usos).toEqual(['#i-ahorro', '#i-metas', '#i-apartados', '#i-inversion']);
   });
 
-  it('A2: la fila declara su vehículo, que es de donde el CSS toma el color del dominio', () => {
-    const claves = [...document.querySelectorAll('.ahorro-total__item')]
-      .map(li => li.dataset.vehiculo);
+  it('la fila declara su modalidad, que es de donde el CSS toma el color del dominio', () => {
+    const claves = [...document.querySelectorAll('.casa-ahorro__fila')]
+      .map(a => a.dataset.vehiculo);
     expect(claves).toEqual(['fondo', 'metas', 'apartados', 'inversiones']);
   });
 
-  it('A1: la barra sigue siendo la única que dibuja la proporción, con su porcentaje al lado', () => {
-    const primera = document.querySelector('.ahorro-total__item');
-    expect(primera.querySelector('.ahorro-total__barra-fill').getAttribute('style')).toContain('width:50%');
-    expect(primera.querySelector('.ahorro-total__pct').textContent).toBe('50%');
+  it('A8: la fila entera es el enlace, y el fondo lleva a #fondo', () => {
+    const filas = [...document.querySelectorAll('a.casa-ahorro__fila')];
+    expect(filas.map(a => a.getAttribute('href')))
+      .toEqual(['#fondo', '#metas', '#apartados', '#inversion']);
+    expect(document.querySelector('.ahorro-total__link')).toBe(null);
+  });
+
+  it('cada fila dice para qué sirve su modalidad y en qué va', () => {
+    const primera = document.querySelector('.casa-ahorro__fila');
+    expect(primera.querySelector('.casa-ahorro__proposito').textContent)
+      .toBe('Para cuando algo se dañe o te quedes sin ingresos');
+    expect(primera.querySelector('.casa-ahorro__estado').textContent).toBe('2 meses cubiertos');
+  });
+
+  it('respeta el ojo de privacidad: ni el total ni los montos tocan el DOM', () => {
+    S.config = { ocultarSaldo: true };
+    renderCasaAhorro(1_000_000);
+    expect(document.querySelector('.casa-ahorro__valor').textContent).toBe(SALDO_MASCARA_CUENTA);
+    expect(document.body.innerHTML).not.toContain('4.000.000');
   });
 });
 

@@ -1,20 +1,22 @@
 /**
- * hub-ahorros.test.js - NAV.B: hub "Ahorros" (ADR 024, D4/D5/D6).
+ * hub-ahorros.test.js - la casa de Ahorro (DIS.18) y el menú "Más" v2.
  *
  * Cubre:
- * - Menú "Más" v2 (NAV2.1a, ADR 040): hoja agrupada (Gestión del dinero /
- *   Ahorros / Ajustes + tema), tile activo por dominio, toggle de tema.
- * - Franja de pestañas Fondo/Metas/Apartados/Inversión compartida por las
- *   4 secciones (enlaces, cero cambios de router).
- * - Consolidado de ahorro (ADR 009) como cabecera común del hub.
- * - Renombre de la sección "Ahorro" a "Fondo de emergencia".
- * - Sidebar desktop: grupo "Ahorros" (antes "Crecer"), "Herramientas"
- *   disuelto con Análisis dentro de Seguimiento (antes "Gestión", NAV.C).
+ * - Menú "Más" v2 (NAV2.1a, ADR 040): hoja agrupada, tile activo por dominio,
+ *   toggle de tema. Desde DIS.18 el grupo "Ahorros" y sus 4 tejas se reducen a
+ *   una sola entrada a ancho completo: "Ahorro".
+ * - La casa `#ahorro` (DIS.18, ADR 009 restaurado): el total una sola vez y las
+ *   cuatro modalidades como filas navegables, cada una con su propósito y su
+ *   estado en su propia unidad.
+ * - El fondo de emergencia se muda de `#ahorro` a `#fondo`.
+ * - Cada sección hija abre con "volver a Ahorro" y sin franja de pestañas ni
+ *   card consolidada repetida (las dos se retiraron con DIS.18).
+ * - Sidebar desktop: grupo "Ahorro" con una entrada.
  */
 
 import { test, expect } from '@playwright/test';
 
-/** Estado mínimo sin ahorros: el consolidado debe quedar oculto. */
+/** Estado mínimo sin ahorros: la casa muestra las cuatro filas en cero. */
 async function seedVacio(page) {
   await page.addInitScript(() => {
     localStorage.setItem('fk_v1', JSON.stringify({
@@ -47,12 +49,12 @@ async function seedConAhorros(page) {
   });
 }
 
-// ── MÓVIL: modal Más, pestañas y consolidado ────────────────────────────────
+// ── MÓVIL: menú Más y la casa de Ahorro ─────────────────────────────────────
 
-test.describe('NAV.B - hub Ahorros (móvil)', () => {
+test.describe('DIS.18 - la casa de Ahorro (móvil)', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('el menú Más es una hoja agrupada: Gestión del dinero + Ahorros + Ajustes (NAV2.1a, ADR 040 D1)', async ({ page }) => {
+  test('el menú Más deja un solo grupo rotulado y una entrada de Ahorro (DIS.18)', async ({ page }) => {
     await seedVacio(page);
     await page.goto('/#dash');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
@@ -60,23 +62,22 @@ test.describe('NAV.B - hub Ahorros (móvil)', () => {
     await page.click('.nav-item[data-modal="modal-mas"]');
     await expect(page.locator('#modal-mas[data-open]')).toHaveCount(1);
 
-    // Dos grupos rotulados (revisa el "sin grupos" del ADR 024 D5).
+    // El rótulo "Ahorros" se retira con sus 4 tejas: sobre una sola entrada,
+    // un rótulo de grupo no agrupa nada.
     const grupos = await page.$$eval('#modal-mas .mas-sheet__group-label', els =>
       els.map(e => e.textContent.trim()));
-    expect(grupos).toEqual(['Gestión del dinero', 'Ahorros']);
+    expect(grupos).toEqual(['Gestión del dinero']);
 
-    // 11 tiles: las 4 secciones de ahorro recuperan entrada directa y
-    // Movimientos gana la suya (DIS.6/C6, regla R32).
     const labels = await page.$$eval('#modal-mas .mas-tile__label', els =>
       els.map(e => e.textContent.trim()));
     expect(labels).toEqual([
       'Deudas', 'Mis cuentas', 'Movimientos', 'Me deben', 'Límites de gasto', 'Análisis',
-      'Fondo de emergencia', 'Metas', 'Apartados', 'Inversión',
+      'Ahorro',
       'Ajustes',
     ]);
   });
 
-  test('el tile "Fondo de emergencia" navega al hub (#ahorro) y cierra la hoja', async ({ page }) => {
+  test('el tile "Ahorro" abre la casa (#ahorro) y cierra la hoja', async ({ page }) => {
     await seedVacio(page);
     await page.goto('/#dash');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
@@ -86,7 +87,7 @@ test.describe('NAV.B - hub Ahorros (móvil)', () => {
 
     await expect(page.locator('#modal-mas[data-open]')).toHaveCount(0);
     await expect(page.locator('#sec-ahorro.active')).toBeVisible();
-    await expect(page.locator('#title-ahorro')).toHaveText('Fondo de emergencia');
+    await expect(page.locator('#title-ahorro')).toHaveText('Ahorro');
   });
 
   test('la hoja marca la sección activa y el botón de tema alterna sin cerrarla (NAV2.1a, ADR 040 D2/D3)', async ({ page }) => {
@@ -111,62 +112,82 @@ test.describe('NAV.B - hub Ahorros (móvil)', () => {
     await expect(page.locator('body')).not.toHaveClass(/light-theme/);
   });
 
-  test('la franja de pestañas navega entre las 4 secciones y marca la actual', async ({ page }) => {
-    await seedVacio(page);
+  test('la casa muestra el total una vez y las cuatro modalidades con propósito y estado', async ({ page }) => {
+    await seedConAhorros(page);
     await page.goto('/#ahorro');
     await page.waitForSelector('#sec-ahorro.active', { timeout: 10_000 });
 
-    const tabsAhorro = page.locator('#sec-ahorro .hub-tabs__tab');
-    await expect(tabsAhorro).toHaveCount(4);
-    await expect(page.locator('#sec-ahorro .hub-tabs__tab[aria-current="page"]')).toHaveText('Fondo');
+    await expect(page.locator('.casa-ahorro__label')).toHaveText('Todo lo que tienes guardado');
+    await expect(page.locator('.casa-ahorro__valor')).toHaveText('$1.500.000');
 
-    // Fondo → Metas
-    await page.click('#sec-ahorro .hub-tabs__tab[href="#metas"]');
-    await expect(page.locator('#sec-metas.active')).toBeVisible();
-    await expect(page.locator('#sec-metas .hub-tabs__tab[aria-current="page"]')).toHaveText('Metas');
-
-    // Metas → Apartados → Inversión (la franja está en todas las secciones)
-    await page.click('#sec-metas .hub-tabs__tab[href="#apartados"]');
-    await expect(page.locator('#sec-apartados.active')).toBeVisible();
-    await page.click('#sec-apartados .hub-tabs__tab[href="#inversion"]');
-    await expect(page.locator('#sec-inversion.active')).toBeVisible();
-    await expect(page.locator('#sec-inversion .hub-tabs__tab[aria-current="page"]')).toHaveText('Inversión');
+    const filas = page.locator('#sec-ahorro .casa-ahorro__fila');
+    await expect(filas).toHaveCount(4);
+    await expect(filas.locator('.casa-ahorro__proposito').first())
+      .toHaveText('Para cuando algo se dañe o te quedes sin ingresos');
+    await expect(page.locator('#sec-ahorro .casa-ahorro__fila[data-vehiculo="metas"] .casa-ahorro__estado'))
+      .toHaveText('1 en curso');
   });
 
-  test('el consolidado es la cabecera común: visible en Metas con el total', async ({ page }) => {
+  test('las filas son la navegación: cada una entra a su sección y se puede volver', async ({ page }) => {
+    await seedConAhorros(page);
+    await page.goto('/#ahorro');
+    await page.waitForSelector('#sec-ahorro.active', { timeout: 10_000 });
+
+    // Fila del fondo → #fondo, que es la ruta nueva de la sección.
+    await page.click('#sec-ahorro .casa-ahorro__fila[data-vehiculo="fondo"]');
+    await expect(page.locator('#sec-fondo.active')).toBeVisible();
+    await expect(page.locator('#title-fondo')).toHaveText('Fondo de emergencia');
+
+    // Y desde la hija se puede subir, que es lo que antes no existía.
+    await page.click('#sec-fondo .section__volver');
+    await expect(page.locator('#sec-ahorro.active')).toBeVisible();
+
+    await page.click('#sec-ahorro .casa-ahorro__fila[data-vehiculo="apartados"]');
+    await expect(page.locator('#sec-apartados.active')).toBeVisible();
+    await expect(page.locator('#sec-apartados .section__volver')).toHaveAttribute('href', '#ahorro');
+  });
+
+  test('las cuatro hijas abren sin pestañas y sin la card consolidada repetida', async ({ page }) => {
     await seedConAhorros(page);
     await page.goto('/#metas');
     await page.waitForSelector('#sec-metas.active', { timeout: 10_000 });
 
-    const slot = page.locator('#sec-metas [data-hub-consolidado]');
-    await expect(slot).toBeVisible();
-    await expect(slot.locator('.ahorro-total__valor')).toHaveText('$1.500.000');
+    await expect(page.locator('.hub-tabs')).toHaveCount(0);
+    await expect(page.locator('[data-hub-consolidado]')).toHaveCount(0);
+    // El consolidado existe una sola vez, y no es en una hija.
+    await expect(page.locator('#sec-metas .casa-ahorro')).toHaveCount(0);
+    await expect(page.locator('.casa-ahorro')).toHaveCount(1);
 
-    // La fila del vehículo de la sección actual no lleva enlace "Ver";
-    // las demás sí (aquí: Fondo enlaza a #ahorro, Metas no se enlaza a sí misma).
-    await expect(slot.locator('a[href="#ahorro"]')).toHaveCount(1);
-    await expect(slot.locator('a[href="#metas"]')).toHaveCount(0);
+    for (const hash of ['#fondo', '#apartados', '#inversion']) {
+      await page.evaluate((h) => { window.location.hash = h; }, hash);
+      await expect(page.locator(`${hash.replace('#', '#sec-')}.active .section__volver`)).toHaveCount(1);
+    }
   });
 
-  test('sin ahorros el consolidado queda oculto en todo el hub', async ({ page }) => {
+  test('sin ahorros la casa igual muestra las cuatro filas: lo que no aparece no se descubre', async ({ page }) => {
     await seedVacio(page);
     await page.goto('/#ahorro');
     await page.waitForSelector('#sec-ahorro.active', { timeout: 10_000 });
 
-    await expect(page.locator('#sec-ahorro [data-hub-consolidado]')).toBeHidden();
-
-    await page.click('#sec-ahorro .hub-tabs__tab[href="#apartados"]');
-    await expect(page.locator('#sec-apartados.active')).toBeVisible();
-    await expect(page.locator('#sec-apartados [data-hub-consolidado]')).toBeHidden();
+    await expect(page.locator('.casa-ahorro__valor')).toHaveText('$0');
+    await expect(page.locator('#sec-ahorro .casa-ahorro__fila')).toHaveCount(4);
+    await expect(page.locator('#sec-ahorro .casa-ahorro__fila[data-vehiculo="fondo"] .casa-ahorro__estado'))
+      .toHaveText('sin empezar');
   });
 
-  test('el botón "Más" se resalta al estar en Apartados e Inversión', async ({ page }) => {
+  test('el botón "Más" se resalta y nombra la sección en la casa y en sus hijas', async ({ page }) => {
     await seedVacio(page);
-    await page.goto('/#apartados');
-    await page.waitForSelector('#sec-apartados.active', { timeout: 10_000 });
+    await page.goto('/#ahorro');
+    await page.waitForSelector('#sec-ahorro.active', { timeout: 10_000 });
 
     const masBtn = page.locator('.nav-item[data-modal="modal-mas"]');
     await expect(masBtn).toHaveClass(/active/);
+    await expect(masBtn.locator('.nav-item__label')).toHaveText('Ahorro');
+
+    await page.evaluate(() => { window.location.hash = '#fondo'; });
+    await page.waitForSelector('#sec-fondo.active', { timeout: 5_000 });
+    await expect(masBtn).toHaveClass(/active/);
+    await expect(masBtn.locator('.nav-item__label')).toHaveText('Fondo');
 
     await page.evaluate(() => { window.location.hash = '#inversion'; });
     await page.waitForSelector('#sec-inversion.active', { timeout: 5_000 });
@@ -174,12 +195,12 @@ test.describe('NAV.B - hub Ahorros (móvil)', () => {
   });
 });
 
-// ── DESKTOP: sidebar con grupo "Ahorros" ────────────────────────────────────
+// ── DESKTOP: sidebar con grupo "Ahorro" ─────────────────────────────────────
 
-test.describe('NAV.B - sidebar desktop', () => {
+test.describe('DIS.18 - sidebar desktop', () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
-  test('grupos: diario sin rótulo (NAV2.1b), Seguimiento (con Análisis) y Ahorros; sin "Herramientas"', async ({ page }) => {
+  test('grupos: diario sin rótulo (NAV2.1b), Seguimiento (con Análisis) y Ahorro con una entrada', async ({ page }) => {
     await seedVacio(page);
     await page.goto('/#dash');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
@@ -188,7 +209,7 @@ test.describe('NAV.B - sidebar desktop', () => {
     // nombre queda para lectores de pantalla vía aria-label.
     const grupos = await page.$$eval('#sidebar .nav-group__label', els =>
       els.map(e => e.textContent.trim()));
-    expect(grupos).toEqual(['Seguimiento', 'Ahorros']);
+    expect(grupos).toEqual(['Seguimiento', 'Ahorro']);
     await expect(page.locator('#sidebar [role="group"][aria-label="Uso diario"] a[href="#dash"]'))
       .toHaveCount(1);
 
@@ -199,8 +220,12 @@ test.describe('NAV.B - sidebar desktop', () => {
     const gestion = page.locator('.nav-group', { has: page.locator('#nav-label-gestion') });
     await expect(gestion.locator('a[href="#analisis"]')).toHaveCount(1);
 
-    // La entrada del fondo usa el nombre nuevo de la sección.
-    const fondo = page.locator('#sidebar a[href="#ahorro"] .nav-item__label');
-    await expect(fondo).toHaveText('Fondo de emergencia');
+    // El grupo lo encabeza la casa; las 4 modalidades quedan como atajos de
+    // desktop, y el fondo apunta a su ruta nueva.
+    const ahorros = page.locator('.nav-group', { has: page.locator('#nav-label-ahorros') });
+    await expect(ahorros.locator('a')).toHaveCount(5);
+    await expect(ahorros.locator('a').first()).toHaveAttribute('href', '#ahorro');
+    await expect(ahorros.locator('a[href="#fondo"] .nav-item__label')).toHaveText('Fondo de emergencia');
+    await expect(ahorros.locator('a[href="#ahorro"] .nav-item__label')).toHaveText('Ahorro');
   });
 });

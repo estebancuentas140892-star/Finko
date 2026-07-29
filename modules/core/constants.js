@@ -824,7 +824,7 @@ export function clasificarSeccionEnGrupo(seccion) {
 export const ACCESOS_INICIO = [
   { id: 'tesoreria',   hash: 'tesoreria',   nombre: 'Mis cuentas',      icono: 'i-cuentas' },
   { id: 'compromisos', hash: 'compromisos', nombre: 'Deudas',           icono: 'i-deudas' },
-  { id: 'ahorro',      hash: 'ahorro',      nombre: 'Ahorros',          icono: 'i-ahorro' },
+  { id: 'ahorro',      hash: 'ahorro',      nombre: 'Ahorro',           icono: 'i-ahorro' },
   { id: 'presupuesto', hash: 'presupuesto', nombre: 'Límites de gasto', icono: 'i-presupuesto' },
   { id: 'personales',  hash: 'personales',  nombre: 'Me deben',         icono: 'i-personales' },
   { id: 'analisis',    hash: 'analisis',    nombre: 'Análisis',         icono: 'i-analisis' },

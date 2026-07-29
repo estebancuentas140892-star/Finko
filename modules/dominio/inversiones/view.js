@@ -279,7 +279,7 @@ function _renderAcciones(momento) {
   if (irAlFondo) {
     return `
       <div class="inversion-momento__acciones">
-        <a class="inversion-momento__principal" href="#ahorro">Ir al Fondo de emergencia</a>
+        <a class="inversion-momento__principal" href="#fondo">Ir al Fondo de emergencia</a>
         <button class="btn btn-ghost btn-sm inversion-momento__secundaria" type="button" data-action="inversion-nueva">
           ${_esc(momento.accion)}
         </button>

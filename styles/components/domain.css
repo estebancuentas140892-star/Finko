@@ -3157,119 +3157,118 @@ button.chip:focus-visible {
   padding: 0 var(--fk-space-3) var(--fk-space-3);
 }
 
-/* ── CONSOLIDADO DE AHORRO (F6) ───────────────────────────────── */
-.ahorro-total {
-  background: var(--fk-bg-surface);
-  border: 1px solid var(--fk-border-subtle);
-  border-radius: var(--fk-radius-lg);
-  padding: var(--fk-space-4);
+/* ── CASA DE AHORRO (DIS.18, ADR 009 restaurado) ───────────────
+   Reemplaza a `.ahorro-total`, el consolidado de solo lectura que se repetía
+   en las cuatro secciones hijas del hub. Acá las filas son la navegación, así
+   que se van las barras de participación (el reparto en porcentaje no ayuda a
+   decidir a dónde entrar) y el enlace "Ver" de 18px: la fila entera es el
+   destino. */
+.casa-ahorro__header {
   margin-bottom: var(--fk-space-4);
 }
 
-.ahorro-total__header {
-  margin-bottom: var(--fk-space-3);
-}
-
-.ahorro-total__label {
-  font-size: var(--fk-text-xs);
-  color: var(--fk-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+.casa-ahorro__label {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
   margin: 0;
 }
 
-.ahorro-total__valor {
+.casa-ahorro__valor {
+  font-family: var(--fk-font-mono);
   font-size: var(--fk-text-3xl);
   font-weight: var(--fk-font-bold);
-  color: var(--fk-text-accent);
-  margin: 2px 0;
+  color: var(--fk-text-primary);
+  margin: 2px 0 0;
 }
 
-.ahorro-total__sub {
-  font-size: var(--fk-text-xs);
-  color: var(--fk-text-muted);
-  margin: 0;
-}
-
-.ahorro-total__lista {
+.casa-ahorro__lista {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--fk-space-3);
-}
-
-.ahorro-total__item {
-  display: grid;
-  grid-template-columns: minmax(7rem, auto) 1fr auto auto;
-  align-items: center;
-  gap: var(--fk-space-3);
-}
-
-.ahorro-total__nombre {
-  font-size: var(--fk-text-sm);
-  color: var(--fk-text-primary);
-  display: flex;
-  align-items: center;
   gap: var(--fk-space-2);
+}
+
+/* La fila completa es el enlace (regla R4: área táctil real). El grid deja el
+   propósito y el estado en la segunda línea de cada columna, así que la fila
+   dice cuatro cosas sin cuatro controles: qué es, para qué sirve, cuánto hay y
+   en qué va. */
+.casa-ahorro__fila {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: var(--fk-space-3);
+  min-height: 44px;
+  padding: var(--fk-space-3);
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  text-decoration: none;
+  transition:
+    background var(--fk-transition-fast),
+    border-color var(--fk-transition-fast);
+}
+.casa-ahorro__fila:hover,
+.casa-ahorro__fila:focus-visible {
+  background: var(--fk-bg-hover);
+  border-color: var(--fk-border-strong);
+}
+
+/* Cada modalidad se identifica con el símbolo y el color de su propio dominio,
+   la misma clave que su teja de sección. Apartados comparte el token de
+   ahorro: no tiene uno propio. */
+.casa-ahorro__ico {
+  --fk-icon-size: var(--fk-icon-md);
+  flex-shrink: 0;
+}
+[data-vehiculo="fondo"]       .casa-ahorro__ico { color: var(--fk-dom-ahorro-text); }
+[data-vehiculo="metas"]       .casa-ahorro__ico { color: var(--fk-dom-metas-text); }
+[data-vehiculo="apartados"]   .casa-ahorro__ico { color: var(--fk-dom-ahorro-text); }
+[data-vehiculo="inversiones"] .casa-ahorro__ico { color: var(--fk-dom-inversion-text); }
+
+.casa-ahorro__cuerpo,
+.casa-ahorro__cifras {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   min-width: 0;
 }
 
-/* DIS.12 (hallazgo A2): los cuatro vehículos se identificaban con emoji del
-   sistema operativo. Con el símbolo del sprite el color sale del token de cada
-   dominio, así que el consolidado repite la misma clave de color que las
-   pestañas del hub y la teja de cada sección. Apartados comparte el token de
-   ahorro: no tiene uno propio. */
-.ahorro-total__ico {
-  --fk-icon-size: var(--fk-icon-sm);
-  flex-shrink: 0;
-}
-[data-vehiculo="fondo"]       .ahorro-total__ico { color: var(--fk-dom-ahorro-text); }
-[data-vehiculo="metas"]       .ahorro-total__ico { color: var(--fk-dom-metas-text); }
-[data-vehiculo="apartados"]   .ahorro-total__ico { color: var(--fk-dom-ahorro-text); }
-[data-vehiculo="inversiones"] .ahorro-total__ico { color: var(--fk-dom-inversion-text); }
-
-.ahorro-total__barra {
-  height: 6px;
-  border-radius: var(--fk-radius-full);
-  background: var(--fk-bg-base);
-  overflow: hidden;
+.casa-ahorro__cifras {
+  align-items: flex-end;
+  text-align: right;
 }
 
-.ahorro-total__barra-fill {
-  display: block;
-  height: 100%;
-  background: var(--fk-text-accent);
-  border-radius: var(--fk-radius-full);
+.casa-ahorro__nombre {
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
 }
 
-.ahorro-total__monto {
+.casa-ahorro__proposito {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  line-height: 1.35;
+}
+
+.casa-ahorro__monto {
+  font-family: var(--fk-font-mono);
   font-size: var(--fk-text-sm);
   font-weight: var(--fk-font-medium);
   color: var(--fk-text-primary);
   white-space: nowrap;
 }
 
-.ahorro-total__pct {
+.casa-ahorro__estado {
   font-size: var(--fk-text-xs);
-  color: var(--fk-text-muted);
-  font-weight: var(--fk-font-regular);
+  color: var(--fk-text-secondary);
 }
 
-/* DIS.12 (hallazgo A8, regla R4): el enlace medía 18px de zona activa, el alto
-   de su propia línea, y es lo que se usa para saltar entre los cuatro
-   vehículos de ahorro. El margen negativo deja el dibujo intacto: solo crece
-   la zona sensible. */
-.ahorro-total__link {
-  font-size: var(--fk-text-xs);
-  color: var(--fk-text-accent);
-  text-decoration: none;
-  white-space: nowrap;
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  margin-block: -13px;
+.casa-ahorro__chevron {
+  --fk-icon-size: var(--fk-icon-sm);
+  color: var(--fk-text-muted);
+  flex-shrink: 0;
 }
 
 /* `.list-item--listo` se retiro en DIS.15: el apartado listo ya no es una fila
