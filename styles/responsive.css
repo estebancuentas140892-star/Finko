@@ -237,6 +237,11 @@
      especificidad (mismo motivo que G2 en Gastos). */
   .apartado-card__secundaria { min-height: 44px; }
 
+  /* DIS.16, mismo motivo de capa: "Editar" y "Subir mi meta a 6 meses" son la
+     accion secundaria de la tarjeta del fondo y siguen siendo `.btn-sm`, que
+     mide 36px desde este mismo archivo. */
+  .fondo-card__secundaria { min-height: 44px; }
+
   /* DIS.17, mismo motivo de capa: "Registrar otra inversión" baja a secundaria
      cuando la tarjeta del momento ofrece primero ir al Fondo de emergencia, y
      como `.btn-sm` mediría 36px. */

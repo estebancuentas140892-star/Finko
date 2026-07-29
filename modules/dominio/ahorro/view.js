@@ -4,9 +4,9 @@
  */
 
 import { S } from '../../core/state.js';
-import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
+import { f, fechaLegible, formateadorFecha, hoy, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt, tejaCategoria } from '../../infra/icons.js';
-import { progressRing } from '../../infra/svg.js';
+import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import {
   calcularObjetivoFondo,
   calcularProgresoFondo,
@@ -14,6 +14,11 @@ import {
   calcularMontoTotalFondo,
   ordenarAportesPorFecha,
   consolidarAhorro,
+  nivelesFondo,
+  mesesEnPalabras,
+  fechaCobertura,
+  bloquesCobertura,
+  NIVELES_FONDO,
   META_MESES_MIN,
   META_MESES_MAX,
 } from './logic.js';
@@ -59,7 +64,7 @@ export function renderAhorro(gastosFijosMensuales, tasaAhorro = null, sugerencia
     return;
   }
 
-  el.innerHTML = _renderHero(fondo, gastosFijosMensuales, tasaAhorro, sugerencia);
+  el.innerHTML = _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia);
 }
 
 // ── CONSOLIDADO DE AHORRO (F6, cabecera del hub Ahorros en NAV.B) ─
@@ -154,89 +159,284 @@ function _htmlConsolidado(total, desglose, seccionActual) {
 
 // ── EMPTY STATE ──────────────────────────────────────────────────
 
+/**
+ * Estado 1 (DIS.16): sin fondo todavía. La tarjeta no existe, así que hay que
+ * explicar para qué sirve, y los tres niveles aparecen desde el primer momento
+ * apagados: son la promesa de la sección. La última línea traduce el primer
+ * nivel a pesos con los datos que Finko ya tiene, así que la decisión de
+ * activarlo no se toma a ciegas.
+ */
 function _renderEmptyState(gastosFijosMensuales) {
-  const objetivoPreview = calcularObjetivoFondo(gastosFijosMensuales, 3);
-  const preview = objetivoPreview > 0
-    ? `<p class="empty-state__tip">${icon('analisis')} Con tus gastos fijos actuales, 3 meses de colchón equivalen a <strong>${f(objetivoPreview)}</strong>.</p>`
-    : `<p class="empty-state__tip">${icon('lightbulb')} Tip: registra tus gastos fijos (arriendo, servicios, suscripciones) desde Calendario para que Finko calcule cuánto necesitas en tu fondo.</p>`;
+  const primerNivel = calcularObjetivoFondo(gastosFijosMensuales, NIVELES_FONDO[0].meses);
+
+  const nivelesHtml = NIVELES_FONDO.map(n => `
+        <li class="fondo-card__nivel-fila fondo-card__nivel-fila--lejano">
+          <span class="fondo-card__punto" aria-hidden="true"></span>
+          <span class="fondo-card__nivel-tx">${_esc(n.titulo)} · ${_esc(n.consecuencia)}</span>
+        </li>`).join('');
+
+  const pistaHtml = primerNivel > 0
+    ? `<p class="fondo-card__veredicto">Con lo que pagas cada mes, tu primer nivel serían <strong>${f(primerNivel)}</strong>.</p>`
+    : `<p class="fondo-card__veredicto">Registra tus gastos fijos desde Calendario (arriendo, servicios, suscripciones) y Finko calcula cuánto necesitas.</p>`;
 
   return `
-    <div class="empty-state">
+    <article class="fondo-card fondo-card--vacio" data-dom="ahorro" aria-label="Fondo de emergencia">
       <div class="empty-state__icon">${emptyArt('ahorro')}</div>
-      <p class="empty-state__title">Empieza tu fondo de emergencia</p>
-      <p class="empty-state__desc">Activa tu fondo con 3 a 6 meses de tus gastos fijos.</p>
-      <button class="btn btn-primary" data-action="ahorro-activar-fondo">+ Activar fondo</button>
-      ${preview}
-    </div>`;
+      <p class="fondo-card__pregunta">¿Cuánto tiempo aguantarías sin ingresos?</p>
+      <p class="fondo-card__explica">Un fondo de emergencia es dinero que apartas para cuando algo se dañe o dejes de recibir. No se gasta: está ahí para que un imprevisto no se convierta en deuda.</p>
+      <div class="fondo-card__escalera">
+        <p class="fondo-card__kicker">Los tres niveles</p>
+        <ul class="fondo-card__niveles" role="list">${nivelesHtml}</ul>
+      </div>
+      ${pistaHtml}
+      <div class="fondo-card__acciones">
+        <button class="fondo-card__principal" type="button" data-action="ahorro-activar-fondo">Empezar mi fondo</button>
+      </div>
+    </article>`;
 }
 
 // ── HERO DEL FONDO (estado activo) ───────────────────────────────
 
-function _renderHero(fondo, gastosFijosMensuales, tasaAhorro, sugerencia = null) {
+/**
+ * DIS.16 (arquitectura I con la prueba de H): la tarjeta del fondo deja de
+ * medirse en porcentaje y pasa a medirse en **tiempo**. El fondo no es ni una
+ * meta ni un apartado, y eso obliga a resolver dos cosas que ninguna otra
+ * sección tiene:
+ *
+ * - **El objetivo se mueve solo.** Si suben los gastos fijos, el porcentaje cae
+ *   sin que el usuario haya gastado un peso. Con niveles definidos en meses eso
+ *   se entiende: lo que cambió fue el costo de un mes, y **un nivel logrado no
+ *   se retira**.
+ * - **No hay final.** Llegar a la meta no apaga la tarjeta: el siguiente nivel
+ *   sigue a la vista, porque tres meses no es el final del camino.
+ *
+ * Las cuatro piezas hacen un trabajo cada una: el **nombre del nivel** dice qué
+ * logró, los **bloques de mes y la fecha** demuestran cuánto aguanta (una
+ * afirmación de texto hay que creerla; agosto entero y casi todo septiembre se
+ * ve), la **escalera** dice hacia dónde va y el **veredicto** dice qué hacer.
+ *
+ * El anillo de progreso se retira: el porcentaje pasa a ser un rótulo pequeño al
+ * pie de los bloques, que es todo el peso que merece aquí.
+ */
+function _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia = null) {
   const { metaMeses, montoActual: montoBase } = fondo;
   const aportes    = Array.isArray(S.ahorro?.aportes) ? S.ahorro.aportes : [];
   const montoTotal = calcularMontoTotalFondo(montoBase, aportes);
   const objetivo   = calcularObjetivoFondo(gastosFijosMensuales, metaMeses);
-  const progreso   = calcularProgresoFondo(montoTotal, objetivo);
   const colchon    = mesesDeColchon(montoTotal, gastosFijosMensuales);
-  const { porcentaje, faltante, completado } = progreso;
+  const { porcentaje, faltante, completado } = calcularProgresoFondo(montoTotal, objetivo);
 
-  // DIS.12 (hallazgo A4, regla R52): el contenedor NO lleva `aria-hidden`. El
-  // SVG de `progressRing()` ya sale con `role="img"` y su etiqueta, así que
-  // ocultar el envoltorio borraba el subárbol entero y el dato principal del
-  // hero (el porcentaje) no se anunciaba. Mismo patrón que `score-hero__ring`
-  // en Análisis. `role="img"` deja el `<text>` del número como presentacional.
-  const claseAnillo = completado ? 'complete' : porcentaje >= 80 ? 'near' : 'default';
+  const oculto = S.config?.ocultarSaldo === true;
+  const m      = (n) => oculto ? SALDO_MASCARA_CUENTA : f(n);
+  const enCero = montoTotal <= 0;
 
-  const subColchon = colchon === null
-    ? `<span class="fondo-hero__sub">Registra tus gastos fijos para ver cuántos meses cubre.</span>`
-    : completado
-      ? `<span class="fondo-hero__sub fondo-hero__sub--ok">Cubre ${_fmtMeses(colchon)} de tus gastos fijos.</span>`
-      : `<span class="fondo-hero__sub">Cubre ${_fmtMeses(colchon)} de los ${metaMeses} que apuntas.</span>`;
+  const niveles = nivelesFondo(colchon);
+  const actual  = niveles.find(n => n.estado === 'actual') ?? null;
+  const ultimoLogrado = [...niveles].reverse().find(n => n.estado === 'logrado') ?? null;
 
-  const labelObjetivo = objetivo > 0
-    ? `Objetivo: ${f(objetivo)} (${metaMeses} ${metaMeses === 1 ? 'mes' : 'meses'} de gastos fijos)`
-    : `Aún no hay un objetivo: registra tus gastos fijos para calcularlo.`;
-
-  const faltanteHtml = !completado && objetivo > 0
-    ? `<p class="fondo-hero__faltante">Te faltan <strong>${f(faltante)}</strong>.</p>`
-    : '';
-
-  const banner = completado
-    ? `<p class="fondo-hero__banner" role="status">${icon('trophy')} ¡Fondo de emergencia completo! Cualquier aporte extra suma colchón.</p>`
-    : '';
+  // La oferta de seguir nombra su destino ("Subir mi meta a 6 meses"): un botón
+  // que solo dice "subir" obliga a abrir el formulario para saber a cuánto.
+  const siguienteNivel = NIVELES_FONDO.find(n => n.meses > metaMeses) ?? null;
 
   const compromisoMensual = Number(S.ahorro?.compromisoMensual) || 0;
 
   return `
-    <article class="fondo-hero" aria-label="Fondo de emergencia">
-      <header class="fondo-hero__header">
-        <div class="progress-ring-wrap progress-ring-wrap--${claseAnillo}" data-dom="ahorro">
-          ${progressRing(porcentaje, { size: 88, strokeWidth: 7, ariaLabel: `Fondo de emergencia: ${porcentaje}% de tu objetivo` })}
-        </div>
-        <div class="fondo-hero__title-wrap">
-          <p class="fondo-hero__label">Fondo de emergencia</p>
-          <p class="fondo-hero__title">${f(montoTotal)}</p>
-          ${subColchon}
-          ${faltanteHtml}
-        </div>
-        <button class="btn btn-ghost btn-icon"
-                data-action="ahorro-editar"
-                aria-label="Editar fondo de emergencia">
-          <svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg>
+    <article class="fondo-card" data-dom="ahorro" aria-label="Fondo de emergencia">
+      ${_renderNivelActual({ enCero, completado, ultimoLogrado, actual })}
+      ${_renderCobertura({ colchon, metaMeses, porcentaje, enCero })}
+      ${_renderEscalera(niveles, completado, enCero)}
+      ${_renderVeredictoFondo({ completado, faltante, objetivo, montoTotal, metaMeses, actual, sugerencia, enCero, m })}
+      ${_renderDatosFondo({ montoTotal, objetivo, gastosFijosMensuales, compromisoMensual, tasaAhorro, metaMeses, enCero, m })}
+      <p class="fondo-card__nota">Este dinero sigue en tus cuentas. Solo queda apartado para emergencias: a diferencia de Metas y Apartados, no descuenta saldo.</p>
+      <div class="fondo-card__acciones">
+        <button class="fondo-card__principal" type="button" data-action="ahorro-nuevo-aporte">
+          ${enCero ? 'Hacer mi primer aporte' : 'Registrar un aporte'}
         </button>
-      </header>
-
-      <p class="fondo-hero__meta">
-        <span class="fondo-hero__meta-label">${labelObjetivo}</span>
-      </p>
-
-      <p class="fondo-hero__nota">Este dinero sigue en tus cuentas: el fondo solo lo marca como reservado para emergencias (a diferencia de Metas y Apartados, no descuenta saldo).</p>
-
-      ${banner}
+        <div class="fondo-card__secundarias">
+          <button class="btn btn-ghost btn-sm fondo-card__secundaria" type="button" data-action="ahorro-editar">
+            ${completado && siguienteNivel ? `Subir mi meta a ${siguienteNivel.meses} meses` : 'Editar'}
+          </button>
+        </div>
+      </div>
     </article>
 
     ${_renderHabitoSection(aportes, compromisoMensual, tasaAhorro, sugerencia)}`;
+}
+
+/**
+ * El bloque de identidad de la tarjeta. En cero no se dice "0 meses cubiertos"
+ * como cifra grande: se nombra el nivel al que va, que es la única lectura que
+ * no desanima en el momento más frágil.
+ */
+function _renderNivelActual({ enCero, completado, ultimoLogrado, actual }) {
+  let kicker = 'Ya tienes';
+  let nombre = ultimoLogrado?.logrado ?? '';
+
+  if (enCero || (!ultimoLogrado && actual)) {
+    // Sin ningún nivel logrado el próximo es siempre el primero, así que el
+    // nombre no se deriva: es el paso que el usuario tiene enfrente.
+    kicker = 'Vas a empezar';
+    nombre = 'Tu primer mes';
+  } else if (completado) {
+    kicker = 'Lo lograste';
+  }
+
+  return `
+      <div class="fondo-card__nivel">
+        <p class="fondo-card__kicker">${kicker}</p>
+        <p class="fondo-card__nivel-nombre">${_esc(nombre)}</p>
+      </div>`;
+}
+
+/**
+ * La prueba: la fecha hasta la que alcanza el fondo y los meses del calendario
+ * que cubre. La frase dice **"si hoy dejaras"** a propósito: la fecha es
+ * hipotética y sin esa apertura parecería un pronóstico.
+ */
+function _renderCobertura({ colchon, metaMeses, porcentaje, enCero }) {
+  if (colchon === null) {
+    return `
+      <p class="fondo-card__frase">Registra tus gastos fijos desde Calendario y Finko calcula cuánto tiempo te cubre el fondo.</p>`;
+  }
+
+  const bloques = bloquesCobertura(colchon, metaMeses, hoy());
+  const mesCorto = formateadorFecha('es-CO', { month: 'short', timeZone: 'UTC' });
+
+  const bloquesHtml = bloques.map(b => `
+          <span class="fondo-card__bloque">
+            <span class="fondo-card__bloque-fill" style="width:${b.pct}%"></span>
+            <span class="fondo-card__bloque-mes">${_esc(mesCorto.format(new Date(`${b.mesISO}T12:00:00Z`)))}</span>
+          </span>`).join('');
+
+  const hasta = fechaCobertura(colchon, hoy());
+  const frase = enCero || !hasta
+    ? 'Todavía no tienes días cubiertos. El primer aporte ya te compra tiempo.'
+    : `Si hoy dejaras de recibir ingresos, cubres tus gastos hasta el <strong>${fechaLegible(hasta)}</strong>`;
+
+  return `
+      <div class="fondo-card__cobertura">
+        <p class="fondo-card__frase">${frase}</p>
+        <div class="fondo-card__bloques" aria-hidden="true">${bloquesHtml}</div>
+        <p class="fondo-card__bloques-pie">
+          <span>${_pieCobertura(colchon, metaMeses)}</span>
+          <span>${porcentaje}%</span>
+        </p>
+      </div>`;
+}
+
+/**
+ * El rótulo bajo los bloques. Con la meta cubierta "3 meses de 3 meses" repite
+ * la cifra dos veces para decir una sola cosa: que están completos.
+ *
+ * @param {number} colchon   meses cubiertos.
+ * @param {number} metaMeses meses que el usuario apunta a cubrir.
+ * @returns {string}
+ */
+function _pieCobertura(colchon, metaMeses) {
+  const plural = metaMeses === 1 ? 'mes' : 'meses';
+  return colchon >= metaMeses
+    ? `${metaMeses} ${plural} completos`
+    : `${mesesEnPalabras(colchon)} de ${metaMeses} ${plural}`;
+}
+
+/**
+ * La escalera de niveles. Un porcentaje muy bajo se dice con palabras: recién
+ * cruzada la meta, el avance hacia el nivel siguiente es del 3%, y mostrarlo
+ * justo en el momento de celebrar convierte el logro en una cuenta pendiente.
+ *
+ * En cero no se dice ni un porcentaje ni "apenas empiezas": el nivel todavía no
+ * se empezó, así que la palabra es **próximo**. Decir "apenas empiezas" cuando
+ * no se ha puesto un peso suena a reproche.
+ */
+function _renderEscalera(niveles, completado, enCero) {
+  const filas = niveles.map(n => {
+    let estadoHtml = '';
+    if (n.estado === 'logrado') {
+      estadoHtml = '<span class="fondo-card__nivel-estado">logrado</span>';
+    } else if (n.estado === 'actual') {
+      if (enCero) {
+        estadoHtml = '<span class="fondo-card__nivel-estado">próximo</span>';
+      } else {
+        estadoHtml = (completado || n.pct < 10)
+          ? '<span class="fondo-card__nivel-estado">apenas empiezas</span>'
+          : `<span class="fondo-card__nivel-estado">vas en ${n.pct}%</span>`;
+      }
+    }
+    return `
+        <li class="fondo-card__nivel-fila fondo-card__nivel-fila--${n.estado}">
+          <span class="fondo-card__punto" aria-hidden="true"></span>
+          <span class="fondo-card__nivel-tx">${_esc(n.titulo)} · ${_esc(n.consecuencia)}</span>
+          ${estadoHtml}
+        </li>`;
+  }).join('');
+
+  return `<ul class="fondo-card__niveles" role="list">${filas}</ul>`;
+}
+
+/**
+ * La línea que dice qué hacer. Con la meta cumplida celebra primero y ofrece
+ * después: seguir hasta el nivel siguiente es una oferta, no un reproche.
+ */
+function _renderVeredictoFondo({ completado, faltante, objetivo, montoTotal, metaMeses, actual, sugerencia, enCero, m }) {
+  if (objetivo <= 0) return '';
+
+  // Estado 2 (recién activado): en cero, "te faltan $4.382.700 para tu meta" es
+  // la lectura que más desanima en el momento más frágil. El veredicto apunta al
+  // primer nivel, que es el paso que el usuario tiene enfrente y cuesta un
+  // tercio de la meta.
+  if (enCero && actual) {
+    const objetivoNivel = Math.round(actual.meses * (objetivo / metaMeses));
+    if (sugerencia?.monto > 0 && objetivoNivel > 0) {
+      const mesesNivel = Math.max(1, Math.ceil(objetivoNivel / sugerencia.monto));
+      return `<p class="fondo-card__veredicto">Guardando ${m(sugerencia.monto)} al mes, en ${mesesNivel} ${mesesNivel === 1 ? 'mes' : 'meses'} llegas a tu primer nivel.</p>`;
+    }
+    return `<p class="fondo-card__veredicto">Tu primer nivel son ${m(objetivoNivel)}: un mes de lo que pagas sí o sí.</p>`;
+  }
+
+  if (completado) {
+    if (!actual) {
+      return `<p class="fondo-card__veredicto">Cumpliste tu meta de ${metaMeses} ${metaMeses === 1 ? 'mes' : 'meses'}. Cada aporte extra suma colchón.</p>`;
+    }
+    const costoMes      = objetivo / metaMeses;
+    const objetivoNivel = Math.round(actual.meses * costoMes);
+    const faltaNivel    = Math.max(0, objetivoNivel - montoTotal);
+    return `<p class="fondo-card__veredicto">Cumpliste tu meta. Si quieres seguir, ${actual.titulo.toLowerCase()} son ${m(objetivoNivel)}: te faltan ${m(faltaNivel)}.</p>`;
+  }
+
+  const ritmo = sugerencia?.monto > 0 && sugerencia?.meses
+    ? ` Guardando ${m(sugerencia.monto)} al mes llegas en ${sugerencia.meses} ${sugerencia.meses === 1 ? 'mes' : 'meses'}.`
+    : '';
+
+  return `<p class="fondo-card__veredicto">Te faltan ${m(faltante)} para tu meta.${ritmo}</p>`;
+}
+
+/** Las líneas de detalle del pie, en lenguaje de todos los días. */
+function _renderDatosFondo({ montoTotal, objetivo, gastosFijosMensuales, compromisoMensual, tasaAhorro, metaMeses, enCero, m }) {
+  const lineas = [];
+
+  if (enCero && objetivo > 0) {
+    // "Tienes $0 de $4.382.700" es la misma cifra dicha de la peor manera. El
+    // "hoy" además advierte que el objetivo se mueve cuando cambian los gastos.
+    lineas.push(`<p class="fondo-card__dato fondo-card__dato--fuerte">Tu meta es cubrir ${metaMeses} ${metaMeses === 1 ? 'mes' : 'meses'}: hoy son ${m(objetivo)}</p>`);
+  } else {
+    lineas.push(objetivo > 0
+      ? `<p class="fondo-card__dato fondo-card__dato--fuerte">Tienes ${m(montoTotal)} de ${m(objetivo)}</p>`
+      : `<p class="fondo-card__dato fondo-card__dato--fuerte">Tienes ${m(montoTotal)}</p>`);
+  }
+
+  if (gastosFijosMensuales > 0) {
+    lineas.push(`<p class="fondo-card__dato">Cada nivel es un mes más de lo que pagas sí o sí (${m(gastosFijosMensuales)})</p>`);
+  }
+
+  const partesHabito = [];
+  if (compromisoMensual > 0) partesHabito.push(`Te propusiste guardar ${m(compromisoMensual)} cada mes`);
+  // Una proporción no revela cuánto dinero hay, así que no se enmascara.
+  if (tasaAhorro !== null && tasaAhorro > 0) partesHabito.push(`de cada $100 que recibes, guardas $${tasaAhorro}`);
+  if (partesHabito.length > 0) {
+    lineas.push(`<p class="fondo-card__dato">${partesHabito.join(' · ')}</p>`);
+  }
+
+  return `<div class="fondo-card__datos">${lineas.join('')}</div>`;
 }
 
 // ── SECCIÓN DE HÁBITO (aportes + compromiso + tasa) ──────────────
@@ -276,11 +476,13 @@ function _renderHabitoSection(aportes, compromisoMensual, tasaAhorro, sugerencia
     ? _renderNudgeTasa(tasaAhorro)
     : '';
 
+  // DIS.16: el botón de registrar se fue de este encabezado. La acción principal
+  // de la sección vive ahora en la tarjeta, a ancho completo, y tenerla dos
+  // veces en la misma pantalla la volvía ruido (regla R1: un primario).
   return `
     <section class="ahorro-habito" aria-label="Historial de aportes">
       <div class="ahorro-habito__header">
         <h2 class="ahorro-habito__title">Aportes al fondo</h2>
-        <button class="btn btn-sm btn-primary" data-action="ahorro-nuevo-aporte">+ Registrar</button>
       </div>
       ${compromisoHtml}
       ${listaHtml}
@@ -554,15 +756,6 @@ export function renderCajaSugerencia(sugerencia) {
     </div>`;
 }
 
-// ── HELPERS ──────────────────────────────────────────────────────
-
-/**
- * Formatea una cantidad de meses con 1 decimal pero suprime el ".0" cuando es
- * entero. Ej: 1 → "1 mes", 2.5 → "2,5 meses", 3 → "3 meses".
- */
-function _fmtMeses(n) {
-  if (n == null) return '';
-  const entero = Math.abs(n - Math.round(n)) < 0.05;
-  const valor  = entero ? Math.round(n) : n.toString().replace('.', ',');
-  return `${valor} ${Math.abs(n - 1) < 0.05 ? 'mes' : 'meses'}`;
-}
+// `_fmtMeses` se retiró en DIS.16: decía "1,8 meses", que es lenguaje de hoja
+// de cálculo para la cifra más importante de la sección. Lo reemplaza
+// `mesesEnPalabras()` en logic.js, que dice "1 mes y 3 semanas".

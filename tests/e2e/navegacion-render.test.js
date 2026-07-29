@@ -69,8 +69,8 @@ test.describe('Render tras navegación (regresión hashchange)', () => {
     await expect(page.locator('#sec-ahorro.active')).toBeVisible();
 
     await expect(
-      page.locator('#panel-ahorro .empty-state__title')
-    ).toHaveText('Empieza tu fondo de emergencia', { timeout: 3_000 });
+      page.locator('#panel-ahorro .fondo-card__pregunta')
+    ).toHaveText('¿Cuánto tiempo aguantarías sin ingresos?', { timeout: 3_000 });
   });
 
   test('Gastos muestra empty state al navegar desde Dashboard', async ({ page }) => {

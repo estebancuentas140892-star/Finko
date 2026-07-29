@@ -130,6 +130,146 @@ export function consolidarAhorro({ fondo = 0, metas = 0, apartados = 0, inversio
   return { total, desglose };
 }
 
+// ── NIVELES DE PROTECCIÓN (DIS.16, arquitectura I+H) ─────────────
+
+/**
+ * Los tres niveles del fondo, en meses cubiertos y en lenguaje corriente.
+ *
+ * Un fondo **no se completa**: llegar a tres meses no es el final, la
+ * recomendación sensata es seguir hasta seis. Los niveles convierten un camino
+ * largo sin final en una serie de logros nombrados, y el nombre es lo que hace
+ * el trabajo: "60%" no significa nada, "buscas trabajo con calma" sí. Son fijos
+ * (1, 3 y 6) aunque el usuario apunte a otra meta: la escalera es el camino
+ * posible, la meta es su situación elegida.
+ *
+ * Los textos no llevan jerga ni dramatizan (ADR 003): "con calma" y no "sin
+ * pánico", que mete miedo donde debía haber tranquilidad.
+ */
+export const NIVELES_FONDO = [
+  { meses: 1, titulo: 'Un mes',    consecuencia: 'si algo pasa, no corres',       logrado: 'Un mes cubierto' },
+  { meses: 3, titulo: 'Tres meses', consecuencia: 'buscas trabajo con calma',     logrado: 'Tres meses cubiertos' },
+  { meses: 6, titulo: 'Seis meses', consecuencia: 'aguantas algo grande',         logrado: 'Seis meses cubiertos' },
+];
+
+/**
+ * Estado de cada nivel para los meses de colchón que el usuario tiene hoy.
+ *
+ * Un nivel logrado **no se retira** cuando el objetivo se mueve: si suben los
+ * gastos fijos el usuario no perdió nada, cambió lo que falta. Por eso el corte
+ * es contra los meses cubiertos y no contra un porcentaje del objetivo.
+ *
+ * El `pct` del nivel en curso es **relativo a su tramo** (del nivel anterior al
+ * suyo), no al objetivo global: es la distancia que hay que recorrer ahora, y
+ * el avance global ya está dicho arriba en meses.
+ *
+ * @param {number|null} mesesCubiertos Salida de `mesesDeColchon()`.
+ * @returns {Array<{
+ *   meses: number, titulo: string, consecuencia: string, logrado: string,
+ *   estado: 'logrado'|'actual'|'lejano', pct: number|null,
+ * }>}
+ */
+export function nivelesFondo(mesesCubiertos) {
+  const cubiertos = Math.max(0, Number(mesesCubiertos) || 0);
+  let actualAsignado = false;
+
+  return NIVELES_FONDO.map((nivel, i) => {
+    if (cubiertos >= nivel.meses) {
+      return { ...nivel, estado: 'logrado', pct: 100 };
+    }
+    if (!actualAsignado) {
+      actualAsignado = true;
+      const desde = i === 0 ? 0 : NIVELES_FONDO[i - 1].meses;
+      const tramo = nivel.meses - desde;
+      const pct   = Math.max(0, Math.min(100, Math.round(((cubiertos - desde) / tramo) * 100)));
+      return { ...nivel, estado: 'actual', pct };
+    }
+    return { ...nivel, estado: 'lejano', pct: null };
+  });
+}
+
+/**
+ * Cuánto tiempo cubre el fondo, dicho como lo diría una persona.
+ *
+ * "1,8 meses" es lenguaje de hoja de cálculo: nadie piensa en decimales de mes,
+ * y era la cifra más importante de la sección. Un mes se cuenta acá como cuatro
+ * semanas: no es exacto, pero es la cuenta que hace cualquiera.
+ *
+ * @param {number|null} meses
+ * @returns {string} ej. "1 mes y 3 semanas", "3 semanas", "0 meses".
+ */
+export function mesesEnPalabras(meses) {
+  const n = Number(meses);
+  if (!Number.isFinite(n) || n <= 0) return '0 meses';
+
+  let enteros  = Math.floor(n);
+  let semanas  = Math.round((n - enteros) * 4);
+  if (semanas === 4) { enteros += 1; semanas = 0; }
+
+  const partes = [];
+  if (enteros > 0) partes.push(`${enteros} ${enteros === 1 ? 'mes' : 'meses'}`);
+  if (semanas > 0) partes.push(`${semanas} ${semanas === 1 ? 'semana' : 'semanas'}`);
+  if (partes.length === 0) return 'menos de una semana';
+  return partes.join(' y ');
+}
+
+/** Días que dura un mes, promediados: el fondo se mide en meses, no en fechas exactas. */
+const _DIAS_POR_MES = 30.44;
+
+/**
+ * Hasta qué día alcanza el fondo si hoy se cortaran los ingresos.
+ *
+ * Es la traducción visceral de la sección: una fecha se siente de una forma que
+ * un porcentaje no, y cada aporte la mueve hacia adelante. **Es hipotética** y
+ * la vista tiene que decirlo ("si hoy dejaras de recibir ingresos"), o parece
+ * un pronóstico.
+ *
+ * @param {number|null} mesesCubiertos
+ * @param {string} hoyISO YYYY-MM-DD.
+ * @returns {string|null} YYYY-MM-DD, o null si no hay cobertura que datar.
+ */
+export function fechaCobertura(mesesCubiertos, hoyISO) {
+  const meses = Number(mesesCubiertos);
+  if (!Number.isFinite(meses) || meses <= 0) return null;
+  if (!hoyISO || !/^\d{4}-\d{2}-\d{2}$/.test(hoyISO)) return null;
+
+  const d = new Date(`${hoyISO}T12:00:00Z`);
+  if (isNaN(d)) return null;
+  d.setUTCDate(d.getUTCDate() + Math.round(meses * _DIAS_POR_MES));
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Los meses del calendario que el fondo cubre, en bloques.
+ *
+ * Son la **prueba** del nivel: "cubres un mes" es una afirmación que hay que
+ * creer, y agosto entero más casi todo septiembre se ve. Cada bloque es un mes
+ * corrido desde el actual, relleno con la fracción que el fondo alcanza a
+ * cubrir. Se dibujan tantos como la meta del usuario, no como el último nivel:
+ * los bloques son su situación real, la escalera es el camino posible.
+ *
+ * @param {number|null} mesesCubiertos
+ * @param {number} metaMeses
+ * @param {string} hoyISO YYYY-MM-DD.
+ * @returns {Array<{ mesISO: string, pct: number }>} vacío si la meta no es válida.
+ */
+export function bloquesCobertura(mesesCubiertos, metaMeses, hoyISO) {
+  const meta = Math.round(Number(metaMeses));
+  if (!Number.isFinite(meta) || meta <= 0) return [];
+  if (!hoyISO || !/^\d{4}-\d{2}-\d{2}$/.test(hoyISO)) return [];
+
+  const [anio, mes] = hoyISO.split('-').map(Number);
+  let restante = Math.max(0, Number(mesesCubiertos) || 0);
+
+  return Array.from({ length: meta }, (_, i) => {
+    const indice = (mes - 1) + i;
+    const y = anio + Math.floor(indice / 12);
+    const m = String((indice % 12) + 1).padStart(2, '0');
+    const pct = Math.max(0, Math.min(1, restante)) * 100;
+    restante -= 1;
+    return { mesISO: `${y}-${m}-01`, pct: Math.round(pct) };
+  });
+}
+
 // ── VALIDACIÓN ───────────────────────────────────────────────────
 
 /**

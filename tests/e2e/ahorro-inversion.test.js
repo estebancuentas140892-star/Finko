@@ -101,8 +101,8 @@ test.describe('Ahorro - fondo de emergencia (J.1)', () => {
     await expect(page.locator('#sec-ahorro.active')).toBeVisible({ timeout: 5_000 });
 
     await expect(
-      page.locator('#panel-ahorro .empty-state__title')
-    ).toHaveText('Empieza tu fondo de emergencia', { timeout: 3_000 });
+      page.locator('#panel-ahorro .fondo-card__pregunta')
+    ).toHaveText('¿Cuánto tiempo aguantarías sin ingresos?', { timeout: 3_000 });
 
     // El CTA de activación está presente
     await expect(page.locator('[data-action="ahorro-activar-fondo"]')).toBeVisible();
@@ -129,8 +129,8 @@ test.describe('Ahorro - fondo de emergencia (J.1)', () => {
     await expect(page.locator(modalCerrado('modal-ahorro'))).toBeAttached({ timeout: 3_000 });
 
     // El hero debe mostrarse con el monto base
-    await expect(page.locator('.fondo-hero')).toBeVisible({ timeout: 3_000 });
-    await expect(page.locator('.fondo-hero__title')).toHaveText('$500.000');
+    await expect(page.locator('.fondo-card')).toBeVisible({ timeout: 3_000 });
+    await expect(page.locator('.fondo-card__dato--fuerte')).toContainText('$500.000');
   });
 
   // A.3 - Aporte: historial + monto del hero sube ----------------------------
@@ -145,7 +145,7 @@ test.describe('Ahorro - fondo de emergencia (J.1)', () => {
     await formFondo.locator('[name="metaMeses"]').fill('3');
     await formFondo.locator('[name="montoActual"]').fill('500000');
     await formFondo.locator('button[type="submit"]').click();
-    await expect(page.locator('.fondo-hero__title')).toHaveText('$500.000', { timeout: 3_000 });
+    await expect(page.locator('.fondo-card__dato--fuerte')).toContainText('$500.000', { timeout: 3_000 });
 
     // Registrar un aporte de $200.000
     await page.click('[data-action="ahorro-nuevo-aporte"]');
@@ -160,7 +160,7 @@ test.describe('Ahorro - fondo de emergencia (J.1)', () => {
     await expect(page.locator(modalCerrado('modal-ahorro'))).toBeAttached({ timeout: 3_000 });
 
     // Hero debe mostrar la suma: $500.000 + $200.000 = $700.000
-    await expect(page.locator('.fondo-hero__title')).toHaveText('$700.000', { timeout: 3_000 });
+    await expect(page.locator('.fondo-card__dato--fuerte')).toContainText('$700.000', { timeout: 3_000 });
 
     // El aporte aparece en el historial
     await expect(page.locator('.ahorro-habito__lista')).toContainText('$200.000', { timeout: 3_000 });
@@ -178,7 +178,7 @@ test.describe('Ahorro - fondo de emergencia (J.1)', () => {
     await formFondo.locator('[name="metaMeses"]').fill('3');
     await formFondo.locator('[name="montoActual"]').fill('300000');
     await formFondo.locator('button[type="submit"]').click();
-    await expect(page.locator('.fondo-hero__title')).toHaveText('$300.000', { timeout: 3_000 });
+    await expect(page.locator('.fondo-card__dato--fuerte')).toContainText('$300.000', { timeout: 3_000 });
 
     // Esperar que el debounce de save() (200ms) complete
     await page.waitForTimeout(400);
@@ -189,8 +189,8 @@ test.describe('Ahorro - fondo de emergencia (J.1)', () => {
     await expect(page.locator('#sec-ahorro.active')).toBeVisible({ timeout: 10_000 });
 
     // El hero debe mostrar los mismos datos
-    await expect(page.locator('.fondo-hero')).toBeVisible({ timeout: 3_000 });
-    await expect(page.locator('.fondo-hero__title')).toHaveText('$300.000');
+    await expect(page.locator('.fondo-card')).toBeVisible({ timeout: 3_000 });
+    await expect(page.locator('.fondo-card__dato--fuerte')).toContainText('$300.000');
   });
 });
 

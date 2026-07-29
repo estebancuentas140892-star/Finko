@@ -861,107 +861,253 @@
   color: var(--fk-text-primary);
 }
 
-/* ── J.1: Fondo de emergencia (Ahorro) ───────────────────── */
-.fondo-hero {
-  background: var(--fk-bg-elevated);
+/* ── J.1: Fondo de emergencia (Ahorro) ─────────────────────
+   DIS.16 (arquitectura I con la prueba de H): `.fondo-hero` se retiro entero.
+   La seccion dejo de medirse en porcentaje y pasa a medirse en tiempo, asi que
+   el anillo de progreso desaparece y lo sustituyen los bloques de mes (la
+   prueba) y la escalera de niveles (el camino). Un fondo no se completa: al
+   llegar a la meta el nivel siguiente sigue a la vista. */
+
+.fondo-card {
+  background: var(--fk-bg-surface);
   border: 1px solid var(--fk-border-subtle);
   border-radius: var(--fk-radius-lg);
-  padding: var(--fk-space-lg);
-  margin-bottom: var(--fk-space-lg);
+  box-shadow: var(--fk-shadow-sm);
+  padding: var(--fk-space-4);
   display: flex;
   flex-direction: column;
-  gap: var(--fk-space-md);
+  gap: var(--fk-space-3);
 }
 
-.fondo-hero__header {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: var(--fk-space-md);
+/* Estado sin activar: la tarjeta explica para que sirve y ensena los tres
+   niveles apagados, que son la promesa de la seccion. */
+.fondo-card--vacio {
+  align-items: stretch;
+  text-align: left;
+}
+.fondo-card--vacio .empty-state__icon { align-self: center; }
+
+.fondo-card__pregunta {
+  margin: 0;
+  font-size: var(--fk-text-lg);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  line-height: 1.3;
 }
 
-/* DIS.12 (hallazgo A9): acá vivían `.fondo-hero__icon` y `.fondo-hero__icon
-   .icon`, la teja redonda que el anillo de progreso reemplazó, sin un solo
-   consumidor en el proyecto. `.inversion-hero__icon` es idéntica y sí está
-   viva, así que dos patrones para el mismo componente convivían en el archivo
-   sin forma de saber cuál era el vigente sin abrir el JS. */
+.fondo-card__explica {
+  margin: 0;
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  line-height: 1.5;
+}
 
-.fondo-hero__title-wrap {
+.fondo-card__nivel {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  min-width: 0;
 }
 
-.fondo-hero__label {
-  font-size: var(--fk-fs-xs);
-  color: var(--fk-text-muted);
+.fondo-card__kicker {
+  margin: 0;
+  font-size: var(--fk-text-xs);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin: 0;
-}
-
-.fondo-hero__title {
-  font-size: var(--fk-fs-xl);
-  font-weight: var(--fk-fw-bold);
-  color: var(--fk-text-primary);
-  margin: 0;
-  font-variant-numeric: tabular-nums;
-}
-
-.fondo-hero__sub {
-  font-size: var(--fk-fs-sm);
   color: var(--fk-text-muted);
 }
-.fondo-hero__sub--ok {
-  color: var(--fk-dom-ahorro-text);
-  font-weight: var(--fk-fw-semibold);
+
+/* El nombre del nivel es el dato protagonista: dice que logro el usuario, que
+   es lo que un porcentaje nunca dijo. */
+.fondo-card__nivel-nombre {
+  margin: 0;
+  font-size: var(--fk-text-2xl);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  line-height: 1.15;
 }
 
-/* DIS.12 (hallazgo A9): `.fondo-hero__progress` y `.fondo-hero__pct` tampoco
-   se emitieron nunca desde `_renderHero()`. */
-
-.fondo-hero__meta {
+.fondo-card__cobertura {
   display: flex;
-  align-items: baseline;
-  gap: var(--fk-space-sm);
-  margin: 0;
-  font-size: var(--fk-fs-sm);
+  flex-direction: column;
+  gap: var(--fk-space-2);
 }
-.fondo-hero__meta-label {
+
+.fondo-card__frase {
+  margin: 0;
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  line-height: 1.45;
+}
+.fondo-card__frase strong { color: var(--fk-text-primary); }
+
+/* Los bloques de mes: cada uno es un mes del calendario, relleno con la
+   fraccion que el fondo alcanza a cubrir. Son la prueba del nivel, asi que se
+   cuentan de un vistazo y llevan su rotulo dentro. */
+.fondo-card__bloques {
+  display: flex;
+  gap: var(--fk-space-1);
+  align-items: stretch;
+  height: 2.25rem;
+}
+
+.fondo-card__bloque {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  border-radius: var(--fk-radius-sm);
+  background: var(--fk-bg-elevated);
+  overflow: hidden;
+}
+
+.fondo-card__bloque-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--fk-dom-ahorro);
+}
+
+.fondo-card__bloque-mes {
+  position: absolute;
+  left: 4px;
+  bottom: 2px;
+  font-size: 0.625rem;
   color: var(--fk-text-muted);
 }
 
-.fondo-hero__faltante {
+.fondo-card__bloques-pie {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--fk-space-2);
   margin: 0;
-  font-size: var(--fk-fs-sm);
-  color: var(--fk-text-secondary);
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
 }
-.fondo-hero__faltante strong {
-  color: var(--fk-text-primary);
+.fondo-card__bloques-pie span:last-child { font-variant-numeric: tabular-nums; }
+
+/* La escalera de niveles: lo logrado, lo proximo y lo posible. El tercer
+   peldano existe para que completar no se lea como terminar. */
+.fondo-card__niveles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fondo-card__nivel-fila {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  font-size: var(--fk-text-xs);
+  line-height: 1.4;
+}
+
+.fondo-card__punto {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid var(--fk-border-default);
+}
+
+.fondo-card__nivel-tx {
+  flex: 1;
+  min-width: 0;
+  color: var(--fk-text-muted);
+}
+
+.fondo-card__nivel-estado {
+  flex: none;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
   font-variant-numeric: tabular-nums;
 }
 
-/* Nota aclaratoria (no es un dato, es contexto): un peldaño por debajo del
-   objetivo, con un filete propio para no competir con el dato principal. */
-.fondo-hero__nota {
-  margin: var(--fk-space-2) 0 0;
+.fondo-card__nivel-fila--logrado .fondo-card__punto {
+  background: var(--fk-dom-ahorro);
+  border-color: var(--fk-dom-ahorro);
+}
+.fondo-card__nivel-fila--logrado .fondo-card__nivel-tx { color: var(--fk-text-secondary); }
+
+.fondo-card__nivel-fila--actual .fondo-card__punto { border-color: var(--fk-dom-ahorro); }
+.fondo-card__nivel-fila--actual .fondo-card__nivel-tx {
+  color: var(--fk-text-primary);
+  font-weight: var(--fk-font-semibold);
+}
+.fondo-card__nivel-fila--actual .fondo-card__nivel-estado { color: var(--fk-text-secondary); }
+
+.fondo-card__veredicto {
+  margin: 0;
+  padding-left: var(--fk-space-3);
+  border-left: 2px solid var(--fk-dom-ahorro);
+  font-size: var(--fk-text-sm);
+  line-height: 1.45;
+  color: var(--fk-text-primary);
+}
+
+.fondo-card__datos {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fondo-card__dato {
+  margin: 0;
+  font-size: var(--fk-text-xs);
+  line-height: 1.45;
+  color: var(--fk-text-muted);
+}
+.fondo-card__dato--fuerte { color: var(--fk-text-primary); }
+
+/* Nota aclaratoria (ADR 009): no es un dato, es contexto. Un peldano por
+   debajo, con su propio filete para no competir. */
+.fondo-card__nota {
+  margin: 0;
   padding-top: var(--fk-space-2);
   border-top: 1px solid var(--fk-border-subtle);
-  font-size: var(--fk-fs-xs);
+  font-size: var(--fk-text-xs);
   color: var(--fk-text-muted);
-  line-height: var(--fk-leading-relaxed);
+  line-height: 1.5;
 }
 
-.fondo-hero__banner {
-  margin: 0;
-  padding: var(--fk-space-sm) var(--fk-space-md);
-  border-radius: var(--fk-radius-md);
-  background: color-mix(in srgb, var(--fk-dom-ahorro) 10%, transparent);
-  color: var(--fk-dom-ahorro-text);
-  font-size: var(--fk-fs-sm);
-  font-weight: var(--fk-fw-semibold);
+.fondo-card__acciones {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
 }
+
+/* Accion principal con la identidad del hub de ahorro, mismo patron que
+   `.apartado-card__principal` y `.meta-card__aportar`. */
+.fondo-card__principal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  border: 1.5px solid color-mix(in srgb, var(--fk-dom-ahorro) 40%, transparent);
+  background: var(--fk-dom-ahorro-bg);
+  color: var(--fk-dom-ahorro-text);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color var(--fk-transition-fast), border-color var(--fk-transition-fast);
+}
+.fondo-card__principal:hover {
+  background: color-mix(in srgb, var(--fk-dom-ahorro) 20%, transparent);
+  border-color: color-mix(in srgb, var(--fk-dom-ahorro) 60%, transparent);
+}
+
+.fondo-card__secundarias {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--fk-space-3);
+}
+
+.fondo-card__secundaria { color: var(--fk-text-muted); }
+.fondo-card__secundaria:hover { color: var(--fk-text-secondary); }
 
 /* ── J.1b: Sección hábito de ahorro (aportes + compromiso) ─── */
 

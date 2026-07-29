@@ -28,6 +28,12 @@ import {
   // AH.2
   calcularAporteSugerido,
   HORIZONTE_FONDO_MESES,
+  // DIS.16
+  nivelesFondo,
+  mesesEnPalabras,
+  fechaCobertura,
+  bloquesCobertura,
+  NIVELES_FONDO,
 } from '../../modules/dominio/ahorro/logic.js';
 import {
   renderFormAporte,
@@ -665,23 +671,26 @@ describe('DIS.12 - consolidado del hub (A2, A1)', () => {
   });
 });
 
-describe('DIS.12 - hero del fondo (A4)', () => {
+// DIS.16: el anillo de progreso se retiró de esta sección. El hallazgo A4 de
+// DIS.12 (el contenedor que ocultaba su propio subárbol) deja de aplicar porque
+// deja de haber contenedor: el porcentaje es ahora un rótulo de texto al pie de
+// los bloques, que ningún `aria-hidden` envuelve.
+describe('DIS.16 - la tarjeta del fondo ya no usa anillo', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="panel-ahorro"></div>';
     S.ahorro = { fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 1_800_000 }, aportes: [] };
     renderAhorro(1_000_000, null, null);
   });
 
-  it('A4: el contenedor del anillo ya no oculta su propio subárbol', () => {
-    const wrap = document.querySelector('.progress-ring-wrap');
-    expect(wrap).not.toBeNull();
-    expect(wrap.getAttribute('aria-hidden')).toBeNull();
+  it('no queda ningún anillo de progreso en la sección', () => {
+    expect(document.querySelector('.progress-ring')).toBeNull();
+    expect(document.querySelector('.progress-ring-wrap')).toBeNull();
   });
 
-  it('A4: el anillo conserva su rol y su etiqueta dice qué significa el número', () => {
-    const svg = document.querySelector('.progress-ring-wrap .progress-ring');
-    expect(svg.getAttribute('role')).toBe('img');
-    expect(svg.getAttribute('aria-label')).toBe('Fondo de emergencia: 60% de tu objetivo');
+  it('el porcentaje sobrevive como rótulo al pie de los bloques, sin aria-hidden encima', () => {
+    const pie = document.querySelector('.fondo-card__bloques-pie');
+    expect(pie.textContent).toContain('60%');
+    expect(pie.closest('[aria-hidden="true"]')).toBeNull();
   });
 });
 
@@ -761,5 +770,317 @@ describe('DIS.12 - formulario del fondo (A3)', () => {
     expect(html).not.toContain('modal__footer-secundario');
     expect(html).not.toContain('ahorro-desactivar');
     expect(html).toContain('Activar fondo');
+  });
+});
+
+// ════════════════════════════════════════════════════════════════
+// DIS.16 - arquitectura I con la prueba de H
+// ════════════════════════════════════════════════════════════════
+
+describe('nivelesFondo()', () => {
+  it('los tres niveles son fijos: 1, 3 y 6 meses', () => {
+    expect(NIVELES_FONDO.map(n => n.meses)).toEqual([1, 3, 6]);
+  });
+
+  it('sin nada cubierto, el primero es el actual y los otros dos quedan lejos', () => {
+    const n = nivelesFondo(0);
+    expect(n.map(x => x.estado)).toEqual(['actual', 'lejano', 'lejano']);
+    expect(n[0].pct).toBe(0);
+  });
+
+  it('el porcentaje del nivel en curso es relativo a su tramo, no al objetivo', () => {
+    // 1,8 meses: el primer nivel está logrado y del tramo 1 a 3 lleva el 40%.
+    const n = nivelesFondo(1.8);
+    expect(n[0].estado).toBe('logrado');
+    expect(n[1].estado).toBe('actual');
+    expect(n[1].pct).toBe(40);
+    expect(n[2].estado).toBe('lejano');
+  });
+
+  it('un nivel logrado no se retira aunque falte mucho para el siguiente', () => {
+    expect(nivelesFondo(1).map(x => x.estado)).toEqual(['logrado', 'actual', 'lejano']);
+  });
+
+  it('con seis meses cubiertos los tres quedan logrados y no hay actual', () => {
+    const n = nivelesFondo(6);
+    expect(n.every(x => x.estado === 'logrado')).toBe(true);
+  });
+
+  it('lectura defensiva: null o negativo se tratan como cero', () => {
+    expect(nivelesFondo(null)[0].estado).toBe('actual');
+    expect(nivelesFondo(-3)[0].pct).toBe(0);
+  });
+});
+
+describe('mesesEnPalabras()', () => {
+  it('1,8 se dice "1 mes y 3 semanas", no en decimales', () => {
+    expect(mesesEnPalabras(1.8)).toBe('1 mes y 3 semanas');
+  });
+
+  it('un entero no arrastra semanas', () => {
+    expect(mesesEnPalabras(3)).toBe('3 meses');
+    expect(mesesEnPalabras(1)).toBe('1 mes');
+  });
+
+  it('menos de un mes se dice solo en semanas', () => {
+    expect(mesesEnPalabras(0.5)).toBe('2 semanas');
+    expect(mesesEnPalabras(0.25)).toBe('1 semana');
+  });
+
+  it('una fracción que redondea a cuatro semanas sube el mes', () => {
+    expect(mesesEnPalabras(1.95)).toBe('2 meses');
+  });
+
+  it('una cobertura mínima no dice "0"', () => {
+    expect(mesesEnPalabras(0.05)).toBe('menos de una semana');
+  });
+
+  it('cero y lo no calculable dicen "0 meses"', () => {
+    expect(mesesEnPalabras(0)).toBe('0 meses');
+    expect(mesesEnPalabras(null)).toBe('0 meses');
+  });
+});
+
+describe('fechaCobertura()', () => {
+  it('traduce los meses cubiertos a un día concreto del calendario', () => {
+    expect(fechaCobertura(1, '2026-07-28')).toBe('2026-08-27');
+  });
+
+  it('más cobertura, fecha más lejana: cada aporte mueve la fecha', () => {
+    const antes   = fechaCobertura(1, '2026-07-28');
+    const despues = fechaCobertura(1.8, '2026-07-28');
+    expect(despues > antes).toBe(true);
+  });
+
+  it('sin cobertura no hay fecha que datar', () => {
+    expect(fechaCobertura(0, '2026-07-28')).toBeNull();
+    expect(fechaCobertura(null, '2026-07-28')).toBeNull();
+    expect(fechaCobertura(2, 'no-es-fecha')).toBeNull();
+  });
+});
+
+describe('bloquesCobertura()', () => {
+  it('dibuja tantos bloques como meses de meta, desde el mes actual', () => {
+    const b = bloquesCobertura(1.8, 3, '2026-07-28');
+    expect(b).toHaveLength(3);
+    expect(b.map(x => x.mesISO)).toEqual(['2026-07-01', '2026-08-01', '2026-09-01']);
+  });
+
+  it('el relleno se reparte mes a mes: entero, parcial y vacío', () => {
+    expect(bloquesCobertura(1.8, 3, '2026-07-28').map(x => x.pct)).toEqual([100, 80, 0]);
+  });
+
+  it('en cero todos los bloques van vacíos', () => {
+    expect(bloquesCobertura(0, 3, '2026-07-28').map(x => x.pct)).toEqual([0, 0, 0]);
+  });
+
+  it('cubierto de sobra, ningún bloque pasa de lleno', () => {
+    expect(bloquesCobertura(9, 3, '2026-07-28').map(x => x.pct)).toEqual([100, 100, 100]);
+  });
+
+  it('cruza el fin de año sin saltarse meses', () => {
+    const b = bloquesCobertura(1, 3, '2026-11-15');
+    expect(b.map(x => x.mesISO)).toEqual(['2026-11-01', '2026-12-01', '2027-01-01']);
+  });
+
+  it('sin meta válida no hay bloques', () => {
+    expect(bloquesCobertura(2, 0, '2026-07-28')).toEqual([]);
+  });
+});
+
+describe('renderAhorro() - tarjeta del fondo (DIS.16)', () => {
+  const textoDatos = () =>
+    [...document.querySelectorAll('.fondo-card__dato')].map(p => p.textContent).join(' | ');
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-ahorro"></div>';
+    S.config = {};
+    S.ahorro = { fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 1_800_000 }, aportes: [], compromisoMensual: 0 };
+  });
+
+  it('el dato protagonista es el nivel alcanzado, no el monto', () => {
+    renderAhorro(1_000_000, null, null);
+    expect(document.querySelector('.fondo-card__kicker').textContent).toContain('Ya tienes');
+    expect(document.querySelector('.fondo-card__nivel-nombre').textContent).toBe('Un mes cubierto');
+  });
+
+  it('la cobertura se prueba con los bloques del calendario y una fecha hipotética', () => {
+    renderAhorro(1_000_000, null, null);
+    expect(document.querySelectorAll('.fondo-card__bloque')).toHaveLength(3);
+    expect(document.querySelector('.fondo-card__frase').textContent).toContain('Si hoy dejaras de recibir ingresos');
+  });
+
+  it('los meses cubiertos se dicen en palabras, sin decimales', () => {
+    renderAhorro(1_000_000, null, null);
+    const pie = document.querySelector('.fondo-card__bloques-pie').textContent;
+    expect(pie).toContain('1 mes y 3 semanas de 3 meses');
+    expect(pie).not.toContain('1,8');
+  });
+
+  it('la escalera muestra los tres niveles con su estado', () => {
+    renderAhorro(1_000_000, null, null);
+    const filas = [...document.querySelectorAll('.fondo-card__nivel-fila')];
+    expect(filas).toHaveLength(3);
+    expect(filas[0].className).toContain('--logrado');
+    expect(filas[1].className).toContain('--actual');
+    expect(filas[1].textContent).toContain('vas en 40%');
+    expect(filas[2].className).toContain('--lejano');
+  });
+
+  it('con la meta cubierta el pie no repite la cifra: dice completos', () => {
+    S.ahorro.fondoEmergencia.montoActual = 3_000_000;
+    renderAhorro(1_000_000, null, null);
+    const pie = document.querySelector('.fondo-card__bloques-pie').textContent;
+    expect(pie).toContain('3 meses completos');
+    expect(pie).not.toContain('3 meses de 3 meses');
+    expect(pie).toContain('100%');
+  });
+
+  it('con la meta cumplida el siguiente nivel sigue a la vista: la tarjeta no se apaga', () => {
+    S.ahorro.fondoEmergencia.montoActual = 3_000_000;
+    renderAhorro(1_000_000, null, null);
+    expect(document.querySelector('.fondo-card__kicker').textContent).toContain('Lo lograste');
+    const filas = [...document.querySelectorAll('.fondo-card__nivel-fila')];
+    expect(filas[2].className).toContain('--actual');
+    expect(document.querySelector('.fondo-card__veredicto').textContent).toContain('Cumpliste tu meta');
+  });
+
+  it('recién cruzada la meta, el avance del nivel siguiente se dice con palabras', () => {
+    S.ahorro.fondoEmergencia.montoActual = 3_000_000;
+    renderAhorro(1_000_000, null, null);
+    const fila = document.querySelectorAll('.fondo-card__nivel-fila')[2];
+    expect(fila.textContent).toContain('apenas empiezas');
+    expect(fila.textContent).not.toMatch(/vas en \d+%/);
+  });
+
+  it('con la meta cumplida la acción secundaria ofrece subirla y nombra el destino', () => {
+    S.ahorro.fondoEmergencia.montoActual = 3_000_000;
+    renderAhorro(1_000_000, null, null);
+    expect(document.querySelector('.fondo-card__secundaria').textContent).toContain('Subir mi meta a 6 meses');
+  });
+
+  it('con la meta ya en el último nivel la secundaria vuelve a ser Editar', () => {
+    S.ahorro.fondoEmergencia.metaMeses   = 6;
+    S.ahorro.fondoEmergencia.montoActual = 6_000_000;
+    renderAhorro(1_000_000, null, null);
+    expect(document.querySelector('.fondo-card__secundaria').textContent.trim()).toBe('Editar');
+  });
+
+  it('en cero se nombra el nivel al que va, no "0 meses"', () => {
+    S.ahorro.fondoEmergencia.montoActual = 0;
+    renderAhorro(1_000_000, null, null);
+    expect(document.querySelector('.fondo-card__kicker').textContent).toContain('Vas a empezar');
+    expect(document.querySelector('.fondo-card__nivel-nombre').textContent).toBe('Tu primer mes');
+    expect(document.querySelector('.fondo-card__frase').textContent).toContain('Todavía no tienes días cubiertos');
+    expect(document.querySelector('.fondo-card__principal').textContent).toContain('Hacer mi primer aporte');
+  });
+
+  it('en cero el nivel próximo se nombra, no se le pone porcentaje ni reproche', () => {
+    S.ahorro.fondoEmergencia.montoActual = 0;
+    renderAhorro(1_000_000, null, null);
+    const fila = document.querySelectorAll('.fondo-card__nivel-fila')[0];
+    expect(fila.className).toContain('--actual');
+    expect(fila.textContent).toContain('próximo');
+    expect(fila.textContent).not.toContain('apenas empiezas');
+    expect(fila.textContent).not.toMatch(/vas en \d+%/);
+  });
+
+  it('en cero el veredicto apunta al primer nivel, no a la meta completa', () => {
+    S.ahorro.fondoEmergencia.montoActual = 0;
+    renderAhorro(1_000_000, null, { monto: 200_000, meses: 15 });
+    const veredicto = document.querySelector('.fondo-card__veredicto').textContent;
+    expect(veredicto).toContain('llegas a tu primer nivel');
+    expect(veredicto).toContain('$200.000');
+    // 1 mes de colchón son $1.000.000: a $200.000 al mes, 5 meses.
+    expect(veredicto).toContain('en 5 meses');
+    expect(veredicto).not.toContain('Te faltan');
+  });
+
+  it('en cero y sin sugerencia, el veredicto igual dice cuánto cuesta el primer nivel', () => {
+    S.ahorro.fondoEmergencia.montoActual = 0;
+    renderAhorro(1_000_000, null, null);
+    expect(document.querySelector('.fondo-card__veredicto').textContent)
+      .toContain('Tu primer nivel son $1.000.000');
+  });
+
+  it('en cero el objetivo se dice como meta, no como "tienes $0 de"', () => {
+    S.ahorro.fondoEmergencia.montoActual = 0;
+    renderAhorro(1_000_000, null, null);
+    const datos = textoDatos();
+    expect(datos).toContain('Tu meta es cubrir 3 meses: hoy son $3.000.000');
+    expect(datos).not.toContain('Tienes $0');
+  });
+
+  it('sin gastos fijos registrados no inventa cobertura', () => {
+    renderAhorro(0, null, null);
+    expect(document.querySelector('.fondo-card__bloque')).toBeNull();
+    expect(document.querySelector('.fondo-card__frase').textContent).toContain('Registra tus gastos fijos');
+  });
+
+  it('el hábito se dice sin porcentajes que obliguen a una cuenta mental', () => {
+    S.ahorro.compromisoMensual = 250_000;
+    renderAhorro(1_000_000, 23, null);
+    expect(textoDatos()).toContain('Te propusiste guardar $250.000 cada mes');
+    expect(textoDatos()).toContain('de cada $100 que recibes, guardas $23');
+  });
+
+  it('la nota del ADR 009 se conserva: el dinero no se mueve', () => {
+    renderAhorro(1_000_000, null, null);
+    expect(document.querySelector('.fondo-card__nota').textContent).toContain('sigue en tus cuentas');
+  });
+
+  // Regla R20: el ojo esconde pesos, no progreso.
+  it('con el saldo oculto enmascara los pesos y conserva nivel, bloques y fecha', () => {
+    S.config = { ocultarSaldo: true };
+    S.ahorro.compromisoMensual = 250_000;
+    renderAhorro(1_000_000, 23, null);
+    expect(textoDatos()).not.toContain('1.800.000');
+    expect(textoDatos()).not.toContain('3.000.000');
+    expect(document.querySelector('.fondo-card__nivel-nombre').textContent).toBe('Un mes cubierto');
+    expect(document.querySelectorAll('.fondo-card__bloque')).toHaveLength(3);
+    expect(document.querySelector('.fondo-card__bloques-pie').textContent).toContain('60%');
+    // Una proporción no revela cuánto dinero hay.
+    expect(textoDatos()).toContain('guardas $23');
+  });
+
+  it('sin el flag activo los montos se ven completos', () => {
+    renderAhorro(1_000_000, null, null);
+    expect(textoDatos()).toContain('1.800.000');
+  });
+
+  it('el botón de registrar vive solo en la tarjeta, no también en el encabezado de aportes', () => {
+    renderAhorro(1_000_000, null, null);
+    expect(document.querySelectorAll('[data-action="ahorro-nuevo-aporte"]')).toHaveLength(1);
+    expect(document.querySelector('.fondo-card__principal').dataset.action).toBe('ahorro-nuevo-aporte');
+  });
+});
+
+describe('renderAhorro() - sin fondo activo (DIS.16, estado 1)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-ahorro"></div>';
+    S.config = {};
+    S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [] };
+  });
+
+  it('los tres niveles se ven desde el primer momento, apagados', () => {
+    renderAhorro(1_000_000, null, null);
+    const filas = [...document.querySelectorAll('.fondo-card__nivel-fila')];
+    expect(filas).toHaveLength(3);
+    expect(filas.every(f => f.className.includes('--lejano'))).toBe(true);
+  });
+
+  it('traduce el primer nivel a pesos para que la decisión no se tome a ciegas', () => {
+    renderAhorro(1_000_000, null, null);
+    expect(document.querySelector('.fondo-card__veredicto').textContent).toContain('$1.000.000');
+  });
+
+  it('sin gastos fijos dice cómo conseguir el dato en vez de un monto inventado', () => {
+    renderAhorro(0, null, null);
+    expect(document.querySelector('.fondo-card__veredicto').textContent).toContain('Registra tus gastos fijos');
+  });
+
+  it('la acción de arranque conserva su data-action', () => {
+    renderAhorro(1_000_000, null, null);
+    expect(document.querySelector('[data-action="ahorro-activar-fondo"]').textContent).toContain('Empezar mi fondo');
   });
 });
