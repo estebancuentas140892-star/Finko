@@ -13,6 +13,7 @@ import {
 } from '../../modules/dominio/metas/logic.js';
 import { renderFormAbonoMeta, renderFormMeta, renderListaMetas } from '../../modules/dominio/metas/view.js';
 import { CATEGORIAS_META_USUARIO } from '../../modules/core/constants.js';
+import { SILUETAS } from '../../modules/infra/svg.js';
 import { S } from '../../modules/core/state.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -491,24 +492,26 @@ describe('renderListaMetas() - ícono de categoría en la lista', () => {
     document.body.innerHTML = '<div id="lista-metas"></div>';
   });
 
-  it('una meta creada con categoría "Boda" muestra el anillo del sprite en el centro del arco', () => {
+  it('una meta creada con categoría "Boda" muestra la silueta del anillo en el centro del arco', () => {
     S.metas = [{
       ...normalizarMeta({ ...datosFormValidos, nombre: 'Fiesta de bodas', categoria: 'Boda', icono: '' }),
       id: 'm1',
     }];
     renderListaMetas();
-    expect(document.querySelector('.meta-card__arco-icono').innerHTML).toContain('#c-anillo');
+    const glifo = document.querySelector('.meta-card__arco-icono');
+    expect(glifo.innerHTML).toContain(SILUETAS.anillo);
+    expect(glifo.classList.contains('meta-card__arco-icono--silueta')).toBe(true);
     expect(document.querySelector('.meta-card__nombre').textContent).toContain('Fiesta de bodas');
   });
 
-  it('una meta vieja con categoría y emoji almacenado migra sola al glifo del sprite', () => {
+  it('una meta vieja con categoría y emoji almacenado migra sola a la silueta de su categoría', () => {
     S.metas = [{
       id: 'm1', nombre: 'Viaje a la playa', categoria: 'Viajes', icono: '✈️',
       montoObjetivo: 1_000_000, montoActual: 0, fechaLimite: null, completada: false,
     }];
     renderListaMetas();
     const glifo = document.querySelector('.meta-card__arco-icono');
-    expect(glifo.innerHTML).toContain('#c-avion');
+    expect(glifo.innerHTML).toContain(SILUETAS.avion);
     expect(glifo.textContent).not.toContain('✈️');
   });
 
@@ -523,13 +526,59 @@ describe('renderListaMetas() - ícono de categoría en la lista', () => {
     expect(glifo.innerHTML).not.toContain('#c-otros');
   });
 
-  it('categoría "Otra" sin emoji manual cae a la caja c-otros', () => {
+  it('categoría "Otra" sin emoji manual cae a la silueta de la caja', () => {
     S.metas = [{
       ...normalizarMeta({ ...datosFormValidos, nombre: 'Lo que sea', categoria: 'Otra', icono: '' }),
       id: 'm1',
     }];
     renderListaMetas();
-    expect(document.querySelector('.meta-card__arco-icono').innerHTML).toContain('#c-otros');
+    expect(document.querySelector('.meta-card__arco-icono').innerHTML).toContain(SILUETAS.caja);
+  });
+
+  // DIS.19: la silueta se llena hasta el porcentaje de la meta, y una cumplida
+  // se dibuja llena aunque su objetivo haya cambiado despues (el corte del
+  // bloque manda, igual que en su arco).
+  it('la silueta se llena hasta el porcentaje: el nivel del agua baja al subir el avance', () => {
+    S.metas = [{
+      ...normalizarMeta({ ...datosFormValidos, nombre: 'Viaje', categoria: 'Viajes', icono: '' }),
+      id: 'm1', montoObjetivo: 1_000_000, montoActual: 250_000,
+    }];
+    renderListaMetas();
+    const agua = document.querySelector('.silueta__llena');
+    // 25%: el nivel arranca en y = 18 de 24 y el agua mide 6.
+    expect(agua.getAttribute('y')).toBe('18');
+    expect(agua.getAttribute('height')).toBe('6');
+  });
+
+  it('una meta en cero no dibuja agua, solo la silueta vacia', () => {
+    S.metas = [{
+      ...normalizarMeta({ ...datosFormValidos, nombre: 'Viaje', categoria: 'Viajes', icono: '' }),
+      id: 'm1', montoObjetivo: 1_000_000, montoActual: 0,
+    }];
+    renderListaMetas();
+    expect(document.querySelector('.silueta__vacia')).not.toBeNull();
+    expect(document.querySelector('.silueta__llena')).toBeNull();
+  });
+
+  it('cada silueta recorta con su propio clipPath: dos metas no comparten id', () => {
+    S.metas = [
+      { ...normalizarMeta({ ...datosFormValidos, nombre: 'Viaje', categoria: 'Viajes', icono: '' }), id: 'm1', montoActual: 500_000 },
+      { ...normalizarMeta({ ...datosFormValidos, nombre: 'Casa', categoria: 'Vivienda', icono: '' }), id: 'm2', montoActual: 500_000 },
+    ];
+    renderListaMetas();
+    const ids = [...document.querySelectorAll('clipPath')].map(c => c.getAttribute('id'));
+    expect(ids).toEqual(['silueta-m1', 'silueta-m2']);
+  });
+
+  it('la silueta es decorativa: no repite el porcentaje que ya anuncia el arco', () => {
+    S.metas = [{
+      ...normalizarMeta({ ...datosFormValidos, nombre: 'Viaje', categoria: 'Viajes', icono: '' }),
+      id: 'm1', montoActual: 500_000,
+    }];
+    renderListaMetas();
+    const svg = document.querySelector('.silueta');
+    expect(svg.getAttribute('aria-hidden')).toBe('true');
+    expect(svg.getAttribute('role')).toBeNull();
   });
 
   it('una meta sin categoría ni emoji muestra la diana i-metas', () => {

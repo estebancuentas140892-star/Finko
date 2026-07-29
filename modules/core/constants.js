@@ -743,6 +743,39 @@ export const CATEGORIA_META_ICONO = {
   'Otra':           'c-otros',
 };
 
+/**
+ * Silueta que se llena por categoría de meta (DIS.19, item 3 del informe de
+ * gráficos). El ícono del sprite dice **qué** persigues; la silueta dice
+ * además **cuánto llevas**, porque se llena de abajo hacia arriba como un
+ * recipiente. Solo UI, igual que `CATEGORIA_META_ICONO`.
+ *
+ * Aquí vive el mapeo, no el dibujo: la geometría de cada forma está en
+ * `infra/svg.js` (`SILUETAS`), que es su capa. Un símbolo del sprite no sirve
+ * como silueta: la mayoría son trazos abiertos, y rellenar por altura un trazo
+ * abierto no produce un nivel legible. Estas diez son figuras cerradas
+ * derivadas de esos mismos glifos.
+ *
+ * El inventario es cerrado y cubre `CATEGORIAS_META_USUARIO` completo, así que
+ * no hay categoría sin forma: 'Otra' es la caja, un destino legítimo y no un
+ * caso de fallo. Las dos categorías que CAT.1c retiró del formulario se
+ * resuelven donde la propia taxonomía las mandó: 'Vacaciones' se fusionó con
+ * 'Viajes' (avión) y 'Cumpleaños' se fue a Apartados, así que hereda la caja.
+ */
+export const CATEGORIA_META_SILUETA = {
+  'Viajes':         'avion',
+  'Cumpleaños':     'caja',
+  'Boda':           'anillo',
+  'Vivienda':       'hogar',
+  'Vehículo':       'carro',
+  'Computador':     'computador',
+  'Celular':        'telefono',
+  'Educación':      'libro',
+  'Hijo(s)':        'biberon',
+  'Vacaciones':     'avion',
+  'Emprendimiento': 'cohete',
+  'Otra':           'caja',
+};
+
 /** Frecuencias soportadas en compromisos e ingresos recurrentes. */
 export const FRECUENCIAS = [
   'Diario',

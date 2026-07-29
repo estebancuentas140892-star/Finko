@@ -4,6 +4,8 @@ import {
   donut,
   progressRing,
   arcoProgreso,
+  siluetaMeta,
+  SILUETAS,
   colorearSegmentos,
   PALETA_CATEGORIAS,
 } from '../../modules/infra/svg.js';
@@ -374,5 +376,82 @@ describe('colorearSegmentos()', () => {
 
   it('array vacío → array vacío', () => {
     expect(colorearSegmentos([])).toEqual([]);
+  });
+});
+
+// ── siluetaMeta() (DIS.19) ───────────────────────────────────────
+
+describe('siluetaMeta()', () => {
+  const base = { forma: 'avion', clave: 'm1' };
+
+  it('dibuja la figura tres veces: vacia, agua recortada y borde', () => {
+    const out = siluetaMeta(50, base);
+    expect(out).toContain('class="silueta__vacia"');
+    expect(out).toContain('class="silueta__llena"');
+    expect(out).toContain('class="silueta__borde"');
+    expect(out).toContain(SILUETAS.avion);
+  });
+
+  it('el nivel del agua baja a medida que sube el porcentaje', () => {
+    const y = (pct) => Number(/class="silueta__llena" x="0" y="([\d.]+)"/.exec(siluetaMeta(pct, base))[1]);
+    expect(y(25)).toBe(18);
+    expect(y(50)).toBe(12);
+    expect(y(100)).toBe(0);
+  });
+
+  it('la altura del agua y su nivel siempre suman el lado del lienzo', () => {
+    for (const pct of [1, 33, 67, 99, 100]) {
+      const m = /y="([\d.]+)" width="24" height="([\d.]+)"/.exec(siluetaMeta(pct, base));
+      expect(Number(m[1]) + Number(m[2])).toBeCloseTo(24, 2);
+    }
+  });
+
+  it('con 0% no emite agua: un rectangulo de altura cero no dice nada', () => {
+    const out = siluetaMeta(0, base);
+    expect(out).not.toContain('silueta__llena');
+    expect(out).toContain('class="silueta__vacia"');
+  });
+
+  it('recorta el porcentaje fuera de rango en vez de deformar la figura', () => {
+    expect(siluetaMeta(180, base)).toContain('y="0"');
+    expect(siluetaMeta(-40, base)).not.toContain('silueta__llena');
+  });
+
+  it('con 100% no dibuja la linea del nivel: no hay nivel que marcar', () => {
+    expect(siluetaMeta(100, base)).not.toContain('silueta__linea');
+    expect(siluetaMeta(60, base)).toContain('silueta__linea');
+  });
+
+  it('el clipPath toma su id de la clave, asi que dos siluetas no colisionan', () => {
+    expect(siluetaMeta(50, { forma: 'hogar', clave: 'm1' })).toContain('id="silueta-m1"');
+    expect(siluetaMeta(50, { forma: 'hogar', clave: 'm2' })).toContain('id="silueta-m2"');
+  });
+
+  it('sin clave se dibuja vacia: mejor sin llenar que llenada con el recorte de otra', () => {
+    const out = siluetaMeta(70, { forma: 'avion' });
+    expect(out).not.toContain('silueta__llena');
+    expect(out).not.toContain('clipPath');
+  });
+
+  it('una forma desconocida cae a la caja en vez de quedarse sin dibujo', () => {
+    expect(siluetaMeta(50, { forma: 'no-existe', clave: 'm1' })).toContain(SILUETAS.caja);
+  });
+
+  it('por defecto se anuncia con role img y etiqueta', () => {
+    const out = siluetaMeta(42, base);
+    expect(out).toContain('role="img"');
+    expect(out).toContain('aria-label="Progreso: 42%"');
+  });
+
+  it('decorativa se oculta al lector: el contexto ya dice el porcentaje', () => {
+    const out = siluetaMeta(42, { ...base, decorativa: true });
+    expect(out).toContain('aria-hidden="true"');
+    expect(out).not.toContain('role="img"');
+    expect(out).not.toContain('aria-label');
+  });
+
+  it('escapa la clave y la etiqueta que recibe', () => {
+    const out = siluetaMeta(50, { forma: 'avion', clave: 'a"><b', ariaLabel: 'Meta <b>' });
+    expect(out).not.toContain('<b>');
   });
 });

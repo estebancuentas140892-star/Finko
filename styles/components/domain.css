@@ -669,6 +669,21 @@ button.chip:focus-visible {
   --fk-icon-size: 2.75rem;
 }
 
+/* DIS.19: cuando el centro del arco lo ocupa la silueta que se llena, el hueco
+   deja de medirse en tamano de fuente (un glifo o un emoji) y pasa a ser una
+   caja con lado propio: el SVG de la silueta se estira al 100% de su
+   contenedor. 62px es el diametro que deja el arco libre sin tocar el trazo. */
+.meta-card__arco-icono--silueta {
+  width: 62px;
+  height: 62px;
+  font-size: 0;
+  /* La silueta se tine con currentColor, asi que hereda el color que
+     `.progress-ring-wrap` ya le dio al arco en vez del gris del icono: el nivel
+     del agua y el arco que lo rodea nunca se contradicen, y una meta cumplida
+     los pone los dos en verde. */
+  color: inherit;
+}
+
 .meta-card__escala {
   display: flex;
   justify-content: space-between;

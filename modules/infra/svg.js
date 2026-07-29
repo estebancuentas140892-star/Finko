@@ -238,6 +238,100 @@ export function arcoProgreso(porcentaje, opts = {}) {
   </svg>`;
 }
 
+// ── SILUETA QUE SE LLENA ─────────────────────────────────────────
+
+/**
+ * Geometría de las diez siluetas de meta (DIS.19). Todas en el mismo lienzo de
+ * 24x24 del sprite y todas **cerradas**: un trazo abierto no se puede rellenar
+ * por altura sin que el nivel se lea como un error de dibujo.
+ *
+ * Derivadas de los glifos que `CATEGORIA_META_ICONO` ya resuelve, así que la
+ * meta se sigue reconociendo igual; lo que cambia es que ahora también mide.
+ * El mapeo categoría a forma vive en `core/constants.js`
+ * (`CATEGORIA_META_SILUETA`): esto es solo el dibujo.
+ */
+export const SILUETAS = {
+  avion:      'M12 2.9c1.05 0 1.75 1.5 1.75 3.3v3.5l6.75 3.9v2.4l-6.75-2v3.4l1.95 1.6v2.1L12 20l-3.7 1.1V19l1.95-1.6V14l-6.75 2v-2.4l6.75-3.9V6.2c0-1.8.7-3.3 1.75-3.3z',
+  hogar:      'M12 2.6 21.4 11v9.1a1.7 1.7 0 0 1-1.7 1.7h-4.5v-6.3h-6.4v6.3H4.3a1.7 1.7 0 0 1-1.7-1.7V11z',
+  carro:      'M2.8 17.3v-2.9a1.9 1.9 0 0 1 1.35-1.82l1.75-.53 2.5-3.35A3 3 0 0 1 10.8 7.5h4.1a3 3 0 0 1 2.1.86l2.9 2.84 1.5.5a1.9 1.9 0 0 1 1.3 1.8v3.8a1.2 1.2 0 0 1-1.2 1.2h-1.3a2.55 2.55 0 0 0-5.1 0H9.3a2.55 2.55 0 0 0-5.1 0H4a1.2 1.2 0 0 1-1.2-1.2z',
+  computador: 'M4.3 5.6h15.4v9.2H4.3zm-2.6 10.6h20.6l-1.1 2.3a1.6 1.6 0 0 1-1.45.9H4.25a1.6 1.6 0 0 1-1.45-.9z',
+  telefono:   'M8.1 2.7h7.8a2.4 2.4 0 0 1 2.4 2.4v13.8a2.4 2.4 0 0 1-2.4 2.4H8.1a2.4 2.4 0 0 1-2.4-2.4V5.1a2.4 2.4 0 0 1 2.4-2.4z',
+  libro:      'M12 6.4c-1.9-1.6-4.3-2.3-7.2-2.3a1.4 1.4 0 0 0-1.4 1.4v11.6a1.4 1.4 0 0 0 1.4 1.4c2.9 0 5.3.7 7.2 2.3 1.9-1.6 4.3-2.3 7.2-2.3a1.4 1.4 0 0 0 1.4-1.4V5.5a1.4 1.4 0 0 0-1.4-1.4c-2.9 0-5.3.7-7.2 2.3z',
+  anillo:     'M12 8.2a6.4 6.4 0 1 1 0 12.8 6.4 6.4 0 0 1 0-12.8zm0 3.1a3.3 3.3 0 1 0 0 6.6 3.3 3.3 0 0 0 0-6.6zM12 2.6 15.1 7H8.9z',
+  biberon:    'M9.6 2.7h4.8v1.7a2.2 2.2 0 0 1-.9 1.77l-.4.3v1.36h1.3a2.3 2.3 0 0 1 2.3 2.3v9.4a2.3 2.3 0 0 1-2.3 2.3H9.6a2.3 2.3 0 0 1-2.3-2.3v-9.4a2.3 2.3 0 0 1 2.3-2.3h1.3V6.44l-.4-.3a2.2 2.2 0 0 1-.9-1.77z',
+  cohete:     'M12 2.4c2.6 2.6 4.1 6 4.1 9.7l2.4 2.9v3.1l-3.3-1.6-.9 3.4h-4.6l-.9-3.4-3.3 1.6v-3.1l2.4-2.9c0-3.7 1.5-7.1 4.1-9.7z',
+  caja:       'M7.33 4.05h9.34A1.7 1.7 0 0 1 18.2 5L20 8.6v10.2a1.9 1.9 0 0 1-1.9 1.9H5.9A1.9 1.9 0 0 1 4 18.8V8.6L5.8 5a1.7 1.7 0 0 1 1.53-.95z',
+};
+
+/** Lado del lienzo de las siluetas. El mismo del sprite. */
+const _SILUETA_LADO = 24;
+
+/**
+ * Silueta de una meta llena hasta su porcentaje (DIS.19).
+ *
+ * Hermana de `progressRing()` y `arcoProgreso()`, con las mismas reglas: los
+ * colores viven en CSS (`.silueta__*`), el porcentaje se recorta al rango y el
+ * `<svg>` lleva su propio `role="img"` con la etiqueta que arma el llamador.
+ *
+ * **Cómo se llena.** El agua es un `<rect>` que crece desde abajo y va recortado
+ * por la propia silueta con un `<clipPath>`. La alternativa (tapar la parte seca
+ * con un rectángulo del color del fondo) daba el mismo dibujo pero solo mientras
+ * el contenedor tuviera exactamente ese color: al montar la silueta en un
+ * carril con otro fondo, el rectángulo aparecía como un bloque. El recorte no
+ * depende del contexto.
+ *
+ * El `<clipPath>` necesita un id único en el documento y hay varias siluetas en
+ * pantalla a la vez, así que el llamador pasa la clave que ya identifica su
+ * fila (el id de la meta). Sin `clave` no se emite el recorte: la silueta se
+ * dibuja vacía en vez de rellenarse con el recorte de otra.
+ *
+ * @param {number} porcentaje - 0 a 100; fuera de rango se recorta.
+ * @param {Object} opts
+ * @param {string} opts.forma          - clave de `SILUETAS`. Sin coincidencia, la caja.
+ * @param {string} opts.clave          - id único para el `<clipPath>` (ej. el id de la meta).
+ * @param {string} [opts.ariaLabel]    - Default: "Progreso: N%".
+ * @param {boolean}[opts.conLinea=true]- Línea del nivel donde termina el agua.
+ * @param {boolean}[opts.decorativa=false] - Sin `role="img"` ni etiqueta: el
+ *   dibujo no aporta información que el contexto no diga ya. Es lo correcto
+ *   cuando la silueta acompaña a un medidor que ya anuncia el porcentaje (el
+ *   arco de la tarjeta de meta) o va dentro de un botón con nombre propio (el
+ *   carril de la casa de Ahorro). Emitir un `role="img"` dentro de un ancestro
+ *   `aria-hidden` sería peor que no emitirlo: parecería el defecto que la regla
+ *   R52 vino a corregir, con la etiqueta borrada sin que se note.
+ * @returns {string} SVG completo.
+ */
+export function siluetaMeta(porcentaje, opts = {}) {
+  const { forma, clave, conLinea = true, decorativa = false } = opts;
+
+  const d        = SILUETAS[forma] ?? SILUETAS.caja;
+  const pct      = Math.max(0, Math.min(100, Number(porcentaje) || 0));
+  const pctLabel = Math.round(pct);
+  const ariaLabel = opts.ariaLabel ?? `Progreso: ${pctLabel}%`;
+  const semantica = decorativa
+    ? 'aria-hidden="true" focusable="false"'
+    : `role="img" aria-label="${_esc(ariaLabel)}"`;
+
+  // Altura del agua contada desde arriba: con 0% el nivel está en el borde
+  // inferior y con 100% en el superior.
+  const nivel = Number((_SILUETA_LADO * (1 - pct / 100)).toFixed(2));
+  const alto  = Number((_SILUETA_LADO - nivel).toFixed(2));
+
+  const clipId  = clave ? `silueta-${_esc(String(clave))}` : '';
+  const recorte = clipId ? ` clip-path="url(#${clipId})"` : '';
+
+  const aguaHtml = (clipId && pct > 0)
+    ? `<defs><clipPath id="${clipId}"><path d="${d}"/></clipPath></defs>
+    <rect class="silueta__llena" x="0" y="${nivel}" width="${_SILUETA_LADO}" height="${alto}"${recorte}/>
+    ${conLinea && pct < 100 ? `<line class="silueta__linea" x1="0" y1="${nivel}" x2="${_SILUETA_LADO}" y2="${nivel}"${recorte}/>` : ''}`
+    : '';
+
+  return `<svg viewBox="0 0 ${_SILUETA_LADO} ${_SILUETA_LADO}" ${semantica} class="silueta">
+    <path class="silueta__vacia" d="${d}"/>
+    ${aguaHtml}
+    <path class="silueta__borde" d="${d}"/>
+  </svg>`;
+}
+
 // ── PALETA ───────────────────────────────────────────────────────
 
 /**

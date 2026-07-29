@@ -20,6 +20,7 @@ import {
   CATEGORIAS_META,
   CATEGORIAS_META_USUARIO,
   CATEGORIA_META_ICONO,
+  CATEGORIA_META_SILUETA,
   GRUPOS_FINANCIEROS,
   LABEL_GRUPO_FINANCIERO,
   GRUPO_POR_SECCION,
@@ -27,6 +28,7 @@ import {
   ICONOS_CATEGORIA_PERSONALIZADA,
   iconoDeCategoriaGasto,
 } from '../../modules/core/constants.js';
+import { SILUETAS } from '../../modules/infra/svg.js';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -199,6 +201,40 @@ describe('CATEGORIAS_META / CATEGORIA_META_ICONO', () => {
 
   it('sin categorías duplicadas', () => {
     expect(new Set(CATEGORIAS_META).size).toBe(CATEGORIAS_META.length);
+  });
+});
+
+// ── CATEGORIA_META_SILUETA (DIS.19, item 3 del informe de graficos) ──
+
+describe('CATEGORIA_META_SILUETA', () => {
+  it('toda categoría de CATEGORIAS_META resuelve una forma, así que no hay meta sin silueta', () => {
+    for (const cat of CATEGORIAS_META) {
+      expect(SILUETAS[CATEGORIA_META_SILUETA[cat]]).toBeDefined();
+    }
+  });
+
+  it('no tiene entradas huérfanas (todas están en CATEGORIAS_META)', () => {
+    for (const cat of Object.keys(CATEGORIA_META_SILUETA)) {
+      expect(CATEGORIAS_META).toContain(cat);
+    }
+  });
+
+  it('las diez formas del inventario se usan todas: ninguna queda sin categoría', () => {
+    const usadas = new Set(Object.values(CATEGORIA_META_SILUETA));
+    expect(usadas).toEqual(new Set(Object.keys(SILUETAS)));
+  });
+
+  it('las dos categorías que CAT.1c retiró heredan donde la taxonomía las mandó', () => {
+    // 'Vacaciones' se fusionó con 'Viajes', así que comparte su avión.
+    expect(CATEGORIA_META_SILUETA['Vacaciones']).toBe(CATEGORIA_META_SILUETA['Viajes']);
+    // 'Cumpleaños' se fue a Apartados: sin metáfora propia, hereda la caja.
+    expect(CATEGORIA_META_SILUETA['Cumpleaños']).toBe(CATEGORIA_META_SILUETA['Otra']);
+  });
+
+  it('cada silueta es un path cerrado: termina en z, para que el relleno tenga sentido', () => {
+    for (const [forma, d] of Object.entries(SILUETAS)) {
+      expect(d.trim().endsWith('z'), forma).toBe(true);
+    }
   });
 });
 

@@ -6,11 +6,14 @@
 import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
 import { emptyArt, iconoCategoria } from '../../infra/icons.js';
-import { arcoProgreso } from '../../infra/svg.js';
+import { arcoProgreso, siluetaMeta } from '../../infra/svg.js';
 import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
-import { CATEGORIAS_META_USUARIO, CATEGORIA_META_ICONO, ICONOS_CATEGORIA_PERSONALIZADA } from '../../core/constants.js';
+import {
+  CATEGORIAS_META_USUARIO, CATEGORIA_META_ICONO, CATEGORIA_META_SILUETA,
+  ICONOS_CATEGORIA_PERSONALIZADA,
+} from '../../core/constants.js';
 import {
   metasActivas, metasCumplidas, calcularProgreso, calcularAhorroPorPeriodo,
   etiquetaPeriodoAhorro, frecuenciaPrincipalIngresos,
@@ -95,7 +98,6 @@ export function renderListaMetas() {
 function _renderMetaCard(meta, frecuenciaIngresos, oculto = false) {
   const nombre  = _esc(meta.nombre);
   const id      = _esc(meta.id);
-  const icono   = _iconoMeta(meta, 'icon meta-card__glifo');
   const { porcentaje, faltante, completada } = calcularProgreso(meta);
   const ahorro  = calcularAhorroPorPeriodo(meta, frecuenciaIngresos);
   const m       = (n) => oculto ? SALDO_MASCARA_CUENTA : f(n);
@@ -104,6 +106,7 @@ function _renderMetaCard(meta, frecuenciaIngresos, oculto = false) {
   // cumplida se pinta como cumplida aunque su objetivo haya cambiado después.
   const cumplida  = meta.completada === true || completada;
   const claseArco = cumplida ? 'complete' : porcentaje >= 80 ? 'near' : 'default';
+  const glifo     = _glifoMeta(meta, porcentaje, cumplida);
   const acumulado = meta.montoActual ?? 0;
   const enCero    = acumulado <= 0;
 
@@ -163,7 +166,7 @@ function _renderMetaCard(meta, frecuenciaIngresos, oculto = false) {
           ${arcoProgreso(porcentaje, {
             ariaLabel: cumplida ? `${nombre}: meta cumplida` : `${nombre}: ${porcentaje}% de tu objetivo`,
           })}
-          <span class="meta-card__arco-icono" aria-hidden="true">${icono}</span>
+          <span class="meta-card__arco-icono${glifo.esSilueta ? ' meta-card__arco-icono--silueta' : ''}" aria-hidden="true">${glifo.html}</span>
         </div>
         <p class="meta-card__escala">
           <span>${f(0)}</span>
@@ -361,6 +364,60 @@ function _renderOpcionesCategoria(seleccionada = '') {
 function _valorIconoEditable(meta) {
   if (!meta?.icono) return null;
   return /^[a-z]-/.test(meta.icono) ? meta.icono : null;
+}
+
+/**
+ * Lo que va en el centro del arco (DIS.19, item 3 del informe de gráficos).
+ *
+ * La silueta gana cuando la categoría resuelve una forma, porque hace el trabajo
+ * del ícono y uno más: se llena de abajo hacia arriba, así que a 62px la meta se
+ * reconoce **y** se mide sin leer una cifra. El resto conserva su glifo de
+ * siempre, y la precedencia es exactamente la de `_iconoMeta()` para que las dos
+ * lecturas no se contradigan:
+ *
+ * - Categoría predefinida: manda la categoría, así que manda su silueta.
+ * - Categoría 'Otra' con ícono propio: gana el ícono. El usuario eligió ese
+ *   glifo a mano (MT.3/CAT.2b) y una caja genérica sería un retroceso.
+ * - Categoría 'Otra' sin ícono propio: la caja, que es lo que ya mostraba.
+ * - Sin categoría: la diana de siempre. "Sin categoría" no es una categoría, y
+ *   darle la caja diría "Otra", que es una elección que el usuario no hizo.
+ *
+ * La silueta se emite decorativa: el arco que la rodea ya anuncia el porcentaje
+ * con el nombre de la meta, y repetirlo lo diría dos veces.
+ *
+ * @param {import('../../core/state.js').Meta} meta
+ * @param {number} porcentaje
+ * @param {boolean} cumplida
+ * @returns {{html: string, esSilueta: boolean}}
+ */
+function _glifoMeta(meta, porcentaje, cumplida) {
+  const forma = _formaSilueta(meta);
+  if (!forma) {
+    return { html: _iconoMeta(meta, 'icon meta-card__glifo'), esSilueta: false };
+  }
+
+  // Una meta marcada como cumplida se dibuja llena aunque su objetivo haya
+  // cambiado después, igual que su arco (el corte del bloque manda).
+  return {
+    html: siluetaMeta(cumplida ? 100 : porcentaje, {
+      forma,
+      clave:      meta.id,
+      decorativa: true,
+    }),
+    esSilueta: true,
+  };
+}
+
+/**
+ * Forma de la silueta de una meta, o `null` si le toca conservar su ícono.
+ * Las reglas y su motivo están en `_glifoMeta()`.
+ * @param {import('../../core/state.js').Meta} meta
+ * @returns {string|null} clave de `SILUETAS`.
+ */
+function _formaSilueta(meta) {
+  if (!meta?.categoria) return null;
+  if (meta.categoria === 'Otra' && meta.icono) return null;
+  return CATEGORIA_META_SILUETA[meta.categoria] ?? null;
 }
 
 /**

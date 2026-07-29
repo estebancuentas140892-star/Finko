@@ -524,6 +524,40 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Silueta que se llena (DIS.19, item 3 del informe de graficos de Ahorro).
+   Tercer hermano del anillo y del arco: la figura de lo que persigues es
+   tambien el medidor, asi que la meta se reconoce y se mide con un solo dibujo.
+   El agua toma el color del contexto por currentColor, igual que el arco, y
+   `.progress-ring-wrap` sigue decidiendolo desde el wrapper.
+   El SVG no declara width/height: lo dimensiona su contenedor. */
+.silueta {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.silueta__vacia { fill: var(--fk-bg-elevated); }
+.silueta__llena {
+  fill: currentColor;
+  animation: silueta-subir var(--fk-transition-slow) both;
+}
+.silueta__linea {
+  stroke: currentColor;
+  stroke-width: 0.6;
+  stroke-opacity: 0.9;
+}
+.silueta__borde {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 0.8;
+  stroke-opacity: 0.55;
+}
+/* El nivel entra subiendo desde el borde inferior. El recorte del clipPath es
+   el que impide que el desplazamiento se salga de la figura; a11y.css anula la
+   animacion global bajo prefers-reduced-motion. */
+@keyframes silueta-subir {
+  from { transform: translateY(24px); }
+}
+
 /* Color del arco via currentColor: una clase en el wrapper, sin inline styles.
    IV.2b (ADR 031): el estado por defecto ("aún en progreso") se tiñe con el
    acento de sección (`--fk-section-accent`, de un `[data-dom="X"]` ancestro);
