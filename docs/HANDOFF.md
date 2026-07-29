@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-28. Última tarea cerrada: DIS.18, Ahorro pasa de encabezado repetido a pantalla propia (la casa de las cuatro modalidades).
+> Última actualización: 2026-07-29. Última tarea cerrada: DIS.19, Ahorro en cuatro carriles (cada modalidad con su propio gráfico).
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, GMF).
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 3337/3337 verdes |
-| Tests E2E | 236/236 verdes en las 11 suites, corrida completa el 2026-07-28. El desglose no se transcribe acá: lo reporta la propia corrida. |
+| Tests unitarios + integración | 3424/3424 verdes |
+| Tests E2E | 236/236 verdes en las 11 suites, corrida completa el 2026-07-28 (DIS.19 no la re-corrió: no tocó el arranque ni agregó flujos). El desglose no se transcribe acá: lo reporta la propia corrida. |
 | Schema version (localStorage) | v27 |
 | Lighthouse Performance | 100 |
 | Lighthouse Accessibility | 100 |
@@ -39,6 +39,10 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, GMF).
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(ahorro): DIS.19, Ahorro en cuatro carriles · 2026-07-29
+
+Sexta y última pasada de la auditoría por secciones. DIS.18 le dio a las cuatro modalidades una pantalla padre, pero las filas eran monto y estado en texto: **la diferencia entre las cuatro estaba adentro de cada sección y la decisión se toma afuera**. Ahora cada carril de `#ahorro` trae su propio gráfico y cada gráfico mide en su propia unidad (meses cubiertos, columnas contra la marca del plan, siluetas que se llenan, dos columnas de crecimiento), con el rótulo del momento de uso encabezando y ordenando los cuatro. Los mismos gráficos entran a las secciones hijas: la silueta al centro del arco en Metas, el comparador encima de la lista en Apartados, la franja con el eje de niveles y el medidor del compromiso en Fondo. Dos piezas bajan a `infra/bolsas.js` e `infra/portafolio.js` en vez de duplicarse (primer paso de ARQ.1). **Fuera de alcance:** la celda de ahorro en Inicio (para triaje), la etapa de Inversión en su carril (espera ARQ.1) y el nombre "Apartados" (AH.7). 3424/3424 unit + lint verdes. SW v441 → v446.
 
 ### feat(ahorro): DIS.18, Ahorro pasa de encabezado repetido a pantalla propia · 2026-07-28
 
@@ -64,13 +68,7 @@ Arquitectura **E** de la auditoría por secciones, y la respuesta de Metas **no 
 
 ---
 
-### feat(metas): DIS.14, la meta pasa de fila a tarjeta con medidor · 2026-07-28
-
-Arquitectura **A2** de la auditoría de diseño por secciones (carpeta "Diseño Secciones"): la meta deja de ser una fila horizontal con anillo en una esquina y pasa a ser `.meta-card`, tarjeta vertical con medidor semicircular, como ya había hecho `.deuda-card`. **El objetivo deja de competir con lo acumulado**: es el extremo de la escala del arco, no un segundo número, y el ícono de la meta se muda al centro del arco a 44px. Cinco estados resueltos: en curso, sin fecha límite (el hueco del plan de aportes lo ocupa la invitación a ponerla), recién creada (la cifra en cero cede su línea a una frase y el botón nombra el primer paso), cumplida (arco cerrado, sin aportar) y con el saldo oculto. Las tres acciones a 44px, así que MT.g queda cerrado dentro de Metas sin decidir `btn-sm` global. El copy visible adopta "aporte", la palabra de Apartados y Fondo; los ids y `data-action` no cambian. `arcoProgreso()` nace en `infra/svg.js` como hermano de `progressRing()`. **Sin aplicar:** la historia de la meta cumplida ("12 aportes en 6 meses"), que no tiene de dónde salir sin ledger de aportes ni `fechaCumplida`. Tres reglas nuevas de diseño (R57 a R59). 3223/3223 unit + 235/235 E2E + lint verdes. SW v435 → v436.
-
----
-
-> Para tareas anteriores (feat(metas) CAT.1c el catalogo de Metas adopta la taxonomia global, docs(tesoreria) MC.16 la tarjeta de credito se decide como producto de Deudas, fix(tesoreria) MC.13f confirmar el cobro que Finko no puede datar, fix(gastos) TX.12b el chip de gasto frecuente ofrece el monto real, fix(metas) MT.7 prellenar el monto del aporte con la cuota del periodo, fix(metas) DIS.13 las 6 correcciones de la auditoria de diseno sobre Metas, fix(fondo) DIS.12 las 9 correcciones de la auditoria de diseno sobre Fondo de emergencia, fix(calendario) DIS.11 las 11 correcciones de la auditoria de diseno sobre Calendario, fix(analisis) DIS.10 las 12 correcciones de la auditoria de diseno sobre Analisis, fix(mis-cuentas) DIS.9 las 9 correcciones de la auditoria de diseno sobre Mis cuentas, fix(limites) DIS.7 las 9 correcciones de la auditoria de diseno sobre Limites de gasto, fix(interfaz) DIS.6 las 7 correcciones de la auditoria de diseno sobre la Interfaz, fix(apartados) DIS.5 las 11 correcciones de la auditoría de diseño sobre Apartados, fix(gastos) DIS.4 las 10 correcciones de la auditoría de diseño sobre Gastos, fix(me-deben) DIS.3 las 11 correcciones de la auditoría de diseño sobre Me deben, fix(deudas) DIS.2 las 8 correcciones de la auditoría de diseño sobre Deudas, fix(inicio) V1 el acento de marca deja de medir el gasto semanal, docs(reorg) Fases 1 y 2 de la reorganización documental, feat(metas) EDIT.1a editar sin destruir el progreso, feat(gastos) TX.12 gastos frecuentes y "Repetir", feat(agenda) CAL.5a pagar en lote lo que ya venció, feat(movimientos) MOV.2 búsqueda y filtros en el ledger, feat(movimientos) MOV.1 el ledger deja de ser solo lectura, feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
+> Para tareas anteriores (feat(metas) DIS.14 la meta pasa de fila a tarjeta con medidor, feat(metas) CAT.1c el catalogo de Metas adopta la taxonomia global, docs(tesoreria) MC.16 la tarjeta de credito se decide como producto de Deudas, fix(tesoreria) MC.13f confirmar el cobro que Finko no puede datar, fix(gastos) TX.12b el chip de gasto frecuente ofrece el monto real, fix(metas) MT.7 prellenar el monto del aporte con la cuota del periodo, fix(metas) DIS.13 las 6 correcciones de la auditoria de diseno sobre Metas, fix(fondo) DIS.12 las 9 correcciones de la auditoria de diseno sobre Fondo de emergencia, fix(calendario) DIS.11 las 11 correcciones de la auditoria de diseno sobre Calendario, fix(analisis) DIS.10 las 12 correcciones de la auditoria de diseno sobre Analisis, fix(mis-cuentas) DIS.9 las 9 correcciones de la auditoria de diseno sobre Mis cuentas, fix(limites) DIS.7 las 9 correcciones de la auditoria de diseno sobre Limites de gasto, fix(interfaz) DIS.6 las 7 correcciones de la auditoria de diseno sobre la Interfaz, fix(apartados) DIS.5 las 11 correcciones de la auditoría de diseño sobre Apartados, fix(gastos) DIS.4 las 10 correcciones de la auditoría de diseño sobre Gastos, fix(me-deben) DIS.3 las 11 correcciones de la auditoría de diseño sobre Me deben, fix(deudas) DIS.2 las 8 correcciones de la auditoría de diseño sobre Deudas, fix(inicio) V1 el acento de marca deja de medir el gasto semanal, docs(reorg) Fases 1 y 2 de la reorganización documental, feat(metas) EDIT.1a editar sin destruir el progreso, feat(gastos) TX.12 gastos frecuentes y "Repetir", feat(agenda) CAL.5a pagar en lote lo que ya venció, feat(movimientos) MOV.2 búsqueda y filtros en el ledger, feat(movimientos) MOV.1 el ledger deja de ser solo lectura, feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
 
 ---
 

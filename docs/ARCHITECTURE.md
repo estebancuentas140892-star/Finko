@@ -1,7 +1,7 @@
 # Arquitectura - Finko Claude
 
 > Documento vivo. Se actualiza cuando cambia una capa, se agrega un dominio, se mueve un archivo de estilos o se introduce un patrón nuevo.
-> Última revisión: 2026-07-24 (absorbe el mapa operativo del ex `MAPA.md` como sección 13).
+> Última revisión: 2026-07-29 (DIS.19 suma `infra/bolsas.js`, `infra/portafolio.js` y `ui/comparador.js`). Antes: 2026-07-24 (absorbe el mapa operativo del ex `MAPA.md` como sección 13).
 >
 > **Dos preguntas distintas, dos mitades:** las secciones 1 a 12 responden **cómo está construido** el sistema (capas, dominios, eventos, reglas técnicas). La sección 13 responde **dónde está cada cosa y cómo localizarla** (sección visible → carpeta, índice de estilos, síntoma → dónde mirar). Si vienes a arreglar algo y no sabes por dónde empezar, ve directo a la 13.
 
@@ -71,7 +71,9 @@ Utilidades transversales sin dependencias de dominio.
 | `cuenta-helper.js` | Patrón compartido "0/1/varias cuentas": `renderSelectorCuenta()` + `resolverPagoConPreferida()`, usado por Gastos, Deudas, Apartados y Metas |
 | `distribuir-pago.js` | `distribuirPago()`: reparte un monto entre varias cuentas cuando ninguna alcanza sola |
 | `icons.js` | `icon(id)` y `emptyArt(id)`: helpers que referencian el sprite SVG inline de `index.html` |
-| `svg.js` | Gráficos SVG generados (sparkline, donut) para Análisis |
+| `svg.js` | Gráficos SVG generados: `sparkline`/`donut` para Análisis, `progressRing`/`arcoProgreso` y `siluetaMeta` (silueta que se llena por altura, DIS.19) |
+| `bolsas.js` | El plan de aportes de una bolsa con fecha: `diasHastaFecha`, `planDeReferencia`, `estadoDeBolsa`. Lo comparten Apartados y la casa de Ahorro (DIS.19), primer paso de ARQ.1 |
+| `portafolio.js` | Lo invertido, su proyección al vencimiento y la geometría del gráfico de dos columnas: de `esProyectable` a `columnasPortafolio`. Lo comparten Inversión y la casa de Ahorro (DIS.19) |
 | `csv.js` | Parser/serializador CSV (RFC 4180 simplificado) para importar/exportar gastos |
 | `notificaciones.js` | Web Notifications API para recordatorios de compromisos próximos |
 | `form-errors.js` | Helpers de validación y mensajes de error en formularios |
@@ -92,6 +94,7 @@ Bootstrap y orquestación de la interfaz.
 | `confirm.js` | Overlay de confirmación (reemplaza `confirm()` nativo) |
 | `onboarding.js` | Wizard de bienvenida para usuario nuevo (`!S.onboarded`) |
 | `proposito.js` | Banner colapsable de "propósito de sección" (qué resuelve cada sección), patrón de [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md) |
+| `comparador.js` | Columnas comparables de varias bolsas contra la marca de su plan: `htmlComparador()` + `pieComparador()`. Puro, sin DOM. Lo comparten la lista de Apartados y la casa de Ahorro (DIS.19) |
 | `menu-mas.js` | Menú "Más" (secciones que no caben en la bottom nav móvil) |
 | `install-prompt.js` | Prompt de instalación de la PWA (`beforeinstallprompt`) |
 

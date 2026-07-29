@@ -7,8 +7,8 @@
 ## Aportar a un apartado (dominio `apartados`, AP.5a)
 
 - **Objetivo**          : registrar dinero apartado para un gasto esporádico previsible (SOAT, regalos, matrícula...), descontando la cuenta de origen (patrón 0/1/varias de `infra/cuenta-helper.js`, igual que Metas). Desde AP.5a, el monto llega prellenado con el aporte que le toca aportar al usuario según fecha objetivo y frecuencia real de ingresos, en vez de pedirle que lo vuelva a escribir.
-- **Estado actual**     : estable. **DIS.15 cerrada** (2026-07-28): la fila pasó a `.apartado-card`, tarjeta propia con dos carreras (el dinero reunido contra lo que el plan preveía), el plazo como dato protagonista, la recurrencia en la cabecera y el ojo de privacidad, que hasta hoy no llegaba al hub de ahorro. **AP.5a cerrada** (2026-07-22) y **DIS.5 cerrada** (2026-07-26, 11 de los 13 hallazgos de la auditoría de diseño; su capa de layout la reemplazó DIS.15). El resto de AP.5 (form v2, toggle "Recurrente") sigue pendiente de análisis y toca el mismo formulario que tocó DIS.5/A8: A8 fue composición (cuántas plantillas se ven), AP.5 es estructura (qué campos y en qué orden).
-- **Verificado contra** : DIS.15 (2026-07-28).
+- **Estado actual**     : estable. **DIS.19 cerrada** (2026-07-29): la lista gana un comparador encima, con las columnas de todos los apartados contra la marca de su plan. Responde "de los cuatro, ¿cuál va mal?", que ninguna tarjeta individual podía contestar. **DIS.15 cerrada** (2026-07-28): la fila pasó a `.apartado-card`, tarjeta propia con dos carreras (el dinero reunido contra lo que el plan preveía), el plazo como dato protagonista, la recurrencia en la cabecera y el ojo de privacidad, que hasta hoy no llegaba al hub de ahorro. **AP.5a cerrada** (2026-07-22) y **DIS.5 cerrada** (2026-07-26, 11 de los 13 hallazgos de la auditoría de diseño; su capa de layout la reemplazó DIS.15). El resto de AP.5 (form v2, toggle "Recurrente") sigue pendiente de análisis y toca el mismo formulario que tocó DIS.5/A8: A8 fue composición (cuántas plantillas se ven), AP.5 es estructura (qué campos y en qué orden).
+- **Verificado contra** : DIS.19, commit `788f87d` (2026-07-29).
 
 **Dónde vive**
 
@@ -29,7 +29,7 @@
 | Separador de miles de los dos campos de monto | `modules/dominio/apartados/view.js` / `index.js` | `miles()`, `desdeMiles()`, `_wireMiles()`, atributo `data-miles` | ~30, ~280 |
 | Schema del apartado | `modules/core/state.js` | `S.apartados[]` (`montoObjetivo`, `montoActual`, `fechaObjetivo`, `frecuenciaAporte`, `completado`, `fechaInicioPlan` opcional) | |
 
-**Recursos**: estilos en `styles/components/domain.css` (`.lista-apartados`, `.apartado-*`) y en `styles/responsive.css` (la grilla de la fila y el piso táctil de "Ya lo usé", DIS.5: van ahí porque la capa `responsive` gana por orden a `components`); iconos vía el picker compartido (`infra/icon-picker.js`, CAT.2c) o el emoji curado de cada plantilla; token de dominio `--fk-dom-apartados`.
+**Recursos**: el comparador compartido (`ui/comparador.js`, `htmlComparador()` + `pieComparador()`, estilado en `.cmp__*` de `styles/components/charts.css`) y el estado comparable de cada bolsa (`infra/bolsas.js`, `estadoDeBolsa()`, que envuelve `planDeReferencia()`); estilos en `styles/components/domain.css` (`.lista-apartados`, `.apartados-comparador`, `.apartado-*`) y en `styles/responsive.css` (la grilla de la fila y el piso táctil de "Ya lo usé", DIS.5: van ahí porque la capa `responsive` gana por orden a `components`); iconos vía el picker compartido (`infra/icon-picker.js`, CAT.2c) o el emoji curado de cada plantilla; token de dominio `--fk-dom-apartados`.
 
 **Dependencias y relaciones**: `apartados` no importa de otros dominios (ADN 10); `frecuenciaPrincipalIngresos` se re-exporta desde `infra/vencimientos.js` para preseleccionar la frecuencia del form al crear. Escucha `EventBus.on('distribucion:aplicar', ...)` para sumar los aportes del asistente de distribución de Mis Cuentas (el descuento de esa cuenta lo centraliza tesorería, no aquí). El descuento de cuenta al aportar manualmente (`_guardarAporte`) sí es local, vía `_ajustarSaldoCuenta()` + `editar('cuentas', ...)`.
 
@@ -46,7 +46,19 @@
 
 **Cambios pendientes**: **editar un apartado** (rebanada pendiente de **EDIT.1**): el mockup de DIS.15 pone "Editar" en el renglón secundario y una invitación "Elegir fecha" en el estado sin fecha, y ninguna de las dos se implementó porque hoy no existe el flujo; la tarjeta dice qué ganaría el usuario con una fecha, pero no puede ofrecerle el control. **La historia entre ciclos** que pide el estado 4 del mockup ("el año pasado llegaste con 12 días de sobra", "reunido en 4 meses sin fallar un aporte"): `fechaInicioPlan` ya deja media memoria puesta, falta anotar el cierre y los días de sobra, y no hay ledger de aportes. El resto de **AP.5** (form v2 con chips de categoría, toggle "Recurrente" fuera del registro inicial), `docs/BOARD.md`. Dos decisiones de la auditoría de diseño esperan a Esteban: **registrar el gasto al usar el apartado** (hallazgo A11: hoy pagar el SOAT con lo reunido no deja rastro en Gastos ni en Análisis; cruza dominios, tendría que ir por EventBus) El hallazgo A13 (**el consolidado del hub**, 61% de la primera pantalla antes de la lista) **quedó resuelto por DIS.18**: el consolidado se fue de esta sección a la casa de Ahorro, y acá entró `.section__volver` ([ADR 056](../DECISIONS/056-la-casa-de-ahorro.md)).
 
+**Riesgos añadidos por DIS.19**:
+
+- **`planDeReferencia()` y `diasHastaFecha()` ya no viven acá.** Bajaron a `infra/bolsas.js` porque el carril de Apartados en la casa de Ahorro necesita el mismo cálculo y ADN 10 le prohíbe importar este dominio. `logic.js` las re-exporta con el nombre de siempre, así que ninguna vista ni test cambió de importación; una copia local nueva rompe los tests de frontera de `bolsas.test.js`.
+
+- **El comparador de la lista no es interactivo, el del carril sí.** Acá tocar una columna no tendría a dónde llevar (las tarjetas ya están debajo, en el mismo orden), así que el gráfico va `aria-hidden` y su lectura la da el pie en palabras. En el hub cada columna abre el aporte a su apartado. Si se hacen iguales, una de las dos pantallas gana un gesto que no significa nada.
+
+- **Con un solo apartado el comparador no se dibuja.** Comparar una columna con nada es ruido, y su tarjeta ya dice todo lo que el gráfico diría.
+
+- **`estadoDeBolsa().reunido` es más ancho que `estaListoParaReiniciar()`.** El primero describe un dibujo (la columna llena, sea recurrente o no) y el segundo gobierna una acción (usar el dinero y arrancar el ciclo, solo en recurrentes). Igualarlos pinta de verde columnas que no tienen acción, o deja grises columnas al 100%.
+
 **Cambios realizados**:
+
+- 2026-07-29 (**DIS.19**, item 5 del informe de gráficos de Ahorro): nace el comparador encima de la lista, `ui/comparador.js` compartido con el carril del hub, y `planDeReferencia()`/`diasHastaFecha()` bajan a `infra/bolsas.js` con re-export. Ver CHANGELOG.
 
 - 2026-07-28 (**DIS.15**, arquitectura E de la auditoría de diseño por secciones): la fila pasa a `.apartado-card` con dos carreras (dinero reunido contra plan previsto, dibujado en aportes), el plazo como dato protagonista, veredicto con umbral de un aporte completo, la recurrencia como marca de cabecera, seis estados resueltos y el ojo de privacidad. `planDeReferencia()` nueva en `logic.js`; `reiniciarCiclo()` anota `fechaInicioPlan`. Ver CHANGELOG.
 

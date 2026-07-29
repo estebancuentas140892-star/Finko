@@ -7,8 +7,8 @@
 ## Fondo de emergencia (dominio `ahorro`, J.1)
 
 - **Objetivo**          : activar/editar un fondo de emergencia con meta en meses de gastos fijos, registrar aportes, definir un compromiso mensual ("págate primero") con sugerencia calculada (AH.2), y mostrar la tasa de ahorro del mes con un nudge según el rango. El dominio dibuja además **la casa de Ahorro** (bloque aparte en esta ficha), que reemplazó al consolidado repetido del hub.
-- **Estado actual**     : estable. **Su ruta es `#fondo` desde DIS.18** (2026-07-28): `#ahorro` es la casa. **DIS.16 cerrada** (2026-07-28): el hero pasó a `.fondo-card` y la sección dejó de medirse en porcentaje para medirse en **tiempo**. El anillo de progreso se retiró; lo sustituyen los bloques de mes (la prueba) y la escalera de tres niveles (el camino). Cuatro de los seis estados del mockup están construidos; los otros dos dependen de datos que Finko no guarda (ver Riesgos). **DIS.12 cerrada** (2026-07-27): las 9 correcciones de la auditoría de diseño de la sección; su capa de hero la reemplazó DIS.16, el resto (consolidado, lista de aportes, compromiso, formulario) sigue vigente. **BUG-012 corregido** (2026-07-11): el mensaje de confirmación al desactivar el fondo ya no usa el literal técnico "empty state" (ADN 11: lenguaje humano). **AH.5a cerrada** (2026-07-22): "Registrar aporte" prellena el monto con la sugerencia de AH.2. El resto de la iniciativa "Fondo de emergencia v2" (brief 2026-07-08, `docs/BOARD.md`) sigue pendiente de análisis en **AH.5**.
-- **Verificado contra** : commit `979bdc0` DIS.18 (2026-07-28).
+- **Estado actual**     : estable. **DIS.19 cerrada** (2026-07-29): la tarjeta deja de medirse con dos componentes y pasa a uno. Los bloques de mes se ponen verticales, el eje de la franja rotula los tres niveles y la lista de niveles que vivía aparte se retira (unos 90px recuperados); el compromiso mensual deja la fila de texto y pasa a un medidor de gota que se llena con lo aportado en el mes. **Su ruta es `#fondo` desde DIS.18** (2026-07-28): `#ahorro` es la casa. **DIS.16 cerrada** (2026-07-28): el hero pasó a `.fondo-card` y la sección dejó de medirse en porcentaje para medirse en **tiempo**. El anillo de progreso se retiró; lo sustituyen los bloques de mes (la prueba) y la escalera de tres niveles (el camino). Cuatro de los seis estados del mockup están construidos; los otros dos dependen de datos que Finko no guarda (ver Riesgos). **DIS.12 cerrada** (2026-07-27): las 9 correcciones de la auditoría de diseño de la sección; su capa de hero la reemplazó DIS.16, el resto (consolidado, lista de aportes, compromiso, formulario) sigue vigente. **BUG-012 corregido** (2026-07-11): el mensaje de confirmación al desactivar el fondo ya no usa el literal técnico "empty state" (ADN 11: lenguaje humano). **AH.5a cerrada** (2026-07-22): "Registrar aporte" prellena el monto con la sugerencia de AH.2. El resto de la iniciativa "Fondo de emergencia v2" (brief 2026-07-08, `docs/BOARD.md`) sigue pendiente de análisis en **AH.5**.
+- **Verificado contra** : commit `788f87d` DIS.19 (2026-07-29).
 
 **Dónde vive**
 
@@ -20,14 +20,16 @@
 | Cálculos puros (objetivo, progreso, colchón, tasa, sugerencia) | `modules/dominio/ahorro/logic.js` | `calcularObjetivoFondo()`, `calcularProgresoFondo()`, `mesesDeColchon()`, `calcularTasaAhorro()`, `calcularAporteSugerido()` | |
 | Casa de Ahorro (DIS.18; ver su bloque) | `modules/dominio/ahorro/logic.js` / `view.js` | `casaAhorro()`, `renderCasaAhorro()` | |
 | Render principal (estado 1 + tarjeta del fondo) | `modules/dominio/ahorro/view.js` | `renderAhorro()`, `_renderEmptyState()`, `_renderFondoCard()` | ~56, ~169, ~221 |
-| Las piezas de la tarjeta (DIS.16) | `modules/dominio/ahorro/view.js` | `_renderNivelActual()`, `_renderCobertura()`, `_renderEscalera()`, `_renderVeredictoFondo()`, `_renderDatosFondo()`, `_pieCobertura()` | |
+| Las piezas de la tarjeta (DIS.16, franja de DIS.19) | `modules/dominio/ahorro/view.js` | `_renderNivelActual()`, `_renderCobertura()`, `_renderVeredictoFondo()`, `_renderDatosFondo()`, `_pieCobertura()` | |
+| La franja y su eje de niveles (DIS.19) | `modules/dominio/ahorro/logic.js` | `franjaCobertura()`, `MESES_FRANJA_MIN`, `MAX_ROTULOS_MES` | |
+| El medidor del compromiso del mes (DIS.19) | `modules/dominio/ahorro/logic.js` / `view.js` | `aportadoEnMes()`, `progresoCompromiso()`, `_renderMedidorCompromiso()` | |
 | Los tres niveles y su estado (DIS.16) | `modules/dominio/ahorro/logic.js` | `NIVELES_FONDO`, `nivelesFondo(mesesCubiertos)` | ~133 |
 | El tiempo dicho en palabras y su prueba (DIS.16) | `modules/dominio/ahorro/logic.js` | `mesesEnPalabras()`, `fechaCobertura()`, `bloquesCobertura()` | |
 | Sección de hábito (aportes + compromiso + nudge de tasa) | `modules/dominio/ahorro/view.js` | `_renderHabitoSection()`, `_renderNudgeTasa()` | ~232, ~294 |
 | Formularios modales (fondo, aporte, compromiso) | `modules/dominio/ahorro/view.js` | `renderFormFondo()`, `renderFormAporte()`, `renderFormCompromisoMensual()` | ~341, ~386, ~428 |
 | Schema del fondo/aportes | `modules/core/state.js` | `S.ahorro.fondoEmergencia`, `S.ahorro.aportes`, `S.ahorro.compromisoMensual` | |
 
-**Recursos**: estilos en `styles/components/*.css` (clases `.fondo-card__*` desde DIS.16, `.ahorro-habito__*`, `.casa-ahorro__*` desde DIS.18, `.nudge`), más `.modal__footer-secundario` en `styles/modals.css` (DIS.12, fila de la acción destructiva del formulario) y dos bloques en `styles/responsive.css`: la fila de la casa dentro de `@media (max-width: 767px)` y los 44px de `.fondo-card__secundaria`, que van ahí porque compiten con `.btn-sm` del mismo archivo (regla R4, mismo motivo de capa que Apartados e Inversión); iconos vía sprite (`icon()`, `tejaCategoria('i-ahorro', 'ahorro')`, `emptyArt('ahorro')`); token de dominio `--fk-dom-ahorro`. **`progressRing()` ya no se usa acá**: DIS.16 retiró el anillo.
+**Recursos**: estilos en `styles/components/*.css` (clases `.fondo-card__*` desde DIS.16, `.cov__*` y `.liq*` desde DIS.19 en `analysis.css`, `.ahorro-habito__*`, `.nudge`), más `.modal__footer-secundario` en `styles/modals.css` (DIS.12, fila de la acción destructiva del formulario) y dos bloques en `styles/responsive.css`: la fila de la casa dentro de `@media (max-width: 767px)` y los 44px de `.fondo-card__secundaria`, que van ahí porque compiten con `.btn-sm` del mismo archivo (regla R4, mismo motivo de capa que Apartados e Inversión); iconos vía sprite (`icon()`, `tejaCategoria('i-ahorro', 'ahorro')`, `emptyArt('ahorro')`); token de dominio `--fk-dom-ahorro`. **`progressRing()` ya no se usa acá**: DIS.16 retiró el anillo. La gota del medidor la dibuja `siluetaMeta()` de `infra/svg.js` con la forma `gota`: el relleno por altura tiene una sola implementación en la app.
 
 **Dependencias y relaciones**: `ahorro` no importa de otros dominios (ADN 10); `gastosFijosMensuales` y `tasaAhorro` los calcula `index.js` a partir de `S.compromisos`/`S.ingresos`/`S.gastos` recibidos como parámetros de `renderAhorro()`. Escucha `state:change` de `ahorro`, `compromisos`, `ingresos`, `gastos`, `metas`, `apartados` e `inversiones` (el objetivo depende de fijos; las filas de la casa, de las otras 3 modalidades). Escucha `EventBus.on('distribucion:aplicar', ...)` para sumar aportes del asistente de distribución de Mis Cuentas (MC.7e): el aporte al fondo NO descuenta cuenta (ADR 009, el dinero "se queda" donde está).
 
@@ -37,6 +39,10 @@
 
 - **Dos de los seis estados del mockup no se pueden construir hoy** (DIS.16). El estado 4 quiere decir "tardaste 14 meses en llegar" y el estado 5 quiere explicar el retroceso ("tus gastos subieron de $1.460.900 a $1.680.000, así que el mismo dinero te cubre menos tiempo: no perdiste nada"). Los dos necesitan datos que `S.ahorro` no guarda: **cuándo se alcanzó cada nivel** y **con qué gasto fijo se calculó el nivel anterior**. Son dos campos, no un historial, y el propio informe de diseño los deja anotados para implementación. Sin ellos, cuando suben los gastos fijos la tarjeta baja el porcentaje sin explicar por qué: el nivel logrado sí se conserva (`nivelesFondo()` corta contra meses cubiertos, no contra el objetivo), que es la mitad importante del problema.
 
+- **La franja llega hasta el último nivel, no hasta la meta.** `franjaCobertura()` dibuja `max(metaMeses, 6)` bloques porque su eje rotula los tres niveles y "seis meses" sobre una franja de tres caería fuera del dibujo. Con la meta por encima de 6 manda la meta. Pasados 8 bloques se dejan de rotular los meses (a 12 cada bloque baja a unos 26px): el eje de niveles sobrevive, y el mes exacto lo dice la fecha de cobertura en la frase.
+
+- **El estado "logrado" del nivel ya no se dice con palabras, se dice con color.** Al retirar la lista de niveles se fue con ella la consecuencia de cada uno ("buscas trabajo con calma"), que sigue viva solo en el estado vacío. Si una revisión futura quiere ese texto en la tarjeta activa, hay que decidir dónde: la franja no tiene sitio para tres frases.
+
 - **`nivelesFondo()` no depende de la meta del usuario.** La escalera es fija en 1, 3 y 6 meses aunque alguien apunte a 4: la escalera es el camino posible y la meta es su situación elegida. Si un cambio futuro las acopla, el estado "meta cumplida" deja de tener siguiente tramo y la tarjeta vuelve a apagarse al llegar (regla R67).
 
 - **"Desactivar fondo" se queda en el formulario, no vuelve a la tarjeta.** El mockup de DIS.16 lo dibuja en el renglón secundario junto a "Editar", pero DIS.12 lo bajó a su propia fila dentro del modal con `.btn-danger` (regla R53), y esa decisión es posterior al mockup. Subirlo a la tarjeta pondría una acción destructiva al lado de una de rutina.
@@ -44,11 +50,15 @@
 - **Lenguaje humano (ADN 11) en mensajes de `confirmar()`**: a diferencia del HTML de las vistas (revisado en cada PR), los textos de `confirmar({ mensaje: ... })` no pasan por ningún linter de copy; un grep periódico de literales técnicos (`empty state`, `placeholder`, `null`, `undefined`, `TODO`) en `index.js`/`acciones/*.js` de todos los dominios es la única red de seguridad hoy (ver Nota de BUGS.md).
 - **El consolidado repetido y su barra ya no existen** (DIS.18): eran un componente compartido por las cuatro secciones y la regla R54 medía sus pistas. Su reemplazo, la casa, vive en un solo sitio y no dibuja proporciones. Los riesgos propios de la casa están en su bloque.
 - **El anillo del hero NO puede volver a envolverse en `aria-hidden`** (regla R52): `progressRing()` emite su propio `role="img"` con la etiqueta que construye el llamador, y ocultar el contenedor borra el subárbol entero. Metas ya lo corrigió en DIS.13; Apartados sigue con el defecto a la espera de su auditoría.
+- **El medidor del compromiso corta por mes calendario, no por 30 días.** `aportadoEnMes()` filtra por el prefijo `YYYY-MM` de la fecha del aporte: el 1 el medidor vuelve a cero porque la promesa se renueva. Una ventana móvil de 30 días dejaría el vaso a media agua el día que arranca el mes nuevo, que es justo cuando el usuario espera verlo vacío.
+
 - **AH.5a solo alcanza a "Registrar aporte"**: el compromiso mensual sigue con su propio botón "Usar este monto" (`ahorro-usar-sugerido`) en vez de prellenado directo; son dos formularios con propósito distinto (uno es un recordatorio, el otro un movimiento real) y no se fusionaron a propósito.
 
 **Cambios pendientes**: **los estados 4 y 5 del mockup de DIS.16** y los dos campos que los habilitan (fecha de cada nivel alcanzado, gasto fijo de referencia), que pasan por triaje antes de ser tarjeta. El resto de **AH.5** (rediseño UX educativo del fondo; la integración del aporte con "Distribuir mi ingreso" ya existe vía `EventBus.on('distribucion:aplicar', ...)`, `docs/BOARD.md`).
 
 **Cambios realizados**:
+
+- 2026-07-29 (**DIS.19**, items 6 y 7 del informe de gráficos): la franja de meses se pone vertical y absorbe el eje de niveles, `_renderEscalera()` se retira, y el compromiso mensual pasa de fila de texto a medidor de gota. `franjaCobertura()`, `aportadoEnMes()` y `progresoCompromiso()` nuevas en `logic.js`. Ver CHANGELOG.
 
 - 2026-07-28 (**DIS.18**, la casa de Ahorro): la sección se muda de `#ahorro` a `#fondo`, pierde la franja de pestañas y el slot del consolidado, y gana `.section__volver`. `consolidarAhorro()` pasa a `casaAhorro()`. Detalle en el bloque de la casa. Ver CHANGELOG.
 
@@ -60,37 +70,47 @@
 
 ---
 
-## Casa de Ahorro (dominio `ahorro`, hub `#ahorro`)
+## Casa de Ahorro: los cuatro carriles (dominio `ahorro`, hub `#ahorro`)
 
-- **Objetivo**          : responder "cuánto tengo guardado en total y dónde" en una sola pantalla, y ser la puerta a las cuatro modalidades. Es el único lugar donde los cuatro nombres conviven, así que también es donde se enseña la diferencia entre ellos.
-- **Estado actual**     : estable. **DIS.18 cerrada** (2026-07-28): nace la pantalla. Reemplaza al consolidado de solo lectura que se repetía en las cuatro secciones hijas (F6, ADR 024 D4) y restaura la intención del [ADR 009](../DECISIONS/009-fondo-de-emergencia.md).
-- **Verificado contra** : commit `979bdc0` DIS.18 (2026-07-28).
+- **Objetivo**          : que el usuario decida **a cuál de las cuatro modalidades entrar, y con información**. Es el único lugar donde los cuatro nombres conviven, así que también es donde se enseña la diferencia entre ellos; y como cada carril trae su propio gráfico, la pantalla enseña además a leer la sección a la que lleva.
+- **Estado actual**     : estable. **DIS.19 cerrada** (2026-07-29, arquitectura 1c del informe "Auditoría Ahorro"): las cuatro filas de monto y estado en texto pasan a cuatro **carriles**, cada uno con su gráfico en su propia unidad, su rótulo de momento de uso y su acción. El total baja al pie en una línea. **DIS.18 cerrada** (2026-07-28): nace la pantalla y reemplaza al consolidado de solo lectura que se repetía en las cuatro hijas (F6, ADR 024 D4), restaurando la intención del [ADR 009](../DECISIONS/009-fondo-de-emergencia.md).
+- **Verificado contra** : commit `788f87d` DIS.19 (2026-07-29).
 
 **Dónde vive**
 
 | Pieza | Archivo | Ancla | Línea |
 |---|---|---|---|
-| Filas, propósito y estado por modalidad | `modules/dominio/ahorro/logic.js` | `casaAhorro()`, `MODALIDADES_AHORRO`, `_estadoFondo()`, `_estadoMetas()`, `_estadoApartados()`, `_estadoInversion()` | ~102 |
+| Carriles, momento de uso, propósito y estado | `modules/dominio/ahorro/logic.js` | `casaAhorro()`, `MODALIDADES_AHORRO` (con `cuando`), `_estadoFondo()`, `_estadoMetas()`, `_estadoApartados()`, `_estadoInversion()` | ~102 |
 | Próximo cobro de Apartados sin importar ese dominio | `modules/dominio/ahorro/logic.js` | `diasAlProximoApartado(apartados, hoyISO)` | |
-| Render de la pantalla | `modules/dominio/ahorro/view.js` | `renderCasaAhorro()`, `_htmlCasaAhorro()` | ~55 |
+| Render de la pantalla | `modules/dominio/ahorro/view.js` | `renderCasaAhorro()`, `_htmlHub()`, `_htmlCarril()` | ~64 |
+| Un gráfico por carril | `modules/dominio/ahorro/view.js` | `_graficoFondo()`, `_graficoApartados()`, `_graficoMetas()`, `_graficoInversion()` | |
+| Saltar de carril con los chips | `modules/dominio/ahorro/index.js` | `_irACarril()`, acción `ahorro-ir-a-carril` | |
+| Cálculos que el carril comparte con su sección | `modules/infra/bolsas.js` / `modules/infra/portafolio.js` | `estadoDeBolsa()`, `planDeReferencia()`, `columnasPortafolio()` | |
+| El comparador de columnas, compartido | `modules/ui/comparador.js` | `htmlComparador()`, `pieComparador()` | |
 | Slot y sección | `index.html` | `#sec-ahorro`, `#panel-casa-ahorro` | |
 | Volver a la casa desde cada hija | `index.html` | `.section__volver` en `#sec-fondo`, `#sec-metas`, `#sec-apartados`, `#sec-inversion` | |
 | Rutas | `modules/infra/router.js` | `SECTIONS`: `ahorro` a `sec-ahorro`, `fondo` a `sec-fondo` | ~11 |
 | Rótulo del botón "Más" por sección | `modules/ui/shell.js` | `SECCION_NAV`, `MAS_SECTIONS` | ~20 |
 
-**Recursos**: `.casa-ahorro__*` en `styles/components/domain.css` (color por `[data-vehiculo]`, misma clave que la teja de cada sección) y su bloque móvil en `styles/responsive.css`; `[data-section="fondo"]` en `styles/layout.css` para el acento de navegación; símbolos `i-ahorro`, `i-metas`, `i-apartados`, `i-inversion`, `i-chevron-right`; lee `S.ahorro`, `S.metas`, `S.apartados`, `S.inversiones` y `S.config.ocultarSaldo`.
+**Recursos**: `.hub__*`, `.lane__*`, `.silrow`/`.silbtn__*` y `.grow__*` en `styles/components/domain.css`; `.cmp__*` en `styles/components/charts.css`; `.cov__*` en `styles/components/analysis.css`; el ajuste móvil de la leyenda de `.grow` en `styles/responsive.css`; `[data-section="fondo"]` en `styles/layout.css` para el acento de navegación; símbolos `i-ahorro`, `i-metas`, `i-apartados`, `i-inversion`; lee `S.ahorro`, `S.metas`, `S.apartados`, `S.inversiones` y `S.config.ocultarSaldo`.
 
-**Dependencias y relaciones**: `renderCasaAhorro(gastosFijosMensuales)` la invoca `_renderAhorroBound()` y `_renderSegunSeccion()` con `renderSmart(..., 'ahorro')`. El view suma los montos de las cuatro slices inline: no importa Metas, Apartados ni Inversión (ADN 10), y las funciones de estado son puras y reciben conteos ya calculados.
+**Dependencias y relaciones**: `renderCasaAhorro(gastosFijosMensuales)` la invoca `_renderAhorroBound()` y `_renderSegunSeccion()` con `renderSmart(..., 'ahorro')`. El view suma los montos de las cuatro slices inline y no importa Metas, Apartados ni Inversión (ADN 10): los cálculos que necesita de esos dominios los toma de `infra/bolsas.js` y `infra/portafolio.js`, adonde DIS.19 los bajó por ese motivo. Las acciones de los carriles se despachan por `data-action` (`aportar-apartado`, `abonar-meta`, `nuevo-apartado`, `nueva-meta`, `inversion-nueva`), que es delegación global y no importación: el hub dispara formularios de otros dominios sin conocerlos.
 
 **Riesgos**:
 
-- **La fila de Inversión cuenta inversiones, no dice su etapa.** El mockup mostraba "construyendo", que sale de `momentoInversion()` en el dominio Inversión: importarlo rompe ADN 10 y replicarlo duplicaría el cálculo que **ARQ.1** existe para unificar. Cuando ARQ.1 mueva el modelo de las cuatro bolsas a `infra/`, la etapa se puede leer sin duplicar nada.
-- **El orden de las filas es fijo y las cuatro se muestran siempre**, también en cero: una modalidad que no aparece no se puede descubrir, y ese descubrimiento es la mitad del propósito de la pantalla. Filtrar por monto (lo que hacía `consolidarAhorro()`) devuelve el defecto.
+- **El carril de Inversión cuenta inversiones, no dice su etapa.** El mockup mostraba "construyendo", que sale de `momentoInversion()` en el dominio Inversión: importarlo rompe ADN 10 y replicarlo duplicaría lo que **ARQ.1** existe para unificar. DIS.19 sí bajó a `infra/portafolio.js` la cadena de proyección, porque el gráfico del carril la necesitaba y `columnasPortafolio()` no se puede mover sola; la etapa sigue esperando ARQ.1.
+- **El orden de los carriles es fijo y los cuatro se muestran siempre**, también en cero: una modalidad que no aparece no se puede descubrir, y ese descubrimiento es la mitad del propósito de la pantalla. Filtrar por monto (lo que hacía `consolidarAhorro()`) devuelve el defecto. **El orden lo fija el rótulo `cuando`**, no la urgencia: si alguien reordena `MODALIDADES_AHORRO` sin revisar esos cuatro textos, la secuencia deja de poder explicarse.
+- **Ningún carril en cero dibuja un gráfico vacío.** Muestra qué hace la modalidad y ofrece su primer paso con la acción de su dominio. Un gráfico en cero es una promesa mal contada: cuatro rieles vacíos se leen como error, no como invitación.
+- **La columna y la silueta SON la acción, no una selección.** El prototipo elegía un item y luego pulsaba un botón; acá el toque abre el aporte directo. Es un toque menos y, sobre todo, cero estado de UI que mantener entre renders (el hub se re-renderiza con cada `state:change` de las cuatro slices, y una selección guardada se perdería o habría que persistirla en `S`, que no es su sitio).
+- **Los chips no navegan, mueven el scroll.** Son botones con `ahorro-ir-a-carril` y `scrollIntoView`, no enlaces con hash: el router leería `#carril-metas` como sección inexistente y llevaría a Inicio.
+- **El carril usa el nombre de la sección, no la frase descriptiva del prototipo.** El mockup rotulaba "Pagos que ya sabes que llegan" en vez de "Apartados". Renombrar solo en el hub dejaría dos nombres para una cosa mientras la sección hija sigue diciendo el suyo; el nombre "Apartados" está en revisión abierta en **AH.7**.
 - **`_estadoApartados()` chequea el tipo antes de convertir.** `Number(null)` es 0 y 0 días significa "vence hoy": sin ese chequeo, un apartado sin fecha se anuncia como si venciera hoy. Hay test que lo fija.
 - **`#ahorro` cambió de dueño.** Un enlace que quiera el fondo tiene que apuntar a `#fondo` (hoy: `analisis/view.js` y `inversiones/view.js`). Los bookmarks viejos a `#ahorro` llegan a la casa a propósito: suben un nivel, no se pierden.
 
 **Cambios pendientes**: **promover "Ahorro" a la barra inferior** queda sin decidir (hoy vive en "Más"); mover Calendario para hacerle sitio es una decisión de otra sección. El nombre **"Apartados"**, que colisiona con "apartar" (el verbo genérico de ahorrar en toda la app), quedó señalado y sin resolver: es lenguaje de producto y toca varias pantallas.
 
 **Cambios realizados**:
+
+- 2026-07-29 (**DIS.19**, informe "Auditoría Ahorro" en tres documentos, arquitectura 1c de 3 evaluadas): las cuatro filas pasan a cuatro carriles con gráfico propio, rótulo de momento de uso y acción; el total baja al pie. `MODALIDADES_AHORRO` gana `cuando` y se reordena por la pregunta del momento de uso. `_htmlCasaAhorro()` pasa a `_htmlHub()` + `_htmlCarril()` + cuatro funciones de gráfico. Ver CHANGELOG.
 
 - 2026-07-28 (**DIS.18**, informe "Arquitectura Tu ahorro total", arquitectura 3 de 4 evaluadas): nace la pantalla; el fondo se muda a `#fondo`; se retiran `.hub-tabs` y `[data-hub-consolidado]` de las cuatro hijas y cada una gana `.section__volver`; las 4 tejas del grupo "Ahorros" en "Más" pasan a una a ancho completo (el sidebar de desktop las conserva como atajos declarados); `consolidarAhorro()` pasa a `casaAhorro()` con orden fijo y sin esconder modalidades. Ver CHANGELOG y [ADR 056](../DECISIONS/056-la-casa-de-ahorro.md).

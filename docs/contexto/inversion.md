@@ -7,8 +7,8 @@
 ## La sección Inversión: los tres momentos (dominio `inversiones`, DIS.17)
 
 - **Objetivo**          : acompañar a quien está aprendiendo a invertir, no solo registrarle cifras. La sección no lista un portafolio: nombra la etapa en la que está el usuario y le enseña una cosa distinta en cada una. Una inversión se registra **una sola vez**: no tiene aportes, ni recurrencia, ni monto objetivo, así que tampoco tiene barra de progreso (ponerle una sería inventarle una meta que no tiene). El capital solo crece por una vía: el asistente "Distribuir mi ingreso", nunca desde la tarjeta.
-- **Estado actual**     : estable. **DIS.17 cerrada** (2026-07-28): el hero de total invertido, la card de proyección al vencimiento, la lista de porcentajes por tipo, la pila de nudges y el tip permanente se fusionaron en `.inversion-momento`, una tarjeta por etapa con el gráfico de dos columnas. Momentos 1 y 2 vivos; el 3 queda diseñado y sin construir por falta de un dato (ver Riesgos). J.2a (total + lista), J.2b (proyección) y J.2c (nudges) siguen siendo el cálculo: DIS.17 cambió quién lo muestra y cómo se dice, no la fórmula.
-- **Verificado contra** : DIS.17 (2026-07-28).
+- **Estado actual**     : estable. **DIS.19** (2026-07-29) no cambió esta pantalla, pero sí de dónde saca su aritmética: la cadena de proyección bajó a `infra/portafolio.js` para que el carril de Inversión en la casa de Ahorro dibuje el mismo gráfico sin importar este dominio. Cero cambio de comportamiento. **DIS.17 cerrada** (2026-07-28): el hero de total invertido, la card de proyección al vencimiento, la lista de porcentajes por tipo, la pila de nudges y el tip permanente se fusionaron en `.inversion-momento`, una tarjeta por etapa con el gráfico de dos columnas. Momentos 1 y 2 vivos; el 3 queda diseñado y sin construir por falta de un dato (ver Riesgos). J.2a (total + lista), J.2b (proyección) y J.2c (nudges) siguen siendo el cálculo: DIS.17 cambió quién lo muestra y cómo se dice, no la fórmula.
+- **Verificado contra** : DIS.19, commit `788f87d` (2026-07-29).
 
 **Dónde vive**
 
@@ -28,7 +28,7 @@
 | Fórmulas financieras compartidas | `modules/infra/financiero.js` | `calcularCDT()`, `calcularInteresCompuesto()`, `calcularRentabilidadReal()`, `calcularRegla72()` | |
 | Schema de la inversión | `modules/core/state.js` | `S.inversiones[]` (`tipo`, `nombre`, `monto`, `tasaEA`, `plazoMeses`, `fechaInicio`) | |
 
-**Recursos**: estilos en `styles/components/analysis.css` (`.inversion-momento`, `.inversion-lista`, `.inversion-item__*`) y una línea en `styles/responsive.css` (los 44px de `.inversion-momento__secundaria`, que compite con `.btn-sm` de ese mismo archivo). Token de dominio `--fk-dom-inversion` (turquesa, [ADR 031](../DECISIONS/031-identidad-de-color-por-seccion.md)); el gráfico usa cinco mezclas de ese token con `color-mix` vía `data-seg="0..4"`, y el segmento del tiempo es el único a tinta plena. IPC observado y meta de BanRep en `modules/core/constants.js` (`ipcObservadoVigente()`).
+**Recursos**: la proyección y la geometría del gráfico viven en `infra/portafolio.js` (`calcularTotalInvertido`, `calcularPorTipo`, `esProyectable`, `proyectarInversion`, `proyectarPortafolio`, `columnasPortafolio`); `logic.js` las re-exporta con el nombre de siempre y conserva lo que es de la sección (tipos, validación, nudges, `momentoInversion`, rentabilidad real). Estilos en `styles/components/analysis.css` (`.inversion-momento`, `.inversion-lista`, `.inversion-item__*`) y una línea en `styles/responsive.css` (los 44px de `.inversion-momento__secundaria`, que compite con `.btn-sm` de ese mismo archivo). Token de dominio `--fk-dom-inversion` (turquesa, [ADR 031](../DECISIONS/031-identidad-de-color-por-seccion.md)); el gráfico usa cinco mezclas de ese token con `color-mix` vía `data-seg="0..4"`, y el segmento del tiempo es el único a tinta plena. IPC observado y meta de BanRep en `modules/core/constants.js` (`ipcObservadoVigente()`).
 
 **Dependencias y relaciones**: `inversiones` no importa de otros dominios (ADN 10). La vista **lee** `S.ahorro.fondoEmergencia` (solo el slice de estado, sin importar el dominio Ahorro) para pasarle el contexto a `momentoInversion()`. Escucha `EventBus.on('distribucion:aplicar', ...)` para sumar al capital lo que el plan de distribución asignó; el descuento de la cuenta de origen lo centraliza tesorería, no este dominio. `analisis` suma las inversiones al patrimonio vía `calcularActivos()`.
 
@@ -44,6 +44,14 @@
 
 **Cambios pendientes**: **el momento 3** y el dato que lo habilita (valor real en el tiempo), que pasa por triaje antes de ser tarjeta. **Editar una inversión** (rebanada de **EDIT.1**): el mockup pone Editar al lado de Eliminar en la tarjeta de cada holding y no se implementó porque el flujo no existe. **INV.1** (de dónde sale el dinero al registrar), ya en [`BOARD.md`](../BOARD.md). El **consolidado del hub** (hallazgo A13) ya no vive acá: DIS.18 lo mudó a la casa de Ahorro y esta sección abre con `.section__volver` ([ADR 056](../DECISIONS/056-la-casa-de-ahorro.md)).
 
+**Riesgos añadidos por DIS.19**:
+
+- **`columnasPortafolio()` no se puede mover sola**: arrastra `proyectarPortafolio` → `proyectarInversion` → `esProyectable` y `calcularPorTipo`. Por eso el movimiento a infra fue de la cadena completa y no de una función. Los seis nombres siguen exportados desde `logic.js`, así que ningún llamador cambió; `bolsas.test.js` compara identidad de función entre infra y el dominio para que una copia local nueva falle.
+
+- **La versión del carril y la de la sección son el mismo gráfico con distinto tamaño**, a propósito: el carril tiene que enseñar a leer la pantalla a la que lleva. Si divergen, el usuario aprende dos veces lo mismo.
+
 **Cambios realizados**:
+
+- 2026-07-29 (**DIS.19**, rebanada 0): la cadena de proyección y `columnasPortafolio()` bajan a `infra/portafolio.js` con re-export desde `logic.js`. Sin cambio de comportamiento. Ver CHANGELOG.
 
 - 2026-07-28 (**DIS.17**, arquitectura O con el gráfico de N, auditoría de diseño por secciones): la cabecera pasa de total a etapa, gráfico de dos columnas con la primera partida por tipo, lenguaje reescrito sin tecnicismos, nudges absorbidos en la frase del momento y un solo primario por pantalla. `momentoInversion()`, `columnasPortafolio()`, `fechaVencimientoInversion()`, `rasgoTipo()` y `explicacionTipo()` nuevas en `logic.js`. Ver CHANGELOG.
