@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-29 (DIS.19 cierra el frente de Ahorro y deja dos piezas de ARQ.1 ya en `infra/`; no tenía tarjeta propia, entró por handoff de diseño). Antes: 2026-07-27 (CAT.1 cierra: la taxonomía global queda implementada en las tres secciones y su tarjeta sale del tablero). Antes: MC.16 deja de estar bloqueada, el ADR 051 se acepta y la tarjeta se re-corta en MC.16a a MC.16e. Antes: Fase 2 de la reorganización documental, purga de narrativa cerrada, ver [`MIGRACION.md`](MIGRACION.md). La historia de lo ya cerrado vive en [`CHANGELOG.md`](CHANGELOG.md) y en las fichas de [`contexto/`](contexto/README.md), no aquí.
+> Última actualización: 2026-07-29 (INV.1 cierra: el dinero sale de una cuenta al registrar una inversión, y su tarjeta sale del tablero). Antes: DIS.19 cierra el frente de Ahorro y deja dos piezas de ARQ.1 ya en `infra/`; no tenía tarjeta propia, entró por handoff de diseño. Antes: 2026-07-27 (CAT.1 cierra: la taxonomía global queda implementada en las tres secciones y su tarjeta sale del tablero). Antes: MC.16 deja de estar bloqueada, el ADR 051 se acepta y la tarjeta se re-corta en MC.16a a MC.16e. La historia de lo ya cerrado vive en [`CHANGELOG.md`](CHANGELOG.md) y en las fichas de [`contexto/`](contexto/README.md), no aquí.
 
 ---
 
@@ -46,7 +46,6 @@ Las 54 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
-| INV.1 | Origen del dinero al registrar una inversión | Inversión | alta | ADR 053 (aceptado) |
 | CAL.5b | El lote también cubre deudas, y se ofrece desde Inicio | Calendario | media | ARQ.2 (deudas); Inicio no depende de nada |
 | MC.13 | Distribución v2: contextual por fecha, guiada y con origen real | Mis cuentas | alta | nada |
 | MC.13e-2b | Quitar "Abonar extra a deudas" del asistente | Mis cuentas | media | conviene antes de MC.13e-2f |
@@ -342,23 +341,6 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Riesgo     : el bump de schema toca préstamos ya existentes en dispositivos reales; la migración debe conservar el acumulado `pagado` (ADR 047 D3)
 - Modelo     : Alta capacidad - Alto (intereses acumulados con pagos parciales; el resto de rebanadas puede bajar)
 - Rebanadas  : PE.6a intereses+desglose, PE.6b historial+schema, PE.6c rendimiento, PE.6d estados visuales, PE.6e confianza
-
----
-
-### Inversión (dominio `inversiones`)
-
-#### INV.1 - Origen del dinero al registrar una inversión
-- Prioridad  : alta
-- Estado     : pendiente. Ejecuta la consecuencia inmediata del **[ADR 053](DECISIONS/053-invariante-de-patrimonio.md)** (Aceptada). Hallazgo H5 de la auditoría integral del 2026-07-25.
-- Área       : code
-- Objetivo   : hoy `inversiones` no toca cuentas, mientras `analisis` asume que ese dinero ya salió de ellas: comprar un CDT con saldo de una cuenta registrada infla patrimonio y Score de forma permanente. Preguntar el origen con dos ramas explícitas (cuenta propia / preexistente o externa), descontar cuando aplique y persistir `cuentaId`. Default sugerido según `fecha de inicio` (hoy o reciente sugiere cuenta; pasada sugiere preexistente).
-- Alcance    : **indivisible**: alta con descuento + reversa al eliminar + regla de cuenta origen ya borrada. I3 del ADR prohíbe entregar solo el alta.
-- Secciones  : Inversión, Mis cuentas (saldo)
-- Archivos   : `modules/dominio/inversiones/` (index, logic, view), `modules/core/state.js` (`cuentaId` opcional en el typedef de Inversion)
-- Riesgo     : `inversiones` pasa a mover dinero real; debe hacerlo vía `editar('cuentas', ...)` de `infra/crud.js`, nunca importando tesorería (ADN 10, precedente PE.7). Definir antes de codificar qué pasa al eliminar una inversión cuya cuenta origen ya no existe (recomendación del análisis: no revertir y avisar, nunca revertir a una cuenta arbitraria).
-- No hacer   : no se toca `calcularActivos()` (I4 del ADR: cambiar la regla de suma borraría del patrimonio las inversiones ya registradas). Sin bump de `SCHEMA_VERSION`: campo opcional `undefined`-safe.
-- Depende de : ADR 053 (aceptado). **Precede** a la rebanada de Inversión de EDIT.1
-- Modelo     : Alta capacidad - Alto (un dominio empieza a mover saldo; la reversa mal hecha descuadra el patrimonio)
 
 ---
 

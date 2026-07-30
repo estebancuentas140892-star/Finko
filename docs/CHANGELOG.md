@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(inversion): INV.1, el dinero sale de una cuenta al registrar una inversión · 2026-07-29
+
+Hasta hoy `inversiones` era la única de las cuatro bolsas de ahorro que no tocaba cuentas, mientras `analisis` daba por hecho que sí: comprar un CDT con saldo de una cuenta registrada inflaba el patrimonio de forma permanente y en silencio (hallazgo H5 de la auditoría integral del 2026-07-25, [ADR 053](DECISIONS/053-invariante-de-patrimonio.md)). Ficha: [`contexto/inversion.md`](contexto/inversion.md).
+
+- **La pregunta va en la captura, con dos ramas explícitas.** "Salió de mi cuenta" o "Ya la tenía", sin default silencioso: descontar de más borra dinero real y descontar de menos infla el patrimonio, y la app no puede deducir cuál pasó. La rama se sugiere según la fecha de inicio que el formulario ya pide (`origenSugerido()`, reciente = cuenta, vieja = preexistente) y siempre queda editable.
+- **Con cuenta de origen, guardar descuenta y eliminar devuelve.** El alta resta el monto del saldo de la cuenta (con confirmación explícita si lo deja en negativo, mismo criterio que un aporte a una meta desde una sola cuenta); eliminar la inversión devuelve el monto vivo, no el original, porque un aporte posterior del asistente "Distribuir mi ingreso" también salió de cuentas.
+- **La cuenta de origen ya borrada no inventa un destino.** Si la cuenta ya no existe al eliminar la inversión, el dinero no se devuelve a ninguna otra: inventar un destino sería fingir un movimiento que nunca ocurrió.
+- **Sin ninguna cuenta activa, la pregunta no se dibuja.** El origen llega ausente y se trata como preexistente, la rama que no mueve dinero.
+- **Alcance indivisible por el propio ADR**: alta con descuento, reversa al eliminar y la regla de cuenta ya borrada entregadas juntas, sin dejar la mitad más fácil para después.
+
+`S.inversiones[].cuentaId` nuevo y opcional, sin bump de schema. 3450/3450 unit + lint verdes. SW v446 → v447.
+
+---
+
 ### feat(ahorro): DIS.19, Ahorro en cuatro carriles · 2026-07-29
 
 Sexta pasada de la auditoría por secciones, y la que cierra el frente de Ahorro. DIS.18 le dio a las cuatro modalidades una pantalla padre y resolvió la navegación, pero dejó el problema de fondo intacto: **la diferencia entre las cuatro estaba adentro de cada sección y la decisión se toma afuera**. Las filas eran monto y estado en texto, así que entrar era una apuesta, y las cuatro se sentían la misma cosa cuatro veces aunque el código ya las hubiera diferenciado. Arquitectura 1c de 3 evaluadas, informe en tres documentos (diagnóstico, arquitectura, gráficos). Fichas: [`contexto/ahorro.md`](contexto/ahorro.md), [`contexto/metas.md`](contexto/metas.md), [`contexto/apartados.md`](contexto/apartados.md), [`contexto/inversion.md`](contexto/inversion.md), [`contexto/transversal.md`](contexto/transversal.md).
