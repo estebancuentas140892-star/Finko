@@ -106,10 +106,14 @@
 - **El carril usa el nombre de la sección, no la frase descriptiva del prototipo.** El mockup rotulaba "Pagos que ya sabes que llegan" en vez de "Apartados". Renombrar solo en el hub dejaría dos nombres para una cosa mientras la sección hija sigue diciendo el suyo; el nombre "Apartados" está en revisión abierta en **AH.7**.
 - **`_estadoApartados()` chequea el tipo antes de convertir.** `Number(null)` es 0 y 0 días significa "vence hoy": sin ese chequeo, un apartado sin fecha se anuncia como si venciera hoy. Hay test que lo fija.
 - **`#ahorro` cambió de dueño.** Un enlace que quiera el fondo tiene que apuntar a `#fondo` (hoy: `analisis/view.js` y `inversiones/view.js`). Los bookmarks viejos a `#ahorro` llegan a la casa a propósito: suben un nivel, no se pierden.
+- **Cada `.lane__cta` repite la `data-action` de su sección, y eso rompe tests ajenos.** `nueva-meta`, `nuevo-apartado`, `inversion-nueva`, `ahorro-activar-fondo` y `ahorro-nuevo-aporte` existen ahora dos o tres veces en el DOM, y como las 15 secciones coexisten (solo cambia `display`), un selector suelto `[data-action="..."]` puede quedarse con el botón del carril oculto. Tumbó 16 tests E2E de Metas, Apartados e Inversión que no tocaban esta sección (**BUG-019**). Al agregar un CTA nuevo a un carril, el selector de todo test que use esa acción va acotado a su sección. La regla quedó en [`CONTRIBUTING.md`](../CONTRIBUTING.md).
+- **Los selectores E2E de esta pantalla son `.lane` y `#carril-<clave>`**, y la salida es `a.lane__ver`. Al cambiar el markup del hub hay que correr `pnpm run test:e2e`: no es compuerta de cada commit, y DIS.19 dejó la suite dos días en rojo justamente por eso.
 
 **Cambios pendientes**: **promover "Ahorro" a la barra inferior** queda sin decidir (hoy vive en "Más"); mover Calendario para hacerle sitio es una decisión de otra sección. El nombre **"Apartados"**, que colisiona con "apartar" (el verbo genérico de ahorrar en toda la app), quedó señalado y sin resolver: es lenguaje de producto y toca varias pantallas.
 
 **Cambios realizados**:
+
+- 2026-07-30 (**BUG-019**): los tests E2E de esta pantalla y de sus hijas vuelven al markup vigente (`.lane`, `#carril-<clave>`, `a.lane__ver`) y los selectores de `data-action` quedan acotados por sección. Sin tocar `modules/`. Ver CHANGELOG.
 
 - 2026-07-29 (**DIS.19**, informe "Auditoría Ahorro" en tres documentos, arquitectura 1c de 3 evaluadas): las cuatro filas pasan a cuatro carriles con gráfico propio, rótulo de momento de uso y acción; el total baja al pie. `MODALIDADES_AHORRO` gana `cuando` y se reordena por la pregunta del momento de uso. `_htmlCasaAhorro()` pasa a `_htmlHub()` + `_htmlCarril()` + cuatro funciones de gráfico. Ver CHANGELOG.
 

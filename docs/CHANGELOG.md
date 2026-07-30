@@ -10,6 +10,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### test(e2e): BUG-019 y BUG-020, la compuerta E2E vuelve a verde · 2026-07-30
+
+La suite E2E llevaba dos días caída sin que nadie lo supiera: la última corrida verde fue del 2026-07-28 (236/236), anterior a DIS.19, y el cierre de INV.1 fue el primero que la volvió a correr. Estaba en 20+ fallas con 146 tests sin ejecutar. Queda en **243/243**, y la unitaria en 3450/3450. Cero cambios en `modules/`: el defecto era de los tests, no de la app.
+
+- **La causa dominante no era la obvia.** Que `.casa-ahorro__fila[data-vehiculo]` hubiera desaparecido explicaba solo 4 fallas. Las otras 16 eran que cada `.lane__cta` que DIS.19 agregó a los carriles **duplica la `data-action` de su sección**, así que todo selector `[data-action="..."]` a nivel de documento pasó a resolver 2 o 3 elementos y Playwright elegía el del carril oculto. Se acotaron a su sección los 25 sitios de las cinco acciones duplicadas. Es la clase de rotura que se repite con cada CTA nuevo en un carril, así que el patrón importa más que los sitios.
+- **Tres tests de Metas afirmaban un sprite que ya no se dibuja.** `CATEGORIA_META_SILUETA['Boda'] = 'anillo'`: DIS.19 cambió `<use href="#c-anillo">` por una silueta que se llena. Ahora afirman la silueta, y la forma exacta la sigue fijando `tests/unit/metas.test.js` contra `SILUETAS.anillo`. No se duplicó el path en el E2E ni se agregó un atributo a producción para poder mirarlo: el unit test ya lo comparaba bien, así que el E2E se queda con lo que le toca a un E2E.
+- **BUG-020, encontrado por el reloj.** `DIA_AYER` y `DIA_PASADO` de `compromisos.test.js` envolvían a módulo 28 para que el día existiera en cualquier mes; eso mantiene el día válido pero **le cambia el offset** a fin de mes, y el offset era justo lo que dos tests afirmaban. Con hoy = 30, "ayer" daba 1: 29 días de atraso. Fallaba 2 o 3 días de cada mes y salió porque la sesión cruzó la medianoche. Los dos pasan a `vi.setSystemTime` con `diaPago` explícito (convención de `agenda.test.js`); los otros 7 usos de `DIA_PASADO` se quedan, porque ahí solo hace falta "un día ya pasado".
+- **Un defecto propio de INV.1, del día anterior.** `elegirOrigen()` ahora clickea el `<label class="chip-fecha">` en vez de llamar `.check()` sobre el radio oculto, que el label intercepta. Los otros cinco sitios "pasaban" solo porque `.check()` es no-op cuando el radio ya está marcado, así que la convención (documentada en `smoke.test.js`) estaba rota en seis sitios y se notaba en uno.
+
+**Lo que queda dicho para la próxima:** DIS.19 actualizó los unit tests y no los E2E, y nada avisó. Mientras E2E no sea compuerta de cierre, cualquier cambio de markup puede volver a dejarla en rojo dos días sin que se sepa.
+
+---
+
 ### feat(inversion): INV.1, el dinero sale de una cuenta al registrar una inversión · 2026-07-29
 
 Hasta hoy `inversiones` era la única de las cuatro bolsas de ahorro que no tocaba cuentas, mientras `analisis` daba por hecho que sí: comprar un CDT con saldo de una cuenta registrada inflaba el patrimonio de forma permanente y en silencio (hallazgo H5 de la auditoría integral del 2026-07-25, [ADR 053](DECISIONS/053-invariante-de-patrimonio.md)). Ficha: [`contexto/inversion.md`](contexto/inversion.md).

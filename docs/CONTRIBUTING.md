@@ -123,6 +123,12 @@ a11y(modales): implementar focus trap en todos los modales
 - Los tests de lógica financiera nunca usan mocks de `localStorage` - usan `happy-dom` o datos puros.
 - Cobertura objetivo: ≥ 90% en archivos de `core/` y `dominio/*/logic.js`.
 
+### Dos reglas que salieron de BUG-019 y BUG-020 (2026-07-30)
+
+- **En E2E, un `[data-action="..."]` va acotado a su sección**: `#sec-metas [data-action="nueva-meta"]`, nunca suelto. Las 15 secciones viven siempre en el DOM (solo cambia `display`), así que un selector a nivel de documento puede resolver el botón de una sección oculta. Desde DIS.19 cada carril de `#ahorro` repite la `data-action` de su sección, y eso tumbó 16 tests que antes pasaban.
+- **Un test que afirma una distancia en días fija el reloj** con `vi.setSystemTime` y usa el día explícito, en vez de derivarlo del reloj real. Envolver con `% 28` para que el día exista en cualquier mes mantiene el día válido pero **le cambia el offset** los días 29 a 31, que es justo lo que el test afirmaba. Convención de referencia: `tests/unit/agenda.test.js`.
+- **Si cambias markup, corre E2E**: no es compuerta de cada commit (tarda ~3,5 min), así que un cambio de clases o de estructura la deja caída sin que nada avise. DIS.19 actualizó los unit tests y no los E2E, y la suite pasó dos días en rojo.
+
 ```bash
 pnpm test              # Corre todos los tests una vez
 pnpm run test:watch    # TDD: re-corre al guardar

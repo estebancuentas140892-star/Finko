@@ -3,7 +3,7 @@
 > Errores detectados durante el desarrollo, con toda la información necesaria para resolverlos sin tener que volver a buscar dónde están.
 > Al solucionarse, el error se **elimina** de este archivo y el fix queda documentado en [`CHANGELOG.md`](CHANGELOG.md) con referencia al ID.
 > Solo entra lo **verificado** contra el código (archivo, función, línea). Una sospecha no es un error: es una tarjeta de investigación en [`BOARD.md`](BOARD.md).
-> Última actualización: 2026-07-29. **5 errores abiertos:** BUG-019 (la suite E2E apunta al markup que DIS.19 reemplazó y la compuerta E2E está caída), BUG-016 (cuatro mensajes en voseo), BUG-013 (el pase de accesibilidad mide contraste durante el fundido del modal), BUG-017 (el modelo Quincenal pierde un cobro al mes) y BUG-018 (fecha por defecto del abono a deuda usa UTC, no hora Colombia). BUG-018 afecta el uso diario desde las 7 p.m. hora Colombia en adelante; BUG-019 no afecta al usuario pero deja al proyecto sin red de seguridad E2E.
+> Última actualización: 2026-07-30. **4 errores abiertos:** BUG-016 (cuatro mensajes en voseo), BUG-013 (el pase de accesibilidad mide contraste durante el fundido del modal), BUG-017 (el modelo Quincenal pierde un cobro al mes) y BUG-018 (fecha por defecto del abono a deuda usa UTC, no hora Colombia). BUG-018 afecta el uso diario desde las 7 p.m. hora Colombia en adelante.
 
 ---
 
@@ -26,17 +26,6 @@ Numerar `BUG-001`, `BUG-002`... de forma consecutiva y sin reutilizar números a
 ---
 
 ## Pendientes
-
-### BUG-019 - La suite E2E apunta al markup que DIS.19 reemplazó: la compuerta E2E está caída
-- Estado    : pendiente
-- Prioridad : alta (no lo ve ningún usuario, pero el proyecto quedó sin red de seguridad E2E y cada cierre siguiente hereda el rojo)
-- Problema  : `ahorro-inversion.test.js` falla **16 de 16**; `smoke.test.js` falla 4 de Metas y deja **146 tests sin ejecutar**, así que el total del rojo sigue sin medir. Dos síntomas: timeout en `page.click('.casa-ahorro__fila[data-vehiculo="fondo"]')`, y "element is not visible" con Playwright reportando *"locator resolved to 2 elements"* para `[data-action="inversion-nueva"]` y *"3 elements"* para `[data-action="nueva-meta"]`, eligiendo en ambos casos un `<button class="lane__cta">`.
-- Causa     : **DIS.19 cambió el markup de la casa de Ahorro y no re-corrió E2E.** Dos efectos, y el segundo es el que más rompe. (1) Los `.casa-ahorro__fila[data-vehiculo]` de DIS.18 son ahora `.lane` con `id="carril-<clave>"` y salida por `a.lane__ver[href="#<seccion>"]` (`modules/dominio/ahorro/view.js:197-207`); `grep -rn "casa-ahorro__fila\|data-vehiculo" modules/ styles/` no devuelve ninguna coincidencia. Eso explica 4 tests. (2) **Cada carril trae su propio `.lane__cta` con la misma `data-action` que ya usaban la sección y el menú "Más"**, así que todo selector `[data-action="..."]` a nivel de documento pasó a resolver 2 o 3 elementos y el primero vive en un carril oculto. Eso explica los otros 12 y los 4 de Metas: no es el hub de Ahorro, es cualquier suite que abra un formulario por `data-action`. Última corrida verde: 2026-07-28 (236/236), anterior a DIS.19.
-- Archivo   : `tests/e2e/ahorro-inversion.test.js`, `tests/e2e/smoke.test.js` (revisar `hub-ahorros.test.js` y `navegacion-render.test.js`: no se ejecutaron)
-- Función   : suites "Ahorro - fondo de emergencia (J.1)", "Inversión - portafolio real (J.2)", "Inversión - origen del dinero (INV.1)", "Metas - categorías con emoji (MT.1)". El helper `abrirFormInversion()` (`ahorro-inversion.test.js:418`) concentra 12 de las 16 fallas.
-- Líneas    : `ahorro-inversion.test.js` 103, 120, 149, 185, 418 · `smoke.test.js` 498, 514, 530, 550
-- Secciones : ninguna de la app. Afecta la compuerta E2E de todo el proyecto.
-- **Arreglo sugerido**: el fix grande es **acotar los `data-action` al contenedor visible** (por ejemplo `#sec-inversion [data-action="inversion-nueva"]`, o un helper compartido que filtre por sección activa); eso solo arregla 16 de las 20 fallas conocidas con un cambio de patrón, no de test por test. Aparte, navegar por el markup vigente (`a.lane__ver[href="#fondo"]`, o ir al hash y afirmar `#sec-fondo.active`). Después correr la suite completa: los 146 no ejecutados pueden esconder más del mismo patrón.
 
 ### BUG-016 - Cuatro mensajes en voseo rompen el tuteo del ADN 11
 - Estado    : pendiente
