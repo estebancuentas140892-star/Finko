@@ -21,6 +21,7 @@ Las cuatro son obligatorias. Si alguna falla, se arregla la causa: no se commite
 | 2 | Lint verde | `pnpm run lint` | siempre que se tocó `.js` |
 | 3 | Cero guion largo (U+2014, U+2013) | comando de abajo | siempre, también en tareas de solo documentación |
 | 4 | Bump del Service Worker | subir `CACHE_NAME` en `service-worker.js`, ver `OPERACION.md` runbook 3 | siempre que cambió un archivo que el SW precachea (`.js`, `.css`, `index.html`, `docs/legal/*.md`) |
+| 5 | E2E verdes si el diff toca markup | `pnpm run e2e:check`; si dice OBLIGATORIA, `pnpm run test:e2e` | lo decide el script, no el criterio de quien cierra |
 
 Compuerta 3, en Git Bash. **Salida vacía significa que pasa:**
 
@@ -30,7 +31,11 @@ git ls-files -z '*.md' '*.js' '*.css' '*.html' | LC_ALL=C.UTF-8 xargs -0 grep -n
 
 Tres detalles que costaron tres intentos y por eso quedan escritos: el `LC_ALL` va **sobre el `xargs`** (antes del `git` no llega al `grep`, y sin él `grep -P` falla con "supports only unibyte and UTF-8 locales"); `git ls-files` evita que el recorrido se cuelgue en `node_modules` y que `coverage/`, que es generado, dé falsos positivos; y la herramienta `Grep` de Claude Code acepta el mismo patrón sin forzar locale.
 
-E2E (`pnpm run test:e2e`) no es compuerta de cada commit: tarda ~3,5 minutos. Se corre cuando la tarea tocó un flujo de usuario, agregó tests E2E propios o cambió el arranque de la app.
+**Compuerta 5, desde 2026-07-30.** E2E dejó de ser opcional: `pnpm run e2e:check` mira las líneas que cambiaron y responde si es obligatoria. Dispara con cualquier señal de markup (`class=`, `id=`, `data-*=`, `href=`, `aria-*=`, un `[data-x]` en CSS o en un `querySelector`, un tag HTML, `innerHTML`). Ignora `docs/`, `scripts/`, `tests/unit/` y `tests/integration/`, que no pueden mover un selector.
+
+Existe porque la norma escrita no alcanzó: DIS.19 cambió el markup de la casa de Ahorro, actualizó los tests unitarios y no los E2E, y la suite pasó **dos días en rojo** con 146 tests sin ejecutar hasta que el cierre de otra tarea la corrió (BUG-019). Que la decisión sea de un script y no de un juicio es todo el punto: quien cierra no tiene que acordarse.
+
+Sigue tardando ~3,5 minutos, así que conviene lanzarla en segundo plano al empezar el cierre y leer el resultado antes de commitear. Si `e2e:check` dice que no hace falta, decirlo en el reporte en vez de dejar la duda.
 
 Si la tarea fue **solo de documentación**, aplican la 3 y nada más: decirlo explícitamente en el reporte ("sin tocar `modules/`, no hay tests que correr") en vez de dejar la duda.
 

@@ -49,6 +49,7 @@ pnpm run test:watch          # modo TDD
 pnpm run coverage            # umbral 90% sobre capa lógica
 
 # Tests E2E (Playwright + Chromium)
+pnpm run e2e:check           # responde si el diff obliga a correrlos
 pnpm run test:e2e
 pnpm run test:e2e:ui         # con inspector
 
