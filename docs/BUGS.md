@@ -3,7 +3,7 @@
 > Errores detectados durante el desarrollo, con toda la información necesaria para resolverlos sin tener que volver a buscar dónde están.
 > Al solucionarse, el error se **elimina** de este archivo y el fix queda documentado en [`CHANGELOG.md`](CHANGELOG.md) con referencia al ID.
 > Solo entra lo **verificado** contra el código (archivo, función, línea). Una sospecha no es un error: es una tarjeta de investigación en [`BOARD.md`](BOARD.md).
-> Última actualización: 2026-07-25. **4 errores abiertos:** BUG-016 (cuatro mensajes en voseo), BUG-013 (el pase de accesibilidad mide contraste durante el fundido del modal), BUG-017 (el modelo Quincenal pierde un cobro al mes) y BUG-018 (fecha por defecto del abono a deuda usa UTC, no hora Colombia). BUG-018 afecta el uso diario desde las 7 p.m. hora Colombia en adelante.
+> Última actualización: 2026-07-29. **5 errores abiertos:** BUG-019 (la suite E2E apunta al markup que DIS.19 reemplazó y la compuerta E2E está caída), BUG-016 (cuatro mensajes en voseo), BUG-013 (el pase de accesibilidad mide contraste durante el fundido del modal), BUG-017 (el modelo Quincenal pierde un cobro al mes) y BUG-018 (fecha por defecto del abono a deuda usa UTC, no hora Colombia). BUG-018 afecta el uso diario desde las 7 p.m. hora Colombia en adelante; BUG-019 no afecta al usuario pero deja al proyecto sin red de seguridad E2E.
 
 ---
 
@@ -26,6 +26,17 @@ Numerar `BUG-001`, `BUG-002`... de forma consecutiva y sin reutilizar números a
 ---
 
 ## Pendientes
+
+### BUG-019 - La suite E2E apunta al markup que DIS.19 reemplazó: la compuerta E2E está caída
+- Estado    : pendiente
+- Prioridad : alta (no lo ve ningún usuario, pero el proyecto quedó sin red de seguridad E2E y cada cierre siguiente hereda el rojo)
+- Problema  : `pnpm run test:e2e` falla en al menos dos suites. `ahorro-inversion.test.js` falla sus 16 tests (los 4 del fondo por timeout en `page.click('.casa-ahorro__fila[data-vehiculo="fondo"]')`); `smoke.test.js` falla 4 tests de Metas con "element is not visible" en `[data-action="nueva-meta"]`, que Playwright reporta como *"locator resolved to 3 elements"*. Quedaron **146 tests sin ejecutar**: el alcance real del rojo no está medido.
+- Causa     : **DIS.19 cambió el markup de la casa de Ahorro y no re-corrió E2E.** Los `.casa-ahorro__fila[data-vehiculo]` de DIS.18 son ahora `.lane` con `id="carril-<clave>"` y salida por `a.lane__ver[href="#<seccion>"]` (`modules/dominio/ahorro/view.js:197-207`); `grep -rn "casa-ahorro__fila\|data-vehiculo" modules/ styles/` no devuelve ninguna coincidencia. El segundo síntoma es el mismo cambio: cada carril trae su propio `.lane__cta` con la `data-action` que ya usaban la sección y el menú "Más", así que el selector pasó de 1 a 3 elementos y el primero está en un carril no visible. Última corrida verde de E2E: 2026-07-28 (236/236), anterior a DIS.19.
+- Archivo   : `tests/e2e/ahorro-inversion.test.js`, `tests/e2e/smoke.test.js` (revisar `hub-ahorros.test.js` y `navegacion-render.test.js`: tocan la misma pantalla y no se ejecutaron)
+- Función   : suite "Ahorro - fondo de emergencia (J.1)" y suite "Metas - categorías con emoji (MT.1)"
+- Líneas    : `ahorro-inversion.test.js` 103, 120, 149, 185 · `smoke.test.js` 498, 514, 530, 550
+- Secciones : ninguna de la app. Afecta la compuerta E2E de todo el proyecto.
+- **Arreglo sugerido**: navegar por el markup vigente (`a.lane__ver[href="#fondo"]`, o ir al hash y afirmar `#sec-fondo.active`) y **acotar los selectores de `data-action` al contenedor visible**, que es la causa estructural del segundo síntoma y se va a repetir con cada CTA duplicado en los carriles. Después correr la suite completa. Entra por triaje como tarjeta propia: el alcance no está medido.
 
 ### BUG-016 - Cuatro mensajes en voseo rompen el tuteo del ADN 11
 - Estado    : pendiente
