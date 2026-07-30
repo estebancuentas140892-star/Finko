@@ -117,24 +117,27 @@ test.describe('DIS.18 - la casa de Ahorro (móvil)', () => {
     await page.goto('/#ahorro');
     await page.waitForSelector('#sec-ahorro.active', { timeout: 10_000 });
 
-    await expect(page.locator('.casa-ahorro__label')).toHaveText('Todo lo que tienes guardado');
-    await expect(page.locator('.casa-ahorro__valor')).toHaveText('$1.500.000');
+    // DIS.19: el total bajó al pie del hub y la fila pasó a ser un carril.
+    await expect(page.locator('#sec-ahorro .hub__total')).toContainText('Todo lo que tienes guardado');
+    await expect(page.locator('#casa-ahorro-total')).toHaveText('$1.500.000');
 
-    const filas = page.locator('#sec-ahorro .casa-ahorro__fila');
-    await expect(filas).toHaveCount(4);
-    await expect(filas.locator('.casa-ahorro__proposito').first())
-      .toHaveText('Para cuando algo se dañe o te quedes sin ingresos');
-    await expect(page.locator('#sec-ahorro .casa-ahorro__fila[data-vehiculo="metas"] .casa-ahorro__estado'))
-      .toHaveText('1 en curso');
+    const carriles = page.locator('#sec-ahorro .lane');
+    await expect(carriles).toHaveCount(4);
+    // DIS.19 reemplazó el propósito por el momento de uso, que es lo que ahora
+    // ordena los cuatro carriles con una sola pregunta.
+    await expect(carriles.locator('.lane__cuando').first())
+      .toHaveText('Ojalá nunca lo uses');
+    await expect(page.locator('#carril-metas .lane__estado'))
+      .toContainText('1 en curso');
   });
 
-  test('las filas son la navegación: cada una entra a su sección y se puede volver', async ({ page }) => {
+  test('los carriles son la navegación: cada uno entra a su sección y se puede volver', async ({ page }) => {
     await seedConAhorros(page);
     await page.goto('/#ahorro');
     await page.waitForSelector('#sec-ahorro.active', { timeout: 10_000 });
 
-    // Fila del fondo → #fondo, que es la ruta nueva de la sección.
-    await page.click('#sec-ahorro .casa-ahorro__fila[data-vehiculo="fondo"]');
+    // DIS.19: la salida del carril es su enlace "Ver todo", no la fila entera.
+    await page.click('#carril-fondo .lane__ver');
     await expect(page.locator('#sec-fondo.active')).toBeVisible();
     await expect(page.locator('#title-fondo')).toHaveText('Fondo de emergencia');
 
@@ -142,7 +145,7 @@ test.describe('DIS.18 - la casa de Ahorro (móvil)', () => {
     await page.click('#sec-fondo .section__volver');
     await expect(page.locator('#sec-ahorro.active')).toBeVisible();
 
-    await page.click('#sec-ahorro .casa-ahorro__fila[data-vehiculo="apartados"]');
+    await page.click('#carril-apartados .lane__ver');
     await expect(page.locator('#sec-apartados.active')).toBeVisible();
     await expect(page.locator('#sec-apartados .section__volver')).toHaveAttribute('href', '#ahorro');
   });
@@ -154,9 +157,10 @@ test.describe('DIS.18 - la casa de Ahorro (móvil)', () => {
 
     await expect(page.locator('.hub-tabs')).toHaveCount(0);
     await expect(page.locator('[data-hub-consolidado]')).toHaveCount(0);
-    // El consolidado existe una sola vez, y no es en una hija.
-    await expect(page.locator('#sec-metas .casa-ahorro')).toHaveCount(0);
-    await expect(page.locator('.casa-ahorro')).toHaveCount(1);
+    // El consolidado existe una sola vez, y no es en una hija. DIS.19: el hub
+    // es `.hub` y su total el pie `.hub__total`.
+    await expect(page.locator('#sec-metas .hub')).toHaveCount(0);
+    await expect(page.locator('.hub__total')).toHaveCount(1);
 
     for (const hash of ['#fondo', '#apartados', '#inversion']) {
       await page.evaluate((h) => { window.location.hash = h; }, hash);
@@ -164,15 +168,15 @@ test.describe('DIS.18 - la casa de Ahorro (móvil)', () => {
     }
   });
 
-  test('sin ahorros la casa igual muestra las cuatro filas: lo que no aparece no se descubre', async ({ page }) => {
+  test('sin ahorros la casa igual muestra los cuatro carriles: lo que no aparece no se descubre', async ({ page }) => {
     await seedVacio(page);
     await page.goto('/#ahorro');
     await page.waitForSelector('#sec-ahorro.active', { timeout: 10_000 });
 
-    await expect(page.locator('.casa-ahorro__valor')).toHaveText('$0');
-    await expect(page.locator('#sec-ahorro .casa-ahorro__fila')).toHaveCount(4);
-    await expect(page.locator('#sec-ahorro .casa-ahorro__fila[data-vehiculo="fondo"] .casa-ahorro__estado'))
-      .toHaveText('sin empezar');
+    await expect(page.locator('#casa-ahorro-total')).toHaveText('$0');
+    await expect(page.locator('#sec-ahorro .lane')).toHaveCount(4);
+    await expect(page.locator('#carril-fondo .lane__estado'))
+      .toContainText('sin empezar');
   });
 
   test('el botón "Más" se resalta y nombra la sección en la casa y en sus hijas', async ({ page }) => {

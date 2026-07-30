@@ -68,8 +68,8 @@ test.describe('Render tras navegación (regresión hashchange)', () => {
     await page.click('a[href="#ahorro"]');
     await expect(page.locator('#sec-ahorro.active')).toBeVisible();
 
-    // DIS.18: la casa es el destino, y sus filas son la navegación.
-    await page.click('.casa-ahorro__fila[data-vehiculo="fondo"]');
+    // DIS.19: la casa es el destino, y la salida de cada carril es "Ver todo".
+    await page.click('#carril-fondo .lane__ver');
     await expect(page.locator('#sec-fondo.active')).toBeVisible();
 
     await expect(

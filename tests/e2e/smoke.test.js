@@ -495,8 +495,13 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
 
   // DIS.14 (arquitectura A2): el ícono pasó al centro del arco y el nombre
   // vive en su propia línea, arriba de la tarjeta.
-  test('crear una meta con categoría "Boda" muestra el anillo del sprite en el arco (ID.3)', async ({ page }) => {
-    await page.click('[data-action="nueva-meta"]');
+  // DIS.19: una categoría predefinida ya no pinta el glifo del sprite en el
+  // arco, pinta su silueta que se llena. Acá se verifica el flujo completo
+  // (elegir categoría, guardar, ver la tarjeta con su silueta); que la forma
+  // sea exactamente el anillo lo fija `tests/unit/metas.test.js` contra
+  // `SILUETAS.anillo`, que es donde se puede comparar el path sin acoplar el E2E.
+  test('crear una meta con categoría "Boda" muestra su silueta en el arco (ID.3)', async ({ page }) => {
+    await page.click('#sec-metas [data-action="nueva-meta"]');
     await page.waitForSelector('#modal-meta[data-open]');
 
     const form = page.locator('#modal-meta-body form');
@@ -507,12 +512,14 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
 
     await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
 
-    await expect(page.locator('#lista-metas .meta-card__arco-icono use[href="#c-anillo"]')).toHaveCount(1);
+    const glifo = page.locator('#lista-metas .meta-card__arco-icono');
+    await expect(glifo).toHaveClass(/meta-card__arco-icono--silueta/);
+    await expect(glifo.locator('svg.silueta')).toHaveCount(1);
     await expect(page.locator('#lista-metas .meta-card__nombre')).toContainText('Fiesta de matrimonio');
   });
 
   test('MT.3: el campo de emoji está oculto salvo con categoría "Otra"', async ({ page }) => {
-    await page.click('[data-action="nueva-meta"]');
+    await page.click('#sec-metas [data-action="nueva-meta"]');
     await page.waitForSelector('#modal-meta[data-open]');
 
     const form = page.locator('#modal-meta-body form');
@@ -528,7 +535,7 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
   });
 
   test('CAT.2b: con categoría "Otra" el ícono elegido en el picker queda en la lista', async ({ page }) => {
-    await page.click('[data-action="nueva-meta"]');
+    await page.click('#sec-metas [data-action="nueva-meta"]');
     await page.waitForSelector('#modal-meta[data-open]');
 
     const form = page.locator('#modal-meta-body form');
@@ -548,7 +555,7 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
   });
 
   test('CAT.2b: volver de "Otra" a otra categoría limpia el ícono elegido a mano', async ({ page }) => {
-    await page.click('[data-action="nueva-meta"]');
+    await page.click('#sec-metas [data-action="nueva-meta"]');
     await page.waitForSelector('#modal-meta[data-open]');
 
     const form = page.locator('#modal-meta-body form');
@@ -565,9 +572,12 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
 
     await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
 
-    // El ícono mostrado es la casa de Vivienda (sprite), no el elegido con "Otra".
+    // Manda Vivienda, no el ícono que el usuario alcanzó a elegir con "Otra".
+    // DIS.19: una categoría predefinida se dibuja como silueta, así que la
+    // prueba es que aparezca la silueta y NO quede el sprite elegido a mano.
     const glifo = page.locator('#lista-metas .meta-card__arco-icono');
-    await expect(glifo.locator('use[href="#i-home"]')).toHaveCount(1);
+    await expect(glifo).toHaveClass(/meta-card__arco-icono--silueta/);
+    await expect(glifo.locator('svg.silueta')).toHaveCount(1);
     await expect(glifo.locator('use[href="#c-torta"]')).toHaveCount(0);
   });
 });
@@ -590,7 +600,7 @@ test.describe('Metas - abono con selector de cuenta compartido (MT.5)', () => {
   async function crearMetaSimple(page, nombre, montoObjetivo) {
     await page.goto('/#metas');
     await expect(page.locator('#sec-metas.active')).toBeVisible();
-    await page.click('[data-action="nueva-meta"]');
+    await page.click('#sec-metas [data-action="nueva-meta"]');
     await page.waitForSelector('#modal-meta[data-open]');
     const form = page.locator('#modal-meta-body form');
     await form.locator('#meta-nombre').fill(nombre);
@@ -684,7 +694,7 @@ test.describe('Metas - ritmo de ahorro según frecuencia (MT.4)', () => {
     const mes  = String(futura.getMonth() + 1).padStart(2, '0');
     const dia  = String(futura.getDate()).padStart(2, '0');
 
-    await page.click('[data-action="nueva-meta"]');
+    await page.click('#sec-metas [data-action="nueva-meta"]');
     await page.waitForSelector('#modal-meta[data-open]');
     const form = page.locator('#modal-meta-body form');
     await form.locator('#meta-nombre').fill('Estudio de idiomas');
@@ -4115,7 +4125,7 @@ test.describe('Apartados - selector de ícono compacto (CAT.2c)', () => {
     await saltearOnboarding(page);
     await page.goto('/#apartados');
     await page.waitForSelector('#sec-apartados.active', { timeout: 10_000 });
-    await page.click('[data-action="nuevo-apartado"]');
+    await page.click('#sec-apartados [data-action="nuevo-apartado"]');
     await page.waitForSelector('#modal-apartado[data-open]');
 
     const form = page.locator('#modal-apartado-body form');
@@ -4138,7 +4148,7 @@ test.describe('Apartados - selector de ícono compacto (CAT.2c)', () => {
     await saltearOnboarding(page);
     await page.goto('/#apartados');
     await page.waitForSelector('#sec-apartados.active', { timeout: 10_000 });
-    await page.click('[data-action="nuevo-apartado"]');
+    await page.click('#sec-apartados [data-action="nuevo-apartado"]');
     await page.waitForSelector('#modal-apartado[data-open]');
 
     const form = page.locator('#modal-apartado-body form');
@@ -4162,7 +4172,7 @@ test.describe('Apartados - selector de ícono compacto (CAT.2c)', () => {
     await saltearOnboarding(page);
     await page.goto('/#apartados');
     await page.waitForSelector('#sec-apartados.active', { timeout: 10_000 });
-    await page.click('[data-action="nuevo-apartado"]');
+    await page.click('#sec-apartados [data-action="nuevo-apartado"]');
     await page.waitForSelector('#modal-apartado[data-open]');
 
     const form = page.locator('#modal-apartado-body form');
@@ -4657,7 +4667,7 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
   });
 
   test('editar prellena los campos actuales y actualiza nombre/objetivo/fecha', async ({ page }) => {
-    await page.click('[data-action="nueva-meta"]');
+    await page.click('#sec-metas [data-action="nueva-meta"]');
     await page.waitForSelector('#modal-meta[data-open]');
     const form = page.locator('#modal-meta-body form');
     await form.locator('#meta-nombre').fill('Viaje a la costa');
@@ -4694,7 +4704,7 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
 
     await page.goto('/#metas');
     await expect(page.locator('#sec-metas.active')).toBeVisible();
-    await page.click('[data-action="nueva-meta"]');
+    await page.click('#sec-metas [data-action="nueva-meta"]');
     await page.waitForSelector('#modal-meta[data-open]');
     const form = page.locator('#modal-meta-body form');
     await form.locator('#meta-nombre').fill('Laptop nueva');
@@ -4729,7 +4739,7 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
   });
 
   test('bajar el objetivo por debajo de lo ya aportado marca la meta como completada', async ({ page }) => {
-    await page.click('[data-action="nueva-meta"]');
+    await page.click('#sec-metas [data-action="nueva-meta"]');
     await page.waitForSelector('#modal-meta[data-open]');
     const form = page.locator('#modal-meta-body form');
     await form.locator('#meta-nombre').fill('Fondo cámara');
@@ -4763,7 +4773,7 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
   });
 
   test('editar preserva la categoría e ícono elegidos', async ({ page }) => {
-    await page.click('[data-action="nueva-meta"]');
+    await page.click('#sec-metas [data-action="nueva-meta"]');
     await page.waitForSelector('#modal-meta[data-open]');
     const form = page.locator('#modal-meta-body form');
     await form.locator('#meta-nombre').fill('Boda de mi hermana');
@@ -4783,7 +4793,10 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
     await formEdit.locator('button[type="submit"]').click();
     await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
 
+    // DIS.19: la categoría sobrevivió a la edición, y una predefinida se
+    // dibuja como silueta (la forma exacta la fija el unit test de metas).
     const glifo = page.locator('#lista-metas .meta-card__arco-icono');
-    await expect(glifo.locator('use[href="#c-anillo"]')).toHaveCount(1);
+    await expect(glifo).toHaveClass(/meta-card__arco-icono--silueta/);
+    await expect(glifo.locator('svg.silueta')).toHaveCount(1);
   });
 });

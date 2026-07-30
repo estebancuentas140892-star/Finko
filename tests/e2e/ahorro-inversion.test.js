@@ -100,7 +100,7 @@ test.describe('Ahorro - fondo de emergencia (J.1)', () => {
     // DIS.18: se entra por la casa de Ahorro, y el fondo es su primera fila.
     await page.click('a[href="#ahorro"]');
     await expect(page.locator('#sec-ahorro.active')).toBeVisible({ timeout: 5_000 });
-    await page.click('.casa-ahorro__fila[data-vehiculo="fondo"]');
+    await page.click('#carril-fondo .lane__ver');
     await expect(page.locator('#sec-fondo.active')).toBeVisible({ timeout: 5_000 });
 
     await expect(
@@ -108,7 +108,7 @@ test.describe('Ahorro - fondo de emergencia (J.1)', () => {
     ).toHaveText('¿Cuánto tiempo aguantarías sin ingresos?', { timeout: 3_000 });
 
     // El CTA de activación está presente
-    await expect(page.locator('[data-action="ahorro-activar-fondo"]')).toBeVisible();
+    await expect(page.locator('#sec-fondo [data-action="ahorro-activar-fondo"]')).toBeVisible();
   });
 
   // A.2 - Activar fondo: modal → form → hero --------------------------------
@@ -117,11 +117,11 @@ test.describe('Ahorro - fondo de emergencia (J.1)', () => {
     // DIS.18: se entra por la casa de Ahorro, y el fondo es su primera fila.
     await page.click('a[href="#ahorro"]');
     await expect(page.locator('#sec-ahorro.active')).toBeVisible({ timeout: 5_000 });
-    await page.click('.casa-ahorro__fila[data-vehiculo="fondo"]');
+    await page.click('#carril-fondo .lane__ver');
     await expect(page.locator('#sec-fondo.active')).toBeVisible({ timeout: 5_000 });
 
     // Abrir modal de activación
-    await page.click('[data-action="ahorro-activar-fondo"]');
+    await page.click('#sec-fondo [data-action="ahorro-activar-fondo"]');
     await page.waitForSelector('#modal-ahorro[data-open]', { timeout: 5_000 });
 
     const form = page.locator('#modal-ahorro-body form#form-fondo');
@@ -146,9 +146,9 @@ test.describe('Ahorro - fondo de emergencia (J.1)', () => {
     // DIS.18: se entra por la casa de Ahorro, y el fondo es su primera fila.
     await page.click('a[href="#ahorro"]');
     await expect(page.locator('#sec-ahorro.active')).toBeVisible({ timeout: 5_000 });
-    await page.click('.casa-ahorro__fila[data-vehiculo="fondo"]');
+    await page.click('#carril-fondo .lane__ver');
     await expect(page.locator('#sec-fondo.active')).toBeVisible({ timeout: 5_000 });
-    await page.click('[data-action="ahorro-activar-fondo"]');
+    await page.click('#sec-fondo [data-action="ahorro-activar-fondo"]');
     await page.waitForSelector('#modal-ahorro[data-open]', { timeout: 5_000 });
     const formFondo = page.locator('#modal-ahorro-body form#form-fondo');
     await formFondo.locator('[name="metaMeses"]').fill('3');
@@ -157,7 +157,7 @@ test.describe('Ahorro - fondo de emergencia (J.1)', () => {
     await expect(page.locator('.fondo-card__dato--fuerte')).toContainText('$500.000', { timeout: 3_000 });
 
     // Registrar un aporte de $200.000
-    await page.click('[data-action="ahorro-nuevo-aporte"]');
+    await page.click('#sec-fondo [data-action="ahorro-nuevo-aporte"]');
     await page.waitForSelector('#modal-ahorro[data-open]', { timeout: 5_000 });
     const formAporte = page.locator('#modal-ahorro-body form#form-aporte');
     await formAporte.locator('[name="monto"]').fill('200000');
@@ -182,9 +182,9 @@ test.describe('Ahorro - fondo de emergencia (J.1)', () => {
     // DIS.18: se entra por la casa de Ahorro, y el fondo es su primera fila.
     await page.click('a[href="#ahorro"]');
     await expect(page.locator('#sec-ahorro.active')).toBeVisible({ timeout: 5_000 });
-    await page.click('.casa-ahorro__fila[data-vehiculo="fondo"]');
+    await page.click('#carril-fondo .lane__ver');
     await expect(page.locator('#sec-fondo.active')).toBeVisible({ timeout: 5_000 });
-    await page.click('[data-action="ahorro-activar-fondo"]');
+    await page.click('#sec-fondo [data-action="ahorro-activar-fondo"]');
     await page.waitForSelector('#modal-ahorro[data-open]', { timeout: 5_000 });
     const formFondo = page.locator('#modal-ahorro-body form#form-fondo');
     await formFondo.locator('[name="metaMeses"]').fill('3');
@@ -225,7 +225,7 @@ test.describe('Inversión - portafolio real (J.2)', () => {
     ).toHaveText('Registra tus inversiones', { timeout: 3_000 });
 
     // El CTA de alta está presente
-    await expect(page.locator('[data-action="inversion-nueva"]').first()).toBeVisible();
+    await expect(page.locator('#sec-inversion [data-action="inversion-nueva"]').first()).toBeVisible();
   });
 
   // B.2 - Alta inversión: lista + tarjeta del momento ------------------------
@@ -234,7 +234,7 @@ test.describe('Inversión - portafolio real (J.2)', () => {
     await page.click('a[href="#inversion"]');
     await expect(page.locator('#sec-inversion.active')).toBeVisible({ timeout: 5_000 });
 
-    await page.click('[data-action="inversion-nueva"]');
+    await page.click('#sec-inversion [data-action="inversion-nueva"]');
     await page.waitForSelector('#modal-inversion[data-open]', { timeout: 5_000 });
 
     const form = page.locator('#modal-inversion-body form#form-inversion');
@@ -264,7 +264,7 @@ test.describe('Inversión - portafolio real (J.2)', () => {
     await page.click('a[href="#inversion"]');
     await expect(page.locator('#sec-inversion.active')).toBeVisible({ timeout: 5_000 });
 
-    await page.click('[data-action="inversion-nueva"]');
+    await page.click('#sec-inversion [data-action="inversion-nueva"]');
     await page.waitForSelector('#modal-inversion[data-open]', { timeout: 5_000 });
 
     const form = page.locator('#modal-inversion-body form#form-inversion');
@@ -298,7 +298,7 @@ test.describe('Inversión - portafolio real (J.2)', () => {
     await expect(page.locator('#sec-inversion.active')).toBeVisible({ timeout: 5_000 });
 
     // Registrar para poder eliminar
-    await page.click('[data-action="inversion-nueva"]');
+    await page.click('#sec-inversion [data-action="inversion-nueva"]');
     await page.waitForSelector('#modal-inversion[data-open]', { timeout: 5_000 });
     const form = page.locator('#modal-inversion-body form#form-inversion');
     await form.locator('select[name="tipo"]').selectOption('Fondo');
@@ -337,7 +337,7 @@ test.describe('Inversión - portafolio real (J.2)', () => {
     await expect(page.locator('#sec-inversion.active')).toBeVisible({ timeout: 5_000 });
 
     // Registrar inversión
-    await page.click('[data-action="inversion-nueva"]');
+    await page.click('#sec-inversion [data-action="inversion-nueva"]');
     await page.waitForSelector('#modal-inversion[data-open]', { timeout: 5_000 });
     const form = page.locator('#modal-inversion-body form#form-inversion');
     await form.locator('select[name="tipo"]').selectOption('Acciones');
@@ -415,9 +415,24 @@ async function saldoCuenta(page) {
 
 /** Abre el formulario de inversión y devuelve su locator. */
 async function abrirFormInversion(page) {
-  await page.click('[data-action="inversion-nueva"]');
+  await page.click('#sec-inversion [data-action="inversion-nueva"]');
   await page.waitForSelector('#modal-inversion[data-open]', { timeout: 5_000 });
   return page.locator('#modal-inversion-body form#form-inversion');
+}
+
+/**
+ * Elige una rama del origen del dinero (INV.1).
+ *
+ * Los dos chips reusan el patrón de FORM.1 (ADR 042 D1): el radio va oculto
+ * detrás de su `<label class="chip-fecha">`, así que hay que clickear el label.
+ * Llamar `.check()` sobre el input no sirve: el label intercepta el puntero. Es
+ * la misma razón por la que `smoke.test.js` tiene su helper `elegirChip()`.
+ *
+ * @param {import('@playwright/test').Locator} form
+ * @param {'cuenta'|'preexistente'} valor
+ */
+async function elegirOrigen(form, valor) {
+  await form.locator(`.chip-fecha:has(input[name="origen"][value="${valor}"])`).click();
 }
 
 test.describe('Inversión - origen del dinero (INV.1)', () => {
@@ -448,7 +463,7 @@ test.describe('Inversión - origen del dinero (INV.1)', () => {
     const form = await abrirFormInversion(page);
 
     // El usuario contesta: preexistente.
-    await form.locator('input[name="origen"][value="preexistente"]').check();
+    await elegirOrigen(form, 'preexistente');
     await expect(form.locator('#inv-origen-cuenta')).toBeHidden();
 
     // Cambiar la fecha ya no le pisa la respuesta.
@@ -467,7 +482,7 @@ test.describe('Inversión - origen del dinero (INV.1)', () => {
     await form.locator('[name="nombre"]').fill('CDT con origen E2E');
     await form.locator('[name="monto"]').fill('2000000');
     await form.locator('[name="fechaInicio"]').fill(hoyLocal());
-    await form.locator('input[name="origen"][value="cuenta"]').check();
+    await elegirOrigen(form, 'cuenta');
     await form.locator('input[name="cuentaId"][value="cta-e2e"]').check();
     await form.locator('button[type="submit"]').click();
 
@@ -486,7 +501,7 @@ test.describe('Inversión - origen del dinero (INV.1)', () => {
     await form.locator('[name="nombre"]').fill('Fondo preexistente E2E');
     await form.locator('[name="monto"]').fill('2000000');
     await form.locator('[name="fechaInicio"]').fill('2018-05-20');
-    await form.locator('input[name="origen"][value="preexistente"]').check();
+    await elegirOrigen(form, 'preexistente');
     await form.locator('button[type="submit"]').click();
 
     await expect(page.locator(modalCerrado('modal-inversion'))).toBeAttached({ timeout: 3_000 });
@@ -504,7 +519,7 @@ test.describe('Inversión - origen del dinero (INV.1)', () => {
     await form.locator('[name="nombre"]').fill('CDT reversible E2E');
     await form.locator('[name="monto"]').fill('1500000');
     await form.locator('[name="fechaInicio"]').fill(hoyLocal());
-    await form.locator('input[name="origen"][value="cuenta"]').check();
+    await elegirOrigen(form, 'cuenta');
     await form.locator('input[name="cuentaId"][value="cta-e2e"]').check();
     await form.locator('button[type="submit"]').click();
 
@@ -532,7 +547,7 @@ test.describe('Inversión - origen del dinero (INV.1)', () => {
     await form.locator('[name="nombre"]').fill('Cripto vieja E2E');
     await form.locator('[name="monto"]').fill('900000');
     await form.locator('[name="fechaInicio"]').fill('2017-11-02');
-    await form.locator('input[name="origen"][value="preexistente"]').check();
+    await elegirOrigen(form, 'preexistente');
     await form.locator('button[type="submit"]').click();
 
     await expect(page.locator('.inversion-lista__items')).toContainText('Cripto vieja E2E', { timeout: 3_000 });
@@ -559,7 +574,7 @@ test.describe('Inversión - origen del dinero (INV.1)', () => {
     await form.locator('[name="nombre"]').fill('Finca raiz E2E');
     await form.locator('[name="monto"]').fill('9000000');
     await form.locator('[name="fechaInicio"]').fill(hoyLocal());
-    await form.locator('input[name="origen"][value="cuenta"]').check();
+    await elegirOrigen(form, 'cuenta');
     await form.locator('input[name="cuentaId"][value="cta-e2e"]').check();
     await form.locator('button[type="submit"]').click();
 
