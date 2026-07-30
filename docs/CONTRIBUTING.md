@@ -1,8 +1,8 @@
 # Guía de contribución - Finko Claude
 
----
-
-## Principio rector
+> Este documento es dueño de **dos cosas**: el formato de los commits y qué se exige antes de commitear. Nada más.
+> Lo que se movió de acá porque ya tenía dueño: las reglas de código y los patrones técnicos viven en [`ARCHITECTURE.md`](ARCHITECTURE.md) y en el ADN de [`/CLAUDE.md`](../CLAUDE.md) seccion 4; el workflow, en `/CLAUDE.md` seccion 2; el runbook de constantes legales, en [`OPERACION.md`](OPERACION.md) runbook 2; la secuencia de cierre, en la skill `cerrar-tarea`. Duplicarlas acá era la razón de que este archivo pesara el doble de su techo.
+> Revisado: 2026-07-30.
 
 > Una tarea bien hecha hoy ahorra cinco mal hechas la semana que viene.
 
@@ -10,80 +10,18 @@
 
 ## Antes de empezar
 
-1. Lee [ARCHITECTURE.md](ARCHITECTURE.md) (10 min)
-2. Lee [BOARD.md](BOARD.md) - cuál es la tarjeta en proceso o la siguiente a elegir
-3. Si la tarjeta toca CSS/tokens, revisa [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)
-4. Corre `pnpm test` - debe pasar en verde antes de tocar nada
+1. [`/CLAUDE.md`](../CLAUDE.md): workflow, ADN y estándar de comunicación. Es el punto de entrada.
+2. [`BOARD.md`](BOARD.md): la tarjeta en proceso, o la siguiente a elegir.
+3. La ficha de la sección en [`contexto/`](contexto/README.md) antes de tocarla.
+4. `pnpm test` en verde antes de tocar nada.
 
----
-
-## Flujo de trabajo
-
-```
-1. Elegir una tarjeta pendiente de BOARD.md
-2. Hacer UNA sola tarea a la vez
-3. pnpm test - verde obligatorio antes de commitear
-4. Commitear con el formato correcto
-5. Actualizar BOARD.md (borrar la tarjeta completada) + CHANGELOG.md
-6. Reportar próxima tarea recomendada
-```
-
----
-
-## Reglas de código
-
-### JavaScript
-
-- **Sin build step.** Vanilla JS ES6 modules. El navegador los entiende directamente.
-- **Sin `window.X`** - toda función o variable debe exportarse con `export`. Comunicación cross-módulo: EventBus.
-- **Sin `onclick=""` en HTML** - todo vía `data-action` delegado en `actions.js`.
-- **`logic.js` sin DOM** - los cálculos no pueden usar `document`, `window` ni `localStorage`. Solo reciben datos, devuelven datos.
-- **`save()` siempre** - toda mutación de `S` va seguida de `save()` de `storage.js`. Nunca escribir a `localStorage` directamente.
-- **JSDoc en funciones públicas** (opcional pero bienvenido):
-  ```js
-  /**
-   * @param {number} monto - Monto en COP
-   * @param {number} tasa - Tasa anual efectiva (ej: 0.24 = 24%)
-   * @returns {number} Cuota mensual en COP
-   */
-  export function calcularCuota(monto, tasa) { ... }
-  ```
-
-### CSS
-
-- **Sin `style=""` inline** - siempre clases del design system.
-- **Usar tokens CSS** - `var(--fk-accent)`, `var(--fk-space-4)`, nunca colores o tamaños hardcoded. Ver [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) para el catálogo completo.
-- **Respetar `@layer`** - no agregar reglas en capas incorrectas.
-- **Modo oscuro incluido** - toda nueva clase debe funcionar en ambos temas (probar los dos antes de commitear).
-
-### HTML
-
-- **Semántica correcta** - `<button>` para acciones, `<a>` para navegación, `<input type="...">` correcto.
-- **ARIA cuando el HTML semántico no alcanza** - no usar ARIA para redundar lo que ya dice el HTML.
-- **Atributos `data-action`** - siempre `kebab-case verbo-sustantivo`: `guardar-gasto`, `editar-meta`.
-
----
-
-## Naming
-
-| Elemento | Convención | Ejemplo |
-|---|---|---|
-| Dominios JS | Español neutro | `ingresos`, `compromisos` |
-| Infra/UI JS | Inglés | `render`, `actions`, `shell` |
-| Archivos CSS | kebab-case | `tokens.css`, `main.css` |
-| Variables CSS | `--fk-*` prefijo | `--fk-color-accent`, `--fk-space-4` |
-| Funciones de dominio | camelCase ES | `calcularCuota`, `ordenarDeudas` |
-| Eventos EventBus | `dominio:acción` | `state:change`, `distribucion:aplicar` |
-| `data-action` | kebab-case verbo-sustantivo | `guardar-gasto`, `abrir-modal-deuda` |
-| Tests | `nombre.test.js` | `storage.test.js` |
+Si la tarjeta toca CSS o tokens, además [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
 
 ---
 
 ## Commits
 
-Formato: `tipo(área): descripción corta en español`
-
-**Tipos:**
+Formato: `tipo(área): descripción corta en español`.
 
 | Tipo | Cuándo |
 |---|---|
@@ -93,139 +31,70 @@ Formato: `tipo(área): descripción corta en español`
 | `test` | Agregar o arreglar tests |
 | `docs` | Solo documentación |
 | `style` | Formato, sin cambio lógico |
-| `chore` | Tareas de mantenimiento (deps, config) |
+| `chore` | Mantenimiento (deps, config) |
 | `perf` | Mejora de rendimiento |
-| `a11y` | Mejoras de accesibilidad |
-
-**Ejemplos:**
+| `a11y` | Accesibilidad |
 
 ```
 feat(gastos): agregar detector de gastos hormiga
-fix(storage): corregir migración v1→v2 con datos vacíos
-test(compromisos): agregar tests de avalancha y bola de nieve
-docs(architecture): actualizar árbol de dependencias
-chore: actualizar SMMLV y UVT para 2026
+fix(storage): corregir migracion v1 a v2 con datos vacios
 a11y(modales): implementar focus trap en todos los modales
 ```
 
 **Reglas:**
-- Descripción en español, imperativo presente: "agregar", "corregir", "actualizar" (no "agregué", "agregando").
+
+- Imperativo presente: "agregar", "corregir". No "agregué" ni "agregando".
 - Máximo 72 caracteres en la primera línea.
-- Si el commit afecta múltiples áreas, usa el área más importante o `app`.
-- `pnpm test` debe pasar en verde antes de cada commit.
+- **Cuerpo en ASCII sin acentos** (convención vigente del repo).
+- Si toca varias áreas, usar la más importante o `app`.
+- Varios commits chicos y legibles antes que uno grande. Los borrados van en su propio commit, para que el diff sea reversible.
+
+---
+
+## Qué se exige antes de commitear
+
+Las cinco compuertas. La ejecución paso a paso es de la skill `cerrar-tarea`; acá está **qué** se exige.
+
+| # | Compuerta | Cuándo aplica |
+|---|---|---|
+| 1 | `pnpm test` en verde | se tocó `modules/` o `tests/` |
+| 2 | `pnpm run lint` en verde | se tocó `.js` |
+| 3 | Cero U+2014 y U+2013 | siempre, también en tareas de solo documentación |
+| 4 | Bump de `CACHE_NAME` | cambió un archivo que el SW precachea |
+| 5 | E2E en verde | el cambio toca runtime. Lo responde `pnpm run e2e:check` |
+
+Ninguna se salta con `--no-verify`. Si una queda en rojo, se arregla la causa o se reporta sin commitear.
+
+### Compuerta 5, en detalle
+
+Es obligatoria en cuanto se toca `index.html`, `modules/`, `styles/` o `service-worker.js`. No la dispara `docs/`, `scripts/` ni `tests/unit/`.
+
+No depende de que alguien se acuerde: `.githooks/pre-commit` bloquea el commit si falta un sello E2E verde para ese runtime exacto. El hook compara huellas y no corre Playwright, así que es instantáneo y la suite se corre una vez por lote, no una vez por commit. `pnpm run test:e2e` escribe el sello al salir verde.
+
+Activarlo en un clon nuevo: `pnpm run hooks:on`. Detalle y motivo: [`OPERACION.md`](OPERACION.md) runbook 5.
 
 ---
 
 ## Tests
 
 - Cada `logic.js` nuevo tiene su `nombre.test.js` en `tests/unit/`.
-- Los tests corren con `pnpm test` (Vitest + happy-dom).
-- Los tests de lógica financiera nunca usan mocks de `localStorage` - usan `happy-dom` o datos puros.
-- Cobertura objetivo: ≥ 90% en archivos de `core/` y `dominio/*/logic.js`.
+- Los tests de lógica financiera no usan mocks de `localStorage`: usan `happy-dom` o datos puros.
+- Cobertura objetivo: 90 % o más en `core/` y `dominio/*/logic.js`.
 
-### Dos reglas que salieron de BUG-019 y BUG-020 (2026-07-30)
+Dos reglas que costaron una suite caída dos días (BUG-019 y BUG-020):
 
-- **En E2E, un `[data-action="..."]` va acotado a su sección**: `#sec-metas [data-action="nueva-meta"]`, nunca suelto. Las 15 secciones viven siempre en el DOM (solo cambia `display`), así que un selector a nivel de documento puede resolver el botón de una sección oculta. Desde DIS.19 cada carril de `#ahorro` repite la `data-action` de su sección, y eso tumbó 16 tests que antes pasaban.
-- **Un test que afirma una distancia en días fija el reloj** con `vi.setSystemTime` y usa el día explícito, en vez de derivarlo del reloj real. Envolver con `% 28` para que el día exista en cualquier mes mantiene el día válido pero **le cambia el offset** los días 29 a 31, que es justo lo que el test afirmaba. Convención de referencia: `tests/unit/agenda.test.js`.
-- **Si el cambio toca runtime, E2E es compuerta obligatoria, y la exige un hook.** No es criterio de nadie: `pnpm run e2e:check` responde, y es obligatoria en cuanto se toca `index.html`, `modules/`, `styles/` o `service-worker.js`. `docs/`, `scripts/` y `tests/unit/` no la disparan.
-  `.githooks/pre-commit` bloquea el commit si falta un sello E2E verde para ese runtime exacto. Es instantáneo: compara huellas, no corre Playwright, así que la suite se corre **una vez por lote** y no una vez por commit. `pnpm run test:e2e` escribe el sello al salir verde; el sello no se versiona.
-  Activarlo en un clon nuevo: `pnpm run hooks:on` (usa `core.hooksPath`, sin husky ni dependencias, ver `SECURITY.md` y ADN 1).
-  Nació porque la norma escrita no alcanzó: DIS.19 actualizó los unit tests y no los E2E, y la suite pasó **dos días en rojo** con 146 tests sin ejecutar. Ejecución: compuerta 5 de la skill `cerrar-tarea`.
+- **En E2E, un `[data-action="..."]` va acotado a su sección**: `#sec-metas [data-action="nueva-meta"]`, nunca suelto. Las 15 secciones viven siempre en el DOM (solo cambia `display`), y desde DIS.19 cada carril de `#ahorro` repite la `data-action` de su sección: un selector suelto se queda con el botón de una sección oculta.
+- **Un test que afirma una distancia en días fija el reloj** con `vi.setSystemTime` y usa el día explícito. Envolver con `% 28` mantiene el día válido pero le cambia el offset los días 29 a 31, que es justo lo que el test afirmaba. Referencia: `tests/unit/agenda.test.js`.
 
-```bash
-pnpm test              # Corre todos los tests una vez
-pnpm run test:watch    # TDD: re-corre al guardar
-pnpm run coverage      # Muestra cobertura detallada
-```
-
----
-
-## Actualizar constantes legales
-
-Las únicas constantes con vencimiento son anuales: **SMMLV**, **auxilio de transporte** y **UVT** (regla ADN 12; la tasa de usura se eliminó del producto, ver [ADR 004](DECISIONS/004-eliminar-tasa-usura.md)). Viven en `LEGAL_POR_ANIO` dentro de `modules/core/constants.js`.
-
-Protocolo cuando se publican los valores nuevos (normalmente en enero):
-
-1. Buscar los valores oficiales: DIAN (UVT) y Mintrabajo (SMMLV, auxilio de transporte).
-2. En `constants.js`, agregar **una entrada nueva** en `LEGAL_POR_ANIO` para el año (no se crean exports `_20XX` sueltos; toda la app lee de la tabla histórica).
-3. Correr `pnpm test` (incluye `tests/unit/constants.test.js`).
-4. Bumpear `CACHE_NAME` en `service-worker.js`.
-5. Commit: `feat(E.2): cargar SMMLV + auxilio + UVT <año>`.
-6. Agregar entrada en `CHANGELOG.md`.
-
-Detalle paso a paso en [`HANDOFF.md`](HANDOFF.md) sección "Recordatorio enero 2027".
-
----
-
-## Patrones a seguir
-
-### CRUD genérico
-
-```js
-import { guardar, editar, eliminar } from '../../infra/crud.js';
-
-guardar('gastos', { descripcion, monto, categoria, fecha });
-editar('gastos', id, { monto: 150000 });
-eliminar('gastos', id);
-```
-
-### Render inteligente
-
-`renderSmart` evita re-renderizar secciones que el usuario no está viendo.
-
-```js
-import { renderSmart } from '../../infra/render.js';
-
-EventBus.on('state:change', ({ section }) => {
-  if (section === 'gastos') renderSmart(renderGastos, 'gastos');
-});
-```
-
-### Announce para accesibilidad
-
-```js
-import { announce } from '../../infra/a11y.js';
-
-announce('Gasto guardado correctamente');       // polite
-announce('Error: monto inválido', 'assertive'); // urgente
-```
-
-### Modales - contrato
-
-- Abrir: `abrirModal('#modal-gasto')` - quita `aria-hidden`, agrega `data-open=""`, `trapFocus`, marca `.app-shell` como `inert`.
-- Cerrar: `cerrarModal('#modal-gasto')` - pone `aria-hidden="true"`, quita `data-open`, libera el `inert`, `releaseFocus`.
-- HTML del modal vive en `index.html` (estático). El formulario interno se inyecta dinámicamente.
-- Escape cierra el modal activo (manejado en `actions.js`).
-
-### Selector de cuenta compartido (patrón 0/1/varias)
-
-Cualquier flujo que mueva dinero (gasto, abono, aporte) usa el mismo patrón: sin cuentas activas → seguimiento sin descuento; una cuenta → autoselección; varias → selector con reparto automático si ninguna alcanza sola.
-
-```js
-import { renderSelectorCuenta, resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
-```
+Comandos: [`README.md`](../README.md), que es la única lista.
 
 ---
 
 ## Qué NO hacer
 
-- No crear archivos fuera de la estructura propuesta sin discutirlo.
-- No agregar dependencias de runtime (`package.json` solo tiene devDeps).
-- No escribir tests de UI con mocks pesados - los tests son de `logic.js` puro + happy-dom para axe.
-- No usar `alert()` / `confirm()` nativos - usar `dialogo()` de `infra/utils.js` o el overlay de `ui/confirm.js`.
-- No hardcodear colores, tamaños o espaciados en CSS - usar tokens.
-- No hacer cambios destructivos (eliminar archivos, `reset --hard`) sin aprobación explícita.
-- No dejar tarjetas cerradas en `BOARD.md` - se borran al cerrar la tarea, la historia va en `CHANGELOG.md`.
+- No agregar dependencias de runtime: `package.json` solo tiene devDeps, y antes de tocarlas se lee [`SECURITY.md`](SECURITY.md).
+- No dejar tarjetas cerradas en `BOARD.md`: se borran al cerrar, la historia va al `CHANGELOG.md`.
+- No cerrar una respuesta con la próxima tarea, el modelo ni el nivel de esfuerzo recomendados: lo prohíbe `/CLAUDE.md` seccion 2.
+- No hacer cambios destructivos (eliminar archivos, `reset --hard`, force push) sin aprobación explícita.
 
----
-
-## Para asistentes IA
-
-Antes de tocar código, leer en este orden:
-
-1. [`/CLAUDE.md`](../CLAUDE.md) - workflow obligatorio + reglas ADN + estado actual.
-2. [BOARD.md](BOARD.md) - tarjeta en proceso y pendientes por sección.
-3. [ARCHITECTURE.md](ARCHITECTURE.md) - capas, flujo de datos, reglas innegociables.
-4. El archivo de decisión (`DECISIONS/NNN-*.md`) si la tarjeta lo referencia.
-
-Nunca hacer cambios destructivos (eliminar archivos, force push) sin confirmación explícita del humano.
+Naming: [`ARCHITECTURE.md`](ARCHITECTURE.md) seccion 11. Reglas de JS, CSS y HTML: el ADN de [`/CLAUDE.md`](../CLAUDE.md) seccion 4.

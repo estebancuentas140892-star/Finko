@@ -5,7 +5,7 @@ description: Ejecuta el cierre de una tarea de Finko: las compuertas de verifica
 
 # Cerrar una tarea en Finko
 
-Este es el **punto único de ejecución del cierre**. Ningún otro documento describe el paso a paso: `CLAUDE.md` fija la norma en una línea y apunta acá; `CONTRIBUTING.md` es dueño de **qué se exige** (las compuertas) y este archivo de **cómo se ejecuta**.
+**Punto único de ejecución del cierre.** `CONTRIBUTING.md` es dueño de qué se exige; este archivo, de cómo se ejecuta.
 
 Orden: compuertas → commit → documentos → techos → reporte. No saltarse el orden: commitear antes de verificar deja la rama en rojo, y actualizar documentos antes del commit deja el hash sin conocer.
 
@@ -13,7 +13,7 @@ Orden: compuertas → commit → documentos → techos → reporte. No saltarse 
 
 ## 1. Compuertas antes de commitear
 
-Las cuatro son obligatorias. Si alguna falla, se arregla la causa: no se commitea igual ni se salta con `--no-verify`.
+Las cinco son obligatorias. Si alguna falla, se arregla la causa: no se commitea igual ni se salta con `--no-verify`.
 
 | # | Compuerta | Cómo se ejecuta | Cuándo aplica |
 |---|---|---|---|
@@ -29,17 +29,9 @@ Compuerta 3, en Git Bash. **Salida vacía significa que pasa:**
 git ls-files -z '*.md' '*.js' '*.css' '*.html' | LC_ALL=C.UTF-8 xargs -0 grep -nP '[\x{2013}\x{2014}]'
 ```
 
-Tres detalles que costaron tres intentos y por eso quedan escritos: el `LC_ALL` va **sobre el `xargs`** (antes del `git` no llega al `grep`, y sin él `grep -P` falla con "supports only unibyte and UTF-8 locales"); `git ls-files` evita que el recorrido se cuelgue en `node_modules` y que `coverage/`, que es generado, dé falsos positivos; y la herramienta `Grep` de Claude Code acepta el mismo patrón sin forzar locale.
+Dos detalles que costaron tres intentos: el `LC_ALL` va **sobre el `xargs`** (antes del `git` no llega al `grep`, y sin él `grep -P` falla con "supports only unibyte and UTF-8 locales"), y `git ls-files` evita colgarse en `node_modules` y los falsos positivos de `coverage/`, que es generado.
 
-**Compuerta 5, desde 2026-07-30.** E2E dejó de ser opcional. `pnpm run e2e:check` responde si es obligatoria: lo es en cuanto el cambio toca **lo que la app ejecuta** (`index.html`, `modules/`, `styles/`, `service-worker.js`). Cambios en `docs/`, `scripts/`, `tests/unit/` o `tests/integration/` no la disparan.
-
-La regla es por ruta y no por contenido del diff a propósito. El primer diseño buscaba señales de markup en las líneas cambiadas y tenía dos falsos negativos que lo volvían inservible: `.lane__cta { display: none }` rompe un `toBeVisible()` sin traer ninguna señal, y cambiar un texto visible rompe un `toHaveText()` sin tocar una clase. En una compuerta, un falso negativo es lo peor posible: deja pasar justo lo que existe para atrapar, y encima con la confianza de haber corrido el chequeo.
-
-Existe porque la norma escrita no alcanzó: DIS.19 cambió el markup de la casa de Ahorro, actualizó los tests unitarios y no los E2E, y la suite pasó **dos días en rojo** con 146 tests sin ejecutar hasta que el cierre de otra tarea la corrió (BUG-019).
-
-**No depende de que alguien se acuerde:** el hook de `.githooks/pre-commit` bloquea el commit si el cambio toca runtime y no hay un sello E2E verde para ese runtime exacto. El hook es instantáneo (compara huellas, no corre Playwright), así que la suite se corre **una vez por lote de trabajo** y no una vez por commit. `pnpm run test:e2e` escribe el sello al salir en verde.
-
-Si el hook no está activo en el clon, se activa una vez con `pnpm run hooks:on`.
+**Compuerta 5, desde 2026-07-30.** Dispara con `index.html`, `modules/`, `styles/` o `service-worker.js`; no con `docs/`, `scripts/` ni `tests/unit/`. Tarda ~3,5 min: conviene lanzarla en segundo plano al empezar el cierre. `pnpm run test:e2e` sella el runtime que aprobó, y `.githooks/pre-commit` bloquea el commit si falta ese sello, así que no depende de acordarse. Si el hook no está activo en el clon: `pnpm run hooks:on`. Motivo y diseño: `OPERACION.md` runbook 5.
 
 Si la tarea fue **solo de documentación**, aplican la 3 y nada más: decirlo explícitamente en el reporte ("sin tocar `modules/`, no hay tests que correr") en vez de dejar la duda.
 
@@ -47,11 +39,10 @@ Si la tarea fue **solo de documentación**, aplican la 3 y nada más: decirlo ex
 
 ## 2. Commit y push
 
-- Formato del mensaje y tipos: `CONTRIBUTING.md` sección "Commits".
-- Cuerpo del mensaje en **ASCII sin acentos** (convención vigente del repo, ver `git log`).
+Formato, tipos y reglas del mensaje: `CONTRIBUTING.md` sección "Commits". Acá solo lo que es del cierre:
+
 - Terminar con el trailer `Co-Authored-By` que usa el repo.
-- **Commit y push son autónomos:** no se pide permiso, pero solo después de que las compuertas den verde. Si algo quedó en rojo, se reporta y no se commitea.
-- Una tarea puede necesitar varios commits pequeños. Preferir varios chicos y legibles a uno grande, y **aislar los borrados en su propio commit** para que el diff sea reversible.
+- **Commit y push son autónomos:** no se pide permiso, pero solo con las compuertas en verde. Si algo quedó en rojo, se reporta y no se commitea.
 
 ---
 
@@ -100,7 +91,7 @@ Antes de cerrar, verificar que ningún archivo vivo superó su techo. Superarlo 
 for f in CLAUDE.md docs/HANDOFF.md docs/BOARD.md docs/BUGS.md docs/CHANGELOG.md docs/ARCHITECTURE.md docs/CONTRIBUTING.md docs/DESIGN_SYSTEM.md docs/SECURITY.md; do printf '%6s KB  %s\n' "$(( ($(wc -c < "$f") + 1023) / 1024 ))" "$f"; done
 ```
 
-**Vigencia (principio 11):** todo documento activo que se toque lleva su sello `Revisado: YYYY-MM-DD` actualizado. Los que pasen de 90 días sin modificación quedan "por validar" y hay que verificarlos contra el código antes de citarlos como fuente de verdad:
+**Vigencia:** todo documento que se toque actualiza su sello `Revisado: YYYY-MM-DD`. Los que pasen de 90 días sin cambios se verifican contra el código antes de citarlos como fuente de verdad:
 
 ```bash
 git ls-files -- '*.md' ':(exclude)docs/DECISIONS/*' ':(exclude)docs/changelog/*' ':(exclude)docs/archive/*' ':(exclude)docs/legal/*' | while read -r f; do echo "$(git log -1 --format=%as -- "$f")  $f"; done | sort
