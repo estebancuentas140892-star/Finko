@@ -35,3 +35,6 @@ playwright-report/
 # Python (scripts de desarrollo: gen-icons, sync-sprite...)
 __pycache__/
 *.pyc
+
+# Sello de la ultima corrida E2E verde (hecho local, no del proyecto)
+.e2e-sello.json

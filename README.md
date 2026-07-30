@@ -49,8 +49,9 @@ pnpm run test:watch          # modo TDD
 pnpm run coverage            # umbral 90% sobre capa lógica
 
 # Tests E2E (Playwright + Chromium)
-pnpm run e2e:check           # responde si el diff obliga a correrlos
-pnpm run test:e2e
+pnpm run hooks:on            # una vez por clon: activa el pre-commit de .githooks
+pnpm run e2e:check           # responde si el cambio obliga a correrlos
+pnpm run test:e2e            # al salir verde, sella el runtime que aprobó
 pnpm run test:e2e:ui         # con inspector
 
 # Auditoría Lighthouse (requiere servidor en :8080 corriendo)

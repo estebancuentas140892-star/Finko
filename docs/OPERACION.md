@@ -2,7 +2,7 @@
 
 > Runbooks: todo lo que se hace **fuera de escribir código**. Secuencias de pasos reproducibles, no decisiones.
 > Lo que NO va acá: decisiones (van a `DECISIONS/`), estado del proyecto (va a [`HANDOFF.md`](HANDOFF.md)) y el catálogo de comandos de desarrollo, que tiene una sola fuente: los scripts de `package.json`, listados para humanos en el [`README.md`](../README.md). Dentro de un runbook se nombra el comando que ese paso necesita y nada más.
-> Revisado: 2026-07-24.
+> Revisado: 2026-07-30.
 
 | Runbook | Cuándo se ejecuta |
 |---|---|
@@ -10,6 +10,7 @@
 | [2. Constantes legales anuales](#2-constantes-legales-anuales-smmlv-auxilio-uvt) | cada enero (tarjeta E.2 del año) |
 | [3. Bump del Service Worker](#3-bump-del-service-worker) | en cada tarea que cambie un archivo cacheado |
 | [4. Harness de rendimiento](#4-harness-de-rendimiento) | antes y después de toda tarea PERF |
+| [5. Hook de pre-commit: la compuerta E2E](#5-hook-de-pre-commit-la-compuerta-e2e) | una vez por clon, para activarlo |
 
 ---
 
@@ -126,3 +127,25 @@ Aviso de actualización al usuario final: no existe todavía, es la tarjeta **UP
 **Qué no mide todavía:** el arranque (`loadData()`, con su `JSON.parse` y sus migraciones), que es justamente lo único que crece lineal con el estado total y no se puede memoizar. Agregar esa columna es la tarjeta **PERF.8**, y es el dato que el ADR 030 exige para decidir el paso a IndexedDB con evidencia en vez de intuición.
 
 El harness es independiente de la suite de tests: no corre con `pnpm test` ni la bloquea.
+
+---
+
+## 5. Hook de pre-commit: la compuerta E2E
+
+**Qué resuelve.** E2E tarda ~3,5 min, así que nunca fue compuerta de cada commit. El precio se pagó en **BUG-019**: DIS.19 cambió el markup de la casa de Ahorro, actualizó los unit tests y no los E2E, y la suite quedó **dos días en rojo** con 146 tests sin ejecutar. Lo encontró el cierre de otra tarea, por casualidad.
+
+**Activarlo (una vez por clon):**
+
+```bash
+pnpm run hooks:on
+```
+
+Usa `core.hooksPath` apuntando a `.githooks/`. Sin husky ni dependencias: `.git/hooks/` no se versiona y agregar tooling contradice el ADN 1 y [`SECURITY.md`](SECURITY.md). Verificar con `git config core.hooksPath`.
+
+**Cómo funciona.** `scripts/necesita-e2e.js` responde si el cambio obliga a correr E2E: lo obliga tocar `index.html`, `modules/`, `styles/` o `service-worker.js`, y solo eso. `pnpm run test:e2e` corre `scripts/e2e-sello.js` al salir verde, que escribe en `.e2e-sello.json` la huella del runtime aprobado. `.githooks/pre-commit` compara esa huella con la actual y bloquea si no cuadran o falta el sello.
+
+**El hook no corre Playwright, compara huellas: es instantáneo.** Uno que bloquee 3,5 min se acaba saltando con `--no-verify`, y una compuerta que se saltea es peor que ninguna porque da falsa confianza. Con el sello la suite se corre **una vez por lote** y el resto de los commits pasan gratis mientras el runtime no cambie.
+
+**La regla es por ruta, no por contenido del diff.** El primer diseño buscaba señales de markup en las líneas cambiadas y tenía dos falsos negativos: `display: none` rompe un `toBeVisible()` sin traer señal, y cambiar un texto rompe un `toHaveText()` sin tocar una clase. En una compuerta el falso negativo es el peor error.
+
+`.e2e-sello.json` no se versiona: es un hecho de una máquina y un momento, así que un clon nuevo arranca sin sello. Si el hook bloquea, la salida es correr la suite.

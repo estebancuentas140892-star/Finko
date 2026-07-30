@@ -11,9 +11,10 @@
     "lint": "eslint modules/ tests/",
     "format": "prettier --write \"**/*.{js,css,html,md,json}\"",
     "serve": "python -m http.server 8080",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test && node scripts/e2e-sello.js",
     "test:e2e:ui": "playwright test --ui",
     "e2e:check": "node scripts/necesita-e2e.js",
+    "hooks:on": "git config core.hooksPath .githooks && node -e \"console.log('Hook de pre-commit activado (.githooks).')\"",
     "lighthouse": "node scripts/lighthouse.js"
   },
   "devDependencies": {

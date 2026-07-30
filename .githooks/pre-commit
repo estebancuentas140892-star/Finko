@@ -1,0 +1,51 @@
+#!/bin/sh
+#
+# pre-commit - Compuerta 5: E2E obligatoria cuando lo que se commitea toca markup.
+#
+# Nace de BUG-019: DIS.19 cambio el markup de la casa de Ahorro, actualizo los
+# tests unitarios y no los E2E, y la suite paso dos dias en rojo con 146 tests
+# sin ejecutar. La norma escrita no alcanzo, asi que la compuerta se automatiza.
+#
+# Este hook es INSTANTANEO a proposito: no corre Playwright. Compara la huella
+# del runtime que se esta commiteando contra la del sello que dejo la ultima
+# corrida verde. Un hook que bloquee 3,5 minutos se acaba saltando con
+# --no-verify, y una compuerta que se saltea da falsa confianza.
+#
+# Vive versionado en .githooks/ porque .git/hooks/ no se versiona y husky seria
+# una dependencia nueva (ver SECURITY.md y ADN 1: sin build step, sin tooling).
+# Se activa una vez por clon:
+#
+#   git config core.hooksPath .githooks
+#
+set -e
+
+SELLO=".e2e-sello.json"
+
+# Solo lo que esta en el index: da igual lo que quede sucio en el disco.
+if node scripts/necesita-e2e.js --cached >/dev/null 2>&1; then
+  exit 0   # exit 0 del detector = el diff no toca markup
+fi
+
+echo ""
+node scripts/necesita-e2e.js --cached || true
+echo ""
+
+if [ ! -f "$SELLO" ]; then
+  echo "BLOQUEADO: no hay sello de una corrida E2E verde en esta copia."
+  echo "  Corre:  pnpm run test:e2e"
+  exit 1
+fi
+
+ACTUAL=$(node scripts/necesita-e2e.js --hash)
+SELLADA=$(node -e "process.stdout.write(require('./$SELLO').huella)")
+
+if [ "$ACTUAL" != "$SELLADA" ]; then
+  echo "BLOQUEADO: el sello E2E es de otro runtime, no del que estas commiteando."
+  echo "  sellado: $SELLADA"
+  echo "  actual : $ACTUAL"
+  echo "  Corre:  pnpm run test:e2e"
+  exit 1
+fi
+
+echo "E2E: sello valido para este runtime. Compuerta 5 en verde."
+exit 0
