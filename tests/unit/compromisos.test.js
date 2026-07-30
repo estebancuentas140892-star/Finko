@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   compromisosActivos,
   calcularCompromisoMensual,
@@ -2450,6 +2450,10 @@ describe('renderPanelVencidos() - jerarquía real sin línea roja (IN.8e, ADR 03
     S.compromisos = [];
   });
 
+  // Los dos tests de conteo exacto fijan el reloj; devolverlo acá evita que la
+  // fecha falsa se filtre a los tests que sí derivan su día del reloj real.
+  afterEach(() => { vi.useRealTimers(); });
+
   it('el título ya no incluye el conteo; el número vive en el badge circular', () => {
     S.compromisos = [
       compromisoBase({ id: 'c1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad', diaPago: DIA_PASADO }),
@@ -2462,9 +2466,19 @@ describe('renderPanelVencidos() - jerarquía real sin línea roja (IN.8e, ADR 03
     expect(html).toMatch(/vencidos-card__counter[^>]*>2</);
   });
 
+  // Los dos tests que afirman un conteo EXACTO de días fijan el reloj en vez
+  // de derivar el día del reloj real (convención de `agenda.test.js`). Antes
+  // salían de `DIA_PASADO`/`DIA_HOY - 1`, que envuelven a módulo 28 para que el
+  // día exista en cualquier mes: eso mantiene el día válido pero **le cambia el
+  // offset** a fin de mes, y el offset es justo lo que se está afirmando. Con
+  // hoy = 30, "ayer" daba 1, o sea 29 días de atraso, y el test fallaba 2 o 3
+  // días de cada mes. El resto del archivo sigue usando `DIA_PASADO` sin
+  // problema: ahí solo hace falta "un día ya pasado", no una distancia exacta.
   it('un ítem vencido hace 2 días muestra "Venció hace 2 días" en danger y badge corto "Deuda"', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 6, 15)); // 15 julio 2026
     S.compromisos = [
-      compromisoBase({ id: 'c1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad', diaPago: DIA_PASADO }),
+      compromisoBase({ id: 'c1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad', diaPago: 13 }),
     ];
     renderPanelVencidos();
     const html = document.getElementById('panel-vencidos').innerHTML;
@@ -2494,9 +2508,10 @@ describe('renderPanelVencidos() - jerarquía real sin línea roja (IN.8e, ADR 03
   });
 
   it('vencido hace 1 día dice "Venció ayer"', () => {
-    const DIA_AYER = ((DIA_HOY - 1 + 28 - 1) % 28) + 1;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 6, 15)); // 15 julio 2026
     S.compromisos = [
-      compromisoBase({ id: 'c1', descripcion: 'Arriendo', tipo: 'fijo', diaPago: DIA_AYER }),
+      compromisoBase({ id: 'c1', descripcion: 'Arriendo', tipo: 'fijo', diaPago: 14 }),
     ];
     renderPanelVencidos();
     const html = document.getElementById('panel-vencidos').innerHTML;
