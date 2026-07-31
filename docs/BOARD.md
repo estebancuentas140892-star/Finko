@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-31 (IN.9a cierra: los dos avisos de "Atención hoy" comparten fila y su tarjeta sale del tablero). Antes: 2026-07-31 (handoff de la auditoría de navegación global: nace la iniciativa **IN.9 "Inicio en escritorio"** con cinco rebanadas, e **INT.1** registra la barra superior de escritorio, que bloquea ID4 e ID7. Inicio sale de "Secciones sin tarjetas pendientes"). Antes: 2026-07-30 (MC.16c cierra: bloque de tarjetas de crédito en Mis cuentas, solo lectura; su tarjeta sale del tablero). Antes: 2026-07-30 (MC.16d cierra: el consumo con tarjeta pregunta a cuántas cuotas y sube `cuotaMensual`; su tarjeta sale del tablero). Antes: 2026-07-30 (ADR 033 aceptado en P1, P2, P3 y P5: DV.2a, DV.2b y DV.2c quedan desbloqueadas, DV.2d sigue bloqueada por P4 y por la cola de diseño). Antes: 2026-07-30 (MC.16a cierra: la tarjeta de crédito gana su cupo y su tarjeta sale del tablero; MC.16b queda desbloqueada). Antes: 2026-07-29 (INV.1 cierra: el dinero sale de una cuenta al registrar una inversión, y su tarjeta sale del tablero). Antes: DIS.19 cierra el frente de Ahorro y deja dos piezas de ARQ.1 ya en `infra/`; no tenía tarjeta propia, entró por handoff de diseño. Antes: 2026-07-27 (CAT.1 cierra: la taxonomía global queda implementada en las tres secciones y su tarjeta sale del tablero). Antes: MC.16 deja de estar bloqueada, el ADR 051 se acepta y la tarjeta se re-corta en MC.16a a MC.16e. La historia de lo ya cerrado vive en [`CHANGELOG.md`](CHANGELOG.md) y en las fichas de [`contexto/`](contexto/README.md), no aquí.
+> Última actualización: 2026-07-31 (IN.9b cierra: 8 filas de actividad en escritorio y 5 en móvil; su tarjeta sale del tablero). Antes: 2026-07-31 (IN.9a cierra: los dos avisos de "Atención hoy" comparten fila y su tarjeta sale del tablero). Antes: 2026-07-31 (handoff de la auditoría de navegación global: nace la iniciativa **IN.9 "Inicio en escritorio"** con cinco rebanadas, e **INT.1** registra la barra superior de escritorio, que bloquea ID4 e ID7. Inicio sale de "Secciones sin tarjetas pendientes"). Antes: 2026-07-30 (MC.16c cierra: bloque de tarjetas de crédito en Mis cuentas, solo lectura; su tarjeta sale del tablero). Antes: 2026-07-30 (MC.16d cierra: el consumo con tarjeta pregunta a cuántas cuotas y sube `cuotaMensual`; su tarjeta sale del tablero). Antes: 2026-07-30 (ADR 033 aceptado en P1, P2, P3 y P5: DV.2a, DV.2b y DV.2c quedan desbloqueadas, DV.2d sigue bloqueada por P4 y por la cola de diseño). Antes: 2026-07-30 (MC.16a cierra: la tarjeta de crédito gana su cupo y su tarjeta sale del tablero; MC.16b queda desbloqueada). Antes: 2026-07-29 (INV.1 cierra: el dinero sale de una cuenta al registrar una inversión, y su tarjeta sale del tablero). Antes: DIS.19 cierra el frente de Ahorro y deja dos piezas de ARQ.1 ya en `infra/`; no tenía tarjeta propia, entró por handoff de diseño. Antes: 2026-07-27 (CAT.1 cierra: la taxonomía global queda implementada en las tres secciones y su tarjeta sale del tablero). Antes: MC.16 deja de estar bloqueada, el ADR 051 se acepta y la tarjeta se re-corta en MC.16a a MC.16e. La historia de lo ya cerrado vive en [`CHANGELOG.md`](CHANGELOG.md) y en las fichas de [`contexto/`](contexto/README.md), no aquí.
 
 ---
 
@@ -42,11 +42,10 @@ Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (si
 
 ## Índice de pendientes
 
-Las 58 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+Las 57 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
-| IN.9b | 8 filas de actividad en escritorio, 5 en móvil | Inicio | media | nada |
 | IN.9c | El detalle por cuenta sale del hero a columna propia | Inicio | media | ADR nuevo (acota 034 D4) |
 | IN.9d | Accesos y actividad separados en escritorio, fila final 6+6 | Inicio | media | ADR nuevo (acota 034 D7); conviene tras IN.9c |
 | IN.9e | Estado vacío propio de escritorio | Inicio | baja | nada; el copy queda provisional (PI5) |
@@ -111,19 +110,7 @@ Las 58 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 
 ### Inicio (dominio `resumen`)
 
-> **Iniciativa "IN.9 - Inicio en escritorio"** (auditoría de navegación global de Claude Design, 2026-07-31; handoff en `Auditoría navegación global Finko-handoff/`). Fuente única del reparto de Inicio sobre 1024px. Ocho decisiones ID1 a ID8: **ID8 es un no-op** (decide *no* agregar un botón de registrar, ya cubierto por ADR 024) y **ID4 e ID7 salen a INT.1**, porque dependen de una barra superior de escritorio que no existe en el repo. Las rebanadas de abajo cubren ID1, ID3, ID5 e ID6 (ID2 ya cerró). El informe deja además tres reglas para el design system (R78 ancho completo que se gana, R79 gráfico dimensionado por su dato, R80 acordeón como respuesta al ancho escaso) y dos decisiones abiertas que viajan con INT.1: `--fk-bg-glass` sin valor en tema claro (PI7) y el contraste de los tokens `--fk-dom-*` (PI8, medido: 3,23:1 y 2,65:1, bajo el mínimo 3:1 de WCAG 1.4.11). **Móvil no cambia en ninguna rebanada salvo lo que IN.9a decida.**
-
-#### IN.9b - 8 filas de actividad en escritorio, 5 en móvil
-- Prioridad  : media
-- Estado     : pendiente
-- Área       : ambos
-- Objetivo   : ID5 del informe, cierra IE8. El límite de 5 se eligió para 390px; `movimientosRecientes()` ya recibe el límite por parámetro, así que no hay dato ni consulta nueva.
-- Riesgo     : un usuario que registra poco deja la columna corta y desbalancea la fila (pendiente PI10 del informe, sin resolver).
-- Secciones  : Inicio (`movimientos`)
-- Archivos   : `modules/dominio/movimientos/view.js`, `tests/unit/`
-- Depende de : nada
-- Aceptación : test que fije el límite por ancho + captura a 1280px con 8 filas y a 390px con 5
-- Modelo     : bajo
+> **Iniciativa "IN.9 - Inicio en escritorio"** (auditoría de navegación global de Claude Design, 2026-07-31; handoff en `Auditoría navegación global Finko-handoff/`). Fuente única del reparto de Inicio sobre 1024px. Ocho decisiones ID1 a ID8: **ID8 es un no-op** (decide *no* agregar un botón de registrar, ya cubierto por ADR 024) y **ID4 e ID7 salen a INT.1**, porque dependen de una barra superior de escritorio que no existe en el repo. Las rebanadas de abajo cubren ID1, ID3 e ID6 (ID2 e ID5 ya cerraron). **PI10 sigue abierto:** un usuario que registra poco deja la columna de actividad corta y desbalancea la fila final; se decide en IN.9d, que es la que arma esa fila. El informe deja además tres reglas para el design system (R78 ancho completo que se gana, R79 gráfico dimensionado por su dato, R80 acordeón como respuesta al ancho escaso) y dos decisiones abiertas que viajan con INT.1: `--fk-bg-glass` sin valor en tema claro (PI7) y el contraste de los tokens `--fk-dom-*` (PI8, medido: 3,23:1 y 2,65:1, bajo el mínimo 3:1 de WCAG 1.4.11). **Móvil no cambia en ninguna rebanada salvo lo que IN.9a decida.**
 
 #### IN.9c - El detalle por cuenta sale del hero a columna propia
 - Prioridad  : media

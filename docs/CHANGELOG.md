@@ -10,6 +10,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(inicio): IN.9b, 8 filas de actividad en escritorio y 5 en móvil · 2026-07-31
+
+Segunda rebanada de **IN.9** ([ADR 057](DECISIONS/057-inicio-en-escritorio.md) D4), cierra IE8. Ficha: [`contexto/inicio.md`](contexto/inicio.md).
+
+- **El límite no era una regla de negocio, era una elección de presentación para 390px.** `movimientosRecientes()` ya recibía el límite por parámetro desde TX.8a, así que lo que cambia es el argumento: no hay dato nuevo, consulta nueva ni bump de schema. El límite ya estaba en la clave del memo (`_extraerFuentes` lo incluía), así que cambiar de ancho no devuelve el resultado cacheado del otro.
+- **`_limiteRecientes()` lee el ancho con `matchMedia('(max-width: 1023.98px)')`**, mismo umbral y misma forma que `_lanzarConfetti()` de `logros/index.js`: es la convención que el proyecto ya tenía para leer el ancho desde JS, en vez de inventar una.
+- **Limitación declarada:** el ancho se lee en cada render, y el panel se repinta con `state:change`. Un cambio de ancho **sin** cambio de estado no repinta, así que el panel se queda con el límite del último render hasta la siguiente acción. Se acepta para no montar un observador de `resize` que ningún otro panel de Inicio tiene.
+- El test viejo afirmaba "como máximo 5" sin decir a qué ancho: se parte en tres (móvil 5, escritorio 8, y menos movimientos que el límite).
+
+Verificado en el navegador con 12 movimientos sembrados: 1280px pinta 8 filas (panel de 557px), 391px pinta 5 (378px), sin desbordes. **PI10 del informe sigue abierto** (un usuario que registra poco deja la columna corta): se decide en IN.9d, que es la rebanada que arma la fila final. 3525/3525 unit + 246/246 E2E + lint verdes. SW v456 a v457.
+
+---
+
 ### feat(inicio): IN.9a, los dos avisos de "Atención hoy" comparten fila · 2026-07-31
 
 Primera rebanada de **IN.9 "Inicio en escritorio"** ([ADR 057](DECISIONS/057-inicio-en-escritorio.md)), nacida del handoff de la auditoría de navegación global. Ficha: [`contexto/inicio.md`](contexto/inicio.md).
