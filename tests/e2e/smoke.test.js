@@ -337,11 +337,20 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
   });
 
   test('Pendientes del mes sin línea roja, badge corto y "Ver calendario" al calendario (IN.8e, ADR 034 D5)', async ({ page }) => {
-    await page.addInitScript(() => {
+    // BUG-021: el caso que esta prueba describe ("venció hace 2 días" junto a
+    // "vence hoy") solo existe en un día del mes con margen a ambos lados, así
+    // que el reloj se fija en vez de derivar los días de la fecha real. La
+    // aritmética anterior (`((dia - 2 + 27) % 28) + 1`) envolvía en el rango
+    // 1..28 en vez de restar 2, y sembraba el día equivocado los días 1, 2, 3
+    // y 31 del mes: el 31 de julio esperaba "hace 2 días" contra un
+    // compromiso del día 1. Misma familia de defecto de reloj que BUG-019 y
+    // BUG-020. `setFixedTime` no toca los timers reales, así que el debounce
+    // de `save()` (ADN 5) sigue corriendo igual.
+    const DIA = 15;
+    const DIA_VENCIDO = DIA - 2;
+    await page.clock.setFixedTime(new Date(`2026-03-${DIA}T10:00:00`));
+    await page.addInitScript(({ dia, diaPasado }) => {
       if (localStorage.getItem('fk_v1')) return;
-      const hoy = new Date();
-      const dia = hoy.getDate();
-      const diaPasado = ((dia - 2 + 28 - 1) % 28) + 1;
       const estado = {
         version: 1,
         perfil: { nombre: 'TestUser', smmlv: 1750905 },
@@ -356,7 +365,7 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
         metas: [],
       };
       localStorage.setItem('fk_v1', JSON.stringify(estado));
-    });
+    }, { dia: DIA, diaPasado: DIA_VENCIDO });
     await page.goto('/');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
 
