@@ -10,13 +10,37 @@ import { emptyArt, tejaCategoria } from '../../infra/icons.js';
 import { memoizar } from '../../infra/memo.js';
 import { movimientosRecientes, movimientosCompletos, descripcionMovimiento, filtrarMovimientos } from './logic.js';
 
-/** Cuántos movimientos recientes se muestran en el panel de Inicio. */
-const LIMITE_RECIENTES = 5;
+/**
+ * Cuántos movimientos recientes muestra el panel de Inicio.
+ *
+ * El 5 se eligió para 390px (ADR 034 D7), donde el alto es el recurso escaso.
+ * En escritorio la columna del panel deja sitio para 8 sin scroll y sin pedir
+ * un dato nuevo: `movimientosRecientes()` ya recibe el límite por parámetro,
+ * así que lo que cambia es el argumento, no la derivación (ADR 057 D4, IN.9b).
+ */
+const LIMITE_RECIENTES_MOVIL       = 5;
+const LIMITE_RECIENTES_ESCRITORIO  = 8;
+
+/**
+ * Mismo umbral y misma forma que `_lanzarConfetti()` de `logros/index.js`: el
+ * corte de escritorio de la app es 1024px.
+ *
+ * Se lee en cada render en vez de cachearse, porque el panel se repinta con
+ * cada `state:change` y el ancho pudo cambiar en el medio. Un cambio de ancho
+ * sin cambio de estado NO repinta: el panel se queda con el límite del último
+ * render hasta la siguiente acción. Se acepta a propósito, para no montar un
+ * observador de `resize` que ningún otro panel de Inicio tiene.
+ */
+function _limiteRecientes() {
+  return window.matchMedia?.('(max-width: 1023.98px)').matches
+    ? LIMITE_RECIENTES_MOVIL
+    : LIMITE_RECIENTES_ESCRITORIO;
+}
 
 /**
  * PERF.2: ambas derivaciones concatenan y ordenan las 3 fuentes completas
  * (gastos + ingresos puntuales + aportes) aunque `movimientosRecientes()`
- * solo muestre 5 filas. El caller pasa un objeto envoltorio nuevo en cada
+ * solo muestre 5 u 8 filas. El caller pasa un objeto envoltorio nuevo en cada
  * llamada (`{ gastos, ... }`), así que `extraerClave` compara los arrays de
  * adentro, no el envoltorio (que siempre sería una referencia distinta).
  */
@@ -118,7 +142,7 @@ export function renderActividadReciente() {
     aportes:                  S.ahorro?.aportes,
     transferencias:           S.transferencias,
     categoriasPersonalizadas: S.categoriasPersonalizadas,
-  }, LIMITE_RECIENTES);
+  }, _limiteRecientes());
 
   if (movs.length === 0) {
     el.innerHTML = '';

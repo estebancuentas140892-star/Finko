@@ -349,6 +349,9 @@ describe('movimientosRecientes()', () => {
 
 describe('renderActividadReciente()', () => {
   const elPanel = () => document.getElementById('panel-actividad-reciente');
+  const matchMediaReal = window.matchMedia;
+
+  afterEach(() => { window.matchMedia = matchMediaReal; });
 
   beforeEach(() => {
     document.body.innerHTML = '<div id="panel-actividad-reciente" hidden></div>';
@@ -402,11 +405,32 @@ describe('renderActividadReciente()', () => {
     expect(html).not.toContain('-$200.000');
   });
 
-  it('muestra como máximo 5 movimientos aunque haya más', () => {
-    S.gastos = Array.from({ length: 8 }, (_, i) => gasto({ id: `g${i}`, fecha: `2026-07-${String(i + 1).padStart(2, '0')}` }));
+  // IN.9b (ADR 057 D4): el límite lo decide el ancho, no el dispositivo. El 5
+  // se eligió para 390px; en escritorio caben 8 sin pedir un dato nuevo.
+  // `matchMedia` se falsea porque happy-dom no tiene viewport real.
+  const anchoDe = (esMovil) => {
+    window.matchMedia = () => ({ matches: esMovil });
+  };
+
+  it('muestra como máximo 5 movimientos en móvil aunque haya más', () => {
+    anchoDe(true);
+    S.gastos = Array.from({ length: 12 }, (_, i) => gasto({ id: `g${i}`, fecha: `2026-07-${String(i + 1).padStart(2, '0')}` }));
     renderActividadReciente();
-    const items = elPanel().querySelectorAll('.actividad-reciente__item');
-    expect(items).toHaveLength(5);
+    expect(elPanel().querySelectorAll('.actividad-reciente__item')).toHaveLength(5);
+  });
+
+  it('muestra hasta 8 movimientos en escritorio', () => {
+    anchoDe(false);
+    S.gastos = Array.from({ length: 12 }, (_, i) => gasto({ id: `g${i}`, fecha: `2026-07-${String(i + 1).padStart(2, '0')}` }));
+    renderActividadReciente();
+    expect(elPanel().querySelectorAll('.actividad-reciente__item')).toHaveLength(8);
+  });
+
+  it('con menos movimientos que el límite, escritorio muestra los que hay', () => {
+    anchoDe(false);
+    S.gastos = Array.from({ length: 3 }, (_, i) => gasto({ id: `g${i}`, fecha: `2026-07-0${i + 1}` }));
+    renderActividadReciente();
+    expect(elPanel().querySelectorAll('.actividad-reciente__item')).toHaveLength(3);
   });
 
   it('vuelve a ocultarse si se vacían las fuentes tras un render previo', () => {
