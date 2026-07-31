@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-30 (MC.16c cierra: bloque de tarjetas de crédito en Mis cuentas, solo lectura; su tarjeta sale del tablero). Antes: 2026-07-30 (MC.16d cierra: el consumo con tarjeta pregunta a cuántas cuotas y sube `cuotaMensual`; su tarjeta sale del tablero). Antes: 2026-07-30 (ADR 033 aceptado en P1, P2, P3 y P5: DV.2a, DV.2b y DV.2c quedan desbloqueadas, DV.2d sigue bloqueada por P4 y por la cola de diseño). Antes: 2026-07-30 (MC.16a cierra: la tarjeta de crédito gana su cupo y su tarjeta sale del tablero; MC.16b queda desbloqueada). Antes: 2026-07-29 (INV.1 cierra: el dinero sale de una cuenta al registrar una inversión, y su tarjeta sale del tablero). Antes: DIS.19 cierra el frente de Ahorro y deja dos piezas de ARQ.1 ya en `infra/`; no tenía tarjeta propia, entró por handoff de diseño. Antes: 2026-07-27 (CAT.1 cierra: la taxonomía global queda implementada en las tres secciones y su tarjeta sale del tablero). Antes: MC.16 deja de estar bloqueada, el ADR 051 se acepta y la tarjeta se re-corta en MC.16a a MC.16e. La historia de lo ya cerrado vive en [`CHANGELOG.md`](CHANGELOG.md) y en las fichas de [`contexto/`](contexto/README.md), no aquí.
+> Última actualización: 2026-07-31 (IN.9a cierra: los dos avisos de "Atención hoy" comparten fila y su tarjeta sale del tablero). Antes: 2026-07-31 (handoff de la auditoría de navegación global: nace la iniciativa **IN.9 "Inicio en escritorio"** con cinco rebanadas, e **INT.1** registra la barra superior de escritorio, que bloquea ID4 e ID7. Inicio sale de "Secciones sin tarjetas pendientes"). Antes: 2026-07-30 (MC.16c cierra: bloque de tarjetas de crédito en Mis cuentas, solo lectura; su tarjeta sale del tablero). Antes: 2026-07-30 (MC.16d cierra: el consumo con tarjeta pregunta a cuántas cuotas y sube `cuotaMensual`; su tarjeta sale del tablero). Antes: 2026-07-30 (ADR 033 aceptado en P1, P2, P3 y P5: DV.2a, DV.2b y DV.2c quedan desbloqueadas, DV.2d sigue bloqueada por P4 y por la cola de diseño). Antes: 2026-07-30 (MC.16a cierra: la tarjeta de crédito gana su cupo y su tarjeta sale del tablero; MC.16b queda desbloqueada). Antes: 2026-07-29 (INV.1 cierra: el dinero sale de una cuenta al registrar una inversión, y su tarjeta sale del tablero). Antes: DIS.19 cierra el frente de Ahorro y deja dos piezas de ARQ.1 ya en `infra/`; no tenía tarjeta propia, entró por handoff de diseño. Antes: 2026-07-27 (CAT.1 cierra: la taxonomía global queda implementada en las tres secciones y su tarjeta sale del tablero). Antes: MC.16 deja de estar bloqueada, el ADR 051 se acepta y la tarjeta se re-corta en MC.16a a MC.16e. La historia de lo ya cerrado vive en [`CHANGELOG.md`](CHANGELOG.md) y en las fichas de [`contexto/`](contexto/README.md), no aquí.
 
 ---
 
@@ -42,10 +42,15 @@ Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (si
 
 ## Índice de pendientes
 
-Las 53 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+Las 58 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
+| IN.9b | 8 filas de actividad en escritorio, 5 en móvil | Inicio | media | nada |
+| IN.9c | El detalle por cuenta sale del hero a columna propia | Inicio | media | ADR nuevo (acota 034 D4) |
+| IN.9d | Accesos y actividad separados en escritorio, fila final 6+6 | Inicio | media | ADR nuevo (acota 034 D7); conviene tras IN.9c |
+| IN.9e | Estado vacío propio de escritorio | Inicio | baja | nada; el copy queda provisional (PI5) |
+| INT.1 | Barra superior de escritorio y carril de urgencias | Transversal | media | requiere ADR; bloquea ID4 e ID7 de Inicio |
 | CAL.5b | El lote también cubre deudas, y se ofrece desde Inicio | Calendario | media | ARQ.2 (deudas); Inicio no depende de nada |
 | MC.13 | Distribución v2: contextual por fecha, guiada y con origen real | Mis cuentas | alta | nada |
 | MC.13e-2c | Identidad visual por fila: logo/ícono + nombre + nota | Mis cuentas | media | verificar notas ya existentes en el análisis |
@@ -103,6 +108,58 @@ Las 53 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 > **Dos hallazgos siguen cuestionando una decisión vigente y no se ejecutan sin la palabra de Esteban** (regla 2.7: un ADR no se revierte en silencio): la propuesta de distribución de un toque frente a MC.13e-2g, y MC.17f frente al cierre de MC.17 como "completa". Cada tarjeta lo dice en su Estado.
 >
 > **Alcance honesto del triaje:** se trió todo lo que el informe entregó enumerado. Su tabla "hallazgos por módulo" vino como vista filtrable y las fichas individuales no llegaron en texto: si Esteban quiere ese detalle triado uno por uno, hay que recuperarlo de la fuente.
+
+### Inicio (dominio `resumen`)
+
+> **Iniciativa "IN.9 - Inicio en escritorio"** (auditoría de navegación global de Claude Design, 2026-07-31; handoff en `Auditoría navegación global Finko-handoff/`). Fuente única del reparto de Inicio sobre 1024px. Ocho decisiones ID1 a ID8: **ID8 es un no-op** (decide *no* agregar un botón de registrar, ya cubierto por ADR 024) y **ID4 e ID7 salen a INT.1**, porque dependen de una barra superior de escritorio que no existe en el repo. Las rebanadas de abajo cubren ID1, ID3, ID5 e ID6 (ID2 ya cerró). El informe deja además tres reglas para el design system (R78 ancho completo que se gana, R79 gráfico dimensionado por su dato, R80 acordeón como respuesta al ancho escaso) y dos decisiones abiertas que viajan con INT.1: `--fk-bg-glass` sin valor en tema claro (PI7) y el contraste de los tokens `--fk-dom-*` (PI8, medido: 3,23:1 y 2,65:1, bajo el mínimo 3:1 de WCAG 1.4.11). **Móvil no cambia en ninguna rebanada salvo lo que IN.9a decida.**
+
+#### IN.9b - 8 filas de actividad en escritorio, 5 en móvil
+- Prioridad  : media
+- Estado     : pendiente
+- Área       : ambos
+- Objetivo   : ID5 del informe, cierra IE8. El límite de 5 se eligió para 390px; `movimientosRecientes()` ya recibe el límite por parámetro, así que no hay dato ni consulta nueva.
+- Riesgo     : un usuario que registra poco deja la columna corta y desbalancea la fila (pendiente PI10 del informe, sin resolver).
+- Secciones  : Inicio (`movimientos`)
+- Archivos   : `modules/dominio/movimientos/view.js`, `tests/unit/`
+- Depende de : nada
+- Aceptación : test que fije el límite por ancho + captura a 1280px con 8 filas y a 390px con 5
+- Modelo     : bajo
+
+#### IN.9c - El detalle por cuenta sale del hero a columna propia
+- Prioridad  : media
+- Estado     : requiere ADR (acota el 034 D4 a móvil, aprobado como PI1 del informe el 2026-07-31: "no se revierte, se acota")
+- Área       : ambos
+- Objetivo   : mitad de ID1, cierra IE4 e IT10 y aplica R80. En escritorio hay una columna libre al lado del hero, así que el detalle deja de ser un acordeón que empuja una página de 2.309px sin persistir su estado.
+- Riesgo     : **el más alto de la iniciativa.** La máscara de privacidad hoy cubre total y detalle porque viven en el mismo hero (extensión IN.2); separados, hay que garantizar que un solo ojo siga cubriendo los dos y que ningún saldo real toque el DOM oculto, que es lo que ya comprueba el test de IN.8c (pendiente PI4 del informe).
+- Secciones  : Inicio
+- Archivos   : `index.html`, `modules/infra/render.js` (`updSaldo`, `alternarDetalleCuentas`), `styles/components/domain.css`, `styles/responsive.css`
+- Depende de : el ADR nuevo
+- Aceptación : test de máscara sobre las dos celdas + captura a 1280px y a 390px (acordeón intacto)
+- Modelo     : medio-alto (toca máscara de privacidad y marcado compartido)
+
+#### IN.9d - Accesos y actividad separados en escritorio, fila final 6+6
+- Prioridad  : media
+- Estado     : requiere ADR (acota el 034 D7 a móvil)
+- Área       : ambos
+- Objetivo   : la otra mitad de ID1 más ID3; cierra IE3 e IE5. La fusión ahorra una tarjeta donde el alto es escaso (móvil); en escritorio sobra ancho, así que separarlas ahorra alto en vez de gastarlo, y el gráfico semanal recupera span 6 (R79: sus 7 barras miden 44px en móvil, 49 a span 6 y 177 a span 12 en 1920, donde la semana deja de tener forma de semana).
+- Riesgo     : parte el `.accesos-actividad` que móvil usa hoy; es marcado compartido y varios tests de Inicio afirman posición (pendiente PI3 del informe).
+- Secciones  : Inicio (`accesos`, `movimientos`, `resumen`)
+- Archivos   : `index.html`, `styles/components/domain.css`, `styles/responsive.css`, `tests/unit/`, `tests/e2e/`
+- Depende de : el ADR nuevo; conviene después de IN.9c (misma fila, mismo marcado)
+- Aceptación : suite unit + E2E verde contra el marcado nuevo + capturas a 1280px y 390px
+- Modelo     : medio-alto
+
+#### IN.9e - Estado vacío propio de escritorio
+- Prioridad  : baja
+- Estado     : pendiente. **La estructura se aprueba, el copy no:** el texto de los tres pasos queda provisional hasta una revisión de UX Writing que cubra toda la app, para no fijar un tono en una sola pantalla (pendiente PI5 del informe, pospuesto el 2026-07-31).
+- Área       : design
+- Objetivo   : ID6, cierra IE9. La guía de móvil estirada a 990px se lee como una pantalla a medio cargar; centrada en 620px con tres pasos se lee como el arranque de la app.
+- Riesgo     : el informe cubre "sin nada" y "con todo"; los estados vacíos parciales (cuentas sí, gastos no) siguen sin cubrir en las dos plataformas (pendiente PI6).
+- Secciones  : Inicio
+- Archivos   : `index.html` (`#hero-guia-saldo`), `styles/components/domain.css`, `styles/responsive.css`
+- Depende de : nada
+- Aceptación : captura del primer uso a 1280px y a 390px (guía de móvil intacta)
+- Modelo     : bajo
 
 ### Calendario (dominio `agenda`)
 
@@ -379,6 +436,18 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 > **Auditoría de rendimiento 2026-07 completa** (PERF.0 a PERF.4 cerradas, ver [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md)). Los dos hallazgos que siguen mandando: `renderSmart()` ya evita el recálculo cruzado, y guardar cuesta ~5 ms debounced, así que la persistencia NO se reescribió ([ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md), disparadores en su D4). **Disciplina obligatoria de toda tarjeta PERF: correr `pnpm perf` antes y después y comparar contra BASELINE.md.**
 
+#### INT.1 - Barra superior de escritorio y carril de urgencias
+- Prioridad  : media
+- Estado     : **requiere ADR y la palabra de Esteban antes de codificar.** Nace del handoff de la auditoría de navegación global (2026-07-31, archivos `Interfaz 1-4` de `Auditoría navegación global Finko-handoff/`), que todavía no se trió decisión por decisión: esta tarjeta la registra como fuente única, no la aprueba. Verificado el 2026-07-31: la barra no existe en el repo (cero `topbar` en `styles/`; el sidebar de `layout.css` sí está).
+- Área       : ambos
+- Objetivo   : la barra superior permanente de escritorio (título de sección, botón "Registrar" y avatar con acceso a Ajustes) y el carril de 320px a partir de 1.680px. **Bloquea ID4 e ID7 de la iniciativa IN.9**: hoy `.perfil-inicio` es el único encabezado de Inicio en las dos plataformas, así que ocultarlo en escritorio dejaría la pantalla sin saludo, sin marca y sin acceso a Ajustes.
+- Riesgo     : cambia el chrome de las 13 secciones a la vez, no solo Inicio. Arrastra además las dos decisiones abiertas del informe de Inicio: PI7 (`--fk-bg-glass` no tiene valor propio en tema claro y pinta una banda negra sobre página blanca: gana valor claro en `themes.css` o se retira del design system) y PI8 (contraste de los tokens `--fk-dom-*`, medido en 3,23:1 y 2,65:1 contra el mínimo 3:1 de WCAG 1.4.11, hallazgo IT12).
+- Secciones  : Transversal (`ui/shell.js`, las 13 secciones)
+- Archivos   : `index.html`, `modules/ui/shell.js`, `styles/layout.css`, `styles/responsive.css`, `styles/themes.css`
+- Depende de : triaje de la auditoría Interfaz + ADR propio
+- Aceptación : capturas de las 13 secciones en ambos temas + contraste medido de los tokens que toque
+- Modelo     : alto (chrome global, 13 secciones, dos decisiones de token abiertas)
+
 #### PERF.5 (futura, no iniciar) - Migrar la persistencia a IndexedDB
 - Prioridad  : sin definir (se retoma solo si se dispara un criterio del [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) D4)
 - Estado     : diferida por decisión del ADR 030. **NO iniciar** sin uno de sus disparadores: jank de guardado medido en dispositivo real, usuarios reales acercándose a la cuota (el aviso de PERF.4 disparándose en la práctica), o una feature que necesite persistencia asíncrona / mayor cupo (ej. CFG.4).
@@ -591,7 +660,6 @@ Se listan solo para que una idea nueva de estas secciones no vuelva a generar un
 
 | Sección | Dónde vive su trabajo futuro |
 |---|---|
-| Inicio | Iniciativa "Inicio v2" completa ([ADR 034](DECISIONS/034-inicio-v2.md)). Las recomendaciones anticipadas de "Próximas prioridades" son el punto 4 de **LIM.1** y del [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md) |
 | Gastos | Iniciativa "Gastos v2" completa ([ADR 039](DECISIONS/039-gastos-v2-visual.md)), con 3 decisiones diferidas anotadas en el ADR: FAB, búsqueda en el header y comparación tangible del insight hormiga. La taxonomía de categorías ya cerró (**CAT.1**, [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md)); lo que queda de categorías es **CAT.3** (personalizadas globales) y el motor de sugerencia por categoría, la fusión LIM.1 / ANL.1 / ADR 029 |
 | Movimientos | Ledger accionable, con búsqueda y filtros, completo. Los huecos que quedan son **MC.17f** (deshacer transferencia) y **EDIT.1** (editar donde el dominio dueño todavía no sabe) |
 | Deudas | Iniciativa "Deudas v2" completa ([ADR 036](DECISIONS/036-deudas-v2-visual.md)). Que un pago de deuda descuente de la cuenta ya existe desde el [ADR 002](DECISIONS/002-abono-deudas.md): si aparece un caso donde NO ocurra, es un bug para [`BUGS.md`](BUGS.md), no una feature |

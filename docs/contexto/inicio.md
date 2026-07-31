@@ -8,7 +8,16 @@
 
 - **Objetivo**          : pantalla principal e inamovible de la app; hoy muestra saldo (hero a ancho completo), accesos rápidos personalizables, paneles de vencidos/próximos y un resumen semanal.
 - **Estado actual**     : estable, en evolución. **IN.7**, **IN.6a**, **CAL.1**, **TX.8a**, **TX.8b** e **IN.4a** cerradas; **IN.5** (2026-07-06) eliminó "Gasto rápido" y el panel "Gastos por organizar", dejando el hero a ancho completo. **PERF.1** (2026-07-06) paginó por lotes la vista completa de Movimientos (`#movimientos`). **PERF.2** (2026-07-06) memoizó `resumenSemanal()` y `movimientosRecientes()`/`movimientosCompletos()`; sin cambios de comportamiento visible en ninguno de los dos. **IV.2c** (2026-07-10, ADR 031): "Pendientes del mes" y "Próximas prioridades" ganan una etiqueta de texto con el tipo (`.dom-badge`, "el color nunca viaja solo") junto al icono+color de sección ya existentes; corrige un bug real donde un apartado en "Próximas prioridades" heredaba el color de "fijo" en vez del suyo propio. Rediseño mayor decidido en [ADR 028](../DECISIONS/028-inicio-centro-de-control.md) (**aprobado el 2026-07-05**): un rol por bloque, orden vertical definido. **Nota (2026-07-12):** la revisión formal de ese ADR ya existe y está aceptada: [ADR 034](../DECISIONS/034-inicio-v2.md) "Inicio v2" (diseño hifi de Esteban en `Iteración de specimen/design_handoff_inicio_v2/`), que reordena la pantalla (alertas primero, accesos+actividad fusionados al final), rediseña hero/pendientes/resumen y resuelve IN.6b con teja de iniciales (sin foto). **Actualización (2026-07-12):** las 7 rebanadas IN.8a a IN.8g ya cerraron; esta ficha describe el estado vigente en código con el diseño completo de "Inicio v2" implementado.
-- **Verificado contra** : commit `6ddfd0f` (2026-07-25), cierre de la auditoría de diseño de Inicio (F1 a F8 + V1).
+- **Verificado contra** : commit `0e8d92b` (2026-07-31), cierre de IN.9a.
+
+**Escritorio: iniciativa IN.9, en curso** ([ADR 057](../DECISIONS/057-inicio-en-escritorio.md)). El ADR 034 diseñó Inicio contra un mockup de 390px y dejó escrito que el reparto de escritorio quedaba sin decidir; el ADR 057 lo decide: cero celdas de ancho completo, `span 4` y `span 6` (regla R78). Cerró **IN.9a** (los dos avisos de "Atención hoy" comparten fila). Siguen abiertas IN.9b (8 filas de actividad en escritorio), IN.9c (el detalle por cuenta a columna propia, acota el 034 D4 a móvil), IN.9d (accesos y actividad separados, acota el 034 D7 a móvil) e IN.9e (estado vacío de escritorio). **Fuera de la iniciativa:** ID4 e ID7 del informe (ocultar `.perfil-inicio` y el carril de urgencias) dependen de una barra superior de escritorio que no existe en el código, registrada como INT.1.
+
+**Riesgos vivos de la iniciativa:** el bento es marcado compartido, así que IN.9c e IN.9d tocan móvil aunque el reparto sea de escritorio; IN.9c además parte la máscara de privacidad en dos celdas, garantía que hoy cubre el test de IN.8c. Tablet (768 a 1.023px) sigue sin auditar.
+
+**Cambios realizados**
+
+- 2026-07-31 IN.9a: `#panel-distribuir-inicio` y `#panel-limites` pasan a `bento__cell--half` y límites sube a la 2.ª posición del grupo, junto al otro aviso. Acota el ADR 034 D1 en las dos plataformas. Grupo "Atención hoy" a 1280px: 541px a 459px.
+- 2026-07-31 BUG-021: la prueba E2E de "Pendientes del mes" fija el reloj con `page.clock.setFixedTime`; antes derivaba el día vencido de una envoltura modulo 28 y fallaba los días 1, 2, 3 y 31 del mes.
 
 **Dónde vive**
 

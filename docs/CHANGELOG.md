@@ -10,6 +10,29 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(inicio): IN.9a, los dos avisos de "Atención hoy" comparten fila · 2026-07-31
+
+Primera rebanada de **IN.9 "Inicio en escritorio"** ([ADR 057](DECISIONS/057-inicio-en-escritorio.md)), nacida del handoff de la auditoría de navegación global. Ficha: [`contexto/inicio.md`](contexto/inicio.md).
+
+- **El reorden es lo que hace funcionar el reparto, no un detalle cosmético.** Pasar los dos avisos a `bento__cell--half` **sin** moverlos empeora el alto del grupo de 541px a 588px: un aviso de 66px emparejado con una tarjeta de 322px estira la fila y además rompe la que "Pendientes" y "Próximas prioridades" ya compartían. Con `#panel-limites` subido junto a `#panel-distribuir-inicio`, el grupo baja a **459px** (-15%) y el bento completo de 1.680 a 1.598. Las tres cifras son medición directa a 1280px con los cuatro paneles visibles.
+- **Acota el [ADR 034](DECISIONS/034-inicio-v2.md) D1, que ponía las alertas de límites al final del grupo, y lo hace en las dos plataformas.** El bento es marcado compartido; la alternativa de reordenar solo en escritorio con `order` de CSS se rechazó porque divorcia el orden de foco del orden visual (WCAG 2.4.3). Se acepta porque es coherente con el principio que el propio D1 declaró ("lo accionable sube") y una alerta de límite es accionable, no un atajo.
+- **Cero vocabulario CSS nuevo:** solo clases del bento que ya existían, así que tablet y móvil caen solos sin media query nueva. Medido: tablet 821px baja de 541 a 478px sin desbordes; móvil 390px conserva alto y una sola columna, y lo único que cambia ahí es el orden.
+
+**ID4 e ID7 del informe quedan fuera de la iniciativa:** dependen de una barra superior de escritorio que no existe en el código (`.perfil-inicio` es hoy el único encabezado de Inicio en las dos plataformas, acceso a Ajustes incluido). Registrados en la tarjeta INT.1. Sin bump de schema. 3523/3523 unit + 246/246 E2E + lint verdes. SW v455 a v456.
+
+---
+
+### test(e2e): BUG-021, fijar el reloj del panel de vencidos · 2026-07-31
+
+Defecto preexistente de la suite, encontrado al correr la compuerta E2E de IN.9a y verificado contra el árbol limpio antes de tocar nada.
+
+- La prueba de "Pendientes del mes" (IN.8e) sembraba el día vencido con `((dia - 2 + 27) % 28) + 1`, que **envuelve en el rango 1..28 en vez de restar 2**. Sembraba el día equivocado los días 1, 2, 3 y 31 del mes: el 31 de julio esperaba "Venció hace 2 días" contra un compromiso del día 1 y leía "Venció hace 30 días".
+- El caso que la prueba describe ("venció hace 2 días" junto a "vence hoy") solo existe en un día del mes con margen a ambos lados, así que la fecha se fija con `page.clock.setFixedTime` en vez de derivarse del reloj real. `setFixedTime` no toca los timers, así que el debounce de `save()` (ADN 5) sigue corriendo igual.
+
+Misma familia que BUG-019 y BUG-020. 246/246 E2E verdes.
+
+---
+
 ### feat(gastos): MC.16d, "¿A cuántas cuotas?" al registrar el consumo · 2026-07-30
 
 Cierra MC.16 salvo MC.16e. El consumo con tarjeta ya no asume pago único. Ficha: [`contexto/deudas.md`](contexto/deudas.md).
