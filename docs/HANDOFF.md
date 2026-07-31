@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-30. Última tarea cerrada: MC.16c, bloque de tarjetas de crédito en Mis cuentas.
+> Última actualización: 2026-07-30. Última tarea cerrada: MC.16d, "¿A cuántas cuotas?" al registrar el consumo con tarjeta.
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko

@@ -20,6 +20,8 @@ import {
   tarjetasDeCredito,
   efectoEnDeuda,
   deltasPorEdicionEnDeuda,
+  efectoEnCuotaMensual,
+  deltasPorEdicionEnCuotaMensual,
 } from '../../modules/dominio/gastos/logic.js';
 import { renderFormGasto, renderListaGastos, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, irAMesActual, CATEGORIA_NUEVA_VALUE } from '../../modules/dominio/gastos/view.js';
 import { CATEGORIAS_GASTO, CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA } from '../../modules/core/constants.js';
@@ -423,6 +425,22 @@ describe('normalizarGasto()', () => {
     expect(result.consumoTC).toBe(false);
     expect(result.cuentaId).toBe('c1');
   });
+
+  // MC.16d: cuotas solo aplica a un consumo con tarjeta.
+  it('MC.16d: un consumo con tarjeta toma las cuotas elegidas', () => {
+    const result = normalizarGasto({ ...datosFormValidos, cuentaId: 'tc:d1', cuotas: '6' });
+    expect(result.cuotas).toBe(6);
+  });
+
+  it('MC.16d: sin cuotas en el form, un consumo con tarjeta cae a 1 (pago único)', () => {
+    const result = normalizarGasto({ ...datosFormValidos, cuentaId: 'tc:d1' });
+    expect(result.cuotas).toBe(1);
+  });
+
+  it('MC.16d: un gasto pagado con cuenta no lleva cuotas (null explícito, limpia el dato al editar)', () => {
+    const result = normalizarGasto({ ...datosFormValidos, cuotas: '12' });
+    expect(result.cuotas).toBeNull();
+  });
 });
 
 // ── deltasPorEdicionEnDeuda() ────────────────────────────────────
@@ -495,6 +513,62 @@ describe('efectoEnDeuda()', () => {
   it('un gasto sin deuda no tiene efecto', () => {
     expect(efectoEnDeuda({ monto: 90_000 })).toBe(0);
     expect(efectoEnDeuda(null)).toBe(0);
+  });
+});
+
+// ── efectoEnCuotaMensual() (MC.16d) ───────────────────────────────
+
+describe('efectoEnCuotaMensual()', () => {
+  it('un consumo a 1 cuota (pago único) suma el monto completo', () => {
+    expect(efectoEnCuotaMensual({ compromisoId: 'd1', monto: 90_000, consumoTC: true, cuotas: 1 })).toBe(90_000);
+  });
+
+  it('un consumo a varias cuotas suma monto/cuotas, redondeado', () => {
+    expect(efectoEnCuotaMensual({ compromisoId: 'd1', monto: 100_000, consumoTC: true, cuotas: 3 })).toBe(33_333);
+  });
+
+  it('sin cuotas en el dato (legacy) equivale a 1 cuota', () => {
+    expect(efectoEnCuotaMensual({ compromisoId: 'd1', monto: 90_000, consumoTC: true })).toBe(90_000);
+  });
+
+  it('un abono no tiene efecto (opera sobre saldoTotal, no sobre la cuota proyectada)', () => {
+    expect(efectoEnCuotaMensual({ compromisoId: 'd1', monto: 90_000, consumoTC: false })).toBe(0);
+  });
+
+  it('un gasto sin deuda no tiene efecto', () => {
+    expect(efectoEnCuotaMensual({ monto: 90_000, consumoTC: true })).toBe(0);
+    expect(efectoEnCuotaMensual(null)).toBe(0);
+  });
+});
+
+// ── deltasPorEdicionEnCuotaMensual() (MC.16d) ─────────────────────
+
+describe('deltasPorEdicionEnCuotaMensual()', () => {
+  const consumo = (monto, cuotas = 1, id = 'd1') => ({ compromisoId: id, monto, consumoTC: true, cuotas });
+  const abono   = (monto, id = 'd1') => ({ compromisoId: id, monto, consumoTC: false });
+
+  it('crear un consumo a 1 cuota sube cuotaMensual el monto completo', () => {
+    expect(deltasPorEdicionEnCuotaMensual(null, consumo(200_000))).toEqual({ d1: 200_000 });
+  });
+
+  it('crear un consumo diferido sube cuotaMensual solo la cuota mensual', () => {
+    expect(deltasPorEdicionEnCuotaMensual(null, consumo(300_000, 3))).toEqual({ d1: 100_000 });
+  });
+
+  it('crear un abono no mueve cuotaMensual', () => {
+    expect(deltasPorEdicionEnCuotaMensual(null, abono(200_000))).toEqual({});
+  });
+
+  it('eliminar un consumo revierte lo que había sumado', () => {
+    expect(deltasPorEdicionEnCuotaMensual(consumo(300_000, 3), null)).toEqual({ d1: -100_000 });
+  });
+
+  it('cambiar de 1 a 6 cuotas sobre el mismo monto baja el aporte mensual', () => {
+    expect(deltasPorEdicionEnCuotaMensual(consumo(600_000, 1), consumo(600_000, 6))).toEqual({ d1: -500_000 });
+  });
+
+  it('editar un consumo sin cambiar monto ni cuotas no mueve nada', () => {
+    expect(deltasPorEdicionEnCuotaMensual(consumo(200_000, 2), consumo(200_000, 2))).toEqual({});
   });
 });
 
@@ -759,6 +833,24 @@ describe('renderFormGasto() - selector de cuenta', () => {
     const html = renderFormGasto();
     expect(html).not.toContain('value="tc:d1"');
     expect(html).toContain('¿De qué cuenta sale el dinero?');
+  });
+
+  // MC.16d: "¿A cuántas cuotas?" vive en el form (radios, no <select>), oculto
+  // por defecto: el JS de index.js lo revela al elegir una tarjeta.
+  it('MC.16d: el bloque de cuotas existe oculto, con "1 cuota" pre-marcada', () => {
+    S.cuentas = [cuenta('c1', 'Bancolombia', 600_000)];
+    S.compromisos = [tarjetaTC()];
+    const html = renderFormGasto();
+    expect(html).toMatch(/id="grupo-gasto-cuotas"[^>]*hidden/);
+    expect(html).toContain('name="cuotas"');
+    expect(html).toMatch(/value="1"[^>]*checked/);
+    expect(html).not.toContain('<select');
+  });
+
+  it('MC.16d: el bloque de cuotas existe aunque no haya tarjetas operables (siempre en el DOM)', () => {
+    S.cuentas = [cuenta('c1', 'Bancolombia', 600_000)];
+    const html = renderFormGasto();
+    expect(html).toContain('name="cuotas"');
   });
 
   it('CAT.1a: el hint "normalmente pertenece a fijos" ya no existe (retirado, ADR 014)', () => {

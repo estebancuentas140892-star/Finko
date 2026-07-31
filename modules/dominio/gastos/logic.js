@@ -418,6 +418,54 @@ export function efectoEnDeuda(gasto) {
 }
 
 /**
+ * Cuánto le suma un consumo a la `cuotaMensual` de su tarjeta (MC.16d): el
+ * consumo se difiere a `cuotas` cuotas (1 = pago único) y cada una vale
+ * `monto / cuotas`, redondeado a COP. Solo los consumos suman (`consumoTC`):
+ * un abono (ADR 051 D2, D.14/abonos) opera sobre `saldoTotal`, nunca sobre la
+ * cuota proyectada, así que devuelve 0. Sin `cuotas` (dato legacy o gasto sin
+ * tarjeta) equivale a 1 cuota.
+ *
+ * @param {import('../../core/state.js').Gasto|null|undefined} gasto
+ * @returns {number}
+ */
+export function efectoEnCuotaMensual(gasto) {
+  if (!gasto?.compromisoId || !gasto.consumoTC) return 0;
+  const monto  = Number(gasto.monto) || 0;
+  const cuotas = Number(gasto.cuotas) || 1;
+  return Math.round(monto / cuotas);
+}
+
+/**
+ * Delta a aplicar a la `cuotaMensual` de cada tarjeta cuando un consumo se
+ * crea, se edita o se elimina. Mismo contrato que `deltasPorEdicionEnDeuda`:
+ * revierte el efecto del gasto anterior y aplica el del nuevo, neto por
+ * tarjeta (no dos escrituras).
+ *
+ *   - crear:    `deltasPorEdicionEnCuotaMensual(null, gasto)`
+ *   - editar:   `deltasPorEdicionEnCuotaMensual(anterior, gasto)`
+ *   - eliminar: `deltasPorEdicionEnCuotaMensual(gasto, null)`
+ *
+ * @param {import('../../core/state.js').Gasto|null} antes
+ * @param {import('../../core/state.js').Gasto|null} despues
+ * @returns {Record<string, number>}
+ */
+export function deltasPorEdicionEnCuotaMensual(antes, despues) {
+  const deltas = {};
+  const acumular = (id, valor) => {
+    if (!id) return;
+    deltas[id] = (deltas[id] ?? 0) + valor;
+  };
+
+  acumular(antes?.compromisoId,   -efectoEnCuotaMensual(antes));
+  acumular(despues?.compromisoId, +efectoEnCuotaMensual(despues));
+
+  for (const [id, delta] of Object.entries(deltas)) {
+    if (delta === 0) delete deltas[id];
+  }
+  return deltas;
+}
+
+/**
  * Delta a aplicar al `saldoTotal` de cada deuda cuando un gasto se crea, se
  * edita o se elimina: revierte el efecto del gasto anterior y aplica el del
  * nuevo. Mapa { compromisoId → deltaASumar }, mismo contrato que
@@ -480,6 +528,7 @@ export function normalizarGasto(datos) {
     nota: datos.nota?.trim() || '',
     compromisoId: esConsumoTC ? origen.slice(TARJETA_PREFIJO.length) : (datos.compromisoId || null),
     consumoTC: esConsumoTC,
+    cuotas: esConsumoTC ? (parseInt(datos.cuotas, 10) || 1) : null,
   };
   if (datos.descripcion?.trim()) base.descripcion = datos.descripcion.trim();
   return base;

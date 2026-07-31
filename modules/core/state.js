@@ -145,6 +145,11 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT } from './constants.js';
  *                                    el mismo compromisoId. Deducirlo de la ausencia de
  *                                    cuentaId sería frágil: un gasto sin cuenta ya es
  *                                    legal (efectivo no registrado).
+ * @property {number} [cuotas]        MC.16d. Solo con `consumoTC`: a cuántas cuotas se
+ *                                    difirió el consumo (1 = pago único). Sube
+ *                                    `cuotaMensual` de la tarjeta en `monto / cuotas`; no
+ *                                    crea un plan de pagos por compra (ADR 051 D2), el
+ *                                    saldo sigue siendo revolvente.
  */
 
 /**

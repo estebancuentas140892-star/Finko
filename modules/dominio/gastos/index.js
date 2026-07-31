@@ -23,7 +23,7 @@ import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
 import { wireIconoPicker } from '../../infra/icon-picker.js';
 import {
   validarGasto, normalizarGasto,
-  deltasPorEdicionDeGasto, deltasPorEdicionEnDeuda,
+  deltasPorEdicionDeGasto, deltasPorEdicionEnDeuda, deltasPorEdicionEnCuotaMensual,
   validarCategoriaPersonalizada,
 } from './logic.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
@@ -107,6 +107,8 @@ async function _guardarGasto() {
 
       // Sincronizar saldoTotal si el gasto tocaba una deuda (abono o consumo).
       _aplicarDeltasADeudas(deltasPorEdicionEnDeuda(anterior, gasto));
+      // MC.16d: sincronizar cuotaMensual si el consumo cambió de monto o de cuotas.
+      _aplicarDeltasACuotaMensual(deltasPorEdicionEnCuotaMensual(anterior, gasto));
     }
     editar('gastos', idEdit, gasto);
   } else {
@@ -122,6 +124,8 @@ async function _guardarGasto() {
       // lo recibe como cualquier gasto.
       guardar('gastos', base);
       _aplicarDeltasADeudas(deltasPorEdicionEnDeuda(null, base));
+      // MC.16d: el consumo sube cuotaMensual en monto/cuotas (1 = pago único).
+      _aplicarDeltasACuotaMensual(deltasPorEdicionEnCuotaMensual(null, base));
     } else {
       const splits = await resolverPagoConPreferida(
         S.cuentas, base.monto, base.cuentaId, 'registrar el gasto',
@@ -215,6 +219,14 @@ function _editarGasto(el) {
     if (radio) radio.checked = true;
   }
 
+  // MC.16d: revelar y prellenar "¿A cuántas cuotas?" si el gasto es un
+  // consumo con tarjeta. `checked = true` de arriba no dispara 'change', así
+  // que el grupo se muestra/oculta a mano acá.
+  const grupoCuotas = form.querySelector('#grupo-gasto-cuotas');
+  if (grupoCuotas) grupoCuotas.hidden = !gasto.consumoTC;
+  const radioCuotas = form.querySelector(`input[name="cuotas"][value="${gasto.cuotas || 1}"]`);
+  if (radioCuotas) radioCuotas.checked = true;
+
   const titulo = overlay.querySelector('.modal__title');
   if (titulo) titulo.textContent = 'Editar gasto';
 
@@ -262,7 +274,12 @@ function _prellenarCamposGasto(form, datos) {
 
   if (datos.cuentaId) {
     const radioCuenta = form.querySelector(`input[name="cuentaId"][value="${CSS.escape(datos.cuentaId)}"]`);
-    if (radioCuenta) radioCuenta.checked = true;
+    if (radioCuenta) {
+      radioCuenta.checked = true;
+      // Dispara el listener delegado (MC.16d: revela "¿A cuántas cuotas?" si
+      // la plantilla apunta a una tarjeta).
+      radioCuenta.dispatchEvent(new Event('change', { bubbles: true }));
+    }
   }
 
   if (datos.nota) {
@@ -389,6 +406,8 @@ async function _eliminarGasto(el) {
   // Revertir el efecto en la deuda: un abono la vuelve a subir, un consumo con
   // tarjeta la baja (MC.16b, ADR 051 D3).
   _aplicarDeltasADeudas(deltasPorEdicionEnDeuda(gasto, null));
+  // MC.16d: revertir lo que ese consumo sumaba a cuotaMensual.
+  _aplicarDeltasACuotaMensual(deltasPorEdicionEnCuotaMensual(gasto, null));
 
   eliminar('gastos', id);
   renderListaGastos();
@@ -451,6 +470,31 @@ function _aplicarDeltasADeudas(deltas) {
   }
 }
 
+/**
+ * Ajusta la `cuotaMensual` de una tarjeta cuando un consumo se crea, edita o
+ * elimina (MC.16d). Mismo patrón que `_ajustarSaldoDeuda`, acotado en cero.
+ * @param {string} compromisoId
+ * @param {number} delta
+ */
+function _ajustarCuotaMensual(compromisoId, delta) {
+  if (!compromisoId || !Number.isFinite(delta) || delta === 0) return;
+  const comp = S.compromisos.find(c => c.id === compromisoId);
+  if (!comp) return;
+  const nuevaCuota = Math.max(0, (Number(comp.cuotaMensual) || 0) + delta);
+  editar('compromisos', compromisoId, { cuotaMensual: nuevaCuota });
+}
+
+/**
+ * Aplica un mapa de deltas { compromisoId → delta } a `cuotaMensual`.
+ * Gemelo de `_aplicarDeltasADeudas`.
+ * @param {Record<string, number>} deltas
+ */
+function _aplicarDeltasACuotaMensual(deltas) {
+  for (const [compromisoId, delta] of Object.entries(deltas)) {
+    _ajustarCuotaMensual(compromisoId, delta);
+  }
+}
+
 // ── INICIALIZACIÓN ───────────────────────────────────────────────
 
 /**
@@ -481,6 +525,7 @@ function _montarFormGasto(opciones = {}) {
   const camposNueva = form.querySelector('#categoria-nueva-fields');
   const fechaInput  = form.querySelector('#gasto-fecha');
   const fechaOtra   = form.querySelector('#gasto-fecha-otra');
+  const grupoCuotas = form.querySelector('#grupo-gasto-cuotas');
   form.addEventListener('change', (e) => {
     const t = e.target;
     // TX.9b: el chip "Otra categoría" revela nombre + selector de ícono en el
@@ -497,6 +542,11 @@ function _montarFormGasto(opciones = {}) {
         fechaInput.value = t.value === 'ayer' ? ayerIso() : hoy();
         fechaOtra.hidden = true;
       }
+    }
+    // MC.16d: "¿A cuántas cuotas?" solo aplica cuando el origen elegido es
+    // una tarjeta (prefijo tc:).
+    if (t.name === 'cuentaId' && grupoCuotas) {
+      grupoCuotas.hidden = !t.value.startsWith(TARJETA_PREFIJO);
     }
   });
 

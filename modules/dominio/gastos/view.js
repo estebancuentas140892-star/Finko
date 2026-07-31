@@ -569,6 +569,9 @@ function _renderChipsFrecuentes() {
  * no todas las respuestas son una cuenta. Gastos es el único formulario que
  * las ofrece (no se ahorra ni se transfiere con cupo de crédito).
  *
+ * MC.16d: con una tarjeta elegida, revela "¿A cuántas cuotas?" (index.js la
+ * oculta/muestra por delegación de `change`, mismo patrón que "Otra categoría").
+ *
  * @param {{ sugerencias?: boolean }} [opciones] `sugerencias: false` omite los
  *   chips de gastos frecuentes (TX.12): el caller la pasa en modo edición.
  * @returns {string}
@@ -647,6 +650,16 @@ export function renderFormGasto({ sugerencias = true } = {}) {
         ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'categoria-nueva-icono', nombreCampo: 'categoriaNuevaIcono' })}
       </div>
       ${renderSelectorCuenta(cuentas, { tarjetas, label: labelOrigen })}
+      <div class="form-group" id="grupo-gasto-cuotas" hidden>
+        <span class="label" id="gasto-cuotas-label">¿A cuántas cuotas?</span>
+        <div class="fecha-chips" role="radiogroup" aria-labelledby="gasto-cuotas-label">
+          ${[1, 2, 3, 6, 9, 12, 18, 24].map(n => `
+          <label class="chip-fecha">
+            <input type="radio" name="cuotas" class="chip-cat__radio" value="${n}"${n === 1 ? ' checked' : ''} />
+            ${n === 1 ? '1 cuota' : `${n} cuotas`}
+          </label>`).join('')}
+        </div>
+      </div>
       <div class="form-group">
         <span class="label" id="gasto-fecha-label">Fecha</span>
         <div class="fecha-chips" role="radiogroup" aria-labelledby="gasto-fecha-label">

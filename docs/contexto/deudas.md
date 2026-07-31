@@ -92,8 +92,8 @@ Fuera de esas dos, la iniciativa "Deudas v2: de registro a asesor" (brief 2026-0
 ## Tarjeta de crédito ([ADR 051](../DECISIONS/051-tarjeta-de-credito-producto-integrado.md), iniciativa MC.16)
 
 - **Objetivo**          : la tarjeta es un producto de Deudas, no una `Cuenta`: cupo más deuda, nunca dinero disponible. `cupoTotal` es el único campo nuevo del modelo (D1) y el `disponible` se deriva, nunca se almacena.
-- **Estado actual**     : **MC.16a y MC.16b CERRADAS (2026-07-30)**, las dos primeras de cinco rebanadas. La tarjeta ya es operable de punta a punta: se registra con cupo y **se puede pagar con ella** (el consumo sube el saldo, y editarlo o eliminarlo lo revierte exacto). Siguen abiertas MC.16c a MC.16e en [BOARD.md](../BOARD.md). Con MC.16b en producción, `consumosTC` del monitor de renta deja de ser captura manual (CFG.2a).
-- **Verificado contra** : MC.16b (2026-07-30).
+- **Estado actual**     : **MC.16a, MC.16b, MC.16c y MC.16d CERRADAS (2026-07-30)**, cuatro de cinco rebanadas. La tarjeta ya es operable de punta a punta: se registra con cupo, se paga con ella (el consumo sube el saldo), ahora también difiere a cuotas (sube `cuotaMensual` automáticamente) y se ve en su propio bloque de Mis cuentas. Solo queda abierta MC.16e en [BOARD.md](../BOARD.md). Con MC.16b en producción, `consumosTC` del monitor de renta deja de ser captura manual (CFG.2a).
+- **Verificado contra** : MC.16d (2026-07-30).
 
 **`cupoTotal` es dato y discriminador a la vez** (misma economía que `esCuotaManejo`): una deuda con `categoria: 'Tarjeta de crédito'` **con** `cupoTotal` es una tarjeta operable (recibe consumos, muestra disponible); **sin** `cupoTotal` es una deuda vieja capturada a posteriori y se comporta como cualquier otra. No hay campo `esTarjeta` ni bandera paralela.
 
@@ -114,6 +114,10 @@ Fuera de esas dos, la iniciativa "Deudas v2: de registro a asesor" (brief 2026-0
 | Origen del gasto (cuenta vs tarjeta) | `gastos/logic.js`, `normalizarGasto` |
 | Signo del ajuste a la deuda | `gastos/logic.js`, `efectoEnDeuda` + `deltasPorEdicionEnDeuda` |
 | Escritura del saldo de la deuda | `gastos/index.js`, `_aplicarDeltasADeudas` sobre `_ajustarSaldoDeuda` |
+| Campo "¿A cuántas cuotas?" (MC.16d, chips, oculto salvo tarjeta) | `gastos/view.js`, `#grupo-gasto-cuotas` tras el selector de origen |
+| Revelado del campo (delegado en `change` de `cuentaId`) | `gastos/index.js`, listener de `_montarFormGasto` |
+| Aporte del consumo a `cuotaMensual` (`monto / cuotas`, redondeado) | `gastos/logic.js`, `efectoEnCuotaMensual` + `deltasPorEdicionEnCuotaMensual` |
+| Escritura de `cuotaMensual` | `gastos/index.js`, `_aplicarDeltasACuotaMensual` sobre `_ajustarCuotaMensual` |
 
 **Riesgos**:
 
