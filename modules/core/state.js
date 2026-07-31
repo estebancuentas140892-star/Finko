@@ -187,6 +187,14 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT } from './constants.js';
  *                                       revertir el crédito exacto si se elimina más
  *                                       adelante sin que abonos posteriores lo afecten.
  *                                       Solo presente junto con cuentaOrigenId.
+ *
+ * @property {number}  [cupoTotal]       COP (ADR 051 D1). Cupo aprobado de una
+ *                                       tarjeta de crédito (categoria='Tarjeta de
+ *                                       crédito'). Discriminador de "tarjeta operable":
+ *                                       con cupoTotal recibe consumos y muestra
+ *                                       disponible (cupoTotal - saldoTotal, derivado,
+ *                                       nunca almacenado); sin cupoTotal es una deuda
+ *                                       vieja capturada a posteriori. Solo deuda-entidad.
  */
 
 /**

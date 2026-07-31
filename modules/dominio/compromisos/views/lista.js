@@ -212,6 +212,12 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null, oculto = fals
     tasaChip = `<span class="chip">${icon('check-circle')} Sin interés</span>`;
   }
 
+  // MC.16a (ADR 051 D1): cupoTotal es el discriminador de "tarjeta operable".
+  // disponible se deriva, nunca se almacena.
+  const cupoChip = (Number(compromiso.cupoTotal) > 0)
+    ? `<span class="chip">${icon('cuentas')} Disponible ${f(Math.max(Number(compromiso.cupoTotal) - saldo, 0))}</span>`
+    : '';
+
   // D.12: aviso de tasa desconocida por deuda. D.16d lo asciende de línea de
   // texto con emoji a callout ámbar con ícono.
   const avisoTasa = (entidadSinTasa && !saldada)
@@ -271,6 +277,7 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null, oculto = fals
         ${urgenciaChip}
         <span class="chip ${catChipMod}">${catChipIcono} ${catChipLabel}</span>
         ${tasaChip}
+        ${cupoChip}
       </div>
       ${avisoTasa}
       <div class="deuda-card__acciones">

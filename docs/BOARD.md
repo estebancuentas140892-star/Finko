@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-30 (MC.16a cierra: la tarjeta de crédito gana su cupo y su tarjeta sale del tablero; MC.16b queda desbloqueada). Antes: 2026-07-29 (INV.1 cierra: el dinero sale de una cuenta al registrar una inversión, y su tarjeta sale del tablero). Antes: DIS.19 cierra el frente de Ahorro y deja dos piezas de ARQ.1 ya en `infra/`; no tenía tarjeta propia, entró por handoff de diseño. Antes: 2026-07-27 (CAT.1 cierra: la taxonomía global queda implementada en las tres secciones y su tarjeta sale del tablero). Antes: MC.16 deja de estar bloqueada, el ADR 051 se acepta y la tarjeta se re-corta en MC.16a a MC.16e. La historia de lo ya cerrado vive en [`CHANGELOG.md`](CHANGELOG.md) y en las fichas de [`contexto/`](contexto/README.md), no aquí.
+> Última actualización: 2026-07-30 (ADR 033 aceptado en P1, P2, P3 y P5: DV.2a, DV.2b y DV.2c quedan desbloqueadas, DV.2d sigue bloqueada por P4 y por la cola de diseño). Antes: 2026-07-30 (MC.16a cierra: la tarjeta de crédito gana su cupo y su tarjeta sale del tablero; MC.16b queda desbloqueada). Antes: 2026-07-29 (INV.1 cierra: el dinero sale de una cuenta al registrar una inversión, y su tarjeta sale del tablero). Antes: DIS.19 cierra el frente de Ahorro y deja dos piezas de ARQ.1 ya en `infra/`; no tenía tarjeta propia, entró por handoff de diseño. Antes: 2026-07-27 (CAT.1 cierra: la taxonomía global queda implementada en las tres secciones y su tarjeta sale del tablero). Antes: MC.16 deja de estar bloqueada, el ADR 051 se acepta y la tarjeta se re-corta en MC.16a a MC.16e. La historia de lo ya cerrado vive en [`CHANGELOG.md`](CHANGELOG.md) y en las fichas de [`contexto/`](contexto/README.md), no aquí.
 
 ---
 
@@ -75,10 +75,10 @@ Las 53 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | CFG.7 | Transición de tema claro/oscuro más fluida | Configuración | baja | verificación en dispositivo real primero |
 | PERF.5 | Migrar la persistencia a IndexedDB (futura, no iniciar) | Transversal | sin definir | un disparador del ADR 030 D4 |
 | PERF.6 | Coalescer de renders por microtask | Transversal | baja | decidir si el beneficio lo justifica |
-| DV.2a | Tokens de superficie/elevación + degradado de identidad | Transversal | alta | ADR 033 aprobado |
+| DV.2a | Tokens de superficie/elevación + degradado de identidad | Transversal | alta | nada (ADR 033 aceptado) |
 | DV.2b | Riqueza visual piloto: formas orgánicas + patrón | Transversal | media-alta | DV.2a |
-| DV.2c | Catálogo de movimiento con propósito | Transversal | media-alta | ADR 033 aprobado |
-| DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | DV.2b; diseños o drafts aprobados |
+| DV.2c | Catálogo de movimiento con propósito | Transversal | media-alta | nada (ADR 033 aceptado) |
+| DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | P4 del ADR 033 + cola de diseño |
 | IV.4 | Iconografía dirigida post-color | Transversal | tras IV.2 | IV.2 en producción + revisión visual |
 | PERF.7c | Warm-up de derivaciones pesadas en idle | Transversal | media | conviene después de PERF.7b |
 | PERF.8 | Columna "arranque" en el harness + limpieza de CSS muerto | Transversal | media | nada |
@@ -442,21 +442,21 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Depende de : decidir si el beneficio (situacional, Inicio) justifica el cambio de timing. Alternativa recomendada: PERF.7 primero (ganancia medida e incondicional).
 - Modelo     : Alta capacidad - Alto (si se hace)
 
-> **Iniciativa Dirección Visual premium** ([ADR 033](DECISIONS/033-direccion-visual-premium.md), estado **Propuesta**), evolución de la identidad de color por sección ([ADR 031](DECISIONS/031-identidad-de-color-por-seccion.md), IV.1 e IV.2 cerradas). **Nada de esto se implementa sin la validación de Esteban:** el ADR espera 5 respuestas (sección "Preguntas abiertas P1 a P5", cada una con su recomendación escrita). Las rebanadas DV.2a-d están abajo.
+> **Iniciativa Dirección Visual premium** ([ADR 033](DECISIONS/033-direccion-visual-premium.md), **Aceptada el 2026-07-30** en P1, P2, P3 y P5), evolución de la identidad de color por sección ([ADR 031](DECISIONS/031-identidad-de-color-por-seccion.md), IV.1 e IV.2 cerradas). **DV.2a, DV.2b y DV.2c quedan desbloqueadas.** Solo **P4** (lote inicial de ilustraciones) sigue abierta y se decide al iniciar DV.2d.
 
 #### DV.2a - Tokens de superficie/elevación + degradado de identidad (D1+D2 del ADR 033)
 - Prioridad  : alta (primera rebanada de la dirección visual; DV.2b/c/d y las iniciativas v2 construyen encima)
 - Área       : design
-- Estado     : **no iniciar sin validación del [ADR 033](DECISIONS/033-direccion-visual-premium.md)** (P1 y P5 la afectan directo)
-- Objetivo   : escala de elevación de 4 niveles: `.card`/`.bento__cell`/`.list-item` ganan sombra en reposo (`--fk-shadow-sm`), sombras de doble capa tintadas en tema claro (`themes.css`), y regla de aire entre bloques (space-6 móvil / space-8 escritorio) documentada para las v2. Variable nueva `--fk-section-color` (token crudo) en el mapeo `[data-dom]`/`[data-section]` + token `--fk-grad-identity` (degradado de identidad, 2 paradas), con piloto en los heroes existentes (Inicio, Fondo, Inversión). DESIGN_SYSTEM.md gana la sección "Elevación" y actualiza "Sombras". Verificación: capturas ambos temas, contraste medido contra la parada fuerte del degradado (método IV.1), Lighthouse 100, `pnpm perf` sin regresión.
-- Secciones  : Transversal (`styles/tokens.css`, `styles/themes.css`, `styles/components/buttons.css` `.card`, `styles/layout.css` `.bento__cell` + mapeo, `styles/components/atoms.css` `.list-item`)
-- Depende de : ADR 033 aprobado
+- Estado     : **desbloqueada** (ADR 033 aceptado el 2026-07-30: P1 consolidar las 6 superficies existentes, P5 sombra en ambos temas). Ejecutable ya.
+- Objetivo   : escala de elevación de 4 niveles: `.card`/`.bento__cell`/`.list-item` ganan sombra en reposo (`--fk-shadow-sm`) **en ambos temas** (P5), sombras de doble capa tintadas en tema claro (`themes.css`), y regla de aire entre bloques (space-6 móvil / space-8 escritorio) documentada para las v2. Variable nueva `--fk-section-color` (token crudo) en el mapeo `[data-dom]`/`[data-section]` + token `--fk-grad-identity` (degradado de identidad, 2 paradas). **Alcance de P1: consolidar las 6 superficies que ya copiaron el degradado a mano**, no desplegar a las 13 secciones (tabla D2 bis del ADR 033: `.hero-inicio`, `.score-hero`, `.hero-gastos`, `.hero-tesoreria`, `.hero-compromisos`, `.hero-agenda`, con paradas derivadas entre 14 % y 16 %). La fórmula se tokeniza y la parada queda parametrizable: el contraste de `.hero-inicio` ya está medido al 14 % y no se invalida sin re-medir. DESIGN_SYSTEM.md gana la sección "Elevación" y actualiza "Sombras". Verificación: capturas ambos temas, contraste medido contra la parada fuerte del degradado (método IV.1), Lighthouse 100, `pnpm perf` sin regresión.
+- Secciones  : Transversal (`styles/tokens.css`, `styles/themes.css`, `styles/components/buttons.css` `.card`, `styles/layout.css` `.bento__cell` + mapeo, `styles/components/atoms.css` `.list-item`, más los 3 archivos de los heroes: `components/domain.css`, `components/analysis.css`, `components/config.css`)
+- Depende de : nada (ADR 033 aceptado)
 - Modelo     : Equilibrado - Alto (cambio transversal de CSS con verificación de contraste y perf en cada tema)
 
 #### DV.2b - Riqueza visual piloto: formas orgánicas + patrón (D3 del ADR 033)
 - Prioridad  : media-alta
 - Área       : design
-- Estado     : no iniciar sin validación del ADR 033 (P2)
+- Estado     : **desbloqueada** (P2 resuelta el 2026-07-30: catálogo neutro compartido de 3 a 5 formas, teñido por dominio vía `currentColor`). Espera a DV.2a.
 - Objetivo   : extensión de `scripts/sync-sprite.py` a la carpeta `assets/svg/decoracion/` (prefijo `d-*`, validación propia: no aplican las reglas de icono 24px); clase `.decor` (posición absoluta en esquinas, `aria-hidden`, `pointer-events: none`, opacidad 4-8%); 3-5 formas neutras draft (plantillas que Esteban sobrescribe en Illustrator, ADR 026) teñidas por dominio vía `currentColor`; patrón de puntos CSS tokenizado (`--fk-pattern-dots`, solo empty states/onboarding). Piloto acotado: 2 heroes + 2 empty states. Presupuesto D3/D6 del ADR (máx 1 forma por pantalla, texto nunca sobre decoración sin re-medir contraste).
 - Secciones  : Transversal (sprite, `styles/components/atoms.css`, heroes piloto)
 - Depende de : DV.2a (usa `--fk-section-color`)
@@ -465,7 +465,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 #### DV.2c - Catálogo de movimiento con propósito (D4 del ADR 033)
 - Prioridad  : media-alta
 - Área       : design
-- Estado     : no iniciar sin validación del ADR 033
+- Estado     : **desbloqueada** (ADR 033 aceptado el 2026-07-30). Ejecutable ya, independiente de DV.2a/b.
 - Objetivo   : (1) cascada acotada en listas (`cardIn` escalonado solo en los primeros 6 items, paso 35 ms); (2) resaltado de fila recién guardada vía pseudo-elemento con `--fk-dom-X-bg` desvaneciendo por `opacity` (no se anima `background-color`); (3) **retiro de `empty-orbit`/`empty-float`** (bucles infinitos, contra el veto del brief) + auditoría de `animation-iteration-count: infinite` en todo `styles/`; (4) doctrina del catálogo cerrado escrita en DESIGN_SYSTEM.md (toda animación nueva se registra ahí con su propósito). No toca celebraciones (LG.2/ADR 032) ni el cambio de tema (CFG.7). Verificación en móvil real o E2E de timing + `pnpm perf`.
 - Secciones  : Transversal (`styles/base.css`, `styles/components/atoms.css`, `docs/DESIGN_SYSTEM.md`; JS solo si un helper entra a `infra/animate.js`)
 - Depende de : ADR 033 aprobado; independiente de DV.2a/b
@@ -474,7 +474,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 #### DV.2d - Ilustraciones como clase nueva de asset (D3 del ADR 033)
 - Prioridad  : media
 - Área       : design
-- Estado     : no iniciar sin validación del ADR 033 (P4); **bloqueada por la cola de diseño de Esteban** (los drafts de Claude entran como plantillas que él sobrescribe, principio ADR 026)
+- Estado     : **bloqueada.** Es la única rebanada que sigue esperando: **P4 del ADR 033 sin resolver** (lote inicial de ilustraciones; se decide al iniciarla) y **cola de diseño de Esteban** (los drafts de Claude entran como plantillas que él sobrescribe, principio ADR 026)
 - Objetivo   : carpeta `assets/svg/ilustraciones/` (prefijo `il-*`) + spec (retícula 120, trazo del lenguaje v2 escalado, paleta limitada a tokens, ambos temas) + extensión del sync; los empty states del lote P4 (recomendado: las 6 superficies más visitadas) reemplazan el arte geométrico de `emptyArt()`. Presupuesto de sprite ≤ ~25 KB fuente por lote; Lighthouse 100 como gate.
 - Secciones  : Transversal (sprite, `infra/icons.js` `emptyArt()`, empty states de las vistas del lote)
 - Depende de : DV.2b (pipeline de decoración ya extendido); diseños o drafts aprobados

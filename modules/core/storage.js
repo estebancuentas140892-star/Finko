@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 27;
+const SCHEMA_VERSION = 28;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -433,6 +433,11 @@ function _migrate(raw) {
   // mal el asistente. El campo se llena solo cuando el usuario lo elige en el
   // formulario, o solo si tiene una única cuenta (ahí no hay nada que adivinar).
   // Migración intencionalmente no-op: solo bump de versión (precedente v4 → v5).
+
+  // v27 → v28: `cupoTotal` en Compromiso de tarjeta de crédito (MC.16a, ADR 051
+  // D1). Campo opcional que el usuario llena por formulario; sin backfill
+  // posible (no hay cupo que inventar para deudas ya guardadas). Migración
+  // intencionalmente no-op, mismo precedente de v26 → v27.
 
   if (typeof data._version !== 'number' || data._version < SCHEMA_VERSION) {
     data._version = SCHEMA_VERSION;

@@ -322,6 +322,17 @@ export function validarCompromiso(datos) {
         errores.push('La unidad de tasa debe ser EA o mensual.');
       }
     }
+    // MC.16a (ADR 051 D1): cupoTotal solo aplica a tarjeta de crédito (entidad),
+    // y es opcional. Si viene, debe ser un número positivo.
+    if (datos.tipo === 'deuda-entidad' && datos.categoria === 'Tarjeta de crédito') {
+      const tieneCupo = datos.cupoTotal !== '' && datos.cupoTotal !== undefined && datos.cupoTotal !== null;
+      if (tieneCupo) {
+        const cupo = Number(datos.cupoTotal);
+        if (isNaN(cupo) || cupo <= 0) {
+          errores.push('El cupo de la tarjeta debe ser un número mayor a 0.');
+        }
+      }
+    }
   }
 
   return errores;
@@ -440,6 +451,13 @@ export function normalizarCompromiso(datos) {
       base.tasa       = tieneTasa ? tasaPct / 100 : 0;
       base.tasaUnidad = tieneTasa ? (datos.tasaUnidad || 'mensual') : 'mensual';
     }
+    // MC.16a (ADR 051 D1): cupoTotal solo aplica a tarjeta de crédito (entidad).
+    // Siempre explícito (null si no aplica), mismo patrón que `icono`, para que
+    // `editar()` (Object.assign shallow) lo limpie si el usuario cambia de categoría.
+    const cupoPct = Number(datos.cupoTotal);
+    const tieneCupo = datos.cupoTotal !== '' && datos.cupoTotal !== undefined && datos.cupoTotal !== null
+      && !isNaN(cupoPct) && cupoPct > 0;
+    base.cupoTotal = (base.categoria === 'Tarjeta de crédito' && tieneCupo) ? cupoPct : null;
   }
 
   return base;

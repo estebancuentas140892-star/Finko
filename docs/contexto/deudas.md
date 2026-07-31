@@ -89,6 +89,35 @@ Fuera de esas dos, la iniciativa "Deudas v2: de registro a asesor" (brief 2026-0
 
 ---
 
+## Tarjeta de crédito ([ADR 051](../DECISIONS/051-tarjeta-de-credito-producto-integrado.md), iniciativa MC.16)
+
+- **Objetivo**          : la tarjeta es un producto de Deudas, no una `Cuenta`: cupo más deuda, nunca dinero disponible. `cupoTotal` es el único campo nuevo del modelo (D1) y el `disponible` se deriva, nunca se almacena.
+- **Estado actual**     : **MC.16a CERRADA (2026-07-30)**, la primera de cinco rebanadas. Existe el dato base; **todavía no se puede pagar con la tarjeta** (eso es MC.16b). Siguen abiertas MC.16b a MC.16e en [BOARD.md](../BOARD.md).
+- **Verificado contra** : MC.16a (2026-07-30).
+
+**`cupoTotal` es dato y discriminador a la vez** (misma economía que `esCuotaManejo`): una deuda con `categoria: 'Tarjeta de crédito'` **con** `cupoTotal` es una tarjeta operable (recibirá consumos en MC.16b, muestra disponible); **sin** `cupoTotal` es una deuda vieja capturada a posteriori y se comporta como cualquier otra. No hay campo `esTarjeta` ni bandera paralela.
+
+**Anclas del código**:
+
+| Pieza | Dónde |
+|---|---|
+| Campo del form (oculto salvo categoría tarjeta) | `views/formularios.js`, `#grupo-comp-cupo` tras el monto hero |
+| Revelado del campo | `index.js`, `_wireCupoTarjeta` (patrón de `_wireIconoOtraCategoria`) |
+| Validación (opcional; si viene, > 0) | `logic/modelo.js`, `validarCompromiso` |
+| Normalización (`null` explícito si no aplica) | `logic/modelo.js`, `normalizarCompromiso` |
+| Chip "Disponible" en la card | `views/lista.js`, `cupoChip` |
+
+**Riesgos**:
+
+- **El chip de disponible no se apaga solo si el saldo supera el cupo**: se acota con `Math.max(..., 0)`, así que una deuda sobregirada muestra "Disponible $0" en vez de un negativo. Cuando MC.16b haga subir el saldo con cada consumo, decidir si ese borde merece un aviso propio en vez del cero mudo.
+- **`cupoTotal` se limpia a `null` al cambiar de categoría al editar** (lo exige `editar()`, que hace `Object.assign` shallow): reclasificar una tarjeta como "Vivienda" y volver a "Tarjeta de crédito" pierde el cupo tecleado. Es el mismo comportamiento que `icono` y es intencional, pero el usuario no recibe aviso.
+
+**Cambios realizados**:
+
+- 2026-07-30 (MC.16a): `cupoTotal` en el form condicionado a la categoría, validación, normalización, chip de disponible en la card y bump de schema v27 a v28 (migración no-op). Ver [CHANGELOG](../CHANGELOG.md).
+
+---
+
 ## Deudas v2 (D.15, diseño 2026-07-12)
 
 > Bloque escrito en la fase de análisis (Opus 4.8), **antes de codificar** (regla 2.6). Documenta el estado real de la sección y el diseño del motor de recomendación de palanca. Las 5 rebanadas (D.15a-e) viven en `docs/BOARD.md`.

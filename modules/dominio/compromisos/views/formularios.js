@@ -148,6 +148,7 @@ export function renderFormDeuda(tipo, deuda = null) {
   const vCuota = modoEdit && deuda.cuotaMensual > 0 ? deuda.cuotaMensual : '';
   const vTasa  = modoEdit && deuda.tasa != null ? deuda.tasa : '';
   const vDia   = modoEdit ? (deuda.diaPago ?? '') : '';
+  const vCupo  = modoEdit && deuda.cupoTotal != null ? deuda.cupoTotal : '';
 
   // D.10: el eje "qué/con quién" usa un catálogo distinto según Entidad/Personal.
   // Entidad clasifica el producto (Tarjeta, Vivienda...); Personal, la relación
@@ -242,6 +243,17 @@ export function renderFormDeuda(tipo, deuda = null) {
                  autocomplete="off" value="${vSaldo}" />
         </div>
         <span class="monto-hero__hint">COP</span>
+      </div>
+
+      <div class="form-group" id="grupo-comp-cupo"${esEntidad && catSel === 'Tarjeta de crédito' ? '' : ' hidden'}>
+        <label for="comp-cupo" class="label">Cupo aprobado de la tarjeta <span class="form-optional">opcional</span></label>
+        <div class="input-group">
+          <span class="input-prefix" aria-hidden="true">$</span>
+          <input id="comp-cupo" name="cupoTotal" class="input input--has-prefix" type="number"
+                 min="1" step="10000" placeholder="0"
+                 autocomplete="off" value="${vCupo}" />
+        </div>
+        <p class="form-hint">Con el cupo, Finko calcula tu disponible y habilita pagar con esta tarjeta desde Gastos.</p>
       </div>
 
       <div class="form-group" id="grupo-comp-cuota">

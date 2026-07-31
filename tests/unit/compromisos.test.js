@@ -384,6 +384,38 @@ describe('validarCompromiso()', () => {
     expect(errores.length).toBeGreaterThan(0);
     expect(errores[0]).toMatch(/descripci/i);
   });
+
+  // ── MC.16a (ADR 051 D1): cupoTotal de tarjeta de crédito ──────────
+
+  it('MC.16a: tarjeta de crédito sin cupoTotal no es error (opcional)', () => {
+    expect(validarCompromiso({
+      ...datosFormValidos, tipo: 'deuda-entidad',
+      saldoTotal: '500000', cuotaMensual: '100000', categoria: 'Tarjeta de crédito',
+    })).toEqual([]);
+  });
+
+  it('MC.16a: tarjeta de crédito con cupoTotal válido no es error', () => {
+    expect(validarCompromiso({
+      ...datosFormValidos, tipo: 'deuda-entidad',
+      saldoTotal: '500000', cuotaMensual: '100000', categoria: 'Tarjeta de crédito', cupoTotal: '3000000',
+    })).toEqual([]);
+  });
+
+  it('MC.16a: tarjeta de crédito con cupoTotal <= 0 es error', () => {
+    const errores = validarCompromiso({
+      ...datosFormValidos, tipo: 'deuda-entidad',
+      saldoTotal: '500000', cuotaMensual: '100000', categoria: 'Tarjeta de crédito', cupoTotal: '0',
+    });
+    expect(errores.length).toBeGreaterThan(0);
+    expect(errores[0]).toMatch(/cupo/i);
+  });
+
+  it('MC.16a: cupoTotal inválido en otra categoría no reporta error (el campo no aplica)', () => {
+    expect(validarCompromiso({
+      ...datosFormValidos, tipo: 'deuda-entidad',
+      saldoTotal: '500000', cuotaMensual: '100000', categoria: 'Vivienda', cupoTotal: '-5',
+    })).toEqual([]);
+  });
 });
 
 // ── normalizarCompromiso() ────────────────────────────────────────
@@ -469,6 +501,35 @@ describe('normalizarCompromiso()', () => {
     const result = normalizarCompromiso(datos);
     expect(result.tasa).toBeNull();
     expect(result.tasaUnidad).toBe('EA');
+  });
+
+  // ── MC.16a (ADR 051 D1): cupoTotal de tarjeta de crédito ──────────
+
+  it('MC.16a: con categoría "Tarjeta de crédito" y cupoTotal válido, lo guarda', () => {
+    const datos = {
+      ...datosFormValidos, tipo: 'deuda-entidad',
+      saldoTotal: '500000', cuotaMensual: '100000', categoria: 'Tarjeta de crédito', cupoTotal: '3000000',
+    };
+    const result = normalizarCompromiso(datos);
+    expect(result.cupoTotal).toBe(3_000_000);
+  });
+
+  it('MC.16a: con otra categoría, cupoTotal queda null aunque venga en los datos', () => {
+    const datos = {
+      ...datosFormValidos, tipo: 'deuda-entidad',
+      saldoTotal: '500000', cuotaMensual: '100000', categoria: 'Vivienda', cupoTotal: '3000000',
+    };
+    const result = normalizarCompromiso(datos);
+    expect(result.cupoTotal).toBeNull();
+  });
+
+  it('MC.16a: tarjeta de crédito sin cupoTotal (deuda vieja a posteriori), queda null', () => {
+    const datos = {
+      ...datosFormValidos, tipo: 'deuda-entidad',
+      saldoTotal: '500000', cuotaMensual: '100000', categoria: 'Tarjeta de crédito', cupoTotal: '',
+    };
+    const result = normalizarCompromiso(datos);
+    expect(result.cupoTotal).toBeNull();
   });
 
   it('para tipo=fijo no agrega campos de deuda aunque vengan en el form', () => {

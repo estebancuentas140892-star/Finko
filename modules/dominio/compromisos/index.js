@@ -98,6 +98,7 @@ function _mostrarFormDeuda(overlay, tipo, deuda = null) {
   });
   _wireToggleFiado(body);
   _wireIconoOtraCategoria(body);
+  _wireCupoTarjeta(body);
   _wireCondicionesColapsable(body);
 
   // El segmented y el foco inicial en descripción solo aplican al crear:
@@ -252,6 +253,25 @@ function _wireIconoOtraCategoria(body) {
   });
   aplicar(form.querySelector('input[name="categoria"]:checked')?.value ?? null); // estado inicial (ej. edición de una deuda ya guardada como 'Otra')
   wireIconoPicker(picker);
+}
+
+/**
+ * MC.16a (ADR 051 D1): el campo `cupoTotal` solo tiene sentido con categoría
+ * 'Tarjeta de crédito' (entidad). Se revela/oculta al cambiar el chip, mismo
+ * patrón que `_wireIconoOtraCategoria`.
+ * @param {HTMLElement} body - contenedor del form ya inyectado.
+ */
+function _wireCupoTarjeta(body) {
+  const form  = body.querySelector('#form-compromiso');
+  const grupo = body.querySelector('#grupo-comp-cupo');
+  if (!form || !grupo) return;
+  if (form.querySelector('input[name="tipo"]')?.value !== 'deuda-entidad') return;
+
+  const aplicar = (valor) => { grupo.hidden = valor !== 'Tarjeta de crédito'; };
+  form.addEventListener('change', (e) => {
+    if (e.target.name === 'categoria') aplicar(e.target.value);
+  });
+  aplicar(form.querySelector('input[name="categoria"]:checked')?.value ?? null); // estado inicial (ej. edición de una tarjeta existente)
 }
 
 /**
