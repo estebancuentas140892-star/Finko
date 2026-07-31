@@ -2,7 +2,7 @@
 
 > **Archivo temporal de trabajo.** Nace con la auditoría documental del 2026-07-24 (7 agentes) y **se borra al cerrar la Fase 5**. No cuenta para los techos de tamaño: no es documentación del proyecto, es el contrato de una migración.
 >
-> **Estado:** dirección general aprobada por Esteban el 2026-07-24 con 8 ajustes, todos incorporados. **Fases 1, 2 y 3 cerradas el 2026-07-24** (11 commits). **Fase 4B.1 (MAPA a ARCHITECTURE) integrada y verificada el 2026-07-24, con el borrado del origen bloqueado por el techo de ARCHITECTURE.md**: ver la trazabilidad y el hallazgo en la sección 11.7. El resto de la Fase 4 sigue sin ejecutar.
+> **Estado:** dirección general aprobada por Esteban el 2026-07-24 con 8 ajustes, todos incorporados. **Fases 1, 2 y 3 cerradas el 2026-07-24** (11 commits). **Fase 4 en curso**, auditada contra el repo el 2026-07-31: de los 10 movimientos de la tabla 11.1 están **hechos 1, 2, 3, 4, 5, 7, 8 y 10**; **falta el 6** (`BOARD.md` tiene su índice tabular pero sigue en 80 KB contra un techo de 40) y el **9** está a medias (la limpieza mínima de 12.1 se ejecutó en el commit `03e0613`; los comodines amplios de 12.2 siguen esperando la decisión de Esteban). Detalle por movimiento en la tabla de estado de 11.1.
 
 ## Índice
 
@@ -634,6 +634,21 @@ Preparado a pedido de Esteban el 2026-07-24. **Nada de esta sección se ejecutó
 
 ### 11.1 Inventario completo de movimientos
 
+**Estado medido contra el repo el 2026-07-31** (auditoría de retomada de DOC.1; el inventario de abajo se conserva íntegro como contrato, esta tabla dice qué falta):
+
+| # | Movimiento | Estado | Evidencia |
+|---|---|---|---|
+| 1 | `MAPA.md` a `ARCHITECTURE.md` §13 | Hecho | `docs/MAPA.md` no existe; §13.1 a 13.6 presentes. Trazabilidad en 11.7 |
+| 2 | Borrar `SETUP_DOMINIO.md` | Hecho | No existe; runbook 1 de `OPERACION.md` es su dueño |
+| 3 | `assets/svg/identidad/README.md` fusionado | Hecho | No existe; commit `32c17ff` |
+| 4 | `assets/svg/ilustraciones/README.md` fusionado | Hecho | No existe; mismo commit |
+| 5 | `HANDOFF.md` a 6 KB con línea de contrato | Hecho el 2026-07-31 | 12,95 a 4,3 KB. Ver 11.8 |
+| 6 | `BOARD.md` índice tabular + purga | **Parcial** | El índice existe, pero el archivo sigue en **80 KB contra un techo de 40**. Es lo único que bloquea el cierre de la Fase 4 |
+| 7 | 9 briefs a ADR 043 a 051 | Hecho | Los 9 ADR existen; cero bloques de brief sin comprimir en el tablero. CFG.4 sin ADR propio a propósito (11.3) |
+| 8 | `transversal.md` partido | Hecho | Tres fichas medidas en 11.4 |
+| 9 | `.claude/settings.local.json` | **Parcial** | 12.1 ejecutado (commit `03e0613`, 146 a 131 entradas); 12.2 (comodines amplios) sigue esperando la decisión de Esteban |
+| 10 | Comentario de `core/state.js` | Hecho | Línea 464: `distribucion:aplicar` |
+
 | # | Origen | Destino | Acción | Riesgo | Validación posterior |
 |---|---|---|---|---|---|
 | 1 | `docs/MAPA.md` (108 líneas, 6 secciones) | `docs/ARCHITECTURE.md` (secciones nuevas, antes de la tabla de dominios y antes del cierre) | Fusionar y borrar el origen | **Alto** | Los enlaces vivos a `MAPA.md` (`CLAUDE.md` §1, `docs/contexto/README.md`) se actualizan a `ARCHITECTURE.md`. `git mv` no aplica (es fusión de contenido, no reubicación intacta): usar `git rm` tras confirmar que el 100% del contenido está en el destino. Verificar que la nota de `.calc-*` código muerto (línea 76 de MAPA) sobrevive la fusión: sigue siendo cierta. |
@@ -793,9 +808,38 @@ Consecuencias aplicadas:
 | Los inventarios técnicos de 2.2 (`infra/`) y 2.3 (`ui/`) **no se borran** | Corregida la fila de ARCHITECTURE en la sección 6, que ordenaba borrarlos. Su columna "Responsabilidad" no la responde `ls`: no son inventarios, son asignación de responsabilidad |
 | Margen para la Fase 4 siguiente | `ARCHITECTURE.md` cierra en **30,1 KB** (el índice tabular sumó 1,4 KB), con **1,9 KB libres** bajo el techo de 32. Las convenciones técnicas de CONTRIBUTING son ~4 KB: **no caben sin podar**. Queda como **riesgo abierto declarado** del bloque que las absorba, a decidir ahí con números medidos, no ahora por anticipado |
 
+### 11.8 Bloque 5 ejecutado: HANDOFF.md a 6 KB con línea de contrato
+
+Ejecutado el 2026-07-31. **12,95 KB a 4,3 KB** (techo 6 KB), sin perder ninguna cifra de la tabla de métricas: las 7 filas sobreviven y la octava (errores abiertos) sube desde la ex sección 4, donde estaba en prosa. Las 4 filas de Lighthouse se funden en una sola con el mismo dato ("100 en las cuatro").
+
+Qué sale y a qué dueño, con el destino verificado **antes** de borrar (protocolo 11.6 punto 4):
+
+| Bloque que sale | Dueño verificado |
+|---|---|
+| §1 "Qué es Finko" (identidad, versión, rama) | `CLAUDE.md` §0 y `README.md`; versión y rama quedan en una línea de cabecera |
+| §4 runbook "Recordatorio enero 2027" (7 pasos, DIAN/Mintrabajo, bump del SW) | `OPERACION.md` runbook 2, que además ya encadena el bump del SW como runbook 3. **Contenido íntegro y más completo en el destino** |
+| §4 aviso de leer `SECURITY.md` antes de tocar dependencias | `CLAUDE.md` §1, fila de `SECURITY.md` ("obligatorio antes de tocar dependencias") |
+| §5 workflow | ya era solo un puntero a `CLAUDE.md` §2 |
+| §6 arquitectura por capa + regla del EventBus | `ARCHITECTURE.md` §2 (las 4 capas y los 18 dominios, con más detalle) |
+| §7 comandos rápidos | `README.md`, única lista de comandos (`pnpm perf` vive además en `OPERACION.md` runbook 4 con su disciplina obligatoria) |
+| Párrafo de ~1.400 caracteres enumerando 40 tareas anteriores | una línea a `CHANGELOG.md` y `changelog/`. Era el mayor consumidor de bytes del archivo y duplicaba el índice del CHANGELOG |
+| Línea "Modelo: escribe tu `Próximo paso` con Haiku 4.5" | derogada dos veces: por el ajuste 8 (sin nombres de versión) y por el estándar de comunicación de `CLAUDE.md` §2, que prohíbe cerrar recomendando modelo |
+
+**Referencias actualizadas** (las 3 vivas que apuntaban a un bloque movido o renumerado):
+
+| Archivo | Vieja | Nueva |
+|---|---|---|
+| `README.md` §Métricas | "HANDOFF sección 2" | "sección 1" (la tabla subió al numerarse de nuevo) |
+| `docs/BOARD.md`, tarjeta E.2-2027 | "HANDOFF sección Recordatorio enero 2027" | `OPERACION.md` runbook 2 |
+| `.claude/skills/cerrar-tarea/SKILL.md` paso 3 | "bajar la sexta al puntero de tareas anteriores" | **borrar** la sexta, más el recordatorio de no reintroducir comandos, runbooks ni arquitectura. Sin esto, el próximo cierre reconstruía el párrafo purgado |
+
+`docs/OPERACION.md` no se toca: su puntero a HANDOFF por "estado del proyecto" sigue siendo exacto. `CLAUDE.md` §1 tampoco: su fila ya decía "dónde estamos hoy, métricas, últimas 5 tareas" y "qué NO buscar ahí: historia, workflow, comandos, runbooks", que es literalmente el contrato que el archivo ahora imprime en su cabecera.
+
+Para que la compresión no se deshaga sola, la poda del paso 3 de la skill es parte del mismo movimiento: el texto anterior mandaba "bajar la sexta al puntero de tareas anteriores", que es exactamente el párrafo de 1.400 caracteres que este bloque eliminó.
+
 ---
 
-## 12. Auditoría de settings.local.json (sin ejecutar ninguna limpieza)
+## 12. Auditoría de settings.local.json (12.1 ejecutado, 12.2 y 12.3 pendientes)
 
 Pedido explícito de Esteban: entregar hallazgos y propuesta mínima, **no tocar el archivo todavía**. 146 entradas de permisos en total, en `.claude/settings.local.json`. Ninguna de las siguientes acciones se ejecutó.
 
@@ -841,6 +885,11 @@ Alrededor de 100 de las 146 entradas son comandos literales, no comodín, congel
 
 **Propuesta mínima:** no borrar en este turno. Si Esteban quiere reducir el archivo, el criterio más seguro es por antigüedad de uso real (que hoy no es visible en el propio archivo) antes que por juicio de "esto ya no sirve", que puede equivocarse.
 
-### 12.4 Lo que no se tocó
+### 12.4 Qué se ejecutó y qué sigue pendiente
 
-Cero ediciones a `.claude/settings.local.json` en este turno. Todo lo anterior es hallazgo y propuesta, a la espera de que Esteban decida qué ejecutar y en qué orden.
+**Corrección del 2026-07-31.** Esta sección decía "cero ediciones" y quedó desactualizada el mismo día en que se escribió: la propuesta mínima de **12.1 ya se ejecutó** en el commit `03e0613` (2026-07-24 20:25), que borró las 14 rutas muertas más el permiso redundante de `git commit`. Verificado contra el archivo: **146 a 131 entradas**, exactamente lo que el mensaje del commit declara.
+
+**Sigue pendiente de la decisión de Esteban, sin tocar:**
+
+- **12.2, los comodines amplios** (`python -c`, `git push`, `git rm`, `git config`, `git branch`, `git stash`, `pnpm exec`, `pnpm run`, `npx` con argumentos libres): siguen presentes tal cual. Son permisos de ejecución, no documentación: ninguno se toca sin su palabra.
+- **12.3, los ~100 comandos históricos precisos:** propuesta explícita de **no** borrarlos por juicio de utilidad.

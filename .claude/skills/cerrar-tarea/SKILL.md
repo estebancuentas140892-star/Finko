@@ -48,11 +48,11 @@ Formato, tipos y reglas del mensaje: `CONTRIBUTING.md` sección "Commits". Acá 
 
 ## 3. Secuencia de documentos
 
-Cuatro ediciones siempre, dos condicionales. Tres de las cuatro son de una a tres líneas: la única edición larga es la ficha de contexto, porque es la que se lee antes de volver a tocar esa funcionalidad.
+Cuatro ediciones siempre, dos condicionales. La única larga es la ficha de contexto: es la que se lee antes de volver a tocar esa funcionalidad.
 
 1. **`docs/contexto/<sección>.md`** (edición sustantiva). Actualizar el bloque de la funcionalidad tocada: `Estado actual`, `Cambios pendientes`, `Riesgos` si aparecieron, y `Verificado contra` con el commit nuevo. En `Cambios realizados` va **una línea por hito** (`YYYY-MM-DD <ID>: qué`), nunca un párrafo: el detalle vive en el CHANGELOG. Si el bloque no existía, se escribió al empezar la tarea, no ahora.
 2. **`docs/CHANGELOG.md`** (una entrada). Antes de escribir, comprobar la rotación: si el mes de la última entrada no es el mes actual, mover el mes cerrado a `docs/changelog/YYYY-MM.md` y dejar CHANGELOG.md con el mes nuevo más el índice. Desde 2026-08 el formato de entrada es **una fila de tabla por tarea**: fecha, ID, tipo(área), qué cambió, commit, puntero a la ficha. La columna "qué cambió" contiene el punto que **no** se deduce del diff.
-3. **`docs/HANDOFF.md`** (una a tres líneas). Agregar la tarea al tope de "Qué se hizo recientemente", bajar la sexta al puntero de tareas anteriores, y actualizar la tabla de métricas solo si alguna cifra cambió. Tres líneas, no quince.
+3. **`docs/HANDOFF.md`** (una a tres líneas). Agregar la tarea al tope de "Últimas 5 tareas cerradas", **borrar la sexta** (su detalle vive en el CHANGELOG), y actualizar el sello `Revisado:` y la tabla de métricas si alguna cifra cambió. Su cabecera imprime el contrato: nada de comandos, runbooks, arquitectura ni identidad.
 4. **`docs/BOARD.md`** (borrar). Eliminar la tarjeta cerrada. Si la tarea era una rebanada, dejar la tarjeta padre con las rebanadas que faltan y **cero narrativa de lo que ya cerró**. Si la tarea destapó trabajo nuevo, entra por la skill `triaje-tarea`, no directo.
 
 Condicionales:
@@ -101,7 +101,7 @@ git ls-files -- '*.md' ':(exclude)docs/DECISIONS/*' ':(exclude)docs/changelog/*'
 
 ## 5. Reporte de supervisión
 
-El usuario no lee el diff: verifica en la app. El reporte va **siempre**, en este orden, y es la parte que no se puede automatizar.
+El usuario no lee el diff: verifica en la app. El reporte va **siempre**, en este orden.
 
 1. **Qué archivos cambiaron**, con rutas relativas y enlazadas.
 2. **Qué cambió en cada uno**, una o dos líneas por archivo.

@@ -121,7 +121,7 @@ Arquitectura detallada en [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Métricas actuales
 
-Cifras de tests y cobertura vivas en [`docs/HANDOFF.md`](docs/HANDOFF.md) sección 2 (se actualizan en cada tarea; no se duplican aquí para no desincronizarse).
+Cifras de tests y cobertura vivas en [`docs/HANDOFF.md`](docs/HANDOFF.md) sección 1 (se actualizan en cada tarea; no se duplican aquí para no desincronizarse).
 
 | Métrica | Objetivo |
 |---|---|

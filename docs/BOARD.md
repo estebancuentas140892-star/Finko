@@ -668,7 +668,7 @@ Se listan solo para que una idea nueva de estas secciones no vuelva a generar un
 #### E.2-2027 - Actualizar SMMLV + UVT a valores 2027
 - Prioridad  : alta (cuando llegue la fecha)
 - Estado     : pendiente, programada para enero 2027
-- Objetivo   : reemplazar `2027: null` por la entrada completa en `LEGAL_POR_ANIO` con los valores oficiales de Mintrabajo (SMMLV) y DIAN (UVT). Ver instrucciones detalladas en [`HANDOFF.md`](HANDOFF.md) sección "Recordatorio enero 2027".
+- Objetivo   : reemplazar `2027: null` por la entrada completa en `LEGAL_POR_ANIO` con los valores oficiales de Mintrabajo (SMMLV) y DIAN (UVT). Procedimiento paso a paso: [`OPERACION.md`](OPERACION.md) runbook 2.
 - Secciones  : Transversal (constantes legales)
 - Archivos   : `modules/core/constants.js`
 - Depende de : publicación oficial de los decretos/resoluciones 2027
