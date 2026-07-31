@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-30 (ADR 033 aceptado en P1, P2, P3 y P5: DV.2a, DV.2b y DV.2c quedan desbloqueadas, DV.2d sigue bloqueada por P4 y por la cola de diseño). Antes: 2026-07-30 (MC.16a cierra: la tarjeta de crédito gana su cupo y su tarjeta sale del tablero; MC.16b queda desbloqueada). Antes: 2026-07-29 (INV.1 cierra: el dinero sale de una cuenta al registrar una inversión, y su tarjeta sale del tablero). Antes: DIS.19 cierra el frente de Ahorro y deja dos piezas de ARQ.1 ya en `infra/`; no tenía tarjeta propia, entró por handoff de diseño. Antes: 2026-07-27 (CAT.1 cierra: la taxonomía global queda implementada en las tres secciones y su tarjeta sale del tablero). Antes: MC.16 deja de estar bloqueada, el ADR 051 se acepta y la tarjeta se re-corta en MC.16a a MC.16e. La historia de lo ya cerrado vive en [`CHANGELOG.md`](CHANGELOG.md) y en las fichas de [`contexto/`](contexto/README.md), no aquí.
+> Última actualización: 2026-07-30 (MC.16c cierra: bloque de tarjetas de crédito en Mis cuentas, solo lectura; su tarjeta sale del tablero). Antes: 2026-07-30 (MC.16d cierra: el consumo con tarjeta pregunta a cuántas cuotas y sube `cuotaMensual`; su tarjeta sale del tablero). Antes: 2026-07-30 (ADR 033 aceptado en P1, P2, P3 y P5: DV.2a, DV.2b y DV.2c quedan desbloqueadas, DV.2d sigue bloqueada por P4 y por la cola de diseño). Antes: 2026-07-30 (MC.16a cierra: la tarjeta de crédito gana su cupo y su tarjeta sale del tablero; MC.16b queda desbloqueada). Antes: 2026-07-29 (INV.1 cierra: el dinero sale de una cuenta al registrar una inversión, y su tarjeta sale del tablero). Antes: DIS.19 cierra el frente de Ahorro y deja dos piezas de ARQ.1 ya en `infra/`; no tenía tarjeta propia, entró por handoff de diseño. Antes: 2026-07-27 (CAT.1 cierra: la taxonomía global queda implementada en las tres secciones y su tarjeta sale del tablero). Antes: MC.16 deja de estar bloqueada, el ADR 051 se acepta y la tarjeta se re-corta en MC.16a a MC.16e. La historia de lo ya cerrado vive en [`CHANGELOG.md`](CHANGELOG.md) y en las fichas de [`contexto/`](contexto/README.md), no aquí.
 
 ---
 
@@ -53,8 +53,6 @@ Las 53 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | MC.13e-2f-2 | Decisión explícita del remanente (paso final del asistente) | Mis cuentas | alta | bloqueada por UX |
 | MC.13e-2g | Rediseño en 2 pasos con educación financiera | Mis cuentas | media | última; depende del handoff de diseño |
 | MC.13c-3 | Datar el cobro de todas las frecuencias | Mis cuentas | baja | nada |
-| MC.16c | Bloque de tarjetas en Mis cuentas | Mis cuentas | media | nada (MC.16b cerró) |
-| MC.16d | "¿A cuántas cuotas?" al registrar el consumo | Mis cuentas | media | nada (MC.16b cerró) |
 | MC.16e | Nudges de costo: avance, otra red, pago mínimo | Mis cuentas | media | nada (MC.16b cerró) |
 | MC.17f | Deshacer o editar una transferencia | Mis cuentas | media | coordinar con MOV.1 |
 | AP.5 | Apartados v2: formulario consistente, recurrencia como toggle | Apartados | media | nada (CAT.1 cerró) |
@@ -177,27 +175,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 - Depende de : nada
 - Modelo     : Alta capacidad - Alto (toca la clave de de-duplicación y, si se corrige el quincenal, el Calendario)
 
-> **MC.16 - Tarjeta de crédito como producto integrado.** El ADR quedó **aceptado el 2026-07-27**: la tarjeta es un producto de Deudas (alternativa B), con saldo revolvente y una sola deuda por tarjeta. Diseño completo, invariantes y las 4 alternativas rechazadas en **[ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md)**, su dueño: leerlo antes de iniciar cualquier rebanada. **Ninguna rebanada crea un tipo de cuenta ni una `Cuenta` para la tarjeta** (D5, I5 del [ADR 053](DECISIONS/053-invariante-de-patrimonio.md)). La tarjeta ya es operable (se registra con cupo y recibe consumos): las tres rebanadas que quedan la refinan, ninguna la bloquea. `consumosTC` del monitor de renta (CFG.2a) quedó desbloqueado.
-
-#### MC.16c - Bloque de tarjetas en Mis cuentas
-- Prioridad  : media
-- Área       : ambos
-- Estado     : pendiente
-- Objetivo   : Mis cuentas muestra las tarjetas en un bloque propio, **fuera** del total de dinero disponible, con cupo usado y disponible, y enlace a Deudas para operar. Solo lectura: la dueña es Deudas (D6).
-- Secciones  : Mis cuentas
-- Archivos   : `modules/dominio/tesoreria/views/cuentas.js` (lee `S.compromisos`, como ya hacen `views/distribucion.js` y `acciones/cuentas.js`; nunca importa el dominio), CSS del bloque
-- Depende de : nada (MC.16b cerró el 2026-07-30; `tarjetasDeCredito()` de `gastos/logic.js` es el filtro de referencia, sin importar el dominio)
-- Modelo     : Equilibrado - Alto (vista de solo lectura sobre datos ya existentes)
-
-#### MC.16d - "¿A cuántas cuotas?" al registrar el consumo
-- Prioridad  : media
-- Área       : code
-- Estado     : pendiente. Refina el consumo que ya funciona.
-- Objetivo   : al registrar un consumo, preguntar el número de cuotas y subir `cuotaMensual` en `monto / N`. **No crea un plan por compra** (D2): el saldo es revolvente y el pago anticipado opera sobre el total de la tarjeta.
-- Secciones  : Gastos, Deudas
-- Archivos   : `modules/dominio/gastos/view.js` (campo condicionado a que el origen elegido lleve el prefijo `tc:`), `gastos/index.js`
-- Depende de : nada (MC.16b cerró el 2026-07-30)
-- Modelo     : Equilibrado - Alto (un cálculo simple sobre un flujo ya construido)
+> **MC.16 - Tarjeta de crédito como producto integrado.** El ADR quedó **aceptado el 2026-07-27**: la tarjeta es un producto de Deudas (alternativa B), con saldo revolvente y una sola deuda por tarjeta. Diseño completo, invariantes y las 4 alternativas rechazadas en **[ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md)**, su dueño: leerlo antes de iniciar cualquier rebanada. **Ninguna rebanada crea un tipo de cuenta ni una `Cuenta` para la tarjeta** (D5, I5 del [ADR 053](DECISIONS/053-invariante-de-patrimonio.md)). La tarjeta ya es operable (se registra con cupo, recibe consumos y difiere a cuotas): la rebanada que queda la refina, no la bloquea. `consumosTC` del monitor de renta (CFG.2a) quedó desbloqueado.
 
 #### MC.16e - Nudges de costo: avance en efectivo, retiro en otra red, pago mínimo
 - Prioridad  : media

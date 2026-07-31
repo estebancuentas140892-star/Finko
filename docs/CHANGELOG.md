@@ -10,6 +10,31 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(gastos): MC.16d, "¿A cuántas cuotas?" al registrar el consumo · 2026-07-30
+
+Cierra MC.16 salvo MC.16e. El consumo con tarjeta ya no asume pago único. Ficha: [`contexto/deudas.md`](contexto/deudas.md).
+
+- **Un campo nuevo, condicionado al origen, con el mismo lenguaje de chips del resto del form v2** (`#grupo-gasto-cuotas`, oculto salvo que el radio de origen elegido lleve el prefijo `tc:`): 1, 2, 3, 6, 9, 12, 18 o 24 cuotas, "1 cuota" pre-marcada. Nada de `<select>`: ADR 042 ya fijó los chips como lenguaje de formularios v2.
+- **`cuotaMensual` sube en `monto / cuotas`, redondeado a COP**, con el mismo patrón de deltas netos que ya usaba el saldo de la deuda (`efectoEnCuotaMensual` + `deltasPorEdicionEnCuotaMensual` en `logic.js`, gemelas de `efectoEnDeuda`/`deltasPorEdicionEnDeuda`): crear, editar y eliminar el consumo se resuelven con la misma función, pasando `null` del lado que corresponde. Un abono no toca `cuotaMensual` (`efectoEnCuotaMensual` exige `consumoTC`): opera sobre `saldoTotal`, nunca sobre la cuota proyectada (ADR 051 D2).
+- **No crea un plan de pagos por compra.** El consumo sigue siendo un único `Gasto` (MC.16b); `cuotas` es solo el dato con el que se calculó el aporte a `cuotaMensual`, no un cronograma nuevo. El saldo de la tarjeta sigue siendo revolvente y el pago anticipado sigue operando sobre el total (`saldoTotal`), sin tocar `cuotas`.
+- **`cuotaMensual` ya era un campo del schema** (v5, "lo que se paga al mes"): sin bump. Alimenta directo la `capacidad` de `recomendarPalanca()` (D.15d), así que el motor de palancas de Deudas mejora su cálculo sin que esta rebanada lo toque.
+
+Sin cambios en `compromisos` (D2 del ADR 051: `compromisos` no se entera del consumo, sigue siendo Gastos quien escribe). 16 tests unitarios nuevos (`efectoEnCuotaMensual`, `deltasPorEdicionEnCuotaMensual`, `normalizarGasto` con `cuotas`, revelado del campo en `renderFormGasto`). 3523/3523 unit + 246/246 E2E + lint verdes. SW v453 a v455.
+
+---
+
+### feat(tesoreria): MC.16c, bloque de tarjetas de crédito en Mis cuentas · 2026-07-30
+
+La tarjeta ya no es invisible en Mis cuentas: aparece en un bloque propio, **fuera** del total de dinero disponible (ADR 051 D6, no es un activo), con cupo, usado y disponible derivado. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md).
+
+- **`tarjetasCredito()` duplica el filtro de `tarjetasDeCredito()` de `gastos/logic.js` a propósito** (ADN 10, ningún dominio importa a otro): mismo criterio (`deuda-entidad` + categoría "Tarjeta de crédito" + `cupoTotal` > 0 + activa), en `tesoreria/logic/cuentas.js`.
+- **Solo lectura: la dueña de operar sigue siendo Deudas.** El bloque reusa la anatomía de `.cuenta-card` (sin vocabulario CSS nuevo, mismo componente visual que el resto de la sección) y cierra con un enlace "Ver en Deudas" (`#compromisos`); nada de editar, abonar ni eliminar desde acá.
+- **Disponible se deriva, nunca se almacena** (`cupoTotal - saldoTotal`, acotado a cero), mismo criterio que el chip de disponible de Deudas.
+
+9 tests unitarios nuevos (`tarjetasCredito()`, `renderTarjetasTC()`). 3523/3523 unit + lint verdes. SW v454 a v455.
+
+---
+
 ### feat(tesoreria): MC.13e-2e, completar el déficit con el saldo de otra cuenta · 2026-07-30
 
 Punto 14 del brief de Mis Cuentas v2. Hasta ahora, marcar más de lo que entra dejaba el asistente en un callejón: "Reduce algún destino" y el botón apagado, aunque el usuario tuviera el dinero en otra cuenta. Ahora el déficit se nombra y se ofrece cubrir. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md).
