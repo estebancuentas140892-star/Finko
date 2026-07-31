@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   cuentasActivas,
   calcularTotalCuentas,
+  tarjetasCredito,
   composicionCuentas,
   resumenCuentas,
   validarCuenta,
@@ -48,7 +49,7 @@ import {
   calcularTransferencia,
 } from '../../modules/dominio/tesoreria/logic.js';
 import { CATEGORIAS_INGRESO, CATEGORIA_INGRESO_ICONO, SMMLV, AUXILIO_TRANSPORTE, TIPOS_LLAVE } from '../../modules/core/constants.js';
-import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderListaIngresosPuntuales, renderNudgeDistribucionInicio, renderDistribucionIngreso, renderFormCuenta, renderListaCuentas, renderHeroTesoreria, renderGMFIndicador, renderBotonTransferir, renderFormTransferencia, renderParTransferencia, renderSeccionGMF } from '../../modules/dominio/tesoreria/view.js';
+import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderListaIngresosPuntuales, renderNudgeDistribucionInicio, renderDistribucionIngreso, renderFormCuenta, renderListaCuentas, renderTarjetasTC, renderHeroTesoreria, renderGMFIndicador, renderBotonTransferir, renderFormTransferencia, renderParTransferencia, renderSeccionGMF } from '../../modules/dominio/tesoreria/view.js';
 import { initAccionesDistribucion } from '../../modules/dominio/tesoreria/acciones/distribucion.js';
 import { initAccionesCuentas, inyectarFormCuenta } from '../../modules/dominio/tesoreria/acciones/cuentas.js';
 import { initAccionesTransferencias } from '../../modules/dominio/tesoreria/acciones/transferencias.js';
@@ -131,6 +132,44 @@ describe('calcularTotalCuentas()', () => {
   it('trata saldo undefined como 0', () => {
     const { saldo: _, ...sinSaldo } = cuentaBase();
     expect(calcularTotalCuentas([sinSaldo])).toBe(0);
+  });
+});
+
+// ── tarjetasCredito() (MC.16c) ────────────────────────────────────
+
+describe('tarjetasCredito()', () => {
+  const tarjeta = (overrides = {}) => ({
+    id: 'tc1',
+    nombre: 'Tarjeta Bancolombia',
+    tipo: 'deuda-entidad',
+    categoria: 'Tarjeta de crédito',
+    cupoTotal: 5_000_000,
+    saldoTotal: 1_000_000,
+    activo: true,
+    ...overrides,
+  });
+
+  it('devuelve la tarjeta con cupo registrado', () => {
+    expect(tarjetasCredito([tarjeta()])).toHaveLength(1);
+  });
+
+  it('excluye la deuda de tarjeta sin cupo (deuda vieja, no producto operable)', () => {
+    expect(tarjetasCredito([tarjeta({ cupoTotal: null })])).toEqual([]);
+    expect(tarjetasCredito([tarjeta({ cupoTotal: 0 })])).toEqual([]);
+  });
+
+  it('excluye otras categorías de deuda y las deudas personales', () => {
+    expect(tarjetasCredito([tarjeta({ categoria: 'Vehículo' })])).toEqual([]);
+    expect(tarjetasCredito([tarjeta({ tipo: 'deuda-personal' })])).toEqual([]);
+  });
+
+  it('excluye la tarjeta archivada: ya no recibe consumos', () => {
+    expect(tarjetasCredito([tarjeta({ activo: false })])).toEqual([]);
+  });
+
+  it('tolera undefined y lista vacía', () => {
+    expect(tarjetasCredito(undefined)).toEqual([]);
+    expect(tarjetasCredito([])).toEqual([]);
   });
 });
 
@@ -1097,6 +1136,60 @@ describe('renderListaCuentas() - MC.18b: tarjeta de cuenta con nombre + tipo + c
     const el = document.getElementById('lista-tesoreria');
     expect(el.querySelector('.cuenta-card__nombre').textContent).toBe('Nequi principal');
     expect(el.querySelector('.cuenta-card__tipo').textContent).toBe('Nequi · Ahorros');
+  });
+});
+
+// ── renderTarjetasTC() (MC.16c, ADR 051 D6) ───────────────────────
+
+describe('renderTarjetasTC()', () => {
+  const tarjeta = (overrides = {}) => ({
+    id: 'tc1',
+    nombre: 'Tarjeta Bancolombia Visa',
+    tipo: 'deuda-entidad',
+    categoria: 'Tarjeta de crédito',
+    cupoTotal: 1_000_000,
+    saldoTotal: 320_000,
+    activo: true,
+    ...overrides,
+  });
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="tesoreria-tarjetas"></div>';
+  });
+
+  it('sin tarjetas operables, no pinta nada', () => {
+    S.compromisos = [];
+    renderTarjetasTC();
+    expect(document.getElementById('tesoreria-tarjetas').innerHTML).toBe('');
+  });
+
+  it('muestra cupo, usado y disponible (derivado, nunca almacenado)', () => {
+    S.compromisos = [tarjeta()];
+    renderTarjetasTC();
+    const el = document.getElementById('tesoreria-tarjetas');
+    expect(el.querySelector('.cuenta-card__nombre').textContent).toBe('Tarjeta Bancolombia Visa');
+    expect(el.querySelector('.cuenta-card__tipo').textContent).toBe('Cupo $1.000.000');
+    expect(el.querySelector('.cuenta-card__saldo').textContent).toBe('$680.000');
+    expect(el.querySelector('.chip__label').textContent).toBe('Usado $320.000');
+  });
+
+  it('el enlace lleva a Deudas: la sección es solo lectura', () => {
+    S.compromisos = [tarjeta()];
+    renderTarjetasTC();
+    const link = document.querySelector('#tesoreria-tarjetas a[href="#compromisos"]');
+    expect(link).not.toBeNull();
+  });
+
+  it('no cuenta las deudas de tarjeta sin cupo (deuda vieja capturada a posteriori)', () => {
+    S.compromisos = [tarjeta({ cupoTotal: null })];
+    renderTarjetasTC();
+    expect(document.getElementById('tesoreria-tarjetas').innerHTML).toBe('');
+  });
+});
+
+describe('renderListaCuentas() - MC.18b: cuota de manejo y GMF como chips', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-tesoreria"></div>';
   });
 
   it('cuota de manejo y GMF se muestran como chips con su icono', () => {

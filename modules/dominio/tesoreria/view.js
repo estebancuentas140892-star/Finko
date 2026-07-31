@@ -21,6 +21,7 @@ import {
   renderListaCuentas,
   renderFormCuenta,
   renderGMFIndicador,
+  renderTarjetasTC,
 } from './views/cuentas.js';
 import {
   renderListaIngresos,
@@ -46,6 +47,7 @@ export {
   renderListaCuentas,
   renderFormCuenta,
   renderGMFIndicador,
+  renderTarjetasTC,
   renderListaIngresos,
   renderFormIngreso,
   renderListaIngresosPuntuales,
@@ -64,6 +66,7 @@ export {
 export function renderTesoreria() {
   renderHeroTesoreria();
   renderListaCuentas();
+  renderTarjetasTC();
   renderBotonTransferir();
   renderGMFIndicador();
   renderNudgeProximoIngreso();

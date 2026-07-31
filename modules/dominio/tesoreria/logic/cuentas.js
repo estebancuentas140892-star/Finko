@@ -42,6 +42,24 @@ export function calcularTotalCuentas(cuentas) {
 }
 
 /**
+ * Tarjetas de crédito operables entre los compromisos (MC.16c): mismo filtro
+ * que `tarjetasDeCredito()` de `gastos/logic.js`, duplicado a propósito
+ * (ADN 10, ningún dominio importa a otro). Mis cuentas solo lee para mostrar
+ * el bloque de solo lectura: la dueña de operar sigue siendo Deudas.
+ *
+ * @param {import('../../../core/state.js').Compromiso[]} compromisos
+ * @returns {import('../../../core/state.js').Compromiso[]}
+ */
+export function tarjetasCredito(compromisos) {
+  return (compromisos ?? []).filter(c =>
+    c.tipo === 'deuda-entidad'
+    && c.categoria === 'Tarjeta de crédito'
+    && (Number(c.cupoTotal) || 0) > 0
+    && c.activo !== false,
+  );
+}
+
+/**
  * Cuántos segmentos dibuja la barra del hero como máximo (MC-DIS.9 C4).
  * Con más cuentas que este tope, las que sobran se agrupan en un solo
  * segmento "otras": tres tintes son los que alcanzan a distinguirse sin

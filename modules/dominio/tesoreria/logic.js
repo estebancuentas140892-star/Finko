@@ -19,6 +19,7 @@
 export {
   cuentasActivas,
   calcularTotalCuentas,
+  tarjetasCredito,
   composicionCuentas,
   resumenCuentas,
   validarCuenta,

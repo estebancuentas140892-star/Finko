@@ -21,6 +21,7 @@ import {
   resumenCuentas,
   calcularCostoGMF,
   detectarNudgeGMF,
+  tarjetasCredito,
 } from '../logic/cuentas.js';
 
 // ── HERO: TOTAL EN CUENTAS (MC.18a, ADR 035 D1+D3+D5) ────────────
@@ -256,6 +257,73 @@ function _renderEmptyState() {
       <button class="btn btn-primary" data-action="nueva-cuenta">+ Agregar cuenta</button>
       <p class="empty-state__tip">${icon('lightbulb')} Tip: Nequi, Daviplata y el efectivo también cuentan. Todo lo que tienes, en un solo lugar.</p>
     </div>`;
+}
+
+// ── TARJETAS DE CRÉDITO (MC.16c, ADR 051 D6) ──────────────────────
+
+/**
+ * Renderiza el bloque de tarjetas de crédito en `#tesoreria-tarjetas`.
+ * No-op si el contenedor no existe o no hay tarjetas operables.
+ *
+ * Solo lectura: fuera del total de dinero disponible (D6, la tarjeta no es
+ * un activo), con cupo usado/disponible y enlace a Deudas para operar. La
+ * dueña de crear, editar y registrar abonos sigue siendo Deudas.
+ */
+export function renderTarjetasTC() {
+  const el = document.getElementById('tesoreria-tarjetas');
+  if (!el) return;
+
+  const tarjetas = tarjetasCredito(S.compromisos);
+  if (tarjetas.length === 0) {
+    el.innerHTML = '';
+    return;
+  }
+
+  const oculto = S.config?.ocultarSaldo === true;
+
+  el.innerHTML = `
+    <h2 class="sr-only">Tus tarjetas de crédito</h2>
+    ${tarjetas.map(t => _renderTarjetaTC(t, oculto)).join('')}`;
+}
+
+/**
+ * Reusa la anatomía de `.cuenta-card` (MC.18b): mismo componente visual que
+ * el resto de la sección, sin vocabulario CSS nuevo. La diferencia es de
+ * contenido, no de tarjeta: cupo como subtítulo, disponible como cifra
+ * prominente, usado como chip, y el enlace a Deudas donde iban editar/eliminar.
+ *
+ * @param {import('../../../core/state.js').Compromiso} tarjeta
+ * @param {boolean} oculto - S.config.ocultarSaldo (mismo flag que el resto de la sección).
+ * @returns {string}
+ */
+function _renderTarjetaTC(tarjeta, oculto) {
+  const cupoTotal   = Number(tarjeta.cupoTotal) || 0;
+  const usado       = Number(tarjeta.saldoTotal) || 0;
+  const disponible  = Math.max(cupoTotal - usado, 0);
+  const nombre      = _esc(tarjeta.nombre);
+
+  const disponibleTxt = oculto ? SALDO_MASCARA_CUENTA : f(disponible);
+  const usadoTxt       = oculto ? SALDO_MASCARA_CUENTA : f(usado);
+
+  return `
+    <article class="cuenta-card">
+      <div class="cuenta-card__top">
+        <div class="cuenta-card__icon" aria-hidden="true">${_bankAvatarHtml('otro')}</div>
+        <div class="cuenta-card__info">
+          <p class="cuenta-card__nombre">${nombre}</p>
+          <p class="cuenta-card__tipo">Cupo ${f(cupoTotal)}</p>
+        </div>
+        <span class="cuenta-card__saldo" aria-label="Disponible ${disponibleTxt}">${disponibleTxt}</span>
+      </div>
+      <div class="cuenta-card__bottom">
+        <div class="cuenta-card__chips">
+          <span class="chip"><span class="chip__label">Usado ${usadoTxt}</span></span>
+        </div>
+        <div class="cuenta-card__actions">
+          <a class="btn btn-ghost btn-sm" href="#compromisos">Ver en Deudas</a>
+        </div>
+      </div>
+    </article>`;
 }
 
 // ── FORMULARIO DEL MODAL ─────────────────────────────────────────
