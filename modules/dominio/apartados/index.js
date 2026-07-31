@@ -67,7 +67,7 @@ function _guardarApartado() {
   // T11 (A9): crear un apartado no mueve dinero (nace en $0 y no toca ninguna
   // cuenta). El anuncio dice cuál es el paso que falta, en vez de dar por
   // hecho que el usuario ya apartó algo.
-  announce('Apartado creado. Registra tu primer aporte para empezar a separar el dinero.');
+  announce('Reserva creada. Registra tu primer aporte para empezar a separar el dinero.');
 }
 
 /** @param {HTMLElement} el */
@@ -79,8 +79,8 @@ async function _eliminarApartado(el) {
   if (!apartado) return;
 
   const ok = await confirmar({
-    titulo:         'Eliminar apartado',
-    mensaje:        `¿Quieres eliminar el apartado "${apartado.nombre}"? Esta acción no se puede deshacer.`,
+    titulo:         'Eliminar reserva',
+    mensaje:        `¿Quieres eliminar la reserva "${apartado.nombre}"? Esta acción no se puede deshacer.`,
     confirmarTexto: 'Eliminar',
     peligroso:      true,
   });
@@ -88,7 +88,7 @@ async function _eliminarApartado(el) {
 
   eliminar('apartados', id);
   renderListaApartados();
-  announce(`Apartado "${apartado.nombre}" eliminado.`);
+  announce(`Reserva "${apartado.nombre}" eliminada.`);
 }
 
 /**
@@ -131,7 +131,7 @@ async function _reiniciarApartado(el) {
   });
 
   renderListaApartados();
-  announce(`Apartado "${apartado.nombre}" reiniciado para el próximo ciclo.`);
+  announce(`Reserva "${apartado.nombre}" reiniciada para el próximo ciclo.`);
 }
 
 // ── HANDLERS: PLANTILLAS + SUGERENCIA EN VIVO ────────────────────
@@ -288,7 +288,7 @@ async function _guardarAporte() {
   renderListaApartados();
   updSaldo();
   announce(completado
-    ? `¡Apartado "${apartado.nombre}" completado! 🎉`
+    ? `¡Reserva "${apartado.nombre}" completada! 🎉`
     : `Aporte de ${f(aporte)} registrado en "${apartado.nombre}".`
   );
 }

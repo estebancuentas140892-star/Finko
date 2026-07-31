@@ -120,7 +120,7 @@ export const MODALIDADES_AHORRO = [
     proposito: 'Para cuando algo se dañe o te quedes sin ingresos',
   },
   {
-    clave: 'apartados', seccion: 'apartados', icono: 'apartados', label: 'Apartados',
+    clave: 'apartados', seccion: 'apartados', icono: 'apartados', label: 'Reservas',
     cuando: 'En una fecha que no elegiste',
     proposito: 'Para pagos que ya sabes que llegan',
   },

@@ -1018,7 +1018,7 @@ describe('renderNudgeApartadosProximos() - resumen en vez de eco (T7)', () => {
     ];
     renderNudgeApartadosProximos();
     const txt = document.getElementById('apartados-nudge-proximos').textContent;
-    expect(txt).toContain('3 apartados vencen en los próximos ' + DIAS_PROXIMO + ' días');
+    expect(txt).toContain('3 reservas vencen en los próximos ' + DIAS_PROXIMO + ' días');
     expect(txt).toContain('$1.080.000');
     expect(txt).toContain('entre los 3');
   });
@@ -1027,7 +1027,7 @@ describe('renderNudgeApartadosProximos() - resumen en vez de eco (T7)', () => {
     S.apartados = [apartadoBase({ montoActual: 120_000, montoObjetivo: 300_000, fechaObjetivo: enDias(6) })];
     renderNudgeApartadosProximos();
     const txt = document.getElementById('apartados-nudge-proximos').textContent;
-    expect(txt).toContain('1 apartado vence en los próximos ' + DIAS_PROXIMO + ' días');
+    expect(txt).toContain('1 reserva vence en los próximos ' + DIAS_PROXIMO + ' días');
     expect(txt).toContain('$180.000');
     expect(txt).not.toContain('entre los');
   });

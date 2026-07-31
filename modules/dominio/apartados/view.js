@@ -259,7 +259,7 @@ function _renderApartadoCard(apartado, oculto = false) {
                   type="button"
                   data-action="eliminar-apartado"
                   data-id="${id}"
-                  aria-label="Eliminar apartado ${nombre}">Eliminar</button>
+                  aria-label="Eliminar reserva ${nombre}">Eliminar</button>
         </div>
       </div>
     </article>`;
@@ -436,9 +436,9 @@ function _renderEmptyState() {
   return `
     <div class="empty-state">
       <div class="empty-state__icon">${emptyArt('apartados')}</div>
-      <p class="empty-state__title">Sin apartados todavía</p>
+      <p class="empty-state__title">Sin reservas todavía</p>
       <p class="empty-state__desc">Ponle nombre, monto y fecha a un gasto que viene, y Finko te dice cuánto separar en cada pago. El dinero se aparta cuando registras el primer aporte.</p>
-      <button class="btn btn-secondary" data-action="nuevo-apartado">+ Crear apartado</button>
+      <button class="btn btn-secondary" data-action="nuevo-apartado">+ Crear reserva</button>
       <p class="empty-state__tip empty-state__tip--muted">¿Buscabas ponerle un tope a lo que gastas al mes? Eso va en Límites de gasto.</p>
     </div>`;
 }
@@ -482,8 +482,8 @@ function _renderNudgeProximos(proximos, oculto = false) {
   const monto    = oculto ? SALDO_MASCARA_CUENTA : f(faltante);
 
   const tituloStr = cuantos === 1
-    ? `1 apartado vence en los próximos ${DIAS_PROXIMO} días`
-    : `${cuantos} apartados vencen en los próximos ${DIAS_PROXIMO} días`;
+    ? `1 reserva vence en los próximos ${DIAS_PROXIMO} días`
+    : `${cuantos} reservas vencen en los próximos ${DIAS_PROXIMO} días`;
 
   const descStr = cuantos === 1
     ? `Te falta reunir <strong>${monto}</strong>.`
@@ -524,7 +524,7 @@ export function renderFormApartado(frecuenciaPreferida = 'Mensual') {
       <details class="form-details">
         <summary class="form-details__summary">Ver las otras ${resto.length} plantillas</summary>
         <div class="form-details__body">
-          <div class="apartado-plantillas" role="group" aria-label="Más plantillas de apartado">
+          <div class="apartado-plantillas" role="group" aria-label="Más plantillas de reserva">
             ${resto.map(chip).join('')}
           </div>
         </div>
@@ -541,13 +541,13 @@ export function renderFormApartado(frecuenciaPreferida = 'Mensual') {
   return `
     <form id="form-apartado" novalidate>
       <p class="form-hint form-hint--muted">¿Para qué gasto quieres prepararte? Toca uno o escribe el tuyo.</p>
-      <div class="apartado-plantillas apartado-plantillas--parcial" role="group" aria-label="Plantillas de apartado">
+      <div class="apartado-plantillas apartado-plantillas--parcial" role="group" aria-label="Plantillas de reserva">
         ${plantillasHtml}
       </div>
       ${restoHtml}
 
       <div class="form-group">
-        <label for="apartado-nombre" class="label">Nombre del apartado</label>
+        <label for="apartado-nombre" class="label">Nombre de la reserva</label>
         <div class="apartado-nombre-row">
           ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'apartado-icono', nombreCampo: 'icono', label: '' })}
           <input id="apartado-nombre" name="nombre" class="input apartado-nombre-row__nombre" type="text"
@@ -586,7 +586,7 @@ export function renderFormApartado(frecuenciaPreferida = 'Mensual') {
             <select id="apartado-periodo" name="periodoMeses" class="input">
               ${periodoOpts}
             </select>
-            <p class="form-hint">Cuando marques "Ya lo usé", el apartado arranca de cero para la próxima vez.</p>
+            <p class="form-hint">Cuando marques "Ya lo usé", la reserva arranca de cero para la próxima vez.</p>
           </div>
         </div>
       </details>
@@ -597,7 +597,7 @@ export function renderFormApartado(frecuenciaPreferida = 'Mensual') {
 
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Crear apartado</button>
+        <button type="submit" class="btn btn-primary">Crear reserva</button>
       </div>
     </form>`;
 }

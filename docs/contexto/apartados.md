@@ -7,7 +7,7 @@
 ## Aportar a un apartado (dominio `apartados`, AP.5a)
 
 - **Objetivo**          : registrar dinero apartado para un gasto esporádico previsible (SOAT, regalos, matrícula...), descontando la cuenta de origen (patrón 0/1/varias de `infra/cuenta-helper.js`, igual que Metas). Desde AP.5a, el monto llega prellenado con el aporte que le toca aportar al usuario según fecha objetivo y frecuencia real de ingresos, en vez de pedirle que lo vuelva a escribir.
-- **Estado actual**     : estable. **DIS.19 cerrada** (2026-07-29): la lista gana un comparador encima, con las columnas de todos los apartados contra la marca de su plan. Responde "de los cuatro, ¿cuál va mal?", que ninguna tarjeta individual podía contestar. **DIS.15 cerrada** (2026-07-28): la fila pasó a `.apartado-card`, tarjeta propia con dos carreras (el dinero reunido contra lo que el plan preveía), el plazo como dato protagonista, la recurrencia en la cabecera y el ojo de privacidad, que hasta hoy no llegaba al hub de ahorro. **AP.5a cerrada** (2026-07-22) y **DIS.5 cerrada** (2026-07-26, 11 de los 13 hallazgos de la auditoría de diseño; su capa de layout la reemplazó DIS.15). El resto de AP.5 (form v2, toggle "Recurrente") sigue pendiente de análisis y toca el mismo formulario que tocó DIS.5/A8: A8 fue composición (cuántas plantillas se ven), AP.5 es estructura (qué campos y en qué orden).
+- **Estado actual**     : estable. **AH.7b cerrada** (2026-07-31): la sección se ve como "Reservas" en toda la app; el nombre interno del dominio (`apartados`, `S.apartados`) no cambió. **DIS.19 cerrada** (2026-07-29): la lista gana un comparador encima, con las columnas de todos los apartados contra la marca de su plan. Responde "de los cuatro, ¿cuál va mal?", que ninguna tarjeta individual podía contestar. **DIS.15 cerrada** (2026-07-28): la fila pasó a `.apartado-card`, tarjeta propia con dos carreras (el dinero reunido contra lo que el plan preveía), el plazo como dato protagonista, la recurrencia en la cabecera y el ojo de privacidad, que hasta hoy no llegaba al hub de ahorro. **AP.5a cerrada** (2026-07-22) y **DIS.5 cerrada** (2026-07-26, 11 de los 13 hallazgos de la auditoría de diseño; su capa de layout la reemplazó DIS.15). El resto de AP.5 (form v2, toggle "Recurrente") sigue pendiente de análisis y toca el mismo formulario que tocó DIS.5/A8: A8 fue composición (cuántas plantillas se ven), AP.5 es estructura (qué campos y en qué orden).
 - **Verificado contra** : DIS.19, commit `788f87d` (2026-07-29).
 
 **Dónde vive**
@@ -57,6 +57,8 @@
 - **`estadoDeBolsa().reunido` es más ancho que `estaListoParaReiniciar()`.** El primero describe un dibujo (la columna llena, sea recurrente o no) y el segundo gobierna una acción (usar el dinero y arrancar el ciclo, solo en recurrentes). Igualarlos pinta de verde columnas que no tienen acción, o deja grises columnas al 100%.
 
 **Cambios realizados**:
+
+- 2026-07-31 (**AH.7b**): "Apartados" se renombra a "Reservas" en todo el copy visible (nav, título, botones, formularios, anuncios, banner de propósito, referencias cruzadas en Metas/Análisis/Ahorro/Compromisos). El dominio interno, la carpeta `modules/dominio/apartados/`, `S.apartados` y sus ids/data-action no cambian (decisión explícita de Esteban: alcance solo copy). Ver CHANGELOG.
 
 - 2026-07-29 (**DIS.19**, item 5 del informe de gráficos de Ahorro): nace el comparador encima de la lista, `ui/comparador.js` compartido con el carril del hub, y `planDeReferencia()`/`diasHastaFecha()` bajan a `infra/bolsas.js` con re-export. Ver CHANGELOG.
 

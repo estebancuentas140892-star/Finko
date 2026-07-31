@@ -37,7 +37,7 @@ describe('htmlBannerProposito', () => {
   it('el banner contiene el texto del copy de Apartados', () => {
     const html = htmlBannerProposito('apartados', false);
     expect(html).toContain('SOAT');
-    expect(html).toContain('Apartados te ayuda');
+    expect(html).toContain('Reservas te ayuda');
   });
 
   it('MC.5e (ADR 017 decisión 7): el propósito de Límites de gasto se alinea con "Mis cuentas planifica, Límites vigila"', () => {

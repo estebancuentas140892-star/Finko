@@ -44,7 +44,7 @@ const SECCION_NAV = {
   ahorro:      ['Ahorro',      'i-ahorro'],
   fondo:       ['Fondo',       'i-ahorro'],
   metas:       ['Metas',       'i-metas'],
-  apartados:   ['Apartados',   'i-apartados'],
+  apartados:   ['Reservas',    'i-apartados'],
   inversion:   ['Inversión',   'i-inversion'],
   config:      ['Ajustes',     'i-ajustes'],
 };

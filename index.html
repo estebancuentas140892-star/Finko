@@ -343,9 +343,9 @@
             </a>
 
             <a class="nav-item nav-item--no-mobile" href="#apartados" data-section="apartados"
-               aria-label="Apartados para gastos previsibles">
+               aria-label="Reservas para gastos previsibles">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-apartados"/></svg>
-              <span class="nav-item__label">Apartados</span>
+              <span class="nav-item__label">Reservas</span>
             </a>
 
             <a class="nav-item nav-item--no-mobile" href="#inversion" data-section="inversion"
@@ -761,7 +761,7 @@
 
       <!-- LÍMITES DE GASTO (antes "Presupuesto"): tope mensual por categoría.
            Internamente sigue siendo el dominio "presupuesto" (S.presupuestos).
-           El renombre es solo de cara al usuario, para no confundir con Apartados
+           El renombre es solo de cara al usuario, para no confundir con Reservas
            (guardar dinero) vs límite de gasto (vigilar cuánto sale). -->
       <section class="section" id="sec-presupuesto" tabindex="-1" aria-labelledby="title-presupuesto">
         <header class="section__header">
@@ -786,7 +786,7 @@
 
       <!-- AHORRO (DIS.18, ADR 009 restaurado) - la casa de las cuatro
            modalidades. Hasta DIS.18 este contenido era la card consolidada
-           repetida en Fondo, Metas, Apartados e Inversión, con una barra de
+           repetida en Fondo, Metas, Reservas e Inversión, con una barra de
            pestañas encima: el resumen de un padre que no existía. Ahora el
            padre tiene dirección propia (#ahorro) y el bloque se muestra una
            sola vez, donde significa algo. Las cuatro filas son la navegación. -->
@@ -870,7 +870,7 @@
 
       </section>
 
-      <!-- APARTADOS -->
+      <!-- RESERVAS (dominio interno "apartados") -->
       <section class="section" id="sec-apartados" tabindex="-1" aria-labelledby="title-apartados">
         <!-- Volver a la casa (DIS.18): ver nota en #sec-fondo. -->
         <a class="section__volver" href="#ahorro" aria-label="Volver a Ahorro">
@@ -879,11 +879,11 @@
         <header class="section__header">
           <div class="section__title-group">
             <span class="cat-teja section__icon" data-dom="ahorro" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-apartados"/></svg></span>
-            <h1 class="section__title" id="title-apartados">Apartados</h1>
+            <h1 class="section__title" id="title-apartados">Reservas</h1>
           </div>
           <button class="btn btn-primary" data-action="nuevo-apartado"
-                  aria-label="Crear nuevo apartado">
-            + Apartado
+                  aria-label="Crear nueva reserva">
+            + Reserva
           </button>
         </header>
         <div id="proposito-apartados">

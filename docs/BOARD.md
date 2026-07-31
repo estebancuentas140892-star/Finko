@@ -269,14 +269,17 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 
 ### Ahorro (dominio `ahorro`, casa de Ahorro + fondo de emergencia)
 
-#### AH.7 - Los dos temas que DIS.18 señaló y no resolvió
-- Prioridad  : baja
-- Área       : design (los dos son de arquitectura y lenguaje de producto, no de lógica)
-- Estado     : registrado, sin analizar. Origen: informe "Arquitectura Tu ahorro total", pendientes 1 y 3 ([ADR 056](DECISIONS/056-la-casa-de-ahorro.md)).
-- Objetivo   : (1) decidir si **"Ahorro" sube a la barra inferior**, lo que implica desplazar Calendario: es una decisión de la barra completa y no se toma desde una sección. (2) el nombre **"Apartados"** colisiona con "apartar", el verbo genérico de ahorrar en toda la app: renombrarlo toca varias pantallas, microcopy y la ficha de su dominio.
-- Secciones  : Ahorro (casa), Apartados, Barra de navegación
-- Depende de : nada duro. El punto 1 conviene decidirlo junto a cualquier revisión futura de la barra inferior; el punto 2, antes de escribir más copy que use la palabra.
-- Modelo     : Equilibrado - Medio (dos decisiones de producto con barrido de copy acotado)
+#### AH.7a - Ahorro sube a la barra inferior, Calendario baja a "Más"
+- Prioridad  : media
+- Estado     : requiere ADR nuevo (**supersede el D1 del [ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md)**, decisión de Esteban tomada el 2026-07-31 tras el triaje de AH.7)
+- Área       : ambos
+- Objetivo   : la barra inferior pasa de `Inicio · Gastos · [+] · Calendario · Más` a `Inicio · Gastos · [+] · Ahorro · Más`; Calendario se muda a teja dentro de "Más".
+- Riesgo     : toca la navegación global; coordinar con **INT.1** (barra superior de escritorio) e **IN.9** (Inicio en escritorio), en curso sobre la misma franja aunque en otra plataforma, para no pisarse
+- Secciones  : Navegación (bottom nav), Ahorro, Calendario, Más
+- Archivos   : `index.html` (nav), ruteo en `modules/infra/`, `styles/components/` (nav), `tests/e2e/`
+- Depende de : nada duro; coordinar con INT.1/IN.9
+- Aceptación : captura móvil con Ahorro en la barra + Calendario dentro de "Más" + E2E de navegación verde
+- Modelo     : Alta capacidad - Alto (nav global, revierte un ADR vigente)
 
 #### AH.5 - Fondo v2: rediseño UX educativo + aportes por el flujo de distribución
 - Prioridad  : media

@@ -77,7 +77,7 @@ export function destinosAporte(ahorro, metas, apartados) {
 
   for (const a of (Array.isArray(apartados) ? apartados : [])) {
     if (!a) continue;
-    destinos.push({ targetAction: 'aportar-apartado', id: a.id, label: a.nombre || 'Apartado', monto: Number(a.montoActual) || 0 });
+    destinos.push({ targetAction: 'aportar-apartado', id: a.id, label: a.nombre || 'Reserva', monto: Number(a.montoActual) || 0 });
   }
 
   return destinos;

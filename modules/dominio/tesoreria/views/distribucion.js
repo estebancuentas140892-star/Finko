@@ -281,7 +281,7 @@ function _filaDistribuir(d) {
 
   const seccionHint = _SECCION_OBJETIVO[d.tipo];
   const hint = (d.sinFecha && seccionHint)
-    ? `<p class="form-hint form-hint--muted distribuir__hint">Ponle una fecha en <a href="#${seccionHint}">${seccionHint === 'metas' ? 'Metas' : 'Apartados'}</a> para calcular cuánto aportar.</p>`
+    ? `<p class="form-hint form-hint--muted distribuir__hint">Ponle una fecha en <a href="#${seccionHint}">${seccionHint === 'metas' ? 'Metas' : 'Reservas'}</a> para calcular cuánto aportar.</p>`
     : '';
 
   const marcada = d.tipo !== 'cuenta';

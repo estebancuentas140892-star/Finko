@@ -319,7 +319,7 @@ export function validarApartado(datos) {
   const errores = [];
 
   if (!datos?.nombre?.trim()) {
-    errores.push('El nombre del apartado es obligatorio.');
+    errores.push('El nombre de la reserva es obligatorio.');
   }
 
   const objetivo = Number(datos?.montoObjetivo);
@@ -341,7 +341,7 @@ export function validarApartado(datos) {
   if (_esRecurrente(datos?.recurrente)) {
     const periodo = Number(datos?.periodoMeses);
     if (!Number.isInteger(periodo) || periodo <= 0) {
-      errores.push('Indica cada cuántos meses se repite el apartado.');
+      errores.push('Indica cada cuántos meses se repite la reserva.');
     }
   }
 

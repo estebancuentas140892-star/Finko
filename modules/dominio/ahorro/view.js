@@ -492,7 +492,7 @@ function _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia = 
       ${_renderCobertura({ colchon, metaMeses, montoTotal, enCero, m })}
       ${_renderVeredictoFondo({ completado, faltante, objetivo, montoTotal, metaMeses, actual, sugerencia, enCero, m })}
       ${_renderDatosFondo({ montoTotal, objetivo, gastosFijosMensuales, compromisoMensual, tasaAhorro, metaMeses, enCero, m })}
-      <p class="fondo-card__nota">Este dinero sigue en tus cuentas. Solo queda apartado para emergencias: a diferencia de Metas y Apartados, no descuenta saldo.</p>
+      <p class="fondo-card__nota">Este dinero sigue en tus cuentas. Solo queda apartado para emergencias: a diferencia de Metas y Reservas, no descuenta saldo.</p>
       <div class="fondo-card__acciones">
         <button class="fondo-card__principal" type="button" data-action="ahorro-nuevo-aporte">
           ${enCero ? 'Hacer mi primer aporte' : 'Registrar un aporte'}

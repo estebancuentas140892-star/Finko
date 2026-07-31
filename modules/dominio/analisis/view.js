@@ -629,7 +629,7 @@ function _renderScoreSalud(resumen) {
 const _BUCKETS_ACTIVOS = [
   { key: 'totalCuentas',     label: 'Cuentas',    mod: 'cuentas' },
   { key: 'totalMetas',       label: 'Metas',      mod: 'metas' },
-  { key: 'totalApartados',   label: 'Apartados',  mod: 'apartados' },
+  { key: 'totalApartados',   label: 'Reservas',   mod: 'apartados' },
   { key: 'totalInversiones', label: 'Inversión',  mod: 'inversion' },
   // PE.7: capital prestado que ya salió de una cuenta y está por volver.
   { key: 'totalPorCobrar',   label: 'Por cobrar', mod: 'porcobrar' },

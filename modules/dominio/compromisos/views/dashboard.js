@@ -37,7 +37,7 @@ const _DOM_BADGE_POR_TIPO = {
 const _LABEL_POR_TIPO = {
   ...LABEL_TIPO,
   'personal': 'Préstamo',
-  'apartado': 'Apartado',
+  'apartado': 'Reserva',
 };
 function _tipoBadge(tipo) {
   const dom = _DOM_BADGE_POR_TIPO[tipo] ?? 'agenda';

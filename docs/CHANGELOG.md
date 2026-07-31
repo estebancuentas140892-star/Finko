@@ -10,6 +10,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(ahorro): AH.7b, "Apartados" se renombra a "Reservas" en todo el copy visible · 2026-07-31
+
+Decisión de Esteban tras el triaje del hallazgo pendiente 3 de DIS.18 ([ADR 056](DECISIONS/056-la-casa-de-ahorro.md)): "Apartados" colisionaba con "apartar", el verbo genérico de ahorrar en toda la app. Ficha: [`contexto/apartados.md`](contexto/apartados.md).
+
+- **Alcance acotado a copy visible, por decisión explícita.** El dominio interno (`modules/dominio/apartados/`), `S.apartados`, ids y `data-action` no cambian: cero riesgo de schema, cero migración. Mismo patrón que "Límites de gasto" (dominio interno `presupuesto`).
+- **14 archivos con cadenas visibles**: nav, título de sección, botones, formularios, `announce()`, confirmación de eliminar, banner de propósito, y las referencias cruzadas en Metas, Análisis, Compromisos y la casa de Ahorro.
+- **AH.7 se partió en dos tarjetas** (regla "dividir lo grande"): AH.7a (Ahorro sube a la barra inferior, Calendario baja a "Más") sigue pendiente en `BOARD.md`, requiere ADR nuevo porque revierte el D1 del [ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md).
+- 3.525 tests unitarios verdes, 246 E2E verdes. Sin regresión.
+
+---
+
 ### docs(transversal): CAT.3, el modelo de las categorías personalizadas globales queda decidido · 2026-07-31
 
 **[ADR 058](DECISIONS/058-categorias-personalizadas-globales.md)** con 5 decisiones, escrito sobre un mapeo completo del código (origen y destino). Ficha: [`contexto/transversal.md`](contexto/transversal.md). Sin cambios de código: CAT.3 queda en cuatro rebanadas (CAT.3a a CAT.3d) listas para ejecutar.
