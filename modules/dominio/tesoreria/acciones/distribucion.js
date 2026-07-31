@@ -23,6 +23,7 @@ import {
   estadoDistribucion,
   topeAbonoExtraDeuda,
   cuentaIngresoPrincipal,
+  planComplementoDeficit,
 } from '../logic/distribucion.js';
 import { renderDistribucionIngreso, renderAsistenteDistribucion } from '../view.js';
 
@@ -377,6 +378,84 @@ function _actualizarSugerenciasRemanente(panel, monto, necesidades) {
 }
 
 /**
+ * Cuenta a la que entra el ingreso, hasta donde el asistente puede saberlo sin
+ * preguntar: la que el ingreso principal ya tiene guardada (MC.13e-2f-1) si
+ * sigue activa, o la única cuenta activa (regla de cuenta única). `null` cuando
+ * hay varias y ninguna está guardada: ahí la resuelve `resolverCuenta()` al
+ * confirmar, y hasta entonces el bloque de déficit calcula con todas.
+ *
+ * @returns {string|null}
+ */
+function _cuentaOrigenDistribucion() {
+  const activas   = (S.cuentas ?? []).filter(c => c.activa !== false);
+  const preferida = cuentaIngresoPrincipal(S.ingresos ?? []);
+  if (preferida && activas.some(c => c.id === preferida)) return preferida;
+  return activas.length === 1 ? activas[0].id : null;
+}
+
+/** Nombre de una cuenta por id (para los mensajes del déficit). */
+function _nombreCuenta(id) {
+  return (S.cuentas ?? []).find(c => c.id === id)?.nombre ?? 'otra cuenta';
+}
+
+/**
+ * Escribe el bloque de déficit (MC.13e-2e): lo marcado supera el monto a
+ * distribuir y el asistente ofrece completar la diferencia con el saldo de
+ * otras cuentas activas, en vez de obligar a recortar destinos. La oferta es
+ * explícita (casilla sin marcar por defecto, mismo espíritu que el resto del
+ * asistente: nada se mueve sin que el usuario lo diga) y nunca sobregira: el
+ * reparto sale de `planComplementoDeficit`, que reusa `distribuirPago`.
+ *
+ * Solo escribe texto y `hidden`, igual que `#distribuir-cuentas-resumen`: el
+ * markup lo genera la vista.
+ *
+ * @param {Element} panel
+ * @param {number} deficit Salida de `resumirPlanDistribucion`.
+ * @returns {{plan: ReturnType<typeof planComplementoDeficit>, aplicable: boolean}}
+ *   `aplicable`: hay con qué cubrirlo Y el usuario lo aceptó.
+ */
+function _actualizarBloqueDeficit(panel, deficit) {
+  const plan  = planComplementoDeficit(S.cuentas ?? [], deficit, _cuentaOrigenDistribucion());
+  const bloque = panel.querySelector('#distribuir-deficit');
+  const msg    = panel.querySelector('#distribuir-deficit-msg');
+  const opcion = panel.querySelector('#distribuir-deficit-opcion');
+  const chk    = panel.querySelector('[data-dist-completar-deficit]');
+  const detalle = panel.querySelector('#distribuir-deficit-detalle');
+  if (!bloque || !msg || !opcion || !chk || !detalle) return { plan, aplicable: false };
+
+  if (deficit <= 0) {
+    bloque.hidden = true;
+    opcion.hidden = true;
+    // Sin déficit no hay nada que aceptar: la casilla vuelve a cero para que
+    // una aceptación vieja no reviva sola si el usuario marca más destinos.
+    chk.checked = false;
+    msg.textContent = '';
+    detalle.textContent = '';
+    return { plan, aplicable: false };
+  }
+
+  bloque.hidden = false;
+  opcion.hidden = !plan.cubre;
+  if (!plan.cubre) chk.checked = false;
+
+  if (plan.cubre) {
+    msg.textContent = `Te faltan ${f(plan.deficit)} para cubrir lo que marcaste.`;
+    msg.classList.remove('form-hint--danger');
+    detalle.textContent = chk.checked
+      ? `Saldrán ${plan.splits.map(s => `${f(s.monto)} de ${_nombreCuenta(s.cuentaId)}`).join(' y ')}.`
+      : 'Tus otras cuentas alcanzan a cubrirlo. Ninguna queda en negativo.';
+  } else {
+    msg.textContent = plan.disponible > 0
+      ? `Te faltan ${f(plan.deficit)} y tus otras cuentas suman ${f(plan.disponible)}: no alcanzan. Reduce algún destino.`
+      : `Te faltan ${f(plan.deficit)} y ninguna otra cuenta tiene saldo para completarlos. Reduce algún destino.`;
+    msg.classList.add('form-hint--danger');
+    detalle.textContent = '';
+  }
+
+  return { plan, aplicable: plan.cubre && chk.checked };
+}
+
+/**
  * Valida las transferencias de Estilo de vida a otras cuentas (Paso 3, MC.7e)
  * contra el presupuesto de Estilo de vida ya recalculado sobre el remanente
  * real (R3): no se puede mover más de lo que ese presupuesto contiene. Reusa
@@ -401,7 +480,11 @@ function _recalcularDistribucion() {
   // resumen de abajo sume los montos ya actualizados.
   const { estiloVida: evBudget } = _actualizarSugerenciasRemanente(panel, monto, necesidades);
   const items       = [...necesidades, ..._leerItemsDistribucion(panel, necesidades)];
-  const { asignado, sinAsignar, excede } = resumirPlanDistribucion(monto, items);
+  const { asignado, sinAsignar, excede, deficit } = resumirPlanDistribucion(monto, items);
+
+  // MC.13e-2e: el déficit no bloquea por sí solo; se puede completar con el
+  // saldo de otras cuentas si el usuario lo acepta explícitamente.
+  const { aplicable: deficitCubierto } = _actualizarBloqueDeficit(panel, deficit);
 
   // Paso 3 (MC.7e): transferencias hacia otras cuentas, validadas aparte
   // contra el presupuesto de Estilo de vida (no contra el ingreso total).
@@ -420,13 +503,17 @@ function _recalcularDistribucion() {
   // "Distribuir" se habilita si hay algo real que registrar: Necesidades/Ahorro/
   // Deudas/Inversiones (asignado) o, con MC.7e, una transferencia entre cuentas
   // (transferido), aunque no haya nada más marcado en los otros pasos.
-  const valido    = monto > 0 && (asignado > 0 || transferido > 0) && !excede && !excedeTransferencia;
+  const valido    = monto > 0 && (asignado > 0 || transferido > 0)
+    && (!excede || deficitCubierto) && !excedeTransferencia;
 
   if (resumenEl) {
+    // Con déficit, el "qué hacer" vive en el bloque de abajo (completar con
+    // otra cuenta o recortar): el resumen solo reporta la cifra, para no dar
+    // dos instrucciones distintas a la vez (MC.13e-2e).
     resumenEl.textContent = excede
-      ? `Asignaste ${f(asignado)}, más que tu ingreso de ${f(monto)}. Reduce algún destino.`
+      ? `Asignaste ${f(asignado)}, ${f(deficit)} más que tu ingreso de ${f(monto)}.`
       : `Asignado: ${f(asignado)}. Queda disponible en tu cuenta: ${f(sinAsignar)}.`;
-    resumenEl.classList.toggle('form-hint--danger', excede);
+    resumenEl.classList.toggle('form-hint--danger', excede && !deficitCubierto);
   }
 
   if (boton) boton.disabled = !valido;
@@ -524,11 +611,33 @@ function _aplicarTransferenciasCuentas(transferencias, cuentaOrigenId) {
 }
 
 /**
+ * Aplica el complemento del déficit (MC.13e-2e): descuenta de cada cuenta lo
+ * que `planComplementoDeficit` repartió. Ninguna queda en negativo (el reparto
+ * solo toma hasta el saldo de cada una) y la cuenta de origen nunca está en la
+ * lista, así que el descuento de aquí y el saldo final de origen no se pisan.
+ *
+ * @param {Array<{cuentaId:string, monto:number}>} splits
+ * @returns {number} Total efectivamente tomado de las otras cuentas.
+ */
+function _aplicarComplementoDeficit(splits) {
+  let total = 0;
+  for (const s of splits ?? []) {
+    const cuenta = (S.cuentas ?? []).find(c => c.id === s.cuentaId);
+    if (!cuenta || s.monto <= 0) continue;
+    editar('cuentas', s.cuentaId, { saldo: (cuenta.saldo ?? 0) - s.monto });
+    total += s.monto;
+  }
+  return total;
+}
+
+/**
  * Aplica la distribución: acredita el ingreso a la cuenta de origen, descuenta lo
  * que físicamente sale (Necesidades marcadas + metas/apartados/deudas/inversiones
  * seleccionadas; el aporte al fondo no descuenta, ADR 009), registra los pagos
  * de Necesidades (R1), reparte Estilo de vida entre cuentas si corresponde
- * (MC.7e) y delega el resto a cada dominio por EventBus. Guarda snapshot para undo.
+ * (MC.7e), completa el déficit con otras cuentas si el usuario lo aceptó
+ * (MC.13e-2e) y delega el resto a cada dominio por EventBus. Guarda snapshot
+ * para undo (incluye 'cuentas': deshacer devuelve también el complemento).
  */
 async function _confirmarDistribucion() {
   const panel = document.getElementById('distribuir-ingreso-panel');
@@ -538,7 +647,7 @@ async function _confirmarDistribucion() {
   const necesidades = _leerNecesidadesMarcadas(panel);
   const items       = _leerItemsDistribucion(panel, necesidades);
   const todos       = [...necesidades, ...items];
-  const { asignado, excede } = resumirPlanDistribucion(monto, todos);
+  const { asignado, excede, deficit } = resumirPlanDistribucion(monto, todos);
 
   // Paso 3 (MC.7e): las transferencias a otras cuentas se validan contra el
   // presupuesto de Estilo de vida sobre el remanente real (R3), no contra el
@@ -554,16 +663,32 @@ async function _confirmarDistribucion() {
 
   // Igual que en `_recalcularDistribucion`: una transferencia entre cuentas
   // (MC.7e) por sí sola ya es una acción válida, aunque nada más esté marcado.
-  if (monto <= 0 || (asignado <= 0 && transferido <= 0) || excede || excedeTransferencia) return;
+  if (monto <= 0 || (asignado <= 0 && transferido <= 0) || excedeTransferencia) return;
+
+  // MC.13e-2e: lo marcado excede el monto a distribuir. Solo se puede confirmar
+  // si el usuario aceptó completar la diferencia con otras cuentas.
+  const aceptaComplemento = panel.querySelector('[data-dist-completar-deficit]')?.checked === true;
+  if (excede && !aceptaComplemento) return;
 
   // MC.13e-2f-1: parte de la cuenta que el ingreso principal ya tiene guardada
-  // (MC.13d) en vez de preguntar siempre; solo si esa cuenta sigue activa. Sin
-  // ella, cae al flujo de siempre (`resolverCuenta`).
-  const cuentaPreferida = cuentaIngresoPrincipal(S.ingresos ?? []);
-  const cuentaId = (cuentaPreferida && (S.cuentas ?? []).some(c => c.id === cuentaPreferida && c.activa !== false))
-    ? cuentaPreferida
-    : await resolverCuenta(S.cuentas ?? [], 'distribuir tu ingreso');
+  // (MC.13d) en vez de preguntar siempre; solo si esa cuenta sigue activa (o es
+  // la única). Sin ella, cae al flujo de siempre (`resolverCuenta`).
+  const cuentaId = _cuentaOrigenDistribucion()
+    ?? await resolverCuenta(S.cuentas ?? [], 'distribuir tu ingreso');
   if (!cuentaId) return; // 0 cuentas (guía) o el usuario canceló.
+
+  // El reparto del complemento se recalcula con la cuenta de origen ya
+  // resuelta: mientras el usuario elegía, ella dejó de ser elegible (el dinero
+  // no puede salir de la misma cuenta que lo recibe), así que lo que el panel
+  // mostró podía contarla. Si con la cuenta real ya no alcanza, no se aplica
+  // nada: sobregirar en silencio sería justo lo que esta rebanada evita.
+  const complemento = excede
+    ? planComplementoDeficit(S.cuentas ?? [], deficit, cuentaId)
+    : { splits: [], cubre: false };
+  if (excede && !complemento.cubre) {
+    announce('Tus otras cuentas no alcanzan para completar lo que marcaste. Ajusta algún destino.');
+    return;
+  }
 
   // Snapshot antes de tocar nada, para un "Deshacer" atómico.
   _snapshotDistribucion = _clonarSlices(_SLICES_DISTRIBUCION);
@@ -588,6 +713,10 @@ async function _confirmarDistribucion() {
   // origen), para descontarlo junto con lo demás que sale de esa cuenta.
   const totalTransferido = _aplicarTransferenciasCuentas(transferencias, cuentaId);
 
+  // MC.13e-2e: el complemento sale de las otras cuentas y entra a la de origen,
+  // que es desde donde se paga todo lo marcado.
+  const totalComplemento = _aplicarComplementoDeficit(complemento.splits);
+
   // Descontar lo que sale de la cuenta (no el fondo, ADR 009) y lo transferido
   // a otras cuentas: ambos dejan la cuenta de origen. El ingreso se acredita.
   const descontable = todos
@@ -595,7 +724,9 @@ async function _confirmarDistribucion() {
     .reduce((s, i) => s + i.monto, 0);
   const cuenta = (S.cuentas ?? []).find(c => c.id === cuentaId);
   if (cuenta) {
-    editar('cuentas', cuentaId, { saldo: (cuenta.saldo ?? 0) + monto - descontable - totalTransferido });
+    editar('cuentas', cuentaId, {
+      saldo: (cuenta.saldo ?? 0) + monto + totalComplemento - descontable - totalTransferido,
+    });
   }
 
   // Necesidades (Paso 1, R1): tesorería aplica directo el pago real.
@@ -606,7 +737,9 @@ async function _confirmarDistribucion() {
   EventBus.emit('distribucion:aplicar', { items, cuentaOrigenId: cuentaId });
 
   updSaldo();
-  announce(`Distribuiste ${f(asignado)} de tu ingreso.`);
+  announce(totalComplemento > 0
+    ? `Distribuiste ${f(asignado)}: ${f(monto)} de tu ingreso y ${f(totalComplemento)} del saldo de tus otras cuentas.`
+    : `Distribuiste ${f(asignado)} de tu ingreso.`);
 
   // Confirmar cierra el modal (ADR 035 D6): ya no queda nada por hacer en el
   // asistente. El snackbar "Deshacer" vive en <body>, sobrevive el cierre.
@@ -691,6 +824,10 @@ export function initAccionesDistribucion() {
     if (!(t instanceof HTMLInputElement)) return;
     if (t.hasAttribute('data-dist-destino-toggle')) {
       _onToggleDestinoDistribucion(t);
+    } else if (t.hasAttribute('data-dist-completar-deficit')) {
+      // MC.13e-2e: aceptar (o retirar) el complemento del déficit habilita o
+      // vuelve a bloquear "Distribuir", y cambia el detalle de dónde sale.
+      _recalcularDistribucion();
     } else if (t.hasAttribute('data-nec-toggle')) {
       // Necesidades (Paso 1, R1): sin monto editable que habilitar/deshabilitar,
       // solo recalcular el resumen en vivo.

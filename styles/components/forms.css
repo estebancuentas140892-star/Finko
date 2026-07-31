@@ -357,6 +357,18 @@ form:not(.config-form) .form-group:not(:first-child) {
   color: var(--fk-text-secondary);
   white-space: nowrap;
 }
+/* Déficit del asistente (MC.13e-2e): lo marcado supera el monto a distribuir y
+   se ofrece completarlo con el saldo de otras cuentas. Vive junto al resumen,
+   fuera de la paginación; los hijos ocultos los apaga el [hidden] global. */
+.distribuir__deficit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+  margin-top: var(--fk-space-2);
+}
+.distribuir__deficit > .form-hint {
+  margin-top: 0;
+}
 /* Asistente paginado (MC.7d, ADR 018): un paso visible a la vez. El indicador
    de paso, el monto a distribuir y el resumen viven fuera de la paginación.
    Los pasos y botones ocultos se apagan con el [hidden] global (reset.css). */

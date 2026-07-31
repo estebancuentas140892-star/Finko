@@ -31,6 +31,7 @@ import {
   calcularGastosFijosMensuales,
   esDistribucionPersonalizadaValida,
   resumirPlanDistribucion,
+  planComplementoDeficit,
   topeAbonoExtraDeuda,
   construirPlanInversiones,
   construirFilasTransferenciaCuentas,
@@ -3289,6 +3290,75 @@ describe('resumirPlanDistribucion()', () => {
   it('ignora montos no numéricos y trata el plan vacío como 0', () => {
     expect(resumirPlanDistribucion(1_000_000, [{ monto: NaN }, {}]).asignado).toBe(0);
     expect(resumirPlanDistribucion(1_000_000, []).sinAsignar).toBe(1_000_000);
+  });
+
+  it('expone el déficit cuando excede, y 0 cuando no (MC.13e-2e)', () => {
+    expect(resumirPlanDistribucion(500_000, [{ monto: 700_000 }]).deficit).toBe(200_000);
+    expect(resumirPlanDistribucion(500_000, [{ monto: 300_000 }]).deficit).toBe(0);
+    expect(resumirPlanDistribucion(500_000, [{ monto: 500_000 }]).deficit).toBe(0);
+  });
+});
+
+// ── planComplementoDeficit() (MC.13e-2e) ──────────────────────────
+describe('planComplementoDeficit()', () => {
+  const CUENTAS = [
+    { id: 'c1', nombre: 'Nómina',      saldo: 100_000 },
+    { id: 'c2', nombre: 'Ahorros',     saldo: 500_000 },
+    { id: 'c3', nombre: 'Bolsillo',    saldo: 300_000 },
+  ];
+
+  it('reparte el déficit entre las otras cuentas, mayor saldo primero', () => {
+    const r = planComplementoDeficit(CUENTAS, 600_000, 'c1');
+    expect(r.cubre).toBe(true);
+    expect(r.deficit).toBe(600_000);
+    expect(r.splits).toEqual([
+      { cuentaId: 'c2', monto: 500_000 },
+      { cuentaId: 'c3', monto: 100_000 },
+    ]);
+  });
+
+  it('excluye la cuenta de origen: su saldo no cuenta como disponible', () => {
+    const r = planComplementoDeficit(CUENTAS, 850_000, 'c2');
+    expect(r.disponible).toBe(400_000);   // c1 + c3, sin los 500.000 de c2
+    expect(r.cubre).toBe(false);
+    expect(r.splits).toEqual([]);
+  });
+
+  it('sin cuenta de origen conocida, todas las activas son elegibles', () => {
+    const r = planComplementoDeficit(CUENTAS, 900_000, null);
+    expect(r.disponible).toBe(900_000);
+    expect(r.cubre).toBe(true);
+  });
+
+  it('no alcanza: cubre false y ningún split, para no dejar cuentas en negativo', () => {
+    const r = planComplementoDeficit(CUENTAS, 1_000_000, 'c1');
+    expect(r.cubre).toBe(false);
+    expect(r.splits).toEqual([]);
+    expect(r.disponible).toBe(800_000);
+  });
+
+  it('ignora cuentas inactivas y las de saldo 0 o negativo', () => {
+    const cuentas = [
+      { id: 'c1', saldo: 400_000, activa: false },
+      { id: 'c2', saldo: 0 },
+      { id: 'c3', saldo: -50_000 },
+      { id: 'c4', saldo: 200_000 },
+    ];
+    const r = planComplementoDeficit(cuentas, 200_000, null);
+    expect(r.disponible).toBe(200_000);
+    expect(r.splits).toEqual([{ cuentaId: 'c4', monto: 200_000 }]);
+  });
+
+  it('sin déficit no hay nada que completar', () => {
+    const r = planComplementoDeficit(CUENTAS, 0, 'c1');
+    expect(r.deficit).toBe(0);
+    expect(r.cubre).toBe(false);
+    expect(r.splits).toEqual([]);
+  });
+
+  it('tolera entradas inválidas sin romper', () => {
+    expect(planComplementoDeficit(null, NaN, null).cubre).toBe(false);
+    expect(planComplementoDeficit(undefined, 100, null).disponible).toBe(0);
   });
 });
 

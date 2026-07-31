@@ -8,6 +8,7 @@
  */
 
 import { obligacionesYAportesDelCobro, frecuenciaPrincipalIngresos, normalizarFrecuenciaAporte } from '../../../infra/vencimientos.js';
+import { distribuirPago } from '../../../infra/distribuir-pago.js';
 import { FACTOR_MENSUAL, isoFecha, ultimoPagoHasta } from './ingresos.js';
 
 /**
@@ -806,9 +807,11 @@ export function sugerirDistribucionIngreso(ingresoMensual, {
  *
  * @param {number} montoIngreso - total que se está repartiendo.
  * @param {Array<{ monto: number }>} destinos - filas del plan (cualquier grupo).
- * @returns {{ asignado: number, sinAsignar: number, excede: boolean }}
+ * @returns {{ asignado: number, sinAsignar: number, excede: boolean, deficit: number }}
  *   asignado: suma de los montos. sinAsignar: lo que queda del ingreso (>= 0).
- *   excede: true si se asignó más que el ingreso (no se puede confirmar).
+ *   excede: true si se asignó más que el ingreso. deficit: cuánto falta para
+ *   cubrir lo marcado (0 cuando no excede); es el monto que MC.13e-2e ofrece
+ *   completar con el saldo de otra cuenta.
  */
 export function resumirPlanDistribucion(montoIngreso, destinos) {
   const asignado = (destinos ?? []).reduce((s, d) => s + (Number(d.monto) || 0), 0);
@@ -817,7 +820,48 @@ export function resumirPlanDistribucion(montoIngreso, destinos) {
     asignado,
     sinAsignar: Math.max(0, m - asignado),
     excede:     asignado > m,
+    deficit:    Math.max(0, asignado - m),
   };
+}
+
+/**
+ * Plan para completar el déficit del asistente con el saldo de otras cuentas
+ * (MC.13e-2e, punto 14 del brief): lo marcado (Necesidades + Ahorro +
+ * Inversiones) supera el monto a distribuir, y en vez de obligar a recortar
+ * destinos, el asistente ofrece tomar la diferencia de las demás cuentas
+ * activas. La oferta es explícita: esta función solo calcula de dónde saldría
+ * el dinero; quien decide es el usuario con la casilla del panel.
+ *
+ * Reusa `distribuirPago` (mismo reparto "mayor saldo primero, sin dejar
+ * ninguna en negativo" de los pagos y abonos multi-cuenta), así que el
+ * complemento nunca sobregira: si el saldo disponible no alcanza, `cubre` es
+ * `false` y no hay splits que aplicar.
+ *
+ * La cuenta de origen queda fuera de las elegibles: ahí es justo donde entra el
+ * ingreso y de donde sale lo marcado, así que "completar" con ella misma no
+ * movería nada. `cuentaOrigenId` en `null` (varias cuentas activas y ningún
+ * `Ingreso.cuentaId` guardado: el asistente aún no sabe cuál será) hace que
+ * todas cuenten; el caller vuelve a calcular con la cuenta ya resuelta antes de
+ * aplicar.
+ *
+ * Pura: no lee `S` ni el DOM.
+ *
+ * @param {import('../../../core/state.js').Cuenta[]} cuentas Todas las cuentas (activas o no).
+ * @param {number} deficit Lo que falta para cubrir lo marcado.
+ * @param {string|null} [cuentaOrigenId] Cuenta a la que entra el ingreso.
+ * @returns {{deficit:number, disponible:number, splits:Array<{cuentaId:string, monto:number}>, cubre:boolean}}
+ */
+export function planComplementoDeficit(cuentas = [], deficit = 0, cuentaOrigenId = null) {
+  const falta = Math.max(0, Math.round(Number(deficit) || 0));
+
+  const elegibles = (Array.isArray(cuentas) ? cuentas : [])
+    .filter(c => c && c.activa !== false && c.id !== cuentaOrigenId && (Number(c.saldo) || 0) > 0);
+  const disponible = elegibles.reduce((s, c) => s + (Number(c.saldo) || 0), 0);
+
+  if (falta <= 0) return { deficit: 0, disponible, splits: [], cubre: false };
+
+  const { ok, splits } = distribuirPago(elegibles, falta);
+  return { deficit: falta, disponible, splits: ok ? splits : [], cubre: ok };
 }
 
 

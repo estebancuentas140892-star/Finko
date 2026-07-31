@@ -10,6 +10,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(tesoreria): MC.13e-2e, completar el déficit con el saldo de otra cuenta · 2026-07-30
+
+Punto 14 del brief de Mis Cuentas v2. Hasta ahora, marcar más de lo que entra dejaba el asistente en un callejón: "Reduce algún destino" y el botón apagado, aunque el usuario tuviera el dinero en otra cuenta. Ahora el déficit se nombra y se ofrece cubrir. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md).
+
+- **La oferta es explícita, y por eso la casilla arranca sin marcar.** Mover dinero entre cuentas del usuario sin que él lo diga es el mismo problema de filosofía que PA.1 tiene abierto; acá no se decide nada por él. Sin aceptar, "Distribuir" sigue bloqueado exactamente como antes, y retirar la aceptación lo vuelve a bloquear.
+- **El reparto es `distribuirPago`, no un cálculo nuevo.** `planComplementoDeficit()` (en `logic/distribucion.js`) reusa el helper que ya cobra los pagos multi-cuenta: mayor saldo primero y **nunca por encima del saldo de cada cuenta**. Si el disponible no alcanza, no hay splits ni oferta: se muestra cuánto suman las otras cuentas y el botón sigue apagado. Así ninguna cuenta puede quedar en negativo por este camino, y no hizo falta un diálogo de sobregiro.
+- **El reparto se recalcula con la cuenta de origen ya resuelta.** Mientras el panel muestra la oferta, con dos o más cuentas y ningún `Ingreso.cuentaId` guardado, el asistente todavía no sabe a cuál entra el dinero, así que las cuenta todas. Al confirmar, `resolverCuenta()` ya devolvió la de origen: se vuelve a repartir excluyéndola (el complemento no puede salir de la misma cuenta que lo recibe) y, si con la cuenta real ya no alcanza, no se aplica nada. Sobregirar en silencio era justo el riesgo de esta rebanada.
+- **El déficit se mide contra el monto del cobro, no contra el saldo de la cuenta.** Es la misma regla que el guard anterior ya aplicaba al bloquear; lo único que cambia es que ahora hay una salida distinta de "recorta". Un déficit que venga solo del aporte al fondo también trae dinero a la cuenta de origen: ahí es donde el fondo vive (ADR 009).
+
+"Deshacer" cubre el complemento sin cambios: `cuentas` ya estaba en el snapshot. Sin bump de schema. SW v452 a v453.
+
+---
+
 ### feat(gastos): MC.16b, pagar con la tarjeta sube la deuda · 2026-07-30
 
 Segunda rebanada de MC.16 y el corazón del [ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md) (D3 y D4): ya se puede pagar con la tarjeta. Indivisible por la I3 del [ADR 053](DECISIONS/053-invariante-de-patrimonio.md), así que entran juntas el alta, la edición y la eliminación del consumo. Ficha: [`contexto/deudas.md`](contexto/deudas.md).

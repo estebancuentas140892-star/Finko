@@ -64,6 +64,7 @@ export {
   construirContextoDistribucion,
   sugerirDistribucionIngreso,
   resumirPlanDistribucion,
+  planComplementoDeficit,
   topeAbonoExtraDeuda,
   construirPlanInversiones,
   construirFilasTransferenciaCuentas,

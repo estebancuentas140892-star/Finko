@@ -403,8 +403,12 @@ function _preguntaCobroRecibido(periodoISO) {
  *      otras cuentas, sin tocar el total del remanente. La confirmación única
  *      aplica todo al final.
  *
- * El monto a distribuir, el indicador de paso y el resumen en vivo quedan fuera
- * de la paginación (visibles en todos los pasos). La navegación avanzar/atrás,
+ * El monto a distribuir, el indicador de paso, el resumen en vivo y el bloque de
+ * déficit (MC.13e-2e) quedan fuera de la paginación (visibles en todos los
+ * pasos): lo marcado en el Paso 1 puede exceder el monto recién en el Paso 2,
+ * así que la oferta de completar con otra cuenta tiene que verse desde donde se
+ * produzca. Su contenido lo escribe `acciones/distribucion.js` en vivo (solo
+ * texto y `hidden`, mismo trato que `#distribuir-cuentas-resumen`). La navegación avanzar/atrás,
  * el recálculo y el botón "Distribuir" se manejan desde acciones/distribucion.js. Devuelve ''
  * si no hay ningún destino fondeable, Necesidad que marcar, ni cuenta a la que
  * repartir Estilo de vida (MC.7e: con 2+ cuentas el reparto es accionable
@@ -540,6 +544,14 @@ function _renderPanelDistribuir(d) {
           ${indicadorPaso}
           ${pasosHtml}
           <p id="distribuir-resumen" class="form-hint" role="status"></p>
+          <div id="distribuir-deficit" class="distribuir__deficit" hidden>
+            <p id="distribuir-deficit-msg" class="form-hint" role="status"></p>
+            <label id="distribuir-deficit-opcion" class="checkbox-row" hidden>
+              <input type="checkbox" data-dist-completar-deficit />
+              <span>Completar con el saldo de mis otras cuentas</span>
+            </label>
+            <p id="distribuir-deficit-detalle" class="form-hint form-hint--muted"></p>
+          </div>
           <div class="distribuir__nav">
             <button type="button" class="btn btn-ghost btn-sm distribuir__nav-atras"
                     data-action="distribuir-paso-atras" hidden>

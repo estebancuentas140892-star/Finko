@@ -50,7 +50,6 @@ Las 53 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | MC.13 | Distribución v2: contextual por fecha, guiada y con origen real | Mis cuentas | alta | nada |
 | MC.13e-2c | Identidad visual por fila: logo/ícono + nombre + nota | Mis cuentas | media | verificar notas ya existentes en el análisis |
 | MC.13e-2d | Cuota del período en las filas de ahorro, no el objetivo total | Mis cuentas | media | nada (el motor ya existe) |
-| MC.13e-2e | Completar con saldo de otras cuentas si el ingreso no alcanza | Mis cuentas | media-alta | nada |
 | MC.13e-2f-2 | Decisión explícita del remanente (paso final del asistente) | Mis cuentas | alta | bloqueada por UX |
 | MC.13e-2g | Rediseño en 2 pasos con educación financiera | Mis cuentas | media | última; depende del handoff de diseño |
 | MC.13c-3 | Datar el cobro de todas las frecuencias | Mis cuentas | baja | nada |
@@ -128,7 +127,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 
 #### MC.13 - Distribución v2: contextual por fecha, guiada y con origen real del dinero
 - Prioridad  : alta
-- Estado     : **el motor está completo y en producción** ([ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md), aceptado parcialmente, con su diseño completo dentro); el asistente está a mitad de rediseño. Siguen abiertas **MC.13e-2c a MC.13e-2g** (MC.13e-2b y la mitad `cuentaId` de MC.13e-2f cerraron), abajo.
+- Estado     : **el motor está completo y en producción** ([ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md), aceptado parcialmente, con su diseño completo dentro); el asistente está a mitad de rediseño. Siguen abiertas **MC.13e-2c, MC.13e-2d, MC.13e-2f-2 y MC.13e-2g**, abajo.
 - Objetivo   : responder "¿qué debo hacer HOY con este dinero?" en vez de mostrar todo el mes. Diseño completo y regla vigente del motor (`infra/vencimientos.js`, única tabla de frecuencias del proyecto) en [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md), sección "Distribución v2".
 - Secciones  : Mis cuentas (`tesoreria/logic/distribucion.js`, `views/distribucion.js`, `acciones/distribucion.js`)
 - Depende de : nada (la decisión (a) ya está resuelta); coordinar con PA.1 (conflicto (b), independiente)
@@ -149,14 +148,6 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 - Secciones  : Mis cuentas, transversal por el motor (`infra/vencimientos.js`)
 - Depende de : nada (el motor ya existe, MC.13b)
 - Modelo     : Equilibrado - Alto (verificar el dato correcto antes de tocar la vista)
-
-#### MC.13e-2e - Completar con saldo de otras cuentas si el ingreso no alcanza
-- Prioridad  : media-alta
-- Objetivo   : punto 14 del brief: si lo marcado (Necesidades + Ahorro + Inversiones) excede el monto a distribuir, detectar el déficit y ofrecer explícitamente completar con saldo disponible de otra cuenta activa (no automático: pregunta explícita, patrón ya usado en abonos/pagos con sobregiro). Toca el cálculo de `excede`/`asignado` en `resumirPlanDistribucion` y el apply en `_confirmarDistribucion` (de dónde sale el complemento, cómo se registra el descuento en la segunda cuenta).
-- Secciones  : Mis cuentas
-- Archivos   : `modules/dominio/tesoreria/logic/distribucion.js` (`resumirPlanDistribucion`), `acciones/distribucion.js` (`_confirmarDistribucion`), `views/distribucion.js` (mensaje de déficit)
-- Depende de : nada
-- Modelo     : Alta capacidad - Alto (lógica financiera nueva con casos borde: qué cuenta, cuánto, no dejar ninguna en negativo sin confirmar)
 
 #### MC.13e-2f-2 - Decisión explícita del remanente (paso final del asistente)
 - Prioridad  : alta
