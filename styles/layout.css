@@ -485,12 +485,6 @@
 .bento__cell--accent:hover {
   box-shadow: var(--fk-shadow-glow);
 }
-.bento__cell--glass {
-  background: var(--fk-bg-glass);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
 /* Elementos internos de la celda */
 .bento__label {
   font-size: var(--fk-text-xs);

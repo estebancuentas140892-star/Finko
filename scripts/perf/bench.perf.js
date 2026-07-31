@@ -10,6 +10,9 @@
  *     una sola vez) + el costo de cargar un lote adicional (debe mantenerse
  *     plano con el tamaño del historial, no crecer con él).
  *   - Persistencia: JSON.stringify(S) aislado + el save() real (_flushNow).
+ *   - Arranque (PERF.8): loadData() real (JSON.parse + migraciones) sobre el
+ *     payload serializado, la otra mitad de la ruta de arranque que crece
+ *     lineal con el estado y que el D4 del ADR 030 exige medir.
  *
  * No es un test de aserción de negocio: es una MEDICIÓN. Corre fuera de la
  * suite normal (`pnpm test` no lo toca) vía su propia config:
@@ -41,7 +44,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { S, EventBus } from '../../modules/core/state.js';
-import { _flushNow } from '../../modules/core/storage.js';
+import { _flushNow, loadData, STORAGE_KEY } from '../../modules/core/storage.js';
 import { renderPanelResumen } from '../../modules/dominio/resumen/view.js';
 import { renderActividadReciente, renderMovimientosCompletos, cargarMasMovimientos } from '../../modules/dominio/movimientos/view.js';
 import { movimientosCompletos } from '../../modules/dominio/movimientos/logic.js';
@@ -121,6 +124,13 @@ describe('Rendimiento - hot paths (PERF.0 línea base, PERF.1 windowing, PERF.2 
       const stringify = medir(() => JSON.stringify(S), { iteraciones: 15 });
       const save      = medir(() => _flushNow(), { iteraciones: 15 });
 
+      // Arranque real (PERF.8): JSON.parse + migraciones sobre el mismo
+      // payload que "stringify ms" acaba de medir, ya en localStorage bajo
+      // la clave real. Es el costo que corre una sola vez al abrir la app y
+      // que el D4 del ADR 030 exige medir para decidir IndexedDB.
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(S));
+      const arranque = medir(() => loadData(), { iteraciones: 15 });
+
       renderMovimientosCompletos();
       nodosPrimerLote = document.querySelectorAll('#lista-movimientos .list-item').length;
       // Cantidad real disponible (calculada con la función pura, sin tocar el
@@ -139,6 +149,7 @@ describe('Rendimiento - hot paths (PERF.0 línea base, PERF.1 windowing, PERF.2 
         'Movs +1 lote ms':     fmt(loteExtra),
         'stringify ms':        fmt(stringify),
         'save ms':             fmt(save),
+        'arranque ms':         fmt(arranque),
         'nodos 1er lote':      nodosPrimerLote,
         'total disponible':    totalDisponible,
       });
