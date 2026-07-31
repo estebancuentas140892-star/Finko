@@ -16,6 +16,9 @@
  */
 
 import { test, expect } from '@playwright/test';
+// MC.16a: la versión de schema se lee de su fuente, no se teclea. Antes estaba
+// hardcodeada (27) y el bump a v28 la dejó en rojo sin que el cambio la tocara.
+import { SCHEMA_VERSION as SCHEMA_VERSION_VIGENTE } from '../../modules/core/storage.js';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -1182,7 +1185,7 @@ test.describe('Tesorería - cuenta y saldo', () => {
         version:      st._version,
         cuentaExiste: (st.cuentas ?? []).some(c => c.id === ing.cuentaId),
       };
-    }), { timeout: 5_000 }).toEqual({ version: 27, cuentaExiste: true });
+    }), { timeout: 5_000 }).toEqual({ version: SCHEMA_VERSION_VIGENTE, cuentaExiste: true });
   });
 });
 
@@ -3581,130 +3584,6 @@ test.describe('Mis cuentas - Distribuir mi ingreso: checklist de Necesidades', (
   });
 });
 
-test.describe('Mis cuentas - Distribuir mi ingreso: abono extra a deudas (BUG-006)', () => {
-  test('el abono extra a una deuda registra el gasto, baja el saldo y descuenta la cuenta una sola vez', async ({ page }) => {
-    await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
-      // cuotaMensual 0: la deuda no aparece en el checklist de Necesidades, solo
-      // en "Abonar extra a deudas". Así se aísla la ruta del abono extra (BUG-006).
-      st.compromisos = [
-        { id: 'd1', descripcion: 'Tarjeta', tipo: 'deuda-entidad', saldoTotal: 2_000_000, cuotaMensual: 0, diaPago: 15, activo: true },
-      ];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
-    });
-
-    await page.goto('/#tesoreria');
-    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
-    await page.click('[data-action="toggle-distribuir-ingreso"]');
-
-    // No hay fila de checklist (cuotaMensual 0); sí un input de abono extra.
-    await expect(page.locator('[data-nec-toggle]')).toHaveCount(0);
-    const inputExtra = page.locator('.distribuir__monto[data-dist-tipo="deuda"]');
-    await expect(inputExtra).toHaveCount(1);
-    await inputExtra.fill('500000');
-
-    await avanzarDistribuirHasta(page);
-    await page.click('[data-action="confirmar-distribucion"]');
-    await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
-
-    await page.waitForTimeout(400); // flush del save() debounced (ADN #5)
-    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
-
-    // BUG-006: ahora existe el gasto-abono, con el mismo shape que el abono individual.
-    const abono = st.gastos.find(g => g.compromisoId === 'd1');
-    expect(abono).toBeTruthy();
-    expect(abono.monto).toBe(500_000);
-    expect(abono.categoria).toBe('Deudas');
-    expect(abono.cuentaId).toBe('c1');
-    // La deuda bajó y la cuenta se descontó una sola vez (tesorería centraliza el descuento).
-    expect(st.compromisos.find(c => c.id === 'd1').saldoTotal).toBe(1_500_000);
-    expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(1_000_000 + 3_000_000 - 500_000);
-  });
-
-  test('Deshacer revierte el abono extra: borra el gasto y restaura el saldo de la deuda y la cuenta', async ({ page }) => {
-    await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
-      st.compromisos = [
-        { id: 'd1', descripcion: 'Tarjeta', tipo: 'deuda-entidad', saldoTotal: 2_000_000, cuotaMensual: 0, diaPago: 15, activo: true },
-      ];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
-    });
-
-    await page.goto('/#tesoreria');
-    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
-    await page.click('[data-action="toggle-distribuir-ingreso"]');
-    await page.locator('.distribuir__monto[data-dist-tipo="deuda"]').fill('500000');
-    await avanzarDistribuirHasta(page);
-    await page.click('[data-action="confirmar-distribucion"]');
-    await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
-
-    await page.click('[data-action="deshacer-distribucion"]');
-
-    await page.waitForTimeout(400);
-    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
-    expect(st.gastos.find(g => g.compromisoId === 'd1')).toBeUndefined();
-    expect(st.compromisos.find(c => c.id === 'd1').saldoTotal).toBe(2_000_000);
-    expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(1_000_000);
-  });
-});
-
-test.describe('Mis cuentas - Distribuir mi ingreso: cuota del checklist + abono extra a la misma deuda no sobrepaga (BUG-009)', () => {
-  test('el extra se topa a lo que queda tras la cuota marcada: la deuda llega a 0, nunca a negativo, y la cuenta se debita exactamente el saldo', async ({ page }) => {
-    await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
-      // saldoTotal 300.000 con cuotaMensual 100.000: la deuda aparece a la vez en
-      // el checklist (cuota, marcada por defecto) y en "Abonar extra a deudas".
-      st.compromisos = [
-        { id: 'd1', descripcion: 'Tarjeta', tipo: 'deuda-entidad', saldoTotal: 300_000, cuotaMensual: 100_000, diaPago: 15, activo: true },
-      ];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
-    });
-
-    await page.goto('/#tesoreria');
-    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
-    await page.click('[data-action="toggle-distribuir-ingreso"]');
-
-    // La cuota (100.000) llega marcada por defecto en el checklist.
-    const checklist = page.locator('[data-nec-toggle][data-nec-tipo="deuda"][data-nec-id="d1"]');
-    await expect(checklist).toBeChecked();
-    await expect(checklist).toHaveAttribute('data-nec-monto', '100000');
-
-    // El usuario pide un extra de 300.000: más de lo que queda tras la cuota (200.000).
-    // El abono extra vive en el paso 2 del asistente (MC.7d).
-    await avanzarDistribuirHasta(page, '.distribuir__monto[data-dist-tipo="deuda"][data-dist-id="d1"]');
-    const inputExtra = page.locator('.distribuir__monto[data-dist-tipo="deuda"][data-dist-id="d1"]');
-    await inputExtra.fill('300000');
-
-    // El resumen en vivo ya refleja el tope coordinado: asignado = 100.000 (cuota) + 200.000 (extra topado), no 400.000.
-    await expect(page.locator('#distribuir-resumen')).toContainText('Asignado: $300.000');
-
-    await avanzarDistribuirHasta(page);
-    await page.click('[data-action="confirmar-distribucion"]');
-    await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
-
-    await page.waitForTimeout(400); // flush del save() debounced (ADN #5)
-    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
-
-    // La deuda queda exactamente en 0, nunca negativa.
-    expect(st.compromisos.find(c => c.id === 'd1').saldoTotal).toBe(0);
-    // La suma de los dos gastos (cuota + extra topado) es el saldo real de la deuda, no más.
-    const gastosDeuda = st.gastos.filter(g => g.compromisoId === 'd1');
-    const totalAbonado = gastosDeuda.reduce((s, g) => s + g.monto, 0);
-    expect(totalAbonado).toBe(300_000);
-    // La cuenta se debita exactamente el saldo pagado, no cuota + extra sin topar (400.000).
-    expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(1_000_000 + 3_000_000 - 300_000);
-  });
-});
-
 // ── Mis cuentas: asistente paginado + presupuesto sobre el remanente (MC.7d, ADR 018 R3) ──
 
 test.describe('Mis cuentas - Distribuir mi ingreso: asistente paginado (MC.7d)', () => {
@@ -3825,10 +3704,10 @@ test.describe('Mis cuentas - Distribuir mi ingreso: asistente paginado (MC.7d)',
       st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
       st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
       // Sin fondo activo, sin metas ni apartados: ninguna fila de Ahorro. Con una
-      // deuda para que el paso 2 sí exista (abono extra), sin mostrar el hint de
+      // inversión para que el paso 2 sí exista, sin mostrar el hint de
       // "sugerencia de ahorro" (estado vacío corregido en MC.7f).
-      st.compromisos = [
-        { id: 'd1', descripcion: 'Tarjeta', tipo: 'deuda-entidad', saldoTotal: 2_000_000, cuotaMensual: 0, diaPago: 15, activo: true },
+      st.inversiones = [
+        { id: 'inv1', nombre: 'CDT', tipo: 'CDT', monto: 500_000 },
       ];
       localStorage.setItem('fk_v1', JSON.stringify(st));
     });
@@ -3839,7 +3718,7 @@ test.describe('Mis cuentas - Distribuir mi ingreso: asistente paginado (MC.7d)',
 
     await expect(page.locator('text=💰 Ahorro, deudas e inversiones · ajusta cuánto destinar a cada una:')).toBeVisible();
     await expect(page.locator('[data-dist-sugerencia-ahorro]')).toHaveCount(0);
-    await expect(page.locator('.distribuir__monto[data-dist-tipo="deuda"]')).toBeVisible();
+    await expect(page.locator('.distribuir__monto[data-dist-tipo="inversion"]')).toBeVisible();
   });
 
   test('R3: la sugerencia de ahorro se recalcula sobre el remanente real y respeta la edición manual del fondo', async ({ page }) => {
@@ -4058,6 +3937,71 @@ test.describe('Mis cuentas - Distribuir mi ingreso: reparto de Estilo de vida en
     const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
     expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(1_000_000);
     expect(st.cuentas.find(c => c.id === 'c2').saldo).toBe(500_000);
+  });
+});
+
+test.describe('Mis cuentas - Distribuir mi ingreso: cuenta del ingreso principal (MC.13e-2f-1)', () => {
+  test('con Ingreso.cuentaId guardado, confirmar distribuye directo sin preguntar la cuenta', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true, cuentaId: 'c2' }];
+      st.cuentas = [
+        { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true },
+        { id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 500_000, activa: true },
+      ];
+      st.compromisos = [
+        { id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', frecuencia: 'Mensual', diaPago: 5, monto: 800_000, activo: true, categoria: null },
+      ];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.click('[data-action="toggle-distribuir-ingreso"]');
+    await avanzarDistribuirHasta(page);
+
+    await page.click('[data-action="confirmar-distribucion"]');
+    // Con 2+ cuentas, sin cuentaId el picker aparece (ver el test de MC.7e
+    // "Deshacer revierte la transferencia..."); con cuentaId guardado no debe
+    // aparecer: la distribución se acredita directo a Bancolombia (c2).
+    await expect(page.locator('[data-role="elegir"]')).toHaveCount(0);
+    await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
+
+    await page.waitForTimeout(400);
+    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+    expect(st.cuentas.find(c => c.id === 'c2').saldo).toBe(500_000 + 3_000_000 - 800_000);
+    expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(1_000_000);
+  });
+
+  test('si la cuenta guardada ya no está activa, cae al picker como antes', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true, cuentaId: 'c2' }];
+      st.cuentas = [
+        { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true },
+        { id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 500_000, activa: false },
+      ];
+      st.compromisos = [
+        { id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', frecuencia: 'Mensual', diaPago: 5, monto: 800_000, activo: true, categoria: null },
+      ];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.click('[data-action="toggle-distribuir-ingreso"]');
+    await avanzarDistribuirHasta(page);
+
+    await page.click('[data-action="confirmar-distribucion"]');
+    // Una sola cuenta activa (c1): regla de cuenta única, auto-selecciona sin
+    // preguntar (mismo comportamiento de siempre, no el picker de varias).
+    await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
+
+    await page.waitForTimeout(400);
+    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+    expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(1_000_000 + 3_000_000 - 800_000);
   });
 });
 

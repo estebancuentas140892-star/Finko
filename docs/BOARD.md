@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-29 (INV.1 cierra: el dinero sale de una cuenta al registrar una inversión, y su tarjeta sale del tablero). Antes: DIS.19 cierra el frente de Ahorro y deja dos piezas de ARQ.1 ya en `infra/`; no tenía tarjeta propia, entró por handoff de diseño. Antes: 2026-07-27 (CAT.1 cierra: la taxonomía global queda implementada en las tres secciones y su tarjeta sale del tablero). Antes: MC.16 deja de estar bloqueada, el ADR 051 se acepta y la tarjeta se re-corta en MC.16a a MC.16e. La historia de lo ya cerrado vive en [`CHANGELOG.md`](CHANGELOG.md) y en las fichas de [`contexto/`](contexto/README.md), no aquí.
+> Última actualización: 2026-07-30 (MC.16a cierra: la tarjeta de crédito gana su cupo y su tarjeta sale del tablero; MC.16b queda desbloqueada). Antes: 2026-07-29 (INV.1 cierra: el dinero sale de una cuenta al registrar una inversión, y su tarjeta sale del tablero). Antes: DIS.19 cierra el frente de Ahorro y deja dos piezas de ARQ.1 ya en `infra/`; no tenía tarjeta propia, entró por handoff de diseño. Antes: 2026-07-27 (CAT.1 cierra: la taxonomía global queda implementada en las tres secciones y su tarjeta sale del tablero). Antes: MC.16 deja de estar bloqueada, el ADR 051 se acepta y la tarjeta se re-corta en MC.16a a MC.16e. La historia de lo ya cerrado vive en [`CHANGELOG.md`](CHANGELOG.md) y en las fichas de [`contexto/`](contexto/README.md), no aquí.
 
 ---
 
@@ -42,21 +42,19 @@ Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (si
 
 ## Índice de pendientes
 
-Las 54 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+Las 53 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
 | CAL.5b | El lote también cubre deudas, y se ofrece desde Inicio | Calendario | media | ARQ.2 (deudas); Inicio no depende de nada |
 | MC.13 | Distribución v2: contextual por fecha, guiada y con origen real | Mis cuentas | alta | nada |
-| MC.13e-2b | Quitar "Abonar extra a deudas" del asistente | Mis cuentas | media | conviene antes de MC.13e-2f |
 | MC.13e-2c | Identidad visual por fila: logo/ícono + nombre + nota | Mis cuentas | media | verificar notas ya existentes en el análisis |
 | MC.13e-2d | Cuota del período en las filas de ahorro, no el objetivo total | Mis cuentas | media | nada (el motor ya existe) |
-| MC.13e-2e | Completar con saldo de otras cuentas si el ingreso no alcanza | Mis cuentas | media-alta | conviene después de MC.13e-2b |
-| MC.13e-2f | Integración con la cuenta del ingreso fijo + decisión del remanente | Mis cuentas | alta | conviene después de MC.13e-2b; bloqueada por UX |
+| MC.13e-2e | Completar con saldo de otras cuentas si el ingreso no alcanza | Mis cuentas | media-alta | nada |
+| MC.13e-2f-2 | Decisión explícita del remanente (paso final del asistente) | Mis cuentas | alta | bloqueada por UX |
 | MC.13e-2g | Rediseño en 2 pasos con educación financiera | Mis cuentas | media | última; depende del handoff de diseño |
 | MC.13c-3 | Datar el cobro de todas las frecuencias | Mis cuentas | baja | nada |
-| MC.16a | Cupo de la tarjeta de crédito (`cupoTotal`) | Mis cuentas | alta | ADR 051 D1 (aceptado) |
-| MC.16b | Pagar con la tarjeta: el consumo sube la deuda | Mis cuentas | alta | MC.16a |
+| MC.16b | Pagar con la tarjeta: el consumo sube la deuda | Mis cuentas | alta | nada (MC.16a cerró) |
 | MC.16c | Bloque de tarjetas en Mis cuentas | Mis cuentas | media | MC.16b |
 | MC.16d | "¿A cuántas cuotas?" al registrar el consumo | Mis cuentas | media | MC.16b |
 | MC.16e | Nudges de costo: avance, otra red, pago mínimo | Mis cuentas | media | MC.16b |
@@ -104,7 +102,7 @@ Las 54 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 
 ## Pendientes por sección
 
-> **Lente de la auditoría de UX/producto (2026-07-21).** Recorrido de toda la app simulando a un usuario colombiano real. Sus 7 patrones son criterio de priorización, no tareas, y explican casi toda la lista de abajo. **Cerrados:** P2 (trabajo manual uno por uno), P4 (ledger de solo lectura) y P5 (módulos que no comparten datos con el saldo). **Abiertos:** P1 datos que la app ya tiene y vuelve a pedir (LIM.1, CFG.2a, MC.13e-2f), P3 no se puede editar (EDIT.1, MC.17f), P6 se informa pero no se acciona (motor único de sugerencia por categoría: LIM.1 / ANL.1 / [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md)), P7 un concepto con cuatro implementaciones (ARQ.1, ARQ.2).
+> **Lente de la auditoría de UX/producto (2026-07-21).** Recorrido de toda la app simulando a un usuario colombiano real. Sus 7 patrones son criterio de priorización, no tareas, y explican casi toda la lista de abajo. **Cerrados:** P2 (trabajo manual uno por uno), P4 (ledger de solo lectura) y P5 (módulos que no comparten datos con el saldo). **Abiertos:** P1 datos que la app ya tiene y vuelve a pedir (LIM.1, CFG.2a; la mitad `cuentaId` de MC.13e-2f ya cerró), P3 no se puede editar (EDIT.1, MC.17f), P6 se informa pero no se acciona (motor único de sugerencia por categoría: LIM.1 / ANL.1 / [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md)), P7 un concepto con cuatro implementaciones (ARQ.1, ARQ.2).
 >
 > **Dos hallazgos siguen cuestionando una decisión vigente y no se ejecutan sin la palabra de Esteban** (regla 2.7: un ADR no se revierte en silencio): la propuesta de distribución de un toque frente a MC.13e-2g, y MC.17f frente al cierre de MC.17 como "completa". Cada tarjeta lo dice en su Estado.
 >
@@ -131,21 +129,13 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 
 #### MC.13 - Distribución v2: contextual por fecha, guiada y con origen real del dinero
 - Prioridad  : alta
-- Estado     : **el motor está completo y en producción** ([ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md), aceptado parcialmente, con su diseño completo dentro); el asistente está a mitad de rediseño. Siguen abiertas **MC.13e-2b a MC.13e-2g**, abajo.
+- Estado     : **el motor está completo y en producción** ([ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md), aceptado parcialmente, con su diseño completo dentro); el asistente está a mitad de rediseño. Siguen abiertas **MC.13e-2c a MC.13e-2g** (MC.13e-2b y la mitad `cuentaId` de MC.13e-2f cerraron), abajo.
 - Objetivo   : responder "¿qué debo hacer HOY con este dinero?" en vez de mostrar todo el mes. Diseño completo y regla vigente del motor (`infra/vencimientos.js`, única tabla de frecuencias del proyecto) en [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md), sección "Distribución v2".
 - Secciones  : Mis cuentas (`tesoreria/logic/distribucion.js`, `views/distribucion.js`, `acciones/distribucion.js`)
 - Depende de : nada (la decisión (a) ya está resuelta); coordinar con PA.1 (conflicto (b), independiente)
 - Modelo     : cada rebanada MC.13e-2 lleva el suyo (ver abajo)
 
 > **Rebanadas de MC.13e-2**, re-cortadas por riesgo e independencia (regla 2.1). El mapa del asistente (qué función vive en qué archivo, con líneas) es la tabla de anclas de [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md): leerla antes de iniciar cualquiera de estas rebanadas.
-
-#### MC.13e-2b - Quitar "Abonar extra a deudas" del asistente
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : un abono es un pago, vive en Deudas, no en el asistente de distribución: quitar `seccionDeudas`/`destinosDeudas` del asistente y del apply. Archivos, funciones y la trampa de `descontable`/`hayDestinos` en [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md).
-- Secciones  : Mis cuentas, Deudas (el consumidor de `distribucion:aplicar` para abonos)
-- Depende de : conviene antes de MC.13e-2f (simplifica el paso final que esa rebanada rediseña)
-- Modelo     : Equilibrado - Alto (toca apply + un consumidor por EventBus en otro dominio)
 
 #### MC.13e-2c - Identidad visual por fila: logo/ícono + nombre + nota
 - Prioridad  : media
@@ -166,18 +156,17 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 - Objetivo   : punto 14 del brief: si lo marcado (Necesidades + Ahorro + Inversiones) excede el monto a distribuir, detectar el déficit y ofrecer explícitamente completar con saldo disponible de otra cuenta activa (no automático: pregunta explícita, patrón ya usado en abonos/pagos con sobregiro). Toca el cálculo de `excede`/`asignado` en `resumirPlanDistribucion` y el apply en `_confirmarDistribucion` (de dónde sale el complemento, cómo se registra el descuento en la segunda cuenta).
 - Secciones  : Mis cuentas
 - Archivos   : `modules/dominio/tesoreria/logic/distribucion.js` (`resumirPlanDistribucion`), `acciones/distribucion.js` (`_confirmarDistribucion`), `views/distribucion.js` (mensaje de déficit)
-- Depende de : conviene después de MC.13e-2b (menos destinos que balancear)
+- Depende de : nada
 - Modelo     : Alta capacidad - Alto (lógica financiera nueva con casos borde: qué cuenta, cuánto, no dejar ninguna en negativo sin confirmar)
 
-#### MC.13e-2f - Integración con la cuenta del ingreso fijo + decisión explícita del remanente
+#### MC.13e-2f-2 - Decisión explícita del remanente (paso final del asistente)
 - Prioridad  : alta
-- Estado     : pendiente de análisis. **Necesita la palabra de Esteban antes de codificar (regla 2.7)**: hoy el paso final "Estilo de vida" es puramente informativo (el remanente se queda donde está, sin pedir confirmación); el punto 18 quiere una decisión EXPLÍCITA (dejarlo en la cuenta / ahorro / meta) y la integración del ingreso fijo quiere que el paso desaparezca del todo. Ambas cosas juntas cambian la UX del cierre del asistente (MC.7e): preguntar antes de decidir el diseño exacto (¿un selector "¿qué haces con los $X que sobran?" con 3 opciones? ¿un cuarto paso?).
-- Objetivo   : (integración ingreso fijo) el asistente parte de `Ingreso.cuentaId` (MC.13d) en vez de siempre llamar `resolverCuenta()`; los pagos aprobados se descuentan de ahí. (18) el remanente ya no es solo informativo: exige una decisión explícita antes de poder confirmar.
+- Estado     : pendiente de análisis. **Necesita la palabra de Esteban antes de codificar (regla 2.7)**: hoy el paso final "Estilo de vida" es puramente informativo (el remanente se queda donde está, sin pedir confirmación); el punto 18 quiere una decisión EXPLÍCITA (dejarlo en la cuenta / ahorro / meta). Cambia la UX del cierre del asistente (MC.7e): preguntar antes de decidir el diseño exacto (¿un selector "¿qué haces con los $X que sobran?" con 3 opciones? ¿un cuarto paso?).
+- Objetivo   : el remanente ya no es solo informativo: exige una decisión explícita antes de poder confirmar. **MC.13e-2f-1 (usar `Ingreso.cuentaId` en vez de preguntar siempre la cuenta) ya cerró** (ver `contexto/mis-cuentas.md`); esta es la mitad que seguía bloqueada.
 - Secciones  : Mis cuentas
-- Archivos   : `modules/dominio/tesoreria/acciones/distribucion.js` (`_confirmarDistribucion`, resolución de cuenta), `views/distribucion.js` (`seccionInfo`, paso "Estilo de vida")
-- **Desbloqueo parcial propuesto por el triaje de la auditoría (2026-07-21), patrón P1:** esta tarjeta mezcla dos cosas de dificultad muy distinta, y la mitad fácil está presa de la difícil. Usar `Ingreso.cuentaId` (MC.13d) como punto de partida en vez de llamar siempre a `resolverCuenta()` **no necesita diseño nuevo**: el dato ya se captura desde MC.13d y hoy se ignora, así que el usuario vuelve a elegir la misma cuenta cada quincena. La decisión explícita del remanente (punto 18) sí necesita la palabra de Esteban. Recomendación: partir en **MC.13e-2f-1** (usar el `cuentaId` del ingreso, desbloqueada, ejecutable ya) y **MC.13e-2f-2** (decisión del remanente, sigue bloqueada).
-- Depende de : conviene después de MC.13e-2b (menos ruido en el paso final); **bloqueada por la decisión de UX de Esteban** (solo la mitad del remanente, ver desbloqueo parcial arriba)
-- Modelo     : Alta capacidad - Alto (lógica financiera + decisión de producto no trivial); la mitad del `cuentaId` baja a Equilibrado - Alto
+- Archivos   : `modules/dominio/tesoreria/acciones/distribucion.js` (`_confirmarDistribucion`), `views/distribucion.js` (`seccionInfo`, paso "Estilo de vida")
+- Depende de : **bloqueada por la decisión de UX de Esteban**
+- Modelo     : Alta capacidad - Alto (lógica financiera + decisión de producto no trivial)
 
 #### MC.13e-2g - Rediseño en 2 pasos con educación financiera
 - Prioridad  : media
@@ -200,16 +189,6 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 
 > **MC.16 - Tarjeta de crédito como producto integrado.** El ADR quedó **aceptado el 2026-07-27**: la tarjeta es un producto de Deudas (alternativa B), con saldo revolvente y una sola deuda por tarjeta. Diseño completo, invariantes y las 4 alternativas rechazadas en **[ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md)**, su dueño: leerlo antes de iniciar cualquier rebanada. **Ninguna rebanada crea un tipo de cuenta ni una `Cuenta` para la tarjeta** (D5, I5 del [ADR 053](DECISIONS/053-invariante-de-patrimonio.md)). Desbloquea `consumosTC` del monitor de renta (CFG.2a) en cuanto MC.16b esté en producción.
 
-#### MC.16a - Cupo de la tarjeta de crédito (`cupoTotal`)
-- Prioridad  : alta
-- Área       : code
-- Estado     : pendiente, ejecutable ya. Es el dato base: sin cupo no hay producto operable.
-- Objetivo   : el formulario de deuda con categoría 'Tarjeta de crédito' gana el campo `cupoTotal`, y la fila de Deudas muestra el disponible (`cupoTotal - saldoTotal`), derivado, nunca almacenado. `cupoTotal` es además el discriminador de "tarjeta operable" (ADR 051 D1).
-- Secciones  : Deudas
-- Archivos   : `modules/dominio/compromisos/views/formularios.js` (campo condicionado a la categoría, patrón `_wireToggleFiado`), `logic.js` (validación/normalización), `views/lista.js`, `modules/core/state.js` (typedef), `modules/core/storage.js` (bump a v28, migración no-op, precedente v26 → v27)
-- Depende de : nada (ADR 051 aceptado)
-- Modelo     : Equilibrado - Alto (campo nuevo + bump; sin dinero en movimiento)
-
 #### MC.16b - Pagar con la tarjeta: el consumo sube la deuda
 - Prioridad  : alta
 - Área       : code
@@ -218,7 +197,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 - Secciones  : Gastos, Deudas (saldo), Análisis y Límites (los reciben gratis: un consumo es un gasto normal)
 - Archivos   : `modules/dominio/gastos/index.js` (`_ajustarSaldoDeuda`, alta/edición/eliminación), `gastos/view.js`, `modules/infra/cuenta-helper.js` (`renderSelectorCuenta` acepta tarjetas por parámetro, nunca lee `S.compromisos`), `modules/core/state.js` (typedef de Gasto)
 - Riesgo     : el signo invertido en la edición descuadra la deuda en silencio. La tarjeta solo se ofrece en Gastos: no se ahorra ni se transfiere con cupo (D4)
-- Depende de : MC.16a
+- Depende de : nada (MC.16a cerró el 2026-07-30: `cupoTotal` ya existe)
 - Modelo     : Alta capacidad - Alto (mueve saldo de deuda con reversa exacta en tres operaciones)
 
 #### MC.16c - Bloque de tarjetas en Mis cuentas

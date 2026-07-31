@@ -65,9 +65,9 @@ export {
   sugerirDistribucionIngreso,
   resumirPlanDistribucion,
   topeAbonoExtraDeuda,
-  construirPlanDeudas,
   construirPlanInversiones,
   construirFilasTransferenciaCuentas,
+  cuentaIngresoPrincipal,
 } from './logic/distribucion.js';
 
 export {

@@ -24,7 +24,6 @@ import {
   construirDesgloseAhorroPorObjetivo,
   construirDesgloseNecesidades,
   presupuestosSobreRemanente,
-  construirPlanDeudas,
   construirPlanInversiones,
   construirFilasTransferenciaCuentas,
   estadoDistribucion,
@@ -172,13 +171,6 @@ function _construirDatosDistribucion() {
     budgetAhorro: presupuestos.ahorro,
   });
 
-  // Deudas con saldo pendiente (MC.4b): destinos fondeables vía abono real.
-  const deudasPendientes = (S.compromisos ?? [])
-    .filter(c => c.activo !== false
-      && (c.tipo === 'deuda-entidad' || c.tipo === 'deuda-personal')
-      && (Number(c.saldoTotal) || 0) > 0);
-  const destinosDeudas = construirPlanDeudas({ deudas: deudasPendientes });
-
   // Inversiones (MC.4e): cada holding es un destino fondeable; el aporte
   // incrementa su capital. El descuento de la cuenta lo centraliza tesorería.
   const destinosInversiones = construirPlanInversiones({ inversiones: S.inversiones ?? [] });
@@ -192,7 +184,7 @@ function _construirDatosDistribucion() {
     : [];
 
   const hayDestinos = itemsNecesidades.length > 0 || destinosAhorro.length > 0
-    || destinosDeudas.length > 0 || destinosInversiones.length > 0 || destinosCuentas.length > 0;
+    || destinosInversiones.length > 0 || destinosCuentas.length > 0;
 
   return {
     dist, presetId, distribucionPersonalizada, estado: estadoDist, hayDestinos,
@@ -203,7 +195,6 @@ function _construirDatosDistribucion() {
       ahorroBudget:    presupuestos.ahorro,
       evBudget:        presupuestos.estiloVida,
       destinosAhorro,
-      destinosDeudas,
       destinosInversiones,
       destinosCuentas,
       itemsNecesidades,
@@ -429,17 +420,16 @@ function _preguntaCobroRecibido(periodoISO) {
  * antes se encontraba un asistente que no dejaba avanzar; ahora encuentra la
  * pregunta que lo desbloquea sin que Calendario tenga que saber nada de esto.
  *
- * @param {{montoIngreso:number, ahorroPct:number, estiloVidaPct:number, ahorroBudget:number, evBudget:number, destinosAhorro:Array, destinosDeudas:Array, destinosInversiones:Array, destinosCuentas?:Array, itemsNecesidades?:Array, estado:{estado:string, periodoISO:string|null, esHoy:boolean}}} d
+ * @param {{montoIngreso:number, ahorroPct:number, estiloVidaPct:number, ahorroBudget:number, evBudget:number, destinosAhorro:Array, destinosInversiones:Array, destinosCuentas?:Array, itemsNecesidades?:Array, estado:{estado:string, periodoISO:string|null, esHoy:boolean}}} d
  * @returns {string}
  */
 function _renderPanelDistribuir(d) {
   const { montoIngreso, ahorroPct, estiloVidaPct, ahorroBudget, evBudget } = d;
   const necesidades = d.itemsNecesidades ?? [];
   const ahorro      = d.destinosAhorro ?? [];
-  const deudas      = d.destinosDeudas ?? [];
   const inversiones = d.destinosInversiones ?? [];
   const cuentas     = d.destinosCuentas ?? [];
-  if (necesidades.length === 0 && ahorro.length === 0 && deudas.length === 0 && inversiones.length === 0 && cuentas.length === 0) return '';
+  if (necesidades.length === 0 && ahorro.length === 0 && inversiones.length === 0 && cuentas.length === 0) return '';
 
   const est = d.estado?.estado ?? 'sin-fecha';
 
@@ -475,13 +465,6 @@ function _renderPanelDistribuir(d) {
           <p class="form-hint">Sugerencia: <span data-dist-sugerencia-ahorro>${f(ahorroBudget)}</span> a ahorro${necesidades.length > 0 ? ', calculada sobre lo que queda tras tus Necesidades marcadas' : ''}.</p>
           <div class="distribuir-ingreso__destinos">${ahorro.map(_filaDistribuir).join('')}</div>`
     : '';
-  const seccionDeudas = deudas.length > 0
-    ? `
-          <p class="form-hint distribuir__subtitulo">Abonar extra a deudas (ordenadas por prioridad de pago):</p>
-          <div class="distribuir-ingreso__destinos">
-            ${deudas.map(_filaDistribuir).join('')}
-          </div>`
-    : '';
   const seccionInversiones = inversiones.length > 0
     ? `
           <p class="form-hint distribuir__subtitulo">Aportar a inversiones:</p>
@@ -492,7 +475,6 @@ function _renderPanelDistribuir(d) {
   const seccionAsignaciones = `
           ${tituloAsignaciones}
           ${seccionAhorro}
-          ${seccionDeudas}
           ${seccionInversiones}`;
 
   // Paso final (MC.4c): Estilo de vida no se mueve entre gastos/ahorro/deudas en
@@ -524,7 +506,7 @@ function _renderPanelDistribuir(d) {
   // Shell paginado (MC.7d): un paso visible a la vez, avanzar/atrás inline.
   const pasos = [];
   if (necesidades.length > 0) pasos.push({ titulo: 'Necesidades', html: seccionNecesidades });
-  if (ahorro.length > 0 || deudas.length > 0 || inversiones.length > 0) {
+  if (ahorro.length > 0 || inversiones.length > 0) {
     pasos.push({ titulo: 'Ahorro, deudas e inversiones', html: seccionAsignaciones });
   }
   pasos.push({ titulo: 'Estilo de vida', html: seccionInfo });
@@ -684,7 +666,7 @@ function _renderTarjetaDistribuir({ dist, estado, hayDestinos, distribuir }) {
  * @param {ReturnType<typeof sugerirDistribucionIngreso>} dist
  * @param {string} presetActivo
  * @param {{n:number, e:number, a:number}|null} distribucionPersonalizada
- * @param {{montoIngreso:number, ahorroPct:number, estiloVidaPct:number, ahorroBudget:number, evBudget:number, destinosAhorro:Array, destinosDeudas:Array}} distribuir
+ * @param {{montoIngreso:number, ahorroPct:number, estiloVidaPct:number, ahorroBudget:number, evBudget:number, destinosAhorro:Array}} distribuir
  */
 function _renderContenidoAsistente({ razon, split }, presetActivo, distribucionPersonalizada, distribuir) {
   const { necesidades, estiloVida, ahorro } = split;

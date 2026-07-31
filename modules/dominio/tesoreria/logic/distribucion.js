@@ -7,7 +7,7 @@
  * - Testeable en Node/Vitest sin ningun mock de navegador.
  */
 
-import { obligacionesYAportesDelCobro } from '../../../infra/vencimientos.js';
+import { obligacionesYAportesDelCobro, frecuenciaPrincipalIngresos, normalizarFrecuenciaAporte } from '../../../infra/vencimientos.js';
 import { FACTOR_MENSUAL, isoFecha, ultimoPagoHasta } from './ingresos.js';
 
 /**
@@ -191,6 +191,29 @@ export function estadoDistribucion(
     periodoISO: mejorCobro,
     esHoy:      mejorCobro === hoyISO,
   };
+}
+
+/**
+ * Cuenta de destino del ingreso principal (MC.13e-2f-1, mitad desbloqueada de
+ * MC.13e-2f): el asistente parte de `Ingreso.cuentaId` (MC.13d) en vez de
+ * preguntar siempre con `resolverCuenta()`. El "principal" es el mismo
+ * criterio de `frecuenciaPrincipalIngresos` (la frecuencia con más ingresos
+ * activos); entre esos, el primero que ya tiene `cuentaId` guardado. `null`
+ * si ninguno la tiene (el caller cae a `resolverCuenta()` como hoy).
+ *
+ * Pura: no lee `S` ni el DOM.
+ *
+ * @param {import('../../../core/state.js').Ingreso[]} ingresos
+ * @returns {string|null}
+ */
+export function cuentaIngresoPrincipal(ingresos = []) {
+  const activos = (ingresos ?? []).filter(i => i.activo !== false);
+  if (activos.length === 0) return null;
+
+  const principal = frecuenciaPrincipalIngresos(activos);
+  const conCuenta = activos.find(i =>
+    normalizarFrecuenciaAporte(i.frecuencia) === principal && i.cuentaId);
+  return conCuenta?.cuentaId ?? null;
 }
 
 // ── DISTRIBUCIÓN ADAPTATIVA DEL INGRESO (Fase 3) ─────────────────
@@ -797,20 +820,6 @@ export function resumirPlanDistribucion(montoIngreso, destinos) {
   };
 }
 
-/**
- * Tasa efectiva anual (decimal) de una deuda según su `tasaUnidad`.
- * Replicado de compromisos/logic.js (`tasaEADe` / `tasaMensualToEA`) para no
- * crear dependencia cruzada entre dominios (ADN #10). Mantener en sync si la
- * fórmula cambia allá.
- *
- * @param {{ tasa?: number, tasaUnidad?: string }} c
- * @returns {number}
- */
-function _tasaEADeuda(c) {
-  const t = Number(c?.tasa);
-  if (!Number.isFinite(t) || t < 0) return 0;
-  return c?.tasaUnidad === 'mensual' ? Math.pow(1 + t, 12) - 1 : t;
-}
 
 /**
  * Tope del abono extra a una deuda cuando su cuota del checklist de
@@ -831,31 +840,6 @@ function _tasaEADeuda(c) {
 export function topeAbonoExtraDeuda(saldoTotal, cuotaMarcada, extraSolicitado) {
   const disponible = Math.max(0, (Number(saldoTotal) || 0) - (Number(cuotaMarcada) || 0));
   return Math.min(Number(extraSolicitado) || 0, disponible);
-}
-
-/**
- * Arma las filas de deudas fondeables para "Distribuir mi ingreso" (MC.4b),
- * ordenadas por prioridad de pago estilo Avalancha (mayor interés efectivo
- * primero, que es la estrategia óptima recomendada). Empate por menor saldo.
- *
- * Cada fila arranca en monto 0 (el usuario decide cuánto abonar). `saldoTotal`
- * se incluye para mostrarlo y para topar el abono (no se paga más de lo que se
- * debe). Pura: recibe las deudas y no lee S ni el DOM.
- *
- * @param {{ deudas?: Array<{id:string, descripcion?:string, saldoTotal?:number, tasa?:number, tasaUnidad?:string}> }} args
- * @returns {Array<{ tipo:'deuda', id:string, nombre:string, monto:number, saldoTotal:number, tasaEA:number }>}
- */
-export function construirPlanDeudas({ deudas = [] }) {
-  return deudas
-    .map(d => ({
-      tipo:       'deuda',
-      id:         d.id,
-      nombre:     d.descripcion ?? d.nombre ?? 'Deuda',
-      monto:      0,
-      saldoTotal: Number(d.saldoTotal) || 0,
-      tasaEA:     _tasaEADeuda(d),
-    }))
-    .sort((a, b) => (b.tasaEA - a.tasaEA) || (a.saldoTotal - b.saldoTotal));
 }
 
 /**

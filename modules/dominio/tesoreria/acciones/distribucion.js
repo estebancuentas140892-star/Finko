@@ -22,6 +22,7 @@ import {
   presupuestosSobreRemanente,
   estadoDistribucion,
   topeAbonoExtraDeuda,
+  cuentaIngresoPrincipal,
 } from '../logic/distribucion.js';
 import { renderDistribucionIngreso, renderAsistenteDistribucion } from '../view.js';
 
@@ -555,7 +556,13 @@ async function _confirmarDistribucion() {
   // (MC.7e) por sí sola ya es una acción válida, aunque nada más esté marcado.
   if (monto <= 0 || (asignado <= 0 && transferido <= 0) || excede || excedeTransferencia) return;
 
-  const cuentaId = await resolverCuenta(S.cuentas ?? [], 'distribuir tu ingreso');
+  // MC.13e-2f-1: parte de la cuenta que el ingreso principal ya tiene guardada
+  // (MC.13d) en vez de preguntar siempre; solo si esa cuenta sigue activa. Sin
+  // ella, cae al flujo de siempre (`resolverCuenta`).
+  const cuentaPreferida = cuentaIngresoPrincipal(S.ingresos ?? []);
+  const cuentaId = (cuentaPreferida && (S.cuentas ?? []).some(c => c.id === cuentaPreferida && c.activa !== false))
+    ? cuentaPreferida
+    : await resolverCuenta(S.cuentas ?? [], 'distribuir tu ingreso');
   if (!cuentaId) return; // 0 cuentas (guía) o el usuario canceló.
 
   // Snapshot antes de tocar nada, para un "Deshacer" atómico.

@@ -10,6 +10,31 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(compromisos): MC.16a, el cupo de la tarjeta de crédito · 2026-07-30
+
+Primera de las cinco rebanadas de MC.16 ([ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md), aceptado el 2026-07-27). Entrega el dato base y nada más: **todavía no se puede pagar con la tarjeta**, eso es MC.16b. Ficha: [`contexto/deudas.md`](contexto/deudas.md).
+
+- **El campo nuevo hace también de discriminador.** `cupoTotal` no viene acompañado de un `esTarjeta`: una deuda con categoría 'Tarjeta de crédito' y cupo es un producto operable; sin cupo es una deuda vieja capturada a posteriori y se comporta igual que siempre. Es la misma economía de `esCuotaManejo`, que ya era dato y marca a la vez, y evita dos fuentes que puedan contradecirse.
+- **El disponible se deriva en la vista, nunca se almacena.** `cupoTotal - saldoTotal` se calcula al pintar el chip. Guardarlo obligaría a sincronizarlo con cada abono y cada consumo futuro, que es exactamente el tipo de doble fuente que la I5 del [ADR 053](DECISIONS/053-invariante-de-patrimonio.md) prohíbe. El chip acota a cero con `Math.max`, así que un saldo por encima del cupo no muestra un negativo.
+- **Ninguna `Cuenta` nueva, ningún tipo de cuenta nuevo.** La prohibición es explícita (D5): el cupo es capacidad de endeudamiento, no dinero, y `calcularActivos()` no se tocó. `calcularPasivos()` ya sumaba el `saldoTotal` de toda deuda activa, así que el patrimonio quedó correcto sin escribir una línea de análisis.
+- **El campo se revela por categoría con el patrón que ya existía.** `_wireCupoTarjeta` es un calco de `_wireIconoOtraCategoria`: `change` delegado en el `<form>`, filtrando `e.target.name === 'categoria'`. Cero vocabulario nuevo.
+
+Bump de schema v27 a v28 con migración no-op documentada (precedente v26 a v27: campo que el usuario llena por formulario, sin backfill posible).
+
+---
+
+### refactor(tesoreria): MC.13e-2b + MC.13e-2f-1, el asistente deja las deudas a Deudas y parte de la cuenta del ingreso · 2026-07-30
+
+Dos rebanadas de bajo riesgo del rediseño del asistente "Distribuir mi ingreso" (MC.13), ficha [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md).
+
+- **MC.13e-2b: "Abonar extra a deudas" sale del asistente.** Un abono es un pago y vive en Deudas, no en un reparto de ingreso: se quitan `destinosDeudas`/`seccionDeudas` de `_construirDatosDistribucion`, `_renderPanelDistribuir` y el apply (`views/distribucion.js`, `acciones/distribucion.js`). `construirPlanDeudas()` y su helper `_tasaEADeuda()` quedaron sin consumidor y se borraron de `logic/distribucion.js` junto con sus tests unitarios; los 2 `test.describe` de E2E que ejercían solo esa ruta (BUG-006, BUG-009) se borraron con ella.
+- **MC.13e-2f-1: la distribución parte del `cuentaId` que el ingreso ya tiene guardado (MC.13d).** Antes siempre preguntaba con `resolverCuenta()` aunque el usuario ya hubiera elegido cuenta al capturar el ingreso. `cuentaIngresoPrincipal()` (nueva, `logic/distribucion.js`) busca, entre los ingresos activos de la frecuencia principal, el primero con `cuentaId`; si esa cuenta sigue activa, `_confirmarDistribucion` la usa directo y solo cae al picker de siempre cuando no hay dato o la cuenta se desactivó. Sin bump de schema: reutiliza el campo de MC.13d.
+- La mitad difícil de MC.13e-2f (decisión explícita del remanente, punto 18) sigue bloqueada por la palabra de Esteban, sin tocar.
+
+485/485 unit de tesoreria + 3410/3410 unit total + lint verdes. 22/22 E2E del asistente (20 existentes + 2 nuevas para MC.13e-2f-1). SW v448 → v449.
+
+---
+
 ### test(e2e): BUG-019 y BUG-020, la compuerta E2E vuelve a verde · 2026-07-30
 
 La suite E2E llevaba dos días caída sin que nadie lo supiera: la última corrida verde fue del 2026-07-28 (236/236), anterior a DIS.19, y el cierre de INV.1 fue el primero que la volvió a correr. Estaba en 20+ fallas con 146 tests sin ejecutar. Queda en **243/243**, y la unitaria en 3450/3450. Cero cambios en `modules/`: el defecto era de los tests, no de la app.
