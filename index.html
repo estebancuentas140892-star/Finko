@@ -417,8 +417,16 @@
         </header>
 
         <!-- BENTO GRID del dashboard (orden IN.8a, ADR 034 D1): hero →
-             "Atención hoy" (nudge + pendientes + prioridades + límites) →
-             "Resumen de la semana" → accesos + actividad al final.
+             "Atención hoy" → "Resumen de la semana" → accesos + actividad
+             al final. Dentro de "Atención hoy" el orden lo fija el
+             ADR 057 D2 (IN.9a): los dos avisos primero (distribuir +
+             límites), las dos listas después (vencidos + prioridades).
+             Acota el ADR 034 D1, que ponía límites al final del grupo: a
+             span 6 los avisos solo se emparejan entre sí, y un aviso junto
+             a una lista estira la fila en vez de acortarla (medido: 588px
+             sin reordenar contra 459px reordenado, a 1280px). El orden es
+             el mismo en las dos plataformas: es marcado compartido y
+             separarlo por CSS divorciaría el foco del orden visual.
              Los paneles dinámicos arrancan con [hidden]; cada dominio los
              activa cuando hay datos. Un grupo sin celdas visibles desaparece
              completo (label incluido) vía :has() en layout.css. -->
@@ -484,8 +492,15 @@
               <!-- DISTRIBUIR INGRESO: nudge (CAL.1, ADR 028 D4). Visible solo
                    cuando llegó el cobro del periodo y aún no se distribuyó.
                    tesoreria/views/distribucion.js lo llena; [hidden] si no aplica. -->
-              <div id="panel-distribuir-inicio" class="bento__cell bento__cell--flat bento__cell--full"
+              <div id="panel-distribuir-inicio" class="bento__cell bento__cell--flat bento__cell--half"
                    role="region" aria-label="Distribuir tu ingreso" hidden></div>
+
+              <!-- ALERTAS DE LÍMITES: envelopes en estado alerta (>=75%) o excedido
+                   (>100%). Sin rediseño propio en Inicio v2 (su copy vive en LIM.1).
+                   presupuesto/view.js lo llena; [hidden] si todos están en 'ok'.
+                   IN.9a: sube al lado del otro aviso; ver el comentario del grupo. -->
+              <div id="panel-limites" class="bento__cell bento__cell--flat bento__cell--half"
+                   role="region" aria-label="Alertas de límites de gasto" hidden></div>
 
               <!-- PENDIENTES / VENCIDOS: compromisos cuyo día de pago ya pasó.
                    dashboard.js lo llena; [hidden] hasta que haya datos. -->
@@ -496,12 +511,6 @@
                    dashboard.js lo llena; [hidden] hasta que haya datos. -->
               <div id="panel-prioridades" class="bento__cell bento__cell--flat bento__cell--half"
                    role="region" aria-label="Próximas prioridades" hidden></div>
-
-              <!-- ALERTAS DE LÍMITES: envelopes en estado alerta (>=75%) o excedido
-                   (>100%). Sin rediseño propio en Inicio v2 (su copy vive en LIM.1).
-                   presupuesto/view.js lo llena; [hidden] si todos están en 'ok'. -->
-              <div id="panel-limites" class="bento__cell bento__cell--flat bento__cell--full"
-                   role="region" aria-label="Alertas de límites de gasto" hidden></div>
 
             </div>
           </div>
