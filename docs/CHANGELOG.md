@@ -10,6 +10,12 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(transversal): CAT.4, auditoría de consistencia de formularios cerrada sin hallazgos · 2026-07-31
+
+Auditoría de las dos reglas transversales (categoría/tipo antes que descripción, fecha por defecto = hoy en creación) sobre los ~8 formularios en alcance: Gastos, Ingresos fijos y puntuales, Transferencias, Deuda nueva, Abono a deuda, Gasto fijo, Inversiones, Personales/préstamos, Ahorro/aporte. Las dos reglas ya se cumplían en todos, los formularios v2 la respetan por diseño. `fechaObjetivo` (Apartados) y `fechaLimite` (Metas) quedan fuera de alcance: son fecha meta futura opcional, no fecha de registro/movimiento. Sin cambios de código ni de schema. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
+
+---
+
 ### feat(inicio): IN.9b, 8 filas de actividad en escritorio y 5 en móvil · 2026-07-31
 
 Segunda rebanada de **IN.9** ([ADR 057](DECISIONS/057-inicio-en-escritorio.md) D4), cierra IE8. Ficha: [`contexto/inicio.md`](contexto/inicio.md).

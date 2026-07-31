@@ -83,7 +83,6 @@ Las 57 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | PERF.7c | Warm-up de derivaciones pesadas en idle | Transversal | media | conviene después de PERF.7b |
 | PERF.8 | Columna "arranque" en el harness + limpieza de CSS muerto | Transversal | media | nada |
 | CAT.3 | Categorías personalizadas globales | Transversal | media | CAT.2 (el picker) |
-| CAT.4 | Auditoría de consistencia de formularios | Transversal | media | nada; coordinar con Deudas v2 y MC.15d |
 | EDIT.1 | Editar sin destruir: Apartados, Inversión y Me deben | Transversal | media-alta | nada duro; coordina con ARQ.1 |
 | ARQ.1 | `infra/bolsas.js`: un solo modelo para las cuatro bolsas | Transversal | baja | nada |
 | ARQ.2 | Consolidar los cálculos duplicados que quedan | Transversal | baja | nada; conviene antes de CAL.5b |
@@ -523,7 +522,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 ---
 
-> **Iniciativa CAT: taxonomía de categorías + picker de icono compartido** (triaje 2026-07-08, briefs "Auditoría Gastos" y parte de "Auditoría Calendario"). Fuente única para todo lo de categorías entre secciones. **CAT.1 (taxonomía) y CAT.2 (picker) están cerradas**, con la D3 del [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md) validada en la misma pasada; el estado y las reglas heredadas viven en [`contexto/transversal.md`](contexto/transversal.md). Quedan CAT.3 y CAT.4.
+> **Iniciativa CAT: taxonomía de categorías + picker de icono compartido** (triaje 2026-07-08, briefs "Auditoría Gastos" y parte de "Auditoría Calendario"). Fuente única para todo lo de categorías entre secciones. **CAT.1 (taxonomía), CAT.2 (picker) y CAT.4 (auditoría de formularios) están cerradas**, con la D3 del [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md) validada en la misma pasada; el estado y las reglas heredadas viven en [`contexto/transversal.md`](contexto/transversal.md). Queda CAT.3.
 
 #### CAT.3 - Categorías personalizadas globales (mismo estatus que las nativas, en toda la app)
 - Prioridad  : media
@@ -532,14 +531,6 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Secciones  : transversal
 - Depende de : nada: CAT.1 (a qué sección pertenece una categoría) y CAT.2 (cómo se crea) ya cerraron. Hereda de CAT.1c la regla de retiro con edición segura (ficha)
 - Modelo     : Alta capacidad - Alto (modelo de datos + propagación transversal)
-
-#### CAT.4 - Auditoría de consistencia de formularios: orden de campos + fecha por defecto
-- Prioridad  : media
-- Estado     : pendiente. Los formularios ya migrados al lenguaje v2 cumplen "fecha por defecto = hoy" por diseño; la auditoría sigue vigente para los no migrados. Detalle en [`contexto/transversal.md`](contexto/transversal.md).
-- Objetivo   : dos reglas transversales en una pasada por todos los formularios: orden categoría/tipo antes que descripción, y fecha por defecto = hoy en todo campo de fecha nuevo.
-- Secciones  : transversal (solo views de formularios, sin lógica de negocio)
-- Depende de : nada; coordinar con los reordenamientos ya previstos en Deudas v2 y MC.15d para no tocar el mismo form dos veces
-- Modelo     : Equilibrado - Medio (una pasada por ~8 formularios con tests de ambas reglas)
 
 #### EDIT.1 - Editar sin destruir: Apartados, Inversión y Me deben
 - Prioridad  : media-alta
