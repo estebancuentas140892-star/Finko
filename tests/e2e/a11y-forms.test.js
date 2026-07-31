@@ -50,7 +50,30 @@ async function seedEstadoBase(page) {
  * @param {import('@playwright/test').Page} page
  * @param {string} selector - contenedor a auditar (modal o panel abierto).
  */
+/**
+ * BUG-013: `[data-open]` se marca al INICIO del fundido de entrada
+ * (`styles/modals.css`, `.modal-overlay { transition: opacity ... }`), no
+ * cuando termina. Medir el contraste mientras el overlay sigue en tránsito
+ * da un color mezclado con el fondo, no el real, y produce violaciones
+ * `color-contrast` intermitentes que no existen con el modal ya asentado.
+ *
+ * Espera a que la opacidad computada del overlay (el propio `scope`, o su
+ * ancestro `.modal-overlay` si `scope` es un descendiente, como el panel de
+ * "Distribuir mi ingreso") llegue a `1`. Si no hay overlay que envuelva al
+ * `scope` (no debería pasar hoy, pero un modal futuro sin ese contenedor no
+ * debe colgar el test), no espera nada y deja que axe reporte lo que haya.
+ */
+async function esperarFundidoDeEntrada(page, selector) {
+  await page.waitForFunction((sel) => {
+    const el = document.querySelector(sel);
+    const overlay = el?.closest('.modal-overlay') ?? el;
+    if (!overlay) return true;
+    return getComputedStyle(overlay).opacity === '1';
+  }, selector, { timeout: 2_000 });
+}
+
 async function violacionesGraves(page, selector) {
+  await esperarFundidoDeEntrada(page, selector);
   await page.addScriptTag({ path: 'node_modules/axe-core/axe.min.js' });
   return await page.evaluate(async (scope) => {
     const el = document.querySelector(scope);
