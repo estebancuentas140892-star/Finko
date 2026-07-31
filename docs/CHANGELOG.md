@@ -10,6 +10,22 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(transversal): CAT.3, el modelo de las categorías personalizadas globales queda decidido · 2026-07-31
+
+**[ADR 058](DECISIONS/058-categorias-personalizadas-globales.md)** con 5 decisiones, escrito sobre un mapeo completo del código (origen y destino). Ficha: [`contexto/transversal.md`](contexto/transversal.md). Sin cambios de código: CAT.3 queda en cuatro rebanadas (CAT.3a a CAT.3d) listas para ejecutar.
+
+- **El mapeo corrigió el alcance de la tarjeta, y hacia abajo.** La tarjeta pedía propagar "el mismo ícono y color a TODAS las superficies" y anticipaba un mapa de color por categoría. Ese mapa **no existe en el repo** y nada lo pide: el color de la teja lo declara el dominio (`--fk-dom-gastos`) y el de la dona se asigna por posición en el ranking (`svg.js:374`). Gráficos, CSV (texto plano) y 8 de 9 filtros (derivados de los datos, no de la constante) **ya funcionan** con personalizadas.
+- **La sección es un campo del objeto, no una colección aparte** (D1): `seccion: 'gasto' | 'fijo'`, bump v28 a v29 con migración idempotente. Es la traducción directa de la tesis del ADR 014, que ya decidió que una categoría pertenece a una sección. Una colección nueva por sección se rechazó: duplicaría resolutora y validador para el mismo resultado.
+- **Ofrecer filtra por sección, resolver ignora la sección** (D2). Separarlas es lo que simplifica el resto: una superficie que pinta un movimiento no sabe de qué formulario salió ese nombre. La resolutora global **es posible porque TX.4 ya lo garantiza**: las 5 etiquetas que comparten los dos catálogos nativos tienen el mismo símbolo en ambos (verificado en `constants.js:456` y `:609`). TX.4 sube de guardarraíl a dependencia.
+- **Defecto preexistente encontrado, y entra en la iniciativa** (D3): 3 de las 7 superficies que leen el mapa crudo **ya fallan hoy** sin CAT.3. Una personalizada de Gastos se pinta `c-otros` en el envelope de Presupuesto (`presupuesto/view.js:492`), en el banner de alertas (`:742`) y como categoría top de Inicio (`resumen/view.js:119`), mientras el formulario que la creó sí muestra el ícono elegido: la app se contradice a sí misma.
+- **Colisión latente cerrada** (D4): `validarCategoriaPersonalizada` compara contra `CATEGORIAS_GASTO` pero no contra `CATEGORIAS_AGENDA`, así que hoy se puede crear una personalizada "Arriendo" o "Streaming". Se valida para altas nuevas; lo ya guardado no se reescribe, misma regla que CAT.1a.
+- **Fuera de alcance por decisión, no por olvido:** renombrar y eliminar (hoy no existe ninguna de las dos, así que un typo queda fijo para siempre: es CRUD, no propagación, y sale a tarjeta propia), Apartados y Metas (catálogos de otra naturaleza) e Ingresos.
+- **Dos punteros vencidos retirados del tablero:** la iniciativa "Apartados v2" le asignaba a CAT.3 el "Otro con nombre+icono" y el paso de emoji a símbolo del sprite. CAT.2 ya resolvió los dos (`apartados/view.js:550-553` y `_iconoApartado()` en `:183-185`); el remanente es que `PLANTILLAS_APARTADO` sigue ofreciendo emoji en sus chips, que es consistencia visual de Apartados.
+
+Tarea de solo documentación: sin tocar `modules/`, sin tests ni lint que correr, sin bump del SW. Compuerta 3 (guion largo) en verde.
+
+---
+
 ### docs(reorg): DOC.1 movimiento 5, HANDOFF.md a 6 KB con linea de contrato · 2026-07-31
 
 Punto 5 de los 10 movimientos de la Fase 4 de la reorganización documental (tabla 11.1 de [`MIGRACION.md`](MIGRACION.md)). `HANDOFF.md` pasa de **12,95 KB a 4,3 KB** contra un techo de 6 KB.

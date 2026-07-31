@@ -31,7 +31,7 @@
 - **El guardarraíl de consistencia de TX.4** (misma etiqueta ⇒ mismo emoji entre catálogos) debe seguir verde tras cada rebanada: al renombrar o retirar, revisar que no queden etiquetas compartidas divergentes. TX.4 lee `CATEGORIA_META_ICONO`, que sigue cubriendo el catálogo base completo: retirar una categoría del formulario no la saca de ese guardarraíl.
 - **Retirar una categoría de un catálogo que se puede editar (hallazgo de CAT.1c)**: filtrar el formulario no basta cuando la sección permite editar el registro (EDIT.1). Si el selector no ofrece la categoría guardada, al editar cae en la primera opción y una corrección de nombre borra la categoría y cambia el ícono. Regla: el selector reinyecta la categoría retirada **solo cuando ya estaba elegida**. Aplica a cualquier retiro futuro (CAT.3) en Metas y en las secciones que EDIT.1 vaya abriendo.
 
-**Cambios pendientes**: ninguno de CAT.1 (iniciativa completa; la tarjeta sale del BOARD). **CAT.3** (categorías personalizadas globales): las personalizadas de TX.9b existen solo para Gastos; extenderlas a Gastos fijos con el mismo ícono/color en TODAS las superficies (Calendario, Inicio, Movimientos, Pendientes, Prioridades, Análisis, filtros, gráficos) exige decidir el modelo de datos (catálogo global vs. por sección, probable bump de schema); depende de esta taxonomía y de CAT.2 (el picker). **CAT.4 cerrada (2026-07-31)**: sin hallazgos.
+**Cambios pendientes**: ninguno de CAT.1 (iniciativa completa; la tarjeta sale del BOARD). **CAT.3 decidida el 2026-07-31 ([ADR 058](../DECISIONS/058-categorias-personalizadas-globales.md))**, cuatro rebanadas sin iniciar: ver el bloque "Categorías personalizadas del usuario" más abajo. **CAT.4 cerrada (2026-07-31)**: sin hallazgos.
 
 **Cambios realizados**:
 
@@ -43,13 +43,61 @@
 
 ---
 
+## Categorías personalizadas del usuario (TX.9b, y su extensión CAT.3)
+
+- **Objetivo**          : el usuario crea sus propias categorías con nombre e ícono, y valen igual que las nativas. Hoy solo en Gastos; **CAT.3** las extiende a Gastos fijos con la sección como campo del objeto, oferta filtrada por sección y resolución de ícono global ([ADR 058](../DECISIONS/058-categorias-personalizadas-globales.md), 5 decisiones).
+- **Estado actual**     : **TX.9b en producción, CAT.3 decidida y sin iniciar** (cuatro rebanadas, CAT.3a a CAT.3d). `S.categoriasPersonalizadas` es `{id, nombre, icono, fechaCreacion}[]` (migración v23 a v24); la clave funcional es el **`nombre`**, que es lo que se guarda en `Gasto.categoria` igual que una nativa. `id` y `fechaCreacion` los inyecta el helper genérico `guardar()` de `infra/crud.js`. **No hay edición ni borrado**: la única operación sobre la colección es `guardar()`, así que una vez creada es permanente (un typo queda fijo y su nombre normalizado bloquea el reintento). Eso queda **fuera** del ADR 058 y sale a tarjeta propia.
+- **Verificado contra** : `66236cb` (2026-07-31, mapeo completo de origen y destino para el ADR 058).
+
+**Dónde vive**
+
+| Pieza | Archivo | Ancla | Línea |
+|---|---|---|---|
+| El array en el estado (contrato en JSDoc) | `modules/core/state.js` | `categoriasPersonalizadas` | ~413 |
+| Migración que creó el campo (v23 a v24) | `modules/core/storage.js` | idempotente, garantiza `[]` | ~398 |
+| **Resolutora, punto único** | `modules/core/constants.js` | `iconoDeCategoriaGasto(categoria, personalizadas)` | ~529 |
+| Catálogo de íconos elegibles (29, cerrado) | `modules/core/constants.js` | `ICONOS_CATEGORIA_PERSONALIZADA` | ~487 |
+| Validador del alta | `modules/dominio/gastos/logic.js` | `validarCategoriaPersonalizada()` | ~314 |
+| Alta (dentro del guardado del gasto) | `modules/dominio/gastos/index.js` | `_guardarGasto()`, chip sentinela `'__nueva__'` | ~66 |
+| Chips del formulario de gasto | `modules/dominio/gastos/view.js` | nativas, personalizadas, sentinela | ~612 |
+
+**Las 7 superficies que leen el mapa crudo** (alcance de CAT.3b, D3 del ADR 058). Las tres últimas **ya fallan hoy**, sin CAT.3:
+
+| # | Archivo | Qué pinta | Acceso crudo |
+|---|---|---|---|
+| C1 | `modules/dominio/agenda/view.js:716` | detalle del día del calendario | `CATEGORIA_AGENDA_ICONO[c.categoria]` |
+| C2 | `modules/dominio/agenda/view.js:888` | chips del formulario de gasto fijo | `CATEGORIA_AGENDA_ICONO[c]` |
+| C3 | `modules/dominio/gastos/logic.js:585` | `iconoPorOrigen()`, gasto nacido de un fijo | `CATEGORIA_AGENDA_ICONO[comp.categoria]` |
+| C4 | `modules/dominio/tesoreria/views/distribucion.js:315` | checklist de Necesidades | `CATEGORIA_AGENDA_ICONO[it.categoria]` |
+| C5 | `modules/dominio/presupuesto/view.js:492` | envelope de un límite | `CATEGORIA_ICONO[...] ?? 'c-otros'` |
+| C6 | `modules/dominio/presupuesto/view.js:742` | banner de alertas de límite | `CATEGORIA_ICONO[...] ?? 'c-otros'` |
+| C7 | `modules/dominio/resumen/view.js:119` | categoría top de la semana, en Inicio | `CATEGORIA_ICONO[...] ?? 'c-otros'` |
+
+**Los 3 gates de escritura de Gastos fijos** (alcance de CAT.3c): `compromisos/logic/modelo.js:276` rechaza con error toda categoría fuera de `CATEGORIAS_AGENDA`; `:414` la descarta a `null` **en silencio**; `:55` decide si `descripcion` es la categoría o texto libre. Dos espejos en la UI: `agenda/index.js:145` (prefill al editar) y `:217` (`_syncCategoriaGastoFijo`).
+
+**Dependencias y relaciones**: `iconoDeCategoriaGasto()` es pura (recibe las personalizadas por parámetro, el caller lee `S`) y está cableada en 7 sitios del lado Gastos y Presupuesto. `validarPresupuesto` es el **único** validador que ya recibe las personalizadas (`presupuesto/logic.js:558`, cableado en `presupuesto/index.js:97`). **TX.4 sube de guardarraíl a dependencia** con el ADR 058 D2: la resolución global se apoya en que dos catálogos nativos nunca den símbolos distintos a la misma etiqueta, y las 5 etiquetas compartidas (Servicios públicos, Mercado, Educación, Transporte, Mascotas) hoy coinciden.
+
+**Riesgos**:
+
+- **Colisión de nombre con el catálogo de Agenda**: `validarCategoriaPersonalizada` compara contra `CATEGORIAS_GASTO` pero **no** contra `CATEGORIAS_AGENDA` (`gastos/logic.js:323`), así que hoy se puede crear una personalizada "Arriendo" o "Streaming". El ADR 058 D4 lo cierra para altas nuevas; lo ya guardado **no se reescribe** (misma regla que CAT.1a).
+- **Sin validación de longitud ni de cantidad**: el input no tiene `maxlength` y no existe ningún tope de cuántas personalizadas se pueden crear.
+- **El roundtrip de CSV no recrea la entrada**: `import/logic.js:176` acepta cualquier texto como categoría, así que exportar e importar conserva el **nombre** pero no vuelve a crear la personalizada en `S`; el gasto importado queda sin ícono asociado.
+- **Una personalizada sin uso sigue apareciendo**: borrar su último gasto no la retira del catálogo, porque no hay borrado.
+- **Precedencia de `iconoPorOrigen`**: un gasto nacido de un fijo o de un abono hereda el ícono del compromiso y la personalizada nunca se consulta (`gastos/view.js:441`).
+
+**Cambios pendientes**: las cuatro rebanadas de **CAT.3** (detalle y alcance por rebanada en el BOARD). Fuera de alcance por decisión del ADR 058: renombrar y eliminar (tarjeta propia), Apartados y Metas (catálogos de otra naturaleza), Ingresos.
+
+**Cambios realizados**: `TX.9b`: creación de la funcionalidad (detalle en el CHANGELOG). `2026-07-31 (ADR 058)`: mapeo completo de origen y destino, sin cambios de código.
+
+---
+
 ---
 
 ## Persistencia y salvaguarda de cuota (localStorage)
 
 - **Objetivo**          : todo el estado vive en `localStorage` bajo la clave única `fk_v1` (ADN 3). `save()` está debounced 200 ms; `_flush()` serializa `S` entero y escribe. Una salvaguarda avisa antes de llenar la cuota y evita que un guardado fallido se pierda en silencio (ADR 030).
-- **Estado actual**     : estable. **PERF.4** ([ADR 030](../DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md), 2026-07-06) decidió **no** reescribir la persistencia (el costo de guardar es ~5 ms debounced, medido en `scripts/perf/`) y en su lugar agregó la salvaguarda de cuota. **IndexedDB** queda como dirección futura (**PERF.5** en BOARD, no iniciar sin un disparador del ADR 030 D4). Partir `localStorage` por clave está **rechazado** (no sube la cuota).
-- **Verificado contra** : `5039a76` (2026-07-06, PERF.4).
+- **Estado actual**     : estable. **PERF.4** ([ADR 030](../DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md), 2026-07-06) decidió **no** reescribir la persistencia (el costo de guardar es ~5 ms debounced, medido en `scripts/perf/`) y en su lugar agregó la salvaguarda de cuota. **IndexedDB** queda como dirección futura (**PERF.5** en BOARD, no iniciar sin un disparador del ADR 030 D4). Partir `localStorage` por clave está **rechazado** (no sube la cuota). Desde **PERF.8** el harness también mide el arranque (`loadData()`: `JSON.parse` + migraciones), la otra mitad de la ruta: **0,6 / 2,6 / 5,1 ms** de mediana a 1.000 / 5.000 / 10.000 gastos. Lineal y lejos del disparador; el D4 sigue exigiendo jank en dispositivo real, no esta cifra de happy-dom.
+- **Verificado contra** : `8bfd40e` (2026-07-31, PERF.8).
 
 **Dónde vive**
 
@@ -61,12 +109,13 @@
 | Aviso en Ajustes | `modules/dominio/config/view.js` | `_renderAvisoAlmacenamiento()` (en `_renderDatos`) | |
 | Escucha de eventos + anuncio | `modules/dominio/config/index.js` | `EventBus.on('storage:error')`, `on('storage:cuota')` | |
 | Restaurar backup (escribe el blob crudo) | `modules/dominio/config/index.js` | `_importarDatos()` | ~42 |
+| Medición de escritura y arranque | `scripts/perf/bench.perf.js` | columnas `stringify ms`, `save ms`, `arranque ms` | |
 
 **Dependencias y relaciones**: `_flush()` emite `state:save` (éxito), `storage:cuota` (al cruzar de nivel de uso) y `storage:error` (guardado rechazado). `config/` los escucha para avisar. `infra/memo.js` (PERF.2) escucha `state:change`, no estos. Exportar backup (`config/_exportarDatos`) usa `JSON.stringify(S)` en memoria: es independiente del layout de storage.
 
 **Riesgos**: `LIMITE_LOCALSTORAGE_CHARS` (4.5 M chars) es un piso conservador, no el cupo exacto (varía por navegador); por eso `falloUltimoGuardado` (fallo real) manda sobre la estimación. Si algún día se migra a IndexedDB (PERF.5), `loadData()` pasa a async → bootstrap async, y el sembrado E2E (escribe `fk_v1`) hay que reescribirlo: es el cambio de mayor riesgo del proyecto.
 
-**Cambios realizados**: `2026-07-06 (PERF.4, ADR 030)`: salvaguarda de cuota + guardado que ya no falla en silencio (detalle en CHANGELOG).
+**Cambios realizados**: `2026-07-06 (PERF.4, ADR 030)`: salvaguarda de cuota + guardado que ya no falla en silencio (detalle en CHANGELOG). `2026-07-31 (PERF.8)`: columna "arranque" en el harness, el dato que el D4 pedía.
 
 ---
 

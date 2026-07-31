@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-07-31. Última tarea cerrada: DOC.1 movimiento 5, `HANDOFF.md` a 6 KB con línea de contrato.
+> Revisado: 2026-07-31. Última tarea cerrada: PERF.8, columna "arranque" en el harness + limpieza de CSS muerto.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -25,6 +25,12 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**PERF.8 - columna "arranque" en el harness + limpieza de CSS muerto, 2026-07-31**
+El harness ya cronometraba la escritura (`stringify`, `save`) pero nunca el camino de vuelta. La columna nueva mide `loadData()` real (`JSON.parse` + las migraciones) sobre el mismo payload: **0,6 / 2,6 / 5,1 ms** de mediana a 1.000 / 5.000 / 10.000 gastos. Es el dato que el [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) D4 pedía para disparar PERF.5 con evidencia: crece lineal y **hoy no lo dispara**. De paso, 42 líneas de CSS sin una sola referencia (`.bento__cell--glass`, `.skeleton`, `.spinner` y sus keyframes huérfanos).
+
+**CAT.3 - modelo de las categorías personalizadas globales decidido, 2026-07-31**
+**[ADR 058](DECISIONS/058-categorias-personalizadas-globales.md)**, 5 decisiones sobre un mapeo del código: la sección es un **campo** del objeto (`seccion: 'gasto' | 'fijo'`, bump v29), ofrecer filtra por sección y resolver la ignora. El mapeo bajó el alcance de la tarjeta: gráficos, CSV y 8 de 9 filtros ya funcionan, y **no existe ningún mapa categoría-color** en el repo. **Defecto preexistente que entra:** 3 superficies ya pintan `c-otros` una personalizada de Gastos (`presupuesto/view.js:492`, `:742`, `resumen/view.js:119`). Cuatro rebanadas, ninguna iniciada.
+
 **DOC.1 movimiento 5 - `HANDOFF.md` a 6 KB con línea de contrato, 2026-07-31**
 Punto 5 de la Fase 4 de la reorganización documental: 12,95 a 4,3 KB. Los 8 bloques que salen (identidad, runbook de E.2-2027, workflow, arquitectura, comandos, el párrafo de 40 tareas) se verificaron en su dueño antes de borrarse. La cabecera imprime el contrato para que no vuelva a crecer, y el paso 3 de la skill `cerrar-tarea` deja de reconstruir el párrafo purgado. **Falta el punto 6 para cerrar la Fase 4:** `BOARD.md` en 80 KB contra un techo de 40.
 
@@ -33,12 +39,6 @@ Las 2 reglas transversales (categoría/tipo antes que descripción; fecha por de
 
 **IN.9b - 8 filas de actividad en escritorio y 5 en móvil, 2026-07-31**
 Segunda rebanada de IN.9 ([ADR 057](DECISIONS/057-inicio-en-escritorio.md) D4). `movimientosRecientes()` ya recibía el límite por parámetro: cambia el argumento, no la derivación (sin bump). **Limitación declarada:** el panel se repinta con `state:change`, así que cambiar de ancho sin cambiar de estado deja el límite del último render. PI10 (columna corta si el usuario registra poco) sigue abierto, se decide en IN.9d.
-
-**IN.9a - los dos avisos de "Atención hoy" comparten fila, 2026-07-31**
-Primera rebanada de IN.9 ([ADR 057](DECISIONS/057-inicio-en-escritorio.md)). Los dos avisos pasan a `bento__cell--half` y el grupo queda en dos filas de dos: 541px a 459px de alto. Cero CSS nuevo, así que tablet y móvil caen solos. Acota el ADR 034 D1 en las dos plataformas (separar por `order` divorciaría foco y visual, WCAG 2.4.3). **ID4 e ID7 salen a INT.1:** dependen de una barra superior de escritorio que no existe. De paso, BUG-021.
-
-**MC.16d - "¿A cuántas cuotas?" al registrar el consumo, 2026-07-30**
-Cierra MC.16 salvo MC.16e. Chips 1 a 24 revelados solo con origen `tc:`; sube `cuotaMensual` en `monto / cuotas`. Mismo patrón de deltas netos que `saldoTotal`; un abono no lo toca. No crea un plan por compra (ADR 051 D2): sigue siendo un único `Gasto` con saldo revolvente. `cuotaMensual` ya existía en v5, sin bump.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 
