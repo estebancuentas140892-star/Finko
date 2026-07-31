@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-07-31. Última tarea cerrada: CAT.4, auditoría de consistencia de formularios (sin hallazgos).
+> Revisado: 2026-07-31. Última tarea cerrada: DOC.1 movimiento 5, `HANDOFF.md` a 6 KB con línea de contrato.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -25,6 +25,9 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**DOC.1 movimiento 5 - `HANDOFF.md` a 6 KB con línea de contrato, 2026-07-31**
+Punto 5 de la Fase 4 de la reorganización documental: 12,95 a 4,3 KB. Los 8 bloques que salen (identidad, runbook de E.2-2027, workflow, arquitectura, comandos, el párrafo de 40 tareas) se verificaron en su dueño antes de borrarse. La cabecera imprime el contrato para que no vuelva a crecer, y el paso 3 de la skill `cerrar-tarea` deja de reconstruir el párrafo purgado. **Falta el punto 6 para cerrar la Fase 4:** `BOARD.md` en 80 KB contra un techo de 40.
+
 **CAT.4 - auditoría de consistencia de formularios, 2026-07-31**
 Las 2 reglas transversales (categoría/tipo antes que descripción; fecha por defecto = hoy al crear) ya se cumplían en los ~8 formularios en alcance. Cierra sin cambios de código. `fechaObjetivo` (Apartados) y `fechaLimite` (Metas) quedan fuera: son fecha meta futura, no fecha de registro.
 
@@ -36,9 +39,6 @@ Primera rebanada de IN.9 ([ADR 057](DECISIONS/057-inicio-en-escritorio.md)). Los
 
 **MC.16d - "¿A cuántas cuotas?" al registrar el consumo, 2026-07-30**
 Cierra MC.16 salvo MC.16e. Chips 1 a 24 revelados solo con origen `tc:`; sube `cuotaMensual` en `monto / cuotas`. Mismo patrón de deltas netos que `saldoTotal`; un abono no lo toca. No crea un plan por compra (ADR 051 D2): sigue siendo un único `Gasto` con saldo revolvente. `cuotaMensual` ya existía en v5, sin bump.
-
-**MC.16c - bloque de tarjetas de crédito en Mis cuentas, 2026-07-30**
-Bloque propio, **fuera** del total de dinero disponible (ADR 051 D6), con cupo, usado y disponible derivado (nunca almacenado). Solo lectura: reusa la anatomía de `.cuenta-card` y cierra con enlace a Deudas, que sigue siendo la dueña de operar. `tarjetasCredito()` duplica a propósito el filtro de `gastos/logic.js` (ADN 10).
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 

@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(reorg): DOC.1 movimiento 5, HANDOFF.md a 6 KB con linea de contrato · 2026-07-31
+
+Punto 5 de los 10 movimientos de la Fase 4 de la reorganización documental (tabla 11.1 de [`MIGRACION.md`](MIGRACION.md)). `HANDOFF.md` pasa de **12,95 KB a 4,3 KB** contra un techo de 6 KB.
+
+- **La compresión no borra información, la devuelve a su dueño.** Los 8 bloques que salen (identidad del producto, runbook de enero 2027, aviso de `SECURITY.md`, workflow, arquitectura por capa, comandos, el párrafo de 40 tareas anteriores y la línea de modelo sugerido) se verificaron presentes en su destino **antes** de borrarse, protocolo 11.6 punto 4. El runbook de E.2-2027 ya vivía más completo en `OPERACION.md` runbook 2, que además encadena el bump del SW.
+- **El mayor consumidor de bytes era un párrafo de ~1.400 caracteres** que enumeraba 40 tareas anteriores, o sea el índice del CHANGELOG copiado en prosa. Queda una línea.
+- **La línea de contrato en la cabecera es lo que evita que vuelva a crecer:** el archivo declara la única pregunta que responde y los 7 dueños de lo que no contiene. Es el mecanismo que la sección 2 de MIGRACION eligió en vez de renombrar el archivo a `ESTADO.md`, que costaba 16 referencias vivas y 21 enlaces muertos en historia congelada.
+- **La poda se hace sostenible en la skill, no solo en el archivo.** El paso 3 de `cerrar-tarea` mandaba "bajar la sexta al puntero de tareas anteriores": ese puntero era justo el párrafo purgado, así que el próximo cierre lo habría reconstruido. Ahora manda borrar la sexta y recuerda el contrato de la cabecera.
+- **Correcciones de rumbo en MIGRACION.md**, medidas contra el repo: la cabecera decía "el resto de la Fase 4 sigue sin ejecutar" cuando 8 de los 10 movimientos ya estaban hechos, y la sección 12 decía "cero ediciones a `settings.local.json`" cuando la limpieza mínima de 12.1 ya se había ejecutado en el commit `03e0613` (146 a 131 entradas). Nueva tabla de estado en 11.1 y trazabilidad del movimiento en 11.8.
+
+Tarea de solo documentación: sin tocar `modules/`, sin tests ni lint que correr, sin bump del SW. Compuerta 3 (guion largo) en verde. **La Fase 4 queda a un movimiento de cerrar:** falta el punto 6, `BOARD.md` en 80 KB contra un techo de 40. Hallazgo lateral registrado, no corregido: `README.md` pesa 5,3 KB contra los 4 KB que le fija el contrato.
+
+---
+
 ### docs(transversal): CAT.4, auditoría de consistencia de formularios cerrada sin hallazgos · 2026-07-31
 
 Auditoría de las dos reglas transversales (categoría/tipo antes que descripción, fecha por defecto = hoy en creación) sobre los ~8 formularios en alcance: Gastos, Ingresos fijos y puntuales, Transferencias, Deuda nueva, Abono a deuda, Gasto fijo, Inversiones, Personales/préstamos, Ahorro/aporte. Las dos reglas ya se cumplían en todos, los formularios v2 la respetan por diseño. `fechaObjetivo` (Apartados) y `fechaLimite` (Metas) quedan fuera de alcance: son fecha meta futura opcional, no fecha de registro/movimiento. Sin cambios de código ni de schema. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
