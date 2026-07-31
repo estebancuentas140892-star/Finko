@@ -10,6 +10,7 @@
 
 import { S, EventBus } from '../../core/state.js';
 import { save } from '../../core/storage.js';
+import { TARJETA_PREFIJO } from '../../core/constants.js';
 import { guardar, editar, eliminar } from '../../infra/crud.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
@@ -22,7 +23,7 @@ import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
 import { wireIconoPicker } from '../../infra/icon-picker.js';
 import {
   validarGasto, normalizarGasto,
-  deltasPorEdicionDeGasto,
+  deltasPorEdicionDeGasto, deltasPorEdicionEnDeuda,
   validarCategoriaPersonalizada,
 } from './logic.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
@@ -97,49 +98,61 @@ async function _guardarGasto() {
       );
       _aplicarDeltasASaldos(deltas);
 
-      // Preservar compromisoId del gasto original (el form no lo expone).
-      if (anterior.compromisoId) gasto.compromisoId = anterior.compromisoId;
-
-      // Sincronizar saldoTotal si el gasto era un gasto-abono.
-      if (anterior.compromisoId) {
-        _ajustarSaldoDeuda(anterior.compromisoId, anterior.monto - gasto.monto);
+      // Preservar el compromisoId del gasto-abono original: el formulario no lo
+      // expone. Un consumo con tarjeta (MC.16b) sí trae el suyo del selector,
+      // así que ahí manda lo que el usuario acaba de elegir.
+      if (!gasto.compromisoId && anterior.compromisoId && !anterior.consumoTC) {
+        gasto.compromisoId = anterior.compromisoId;
       }
+
+      // Sincronizar saldoTotal si el gasto tocaba una deuda (abono o consumo).
+      _aplicarDeltasADeudas(deltasPorEdicionEnDeuda(anterior, gasto));
     }
     editar('gastos', idEdit, gasto);
   } else {
     // En creación: se usa la cuenta elegida. Si no alcanza, el reparto entre
     // varias se resuelve al confirmar, sin dejar ninguna en negativo. Un
     // registro por cuenta usada.
-    const base = normalizarGasto(datos); // incluye la cuenta elegida
-    const splits = await resolverPagoConPreferida(
-      S.cuentas, base.monto, base.cuentaId, 'registrar el gasto',
-    );
-    if (splits === null) return; // canceló o fue redirigido a Mis Cuentas
+    const base = normalizarGasto(datos); // incluye la cuenta o la tarjeta elegida
 
-    // Una sola cuenta que no alcanza: confirmar el sobregiro (no hay reparto).
-    if (splits.length === 1) {
-      const c = S.cuentas.find(x => x.id === splits[0].cuentaId);
-      const saldoCuenta = c?.saldo ?? 0;
-      if (saldoCuenta < splits[0].monto) {
-        const ok = await confirmar({
-          titulo:         'Registrar gasto',
-          mensaje:        `${c?.nombre ?? 'La cuenta'} tiene ${f(saldoCuenta)} y el gasto es ${f(splits[0].monto)}: quedará en negativo. ¿Registrar de todas formas?`,
-          confirmarTexto: 'Registrar gasto',
-          peligroso:      true,
-        });
-        if (!ok) return;
+    if (base.consumoTC) {
+      // MC.16b (ADR 051 D3): un consumo con tarjeta no sale de ninguna cuenta,
+      // así que no pasa por el reparto ni por el aviso de sobregiro. Sube el
+      // saldo de la tarjeta y nada más; lo demás (categoría, límites, análisis)
+      // lo recibe como cualquier gasto.
+      guardar('gastos', base);
+      _aplicarDeltasADeudas(deltasPorEdicionEnDeuda(null, base));
+    } else {
+      const splits = await resolverPagoConPreferida(
+        S.cuentas, base.monto, base.cuentaId, 'registrar el gasto',
+      );
+      if (splits === null) return; // canceló o fue redirigido a Mis Cuentas
+
+      // Una sola cuenta que no alcanza: confirmar el sobregiro (no hay reparto).
+      if (splits.length === 1) {
+        const c = S.cuentas.find(x => x.id === splits[0].cuentaId);
+        const saldoCuenta = c?.saldo ?? 0;
+        if (saldoCuenta < splits[0].monto) {
+          const ok = await confirmar({
+            titulo:         'Registrar gasto',
+            mensaje:        `${c?.nombre ?? 'La cuenta'} tiene ${f(saldoCuenta)} y el gasto es ${f(splits[0].monto)}: quedará en negativo. ¿Registrar de todas formas?`,
+            confirmarTexto: 'Registrar gasto',
+            peligroso:      true,
+          });
+          if (!ok) return;
+        }
       }
-    }
 
-    const repartido = splits.length > 1;
-    for (const s of splits) {
-      guardar('gastos', {
-        ...base,
-        cuentaId: s.cuentaId || null,
-        monto:    s.monto,
-        nota:     repartido ? [base.nota, 'Gasto repartido entre varias cuentas'].filter(Boolean).join(' · ') : base.nota,
-      });
-      _ajustarSaldoCuenta(s.cuentaId, -s.monto);
+      const repartido = splits.length > 1;
+      for (const s of splits) {
+        guardar('gastos', {
+          ...base,
+          cuentaId: s.cuentaId || null,
+          monto:    s.monto,
+          nota:     repartido ? [base.nota, 'Gasto repartido entre varias cuentas'].filter(Boolean).join(' · ') : base.nota,
+        });
+        _ajustarSaldoCuenta(s.cuentaId, -s.monto);
+      }
     }
   }
 
@@ -193,10 +206,12 @@ function _editarGasto(el) {
   const notaEl = form.querySelector('[name="nota"]');
   if (notaEl) notaEl.value = gasto.nota ?? '';
 
-  // Precargar la cuenta del gasto en el selector de tarjetas. Si el gasto venía
-  // sin cuenta (versiones previas), queda la pre-selección por defecto.
-  if (gasto.cuentaId) {
-    const radio = form.querySelector(`input[name="cuentaId"][value="${gasto.cuentaId}"]`);
+  // Precargar el origen del gasto en el selector: su cuenta, o su tarjeta si
+  // fue un consumo (MC.16b). Si el gasto venía sin origen (versiones previas),
+  // queda la pre-selección por defecto.
+  const origen = _origenDeGasto(gasto);
+  if (origen) {
+    const radio = form.querySelector(`input[name="cuentaId"][value="${CSS.escape(origen)}"]`);
     if (radio) radio.checked = true;
   }
 
@@ -204,6 +219,18 @@ function _editarGasto(el) {
   if (titulo) titulo.textContent = 'Editar gasto';
 
   abrirModal(overlay);
+}
+
+/**
+ * Valor con el que el selector de origen identifica de dónde salió un gasto ya
+ * guardado: el id de su cuenta, o el de su tarjeta con prefijo si fue un
+ * consumo (MC.16b). Devuelve '' si el gasto no tiene origen registrado.
+ * @param {import('../../core/state.js').Gasto} gasto
+ * @returns {string}
+ */
+function _origenDeGasto(gasto) {
+  if (gasto.consumoTC && gasto.compromisoId) return TARJETA_PREFIJO + gasto.compromisoId;
+  return gasto.cuentaId ?? '';
 }
 
 // ── HANDLERS: GASTOS FRECUENTES (TX.12) ─────────────────────────
@@ -292,7 +319,7 @@ function _repetirGasto(el) {
   _prellenarCamposGasto(form, {
     monto:     gasto.monto,
     categoria: gasto.categoria ?? '',
-    cuentaId:  gasto.cuentaId ?? '',
+    cuentaId:  _origenDeGasto(gasto),
     nota:      gasto.nota ?? '',
   });
 
@@ -359,8 +386,9 @@ async function _eliminarGasto(el) {
   // Devolver el monto al saldo de la cuenta (si el gasto tenía cuenta).
   _ajustarSaldoCuenta(gasto.cuentaId, +gasto.monto);
 
-  // Revertir el abono en la deuda si era un gasto-abono.
-  if (gasto.compromisoId) _ajustarSaldoDeuda(gasto.compromisoId, +gasto.monto);
+  // Revertir el efecto en la deuda: un abono la vuelve a subir, un consumo con
+  // tarjeta la baja (MC.16b, ADR 051 D3).
+  _aplicarDeltasADeudas(deltasPorEdicionEnDeuda(gasto, null));
 
   eliminar('gastos', id);
   renderListaGastos();
@@ -409,6 +437,18 @@ function _ajustarSaldoDeuda(compromisoId, delta) {
   if (!comp) return;
   const nuevoSaldo = Math.max(0, (Number(comp.saldoTotal) || 0) + delta);
   editar('compromisos', compromisoId, { saldoTotal: nuevoSaldo });
+}
+
+/**
+ * Aplica un mapa de deltas { compromisoId → delta } a los saldos de las deudas.
+ * Gemelo de `_aplicarDeltasASaldos`: los deltas los calcula
+ * `deltasPorEdicionEnDeuda` (logic.js), acá solo se escriben.
+ * @param {Record<string, number>} deltas
+ */
+function _aplicarDeltasADeudas(deltas) {
+  for (const [compromisoId, delta] of Object.entries(deltas)) {
+    _ajustarSaldoDeuda(compromisoId, delta);
+  }
 }
 
 // ── INICIALIZACIÓN ───────────────────────────────────────────────

@@ -642,6 +642,16 @@ export const CATEGORIAS_DEUDA = [
   'Otra',
 ];
 
+/**
+ * Prefijo del valor que identifica a una tarjeta de crédito en el selector de
+ * origen del dinero (MC.16b, ADR 051 D3/D4). El selector es uno solo: sus
+ * opciones son cuentas (valor = `cuenta.id`) y tarjetas (valor =
+ * `tc:<compromisoId>`), así que elegir una excluye a la otra por construcción.
+ * Vive acá porque lo comparten quien lo escribe (`infra/cuenta-helper.js`) y
+ * quien lo lee (`gastos/logic.js`), y ningún dominio importa a otro.
+ */
+export const TARJETA_PREFIJO = 'tc:';
+
 /** Ícono del sprite por tipo de deuda. Solo UI; nunca en el valor almacenado. */
 export const CATEGORIA_DEUDA_ICONO = {
   'Tarjeta de crédito': 'i-deudas',

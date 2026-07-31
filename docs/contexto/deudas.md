@@ -92,29 +92,40 @@ Fuera de esas dos, la iniciativa "Deudas v2: de registro a asesor" (brief 2026-0
 ## Tarjeta de crédito ([ADR 051](../DECISIONS/051-tarjeta-de-credito-producto-integrado.md), iniciativa MC.16)
 
 - **Objetivo**          : la tarjeta es un producto de Deudas, no una `Cuenta`: cupo más deuda, nunca dinero disponible. `cupoTotal` es el único campo nuevo del modelo (D1) y el `disponible` se deriva, nunca se almacena.
-- **Estado actual**     : **MC.16a CERRADA (2026-07-30)**, la primera de cinco rebanadas. Existe el dato base; **todavía no se puede pagar con la tarjeta** (eso es MC.16b). Siguen abiertas MC.16b a MC.16e en [BOARD.md](../BOARD.md).
-- **Verificado contra** : MC.16a (2026-07-30).
+- **Estado actual**     : **MC.16a y MC.16b CERRADAS (2026-07-30)**, las dos primeras de cinco rebanadas. La tarjeta ya es operable de punta a punta: se registra con cupo y **se puede pagar con ella** (el consumo sube el saldo, y editarlo o eliminarlo lo revierte exacto). Siguen abiertas MC.16c a MC.16e en [BOARD.md](../BOARD.md). Con MC.16b en producción, `consumosTC` del monitor de renta deja de ser captura manual (CFG.2a).
+- **Verificado contra** : MC.16b (2026-07-30).
 
-**`cupoTotal` es dato y discriminador a la vez** (misma economía que `esCuotaManejo`): una deuda con `categoria: 'Tarjeta de crédito'` **con** `cupoTotal` es una tarjeta operable (recibirá consumos en MC.16b, muestra disponible); **sin** `cupoTotal` es una deuda vieja capturada a posteriori y se comporta como cualquier otra. No hay campo `esTarjeta` ni bandera paralela.
+**`cupoTotal` es dato y discriminador a la vez** (misma economía que `esCuotaManejo`): una deuda con `categoria: 'Tarjeta de crédito'` **con** `cupoTotal` es una tarjeta operable (recibe consumos, muestra disponible); **sin** `cupoTotal` es una deuda vieja capturada a posteriori y se comporta como cualquier otra. No hay campo `esTarjeta` ni bandera paralela.
+
+**El consumo vive en el dominio de Gastos, no acá.** Un consumo es un `Gasto` con `compromisoId` y `consumoTC: true`, sin `cuentaId`. `compromisos` no se enteró: no cambió ni una línea suya en MC.16b. El campo `consumoTC` existe porque el abono a la tarjeta lleva **el mismo** `compromisoId` con el signo contrario, y deducirlo de la ausencia de `cuentaId` sería frágil (un gasto sin cuenta ya es legal: efectivo no registrado).
 
 **Anclas del código**:
 
 | Pieza | Dónde |
 |---|---|
-| Campo del form (oculto salvo categoría tarjeta) | `views/formularios.js`, `#grupo-comp-cupo` tras el monto hero |
-| Revelado del campo | `index.js`, `_wireCupoTarjeta` (patrón de `_wireIconoOtraCategoria`) |
-| Validación (opcional; si viene, > 0) | `logic/modelo.js`, `validarCompromiso` |
-| Normalización (`null` explícito si no aplica) | `logic/modelo.js`, `normalizarCompromiso` |
-| Chip "Disponible" en la card | `views/lista.js`, `cupoChip` |
+| Campo del form (oculto salvo categoría tarjeta) | `compromisos/views/formularios.js`, `#grupo-comp-cupo` tras el monto hero |
+| Revelado del campo | `compromisos/index.js`, `_wireCupoTarjeta` (patrón de `_wireIconoOtraCategoria`) |
+| Validación (opcional; si viene, > 0) | `compromisos/logic/modelo.js`, `validarCompromiso` |
+| Normalización (`null` explícito si no aplica) | `compromisos/logic/modelo.js`, `normalizarCompromiso` |
+| Chip "Disponible" en la card | `compromisos/views/lista.js`, `cupoChip` |
+| Prefijo del valor de tarjeta en el selector | `core/constants.js`, `TARJETA_PREFIJO` (`'tc:'`) |
+| Tarjetas en el selector de origen (grupo aparte) | `infra/cuenta-helper.js`, `renderSelectorCuenta({ tarjetas })` |
+| Qué tarjeta es operable | `gastos/logic.js`, `tarjetasDeCredito` |
+| Origen del gasto (cuenta vs tarjeta) | `gastos/logic.js`, `normalizarGasto` |
+| Signo del ajuste a la deuda | `gastos/logic.js`, `efectoEnDeuda` + `deltasPorEdicionEnDeuda` |
+| Escritura del saldo de la deuda | `gastos/index.js`, `_aplicarDeltasADeudas` sobre `_ajustarSaldoDeuda` |
 
 **Riesgos**:
 
-- **El chip de disponible no se apaga solo si el saldo supera el cupo**: se acota con `Math.max(..., 0)`, así que una deuda sobregirada muestra "Disponible $0" en vez de un negativo. Cuando MC.16b haga subir el saldo con cada consumo, decidir si ese borde merece un aviso propio en vez del cero mudo.
-- **`cupoTotal` se limpia a `null` al cambiar de categoría al editar** (lo exige `editar()`, que hace `Object.assign` shallow): reclasificar una tarjeta como "Vivienda" y volver a "Tarjeta de crédito" pierde el cupo tecleado. Es el mismo comportamiento que `icono` y es intencional, pero el usuario no recibe aviso.
+- **Nada impide que un consumo pase del cupo**: el consumo se registra igual y el disponible queda en "$0" (acotado con `Math.max`), sin aviso. Ahora que el saldo sí sube con cada compra, ese borde es alcanzable de verdad: candidato natural del nudge de MC.16e, junto con el de pago mínimo.
+- **`cupoTotal` se limpia a `null` al cambiar de categoría al editar** (lo exige `editar()`, que hace `Object.assign` shallow): reclasificar una tarjeta como "Vivienda" y volver a "Tarjeta de crédito" pierde el cupo tecleado. Es el mismo comportamiento que `icono` y es intencional, pero el usuario no recibe aviso. **Ojo con el efecto nuevo:** una tarjeta que pierde su cupo deja de ofrecerse en Gastos, aunque sus consumos ya registrados siguen intactos.
+- **Sin cuentas activas no hay formulario de gasto**, así que quien solo tenga tarjeta no puede registrar un consumo: el empty state de `renderFormGasto` sigue exigiendo una cuenta. Es preexistente y quedó fuera de MC.16b a propósito (tocar ese empty state es una decisión de producto, no del signo del saldo).
+- **Un gasto repartido entre varias cuentas se parte en varios registros; un consumo con tarjeta nunca se parte**: no hay reparto que hacer sobre un cupo. Si MC.16d agrega cuotas, se apoya en ese mismo registro único.
 
 **Cambios realizados**:
 
 - 2026-07-30 (MC.16a): `cupoTotal` en el form condicionado a la categoría, validación, normalización, chip de disponible en la card y bump de schema v27 a v28 (migración no-op). Ver [CHANGELOG](../CHANGELOG.md).
+- 2026-07-30 (MC.16b): el consumo con tarjeta como `Gasto` con `consumoTC`, tarjetas en el selector de origen (solo Gastos) y el signo del saldo en `deltasPorEdicionEnDeuda`, con alta, edición y eliminación juntas. Ver [CHANGELOG](../CHANGELOG.md).
 
 ---
 

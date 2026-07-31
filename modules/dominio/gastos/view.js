@@ -10,7 +10,7 @@ import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA, iconoDeCategoriaGasto } from '../../core/constants.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
-import { gastosMes, filtrarGastos, ordenarRecientesPrimero, agruparPorDia, totalGastos, variacionMensualGasto, detectarHormigas, iconoPorOrigen, gastosFrecuentes } from './logic.js';
+import { gastosMes, filtrarGastos, ordenarRecientesPrimero, agruparPorDia, totalGastos, variacionMensualGasto, detectarHormigas, iconoPorOrigen, gastosFrecuentes, tarjetasDeCredito } from './logic.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
 
@@ -564,6 +564,11 @@ function _renderChipsFrecuentes() {
  * en edición el registro sigue siendo de una sola cuenta. La pre-selección la
  * ajusta el caller (`_editarGasto`) en modo edición.
  *
+ * MC.16b (ADR 051 D4): si hay tarjetas de crédito operables, el selector las
+ * ofrece en un grupo aparte y la pregunta pasa a ser "¿con qué pagaste?": ya
+ * no todas las respuestas son una cuenta. Gastos es el único formulario que
+ * las ofrece (no se ahorra ni se transfiere con cupo de crédito).
+ *
  * @param {{ sugerencias?: boolean }} [opciones] `sugerencias: false` omite los
  *   chips de gastos frecuentes (TX.12): el caller la pasa en modo edición.
  * @returns {string}
@@ -582,6 +587,12 @@ export function renderFormGasto({ sugerencias = true } = {}) {
         <a class="btn btn-primary btn-lg" href="#tesoreria" data-action="ir-a-crear-cuenta">${icon('cuentas')} Crear una cuenta</a>
       </div>`;
   }
+
+  // MC.16b: las tarjetas operables las pasa el caller, el helper nunca lee
+  // S.compromisos (ADR 051 D4). Leer el singleton de otro dominio sí es la
+  // norma (ADN 10 prohíbe importar el módulo, no leer S).
+  const tarjetas    = tarjetasDeCredito(S.compromisos);
+  const labelOrigen = tarjetas.length > 0 ? '¿Con qué pagaste?' : '¿De qué cuenta sale el dinero?';
 
   // FORM.1a (ADR 042 D2/D3): la categoría se elige con chips de ícono, no
   // con un desplegable. Radios reales name="categoria" dentro del label:
@@ -635,7 +646,7 @@ export function renderFormGasto({ sugerencias = true } = {}) {
                placeholder="Ej. Gimnasio" autocomplete="off" />
         ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'categoria-nueva-icono', nombreCampo: 'categoriaNuevaIcono' })}
       </div>
-      ${renderSelectorCuenta(cuentas)}
+      ${renderSelectorCuenta(cuentas, { tarjetas, label: labelOrigen })}
       <div class="form-group">
         <span class="label" id="gasto-fecha-label">Fecha</span>
         <div class="fecha-chips" role="radiogroup" aria-labelledby="gasto-fecha-label">

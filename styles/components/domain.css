@@ -1298,6 +1298,15 @@ button.chip:focus-visible {
   flex: 1;
 }
 
+/* MC.16b (ADR 051 D4): rótulo del grupo de tarjetas de crédito, que va debajo
+   de las cuentas para que el cupo nunca se lea como dinero disponible. */
+.cuenta-sel__grupo {
+  margin-top: var(--fk-space-2);
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-medium);
+  color: var(--fk-text-muted);
+}
+
 /* Tarjeta seleccionada: borde y fondo resaltados. */
 .cuenta-sel__row:has(.cuenta-sel__radio:checked) {
   border-color: var(--fk-accent);

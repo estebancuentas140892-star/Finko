@@ -3,7 +3,7 @@
  * Sin DOM. Sin S directo. Testeable en Node/Vitest sin mocks de navegador.
  */
 
-import { CATEGORIA_AGENDA_ICONO, CATEGORIAS_GASTO, ICONOS_CATEGORIA_PERSONALIZADA } from '../../core/constants.js';
+import { CATEGORIA_AGENDA_ICONO, CATEGORIAS_GASTO, ICONOS_CATEGORIA_PERSONALIZADA, TARJETA_PREFIJO } from '../../core/constants.js';
 
 // ── FILTROS Y AGRUPACIÓN ─────────────────────────────────────────
 
@@ -402,6 +402,55 @@ export function deltasPorEdicionDeGasto(antes, despues) {
   return deltas;
 }
 
+/**
+ * Cuánto le suma un gasto al `saldoTotal` de su deuda mientras existe. Un abono
+ * lo baja (ADR 002), un consumo con tarjeta lo sube (MC.16b, ADR 051 D3): el
+ * signo lo fija `consumoTC`, porque los dos llevan el mismo `compromisoId` y
+ * sin él el ajuste sería ambiguo. Devuelve 0 si el gasto no toca deuda.
+ *
+ * @param {import('../../core/state.js').Gasto|null|undefined} gasto
+ * @returns {number}
+ */
+export function efectoEnDeuda(gasto) {
+  if (!gasto?.compromisoId) return 0;
+  const monto = Number(gasto.monto) || 0;
+  return gasto.consumoTC ? monto : -monto;
+}
+
+/**
+ * Delta a aplicar al `saldoTotal` de cada deuda cuando un gasto se crea, se
+ * edita o se elimina: revierte el efecto del gasto anterior y aplica el del
+ * nuevo. Mapa { compromisoId → deltaASumar }, mismo contrato que
+ * `deltasPorEdicionDeGasto` para las cuentas.
+ *
+ *   - crear:    `deltasPorEdicionEnDeuda(null, gasto)`
+ *   - editar:   `deltasPorEdicionEnDeuda(anterior, gasto)`
+ *   - eliminar: `deltasPorEdicionEnDeuda(gasto, null)`
+ *
+ * Sobre la misma deuda devuelve el NETO, no dos movimientos: el saldo se acota
+ * en cero al escribirlo, y una reversa intermedia que toque el piso perdería el
+ * remanente en silencio (el descuadre que MC.16b tiene que evitar).
+ *
+ * @param {import('../../core/state.js').Gasto|null} antes
+ * @param {import('../../core/state.js').Gasto|null} despues
+ * @returns {Record<string, number>}
+ */
+export function deltasPorEdicionEnDeuda(antes, despues) {
+  const deltas = {};
+  const acumular = (id, valor) => {
+    if (!id) return;
+    deltas[id] = (deltas[id] ?? 0) + valor;
+  };
+
+  acumular(antes?.compromisoId,   -efectoEnDeuda(antes));
+  acumular(despues?.compromisoId, +efectoEnDeuda(despues));
+
+  for (const [id, delta] of Object.entries(deltas)) {
+    if (delta === 0) delete deltas[id];
+  }
+  return deltas;
+}
+
 // ── TRANSFORMACIÓN ───────────────────────────────────────────────
 
 /**
@@ -413,16 +462,49 @@ export function deltasPorEdicionDeGasto(antes, despues) {
  * @param {Record<string, string>} datos
  */
 export function normalizarGasto(datos) {
+  // MC.16b (ADR 051 D3): el selector de origen es uno solo, y una tarjeta llega
+  // con el prefijo `tc:`. Un consumo con tarjeta no descuenta ninguna cuenta
+  // (el dinero no salió del banco), apunta a la tarjeta y marca `consumoTC`.
+  // El campo es necesario porque el abono a esa misma tarjeta lleva el mismo
+  // `compromisoId` con el signo contrario. Siempre explícito (false cuando no
+  // aplica), mismo patrón que `cupoTotal`, para que `editar()` (Object.assign
+  // superficial) lo limpie si el gasto deja de pagarse con tarjeta.
+  const origen      = datos.cuentaId || '';
+  const esConsumoTC = origen.startsWith(TARJETA_PREFIJO);
+
   const base = {
     monto: Number(datos.monto),
     categoria: datos.categoria,
     fecha: datos.fecha,
-    cuentaId: datos.cuentaId || null,
+    cuentaId: esConsumoTC ? null : (origen || null),
     nota: datos.nota?.trim() || '',
-    compromisoId: datos.compromisoId || null,
+    compromisoId: esConsumoTC ? origen.slice(TARJETA_PREFIJO.length) : (datos.compromisoId || null),
+    consumoTC: esConsumoTC,
   };
   if (datos.descripcion?.trim()) base.descripcion = datos.descripcion.trim();
   return base;
+}
+
+/**
+ * Tarjetas de crédito operables entre los compromisos: deuda con entidad,
+ * categoría 'Tarjeta de crédito' y `cupoTotal` registrado, que es lo que
+ * distingue una tarjeta operable de una deuda vieja capturada a posteriori
+ * (MC.16a, ADR 051 D1). Solo las activas: una tarjeta archivada ya no recibe
+ * consumos.
+ *
+ * Gastos la usa para pasarle las tarjetas a `renderSelectorCuenta`. Lee el
+ * array que le den: no toca `S` ni importa el dominio de compromisos (ADN 10).
+ *
+ * @param {import('../../core/state.js').Compromiso[]} compromisos
+ * @returns {import('../../core/state.js').Compromiso[]}
+ */
+export function tarjetasDeCredito(compromisos) {
+  return (compromisos ?? []).filter(c =>
+    c.tipo === 'deuda-entidad'
+    && c.categoria === 'Tarjeta de crédito'
+    && (Number(c.cupoTotal) || 0) > 0
+    && c.activo !== false,
+  );
 }
 
 // ── ÍCONO POR ORIGEN (TX.6 / TX.7, sprite desde ID.3) ────────────

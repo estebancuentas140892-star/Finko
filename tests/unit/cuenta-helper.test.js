@@ -25,6 +25,18 @@ const cuentaActiva = (overrides = {}) => ({
   ...overrides,
 });
 
+/** Tarjeta operable (MC.16b): compromiso de deuda con cupo registrado. */
+const tarjetaTC = (overrides = {}) => ({
+  id:          'd1',
+  descripcion: 'Tarjeta Bancolombia',
+  tipo:        'deuda-entidad',
+  categoria:   'Tarjeta de crédito',
+  cupoTotal:   5_000_000,
+  saldoTotal:  1_000_000,
+  activo:      true,
+  ...overrides,
+});
+
 // ── LIMPIEZA DE DOM ──────────────────────────────────────────────
 
 afterEach(() => {
@@ -180,6 +192,54 @@ describe('renderSelectorCuenta()', () => {
       cuentaActiva({ id: 'c2', saldo: 100_000 }),
     ], { selectedId: 'c2' });
     expect(html).toMatch(/value="c2"[^>]*checked|checked[^>]*value="c2"/);
+  });
+
+  // ── MC.16b: tarjetas de crédito (ADR 051 D4) ──────────────────
+
+  it('las tarjetas van en su propio grupo, con el prefijo tc: y su cupo disponible', () => {
+    const html = renderSelectorCuenta([cuentaActiva({ id: 'c1' })], { tarjetas: [tarjetaTC()] });
+    expect(html).toContain('cuenta-sel__grupo');
+    expect(html).toContain('Tarjetas de crédito');
+    expect(html).toContain('value="tc:d1"');
+    expect(html).toContain('Cupo $4.000.000');
+  });
+
+  it('la tarjeta va debajo de las cuentas: el cupo nunca encabeza el dinero real', () => {
+    const html = renderSelectorCuenta([cuentaActiva({ id: 'c1' })], { tarjetas: [tarjetaTC()] });
+    expect(html.indexOf('value="c1"')).toBeLessThan(html.indexOf('value="tc:d1"'));
+  });
+
+  it('nunca pre-selecciona una tarjeta: el default sigue siendo la cuenta de mayor saldo', () => {
+    const html = renderSelectorCuenta([
+      cuentaActiva({ id: 'c1', saldo: 900_000 }),
+    ], { tarjetas: [tarjetaTC()] });
+    expect(html).not.toMatch(/value="tc:d1"[^>]*checked/);
+    expect(html).toMatch(/value="c1"[^>]*checked/);
+  });
+
+  it('respeta selectedId cuando apunta a una tarjeta (edición de un consumo)', () => {
+    const html = renderSelectorCuenta([
+      cuentaActiva({ id: 'c1', saldo: 900_000 }),
+    ], { tarjetas: [tarjetaTC()], selectedId: 'tc:d1' });
+    expect(html).toMatch(/value="tc:d1"[^>]*checked/);
+    expect(html).not.toMatch(/value="c1"[^>]*checked/);
+  });
+
+  it('el cupo disponible se acota en cero si la tarjeta está sobregirada', () => {
+    const html = renderSelectorCuenta([cuentaActiva()], {
+      tarjetas: [tarjetaTC({ cupoTotal: 1_000_000, saldoTotal: 1_400_000 })],
+    });
+    expect(html).toContain('Cupo $0');
+  });
+
+  it('sin cuentas pero con tarjetas: el selector existe y no pre-marca nada', () => {
+    const html = renderSelectorCuenta([], { tarjetas: [tarjetaTC()] });
+    expect(html).toContain('value="tc:d1"');
+    expect(html).not.toContain('checked');
+  });
+
+  it('sin cuentas ni tarjetas: sigue devolviendo cadena vacía', () => {
+    expect(renderSelectorCuenta([], { tarjetas: [] })).toBe('');
   });
 });
 

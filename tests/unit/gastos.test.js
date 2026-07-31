@@ -17,6 +17,9 @@ import {
   variacionMensualGasto,
   agruparPorDia,
   gastosFrecuentes,
+  tarjetasDeCredito,
+  efectoEnDeuda,
+  deltasPorEdicionEnDeuda,
 } from '../../modules/dominio/gastos/logic.js';
 import { renderFormGasto, renderListaGastos, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, irAMesActual, CATEGORIA_NUEVA_VALUE } from '../../modules/dominio/gastos/view.js';
 import { CATEGORIAS_GASTO, CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA } from '../../modules/core/constants.js';
@@ -392,6 +395,145 @@ describe('normalizarGasto()', () => {
   it('no incluye id (lo asigna crud.js)', () => {
     expect(normalizarGasto(datosFormValidos)).not.toHaveProperty('id');
   });
+
+  // MC.16b (ADR 051 D3): el selector de origen es uno solo y una tarjeta llega
+  // prefijada; el consumo no descuenta cuenta y apunta a la tarjeta.
+  it('MC.16b: origen con prefijo tc: deja cuentaId en null y apunta a la tarjeta', () => {
+    const result = normalizarGasto({ ...datosFormValidos, cuentaId: 'tc:d1' });
+    expect(result.cuentaId).toBeNull();
+    expect(result.compromisoId).toBe('d1');
+    expect(result.consumoTC).toBe(true);
+  });
+
+  it('MC.16b: un gasto pagado con cuenta marca consumoTC en false', () => {
+    const result = normalizarGasto(datosFormValidos);
+    expect(result.consumoTC).toBe(false);
+    expect(result.compromisoId).toBeNull();
+  });
+
+  it('MC.16b: consumoTC false explícito limpia el flag al editar (editar() hace merge superficial)', () => {
+    // Un consumo que pasa a pagarse con cuenta no puede quedarse con el flag.
+    const result = normalizarGasto({ ...datosFormValidos, cuentaId: 'c1' });
+    expect(result).toHaveProperty('consumoTC', false);
+  });
+
+  it('MC.16b: un abono (compromisoId sin prefijo) no se confunde con un consumo', () => {
+    const result = normalizarGasto({ ...datosFormValidos, compromisoId: 'd9' });
+    expect(result.compromisoId).toBe('d9');
+    expect(result.consumoTC).toBe(false);
+    expect(result.cuentaId).toBe('c1');
+  });
+});
+
+// ── deltasPorEdicionEnDeuda() ────────────────────────────────────
+
+describe('deltasPorEdicionEnDeuda()', () => {
+  const abono   = (monto, id = 'd1') => ({ compromisoId: id, monto, consumoTC: false });
+  const consumo = (monto, id = 'd1') => ({ compromisoId: id, monto, consumoTC: true });
+
+  it('crear un consumo sube el saldo de la tarjeta', () => {
+    expect(deltasPorEdicionEnDeuda(null, consumo(200_000))).toEqual({ d1: 200_000 });
+  });
+
+  it('crear un abono baja el saldo de la deuda (ADR 002, signo contrario)', () => {
+    expect(deltasPorEdicionEnDeuda(null, abono(200_000))).toEqual({ d1: -200_000 });
+  });
+
+  it('eliminar un consumo lo revierte: el saldo baja lo mismo que subió', () => {
+    expect(deltasPorEdicionEnDeuda(consumo(200_000), null)).toEqual({ d1: -200_000 });
+  });
+
+  it('eliminar un abono lo revierte: el saldo vuelve a subir', () => {
+    expect(deltasPorEdicionEnDeuda(abono(200_000), null)).toEqual({ d1: 200_000 });
+  });
+
+  it('subir el monto de un consumo mueve solo la diferencia', () => {
+    expect(deltasPorEdicionEnDeuda(consumo(200_000), consumo(250_000))).toEqual({ d1: 50_000 });
+  });
+
+  it('bajar el monto de un consumo devuelve la diferencia', () => {
+    expect(deltasPorEdicionEnDeuda(consumo(200_000), consumo(120_000))).toEqual({ d1: -80_000 });
+  });
+
+  it('editar un consumo sin cambiar el monto no mueve nada', () => {
+    expect(deltasPorEdicionEnDeuda(consumo(200_000), consumo(200_000))).toEqual({});
+  });
+
+  it('cambiar de tarjeta revierte en una y aplica en la otra', () => {
+    expect(deltasPorEdicionEnDeuda(consumo(200_000, 'd1'), consumo(200_000, 'd2')))
+      .toEqual({ d1: -200_000, d2: 200_000 });
+  });
+
+  it('un consumo que pasa a pagarse con cuenta se revierte y no toca ninguna deuda nueva', () => {
+    const conCuenta = { compromisoId: null, monto: 200_000, consumoTC: false };
+    expect(deltasPorEdicionEnDeuda(consumo(200_000), conCuenta)).toEqual({ d1: -200_000 });
+  });
+
+  it('un gasto sin deuda editado a otro sin deuda no genera deltas', () => {
+    const sinDeuda = { compromisoId: null, monto: 50_000 };
+    expect(deltasPorEdicionEnDeuda(sinDeuda, sinDeuda)).toEqual({});
+  });
+
+  it('el signo no se invierte si un abono y un consumo comparten compromisoId', () => {
+    // El caso que obliga a que exista consumoTC (ADR 051 D3): la misma tarjeta
+    // recibe abonos y consumos, y el compromisoId solo no dice en qué sentido.
+    expect(deltasPorEdicionEnDeuda(abono(100_000), consumo(100_000))).toEqual({ d1: 200_000 });
+  });
+});
+
+// ── efectoEnDeuda() ──────────────────────────────────────────────
+
+describe('efectoEnDeuda()', () => {
+  it('un consumo suma su monto', () => {
+    expect(efectoEnDeuda({ compromisoId: 'd1', monto: 90_000, consumoTC: true })).toBe(90_000);
+  });
+
+  it('un abono resta su monto', () => {
+    expect(efectoEnDeuda({ compromisoId: 'd1', monto: 90_000 })).toBe(-90_000);
+  });
+
+  it('un gasto sin deuda no tiene efecto', () => {
+    expect(efectoEnDeuda({ monto: 90_000 })).toBe(0);
+    expect(efectoEnDeuda(null)).toBe(0);
+  });
+});
+
+// ── tarjetasDeCredito() ──────────────────────────────────────────
+
+describe('tarjetasDeCredito()', () => {
+  const tarjeta = (overrides = {}) => ({
+    id: 'd1',
+    descripcion: 'Tarjeta Bancolombia',
+    tipo: 'deuda-entidad',
+    categoria: 'Tarjeta de crédito',
+    cupoTotal: 5_000_000,
+    saldoTotal: 1_000_000,
+    activo: true,
+    ...overrides,
+  });
+
+  it('devuelve la tarjeta con cupo registrado', () => {
+    expect(tarjetasDeCredito([tarjeta()])).toHaveLength(1);
+  });
+
+  it('excluye la deuda de tarjeta sin cupo (deuda vieja, no producto operable)', () => {
+    expect(tarjetasDeCredito([tarjeta({ cupoTotal: null })])).toEqual([]);
+    expect(tarjetasDeCredito([tarjeta({ cupoTotal: 0 })])).toEqual([]);
+  });
+
+  it('excluye otras categorías de deuda y las deudas personales', () => {
+    expect(tarjetasDeCredito([tarjeta({ categoria: 'Vehículo' })])).toEqual([]);
+    expect(tarjetasDeCredito([tarjeta({ tipo: 'deuda-personal' })])).toEqual([]);
+  });
+
+  it('excluye la tarjeta archivada: ya no recibe consumos', () => {
+    expect(tarjetasDeCredito([tarjeta({ activo: false })])).toEqual([]);
+  });
+
+  it('tolera undefined y lista vacía', () => {
+    expect(tarjetasDeCredito(undefined)).toEqual([]);
+    expect(tarjetasDeCredito([])).toEqual([]);
+  });
 });
 
 // ── aplicarGastoASaldo() ─────────────────────────────────────────
@@ -533,8 +675,20 @@ describe('renderFormGasto() - selector de cuenta', () => {
     id, nombre, saldo, banco: 'Nequi', tipo: 'Ahorros', activa: true,
   });
 
+  const tarjetaTC = (overrides = {}) => ({
+    id: 'd1',
+    descripcion: 'Tarjeta Bancolombia',
+    tipo: 'deuda-entidad',
+    categoria: 'Tarjeta de crédito',
+    cupoTotal: 5_000_000,
+    saldoTotal: 1_000_000,
+    activo: true,
+    ...overrides,
+  });
+
   beforeEach(() => {
     S.cuentas = [];
+    S.compromisos = [];
   });
 
   it('sin cuentas: empty state guiado, sin form, CTA que crea la cuenta', () => {
@@ -571,6 +725,40 @@ describe('renderFormGasto() - selector de cuenta', () => {
     expect(html).toContain('name="cuentaId"');
     expect(html).toContain('value="c1"');
     expect(html).toContain('checked');
+  });
+
+  // MC.16b (ADR 051 D4): Gastos es el único formulario que ofrece tarjetas.
+  it('MC.16b: con tarjeta operable, el selector la ofrece prefijada y en su grupo', () => {
+    S.cuentas = [cuenta('c1', 'Bancolombia', 600_000)];
+    S.compromisos = [tarjetaTC()];
+    const html = renderFormGasto();
+    expect(html).toContain('value="tc:d1"');
+    expect(html).toContain('cuenta-sel__grupo');
+    expect(html).toContain('Tarjetas de crédito');
+    // La pregunta deja de asumir que todo sale de una cuenta.
+    expect(html).toContain('¿Con qué pagaste?');
+  });
+
+  it('MC.16b: la tarjeta nunca viene pre-seleccionada (el default sigue siendo una cuenta)', () => {
+    S.cuentas = [cuenta('c1', 'Bancolombia', 600_000)];
+    S.compromisos = [tarjetaTC()];
+    const html = renderFormGasto();
+    expect(html).not.toMatch(/value="tc:d1"[^>]*checked/);
+    expect(html).toMatch(/value="c1"[^>]*checked/);
+  });
+
+  it('MC.16b: muestra el cupo disponible de la tarjeta, no un saldo', () => {
+    S.cuentas = [cuenta('c1', 'Bancolombia', 600_000)];
+    S.compromisos = [tarjetaTC({ cupoTotal: 5_000_000, saldoTotal: 1_000_000 })];
+    expect(renderFormGasto()).toContain('Cupo $4.000.000');
+  });
+
+  it('MC.16b: sin tarjetas operables, el formulario no cambia de pregunta', () => {
+    S.cuentas = [cuenta('c1', 'Bancolombia', 600_000)];
+    S.compromisos = [tarjetaTC({ cupoTotal: null })];
+    const html = renderFormGasto();
+    expect(html).not.toContain('value="tc:d1"');
+    expect(html).toContain('¿De qué cuenta sale el dinero?');
   });
 
   it('CAT.1a: el hint "normalmente pertenece a fijos" ya no existe (retirado, ADR 014)', () => {

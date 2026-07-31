@@ -137,6 +137,14 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT } from './constants.js';
  *                                    gasto como abono a la deuda y permite que al
  *                                    editar/eliminar el gasto se sincronice el
  *                                    saldoTotal del compromiso. Definido en ADR 002.
+ * @property {boolean} [consumoTC]    MC.16b (ADR 051 D3). true: el gasto se pagó con
+ *                                    la tarjeta de `compromisoId`, así que no descuenta
+ *                                    ninguna cuenta (`cuentaId` ausente) y SUBE el
+ *                                    saldoTotal de la tarjeta. Fija el signo del ajuste,
+ *                                    que el abono a esa misma tarjeta lleva invertido con
+ *                                    el mismo compromisoId. Deducirlo de la ausencia de
+ *                                    cuentaId sería frágil: un gasto sin cuenta ya es
+ *                                    legal (efectivo no registrado).
  */
 
 /**

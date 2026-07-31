@@ -15,10 +15,13 @@
  */
 
 import { EventBus } from '../core/state.js';
+import { TARJETA_PREFIJO, CATEGORIA_DEUDA_ICONO } from '../core/constants.js';
 import { trapFocus, releaseFocus } from './a11y.js';
 import { esc as _esc, f } from './utils.js';
 import { navigate } from './router.js';
 import { bancoAvatar } from './bancos.js';
+import { resolverMarca, tejaMarca } from './marcas.js';
+import { tejaCategoria } from './icons.js';
 import { distribuirPago } from './distribuir-pago.js';
 
 // ── API PÚBLICA ──────────────────────────────────────────────────
@@ -38,36 +41,73 @@ import { distribuirPago } from './distribuir-pago.js';
  * recibes este ingreso?" (MC.13d) no hay default posible, y un valor no elegido
  * se guardaría como un hecho del usuario. El caller debe tolerar que no venga.
  *
+ * `tarjetas` (MC.16b, ADR 051 D4) agrega las tarjetas de crédito operables en
+ * un grupo aparte, debajo de las cuentas y con su cupo disponible en vez de un
+ * saldo: no son dinero real. **El caller pasa la lista**, el helper nunca lee
+ * `S.compromisos`, así infra no gana conocimiento de un dominio y cada
+ * formulario decide si las ofrece (hoy solo Gastos). Su valor lleva el prefijo
+ * `TARJETA_PREFIJO`; nunca se pre-seleccionan.
+ *
  * @param {import('../core/state.js').Cuenta[]} cuentas
- * @param {{ selectedId?: string|null, label?: string, name?: string, preseleccionar?: boolean }} [opts]
+ * @param {{ selectedId?: string|null, label?: string, name?: string, preseleccionar?: boolean, tarjetas?: import('../core/state.js').Compromiso[] }} [opts]
  * @returns {string}
  */
-export function renderSelectorCuenta(cuentas, { selectedId = null, label = '¿De qué cuenta sale el dinero?', name = 'cuentaId', preseleccionar = true } = {}) {
+export function renderSelectorCuenta(cuentas, { selectedId = null, label = '¿De qué cuenta sale el dinero?', name = 'cuentaId', preseleccionar = true, tarjetas = [] } = {}) {
   const activas = (cuentas ?? []).filter(c => c.activa !== false);
-  if (activas.length === 0) return '';
+  const tjs     = tarjetas ?? [];
+  if (activas.length === 0 && tjs.length === 0) return '';
 
-  const elegida = (selectedId && activas.some(c => c.id === selectedId)) ? selectedId : null;
+  const valores = new Set([...activas.map(c => c.id), ...tjs.map(t => TARJETA_PREFIJO + t.id)]);
+  const elegida = (selectedId && valores.has(selectedId)) ? selectedId : null;
   const sel = elegida
-    ?? (preseleccionar ? [...activas].sort((a, b) => (b.saldo ?? 0) - (a.saldo ?? 0))[0].id : null);
+    ?? ((preseleccionar && activas.length > 0) ? [...activas].sort((a, b) => (b.saldo ?? 0) - (a.saldo ?? 0))[0].id : null);
 
-  const filas = activas.map(c => `
+  const fila = (valor, avatar, nombre, cifra) => `
       <label class="cuenta-sel__row">
         <input type="radio" name="${_esc(name)}" class="cuenta-sel__radio"
-               value="${_esc(c.id)}" ${c.id === sel ? 'checked' : ''} />
+               value="${_esc(valor)}" ${valor === sel ? 'checked' : ''} />
         <span class="cuenta-picker__main">
-          ${bancoAvatar(c.banco, c.icono)}
-          <span class="cuenta-picker__nombre">${_esc(c.nombre)}</span>
+          ${avatar}
+          <span class="cuenta-picker__nombre">${_esc(nombre)}</span>
         </span>
-        <span class="cuenta-picker__saldo">${f(c.saldo ?? 0)}</span>
-      </label>`).join('');
+        <span class="cuenta-picker__saldo">${cifra}</span>
+      </label>`;
+
+  const filas = activas.map(c => fila(c.id, bancoAvatar(c.banco, c.icono), c.nombre, f(c.saldo ?? 0))).join('');
+
+  // El cupo disponible se deriva (cupoTotal - saldoTotal, acotado a cero) y se
+  // rotula como cupo: es capacidad de endeudamiento, no dinero (ADR 051 D5).
+  const filasTarjetas = tjs.length === 0 ? '' : `
+        <p class="cuenta-sel__grupo">Tarjetas de crédito</p>
+        ${tjs.map(t => fila(
+          TARJETA_PREFIJO + t.id,
+          _tejaTarjeta(t),
+          t.descripcion,
+          `Cupo ${f(Math.max((Number(t.cupoTotal) || 0) - (Number(t.saldoTotal) || 0), 0))}`,
+        )).join('')}`;
 
   return `
     <div class="form-group">
       <span class="label">${_esc(label)}</span>
       <div class="cuenta-sel__lista" role="radiogroup" aria-label="${_esc(label)}">
-        ${filas}
+        ${filas}${filasTarjetas}
       </div>
     </div>`;
+}
+
+/**
+ * Teja de una tarjeta en el selector: la marca que mencione su descripción
+ * ("Tarjeta Bancolombia"), y si no hay match, la teja de tipo de deuda. Misma
+ * cadena que la card de Deudas, para que la tarjeta se vea igual en los dos
+ * lados.
+ * @param {import('../core/state.js').Compromiso} tarjeta
+ * @returns {string}
+ */
+function _tejaTarjeta(tarjeta) {
+  const marca = resolverMarca(tarjeta.descripcion);
+  return marca
+    ? tejaMarca(marca)
+    : tejaCategoria(CATEGORIA_DEUDA_ICONO['Tarjeta de crédito'], 'compromisos');
 }
 
 /**

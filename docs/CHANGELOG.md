@@ -10,6 +10,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(gastos): MC.16b, pagar con la tarjeta sube la deuda · 2026-07-30
+
+Segunda rebanada de MC.16 y el corazón del [ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md) (D3 y D4): ya se puede pagar con la tarjeta. Indivisible por la I3 del [ADR 053](DECISIONS/053-invariante-de-patrimonio.md), así que entran juntas el alta, la edición y la eliminación del consumo. Ficha: [`contexto/deudas.md`](contexto/deudas.md).
+
+- **Un solo selector de origen, no dos campos.** Las tarjetas entran al mismo radiogroup `name="cuentaId"` con el valor prefijado `tc:<compromisoId>` (`TARJETA_PREFIJO`, `core/constants.js`), en un grupo aparte y debajo de las cuentas. Elegir cuenta o tarjeta queda excluyente por construcción, y `validarGasto()` no cambió: el campo obligatorio sigue siendo el mismo. Con tarjetas a la vista la pregunta pasa a "¿Con qué pagaste?", porque ya no todas las respuestas son una cuenta.
+- **El signo salió a `logic.js` en vez de vivir en el handler.** `deltasPorEdicionEnDeuda(antes, despues)` devuelve un mapa `{ compromisoId → delta }`, mismo contrato que `deltasPorEdicionDeGasto` para cuentas, y cubre las tres operaciones con una sola función (`crear`, `editar`, `eliminar` pasan `null` de un lado). Un consumo sube el saldo, un abono lo baja, y sobre la misma deuda se escribe el **neto**: `_ajustarSaldoDeuda` acota en cero, así que revertir y volver a aplicar en dos pasadas podía perder el remanente en silencio. Ese descuadre invisible era el riesgo declarado de la tarjeta.
+- **`consumoTC` es obligatorio porque el `compromisoId` solo no basta.** El abono a la tarjeta y el consumo con esa tarjeta llevan el mismo `compromisoId`; deducir el sentido de la ausencia de `cuentaId` sería frágil, porque un gasto sin cuenta ya es legal (efectivo no registrado). Se escribe siempre explícito (`false` cuando no aplica) para que `editar()`, que hace `Object.assign` superficial, lo limpie cuando un consumo pasa a pagarse con una cuenta.
+- **Un consumo no toca ninguna cuenta.** No pasa por el reparto multi-cuenta ni por el aviso de sobregiro: el dinero no salió del banco. Lo demás lo recibe gratis por ser un gasto normal (su categoría, sus límites de gasto, su análisis), que es lo que el ADR compró al no inventar un tipo de movimiento nuevo.
+
+Sin bump de schema: `consumoTC` entra en la v28 que abrió MC.16a, como pide el D8 del ADR (un solo bump para los dos campos). SW v450 a v451.
+
+---
+
 ### feat(compromisos): MC.16a, el cupo de la tarjeta de crédito · 2026-07-30
 
 Primera de las cinco rebanadas de MC.16 ([ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md), aceptado el 2026-07-27). Entrega el dato base y nada más: **todavía no se puede pagar con la tarjeta**, eso es MC.16b. Ficha: [`contexto/deudas.md`](contexto/deudas.md).
