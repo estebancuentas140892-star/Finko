@@ -374,6 +374,23 @@ form:not(.config-form) .form-group:not(:first-child) {
 .distribuir__deficit > .form-hint {
   margin-top: 0;
 }
+/* Decisión explícita del remanente (MC.13e-2f-2, punto 18): lo que queda sin
+   asignar deja de ser informativo y pide destino antes de confirmar. Vive
+   dentro del último paso; el radio hereda el tamaño del checkbox de
+   `.checkbox-row` para que las dos filas del asistente se lean igual. */
+.distribuir__remanente {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+  margin-top: var(--fk-space-2);
+}
+.distribuir__remanente input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--fk-accent);
+  cursor: pointer;
+}
 /* Asistente paginado (MC.7d, ADR 018): un paso visible a la vez. El indicador
    de paso, el monto a distribuir y el resumen viven fuera de la paginación.
    Los pasos y botones ocultos se apagan con el [hidden] global (reset.css). */

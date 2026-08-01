@@ -437,10 +437,12 @@ function _preguntaCobroRecibido(periodoISO) {
  *      ahorro calculada sobre el remanente real tras las Necesidades marcadas
  *      (R3); abonos extra a deudas por prioridad de pago y aportes a inversiones.
  *   3. Estilo de vida: lo que queda disponible en la cuenta. Con una sola
- *      cuenta activa es puramente informativo (regla de cuenta única); con 2+
- *      cuentas (MC.7e) suma un reparto opcional: transferencias internas hacia
- *      otras cuentas, sin tocar el total del remanente. La confirmación única
- *      aplica todo al final.
+ *      cuenta activa el monto es puramente informativo (regla de cuenta única);
+ *      con 2+ cuentas (MC.7e) suma un reparto opcional: transferencias internas
+ *      hacia otras cuentas, sin tocar el total del remanente. Desde MC.13e-2f-2
+ *      cierra con la decisión explícita del remanente (punto 18): qué se hace
+ *      con lo que quedó sin asignar, sin preselección, obligatoria antes de
+ *      confirmar. La confirmación única aplica todo al final.
  *
  * El monto a distribuir, el indicador de paso, el resumen en vivo y el bloque de
  * déficit (MC.13e-2e) quedan fuera de la paginación (visibles en todos los
@@ -535,6 +537,40 @@ function _renderPanelDistribuir(d) {
           <p id="distribuir-cuentas-resumen" class="form-hint form-hint--muted" role="status"></p>`
     : '';
 
+  // Decisión explícita del remanente (MC.13e-2f-2, punto 18 del brief): lo que
+  // queda sin asignar deja de ser puramente informativo y hay que decir qué se
+  // hace con ello antes de confirmar. Sin preselección a propósito: una opción
+  // marcada de entrada es la respuesta de Finko, no la del usuario, y el punto
+  // 18 pide justo lo contrario.
+  //
+  // Las opciones se arman con los destinos que el Paso 2 ya tiene: mandarlo a
+  // ahorro o a una meta no abre una ruta de apply nueva, prellena la fila que
+  // registra ese aporte desde siempre (ver `_elegirDestinoRemanente` en
+  // acciones/distribucion.js). Sin fila de ahorro ni de meta donde ponerlo, la
+  // única respuesta posible sería "dejarlo": una pregunta de una sola respuesta
+  // es fricción, no decisión, así que el bloque no se renderiza y el asistente
+  // confirma como antes.
+  const hayAhorro = ahorro.some(d => d.tipo === 'fondo' || d.tipo === 'apartado');
+  const hayMeta   = ahorro.some(d => d.tipo === 'meta');
+  const opcionesRemanente = [
+    { valor: 'cuenta', texto: 'Dejarlo en mi cuenta para mis gastos del día a día' },
+    ...(hayAhorro ? [{ valor: 'ahorro', texto: 'Mandarlo a mi ahorro' }] : []),
+    ...(hayMeta   ? [{ valor: 'meta',   texto: 'Mandarlo a una meta' }] : []),
+  ];
+  const seccionRemanente = opcionesRemanente.length > 1
+    ? `
+          <div id="distribuir-remanente" class="distribuir__remanente" hidden>
+            <p class="form-hint distribuir__subtitulo">¿Qué haces con los <span data-dist-remanente-monto>${f(0)}</span> que quedan sin asignar?</p>
+            <div role="radiogroup" aria-label="Qué hacer con lo que queda sin asignar">
+              ${opcionesRemanente.map(o => `
+              <label class="checkbox-row">
+                <input type="radio" name="distribuir-remanente" value="${o.valor}" data-dist-remanente />
+                <span>${o.texto}</span>
+              </label>`).join('')}
+            </div>
+          </div>`
+    : '';
+
   const seccionInfo = `
           <p class="form-hint distribuir__subtitulo">Esto queda en tu cuenta (no se mueve):</p>
           <div class="distribuir__info">
@@ -544,6 +580,7 @@ function _renderPanelDistribuir(d) {
             </p>
           </div>
           ${seccionCuentas}
+          ${seccionRemanente}
           <p class="form-hint form-hint--muted">Revisa el resumen y confirma: se registrarán los pagos y aportes que marcaste.</p>`;
 
   // Shell paginado (MC.7d): un paso visible a la vez, avanzar/atrás inline.

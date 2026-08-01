@@ -455,6 +455,106 @@ function _actualizarBloqueDeficit(panel, deficit) {
   return { plan, aplicable: plan.cubre && chk.checked };
 }
 
+/** Destino elegido para el remanente, o `null` si todavía no hay decisión. */
+function _decisionRemanente(panel) {
+  return panel.querySelector('[data-dist-remanente]:checked')?.value ?? null;
+}
+
+/**
+ * Escribe el bloque de decisión del remanente (MC.13e-2f-2, punto 18 del
+ * brief): lo que queda sin asignar exige una respuesta explícita antes de
+ * confirmar. La cifra es `sinAsignar` (lo que sobra del cobro), la misma que ya
+ * reporta `#distribuir-resumen`, no el presupuesto de Estilo de vida: el
+ * usuario decide sobre el dinero que efectivamente le queda suelto.
+ *
+ * Solo escribe texto y `hidden`, igual que el bloque de déficit: el markup lo
+ * genera la vista, que además decide si el bloque existe (sin fila de ahorro ni
+ * de meta no hay decisión que pedir).
+ *
+ * @param {Element} panel
+ * @param {number} sinAsignar Salida de `resumirPlanDistribucion`.
+ * @returns {boolean} `true` si falta decidir, y por lo tanto "Distribuir" se bloquea.
+ */
+function _actualizarBloqueRemanente(panel, sinAsignar) {
+  const bloque = panel.querySelector('#distribuir-remanente');
+  if (!bloque) return false;
+
+  // Sin remanente no hay pregunta que hacer: repartió todo el cobro.
+  bloque.hidden = sinAsignar <= 0;
+  if (bloque.hidden) return false;
+
+  const montoEl = bloque.querySelector('[data-dist-remanente-monto]');
+  if (montoEl) montoEl.textContent = f(sinAsignar);
+  return _decisionRemanente(panel) === null;
+}
+
+/**
+ * Fila del Paso 2 que recibe el remanente según el destino elegido
+ * (MC.13e-2f-2). "Ahorro" prefiere el fondo de emergencia y cae al primer
+ * apartado si el fondo no está activo; "meta", la primera meta. Devuelve el
+ * input de monto, o `null` si esa fila no existe.
+ *
+ * @param {Element} panel
+ * @param {'ahorro'|'meta'} destino
+ * @returns {HTMLInputElement|null}
+ */
+function _filaDestinoRemanente(panel, destino) {
+  const porTipo = (tipo) => panel.querySelector(`.distribuir__monto[data-dist-tipo="${tipo}"]`);
+  return destino === 'meta'
+    ? porTipo('meta')
+    : (porTipo('fondo') ?? porTipo('apartado'));
+}
+
+/**
+ * Aplica la decisión del remanente (MC.13e-2f-2, punto 18).
+ *
+ * - "Dejarlo en mi cuenta" es la decisión de no mover nada: solo desbloquea
+ *   "Distribuir" (lo hace el recálculo, no hay nada que escribir).
+ * - "Mandarlo a mi ahorro" / "a una meta" NO abre una ruta de apply nueva:
+ *   suma el remanente a la fila que el Paso 2 ya tiene y devuelve al usuario
+ *   ahí, que es donde ese aporte se registra desde siempre. Así el destino
+ *   queda editable antes de confirmar y el apply sigue siendo uno solo.
+ *
+ * @param {HTMLInputElement} radio Radio recién marcado.
+ */
+function _elegirDestinoRemanente(radio) {
+  const panel = document.getElementById('distribuir-ingreso-panel');
+  if (!panel) return;
+  if (radio.value === 'cuenta') { _recalcularDistribucion(); return; }
+
+  const monto       = Number(document.getElementById('distribuir-monto')?.value) || 0;
+  const necesidades = _leerNecesidadesMarcadas(panel);
+  const items       = [...necesidades, ..._leerItemsDistribucion(panel, necesidades)];
+  const { sinAsignar } = resumirPlanDistribucion(monto, items);
+
+  const inp = _filaDestinoRemanente(panel, radio.value);
+  if (!inp || sinAsignar <= 0) { _recalcularDistribucion(); return; }
+
+  const fila   = inp.closest('.distribuir__fila');
+  const toggle = fila?.querySelector('[data-dist-destino-toggle]');
+  if (toggle && !toggle.checked) { toggle.checked = true; inp.disabled = false; }
+  inp.value = (Number(inp.value) || 0) + sinAsignar;
+
+  // R3: la fila del fondo sigue la sugerencia automática hasta que alguien la
+  // toca. Elegir un destino cuenta como tocarla, tanto si es la que recibe el
+  // remanente como si no: sin sacarla del automático, lo que acabamos de sumar
+  // a otra fila se lo descontaría a ella y el remanente no bajaría a cero.
+  inp.dataset.editado = '1';
+  const auto = panel.querySelector('.distribuir__monto[data-dist-auto="1"]');
+  if (auto) auto.dataset.editado = '1';
+
+  // Volver al paso de la fila deja el monto a la vista y editable; el propio
+  // salto recalcula el resumen (ver `_irAPasoDistribucion`).
+  const idxPaso = Number(fila?.closest('[data-dist-paso]')?.dataset.distPaso);
+  if (Number.isInteger(idxPaso)) _irAPasoDistribucion(panel, idxPaso);
+  inp.focus({ preventScroll: true });
+  inp.select();
+  _recalcularDistribucion();
+
+  const nombre = (inp.getAttribute('aria-label') ?? '').replace('Monto para ', '');
+  announce(`Sumamos ${f(sinAsignar)} a ${nombre}. Ajusta el monto si quieres.`);
+}
+
 /**
  * Valida las transferencias de Estilo de vida a otras cuentas (Paso 3, MC.7e)
  * contra el presupuesto de Estilo de vida ya recalculado sobre el remanente
@@ -486,6 +586,10 @@ function _recalcularDistribucion() {
   // saldo de otras cuentas si el usuario lo acepta explícitamente.
   const { aplicable: deficitCubierto } = _actualizarBloqueDeficit(panel, deficit);
 
+  // MC.13e-2f-2: lo que queda sin asignar exige una decisión explícita antes de
+  // confirmar (punto 18). No es un error que corregir: es una pregunta pendiente.
+  const faltaDecidirRemanente = _actualizarBloqueRemanente(panel, sinAsignar);
+
   // Paso 3 (MC.7e): transferencias hacia otras cuentas, validadas aparte
   // contra el presupuesto de Estilo de vida (no contra el ingreso total).
   const transferencias = _leerTransferenciasCuentas(panel);
@@ -504,7 +608,7 @@ function _recalcularDistribucion() {
   // Deudas/Inversiones (asignado) o, con MC.7e, una transferencia entre cuentas
   // (transferido), aunque no haya nada más marcado en los otros pasos.
   const valido    = monto > 0 && (asignado > 0 || transferido > 0)
-    && (!excede || deficitCubierto) && !excedeTransferencia;
+    && (!excede || deficitCubierto) && !excedeTransferencia && !faltaDecidirRemanente;
 
   if (resumenEl) {
     // Con déficit, el "qué hacer" vive en el bloque de abajo (completar con
@@ -647,7 +751,7 @@ async function _confirmarDistribucion() {
   const necesidades = _leerNecesidadesMarcadas(panel);
   const items       = _leerItemsDistribucion(panel, necesidades);
   const todos       = [...necesidades, ...items];
-  const { asignado, excede, deficit } = resumirPlanDistribucion(monto, todos);
+  const { asignado, sinAsignar, excede, deficit } = resumirPlanDistribucion(monto, todos);
 
   // Paso 3 (MC.7e): las transferencias a otras cuentas se validan contra el
   // presupuesto de Estilo de vida sobre el remanente real (R3), no contra el
@@ -669,6 +773,12 @@ async function _confirmarDistribucion() {
   // si el usuario aceptó completar la diferencia con otras cuentas.
   const aceptaComplemento = panel.querySelector('[data-dist-completar-deficit]')?.checked === true;
   if (excede && !aceptaComplemento) return;
+
+  // MC.13e-2f-2: con remanente sin decidir no se confirma. El botón ya está
+  // deshabilitado; este guard es el mismo cinturón que el del déficit, para
+  // quien llegue acá sin pasar por el botón.
+  const pideDecision = panel.querySelector('#distribuir-remanente') !== null;
+  if (pideDecision && sinAsignar > 0 && _decisionRemanente(panel) === null) return;
 
   // MC.13e-2f-1: parte de la cuenta que el ingreso principal ya tiene guardada
   // (MC.13d) en vez de preguntar siempre; solo si esa cuenta sigue activa (o es
@@ -828,6 +938,10 @@ export function initAccionesDistribucion() {
       // MC.13e-2e: aceptar (o retirar) el complemento del déficit habilita o
       // vuelve a bloquear "Distribuir", y cambia el detalle de dónde sale.
       _recalcularDistribucion();
+    } else if (t.hasAttribute('data-dist-remanente')) {
+      // MC.13e-2f-2: elegir destino para lo que sobra desbloquea "Distribuir" y,
+      // si no es "dejarlo en la cuenta", prellena la fila del Paso 2.
+      _elegirDestinoRemanente(t);
     } else if (t.hasAttribute('data-nec-toggle')) {
       // Necesidades (Paso 1, R1): sin monto editable que habilitar/deshabilitar,
       // solo recalcular el resumen en vivo.
