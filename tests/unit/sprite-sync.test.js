@@ -41,6 +41,7 @@ function listarSvgRecursivo(dir, base = dir) {
 function prefijoDe(rutaRelativa) {
   const partes = rutaRelativa.split('/');
   if (partes[0] === 'logos') return 'b-';
+  if (partes[0] === 'decoracion') return 'd-';
   if (partes[0] === 'iconos' && PREFIJO_ICONOS[partes[1]]) return PREFIJO_ICONOS[partes[1]];
   return null; // identidad/, ilustraciones/: fuera del alcance del sync (README seccion 2)
 }

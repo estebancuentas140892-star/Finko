@@ -1419,6 +1419,8 @@ button.chip:focus-visible {
 
 .hero-inicio {
   position: relative;
+  overflow: hidden; /* recorta la forma .decor (DV.2b) en la esquina */
+  isolation: isolate; /* contiene el z-index negativo de .decor a este hero */
   text-align: center;
   gap: var(--fk-space-3);
   border-radius: var(--fk-radius-xl);
@@ -1619,6 +1621,8 @@ button.chip:focus-visible {
 
 .hero-tesoreria {
   position: relative;
+  overflow: hidden; /* recorta la forma .decor (DV.2b) en la esquina */
+  isolation: isolate; /* contiene el z-index negativo de .decor a este hero */
   margin-block-end: var(--fk-space-6);
   border-radius: var(--fk-radius-xl);
   border: 1px solid color-mix(in srgb, var(--fk-dom-tesoreria) 30%, transparent);

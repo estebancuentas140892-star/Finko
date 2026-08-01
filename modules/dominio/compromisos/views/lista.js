@@ -319,7 +319,7 @@ function _subtituloSaldada(iso) {
 
 function _renderEmptyState() {
   return `
-    <div class="empty-state">
+    <div class="empty-state pattern-dots">
       <div class="empty-state__icon" aria-hidden="true">${emptyArt('deudas')}</div>
       <p class="empty-state__title">Sin deudas registradas</p>
       <p class="empty-state__desc">Agrega tu primer crédito con entidad (banco, tarjeta) o personal (familiar, gota a gota) y Finko arma tu estrategia de salida.</p>

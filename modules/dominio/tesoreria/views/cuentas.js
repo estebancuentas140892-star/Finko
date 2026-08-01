@@ -92,6 +92,7 @@ export function renderHeroTesoreria() {
 
   el.innerHTML = `
     <div class="hero-tesoreria">
+      <svg class="decor decor--bottom-right" aria-hidden="true"><use href="#d-onda"/></svg>
       ${ojoHtml}
       <p class="hero-tesoreria__label">${label}</p>
       <p class="hero-tesoreria__valor">${totalTxt}</p>

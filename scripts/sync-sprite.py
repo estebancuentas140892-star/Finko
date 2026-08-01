@@ -17,9 +17,11 @@ un artefacto derivado. El script:
      (decision humana, README 6b) ni una <image> incrustada (se rechaza
      con ErrorRecurso explicito, nunca se borra en silencio).
   1. Recorre iconos/{secciones,simbolos,utilitarios} (prefijo i-),
-     iconos/categorias (prefijo c-) y logos/** en cualquier subcarpeta
-     (prefijo b-). identidad/ e ilustraciones/ son "futuro" (README
-     seccion 2) y todavia no se conectan al sprite.
+     iconos/categorias (prefijo c-), logos/** en cualquier subcarpeta
+     (prefijo b-) y decoracion/ (prefijo d-, formas organicas del ADR
+     033 D3: viewBox propio, sin roles centinela, fill="currentColor").
+     identidad/ e ilustraciones/ son "futuro" (README seccion 2) y
+     todavia no se conectan al sprite.
   2. Excluye los archivos con data-placeholder="true" (recurso aun sin
      disenar): el fallback de iniciales los cubre mientras tanto.
   3. Convierte los colores centinela de Illustrator a los 3 roles finales
@@ -124,6 +126,8 @@ def prefijo_de(ruta_relativa: Path):
     partes = ruta_relativa.parts
     if partes[0] == 'logos':
         return 'b-'
+    if partes[0] == 'decoracion':
+        return 'd-'
     if partes[0] == 'iconos' and len(partes) >= 2 and partes[1] in CARPETAS_ICONOS:
         return CARPETAS_ICONOS[partes[1]]
     return None  # identidad/, ilustraciones/: fuera del alcance del sync
@@ -330,14 +334,18 @@ def _validar_fullcolor(id_symbol: str, cuerpo: str, advertencias: list) -> str:
     return cuerpo
 
 
-def validar_y_convertir(id_symbol: str, contenido: str, advertencias: list) -> str:
+def validar_y_convertir(id_symbol: str, contenido: str, advertencias: list) -> tuple:
     m = RE_ROOT.match(contenido)
     if not m:
         raise ErrorRecurso(f'{id_symbol}: no tiene la forma <svg ...>...</svg> esperada (revisar export)')
     attrs_raiz, cuerpo = m.groups()
     atributos = dict(RE_ATTR.findall(attrs_raiz))
 
-    if atributos.get('viewBox') != '0 0 24 24':
+    es_decor = id_symbol.startswith('d-')
+    viewbox = atributos.get('viewBox')
+    if not viewbox:
+        raise ErrorRecurso(f'{id_symbol}: viewBox debe estar declarado')
+    if not es_decor and viewbox != '0 0 24 24':
         raise ErrorRecurso(f'{id_symbol}: viewBox debe ser "0 0 24 24"')
     prohibidos = ATRIBUTOS_PROHIBIDOS_RAIZ & atributos.keys()
     if prohibidos:
@@ -354,7 +362,7 @@ def validar_y_convertir(id_symbol: str, contenido: str, advertencias: list) -> s
     # convertir colores; valida forma con el set ampliado (permite degradados)
     # y verifica que los IDs de gradiente sean unicos en todo el sprite.
     if atributos.get('data-fullcolor') == 'true':
-        return _validar_fullcolor(id_symbol, cuerpo, advertencias)
+        return _validar_fullcolor(id_symbol, cuerpo, advertencias), viewbox
 
     for etiqueta in RE_TAG.findall(cuerpo):
         nombre = etiqueta.lower()
@@ -369,26 +377,37 @@ def validar_y_convertir(id_symbol: str, contenido: str, advertencias: list) -> s
         raise ErrorRecurso(f'{id_symbol}: class/style no permitidos (solo atributos de presentacion)')
 
     es_logo = id_symbol.startswith('b-')
-    cuerpo = _convertir_centinela(id_symbol, cuerpo, es_logo)
 
-    if es_logo:
+    if es_decor:
+        # Forma decorativa (ADR 033 D3): fill="currentColor" ya puesto a mano
+        # por diseno, sin roles centinela que convertir (no es icono ni logo).
+        # El dominio la tine en runtime via CSS (.decor, currentColor).
         colores = {v.lower() for v in re.findall(r'fill="([^"]*)"', cuerpo)} - {'currentcolor', 'none'}
         if colores:
             raise ErrorRecurso(
                 f'{id_symbol}: color(es) propio(s) en el archivo ({", ".join(sorted(colores))}); '
-                f'los logos son silueta monocroma (fill="currentColor"), el color vive en el catalogo'
+                f'las formas decorativas son fill="currentColor", el color lo pone el dominio via CSS'
             )
     else:
-        n_elementos = len(RE_TAG.findall(cuerpo))
-        if n_elementos > 6:
-            advertencias.append(f'{id_symbol}: {n_elementos} elementos (guia: maximo ~6)')
-        peso = len(cuerpo.encode('utf-8'))
-        if peso > 1024:
-            advertencias.append(f'{id_symbol}: {peso} bytes (guia: ~1 KB)')
+        cuerpo = _convertir_centinela(id_symbol, cuerpo, es_logo)
+        if es_logo:
+            colores = {v.lower() for v in re.findall(r'fill="([^"]*)"', cuerpo)} - {'currentcolor', 'none'}
+            if colores:
+                raise ErrorRecurso(
+                    f'{id_symbol}: color(es) propio(s) en el archivo ({", ".join(sorted(colores))}); '
+                    f'los logos son silueta monocroma (fill="currentColor"), el color vive en el catalogo'
+                )
+        else:
+            n_elementos = len(RE_TAG.findall(cuerpo))
+            if n_elementos > 6:
+                advertencias.append(f'{id_symbol}: {n_elementos} elementos (guia: maximo ~6)')
+            peso = len(cuerpo.encode('utf-8'))
+            if peso > 1024:
+                advertencias.append(f'{id_symbol}: {peso} bytes (guia: ~1 KB)')
     if RE_DECIMALES_LARGOS.search(cuerpo):
         advertencias.append(f'{id_symbol}: coordenadas con mas de 2 decimales')
 
-    return cuerpo
+    return cuerpo, viewbox
 
 
 def orden_actual_del_sprite() -> list:
@@ -433,6 +452,7 @@ def main():
     advertencias = []
     normalizaciones = []
     cuerpos = {}
+    viewboxes = {}
     for id_symbol, (rel, contenido) in sorted(candidatos.items()):
         notas = []
         contenido_normalizado = normalizar_export_illustrator(rel.stem, contenido, notas)
@@ -440,7 +460,7 @@ def main():
             (SVG_ROOT / rel).write_text(contenido_normalizado, encoding='utf-8', newline='\n')
             normalizaciones.append(f'{rel}: {"; ".join(notas)}')
         try:
-            cuerpos[id_symbol] = validar_y_convertir(id_symbol, contenido_normalizado, advertencias)
+            cuerpos[id_symbol], viewboxes[id_symbol] = validar_y_convertir(id_symbol, contenido_normalizado, advertencias)
         except ErrorRecurso as e:
             errores.append(f'{rel}: {e}')
 
@@ -469,7 +489,7 @@ def main():
         return 1
 
     bloque_nuevo = '\n'.join(
-        f'    <symbol id="{id_}" viewBox="0 0 24 24">{cuerpos[id_]}</symbol>'
+        f'    <symbol id="{id_}" viewBox="{viewboxes[id_]}">{cuerpos[id_]}</symbol>'
         for id_ in orden
     )
 

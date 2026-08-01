@@ -279,6 +279,29 @@ Elevación sutil, **sin glow neón** (el look "neón sobre negro" se retiró en 
 - **Toda animación respeta `prefers-reduced-motion`.**
 - El cambio de tema usa la técnica `.theme-transitioning` (crossfade de 280ms sobre ~30 contenedores acotados, no `*`, para no causar lag en móvil).
 
+### Catálogo cerrado de animación (DV.2c, [ADR 033](DECISIONS/033-direccion-visual-premium.md) D4)
+
+Doctrina, no lista de sugerencias: **agregar una animación nueva es agregarla a esta tabla con su propósito**. Sin fila propia, no se implementa.
+
+- Toda animación responde una de dos preguntas: **"¿qué acaba de pasar?"** (feedback de una acción) o **"¿a dónde entré?"** (orientación). Si no responde ninguna, no entra.
+- Duración: 150-250ms para micro-interacciones; 300-350ms es el techo, reservado para entrada de sección.
+- Easing estándar: `cubic-bezier(0.2, 0.8, 0.2, 1)`.
+- Solo `transform` y `opacity` (compositor). Se ejecuta **una vez**: `animation-iteration-count: infinite` queda prohibido en todo `styles/`.
+- Todo helper JS nuevo se auto-chequea contra `prefers-reduced-motion` (patrón de `countUp` en `infra/animate.js`); el llamador no repite el chequeo.
+
+| Momento | Animación | Duración |
+|---|---|---|
+| Entrar a una sección | `sectionIn` | 300ms |
+| Lista al renderizar | cascada acotada: `cardIn` en los primeros 6 `.list-item`, paso 35ms (DV.2c) | 200ms + cola ≤175ms |
+| Registro guardado (toast) | `toastIn` / `toastOut` | 200ms |
+| Registro guardado (fila) | resaltado de fila nueva: `.list-item--nuevo`, pseudo-elemento con tinte de dominio que se desvanece vía `opacity` (DV.2c) | 600ms |
+| Progreso que avanza | `progress-fill` / `ring-fill` | según valor |
+| Monto que cambia | `countUp` (`infra/animate.js`, reentrante) | 500ms |
+| Completar meta / pagar deuda / logro | toast + confetti del dominio | vive en LG.2/[ADR 032](DECISIONS/032-logros-v2-niveles-y-habitos.md), no se duplica acá |
+| Cambio de tema | `theme-transitioning` | 280ms, evolución fuera de alcance: CFG.7 |
+
+**Retiros (DV.2c):** `empty-orbit` y `empty-float` (bucles ambientales infinitos en los empty states) se retiraron: contradecían el veto de animaciones permanentes. El empty state gana personalidad por su ilustración estática, no por movimiento perpetuo.
+
 ---
 
 ## Iconografía

@@ -47,6 +47,7 @@ assets/svg/
 │   ├── telecom/           → movistar, claro, tigo
 │   ├── movilidad/         → uber, rappi
 │   └── educacion/         → duolingo, platzi
+├── decoracion/            → formas orgánicas de fondo (DV.2b, ADR 033 D3)
 ├── ilustraciones/         → ilustraciones spot y pictogramas (futuro)
 └── identidad/             → marca propia de Finko: logo, wordmark (futuro)
 ```
@@ -58,6 +59,7 @@ assets/svg/
 | `iconos/secciones`, `iconos/simbolos`, `iconos/utilitarios` | `i-` | `home.svg` → `i-home` | CSS (`.icon`: trazo `currentColor`, grosor 2.35) |
 | `iconos/categorias` | `c-` | `mercado.svg` → `c-mercado` | CSS (teja de dominio, `tejaCategoria`) |
 | `logos/**` (cualquier subcarpeta) | `b-` | `bancos/nequi.svg` → `b-nequi` | Catálogo (`color` + `texto` de `MARCAS` / `BANCOS_CO`) |
+| `decoracion/` | `d-` | `blob.svg` → `d-blob` | CSS (`.decor`, `currentColor` hereda `--fk-section-color` del hero anfitrión) |
 
 Las subcarpetas de `logos/` son solo organización humana: mover un logo de
 `streaming/` a `tecnologia/` **no cambia su id**. En cambio, mover un archivo entre
@@ -79,6 +81,16 @@ Carpeta para ilustraciones spot y pictogramas (onboarding, momentos de celebraci
 **Estado actual:** vacía a propósito. Los empty states de hoy son una composición generada en JS (`emptyArt()` en `modules/infra/icons.js`) que orbita alrededor de los iconos de sección, y no requieren archivos.
 
 Reglas cuando lleguen las primeras piezas: mismo lenguaje visual del sistema (redondez, trazo cálido, chispa) aplicado a escala mayor; retícula recomendada 120×120 (la de `emptyArt`), `viewBox` propio documentado en este README al definirse; colores solo por rol (`currentColor`, variables `--fk-*`, nunca absolutos, para sobrevivir a ambos temas); mismo flujo de nomenclatura y revisión que el resto de la biblioteca (secciones 3 y 9).
+
+### 2.3 `decoracion/` (formas orgánicas de fondo, DV.2b)
+
+Catálogo neutro compartido de formas orgánicas estáticas (curvas suaves, arcos, blobs contenidos), definido en el [ADR 033](../../docs/DECISIONS/033-direccion-visual-premium.md) D3. A diferencia de `iconos/` y `logos/`, no comparte el estándar técnico de la sección 4:
+
+- **`viewBox` propio, declarado, no forzado a 24×24.** Cada forma dibuja en el lienzo que necesite (el catálogo inicial usa 200×200); el sync lo preserva tal cual en el `<symbol>` generado.
+- **Un solo rol de color:** `fill="currentColor"` en la raíz del path, sin roles centinela (nada de duotono ni chispa: son fondo, no glifo). El dominio la tiñe en runtime vía CSS (`.decor`, `styles/components/atoms.css`), heredando `--fk-section-color` del hero o empty state que la aloja.
+- **Primitivas permitidas y prohibiciones idénticas a `iconos/`**: `path`/`circle`/`rect`/`line`, cero `<image>`, cero `transform`/`class`/`style`, IDs internos prefijados si algún día trae `<defs>` (hoy ninguna los necesita).
+- **Catálogo inicial (3 formas, borrador de Claude que Esteban sobrescribe en Illustrator, mismo principio "la biblioteca nace poblada" del ADR 026):** `blob.svg` (mancha orgánica contenida), `arco.svg` (medialuna/arco), `onda.svg` (banda ondulada de esquina).
+- **Uso en CSS:** clase `.decor` (posición absoluta en una esquina, `aria-hidden="true"`, `pointer-events: none`, opacidad 4-8%, `z-index: -1`); el contenedor que la usa necesita `overflow: hidden` propio y (recomendado) `isolation: isolate` para que el z-index negativo no se fugue de esa caja. Presupuesto: **máximo 1 forma por pantalla**, nunca debajo de un bloque de texto largo sin remedir contraste (D6 del ADR 033).
 
 ---
 

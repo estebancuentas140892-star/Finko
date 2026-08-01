@@ -196,7 +196,7 @@ function _renderMetaCard(meta, frecuenciaIngresos, oculto = false) {
 
 function _renderEmptyState() {
   return `
-    <div class="empty-state">
+    <div class="empty-state pattern-dots">
       <div class="empty-state__icon">${emptyArt('metas')}</div>
       <p class="empty-state__title">Sin metas de ahorro</p>
       <p class="empty-state__desc">Crea tu primera meta: un viaje, una laptop, la boda o lo que quieras. Para gastos que ya sabes que vienen (SOAT, impuestos, arriendo), usa Reservas.</p>

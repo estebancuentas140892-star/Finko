@@ -86,6 +86,47 @@
     transform: translateY(-1px);
   }
 }
+
+/* Cascada acotada de entrada (DV.2c, ADR 033 D4): primeros 6 .list-item de
+   cualquier lista, paso 35ms, cola tope 175ms. El resto de la lista aparece
+   sin animar (evita costo de repintado en listas largas). Reutiliza cardIn
+   (base.css); `of .list-item` cuenta solo hermanos de esta clase, así que
+   divisores intercalados (ej. cabeceras de mes) no corren el conteo. */
+@media (prefers-reduced-motion: no-preference) {
+  .list-item:nth-child(-n+6 of .list-item) {
+    animation: cardIn 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  }
+  .list-item:nth-child(1 of .list-item) { animation-delay:   0ms; }
+  .list-item:nth-child(2 of .list-item) { animation-delay:  35ms; }
+  .list-item:nth-child(3 of .list-item) { animation-delay:  70ms; }
+  .list-item:nth-child(4 of .list-item) { animation-delay: 105ms; }
+  .list-item:nth-child(5 of .list-item) { animation-delay: 140ms; }
+  .list-item:nth-child(6 of .list-item) { animation-delay: 175ms; }
+}
+
+/* Resaltado de fila recién guardada (DV.2c, ADR 033 D4). El consumidor
+   (infra/animate.js → resaltarFilaNueva) agrega esta clase y, si aplica,
+   fija `--fk-row-highlight-bg` a un `--fk-dom-X-bg` puntual antes de
+   agregarla: la variable no se puede mapear una sola vez en :root (mismo
+   límite de color-mix documentado en tokens.css para --fk-section-color),
+   así que el default de abajo es el único fallback genérico. */
+.list-item--nuevo {
+  position: relative;
+}
+.list-item--nuevo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--fk-row-highlight-bg, var(--fk-accent-subtle));
+  animation: rowHighlightOut 600ms ease-out forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .list-item--nuevo::after {
+    display: none;
+  }
+}
 .list-item__icon {
   position: relative;  /* ancla del badge de orden superpuesto (MK.2) */
   width: var(--fk-space-10);
@@ -335,25 +376,6 @@
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-/* Vida sutil: órbita girando lenta + puntos flotando.
-   Solo bajo no-preference; a11y.css además colapsa duraciones. */
-@media (prefers-reduced-motion: no-preference) {
-  .empty-art__orbit {
-    animation: empty-orbit 40s linear infinite;
-    transform-origin: center;
-  }
-  .empty-art__dots {
-    animation: empty-float 4s ease-in-out infinite alternate;
-  }
-}
-@keyframes empty-orbit {
-  to { transform: rotate(360deg); }
-}
-@keyframes empty-float {
-  from { transform: translateY(2px); }
-  to   { transform: translateY(-2px); }
-}
-
 .empty-state__title {
   font-size: var(--fk-text-xl);
   font-weight: var(--fk-font-bold);

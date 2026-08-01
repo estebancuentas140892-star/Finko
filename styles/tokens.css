@@ -254,6 +254,13 @@
     transparent 55%
   );
 
+  /* ── PATRÓN DE PUNTOS (DV.2b, ADR 033 D3) ───────────────────────
+     Único patrón del catálogo: pintura CSS pura, sin asset. Reservado
+     para empty states y onboarding (nunca fondos de página ni cards
+     de contenido). Se aplica con la clase `.pattern-dots` (atoms.css),
+     que fija el `background-size`; el token solo define la imagen. */
+  --fk-pattern-dots: radial-gradient(circle at 1px 1px, var(--fk-border-subtle) 1px, transparent 0);
+
   /* ── Z-INDEX ─────────────────────────────────────────────────── */
   --fk-z-dropdown:      50;
   --fk-z-sidebar:       100;
