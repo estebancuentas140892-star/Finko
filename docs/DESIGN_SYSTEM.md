@@ -272,6 +272,26 @@ Elevación sutil, **sin glow neón** (el look "neón sobre negro" se retiró en 
 
 ---
 
+## Riqueza visual: decoración y patrón (DV.2b, [ADR 033](DECISIONS/033-direccion-visual-premium.md) D3)
+
+Piloto acotado sobre el pipeline del [ADR 026](DECISIONS/026-biblioteca-de-recursos-graficos.md): dos recursos nuevos, presupuesto duro en ambos.
+
+**Formas orgánicas (`assets/svg/decoracion/`, símbolos `d-*`).** Catálogo neutro compartido (curvas suaves, arcos, blobs), `fill="currentColor"`: el dominio la tiñe vía CSS, cero diseño por sección. Clase `.decor` (`styles/components/atoms.css`):
+
+- `position: absolute`, `z-index: -1`, `pointer-events: none`, `opacity: 0.06` (rango permitido 4-8%).
+- Modificadores de esquina: `.decor--top-right`, `.decor--bottom-right`.
+- **El contenedor que la aloja necesita `overflow: hidden` propio y `isolation: isolate`** (contiene el z-index negativo a esa caja, evita que se fugue a otros elementos de la página).
+- **Presupuesto: máximo 1 forma por pantalla.** Nunca debajo de un bloque de texto largo sin volver a medir contraste contra el compuesto.
+- **Piloto actual (2 heroes):** `.hero-inicio` (`d-blob`, esquina superior derecha) y `.hero-tesoreria` (`d-onda`, esquina inferior derecha).
+
+**Patrón de puntos (`--fk-pattern-dots`, `styles/tokens.css`).** CSS puro, sin asset: `radial-gradient` tokenizado. Clase `.pattern-dots` fija el `background-size` (16px). Reservado para empty states y onboarding, nunca fondos de página ni cards de contenido. **Piloto actual (2 empty states):** Metas y Deudas (`_renderEmptyState()` de sus vistas).
+
+**Especificación técnica de `decoracion/`:** a diferencia de `iconos/`/`logos/`, no está atada a la retícula 24×24: cada forma declara su propio `viewBox` (el catálogo inicial usa 200×200) y `scripts/sync-sprite.py` lo preserva en el `<symbol>` generado. Detalle completo en `assets/svg/README.md` sección 2.3.
+
+**Guardarraíles heredados del ADR (D6, aplican a toda pieza DV.2*):** ambos temas, WCAG AA con cálculo real, Lighthouse 100 + `pnpm perf` sin regresión, cero JS nuevo para color/decoración, lista prohibida vigente (`backdrop-filter`, blurs, degradados de 3+ paradas, `mix-blend-mode`, animaciones en bucle).
+
+---
+
 ## Transiciones y movimiento
 
 - `--fk-transition-fast` (120ms) · `-base` (200ms) · `-slow` (350ms), easing `cubic-bezier(0.4, 0, 0.2, 1)`.

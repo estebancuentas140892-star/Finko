@@ -10,6 +10,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(dv2): DV.2b, riqueza visual piloto: formas orgánicas + patrón · 2026-08-01
+
+D3 del [ADR 033](DECISIONS/033-direccion-visual-premium.md), desbloqueada al cerrar DV.2a. Ficha: [`contexto/sistema-visual.md`](contexto/sistema-visual.md). Commits `ac10202` + `1e21397` (el segundo repara un bloque CSS perdido por una escritura concurrente durante el cierre, ver mensaje del commit).
+
+- **Pipeline extendido a `assets/svg/decoracion/`** (prefijo `d-`): a diferencia de `iconos/`/`logos/`, cada forma declara su propio `viewBox` (no forzado a 24×24) y `scripts/sync-sprite.py` lo preserva en el `<symbol>` generado; sin roles centinela, `fill="currentColor"` puesto a mano. Catálogo inicial de 3 formas draft que Esteban sobrescribe en Illustrator (ADR 026): `blob.svg`, `arco.svg`, `onda.svg`.
+- **Clase `.decor`** (`styles/components/atoms.css`): posición absoluta, `z-index: -1`, opacidad 6%, teñida por `--fk-section-color` del hero anfitrión. El contenedor gana `overflow: hidden` + `isolation: isolate` para recortar la forma y contener el z-index negativo.
+- **Token `--fk-pattern-dots`** (`styles/tokens.css`) + clase `.pattern-dots`: patrón CSS puro, sin asset, reservado a empty states/onboarding.
+- **Piloto acotado (D3 del ADR): 2 heroes + 2 empty states.** `.hero-inicio` (`d-blob`) y `.hero-tesoreria` (`d-onda`); empty states de Metas y Deudas con `.pattern-dots`.
+- `assets/svg/README.md` gana la sección 2.3 (`decoracion/`); `DESIGN_SYSTEM.md` gana "Riqueza visual". Guardarraíl `sprite-sync.test.js` actualizado con el mismo mapeo de prefijo. 3583 unit verdes (+7 del guardarraíl de sprite), E2E verde. SW v467 a v469.
+
 ### docs(diseno): DV.2a, cierre documental de tokens de superficie/elevación + degradado de identidad · 2026-08-01
 
 El código entró en su propio commit (`d8a7d53`, 2026-07-31) sin cierre documental: tarjeta seguía en BOARD.md y sin entrada de changelog. Esta entrada lo repara. Ficha: [`contexto/sistema-visual.md`](contexto/sistema-visual.md).
