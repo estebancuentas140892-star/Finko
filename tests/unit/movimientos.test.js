@@ -349,12 +349,14 @@ describe('movimientosRecientes()', () => {
 
 describe('renderActividadReciente()', () => {
   const elPanel = () => document.getElementById('panel-actividad-reciente');
+  const elPanelEscritorio = () => document.getElementById('panel-actividad-reciente-escritorio');
   const matchMediaReal = window.matchMedia;
 
   afterEach(() => { window.matchMedia = matchMediaReal; });
 
   beforeEach(() => {
-    document.body.innerHTML = '<div id="panel-actividad-reciente" hidden></div>';
+    document.body.innerHTML = '<div id="panel-actividad-reciente" hidden></div>'
+      + '<div id="panel-actividad-reciente-escritorio" hidden></div>';
     S.gastos = [];
     S.ingresosPuntuales = [];
     S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
@@ -450,6 +452,28 @@ describe('renderActividadReciente()', () => {
     const link = elPanel().querySelector('.actividad-reciente__ver-todo');
     expect(link).not.toBeNull();
     expect(link.getAttribute('href')).toBe('#movimientos');
+  });
+
+  // ── IN.9d (ADR 057 D4): copia propia para la fila final de escritorio ──
+
+  it('llena la copia de escritorio con el mismo contenido que la de móvil', () => {
+    S.gastos = [gasto()];
+    renderActividadReciente();
+    expect(elPanelEscritorio().hidden).toBe(false);
+    expect(elPanelEscritorio().innerHTML).toBe(elPanel().innerHTML);
+  });
+
+  it('oculta también la copia de escritorio sin movimientos', () => {
+    renderActividadReciente();
+    expect(elPanelEscritorio().hidden).toBe(true);
+    expect(elPanelEscritorio().innerHTML).toBe('');
+  });
+
+  it('no-op si solo existe la copia de escritorio (móvil ausente del DOM)', () => {
+    document.body.innerHTML = '<div id="panel-actividad-reciente-escritorio" hidden></div>';
+    S.gastos = [gasto()];
+    expect(() => renderActividadReciente()).not.toThrow();
+    expect(elPanelEscritorio().hidden).toBe(false);
   });
 
   // ── IN.8g (ADR 034 D7): fusión con Accesos rápidos, header simplificado ──

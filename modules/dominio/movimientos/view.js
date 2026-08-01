@@ -127,14 +127,23 @@ function _diasDesde(fechaISO) {
 }
 
 /**
- * Renderiza en `#panel-actividad-reciente` los últimos movimientos derivados
- * de gastos, ingresos puntuales y aportes al fondo (ADR 028 D5). Vacío si no
- * hay ninguno, y limpia el panel para no ocupar espacio. No-op si el
- * contenedor no existe.
+ * Renderiza los últimos movimientos derivados de gastos, ingresos puntuales
+ * y aportes al fondo (ADR 028 D5). Vacío si no hay ninguno, y limpia el
+ * panel para no ocupar espacio.
+ *
+ * IN.9d (ADR 057 D4): dos contenedores conviven en el DOM
+ * (`#panel-actividad-reciente` en la fusión móvil, junto a Accesos rápidos;
+ * `#panel-actividad-reciente-escritorio`, celda propia junto al resumen
+ * semanal). render.js decide cuál se ve según el ancho, esta función llena
+ * los dos con el mismo contenido (mismo límite de `_limiteRecientes()`: el
+ * que no se ve queda con marcado inerte, no repintado aparte). No-op si
+ * ninguno existe.
  */
 export function renderActividadReciente() {
-  const el = document.getElementById('panel-actividad-reciente');
-  if (!el) return;
+  const targets = ['panel-actividad-reciente', 'panel-actividad-reciente-escritorio']
+    .map(id => document.getElementById(id))
+    .filter(Boolean);
+  if (targets.length === 0) return;
 
   const movs = _movimientosRecientesMemo({
     gastos:                   S.gastos,
@@ -145,11 +154,9 @@ export function renderActividadReciente() {
   }, _limiteRecientes());
 
   if (movs.length === 0) {
-    el.innerHTML = '';
-    el.hidden = true;
+    targets.forEach(el => { el.innerHTML = ''; el.hidden = true; });
     return;
   }
-  el.hidden = false;
 
   const items = movs.map(m => {
     const esIngreso  = m.direccion === 'ingreso';
@@ -166,17 +173,16 @@ export function renderActividadReciente() {
       </li>`;
   }).join('');
 
-  // IN.8g (ADR 034 D7): el panel ya no es su propia card; vive fusionado con
-  // "Accesos rápidos" en un solo bento__cell (index.html), separado por
-  // border-top (`.accesos-actividad__seccion--actividad`). Header
-  // simplificado a label + "Ver todo" en la misma fila (antes: encabezado
-  // con ícono propio arriba y el link como pie de página abajo).
-  el.innerHTML = `
+  // IN.8g (ADR 034 D7): header propio (label + "Ver todo" en la misma fila)
+  // en vez de depender de un encabezado externo.
+  const html = `
     <div class="accesos-actividad__header">
       <span class="accesos-actividad__label">Actividad reciente</span>
       <a class="actividad-reciente__ver-todo" href="#movimientos">Ver todo</a>
     </div>
     <ul class="actividad-reciente__list" role="list">${items}</ul>`;
+
+  targets.forEach(el => { el.hidden = false; el.innerHTML = html; });
 }
 
 // ── VISTA COMPLETA (TX.8b, ruta propia #movimientos) ────────────

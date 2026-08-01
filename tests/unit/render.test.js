@@ -19,7 +19,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { S } from '../../modules/core/state.js';
 import {
-  updSaldo, updSaludo, alternarDetalleCuentas,
+  updSaldo, updSaludo, alternarDetalleCuentas, renderAll,
   SALDO_MASCARA, SALDO_MASCARA_CUENTA,
 } from '../../modules/infra/render.js';
 import { initAcciones, dispatch } from '../../modules/ui/actions.js';
@@ -390,6 +390,47 @@ describe('updSaldo() - detalle por cuenta en columna propia (escritorio)', () =>
     updSaldo();
     expect(elLista().querySelector('img')).toBeNull();
     expect(elLista().innerHTML).toContain('&lt;img');
+  });
+});
+
+// ── REPARTO ACCESOS/ACTIVIDAD/RESUMEN EN ESCRITORIO (IN.9d, ADR 057 D4) ──────
+
+describe('renderAll() - reparto de Accesos rápidos y Actividad reciente', () => {
+  const elMovil             = () => document.getElementById('accesos-actividad-movil');
+  const elAccesosEscritorio = () => document.getElementById('panel-accesos-escritorio');
+  const elActividadEscritorio = () => document.getElementById('panel-actividad-reciente-escritorio');
+
+  afterEach(restaurarAncho);
+
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <div id="accesos-actividad-movil" hidden></div>
+      <div id="panel-accesos-escritorio" hidden></div>
+      <div id="panel-actividad-reciente-escritorio" hidden></div>`;
+    S.cuentas = [];
+    S.config  = {};
+  });
+
+  it('en móvil muestra la fusión y oculta las dos celdas de escritorio', () => {
+    anchoDe(true);
+    renderAll();
+    expect(elMovil().hidden).toBe(false);
+    expect(elAccesosEscritorio().hidden).toBe(true);
+    expect(elActividadEscritorio().hidden).toBe(true);
+  });
+
+  it('en escritorio oculta la fusión y muestra Accesos rápidos', () => {
+    anchoDe(false);
+    renderAll();
+    expect(elMovil().hidden).toBe(true);
+    expect(elAccesosEscritorio().hidden).toBe(false);
+  });
+
+  it('en escritorio no fuerza visible Actividad reciente si ya quedó oculta por falta de movimientos', () => {
+    anchoDe(false);
+    elActividadEscritorio().hidden = true; // simula lo que ya decidió movimientos/view.js
+    renderAll();
+    expect(elActividadEscritorio().hidden).toBe(true);
   });
 });
 

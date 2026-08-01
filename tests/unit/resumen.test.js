@@ -306,6 +306,17 @@ describe('renderPanelResumen()', () => {
     expect(elPanel().innerHTML).toContain('$20.000');
   });
 
+  // IN.9d (ADR 057 D4): título propio; ya no depende del label de un grupo
+  // externo, que en escritorio ahora también podría contener Actividad
+  // reciente (fila final 6+6).
+  it('trae su propio título, no depende de un label externo', () => {
+    S.gastos = [gasto({ fecha: '2026-06-13', monto: 20_000 })];
+    renderPanelResumen();
+    const titulo = elPanel().querySelector('.accesos-actividad__label');
+    expect(titulo).not.toBeNull();
+    expect(titulo.textContent).toBe('Resumen de la semana');
+  });
+
   // ── IN.8f (ADR 034 D6): bloque visual con barras + chip + categoría top ──
 
   it('dibuja 7 barras, una por día de la ventana', () => {

@@ -573,26 +573,54 @@
             </div>
           </div>
 
-          <!-- RESUMEN DE LA SEMANA (IN.8a): sube desde el final; el label de
-               grupo es el título (la card ya no repite encabezado interno).
-               resumen/view.js lo llena; [hidden] hasta que haya actividad. -->
+          <!-- ACCESOS RÁPIDOS EN ESCRITORIO (IN.9d, ADR 057 D4): columna
+               propia span 4, fila propia. Acota el 034 D7: en escritorio
+               sobra ancho, separar ahorra alto en vez de gastarlo. Mismo
+               patrón que IN.9c: dos contenedores conviven en el DOM, uno por
+               ancho, y render.js decide cuál se ve. La versión móvil sigue
+               fusionada con Actividad reciente, sin cambios, más abajo.
+               Arranca [hidden]. Siempre visible cuando aplica (sin dato que
+               lo oculte): "Personalizar" necesita quedar a mano. -->
           <div class="bento__group">
-            <h2 class="bento__group-label" id="label-resumen-semana">Resumen de la semana</h2>
             <div class="bento__group-cells">
-              <div id="panel-resumen" class="bento__cell bento__cell--flat bento__cell--full"
-                   role="region" aria-label="Resumen de la semana" hidden></div>
+              <div class="bento__cell" id="panel-accesos-escritorio"
+                   role="region" aria-label="Accesos rápidos" hidden>
+                <div class="accesos-actividad__header">
+                  <span class="accesos-actividad__label">Accesos rápidos</span>
+                  <button class="accesos-inicio__personalizar btn btn-ghost btn-sm" type="button"
+                          data-action="accesos-personalizar">
+                    <svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg>
+                    Personalizar
+                  </button>
+                </div>
+                <div class="accesos-inicio__grid" id="accesos-inicio-grid-escritorio"></div>
+              </div>
             </div>
           </div>
 
-          <!-- ACCESOS RÁPIDOS + ACTIVIDAD RECIENTE (IN.8g, ADR 034 D7): un
-               solo bento__cell, cierre de la pantalla. Accesos arriba
+          <!-- RESUMEN DE LA SEMANA + ACTIVIDAD RECIENTE EN ESCRITORIO (IN.9d,
+               ADR 057 D4): fila final, span 6 + span 6. El gráfico semanal
+               recupera la proporción con la que se diseñó (R79, 49px por
+               barra contra 44px en móvil o 177px que daba el span 12
+               anterior). Dos celdas sueltas, sin grupo que las una: ya no
+               comparten tema, solo el ancho sobrante, así que cada una lleva
+               su propio título (resumen/view.js ya no depende del label
+               externo que traía desde IN.8a). Arrancan [hidden]. -->
+          <div id="panel-resumen" class="bento__cell bento__cell--half bento__cell--flat"
+               role="region" aria-label="Resumen de la semana" hidden></div>
+          <div id="panel-actividad-reciente-escritorio" class="bento__cell bento__cell--half"
+               role="region" aria-label="Actividad reciente" hidden></div>
+
+          <!-- ACCESOS RÁPIDOS + ACTIVIDAD RECIENTE EN MÓVIL (IN.8g, ADR 034
+               D7; acotada a móvil desde IN.9d, ADR 057 D4). Un solo
+               bento__cell, cierre de la pantalla bajo 1024px. Accesos arriba
                (IN.4a, ADR 028 D2; accesos/view.js llena la grilla contra
-               S.config.accesosInicio, siempre visible para que
-               "Personalizar" quede a mano); actividad abajo (TX.8a, ADR 028
-               D5; movimientos/view.js lo llena, [hidden] si no hay
-               movimientos). Solo cambia contenedor/posición: ninguno de los
-               dos logic.js cambió. -->
-          <div class="bento__cell bento__cell--full bento__cell--flat accesos-actividad">
+               S.config.accesosInicio); actividad abajo (TX.8a, ADR 028 D5;
+               movimientos/view.js lo llena, [hidden] si no hay movimientos).
+               Ninguno de los dos logic.js cambió. Arranca [hidden]; render.js
+               lo revela bajo 1024px. -->
+          <div class="bento__cell bento__cell--full bento__cell--flat accesos-actividad"
+               id="accesos-actividad-movil" hidden>
             <div class="accesos-actividad__seccion" role="region" aria-label="Accesos rápidos">
               <div class="accesos-actividad__header">
                 <span class="accesos-actividad__label">Accesos rápidos</span>

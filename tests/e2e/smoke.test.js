@@ -502,7 +502,10 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await expect(panel.locator('.resumen-semana__top-monto')).toHaveText('$180.000');
   });
 
-  test('Accesos rápidos + Actividad reciente fusionados en un solo bloque (IN.8g, ADR 034 D7)', async ({ page }) => {
+  test('móvil: Accesos rápidos + Actividad reciente fusionados en un solo bloque (IN.8g, ADR 034 D7; acotado a móvil desde IN.9d, ADR 057 D4)', async ({ page }) => {
+    // Desde 1024px cada uno vive por separado (ver el test de escritorio,
+    // más abajo); acá se verifica que la fusión móvil sigue intacta.
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.addInitScript(() => {
       if (localStorage.getItem('fk_v1')) return;
       const hoy = new Date();
@@ -545,6 +548,74 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
 
     // El separador vive en la sección de actividad, no en toda la tarjeta.
     await expect(actividad).toHaveClass(/accesos-actividad__seccion--actividad/);
+  });
+
+  test('escritorio: Accesos rápidos en fila propia, Resumen semanal y Actividad reciente en la fila final 6+6 (IN.9d, ADR 057 D4)', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.addInitScript(() => {
+      if (localStorage.getItem('fk_v1')) return;
+      const hoy = new Date();
+      const iso = (d) => {
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+      };
+      const estado = {
+        version: 1,
+        perfil: { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas: [],
+        ingresos: [],
+        gastos: [
+          { id: 'g1', descripcion: 'Mercado semanal', categoria: 'Mercado', monto: 50000, fecha: iso(hoy), cuentaId: null, nota: '' },
+        ],
+        compromisos: [],
+        metas: [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    });
+    await page.goto('/');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+
+    // La fusión móvil desaparece del todo: nada de saldos de acceso rápido
+    // ni de actividad duplicados en un contenedor que no se ve.
+    await expect(page.locator('#accesos-actividad-movil')).toBeHidden();
+
+    // Accesos rápidos: columna propia, angosta (span 4), con su propio botón
+    // "Personalizar" a mano.
+    const accesos = page.locator('#panel-accesos-escritorio');
+    await expect(accesos).toBeVisible();
+    await expect(accesos.locator('.accesos-actividad__label')).toHaveText('Accesos rápidos');
+    await expect(accesos.locator('[data-action="accesos-personalizar"]')).toBeVisible();
+    await expect(page.locator('#accesos-inicio-grid-escritorio .menu-mas__item').first()).toBeVisible();
+
+    // Resumen semanal y Actividad reciente: misma fila (mismo y), a la
+    // derecha de Accesos rápidos (mismo criterio que IN.9c con el hero).
+    const resumen    = page.locator('#panel-resumen');
+    const actividad  = page.locator('#panel-actividad-reciente-escritorio');
+    await expect(resumen).toBeVisible();
+    await expect(actividad).toBeVisible();
+    await expect(actividad.locator('.accesos-actividad__label')).toHaveText('Actividad reciente');
+    await expect(actividad).toContainText('Mercado semanal');
+
+    // La entrada del bento anima cada celda (cardIn, 0.4s + hasta 160ms de
+    // delay escalonado, layout.css): sin esperar a que asiente, dos celdas
+    // en índices distintos miden "y" en puntos distintos de su propio
+    // slide-in y la fila final parece descuadrada sin estarlo.
+    await page.waitForTimeout(600);
+
+    const cajaAccesos   = await accesos.boundingBox();
+    const cajaResumen   = await resumen.boundingBox();
+    const cajaActividad = await actividad.boundingBox();
+
+    // Accesos queda en una fila propia, arriba de Resumen + Actividad.
+    expect(cajaAccesos.y).toBeLessThan(cajaResumen.y);
+    // Resumen y Actividad comparten fila, y Actividad va a la derecha.
+    expect(Math.round(cajaResumen.y)).toBe(Math.round(cajaActividad.y));
+    expect(cajaActividad.x).toBeGreaterThan(cajaResumen.x);
+    // Span 4 contra span 6: Accesos es más angosto que Resumen.
+    expect(cajaAccesos.width).toBeLessThan(cajaResumen.width);
   });
 });
 

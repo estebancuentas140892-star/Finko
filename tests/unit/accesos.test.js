@@ -97,6 +97,21 @@ describe('renderAccesosInicio()', () => {
     expect(() => renderAccesosInicio()).not.toThrow();
     expect(document.getElementById('accesos-inicio-grid').innerHTML).toBe('');
   });
+
+  // IN.9d (ADR 057 D4): copia propia para la columna de escritorio.
+  it('llena también la copia de escritorio, si existe, con el mismo contenido', () => {
+    document.body.innerHTML += '<div id="accesos-inicio-grid-escritorio"></div>';
+    renderAccesosInicio();
+    const escritorio = document.getElementById('accesos-inicio-grid-escritorio');
+    expect(escritorio.innerHTML).toBe(document.getElementById('accesos-inicio-grid').innerHTML);
+    expect(escritorio.querySelectorAll('.menu-mas__item')).toHaveLength(3);
+  });
+
+  it('no-op si solo existe la copia de escritorio (móvil ausente del DOM)', () => {
+    document.body.innerHTML = '<div id="accesos-inicio-grid-escritorio"></div>';
+    expect(() => renderAccesosInicio()).not.toThrow();
+    expect(document.getElementById('accesos-inicio-grid-escritorio').querySelectorAll('.menu-mas__item')).toHaveLength(3);
+  });
 });
 
 // ── renderModalPersonalizarAccesos() ──────────────────────────────

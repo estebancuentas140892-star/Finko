@@ -2792,6 +2792,15 @@ button.chip:focus-visible {
   padding: var(--fk-space-5);
 }
 
+/* IN.9d: título propio, reusa .accesos-actividad__label (ya validado sobre
+   bg-surface) en vez de duplicar la regla; la card ya no depende del label
+   de un grupo externo que ahora también tendría que describir Actividad
+   reciente. */
+.resumen-semana > .accesos-actividad__label {
+  display: block;
+  margin-bottom: var(--fk-space-3);
+}
+
 .resumen-semana__header {
   display: flex;
   align-items: flex-start;

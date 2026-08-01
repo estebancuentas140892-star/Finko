@@ -125,11 +125,14 @@ export function renderPanelResumen() {
       </div>`
     : '';
 
-  // IN.8a (ADR 034 D1): la card ya no repite el encabezado interno; el título
-  // visible es el label del grupo "Resumen de la semana" en index.html.
+  // IN.9d (ADR 057 D4): título propio de vuelta. Desde IN.8a vivía en el
+  // label del grupo externo, pero ese grupo ahora también podría contener
+  // Actividad reciente (fila final 6+6 en escritorio) y un label compartido
+  // la describiría mal.
   el.innerHTML = `
     <section class="resumen-card" aria-label="Resumen de la semana">
       <div class="resumen-semana">
+        <span class="accesos-actividad__label">Resumen de la semana</span>
         <div class="resumen-semana__header">
           <div>
             <p class="resumen-semana__label">Gastaste esta semana</p>

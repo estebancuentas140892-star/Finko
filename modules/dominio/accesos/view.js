@@ -11,22 +11,30 @@ import { ACCESOS_INICIO } from '../../core/constants.js';
 import { accesosVisibles } from './logic.js';
 
 /**
- * Renderiza en `#accesos-inicio-grid` los tiles de acceso rápido elegidos por
- * el usuario, y siempre deja visible el botón "Personalizar" (incluso con 0
- * tiles, para que el usuario pueda agregar alguno). No-op si el contenedor
- * no existe.
+ * Renderiza los tiles de acceso rápido elegidos por el usuario, y siempre
+ * deja visible el botón "Personalizar" (incluso con 0 tiles, para que el
+ * usuario pueda agregar alguno).
+ *
+ * IN.9d (ADR 057 D4): dos copias del mismo contenido conviven en el DOM
+ * (`#accesos-inicio-grid` en la fusión móvil, `#accesos-inicio-grid-escritorio`
+ * en la columna propia de escritorio); render.js decide cuál se ve según el
+ * ancho, esta función simplemente llena las dos. No-op si ninguna existe.
  */
 export function renderAccesosInicio() {
-  const grid = document.getElementById('accesos-inicio-grid');
-  if (!grid) return;
+  const grids = ['accesos-inicio-grid', 'accesos-inicio-grid-escritorio']
+    .map(id => document.getElementById(id))
+    .filter(Boolean);
+  if (grids.length === 0) return;
 
   const accesos = accesosVisibles(S.config?.accesosInicio, ACCESOS_INICIO);
 
-  grid.innerHTML = accesos.map(a => `
+  const html = accesos.map(a => `
     <a class="menu-mas__item" href="#${_esc(a.hash)}" data-section="${_esc(a.hash)}">
       ${iconoCategoria(a.icono, 'menu-mas__icon icon')}
       <span class="menu-mas__label">${_esc(a.nombre)}</span>
     </a>`).join('');
+
+  grids.forEach(grid => { grid.innerHTML = html; });
 }
 
 /**

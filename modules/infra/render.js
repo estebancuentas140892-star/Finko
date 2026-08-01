@@ -205,6 +205,35 @@ function _enEscritorio() {
 }
 
 /**
+ * Reparte Accesos rápidos, Actividad reciente y Resumen de la semana según
+ * el ancho (IN.9d, ADR 057 D4): fusionados en una sola card en móvil (034
+ * D7 sin cambios ahí), separados en escritorio (Accesos span 4 en fila
+ * propia; Actividad junto al resumen semanal, span 6 + span 6, R79).
+ *
+ * Mismo patrón que IN.9c: los contenedores de cada ancho conviven en el DOM
+ * desde `index.html`; accesos/view.js y movimientos/view.js llenan los dos
+ * sin condicional (`.accesos-inicio__grid`, `#panel-actividad-reciente*`),
+ * esta función solo decide cuál se ve. Resumen semanal (`#panel-resumen`) no
+ * necesita reparto propio: es la misma celda en los dos anchos, solo cambia
+ * de span vía CSS responsive.
+ *
+ * Se lee en cada `renderAll()`, misma limitación aceptada en IN.9b/IN.9c: un
+ * cambio de ancho sin cambio de estado no repinta.
+ */
+function _repartoAccesosActividad() {
+  const enEscritorio = _enEscritorio();
+  const movil             = document.getElementById('accesos-actividad-movil');
+  const accesosEscritorio = document.getElementById('panel-accesos-escritorio');
+  const actividadEscritorio = document.getElementById('panel-actividad-reciente-escritorio');
+  if (movil)             movil.hidden = enEscritorio;
+  if (accesosEscritorio) accesosEscritorio.hidden = !enEscritorio;
+  // actividadEscritorio también lo oculta movimientos/view.js cuando no hay
+  // movimientos; acá solo se fuerza oculto por ancho, nunca se fuerza visible
+  // (dejaría un panel vacío si movimientos/view.js ya lo escondió por datos).
+  if (actividadEscritorio && !enEscritorio) actividadEscritorio.hidden = true;
+}
+
+/**
  * Filas del detalle por cuenta: teja del banco + nombre + saldo. Las comparten
  * el acordeón de móvil y la columna de escritorio, así que la máscara de
  * privacidad se decide en un solo sitio (PI4 del informe de Inicio).
@@ -318,4 +347,9 @@ export function renderAll() {
       console.error('[render] renderAll: un render de dominio falló:', err);
     }
   }
+  // Después de los renders de dominio: _repartoAccesosActividad() solo fuerza
+  // el oculto de Actividad reciente en escritorio hacia móvil, nunca al
+  // revés, para no pisar el oculto por falta de movimientos que ya aplicó
+  // movimientos/view.js (registrado arriba, en _renders).
+  _repartoAccesosActividad();
 }
