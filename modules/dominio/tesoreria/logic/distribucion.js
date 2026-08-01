@@ -101,8 +101,9 @@ export function construirDesgloseNecesidades(compromisos = [], gastos = [], hoy 
       diaPago:     Number.isInteger(diaPagoNum) ? diaPagoNum : null,
       pagado:      o.pagado,
       ocurrencias: o.ocurrencias.length,
-      // MC.13e-2c: hoy solo `tipo='fijo'` con categoria predefinida llena
-      // este campo (ver modelo.js, "AG.4"); en el resto queda ''.
+      // MC.13e-2c: nota de texto libre. Para 'fijo' con categoría predefinida
+      // viene del doble uso del campo de texto (modelo.js, "AG.4"); para
+      // deudas, de su propio campo del form. Ausente = ''.
       nota:        typeof compromiso?.nota === 'string' ? compromiso.nota : '',
     };
   });

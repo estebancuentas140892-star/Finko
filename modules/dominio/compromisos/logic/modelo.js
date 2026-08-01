@@ -399,14 +399,16 @@ export function detectarDeudaCreciente(datos) {
  *                       guarda como nota opcional; sin categoría (o con 'Otro'), descripcion es el
  *                       nombre que escribió el usuario y nota queda ''. `icono` (CAT.2f): mismo
  *                       patrón que la rama de deuda, solo con categoría 'Otro'.
- * - 'deuda-entidad'  → { saldoTotal, cuotaMensual, categoria|null, tasa|null, tasaUnidad='EA', icono|null }
+ * - 'deuda-entidad'  → { saldoTotal, cuotaMensual, categoria|null, tasa|null, tasaUnidad='EA', icono|null, nota }
  *                       (tasa null = desconocida; 0 significaría "sin interés",
  *                       que en una entidad casi nunca es cierto; categoria desde v18, CATEGORIAS_DEUDA)
- * - 'deuda-personal' → { saldoTotal, cuotaMensual, categoria|null, tasa?, tasaUnidad?, icono|null }
+ * - 'deuda-personal' → { saldoTotal, cuotaMensual, categoria|null, tasa?, tasaUnidad?, icono|null, nota }
  *                       (sin tasa = 0: el form dice "si no cobra interés, deja en blanco")
  *                       `icono` (CAT.2d, extendido a 'fijo' en CAT.2f): solo con categoría
  *                       'Otra'/'Otro' y un ícono elegido del picker compartido
  *                       (`ICONOS_CATEGORIA_PERSONALIZADA`); siempre explícito (null si no aplica)
+ *                       `nota` (MC.13e-2c): texto libre opcional, directo del campo del form (a
+ *                       diferencia de 'fijo', acá no hace doble uso con descripcion).
  *                       para que `editar()` (Object.assign shallow) lo limpie si el usuario cambia
  *                       de categoría al editar, en vez de dejarlo huérfano.
  *
@@ -439,6 +441,9 @@ export function normalizarCompromiso(datos) {
 
   if (esDeuda(datos.tipo)) {
     base.saldoTotal   = Number(datos.saldoTotal);
+    // MC.13e-2c: nota de texto libre, mismo campo opcional que ya tienen Meta
+    // y Apartado; se muestra junto a la fila en el asistente de distribución.
+    base.nota         = datos.nota?.trim() || '';
     // D.13: sin cuota fija (deuda personal) se guarda 0: el simulador de
     // estrategia la excluye y la lista muestra la frecuencia en su lugar.
     base.cuotaMensual = Number(datos.cuotaMensual) || 0;

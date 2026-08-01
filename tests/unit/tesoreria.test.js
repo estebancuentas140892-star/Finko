@@ -545,6 +545,16 @@ describe('construirDesgloseNecesidades()', () => {
     expect(construirDesgloseNecesidades(comps, [], HOY_TEST)[0].icono).toBeNull();
   });
 
+  it('MC.13e-2c: propaga la nota de una deuda a la fila', () => {
+    const comps = [compDeudaBase({ nota: 'Termina en 4532' })];
+    expect(construirDesgloseNecesidades(comps, [], HOY_TEST)[0].nota).toBe('Termina en 4532');
+  });
+
+  it('MC.13e-2c: una deuda sin nota queda con nota=""', () => {
+    const comps = [compDeudaBase()];
+    expect(construirDesgloseNecesidades(comps, [], HOY_TEST)[0].nota).toBe('');
+  });
+
   it('deuda-personal también cuenta como Necesidad', () => {
     const comps = [compDeudaBase({ tipo: 'deuda-personal' })];
     expect(construirDesgloseNecesidades(comps, [], HOY_TEST)[0].tipo).toBe('deuda');

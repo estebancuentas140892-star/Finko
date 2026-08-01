@@ -152,6 +152,7 @@ export function renderFormDeuda(tipo, deuda = null) {
   const vTasa  = modoEdit && deuda.tasa != null ? deuda.tasa : '';
   const vDia   = modoEdit ? (deuda.diaPago ?? '') : '';
   const vCupo  = modoEdit && deuda.cupoTotal != null ? deuda.cupoTotal : '';
+  const vNota  = modoEdit ? _esc(deuda.nota ?? '') : '';
 
   // D.10: el eje "qué/con quién" usa un catálogo distinto según Entidad/Personal.
   // Entidad clasifica el producto (Tarjeta, Vivienda...); Personal, la relación
@@ -308,6 +309,14 @@ export function renderFormDeuda(tipo, deuda = null) {
                min="1" max="31" step="1" placeholder="1" required aria-required="true"
                value="${vDia}" />
         ${esEntidad ? '' : '<p class="form-hint">Si acordaron una fecha, usa ese día; si no, uno que te sirva de recordatorio.</p>'}
+      </div>
+
+      <div class="form-group">
+        <label for="comp-nota" class="label">Nota (opcional)</label>
+        <input id="comp-nota" name="nota" class="input" type="text" maxlength="80"
+               placeholder="Ej. Número de cuenta, referencia de pago"
+               value="${vNota}" />
+        <p class="form-hint">Se muestra junto a la deuda en el asistente de "Distribuir mi ingreso".</p>
       </div>
 
       ${bloqueOrigen}

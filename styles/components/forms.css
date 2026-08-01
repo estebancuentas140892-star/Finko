@@ -331,6 +331,11 @@ form:not(.config-form) .form-group:not(:first-child) {
   color: var(--fk-text-muted);
   font-size: var(--fk-text-xs);
 }
+.distribuir__nota {
+  color: var(--fk-text-muted);
+  font-size: var(--fk-text-xs);
+  font-style: italic;
+}
 .distribuir__info {
   display: flex;
   flex-direction: column;

@@ -170,6 +170,11 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT } from './constants.js';
  * @property {string} fechaCreacion      ISO 8601.
  *
  * @property {number} [monto]            COP. Cuota fija mensual. Solo para tipo='fijo'.
+ * @property {string} [nota]             Texto libre opcional (MC.13e-2c). Se muestra junto
+ *                                       a la fila en el asistente de distribución. Para
+ *                                       tipo='fijo' con categoría predefinida es el campo
+ *                                       de texto del form (AG.4, doble uso con descripcion);
+ *                                       para deudas es un campo propio, directo del form.
  *
  * @property {number} [saldoTotal]       COP. Lo que aún se debe en total. Solo para
  *                                       deudas. Se descuenta al pagar (manual).

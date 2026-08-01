@@ -590,6 +590,24 @@ describe('normalizarCompromiso()', () => {
     expect(result.nota).toBe('');
   });
 
+  // ── MC.13e-2c: nota de una deuda (campo propio, no doble uso como en fijo) ──
+
+  it('MC.13e-2c: para deuda-entidad guarda la nota recortada', () => {
+    const result = normalizarCompromiso({
+      ...datosFormValidos, tipo: 'deuda-entidad',
+      saldoTotal: '500000', cuotaMensual: '50000', nota: '  Termina en 4532  ',
+    });
+    expect(result.nota).toBe('Termina en 4532');
+  });
+
+  it('MC.13e-2c: para deuda-personal sin nota, queda como cadena vacía', () => {
+    const result = normalizarCompromiso({
+      ...datosFormValidos, tipo: 'deuda-personal',
+      saldoTotal: '500000', cuotaMensual: '50000',
+    });
+    expect(result.nota).toBe('');
+  });
+
   // ── CAT.2f: ícono elegido para la categoría "Otro" en Fijo ────────
 
   it('CAT.2f: con categoría "Otro" y un ícono válido del catálogo, lo guarda', () => {
@@ -2143,6 +2161,32 @@ describe('renderFormDeuda() - picker de ícono (CAT.2d)', () => {
   it('el picker usa el catálogo compartido ICONOS_CATEGORIA_PERSONALIZADA (mismo id que Gastos/Metas/Apartados)', () => {
     const html = renderFormDeuda('deuda-entidad');
     expect(html).toContain('data-icono-picker="comp-icono"');
+  });
+});
+
+// ── MC.13e-2c: nota opcional (mismo patrón que Meta/Apartado) ─────
+
+describe('renderFormDeuda() - nota opcional (MC.13e-2c)', () => {
+  it('incluye el campo de nota, vacío en modo creación', () => {
+    const html = renderFormDeuda('deuda-entidad');
+    expect(html).toContain('id="comp-nota"');
+    expect(html).toContain('name="nota"');
+    expect(html).toMatch(/id="comp-nota"[^>]*value=""/);
+  });
+
+  it('en modo edición, prellena la nota guardada', () => {
+    const deuda = {
+      id: 'd1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad',
+      saldoTotal: 2_000_000, cuotaMensual: 200_000, frecuencia: 'Mensual',
+      diaPago: 5, categoria: 'Tarjeta de crédito', activo: true, nota: 'Termina en 4532',
+    };
+    const html = renderFormDeuda('deuda-entidad', deuda);
+    expect(html).toMatch(/id="comp-nota"[^>]*value="Termina en 4532"/);
+  });
+
+  it('funciona igual en el form de deuda personal', () => {
+    const html = renderFormDeuda('deuda-personal');
+    expect(html).toContain('id="comp-nota"');
   });
 });
 
