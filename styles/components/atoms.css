@@ -324,6 +324,42 @@
 }
 
 /* ════════════════════════════════════════════════════════════
+   RIQUEZA VISUAL: decoración y patrón (DV.2b, ADR 033 D3)
+   Piloto acotado: máx 1 forma por pantalla, opacidad 4-8%, nunca
+   debajo de un bloque de texto largo sin re-medir contraste. El
+   contenedor que la usa necesita `overflow: hidden` propio (las
+   formas se posicionan fuera de su caja para sangrar la esquina).
+   ════════════════════════════════════════════════════════════ */
+
+/* Forma orgánica de fondo (`assets/svg/decoracion/`, símbolos `d-*`).
+   currentColor + `--fk-section-color` del hero que la aloja: la tiñe
+   de la sección sin CSS nuevo por dominio. */
+.decor {
+  position: absolute;
+  z-index: -1; /* siempre detrás del contenido, ver isolation en el hero anfitrión */
+  width: 55%;
+  height: auto;
+  color: var(--fk-section-color, currentColor);
+  opacity: 0.06;
+  pointer-events: none;
+}
+.decor--top-right {
+  top: -18%;
+  right: -10%;
+}
+.decor--bottom-right {
+  bottom: -22%;
+  right: -8%;
+}
+
+/* Patrón de puntos, solo empty states/onboarding (nunca fondos de
+   página ni cards de contenido, D3 punto 2 del ADR 033). */
+.pattern-dots {
+  background-image: var(--fk-pattern-dots);
+  background-size: 16px 16px;
+}
+
+/* ════════════════════════════════════════════════════════════
    EMPTY STATE
    ════════════════════════════════════════════════════════════ */
 
