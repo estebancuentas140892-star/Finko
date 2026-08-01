@@ -10,6 +10,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(tesoreria): MC.13e-2f-2, decisión explícita del remanente al confirmar · 2026-08-01
+
+Punto 18 del brief; **cierra MC.13e-2f completa** (la mitad del `cuentaId` cerró el 2026-07-30). Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md).
+
+- **Las tres decisiones de UX de Esteban del 2026-07-30, tal cual.** Radiogroup de 3 opciones dentro del paso final "Estilo de vida" que ya existía, **sin preselección** (una opción marcada de entrada sería la respuesta de Finko, no la del usuario) y con "Distribuir" bloqueado hasta elegir: ni cuarto paso ni modal. La cifra es `sinAsignar`, lo que sobra del cobro, no `evBudget` del split. Y "ahorro"/"meta" **no abre ruta de apply nueva**: `_elegirDestinoRemanente` suma a la fila que el Paso 2 ya tiene, devuelve el foco ahí y la deja editable. Sin cambios en `logic/distribucion.js`: `resumirPlanDistribucion` ya devolvía `sinAsignar`.
+- **Dos cosas que el diseño no cubría.** Sin fila de ahorro ni de meta donde ponerlo, la única respuesta posible sería "dejarlo": una pregunta de una sola respuesta es fricción, no decisión, así que el bloque no se renderiza y el asistente confirma como antes. Y elegir destino marca `data-editado` en la fila del fondo **aunque no sea la receptora**: sin eso, el automático de R3 le descontaría al fondo lo que se acaba de sumar a otra fila y el remanente nunca bajaría a cero.
+- Guard en `_confirmarDistribucion` además del botón deshabilitado, mismo cinturón que el del déficit (MC.13e-2e). 5 E2E nuevos ([`distribucion-remanente.test.js`](../tests/e2e/distribucion-remanente.test.js)), incluido el camino hasta `localStorage`. Sin bump de schema. SW v466 a v467.
+
 ### feat(inicio): IN.9d, Accesos rápidos en fila propia, Resumen semanal y Actividad reciente en la fila final 6+6 · 2026-08-01
 
 Cuarta rebanada de **IN.9** ([ADR 057](DECISIONS/057-inicio-en-escritorio.md) D4), cierra la iniciativa salvo IN.9e. Ficha: [`contexto/inicio.md`](contexto/inicio.md).

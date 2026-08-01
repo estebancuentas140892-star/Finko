@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-01. Última tarea cerrada: IN.9d, Accesos rápidos en fila propia y Actividad reciente en la fila final 6+6 de escritorio.
+> Revisado: 2026-08-01. Última tarea cerrada: MC.13e-2f-2, el remanente del asistente de distribución exige decisión explícita antes de confirmar.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -14,7 +14,7 @@
 | Métrica | Valor |
 |---|---|
 | Tests unitarios + integración | 3577/3577 verdes |
-| Tests E2E | 253/253 verdes (corrida del 2026-08-01, sello del commit `b265c01`). **Es compuerta** desde el 2026-07-30: el hook de pre-commit exige el sello de una corrida verde cuando el diff toca runtime; el árbol compartido puede necesitar resellar si otra sesión edita en simultáneo |
+| Tests E2E | 253/253 verdes (corrida del 2026-08-01, sello del commit `8a62a88`). **Es compuerta** desde el 2026-07-30: el hook de pre-commit exige el sello de una corrida verde cuando el diff toca runtime. La huella se calcula sobre el **índice** (`git ls-files -s`), no sobre el árbol: hay que `git add` **antes** de sellar, o el propio `add` invalida el sello |
 | Schema version (`localStorage`) | v31 (`seccion` en categoría personalizada, CAT.3a; migración backfill) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**MC.13e-2f-2 - decisión explícita del remanente al confirmar, 2026-08-01**
+Punto 18 del brief; cierra **MC.13e-2f** completa. Radiogroup de 3 opciones dentro del paso final que ya existía, sin preselección y con "Distribuir" bloqueado hasta elegir; la cifra es `sinAsignar`, no `evBudget`. "Ahorro"/"meta" no abre ruta de apply: suma a la fila del Paso 2 y devuelve el foco ahí. Sin fila de ahorro ni de meta el bloque no se renderiza (pregunta de una sola respuesta = fricción). Del rediseño del asistente solo queda **MC.13e-2g**.
 
 **IN.9d - Accesos rápidos en fila propia, Resumen semanal y Actividad reciente en la fila final 6+6, 2026-08-01**
 Cuarta rebanada de IN.9 ([ADR 057](DECISIONS/057-inicio-en-escritorio.md) D4), cierra la iniciativa salvo IN.9e. La fusión de Accesos + Actividad (ADR 034 D7) queda acotada a móvil, mismo patrón que el acordeón de IN.9c: dos contenedores conviven en el DOM y `_repartoAccesosActividad()` (render.js) decide cuál se ve. `#panel-resumen` no se duplica, solo cambia de `--full` a `--half` y gana título propio.
@@ -36,9 +39,6 @@ Cierre documental: el código entró como colateral del commit `ab8c9a1` (CAT.3a
 
 **CAT.3a - modelo de las categorías personalizadas globales, 2026-08-01**
 Primera de las cuatro rebanadas del [ADR 058](DECISIONS/058-categorias-personalizadas-globales.md), sin cambio visible todavía: campo `seccion` (bump v30 a v31 con backfill), resolutora de ícono global sobre los dos catálogos nativos y validador que compara contra los dos. Las compuertas destaparon **8 unitarios y 4 E2E rojos en HEAD**, los tres del mismo patrón de fechas fijas en los tests (BUG-022, BUG-023, BUG-024): quedaron arreglados en el mismo commit y la suite vuelve a verde.
-
-**MC.16e - avisos de costo de la tarjeta de crédito, 2026-07-31**
-Cierra **MC.16 completa** y deja ejecutado el [ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md). Dos de los tres avisos del D7 no tenían dato que los disparara: se resuelven con **un solo campo** (`avanceTC`, bump v29 a v30) y el retiro en otra red entra en el texto del mismo aviso. El **pago mínimo se deriva** de `tasa` y saldo, no se captura (un mínimo tecleado queda viejo cada mes). Se sumó un cuarto aviso derivable, **el consumo que pasa del cupo**, que el tablero traía anotado desde MC.16b. Ninguno bloquea: informan el costo, no validan.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 
