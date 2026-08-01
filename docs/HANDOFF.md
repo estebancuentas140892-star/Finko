@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-01. Última tarea cerrada: MC.13e-2f-2, el remanente del asistente de distribución exige decisión explícita antes de confirmar.
+> Revisado: 2026-08-01. Última tarea cerrada: DV.2a, cierre documental de tokens de superficie/elevación + degradado de identidad.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -25,6 +25,9 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**DV.2a - cierre documental de tokens de superficie/elevación + degradado de identidad, 2026-08-01**
+El código entró en su propio commit (`d8a7d53`, 2026-07-31) sin cierre documental. Escala de elevación de 4 niveles ([ADR 033](DECISIONS/033-direccion-visual-premium.md) D1): `.card`/`.bento__cell`/`.list-item` ganan sombra en reposo en ambos temas, doble capa en claro. `--fk-grad-identity` (D2) consolida el degradado que 6 heroes copiaban a mano. Sin cambios de código en este cierre.
+
 **MC.13e-2f-2 - decisión explícita del remanente al confirmar, 2026-08-01**
 Punto 18 del brief; cierra **MC.13e-2f** completa. Radiogroup de 3 opciones dentro del paso final que ya existía, sin preselección y con "Distribuir" bloqueado hasta elegir; la cifra es `sinAsignar`, no `evBudget`. "Ahorro"/"meta" no abre ruta de apply: suma a la fila del Paso 2 y devuelve el foco ahí. Sin fila de ahorro ni de meta el bloque no se renderiza (pregunta de una sola respuesta = fricción). Del rediseño del asistente solo queda **MC.13e-2g**.
 
@@ -36,9 +39,6 @@ El grueso ya había entrado sin atribución en `132b0b5` (MC.13e-2d): iconos de 
 
 **AP.5 - form v2 de Apartados y recurrencia como toggle, 2026-08-01**
 Cierre documental: el código entró como colateral del commit `ab8c9a1` (CAT.3a). El form de nuevo apartado adopta chips-cat + monto-hero (resuelve el conflicto del [ADR 042](DECISIONS/042-formularios-v2-visual.md) D9 a favor de los chips) y la pregunta de recurrencia sale del alta; se activa después con el botón "Hacer recurrente" que ya vivía en la tarjeta.
-
-**CAT.3a - modelo de las categorías personalizadas globales, 2026-08-01**
-Primera de las cuatro rebanadas del [ADR 058](DECISIONS/058-categorias-personalizadas-globales.md), sin cambio visible todavía: campo `seccion` (bump v30 a v31 con backfill), resolutora de ícono global sobre los dos catálogos nativos y validador que compara contra los dos. Las compuertas destaparon **8 unitarios y 4 E2E rojos en HEAD**, los tres del mismo patrón de fechas fijas en los tests (BUG-022, BUG-023, BUG-024): quedaron arreglados en el mismo commit y la suite vuelve a verde.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 

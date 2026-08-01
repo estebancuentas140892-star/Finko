@@ -10,6 +10,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### docs(diseno): DV.2a, cierre documental de tokens de superficie/elevación + degradado de identidad · 2026-08-01
+
+El código entró en su propio commit (`d8a7d53`, 2026-07-31) sin cierre documental: tarjeta seguía en BOARD.md y sin entrada de changelog. Esta entrada lo repara. Ficha: [`contexto/sistema-visual.md`](contexto/sistema-visual.md).
+
+- **Escala de elevación de 4 niveles** ([ADR 033](DECISIONS/033-direccion-visual-premium.md) D1): `.card`, `.bento__cell` y `.list-item` ganan sombra en reposo (`--fk-shadow-sm`) en ambos temas; en tema claro sube a doble capa tintada azul-tinta (contacto + ambiental).
+- **Token `--fk-grad-identity` consolida el degradado** (D2) que 6 heroes copiaban a mano (`.hero-inicio`, `.score-hero`, `.hero-gastos`, `.hero-tesoreria`, `.hero-compromisos`, `.hero-agenda`): fórmula fija, `--fk-section-color` y `--fk-grad-identity-stop` parametrizables por superficie. Paradas 14/15/16% conservadas sin unificar (ya medidas, no se re-miden). Cada hero redeclara la fórmula localmente: un `var()` dentro de una custom property resuelve contra el elemento donde esa property se declara, no donde se consume.
+- `docs/DESIGN_SYSTEM.md` ya había ganado la sección "Sombras y elevación" en el commit original. Sin cambios de código en este cierre, solo documental. SW ya estaba en v461 desde el commit original.
+
 ### feat(tesoreria): MC.13e-2f-2, decisión explícita del remanente al confirmar · 2026-08-01
 
 Punto 18 del brief; **cierra MC.13e-2f completa** (la mitad del `cuentaId` cerró el 2026-07-30). Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md).
