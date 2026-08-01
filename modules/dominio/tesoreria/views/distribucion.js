@@ -11,6 +11,8 @@
 import { S } from '../../../core/state.js';
 import { f, esc as _esc } from '../../../infra/utils.js';
 import { icon, iconoCategoria } from '../../../infra/icons.js';
+import { resolverMarca, tejaMarca } from '../../../infra/marcas.js';
+import { bancoAvatar } from '../../../infra/bancos.js';
 import {
   CATEGORIA_AGENDA_ICONO, CATEGORIA_DEUDA_ICONO, CATEGORIA_DEUDA_PERSONAL_ICONO,
 } from '../../../core/constants.js';
@@ -169,6 +171,7 @@ function _construirDatosDistribucion() {
     apartados:    S.apartados ?? [],
     fondo:        fondoParaPlan,
     budgetAhorro: presupuestos.ahorro,
+    frecuencia:   cobro.frecuencia,
   });
 
   // Inversiones (MC.4e): cada holding es un destino fondeable; el aporte
@@ -266,7 +269,7 @@ const _SECCION_OBJETIVO = { meta: 'metas', apartado: 'apartados' };
  * remanente completo queda en la cuenta de origen, como hoy); el usuario opta
  * por mover dinero a otra cuenta explícitamente.
  *
- * @param {{tipo:string, id:string|null, nombre:string, monto:number, saldoTotal?:number, invertido?:number, saldoActual?:number, sinFecha?:boolean, autoExcedente?:boolean}} d
+ * @param {{tipo:string, id:string|null, nombre:string, monto:number, saldoTotal?:number, invertido?:number, saldoActual?:number, sinFecha?:boolean, autoExcedente?:boolean, icono?:string|null, nota?:string, banco?:string}} d
  * @returns {string}
  */
 function _filaDistribuir(d) {
@@ -278,6 +281,7 @@ function _filaDistribuir(d) {
   } else if (d.tipo === 'cuenta' && d.saldoActual != null) {
     sub = ` <span class="distribuir__saldo">saldo ${f(d.saldoActual)}</span>`;
   }
+  const notaSub = d.nota ? ` <span class="distribuir__nota">${_esc(d.nota)}</span>` : '';
 
   const seccionHint = _SECCION_OBJETIVO[d.tipo];
   const hint = (d.sinFecha && seccionHint)
@@ -290,7 +294,7 @@ function _filaDistribuir(d) {
         <div class="distribuir__fila">
           <label class="checkbox-row distribuir__toggle">
             <input type="checkbox" data-dist-destino-toggle ${marcada ? 'checked' : ''} />
-            <span>${_esc(d.nombre)}${sub}</span>
+            <span>${_iconoDestino(d)} ${_esc(d.nombre)}${sub}${notaSub}</span>
           </label>
           <input type="number" class="input distribuir__monto"
                  min="0" step="10000" inputmode="numeric" value="${d.monto}"
@@ -302,12 +306,46 @@ function _filaDistribuir(d) {
         ${hint}`;
 }
 
+/** Ícono genérico por tipo de destino, último eslabón de la cadena de `_iconoDestino`. */
+const _ICONO_GENERICO_DESTINO = { meta: 'i-metas', apartado: 'i-apartados', inversion: 'i-inversion', fondo: 'i-ahorro' };
+
 /**
- * Ícono inline de una fila de Necesidades: por categoría si existe, si no
- * un genérico por tipo (calendario para fijos, tarjeta para deudas). Va en
- * línea con el texto de la checklist, por eso icon--sm y no una teja.
+ * Ícono inline de una fila del panel de destinos (MC.13e-2c): logo/ícono de
+ * marca + nombre + nota, reusando la infra ya construida (BR/MK/CAT.2), sin
+ * crear íconos nuevos. Prioridad: marca reconocida en el nombre (Bancolombia,
+ * Nequi...) > símbolo/emoji ya guardado en el ítem > genérico por tipo. Mismo
+ * orden que ya usa Agenda para sus filas (`_renderDetalleItem`, MK.2).
+ * Cuentas van aparte: siempre tienen `banco`, así que usan `bancoAvatar`
+ * directo, igual que el resto de la app (Mis cuentas, Deudas).
+ */
+function _iconoDestino(d) {
+  if (d.tipo === 'cuenta') return bancoAvatar(d.banco, d.icono);
+
+  const marca = resolverMarca(d.nombre);
+  if (marca) return tejaMarca(marca);
+
+  // Apartados guardan el ícono como emoji crudo (CAT.2c); Metas, como id de
+  // símbolo del sprite salvo entradas viejas pre-CAT.2b (mismo criterio que
+  // `_iconoApartado`/`_iconoMeta` en sus propias vistas, no importable acá
+  // porque tesoreria no puede importar otro dominio, ADN #10).
+  if (d.icono) {
+    return /^[a-z]-/.test(d.icono) ? iconoCategoria(d.icono, 'icon icon--sm') : _esc(d.icono);
+  }
+
+  return iconoCategoria(_ICONO_GENERICO_DESTINO[d.tipo] ?? 'i-cuentas', 'icon icon--sm');
+}
+
+/**
+ * Ícono inline de una fila de Necesidades: marca reconocida en el nombre
+ * primero (MC.13e-2c, mismo criterio que `_iconoDestino`), si no por
+ * categoría, si no un genérico por tipo (calendario para fijos, tarjeta para
+ * deudas). Va en línea con el texto de la checklist, por eso icon--sm y no
+ * una teja (salvo que gane la marca, que sí trae su propia teja).
  */
 function _iconoNecesidad(it) {
+  const marca = resolverMarca(it.nombre);
+  if (marca) return tejaMarca(marca);
+
   // CAT.2d: ícono elegido por el usuario para la categoría 'Otra'/'Otro' de
   // una deuda prevalece sobre el fijo del catálogo (mismo campo que ya
   // resuelve el ícono en la lista de Deudas, `compromiso.icono`).
@@ -326,12 +364,13 @@ function _iconoNecesidad(it) {
  * monto, para que no se pueda volver a registrar (mismo guard que el badge
  * "Ya pagaste este mes" de Agenda).
  *
- * @param {{id:string, nombre:string, categoria:string|null, tipo:'fijo'|'deuda', monto:number, diaPago:number|null, pagado:boolean}} it
+ * @param {{id:string, nombre:string, categoria:string|null, tipo:'fijo'|'deuda', monto:number, diaPago:number|null, pagado:boolean, nota?:string}} it
  * @returns {string}
  */
 function _filaNecesidad(it) {
   const catSub = it.categoria ? ` <span class="distribuir__nec-item-cat">· ${_esc(it.categoria)}</span>` : '';
   const diaSub = it.diaPago ? ` <span class="distribuir__saldo">día ${it.diaPago}</span>` : '';
+  const notaSub = it.nota ? ` <span class="distribuir__nota">${_esc(it.nota)}</span>` : '';
   const checkedAttr = it.pagado ? 'checked disabled' : 'checked';
 
   return `
@@ -339,7 +378,7 @@ function _filaNecesidad(it) {
           <label class="checkbox-row distribuir__toggle">
             <input type="checkbox" data-nec-toggle data-nec-tipo="${_esc(it.tipo)}"
                    data-nec-id="${_esc(it.id)}" data-nec-monto="${it.monto}" ${checkedAttr} />
-            <span>${_iconoNecesidad(it)} ${_esc(it.nombre)}${catSub}${diaSub}</span>
+            <span>${_iconoNecesidad(it)} ${_esc(it.nombre)}${catSub}${diaSub}${notaSub}</span>
           </label>
           <span class="distribuir__nec-monto">${it.pagado ? 'Ya pagado' : f(it.monto)}</span>
         </div>`;

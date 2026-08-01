@@ -48,6 +48,7 @@ import {
   normalizarTransferencia,
   calcularTransferencia,
 } from '../../modules/dominio/tesoreria/logic.js';
+import { aportePorPeriodo } from '../../modules/infra/vencimientos.js';
 import { CATEGORIAS_INGRESO, CATEGORIA_INGRESO_ICONO, SMMLV, AUXILIO_TRANSPORTE, TIPOS_LLAVE } from '../../modules/core/constants.js';
 import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderListaIngresosPuntuales, renderNudgeDistribucionInicio, renderDistribucionIngreso, renderFormCuenta, renderListaCuentas, renderTarjetasTC, renderHeroTesoreria, renderGMFIndicador, renderBotonTransferir, renderFormTransferencia, renderParTransferencia, renderSeccionGMF } from '../../modules/dominio/tesoreria/view.js';
 import { initAccionesDistribucion } from '../../modules/dominio/tesoreria/acciones/distribucion.js';
@@ -490,7 +491,7 @@ describe('construirDesgloseNecesidades()', () => {
   it('un fijo mensual aparece con su monto tal cual, tipo "fijo", con día de pago y sin pagar', () => {
     const comps = [fijoNec({ id: 'cf1', descripcion: 'Arriendo', categoria: 'Arriendo', monto: 800_000 })];
     expect(construirDesgloseNecesidades(comps, [], HOY_TEST)).toEqual([
-      { id: 'cf1', nombre: 'Arriendo', categoria: 'Arriendo', icono: null, tipo: 'fijo', monto: 800_000, diaPago: 20, pagado: false, ocurrencias: 1 },
+      { id: 'cf1', nombre: 'Arriendo', categoria: 'Arriendo', icono: null, tipo: 'fijo', monto: 800_000, diaPago: 20, pagado: false, ocurrencias: 1, nota: '' },
     ]);
   });
 
@@ -3167,24 +3168,32 @@ describe('construirDesgloseAhorroPorObjetivo()', () => {
     expect(construirDesgloseAhorroPorObjetivo()).toEqual([]);
   });
 
-  it('una meta con fecha sugiere faltante/meses restantes, igual que calcularAporteMensualObjetivos', () => {
+  it('una meta con fecha sugiere la cuota del período vía el motor aportePorPeriodo (MC.13e-2d)', () => {
     const metas = [metaConFecha()];
     const filas = construirDesgloseAhorroPorObjetivo({ metas, budgetAhorro: 1_000_000, hoy });
-    const esperado = calcularAporteMensualObjetivos(metas, [], hoy);
-    expect(filas).toEqual([{ tipo: 'meta', id: 'm1', nombre: 'Viaje', monto: esperado, sinFecha: false }]);
+    const esperado = aportePorPeriodo(1_200_000, '2027-01-01', 'Mensual', '2026-07-01').montoPorPeriodo;
+    expect(filas).toEqual([{ tipo: 'meta', id: 'm1', nombre: 'Viaje', monto: esperado, sinFecha: false, icono: null, nota: '' }]);
+    expect(esperado).toBeGreaterThan(0);
+  });
+
+  it('una meta con fecha, con frecuencia Quincenal, reparte la cuota por quincena', () => {
+    const metas = [metaConFecha()];
+    const filas = construirDesgloseAhorroPorObjetivo({ metas, budgetAhorro: 1_000_000, frecuencia: 'Quincenal', hoy });
+    const esperado = aportePorPeriodo(1_200_000, '2027-01-01', 'Quincenal', '2026-07-01').montoPorPeriodo;
+    expect(filas[0].monto).toBe(esperado);
     expect(esperado).toBeGreaterThan(0);
   });
 
   it('una meta sin fechaLimite sugiere 0 (no adivina) y marca sinFecha', () => {
     const metas = [metaConFecha({ fechaLimite: null })];
     const filas = construirDesgloseAhorroPorObjetivo({ metas, budgetAhorro: 1_000_000, hoy });
-    expect(filas).toEqual([{ tipo: 'meta', id: 'm1', nombre: 'Viaje', monto: 0, sinFecha: true }]);
+    expect(filas).toEqual([{ tipo: 'meta', id: 'm1', nombre: 'Viaje', monto: 0, sinFecha: true, icono: null, nota: '' }]);
   });
 
   it('un apartado sin fechaObjetivo sugiere 0 y marca sinFecha', () => {
     const apartados = [apartadoConFecha({ fechaObjetivo: null })];
     const filas = construirDesgloseAhorroPorObjetivo({ apartados, budgetAhorro: 1_000_000, hoy });
-    expect(filas).toEqual([{ tipo: 'apartado', id: 'ap1', nombre: 'SOAT', monto: 0, sinFecha: true }]);
+    expect(filas).toEqual([{ tipo: 'apartado', id: 'ap1', nombre: 'SOAT', monto: 0, sinFecha: true, icono: null, nota: '' }]);
   });
 
   it('una meta con fecha NO marca sinFecha, aunque su fecha ya haya pasado', () => {
@@ -3232,7 +3241,7 @@ describe('construirDesgloseAhorroPorObjetivo()', () => {
 
   it('el fondo activo e incompleto recibe el excedente tras los aportes a objetivos', () => {
     const metas = [metaConFecha()]; // aporte ~200.000 (1.2M/6 meses)
-    const aporteMeta = calcularAporteMensualObjetivos(metas, [], hoy);
+    const aporteMeta = aportePorPeriodo(1_200_000, '2027-01-01', 'Mensual', '2026-07-01').montoPorPeriodo;
     const fondo = { activo: true, completado: false };
     const filas = construirDesgloseAhorroPorObjetivo({ metas, fondo, budgetAhorro: 1_000_000, hoy });
     expect(filas[0]).toEqual({ tipo: 'fondo', id: null, nombre: 'Fondo de emergencia', monto: 1_000_000 - aporteMeta, sinFecha: false, autoExcedente: true });
@@ -3547,7 +3556,7 @@ describe('construirFilasTransferenciaCuentas()', () => {
     const filas = construirFilasTransferenciaCuentas([
       { id: 'c1', nombre: 'Nequi', saldo: 300_000 },
     ]);
-    expect(filas).toEqual([{ tipo: 'cuenta', id: 'c1', nombre: 'Nequi', monto: 0, saldoActual: 300_000 }]);
+    expect(filas).toEqual([{ tipo: 'cuenta', id: 'c1', nombre: 'Nequi', monto: 0, saldoActual: 300_000, banco: undefined, icono: null }]);
   });
 
   it('ordena de mayor a menor saldo actual', () => {
@@ -3560,7 +3569,7 @@ describe('construirFilasTransferenciaCuentas()', () => {
 
   it('nombre por defecto y saldo 0 cuando faltan datos', () => {
     const filas = construirFilasTransferenciaCuentas([{ id: 'c1' }]);
-    expect(filas[0]).toEqual({ tipo: 'cuenta', id: 'c1', nombre: 'Cuenta', monto: 0, saldoActual: 0 });
+    expect(filas[0]).toEqual({ tipo: 'cuenta', id: 'c1', nombre: 'Cuenta', monto: 0, saldoActual: 0, banco: undefined, icono: null });
   });
 
   it('sin cuentas devuelve un array vacío', () => {

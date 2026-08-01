@@ -174,8 +174,10 @@ test.describe('Dashboard', () => {
     await expect(page.locator('#hero-guia-saldo')).toBeVisible();
     await expect(page.locator('#saldo-desc')).toBeHidden();
 
-    // El botón de la guía lleva directo a Tesorería.
-    await page.click('#hero-guia-saldo a[href="#tesoreria"]');
+    // El botón de la guía lleva directo a Tesorería. IN.9e (ADR 057 D6) renderiza
+    // dos variantes (móvil/escritorio) a la vez, una oculta por CSS según el ancho:
+    // el viewport de este test es de escritorio, así que apunta a esa variante.
+    await page.click('#hero-guia-saldo .hero-guia__escritorio a[href="#tesoreria"]');
     await expect(page.locator('#sec-tesoreria.active')).toBeVisible();
   });
 
@@ -289,7 +291,10 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     expect(despues.y).toBe(antes.y);
   });
 
-  test('el detalle por cuenta expande, respeta la máscara y no persiste (IN.8c, ADR 034 D4)', async ({ page }) => {
+  test('móvil: el detalle por cuenta expande, respeta la máscara y no persiste (IN.8c, ADR 034 D4)', async ({ page }) => {
+    // IN.9c (ADR 057 D3) acota el acordeón a móvil: desde 1024px el detalle
+    // vive en su columna propia y el pill no se pinta. El ancho se declara.
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.addInitScript(() => {
       if (localStorage.getItem('fk_v1')) return;
       const estado = {
@@ -334,6 +339,55 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
     await expect(page.locator('#saldo-detalle')).toBeHidden();
     await expect(page.locator('#saldo-detalle-toggle')).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  test('escritorio: el detalle por cuenta es columna propia y el mismo ojo la cubre (IN.9c, ADR 057 D3)', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.addInitScript(() => {
+      if (localStorage.getItem('fk_v1')) return;
+      const estado = {
+        version: 1,
+        perfil: { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas: [
+          { id: 'c1', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 1450000, activa: true },
+          { id: 'c2', nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo', saldo: 350000, activa: true },
+        ],
+        ingresos: [],
+        gastos: [],
+        compromisos: [],
+        metas: [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    });
+    await page.goto('/');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+
+    // La columna se pinta sola: no hay nada que expandir.
+    const panel = page.locator('#panel-cuentas-detalle');
+    await expect(panel).toBeVisible();
+    await expect(panel.locator('.hero-inicio__cuenta')).toHaveCount(2);
+    await expect(panel).toContainText('Bancolombia');
+    await expect(panel).toContainText('$1.450.000');
+
+    // El acordeón no existe acá, y el conteo del hero convive con la columna.
+    await expect(page.locator('#saldo-detalle-toggle')).toBeHidden();
+    await expect(page.locator('#saldo-detalle')).toBeHidden();
+    await expect(page.locator('#saldo-desc')).toHaveText('efectivo + 1 cuenta bancaria');
+
+    // Hero y columna comparten fila: el hero dejó de ser una banda.
+    const cajaHero  = await page.locator('.hero-inicio').boundingBox();
+    const cajaPanel = await panel.boundingBox();
+    expect(Math.round(cajaHero.y)).toBe(Math.round(cajaPanel.y));
+    expect(cajaPanel.x).toBeGreaterThan(cajaHero.x);
+
+    // PI4: un solo ojo cubre el total y la columna.
+    await page.click('#saldo-ojo');
+    await expect(page.locator('#saldo-total')).toHaveText('$••••••');
+    await expect(panel).not.toContainText('1.450.000');
+    await expect(panel).not.toContainText('350.000');
+    await page.click('#saldo-ojo');
+    await expect(panel).toContainText('$1.450.000');
   });
 
   test('Pendientes del mes sin línea roja, badge corto y "Ver calendario" al calendario (IN.8e, ADR 034 D5)', async ({ page }) => {

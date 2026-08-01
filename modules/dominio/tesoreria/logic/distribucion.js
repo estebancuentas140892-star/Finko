@@ -7,7 +7,7 @@
  * - Testeable en Node/Vitest sin ningun mock de navegador.
  */
 
-import { obligacionesYAportesDelCobro, frecuenciaPrincipalIngresos, normalizarFrecuenciaAporte } from '../../../infra/vencimientos.js';
+import { obligacionesYAportesDelCobro, frecuenciaPrincipalIngresos, normalizarFrecuenciaAporte, aportePorPeriodo } from '../../../infra/vencimientos.js';
 import { distribuirPago } from '../../../infra/distribuir-pago.js';
 import { FACTOR_MENSUAL, isoFecha, ultimoPagoHasta } from './ingresos.js';
 
@@ -69,7 +69,7 @@ export function calcularGastosFijosMensuales(compromisos) {
  *   está distribuyendo. Sin fecha datable (`estadoDistribucion` sólo data
  *   Mensual/Quincenal) se asume que el cobro es hoy: la ventana arranca hoy,
  *   que es exactamente lo que el usuario está repartiendo.
- * @returns {Array<{id:string, nombre:string, categoria:string|null, icono:string|null, tipo:'fijo'|'deuda', monto:number, diaPago:number|null, pagado:boolean, ocurrencias:number}>}
+ * @returns {Array<{id:string, nombre:string, categoria:string|null, icono:string|null, tipo:'fijo'|'deuda', monto:number, diaPago:number|null, pagado:boolean, ocurrencias:number, nota:string}>}
  *   Los no pagados primero (de mayor a menor monto), luego los ya pagados.
  */
 export function construirDesgloseNecesidades(compromisos = [], gastos = [], hoy = new Date(), cobro = null) {
@@ -87,7 +87,8 @@ export function construirDesgloseNecesidades(compromisos = [], gastos = [], hoy 
   if (!r) return [];
 
   return r.enVentana.map(o => {
-    const diaPagoNum = Number(compromisos.find(c => c.id === o.id)?.diaPago);
+    const compromiso = compromisos.find(c => c.id === o.id);
+    const diaPagoNum = Number(compromiso?.diaPago);
     return {
       id:        o.id,
       nombre:    o.nombre,
@@ -100,6 +101,9 @@ export function construirDesgloseNecesidades(compromisos = [], gastos = [], hoy 
       diaPago:     Number.isInteger(diaPagoNum) ? diaPagoNum : null,
       pagado:      o.pagado,
       ocurrencias: o.ocurrencias.length,
+      // MC.13e-2c: hoy solo `tipo='fijo'` con categoria predefinida llena
+      // este campo (ver modelo.js, "AG.4"); en el resto queda ''.
+      nota:        typeof compromiso?.nota === 'string' ? compromiso.nota : '',
     };
   });
 }
@@ -265,6 +269,26 @@ function _aporteMensualObjetivo(montoObjetivo, montoActual, fecha, tsHoy) {
 }
 
 /**
+ * Cuota del período (no el objetivo total) para UNA fila de ahorro del
+ * asistente, vía el motor compartido `aportePorPeriodo` (MC.13b, ADR 041):
+ * mismo cálculo que ya usan Metas (`calcularAhorroPorPeriodo`) y Apartados
+ * (`calcularAporteSugerido`) en su propia sección (MC.13e-2d).
+ *
+ * @param {number} montoObjetivo
+ * @param {number} montoActual
+ * @param {string|null|undefined} fecha - YYYY-MM-DD.
+ * @param {string} frecuencia - una de FRECUENCIAS_APORTE.
+ * @param {string} hoyISO
+ * @returns {number}
+ */
+function _aportePorPeriodoObjetivo(montoObjetivo, montoActual, fecha, frecuencia, hoyISO) {
+  const faltante = Math.max(0, (Number(montoObjetivo) || 0) - (Number(montoActual) || 0));
+  if (faltante <= 0 || !fecha) return 0;
+  const r = aportePorPeriodo(faltante, fecha, frecuencia, hoyISO);
+  return r ? r.montoPorPeriodo : 0;
+}
+
+/**
  * Calcula cuánto aportar por mes para llegar a tiempo a todas las metas
  * y apartados con fecha objetivo que aún tienen saldo pendiente.
  * Pura: recibe arrays planos, sin leer S ni el DOM.
@@ -307,40 +331,53 @@ export function calcularAporteMensualObjetivos(metas = [], apartados = [], hoy =
  *
  * Pura: no lee `S` ni el DOM, no importa otros dominios (ADN #10).
  *
+ * Desde MC.13e-2d usa el motor compartido `aportePorPeriodo` (`infra/vencimientos.js`,
+ * MC.13b) con la frecuencia real de cobro del usuario, la misma cuota que ya
+ * muestran Metas y Apartados en su propia sección: antes calculaba siempre un
+ * aporte MENSUAL aquí mismo (`_aporteMensualObjetivo`), desalineado con
+ * `budgetAhorro`, que ya es el presupuesto de ESTE cobro (BUG-2).
+ *
  * @param {{
- *   metas?:       Array<{id:string, nombre:string, montoObjetivo:number, montoActual:number, fechaLimite:string|null, completada:boolean}>,
- *   apartados?:   Array<{id:string, nombre:string, montoObjetivo:number, montoActual:number, fechaObjetivo:string|null, completado:boolean}>,
+ *   metas?:       Array<{id:string, nombre:string, montoObjetivo:number, montoActual:number, fechaLimite:string|null, icono?:string|null, nota?:string, completada:boolean}>,
+ *   apartados?:   Array<{id:string, nombre:string, montoObjetivo:number, montoActual:number, fechaObjetivo:string|null, icono?:string, nota?:string, completado:boolean}>,
  *   fondo?:       {activo:boolean, completado:boolean}|null,
  *   budgetAhorro?: number,
+ *   frecuencia?:  string,
  *   hoy?:         Date,
  * }} [args]
- * @returns {Array<{tipo:'fondo'|'meta'|'apartado', id:string|null, nombre:string, monto:number, sinFecha:boolean, autoExcedente?:boolean}>}
+ * @returns {Array<{tipo:'fondo'|'meta'|'apartado', id:string|null, nombre:string, monto:number, sinFecha:boolean, autoExcedente?:boolean, icono?:string|null, nota?:string}>}
  *   Fondo primero (si activo), luego metas, luego apartados.
  *   `sinFecha` siempre es `false` para la fila del fondo (no aplica).
  *   `autoExcedente` solo existe en la fila del fondo: `true` cuando está
  *   incompleto, es decir, cuando su sugerencia es el excedente del presupuesto
  *   y debe re-absorberlo en vivo si el presupuesto cambia (R3, MC.7d).
+ *   `icono`/`nota` (MC.13e-2c) viajan solo en metas/apartados: la vista los usa
+ *   para el logo/ícono de la fila y la nota opcional; el fondo no los necesita.
  */
 export function construirDesgloseAhorroPorObjetivo({
-  metas = [], apartados = [], fondo = null, budgetAhorro = 0, hoy = new Date(),
+  metas = [], apartados = [], fondo = null, budgetAhorro = 0, frecuencia = 'Mensual', hoy = new Date(),
 } = {}) {
-  const tsHoy  = hoy instanceof Date ? hoy.getTime() : Date.now();
+  const hoyISO = isoFecha(hoy instanceof Date ? hoy : new Date());
   const budget = Math.max(0, Math.round(Number(budgetAhorro) || 0));
 
   const filasMetas = metas
     .filter(m => m.completada !== true)
     .map(m => ({
       tipo: 'meta', id: m.id, nombre: m.nombre,
-      monto: _aporteMensualObjetivo(m.montoObjetivo, m.montoActual, m.fechaLimite, tsHoy),
+      monto: _aportePorPeriodoObjetivo(m.montoObjetivo, m.montoActual, m.fechaLimite, frecuencia, hoyISO),
       sinFecha: !m.fechaLimite,
+      icono: m.icono ?? null,
+      nota: typeof m.nota === 'string' ? m.nota : '',
     }));
 
   const filasApartados = apartados
     .filter(a => a.completado !== true)
     .map(a => ({
       tipo: 'apartado', id: a.id, nombre: a.nombre,
-      monto: _aporteMensualObjetivo(a.montoObjetivo, a.montoActual, a.fechaObjetivo, tsHoy),
+      monto: _aportePorPeriodoObjetivo(a.montoObjetivo, a.montoActual, a.fechaObjetivo, frecuencia, hoyISO),
       sinFecha: !a.fechaObjetivo,
+      icono: a.icono ?? null,
+      nota: typeof a.nota === 'string' ? a.nota : '',
     }));
 
   const totalObjetivos = [...filasMetas, ...filasApartados].reduce((s, f) => s + f.monto, 0);
@@ -924,8 +961,10 @@ export function construirPlanInversiones({ inversiones = [] }) {
  * Pura: recibe las cuentas y no lee S ni el DOM.
  *
  * @param {import('../../../core/state.js').Cuenta[]} cuentas - cuentas activas.
- * @returns {Array<{tipo:'cuenta', id:string, nombre:string, monto:number, saldoActual:number}>}
+ * @returns {Array<{tipo:'cuenta', id:string, nombre:string, monto:number, saldoActual:number, banco:string, icono:string|null}>}
  *   Ordenadas de mayor a menor saldo (mismo criterio que el selector de cuentas).
+ *   `banco`/`icono` (MC.13e-2c) viajan para que la vista dibuje la misma teja
+ *   de marca (`bancoAvatar`) que usa el resto de la app para esta cuenta.
  */
 export function construirFilasTransferenciaCuentas(cuentas = []) {
   return (Array.isArray(cuentas) ? cuentas : [])
@@ -935,6 +974,8 @@ export function construirFilasTransferenciaCuentas(cuentas = []) {
       nombre:      c.nombre ?? 'Cuenta',
       monto:       0,
       saldoActual: Number(c.saldo) || 0,
+      banco:       c.banco,
+      icono:       c.icono ?? null,
     }))
     .sort((a, b) => b.saldoActual - a.saldoActual);
 }

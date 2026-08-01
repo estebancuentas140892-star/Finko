@@ -53,7 +53,6 @@ Las 57 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | CAL.5b | El lote también cubre deudas, y se ofrece desde Inicio | Calendario | media | ARQ.2 (deudas); Inicio no depende de nada |
 | MC.13 | Distribución v2: contextual por fecha, guiada y con origen real | Mis cuentas | alta | nada |
 | MC.13e-2c | Identidad visual por fila: logo/ícono + nombre + nota | Mis cuentas | media | verificar notas ya existentes en el análisis |
-| MC.13e-2d | Cuota del período en las filas de ahorro, no el objetivo total | Mis cuentas | media | nada (el motor ya existe) |
 | MC.13e-2f-2 | Decisión explícita del remanente (paso final del asistente) | Mis cuentas | alta | bloqueada por UX |
 | MC.13e-2g | Rediseño en 2 pasos con educación financiera | Mis cuentas | media | última; depende del handoff de diseño |
 | MC.13c-3 | Datar el cobro de todas las frecuencias | Mis cuentas | baja | nada |
@@ -81,7 +80,7 @@ Las 57 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | P4 del ADR 033 + cola de diseño |
 | IV.4 | Iconografía dirigida post-color | Transversal | tras IV.2 | IV.2 en producción + revisión visual |
 | PERF.7c | Warm-up de derivaciones pesadas en idle | Transversal | media | conviene después de PERF.7b |
-| CAT.3 | Categorías personalizadas globales | Transversal | media | CAT.2 (el picker) |
+| CAT.3 | Categorías personalizadas globales (4 rebanadas, ADR 058) | Transversal | media | nada; decidida el 2026-07-31 |
 | EDIT.1 | Editar sin destruir: Apartados, Inversión y Me deben | Transversal | media-alta | nada duro; coordina con ARQ.1 |
 | ARQ.1 | `infra/bolsas.js`: un solo modelo para las cuatro bolsas | Transversal | baja | nada |
 | ARQ.2 | Consolidar los cálculos duplicados que quedan | Transversal | baja | nada; conviene antes de CAL.5b |
@@ -167,7 +166,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 
 #### MC.13 - Distribución v2: contextual por fecha, guiada y con origen real del dinero
 - Prioridad  : alta
-- Estado     : **el motor está completo y en producción** ([ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md), aceptado parcialmente, con su diseño completo dentro); el asistente está a mitad de rediseño. Siguen abiertas **MC.13e-2c, MC.13e-2d, MC.13e-2f-2 y MC.13e-2g**, abajo.
+- Estado     : **el motor está completo y en producción** ([ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md), aceptado parcialmente, con su diseño completo dentro); el asistente está a mitad de rediseño. Siguen abiertas **MC.13e-2c, MC.13e-2f-2 y MC.13e-2g**, abajo. **MC.13e-2d cerrada** (ver CHANGELOG).
 - Objetivo   : responder "¿qué debo hacer HOY con este dinero?" en vez de mostrar todo el mes. Diseño completo y regla vigente del motor (`infra/vencimientos.js`, única tabla de frecuencias del proyecto) en [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md), sección "Distribución v2".
 - Secciones  : Mis cuentas (`tesoreria/logic/distribucion.js`, `views/distribucion.js`, `acciones/distribucion.js`)
 - Depende de : nada (la decisión (a) ya está resuelta); coordinar con PA.1 (conflicto (b), independiente)
@@ -181,13 +180,6 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 - Secciones  : Mis cuentas
 - Depende de : verificar en el análisis si `compromiso.nota`/`meta.nota`/`apartado.nota` ya existen o hace falta agregarlos
 - Modelo     : Equilibrado - Alto (reuso de infra existente en varias filas, revisar shape de datos por tipo)
-
-#### MC.13e-2d - Cuota del período en las filas de ahorro, no el objetivo total
-- Prioridad  : media
-- Objetivo   : las filas de ahorro del asistente muestran la cuota del período (motor `aportePorPeriodo`, MC.13b), no el objetivo total. Verificar si `construirDesgloseAhorroPorObjetivo` ya usa el motor: detalle en [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md).
-- Secciones  : Mis cuentas, transversal por el motor (`infra/vencimientos.js`)
-- Depende de : nada (el motor ya existe, MC.13b)
-- Modelo     : Equilibrado - Alto (verificar el dato correcto antes de tocar la vista)
 
 #### MC.13e-2f-2 - Decisión explícita del remanente (paso final del asistente)
 - Prioridad  : alta
@@ -240,7 +232,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 
 ### Apartados (dominio `apartados`)
 
-> **Iniciativa "Apartados v2: colchón para gastos esporádicos"** (brief de Esteban del 2026-07-08, 6 puntos). El criterio Apartados vs Metas (un apartado es una obligación previsible, una meta es un deseo) es del [ADR 007](DECISIONS/007-dominio-apartados.md); su aplicación al catálogo, del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). **Derivados a fuentes únicas:** categorías que en realidad son Metas y picker de icono ya los resolvieron **CAT.1** y **CAT.2** (cerradas; el `icono` de apartados sigue siendo emoji como dato del usuario, exento de TX.4, y su paso a símbolo del sprite se decide en CAT.3); "Otro" con nombre+icono → **CAT.3**.
+> **Iniciativa "Apartados v2: colchón para gastos esporádicos"** (brief de Esteban del 2026-07-08, 6 puntos). El criterio Apartados vs Metas (un apartado es una obligación previsible, una meta es un deseo) es del [ADR 007](DECISIONS/007-dominio-apartados.md); su aplicación al catálogo, del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). **Derivados a fuentes únicas:** categorías que en realidad son Metas y picker de icono ya los resolvieron **CAT.1** y **CAT.2** (cerradas). **Dos punteros a CAT.3 retirados el 2026-07-31** al escribir el [ADR 058](DECISIONS/058-categorias-personalizadas-globales.md), que deja Apartados fuera de alcance con razón declarada: "Otro con nombre+icono" **ya existe** (nombre libre + picker de sprite, `apartados/view.js:550-553`) y el paso de emoji a símbolo **ya está resuelto para los apartados nuevos** (`_iconoApartado()` soporta los dos formatos, `apartados/view.js:183-185`). El remanente es que `PLANTILLAS_APARTADO` sigue ofreciendo emoji en sus chips: es consistencia visual de Apartados, no taxonomía de categorías.
 
 #### AP.5 - Apartados v2: formulario consistente, recurrencia como toggle
 - Prioridad  : media
@@ -518,11 +510,29 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 #### CAT.3 - Categorías personalizadas globales (mismo estatus que las nativas, en toda la app)
 - Prioridad  : media
+- Estado     : **decidida el 2026-07-31, [ADR 058](DECISIONS/058-categorias-personalizadas-globales.md)**, en cuatro rebanadas. Ninguna iniciada.
+- Objetivo   : las personalizadas de TX.9b valen hoy solo para Gastos; extenderlas a Gastos fijos con la sección como campo del objeto (`seccion: 'gasto' | 'fijo'`), oferta filtrada por sección y resolución de ícono global.
+- Secciones  : transversal (Gastos, Gastos fijos, Presupuesto, Inicio, Calendario, Tesorería)
+- Depende de : nada. CAT.1 (a qué sección pertenece una categoría) y CAT.2 (cómo se crea) ya cerraron
+- **Alcance corregido en el mapeo del 2026-07-31:** gráficos, CSV y 8 de 9 filtros **ya funcionan** con personalizadas (el color viene del dominio y del ranking, no de la categoría; no existe ningún mapa `categoría` a `color` en el repo). El trabajo real son el gate de escritura de fijos y 7 accesos crudos al mapa de íconos, **3 de los cuales ya fallan hoy** sin CAT.3.
+- Modelo     : Alta capacidad - Alto (bump de schema + propagación transversal)
+
+##### CAT.3a - el modelo: campo `seccion`, migración v29 y resolutora global
+- Estado     : pendiente, primera rebanada
+- Alcance    : campo `seccion` en `S.categoriasPersonalizadas` (D1), migración idempotente v28 a v29 que pone `'gasto'` en las existentes, resolutora global sobre los dos mapas nativos (D2), y `validarCategoriaPersonalizada` comparando también contra `CATEGORIAS_AGENDA` (D4). Sin cambio visible en la app todavía
+- Archivos   : `core/state.js`, `core/storage.js` (migración), `core/constants.js` (resolutora), `gastos/logic.js` (validador)
+
+##### CAT.3b - los siete accesos crudos pasan por la resolutora
 - Estado     : pendiente
-- Objetivo   : las categorías personalizadas valen hoy solo para Gastos; extenderlas a Gastos fijos y a TODAS las superficies con el mismo estatus que las nativas. Detalle y modelo de datos a decidir en [`contexto/transversal.md`](contexto/transversal.md).
-- Secciones  : transversal
-- Depende de : nada: CAT.1 (a qué sección pertenece una categoría) y CAT.2 (cómo se crea) ya cerraron. Hereda de CAT.1c la regla de retiro con edición segura (ficha)
-- Modelo     : Alta capacidad - Alto (modelo de datos + propagación transversal)
+- Alcance    : D3 del ADR 058. Los 4 de fijos (`agenda/view.js:716`, `:888`, `gastos/logic.js:585`, `tesoreria/views/distribucion.js:315`) y los 3 que **ya fallan hoy** con una personalizada de Gastos, que la pintan `c-otros` mientras el formulario que la creó muestra el ícono correcto (`presupuesto/view.js:492`, `:742`, `resumen/view.js:119`)
+
+##### CAT.3c - Gastos fijos ofrece y acepta personalizadas
+- Estado     : pendiente
+- Alcance    : chip de categoría nueva en `renderFormGastoFijo()`, decidiendo cómo convive con `'Otro'` (que es miembro literal del catálogo, no sentinela), y los tres gates de escritura de `compromisos/logic/modelo.js` (`:276` rechaza duro, `:414` descarta a `null` en silencio, `:55`) más sus dos espejos en `agenda/index.js:145` y `:217`
+
+##### CAT.3d - las superficies de fijos resuelven el ícono de una personalizada
+- Estado     : pendiente, última rebanada
+- Alcance    : detalle del día del calendario, checklist de Necesidades de Tesorería y el gasto nacido de un fijo (`iconoPorOrigen`)
 
 #### EDIT.1 - Editar sin destruir: Apartados, Inversión y Me deben
 - Prioridad  : media-alta
@@ -641,7 +651,7 @@ Se listan solo para que una idea nueva de estas secciones no vuelva a generar un
 
 #### DOC.1 - Reorganización documental, fases 3 a 5
 - Prioridad  : media
-- Estado     : Fases 1, 2 y 3 cerradas. Fase 4 en curso (Paso 4 de la migración del tablero, en progreso). El plan completo por fases vive en [`MIGRACION.md`](MIGRACION.md) sección 7, que se borra al cerrar la Fase 5.
+- Estado     : Fases 1, 2 y 3 cerradas. **Fase 4 a un movimiento de cerrar:** de los 10 de la tabla 11.1 están hechos 8 (el 5, `HANDOFF.md` a 6 KB, cerró el 2026-07-31); falta el **6** (`BOARD.md` en 80 KB contra un techo de 40) y el **9** sigue esperando la decisión de Esteban sobre los comodines amplios de `settings.local.json` (12.2). El plan completo por fases vive en [`MIGRACION.md`](MIGRACION.md) sección 7, que se borra al cerrar la Fase 5.
 - Objetivo   : bajar el arranque de una tarea de ~69.400 a ~21.000 tokens sin perder información, moviendo cada bloque a su dueño documental.
 - Secciones  : ninguna de la app (solo documentación, `CLAUDE.md` y `.claude/`)
 - Archivos   : la tabla de trazabilidad de [`MIGRACION.md`](MIGRACION.md) sección 6 los lista uno por uno

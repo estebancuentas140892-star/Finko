@@ -10,6 +10,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### fix(tesoreria): MC.13e-2d, cuota del periodo en las filas de ahorro, no el objetivo total · 2026-07-31
+
+`construirDesgloseAhorroPorObjetivo` (panel "Distribuir mi ingreso") calculaba siempre un aporte MENSUAL con un helper local (`_aporteMensualObjetivo`), aunque `budgetAhorro` ya es el presupuesto de ESTE cobro (BUG-2, no el mes). Un usuario quincenal veia una fila de ahorro que no cuadraba con el resto del panel.
+
+- Pasa al motor compartido `aportePorPeriodo` (`infra/vencimientos.js`, MC.13b), con la `frecuencia` real de cobro (`cobro.frecuencia`, ya calculada en `_construirDatosDistribucion`) enchufada como parametro nuevo de la funcion. Mismo calculo que ya usan Metas (`calcularAhorroPorPeriodo`) y Apartados (`calcularAporteSugerido`) en su propia seccion.
+- `_aporteMensualObjetivo` se conserva: la sigue usando `calcularAporteMensualObjetivos` (MC.6a), sin relacion con las filas de este asistente.
+- 3.533 tests unitarios verdes (2 nuevos, 2 actualizados para comparar contra el motor en vez del helper viejo). 246/247 E2E: la falla es preexistente y no relacionada (locator duplicado en `#hero-guia-saldo`, cambio de otra sesion sin commitear en `index.html`).
+
 ### feat(ahorro): AH.7b, "Apartados" se renombra a "Reservas" en todo el copy visible · 2026-07-31
 
 Decisión de Esteban tras el triaje del hallazgo pendiente 3 de DIS.18 ([ADR 056](DECISIONS/056-la-casa-de-ahorro.md)): "Apartados" colisionaba con "apartar", el verbo genérico de ahorrar en toda la app. Ficha: [`contexto/apartados.md`](contexto/apartados.md).
@@ -34,6 +42,18 @@ Decisión de Esteban tras el triaje del hallazgo pendiente 3 de DIS.18 ([ADR 056
 - **Dos punteros vencidos retirados del tablero:** la iniciativa "Apartados v2" le asignaba a CAT.3 el "Otro con nombre+icono" y el paso de emoji a símbolo del sprite. CAT.2 ya resolvió los dos (`apartados/view.js:550-553` y `_iconoApartado()` en `:183-185`); el remanente es que `PLANTILLAS_APARTADO` sigue ofreciendo emoji en sus chips, que es consistencia visual de Apartados.
 
 Tarea de solo documentación: sin tocar `modules/`, sin tests ni lint que correr, sin bump del SW. Compuerta 3 (guion largo) en verde.
+
+---
+
+### feat(perf): PERF.8, columna arranque en el harness + CSS muerto · 2026-07-31
+
+Las dos mitades de la tarjeta, sin relación entre sí salvo que ambas eran deuda medida.
+
+- **`pnpm perf` no medía la mitad más caras del arranque.** El harness ya cronometraba `JSON.stringify(S)` y el `save()` real, o sea la escritura; el camino de vuelta (`JSON.parse` + las 28 migraciones + volcado a `S`) no se medía nunca. La nueva columna "arranque" corre `loadData()` sobre el mismo payload que `stringify` acaba de serializar, ya puesto en `localStorage` bajo la clave real: mide el costo que el usuario paga una sola vez al abrir la app.
+- **Es el dato que el [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) D4 exige** para disparar PERF.5 (IndexedDB) con evidencia en vez de intuición. Primera medición en happy-dom, mediana / p95: **0,6 / 0,8 ms** a 1.000 gastos, **2,6 / 2,8** a 5.000, **5,1 / 6,7** a 10.000. Crece lineal, como se esperaba, y hoy está lejos de justificar el rewrite: el disparador sigue siendo jank en dispositivo real, no esta cifra.
+- **Borrado CSS sin una sola referencia:** `.bento__cell--glass` (con su `backdrop-filter`, el único uso de `--fk-bg-glass` fuera de los tokens), `.skeleton` y `.spinner`. Al caer arrastran a `.spinner-lg` y a los `@keyframes spin` y `shimmer`, que quedaban huérfanos: 36 líneas de `atoms.css` y 6 de `layout.css`. El barril `components.css` deja de anunciar `.spinner` en su índice.
+
+Verificación: los 3.532 tests unitarios en verde, 246 E2E en verde y sellados, `pnpm perf` imprimiendo la columna nueva. Bump del SW a `finko-v459` porque el borrado toca CSS precacheado. El harness sigue fuera de `pnpm test`.
 
 ---
 

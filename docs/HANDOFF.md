@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-07-31. Última tarea cerrada: AH.7b, "Apartados" se renombra a "Reservas" en todo el copy visible.
+> Revisado: 2026-07-31. Última tarea cerrada: MC.13e-2d, cuota del periodo en las filas de ahorro, no el objetivo total.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 3525/3525 verdes |
-| Tests E2E | 246/246 verdes en las 12 suites (corrida completa el 2026-07-31). **Es compuerta** desde el 2026-07-30: el hook de pre-commit exige el sello de una corrida verde cuando el diff toca runtime |
+| Tests unitarios + integración | 3533/3533 verdes |
+| Tests E2E | 246/247 verdes (corrida del 2026-07-31). La falla es preexistente y no relacionada a MC.13e-2d: locator duplicado en `#hero-guia-saldo`, de un cambio de otra sesión sin commitear en `index.html`. **Es compuerta** desde el 2026-07-30: el hook de pre-commit exige el sello de una corrida verde cuando el diff toca runtime |
 | Schema version (`localStorage`) | v28 |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
