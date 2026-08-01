@@ -441,6 +441,8 @@
   background: var(--fk-bg-surface);
   border: 1px solid var(--fk-border-subtle);
   border-radius: var(--fk-radius-xl);
+  /* Nivel 1 "reposo" (DV.2a, ADR 033 D1), mismo criterio que .card. */
+  box-shadow: var(--fk-shadow-sm);
   padding: var(--fk-space-6);
   display: flex;
   flex-direction: column;

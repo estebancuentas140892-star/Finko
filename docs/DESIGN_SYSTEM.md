@@ -185,6 +185,16 @@ Reconocimiento visual inmediato de cada sección ([ADR 031](DECISIONS/031-identi
 - **Opacidad del fondo cuando lleva texto real encima (hallazgo IV.2a):** 12% + `-text` cae a 4.22-4.46:1 en tema claro para varios dominios (por debajo del 4.5:1 de WCAG 1.4.3). `.dom-badge--*` (texto real, no solo icono) usa 6% en vez de 12% (peor caso medido: 4.54:1). Regla: contenido de texto → ~6%; glifo/icono decorativo → 12-14% está bien.
 - El token base `--fk-dom-X` se reserva para acentos decorativos (bordes finos, franjas) que ya van acompañados de icono/etiqueta y por eso quedan exentos del umbral de contraste no textual (SC 1.4.11).
 
+### Degradado de identidad (`--fk-grad-identity`)
+
+DV.2a ([ADR 033](DECISIONS/033-direccion-visual-premium.md) D2) tokeniza el degradado que 6 heroes ya copiaban a mano: `linear-gradient(160deg, color-mix(in srgb, var(--fk-section-color) var(--fk-grad-identity-stop), transparent), transparent 55%)`. Fórmula fija (ángulo, orden de capas, corte en 55%); cada superficie declara localmente:
+
+- **`--fk-section-color`**: el token crudo de su dominio (`--fk-dom-X`), o `--fk-accent`/`--score-banda` en los dos heroes semánticos (`.hero-inicio`, `.score-hero`) que quedan fuera del mapeo `[data-dom]`.
+- **`--fk-grad-identity-stop`**: la parada, **medida por superficie y sin unificar** (divergencia 14-16% conservada a propósito: `.hero-inicio`/`.score-hero` 14%, `.hero-gastos` 15%, `.hero-tesoreria`/`.hero-compromisos`/`.hero-agenda` 16%). Subir una parada ya medida a un valor común invalidaría su contraste sin necesidad.
+- **`--fk-grad-identity`**: sí, otra vez, la línea completa de arriba. Limitación real de CSS (verificada en Chrome): un `var()` dentro del VALOR de una custom property se resuelve contra el elemento donde ESA property se declaró, no donde se consume. Declararla una sola vez en `:root` con `--fk-section-color`/`--fk-grad-identity-stop` adentro NO funciona para superficies que las redefinen: siempre leería el `:root`. La única forma que funciona en CSS puro es que las tres líneas vivan juntas, en el mismo selector, en cada superficie. `tokens.css` conserva la fórmula como referencia canónica, no como algo que se consuma con `var(--fk-grad-identity)` a secas.
+
+**Uso permitido:** heroes de sección y superficies grandes de identidad, empty states. Máximo 2 paradas (ADR 031 D6). CTA primarios, fondos de página y filas de lista siguen planos. Si hay texto encima, se mide contra la parada más fuerte con WCAG real; texto coloreado (`-text`) encima exige bajar esa parada a ~6-8%.
+
 **R6 · El acento no mide gasto** ([ADR 054](DECISIONS/054-el-acento-no-mide-gasto.md)): toda magnitud de gasto va en familia `--fk-dom-gastos` o en neutro; `--fk-accent` queda para dinero disponible, progreso y logro (principio 7). El chip que celebra una **bajada** sí va verde: es logro, no magnitud.
 
 **R44 · La paleta de categorías no habla de dirección:** ningún color con significado de dirección de dinero (el verde de la marca, el rojo de peligro) se usa como color de categoría en un gráfico de distribución. Una dona reparte, no juzga. Y los porcentajes de un reparto suman 100: se calculan por resto mayor sobre el conjunto, no con un redondeo independiente por segmento. Origen: `PALETA_CATEGORIAS` asignaba `#00dc82` al índice 0 y `#ef4444` al 3, así que la categoría con más gasto salía siempre en el verde de la marca y desde la cuarta siempre había una roja, dos bloques debajo de la card donde IV.3 y ANL.2c acababan de re-declarar que subir el gasto no se pinta de rojo (ADR 019). En el mismo ejemplo la columna de porcentajes sumaba 99.
@@ -240,16 +250,25 @@ Pesos: `--fk-font-light` (300) a `--fk-font-extrabold` (800). Altura de línea: 
 
 ## Sombras y elevación
 
-Elevación sutil, **sin glow neón** (el look "neón sobre negro" se retiró en el rediseño 2026).
+Elevación sutil, **sin glow neón** (el look "neón sobre negro" se retiró en el rediseño 2026). Escala semántica de 4 niveles (DV.2a, [ADR 033](DECISIONS/033-direccion-visual-premium.md) D1): cada superficie declara su nivel, no una sombra suelta.
+
+| Nivel | Nombre | Fondo | Borde | Sombra | Ejemplos |
+|---|---|---|---|---|---|
+| 0 | Lienzo | `--fk-bg-base` | no | no | fondo de página, secciones |
+| 1 | Reposo | `--fk-bg-surface` | `--fk-border-subtle` | `--fk-shadow-sm` | `.card`, `.bento__cell`, `.list-item` |
+| 2 | Realce | `--fk-bg-elevated` | `--fk-border-default` | `--fk-shadow-md` | hover de card, dropdowns |
+| 3 | Flotante | `--fk-bg-surface` | según pieza | `--fk-shadow-lg` | modales, toasts, sheets |
 
 | Token | Uso |
 |---|---|
-| `--fk-shadow-sm` | Cards sutiles, elevación mínima |
-| `--fk-shadow-md` | Cards en hover, dropdowns |
-| `--fk-shadow-lg` | Modales, overlays |
+| `--fk-shadow-sm` | Nivel 1, reposo |
+| `--fk-shadow-md` | Nivel 2, hover/dropdowns |
+| `--fk-shadow-lg` | Nivel 3, modales/overlays |
 | `--fk-shadow-glow` | Anillo de acento fino (1.5px de borde accent + sombra suave); **no** es glow luminoso |
 
-En modo claro las sombras van tintadas hacia azul-tinta (`rgba(26,32,60,...)`) en vez de gris sucio.
+**El cambio real es el nivel 1:** en oscuro los escalones de fondo (`-base` → `-surface` → `-elevated`) ya comunican profundidad, así que la sombra en reposo es un refuerzo sutil. En claro el borde 1px no alcanzaba solo: `-sm`/`-md` van tintados hacia azul-tinta (`rgba(26,32,60,...)`) y en **doble capa** (una nítida de contacto + una ambiental difusa, mismo tinte) desde `themes.css`. `-lg` no cambia (sigue siendo una sola capa). Doble capa sigue siendo una pintura única por elemento: `box-shadow` transiciona solo en hover/focus, nunca en keyframes.
+
+**Aire entre bloques (para las iniciativas v2):** separación entre bloques de una sección, `--fk-space-6` en móvil y `--fk-space-8` en escritorio. Es guía de composición para pantallas nuevas, no un cambio retroactivo del espaciado ya cerrado.
 
 ---
 

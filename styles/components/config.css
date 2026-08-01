@@ -710,9 +710,11 @@
   margin-block-end: var(--fk-space-5);
   border-radius: var(--fk-radius-xl);
   border: 1px solid color-mix(in srgb, var(--fk-dom-agenda) 30%, transparent);
-  background:
-    linear-gradient(160deg, color-mix(in srgb, var(--fk-dom-agenda) 16%, transparent), transparent 55%),
-    var(--fk-bg-surface);
+  /* Parada 16% ya medida (cierre de CAL.4a), no se re-mide. */
+  --fk-section-color: var(--fk-dom-agenda);
+  --fk-grad-identity-stop: 16%;
+  --fk-grad-identity: linear-gradient(160deg, color-mix(in srgb, var(--fk-section-color) var(--fk-grad-identity-stop), transparent), transparent 55%);
+  background: var(--fk-grad-identity), var(--fk-bg-surface);
   box-shadow: var(--fk-shadow-md);
   padding: var(--fk-space-6) var(--fk-space-5) var(--fk-space-5);
 }

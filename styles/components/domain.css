@@ -1077,6 +1077,7 @@ button.chip:focus-visible {
 .apartado-card__secundarias {
   display: flex;
   justify-content: flex-end;
+  gap: var(--fk-space-2);
 }
 
 .apartado-card__secundaria { color: var(--fk-text-muted); }
@@ -1433,9 +1434,12 @@ button.chip:focus-visible {
   gap: var(--fk-space-3);
   border-radius: var(--fk-radius-xl);
   border-color: var(--fk-accent-border);
-  background:
-    linear-gradient(160deg, color-mix(in srgb, var(--fk-accent) 14%, transparent), transparent 55%),
-    var(--fk-bg-surface);
+  /* Fuera del mapeo [data-dom] (D2 bis punto 3): usa --fk-accent, no un
+     dominio. Parada 14% ya medida (cierre de IN.8b), no se re-mide. */
+  --fk-section-color: var(--fk-accent);
+  --fk-grad-identity-stop: 14%;
+  --fk-grad-identity: linear-gradient(160deg, color-mix(in srgb, var(--fk-section-color) var(--fk-grad-identity-stop), transparent), transparent 55%);
+  background: var(--fk-grad-identity), var(--fk-bg-surface);
   box-shadow: var(--fk-shadow-md);
   padding: var(--fk-space-6) var(--fk-space-5) var(--fk-space-5);
 }
@@ -1629,9 +1633,11 @@ button.chip:focus-visible {
   margin-block-end: var(--fk-space-6);
   border-radius: var(--fk-radius-xl);
   border: 1px solid color-mix(in srgb, var(--fk-dom-tesoreria) 30%, transparent);
-  background:
-    linear-gradient(160deg, color-mix(in srgb, var(--fk-dom-tesoreria) 16%, transparent), transparent 55%),
-    var(--fk-bg-surface);
+  /* Parada 16% ya medida (cierre de MC.18a), no se re-mide. */
+  --fk-section-color: var(--fk-dom-tesoreria);
+  --fk-grad-identity-stop: 16%;
+  --fk-grad-identity: linear-gradient(160deg, color-mix(in srgb, var(--fk-section-color) var(--fk-grad-identity-stop), transparent), transparent 55%);
+  background: var(--fk-grad-identity), var(--fk-bg-surface);
   box-shadow: var(--fk-shadow-md);
   padding: var(--fk-space-6) var(--fk-space-5) var(--fk-space-5);
 }
@@ -1706,9 +1712,11 @@ button.chip:focus-visible {
   margin-block-end: var(--fk-space-6);
   border-radius: var(--fk-radius-xl);
   border: 1px solid color-mix(in srgb, var(--fk-dom-compromisos) 30%, transparent);
-  background:
-    linear-gradient(160deg, color-mix(in srgb, var(--fk-dom-compromisos) 16%, transparent), transparent 55%),
-    var(--fk-bg-surface);
+  /* Parada 16% ya medida (cierre de D.16a), no se re-mide. */
+  --fk-section-color: var(--fk-dom-compromisos);
+  --fk-grad-identity-stop: 16%;
+  --fk-grad-identity: linear-gradient(160deg, color-mix(in srgb, var(--fk-section-color) var(--fk-grad-identity-stop), transparent), transparent 55%);
+  background: var(--fk-grad-identity), var(--fk-bg-surface);
   box-shadow: var(--fk-shadow-md);
   padding: var(--fk-space-6) var(--fk-space-5) var(--fk-space-5);
 }
@@ -3588,9 +3596,11 @@ button.chip:focus-visible {
   margin-block-end: var(--fk-space-5);
   border-radius: var(--fk-radius-xl);
   border: 1px solid color-mix(in srgb, var(--fk-dom-gastos) 28%, transparent);
-  background:
-    linear-gradient(160deg, color-mix(in srgb, var(--fk-dom-gastos) 15%, transparent), transparent 55%),
-    var(--fk-bg-surface);
+  /* Parada 15% ya medida (método IV.1), no se re-mide. */
+  --fk-section-color: var(--fk-dom-gastos);
+  --fk-grad-identity-stop: 15%;
+  --fk-grad-identity: linear-gradient(160deg, color-mix(in srgb, var(--fk-section-color) var(--fk-grad-identity-stop), transparent), transparent 55%);
+  background: var(--fk-grad-identity), var(--fk-bg-surface);
   box-shadow: var(--fk-shadow-md);
   padding: var(--fk-space-4) var(--fk-space-5) var(--fk-space-5);
   text-align: center;

@@ -292,9 +292,12 @@
 .score-hero {
   border-radius: var(--fk-radius-xl);
   border: 1px solid color-mix(in srgb, var(--score-banda) 30%, transparent);
-  background:
-    linear-gradient(160deg, color-mix(in srgb, var(--score-banda) 14%, transparent), transparent 55%),
-    var(--fk-bg-surface);
+  /* Fuera del mapeo [data-dom] (D2 bis punto 3): el color es la banda del
+     score, no el dominio. Parada 14% ya medida, no se re-mide. */
+  --fk-section-color: var(--score-banda);
+  --fk-grad-identity-stop: 14%;
+  --fk-grad-identity: linear-gradient(160deg, color-mix(in srgb, var(--fk-section-color) var(--fk-grad-identity-stop), transparent), transparent 55%);
+  background: var(--fk-grad-identity), var(--fk-bg-surface);
   box-shadow: var(--fk-shadow-md);
   padding: var(--fk-space-5);
   display: flex;

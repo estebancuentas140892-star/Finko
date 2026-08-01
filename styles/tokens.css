@@ -230,6 +230,30 @@
   --fk-shadow-lg:   0 8px 32px rgba(4, 6, 12, 0.55);
   --fk-shadow-glow: 0 0 0 1.5px var(--fk-accent-border), 0 4px 20px rgba(4, 6, 12, 0.45);
 
+  /* ── DEGRADADO DE IDENTIDAD (DV.2a, ADR 033 D2) ─────────────────
+     Fórmula canónica, consolidada de las 6 superficies que la copiaban
+     a mano: ángulo, orden de capas y el corte final (`transparent 55%`)
+     son fijos. Cada superficie parametriza `--fk-section-color` (su
+     token crudo de dominio, o `--fk-accent`/`--score-banda` en los dos
+     heroes semánticos que quedan fuera del mapeo `[data-dom]`) y
+     `--fk-grad-identity-stop` (parada medida, 14-16% según superficie,
+     ver DESIGN_SYSTEM.md). Máximo 2 paradas (ADR 031 D6, sin multi-stop).
+
+     Limitación real de CSS: un `var()` dentro del VALOR de una custom
+     property se resuelve contra el elemento donde ESA property fue
+     declarada, no donde se consume (`--fk-grad-identity` aquí vive en
+     `:root`, así que `var(--fk-section-color)` dentro de ella siempre
+     leería el valor de `:root`, no el de la superficie). Por eso cada
+     consumidor REDECLARA esta misma línea en su propio selector, justo
+     debajo de sus dos variables locales; esta declaración en `:root`
+     queda como referencia canónica de la fórmula, no se usa via
+     `var(--fk-grad-identity)` directo. */
+  --fk-grad-identity: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--fk-section-color, transparent) var(--fk-grad-identity-stop, 14%), transparent),
+    transparent 55%
+  );
+
   /* ── Z-INDEX ─────────────────────────────────────────────────── */
   --fk-z-dropdown:      50;
   --fk-z-sidebar:       100;

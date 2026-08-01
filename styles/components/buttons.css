@@ -130,6 +130,10 @@
   background: var(--fk-bg-surface);
   border: 1px solid var(--fk-border-subtle);
   border-radius: var(--fk-radius-lg);
+  /* Nivel 1 "reposo" (DV.2a, ADR 033 D1): sutil en oscuro (los
+     escalones de fondo ya comunican profundidad ahí), protagonista en
+     claro (doble capa vía themes.css, el borde solo ya no alcanzaba). */
+  box-shadow: var(--fk-shadow-sm);
   padding: var(--fk-space-6);
   transition:
     border-color var(--fk-transition-base),

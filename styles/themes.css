@@ -76,9 +76,14 @@ body.light-theme {
   --fk-btn-primary-text:  #ffffff;
   --fk-btn-primary-hover: #005a33;
 
-  /* ── SOMBRAS (tintadas hacia el azul-tinta, menos "gris sucio") ── */
-  --fk-shadow-sm:   0 1px 3px rgba(26, 32, 60, 0.10);
-  --fk-shadow-md:   0 4px 16px rgba(26, 32, 60, 0.09);
+  /* ── SOMBRAS (tintadas hacia el azul-tinta, menos "gris sucio") ──
+     DV.2a (ADR 033 D1): en claro el borde 1px ya no alcanza para la
+     profundidad en reposo (hallazgo 2 del ADR), así que -sm/-md suben a
+     doble capa: una nítida de contacto + una ambiental difusa, mismo
+     tinte. Pintura única por elemento (sigue costando un solo paint),
+     -lg no cambia (ya es la escala flotante de modales/toasts). ── */
+  --fk-shadow-sm:   0 1px 2px rgba(26, 32, 60, 0.07), 0 3px 8px rgba(26, 32, 60, 0.05);
+  --fk-shadow-md:   0 2px 4px rgba(26, 32, 60, 0.06), 0 10px 24px rgba(26, 32, 60, 0.08);
   --fk-shadow-lg:   0 8px 32px rgba(26, 32, 60, 0.11);
   --fk-shadow-glow: 0 0 0 1.5px var(--fk-accent-border), 0 4px 20px rgba(26, 32, 60, 0.12);
 }
