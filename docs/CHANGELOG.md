@@ -10,6 +10,13 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(inicio): IN.9c, cierre documental de la columna propia del detalle por cuenta · 2026-08-01
+
+Tercera rebanada de **IN.9** ([ADR 057](DECISIONS/057-inicio-en-escritorio.md) D3). El código entró como colateral del commit `ab8c9a1` (CAT.3a) sin su propio cierre; esta entrada lo repara. Ficha: [`contexto/inicio.md`](contexto/inicio.md).
+
+- `#panel-cuentas-detalle`/`#cuentas-detalle-lista` (`index.html`) muestran el detalle por cuenta en una columna propia desde 1024px, y comparten `_filasCuentas()` (`render.js`) con el acordeón del hero, que a partir de ahora queda acotado a menos de 1024px (`_enEscritorio()`). La máscara de privacidad cubre las dos celdas juntas, extensión de IN.2 ya prevista en el ADR.
+- Tests y bump de SW ya estaban en `ab8c9a1` (v463): `smoke.test.js` (E2E, columna de escritorio) y `render.test.js` (unit). Sin cambios de código en este cierre.
+
 ### fix(test): BUG-022, BUG-023 y BUG-024, suites que se ponían rojas según el día del mes · 2026-08-01
 
 Encontrados al correr las compuertas de CAT.3a: **8 unitarios y 4 E2E rojos en HEAD**, verificados contra un stash completo del árbol. Ninguno es un defecto de la app: los tres son el **mismo patrón de fechas fijas** en los tests, que solo fallan los primeros días de cada mes.
