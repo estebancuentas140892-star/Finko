@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-01. Última tarea cerrada: AP.5, form v2 de Apartados (chips-cat + monto-hero) y recurrencia como toggle post-creación.
+> Revisado: 2026-08-01. Última tarea cerrada: MC.13e-2c, logo/ícono + nota por fila en el asistente de "Distribuir mi ingreso".
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 3561/3561 verdes |
-| Tests E2E | 246/246 verdes (corrida del 2026-08-01), 1 flaky que pasa al reintentar: la comparación de `boundingBox` del test IN.9c difiere en 1 px. **Es compuerta** desde el 2026-07-30: el hook de pre-commit exige el sello de una corrida verde cuando el diff toca runtime |
+| Tests unitarios + integración | 3577/3577 verdes |
+| Tests E2E | 253/253 verdes (corrida del 2026-08-01, sello del commit `c991da1`). **Es compuerta** desde el 2026-07-30: el hook de pre-commit exige el sello de una corrida verde cuando el diff toca runtime; el árbol compartido puede necesitar resellar si otra sesión edita en simultáneo |
 | Schema version (`localStorage`) | v31 (`seccion` en categoría personalizada, CAT.3a; migración backfill) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**MC.13e-2c - logo/ícono + nota por fila en el asistente, 2026-08-01**
+El grueso ya había entrado sin atribución en `132b0b5` (MC.13e-2d): iconos de marca, render de la nota, CSS de `.distribuir__saldo`. Lo pendiente era `Compromiso.nota`: solo existía para `tipo='fijo'` con categoría predefinida (AG.4); las deudas ganan el mismo campo opcional que Meta/Apartado. `.distribuir__nota` (usada sin regla propia desde `132b0b5`) gana estilo.
 
 **AP.5 - form v2 de Apartados y recurrencia como toggle, 2026-08-01**
 Cierre documental: el código entró como colateral del commit `ab8c9a1` (CAT.3a). El form de nuevo apartado adopta chips-cat + monto-hero (resuelve el conflicto del [ADR 042](DECISIONS/042-formularios-v2-visual.md) D9 a favor de los chips) y la pregunta de recurrencia sale del alta; se activa después con el botón "Hacer recurrente" que ya vivía en la tarjeta.
@@ -36,9 +39,6 @@ Cierra **MC.16 completa** y deja ejecutado el [ADR 051](DECISIONS/051-tarjeta-de
 
 **AH.7b - "Apartados" se renombra a "Reservas" en todo el copy visible, 2026-07-31**
 Decisión de Esteban tras el triaje del pendiente 3 de DIS.18 ([ADR 056](DECISIONS/056-la-casa-de-ahorro.md)): el nombre colisionaba con "apartar". Alcance acotado a copy (nav, título, botones, formularios, anuncios, banner de propósito y referencias cruzadas): el dominio interno, `S.apartados` e ids no cambian. AH.7 se partió en dos; **AH.7a** (Ahorro sube a la barra inferior, Calendario a "Más") sigue pendiente, requiere ADR nuevo por revertir el D1 del [ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md).
-
-**PERF.8 - columna "arranque" en el harness + limpieza de CSS muerto, 2026-07-31**
-El harness ya cronometraba la escritura (`stringify`, `save`) pero nunca el camino de vuelta. La columna nueva mide `loadData()` real (`JSON.parse` + las migraciones) sobre el mismo payload: **0,6 / 2,6 / 5,1 ms** de mediana a 1.000 / 5.000 / 10.000 gastos. Es el dato que el [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) D4 pedía para disparar PERF.5 con evidencia: crece lineal y **hoy no lo dispara**. De paso, 42 líneas de CSS sin una sola referencia (`.bento__cell--glass`, `.skeleton`, `.spinner` y sus keyframes huérfanos).
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 
