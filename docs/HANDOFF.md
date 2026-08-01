@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-01. Última tarea cerrada: MC.13e-2c, logo/ícono + nota por fila en el asistente de "Distribuir mi ingreso".
+> Revisado: 2026-08-01. Última tarea cerrada: IN.9d, Accesos rápidos en fila propia y Actividad reciente en la fila final 6+6 de escritorio.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -14,7 +14,7 @@
 | Métrica | Valor |
 |---|---|
 | Tests unitarios + integración | 3577/3577 verdes |
-| Tests E2E | 253/253 verdes (corrida del 2026-08-01, sello del commit `c991da1`). **Es compuerta** desde el 2026-07-30: el hook de pre-commit exige el sello de una corrida verde cuando el diff toca runtime; el árbol compartido puede necesitar resellar si otra sesión edita en simultáneo |
+| Tests E2E | 253/253 verdes (corrida del 2026-08-01, sello del commit `b265c01`). **Es compuerta** desde el 2026-07-30: el hook de pre-commit exige el sello de una corrida verde cuando el diff toca runtime; el árbol compartido puede necesitar resellar si otra sesión edita en simultáneo |
 | Schema version (`localStorage`) | v31 (`seccion` en categoría personalizada, CAT.3a; migración backfill) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**IN.9d - Accesos rápidos en fila propia, Resumen semanal y Actividad reciente en la fila final 6+6, 2026-08-01**
+Cuarta rebanada de IN.9 ([ADR 057](DECISIONS/057-inicio-en-escritorio.md) D4), cierra la iniciativa salvo IN.9e. La fusión de Accesos + Actividad (ADR 034 D7) queda acotada a móvil, mismo patrón que el acordeón de IN.9c: dos contenedores conviven en el DOM y `_repartoAccesosActividad()` (render.js) decide cuál se ve. `#panel-resumen` no se duplica, solo cambia de `--full` a `--half` y gana título propio.
 
 **MC.13e-2c - logo/ícono + nota por fila en el asistente, 2026-08-01**
 El grueso ya había entrado sin atribución en `132b0b5` (MC.13e-2d): iconos de marca, render de la nota, CSS de `.distribuir__saldo`. Lo pendiente era `Compromiso.nota`: solo existía para `tipo='fijo'` con categoría predefinida (AG.4); las deudas ganan el mismo campo opcional que Meta/Apartado. `.distribuir__nota` (usada sin regla propia desde `132b0b5`) gana estilo.
@@ -36,9 +39,6 @@ Primera de las cuatro rebanadas del [ADR 058](DECISIONS/058-categorias-personali
 
 **MC.16e - avisos de costo de la tarjeta de crédito, 2026-07-31**
 Cierra **MC.16 completa** y deja ejecutado el [ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md). Dos de los tres avisos del D7 no tenían dato que los disparara: se resuelven con **un solo campo** (`avanceTC`, bump v29 a v30) y el retiro en otra red entra en el texto del mismo aviso. El **pago mínimo se deriva** de `tasa` y saldo, no se captura (un mínimo tecleado queda viejo cada mes). Se sumó un cuarto aviso derivable, **el consumo que pasa del cupo**, que el tablero traía anotado desde MC.16b. Ninguno bloquea: informan el costo, no validan.
-
-**AH.7b - "Apartados" se renombra a "Reservas" en todo el copy visible, 2026-07-31**
-Decisión de Esteban tras el triaje del pendiente 3 de DIS.18 ([ADR 056](DECISIONS/056-la-casa-de-ahorro.md)): el nombre colisionaba con "apartar". Alcance acotado a copy (nav, título, botones, formularios, anuncios, banner de propósito y referencias cruzadas): el dominio interno, `S.apartados` e ids no cambian. AH.7 se partió en dos; **AH.7a** (Ahorro sube a la barra inferior, Calendario a "Más") sigue pendiente, requiere ADR nuevo por revertir el D1 del [ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md).
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 

@@ -10,6 +10,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(inicio): IN.9d, Accesos rápidos en fila propia, Resumen semanal y Actividad reciente en la fila final 6+6 · 2026-08-01
+
+Cuarta rebanada de **IN.9** ([ADR 057](DECISIONS/057-inicio-en-escritorio.md) D4), cierra la iniciativa salvo IN.9e. Ficha: [`contexto/inicio.md`](contexto/inicio.md).
+
+- **La fusión de Accesos rápidos + Actividad reciente (ADR 034 D7) queda acotada a móvil, igual que hizo IN.9c con el acordeón.** Mismo patrón: dos contenedores conviven en el DOM (`#accesos-actividad-movil` fusionado; `#panel-accesos-escritorio` span 4 en fila propia y `#panel-actividad-reciente-escritorio` span 6 junto a `#panel-resumen`), `_repartoAccesosActividad()` nuevo en `render.js` decide cuál se ve según el ancho (mismo umbral 1024px que `_enEscritorio()`). `accesos/view.js` y `movimientos/view.js` llenan las dos copias sin condicional; el reparto se llama después de los renders de dominio para no pisar el oculto por falta de movimientos que ya aplicó `movimientos/view.js`.
+- **`#panel-resumen` no se duplica:** es la misma celda en los dos anchos, pasa de `bento__cell--full` a `bento__cell--half` (CSS responsive ya la vuelve span 1 en móvil) y recupera un título propio (`renderPanelResumen()`) porque el grupo con label externo que lo describía ahora también tendría que describir Actividad reciente, que no comparte tema. El gráfico semanal recupera la proporción con la que se diseñó (R79: 49px por barra a span 6 contra 177px que daba el span 12 anterior).
+- **DOM = orden visual = orden de foco en los dos anchos, sin `order` de CSS** (mismo criterio que rechazó IN.9a D2 por WCAG 2.4.3): Accesos rápidos en fila propia se logra envolviendo su única celda en un `.bento__group` sin label (fuerza fila completa); Resumen y Actividad son celdas sueltas fuera de grupo, así el auto-flow del grid las empareja solas. En móvil, el grupo de Accesos y la celda de Actividad quedan `hidden` y el acordeón fusionado ocupa su lugar de siempre: el orden visible no cambia.
+- 9 tests unitarios nuevos (`accesos.test.js`, `movimientos.test.js`, `render.test.js`, `resumen.test.js`) + 2 E2E (fusión móvil confirmada intacta a 390px, fila final 6+6 medida a 1280px). La medición de posición espera 600ms: la entrada del bento anima cada celda con delay escalonado (layout.css) y dos celdas en índices distintos miden "y" en puntos distintos de su propio slide-in si no se espera a que asiente. 3577 unit + 253 E2E + lint verdes. SW v465 a v466.
+
 ### feat(tesoreria): MC.13e-2c, logo/ícono + nota por fila en el asistente · 2026-08-01
 
 El grueso (`_iconoDestino`/`_iconoNecesidad` con `bancoAvatar`/`resolverMarca`, render de `nota`, CSS de `.distribuir__saldo`) ya había entrado sin atribución en el commit `132b0b5` (MC.13e-2d). Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md).
