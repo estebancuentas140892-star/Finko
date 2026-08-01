@@ -8,7 +8,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
-## Mes corriente (2026-07)
+## Mes corriente (2026-08)
+
+### docs(apartados): AP.5, cierre documental del form v2 y la recurrencia como toggle · 2026-08-01
+
+El código entró como colateral del commit `ab8c9a1` (CAT.3a) sin su propio cierre; esta entrada lo repara. Ficha: [`contexto/apartados.md`](contexto/apartados.md).
+
+- **Form v2** (`renderFormApartado()`): plantillas migradas de `.chip` a `chips-cat`/`chip-cat`, monto objetivo a `monto-hero`, campo "Nota" nuevo, footer `modal__footer--principal`. Resuelve el conflicto abierto del [ADR 042](DECISIONS/042-formularios-v2-visual.md) D9 (dropdown vs. chips): ganan los chips, la convención ya escrita del lenguaje v2.
+- **Recurrencia fuera del registro inicial**: se retira el `<details>` "Este gasto se repite" (checkbox + `select` de periodo) del alta; se activa después con el botón "Hacer recurrente" que ya vivía en la tarjeta (`toggle-recurrente-apartado`).
+- Sin bump de schema ni tests nuevos: `normalizarApartado()`/`validarApartado()` ya toleraban `recurrente`/`periodoMeses` ausentes, y `apartados.test.js` (167 tests) ya cubría el toggle y la ausencia de los campos retirados.
 
 ### docs(inicio): IN.9c, cierre documental de la columna propia del detalle por cuenta · 2026-08-01
 

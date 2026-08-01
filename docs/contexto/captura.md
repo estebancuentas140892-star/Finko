@@ -22,7 +22,7 @@
 | Estado seleccionado de chips | `styles/components/forms.css` | `.chip-cat:has(.chip-cat__radio:checked)` | patrón calibrado D.16b (tinte 12% + borde 50% + texto primario); radio oculto DENTRO del label, foco vía `:has(:focus-visible)` |
 | Bloque de errores | `modules/infra/form-errors.js` | `mostrarErroresForm()` | sin cambios: su `.form-errors` ya coincide con la anatomía del mockup; la grilla de chips se marca vía `.chips-cat:has(.field-invalid)` |
 
-**Dependencias y relaciones**: consume `--fk-section-accent` (IV.2b/ADR 031) y el patrón de selección D.16b; convive con el selector de cuenta (`renderSelectorCuenta`, conservado a propósito, ADR 042 D3) y el picker de ícono CAT.2. **Conflicto abierto (ADR 042 D9):** AP.5 pedía dropdown de categoría para Apartados; decidir con Esteban al iniciarla.
+**Dependencias y relaciones**: consume `--fk-section-accent` (IV.2b/ADR 031) y el patrón de selección D.16b; convive con el selector de cuenta (`renderSelectorCuenta`, conservado a propósito, ADR 042 D3) y el picker de ícono CAT.2. **Conflicto de ADR 042 D9 resuelto (AP.5, 2026-08-01):** el brief de Apartados pedía dropdown de categoría; ganaron los chips por ser la convención ya escrita del lenguaje v2 (`renderFormApartado()`, ver [`apartados.md`](apartados.md)).
 
 **Riesgos**:
 

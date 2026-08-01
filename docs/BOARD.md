@@ -56,7 +56,6 @@ Las 56 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | MC.13e-2g | Rediseño en 2 pasos con educación financiera | Mis cuentas | media | última; depende del handoff de diseño |
 | MC.13c-3 | Datar el cobro de todas las frecuencias | Mis cuentas | baja | nada |
 | MC.17f | Deshacer o editar una transferencia | Mis cuentas | media | coordinar con MOV.1 |
-| AP.5 | Apartados v2: formulario consistente, recurrencia como toggle | Apartados | media | nada (CAT.1 cerró) |
 | MT.6 | Metas v2: subcategorías inteligentes + plan de aportes | Metas | media-alta | MC.13 (motor); ADR 029 D3 |
 | AH.5 | Fondo v2: rediseño UX educativo + aportes por distribución | Ahorro | media | motor de MC.13; rediseño conviene tras IV.2 |
 | LIM.1 | Límites v2: asistente preventivo de estilo de vida | Límites | sin definir | ADR 045 (base de cálculo); ADR 044 (sugerencias) |
@@ -202,21 +201,6 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 - Secciones  : Mis cuentas, Movimientos (rastro)
 - Depende de : coordinar con **MOV.1** (si el ledger gana acciones por fila, "deshacer transferencia" es una de ellas y no necesita UI propia en Mis cuentas)
 - Modelo     : Alta capacidad - Alto (dinero en dos cuentas + GMF; una reversa mal hecha descuadra el patrimonio)
-
----
-
-### Apartados (dominio `apartados`)
-
-> **Iniciativa "Apartados v2: colchón para gastos esporádicos"** (brief de Esteban del 2026-07-08, 6 puntos). El criterio Apartados vs Metas (un apartado es una obligación previsible, una meta es un deseo) es del [ADR 007](DECISIONS/007-dominio-apartados.md); su aplicación al catálogo, del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). **Derivados a fuentes únicas:** categorías que en realidad son Metas y picker de icono ya los resolvieron **CAT.1** y **CAT.2** (cerradas). **Dos punteros a CAT.3 retirados el 2026-07-31** al escribir el [ADR 058](DECISIONS/058-categorias-personalizadas-globales.md), que deja Apartados fuera de alcance con razón declarada: "Otro con nombre+icono" **ya existe** (nombre libre + picker de sprite, `apartados/view.js:550-553`) y el paso de emoji a símbolo **ya está resuelto para los apartados nuevos** (`_iconoApartado()` soporta los dos formatos, `apartados/view.js:183-185`). El remanente es que `PLANTILLAS_APARTADO` sigue ofreciendo emoji en sus chips: es consistencia visual de Apartados, no taxonomía de categorías.
-
-#### AP.5 - Apartados v2: formulario consistente, recurrencia como toggle
-- Prioridad  : media
-- Estado     : pendiente de análisis (no iniciar). **AP.5a cerrada** (ver CHANGELOG): el punto (6) del alcance original ya no es parte de esta tarjeta.
-- Objetivo   : (1) el form de nuevo apartado adopta el patrón estándar de captura. **Ojo (triaje 2026-07-15):** el brief pedía dropdown "Seleccionar categoría..." que autocompleta, pero el [ADR 042](DECISIONS/042-formularios-v2-visual.md) (Formularios v2, D9) fijó después los **chips de ícono** como lenguaje de la app; decidir con Esteban al iniciar (recomendación: chips, por consistencia); (4) la pregunta "¿este gasto se repite?" sale del registro inicial y pasa a ser un **toggle "Recurrente"** en el apartado ya creado (activa/desactiva la recurrencia v14 existente; el form inicial queda más simple).
-- Secciones  : Apartados
-- Archivos   : `modules/dominio/apartados/` (form, view, logic)
-- Depende de : nada. CAT.1 cerró, así que el catálogo de la filosofía redefinida ya está en `PLANTILLAS_APARTADO`
-- Modelo     : Equilibrado - Alto (re-corte en rebanadas al iniciar)
 
 ---
 
@@ -614,6 +598,7 @@ Se listan solo para que una idea nueva de estas secciones no vuelva a generar un
 | Movimientos | Ledger accionable, con búsqueda y filtros, completo. Los huecos que quedan son **MC.17f** (deshacer transferencia) y **EDIT.1** (editar donde el dominio dueño todavía no sabe) |
 | Deudas | Iniciativa "Deudas v2" completa ([ADR 036](DECISIONS/036-deudas-v2-visual.md)). Que un pago de deuda descuente de la cuenta ya existe desde el [ADR 002](DECISIONS/002-abono-deudas.md): si aparece un caso donde NO ocurra, es un bug para [`BUGS.md`](BUGS.md), no una feature |
 | Inversión | Sin pendientes propios. Su "editar sin destruir" es una rebanada de **EDIT.1**; su infraestructura compartida, **ARQ.1** |
+| Apartados | Iniciativa "Apartados v2" completa (**AP.5** cerrada, 2026-08-01). Editar un apartado es una rebanada de **EDIT.1**; el catálogo de plantillas queda fuera de **CAT.3** (razón en el [ADR 058](DECISIONS/058-categorias-personalizadas-globales.md)) |
 | Biblioteca gráfica e iconografía | Completas ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md), [025](DECISIONS/025-logotipos-de-marca-y-tejas.md), [026](DECISIONS/026-biblioteca-de-recursos-graficos.md), [027](DECISIONS/027-logos-de-marca-a-color-excepcion-monocromo.md)). La regla de fidelidad de los SVG que entrega Esteban y el costo de agregar un glifo viven en [`assets/svg/README.md`](../assets/svg/README.md). Lo único pendiente es **IV.4** |
 
 ---

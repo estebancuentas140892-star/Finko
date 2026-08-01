@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-01. Última tarea cerrada: CAT.3a, modelo de las categorías personalizadas globales (campo `seccion`, resolutora global, validador D4).
+> Revisado: 2026-08-01. Última tarea cerrada: AP.5, form v2 de Apartados (chips-cat + monto-hero) y recurrencia como toggle post-creación.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -25,6 +25,9 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**AP.5 - form v2 de Apartados y recurrencia como toggle, 2026-08-01**
+Cierre documental: el código entró como colateral del commit `ab8c9a1` (CAT.3a). El form de nuevo apartado adopta chips-cat + monto-hero (resuelve el conflicto del [ADR 042](DECISIONS/042-formularios-v2-visual.md) D9 a favor de los chips) y la pregunta de recurrencia sale del alta; se activa después con el botón "Hacer recurrente" que ya vivía en la tarjeta.
+
 **CAT.3a - modelo de las categorías personalizadas globales, 2026-08-01**
 Primera de las cuatro rebanadas del [ADR 058](DECISIONS/058-categorias-personalizadas-globales.md), sin cambio visible todavía: campo `seccion` (bump v30 a v31 con backfill), resolutora de ícono global sobre los dos catálogos nativos y validador que compara contra los dos. Las compuertas destaparon **8 unitarios y 4 E2E rojos en HEAD**, los tres del mismo patrón de fechas fijas en los tests (BUG-022, BUG-023, BUG-024): quedaron arreglados en el mismo commit y la suite vuelve a verde.
 
@@ -36,9 +39,6 @@ Decisión de Esteban tras el triaje del pendiente 3 de DIS.18 ([ADR 056](DECISIO
 
 **PERF.8 - columna "arranque" en el harness + limpieza de CSS muerto, 2026-07-31**
 El harness ya cronometraba la escritura (`stringify`, `save`) pero nunca el camino de vuelta. La columna nueva mide `loadData()` real (`JSON.parse` + las migraciones) sobre el mismo payload: **0,6 / 2,6 / 5,1 ms** de mediana a 1.000 / 5.000 / 10.000 gastos. Es el dato que el [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) D4 pedía para disparar PERF.5 con evidencia: crece lineal y **hoy no lo dispara**. De paso, 42 líneas de CSS sin una sola referencia (`.bento__cell--glass`, `.skeleton`, `.spinner` y sus keyframes huérfanos).
-
-**CAT.3 - modelo de las categorías personalizadas globales decidido, 2026-07-31**
-**[ADR 058](DECISIONS/058-categorias-personalizadas-globales.md)**, 5 decisiones sobre un mapeo del código: la sección es un **campo** del objeto (`seccion: 'gasto' | 'fijo'`, bump v29), ofrecer filtra por sección y resolver la ignora. El mapeo bajó el alcance de la tarjeta: gráficos, CSV y 8 de 9 filtros ya funcionan, y **no existe ningún mapa categoría-color** en el repo. **Defecto preexistente que entra:** 3 superficies ya pintan `c-otros` una personalizada de Gastos (`presupuesto/view.js:492`, `:742`, `resumen/view.js:119`). Cuatro rebanadas, ninguna iniciada.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 
