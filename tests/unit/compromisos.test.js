@@ -2506,19 +2506,28 @@ describe('renderPanelVencidos() - total al pie (IN.1)', () => {
 // ── renderPanelVencidos() - jerarquía sin línea roja (IN.8e, ADR 034 D5) ──
 
 describe('renderPanelVencidos() - jerarquía real sin línea roja (IN.8e, ADR 034 D5)', () => {
+  // Todo este bloque necesita un día YA PASADO dentro del mes en curso, y el
+  // mes en curso no siempre tiene uno: el día 1 no hay ningún día anterior, y
+  // `DIA_PASADO` (que envuelve a módulo 28) devuelve 27, o sea el futuro. El
+  // panel salía vacío y 6 tests fallaban los primeros días de cada mes. Se fija
+  // el reloj a mitad de mes, misma convención que ya usaban los dos tests de
+  // conteo exacto de días.
+  const HOY_FIJO = 15;
+  const PASADO_FIJO = 13;
+
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 6, HOY_FIJO)); // 15 julio 2026
     document.body.innerHTML = '<div id="panel-vencidos"></div>';
     S.compromisos = [];
   });
 
-  // Los dos tests de conteo exacto fijan el reloj; devolverlo acá evita que la
-  // fecha falsa se filtre a los tests que sí derivan su día del reloj real.
   afterEach(() => { vi.useRealTimers(); });
 
   it('el título ya no incluye el conteo; el número vive en el badge circular', () => {
     S.compromisos = [
-      compromisoBase({ id: 'c1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad', diaPago: DIA_PASADO }),
-      compromisoBase({ id: 'c2', descripcion: 'Netflix', tipo: 'fijo', diaPago: DIA_HOY }),
+      compromisoBase({ id: 'c1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad', diaPago: PASADO_FIJO }),
+      compromisoBase({ id: 'c2', descripcion: 'Netflix', tipo: 'fijo', diaPago: HOY_FIJO }),
     ];
     renderPanelVencidos();
     const html = document.getElementById('panel-vencidos').innerHTML;
@@ -2527,17 +2536,7 @@ describe('renderPanelVencidos() - jerarquía real sin línea roja (IN.8e, ADR 03
     expect(html).toMatch(/vencidos-card__counter[^>]*>2</);
   });
 
-  // Los dos tests que afirman un conteo EXACTO de días fijan el reloj en vez
-  // de derivar el día del reloj real (convención de `agenda.test.js`). Antes
-  // salían de `DIA_PASADO`/`DIA_HOY - 1`, que envuelven a módulo 28 para que el
-  // día exista en cualquier mes: eso mantiene el día válido pero **le cambia el
-  // offset** a fin de mes, y el offset es justo lo que se está afirmando. Con
-  // hoy = 30, "ayer" daba 1, o sea 29 días de atraso, y el test fallaba 2 o 3
-  // días de cada mes. El resto del archivo sigue usando `DIA_PASADO` sin
-  // problema: ahí solo hace falta "un día ya pasado", no una distancia exacta.
   it('un ítem vencido hace 2 días muestra "Venció hace 2 días" en danger y badge corto "Deuda"', () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 6, 15)); // 15 julio 2026
     S.compromisos = [
       compromisoBase({ id: 'c1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad', diaPago: 13 }),
     ];
@@ -2550,7 +2549,7 @@ describe('renderPanelVencidos() - jerarquía real sin línea roja (IN.8e, ADR 03
 
   it('un ítem que vence hoy muestra "Vence hoy" en warning y badge corto "Gasto fijo"', () => {
     S.compromisos = [
-      compromisoBase({ id: 'c1', descripcion: 'Netflix', tipo: 'fijo', diaPago: DIA_HOY }),
+      compromisoBase({ id: 'c1', descripcion: 'Netflix', tipo: 'fijo', diaPago: HOY_FIJO }),
     ];
     renderPanelVencidos();
     const html = document.getElementById('panel-vencidos').innerHTML;
@@ -2561,7 +2560,7 @@ describe('renderPanelVencidos() - jerarquía real sin línea roja (IN.8e, ADR 03
 
   it('una deuda personal también usa el badge corto "Deuda"', () => {
     S.compromisos = [
-      compromisoBase({ id: 'c1', descripcion: 'Préstamo primo', tipo: 'deuda-personal', diaPago: DIA_PASADO }),
+      compromisoBase({ id: 'c1', descripcion: 'Préstamo primo', tipo: 'deuda-personal', diaPago: PASADO_FIJO }),
     ];
     renderPanelVencidos();
     const html = document.getElementById('panel-vencidos').innerHTML;
@@ -2569,8 +2568,6 @@ describe('renderPanelVencidos() - jerarquía real sin línea roja (IN.8e, ADR 03
   });
 
   it('vencido hace 1 día dice "Venció ayer"', () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 6, 15)); // 15 julio 2026
     S.compromisos = [
       compromisoBase({ id: 'c1', descripcion: 'Arriendo', tipo: 'fijo', diaPago: 14 }),
     ];
@@ -2580,7 +2577,7 @@ describe('renderPanelVencidos() - jerarquía real sin línea roja (IN.8e, ADR 03
   });
 
   it('sin línea roja de alarma: la tarjeta no lleva border-left en su clase base', () => {
-    S.compromisos = [compromisoBase({ diaPago: DIA_PASADO })];
+    S.compromisos = [compromisoBase({ diaPago: PASADO_FIJO })];
     renderPanelVencidos();
     const html = document.getElementById('panel-vencidos').innerHTML;
     expect(html).not.toContain('vencidos-card__item--leve');
@@ -2589,7 +2586,7 @@ describe('renderPanelVencidos() - jerarquía real sin línea roja (IN.8e, ADR 03
   });
 
   it('"Ver calendario" lleva a #agenda (Calendario), no a #compromisos', () => {
-    S.compromisos = [compromisoBase({ diaPago: DIA_PASADO })];
+    S.compromisos = [compromisoBase({ diaPago: PASADO_FIJO })];
     renderPanelVencidos();
     const html = document.getElementById('panel-vencidos').innerHTML;
     expect(html).toContain('href="#agenda"');
@@ -2599,14 +2596,21 @@ describe('renderPanelVencidos() - jerarquía real sin línea roja (IN.8e, ADR 03
 });
 
 describe('renderPanelVencidos() - los que no caben se declaran, no se esconden', () => {
+  // Mismo motivo que el describe de arriba: el día 1 del mes no tiene ningún
+  // día anterior, así que el reloj se fija a mitad de mes para que "vencido"
+  // exista siempre.
   const vencidosN = n => Array.from({ length: n }, (_, i) => compromisoBase({
-    id: `c${i}`, descripcion: `Fijo ${i}`, monto: 10_000, diaPago: DIA_PASADO,
+    id: `c${i}`, descripcion: `Fijo ${i}`, monto: 10_000, diaPago: 13,
   }));
 
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 6, 15)); // 15 julio 2026
     document.body.innerHTML = '<div id="panel-vencidos"></div>';
     S.compromisos = [];
   });
+
+  afterEach(() => { vi.useRealTimers(); });
 
   it('con 4 o menos: todas las filas, sin fila "Ver los N"', () => {
     S.compromisos = vencidosN(4);

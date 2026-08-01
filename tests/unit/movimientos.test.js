@@ -93,13 +93,13 @@ describe('movimientosDesdeGastos()', () => {
   });
 
   it('resuelve el ícono de una categoría personalizada (TX.9b)', () => {
-    const personalizadas = [{ nombre: 'Gimnasio', icono: 'c-pesa' }];
-    const [m] = movimientosDesdeGastos([gasto({ categoria: 'Gimnasio' })], personalizadas);
+    const personalizadas = [{ nombre: 'Suplementos', icono: 'c-pesa' }];
+    const [m] = movimientosDesdeGastos([gasto({ categoria: 'Suplementos' })], personalizadas);
     expect(m.icono).toBe('c-pesa');
   });
 
   it('sin personalizadas (default []), una categoría desconocida sigue cayendo al genérico', () => {
-    const [m] = movimientosDesdeGastos([gasto({ categoria: 'Gimnasio' })]);
+    const [m] = movimientosDesdeGastos([gasto({ categoria: 'Suplementos' })]);
     expect(m.icono).toBe('i-gastos');
   });
 

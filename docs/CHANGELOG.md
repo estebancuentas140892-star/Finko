@@ -10,6 +10,35 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### fix(test): BUG-022, BUG-023 y BUG-024, suites que se ponían rojas según el día del mes · 2026-08-01
+
+Encontrados al correr las compuertas de CAT.3a: **8 unitarios y 4 E2E rojos en HEAD**, verificados contra un stash completo del árbol. Ninguno es un defecto de la app: los tres son el **mismo patrón de fechas fijas** en los tests, que solo fallan los primeros días de cada mes.
+
+- **BUG-022** (`renderPanelVencidos`, 6 tests): `DIA_PASADO` envuelve a módulo 28, así que el día 1 del mes devolvía 27, o sea el futuro. Sin vencidos, el panel salía vacío. Los dos describes fijan el reloj a mitad de mes, la convención que el propio archivo ya había adoptado para los tests de distancia exacta.
+- **BUG-023** (chip TX.12b, 1 unitario + 2 E2E): el unitario fijaba fechas de junio contra la ventana de 60 días que `renderFormGasto` mide con el reloj real. El E2E sembraba con `isoHaceNDias`, correcto, pero la lista de gastos muestra el **mes en curso** y el día 1 toda fecha "hace N días" cae en el mes anterior: se topa en el día 1.
+- **BUG-024** (gota del compromiso de ahorro): los aportes estaban fijos en julio y el medidor mide el mes en curso.
+- **Colateral real de CAT.3a, no rot:** el E2E de TX.9b creaba una personalizada llamada "Gimnasio", que con el D4 nuevo ahora colisiona con `CATEGORIAS_AGENDA`. Renombrada a "Suplementos", igual que los unitarios equivalentes.
+
+### feat(gastos): CAT.3a, modelo de categorías personalizadas globales · 2026-08-01
+
+Primera de cuatro rebanadas del [ADR 058](DECISIONS/058-categorias-personalizadas-globales.md). Sin cambio visible en la app todavía. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
+
+- **Campo `seccion` en `S.categoriasPersonalizadas`** (D1): `'gasto' | 'fijo'`, backfill `'gasto'` en las existentes (bump de schema v30 a v31, migración idempotente).
+- **Resolutora global de ícono** (D2): `iconoDeCategoriaGasto()` ahora también resuelve contra `CATEGORIA_AGENDA_ICONO`, no solo `CATEGORIA_ICONO`, antes de caer a la personalizada o al genérico `i-gastos`. Ignora la `seccion` a propósito: una superficie que pinta un movimiento no sabe, y no debe saber, de qué formulario salió el nombre.
+- **`validarCategoriaPersonalizada` compara contra los dos catálogos nativos** (D4): `CATEGORIAS_GASTO` y `CATEGORIAS_AGENDA`. El nombre es único en toda la app, no por sección.
+- El formulario de gasto sigue siendo la única fuente de personalizadas hasta CAT.3c: `gastos/index.js` estampa `seccion: 'gasto'` al crear.
+
+### feat(gastos): MC.16e, avisos de costo de la tarjeta de crédito · 2026-07-31
+
+Cierra **MC.16** y el [ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md) completo (D7, la última rebanada). Ficha: [`contexto/deudas.md`](contexto/deudas.md).
+
+- **Dos de los tres avisos del D7 no tenían dato que los disparara.** El avance en efectivo y el retiro en otra red no existen en el modelo y no se deducen de nada: la categoría del gasto no lo dice. Se resuelven con **un solo campo** (`avanceTC`, checkbox visible solo con origen tarjeta) y el retiro en otra red **entra en el texto del mismo aviso**, no como segundo campo: es un costo del mismo hecho, y un campo más era vocabulario nuevo sin información nueva.
+- **El pago mínimo se deriva, no se captura** (decisión de Esteban). Un campo `pagoMinimo` cambia cada mes y queda viejo; "lo que no pagues genera intereses" vale para cualquier abono que no cubra el saldo. El aviso vive en `_actualizarTipProyeccion`, que ya existía con mensajes priorizados: se le inserta una rama para tarjetas **antes** de "terminas N meses antes", porque proyectar meses sobre un saldo revolvente engaña. Con `tasa` registrada trae el monto del interés; sin ella explica el mecanismo y **nunca inventa una cifra**.
+- **Cuarto aviso: el consumo que se pasa del cupo**, candidato que el tablero traía anotado desde MC.16b. Es 100 % derivable (`excesoDeCupo`), no pide dato nuevo y tapa un borde mudo: hoy el consumo entra igual y el disponible queda en "$0" sin decir nada. No bloquea el registro, porque quien aprueba es el banco.
+- **Al editar, el monto anterior vuelve al cupo antes de comparar** (`montoPrevio`): sin eso, subir $1.000 a un consumo viejo parecería ocupar el monto entero otra vez.
+- **`tasaMensualDecimal` sale de `detectarDeudaCreciente`** en vez de duplicar la conversión EA a mensual. Gastos no la usa: su aviso explica el mecanismo del avance sin cifras, así que no necesita la tasa y no cruza dominios (ADN 10).
+- Bump de schema v29 a v30, migración no-op (precedente v27 a v28). SW v461 a v462.
+
 ### fix(tesoreria): MC.13e-2d, cuota del periodo en las filas de ahorro, no el objetivo total · 2026-07-31
 
 `construirDesgloseAhorroPorObjetivo` (panel "Distribuir mi ingreso") calculaba siempre un aporte MENSUAL con un helper local (`_aporteMensualObjetivo`), aunque `budgetAhorro` ya es el presupuesto de ESTE cobro (BUG-2, no el mes). Un usuario quincenal veia una fila de ahorro que no cuadraba con el resto del panel.

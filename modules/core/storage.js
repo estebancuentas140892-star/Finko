@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 28;
+const SCHEMA_VERSION = 31;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -440,6 +440,34 @@ function _migrate(raw) {
   // backfill posible: no hay cupo que inventar para deudas ya guardadas, y
   // ningún gasto anterior se pagó con una tarjeta que no existía. Migración
   // intencionalmente no-op, mismo precedente de v26 → v27.
+
+  // v28 → v29: `nota` opcional en Meta y Apartado (MC.13e-2c), texto libre que
+  // el asistente de distribución muestra junto al destino. Sin backfill: no
+  // hay nota que inventar para una meta o apartado ya guardado; `undefined` se
+  // trata como "sin nota" en toda la app. Migración intencionalmente no-op,
+  // mismo precedente de v26 → v27 y v27 → v28.
+
+  // v29 → v30: `avanceTC` en Gasto (MC.16e, ADR 051 D7), la marca de "avance en
+  // efectivo" que dispara el aviso de costo. Opcional y `undefined`-safe: un
+  // consumo ya guardado sin la marca se trata como compra, que es lo que era.
+  // Sin backfill posible (nada en el gasto distingue un avance de una compra) y
+  // sin efecto en cálculos. Migración intencionalmente no-op, mismo precedente
+  // de v27 → v28 y v28 → v29.
+
+  // v30 → v31: `seccion` en categoría personalizada (CAT.3a, ADR 058 D1), que
+  // extiende TX.9b a Gastos fijos. Las personalizadas existentes son todas de
+  // Gastos (la única sección que las creaba hasta ahora): se backfillea
+  // `seccion: 'gasto'`. Idempotente: si el campo ya está presente, no se
+  // sobreescribe.
+  if ((typeof data._version === 'number' ? data._version : 1) < 31) {
+    if (Array.isArray(data.categoriasPersonalizadas)) {
+      for (const c of data.categoriasPersonalizadas) {
+        if (c && typeof c === 'object' && !('seccion' in c)) {
+          c.seccion = 'gasto';
+        }
+      }
+    }
+  }
 
   if (typeof data._version !== 'number' || data._version < SCHEMA_VERSION) {
     data._version = SCHEMA_VERSION;

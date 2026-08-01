@@ -56,7 +56,10 @@ export function renderFormAbono(deuda) {
   return `
     <form id="form-abono" novalidate
           data-saldo="${saldo}"
-          data-cuota="${cuota}">
+          data-cuota="${cuota}"
+          data-tarjeta="${(Number(deuda.cupoTotal) || 0) > 0 ? '1' : ''}"
+          data-tasa="${deuda.tasa ?? ''}"
+          data-tasa-unidad="${_esc(deuda.tasaUnidad ?? '')}">
       <input type="hidden" name="compromisoId" value="${_esc(deuda.id)}" />
 
       <p class="form-hint form-hint--muted">

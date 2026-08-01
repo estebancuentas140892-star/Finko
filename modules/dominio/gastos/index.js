@@ -24,7 +24,7 @@ import { wireIconoPicker } from '../../infra/icon-picker.js';
 import {
   validarGasto, normalizarGasto,
   deltasPorEdicionDeGasto, deltasPorEdicionEnDeuda, deltasPorEdicionEnCuotaMensual,
-  validarCategoriaPersonalizada,
+  validarCategoriaPersonalizada, excesoDeCupo,
 } from './logic.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { renderListaGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, irAMesActual, ayerIso, CATEGORIA_NUEVA_VALUE } from './view.js';
@@ -80,8 +80,9 @@ async function _guardarGasto() {
   // pasa a ser su nombre, exactamente como si el usuario hubiera elegido una nativa.
   if (esCategoriaNueva) {
     const nueva = guardar('categoriasPersonalizadas', {
-      nombre: datos.categoriaNuevaNombre.trim(),
-      icono:  datos.categoriaNuevaIcono,
+      nombre:  datos.categoriaNuevaNombre.trim(),
+      icono:   datos.categoriaNuevaIcono,
+      seccion: 'gasto',
     });
     datos.categoria = nueva.nombre;
   }
@@ -226,6 +227,16 @@ function _editarGasto(el) {
   if (grupoCuotas) grupoCuotas.hidden = !gasto.consumoTC;
   const radioCuotas = form.querySelector(`input[name="cuotas"][value="${gasto.cuotas || 1}"]`);
   if (radioCuotas) radioCuotas.checked = true;
+
+  // MC.16e: misma razón que las cuotas, el `checked` programático no dispara
+  // 'change'. La marca de avance y su aviso de costo se ajustan a mano.
+  const grupoAvance = form.querySelector('#grupo-gasto-avance');
+  if (grupoAvance) grupoAvance.hidden = !gasto.consumoTC;
+  const avanceCheck = form.querySelector('[name="avanceTC"]');
+  if (avanceCheck) avanceCheck.checked = gasto.avanceTC === true;
+  const avanceNudge = form.querySelector('#gasto-avance-nudge');
+  if (avanceNudge) avanceNudge.hidden = gasto.avanceTC !== true;
+  _actualizarNudgeSobrecupo();
 
   const titulo = overlay.querySelector('.modal__title');
   if (titulo) titulo.textContent = 'Editar gasto';
@@ -526,6 +537,8 @@ function _montarFormGasto(opciones = {}) {
   const fechaInput  = form.querySelector('#gasto-fecha');
   const fechaOtra   = form.querySelector('#gasto-fecha-otra');
   const grupoCuotas = form.querySelector('#grupo-gasto-cuotas');
+  const grupoAvance = form.querySelector('#grupo-gasto-avance');
+  const avanceNudge = form.querySelector('#gasto-avance-nudge');
   form.addEventListener('change', (e) => {
     const t = e.target;
     // TX.9b: el chip "Otra categoría" revela nombre + selector de ícono en el
@@ -548,10 +561,68 @@ function _montarFormGasto(opciones = {}) {
     if (t.name === 'cuentaId' && grupoCuotas) {
       grupoCuotas.hidden = !t.value.startsWith(TARJETA_PREFIJO);
     }
+    // MC.16e (ADR 051 D7): "fue un avance" solo aplica con tarjeta, igual que
+    // las cuotas. Cambiar a una cuenta limpia la marca y su aviso: si no queda
+    // limpia, `normalizarGasto` la descartaría igual y el usuario vería un
+    // check activo que no se guarda.
+    if (t.name === 'cuentaId' && grupoAvance) {
+      const esTarjeta = t.value.startsWith(TARJETA_PREFIJO);
+      grupoAvance.hidden = !esTarjeta;
+      if (!esTarjeta) {
+        const check = form.querySelector('[name="avanceTC"]');
+        if (check) check.checked = false;
+        if (avanceNudge) avanceNudge.hidden = true;
+      }
+    }
+    if (t.name === 'avanceTC' && avanceNudge) {
+      avanceNudge.hidden = !t.checked;
+    }
+    if (t.name === 'cuentaId') _actualizarNudgeSobrecupo();
+  });
+
+  // El aviso de sobrecupo depende del monto que se está escribiendo, así que
+  // escucha 'input' y no solo 'change' (mismo patrón que el tip del abono).
+  form.addEventListener('input', (e) => {
+    if (e.target.name === 'monto') _actualizarNudgeSobrecupo();
   });
 
   // CAT.2: selector compacto de ícono (recuadro + panel colapsable).
   wireIconoPicker(form.querySelector('[data-icono-picker="categoria-nueva-icono"]'));
+}
+
+/**
+ * MC.16e (ADR 051 D7): aviso de que el consumo pasa del cupo de la tarjeta,
+ * antes de guardarlo. Hoy el consumo entra igual y el disponible queda en "$0"
+ * sin decir nada. El aviso explica el costo y no bloquea: el banco es quien
+ * aprueba o rechaza, y Finko no puede saberlo (ADR 003, ADN 11).
+ *
+ * Se apaga solo cuando el origen no es una tarjeta o el monto todavía no es
+ * válido, así que puede llamarse en cualquier momento del formulario.
+ */
+function _actualizarNudgeSobrecupo() {
+  const form = document.getElementById('form-gasto');
+  const el   = form?.querySelector('#gasto-sobrecupo-nudge');
+  if (!form || !el) return;
+
+  const apagar = () => { el.textContent = ''; el.hidden = true; };
+
+  const origen = form.querySelector('input[name="cuentaId"]:checked')?.value ?? '';
+  const monto  = Number(form.querySelector('[name="monto"]')?.value);
+  if (!origen.startsWith(TARJETA_PREFIJO) || !(monto > 0)) return apagar();
+
+  const tarjetaId = origen.slice(TARJETA_PREFIJO.length);
+  const tarjeta   = (S.compromisos ?? []).find(c => c.id === tarjetaId);
+
+  // En edición, el saldo de la tarjeta ya carga el consumo que se está
+  // editando: sin devolverlo al cupo, cualquier cambio parecería ocuparlo dos veces.
+  const anterior = form.dataset.id ? (S.gastos ?? []).find(g => g.id === form.dataset.id) : null;
+  const previo   = (anterior?.consumoTC && anterior.compromisoId === tarjetaId) ? Number(anterior.monto) || 0 : 0;
+
+  const hallazgo = excesoDeCupo(tarjeta, monto, previo);
+  if (!hallazgo) return apagar();
+
+  el.textContent = `Este consumo pasa del cupo en ${f(hallazgo.exceso)}: te quedan ${f(hallazgo.disponible)} disponibles. Puedes registrarlo, pero tu banco decide si lo aprueba y suele cobrar por pasarse del cupo.`;
+  el.hidden = false;
 }
 
 export function initGastos() {

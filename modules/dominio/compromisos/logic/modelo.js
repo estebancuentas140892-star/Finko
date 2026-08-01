@@ -339,6 +339,22 @@ export function validarCompromiso(datos) {
 }
 
 /**
+ * Tasa mensual en decimal a partir de la tasa registrada en la deuda, que se
+ * guarda en % y con su unidad ('EA' anual de banco/tarjeta, o 'mensual' del
+ * préstamo personal). Devuelve 0 cuando no hay tasa con la que calcular.
+ *
+ * @param {number|string} tasaPct   tasa en %, como la teclea el usuario.
+ * @param {string} [tasaUnidad]     'EA' | 'mensual'.
+ * @returns {number} decimal mensual (0.02 = 2% mensual).
+ */
+export function tasaMensualDecimal(tasaPct, tasaUnidad) {
+  const pct = Number(tasaPct);
+  if (!(pct > 0)) return 0;
+  const decimal = pct / 100;
+  return tasaUnidad === 'mensual' ? decimal : Math.pow(1 + decimal, 1 / 12) - 1;
+}
+
+/**
  * Detecta si la cuota declarada no cubre el interés mensual del crédito.
  * Si cuotaMensual <= interés mensual, la deuda crece (nunca baja) o se mantiene.
  *
@@ -359,12 +375,7 @@ export function detectarDeudaCreciente(datos) {
 
   if (!(cuota > 0) || !(saldo > 0) || !(tasaPct > 0)) return null;
 
-  const tasaDecimal  = tasaPct / 100;
-  const tasaMensual  = datos.tasaUnidad === 'mensual'
-    ? tasaDecimal
-    : Math.pow(1 + tasaDecimal, 1 / 12) - 1;
-
-  const interesMensual = saldo * tasaMensual;
+  const interesMensual = saldo * tasaMensualDecimal(tasaPct, datos.tasaUnidad);
   if (cuota <= interesMensual) {
     return {
       interesMensual,

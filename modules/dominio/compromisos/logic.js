@@ -35,6 +35,7 @@ export {
   nivelAlertaMora,
   validarCompromiso,
   detectarDeudaCreciente,
+  tasaMensualDecimal,
   normalizarCompromiso,
 } from './logic/modelo.js';
 

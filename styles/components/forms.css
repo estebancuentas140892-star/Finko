@@ -786,6 +786,11 @@ textarea.input {
   --fk-icon-size: var(--fk-icon-md);
   color: var(--fk-text-secondary);
 }
+/* AP.5b: plantillas de reserva usan emoji curado, no el sprite de íconos. */
+.chip-cat__icono {
+  font-size: var(--fk-text-xl);
+  line-height: 1;
+}
 .chip-cat__label {
   font-size: var(--fk-text-xs);
   font-weight: var(--fk-font-medium);

@@ -5,7 +5,7 @@
 
 import { S } from '../../core/state.js';
 import { f, fechaLegible, hoy, esc as _esc } from '../../infra/utils.js';
-import { iconoCategoria, emptyArt } from '../../infra/icons.js';
+import { iconoCategoria, emptyArt, icon } from '../../infra/icons.js';
 import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
@@ -25,7 +25,6 @@ import {
   FRECUENCIAS_APORTE,
   PLANTILLAS_APARTADO,
   PLANTILLAS_APARTADO_FRECUENTES,
-  PERIODOS_RECURRENCIA,
   PERIODO_RECURRENCIA_DEFAULT,
   ICONO_APARTADO_DEFAULT,
 } from './logic.js';
@@ -255,6 +254,12 @@ function _renderApartadoCard(apartado, oculto = false) {
       <div class="apartado-card__acciones">
         ${_renderAccionPrincipal({ nombre, id, listo, completado, enCero, sugerido, oculto })}
         <div class="apartado-card__secundarias">
+          <button class="btn btn-ghost btn-sm apartado-card__secundaria"
+                  type="button"
+                  data-action="toggle-recurrente-apartado"
+                  data-id="${id}"
+                  aria-pressed="${apartado.recurrente === true ? 'true' : 'false'}"
+                  aria-label="${apartado.recurrente === true ? 'Desactivar' : 'Activar'} recurrencia de ${nombre}">${apartado.recurrente === true ? 'Recurrente' : 'Hacer recurrente'}</button>
           <button class="btn btn-ghost btn-sm apartado-card__secundaria"
                   type="button"
                   data-action="eliminar-apartado"
@@ -509,11 +514,16 @@ function _renderNudgeProximos(proximos, oculto = false) {
  */
 export function renderFormApartado(frecuenciaPreferida = 'Mensual') {
   // T4 (A8): las 6 frecuentes a la vista, las otras 14 plegadas.
+  // AP.5b (ADR 042 D9): lenguaje de chips-cat compartido en vez del `.chip`
+  // pildora suelto. No son radios: el nombre sigue siendo texto libre debajo
+  // (no hay un valor final fijo que "quede marcado"), la plantilla solo
+  // prellena nombre + icono, igual que antes.
   const chip = (p) => `
-      <button type="button" class="chip"
+      <button type="button" class="chip-cat"
               data-action="apartado-plantilla"
               data-nombre="${_esc(p.nombre)}" data-icono="${_esc(p.icono)}">
-        ${_esc(p.icono)} ${_esc(p.nombre)}
+        <span class="chip-cat__icono" aria-hidden="true">${_esc(p.icono)}</span>
+        <span class="chip-cat__label">${_esc(p.nombre)}</span>
       </button>`;
 
   const frecuentes = PLANTILLAS_APARTADO.filter(p => PLANTILLAS_APARTADO_FRECUENTES.includes(p.nombre));
@@ -524,7 +534,7 @@ export function renderFormApartado(frecuenciaPreferida = 'Mensual') {
       <details class="form-details">
         <summary class="form-details__summary">Ver las otras ${resto.length} plantillas</summary>
         <div class="form-details__body">
-          <div class="apartado-plantillas" role="group" aria-label="Más plantillas de reserva">
+          <div class="chips-cat" role="group" aria-label="Más plantillas de reserva">
             ${resto.map(chip).join('')}
           </div>
         </div>
@@ -534,14 +544,10 @@ export function renderFormApartado(frecuenciaPreferida = 'Mensual') {
     .map(fr => `<option value="${_esc(fr)}"${fr === frecuenciaPreferida ? ' selected' : ''}>${_esc(fr)}</option>`)
     .join('');
 
-  const periodoOpts = PERIODOS_RECURRENCIA
-    .map(p => `<option value="${p.meses}"${p.meses === PERIODO_RECURRENCIA_DEFAULT ? ' selected' : ''}>${_esc(p.etiqueta)}</option>`)
-    .join('');
-
   return `
     <form id="form-apartado" novalidate>
       <p class="form-hint form-hint--muted">¿Para qué gasto quieres prepararte? Toca uno o escribe el tuyo.</p>
-      <div class="apartado-plantillas apartado-plantillas--parcial" role="group" aria-label="Plantillas de reserva">
+      <div class="chips-cat" role="group" aria-label="Plantillas de reserva">
         ${plantillasHtml}
       </div>
       ${restoHtml}
@@ -554,11 +560,15 @@ export function renderFormApartado(frecuenciaPreferida = 'Mensual') {
                  placeholder="Ej. SOAT, Productos personales" required aria-required="true" autocomplete="off" />
         </div>
       </div>
-      <div class="form-group">
-        <label for="apartado-objetivo" class="label">¿Cuánto necesitas reunir?</label>
-        <input id="apartado-objetivo" name="montoObjetivo" class="input" type="text"
-               placeholder="0" required aria-required="true"
-               inputmode="numeric" autocomplete="off" data-miles />
+      <div class="monto-hero">
+        <label class="monto-hero__label" for="apartado-objetivo">¿Cuánto necesitas reunir?</label>
+        <div class="monto-hero__box">
+          <span class="monto-hero__prefijo" aria-hidden="true">$</span>
+          <input id="apartado-objetivo" name="montoObjetivo" class="input input--big-amount" type="text"
+                 placeholder="0" required aria-required="true"
+                 inputmode="numeric" autocomplete="off" data-miles />
+        </div>
+        <span class="monto-hero__hint">COP</span>
       </div>
       <div class="form-group">
         <label for="apartado-fecha" class="label">¿Para cuándo lo necesitas? (opcional)</label>
@@ -572,32 +582,20 @@ export function renderFormApartado(frecuenciaPreferida = 'Mensual') {
         <p class="form-hint">Elige según la frecuencia con que recibes tu pago. Finko calcula cuánto separar en cada cobro.</p>
       </div>
 
-      <details class="form-details">
-        <summary class="form-details__summary">Este gasto se repite (SOAT, impuestos, matrícula...)</summary>
-        <div class="form-details__body">
-          <div class="form-group form-group--checkbox">
-            <label class="checkbox-row">
-              <input id="apartado-recurrente" name="recurrente" type="checkbox" />
-              <span>Activar recurrencia</span>
-            </label>
-          </div>
-          <div class="form-group" id="apartado-periodo-group" hidden>
-            <label for="apartado-periodo" class="label">¿Cada cuánto tiempo se repite?</label>
-            <select id="apartado-periodo" name="periodoMeses" class="input">
-              ${periodoOpts}
-            </select>
-            <p class="form-hint">Cuando marques "Ya lo usé", la reserva arranca de cero para la próxima vez.</p>
-          </div>
-        </div>
-      </details>
-
       <p id="apartado-sugerencia-live" class="form-hint form-hint--muted" aria-live="polite">
         Ponle un monto y una fecha para ver cuánto separar en cada pago.
       </p>
 
-      <div class="modal__footer">
+      <div class="form-group">
+        <label for="apartado-nota" class="label">Nota (opcional)</label>
+        <input id="apartado-nota" name="nota" class="input" type="text" maxlength="80"
+               placeholder="Ej. Póliza vence en marzo, aseguradora Sura" />
+        <p class="form-hint">Se muestra junto al apartado en el asistente de "Distribuir mi ingreso".</p>
+      </div>
+
+      <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Crear reserva</button>
+        <button type="submit" class="btn btn-primary">${icon('check-circle')} Crear reserva</button>
       </div>
     </form>`;
 }

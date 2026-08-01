@@ -92,8 +92,8 @@ Fuera de esas dos, la iniciativa "Deudas v2: de registro a asesor" (brief 2026-0
 ## Tarjeta de crédito ([ADR 051](../DECISIONS/051-tarjeta-de-credito-producto-integrado.md), iniciativa MC.16)
 
 - **Objetivo**          : la tarjeta es un producto de Deudas, no una `Cuenta`: cupo más deuda, nunca dinero disponible. `cupoTotal` es el único campo nuevo del modelo (D1) y el `disponible` se deriva, nunca se almacena.
-- **Estado actual**     : **MC.16a, MC.16b, MC.16c y MC.16d CERRADAS (2026-07-30)**, cuatro de cinco rebanadas. La tarjeta ya es operable de punta a punta: se registra con cupo, se paga con ella (el consumo sube el saldo), ahora también difiere a cuotas (sube `cuotaMensual` automáticamente) y se ve en su propio bloque de Mis cuentas. Solo queda abierta MC.16e en [BOARD.md](../BOARD.md). Con MC.16b en producción, `consumosTC` del monitor de renta deja de ser captura manual (CFG.2a).
-- **Verificado contra** : MC.16d (2026-07-30).
+- **Estado actual**     : **MC.16 CERRADA (2026-07-31)**, las cinco rebanadas. La tarjeta es operable de punta a punta: se registra con cupo, se paga con ella (el consumo sube el saldo), difiere a cuotas (sube `cuotaMensual` automáticamente), se ve en su propio bloque de Mis cuentas y avisa su costo en cuatro situaciones (MC.16e). El [ADR 051](../DECISIONS/051-tarjeta-de-credito-producto-integrado.md) queda ejecutado completo. Con MC.16b en producción, `consumosTC` del monitor de renta deja de ser captura manual (CFG.2a).
+- **Verificado contra** : MC.16e (2026-07-31).
 
 **`cupoTotal` es dato y discriminador a la vez** (misma economía que `esCuotaManejo`): una deuda con `categoria: 'Tarjeta de crédito'` **con** `cupoTotal` es una tarjeta operable (recibe consumos, muestra disponible); **sin** `cupoTotal` es una deuda vieja capturada a posteriori y se comporta como cualquier otra. No hay campo `esTarjeta` ni bandera paralela.
 
@@ -118,10 +118,16 @@ Fuera de esas dos, la iniciativa "Deudas v2: de registro a asesor" (brief 2026-0
 | Revelado del campo (delegado en `change` de `cuentaId`) | `gastos/index.js`, listener de `_montarFormGasto` |
 | Aporte del consumo a `cuotaMensual` (`monto / cuotas`, redondeado) | `gastos/logic.js`, `efectoEnCuotaMensual` + `deltasPorEdicionEnCuotaMensual` |
 | Escritura de `cuotaMensual` | `gastos/index.js`, `_aplicarDeltasACuotaMensual` sobre `_ajustarCuotaMensual` |
+| Marca del avance en efectivo (MC.16e, checkbox oculto salvo tarjeta) | `gastos/view.js`, `#grupo-gasto-avance` + aviso `#gasto-avance-nudge` |
+| Aviso de consumo que pasa del cupo | `gastos/logic.js`, `excesoDeCupo` + `gastos/index.js`, `_actualizarNudgeSobrecupo` |
+| Aviso de lo que cuesta no pagar el total | `compromisos/index.js`, `_actualizarTipProyeccion` (rama de tarjeta) |
+| Tasa mensual desde la tasa registrada (EA o mensual) | `compromisos/logic/modelo.js`, `tasaMensualDecimal` |
 
 **Riesgos**:
 
-- **Nada impide que un consumo pase del cupo**: el consumo se registra igual y el disponible queda en "$0" (acotado con `Math.max`), sin aviso. Ahora que el saldo sí sube con cada compra, ese borde es alcanzable de verdad: candidato natural del nudge de MC.16e, junto con el de pago mínimo.
+- **Nada impide que un consumo pase del cupo**: desde MC.16e el formulario lo avisa con el exceso exacto, pero **no bloquea** y el disponible sigue acotado con `Math.max`. Es deliberado: quien aprueba o rechaza es el banco, y Finko no puede saberlo. El aviso es informativo, no una validación.
+- **`avanceTC` no entra en ningún cálculo**: solo dispara el aviso. Si algún día se quiere separar avances de compras en Análisis o en el monitor de renta, el dato ya está guardado, pero hoy nadie lo lee fuera del formulario.
+- **El aviso de intereses del abono depende de una `tasa` que el usuario pudo no registrar**: sin ella el mensaje explica el mecanismo sin cifra. La `tasa` tampoco capitaliza el saldo sola (fuera de alcance del ADR 051): el número del aviso es una estimación del próximo mes, no un movimiento que la app vaya a aplicar.
 - **`cupoTotal` se limpia a `null` al cambiar de categoría al editar** (lo exige `editar()`, que hace `Object.assign` shallow): reclasificar una tarjeta como "Vivienda" y volver a "Tarjeta de crédito" pierde el cupo tecleado. Es el mismo comportamiento que `icono` y es intencional, pero el usuario no recibe aviso. **Ojo con el efecto nuevo:** una tarjeta que pierde su cupo deja de ofrecerse en Gastos, aunque sus consumos ya registrados siguen intactos.
 - **Sin cuentas activas no hay formulario de gasto**, así que quien solo tenga tarjeta no puede registrar un consumo: el empty state de `renderFormGasto` sigue exigiendo una cuenta. Es preexistente y quedó fuera de MC.16b a propósito (tocar ese empty state es una decisión de producto, no del signo del saldo).
 - **Un gasto repartido entre varias cuentas se parte en varios registros; un consumo con tarjeta nunca se parte**: no hay reparto que hacer sobre un cupo. Si MC.16d agrega cuotas, se apoya en ese mismo registro único.
@@ -130,6 +136,7 @@ Fuera de esas dos, la iniciativa "Deudas v2: de registro a asesor" (brief 2026-0
 
 - 2026-07-30 (MC.16a): `cupoTotal` en el form condicionado a la categoría, validación, normalización, chip de disponible en la card y bump de schema v27 a v28 (migración no-op). Ver [CHANGELOG](../CHANGELOG.md).
 - 2026-07-30 (MC.16b): el consumo con tarjeta como `Gasto` con `consumoTC`, tarjetas en el selector de origen (solo Gastos) y el signo del saldo en `deltasPorEdicionEnDeuda`, con alta, edición y eliminación juntas. Ver [CHANGELOG](../CHANGELOG.md).
+- 2026-07-31 (MC.16e): cuatro avisos de costo (avance en efectivo con el retiro en otra red en su texto, sobrecupo, y lo que cuesta no pagar el total del abono), campo `avanceTC` con bump v29 a v30 y `tasaMensualDecimal` extraída de `detectarDeudaCreciente`. Ver [CHANGELOG](../CHANGELOG.md).
 
 ---
 

@@ -410,18 +410,27 @@ describe('TX.9b - ICONOS_CATEGORIA_PERSONALIZADA', () => {
 });
 
 describe('iconoDeCategoriaGasto()', () => {
-  it('resuelve una categoría nativa desde CATEGORIA_ICONO', () => {
+  it('resuelve una categoría nativa de Gastos desde CATEGORIA_ICONO', () => {
     expect(iconoDeCategoriaGasto('Mercado')).toBe('c-mercado');
   });
 
-  it('resuelve una categoría personalizada por nombre', () => {
-    const personalizadas = [{ nombre: 'Gimnasio', icono: 'c-pesa' }];
-    expect(iconoDeCategoriaGasto('Gimnasio', personalizadas)).toBe('c-pesa');
+  it('resuelve una categoría nativa de Gastos fijos desde CATEGORIA_AGENDA_ICONO (resolutora global, ADR 058 D2)', () => {
+    expect(iconoDeCategoriaGasto('Arriendo')).toBe('i-home');
   });
 
-  it('nativa tiene prioridad si por algún motivo coinciden los nombres', () => {
+  it('resuelve una categoría personalizada por nombre', () => {
+    const personalizadas = [{ nombre: 'Suplementos', icono: 'c-pesa' }];
+    expect(iconoDeCategoriaGasto('Suplementos', personalizadas)).toBe('c-pesa');
+  });
+
+  it('nativa de Gastos tiene prioridad si por algún motivo coinciden los nombres', () => {
     const personalizadas = [{ nombre: 'Mercado', icono: 'c-pesa' }];
     expect(iconoDeCategoriaGasto('Mercado', personalizadas)).toBe('c-mercado');
+  });
+
+  it('nativa de Agenda tiene prioridad sobre una personalizada homónima', () => {
+    const personalizadas = [{ nombre: 'Arriendo', icono: 'c-pesa' }];
+    expect(iconoDeCategoriaGasto('Arriendo', personalizadas)).toBe('i-home');
   });
 
   it('cae al genérico i-gastos sin categoría nativa ni personalizada', () => {

@@ -1098,19 +1098,8 @@ button.chip:focus-visible {
   color: var(--fk-success-text);
 }
 
-.apartado-plantillas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--fk-space-2);
-  margin-bottom: var(--fk-space-3);
-}
-
-/* T4 (DIS.5, hallazgo A8): con las 6 plantillas frecuentes arriba y las otras
-   14 dentro del `.form-details`, el bloque de arriba no necesita el margen
-   completo: el `<details>` que lo sigue ya trae el suyo. */
-.apartado-plantillas--parcial {
-  margin-bottom: var(--fk-space-2);
-}
+/* `.apartado-plantillas`/`--parcial` se retiraron en AP.5b: la grilla de
+   plantillas pasó a `.chips-cat` (lenguaje compartido, ADR 042 D9). */
 
 /* `.apartado__sugerencia` y `.apartado__listo` se retiraron en DIS.15: la
    sugerencia dejo de ser un aviso suelto y es ahora la segunda carrera mas la

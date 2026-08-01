@@ -10,6 +10,7 @@ import {
   etiquetaPeriodoMeses,
   avanzarMeses,
   reiniciarCiclo,
+  alternarRecurrencia,
   frecuenciaPrincipalIngresos,
   apartadosProximos,
   validarApartado,
@@ -369,6 +370,32 @@ describe('reiniciarCiclo()', () => {
   });
 });
 
+// ── alternarRecurrencia() (AP.5) ──────────────────────────────────
+
+describe('alternarRecurrencia()', () => {
+  it('activa un apartado nunca recurrente con el periodo default (anual)', () => {
+    const a = apartadoBase({ recurrente: false, periodoMeses: null });
+    expect(alternarRecurrencia(a)).toEqual({ recurrente: true, periodoMeses: PERIODO_RECURRENCIA_DEFAULT });
+  });
+
+  it('activa conservando un periodo que ya tenía guardado', () => {
+    const a = apartadoBase({ recurrente: false, periodoMeses: 3 });
+    expect(alternarRecurrencia(a)).toEqual({ recurrente: true, periodoMeses: 3 });
+  });
+
+  it('desactiva conservando el periodo guardado, por si se reactiva después', () => {
+    const a = apartadoBase({ recurrente: true, periodoMeses: 6 });
+    expect(alternarRecurrencia(a)).toEqual({ recurrente: false, periodoMeses: 6 });
+  });
+
+  it('es simétrica: aplicarla dos veces vuelve al estado original', () => {
+    const a = apartadoBase({ recurrente: false, periodoMeses: null });
+    const activado = alternarRecurrencia(a);
+    const desactivado = alternarRecurrencia({ ...a, ...activado });
+    expect(desactivado).toEqual({ recurrente: false, periodoMeses: PERIODO_RECURRENCIA_DEFAULT });
+  });
+});
+
 // ── etiquetaPeriodoMeses() ───────────────────────────────────────
 
 describe('etiquetaPeriodoMeses()', () => {
@@ -408,6 +435,7 @@ describe('normalizarApartado()', () => {
       frecuenciaAporte: 'Quincenal',
       recurrente:       false,
       periodoMeses:     null,
+      nota:             '',
       completado:       false,
     });
   });
@@ -802,10 +830,10 @@ describe('renderFormApartado() - plantillas plegadas (T4)', () => {
     expect(html).toContain('Ver las otras ' + (PLANTILLAS_APARTADO.length - 6) + ' plantillas');
   });
 
-  it('el bloque visible lleva el modificador --parcial y va antes del details', () => {
+  it('el bloque visible usa el lenguaje de chips compartido y va antes del details', () => {
     const html = renderFormApartado();
-    expect(html).toContain('apartado-plantillas apartado-plantillas--parcial');
-    expect(html.indexOf('apartado-plantillas--parcial')).toBeLessThan(html.indexOf('Ver las otras'));
+    expect(html).toContain('aria-label="Plantillas de reserva"');
+    expect(html.indexOf('aria-label="Plantillas de reserva"')).toBeLessThan(html.indexOf('Ver las otras'));
   });
 });
 
@@ -825,6 +853,53 @@ describe('formularios de Apartados - monto con separador (T9)', () => {
     expect(html).toMatch(/id="aporte-apartado-monto"[^>]*type="text"/);
     expect(html).toMatch(/id="aporte-apartado-monto"[\s\S]{0,200}?data-miles/);
     expect(html).not.toMatch(/id="aporte-apartado-monto"[^>]*type="number"/);
+  });
+});
+
+// ── AP.5: lenguaje v2 en el form de creación + toggle fuera del registro ──
+
+describe('renderFormApartado() - lenguaje v2 (AP.5)', () => {
+  it('el monto objetivo vive dentro de .monto-hero', () => {
+    const html = renderFormApartado();
+    expect(html).toContain('<div class="monto-hero">');
+    const i = html.indexOf('<div class="monto-hero">');
+    const j = html.indexOf('</div>', html.indexOf('id="apartado-objetivo"'));
+    expect(html.slice(i, j)).toContain('id="apartado-objetivo"');
+  });
+
+  it('el footer es modal__footer--principal con check-circle', () => {
+    const html = renderFormApartado();
+    expect(html).toContain('modal__footer modal__footer--principal');
+    expect(html).toMatch(/#i-check-circle[\s\S]{0,40}Crear reserva/);
+  });
+
+  it('ya no trae el checkbox ni el select de recurrencia (AP.5): sale del registro inicial', () => {
+    const html = renderFormApartado();
+    expect(html).not.toContain('apartado-recurrente');
+    expect(html).not.toContain('apartado-periodo-group');
+    expect(html).not.toContain('Este gasto se repite');
+  });
+});
+
+describe('_renderApartadoCard() (vía renderListaApartados) - toggle de recurrencia (AP.5)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-apartados"></div>';
+  });
+
+  it('ofrece "Hacer recurrente" en un apartado no recurrente', () => {
+    S.apartados = [apartadoBase({ recurrente: false })];
+    renderListaApartados();
+    const btn = document.querySelector('[data-action="toggle-recurrente-apartado"]');
+    expect(btn.getAttribute('aria-pressed')).toBe('false');
+    expect(btn.textContent).toBe('Hacer recurrente');
+  });
+
+  it('ofrece "Recurrente" (activo) en un apartado ya recurrente', () => {
+    S.apartados = [apartadoBase({ recurrente: true, periodoMeses: 12 })];
+    renderListaApartados();
+    const btn = document.querySelector('[data-action="toggle-recurrente-apartado"]');
+    expect(btn.getAttribute('aria-pressed')).toBe('true');
+    expect(btn.textContent).toBe('Recurrente');
   });
 });
 

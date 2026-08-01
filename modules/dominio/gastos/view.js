@@ -660,6 +660,16 @@ export function renderFormGasto({ sugerencias = true } = {}) {
           </label>`).join('')}
         </div>
       </div>
+      <div class="form-group form-group--checkbox" id="grupo-gasto-avance" hidden>
+        <label class="checkbox-row">
+          <input type="checkbox" name="avanceTC" value="1" />
+          <span>Fue un avance en efectivo</span>
+        </label>
+        <p class="form-hint form-hint--info" id="gasto-avance-nudge" hidden>
+          Un avance cobra intereses desde el mismo día que lo retiras: no tiene los días sin intereses de una compra, y casi siempre suma un cobro fijo por el retiro. Si lo sacaste de un cajero de otra red, ese retiro tiene su propio costo aparte.
+        </p>
+      </div>
+      <p class="form-hint form-hint--info" id="gasto-sobrecupo-nudge" aria-live="polite" hidden></p>
       <div class="form-group">
         <span class="label" id="gasto-fecha-label">Fecha</span>
         <div class="fecha-chips" role="radiogroup" aria-labelledby="gasto-fecha-label">

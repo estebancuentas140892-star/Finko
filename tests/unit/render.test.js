@@ -48,8 +48,25 @@ function montarHero() {
       <ul class="hero-inicio__detalle" id="saldo-detalle" role="list" hidden></ul>
       <p class="hero-inicio__desc" id="saldo-desc">efectivo + cuentas bancarias</p>
       <div id="hero-guia-saldo" hidden></div>
-    </article>`;
+    </article>
+    <div class="bento__cell bento__cell--half" id="panel-cuentas-detalle"
+         role="region" aria-labelledby="cuentas-detalle-titulo" hidden>
+      <div class="card__header">
+        <h2 class="card__title" id="cuentas-detalle-titulo">Dónde está tu dinero</h2>
+      </div>
+      <ul class="cuentas-inicio__lista" id="cuentas-detalle-lista" role="list"></ul>
+    </div>`;
 }
+
+/**
+ * IN.9c (ADR 057 D3): el detalle por cuenta es acordeón bajo 1024px y columna
+ * propia desde ahí, así que cada test tiene que declarar su ancho.
+ * happy-dom no tiene viewport real: `matchMedia` se falsea y `restaurarAncho`
+ * lo devuelve a su sitio.
+ */
+const matchMediaReal = globalThis.window?.matchMedia;
+const anchoDe = (esMovil) => { window.matchMedia = () => ({ matches: esMovil }); };
+const restaurarAncho = () => { window.matchMedia = matchMediaReal; };
 
 const cuenta = (saldo, overrides = {}) => ({
   id: 'c1', nombre: 'Efectivo', tipo: 'efectivo', saldo, activa: true, ...overrides,
@@ -189,7 +206,7 @@ describe('acción saldo-visibilidad', () => {
 
 // ── DETALLE POR CUENTA (IN.8c, ADR 034 D4) ───────────────────────────────────
 
-describe('updSaldo() - detalle por cuenta expandible', () => {
+describe('updSaldo() - detalle por cuenta expandible (móvil)', () => {
   const elPill    = () => document.getElementById('saldo-detalle-toggle');
   const elDetalle = () => document.getElementById('saldo-detalle');
   const elDesc    = () => document.getElementById('saldo-desc');
@@ -200,7 +217,10 @@ describe('updSaldo() - detalle por cuenta expandible', () => {
     if (elPill().getAttribute('aria-expanded') === 'true') alternarDetalleCuentas();
   }
 
+  afterEach(restaurarAncho);
+
   beforeEach(() => {
+    anchoDe(true);
     S.cuentas = [
       cuenta(1_450_000, { id: 'c1', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros' }),
       cuenta(685_000,   { id: 'c2', nombre: 'Nequi',       banco: 'Nequi',       tipo: 'Ahorros' }),
@@ -293,6 +313,83 @@ describe('updSaldo() - detalle por cuenta expandible', () => {
     expect(JSON.stringify(S.config)).toBe(antes);
     dispatch(elPill(), new Event('click'));
     expect(elPill().getAttribute('aria-expanded')).toBe('false');
+  });
+});
+
+// ── DETALLE POR CUENTA EN ESCRITORIO (IN.9c, ADR 057 D3) ─────────────────────
+
+describe('updSaldo() - detalle por cuenta en columna propia (escritorio)', () => {
+  const elPill   = () => document.getElementById('saldo-detalle-toggle');
+  const elAcorde = () => document.getElementById('saldo-detalle');
+  const elPanel  = () => document.getElementById('panel-cuentas-detalle');
+  const elLista  = () => document.getElementById('cuentas-detalle-lista');
+  const elDesc   = () => document.getElementById('saldo-desc');
+
+  afterEach(restaurarAncho);
+
+  beforeEach(() => {
+    anchoDe(false);
+    S.cuentas = [
+      cuenta(1_450_000, { id: 'c1', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros' }),
+      cuenta(685_000,   { id: 'c2', nombre: 'Nequi',       banco: 'Nequi',       tipo: 'Ahorros' }),
+      cuenta(350_000,   { id: 'c3', nombre: 'Efectivo',    banco: 'Efectivo',    tipo: 'Efectivo' }),
+    ];
+    updSaldo();
+  });
+
+  it('la columna se muestra siempre, con una fila por cuenta', () => {
+    expect(elPanel().hidden).toBe(false);
+    expect(elLista().querySelectorAll('.hero-inicio__cuenta').length).toBe(3);
+    expect(elLista().innerHTML).toContain('Bancolombia');
+    expect(elLista().innerHTML).toContain('$1.450.000');
+    expect(elLista().querySelectorAll('.bank-avatar').length).toBe(3);
+  });
+
+  it('el acordeón del hero no existe como estado: pill oculto y lista vacía', () => {
+    expect(elPill().hidden).toBe(true);
+    expect(elPill().getAttribute('aria-expanded')).toBe('false');
+    expect(elAcorde().hidden).toBe(true);
+    expect(elAcorde().innerHTML).toBe('');
+  });
+
+  it('el conteo del hero convive con la columna: el detalle ya no ocupa su sitio', () => {
+    expect(elDesc().hidden).toBe(false);
+    expect(elDesc().textContent).toBe('efectivo + 2 cuentas bancarias');
+  });
+
+  it('un solo ojo cubre el total y la columna: ningún saldo real toca el DOM', () => {
+    S.config.ocultarSaldo = true;
+    updSaldo();
+    expect(elSaldo().textContent).toBe(SALDO_MASCARA);
+    const saldos = [...elLista().querySelectorAll('.hero-inicio__cuenta-saldo')];
+    expect(saldos.length).toBe(3);
+    for (const s of saldos) expect(s.textContent).toBe(SALDO_MASCARA_CUENTA);
+    expect(document.body.innerHTML).not.toContain('1.450.000');
+    expect(document.body.innerHTML).not.toContain('685.000');
+    expect(document.body.innerHTML).not.toContain('350.000');
+  });
+
+  it('sin cuentas: la columna se oculta y se vacía', () => {
+    S.cuentas = [];
+    updSaldo();
+    expect(elPanel().hidden).toBe(true);
+    expect(elLista().innerHTML).toBe('');
+  });
+
+  it('al pasar a móvil la columna se vacía: nada de saldos en un DOM que no se ve', () => {
+    expect(elLista().innerHTML).not.toBe('');
+    anchoDe(true);
+    updSaldo();
+    expect(elPanel().hidden).toBe(true);
+    expect(elLista().innerHTML).toBe('');
+    expect(elPill().hidden).toBe(false);
+  });
+
+  it('el nombre de la cuenta se escapa también en la columna', () => {
+    S.cuentas = [cuenta(100, { id: 'c1', nombre: '<img src=x onerror=alert(1)>', banco: 'Nequi', tipo: 'Ahorros' })];
+    updSaldo();
+    expect(elLista().querySelector('img')).toBeNull();
+    expect(elLista().innerHTML).toContain('&lt;img');
   });
 });
 

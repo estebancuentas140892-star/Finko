@@ -435,7 +435,7 @@
           <!-- HERO: saldo disponible, centrado y protagonista (IN.8b, ADR 034
                D2/D3; piloto visual ADR 033 D1/D2 acotado a Inicio).
                render.js (updSaldo) controla el estado vacío vs. con cuentas. -->
-          <article class="bento__cell bento__cell--full bento__cell--hero hero-inicio">
+          <article class="bento__cell bento__cell--half bento__cell--hero hero-inicio">
             <!-- Ojo de privacidad (IN.2 + D3): posición absoluta estable en la
                  esquina; al alternar solo cambian el icono y el contenido del
                  monto, nunca la posición del control. render.js (updSaldo)
@@ -453,7 +453,12 @@
                  fila por cuenta. Estado solo de UI en memoria (no persiste);
                  colapsado por defecto. render.js (updSaldo) llena las filas y
                  sincroniza pill, aria-expanded y la máscara de privacidad
-                 (el ojo enmascara total Y detalle juntos, extensión IN.2). -->
+                 (el ojo enmascara total Y detalle juntos, extensión IN.2).
+                 IN.9c (ADR 057 D3) acota el acordeon a movil: bajo 1024px es
+                 la unica forma de mostrar las cuentas sin sacar al usuario de
+                 la pantalla; desde 1024px hay una columna al lado y el mismo
+                 contenido vive en #panel-cuentas-detalle, siempre visible.
+                 updSaldo() oculta el pill y vacia esta lista en escritorio. -->
             <button class="hero-inicio__pill" type="button" id="saldo-detalle-toggle"
                     data-action="saldo-detalle" aria-expanded="false"
                     aria-controls="saldo-detalle">
@@ -467,20 +472,73 @@
                  vuelve redundante); updSaldo() calcula el texto real. -->
             <p class="hero-inicio__desc" id="saldo-desc">efectivo + cuentas bancarias</p>
 
-            <!-- Empty state: visible cuando no hay cuentas (render.js lo controla) -->
+            <!-- Empty state: visible cuando no hay cuentas (render.js lo controla).
+                 IN.9e (ADR 057 D6, ficha IE9): dos versiones del mismo estado,
+                 una sola oculta por render.js via #hero-guia-saldo. Bajo
+                 1024px se ve `__movil` (guia de ancho completo, intacta);
+                 desde 1024px se ve `__escritorio` (pieza centrada de 620px
+                 con tres pasos), porque la guia de movil estirada a 990px se
+                 lee como pantalla a medio cargar. Estructura aprobada el
+                 2026-07-31; el copy de los tres pasos queda provisional hasta
+                 la revision de UX Writing (PI5). -->
             <div class="hero-guia" id="hero-guia-saldo" hidden>
-              <span class="hero-guia__icon" aria-hidden="true"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-cuentas"/></svg></span>
-              <p class="hero-guia__title">¿Dónde tienes tu dinero?</p>
-              <p class="hero-guia__desc">
-                Agrega tus cuentas o billeteras y Finko calcula
-                automáticamente cuánto tienes disponible hoy.
-              </p>
-              <a class="btn btn-primary btn-lg hero-guia__cta" href="#tesoreria">
-                <svg class="icon" aria-hidden="true"><use href="#i-cuentas"/></svg>
-                Agregar mis cuentas
-              </a>
+              <div class="hero-guia__movil">
+                <span class="hero-guia__icon" aria-hidden="true"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-cuentas"/></svg></span>
+                <p class="hero-guia__title">¿Dónde tienes tu dinero?</p>
+                <p class="hero-guia__desc">
+                  Agrega tus cuentas o billeteras y Finko calcula
+                  automáticamente cuánto tienes disponible hoy.
+                </p>
+                <a class="btn btn-primary btn-lg hero-guia__cta" href="#tesoreria">
+                  <svg class="icon" aria-hidden="true"><use href="#i-cuentas"/></svg>
+                  Agregar mis cuentas
+                </a>
+              </div>
+              <div class="hero-guia__escritorio">
+                <span class="hero-guia__icon" aria-hidden="true"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-cuentas"/></svg></span>
+                <p class="hero-guia__title">Empecemos por saber cuánto tienes</p>
+                <p class="hero-guia__desc">
+                  Finko no se conecta a tu banco ni te pide datos. Tú registras, Finko calcula.
+                </p>
+                <div class="hero-guia__pasos">
+                  <div class="hero-guia__paso">
+                    <span class="hero-guia__paso-n">1</span>
+                    <p class="hero-guia__paso-t">Agrega tus cuentas</p>
+                    <p class="hero-guia__paso-d">Efectivo, bancos y billeteras. Con eso Finko ya sabe cuánto tienes disponible hoy.</p>
+                  </div>
+                  <div class="hero-guia__paso">
+                    <span class="hero-guia__paso-n">2</span>
+                    <p class="hero-guia__paso-t">Registra un gasto</p>
+                    <p class="hero-guia__paso-d">Con el botón Registrar de arriba. Dos datos: cuánto y en qué.</p>
+                  </div>
+                  <div class="hero-guia__paso">
+                    <span class="hero-guia__paso-n">3</span>
+                    <p class="hero-guia__paso-t">Anota lo que debes</p>
+                    <p class="hero-guia__paso-d">Deudas y pagos fijos. Esta pantalla te avisa antes de que se venzan.</p>
+                  </div>
+                </div>
+                <a class="btn btn-primary btn-lg hero-guia__cta" href="#tesoreria">
+                  <svg class="icon" aria-hidden="true"><use href="#i-cuentas"/></svg>
+                  Agregar mis cuentas
+                </a>
+              </div>
             </div>
           </article>
+
+          <!-- DÓNDE ESTÁ TU DINERO (IN.9c, ADR 057 D3): el detalle por cuenta
+               como columna propia al lado del hero, solo desde 1024px. Mismo
+               dato y mismas filas que el acordeón de móvil (`.hero-inicio__cuenta*`),
+               y la misma máscara: updSaldo() llena las dos listas desde el
+               mismo `oculto`, así que el ojo del hero sigue cubriendo total y
+               detalle juntos. Arranca [hidden]; updSaldo() lo revela cuando el
+               ancho da y hay al menos una cuenta activa. -->
+          <div class="bento__cell bento__cell--half" id="panel-cuentas-detalle"
+               role="region" aria-labelledby="cuentas-detalle-titulo" hidden>
+            <div class="card__header">
+              <h2 class="card__title" id="cuentas-detalle-titulo">Dónde está tu dinero</h2>
+            </div>
+            <ul class="cuentas-inicio__lista" id="cuentas-detalle-lista" role="list"></ul>
+          </div>
 
           <!-- ATENCIÓN HOY (IN.8a, ADR 034 D1): lo accionable del día, justo
                debajo del hero. Cada panel se aplana (bento__cell--flat): el

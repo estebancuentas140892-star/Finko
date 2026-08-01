@@ -308,6 +308,22 @@ export function reiniciarCiclo(apartado, hoyISO) {
   };
 }
 
+/**
+ * AP.5: la recurrencia se activa/desactiva desde la tarjeta del apartado ya
+ * creado, no desde el registro inicial. Activar fija `periodoMeses` en el
+ * default anual si el apartado nunca tuvo uno (primera vez); desactivar
+ * conserva el valor guardado, por si se reactiva después.
+ * @param {import('../../core/state.js').Apartado} apartado
+ * @returns {{ recurrente: boolean, periodoMeses: number|null }}
+ */
+export function alternarRecurrencia(apartado) {
+  const activar = apartado?.recurrente !== true;
+  return {
+    recurrente:   activar,
+    periodoMeses: activar ? (apartado?.periodoMeses ?? PERIODO_RECURRENCIA_DEFAULT) : (apartado?.periodoMeses ?? null),
+  };
+}
+
 // ── VALIDACIÓN ───────────────────────────────────────────────────
 
 /**
@@ -398,6 +414,7 @@ export function normalizarApartado(datos) {
     frecuenciaAporte: frecuencia,
     recurrente,
     periodoMeses,
+    nota:             datos.nota?.trim() || '',
     completado:       false,
   };
 }

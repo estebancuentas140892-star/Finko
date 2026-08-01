@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-31 (IN.9b cierra: 8 filas de actividad en escritorio y 5 en móvil; su tarjeta sale del tablero). Antes: 2026-07-31 (IN.9a cierra: los dos avisos de "Atención hoy" comparten fila y su tarjeta sale del tablero). Antes: 2026-07-31 (handoff de la auditoría de navegación global: nace la iniciativa **IN.9 "Inicio en escritorio"** con cinco rebanadas, e **INT.1** registra la barra superior de escritorio, que bloquea ID4 e ID7. Inicio sale de "Secciones sin tarjetas pendientes"). Antes: 2026-07-30 (MC.16c cierra: bloque de tarjetas de crédito en Mis cuentas, solo lectura; su tarjeta sale del tablero). Antes: 2026-07-30 (MC.16d cierra: el consumo con tarjeta pregunta a cuántas cuotas y sube `cuotaMensual`; su tarjeta sale del tablero). Antes: 2026-07-30 (ADR 033 aceptado en P1, P2, P3 y P5: DV.2a, DV.2b y DV.2c quedan desbloqueadas, DV.2d sigue bloqueada por P4 y por la cola de diseño). Antes: 2026-07-30 (MC.16a cierra: la tarjeta de crédito gana su cupo y su tarjeta sale del tablero; MC.16b queda desbloqueada). Antes: 2026-07-29 (INV.1 cierra: el dinero sale de una cuenta al registrar una inversión, y su tarjeta sale del tablero). Antes: DIS.19 cierra el frente de Ahorro y deja dos piezas de ARQ.1 ya en `infra/`; no tenía tarjeta propia, entró por handoff de diseño. Antes: 2026-07-27 (CAT.1 cierra: la taxonomía global queda implementada en las tres secciones y su tarjeta sale del tablero). Antes: MC.16 deja de estar bloqueada, el ADR 051 se acepta y la tarjeta se re-corta en MC.16a a MC.16e. La historia de lo ya cerrado vive en [`CHANGELOG.md`](CHANGELOG.md) y en las fichas de [`contexto/`](contexto/README.md), no aquí.
+> Última actualización: 2026-07-31 (MC.16e cierra: la tarjeta avisa su costo en avance, sobrecupo y abono parcial; con ella cierra **MC.16** completa y el ADR 051 queda ejecutado). Antes: 2026-07-31 (IN.9b cierra: 8 filas de actividad en escritorio y 5 en móvil; su tarjeta sale del tablero). Antes: 2026-07-31 (IN.9a cierra: los dos avisos de "Atención hoy" comparten fila y su tarjeta sale del tablero). Antes: 2026-07-31 (handoff de la auditoría de navegación global: nace la iniciativa **IN.9 "Inicio en escritorio"** con cinco rebanadas, e **INT.1** registra la barra superior de escritorio, que bloquea ID4 e ID7. Inicio sale de "Secciones sin tarjetas pendientes"). Antes: 2026-07-30 (MC.16c cierra: bloque de tarjetas de crédito en Mis cuentas, solo lectura; su tarjeta sale del tablero). Antes: 2026-07-30 (MC.16d cierra: el consumo con tarjeta pregunta a cuántas cuotas y sube `cuotaMensual`; su tarjeta sale del tablero). Antes: 2026-07-30 (ADR 033 aceptado en P1, P2, P3 y P5: DV.2a, DV.2b y DV.2c quedan desbloqueadas, DV.2d sigue bloqueada por P4 y por la cola de diseño). Antes: 2026-07-30 (MC.16a cierra: la tarjeta de crédito gana su cupo y su tarjeta sale del tablero; MC.16b queda desbloqueada). Antes: 2026-07-29 (INV.1 cierra: el dinero sale de una cuenta al registrar una inversión, y su tarjeta sale del tablero). Antes: DIS.19 cierra el frente de Ahorro y deja dos piezas de ARQ.1 ya en `infra/`; no tenía tarjeta propia, entró por handoff de diseño. Antes: 2026-07-27 (CAT.1 cierra: la taxonomía global queda implementada en las tres secciones y su tarjeta sale del tablero). Antes: MC.16 deja de estar bloqueada, el ADR 051 se acepta y la tarjeta se re-corta en MC.16a a MC.16e. La historia de lo ya cerrado vive en [`CHANGELOG.md`](CHANGELOG.md) y en las fichas de [`contexto/`](contexto/README.md), no aquí.
 
 ---
 
@@ -56,7 +56,6 @@ Las 57 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | MC.13e-2f-2 | Decisión explícita del remanente (paso final del asistente) | Mis cuentas | alta | bloqueada por UX |
 | MC.13e-2g | Rediseño en 2 pasos con educación financiera | Mis cuentas | media | última; depende del handoff de diseño |
 | MC.13c-3 | Datar el cobro de todas las frecuencias | Mis cuentas | baja | nada |
-| MC.16e | Nudges de costo: avance, otra red, pago mínimo | Mis cuentas | media | nada (MC.16b cerró) |
 | MC.17f | Deshacer o editar una transferencia | Mis cuentas | media | coordinar con MOV.1 |
 | AP.5 | Apartados v2: formulario consistente, recurrencia como toggle | Apartados | media | nada (CAT.1 cerró) |
 | MT.6 | Metas v2: subcategorías inteligentes + plan de aportes | Metas | media-alta | MC.13 (motor); ADR 029 D3 |
@@ -162,7 +161,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 
 ### Mis cuentas (dominio `tesoreria`)
 
-> **Iniciativa "Mis Cuentas v2: centro de administración del dinero"** (briefs de Esteban del 2026-07-08). Fuente única de la sección. De sus 4 frentes siguen abiertos **MC.13** (Distribución v2) y **MC.16** (tarjeta de crédito, [ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md) aceptado el 2026-07-27, alternativa B, re-cortado en MC.16a a MC.16e); **MC.17** (transferencias) y **MC.18** (rediseño visual, [ADR 035](DECISIONS/035-mis-cuentas-v2.md)) están cerrados. **Conflicto (b) del brief, abierto:** "el dinero del ingreso fijo se abona solo a la cuenta en la fecha de pago" es un movimiento automático sin confirmación, exactamente el problema de filosofía de PA.1, así que se decide en el MISMO ADR de pagos automáticos y no por separado. El conflicto (a) quedó resuelto el 2026-07-15.
+> **Iniciativa "Mis Cuentas v2: centro de administración del dinero"** (briefs de Esteban del 2026-07-08). Fuente única de la sección. De sus 4 frentes solo sigue abierto **MC.13** (Distribución v2); **MC.16** (tarjeta de crédito, [ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md) ejecutado completo), **MC.17** (transferencias) y **MC.18** (rediseño visual, [ADR 035](DECISIONS/035-mis-cuentas-v2.md)) están cerrados. **Conflicto (b) del brief, abierto:** "el dinero del ingreso fijo se abona solo a la cuenta en la fecha de pago" es un movimiento automático sin confirmación, exactamente el problema de filosofía de PA.1, así que se decide en el MISMO ADR de pagos automáticos y no por separado. El conflicto (a) quedó resuelto el 2026-07-15.
 
 #### MC.13 - Distribución v2: contextual por fecha, guiada y con origen real del dinero
 - Prioridad  : alta
@@ -208,17 +207,6 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 - Secciones  : Mis cuentas (asistente), Calendario (si se corrige el modelo quincenal)
 - Depende de : nada
 - Modelo     : Alta capacidad - Alto (toca la clave de de-duplicación y, si se corrige el quincenal, el Calendario)
-
-> **MC.16 - Tarjeta de crédito como producto integrado.** El ADR quedó **aceptado el 2026-07-27**: la tarjeta es un producto de Deudas (alternativa B), con saldo revolvente y una sola deuda por tarjeta. Diseño completo, invariantes y las 4 alternativas rechazadas en **[ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md)**, su dueño: leerlo antes de iniciar cualquier rebanada. **Ninguna rebanada crea un tipo de cuenta ni una `Cuenta` para la tarjeta** (D5, I5 del [ADR 053](DECISIONS/053-invariante-de-patrimonio.md)). La tarjeta ya es operable (se registra con cupo, recibe consumos y difiere a cuotas): la rebanada que queda la refina, no la bloquea. `consumosTC` del monitor de renta (CFG.2a) quedó desbloqueado.
-
-#### MC.16e - Nudges de costo: avance en efectivo, retiro en otra red, pago mínimo
-- Prioridad  : media
-- Área       : ambos
-- Estado     : pendiente, última. Educa sobre un flujo que ya existe y funciona.
-- Objetivo   : avisar el costo real en esas tres situaciones concretas y en el momento de la operación (D7). Prohibido comentar cada consumo o calificar la compra: el aviso explica el costo, no juzga ([ADR 003](DECISIONS/003-tono-neutral-profesional.md), ADN 11).
-- Secciones  : Gastos, Deudas
-- Depende de : nada (MC.16b cerró el 2026-07-30). Candidato adicional detectado ahí: **consumo que pasa del cupo**, que hoy se registra sin aviso y deja el disponible en "$0" mudo (ver [`contexto/deudas.md`](contexto/deudas.md))
-- Modelo     : Alta capacidad - Alto (el contenido es producto y tono, no cálculo)
 
 #### MC.17f - Deshacer o editar una transferencia (hueco de integridad)
 - Prioridad  : media
@@ -510,17 +498,12 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 #### CAT.3 - Categorías personalizadas globales (mismo estatus que las nativas, en toda la app)
 - Prioridad  : media
-- Estado     : **decidida el 2026-07-31, [ADR 058](DECISIONS/058-categorias-personalizadas-globales.md)**, en cuatro rebanadas. Ninguna iniciada.
+- Estado     : **decidida el 2026-07-31, [ADR 058](DECISIONS/058-categorias-personalizadas-globales.md)**, en cuatro rebanadas. **CAT.3a cerrada (2026-08-01)**, quedan tres.
 - Objetivo   : las personalizadas de TX.9b valen hoy solo para Gastos; extenderlas a Gastos fijos con la sección como campo del objeto (`seccion: 'gasto' | 'fijo'`), oferta filtrada por sección y resolución de ícono global.
 - Secciones  : transversal (Gastos, Gastos fijos, Presupuesto, Inicio, Calendario, Tesorería)
 - Depende de : nada. CAT.1 (a qué sección pertenece una categoría) y CAT.2 (cómo se crea) ya cerraron
 - **Alcance corregido en el mapeo del 2026-07-31:** gráficos, CSV y 8 de 9 filtros **ya funcionan** con personalizadas (el color viene del dominio y del ranking, no de la categoría; no existe ningún mapa `categoría` a `color` en el repo). El trabajo real son el gate de escritura de fijos y 7 accesos crudos al mapa de íconos, **3 de los cuales ya fallan hoy** sin CAT.3.
 - Modelo     : Alta capacidad - Alto (bump de schema + propagación transversal)
-
-##### CAT.3a - el modelo: campo `seccion`, migración v29 y resolutora global
-- Estado     : pendiente, primera rebanada
-- Alcance    : campo `seccion` en `S.categoriasPersonalizadas` (D1), migración idempotente v28 a v29 que pone `'gasto'` en las existentes, resolutora global sobre los dos mapas nativos (D2), y `validarCategoriaPersonalizada` comparando también contra `CATEGORIAS_AGENDA` (D4). Sin cambio visible en la app todavía
-- Archivos   : `core/state.js`, `core/storage.js` (migración), `core/constants.js` (resolutora), `gastos/logic.js` (validador)
 
 ##### CAT.3b - los siete accesos crudos pasan por la resolutora
 - Estado     : pendiente

@@ -920,14 +920,22 @@ describe('DIS.16 - la tarjeta del fondo ya no usa anillo', () => {
 });
 
 describe('DIS.12 - lista de aportes y compromiso (A5, A6)', () => {
+  // El medidor del compromiso mide los aportes del MES EN CURSO, así que las
+  // fechas se derivan del reloj: fijas, quedaban en un mes pasado y la gota
+  // marcaba 0%. Se usa el día 1 porque siempre existe y nunca es futuro.
+  const _hoy = new Date();
+  const _diaUno = new Date(_hoy.getFullYear(), _hoy.getMonth(), 1);
+  const _isoDiaUno = `${_diaUno.getFullYear()}-${String(_diaUno.getMonth() + 1).padStart(2, '0')}-01`;
+  const _etiquetaDiaUno = _diaUno.toLocaleDateString('es-CO', { day: 'numeric', month: 'long' });
+
   beforeEach(() => {
     document.body.innerHTML = '<div id="panel-ahorro"></div>';
     S.ahorro = {
       fondoEmergencia:   { activo: true, metaMeses: 3, montoActual: 1_000_000 },
       compromisoMensual: 250_000,
       aportes: [
-        { id: 'ap1', monto: 250_000, fecha: '2026-07-22' },
-        { id: 'ap2', monto: 184_000, fecha: '2026-07-15', nota: 'Distribución de ingreso' },
+        { id: 'ap1', monto: 250_000, fecha: _isoDiaUno },
+        { id: 'ap2', monto: 184_000, fecha: _isoDiaUno, nota: 'Distribución de ingreso' },
       ],
     };
     renderAhorro(1_000_000, null, null);
@@ -935,7 +943,8 @@ describe('DIS.12 - lista de aportes y compromiso (A5, A6)', () => {
 
   it('A5: el título de la fila es la fecha, no el monto', () => {
     const primera = document.querySelector('.ahorro-habito__lista .list-item');
-    expect(primera.querySelector('.list-item__title').textContent).toMatch(/22 de julio/i);
+    expect(primera.querySelector('.list-item__title').textContent.toLowerCase())
+      .toContain(_etiquetaDiaUno.toLowerCase());
     expect(primera.querySelector('.list-item__title').textContent).not.toContain('$');
   });
 

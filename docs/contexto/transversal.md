@@ -46,19 +46,19 @@
 ## Categorías personalizadas del usuario (TX.9b, y su extensión CAT.3)
 
 - **Objetivo**          : el usuario crea sus propias categorías con nombre e ícono, y valen igual que las nativas. Hoy solo en Gastos; **CAT.3** las extiende a Gastos fijos con la sección como campo del objeto, oferta filtrada por sección y resolución de ícono global ([ADR 058](../DECISIONS/058-categorias-personalizadas-globales.md), 5 decisiones).
-- **Estado actual**     : **TX.9b en producción, CAT.3 decidida y sin iniciar** (cuatro rebanadas, CAT.3a a CAT.3d). `S.categoriasPersonalizadas` es `{id, nombre, icono, fechaCreacion}[]` (migración v23 a v24); la clave funcional es el **`nombre`**, que es lo que se guarda en `Gasto.categoria` igual que una nativa. `id` y `fechaCreacion` los inyecta el helper genérico `guardar()` de `infra/crud.js`. **No hay edición ni borrado**: la única operación sobre la colección es `guardar()`, así que una vez creada es permanente (un typo queda fijo y su nombre normalizado bloquea el reintento). Eso queda **fuera** del ADR 058 y sale a tarjeta propia.
-- **Verificado contra** : `66236cb` (2026-07-31, mapeo completo de origen y destino para el ADR 058).
+- **Estado actual**     : **TX.9b en producción, CAT.3a cerrada (2026-08-01)**, quedan CAT.3b a CAT.3d. `S.categoriasPersonalizadas` es `{id, nombre, icono, fechaCreacion, seccion}[]` (`seccion: 'gasto' | 'fijo'`, D1, migración v30 a v31; existentes backfilleadas a `'gasto'`); la clave funcional sigue siendo el **`nombre`**, que es lo que se guarda en `Gasto.categoria` igual que una nativa. `id` y `fechaCreacion` los inyecta el helper genérico `guardar()` de `infra/crud.js`. La **resolutora** (D2) ahora fusiona `CATEGORIA_ICONO` y `CATEGORIA_AGENDA_ICONO` antes de caer a la personalizada, e ignora `seccion` a propósito. El **validador** (D4) compara contra los dos catálogos nativos completos. Hasta CAT.3c el formulario de gasto sigue siendo la única fuente: `gastos/index.js` estampa `seccion: 'gasto'` al crear. **No hay edición ni borrado**: la única operación sobre la colección es `guardar()`, así que una vez creada es permanente. Eso queda **fuera** del ADR 058 y sale a tarjeta propia.
+- **Verificado contra** : CAT.3a (2026-08-01).
 
 **Dónde vive**
 
 | Pieza | Archivo | Ancla | Línea |
 |---|---|---|---|
-| El array en el estado (contrato en JSDoc) | `modules/core/state.js` | `categoriasPersonalizadas` | ~413 |
-| Migración que creó el campo (v23 a v24) | `modules/core/storage.js` | idempotente, garantiza `[]` | ~398 |
+| El array en el estado (contrato en JSDoc) | `modules/core/state.js` | `categoriasPersonalizadas` | ~421 |
+| Migración v30 a v31 (`seccion`) | `modules/core/storage.js` | idempotente, backfill `'gasto'` | ~447 |
 | **Resolutora, punto único** | `modules/core/constants.js` | `iconoDeCategoriaGasto(categoria, personalizadas)` | ~529 |
 | Catálogo de íconos elegibles (29, cerrado) | `modules/core/constants.js` | `ICONOS_CATEGORIA_PERSONALIZADA` | ~487 |
-| Validador del alta | `modules/dominio/gastos/logic.js` | `validarCategoriaPersonalizada()` | ~314 |
-| Alta (dentro del guardado del gasto) | `modules/dominio/gastos/index.js` | `_guardarGasto()`, chip sentinela `'__nueva__'` | ~66 |
+| Validador del alta (D4: dos catálogos nativos) | `modules/dominio/gastos/logic.js` | `validarCategoriaPersonalizada()` | ~314 |
+| Alta (dentro del guardado del gasto, estampa `seccion: 'gasto'`) | `modules/dominio/gastos/index.js` | `_guardarGasto()`, chip sentinela `'__nueva__'` | ~66 |
 | Chips del formulario de gasto | `modules/dominio/gastos/view.js` | nativas, personalizadas, sentinela | ~612 |
 
 **Las 7 superficies que leen el mapa crudo** (alcance de CAT.3b, D3 del ADR 058). Las tres últimas **ya fallan hoy**, sin CAT.3:
@@ -79,15 +79,15 @@
 
 **Riesgos**:
 
-- **Colisión de nombre con el catálogo de Agenda**: `validarCategoriaPersonalizada` compara contra `CATEGORIAS_GASTO` pero **no** contra `CATEGORIAS_AGENDA` (`gastos/logic.js:323`), así que hoy se puede crear una personalizada "Arriendo" o "Streaming". El ADR 058 D4 lo cierra para altas nuevas; lo ya guardado **no se reescribe** (misma regla que CAT.1a).
+- **Colisión de nombre con el catálogo de Agenda: cerrada por CAT.3a.** `validarCategoriaPersonalizada` ya compara también contra `CATEGORIAS_AGENDA`. Una personalizada creada **antes** de CAT.3a con un nombre que hoy colisiona (ej. "Arriendo") conserva su categoría y sus gastos: D4 valida altas nuevas, nunca reescribe lo guardado (misma regla que CAT.1a).
 - **Sin validación de longitud ni de cantidad**: el input no tiene `maxlength` y no existe ningún tope de cuántas personalizadas se pueden crear.
 - **El roundtrip de CSV no recrea la entrada**: `import/logic.js:176` acepta cualquier texto como categoría, así que exportar e importar conserva el **nombre** pero no vuelve a crear la personalizada en `S`; el gasto importado queda sin ícono asociado.
 - **Una personalizada sin uso sigue apareciendo**: borrar su último gasto no la retira del catálogo, porque no hay borrado.
 - **Precedencia de `iconoPorOrigen`**: un gasto nacido de un fijo o de un abono hereda el ícono del compromiso y la personalizada nunca se consulta (`gastos/view.js:441`).
 
-**Cambios pendientes**: las cuatro rebanadas de **CAT.3** (detalle y alcance por rebanada en el BOARD). Fuera de alcance por decisión del ADR 058: renombrar y eliminar (tarjeta propia), Apartados y Metas (catálogos de otra naturaleza), Ingresos.
+**Cambios pendientes**: CAT.3b a CAT.3d (detalle y alcance por rebanada en el BOARD). Fuera de alcance por decisión del ADR 058: renombrar y eliminar (tarjeta propia), Apartados y Metas (catálogos de otra naturaleza), Ingresos.
 
-**Cambios realizados**: `TX.9b`: creación de la funcionalidad (detalle en el CHANGELOG). `2026-07-31 (ADR 058)`: mapeo completo de origen y destino, sin cambios de código.
+**Cambios realizados**: `TX.9b`: creación de la funcionalidad (detalle en el CHANGELOG). `2026-07-31 (ADR 058)`: mapeo completo de origen y destino, sin cambios de código. `2026-08-01 (CAT.3a)`: campo `seccion`, migración v30 a v31, resolutora global, validador D4 (detalle en el CHANGELOG).
 
 ---
 

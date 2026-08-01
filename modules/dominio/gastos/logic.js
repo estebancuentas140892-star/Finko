@@ -3,7 +3,7 @@
  * Sin DOM. Sin S directo. Testeable en Node/Vitest sin mocks de navegador.
  */
 
-import { CATEGORIA_AGENDA_ICONO, CATEGORIAS_GASTO, ICONOS_CATEGORIA_PERSONALIZADA, TARJETA_PREFIJO } from '../../core/constants.js';
+import { CATEGORIA_AGENDA_ICONO, CATEGORIAS_AGENDA, CATEGORIAS_GASTO, ICONOS_CATEGORIA_PERSONALIZADA, TARJETA_PREFIJO } from '../../core/constants.js';
 
 // ── FILTROS Y AGRUPACIÓN ─────────────────────────────────────────
 
@@ -302,10 +302,13 @@ export function validarGasto(datos) {
 }
 
 /**
- * Valida una categoría de gasto personalizada nueva (TX.9b): nombre no
- * vacío, sin duplicar (sin distinguir mayúsculas/tildes de más o de menos)
- * ninguna categoría nativa ni una ya creada por el usuario, e ícono elegido
- * del catálogo curado.
+ * Valida una categoría personalizada nueva, de Gastos o de Gastos fijos
+ * (TX.9b, extendida en CAT.3a): nombre no vacío, sin duplicar (sin
+ * distinguir mayúsculas/tildes de más o de menos) ninguna categoría nativa
+ * de los dos catálogos (`CATEGORIAS_GASTO`, `CATEGORIAS_AGENDA`) ni una ya
+ * creada por el usuario, e ícono elegido del catálogo curado. El nombre es
+ * único en toda la app, no por sección (ADR 058 D4): la resolución de
+ * ícono es global y dos personalizadas homónimas serían indistinguibles.
  *
  * @param {{ nombre: string, icono: string }} datos
  * @param {{ nombre: string, icono: string }[]} existentes personalizadas ya guardadas
@@ -320,7 +323,7 @@ export function validarCategoriaPersonalizada(datos, existentes = []) {
   } else {
     const normalizar = (s) => s.toLocaleLowerCase('es').normalize('NFD').replace(/\p{Diacritic}/gu, '');
     const normalizado = normalizar(nombre);
-    const nativas = CATEGORIAS_GASTO.map(normalizar);
+    const nativas = [...CATEGORIAS_GASTO, ...CATEGORIAS_AGENDA].map(normalizar);
     const propias = existentes.map(c => normalizar(c.nombre));
     if (nativas.includes(normalizado) || propias.includes(normalizado)) {
       errores.push('Ya existe una categoría con ese nombre.');
@@ -529,6 +532,10 @@ export function normalizarGasto(datos) {
     compromisoId: esConsumoTC ? origen.slice(TARJETA_PREFIJO.length) : (datos.compromisoId || null),
     consumoTC: esConsumoTC,
     cuotas: esConsumoTC ? (parseInt(datos.cuotas, 10) || 1) : null,
+    // MC.16e (ADR 051 D7): la marca del avance en efectivo solo dispara el aviso
+    // de costo; ningún cálculo la lee. Explícita como `cuotas`, para que un gasto
+    // que deja de pagarse con tarjeta no conserve la marca al editarlo.
+    avanceTC: esConsumoTC ? datos.avanceTC === '1' : false,
   };
   if (datos.descripcion?.trim()) base.descripcion = datos.descripcion.trim();
   return base;
@@ -554,6 +561,36 @@ export function tarjetasDeCredito(compromisos) {
     && (Number(c.cupoTotal) || 0) > 0
     && c.activo !== false,
   );
+}
+
+/**
+ * Cuánto se pasa del cupo un consumo que se está registrando (MC.16e, ADR 051
+ * D7). Hoy el consumo se guarda igual y el disponible queda en "$0" mudo: este
+ * es el dato con el que el formulario lo dice antes de guardar.
+ *
+ * Al editar un consumo de la misma tarjeta, `montoPrevio` devuelve al cupo lo
+ * que el gasto anterior ya ocupaba; sin él, subir $1.000 a un consumo viejo
+ * parecería ocupar el monto entero otra vez.
+ *
+ * Devuelve `null` cuando no hay exceso o cuando no hay cupo con el que comparar,
+ * mismo contrato que `detectarDeudaCreciente` (compromisos): sin hallazgo, sin
+ * objeto. No decide el texto: la vista lo arma con estos números.
+ *
+ * @param {import('../../core/state.js').Compromiso|null|undefined} tarjeta
+ * @param {number} monto
+ * @param {number} [montoPrevio] monto del consumo que se está editando, si es la misma tarjeta.
+ * @returns {{ disponible:number, exceso:number }|null}
+ */
+export function excesoDeCupo(tarjeta, monto, montoPrevio = 0) {
+  const cupo = Number(tarjeta?.cupoTotal) || 0;
+  if (cupo <= 0) return null;
+
+  const saldo      = Number(tarjeta.saldoTotal) || 0;
+  const disponible = Math.max(cupo - saldo + (Number(montoPrevio) || 0), 0);
+  const valor      = Number(monto) || 0;
+
+  if (!(valor > disponible)) return null;
+  return { disponible, exceso: valor - disponible };
 }
 
 // ── ÍCONO POR ORIGEN (TX.6 / TX.7, sprite desde ID.3) ────────────

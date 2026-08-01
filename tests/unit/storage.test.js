@@ -1212,7 +1212,8 @@ describe('Migración v23 → v24 (categorías de gasto personalizadas, TX.9b)', 
 
     loadData();
 
-    expect(S.categoriasPersonalizadas).toEqual([existente]);
+    // El cascade llega hasta SCHEMA_VERSION: v30 → v31 (CAT.3a) le suma `seccion: 'gasto'`.
+    expect(S.categoriasPersonalizadas).toEqual([{ ...existente, seccion: 'gasto' }]);
   });
 });
 
@@ -1314,5 +1315,28 @@ describe('Migración v26 → v27 (cuenta de destino del ingreso fijo, MC.13d)', 
 
     expect(S.ingresos[0].cuentaId).toBeUndefined();
     expect(S.ingresos[1].cuentaId).toBe('c1');
+  });
+});
+
+describe('Migración v30 → v31 (seccion en categoría personalizada, CAT.3a, ADR 058)', () => {
+  it('una personalizada existente sin seccion recibe "gasto" (única sección que las creaba)', () => {
+    const existente = { id: 'cat1', nombre: 'Gimnasio', icono: 'c-pesa', fechaCreacion: '2026-07-05T10:00:00Z' };
+    const v30 = { ...createInitialState(), _version: 30, categoriasPersonalizadas: [existente] };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v30));
+
+    loadData();
+
+    expect(S.categoriasPersonalizadas[0].seccion).toBe('gasto');
+    expect(S._version).toBe(SCHEMA_VERSION);
+  });
+
+  it('es idempotente: no sobrescribe una seccion ya presente', () => {
+    const existente = { id: 'cat1', nombre: 'Netflix', icono: 'c-streaming', fechaCreacion: '2026-07-05T10:00:00Z', seccion: 'fijo' };
+    const v31 = { ...createInitialState(), _version: 31, categoriasPersonalizadas: [existente] };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v31));
+
+    loadData();
+
+    expect(S.categoriasPersonalizadas[0].seccion).toBe('fijo');
   });
 });

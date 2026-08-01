@@ -150,6 +150,12 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT } from './constants.js';
  *                                    `cuotaMensual` de la tarjeta en `monto / cuotas`; no
  *                                    crea un plan de pagos por compra (ADR 051 D2), el
  *                                    saldo sigue siendo revolvente.
+ * @property {boolean} [avanceTC]     MC.16e (ADR 051 D7). Solo con `consumoTC`: el
+ *                                    consumo fue un avance en efectivo, no una compra.
+ *                                    Solo dispara el aviso de costo en el formulario:
+ *                                    no cambia el saldo, la cuota ni ningún cálculo.
+ *                                    Es dato del usuario porque no hay forma de
+ *                                    deducirlo (la categoría del gasto no lo dice).
  */
 
 /**
@@ -240,6 +246,8 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT } from './constants.js';
  * @property {number} montoActual     COP.
  * @property {string} [fechaLimite]   ISO 8601 (YYYY-MM-DD).
  * @property {string} [icono]
+ * @property {string} [nota]          Texto libre opcional (MC.13e-2c). Se muestra
+ *                                    junto a la meta en el asistente de distribución.
  * @property {boolean} completada
  */
 
@@ -259,6 +267,8 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT } from './constants.js';
  * @property {string}      [fechaInicioPlan] YYYY-MM-DD: arranque del ciclo vigente, lo anota
  *   `reiniciarCiclo()` al cerrar uno (DIS.15). Opcional y sin migración: quien no lo tenga
  *   mide su plan de referencia desde `fechaCreacion`, que es su primer ciclo.
+ * @property {string}      [nota]            Texto libre opcional (MC.13e-2c). Se muestra
+ *   junto al apartado en el asistente de distribución.
  */
 
 /**
@@ -411,11 +421,14 @@ export function createInitialState() {
     gastos: [],
 
     /**
-     * Categorías de gasto creadas por el usuario (TX.9b, schema v24). Se
-     * comportan igual que una categoría nativa de `CATEGORIAS_GASTO`: el
-     * nombre (no el `id` que le asigna `guardar()`) es la clave que se
-     * guarda en `Gasto.categoria`, igual que en `CATEGORIA_ICONO`.
-     * @type {{ id: string, nombre: string, icono: string, fechaCreacion: string }[]}
+     * Categorías creadas por el usuario, de Gastos o de Gastos fijos (TX.9b,
+     * extendida a Gastos fijos en CAT.3a, schema v31, ADR 058 D1). El
+     * `nombre` (no el `id` que le asigna `guardar()`) es la clave que se
+     * guarda en `Gasto.categoria` o `Compromiso.categoria`, igual que una
+     * nativa. `seccion` decide en qué formulario se **ofrece** como chip
+     * (`'gasto'` o `'fijo'`); resolver su ícono ya guardado ignora la
+     * sección (ADR 058 D2).
+     * @type {{ id: string, nombre: string, icono: string, fechaCreacion: string, seccion: 'gasto' | 'fijo' }[]}
      */
     categoriasPersonalizadas: [],
 

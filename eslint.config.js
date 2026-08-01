@@ -61,6 +61,8 @@ export default [
         FileReader:   'readonly',
         // Web Notifications API - usada en infra/notificaciones.js
         Notification: 'readonly',
+        // CSSOM - usada en tests/e2e para medir contraste tras el fundido
+        getComputedStyle: 'readonly',
       },
     },
   },

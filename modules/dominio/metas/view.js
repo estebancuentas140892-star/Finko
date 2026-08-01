@@ -318,6 +318,13 @@ export function renderFormMeta(meta = null) {
       <div class="form-group" id="form-group-meta-icono" ${esOtra ? '' : 'hidden'}>
         ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'meta-icono', nombreCampo: 'icono', label: 'Elige un ícono para tu meta', valorActual: _valorIconoEditable(meta) })}
       </div>
+      <div class="form-group">
+        <label for="meta-nota" class="label">Nota (opcional)</label>
+        <input id="meta-nota" name="nota" class="input" type="text" maxlength="80"
+               placeholder="Ej. Cotización en Despegar, código de la reserva"
+               value="${_esc(meta?.nota ?? '')}" />
+        <p class="form-hint">Se muestra junto a la meta en el asistente de "Distribuir mi ingreso".</p>
+      </div>
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">${botonTexto}</button>

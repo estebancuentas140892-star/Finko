@@ -1005,7 +1005,7 @@ test.describe('Gastos - CRUD', () => {
     await elegirCategoriaGasto(form, '__nueva__');
     await expect(page.locator('#categoria-nueva-fields')).toBeVisible();
 
-    await form.locator('#categoria-nueva-nombre').fill('Gimnasio');
+    await form.locator('#categoria-nueva-nombre').fill('Suplementos');
     // CAT.2: el selector de ícono nace como recuadro colapsado; hay que
     // tocarlo primero para desplegar la grilla antes de elegir un ícono.
     // Acotado a `form`: con CAT.2b (Metas) el picker vive en más de un
@@ -1020,21 +1020,21 @@ test.describe('Gastos - CRUD', () => {
     await form.locator('button[type="submit"]').click();
 
     await expect(page.locator(modalCerrado('modal-gasto'))).toBeAttached({ timeout: 3_000 });
-    await expect(page.locator('#lista-gastos .list-item__title')).toHaveText('Gimnasio', { timeout: 3_000 });
+    await expect(page.locator('#lista-gastos .list-item__title')).toHaveText('Suplementos', { timeout: 3_000 });
 
-    // Registrar un segundo gasto: "Gimnasio" ya aparece como chip normal
+    // Registrar un segundo gasto: "Suplementos" ya aparece como chip normal
     // (se comporta igual que una categoría nativa, sin duplicar el flujo).
     await page.click('[data-action="nuevo-gasto"]');
     await page.waitForSelector('#modal-gasto[data-open]');
     const form2 = page.locator('#modal-gasto-body form');
-    await expect(form2.locator('input[name="categoria"][value="Gimnasio"]')).toHaveCount(1);
-    await elegirCategoriaGasto(form2, 'Gimnasio');
+    await expect(form2.locator('input[name="categoria"][value="Suplementos"]')).toHaveCount(1);
+    await elegirCategoriaGasto(form2, 'Suplementos');
     await expect(page.locator('#categoria-nueva-fields')).toBeHidden();
     await form2.locator('[name="monto"]').fill('30000');
     await form2.locator('button[type="submit"]').click();
 
     await expect(page.locator(modalCerrado('modal-gasto'))).toBeAttached({ timeout: 3_000 });
-    const items = page.locator('#lista-gastos .list-item__title', { hasText: 'Gimnasio' });
+    const items = page.locator('#lista-gastos .list-item__title', { hasText: 'Suplementos' });
     await expect(items).toHaveCount(2);
   });
 });
@@ -4559,10 +4559,15 @@ test.describe('Agenda - pago en lote (CAL.5a)', () => {
 // ofrece "Repetir" para una fila puntual. Ninguno pide un dato nuevo.
 
 test.describe('Gastos - gastos frecuentes y Repetir (TX.12)', () => {
-  /** ISO 'YYYY-MM-DD' de hace N días, con el reloj real del entorno. */
+  /**
+   * ISO 'YYYY-MM-DD' de hace N días, **sin salir del mes en curso**: la lista
+   * de gastos muestra el mes actual, así que una fecha del mes anterior deja
+   * la lista vacía y el test falla según el día en que se corra (los primeros
+   * días del mes, siempre). El tope en el día 1 mantiene el gasto visible.
+   */
   function isoHaceNDias(n) {
     const d = new Date();
-    d.setDate(d.getDate() - n);
+    d.setDate(Math.max(d.getDate() - n, 1));
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const dd = String(d.getDate()).padStart(2, '0');

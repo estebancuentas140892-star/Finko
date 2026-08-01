@@ -3,7 +3,9 @@
 > Errores detectados durante el desarrollo, con toda la información necesaria para resolverlos sin tener que volver a buscar dónde están.
 > Al solucionarse, el error se **elimina** de este archivo y el fix queda documentado en [`CHANGELOG.md`](CHANGELOG.md) con referencia al ID.
 > Solo entra lo **verificado** contra el código (archivo, función, línea). Una sospecha no es un error: es una tarjeta de investigación en [`BOARD.md`](BOARD.md).
-> Última actualización: 2026-07-30. **4 errores abiertos:** BUG-016 (cuatro mensajes en voseo), BUG-013 (el pase de accesibilidad mide contraste durante el fundido del modal), BUG-017 (el modelo Quincenal pierde un cobro al mes) y BUG-018 (fecha por defecto del abono a deuda usa UTC, no hora Colombia). BUG-018 afecta el uso diario desde las 7 p.m. hora Colombia en adelante.
+> Última actualización: 2026-08-01. **4 errores abiertos:** BUG-016 (cuatro mensajes en voseo), BUG-013 (el pase de accesibilidad mide contraste durante el fundido del modal), BUG-017 (el modelo Quincenal pierde un cobro al mes) y BUG-018 (fecha por defecto del abono a deuda usa UTC, no hora Colombia). BUG-018 afecta el uso diario desde las 7 p.m. hora Colombia en adelante.
+>
+> **Patrón recurrente que conviene vigilar (cerrado 3 veces el 2026-08-01):** tests con **fechas fijas** o con un día derivado a módulo 28 se ponen rojos según el día en que se corran, casi siempre los primeros días del mes. La regla es derivar las fechas del reloj, y **fijar el reloj** (`vi.setSystemTime`) cuando el test afirma una distancia exacta o necesita un día ya pasado dentro del mes.
 
 ---
 

@@ -202,6 +202,7 @@ export function normalizarMeta(datos, metaExistente = null) {
     fechaLimite:   datos.fechaLimite?.trim() || null,
     categoria,
     icono:         datos.icono?.trim() || null,
+    nota:          datos.nota?.trim() || '',
     completada,
   };
 }

@@ -22,7 +22,7 @@ import { f, fechaLegible, hoy, esc as _esc } from '../../infra/utils.js';
 import {
   validarApartado, normalizarApartado, validarAbonoApartado,
   calcularProgreso, calcularAporteSugerido, reiniciarCiclo,
-  frecuenciaPrincipalIngresos,
+  frecuenciaPrincipalIngresos, alternarRecurrencia,
 } from './logic.js';
 import {
   renderListaApartados, renderFormApartado, renderFormAporteApartado,
@@ -38,7 +38,6 @@ function _nuevoApartado() {
   // Re-inyectar para actualizar la frecuencia pre-seleccionada según ingresos actuales.
   _inyectarFormApartado();
   _resetSugerenciaLive();
-  _togglePeriodoRecurrencia(false);
   abrirModal(overlay);
 }
 
@@ -132,6 +131,41 @@ async function _reiniciarApartado(el) {
 
   renderListaApartados();
   announce(`Reserva "${apartado.nombre}" reiniciada para el próximo ciclo.`);
+}
+
+/**
+ * AP.5: la recurrencia sale del registro inicial y pasa a ser un toggle sobre
+ * el apartado ya creado (acción secundaria de la tarjeta). Activar fija
+ * `periodoMeses` en el default anual (SOAT, impuestos) si el apartado nunca
+ * tuvo uno; desactivar conserva el valor guardado, por si se reactiva después.
+ * @param {HTMLElement} el
+ */
+async function _toggleRecurrenteApartado(el) {
+  const id = el.dataset.id;
+  if (!id) return;
+
+  const apartado = S.apartados.find(a => a.id === id);
+  if (!apartado) return;
+
+  const patch = alternarRecurrencia(apartado);
+
+  // Un apartado completado y no recurrente desaparece de la lista (logic.js,
+  // apartadosActivos). Avisar antes de que se esfume por un toque.
+  if (!patch.recurrente && apartado.completado === true) {
+    const ok = await confirmar({
+      titulo:  'Desactivar recurrencia',
+      mensaje: `"${apartado.nombre}" ya está completa: al desactivar la recurrencia, dejará de aparecer en tu lista de reservas.`,
+      confirmarTexto: 'Desactivar',
+    });
+    if (!ok) return;
+  }
+
+  editar('apartados', id, patch);
+
+  renderListaApartados();
+  announce(patch.recurrente
+    ? `Recurrencia activada para "${apartado.nombre}".`
+    : `Recurrencia desactivada para "${apartado.nombre}".`);
 }
 
 // ── HANDLERS: PLANTILLAS + SUGERENCIA EN VIVO ────────────────────
@@ -346,10 +380,6 @@ function _inyectarFormApartado() {
   form.addEventListener('input', _actualizarSugerenciaLive);
   form.addEventListener('change', _actualizarSugerenciaLive);
 
-  // Mostrar/ocultar el periodo de recurrencia según el checkbox "Se repite".
-  const checkRecurrente = form.querySelector('#apartado-recurrente');
-  checkRecurrente?.addEventListener('change', () => _togglePeriodoRecurrencia(checkRecurrente.checked));
-
   // CAT.2c: selector compacto de ícono. El form se re-renderiza completo en
   // cada apertura (arriba en esta misma función), así que basta wirearlo aquí:
   // no hace falta resetIconoPicker (a diferencia de Metas, que reusa un form
@@ -357,18 +387,13 @@ function _inyectarFormApartado() {
   wireIconoPicker(form.querySelector('[data-icono-picker="apartado-icono"]'));
 }
 
-/** Muestra u oculta el campo "¿cada cuánto se repite?" según el checkbox. */
-function _togglePeriodoRecurrencia(visible) {
-  const group = document.getElementById('apartado-periodo-group');
-  if (group) group.hidden = !visible;
-}
-
 export function initApartados() {
-  registrarAccion('nuevo-apartado',     _nuevoApartado);
-  registrarAccion('eliminar-apartado',  _eliminarApartado);
-  registrarAccion('aportar-apartado',   _abrirAporte);
-  registrarAccion('reiniciar-apartado', _reiniciarApartado);
-  registrarAccion('apartado-plantilla', _aplicarPlantilla);
+  registrarAccion('nuevo-apartado',            _nuevoApartado);
+  registrarAccion('eliminar-apartado',         _eliminarApartado);
+  registrarAccion('aportar-apartado',          _abrirAporte);
+  registrarAccion('reiniciar-apartado',        _reiniciarApartado);
+  registrarAccion('apartado-plantilla',        _aplicarPlantilla);
+  registrarAccion('toggle-recurrente-apartado', _toggleRecurrenteApartado);
 
   _inyectarFormApartado();
 

@@ -21,7 +21,7 @@ import { confirmar } from '../../ui/confirm.js';
 import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
 import { wireIconoPicker } from '../../infra/icon-picker.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
-import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, repartirExtraEnCuotas, tasaMensualToEA, esDeuda } from './logic.js';
+import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, repartirExtraEnCuotas, tasaMensualToEA, tasaMensualDecimal, esDeuda } from './logic.js';
 import {
   renderHeroCompromisos,
   renderListaCompromisos,
@@ -488,9 +488,16 @@ async function _archivarCompromiso(el) {
  * (deudas sin cuota fija, Fiado/D.13, o un abono chico que no adelanta un mes
  * completo). Prioridad de mensajes (el primero que aplique):
  *   1. El abono salda la deuda por completo → la reafirmación más fuerte.
- *   2. Hay cuota registrada y el abono adelanta al menos un mes → cuánto antes.
- *   3. Cualquier otro abono válido → refuerzo genérico, nunca deja el campo vacío.
+ *   2. MC.16e: es una tarjeta y queda saldo → qué cuesta no pagar el total.
+ *   3. Hay cuota registrada y el abono adelanta al menos un mes → cuánto antes.
+ *   4. Cualquier otro abono válido → refuerzo genérico, nunca deja el campo vacío.
  * Tono ADR 003/008: afirma el progreso real, sin presión ni comparación.
+ *
+ * El caso 2 es el nudge de pago mínimo del ADR 051 D7, derivado y no capturado:
+ * el mínimo del extracto cambia cada mes y quedaría viejo, mientras que "lo que
+ * no pagues genera intereses" vale para cualquier abono que no cubra el saldo.
+ * Con `tasa` registrada el aviso trae el monto; sin ella explica el mecanismo,
+ * pero nunca inventa una cifra. Explica el costo, no califica la decisión.
  */
 function _actualizarTipProyeccion() {
   const montoInput = document.getElementById('abono-monto');
@@ -515,6 +522,16 @@ function _actualizarTipProyeccion() {
 
   if (montoEfectivo >= saldo) {
     tipEl.textContent = '¡Con este abono saldas esta deuda por completo!';
+    return;
+  }
+
+  if (form.dataset.tarjeta === '1') {
+    const resto       = saldo - montoEfectivo;
+    const tasaMensual = tasaMensualDecimal(form.dataset.tasa, form.dataset.tasaUnidad);
+    const interes     = Math.round(resto * tasaMensual);
+    tipEl.textContent = interes > 0
+      ? `Quedan ${f(resto)} en la tarjeta. Con la tasa que registraste, ese saldo genera unos ${f(interes)} de intereses el próximo mes.`
+      : `Quedan ${f(resto)} en la tarjeta: lo que no pagues del total genera intereses hasta el próximo corte.`;
     return;
   }
 

@@ -22,6 +22,7 @@ import {
   deltasPorEdicionEnDeuda,
   efectoEnCuotaMensual,
   deltasPorEdicionEnCuotaMensual,
+  excesoDeCupo,
 } from '../../modules/dominio/gastos/logic.js';
 import { renderFormGasto, renderListaGastos, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, irAMesActual, CATEGORIA_NUEVA_VALUE } from '../../modules/dominio/gastos/view.js';
 import { CATEGORIAS_GASTO, CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA } from '../../modules/core/constants.js';
@@ -306,7 +307,7 @@ describe('validarGasto()', () => {
 
 describe('validarCategoriaPersonalizada()', () => {
   it('acepta nombre e ícono válidos, sin duplicados', () => {
-    expect(validarCategoriaPersonalizada({ nombre: 'Gimnasio', icono: 'c-pesa' }, [])).toEqual([]);
+    expect(validarCategoriaPersonalizada({ nombre: 'Suplementos', icono: 'c-pesa' }, [])).toEqual([]);
   });
 
   it('reporta error si el nombre está vacío', () => {
@@ -320,17 +321,22 @@ describe('validarCategoriaPersonalizada()', () => {
   });
 
   it('reporta error si no se eligió ícono', () => {
-    const errores = validarCategoriaPersonalizada({ nombre: 'Gimnasio', icono: '' }, []);
+    const errores = validarCategoriaPersonalizada({ nombre: 'Suplementos', icono: '' }, []);
     expect(errores.some(e => /ícono/i.test(e))).toBe(true);
   });
 
   it('reporta error si el ícono no está en el catálogo curado (defensivo)', () => {
-    const errores = validarCategoriaPersonalizada({ nombre: 'Gimnasio', icono: 'c-mercado' }, []);
+    const errores = validarCategoriaPersonalizada({ nombre: 'Suplementos', icono: 'c-mercado' }, []);
     expect(errores.some(e => /ícono/i.test(e))).toBe(true);
   });
 
-  it('reporta error si el nombre duplica una categoría nativa', () => {
+  it('reporta error si el nombre duplica una categoría nativa de Gastos', () => {
     const errores = validarCategoriaPersonalizada({ nombre: 'Mercado', icono: 'c-pesa' }, []);
+    expect(errores.some(e => /existe/i.test(e))).toBe(true);
+  });
+
+  it('reporta error si el nombre duplica una categoría nativa de Gastos fijos (D4, ADR 058)', () => {
+    const errores = validarCategoriaPersonalizada({ nombre: 'Gimnasio', icono: 'c-pesa' }, []);
     expect(errores.some(e => /existe/i.test(e))).toBe(true);
   });
 
@@ -340,8 +346,8 @@ describe('validarCategoriaPersonalizada()', () => {
   });
 
   it('reporta error si el nombre duplica una categoría personalizada ya creada', () => {
-    const existentes = [{ nombre: 'Gimnasio', icono: 'c-pesa' }];
-    const errores = validarCategoriaPersonalizada({ nombre: 'Gimnasio', icono: 'c-carro' }, existentes);
+    const existentes = [{ nombre: 'Suplementos', icono: 'c-pesa' }];
+    const errores = validarCategoriaPersonalizada({ nombre: 'Suplementos', icono: 'c-carro' }, existentes);
     expect(errores.some(e => /existe/i.test(e))).toBe(true);
   });
 
@@ -440,6 +446,72 @@ describe('normalizarGasto()', () => {
   it('MC.16d: un gasto pagado con cuenta no lleva cuotas (null explícito, limpia el dato al editar)', () => {
     const result = normalizarGasto({ ...datosFormValidos, cuotas: '12' });
     expect(result.cuotas).toBeNull();
+  });
+
+  // MC.16e (ADR 051 D7): la marca del avance solo existe para el aviso de costo.
+  it('MC.16e: un consumo marcado como avance guarda avanceTC', () => {
+    const result = normalizarGasto({ ...datosFormValidos, cuentaId: 'tc:d1', avanceTC: '1' });
+    expect(result.avanceTC).toBe(true);
+  });
+
+  it('MC.16e: un consumo sin la marca es una compra (checkbox ausente en FormData)', () => {
+    const result = normalizarGasto({ ...datosFormValidos, cuentaId: 'tc:d1' });
+    expect(result.avanceTC).toBe(false);
+  });
+
+  it('MC.16e: pagar con cuenta limpia avanceTC aunque el form lo traiga (merge superficial de editar())', () => {
+    const result = normalizarGasto({ ...datosFormValidos, avanceTC: '1' });
+    expect(result).toHaveProperty('avanceTC', false);
+  });
+
+  it('MC.16e: la marca no toca el saldo ni la cuota (solo dispara el aviso)', () => {
+    const compra = normalizarGasto({ ...datosFormValidos, cuentaId: 'tc:d1', cuotas: '3' });
+    const avance = normalizarGasto({ ...datosFormValidos, cuentaId: 'tc:d1', cuotas: '3', avanceTC: '1' });
+    expect(efectoEnDeuda(avance)).toBe(efectoEnDeuda(compra));
+    expect(efectoEnCuotaMensual(avance)).toBe(efectoEnCuotaMensual(compra));
+  });
+});
+
+// ── excesoDeCupo() (MC.16e) ──────────────────────────────────────
+
+describe('excesoDeCupo()', () => {
+  const tarjeta = (overrides = {}) => ({
+    id: 'd1', cupoTotal: 5_000_000, saldoTotal: 4_500_000, ...overrides,
+  });
+
+  it('devuelve null cuando el consumo cabe en el cupo disponible', () => {
+    expect(excesoDeCupo(tarjeta(), 500_000)).toBeNull();
+  });
+
+  it('devuelve el exceso y el disponible cuando se pasa', () => {
+    expect(excesoDeCupo(tarjeta(), 800_000)).toEqual({ disponible: 500_000, exceso: 300_000 });
+  });
+
+  it('el borde exacto del cupo no es exceso', () => {
+    expect(excesoDeCupo(tarjeta(), 500_000)).toBeNull();
+  });
+
+  it('sin cupo registrado no hay con qué comparar (deuda vieja, no tarjeta operable)', () => {
+    expect(excesoDeCupo(tarjeta({ cupoTotal: null }), 9_000_000)).toBeNull();
+    expect(excesoDeCupo(null, 9_000_000)).toBeNull();
+  });
+
+  it('una tarjeta ya sobregirada deja el disponible en cero, nunca negativo', () => {
+    const r = excesoDeCupo(tarjeta({ saldoTotal: 6_000_000 }), 100_000);
+    expect(r).toEqual({ disponible: 0, exceso: 100_000 });
+  });
+
+  it('al editar, el monto anterior vuelve al cupo antes de comparar', () => {
+    // El saldo de la tarjeta ya carga los $800.000 del consumo que se edita:
+    // subirlo a $900.000 solo ocupa $100.000 más, no $900.000 otra vez.
+    const t = tarjeta({ saldoTotal: 4_800_000 });
+    expect(excesoDeCupo(t, 900_000, 800_000)).toBeNull();
+    expect(excesoDeCupo(t, 900_000)).toEqual({ disponible: 200_000, exceso: 700_000 });
+  });
+
+  it('monto vacío o cero no avisa nada', () => {
+    expect(excesoDeCupo(tarjeta({ saldoTotal: 5_000_000 }), 0)).toBeNull();
+    expect(excesoDeCupo(tarjeta({ saldoTotal: 5_000_000 }), NaN)).toBeNull();
   });
 });
 
@@ -851,6 +923,34 @@ describe('renderFormGasto() - selector de cuenta', () => {
     S.cuentas = [cuenta('c1', 'Bancolombia', 600_000)];
     const html = renderFormGasto();
     expect(html).toContain('name="cuotas"');
+  });
+
+  // MC.16e (ADR 051 D7): la marca del avance y sus dos avisos viven en el form,
+  // ocultos; index.js los revela según el origen, la marca y el monto.
+  it('MC.16e: el bloque del avance existe oculto y sin marcar', () => {
+    S.cuentas = [cuenta('c1', 'Bancolombia', 600_000)];
+    S.compromisos = [tarjetaTC()];
+    const html = renderFormGasto();
+    expect(html).toMatch(/id="grupo-gasto-avance"[^>]*hidden/);
+    expect(html).toContain('name="avanceTC"');
+    expect(html).not.toMatch(/name="avanceTC"[^>]*checked/);
+  });
+
+  it('MC.16e: el aviso del avance nombra su costo, sin calificar la decisión', () => {
+    S.cuentas = [cuenta('c1', 'Bancolombia', 600_000)];
+    S.compromisos = [tarjetaTC()];
+    const html = renderFormGasto();
+    expect(html).toMatch(/id="gasto-avance-nudge"[^>]*hidden/);
+    expect(html).toContain('intereses desde el mismo día');
+    expect(html).toContain('cajero de otra red');
+  });
+
+  it('MC.16e: el aviso de sobrecupo nace vacío y con aria-live (lo llena index.js)', () => {
+    S.cuentas = [cuenta('c1', 'Bancolombia', 600_000)];
+    S.compromisos = [tarjetaTC()];
+    const html = renderFormGasto();
+    expect(html).toMatch(/id="gasto-sobrecupo-nudge"[^>]*aria-live="polite"/);
+    expect(html).toMatch(/id="gasto-sobrecupo-nudge"[^>]*hidden/);
   });
 
   it('CAT.1a: el hint "normalmente pertenece a fijos" ya no existe (retirado, ADR 014)', () => {
@@ -1801,8 +1901,16 @@ describe('renderFormGasto() - chips de gastos frecuentes (TX.12)', () => {
   const cuenta = (id, nombre, saldo = 500_000) => ({
     id, nombre, saldo, banco: 'Nequi', tipo: 'Ahorros', activa: true,
   });
+  // `renderFormGasto` deriva los frecuentes contra el reloj real (`hoy()`), no
+  // contra una fecha inyectable: una fecha fija se sale de la ventana de 60
+  // días con el paso del tiempo y el chip deja de pintarse.
+  const haceNDias = (n) => {
+    const d = new Date();
+    d.setDate(d.getDate() - n);
+    return d.toISOString().slice(0, 10);
+  };
   const g = (overrides = {}) => ({
-    id: 'x', monto: 15_000, categoria: 'Alimentación', fecha: '2026-06-10',
+    id: 'x', monto: 15_000, categoria: 'Alimentación', fecha: haceNDias(5),
     cuentaId: 'c1', descripcion: '', compromisoId: null,
     ...overrides,
   });
@@ -1830,9 +1938,9 @@ describe('renderFormGasto() - chips de gastos frecuentes (TX.12)', () => {
 
   it('TX.12b: el chip usa el monto real del gasto más reciente, no el redondeado a $1.000', () => {
     S.gastos = [
-      g({ id: 'a', monto: 6_500, fecha: '2026-06-01' }),
-      g({ id: 'b', monto: 6_500, fecha: '2026-06-05' }),
-      g({ id: 'c', monto: 6_500, fecha: '2026-06-10' }),
+      g({ id: 'a', monto: 6_500, fecha: haceNDias(15) }),
+      g({ id: 'b', monto: 6_500, fecha: haceNDias(10) }),
+      g({ id: 'c', monto: 6_500, fecha: haceNDias(5) }),
     ];
     const html = renderFormGasto();
     expect(html).toContain('data-monto="6500"');

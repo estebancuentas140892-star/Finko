@@ -141,14 +141,19 @@ export function updSaldo() {
     if (use) use.setAttribute('href', oculto ? '#i-eye-off' : '#i-eye');
   }
 
-  // Detalle por cuenta (IN.8c, ADR 034 D4): pill + filas. La máscara del ojo
-  // cubre total Y detalle juntos (extensión de IN.2): el saldo real de cada
-  // cuenta tampoco toca el DOM mientras está oculto.
-  const abierto = _detalleCuentasAbierto && !sinCuentas;
+  // Detalle por cuenta. En móvil es el acordeón del hero (IN.8c, ADR 034 D4):
+  // a 390px expandir es la única forma de mostrar las cuentas sin sacar al
+  // usuario de la pantalla. Desde 1024px hay una columna libre al lado, así
+  // que el mismo contenido vive ahí y deja de ser un estado (IN.9c, ADR 057
+  // D3, regla R80). Las dos listas se llenan desde el mismo `oculto`: la
+  // máscara del ojo cubre total Y detalle juntos (extensión de IN.2), y el
+  // saldo real de cada cuenta no toca el DOM en ninguna de las dos.
+  const enEscritorio = _enEscritorio();
+  const abierto = _detalleCuentasAbierto && !sinCuentas && !enEscritorio;
   const pill    = document.getElementById('saldo-detalle-toggle');
   const detalle = document.getElementById('saldo-detalle');
   if (pill) {
-    pill.hidden = sinCuentas;
+    pill.hidden = sinCuentas || enEscritorio;
     pill.setAttribute('aria-expanded', String(abierto));
     const labelPill = document.getElementById('saldo-detalle-label');
     if (labelPill) labelPill.textContent = abierto ? 'Ocultar detalle' : 'Ver detalle por cuenta';
@@ -159,25 +164,67 @@ export function updSaldo() {
       detalle.innerHTML = '';
     } else {
       detalle.hidden = false;
-      detalle.innerHTML = cuentasActivas.map(c => {
-        // Cuentas viejas sin `banco` pero de efectivo caen a la teja Efectivo.
-        const bancoId = c.banco ?? (_esEfectivo(c) ? 'Efectivo' : undefined);
-        const saldoTxt = oculto ? SALDO_MASCARA_CUENTA : f(c.saldo ?? 0);
-        return `
-          <li class="hero-inicio__cuenta">
-            ${bancoAvatar(bancoId, c.icono)}
-            <span class="hero-inicio__cuenta-nombre">${_esc(c.nombre ?? '')}</span>
-            <span class="hero-inicio__cuenta-saldo">${saldoTxt}</span>
-          </li>`;
-      }).join('');
+      detalle.innerHTML = _filasCuentas(cuentasActivas, oculto);
     }
   }
 
-  // "efectivo + N cuentas bancarias": solo colapsado (expandido es redundante).
+  // Columna propia de escritorio (IN.9c). Vacía su lista al ocultarse por el
+  // mismo motivo que el acordeón: nada de saldos en un DOM que no se ve.
+  const panelCuentas = document.getElementById('panel-cuentas-detalle');
+  if (panelCuentas) {
+    const visible = enEscritorio && !sinCuentas;
+    panelCuentas.hidden = !visible;
+    const lista = document.getElementById('cuentas-detalle-lista');
+    if (lista) lista.innerHTML = visible ? _filasCuentas(cuentasActivas, oculto) : '';
+  }
+
+  // "efectivo + N cuentas bancarias": se oculta solo cuando el acordeón está
+  // expandido, que es cuando lo repite. En escritorio el detalle vive al lado
+  // y no ocupa el sitio del conteo, así que los dos conviven.
   if (desc && !sinCuentas) {
     desc.hidden = abierto;
     if (!abierto) desc.textContent = _descCuentas(cuentasActivas);
   }
+}
+
+/**
+ * ¿El ancho da para la columna propia del detalle por cuenta?
+ *
+ * Mismo umbral y misma forma que `_limiteRecientes()` de
+ * `movimientos/view.js` y `_lanzarConfetti()` de `logros/index.js`: el corte
+ * de escritorio de la app es 1024px.
+ *
+ * Se lee en cada `updSaldo()`. Un cambio de ancho sin cambio de estado no
+ * repinta, así que el hero se queda con el reparto del último render hasta la
+ * siguiente acción; misma limitación aceptada en IN.9b.
+ *
+ * @returns {boolean}
+ */
+function _enEscritorio() {
+  return !window.matchMedia?.('(max-width: 1023.98px)').matches;
+}
+
+/**
+ * Filas del detalle por cuenta: teja del banco + nombre + saldo. Las comparten
+ * el acordeón de móvil y la columna de escritorio, así que la máscara de
+ * privacidad se decide en un solo sitio (PI4 del informe de Inicio).
+ *
+ * @param {import('../core/state.js').Cuenta[]} cuentas - activas.
+ * @param {boolean} oculto - `S.config.ocultarSaldo`.
+ * @returns {string} HTML de los `<li>`.
+ */
+function _filasCuentas(cuentas, oculto) {
+  return cuentas.map(c => {
+    // Cuentas viejas sin `banco` pero de efectivo caen a la teja Efectivo.
+    const bancoId  = c.banco ?? (_esEfectivo(c) ? 'Efectivo' : undefined);
+    const saldoTxt = oculto ? SALDO_MASCARA_CUENTA : f(c.saldo ?? 0);
+    return `
+      <li class="hero-inicio__cuenta">
+        ${bancoAvatar(bancoId, c.icono)}
+        <span class="hero-inicio__cuenta-nombre">${_esc(c.nombre ?? '')}</span>
+        <span class="hero-inicio__cuenta-saldo">${saldoTxt}</span>
+      </li>`;
+  }).join('');
 }
 
 /**

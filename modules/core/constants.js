@@ -517,10 +517,14 @@ export const ICONOS_CATEGORIA_PERSONALIZADA = [
 ];
 
 /**
- * Resuelve el ícono de una categoría de gasto: nativa primero
- * (`CATEGORIA_ICONO`), luego personalizada (creada por el usuario, TX.9b),
- * y como último recurso el genérico `i-gastos`. Pura: recibe las
- * personalizadas como parámetro (el caller, `view.js`, lee `S`).
+ * Resuelve el ícono de una categoría ya guardada, sea de Gastos o de Gastos
+ * fijos: nativa de Gastos (`CATEGORIA_ICONO`), nativa de Agenda
+ * (`CATEGORIA_AGENDA_ICONO`), personalizada (creada por el usuario, TX.9b,
+ * de cualquier `seccion`), y como último recurso el genérico `i-gastos`.
+ * Resolutora global (ADR 058 D2): ignora la `seccion` porque el nombre ya
+ * es único en toda la app (D4) y una superficie que pinta un movimiento no
+ * sabe, y no debe saber, de qué formulario salió ese nombre. Pura: recibe
+ * las personalizadas como parámetro (el caller lee `S`).
  *
  * @param {string} categoria
  * @param {{ nombre: string, icono: string }[]} [personalizadas]
@@ -528,6 +532,7 @@ export const ICONOS_CATEGORIA_PERSONALIZADA = [
  */
 export function iconoDeCategoriaGasto(categoria, personalizadas = []) {
   if (CATEGORIA_ICONO[categoria]) return CATEGORIA_ICONO[categoria];
+  if (CATEGORIA_AGENDA_ICONO[categoria]) return CATEGORIA_AGENDA_ICONO[categoria];
   const propia = personalizadas.find(c => c.nombre === categoria);
   return propia?.icono ?? 'i-gastos';
 }

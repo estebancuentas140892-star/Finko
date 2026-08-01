@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-07-31. Última tarea cerrada: MC.13e-2d, cuota del periodo en las filas de ahorro, no el objetivo total.
+> Revisado: 2026-08-01. Última tarea cerrada: CAT.3a, modelo de las categorías personalizadas globales (campo `seccion`, resolutora global, validador D4).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,17 +13,23 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 3533/3533 verdes |
-| Tests E2E | 246/247 verdes (corrida del 2026-07-31). La falla es preexistente y no relacionada a MC.13e-2d: locator duplicado en `#hero-guia-saldo`, de un cambio de otra sesión sin commitear en `index.html`. **Es compuerta** desde el 2026-07-30: el hook de pre-commit exige el sello de una corrida verde cuando el diff toca runtime |
-| Schema version (`localStorage`) | v28 |
+| Tests unitarios + integración | 3561/3561 verdes |
+| Tests E2E | 246/246 verdes (corrida del 2026-08-01), 1 flaky que pasa al reintentar: la comparación de `boundingBox` del test IN.9c difiere en 1 px. **Es compuerta** desde el 2026-07-30: el hook de pre-commit exige el sello de una corrida verde cuando el diff toca runtime |
+| Schema version (`localStorage`) | v31 (`seccion` en categoría personalizada, CAT.3a; migración backfill) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
 | `onclick` / `style=""` / `window.X` en módulos | 0 / 0 / 0 |
-| Errores abiertos | **2**, ninguno con impacto en el uso diario (uno de copy, uno de la propia suite E2E): ver [BUGS.md](BUGS.md) |
+| Errores abiertos | **4**: ver [BUGS.md](BUGS.md). BUG-018 es el único con impacto en el uso diario |
 
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**CAT.3a - modelo de las categorías personalizadas globales, 2026-08-01**
+Primera de las cuatro rebanadas del [ADR 058](DECISIONS/058-categorias-personalizadas-globales.md), sin cambio visible todavía: campo `seccion` (bump v30 a v31 con backfill), resolutora de ícono global sobre los dos catálogos nativos y validador que compara contra los dos. Las compuertas destaparon **8 unitarios y 4 E2E rojos en HEAD**, los tres del mismo patrón de fechas fijas en los tests (BUG-022, BUG-023, BUG-024): quedaron arreglados en el mismo commit y la suite vuelve a verde.
+
+**MC.16e - avisos de costo de la tarjeta de crédito, 2026-07-31**
+Cierra **MC.16 completa** y deja ejecutado el [ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md). Dos de los tres avisos del D7 no tenían dato que los disparara: se resuelven con **un solo campo** (`avanceTC`, bump v29 a v30) y el retiro en otra red entra en el texto del mismo aviso. El **pago mínimo se deriva** de `tasa` y saldo, no se captura (un mínimo tecleado queda viejo cada mes). Se sumó un cuarto aviso derivable, **el consumo que pasa del cupo**, que el tablero traía anotado desde MC.16b. Ninguno bloquea: informan el costo, no validan.
 
 **AH.7b - "Apartados" se renombra a "Reservas" en todo el copy visible, 2026-07-31**
 Decisión de Esteban tras el triaje del pendiente 3 de DIS.18 ([ADR 056](DECISIONS/056-la-casa-de-ahorro.md)): el nombre colisionaba con "apartar". Alcance acotado a copy (nav, título, botones, formularios, anuncios, banner de propósito y referencias cruzadas): el dominio interno, `S.apartados` e ids no cambian. AH.7 se partió en dos; **AH.7a** (Ahorro sube a la barra inferior, Calendario a "Más") sigue pendiente, requiere ADR nuevo por revertir el D1 del [ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md).
@@ -33,12 +39,6 @@ El harness ya cronometraba la escritura (`stringify`, `save`) pero nunca el cami
 
 **CAT.3 - modelo de las categorías personalizadas globales decidido, 2026-07-31**
 **[ADR 058](DECISIONS/058-categorias-personalizadas-globales.md)**, 5 decisiones sobre un mapeo del código: la sección es un **campo** del objeto (`seccion: 'gasto' | 'fijo'`, bump v29), ofrecer filtra por sección y resolver la ignora. El mapeo bajó el alcance de la tarjeta: gráficos, CSV y 8 de 9 filtros ya funcionan, y **no existe ningún mapa categoría-color** en el repo. **Defecto preexistente que entra:** 3 superficies ya pintan `c-otros` una personalizada de Gastos (`presupuesto/view.js:492`, `:742`, `resumen/view.js:119`). Cuatro rebanadas, ninguna iniciada.
-
-**DOC.1 movimiento 5 - `HANDOFF.md` a 6 KB con línea de contrato, 2026-07-31**
-Punto 5 de la Fase 4 de la reorganización documental: 12,95 a 4,3 KB. Los 8 bloques que salen (identidad, runbook de E.2-2027, workflow, arquitectura, comandos, el párrafo de 40 tareas) se verificaron en su dueño antes de borrarse. La cabecera imprime el contrato para que no vuelva a crecer, y el paso 3 de la skill `cerrar-tarea` deja de reconstruir el párrafo purgado. **Falta el punto 6 para cerrar la Fase 4:** `BOARD.md` en 80 KB contra un techo de 40.
-
-**CAT.4 - auditoría de consistencia de formularios, 2026-07-31**
-Las 2 reglas transversales (categoría/tipo antes que descripción; fecha por defecto = hoy al crear) ya se cumplían en los ~8 formularios en alcance. Cierra sin cambios de código. `fechaObjetivo` (Apartados) y `fechaLimite` (Metas) quedan fuera: son fecha meta futura, no fecha de registro.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 

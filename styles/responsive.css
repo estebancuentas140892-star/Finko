@@ -310,6 +310,11 @@
     height: 100%;
   }
 
+  /* IN.9e: bajo 1024px el estado vacio del hero es la guia de movil de
+     siempre (ancho completo), no la pieza de tres pasos de escritorio. */
+  .hero-guia__movil { display: flex; }
+  .hero-guia__escritorio { display: none; }
+
   /* ── INPUTS - 16px font-size evita zoom autom. en iOS ──────── */
   .input,
   textarea.input,
@@ -448,6 +453,18 @@
      que subía la columna del ícono de 40 a 56px por el diámetro del anillo)
      quedó sin sujeto y se retiró. El caso de Metas sigue documentado en la
      regla R56, que nació de él. */
+}
+
+/* ── TABLET (768 a 1023px): correcciones propias del rango ────── */
+/* Rango cerrado a propósito, no `max-width` abierto: bajo 768px el bento ya
+   es de 1 columna y una regla más específica que la de allá le ganaría. */
+@media (min-width: 768px) and (max-width: 1023px) {
+
+  /* IN.9c (ADR 057 D3): el hero de Inicio pasó a `--half` para dejarle la
+     columna de al lado al detalle por cuenta, pero esa columna solo existe
+     desde 1024px. Acá el detalle vuelve a ser el acordeón del hero, así que
+     sin esto el hero se queda a media fila con el hueco al lado. */
+  .bento--dash .bento__cell--hero { grid-column: span 6; }
 }
 
 /* ── MÓVIL (< 768px): grid 1-col, fluid type, layouts compactos ─ */

@@ -578,6 +578,64 @@
   letter-spacing: 0.01em;
 }
 
+/* IN.9e (ADR 057 D6): dos versiones del mismo estado vacio bajo un solo
+   contenedor. `__movil` es la guia de ancho completo de arriba, sin cambios;
+   `__escritorio` es la pieza centrada de 620px con tres pasos, visible desde
+   1024px (responsive.css decide cual de las dos se ve). */
+.hero-guia__movil { display: none; flex-direction: column; align-items: center; text-align: center; gap: var(--fk-space-3); width: 100%; }
+.hero-guia__escritorio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--fk-space-5);
+  width: 100%;
+  max-width: 620px;
+  margin-inline: auto;
+  padding: var(--fk-space-4) 0;
+}
+.hero-guia__escritorio .hero-guia__cta { margin-top: 0; }
+.hero-guia__pasos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--fk-space-4);
+  width: 100%;
+  text-align: left;
+}
+.hero-guia__paso {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+  padding: var(--fk-space-4);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-md);
+  background: var(--fk-bg-elevated);
+}
+.hero-guia__paso-n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--fk-radius-full);
+  background: var(--fk-accent-subtle);
+  color: var(--fk-text-accent);
+  font-size: 11px;
+  font-weight: var(--fk-font-bold);
+}
+.hero-guia__paso-t {
+  margin: 0;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
+.hero-guia__paso-d {
+  margin: 0;
+  font-size: var(--fk-text-xs);
+  line-height: var(--fk-leading-normal);
+  color: var(--fk-text-secondary);
+}
+
 /* ── GRUPOS DEL DASHBOARD (IN.8a, ADR 034 D1) ──────────────
    "Atención hoy" y "Resumen de la semana" agrupan sus paneles bajo un
    label de sección. El grupo ocupa el ancho completo del bento y sus
