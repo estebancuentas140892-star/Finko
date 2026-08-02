@@ -10,6 +10,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### refactor(transversal): ARQ.1a, unificar progreso de las cuatro bolsas · 2026-08-02
+
+Rebanada de **ARQ.1** (patrón P7 de la auditoría de UX/producto). Commit `87b6b04`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
+
+- `progresoDeBolsa(objetivo, actual)` en `infra/bolsas.js` reemplaza las tres copias de `calcularProgreso`/`calcularProgresoFondo` (Metas, Apartados, Ahorro) más la cuarta inline de `estadoDeBolsa`, con el criterio de bordes más estricto (el del Fondo: objetivo no finito o acumulado negativo, antes solo protegidos ahí).
+- `diasHastaFecha` de un solo argumento en `metas/logic.js` (redondeo distinto al de `infra/bolsas.js`) se retira sin reemplazo: no lo llamaba nadie en `modules/`, solo su propio test.
+- Resuelve la pieza de arquitectura que necesita el Hub Ahorro para leer el progreso de Metas y Apartados sin importar esos dominios (ADN 10): la fuente única ya vive en `infra/bolsas.js`.
+- Pendiente de ARQ.1: la propiedad "descuenta saldo" del ADR 053, los handlers de "aportar" y la etapa de Inversión del carril.
+- 3621 unit + 253 E2E + lint verdes. SW v474 a v475.
+
 ### feat(inversiones): EDIT.1, editar sin destruir una inversión · 2026-08-02
 
 Rebanada Inversión de **EDIT.1** (patrón P3 de la auditoría de UX/producto). Commit `886c5b7`. Ficha: [`contexto/inversion.md`](contexto/inversion.md). Me deben sigue pendiente de la misma tarjeta.

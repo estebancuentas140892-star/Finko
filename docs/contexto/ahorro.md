@@ -8,7 +8,7 @@
 
 - **Objetivo**          : activar/editar un fondo de emergencia con meta en meses de gastos fijos, registrar aportes, definir un compromiso mensual ("págate primero") con sugerencia calculada (AH.2), y mostrar la tasa de ahorro del mes con un nudge según el rango. El dominio dibuja además **la casa de Ahorro** (bloque aparte en esta ficha), que reemplazó al consolidado repetido del hub.
 - **Estado actual**     : estable. **DIS.19 cerrada** (2026-07-29): la tarjeta deja de medirse con dos componentes y pasa a uno. Los bloques de mes se ponen verticales, el eje de la franja rotula los tres niveles y la lista de niveles que vivía aparte se retira (unos 90px recuperados); el compromiso mensual deja la fila de texto y pasa a un medidor de gota que se llena con lo aportado en el mes. **Su ruta es `#fondo` desde DIS.18** (2026-07-28): `#ahorro` es la casa. **DIS.16 cerrada** (2026-07-28): el hero pasó a `.fondo-card` y la sección dejó de medirse en porcentaje para medirse en **tiempo**. El anillo de progreso se retiró; lo sustituyen los bloques de mes (la prueba) y la escalera de tres niveles (el camino). Cuatro de los seis estados del mockup están construidos; los otros dos dependen de datos que Finko no guarda (ver Riesgos). **DIS.12 cerrada** (2026-07-27): las 9 correcciones de la auditoría de diseño de la sección; su capa de hero la reemplazó DIS.16, el resto (consolidado, lista de aportes, compromiso, formulario) sigue vigente. **BUG-012 corregido** (2026-07-11): el mensaje de confirmación al desactivar el fondo ya no usa el literal técnico "empty state" (ADN 11: lenguaje humano). **AH.5a cerrada** (2026-07-22): "Registrar aporte" prellena el monto con la sugerencia de AH.2. El resto de la iniciativa "Fondo de emergencia v2" (brief 2026-07-08, `docs/BOARD.md`) sigue pendiente de análisis en **AH.5**.
-- **Verificado contra** : commit `788f87d` DIS.19 (2026-07-29).
+- **Verificado contra** : ARQ.1a, commit `87b6b04` (2026-08-02).
 
 **Dónde vive**
 
@@ -57,6 +57,8 @@
 **Cambios pendientes**: **los estados 4 y 5 del mockup de DIS.16** y los dos campos que los habilitan (fecha de cada nivel alcanzado, gasto fijo de referencia), que pasan por triaje antes de ser tarjeta. El resto de **AH.5** (rediseño UX educativo del fondo; la integración del aporte con "Distribuir mi ingreso" ya existe vía `EventBus.on('distribucion:aplicar', ...)`, `docs/BOARD.md`).
 
 **Cambios realizados**:
+
+- 2026-08-02 (**ARQ.1a**, commit `87b6b04`): `calcularProgresoFondo(montoActual, objetivo)` pasa a envoltorio de `progresoDeBolsa()` (`infra/bolsas.js`); sus bordes estrictos (objetivo no finito, acumulado negativo) son los que quedaron en la versión compartida que ahora usan Metas y Apartados también.
 
 - 2026-07-29 (**DIS.19**, items 6 y 7 del informe de gráficos): la franja de meses se pone vertical y absorbe el eje de niveles, `_renderEscalera()` se retira, y el compromiso mensual pasa de fila de texto a medidor de gota. `franjaCobertura()`, `aportadoEnMes()` y `progresoCompromiso()` nuevas en `logic.js`. Ver CHANGELOG.
 

@@ -8,7 +8,7 @@
 
 - **Objetivo**          : bolsas de ahorro con nombre, objetivo, fecha límite opcional y categoría (dueño de su propio `montoActual`, a diferencia de Deudas que deriva el progreso del historial de gastos). El usuario crea, abona, edita y elimina; la fecha límite alimenta un ritmo de ahorro sugerido (MT.4) según la frecuencia real de sus ingresos.
 - **Estado actual**     : estable. **DIS.19** (2026-07-29) pone la silueta de la meta en el centro del arco: la figura de lo que persigues es también el medidor, porque se llena de abajo hacia arriba. **DIS.14** (2026-07-28) aplica la arquitectura A2 de la auditoría por secciones: la meta dejó de ser una fila y es una tarjeta vertical (`.meta-card`) con medidor semicircular, el ícono en el centro del arco, el objetivo como extremo de la escala y el copy en "aporte". **MT.7** (2026-07-27) prellena el monto del aporte con la cuota del período (mismo criterio que Apartados y Fondo). **DIS.13** (2026-07-27) había aplicado la primera pasada de diseño: el ojo de privacidad, el bloque de metas cumplidas y el anillo accesible siguen vigentes; su capa de layout la reemplazó DIS.14. **EDIT.1a** (2026-07-23) cerró el hueco de edición: antes, corregir un nombre o un objetivo mal escrito obligaba a eliminar y recrear, perdiendo el progreso acumulado.
-- **Verificado contra** : DIS.19, commit `788f87d` (2026-07-29).
+- **Verificado contra** : ARQ.1a, commit `87b6b04` (2026-08-02).
 
 **Dónde vive**
 
@@ -51,6 +51,8 @@
 - **El `clipPath` toma su id de `meta.id`.** Dos siluetas en pantalla con el mismo id se recortan con la figura equivocada. La sección Metas usa `silueta-<id>` y el carril del hub `silueta-carril-<id>` para no colisionar entre sí.
 
 **Cambios realizados**:
+
+- 2026-08-02 (**ARQ.1a**, commit `87b6b04`): `calcularProgreso(meta)` pasa a envoltorio de `progresoDeBolsa()` (`infra/bolsas.js`); su propio `diasHastaFecha` de un argumento se retira sin reemplazo (sin llamadores en `modules/`).
 
 - 2026-07-29 (**DIS.19**, item 3 del informe de gráficos de Ahorro): `siluetaMeta()` + `SILUETAS` (diez figuras cerradas) en `infra/svg.js`, `CATEGORIA_META_SILUETA` en `core/constants.js`, y `_glifoMeta()` en el view eligiendo entre silueta e ícono con la precedencia de `_iconoMeta()`. Ver CHANGELOG.
 
