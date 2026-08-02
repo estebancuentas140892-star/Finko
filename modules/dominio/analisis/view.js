@@ -122,6 +122,21 @@ const _calcularEstadoRentaMemo = memoizar(
 );
 
 /**
+ * PERF.7c: precalienta `_calcularDatosAnalisisMemo` en idle, con los mismos
+ * argumentos que `renderAnalisis()`, para que la primera navegación a
+ * Análisis encuentre la caché tibia en vez de pagar el cómputo frío. No toca
+ * el DOM.
+ */
+export function precalentarAnalisis() {
+  const fechaHoy = hoy();
+  const anio = Number(fechaHoy.slice(0, 4));
+  const mes  = Number(fechaHoy.slice(5, 7));
+  _calcularDatosAnalisisMemo(
+    S.gastos, S.compromisos, S.cuentas, S.metas, S.apartados, S.inversiones, S.personales, anio, mes,
+  );
+}
+
+/**
  * Renderiza el análisis completo en `#panel-analisis`.
  * No-op si el contenedor no existe.
  */

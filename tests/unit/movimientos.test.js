@@ -24,7 +24,7 @@ import {
   renderActividadReciente, renderMovimientosCompletos, cargarMasMovimientos,
   renderFiltrosMovimientos, setFiltroTexto, setFiltroDominio,
   setFiltroFechaDesde, setFiltroFechaHasta, limpiarFiltrosMovimientos,
-  actualizarBotonLimpiarFiltros,
+  actualizarBotonLimpiarFiltros, precalentarMovimientos,
 } from '../../modules/dominio/movimientos/view.js';
 import { S } from '../../modules/core/state.js';
 
@@ -645,6 +645,37 @@ describe('renderMovimientosCompletos()', () => {
     S.transferencias = [transferencia()];
     renderMovimientosCompletos();
     expect(elLista().querySelector('.list-item__subtitle').textContent).not.toContain('4x1000');
+  });
+});
+
+// ── precalentarMovimientos() (PERF.7c) ──────────────────────────────
+
+describe('precalentarMovimientos()', () => {
+  const elLista = () => document.getElementById('lista-movimientos');
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-movimientos"></div>';
+    S.gastos = [gasto()];
+    S.ingresosPuntuales = [];
+    S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
+    S.transferencias = [];
+    S.cuentas = [];
+  });
+
+  it('no lanza sin ningún contenedor en el DOM', () => {
+    document.body.innerHTML = '';
+    expect(() => precalentarMovimientos()).not.toThrow();
+  });
+
+  it('no toca el DOM', () => {
+    precalentarMovimientos();
+    expect(elLista().innerHTML).toBe('');
+  });
+
+  it('precalentar antes de renderMovimientosCompletos() no cambia el resultado', () => {
+    precalentarMovimientos();
+    renderMovimientosCompletos();
+    expect(elLista().querySelectorAll('.list-item')).toHaveLength(1);
   });
 });
 

@@ -199,6 +199,15 @@ function _todosLosMovimientos() {
 }
 
 /**
+ * PERF.7c: precalienta `_movimientosCompletosMemo` en idle, para que la
+ * primera apertura de la vista completa (`#movimientos`) encuentre la caché
+ * tibia. No toca el DOM.
+ */
+export function precalentarMovimientos() {
+  _todosLosMovimientos();
+}
+
+/**
  * Renderiza la barra de filtros de la vista completa (MOV.2) en
  * `#movimientos-filtros`: búsqueda por texto, chips por dominio (reusa el
  * lenguaje `.chip`/`.filtros-bar` de Gastos, ningún componente nuevo) y rango

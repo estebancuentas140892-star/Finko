@@ -19,6 +19,8 @@ import { initAcciones } from './actions.js';
 import { initOnboarding } from './onboarding.js';
 import { renderAll } from '../infra/render.js';
 import { verificarYNotificar } from '../infra/notificaciones.js';
+import { precalentarAnalisis } from '../dominio/analisis/view.js';
+import { precalentarMovimientos } from '../dominio/movimientos/view.js';
 import { initTesoreria } from '../dominio/tesoreria/index.js';
 import { initGastos } from '../dominio/gastos/index.js';
 import { initMetas } from '../dominio/metas/index.js';
@@ -75,3 +77,15 @@ initLogros();
 // Verificar compromisos próximos y mostrar notificación si el usuario optó-in.
 // Se ejecuta después del primer render para no bloquear el arranque.
 verificarYNotificar(S.compromisos);
+
+// PERF.7c: precalienta en idle el bundle memoizado de Análisis y el
+// historial completo de Movimientos, para que la primera navegación a esas
+// secciones caiga en caché en vez de pagar el cómputo frío. Fallback
+// `setTimeout` para navegadores sin `requestIdleCallback` (ej. Safari).
+const _idleWarmUp = typeof window.requestIdleCallback === 'function'
+  ? window.requestIdleCallback
+  : (fn) => setTimeout(fn, 1);
+_idleWarmUp(() => {
+  precalentarAnalisis();
+  precalentarMovimientos();
+});

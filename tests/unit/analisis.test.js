@@ -20,7 +20,7 @@ import {
   repartirPorcentajes,
 } from '../../modules/dominio/analisis/logic.js';
 import { UVT, TOPES_RENTA_UVT } from '../../modules/core/constants.js';
-import { renderAnalisis } from '../../modules/dominio/analisis/view.js';
+import { renderAnalisis, precalentarAnalisis } from '../../modules/dominio/analisis/view.js';
 import { S } from '../../modules/core/state.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -1719,6 +1719,38 @@ describe('renderAnalisis() - PERF.7d Estado de tu renta memoizado, sin quedar ob
     renderAnalisis();
     renderAnalisis();
     expect(criterioIngresos().querySelector('.renta-criterio__valor').textContent).toContain('$10.000.000');
+  });
+});
+
+// ── precalentarAnalisis() - PERF.7c warm-up en idle ────────────────
+
+describe('precalentarAnalisis()', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-analisis"></div>';
+    S.gastos = [gasto()]; S.compromisos = []; S.cuentas = [cuenta({ saldo: 500_000 })];
+    S.metas = []; S.apartados = []; S.inversiones = []; S.personales = [];
+    S.config = { datosFiscales: {} };
+  });
+
+  it('no lanza sin ningún contenedor en el DOM', () => {
+    document.body.innerHTML = '';
+    expect(() => precalentarAnalisis()).not.toThrow();
+  });
+
+  it('no toca el DOM', () => {
+    precalentarAnalisis();
+    expect(document.getElementById('panel-analisis').innerHTML).toBe('');
+  });
+
+  it('precalentar antes de renderAnalisis() no cambia el resultado', () => {
+    precalentarAnalisis();
+    renderAnalisis();
+    const html = document.getElementById('panel-analisis').innerHTML;
+    expect(html.length).toBeGreaterThan(0);
+
+    document.body.innerHTML = '<div id="panel-analisis"></div>';
+    renderAnalisis();
+    expect(document.getElementById('panel-analisis').innerHTML).toBe(html);
   });
 });
 
