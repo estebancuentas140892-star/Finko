@@ -20,6 +20,7 @@ import {
   proyectarInversion,
   proyectarPortafolio,
   columnasPortafolio,
+  etapaDePortafolio,
 } from '../../infra/portafolio.js';
 
 // Lo invertido, su proyección al vencimiento y la geometría de las dos columnas
@@ -567,17 +568,20 @@ export function fechaVencimientoInversion(inv) {
  * } | null} null si no hay ninguna inversión con monto.
  */
 export function momentoInversion(inversiones, contexto = {}) {
-  const lista = Array.isArray(inversiones)
-    ? inversiones.filter(i => Number(i?.monto) > 0)
-    : [];
-  if (lista.length === 0) return null;
+  // El corte entre "la primera" y "el conjunto" vive en `infra/portafolio.js`
+  // desde ARQ.1c: la casa de Ahorro lo necesita para su carril y ADN #10 le
+  // impide importar este dominio. Acá queda lo que sí es de la sección: las
+  // frases, el anticipo y la acción de cada momento.
+  const etapa = etapaDePortafolio(inversiones);
+  if (etapa === null) return null;
+  const lista = etapa.activas;
 
   const nudges = detectarNudgesInversion(lista, contexto);
   const aviso  = nudges.find(n => n.id === 'fondo-primero' || n.id === 'fondo-incompleto') ?? null;
 
-  if (lista.length === 1) {
+  if (etapa.numero === 1) {
     return {
-      numero:         1,
+      numero:         etapa.numero,
       chip:           'aprendiendo',
       titulo:         'Diste tu primer paso',
       frase:          explicacionTipo(lista[0].tipo),
@@ -601,7 +605,7 @@ export function momentoInversion(inversiones, contexto = {}) {
   }
 
   return {
-    numero:         2,
+    numero:         etapa.numero,
     chip:           'construyendo',
     titulo:         'Estás construyendo patrimonio',
     frase,

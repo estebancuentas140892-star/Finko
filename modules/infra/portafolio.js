@@ -10,9 +10,14 @@
  * habría duplicado las fórmulas financieras del negocio, que es justo lo que
  * DIS.18 se negó a hacer con `momentoInversion()`.
  *
+ * `etapaDePortafolio()` bajó después, por la misma razón y con el mismo límite:
+ * es el **corte** entre la primera inversión y el conjunto (el "momento" de
+ * DIS.17 sin una palabra de copy), que la casa de Ahorro necesita para decir la
+ * etapa de su carril en vez de un conteo.
+ *
  * Lo que NO está aquí sigue siendo del dominio: los tipos soportados, la
- * validación del formulario, los nudges, el momento del usuario y la
- * rentabilidad real. Esto es la aritmética compartida, no la sección.
+ * validación del formulario, los nudges, las frases del momento del usuario y
+ * la rentabilidad real. Esto es la aritmética compartida, no la sección.
  *
  * Sin DOM. Sin S directo. Importa de `infra/financiero.js` (capa infra, no
  * dominio): ahí viven las fórmulas CO reutilizables (CDT, interés compuesto).
@@ -61,6 +66,45 @@ export function calcularPorTipo(inversiones) {
   return Object.entries(acc)
     .map(([tipo, t]) => ({ tipo, total: t, pct: Math.round((t / total) * 100) }))
     .sort((a, b) => b.total - a.total);
+}
+
+/**
+ * En qué etapa va el portafolio: cuántas inversiones abiertas hay y si eso es
+ * la primera o ya el conjunto.
+ *
+ * Es el corte que la sección Inversión llamaba "momento" (DIS.17): con una sola
+ * inversión la app explica qué compró el usuario, con dos o más muestra el
+ * conjunto y de qué está hecho. La casa de Ahorro necesita el mismo corte para
+ * decir la etapa en su carril en vez de un conteo (consecuencia pendiente del
+ * ADR 056), y `momentoInversion()` no se puede leer desde ahí: es del dominio
+ * Inversión y ADN #10 prohíbe importarlo. Bajar el corte acá es el mismo
+ * movimiento que hizo `columnasPortafolio()` con la geometría del gráfico.
+ *
+ * **Lo que baja es el criterio, no la frase.** Los títulos, la explicación del
+ * tipo, el anticipo y la acción siguen en `inversiones/logic.js`, y el carril de
+ * Ahorro pone las suyas: infra devuelve números, cada pantalla su vocabulario
+ * (mismo criterio que `estadoDeBolsa()` en `infra/bolsas.js`).
+ *
+ * `activas` viaja en la respuesta porque el filtro "monto > 0" es parte del
+ * mismo criterio: quien pregunta por la etapa suele necesitar después la lista
+ * que la produjo, y volver a filtrarla sería duplicar la definición de
+ * "inversión abierta".
+ *
+ * @param {Array<{monto:number}>} inversiones
+ * @returns {{ numero: number, abiertas: number, activas: Array<Object> } | null}
+ *   null si no hay ninguna inversión con monto.
+ */
+export function etapaDePortafolio(inversiones) {
+  const activas = Array.isArray(inversiones)
+    ? inversiones.filter(i => Number(i?.monto) > 0)
+    : [];
+  if (activas.length === 0) return null;
+
+  return {
+    numero:   activas.length === 1 ? 1 : 2,
+    abiertas: activas.length,
+    activas,
+  };
 }
 
 // ── PROYECCIÓN ───────────────────────────────────────────────────

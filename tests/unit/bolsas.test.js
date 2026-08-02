@@ -12,6 +12,12 @@
  * Motivo del movimiento: la casa de Ahorro dibuja la línea del plan de
  * Apartados y las dos columnas de Inversión en sus carriles, y ADN #10 le
  * prohíbe importar esos dominios.
+ *
+ * ARQ.1c suma la tercera pieza, `etapaDePortafolio()`: el mismo motivo, con un
+ * matiz que las dos anteriores no tenían. Acá no se movió una función entera
+ * sino el **corte** que decide la etapa; las frases del momento se quedaron en
+ * `inversiones/logic.js`, así que la frontera se prueba por comportamiento
+ * (mismo número por las dos puertas) y no por identidad.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -140,5 +146,48 @@ describe('infra/portafolio.js - frontera con el dominio Inversión', () => {
   it('columnasPortafolio devuelve null sin capital registrado', () => {
     expect(portafolio.columnasPortafolio([])).toBeNull();
     expect(portafolio.columnasPortafolio(null)).toBeNull();
+  });
+});
+
+// ARQ.1c: la casa de Ahorro necesita decir la etapa de su carril de Inversión y
+// no puede importar `momentoInversion()` (ADN #10). El corte que decide la
+// etapa baja a infra; las frases se quedan en la sección. Estos tests son la
+// red que impide que el carril vuelva a calcularlo por su cuenta.
+describe('etapaDePortafolio - el corte que Ahorro e Inversión comparten (ARQ.1c)', () => {
+  const cdt = { tipo: 'CDT',   monto: 5_000_000, tasaEA: 11.5, plazoMeses: 12 };
+  const fic = { tipo: 'Fondo', monto: 3_000_000, tasaEA: 8,    plazoMeses: 24 };
+
+  it('sin inversiones con monto no hay etapa', () => {
+    expect(portafolio.etapaDePortafolio([])).toBeNull();
+    expect(portafolio.etapaDePortafolio(null)).toBeNull();
+    expect(portafolio.etapaDePortafolio([{ tipo: 'CDT', monto: 0 }])).toBeNull();
+  });
+
+  it('una sola inversión es la etapa 1; dos o más, la 2', () => {
+    expect(portafolio.etapaDePortafolio([cdt]).numero).toBe(1);
+    expect(portafolio.etapaDePortafolio([cdt, fic]).numero).toBe(2);
+  });
+
+  it('abiertas cuenta solo las que tienen monto, y activas es esa misma lista', () => {
+    const etapa = portafolio.etapaDePortafolio([cdt, { tipo: 'Cripto', monto: 0 }, fic]);
+    expect(etapa.abiertas).toBe(2);
+    expect(etapa.activas).toEqual([cdt, fic]);
+  });
+
+  it('la sección Inversión lee la etapa de infra, no una copia propia', () => {
+    const listo = { fondoActivo: true, fondoCompletado: true };
+    for (const lista of [[cdt], [cdt, fic]]) {
+      expect(inversiones.momentoInversion(lista, listo).numero)
+        .toBe(portafolio.etapaDePortafolio(lista).numero);
+    }
+  });
+
+  it('el conteo del carril y la etapa salen del mismo filtro', () => {
+    const lista = [cdt, { tipo: 'Cripto', monto: 0 }, fic];
+    const etapa = portafolio.etapaDePortafolio(lista);
+    // El carril de Ahorro puede contar inversiones abiertas y nombrar su etapa
+    // con una sola llamada, sin importar el dominio Inversión.
+    expect(etapa.abiertas).toBe(etapa.activas.length);
+    expect(inversiones.momentoInversion(lista).numero).toBe(etapa.numero);
   });
 });
