@@ -343,6 +343,17 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
 
   test('escritorio: el detalle por cuenta es columna propia y el mismo ojo la cubre (IN.9c, ADR 057 D3)', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
+    // Este test mide geometría y `boundingBox()` incluye el transform. La
+    // cascada de entrada del dashboard (`cardIn`, layout.css) desliza cada
+    // celda desde translateY(8px) con 40ms de stagger: el hero (nth-child 1,
+    // delay 0) aterriza antes que la columna (nth-child 2, delay 40ms) y entre
+    // medio sus `y` difieren hasta 8px. Esa era la causa del flaky (fallaba con
+    // 98 contra 104): bajo carga en paralelo la ventana dura más que la
+    // medición. `reduce` apaga la cascada por CSS (el bloque vive dentro de un
+    // `@media no-preference`) y deja en pie lo único que el test afirma: que
+    // las dos celdas comparten fila. El test de IN.9d, más abajo, mitiga el
+    // mismo efecto con un `waitForTimeout(600)`, que es una espera a ciegas.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.addInitScript(() => {
       if (localStorage.getItem('fk_v1')) return;
       const estado = {
