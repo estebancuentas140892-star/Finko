@@ -1824,12 +1824,12 @@ test.describe('Agenda', () => {
     const mesBefore = await titulo.textContent();
 
     await btnPrev.click();
-    await page.waitForTimeout(100);
 
-    const mesAfter = await titulo.textContent();
-
-    // Debe cambiar el mes mostrado
-    expect(mesBefore).not.toBe(mesAfter);
+    // El repintado del mes es la señal: `toHaveText` reintenta hasta que el
+    // título deja de decir lo mismo. Antes se esperaban 100ms a ciegas, el
+    // margen más corto del repo, y el handler no solo repinta (también hace
+    // `_devolverFoco()` y `announce()`, DIS.11 V-4).
+    await expect(titulo).not.toHaveText(mesBefore);
   });
 
   test('navega mes siguiente con botón >', async ({ page }) => {
@@ -1839,12 +1839,9 @@ test.describe('Agenda', () => {
     const mesBefore = await titulo.textContent();
 
     await btnNext.click();
-    await page.waitForTimeout(100);
 
-    const mesAfter = await titulo.textContent();
-
-    // Debe cambiar el mes mostrado
-    expect(mesBefore).not.toBe(mesAfter);
+    // Misma señal que el test de arriba: el título repintado, no un reloj.
+    await expect(titulo).not.toHaveText(mesBefore);
   });
 });
 
