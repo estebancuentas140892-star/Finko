@@ -82,10 +82,10 @@ describe('eventosDelMes - frecuencia Quincenal', () => {
     expect(Object.keys(r).sort((a,b)=>+a-+b)).toEqual(['10', '25']);
   });
 
-  it('cae solo en diaPago si diaPago+15 no cabe en el mes', () => {
+  it('cae en el último día del mes si diaPago+15 no cabe (BUG-017)', () => {
     const c = compromisoBase({ frecuencia: 'Quincenal', diaPago: 20 });
-    const r = eventosDelMes([c], 2026, 1); // feb 28: 20+15=35 no cabe
-    expect(Object.keys(r)).toEqual(['20']);
+    const r = eventosDelMes([c], 2026, 1); // feb 28: 20+15=35 se clampea a 28
+    expect(Object.keys(r).sort((a, b) => +a - +b)).toEqual(['20', '28']);
   });
 });
 

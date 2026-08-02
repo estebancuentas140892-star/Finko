@@ -103,8 +103,14 @@ export function ocurrenciasEnMes(item, year, month) {
       return [diaPago];
 
     case 'Quincenal': {
-      const d2 = diaPago + 15;
-      return d2 <= diasEnMes ? [diaPago, d2] : [diaPago];
+      // Dos cobros al mes. El segundo se clampea al último día cuando no cabe
+      // (día 20 + 15 = 35 vale 31): antes se descartaba y el mes entero se
+      // quedaba con un solo cobro, que era BUG-017. El clamp es el criterio
+      // que `diasParaProximoPago` y `ultimoPagoHasta` ya usaban desde MC.4d.
+      // Si el clamp lo hace coincidir con el primero, hay un solo cobro: día
+      // 31 no se cobra dos veces el 31.
+      const d2 = Math.min(diaPago + 15, diasEnMes);
+      return d2 > diaPago ? [diaPago, d2] : [diaPago];
     }
 
     case 'Semanal': {
@@ -245,27 +251,6 @@ const _MESES_POR_PERIODO_DATABLE = {
 export const FRECUENCIAS_DATABLES = Object.freeze(Object.keys(_MESES_POR_PERIODO_DATABLE));
 
 /**
- * Días del mes en que un item pudo cobrarse, para efectos de **datar**.
- *
- * Es `ocurrenciasEnMes` salvo en Quincenal, donde completa la segunda quincena
- * que no cabe en el mes clampeándola al último día (día 14 + 15 = 29 en
- * febrero, que acá vale 28). Esa es la conducta que `ultimoPagoHasta` tiene
- * desde MC.4d y de la que depende la clave de de-duplicación del asistente:
- * quien cobra dos veces al mes se quedaría sin clave en su segundo cobro.
- * `ocurrenciasEnMes` en cambio la descarta, que es **[BUG-017](../../docs/BUGS.md)**.
- * Las dos reglas vuelven a ser una cuando BUG-017 se decida; hasta entonces la
- * divergencia se declara acá en vez de dejarse implícita.
- */
-function _candidatosDelMes(item, year, month) {
-  const dias = ocurrenciasEnMes(item, year, month);
-  if (item.frecuencia !== 'Quincenal' || dias.length === 0) return dias;
-
-  const ultimoDia = _diasDelMes(year, month);
-  const segundo   = Math.min(Math.min(Number(item.diaPago), ultimoDia) + 15, ultimoDia);
-  return dias.includes(segundo) ? dias : [...dias, segundo];
-}
-
-/**
  * Fecha ISO del último vencimiento de un item que ya ocurrió (<= `hoyISO`), o
  * `null` si su frecuencia no se puede datar. Espejo hacia atrás de
  * `ventanaDelCobro`: esa dice hasta cuándo dura el cobro, esta dice cuál fue.
@@ -302,7 +287,7 @@ export function ultimoVencimientoHasta(item, hoyISO) {
   let y = desde.getFullYear();
   let m = desde.getMonth();
   while (y < hoy.getFullYear() || (y === hoy.getFullYear() && m <= hoy.getMonth())) {
-    for (const d of _candidatosDelMes(item, y, m)) {
+    for (const d of ocurrenciasEnMes(item, y, m)) {
       const fecha = new Date(y, m, d);
       if (fecha <= hoy && (!ultimo || fecha > ultimo)) ultimo = fecha;
     }

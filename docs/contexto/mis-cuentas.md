@@ -149,7 +149,7 @@ Además: rediseño visual ADR 035 completo. Ver "Transferencias" y "Distribució
 
 ---
 
-**Trampa de MC.13c-3**: en `infra/vencimientos.js` hay **dos** reglas de quincena, a propósito. `ocurrenciasEnMes` descarta la segunda quincena que no cabe en el mes (**BUG-017**); `_candidatosDelMes`, que solo usa `ultimoVencimientoHasta`, la clampea al último día porque sin ella el segundo cobro del mes queda sin clave de de-duplicación. Se unifican cuando BUG-017 se decida, no antes. Y `ultimoPagoHasta` recibe el **ingreso entero**: sin el objeto no viaja `fechaCreacion`, la única forma de saber en qué mes cae el ciclo de una frecuencia larga.
+**Trampa de MC.13c-3**: `ultimoPagoHasta` recibe el **ingreso entero**, no su frecuencia y su día sueltos. Sin el objeto no viaja `fechaCreacion`, que es la única forma de saber en qué mes cae el ciclo de una frecuencia larga; pasarle escalares vuelve a dejar Bimestral a Anual sin datar. La divergencia de quincena que MC.13c-3 declaró aquí ya no existe: **BUG-017 se arregló el 2026-08-02** y `ocurrenciasEnMes` es de nuevo la única regla de frecuencias.
 
 **Cambios pendientes**: rediseño del asistente (MC.13e-2+, puntos 9-21 del brief), rebanadas re-cortadas por riesgo. **MC.13e-2g necesita la palabra de Esteban antes de codificar** (ver `docs/BOARD.md`, no se resume acá).
 

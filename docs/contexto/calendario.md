@@ -60,11 +60,13 @@
 - **CAL.3, `marcarEntradaSeccion()` solo la llama `agenda/index.js` en el listener de `hashchange`, nunca en el render de arranque**: decisión deliberada, no un olvido. Si `renderAgenda()` consumiera un flag "primera vez" activado incondicionalmente al boot, los tests E2E existentes que usan `page.goto('/#agenda')` con `diaPago` fijo (15, 20...) podrían colisionar con el día real de ejecución y el click explícito del test cerraría el detalle en vez de abrirlo (toggle sobre un día ya auto-seleccionado): un bug intermitente que solo se reproduce en fechas de calendario específicas. Por eso el mecanismo es un flag que arranca en `false` y solo se arma por una llamada explícita a `marcarEntradaSeccion()`, nunca por el mero hecho de renderizar. Consecuencia real de producto (aceptada): recargar la app ya posicionada en `#agenda` (deep-link, F5) no auto-abre el detalle de hoy; solo navegar hacia la sección desde otra sí.
 - **Los tests unitarios de `renderAgenda()` que NO llaman `marcarEntradaSeccion()` nunca disparan el auto-select**, así que agregar fixtures nuevas a `tests/unit/agenda.test.js` con eventos en el día real de "hoy" (bajo `vi.setSystemTime`) es seguro sin importar el orden de ejecución de los tests.
 
-**Cambios pendientes**: ninguno del pago en lote: **CAL.5a** y **CAL.5b** están cerradas. Bug conocido del motor que afecta también a esta sección: **BUG-017** (Quincenal pierde un cobro si `diaPago > 16`). Calendario v2 completo; iniciativa Formularios v2 completa.
+**Cambios pendientes**: ninguno del pago en lote: **CAL.5a** y **CAL.5b** están cerradas. Calendario v2 completo; iniciativa Formularios v2 completa.
 
 Lo que **DIS.11 dejó abierto**, con su medición: (1) **el alto del formulario de gasto fijo**, 900,4px de contenido en una hoja de 776px, de los cuales 398,5 son la grilla de 15 chips de categoría que fijó el [ADR 042](../DECISIONS/042-formularios-v2-visual.md) D3: se decide junto con la V2 de la auditoría de Gastos, porque es el mismo problema en dos formularios del mismo lenguaje; (2) **la marca de vencido en deudas**, resuelta por CAL.5b; (3) **el ojo del hero a 44px** (mide 40), que vive en la lista compartida de `domain.css` con Inicio, Mis cuentas y Deudas y se corrige de una vez allí, no por sección.
 
 **Cambios realizados**:
+
+- 2026-08-02 **BUG-017**: un compromiso o ingreso Quincenal con `diaPago > 16` ya cae **dos veces** en el mes. La segunda quincena que no cabe se clampea al último dia (dia 20 mas 15 vale 31 en julio) en vez de descartarse; con `diaPago` 31 sigue siendo un solo cobro. Cambia lo que muestra el grid: hay un dot mas al final del mes en esos casos.
 
 - 2026-08-02 **CAL.5b**: el lote suma deudas (por el faltante de la cuota del mes, topado al saldo) y se ofrece desde el bloque de vencidos de Inicio con el evento `lote:abrir`, sin navegar.
 

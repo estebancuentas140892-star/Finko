@@ -79,9 +79,20 @@ describe('ocurrenciasEnMes - frecuencias', () => {
     expect(ocurrenciasEnMes(item({ frecuencia: 'Quincenal', diaPago: 5 }), 2026, 6)).toEqual([5, 20]);
   });
 
-  it('Quincenal: un solo día si el segundo no cabe en el mes', () => {
-    // diaPago 20 → 20 y 35; 35 > 31, sólo [20].
-    expect(ocurrenciasEnMes(item({ frecuencia: 'Quincenal', diaPago: 20 }), 2026, 6)).toEqual([20]);
+  it('Quincenal: el segundo que no cabe se clampea al último día (BUG-017)', () => {
+    // diaPago 20 → 20 y 35; 35 no cabe en julio (31 días) y vale 31. Antes se
+    // descartaba y el mes se quedaba con un solo cobro.
+    expect(ocurrenciasEnMes(item({ frecuencia: 'Quincenal', diaPago: 20 }), 2026, 6)).toEqual([20, 31]);
+    // Febrero: 14 + 15 = 29 vale 28, que es la segunda quincena real.
+    expect(ocurrenciasEnMes(item({ frecuencia: 'Quincenal', diaPago: 14 }), 2026, 1)).toEqual([14, 28]);
+  });
+
+  it('Quincenal: un solo día cuando el clamp coincide con el primero', () => {
+    // diaPago 31 en julio: el segundo también vale 31, y nadie cobra dos veces
+    // el mismo día.
+    expect(ocurrenciasEnMes(item({ frecuencia: 'Quincenal', diaPago: 31 }), 2026, 6)).toEqual([31]);
+    // Mismo caso vía clamp del primero: 30 en febrero vale 28 para los dos.
+    expect(ocurrenciasEnMes(item({ frecuencia: 'Quincenal', diaPago: 30 }), 2026, 1)).toEqual([28]);
   });
 
   it('Semanal: cada 7 días desde diaPago', () => {
@@ -150,8 +161,7 @@ describe('ocurrenciasEnRango - fechas ISO en el rango', () => {
   });
 
   it('rango que cruza meses: recoge ocurrencias de ambos meses', () => {
-    // Quincenal, diaPago 25: julio → 25 jul y 9 ago (segundo no cabe: 40>31, sólo 25);
-    // ventana 25 jul → 9 ago recoge 25 jul (mensual) y en agosto el 25 queda fuera.
+    // Ventana 25 jul → 9 ago: recoge el 25 jul y en agosto el 25 queda fuera.
     const c = item({ frecuencia: 'Mensual', diaPago: 25 });
     expect(ocurrenciasEnRango(c, '2026-07-25', '2026-08-09')).toEqual(['2026-07-25']);
   });
@@ -283,10 +293,9 @@ describe('ultimoVencimientoHasta - Mensual y Quincenal (paridad con MC.4d)', () 
   });
 
   it('Quincenal: la segunda quincena que no cabe en el mes se clampea, no se pierde', () => {
-    // BUG-017: `ocurrenciasEnMes` la descarta (día 14 + 15 = 29 en febrero);
-    // datar sí la necesita, o el segundo cobro del mes queda sin clave de
-    // de-duplicación. Divergencia declarada, no accidental.
-    expect(ocurrenciasEnMes(item({ frecuencia: 'Quincenal', diaPago: 14 }), 2026, 1)).toEqual([14]);
+    // Una sola regla desde que BUG-017 se arregló: datar y el Calendario leen
+    // el mismo `ocurrenciasEnMes`.
+    expect(ocurrenciasEnMes(item({ frecuencia: 'Quincenal', diaPago: 14 }), 2026, 1)).toEqual([14, 28]);
     expect(ultimoVencimientoHasta(item({ frecuencia: 'Quincenal', diaPago: 14 }), '2026-02-28'))
       .toBe('2026-02-28');
   });
@@ -341,6 +350,22 @@ describe('integración: ventana de un cobro + obligaciones que caen en ella', ()
     const fijoQuincenal = item({ frecuencia: 'Quincenal', diaPago: 5 });
     const caidas = ocurrenciasEnRango(fijoQuincenal, ventana.inicioISO, ventana.finISO);
     expect(caidas).toEqual(['2026-07-05', '2026-07-20']);
+  });
+
+  it('BUG-017: un fijo quincenal con diaPago > 16 se pide dos veces, no una', () => {
+    // Antes del arreglo la segunda ocurrencia se descartaba y la checklist de
+    // Necesidades pedía la mitad del dinero que el mes realmente cobra.
+    const ventana = ventanaDelCobro('Mensual', '2026-07-01');
+    const fijo    = { id: 'f1', descripcion: 'Cuota', tipo: 'fijo', monto: 60_000, frecuencia: 'Quincenal', diaPago: 20 };
+    expect(ocurrenciasEnRango(fijo, ventana.inicioISO, ventana.finISO))
+      .toEqual(['2026-07-20', '2026-07-31']);
+
+    const r = obligacionesYAportesDelCobro({
+      cobro: { frecuencia: 'Mensual', fechaISO: '2026-07-01' },
+      compromisos: [fijo],
+      hoyISO: '2026-07-01',
+    });
+    expect(r.enVentana[0]).toMatchObject({ id: 'f1', monto: 120_000, montoUnitario: 60_000 });
   });
 
   it('la ventana de una quincena sólo captura las obligaciones de esos 15 días', () => {
