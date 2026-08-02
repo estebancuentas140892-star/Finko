@@ -10,6 +10,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(ahorro): AH.8, el carril de Inversion dice su etapa · 2026-08-02
+
+Ejecuta la consecuencia que el [ADR 056](DECISIONS/056-la-casa-de-ahorro.md) dejó pendiente desde DIS.18, con el dato que **ARQ.1c** puso a su alcance esa misma jornada. Ficha: [`contexto/ahorro.md`](contexto/ahorro.md).
+
+- **El carril pasa de "2 inversiones" a "2 inversiones, construyendo".** No es la etapa **en vez** del conteo: el conteo del D4 no decía en qué va el usuario (que es justo lo que dicen los otros tres carriles: tiempo cubierto, metas vivas, días al cobro) y la etapa sola no dice el tamaño de lo construido. El D4 no se revierte, se completa.
+- `casaAhorro()` recibe `etapaInversion` (opcional, `number|null`); `ETAPA_INVERSION` en `ahorro/logic.js` pone las palabras. **Una etapa sin entrada en esa tabla cae al conteo solo**, nunca a una frase rota: la etapa 3 todavía no existe.
+- **Las dos palabras son las mismas del chip de la sección hija a propósito** ("aprendiendo", "construyendo"): el carril lleva ahí y el usuario tiene que reconocer lo que leyó. Infra no guarda copy, así que la coincidencia la sostiene un test de `bolsas.test.js` que falla si una de las dos pantallas se renombra sola.
+- **El conteo del carril ahora filtra igual que la etapa.** Antes era `S.inversiones.length` (contaba una inversión con monto 0, que la etapa no cuenta); ahora las dos cifras salen de la misma llamada a `etapaDePortafolio()`. Sin efecto práctico: la validación del formulario ya exige monto positivo.
+- 4 tests nuevos (3 en `ahorro.test.js`, 1 de no divergencia en `bolsas.test.js`). Verificado en la app con 0, 1 y 2 inversiones. 3633 unit + E2E + lint verdes. SW v477 a v478.
+
 ### refactor(transversal): ARQ.1c, la etapa de Inversion al alcance de Ahorro · 2026-08-02
 
 Reabre el punto 2 que **ARQ.1** había dejado como hueco intencional, a pedido de Esteban. Commit `b6a7825`. Fichas: [`contexto/ahorro.md`](contexto/ahorro.md) e [`contexto/inversion.md`](contexto/inversion.md). Sin cambio de comportamiento ni de UI.

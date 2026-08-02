@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-02. Última tarea cerrada: ARQ.1c, la etapa de Inversión al alcance del hub de Ahorro.
+> Revisado: 2026-08-02. Última tarea cerrada: AH.8, el carril de Inversión dice su etapa.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,7 +13,7 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 3630/3630 verdes |
+| Tests unitarios + integración | 3633/3633 verdes |
 | Tests E2E | 252/253 verdes + 1 flaky ajeno (IN.9c, diferencia de 5px en `boundingBox`), corrida del 2026-08-02, sello del commit `b6a7825`. **Es compuerta** desde el 2026-07-30: el hook de pre-commit exige el sello de una corrida verde cuando el diff toca runtime. La huella se calcula sobre el **índice** (`git ls-files -s`), no sobre el árbol: hay que `git add` **antes** de sellar, o el propio `add` invalida el sello. **Ojo con sesiones paralelas sobre el mismo worktree**: el índice compartido puede invalidar el sello entre que se corre la suite y se commitea; `git reset HEAD -- archivo` + `git apply --cached parche.diff` separa hunks propios de ajenos cuando el mismo archivo cambia por dos sesiones a la vez, sin tocar el árbol de trabajo de la otra sesión (usado el 2026-08-02 en `infra/bolsas.js` y `tests/unit/analisis.test.js`, ARQ.1a vs. ARQ.1b) |
 | Schema version (`localStorage`) | v32 (`config.ultimaVersionVista`, UPD.1; migración backfill al catálogo vigente) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
@@ -25,6 +25,9 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**AH.8 - el carril de Inversión dice su etapa, 2026-08-02**
+El carril de la casa de Ahorro pasa de "2 inversiones" a "2 inversiones, construyendo": el conteo del D4 del [ADR 056](DECISIONS/056-la-casa-de-ahorro.md) más la etapa que su mockup pedía desde DIS.18. `casaAhorro()` gana `etapaInversion`; las palabras viven en `ETAPA_INVERSION` (`ahorro/logic.js`) y son las mismas del chip de la sección hija, con un test que falla si las dos pantallas se separan. Cierra la última consecuencia pendiente del ADR 056.
+
 **ARQ.1c - la etapa de Inversión al alcance del hub de Ahorro, 2026-08-02**
 `etapaDePortafolio()` en `infra/portafolio.js`: el corte que decide el momento del portafolio (una inversión con monto es el 1, dos o más el 2) sale del dominio Inversión, que lo consume sin cambiar de comportamiento. Era la última pieza de arquitectura que le faltaba a la casa de Ahorro para su carril de Inversión ([ADR 056](DECISIONS/056-la-casa-de-ahorro.md)). Las frases del momento **no** bajaron: infra devuelve números, cada pantalla pone su vocabulario. El carril sigue diciendo "2 inversiones": qué debe decir es decisión de copy, no de arquitectura.
 
@@ -33,9 +36,6 @@ ARQ.1a: `progresoDeBolsa()` en `infra/bolsas.js` reemplaza las tres copias de `c
 
 **EDIT.1 (rebanada Inversión) - editar sin destruir una inversión, 2026-08-02**
 Botón "Editar" por holding; `normalizarInversion(datos, inversionExistente)` preserva `cuentaId` (el origen no se vuelve a preguntar, ADR 053). Con cuenta de origen, editar el monto ajusta el saldo por delta (ADR 053 I3): confirma solo si el aumento deja la cuenta en negativo. Me deben es la última rebanada pendiente de EDIT.1.
-
-**ARQ.2 - consolidar los cálculos duplicados que quedan (puntos 1 y 2), 2026-08-02**
-`FACTOR_MENSUAL` con fuente única en `infra/financiero.js` (`tesoreria/logic/ingresos.js` reexporta en vez de duplicar). `infra/pago-compromiso.js` nuevo (`gastoDePagoCompromiso()` + `bajarSaldoDeuda()`) sustituye las 4 copias reales de "registrar pago de compromiso" (el hallazgo original solo nombraba 3). Punto 3 (totales de Agenda vs. motor de vencimientos) analizado y dejado sin tocar por decisión de Esteban: ya divergieron en comportamiento, consolidarlos sería cambiar lo que muestra el hero de Agenda, no un refactor mecánico.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 
