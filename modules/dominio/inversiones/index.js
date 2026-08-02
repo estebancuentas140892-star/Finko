@@ -121,6 +121,38 @@ function _nuevaInversion() {
   abrirModal(overlay);
 }
 
+/**
+ * Abre el modal de inversión en modo edición (EDIT.1) con los datos actuales
+ * prellenados. El origen del dinero no se vuelve a preguntar (ver
+ * `_renderOrigenEditable` en `view.js`): `_wireOrigen()` no aplica aquí.
+ * @param {HTMLElement} el - botón con data-id de la inversión.
+ */
+function _editarInversion(el) {
+  const id = el.dataset.id;
+  if (!id) return;
+
+  const inversion = (S.inversiones ?? []).find(x => x.id === id);
+  if (!inversion) return;
+
+  const overlay = _getOverlay();
+  if (!overlay) return;
+
+  const titulo = overlay.querySelector('.modal__title');
+  if (titulo) titulo.textContent = 'Editar inversión';
+
+  _setBody(renderFormInversion({ fechaInicio: inversion.fechaInicio, inversion }));
+
+  const form = document.getElementById('form-inversion');
+  if (form) {
+    form.dataset.id = inversion.id;
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      _guardarInversion(form);
+    });
+  }
+  abrirModal(overlay);
+}
+
 /** @param {HTMLFormElement} form */
 async function _guardarInversion(form) {
   const datos   = Object.fromEntries(new FormData(form));
@@ -128,6 +160,50 @@ async function _guardarInversion(form) {
 
   if (errores.length > 0) {
     mostrarErroresForm(form, errores);
+    return;
+  }
+
+  const idEdit = form.dataset.id || null;
+
+  if (idEdit) {
+    const existente = (S.inversiones ?? []).find(x => x.id === idEdit);
+    if (!existente) return;
+
+    const inversion = normalizarInversion(datos, existente);
+
+    // ADR 053 I3: si la inversión tiene cuenta de origen, el monto editado
+    // recalcula cuánto debería estar descontado hoy, no solo la cifra
+    // guardada. `delta` > 0 devuelve dinero a la cuenta (monto bajó); < 0
+    // descuenta de más (monto subió).
+    let delta = 0;
+    if (inversion.cuentaId) {
+      delta = existente.monto - inversion.monto;
+      if (delta < 0) {
+        const cuenta = (S.cuentas ?? []).find(c => c.id === inversion.cuentaId);
+        const saldo  = cuenta?.saldo ?? 0;
+        if (saldo + delta < 0) {
+          const ok = await confirmar({
+            titulo:         'Editar inversión',
+            mensaje:        `¿Actualizar "${inversion.nombre}" a ${f(inversion.monto)}? Se descontarán ${f(-delta)} más de ${cuenta?.nombre ?? 'la cuenta'}: el saldo disponible es ${f(saldo)} y quedará en negativo.`,
+            confirmarTexto: 'Actualizar inversión',
+            peligroso:      true,
+          });
+          if (!ok) return;
+        }
+      }
+    }
+
+    editar('inversiones', idEdit, inversion);
+
+    if (delta !== 0) {
+      _ajustarSaldoCuenta(inversion.cuentaId, delta);
+      updSaldo();
+    }
+
+    const overlay = _getOverlay();
+    if (overlay) cerrarModal(overlay);
+
+    announce(`Inversión "${inversion.nombre}" actualizada.`);
     return;
   }
 
@@ -229,6 +305,7 @@ function _renderInversionBound() {
 
 export function initInversiones() {
   registrarAccion('inversion-nueva',     _nuevaInversion);
+  registrarAccion('inversion-editar',    _editarInversion);
   registrarAccion('inversion-eliminar',  _eliminarInversion);
 
   // Re-render ante cambios en la colección de inversiones.

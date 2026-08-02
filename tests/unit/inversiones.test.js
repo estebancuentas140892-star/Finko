@@ -12,7 +12,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { S } from '../../modules/core/state.js';
-import { renderFormInversion } from '../../modules/dominio/inversiones/view.js';
+import { renderFormInversion, renderInversion } from '../../modules/dominio/inversiones/view.js';
 import {
   TIPOS_INVERSION, TASA_EA_MAX, PLAZO_MESES_MAX,
   calcularTotalInvertido, calcularPorTipo, ordenarInversionesPorMonto,
@@ -293,6 +293,47 @@ describe('normalizarInversion()', () => {
     const r = normalizarInversion(null);
     expect(r.tipo).toBe('Otro');
     expect(r.monto).toBe(0);
+  });
+});
+
+// ── normalizarInversion(datos, inversionExistente) - EDIT.1 ────────
+
+describe('normalizarInversion() - modo edición (EDIT.1)', () => {
+  const datosEditados = {
+    tipo: 'Fondo', nombre: 'Fondo renombrado', monto: '2000000',
+    tasaEA: '9', plazoMeses: '6', fechaInicio: '2026-08-01',
+  };
+
+  it('sin inversionExistente, se comporta igual que antes: sin cuentaId', () => {
+    const r = normalizarInversion(datosEditados);
+    expect('cuentaId' in r).toBe(false);
+  });
+
+  it('con existente sin cuentaId, el resultado tampoco lo agrega', () => {
+    const existente = { id: 'i1', tipo: 'CDT', nombre: 'X', monto: 1_000_000, fechaInicio: '2026-01-01' };
+    const r = normalizarInversion(datosEditados, existente);
+    expect('cuentaId' in r).toBe(false);
+  });
+
+  it('con existente con cuentaId, lo preserva aunque el form no lo envíe', () => {
+    const existente = { id: 'i1', tipo: 'CDT', nombre: 'X', monto: 1_000_000, fechaInicio: '2026-01-01', cuentaId: 'cta1' };
+    const r = normalizarInversion(datosEditados, existente);
+    expect(r.cuentaId).toBe('cta1');
+  });
+
+  it('ignora un origen/cuentaId que llegara en datos: el existente manda', () => {
+    const existente = { id: 'i1', tipo: 'CDT', nombre: 'X', monto: 1_000_000, fechaInicio: '2026-01-01', cuentaId: 'cta1' };
+    const r = normalizarInversion({ ...datosEditados, origen: 'cuenta', cuentaId: 'cta9' }, existente);
+    expect(r.cuentaId).toBe('cta1');
+  });
+
+  it('actualiza tipo, nombre, monto, tasa, plazo y fecha normalmente', () => {
+    const existente = { id: 'i1', tipo: 'CDT', nombre: 'CDT viejo', monto: 1_000_000, tasaEA: 10, plazoMeses: 12, fechaInicio: '2026-01-01' };
+    const r = normalizarInversion(datosEditados, existente);
+    expect(r).toEqual({
+      tipo: 'Fondo', nombre: 'Fondo renombrado', monto: 2_000_000,
+      tasaEA: 9, plazoMeses: 6, fechaInicio: '2026-08-01',
+    });
   });
 });
 
@@ -856,5 +897,87 @@ describe('renderFormInversion() - origen del dinero', () => {
     const html = renderFormInversion({ fechaInicio: '2026-07-29' });
     expect(html).toContain('le descuenta ese dinero');
     expect(html).toContain('los saldos no se tocan');
+  });
+});
+
+// ── renderFormInversion(inversion) - modo edición (EDIT.1) ─────────
+
+describe('renderFormInversion() - modo edición (EDIT.1)', () => {
+  beforeEach(() => {
+    S.cuentas = [
+      { id: 'cta1', nombre: 'Ahorros Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 3_000_000, activa: true },
+    ];
+  });
+
+  const inversionBase = (overrides = {}) => ({
+    id: 'i1', tipo: 'CDT', nombre: 'CDT Bancolombia', monto: 5_000_000,
+    tasaEA: 10, plazoMeses: 12, fechaInicio: '2026-06-01',
+    ...overrides,
+  });
+
+  it('sin inversion, arranca en modo creación: botón "Guardar inversión"', () => {
+    const html = renderFormInversion({ fechaInicio: '2026-08-02' });
+    expect(html).toContain('>Guardar inversión<');
+    expect(html).not.toContain('Actualizar inversión');
+  });
+
+  it('con una inversión, prellena nombre, monto, tasa, plazo y fecha', () => {
+    const inv = inversionBase();
+    const html = renderFormInversion({ fechaInicio: inv.fechaInicio, inversion: inv });
+    expect(html).toMatch(/id="inv-nombre"[^>]*value="CDT Bancolombia"/);
+    expect(html).toMatch(/id="inv-monto"[^>]*value="5000000"/);
+    expect(html).toMatch(/id="inv-tasa"[^>]*value="10"/);
+    expect(html).toMatch(/id="inv-plazo"[^>]*value="12"/);
+    expect(html).toMatch(/id="inv-fecha"[^>]*value="2026-06-01"/);
+  });
+
+  it('con una inversión, el botón dice "Actualizar inversión"', () => {
+    const html = renderFormInversion({ fechaInicio: '2026-06-01', inversion: inversionBase() });
+    expect(html).toContain('>Actualizar inversión<');
+    expect(html).not.toContain('>Guardar inversión<');
+  });
+
+  it('marca el tipo de la inversión como seleccionado', () => {
+    const html = renderFormInversion({ fechaInicio: '2026-06-01', inversion: inversionBase({ tipo: 'Fondo' }) });
+    expect(html).toContain('<option value="Fondo" selected>Fondo</option>');
+  });
+
+  it('sin cuentaId, no pregunta ni muestra nota de origen', () => {
+    const html = renderFormInversion({ fechaInicio: '2026-06-01', inversion: inversionBase() });
+    expect(html).not.toContain('name="origen"');
+    expect(html).not.toContain('salió de');
+  });
+
+  it('con cuentaId, muestra la cuenta de origen en solo lectura, sin volver a preguntar', () => {
+    const inv = inversionBase({ cuentaId: 'cta1' });
+    const html = renderFormInversion({ fechaInicio: inv.fechaInicio, inversion: inv });
+    expect(html).not.toContain('name="origen"');
+    expect(html).toContain('Ahorros Bancolombia');
+    expect(html).toContain('Finko ajusta el saldo de esa cuenta');
+  });
+
+  it('tasa y plazo en 0 quedan vacíos, no "0", en el campo (mismo criterio que placeholder)', () => {
+    const inv = inversionBase({ tasaEA: 0, plazoMeses: 0 });
+    const html = renderFormInversion({ fechaInicio: inv.fechaInicio, inversion: inv });
+    expect(html).toMatch(/id="inv-tasa"[^>]*value=""/);
+    expect(html).toMatch(/id="inv-plazo"[^>]*value=""/);
+  });
+});
+
+// ── _renderItem() (vía renderInversion) - botón Editar (EDIT.1) ────
+
+describe('renderInversion() - botón Editar en la tarjeta (EDIT.1)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-inversion"></div>';
+    S.cuentas = [];
+  });
+
+  it('cada inversión trae un botón "inversion-editar" con su id', () => {
+    S.inversiones = [{ id: 'i1', tipo: 'CDT', nombre: 'CDT Bancolombia', monto: 5_000_000, tasaEA: 10, plazoMeses: 12, fechaInicio: '2026-06-01' }];
+    renderInversion();
+    const btn = document.querySelector('[data-action="inversion-editar"]');
+    expect(btn).not.toBeNull();
+    expect(btn.dataset.id).toBe('i1');
+    expect(btn.getAttribute('aria-label')).toBe('Editar inversión CDT Bancolombia');
   });
 });

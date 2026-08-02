@@ -355,6 +355,12 @@ function _renderItem(inv) {
       <div class="list-item__action">
         <span class="list-item__value">${f(inv.monto)}</span>
         <button class="btn btn-ghost btn-icon"
+                data-action="inversion-editar"
+                data-id="${_esc(inv.id)}"
+                aria-label="Editar inversión ${_esc(inv.nombre)}">
+          <svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg>
+        </button>
+        <button class="btn btn-ghost btn-icon"
                 data-action="inversion-eliminar"
                 data-id="${_esc(inv.id)}"
                 aria-label="Eliminar inversión ${_esc(inv.nombre)}">
@@ -367,15 +373,26 @@ function _renderItem(inv) {
 // ── FORMULARIO MODAL - ALTA ──────────────────────────────────────
 
 /**
- * HTML del formulario para registrar una nueva inversión.
+ * HTML del formulario de inversión: registra una nueva o edita una existente.
  *
- * @param {{ fechaInicio: string }} opts  fecha en YYYY-MM-DD (default: hoy).
+ * EDIT.1: `inversion` (opcional) distingue crear de editar. Al editar se
+ * prellenan tipo, nombre, monto, tasa, plazo y fecha; el origen del dinero
+ * **no se vuelve a preguntar** (`_renderOrigenEditable`, solo lectura), ya que
+ * se decide una sola vez al crear (ADR 053) y reabrir la pregunta permitiría
+ * mover el descuento histórico de una cuenta a otra sin dejar rastro. Si la
+ * inversión tiene cuenta de origen, cambiar el monto sí ajusta su saldo
+ * (`_guardarInversion` en index.js).
+ *
+ * @param {{ fechaInicio: string, inversion?: import('../../core/state.js').Inversion|null }} opts
+ *   `fechaInicio` en YYYY-MM-DD (default: hoy al crear, la propia al editar).
  * @returns {string}
  */
-export function renderFormInversion({ fechaInicio }) {
+export function renderFormInversion({ fechaInicio, inversion = null }) {
   const opciones = TIPOS_INVERSION
-    .map(t => `<option value="${_esc(t)}">${_esc(t)}</option>`)
+    .map(t => `<option value="${_esc(t)}"${inversion?.tipo === t ? ' selected' : ''}>${_esc(t)}</option>`)
     .join('');
+
+  const botonTexto = inversion ? 'Actualizar inversión' : 'Guardar inversión';
 
   return `
     <form id="form-inversion" novalidate>
@@ -390,28 +407,32 @@ export function renderFormInversion({ fechaInicio }) {
         <label for="inv-nombre" class="label">Nombre</label>
         <input id="inv-nombre" name="nombre" class="input" type="text"
                maxlength="60" placeholder="Ej. CDT Bancolombia, ETF S&amp;P 500, Bitcoin"
-               required aria-required="true" autocomplete="off" autofocus />
+               required aria-required="true" autocomplete="off" autofocus
+               value="${_esc(inversion?.nombre ?? '')}" />
       </div>
 
       <div class="form-group">
         <label for="inv-monto" class="label">Monto invertido (COP)</label>
         <input id="inv-monto" name="monto" class="input" type="number"
                min="1" step="10000" placeholder="1000000"
-               required aria-required="true" inputmode="numeric" />
+               required aria-required="true" inputmode="numeric"
+               value="${inversion ? Number(inversion.monto) || '' : ''}" />
       </div>
 
       <div class="form-group">
         <label for="inv-tasa" class="label">Tasa EA estimada (%) <span class="label__opt">opcional</span></label>
         <input id="inv-tasa" name="tasaEA" class="input" type="number"
                min="0" max="100" step="0.1" placeholder="0"
-               inputmode="decimal" />
+               inputmode="decimal"
+               value="${inversion && Number(inversion.tasaEA) > 0 ? inversion.tasaEA : ''}" />
         <p class="form-hint">Déjalo en 0 si la rentabilidad es variable (acciones, cripto).</p>
       </div>
 
       <div class="form-group">
         <label for="inv-plazo" class="label">Plazo (meses) <span class="label__opt">opcional</span></label>
         <input id="inv-plazo" name="plazoMeses" class="input" type="number"
-               min="0" step="1" placeholder="0" inputmode="numeric" />
+               min="0" step="1" placeholder="0" inputmode="numeric"
+               value="${inversion && Number(inversion.plazoMeses) > 0 ? inversion.plazoMeses : ''}" />
         <p class="form-hint">Pon 0 si no tiene un plazo fijo.</p>
       </div>
 
@@ -421,13 +442,26 @@ export function renderFormInversion({ fechaInicio }) {
                value="${_esc(fechaInicio)}" required aria-required="true" />
       </div>
 
-      ${_renderOrigen(fechaInicio)}
+      ${inversion ? _renderOrigenEditable(inversion) : _renderOrigen(fechaInicio)}
 
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar inversión</button>
+        <button type="submit" class="btn btn-primary">${botonTexto}</button>
       </div>
     </form>`;
+}
+
+/**
+ * Nota de solo lectura del origen del dinero al editar (EDIT.1). Ver el
+ * porqué de no reabrir la pregunta en `renderFormInversion`.
+ * @param {import('../../core/state.js').Inversion} inversion
+ * @returns {string} '' si la inversión no tiene cuenta de origen.
+ */
+function _renderOrigenEditable(inversion) {
+  if (!inversion.cuentaId) return '';
+  const cuenta = (S.cuentas ?? []).find(c => c.id === inversion.cuentaId);
+  return `
+      <p class="form-hint">Este dinero salió de <strong>${_esc(cuenta?.nombre ?? 'una cuenta')}</strong>. Si cambias el monto, Finko ajusta el saldo de esa cuenta.</p>`;
 }
 
 /**

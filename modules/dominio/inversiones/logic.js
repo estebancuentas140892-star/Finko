@@ -290,13 +290,21 @@ export function normalizarPlazoMeses(raw) {
  * dejaría un dato que parece origen y no lo es. Mismo criterio que
  * `normalizarPersonal()` con el `cuentaId` de PE.7.
  *
+ * EDIT.1: `inversionExistente` (opcional) distingue crear de editar. El form de
+ * edición no vuelve a preguntar el origen del dinero (no lo dibuja, ver
+ * `_renderOrigenEditable` en `view.js`): `cuentaId` se preserva tal cual del
+ * registro existente, nunca de `datos`. El ajuste del saldo de esa cuenta ante
+ * un monto editado lo calcula `_guardarInversion()` en `index.js` (ADR 053 I3),
+ * no esta función.
+ *
  * @param {{tipo:string, nombre:string, monto:string|number,
  *          tasaEA:string|number, plazoMeses:string|number, fechaInicio:string,
  *          origen?:string, cuentaId?:string}} datos
+ * @param {import('../../core/state.js').Inversion|null} [inversionExistente] modo edición si se pasa.
  * @returns {{tipo:string, nombre:string, monto:number, tasaEA:number,
  *           plazoMeses:number, fechaInicio:string, cuentaId?:string}}
  */
-export function normalizarInversion(datos) {
+export function normalizarInversion(datos, inversionExistente = null) {
   const d = datos ?? {};
   const inv = {
     tipo:        TIPOS_INVERSION.includes(d.tipo) ? d.tipo : 'Otro',
@@ -306,6 +314,11 @@ export function normalizarInversion(datos) {
     plazoMeses:  normalizarPlazoMeses(d.plazoMeses),
     fechaInicio: String(d.fechaInicio ?? '').trim(),
   };
+
+  if (inversionExistente) {
+    if (inversionExistente.cuentaId) inv.cuentaId = inversionExistente.cuentaId;
+    return inv;
+  }
 
   const cuentaId = String(d.cuentaId ?? '').trim();
   if (d.origen === 'cuenta' && cuentaId !== '') inv.cuentaId = cuentaId;
