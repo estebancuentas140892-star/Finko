@@ -24,8 +24,10 @@ import {
   mesesEnPalabras,
   fechaCobertura,
   franjaCobertura,
-  aportadoEnMes,
+  aportadoEnPeriodo,
   progresoCompromiso,
+  etiquetaCadaPeriodo,
+  montoPorPeriodo,
   NIVELES_FONDO,
   META_MESES_MIN,
   META_MESES_MAX,
@@ -45,8 +47,12 @@ import {
  * @param {Object|null} sugerencia           Aporte sugerido (AH.2) calculado por
  *                                           index.js con calcularAporteSugerido.
  *                                           null si no se puede calcular.
+ * @param {string}      frecuencia           Frecuencia real de cobro (AH.5, ADR
+ *                                           049 D4), calculada por index.js con
+ *                                           frecuenciaPrincipalIngresos(S.ingresos).
+ *                                           Por defecto 'Mensual'.
  */
-export function renderAhorro(gastosFijosMensuales, tasaAhorro = null, sugerencia = null) {
+export function renderAhorro(gastosFijosMensuales, tasaAhorro = null, sugerencia = null, frecuencia = 'Mensual') {
   const el = document.getElementById('panel-ahorro');
   if (!el) return;
 
@@ -57,7 +63,7 @@ export function renderAhorro(gastosFijosMensuales, tasaAhorro = null, sugerencia
     return;
   }
 
-  el.innerHTML = _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia);
+  el.innerHTML = _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia, frecuencia);
 }
 
 // ── CASA DE AHORRO: LOS CUATRO CARRILES (DIS.19, arquitectura 1c) ─
@@ -471,7 +477,7 @@ function _renderEmptyState(gastosFijosMensuales) {
  * El anillo de progreso se retira: el porcentaje pasa a ser un rótulo pequeño al
  * pie de los bloques, que es todo el peso que merece aquí.
  */
-function _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia = null) {
+function _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia = null, frecuencia = 'Mensual') {
   const { metaMeses, montoActual: montoBase } = fondo;
   const aportes    = Array.isArray(S.ahorro?.aportes) ? S.ahorro.aportes : [];
   const montoTotal = calcularMontoTotalFondo(montoBase, aportes);
@@ -498,7 +504,7 @@ function _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia = 
       ${_renderNivelActual({ enCero, completado, ultimoLogrado, actual })}
       ${_renderCobertura({ colchon, metaMeses, montoTotal, enCero, m })}
       ${_renderVeredictoFondo({ completado, faltante, objetivo, montoTotal, metaMeses, actual, sugerencia, enCero, m })}
-      ${_renderDatosFondo({ montoTotal, objetivo, gastosFijosMensuales, compromisoMensual, tasaAhorro, metaMeses, enCero, m })}
+      ${_renderDatosFondo({ montoTotal, objetivo, gastosFijosMensuales, compromisoMensual, tasaAhorro, metaMeses, enCero, m, frecuencia })}
       <p class="fondo-card__nota">Este dinero sigue en tus cuentas. Solo queda apartado para emergencias: a diferencia de Metas y Reservas, no descuenta saldo.</p>
       <div class="fondo-card__acciones">
         <button class="fondo-card__principal" type="button" data-action="ahorro-nuevo-aporte">
@@ -512,7 +518,7 @@ function _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia = 
       </div>
     </article>
 
-    ${_renderHabitoSection(aportes, compromisoMensual, tasaAhorro, sugerencia)}`;
+    ${_renderHabitoSection(aportes, compromisoMensual, tasaAhorro, sugerencia, frecuencia)}`;
 }
 
 /**
@@ -651,7 +657,7 @@ function _renderVeredictoFondo({ completado, faltante, objetivo, montoTotal, met
 }
 
 /** Las líneas de detalle del pie, en lenguaje de todos los días. */
-function _renderDatosFondo({ montoTotal, objetivo, gastosFijosMensuales, compromisoMensual, tasaAhorro, metaMeses, enCero, m }) {
+function _renderDatosFondo({ montoTotal, objetivo, gastosFijosMensuales, compromisoMensual, tasaAhorro, metaMeses, enCero, m, frecuencia = 'Mensual' }) {
   const lineas = [];
 
   if (enCero && objetivo > 0) {
@@ -669,7 +675,7 @@ function _renderDatosFondo({ montoTotal, objetivo, gastosFijosMensuales, comprom
   }
 
   const partesHabito = [];
-  if (compromisoMensual > 0) partesHabito.push(`Te propusiste guardar ${m(compromisoMensual)} cada mes`);
+  if (compromisoMensual > 0) partesHabito.push(`Te propusiste guardar ${m(compromisoMensual)} ${etiquetaCadaPeriodo(frecuencia)}`);
   // Una proporción no revela cuánto dinero hay, así que no se enmascara.
   if (tasaAhorro !== null && tasaAhorro > 0) partesHabito.push(`de cada $100 que recibes, guardas $${tasaAhorro}`);
   if (partesHabito.length > 0) {
@@ -681,13 +687,15 @@ function _renderDatosFondo({ montoTotal, objetivo, gastosFijosMensuales, comprom
 
 // ── SECCIÓN DE HÁBITO (aportes + compromiso + tasa) ──────────────
 
-function _renderHabitoSection(aportes, compromisoMensual, tasaAhorro, sugerencia = null) {
+function _renderHabitoSection(aportes, compromisoMensual, tasaAhorro, sugerencia = null, frecuencia = 'Mensual') {
   const ordenados = ordenarAportesPorFecha(aportes);
 
   // AH.2: si no hay compromiso definido y hay una sugerencia con datos
-  // reales, la pregunta viene acompañada del punto de partida.
+  // reales, la pregunta viene acompañada del punto de partida. AH.5 (ADR 049
+  // D4): el punto de partida se dice en la frecuencia real de cobro, no en
+  // el mensual con el que razona internamente calcularAporteSugerido().
   const hintSugerido = (sugerencia && sugerencia.monto > 0)
-    ? ` Según tus números, ${f(sugerencia.monto)} es un buen punto de partida.`
+    ? ` Según tus números, ${f(montoPorPeriodo(sugerencia.monto, frecuencia))} es un buen punto de partida.`
     : '';
 
   // DIS.12 (hallazgo A6): el compromiso usaba `i-deudas`, el símbolo que
@@ -696,9 +704,9 @@ function _renderHabitoSection(aportes, compromisoMensual, tasaAhorro, sugerencia
   // `i-recurring` es el mismo símbolo de recurrencia que ya marca los gastos
   // fijos en Calendario e Inicio, que es exactamente lo que esto es.
   const compromisoHtml = compromisoMensual > 0
-    ? _renderMedidorCompromiso(compromisoMensual, aportes)
+    ? _renderMedidorCompromiso(compromisoMensual, aportes, frecuencia)
     : `<p class="ahorro-habito__sin-compromiso">
-        ¿Cuánto quieres apartar cada mes?${hintSugerido}
+        ¿Cuánto quieres apartar ${etiquetaCadaPeriodo(frecuencia)}?${hintSugerido}
         <button class="btn btn-ghost btn-sm" data-action="ahorro-editar-compromiso">Definir →</button>
       </p>`;
 
@@ -726,6 +734,19 @@ function _renderHabitoSection(aportes, compromisoMensual, tasaAhorro, sugerencia
     </section>`;
 }
 
+/** Copy del cierre del medidor por frecuencia (AH.5, ADR 049 D4). Mensual
+ *  conserva el texto original tal cual estaba antes de AH.5. */
+const _PERIODO_COPY = {
+  Diario:    { cumplido: 'Día cumplido. Mañana vuelve a empezar.',
+               cierra: 'Hoy cierra el día.', restante: (n) => `Quedan ${n} días.` },
+  Semanal:   { cumplido: 'Semana cumplida. El lunes vuelve a empezar.',
+               cierra: 'Hoy cierra la semana.', restante: (n) => `Quedan ${n} días de la semana.` },
+  Quincenal: { cumplido: 'Quincena cumplida. Vuelve a empezar en la próxima.',
+               cierra: 'Hoy cierra la quincena.', restante: (n) => `Quedan ${n} días de la quincena.` },
+  Mensual:   { cumplido: 'Mes cumplido. El 1 vuelve a empezar.',
+               cierra: 'Hoy cierra el mes.', restante: (n) => `Quedan ${n} días del mes.` },
+};
+
 /**
  * El medidor del compromiso del mes (DIS.19, item 7).
  *
@@ -741,25 +762,30 @@ function _renderHabitoSection(aportes, compromisoMensual, tasaAhorro, sugerencia
  * El dibujo es decorativo: lo que dice está escrito al lado en palabras y en
  * pesos, y el porcentaje sobrepuesto es texto real que el lector ya anuncia.
  *
+ * AH.5 (ADR 049 D4) generaliza el período a la frecuencia real de cobro: el
+ * texto de cierre ("el 1 vuelve a empezar") cambia de fecha, no de idea.
+ *
  * @param {number} compromisoMensual
  * @param {Array<{monto:number, fecha:string}>} aportes
+ * @param {string} [frecuencia] una de FRECUENCIAS_APORTE. Por defecto 'Mensual'.
  */
-function _renderMedidorCompromiso(compromisoMensual, aportes) {
+function _renderMedidorCompromiso(compromisoMensual, aportes, frecuencia = 'Mensual') {
   const hoyISO = hoy();
-  const p = progresoCompromiso(compromisoMensual, aportadoEnMes(aportes, hoyISO), hoyISO);
+  const p = progresoCompromiso(compromisoMensual, aportadoEnPeriodo(aportes, hoyISO, frecuencia), hoyISO, frecuencia);
   if (!p) return '';
 
   const oculto = S.config?.ocultarSaldo === true;
   const m = (n) => oculto ? SALDO_MASCARA_CUENTA : f(n);
 
-  // El 1 el medidor vuelve a cero, así que el mes cumplido no dice "te faltan
-  // $0": dice que se renueva. Y con el mes corriendo la nota es una cuenta
-  // concreta, no un ánimo.
+  // El período cerrado vuelve a cero, así que no dice "te faltan $0": dice que
+  // se renueva. Y con el período corriendo la nota es una cuenta concreta, no
+  // un ánimo. Cada frecuencia cierra en una fecha propia (ver _PERIODO_COPY).
+  const cp = _PERIODO_COPY[frecuencia] ?? _PERIODO_COPY.Mensual;
   const nota = p.completo
-    ? 'Mes cumplido. El 1 vuelve a empezar.'
+    ? cp.cumplido
     : p.diasRestantes <= 1
-      ? `Hoy cierra el mes. Con ${m(p.faltante)} lo completas.`
-      : `Quedan ${p.diasRestantes} días del mes. Con ${m(p.faltante)} lo completas.`;
+      ? `${cp.cierra} Con ${m(p.faltante)} lo completas.`
+      : `${cp.restante(p.diasRestantes)} Con ${m(p.faltante)} lo completas.`;
 
   return `
       <div class="ahorro-habito__compromiso">
@@ -772,7 +798,7 @@ function _renderMedidorCompromiso(compromisoMensual, aportes) {
           <p class="ahorro-habito__compromiso-nota">${nota}</p>
         </div>
         <button class="btn btn-ghost btn-sm" data-action="ahorro-editar-compromiso"
-                aria-label="Editar compromiso mensual">Editar</button>
+                aria-label="Editar compromiso de ahorro">Editar</button>
       </div>`;
 }
 
@@ -968,9 +994,14 @@ export function renderFormAporte({ fecha, sugerencia = null }) {
  * @param {number}      compromisoMensual Valor actual. 0 = sin compromiso.
  * @param {Object|null} sugerencia        Aporte sugerido (AH.2), salida de
  *                                        calcularAporteSugerido. null = sin caja.
+ * @param {string}      [frecuencia]      Frecuencia real de cobro (AH.5, ADR
+ *                                        049 D4), calculada por index.js. La
+ *                                        pregunta y la caja de sugerencia se
+ *                                        hacen en esa frecuencia, no en mensual
+ *                                        asumido. Por defecto 'Mensual'.
  * @returns {string}
  */
-export function renderFormCompromisoMensual(compromisoMensual, sugerencia = null) {
+export function renderFormCompromisoMensual(compromisoMensual, sugerencia = null, frecuencia = 'Mensual') {
   // AH.2: sin ingresos registrados, la sugerencia pide el promedio mensual
   // para afinarse. El valor no se guarda: solo recalcula la caja en vivo.
   const inputIngresoHtml = sugerencia?.base === 'sin-ingreso'
@@ -984,13 +1015,13 @@ export function renderFormCompromisoMensual(compromisoMensual, sugerencia = null
     : '';
 
   const cajaHtml = sugerencia
-    ? `<div id="caja-sugerencia">${renderCajaSugerencia(sugerencia)}</div>`
+    ? `<div id="caja-sugerencia">${renderCajaSugerencia(sugerencia, frecuencia)}</div>`
     : '';
 
   return `
     <form id="form-compromiso" novalidate>
       <div class="form-group">
-        <label for="compromiso-monto" class="label">¿Cuánto quieres apartar por mes? (COP)</label>
+        <label for="compromiso-monto" class="label">¿Cuánto quieres apartar ${etiquetaCadaPeriodo(frecuencia)}? (COP)</label>
         <input id="compromiso-monto" name="compromisoMensual" class="input" type="number"
                min="0" step="10000" value="${Number(compromisoMensual) || 0}"
                placeholder="0" inputmode="numeric" autofocus />
@@ -1013,9 +1044,12 @@ export function renderFormCompromisoMensual(compromisoMensual, sugerencia = null
  * usuario escribe su ingreso promedio).
  *
  * @param {{ monto: number, base: string, razones: string[] }|null} sugerencia
+ * @param {string} [frecuencia] una de FRECUENCIAS_APORTE (AH.5, ADR 049 D4):
+ *   `sugerencia.monto` es mensual, el título y el botón se muestran en la
+ *   frecuencia real de cobro. Por defecto 'Mensual'.
  * @returns {string}
  */
-export function renderCajaSugerencia(sugerencia) {
+export function renderCajaSugerencia(sugerencia, frecuencia = 'Mensual') {
   if (!sugerencia) return '';
   const { monto, base, razones } = sugerencia;
   const razonesHtml = (razones ?? []).map(r => `<p class="nudge__desc">${r}</p>`).join('');
@@ -1030,14 +1064,15 @@ export function renderCajaSugerencia(sugerencia) {
       </div>`;
   }
 
+  const montoPeriodo = montoPorPeriodo(monto, frecuencia);
   return `
     <div class="nudge nudge-info" role="status">
       <span class="nudge__icon" aria-hidden="true">${icon('lightbulb')}</span>
       <div class="nudge__body">
-        <p class="nudge__title">Sugerido: ${f(monto)} al mes</p>
+        <p class="nudge__title">Sugerido: ${f(montoPeriodo)} ${etiquetaCadaPeriodo(frecuencia)}</p>
         ${razonesHtml}
         <button type="button" class="btn btn-ghost btn-sm"
-                data-action="ahorro-usar-sugerido" data-monto="${monto}">Usar este monto</button>
+                data-action="ahorro-usar-sugerido" data-monto="${montoPeriodo}">Usar este monto</button>
       </div>
     </div>`;
 }

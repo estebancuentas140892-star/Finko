@@ -11,6 +11,13 @@
 
 import { progresoDeBolsa } from '../../infra/bolsas.js';
 import { f } from '../../infra/utils.js';
+import {
+  frecuenciaPrincipalIngresos,
+  diasPorPeriodo,
+  FRECUENCIAS_APORTE,
+} from '../../infra/vencimientos.js';
+
+export { frecuenciaPrincipalIngresos };
 
 // ── RANGOS PERMITIDOS ────────────────────────────────────────────
 
@@ -547,22 +554,122 @@ export function aportadoEnMes(aportes, hoyISO) {
 }
 
 /**
- * El estado del compromiso de este mes, para el medidor (DIS.19, item 7).
+ * Fecha ISO formateada desde un Date leído en UTC (mismo criterio que el
+ * resto del archivo: medianoche UTC, sin desfase de zona horaria).
+ */
+function _isoUTC(d) {
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+}
+
+/**
+ * Rango [inicioISO, finISO] del período de compromiso vigente para `hoyISO`,
+ * según la frecuencia con la que el usuario cobra (AH.5, ADR 049 D4).
+ *
+ * Cada frecuencia cierra en una fecha fija, nunca en una ventana móvil: igual
+ * que aportadoEnMes() rechaza los últimos 30 días a favor del mes calendario
+ * (la promesa se renueva el 1, no se arrastra), Quincenal cierra el 15 o el
+ * último día del mes, Semanal el domingo y Diario el mismo día. Una ventana
+ * móvil dejaría el medidor a media agua justo cuando el período nuevo arranca.
+ *
+ * @param {string} frecuencia una de FRECUENCIAS_APORTE; cualquier otra cae a Mensual.
+ * @param {string} hoyISO YYYY-MM-DD.
+ * @returns {{inicioISO:string, finISO:string}}
+ */
+function _rangoPeriodo(frecuencia, hoyISO) {
+  const [anio, mes, dia] = hoyISO.split('-').map(Number);
+
+  if (frecuencia === 'Diario') return { inicioISO: hoyISO, finISO: hoyISO };
+
+  if (frecuencia === 'Semanal') {
+    const d = new Date(Date.UTC(anio, mes - 1, dia));
+    const offsetLunes = d.getUTCDay() === 0 ? 6 : d.getUTCDay() - 1;
+    const lunes = new Date(d);
+    lunes.setUTCDate(d.getUTCDate() - offsetLunes);
+    const domingo = new Date(lunes);
+    domingo.setUTCDate(lunes.getUTCDate() + 6);
+    return { inicioISO: _isoUTC(lunes), finISO: _isoUTC(domingo) };
+  }
+
+  const mm = String(mes).padStart(2, '0');
+  const ultimo = new Date(Date.UTC(anio, mes, 0)).getUTCDate();
+
+  if (frecuencia === 'Quincenal') {
+    return dia <= 15
+      ? { inicioISO: `${anio}-${mm}-01`, finISO: `${anio}-${mm}-15` }
+      : { inicioISO: `${anio}-${mm}-16`, finISO: `${anio}-${mm}-${String(ultimo).padStart(2, '0')}` };
+  }
+
+  // Mensual y cualquier otra: el mes calendario completo (comportamiento
+  // original de aportadoEnMes(), reescrito como rango para reutilizarlo aquí).
+  return { inicioISO: `${anio}-${mm}-01`, finISO: `${anio}-${mm}-${String(ultimo).padStart(2, '0')}` };
+}
+
+/**
+ * Cuánto se aportó al fondo dentro del período de compromiso vigente, según
+ * la frecuencia real de cobro del usuario (AH.5, ADR 049 D4). Generaliza
+ * aportadoEnMes(): con Mensual delega en ella sin cambios (mismo resultado
+ * byte a byte); con Quincenal/Semanal/Diario usa el rango calendario propio
+ * de esa frecuencia (ver `_rangoPeriodo`).
+ *
+ * @param {Array<{monto:number, fecha:string}>} aportes
+ * @param {string} hoyISO YYYY-MM-DD.
+ * @param {string} [frecuencia] una de FRECUENCIAS_APORTE. Por defecto 'Mensual'.
+ * @returns {number} COP. 0 si no hay aportes del período o el input no sirve.
+ */
+export function aportadoEnPeriodo(aportes, hoyISO, frecuencia = 'Mensual') {
+  if (frecuencia === 'Mensual' || !FRECUENCIAS_APORTE.includes(frecuencia)) {
+    return aportadoEnMes(aportes, hoyISO);
+  }
+  if (!Array.isArray(aportes)) return 0;
+  if (!hoyISO || !/^\d{4}-\d{2}-\d{2}$/.test(hoyISO)) return 0;
+
+  const { inicioISO, finISO } = _rangoPeriodo(frecuencia, hoyISO);
+  return aportes.reduce((sum, a) => {
+    if (typeof a?.fecha !== 'string' || a.fecha < inicioISO || a.fecha > finISO) return sum;
+    const monto = Number(a.monto);
+    return sum + (Number.isFinite(monto) && monto > 0 ? monto : 0);
+  }, 0);
+}
+
+/**
+ * Días que quedan del período de compromiso vigente, contando hoy (el último
+ * día del período todavía cuenta como un día para cumplir). Generaliza
+ * `_diasRestantesDelMes`: con Mensual delega en ella sin cambios.
+ * @param {string} frecuencia una de FRECUENCIAS_APORTE.
+ * @param {string} hoyISO YYYY-MM-DD.
+ * @returns {number}
+ */
+function _diasRestantesPeriodo(frecuencia, hoyISO) {
+  if (frecuencia === 'Mensual' || !FRECUENCIAS_APORTE.includes(frecuencia)) {
+    return _diasRestantesDelMes(hoyISO);
+  }
+  if (!hoyISO || !/^\d{4}-\d{2}-\d{2}$/.test(hoyISO)) return 0;
+
+  const { finISO } = _rangoPeriodo(frecuencia, hoyISO);
+  const [ay, am, ad] = hoyISO.split('-').map(Number);
+  const [by, bm, bd] = finISO.split('-').map(Number);
+  return Math.max(0, Math.round((Date.UTC(by, bm - 1, bd) - Date.UTC(ay, am - 1, ad)) / 86_400_000) + 1);
+}
+
+/**
+ * El estado del compromiso del período vigente, para el medidor (DIS.19, item
+ * 7; período generalizado en AH.5/ADR 049 D4).
  *
  * La fila de texto que decía "Compromiso mensual: $420.000" informaba sin medir:
- * no había forma de saber si el mes iba cumplido sin abrir la lista de aportes y
- * sumar a mano. El medidor mide, y para eso hacen falta las tres cifras juntas:
- * lo prometido, lo hecho y lo que queda de mes.
+ * no había forma de saber si el período iba cumplido sin abrir la lista de
+ * aportes y sumar a mano. El medidor mide, y para eso hacen falta las tres
+ * cifras juntas: lo prometido, lo hecho y lo que queda del período.
  *
  * @param {number} compromisoMensual
- * @param {number} aportadoMes
+ * @param {number} aportadoMes Salida de aportadoEnPeriodo() con la misma frecuencia.
  * @param {string} hoyISO YYYY-MM-DD.
+ * @param {string} [frecuencia] una de FRECUENCIAS_APORTE. Por defecto 'Mensual'.
  * @returns {{
  *   pct: number, aportado: number, objetivo: number, faltante: number,
  *   diasRestantes: number, completo: boolean,
  * } | null} null sin compromiso definido: no hay promesa que medir.
  */
-export function progresoCompromiso(compromisoMensual, aportadoMes, hoyISO) {
+export function progresoCompromiso(compromisoMensual, aportadoMes, hoyISO, frecuencia = 'Mensual') {
   const objetivo = Number(compromisoMensual);
   if (!Number.isFinite(objetivo) || objetivo <= 0) return null;
 
@@ -574,9 +681,44 @@ export function progresoCompromiso(compromisoMensual, aportadoMes, hoyISO) {
     aportado,
     objetivo,
     faltante:      Math.max(0, objetivo - aportado),
-    diasRestantes: _diasRestantesDelMes(hoyISO),
+    diasRestantes: _diasRestantesPeriodo(frecuencia, hoyISO),
     completo:      aportado >= objetivo,
   };
+}
+
+/**
+ * Convierte un monto mensual al equivalente del período de `frecuencia`
+ * (AH.5, ADR 049 D4): la sugerencia de AH.2 razona en mensual (ingresos y
+ * gastos fijos se piensan por mes), pero el compromiso se pregunta y se mide
+ * en la frecuencia real de cobro del usuario. Mensual devuelve el mismo monto
+ * sin tocar.
+ * @param {number} montoMensual
+ * @param {string} frecuencia una de FRECUENCIAS_APORTE.
+ * @returns {number}
+ */
+export function montoPorPeriodo(montoMensual, frecuencia) {
+  const monto = Math.max(0, Number(montoMensual) || 0);
+  if (frecuencia === 'Mensual' || !FRECUENCIAS_APORTE.includes(frecuencia)) return Math.round(monto);
+  return Math.round(monto * diasPorPeriodo(frecuencia) / diasPorPeriodo('Mensual'));
+}
+
+/** Mapa {frecuencia → "cada X"}, para el copy del compromiso. Mensual conserva
+ *  el texto original ("cada mes") tal cual estaba antes de AH.5. */
+const _CADA_PERIODO = {
+  Diario:    'cada día',
+  Semanal:   'cada semana',
+  Quincenal: 'cada quincena',
+  Mensual:   'cada mes',
+};
+
+/**
+ * Etiqueta "cada X" del período de compromiso, para el copy de la sección y
+ * del formulario (AH.5, ADR 049 D4).
+ * @param {string} frecuencia una de FRECUENCIAS_APORTE.
+ * @returns {string}
+ */
+export function etiquetaCadaPeriodo(frecuencia) {
+  return _CADA_PERIODO[frecuencia] ?? _CADA_PERIODO.Mensual;
 }
 
 /**

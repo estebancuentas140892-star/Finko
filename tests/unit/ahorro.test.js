@@ -38,10 +38,14 @@ import {
   bloquesCobertura,
   franjaCobertura,
   aportadoEnMes,
+  aportadoEnPeriodo,
   progresoCompromiso,
   MESES_FRANJA_MIN,
   MAX_ROTULOS_MES,
   NIVELES_FONDO,
+  // AH.5 (ADR 049 D4)
+  montoPorPeriodo,
+  etiquetaCadaPeriodo,
 } from '../../modules/dominio/ahorro/logic.js';
 import {
   renderFormAporte,
@@ -1290,6 +1294,15 @@ describe('renderAhorro() - tarjeta del fondo (DIS.16)', () => {
     expect(textoDatos()).toContain('de cada $100 que recibes, guardas $23');
   });
 
+  // AH.5 (ADR 049 D4): el compromiso se dice en la frecuencia real de cobro,
+  // no en mensual asumido. Sin frecuencia (llamada de arriba) el default
+  // 'Mensual' conserva el texto de siempre; con 'Quincenal' cambia el rótulo.
+  it('con frecuencia de cobro quincenal, el hábito se dice por quincena', () => {
+    S.ahorro.compromisoMensual = 140_000;
+    renderAhorro(1_000_000, null, null, 'Quincenal');
+    expect(textoDatos()).toContain('Te propusiste guardar $140.000 cada quincena');
+  });
+
   it('la nota del ADR 009 se conserva: el dinero no se mueve', () => {
     renderAhorro(1_000_000, null, null);
     expect(document.querySelector('.fondo-card__nota').textContent).toContain('sigue en tus cuentas');
@@ -1470,5 +1483,95 @@ describe('progresoCompromiso()', () => {
   it('cuenta bien un mes de 30 días y febrero de año bisiesto', () => {
     expect(progresoCompromiso(400_000, 0, '2026-06-01').diasRestantes).toBe(30);
     expect(progresoCompromiso(400_000, 0, '2028-02-01').diasRestantes).toBe(29);
+  });
+
+  it('sin frecuencia (o Mensual explícito) los días restantes son los del mes calendario', () => {
+    expect(progresoCompromiso(400_000, 0, '2026-07-29', 'Mensual').diasRestantes).toBe(3);
+  });
+
+  it('Diario siempre cierra hoy: 1 día restante', () => {
+    expect(progresoCompromiso(400_000, 0, '2026-07-15', 'Diario').diasRestantes).toBe(1);
+  });
+
+  it('Semanal cierra el domingo de la semana de hoy', () => {
+    // 2026-07-29 es miércoles, la semana corre lunes 27 a domingo 2 de
+    // agosto: quedan 5 días contando hoy.
+    expect(progresoCompromiso(400_000, 0, '2026-07-29', 'Semanal').diasRestantes).toBe(5);
+    // Domingo mismo: cierra hoy.
+    expect(progresoCompromiso(400_000, 0, '2026-08-02', 'Semanal').diasRestantes).toBe(1);
+  });
+
+  it('Quincenal cierra el 15 o el último día del mes', () => {
+    expect(progresoCompromiso(400_000, 0, '2026-07-10', 'Quincenal').diasRestantes).toBe(6);
+    expect(progresoCompromiso(400_000, 0, '2026-07-20', 'Quincenal').diasRestantes).toBe(12);
+  });
+});
+
+// ── aportadoEnPeriodo() (AH.5, ADR 049 D4) ────────────────────────
+
+describe('aportadoEnPeriodo()', () => {
+  const aportes = [
+    { id: '1', monto: 120_000, fecha: '2026-07-03' },
+    { id: '2', monto: 140_000, fecha: '2026-07-28' },
+    { id: '3', monto: 500_000, fecha: '2026-06-30' },
+    { id: '4', monto: 900_000, fecha: '2026-08-01' },
+  ];
+
+  it('sin frecuencia (o Mensual) delega en aportadoEnMes(), mismo resultado', () => {
+    expect(aportadoEnPeriodo(aportes, '2026-07-29')).toBe(aportadoEnMes(aportes, '2026-07-29'));
+    expect(aportadoEnPeriodo(aportes, '2026-07-29', 'Mensual')).toBe(260_000);
+  });
+
+  it('Diario solo suma los aportes de hoy', () => {
+    expect(aportadoEnPeriodo(aportes, '2026-07-28', 'Diario')).toBe(140_000);
+    expect(aportadoEnPeriodo(aportes, '2026-07-27', 'Diario')).toBe(0);
+  });
+
+  it('Semanal suma de lunes a domingo de la semana de hoy', () => {
+    // Semana del 2026-07-27 (lunes) al 2026-08-02 (domingo): cae el aporte
+    // del 28 de julio y el del 1 de agosto, no el del 3.
+    expect(aportadoEnPeriodo(aportes, '2026-07-29', 'Semanal')).toBe(140_000 + 900_000);
+  });
+
+  it('Quincenal corta el mes en dos: 1-15 y 16-fin de mes', () => {
+    expect(aportadoEnPeriodo(aportes, '2026-07-03', 'Quincenal')).toBe(120_000);
+    expect(aportadoEnPeriodo(aportes, '2026-07-28', 'Quincenal')).toBe(140_000);
+  });
+
+  it('una frecuencia desconocida cae a Mensual, igual que aportadoEnMes()', () => {
+    expect(aportadoEnPeriodo(aportes, '2026-07-29', 'Bimestral')).toBe(260_000);
+  });
+});
+
+// ── montoPorPeriodo() + etiquetaCadaPeriodo() (AH.5, ADR 049 D4) ──
+
+describe('montoPorPeriodo()', () => {
+  it('Mensual devuelve el mismo monto', () => {
+    expect(montoPorPeriodo(280_000, 'Mensual')).toBe(280_000);
+  });
+
+  it('convierte proporcionalmente a los días del período', () => {
+    expect(montoPorPeriodo(300_000, 'Quincenal')).toBe(150_000);
+    expect(montoPorPeriodo(300_000, 'Semanal')).toBe(70_000);
+    expect(montoPorPeriodo(300_000, 'Diario')).toBe(10_000);
+  });
+
+  it('nunca es negativo ni NaN con entradas inválidas', () => {
+    expect(montoPorPeriodo(-100, 'Quincenal')).toBe(0);
+    expect(montoPorPeriodo(NaN, 'Semanal')).toBe(0);
+  });
+});
+
+describe('etiquetaCadaPeriodo()', () => {
+  it('devuelve la frase "cada X" de cada frecuencia', () => {
+    expect(etiquetaCadaPeriodo('Mensual')).toBe('cada mes');
+    expect(etiquetaCadaPeriodo('Quincenal')).toBe('cada quincena');
+    expect(etiquetaCadaPeriodo('Semanal')).toBe('cada semana');
+    expect(etiquetaCadaPeriodo('Diario')).toBe('cada día');
+  });
+
+  it('una frecuencia desconocida cae a "cada mes"', () => {
+    expect(etiquetaCadaPeriodo('Bimestral')).toBe('cada mes');
+    expect(etiquetaCadaPeriodo(undefined)).toBe('cada mes');
   });
 });

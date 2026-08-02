@@ -21,6 +21,7 @@ import { mostrarErroresForm }       from '../../infra/form-errors.js';
 import { confirmar }                from '../../ui/confirm.js';
 import { hoy }                      from '../../infra/utils.js';
 import { genId }                    from '../../infra/crud.js';
+import { frecuenciaPrincipalIngresos } from '../../infra/vencimientos.js';
 import {
   validarMetaMeses, validarMontoActual,
   normalizarMetaMeses, normalizarMontoActual,
@@ -167,6 +168,17 @@ function _calcularIngresosMensuales() {
     total += (Number(ing.monto) || 0) * factor;
   }
   return total;
+}
+
+/**
+ * Frecuencia real de cobro del usuario (AH.5, ADR 049 D4): el compromiso de
+ * aporte se pregunta y se mide en esta frecuencia, no en mensual asumido.
+ * `frecuenciaPrincipalIngresos` es infra compartida (no otro dominio, ADN
+ * #10): la misma que ya usan Metas y Apartados para su propio ritmo de aporte.
+ * @returns {string} una de FRECUENCIAS_APORTE. 'Mensual' sin ingresos activos.
+ */
+function _frecuenciaCompromiso() {
+  return frecuenciaPrincipalIngresos(S.ingresos);
 }
 
 /**
@@ -404,10 +416,11 @@ function _editarCompromisoMensual() {
   if (!overlay) return;
 
   const titulo = overlay.querySelector('.modal__title');
-  if (titulo) titulo.textContent = 'Compromiso mensual de ahorro';
+  if (titulo) titulo.textContent = 'Compromiso de ahorro';
 
   const compromisoActual = Number(S.ahorro?.compromisoMensual) || 0;
-  _setBody(renderFormCompromisoMensual(compromisoActual, _construirSugerenciaAporte()));
+  const frecuencia = _frecuenciaCompromiso();
+  _setBody(renderFormCompromisoMensual(compromisoActual, _construirSugerenciaAporte(), frecuencia));
 
   const form = document.getElementById('form-compromiso');
   if (form) {
@@ -426,7 +439,7 @@ function _editarCompromisoMensual() {
       if (!caja) return;
       const val = Number(inputIngreso.value);
       const override = Number.isFinite(val) && val > 0 ? val : null;
-      caja.innerHTML = renderCajaSugerencia(_construirSugerenciaAporte(override));
+      caja.innerHTML = renderCajaSugerencia(_construirSugerenciaAporte(override), frecuencia);
     });
   }
 
@@ -476,7 +489,7 @@ function _guardarCompromisoMensual(form) {
  * Calcula gastosFijosMensuales al vuelo desde S.compromisos.
  */
 function _renderAhorroBound() {
-  renderAhorro(_gastosFijosMensuales(), _calcularTasaAhorro(), _construirSugerenciaAporte());
+  renderAhorro(_gastosFijosMensuales(), _calcularTasaAhorro(), _construirSugerenciaAporte(), _frecuenciaCompromiso());
   renderCasaAhorro(_gastosFijosMensuales());
 }
 
