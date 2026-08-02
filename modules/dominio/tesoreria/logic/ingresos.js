@@ -8,16 +8,12 @@
  */
 
 import { FRECUENCIAS, CATEGORIAS_INGRESO, SMMLV, AUXILIO_TRANSPORTE } from '../../../core/constants.js';
+import { FACTOR_MENSUAL_INGRESO } from '../../../infra/financiero.js';
 
-// Tabla de conversión a mensual. Local al dominio (ADN #10); compartida con logic/distribucion.js.
-// Frecuencias de baja periodicidad (Bimestral, Trimestral, Semestral, Anual,
-// 'Única vez') se excluyen intencionalmente: no representan flujo mensual recurrente.
-export const FACTOR_MENSUAL = {
-  'Diario':    30,
-  'Semanal':   4.33,
-  'Quincenal': 2,
-  'Mensual':   1,
-};
+// Reexporta la tabla única de infra (ARQ.2 punto 1): antes una copia idéntica
+// vivía acá. Importar infra no viola ADN #10 (solo prohíbe dominio → dominio).
+// Compartida con logic/distribucion.js.
+export const FACTOR_MENSUAL = FACTOR_MENSUAL_INGRESO;
 
 // ── PRIMA DE SERVICIOS - recordatorio (G.3.F9) ──────────────────
 

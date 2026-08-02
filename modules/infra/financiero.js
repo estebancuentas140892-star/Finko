@@ -206,8 +206,12 @@ export function calcularRentabilidadReal(capital, tasaPct, inflacionPct) {
  * de cualquier dominio que necesite proyectar el ingreso (tesorería, presupuesto,
  * compromisos). Los dominios que solo la usan para sus propios cálculos mantienen
  * su copia local por la regla ADN #10 (compromisos/logic/modelo.js, ahorro/index.js).
+ *
+ * Exportada (ARQ.2 punto 1) para que `tesoreria/logic/ingresos.js` la reexporte
+ * como `FACTOR_MENSUAL` en vez de mantener una segunda copia idéntica: tesorería
+ * puede importar infra sin violar ADN #10 (la regla prohíbe dominio → dominio).
  */
-const FACTOR_MENSUAL_INGRESO = {
+export const FACTOR_MENSUAL_INGRESO = {
   'Diario':    30,
   'Semanal':   4.33,
   'Quincenal': 2,

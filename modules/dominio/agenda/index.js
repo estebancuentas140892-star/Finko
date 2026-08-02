@@ -24,6 +24,7 @@
 import { S, EventBus } from '../../core/state.js';
 import { save } from '../../core/storage.js';
 import { guardar, editar, eliminar } from '../../infra/crud.js';
+import { gastoDePagoCompromiso } from '../../infra/pago-compromiso.js';
 import { renderSmart, updSaldo } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { registrarAccion } from '../../ui/actions.js';
@@ -364,20 +365,16 @@ async function _marcarPagadoGastoFijo(el) {
 
 /**
  * Escribe uno o varios pagos de gastos fijos: un gasto vinculado por cada
- * cuenta usada + el descuento del saldo de esas cuentas.
- *
- * Única copia de esta aritmética dentro de Agenda: la comparten el pago
- * individual ("Marcar pagado") y el pago en lote (CAL.5a). Deliberadamente NO
- * se extrajo todavía a `infra/`: las otras dos copias del proyecto
- * (`compromisos/_guardarAbono` y el apply de `tesoreria/acciones/distribucion.js`)
- * también mueven el `saldoTotal` de una deuda, así que unificarlas es un
- * refactor cross-dominio con su propia tarjeta (**ARQ.2** punto 2). Lo que
- * esta función sí garantiza es que el lote no agregue una cuarta copia.
+ * cuenta usada (`infra/pago-compromiso.js`, ARQ.2 punto 2) + el descuento del
+ * saldo de esas cuentas. Compartida por el pago individual ("Marcar pagado")
+ * y el pago en lote (CAL.5a).
  *
  * El descuento se acumula por cuenta y se aplica **una sola vez** al final: en
  * un lote la misma cuenta paga varios items, y hacer un `editar` por item
  * leería el saldo ya mutado en cada vuelta (funciona, pero emite N eventos
- * `state:change` por cuenta y re-renderiza toda la app en cada uno).
+ * `state:change` por cuenta y re-renderiza toda la app en cada uno). Esta
+ * estrategia de batching es propia de Agenda: el helper compartido solo
+ * escribe el gasto, nunca toca `cuentas`.
  *
  * @param {Array<{
  *   comp: import('../../core/state.js').Compromiso,
@@ -392,14 +389,11 @@ function _registrarPagosFijos(pagos) {
   for (const { comp, fecha, partes } of pagos) {
     const repartido = partes.length > 1;
     for (const p of partes) {
-      guardar('gastos', {
-        descripcion:  `Pago: ${comp.descripcion}`,
-        monto:        p.monto,
-        categoria:    'Gastos fijos',
+      gastoDePagoCompromiso(comp, {
+        monto:    p.monto,
         fecha,
-        cuentaId:     p.cuentaId || null,
-        nota:         repartido ? 'Pago repartido entre varias cuentas' : '',
-        compromisoId: comp.id,
+        cuentaId: p.cuentaId,
+        nota:     repartido ? 'Pago repartido entre varias cuentas' : '',
       });
       if (p.cuentaId) {
         porCuenta.set(p.cuentaId, (porCuenta.get(p.cuentaId) ?? 0) + p.monto);

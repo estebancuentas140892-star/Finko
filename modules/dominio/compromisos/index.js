@@ -19,6 +19,7 @@ import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { f, hoy } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
 import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
+import { gastoDePagoCompromiso, bajarSaldoDeuda } from '../../infra/pago-compromiso.js';
 import { wireIconoPicker } from '../../infra/icon-picker.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, repartirExtraEnCuotas, tasaMensualToEA, tasaMensualDecimal, esDeuda } from './logic.js';
@@ -430,14 +431,11 @@ async function _guardarAbono() {
   const repartido = splits.length > 1;
   const notaBase  = datos.nota?.trim() || '';
   for (const s of splits) {
-    guardar('gastos', {
-      descripcion:        `Abono: ${deuda.descripcion}`,
-      monto:              s.monto,
-      categoria:          'Deudas',
-      fecha:              datos.fecha,
-      cuentaId:           s.cuentaId || null,
-      nota:               repartido ? [notaBase, 'Abono repartido entre varias cuentas'].filter(Boolean).join(' · ') : notaBase,
-      compromisoId:       deudaId,
+    gastoDePagoCompromiso(deuda, {
+      monto:    s.monto,
+      fecha:    datos.fecha,
+      cuentaId: s.cuentaId,
+      nota:     repartido ? [notaBase, 'Abono repartido entre varias cuentas'].filter(Boolean).join(' · ') : notaBase,
     });
     const cuenta = S.cuentas.find(x => x.id === s.cuentaId);
     if (cuenta) {
@@ -445,9 +443,8 @@ async function _guardarAbono() {
     }
   }
 
-  // Reducir el saldo de la deuda por el total abonado.
-  const nuevoSaldo = saldaDeuda ? 0 : Math.max(0, (Number(deuda.saldoTotal) || 0) - montoAjustado);
-  editar('compromisos', deudaId, { saldoTotal: nuevoSaldo });
+  // Reducir el saldo de la deuda por el total abonado (ARQ.2 punto 2).
+  bajarSaldoDeuda(deuda, montoAjustado);
 
   const overlay = document.getElementById('modal-abono');
   if (overlay) cerrarModal(overlay);
@@ -881,17 +878,8 @@ export function initCompromisos() {
     for (const it of abonos) {
       const deuda = S.compromisos.find(c => c.id === it.id);
       if (!deuda) continue;
-      guardar('gastos', {
-        descripcion:        `Abono: ${deuda.descripcion}`,
-        monto:              it.monto,
-        categoria:          'Deudas',
-        fecha:              hoy(),
-        cuentaId:           cuentaOrigenId,
-        nota:               '',
-        compromisoId:       it.id,
-      });
-      const nuevoSaldo = Math.max(0, (Number(deuda.saldoTotal) || 0) - it.monto);
-      editar('compromisos', it.id, { saldoTotal: nuevoSaldo });
+      gastoDePagoCompromiso(deuda, { monto: it.monto, fecha: hoy(), cuentaId: cuentaOrigenId });
+      bajarSaldoDeuda(deuda, it.monto);
     }
   });
 

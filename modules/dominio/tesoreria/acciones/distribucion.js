@@ -9,12 +9,13 @@
 
 import { S, EventBus } from '../../../core/state.js';
 import { save } from '../../../core/storage.js';
-import { guardar, editar } from '../../../infra/crud.js';
+import { editar } from '../../../infra/crud.js';
 import { registrarAccion } from '../../../ui/actions.js';
 import { updSaldo } from '../../../infra/render.js';
 import { announce } from '../../../infra/a11y.js';
 import { f, hoy } from '../../../infra/utils.js';
 import { resolverCuenta } from '../../../infra/cuenta-helper.js';
+import { gastoDePagoCompromiso, bajarSaldoDeuda } from '../../../infra/pago-compromiso.js';
 import { abrirModal, cerrarModal } from '../../../ui/modales.js';
 import {
   esDistribucionPersonalizadaValida,
@@ -664,30 +665,8 @@ function _aplicarNecesidad(item, cuentaId) {
   const comp = (S.compromisos ?? []).find(c => c.id === item.id);
   if (!comp) return;
 
-  if (item.tipo === 'necesidad-fijo') {
-    guardar('gastos', {
-      descripcion:        `Pago: ${comp.descripcion}`,
-      monto:              item.monto,
-      categoria:          'Gastos fijos',
-      fecha:              hoy(),
-      cuentaId,
-      nota:               '',
-      compromisoId:       item.id,
-    });
-    return;
-  }
-
-  guardar('gastos', {
-    descripcion:        `Abono: ${comp.descripcion}`,
-    monto:              item.monto,
-    categoria:          'Deudas',
-    fecha:              hoy(),
-    cuentaId,
-    nota:               '',
-    compromisoId:       item.id,
-  });
-  const nuevoSaldo = Math.max(0, (Number(comp.saldoTotal) || 0) - item.monto);
-  editar('compromisos', item.id, { saldoTotal: nuevoSaldo });
+  gastoDePagoCompromiso(comp, { monto: item.monto, fecha: hoy(), cuentaId });
+  if (item.tipo === 'necesidad-deuda') bajarSaldoDeuda(comp, item.monto);
 }
 
 /**
