@@ -25,7 +25,7 @@ import {
   etiquetaPeriodo,
   frecuenciaPrincipalIngresos,
 } from '../../infra/vencimientos.js';
-import { diasHastaFecha, planDeReferencia } from '../../infra/bolsas.js';
+import { diasHastaFecha, planDeReferencia, progresoDeBolsa } from '../../infra/bolsas.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
 
@@ -167,21 +167,15 @@ export function apartadosProximos(apartados, hoyISO, diasUmbral = DIAS_PROXIMO) 
 
 /**
  * Calcula el progreso de un apartado.
+ *
+ * Envoltorio de `progresoDeBolsa` (ARQ.1a) con los campos de este dominio: el
+ * cálculo es el mismo de las cuatro bolsas y su copia única vive en infra.
+ *
  * @param {import('../../core/state.js').Apartado} apartado
  * @returns {{ porcentaje: number, faltante: number, completado: boolean }}
  */
 export function calcularProgreso(apartado) {
-  const objetivo = Number(apartado?.montoObjetivo) || 0;
-  const actual   = Number(apartado?.montoActual)   || 0;
-
-  if (objetivo <= 0) {
-    return { porcentaje: 0, faltante: 0, completado: false };
-  }
-
-  const porcentaje = Math.min(100, Math.round((actual / objetivo) * 100));
-  const faltante   = Math.max(0, objetivo - actual);
-
-  return { porcentaje, faltante, completado: porcentaje >= 100 };
+  return progresoDeBolsa(apartado?.montoObjetivo, apartado?.montoActual);
 }
 
 /**

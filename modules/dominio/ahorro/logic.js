@@ -9,6 +9,7 @@
  * respetamos la regla ADN #10: ahorro no importa de otro dominio.
  */
 
+import { progresoDeBolsa } from '../../infra/bolsas.js';
 import { f } from '../../infra/utils.js';
 
 // ── RANGOS PERMITIDOS ────────────────────────────────────────────
@@ -44,6 +45,12 @@ export function calcularObjetivoFondo(gastosFijosMensuales, metaMeses) {
 /**
  * Progreso del fondo de emergencia.
  *
+ * Envoltorio de `progresoDeBolsa` (ARQ.1a): el cálculo es el mismo de las
+ * cuatro bolsas y su copia única vive en infra. Los bordes estrictos que este
+ * fondo ya tenía (objetivo no finito, acumulado negativo) son los que quedaron
+ * en la versión compartida. Lo propio de acá es el orden de los argumentos, que
+ * se conserva porque el caller lee primero el monto y después lo deriva.
+ *
  * @param {number} montoActual Lo que ya tiene apartado el usuario.
  * @param {number} objetivo    Lo que necesita para cubrir su meta.
  * @returns {{ porcentaje: number, faltante: number, completado: boolean }}
@@ -52,14 +59,7 @@ export function calcularObjetivoFondo(gastosFijosMensuales, metaMeses) {
  *   - completado: true si `montoActual >= objetivo` y objetivo > 0.
  */
 export function calcularProgresoFondo(montoActual, objetivo) {
-  const actual = Math.max(0, Number(montoActual) || 0);
-  const meta   = Number(objetivo);
-  if (!Number.isFinite(meta) || meta <= 0) {
-    return { porcentaje: 0, faltante: 0, completado: false };
-  }
-  const porcentaje = Math.min(100, Math.round((actual / meta) * 100));
-  const faltante   = Math.max(0, meta - actual);
-  return { porcentaje, faltante, completado: porcentaje >= 100 };
+  return progresoDeBolsa(objetivo, montoActual);
 }
 
 /**

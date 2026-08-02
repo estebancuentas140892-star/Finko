@@ -6,7 +6,6 @@ import {
   calcularAhorroPorPeriodo,
   frecuenciaPrincipalIngresos,
   etiquetaPeriodoAhorro,
-  diasHastaFecha,
   validarMeta,
   validarAbono,
   normalizarMeta,
@@ -145,34 +144,11 @@ describe('calcularProgreso()', () => {
   });
 });
 
-// ── diasHastaFecha() ──────────────────────────────────────────────
-
-describe('diasHastaFecha()', () => {
-  it('devuelve null si fechaLimite es null', () => {
-    expect(diasHastaFecha(null)).toBeNull();
-  });
-
-  it('devuelve null si fechaLimite es undefined', () => {
-    expect(diasHastaFecha(undefined)).toBeNull();
-  });
-
-  it('devuelve null si fechaLimite es string vacío', () => {
-    expect(diasHastaFecha('')).toBeNull();
-  });
-
-  it('devuelve un número positivo para fechas futuras', () => {
-    const futura = new Date();
-    futura.setDate(futura.getDate() + 30);
-    const iso = futura.toISOString().slice(0, 10);
-    const dias = diasHastaFecha(iso);
-    expect(dias).toBeGreaterThan(0);
-    expect(dias).toBeLessThanOrEqual(31);
-  });
-
-  it('devuelve un número ≤ 0 para fechas pasadas', () => {
-    expect(diasHastaFecha('2020-01-01')).toBeLessThanOrEqual(0);
-  });
-});
+// `diasHastaFecha` salió de este dominio con ARQ.1a: era una función muerta
+// (cero llamadores en `modules/`, solo este bloque de tests la mantenía viva) y
+// además leía el reloj por dentro, así que no había forma de fijarle un día.
+// La única medida de días de una bolsa es la de `infra/bolsas.js`, que recibe
+// el día de referencia y la cubre `bolsas.test.js`.
 
 // ── frecuenciaPrincipalIngresos() (MT.4) ──────────────────────────
 

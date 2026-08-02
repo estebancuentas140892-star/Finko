@@ -15,6 +15,7 @@ import {
   etiquetaPeriodo,
   frecuenciaPrincipalIngresos,
 } from '../../infra/vencimientos.js';
+import { progresoDeBolsa } from '../../infra/bolsas.js';
 import { hoy } from '../../infra/utils.js';
 
 // ── RITMO DE AHORRO (MT.4, motor compartido desde MC.13b) ─────────
@@ -60,37 +61,18 @@ export function metasCumplidas(metas) {
 
 /**
  * Calcula el progreso de una meta de ahorro.
+ *
+ * Envoltorio de `progresoDeBolsa` (ARQ.1a) con los campos de este dominio: el
+ * cálculo es el mismo de las cuatro bolsas y su copia única vive en infra. Lo
+ * único propio es el nombre del campo: acá la meta se completa **en femenino**,
+ * y así lo guarda el registro (`S.metas[].completada`).
+ *
  * @param {import('../../core/state.js').Meta} meta
  * @returns {{ porcentaje: number, faltante: number, completada: boolean }}
  */
 export function calcularProgreso(meta) {
-  const objetivo = meta.montoObjetivo ?? 0;
-  const actual   = meta.montoActual   ?? 0;
-
-  if (objetivo <= 0) {
-    return { porcentaje: 0, faltante: 0, completada: false };
-  }
-
-  const porcentaje = Math.min(100, Math.round((actual / objetivo) * 100));
-  const faltante   = Math.max(0, objetivo - actual);
-
-  return { porcentaje, faltante, completada: porcentaje >= 100 };
-}
-
-/**
- * Número de días calendario entre hoy y `fechaLimite`.
- * Devuelve `null` si no hay fecha límite.
- * Un valor ≤ 0 significa que el plazo ya venció.
- *
- * @param {string|null|undefined} fechaLimite - YYYY-MM-DD.
- * @returns {number|null}
- */
-export function diasHastaFecha(fechaLimite) {
-  if (!fechaLimite) return null;
-  const hoy   = new Date();
-  hoy.setHours(0, 0, 0, 0);
-  const limite = new Date(fechaLimite + 'T00:00:00');
-  return Math.ceil((limite - hoy) / (1000 * 60 * 60 * 24));
+  const { porcentaje, faltante, completado } = progresoDeBolsa(meta?.montoObjetivo, meta?.montoActual);
+  return { porcentaje, faltante, completada: completado };
 }
 
 /**

@@ -20,6 +20,8 @@ import * as bolsas     from '../../modules/infra/bolsas.js';
 import * as portafolio from '../../modules/infra/portafolio.js';
 import * as apartados  from '../../modules/dominio/apartados/logic.js';
 import * as inversiones from '../../modules/dominio/inversiones/logic.js';
+import * as metas      from '../../modules/dominio/metas/logic.js';
+import * as ahorro     from '../../modules/dominio/ahorro/logic.js';
 
 describe('infra/bolsas.js - frontera con el dominio Apartados', () => {
   it('el dominio re-exporta la misma función, no una copia', () => {
@@ -46,6 +48,69 @@ describe('infra/bolsas.js - frontera con el dominio Apartados', () => {
     expect(bolsas.diasHastaFecha('2026-07-31', '2026-07-01')).toBe(30);
     expect(bolsas.diasHastaFecha('2026-06-30', '2026-07-01')).toBe(-1);
     expect(bolsas.diasHastaFecha('', '2026-07-01')).toBeNull();
+  });
+});
+
+describe('progresoDeBolsa - la única cuenta de progreso de las cuatro bolsas', () => {
+  it('reparte porcentaje, faltante y completado', () => {
+    expect(bolsas.progresoDeBolsa(360_000, 90_000))
+      .toEqual({ porcentaje: 25, faltante: 270_000, completado: false });
+  });
+
+  it('topa el porcentaje en 100 y el faltante en 0 cuando sobra dinero', () => {
+    expect(bolsas.progresoDeBolsa(360_000, 500_000))
+      .toEqual({ porcentaje: 100, faltante: 0, completado: true });
+  });
+
+  it('sin objetivo positivo devuelve progreso neutro', () => {
+    for (const objetivo of [0, -100, NaN, null, undefined, 'no-es-monto']) {
+      expect(bolsas.progresoDeBolsa(objetivo, 500_000))
+        .toEqual({ porcentaje: 0, faltante: 0, completado: false });
+    }
+  });
+
+  it('trata un acumulado negativo o no numérico como 0', () => {
+    expect(bolsas.progresoDeBolsa(1_000_000, -500_000).porcentaje).toBe(0);
+    expect(bolsas.progresoDeBolsa(1_000_000, NaN).porcentaje).toBe(0);
+    expect(bolsas.progresoDeBolsa(1_000_000, undefined).faltante).toBe(1_000_000);
+  });
+});
+
+// Los tres dominios envuelven la función de infra en vez de re-exportarla (cada
+// uno recibe su propio registro y Metas además renombra el campo a femenino),
+// así que la frontera no se puede probar por identidad como las de abajo. Se
+// prueba por comportamiento, y con los dos bordes estrictos justamente: eran los
+// que cada copia local resolvía distinto, así que una copia nueva los falla.
+describe('las cuatro bolsas comparten los bordes del cálculo (ARQ.1a)', () => {
+  it('un objetivo NaN no se cuela como porcentaje NaN en ninguna', () => {
+    expect(apartados.calcularProgreso({ montoObjetivo: NaN, montoActual: 100 }))
+      .toEqual({ porcentaje: 0, faltante: 0, completado: false });
+    expect(metas.calcularProgreso({ montoObjetivo: NaN, montoActual: 100 }))
+      .toEqual({ porcentaje: 0, faltante: 0, completada: false });
+    expect(ahorro.calcularProgresoFondo(100, NaN))
+      .toEqual({ porcentaje: 0, faltante: 0, completado: false });
+  });
+
+  it('un acumulado negativo se recorta a 0 en las tres', () => {
+    expect(apartados.calcularProgreso({ montoObjetivo: 1_000, montoActual: -500 }).porcentaje).toBe(0);
+    expect(metas.calcularProgreso({ montoObjetivo: 1_000, montoActual: -500 }).porcentaje).toBe(0);
+    expect(ahorro.calcularProgresoFondo(-500, 1_000).porcentaje).toBe(0);
+  });
+
+  it('el mismo par de montos da el mismo porcentaje por las tres puertas', () => {
+    const objetivo = 3_000_000;
+    const actual   = 1_000_000;
+    const esperado = bolsas.progresoDeBolsa(objetivo, actual).porcentaje;
+
+    expect(apartados.calcularProgreso({ montoObjetivo: objetivo, montoActual: actual }).porcentaje).toBe(esperado);
+    expect(metas.calcularProgreso({ montoObjetivo: objetivo, montoActual: actual }).porcentaje).toBe(esperado);
+    expect(ahorro.calcularProgresoFondo(actual, objetivo).porcentaje).toBe(esperado);
+  });
+
+  it('estadoDeBolsa lee el mismo porcentaje que la bolsa que lo alimenta', () => {
+    const bolsa = { montoObjetivo: 1_200_000, montoActual: 400_000 };
+    expect(bolsas.estadoDeBolsa(bolsa, '2026-07-01').pct)
+      .toBe(bolsas.progresoDeBolsa(bolsa.montoObjetivo, bolsa.montoActual).porcentaje);
   });
 });
 

@@ -19,9 +19,52 @@
  *
  * Primer paso concreto de ARQ.1: no es el modelo unificado de las cuatro
  * bolsas, es la primera pieza que ya tenía dos lectores.
+ *
+ * ARQ.1a suma la segunda pieza: `progresoDeBolsa`, que las cuatro bolsas
+ * calculaban por separado (`calcularProgreso` en Metas y en Apartados,
+ * `calcularProgresoFondo` en Ahorro, y una cuarta copia dentro de
+ * `estadoDeBolsa`, acá mismo). Cada dominio conserva su envoltorio con el
+ * nombre y el vocabulario de siempre.
  */
 
 import { diasPorPeriodo, normalizarFrecuenciaAporte } from './vencimientos.js';
+
+// ── PROGRESO ─────────────────────────────────────────────────────
+
+/**
+ * Cuánto lleva reunido una bolsa frente a lo que quiere reunir (ARQ.1a).
+ *
+ * Recibe dos números y no una bolsa, porque el fondo de emergencia no es un
+ * registro guardado: su objetivo se deriva de los gastos fijos del mes. La
+ * forma más chica que sirve a las cuatro bolsas son los dos montos sueltos, y
+ * cada dominio arma su llamada con los campos que sí tiene.
+ *
+ * **Los bordes son los más estrictos de las tres copias que reemplaza**, no un
+ * promedio: Metas dejaba pasar un objetivo `NaN` hasta la vista (el porcentaje
+ * salía `NaN` y se pintaba tal cual), y ni Metas ni Apartados recortaban un
+ * acumulado negativo. Solo el fondo protegía los dos casos, así que su criterio
+ * es el que queda. Ningún test existente dependía de los bordes laxos.
+ *
+ * @param {number|string|null|undefined} objetivo - lo que la bolsa quiere reunir.
+ * @param {number|string|null|undefined} actual   - lo que ya lleva reunido.
+ * @returns {{ porcentaje: number, faltante: number, completado: boolean }}
+ *   - porcentaje: entero 0-100, redondeado.
+ *   - faltante:   COP que faltan para el objetivo, nunca negativo.
+ *   - completado: el porcentaje ya llegó a 100.
+ */
+export function progresoDeBolsa(objetivo, actual) {
+  const meta    = Number(objetivo);
+  const reunido = Math.max(0, Number(actual) || 0);
+
+  if (!Number.isFinite(meta) || meta <= 0) {
+    return { porcentaje: 0, faltante: 0, completado: false };
+  }
+
+  const porcentaje = Math.min(100, Math.round((reunido / meta) * 100));
+  const faltante   = Math.max(0, meta - reunido);
+
+  return { porcentaje, faltante, completado: porcentaje >= 100 };
+}
 
 // ── FECHAS ───────────────────────────────────────────────────────
 
@@ -32,8 +75,9 @@ import { diasPorPeriodo, normalizarFrecuenciaAporte } from './vencimientos.js';
  *
  * `hoyISO` se inyecta para que el cálculo sea determinista en tests.
  *
- * Metas conserva su propio `diasHastaFecha` de un solo argumento y con otro
- * redondeo: unificarlos cambia resultados y es trabajo de ARQ.1, no de aquí.
+ * Metas tenía su propio `diasHastaFecha` de un solo argumento, que leía el
+ * reloj por dentro. ARQ.1a lo retiró sin reemplazarlo: no lo llamaba nadie en
+ * `modules/`, solo su propio test. Esta es la única medida de días de una bolsa.
  *
  * @param {string|null|undefined} fechaObjetivo - YYYY-MM-DD.
  * @param {string} hoyISO - YYYY-MM-DD (día de referencia).
@@ -151,7 +195,11 @@ export function estadoDeBolsa(bolsa, hoyISO) {
   const objetivo = Number(bolsa?.montoObjetivo) || 0;
   const actual   = Number(bolsa?.montoActual) || 0;
 
-  const pct     = objetivo > 0 ? Math.min(100, Math.round((actual / objetivo) * 100)) : 0;
+  const { porcentaje: pct } = progresoDeBolsa(objetivo, actual);
+
+  // `reunido` compara los montos, no el porcentaje: con un objetivo de 1.000 y
+  // 996 reunidos la barra ya se dibuja llena (redondea a 100) pero el dinero no
+  // alcanza. Acá manda el dinero, porque de esto cuelga "listo para usarse".
   const reunido = objetivo > 0 && actual >= objetivo;
 
   const plan    = planDeReferencia(bolsa, hoyISO);
