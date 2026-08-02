@@ -10,6 +10,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### refactor(transversal): ARQ.1c, la etapa de Inversion al alcance de Ahorro · 2026-08-02
+
+Reabre el punto 2 que **ARQ.1** había dejado como hueco intencional, a pedido de Esteban. Commit `b6a7825`. Fichas: [`contexto/ahorro.md`](contexto/ahorro.md) e [`contexto/inversion.md`](contexto/inversion.md). Sin cambio de comportamiento ni de UI.
+
+- **El pedido llegó rotulado LEG.2**, ID que ya pertenece a la tarjeta legal de aceptación versionada (sigue abierta y sin tocar). Se cierra como **ARQ.1c**, que es donde el pendiente estaba documentado.
+- `etapaDePortafolio(inversiones)` en `infra/portafolio.js`: el corte que decide el momento del portafolio (una inversión con monto es la etapa 1, dos o más la 2), más las abiertas y la lista que las produjo. Es la única pieza que la casa de Ahorro no podía obtener sin romper ADN 10, y la última de arquitectura que le faltaba a su carril de Inversión ([ADR 056](DECISIONS/056-la-casa-de-ahorro.md)).
+- **Baja el criterio, no la sección.** `momentoInversion()` lo consume y conserva títulos, frases, anticipo, acción y avisos; `TOTAL_MOMENTOS` tampoco baja (el conteo "momento 1 de 3" es del relato de Inversión y no lo lee nadie más). Infra devuelve números y cada pantalla pone su vocabulario, mismo criterio que `estadoDeBolsa()`.
+- **Lo que queda del carril es copy, no arquitectura:** `_estadoInversion()` sigue diciendo "2 inversiones" porque el D4 del ADR 056 define esa unidad, y cambiarla es decisión de producto. El dato ya está a una llamada de distancia.
+- 5 tests nuevos en `bolsas.test.js` (bordes, umbral, filtro de monto y la invariante de que las dos puertas dan el mismo número). 3630 unit + 252 E2E (1 flaky ajeno, IN.9c) + lint verdes. SW v476 a v477.
+
 ### docs(transversal): ARQ.1, cierre documental · 2026-08-02
 
 Cierra la tarjeta **ARQ.1** completa (patrón P7). Ficha: [`contexto/transversal.md`](contexto/transversal.md). Sin cambio de código: decisión de Esteban sobre los dos puntos que quedaban tras ARQ.1a/1b.

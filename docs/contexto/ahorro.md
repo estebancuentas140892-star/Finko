@@ -76,7 +76,7 @@
 
 - **Objetivo**          : que el usuario decida **a cuál de las cuatro modalidades entrar, y con información**. Es el único lugar donde los cuatro nombres conviven, así que también es donde se enseña la diferencia entre ellos; y como cada carril trae su propio gráfico, la pantalla enseña además a leer la sección a la que lleva.
 - **Estado actual**     : estable. **DIS.19 cerrada** (2026-07-29, arquitectura 1c del informe "Auditoría Ahorro"): las cuatro filas de monto y estado en texto pasan a cuatro **carriles**, cada uno con su gráfico en su propia unidad, su rótulo de momento de uso y su acción. El total baja al pie en una línea. **DIS.18 cerrada** (2026-07-28): nace la pantalla y reemplaza al consolidado de solo lectura que se repetía en las cuatro hijas (F6, ADR 024 D4), restaurando la intención del [ADR 009](../DECISIONS/009-fondo-de-emergencia.md).
-- **Verificado contra** : commit `788f87d` DIS.19 (2026-07-29).
+- **Verificado contra** : ARQ.1c (2026-08-02).
 
 **Dónde vive**
 
@@ -87,7 +87,7 @@
 | Render de la pantalla | `modules/dominio/ahorro/view.js` | `renderCasaAhorro()`, `_htmlHub()`, `_htmlCarril()` | ~64 |
 | Un gráfico por carril | `modules/dominio/ahorro/view.js` | `_graficoFondo()`, `_graficoApartados()`, `_graficoMetas()`, `_graficoInversion()` | |
 | Saltar de carril con los chips | `modules/dominio/ahorro/index.js` | `_irACarril()`, acción `ahorro-ir-a-carril` | |
-| Cálculos que el carril comparte con su sección | `modules/infra/bolsas.js` / `modules/infra/portafolio.js` | `estadoDeBolsa()`, `planDeReferencia()`, `columnasPortafolio()` | |
+| Cálculos que el carril comparte con su sección | `modules/infra/bolsas.js` / `modules/infra/portafolio.js` | `estadoDeBolsa()`, `planDeReferencia()`, `columnasPortafolio()`, `etapaDePortafolio()` | |
 | El comparador de columnas, compartido | `modules/ui/comparador.js` | `htmlComparador()`, `pieComparador()` | |
 | Slot y sección | `index.html` | `#sec-ahorro`, `#panel-casa-ahorro` | |
 | Volver a la casa desde cada hija | `index.html` | `.section__volver` en `#sec-fondo`, `#sec-metas`, `#sec-apartados`, `#sec-inversion` | |
@@ -100,7 +100,7 @@
 
 **Riesgos**:
 
-- **El carril de Inversión cuenta inversiones, no dice su etapa.** El mockup mostraba "construyendo", que sale de `momentoInversion()` en el dominio Inversión: importarlo rompe ADN 10 y replicarlo duplicaría lo que **ARQ.1** existe para unificar. DIS.19 sí bajó a `infra/portafolio.js` la cadena de proyección, porque el gráfico del carril la necesitaba y `columnasPortafolio()` no se puede mover sola; la etapa sigue esperando ARQ.1.
+- **El carril de Inversión cuenta inversiones, y ya puede decir su etapa.** El mockup mostraba "construyendo", que salía de `momentoInversion()` en el dominio Inversión: importarlo rompe ADN 10 y replicarlo duplicaría el criterio. **ARQ.1c cerró esa brecha** (2026-08-02): el corte que decide la etapa vive en `etapaDePortafolio()` (`infra/portafolio.js`), junto a la cadena de proyección que DIS.19 ya había bajado ahí. El carril lo lee con una llamada (`etapaDePortafolio(S.inversiones)` en `view.js`, igual que hoy llama a `columnasPortafolio`) y pasa el número a `casaAhorro()`. **Lo que falta no es arquitectura, es copy:** `_estadoInversion()` sigue diciendo "2 inversiones" porque cambiar qué dice la fila contradice el D4 del [ADR 056](../DECISIONS/056-la-casa-de-ahorro.md) y es decisión de producto. Las frases del momento ("aprendiendo", "construyendo", los títulos) **no** bajaron a infra a propósito: infra devuelve números y cada pantalla pone su vocabulario, mismo criterio que `estadoDeBolsa()`.
 - **El orden de los carriles es fijo y los cuatro se muestran siempre**, también en cero: una modalidad que no aparece no se puede descubrir, y ese descubrimiento es la mitad del propósito de la pantalla. Filtrar por monto (lo que hacía `consolidarAhorro()`) devuelve el defecto. **El orden lo fija el rótulo `cuando`**, no la urgencia: si alguien reordena `MODALIDADES_AHORRO` sin revisar esos cuatro textos, la secuencia deja de poder explicarse.
 - **Ningún carril en cero dibuja un gráfico vacío.** Muestra qué hace la modalidad y ofrece su primer paso con la acción de su dominio. Un gráfico en cero es una promesa mal contada: cuatro rieles vacíos se leen como error, no como invitación.
 - **La columna y la silueta SON la acción, no una selección.** El prototipo elegía un item y luego pulsaba un botón; acá el toque abre el aporte directo. Es un toque menos y, sobre todo, cero estado de UI que mantener entre renders (el hub se re-renderiza con cada `state:change` de las cuatro slices, y una selección guardada se perdería o habría que persistirla en `S`, que no es su sitio).
@@ -111,9 +111,11 @@
 - **Cada `.lane__cta` repite la `data-action` de su sección, y eso rompe tests ajenos.** `nueva-meta`, `nuevo-apartado`, `inversion-nueva`, `ahorro-activar-fondo` y `ahorro-nuevo-aporte` existen ahora dos o tres veces en el DOM, y como las 15 secciones coexisten (solo cambia `display`), un selector suelto `[data-action="..."]` puede quedarse con el botón del carril oculto. Tumbó 16 tests E2E de Metas, Apartados e Inversión que no tocaban esta sección (**BUG-019**). Al agregar un CTA nuevo a un carril, el selector de todo test que use esa acción va acotado a su sección. La regla quedó en [`CONTRIBUTING.md`](../CONTRIBUTING.md).
 - **Los selectores E2E de esta pantalla son `.lane` y `#carril-<clave>`**, y la salida es `a.lane__ver`. Al cambiar el markup del hub hay que correr `pnpm run test:e2e`: no es compuerta de cada commit, y DIS.19 dejó la suite dos días en rojo justamente por eso.
 
-**Cambios pendientes**: **promover "Ahorro" a la barra inferior** queda sin decidir (hoy vive en "Más"); mover Calendario para hacerle sitio es una decisión de otra sección. El nombre **"Apartados"**, que colisiona con "apartar" (el verbo genérico de ahorrar en toda la app), quedó señalado y sin resolver: es lenguaje de producto y toca varias pantallas.
+**Cambios pendientes**: **qué dice el carril de Inversión**, la única pieza que quedaba del hub y hoy solo espera una decisión de copy (el dato ya se puede leer, ver el primer riesgo). **Promover "Ahorro" a la barra inferior** queda sin decidir (hoy vive en "Más"); mover Calendario para hacerle sitio es una decisión de otra sección, con tarjeta **AH.7a**. El nombre **"Apartados"**, que colisiona con "apartar" (el verbo genérico de ahorrar en toda la app), quedó señalado y sin resolver: es lenguaje de producto y toca varias pantallas.
 
 **Cambios realizados**:
+
+- 2026-08-02 (**ARQ.1c**): `etapaDePortafolio()` en `infra/portafolio.js` deja la etapa de Inversión al alcance del carril sin importar ese dominio. Sin cambio visible: falta la decisión de copy. Ver CHANGELOG.
 
 - 2026-07-30 (**BUG-019**): los tests E2E de esta pantalla y de sus hijas vuelven al markup vigente (`.lane`, `#carril-<clave>`, `a.lane__ver`) y los selectores de `data-action` quedan acotados por sección. Sin tocar `modules/`. Ver CHANGELOG.
 

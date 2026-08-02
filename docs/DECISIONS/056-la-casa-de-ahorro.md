@@ -47,6 +47,7 @@ La causa no era la card ni las pestañas: era que **el concepto padre no tenía 
 - Una quinta bolsa futura es una fila más en una lista, no una quinta pestaña en una barra que ya estaba llena.
 - Las cuatro secciones hijas abren en su contenido: el título de Metas pasa de 365px a 68px del tope, y su primera tarjeta de 433px a 128px (medido a 375px).
 - **La fila de Inversión cuenta inversiones en vez de decir su etapa.** El mockup mostraba "construyendo", que sale de `momentoInversion()` en el dominio Inversión: importarlo rompe la regla ADN #10 y replicarlo duplicaría el cálculo que ARQ.1 existe para unificar. Queda pendiente de ARQ.1, no de esta decisión.
+  - **Desbloqueada el 2026-08-02 (ARQ.1c).** El corte que decide la etapa bajó a `infra/portafolio.js` (`etapaDePortafolio()`), que la casa puede leer sin importar el dominio Inversión y sin copiar el criterio. Lo que sigue abierto ya no es arquitectura sino **qué dice la fila**: `_estadoInversion()` conserva el conteo que fija el D4 de arriba, y cambiarlo por la etapa es una decisión de copy, del alcance de quien implemente esa fila.
 - Quedan dos temas señalados y sin resolver, los dos por fuera del alcance de una sección: **promover "Ahorro" a la barra inferior** (implicaría mover Calendario, decisión de otra sección) y el nombre **"Apartados"**, que colisiona con "apartar", el verbo genérico de ahorrar en toda la app.
 - Cinco reglas nuevas en [`DESIGN_SYSTEM.md`](../DESIGN_SYSTEM.md) (R70 a R74): son de arquitectura de información, no de componente, así que van en Principios.
 
