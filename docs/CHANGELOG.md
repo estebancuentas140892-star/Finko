@@ -10,6 +10,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(apartados): EDIT.1, editar sin destruir una reserva · 2026-08-02
+
+Rebanada Apartados de **EDIT.1** (patrón P3 de la auditoría de UX/producto). Commit `5929836`. Ficha: [`contexto/apartados.md`](contexto/apartados.md). Inversión y Me deben siguen pendientes de la misma tarjeta.
+
+- Botón "Editar" en la tarjeta abre el mismo modal de siempre con los datos actuales prellenados (nombre, ícono, monto objetivo, fecha objetivo, nota); las plantillas rápidas se ocultan en modo edición.
+- `normalizarApartado(datos, apartadoExistente = null)` preserva `montoActual`, `recurrente` y `periodoMeses` del registro existente (no vuelven a pasar por el form) y recalcula `completado` contra el objetivo nuevo, mismo patrón que **EDIT.1a** validó en Metas.
+- 17 tests unitarios nuevos (`normalizarApartado` en modo edición, `renderFormApartado` prellenado, botón Editar en la tarjeta). Verificado en la app real: crear, editar nombre/monto/fecha, y editar bajando el objetivo por debajo del acumulado (recalcula `completado` a `true` sin tocar el acumulado).
+- 3600 unit + 252 E2E + lint verdes. SW v470 a v472.
+
 ### perf(rendimiento): PERF.7c, warm-up de derivaciones pesadas en idle · 2026-08-01
 
 Cierra **PERF.7** completo. Commit `156aa88`. Detalle: [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md).
