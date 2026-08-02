@@ -10,6 +10,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### fix(config): CFG.6, "Instalar Finko" y "Activar recordatorios" dejan de estirarse a ancho completo en tablet y escritorio · 2026-08-02
+
+Avanza **CFG.6** (pase de escritorio/tablet + tema claro, alcance acotado; el inventario de configs faltantes, punto 1, sigue pendiente de CFG.1 a CFG.5). Ficha: [`contexto/configuracion.md`](contexto/configuracion.md).
+
+- **El defecto:** los dos botones vivían sueltos dentro de `.config-section` (flex column sin `align-items`, stretch por defecto) y se estiraban a 932px en escritorio (1280px) y 660px en tablet (768px). El pase 2026-07-25 ya había corregido este mismo patrón para `.config-form`/`.config-danger` y los pares de `.config-actions--ambito`, pero no cubría estos dos botones sueltos.
+- Nueva regla `.config-section > .btn { align-self: flex-start; min-width: 160px; }`, mismo patrón que "Guardar perfil". Verificado en el navegador a 390/768/1280px.
+- **Tema claro revisado por código**, no por captura: `config.css` usa 100% `var(--fk-*)`, cero color hardcodeado. El Browser pane no compuso frames en esta sesión, así que no hay verificación visual real del punto 3; queda para una revisión en dispositivo.
+- 26/26 tests de `config.test.js` verdes. SW v482 a v483.
+
 ### feat(inicio): IN.9e, estado vacio propio de escritorio, cierra la iniciativa IN.9 · 2026-08-02
 
 Cierra **IN.9e** (ID6 del [ADR 057](DECISIONS/057-inicio-en-escritorio.md)), la ultima rebanada de la iniciativa "Inicio en escritorio": las cinco cierran. Ficha: [`contexto/inicio.md`](contexto/inicio.md).

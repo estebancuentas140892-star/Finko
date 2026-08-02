@@ -10,9 +10,7 @@
 
 ## En proceso
 
-### CFG.6 - Revision general de la seccion Ajustes (alcance acotado: 2 y 3)
-- Inicio: 2026-08-02
-- Alcance de esta pasada: pase de escritorio/tablet (punto 2) + verificacion tema claro (punto 3). El inventario de configs faltantes (punto 1) queda fuera, depende de CFG.1 a CFG.5 sin cerrar.
+_(vacío: elegir la siguiente tarjeta de "Pendientes")_
 
 ---
 
@@ -48,7 +46,14 @@ Las 35 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
-| INT.1 | Barra superior de escritorio y carril de urgencias | Transversal | media | requiere ADR; bloquea ID4 e ID7 de Inicio |
+| INT.1a | El contenido se centra y Movimientos entra al sidebar | Transversal | media | nada; ADR 059 aceptado |
+| INT.1b | Las hijas de Ahorro se anidan; el sidebar cabe | Transversal | media | INT.1a; acota el ADR 056; cierra BUG-026 |
+| INT.1c | Barra superior de 56px (sección, Registrar, tema, perfil) | Transversal | media | INT.1b; pendiente P9 (Lighthouse) |
+| INT.1d | Cinta de saldo en la barra, con su ojo | Transversal | media | INT.1c |
+| INT.1e | El primario de cada sección sube a la barra | Transversal | media | INT.1c; pendiente P1 (recorrer 13) |
+| INT.1f | Formulario de escritorio a 840px, dos columnas | Transversal | media | nada duro; conviene tras INT.1c |
+| INT.1g | Carril derecho de 320px desde 1.680px | Transversal | baja | INT.1a; pendiente P1 |
+| INT.1h | Cuatro atajos de teclado | Transversal | baja | INT.1c; pendiente P8 (validación a11y) |
 | MC.13 | Distribución v2: contextual por fecha, guiada y con origen real | Mis cuentas | alta | nada |
 | MC.13e-2g | Rediseño en 2 pasos con educación financiera | Mis cuentas | media | última; depende del handoff de diseño |
 | MC.17f | Deshacer o editar una transferencia | Mis cuentas | media | coordinar con MOV.1 |
@@ -93,7 +98,7 @@ Las 35 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 
 ### Inicio (dominio `resumen`)
 
-> **Iniciativa "IN.9 - Inicio en escritorio", cerrada** (auditoría de navegación global de Claude Design, 2026-07-31; handoff en `Auditoría navegación global Finko-handoff/`). Sus cinco rebanadas (IN.9a a IN.9e) cerraron el 2026-08-02. **ID4 e ID7 salen a INT.1**, porque dependen de una barra superior de escritorio que no existe en el repo; **ID8 fue un no-op** (decide *no* agregar un botón de registrar, ya cubierto por ADR 024). El informe deja tres reglas para el design system (R78 ancho completo que se gana, R79 gráfico dimensionado por su dato, R80 acordeón/estado como respuesta al ancho escaso) y dos decisiones abiertas que viajan con INT.1: `--fk-bg-glass` sin valor en tema claro (PI7) y el contraste de los tokens `--fk-dom-*` (PI8, medido: 3,23:1 y 2,65:1, bajo el mínimo 3:1 de WCAG 1.4.11). **Móvil no cambia salvo lo que IN.9a decidió** (orden de las alertas de límites). Detalle completo: [`contexto/inicio.md`](contexto/inicio.md).
+> **Iniciativa "IN.9 - Inicio en escritorio", cerrada** (auditoría de navegación global de Claude Design, 2026-07-31; handoff en `Auditoría navegación global Finko-handoff/`). Sus cinco rebanadas (IN.9a a IN.9e) cerraron el 2026-08-02. **ID4 e ID7 salen a INT.1**, porque dependen de una barra superior de escritorio que no existe en el repo; **ID8 fue un no-op** (decide *no* agregar un botón de registrar, ya cubierto por ADR 024). Sus tres reglas (**R78** ancho completo que se gana, **R79** gráfico dimensionado por su dato, **R80** acordeón/estado como respuesta al ancho escaso) ya están en `DESIGN_SYSTEM.md`. De sus dos decisiones abiertas, **PI7 se cerró por falso el 2026-08-02**: `--fk-bg-glass` sí tiene valor en tema claro (`themes.css`), así que nunca bloqueó la barra superior. **PI8 sigue abierto** (contraste de los tokens `--fk-dom-*`, medido: 3,23:1 y 2,65:1, bajo el mínimo 3:1 de WCAG 1.4.11) y **no viaja con INT.1**: corregirlo cambia 13 secciones de golpe y merece tarjeta de accesibilidad propia. **Móvil no cambia salvo lo que IN.9a decidió** (orden de las alertas de límites). Detalle completo: [`contexto/inicio.md`](contexto/inicio.md).
 
 ### Calendario (dominio `agenda`)
 
@@ -285,7 +290,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 #### CFG.6 - Revisión general de la sección Ajustes
 - Prioridad  : sin definir
 - Área       : design (auditoría visual y de layout, sin lógica nueva)
-- Estado     : **parcialmente ejecutada (2026-07-25).** La auditoría de diseño de la sección entregó 13 hallazgos y se aplicaron los 11 que no dependen de otra sección: agrupación y reorden del panel, un solo primario, confirmación visible al guardar, importador accesible, pesos con separador de miles, botones de datos por ámbito, instrucción ramificada por PWA, Centro Legal con jerarquía, "Acerca de" sin jerga y teja + sprite en el encabezado (ver CHANGELOG 2026-07-25). **Lo que sigue abierto en esta tarjeta:** (1) el inventario de qué configuraciones *faltan* en Ajustes, que es lo que la ata a CFG.1 a CFG.5; (2) el pase de **escritorio y tablet**, que la auditoría no revisó (solo móvil 390px, solo tema oscuro), incluidos el Bento Grid y los botones que hoy ocupan todo el ancho; (3) tema claro, sin verificar.
+- Estado     : **parcialmente ejecutada (2026-08-02).** Los pases de 2026-07-25 y 2026-08-02 ya aplicaron 12 de 13 hallazgos. El pase 2026-08-02 (escritorio/tablet + tema claro) corrigió "Instalar Finko" y "Activar recordatorios", que se estiraban a ancho completo en tablet (768px) y escritorio (1280px): mismo `align-self: flex-start` que ya tenían "Guardar perfil" y los botones de zona de peligro (ver CHANGELOG). Tema claro revisado por código (100% `var(--fk-*)`, sin color hardcodeado); sin captura visual real, el Browser pane no compuso frames en esa sesión. **Lo que sigue abierto en esta tarjeta:** (1) el inventario de qué configuraciones *faltan* en Ajustes, que es lo que la ata a CFG.1 a CFG.5; el Bento Grid a escritorio queda como mejora futura, no bloquea nada (medido: panel de 982px a 1280px, columna única, sin bug).
 - Objetivo   : el usuario pidió revisar si faltan configuraciones que deberían vivir en Ajustes, con el objetivo de que la sección se convierta en el centro de configuración de Finko (seguridad, personalización, notificaciones, respaldo y cualquier otra opción relevante), con interfaz clara y organizada. **Ampliado por triaje del 4.º lote (2026-07-08, brief de Ajustes punto 2):** rediseño visual de la sección con tarjetas de tamaño uniforme, Bento Grid donde aporte, bloques compactos y alineados, sin botones que ocupen todo el ancho en desktop (hoy: "Instalar aplicación", "Recordatorios"); misma sensación de orden que el resto de la app (coordina con IV.2). **7.º lote:** el layout debe reservar el bloque del **Centro Legal** (iniciativa LEG, Transversal).
 - Secciones  : Configuración (Ajustes)
 - Archivos   : `modules/dominio/config/view.js`, `styles/components/config.css`
@@ -307,17 +312,96 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 > **Auditoría de rendimiento 2026-07 completa** (PERF.0 a PERF.4 cerradas, ver [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md)). Los dos hallazgos que siguen mandando: `renderSmart()` ya evita el recálculo cruzado, y guardar cuesta ~5 ms debounced, así que la persistencia NO se reescribió ([ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md), disparadores en su D4). **Disciplina obligatoria de toda tarjeta PERF: correr `pnpm perf` antes y después y comparar contra BASELINE.md.**
 
-#### INT.1 - Barra superior de escritorio y carril de urgencias
+> **Iniciativa "INT.1 - Interfaz de escritorio"** ([ADR 059](DECISIONS/059-interfaz-de-escritorio.md), **aceptado el 2026-08-02**; handoff `Interfaz 1-4` de `Auditoría navegación global Finko-handoff/`). Fuente única del chrome de escritorio. Ocho decisiones D1 a D9 (**D4, el buscador global, sale a auditoría propia**) en ocho rebanadas verificables por separado. **Móvil no cambia en nada:** la auditoría le encontró cero problemas propios. **Desbloquea ID4 e ID7 de IN.9**, que dependían de esta barra. Dos premisas de la auditoría quedaron corregidas al verificarla contra el código: **PI7 es falso** (`--fk-bg-glass` sí tiene valor en tema claro, `themes.css`, así que no bloquea nada) y la regla de emergencia del sidebar es **CSS muerto** ([BUG-026](BUGS.md), sus cuatro declaraciones pierden la cascada; el nav desborda 41px y esa regla compra 0px). Las tres reglas del informe (**R75** verificar en las dos topologías, **R76** una acción global existe en cada topología, **R77** el ancho sobrante se centra o se usa) entran a `DESIGN_SYSTEM.md` al cerrar la última rebanada. **Coordinar con AH.7a**, que toca el mismo marcado de nav en la otra plataforma.
+
+#### INT.1a - El contenido se centra y Movimientos entra al sidebar
 - Prioridad  : media
-- Estado     : **requiere ADR y la palabra de Esteban antes de codificar.** Nace del handoff de la auditoría de navegación global (2026-07-31, archivos `Interfaz 1-4` de `Auditoría navegación global Finko-handoff/`), que todavía no se trió decisión por decisión: esta tarjeta la registra como fuente única, no la aprueba. Verificado el 2026-07-31: la barra no existe en el repo (cero `topbar` en `styles/`; el sidebar de `layout.css` sí está).
+- Estado     : pendiente. Decisiones D7 (mitad) y D6 (mitad) del ADR 059. Sin pendientes que la bloqueen.
+- Área       : ambos (una línea de CSS + una fila de marcado)
+- Objetivo   : `.section` gana `margin-inline: auto` (medido: 240px huérfanos pegados al borde derecho a 1920, 880 a 2560) y `#movimientos` entra al grupo "Seguimiento" del sidebar, que hoy lista 14 destinos sin él (R32 incumplida solo en escritorio; se llega únicamente por "Ver todo", que arranca `[hidden]`).
+- Secciones  : Transversal (shell), Movimientos
+- Archivos   : `styles/layout.css` (`.section`), `index.html` (nav)
+- Depende de : nada
+- Aceptación : `.section` centrada medida a 1920 y a 2560 + Movimientos alcanzable en 1 clic desde cualquier sección + E2E de navegación verde
+- Modelo     : bajo
+
+#### INT.1b - Las hijas de Ahorro se anidan y el sidebar cabe en un portátil
+- Prioridad  : media
+- Estado     : pendiente. Decisión D6 (mitad) del ADR 059 + hallazgo E10. **Acota el [ADR 056](DECISIONS/056-la-casa-de-ahorro.md)**: sus cuatro atajos pasan de permanentes a contextuales en escritorio, no se retiran.
 - Área       : ambos
-- Objetivo   : la barra superior permanente de escritorio (título de sección, botón "Registrar" y avatar con acceso a Ajustes) y el carril de 320px a partir de 1.680px. **Bloquea ID4 e ID7 de la iniciativa IN.9**: hoy `.perfil-inicio` es el único encabezado de Inicio en las dos plataformas, así que ocultarlo en escritorio dejaría la pantalla sin saludo, sin marca y sin acceso a Ajustes.
-- Riesgo     : cambia el chrome de las 13 secciones a la vez, no solo Inicio. Arrastra además las dos decisiones abiertas del informe de Inicio: PI7 (`--fk-bg-glass` no tiene valor propio en tema claro y pinta una banda negra sobre página blanca: gana valor claro en `themes.css` o se retira del design system) y PI8 (contraste de los tokens `--fk-dom-*`, medido en 3,23:1 y 2,65:1 contra el mínimo 3:1 de WCAG 1.4.11, hallazgo IT12).
+- Objetivo   : Fondo, Metas, Apartados e Inversión aparecen como sub-nivel solo al estar dentro del grupo Ahorro; el sidebar baja de 14 filas fijas a 9 y recupera ~160px. `.section__volver` se oculta en escritorio en esas cuatro (hoy pintan el volver **y** están en el sidebar); en móvil sigue intacto, que es donde se decidió.
+- Riesgo     : **resuelve o retira [BUG-026](BUGS.md)**. Medido: el nav necesita 648px y dispone de 607, desborda 41px, y la regla `@media (max-height: 800px)` que debería mitigarlo no aplica ninguna de sus cuatro declaraciones. Si el anidado recupera los 160px, el bloque se borra en vez de repararse.
+- Secciones  : Transversal (sidebar), Ahorro y sus 4 hijas
+- Archivos   : `index.html` (nav), `styles/layout.css`, `modules/ui/shell.js`
+- Depende de : INT.1a (misma zona de marcado); actualizar el ADR 056 al cerrar
+- Aceptación : alto del nav medido a 1280x799 sin desborde + sub-nav que se despliega y repliega + E2E de navegación verde
+- Modelo     : Equilibrado - Alto (nav global + un ADR que se acota)
+
+#### INT.1c - Barra superior de 56px: sección, Registrar, tema y perfil
+- Prioridad  : media
+- Estado     : pendiente. Decisiones D1, D2 y D5 del ADR 059. **PI7 ya no la bloquea** (era falso).
+- Área       : ambos
+- Objetivo   : la barra fija con teja + título de sección (anatomía de R33 entera, no partida), "Registrar" en verde que abre la misma hoja `#modal-registrar` de móvil (hoy sin un solo disparador en escritorio: 3 clics con cambio de sección contra 2 toques), y tema + perfil a la derecha (hoy el tema son 2 clics + scroll dentro de Ajustes).
+- Riesgo     : cambia el chrome de las 13 secciones a la vez. **Pendiente P9:** `backdrop-filter` fijo sobre contenido que scrollea es el caso donde el filtro cuesta, y Lighthouse 100 es innegociable; alternativa lista, fondo opaco `--fk-bg-surface` con borde inferior.
 - Secciones  : Transversal (`ui/shell.js`, las 13 secciones)
-- Archivos   : `index.html`, `modules/ui/shell.js`, `styles/layout.css`, `styles/responsive.css`, `styles/themes.css`
-- Depende de : triaje de la auditoría Interfaz + ADR propio
-- Aceptación : capturas de las 13 secciones en ambos temas + contraste medido de los tokens que toque
-- Modelo     : alto (chrome global, 13 secciones, dos decisiones de token abiertas)
+- Archivos   : `index.html`, `modules/ui/shell.js`, `styles/layout.css`, `styles/responsive.css`
+- Depende de : INT.1b (el sidebar ya estabilizado)
+- Aceptación : capturas de las 13 secciones en ambos temas + Lighthouse 100 en las cuatro métricas + registrar en 1 clic
+- Modelo     : Alta capacidad - Alto (chrome global)
+
+#### INT.1d - La cinta de saldo en la barra, con su ojo de privacidad
+- Prioridad  : media
+- Estado     : pendiente. Decisión D9 del ADR 059 (P7 "mantener" + P10 "en la barra superior", las dos ya decididas por Esteban).
+- Área       : ambos
+- Objetivo   : `.sidebar__saldo` deja de ser CSS sin marcado (3 clases huérfanas en `layout.css`) y pasa a componente real en la barra superior. Lee `S.config.ocultarSaldo` como todo monto (R20) y **no se pinta en Inicio**, donde el hero ya lo dice (R27).
+- Riesgo     : en el pie del sidebar costaba 70px y devolvía el desborde que INT.1b acaba de cerrar; en la barra cuesta 0px de lateral. Contra declarado: el título de sección pierde ancho entre 1.024 y 1.180px.
+- Secciones  : Transversal (las 13 secciones menos Inicio)
+- Archivos   : `index.html`, `modules/infra/render.js`, `styles/layout.css`
+- Depende de : INT.1c
+- Aceptación : el saldo se ve en 12 de 13 secciones, no en Inicio, y la máscara del ojo lo cubre sin que ningún monto real toque el DOM oculto
+- Modelo     : Equilibrado - Alto
+
+#### INT.1e - El primario de cada sección sube a la barra
+- Prioridad  : media
+- Estado     : pendiente. Decisión D3 del ADR 059. **Arrastra el pendiente P1**, que la auditoría dejó sin resolver: hay secciones con dos acciones ("+ Fijo" y "+ Puntual" en Mis cuentas) y secciones sin ninguna (Análisis, Ahorro, Movimientos).
+- Área       : ambos
+- Objetivo   : el primario de sección pasa a la barra en secundario (R38: mover dinero pesa más que crear una ficha; R1: un solo verde visible), y la página arranca en el dato. ~70px de alto recuperados por sección.
+- Secciones  : Transversal (las 13)
+- Archivos   : `index.html`, `modules/ui/shell.js`, las vistas con encabezado propio
+- Depende de : INT.1c; recorrer las 13 secciones antes de codificar (P1)
+- Modelo     : Alta capacidad - Alto (13 secciones, cada una con su caso)
+
+#### INT.1f - Formulario de escritorio a 840px y dos columnas
+- Prioridad  : media
+- Estado     : pendiente. Decisión D8 del ADR 059.
+- Área       : ambos
+- Objetivo   : `.modal` mide 520px y `modals.css` no tiene una sola regla sobre 1024px, así que 8 campos se apilan con scroll interno (`max-height: 90dvh`) mientras 1.400px quedan libres al lado; Guardar puede quedar fuera de vista mientras se escribe el monto. A 840px los campos cortos se emparejan y los largos siguen a ancho completo. **El orden lógico no cambia** (R11) y **móvil no cambia**: la hoja inferior sigue de una columna.
+- Riesgo     : toca todos los modales, incluidos el asistente de distribución y el import de CSV (`.modal--xl`)
+- Secciones  : Transversal (todos los formularios)
+- Archivos   : `styles/modals.css`, `styles/responsive.css`
+- Depende de : nada duro; conviene tras INT.1c
+- Modelo     : Equilibrado - Alto
+
+#### INT.1g - Carril derecho de 320px desde 1.680px
+- Prioridad  : baja
+- Estado     : pendiente. Decisión D7 (mitad) del ADR 059. **Arrastra el mismo pendiente P1 que INT.1e:** el carril solo tiene sentido si cada sección decide qué pone ahí.
+- Área       : ambos
+- Objetivo   : lo urgente (vencidos y próximos) deja de obligar a bajar un pliegue. Entre 1.024 y 1.680px el contenido va centrado a una columna, sin carril.
+- Secciones  : Transversal
+- Archivos   : `styles/layout.css`, `styles/responsive.css`, `index.html`
+- Depende de : INT.1a (el centrado) + P1 resuelto
+- Modelo     : Equilibrado - Alto
+
+#### INT.1h - Cuatro atajos de teclado
+- Prioridad  : baja
+- Estado     : pendiente. **Pendiente P8: es la única decisión del informe que puede fallar por implementación, no por diseño.**
+- Área       : code
+- Objetivo   : `N` abre Registrar, `G` + inicial salta de sección, `?` muestra la lista, `Esc` cierra (ya existe). Cuatro y no quince: el usuario de Finko no es un usuario avanzado, y cada atajo se anuncia en la propia interfaz. El quinto (`/` para buscar) entra con la auditoría del buscador.
+- Riesgo     : un `keydown` global tiene que ignorar los campos de texto, no chocar con los atajos del navegador ni con el modo de navegación de un lector de pantalla. Hoy el único `keydown` global de la app es el `Escape` de `ui/actions.js`.
+- Secciones  : Transversal
+- Archivos   : `modules/ui/actions.js`, `index.html` (panel de ayuda)
+- Depende de : INT.1c (el tooltip de Registrar anuncia la `N`)
+- Modelo     : Alta capacidad - Alto (riesgo de accesibilidad real)
 
 #### PERF.5 (futura, no iniciar) - Migrar la persistencia a IndexedDB
 - Prioridad  : sin definir (se retoma solo si se dispara un criterio del [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) D4)

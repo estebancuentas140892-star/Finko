@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-02. Última tarea cerrada: IN.9e, estado vacío propio de escritorio (cierra la iniciativa IN.9).
+> Revisado: 2026-08-02. Última tarea cerrada: CFG.6, pase de escritorio/tablet + tema claro en Ajustes.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -14,7 +14,7 @@
 | Métrica | Valor |
 |---|---|
 | Tests unitarios + integración | 3683/3683 verdes |
-| Tests E2E | 255/255 verdes, corrida del 2026-08-02, **sin flaky**: el de IN.9c estaba causado por la cascada de entrada del dashboard (`cardIn` desliza cada celda desde `translateY(8px)` con 40ms de stagger y `boundingBox()` incluye el transform), y se cerró midiendo con `emulateMedia({ reducedMotion: 'reduce' })`. **Es compuerta** desde el 2026-07-30: el hook de pre-commit exige el sello de una corrida verde cuando el diff toca runtime. La huella se calcula sobre el **índice** (`git ls-files -s`), no sobre el árbol: hay que `git add` **antes** de sellar, o el propio `add` invalida el sello. **Ojo con sesiones paralelas sobre el mismo worktree**: el índice compartido puede invalidar el sello entre que se corre la suite y se commitea; `git reset HEAD -- archivo` + `git apply --cached parche.diff` separa hunks propios de ajenos cuando el mismo archivo cambia por dos sesiones a la vez, sin tocar el árbol de trabajo de la otra sesión (usado el 2026-08-02 en `infra/bolsas.js` y `tests/unit/analisis.test.js`, ARQ.1a vs. ARQ.1b) |
+| Tests E2E | 255/255 verdes, corrida del 2026-08-02 (CFG.6, config.css + service-worker.js staged), **sin flaky**: el de IN.9c estaba causado por la cascada de entrada del dashboard (`cardIn` desliza cada celda desde `translateY(8px)` con 40ms de stagger y `boundingBox()` incluye el transform), y se cerró midiendo con `emulateMedia({ reducedMotion: 'reduce' })`. **Es compuerta** desde el 2026-07-30: el hook de pre-commit exige el sello de una corrida verde cuando el diff toca runtime. La huella se calcula sobre el **índice** (`git ls-files -s`), no sobre el árbol: hay que `git add` **antes** de sellar, o el propio `add` invalida el sello. **Ojo con sesiones paralelas sobre el mismo worktree**: el índice compartido puede invalidar el sello entre que se corre la suite y se commitea; `git reset HEAD -- archivo` + `git apply --cached parche.diff` separa hunks propios de ajenos cuando el mismo archivo cambia por dos sesiones a la vez, sin tocar el árbol de trabajo de la otra sesión (usado el 2026-08-02 en `infra/bolsas.js` y `tests/unit/analisis.test.js`, ARQ.1a vs. ARQ.1b) |
 | Schema version (`localStorage`) | v32 (`config.ultimaVersionVista`, UPD.1; migración backfill al catálogo vigente) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**CFG.6 - pase de escritorio/tablet + tema claro en Ajustes, 2026-08-02**
+"Instalar Finko" y "Activar recordatorios" vivían sueltos dentro de `.config-section` (flex column, stretch por defecto) y se estiraban a 932px en escritorio (1280px) y 660px en tablet (768px); el pase 2026-07-25 solo había corregido `.config-form`/`.config-danger` y los pares de `.config-actions--ambito`. Nueva regla `.config-section > .btn { align-self: flex-start; min-width: 160px; }`, mismo patrón que "Guardar perfil". Tema claro revisado por código (100% `var(--fk-*)`), sin captura real. Sigue abierto el inventario de configs faltantes (punto 1), depende de CFG.1 a CFG.5.
 
 **IN.9e - estado vacío propio de escritorio, cierra IN.9, 2026-08-02**
 `.hero-guia__escritorio` nueva: pieza centrada de 620px con tres pasos, junto a `.hero-guia__movil` intacta; la CSS decide cuál se ve por ancho. Copy provisional (PI5). Código ya en el árbol desde `ab8c9a1` (sesión paralela); este cierre verifica y pone el tablero al día.
@@ -36,9 +39,6 @@ Desde las 7 p.m. en UTC-5, `toISOString().slice(0,10)` ya devuelve mañana: el a
 
 **CAL.5b - el lote también cubre deudas y se ofrece desde Inicio, 2026-08-02**
 El pago en lote deja de ser solo de gastos fijos y solo del Calendario. Una deuda entra por **lo que falta de la cuota del mes, topado a su `saldoTotal`**: cobrar la cuota entera sobre un abono previo habría cobrado dos veces. Ningún dominio cambia de dueño: Agenda sigue dueña del lote, la aritmética de la deuda sigue en Compromisos y el par gasto vinculado + baja de saldo en `infra/pago-compromiso.js`. Inicio no importa a Agenda: emite `lote:abrir` y el modal abre sobre el dashboard. De paso, "Pendientes del mes" deja de listar lo ya pagado.
-
-**MC.13c-3 - datar el cobro de todas las frecuencias, 2026-08-02**
-`ultimoVencimientoHasta(item, hoyISO)` en `infra/vencimientos.js` data el último cobro de las seis frecuencias con día del mes, espejo hacia atrás de `ventanaDelCobro`. Un ingreso Bimestral a Anual deja de caer en `'sin-fecha'` y gana su clave de de-duplicación (antes el mismo cobro se repartía cuantas veces se abriera el asistente). `ultimoPagoHasta` queda como envoltorio y **cambia de contrato**: recibe el ingreso entero, que es por donde viaja `fechaCreacion`. Semanal y Diario siguen sin datarse por modelo de datos. Cierra el pendiente del [ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md) D2.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 

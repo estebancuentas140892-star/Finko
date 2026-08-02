@@ -175,6 +175,16 @@
   min-width: 160px;
 }
 
+/* CFG.6 (pase escritorio/tablet): "Instalar Finko" y "Activar recordatorios"
+   son botones sueltos dentro de `.config-section` (flex column, stretch por
+   defecto). El pase 2026-07-25 ya le dio `align-self: flex-start` a los
+   botones de `.config-form` y `.config-danger`; estos dos quedaron fuera y
+   se estiraban a 932px en escritorio (1280px) y 660px en tablet (768px). */
+.config-section > .btn {
+  align-self: flex-start;
+  min-width: 160px;
+}
+
 /* Fila del botón de guardar + la confirmación visible (B12/R14). El chip
    verde es el mismo `.chip-success` de atoms.css; nace apagado y
    `config/index.js` lo enciende unos segundos tras persistir. `.chip`
