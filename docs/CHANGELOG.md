@@ -10,6 +10,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(inversiones): EDIT.1, editar sin destruir una inversión · 2026-08-02
+
+Rebanada Inversión de **EDIT.1** (patrón P3 de la auditoría de UX/producto). Commit `886c5b7`. Ficha: [`contexto/inversion.md`](contexto/inversion.md). Me deben sigue pendiente de la misma tarjeta.
+
+- Botón "Editar" en cada holding abre el mismo modal con tipo, nombre, monto, tasa EA, plazo y fecha prellenados; el origen del dinero no se vuelve a preguntar (se decide una sola vez al crear, ADR 053).
+- `normalizarInversion(datos, inversionExistente = null)` preserva el `cuentaId` del registro existente en vez de leerlo del form (que ya no lo pregunta).
+- Con cuenta de origen, editar el monto ajusta el saldo de esa cuenta por el delta entre el monto viejo y el nuevo (ADR 053 I3): si sube, descuenta de más (con confirmación solo si deja la cuenta en negativo); si baja, devuelve la diferencia sin preguntar.
+- 13 tests unitarios nuevos (`normalizarInversion` en modo edición, `renderFormInversion` prellenado y nota de origen en solo lectura, botón Editar en la tarjeta). Verificado en la app real: editar campos, subir el monto con y sin cubrir el saldo (dispara y no dispara confirmación según corresponda), bajar el monto.
+- 3621 unit + 252 E2E (1 flaky, pasó en reintento) + lint verdes. SW v473 a v474.
+
 ### refactor(transversal): ARQ.2, consolidar los calculos duplicados que quedan · 2026-08-02
 
 Hallazgo de la auditoria de UX/producto (2026-07-21), patron P7. Commit `94475e1`. Ficha: [`contexto/transversal.md`](contexto/transversal.md). Sin cambio de comportamiento en lo que se toco.
