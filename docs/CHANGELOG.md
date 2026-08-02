@@ -10,6 +10,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### refactor(transversal): ARQ.2, consolidar los calculos duplicados que quedan · 2026-08-02
+
+Hallazgo de la auditoria de UX/producto (2026-07-21), patron P7. Commit `94475e1`. Ficha: [`contexto/transversal.md`](contexto/transversal.md). Sin cambio de comportamiento en lo que se toco.
+
+- **Punto 1, `FACTOR_MENSUAL`**: `infra/financiero.js` exporta `FACTOR_MENSUAL_INGRESO` (antes privada); `tesoreria/logic/ingresos.js` la reexporta como `FACTOR_MENSUAL` en vez de mantener una copia identica. Las tablas de 9 entradas de `compromisos/logic/modelo.js` y `ahorro/index.js` no se tocan: son otra tabla, duplicacion ya intencional por ADN #10.
+- **Punto 2, helper "registrar pago de compromiso"**: nuevo `infra/pago-compromiso.js` (`gastoDePagoCompromiso()` + `bajarSaldoDeuda()`). Sustituye 4 copias, no las 3 que nombraba el hallazgo original: `compromisos/index.js` tenia dos (`_guardarAbono` y el listener `distribucion:aplicar`), mas el apply de `tesoreria/acciones/distribucion.js` y `agenda/index.js` (`_registrarPagosFijos`). El descuento de la cuenta de origen queda en cada caller (cada uno lo hace en un momento distinto, a proposito). Desbloquea la parte de deudas de CAL.5b.
+- **Punto 3, analizado y NO tocado** (decision de Esteban): `totalesDelMes`/`totalDia` de Agenda y `_obligacionesEnRango` de `infra/vencimientos.js` ya divergieron en comportamiento (esta ultima topa una deuda a `saldoTotal`, BUG-004; Agenda no). Unificarlas de verdad seria cambio de comportamiento, no el refactor mecanico que pedia la tarjeta.
+- 3608 unit + 253 E2E (1 flaky, paso en reintento; ajena, no relacionada) + lint verdes. SW v472 a v473.
+
 ### feat(actualizacion): UPD.1, aviso de version nueva + resumen de novedades · 2026-08-02
 
 Commit `fbaeba6`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
