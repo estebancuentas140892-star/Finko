@@ -10,6 +10,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### docs(transversal): ARQ.1, cierre documental · 2026-08-02
+
+Cierra la tarjeta **ARQ.1** completa (patrón P7). Ficha: [`contexto/transversal.md`](contexto/transversal.md). Sin cambio de código: decisión de Esteban sobre los dos puntos que quedaban tras ARQ.1a/1b.
+
+- **Handlers de "aportar"** (`_guardarAbonoMeta` en `metas/index.js`, `_guardarAporte` en `apartados/index.js`): quedan como duplicación intencional documentada, mismo criterio que ARQ.2 punto 3. El cálculo que hacían distinto ya está unificado desde ARQ.1a; lo que sigue duplicado es orquestación de UI, no lógica de negocio, y `infra/bolsas.js` es "sin DOM" a propósito.
+- **Etapa de Inversión en el carril de Ahorro** (DIS.18): `_estadoInversion()` sigue mostrando un conteo en vez de la etapa de `momentoInversion()`. Es un cambio de UI real, no un refactor mecánico de cálculo duplicado: queda fuera del alcance de esta tarjeta.
+- Tarjeta ARQ.1 sale de `docs/BOARD.md`.
+
 ### refactor(transversal): ARQ.1b, propiedad descuenta saldo (ADR 053) · 2026-08-02
 
 Rebanada de **ARQ.1** (patrón P7 de la auditoría de UX/producto). Commit `bc25fe9`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).

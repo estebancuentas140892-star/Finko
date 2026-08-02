@@ -71,8 +71,7 @@ Las 36 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | P4 del ADR 033 + cola de diseño |
 | IV.4 | Iconografía dirigida post-color | Transversal | tras IV.2 | IV.2 en producción + revisión visual |
 | CAT.3 | Categorías personalizadas globales (4 rebanadas, ADR 058) | Transversal | media | nada; decidida el 2026-07-31 |
-| EDIT.1 | Editar sin destruir: Me deben | Transversal | media-alta | nada duro; coordina con ARQ.1 |
-| ARQ.1 | `infra/bolsas.js`: un solo modelo para las cuatro bolsas | Transversal | baja | nada |
+| EDIT.1 | Editar sin destruir: Me deben | Transversal | media-alta | nada |
 | GU.1a | Auditoría del sistema de guía + revisión del ADR 016 | Transversal | media | recomendado tras IV.2 + las v2 grandes |
 | LEG.2 | Aceptación obligatoria versionada | Transversal | alta | checklist de `docs/legal/README.md` |
 | LG.2d | Mudanza de la vitrina a Análisis + tarjeta en Inicio | Transversal | baja (bloqueada) | ANL.1 (layout) |
@@ -87,7 +86,7 @@ Las 36 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 
 ## Pendientes por sección
 
-> **Lente de la auditoría de UX/producto (2026-07-21).** Recorrido de toda la app simulando a un usuario colombiano real. Sus 7 patrones son criterio de priorización, no tareas, y explican casi toda la lista de abajo. **Cerrados:** P2 (trabajo manual uno por uno), P4 (ledger de solo lectura) y P5 (módulos que no comparten datos con el saldo). **Abiertos:** P1 datos que la app ya tiene y vuelve a pedir (LIM.1, CFG.2a; la mitad `cuentaId` de MC.13e-2f ya cerró), P3 no se puede editar (EDIT.1, MC.17f), P6 se informa pero no se acciona (motor único de sugerencia por categoría: LIM.1 / ANL.1 / [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md)), P7 un concepto con cuatro implementaciones (ARQ.1; ARQ.2 cerrada el 2026-08-02, ver `contexto/transversal.md`).
+> **Lente de la auditoría de UX/producto (2026-07-21).** Recorrido de toda la app simulando a un usuario colombiano real. Sus 7 patrones son criterio de priorización, no tareas, y explican casi toda la lista de abajo. **Cerrados:** P2 (trabajo manual uno por uno), P4 (ledger de solo lectura) y P5 (módulos que no comparten datos con el saldo). **Abiertos:** P1 datos que la app ya tiene y vuelve a pedir (LIM.1, CFG.2a; la mitad `cuentaId` de MC.13e-2f ya cerró), P3 no se puede editar (EDIT.1, MC.17f), P6 se informa pero no se acciona (motor único de sugerencia por categoría: LIM.1 / ANL.1 / [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md)), P7 un concepto con cuatro implementaciones (ARQ.1 y ARQ.2 cerradas el 2026-08-02, ver `contexto/transversal.md`).
 >
 > **Dos hallazgos siguen cuestionando una decisión vigente y no se ejecutan sin la palabra de Esteban** (regla 2.7: un ADR no se revierte en silencio): la propuesta de distribución de un toque frente a MC.13e-2g, y MC.17f frente al cierre de MC.17 como "completa". Cada tarjeta lo dice en su Estado.
 >
@@ -422,18 +421,8 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Objetivo   : Me deben todavía no permite **editar** un préstamo ya creado: corregir un nombre, un monto o una fecha obliga a **eliminar y recrear**, perdiendo en el camino el historial de abonos. Aplicar el mismo patrón que **EDIT.1a** (Metas), Apartados e Inversión ya validaron (formulario reinyectado con `registro = null` para crear y con el registro existente para editar; `normalizarX(datos, existente = null)` conserva el histórico acumulado y recalcula solo lo que depende del campo editado).
 - Secciones  : Me deben
 - Archivos   : `personales/` (form + acciones), patrón de referencia en `metas/` (EDIT.1a), `apartados/`, `inversiones/` y en `compromisos` (D.15b, para Deudas)
-- Depende de : nada duro. Coordina con **ARQ.1** (si las 4 bolsas comparten componente, el formulario de edición se simplifica), aunque las 3 rebanadas ya cerradas demostraron que escribir la rebanada de un dominio no es tan costoso como se temía
+- Depende de : nada duro. **ARQ.1 cerrada (2026-08-02): no fusionó componente ni pantalla**, así que este acoplamiento no aplica; las 3 rebanadas ya cerradas demostraron que escribir la rebanada de un dominio no es tan costoso como se temía
 - Modelo     : Equilibrado - Alto (patrón ya probado en D.15b, EDIT.1a, Apartados e Inversión; sin lógica financiera nueva)
-
-#### ARQ.1 - `infra/bolsas.js`: un solo modelo para las cuatro bolsas
-- Prioridad  : baja
-- Estado     : pendiente de análisis. Hallazgo de la auditoría de UX/producto, patrón P7. **No es un rediseño de pantallas.** **ARQ.1a (progreso unificado) cerrada 2026-08-02, commit `87b6b04`:** `progresoDeBolsa()` en `infra/bolsas.js` reemplaza las tres copias de `calcularProgreso`/`calcularProgresoFondo` (Metas, Apartados, Ahorro) más la cuarta inline de `estadoDeBolsa`; el `diasHastaFecha` de un argumento de Metas se retiró sin reemplazo. **ARQ.1b (descuenta saldo) cerrada 2026-08-02, commit `bc25fe9`:** `descuentaSaldo(tipoBolsa, registro)` expone la tabla del ADR 053 I2 en código, con 4 tests de invariante en `analisis.test.js` (incluida la brecha aceptada I4 de Inversión). Detalle en [`contexto/transversal.md`](contexto/transversal.md).
-- Objetivo   : fondo de emergencia, metas, apartados e inversión son 4 implementaciones del mismo concepto (bolsa con objetivo, acumulado, progreso y aportes). Unificar la infraestructura compartida en `infra/`, sin fusionar las pantallas. **Lo que queda tras ARQ.1a/1b:**
-- **De DIS.18 (2026-07-28):** la fila de Inversión de la casa de Ahorro muestra un conteo ("2 inversiones") en vez de su etapa ("construyendo"), porque `momentoInversion()` vive en el dominio Inversión: importarlo rompe ADN 10 y replicarlo duplica justo lo que esta tarjeta unifica. Con el modelo en `infra/`, la fila lee la etapa sin duplicar nada. Sin empezar.
-- Los handlers de "aportar" siguen casi idénticos entre Metas y Apartados, sin extraer.
-- Secciones  : Transversal (`infra/`), consumidores en Ahorro (casa y fondo), Metas, Apartados, Inversión
-- Depende de : nada. ARQ.1a y ARQ.1b (cerradas) ya demostraron que unificar después de escribir los 4 editores es viable
-- Modelo     : Equilibrado - Alto (lo que queda es de UI/orquestación, no de cálculo financiero: sin el riesgo de redondeo de `diasHastaFecha` ni la falta de invariante de ADR 053, ya resueltos)
 
 ---
 
@@ -507,7 +496,7 @@ Se listan solo para que una idea nueva de estas secciones no vuelva a generar un
 | Gastos | Iniciativa "Gastos v2" completa ([ADR 039](DECISIONS/039-gastos-v2-visual.md)), con 3 decisiones diferidas anotadas en el ADR: FAB, búsqueda en el header y comparación tangible del insight hormiga. La taxonomía de categorías ya cerró (**CAT.1**, [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md)); lo que queda de categorías es **CAT.3** (personalizadas globales) y el motor de sugerencia por categoría, la fusión LIM.1 / ANL.1 / ADR 029 |
 | Movimientos | Ledger accionable, con búsqueda y filtros, completo. Los huecos que quedan son **MC.17f** (deshacer transferencia) y **EDIT.1** (editar donde el dominio dueño todavía no sabe) |
 | Deudas | Iniciativa "Deudas v2" completa ([ADR 036](DECISIONS/036-deudas-v2-visual.md)). Que un pago de deuda descuente de la cuenta ya existe desde el [ADR 002](DECISIONS/002-abono-deudas.md): si aparece un caso donde NO ocurra, es un bug para [`BUGS.md`](BUGS.md), no una feature |
-| Inversión | Sin pendientes propios. "Editar sin destruir" ya cerró (**EDIT.1**, 2026-08-02); su infraestructura compartida, **ARQ.1** |
+| Inversión | Sin pendientes propios. "Editar sin destruir" ya cerró (**EDIT.1**, 2026-08-02); su infraestructura compartida cerró con **ARQ.1** (2026-08-02) |
 | Apartados | Iniciativa "Apartados v2" completa (**AP.5** cerrada, 2026-08-01). "Editar sin destruir" ya cerró (**EDIT.1**, 2026-08-02); el catálogo de plantillas queda fuera de **CAT.3** (razón en el [ADR 058](DECISIONS/058-categorias-personalizadas-globales.md)) |
 | Biblioteca gráfica e iconografía | Completas ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md), [025](DECISIONS/025-logotipos-de-marca-y-tejas.md), [026](DECISIONS/026-biblioteca-de-recursos-graficos.md), [027](DECISIONS/027-logos-de-marca-a-color-excepcion-monocromo.md)). La regla de fidelidad de los SVG que entrega Esteban y el costo de agregar un glifo viven en [`assets/svg/README.md`](../assets/svg/README.md). Lo único pendiente es **IV.4** |
 

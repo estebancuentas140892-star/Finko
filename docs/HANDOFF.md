@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-02. Última tarea cerrada: ARQ.1b, propiedad descuenta saldo (ADR 053).
+> Revisado: 2026-08-02. Última tarea cerrada: ARQ.1, cierre completo (patrón P7).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -25,11 +25,8 @@
 
 ## 2. Últimas 5 tareas cerradas
 
-**ARQ.1b - propiedad descuenta saldo (ADR 053), 2026-08-02**
-`descuentaSaldo(tipoBolsa, registro)` en `infra/bolsas.js` expone en código la tabla del ADR 053 I2 (Metas y Apartados siempre descuentan, el Fondo nunca por ADR 020, Inversión según `cuentaId`), antes folclore de cada dominio. 4 tests de invariante en `analisis.test.js`. Pendiente de ARQ.1: handlers de "aportar" y etapa de Inversión del carril (DIS.18).
-
-**ARQ.1a - unificar progreso de las cuatro bolsas, 2026-08-02**
-`progresoDeBolsa()` en `infra/bolsas.js` reemplaza las tres copias de `calcularProgreso`/`calcularProgresoFondo` (Metas, Apartados, Ahorro) más la cuarta inline de `estadoDeBolsa`, bordes más estrictos (los del Fondo). Resuelve la pieza de arquitectura que el Hub Ahorro necesitaba para leer progreso de Metas y Apartados sin importar esos dominios (ADN 10).
+**ARQ.1 - un solo modelo para las cuatro bolsas, cerrada completa, 2026-08-02**
+ARQ.1a: `progresoDeBolsa()` en `infra/bolsas.js` reemplaza las tres copias de `calcularProgreso`/`calcularProgresoFondo` más la inline de `estadoDeBolsa`. ARQ.1b: `descuentaSaldo(tipoBolsa, registro)` expone en código la tabla del ADR 053 I2. Decisión de Esteban: los handlers de "aportar" (Metas/Apartados) y la etapa de Inversión del carril (DIS.18) quedan como duplicación/hueco intencional documentado, sin tocar código.
 
 **EDIT.1 (rebanada Inversión) - editar sin destruir una inversión, 2026-08-02**
 Botón "Editar" por holding; `normalizarInversion(datos, inversionExistente)` preserva `cuentaId` (el origen no se vuelve a preguntar, ADR 053). Con cuenta de origen, editar el monto ajusta el saldo por delta (ADR 053 I3): confirma solo si el aumento deja la cuenta en negativo. Me deben es la última rebanada pendiente de EDIT.1.
