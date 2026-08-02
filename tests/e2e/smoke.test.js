@@ -351,8 +351,8 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     // 98 contra 104): bajo carga en paralelo la ventana dura más que la
     // medición. `reduce` apaga la cascada por CSS (el bloque vive dentro de un
     // `@media no-preference`) y deja en pie lo único que el test afirma: que
-    // las dos celdas comparten fila. El test de IN.9d, más abajo, mitiga el
-    // mismo efecto con un `waitForTimeout(600)`, que es una espera a ciegas.
+    // las dos celdas comparten fila. El test de IN.9d, más abajo, hace lo
+    // mismo por la misma razón.
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.addInitScript(() => {
       if (localStorage.getItem('fk_v1')) return;
@@ -563,6 +563,15 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
 
   test('escritorio: Accesos rápidos en fila propia, Resumen semanal y Actividad reciente en la fila final 6+6 (IN.9d, ADR 057 D4)', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
+    // Misma razón que en IN.9c: este test mide geometría, `boundingBox()`
+    // incluye el transform y la cascada de entrada (`cardIn`, layout.css)
+    // desliza cada celda desde translateY(8px) con delays escalonados. Antes
+    // se esperaba a que asentara con un `waitForTimeout(600)`, que es una
+    // espera a ciegas: si la máquina va lenta, 600ms no alcanzan y el test
+    // falla sin que nada esté roto. `reduce` apaga la cascada por CSS (vive
+    // dentro de un `@media no-preference`) y la medición deja de depender del
+    // reloj.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.addInitScript(() => {
       if (localStorage.getItem('fk_v1')) return;
       const hoy = new Date();
@@ -609,12 +618,6 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await expect(actividad).toBeVisible();
     await expect(actividad.locator('.accesos-actividad__label')).toHaveText('Actividad reciente');
     await expect(actividad).toContainText('Mercado semanal');
-
-    // La entrada del bento anima cada celda (cardIn, 0.4s + hasta 160ms de
-    // delay escalonado, layout.css): sin esperar a que asiente, dos celdas
-    // en índices distintos miden "y" en puntos distintos de su propio
-    // slide-in y la fila final parece descuadrada sin estarlo.
-    await page.waitForTimeout(600);
 
     const cajaAccesos   = await accesos.boundingBox();
     const cajaResumen   = await resumen.boundingBox();
