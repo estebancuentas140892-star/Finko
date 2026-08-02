@@ -10,6 +10,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(inicio): IN.9e, estado vacio propio de escritorio, cierra la iniciativa IN.9 · 2026-08-02
+
+Cierra **IN.9e** (ID6 del [ADR 057](DECISIONS/057-inicio-en-escritorio.md)), la ultima rebanada de la iniciativa "Inicio en escritorio": las cinco cierran. Ficha: [`contexto/inicio.md`](contexto/inicio.md).
+
+- **El defecto que resolvia:** sin cuentas, `#hero-guia-saldo` solo tenia la version movil (icono + texto + CTA, ancho completo). Estirada a 990px se leia como una pantalla a medio cargar, no como el arranque de la app.
+- **Dos versiones del mismo estado conviven en el DOM**, mismo patron que IN.9c/IN.9d: `.hero-guia__movil` (intacta) y `.hero-guia__escritorio` (pieza centrada `max-width: 620px`, tres pasos numerados: agregar cuentas, registrar un gasto, anotar una deuda). `render.js` no cambia: sigue togglenado un solo `hidden` en el contenedor padre, la CSS decide cual mitad se ve segun el ancho (`responsive.css`, mismo umbral 1024px que `_enEscritorio()`).
+- **El copy de los tres pasos queda provisional** (PI5 del informe, pospuesto el 2026-07-31): fijar tono en una sola pantalla antes de la revision de UX Writing completa no es lo que el ADR aprobo. La estructura si esta aprobada.
+- **El codigo ya estaba en el arbol** desde el commit `ab8c9a1` (CAT.3a) de una sesion paralela; este cierre verifica (3683 unit + axe verdes, `max-width` medido en 620px real en el navegador a 1280px) y pone la iniciativa IN.9 al dia en el tablero.
+- Verificado en la app: sin cuentas, a 1280px se ve la pieza de tres pasos centrada; bajo 1024px, la guia de ancho completo de siempre, intacta.
+
 ### feat(agenda): CAL.5b, el lote tambien cubre deudas y se ofrece desde Inicio · 2026-08-02
 
 Cierra **CAL.5a** con sus dos ampliaciones: el pago en lote deja de ser solo de gastos fijos y deja de vivir solo en el Calendario. No hay mecanismo nuevo. Fichas: [`contexto/calendario.md`](contexto/calendario.md) e [`contexto/inicio.md`](contexto/inicio.md).
