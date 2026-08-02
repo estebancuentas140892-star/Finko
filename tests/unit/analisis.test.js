@@ -19,6 +19,7 @@ import {
   detectarNudgesRenta,
   repartirPorcentajes,
 } from '../../modules/dominio/analisis/logic.js';
+import { descuentaSaldo } from '../../modules/infra/bolsas.js';
 import { UVT, TOPES_RENTA_UVT } from '../../modules/core/constants.js';
 import { renderAnalisis, precalentarAnalisis } from '../../modules/dominio/analisis/view.js';
 import { S } from '../../modules/core/state.js';
@@ -315,6 +316,34 @@ describe('calcularActivos()', () => {
     const r = calcularActivos([cuenta()], [meta()], [apartado()], [inversion()]);
     expect(r.totalPorCobrar).toBe(0);
     expect(r.total).toBe(3_700_000);
+  });
+
+  // ── invariante de patrimonio (ADR 053, propiedad "descuenta saldo") ──
+  // descuentaSaldo() vive en infra/bolsas.js (ARQ.1): es la tabla del ADR
+  // hecha código, no una entrada nueva de este cálculo (I4: la regla de suma
+  // no se toca de forma retroactiva).
+
+  it('metas y apartados siempre descuentan saldo: por eso su bucket entra completo', () => {
+    expect(descuentaSaldo('metas')).toBe(true);
+    expect(descuentaSaldo('apartados')).toBe(true);
+  });
+
+  it('el fondo nunca descuenta saldo (ADR 020): por eso no tiene bucket propio acá', () => {
+    expect(descuentaSaldo('fondo')).toBe(false);
+  });
+
+  it('una inversión descuenta saldo solo si declaró cuenta de origen (INV.1)', () => {
+    expect(descuentaSaldo('inversion', inversion({ cuentaId: 'cu1' }))).toBe(true);
+    expect(descuentaSaldo('inversion', inversion({ cuentaId: undefined }))).toBe(false);
+  });
+
+  it('brecha aceptada (ADR 053 I4): una inversión sin cuenta de origen igual suma a activos', () => {
+    // No es un bug: sin backfill de procedencia (I4), calcularActivos no puede
+    // distinguir esta inversión de una que sí descontó una cuenta real.
+    const sinOrigen = inversion({ cuentaId: undefined });
+    const r = calcularActivos([], [], [], [sinOrigen]);
+    expect(descuentaSaldo('inversion', sinOrigen)).toBe(false);
+    expect(r.totalInversiones).toBe(sinOrigen.monto);
   });
 });
 

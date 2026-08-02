@@ -216,6 +216,42 @@ export function estadoDeBolsa(bolsa, hoyISO) {
   };
 }
 
+// ── DESCUENTA SALDO (ADR 053) ────────────────────────────────────
+
+/**
+ * Si aportar a esta bolsa descuenta la cuenta de origen, la propiedad que el
+ * ADR 053 (I2, invariante de patrimonio) pidió modelar explícitamente en el
+ * modelo unificado: antes vivía como folclore de cada dominio.
+ *
+ * Metas y Apartados siempre descuentan (aportan solo desde una cuenta real).
+ * El fondo nunca (ADR 020: excluido de `activos`, su dinero sigue en
+ * `cuentas`). Inversión depende del registro puntual: `cuentaId` presente es
+ * la marca de que esa inversión sí salió de una cuenta (INV.1); sin ella la
+ * app no puede saberlo (preexistente, nómina, reinversión, efectivo).
+ *
+ * `calcularActivos()` (`analisis/logic.js`) no llama esta función: su regla
+ * de suma no se toca de forma retroactiva (ADR 053 I4). Esta función es la
+ * tabla de la invariante hecha código y test, no una entrada nueva del
+ * cálculo de patrimonio.
+ *
+ * @param {'metas'|'apartados'|'fondo'|'inversion'} tipoBolsa
+ * @param {{cuentaId?: string|null}} [registro] - solo lo usa 'inversion'.
+ * @returns {boolean}
+ */
+export function descuentaSaldo(tipoBolsa, registro = null) {
+  switch (tipoBolsa) {
+    case 'metas':
+    case 'apartados':
+      return true;
+    case 'fondo':
+      return false;
+    case 'inversion':
+      return Boolean(registro?.cuentaId);
+    default:
+      return false;
+  }
+}
+
 /** Recorta un entero al rango [0, max]. */
 function _acotar(n, max) {
   if (!Number.isFinite(n) || n < 0) return 0;
