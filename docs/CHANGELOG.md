@@ -10,6 +10,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### refactor(transversal): ARQ.1b, propiedad descuenta saldo (ADR 053) · 2026-08-02
+
+Rebanada de **ARQ.1** (patrón P7 de la auditoría de UX/producto). Commit `bc25fe9`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
+
+- `descuentaSaldo(tipoBolsa, registro)` en `infra/bolsas.js`: la tabla del ADR 053 I2 hecha código (Metas y Apartados siempre descuentan; el Fondo nunca, ADR 020; Inversión según si declaró `cuentaId`, INV.1), antes folclore repartido por dominio.
+- `calcularActivos()` no llama esta función: su regla de suma no se toca de forma retroactiva (ADR 053 I4).
+- 4 tests de invariante en `analisis.test.js`, incluido el que documenta la brecha aceptada I4: una inversión sin `cuentaId` igual suma a activos porque no hay forma de adivinar su procedencia con datos existentes.
+- Pendiente de ARQ.1: los handlers de "aportar" (Metas/Apartados) y la etapa de Inversión del carril (DIS.18).
+- 3625 unit + 253 E2E + lint verdes. SW v475 a v476.
+
 ### refactor(transversal): ARQ.1a, unificar progreso de las cuatro bolsas · 2026-08-02
 
 Rebanada de **ARQ.1** (patrón P7 de la auditoría de UX/producto). Commit `87b6b04`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
