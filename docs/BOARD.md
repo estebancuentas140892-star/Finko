@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-08-02 (IN.9e cierra: pieza de escritorio de tres pasos para el estado vacío del hero, `.hero-guia__escritorio`, junto a la guía móvil intacta; copy provisional, PI5; cierra la iniciativa **IN.9** completa; el código ya estaba en el árbol desde el commit `ab8c9a1`, este cierre solo pone el tablero al día). Antes: 2026-08-02 (MC.13c-3 cierra: `ultimoVencimientoHasta` en el motor data el ultimo cobro de las seis frecuencias con dia del mes, y un ingreso Bimestral a Anual gana su guard de de-duplicacion; Semanal y Diario quedan fuera por modelo de datos, ver el ADR 041 D2; su tarjeta sale del tablero). Antes: 2026-08-02 (EDIT.1 cierra la rebanada Inversión: tipo, nombre, monto, tasa, plazo y fecha se editan sin recrear la inversión; con cuenta de origen, el monto editado ajusta el saldo por delta, ADR 053 I3; Me deben es la última rebanada pendiente de la misma tarjeta, que no sale del tablero). Antes: 2026-08-02 (ARQ.2 cierra puntos 1 y 2: `FACTOR_MENSUAL` con fuente única en `infra/financiero.js` y el helper `infra/pago-compromiso.js` que sustituye las 4 copias de "registrar pago de compromiso"; punto 3 se deja documentado sin tocar por decisión de Esteban, ver `contexto/transversal.md`; su tarjeta sale del tablero). Antes: 2026-08-02 (UPD.1 cierra: aviso discreto + botón cuando el SW no pudo recargar solo, y resumen de novedades una sola vez tras actualizar; su tarjeta sale del tablero). Antes: 2026-08-02 (EDIT.1 cierra la rebanada Apartados: nombre, ícono, monto objetivo, fecha y nota se editan sin recrear el apartado; Inversión y Me deben siguen pendientes de la misma tarjeta, que no sale del tablero). Antes: 2026-08-01 (PERF.7c cierra: warm-up en `requestIdleCallback` del bundle memoizado de Análisis y de `movimientosCompletos`; cierra **PERF.7** completo). Antes: 2026-08-01 (DV.2c cierra: cascada acotada de listas, resaltado de fila nueva y retiro de `empty-orbit`/`empty-float`; su tarjeta sale del tablero). Antes: 2026-08-01 (DV.2b cierra: pipeline de sprite extendido a `assets/svg/decoracion/`, clase `.decor` + patrón `.pattern-dots`, piloto en 2 heroes y 2 empty states; su tarjeta sale del tablero). Antes: 2026-08-01 (DV.2a cierra: escala de elevación de 4 niveles y `--fk-grad-identity` consolidado en los 6 heroes que lo copiaban a mano; el código ya estaba en el árbol desde el commit `d8a7d53` del 2026-07-31, este cierre solo pone el tablero al día; DV.2b queda desbloqueada sin depender de nada). Antes: 2026-08-01 (MC.13e-2f-2 cierra: el remanente del asistente exige decisión explícita antes de confirmar, punto 18 del brief; con ella cierra **MC.13e-2f** completa y del rediseño del asistente solo queda MC.13e-2g). Antes: 2026-08-01 (IN.9d cierra: Accesos rápidos gana fila propia y Actividad reciente se empareja con Resumen semanal en la fila final 6+6, ADR 057 D4; cierra la iniciativa IN.9 salvo IN.9e). Antes: 2026-08-01 (MC.13e-2c cierra: logo/ícono + nota por fila en el asistente de distribución; la nota de una deuda es lo único que faltaba, el resto ya estaba en el árbol desde `132b0b5`; su tarjeta sale del tablero). Antes: 2026-08-01 (IN.9d corrige estado: el ADR 057 D4 ya cubre su decisión, dejaba de estar "requiere ADR" desde el 2026-07-31 y el tablero no lo reflejaba). Antes: 2026-08-01 (IN.9c cierra: la columna propia del detalle por cuenta en escritorio, ADR 057 D3; el código ya estaba en el árbol desde el commit `ab8c9a1`, este cierre solo pone el tablero al día). Antes: 2026-07-31 (MC.16e cierra: la tarjeta avisa su costo en avance, sobrecupo y abono parcial; con ella cierra **MC.16** completa y el ADR 051 queda ejecutado). Antes: 2026-07-31 (IN.9b cierra: 8 filas de actividad en escritorio y 5 en móvil; su tarjeta sale del tablero). Antes: 2026-07-31 (IN.9a cierra: los dos avisos de "Atención hoy" comparten fila y su tarjeta sale del tablero). Antes: 2026-07-31 (handoff de la auditoría de navegación global: nace la iniciativa **IN.9 "Inicio en escritorio"** con cinco rebanadas, e **INT.1** registra la barra superior de escritorio, que bloquea ID4 e ID7. Inicio sale de "Secciones sin tarjetas pendientes"). Antes: 2026-07-30 (MC.16c cierra: bloque de tarjetas de crédito en Mis cuentas, solo lectura; su tarjeta sale del tablero). Antes: 2026-07-30 (MC.16d cierra: el consumo con tarjeta pregunta a cuántas cuotas y sube `cuotaMensual`; su tarjeta sale del tablero). Antes: 2026-07-30 (ADR 033 aceptado en P1, P2, P3 y P5: DV.2a, DV.2b y DV.2c quedan desbloqueadas, DV.2d sigue bloqueada por P4 y por la cola de diseño). Antes: 2026-07-30 (MC.16a cierra: la tarjeta de crédito gana su cupo y su tarjeta sale del tablero; MC.16b queda desbloqueada). Antes: 2026-07-29 (INV.1 cierra: el dinero sale de una cuenta al registrar una inversión, y su tarjeta sale del tablero). Antes: DIS.19 cierra el frente de Ahorro y deja dos piezas de ARQ.1 ya en `infra/`; no tenía tarjeta propia, entró por handoff de diseño. Antes: 2026-07-27 (CAT.1 cierra: la taxonomía global queda implementada en las tres secciones y su tarjeta sale del tablero). Antes: MC.16 deja de estar bloqueada, el ADR 051 se acepta y la tarjeta se re-corta en MC.16a a MC.16e. La historia de lo ya cerrado vive en [`CHANGELOG.md`](CHANGELOG.md) y en las fichas de [`contexto/`](contexto/README.md), no aquí.
+> Última actualización: 2026-08-02. Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
 
 ---
 
@@ -98,7 +98,7 @@ Las 35 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 
 ### Inicio (dominio `resumen`)
 
-> **Iniciativa "IN.9 - Inicio en escritorio", cerrada** (auditoría de navegación global de Claude Design, 2026-07-31; handoff en `Auditoría navegación global Finko-handoff/`). Sus cinco rebanadas (IN.9a a IN.9e) cerraron el 2026-08-02. **ID4 e ID7 salen a INT.1**, porque dependen de una barra superior de escritorio que no existe en el repo; **ID8 fue un no-op** (decide *no* agregar un botón de registrar, ya cubierto por ADR 024). Sus tres reglas (**R78** ancho completo que se gana, **R79** gráfico dimensionado por su dato, **R80** acordeón/estado como respuesta al ancho escaso) ya están en `DESIGN_SYSTEM.md`. De sus dos decisiones abiertas, **PI7 se cerró por falso el 2026-08-02**: `--fk-bg-glass` sí tiene valor en tema claro (`themes.css`), así que nunca bloqueó la barra superior. **PI8 sigue abierto** (contraste de los tokens `--fk-dom-*`, medido: 3,23:1 y 2,65:1, bajo el mínimo 3:1 de WCAG 1.4.11) y **no viaja con INT.1**: corregirlo cambia 13 secciones de golpe y merece tarjeta de accesibilidad propia. **Móvil no cambia salvo lo que IN.9a decidió** (orden de las alertas de límites). Detalle completo: [`contexto/inicio.md`](contexto/inicio.md).
+> **Iniciativa "IN.9 - Inicio en escritorio", cerrada** (sus cinco rebanadas, 2026-08-02). Detalle e historia: [`contexto/inicio.md`](contexto/inicio.md) y CHANGELOG. **PI8 sigue abierto** (contraste de los tokens `--fk-dom-*`, bajo el mínimo WCAG 1.4.11) y no viaja con INT.1: merece tarjeta de accesibilidad propia. Móvil no cambia salvo lo que IN.9a decidió.
 
 ### Calendario (dominio `agenda`)
 
@@ -108,7 +108,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 
 ### Mis cuentas (dominio `tesoreria`)
 
-> **Iniciativa "Mis Cuentas v2: centro de administración del dinero"** (briefs de Esteban del 2026-07-08). Fuente única de la sección. De sus 4 frentes solo sigue abierto **MC.13** (Distribución v2); **MC.16** (tarjeta de crédito, [ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md) ejecutado completo), **MC.17** (transferencias) y **MC.18** (rediseño visual, [ADR 035](DECISIONS/035-mis-cuentas-v2.md)) están cerrados. **Conflicto (b) del brief, abierto:** "el dinero del ingreso fijo se abona solo a la cuenta en la fecha de pago" es un movimiento automático sin confirmación, exactamente el problema de filosofía de PA.1, así que se decide en el MISMO ADR de pagos automáticos y no por separado. El conflicto (a) quedó resuelto el 2026-07-15.
+> **Iniciativa "Mis Cuentas v2"** (briefs 2026-07-08). Fuente única de la sección. Solo sigue abierto **MC.13** (Distribución v2); MC.16/17/18 cerrados. **Conflicto (b) del brief, abierto:** "el ingreso fijo se abona solo sin confirmación" es el mismo problema de filosofía de PA.1, se decide en ESE ADR y no por separado.
 
 #### MC.13 - Distribución v2: contextual por fecha, guiada y con origen real del dinero
 - Prioridad  : alta
@@ -312,7 +312,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 > **Auditoría de rendimiento 2026-07 completa** (PERF.0 a PERF.4 cerradas, ver [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md)). Los dos hallazgos que siguen mandando: `renderSmart()` ya evita el recálculo cruzado, y guardar cuesta ~5 ms debounced, así que la persistencia NO se reescribió ([ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md), disparadores en su D4). **Disciplina obligatoria de toda tarjeta PERF: correr `pnpm perf` antes y después y comparar contra BASELINE.md.**
 
-> **Iniciativa "INT.1 - Interfaz de escritorio"** ([ADR 059](DECISIONS/059-interfaz-de-escritorio.md), **aceptado el 2026-08-02**; handoff `Interfaz 1-4` de `Auditoría navegación global Finko-handoff/`). Fuente única del chrome de escritorio. Ocho decisiones D1 a D9 (**D4, el buscador global, sale a auditoría propia**) en ocho rebanadas verificables por separado. **Móvil no cambia en nada:** la auditoría le encontró cero problemas propios. **Desbloquea ID4 e ID7 de IN.9**, que dependían de esta barra. Dos premisas de la auditoría quedaron corregidas al verificarla contra el código: **PI7 es falso** (`--fk-bg-glass` sí tiene valor en tema claro, `themes.css`, así que no bloquea nada) y la regla de emergencia del sidebar es **CSS muerto** ([BUG-026](BUGS.md), sus cuatro declaraciones pierden la cascada; el nav desborda 41px y esa regla compra 0px). Las tres reglas del informe (**R75** verificar en las dos topologías, **R76** una acción global existe en cada topología, **R77** el ancho sobrante se centra o se usa) entran a `DESIGN_SYSTEM.md` al cerrar la última rebanada. **Coordinar con AH.7a**, que toca el mismo marcado de nav en la otra plataforma.
+> **Iniciativa "INT.1 - Interfaz de escritorio"** ([ADR 059](DECISIONS/059-interfaz-de-escritorio.md), aceptado 2026-08-02). Fuente única del chrome de escritorio, 8 decisiones en 8 rebanadas. Móvil no cambia. **Coordinar con AH.7a** (mismo marcado de nav, otra plataforma). Detalle e historia de PI7/BUG-026: CHANGELOG y `DESIGN_SYSTEM.md`.
 
 #### INT.1a - El contenido se centra y Movimientos entra al sidebar
 - Prioridad  : media
@@ -337,71 +337,46 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Aceptación : alto del nav medido a 1280x799 sin desborde + sub-nav que se despliega y repliega + E2E de navegación verde
 - Modelo     : Equilibrado - Alto (nav global + un ADR que se acota)
 
+> **Las seis rebanadas restantes**, en una línea cada una: su alcance completo, con medición y contra declarado, vive en el [ADR 059](DECISIONS/059-interfaz-de-escritorio.md) y no se repite acá. Se re-expanden a tarjeta completa al iniciarlas.
+
 #### INT.1c - Barra superior de 56px: sección, Registrar, tema y perfil
-- Prioridad  : media
-- Estado     : pendiente. Decisiones D1, D2 y D5 del ADR 059. **PI7 ya no la bloquea** (era falso).
-- Área       : ambos
-- Objetivo   : la barra fija con teja + título de sección (anatomía de R33 entera, no partida), "Registrar" en verde que abre la misma hoja `#modal-registrar` de móvil (hoy sin un solo disparador en escritorio: 3 clics con cambio de sección contra 2 toques), y tema + perfil a la derecha (hoy el tema son 2 clics + scroll dentro de Ajustes).
-- Riesgo     : cambia el chrome de las 13 secciones a la vez. **Pendiente P9:** `backdrop-filter` fijo sobre contenido que scrollea es el caso donde el filtro cuesta, y Lighthouse 100 es innegociable; alternativa lista, fondo opaco `--fk-bg-surface` con borde inferior.
-- Secciones  : Transversal (`ui/shell.js`, las 13 secciones)
+- Estado     : pendiente, prioridad media. D1, D2 y D5. **PI7 ya no la bloquea** (era falso). Área: ambos.
+- Objetivo   : teja + título fijos (el `h1` hoy se va con el scroll), "Registrar" abriendo la misma `#modal-registrar` que móvil (hoy sin un solo disparador en escritorio), tema y perfil a la derecha.
+- Riesgo     : cambia el chrome de las 13 secciones a la vez. **Pendiente P9:** `backdrop-filter` fijo contra el techo de Lighthouse 100; alternativa lista, fondo opaco con borde.
 - Archivos   : `index.html`, `modules/ui/shell.js`, `styles/layout.css`, `styles/responsive.css`
-- Depende de : INT.1b (el sidebar ya estabilizado)
-- Aceptación : capturas de las 13 secciones en ambos temas + Lighthouse 100 en las cuatro métricas + registrar en 1 clic
-- Modelo     : Alta capacidad - Alto (chrome global)
+- Depende de : INT.1b · Aceptación: las 13 secciones en ambos temas + Lighthouse 100 + registrar en 1 clic · Modelo: Alta capacidad - Alto
 
 #### INT.1d - La cinta de saldo en la barra, con su ojo de privacidad
-- Prioridad  : media
-- Estado     : pendiente. Decisión D9 del ADR 059 (P7 "mantener" + P10 "en la barra superior", las dos ya decididas por Esteban).
-- Área       : ambos
-- Objetivo   : `.sidebar__saldo` deja de ser CSS sin marcado (3 clases huérfanas en `layout.css`) y pasa a componente real en la barra superior. Lee `S.config.ocultarSaldo` como todo monto (R20) y **no se pinta en Inicio**, donde el hero ya lo dice (R27).
-- Riesgo     : en el pie del sidebar costaba 70px y devolvía el desborde que INT.1b acaba de cerrar; en la barra cuesta 0px de lateral. Contra declarado: el título de sección pierde ancho entre 1.024 y 1.180px.
-- Secciones  : Transversal (las 13 secciones menos Inicio)
+- Estado     : pendiente, prioridad media. D9 (P7 y P10 ya decididos por Esteban). Área: ambos.
+- Objetivo   : `.sidebar__saldo` deja de ser CSS sin marcado y pasa a componente real. Lee `ocultarSaldo` (R20) y **no se pinta en Inicio**, donde el hero ya lo dice (R27).
 - Archivos   : `index.html`, `modules/infra/render.js`, `styles/layout.css`
-- Depende de : INT.1c
-- Aceptación : el saldo se ve en 12 de 13 secciones, no en Inicio, y la máscara del ojo lo cubre sin que ningún monto real toque el DOM oculto
-- Modelo     : Equilibrado - Alto
+- Depende de : INT.1c · Aceptación: visible en 12 de 13 secciones y ningún monto real en el DOM enmascarado · Modelo: Equilibrado - Alto
 
 #### INT.1e - El primario de cada sección sube a la barra
-- Prioridad  : media
-- Estado     : pendiente. Decisión D3 del ADR 059. **Arrastra el pendiente P1**, que la auditoría dejó sin resolver: hay secciones con dos acciones ("+ Fijo" y "+ Puntual" en Mis cuentas) y secciones sin ninguna (Análisis, Ahorro, Movimientos).
-- Área       : ambos
-- Objetivo   : el primario de sección pasa a la barra en secundario (R38: mover dinero pesa más que crear una ficha; R1: un solo verde visible), y la página arranca en el dato. ~70px de alto recuperados por sección.
-- Secciones  : Transversal (las 13)
+- Estado     : pendiente, prioridad media. D3. **Bloqueada por el pendiente P1:** hay secciones con dos acciones (Mis cuentas) y otras sin ninguna (Análisis, Ahorro, Movimientos); hay que recorrer las 13 antes de codificar. Área: ambos.
+- Objetivo   : el primario pasa a secundario en la barra (R38, R1) y la página arranca en el dato. ~70px por sección.
 - Archivos   : `index.html`, `modules/ui/shell.js`, las vistas con encabezado propio
-- Depende de : INT.1c; recorrer las 13 secciones antes de codificar (P1)
-- Modelo     : Alta capacidad - Alto (13 secciones, cada una con su caso)
+- Depende de : INT.1c + P1 resuelto · Modelo: Alta capacidad - Alto
 
 #### INT.1f - Formulario de escritorio a 840px y dos columnas
-- Prioridad  : media
-- Estado     : pendiente. Decisión D8 del ADR 059.
-- Área       : ambos
-- Objetivo   : `.modal` mide 520px y `modals.css` no tiene una sola regla sobre 1024px, así que 8 campos se apilan con scroll interno (`max-height: 90dvh`) mientras 1.400px quedan libres al lado; Guardar puede quedar fuera de vista mientras se escribe el monto. A 840px los campos cortos se emparejan y los largos siguen a ancho completo. **El orden lógico no cambia** (R11) y **móvil no cambia**: la hoja inferior sigue de una columna.
+- Estado     : pendiente, prioridad media. D8. Área: ambos.
+- Objetivo   : `.modal` mide 520px sin ninguna regla sobre 1024px, así que 8 campos se apilan con scroll interno y 1.400px libres al lado. **Móvil no cambia** y el orden lógico tampoco (R11).
 - Riesgo     : toca todos los modales, incluidos el asistente de distribución y el import de CSV (`.modal--xl`)
-- Secciones  : Transversal (todos los formularios)
 - Archivos   : `styles/modals.css`, `styles/responsive.css`
-- Depende de : nada duro; conviene tras INT.1c
-- Modelo     : Equilibrado - Alto
+- Depende de : nada duro; conviene tras INT.1c · Modelo: Equilibrado - Alto
 
 #### INT.1g - Carril derecho de 320px desde 1.680px
-- Prioridad  : baja
-- Estado     : pendiente. Decisión D7 (mitad) del ADR 059. **Arrastra el mismo pendiente P1 que INT.1e:** el carril solo tiene sentido si cada sección decide qué pone ahí.
-- Área       : ambos
-- Objetivo   : lo urgente (vencidos y próximos) deja de obligar a bajar un pliegue. Entre 1.024 y 1.680px el contenido va centrado a una columna, sin carril.
-- Secciones  : Transversal
+- Estado     : pendiente, prioridad baja. D7 (mitad). **Bloqueada por el mismo P1 que INT.1e:** el carril solo sirve si cada sección decide qué pone ahí. Área: ambos.
+- Objetivo   : lo urgente deja de obligar a bajar un pliegue. Entre 1.024 y 1.680px, contenido centrado a una columna, sin carril.
 - Archivos   : `styles/layout.css`, `styles/responsive.css`, `index.html`
-- Depende de : INT.1a (el centrado) + P1 resuelto
-- Modelo     : Equilibrado - Alto
+- Depende de : INT.1a + P1 resuelto · Modelo: Equilibrado - Alto
 
 #### INT.1h - Cuatro atajos de teclado
-- Prioridad  : baja
-- Estado     : pendiente. **Pendiente P8: es la única decisión del informe que puede fallar por implementación, no por diseño.**
-- Área       : code
-- Objetivo   : `N` abre Registrar, `G` + inicial salta de sección, `?` muestra la lista, `Esc` cierra (ya existe). Cuatro y no quince: el usuario de Finko no es un usuario avanzado, y cada atajo se anuncia en la propia interfaz. El quinto (`/` para buscar) entra con la auditoría del buscador.
-- Riesgo     : un `keydown` global tiene que ignorar los campos de texto, no chocar con los atajos del navegador ni con el modo de navegación de un lector de pantalla. Hoy el único `keydown` global de la app es el `Escape` de `ui/actions.js`.
-- Secciones  : Transversal
+- Estado     : pendiente, prioridad baja. **Pendiente P8: la única decisión del informe que puede fallar por implementación, no por diseño.** Área: code.
+- Objetivo   : `N` registrar, `G` + inicial saltar de sección, `?` la lista, `Esc` cerrar (ya existe). El quinto (`/`) entra con la auditoría del buscador.
+- Riesgo     : un `keydown` global debe ignorar campos de texto y no chocar con el navegador ni con el modo de navegación de un lector de pantalla. Hoy el único global es el `Escape` de `ui/actions.js`.
 - Archivos   : `modules/ui/actions.js`, `index.html` (panel de ayuda)
-- Depende de : INT.1c (el tooltip de Registrar anuncia la `N`)
-- Modelo     : Alta capacidad - Alto (riesgo de accesibilidad real)
+- Depende de : INT.1c · Modelo: Alta capacidad - Alto (riesgo de accesibilidad real)
 
 #### PERF.5 (futura, no iniciar) - Migrar la persistencia a IndexedDB
 - Prioridad  : sin definir (se retoma solo si se dispara un criterio del [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) D4)
@@ -423,7 +398,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Depende de : decidir si el beneficio (situacional, Inicio) justifica el cambio de timing. Alternativa recomendada: PERF.7 primero (ganancia medida e incondicional).
 - Modelo     : Alta capacidad - Alto (si se hace)
 
-> **Iniciativa Dirección Visual premium** ([ADR 033](DECISIONS/033-direccion-visual-premium.md), **Aceptada el 2026-07-30** en P1, P2, P3 y P5), evolución de la identidad de color por sección ([ADR 031](DECISIONS/031-identidad-de-color-por-seccion.md), IV.1 e IV.2 cerradas). **DV.2a cierra el 2026-07-31, DV.2b y DV.2c el 2026-08-01.** Solo **P4** (lote inicial de ilustraciones) sigue abierta y se decide al iniciar DV.2d.
+> **Iniciativa Dirección Visual premium** ([ADR 033](DECISIONS/033-direccion-visual-premium.md)). DV.2a/b/c cerradas. Solo **P4** (lote inicial de ilustraciones) sigue abierta, se decide al iniciar DV.2d.
 
 #### DV.2d - Ilustraciones como clase nueva de asset (D3 del ADR 033)
 - Prioridad  : media
@@ -446,7 +421,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 ---
 
-> **Iniciativa CAT: taxonomía de categorías + picker de icono compartido** (triaje 2026-07-08, briefs "Auditoría Gastos" y parte de "Auditoría Calendario"). Fuente única para todo lo de categorías entre secciones. **CAT.1 (taxonomía), CAT.2 (picker) y CAT.4 (auditoría de formularios) están cerradas**, con la D3 del [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md) validada en la misma pasada; el estado y las reglas heredadas viven en [`contexto/transversal.md`](contexto/transversal.md). Queda CAT.3.
+> **Iniciativa CAT: taxonomía + picker de ícono compartido.** Fuente única para categorías entre secciones. CAT.1, CAT.2 y CAT.4 cerradas (reglas heredadas en [`contexto/transversal.md`](contexto/transversal.md)). Queda CAT.3.
 
 #### CAT.3 - Categorías personalizadas globales (mismo estatus que las nativas, en toda la app)
 - Prioridad  : media
@@ -559,7 +534,7 @@ Se listan solo para que una idea nueva de estas secciones no vuelva a generar un
 
 #### DOC.1 - Reorganización documental, fases 3 a 5
 - Prioridad  : media
-- Estado     : Fases 1, 2 y 3 cerradas. **Fase 4 a un movimiento de cerrar:** de los 10 de la tabla 11.1 están hechos 8 (el 5, `HANDOFF.md` a 6 KB, cerró el 2026-07-31); falta el **6** (`BOARD.md` en 80 KB contra un techo de 40) y el **9** sigue esperando la decisión de Esteban sobre los comodines amplios de `settings.local.json` (12.2). El plan completo por fases vive en [`MIGRACION.md`](MIGRACION.md) sección 7, que se borra al cerrar la Fase 5.
+- Estado     : Fases 1, 2 y 3 cerradas. **Fase 4:** de los 10 de la tabla 11.1 están hechos 8; falta el **6** (`BOARD.md`: poda de narrativa duplicada con CHANGELOG del 2026-08-02 bajó de 80 a 62,5 KB, sigue sobre el techo de 40, hace falta partir el archivo en satélites por dominio para cerrarlo de verdad) y el **9** sigue esperando la decisión de Esteban sobre los comodines amplios de `settings.local.json` (12.2). Plan completo: [`MIGRACION.md`](MIGRACION.md) sección 7.
 - Objetivo   : bajar el arranque de una tarea de ~69.400 a ~21.000 tokens sin perder información, moviendo cada bloque a su dueño documental.
 - Secciones  : ninguna de la app (solo documentación, `CLAUDE.md` y `.claude/`)
 - Archivos   : la tabla de trazabilidad de [`MIGRACION.md`](MIGRACION.md) sección 6 los lista uno por uno
