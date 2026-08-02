@@ -9,6 +9,7 @@
 
 import { FRECUENCIAS, CATEGORIAS_INGRESO, SMMLV, AUXILIO_TRANSPORTE } from '../../../core/constants.js';
 import { FACTOR_MENSUAL_INGRESO } from '../../../infra/financiero.js';
+import { FRECUENCIAS_DATABLES, ultimoVencimientoHasta } from '../../../infra/vencimientos.js';
 
 // Reexporta la tabla única de infra (ARQ.2 punto 1): antes una copia idéntica
 // vivía acá. Importar infra no viola ADN #10 (solo prohíbe dominio → dominio).
@@ -183,42 +184,24 @@ export function isoFecha(d) {
 
 /**
  * Devuelve la fecha (ISO 'YYYY-MM-DD') del cobro más reciente que ya ocurrió
- * (<= hoy) de un ingreso recurrente, o null si no aplica. Es el espejo hacia
- * atrás de `diasParaProximoPago`: mira el mes actual y el anterior y toma el
- * último día de cobro que no sea futuro. Solo soporta Mensual y Quincenal.
+ * (<= hoy) de un ingreso recurrente, o null si su frecuencia no se puede datar.
+ * Es el espejo hacia atrás de `diasParaProximoPago`.
  *
- * @param {string}      frecuencia
- * @param {number|null} diaPago
- * @param {Date}        [hoy]
+ * Envoltorio delgado de `ultimoVencimientoHasta` (infra/vencimientos.js), donde
+ * vive la regla de frecuencias desde MC.13c-3: acá sólo se traduce el `Date`
+ * del dominio a la fecha ISO que habla el motor. Mismo patrón que
+ * `calcularAhorroPorPeriodo` en Metas y `calcularAporteSugerido` en Apartados.
+ *
+ * **Recibe el ingreso entero**, no su frecuencia y su día sueltos (cambio de
+ * MC.13c-3): las frecuencias largas (Bimestral a Anual) sitúan su ciclo desde
+ * `fechaCreacion`, así que sin el objeto no se pueden datar.
+ *
+ * @param {{frecuencia?:string, diaPago?:number, fechaCreacion?:string}} ingreso
+ * @param {Date} [hoy]
  * @returns {string | null}
  */
-export function ultimoPagoHasta(frecuencia, diaPago, hoy = new Date()) {
-  if (!diaPago || (frecuencia !== 'Mensual' && frecuencia !== 'Quincenal')) return null;
-
-  const hoyNorm = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
-
-  function _fechaEnMes(anio, mes, dia) {
-    const ultimo = new Date(anio, mes + 1, 0).getDate();
-    return new Date(anio, mes, Math.min(dia, ultimo));
-  }
-  function _candidatosMes(anio, mes) {
-    if (frecuencia === 'Mensual') return [_fechaEnMes(anio, mes, diaPago)];
-    return [_fechaEnMes(anio, mes, diaPago), _fechaEnMes(anio, mes, diaPago + 15)];
-  }
-
-  const anio     = hoyNorm.getFullYear();
-  const mes      = hoyNorm.getMonth();
-  const prevMes  = mes === 0 ? 11 : mes - 1;
-  const prevAnio = mes === 0 ? anio - 1 : anio;
-
-  const ultimo = [
-    ..._candidatosMes(prevAnio, prevMes),
-    ..._candidatosMes(anio, mes),
-  ]
-    .filter(fch => fch <= hoyNorm)
-    .sort((a, b) => b - a)[0];
-
-  return ultimo ? isoFecha(ultimo) : null;
+export function ultimoPagoHasta(ingreso, hoy = new Date()) {
+  return ultimoVencimientoHasta(ingreso, isoFecha(hoy));
 }
 
 // ── VALIDACIÓN INGRESOS ──────────────────────────────────────────
@@ -226,10 +209,12 @@ export function ultimoPagoHasta(frecuencia, diaPago, hoy = new Date()) {
 /**
  * Frecuencias en las que aplica capturar el día del mes en que llega el pago.
  * Excluye Diario, Semanal (día de semana), Variable y Única vez.
+ *
+ * Reexporta la lista única de infra (MC.13c-3): antes una copia idéntica vivía
+ * acá. Pedir el día y poder datar el cobro son la misma pregunta desde los dos
+ * lados, y desde MC.13c-3 el motor necesita la lista para decidir qué data.
  */
-export const FRECUENCIAS_CON_DIA = [
-  'Quincenal', 'Mensual', 'Bimestral', 'Trimestral', 'Semestral', 'Anual',
-];
+export const FRECUENCIAS_CON_DIA = FRECUENCIAS_DATABLES;
 
 /**
  * Valida los datos del formulario de ingreso recurrente.

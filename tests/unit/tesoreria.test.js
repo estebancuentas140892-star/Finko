@@ -2365,40 +2365,45 @@ describe('detectarNudgeProximoIngreso()', () => {
 describe('ultimoPagoHasta()', () => {
   it('Mensual: el día de pago ya pasó este mes → ese mismo día', () => {
     const hoy = new Date(2026, 6, 5); // 5 jul 2026
-    expect(ultimoPagoHasta('Mensual', 30, hoy)).toBe('2026-06-30');
+    expect(ultimoPagoHasta({ frecuencia: 'Mensual', diaPago: 30 }, hoy)).toBe('2026-06-30');
   });
 
   it('Mensual: hoy es el día de pago → hoy', () => {
     const hoy = new Date(2026, 5, 30); // 30 jun 2026
-    expect(ultimoPagoHasta('Mensual', 30, hoy)).toBe('2026-06-30');
+    expect(ultimoPagoHasta({ frecuencia: 'Mensual', diaPago: 30 }, hoy)).toBe('2026-06-30');
   });
 
   it('Mensual: el día de pago aún no llega este mes → el del mes anterior', () => {
     const hoy = new Date(2026, 5, 10); // 10 jun 2026
-    expect(ultimoPagoHasta('Mensual', 30, hoy)).toBe('2026-05-30');
+    expect(ultimoPagoHasta({ frecuencia: 'Mensual', diaPago: 30 }, hoy)).toBe('2026-05-30');
   });
 
   it('Mensual: día 31 en mes corto → último día del mes', () => {
     const hoy = new Date(2026, 1, 15); // 15 feb 2026
-    expect(ultimoPagoHasta('Mensual', 31, hoy)).toBe('2026-01-31');
+    expect(ultimoPagoHasta({ frecuencia: 'Mensual', diaPago: 31 }, hoy)).toBe('2026-01-31');
   });
 
   it('Quincenal: tras la segunda quincena → día+15', () => {
     const hoy = new Date(2026, 5, 20); // 20 jun 2026
-    expect(ultimoPagoHasta('Quincenal', 15, hoy)).toBe('2026-06-15');
+    expect(ultimoPagoHasta({ frecuencia: 'Quincenal', diaPago: 15 }, hoy)).toBe('2026-06-15');
   });
 
   it('Quincenal: entre las dos quincenas del mes → primera quincena', () => {
     const hoy = new Date(2026, 5, 16); // 16 jun 2026
-    expect(ultimoPagoHasta('Quincenal', 15, hoy)).toBe('2026-06-15');
+    expect(ultimoPagoHasta({ frecuencia: 'Quincenal', diaPago: 15 }, hoy)).toBe('2026-06-15');
   });
 
   it('null cuando no hay diaPago', () => {
-    expect(ultimoPagoHasta('Mensual', null, new Date(2026, 5, 20))).toBeNull();
+    expect(ultimoPagoHasta({ frecuencia: 'Mensual', diaPago: null }, new Date(2026, 5, 20))).toBeNull();
   });
 
-  it('null para frecuencia no datable (Anual)', () => {
-    expect(ultimoPagoHasta('Anual', 15, new Date(2026, 5, 20))).toBeNull();
+  it('Anual: ya se data desde MC.13c-3, con el ciclo desde fechaCreacion', () => {
+    const ingreso = { frecuencia: 'Anual', diaPago: 15, fechaCreacion: '2026-01-10' };
+    expect(ultimoPagoHasta(ingreso, new Date(2026, 5, 20))).toBe('2026-01-15');
+  });
+
+  it('null para frecuencia sin día del mes (Semanal)', () => {
+    expect(ultimoPagoHasta({ frecuencia: 'Semanal', diaPago: 3 }, new Date(2026, 5, 20))).toBeNull();
   });
 });
 
@@ -2418,9 +2423,31 @@ describe('estadoDistribucion()', () => {
     expect(estadoDistribucion(null, null, hoy).estado).toBe('sin-fecha');
   });
 
-  it('sin-fecha: solo frecuencias no datables (Anual con día)', () => {
-    const ingresos = [{ id: 'i1', descripcion: 'Prima', frecuencia: 'Anual', activo: true, diaPago: 15 }];
+  it('sin-fecha: solo frecuencias sin día del mes (Semanal, Diario)', () => {
+    const ingresos = [
+      { id: 'i1', descripcion: 'Ventas',   frecuencia: 'Semanal', activo: true, diaPago: 3 },
+      { id: 'i2', descripcion: 'Propinas', frecuencia: 'Diario',  activo: true, diaPago: 1 },
+    ];
     expect(estadoDistribucion(ingresos, null, hoy).estado).toBe('sin-fecha');
+  });
+
+  it('MC.13c-3: una frecuencia larga ya se data y gana su guard de de-duplicación', () => {
+    // Anual con día 15 creado en enero: el cobro del 15 ene es el último. Antes
+    // de MC.13c-3 caía en 'sin-fecha' y la acción quedaba sin llave de de-dup,
+    // así que el mismo cobro se podía repartir cuantas veces se abriera.
+    const ingresos = [{ id: 'i1', descripcion: 'Arriendo anual', frecuencia: 'Anual', activo: true, diaPago: 15, fechaCreacion: '2026-01-10T00:00:00.000Z' }];
+    expect(estadoDistribucion(ingresos, null, hoy)).toMatchObject({
+      estado: 'listo', periodoISO: '2026-01-15',
+    });
+    expect(estadoDistribucion(ingresos, '2026-01-15', hoy).estado).toBe('distribuido');
+  });
+
+  it('MC.13c-3: el ingreso más reciente manda cuando conviven Mensual y Semestral', () => {
+    const ingresos = [
+      { id: 'i1', descripcion: 'Salario',   frecuencia: 'Mensual',   activo: true, diaPago: 30, fechaCreacion: '2026-01-01T00:00:00.000Z' },
+      { id: 'i2', descripcion: 'Dividendo', frecuencia: 'Semestral', activo: true, diaPago: 10, fechaCreacion: '2026-01-05T00:00:00.000Z' },
+    ];
+    expect(estadoDistribucion(ingresos, null, hoy).periodoISO).toBe('2026-06-30');
   });
 
   it('listo: el cobro del periodo ya llegó y no se ha distribuido', () => {

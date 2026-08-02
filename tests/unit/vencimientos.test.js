@@ -5,6 +5,8 @@
  * - ocurrenciasEnMes: regla de frecuencias (extraída de agenda), validación.
  * - ocurrenciasEnRango: ventana arbitraria que puede cruzar meses.
  * - ventanaDelCobro: ventana de un cobro por frecuencia.
+ * - ultimoVencimientoHasta (MC.13c-3): cuál fue el último cobro, todas las
+ *   frecuencias con día del mes.
  *
  * Mitad B (MC.13b):
  * - frecuenciaPrincipalIngresos: cada cuánto cobra realmente el usuario.
@@ -20,6 +22,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   FRECUENCIAS_APORTE,
+  FRECUENCIAS_DATABLES,
+  ultimoVencimientoHasta,
   aportePorPeriodo,
   diasPorPeriodo,
   etiquetaPeriodo,
@@ -213,6 +217,117 @@ describe('ventanaDelCobro', () => {
 
   it('frecuencia desconocida: cae a un mes (conservador)', () => {
     expect(ventanaDelCobro('Variable', '2026-07-10')).toEqual({ inicioISO: '2026-07-10', finISO: '2026-08-09' });
+  });
+});
+
+// ── ultimoVencimientoHasta (MC.13c-3) ────────────────────────────
+
+describe('ultimoVencimientoHasta - validación', () => {
+  it('null con item nulo o no-objeto', () => {
+    expect(ultimoVencimientoHasta(null, '2026-07-20')).toBeNull();
+    expect(ultimoVencimientoHasta('x', '2026-07-20')).toBeNull();
+  });
+
+  it('null si hoyISO no es una fecha real', () => {
+    expect(ultimoVencimientoHasta(item(), 'x')).toBeNull();
+    expect(ultimoVencimientoHasta(item(), '2026-13-45')).toBeNull();
+  });
+
+  it('null sin diaPago válido', () => {
+    expect(ultimoVencimientoHasta(item({ diaPago: null }), '2026-07-20')).toBeNull();
+    expect(ultimoVencimientoHasta(item({ diaPago: 0 }), '2026-07-20')).toBeNull();
+    expect(ultimoVencimientoHasta(item({ diaPago: 32 }), '2026-07-20')).toBeNull();
+  });
+
+  it('null para las frecuencias sin día del mes', () => {
+    for (const frecuencia of ['Diario', 'Semanal', 'Variable', 'Única vez', 'Rara']) {
+      expect(ultimoVencimientoHasta(item({ frecuencia, diaPago: 5 }), '2026-07-20')).toBeNull();
+    }
+  });
+
+  it('FRECUENCIAS_DATABLES son exactamente las seis con día del mes', () => {
+    expect(FRECUENCIAS_DATABLES)
+      .toEqual(['Quincenal', 'Mensual', 'Bimestral', 'Trimestral', 'Semestral', 'Anual']);
+  });
+});
+
+describe('ultimoVencimientoHasta - Mensual y Quincenal (paridad con MC.4d)', () => {
+  it('Mensual: el día ya pasó este mes', () => {
+    expect(ultimoVencimientoHasta(item({ diaPago: 30 }), '2026-07-05')).toBe('2026-06-30');
+  });
+
+  it('Mensual: hoy es el día de cobro', () => {
+    expect(ultimoVencimientoHasta(item({ diaPago: 30 }), '2026-06-30')).toBe('2026-06-30');
+  });
+
+  it('Mensual: el día aún no llega, cae al mes anterior', () => {
+    expect(ultimoVencimientoHasta(item({ diaPago: 30 }), '2026-06-10')).toBe('2026-05-30');
+  });
+
+  it('Mensual: día 31 en mes corto se clampea al último día', () => {
+    expect(ultimoVencimientoHasta(item({ diaPago: 31 }), '2026-02-15')).toBe('2026-01-31');
+  });
+
+  it('Mensual: cruce de año', () => {
+    expect(ultimoVencimientoHasta(item({ diaPago: 20 }), '2026-01-05')).toBe('2025-12-20');
+  });
+
+  it('Quincenal: entre las dos quincenas devuelve la primera', () => {
+    expect(ultimoVencimientoHasta(item({ frecuencia: 'Quincenal', diaPago: 15 }), '2026-06-16'))
+      .toBe('2026-06-15');
+  });
+
+  it('Quincenal: tras la segunda quincena devuelve día + 15', () => {
+    expect(ultimoVencimientoHasta(item({ frecuencia: 'Quincenal', diaPago: 15 }), '2026-06-30'))
+      .toBe('2026-06-30');
+  });
+
+  it('Quincenal: la segunda quincena que no cabe en el mes se clampea, no se pierde', () => {
+    // BUG-017: `ocurrenciasEnMes` la descarta (día 14 + 15 = 29 en febrero);
+    // datar sí la necesita, o el segundo cobro del mes queda sin clave de
+    // de-duplicación. Divergencia declarada, no accidental.
+    expect(ocurrenciasEnMes(item({ frecuencia: 'Quincenal', diaPago: 14 }), 2026, 1)).toEqual([14]);
+    expect(ultimoVencimientoHasta(item({ frecuencia: 'Quincenal', diaPago: 14 }), '2026-02-28'))
+      .toBe('2026-02-28');
+  });
+});
+
+describe('ultimoVencimientoHasta - frecuencias largas (lo que abre MC.13c-3)', () => {
+  const anual = (overrides = {}) =>
+    item({ frecuencia: 'Anual', diaPago: 15, fechaCreacion: '2026-01-10', ...overrides });
+
+  it('Anual: el cobro del aniversario, aunque hayan pasado meses', () => {
+    expect(ultimoVencimientoHasta(anual(), '2026-08-02')).toBe('2026-01-15');
+  });
+
+  it('Anual: antes del primer aniversario no hay cobro que datar', () => {
+    expect(ultimoVencimientoHasta(anual({ fechaCreacion: '2026-07-01' }), '2026-07-10')).toBeNull();
+  });
+
+  it('Anual: el aniversario del año pasado si el de este aún no llega', () => {
+    expect(ultimoVencimientoHasta(anual(), '2027-01-05')).toBe('2026-01-15');
+  });
+
+  it('Semestral: el ciclo cuenta desde fechaCreacion', () => {
+    const i = item({ frecuencia: 'Semestral', diaPago: 10, fechaCreacion: '2026-01-05' });
+    expect(ultimoVencimientoHasta(i, '2026-06-30')).toBe('2026-01-10');
+    expect(ultimoVencimientoHasta(i, '2026-07-15')).toBe('2026-07-10');
+  });
+
+  it('Bimestral: sólo los meses del ciclo cuentan', () => {
+    const i = item({ frecuencia: 'Bimestral', diaPago: 10, fechaCreacion: '2026-01-05' });
+    expect(ultimoVencimientoHasta(i, '2026-02-28')).toBe('2026-01-10');
+    expect(ultimoVencimientoHasta(i, '2026-03-20')).toBe('2026-03-10');
+  });
+
+  it('Trimestral: el cobro anterior cuando el del trimestre aún no llega', () => {
+    const i = item({ frecuencia: 'Trimestral', diaPago: 20, fechaCreacion: '2026-01-05' });
+    expect(ultimoVencimientoHasta(i, '2026-04-10')).toBe('2026-01-20');
+  });
+
+  it('sin fechaCreacion el ciclo cae todos los meses, criterio del resto del motor', () => {
+    expect(ultimoVencimientoHasta(item({ frecuencia: 'Anual', diaPago: 15 }), '2026-08-02'))
+      .toBe('2026-07-15');
   });
 });
 

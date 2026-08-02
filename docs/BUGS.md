@@ -3,7 +3,7 @@
 > Errores detectados durante el desarrollo, con toda la información necesaria para resolverlos sin tener que volver a buscar dónde están.
 > Al solucionarse, el error se **elimina** de este archivo y el fix queda documentado en [`CHANGELOG.md`](CHANGELOG.md) con referencia al ID.
 > Solo entra lo **verificado** contra el código (archivo, función, línea). Una sospecha no es un error: es una tarjeta de investigación en [`BOARD.md`](BOARD.md).
-> Última actualización: 2026-08-01. **4 errores abiertos:** BUG-016 (cuatro mensajes en voseo), BUG-013 (el pase de accesibilidad mide contraste durante el fundido del modal), BUG-017 (el modelo Quincenal pierde un cobro al mes) y BUG-018 (fecha por defecto del abono a deuda usa UTC, no hora Colombia). BUG-018 afecta el uso diario desde las 7 p.m. hora Colombia en adelante.
+> Última actualización: 2026-08-02 (BUG-017 anota el segundo sitio con regla de quincena, abierto por MC.13c-3). **4 errores abiertos:** BUG-016 (cuatro mensajes en voseo), BUG-013 (el pase de accesibilidad mide contraste durante el fundido del modal), BUG-017 (el modelo Quincenal pierde un cobro al mes) y BUG-018 (fecha por defecto del abono a deuda usa UTC, no hora Colombia). BUG-018 afecta el uso diario desde las 7 p.m. hora Colombia en adelante.
 >
 > **Patrón recurrente que conviene vigilar (cerrado 3 veces el 2026-08-01):** tests con **fechas fijas** o con un día derivado a módulo 28 se ponen rojos según el día en que se corran, casi siempre los primeros días del mes. La regla es derivar las fechas del reloj, y **fijar el reloj** (`vi.setSystemTime`) cuando el test afirma una distancia exacta o necesita un día ya pasado dentro del mes.
 
@@ -71,4 +71,5 @@ Numerar `BUG-001`, `BUG-002`... de forma consecutiva y sin reutilizar números a
 - Función   : `ocurrenciasEnMes`, caso Quincenal
 - Líneas    : sin localizar (hallazgo de MC.13c-2, no una lectura de código línea a línea)
 - Secciones : Calendario, Mis cuentas (asistente), transversal (todo consumidor del motor)
+- **Dos reglas de quincena en el mismo archivo desde MC.13c-3 (2026-08-02)**: `_candidatosDelMes` (privada, solo la usa `ultimoVencimientoHasta`) **clampea** al último día del mes la segunda quincena que no cabe, en vez de descartarla. No es una copia del defecto: es la conducta que `ultimoPagoHasta` tiene desde MC.4d y de la que depende la clave de de-duplicación del asistente, así que alinearla con `ocurrenciasEnMes` habría quitado el guard del segundo cobro del mes. Al arreglar este error se borra `_candidatosDelMes` y las dos vuelven a ser una.
 - **Arreglo sugerido**: el segundo cobro debería pasar al mes siguiente (día 5). **Requiere decisión de Esteban**, porque cambia lo que hoy ve el Calendario.

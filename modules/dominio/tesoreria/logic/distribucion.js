@@ -114,8 +114,14 @@ export function construirDesgloseNecesidades(compromisos = [], gastos = [], hoy 
  * ingresos y el último periodo ya distribuido. Pura (sin S, sin DOM).
  *
  * El "periodo" es la fecha del cobro más reciente (<= hoy y no anterior a la
- * creación del ingreso) entre los ingresos activos con día de pago datable
- * (Mensual / Quincenal). Esa fecha ISO es la clave de de-duplicación.
+ * creación del ingreso) entre los ingresos activos con día de pago datable.
+ * Esa fecha ISO es la clave de de-duplicación.
+ *
+ * Desde MC.13c-3 "datable" son las seis frecuencias con día del mes
+ * (`FRECUENCIAS_CON_DIA`), no sólo Mensual y Quincenal: un ingreso Bimestral,
+ * Trimestral, Semestral o Anual ya no cae en 'sin-fecha', y por lo tanto ya no
+ * se puede distribuir dos veces el mismo cobro. Diario y Semanal siguen sin
+ * datarse: caen por día de semana y el formulario no les pide `diaPago`.
  *
  * Estados:
  *   'sin-fecha'     : ningún ingreso activo tiene un cobro datable → el caller
@@ -161,13 +167,13 @@ export function estadoDistribucion(
   if (!Array.isArray(ingresos)) return base;
 
   const activos = ingresos.filter(i => i.activo !== false && i.diaPago);
-  let hayDatable = false;  // algún ingreso con frecuencia datable (Mensual/Quincenal)
+  let hayDatable = false;  // algún ingreso con frecuencia datable (las de FRECUENCIAS_CON_DIA)
   let mejorCobro = null;   // periodoISO más reciente de un cobro ya recibido
   let candidato  = null;   // el más reciente descartado por creación tardía (MC.13f)
 
   for (const i of activos) {
-    const ultISO = ultimoPagoHasta(i.frecuencia, i.diaPago, hoy);
-    if (!ultISO) continue;          // frecuencia no datable (Anual, etc.)
+    const ultISO = ultimoPagoHasta(i, hoy);
+    if (!ultISO) continue;          // frecuencia sin día del mes (Diario, Semanal, Variable)
     hayDatable = true;
     // No datar cobros anteriores a la creación del ingreso: evita el falso
     // "ya recibiste" al registrar hoy un ingreso cuyo día de pago ya pasó.

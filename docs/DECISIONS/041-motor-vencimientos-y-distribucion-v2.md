@@ -76,6 +76,8 @@ obligacionesYAportesDelCobro({ cobro:{frecuencia, fechaISO}, compromisos, gastos
 >
 > Además hay una **dependencia técnica no prevista**: `ultimoPagoHasta` sigue devolviendo `null` para todo lo que no sea Mensual/Quincenal, así que datar el cobro de un usuario Semanal o Diario es una rebanada previa. `ventanaDelCobro` cubre las frecuencias, pero **datar el último cobro** no se generalizó.
 >
+> **Cerrado en MC.13c-3 (2026-08-02), con un límite.** `ultimoVencimientoHasta(item, hoyISO)` en el motor data el último cobro de las **seis frecuencias con día del mes**, y `ultimoPagoHasta` queda como envoltorio que le pasa el ingreso entero (las largas sitúan su ciclo desde `fechaCreacion`). **Semanal y Diario siguen sin datarse, y no por omisión**: caen por día de semana, el formulario no les pide `diaPago` y darles fecha exige un campo nuevo, que es otra decisión. Lo que la corrección de arriba temía (un usuario largo sin guard de de-duplicación) ya no ocurre; lo que sigue abierto es el modelo de datos de las frecuencias sin día del mes.
+>
 > Dos decisiones de diseño que MC.13c-1 sí tomó, por ser técnicas: **una fila por compromiso, no por ocurrencia** (un `Gasto` no dice a qué ocurrencia pertenece: atribuirlo sería inventar el dato) y **un mismo compromiso puede estar en `vencidas` y en `enVentana`** con ocurrencias distintas (son deudas reales distintas; los tramos son disjuntos).
 - **Aportes por período** (no total ni mensual): consume `aportePorPeriodo` (punto 21).
 
@@ -168,7 +170,8 @@ El **motor (MC.13a-b) no depende de los conflictos** y puede arrancar apenas Est
 | **MC.13a** | `infra/vencimientos.js` mitad A (`ocurrenciasEnRango`, `ventanaDelCobro`) + Agenda pasa a consumirla (su `eventosDelMes` queda como envoltorio). Solo-unit + E2E de Calendario intactos. | ADR aprobado | Opus 4.8 - Alto (lógica de fechas/frecuencias, riesgo de regresión en Calendario) |
 | **MC.13b** | `infra/vencimientos.js` mitad B (`frecuenciaPrincipalIngresos`, `diasPorPeriodo`, `aportePorPeriodo`) + Metas y Apartados **borran sus copias** y re-importan. Refactor sin cambio de comportamiento, verificado con sus tests. | MC.13a | Opus 4.8 - Alto |
 | **MC.13c-1** | `obligacionesYAportesDelCobro` (D2) puro + 40 tests. **Cerrada 2026-07-14.** Sin consumidores todavía. | MC.13b | Opus 4.8 - Alto |
-| **MC.13c-2** | La checklist de Necesidades y el desglose de ahorro pasan a consumirlo (absorbe MC.7g). **Bloqueada**: 3 decisiones de producto + generalizar `ultimoPagoHasta` (ver la corrección en D2). | MC.13c-1 + decisiones de Esteban | Opus 4.8 - Alto |
+| **MC.13c-2** | La checklist de Necesidades y el desglose de ahorro pasan a consumirlo (absorbe MC.7g). **Cerrada 2026-07-14**: las 3 decisiones de producto se tomaron y generalizar `ultimoPagoHasta` resultó innecesario para el wiring, así que se separó. | MC.13c-1 + decisiones de Esteban | Opus 4.8 - Alto |
+| **MC.13c-3** | Generalizar el datado del cobro: `ultimoVencimientoHasta` en el motor. **Cerrada 2026-08-02**, ver la nota de cierre en D2. Semanal y Diario quedan fuera por modelo de datos, no por alcance. | MC.13c-2 | Opus 5 - Alto |
 | **MC.13d** | Schema: `cuentaId` en `Ingreso` (D5), bump v26→v27 + migración + el form de ingreso fijo captura la cuenta. **Cerrada 2026-07-14**: migración intencionalmente no-op (no hay nada que migrar sin backfill), form con patrón 0/1/varias y selector sin preseleccionar. | nada dura; independiente | Opus 4.8 - Extra (bump con migración) |
 | **MC.13e+** | Asistente v2 UI (puntos 9-20): paso educativo, recomendaciones por categoría, excedente explícito, filas con logo, navegación v2. Varias rebanadas de UI. | MC.13c, MC.13d; **decisión (a)** para el flujo esporádico | Sonnet 5 - Alto por rebanada |
 

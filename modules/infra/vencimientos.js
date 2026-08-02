@@ -184,9 +184,8 @@ export function ocurrenciasEnRango(item, inicioISO, finISO) {
 /**
  * Ventana de un cobro: desde el día del cobro hasta el día anterior al
  * siguiente cobro de la misma frecuencia. Responde "hasta cuándo tiene que
- * durar este dinero" para la Distribución v2. A diferencia de
- * `ultimoPagoHasta`/`diasParaProximoPago` (tesoreria/logic/ingresos.js, sólo
- * Mensual y Quincenal), cubre todas las frecuencias.
+ * durar este dinero" para la Distribución v2. Cubre todas las frecuencias, y
+ * su espejo hacia atrás ("cuál fue ese cobro") es `ultimoVencimientoHasta`.
  *
  * Longitud de la ventana: Diario un día; Semanal siete; Quincenal quince;
  * Mensual el mes calendario (día equivalente del mes siguiente menos uno, así
@@ -217,6 +216,100 @@ export function ventanaDelCobro(frecuencia, fechaCobroISO) {
     default:           fin = _addDias(_addMeses(inicio, 1), -1);  break;
   }
   return { inicioISO: _iso(inicio), finISO: _iso(fin) };
+}
+
+// ── DATAR EL ÚLTIMO VENCIMIENTO (MC.13c-3) ───────────────────────
+
+/**
+ * Meses que dura un período de cada frecuencia que se puede **datar por día
+ * del mes**, y a la vez la lista de esas frecuencias: si una no está acá, no
+ * hay con qué situar su cobro en el calendario (Diario y Semanal caen por día
+ * de semana y por eso el formulario no les pide `diaPago`; Variable y Única
+ * vez no se repiten).
+ */
+const _MESES_POR_PERIODO_DATABLE = {
+  Quincenal:  1,
+  Mensual:    1,
+  Bimestral:  2,
+  Trimestral: 3,
+  Semestral:  6,
+  Anual:      12,
+};
+
+/**
+ * Frecuencias con día del mes. Fuente única: el formulario de ingresos la
+ * re-exporta como `FRECUENCIAS_CON_DIA` (tesoreria/logic/ingresos.js) para
+ * decidir cuándo pedir el día, que es la misma pregunta desde el otro lado.
+ * Si algún día capturar el día y poder datarlo dejan de coincidir, separarlas.
+ */
+export const FRECUENCIAS_DATABLES = Object.freeze(Object.keys(_MESES_POR_PERIODO_DATABLE));
+
+/**
+ * Días del mes en que un item pudo cobrarse, para efectos de **datar**.
+ *
+ * Es `ocurrenciasEnMes` salvo en Quincenal, donde completa la segunda quincena
+ * que no cabe en el mes clampeándola al último día (día 14 + 15 = 29 en
+ * febrero, que acá vale 28). Esa es la conducta que `ultimoPagoHasta` tiene
+ * desde MC.4d y de la que depende la clave de de-duplicación del asistente:
+ * quien cobra dos veces al mes se quedaría sin clave en su segundo cobro.
+ * `ocurrenciasEnMes` en cambio la descarta, que es **[BUG-017](../../docs/BUGS.md)**.
+ * Las dos reglas vuelven a ser una cuando BUG-017 se decida; hasta entonces la
+ * divergencia se declara acá en vez de dejarse implícita.
+ */
+function _candidatosDelMes(item, year, month) {
+  const dias = ocurrenciasEnMes(item, year, month);
+  if (item.frecuencia !== 'Quincenal' || dias.length === 0) return dias;
+
+  const ultimoDia = _diasDelMes(year, month);
+  const segundo   = Math.min(Math.min(Number(item.diaPago), ultimoDia) + 15, ultimoDia);
+  return dias.includes(segundo) ? dias : [...dias, segundo];
+}
+
+/**
+ * Fecha ISO del último vencimiento de un item que ya ocurrió (<= `hoyISO`), o
+ * `null` si su frecuencia no se puede datar. Espejo hacia atrás de
+ * `ventanaDelCobro`: esa dice hasta cuándo dura el cobro, esta dice cuál fue.
+ *
+ * Cubre **todas** las frecuencias con día del mes, no sólo Mensual y Quincenal
+ * (MC.13c-3): las largas se apoyan en el ciclo desde `fechaCreacion` que ya
+ * aplica `ocurrenciasEnMes`, por eso recibe el item entero y no sólo su
+ * frecuencia y su día. Sin `fechaCreacion` el ciclo cae todos los meses, mismo
+ * criterio conservador del resto del motor.
+ *
+ * Su consumidor es el guard de de-duplicación del asistente de distribución
+ * (`estadoDistribucion` vía `ultimoPagoHasta`): la fecha que devuelve es la
+ * clave con la que se sella `ultimaDistribucionPeriodo`.
+ *
+ * @param {{frecuencia?:string, diaPago?:number, fechaCreacion?:string}} item
+ * @param {string} hoyISO 'YYYY-MM-DD' de referencia (inyectable).
+ * @returns {string | null}
+ */
+export function ultimoVencimientoHasta(item, hoyISO) {
+  const hoy = _fechaDesdeISO(hoyISO);
+  if (!item || typeof item !== 'object' || !hoy) return null;
+
+  const meses = _MESES_POR_PERIODO_DATABLE[item.frecuencia];
+  if (!meses) return null;
+
+  const diaPago = Number(item.diaPago);
+  if (!Number.isInteger(diaPago) || diaPago < 1 || diaPago > 31) return null;
+
+  // Un período hacia atrás alcanza para encontrar el cobro anterior: más lejos
+  // sería un cobro que el usuario ya dejó pasar, no el último.
+  const desde = new Date(hoy.getFullYear(), hoy.getMonth() - meses, 1);
+
+  let ultimo = null;
+  let y = desde.getFullYear();
+  let m = desde.getMonth();
+  while (y < hoy.getFullYear() || (y === hoy.getFullYear() && m <= hoy.getMonth())) {
+    for (const d of _candidatosDelMes(item, y, m)) {
+      const fecha = new Date(y, m, d);
+      if (fecha <= hoy && (!ultimo || fecha > ultimo)) ultimo = fecha;
+    }
+    m += 1;
+    if (m > 11) { m = 0; y += 1; }
+  }
+  return ultimo ? _iso(ultimo) : null;
 }
 
 // ── MITAD B: APORTES POR PERÍODO (MC.13b) ────────────────────────

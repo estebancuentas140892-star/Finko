@@ -10,6 +10,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(tesoreria): MC.13c-3, datar el cobro de todas las frecuencias · 2026-08-02
+
+Cierra el último pendiente del motor de vencimientos ([ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md) D2): un ingreso Bimestral, Trimestral, Semestral o Anual ya no se queda sin clave de de-duplicación. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md).
+
+- **El agujero que cierra:** `estadoDistribucion` devolvía `'sin-fecha'` para esas cuatro frecuencias, y ese estado deja la acción disponible **a propósito** (no hay periodo que sellar). Consecuencia: quien solo cobra una vez al año podía abrir el asistente y repartir el mismo cobro cuantas veces quisiera, acreditando de más en cada pasada.
+- **La regla de frecuencias sube a infra, no baja a Ahorro ni se copia:** `ultimoVencimientoHasta(item, hoyISO)` en `infra/vencimientos.js`, espejo hacia atrás de `ventanaDelCobro`. Las frecuencias largas necesitan el ciclo desde `fechaCreacion`, que solo `ocurrenciasEnMes` sabe calcular (`_caeEnCiclo`, privado): reimplementarlo en tesorería habría sido el cuarto motor que el ADR 041 existe para evitar.
+- **`ultimoPagoHasta` pasa a envoltorio delgado** y **cambia de contrato**: recibe el ingreso entero en vez de `(frecuencia, diaPago)`. Sin el objeto no viaja `fechaCreacion` y un Anual se dataría todos los meses. Único consumidor en producción: `estadoDistribucion`. Mismo patrón de envoltorio que Metas y Apartados sobre la mitad B.
+- **`FRECUENCIAS_CON_DIA` deja de ser una lista propia** y reexporta `FRECUENCIAS_DATABLES` de infra: pedir el día del mes y poder datar el cobro son la misma pregunta desde los dos lados, y el motor ya necesitaba la lista. Mismo precedente que `FACTOR_MENSUAL` en ese archivo (ARQ.2 punto 1).
+- **Divergencia declarada con BUG-017, no arreglada:** datar clampea al último día del mes la segunda quincena que no cabe (día 14 + 15 = 29 en febrero vale 28), porque `ultimoPagoHasta` lo hace desde MC.4d y quitarlo dejaría sin clave el segundo cobro del mes. `ocurrenciasEnMes` en cambio la descarta. Las dos reglas vuelven a ser una cuando Esteban decida BUG-017, que ahora anota los dos sitios.
+- **Diario y Semanal siguen sin datarse** y no es un hueco: caen por día de semana y el formulario no les pide `diaPago`. Darles fecha exigiría un campo nuevo, que es otra tarjeta.
+- 23 tests nuevos (16 de `ultimoVencimientoHasta` en `vencimientos.test.js`, el resto en `tesoreria.test.js` sobre el envoltorio y el guard). 3656 unit + lint verdes. SW v478 a v479.
+
 ### feat(ahorro): AH.8, el carril de Inversion dice su etapa · 2026-08-02
 
 Ejecuta la consecuencia que el [ADR 056](DECISIONS/056-la-casa-de-ahorro.md) dejó pendiente desde DIS.18, con el dato que **ARQ.1c** puso a su alcance esa misma jornada. Ficha: [`contexto/ahorro.md`](contexto/ahorro.md).
