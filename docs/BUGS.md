@@ -3,7 +3,7 @@
 > Errores detectados durante el desarrollo, con toda la información necesaria para resolverlos sin tener que volver a buscar dónde están.
 > Al solucionarse, el error se **elimina** de este archivo y el fix queda documentado en [`CHANGELOG.md`](CHANGELOG.md) con referencia al ID.
 > Solo entra lo **verificado** contra el código (archivo, función, línea). Una sospecha no es un error: es una tarjeta de investigación en [`BOARD.md`](BOARD.md).
-> Última actualización: 2026-08-02 (BUG-017 solucionado y retirado). **3 errores abiertos:** BUG-016 (cuatro mensajes en voseo), BUG-013 (el pase de accesibilidad mide contraste durante el fundido del modal) y BUG-018 (fecha por defecto del abono a deuda usa UTC, no hora Colombia). BUG-018 afecta el uso diario desde las 7 p.m. hora Colombia en adelante.
+> Última actualización: 2026-08-02 (BUG-017 y BUG-018 solucionados y retirados; nace **BUG-025**, el mismo patrón de huso en `fechaCreacion`, que sí necesita decisión). **3 errores abiertos:** BUG-016 (cuatro mensajes en voseo), BUG-013 (el pase de accesibilidad mide contraste durante el fundido del modal) y BUG-025 (`fechaCreacion` se guarda en UTC y se lee como fecha local).
 >
 > **Patrón recurrente que conviene vigilar (cerrado 3 veces el 2026-08-01):** tests con **fechas fijas** o con un día derivado a módulo 28 se ponen rojos según el día en que se corran, casi siempre los primeros días del mes. La regla es derivar las fechas del reloj, y **fijar el reloj** (`vi.setSystemTime`) cuando el test afirma una distancia exacta o necesita un día ya pasado dentro del mes.
 
@@ -51,14 +51,16 @@ Numerar `BUG-001`, `BUG-002`... de forma consecutiva y sin reutilizar números a
 - Secciones : ninguna de la app (solo la suite E2E). Afecta la confianza en el pase A11Y.5.
 - **Arreglo sugerido**: esperar a que el fundido termine antes de medir, no dormir un tiempo fijo. Opciones: esperar la promesa de `element.getAnimations()` en el overlay, o afirmar `opacity === '1'` con `expect.poll` antes de llamar a axe. Conviene hacerlo en el helper compartido para que cubra todos los modales de una vez.
 
-### BUG-018 - La fecha por defecto del abono a deuda usa UTC, no hora Colombia
+### BUG-025 - `fechaCreacion` se guarda en UTC y se lee como fecha local
 - Estado    : pendiente
-- Prioridad : alta (corrompe datos financieros; sin decisión de producto, un tecleo por sitio)
-- Problema  : el formulario de abono a deuda inicializa la fecha con `new Date().toISOString().slice(0,10)`. Colombia es UTC-5: desde las 7 p.m. hora local, esa fecha ya es "mañana". Reproducido: abono registrado el 24 de julio a las 11:50 p.m. quedó guardado y visible en Movimientos como "25 de julio".
-- Causa     : uso de fecha UTC en vez de fecha local. El proyecto ya tiene el helper correcto, `isoFecha()` en `modules/dominio/tesoreria/logic/ingresos.js:184`, pero vive dentro de un dominio y nadie más lo busca ahí.
-- Archivo   : `modules/dominio/compromisos/views/formularios.js`
-- Función   : valor por defecto del campo fecha en el formulario de abono
-- Líneas    : ~54
-- Secciones : Deudas (abono). Variantes cosméticas del mismo patrón, sin persistencia de dato incorrecto: `modules/dominio/compromisos/views/alertas.js:29` (umbral de meses, no se mueve por horas) y `modules/dominio/config/index.js:32,109` (nombre de archivo de backup). No requieren fix urgente, solo quedan atrapadas si se promueve el helper.
-- **Arreglo sugerido**: mover `isoFecha()` a `infra/utils.js` como única fuente de "hoy en ISO", reemplazar el uso en `formularios.js:54` (obligatorio) y opcionalmente los otros dos (cosmético). Test unitario que fije un huso UTC-5 nocturno.
+- Prioridad : media (no corrompe montos ni saldos; corre fechas un día, y en el borde de mes corre un ciclo entero)
+- Problema  : todo registro creado desde las 7 p.m. hora Colombia queda con una `fechaCreacion` cuya parte de fecha es la de mañana. Los consumidores le cortan los primeros 10 caracteres y la tratan como fecha local, así que: una deuda creada el 31 de julio a las 8 p.m. cuenta como de agosto; un compromiso Bimestral creado esa noche ancla su ciclo un mes tarde y el Calendario lo pinta en los meses equivocados; el umbral de "deudas durmiendo" y el guard de "no marcar vencido lo creado después" se corren un día.
+- Causa     : `crear()` sella `fechaCreacion: new Date().toISOString()`, que es un instante UTC correcto. El defecto está en leerlo como si fuera una fecha de calendario local, no en guardarlo. Es el mismo patrón de BUG-018 (solucionado el 2026-08-02), que solo cubría los tres sitios que llamaban a `toISOString()` para pintar "hoy".
+- Archivo   : `modules/infra/crud.js` (origen del sello) y sus lectores
+- Función   : `crear()` en `crud.js:38`; lectores `_caeEnCiclo` (`infra/vencimientos.js`), `estadoDistribucion` (`tesoreria/logic/distribucion.js`), `detectarDeudasDurmiendo` y los tres `_RX_FECHA_COMP.exec` de `compromisos/logic/alertas.js`
+- Líneas    : `crud.js:38`; `alertas.js:62`, `:132`, `:230`
+- Secciones : Deudas, Calendario, Mis cuentas (asistente), transversal (todo consumidor del motor)
+- **Requiere decisión antes de tocarlo**: los registros ya guardados tienen el sello UTC, así que cambiar `crear()` no arregla el pasado y mezcla dos convenciones en la misma colección. Las dos salidas son (a) guardar además `fechaCreacionLocal` (campo nuevo, migración con backfill imposible: el huso del momento de creación no se puede recuperar) o (b) dejar el sello como está y convertir a fecha local en la lectura, con un helper único. La (b) no necesita schema y arregla el pasado, pero cambia lo que hoy muestra el Calendario para los registros nocturnos.
+
+
 

@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-02. Última tarea cerrada: BUG-017, el Quincenal con día alto recupera su segundo cobro.
+> Revisado: 2026-08-02. Última tarea cerrada: BUG-018, la fecha por defecto del abono deja de irse a mañana.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -19,23 +19,26 @@
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
 | `onclick` / `style=""` / `window.X` en módulos | 0 / 0 / 0 |
-| Errores abiertos | **3**: ver [BUGS.md](BUGS.md). BUG-018 es el único con impacto en el uso diario |
+| Errores abiertos | **3**: ver [BUGS.md](BUGS.md). BUG-025 es el único con impacto en el uso diario, y necesita decisión antes de tocarlo |
 
 ---
 
 ## 2. Últimas 5 tareas cerradas
 
+**BUG-018 - la fecha por defecto del abono deja de irse a mañana, 2026-08-02**
+Desde las 7 p.m. en UTC-5, `toISOString().slice(0,10)` ya devuelve mañana: el abono de las 11:50 p.m. del 24 se guardaba como del 25. Los cinco sitios que pintaban "hoy" así pasan a `hoy()` (`infra/utils.js`), que ya existía: no hizo falta mover nada, solo llamarla. Muere `_hoyISO()` de `personales/view.js`, copia literal. Deja abierto **BUG-025**, el mismo huso en `fechaCreacion` pero del lado de la lectura y con datos ya guardados.
+
 **BUG-017 - el Quincenal con día alto recupera su segundo cobro, 2026-08-02**
-`ocurrenciasEnMes` **clampea al último día del mes** la segunda quincena que no cabe en vez de descartarla: con `diaPago = 20` julio pasa de un cobro a dos (20 y 31). Afecta al Calendario (un dot más), a la checklist de Necesidades (pedía la mitad del dinero real) y al pago en lote. Se eligió clamp y no el "pasa al mes siguiente" que sugería `BUGS.md`: `diasParaProximoPago` y `ultimoPagoHasta` ya clampeaban, y rodar al mes siguiente le quitaría a un quincenal de día 14 su cobro del 28 de febrero. Alternativa rechazada escrita en el [ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md) D1. Deja **una sola** regla de frecuencias: `_candidatosDelMes` (la copia que MC.13c-3 había declarado ese mismo día) se borra.
+`ocurrenciasEnMes` **clampea al último día del mes** la segunda quincena que no cabe en vez de descartarla: con `diaPago = 20` julio pasa de un cobro a dos. Afecta al Calendario, a la checklist de Necesidades (pedía la mitad del dinero real) y al pago en lote. Clamp y no "pasa al mes siguiente" porque `diasParaProximoPago` y `ultimoPagoHasta` ya clampeaban; alternativa rechazada en el [ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md) D1. Deja una sola regla de frecuencias: `_candidatosDelMes` se borra.
 
 **CAL.5b - el lote también cubre deudas y se ofrece desde Inicio, 2026-08-02**
-El pago en lote deja de ser solo de gastos fijos y solo del Calendario. Una deuda entra por **lo que falta de la cuota del mes, topado a su `saldoTotal`** (la decisión de "abono parcial dentro de un lote" que la tarjeta pedía explícita: cobrar la cuota entera sobre un abono previo habría cobrado dos veces). Ningún dominio cambia de dueño: Agenda sigue siendo dueña del lote, la aritmética de la deuda sigue en Compromisos y el par gasto vinculado + baja de saldo sigue en `infra/pago-compromiso.js`. Inicio no importa a Agenda: emite el evento nuevo `lote:abrir` y el modal abre sobre el dashboard. De paso, "Pendientes del mes" deja de listar lo ya pagado (defecto preexistente que el CTA nuevo volvía visible).
+El pago en lote deja de ser solo de gastos fijos y solo del Calendario. Una deuda entra por **lo que falta de la cuota del mes, topado a su `saldoTotal`**: cobrar la cuota entera sobre un abono previo habría cobrado dos veces. Ningún dominio cambia de dueño: Agenda sigue dueña del lote, la aritmética de la deuda sigue en Compromisos y el par gasto vinculado + baja de saldo en `infra/pago-compromiso.js`. Inicio no importa a Agenda: emite `lote:abrir` y el modal abre sobre el dashboard. De paso, "Pendientes del mes" deja de listar lo ya pagado.
 
 **MC.13c-3 - datar el cobro de todas las frecuencias, 2026-08-02**
-`ultimoVencimientoHasta(item, hoyISO)` en `infra/vencimientos.js`: el último cobro de las seis frecuencias con día del mes, espejo hacia atrás de `ventanaDelCobro`. Un ingreso Bimestral a Anual deja de caer en `'sin-fecha'` y gana la clave de de-duplicación que le faltaba (antes se podía repartir el mismo cobro cuantas veces se abriera el asistente). `ultimoPagoHasta` queda como envoltorio y **cambia de contrato**: recibe el ingreso entero, porque las frecuencias largas sitúan su ciclo desde `fechaCreacion`. Semanal y Diario siguen sin datarse por modelo de datos, no por alcance. Cierra el último pendiente del [ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md) D2.
+`ultimoVencimientoHasta(item, hoyISO)` en `infra/vencimientos.js` data el último cobro de las seis frecuencias con día del mes, espejo hacia atrás de `ventanaDelCobro`. Un ingreso Bimestral a Anual deja de caer en `'sin-fecha'` y gana su clave de de-duplicación (antes el mismo cobro se repartía cuantas veces se abriera el asistente). `ultimoPagoHasta` queda como envoltorio y **cambia de contrato**: recibe el ingreso entero, que es por donde viaja `fechaCreacion`. Semanal y Diario siguen sin datarse por modelo de datos. Cierra el pendiente del [ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md) D2.
 
 **AH.8 - el carril de Inversión dice su etapa, 2026-08-02**
-El carril de la casa de Ahorro pasa de "2 inversiones" a "2 inversiones, construyendo": el conteo del D4 del [ADR 056](DECISIONS/056-la-casa-de-ahorro.md) más la etapa que su mockup pedía desde DIS.18. `casaAhorro()` gana `etapaInversion`; las palabras viven en `ETAPA_INVERSION` (`ahorro/logic.js`) y son las mismas del chip de la sección hija, con un test que falla si las dos pantallas se separan. Cierra la última consecuencia pendiente del ADR 056.
+El carril pasa de "2 inversiones" a "2 inversiones, construyendo": el conteo del D4 del [ADR 056](DECISIONS/056-la-casa-de-ahorro.md) más la etapa que su mockup pedía desde DIS.18. `casaAhorro()` gana `etapaInversion`; las palabras viven en `ETAPA_INVERSION` (`ahorro/logic.js`) y son las del chip de la sección hija, con un test que falla si las dos pantallas se separan.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 

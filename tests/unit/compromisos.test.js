@@ -2054,6 +2054,40 @@ describe('renderFormAbono() - formulario', () => {
     expect(posRefuerzo).toBeGreaterThan(-1);
     expect(posRefuerzo).toBeLessThan(posFooter);
   });
+
+  // ── BUG-018: la fecha por defecto es la local, no la UTC ────────
+  describe('fecha por defecto en hora Colombia (BUG-018)', () => {
+    const tzOriginal = process.env.TZ;
+
+    afterEach(() => {
+      process.env.TZ = tzOriginal;
+      vi.useRealTimers();
+    });
+
+    it('a las 11:50 p.m. hora Colombia la fecha por defecto sigue siendo HOY', () => {
+      // Reproducción exacta del reporte: abono del 24 de julio a las 11:50 p.m.
+      // quedaba guardado y visible en Movimientos como "25 de julio".
+      process.env.TZ = 'America/Bogota';
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-07-25T04:50:00.000Z')); // 24 jul 23:50 en Bogotá
+
+      // La lectura UTC, que es la que fallaba, da el día siguiente.
+      expect(new Date().toISOString().slice(0, 10)).toBe('2026-07-25');
+      expect(new Date().getDate()).toBe(24);
+
+      S.cuentas = [cuenta('c1', 'Bancolombia', 1_000_000)];
+      expect(renderFormAbono(deuda)).toContain('value="2026-07-24"');
+    });
+
+    it('de día la fecha local y la UTC coinciden y no cambia nada', () => {
+      process.env.TZ = 'America/Bogota';
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-07-24T15:00:00.000Z')); // 24 jul 10:00 en Bogotá
+
+      S.cuentas = [cuenta('c1', 'Bancolombia', 1_000_000)];
+      expect(renderFormAbono(deuda)).toContain('value="2026-07-24"');
+    });
+  });
 });
 
 // ── renderFormDeuda() - selector de tipo de obligación ────────────

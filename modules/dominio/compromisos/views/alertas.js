@@ -9,7 +9,7 @@
  */
 
 import { S } from '../../../core/state.js';
-import { f, esc as _esc } from '../../../infra/utils.js';
+import { f, esc as _esc, hoy } from '../../../infra/utils.js';
 import { icon } from '../../../infra/icons.js';
 import {
   detectarDeudasDurmiendo,
@@ -26,7 +26,7 @@ export function renderAlertaDeudasDurmiendo() {
   const el = document.getElementById('nudge-deudas-durmiendo');
   if (!el) return;
 
-  const hoyISO  = new Date().toISOString().slice(0, 10);
+  const hoyISO  = hoy();
   const deudas  = detectarDeudasDurmiendo(S.compromisos, hoyISO);
 
   if (deudas.length === 0) {

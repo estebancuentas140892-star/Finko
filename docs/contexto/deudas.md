@@ -85,6 +85,7 @@ Fuera de esas dos, la iniciativa "Deudas v2: de registro a asesor" (brief 2026-0
 
 **Cambios realizados**:
 
+- 2026-08-02 (**BUG-018**): la fecha por defecto del abono sale de `hoy()` (`infra/utils.js`, getters locales) y no de `toISOString()`. Desde las 7 p.m. hora Colombia el abono quedaba fechado al dia siguiente. Mismo cambio en `views/alertas.js` (umbral de deudas durmiendo). Queda abierto **BUG-025**: `fechaCreacion` arrastra el mismo defecto de huso del lado de la lectura.
 - 2026-07-15 (FORM.1b): form v2 completo (segmented, chips, monto hero, disclosure de tasa, toggle D.14, teja del header) + retiro completo del chooser de dos pasos (JS y CSS muertos). Ver [CHANGELOG](../CHANGELOG.md).
 
 ---

@@ -56,7 +56,7 @@ function _exportarDatos() {
     const json  = JSON.stringify(S, null, 2);
     const blob  = new Blob([json], { type: 'application/json' });
     const url   = URL.createObjectURL(blob);
-    const fecha = new Date().toISOString().slice(0, 10);
+    const fecha = hoy();
     const a     = document.createElement('a');
     a.href     = url;
     a.download = `finko-backup-${fecha}.json`;
@@ -144,7 +144,7 @@ function _exportarGastosCSV() {
   try {
     const blob  = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     const url   = URL.createObjectURL(blob);
-    const fecha = new Date().toISOString().slice(0, 10);
+    const fecha = hoy();
     const a     = document.createElement('a');
     a.href     = url;
     a.download = `finko-gastos-${fecha}.csv`;

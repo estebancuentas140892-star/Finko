@@ -10,7 +10,7 @@
  */
 
 import { S } from '../../../core/state.js';
-import { f, esc as _esc } from '../../../infra/utils.js';
+import { f, esc as _esc, hoy } from '../../../infra/utils.js';
 import {
   FRECUENCIAS,
   CATEGORIAS_DEUDA,
@@ -51,7 +51,10 @@ export function renderFormAbono(deuda) {
 
   const saldo = Number(deuda.saldoTotal) || 0;
   const cuota = Number(deuda.cuotaMensual) || 0;
-  const fechaHoy = new Date().toISOString().slice(0, 10);
+  // `hoy()` y no `toISOString()`: Colombia es UTC-5 y desde las 7 p.m. la fecha
+  // UTC ya es mañana, así que el abono quedaba guardado un día adelante
+  // (BUG-018). El helper usa los getters locales de Date.
+  const fechaHoy = hoy();
 
   return `
     <form id="form-abono" novalidate

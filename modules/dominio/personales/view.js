@@ -4,7 +4,7 @@
  */
 
 import { S } from '../../core/state.js';
-import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
+import { f, fechaLegible, esc as _esc, hoy as hoyISO } from '../../infra/utils.js';
 import { icon, emptyArt } from '../../infra/icons.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../infra/render.js';
@@ -245,7 +245,7 @@ function _renderEmptyState() {
  * @returns {string}
  */
 export function renderFormPersonal() {
-  const hoy = _hoyISO();
+  const hoy = hoyISO();
   const cuentasActivas = (S.cuentas ?? []).filter(c => c.activa !== false);
   const cuentaHtml = renderSelectorCuenta(cuentasActivas, {
     label: '¿De qué cuenta sale el dinero?',
@@ -360,10 +360,5 @@ export function renderFormPagoPersonal(prestamo) {
 
 // ── HELPERS ──────────────────────────────────────────────────────
 
-function _hoyISO() {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm   = String(d.getMonth() + 1).padStart(2, '0');
-  const dd   = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
-}
+// `_hoyISO` local se borró en BUG-018: era una copia literal de `hoy()`
+// (infra/utils.js), que ya es la única fuente de "hoy en ISO local".
