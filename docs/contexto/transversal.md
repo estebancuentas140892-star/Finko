@@ -223,14 +223,41 @@
 
 ---
 
-## Aviso de actualización del Service Worker (UPD.1, pendiente)
+## Aviso de actualización del Service Worker + novedades (UPD.1)
 
-- **Objetivo**          : cuando el SW detecte una versión nueva (`updatefound`), mostrar un aviso discreto con botón que aplica la actualización (`skipWaiting` + recarga controlada) en vez de esperar a la próxima recarga casual. Tras actualizar, mostrar una única vez un resumen breve de las novedades relevantes (catálogo `NOVEDADES_POR_VERSION` en `constants.js`, comparado contra la última versión vista persistida).
-- **Estado actual**     : pendiente de análisis, no iniciada. Tarjeta **UPD.1** en `docs/BOARD.md`. Sin cambio de datos financieros (las migraciones idempotentes ya garantizan eso, ADN 6); cero servidor, el SW ya versiona con `CACHE_NAME`.
+- **Objetivo**          : el SW ya recargaba solo, en silencio, cuando detectaba una versión nueva y era seguro hacerlo (sin modal abierto, sin input con foco). El hueco real era el caso contrario: si no era seguro, el usuario se quedaba sin ninguna señal hasta la próxima recarga casual. UPD.1 cubre exactamente ese hueco con un aviso discreto + botón, y agrega un resumen de novedades que se muestra una sola vez tras actualizar.
+- **Estado actual**     : **cerrada (2026-08-02)**. Decisión de alcance: el caso seguro sigue recargando solo sin aviso (comportamiento ya en producción, commits `d13b45c`/`cd14689`, 2026-07-27); el aviso visible aparece solo cuando el guard bloquea la recarga automática.
+- **Verificado contra** : `fbaeba6` (2026-08-02).
 
-**Archivos**: `modules/infra/sw-register.js`, `service-worker.js`, `modules/core/constants.js`, `modules/ui/shell.js`.
+**Dónde vive**
 
-**Riesgo**: el ciclo de vida del SW tiene esquinas (waiting/controllerchange/doble recarga); verificar con cuidado antes de dar por cerrado.
+| Pieza | Archivo | Ancla | Línea |
+|---|---|---|---|
+| Guard que bloquea la recarga automática | `modules/infra/sw-register.js` | `esSeguroRecargar()`, listener `controllerchange` | ~56, ~67 |
+| Puente hacia el aviso (el SW es `<script>` clásico, no importa `EventBus`) | `modules/infra/sw-register.js` | `document.dispatchEvent(new CustomEvent('sw:actualizacion-lista'))` | ~77 |
+| Banner + botón "Actualizar ahora" | `modules/ui/sw-aviso.js` | `initSwAviso()`, `_mostrarAviso()` | ~12, ~16 |
+| CSS del banner (mismo esqueleto que `.logro-toast`, sin autocierre) | `styles/components/nudges.css` | `.sw-aviso` | ~260 |
+| Catálogo de novedades por versión (clave = número de `CACHE_NAME`) | `modules/core/constants.js` | `NOVEDADES_POR_VERSION` | ~901 |
+| Última versión conocida del catálogo (usada por el default y la migración) | `modules/core/constants.js` | `ultimaVersionNovedadesConocida()` | ~909 |
+| Marca persistida de hasta dónde ya vio el usuario | `modules/core/state.js` | `config.ultimaVersionVista` | ~412 |
+| Migración v31 a v32 (backfill al catálogo vigente en ese momento) | `modules/core/storage.js` | `SCHEMA_VERSION = 32`, migración | ~21, ~472 |
+| Modal de novedades (reusa `.modal`/`.modal__header` etc., patrón de `confirm.js`) | `modules/ui/novedades.js` | `mostrarNovedadesSiHay()` | ~18 |
+| CSS del modal (lista con viñetas dentro de `.modal__body`) | `styles/modals.css` | `.novedades__lista` | ~570 |
+| Wiring en el arranque | `modules/ui/bootstrap.js` | `initSwAviso()`, `mostrarNovedadesSiHay()` | ~78 |
+
+**Dependencias y relaciones**: `sw-register.js` (clásico, sin imports) es el único puente entre el ciclo de vida real del SW y el resto de la app; el `CustomEvent` en `document` es el patrón elegido para cruzar esa frontera sin romper ADN 8 (cero `window.X`). El resumen de novedades es independiente del aviso: corre en cada arranque (`bootstrap.js`) sin importar si la versión nueva entró por la recarga silenciosa o por el botón del aviso. `NOVEDADES_POR_VERSION` y `ultimaVersionNovedadesConocida()` desacoplan a propósito el catálogo de `CACHE_NAME`: no todo bump de SW (uno por tarea que toque código, ver `OPERACION.md`) amerita una entrada de novedades, así que el catálogo queda disperso por diseño.
+
+**Riesgos**:
+
+- **El ciclo de vida del SW tiene esquinas** (waiting/controllerchange/doble recarga) y sigue sin cobertura automatizada: `sw-register.js` no corre en localhost (rama `_esDesarrollo`), así que el guard, el `CustomEvent` real y la recarga solo se pueden verificar en producción o con el SW forzado a mano. Lo que sí se verificó de forma aislada: `initSwAviso()` + un `CustomEvent` simulado muestran el banner correcto y el botón recarga; `mostrarNovedadesSiHay()` con un catálogo de prueba abre el modal, lista los puntos y persiste `ultimaVersionVista` al cerrar.
+- **`NOVEDADES_POR_VERSION` depende de disciplina manual**: nadie lo llena automáticamente al bumpear `CACHE_NAME`. Si una tarea futura quiere avisar de una novedad, tiene que acordarse de agregar la entrada; no hay guardarraíl que lo fuerce.
+- **Catálogo vacío en este cierre**: no había contenido de producto decidido para anunciar (el copy de novedades es decisión de Esteban, mismo criterio que el copy de UX Writing en otras tarjetas). El mecanismo completo queda probado con datos de prueba, listo para la primera entrada real.
+
+**Cambios pendientes**: ninguno de UPD.1 (tarjeta cerrada, sale del BOARD).
+
+**Cambios realizados**:
+
+- **2026-08-02 (UPD.1)**: aviso discreto + botón para el caso bloqueado, resumen de novedades una sola vez, `config.ultimaVersionVista` (schema v32). Detalle completo en el CHANGELOG.
 
 ---
 

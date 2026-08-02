@@ -112,7 +112,7 @@ El Service Worker es cache-first: si no se sube la versión, el navegador sigue 
 
 **Cómo verificar:** con la app servida, en DevTools → Application → Service Workers debe aparecer la versión nueva; el archivo nuevo se sirve tras recargar. Si la app queda mostrando lo viejo, casi siempre es un bump olvidado.
 
-Aviso de actualización al usuario final: no existe todavía, es la tarjeta **UPD.1** del tablero.
+**Aviso al usuario** (UPD.1): recarga sola si es seguro; si no, `sw-aviso.js` muestra un banner. Si el bump amerita avisar qué hay de nuevo, agregar entrada a `NOVEDADES_POR_VERSION` (`constants.js`) con la misma clave que este `CACHE_NAME`.
 
 ---
 

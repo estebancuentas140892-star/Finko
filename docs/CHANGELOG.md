@@ -10,6 +10,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(actualizacion): UPD.1, aviso de version nueva + resumen de novedades · 2026-08-02
+
+Commit `fbaeba6`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
+
+- **Aviso discreto con boton "Actualizar ahora"** cuando el SW aplica una version nueva pero `sw-register.js` no pudo recargar solo (modal abierto o input con foco al momento del cambio): antes el usuario no tenia ninguna senal hasta la proxima recarga casual. El caso seguro (sin guardas activas) sigue recargando en silencio, sin cambios. `sw-register.js` es un `<script>` clasico y no puede importar `EventBus`; avisa via `CustomEvent('sw:actualizacion-lista')` en `document`, que `modules/ui/sw-aviso.js` escucha.
+- **Resumen de novedades una sola vez tras actualizar**: catalogo `NOVEDADES_POR_VERSION` (`constants.js`, vacio por ahora, se llena a mano en cada release que lo amerite) comparado contra `config.ultimaVersionVista` (bump de schema v31 a v32, migracion idempotente). Un usuario nuevo o uno que migra arranca "al dia" con el catalogo vigente, nunca ve de golpe todo el historial acumulado.
+- Ambos mecanismos son independientes entre si: el resumen de novedades corre en cada arranque sin importar si la version nueva entro por la recarga silenciosa o por el boton del aviso.
+- 8 tests unitarios nuevos (`ultimaVersionNovedadesConocida`, migracion v31 a v32). Verificado en la app real: banner y modal de novedades probados de forma aislada (import directo de los modulos nuevos + evento simulado), dado que el bootstrap completo no pudo correr en vivo por una rotura pasajera y ajena de otra sesion en `infra/bolsas.js` (ya resuelta por esa sesion). 3608 unit + 253 E2E (1 flaky, paso en reintento) + lint verdes. SW v470 a v472 (bump compartido con EDIT.1/apartados, en curso en paralelo).
+
 ### feat(apartados): EDIT.1, editar sin destruir una reserva · 2026-08-02
 
 Rebanada Apartados de **EDIT.1** (patrón P3 de la auditoría de UX/producto). Commit `5929836`. Ficha: [`contexto/apartados.md`](contexto/apartados.md). Inversión y Me deben siguen pendientes de la misma tarjeta.

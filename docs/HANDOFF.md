@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-02. Última tarea cerrada: EDIT.1 (rebanada Apartados), editar sin destruir una reserva.
+> Revisado: 2026-08-02. Última tarea cerrada: UPD.1, aviso de version nueva + resumen de novedades.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,9 +13,9 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 3600/3600 verdes |
-| Tests E2E | 252/253 + 1 flaky (retry verde), corrida del 2026-08-02, sello del commit `5929836`. **Es compuerta** desde el 2026-07-30: el hook de pre-commit exige el sello de una corrida verde cuando el diff toca runtime. La huella se calcula sobre el **índice** (`git ls-files -s`), no sobre el árbol: hay que `git add` **antes** de sellar, o el propio `add` invalida el sello. **Ojo con sesiones paralelas sobre el mismo worktree**: el índice compartido puede invalidar el sello entre que se corre la suite y se commitea (visto el 2026-08-01/02: contención de CPU y staging entrelazado con otra sesión; `git add -p` para separar hunks propios de ajenos cuando el mismo archivo cambia por dos sesiones a la vez) |
-| Schema version (`localStorage`) | v31 (`seccion` en categoría personalizada, CAT.3a; migración backfill) |
+| Tests unitarios + integración | 3608/3608 verdes |
+| Tests E2E | 252/253 + 1 flaky (retry verde), corrida del 2026-08-02, sello del commit `fbaeba6`. **Es compuerta** desde el 2026-07-30: el hook de pre-commit exige el sello de una corrida verde cuando el diff toca runtime. La huella se calcula sobre el **índice** (`git ls-files -s`), no sobre el árbol: hay que `git add` **antes** de sellar, o el propio `add` invalida el sello. **Ojo con sesiones paralelas sobre el mismo worktree**: el índice compartido puede invalidar el sello entre que se corre la suite y se commitea (visto el 2026-08-01/02: contención de CPU y staging entrelazado con otra sesión; `git add -p` para separar hunks propios de ajenos cuando el mismo archivo cambia por dos sesiones a la vez) |
+| Schema version (`localStorage`) | v32 (`config.ultimaVersionVista`, UPD.1; migración backfill al catálogo vigente) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
 | `onclick` / `style=""` / `window.X` en módulos | 0 / 0 / 0 |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**UPD.1 - aviso de versión nueva + resumen de novedades, 2026-08-02**
+Aviso discreto con botón "Actualizar ahora" cuando el SW aplica una versión nueva pero `sw-register.js` no pudo recargar solo (modal abierto o input con foco); el caso seguro sigue recargando en silencio, sin cambios. Resumen de novedades una sola vez tras actualizar: catálogo `NOVEDADES_POR_VERSION` (vacío por ahora) comparado contra `config.ultimaVersionVista` (schema v32). Ambos mecanismos son independientes entre sí.
 
 **EDIT.1 (rebanada Apartados) - editar sin destruir una reserva, 2026-08-02**
 Botón "Editar" en la tarjeta; `normalizarApartado(datos, apartadoExistente)` preserva `montoActual`/`recurrente`/`periodoMeses` y recalcula `completado` contra el objetivo nuevo. Mismo patrón que EDIT.1a validó en Metas. Inversión y Me deben siguen pendientes de la misma tarjeta.
@@ -36,9 +39,6 @@ D4 del [ADR 033](DECISIONS/033-direccion-visual-premium.md), independiente de DV
 
 **DV.2b - riqueza visual piloto: formas orgánicas + patrón, 2026-08-01**
 D3 del [ADR 033](DECISIONS/033-direccion-visual-premium.md), desbloqueada al cerrar DV.2a. Pipeline de `scripts/sync-sprite.py` extendido a `assets/svg/decoracion/` (prefijo `d-`, viewBox propio en vez de forzar 24x24); clase `.decor` (posición absoluta, opacidad 6%, teñida por `--fk-section-color`, `z-index: -1` contenido por `isolation: isolate` en el hero) y patrón `--fk-pattern-dots`. Piloto acotado: 2 heroes (`.hero-inicio` con `d-blob`, `.hero-tesoreria` con `d-onda`) y 2 empty states (Metas, Deudas) con `.pattern-dots`.
-
-**DV.2a - cierre documental de tokens de superficie/elevación + degradado de identidad, 2026-08-01**
-El código entró en su propio commit (`d8a7d53`, 2026-07-31) sin cierre documental. Escala de elevación de 4 niveles ([ADR 033](DECISIONS/033-direccion-visual-premium.md) D1): `.card`/`.bento__cell`/`.list-item` ganan sombra en reposo en ambos temas, doble capa en claro. `--fk-grad-identity` (D2) consolida el degradado que 6 heroes copiaban a mano. Sin cambios de código en este cierre.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 
