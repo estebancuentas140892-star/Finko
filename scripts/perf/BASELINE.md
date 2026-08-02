@@ -151,4 +151,14 @@ Verificado: 2257/2257 unit (5 tests nuevos: `formateadorFecha` + equivalencia de
 
 **Validación:** 2265/2265 unit (4 tests nuevos en `tests/unit/analisis.test.js`) + 155/155 E2E en Chromium real + `pnpm perf`. SW v338 → v339.
 
-> Queda **PERF.7c** (warm-up en `requestIdleCallback` del bundle de Análisis y `movimientosCompletos`). Con PERF.7d cerrada, PERF.7 queda completa salvo esa. Ver [BOARD.md](../../docs/BOARD.md).
+---
+
+## PERF.7c (2026-08-01): warm-up en idle del bundle de Análisis y `movimientosCompletos`
+
+**Cambio:** `bootstrap.js`, tras `renderAll()`, agenda un `requestIdleCallback` (fallback `setTimeout` para navegadores sin soporte, ej. Safari) que llama a dos funciones nuevas: `precalentarAnalisis()` ([analisis/view.js](../../modules/dominio/analisis/view.js)) y `precalentarMovimientos()` ([movimientos/view.js](../../modules/dominio/movimientos/view.js)). Ambas solo invocan los memos ya existentes de PERF.2 (`_calcularDatosAnalisisMemo`, `_movimientosCompletosMemo`) con los mismos argumentos que sus respectivos renders reales; no tocan el DOM. Cierra **PERF.7** completo.
+
+**Por qué no hacía falta infra nueva:** los memos de PERF.2/PERF.7a-d ya cachean 1 entrada por firma de argumentos. Llamar a la función memoizada una vez en idle, con los mismos argumentos que el render real usará después, deja la caché tibia sin duplicar lógica: si el usuario navega a Análisis o a Movimientos antes de que el idle callback corra, el render real paga el cómputo frío una sola vez igual (no hay condición de carrera dañina, solo se pierde el warm-up de esa navegación puntual).
+
+**Medición:** no aplica una fila nueva a la tabla de `bench.perf.js`: el harness mide llamadas directas a los renders (sin pasar por `bootstrap.js`), así que no ejercita el `requestIdleCallback`. El beneficio es de latencia percibida en la primera navegación real (evita el costo frío ya documentado en PERF.2/PERF.7a: hasta ~11-48 ms a 10.000 gastos antes de esas optimizaciones), no un número nuevo de este harness.
+
+**Validación:** 3583/3583 unit (6 tests nuevos: 3 en `tests/unit/analisis.test.js` para `precalentarAnalisis()`, 3 en `tests/unit/movimientos.test.js` para `precalentarMovimientos()`; cubren no-throw sin contenedor, que no tocan el DOM, y que precalentar antes de renderizar no cambia el resultado) + 253/253 E2E en Chromium real + `pnpm perf` sin regresión. SW v467 → v470 (bump compartido con DV.2b/DV.2c, en curso en paralelo).

@@ -10,6 +10,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### perf(rendimiento): PERF.7c, warm-up de derivaciones pesadas en idle · 2026-08-01
+
+Cierra **PERF.7** completo. Commit `156aa88`. Detalle: [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md).
+
+- `bootstrap.js`, tras `renderAll()`, agenda un `requestIdleCallback` (fallback `setTimeout` sin soporte, ej. Safari) que llama a `precalentarAnalisis()` y `precalentarMovimientos()`, nuevas en cada `view.js`. Ambas solo invocan los memos ya existentes de PERF.2 con los mismos argumentos que sus renders reales; no tocan el DOM.
+- Sin infra nueva: los memos de 1 entrada ya cacheaban por firma de argumentos, así que precalentar en idle es solo llamarlos una vez antes de que el usuario navegue.
+- 6 tests unitarios nuevos (3 por función: no lanza sin contenedor, no toca el DOM, precalentar no cambia el resultado del render posterior). 3583 unit + 253 E2E + lint verdes. SW v467 a v470 (bump compartido con DV.2b/DV.2c, en curso en paralelo).
+
 ### feat(diseno): DV.2c, cascada de listas + resaltado de fila + retiro de bucles infinitos · 2026-08-01
 
 D4 del [ADR 033](DECISIONS/033-direccion-visual-premium.md), independiente de DV.2a/b. Ficha: [`contexto/sistema-visual.md`](contexto/sistema-visual.md). Commits `680b0f0`; la cascada, el resaltado y la doctrina de DESIGN_SYSTEM.md ya habían entrado sin atribución en `ac10202`/`b03ca88` (misma condición de carrera de staging concurrente con la sesión de DV.2b que también los afectó a ellos, ver `1e21397`).
