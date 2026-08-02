@@ -235,7 +235,7 @@ EventBus.emit('state:change', { section: 'gastos' });
 EventBus.on('state:change', ({ section }) => renderSmart(renderGastos, section));
 ```
 
-Los 9 eventos reales del sistema (verificados contra el código el 2026-07-24; no hay otros):
+Los 10 eventos reales del sistema (verificados contra el código el 2026-08-02; no hay otros):
 
 | Evento | Quién lo emite | Quién lo escucha |
 |---|---|---|
@@ -245,6 +245,7 @@ Los 9 eventos reales del sistema (verificados contra el código el 2026-07-24; n
 | `onboarding:completado` | `ui/onboarding.js` al cerrar el wizard | `bootstrap.js` |
 | `distribucion:aplicar` | `tesoreria/index.js` al confirmar "Distribuir mi ingreso" | `ahorro/`, `metas/`, `apartados/`, `inversiones/`, `compromisos/` (cada uno aplica su porción de `items` y descuenta la cuenta de origen) |
 | `distribuir:abrir` | `agenda/index.js` y `tesoreria/acciones/distribucion.js` | `tesoreria/index.js` (abre el asistente de distribución desde otra sección sin importarla) |
+| `lote:abrir` | `compromisos/index.js` desde el bloque "Pendientes del mes" de Inicio (CAL.5b), con `{ mes: 'YYYY-MM' }` | `agenda/index.js` (abre el modal de pago en lote sin navegar; el set de pagos lo decide Agenda, su dueña) |
 | `cuenta:crear` | `infra/cuenta-helper.js` y `ui/actions.js` cuando una acción necesita una cuenta y no hay ninguna | `tesoreria/acciones/cuentas.js` (abre el formulario de cuenta nueva) |
 | `storage:cuota` | `core/storage.js` cuando el uso de `localStorage` deja de estar en nivel `ok` | `config/index.js` (aviso de cuota en Ajustes) |
 | `storage:error` | `core/storage.js` cuando un guardado falla | `config/index.js` (aviso de error de persistencia) |

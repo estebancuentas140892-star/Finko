@@ -7,6 +7,7 @@
  */
 
 import { TIPOS_COMPROMISO, esDeuda } from './modelo.js';
+import { estadoPagoMes } from './abonos.js';
 
 // ── DETECTORES DE ALERTA (G.1) ───────────────────────────────────
 
@@ -255,6 +256,36 @@ export function detectarVencidosCompletos(compromisos, hoyISO, config = {}) {
   // Más urgentes primero (mayor atraso).
   out.sort((a, b) => b.diasAtraso - a.diasAtraso);
   return out;
+}
+
+/**
+ * Vencidos del mes que además siguen **sin cubrir** (CAL.5b).
+ *
+ * `detectarVencidosCompletos` solo mira el calendario: día de pago contra hoy.
+ * No sabe si el usuario ya pagó, así que "Pendientes del mes" en Inicio seguía
+ * listando lo pagado y su CTA de pago en lote habría ofrecido registrar dos
+ * veces el mismo dinero. Este envoltorio le cruza el estado de pago del mes,
+ * que ya calcula `estadoPagoMes` de este mismo dominio (una deuda con abono
+ * parcial sigue pendiente: solo sale de la lista cuando queda en 'completo').
+ *
+ * No sustituye a `detectarVencidosCompletos`: el nudge de mora y las alertas
+ * siguen razonando sobre el calendario puro.
+ *
+ * @param {import('../../../core/state.js').Compromiso[]} compromisos
+ * @param {import('../../../core/state.js').Gasto[]} gastos
+ * @param {string} hoyISO YYYY-MM-DD
+ * @param {object} [config] Igual que `detectarVencidosCompletos`.
+ * @returns {ReturnType<typeof detectarVencidosCompletos>}
+ */
+export function vencidosSinPagar(compromisos, gastos, hoyISO, config = {}) {
+  const vencidos = detectarVencidosCompletos(compromisos, hoyISO, config);
+  if (vencidos.length === 0) return [];
+
+  const prefijoMes = typeof hoyISO === 'string' ? hoyISO.slice(0, 7) : '';
+  if (prefijoMes.length !== 7) return vencidos;
+
+  const porId = new Map(compromisos.map(c => [c?.id, c]));
+  return vencidos.filter(v => estadoPagoMes(gastos, porId.get(v.id), prefijoMes) !== 'completo');
 }
 
 /**

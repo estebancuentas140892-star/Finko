@@ -813,6 +813,14 @@ export function initCompromisos() {
   registrarAccion('aplicar-consolidacion',   _aplicarConsolidacion);
   registrarAccion('comp-elegir-tipo',        _elegirTipoDeuda);
 
+  // CAL.5b: "Pagar los N" de "Pendientes del mes". El lote es de Agenda (su
+  // set, su modal, su escritura); acá solo se avisa, sin importar ese dominio
+  // (ADN #10) y sin navegar. El mes es el actual: el panel de Inicio no
+  // navega meses, siempre habla del mes en curso.
+  registrarAccion('inicio-pagar-lote', () => {
+    EventBus.emit('lote:abrir', { mes: hoy().slice(0, 7) });
+  });
+
   // D.16a (ADR 036 D7): el ojo del hero de Deudas comparte el flag
   // S.config.ocultarSaldo con el ojo de Inicio (IN.2) y el de Mis cuentas
   // (MC.18a): un solo control de privacidad en toda la app. El flip con
@@ -859,9 +867,14 @@ export function initCompromisos() {
     if (section === 'compromisos') {
       renderBannerProposito('compromisos', S.compromisos.some(c => esDeuda(c.tipo)));
       renderSmart(_renderTodo, 'compromisos');
-      // El dashboard también depende de compromisos: si el usuario crea/edita/
-      // elimina uno y luego vuelve a #dash, el panel debe reflejarlo. renderSmart
-      // corta si la sección activa no es 'dash', así que es barato llamarlo siempre.
+    }
+    // El dashboard también depende de compromisos: si el usuario crea/edita/
+    // elimina uno y luego vuelve a #dash, el panel debe reflejarlo. renderSmart
+    // corta si la sección activa no es 'dash', así que es barato llamarlo siempre.
+    // CAL.5b suma 'gastos': "Pendientes del mes" ahora esconde lo ya pagado
+    // (`vencidosSinPagar`), así que registrar un pago desde el lote o desde el
+    // calendario tiene que repintarlo. Pagar un fijo no toca `compromisos`.
+    if (section === 'compromisos' || section === 'gastos') {
       renderSmart(_renderDashboardPanels, 'dash');
     }
   });

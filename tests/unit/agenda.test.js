@@ -1948,11 +1948,8 @@ describe('pendientesDePagoDelMes (CAL.5a)', () => {
     expect(r[0].dia).toBe(15);
   });
 
-  it('ignora deudas e ingresos: la rebanada solo paga gastos fijos', () => {
-    const comps = [
-      compromisoBase({ id: 'd1', tipo: 'deuda-entidad', diaPago: 5, cuotaMensual: 300_000, monto: undefined }),
-      compromisoBase({ id: 'a',  diaPago: 5 }),
-    ];
+  it('ignora los días de ingreso: no son dinero a pagar (ADR 021)', () => {
+    const comps   = [compromisoBase({ id: 'a', diaPago: 5 })];
     const eventos = eventosDelMes(comps, 2026, 5);
     const ing = eventosIngresosDelMes(
       [{ id: 'i1', descripcion: 'Salario', monto: 2_000_000, frecuencia: 'Mensual', diaPago: 5, activo: true }],
@@ -1978,6 +1975,105 @@ describe('pendientesDePagoDelMes (CAL.5a)', () => {
     expect(pendientesDePagoDelMes({}, [], 'basura', '2026-06-15')).toEqual([]);
     expect(pendientesDePagoDelMes({}, [], '2026-06', 'basura')).toEqual([]);
     expect(pendientesDePagoDelMes({}, [], '2026-13', '2026-06-15')).toEqual([]);
+  });
+
+  it('marca el tipo de cada pendiente (la vista lo necesita para el subtítulo)', () => {
+    const comps = [compromisoBase({ id: 'a', diaPago: 5 })];
+    const r = pendientesDePagoDelMes(eventosDelMes(comps, 2026, 5), [], '2026-06', '2026-06-15');
+    expect(r[0]).toMatchObject({ tipo: 'fijo', parcial: false });
+  });
+});
+
+// ── CAL.5b: LAS DEUDAS TAMBIÉN ENTRAN AL LOTE ────────────────────
+
+describe('pendientesDePagoDelMes con deudas (CAL.5b)', () => {
+  const deuda = (over = {}) => compromisoBase({
+    id:           'd1',
+    descripcion:  'Tarjeta Visa',
+    tipo:         'deuda-entidad',
+    monto:        undefined,
+    cuotaMensual: 300_000,
+    saldoTotal:   2_000_000,
+    diaPago:      5,
+    ...over,
+  });
+
+  it('incluye la deuda vencida por su cuota mensual, no por su saldo', () => {
+    const r = pendientesDePagoDelMes(eventosDelMes([deuda()], 2026, 5), [], '2026-06', '2026-06-15');
+    expect(r).toHaveLength(1);
+    expect(r[0]).toMatchObject({ id: 'd1', monto: 300_000, tipo: 'deuda-entidad', parcial: false });
+  });
+
+  it('incluye también la deuda personal', () => {
+    const r = pendientesDePagoDelMes(
+      eventosDelMes([deuda({ id: 'd2', tipo: 'deuda-personal' })], 2026, 5), [], '2026-06', '2026-06-15',
+    );
+    expect(r.map(p => p.id)).toEqual(['d2']);
+  });
+
+  it('un abono parcial del mes deja SOLO el resto de la cuota, marcado como parcial', () => {
+    const gastos = [{ id: 'g1', compromisoId: 'd1', fecha: '2026-06-07', monto: 100_000 }];
+    const r = pendientesDePagoDelMes(eventosDelMes([deuda()], 2026, 5), gastos, '2026-06', '2026-06-15');
+    expect(r).toHaveLength(1);
+    expect(r[0]).toMatchObject({ monto: 200_000, parcial: true });
+  });
+
+  it('un abono que cubre la cuota la saca del lote', () => {
+    const gastos = [{ id: 'g1', compromisoId: 'd1', fecha: '2026-06-07', monto: 300_000 }];
+    const r = pendientesDePagoDelMes(eventosDelMes([deuda()], 2026, 5), gastos, '2026-06', '2026-06-15');
+    expect(r).toEqual([]);
+  });
+
+  it('varios abonos del mes se suman antes de decidir el resto', () => {
+    const gastos = [
+      { id: 'g1', compromisoId: 'd1', fecha: '2026-06-07', monto: 100_000 },
+      { id: 'g2', compromisoId: 'd1', fecha: '2026-06-09', monto: 120_000 },
+    ];
+    const r = pendientesDePagoDelMes(eventosDelMes([deuda()], 2026, 5), gastos, '2026-06', '2026-06-15');
+    expect(r[0].monto).toBe(80_000);
+  });
+
+  it('la última cuota se topa al saldo pendiente, nunca lo supera', () => {
+    const r = pendientesDePagoDelMes(
+      eventosDelMes([deuda({ saldoTotal: 120_000 })], 2026, 5), [], '2026-06', '2026-06-15',
+    );
+    expect(r[0].monto).toBe(120_000);
+  });
+
+  it('una deuda saldada no aparece aunque su día ya pasó', () => {
+    const r = pendientesDePagoDelMes(
+      eventosDelMes([deuda({ saldoTotal: 0 })], 2026, 5), [], '2026-06', '2026-06-15',
+    );
+    expect(r).toEqual([]);
+  });
+
+  it('una deuda sin cuota mensual (fiado, D.13) no entra al lote', () => {
+    const r = pendientesDePagoDelMes(
+      eventosDelMes([deuda({ cuotaMensual: 0 })], 2026, 5), [], '2026-06', '2026-06-15',
+    );
+    expect(r).toEqual([]);
+  });
+
+  it('mezcla fijos y deudas ordenados por día', () => {
+    const comps = [
+      deuda({ id: 'd1', diaPago: 10 }),
+      compromisoBase({ id: 'a', descripcion: 'Arriendo', diaPago: 3, monto: 900_000 }),
+    ];
+    const r = pendientesDePagoDelMes(eventosDelMes(comps, 2026, 5), [], '2026-06', '2026-06-15');
+    expect(r.map(p => p.id)).toEqual(['a', 'd1']);
+  });
+
+  it('respeta la misma regla temporal que los fijos: nada del mes futuro', () => {
+    const r = pendientesDePagoDelMes(eventosDelMes([deuda()], 2026, 6), [], '2026-07', '2026-06-15');
+    expect(r).toEqual([]);
+  });
+
+  it('una deuda quincenal aparece una sola vez y por una sola cuota', () => {
+    const r = pendientesDePagoDelMes(
+      eventosDelMes([deuda({ frecuencia: 'Quincenal', diaPago: 5 })], 2026, 5), [], '2026-06', '2026-06-30',
+    );
+    expect(r).toHaveLength(1);
+    expect(r[0]).toMatchObject({ monto: 300_000, dia: 5 });
   });
 });
 
@@ -2094,5 +2190,28 @@ describe('renderFormPagoLote (CAL.5a)', () => {
     expect(document.querySelector('[data-action="agenda-confirmar-lote"]')).not.toBeNull();
     expect(document.querySelector('[data-role="lote-cta-texto"]')).not.toBeNull();
     expect(document.querySelector('[data-role="lote-total"]')).not.toBeNull();
+  });
+
+  // CAL.5b: el modal ya no habla solo de gastos fijos.
+  it('una fila de deuda dice que es la cuota, y el intro avisa que baja el saldo', () => {
+    document.body.innerHTML = renderFormPagoLote([
+      { id: 'd1', descripcion: 'Visa', monto: 300_000, dia: 5, tipo: 'deuda-entidad', parcial: false },
+    ]);
+    expect(document.querySelector('.lote-row__sub').textContent).toBe('Cuota de la deuda, vencía el 5');
+    expect(document.querySelector('.lote-intro').textContent).toContain('baja su saldo');
+  });
+
+  it('una deuda con abono previo dice que es el resto de la cuota', () => {
+    document.body.innerHTML = renderFormPagoLote([
+      { id: 'd1', descripcion: 'Visa', monto: 200_000, dia: 5, tipo: 'deuda-personal', parcial: true },
+    ]);
+    expect(document.querySelector('.lote-row__sub').textContent).toBe('Resto de la cuota, vencía el 5');
+  });
+
+  it('sin deudas el intro no menciona saldos', () => {
+    document.body.innerHTML = renderFormPagoLote([
+      { id: 'a', descripcion: 'Arriendo', monto: 900_000, dia: 5, tipo: 'fijo', parcial: false },
+    ]);
+    expect(document.querySelector('.lote-intro').textContent).not.toContain('saldo');
   });
 });

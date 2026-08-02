@@ -22,6 +22,7 @@ import {
   detectarFijosSinPagarEsteMes,
   detectarDeudasDurmiendo,
   detectarVencidosCompletos,
+  vencidosSinPagar,
   agruparPorDiasRestantes,
   sumarMontos,
   aplicarAbonoASaldo,
@@ -1710,6 +1711,43 @@ describe('detectarVencidosCompletos', () => {
   });
 });
 
+// ── vencidosSinPagar (CAL.5b) ─────────────────────────────────────
+
+describe('vencidosSinPagar', () => {
+  const fijo = { id: 'f1', descripcion: 'Arriendo', tipo: 'fijo', monto: 900_000,
+                 activo: true, diaPago: 5, frecuencia: 'Mensual' };
+  const deuda = { id: 'd1', descripcion: 'Visa', tipo: 'deuda-entidad', cuotaMensual: 300_000,
+                  saldoTotal: 2_000_000, activo: true, diaPago: 5, frecuencia: 'Mensual' };
+
+  it('sin gastos devuelve lo mismo que detectarVencidosCompletos', () => {
+    expect(vencidosSinPagar([fijo, deuda], [], '2026-06-15').map(v => v.id))
+      .toEqual(detectarVencidosCompletos([fijo, deuda], '2026-06-15').map(v => v.id));
+  });
+
+  it('esconde el fijo que ya tiene un gasto vinculado este mes', () => {
+    const gastos = [{ id: 'g1', compromisoId: 'f1', fecha: '2026-06-05', monto: 900_000 }];
+    expect(vencidosSinPagar([fijo, deuda], gastos, '2026-06-15').map(v => v.id)).toEqual(['d1']);
+  });
+
+  it('un gasto de otro mes no esconde nada', () => {
+    const gastos = [{ id: 'g1', compromisoId: 'f1', fecha: '2026-05-05', monto: 900_000 }];
+    expect(vencidosSinPagar([fijo], gastos, '2026-06-15').map(v => v.id)).toEqual(['f1']);
+  });
+
+  it('la deuda con abono PARCIAL sigue pendiente; solo sale cuando cubre la cuota', () => {
+    const parcial = [{ id: 'g1', compromisoId: 'd1', fecha: '2026-06-07', monto: 100_000 }];
+    expect(vencidosSinPagar([deuda], parcial, '2026-06-15').map(v => v.id)).toEqual(['d1']);
+
+    const completo = [{ id: 'g1', compromisoId: 'd1', fecha: '2026-06-07', monto: 300_000 }];
+    expect(vencidosSinPagar([deuda], completo, '2026-06-15')).toEqual([]);
+  });
+
+  it('tolera entradas inválidas y hoyISO sin forma de fecha', () => {
+    expect(vencidosSinPagar([], [], '2026-06-15')).toEqual([]);
+    expect(vencidosSinPagar([fijo], null, '2026-06-15').map(v => v.id)).toEqual(['f1']);
+  });
+});
+
 // ── agruparPorDiasRestantes ───────────────────────────────────────
 
 describe('agruparPorDiasRestantes', () => {
@@ -2636,6 +2674,40 @@ describe('renderPanelVencidos() - jerarquía real sin línea roja (IN.8e, ADR 03
     expect(html).toContain('href="#agenda"');
     expect(html).not.toContain('href="#compromisos"');
     expect(html).toContain('aria-label="Ir al calendario"');
+  });
+
+  // ── CAL.5b: pagar el lote desde Inicio ──────────────────────────
+
+  it('con 2 o más pendientes ofrece "Pagar los N" con la acción del lote', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'c1', descripcion: 'Arriendo', tipo: 'fijo', diaPago: PASADO_FIJO }),
+      compromisoBase({ id: 'c2', descripcion: 'Netflix',  tipo: 'fijo', diaPago: HOY_FIJO }),
+    ];
+    renderPanelVencidos();
+    const btn = document.querySelector('.vencidos-card__pagar');
+    expect(btn).not.toBeNull();
+    expect(btn.dataset.action).toBe('inicio-pagar-lote');
+    expect(btn.textContent.trim()).toBe('Pagar los 2');
+  });
+
+  it('con un solo pendiente no ofrece el lote (no ahorra nada)', () => {
+    S.compromisos = [compromisoBase({ id: 'c1', tipo: 'fijo', diaPago: PASADO_FIJO })];
+    renderPanelVencidos();
+    expect(document.querySelector('.vencidos-card__pagar')).toBeNull();
+  });
+
+  it('lo ya pagado este mes no se lista ni cuenta para el CTA', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'c1', descripcion: 'Arriendo', tipo: 'fijo', diaPago: PASADO_FIJO }),
+      compromisoBase({ id: 'c2', descripcion: 'Netflix',  tipo: 'fijo', diaPago: HOY_FIJO }),
+    ];
+    S.gastos = [{ id: 'g1', compromisoId: 'c1', fecha: '2026-07-13', monto: 900_000 }];
+    renderPanelVencidos();
+    const html = document.getElementById('panel-vencidos').innerHTML;
+    expect(html).not.toContain('Arriendo');
+    expect(html).toContain('Netflix');
+    expect(document.querySelector('.vencidos-card__pagar')).toBeNull();
+    S.gastos = [];
   });
 });
 

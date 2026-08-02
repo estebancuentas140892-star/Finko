@@ -2408,6 +2408,30 @@ button.chip:focus-visible {
   color: var(--fk-text-primary);
 }
 
+/* CAL.5b: pagar en lote desde Inicio. Misma piel que `.cal-lote__cta` del
+   Calendario (indigo de agenda, 44px): es literalmente el mismo flujo, abierto
+   desde otra pantalla, y compartir la piel evita que se lea como otra cosa. */
+.vencidos-card__pagar {
+  display: block;
+  width: calc(100% - 2rem);
+  margin: 0 1rem 1rem;
+  min-height: 44px;
+  padding: 0 var(--fk-space-5);
+  border-radius: var(--fk-radius-md);
+  border: 1.5px solid color-mix(in srgb, var(--fk-dom-agenda) 40%, transparent);
+  background: var(--fk-dom-agenda-bg);
+  color: var(--fk-dom-agenda-text);
+  font-family: var(--fk-font-sans);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-bold);
+  cursor: pointer;
+}
+
+.vencidos-card__pagar:hover {
+  background: color-mix(in srgb, var(--fk-dom-agenda) 20%, transparent);
+  border-color: color-mix(in srgb, var(--fk-dom-agenda) 60%, transparent);
+}
+
 /* ════════════════════════════════════════════════════════════
    PRIORIDADES-CARD - compromisos próximos 7 días agrupados por día.
    Reemplaza Card Hoy: fusiona HOY + próximos en una sola vista.

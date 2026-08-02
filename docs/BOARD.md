@@ -48,7 +48,6 @@ Las 35 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 |---|---|---|---|---|
 | IN.9e | Estado vacío propio de escritorio | Inicio | baja | nada; el copy queda provisional (PI5) |
 | INT.1 | Barra superior de escritorio y carril de urgencias | Transversal | media | requiere ADR; bloquea ID4 e ID7 de Inicio |
-| CAL.5b | El lote también cubre deudas, y se ofrece desde Inicio | Calendario | media | nada |
 | MC.13 | Distribución v2: contextual por fecha, guiada y con origen real | Mis cuentas | alta | nada |
 | MC.13e-2g | Rediseño en 2 pasos con educación financiera | Mis cuentas | media | última; depende del handoff de diseño |
 | MC.17f | Deshacer o editar una transferencia | Mis cuentas | media | coordinar con MOV.1 |
@@ -108,15 +107,6 @@ Las 35 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 - Modelo     : bajo
 
 ### Calendario (dominio `agenda`)
-
-#### CAL.5b - El lote también cubre deudas, y se ofrece desde Inicio
-- Prioridad  : media
-- Estado     : pendiente. Continúa **CAL.5a** (cerrada, ver CHANGELOG). Secuencia "lote manual antes que PA.1" ya decidida por Esteban.
-- Objetivo   : dos ampliaciones del mismo flujo, no un mecanismo nuevo: (1) sumar deudas al lote y (2) ofrecer el lote desde el bloque de vencidos de Inicio sin navegar. Detalle técnico (por qué el filtro actual, qué reusar) en la ficha [`contexto/calendario.md`](contexto/calendario.md).
-- Secciones  : Calendario, Inicio (vencidos), Deudas, Mis cuentas (descuento)
-- Archivos   : `modules/dominio/agenda/logic.js` + `index.js`, `modules/dominio/compromisos/views/dashboard.js`, `modules/infra/distribuir-pago.js`
-- Depende de : nada (ARQ.2 punto 2 cerrado el 2026-08-02: el helper `infra/pago-compromiso.js` que la parte de deudas necesitaba ya existe)
-- Modelo     : Alta capacidad - Alto (el abono a deuda mueve saldo y patrimonio: el borde de "abono parcial dentro de un lote" hay que decidirlo explícitamente)
 
 _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI Calendario" ya tienen fuente única y no generan tarjeta aquí. Tinte de color en las tarjetas de evento → **IV.2c**; logos de marca en eventos → [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md); picker de icono y categorías personalizadas reutilizables → iniciativa **CAT** en Transversal.)_
 

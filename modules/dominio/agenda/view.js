@@ -311,7 +311,8 @@ function _renderHeroMes(eventos, year, month, prefijoMes) {
  * La descripción se queda con la lista de nombres; el "eligiendo la cuenta una
  * sola vez" ya lo explica el modal.
  *
- * @param {Array<{id:string, descripcion:string, monto:number, dia:number}>} pendientes
+ * @param {Array<{id:string, descripcion:string, monto:number, dia:number,
+ *   tipo:string, parcial:boolean}>} pendientes
  * @param {string} prefijoMes 'YYYY-MM' del mes visible (viaja al handler, que
  *   no conoce `_viewYear`/`_viewMonth`, mismo patrón que BUG-015).
  * @returns {string}
@@ -336,10 +337,26 @@ function _renderLoteCard(pendientes, prefijoMes) {
       </div>
       <button type="button" class="cal-lote__cta"
               data-action="agenda-pagar-lote" data-mes="${_esc(prefijoMes)}"
-              aria-label="Pagar juntos los ${n} gastos fijos vencidos">
+              aria-label="Pagar juntos los ${n} pagos vencidos">
         Pagar los ${n}
       </button>
     </section>`;
+}
+
+/**
+ * Subtítulo de una fila del lote: qué es lo que se va a registrar, no solo
+ * cuándo vencía. Un fijo se paga entero; una deuda puede traer el resto de la
+ * cuota (ya tenía un abono este mes) o el resto del saldo (última cuota).
+ *
+ * @param {{dia:number, tipo:string, parcial:boolean}} p
+ * @returns {string}
+ */
+function _subFilaLote(p) {
+  const cuando = `vencía el ${p.dia}`;
+  if (p.tipo !== 'deuda-entidad' && p.tipo !== 'deuda-personal') {
+    return `Vencía el ${p.dia}`;
+  }
+  return p.parcial ? `Resto de la cuota, ${cuando}` : `Cuota de la deuda, ${cuando}`;
 }
 
 /**
@@ -351,23 +368,37 @@ function _renderLoteCard(pendientes, prefijoMes) {
  * mover ese dinero y ocultarle cuánto sería peligroso, no privado. El mismo
  * criterio con que los formularios de gasto nunca enmascaran lo que se escribe.
  *
- * @param {Array<{id:string, descripcion:string, monto:number, dia:number}>} pendientes
+ * CAL.5b: el lote también trae deudas, y una deuda no siempre pide la cuota
+ * completa (puede quedar el resto de un abono previo, o el resto del saldo).
+ * La fila lo dice en su subtítulo en vez de mostrar una cifra sin explicar, y
+ * el intro avisa que un abono baja el saldo de la deuda: es un movimiento con
+ * más consecuencias que pagar un fijo.
+ *
+ * @param {Array<{id:string, descripcion:string, monto:number, dia:number,
+ *   tipo:string, parcial:boolean}>} pendientes
  * @returns {string}
  */
 export function renderFormPagoLote(pendientes) {
-  const items = (pendientes ?? []).map(p => `
+  const lista = pendientes ?? [];
+
+  const items = lista.map(p => `
     <label class="lote-row">
       <input type="checkbox" class="lote-row__check" checked
              data-lote-id="${_esc(p.id)}" data-lote-monto="${Number(p.monto) || 0}" />
       <span class="lote-row__body">
         <span class="lote-row__name">${_esc(p.descripcion || 'Sin nombre')}</span>
-        <span class="lote-row__sub">Vencía el ${p.dia}</span>
+        <span class="lote-row__sub">${_subFilaLote(p)}</span>
       </span>
       <span class="lote-row__amount">${f(Number(p.monto) || 0)}</span>
     </label>`).join('');
 
+  const hayDeudas = lista.some(p => p.tipo === 'deuda-entidad' || p.tipo === 'deuda-personal');
+  const intro = hayDeudas
+    ? 'Estos pagos ya vencieron y no están registrados. Lo que abones a una deuda baja su saldo. Desmarca los que aún no hayas pagado.'
+    : 'Estos pagos ya vencieron y no están registrados. Desmarca los que aún no hayas pagado.';
+
   return `
-    <p class="lote-intro">Estos gastos fijos ya vencieron y no están registrados. Desmarca los que aún no hayas pagado.</p>
+    <p class="lote-intro">${intro}</p>
     <div class="lote-lista">${items}</div>
     <p class="lote-total" data-role="lote-total" aria-live="polite"></p>
     <div class="modal__footer modal__footer--principal">

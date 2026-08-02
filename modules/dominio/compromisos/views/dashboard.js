@@ -14,7 +14,7 @@ import { icon, iconoCategoria } from '../../../infra/icons.js';
 import {
   compromisosActivos,
   compromisosProximos,
-  detectarVencidosCompletos,
+  vencidosSinPagar,
   agruparPorDiasRestantes,
   sumarMontos,
   ICONO_TIPO,
@@ -81,13 +81,18 @@ const MAX_VISIBLES = 4;
  * un scroll interno (invisible en movil: el contador decia 5 y se veian 3, sin
  * ninguna pista), sino tras una fila explicita "Ver los N en el calendario".
  *
+ * CAL.5b: la fuente pasa de `detectarVencidosCompletos` (calendario puro) a
+ * `vencidosSinPagar` (además cruza el estado de pago del mes). Sin ese cruce el
+ * panel listaba lo que el usuario ya había pagado, y el CTA nuevo habría
+ * ofrecido registrar dos veces el mismo dinero.
+ *
  * No-op si el contenedor no existe.
  */
 export function renderPanelVencidos() {
   const el = document.getElementById('panel-vencidos');
   if (!el) return;
 
-  const vencidos = detectarVencidosCompletos(S.compromisos, _hoyISOLocal());
+  const vencidos = vencidosSinPagar(S.compromisos, S.gastos, _hoyISOLocal());
 
   if (vencidos.length === 0) {
     el.innerHTML = '';
@@ -137,6 +142,16 @@ export function renderPanelVencidos() {
     ? `<a href="#agenda" class="vencidos-card__ver-mas">Ver los ${n} en el calendario</a>`
     : '';
 
+  // CAL.5b: registrarlos juntos sin ir al calendario. Mismo umbral que la
+  // tarjeta de lote del Calendario (con uno solo el lote no ahorra nada) y el
+  // mismo orden: el total va arriba del boton, nunca dentro (DIS.11 C5).
+  // El evento lo atiende Agenda, que es la duena del lote: aqui no se calcula
+  // ni se escribe nada de dinero.
+  const pagarJuntos = n >= 2
+    ? `<button type="button" class="vencidos-card__pagar" data-action="inicio-pagar-lote"
+               aria-label="Pagar juntos los ${n} pagos vencidos">Pagar los ${n}</button>`
+    : '';
+
   el.innerHTML = `
     <section class="vencidos-card" aria-label="Pendientes del mes">
       <header class="vencidos-card__header">
@@ -155,6 +170,7 @@ export function renderPanelVencidos() {
         <span>Total pendiente de pago</span>
         <span class="vencidos-card__total-amount">${total}</span>
       </p>
+      ${pagarJuntos}
     </section>`;
 }
 

@@ -15,6 +15,14 @@
 
 import { ocurrenciasEnMes } from '../../infra/vencimientos.js';
 
+/**
+ * Los dos tipos de compromiso que se abonan contra `saldoTotal`. Copia local
+ * y deliberada de `TIPOS_COMPROMISO` de Compromisos (ADN #10: `agenda/logic.js`
+ * no importa de otro dominio), mismo criterio que el orden canónico hardcodeado
+ * en `tiposPresentesEnMes`.
+ */
+const TIPOS_DEUDA = ['deuda-entidad', 'deuda-personal'];
+
 // ── API PÚBLICA ──────────────────────────────────────────────────
 
 /**
@@ -219,8 +227,8 @@ export function totalesDelMes(eventos, gastos, prefijoMes) {
 }
 
 /**
- * Gastos fijos del mes visible que ya vencieron y siguen sin pagar (CAL.5a):
- * la lista que alimenta el pago en lote.
+ * Compromisos del mes visible que ya vencieron y siguen sin cubrir (CAL.5a,
+ * ampliada a deudas por CAL.5b): la lista que alimenta el pago en lote.
  *
  * Aplica la MISMA regla temporal que "Marcar pagado" individual (BUG-015), para
  * que el lote no pueda registrar nada que el botón de a uno no registraría:
@@ -229,27 +237,39 @@ export function totalesDelMes(eventos, gastos, prefijoMes) {
  * - Mes pasado: todos los pendientes (todos están vencidos).
  * - Mes futuro: ninguno. Finko registra lo que pasó, no lo que va a pasar.
  *
- * Alcance de la rebanada: **solo `tipo === 'fijo'`**. Una deuda se abona contra
- * su `saldoTotal` (aritmética distinta, y de otro dominio), así que el lote de
- * deudas es su propia tarjeta (CAL.5b), no un caso más de este bucle.
+ * Alcance: gastos fijos y deudas (`deuda-entidad`, `deuda-personal`). Los dos
+ * tipos comparten el flujo pero no la aritmética, y esa diferencia se decide
+ * acá, no en el handler (CAL.5b):
  *
- * Un fijo aparece **una sola vez** aunque caiga varias veces en el mes (un
- * quincenal): el estado de pago de un fijo es por mes, no por ocurrencia (lo
- * fija `estadoPagoMes`), así que pagarlo dos veces en el mismo lote registraría
- * un doble cobro. Se conserva la ocurrencia más antigua, que es la vencida.
+ * - **Fijo**: se paga de una vez. Lo que vence es `monto` y cualquier gasto
+ *   vinculado ese mes lo cierra.
+ * - **Deuda**: lo que vence es `cuotaMensual`, y un abono puede ser parcial. El
+ *   lote ofrece **lo que falta de la cuota de este mes**, nunca la cuota
+ *   completa: sumar la cuota entera sobre un abono previo cobraría dos veces.
+ *   Ese faltante se topa además en `saldoTotal` (la última cuota de una deuda
+ *   casi saldada es el resto, mismo criterio que `ajustarMontoAbono`), y una
+ *   deuda ya saldada no aparece.
  *
- * El cruce "ya pagado este mes" se hace aquí y no vía `estadoPagoMes` de
+ * Un compromiso aparece **una sola vez** aunque caiga varias veces en el mes
+ * (un quincenal): el estado de pago es por mes, no por ocurrencia (lo fija
+ * `estadoPagoMes`), así que listarlo dos veces registraría un doble cobro. Se
+ * conserva la ocurrencia más antigua, que es la vencida.
+ *
+ * El cruce "ya cubierto este mes" se hace aquí y no vía `estadoPagoMes` de
  * Compromisos: `agenda/logic.js` no importa de otro dominio (ADN #10), mismo
  * duplicado intencional y por la misma razón que `totalesDelMes` y `totalDia`.
- * Para un fijo el criterio es idéntico: cualquier gasto vinculado ese mes.
+ * El criterio es el mismo que el de `estadoPagoMes`: para un fijo, cualquier
+ * gasto vinculado; para una deuda, abonos que alcancen la cuota del mes.
  *
  * @param {ReturnType<typeof eventosDelMes>} eventos Mapa día → eventos del mes
  *   visible (sirve el ya mergeado con ingresos: se filtran por tipo).
  * @param {Array<{compromisoId?:string, fecha?:string, monto?:number}>} gastos
  * @param {string} prefijoMes 'YYYY-MM' del mes visible.
  * @param {string} hoyISO 'YYYY-MM-DD'.
- * @returns {Array<{id:string, descripcion:string, monto:number, dia:number}>}
- *   Ordenados por día ascendente (lo más vencido primero).
+ * @returns {Array<{id:string, descripcion:string, monto:number, dia:number,
+ *   tipo:string, parcial:boolean}>} `monto` es lo que falta por cubrir (no
+ *   siempre la cuota) y `parcial` marca la deuda que ya tenía un abono este
+ *   mes. Ordenados por día ascendente (lo más vencido primero).
  */
 export function pendientesDePagoDelMes(eventos, gastos, prefijoMes, hoyISO) {
   if (!eventos || typeof eventos !== 'object') return [];
@@ -266,7 +286,7 @@ export function pendientesDePagoDelMes(eventos, gastos, prefijoMes, hoyISO) {
   if (anio > anioHoy || (anio === anioHoy && mes > mesHoy)) return [];
   const esMesEnCurso = anio === anioHoy && mes === mesHoy;
 
-  /** @type {Map<string, {id:string, descripcion:string, monto:number, dia:number}>} */
+  /** @type {Map<string, {id:string, descripcion:string, monto:number, dia:number, tipo:string, tope:number}>} */
   const porId = new Map();
 
   for (const [diaStr, evs] of Object.entries(eventos)) {
@@ -277,10 +297,23 @@ export function pendientesDePagoDelMes(eventos, gastos, prefijoMes, hoyISO) {
 
     for (const c of evs) {
       if (!c || typeof c !== 'object') continue;
-      if ((c.tipo ?? 'fijo') !== 'fijo') continue;
+      // Un compromiso sin `tipo` cuenta como fijo (criterio defensivo, el
+      // mismo de `_renderDots` y `tiposPresentesEnMes`). El día de ingreso
+      // (ADR 021) no es dinero a pagar y no entra.
+      const tipo = c.tipo ?? 'fijo';
+      const deuda = TIPOS_DEUDA.includes(tipo);
+      if (tipo !== 'fijo' && !deuda) continue;
       if (!c.id) continue;
-      const monto = Number(c.monto);
+
+      // Lo que vence este mes: el monto del fijo, la cuota de la deuda
+      // (mismo criterio que `totalDia` y `totalesDelMes`).
+      const monto = Number(deuda ? c.cuotaMensual : c.monto);
       if (!Number.isFinite(monto) || monto <= 0) continue;
+
+      // Una deuda saldada no tiene nada que abonar; su saldo es además el
+      // techo de lo que se puede ofrecer.
+      const tope = deuda ? Number(c.saldoTotal) : Infinity;
+      if (deuda && (!Number.isFinite(tope) || tope <= 0)) continue;
 
       const previo = porId.get(c.id);
       if (!previo) {
@@ -289,6 +322,8 @@ export function pendientesDePagoDelMes(eventos, gastos, prefijoMes, hoyISO) {
           descripcion: c.descripcion ?? '',
           monto,
           dia,
+          tipo,
+          tope,
         });
       } else if (dia < previo.dia) {
         previo.dia = dia;
@@ -298,17 +333,34 @@ export function pendientesDePagoDelMes(eventos, gastos, prefijoMes, hoyISO) {
 
   if (porId.size === 0) return [];
 
-  const pagados = new Set();
+  /** @type {Record<string, number>} Abonado en el mes por compromiso. */
+  const abonos = {};
   for (const g of (Array.isArray(gastos) ? gastos : [])) {
     if (!g || typeof g !== 'object') continue;
     if (!g.compromisoId || !porId.has(g.compromisoId)) continue;
     if (typeof g.fecha !== 'string' || !g.fecha.startsWith(prefijoMes)) continue;
-    if ((Number(g.monto) || 0) > 0) pagados.add(g.compromisoId);
+    const n = Number(g.monto);
+    if (Number.isFinite(n) && n > 0) abonos[g.compromisoId] = (abonos[g.compromisoId] ?? 0) + n;
   }
 
-  return [...porId.values()]
-    .filter(p => !pagados.has(p.id))
-    .sort((a, b) => a.dia - b.dia || a.descripcion.localeCompare(b.descripcion, 'es'));
+  const out = [];
+  for (const p of porId.values()) {
+    const abonado = abonos[p.id] ?? 0;
+
+    // Un fijo se paga de una vez: cualquier gasto vinculado ese mes lo cierra.
+    if (p.tipo === 'fijo') {
+      if (abonado > 0) continue;
+      out.push({ id: p.id, descripcion: p.descripcion, monto: p.monto, dia: p.dia, tipo: p.tipo, parcial: false });
+      continue;
+    }
+
+    // Deuda: se ofrece lo que falta de la cuota, topado al saldo pendiente.
+    const falta = Math.min(p.monto - abonado, p.tope);
+    if (falta <= 0) continue;
+    out.push({ id: p.id, descripcion: p.descripcion, monto: falta, dia: p.dia, tipo: p.tipo, parcial: abonado > 0 });
+  }
+
+  return out.sort((a, b) => a.dia - b.dia || a.descripcion.localeCompare(b.descripcion, 'es'));
 }
 
 /**

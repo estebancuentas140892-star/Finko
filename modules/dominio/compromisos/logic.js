@@ -43,6 +43,7 @@ export {
   detectarFijosSinPagarEsteMes,
   detectarDeudasDurmiendo,
   detectarVencidosCompletos,
+  vencidosSinPagar,
   agruparPorDiasRestantes,
   sumarMontos,
 } from './logic/alertas.js';

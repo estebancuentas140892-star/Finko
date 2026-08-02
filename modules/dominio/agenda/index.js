@@ -24,7 +24,7 @@
 import { S, EventBus } from '../../core/state.js';
 import { save } from '../../core/storage.js';
 import { guardar, editar, eliminar } from '../../infra/crud.js';
-import { gastoDePagoCompromiso } from '../../infra/pago-compromiso.js';
+import { gastoDePagoCompromiso, bajarSaldoDeuda, esCompromisoDeuda } from '../../infra/pago-compromiso.js';
 import { renderSmart, updSaldo } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { registrarAccion } from '../../ui/actions.js';
@@ -356,7 +356,7 @@ async function _marcarPagadoGastoFijo(el) {
     }
   }
 
-  _registrarPagosFijos([{ comp, fecha: fechaPago, partes: splits }]);
+  _registrarPagosCompromisos([{ comp, fecha: fechaPago, partes: splits }]);
 
   renderAgenda();
   updSaldo();
@@ -364,10 +364,11 @@ async function _marcarPagadoGastoFijo(el) {
 }
 
 /**
- * Escribe uno o varios pagos de gastos fijos: un gasto vinculado por cada
- * cuenta usada (`infra/pago-compromiso.js`, ARQ.2 punto 2) + el descuento del
- * saldo de esas cuentas. Compartida por el pago individual ("Marcar pagado")
- * y el pago en lote (CAL.5a).
+ * Escribe uno o varios pagos de compromiso: un gasto vinculado por cada cuenta
+ * usada (`infra/pago-compromiso.js`, ARQ.2 punto 2) + el descuento del saldo de
+ * esas cuentas + la baja de `saldoTotal` si el compromiso es una deuda.
+ * Compartida por el pago individual ("Marcar pagado", solo fijos) y el pago en
+ * lote (CAL.5a; deudas desde CAL.5b).
  *
  * El descuento se acumula por cuenta y se aplica **una sola vez** al final: en
  * un lote la misma cuenta paga varios items, y hacer un `editar` por item
@@ -376,18 +377,26 @@ async function _marcarPagadoGastoFijo(el) {
  * estrategia de batching es propia de Agenda: el helper compartido solo
  * escribe el gasto, nunca toca `cuentas`.
  *
+ * `bajarSaldoDeuda` sí va una vez **por compromiso** y con el total abonado,
+ * aunque ese total se haya repartido en varios gastos: el saldo de la deuda no
+ * se descuenta por split (lo dice su propio contrato). La aritmética del abono
+ * no se reescribe acá: es la misma que usan el abono individual de Deudas y la
+ * distribución de tesorería.
+ *
  * @param {Array<{
  *   comp: import('../../core/state.js').Compromiso,
  *   fecha: string,
  *   partes: Array<{cuentaId:string, monto:number}>,
  * }>} pagos
  */
-function _registrarPagosFijos(pagos) {
+function _registrarPagosCompromisos(pagos) {
   /** @type {Map<string, number>} Total a descontar por cuenta. */
   const porCuenta = new Map();
 
   for (const { comp, fecha, partes } of pagos) {
     const repartido = partes.length > 1;
+    let totalCompromiso = 0;
+
     for (const p of partes) {
       gastoDePagoCompromiso(comp, {
         monto:    p.monto,
@@ -395,9 +404,14 @@ function _registrarPagosFijos(pagos) {
         cuentaId: p.cuentaId,
         nota:     repartido ? 'Pago repartido entre varias cuentas' : '',
       });
+      totalCompromiso += p.monto;
       if (p.cuentaId) {
         porCuenta.set(p.cuentaId, (porCuenta.get(p.cuentaId) ?? 0) + p.monto);
       }
+    }
+
+    if (totalCompromiso > 0 && esCompromisoDeuda(comp)) {
+      bajarSaldoDeuda(comp, totalCompromiso);
     }
   }
 
@@ -407,16 +421,16 @@ function _registrarPagosFijos(pagos) {
   }
 }
 
-// ── HANDLERS: PAGO EN LOTE (CAL.5a) ─────────────────────────────
+// ── HANDLERS: PAGO EN LOTE (CAL.5a, deudas y entrada desde Inicio CAL.5b) ──
 
 /**
- * Gastos fijos vencidos y sin pagar del mes `prefijoMes`, leídos de S.
+ * Compromisos vencidos y sin cubrir del mes `prefijoMes`, leídos de S.
  * Se recalcula en cada paso del flujo (abrir el modal, confirmar) en vez de
  * confiar en lo que el DOM traía: entre una cosa y otra el usuario pudo pagar
  * uno desde el detalle del día, o eliminar el compromiso.
  *
  * @param {string} prefijoMes 'YYYY-MM'
- * @returns {Array<{id:string, descripcion:string, monto:number, dia:number}>}
+ * @returns {ReturnType<typeof pendientesDePagoDelMes>}
  */
 function _pendientesDelMes(prefijoMes) {
   const m = /^(\d{4})-(\d{2})$/.exec(prefijoMes ?? '');
@@ -427,10 +441,16 @@ function _pendientesDelMes(prefijoMes) {
 
 /**
  * Abre el modal del lote con todos los pendientes marcados.
- * @param {HTMLElement} el - CTA con data-mes del mes visible.
+ *
+ * El modal (`#modal-pago-lote`) vive en `index.html`, no dentro de
+ * `#panel-agenda`: se puede abrir sin estar en el Calendario. Esa es la puerta
+ * que usa Inicio (CAL.5b, evento `lote:abrir`) para ofrecer el lote desde su
+ * bloque de vencidos sin navegar.
+ *
+ * @param {string} prefijoMes 'YYYY-MM' del mes a liquidar.
  */
-function _pagarLote(el) {
-  const prefijo    = el?.dataset?.mes || _prefijoMesActual();
+function _abrirLote(prefijoMes) {
+  const prefijo    = prefijoMes || _prefijoMesActual();
   const pendientes = _pendientesDelMes(prefijo);
 
   if (pendientes.length === 0) {
@@ -448,6 +468,14 @@ function _pagarLote(el) {
   body.dataset.mes = prefijo;
   _actualizarTotalLote();
   abrirModal(overlay);
+}
+
+/**
+ * CTA de la tarjeta del lote en el Calendario.
+ * @param {HTMLElement} el - botón con data-mes del mes visible.
+ */
+function _pagarLote(el) {
+  _abrirLote(el?.dataset?.mes || _prefijoMesActual());
 }
 
 /**
@@ -496,6 +524,11 @@ function _actualizarTotalLote() {
  * La fecha de cada pago sigue la regla de BUG-015 (`_fechaPagoDelMes`): mes en
  * curso → hoy; mes pasado → la ocurrencia de ese mes. El descuento de las
  * cuentas ocurre ahora en ambos casos (ver la nota de `_marcarPagadoGastoFijo`).
+ *
+ * CAL.5b: los items pueden ser deudas. El monto de cada fila ya viene resuelto
+ * por `pendientesDePagoDelMes` (lo que falta de la cuota del mes, topado al
+ * saldo), así que acá no hay una segunda aritmética de deuda; la baja de
+ * `saldoTotal` la aplica `_registrarPagosCompromisos` con el helper compartido.
  *
  * El modal se cierra ANTES de pedir la cuenta: el selector es otro overlay con
  * su propio `trapFocus`, y apilarlos dejaría el foco atrapado en el de abajo al
@@ -558,7 +591,7 @@ async function _confirmarLote() {
   }
   if (pagos.length === 0) return;
 
-  _registrarPagosFijos(pagos);
+  _registrarPagosCompromisos(pagos);
 
   renderAgenda();
   updSaldo();
@@ -641,9 +674,16 @@ export function initAgenda() {
   registrarAccion('agenda-pagar-lote',        _pagarLote);
   registrarAccion('agenda-confirmar-lote',    _confirmarLote);
 
+  // CAL.5b: Inicio ofrece el mismo lote desde su bloque de vencidos sin
+  // navegar. `compromisos/` emite y Agenda abre: es el mismo patrón que
+  // `distribuir:abrir` (donde Agenda emite y tesorería abre), en la otra
+  // dirección. Ningún dominio importa al otro (ADN #10) y el set de pagos lo
+  // sigue decidiendo Agenda, que es su dueña.
+  EventBus.on('lote:abrir', ({ mes } = {}) => _abrirLote(mes));
+
   // CAL.5a: el cuerpo del modal se re-inyecta en cada apertura, pero el
   // contenedor persiste; por eso el listener del total cuelga de él una sola
-  // vez aquí (colgarlo dentro de `_pagarLote` acumularía uno por apertura).
+  // vez aquí (colgarlo dentro de `_abrirLote` acumularía uno por apertura).
   document.getElementById('modal-pago-lote-body')
     ?.addEventListener('change', (e) => {
       if (e.target.classList?.contains('lote-row__check')) _actualizarTotalLote();

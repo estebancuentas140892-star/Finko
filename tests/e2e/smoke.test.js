@@ -4624,6 +4624,92 @@ test.describe('Agenda - pago en lote (CAL.5a)', () => {
   });
 });
 
+// ── SUITE 12f-bis: el lote también cubre deudas y se ofrece desde Inicio (CAL.5b) ──
+// Dos ampliaciones del mismo flujo: una deuda entra al lote por su cuota (y el
+// abono baja su saldoTotal, no solo el de la cuenta), y el bloque "Pendientes
+// del mes" de Inicio abre el mismo modal sin navegar al Calendario.
+
+test.describe('Lote con deudas y entrada desde Inicio (CAL.5b)', () => {
+  /** Un fijo y una deuda, ambos vencidos el día 1, con una cuenta que alcanza. */
+  async function sembrarMixto(page) {
+    await page.addInitScript(() => {
+      const estado = {
+        version:   1,
+        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas: [{
+          id: 'cta-5b-e2e', nombre: 'Ahorros E2E', tipo: 'ahorros',
+          banco: 'Bancolombia', saldo: 500000, activa: true,
+        }],
+        ingresos: [],
+        gastos:   [],
+        compromisos: [
+          {
+            id: 'fijo-5b-e2e', tipo: 'fijo', descripcion: 'Arriendo 5b E2E',
+            monto: 100000, frecuencia: 'Mensual', diaPago: 1,
+          },
+          {
+            id: 'deuda-5b-e2e', tipo: 'deuda-entidad', descripcion: 'Visa 5b E2E',
+            cuotaMensual: 80000, saldoTotal: 400000, frecuencia: 'Mensual', diaPago: 1,
+          },
+        ],
+        metas: [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    });
+  }
+
+  test('la deuda entra al lote por su cuota y el abono baja su saldoTotal', async ({ page }) => {
+    await sembrarMixto(page);
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+
+    const lote = page.locator('.cal-lote');
+    await expect(lote).toBeVisible({ timeout: 3_000 });
+    // 100.000 del fijo + 80.000 de la cuota de la deuda (no su saldo de 400.000).
+    await expect(lote.locator('.cal-lote__monto')).toHaveText('$180.000');
+
+    await lote.locator('[data-action="agenda-pagar-lote"]').click();
+    const modal = page.locator('#modal-pago-lote');
+    await expect(modal).toBeVisible({ timeout: 3_000 });
+    await expect(modal.locator('.lote-row')).toHaveCount(2);
+    await expect(modal.locator('.lote-row__sub')).toContainText(['Vencía el 1', 'Cuota de la deuda, vencía el 1']);
+    await expect(modal.locator('.lote-intro')).toContainText('baja su saldo');
+
+    await modal.locator('[data-action="agenda-confirmar-lote"]').click();
+    await expect(page.locator('.cal-lote')).toHaveCount(0, { timeout: 5_000 });
+
+    // save() está debounced 200ms: se consulta el estado persistido con poll.
+    await expect.poll(async () => page.evaluate(() => {
+      const s = JSON.parse(localStorage.getItem('fk_v1'));
+      const d = s.compromisos.find(c => c.id === 'deuda-5b-e2e');
+      return { saldo: d.saldoTotal, cuenta: s.cuentas[0].saldo };
+    }), { timeout: 5_000 }).toEqual({ saldo: 320000, cuenta: 320000 });
+  });
+
+  test('Inicio ofrece el mismo lote sin salir del dashboard', async ({ page }) => {
+    await sembrarMixto(page);
+    await page.goto('/#dash');
+    await page.waitForSelector('#panel-vencidos .vencidos-card', { timeout: 10_000 });
+
+    const cta = page.locator('.vencidos-card__pagar');
+    await expect(cta).toHaveText('Pagar los 2');
+    await cta.click();
+
+    const modal = page.locator('#modal-pago-lote');
+    await expect(modal).toBeVisible({ timeout: 3_000 });
+    await expect(modal.locator('.lote-row')).toHaveCount(2);
+    // Sin navegar: el hash sigue siendo el del dashboard.
+    expect(new URL(page.url()).hash).toBe('#dash');
+
+    await modal.locator('[data-action="agenda-confirmar-lote"]').click();
+
+    // Registrado el lote, el bloque de vencidos se vacía solo (ya no hay nada
+    // pendiente este mes) sin recargar ni cambiar de sección.
+    await expect(page.locator('#panel-vencidos .vencidos-card')).toHaveCount(0, { timeout: 5_000 });
+  });
+});
+
 // ── SUITE 12g: Gastos - gastos frecuentes y "Repetir" (TX.12) ────────────────
 // El gasto cotidiano (almuerzo, café, Uber) se repite; el formulario ofrece
 // chips derivados del historial que prellenan todo, y cada fila de la lista
