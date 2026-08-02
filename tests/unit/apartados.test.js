@@ -479,6 +479,68 @@ describe('normalizarApartado()', () => {
   });
 });
 
+// ── normalizarApartado(datos, apartadoExistente) - EDIT.1 ─────────
+
+describe('normalizarApartado() - modo edición (EDIT.1)', () => {
+  it('sin apartadoExistente, se comporta igual que antes: montoActual 0, completado false', () => {
+    const r = normalizarApartado(datosFormValidos);
+    expect(r.montoActual).toBe(0);
+    expect(r.completado).toBe(false);
+  });
+
+  it('con apartadoExistente, conserva montoActual tal cual (no lo resetea a 0)', () => {
+    const existente = apartadoBase({ montoActual: 200_000 });
+    const r = normalizarApartado(datosFormValidos, existente);
+    expect(r.montoActual).toBe(200_000);
+  });
+
+  it('recalcula completado al bajar el objetivo por debajo de lo ya aportado', () => {
+    const existente = apartadoBase({ montoActual: 400_000, montoObjetivo: 500_000, completado: false });
+    const r = normalizarApartado({ ...datosFormValidos, montoObjetivo: '300000' }, existente);
+    expect(r.montoActual).toBe(400_000);
+    expect(r.completado).toBe(true);
+  });
+
+  it('recalcula completado al subir el objetivo por encima de lo ya aportado', () => {
+    const existente = apartadoBase({ montoActual: 360_000, montoObjetivo: 360_000, completado: true });
+    const r = normalizarApartado({ ...datosFormValidos, montoObjetivo: '1000000' }, existente);
+    expect(r.montoActual).toBe(360_000);
+    expect(r.completado).toBe(false);
+  });
+
+  it('conserva recurrente/periodoMeses del existente, ignorando el form (no trae esos campos)', () => {
+    const existente = apartadoBase({ recurrente: true, periodoMeses: 12 });
+    const r = normalizarApartado(datosFormValidos, existente);
+    expect(r.recurrente).toBe(true);
+    expect(r.periodoMeses).toBe(12);
+  });
+
+  it('un existente no recurrente conserva recurrente false aunque el form no lo envíe', () => {
+    const existente = apartadoBase({ recurrente: false, periodoMeses: null });
+    const r = normalizarApartado(datosFormValidos, existente);
+    expect(r.recurrente).toBe(false);
+    expect(r.periodoMeses).toBeNull();
+  });
+
+  it('actualiza nombre, objetivo, fecha, frecuencia y nota normalmente', () => {
+    const existente = apartadoBase({ montoActual: 100_000 });
+    const r = normalizarApartado(
+      { ...datosFormValidos, nombre: 'SOAT renombrado', fechaObjetivo: '2027-03-01', nota: 'Sura' },
+      existente,
+    );
+    expect(r.nombre).toBe('SOAT renombrado');
+    expect(r.fechaObjetivo).toBe('2027-03-01');
+    expect(r.nota).toBe('Sura');
+    expect(r.montoActual).toBe(100_000);
+  });
+
+  it('apartadoExistente sin montoActual (defensivo) trata el histórico como 0', () => {
+    const existente = { id: 'a9', nombre: 'X', montoObjetivo: 100 };
+    const r = normalizarApartado(datosFormValidos, existente);
+    expect(r.montoActual).toBe(0);
+  });
+});
+
 // ── frecuenciaPrincipalIngresos() ────────────────────────────────
 
 describe('frecuenciaPrincipalIngresos()', () => {
@@ -878,6 +940,74 @@ describe('renderFormApartado() - lenguaje v2 (AP.5)', () => {
     expect(html).not.toContain('apartado-recurrente');
     expect(html).not.toContain('apartado-periodo-group');
     expect(html).not.toContain('Este gasto se repite');
+  });
+});
+
+// ── renderFormApartado(apartado) - modo edición (EDIT.1) ──────────
+
+describe('renderFormApartado() - modo edición (EDIT.1)', () => {
+  it('sin apartado, arranca en modo creación: botón "Crear reserva", campos vacíos', () => {
+    const html = renderFormApartado();
+    expect(html).toMatch(/#i-check-circle[\s\S]{0,40}Crear reserva/);
+    expect(html).not.toContain('Actualizar reserva');
+    expect(html).toMatch(/id="apartado-nombre"[^>]*value=""/);
+  });
+
+  it('con un apartado, prellena nombre, objetivo (con separador de miles), fecha y nota', () => {
+    const apartado = apartadoBase({
+      nombre: 'SOAT', montoObjetivo: 980_000, fechaObjetivo: '2026-12-01', nota: 'Poliza Sura',
+    });
+    const html = renderFormApartado(apartado);
+    expect(html).toMatch(/id="apartado-nombre"[^>]*value="SOAT"/);
+    expect(html).toMatch(/id="apartado-objetivo"[^>]*value="980\.000"/);
+    expect(html).toMatch(/id="apartado-fecha"[^>]*value="2026-12-01"/);
+    expect(html).toMatch(/id="apartado-nota"[^>]*value="Poliza Sura"/);
+  });
+
+  it('con un apartado, el botón dice "Actualizar reserva"', () => {
+    const html = renderFormApartado(apartadoBase());
+    expect(html).toMatch(/#i-check-circle[\s\S]{0,40}Actualizar reserva/);
+    expect(html).not.toContain('>Crear reserva<');
+  });
+
+  it('marca la frecuencia del apartado como seleccionada, ignorando frecuenciaPreferida', () => {
+    const html = renderFormApartado(apartadoBase({ frecuenciaAporte: 'Semanal' }), 'Mensual');
+    expect(html).toContain('<option value="Semanal" selected>Semanal</option>');
+  });
+
+  it('oculta las plantillas rápidas al editar (ya no hace falta elegir de cero)', () => {
+    const html = renderFormApartado(apartadoBase());
+    expect(html).not.toContain('data-action="apartado-plantilla"');
+  });
+
+  it('sin apartado, sigue ofreciendo las plantillas rápidas', () => {
+    const html = renderFormApartado();
+    expect(html).toContain('data-action="apartado-plantilla"');
+  });
+
+  it('con un ícono de sprite válido (del catálogo), lo prellena en el picker', () => {
+    const html = renderFormApartado(apartadoBase({ icono: 'c-auto' }));
+    expect(html).toContain('value="c-auto"');
+  });
+
+  it('con un emoji (plantilla curada, no id de sprite), el picker NO intenta usarlo como valor', () => {
+    const html = renderFormApartado(apartadoBase({ icono: '🚗' }));
+    expect(html).toContain('id="apartado-icono" value=""');
+  });
+});
+
+describe('_renderApartadoCard() (vía renderListaApartados) - botón Editar (EDIT.1)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-apartados"></div>';
+  });
+
+  it('cada apartado trae un botón "editar-apartado" con su id', () => {
+    S.apartados = [apartadoBase({ id: 'a1', nombre: 'SOAT' })];
+    renderListaApartados();
+    const btn = document.querySelector('.apartado-card__secundaria[data-action="editar-apartado"]');
+    expect(btn).not.toBeNull();
+    expect(btn.dataset.id).toBe('a1');
+    expect(btn.getAttribute('aria-label')).toBe('Editar reserva SOAT');
   });
 });
 

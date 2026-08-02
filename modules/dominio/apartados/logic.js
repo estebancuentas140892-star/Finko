@@ -393,28 +393,41 @@ export function validarAbonoApartado(monto) {
 /**
  * Convierte datos crudos del formulario al shape de S.apartados.
  * Asume que los datos ya pasaron `validarApartado()`.
+ *
+ * EDIT.1: `apartadoExistente` (opcional) distingue crear de editar. El form de
+ * edición no toca `montoActual` (el histórico de aportes se conserva tal
+ * cual, patrón P3) ni `recurrente`/`periodoMeses` (viven en un toggle propio,
+ * `alternarRecurrencia`, fuera de este formulario): los dos se preservan del
+ * registro existente. `completado` sí se recalcula, porque cambiar el
+ * objetivo puede cruzar el umbral de cumplimiento con el mismo acumulado.
+ *
  * @param {Record<string, string>} datos
+ * @param {import('../../core/state.js').Apartado|null} [apartadoExistente] modo edición si se pasa.
  */
-export function normalizarApartado(datos) {
+export function normalizarApartado(datos, apartadoExistente = null) {
   const frecuencia = FRECUENCIAS_APORTE.includes(datos.frecuenciaAporte)
     ? datos.frecuenciaAporte
     : 'Mensual';
 
-  const recurrente = _esRecurrente(datos.recurrente);
-  const periodoMeses = recurrente
-    ? (Number(datos.periodoMeses) > 0 ? Number(datos.periodoMeses) : PERIODO_RECURRENCIA_DEFAULT)
-    : null;
+  const montoActual = apartadoExistente ? (apartadoExistente.montoActual ?? 0) : 0;
+  const recurrente   = apartadoExistente ? apartadoExistente.recurrente === true : _esRecurrente(datos.recurrente);
+  const periodoMeses = apartadoExistente
+    ? (apartadoExistente.periodoMeses ?? null)
+    : (recurrente ? (Number(datos.periodoMeses) > 0 ? Number(datos.periodoMeses) : PERIODO_RECURRENCIA_DEFAULT) : null);
+
+  const montoObjetivo = Number(datos.montoObjetivo);
+  const { completado } = calcularProgreso({ montoObjetivo, montoActual });
 
   return {
     nombre:           datos.nombre.trim(),
     icono:            datos.icono?.trim() || ICONO_APARTADO_DEFAULT,
-    montoObjetivo:    Number(datos.montoObjetivo),
-    montoActual:      0,
+    montoObjetivo,
+    montoActual,
     fechaObjetivo:    datos.fechaObjetivo?.trim() || null,
     frecuenciaAporte: frecuencia,
     recurrente,
     periodoMeses,
     nota:             datos.nota?.trim() || '',
-    completado:       false,
+    completado,
   };
 }

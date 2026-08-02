@@ -35,9 +35,37 @@ import { renderBannerProposito } from '../../ui/proposito.js';
 function _nuevoApartado() {
   const overlay = document.getElementById('modal-apartado');
   if (!overlay) return;
+
+  const titulo = overlay.querySelector('.modal__title');
+  if (titulo) titulo.textContent = 'Nueva reserva';
+
   // Re-inyectar para actualizar la frecuencia pre-seleccionada según ingresos actuales.
   _inyectarFormApartado();
   _resetSugerenciaLive();
+  abrirModal(overlay);
+}
+
+/**
+ * Abre el modal de apartado en modo edición (EDIT.1) con los datos actuales
+ * prellenados. No toca `montoActual` ni `recurrente`/`periodoMeses` (ver
+ * `normalizarApartado`, `logic.js`): solo nombre, ícono, objetivo, fecha,
+ * frecuencia y nota son editables aquí.
+ * @param {HTMLElement} el - botón con data-id del apartado.
+ */
+function _editarApartado(el) {
+  const id = el.dataset.id;
+  if (!id) return;
+
+  const apartado = S.apartados.find(a => a.id === id);
+  if (!apartado) return;
+
+  const overlay = document.getElementById('modal-apartado');
+  if (!overlay) return;
+
+  const titulo = overlay.querySelector('.modal__title');
+  if (titulo) titulo.textContent = 'Editar reserva';
+
+  _inyectarFormApartado(apartado);
   abrirModal(overlay);
 }
 
@@ -57,7 +85,14 @@ function _guardarApartado() {
     return;
   }
 
-  guardar('apartados', normalizarApartado(datos));
+  const idEdit = form.dataset.id || null;
+
+  if (idEdit) {
+    const existente = S.apartados.find(a => a.id === idEdit);
+    editar('apartados', idEdit, normalizarApartado(datos, existente));
+  } else {
+    guardar('apartados', normalizarApartado(datos));
+  }
 
   const overlay = document.getElementById('modal-apartado');
   if (overlay) cerrarModal(overlay);
@@ -66,7 +101,7 @@ function _guardarApartado() {
   // T11 (A9): crear un apartado no mueve dinero (nace en $0 y no toca ninguna
   // cuenta). El anuncio dice cuál es el paso que falta, en vez de dar por
   // hecho que el usuario ya apartó algo.
-  announce('Reserva creada. Registra tu primer aporte para empezar a separar el dinero.');
+  announce(idEdit ? 'Reserva actualizada.' : 'Reserva creada. Registra tu primer aporte para empezar a separar el dinero.');
 }
 
 /** @param {HTMLElement} el */
@@ -359,15 +394,23 @@ function _wireMiles(root) {
 
 // ── INICIALIZACIÓN ───────────────────────────────────────────────
 
-function _inyectarFormApartado() {
+/**
+ * (Re)Inyecta el HTML del formulario de apartado en el modal y cablea sus
+ * listeners locales. Único punto de entrada para crear (`apartado` null) y
+ * editar (EDIT.1, `apartado` presente).
+ * @param {import('../../core/state.js').Apartado|null} [apartado] modo edición si se pasa.
+ */
+function _inyectarFormApartado(apartado = null) {
   const body = document.getElementById('modal-apartado-body');
   if (!body) return;
 
   const frecuenciaPreferida = frecuenciaPrincipalIngresos(S.ingresos);
-  body.innerHTML = renderFormApartado(frecuenciaPreferida);
+  body.innerHTML = renderFormApartado(apartado, frecuenciaPreferida);
 
   const form = body.querySelector('#form-apartado');
   if (!form) return;
+
+  if (apartado) form.dataset.id = apartado.id;
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -389,6 +432,7 @@ function _inyectarFormApartado() {
 
 export function initApartados() {
   registrarAccion('nuevo-apartado',            _nuevoApartado);
+  registrarAccion('editar-apartado',           _editarApartado);
   registrarAccion('eliminar-apartado',         _eliminarApartado);
   registrarAccion('aportar-apartado',          _abrirAporte);
   registrarAccion('reiniciar-apartado',        _reiniciarApartado);

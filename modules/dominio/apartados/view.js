@@ -262,6 +262,11 @@ function _renderApartadoCard(apartado, oculto = false) {
                   aria-label="${apartado.recurrente === true ? 'Desactivar' : 'Activar'} recurrencia de ${nombre}">${apartado.recurrente === true ? 'Recurrente' : 'Hacer recurrente'}</button>
           <button class="btn btn-ghost btn-sm apartado-card__secundaria"
                   type="button"
+                  data-action="editar-apartado"
+                  data-id="${id}"
+                  aria-label="Editar reserva ${nombre}">Editar</button>
+          <button class="btn btn-ghost btn-sm apartado-card__secundaria"
+                  type="button"
                   data-action="eliminar-apartado"
                   data-id="${id}"
                   aria-label="Eliminar reserva ${nombre}">Eliminar</button>
@@ -507,12 +512,21 @@ function _renderNudgeProximos(proximos, oculto = false) {
 // ── FORMULARIO: NUEVO APARTADO ───────────────────────────────────
 
 /**
- * Devuelve el HTML del formulario de nuevo apartado, con plantillas rápidas y
- * un hint en vivo del aporte sugerido (lo actualiza el listener en index.js).
- * @param {string} [frecuenciaPreferida] Pre-selección derivada de S.ingresos.
+ * Devuelve el HTML del formulario de apartado, con plantillas rápidas y un
+ * hint en vivo del aporte sugerido (lo actualiza el listener en index.js).
+ *
+ * EDIT.1: `apartado` (opcional) distingue crear de editar. Al editar se
+ * prellenan nombre, ícono, objetivo, fecha, frecuencia y nota; las plantillas
+ * rápidas se ocultan (ya no hace falta elegir de cero) y no se toca
+ * `montoActual` ni `recurrente`/`periodoMeses` (los preserva
+ * `normalizarApartado(datos, apartadoExistente)`, la recurrencia vive en su
+ * propio toggle sobre la tarjeta).
+ *
+ * @param {import('../../core/state.js').Apartado|null} [apartado] modo edición si se pasa.
+ * @param {string} [frecuenciaPreferida] Pre-selección derivada de S.ingresos (solo al crear).
  * @returns {string}
  */
-export function renderFormApartado(frecuenciaPreferida = 'Mensual') {
+export function renderFormApartado(apartado = null, frecuenciaPreferida = 'Mensual') {
   // T4 (A8): las 6 frecuentes a la vista, las otras 14 plegadas.
   // AP.5b (ADR 042 D9): lenguaje de chips-cat compartido en vez del `.chip`
   // pildora suelto. No son radios: el nombre sigue siendo texto libre debajo
@@ -540,24 +554,29 @@ export function renderFormApartado(frecuenciaPreferida = 'Mensual') {
         </div>
       </details>`;
 
+  const frecuenciaActual = apartado?.frecuenciaAporte ?? frecuenciaPreferida;
   const frecOpts = FRECUENCIAS_APORTE
-    .map(fr => `<option value="${_esc(fr)}"${fr === frecuenciaPreferida ? ' selected' : ''}>${_esc(fr)}</option>`)
+    .map(fr => `<option value="${_esc(fr)}"${fr === frecuenciaActual ? ' selected' : ''}>${_esc(fr)}</option>`)
     .join('');
+
+  const botonTexto = apartado ? `${icon('check-circle')} Actualizar reserva` : `${icon('check-circle')} Crear reserva`;
 
   return `
     <form id="form-apartado" novalidate>
+      ${apartado ? '' : `
       <p class="form-hint form-hint--muted">¿Para qué gasto quieres prepararte? Toca uno o escribe el tuyo.</p>
       <div class="chips-cat" role="group" aria-label="Plantillas de reserva">
         ${plantillasHtml}
       </div>
-      ${restoHtml}
+      ${restoHtml}`}
 
       <div class="form-group">
         <label for="apartado-nombre" class="label">Nombre de la reserva</label>
         <div class="apartado-nombre-row">
-          ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'apartado-icono', nombreCampo: 'icono', label: '' })}
+          ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'apartado-icono', nombreCampo: 'icono', label: '', valorActual: _valorIconoEditable(apartado) })}
           <input id="apartado-nombre" name="nombre" class="input apartado-nombre-row__nombre" type="text"
-                 placeholder="Ej. SOAT, Productos personales" required aria-required="true" autocomplete="off" />
+                 placeholder="Ej. SOAT, Productos personales" required aria-required="true" autocomplete="off"
+                 value="${_esc(apartado?.nombre ?? '')}" />
         </div>
       </div>
       <div class="monto-hero">
@@ -566,13 +585,14 @@ export function renderFormApartado(frecuenciaPreferida = 'Mensual') {
           <span class="monto-hero__prefijo" aria-hidden="true">$</span>
           <input id="apartado-objetivo" name="montoObjetivo" class="input input--big-amount" type="text"
                  placeholder="0" required aria-required="true"
-                 inputmode="numeric" autocomplete="off" data-miles />
+                 inputmode="numeric" autocomplete="off" data-miles
+                 value="${apartado ? miles(String(apartado.montoObjetivo ?? '')) : ''}" />
         </div>
         <span class="monto-hero__hint">COP</span>
       </div>
       <div class="form-group">
         <label for="apartado-fecha" class="label">¿Para cuándo lo necesitas? (opcional)</label>
-        <input id="apartado-fecha" name="fechaObjetivo" class="input" type="date" />
+        <input id="apartado-fecha" name="fechaObjetivo" class="input" type="date" value="${_esc(apartado?.fechaObjetivo ?? '')}" />
       </div>
       <div class="form-group">
         <label for="apartado-frecuencia" class="label">¿Cada cuánto puedes aportar?</label>
@@ -589,15 +609,30 @@ export function renderFormApartado(frecuenciaPreferida = 'Mensual') {
       <div class="form-group">
         <label for="apartado-nota" class="label">Nota (opcional)</label>
         <input id="apartado-nota" name="nota" class="input" type="text" maxlength="80"
-               placeholder="Ej. Póliza vence en marzo, aseguradora Sura" />
+               placeholder="Ej. Póliza vence en marzo, aseguradora Sura"
+               value="${_esc(apartado?.nota ?? '')}" />
         <p class="form-hint">Se muestra junto al apartado en el asistente de "Distribuir mi ingreso".</p>
       </div>
 
       <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
-        <button type="submit" class="btn btn-primary">${icon('check-circle')} Crear reserva</button>
+        <button type="submit" class="btn btn-primary">${botonTexto}</button>
       </div>
     </form>`;
+}
+
+/**
+ * Valor a prellenar en el selector de ícono al editar. Un apartado creado
+ * desde una plantilla rápida guarda el emoji curado tal cual (`_aplicarPlantilla`
+ * en index.js, no pasa por el picker), y un emoji no es un `data-icon` válido
+ * del catálogo: el picker arrancaría con el recuadro vacío en vez de romperse
+ * intentando resolverlo como símbolo (mismo criterio de `metas/view.js`).
+ * @param {import('../../core/state.js').Apartado|null} apartado
+ * @returns {string|null}
+ */
+function _valorIconoEditable(apartado) {
+  if (!apartado?.icono) return null;
+  return /^[a-z]-/.test(apartado.icono) ? apartado.icono : null;
 }
 
 // ── FORMULARIO: APORTAR A UN APARTADO ────────────────────────────
