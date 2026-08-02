@@ -10,6 +10,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(diseno): DV.2c, cascada de listas + resaltado de fila + retiro de bucles infinitos · 2026-08-01
+
+D4 del [ADR 033](DECISIONS/033-direccion-visual-premium.md), independiente de DV.2a/b. Ficha: [`contexto/sistema-visual.md`](contexto/sistema-visual.md). Commits `680b0f0`; la cascada, el resaltado y la doctrina de DESIGN_SYSTEM.md ya habían entrado sin atribución en `ac10202`/`b03ca88` (misma condición de carrera de staging concurrente con la sesión de DV.2b que también los afectó a ellos, ver `1e21397`).
+
+- **Cascada acotada de listas**: `.list-item:nth-child(-n+6 of .list-item)` anima con `cardIn` los primeros 6 ítems de cualquier lista (paso 35ms, cola ≤175ms); el selector CSS4 `of S` cuenta solo hermanos de esa clase, así que un divisor intercalado (cabecera de mes en Movimientos) no corre el conteo. El resto de la lista aparece sin animar.
+- **Resaltado de fila recién guardada**: clase `.list-item--nuevo`, pseudo-elemento `::after` con `--fk-row-highlight-bg` que se desvanece por `opacity` en 600ms (compositor, nunca `background-color`). Helper `resaltarFilaNueva(el, dominio)` en `infra/animate.js`: no-op bajo `prefers-reduced-motion`, reentrante por elemento. **Sin consumidor todavía**: ninguna vista lo llama al guardar; lo conecta cada iniciativa v2 por sección cuando le toque (regla anti-sistema-paralelo del ADR).
+- **Retiro de `empty-orbit`/`empty-float`**: los dos bucles `animation-iteration-count: infinite` ambientales de los empty states contradecían el veto de animaciones permanentes del propio brief. Cero `infinite` fuera de `a11y.css` en todo `styles/` (auditado).
+- **Catálogo cerrado de animación** documentado en `DESIGN_SYSTEM.md`: toda animación nueva necesita fila propia con su propósito, o no se implementa.
+- 3583 unit + 251 E2E + lint verdes. SW v469 a v470.
+
 ### feat(dv2): DV.2b, riqueza visual piloto: formas orgánicas + patrón · 2026-08-01
 
 D3 del [ADR 033](DECISIONS/033-direccion-visual-premium.md), desbloqueada al cerrar DV.2a. Ficha: [`contexto/sistema-visual.md`](contexto/sistema-visual.md). Commits `ac10202` + `1e21397` (el segundo repara un bloque CSS perdido por una escritura concurrente durante el cierre, ver mensaje del commit).
