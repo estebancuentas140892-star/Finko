@@ -9,7 +9,7 @@
  */
 
 import { S, EventBus, createInitialState } from './state.js';
-import { ACCESOS_INICIO_DEFAULT } from './constants.js';
+import { ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from './constants.js';
 
 /** Clave de localStorage. Bumpear con cuidado: implica migración. */
 const STORAGE_KEY = 'fk_v1';
@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 31;
+const SCHEMA_VERSION = 32;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -466,6 +466,19 @@ function _migrate(raw) {
           c.seccion = 'gasto';
         }
       }
+    }
+  }
+
+  // v31 → v32: `ultimaVersionVista` en config (UPD.1), la marca de hasta
+  // dónde el usuario ya vio el catálogo NOVEDADES_POR_VERSION. El usuario
+  // existente arranca "al día" con el catálogo vigente en este mismo bump
+  // (evita mostrarle de golpe todo el historial acumulado); solo verá
+  // novedades agregadas DESPUÉS de esta versión. Idempotente: si ya es un
+  // número, no se toca.
+  if ((typeof data._version === 'number' ? data._version : 1) < 32) {
+    if (!data.config || typeof data.config !== 'object') data.config = {};
+    if (typeof data.config.ultimaVersionVista !== 'number') {
+      data.config.ultimaVersionVista = ultimaVersionNovedadesConocida();
     }
   }
 

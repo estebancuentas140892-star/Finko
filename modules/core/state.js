@@ -8,7 +8,7 @@
  * - Schema versión: 1 (definida en _version). Migraciones en storage.js.
  */
 
-import { SMMLV, ACCESOS_INICIO_DEFAULT } from './constants.js';
+import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from './constants.js';
 
 /**
  * @typedef {Object} CuotaManejo
@@ -408,6 +408,8 @@ export function createInitialState() {
       datosFiscales: {},
       /** Accesos rápidos personalizables de Inicio (IN.4a, schema v23). */
       accesosInicio: [...ACCESOS_INICIO_DEFAULT],
+      /** Última versión de NOVEDADES_POR_VERSION ya vista (UPD.1, schema v32). */
+      ultimaVersionVista: ultimaVersionNovedadesConocida(),
     },
 
     /** Cuentas / tesorería. */

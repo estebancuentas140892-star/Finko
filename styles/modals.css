@@ -558,6 +558,22 @@
   justify-content: space-between;
 }
 
+/* Modal de novedades (UPD.1): un h3 + ul por versión pendiente de ver. */
+.modal__body h3 {
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
+.novedades__lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+  padding-left: 1.25em;
+  color: var(--fk-text-secondary);
+  font-size: var(--fk-text-sm);
+  line-height: var(--fk-leading-relaxed);
+}
+
 /* DIS.12 (hallazgo A3, regla R53): fila propia para la acción destructiva de
    un formulario. Hasta ahora el sistema no tenía un lugar para ella, y por eso
    "Desactivar fondo" terminó ocupando el sitio de Cancelar con su mismo

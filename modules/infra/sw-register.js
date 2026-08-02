@@ -66,7 +66,17 @@ if ('serviceWorker' in navigator) {
 
     navigator.serviceWorker.addEventListener('controllerchange', function () {
       if (_yaRecargado || !_habiaControlador) return;
-      if (!esSeguroRecargar()) return;
+      if (!esSeguroRecargar()) {
+        // UPD.1: antes esto no hacia nada mas (comentario de arriba: "se
+        // pierde inmediatez, nunca datos"). El usuario se quedaba sin ninguna
+        // senal hasta la proxima recarga casual. document.dispatchEvent en
+        // vez de un import: este archivo es un <script> clasico (no type
+        // module, ver comentario de esSeguroRecargar arriba), asi que no
+        // puede importar EventBus. Quien escucha (modules/ui/sw-aviso.js) es
+        // un modulo aparte.
+        document.dispatchEvent(new CustomEvent('sw:actualizacion-lista'));
+        return;
+      }
       _yaRecargado = true;
       location.reload();
     });

@@ -77,6 +77,8 @@ const CORE_ASSETS = [
   './modules/ui/menu-mas.js',
   './modules/ui/registrar.js',
   './modules/ui/install-prompt.js',
+  './modules/ui/sw-aviso.js',
+  './modules/ui/novedades.js',
   './modules/ui/proposito.js',
   './modules/ui/comparador.js',
 

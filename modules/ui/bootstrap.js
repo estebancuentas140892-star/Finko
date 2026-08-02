@@ -41,6 +41,8 @@ import { initLogros } from '../dominio/logros/index.js';
 import { initMenuMas } from './menu-mas.js';
 import { initRegistrar } from './registrar.js';
 import { initInstallPrompt } from './install-prompt.js';
+import { initSwAviso } from './sw-aviso.js';
+import { mostrarNovedadesSiHay } from './novedades.js';
 
 loadData();
 initFlushOnHide();
@@ -73,6 +75,8 @@ initRegistrar();
 initInstallPrompt();
 renderAll();
 initLogros();
+initSwAviso();
+mostrarNovedadesSiHay();
 
 // Verificar compromisos próximos y mostrar notificación si el usuario optó-in.
 // Se ejecuta después del primer render para no bloquear el arranque.

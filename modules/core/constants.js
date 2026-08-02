@@ -888,3 +888,25 @@ export const ACCESOS_INICIO = [
  * positivo). Ver análisis completo en `docs/contexto/inicio.md` (IN.4a).
  */
 export const ACCESOS_INICIO_DEFAULT = ['tesoreria', 'ahorro', 'presupuesto'];
+
+/**
+ * Catálogo de novedades por versión (UPD.1). Clave = mismo número que
+ * `CACHE_NAME` en `service-worker.js` en el momento del release; no hace
+ * falta una entrada por cada bump (la mayoría son invisibles para el
+ * usuario), solo cuando vale la pena avisar. Ver runbook "Bump del Service
+ * Worker" en `docs/OPERACION.md`.
+ *
+ * @type {Record<number, { titulo: string, items: string[] }>}
+ */
+export const NOVEDADES_POR_VERSION = {};
+
+/**
+ * Última versión del catálogo de novedades conocida en este build. Un
+ * usuario nuevo (o uno que migra a `config.ultimaVersionVista`, schema v32)
+ * arranca "al día" con esto, para no mostrarle de golpe todo el historial.
+ * @returns {number}
+ */
+export function ultimaVersionNovedadesConocida() {
+  const claves = Object.keys(NOVEDADES_POR_VERSION).map(Number);
+  return claves.length ? Math.max(...claves) : 0;
+}

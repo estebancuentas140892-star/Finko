@@ -27,6 +27,8 @@ import {
   clasificarSeccionEnGrupo,
   ICONOS_CATEGORIA_PERSONALIZADA,
   iconoDeCategoriaGasto,
+  NOVEDADES_POR_VERSION,
+  ultimaVersionNovedadesConocida,
 } from '../../modules/core/constants.js';
 import { SILUETAS } from '../../modules/infra/svg.js';
 import { readFileSync } from 'node:fs';
@@ -488,6 +490,24 @@ describe('TX.5 - Mapeo sección → grupo financiero (ADR 014)', () => {
     const gruposRepresentados = new Set(Object.values(GRUPO_POR_SECCION));
     for (const g of GRUPOS_FINANCIEROS) {
       expect(gruposRepresentados.has(g)).toBe(true);
+    }
+  });
+});
+
+describe('ultimaVersionNovedadesConocida (UPD.1)', () => {
+  it('catálogo vacío devuelve 0', () => {
+    expect(Object.keys(NOVEDADES_POR_VERSION)).toHaveLength(0);
+    expect(ultimaVersionNovedadesConocida()).toBe(0);
+  });
+
+  it('devuelve la clave más alta del catálogo', () => {
+    NOVEDADES_POR_VERSION[470] = { titulo: 'Test', items: ['a'] };
+    NOVEDADES_POR_VERSION[480] = { titulo: 'Test 2', items: ['b'] };
+    try {
+      expect(ultimaVersionNovedadesConocida()).toBe(480);
+    } finally {
+      delete NOVEDADES_POR_VERSION[470];
+      delete NOVEDADES_POR_VERSION[480];
     }
   });
 });

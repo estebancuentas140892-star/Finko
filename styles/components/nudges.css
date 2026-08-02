@@ -254,6 +254,57 @@
   }
 }
 
+/* ════════════════════════════════════════════════════════════
+   SW AVISO - version nueva lista, no se pudo recargar sola
+   (modal abierto o input con foco al momento del cambio, ver
+   sw-register.js). JS lo crea, lo agrega al body; el toque en
+   el boton recarga (UPD.1). Mismo esqueleto que .logro-toast,
+   sin autocierre: es accionable, no celebratorio.
+   ════════════════════════════════════════════════════════════ */
+
+.sw-aviso {
+  position: fixed;
+  bottom: calc(var(--fk-space-6) + env(safe-area-inset-bottom, 0px));
+  left:  calc(var(--fk-space-4) + env(safe-area-inset-left,  0px));
+  right: calc(var(--fk-space-4) + env(safe-area-inset-right, 0px));
+  margin: 0 auto;
+  max-width: 420px;
+  width: fit-content;
+  z-index: var(--fk-z-toast);
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-nudge-info-border);
+  border-left: 3px solid var(--fk-info);
+  border-radius: var(--fk-radius-xl);
+  padding: var(--fk-space-3) var(--fk-space-4);
+  box-shadow: var(--fk-shadow-lg);
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sw-aviso {
+    animation: toastIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+}
+
+.sw-aviso__texto {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-medium);
+  color: var(--fk-text-primary);
+}
+
+@media (max-width: 1023.98px) {
+  .sw-aviso {
+    bottom: calc(
+      var(--fk-header-height)
+      + var(--fk-space-4)
+      + env(safe-area-inset-bottom, 0px)
+    );
+  }
+}
+
 /* ── Confetti CSS (30 spans generados por JS) */
 .confetti-piece {
   position: absolute;

@@ -1340,3 +1340,35 @@ describe('Migración v30 → v31 (seccion en categoría personalizada, CAT.3a, A
     expect(S.categoriasPersonalizadas[0].seccion).toBe('fijo');
   });
 });
+
+describe('Migración v31 → v32 (ultimaVersionVista en config, UPD.1)', () => {
+  it('un usuario existente arranca "al día" (sin novedades acumuladas)', () => {
+    const v31 = { ...createInitialState(), _version: 31 };
+    delete v31.config.ultimaVersionVista;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v31));
+
+    loadData();
+
+    expect(typeof S.config.ultimaVersionVista).toBe('number');
+    expect(S._version).toBe(SCHEMA_VERSION);
+  });
+
+  it('un estado v31 sin config en absoluto no revienta la migración', () => {
+    const v31 = { ...createInitialState(), _version: 31 };
+    delete v31.config;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v31));
+
+    expect(() => loadData()).not.toThrow();
+    expect(typeof S.config.ultimaVersionVista).toBe('number');
+  });
+
+  it('es idempotente: no sobrescribe ultimaVersionVista ya presente', () => {
+    const v32 = { ...createInitialState(), _version: 32 };
+    v32.config.ultimaVersionVista = 999;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v32));
+
+    loadData();
+
+    expect(S.config.ultimaVersionVista).toBe(999);
+  });
+});
