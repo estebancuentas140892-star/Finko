@@ -11,6 +11,9 @@ import { f } from './utils.js';
 /** RAF activo por elemento: una nueva llamada sobre el mismo el lo cancela. */
 const _rafs = new WeakMap();
 
+/** Timeout de resaltado activo por elemento: reentrante igual que _rafs. */
+const _resaltados = new WeakMap();
+
 function _easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
 
 /**
@@ -70,4 +73,35 @@ export function stopCount(el) {
     cancelAnimationFrame(prev);
     _rafs.delete(el);
   }
+}
+
+/**
+ * Resalta una fila (`.list-item`) recién guardada (ADR 033 D4): agrega
+ * `.list-item--nuevo`, cuyo pseudo-elemento desvanece un tinte de dominio
+ * por opacidad en ~600ms (compositor, sin animar background-color).
+ *
+ * - Bajo prefers-reduced-motion no agrega la clase: la fila queda visible
+ *   igual, solo sin el destello.
+ * - Reentrante por elemento: una nueva llamada sobre el mismo el reinicia
+ *   el temporizador de limpieza.
+ *
+ * @param {HTMLElement} el - el `.list-item` recién insertado en el DOM.
+ * @param {string} [dominio] - clave de dominio (`--fk-dom-<dominio>-bg`);
+ *   sin ella usa el tinte por defecto del token en atoms.css.
+ */
+export function resaltarFilaNueva(el, dominio) {
+  if (!el) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const prev = _resaltados.get(el);
+  if (prev) clearTimeout(prev);
+
+  if (dominio) el.style.setProperty('--fk-row-highlight-bg', `var(--fk-dom-${dominio}-bg)`);
+  el.classList.add('list-item--nuevo');
+
+  _resaltados.set(el, setTimeout(() => {
+    el.classList.remove('list-item--nuevo');
+    el.style.removeProperty('--fk-row-highlight-bg');
+    _resaltados.delete(el);
+  }, 600));
 }

@@ -209,6 +209,14 @@ select:focus {
   100% { transform: translateY(80px) rotate(720deg); opacity: 0; }
 }
 
+/* Resaltado de fila recién guardada (DV.2c, ADR 033 D4): el tinte vive en un
+   pseudo-elemento (fondo con opacity, no background-color) para no pintar
+   fuera del compositor. Consumidor: .list-item--nuevo en atoms.css. */
+@keyframes rowHighlightOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
 /* Aplicar entrada a paneles de sección al activarse.
    (El selector era .sec.active y nunca coincidía: las secciones usan
    .section. Mismo bug que cardIn, corregido en V.4 para layout.css.) */
