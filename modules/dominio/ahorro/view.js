@@ -9,7 +9,7 @@ import { icon, iconoCategoria, emptyArt, tejaCategoria } from '../../infra/icons
 import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { siluetaMeta } from '../../infra/svg.js';
 import { estadoDeBolsa } from '../../infra/bolsas.js';
-import { columnasPortafolio } from '../../infra/portafolio.js';
+import { columnasPortafolio, etapaDePortafolio } from '../../infra/portafolio.js';
 import { htmlComparador, pieComparador } from '../../ui/comparador.js';
 import { CATEGORIA_META_SILUETA } from '../../core/constants.js';
 import {
@@ -120,6 +120,12 @@ export function renderCasaAhorro(gastosFijosMensuales = 0) {
   const inversiones = Array.isArray(S.inversiones) ? S.inversiones : [];
   const inversionesTotal = inversiones.reduce((sum, i) => sum + (Number(i.monto) || 0), 0);
 
+  // La etapa del portafolio y el conteo de abiertas salen de la misma llamada a
+  // infra (ARQ.1c): es el criterio que la sección Inversión usa para su chip, y
+  // ADN #10 impide leerlo de ese dominio. Antes el carril contaba `.length`, que
+  // incluía una inversión sin monto; ahora las dos cifras filtran igual.
+  const etapaInversiones = etapaDePortafolio(inversiones);
+
   const { total, filas } = casaAhorro({
     montos: {
       fondo:       fondoTotal,
@@ -130,7 +136,8 @@ export function renderCasaAhorro(gastosFijosMensuales = 0) {
     mesesCubiertos:      fondo.activo ? mesesDeColchon(fondoTotal, gastosFijosMensuales) : null,
     metasEnCurso:        metas.length,
     diasProximoApartado: diasAlProximoApartado(apartados, hoyISO),
-    inversionesAbiertas: inversiones.length,
+    inversionesAbiertas: etapaInversiones?.abiertas ?? 0,
+    etapaInversion:      etapaInversiones?.numero   ?? null,
   });
 
   const graficos = {

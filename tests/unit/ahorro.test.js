@@ -497,9 +497,22 @@ describe('casaAhorro', () => {
     expect(r.filas[1].estado).toBe('sin fecha próxima');
   });
 
-  it('el estado de Inversión cuenta las inversiones abiertas', () => {
-    expect(casaAhorro({ inversionesAbiertas: 1 }).filas[3].estado).toBe('1 inversión');
+  it('el estado de Inversión dice cuántas hay y en qué etapa va (ARQ.1c)', () => {
+    expect(casaAhorro({ inversionesAbiertas: 1, etapaInversion: 1 }).filas[3].estado)
+      .toBe('1 inversión, aprendiendo');
+    expect(casaAhorro({ inversionesAbiertas: 3, etapaInversion: 2 }).filas[3].estado)
+      .toBe('3 inversiones, construyendo');
+  });
+
+  it('sin etapa conocida el carril cae al conteo solo, no a una frase rota', () => {
     expect(casaAhorro({ inversionesAbiertas: 2 }).filas[3].estado).toBe('2 inversiones');
+    expect(casaAhorro({ inversionesAbiertas: 1, etapaInversion: 3 }).filas[3].estado)
+      .toBe('1 inversión');
+  });
+
+  it('sin inversiones no hay etapa que anunciar', () => {
+    expect(casaAhorro({ inversionesAbiertas: 0, etapaInversion: null }).filas[3].estado)
+      .toBe('ninguna todavía');
   });
 
   it('MODALIDADES_AHORRO apunta al fondo en #fondo, no en #ahorro (la casa)', () => {

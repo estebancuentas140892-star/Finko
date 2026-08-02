@@ -182,6 +182,23 @@ describe('etapaDePortafolio - el corte que Ahorro e Inversión comparten (ARQ.1c
     }
   });
 
+  it('el carril de Ahorro y el chip de Inversión nombran igual la misma etapa', () => {
+    // Las dos pantallas escriben la palabra por su cuenta (infra no guarda copy),
+    // pero tienen que coincidir: el carril lleva a esa sección y el usuario debe
+    // reconocer ahí lo que leyó en el hub. Si una de las dos se renombra sola,
+    // este test falla.
+    for (const lista of [[cdt], [cdt, fic]]) {
+      const etapa = portafolio.etapaDePortafolio(lista);
+      const chip  = inversiones.momentoInversion(lista, { fondoActivo: true, fondoCompletado: true }).chip;
+      const carril = ahorro.casaAhorro({
+        inversionesAbiertas: etapa.abiertas,
+        etapaInversion:      etapa.numero,
+      }).filas[3].estado;
+
+      expect(carril).toContain(chip);
+    }
+  });
+
   it('el conteo del carril y la etapa salen del mismo filtro', () => {
     const lista = [cdt, { tipo: 'Cripto', monto: 0 }, fic];
     const etapa = portafolio.etapaDePortafolio(lista);

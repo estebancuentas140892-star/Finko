@@ -164,6 +164,7 @@ export const MODALIDADES_AHORRO = [
  *   metasEnCurso?: number,
  *   diasProximoApartado?: number|null,
  *   inversionesAbiertas?: number,
+ *   etapaInversion?: number|null,
  * }} [datos]
  * @returns {{
  *   total: number,
@@ -175,7 +176,7 @@ export const MODALIDADES_AHORRO = [
  */
 export function casaAhorro({
   montos = {}, mesesCubiertos = null, metasEnCurso = 0,
-  diasProximoApartado = null, inversionesAbiertas = 0,
+  diasProximoApartado = null, inversionesAbiertas = 0, etapaInversion = null,
 } = {}) {
   const limpio = (n) => Math.max(0, Number(n) || 0);
   const porClave = {
@@ -189,7 +190,7 @@ export function casaAhorro({
     fondo:       _estadoFondo(mesesCubiertos),
     metas:       _estadoMetas(metasEnCurso),
     apartados:   _estadoApartados(diasProximoApartado, porClave.apartados),
-    inversiones: _estadoInversion(inversionesAbiertas),
+    inversiones: _estadoInversion(inversionesAbiertas, etapaInversion),
   };
 
   const filas = MODALIDADES_AHORRO.map(m => ({
@@ -260,11 +261,50 @@ function _estadoApartados(diasProximoApartado, monto) {
   return `el más próximo, en ${dias} días`;
 }
 
-/** Estado de Inversión: cuántas hay abiertas. */
-function _estadoInversion(inversionesAbiertas) {
+/**
+ * Cómo nombra el carril cada etapa del portafolio.
+ *
+ * **Son las mismas dos palabras que el chip de la sección Inversión**, y eso es
+ * deliberado: el carril lleva a esa pantalla, así que el usuario tiene que
+ * reconocer ahí lo que leyó acá. Es el único caso del hub donde el vocabulario
+ * se comparte a propósito; los otros tres carriles hablan su propio idioma
+ * porque miden cosas que su sección no nombra igual. La copia de las palabras
+ * es intencional (infra no guarda copy, `infra/portafolio.js` solo devuelve el
+ * número) y hay un test que falla si las dos pantallas se separan.
+ *
+ * El índice es el `numero` de `etapaDePortafolio()`. La etapa 3 no existe
+ * todavía: necesita el valor real de cada inversión en el tiempo, que Finko no
+ * guarda (ver la ficha de Inversión). Sin entrada acá, el carril cae al conteo
+ * solo, que es lo que decía antes.
+ */
+const ETAPA_INVERSION = {
+  1: 'aprendiendo',
+  2: 'construyendo',
+};
+
+/**
+ * Estado de Inversión: cuántas hay abiertas y en qué etapa va el portafolio.
+ *
+ * El conteo solo (lo que había hasta ARQ.1c) contestaba "cuántas" y no "en qué
+ * vas", que es lo que contestan los otros tres carriles: el fondo dice tiempo
+ * cubierto, las metas cuántas siguen vivas y los apartados cuándo llega el
+ * cobro. La etapa es la unidad que faltaba, y es la que pedía el mockup de
+ * DIS.18 (ADR 056).
+ *
+ * Se dicen las dos cosas y no solo la etapa: "construyendo" a secas no dice el
+ * tamaño de lo que se construyó, y el carril tiene que servir para decidir si
+ * vale la pena entrar.
+ *
+ * @param {number} inversionesAbiertas - las que tienen monto (`etapaDePortafolio().abiertas`).
+ * @param {number|null} etapaInversion - `etapaDePortafolio().numero`, o null si no hay ninguna.
+ */
+function _estadoInversion(inversionesAbiertas, etapaInversion = null) {
   const n = Math.max(0, Math.round(Number(inversionesAbiertas) || 0));
   if (n === 0) return 'ninguna todavía';
-  return n === 1 ? '1 inversión' : `${n} inversiones`;
+
+  const cuantas = n === 1 ? '1 inversión' : `${n} inversiones`;
+  const etapa   = ETAPA_INVERSION[etapaInversion];
+  return etapa ? `${cuantas}, ${etapa}` : cuantas;
 }
 
 // ── NIVELES DE PROTECCIÓN (DIS.16, arquitectura I+H) ─────────────
