@@ -291,6 +291,12 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  */
 
 /**
+ * @typedef {Object} AceptacionLegal
+ * @property {string} version   Valor de VERSION_LEGAL (config/legal.js) aceptado.
+ * @property {string} fecha     ISO 8601 (YYYY-MM-DD) de la aceptación.
+ */
+
+/**
  * @typedef {Object} Config
  * @property {boolean}     notificaciones - true si el usuario habilitó recordatorios push.
  *                                          Require también que Notification.permission === 'granted'.
@@ -300,6 +306,11 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  *                                           del monitor de renta, keados por año (K.4).
  *                                           Se añaden en v10. Solo contienen los campos
  *                                           que el usuario registró explícitamente.
+ * @property {AceptacionLegal|null} legalAceptado - Registro de aceptación versionada
+ *                                           del paquete legal (LEG.2, schema v33). `null`
+ *                                           = todavía no aceptó la versión vigente
+ *                                           (`VERSION_LEGAL`): la app pide aceptación antes
+ *                                           de continuar. Se añade en v33.
  */
 
 /**
@@ -410,6 +421,8 @@ export function createInitialState() {
       accesosInicio: [...ACCESOS_INICIO_DEFAULT],
       /** Última versión de NOVEDADES_POR_VERSION ya vista (UPD.1, schema v32). */
       ultimaVersionVista: ultimaVersionNovedadesConocida(),
+      /** Aceptación versionada del paquete legal (LEG.2, schema v33). null = pendiente. */
+      legalAceptado: null,
     },
 
     /** Cuentas / tesorería. */

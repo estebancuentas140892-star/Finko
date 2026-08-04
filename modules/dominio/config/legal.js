@@ -13,10 +13,13 @@
 
 /**
  * Marca de versión del paquete legal. Los diez documentos siguen en borrador
- * mientras el checklist de `docs/legal/README.md` siga abierto (LEG.2, trabada
- * por revisión de abogado): el visor la muestra junto al título para que la
- * advertencia viaje con el documento y no se quede en la lista que el usuario
- * ya dejó atrás.
+ * mientras el checklist de `docs/legal/README.md` siga abierto (responsable,
+ * contacto, licencia, revisión de abogado): el visor la muestra junto al
+ * título para que la advertencia viaje con el documento y no se quede en la
+ * lista que el usuario ya dejó atrás. La aceptación obligatoria (LEG.2,
+ * ui/aceptacion-legal.js y ui/onboarding.js) ya corre sobre esta versión: no
+ * espera a que el paquete llegue a v1.0, solo hace explícito que se acepta
+ * la vigente en cada momento.
  */
 export const VERSION_LEGAL = 'Borrador v0.1';
 

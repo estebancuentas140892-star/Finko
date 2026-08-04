@@ -7,7 +7,9 @@
  * 2. initAcciones()    - registra delegación data-action en document.
  * 3. initShell()     - aplica tema guardado.
  * 4. initRouter()    - activa la sección del hash actual y escucha hashchange.
- * 5. initOnboarding()- wizard si es primera vez, no-op si ya completó.
+ * 5. initOnboarding()      - wizard si es primera vez, no-op si ya completó.
+ * 5b. initAceptacionLegal()- gate de re-aceptación si el usuario existente
+ *                            quedó con una versión legal vieja (LEG.2).
  * 6. renderAll()     - pinta el estado inicial en el DOM.
  */
 
@@ -17,6 +19,7 @@ import { initShell, markActiveNav, initSidebarCollapse } from './shell.js';
 import { initRouter } from '../infra/router.js';
 import { initAcciones } from './actions.js';
 import { initOnboarding } from './onboarding.js';
+import { initAceptacionLegal, faltaAceptarLegal } from './aceptacion-legal.js';
 import { renderAll } from '../infra/render.js';
 import { verificarYNotificar } from '../infra/notificaciones.js';
 import { precalentarAnalisis } from '../dominio/analisis/view.js';
@@ -70,13 +73,16 @@ initShell();
 initSidebarCollapse();
 initRouter(markActiveNav);
 initOnboarding();
+initAceptacionLegal();
 initMenuMas();
 initRegistrar();
 initInstallPrompt();
 renderAll();
 initLogros();
 initSwAviso();
-mostrarNovedadesSiHay();
+// Si el gate de aceptación legal quedó abierto (usuario existente con versión
+// vieja), las novedades esperan: aceptacion-legal.js las dispara al aceptar.
+if (!faltaAceptarLegal()) mostrarNovedadesSiHay();
 
 // Verificar compromisos próximos y mostrar notificación si el usuario optó-in.
 // Se ejecuta después del primer render para no bloquear el arranque.

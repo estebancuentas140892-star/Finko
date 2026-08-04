@@ -494,6 +494,19 @@
   line-height: var(--fk-leading-relaxed);
   color: var(--fk-text-muted);
 }
+/* Enlace inline dentro de una frase (LEG.2, checkbox de aceptación legal):
+   ningún componente existente cubre "texto de link a mitad de una oración",
+   el resto son botones o filas completas. */
+.onboarding__link {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--fk-accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.onboarding__link:hover { color: var(--fk-accent-hover); }
 /* El bloque centra el wizard, pero un formulario se lee alineado. */
 .modal--onboarding .form-group { text-align: left; }
 

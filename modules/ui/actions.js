@@ -53,7 +53,8 @@ function _handleClick(e) {
 function _handleKeydown(e) {
   if (e.key !== 'Escape') return;
   const open = document.querySelector('.modal-overlay[data-open]');
-  if (open) cerrarModal(open);
+  // data-bloqueante (LEG.2): gate de aceptación legal, sin salida hasta aceptar.
+  if (open && !('bloqueante' in open.dataset)) cerrarModal(open);
 }
 
 /**

@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 32;
+const SCHEMA_VERSION = 33;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -479,6 +479,24 @@ function _migrate(raw) {
     if (!data.config || typeof data.config !== 'object') data.config = {};
     if (typeof data.config.ultimaVersionVista !== 'number') {
       data.config.ultimaVersionVista = ultimaVersionNovedadesConocida();
+    }
+  }
+
+  // v32 → v33: aceptación legal versionada (LEG.2). Un usuario que YA tenía
+  // datos guardados viene usando Finko bajo el paquete legal informal (Centro
+  // Legal de solo lectura, sin registro de aceptación): se da por aceptada la
+  // versión vigente al momento de este bump ('Borrador v0.1', hardcoded a
+  // propósito, igual que REMAPEO_TIPO_DEUDA en v18→v19: es un hecho histórico
+  // de esta migración, no debe seguir la constante VERSION_LEGAL si cambia
+  // más adelante). El gate solo se activa hacia delante, cuando el paquete
+  // suba de versión de verdad (re-aceptación) - no retroactivamente el día
+  // que este código se despliega. Un usuario nuevo sí arranca en null
+  // (createInitialState(), state.js): a él el onboarding se lo pide de una.
+  // Idempotente: si el campo ya está presente, no se sobreescribe.
+  if ((typeof data._version === 'number' ? data._version : 1) < 33) {
+    if (!data.config || typeof data.config !== 'object') data.config = {};
+    if (!('legalAceptado' in data.config)) {
+      data.config.legalAceptado = { version: 'Borrador v0.1', fecha: new Date().toISOString().slice(0, 10) };
     }
   }
 

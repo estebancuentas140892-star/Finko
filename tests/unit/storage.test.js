@@ -1217,6 +1217,50 @@ describe('Migración v23 → v24 (categorías de gasto personalizadas, TX.9b)', 
   });
 });
 
+describe('Migración v32 → v33 (aceptación legal versionada, LEG.2)', () => {
+  it('un usuario existente (con datos guardados) queda grandfathered: legalAceptado con la versión histórica, no null', () => {
+    const v32 = { ...createInitialState(), _version: 32 };
+    delete v32.config.legalAceptado;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v32));
+
+    loadData();
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(S.config.legalAceptado).not.toBeNull();
+    expect(S.config.legalAceptado.version).toBe('Borrador v0.1');
+    expect(typeof S.config.legalAceptado.fecha).toBe('string');
+  });
+
+  it('un estado v32 sin config en absoluto no revienta la migración', () => {
+    const v32 = { ...createInitialState(), _version: 32 };
+    delete v32.config;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v32));
+
+    expect(() => loadData()).not.toThrow();
+    expect(S.config.legalAceptado).not.toBeNull();
+  });
+
+  it('es idempotente: no sobrescribe una aceptación ya registrada', () => {
+    const v33 = { ...createInitialState(), _version: 33 };
+    v33.config.legalAceptado = { version: 'Borrador v0.2', fecha: '2026-08-01' };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v33));
+
+    loadData();
+
+    expect(S.config.legalAceptado).toEqual({ version: 'Borrador v0.2', fecha: '2026-08-01' });
+  });
+
+  it('idempotente también cuando ya quedó explícitamente en null (usuario nuevo migrado a mitad de camino)', () => {
+    const v33 = { ...createInitialState(), _version: 33 };
+    v33.config.legalAceptado = null;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v33));
+
+    loadData();
+
+    expect(S.config.legalAceptado).toBeNull();
+  });
+});
+
 describe('save() - debounce', () => {
   it('no escribe inmediatamente: requiere esperar al timer o forzar _flushNow', () => {
     vi.useFakeTimers();

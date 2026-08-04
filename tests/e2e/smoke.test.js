@@ -877,17 +877,23 @@ test.describe.serial('Onboarding', () => {
     });
   });
 
-  test('se puede completar el wizard y no reaparece tras recarga', async ({ page }) => {
+  test('se puede completar el wizard (nombre + aceptación legal, LEG.2) y no reaparece tras recarga', async ({ page }) => {
     // Cada test tiene su propio contexto de browser (localStorage limpio por defecto).
     // Solo navegamos directo; si hay contaminación por workers del SW, el retry
     // configurado en playwright.config.js lo resuelve.
     await page.goto('/');
 
-    // Llenar nombre y enviar
+    // Paso 1: nombre.
     await page.locator('#onboarding input[name="nombre"]').fill('María Camila');
     await page.locator('#onboarding button[type="submit"]').click();
 
-    // Wizard debe cerrarse
+    // Paso 2: aceptación obligatoria del paquete legal. El wizard sigue
+    // abierto (mismo overlay #onboarding, contenido reemplazado).
+    await expect(page.locator('#onboarding[data-open]')).toBeVisible({ timeout: 3_000 });
+    await page.locator('#form-onboarding-legal input[name="acepto"]').check();
+    await page.locator('#form-onboarding-legal button[type="submit"]').click();
+
+    // Ahora sí, el wizard debe cerrarse.
     await expect(page.locator(modalCerrado('onboarding'))).toBeAttached({
       timeout: 3_000,
     });
@@ -899,6 +905,20 @@ test.describe.serial('Onboarding', () => {
     await page.reload();
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
     await expect(page.locator('#onboarding[data-open]')).toHaveCount(0);
+  });
+
+  test('sin marcar la casilla de aceptación, el paso 2 no avanza', async ({ page }) => {
+    await page.goto('/');
+
+    await page.locator('#onboarding input[name="nombre"]').fill('Julián');
+    await page.locator('#onboarding button[type="submit"]').click();
+
+    await expect(page.locator('#onboarding[data-open]')).toBeVisible({ timeout: 3_000 });
+    await page.locator('#form-onboarding-legal button[type="submit"]').click();
+
+    // Sigue en el paso 2: el checkbox no se marcó, no hay forma de continuar.
+    await expect(page.locator('#form-onboarding-legal')).toBeVisible();
+    await expect(page.locator('#onboarding[data-open]')).toBeVisible();
   });
 });
 

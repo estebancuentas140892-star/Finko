@@ -1426,13 +1426,28 @@
     </div>
   </div>
 
-  <!-- Modal: Onboarding (wizard de bienvenida) -->
+  <!-- Modal: Onboarding (wizard de bienvenida, 2 pasos: nombre + aceptación legal) -->
   <div class="modal-overlay" id="onboarding"
        role="dialog" aria-modal="true"
        aria-label="Bienvenida a Finko" aria-hidden="true">
     <div class="modal modal--onboarding">
       <div class="modal__body" id="onboarding-body">
         <!-- onboarding.js inyecta el contenido del wizard aquí -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Aceptación legal obligatoria (LEG.2) - gate de re-aceptación para
+       usuarios existentes cuya versión aceptada quedó vieja. Bloqueante a
+       propósito (data-bloqueante): sin botón de cerrar y el Escape global lo
+       ignora (ver actions.js _handleKeydown); un usuario nuevo la resuelve
+       dentro del onboarding, no acá (aceptacion-legal.js). -->
+  <div class="modal-overlay" id="aceptacion-legal" data-bloqueante
+       role="dialog" aria-modal="true"
+       aria-label="Aceptación de políticas" aria-hidden="true">
+    <div class="modal modal--onboarding">
+      <div class="modal__body" id="aceptacion-legal-body">
+        <!-- aceptacion-legal.js inyecta el contenido del gate aquí -->
       </div>
     </div>
   </div>
