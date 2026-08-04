@@ -46,8 +46,8 @@
 ## Categorías personalizadas del usuario (TX.9b, y su extensión CAT.3)
 
 - **Objetivo**          : el usuario crea sus propias categorías con nombre e ícono, y valen igual que las nativas. Hoy solo en Gastos; **CAT.3** las extiende a Gastos fijos con la sección como campo del objeto, oferta filtrada por sección y resolución de ícono global ([ADR 058](../DECISIONS/058-categorias-personalizadas-globales.md), 5 decisiones).
-- **Estado actual**     : **TX.9b en producción, CAT.3a cerrada (2026-08-01)**, quedan CAT.3b a CAT.3d. `S.categoriasPersonalizadas` es `{id, nombre, icono, fechaCreacion, seccion}[]` (`seccion: 'gasto' | 'fijo'`, D1, migración v30 a v31; existentes backfilleadas a `'gasto'`); la clave funcional sigue siendo el **`nombre`**, que es lo que se guarda en `Gasto.categoria` igual que una nativa. `id` y `fechaCreacion` los inyecta el helper genérico `guardar()` de `infra/crud.js`. La **resolutora** (D2) ahora fusiona `CATEGORIA_ICONO` y `CATEGORIA_AGENDA_ICONO` antes de caer a la personalizada, e ignora `seccion` a propósito. El **validador** (D4) compara contra los dos catálogos nativos completos. Hasta CAT.3c el formulario de gasto sigue siendo la única fuente: `gastos/index.js` estampa `seccion: 'gasto'` al crear. **No hay edición ni borrado**: la única operación sobre la colección es `guardar()`, así que una vez creada es permanente. Eso queda **fuera** del ADR 058 y sale a tarjeta propia.
-- **Verificado contra** : CAT.3a (2026-08-01).
+- **Estado actual**     : **TX.9b en producción, CAT.3a y CAT.3b cerradas**, quedan CAT.3c y CAT.3d. `S.categoriasPersonalizadas` es `{id, nombre, icono, fechaCreacion, seccion}[]` (`seccion: 'gasto' | 'fijo'`, D1, migración v30 a v31; existentes backfilleadas a `'gasto'`); la clave funcional sigue siendo el **`nombre`**, que es lo que se guarda en `Gasto.categoria` igual que una nativa. `id` y `fechaCreacion` los inyecta el helper genérico `guardar()` de `infra/crud.js`. La **resolutora** (D2) ahora fusiona `CATEGORIA_ICONO` y `CATEGORIA_AGENDA_ICONO` antes de caer a la personalizada, e ignora `seccion` a propósito. El **validador** (D4) compara contra los dos catálogos nativos completos. Hasta CAT.3c el formulario de gasto sigue siendo la única fuente: `gastos/index.js` estampa `seccion: 'gasto'` al crear. **No hay edición ni borrado**: la única operación sobre la colección es `guardar()`, así que una vez creada es permanente. Eso queda **fuera** del ADR 058 y sale a tarjeta propia.
+- **Verificado contra** : `727d8c9` (2026-08-03, CAT.3b).
 
 **Dónde vive**
 
@@ -61,17 +61,17 @@
 | Alta (dentro del guardado del gasto, estampa `seccion: 'gasto'`) | `modules/dominio/gastos/index.js` | `_guardarGasto()`, chip sentinela `'__nueva__'` | ~66 |
 | Chips del formulario de gasto | `modules/dominio/gastos/view.js` | nativas, personalizadas, sentinela | ~612 |
 
-**Las 7 superficies que leen el mapa crudo** (alcance de CAT.3b, D3 del ADR 058). Las tres últimas **ya fallan hoy**, sin CAT.3:
+**Las 7 superficies que leían el mapa crudo, cerradas por CAT.3b**: las tres últimas fallaban con una personalizada de Gastos antes del cierre (D3 del ADR 058). Las 7 pasan ahora por `iconoDeCategoriaGasto()`:
 
-| # | Archivo | Qué pinta | Acceso crudo |
-|---|---|---|---|
-| C1 | `modules/dominio/agenda/view.js:716` | detalle del día del calendario | `CATEGORIA_AGENDA_ICONO[c.categoria]` |
-| C2 | `modules/dominio/agenda/view.js:888` | chips del formulario de gasto fijo | `CATEGORIA_AGENDA_ICONO[c]` |
-| C3 | `modules/dominio/gastos/logic.js:585` | `iconoPorOrigen()`, gasto nacido de un fijo | `CATEGORIA_AGENDA_ICONO[comp.categoria]` |
-| C4 | `modules/dominio/tesoreria/views/distribucion.js:315` | checklist de Necesidades | `CATEGORIA_AGENDA_ICONO[it.categoria]` |
-| C5 | `modules/dominio/presupuesto/view.js:492` | envelope de un límite | `CATEGORIA_ICONO[...] ?? 'c-otros'` |
-| C6 | `modules/dominio/presupuesto/view.js:742` | banner de alertas de límite | `CATEGORIA_ICONO[...] ?? 'c-otros'` |
-| C7 | `modules/dominio/resumen/view.js:119` | categoría top de la semana, en Inicio | `CATEGORIA_ICONO[...] ?? 'c-otros'` |
+| # | Archivo | Qué pinta |
+|---|---|---|
+| C1 | `modules/dominio/agenda/view.js` (`_renderDetalleItem`) | detalle del día del calendario |
+| C2 | `modules/dominio/agenda/view.js` (`renderFormGastoFijo`) | chips del formulario de gasto fijo |
+| C3 | `modules/dominio/gastos/logic.js` (`iconoPorOrigen`, 3er parámetro `personalizadas`) | gasto nacido de un fijo |
+| C4 | `modules/dominio/tesoreria/views/distribucion.js` (`_iconoNecesidad`) | checklist de Necesidades |
+| C5 | `modules/dominio/presupuesto/view.js` (`_renderEnvelope`) | envelope de un límite |
+| C6 | `modules/dominio/presupuesto/view.js` (`renderPanelLimites`) | banner de alertas de límite |
+| C7 | `modules/dominio/resumen/view.js` (`renderPanelResumen`) | categoría top de la semana, en Inicio |
 
 **Los 3 gates de escritura de Gastos fijos** (alcance de CAT.3c): `compromisos/logic/modelo.js:276` rechaza con error toda categoría fuera de `CATEGORIAS_AGENDA`; `:414` la descarta a `null` **en silencio**; `:55` decide si `descripcion` es la categoría o texto libre. Dos espejos en la UI: `agenda/index.js:145` (prefill al editar) y `:217` (`_syncCategoriaGastoFijo`).
 
@@ -85,9 +85,9 @@
 - **Una personalizada sin uso sigue apareciendo**: borrar su último gasto no la retira del catálogo, porque no hay borrado.
 - **Precedencia de `iconoPorOrigen`**: un gasto nacido de un fijo o de un abono hereda el ícono del compromiso y la personalizada nunca se consulta (`gastos/view.js:441`).
 
-**Cambios pendientes**: CAT.3b a CAT.3d (detalle y alcance por rebanada en el BOARD). Fuera de alcance por decisión del ADR 058: renombrar y eliminar (tarjeta propia), Apartados y Metas (catálogos de otra naturaleza), Ingresos.
+**Cambios pendientes**: CAT.3c y CAT.3d (detalle y alcance por rebanada en el BOARD). Fuera de alcance por decisión del ADR 058: renombrar y eliminar (tarjeta propia), Apartados y Metas (catálogos de otra naturaleza), Ingresos.
 
-**Cambios realizados**: `TX.9b`: creación de la funcionalidad (detalle en el CHANGELOG). `2026-07-31 (ADR 058)`: mapeo completo de origen y destino, sin cambios de código. `2026-08-01 (CAT.3a)`: campo `seccion`, migración v30 a v31, resolutora global, validador D4 (detalle en el CHANGELOG).
+**Cambios realizados**: `TX.9b`: creación de la funcionalidad (detalle en el CHANGELOG). `2026-07-31 (ADR 058)`: mapeo completo de origen y destino, sin cambios de código. `2026-08-01 (CAT.3a)`: campo `seccion`, migración v30 a v31, resolutora global, validador D4 (detalle en el CHANGELOG). `2026-08-03 (CAT.3b)`: los 7 accesos crudos pasan por la resolutora, incluidos los 3 que ya fallaban (detalle en el CHANGELOG).
 
 ---
 

@@ -10,6 +10,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### fix(transversal): CAT.3b, los siete accesos crudos de ícono pasan por la resolutora · 2026-08-03
+
+Cierra **CAT.3b**. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
+
+> **Nota de historia, no de producto.** El commit `727d8c9` lleva el mensaje de esta tarea y también trae 5 archivos de otra sesión paralela (`analisis/logic.js`, `analisis/view.js`, `config/view.js`, `nudges.css`, `analisis.test.js`, veredicto de declarante): compartíamos el índice de git y quedaron staged cuando corrí `pnpm run test:e2e` acá, mismo cruce que documentan las entradas de **AH.5b** e **INT.1a**. No se reescribió la historia; esa sesión cierra su propia tarjeta con su propia entrada cuando corresponda.
+
+- **El defecto (D3 del ADR 058):** `presupuesto/view.js` (envelope + banner de alertas de límite) y `resumen/view.js` (categoría top de Inicio) leían `CATEGORIA_ICONO` crudo y caían a `c-otros` con una categoría personalizada, aunque el formulario de Gastos que la creó sí mostraba el ícono elegido. Cuatro accesos más del lado de Gastos fijos (`agenda/view.js` ×2, `gastos/logic.js`, `tesoreria/views/distribucion.js`) leían `CATEGORIA_AGENDA_ICONO` crudo por el mismo motivo, sin fallar hoy porque Gastos fijos todavía no acepta personalizadas (CAT.3c).
+- Los siete pasan a `iconoDeCategoriaGasto()`, la misma resolutora global que ya usa el formulario de Gastos. `iconoPorOrigen()` (`gastos/logic.js`) gana un tercer parámetro opcional `personalizadas`; sin él se comporta igual que antes (compatibilidad con sus tests existentes).
+- 3 tests nuevos que fijan el defecto (envelope, banner de alertas, categoría top de Inicio) + 1 que cubre el nuevo parámetro de `iconoPorOrigen()`. 3726 unit + 255 E2E + lint verdes (5 fallas preexistentes en `compromisos.test.js`, ajenas a esta tarea: confirmadas contra HEAD sin ningún cambio de sesión). SW v485 a v487 (dos bumps concurrentes durante el cierre, mismo patrón de sesión compartida).
+
 ### docs(transversal): GU.1a, auditoría del sistema de guía + revisión formal del ADR 016 · 2026-08-03
 
 Cierra **GU.1a**. Sin cambio de código: auditoría de UX. Ficha: [`contexto/transversal.md`](contexto/transversal.md).

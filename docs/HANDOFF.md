@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-03. Última tarea cerrada: GU.1a, auditoría del sistema de guía + revisión formal del ADR 016.
+> Revisado: 2026-08-03. Última tarea cerrada: CAT.3b, los siete accesos crudos de ícono pasan por la resolutora.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,7 +13,7 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 3715/3715 verdes |
+| Tests unitarios + integración | 3726/3731 verdes. **5 fallas preexistentes en `compromisos.test.js`** (`renderPanelPrioridades`, anatomía de fila): verificadas contra HEAD sin ningún cambio de sesión, ajenas a CAT.3b, sin tarjeta propia todavía |
 | Tests E2E | 255/255 verdes, corrida del 2026-08-02 (CFG.6, config.css + service-worker.js staged), **sin flaky**: el de IN.9c estaba causado por la cascada de entrada del dashboard (`cardIn` desliza cada celda desde `translateY(8px)` con 40ms de stagger y `boundingBox()` incluye el transform), y se cerró midiendo con `emulateMedia({ reducedMotion: 'reduce' })`. **Es compuerta** desde el 2026-07-30: el hook de pre-commit exige el sello de una corrida verde cuando el diff toca runtime. La huella se calcula sobre el **índice** (`git ls-files -s`), no sobre el árbol: hay que `git add` **antes** de sellar, o el propio `add` invalida el sello. **Ojo con sesiones paralelas sobre el mismo worktree**: el índice compartido puede invalidar el sello entre que se corre la suite y se commitea; `git reset HEAD -- archivo` + `git apply --cached parche.diff` separa hunks propios de ajenos cuando el mismo archivo cambia por dos sesiones a la vez, sin tocar el árbol de trabajo de la otra sesión (usado el 2026-08-02 en `infra/bolsas.js` y `tests/unit/analisis.test.js`, ARQ.1a vs. ARQ.1b) |
 | Schema version (`localStorage`) | v32 (`config.ultimaVersionVista`, UPD.1; migración backfill al catálogo vigente) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**CAT.3b - los siete accesos crudos de ícono pasan por la resolutora, 2026-08-03**
+`presupuesto/view.js` (envelope + banner de alertas), `resumen/view.js` (categoría top de Inicio) y cuatro accesos de Gastos fijos (`agenda/view.js` ×2, `gastos/logic.js`, `tesoreria/views/distribucion.js`) leían el mapa nativo crudo; los tres primeros ya caían a `c-otros` con una personalizada aunque el formulario que la creó mostrara su ícono. Los siete pasan a `iconoDeCategoriaGasto()` (ADR 058 D3). Quedan CAT.3c y CAT.3d.
 
 **GU.1a - auditoría del sistema de guía + revisión formal del ADR 016, 2026-08-03**
 Sin cambio de código. Inventario de las 17 secciones de dominio confirma el [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md) vigente sin desviaciones: las 11 secciones con banner de propósito quedaron limpias de código muerto de EP.1-EP.6, sin empty states que repitan el banner. Único hallazgo: Ahorro apila dos preguntas gancho (banner + hero) mientras el fondo está vacío, anotado para que **AH.5 D3** lo resuelva al rediseñar. Adelantada frente a la recomendación de esperar a las v2 grandes, por instrucción directa.
@@ -36,9 +39,6 @@ Abre la iniciativa INT.1 ([ADR 059](DECISIONS/059-interfaz-de-escritorio.md), 8 
 
 **CFG.6 - pase de escritorio/tablet + tema claro en Ajustes, 2026-08-02**
 "Instalar Finko" y "Activar recordatorios" vivían sueltos dentro de `.config-section` (flex column, stretch por defecto) y se estiraban a 932px en escritorio (1280px) y 660px en tablet (768px); el pase 2026-07-25 solo había corregido `.config-form`/`.config-danger` y los pares de `.config-actions--ambito`. Nueva regla `.config-section > .btn { align-self: flex-start; min-width: 160px; }`, mismo patrón que "Guardar perfil". Tema claro revisado por código (100% `var(--fk-*)`), sin captura real. Sigue abierto el inventario de configs faltantes (punto 1), depende de CFG.1 a CFG.5.
-
-**IN.9e - estado vacío propio de escritorio, cierra IN.9, 2026-08-02**
-`.hero-guia__escritorio` nueva: pieza centrada de 620px con tres pasos, junto a `.hero-guia__movil` intacta; la CSS decide cuál se ve por ancho. Copy provisional (PI5). Código ya en el árbol desde `ab8c9a1` (sesión paralela); este cierre verifica y pone el tablero al día.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 

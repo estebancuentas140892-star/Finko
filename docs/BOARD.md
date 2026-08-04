@@ -423,16 +423,12 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 #### CAT.3 - Categorías personalizadas globales (mismo estatus que las nativas, en toda la app)
 - Prioridad  : media
-- Estado     : **decidida el 2026-07-31, [ADR 058](DECISIONS/058-categorias-personalizadas-globales.md)**, en cuatro rebanadas. **CAT.3a cerrada (2026-08-01)**, quedan tres.
+- Estado     : **decidida el 2026-07-31, [ADR 058](DECISIONS/058-categorias-personalizadas-globales.md)**, en cuatro rebanadas. **CAT.3a y CAT.3b cerradas**, quedan dos.
 - Objetivo   : las personalizadas de TX.9b valen hoy solo para Gastos; extenderlas a Gastos fijos con la sección como campo del objeto (`seccion: 'gasto' | 'fijo'`), oferta filtrada por sección y resolución de ícono global.
 - Secciones  : transversal (Gastos, Gastos fijos, Presupuesto, Inicio, Calendario, Tesorería)
 - Depende de : nada. CAT.1 (a qué sección pertenece una categoría) y CAT.2 (cómo se crea) ya cerraron
-- **Alcance corregido en el mapeo del 2026-07-31:** gráficos, CSV y 8 de 9 filtros **ya funcionan** con personalizadas (el color viene del dominio y del ranking, no de la categoría; no existe ningún mapa `categoría` a `color` en el repo). El trabajo real son el gate de escritura de fijos y 7 accesos crudos al mapa de íconos, **3 de los cuales ya fallan hoy** sin CAT.3.
+- **Alcance corregido en el mapeo del 2026-07-31:** gráficos, CSV y 8 de 9 filtros **ya funcionan** con personalizadas (el color viene del dominio y del ranking, no de la categoría; no existe ningún mapa `categoría` a `color` en el repo). El trabajo real era el gate de escritura de fijos (CAT.3c, pendiente) y los 7 accesos crudos al mapa de íconos (CAT.3b, cerrada).
 - Modelo     : Alta capacidad - Alto (bump de schema + propagación transversal)
-
-##### CAT.3b - los siete accesos crudos pasan por la resolutora
-- Estado     : pendiente
-- Alcance    : D3 del ADR 058. Los 4 de fijos (`agenda/view.js:716`, `:888`, `gastos/logic.js:585`, `tesoreria/views/distribucion.js:315`) y los 3 que **ya fallan hoy** con una personalizada de Gastos, que la pintan `c-otros` mientras el formulario que la creó muestra el ícono correcto (`presupuesto/view.js:492`, `:742`, `resumen/view.js:119`)
 
 ##### CAT.3c - Gastos fijos ofrece y acepta personalizadas
 - Estado     : pendiente
@@ -440,7 +436,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 ##### CAT.3d - las superficies de fijos resuelven el ícono de una personalizada
 - Estado     : pendiente, última rebanada
-- Alcance    : detalle del día del calendario, checklist de Necesidades de Tesorería y el gasto nacido de un fijo (`iconoPorOrigen`)
+- Alcance    : detalle del día del calendario, checklist de Necesidades de Tesorería y el gasto nacido de un fijo (`iconoPorOrigen`) ya pasan por la resolutora desde CAT.3b; esta rebanada es la verificación end-to-end con una personalizada real de sección `'fijo'`, que solo existe una vez CAT.3c la habilite
 
 #### EDIT.1 - Editar sin destruir: Me deben
 - Prioridad  : media-alta
