@@ -58,7 +58,7 @@ Las 35 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | MC.13e-2g | Rediseño en 2 pasos con educación financiera | Mis cuentas | media | última; depende del handoff de diseño |
 | MC.17f | Deshacer o editar una transferencia | Mis cuentas | media | coordinar con MOV.1 |
 | MT.6 | Metas v2: subcategorías inteligentes + plan de aportes | Metas | media-alta | MC.13 (motor); ADR 029 D3 |
-| AH.5 | Fondo v2: rediseño UX educativo + aportes por distribución | Ahorro | media | motor de MC.13; rediseño conviene tras IV.2 |
+| AH.5 | Fondo v2: rediseño UX educativo del hero (D2 + D3) | Ahorro | media | nada duro; decidir handoff de diseño |
 | LIM.1 | Límites v2: asistente preventivo de estilo de vida | Límites | sin definir | ADR 045 (base de cálculo); ADR 044 (sugerencias) |
 | PE.6 | Me deben v2: intereses, historial de abonos y confianza | Me deben | media-alta | nada duro |
 | ANL.1 | Análisis como centro de interpretación financiera | Análisis | sin definir | ADR 046 (criterio y lenguaje); ADR 044 (recomendaciones) |
@@ -76,7 +76,6 @@ Las 35 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | IV.4 | Iconografía dirigida post-color | Transversal | tras IV.2 | IV.2 en producción + revisión visual |
 | CAT.3 | Categorías personalizadas globales (4 rebanadas, ADR 058) | Transversal | media | nada; decidida el 2026-07-31 |
 | EDIT.1 | Editar sin destruir: Me deben | Transversal | media-alta | nada |
-| GU.1a | Auditoría del sistema de guía + revisión del ADR 016 | Transversal | media | recomendado tras IV.2 + las v2 grandes |
 | LEG.2 | Aceptación obligatoria versionada | Transversal | alta | checklist de `docs/legal/README.md` |
 | LG.2d | Mudanza de la vitrina a Análisis + tarjeta en Inicio | Transversal | baja (bloqueada) | ANL.1 (layout) |
 | LG.2e | Familia comportamiento (interpretación de hábitos) | Transversal | baja | LG.2c; `ahorro-creciente` además depende de ANL.1 |
@@ -169,16 +168,15 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 - Aceptación : captura móvil con Ahorro en la barra + Calendario dentro de "Más" + E2E de navegación verde
 - Modelo     : Alta capacidad - Alto (nav global, revierte un ADR vigente)
 
-#### AH.5 - Fondo v2: rediseño UX educativo + aportes por el flujo de distribución
+#### AH.5 - Fondo v2: rediseño UX educativo del hero (D2 + D3)
 - Prioridad  : media
-- Área       : ambos (el rediseño es design; el cambio de flujo de aporte es code)
-- Estado     : pendiente de análisis (no iniciar). Alcance y las 4 decisiones: **[ADR 049](DECISIONS/049-fondo-de-emergencia-v2.md)**, su dueño. **AH.5a cerrada** (ver CHANGELOG).
-- Objetivo   : el aporte principal pasa al asistente de distribución y la sección comunica protección (qué es, por qué importa, cuándo se usa) antes que cifras.
-- Secciones  : Ahorro (fondo), transversal por el motor de MC.13
-- Archivos   : `modules/dominio/ahorro/` (view, logic con AH.2 ya hecho), motor compartido en MC.13
-- Depende de : el aporte por distribución depende del motor de MC.13; el rediseño conviene tras IV.2
-- Riesgo     : las 2 vías de aporte (asistente y registro directo) deben terminar en la misma función del dominio, o el saldo se calcula distinto según por dónde entró (ADR 049 D2)
-- Modelo     : Equilibrado - Alto (rediseño de una sección con lógica ya existente; re-cortar en rebanadas al iniciar)
+- Área       : design (D2 y D3 son rediseño visual; ya no queda código sin mockup)
+- Estado     : pendiente de análisis (no iniciar sin decidir el handoff, mismo dilema que enfrentó MC.13e-2g: mockup de Claude Design o Sonnet/Opus sin mockup). Alcance y las 4 decisiones: **[ADR 049](DECISIONS/049-fondo-de-emergencia-v2.md)**, su dueño. **AH.5a y AH.5b cerradas** (ver CHANGELOG): D1 (aporte por distribución) y D4 (compromiso por frecuencia real) ya en producción.
+- Objetivo   : D3, la sección comunica protección (qué es, por qué importa, cuándo se usa) antes que cifras; D2, el peso visual del registro directo baja al de una acción secundaria, exacto cuánto se decide con la pantalla rediseñada a la vista.
+- Secciones  : Ahorro (fondo)
+- Archivos   : `modules/dominio/ahorro/view.js` (rediseño del hero `_renderFondoCard`), CSS nuevo si hay mockup
+- Depende de : nada duro (el motor de MC.13 y IV.2 ya están en producción)
+- Modelo     : si hay handoff, Equilibrado - Alto (implementación de mockup); si no, Alta capacidad - Alto (diseño + implementación sin mockup)
 
 ---
 
@@ -455,16 +453,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 ---
 
-> **Iniciativa GU.1: guía por navegación (aprender usando, no leyendo)** (6.º lote, 2026-07-08, brief General puntos 4+5). **Revisa el [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md)** (banner de propósito por sección): decirlo formalmente al iniciar, no desmontarlo en silencio. El principio ya se aplica en varios puntos (el CTA de cuenta lleva a crearla, CAL.1 ofrece distribuir al llegar el ingreso, el fondo recomienda su aporte en la distribución) y se adopta como transversal. **Regla anti-doble-trabajo:** GU.1 define el principio y audita el sistema transversal (banners, hints); los rediseños internos de cada sección viven en sus iniciativas v2, que aplican este principio en vez de duplicarlo.
-
-#### GU.1a - Auditoría del sistema de guía + revisión del ADR 016
-- Prioridad  : media
-- Área       : design (auditoría de UX; puede derivar en tarjetas `code` al re-cortarse)
-- Estado     : pendiente de análisis (no iniciar; conviene DESPUÉS de que las iniciativas v2 grandes definan sus pantallas, o la auditoría se hace dos veces)
-- Objetivo   : inventario de banners/hints/CTAs de arranque por sección, propuesta de qué se elimina o convierte en guía contextual, revisión formal del ADR 016. Detalle en [`contexto/transversal.md`](contexto/transversal.md).
-- Secciones  : Transversal (`ui/proposito.js`, empty states de todas las vistas)
-- Depende de : recomendado tras IV.2 + las primeras iniciativas v2; coordina con cada una
-- Modelo     : Equilibrado - Alto (auditoría de UX con criterio, sin lógica nueva)
+> **Iniciativa GU.1: guía por navegación (aprender usando, no leyendo)** (6.º lote, 2026-07-08, brief General puntos 4+5). **GU.1a cerrada (2026-08-03):** [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md) auditado y vigente sin desviaciones; detalle en [`contexto/transversal.md`](contexto/transversal.md). **Regla anti-doble-trabajo:** GU.1 define el principio y audita el sistema transversal (banners, hints); los rediseños internos de cada sección viven en sus iniciativas v2, que aplican este principio en vez de duplicarlo.
 
 ---
 

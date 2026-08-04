@@ -1,6 +1,6 @@
 # ADR 016 - Banner de propósito de sección (patrón "¿para qué sirve esto?")
 
-**Estado:** Implementada (EP.1 a EP.4). **Revisada el 2026-07-03:** el banner pasa de "siempre visible y colapsable" a **divulgación progresiva**: una única descripción por sección, visible solo mientras la sección no tiene datos (ver sección "Revisión 2026-07-03"). La dirección la fijó el usuario el 2026-07-02; esta revisión es la fase de diseño de EP.7.
+**Estado:** Implementada (EP.1 a EP.4, EP.7a a EP.7d). **Revisada el 2026-07-03:** el banner pasa de "siempre visible y colapsable" a **divulgación progresiva**: una única descripción por sección, visible solo mientras la sección no tiene datos (ver sección "Revisión 2026-07-03"). La dirección la fijó el usuario el 2026-07-02; esta revisión es la fase de diseño de EP.7. **Auditada el 2026-08-03 (GU.1a):** sin desviaciones, alcance de 11 secciones confirmado correcto. Detalle: [`contexto/transversal.md`](../contexto/transversal.md).
 **Fecha:** 2026-06-30
 **Autores:** Esteban (producto), Claude Opus 4.8 (diseño)
 **Relación:** vehículo natural de la regla de contexto de [ADR 014](014-taxonomia-categorias-transversal.md) (la taxonomía se enseña sobre todo en el copy). Es la épica EP; este ADR es EP.0 y habilita EP.1 a EP.4.

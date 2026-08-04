@@ -269,9 +269,71 @@
 
 ---
 
-## Sistema de guía por navegación (GU.1, auditoría pendiente)
+## Shell de escritorio: sidebar, ancho de contenido y barra superior (iniciativa INT.1)
+
+- **Objetivo**          : el escritorio nunca se decidió. El sidebar existía desde antes de que la app tuviera dos topologías y las quince auditorías por sección midieron móvil a 390px, así que escritorio heredó el reparto móvil estirado. El [ADR 059](../DECISIONS/059-interfaz-de-escritorio.md) lo decide en ocho rebanadas (INT.1a a INT.1h).
+- **Estado actual**     : **INT.1a cerrada** (contenido centrado + Movimientos en el sidebar). Las otras siete siguen pendientes; la barra superior de 56px, que es el corazón de la propuesta, no existe todavía en el repo.
+- **Verificado contra** : INT.1a (2026-08-02).
+
+**Mediciones vigentes contra el código** (no contra la recreación del handoff), tomadas el 2026-08-02 en la app real:
+
+| Qué | Antes de INT.1a | Después |
+|---|---|---|
+| Ancho huérfano a 1920 (`main` 1680, `.section` 1440) | 240px pegados al borde derecho | 120 + 120 |
+| Ancho huérfano a 2560 | 880px de un lado | 440 + 440 |
+| Destinos sin entrada en el sidebar | 1 (Movimientos) | 0 |
+| Filas visibles del sidebar en escritorio | 15 | 16 |
+| Alto que necesita el nav a 1280x799 | 648px con 607 disponibles: desborda 41px | sin cambio, lo resuelve INT.1b |
+
+**El desborde del nav tiene una mitigación que no funciona** ([BUG-026](../BUGS.md)): el bloque `@media (max-height: 800px) and (min-width: 1024px)` de `layout.css` compacta filas, grupos y rótulos, y **ninguna de sus cuatro declaraciones se aplica**. Todas tienen la misma especificidad (0,1,0) que las reglas incondicionales del mismo archivo, escritas más abajo, y una media query no aporta especificidad. Medido con la media query activa: `min-height` computa 40px y no 36, `margin-top` de grupo 16px y no 8. Se decide dentro de INT.1b: si anidar las hijas de Ahorro recupera los ~160px, el bloque se borra en vez de repararse.
+
+**Dos premisas del handoff que el código desmiente** (verificadas el 2026-08-02, antes de escribir el ADR 059):
+
+- **PI7 es falso.** El informe de Inicio dio por hecho que `--fk-bg-glass` no tenía valor en tema claro y pintaría una banda negra sobre página blanca; el ADR 057 y el tablero lo registraron como decisión abierta que bloqueaba la barra superior. `themes.css` lo define en `rgba(255, 255, 255, 0.75)` desde el commit de CSS base. Cerrado por falso, nunca bloqueó nada.
+- **E3 acredita la mitigación equivocada**, que es BUG-026, arriba.
+
+**Dónde vive**
+
+| Pieza | Archivo | Ancla |
+|---|---|---|
+| Ancho de contenido y su centrado (INT.1a, D7, regla R77) | `styles/layout.css` | `.section { max-width: var(--fk-content-max); margin-inline: auto }` |
+| Tope de ancho (único consumidor: `.section`) | `styles/tokens.css` | `--fk-content-max: 1440px` |
+| Entrada de Movimientos en el sidebar (INT.1a, D6) | `index.html` | `.nav-item--no-mobile` con `href="#movimientos"`, grupo `nav-label-gestion` |
+| Entrada de Movimientos en móvil (sin cambios desde DIS.6/C6) | `index.html` | `.mas-tile` con `href="#movimientos"` |
+| Regla de emergencia del sidebar (muerta, BUG-026) | `styles/layout.css` | `@media (max-height: 800px) and (min-width: 1024px)` |
+| Las que la pisan | `styles/layout.css` | `.nav-item`, `.nav-group`, `.nav-group__label` |
+| Clases de plataforma del nav | `styles/responsive.css` | `.nav-item--mobile-only`, `.nav-item--no-mobile` |
+| Disparador de Registrar (existe solo en móvil, lo resuelve INT.1c) | `index.html` | `.nav-item--registrar.nav-item--mobile-only` |
+| Hoja de registrar (existe en el DOM en las dos plataformas) | `index.html` | `#modal-registrar` |
+| Ancho de modal (520px, sin regla de escritorio; lo resuelve INT.1f) | `styles/modals.css` | `.modal`, `.modal--sm/--lg/--xl/--mas` |
+| CSS del saldo del sidebar, todavía sin marcado (lo resuelve INT.1d) | `styles/layout.css` | `.sidebar__saldo`, `-label`, `-value` |
+| Volver de las hijas de Ahorro (lo acota INT.1b a móvil) | `index.html` | 4 `.section__volver` con `href="#ahorro"` |
+
+**Riesgos**:
+
+- **El chrome cambia en las 13 secciones a la vez** desde INT.1c: no hay forma de pilotarlo en una sola. La suite completa es compuerta de cada rebanada.
+- **Tablet (768 a 1.023px) sigue sin auditar** (pendiente P4 del informe): hoy usa la topología móvil completa en una pantalla de 1.024 de ancho. El hueco crece con cada rebanada, igual que pasó con el ADR 057.
+- **Lighthouse 100 es innegociable** y `backdrop-filter` fijo sobre contenido que scrollea es el caso donde el filtro cuesta (pendiente P9). Alternativa lista: fondo opaco con borde inferior.
+- **Coordinación con AH.7a**, que sube Ahorro a la barra inferior de móvil: toca el mismo marcado de nav en la otra plataforma. Quien vaya segundo rebasa.
+- **Las reglas R75 a R77 están reservadas y sin escribir**: entran a `DESIGN_SYSTEM.md` cuando cierre la última rebanada, así que hoy la lista de principios tiene un hueco declarado entre R74 y R78.
+
+**Cambios pendientes**: siete rebanadas (INT.1b a INT.1h) en `docs/BOARD.md`. Dos pendientes del informe hay que resolverlos **antes** de codificar su rebanada: **P1** (qué primario sube a la barra en cada una de las 13 secciones; bloquea INT.1e y INT.1g) y **P8** (validación de accesibilidad de un `keydown` global; bloquea INT.1h).
+
+**Cambios realizados**:
+
+- **2026-08-02 (INT.1a)**: `.section` gana `margin-inline: auto` y Movimientos entra al grupo "Seguimiento" del sidebar. Detalle en el CHANGELOG.
+
+---
+
+## Sistema de guía por navegación (GU.1, auditoría GU.1a cerrada 2026-08-03)
 
 - **Objetivo**          : principio "aprender usando, no leyendo": el usuario descubre la app guiado en el momento de necesidad, no leyendo texto permanente. Ya se aplica en varios puntos (CTA de cuenta lleva a crearla, CAL.1 ofrece distribuir al llegar el ingreso, el fondo recomienda su aporte en la distribución) y se adopta como principio transversal.
-- **Estado actual**     : pendiente de análisis, no iniciada. Tarjeta **GU.1a** en `docs/BOARD.md`: inventario de todos los banners/hints/CTAs de arranque por sección, propuesta de qué se elimina/fusiona/convierte en guía contextual, revisión formal del [ADR 016](../DECISIONS/016-banner-proposito-de-seccion.md), re-corte en rebanadas por sección. Conviene DESPUÉS de que las iniciativas v2 grandes definan sus pantallas, o la auditoría se hace dos veces.
+- **Estado actual**     : **[ADR 016](../DECISIONS/016-banner-proposito-de-seccion.md) auditado y vigente sin desviaciones.** GU.1a se adelantó a su recomendación original ("después de las v2 grandes") por instrucción directa: alcance acotado a lo ya en producción, con el único hallazgo cruzado marcado para que su sección v2 lo resuelva al rediseñar (no antes).
+- **Inventario verificado** (17 secciones de dominio + `index.html` + `shell.js`):
+  - Las 11 secciones del ADR (`modules/ui/proposito.js`) tienen su banner, cero código muerto de EP.1-EP.6 (`propositoColapsado`, toggles, bloque de Ajustes: ningún rastro en `modules/`), y sus empty states quedaron recortados sin repetir el banner (verificado contra la tabla de EP.7 más abajo).
+  - El único `section__subtitle` que queda en `index.html` (Mis cuentas, "Fuentes de ingreso") es título de sub-bloque, no descripción de propósito: encaja en la excepción que el propio ADR ya declara para "Mis ingresos fijos".
+  - Las 6 secciones sin banner (Dashboard, Ajustes, Movimientos, Accesos, Import, Logros) siguen fuera con motivo propio: Dashboard/Ajustes ya excluidas por el ADR; Movimientos y Accesos son autoevidentes (listado/tiles); Import tiene su instrucción funcional fija, no de propósito; Logros ya aplica el principio "aprender usando" en su propio idioma (hint de "cómo conseguirlo" por logro) y no necesita el patrón del banner encima.
+  - **Único hallazgo:** Ahorro apila dos preguntas gancho cuando el fondo está vacío (banner + hero, detalle en [`contexto/ahorro.md`](ahorro.md)). Cae dentro de **AH.5 D3** (rediseño del hero), no se toca acá por la regla anti-doble-trabajo.
+- **Conclusión formal**: no hace falta re-cortar GU.1a en tarjetas por sección; el sistema transversal está sano y el ADR no se revisa de fondo, solo se confirma.
 
 **Regla anti-doble-trabajo**: esta tarjeta define el principio y audita el sistema transversal (banners, hints); los rediseños internos de cada sección viven en sus propias iniciativas v2, que aplican el principio en vez de duplicarlo.
