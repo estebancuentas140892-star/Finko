@@ -217,7 +217,10 @@ test.describe('Inversión - portafolio real (J.2)', () => {
   // B.1 - Empty state --------------------------------------------------------
 
   test('muestra el empty state al navegar desde Dashboard', async ({ page }) => {
-    await page.click('a[href="#inversion"]');
+    // #inversion ya no es un clic directo desde Dashboard: INT.1b la anida
+    // bajo "Ahorro" en el sidebar. Esta suite prueba Inversión, no la
+    // navegación, así que va directo a la ruta (mismo criterio que MT.1).
+    await page.goto('/#inversion');
     await expect(page.locator('#sec-inversion.active')).toBeVisible({ timeout: 5_000 });
 
     await expect(
@@ -231,7 +234,10 @@ test.describe('Inversión - portafolio real (J.2)', () => {
   // B.2 - Alta inversión: lista + tarjeta del momento ------------------------
 
   test('registrar inversión: aparece en lista y la tarjeta muestra el total', async ({ page }) => {
-    await page.click('a[href="#inversion"]');
+    // #inversion ya no es un clic directo desde Dashboard: INT.1b la anida
+    // bajo "Ahorro" en el sidebar. Esta suite prueba Inversión, no la
+    // navegación, así que va directo a la ruta (mismo criterio que MT.1).
+    await page.goto('/#inversion');
     await expect(page.locator('#sec-inversion.active')).toBeVisible({ timeout: 5_000 });
 
     await page.click('#sec-inversion [data-action="inversion-nueva"]');
@@ -261,7 +267,10 @@ test.describe('Inversión - portafolio real (J.2)', () => {
   // B.3 - CDT con tasa y plazo: proyección visible en el item ----------------
 
   test('CDT con tasa y plazo muestra la proyección al vencimiento en el item', async ({ page }) => {
-    await page.click('a[href="#inversion"]');
+    // #inversion ya no es un clic directo desde Dashboard: INT.1b la anida
+    // bajo "Ahorro" en el sidebar. Esta suite prueba Inversión, no la
+    // navegación, así que va directo a la ruta (mismo criterio que MT.1).
+    await page.goto('/#inversion');
     await expect(page.locator('#sec-inversion.active')).toBeVisible({ timeout: 5_000 });
 
     await page.click('#sec-inversion [data-action="inversion-nueva"]');
@@ -294,7 +303,10 @@ test.describe('Inversión - portafolio real (J.2)', () => {
   // B.4 - Eliminar inversión -------------------------------------------------
 
   test('eliminar inversión la quita de la lista', async ({ page }) => {
-    await page.click('a[href="#inversion"]');
+    // #inversion ya no es un clic directo desde Dashboard: INT.1b la anida
+    // bajo "Ahorro" en el sidebar. Esta suite prueba Inversión, no la
+    // navegación, así que va directo a la ruta (mismo criterio que MT.1).
+    await page.goto('/#inversion');
     await expect(page.locator('#sec-inversion.active')).toBeVisible({ timeout: 5_000 });
 
     // Registrar para poder eliminar
@@ -333,7 +345,10 @@ test.describe('Inversión - portafolio real (J.2)', () => {
   // B.5 - Persistencia -------------------------------------------------------
 
   test('inversiones persisten tras recarga de página', async ({ page }) => {
-    await page.click('a[href="#inversion"]');
+    // #inversion ya no es un clic directo desde Dashboard: INT.1b la anida
+    // bajo "Ahorro" en el sidebar. Esta suite prueba Inversión, no la
+    // navegación, así que va directo a la ruta (mismo criterio que MT.1).
+    await page.goto('/#inversion');
     await expect(page.locator('#sec-inversion.active')).toBeVisible({ timeout: 5_000 });
 
     // Registrar inversión
@@ -439,7 +454,10 @@ test.describe('Inversión - origen del dinero (INV.1)', () => {
   test.beforeEach(async ({ page }) => {
     await estadoConCuenta(page);
     await irADash(page);
-    await page.click('a[href="#inversion"]');
+    // #inversion ya no es un clic directo desde Dashboard: INT.1b la anida
+    // bajo "Ahorro" en el sidebar. Esta suite prueba Inversión, no la
+    // navegación, así que va directo a la ruta (mismo criterio que MT.1).
+    await page.goto('/#inversion');
     await expect(page.locator('#sec-inversion.active')).toBeVisible({ timeout: 5_000 });
   });
 

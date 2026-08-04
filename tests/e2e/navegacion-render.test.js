@@ -54,7 +54,10 @@ test.describe('Render tras navegación (regresión hashchange)', () => {
   test('Metas muestra empty state al navegar desde Dashboard', async ({ page }) => {
     await saltearOnboardingYIrADash(page);
 
-    await page.click('a[href="#metas"]');
+    // #metas ya no es un clic directo desde Dashboard (INT.1b la anida bajo
+    // "Ahorro"); hashchange dispara igual por goto, que es lo que este
+    // archivo prueba (ver el caso de Movimientos, más abajo).
+    await page.goto('/#metas');
     await expect(page.locator('#sec-metas.active')).toBeVisible();
 
     await expect(
@@ -120,8 +123,8 @@ test.describe('Render tras navegación (regresión hashchange)', () => {
       page.locator('#lista-tesoreria .empty-state__title')
     ).toHaveText('Agrega tu primera cuenta', { timeout: 3_000 });
 
-    // Metas después
-    await page.click('a[href="#metas"]');
+    // Metas después (goto: ya no es un clic directo, ver nota arriba)
+    await page.goto('/#metas');
     await expect(
       page.locator('#lista-metas .empty-state__title')
     ).toHaveText('Sin metas de ahorro', { timeout: 3_000 });

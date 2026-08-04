@@ -232,4 +232,43 @@ test.describe('DIS.18 - sidebar desktop', () => {
     await expect(ahorros.locator('a[href="#fondo"] .nav-item__label')).toHaveText('Fondo de emergencia');
     await expect(ahorros.locator('a[href="#ahorro"] .nav-item__label')).toHaveText('Ahorro');
   });
+
+  test('las 4 hijas se anidan: ocultas fuera del grupo, desplegadas dentro (INT.1b)', async ({ page }) => {
+    await seedVacio(page);
+    await page.goto('/#dash');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+
+    const subnav = page.locator('#nav-subnav-ahorro');
+    const trigger = page.locator('[aria-controls="nav-subnav-ahorro"]');
+    await expect(subnav).toBeHidden();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+
+    for (const hash of ['#ahorro', '#fondo', '#metas', '#apartados', '#inversion']) {
+      await page.evaluate((h) => { window.location.hash = h; }, hash);
+      await page.waitForSelector(`${hash.replace('#', '#sec-')}.active`, { timeout: 5_000 });
+      await expect(subnav).toBeVisible();
+      await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    }
+
+    await page.evaluate(() => { window.location.hash = '#gast'; });
+    await page.waitForSelector('#sec-gast.active', { timeout: 5_000 });
+    await expect(subnav).toBeHidden();
+  });
+
+  test('el nav cabe sin desbordar a 1280x799 (BUG-026, resuelto por el anidado)', async ({ page }) => {
+    await seedVacio(page);
+    await page.goto('/#dash');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+
+    const nav = page.locator('.sidebar__nav');
+    const [scrollH, clientH] = await nav.evaluate(el => [el.scrollHeight, el.clientHeight]);
+    expect(scrollH).toBeLessThanOrEqual(clientH);
+  });
+
+  test('el "volver a Ahorro" de las 4 hijas se oculta en desktop: la casa ya está anidada', async ({ page }) => {
+    await seedVacio(page);
+    await page.goto('/#fondo');
+    await page.waitForSelector('#sec-fondo.active', { timeout: 10_000 });
+    await expect(page.locator('#sec-fondo .section__volver')).toBeHidden();
+  });
 });

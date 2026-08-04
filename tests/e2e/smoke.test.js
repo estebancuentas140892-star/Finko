@@ -638,10 +638,11 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
 test.describe('Metas - categorías con emoji (MT.1)', () => {
   test.beforeEach(async ({ page }) => {
     await saltearOnboarding(page);
-    await page.goto('/');
-    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
-    await page.click('a[href="#metas"]');
-    await expect(page.locator('#sec-metas.active')).toBeVisible();
+    // #metas ya no es un clic directo desde el sidebar (INT.1b la anida
+    // bajo "Ahorro"); esta suite prueba el contenido de Metas, no la
+    // navegación, así que va directo a la ruta.
+    await page.goto('/#metas');
+    await page.waitForSelector('#sec-metas.active', { timeout: 10_000 });
   });
 
   // DIS.14 (arquitectura A2): el ícono pasó al centro del arco y el nombre
@@ -910,12 +911,16 @@ test.describe('Navegación hash', () => {
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
   });
 
+  // #metas (y sus 3 hermanas) ya no son un clic directo desde cualquier
+  // sección: INT.1b (ADR 059 D6) las anidó bajo "Ahorro", visibles solo
+  // dentro del grupo. La casa (#ahorro) es el atajo permanente que las
+  // reemplaza en esta lista; el camino de dos clics se prueba abajo.
   const secciones = [
     { href: '#gast',        seccion: 'sec-gast' },
     { href: '#compromisos',  seccion: 'sec-compromisos' },
     { href: '#agenda',      seccion: 'sec-agenda' },
     { href: '#tesoreria',   seccion: 'sec-tesoreria' },
-    { href: '#metas',       seccion: 'sec-metas' },
+    { href: '#ahorro',      seccion: 'sec-ahorro' },
     { href: '#analisis',    seccion: 'sec-analisis' },
     { href: '#config',      seccion: 'sec-config' },
     { href: '#dash',        seccion: 'sec-dash' },
@@ -927,6 +932,12 @@ test.describe('Navegación hash', () => {
       await expect(page.locator(`#${seccion}`)).toHaveClass(/active/);
     });
   }
+
+  test('una hija de Ahorro (ej. Metas) se alcanza en dos clics: Ahorro despliega el sub-nivel (INT.1b)', async ({ page }) => {
+    await page.click('.nav-item[href="#ahorro"]');
+    await page.click('.nav-item[href="#metas"]');
+    await expect(page.locator('#sec-metas')).toHaveClass(/active/);
+  });
 });
 
 // ── SUITE 5: Gastos ─────────────────────────────────────────────────────────

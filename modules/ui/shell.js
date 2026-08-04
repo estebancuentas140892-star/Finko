@@ -23,6 +23,14 @@ const MAS_SECTIONS = new Set([
 ]);
 
 /**
+ * Grupo Ahorro en el sidebar de desktop (INT.1b, ADR 059 D6): la casa
+ * (`ahorro`) y sus 4 hijas. `.nav-subnav` solo se despliega mientras el
+ * hash activo pertenece a este set; el resto del tiempo el grupo paga 1
+ * fila en vez de 5.
+ */
+const GRUPO_AHORRO = new Set(['ahorro', 'fondo', 'metas', 'apartados', 'inversion']);
+
+/**
  * Nombre corto e ícono del sprite de cada sección de MAS_SECTIONS
  * (DIS.6/C3, hallazgo H4, regla R30).
  *
@@ -130,6 +138,18 @@ export function markActiveNav(hash) {
     masBtn.classList.toggle('active', enMas);
     masBtn.setAttribute('aria-current', enMas ? 'page' : 'false');
     _rotularMas(masBtn, enMas ? hash : null);
+  }
+
+  // Sub-nivel del grupo Ahorro (INT.1b): se despliega solo dentro del grupo.
+  // aria-controls, no data-section: el botón "Más" también gana
+  // data-section="ahorro" cuando el hash es 'ahorro' (_rotularMas, arriba),
+  // y data-section no es único en ese caso.
+  const subnav = document.getElementById('nav-subnav-ahorro');
+  const triggerAhorro = document.querySelector('[aria-controls="nav-subnav-ahorro"]');
+  if (subnav && triggerAhorro) {
+    const abierto = GRUPO_AHORRO.has(hash);
+    subnav.hidden = !abierto;
+    triggerAhorro.setAttribute('aria-expanded', String(abierto));
   }
 }
 

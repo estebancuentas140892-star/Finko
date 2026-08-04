@@ -18,8 +18,16 @@
 /* Boton "Mas" del bottom nav: oculto en desktop por defecto */
 .nav-item--mobile-only { display: none; }
 
+/* Volver de las 4 hijas de Ahorro (INT.1b): oculto en desktop por defecto,
+   la casa ya está anidada en el sidebar. Se restaura bajo 1024px, donde
+   sigue siendo la única salida vertical. */
+.section__volver--ahorro-hija { display: none; }
+
 /* ── TABLET + MÓVIL: SIDEBAR INFERIOR + TOUCH TARGETS (< 1024px) ─ */
 @media (max-width: 1023px) {
+
+  /* Volver de las 4 hijas de Ahorro: vuelve a ser la única salida vertical. */
+  .section__volver--ahorro-hija { display: inline-flex; }
 
   /* Items secundarios del bottom nav: ocultos en mobile (van al menu Mas) */
   .nav-item--no-mobile { display: none !important; }

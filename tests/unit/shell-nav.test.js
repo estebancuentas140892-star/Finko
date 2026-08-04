@@ -118,6 +118,47 @@ describe('el botón "Más" nombra la sección donde estás (DIS.6/C3)', () => {
   });
 });
 
+describe('el sub-nivel del grupo Ahorro se despliega dentro del grupo (INT.1b)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <a class="nav-item" data-section="gast"></a>
+      <button class="nav-item" data-modal="modal-mas"></button>
+      <a class="nav-item" href="#ahorro" data-section="ahorro" aria-expanded="false" aria-controls="nav-subnav-ahorro"></a>
+      <div class="nav-subnav" id="nav-subnav-ahorro" hidden>
+        <a class="nav-item" data-section="fondo"></a>
+        <a class="nav-item" data-section="metas"></a>
+      </div>
+    `;
+  });
+
+  // aria-controls, no data-section: el botón "Más" también gana
+  // data-section="ahorro" cuando el hash es 'ahorro' (_rotularMas), y
+  // data-section deja de ser único justo en ese caso.
+  const subnav = () => document.getElementById('nav-subnav-ahorro');
+  const trigger = () => document.querySelector('[aria-controls="nav-subnav-ahorro"]');
+
+  it('permanece oculto fuera del grupo', () => {
+    markActiveNav('gast');
+    expect(subnav().hidden).toBe(true);
+    expect(trigger().getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('se despliega en la casa y en cada una de las 4 hijas', () => {
+    for (const hash of ['ahorro', 'fondo', 'metas', 'apartados', 'inversion']) {
+      markActiveNav(hash);
+      expect(subnav().hidden).toBe(false);
+      expect(trigger().getAttribute('aria-expanded')).toBe('true');
+    }
+  });
+
+  it('se repliega al salir del grupo', () => {
+    markActiveNav('metas');
+    markActiveNav('gast');
+    expect(subnav().hidden).toBe(true);
+    expect(trigger().getAttribute('aria-expanded')).toBe('false');
+  });
+});
+
 describe('toggleTheme() sincroniza todos los toggles presentes', () => {
   beforeEach(() => {
     document.body.classList.remove('light-theme');

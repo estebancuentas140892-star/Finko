@@ -77,44 +77,6 @@
   gap: var(--fk-space-1);
 }
 
-/* En ventanas bajas el último grupo (Herramientas) queda bajo el scroll
-   interno del nav sin ningún indicio visual. Se compacta el espaciado y se
-   añade un fade pegado al fondo que insinúa que hay más para desplazar.
-   min-width 1024px: solo el sidebar de escritorio, no el bottom nav móvil
-   (que ya aplana el nav a fila y no tiene scroll vertical). */
-@media (max-height: 800px) and (min-width: 1024px) {
-  .nav-group {
-    margin-top: var(--fk-space-2);
-  }
-  .nav-group__label {
-    padding-bottom: 4px;
-  }
-  /* Un poco más compacto para que quepa más contenido antes del fade
-     y reducir la chance de que la franja caiga justo sobre una etiqueta. */
-  .nav-item {
-    min-height: 36px;
-    padding-block: var(--fk-space-1);
-  }
-  /* Fade más alto y con más paradas: se difumina de a poco (nunca un
-     corte duro sobre una línea de texto), leyéndose como "hay más
-     abajo" en vez de una etiqueta partida a la mitad. */
-  .sidebar__nav::after {
-    content: '';
-    position: sticky;
-    bottom: 0;
-    display: block;
-    height: 36px;
-    margin-top: -36px;
-    background: linear-gradient(
-      to bottom,
-      transparent,
-      color-mix(in srgb, var(--fk-bg-surface) 55%, transparent) 65%,
-      var(--fk-bg-surface)
-    );
-    pointer-events: none;
-  }
-}
-
 .nav-item {
   position: relative;
   display: flex;
@@ -260,6 +222,23 @@
   text-transform: uppercase;
   letter-spacing: 0.07em;
   padding: 0 var(--fk-space-3) var(--fk-space-2);
+}
+
+/* Sub-nivel del grupo Ahorro (INT.1b, ADR 059 D6): las 4 hijas se anidan
+   bajo la casa y shell.js (markActiveNav) las despliega solo mientras el
+   hash activo pertenece al grupo. [hidden] (reset.css) las saca del layout
+   el resto del tiempo: el grupo paga 1 fila en vez de 5, que es lo que
+   recupera BUG-026 sin necesitar la compactación de emergencia. */
+.nav-subnav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+  margin-top: var(--fk-space-1);
+  padding-left: var(--fk-space-3);
+  border-left: 1px solid var(--fk-border-subtle);
+}
+.nav-item--sub {
+  padding-left: var(--fk-space-2);
 }
 
 /* Footer del sidebar (saldo + toggle tema) */

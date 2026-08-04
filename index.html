@@ -327,46 +327,54 @@
           </div>
         </div>
 
-        <!-- GRUPO 3: Ahorro (DIS.18). El rótulo paraguas ya no es solo un
-             nombre: la casa encabeza el grupo y es la que responde "cuánto
-             tengo guardado en total y dónde". Las 4 modalidades se conservan
-             como entradas directas SOLO en el sidebar de desktop (nav-item--no-
-             mobile), donde hay espacio: son atajos declarados a destinos que la
-             casa también ofrece, no rutas paralelas con otro aspecto. En móvil,
-             donde el hueco era el problema, la única entrada es la casa. -->
+        <!-- GRUPO 3: Ahorro (DIS.18, anidado por INT.1b/ADR 059 D6). El rótulo
+             paraguas ya no es solo un nombre: la casa encabeza el grupo y es
+             la que responde "cuánto tengo guardado en total y dónde". Las 4
+             modalidades son atajos SOLO de desktop (nav-item--no-mobile) y
+             viven anidadas dentro de .nav-subnav: shell.js (markActiveNav)
+             la despliega solo mientras el hash activo pertenece al grupo
+             (Ahorro o una de sus 4 hijas), así que el resto de la navegación
+             paga 1 fila en vez de 5 (recupera BUG-026, ver layout.css). En
+             móvil, donde el hueco era el problema, la única entrada es la
+             casa. -->
         <div class="nav-group" role="listitem">
           <span class="nav-group__label" id="nav-label-ahorros">Ahorro</span>
           <div role="group" aria-labelledby="nav-label-ahorros">
 
             <a class="nav-item nav-item--no-mobile" href="#ahorro" data-section="ahorro"
-               aria-label="Ahorro: fondo, metas, apartados e inversión">
+               aria-label="Ahorro: fondo, metas, apartados e inversión"
+               aria-expanded="false" aria-controls="nav-subnav-ahorro">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-ahorro"/></svg>
               <span class="nav-item__label">Ahorro</span>
             </a>
 
-            <a class="nav-item nav-item--no-mobile" href="#fondo" data-section="fondo"
-               aria-label="Fondo de emergencia">
-              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-ahorro"/></svg>
-              <span class="nav-item__label">Fondo de emergencia</span>
-            </a>
+            <div class="nav-subnav" id="nav-subnav-ahorro" hidden>
 
-            <a class="nav-item nav-item--no-mobile" href="#metas" data-section="metas"
-               aria-label="Metas de ahorro">
-              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-metas"/></svg>
-              <span class="nav-item__label">Metas</span>
-            </a>
+              <a class="nav-item nav-item--no-mobile nav-item--sub" href="#fondo" data-section="fondo"
+                 aria-label="Fondo de emergencia">
+                <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-ahorro"/></svg>
+                <span class="nav-item__label">Fondo de emergencia</span>
+              </a>
 
-            <a class="nav-item nav-item--no-mobile" href="#apartados" data-section="apartados"
-               aria-label="Reservas para gastos previsibles">
-              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-apartados"/></svg>
-              <span class="nav-item__label">Reservas</span>
-            </a>
+              <a class="nav-item nav-item--no-mobile nav-item--sub" href="#metas" data-section="metas"
+                 aria-label="Metas de ahorro">
+                <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-metas"/></svg>
+                <span class="nav-item__label">Metas</span>
+              </a>
 
-            <a class="nav-item nav-item--no-mobile" href="#inversion" data-section="inversion"
-               aria-label="Inversiones y portafolio">
-              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-inversion"/></svg>
-              <span class="nav-item__label">Inversión</span>
-            </a>
+              <a class="nav-item nav-item--no-mobile nav-item--sub" href="#apartados" data-section="apartados"
+                 aria-label="Reservas para gastos previsibles">
+                <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-apartados"/></svg>
+                <span class="nav-item__label">Reservas</span>
+              </a>
+
+              <a class="nav-item nav-item--no-mobile nav-item--sub" href="#inversion" data-section="inversion"
+                 aria-label="Inversiones y portafolio">
+                <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-inversion"/></svg>
+                <span class="nav-item__label">Inversión</span>
+              </a>
+
+            </div>
 
           </div>
         </div>
@@ -910,8 +918,11 @@
       <section class="section" id="sec-fondo" tabindex="-1" aria-labelledby="title-fondo">
         <!-- Volver a la casa (DIS.18): antes desde acá no se podía subir, solo
              saltar de lado con las pestañas. En la PWA instalada no hay botón
-             "atrás" del navegador. Mismo patrón que #sec-movimientos. -->
-        <a class="section__volver" href="#ahorro" aria-label="Volver a Ahorro">
+             "atrás" del navegador. Mismo patrón que #sec-movimientos.
+             --ahorro-hija (INT.1b): en desktop la casa ya está en el sidebar
+             anidado, así que el volver es redundante ahí y se oculta
+             (responsive.css); en móvil sigue siendo la única salida. -->
+        <a class="section__volver section__volver--ahorro-hija" href="#ahorro" aria-label="Volver a Ahorro">
           <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>Ahorro
         </a>
         <header class="section__header">
@@ -930,8 +941,9 @@
 
       <!-- INVERSIÓN (J.2) - Portafolio real -->
       <section class="section" id="sec-inversion" tabindex="-1" aria-labelledby="title-inversion">
-        <!-- Volver a la casa (DIS.18): ver nota en #sec-fondo. -->
-        <a class="section__volver" href="#ahorro" aria-label="Volver a Ahorro">
+        <!-- Volver a la casa (DIS.18): ver nota en #sec-fondo. --ahorro-hija
+             (INT.1b): oculto en desktop, ver nota en #sec-fondo. -->
+        <a class="section__volver section__volver--ahorro-hija" href="#ahorro" aria-label="Volver a Ahorro">
           <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>Ahorro
         </a>
         <header class="section__header">
@@ -950,8 +962,9 @@
 
       <!-- METAS -->
       <section class="section" id="sec-metas" tabindex="-1" aria-labelledby="title-metas">
-        <!-- Volver a la casa (DIS.18): ver nota en #sec-fondo. -->
-        <a class="section__volver" href="#ahorro" aria-label="Volver a Ahorro">
+        <!-- Volver a la casa (DIS.18): ver nota en #sec-fondo. --ahorro-hija
+             (INT.1b): oculto en desktop, ver nota en #sec-fondo. -->
+        <a class="section__volver section__volver--ahorro-hija" href="#ahorro" aria-label="Volver a Ahorro">
           <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>Ahorro
         </a>
         <header class="section__header">
@@ -975,8 +988,9 @@
 
       <!-- RESERVAS (dominio interno "apartados") -->
       <section class="section" id="sec-apartados" tabindex="-1" aria-labelledby="title-apartados">
-        <!-- Volver a la casa (DIS.18): ver nota en #sec-fondo. -->
-        <a class="section__volver" href="#ahorro" aria-label="Volver a Ahorro">
+        <!-- Volver a la casa (DIS.18): ver nota en #sec-fondo. --ahorro-hija
+             (INT.1b): oculto en desktop, ver nota en #sec-fondo. -->
+        <a class="section__volver section__volver--ahorro-hija" href="#ahorro" aria-label="Volver a Ahorro">
           <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>Ahorro
         </a>
         <header class="section__header">

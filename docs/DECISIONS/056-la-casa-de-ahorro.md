@@ -51,6 +51,10 @@ La causa no era la card ni las pestañas: era que **el concepto padre no tenía 
 - Quedan dos temas señalados y sin resolver, los dos por fuera del alcance de una sección: **promover "Ahorro" a la barra inferior** (implicaría mover Calendario, decisión de otra sección) y el nombre **"Apartados"**, que colisiona con "apartar", el verbo genérico de ahorrar en toda la app.
 - Cinco reglas nuevas en [`DESIGN_SYSTEM.md`](../DESIGN_SYSTEM.md) (R70 a R74): son de arquitectura de información, no de componente, así que van en Principios.
 
+## Actualización (INT.1b, 2026-08-03, acota el D8)
+
+El [ADR 059](059-interfaz-de-escritorio.md) D6 acota, no revierte, el punto 8: en el sidebar de desktop las cuatro entradas directas dejan de ser **permanentes** y pasan a **contextuales**, anidadas bajo la casa (`.nav-subnav`) y desplegadas solo mientras el hash activo pertenece al grupo. Motivo: medidas y sin funcionalidad nueva, las cuatro filas costaban ~160px de sidebar todo el tiempo aunque el usuario estuviera en Gastos o Calendario (BUG-026). Siguen siendo atajos declarados a destinos que la casa también ofrece, nunca rutas paralelas: el punto 8 se cumple igual, solo que el sidebar ya no las paga cuando no aplican.
+
 ## Alternativas consideradas
 
 Las cuatro arquitecturas posibles, evaluadas contra los mismos criterios en vez de afirmar una:
