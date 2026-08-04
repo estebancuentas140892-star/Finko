@@ -476,6 +476,12 @@ function _renderEmptyState(gastosFijosMensuales) {
  *
  * El anillo de progreso se retira: el porcentaje pasa a ser un rótulo pequeño al
  * pie de los bloques, que es todo el peso que merece aquí.
+ *
+ * AH.5 (ADR 049 D3): antes del primer número va una línea que dice qué es esto
+ * y por qué importa, la misma pregunta que ya respondía el estado vacío pero
+ * dicha corto, porque acá compite con datos y no puede volver a ocupar un
+ * párrafo. El registro emocional (protección, no solo progreso) tiene que
+ * leerse antes de llegar a la primera cifra.
  */
 function _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia = null, frecuencia = 'Mensual') {
   const { metaMeses, montoActual: montoBase } = fondo;
@@ -501,20 +507,19 @@ function _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia = 
 
   return `
     <article class="fondo-card" data-dom="ahorro" aria-label="Fondo de emergencia">
+      <p class="fondo-card__explica">Tu protección para cuando algo se dañe o dejes de recibir ingresos.</p>
       ${_renderNivelActual({ enCero, completado, ultimoLogrado, actual })}
       ${_renderCobertura({ colchon, metaMeses, montoTotal, enCero, m })}
       ${_renderVeredictoFondo({ completado, faltante, objetivo, montoTotal, metaMeses, actual, sugerencia, enCero, m })}
       ${_renderDatosFondo({ montoTotal, objetivo, gastosFijosMensuales, compromisoMensual, tasaAhorro, metaMeses, enCero, m, frecuencia })}
       <p class="fondo-card__nota">Este dinero sigue en tus cuentas. Solo queda apartado para emergencias: a diferencia de Metas y Reservas, no descuenta saldo.</p>
-      <div class="fondo-card__acciones">
-        <button class="fondo-card__principal" type="button" data-action="ahorro-nuevo-aporte">
+      <div class="fondo-card__secundarias">
+        <button class="btn btn-ghost btn-sm fondo-card__secundaria" type="button" data-action="ahorro-nuevo-aporte">
           ${enCero ? 'Hacer mi primer aporte' : 'Registrar un aporte'}
         </button>
-        <div class="fondo-card__secundarias">
-          <button class="btn btn-ghost btn-sm fondo-card__secundaria" type="button" data-action="ahorro-editar">
-            ${completado && siguienteNivel ? `Subir mi meta a ${siguienteNivel.meses} meses` : 'Editar'}
-          </button>
-        </div>
+        <button class="btn btn-ghost btn-sm fondo-card__secundaria" type="button" data-action="ahorro-editar">
+          ${completado && siguienteNivel ? `Subir mi meta a ${siguienteNivel.meses} meses` : 'Editar'}
+        </button>
       </div>
     </article>
 

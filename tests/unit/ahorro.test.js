@@ -1226,14 +1226,14 @@ describe('renderAhorro() - tarjeta del fondo (DIS.16)', () => {
   it('con la meta cumplida la acción secundaria ofrece subirla y nombra el destino', () => {
     S.ahorro.fondoEmergencia.montoActual = 3_000_000;
     renderAhorro(1_000_000, null, null);
-    expect(document.querySelector('.fondo-card__secundaria').textContent).toContain('Subir mi meta a 6 meses');
+    expect(document.querySelector('[data-action="ahorro-editar"]').textContent).toContain('Subir mi meta a 6 meses');
   });
 
   it('con la meta ya en el último nivel la secundaria vuelve a ser Editar', () => {
     S.ahorro.fondoEmergencia.metaMeses   = 6;
     S.ahorro.fondoEmergencia.montoActual = 6_000_000;
     renderAhorro(1_000_000, null, null);
-    expect(document.querySelector('.fondo-card__secundaria').textContent.trim()).toBe('Editar');
+    expect(document.querySelector('[data-action="ahorro-editar"]').textContent.trim()).toBe('Editar');
   });
 
   it('en cero se nombra el nivel al que va, no "0 meses"', () => {
@@ -1242,7 +1242,7 @@ describe('renderAhorro() - tarjeta del fondo (DIS.16)', () => {
     expect(document.querySelector('.fondo-card__kicker').textContent).toContain('Vas a empezar');
     expect(document.querySelector('.fondo-card__nivel-nombre').textContent).toBe('Tu primer mes');
     expect(document.querySelector('.fondo-card__frase').textContent).toContain('Todavía no tienes días cubiertos');
-    expect(document.querySelector('.fondo-card__principal').textContent).toContain('Hacer mi primer aporte');
+    expect(document.querySelector('[data-action="ahorro-nuevo-aporte"]').textContent).toContain('Hacer mi primer aporte');
   });
 
   it('en cero el primer nivel es el que sigue, y ninguno aparece logrado', () => {
@@ -1332,7 +1332,27 @@ describe('renderAhorro() - tarjeta del fondo (DIS.16)', () => {
   it('el botón de registrar vive solo en la tarjeta, no también en el encabezado de aportes', () => {
     renderAhorro(1_000_000, null, null);
     expect(document.querySelectorAll('[data-action="ahorro-nuevo-aporte"]')).toHaveLength(1);
-    expect(document.querySelector('.fondo-card__principal').dataset.action).toBe('ahorro-nuevo-aporte');
+    expect(document.querySelector('[data-action="ahorro-nuevo-aporte"]').className).toContain('fondo-card__secundaria');
+  });
+
+  // AH.5 (ADR 049 D2): el aporte principal ya vive en el asistente de
+  // distribución; el registro directo desde la sección baja al mismo peso
+  // visual que "Editar", nunca vuelve a ser el botón ancho y de color.
+  it('el aporte directo ya no es la acción principal de la tarjeta: mismo peso que Editar', () => {
+    renderAhorro(1_000_000, null, null);
+    expect(document.querySelector('.fondo-card .fondo-card__principal')).toBeNull();
+    expect(document.querySelector('[data-action="ahorro-nuevo-aporte"]').className).toContain('fondo-card__secundaria');
+  });
+
+  // AH.5 (ADR 049 D3): la sección comunica protección antes que la primera
+  // cifra, no solo en el estado vacío.
+  it('la tarjeta activa explica qué protege antes del primer número', () => {
+    renderAhorro(1_000_000, null, null);
+    const article = document.querySelector('.fondo-card');
+    const hijos = [...article.children];
+    const proposito = article.querySelector('.fondo-card__explica');
+    expect(proposito.textContent).toContain('protección');
+    expect(hijos.indexOf(proposito)).toBe(0);
   });
 });
 
