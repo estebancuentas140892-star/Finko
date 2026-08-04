@@ -295,6 +295,17 @@
               <span class="nav-item__label">Mis cuentas</span>
             </a>
 
+            <!-- INT.1a (ADR 059 D6): Movimientos tenia entrada en la hoja "Mas"
+                 desde DIS.6/C6 y ninguna aca, asi que en escritorio se llegaba
+                 solo por "Ver todo" de Actividad reciente, que arranca [hidden].
+                 R32 pedia entrada propia y solo la cumplia movil. Reusa i-saldo,
+                 igual que su teja de la hoja: el sprite no tiene icono propio. -->
+            <a class="nav-item nav-item--no-mobile" href="#movimientos" data-section="movimientos"
+               aria-label="Movimientos: historial completo">
+              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-saldo"/></svg>
+              <span class="nav-item__label">Movimientos</span>
+            </a>
+
             <a class="nav-item nav-item--no-mobile" href="#personales" data-section="personales"
                aria-label="Préstamos personales: me deben">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-personales"/></svg>

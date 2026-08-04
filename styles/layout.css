@@ -304,6 +304,11 @@
   display: none;
   padding: var(--fk-content-padding);
   max-width: var(--fk-content-max);
+  /* INT.1a (ADR 059 D7, regla R77): sin esto el tope de 1440px dejaba todo el
+     sobrante de un lado. Medido a 1920: main 1680, seccion 1440, 240px pegados
+     al borde derecho; a 2560 eran 880. Un vacio asimetrico no se lee como aire,
+     se lee como algo que falta. */
+  margin-inline: auto;
 }
 .section.active {
   display: block;
