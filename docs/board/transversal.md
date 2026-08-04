@@ -8,28 +8,16 @@
 
 > **Auditoría de rendimiento 2026-07 completa** (PERF.0 a PERF.4 cerradas, ver [`scripts/perf/BASELINE.md`](../../scripts/perf/BASELINE.md)). Los dos hallazgos que siguen mandando: `renderSmart()` ya evita el recálculo cruzado, y guardar cuesta ~5 ms debounced, así que la persistencia NO se reescribió ([ADR 030](../DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md), disparadores en su D4). **Disciplina obligatoria de toda tarjeta PERF: correr `pnpm perf` antes y después y comparar contra BASELINE.md.**
 
-> **Iniciativa "INT.1 - Interfaz de escritorio"** ([ADR 059](../DECISIONS/059-interfaz-de-escritorio.md), aceptado 2026-08-02). Fuente única del chrome de escritorio, 8 decisiones en 8 rebanadas. Móvil no cambia. **Coordinar con AH.7a** (mismo marcado de nav, otra plataforma). Detalle e historia de PI7/BUG-026: CHANGELOG y `DESIGN_SYSTEM.md`.
-
-#### INT.1b - Las hijas de Ahorro se anidan y el sidebar cabe en un portátil
-- Prioridad  : media
-- Estado     : pendiente. Decisión D6 (mitad) del ADR 059 + hallazgo E10. **Acota el [ADR 056](../DECISIONS/056-la-casa-de-ahorro.md)**: sus cuatro atajos pasan de permanentes a contextuales en escritorio, no se retiran.
-- Área       : ambos
-- Objetivo   : Fondo, Metas, Apartados e Inversión aparecen como sub-nivel solo al estar dentro del grupo Ahorro; el sidebar baja de 14 filas fijas a 9 y recupera ~160px. `.section__volver` se oculta en escritorio en esas cuatro (hoy pintan el volver **y** están en el sidebar); en móvil sigue intacto, que es donde se decidió.
-- Riesgo     : **resuelve o retira [BUG-026](../BUGS.md)**. Medido: el nav necesita 648px y dispone de 607, desborda 41px, y la regla `@media (max-height: 800px)` que debería mitigarlo no aplica ninguna de sus cuatro declaraciones. Si el anidado recupera los 160px, el bloque se borra en vez de repararse.
-- Secciones  : Transversal (sidebar), Ahorro y sus 4 hijas
-- Archivos   : `index.html` (nav), `styles/layout.css`, `modules/ui/shell.js`
-- Depende de : INT.1a cerrada (misma zona de marcado); actualizar el ADR 056 al cerrar
-- Aceptación : alto del nav medido a 1280x799 sin desborde + sub-nav que se despliega y repliega + E2E de navegación verde
-- Modelo     : Equilibrado - Alto (nav global + un ADR que se acota)
+> **Iniciativa "INT.1 - Interfaz de escritorio"** ([ADR 059](../DECISIONS/059-interfaz-de-escritorio.md), aceptado 2026-08-02). Fuente única del chrome de escritorio, 8 decisiones en 8 rebanadas. Móvil no cambia. **INT.1a e INT.1b cerradas** (2026-08-02 y 2026-08-03); detalle e historia en el CHANGELOG y [`contexto/transversal.md`](../contexto/transversal.md). **Coordinar con AH.7a** (mismo marcado de nav, otra plataforma).
 
 > **Las seis rebanadas restantes**, en una línea cada una: su alcance completo, con medición y contra declarado, vive en el [ADR 059](../DECISIONS/059-interfaz-de-escritorio.md) y no se repite acá. Se re-expanden a tarjeta completa al iniciarlas.
 
 #### INT.1c - Barra superior de 56px: sección, Registrar, tema y perfil
-- Estado     : pendiente, prioridad media. D1, D2 y D5. **PI7 ya no la bloquea** (era falso). Área: ambos.
+- Estado     : pendiente, prioridad media. D1, D2 y D5. **PI7 ya no la bloquea** (era falso). Depende de **INT.1b cerrada** (misma zona de marcado). Área: ambos.
 - Objetivo   : teja + título fijos (el `h1` hoy se va con el scroll), "Registrar" abriendo la misma `#modal-registrar` que móvil (hoy sin un solo disparador en escritorio), tema y perfil a la derecha.
 - Riesgo     : cambia el chrome de las 13 secciones a la vez. **Pendiente P9:** `backdrop-filter` fijo contra el techo de Lighthouse 100; alternativa lista, fondo opaco con borde.
 - Archivos   : `index.html`, `modules/ui/shell.js`, `styles/layout.css`, `styles/responsive.css`
-- Depende de : INT.1b · Aceptación: las 13 secciones en ambos temas + Lighthouse 100 + registrar en 1 clic · Modelo: Alta capacidad - Alto
+- Aceptación : las 13 secciones en ambos temas + Lighthouse 100 + registrar en 1 clic · Modelo: Alta capacidad - Alto
 
 #### INT.1d - La cinta de saldo en la barra, con su ojo de privacidad
 - Estado     : pendiente, prioridad media. D9 (P7 y P10 ya decididos por Esteban). Área: ambos.

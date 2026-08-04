@@ -272,20 +272,20 @@
 ## Shell de escritorio: sidebar, ancho de contenido y barra superior (iniciativa INT.1)
 
 - **Objetivo**          : el escritorio nunca se decidió. El sidebar existía desde antes de que la app tuviera dos topologías y las quince auditorías por sección midieron móvil a 390px, así que escritorio heredó el reparto móvil estirado. El [ADR 059](../DECISIONS/059-interfaz-de-escritorio.md) lo decide en ocho rebanadas (INT.1a a INT.1h).
-- **Estado actual**     : **INT.1a cerrada** (contenido centrado + Movimientos en el sidebar). Las otras siete siguen pendientes; la barra superior de 56px, que es el corazón de la propuesta, no existe todavía en el repo.
-- **Verificado contra** : INT.1a, commit `c0b8001` (2026-08-03; el código real, `e7703f0` llevo el de AH.5b por carrera de índice).
+- **Estado actual**     : **INT.1a e INT.1b cerradas**. INT.1a: contenido centrado + Movimientos en el sidebar. INT.1b: las 4 hijas de Ahorro se anidan bajo la casa (`.nav-subnav`, desplegado solo dentro del grupo) y `BUG-026` se cierra por eliminación de su causa. Las seis rebanadas restantes siguen pendientes; la barra superior de 56px, que es el corazón de la propuesta, no existe todavía en el repo.
+- **Verificado contra** : INT.1b, commit `4f87f77` (2026-08-03).
 
-**Mediciones vigentes contra el código** (no contra la recreación del handoff), tomadas el 2026-08-02 en la app real:
+**Mediciones vigentes contra el código** (no contra la recreación del handoff):
 
-| Qué | Antes de INT.1a | Después |
-|---|---|---|
-| Ancho huérfano a 1920 (`main` 1680, `.section` 1440) | 240px pegados al borde derecho | 120 + 120 |
-| Ancho huérfano a 2560 | 880px de un lado | 440 + 440 |
-| Destinos sin entrada en el sidebar | 1 (Movimientos) | 0 |
-| Filas visibles del sidebar en escritorio | 15 | 16 |
-| Alto que necesita el nav a 1280x799 | 648px con 607 disponibles: desborda 41px | sin cambio, lo resuelve INT.1b |
+| Qué | Antes de INT.1 | Después de INT.1a | Después de INT.1b |
+|---|---|---|---|
+| Ancho huérfano a 1920 (`main` 1680, `.section` 1440) | 240px pegados al borde derecho | 120 + 120 | sin cambio |
+| Ancho huérfano a 2560 | 880px de un lado | 440 + 440 | sin cambio |
+| Destinos sin entrada en el sidebar | 1 (Movimientos) | 0 | sin cambio |
+| Filas visibles del sidebar en escritorio (grupo Ahorro cerrado) | 15 | 16 | 12 (las 4 hijas se anidan) |
+| Alto que necesita el nav a 1280x799 | 648px con 607 disponibles: desborda 41px | sin cambio | 608px con 608 disponibles: sin desborde |
 
-**El desborde del nav tiene una mitigación que no funciona** ([BUG-026](../BUGS.md)): el bloque `@media (max-height: 800px) and (min-width: 1024px)` de `layout.css` compacta filas, grupos y rótulos, y **ninguna de sus cuatro declaraciones se aplica**. Todas tienen la misma especificidad (0,1,0) que las reglas incondicionales del mismo archivo, escritas más abajo, y una media query no aporta especificidad. Medido con la media query activa: `min-height` computa 40px y no 36, `margin-top` de grupo 16px y no 8. Se decide dentro de INT.1b: si anidar las hijas de Ahorro recupera los ~160px, el bloque se borra en vez de repararse.
+**BUG-026 cerrado por eliminación de causa, no reparado.** El bloque `@media (max-height: 800px) and (min-width: 1024px)` de `layout.css` (compactación de emergencia de filas/grupos/rótulos) nunca se aplicaba: sus cuatro declaraciones tenían la misma especificidad (0,1,0) que las reglas incondicionales del mismo archivo, escritas más abajo, y perdían la cascada. El anidado de INT.1b recuperó los ~160px que esa compactación intentaba ganar sin lograrlo, así que el bloque se borró completo en vez de repararse (medido: `scrollHeight` ≤ `clientHeight` del `.sidebar__nav` a 1280x799, sin la media query).
 
 **Dos premisas del handoff que el código desmiente** (verificadas el 2026-08-02, antes de escribir el ADR 059):
 
@@ -300,14 +300,15 @@
 | Tope de ancho (único consumidor: `.section`) | `styles/tokens.css` | `--fk-content-max: 1440px` |
 | Entrada de Movimientos en el sidebar (INT.1a, D6) | `index.html` | `.nav-item--no-mobile` con `href="#movimientos"`, grupo `nav-label-gestion` |
 | Entrada de Movimientos en móvil (sin cambios desde DIS.6/C6) | `index.html` | `.mas-tile` con `href="#movimientos"` |
-| Regla de emergencia del sidebar (muerta, BUG-026) | `styles/layout.css` | `@media (max-height: 800px) and (min-width: 1024px)` |
-| Las que la pisan | `styles/layout.css` | `.nav-item`, `.nav-group`, `.nav-group__label` |
+| Sub-nivel de las 4 hijas de Ahorro (INT.1b, D6) | `index.html` | `.nav-subnav#nav-subnav-ahorro`, `[hidden]` por defecto |
+| Despliegue del sub-nivel según el hash activo (INT.1b) | `modules/ui/shell.js` | `markActiveNav()`, `GRUPO_AHORRO` |
+| Indentación y borde del sub-nivel (INT.1b) | `styles/layout.css` | `.nav-subnav`, `.nav-item--sub` |
 | Clases de plataforma del nav | `styles/responsive.css` | `.nav-item--mobile-only`, `.nav-item--no-mobile` |
 | Disparador de Registrar (existe solo en móvil, lo resuelve INT.1c) | `index.html` | `.nav-item--registrar.nav-item--mobile-only` |
 | Hoja de registrar (existe en el DOM en las dos plataformas) | `index.html` | `#modal-registrar` |
 | Ancho de modal (520px, sin regla de escritorio; lo resuelve INT.1f) | `styles/modals.css` | `.modal`, `.modal--sm/--lg/--xl/--mas` |
 | CSS del saldo del sidebar, todavía sin marcado (lo resuelve INT.1d) | `styles/layout.css` | `.sidebar__saldo`, `-label`, `-value` |
-| Volver de las hijas de Ahorro (lo acota INT.1b a móvil) | `index.html` | 4 `.section__volver` con `href="#ahorro"` |
+| Volver de las 4 hijas de Ahorro, oculto en desktop (INT.1b) | `index.html` / `styles/responsive.css` | `.section__volver--ahorro-hija` |
 
 **Riesgos**:
 
@@ -316,11 +317,13 @@
 - **Lighthouse 100 es innegociable** y `backdrop-filter` fijo sobre contenido que scrollea es el caso donde el filtro cuesta (pendiente P9). Alternativa lista: fondo opaco con borde inferior.
 - **Coordinación con AH.7a**, que sube Ahorro a la barra inferior de móvil: toca el mismo marcado de nav en la otra plataforma. Quien vaya segundo rebasa.
 - **Las reglas R75 a R77 están reservadas y sin escribir**: entran a `DESIGN_SYSTEM.md` cuando cierre la última rebanada, así que hoy la lista de principios tiene un hueco declarado entre R74 y R78.
+- **Una hija de Ahorro ya no es un clic directo desde cualquier sección** (INT.1b, tradeoff aceptado por el ADR): hace falta abrir "Ahorro" primero para desplegar el sub-nivel. Tests que clickeaban `#metas`/`#inversion` directo desde Dashboard se movieron a `page.goto()` o al camino de dos clics.
 
-**Cambios pendientes**: siete rebanadas (INT.1b a INT.1h) en `docs/BOARD.md`. Dos pendientes del informe hay que resolverlos **antes** de codificar su rebanada: **P1** (qué primario sube a la barra en cada una de las 13 secciones; bloquea INT.1e y INT.1g) y **P8** (validación de accesibilidad de un `keydown` global; bloquea INT.1h).
+**Cambios pendientes**: seis rebanadas (INT.1c a INT.1h) en `docs/BOARD.md`. Dos pendientes del informe hay que resolverlos **antes** de codificar su rebanada: **P1** (qué primario sube a la barra en cada una de las 13 secciones; bloquea INT.1e y INT.1g) y **P8** (validación de accesibilidad de un `keydown` global; bloquea INT.1h).
 
 **Cambios realizados**:
 
+- **2026-08-03 (INT.1b)**: las 4 hijas de Ahorro se anidan bajo la casa en el sidebar de desktop, desplegadas solo dentro del grupo; `.section__volver` de las 4 se oculta en desktop; BUG-026 se cierra por eliminación de causa (el bloque de compactación de emergencia se borró). Detalle en el CHANGELOG.
 - **2026-08-02 (INT.1a)**: `.section` gana `margin-inline: auto` y Movimientos entra al grupo "Seguimiento" del sidebar. Detalle en el CHANGELOG.
 
 ---

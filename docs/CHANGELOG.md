@@ -10,6 +10,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(shell): INT.1b, las hijas de Ahorro se anidan y el sidebar cabe · 2026-08-03
+
+Cierra **INT.1b** (D6 del [ADR 059](DECISIONS/059-interfaz-de-escritorio.md), mitad) y **BUG-026**. Commit `4f87f77`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
+
+- **El defecto que cierra:** a 1280x799 (portátil de 13") el nav desbordaba 41px bajo su propio scroll interno. La mitigación que el proyecto creía tener (`@media (max-height: 800px)`, compactando filas/grupos/rótulos) nunca se aplicaba: sus cuatro declaraciones tenían la misma especificidad que las reglas incondicionales del mismo archivo, escritas más abajo, y perdían la cascada (BUG-026, hallado al verificar la auditoría de Interfaz contra el código).
+- **Fondo, Metas, Reservas e Inversión pasan de filas permanentes a sub-nivel** (`.nav-subnav`): `shell.js` (`markActiveNav`, `GRUPO_AHORRO`) lo despliega solo mientras el hash activo pertenece al grupo Ahorro. El sidebar baja de 14 filas fijas a 9 (grupo cerrado) y recupera los ~160px que le faltaban: medido, el nav pasa de 648px/607 disponibles a 608px/608, sin desborde. La regla de compactación de emergencia se **borró en vez de repararse**: dejó de tener razón de ser.
+- **Selector por `aria-controls`, no por `data-section`:** el botón "Más" (bottom nav, oculto en desktop) también gana `data-section="ahorro"` cuando el hash es `ahorro` (`_rotularMas`, patrón previo), así que `data-section` deja de ser único justo en ese caso. `[aria-controls="nav-subnav-ahorro"]` es el selector estable; lo encontró un test E2E antes de llegar a producción.
+- **`.section__volver` de las 4 hijas se oculta en desktop** (`--ahorro-hija`, `responsive.css`): la casa ya está anidada en el sidebar, así que el volver es redundante ahí. Intacto en móvil, donde sigue siendo la única salida vertical de la PWA instalada.
+- **Acota el ADR 056, no lo revierte** (regla 2.7): el punto 8 pasa de "las 4 entradas directas son permanentes" a "contextuales, dentro del grupo". Nota agregada al propio ADR.
+- **Tradeoff aceptado, documentado en el ADR:** una hija ya no es un clic directo desde cualquier sección; hace falta abrir "Ahorro" primero. 4 tests E2E que clickeaban `#metas`/`#inversion` directo desde Dashboard se movieron a `page.goto()` (suites que prueban contenido, no navegación) o al camino de dos clics (suite que sí prueba navegación).
+- 3 tests unitarios nuevos (`shell-nav.test.js`: oculto fuera del grupo, desplegado en la casa y en las 4 hijas, replegado al salir) + 5 E2E nuevos (anidado, `scrollHeight` ≤ `clientHeight` a 1280x799, volver oculto en desktop, camino de dos clics, DOM completo intacto para accesibilidad). 3729 unit (5 fallas preexistentes de `compromisos.test.js`, ajenas, confirmadas contra HEAD sin este cambio) + 259 E2E + lint verdes. SW v488 a v489.
+
 ### feat(analisis): CFG.2b, Finko infiere si debes declarar renta y lo enmarca por situación laboral · 2026-08-03
 
 Cierra **CFG.2b** y resuelve **D2 del [ADR 050](DECISIONS/050-perfil-fiscal-ubicacion-y-framing.md)**. Ficha: [`contexto/configuracion.md`](contexto/configuracion.md).

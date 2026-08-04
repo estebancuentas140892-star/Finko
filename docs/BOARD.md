@@ -46,8 +46,7 @@ Las 34 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
-| INT.1b | Las hijas de Ahorro se anidan; el sidebar cabe | Transversal | media | INT.1a cerrada; acota el ADR 056; cierra BUG-026 |
-| INT.1c | Barra superior de 56px (sección, Registrar, tema, perfil) | Transversal | media | INT.1b; pendiente P9 (Lighthouse) |
+| INT.1c | Barra superior de 56px (sección, Registrar, tema, perfil) | Transversal | media | INT.1b cerrada; pendiente P9 (Lighthouse) |
 | INT.1d | Cinta de saldo en la barra, con su ojo | Transversal | media | INT.1c |
 | INT.1e | El primario de cada sección sube a la barra | Transversal | media | INT.1c; pendiente P1 (recorrer 13) |
 | INT.1f | Formulario de escritorio a 840px, dos columnas | Transversal | media | nada duro; conviene tras INT.1c |
