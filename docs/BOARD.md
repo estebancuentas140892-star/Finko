@@ -71,7 +71,6 @@ Las 32 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | P4 del ADR 033 + cola de diseño |
 | IV.4 | Iconografía dirigida post-color | Transversal | tras IV.2 | IV.2 en producción + revisión visual |
 | CAT.3 | Categorías personalizadas globales (4 rebanadas, ADR 058) | Transversal | media | nada; decidida el 2026-07-31 |
-| LEG.2 | Aceptación obligatoria versionada | Transversal | alta | checklist de `docs/legal/README.md` |
 | LG.2d | Mudanza de la vitrina a Análisis + tarjeta en Inicio | Transversal | baja (bloqueada) | ANL.1 (layout) |
 | LG.2e | Familia comportamiento (interpretación de hábitos) | Transversal | baja | LG.2c; `ahorro-creciente` además depende de ANL.1 |
 | PA.1 | Pagos y créditos automáticos (débito automático simulado) | Transversal | media-alta | ADR 041 (motor); ADR 052 (Abierta) |
@@ -132,7 +131,7 @@ CFG.2c, CFG.2a, CFG.3, CFG.4, CFG.5, CFG.6, CFG.7 → [`board/configuracion.md`]
 
 ## Transversal (afecta varias secciones)
 
-INT.1a a INT.1h, PERF.5, PERF.6, DV.2d, IV.4, CAT.3 (+ CAT.3c, CAT.3d), LEG.2, LG.2d, LG.2e, PA.1 → [`board/transversal.md`](board/transversal.md)
+INT.1a a INT.1h, PERF.5, PERF.6, DV.2d, IV.4, CAT.3 (+ CAT.3c, CAT.3d), LG.2d, LG.2e, PA.1 → [`board/transversal.md`](board/transversal.md)
 
 ---
 

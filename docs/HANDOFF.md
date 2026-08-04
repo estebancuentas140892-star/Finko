@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-04. Última tarea cerrada: AH.5, D2+D3 del ADR 049, hero educativo y aporte directo baja a secundario (Ahorro).
+> Revisado: 2026-08-04. Última tarea cerrada: LEG.2, aceptación obligatoria versionada (Transversal).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,9 +13,9 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 3738/3738 verdes en el índice de AH.5 |
-| Tests E2E | 260/260 verdes, sello escrito sobre el índice con solo `view.js`/`service-worker.js` staged (AH.5, 2026-08-04). **Compuerta** desde el 2026-07-30. **Sesiones paralelas:** con otra sesión escribiendo el mismo árbol en vivo (LEG.2), la corrida se reintentó 4 veces por inestabilidad del server compartido (8081) hasta coincidir con una ventana calma; ninguna falla tocó Ahorro/Fondo en ningún intento |
-| Schema version (`localStorage`) | v32 (`config.ultimaVersionVista`, UPD.1; migración backfill al catálogo vigente) |
+| Tests unitarios + integración | 3748/3748 verdes en el índice de LEG.2 |
+| Tests E2E | 260/260 verdes, sello escrito sobre el índice de LEG.2. **Compuerta** desde el 2026-07-30. **Sesiones paralelas:** árbol compartido con otra sesión durante todo el cierre (ver AH.5); la corrida final se hizo con servidor propio en puerto aislado para evitar el server 8081 compartido, sin fallas |
+| Schema version (`localStorage`) | v33 (`config.legalAceptado`, LEG.2; migración grandfather para datos existentes) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
 | `onclick` / `style=""` / `window.X` en módulos | 0 / 0 / 0 |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**LEG.2 - aceptación obligatoria versionada (Transversal), 2026-08-04**
+Onboarding gana paso 2: checkbox único con enlaces al Centro Legal, obligatorio antes de entrar. Usuario existente con versión vieja (o sin registro) ve un gate independiente y bloqueante (sin Escape). `config.legalAceptado: {version, fecha} | null`, schema v33; usuario con datos ya guardados queda grandfathered a la versión histórica en la migración, no se le exige aceptar retroactivamente. No espera al checklist de contenido de `legal/README.md` (responsable, contacto, licencia, revisión de abogado): eso bloquea el paquete a v1.0, no el mecanismo. Commit `53becc8`.
 
 **AH.5 - D2+D3 del ADR 049, hero educativo y aporte directo baja a secundario (Ahorro), 2026-08-04**
 La tarjeta activa del fondo abre con una línea de propósito antes de la primera cifra (D3); "Registrar un aporte" baja de botón primario ancho al mismo peso ghost/secundario que "Editar" (D2), porque el flujo principal ya es el asistente "Distribuir mi ingreso". Sin handoff de diseño: sin mockup, se siguió la convención ya escrita en `view.js`/`analysis.css`. Cierra las cuatro decisiones del ADR 049. Commit `dfff037`.
@@ -36,9 +39,6 @@ Cierra D6 del [ADR 059](DECISIONS/059-interfaz-de-escritorio.md) (mitad) y **BUG
 
 **CFG.2b - Finko infiere si debes declarar renta y lo enmarca por situación laboral, 2026-08-03**
 Resuelve **D2 del [ADR 050](DECISIONS/050-perfil-fiscal-ubicacion-y-framing.md)** (el framing legal que bloqueaba la tarjeta) por delegación explícita de Esteban: alternativa **C acotada**, la afirmación recae sobre la regla general, nunca sobre la obligación personal del usuario. `inferirEstadoDeclarante()` da 4 estados y su veredicto encabeza la card de renta; el checkbox "La DIAN me notificó" queda como override positivo. Código en el commit `727d8c9` (CAT.3b, sesión paralela) por la carrera del índice compartido.
-
-**CAT.3b - los siete accesos crudos de ícono pasan por la resolutora, 2026-08-03**
-`presupuesto/view.js` (envelope + banner de alertas), `resumen/view.js` (categoría top de Inicio) y cuatro accesos de Gastos fijos (`agenda/view.js` ×2, `gastos/logic.js`, `tesoreria/views/distribucion.js`) leían el mapa nativo crudo; los tres primeros ya caían a `c-otros` con una personalizada aunque el formulario que la creó mostrara su ícono. Los siete pasan a `iconoDeCategoriaGasto()` (ADR 058 D3). Quedan CAT.3c y CAT.3d.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 

@@ -10,6 +10,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(transversal): LEG.2, aceptación obligatoria versionada · 2026-08-04
+
+Cierra **LEG.2**. Commit `53becc8`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
+
+- **Onboarding gana paso 2**: tras el nombre, un checkbox único ("Acepto los Términos y condiciones, la Política de privacidad y el Tratamiento de datos personales") con los tres como enlaces al Centro Legal (reusa la acción `abrir-legal` de LEG.1). `S.onboarded` solo pasa a `true` al aceptar, no al escribir el nombre.
+- **Gate independiente para usuario existente** (`#aceptacion-legal`): se abre solo si `S.onboarded === true` y `config.legalAceptado` está ausente o es de otra versión que `VERSION_LEGAL`. Bloqueante a propósito: sin botón de cerrar, y el `Escape` global lo ignora (`data-bloqueante`, nuevo guard en `actions.js`); el onboarding conserva su contrato de siempre (Escape sí lo cierra y reaparece la próxima visita).
+- **`config.legalAceptado: { version, fecha } | null`** (schema v33). Usuario nuevo arranca en `null`. Usuario existente con datos ya guardados queda **grandfathered**: la migración le asigna la versión histórica `Borrador v0.1` (hardcoded a propósito, mismo precedente que `REMAPEO_TIPO_DEUDA` en v18 a v19), no `null`. Sin el grandfather, el día del despliegue habría bloqueado retroactivamente a todo usuario real y roto el sembrado `onboarded: true` de las 11 suites E2E existentes (ninguna trae `legalAceptado`).
+- **No espera al checklist de contenido** de [`legal/README.md`](legal/README.md) (responsable, correo de contacto, licencia del código, revisión de abogado colombiano): ese checklist bloquea el paso del paquete a v1.0, no el mecanismo de aceptación, que corre igual sobre la versión vigente (`Borrador v0.1`). Cuando el paquete suba de versión, el gate de re-aceptación se activa solo.
+- Onboarding verificado en la app real (servidor propio, puerto aislado del compartido): paso 1 a paso 2, checkbox obligatorio (sin marcar no avanza), enlaces al Centro Legal abren sobre el gate sin romperlo, `Escape` ignorado en el gate de re-aceptación. 6 tests unitarios nuevos (`aceptacion-legal.test.js`) + 4 de migración v33 (`storage.test.js`) + 2 E2E nuevos y 1 reescrito (`smoke.test.js`, suite Onboarding). 3748 unit + 260 E2E + lint verdes.
+
 ### feat(ahorro): AH.5, D2+D3 del ADR 049, hero educativo y aporte directo baja a secundario · 2026-08-04
 
 Cierra **AH.5**. Commit `dfff037`. Ficha: [`contexto/ahorro.md`](contexto/ahorro.md). D1 y D4 ya estaban en producción (AH.5a/AH.5b); cierra las cuatro decisiones del [ADR 049](DECISIONS/049-fondo-de-emergencia-v2.md).

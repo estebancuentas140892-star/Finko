@@ -340,3 +340,37 @@
 - **Conclusión formal**: no hace falta re-cortar GU.1a en tarjetas por sección; el sistema transversal está sano y el ADR no se revisa de fondo, solo se confirma.
 
 **Regla anti-doble-trabajo**: esta tarjeta define el principio y audita el sistema transversal (banners, hints); los rediseños internos de cada sección viven en sus propias iniciativas v2, que aplican el principio en vez de duplicarlo.
+
+---
+
+## Aceptación legal versionada (LEG.2)
+
+- **Objetivo**          : aceptación expresa del paquete legal antes de usar la app (onboarding, usuario nuevo) y re-aceptación cuando la versión vigente cambie (usuario existente). No espera al checklist de contenido de [`legal/README.md`](../legal/README.md) (responsable, contacto, licencia, revisión de abogado): eso bloquea el paso a v1.0, no el mecanismo, que corre sobre `VERSION_LEGAL` vigente (`Borrador v0.1`).
+- **Estado actual**     : cerrada (2026-08-04). Onboarding gana paso 2 (checkbox único + 3 enlaces al Centro Legal); gate standalone `#aceptacion-legal` para `S.onboarded === true` con `legalAceptado` ausente o de otra versión, bloqueante (Escape lo ignora vía `data-bloqueante`). Usuario existente con datos ya guardados queda **grandfathered** en la migración v33 (versión histórica `Borrador v0.1`, hardcoded a propósito): no se le exige aceptar retroactivamente el día del despliegue.
+- **Verificado contra** : `53becc8` (2026-08-04).
+
+**Dónde vive**
+
+| Pieza | Archivo | Ancla | Línea |
+|---|---|---|---|
+| Registro de aceptación en el estado | `modules/core/state.js` | `config.legalAceptado` | ~425 |
+| Migración v32 a v33 (grandfather) | `modules/core/storage.js` | `SCHEMA_VERSION = 33` | ~21, ~485 |
+| Bloque compartido + gate standalone | `modules/ui/aceptacion-legal.js` | `faltaAceptarLegal()`, `renderBloqueAceptacion()`, `registrarAceptacion()`, `initAceptacionLegal()` | |
+| Paso 2 del wizard | `modules/ui/onboarding.js` | `_renderPaso2()`, `_onSubmitPaso2()` | |
+| Escape ignora overlays bloqueantes | `modules/ui/actions.js` | `_handleKeydown()`, `data-bloqueante` | ~54 |
+| Overlay del gate | `index.html` | `#aceptacion-legal` | |
+| Wiring de arranque | `modules/ui/bootstrap.js` | `initAceptacionLegal()`, tras `initOnboarding()` | |
+
+**Dependencias y relaciones**: reusa la acción global `abrir-legal` (registrada por `config/index.js`, LEG.1) para los 3 enlaces del checkbox, sin importar el dominio config desde `ui/`. `bootstrap.js` difiere `mostrarNovedadesSiHay()` mientras el gate esté pendiente, para no abrir dos modales encima (`trapFocus` no apila).
+
+**Riesgos**:
+
+- **El checklist de contenido sigue abierto** (`legal/README.md`): responsable, correo de contacto y licencia del código sin decidir; revisión de abogado colombiano pendiente (trabajo externo). El paquete sigue en v0.1 borrador; cuando suba a v1.0 (o cualquier cambio importante), el gate de re-aceptación se activa solo con el bump de `VERSION_LEGAL`.
+- **La versión hardcoded `Borrador v0.1` en la migración v33 no debe seguir a `VERSION_LEGAL`** si ese texto cambia: es un hecho histórico de esa migración, mismo precedente que `REMAPEO_TIPO_DEUDA` (v18 a v19).
+- **Evidencia solo local** (limitación honesta ya documentada en `legal/README.md`): sin servidor, `legalAceptado` vive únicamente en el dispositivo del usuario.
+
+**Cambios pendientes**: ninguno de código. El paso a v1.0 depende del checklist de contenido, que es trabajo de Esteban/abogado, no de esta tarjeta.
+
+**Cambios realizados**:
+
+- **2026-08-04 (LEG.2)**: onboarding de 2 pasos, gate de re-aceptación, migración v33 grandfathered. Detalle en el CHANGELOG.
