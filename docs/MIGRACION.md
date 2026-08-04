@@ -643,7 +643,7 @@ Preparado a pedido de Esteban el 2026-07-24. **Nada de esta sección se ejecutó
 | 3 | `assets/svg/identidad/README.md` fusionado | Hecho | No existe; commit `32c17ff` |
 | 4 | `assets/svg/ilustraciones/README.md` fusionado | Hecho | No existe; mismo commit |
 | 5 | `HANDOFF.md` a 6 KB con línea de contrato | Hecho el 2026-07-31 | 12,95 a 4,3 KB. Ver 11.8 |
-| 6 | `BOARD.md` índice tabular + purga | **Parcial** | El índice existe, pero el archivo sigue en **80 KB contra un techo de 40**. Es lo único que bloquea el cierre de la Fase 4 |
+| 6 | `BOARD.md` índice tabular + partido en satélites | Hecho el 2026-08-03 | 60 KB a 15 KB. 8 satélites nuevos en `docs/board/` (uno por sección con tarjetas vivas), ninguno sobre el techo de 40 KB (el mayor, `transversal.md`, 21,6 KB). Ver 11.9 |
 | 7 | 9 briefs a ADR 043 a 051 | Hecho | Los 9 ADR existen; cero bloques de brief sin comprimir en el tablero. CFG.4 sin ADR propio a propósito (11.3) |
 | 8 | `transversal.md` partido | Hecho | Tres fichas medidas en 11.4 |
 | 9 | `.claude/settings.local.json` | **Parcial** | 12.1 ejecutado (commit `03e0613`, 146 a 131 entradas); 12.2 (comodines amplios) sigue esperando la decisión de Esteban |
@@ -836,6 +836,18 @@ Qué sale y a qué dueño, con el destino verificado **antes** de borrar (protoc
 `docs/OPERACION.md` no se toca: su puntero a HANDOFF por "estado del proyecto" sigue siendo exacto. `CLAUDE.md` §1 tampoco: su fila ya decía "dónde estamos hoy, métricas, últimas 5 tareas" y "qué NO buscar ahí: historia, workflow, comandos, runbooks", que es literalmente el contrato que el archivo ahora imprime en su cabecera.
 
 Para que la compresión no se deshaga sola, la poda del paso 3 de la skill es parte del mismo movimiento: el texto anterior mandaba "bajar la sexta al puntero de tareas anteriores", que es exactamente el párrafo de 1.400 caracteres que este bloque eliminó.
+
+### 11.9 Bloque 6 ejecutado: BOARD.md partido en satélites por dominio
+
+Ejecutado el 2026-08-03. La purga narrativa del 2026-08-02 (commit `ff5e5ec`) bajó el archivo de 80 a 62,5 KB, pero seguía sobre el techo de 40: el índice tabular por sí solo no alcanza cuando cada tarjeta completa vive en el mismo archivo que se carga entero al elegir la siguiente.
+
+**Estructura elegida:** un satélite por sección con tarjetas vivas en `docs/board/`, mismo nombre que su ficha en [`contexto/`](contexto/README.md) (`mis-cuentas.md`, `metas.md`, `ahorro.md`, `limites.md`, `me-deben.md`, `analisis.md`, `configuracion.md`, `transversal.md`). `BOARD.md` conserva "En proceso", "Cómo usar", el índice tabular de las 34/35 tarjetas, un enganche de 1-2 líneas por sección apuntando a su satélite, "Secciones sin tarjetas pendientes" y "Mantenimiento" (ambos bloques pequeños, se quedan in place). Calendario e Inicio no tienen tarjetas: su nota anti-duplicado también se queda in place.
+
+**Resultado medido:** `BOARD.md` 62,5 KB a 15 KB. El satélite más grande, `transversal.md` (Transversal reúne 15 tarjetas, la sección con más volumen), 21,6 KB; el resto entre 1,3 y 10,5 KB. Todos muy por debajo del techo de 40 KB.
+
+**Trazabilidad:** las 38 tarjetas `####` y 2 subrebanadas `#####` (CAT.3c, CAT.3d) que tenía el archivo antes de partirlo se verificaron una por una, mismo método que la Fase 2/3 (`grep -oE "^#### [A-Za-z0-9.-]+"` antes y después): ningún ID se perdió ni se duplicó. Cero enlaces internos rotos: los satélites usan `../` para `DECISIONS/`, `BUGS.md`, `contexto/` y `legal/` (un nivel más abajo que `BOARD.md`); verificado con un barrido de todos los enlaces relativos de `docs/board/*.md`.
+
+**Ejecución en dos sesiones paralelas:** mientras se escribían los satélites, otra sesión cerró **INT.1a** sobre el `BOARD.md` ya partido (commit `22d39a7`) y dejó el ajuste espejo en `docs/board/transversal.md` sin commitear, para que esta sesión lo integrara en su propio commit (protocolo ya usado antes en este proyecto para archivos compartidos en vuelo).
 
 ---
 
