@@ -69,6 +69,8 @@ function _enfocarTrasRender(id) {
 function _nuevoPersonal() {
   const overlay = document.getElementById('modal-personal');
   if (!overlay) return;
+  const titulo = overlay.querySelector('.modal__title');
+  if (titulo) titulo.textContent = 'Nuevo préstamo';
   // PE.7: re-inyectar en cada apertura, no solo al arrancar. El form ahora
   // depende de `S.cuentas` (selector de cuenta de origen): si se inyectara una
   // sola vez en el init, crear una cuenta después dejaría el selector invisible
@@ -82,7 +84,43 @@ function _nuevoPersonal() {
   abrirModal(overlay);
 }
 
-function _guardarPersonal() {
+/**
+ * Abre el modal de préstamo en modo edición (EDIT.1) con los datos actuales
+ * prellenados. La cuenta de origen no se vuelve a preguntar (ver
+ * `_renderCuentaEditable` en `view.js`).
+ * @param {HTMLElement} el - botón con data-id del préstamo.
+ */
+function _editarPersonal(el) {
+  const id = el.dataset.id;
+  if (!id) return;
+
+  const prestamo = S.personales.find(p => p.id === id);
+  if (!prestamo) return;
+
+  const overlay = document.getElementById('modal-personal');
+  if (!overlay) return;
+  const titulo = overlay.querySelector('.modal__title');
+  if (titulo) titulo.textContent = 'Editar préstamo';
+
+  _inyectarForm(prestamo);
+  abrirModal(overlay);
+}
+
+function _inyectarForm(prestamo = null) {
+  const body = document.getElementById('modal-personal-body');
+  if (!body) return;
+  body.innerHTML = renderFormPersonal({ prestamo });
+
+  const form = body.querySelector('#form-personal');
+  if (!form) return;
+  if (prestamo) form.dataset.id = prestamo.id;
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    _guardarPersonal();
+  });
+}
+
+async function _guardarPersonal() {
   const form = document.getElementById('form-personal');
   if (!form) return;
 
@@ -91,6 +129,52 @@ function _guardarPersonal() {
 
   if (errores.length > 0) {
     mostrarErroresForm(form, errores);
+    return;
+  }
+
+  const idEdit = form.dataset.id || null;
+
+  if (idEdit) {
+    const existente = S.personales.find(p => p.id === idEdit);
+    if (!existente) return;
+
+    const actualizado = normalizarPersonal(datos, existente);
+
+    // ADR 053 I3: con cuenta de origen, el monto editado ajusta el saldo por
+    // delta contra lo que ya estaba descontado, no solo la cifra guardada.
+    // `delta` > 0 devuelve dinero a la cuenta (monto bajó); < 0 descuenta de
+    // más (monto subió).
+    let delta = 0;
+    if (actualizado.cuentaId) {
+      delta = existente.monto - actualizado.monto;
+      if (delta < 0) {
+        const cuenta = (S.cuentas ?? []).find(c => c.id === actualizado.cuentaId);
+        const saldo  = cuenta?.saldo ?? 0;
+        if (saldo + delta < 0) {
+          const ok = await confirmar({
+            titulo:         'Editar préstamo',
+            mensaje:        `¿Actualizar el préstamo a ${actualizado.persona} a ${f(actualizado.monto)}? Se descontarán ${f(-delta)} más de ${cuenta?.nombre ?? 'la cuenta'}: el saldo disponible es ${f(saldo)} y quedará en negativo.`,
+            confirmarTexto: 'Actualizar préstamo',
+            peligroso:      true,
+          });
+          if (!ok) return;
+        }
+      }
+    }
+
+    editar('personales', idEdit, actualizado);
+
+    if (delta !== 0) {
+      _ajustarSaldoCuenta(actualizado.cuentaId, delta);
+      updSaldo();
+    }
+
+    const overlay = document.getElementById('modal-personal');
+    if (overlay) cerrarModal(overlay);
+
+    renderListaPersonales();
+    _enfocarTrasRender(idEdit);
+    announce(`Préstamo a ${actualizado.persona} actualizado.`);
     return;
   }
 
@@ -236,19 +320,10 @@ async function _eliminarPersonal(el) {
 
 // ── INIT ─────────────────────────────────────────────────────────
 
-function _inyectarForm() {
-  const body = document.getElementById('modal-personal-body');
-  if (!body) return;
-  body.innerHTML = renderFormPersonal();
-  body.querySelector('#form-personal')?.addEventListener('submit', (e) => {
-    e.preventDefault();
-    _guardarPersonal();
-  });
-}
-
 export function initPersonales() {
   registrarAccion('nuevo-personal',    _nuevoPersonal);
   registrarAccion('pagar-personal',    _abrirPagoPersonal);
+  registrarAccion('editar-personal',   _editarPersonal);
   registrarAccion('eliminar-personal', _eliminarPersonal);
 
   _inyectarForm();

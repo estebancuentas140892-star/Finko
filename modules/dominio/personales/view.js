@@ -205,6 +205,10 @@ function _renderPersonalItem(prestamo, hoy, oculto = false) {
       <div class="list-item__action">
         ${accionPago}
         <button class="btn btn-ghost btn-icon"
+                data-action="editar-personal"
+                data-id="${_esc(prestamo.id)}"
+                aria-label="Editar préstamo a ${persona}"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></button>
+        <button class="btn btn-ghost btn-icon"
                 data-action="eliminar-personal"
                 data-id="${_esc(prestamo.id)}"
                 aria-label="Eliminar préstamo a ${persona}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
@@ -236,23 +240,27 @@ function _renderEmptyState() {
  * cuentas activas no se muestra (patrón 0/1/varias) y el préstamo se registra
  * igual, como seguimiento puro que no mueve ningún saldo.
  *
+ * EDIT.1: con `prestamo`, prellena los campos para editar en vez de crear. La
+ * cuenta de origen no se vuelve a preguntar (mismo criterio que Inversión,
+ * ADR 053): si el préstamo tiene `cuentaId`, se muestra como nota de solo
+ * lectura (`_renderCuentaEditable`); reasignarla permitiría mover el
+ * descuento histórico de una cuenta a otra sin dejar rastro.
+ *
  * DIS.3 (V-11): el orden pregunta primero lo esencial [persona · monto · fecha ·
  * cuenta] y después lo opcional [tasa · motivo · fecha pactada]. Antes la tasa
  * (el caso raro) era el tercer campo y empujaba el selector de cuenta y el botón
  * Guardar por debajo del borde de la hoja. Colapsar los opcionales bajo "Más
  * detalles" es una pauta nueva de formulario y se decide en CAT.4, no acá.
  *
+ * @param {{ prestamo?: import('./logic.js').Personal|null }} [opts]
  * @returns {string}
  */
-export function renderFormPersonal() {
+export function renderFormPersonal({ prestamo = null } = {}) {
   const hoy = hoyISO();
-  const cuentasActivas = (S.cuentas ?? []).filter(c => c.activa !== false);
-  const cuentaHtml = renderSelectorCuenta(cuentasActivas, {
-    label: '¿De qué cuenta sale el dinero?',
-  });
-  const notaCuenta = cuentaHtml
-    ? `<p class="form-hint">Se descontará de esa cuenta, porque el dinero deja de estar disponible. Cuando te paguen, vuelve a entrar.</p>`
-    : '';
+  const cuentaHtml = prestamo
+    ? _renderCuentaEditable(prestamo)
+    : _renderCuentaSelector();
+  const botonTexto = prestamo ? 'Actualizar préstamo' : 'Guardar préstamo';
 
   return `
     <form id="form-personal" novalidate>
@@ -260,46 +268,75 @@ export function renderFormPersonal() {
         <label for="pers-persona" class="label">A quién le prestaste</label>
         <input id="pers-persona" name="persona" class="input" type="text"
                placeholder="Ej. Tía Marta" required aria-required="true"
-               autocomplete="off" maxlength="60" />
+               autocomplete="off" maxlength="60"
+               value="${_esc(prestamo?.persona ?? '')}" />
       </div>
       <div class="form-group">
         <label for="pers-monto" class="label">Monto prestado (COP)</label>
         <input id="pers-monto" name="monto" class="input" type="number"
-               min="1" step="1000" placeholder="0" required aria-required="true" />
+               min="1" step="1000" placeholder="0" required aria-required="true"
+               value="${prestamo ? Number(prestamo.monto) || '' : ''}" />
       </div>
       <div class="form-group">
         <label for="pers-fecha" class="label">Fecha del préstamo</label>
         <input id="pers-fecha" name="fecha" class="input" type="date"
-               value="${hoy}" required aria-required="true" />
+               value="${prestamo ? _esc(prestamo.fecha ?? '') : hoy}" required aria-required="true" />
       </div>
 
       ${cuentaHtml}
-      ${notaCuenta}
 
       <div class="form-group">
         <label for="pers-tasa" class="label">Interés mensual (%) <span class="form-optional">opcional</span></label>
         <input id="pers-tasa" name="tasa" class="input" type="number"
                min="0" max="100" step="0.1" placeholder="Ej. 2"
-               inputmode="decimal" />
+               inputmode="decimal"
+               value="${prestamo && tieneInteres(prestamo) ? prestamo.tasa : ''}" />
         <p class="form-hint">Se calcula sobre el capital pendiente; cada pago cubre primero el interés.</p>
       </div>
       <div class="form-group">
         <label for="pers-motivo" class="label">Motivo <span class="form-optional">opcional</span></label>
         <input id="pers-motivo" name="motivo" class="input" type="text"
                placeholder="Ej. mercado, favor" maxlength="80"
-               autocomplete="off" />
+               autocomplete="off"
+               value="${_esc(prestamo?.motivo ?? '')}" />
       </div>
       <div class="form-group">
         <label for="pers-limite" class="label">Fecha pactada de devolución <span class="form-optional">opcional</span></label>
-        <input id="pers-limite" name="fechaLimite" class="input" type="date" />
+        <input id="pers-limite" name="fechaLimite" class="input" type="date"
+               value="${_esc(prestamo?.fechaLimite ?? '')}" />
         <p class="form-hint">Si pasa esta fecha, el préstamo se marca como vencido.</p>
       </div>
 
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar préstamo</button>
+        <button type="submit" class="btn btn-primary">${botonTexto}</button>
       </div>
     </form>`;
+}
+
+/** Selector de cuenta de origen al crear (PE.7). */
+function _renderCuentaSelector() {
+  const cuentasActivas = (S.cuentas ?? []).filter(c => c.activa !== false);
+  const cuentaHtml = renderSelectorCuenta(cuentasActivas, {
+    label: '¿De qué cuenta sale el dinero?',
+  });
+  const notaCuenta = cuentaHtml
+    ? `<p class="form-hint">Se descontará de esa cuenta, porque el dinero deja de estar disponible. Cuando te paguen, vuelve a entrar.</p>`
+    : '';
+  return `${cuentaHtml}${notaCuenta}`;
+}
+
+/**
+ * Nota de solo lectura del origen del dinero al editar (EDIT.1). Ver el
+ * porqué de no reabrir la pregunta en `renderFormPersonal`.
+ * @param {import('./logic.js').Personal} prestamo
+ * @returns {string} '' si el préstamo no tiene cuenta de origen.
+ */
+function _renderCuentaEditable(prestamo) {
+  if (!prestamo.cuentaId) return '';
+  const cuenta = (S.cuentas ?? []).find(c => c.id === prestamo.cuentaId);
+  return `
+      <p class="form-hint">Este dinero salió de <strong>${_esc(cuenta?.nombre ?? 'una cuenta')}</strong>. Si cambias el monto, Finko ajusta el saldo de esa cuenta.</p>`;
 }
 
 // ── FORM PAGO PARCIAL ────────────────────────────────────────────

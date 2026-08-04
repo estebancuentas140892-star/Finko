@@ -745,6 +745,129 @@ describe('normalizarPersonal() con tasa (PE.1)', () => {
   });
 });
 
+// ── normalizarPersonal(datos, existente) - modo edición (EDIT.1) ──
+
+describe('normalizarPersonal() - modo edición (EDIT.1)', () => {
+  const datosEditados = {
+    persona: 'Tía Marta renombrada', monto: '200000', fecha: '2026-06-01',
+  };
+
+  it('actualiza persona, monto y fecha', () => {
+    const existente = { id: 'p1', persona: 'Tía Marta', monto: 100_000, pagado: 0, fecha: '2026-01-01' };
+    const r = normalizarPersonal(datosEditados, existente);
+    expect(r.persona).toBe('Tía Marta renombrada');
+    expect(r.monto).toBe(200_000);
+    expect(r.fecha).toBe('2026-06-01');
+  });
+
+  it('sin fecha en datos, conserva la fecha del existente', () => {
+    const existente = { id: 'p1', persona: 'X', monto: 100_000, pagado: 0, fecha: '2026-01-01' };
+    const r = normalizarPersonal({ persona: 'X', monto: '100000' }, existente);
+    expect(r.fecha).toBe('2026-01-01');
+  });
+
+  it('conserva el pagado acumulado (sin tasa)', () => {
+    const existente = { id: 'p1', persona: 'X', monto: 100_000, pagado: 40_000, fecha: '2026-01-01' };
+    const r = normalizarPersonal({ persona: 'X', monto: '200000' }, existente);
+    expect(r.pagado).toBe(40_000);
+    expect(r.liquidado).toBe(false);
+  });
+
+  it('clampea el pagado si el monto editado baja por debajo de lo ya pagado', () => {
+    const existente = { id: 'p1', persona: 'X', monto: 100_000, pagado: 40_000, fecha: '2026-01-01' };
+    const r = normalizarPersonal({ persona: 'X', monto: '30000' }, existente);
+    expect(r.pagado).toBe(30_000);
+    expect(r.liquidado).toBe(true);
+  });
+
+  it('preserva cuentaId del existente aunque el form no lo envíe', () => {
+    const existente = { id: 'p1', persona: 'X', monto: 100_000, pagado: 0, fecha: '2026-01-01', cuentaId: 'c1' };
+    const r = normalizarPersonal(datosEditados, existente);
+    expect(r.cuentaId).toBe('c1');
+  });
+
+  it('ignora un cuentaId que llegara en datos: el existente manda', () => {
+    const existente = { id: 'p1', persona: 'X', monto: 100_000, pagado: 0, fecha: '2026-01-01', cuentaId: 'c1' };
+    const r = normalizarPersonal({ ...datosEditados, cuentaId: 'c9' }, existente);
+    expect(r.cuentaId).toBe('c1');
+  });
+
+  it('sin cuentaId en el existente, el resultado tampoco lo agrega', () => {
+    const existente = { id: 'p1', persona: 'X', monto: 100_000, pagado: 0, fecha: '2026-01-01' };
+    const r = normalizarPersonal(datosEditados, existente);
+    expect('cuentaId' in r).toBe(false);
+  });
+
+  it('actualiza motivo y fechaLimite', () => {
+    const existente = { id: 'p1', persona: 'X', monto: 100_000, pagado: 0, fecha: '2026-01-01' };
+    const r = normalizarPersonal({ ...datosEditados, motivo: 'mercado', fechaLimite: '2026-07-01' }, existente);
+    expect(r.motivo).toBe('mercado');
+    expect(r.fechaLimite).toBe('2026-07-01');
+  });
+
+  it('borrar motivo en el form lo limpia (editar() sobreescribe, no conserva)', () => {
+    const existente = { id: 'p1', persona: 'X', monto: 100_000, pagado: 0, fecha: '2026-01-01', motivo: 'mercado' };
+    const r = normalizarPersonal({ ...datosEditados, motivo: '' }, existente);
+    expect(r.motivo).toBeUndefined();
+  });
+
+  it('borrar la fecha pactada en el form la limpia', () => {
+    const existente = {
+      id: 'p1', persona: 'X', monto: 100_000, pagado: 0, fecha: '2026-01-01', fechaLimite: '2026-07-01',
+    };
+    const r = normalizarPersonal({ ...datosEditados, fechaLimite: '' }, existente);
+    expect(r.fechaLimite).toBeUndefined();
+  });
+
+  describe('transición de tasa al editar', () => {
+    it('con tasa antes y ahora: conserva capitalPagado/interesPagado/interesPendiente', () => {
+      const existente = {
+        id: 'p1', persona: 'X', monto: 1_000_000, pagado: 50_000, fecha: '2026-01-01',
+        tasa: 2, capitalPagado: 30_000, interesPagado: 20_000, interesPendiente: 5_000,
+        ultimoPago: '2026-05-01',
+      };
+      const r = normalizarPersonal({ persona: 'X', monto: '1000000', tasa: '3' }, existente);
+      expect(r.tasa).toBe(3);
+      expect(r.capitalPagado).toBe(30_000);
+      expect(r.interesPagado).toBe(20_000);
+      expect(r.interesPendiente).toBe(5_000);
+      expect(r.pagado).toBe(50_000);
+      expect(r.ultimoPago).toBe('2026-05-01');
+    });
+
+    it('sin tasa antes, con tasa ahora: lo pagado hasta hoy se asume capital', () => {
+      const existente = { id: 'p1', persona: 'X', monto: 1_000_000, pagado: 100_000, fecha: '2026-01-01' };
+      const r = normalizarPersonal({ persona: 'X', monto: '1000000', tasa: '2' }, existente);
+      expect(r.tasa).toBe(2);
+      expect(r.capitalPagado).toBe(100_000);
+      expect(r.interesPagado).toBe(0);
+      expect(r.interesPendiente).toBe(0);
+    });
+
+    it('con tasa antes, sin tasa ahora: limpia los acumuladores de interés', () => {
+      const existente = {
+        id: 'p1', persona: 'X', monto: 1_000_000, pagado: 50_000, fecha: '2026-01-01',
+        tasa: 2, capitalPagado: 30_000, interesPagado: 20_000, interesPendiente: 5_000,
+      };
+      const r = normalizarPersonal({ persona: 'X', monto: '1000000' }, existente);
+      expect(r.tasa).toBeUndefined();
+      expect(r.capitalPagado).toBeUndefined();
+      expect(r.interesPagado).toBeUndefined();
+      expect(r.interesPendiente).toBeUndefined();
+      expect(r.pagado).toBe(50_000);
+    });
+
+    it('liquida con tasa cuando el capital y el interés pendiente llegan a 0', () => {
+      const existente = {
+        id: 'p1', persona: 'X', monto: 100_000, pagado: 100_000, fecha: '2026-01-01',
+        tasa: 2, capitalPagado: 100_000, interesPagado: 2_000, interesPendiente: 0,
+      };
+      const r = normalizarPersonal({ persona: 'X', monto: '100000', tasa: '2' }, existente);
+      expect(r.liquidado).toBe(true);
+    });
+  });
+});
+
 // ── normalizarPersonal() con cuenta (PE.7) ────────────────────────
 
 describe('normalizarPersonal() con cuenta de origen (PE.7)', () => {
@@ -983,5 +1106,54 @@ describe('vacío y formulario de Me deben (DIS.3)', () => {
       .closest('.form-group').querySelector('.form-hint').textContent.trim();
     expect(hint).toBe('Se calcula sobre el capital pendiente; cada pago cubre primero el interés.');
     expect(hint).not.toContain('Déjalo vacío');
+  });
+});
+
+// ── renderFormPersonal({ prestamo }) - modo edición (EDIT.1) ──────
+
+describe('renderFormPersonal({ prestamo }) - modo edición (EDIT.1)', () => {
+  beforeEach(() => {
+    S.cuentas = [{ id: 'c1', nombre: 'Bancolombia', tipo: 'ahorros', saldo: 1_000_000, activa: true }];
+  });
+
+  const prestamo = {
+    id: 'p1', persona: 'Tía Marta', monto: 500_000, pagado: 100_000,
+    fecha: '2026-03-10', motivo: 'mercado', fechaLimite: '2026-08-01',
+    tasa: 2, cuentaId: 'c1',
+  };
+
+  it('prellena persona, monto, fecha, motivo, fechaLimite y tasa', () => {
+    document.body.innerHTML = `<div id="host">${renderFormPersonal({ prestamo })}</div>`;
+    expect(document.getElementById('pers-persona').value).toBe('Tía Marta');
+    expect(document.getElementById('pers-monto').value).toBe('500000');
+    expect(document.getElementById('pers-fecha').value).toBe('2026-03-10');
+    expect(document.getElementById('pers-motivo').value).toBe('mercado');
+    expect(document.getElementById('pers-limite').value).toBe('2026-08-01');
+    expect(document.getElementById('pers-tasa').value).toBe('2');
+  });
+
+  it('el botón dice "Actualizar préstamo", no "Guardar préstamo"', () => {
+    document.body.innerHTML = `<div id="host">${renderFormPersonal({ prestamo })}</div>`;
+    expect(document.querySelector('#form-personal button[type="submit"]').textContent.trim())
+      .toBe('Actualizar préstamo');
+  });
+
+  it('con cuentaId, la cuenta sale como nota de solo lectura, no como selector', () => {
+    document.body.innerHTML = `<div id="host">${renderFormPersonal({ prestamo })}</div>`;
+    expect(document.querySelector('#form-personal input[name="cuentaId"]')).toBeNull();
+    expect(document.getElementById('host').textContent).toContain('Bancolombia');
+  });
+
+  it('sin cuentaId, no se vuelve a preguntar el origen (a diferencia de crear)', () => {
+    const sinCuenta = { ...prestamo, cuentaId: undefined };
+    document.body.innerHTML = `<div id="host">${renderFormPersonal({ prestamo: sinCuenta })}</div>`;
+    expect(document.querySelector('#form-personal input[name="cuentaId"]')).toBeNull();
+    expect(document.getElementById('host').textContent).not.toContain('¿De qué cuenta sale el dinero?');
+  });
+
+  it('sin prestamo (crear), el botón sigue diciendo "Guardar préstamo"', () => {
+    document.body.innerHTML = `<div id="host">${renderFormPersonal()}</div>`;
+    expect(document.querySelector('#form-personal button[type="submit"]').textContent.trim())
+      .toBe('Guardar préstamo');
   });
 });

@@ -375,16 +375,66 @@ export function validarPersonal(datos) {
  * Normaliza los datos del formulario a un objeto Personal limpio.
  * No asigna id ni fechaCreacion - eso lo hace `crud.guardar`.
  *
+ * EDIT.1: con `existente`, edita un préstamo en vez de crear uno. La cuenta de
+ * origen NO se vuelve a preguntar (mismo criterio que Inversión, ADR 053):
+ * se decide una sola vez al crear y el form de edición no la muestra como
+ * campo, así que siempre se conserva la de `existente`. El histórico de
+ * abonos (`pagado`, `capitalPagado`, `interesPagado`, `interesPendiente`,
+ * `ultimoPago`) se conserva igual; solo `liquidado` se recalcula, porque el
+ * monto editado pudo cambiar el pendiente. Si la tasa cambia de 0 a con
+ * interés, lo pagado hasta ahora se asume capital (mismo criterio que al
+ * crear); si pasa de con interés a sin interés, los acumuladores de interés
+ * se limpian y `pagado` queda como capital simple.
+ *
  * @param {Record<string, string>} datos
+ * @param {Personal|null} [existente] préstamo a editar; `null` = crear.
  * @returns {Omit<Personal, 'id' | 'fechaCreacion'>}
  */
-export function normalizarPersonal(datos) {
-  const monto       = Number(datos.monto);
-  const pagado      = Number(datos.pagado) || 0;
-  const persona     = (datos.persona ?? '').trim();
-  const motivo      = (datos.motivo  ?? '').trim();
-  const fecha       = datos.fecha       || _hoyISO();
-  const fechaLimite = datos.fechaLimite || undefined;
+export function normalizarPersonal(datos, existente = null) {
+  const d           = datos ?? {};
+  const monto       = Number(d.monto);
+  const persona     = (d.persona ?? '').trim();
+  const motivo      = (d.motivo  ?? '').trim();
+  const fechaLimite = d.fechaLimite || undefined;
+  const tasa        = Number(d.tasa);
+  const conTasa     = Number.isFinite(tasa) && tasa > 0;
+
+  if (existente) {
+    const fecha = d.fecha || existente.fecha;
+    const item = { persona, monto, fecha, liquidado: false };
+    // A diferencia de crear, acá sí se asignan aunque queden vacíos: si el
+    // usuario borra el campo para limpiarlo, `editar()` (Object.assign) debe
+    // sobreescribir el valor viejo, no conservarlo por omitir la clave.
+    item.motivo      = motivo || undefined;
+    item.fechaLimite = fechaLimite;
+    if (existente.cuentaId) item.cuentaId = existente.cuentaId;
+    if (existente.ultimoPago) item.ultimoPago = existente.ultimoPago;
+
+    if (conTasa) {
+      item.tasa = tasa;
+      // Con tasa antes: conserva el histórico. Sin tasa antes: arranca los
+      // acumuladores igual que al crear, lo pagado hasta hoy se asume capital.
+      item.capitalPagado    = tieneInteres(existente) ? (Number(existente.capitalPagado) || 0) : (existente.pagado || 0);
+      item.interesPagado    = tieneInteres(existente) ? (Number(existente.interesPagado) || 0) : 0;
+      item.interesPendiente = tieneInteres(existente) ? (Number(existente.interesPendiente) || 0) : 0;
+      item.pagado           = existente.pagado || 0;
+      item.liquidado        = item.capitalPagado >= monto && item.interesPendiente <= 0;
+    } else {
+      // Sin tasa: si venía con interés, sus acumuladores se limpian (undefined
+      // explícito, no se omiten: un `tasa` viejo truthy dejaría `tieneInteres`
+      // en true aunque el usuario haya quitado la tasa).
+      item.tasa             = undefined;
+      item.capitalPagado    = undefined;
+      item.interesPagado    = undefined;
+      item.interesPendiente = undefined;
+      item.pagado           = Math.min(existente.pagado || 0, monto);
+      item.liquidado        = item.pagado >= monto;
+    }
+    return item;
+  }
+
+  const pagado = Number(d.pagado) || 0;
+  const fecha  = d.fecha || _hoyISO();
 
   const item = {
     persona,
@@ -401,13 +451,12 @@ export function normalizarPersonal(datos) {
   // (Object.assign) conserve la cuenta ya guardada, y que un préstamo sin
   // cuenta vinculada quede sin el campo en vez de con un `undefined` explícito.
   // Sin cuenta, el préstamo vale como seguimiento y no toca ningún saldo.
-  const cuentaId = typeof datos.cuentaId === 'string' ? datos.cuentaId.trim() : '';
+  const cuentaId = typeof d.cuentaId === 'string' ? d.cuentaId.trim() : '';
   if (cuentaId) item.cuentaId = cuentaId;
 
   // Tasa de interés mensual opcional (PE.1). Con tasa arrancan los
   // acumuladores capital/interés: lo pagado al crear se asume capital.
-  const tasa = Number(datos.tasa);
-  if (Number.isFinite(tasa) && tasa > 0) {
+  if (conTasa) {
     item.tasa             = tasa;
     item.capitalPagado    = item.pagado;
     item.interesPagado    = 0;
