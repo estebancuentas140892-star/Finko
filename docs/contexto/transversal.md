@@ -273,7 +273,7 @@
 
 - **Objetivo**          : el escritorio nunca se decidió. El sidebar existía desde antes de que la app tuviera dos topologías y las quince auditorías por sección midieron móvil a 390px, así que escritorio heredó el reparto móvil estirado. El [ADR 059](../DECISIONS/059-interfaz-de-escritorio.md) lo decide en ocho rebanadas (INT.1a a INT.1h).
 - **Estado actual**     : **INT.1a cerrada** (contenido centrado + Movimientos en el sidebar). Las otras siete siguen pendientes; la barra superior de 56px, que es el corazón de la propuesta, no existe todavía en el repo.
-- **Verificado contra** : INT.1a (2026-08-02).
+- **Verificado contra** : INT.1a, commit `c0b8001` (2026-08-03; el código real, `e7703f0` llevo el de AH.5b por carrera de índice).
 
 **Mediciones vigentes contra el código** (no contra la recreación del handoff), tomadas el 2026-08-02 en la app real:
 
