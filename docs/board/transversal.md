@@ -109,15 +109,6 @@
 - Estado     : pendiente, última rebanada
 - Alcance    : detalle del día del calendario, checklist de Necesidades de Tesorería y el gasto nacido de un fijo (`iconoPorOrigen`) ya pasan por la resolutora desde CAT.3b; esta rebanada es la verificación end-to-end con una personalizada real de sección `'fijo'`, que solo existe una vez CAT.3c la habilite
 
-#### EDIT.1 - Editar sin destruir: Me deben
-- Prioridad  : media-alta
-- Estado     : pendiente, patrón P3 de la auditoría. **Metas (EDIT.1a), Apartados e Inversión ya cerraron** y dejaron el patrón validado; queda solo Me deben, no iniciada.
-- Objetivo   : Me deben todavía no permite **editar** un préstamo ya creado: corregir un nombre, un monto o una fecha obliga a **eliminar y recrear**, perdiendo en el camino el historial de abonos. Aplicar el mismo patrón que **EDIT.1a** (Metas), Apartados e Inversión ya validaron (formulario reinyectado con `registro = null` para crear y con el registro existente para editar; `normalizarX(datos, existente = null)` conserva el histórico acumulado y recalcula solo lo que depende del campo editado).
-- Secciones  : Me deben
-- Archivos   : `personales/` (form + acciones), patrón de referencia en `metas/` (EDIT.1a), `apartados/`, `inversiones/` y en `compromisos` (D.15b, para Deudas)
-- Depende de : nada duro. **ARQ.1 cerrada (2026-08-02): no fusionó componente ni pantalla**, así que este acoplamiento no aplica; las 3 rebanadas ya cerradas demostraron que escribir la rebanada de un dominio no es tan costoso como se temía
-- Modelo     : Equilibrado - Alto (patrón ya probado en D.15b, EDIT.1a, Apartados e Inversión; sin lógica financiera nueva)
-
 > **Iniciativa GU.1: guía por navegación (aprender usando, no leyendo)** (6.º lote, 2026-07-08, brief General puntos 4+5). **GU.1a cerrada (2026-08-03):** [ADR 016](../DECISIONS/016-banner-proposito-de-seccion.md) auditado y vigente sin desviaciones; detalle en [`contexto/transversal.md`](../contexto/transversal.md). **Regla anti-doble-trabajo:** GU.1 define el principio y audita el sistema transversal (banners, hints); los rediseños internos de cada sección viven en sus iniciativas v2, que aplican este principio en vez de duplicarlo.
 
 > **Iniciativa LEG: Centro Legal y cumplimiento.** El paquete, su estado por documento, el checklist de datos pendientes y el gate de revisión por abogado colombiano viven en [`legal/README.md`](../legal/README.md), su dueño. **Decisión de secuencia vigente: redactar para el modelo local-only actual** con cláusula de versionado, sin esperar a CFG.4; si el [ADR 043](../DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md) aprueba cuentas o sync, el paquete se reescribe. La revisión del abogado es trabajo profesional externo, no una tarea de código: las tarjetas de acá producen borradores e inventario **para** esa revisión.

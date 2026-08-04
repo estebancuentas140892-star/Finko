@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-08-02. Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
+> Última actualización: 2026-08-04. Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
 
 ---
 
@@ -42,7 +42,7 @@ Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (si
 
 ## Índice de pendientes
 
-Las 34 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+Las 33 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
@@ -72,7 +72,6 @@ Las 34 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | P4 del ADR 033 + cola de diseño |
 | IV.4 | Iconografía dirigida post-color | Transversal | tras IV.2 | IV.2 en producción + revisión visual |
 | CAT.3 | Categorías personalizadas globales (4 rebanadas, ADR 058) | Transversal | media | nada; decidida el 2026-07-31 |
-| EDIT.1 | Editar sin destruir: Me deben | Transversal | media-alta | nada |
 | LEG.2 | Aceptación obligatoria versionada | Transversal | alta | checklist de `docs/legal/README.md` |
 | LG.2d | Mudanza de la vitrina a Análisis + tarjeta en Inicio | Transversal | baja (bloqueada) | ANL.1 (layout) |
 | LG.2e | Familia comportamiento (interpretación de hábitos) | Transversal | baja | LG.2c; `ahorro-creciente` además depende de ANL.1 |
@@ -86,7 +85,7 @@ Las 34 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 
 ## Pendientes por sección
 
-> **Lente de la auditoría de UX/producto (2026-07-21).** Recorrido de toda la app simulando a un usuario colombiano real. Sus 7 patrones son criterio de priorización, no tareas, y explican casi toda la lista de abajo. **Cerrados:** P2 (trabajo manual uno por uno), P4 (ledger de solo lectura) y P5 (módulos que no comparten datos con el saldo). **Abiertos:** P1 datos que la app ya tiene y vuelve a pedir (LIM.1, CFG.2a; la mitad `cuentaId` de MC.13e-2f ya cerró), P3 no se puede editar (EDIT.1, MC.17f), P6 se informa pero no se acciona (motor único de sugerencia por categoría: LIM.1 / ANL.1 / [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md)), P7 un concepto con cuatro implementaciones (ARQ.1 y ARQ.2 cerradas el 2026-08-02, ver `contexto/transversal.md`).
+> **Lente de la auditoría de UX/producto (2026-07-21).** Recorrido de toda la app simulando a un usuario colombiano real. Sus 7 patrones son criterio de priorización, no tareas, y explican casi toda la lista de abajo. **Cerrados:** P2 (trabajo manual uno por uno), P4 (ledger de solo lectura), P5 (módulos que no comparten datos con el saldo) y P3 editar sin destruir (EDIT.1 cerrada el 2026-08-04 en sus 4 secciones; queda **MC.17f**, deshacer una transferencia, que es un caso distinto). **Abiertos:** P1 datos que la app ya tiene y vuelve a pedir (LIM.1, CFG.2a; la mitad `cuentaId` de MC.13e-2f ya cerró), P6 se informa pero no se acciona (motor único de sugerencia por categoría: LIM.1 / ANL.1 / [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md)), P7 un concepto con cuatro implementaciones (ARQ.1 y ARQ.2 cerradas el 2026-08-02, ver `contexto/transversal.md`).
 >
 > **Dos hallazgos siguen cuestionando una decisión vigente y no se ejecutan sin la palabra de Esteban** (regla 2.7: un ADR no se revierte en silencio): la propuesta de distribución de un toque frente a MC.13e-2g, y MC.17f frente al cierre de MC.17 como "completa". Cada tarjeta lo dice en su Estado.
 >
@@ -134,7 +133,7 @@ CFG.2c, CFG.2a, CFG.3, CFG.4, CFG.5, CFG.6, CFG.7 → [`board/configuracion.md`]
 
 ## Transversal (afecta varias secciones)
 
-INT.1a a INT.1h, PERF.5, PERF.6, DV.2d, IV.4, CAT.3 (+ CAT.3c, CAT.3d), EDIT.1, LEG.2, LG.2d, LG.2e, PA.1 → [`board/transversal.md`](board/transversal.md)
+INT.1a a INT.1h, PERF.5, PERF.6, DV.2d, IV.4, CAT.3 (+ CAT.3c, CAT.3d), LEG.2, LG.2d, LG.2e, PA.1 → [`board/transversal.md`](board/transversal.md)
 
 ---
 
@@ -145,10 +144,11 @@ Se listan solo para que una idea nueva de estas secciones no vuelva a generar un
 | Sección | Dónde vive su trabajo futuro |
 |---|---|
 | Gastos | Iniciativa "Gastos v2" completa ([ADR 039](DECISIONS/039-gastos-v2-visual.md)), con 3 decisiones diferidas anotadas en el ADR: FAB, búsqueda en el header y comparación tangible del insight hormiga. La taxonomía de categorías ya cerró (**CAT.1**, [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md)); lo que queda de categorías es **CAT.3** (personalizadas globales) y el motor de sugerencia por categoría, la fusión LIM.1 / ANL.1 / ADR 029 |
-| Movimientos | Ledger accionable, con búsqueda y filtros, completo. Los huecos que quedan son **MC.17f** (deshacer transferencia) y **EDIT.1** (editar donde el dominio dueño todavía no sabe) |
+| Movimientos | Ledger accionable, con búsqueda y filtros, completo. El hueco que queda es **MC.17f** (deshacer transferencia); editar un aporte puntual no tiene tarjeta propia (ver `contexto/movimientos.md`) |
 | Deudas | Iniciativa "Deudas v2" completa ([ADR 036](DECISIONS/036-deudas-v2-visual.md)). Que un pago de deuda descuente de la cuenta ya existe desde el [ADR 002](DECISIONS/002-abono-deudas.md): si aparece un caso donde NO ocurra, es un bug para [`BUGS.md`](BUGS.md), no una feature |
 | Inversión | Sin pendientes propios. "Editar sin destruir" ya cerró (**EDIT.1**, 2026-08-02); su infraestructura compartida cerró con **ARQ.1** (2026-08-02) |
 | Apartados | Iniciativa "Apartados v2" completa (**AP.5** cerrada, 2026-08-01). "Editar sin destruir" ya cerró (**EDIT.1**, 2026-08-02); el catálogo de plantillas queda fuera de **CAT.3** (razón en el [ADR 058](DECISIONS/058-categorias-personalizadas-globales.md)) |
+| "Editar sin destruir" (EDIT.1) | **Iniciativa completa** (2026-08-04): Metas (`contexto/metas.md`, EDIT.1a), Apartados, Inversión y Me deben, las 4 secciones que la tenían, editan sin recrear |
 | Biblioteca gráfica e iconografía | Completas ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md), [025](DECISIONS/025-logotipos-de-marca-y-tejas.md), [026](DECISIONS/026-biblioteca-de-recursos-graficos.md), [027](DECISIONS/027-logos-de-marca-a-color-excepcion-monocromo.md)). La regla de fidelidad de los SVG que entrega Esteban y el costo de agregar un glifo viven en [`assets/svg/README.md`](../assets/svg/README.md). Lo único pendiente es **IV.4** |
 
 ---

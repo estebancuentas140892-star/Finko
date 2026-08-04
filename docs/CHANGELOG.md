@@ -10,6 +10,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(personales): EDIT.1, editar sin destruir un préstamo · 2026-08-04
+
+Rebanada Me deben de **EDIT.1** (patrón P3 de la auditoría de UX/producto), **cierra la tarjeta completa** (Metas, Apartados, Inversión y Me deben ya validaron el patrón). Commit `684e228`. Ficha: [`contexto/me-deben.md`](contexto/me-deben.md).
+
+- Botón "Editar" en cada fila abre el mismo modal con los datos actuales prellenados; la cuenta de origen no se vuelve a preguntar (se decide una sola vez al crear, ADR 053), se muestra como nota de solo lectura.
+- `normalizarPersonal(datos, existente = null)` gana la rama de edición: conserva el histórico de pagos (`pagado`, `capitalPagado`, `interesPagado`, `interesPendiente`, `ultimoPago`) y solo recalcula `liquidado`; la transición de tasa sigue el mismo criterio que al crear (con interés a sin interés limpia los acumuladores, sin interés a con interés asume lo pagado como capital).
+- Con cuenta de origen, editar el monto ajusta el saldo por delta (ADR 053 I3): baja devuelve dinero sin preguntar, sube descuenta de más con confirmación si deja la cuenta en negativo. `_guardarPersonal()` pasa a `async` para ese `confirmar()`.
+- **Bug encontrado y corregido en la misma tarea:** la primera versión de la rama de edición omitía `motivo`/`fechaLimite` si venían vacíos, igual que la rama de crear; como `editar()` funde por `Object.assign`, borrar esos campos en el form no los limpiaba, el valor viejo sobrevivía. Se corrigió para que la rama de edición los asigne siempre, aunque queden vacíos.
+- 2 tests unitarios nuevos que fijan el bug (borrar `motivo` o `fechaLimite` al editar los limpia de verdad) + los de la rama de edición en general. Verificado en la app real: crear, editar renombrando y bajando el monto (borra motivo/fechaLimite y confirma que desaparecen de `localStorage`), editar con cuenta de origen bajando el monto (devuelve saldo sin preguntar) y subiendo el monto lo suficiente para dejarla en negativo (dispara la confirmación peligrosa con el copy exacto y aplica el delta al confirmar).
+- 3736 unit + 259 E2E (1 flaky, pasó en reintento) + lint verdes. SW v489 a v491 (la v490 intermedia vino de una sesión paralela en el mismo worktree).
+
 ### feat(shell): INT.1b, las hijas de Ahorro se anidan y el sidebar cabe · 2026-08-03
 
 Cierra **INT.1b** (D6 del [ADR 059](DECISIONS/059-interfaz-de-escritorio.md), mitad) y **BUG-026**. Commit `4f87f77`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
