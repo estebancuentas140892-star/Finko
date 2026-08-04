@@ -10,6 +10,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(ahorro): AH.5, D2+D3 del ADR 049, hero educativo y aporte directo baja a secundario · 2026-08-04
+
+Cierra **AH.5**. Commit `dfff037`. Ficha: [`contexto/ahorro.md`](contexto/ahorro.md). D1 y D4 ya estaban en producción (AH.5a/AH.5b); cierra las cuatro decisiones del [ADR 049](DECISIONS/049-fondo-de-emergencia-v2.md).
+
+- **D3:** la tarjeta activa abre con una línea de propósito ("Tu protección para cuando algo se dañe o dejes de recibir ingresos") antes del nivel y de cualquier monto. El estado vacío ya lo cumplía (`fondo-card__explica`); la línea nueva lleva el mismo tono a la versión con datos.
+- **D2:** "Registrar un aporte" deja `.fondo-card__principal` (botón ancho, color del dominio) por el mismo ghost/secundario que "Editar": el flujo principal ya es "Distribuir mi ingreso" (D1); el registro directo queda para aportes fuera de ciclo. `.fondo-card__principal` se conserva solo para "Empezar mi fondo" del estado vacío.
+- **GU.1a (pregunta del hero vacío apilada sobre el banner) sigue abierta:** D3 no la tocó, la tarjeta activa nunca comparte pantalla con el banner (`renderBannerProposito` lo oculta con `fondoEmergencia.activo`). Sin handoff de diseño: se siguió la convención ya escrita en `view.js`/`analysis.css`.
+- 4 tests nuevos/reescritos + 5 movidos a `[data-action=...]` para no chocar con el botón nuevo. 3738 unit + 260 E2E + lint verdes. SW v489 a v490.
+
 ### feat(personales): EDIT.1, editar sin destruir un préstamo · 2026-08-04
 
 Rebanada Me deben de **EDIT.1** (patrón P3 de la auditoría de UX/producto), **cierra la tarjeta completa** (Metas, Apartados, Inversión y Me deben ya validaron el patrón). Commit `684e228`. Ficha: [`contexto/me-deben.md`](contexto/me-deben.md).

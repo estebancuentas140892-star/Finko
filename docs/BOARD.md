@@ -42,7 +42,7 @@ Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (si
 
 ## Índice de pendientes
 
-Las 33 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+Las 32 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
@@ -56,7 +56,6 @@ Las 33 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | MC.13e-2g | Rediseño en 2 pasos con educación financiera | Mis cuentas | media | última; depende del handoff de diseño |
 | MC.17f | Deshacer o editar una transferencia | Mis cuentas | media | coordinar con MOV.1 |
 | MT.6 | Metas v2: subcategorías inteligentes + plan de aportes | Metas | media-alta | MC.13 (motor); ADR 029 D3 |
-| AH.5 | Fondo v2: rediseño UX educativo del hero (D2 + D3) | Ahorro | media | nada duro; decidir handoff de diseño |
 | LIM.1 | Límites v2: asistente preventivo de estilo de vida | Límites | sin definir | ADR 045 (base de cálculo); ADR 044 (sugerencias) |
 | PE.6 | Me deben v2: intereses, historial de abonos y confianza | Me deben | media-alta | nada duro |
 | ANL.1 | Análisis como centro de interpretación financiera | Análisis | sin definir | ADR 046 (criterio y lenguaje); ADR 044 (recomendaciones) |
@@ -111,7 +110,7 @@ MT.6 → [`board/metas.md`](board/metas.md)
 
 ### Ahorro (dominio `ahorro`, casa de Ahorro + fondo de emergencia)
 
-AH.7a, AH.5 → [`board/ahorro.md`](board/ahorro.md)
+AH.7a → [`board/ahorro.md`](board/ahorro.md)
 
 ### Límites de gasto (dominio `presupuesto`)
 
