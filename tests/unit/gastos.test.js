@@ -1141,6 +1141,18 @@ describe('iconoPorOrigen (TX.6/TX.7)', () => {
     const gasto = { id: 'g8', categoria: 'Otros', compromisoId: 'c-otro-ic' };
     expect(iconoPorOrigen(gasto, compromisos)).toBe('c-cohete');
   });
+
+  // CAT.3b (ADR 058 D3): la categoría del compromiso pasa por la resolutora
+  // global en vez del mapa nativo crudo, lista para cuando CAT.3c habilite
+  // personalizadas en Gastos fijos.
+  it('la categoría de un fijo personalizada resuelve por la resolutora', () => {
+    const conPersonalizada = [
+      { id: 'c-personal', tipo: 'fijo', categoria: 'Streaming propio' },
+    ];
+    const gasto = { id: 'g9', categoria: 'Otros', compromisoId: 'c-personal' };
+    const personalizadas = [{ nombre: 'Streaming propio', icono: 'c-play' }];
+    expect(iconoPorOrigen(gasto, conPersonalizada, personalizadas)).toBe('c-play');
+  });
 });
 
 // ── renderListaGastos() / renderFiltrosGastos() - categorías internas (TX.8b) ──

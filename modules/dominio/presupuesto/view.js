@@ -8,7 +8,6 @@ import { f, esc as _esc }     from '../../infra/utils.js';
 import { icon, iconoCategoria } from '../../infra/icons.js';
 import {
   CATEGORIAS_GASTO_USUARIO,
-  CATEGORIA_ICONO,
   LABEL_GRUPO_FINANCIERO,
   iconoDeCategoriaGasto,
 } from '../../core/constants.js';
@@ -489,7 +488,7 @@ function _renderOllaFinita({ limites, presupuesto, sinTope, excede }) {
 function _renderEnvelope(presupuesto, gastos, anio, mes, nota = '') {
   const { gastado, asignado, restante, porcentaje, estado } = calcularProgreso(presupuesto, gastos, anio, mes);
   const categoria = _esc(presupuesto.categoria);
-  const icono = iconoCategoria(CATEGORIA_ICONO[presupuesto.categoria] ?? 'c-otros', 'icon icon--sm');
+  const icono = iconoCategoria(iconoDeCategoriaGasto(presupuesto.categoria, S.categoriasPersonalizadas), 'icon icon--sm');
   const widthVisual = Math.min(porcentaje, 100);
 
   return `
@@ -739,7 +738,7 @@ export function renderPanelLimites() {
   el.hidden = false;
 
   const items = alertas.map(a => {
-    const icono    = iconoCategoria(CATEGORIA_ICONO[a.categoria] ?? 'c-otros', 'icon icon--sm');
+    const icono    = iconoCategoria(iconoDeCategoriaGasto(a.categoria, S.categoriasPersonalizadas), 'icon icon--sm');
     const cls      = a.estado === 'excedido' ? 'excedido' : 'alerta';
     const badgeTxt = a.estado === 'excedido'
       ? `Superado ${a.porcentaje}%`

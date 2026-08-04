@@ -11,7 +11,7 @@
 import { S } from '../../core/state.js';
 import { f, esc as _esc, hoy } from '../../infra/utils.js';
 import { icon, tejaCategoria } from '../../infra/icons.js';
-import { CATEGORIA_ICONO } from '../../core/constants.js';
+import { iconoDeCategoriaGasto } from '../../core/constants.js';
 import { memoizar } from '../../infra/memo.js';
 import { resumenSemanal } from './logic.js';
 
@@ -116,7 +116,7 @@ export function renderPanelResumen() {
   const topHtml = r.top
     ? `
       <div class="resumen-semana__top">
-        ${tejaCategoria(CATEGORIA_ICONO[r.top.categoria] ?? 'c-otros', 'gastos')}
+        ${tejaCategoria(iconoDeCategoriaGasto(r.top.categoria, S.categoriasPersonalizadas), 'gastos')}
         <div class="resumen-semana__top-body">
           <p class="resumen-semana__top-titulo">${_esc(r.top.categoria)} fue tu categoría top</p>
           <p class="resumen-semana__top-sub">${diasActivosTxt}${picoTxt}</p>

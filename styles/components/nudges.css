@@ -68,6 +68,13 @@
   font-style: italic;
 }
 
+/* CFG.2b: el veredicto de renta es el único nudge con dos párrafos
+   (la conclusión y el encuadre por situación laboral). `.nudge__desc` nace
+   con `margin: 0` porque hasta ahora siempre fue uno solo. */
+.nudge--veredicto .nudge__desc + .nudge__desc {
+  margin-top: var(--fk-space-2);
+}
+
 .nudge__cta {
   align-self: center;
   white-space: nowrap;

@@ -3,7 +3,7 @@
  * Sin DOM. Sin S directo. Testeable en Node/Vitest sin mocks de navegador.
  */
 
-import { CATEGORIA_AGENDA_ICONO, CATEGORIAS_AGENDA, CATEGORIAS_GASTO, ICONOS_CATEGORIA_PERSONALIZADA, TARJETA_PREFIJO } from '../../core/constants.js';
+import { CATEGORIAS_AGENDA, CATEGORIAS_GASTO, ICONOS_CATEGORIA_PERSONALIZADA, TARJETA_PREFIJO, iconoDeCategoriaGasto } from '../../core/constants.js';
 
 // ── FILTROS Y AGRUPACIÓN ─────────────────────────────────────────
 
@@ -611,14 +611,15 @@ export function excesoDeCupo(tarjeta, monto, montoPrevio = 0) {
  *
  * @param {import('../../core/state.js').Gasto} gasto
  * @param {import('../../core/state.js').Compromiso[]} compromisos
+ * @param {{ nombre: string, icono: string }[]} [personalizadas]
  * @returns {string|null}
  */
-export function iconoPorOrigen(gasto, compromisos) {
+export function iconoPorOrigen(gasto, compromisos, personalizadas = []) {
   if (!gasto?.compromisoId) return null;
   const comp = (compromisos ?? []).find(c => c.id === gasto.compromisoId);
   if (!comp) return null;
   if (comp.tipo === 'deuda-entidad')  return 'i-cuentas';
   if (comp.tipo === 'deuda-personal') return 'i-personales';
-  if (comp.tipo === 'fijo')           return comp.icono || CATEGORIA_AGENDA_ICONO[comp.categoria] || null;
+  if (comp.tipo === 'fijo')           return comp.icono || (comp.categoria ? iconoDeCategoriaGasto(comp.categoria, personalizadas) : null);
   return null;
 }

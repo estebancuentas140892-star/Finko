@@ -14,7 +14,7 @@ import { icon, iconoCategoria } from '../../../infra/icons.js';
 import { resolverMarca, tejaMarca } from '../../../infra/marcas.js';
 import { bancoAvatar } from '../../../infra/bancos.js';
 import {
-  CATEGORIA_AGENDA_ICONO, CATEGORIA_DEUDA_ICONO, CATEGORIA_DEUDA_PERSONAL_ICONO,
+  CATEGORIA_DEUDA_ICONO, CATEGORIA_DEUDA_PERSONAL_ICONO, iconoDeCategoriaGasto,
 } from '../../../core/constants.js';
 import { cuentasActivas } from '../logic/cuentas.js';
 import { estimarSalarioMensual } from '../../../infra/financiero.js';
@@ -350,7 +350,7 @@ function _iconoNecesidad(it) {
   // una deuda prevalece sobre el fijo del catálogo (mismo campo que ya
   // resuelve el ícono en la lista de Deudas, `compromiso.icono`).
   const porCategoria = it.icono || (it.tipo === 'fijo'
-    ? CATEGORIA_AGENDA_ICONO[it.categoria]
+    ? iconoDeCategoriaGasto(it.categoria, S.categoriasPersonalizadas)
     : (CATEGORIA_DEUDA_ICONO[it.categoria] ?? CATEGORIA_DEUDA_PERSONAL_ICONO[it.categoria]));
   return iconoCategoria(porCategoria ?? (it.tipo === 'fijo' ? 'i-agenda' : 'i-deudas'), 'icon icon--sm');
 }

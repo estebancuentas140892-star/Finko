@@ -320,6 +320,8 @@ function _renderPerfilFiscal() {
       <p class="config-section__desc">
         Si alguna de estas situaciones aplica a tu caso, Finko agrega una
         recomendación en tu panel de Análisis para que consultes con un contador.
+        No necesitas saber si debes declarar: eso lo estima Análisis con tus
+        topes de renta.
       </p>
       <form id="form-perfil-fiscal" class="config-form" novalidate>
         <div class="form-group form-group--checkbox">
@@ -339,6 +341,10 @@ function _renderPerfilFiscal() {
             <input type="checkbox" name="declaranteObligado" ${decl ? 'checked' : ''} />
             <span>La DIAN me notificó como declarante obligado de renta</span>
           </label>
+          <p class="form-hint">
+            Márcalo solo si ya recibiste esa notificación. Déjalo en blanco si no
+            sabes: Análisis lo estima con tus topes de renta.
+          </p>
         </div>
         ${_botonGuardar('config-fiscal-ok', 'Guardar perfil fiscal')}
       </form>

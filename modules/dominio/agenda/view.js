@@ -15,7 +15,7 @@ import { S } from '../../core/state.js';
 import { f, esc as _esc, hoy } from '../../infra/utils.js';
 import { icon, tejaCategoria } from '../../infra/icons.js';
 import { resolverMarca, tejaMarca } from '../../infra/marcas.js';
-import { FRECUENCIAS, CATEGORIAS_AGENDA, CATEGORIA_AGENDA_ICONO, CATEGORIA_INGRESO_ICONO, ICONOS_CATEGORIA_PERSONALIZADA } from '../../core/constants.js';
+import { FRECUENCIAS, CATEGORIAS_AGENDA, CATEGORIA_INGRESO_ICONO, ICONOS_CATEGORIA_PERSONALIZADA, iconoDeCategoriaGasto } from '../../core/constants.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
 import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { LABEL_TIPO, ICONO_TIPO, calcularAbonosDelMes, estadoPagoMes } from '../compromisos/logic.js';
@@ -744,7 +744,7 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
   // CAT.2f: categoría "Otro" con ícono elegido por el usuario prevalece
   // sobre el fijo por categoría (mismo patrón que Deudas, CAT.2d).
   const simboloCategoria = (!marca && tipo === 'fijo')
-    ? (c.icono || (c.categoria ? CATEGORIA_AGENDA_ICONO[c.categoria] : null))
+    ? (c.icono || (c.categoria ? iconoDeCategoriaGasto(c.categoria, S.categoriasPersonalizadas) : null))
     : null;
   const icono   = marca ? tejaMarca(marca)
     : simboloCategoria ? tejaCategoria(simboloCategoria, 'presupuesto')
@@ -916,7 +916,7 @@ export function renderFormGastoFijo() {
   const chipsCategoria = CATEGORIAS_AGENDA.map(c => `
         <label class="chip-cat">
           <input type="radio" name="categoria" class="chip-cat__radio" value="${_esc(c)}" />
-          <svg class="icon" aria-hidden="true"><use href="#${_esc(CATEGORIA_AGENDA_ICONO[c])}"/></svg>
+          <svg class="icon" aria-hidden="true"><use href="#${_esc(iconoDeCategoriaGasto(c, S.categoriasPersonalizadas))}"/></svg>
           <span class="chip-cat__label">${_esc(c)}</span>
         </label>`).join('');
 

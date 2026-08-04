@@ -438,7 +438,7 @@ function _renderGastoItem(gasto, oculto) {
   // i-personales por tipo de deuda); solo sin origen aplica el de la
   // categoría del gasto (nativa o personalizada, TX.9b). ID.3: el glifo va
   // en la teja teñida del dominio.
-  const simbolo = iconoPorOrigen(gasto, S.compromisos) ?? iconoDeCategoriaGasto(catKey, S.categoriasPersonalizadas);
+  const simbolo = iconoPorOrigen(gasto, S.compromisos, S.categoriasPersonalizadas) ?? iconoDeCategoriaGasto(catKey, S.categoriasPersonalizadas);
 
   return `
     <article class="list-item" data-id="${_esc(gasto.id)}">

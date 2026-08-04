@@ -17,6 +17,7 @@ import {
   totalGastosAnio,
   calcularEstadoRenta,
   detectarNudgesRenta,
+  inferirEstadoDeclarante,
   repartirPorcentajes,
 } from '../../modules/dominio/analisis/logic.js';
 import { descuentaSaldo } from '../../modules/infra/bolsas.js';
@@ -1355,22 +1356,11 @@ describe('detectarNudgesRenta()', () => {
     expect(detectarNudgesRenta(r).filter(n => ['ingresosBrutos','consumosTC','consignaciones'].includes(n.criterio))).toHaveLength(0);
   });
 
-  it('declaranteObligado=true añade nudge informativo cuando no hay otros', () => {
+  // CFG.2b: la conclusión sobre declarar salió de acá y vive en
+  // `inferirEstadoDeclarante()`. Esta función ya no lee el perfil fiscal.
+  it('el perfil fiscal ya no genera nudges: solo los criterios los generan', () => {
     const r = calcularEstadoRenta({ cuentas: [], inversiones: [], gastos: [] }, 2026);
-    const nudges = detectarNudgesRenta(r, { declaranteObligado: true });
-    expect(nudges).toHaveLength(1);
-    expect(nudges[0].nivel).toBe('nudge-info');
-    expect(nudges[0].criterio).toBe('declaranteObligado');
-  });
-
-  it('declaranteObligado=true NO añade nudge si ya hay críticos', () => {
-    const tope = TOPES_RENTA_UVT.consumosTotales * UVT;
-    const r = calcularEstadoRenta({
-      cuentas: [], inversiones: [],
-      gastos: [{ id: 'g', descripcion: 'X', monto: Math.round(tope * 1.10), categoria: 'Otros', fecha: '2026-06-15' }],
-    }, 2026);
-    const nudges = detectarNudgesRenta(r, { declaranteObligado: true });
-    expect(nudges.some(n => n.criterio === 'declaranteObligado')).toBe(false);
+    expect(detectarNudgesRenta(r, { declaranteObligado: true })).toEqual([]);
   });
 
   it('input inválido devuelve array vacío sin lanzar', () => {
@@ -1394,6 +1384,123 @@ describe('detectarNudgesRenta()', () => {
     expect(typeof n.criterio).toBe('string');
     expect(typeof n.etiqueta).toBe('string');
     expect(typeof n.mensaje).toBe('string');
+  });
+});
+
+// ── CFG.2b - INFERENCIA DEL ESTADO DE DECLARANTE ─────────────────
+
+describe('inferirEstadoDeclarante()', () => {
+  const base = { cuentas: [], inversiones: [], gastos: [] };
+  const conTodo = (extra = {}) => calcularEstadoRenta({
+    ...base,
+    config: { datosFiscales: { 2026: { ingresosBrutos: 0, consumosTC: 0, consignaciones: 0, ...extra } } },
+  }, 2026);
+
+  const conGasto = (factor) => {
+    const tope = TOPES_RENTA_UVT.consumosTotales * UVT;
+    return calcularEstadoRenta({
+      ...base,
+      gastos: [{ id: 'g', descripcion: 'X', monto: Math.round(tope * factor), categoria: 'Otros', fecha: '2026-06-15' }],
+    }, 2026);
+  };
+
+  it('input inválido devuelve null sin lanzar', () => {
+    expect(inferirEstadoDeclarante(null)).toBeNull();
+    expect(inferirEstadoDeclarante({})).toBeNull();
+    expect(inferirEstadoDeclarante({ criterios: 'no-array' })).toBeNull();
+  });
+
+  it('un tope superado da estado "probable" y nombra el criterio', () => {
+    const v = inferirEstadoDeclarante(conGasto(1.20));
+    expect(v.estado).toBe('probable');
+    expect(v.nivel).toBe('nudge-high');
+    expect(v.origen).toBe('criterios');
+    expect(v.superados).toContain('Compras y consumos totales');
+    expect(v.mensaje).toContain('Compras y consumos totales');
+  });
+
+  it('nunca afirma la obligación como hecho: usa "es probable" y deriva al contador', () => {
+    const v = inferirEstadoDeclarante(conGasto(1.20));
+    expect(v.titulo).toContain('probable');
+    expect(v.mensaje).toContain('contador');
+    expect(v.mensaje).not.toContain('Debes declarar');
+  });
+
+  it('un criterio por encima del 80 % sin superar da "posible"', () => {
+    const v = inferirEstadoDeclarante(conGasto(0.85));
+    expect(v.estado).toBe('posible');
+    expect(v.nivel).toBe('nudge-medium');
+    expect(v.cerca).toContain('Compras y consumos totales');
+  });
+
+  it('sin nada disparado y con criterios sin dato da "sin-conclusion" y los cuenta', () => {
+    const v = inferirEstadoDeclarante(calcularEstadoRenta(base, 2026));
+    expect(v.estado).toBe('sin-conclusion');
+    expect(v.nivel).toBe('nudge-info');
+    expect(v.sinDato).toBe(3);
+    expect(v.mensaje).toContain('3 de los 5');
+  });
+
+  it('los 5 criterios medidos y ninguno en su tope da "improbable"', () => {
+    const v = inferirEstadoDeclarante(conTodo());
+    expect(v.estado).toBe('improbable');
+    expect(v.sinDato).toBe(0);
+    expect(v.nivel).toBe('nudge-info');
+  });
+
+  it('declaranteObligado=true manda sobre los criterios: siempre "probable"', () => {
+    const v = inferirEstadoDeclarante(conTodo(), { declaranteObligado: true });
+    expect(v.estado).toBe('probable');
+    expect(v.origen).toBe('notificacion');
+    expect(v.mensaje).toContain('2026');
+  });
+
+  it('notificado y además superando un tope: menciona las dos cosas', () => {
+    const v = inferirEstadoDeclarante(conGasto(1.20), { declaranteObligado: true });
+    expect(v.origen).toBe('notificacion');
+    expect(v.mensaje).toContain('Además');
+    expect(v.mensaje).toContain('Compras y consumos totales');
+  });
+
+  it('declaranteObligado=false no niega la conclusión de los criterios', () => {
+    const v = inferirEstadoDeclarante(conGasto(1.20), { declaranteObligado: false });
+    expect(v.estado).toBe('probable');
+    expect(v.origen).toBe('criterios');
+  });
+
+  it('el encuadre cambia con la situación laboral', () => {
+    const r = conGasto(1.20);
+    const emp = inferirEstadoDeclarante(r, null, 'empleado');
+    const ind = inferirEstadoDeclarante(r, null, 'independiente');
+    expect(emp.encuadre).toContain('empleador');
+    expect(ind.encuadre).toContain('independiente');
+    expect(emp.encuadre).not.toBe(ind.encuadre);
+    // La conclusión NO cambia con la situación laboral, solo el encuadre.
+    expect(emp.estado).toBe(ind.estado);
+    expect(emp.mensaje).toBe(ind.mensaje);
+  });
+
+  it('sin situación laboral el encuadre invita a registrarla', () => {
+    const v = inferirEstadoDeclarante(conGasto(1.20), null, '');
+    expect(v.encuadre).toContain('Ajustes');
+  });
+
+  it('una situación laboral desconocida cae en el encuadre genérico', () => {
+    const v = inferirEstadoDeclarante(conGasto(1.20), null, 'inventada');
+    expect(v.encuadre).toBe(inferirEstadoDeclarante(conGasto(1.20), null, 'otro').encuadre);
+  });
+
+  it('enumera varios criterios superados con comas y "y"', () => {
+    const topeC = TOPES_RENTA_UVT.consumosTotales * UVT;
+    const topeP = TOPES_RENTA_UVT.patrimonioBruto * UVT;
+    const r = calcularEstadoRenta({
+      cuentas: [{ id: 'c', saldo: Math.round(topeP * 1.10), activa: true, nombre: 'X', banco: 'Y', tipo: 'Ahorros', fechaCreacion: '2026-01-01T00:00:00Z' }],
+      inversiones: [],
+      gastos: [{ id: 'g', descripcion: 'X', monto: Math.round(topeC * 1.10), categoria: 'Otros', fecha: '2026-06-15' }],
+    }, 2026);
+    const v = inferirEstadoDeclarante(r);
+    expect(v.superados).toHaveLength(2);
+    expect(v.mensaje).toContain(' y ');
   });
 });
 
@@ -2271,8 +2378,12 @@ describe('renderAnalisis() - DIS.10 auditoría de diseño', () => {
 
   // ── C10: región viva solo para lo que responde a una acción ─────
 
+  // CFG.2b: el flag de la sonda pasó de `declaranteObligado` a
+  // `ivaResponsable`. El primero ya no alimenta la recomendación de perfil
+  // fiscal (ahora decide el veredicto de renta); el segundo sigue siendo el
+  // caso que estas dos regresiones querían cubrir.
   it('C10: el panel no deja ningún role="status"', () => {
-    S.config  = { perfilFiscal: { declaranteObligado: true } };
+    S.config  = { perfilFiscal: { ivaResponsable: true } };
     S.cuentas = [cuenta({ saldo: 500_000 })];
     renderAnalisis();
 
@@ -2282,10 +2393,10 @@ describe('renderAnalisis() - DIS.10 auditoría de diseño', () => {
   });
 
   it('C8: el nudge de perfil fiscal usa el sprite, no un emoji', () => {
-    S.config  = { perfilFiscal: { declaranteObligado: true } };
+    S.config  = { perfilFiscal: { ivaResponsable: true } };
     S.cuentas = [cuenta({ saldo: 500_000 })];
     renderAnalisis();
-    const nudge = document.querySelector('.nudge-info');
+    const nudge = document.querySelector('.nudge-info:not(.nudge--veredicto)');
     expect(nudge.querySelector('.nudge__icon use').getAttribute('href')).toBe('#i-info');
   });
 

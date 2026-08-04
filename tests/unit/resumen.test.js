@@ -271,6 +271,7 @@ describe('renderPanelResumen()', () => {
 
   beforeEach(() => {
     document.body.innerHTML = '<section id="panel-resumen"></section>';
+    S.categoriasPersonalizadas = [];
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 5, 13)); // 2026-06-13, mismo HOY que el resto del archivo
   });
@@ -359,6 +360,16 @@ describe('renderPanelResumen()', () => {
     expect(html).toContain('2 de 7 días activos');
     expect(html).toContain('mayor gasto el sábado');
     expect(html).toContain('$180.000');
+  });
+
+  // CAT.3b (ADR 058 D3): la categoría top leía el mapa nativo crudo y una
+  // personalizada caía siempre a 'c-otros'.
+  it('la categoría top personalizada usa su ícono, no el genérico', () => {
+    S.categoriasPersonalizadas = [{ id: 'c1', nombre: 'Domicilios', icono: 'c-tienda' }];
+    S.gastos = [gasto({ fecha: '2026-06-13', categoria: 'Domicilios', monto: 180_000 })];
+    renderPanelResumen();
+    const uso = elPanel().querySelector('.resumen-semana__top use');
+    expect(uso.getAttribute('href')).toBe('#c-tienda');
   });
 
   it('sin categoría top (imposible con registros > 0, pero defensivo) no rompe el render', () => {

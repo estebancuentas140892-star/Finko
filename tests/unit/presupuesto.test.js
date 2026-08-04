@@ -17,7 +17,7 @@ import {
   UMBRAL_ALERTA,
   UMBRAL_EXCEDIDO,
 } from '../../modules/dominio/presupuesto/logic.js';
-import { renderPanelPresupuesto, renderFormPresupuesto } from '../../modules/dominio/presupuesto/view.js';
+import { renderPanelPresupuesto, renderFormPresupuesto, renderPanelLimites } from '../../modules/dominio/presupuesto/view.js';
 import { S } from '../../modules/core/state.js';
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -989,6 +989,18 @@ describe('renderPanelPresupuesto() - correcciones de la auditoría (DIS.7)', () 
     expect(btn.dataset.categoria).toBe('Domicilios');
   });
 
+  // CAT.3b (ADR 058 D3): el envelope leía el mapa nativo crudo y una
+  // personalizada caía siempre a 'c-otros', aunque el formulario de Gastos
+  // sí mostrara su ícono elegido.
+  it('el envelope de una categoría personalizada usa su ícono, no el genérico', () => {
+    S.categoriasPersonalizadas = [{ id: 'c1', nombre: 'Domicilios', icono: 'c-tienda' }];
+    S.presupuestos = [presupuesto({ categoria: 'Domicilios', montoMensual: 100_000 })];
+    S.gastos = [gasto({ categoria: 'Domicilios', monto: 30_000, fecha: dia(5) })];
+    renderPanelPresupuesto();
+    const uso = panel().querySelector('.envelope use');
+    expect(uso.getAttribute('href')).toBe('#c-tienda');
+  });
+
   it('una categoría que vive en Calendario explica dónde se controla y no ofrece tope', () => {
     S.gastos = [gasto({ categoria: 'Servicios públicos', monto: 210_000, fecha: dia(10) })];
     renderPanelPresupuesto();
@@ -1034,5 +1046,29 @@ describe('renderPanelPresupuesto() - correcciones de la auditoría (DIS.7)', () 
     renderPanelPresupuesto();
     const chevron = panel().querySelector('.grupo-card__desglose .analisis-grupo__chevron use');
     expect(chevron.getAttribute('href')).toBe('#i-chevron-right');
+  });
+});
+
+describe('renderPanelLimites() - banner de alertas del dashboard (CAT.3b, ADR 058 D3)', () => {
+  const hoy  = new Date();
+  const anio = hoy.getFullYear();
+  const mes  = String(hoy.getMonth() + 1).padStart(2, '0');
+  const dia  = (n) => `${anio}-${mes}-${String(n).padStart(2, '0')}`;
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-limites"></div>';
+    S.presupuestos = [];
+    S.gastos = [];
+    S.categoriasPersonalizadas = [];
+  });
+
+  it('una alerta de categoría personalizada usa su ícono, no el genérico', () => {
+    S.categoriasPersonalizadas = [{ id: 'c1', nombre: 'Domicilios', icono: 'c-tienda' }];
+    S.presupuestos = [presupuesto({ categoria: 'Domicilios', montoMensual: 50_000 })];
+    S.gastos = [gasto({ categoria: 'Domicilios', monto: 40_000, fecha: dia(5) })];
+    renderPanelLimites();
+    const panel = document.getElementById('panel-limites');
+    const uso = panel.querySelector('.limites-card__name use');
+    expect(uso.getAttribute('href')).toBe('#c-tienda');
   });
 });

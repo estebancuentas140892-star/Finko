@@ -15,7 +15,8 @@ import {
   generarResumen, serieGastosMensual, seriePorCategoria,
   calcularScoreSalud, clasificarScore,
   calcularComparacionCategorias, detectarPatronGastoSemanal,
-  calcularEstadoRenta, detectarNudgesRenta, repartirPorcentajes,
+  calcularEstadoRenta, detectarNudgesRenta, inferirEstadoDeclarante,
+  repartirPorcentajes,
 } from './logic.js';
 
 /**
@@ -336,6 +337,10 @@ function _renderDetalleGastos(hormigas, anio, mes, fechaHoy) {
 /**
  * Recomendación fiscal permanente (K.2). Visible cuando al menos un flag de
  * perfilFiscal está en true. Orienta al usuario a consultar con un contador.
+ *
+ * CFG.2b: `declaranteObligado` salió de esta lista. Ese dato ya no es "una
+ * situación más que puede requerir atención": es el override que decide la
+ * conclusión del veredicto, y decirlo dos veces en la misma card sobraba.
  */
 function _renderRecomendacionFiscal() {
   const pf = (typeof S.config?.perfilFiscal === 'object' && S.config.perfilFiscal !== null)
@@ -345,7 +350,6 @@ function _renderRecomendacionFiscal() {
   const motivos = [];
   if (pf.ivaResponsable)       motivos.push('responsable del IVA');
   if (pf.obligadoContabilidad) motivos.push('obligado a llevar contabilidad');
-  if (pf.declaranteObligado)   motivos.push('declarante notificado por la DIAN');
 
   if (motivos.length === 0) return '';
 
@@ -382,8 +386,12 @@ function _renderEstadoRenta(anio) {
   const estado = _calcularEstadoRentaMemo(S, anio);
   const pf     = (typeof S.config?.perfilFiscal === 'object' && S.config.perfilFiscal !== null)
     ? S.config.perfilFiscal : null;
-  const nudges = detectarNudgesRenta(estado, pf);
+  const nudges = detectarNudgesRenta(estado);
   const vig    = estadoVigenciaLegal();
+
+  // CFG.2b (ADR 050 D2): la conclusión sobre declarar encabeza la card. El
+  // usuario no tiene que interpretar cinco barras para saber dónde está.
+  const veredicto = inferirEstadoDeclarante(estado, pf, S.perfil?.situacionLaboral ?? '');
 
   // DIS.10 (C7): los criterios que Finko puede medir conservan su ficha; los
   // que dependen de un dato manual pasan a una lista compacta con su tope al
@@ -412,9 +420,10 @@ function _renderEstadoRenta(anio) {
     : '';
 
   // El grupo se abre solo si hay algo que el usuario debería ver ya: una alerta
-  // de tope o una recomendación por su perfil fiscal. Si no, queda colapsado.
+  // de tope, un veredicto accionable o una recomendación por su perfil fiscal.
   const recomFiscal = _renderRecomendacionFiscal();
-  const abierto     = tieneAlerta || recomFiscal !== '';
+  const abierto     = tieneAlerta || recomFiscal !== ''
+    || veredicto?.estado === 'probable' || veredicto?.estado === 'posible';
 
   // ANL.2d (ADR 038 D5): badge contador ámbar con los criterios en alerta
   // (cerca + supera), para que lo colapsado no esconda lo urgente.
@@ -436,6 +445,7 @@ function _renderEstadoRenta(anio) {
         ${_CHEVRON_GRUPO}
       </summary>
       <div class="analisis-grupo__body">
+        ${_renderVeredictoRenta(veredicto)}
         ${recomFiscal}
         <p class="analisis__hint">
           UVT vigente: ${f(estado.uvt)}. Topes calculados a partir de tus datos en Finko.
@@ -510,6 +520,31 @@ function _renderCriterioRenta(c) {
       ${barra}
       <p class="renta-criterio__tip">${_esc(c.tip)}</p>
     </article>`;
+}
+
+/**
+ * Veredicto de declarante (CFG.2b, ADR 050 D2). Reutiliza el componente
+ * `nudge` en vez de estrenar uno: es el mismo objeto visual (ícono del sprite,
+ * título, cuerpo) y el nivel ya viene calculado por la lógica.
+ *
+ * El encuadre por situación laboral va en un segundo párrafo, no mezclado con
+ * la conclusión: la conclusión responde "¿me toca?" y el encuadre "¿y eso qué
+ * significa en mi caso?".
+ *
+ * @param {ReturnType<import('./logic.js').inferirEstadoDeclarante>} v
+ * @returns {string} HTML, o '' si no hay veredicto.
+ */
+function _renderVeredictoRenta(v) {
+  if (!v) return '';
+  return `
+    <div class="nudge ${v.nivel} nudge--veredicto">
+      <span class="nudge__icon" aria-hidden="true">${icon(v.icono)}</span>
+      <div class="nudge__body">
+        <p class="nudge__title">${_esc(v.titulo)}</p>
+        <p class="nudge__desc">${_esc(v.mensaje)}</p>
+        <p class="nudge__desc">${_esc(v.encuadre)}</p>
+      </div>
+    </div>`;
 }
 
 function _renderNudgeRenta(n) {

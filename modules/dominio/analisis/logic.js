@@ -803,6 +803,120 @@ export function calcularEstadoRenta(state, anio) {
   };
 }
 
+// ── CFG.2b · INFERENCIA DEL ESTADO DE DECLARANTE ─────────────────
+//
+// Framing: decisión D2 del ADR 050, alternativa C acotada. Finko afirma la
+// REGLA general ("superar cualquiera de los 5 topes normalmente obliga a
+// declarar") y describe dónde está el usuario respecto de ella, pero nunca
+// afirma la obligación como hecho personal ni sustituye al contador (ADR 003).
+// Por eso el vocabulario es "es probable", nunca "debes".
+
+/** Encuadre por situación laboral (CFG.1a). Aplica a cualquier conclusión. */
+const ENCUADRE_LABORAL = {
+  empleado:      'Como empleado, tu empleador ya reporta a la DIAN lo que te paga y lo que te retiene. Que te retengan en la nómina no reemplaza la declaración.',
+  independiente: 'Como independiente, el reporte de tus ingresos corre por tu cuenta: reúne facturas y cuentas de cobro del año antes de declarar.',
+  pensionado:    'Como pensionado, tu pensión tiene un tratamiento propio en la declaración, pero tu patrimonio y tus otros ingresos sí cuentan para estos topes.',
+  mixto:         'Con ingresos de empleo e independientes, los topes se miden sobre el total del año, no sobre cada fuente por separado.',
+  otro:          'Antes de declarar, reúne los soportes de todo lo que recibiste durante el año.',
+};
+
+/** Encuadre cuando el usuario no registró su situación laboral. */
+const ENCUADRE_SIN_SITUACION =
+  'Registra tu situación laboral en Ajustes y Finko ajusta esta explicación a tu caso.';
+
+/** Une etiquetas en una enumeración legible: "A", "A y B", "A, B y C". */
+function _enumerar(etiquetas) {
+  if (etiquetas.length === 0) return '';
+  if (etiquetas.length === 1) return etiquetas[0];
+  return `${etiquetas.slice(0, -1).join(', ')} y ${etiquetas[etiquetas.length - 1]}`;
+}
+
+/**
+ * Infiere el estado de declarante de renta a partir de los 5 criterios del
+ * monitor, el perfil fiscal y la situación laboral. Reemplaza la lectura del
+ * checkbox manual como única fuente: ese checkbox sobrevive solo como override
+ * positivo (la DIAN notifica con datos que Finko no ve), nunca como negación.
+ *
+ * Estados devueltos:
+ *   - `'probable'`:      hay al menos un tope superado, o la DIAN ya notificó.
+ *   - `'posible'`:       ningún tope superado pero al menos uno ≥ 80 %.
+ *   - `'sin-conclusion'`: nada disparado y aún faltan criterios por registrar.
+ *   - `'improbable'`:    los 5 criterios medidos y ninguno llega a su tope.
+ *
+ * @param {ReturnType<calcularEstadoRenta>} estadoRenta
+ * @param {{ declaranteObligado?: boolean } | null} [perfilFiscal=null]
+ * @param {string} [situacionLaboral=''] - id de `SITUACIONES_LABORALES`.
+ * @returns {{
+ *   estado: 'probable'|'posible'|'sin-conclusion'|'improbable',
+ *   nivel: 'nudge-high'|'nudge-medium'|'nudge-info',
+ *   icono: string,
+ *   origen: 'notificacion'|'criterios'|'datos-incompletos',
+ *   superados: string[],
+ *   cerca: string[],
+ *   sinDato: number,
+ *   titulo: string,
+ *   mensaje: string,
+ *   encuadre: string,
+ * } | null} `null` si el estado de renta no es válido.
+ */
+export function inferirEstadoDeclarante(estadoRenta, perfilFiscal = null, situacionLaboral = '') {
+  if (!estadoRenta || !Array.isArray(estadoRenta.criterios)) return null;
+
+  const anio      = estadoRenta.anio;
+  const superados = estadoRenta.criterios.filter(c => c.estado === 'supera').map(c => c.etiqueta);
+  const cerca     = estadoRenta.criterios.filter(c => c.estado === 'cerca').map(c => c.etiqueta);
+  const sinDato   = estadoRenta.criterios.filter(c => c.estado === 'sin-datos').length;
+  const notificado = perfilFiscal?.declaranteObligado === true;
+
+  const encuadre = typeof situacionLaboral === 'string' && situacionLaboral !== ''
+    ? (ENCUADRE_LABORAL[situacionLaboral] ?? ENCUADRE_LABORAL.otro)
+    : ENCUADRE_SIN_SITUACION;
+
+  let estado, nivel, icono, origen, titulo, mensaje;
+
+  if (notificado) {
+    estado = 'probable';
+    nivel  = 'nudge-high';
+    icono  = 'alert';
+    origen = 'notificacion';
+    titulo = `La DIAN te tiene registrado como declarante`;
+    mensaje = `Marcaste que la DIAN te notificó: ese registro obliga a declarar aunque no superes ningún tope. Prepara tu declaración de ${anio}.`;
+    if (superados.length > 0) {
+      mensaje += ` Además, superas el tope de ${_enumerar(superados)}.`;
+    }
+  } else if (superados.length > 0) {
+    estado = 'probable';
+    nivel  = 'nudge-high';
+    icono  = 'alert';
+    origen = 'criterios';
+    titulo = `Es probable que debas declarar renta por ${anio}`;
+    mensaje = `Superas el tope de ${_enumerar(superados)}. Superar cualquiera de los 5 criterios de la DIAN normalmente obliga a declarar. Finko no puede confirmarlo por ti: verifícalo con un contador.`;
+  } else if (cerca.length > 0) {
+    estado = 'posible';
+    nivel  = 'nudge-medium';
+    icono  = 'alert';
+    origen = 'criterios';
+    titulo = `Estás cerca de quedar obligado a declarar`;
+    mensaje = `Todavía no superas ningún tope, pero ${_enumerar(cerca)} ya pasa del 80 %. Si ${anio} cierra así, es probable que tengas que declarar.`;
+  } else if (sinDato > 0) {
+    estado = 'sin-conclusion';
+    nivel  = 'nudge-info';
+    icono  = 'info';
+    origen = 'datos-incompletos';
+    titulo = `Faltan datos para estimar si debes declarar`;
+    mensaje = `Con lo que Finko ve hoy no superas ningún tope, pero ${sinDato} de los 5 criterios siguen sin dato. Regístralos en Ajustes para que la estimación signifique algo.`;
+  } else {
+    estado = 'improbable';
+    nivel  = 'nudge-info';
+    icono  = 'info';
+    origen = 'criterios';
+    titulo = `Con tus datos de ${anio} no estarías obligado a declarar`;
+    mensaje = `Ninguno de los 5 criterios de la DIAN llega a su tope. Esto puede cambiar si tus ingresos o tu patrimonio suben antes de que termine el año.`;
+  }
+
+  return { estado, nivel, icono, origen, superados, cerca, sinDato, titulo, mensaje, encuadre };
+}
+
 /**
  * Genera nudges preventivos a partir del estado de renta.
  *
@@ -810,8 +924,10 @@ export function calcularEstadoRenta(state, anio) {
  *   - Por cada criterio en `'supera'`: nudge nivel `high`.
  *   - Por cada criterio en `'cerca'` (≥ 80 %): nudge nivel `medium`.
  *   - Criterios en `'ok'` o `'sin-datos'`: no generan nudge propio.
- *   - Si `perfilFiscal.declaranteObligado === true` y no hay nudges críticos:
- *     se añade un nudge informativo recordando preparar la declaración.
+ *
+ * CFG.2b: la conclusión sobre si el usuario debe declarar salió de acá y vive
+ * en `inferirEstadoDeclarante()`. Esta función solo describe criterio a
+ * criterio; quién concluye es una sola pieza y no dos.
  *
  * DIS.10 (C8): `icono` devuelve el NOMBRE de un símbolo del sprite ('alert',
  * 'info'), no un emoji. El glifo del sistema operativo no hereda el color del
@@ -820,7 +936,6 @@ export function calcularEstadoRenta(state, anio) {
  * resuelve con `icon(n.icono)`.
  *
  * @param {ReturnType<calcularEstadoRenta>} estadoRenta
- * @param {{ declaranteObligado?: boolean } | null} [perfilFiscal=null]
  * @returns {Array<{
  *   id: string,
  *   nivel: 'nudge-high'|'nudge-medium'|'nudge-info',
@@ -830,7 +945,7 @@ export function calcularEstadoRenta(state, anio) {
  *   mensaje: string,
  * }>}
  */
-export function detectarNudgesRenta(estadoRenta, perfilFiscal = null) {
+export function detectarNudgesRenta(estadoRenta) {
   const nudges = [];
   if (!estadoRenta || !Array.isArray(estadoRenta.criterios)) return nudges;
 
@@ -842,7 +957,7 @@ export function detectarNudgesRenta(estadoRenta, perfilFiscal = null) {
         icono:    'alert',
         criterio: c.id,
         etiqueta: c.etiqueta,
-        mensaje:  `Superas el tope de "${c.etiqueta}" (${Math.round(c.porcentaje)} % del límite). Confirma con un contador.`,
+        mensaje:  `Superas el tope de "${c.etiqueta}" (${Math.round(c.porcentaje)} % del límite).`,
       });
     } else if (c.estado === 'cerca') {
       nudges.push({
@@ -854,18 +969,6 @@ export function detectarNudgesRenta(estadoRenta, perfilFiscal = null) {
         mensaje:  `Estás cerca del tope de "${c.etiqueta}" (${Math.round(c.porcentaje)} % del límite).`,
       });
     }
-  }
-
-  // Refuerzo para declarantes obligados aunque no haya criterios disparados.
-  if (perfilFiscal?.declaranteObligado === true && nudges.length === 0) {
-    nudges.push({
-      id:       'renta-declarante',
-      nivel:    'nudge-info',
-      icono:    'info',
-      criterio: 'declaranteObligado',
-      etiqueta: 'Declarante notificado por la DIAN',
-      mensaje:  'La DIAN te tiene registrado como declarante. Prepara la declaración aunque no superes los topes.',
-    });
   }
 
   return nudges;
