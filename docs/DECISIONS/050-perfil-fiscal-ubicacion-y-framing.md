@@ -1,7 +1,7 @@
 # ADR 050 - Perfil fiscal: ubicación bajo demanda y framing de la obligación de declarar
 
-**Estado:** **Parcialmente aceptada.** D1 (ubicación) decidida por Esteban el 2026-07-08 y pendiente de ejecución en la tarjeta **CFG.2c**. **D2 (framing legal) está Abierta**: no implementar la inferencia de declarante sin resolverla con Esteban.
-**Fecha:** 2026-07-24
+**Estado:** **Aceptada.** D1 (ubicación) decidida por Esteban el 2026-07-08, pendiente de ejecución en la tarjeta **CFG.2c**. **D2 (framing legal) decidida el 2026-08-03** por delegación explícita de Esteban ("toma tú las decisiones que sean mejor para la app"): alternativa **C acotada**, implementada y en producción con CFG.2b.
+**Fecha:** 2026-07-24. Revisado: 2026-08-03.
 **Autores:** Esteban (producto, decisión del 2026-07-06 y brief de Ajustes del 2026-07-08), Claude Opus 5 (triaje y redacción)
 **Relación:** el tono lo restringe el [ADR 003](003-tono-neutral-profesional.md) (Finko orienta, no dictamina). Las constantes anuales que alimentan los topes son ADN regla 12 y el [ADR 004](004-eliminar-tasa-usura.md) fija qué indicadores quedan fuera por costo de mantenimiento. La ubicación de la interpretación en Análisis coordina con el layout de ANL.1 / [ADR 046](046-analisis-interpreta-criterio-y-lenguaje.md). Ficha de la sección: [`contexto/configuracion.md`](../contexto/configuracion.md).
 
@@ -33,29 +33,35 @@ Toda la **interpretación y las recomendaciones se consultan en Análisis**, que
 
 ---
 
-## D2. Framing de la obligación de declarar (ABIERTA)
+## D2. Framing de la obligación de declarar (decidida: C acotada)
 
-**La decisión pendiente: con cuánta fuerza afirma Finko que el usuario está obligado a declarar renta.**
+**La decisión: Finko afirma la regla general y ubica al usuario dentro de ella, pero nunca afirma su obligación como hecho personal.**
 
-Lo que sí está fijado de antemano, porque es ADN y no se negocia acá: **nunca afirmar certeza legal**. Finko orienta, no dictamina (ADR 003). Dentro de ese límite siguen cabiendo varias posturas, y la diferencia entre ellas es real.
+Lo que estaba fijado de antemano, porque es ADN y no se negociaba acá: **nunca afirmar certeza legal**. Finko orienta, no dictamina (ADR 003).
 
-### Alternativas sobre la mesa
+### Qué significa "C acotada" en el texto que ve el usuario
 
-Ninguna está elegida.
+La afirmación recae sobre la norma, no sobre la persona: *"Superas el tope de Compras y consumos totales. Superar cualquiera de los 5 criterios de la DIAN normalmente obliga a declarar. Finko no puede confirmarlo por ti: verifícalo con un contador."*
 
-**A. Condicional con derivación a un profesional.** Mostrar "podrías estar obligado por X, confirma con un contador" cuando un criterio supere el tope. A favor: es la formulación que el brief traía escrita y la que menos promete. En contra: si el usuario efectivamente está obligado, un condicional débil puede leerse como "no pasa nada" y hacerle perder el plazo.
+Tres reglas de redacción que salen de esa distinción y que cualquier texto futuro del monitor debe respetar:
 
-**B. Solo exponer los criterios, sin conclusión.** Mostrar cada tope y dónde está el usuario respecto de él, sin decir si está obligado. A favor: riesgo legal mínimo. En contra: devuelve al usuario el trabajo de interpretar, que es justo lo que la sección Análisis existe para evitar; deja el hueco que la iniciativa quería cerrar.
+1. **El sujeto de la obligación es la regla, no el usuario.** "Superar el tope normalmente obliga", nunca "debes declarar".
+2. **El título usa probabilidad, no certeza:** "Es probable que debas declarar renta por 2026".
+3. **La derivación al contador viaja con la conclusión**, no en una nota al pie que se puede saltar.
 
-**C. Afirmación con matiz por criterio.** Decir "superas el tope de X, esto normalmente implica declarar" y explicar el criterio. A favor: es útil de verdad. En contra: se acerca peligrosamente a asesoría tributaria, que Finko no está en posición de dar.
+### Por qué C y no A ni B
 
-### El encuadre por situación laboral, que aplica a cualquiera de las tres
+**A (condicional puro)** era la formulación del brief y la que menos promete, pero su propio contra la hundió: un "podrías" sobre un tope ya superado se lee como "no pasa nada", y el costo de ese malentendido es una declaración perdida. **B (solo criterios)** era el estado que ya existía: cinco barras y ninguna conclusión. Devolvía al usuario el trabajo de interpretar, que es exactamente lo que Análisis existe para evitar, así que no cerraba nada.
 
-`perfil.situacionLaboral` (ya capturado por CFG.1a) cambia el mensaje aunque no cambie la conclusión: a un empleado le corresponde saber que su empleador reporta sus ingresos; a un independiente, que el reporte es suyo. Esto no está en discusión, se da por parte de la decisión cualquiera sea la alternativa elegida.
+C llega tan lejos como se puede sin dar asesoría tributaria, porque **la afirmación que hace es verificable y general** ("superar un tope normalmente obliga a declarar" es la norma, no un dictamen sobre este usuario). El riesgo que preocupaba de C (sonar a contador) se acota con las tres reglas de arriba.
 
-### Por qué no se cierra acá
+### El encuadre por situación laboral
 
-Es una decisión de Esteban, no una interpretación técnica. El costo de equivocarse no es un bug: es un usuario que no declara porque la app lo tranquilizó, o que paga un contador que no necesitaba porque la app lo asustó.
+`perfil.situacionLaboral` (capturado por CFG.1a) cambia el mensaje aunque no cambie la conclusión: a un empleado le corresponde saber que su empleador reporta sus ingresos y que la retención en nómina no reemplaza la declaración; a un independiente, que el reporte es suyo. Va en un párrafo aparte del veredicto: la conclusión responde "¿me toca?" y el encuadre "¿y eso qué significa en mi caso?". Sin situación laboral registrada, el encuadre invita a registrarla.
+
+### Quién decidió y con qué mandato
+
+Esteban delegó la decisión de forma explícita el 2026-08-03 al abrir CFG.2b ("no preguntes nada, toma tú las decisiones que sean mejor para la app"). Queda anotado porque el ADR original reservaba esta decisión para él: el costo de equivocarse no es un bug, es un usuario que no declara porque la app lo tranquilizó, o que paga un contador que no necesitaba porque la app lo asustó. **Si el criterio no es el que Esteban quiere, se cambia con un ADR nuevo que supersede este, no editando el texto de la UI.**
 
 ---
 
@@ -63,9 +69,9 @@ Es una decisión de Esteban, no una interpretación técnica. El costo de equivo
 
 **El orden de las tarjetas queda fijado por D1.** CFG.2c ejecuta la reubicación y conviene al final, porque CFG.2a y CFG.2b determinan cuántas preguntas sobreviven en el asistente.
 
-**D2 bloquea la implementación de CFG.2b, no la de CFG.2a.** La derivación automática de ingresos brutos no depende del framing: se puede hacer antes.
+**CFG.2b cerró el 2026-08-03 con D2 resuelta.** CFG.2a sigue abierta y no dependía del framing: la derivación automática de ingresos brutos es independiente. Mientras no cierre, el veredicto que ve un usuario sin datos manuales es el estado `sin-conclusion` ("faltan 3 de los 5 criterios"), que es honesto pero no es el objetivo final.
 
-**El estado inferido reemplaza un checkbox que hoy existe.** Cuando D2 se resuelva, el campo manual "La DIAN me notificó como declarante" deja de tener sentido como captura y hay que decidir si se conserva como override, igual que CFG.2a conserva el override de ingresos brutos.
+**El checkbox "La DIAN me notificó como declarante" sobrevive, pero solo como override positivo.** Marcarlo fuerza el veredicto a `probable`; dejarlo en blanco no niega nada, porque la conclusión la calculan los criterios. Se conserva porque la DIAN notifica con datos que Finko no ve (rentas de terceros, reportes de exógena), así que es información que la app no puede derivar. Lo que cambió es el encuadre: su ayuda dice que dejarlo en blanco es lo correcto si no se sabe, y ya no aparece en la lista de "situaciones que pueden requerir atención" del perfil fiscal, porque decir lo mismo dos veces en la misma card era ruido.
 
 ---
 
@@ -80,5 +86,4 @@ Es una decisión de Esteban, no una interpretación técnica. El costo de equivo
 
 ## Qué falta para cerrarlo
 
-1. **Esteban elige entre A, B y C** para el framing de D2.
-2. Decidir si el checkbox manual actual sobrevive como override cuando la inferencia entre.
+Nada de este ADR: las dos decisiones están tomadas. Falta **ejecutar D1**, que es la tarjeta CFG.2c del tablero.

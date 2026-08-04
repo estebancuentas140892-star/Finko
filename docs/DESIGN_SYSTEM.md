@@ -205,7 +205,7 @@ DV.2a ([ADR 033](DECISIONS/033-direccion-visual-premium.md) D2) tokeniza el degr
 
 ### Nudges (5 niveles)
 
-Tokens `--fk-nudge-{nivel}-{bg|border|accent}` construidos con `color-mix()` sobre los semánticos. Niveles: `critical` (danger), `high` (dom-gastos), `medium` (warning), `info` (info), `success` (success). Clases: `.nudge`, `.nudge-critical|high|medium|info|success`.
+Tokens `--fk-nudge-{nivel}-{bg|border|accent}` construidos con `color-mix()` sobre los semánticos. Niveles: `critical` (danger), `high` (dom-gastos), `medium` (warning), `info` (info), `success` (success). Clases: `.nudge`, `.nudge-critical|high|medium|info|success`. Modificador `.nudge--veredicto` (CFG.2b): único caso con dos `.nudge__desc`, porque separa la conclusión del encuadre; solo aporta el margen entre ambos.
 
 ---
 

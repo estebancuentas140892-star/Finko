@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-03. Última tarea cerrada: CAT.3b, los siete accesos crudos de ícono pasan por la resolutora.
+> Revisado: 2026-08-03. Última tarea cerrada: CFG.2b, Finko infiere si debes declarar renta y lo enmarca por situación laboral.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -25,6 +25,9 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**CFG.2b - Finko infiere si debes declarar renta y lo enmarca por situación laboral, 2026-08-03**
+Resuelve **D2 del [ADR 050](DECISIONS/050-perfil-fiscal-ubicacion-y-framing.md)** (el framing legal que bloqueaba la tarjeta) por delegación explícita de Esteban: alternativa **C acotada**, la afirmación recae sobre la regla general, nunca sobre la obligación personal del usuario. `inferirEstadoDeclarante()` da 4 estados y su veredicto encabeza la card de renta; el checkbox "La DIAN me notificó" queda como override positivo. Código en el commit `727d8c9` (CAT.3b, sesión paralela) por la carrera del índice compartido.
+
 **CAT.3b - los siete accesos crudos de ícono pasan por la resolutora, 2026-08-03**
 `presupuesto/view.js` (envelope + banner de alertas), `resumen/view.js` (categoría top de Inicio) y cuatro accesos de Gastos fijos (`agenda/view.js` ×2, `gastos/logic.js`, `tesoreria/views/distribucion.js`) leían el mapa nativo crudo; los tres primeros ya caían a `c-otros` con una personalizada aunque el formulario que la creó mostrara su ícono. Los siete pasan a `iconoDeCategoriaGasto()` (ADR 058 D3). Quedan CAT.3c y CAT.3d.
 
@@ -36,9 +39,6 @@ Ejecuta D4 del [ADR 049](DECISIONS/049-fondo-de-emergencia-v2.md): `frecuenciaPr
 
 **INT.1a - el contenido de escritorio se centra y Movimientos entra al sidebar, 2026-08-02**
 Abre la iniciativa INT.1 ([ADR 059](DECISIONS/059-interfaz-de-escritorio.md), 8 rebanadas) por la de menor riesgo. `.section` gana `margin-inline: auto`: los 240px que quedaban pegados al borde derecho a 1920 (880 a 2560) pasan a repartirse. Movimientos era el único de los 14 destinos sin entrada en el sidebar de escritorio. Al verificar el handoff contra el código cayeron dos premisas suyas: **PI7 era falso** (`--fk-bg-glass` sí tiene valor claro, no bloqueaba nada) y nace **BUG-026**, la regla de emergencia del sidebar pierde la cascada en sus cuatro declaraciones.
-
-**CFG.6 - pase de escritorio/tablet + tema claro en Ajustes, 2026-08-02**
-"Instalar Finko" y "Activar recordatorios" vivían sueltos dentro de `.config-section` (flex column, stretch por defecto) y se estiraban a 932px en escritorio (1280px) y 660px en tablet (768px); el pase 2026-07-25 solo había corregido `.config-form`/`.config-danger` y los pares de `.config-actions--ambito`. Nueva regla `.config-section > .btn { align-self: flex-start; min-width: 160px; }`, mismo patrón que "Guardar perfil". Tema claro revisado por código (100% `var(--fk-*)`), sin captura real. Sigue abierto el inventario de configs faltantes (punto 1), depende de CFG.1 a CFG.5.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 

@@ -62,9 +62,8 @@ Las 35 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | LIM.1 | Límites v2: asistente preventivo de estilo de vida | Límites | sin definir | ADR 045 (base de cálculo); ADR 044 (sugerencias) |
 | PE.6 | Me deben v2: intereses, historial de abonos y confianza | Me deben | media-alta | nada duro |
 | ANL.1 | Análisis como centro de interpretación financiera | Análisis | sin definir | ADR 046 (criterio y lenguaje); ADR 044 (recomendaciones) |
-| CFG.2c | Reubicar lo fiscal: asistente en Ajustes + Análisis | Configuración | sin definir | CFG.2a y CFG.2b |
+| CFG.2c | Reubicar lo fiscal: asistente en Ajustes + Análisis | Configuración | sin definir | CFG.2a |
 | CFG.2a | Auto-derivar ingresos brutos al monitor de renta | Configuración | sin definir | CFG.1a (cerrada) |
-| CFG.2b | Inferir el estado de declarante, con encuadre laboral | Configuración | sin definir | CFG.2a; ADR 050 D2 (framing, Abierta) |
 | CFG.3 | Notificaciones inteligentes anticipatorias | Configuración | sin definir | nada; riesgo técnico a evaluar primero |
 | CFG.4 | Respaldo, cuentas y sincronización [DECISIÓN DE ADN] | Configuración | sin definir | ADR 043 resuelto |
 | CFG.5 | Seguridad de acceso: PIN, patrón, biometría | Configuración | sin definir | nada para PIN local; cuenta depende de CFG.4 |
@@ -229,15 +228,15 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 ### Configuración (dominio `config`)
 
-> **Iniciativa fusionada CFG.1 + CFG.2** ("Perfil fiscal/financiero en Ajustes"). **No iniciar ninguna sin instrucción explícita.** Alcance, la decisión de ubicación ya tomada y el framing legal aún abierto: **[ADR 050](DECISIONS/050-perfil-fiscal-ubicacion-y-framing.md)**, su dueño. Ficha: [`contexto/configuracion.md`](contexto/configuracion.md). El monitor de renta (K.3, `calcularEstadoRenta`) ya hace gran parte de CFG.2: los huecos que quedan son los de CFG.2a y CFG.2b, abajo.
+> **Iniciativa fusionada CFG.1 + CFG.2** ("Perfil fiscal/financiero en Ajustes"). **No iniciar ninguna sin instrucción explícita.** Alcance y sus dos decisiones, ambas tomadas: **[ADR 050](DECISIONS/050-perfil-fiscal-ubicacion-y-framing.md)**, su dueño. Ficha: [`contexto/configuracion.md`](contexto/configuracion.md). El hueco que queda es el de CFG.2a, abajo; CFG.2c ejecuta la reubicación.
 
 #### CFG.2c - Reubicar lo fiscal: asistente bajo demanda en Ajustes + interpretación en Análisis
 - Prioridad  : sin definir
-- Estado     : pendiente. Ejecuta la decisión D1 del **[ADR 050](DECISIONS/050-perfil-fiscal-ubicacion-y-framing.md)** (ya tomada). Conviene DESPUÉS de CFG.2a/2b, que reducen cuántas preguntas quedan en el asistente.
+- Estado     : pendiente. Ejecuta la decisión D1 del **[ADR 050](DECISIONS/050-perfil-fiscal-ubicacion-y-framing.md)** (ya tomada). Conviene DESPUÉS de CFG.2a, que reduce cuántas preguntas quedan en el asistente.
 - Objetivo   : los 2 bloques fiscales dejan de renderizarse permanentes en Ajustes y pasan a un asistente tras botón; la interpretación se consolida en Análisis (coordinar con el layout de ANL.1).
 - Secciones  : Configuración (Ajustes), Análisis
 - Archivos   : `modules/dominio/config/view.js`/`index.js` (los 2 forms actuales), `modules/dominio/analisis/view.js`
-- Depende de : CFG.2a y CFG.2b; coordinar con ANL.1
+- Depende de : CFG.2a; coordinar con ANL.1
 - Modelo     : Equilibrado - Alto (reubicación de UX sin lógica fiscal nueva)
 
 #### CFG.2a - Auto-derivar ingresos brutos del año al monitor de renta
@@ -248,15 +247,6 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Archivos   : `modules/dominio/analisis/logic.js` (`calcularEstadoRenta`, nueva `estimarIngresosBrutosAnio`), `modules/dominio/tesoreria/logic/ingresos.js` (helper de anualización si aplica)
 - Depende de : CFG.1a (cerrada)
 - Modelo     : Alta capacidad - Alto (lógica financiera CO no trivial: anualización de ingresos + interpretación de "ingresos brutos" DIAN)
-
-#### CFG.2b - Inferir el estado de declarante + mensaje del motivo, con encuadre por situación laboral
-- Prioridad  : sin definir
-- Estado     : **bloqueada**: el framing legal es la decisión D2 del **[ADR 050](DECISIONS/050-perfil-fiscal-ubicacion-y-framing.md)** (Abierta, 3 alternativas descritas). No codificar la inferencia sin resolverla con Esteban.
-- Objetivo   : reemplazar el checkbox manual "La DIAN me notificó como declarante" por un estado **inferido** de los 5 criterios, con el encuadre por situación laboral. Nunca afirmar certeza legal.
-- Secciones  : Configuración (Ajustes), Análisis (monitor de renta)
-- Archivos   : `modules/dominio/analisis/logic.js` (`detectarNudgesRenta` y/o nueva lógica de inferencia), `modules/dominio/config/view.js` (perfil fiscal)
-- Depende de : CFG.2a; ADR 050 D2 resuelto
-- Modelo     : Alta capacidad - Alto (producto + framing legal; roza filosofía de producto)
 
 #### CFG.3 - Notificaciones inteligentes anticipatorias
 - Prioridad  : sin definir

@@ -10,6 +10,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(analisis): CFG.2b, Finko infiere si debes declarar renta y lo enmarca por situación laboral · 2026-08-03
+
+Cierra **CFG.2b** y resuelve **D2 del [ADR 050](DECISIONS/050-perfil-fiscal-ubicacion-y-framing.md)**. Ficha: [`contexto/configuracion.md`](contexto/configuracion.md).
+
+> **Nota de historia.** El código viaja en el commit `727d8c9`, que lleva el mensaje de CAT.3b: índice de git compartido con la sesión paralela, mismo cruce que ya documentan AH.5b e INT.1a. Se intentó tres veces separarlo y las tres el commit ajeno se llevó los archivos staged; no se reescribió la historia porque la rama tenía trabajo vivo de la otra sesión encima.
+
+- **La decisión, no el diff:** el framing legal era la decisión abierta del ADR 050, reservada para Esteban, y él la delegó explícitamente al abrir la tarjeta. Se eligió la **alternativa C acotada**: Finko afirma la **regla general** ("superar cualquiera de los 5 criterios de la DIAN normalmente obliga a declarar") y ubica al usuario dentro de ella, pero nunca afirma su obligación como hecho personal. Se rechazó A (condicional puro) porque un "podrías" sobre un tope ya superado se lee como "no pasa nada", y B (solo criterios) porque era el estado que ya existía y no cerraba nada. Las tres reglas de redacción que quedan vinculantes para cualquier texto futuro del monitor están en el ADR.
+- `inferirEstadoDeclarante()` en `analisis/logic.js`: 4 estados (`probable`, `posible`, `sin-conclusion`, `improbable`) más el encuadre por `perfil.situacionLaboral`, que cambia el mensaje sin cambiar la conclusión. El veredicto encabeza la card de renta y decide si el colapsable abre solo.
+- **El checkbox "La DIAN me notificó" no se borró:** pasa a override **positivo**. Marcarlo fuerza `probable`; dejarlo en blanco no niega nada. Se conserva porque la DIAN notifica con datos que Finko no ve, y su ayuda ahora dice que dejarlo vacío es lo correcto si no se sabe. Sale a cambio de la lista de "situaciones que pueden requerir atención" del perfil fiscal: lo decía dos veces en la misma card.
+- `detectarNudgesRenta()` pierde su rama de perfil fiscal, que **nunca se renderizó**: la vista filtraba los nudges `info` y solo pintaba el banner si había alerta alta o media, así que la condición "solo si no hay otros nudges" la hacía inalcanzable. Sus 2 tests se reemplazaron por 12 de la función nueva.
+- Balance de tests: **+13 nuevos, -2 retirados** (los del nudge que nunca se renderizaba). 3726/3731 unit + 255 E2E + lint verdes; las 5 fallas restantes son las preexistentes de `compromisos.test.js`, ajenas y verificadas contra HEAD. Verificado en la app con los tres veredictos (probable por criterio, notificado por la DIAN, sin-conclusión). SW v486 a v487.
+
 ### fix(transversal): CAT.3b, los siete accesos crudos de ícono pasan por la resolutora · 2026-08-03
 
 Cierra **CAT.3b**. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
