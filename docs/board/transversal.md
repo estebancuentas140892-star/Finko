@@ -39,10 +39,10 @@
 - Depende de : nada duro; conviene tras INT.1c · Modelo: Equilibrado - Alto
 
 #### INT.1g - Carril derecho de 320px desde 1.680px
-- Estado     : pendiente, prioridad baja. D7 (mitad). **Bloqueada por el mismo P1 que INT.1e:** el carril solo sirve si cada sección decide qué pone ahí. Área: ambos.
-- Objetivo   : lo urgente deja de obligar a bajar un pliegue. Entre 1.024 y 1.680px, contenido centrado a una columna, sin carril.
-- Archivos   : `styles/layout.css`, `styles/responsive.css`, `index.html`
-- Depende de : INT.1a cerrada + P1 resuelto · Modelo: Equilibrado - Alto
+- Estado     : mecanismo cerrado (commit `4f87f77`, dentro de INT.1b). `.section--con-carril` en `styles/layout.css:296-312`: grid `1fr 320px` desde 1.680px; entre 1.024 y 1.680px una columna centrada (INT.1a). **Sigue bloqueada para uso real por el mismo P1 que INT.1e:** ninguna sección tiene todavía qué poner en el carril, así que ninguna usa la clase. Área: ambos.
+- Objetivo   : lo urgente deja de obligar a bajar un pliegue.
+- Archivos   : `styles/layout.css` (mecanismo listo); falta aplicar `.section--con-carril` por sección cuando P1 resuelva contenido
+- Depende de : P1 resuelto (scope de INT.1e, recorrido de las 13 secciones) · Modelo: Equilibrado - Alto
 
 #### INT.1h - Cuatro atajos de teclado
 - Estado     : pendiente, prioridad baja. **Pendiente P8: la única decisión del informe que puede fallar por implementación, no por diseño.** Área: code.
