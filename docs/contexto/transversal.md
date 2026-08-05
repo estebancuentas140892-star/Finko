@@ -272,8 +272,8 @@
 ## Shell de escritorio: sidebar, ancho de contenido y barra superior (iniciativa INT.1)
 
 - **Objetivo**          : el escritorio nunca se decidió. El sidebar existía desde antes de que la app tuviera dos topologías y las quince auditorías por sección midieron móvil a 390px, así que escritorio heredó el reparto móvil estirado. El [ADR 059](../DECISIONS/059-interfaz-de-escritorio.md) lo decide en ocho rebanadas (INT.1a a INT.1h).
-- **Estado actual**     : **INT.1a e INT.1b cerradas**. INT.1a: contenido centrado + Movimientos en el sidebar. INT.1b: las 4 hijas de Ahorro se anidan bajo la casa (`.nav-subnav`, desplegado solo dentro del grupo) y `BUG-026` se cierra por eliminación de su causa. Las seis rebanadas restantes siguen pendientes; la barra superior de 56px, que es el corazón de la propuesta, no existe todavía en el repo.
-- **Verificado contra** : INT.1b, commit `4f87f77` (2026-08-03).
+- **Estado actual**     : **INT.1a, INT.1b e INT.1f cerradas**. INT.1a: contenido centrado + Movimientos en el sidebar. INT.1b: las 4 hijas de Ahorro se anidan bajo la casa (`.nav-subnav`, desplegado solo dentro del grupo) y `BUG-026` se cierra por eliminación de su causa. INT.1f: el modal sube a 840px en escritorio y su `<form>` pasa a grid de 2 columnas. Las cinco rebanadas restantes siguen pendientes; la barra superior de 56px, que es el corazón de la propuesta, no existe todavía en el repo.
+- **Verificado contra** : INT.1f, commit `bf37761` (2026-08-05).
 
 **Mediciones vigentes contra el código** (no contra la recreación del handoff):
 
@@ -306,7 +306,8 @@
 | Clases de plataforma del nav | `styles/responsive.css` | `.nav-item--mobile-only`, `.nav-item--no-mobile` |
 | Disparador de Registrar (existe solo en móvil, lo resuelve INT.1c) | `index.html` | `.nav-item--registrar.nav-item--mobile-only` |
 | Hoja de registrar (existe en el DOM en las dos plataformas) | `index.html` | `#modal-registrar` |
-| Ancho de modal (520px, sin regla de escritorio; lo resuelve INT.1f) | `styles/modals.css` | `.modal`, `.modal--sm/--lg/--xl/--mas` |
+| Ancho de modal en escritorio (INT.1f, D8): 840px, `--onboarding` se excluye a mano | `styles/modals.css` | `.modal`, `.modal--sm/--lg/--xl/--mas/--onboarding` |
+| Grid de 2 columnas del `<form>` en escritorio (INT.1f, D8): emparejamiento vía `:has()` | `styles/responsive.css` | bloque "ESCRITORIO (>= 1024px): formulario de modal a dos columnas" |
 | CSS del saldo del sidebar, todavía sin marcado (lo resuelve INT.1d) | `styles/layout.css` | `.sidebar__saldo`, `-label`, `-value` |
 | Volver de las 4 hijas de Ahorro, oculto en desktop (INT.1b) | `index.html` / `styles/responsive.css` | `.section__volver--ahorro-hija` |
 
@@ -319,10 +320,11 @@
 - **Las reglas R75 a R77 están reservadas y sin escribir**: entran a `DESIGN_SYSTEM.md` cuando cierre la última rebanada, así que hoy la lista de principios tiene un hueco declarado entre R74 y R78.
 - **Una hija de Ahorro ya no es un clic directo desde cualquier sección** (INT.1b, tradeoff aceptado por el ADR): hace falta abrir "Ahorro" primero para desplegar el sub-nivel. Tests que clickeaban `#metas`/`#inversion` directo desde Dashboard se movieron a `page.goto()` o al camino de dos clics.
 
-**Cambios pendientes**: seis rebanadas (INT.1c a INT.1h) en `docs/BOARD.md`. Dos pendientes del informe hay que resolverlos **antes** de codificar su rebanada: **P1** (qué primario sube a la barra en cada una de las 13 secciones; bloquea INT.1e y INT.1g) y **P8** (validación de accesibilidad de un `keydown` global; bloquea INT.1h).
+**Cambios pendientes**: cinco rebanadas (INT.1c, INT.1d, INT.1e, INT.1g, INT.1h) en `docs/BOARD.md`. Dos pendientes del informe hay que resolverlos **antes** de codificar su rebanada: **P1** (qué primario sube a la barra en cada una de las 13 secciones; bloquea INT.1e y INT.1g) y **P8** (validación de accesibilidad de un `keydown` global; bloquea INT.1h).
 
 **Cambios realizados**:
 
+- **2026-08-05 (INT.1f)**: el modal base sube de 520 a 840px desde 1024px de ventana; su `<form>` interno pasa a grid de 2 columnas, con los `.form-group` simples (label + un solo `.input`/`.select`, sin hint ni picker) emparejados vía `:has()` y todo lo demás a ancho completo. Móvil no cambia. Detalle en el CHANGELOG.
 - **2026-08-03 (INT.1b)**: las 4 hijas de Ahorro se anidan bajo la casa en el sidebar de desktop, desplegadas solo dentro del grupo; `.section__volver` de las 4 se oculta en desktop; BUG-026 se cierra por eliminación de causa (el bloque de compactación de emergencia se borró). Detalle en el CHANGELOG.
 - **2026-08-02 (INT.1a)**: `.section` gana `margin-inline: auto` y Movimientos entra al grupo "Seguimiento" del sidebar. Detalle en el CHANGELOG.
 

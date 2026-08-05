@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-05. Última tarea cerrada: PE.6c y PE.6e, rendimiento e historial por persona (Me deben).
+> Revisado: 2026-08-05. Última tarea cerrada: INT.1f, formulario de escritorio a 840px y dos columnas (Transversal).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 3814/3814 verdes en el índice de PE.6c/PE.6e |
-| Tests E2E | 263/263 verdes, sello escrito sobre el índice de PE.6c/PE.6e. **Compuerta** desde el 2026-07-30. **Sesiones paralelas:** árbol compartido con otra sesión (docs de diseño de escritorio sin commitear); el cierre commiteó solo sus propios archivos |
+| Tests unitarios + integración | 3814/3814 verdes en el índice de INT.1f |
+| Tests E2E | 262/263 verdes (1 flaky ajeno, Agenda pago en lote), sello escrito sobre el índice de INT.1f. **Compuerta** desde el 2026-07-30. **Sesiones paralelas:** árbol compartido con otra sesión, escritura activa sobre `index.html`/`modules/`/`styles/` durante todo el cierre; el commit de código se limitó a `styles/modals.css`, `styles/responsive.css` y `service-worker.js` |
 | Schema version (`localStorage`) | v34 (`Personal.abonos[]`, PE.6b; los préstamos ya cobrados migran con un abono agrupado y conservan `pagado`) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**INT.1f - formulario de escritorio a 840px y dos columnas (Transversal), 2026-08-05**
+El modal base sube de 520 a 840px desde 1024px de ventana ([ADR 059](DECISIONS/059-interfaz-de-escritorio.md) D8); su `<form>` interno pasa a grid de 2 columnas, con los campos simples (label + un solo `.input`/`.select`, sin hint ni picker) emparejados vía `:has()` y todo lo demás a ancho completo. Sin `grid-auto-flow: dense`: el orden del DOM no cambia. Móvil no cambia. CSS puro, sin bump de schema. Commit `bf37761`.
 
 **PE.6c y PE.6e - rendimiento del préstamo e historial por persona (Me deben), 2026-08-05**
 Derivaciones puras sobre el historial que dejó PE.6b, sin schema. `calcularRendimiento()` dice cuánto ganaste y qué porcentaje de lo prestado es, **sin anualizar**: anualizar convertiría un préstamo informal en una promesa de retorno comparable con un CDT. `estadisticasPorPersona()` alimenta un bloque plegado bajo el resumen, solo para quien tiene más de un préstamo, que **describe y no califica** ([ADR 047](DECISIONS/047-me-deben-v2-intereses-e-historial.md) D5): sin score, y ordenado por total prestado, no por puntualidad. La puntualidad solo cuenta préstamos con fecha pactada. Commit `a188744`.
@@ -36,9 +39,6 @@ Derivaciones puras sobre el historial que dejó PE.6b, sin schema. `calcularRend
 
 **LEG.2 - aceptación obligatoria versionada (Transversal), 2026-08-04**
 Onboarding gana paso 2: checkbox único con enlaces al Centro Legal, obligatorio antes de entrar. Usuario existente con versión vieja (o sin registro) ve un gate independiente y bloqueante (sin Escape). `config.legalAceptado: {version, fecha} | null`, schema v33; usuario con datos ya guardados queda grandfathered a la versión histórica en la migración, no se le exige aceptar retroactivamente. No espera al checklist de contenido de `legal/README.md` (responsable, contacto, licencia, revisión de abogado): eso bloquea el paquete a v1.0, no el mecanismo. Commit `53becc8`.
-
-**AH.5 - D2+D3 del ADR 049, hero educativo y aporte directo baja a secundario (Ahorro), 2026-08-04**
-La tarjeta activa del fondo abre con una línea de propósito antes de la primera cifra (D3); "Registrar un aporte" baja de botón primario ancho al mismo peso ghost/secundario que "Editar" (D2), porque el flujo principal ya es el asistente "Distribuir mi ingreso". Sin handoff de diseño: sin mockup, se siguió la convención ya escrita en `view.js`/`analysis.css`. Cierra las cuatro decisiones del ADR 049. Commit `dfff037`.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 

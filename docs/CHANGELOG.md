@@ -10,6 +10,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(transversal): INT.1f, formulario de escritorio a 840px y dos columnas · 2026-08-05
+
+Cierra **INT.1f** (D8 del [ADR 059](DECISIONS/059-interfaz-de-escritorio.md)). Commit `bf37761`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
+
+- **El defecto:** `.modal` medía 520px sin ninguna regla sobre 1024px, así que un formulario de 8 campos se apilaba con scroll interno mientras 1.400px quedaban libres al lado.
+- **El modal base sube a 840px** desde 1024px de ventana. Los modificadores de tamaño (`--sm/--lg/--xl/--mas/--confirm/--sheet`) declaran su propio ancho sin condición y ganan por orden de cascada a igual especificidad; `--onboarding` (wizard centrado) se excluye a mano con la misma técnica.
+- **El `<form>` interno pasa a grid de 2 columnas.** Todo ocupa las dos por defecto (el ancho extra es aire, no reflujo); solo el `.form-group` simple (label + un solo `.input`/`.select`, sin hint ni ícono picker debajo) se empareja con su vecino, vía `:has()`. Sin `grid-auto-flow: dense`, así que el orden del DOM no cambia (R11). Verificado en la app: "Nueva cuenta" empareja Tipo de cuenta + Saldo actual; los formularios con chips/fieldsets/checkboxes (Gastos, Cuota de manejo) no tenían candidatos y quedan igual, solo más anchos.
+- **Móvil no cambia**: sigue siendo la hoja de una columna de siempre. Verificado a 375px.
+- CSS puro, sin `modules/` tocados: 3814 unit + 262 E2E (1 flaky ajeno, Agenda pago en lote) + lint verdes. SW v494 a v496.
+
 ### feat(me-deben): PE.6c y PE.6e, rendimiento del préstamo e historial por persona · 2026-08-05
 
 Cierra **PE.6c** y **PE.6e** (D4 y D5 del [ADR 047](DECISIONS/047-me-deben-v2-intereses-e-historial.md)). Ficha: [`contexto/me-deben.md`](contexto/me-deben.md). Se entregan juntas a propósito: las dos son derivaciones puras sobre `Personal.abonos[]` que PE.6b dejó listo, sin schema, sin persistencia nueva y sobre el mismo render. Partirlas habría costado dos ciclos de verificación para el mismo riesgo.

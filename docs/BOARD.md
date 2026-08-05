@@ -42,14 +42,13 @@ Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (si
 
 ## Índice de pendientes
 
-Las 30 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+Las 29 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
 | INT.1c | Barra superior de 56px (sección, Registrar, tema, perfil) | Transversal | media | INT.1b cerrada; pendiente P9 (Lighthouse) |
 | INT.1d | Cinta de saldo en la barra, con su ojo | Transversal | media | INT.1c |
 | INT.1e | El primario de cada sección sube a la barra | Transversal | media | INT.1c; pendiente P1 (recorrer 13) |
-| INT.1f | Formulario de escritorio a 840px, dos columnas | Transversal | media | nada duro; conviene tras INT.1c |
 | INT.1g | Carril derecho de 320px desde 1.680px | Transversal | baja | INT.1a cerrada; pendiente P1 |
 | INT.1h | Cuatro atajos de teclado | Transversal | baja | INT.1c; pendiente P8 (validación a11y) |
 | MC.17f | Deshacer o editar una transferencia | Mis cuentas | media | coordinar con MOV.1 |

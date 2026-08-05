@@ -10,7 +10,7 @@
 
 > **Iniciativa "INT.1 - Interfaz de escritorio"** ([ADR 059](../DECISIONS/059-interfaz-de-escritorio.md), aceptado 2026-08-02). Fuente única del chrome de escritorio, 8 decisiones en 8 rebanadas. Móvil no cambia. **INT.1a, INT.1b e INT.1c cerradas**; detalle e historia en el CHANGELOG y [`contexto/transversal.md`](../contexto/transversal.md). **Coordinar con AH.7a** (mismo marcado de nav, otra plataforma).
 
-> **Las cinco rebanadas restantes**, en una línea cada una: su alcance completo, con medición y contra declarado, vive en el [ADR 059](../DECISIONS/059-interfaz-de-escritorio.md) y no se repite acá. Se re-expanden a tarjeta completa al iniciarlas.
+> **Las cuatro rebanadas restantes**, en una línea cada una: su alcance completo, con medición y contra declarado, vive en el [ADR 059](../DECISIONS/059-interfaz-de-escritorio.md) y no se repite acá. Se re-expanden a tarjeta completa al iniciarlas.
 
 #### INT.1d - La cinta de saldo en la barra, con su ojo de privacidad
 - Estado     : pendiente, prioridad media. D9 (P7 y P10 ya decididos por Esteban). **INT.1c ya cerró** (la barra que la aloja existe). Área: ambos.
@@ -23,13 +23,6 @@
 - Objetivo   : el primario pasa a secundario en la barra (R38, R1) y la página arranca en el dato. ~70px por sección.
 - Archivos   : `index.html`, `modules/ui/shell.js`, las vistas con encabezado propio
 - Depende de : INT.1c + P1 resuelto · Modelo: Alta capacidad - Alto
-
-#### INT.1f - Formulario de escritorio a 840px y dos columnas
-- Estado     : pendiente, prioridad media. D8. Área: ambos.
-- Objetivo   : `.modal` mide 520px sin ninguna regla sobre 1024px, así que 8 campos se apilan con scroll interno y 1.400px libres al lado. **Móvil no cambia** y el orden lógico tampoco (R11).
-- Riesgo     : toca todos los modales, incluidos el asistente de distribución y el import de CSV (`.modal--xl`)
-- Archivos   : `styles/modals.css`, `styles/responsive.css`
-- Depende de : nada duro; conviene tras INT.1c · Modelo: Equilibrado - Alto
 
 #### INT.1g - Carril derecho de 320px desde 1.680px
 - Estado     : mecanismo cerrado (commit `4f87f77`, dentro de INT.1b). `.section--con-carril` en `styles/layout.css:296-312`: grid `1fr 320px` desde 1.680px; entre 1.024 y 1.680px una columna centrada (INT.1a). **Sigue bloqueada para uso real por el mismo P1 que INT.1e:** ninguna sección tiene todavía qué poner en el carril, así que ninguna usa la clase. Área: ambos.
