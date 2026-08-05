@@ -70,27 +70,35 @@ const MAS_ARIA  = 'Mas opciones';
 let _transitionTimer = null;
 
 /**
- * Aplica el tema (dark/light) y activa una transicion CSS suave.
+ * Aplica el tema (dark/light) y activa una transicion suave.
  *
- * Tecnica "class transitioning": se agrega .theme-transitioning al body
- * ANTES del cambio de clase para que los descendientes interpolen
- * background-color, border-color y color en lugar de cambiar de golpe.
- * La clase se quita despues de 350ms (ligeramente mayor que los 280ms
- * de la transicion CSS para dar margen a slow-mo mobile).
+ * CFG.7: si el navegador soporta View Transitions API y el usuario no pidio
+ * reduced-motion, el crossfade lo hace el navegador en un solo paint
+ * (document.startViewTransition). Es mejora progresiva: donde no hay soporte
+ * (Firefox, navegadores viejos) cae a la tecnica "class transitioning"
+ * existente (.theme-transitioning, 280ms en themes.css), sin regresion.
  *
  * @param {boolean} light - true = tema claro, false = tema oscuro.
  */
 function applyTheme(light) {
-  // Activar transicion antes del swap de clase de tema.
+  const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+  const swap = () => {
+    document.body.classList.toggle(LIGHT_CLASS, light);
+    localStorage.setItem(THEME_KEY, light ? 'light' : 'dark');
+    _syncThemeButton(light);
+    EventBus.emit('theme:change', { light });
+  };
+
+  if (!reducedMotion && document.startViewTransition) {
+    document.startViewTransition(swap);
+    return;
+  }
+
+  // Fallback: tecnica previa (class transitioning con CSS).
   if (_transitionTimer) clearTimeout(_transitionTimer);
   document.body.classList.add('theme-transitioning');
-
-  document.body.classList.toggle(LIGHT_CLASS, light);
-  localStorage.setItem(THEME_KEY, light ? 'light' : 'dark');
-  _syncThemeButton(light);
-  EventBus.emit('theme:change', { light });
-
-  // Limpiar la clase cuando la transicion ya termino.
+  swap();
   _transitionTimer = setTimeout(() => {
     document.body.classList.remove('theme-transitioning');
     _transitionTimer = null;

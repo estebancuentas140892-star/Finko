@@ -145,3 +145,27 @@ body.light-theme {
       box-shadow       280ms ease !important;
   }
 }
+
+/* ── VIEW TRANSITIONS (CFG.7) ──────────────────────────────────
+   Donde el navegador soporta document.startViewTransition() (shell.js,
+   toggleTheme), este bloque reemplaza el crossfade por selectores por
+   un crossfade nativo del snapshot completo en un solo paint: sin el
+   costo de animar ~30 contenedores por separado. Duracion corta (220ms)
+   para no competir con el criterio de rendimiento del ADR 031 D6.
+   prefers-reduced-motion: el navegador no dispara la transicion (shell.js
+   la evita explicitamente), pero se guarda aca tambien por si el sitio
+   la activa desde otro flujo a futuro. ─────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 220ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(root),
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+}
