@@ -38,11 +38,16 @@
   /* Secciones disponibles via modal Mas (tema): no duplicar en Config */
   .config-section--desktop-only { display: none !important; }
 
-  /* Shell: sidebar pasa a fila inferior */
+  /* Shell: sidebar pasa a fila inferior, barra superior no aplica (R31: en
+     movil el alto es el recurso escaso, ver ADR 059). */
   .app-shell {
     grid-template-columns: 1fr;
     grid-template-rows: 1fr var(--fk-header-height);
   }
+
+  .topbar { display: none; }
+
+  .main-content { grid-row: 1; }
 
   .sidebar {
     grid-row: 2;

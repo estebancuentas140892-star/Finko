@@ -8,22 +8,15 @@
 
 > **Auditoría de rendimiento 2026-07 completa** (PERF.0 a PERF.4 cerradas, ver [`scripts/perf/BASELINE.md`](../../scripts/perf/BASELINE.md)). Los dos hallazgos que siguen mandando: `renderSmart()` ya evita el recálculo cruzado, y guardar cuesta ~5 ms debounced, así que la persistencia NO se reescribió ([ADR 030](../DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md), disparadores en su D4). **Disciplina obligatoria de toda tarjeta PERF: correr `pnpm perf` antes y después y comparar contra BASELINE.md.**
 
-> **Iniciativa "INT.1 - Interfaz de escritorio"** ([ADR 059](../DECISIONS/059-interfaz-de-escritorio.md), aceptado 2026-08-02). Fuente única del chrome de escritorio, 8 decisiones en 8 rebanadas. Móvil no cambia. **INT.1a e INT.1b cerradas** (2026-08-02 y 2026-08-03); detalle e historia en el CHANGELOG y [`contexto/transversal.md`](../contexto/transversal.md). **Coordinar con AH.7a** (mismo marcado de nav, otra plataforma).
+> **Iniciativa "INT.1 - Interfaz de escritorio"** ([ADR 059](../DECISIONS/059-interfaz-de-escritorio.md), aceptado 2026-08-02). Fuente única del chrome de escritorio, 8 decisiones en 8 rebanadas. Móvil no cambia. **INT.1a, INT.1b e INT.1c cerradas**; detalle e historia en el CHANGELOG y [`contexto/transversal.md`](../contexto/transversal.md). **Coordinar con AH.7a** (mismo marcado de nav, otra plataforma).
 
-> **Las seis rebanadas restantes**, en una línea cada una: su alcance completo, con medición y contra declarado, vive en el [ADR 059](../DECISIONS/059-interfaz-de-escritorio.md) y no se repite acá. Se re-expanden a tarjeta completa al iniciarlas.
-
-#### INT.1c - Barra superior de 56px: sección, Registrar, tema y perfil
-- Estado     : pendiente, prioridad media. D1, D2 y D5. **PI7 ya no la bloquea** (era falso). Depende de **INT.1b cerrada** (misma zona de marcado). Área: ambos.
-- Objetivo   : teja + título fijos (el `h1` hoy se va con el scroll), "Registrar" abriendo la misma `#modal-registrar` que móvil (hoy sin un solo disparador en escritorio), tema y perfil a la derecha.
-- Riesgo     : cambia el chrome de las 13 secciones a la vez. **Pendiente P9:** `backdrop-filter` fijo contra el techo de Lighthouse 100; alternativa lista, fondo opaco con borde.
-- Archivos   : `index.html`, `modules/ui/shell.js`, `styles/layout.css`, `styles/responsive.css`
-- Aceptación : las 13 secciones en ambos temas + Lighthouse 100 + registrar en 1 clic · Modelo: Alta capacidad - Alto
+> **Las cinco rebanadas restantes**, en una línea cada una: su alcance completo, con medición y contra declarado, vive en el [ADR 059](../DECISIONS/059-interfaz-de-escritorio.md) y no se repite acá. Se re-expanden a tarjeta completa al iniciarlas.
 
 #### INT.1d - La cinta de saldo en la barra, con su ojo de privacidad
-- Estado     : pendiente, prioridad media. D9 (P7 y P10 ya decididos por Esteban). Área: ambos.
+- Estado     : pendiente, prioridad media. D9 (P7 y P10 ya decididos por Esteban). **INT.1c ya cerró** (la barra que la aloja existe). Área: ambos.
 - Objetivo   : `.sidebar__saldo` deja de ser CSS sin marcado y pasa a componente real. Lee `ocultarSaldo` (R20) y **no se pinta en Inicio**, donde el hero ya lo dice (R27).
 - Archivos   : `index.html`, `modules/infra/render.js`, `styles/layout.css`
-- Depende de : INT.1c · Aceptación: visible en 12 de 13 secciones y ningún monto real en el DOM enmascarado · Modelo: Equilibrado - Alto
+- Depende de : INT.1c (cerrada) · Aceptación: visible en 12 de 13 secciones y ningún monto real en el DOM enmascarado · Modelo: Equilibrado - Alto
 
 #### INT.1e - El primario de cada sección sube a la barra
 - Estado     : pendiente, prioridad media. D3. **Bloqueada por el pendiente P1:** hay secciones con dos acciones (Mis cuentas) y otras sin ninguna (Análisis, Ahorro, Movimientos); hay que recorrer las 13 antes de codificar. Área: ambos.
@@ -66,8 +59,9 @@
 - Objetivo   : `programarRender(fn)` en `infra/render.js`, cola dedupada por identidad, vaciada en microtask; los listeners de `state:change` agendan en vez de pintar directo, colapsando repintados del mismo tick a uno. Renders directos (navegación, arranque, `renderAll`) siguen síncronos.
 - Riesgo     : cambia el timing de los renders reactivos de síncrono a microtask. Blast radius de tests medido chico (los tests de vista llaman la view directo, no vía bus; E2E auto-espera). Cerca del pipeline de render: si se hace, medir el doble-render real con un escenario nuevo del harness antes/después (disciplina ADR 030).
 - Secciones  : Transversal (`infra/render.js` + listeners `state:change` de los dominios multi-observador)
-- Depende de : decidir si el beneficio (situacional, Inicio) justifica el cambio de timing. Alternativa recomendada: PERF.7 primero (ganancia medida e incondicional).
+- Depende de : decidir si el beneficio (situacional, Inicio) justifica el cambio de timing. Alternativa recomendada: PERF.7 primero (ganancia medida e incondicional) - ya cerrada el 2026-08-01 (commit `156aa88`).
 - Modelo     : Alta capacidad - Alto (si se hace)
+- Decision 2026-08-05: no se hace. PERF.7 (la alternativa recomendada) ya cerro con ganancia medida e incondicional. Lo que queda de PERF.6 es beneficio situacional y bajo (paneles de Inicio, 2-3 repintados en una accion multi-seccion) contra riesgo real: cambiar el pipeline de render de sincrono a microtask. No hay disparador nuevo que lo justifique. Se reabre solo si aparece evidencia de costo real medido (nuevo escenario de harness, disciplina ADR 030).
 
 > **Iniciativa Dirección Visual premium** ([ADR 033](../DECISIONS/033-direccion-visual-premium.md)). DV.2a/b/c cerradas. Solo **P4** (lote inicial de ilustraciones) sigue abierta, se decide al iniciar DV.2d.
 

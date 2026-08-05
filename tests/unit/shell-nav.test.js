@@ -159,6 +159,64 @@ describe('el sub-nivel del grupo Ahorro se despliega dentro del grupo (INT.1b)',
   });
 });
 
+describe('la barra superior lee la teja + título de la sección activa (INT.1c)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <section class="section active" id="sec-gast">
+        <header class="section__header">
+          <div class="section__title-group">
+            <span class="cat-teja section__icon" data-dom="gastos">
+              <svg class="icon"><use href="#i-gastos"></use></svg>
+            </span>
+            <h1 class="section__title" id="title-gast">Gastos</h1>
+          </div>
+        </header>
+      </section>
+      <section class="section" id="sec-movimientos">
+        <header class="section__header">
+          <div class="section__title-group">
+            <span class="cat-teja section__icon">
+              <svg class="icon"><use href="#i-saldo"></use></svg>
+            </span>
+            <h1 class="section__title" id="title-movimientos">Movimientos</h1>
+          </div>
+        </header>
+      </section>
+      <header id="topbar">
+        <span id="topbar-icon"><svg><use id="topbar-icon-use" href="#i-home"></use></svg></span>
+        <h2 id="topbar-title">Inicio</h2>
+      </header>
+    `;
+  });
+
+  const activar = (id) => {
+    document.querySelectorAll('.section').forEach((s) => s.classList.toggle('active', s.id === id));
+  };
+
+  it('toma la teja, el ícono y el título del header de la sección activa', () => {
+    markActiveNav('gast');
+    expect(document.getElementById('topbar-title').textContent).toBe('Gastos');
+    expect(document.getElementById('topbar-icon-use').getAttribute('href')).toBe('#i-gastos');
+    expect(document.getElementById('topbar-icon').dataset.dom).toBe('gastos');
+  });
+
+  it('sin data-dom en la teja (ej. Movimientos), limpia el dominio previo', () => {
+    markActiveNav('gast');
+    activar('sec-movimientos');
+    markActiveNav('movimientos');
+    expect(document.getElementById('topbar-title').textContent).toBe('Movimientos');
+    expect(document.getElementById('topbar-icon-use').getAttribute('href')).toBe('#i-saldo');
+    expect(document.getElementById('topbar-icon').dataset.dom).toBeUndefined();
+  });
+
+  it('sin ninguna .section.active (Inicio, sin cat-teja propia) cae al rótulo neutro', () => {
+    activar('__ninguna__');
+    markActiveNav('dash');
+    expect(document.getElementById('topbar-title').textContent).toBe('Inicio');
+    expect(document.getElementById('topbar-icon-use').getAttribute('href')).toBe('#i-home');
+  });
+});
+
 describe('toggleTheme() sincroniza todos los toggles presentes', () => {
   beforeEach(() => {
     document.body.classList.remove('light-theme');

@@ -133,12 +133,24 @@ export function updSaldo() {
 
   // Botón del ojo (IN.2): estado presionado = saldo oculto. El icono refleja
   // el estado actual (ojo tachado mientras el monto está enmascarado).
-  const ojo = document.getElementById('saldo-ojo');
-  if (ojo) {
+  // Puede haber más de un ojo a la vez (hero de Inicio + cinta de la barra
+  // superior, INT.1d): mismo patrón que _syncThemeButton (shell.js), un
+  // solo selector por data-action en vez de un id.
+  document.querySelectorAll('[data-action="saldo-visibilidad"]').forEach((ojo) => {
     ojo.hidden = sinCuentas;
     ojo.setAttribute('aria-pressed', String(oculto));
     const use = ojo.querySelector('use');
     if (use) use.setAttribute('href', oculto ? '#i-eye-off' : '#i-eye');
+  });
+
+  // Cinta de saldo de la barra superior (INT.1d, ADR 059 D9): no se pinta en
+  // Inicio, donde el hero ya muestra el mismo dato (R27), ni sin cuentas.
+  const cinta      = document.getElementById('topbar-saldo');
+  const cintaValor = document.getElementById('topbar-saldo-value');
+  if (cinta && cintaValor) {
+    const enDash = (location.hash.slice(1) || 'dash') === 'dash';
+    cinta.hidden = sinCuentas || enDash;
+    cintaValor.textContent = oculto ? SALDO_MASCARA : f(totalCuentas);
   }
 
   // Detalle por cuenta. En móvil es el acordeón del hero (IN.8c, ADR 034 D4):

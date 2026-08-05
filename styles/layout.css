@@ -10,7 +10,10 @@
 .app-shell {
   display: grid;
   grid-template-columns: var(--fk-sidebar-width) 1fr;
-  grid-template-rows: 1fr;
+  /* INT.1c: fila de la barra superior (56px, solo escritorio) + el resto
+     para main-content. Bajo 1024px, responsive.css la redefine sin ella:
+     el sidebar pasa a barra inferior y la barra superior se oculta. */
+  grid-template-rows: var(--fk-topbar-height) 1fr;
   min-height: 100dvh;
   background: var(--fk-bg-base);
 }
@@ -19,6 +22,7 @@
 
 .sidebar {
   grid-column: 1;
+  grid-row: 1 / -1;
   position: sticky;
   top: 0;
   height: 100dvh;
@@ -267,10 +271,103 @@
   color: var(--fk-text-accent);
 }
 
+/* ── BARRA SUPERIOR (INT.1c, ADR 059 D1/D2/D5) ───────────────── */
+
+/* Fondo opaco, no `backdrop-filter`: el ADR deja la alternativa lista
+   para no arriesgar el techo de Lighthouse 100 (pendiente P9) con una
+   superficie fija translucida sobre contenido que scrollea. */
+.topbar {
+  grid-column: 2;
+  grid-row: 1;
+  position: sticky;
+  top: 0;
+  height: var(--fk-topbar-height);
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-4);
+  padding-inline: var(--fk-content-padding);
+  background: var(--fk-bg-surface);
+  border-bottom: 1px solid var(--fk-border-subtle);
+  z-index: var(--fk-z-sidebar);
+}
+
+.topbar__title-group {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  min-width: 0;
+  flex: 1;
+}
+.topbar__title {
+  font-size: var(--fk-text-lg);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  line-height: var(--fk-leading-tight);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topbar__registrar {
+  flex-shrink: 0;
+}
+
+/* Cinta de saldo (INT.1d, ADR 059 D9): mismo vocabulario que
+   .sidebar__saldo-label/-value (arriba), en fila en vez de columna. */
+.topbar__saldo {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  flex-shrink: 0;
+  padding-inline: var(--fk-space-3);
+  border-inline: 1px solid var(--fk-border-subtle);
+}
+.topbar__saldo[hidden] { display: none; }
+.topbar__saldo-label {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+.topbar__saldo-value {
+  font-family: var(--fk-font-mono);
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-accent);
+  white-space: nowrap;
+}
+.topbar__saldo-ojo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--fk-space-8);
+  height: var(--fk-space-8);
+  border-radius: var(--fk-radius-md);
+  border: 1px solid var(--fk-border-default);
+  background: var(--fk-bg-surface);
+  color: var(--fk-text-secondary);
+  flex-shrink: 0;
+  transition: background var(--fk-transition-fast), color var(--fk-transition-fast);
+}
+.topbar__saldo-ojo:hover {
+  background: var(--fk-bg-active);
+  color: var(--fk-text-primary);
+}
+.topbar__saldo-ojo .icon { --fk-icon-size: var(--fk-icon-sm); }
+
+.topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  flex-shrink: 0;
+}
+
 /* ── MAIN CONTENT ───────────────────────────────────────────── */
 
 .main-content {
   grid-column: 2;
+  grid-row: 2;
   min-width: 0;
   /* clip y no hidden: hidden convierte a .main-content en scroll container
      y anula el position:sticky de sus descendientes (ej. .cal-legend,
@@ -291,6 +388,24 @@
 }
 .section.active {
   display: block;
+}
+
+/* INT.1g (ADR 059 D7, regla R77): carril derecho de 320px desde 1.680px de
+   ventana. Solo el mecanismo: que pone cada seccion en el carril es el
+   pendiente P1 (recorrido de las 13, INT.1e), todavia sin resolver. Ninguna
+   seccion usa `.section--con-carril` todavia; sin ella, `.section` sigue
+   centrada tal como la dejo INT.1a. */
+@media (min-width: 1680px) {
+  .section--con-carril {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: var(--fk-space-8);
+    align-items: start;
+  }
+}
+
+.section__carril {
+  min-width: 0;
 }
 
 /* Regreso explícito para las secciones sin ícono en la barra (#movimientos):

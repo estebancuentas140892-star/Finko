@@ -3,6 +3,7 @@
  */
 
 import { EventBus } from '../core/state.js';
+import { updSaldo } from '../infra/render.js';
 
 const THEME_KEY    = 'fk_theme';
 const LIGHT_CLASS  = 'light-theme';
@@ -151,6 +152,47 @@ export function markActiveNav(hash) {
     subnav.hidden = !abierto;
     triggerAhorro.setAttribute('aria-expanded', String(abierto));
   }
+
+  _syncTopbar(hash);
+
+  // Cinta de saldo de la barra (INT.1d): su visibilidad depende del hash
+  // (no se pinta en Inicio) y no todos los dominios llaman updSaldo() en su
+  // propio listener de hashchange. markActiveNav corre en las 13 secciones,
+  // así que es el único punto que garantiza la sincronía sin agregar un
+  // listener por dominio.
+  updSaldo();
+}
+
+/**
+ * Escribe la teja + título de la barra superior (INT.1c, ADR 059 D1).
+ *
+ * No duplica un mapa de nombres/íconos por sección: lee la teja y el h1 que
+ * cada sección ya pinta en su `.section__header` (R33), que showSection()
+ * ya marcó `.active` antes de que corra este handler (initRouter llama
+ * onNavigate después de showSection). Único caso especial, Inicio: su
+ * header es `.perfil-inicio`, sin `.cat-teja` propia (el hero ya nombra la
+ * app), así que cae al rótulo neutro.
+ *
+ * @param {string} hash
+ */
+function _syncTopbar(hash) {
+  const iconWrap = document.getElementById('topbar-icon');
+  const iconUse  = document.getElementById('topbar-icon-use');
+  const titleEl  = document.getElementById('topbar-title');
+  if (!iconWrap || !iconUse || !titleEl) return;
+
+  const activo = document.querySelector('.section.active');
+  const teja   = activo?.querySelector('.section__header .cat-teja');
+  const h1     = activo?.querySelector('.section__header .section__title');
+
+  const dom   = teja?.dataset.dom;
+  const icono = teja?.querySelector('use')?.getAttribute('href') ?? '#i-home';
+  const titulo = h1?.textContent.trim() || 'Inicio';
+
+  if (dom) iconWrap.dataset.dom = dom;
+  else delete iconWrap.dataset.dom;
+  iconUse.setAttribute('href', icono);
+  titleEl.textContent = titulo;
 }
 
 /**

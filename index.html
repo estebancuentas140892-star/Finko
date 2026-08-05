@@ -408,6 +408,56 @@
     </nav>
 
     <!-- ══════════════════════════════════════════════════════════
+         BARRA SUPERIOR - solo escritorio (INT.1c, ADR 059 D1/D2/D5)
+         Fija, 56px. El h1 de cada sección se iba con el scroll (E1);
+         acá la teja + título sobreviven siempre visibles. shell.js
+         (_syncTopbar) los llena leyendo el header de la sección activa,
+         sin duplicar el mapa de nombres/íconos. "Registrar" abre la
+         misma hoja que móvil (mismo handler, otro disparador, R76).
+         ══════════════════════════════════════════════════════════ -->
+    <header class="topbar" id="topbar" aria-label="Barra superior">
+      <div class="topbar__title-group">
+        <span class="cat-teja topbar__icon" id="topbar-icon" aria-hidden="true">
+          <svg class="icon" aria-hidden="true"><use id="topbar-icon-use" href="#i-home"/></svg>
+        </span>
+        <h2 class="topbar__title" id="topbar-title">Inicio</h2>
+      </div>
+
+      <!-- Cinta de saldo (INT.1d, ADR 059 D9): `.sidebar__saldo` era CSS sin
+           marcado, nunca se pintó. render.js (updSaldo) la llena y la oculta
+           en Inicio, donde el hero ya muestra el mismo dato (R27), y sin
+           cuentas (nada que mostrar). Mismo flag `S.config.ocultarSaldo`
+           (R20) y misma acción `saldo-visibilidad` que el ojo del hero: un
+           segundo control, un solo mecanismo. -->
+      <div class="topbar__saldo" id="topbar-saldo" hidden>
+        <span class="topbar__saldo-label">Disponible</span>
+        <span class="topbar__saldo-value" id="topbar-saldo-value">$0</span>
+        <button class="topbar__saldo-ojo" type="button"
+                data-action="saldo-visibilidad" aria-pressed="false"
+                aria-label="Ocultar tu dinero disponible">
+          <svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>
+        </button>
+      </div>
+
+      <button class="btn btn-primary topbar__registrar" type="button"
+              data-action="registrar-abrir-hoja" data-modal="modal-registrar"
+              aria-label="Registrar: gasto, ingreso, pago o ahorro" aria-haspopup="dialog">
+        <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>
+        Registrar
+      </button>
+
+      <div class="topbar__actions">
+        <button class="perfil-inicio__ajustes topbar__theme" type="button" data-action="theme-toggle"
+                aria-label="Cambiar entre tema oscuro y claro" aria-pressed="false">
+          <svg class="icon" aria-hidden="true"><use href="#i-moon"/></svg>
+        </button>
+        <a class="perfil-inicio__ajustes" href="#config" aria-label="Ir a Ajustes">
+          <svg class="icon" aria-hidden="true"><use href="#i-ajustes"/></svg>
+        </a>
+      </div>
+    </header>
+
+    <!-- ══════════════════════════════════════════════════════════
          MAIN CONTENT - secciones de la app
          Cada sección empieza oculta; el router activa la correcta.
          ══════════════════════════════════════════════════════════ -->

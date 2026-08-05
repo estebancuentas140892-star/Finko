@@ -277,6 +277,7 @@
   --fk-sidebar-width:     240px;
   --fk-sidebar-collapsed: 64px;
   --fk-header-height:     60px;
+  --fk-topbar-height:     56px;
   --fk-content-max:       1440px;
   --fk-content-padding:   var(--fk-space-6);
 
