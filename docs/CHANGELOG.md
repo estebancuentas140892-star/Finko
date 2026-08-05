@@ -10,6 +10,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(tesoreria): MC.13e-2g, el asistente abre educando y reparte sus accesos por paso · 2026-08-05
+
+Cierra **MC.13e-2g**, el rediseño del asistente (MC.13e-2 completo) y con él **MC.13** entera: motor y asistente en producción. Commit `f755c40`. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). Decisiones: [ADR 061](DECISIONS/061-educacion-antes-de-repartir.md).
+
+- **La educación va delante de la acción sin cobrar un clic** (punto 9 del brief). `#modal-distribuir-body` queda en dos bloques del mismo scroll: arriba "Así reparten los expertos" (barra 50/30/20 + por grupo su porcentaje de referencia, el real del usuario al lado y qué entra en el grupo) y los chips de método; abajo el shell paginado intacto y prellenado. **No es un paso paginado a propósito:** un Paso 0 cumplía el punto 9 al pie de la letra pero convertía 3 pasos en 4 en el flujo más repetido de la app, que es lo contrario de lo que pedía la auditoría de UX del 2026-07-21. Así queda resuelta esa tensión, que la tarjeta tenía abierta.
+- **Costo medido y declarado:** el bloque mide 299px a 320px de ancho, así que "Monto a distribuir" nace a ~547px del tope del cuerpo del modal en vez de ~278px. En 320x720 son **un** gesto de scroll hasta el checklist, que ya llega marcado; sin desborde horizontal.
+- **Cada acceso cruzado en el paso de su categoría** (punto 10). Los `ctas` que MC.13e-2a había retirado de la tarjeta vuelven repartidos: deudas → Necesidades, fondo e inversiones → Ahorro/deudas/inversiones, Límites de gasto → Estilo de vida. El acceso cuyo paso no existe **se descarta, no se reubica** (reubicarlo sería justo lo que el punto 10 prohíbe); el de Límites nunca se pierde porque su paso siempre existe.
+- **Navegar desde dentro del modal ya no lo deja abierto detrás.** Los accesos usan la acción built-in `ir-a-seccion`, y el hint "Ponle una fecha en Metas/Reservas" de las filas sin fecha pasa a usarla también: era un `<a>` pelado que cambiaba de sección con el asistente encima. Defecto preexistente, corregido acá por coherencia.
+- **El foco de apertura ya no es `#distribuir-monto`.** Ese campo quedó debajo del bloque educativo y enfocarlo con `preventScroll` habría dejado el foco fuera de la vista; lo fija `abrirModal` (botón de cerrar). Un test E2E de MC.7f que lo daba por sentado se reescribió.
+- Las tres cifras de la referencia salen del preset `50-30-20` de `PRESETS_DISTRIBUCION`, no del HTML, y el ancho de los segmentos se escribe como propiedad JS tras el `innerHTML` (cero `style=""`, cero porcentajes duplicados en CSS). `.distribucion-rows`/`.distribucion-rows__razon` se borran al quedar sin consumidor; `.distribuir__cta` se reescribe para su consumidor nuevo (era CSS muerto desde que el asistente pasó a modal). Sin bump de schema.
+- Verificado en la app real (servidor propio, 320px y 375px): bloque educativo con la barra al 50/30/20 y "tú 35/45/20" del split calculado, un acceso por paso, y el acceso de deudas cerrando el modal y aterrizando en Deudas. 9 tests unitarios nuevos + 3 E2E nuevos + 2 reescritos. 3757 unit + 263 E2E + lint verdes. SW v490 a v492.
+
 ### feat(transversal): LEG.2, aceptación obligatoria versionada · 2026-08-04
 
 Cierra **LEG.2**. Commit `53becc8`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).

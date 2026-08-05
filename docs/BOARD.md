@@ -42,7 +42,7 @@ Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (si
 
 ## Índice de pendientes
 
-Las 32 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+Las 30 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
@@ -52,10 +52,8 @@ Las 32 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | INT.1f | Formulario de escritorio a 840px, dos columnas | Transversal | media | nada duro; conviene tras INT.1c |
 | INT.1g | Carril derecho de 320px desde 1.680px | Transversal | baja | INT.1a cerrada; pendiente P1 |
 | INT.1h | Cuatro atajos de teclado | Transversal | baja | INT.1c; pendiente P8 (validación a11y) |
-| MC.13 | Distribución v2: contextual por fecha, guiada y con origen real | Mis cuentas | alta | nada |
-| MC.13e-2g | Rediseño en 2 pasos con educación financiera | Mis cuentas | media | última; depende del handoff de diseño |
 | MC.17f | Deshacer o editar una transferencia | Mis cuentas | media | coordinar con MOV.1 |
-| MT.6 | Metas v2: subcategorías inteligentes + plan de aportes | Metas | media-alta | MC.13 (motor); ADR 029 D3 |
+| MT.6 | Metas v2: subcategorías inteligentes + plan de aportes | Metas | media-alta | nada (el motor de MC.13 ya está); ADR 029 D3 |
 | LIM.1 | Límites v2: asistente preventivo de estilo de vida | Límites | sin definir | ADR 045 (base de cálculo); ADR 044 (sugerencias) |
 | PE.6 | Me deben v2: intereses, historial de abonos y confianza | Me deben | media-alta | nada duro |
 | ANL.1 | Análisis como centro de interpretación financiera | Análisis | sin definir | ADR 046 (criterio y lenguaje); ADR 044 (recomendaciones) |
@@ -85,7 +83,7 @@ Las 32 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 
 > **Lente de la auditoría de UX/producto (2026-07-21).** Recorrido de toda la app simulando a un usuario colombiano real. Sus 7 patrones son criterio de priorización, no tareas, y explican casi toda la lista de abajo. **Cerrados:** P2 (trabajo manual uno por uno), P4 (ledger de solo lectura), P5 (módulos que no comparten datos con el saldo) y P3 editar sin destruir (EDIT.1 cerrada el 2026-08-04 en sus 4 secciones; queda **MC.17f**, deshacer una transferencia, que es un caso distinto). **Abiertos:** P1 datos que la app ya tiene y vuelve a pedir (LIM.1, CFG.2a; la mitad `cuentaId` de MC.13e-2f ya cerró), P6 se informa pero no se acciona (motor único de sugerencia por categoría: LIM.1 / ANL.1 / [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md)), P7 un concepto con cuatro implementaciones (ARQ.1 y ARQ.2 cerradas el 2026-08-02, ver `contexto/transversal.md`).
 >
-> **Dos hallazgos siguen cuestionando una decisión vigente y no se ejecutan sin la palabra de Esteban** (regla 2.7: un ADR no se revierte en silencio): la propuesta de distribución de un toque frente a MC.13e-2g, y MC.17f frente al cierre de MC.17 como "completa". Cada tarjeta lo dice en su Estado.
+> **Un hallazgo sigue cuestionando una decisión vigente y no se ejecuta sin la palabra de Esteban** (regla 2.7: un ADR no se revierte en silencio): MC.17f frente al cierre de MC.17 como "completa". Su tarjeta lo dice en su Estado. La propuesta de distribución de un toque quedó resuelta por el [ADR 061](DECISIONS/061-educacion-antes-de-repartir.md): la educación va delante sin cobrar un clic, y colapsar los tres pasos en una sola pantalla se descartó como reordenamiento (son tres decisiones distintas) y sale a triaje si Esteban lo quiere como tarjeta propia.
 >
 > **Alcance honesto del triaje:** se trió todo lo que el informe entregó enumerado. Su tabla "hallazgos por módulo" vino como vista filtrable y las fichas individuales no llegaron en texto: si Esteban quiere ese detalle triado uno por uno, hay que recuperarlo de la fuente.
 
@@ -101,7 +99,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 
 ### Mis cuentas (dominio `tesoreria`)
 
-MC.13, MC.13e-2g, MC.17f → [`board/mis-cuentas.md`](board/mis-cuentas.md)
+MC.17f → [`board/mis-cuentas.md`](board/mis-cuentas.md)
 
 ### Metas (dominio `metas`)
 

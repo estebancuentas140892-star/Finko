@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-04. Última tarea cerrada: LEG.2, aceptación obligatoria versionada (Transversal).
+> Revisado: 2026-08-05. Última tarea cerrada: MC.13e-2g, el asistente abre educando (Mis cuentas), que cierra MC.13 completa.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 3748/3748 verdes en el índice de LEG.2 |
-| Tests E2E | 260/260 verdes, sello escrito sobre el índice de LEG.2. **Compuerta** desde el 2026-07-30. **Sesiones paralelas:** árbol compartido con otra sesión durante todo el cierre (ver AH.5); la corrida final se hizo con servidor propio en puerto aislado para evitar el server 8081 compartido, sin fallas |
+| Tests unitarios + integración | 3757/3757 verdes en el índice de MC.13e-2g |
+| Tests E2E | 263/263 verdes, sello escrito sobre el índice de MC.13e-2g. **Compuerta** desde el 2026-07-30. **Sesiones paralelas:** árbol compartido con otra sesión (docs de diseño de escritorio sin commitear); el cierre commiteó solo sus propios archivos |
 | Schema version (`localStorage`) | v33 (`config.legalAceptado`, LEG.2; migración grandfather para datos existentes) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**MC.13e-2g - el asistente abre educando y reparte sus accesos por paso (Mis cuentas), cierra MC.13 completa, 2026-08-05**
+`#modal-distribuir-body` queda en dos bloques del mismo scroll: educación arriba (barra 50/30/20, el porcentaje real del usuario al lado y qué entra en cada grupo) y el shell paginado de siempre abajo, prellenado. No es un Paso 0 a propósito: cumplir el punto 9 al pie de la letra habría sumado un clic al flujo más repetido de la app, lo contrario de lo que pedía la auditoría de UX. Los `ctas` vuelven repartidos uno por paso según su categoría, y el que no tiene paso se descarta. Decisiones y alternativas rechazadas: [ADR 061](DECISIONS/061-educacion-antes-de-repartir.md). Commit `f755c40`.
 
 **LEG.2 - aceptación obligatoria versionada (Transversal), 2026-08-04**
 Onboarding gana paso 2: checkbox único con enlaces al Centro Legal, obligatorio antes de entrar. Usuario existente con versión vieja (o sin registro) ve un gate independiente y bloqueante (sin Escape). `config.legalAceptado: {version, fecha} | null`, schema v33; usuario con datos ya guardados queda grandfathered a la versión histórica en la migración, no se le exige aceptar retroactivamente. No espera al checklist de contenido de `legal/README.md` (responsable, contacto, licencia, revisión de abogado): eso bloquea el paquete a v1.0, no el mecanismo. Commit `53becc8`.
@@ -36,9 +39,6 @@ Botón "Editar" en cada fila abre el modal con los datos prellenados; la cuenta 
 
 **INT.1b - las hijas de Ahorro se anidan y el sidebar cabe, 2026-08-03**
 Cierra D6 del [ADR 059](DECISIONS/059-interfaz-de-escritorio.md) (mitad) y **BUG-026**. Fondo, Metas, Reservas e Inversión pasan de filas permanentes a `.nav-subnav`, desplegado solo dentro del grupo Ahorro (`shell.js`, `markActiveNav`). El sidebar recupera ~160px y el nav deja de desbordar a 1280x799 (648px/607 disponibles → 608px/608). La regla de compactación de emergencia (BUG-026, muerta por cascada) se borró en vez de repararse. `.section__volver` de las 4 hijas se oculta en desktop, intacto en móvil. Acota el ADR 056 sin revertirlo. Commit `4f87f77`.
-
-**CFG.2b - Finko infiere si debes declarar renta y lo enmarca por situación laboral, 2026-08-03**
-Resuelve **D2 del [ADR 050](DECISIONS/050-perfil-fiscal-ubicacion-y-framing.md)** (el framing legal que bloqueaba la tarjeta) por delegación explícita de Esteban: alternativa **C acotada**, la afirmación recae sobre la regla general, nunca sobre la obligación personal del usuario. `inferirEstadoDeclarante()` da 4 estados y su veredicto encabeza la card de renta; el checkbox "La DIAN me notificó" queda como override positivo. Código en el commit `727d8c9` (CAT.3b, sesión paralela) por la carrera del índice compartido.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 
