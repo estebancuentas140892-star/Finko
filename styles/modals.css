@@ -55,6 +55,18 @@
   transform: translateY(0) scale(1);
 }
 
+/* INT.1f (ADR 059 D8): en escritorio el modal base sube de 520 a 840px, el
+   ancho donde dos columnas de campo caben sin apretar. Selector de una sola
+   clase a propósito (mismo peso que `.modal--sm/lg/xl/mas/confirm` de abajo):
+   un `:not()` acá subiría la especificidad y les ganaría por peso, no por
+   orden. Los modificadores declaran su propio ancho sin condición y, a
+   igual especificidad, ganan por aparecer después en la hoja. */
+@media (min-width: 1024px) {
+  .modal {
+    max-width: 840px;
+  }
+}
+
 /* IV.2b (ADR 031): franja superior del color del dominio en los modales
    de registro/edición (Nuevo gasto, Nueva deuda, Nueva cuenta...). Barra
    decorativa (WCAG 1.4.11, 3:1 de sobra), mismo principio ya usado en
@@ -100,6 +112,9 @@
 .modal--lg  { max-width: 680px; }
 .modal--xl  { max-width: 880px; }
 .modal--mas { max-width: 560px; }
+/* Wizard centrado de una columna (bienvenida): no es un formulario de
+   campos, así que INT.1f no lo ensancha. */
+.modal--onboarding { max-width: 520px; }
 
 /* Modal de confirmacion (reemplaza window.confirm). Mas chico, sin scroll. */
 .modal--confirm {

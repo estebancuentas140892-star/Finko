@@ -578,6 +578,33 @@
   .nav-item__icon { font-size: 1.125rem; }
 }
 
+/* ── ESCRITORIO (>= 1024px): formulario de modal a dos columnas (INT.1f,
+   ADR 059 D8) ────────────────────────────────────────────────
+   La hoja de móvil obliga a 8 campos apilados con scroll interno mientras
+   el modal, ya ensanchado a 840px (modals.css), deja aire de sobra. Acá el
+   `<form>` pasa a grid de 2 columnas: todo ocupa las dos por defecto (el
+   ancho extra es aire, no reflujo) salvo el `.form-group` simple - label
+   más un solo `.input`/`.select` sin hint ni picker debajo - que se
+   empareja con su vecino. `.form-row` (ya usado en Gastos fijos) sigue
+   siendo un solo ítem que reparte sus 2 columnas internas.
+   Excluidos por ancho o layout propio: `--sm`/`--confirm` (dialogos
+   chicos), `--onboarding` (wizard centrado) y `--sheet` (hoja de Registrar
+   / Más, con su propio grid). El orden del DOM no cambia (R11): sin
+   `grid-auto-flow: dense`, así que nada se adelanta visualmente. */
+@media (min-width: 1024px) {
+  .modal:not(.modal--sm):not(.modal--confirm):not(.modal--onboarding):not(.modal--sheet) .modal__body form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: var(--fk-space-4);
+  }
+  .modal:not(.modal--sm):not(.modal--confirm):not(.modal--onboarding):not(.modal--sheet) .modal__body form > * {
+    grid-column: 1 / -1;
+  }
+  .modal:not(.modal--sm):not(.modal--confirm):not(.modal--onboarding):not(.modal--sheet) .modal__body form > .form-group:has(> label + .input:last-child) {
+    grid-column: span 1;
+  }
+}
+
 /* ── PANTALLA GRANDE (≥ 1440px) ────────────────────────────── */
 @media (min-width: 1440px) {
   .section {
