@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-05. Última tarea cerrada: INT.1f, formulario de escritorio a 840px y dos columnas (Transversal).
+> Revisado: 2026-08-05. Última tarea cerrada: CFG.7, transición de tema con View Transitions API (Configuración).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -14,7 +14,7 @@
 | Métrica | Valor |
 |---|---|
 | Tests unitarios + integración | 3814/3814 verdes en el índice de INT.1f |
-| Tests E2E | 262/263 verdes (1 flaky ajeno, Agenda pago en lote), sello escrito sobre el índice de INT.1f. **Compuerta** desde el 2026-07-30. **Sesiones paralelas:** árbol compartido con otra sesión, escritura activa sobre `index.html`/`modules/`/`styles/` durante todo el cierre; el commit de código se limitó a `styles/modals.css`, `styles/responsive.css` y `service-worker.js` |
+| Tests E2E | 263/263 verdes, sello escrito sobre el índice de CFG.7. **Compuerta** desde el 2026-07-30. **Sesiones paralelas:** árbol compartido con otra sesión durante todo el cierre; el hunk de `applyTheme` en `modules/ui/shell.js` se extrajo a mano con `git apply --cached` para no arrastrar su trabajo en curso (`_syncTopbar`, INT.1c) al commit |
 | Schema version (`localStorage`) | v34 (`Personal.abonos[]`, PE.6b; los préstamos ya cobrados migran con un abono agrupado y conservan `pagado`) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**CFG.7 - transición de tema con View Transitions API (Configuración), 2026-08-05**
+`applyTheme()` usa `document.startViewTransition()` cuando el navegador lo soporta y no hay `prefers-reduced-motion`: crossfade nativo del tema en un solo paint (220ms), mejora progresiva sobre el fallback previo (`theme-transitioning`, 280ms), que se conserva intacto para Firefox y `reduced-motion`. Sin bump de schema. Commit `4a7eda0`.
 
 **INT.1f - formulario de escritorio a 840px y dos columnas (Transversal), 2026-08-05**
 El modal base sube de 520 a 840px desde 1024px de ventana ([ADR 059](DECISIONS/059-interfaz-de-escritorio.md) D8); su `<form>` interno pasa a grid de 2 columnas, con los campos simples (label + un solo `.input`/`.select`, sin hint ni picker) emparejados vía `:has()` y todo lo demás a ancho completo. Sin `grid-auto-flow: dense`: el orden del DOM no cambia. Móvil no cambia. CSS puro, sin bump de schema. Commit `bf37761`.
@@ -36,9 +39,6 @@ Derivaciones puras sobre el historial que dejó PE.6b, sin schema. `calcularRend
 
 **MC.13e-2g - el asistente abre educando y reparte sus accesos por paso (Mis cuentas), cierra MC.13 completa, 2026-08-05**
 `#modal-distribuir-body` queda en dos bloques del mismo scroll: educación arriba (barra 50/30/20, el porcentaje real del usuario al lado y qué entra en cada grupo) y el shell paginado de siempre abajo, prellenado. No es un Paso 0 a propósito: cumplir el punto 9 al pie de la letra habría sumado un clic al flujo más repetido de la app, lo contrario de lo que pedía la auditoría de UX. Los `ctas` vuelven repartidos uno por paso según su categoría, y el que no tiene paso se descarta. Decisiones y alternativas rechazadas: [ADR 061](DECISIONS/061-educacion-antes-de-repartir.md). Commit `f755c40`.
-
-**LEG.2 - aceptación obligatoria versionada (Transversal), 2026-08-04**
-Onboarding gana paso 2: checkbox único con enlaces al Centro Legal, obligatorio antes de entrar. Usuario existente con versión vieja (o sin registro) ve un gate independiente y bloqueante (sin Escape). `config.legalAceptado: {version, fecha} | null`, schema v33; usuario con datos ya guardados queda grandfathered a la versión histórica en la migración, no se le exige aceptar retroactivamente. No espera al checklist de contenido de `legal/README.md` (responsable, contacto, licencia, revisión de abogado): eso bloquea el paquete a v1.0, no el mecanismo. Commit `53becc8`.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 

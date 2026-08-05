@@ -62,7 +62,6 @@ Las 29 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | CFG.4 | Respaldo, cuentas y sincronización [DECISIÓN DE ADN] | Configuración | sin definir | ADR 043 resuelto |
 | CFG.5 | Seguridad de acceso: PIN, patrón, biometría | Configuración | sin definir | nada para PIN local; cuenta depende de CFG.4 |
 | CFG.6 | Revisión general de la sección Ajustes | Configuración | sin definir | CFG.1 a CFG.5 |
-| CFG.7 | Transición de tema claro/oscuro más fluida | Configuración | baja | verificación en dispositivo real primero |
 | PERF.5 | Migrar la persistencia a IndexedDB (futura, no iniciar) | Transversal | sin definir | un disparador del ADR 030 D4 |
 | PERF.6 | Coalescer de renders por microtask | Transversal | baja | decidir si el beneficio lo justifica |
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | P4 del ADR 033 + cola de diseño |
@@ -122,7 +121,7 @@ ANL.1 → [`board/analisis.md`](board/analisis.md)
 
 ### Configuración (dominio `config`)
 
-CFG.2c, CFG.2a, CFG.3, CFG.4, CFG.5, CFG.6, CFG.7 → [`board/configuracion.md`](board/configuracion.md)
+CFG.2c, CFG.2a, CFG.3, CFG.4, CFG.5, CFG.6 → [`board/configuracion.md`](board/configuracion.md)
 
 ---
 

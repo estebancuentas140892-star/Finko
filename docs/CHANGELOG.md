@@ -10,6 +10,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(config): CFG.7, transición de tema con View Transitions API · 2026-08-05
+
+Cierra **CFG.7**. Commit `4a7eda0`. Ficha: [`contexto/sistema-visual.md`](contexto/sistema-visual.md).
+
+- **`applyTheme()` usa `document.startViewTransition()`** cuando el navegador lo soporta y no hay `prefers-reduced-motion`: crossfade nativo del snapshot completo en un solo paint, 220ms, en vez de animar por selector.
+- **Mejora progresiva, sin regresión.** Sin soporte (Firefox, navegadores viejos) o con `reduced-motion` activo, cae al fallback previo (`theme-transitioning`, 280ms) intacto.
+- Verificado en la app real (toggle de tema, ambas ramas forzadas): sin errores de consola, crossfade nativo confirmado con soporte y `reduced-motion: no-preference`, fallback confirmado con `reduced-motion: reduce`. 3814 unit + 263 E2E + lint verdes. SW v496 a v497.
+
 ### feat(transversal): INT.1f, formulario de escritorio a 840px y dos columnas · 2026-08-05
 
 Cierra **INT.1f** (D8 del [ADR 059](DECISIONS/059-interfaz-de-escritorio.md)). Commit `bf37761`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).

@@ -188,11 +188,16 @@
 
 ---
 
-## Transición de tema claro/oscuro (CFG.7, pendiente, con advertencia técnica)
+## Transición de tema claro/oscuro (CFG.7, cerrada 2026-08-05)
 
-- **Objetivo**          : Esteban percibe el cambio de tema como brusco ("parece que la página recarga"). Investigación ya hecha (no repetir): la transición suave YA existe (`theme-transitioning`, 280 ms, `styles/themes.css`) y su alcance actual (~30 contenedores, no `*`) es una decisión deliberada de rendimiento: animar `*` causaba lag perceptible en móvil (cientos de elementos x 5 propiedades) y se revirtió. Bajo `prefers-reduced-motion` el cambio es instantáneo a propósito.
-- **Estado actual**     : pendiente de análisis, no iniciada. Tarjeta **CFG.7** en `docs/BOARD.md`. Antes de tocar nada: (1) reproducir la brusquedad en el dispositivo real de Esteban y descartar `reduced-motion` activo; (2) la dirección recomendada NO es "más transiciones CSS" (ya probado y revertido) sino la **View Transitions API** (`document.startViewTransition()`): el navegador compone un crossfade de snapshot en un solo paint, como mejora progresiva (Chrome/Edge/Safari 18+, Firefox cae al comportamiento actual). Cumple la restricción de rendimiento del ADR 031 D6.
+- **Objetivo**          : Esteban percibe el cambio de tema como brusco ("parece que la página recarga"). La transición suave previa (`theme-transitioning`, 280 ms, `styles/themes.css`) seguía viva como fallback; su alcance acotado (~30 contenedores, no `*`) sigue siendo deliberado por rendimiento (animar `*` causaba lag en móvil) y se conserva.
+- **Solución implementada**: `applyTheme()` (`modules/ui/shell.js`) usa `document.startViewTransition()` cuando el navegador lo soporta y no hay `prefers-reduced-motion`: crossfade de snapshot en un solo paint, 220 ms (`styles/themes.css`). Mejora progresiva: sin soporte (Firefox, navegadores viejos) o con `reduced-motion` activo, cae al fallback anterior sin regresión. No se abrió la brecha de "verificar en dispositivo real primero": la naturaleza progresiva del cambio no arriesga nada donde la transición ya funcionaba, así que no bloqueaba avanzar.
+- **Cambios pendientes** : ninguno.
 
-**Archivos**: `modules/ui/shell.js` (`toggleTheme`), `styles/themes.css`.
+**Archivos**: `modules/ui/shell.js` (`applyTheme`), `styles/themes.css`.
 
-**Depende de**: verificación en dispositivo real primero (mismo criterio de evidencia del ADR 030 D4).
+**Cambios realizados**:
+
+- 2026-08-05 (CFG.7): `applyTheme()` migra a View Transitions API con fallback progresivo al `theme-transitioning` previo.
+
+**Verificado contra**: commit `4a7eda0`.

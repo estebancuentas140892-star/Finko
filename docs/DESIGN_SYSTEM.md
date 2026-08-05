@@ -318,7 +318,7 @@ Doctrina, no lista de sugerencias: **agregar una animación nueva es agregarla a
 | Progreso que avanza | `progress-fill` / `ring-fill` | según valor |
 | Monto que cambia | `countUp` (`infra/animate.js`, reentrante) | 500ms |
 | Completar meta / pagar deuda / logro | toast + confetti del dominio | vive en LG.2/[ADR 032](DECISIONS/032-logros-v2-niveles-y-habitos.md), no se duplica acá |
-| Cambio de tema | `theme-transitioning` | 280ms, evolución fuera de alcance: CFG.7 |
+| Cambio de tema | View Transitions API (crossfade nativo, CFG.7); fallback `theme-transitioning` sin soporte/`reduced-motion` | 220ms / 280ms |
 
 **Retiros (DV.2c):** `empty-orbit` y `empty-float` (bucles ambientales infinitos en los empty states) se retiraron: contradecían el veto de animaciones permanentes. El empty state gana personalidad por su ilustración estática, no por movimiento perpetuo.
 
