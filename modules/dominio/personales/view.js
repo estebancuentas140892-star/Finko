@@ -21,7 +21,19 @@ import {
   ordenarPersonales,
   tieneInteres,
   historialAbonos,
+  calcularRendimiento,
+  estadisticasPorPersona,
 } from './logic.js';
+
+/**
+ * Porcentaje con un decimal como máximo y coma decimal (es-CO). `2` sale "2",
+ * `2.5` sale "2,5": el entero redondo no se escribe "2,0".
+ * @param {number} n
+ * @returns {string}
+ */
+function _pct(n) {
+  return Number(n).toLocaleString('es-CO', { maximumFractionDigits: 1 });
+}
 
 // ── LISTA + RESUMEN ──────────────────────────────────────────────
 
@@ -59,9 +71,59 @@ export function renderListaPersonales() {
 
   el.innerHTML = `
     ${lista.length >= 2 ? _renderResumen(resumen, oculto) : ''}
+    ${_renderPorPersona(lista, hoy, oculto)}
     <div class="personales-lista">
       ${[...activos, ...liquidados].map(p => _renderPersonalItem(p, hoy, oculto)).join('')}
     </div>`;
+}
+
+/**
+ * Historial por persona (PE.6e, ADR 047 D5), plegado bajo el resumen.
+ *
+ * Solo aparece para quien tiene **más de un préstamo**: con uno solo, el bloque
+ * repetiría la fila que está justo debajo y no habría historial del cual hablar.
+ *
+ * El copy describe y no califica (D5, ADR 003): dice cuántos préstamos hubo,
+ * cuánto volvió y qué pasó con las fechas pactadas. Nada de puntajes, bandas ni
+ * semáforos sobre una persona que ni siquiera usa la app. Los préstamos sin
+ * fecha pactada no aparecen en el conteo de puntualidad porque no había fecha
+ * que cumplir, y decirlo así es lo que evita que la ausencia parezca una falta.
+ *
+ * @param {import('./logic.js').Personal[]} lista
+ * @param {Date} hoy
+ * @param {boolean} oculto `S.config.ocultarSaldo` (V-4, regla R20).
+ * @returns {string} '' si nadie tiene más de un préstamo.
+ */
+function _renderPorPersona(lista, hoy, oculto) {
+  const conVarios = estadisticasPorPersona(lista, hoy).filter(e => e.prestamos > 1);
+  if (conVarios.length === 0) return '';
+
+  const m = (n) => oculto ? SALDO_MASCARA_CUENTA : f(n);
+
+  const filas = conVarios.map(e => {
+    const puntualidad = e.conFechaPactada > 0
+      ? `<p class="persona-stat__linea">Con fecha pactada: ${e.aTiempo} a tiempo, ${e.conRetraso} con retraso.</p>`
+      : '';
+    const duracion = e.diasPromedioEnDevolver !== null
+      ? `<p class="persona-stat__linea">${e.liquidados === 1
+          ? `El préstamo que cerró lo cerró en ${e.diasPromedioEnDevolver} días.`
+          : `Los que cerró los cerró en ${e.diasPromedioEnDevolver} días en promedio.`}</p>`
+      : '';
+    return `
+        <li class="persona-stat">
+          <p class="persona-stat__nombre">${_esc(e.persona)}</p>
+          <p class="persona-stat__linea">${e.prestamos} préstamos: le prestaste ${m(e.totalPrestado)} y te devolvió ${m(e.totalRecuperado)}.</p>
+          ${puntualidad}
+          ${duracion}
+        </li>`;
+  }).join('');
+
+  return `
+    <details class="personales-personas">
+      <summary class="personales-personas__summary">Historial por persona</summary>
+      <ul class="personales-personas__lista">${filas}
+      </ul>
+    </details>`;
 }
 
 /**
@@ -149,11 +211,17 @@ function _renderPersonalItem(prestamo, hoy, oculto = false) {
 
   // Con tasa (PE.1): desglose de interés en la card. El interés cobrado solo
   // se menciona cuando existe, para no meter ruido en préstamos recién creados.
-  const interesCobrado = Number(prestamo.interesPagado) || 0;
+  //
+  // PE.6c (ADR 047 D4): a lo cobrado se le suma cuánto representa sobre lo
+  // prestado, que es la pregunta que el monto solo no responde. El liquidado
+  // cambia a pasado cerrado: ya no hay nada que seguir, hay un resultado.
+  const rend = conInteres ? calcularRendimiento(prestamo, hoy) : null;
   const interesHtml = conInteres
-    ? `<p class="list-item__hint">Interés: ${prestamo.tasa}% mensual${
-        interesCobrado > 0 ? ` · Ya cobraste ${m(interesCobrado)} en intereses` : ''
-      }</p>`
+    ? (liquidado
+        ? `<p class="list-item__hint">Te dejó ${m(rend.interesGanado)} en intereses, el ${_pct(rend.rentabilidad)}% de lo que prestaste.</p>`
+        : `<p class="list-item__hint">Interés: ${prestamo.tasa}% mensual${
+            rend.interesGanado > 0 ? ` · Ya ganaste ${m(rend.interesGanado)}, el ${_pct(rend.rentabilidad)}% de lo prestado` : ''
+          }</p>`)
     : '';
 
   // V-10 (regla R8): "Me pagaron" pierde `btn-sm` y queda en el piso táctil de

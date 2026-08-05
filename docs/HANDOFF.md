@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-05. Última tarea cerrada: PE.6b, historial de abonos con schema v34 (Me deben).
+> Revisado: 2026-08-05. Última tarea cerrada: PE.6c y PE.6e, rendimiento e historial por persona (Me deben).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 3788/3788 verdes en el índice de PE.6b |
-| Tests E2E | 263/263 verdes, sello escrito sobre el índice de PE.6b. **Compuerta** desde el 2026-07-30. **Sesiones paralelas:** árbol compartido con otra sesión (docs de diseño de escritorio sin commitear); el cierre commiteó solo sus propios archivos |
+| Tests unitarios + integración | 3814/3814 verdes en el índice de PE.6c/PE.6e |
+| Tests E2E | 263/263 verdes, sello escrito sobre el índice de PE.6c/PE.6e. **Compuerta** desde el 2026-07-30. **Sesiones paralelas:** árbol compartido con otra sesión (docs de diseño de escritorio sin commitear); el cierre commiteó solo sus propios archivos |
 | Schema version (`localStorage`) | v34 (`Personal.abonos[]`, PE.6b; los préstamos ya cobrados migran con un abono agrupado y conservan `pagado`) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**PE.6c y PE.6e - rendimiento del préstamo e historial por persona (Me deben), 2026-08-05**
+Derivaciones puras sobre el historial que dejó PE.6b, sin schema. `calcularRendimiento()` dice cuánto ganaste y qué porcentaje de lo prestado es, **sin anualizar**: anualizar convertiría un préstamo informal en una promesa de retorno comparable con un CDT. `estadisticasPorPersona()` alimenta un bloque plegado bajo el resumen, solo para quien tiene más de un préstamo, que **describe y no califica** ([ADR 047](DECISIONS/047-me-deben-v2-intereses-e-historial.md) D5): sin score, y ordenado por total prestado, no por puntualidad. La puntualidad solo cuenta préstamos con fecha pactada. Commit `PENDIENTE2`.
 
 **PE.6b - historial de abonos con schema v34 (Me deben), 2026-08-05**
 `Personal.abonos[]` guarda fecha, monto, desglose capital/interés y cuenta destino de cada abono: hasta ahora solo existía el acumulador `pagado` y un préstamo con cinco abonos era indistinguible de uno con un solo pago. Resuelve el punto abierto del [ADR 047](DECISIONS/047-me-deben-v2-intereses-e-historial.md) a favor del **abono sintético**: lo ya cobrado migra agrupado en un abono marcado `agrupado`, que la vista rotula "Antes de este historial" en vez de inventarle fecha. Es la precondición de PE.6c y PE.6e. Commit `4e9d0d0`.
@@ -37,16 +40,13 @@ Onboarding gana paso 2: checkbox único con enlaces al Centro Legal, obligatorio
 **AH.5 - D2+D3 del ADR 049, hero educativo y aporte directo baja a secundario (Ahorro), 2026-08-04**
 La tarjeta activa del fondo abre con una línea de propósito antes de la primera cifra (D3); "Registrar un aporte" baja de botón primario ancho al mismo peso ghost/secundario que "Editar" (D2), porque el flujo principal ya es el asistente "Distribuir mi ingreso". Sin handoff de diseño: sin mockup, se siguió la convención ya escrita en `view.js`/`analysis.css`. Cierra las cuatro decisiones del ADR 049. Commit `dfff037`.
 
-**EDIT.1 - editar sin destruir un préstamo (Me deben), cierra la tarjeta completa, 2026-08-04**
-Botón "Editar" en cada fila abre el modal con los datos prellenados; la cuenta de origen no se vuelve a preguntar (ADR 053). `normalizarPersonal(datos, existente)` conserva el histórico de pagos y solo recalcula `liquidado`; con cuenta, el monto editado ajusta el saldo por delta (ADR 053 I3), con confirmación si deja la cuenta en negativo. Bug encontrado y corregido en la misma tarea: la rama de edición omitía `motivo`/`fechaLimite` vacíos igual que crear, y `editar()` (Object.assign) conservaba el valor viejo al borrarlos en el form. Mismo patrón que Metas, Apartados e Inversión, que ya lo habían validado. Commit `684e228`.
-
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 
 ---
 
 ## 3. Qué sigue
 
-- **En proceso:** **PE.6** abierta por rebanadas. Cerrada PE.6b; quedan PE.6c (rendimiento), PE.6d (estados visuales, espera a IV.2 en producción) y PE.6e (confianza), las tres derivadas puras sobre `Personal.abonos[]`.
+- **En proceso:** nada. De PE.6 solo queda **PE.6d** (estados visuales) y está bloqueada hasta que IV.2 esté en producción. La siguiente tarjeta se elige del índice de pendientes de [`BOARD.md`](BOARD.md) (primeras ~50 líneas, no hace falta cargar el archivo completo).
 - **Fase actual:** post-v1.0, mantenimiento y mejoras por sección.
 - **Decisiones de fondo abiertas** que bloquean sus tarjetas: sincronización multidispositivo ([ADR 043](DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md)) y los demás ADR en estado Abierta (ver la columna Estado de cada tarjeta del tablero).
 - **Antes de tocar una sección:** su ficha en [`contexto/`](contexto/README.md). Antes de explorar el código: [`ARCHITECTURE.md`](ARCHITECTURE.md) sección 13.

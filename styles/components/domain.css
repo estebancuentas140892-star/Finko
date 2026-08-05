@@ -3201,6 +3201,51 @@ button.chip:focus-visible {
   color: var(--fk-text-muted);
 }
 
+/* PE.6e: historial por persona, plegado entre el resumen y la lista. Mismo
+   mecanismo que el historial de abonos de la fila, un escalon mas arriba en
+   la jerarquia porque habla de varias filas a la vez. */
+.personales-personas {
+  margin-bottom: var(--fk-space-3);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-md);
+}
+
+.personales-personas__summary {
+  padding: var(--fk-space-3);
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  cursor: pointer;
+  list-style: none;
+}
+
+.personales-personas__summary::-webkit-details-marker { display: none; }
+
+.personales-personas__summary::before { content: '▸ '; }
+
+.personales-personas[open] > .personales-personas__summary::before { content: '▾ '; }
+
+.personales-personas__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--fk-space-3) var(--fk-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+}
+
+.persona-stat__nombre {
+  margin: 0;
+  font-weight: var(--fk-font-semibold);
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-primary);
+}
+
+.persona-stat__linea {
+  margin: var(--fk-space-1) 0 0;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+}
+
 /* ── PANEL DE ALERTAS DE LÍMITES (dashboard) ──────────────────── */
 .limites-card {
   display: flex;

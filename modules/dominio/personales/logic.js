@@ -251,6 +251,47 @@ export function labelEstado(estado) {
   }
 }
 
+/**
+ * Rendimiento de un préstamo (PE.6c, ADR 047 D4). Todo derivado, nada nuevo en
+ * disco: persistir un derivado es garantizar que se desincronice del historial
+ * que lo produce.
+ *
+ * `rentabilidad` es el interés YA COBRADO como porcentaje del capital prestado.
+ * No se anualiza a propósito: anualizar convertiría el número en una promesa de
+ * retorno comparable con un CDT, y esto es un préstamo informal a un conocido
+ * que puede pagar tarde, pagar a medias o no pagar. La cifra honesta es la que
+ * ya entró. Por la misma razón el interés devengado y no cobrado sale aparte y
+ * nunca se suma a lo ganado (mismo criterio que lo excluye del patrimonio).
+ *
+ * @param {Personal} prestamo
+ * @param {Date|string} [fechaRef] default: ahora.
+ * @returns {{
+ *   interesGanado: number,          // interés ya cobrado (0 sin tasa)
+ *   interesPorCobrar: number,       // devengado a fechaRef y aún no cobrado
+ *   capitalRecuperado: number,      // capital que ya volvió, tope el monto prestado
+ *   pctCapitalRecuperado: number,   // 0-100
+ *   rentabilidad: number,           // % del capital prestado ya ganado en interés, 1 decimal
+ * }}
+ */
+export function calcularRendimiento(prestamo, fechaRef = new Date()) {
+  const monto   = prestamo?.monto || 0;
+  const conTasa = tieneInteres(prestamo);
+
+  const interesGanado     = conTasa ? Math.max(0, Number(prestamo.interesPagado) || 0) : 0;
+  const capitalRecuperado = Math.min(
+    conTasa ? Math.max(0, Number(prestamo.capitalPagado) || 0) : Math.max(0, prestamo?.pagado || 0),
+    monto,
+  );
+
+  return {
+    interesGanado,
+    interesPorCobrar:     calcularInteresPendiente(prestamo, fechaRef),
+    capitalRecuperado,
+    pctCapitalRecuperado: monto > 0 ? Math.round((capitalRecuperado / monto) * 100) : 0,
+    rentabilidad:         monto > 0 ? Math.round((interesGanado / monto) * 1000) / 10 : 0,
+  };
+}
+
 // ── AGREGADOS ────────────────────────────────────────────────────
 
 /**
@@ -335,6 +376,101 @@ export function calcularResumen(personales, fechaRef = new Date()) {
     : 0;
 
   return { totalPrestado, totalCobrado, totalPendiente, activos, liquidados, pctCobrado };
+}
+
+/**
+ * Estadísticas por persona (PE.6e, ADR 047 D5). Derivadas del historial: nada
+ * de esto se persiste.
+ *
+ * **Describe lo que pasó, no califica a la persona** (D5, y el ADR 003). No hay
+ * score, ni puntaje, ni banda de reputación, y esta función no ordena por
+ * "quién paga mejor": devuelve las personas por total prestado, que es la
+ * pregunta del usuario ("cuánto tengo con cada quien"), no un ranking de
+ * confiabilidad de gente que ni siquiera usa la app.
+ *
+ * Cómo se cuenta la puntualidad, y por qué solo a veces: **solo entran los
+ * préstamos con fecha pactada**, porque sin fecha no hay nada respecto a lo cual
+ * llegar tarde. Un préstamo liquidado se compara contra su último abono; uno
+ * abierto cuya fecha ya pasó cuenta como retrasado aunque siga vivo. Los
+ * préstamos sin fecha pactada no suman a ninguno de los dos lados.
+ *
+ * `diasPromedioEnDevolver` solo mira los liquidados con `ultimoPago`: un
+ * préstamo abierto todavía no tiene duración, y meterlo con la fecha de hoy
+ * inflaría el promedio cada día que pasa sin que nada haya ocurrido.
+ *
+ * Las personas se agrupan por nombre sin distinguir mayúsculas ni espacios de
+ * más ("Tía Marta" y "tía marta " son la misma). Se muestra la última grafía
+ * que el usuario escribió.
+ *
+ * @param {Personal[]} personales
+ * @param {Date|string} [fechaRef] default: ahora.
+ * @returns {Array<{
+ *   persona: string,
+ *   prestamos: number,
+ *   liquidados: number,
+ *   totalPrestado: number,
+ *   totalRecuperado: number,   // capital + interés recibido
+ *   pendiente: number,         // con interés devengado a fechaRef
+ *   abonos: number,            // cuántos abonos registrados
+ *   conFechaPactada: number,   // base de aTiempo/conRetraso
+ *   aTiempo: number,
+ *   conRetraso: number,
+ *   diasPromedioEnDevolver: number|null,  // null si ningún préstamo suyo se liquidó
+ * }>} ordenadas por total prestado, de mayor a menor.
+ */
+export function estadisticasPorPersona(personales, fechaRef = new Date()) {
+  const lista = Array.isArray(personales) ? personales : [];
+  const ref   = _toRef(fechaRef);
+  const porPersona = new Map();
+
+  for (const p of lista) {
+    const nombre = String(p?.persona ?? '').trim();
+    if (!nombre) continue;
+    const clave = nombre.toLocaleLowerCase('es-CO');
+
+    if (!porPersona.has(clave)) {
+      porPersona.set(clave, {
+        persona: nombre, prestamos: 0, liquidados: 0, totalPrestado: 0, totalRecuperado: 0,
+        pendiente: 0, abonos: 0, conFechaPactada: 0, aTiempo: 0, conRetraso: 0,
+        diasPromedioEnDevolver: null, _diasSuma: 0, _diasCuenta: 0,
+      });
+    }
+    const acc = porPersona.get(clave);
+    acc.persona = nombre;   // la última grafía escrita manda
+
+    const pendiente = calcularPendiente(p, ref);
+    const liquidado = pendiente <= 0;
+
+    acc.prestamos++;
+    acc.totalPrestado   += p?.monto  || 0;
+    acc.totalRecuperado += p?.pagado || 0;
+    acc.pendiente       += pendiente;
+    acc.abonos          += Array.isArray(p?.abonos) ? p.abonos.length : 0;
+    if (liquidado) acc.liquidados++;
+
+    if (p?.fechaLimite) {
+      acc.conFechaPactada++;
+      if (liquidado) {
+        const cerro = p.ultimoPago || p.fechaLimite;
+        if (cerro <= p.fechaLimite) acc.aTiempo++;
+        else                        acc.conRetraso++;
+      } else if (_diasDesde(p.fechaLimite, ref) > 0) {
+        acc.conRetraso++;
+      }
+    }
+
+    if (liquidado && p?.ultimoPago && p?.fecha) {
+      acc._diasSuma   += _diasDesde(p.fecha, _toRef(p.ultimoPago));
+      acc._diasCuenta += 1;
+    }
+  }
+
+  return [...porPersona.values()]
+    .map(({ _diasSuma, _diasCuenta, ...resto }) => ({
+      ...resto,
+      diasPromedioEnDevolver: _diasCuenta > 0 ? Math.round(_diasSuma / _diasCuenta) : null,
+    }))
+    .sort((a, b) => b.totalPrestado - a.totalPrestado);
 }
 
 /**

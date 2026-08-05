@@ -20,6 +20,8 @@ import {
   tieneInteres,
   calcularTotalPorCobrar,
   historialAbonos,
+  calcularRendimiento,
+  estadisticasPorPersona,
 } from '../../modules/dominio/personales/logic.js';
 
 // ── calcularPendiente() ───────────────────────────────────────────
@@ -1053,7 +1055,10 @@ describe('renderListaPersonales() - resumen y privacidad (DIS.3)', () => {
     const el = render();
     expect(el.querySelector('.list-item__subtitle').textContent.trim())
       .toBe(`capital ${SALDO_MASCARA_CUENTA} + interés ${SALDO_MASCARA_CUENTA}`);
-    expect(el.innerHTML).toContain(`Ya cobraste ${SALDO_MASCARA_CUENTA} en intereses`);
+    // PE.6c cambió el copy ("Ya cobraste X en intereses" pasó a "Ya ganaste X,
+    // el N% de lo prestado"): lo que la regla R20 exige sigue siendo lo mismo,
+    // que el monto vaya enmascarado. El porcentaje no es dinero y no se oculta.
+    expect(el.innerHTML).toContain(`Ya ganaste ${SALDO_MASCARA_CUENTA}, el 5% de lo prestado`);
     expect(el.innerHTML).not.toContain('$50.000');
   });
 
@@ -1381,5 +1386,284 @@ describe('renderListaPersonales() - historial de abonos (PE.6b)', () => {
     renderListaPersonales();
     const montos = [...document.querySelectorAll('.personal-abono__monto')].map(e => e.textContent.trim());
     expect(montos.every(t => t === SALDO_MASCARA_CUENTA)).toBe(true);
+  });
+});
+
+// ── calcularRendimiento() - PE.6c, ADR 047 D4 ────────────────────
+
+describe('calcularRendimiento()', () => {
+  it('sin tasa no hay interés ganado ni rentabilidad, pero sí capital recuperado', () => {
+    const r = calcularRendimiento({ monto: 500_000, pagado: 200_000, fecha: '2026-03-10' });
+    expect(r.interesGanado).toBe(0);
+    expect(r.interesPorCobrar).toBe(0);
+    expect(r.rentabilidad).toBe(0);
+    expect(r.capitalRecuperado).toBe(200_000);
+    expect(r.pctCapitalRecuperado).toBe(40);
+  });
+
+  it('con tasa, la rentabilidad es el interés YA COBRADO sobre el capital prestado', () => {
+    const r = calcularRendimiento({
+      monto: 500_000, pagado: 120_000, fecha: '2026-03-01', tasa: 2,
+      capitalPagado: 100_000, interesPagado: 20_000, interesPendiente: 0,
+      ultimoPago: '2026-03-01',
+    }, '2026-03-01');
+    expect(r.interesGanado).toBe(20_000);
+    expect(r.capitalRecuperado).toBe(100_000);
+    expect(r.pctCapitalRecuperado).toBe(20);
+    expect(r.rentabilidad).toBe(4);   // 20.000 / 500.000
+  });
+
+  it('el interés devengado y no cobrado sale aparte y NO entra a lo ganado', () => {
+    // 400.000 de capital pendiente al 2% mensual, 30 dias: 8.000 devengados.
+    const r = calcularRendimiento({
+      monto: 500_000, pagado: 120_000, fecha: '2026-03-01', tasa: 2,
+      capitalPagado: 100_000, interesPagado: 20_000, interesPendiente: 0,
+      ultimoPago: '2026-03-01',
+    }, '2026-03-31');
+    expect(r.interesPorCobrar).toBe(8_000);
+    expect(r.interesGanado).toBe(20_000);
+  });
+
+  it('la rentabilidad conserva un decimal', () => {
+    const r = calcularRendimiento({
+      monto: 400_000, pagado: 10_000, fecha: '2026-03-01', tasa: 2,
+      capitalPagado: 0, interesPagado: 10_000, interesPendiente: 0, ultimoPago: '2026-03-01',
+    }, '2026-03-01');
+    expect(r.rentabilidad).toBe(2.5);
+  });
+
+  it('el capital recuperado nunca pasa del monto prestado', () => {
+    const r = calcularRendimiento({ monto: 100_000, pagado: 200_000, fecha: '2026-03-10' });
+    expect(r.capitalRecuperado).toBe(100_000);
+    expect(r.pctCapitalRecuperado).toBe(100);
+  });
+
+  it('tolera préstamo vacío o sin monto', () => {
+    expect(calcularRendimiento(null).rentabilidad).toBe(0);
+    expect(calcularRendimiento({}).pctCapitalRecuperado).toBe(0);
+  });
+});
+
+// ── estadisticasPorPersona() - PE.6e, ADR 047 D5 ─────────────────
+
+describe('estadisticasPorPersona()', () => {
+  const hoy = '2026-08-05';
+
+  it('agrupa los préstamos de una misma persona y suma prestado y devuelto', () => {
+    const r = estadisticasPorPersona([
+      { persona: 'Ana', monto: 300_000, pagado: 300_000, fecha: '2026-01-10', ultimoPago: '2026-02-10' },
+      { persona: 'Ana', monto: 200_000, pagado: 50_000,  fecha: '2026-06-01', ultimoPago: '2026-07-01' },
+    ], hoy);
+    expect(r).toHaveLength(1);
+    expect(r[0].persona).toBe('Ana');
+    expect(r[0].prestamos).toBe(2);
+    expect(r[0].liquidados).toBe(1);
+    expect(r[0].totalPrestado).toBe(500_000);
+    expect(r[0].totalRecuperado).toBe(350_000);
+    expect(r[0].pendiente).toBe(150_000);
+  });
+
+  it('agrupa sin distinguir mayúsculas ni espacios de más, y conserva la última grafía escrita', () => {
+    const r = estadisticasPorPersona([
+      { persona: 'tía marta ', monto: 100_000, pagado: 0, fecha: '2026-01-10' },
+      { persona: 'Tía Marta',  monto: 200_000, pagado: 0, fecha: '2026-02-10' },
+    ], hoy);
+    expect(r).toHaveLength(1);
+    expect(r[0].persona).toBe('Tía Marta');
+    expect(r[0].prestamos).toBe(2);
+  });
+
+  it('ordena por total prestado, de mayor a menor: no es un ranking de quién paga mejor', () => {
+    const r = estadisticasPorPersona([
+      { persona: 'Ana',    monto: 100_000, pagado: 100_000, fecha: '2026-01-10', ultimoPago: '2026-01-15' },
+      { persona: 'Carlos', monto: 900_000, pagado: 0,       fecha: '2026-01-10' },
+    ], hoy);
+    expect(r.map(e => e.persona)).toEqual(['Carlos', 'Ana']);
+  });
+
+  it('la puntualidad solo cuenta préstamos CON fecha pactada: sin fecha no hay nada que incumplir', () => {
+    const r = estadisticasPorPersona([
+      { persona: 'Ana', monto: 100_000, pagado: 0, fecha: '2026-01-10' },
+      { persona: 'Ana', monto: 100_000, pagado: 0, fecha: '2026-01-10' },
+    ], hoy);
+    expect(r[0].conFechaPactada).toBe(0);
+    expect(r[0].aTiempo).toBe(0);
+    expect(r[0].conRetraso).toBe(0);
+  });
+
+  it('liquidar antes o el mismo día de la fecha pactada cuenta como a tiempo', () => {
+    const r = estadisticasPorPersona([
+      { persona: 'Ana', monto: 100_000, pagado: 100_000, fecha: '2026-01-10', fechaLimite: '2026-03-01', ultimoPago: '2026-02-20' },
+      { persona: 'Ana', monto: 100_000, pagado: 100_000, fecha: '2026-01-10', fechaLimite: '2026-03-01', ultimoPago: '2026-03-01' },
+    ], hoy);
+    expect(r[0].conFechaPactada).toBe(2);
+    expect(r[0].aTiempo).toBe(2);
+    expect(r[0].conRetraso).toBe(0);
+  });
+
+  it('liquidar después de la fecha pactada, y seguir abierto con la fecha ya pasada, cuentan como retraso', () => {
+    const r = estadisticasPorPersona([
+      { persona: 'Ana', monto: 100_000, pagado: 100_000, fecha: '2026-01-10', fechaLimite: '2026-03-01', ultimoPago: '2026-04-15' },
+      { persona: 'Ana', monto: 100_000, pagado: 0,       fecha: '2026-01-10', fechaLimite: '2026-03-01' },
+    ], hoy);
+    expect(r[0].conRetraso).toBe(2);
+    expect(r[0].aTiempo).toBe(0);
+  });
+
+  it('un préstamo abierto con la fecha pactada aún en el futuro no cuenta a ningún lado', () => {
+    const r = estadisticasPorPersona([
+      { persona: 'Ana', monto: 100_000, pagado: 0, fecha: '2026-07-10', fechaLimite: '2026-12-01' },
+    ], hoy);
+    expect(r[0].conFechaPactada).toBe(1);
+    expect(r[0].aTiempo).toBe(0);
+    expect(r[0].conRetraso).toBe(0);
+  });
+
+  it('el promedio de días solo mira los liquidados: uno abierto no infla el promedio cada día', () => {
+    const r = estadisticasPorPersona([
+      { persona: 'Ana', monto: 100_000, pagado: 100_000, fecha: '2026-01-01', ultimoPago: '2026-01-11' },
+      { persona: 'Ana', monto: 100_000, pagado: 100_000, fecha: '2026-01-01', ultimoPago: '2026-01-21' },
+      { persona: 'Ana', monto: 100_000, pagado: 0,       fecha: '2020-01-01' },
+    ], hoy);
+    expect(r[0].diasPromedioEnDevolver).toBe(15);
+  });
+
+  it('sin ningún préstamo liquidado, el promedio de días es null y no 0', () => {
+    const r = estadisticasPorPersona([
+      { persona: 'Ana', monto: 100_000, pagado: 0, fecha: '2026-01-01' },
+    ], hoy);
+    expect(r[0].diasPromedioEnDevolver).toBeNull();
+  });
+
+  it('cuenta los abonos registrados de cada persona', () => {
+    const r = estadisticasPorPersona([
+      { persona: 'Ana', monto: 300_000, pagado: 100_000, fecha: '2026-01-10',
+        abonos: [{ fecha: '2026-02-01', monto: 60_000, aCapital: 60_000, aInteres: 0 },
+                 { fecha: '2026-03-01', monto: 40_000, aCapital: 40_000, aInteres: 0 }] },
+      { persona: 'Ana', monto: 100_000, pagado: 0, fecha: '2026-04-10' },
+    ], hoy);
+    expect(r[0].abonos).toBe(2);
+  });
+
+  it('descarta los préstamos sin nombre y tolera una lista vacía o nula', () => {
+    expect(estadisticasPorPersona([{ persona: '  ', monto: 100_000, pagado: 0, fecha: '2026-01-01' }], hoy)).toEqual([]);
+    expect(estadisticasPorPersona([], hoy)).toEqual([]);
+    expect(estadisticasPorPersona(null, hoy)).toEqual([]);
+  });
+});
+
+// ── Vista: rendimiento (PE.6c) e historial por persona (PE.6e) ───
+
+describe('renderListaPersonales() - rendimiento e historial por persona', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-personales"></div>';
+    S.config = { ocultarSaldo: false };
+  });
+
+  it('PE.6c: con interés ya cobrado, la fila dice cuánto ganaste y qué porcentaje es de lo prestado', () => {
+    S.personales = [{
+      id: 'p1', persona: 'Ana', monto: 500_000, pagado: 120_000, fecha: '2026-03-01',
+      tasa: 2, capitalPagado: 100_000, interesPagado: 20_000, interesPendiente: 0,
+      ultimoPago: '2026-03-01', abonos: [],
+    }];
+    renderListaPersonales();
+    const txt = document.getElementById('lista-personales').textContent;
+    expect(txt).toContain('Ya ganaste');
+    expect(txt).toContain('4% de lo prestado');
+  });
+
+  it('PE.6c: sin interés cobrado todavía, la fila solo anuncia la tasa', () => {
+    S.personales = [{
+      id: 'p1', persona: 'Ana', monto: 500_000, pagado: 0, fecha: '2026-03-01',
+      tasa: 2, capitalPagado: 0, interesPagado: 0, interesPendiente: 0, abonos: [],
+    }];
+    renderListaPersonales();
+    const txt = document.getElementById('lista-personales').textContent;
+    expect(txt).toContain('Interés: 2% mensual');
+    expect(txt).not.toContain('Ya ganaste');
+  });
+
+  it('PE.6c: el préstamo liquidado con tasa cierra con el resultado, no con la tasa', () => {
+    S.personales = [{
+      id: 'p1', persona: 'Ana', monto: 500_000, pagado: 520_000, fecha: '2026-03-01',
+      tasa: 2, capitalPagado: 500_000, interesPagado: 20_000, interesPendiente: 0,
+      liquidado: true, ultimoPago: '2026-04-01', abonos: [],
+    }];
+    renderListaPersonales();
+    const txt = document.getElementById('lista-personales').textContent;
+    expect(txt).toContain('Te dejó');
+    expect(txt).toContain('en intereses');
+    expect(txt).not.toContain('Interés: 2% mensual');
+  });
+
+  it('PE.6c: sin tasa la fila no habla de rendimiento', () => {
+    S.personales = [{ id: 'p1', persona: 'Ana', monto: 500_000, pagado: 100_000, fecha: '2026-03-01', abonos: [] }];
+    renderListaPersonales();
+    const txt = document.getElementById('lista-personales').textContent;
+    expect(txt).not.toContain('Ya ganaste');
+    expect(txt).not.toContain('Interés:');
+  });
+
+  it('PE.6e: el bloque por persona aparece solo para quien tiene más de un préstamo', () => {
+    S.personales = [
+      { id: 'p1', persona: 'Ana',    monto: 300_000, pagado: 300_000, fecha: '2026-01-10', ultimoPago: '2026-02-10', abonos: [] },
+      { id: 'p2', persona: 'Ana',    monto: 200_000, pagado: 0,       fecha: '2026-06-01', abonos: [] },
+      { id: 'p3', persona: 'Carlos', monto: 100_000, pagado: 0,       fecha: '2026-06-01', abonos: [] },
+    ];
+    renderListaPersonales();
+    const nombres = [...document.querySelectorAll('.persona-stat__nombre')].map(e => e.textContent.trim());
+    expect(nombres).toEqual(['Ana']);
+    expect(document.querySelector('.personales-personas').open).toBe(false);
+    expect(document.querySelector('.personales-personas__summary').textContent.trim())
+      .toBe('Historial por persona');
+  });
+
+  it('PE.6e: con un préstamo por persona el bloque no se emite', () => {
+    S.personales = [
+      { id: 'p1', persona: 'Ana',    monto: 300_000, pagado: 0, fecha: '2026-01-10', abonos: [] },
+      { id: 'p2', persona: 'Carlos', monto: 100_000, pagado: 0, fecha: '2026-06-01', abonos: [] },
+    ];
+    renderListaPersonales();
+    expect(document.querySelector('.personales-personas')).toBeNull();
+  });
+
+  it('PE.6e: describe lo que pasó y no califica a la persona', () => {
+    S.personales = [
+      { id: 'p1', persona: 'Ana', monto: 300_000, pagado: 300_000, fecha: '2026-01-10', fechaLimite: '2026-03-01', ultimoPago: '2026-02-10', abonos: [] },
+      { id: 'p2', persona: 'Ana', monto: 200_000, pagado: 0,       fecha: '2026-01-10', fechaLimite: '2026-03-01', abonos: [] },
+    ];
+    renderListaPersonales();
+    const txt = document.querySelector('.personales-personas').textContent;
+    expect(txt).toContain('2 préstamos');
+    expect(txt).toContain('Con fecha pactada: 1 a tiempo, 1 con retraso.');
+    expect(txt).not.toMatch(/puntaje|score|confiab|calific/i);
+  });
+
+  it('PE.6e: la línea de duración concuerda en número con los préstamos ya cerrados', () => {
+    const unLiquidado = [
+      { id: 'p1', persona: 'Ana', monto: 300_000, pagado: 300_000, fecha: '2026-01-01', ultimoPago: '2026-01-11', abonos: [] },
+      { id: 'p2', persona: 'Ana', monto: 200_000, pagado: 0,       fecha: '2026-06-01', abonos: [] },
+    ];
+    S.personales = unLiquidado;
+    renderListaPersonales();
+    expect(document.querySelector('.personales-personas').textContent)
+      .toContain('El préstamo que cerró lo cerró en 10 días.');
+
+    S.personales = [...unLiquidado, { id: 'p3', persona: 'Ana', monto: 100_000, pagado: 100_000, fecha: '2026-01-01', ultimoPago: '2026-01-21', abonos: [] }];
+    renderListaPersonales();
+    expect(document.querySelector('.personales-personas').textContent)
+      .toContain('Los que cerró los cerró en 15 días en promedio.');
+  });
+
+  it('PE.6e: los montos del bloque también respetan el ojo de Inicio (regla R20)', () => {
+    S.config = { ocultarSaldo: true };
+    S.personales = [
+      { id: 'p1', persona: 'Ana', monto: 300_000, pagado: 300_000, fecha: '2026-01-10', ultimoPago: '2026-02-10', abonos: [] },
+      { id: 'p2', persona: 'Ana', monto: 200_000, pagado: 0,       fecha: '2026-06-01', abonos: [] },
+    ];
+    renderListaPersonales();
+    const txt = document.querySelector('.personales-personas').textContent;
+    expect(txt).toContain(SALDO_MASCARA_CUENTA);
+    expect(txt).not.toContain('500.000');
   });
 });

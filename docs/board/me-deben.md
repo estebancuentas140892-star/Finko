@@ -6,13 +6,13 @@
 
 ### Me deben (dominio `personales`)
 
-#### PE.6 - Me deben v2: rendimiento, estados visuales y confianza
+#### PE.6d - Me deben: los cinco estados de un vistazo
 - Prioridad  : media-alta
-- Estado     : en curso. Alcance y las 6 decisiones: **[ADR 047](../DECISIONS/047-me-deben-v2-intereses-e-historial.md)**, su dueño.
-- Objetivo   : que la sección deje de ser un registro y pase a seguimiento: rendimiento del préstamo y estadísticas por persona, ambos derivados del historial.
+- Estado     : bloqueada. Última rebanada viva de PE.6; las demás cerraron el 2026-08-05. Decisión dueña: **[ADR 047](../DECISIONS/047-me-deben-v2-intereses-e-historial.md)** D6.
+- Objetivo   : que al día, próximo a vencer, pago parcial, vencido y finalizado se distingan de un vistazo, con los semánticos que ya existen.
 - Secciones  : Me deben (`personales`)
-- Archivos   : `modules/dominio/personales/logic.js`, `personales/view.js`
-- Depende de : PE.6d espera a IV.2 en producción (ADR 047, punto 2 de "Qué falta para cerrarlo")
-- Riesgo     : D5 exige copy que describa, no que califique a la persona; nada de scores ni semáforos de reputación
-- Modelo     : Alta capacidad - Medio (las tres rebanadas son derivadas puras sobre `abonos[]`)
-- Rebanadas  : PE.6c rendimiento, PE.6d estados visuales, PE.6e confianza
+- Archivos   : `modules/dominio/personales/view.js`, `styles/components/domain.css`
+- Depende de : **IV.2 en producción** (ADR 047, punto 2 de "Qué falta para cerrarlo"): pintar antes es pintar dos veces
+- Riesgo     : sin colores nuevos (ADR 031); el chip ya existe y esto es evolución visual, no un estado nuevo
+- Modelo     : Media capacidad - Medio
+- Nota       : arrastra **V3** de la auditoría de diseño (acortar el copy de `labelEstado()`)

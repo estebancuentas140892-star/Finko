@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(me-deben): PE.6c y PE.6e, rendimiento del préstamo e historial por persona · 2026-08-05
+
+Cierra **PE.6c** y **PE.6e** (D4 y D5 del [ADR 047](DECISIONS/047-me-deben-v2-intereses-e-historial.md)). Ficha: [`contexto/me-deben.md`](contexto/me-deben.md). Se entregan juntas a propósito: las dos son derivaciones puras sobre `Personal.abonos[]` que PE.6b dejó listo, sin schema, sin persistencia nueva y sobre el mismo render. Partirlas habría costado dos ciclos de verificación para el mismo riesgo.
+
+- **`calcularRendimiento()` (D4).** Interés ganado, interés devengado por cobrar, capital recuperado, porcentaje recuperado y rentabilidad. Todo derivado: persistir un derivado es garantizar que se desincronice del historial que lo produce.
+- **La rentabilidad no se anualiza, a propósito.** Anualizarla convertiría el número en una promesa de retorno comparable con un CDT, y esto es un préstamo informal a un conocido que puede pagar tarde, a medias o nunca. La cifra honesta es la que ya entró: interés cobrado sobre capital prestado. Por lo mismo, el interés devengado y no cobrado sale como campo aparte y nunca se suma a lo ganado (mismo criterio que lo excluye del patrimonio desde PE.7).
+- **En la fila, el copy cambia según el momento.** Abierto: "Interés: 2% mensual · Ya ganaste $20.000, el 4% de lo prestado". Liquidado: "Te dejó $20.000 en intereses, el 4% de lo que prestaste", porque ahí ya no hay nada que seguir, hay un resultado. Reemplaza el "Ya cobraste X en intereses" de PE.1, que decía el monto sin decir si era mucho o poco.
+- **`estadisticasPorPersona()` (D5)**, plegado bajo el resumen y **solo para quien tiene más de un préstamo**: con uno solo el bloque repetiría la fila que está justo debajo.
+- **Describe, no califica** (D5 y [ADR 003](DECISIONS/003-tono-neutral-profesional.md)). Sin score, sin banda, sin semáforo sobre una persona que ni siquiera usa la app. **La lista se ordena por total prestado, no por puntualidad**: ordenar por quién paga mejor es construir un ranking de confiabilidad por la puerta de atrás.
+- **La puntualidad solo cuenta préstamos con fecha pactada**, porque sin fecha no hay nada respecto a lo cual llegar tarde, y contar esa ausencia como falta sería inventar un incumplimiento. Un préstamo abierto cuya fecha ya pasó cuenta como retraso aunque siga vivo; uno cuya fecha aún no llega no cuenta a ningún lado. El promedio de días solo mira los liquidados: uno abierto no tiene duración todavía, y meterlo con la fecha de hoy inflaría el promedio cada día sin que pase nada.
+- Las personas se agrupan sin distinguir mayúsculas ni espacios de más ("Tía Marta" y "tía marta " son la misma) y se muestra la última grafía escrita.
+- Verificado en la app real: Tía Marta con dos préstamos muestra "2 préstamos: le prestaste $700.000 y te devolvió $520.000 / Con fecha pactada: 1 a tiempo, 1 con retraso / El préstamo que cerró lo cerró en 31 días", Carlos (un solo préstamo) no aparece en el bloque, y su fila dice "Ya ganaste $20.000, el 5% de lo prestado". 26 tests unitarios nuevos y 1 reescrito (el de máscara de DIS.3 V-4, por el copy nuevo). 3814 unit + 263 E2E + lint verdes. SW v493 a v494.
+- **Queda abierta PE.6d** (estados visuales, D6): espera a IV.2 en producción, como manda el punto 2 de "Qué falta para cerrarlo" del ADR 047.
+
 ### feat(me-deben): PE.6b, historial de abonos con bump de schema · 2026-08-05
 
 Cierra **PE.6b**, la rebanada bisagra de [PE.6](BOARD.md): D4 (rendimiento) y D5 (confianza) del [ADR 047](DECISIONS/047-me-deben-v2-intereses-e-historial.md) dependen de ella. Ficha: [`contexto/me-deben.md`](contexto/me-deben.md).

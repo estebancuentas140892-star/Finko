@@ -1,6 +1,6 @@
 # ADR 047 - Me deben v2: intereses acumulados, historial de abonos y confianza
 
-**Estado:** Aceptada en alcance (triaje del brief de Esteban del 2026-07-08, 8 puntos). Implementación en curso: tarjeta **PE.6** en [BOARD.md](../BOARD.md). **D1 y D2 entregadas** por PE.1 y PE.7 (el modal de cobro ya muestra pendiente, capital e interés acumulado); **D3 entregada** por PE.6b el 2026-08-05 (schema v34). Faltan D4, D5 y D6.
+**Estado:** Aceptada en alcance (triaje del brief de Esteban del 2026-07-08, 8 puntos). Implementación en curso: tarjeta **PE.6** en [BOARD.md](../BOARD.md). **D1 y D2 entregadas** por PE.1 y PE.7 (el modal de cobro ya muestra pendiente, capital e interés acumulado); **D3 entregada** por PE.6b y **D4 y D5** por PE.6c/PE.6e, las tres el 2026-08-05. **Falta solo D6**, que espera a IV.2 (tarjeta PE.6d).
 **Fecha:** 2026-07-24
 **Autores:** Esteban (producto, brief del 2026-07-08), Claude Opus 5 (triaje y redacción)
 **Relación:** extiende la base que dejaron PE.1 a PE.5 (cerradas). Deriva dos puntos del brief a sus dueños externos: los recordatorios de vencimiento al [ADR 044](044-motor-unico-de-sugerencia-por-categoria.md) por la vía de CFG.3 (motor único de notificaciones), y "fecha por defecto = hoy" a la tarjeta transversal CAT.4. Los estados visuales consumen los semánticos del [ADR 031](031-identidad-de-color-por-seccion.md); el tono lo fija el [ADR 003](003-tono-neutral-profesional.md).
@@ -39,9 +39,13 @@ El rendimiento del préstamo (intereses ganados, capital recuperado, porcentaje 
 
 Nada de esto se persiste como campo propio: se calcula. Persistir un derivado es garantizar que se desincronice del historial que lo produce.
 
+**Precisión al implementar (PE.6c, 2026-08-05): la rentabilidad no se anualiza.** El ADR pedía "rentabilidad" sin fijar la unidad. Se entrega como interés YA COBRADO sobre capital prestado. Anualizarla (tasa efectiva anual, TIR) la volvería comparable con un CDT, y eso es una promesa de retorno que un préstamo informal a un conocido no puede sostener: puede pagarse tarde, a medias o nunca. Por la misma razón el interés devengado y no cobrado se reporta aparte y nunca se suma a lo ganado, igual que ya se lo excluye del patrimonio.
+
 ### D5. Las estadísticas por persona son historial informativo, no calificación
 
 El copy debe dejar claro que la app describe lo que pasó, no puntúa a la persona. Es la restricción del brief y la del ADR 003: nada de scores, semáforos de reputación ni lenguaje que juzgue a alguien que no es el usuario de la app.
+
+**Precisión al implementar (PE.6e, 2026-08-05): el orden de la lista también califica.** Ordenar las personas por puntualidad construye el ranking de confiabilidad que esta decisión prohíbe, aunque ninguna palabra del copy lo diga. Se ordena por total prestado, que responde "cuánto tengo con cada quien". Y la puntualidad solo cuenta préstamos con fecha pactada: sin fecha no hay nada que incumplir, y contar esa ausencia junto a los retrasos inventaría una falta.
 
 ### D6. Los estados visuales no introducen colores nuevos
 
