@@ -10,6 +10,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(shell): INT.1c e INT.1d, barra superior de escritorio con cinta de saldo · 2026-08-05
+
+Cierra **INT.1c** (D1/D2/D5) e **INT.1d** (D9) del [ADR 059](DECISIONS/059-interfaz-de-escritorio.md). Commit `a6eb349`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
+
+- **Barra fija de 56px** (`#topbar`, `index.html`), corazón de la propuesta: teja + título de la sección activa (`shell.js`, `_syncTopbar`, sin duplicar el mapa de nombres/íconos), "Registrar" (misma hoja que móvil, otro disparador), toggle de tema y acceso a Ajustes. Reemplaza el `h1` que se iba con el scroll de cada sección.
+- **Fondo opaco sin `backdrop-filter`**: la alternativa que el ADR ya dejaba lista para no arriesgar Lighthouse (verificado: 99/100/100/100).
+- **Cinta de saldo con su ojo (D9):** `.sidebar__saldo` era CSS sin marcado, nunca se pintó; `#topbar-saldo` la vuelve componente real. `updSaldo()` (`infra/render.js`) la llena y la oculta en Inicio (el hero ya lo dice, R27) y sin cuentas. Mismo flag `S.config.ocultarSaldo` (R20) y misma acción `saldo-visibilidad` que el ojo del hero: ahora `updSaldo()` recorre todos los `[data-action="saldo-visibilidad"]` en vez de un solo id, porque puede haber dos ojos a la vez.
+- Verificado en la app real, 13 secciones. 3817 unit + 263 E2E verdes, 3 tests nuevos.
+- **Cierre documental tardío (2026-08-05):** el commit `a6eb349` entró con las cinco compuertas en verde pero sin su secuencia de documentos; esta entrada y la actualización de `contexto/transversal.md`, `HANDOFF.md` y `BOARD.md` la completan.
+
 ### feat(config): CFG.7, transición de tema con View Transitions API · 2026-08-05
 
 Cierra **CFG.7**. Commit `4a7eda0`. Ficha: [`contexto/sistema-visual.md`](contexto/sistema-visual.md).

@@ -272,8 +272,8 @@
 ## Shell de escritorio: sidebar, ancho de contenido y barra superior (iniciativa INT.1)
 
 - **Objetivo**          : el escritorio nunca se decidió. El sidebar existía desde antes de que la app tuviera dos topologías y las quince auditorías por sección midieron móvil a 390px, así que escritorio heredó el reparto móvil estirado. El [ADR 059](../DECISIONS/059-interfaz-de-escritorio.md) lo decide en ocho rebanadas (INT.1a a INT.1h).
-- **Estado actual**     : **INT.1a, INT.1b e INT.1f cerradas**. INT.1a: contenido centrado + Movimientos en el sidebar. INT.1b: las 4 hijas de Ahorro se anidan bajo la casa (`.nav-subnav`, desplegado solo dentro del grupo) y `BUG-026` se cierra por eliminación de su causa. INT.1f: el modal sube a 840px en escritorio y su `<form>` pasa a grid de 2 columnas. Las cinco rebanadas restantes siguen pendientes; la barra superior de 56px, que es el corazón de la propuesta, no existe todavía en el repo.
-- **Verificado contra** : INT.1f, commit `bf37761` (2026-08-05).
+- **Estado actual**     : **INT.1a, INT.1b, INT.1c, INT.1d e INT.1f cerradas**. INT.1a: contenido centrado + Movimientos en el sidebar. INT.1b: las 4 hijas de Ahorro se anidan bajo la casa (`.nav-subnav`, desplegado solo dentro del grupo) y `BUG-026` se cierra por eliminación de su causa. INT.1c: barra superior fija de 56px con teja+título de la sección activa, "Registrar", tema y Ajustes; fondo opaco sin `backdrop-filter` (Lighthouse 99/100/100/100). INT.1d: `#topbar-saldo` es la cinta de saldo con su ojo, oculta en Inicio (el hero ya lo dice) y sin cuentas; `updSaldo()` recorre todos los `[data-action="saldo-visibilidad"]` porque ahora hay dos ojos a la vez. INT.1f: el modal sube a 840px en escritorio y su `<form>` pasa a grid de 2 columnas. Quedan INT.1e, INT.1g y INT.1h.
+- **Verificado contra** : INT.1f, commit `bf37761` (2026-08-05); INT.1c/INT.1d, commit `a6eb349` (2026-08-05).
 
 **Mediciones vigentes contra el código** (no contra la recreación del handoff):
 
@@ -304,26 +304,28 @@
 | Despliegue del sub-nivel según el hash activo (INT.1b) | `modules/ui/shell.js` | `markActiveNav()`, `GRUPO_AHORRO` |
 | Indentación y borde del sub-nivel (INT.1b) | `styles/layout.css` | `.nav-subnav`, `.nav-item--sub` |
 | Clases de plataforma del nav | `styles/responsive.css` | `.nav-item--mobile-only`, `.nav-item--no-mobile` |
-| Disparador de Registrar (existe solo en móvil, lo resuelve INT.1c) | `index.html` | `.nav-item--registrar.nav-item--mobile-only` |
+| Disparador de Registrar en móvil | `index.html` | `.nav-item--registrar.nav-item--mobile-only` |
 | Hoja de registrar (existe en el DOM en las dos plataformas) | `index.html` | `#modal-registrar` |
 | Ancho de modal en escritorio (INT.1f, D8): 840px, `--onboarding` se excluye a mano | `styles/modals.css` | `.modal`, `.modal--sm/--lg/--xl/--mas/--onboarding` |
 | Grid de 2 columnas del `<form>` en escritorio (INT.1f, D8): emparejamiento vía `:has()` | `styles/responsive.css` | bloque "ESCRITORIO (>= 1024px): formulario de modal a dos columnas" |
-| CSS del saldo del sidebar, todavía sin marcado (lo resuelve INT.1d) | `styles/layout.css` | `.sidebar__saldo`, `-label`, `-value` |
+| Barra superior de 56px (INT.1c, D1/D2/D5): teja+título, Registrar, tema, Ajustes | `index.html`, `modules/ui/shell.js` | `#topbar`, `_syncTopbar()` |
+| Cinta de saldo con su ojo (INT.1d, D9), oculta en Inicio y sin cuentas | `index.html`, `modules/infra/render.js` | `#topbar-saldo`, `updSaldo()` |
 | Volver de las 4 hijas de Ahorro, oculto en desktop (INT.1b) | `index.html` / `styles/responsive.css` | `.section__volver--ahorro-hija` |
 
 **Riesgos**:
 
 - **El chrome cambia en las 13 secciones a la vez** desde INT.1c: no hay forma de pilotarlo en una sola. La suite completa es compuerta de cada rebanada.
 - **Tablet (768 a 1.023px) sigue sin auditar** (pendiente P4 del informe): hoy usa la topología móvil completa en una pantalla de 1.024 de ancho. El hueco crece con cada rebanada, igual que pasó con el ADR 057.
-- **Lighthouse 100 es innegociable** y `backdrop-filter` fijo sobre contenido que scrollea es el caso donde el filtro cuesta (pendiente P9). Alternativa lista: fondo opaco con borde inferior.
+- **Lighthouse 100 es innegociable** y `backdrop-filter` fijo sobre contenido que scrollea es el caso donde el filtro cuesta. **P9 resuelto en INT.1c**: la barra usa fondo opaco con borde inferior, sin `backdrop-filter`; verificado 99/100/100/100.
 - **Coordinación con AH.7a**, que sube Ahorro a la barra inferior de móvil: toca el mismo marcado de nav en la otra plataforma. Quien vaya segundo rebasa.
 - **Las reglas R75 a R77 están reservadas y sin escribir**: entran a `DESIGN_SYSTEM.md` cuando cierre la última rebanada, así que hoy la lista de principios tiene un hueco declarado entre R74 y R78.
 - **Una hija de Ahorro ya no es un clic directo desde cualquier sección** (INT.1b, tradeoff aceptado por el ADR): hace falta abrir "Ahorro" primero para desplegar el sub-nivel. Tests que clickeaban `#metas`/`#inversion` directo desde Dashboard se movieron a `page.goto()` o al camino de dos clics.
 
-**Cambios pendientes**: cinco rebanadas (INT.1c, INT.1d, INT.1e, INT.1g, INT.1h) en `docs/BOARD.md`. Dos pendientes del informe hay que resolverlos **antes** de codificar su rebanada: **P1** (qué primario sube a la barra en cada una de las 13 secciones; bloquea INT.1e y INT.1g) y **P8** (validación de accesibilidad de un `keydown` global; bloquea INT.1h).
+**Cambios pendientes**: tres rebanadas (INT.1e, INT.1g, INT.1h) en `docs/BOARD.md`. Dos pendientes del informe hay que resolverlos **antes** de codificar su rebanada: **P1** (qué primario sube a la barra en cada una de las 13 secciones; bloquea INT.1e y INT.1g) y **P8** (validación de accesibilidad de un `keydown` global; bloquea INT.1h).
 
 **Cambios realizados**:
 
+- **2026-08-05 (INT.1c e INT.1d)**: barra superior fija de 56px con teja+título de la sección activa, "Registrar" (misma hoja que móvil, otro disparador), tema y Ajustes; fondo opaco sin `backdrop-filter` (P9 resuelto). Cinta de saldo con su ojo, oculta en Inicio y sin cuentas, mismo flag `ocultarSaldo` y misma acción `saldo-visibilidad` que el hero. Commit `a6eb349`. Detalle en el CHANGELOG.
 - **2026-08-05 (INT.1f)**: el modal base sube de 520 a 840px desde 1024px de ventana; su `<form>` interno pasa a grid de 2 columnas, con los `.form-group` simples (label + un solo `.input`/`.select`, sin hint ni picker) emparejados vía `:has()` y todo lo demás a ancho completo. Móvil no cambia. Detalle en el CHANGELOG.
 - **2026-08-03 (INT.1b)**: las 4 hijas de Ahorro se anidan bajo la casa en el sidebar de desktop, desplegadas solo dentro del grupo; `.section__volver` de las 4 se oculta en desktop; BUG-026 se cierra por eliminación de causa (el bloque de compactación de emergencia se borró). Detalle en el CHANGELOG.
 - **2026-08-02 (INT.1a)**: `.section` gana `margin-inline: auto` y Movimientos entra al grupo "Seguimiento" del sidebar. Detalle en el CHANGELOG.

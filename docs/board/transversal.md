@@ -10,13 +10,7 @@
 
 > **Iniciativa "INT.1 - Interfaz de escritorio"** ([ADR 059](../DECISIONS/059-interfaz-de-escritorio.md), aceptado 2026-08-02). Fuente única del chrome de escritorio, 8 decisiones en 8 rebanadas. Móvil no cambia. **INT.1a, INT.1b e INT.1c cerradas**; detalle e historia en el CHANGELOG y [`contexto/transversal.md`](../contexto/transversal.md). **Coordinar con AH.7a** (mismo marcado de nav, otra plataforma).
 
-> **Las cuatro rebanadas restantes**, en una línea cada una: su alcance completo, con medición y contra declarado, vive en el [ADR 059](../DECISIONS/059-interfaz-de-escritorio.md) y no se repite acá. Se re-expanden a tarjeta completa al iniciarlas.
-
-#### INT.1d - La cinta de saldo en la barra, con su ojo de privacidad
-- Estado     : pendiente, prioridad media. D9 (P7 y P10 ya decididos por Esteban). **INT.1c ya cerró** (la barra que la aloja existe). Área: ambos.
-- Objetivo   : `.sidebar__saldo` deja de ser CSS sin marcado y pasa a componente real. Lee `ocultarSaldo` (R20) y **no se pinta en Inicio**, donde el hero ya lo dice (R27).
-- Archivos   : `index.html`, `modules/infra/render.js`, `styles/layout.css`
-- Depende de : INT.1c (cerrada) · Aceptación: visible en 12 de 13 secciones y ningún monto real en el DOM enmascarado · Modelo: Equilibrado - Alto
+> **Las tres rebanadas restantes**, en una línea cada una: su alcance completo, con medición y contra declarado, vive en el [ADR 059](../DECISIONS/059-interfaz-de-escritorio.md) y no se repite acá. Se re-expanden a tarjeta completa al iniciarlas.
 
 #### INT.1e - El primario de cada sección sube a la barra
 - Estado     : pendiente, prioridad media. D3. **Bloqueada por el pendiente P1:** hay secciones con dos acciones (Mis cuentas) y otras sin ninguna (Análisis, Ahorro, Movimientos); hay que recorrer las 13 antes de codificar. Área: ambos.

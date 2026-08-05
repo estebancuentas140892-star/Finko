@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-05. Última tarea cerrada: CFG.7, transición de tema con View Transitions API (Configuración).
+> Revisado: 2026-08-05. Última tarea cerrada: INT.1c e INT.1d, barra superior de escritorio con cinta de saldo (Transversal).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -25,6 +25,9 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**INT.1c e INT.1d - barra superior de escritorio con cinta de saldo (Transversal), 2026-08-05**
+Barra fija de 56px ([ADR 059](DECISIONS/059-interfaz-de-escritorio.md) D1/D2/D5): teja+título de la sección activa, "Registrar" (misma hoja que móvil), tema y Ajustes; fondo opaco sin `backdrop-filter` para no arriesgar Lighthouse (99/100/100/100). La cinta de saldo (D9) vuelve `.sidebar__saldo` un componente real, con su ojo de privacidad, oculta en Inicio (el hero ya lo dice) y sin cuentas. Commit `a6eb349`.
+
 **CFG.7 - transición de tema con View Transitions API (Configuración), 2026-08-05**
 `applyTheme()` usa `document.startViewTransition()` cuando el navegador lo soporta y no hay `prefers-reduced-motion`: crossfade nativo del tema en un solo paint (220ms), mejora progresiva sobre el fallback previo (`theme-transitioning`, 280ms), que se conserva intacto para Firefox y `reduced-motion`. Sin bump de schema. Commit `4a7eda0`.
 
@@ -36,9 +39,6 @@ Derivaciones puras sobre el historial que dejó PE.6b, sin schema. `calcularRend
 
 **PE.6b - historial de abonos con schema v34 (Me deben), 2026-08-05**
 `Personal.abonos[]` guarda fecha, monto, desglose capital/interés y cuenta destino de cada abono: hasta ahora solo existía el acumulador `pagado` y un préstamo con cinco abonos era indistinguible de uno con un solo pago. Resuelve el punto abierto del [ADR 047](DECISIONS/047-me-deben-v2-intereses-e-historial.md) a favor del **abono sintético**: lo ya cobrado migra agrupado en un abono marcado `agrupado`, que la vista rotula "Antes de este historial" en vez de inventarle fecha. Es la precondición de PE.6c y PE.6e. Commit `4e9d0d0`.
-
-**MC.13e-2g - el asistente abre educando y reparte sus accesos por paso (Mis cuentas), cierra MC.13 completa, 2026-08-05**
-`#modal-distribuir-body` queda en dos bloques del mismo scroll: educación arriba (barra 50/30/20, el porcentaje real del usuario al lado y qué entra en cada grupo) y el shell paginado de siempre abajo, prellenado. No es un Paso 0 a propósito: cumplir el punto 9 al pie de la letra habría sumado un clic al flujo más repetido de la app, lo contrario de lo que pedía la auditoría de UX. Los `ctas` vuelven repartidos uno por paso según su categoría, y el que no tiene paso se descarta. Decisiones y alternativas rechazadas: [ADR 061](DECISIONS/061-educacion-antes-de-repartir.md). Commit `f755c40`.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 
