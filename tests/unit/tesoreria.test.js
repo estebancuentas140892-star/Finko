@@ -50,7 +50,7 @@ import {
 } from '../../modules/dominio/tesoreria/logic.js';
 import { aportePorPeriodo } from '../../modules/infra/vencimientos.js';
 import { CATEGORIAS_INGRESO, CATEGORIA_INGRESO_ICONO, SMMLV, AUXILIO_TRANSPORTE, TIPOS_LLAVE } from '../../modules/core/constants.js';
-import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderListaIngresosPuntuales, renderNudgeDistribucionInicio, renderDistribucionIngreso, renderFormCuenta, renderListaCuentas, renderTarjetasTC, renderHeroTesoreria, renderGMFIndicador, renderBotonTransferir, renderFormTransferencia, renderParTransferencia, renderSeccionGMF } from '../../modules/dominio/tesoreria/view.js';
+import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderListaIngresosPuntuales, renderNudgeDistribucionInicio, renderDistribucionIngreso, renderAsistenteDistribucion, renderFormCuenta, renderListaCuentas, renderTarjetasTC, renderHeroTesoreria, renderGMFIndicador, renderBotonTransferir, renderFormTransferencia, renderParTransferencia, renderSeccionGMF } from '../../modules/dominio/tesoreria/view.js';
 import { initAccionesDistribucion } from '../../modules/dominio/tesoreria/acciones/distribucion.js';
 import { initAccionesCuentas, inyectarFormCuenta } from '../../modules/dominio/tesoreria/acciones/cuentas.js';
 import { initAccionesTransferencias } from '../../modules/dominio/tesoreria/acciones/transferencias.js';
@@ -2743,6 +2743,150 @@ describe('renderDistribucionIngreso() - tarjeta sin accesos cruzados (punto 11)'
       const valor = Number(el.textContent.replace(/[^\d]/g, ''));
       expect(valor).toBeLessThanOrEqual(1_000_000);
     });
+  });
+});
+
+// ── renderAsistenteDistribucion() - MC.13e-2g: bloque educativo + accesos por paso ──
+
+describe('renderAsistenteDistribucion() - bloque educativo (punto 9)', () => {
+  const elBody = () => document.getElementById('modal-distribuir-body');
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="modal-distribuir-body"></div>';
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+    S.cuentas  = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
+    S.compromisos = [
+      { id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', categoria: 'Arriendo', frecuencia: 'Mensual', diaPago: 5, monto: 800_000, activo: true },
+      { id: 'd1', descripcion: 'Tarjeta', tipo: 'deuda-entidad', categoria: 'Tarjeta de crédito', saldoTotal: 2_000_000, cuotaMensual: 250_000, diaPago: 15, activo: true },
+    ];
+    S.metas = [{ id: 'm1', nombre: 'Viaje', montoObjetivo: 1_200_000, montoActual: 0, fechaLimite: null, completada: false }];
+    S.apartados = []; S.inversiones = []; S.gastos = []; S.presupuestos = [];
+    S.ahorro = { fondoEmergencia: { activo: false } };
+    S.config = { ...S.config, presetDistribucion: 'auto', ultimaDistribucionPeriodo: null };
+  });
+
+  it('el asistente abre con la referencia 50/30/20 y qué entra en cada grupo', () => {
+    renderAsistenteDistribucion();
+
+    const edu = elBody().querySelector('.distribuir-edu');
+    expect(edu).not.toBeNull();
+    expect(edu.querySelector('.distribuir-edu__titulo').textContent).toContain('Así reparten los expertos');
+
+    const refs = [...edu.querySelectorAll('.distribuir-edu__ref')].map(el => el.textContent);
+    expect(refs).toEqual(['50%', '30%', '20%']);
+
+    const labels = [...edu.querySelectorAll('.distribuir-edu__label')].map(el => el.textContent);
+    expect(labels).toEqual(['Necesidades', 'Estilo de vida', 'Ahorro']);
+
+    // Lo que convierte la barra en educación: cada grupo dice qué contiene.
+    expect(edu.querySelectorAll('.distribuir-edu__que')).toHaveLength(3);
+  });
+
+  it('al lado de la referencia va el porcentaje del usuario (la comparación es la enseñanza)', () => {
+    renderAsistenteDistribucion();
+
+    const tuyos = [...elBody().querySelectorAll('.distribuir-edu__tuyo')].map(el => el.textContent.trim());
+    expect(tuyos).toHaveLength(3);
+    tuyos.forEach(t => expect(t).toMatch(/^tú \d+%$/));
+    // Los tres porcentajes del usuario suman 100 (es su split real, no la referencia).
+    const suma = tuyos.reduce((s, t) => s + Number(t.replace(/[^\d]/g, '')), 0);
+    expect(suma).toBe(100);
+  });
+
+  it('la barra es decorativa y sus 3 segmentos toman el ancho del preset de referencia', () => {
+    renderAsistenteDistribucion();
+
+    const barra = elBody().querySelector('.distribuir-edu__barra');
+    expect(barra.getAttribute('aria-hidden')).toBe('true');
+    const anchos = [...barra.querySelectorAll('.distribuir-edu__seg')].map(s => s.style.width);
+    expect(anchos).toEqual(['50%', '30%', '20%']);
+  });
+
+  it('la razón del cálculo vive dentro del bloque educativo, no en un bloque suelto', () => {
+    renderAsistenteDistribucion();
+
+    expect(elBody().querySelector('.distribuir-edu__razon').textContent.length).toBeGreaterThan(0);
+    expect(elBody().querySelector('.distribucion-rows')).toBeNull();
+  });
+
+  it('la educación va delante del reparto, pero no lo bloquea: el panel se renderiza en el mismo scroll', () => {
+    renderAsistenteDistribucion();
+
+    const edu   = elBody().querySelector('.distribuir-edu');
+    const panel = elBody().querySelector('#distribuir-ingreso-panel');
+    expect(panel).not.toBeNull();
+    // 4 = DOCUMENT_POSITION_FOLLOWING (el panel va después del bloque educativo).
+    expect(edu.compareDocumentPosition(panel) & 4).toBeTruthy();
+    // El bloque educativo no es un paso paginado: no suma un clic al flujo.
+    expect(edu.hasAttribute('data-dist-paso')).toBe(false);
+    expect(elBody().querySelector('[data-dist-paso-indicador]').textContent).toContain('Paso 1 de 3');
+  });
+});
+
+describe('renderAsistenteDistribucion() - accesos cruzados por paso (punto 10)', () => {
+  const elBody = () => document.getElementById('modal-distribuir-body');
+  /** Paso (por título) que contiene un acceso cruzado a `seccion`. */
+  const pasoDelCta = (seccion) => elBody()
+    .querySelector(`.distribuir__cta[href="#${seccion}"]`)
+    ?.closest('[data-dist-paso]')?.dataset.distPasoTitulo ?? null;
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="modal-distribuir-body"></div>';
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+    S.cuentas  = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
+    S.compromisos = [
+      { id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', categoria: 'Arriendo', frecuencia: 'Mensual', diaPago: 5, monto: 800_000, activo: true },
+      { id: 'd1', descripcion: 'Tarjeta', tipo: 'deuda-entidad', categoria: 'Tarjeta de crédito', saldoTotal: 2_000_000, cuotaMensual: 250_000, diaPago: 15, activo: true },
+    ];
+    S.metas = [{ id: 'm1', nombre: 'Viaje', montoObjetivo: 1_200_000, montoActual: 0, fechaLimite: null, completada: false }];
+    S.apartados = []; S.inversiones = []; S.gastos = []; S.presupuestos = [];
+    S.ahorro = { fondoEmergencia: { activo: false } };
+    S.config = { ...S.config, presetDistribucion: 'auto', ultimaDistribucionPeriodo: null };
+  });
+
+  it('cada acceso aparece en el paso de su categoría, ninguno antes de empezar', () => {
+    renderAsistenteDistribucion();
+
+    expect(pasoDelCta('compromisos')).toBe('Necesidades');
+    expect(pasoDelCta('ahorro')).toBe('Ahorro, deudas e inversiones');
+    expect(pasoDelCta('presupuesto')).toBe('Estilo de vida');
+
+    // Ninguno vive fuera de la paginación (que es "todos juntos al inicio").
+    elBody().querySelectorAll('.distribuir__cta').forEach(a => {
+      expect(a.closest('[data-dist-paso]')).not.toBeNull();
+    });
+  });
+
+  it('los accesos cierran el modal antes de navegar (viven dentro del asistente)', () => {
+    renderAsistenteDistribucion();
+
+    const ctas = [...elBody().querySelectorAll('.distribuir__cta')];
+    expect(ctas.length).toBeGreaterThan(0);
+    ctas.forEach(a => expect(a.dataset.action).toBe('ir-a-seccion'));
+  });
+
+  it('un acceso cuyo paso no existe se descarta, no se reubica en otro', () => {
+    // Deuda activa sin día de pago: cuenta para "tienes deudas" (el acceso a su
+    // estrategia se calcula), pero no produce fila de checklist, así que el paso
+    // de Necesidades no existe.
+    S.compromisos = [{
+      id: 'd1', descripcion: 'Tarjeta', tipo: 'deuda-entidad', categoria: 'Tarjeta de crédito',
+      saldoTotal: 2_000_000, cuotaMensual: 250_000, diaPago: null, activo: true,
+    }];
+    renderAsistenteDistribucion();
+
+    expect(elBody().querySelector('[data-dist-paso-titulo="Necesidades"]')).toBeNull();
+    expect(elBody().querySelector('.distribuir__cta[href="#compromisos"]')).toBeNull();
+    // El de Límites sí sobrevive: su paso (Estilo de vida) siempre existe.
+    expect(pasoDelCta('presupuesto')).toBe('Estilo de vida');
+  });
+
+  it('el hint de "ponle fecha" también cierra el modal antes de navegar', () => {
+    renderAsistenteDistribucion();
+
+    const hint = elBody().querySelector('.distribuir__hint a[href="#metas"]');
+    expect(hint).not.toBeNull();
+    expect(hint.dataset.action).toBe('ir-a-seccion');
   });
 });
 

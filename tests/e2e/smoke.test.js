@@ -3439,10 +3439,9 @@ test.describe('Mis cuentas - Transferir entre cuentas propias (MC.17b)', () => {
 // ── Mis cuentas: sin accesos cruzados en la tarjeta (MC.13e-2a, punto 11) ────
 // Los accesos cruzados ("Ver progreso del fondo", "Ver tu seguimiento en
 // Límites de gasto"...) dejaron de renderizarse en la tarjeta de "Distribuir
-// mi ingreso" (antes MC.5e/ADR 017 los mostraba siempre ahí). La lógica que
-// los calcula (`sugerirDistribucionIngreso().ctas`) sigue intacta y cubierta
-// por sus propios tests unitarios; MC.13e-2g decidirá si reaparecen,
-// contextuales a cada paso del asistente rediseñado.
+// mi ingreso" (antes MC.5e/ADR 017 los mostraba siempre ahí). MC.13e-2g los
+// reintrodujo dentro del asistente, uno en el paso de su categoría (punto 10):
+// la tarjeta sigue sin ninguno.
 
 test.describe('Mis cuentas - la tarjeta de distribución ya no muestra accesos cruzados', () => {
   test('sin enlace a Límites de gasto ni a ninguna otra sección', async ({ page }) => {
@@ -3457,6 +3456,71 @@ test.describe('Mis cuentas - la tarjeta de distribución ya no muestra accesos c
 
     await expect(page.locator('#ingresos-distribucion a[href="#presupuesto"]')).toHaveCount(0);
     await expect(page.locator('.distribucion-ctas')).toHaveCount(0);
+    await expect(page.locator('#ingresos-distribucion .distribuir__cta')).toHaveCount(0);
+  });
+});
+
+// ── Mis cuentas: MC.13e-2g, el asistente abre educando y reparte los accesos ──
+
+test.describe('Mis cuentas - Distribuir mi ingreso: educación primero, accesos por paso', () => {
+  test.beforeEach(async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
+      st.compromisos = [
+        { id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', categoria: 'Arriendo', frecuencia: 'Mensual', diaPago: 5, monto: 800_000, activo: true },
+        { id: 'd1', descripcion: 'Tarjeta', tipo: 'deuda-entidad', categoria: 'Tarjeta de crédito', saldoTotal: 2_000_000, cuotaMensual: 250_000, diaPago: 15, activo: true },
+      ];
+      st.metas = [{ id: 'm1', nombre: 'Viaje', montoObjetivo: 1_200_000, montoActual: 0, fechaLimite: null, completada: false }];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.click('[data-action="toggle-distribuir-ingreso"]');
+  });
+
+  test('el asistente abre con la referencia 50/30/20 y el primer paso ya listo, sin clic extra', async ({ page }) => {
+    const edu = page.locator('.distribuir-edu');
+    await expect(edu).toBeVisible({ timeout: 3_000 });
+    await expect(edu).toContainText('Así reparten los expertos');
+    await expect(edu.locator('.distribuir-edu__ref')).toHaveText(['50%', '30%', '20%']);
+    await expect(edu.locator('.distribuir-edu__tuyo')).toHaveCount(3);
+
+    // La educación no cobra un paso: el checklist del Paso 1 ya está a la vista
+    // y marcado, como antes de MC.13e-2g.
+    await expect(page.locator('[data-dist-paso-indicador]')).toContainText('Paso 1 de 3: Necesidades');
+    await expect(page.locator('[data-nec-id="cf1"]')).toBeChecked();
+  });
+
+  test('cada acceso cruzado aparece en el paso de su categoría', async ({ page }) => {
+    const ctaDeudas = page.locator('.distribuir__cta[href="#compromisos"]');
+    const ctaAhorro = page.locator('.distribuir__cta[href="#ahorro"]');
+    const ctaLimites = page.locator('.distribuir__cta[href="#presupuesto"]');
+
+    // Paso 1: solo el de deudas (sus cuotas se pagan acá).
+    await expect(ctaDeudas).toBeVisible({ timeout: 3_000 });
+    await expect(ctaAhorro).toBeHidden();
+    await expect(ctaLimites).toBeHidden();
+
+    await page.click('[data-action="distribuir-paso-siguiente"]');
+    await expect(ctaAhorro).toBeVisible();
+    await expect(ctaDeudas).toBeHidden();
+
+    await page.click('[data-action="distribuir-paso-siguiente"]');
+    await expect(ctaLimites).toBeVisible();
+    await expect(ctaAhorro).toBeHidden();
+  });
+
+  test('un acceso cruzado cierra el asistente y lleva a su sección', async ({ page }) => {
+    await page.click('.distribuir__cta[href="#compromisos"]');
+
+    await page.waitForSelector('#sec-compromisos.active', { timeout: 10_000 });
+    // Cerrado se verifica por el contrato del overlay (`:not([data-open])`), no
+    // por visibilidad: un modal cerrado queda en opacity 0, que Playwright sigue
+    // contando como visible.
+    await page.waitForSelector(modalCerrado('modal-distribuir'), { timeout: 5_000 });
   });
 });
 
@@ -3839,8 +3903,12 @@ test.describe('Mis cuentas - Distribuir mi ingreso: asistente paginado (MC.7d)',
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
     await page.click('[data-action="toggle-distribuir-ingreso"]');
 
-    // Apertura inicial: el foco real es el monto a distribuir, no el paso 1.
-    await expect(page.locator('#distribuir-monto')).toBeFocused();
+    // Apertura inicial: el foco NO es el paso 1 ni el monto a distribuir.
+    // Desde MC.13e-2g lo fija `abrirModal` (primer focusable del panel, el botón
+    // de cerrar): el monto quedó debajo del bloque educativo y enfocarlo con
+    // `preventScroll` dejaba el foco fuera de la vista.
+    await expect(page.locator('#modal-distribuir .modal__close')).toBeFocused();
+    await expect(page.locator('[data-dist-paso="0"]')).not.toBeFocused();
 
     await page.click('[data-action="distribuir-paso-siguiente"]');
     await expect(page.locator('[data-dist-paso="1"]')).toBeFocused();

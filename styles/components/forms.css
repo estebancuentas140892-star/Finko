@@ -434,10 +434,27 @@ form:not(.config-form) .form-group:not(:first-child) {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-/* Nudge "Hoy recibes tu ingreso. ¿Distribuir?" sobre el botón (MC.4d). */
-.distribuir__cta {
+/* Accesos cruzados de un paso (MC.13e-2g, punto 10): cada recomendación
+   aparece al cierre del paso de su categoría, no todas juntas al abrir el
+   asistente. Peso ghost y alineados a la izquierda para que no compitan con
+   Siguiente/Distribuir, que son la acción del paso.
+   `.distribuir__cta` reemplaza la regla homónima del nudge inline de MC.4d,
+   que quedó sin consumidor al pasar el asistente a modal (su botón usa
+   `.distribuir-card__cta`). Estas etiquetas son frases largas ("Ver tu
+   seguimiento en Límites de gasto"), así que se libera el `white-space: nowrap`
+   de `.btn`: a 320px tienen que envolver, no desbordar. */
+.distribuir__ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fk-space-2);
   margin-top: var(--fk-space-3);
+}
+.distribuir__cta {
+  max-width: 100%;
   font-weight: var(--fk-font-medium);
+  white-space: normal;
+  text-align: left;
+  line-height: var(--fk-leading-snug);
 }
 /* Confirmación tras distribuir el cobro de este periodo (guard de-dup, MC.4d). */
 .distribuir__hecho {

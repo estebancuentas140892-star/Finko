@@ -202,6 +202,10 @@ function _construirDatosDistribucion() {
       destinosCuentas,
       itemsNecesidades,
       estado:          estadoDist,
+      // MC.13e-2g (punto 10): los accesos cruzados viajan al panel para
+      // repartirse por paso, uno en el paso de su categoría. La tarjeta de
+      // entrada sigue sin mostrar ninguno (punto 11, MC.13e-2a).
+      ctas:            dist.ctas ?? [],
     },
   };
 }
@@ -248,6 +252,13 @@ export function renderAsistenteDistribucion() {
   if (!datos) { body.innerHTML = ''; return false; }
 
   body.innerHTML = _renderContenidoAsistente(datos.dist, datos.presetId, datos.distribucionPersonalizada, datos.distribuir);
+
+  // Ancho de los 3 segmentos de la barra de referencia (MC.13e-2g) como
+  // propiedad JS tras el innerHTML, mismo patrón que la barra de la tarjeta de
+  // entrada: así los porcentajes salen del preset y no se hardcodean en CSS.
+  body.querySelectorAll('.distribuir-edu__seg').forEach((seg, i) => {
+    seg.style.width = `${_REFERENCIA_EXPERTOS[i].pct}%`;
+  });
   return true;
 }
 
@@ -283,9 +294,13 @@ function _filaDistribuir(d) {
   }
   const notaSub = d.nota ? ` <span class="distribuir__nota">${_esc(d.nota)}</span>` : '';
 
+  // `ir-a-seccion` (MC.13e-2g): el enlace vive dentro del modal del asistente,
+  // así que tiene que cerrarlo antes de navegar. Sin la acción, el modal
+  // quedaba abierto encima de la sección recién activada. Mismo trato que los
+  // accesos cruzados por paso (`_ctasDelPaso`).
   const seccionHint = _SECCION_OBJETIVO[d.tipo];
   const hint = (d.sinFecha && seccionHint)
-    ? `<p class="form-hint form-hint--muted distribuir__hint">Ponle una fecha en <a href="#${seccionHint}">${seccionHint === 'metas' ? 'Metas' : 'Reservas'}</a> para calcular cuánto aportar.</p>`
+    ? `<p class="form-hint form-hint--muted distribuir__hint">Ponle una fecha en <a href="#${seccionHint}" data-action="ir-a-seccion">${seccionHint === 'metas' ? 'Metas' : 'Reservas'}</a> para calcular cuánto aportar.</p>`
     : '';
 
   const marcada = d.tipo !== 'cuenta';
@@ -422,6 +437,130 @@ function _preguntaCobroRecibido(periodoISO) {
     </button>`;
 }
 
+// ── BLOQUE EDUCATIVO Y ACCESOS POR PASO (MC.13e-2g) ──────────────
+
+/**
+ * Reparto de referencia del bloque educativo (punto 9): la regla 50/30/20, el
+ * punto de partida que la educación financiera usa para explicar un reparto
+ * sano. Los porcentajes NO se escriben acá: salen del preset `50-30-20` que ya
+ * vive en `PRESETS_DISTRIBUCION`, para que la referencia y el chip del mismo
+ * nombre no puedan divergir (el objeto de respaldo solo evita que un cambio de
+ * catálogo rompa el módulo al importarlo).
+ *
+ * Cada entrada trae `que`: lo que convierte la barra en educación y no en
+ * adorno es decir qué entra en cada grupo. `clave` es la del split real del
+ * usuario, para poner su porcentaje al lado del de referencia.
+ */
+const _PRESET_REFERENCIA = PRESETS_DISTRIBUCION.find(p => p.id === '50-30-20')
+  ?? { n: 50, e: 30, a: 20 };
+
+const _REFERENCIA_EXPERTOS = [
+  {
+    clave: 'necesidades', tono: 'necesidades', label: 'Necesidades',
+    pct: _PRESET_REFERENCIA.n,
+    que: 'Arriendo, servicios, transporte y cuotas de deuda.',
+  },
+  {
+    clave: 'estiloVida', tono: 'estilo-vida', label: 'Estilo de vida',
+    pct: _PRESET_REFERENCIA.e,
+    que: 'Salidas, ropa, suscripciones: lo que sí puedes ajustar.',
+  },
+  {
+    clave: 'ahorro', tono: 'ahorro', label: 'Ahorro',
+    pct: _PRESET_REFERENCIA.a,
+    que: 'Primero tu fondo de emergencia, después tus metas.',
+  },
+];
+
+/**
+ * Bloque educativo que abre el asistente (MC.13e-2g, punto 9): antes de repartir,
+ * cómo reparten los expertos, con barra y porcentajes, y qué entra en cada grupo.
+ *
+ * **Va delante de la acción, pero no la bloquea.** El punto 9 pide la educación
+ * primero; la auditoría de UX del 2026-07-21 pide bajar la fricción del flujo
+ * más repetido de la app. Un paso educativo paginado satisfaría al primero y
+ * rompería a la segunda (un toque más cada vez que se cobra), así que este
+ * bloque es la cabecera del asistente, no un paso: se lee de arriba a abajo y
+ * los pasos de reparto siguen abajo, ya prellenados, sin un clic extra.
+ *
+ * Al lado del porcentaje de referencia va el del usuario, que es donde la
+ * comparación enseña: "los expertos 50%, tú 62%". La barra es decorativa
+ * (`aria-hidden`): la lista de abajo da la misma información en texto (SC
+ * 1.4.11, mismo trato que la barra de la tarjeta de entrada).
+ *
+ * @param {{necesidades:{pct:number}, estiloVida:{pct:number}, ahorro:{pct:number}}} split
+ * @param {string} razon Por qué el reparto del usuario quedó así (`sugerirDistribucionIngreso`).
+ * @returns {string}
+ */
+function _renderBloqueEducativo(split, razon) {
+  const filas = _REFERENCIA_EXPERTOS.map(r => `
+        <li class="distribuir-edu__item">
+          <p class="distribuir-edu__fila">
+            <span class="distribuir-edu__dot dist-color-${r.tono}" aria-hidden="true"></span>
+            <span class="distribuir-edu__label">${r.label}</span>
+            <span class="distribuir-edu__ref">${r.pct}%</span>
+            <span class="distribuir-edu__tuyo">tú ${split[r.clave].pct}%</span>
+          </p>
+          <p class="distribuir-edu__que">${r.que}</p>
+        </li>`).join('');
+
+  return `
+    <section class="distribuir-edu" aria-labelledby="distribuir-edu-titulo">
+      <h3 id="distribuir-edu-titulo" class="distribuir-edu__titulo">
+        ${icon('lightbulb', 'icon icon--sm')} Así reparten los expertos
+      </h3>
+      <div class="distribuir-edu__barra" aria-hidden="true">
+        ${_REFERENCIA_EXPERTOS.map(r => `<div class="distribuir-edu__seg dist-color-${r.tono}"></div>`).join('')}
+      </div>
+      <ul class="distribuir-edu__lista">${filas}</ul>
+      <p class="distribuir-edu__razon">${_esc(razon)}</p>
+    </section>`;
+}
+
+/**
+ * Paso al que pertenece cada acceso cruzado (punto 10): cada recomendación
+ * aparece solo en el paso de su categoría, nunca todas juntas al abrir.
+ * Las deudas se pagan en el checklist de Necesidades, el fondo y las
+ * inversiones se fondean en el paso de asignaciones, y Límites de gasto vigila
+ * el Estilo de vida.
+ */
+const _PASO_DE_CTA = {
+  compromisos: 'necesidades',
+  ahorro:      'asignaciones',
+  inversion:   'asignaciones',
+  presupuesto: 'estiloVida',
+};
+
+/**
+ * Accesos cruzados de un paso (punto 10). Un acceso cuyo paso no existe en este
+ * asistente **se descarta**, no se reubica: mostrar "Ver estrategia de deudas"
+ * en el paso de Estilo de vida sería justo lo que el punto 10 prohíbe, y la
+ * sección sigue a un toque desde la navegación. El paso de Estilo de vida
+ * siempre existe, así que el acceso a Límites de gasto (siempre presente,
+ * MC.5e) nunca se pierde.
+ *
+ * `ir-a-seccion` es la acción built-in del shell para enlazar fuera desde un
+ * modal: cierra el asistente y navega (sin ella, `dispatch` cancelaría la
+ * navegación del `<a>` y el modal quedaría abierto encima de la sección nueva).
+ *
+ * @param {{label:string, seccion:string}[]} ctas
+ * @param {'necesidades'|'asignaciones'|'estiloVida'} paso
+ * @returns {string}
+ */
+function _ctasDelPaso(ctas, paso) {
+  const propios = (ctas ?? []).filter(c => _PASO_DE_CTA[c.seccion] === paso);
+  if (propios.length === 0) return '';
+
+  return `
+          <div class="distribuir__ctas">
+            ${propios.map(c => `
+            <a href="#${_esc(c.seccion)}" class="btn btn-ghost btn-sm distribuir__cta"
+               data-action="ir-a-seccion">
+              ${_esc(c.label)} ${icon('chevron-right', 'icon icon--sm')}
+            </a>`).join('')}
+          </div>`;
+}
+
 /**
  * Asistente por pasos (ADR 012, MC.4a/b/d/e; ADR 018, MC.7d: shell paginado
  * con confirmación única al final; MC.7e: Paso 3 accionable con 2+ cuentas).
@@ -465,7 +604,11 @@ function _preguntaCobroRecibido(periodoISO) {
  * antes se encontraba un asistente que no dejaba avanzar; ahora encuentra la
  * pregunta que lo desbloquea sin que Calendario tenga que saber nada de esto.
  *
- * @param {{montoIngreso:number, ahorroPct:number, estiloVidaPct:number, ahorroBudget:number, evBudget:number, destinosAhorro:Array, destinosInversiones:Array, destinosCuentas?:Array, itemsNecesidades?:Array, estado:{estado:string, periodoISO:string|null, esHoy:boolean}}} d
+ * Desde MC.13e-2g (punto 10) cada paso cierra con los accesos cruzados de su
+ * categoría (`_ctasDelPaso`), en vez de mostrarlos todos juntos antes de
+ * empezar.
+ *
+ * @param {{montoIngreso:number, ahorroPct:number, estiloVidaPct:number, ahorroBudget:number, evBudget:number, destinosAhorro:Array, destinosInversiones:Array, destinosCuentas?:Array, itemsNecesidades?:Array, ctas?:Array<{label:string, seccion:string}>, estado:{estado:string, periodoISO:string|null, esHoy:boolean}}} d
  * @returns {string}
  */
 function _renderPanelDistribuir(d) {
@@ -495,7 +638,8 @@ function _renderPanelDistribuir(d) {
           <p class="form-hint distribuir__subtitulo">📦 Necesidades · marca las que cubres con este ingreso:</p>
           <div class="distribuir-ingreso__destinos">
             ${necesidades.map(_filaNecesidad).join('')}
-          </div>`;
+          </div>
+          ${_ctasDelPaso(d.ctas, 'necesidades')}`;
 
   // Paso 2: título consistente con el resto de pasos (MC.7f), y la sugerencia
   // de ahorro sale del remanente real (R3); acciones/distribucion.js la actualiza en vivo
@@ -520,7 +664,8 @@ function _renderPanelDistribuir(d) {
   const seccionAsignaciones = `
           ${tituloAsignaciones}
           ${seccionAhorro}
-          ${seccionInversiones}`;
+          ${seccionInversiones}
+          ${_ctasDelPaso(d.ctas, 'asignaciones')}`;
 
   // Paso final (MC.4c): Estilo de vida no se mueve entre gastos/ahorro/deudas en
   // este panel (se gasta a lo largo del mes). acciones/distribucion.js recalcula su monto en
@@ -581,6 +726,7 @@ function _renderPanelDistribuir(d) {
           </div>
           ${seccionCuentas}
           ${seccionRemanente}
+          ${_ctasDelPaso(d.ctas, 'estiloVida')}
           <p class="form-hint form-hint--muted">Revisa el resumen y confirma: se registrarán los pagos y aportes que marcaste.</p>`;
 
   // Shell paginado (MC.7d): un paso visible a la vez, avanzar/atrás inline.
@@ -744,12 +890,19 @@ function _renderTarjetaDistribuir({ dist, estado, hayDestinos, distribuir }) {
 }
 
 /**
- * Contenido de `#modal-distribuir-body` (ADR 035 D6): configuración de la
- * distribución sugerida (chips de preset, métodos clásicos, editor
- * personalizado, la razón detrás del cálculo) seguida del asistente por pasos
- * (`_renderPanelDistribuir`). Nada de este contenido cambió de lógica, solo de
- * casa: antes vivía siempre desplegado en `#ingresos-distribucion`, ahora se
- * inyecta aquí cada vez que `renderAsistenteDistribucion()` abre el modal.
+ * Contenido de `#modal-distribuir-body` (ADR 035 D6), en dos bloques desde
+ * MC.13e-2g (punto 9):
+ *
+ *   1. **Educación** (`_renderBloqueEducativo`): cómo reparten los expertos, con
+ *      barra y porcentajes, el porcentaje del usuario al lado y la razón detrás
+ *      de su cálculo; enseguida cómo elegir el método (chips de preset, métodos
+ *      clásicos, editor personalizado).
+ *   2. **Reparto** (`_renderPanelDistribuir`): el flujo por pasos de siempre,
+ *      ya prellenado.
+ *
+ * Son dos bloques del mismo scroll, no dos pasos paginados: ver
+ * `_renderBloqueEducativo` para por qué la educación va delante sin cobrar un
+ * clic extra.
  *
  * @param {ReturnType<typeof sugerirDistribucionIngreso>} dist
  * @param {string} presetActivo
@@ -835,6 +988,7 @@ function _renderContenidoAsistente({ razon, split }, presetActivo, distribucionP
     </fieldset>`;
 
   return `
+    ${_renderBloqueEducativo(split, razon)}
     <div class="filtros-bar" role="group" aria-label="Preset de distribución">
       ${autoChip}
       ${personalizadaChip}
@@ -847,8 +1001,5 @@ function _renderContenidoAsistente({ razon, split }, presetActivo, distribucionP
       <p class="form-hint form-hint--muted">Porcentajes fijos. No consideran tus gastos reales.</p>
     </details>
     ${editorPersonalizada}
-    <div class="distribucion-rows">
-      <p class="distribucion-rows__razon">${_esc(razon)}</p>
-    </div>
     ${_renderPanelDistribuir(distribuir)}`;
 }

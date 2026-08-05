@@ -181,7 +181,12 @@ export function abrirAsistenteDistribucion() {
   const panel = document.getElementById('distribuir-ingreso-panel');
   // Ir al paso 0 recalcula el resumen con el monto (y el modo) recién fijados.
   if (panel) _irAPasoDistribucion(panel, 0, { moverFoco: false });
-  document.getElementById('distribuir-monto')?.focus({ preventScroll: true });
+  // MC.13e-2g: el foco de apertura se deja en manos de `abrirModal` (primer
+  // focusable del panel, el botón de cerrar). Antes se movía al monto a
+  // distribuir con `preventScroll`, que ahora vive debajo del bloque educativo:
+  // el foco habría caído en un control fuera de la vista, invisible para quien
+  // navega con teclado. Entrar por el tope también deja que la educación se lea
+  // primero, que es el punto 9.
 }
 
 // ── ASISTENTE PAGINADO (MC.7d, ADR 018) ──────────────────────────
