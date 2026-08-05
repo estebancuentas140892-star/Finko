@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 33;
+const SCHEMA_VERSION = 34;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -497,6 +497,47 @@ function _migrate(raw) {
     if (!data.config || typeof data.config !== 'object') data.config = {};
     if (!('legalAceptado' in data.config)) {
       data.config.legalAceptado = { version: 'Borrador v0.1', fecha: new Date().toISOString().slice(0, 10) };
+    }
+  }
+
+  // v33 → v34: `abonos` en Personal (PE.6b, ADR 047 D3), el historial de abonos
+  // que hasta ahora no existía: solo se guardaba el acumulado `pagado`, así que
+  // un préstamo con cinco abonos y otro con un solo pago eran indistinguibles.
+  //
+  // Esta migración resuelve el punto 1 de "Qué falta para cerrarlo" del ADR 047
+  // (historial vacío vs. abono sintético) a favor del **abono sintético**: si el
+  // préstamo ya tiene `pagado > 0`, se agrupa todo lo cobrado en UN abono
+  // marcado `agrupado: true`. Dejarlo vacío haría que la suma del historial y
+  // el acumulado `pagado` discreparan desde el día uno, y todo lo que se derive
+  // de él (rendimiento D4, estadísticas por persona D5) tendría que llevar una
+  // rama de excepción permanente. El acumulado no se toca (exigencia de D3): el
+  // abono lo REFLEJA, no lo reemplaza.
+  //
+  // Lo que la migración NO inventa: fechas por abono (usa la del último abono
+  // conocido, y la marca `agrupado` es lo que le dice a la vista que no presuma
+  // precisión), ni la cuenta donde entró el dinero. El desglose capital/interés
+  // sí se puede reconstruir, porque `interesPagado` ya lo venía acumulando.
+  // Idempotente: si `abonos` ya es un array, no se toca.
+  if ((typeof data._version === 'number' ? data._version : 1) < 34) {
+    if (Array.isArray(data.personales)) {
+      for (const p of data.personales) {
+        if (!p || typeof p !== 'object' || Array.isArray(p.abonos)) continue;
+        const pagado = Number(p.pagado) || 0;
+        if (pagado <= 0) {
+          p.abonos = [];
+          continue;
+        }
+        const aInteres = Number(p.tasa) > 0
+          ? Math.min(Math.max(0, Number(p.interesPagado) || 0), pagado)
+          : 0;
+        p.abonos = [{
+          fecha:    p.ultimoPago || p.fecha || String(p.fechaCreacion || '').slice(0, 10),
+          monto:    pagado,
+          aCapital: pagado - aInteres,
+          aInteres,
+          agrupado: true,
+        }];
+      }
     }
   }
 

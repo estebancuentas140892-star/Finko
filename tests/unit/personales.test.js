@@ -19,6 +19,7 @@ import {
   desglosarPago,
   tieneInteres,
   calcularTotalPorCobrar,
+  historialAbonos,
 } from '../../modules/dominio/personales/logic.js';
 
 // ── calcularPendiente() ───────────────────────────────────────────
@@ -1155,5 +1156,230 @@ describe('renderFormPersonal({ prestamo }) - modo edición (EDIT.1)', () => {
     document.body.innerHTML = `<div id="host">${renderFormPersonal()}</div>`;
     expect(document.querySelector('#form-personal button[type="submit"]').textContent.trim())
       .toBe('Guardar préstamo');
+  });
+});
+
+// ── Historial de abonos (PE.6b, ADR 047 D3) ──────────────────────
+
+describe('aplicarPago() - historial de abonos (PE.6b)', () => {
+  it('sin tasa, el abono queda registrado con fecha, monto y todo a capital', () => {
+    const p = { monto: 500_000, pagado: 0, fecha: '2026-03-10' };
+    const r = aplicarPago(p, 200_000, '2026-06-15');
+    expect(r.abonos).toEqual([
+      { fecha: '2026-06-15', monto: 200_000, aCapital: 200_000, aInteres: 0 },
+    ]);
+  });
+
+  it('anexa al historial existente en vez de reemplazarlo, y no muta el original', () => {
+    const previo = { fecha: '2026-05-01', monto: 100_000, aCapital: 100_000, aInteres: 0 };
+    const p = { monto: 500_000, pagado: 100_000, fecha: '2026-03-10', abonos: [previo] };
+    const r = aplicarPago(p, 150_000, '2026-06-15');
+    expect(r.abonos).toHaveLength(2);
+    expect(r.abonos[0]).toEqual(previo);
+    expect(r.abonos[1].monto).toBe(150_000);
+    expect(p.abonos).toHaveLength(1);
+  });
+
+  it('guarda la cuenta donde entró el dinero cuando se pasa', () => {
+    const p = { monto: 500_000, pagado: 0, fecha: '2026-03-10' };
+    const r = aplicarPago(p, 200_000, '2026-06-15', 'c1');
+    expect(r.abonos[0].cuentaId).toBe('c1');
+  });
+
+  it('sin cuenta destino, el abono queda sin el campo (no con undefined explícito)', () => {
+    const p = { monto: 500_000, pagado: 0, fecha: '2026-03-10' };
+    const r = aplicarPago(p, 200_000, '2026-06-15');
+    expect('cuentaId' in r.abonos[0]).toBe(false);
+  });
+
+  it('el monto registrado es el APLICADO, no el tecleado: cobrar de más no infla el historial', () => {
+    const p = { monto: 500_000, pagado: 400_000, fecha: '2026-03-10' };
+    const r = aplicarPago(p, 999_999, '2026-06-15');
+    expect(r.abonos[0].monto).toBe(100_000);
+    expect(r.pagado).toBe(500_000);
+  });
+
+  it('un pago rechazado (0) no deja rastro en el historial', () => {
+    const p = { monto: 500_000, pagado: 0, fecha: '2026-03-10', abonos: [] };
+    expect(aplicarPago(p, 0, '2026-06-15').abonos).toEqual([]);
+  });
+
+  it('con tasa, el abono guarda el desglose capital/interés real de esa fecha', () => {
+    // 500.000 al 2% mensual, 30 dias corridos: 10.000 de interes devengado.
+    const p = {
+      monto: 500_000, pagado: 0, fecha: '2026-03-01', tasa: 2,
+      capitalPagado: 0, interesPagado: 0, interesPendiente: 0,
+    };
+    const r = aplicarPago(p, 60_000, '2026-03-31');
+    const abono = r.abonos[0];
+    expect(abono.monto).toBe(60_000);
+    expect(abono.aInteres).toBe(10_000);
+    expect(abono.aCapital).toBe(50_000);
+    expect(abono.aCapital + abono.aInteres).toBe(abono.monto);
+  });
+
+  it('la suma del historial es igual al acumulado `pagado` tras varios abonos', () => {
+    let p = { monto: 500_000, pagado: 0, fecha: '2026-03-10' };
+    p = aplicarPago(p, 100_000, '2026-04-10');
+    p = aplicarPago(p, 150_000, '2026-05-10');
+    p = aplicarPago(p, 50_000,  '2026-06-10');
+    const suma = p.abonos.reduce((acc, a) => acc + a.monto, 0);
+    expect(suma).toBe(p.pagado);
+    expect(p.abonos).toHaveLength(3);
+  });
+});
+
+describe('historialAbonos()', () => {
+  it('devuelve el más reciente primero', () => {
+    const p = { abonos: [
+      { fecha: '2026-04-10', monto: 100_000, aCapital: 100_000, aInteres: 0 },
+      { fecha: '2026-06-10', monto: 50_000,  aCapital: 50_000,  aInteres: 0 },
+      { fecha: '2026-05-10', monto: 150_000, aCapital: 150_000, aInteres: 0 },
+    ] };
+    expect(historialAbonos(p).map(a => a.fecha)).toEqual(['2026-06-10', '2026-05-10', '2026-04-10']);
+  });
+
+  it('dos abonos del mismo día salen en orden inverso al que entraron', () => {
+    const p = { abonos: [
+      { fecha: '2026-06-10', monto: 10_000, aCapital: 10_000, aInteres: 0 },
+      { fecha: '2026-06-10', monto: 20_000, aCapital: 20_000, aInteres: 0 },
+    ] };
+    expect(historialAbonos(p).map(a => a.monto)).toEqual([20_000, 10_000]);
+  });
+
+  it('no muta el préstamo y tolera un registro anterior a v34 (sin el campo)', () => {
+    const p = { abonos: [
+      { fecha: '2026-04-10', monto: 100_000, aCapital: 100_000, aInteres: 0 },
+      { fecha: '2026-06-10', monto: 50_000,  aCapital: 50_000,  aInteres: 0 },
+    ] };
+    historialAbonos(p);
+    expect(p.abonos[0].fecha).toBe('2026-04-10');
+    expect(historialAbonos({})).toEqual([]);
+    expect(historialAbonos(null)).toEqual([]);
+  });
+});
+
+describe('normalizarPersonal() - historial de abonos (PE.6b)', () => {
+  it('al crear, el historial nace vacío', () => {
+    expect(normalizarPersonal({ persona: 'Ana', monto: '500000' }).abonos).toEqual([]);
+  });
+
+  it('al crear con algo ya abonado, ese monto entra como primer abono (la suma cuadra con `pagado`)', () => {
+    const r = normalizarPersonal({ persona: 'Ana', monto: '500000', pagado: '100000', fecha: '2026-03-10' });
+    expect(r.abonos).toEqual([
+      { fecha: '2026-03-10', monto: 100_000, aCapital: 100_000, aInteres: 0 },
+    ]);
+    expect(r.pagado).toBe(100_000);
+  });
+
+  it('al editar, el historial se conserva intacto', () => {
+    const historial = [{ fecha: '2026-05-01', monto: 100_000, aCapital: 100_000, aInteres: 0 }];
+    const existente = {
+      id: 'p1', persona: 'Ana', monto: 500_000, pagado: 100_000,
+      fecha: '2026-03-10', abonos: historial,
+    };
+    const r = normalizarPersonal({ persona: 'Ana', monto: '400000', fecha: '2026-03-10' }, existente);
+    expect(r.abonos).toEqual(historial);
+  });
+
+  it('cambiar la tasa NO reescribe los abonos ya recibidos: su desglose fue real cuando se cobró', () => {
+    const historial = [{ fecha: '2026-05-01', monto: 120_000, aCapital: 100_000, aInteres: 20_000 }];
+    const existente = {
+      id: 'p1', persona: 'Ana', monto: 500_000, pagado: 120_000, fecha: '2026-03-10',
+      tasa: 2, capitalPagado: 100_000, interesPagado: 20_000, interesPendiente: 0, abonos: historial,
+    };
+    const sinTasa = normalizarPersonal({ persona: 'Ana', monto: '500000', fecha: '2026-03-10', tasa: '' }, existente);
+    expect(sinTasa.tasa).toBeUndefined();
+    expect(sinTasa.interesPagado).toBeUndefined();
+    expect(sinTasa.abonos).toEqual(historial);
+  });
+
+  it('editar un préstamo anterior a v34 (sin el campo) deja el historial en array vacío, no undefined', () => {
+    const existente = { id: 'p1', persona: 'Ana', monto: 500_000, pagado: 0, fecha: '2026-03-10' };
+    expect(normalizarPersonal({ persona: 'Ana', monto: '500000' }, existente).abonos).toEqual([]);
+  });
+});
+
+describe('renderListaPersonales() - historial de abonos (PE.6b)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-personales"></div>';
+    S.config = { ocultarSaldo: false };
+  });
+
+  const conAbonos = {
+    id: 'p1', persona: 'Tía Marta', monto: 500_000, pagado: 250_000,
+    fecha: '2026-03-10', ultimoPago: '2026-06-15',
+    abonos: [
+      { fecha: '2026-05-01', monto: 100_000, aCapital: 100_000, aInteres: 0 },
+      { fecha: '2026-06-15', monto: 150_000, aCapital: 150_000, aInteres: 0 },
+    ],
+  };
+
+  it('pliega el historial en un details con el conteo en el summary', () => {
+    S.personales = [conAbonos];
+    renderListaPersonales();
+    const det = document.querySelector('.personal-item__abonos');
+    expect(det).not.toBeNull();
+    expect(det.open).toBe(false);
+    expect(det.querySelector('summary').textContent.trim()).toBe('Ver los 2 abonos recibidos');
+    expect(det.querySelectorAll('.personal-abono')).toHaveLength(2);
+  });
+
+  it('con un solo abono el copy va en singular', () => {
+    S.personales = [{ ...conAbonos, abonos: [conAbonos.abonos[0]], pagado: 100_000 }];
+    renderListaPersonales();
+    expect(document.querySelector('.personal-item__abonos summary').textContent.trim())
+      .toBe('Ver el abono recibido');
+  });
+
+  it('lista el abono más reciente primero', () => {
+    S.personales = [conAbonos];
+    renderListaPersonales();
+    const fechas = [...document.querySelectorAll('.personal-abono__fecha')].map(e => e.textContent.trim());
+    expect(fechas[0]).toContain('15');
+    expect(fechas[1]).toContain('1');
+  });
+
+  it('el abono agrupado de la migración no finge una fecha exacta', () => {
+    S.personales = [{
+      ...conAbonos,
+      abonos: [{ fecha: '2026-06-15', monto: 250_000, aCapital: 250_000, aInteres: 0, agrupado: true }],
+    }];
+    renderListaPersonales();
+    expect(document.querySelector('.personal-abono__fecha').textContent.trim())
+      .toBe('Antes de este historial');
+  });
+
+  it('sin abonos no emite el bloque', () => {
+    S.personales = [{ id: 'p2', persona: 'Ana', monto: 300_000, pagado: 0, fecha: '2026-03-10', abonos: [] }];
+    renderListaPersonales();
+    expect(document.querySelector('.personal-item__abonos')).toBeNull();
+  });
+
+  it('un préstamo anterior a v34 (sin el campo) no rompe el render', () => {
+    S.personales = [{ id: 'p3', persona: 'Ana', monto: 300_000, pagado: 50_000, fecha: '2026-03-10' }];
+    expect(() => renderListaPersonales()).not.toThrow();
+    expect(document.querySelector('.personal-item__abonos')).toBeNull();
+  });
+
+  it('con tasa, cada abono muestra su desglose capital/interés', () => {
+    S.personales = [{
+      id: 'p4', persona: 'Ana', monto: 500_000, pagado: 120_000, fecha: '2026-03-10',
+      tasa: 2, capitalPagado: 100_000, interesPagado: 20_000, interesPendiente: 0,
+      ultimoPago: '2026-05-01',
+      abonos: [{ fecha: '2026-05-01', monto: 120_000, aCapital: 100_000, aInteres: 20_000 }],
+    }];
+    renderListaPersonales();
+    const desglose = document.querySelector('.personal-abono__desglose').textContent;
+    expect(desglose).toContain('capital');
+    expect(desglose).toContain('interés');
+  });
+
+  it('respeta el ojo de Inicio: los montos del historial también se enmascaran (regla R20)', () => {
+    S.config = { ocultarSaldo: true };
+    S.personales = [conAbonos];
+    renderListaPersonales();
+    const montos = [...document.querySelectorAll('.personal-abono__monto')].map(e => e.textContent.trim());
+    expect(montos.every(t => t === SALDO_MASCARA_CUENTA)).toBe(true);
   });
 });

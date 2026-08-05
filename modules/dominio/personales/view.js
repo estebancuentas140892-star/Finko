@@ -20,6 +20,7 @@ import {
   calcularResumen,
   ordenarPersonales,
   tieneInteres,
+  historialAbonos,
 } from './logic.js';
 
 // ── LISTA + RESUMEN ──────────────────────────────────────────────
@@ -197,6 +198,7 @@ function _renderPersonalItem(prestamo, hoy, oculto = false) {
         ${motivoHtml}
         ${ultimoPagoHtml}
         ${fechaLim}
+        ${_renderHistorialAbonos(prestamo, conInteres, m)}
       </div>
       <div class="list-item__meta">
         <p class="list-item__amount">${montoAncla}</p>
@@ -214,6 +216,53 @@ function _renderPersonalItem(prestamo, hoy, oculto = false) {
                 aria-label="Eliminar préstamo a ${persona}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
       </div>
     </article>`;
+}
+
+/**
+ * Historial de abonos de un préstamo (PE.6b, ADR 047 D3), plegado.
+ *
+ * Va colapsado en un `<details>` nativo, sin JS: la fila ya ancla el pendiente
+ * (regla R19) y el historial es consulta, no lo que se decide de un vistazo.
+ * Mismo criterio y mismo mecanismo que los desplegables de Ajustes y Análisis.
+ *
+ * El abono `agrupado` (el que dejó la migración v33 → v34) se rotula distinto a
+ * propósito: dice que resume lo cobrado antes de que existiera el historial, en
+ * vez de hacer pasar una fecha aproximada por una fecha exacta.
+ *
+ * @param {import('./logic.js').Personal} prestamo
+ * @param {boolean} conInteres
+ * @param {(n: number) => string} m helper de dinero con máscara (V-4, regla R20).
+ * @returns {string} '' si el préstamo no tiene abonos registrados.
+ */
+function _renderHistorialAbonos(prestamo, conInteres, m) {
+  const abonos = historialAbonos(prestamo);
+  if (abonos.length === 0) return '';
+
+  const filas = abonos.map(a => {
+    const desglose = (conInteres && Number(a.aInteres) > 0)
+      ? `<span class="personal-abono__desglose">capital ${m(a.aCapital)} · interés ${m(a.aInteres)}</span>`
+      : '';
+    const cuando = a.agrupado
+      ? 'Antes de este historial'
+      : (a.fecha ? fechaLegible(a.fecha) : 'Sin fecha');
+    return `
+        <li class="personal-abono">
+          <span class="personal-abono__fecha">${_esc(cuando)}</span>
+          <span class="personal-abono__monto">${m(a.monto)}</span>
+          ${desglose}
+        </li>`;
+  }).join('');
+
+  const resumen = abonos.length === 1
+    ? 'Ver el abono recibido'
+    : `Ver los ${abonos.length} abonos recibidos`;
+
+  return `
+        <details class="personal-item__abonos">
+          <summary class="personal-item__abonos-summary">${resumen}</summary>
+          <ul class="personal-item__abonos-lista">${filas}
+          </ul>
+        </details>`;
 }
 
 /**

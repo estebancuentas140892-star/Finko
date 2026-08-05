@@ -55,7 +55,7 @@ Las 30 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | MC.17f | Deshacer o editar una transferencia | Mis cuentas | media | coordinar con MOV.1 |
 | MT.6 | Metas v2: subcategorías inteligentes + plan de aportes | Metas | media-alta | nada (el motor de MC.13 ya está); ADR 029 D3 |
 | LIM.1 | Límites v2: asistente preventivo de estilo de vida | Límites | sin definir | ADR 045 (base de cálculo); ADR 044 (sugerencias) |
-| PE.6 | Me deben v2: intereses, historial de abonos y confianza | Me deben | media-alta | nada duro |
+| PE.6 | Me deben v2: rendimiento, estados visuales y confianza | Me deben | media-alta | PE.6d espera a IV.2 |
 | ANL.1 | Análisis como centro de interpretación financiera | Análisis | sin definir | ADR 046 (criterio y lenguaje); ADR 044 (recomendaciones) |
 | CFG.2c | Reubicar lo fiscal: asistente en Ajustes + Análisis | Configuración | sin definir | CFG.2a |
 | CFG.2a | Auto-derivar ingresos brutos al monitor de renta | Configuración | sin definir | CFG.1a (cerrada) |

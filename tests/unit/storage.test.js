@@ -1261,6 +1261,96 @@ describe('Migración v32 → v33 (aceptación legal versionada, LEG.2)', () => {
   });
 });
 
+describe('Migración v33 → v34 (historial de abonos en Personal, PE.6b)', () => {
+  const prestamoBase = {
+    id: 'p1', persona: 'Tía Marta', monto: 500_000, fecha: '2026-03-10',
+    liquidado: false, fechaCreacion: '2026-03-10T10:00:00.000Z',
+  };
+
+  it('un préstamo con pagos previos recibe UN abono agrupado que refleja el acumulado, sin tocarlo', () => {
+    const v33 = { ...createInitialState(), _version: 33 };
+    v33.personales = [{ ...prestamoBase, pagado: 200_000, ultimoPago: '2026-06-15' }];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v33));
+
+    loadData();
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    // El acumulado es la exigencia de D3: la migración lo conserva intacto.
+    expect(S.personales[0].pagado).toBe(200_000);
+    expect(S.personales[0].abonos).toEqual([{
+      fecha: '2026-06-15', monto: 200_000, aCapital: 200_000, aInteres: 0, agrupado: true,
+    }]);
+  });
+
+  it('con tasa, el abono agrupado reparte capital e interés con lo que `interesPagado` ya acumulaba', () => {
+    const v33 = { ...createInitialState(), _version: 33 };
+    v33.personales = [{
+      ...prestamoBase, pagado: 120_000, ultimoPago: '2026-06-15',
+      tasa: 2, capitalPagado: 100_000, interesPagado: 20_000, interesPendiente: 0,
+    }];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v33));
+
+    loadData();
+
+    expect(S.personales[0].abonos).toEqual([{
+      fecha: '2026-06-15', monto: 120_000, aCapital: 100_000, aInteres: 20_000, agrupado: true,
+    }]);
+  });
+
+  it('sin abonos previos el historial nace vacío: no hay nada que agrupar', () => {
+    const v33 = { ...createInitialState(), _version: 33 };
+    v33.personales = [{ ...prestamoBase, pagado: 0 }];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v33));
+
+    loadData();
+
+    expect(S.personales[0].abonos).toEqual([]);
+  });
+
+  it('sin `ultimoPago` la fecha del abono agrupado cae a la del préstamo', () => {
+    const v33 = { ...createInitialState(), _version: 33 };
+    v33.personales = [{ ...prestamoBase, pagado: 50_000 }];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v33));
+
+    loadData();
+
+    expect(S.personales[0].abonos[0].fecha).toBe('2026-03-10');
+  });
+
+  it('es idempotente: un historial ya presente no se reescribe', () => {
+    const historial = [
+      { fecha: '2026-05-01', monto: 80_000, aCapital: 80_000, aInteres: 0 },
+      { fecha: '2026-06-15', monto: 120_000, aCapital: 120_000, aInteres: 0 },
+    ];
+    const v34 = { ...createInitialState(), _version: 34 };
+    v34.personales = [{ ...prestamoBase, pagado: 200_000, abonos: historial }];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v34));
+
+    loadData();
+
+    expect(S.personales[0].abonos).toEqual(historial);
+  });
+
+  it('un historial vacío tampoco se rellena con un abono sintético', () => {
+    const v34 = { ...createInitialState(), _version: 34 };
+    v34.personales = [{ ...prestamoBase, pagado: 200_000, abonos: [] }];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v34));
+
+    loadData();
+
+    expect(S.personales[0].abonos).toEqual([]);
+  });
+
+  it('sin préstamos personales, la migración no falla (no-op)', () => {
+    const v33 = { ...createInitialState(), _version: 33 };
+    delete v33.personales;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v33));
+
+    expect(() => loadData()).not.toThrow();
+    expect(S._version).toBe(SCHEMA_VERSION);
+  });
+});
+
 describe('save() - debounce', () => {
   it('no escribe inmediatamente: requiere esperar al timer o forzar _flushNow', () => {
     vi.useFakeTimers();

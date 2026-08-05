@@ -26,8 +26,30 @@
  * @property {number} [interesPendiente] Interés devengado no cobrado al último evento (solo con tasa).
  * @property {string} [cuentaId]         Cuenta de la que salió el dinero (PE.7). Ausente = el
  *                                       préstamo no movió ningún saldo y no cuenta como activo.
+ * @property {Abono[]} [abonos]          Historial de abonos recibidos (PE.6b, schema v34).
  * @property {boolean} liquidado         true cuando no queda capital ni interés pendiente.
  * @property {string} fechaCreacion      ISO 8601 timestamp.
+ *
+ * Un abono del historial (PE.6b, ADR 047 D3). Antes de v34 solo existía el
+ * acumulador `pagado`, así que un préstamo con cinco abonos y uno con un solo
+ * pago eran indistinguibles: sin historial no hay rendimiento (D4) ni
+ * estadísticas por persona (D5).
+ *
+ * Invariante: la suma de `monto` del historial es igual a `pagado`. La
+ * migración lo respeta agrupando lo ya cobrado en un abono `agrupado`, en vez
+ * de dejar el historial vacío y desincronizado con el acumulado. La única
+ * excepción es una edición que baje el `monto` por debajo de lo ya abonado: el
+ * clamp de `pagado` es anterior a PE.6b y se conserva tal cual.
+ *
+ * @typedef {Object} Abono
+ * @property {string} fecha        ISO 8601 (YYYY-MM-DD) del abono.
+ * @property {number} monto        COP recibidos en ese abono.
+ * @property {number} aCapital     Parte que bajó el capital.
+ * @property {number} aInteres     Parte que cubrió interés devengado (0 sin tasa).
+ * @property {string} [cuentaId]   Cuenta donde entró el dinero. Ausente = no movió saldos.
+ * @property {boolean} [agrupado]  true solo en el abono sintético de la migración v33 → v34:
+ *                                 resume todo lo cobrado antes de que existiera el historial.
+ *                                 La fecha es la del último abono conocido, no la de cada uno.
  */
 
 import { tiempoRelativo } from '../../infra/utils.js';
@@ -409,6 +431,11 @@ export function normalizarPersonal(datos, existente = null) {
     item.fechaLimite = fechaLimite;
     if (existente.cuentaId) item.cuentaId = existente.cuentaId;
     if (existente.ultimoPago) item.ultimoPago = existente.ultimoPago;
+    // PE.6b: el historial es el registro de lo que pasó, no un derivado del
+    // préstamo actual. Cambiar la tasa reescribe los acumuladores (abajo), pero
+    // NO los abonos ya recibidos: su desglose capital/interés fue real cuando
+    // se cobró, y reetiquetarlo hacia atrás sería inventar historia.
+    item.abonos = Array.isArray(existente.abonos) ? existente.abonos : [];
 
     if (conTasa) {
       item.tasa = tasa;
@@ -442,7 +469,14 @@ export function normalizarPersonal(datos, existente = null) {
     pagado: Math.min(pagado, monto),
     fecha,
     liquidado: pagado >= monto,
+    // PE.6b: el historial nace con el préstamo, no al primer cobro. Si el alta
+    // ya viene con algo abonado, ese monto entra como primer abono a la fecha
+    // del préstamo: es lo que mantiene la suma del historial igual a `pagado`.
+    abonos: [],
   };
+  if (item.pagado > 0) {
+    item.abonos = [{ fecha, monto: item.pagado, aCapital: item.pagado, aInteres: 0 }];
+  }
   if (motivo)      item.motivo      = motivo;
   if (fechaLimite) item.fechaLimite = fechaLimite;
 
@@ -502,12 +536,18 @@ export function desglosarPago(prestamo, montoPago, fechaPago = _hoyISO()) {
  * dinero: un pago rechazado (0 o inválido) no debe reiniciar el reloj de
  * antigüedad que usa `calcularDias`, ni mover el ancla de devengo.
  *
+ * PE.6b: el mismo abono se anexa al historial (`abonos`), con su desglose ya
+ * calculado y la cuenta donde entró el dinero. Se guarda el desglose y no solo
+ * el monto porque recalcularlo después es imposible: depende del interés
+ * devengado a esa fecha, que el siguiente abono ya movió.
+ *
  * @param {Personal} prestamo
  * @param {number} montoPago
  * @param {string} [fechaPago] ISO 8601 (YYYY-MM-DD) del abono. Default: hoy.
+ * @param {string|null} [cuentaId] cuenta donde entró el dinero (PE.7). null = no movió saldos.
  * @returns {Personal} objeto actualizado.
  */
-export function aplicarPago(prestamo, montoPago, fechaPago = _hoyISO()) {
+export function aplicarPago(prestamo, montoPago, fechaPago = _hoyISO(), cuentaId = null) {
   if (!tieneInteres(prestamo)) {
     const pendiente = calcularPendiente(prestamo);
     const aplicado  = Math.min(Math.max(0, Number(montoPago) || 0), pendiente);
@@ -517,7 +557,12 @@ export function aplicarPago(prestamo, montoPago, fechaPago = _hoyISO()) {
       pagado:    nuevoPagado,
       liquidado: nuevoPagado >= (prestamo.monto || 0),
     };
-    if (aplicado > 0) actualizado.ultimoPago = fechaPago;
+    if (aplicado > 0) {
+      actualizado.ultimoPago = fechaPago;
+      actualizado.abonos     = _conAbono(prestamo, {
+        fecha: fechaPago, monto: aplicado, aCapital: aplicado, aInteres: 0, cuentaId,
+      });
+    }
     return actualizado;
   }
 
@@ -538,7 +583,27 @@ export function aplicarPago(prestamo, montoPago, fechaPago = _hoyISO()) {
     interesPendiente: nuevoInteresPend,
     liquidado:        nuevoCapitalPagado >= (prestamo.monto || 0) && nuevoInteresPend <= 0,
     ultimoPago:       fechaPago,
+    abonos:           _conAbono(prestamo, { fecha: fechaPago, monto: aplicado, aCapital, aInteres, cuentaId }),
   };
+}
+
+/**
+ * Historial de abonos listo para mostrar: el más reciente primero (PE.6b).
+ * No muta el input y tolera el préstamo anterior a v34 (sin el campo).
+ *
+ * El desempate por fecha usa el orden de registro invertido, no el criterio del
+ * navegador: dos abonos del mismo día tienen que salir en orden inverso al que
+ * entraron, y `Array.sort` solo garantiza estabilidad, no ese orden.
+ *
+ * @param {Personal} prestamo
+ * @returns {Abono[]}
+ */
+export function historialAbonos(prestamo) {
+  const lista = Array.isArray(prestamo?.abonos) ? prestamo.abonos : [];
+  return lista
+    .map((abono, i) => ({ abono, i }))
+    .sort((a, b) => String(b.abono.fecha || '').localeCompare(String(a.abono.fecha || '')) || (b.i - a.i))
+    .map(({ abono }) => abono);
 }
 
 // ── HELPER ───────────────────────────────────────────────────────
@@ -570,6 +635,28 @@ function _diasDesde(iso, ref) {
   const base = new Date(iso + 'T12:00:00');
   base.setHours(0, 0, 0, 0);
   return Math.max(0, Math.floor((ref - base) / 86_400_000));
+}
+
+/**
+ * Anexa un abono al historial del préstamo (PE.6b). No muta el input.
+ * `cuentaId` se incluye solo si viene con valor, mismo patrón condicional que
+ * `Personal.cuentaId`: un abono en efectivo queda sin el campo, no con un
+ * `undefined` explícito que después habría que filtrar al leer.
+ *
+ * @param {Personal} prestamo
+ * @param {{ fecha: string, monto: number, aCapital: number, aInteres: number, cuentaId?: string|null }} abono
+ * @returns {Abono[]}
+ */
+function _conAbono(prestamo, abono) {
+  const previos = Array.isArray(prestamo?.abonos) ? prestamo.abonos : [];
+  const item = {
+    fecha:    abono.fecha,
+    monto:    abono.monto,
+    aCapital: abono.aCapital,
+    aInteres: abono.aInteres,
+  };
+  if (abono.cuentaId) item.cuentaId = abono.cuentaId;
+  return [...previos, item];
 }
 
 function _hoyISO() {

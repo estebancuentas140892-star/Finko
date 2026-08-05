@@ -3150,6 +3150,57 @@ button.chip:focus-visible {
   white-space: nowrap;
 }
 
+/* PE.6b: historial de abonos plegado dentro de la fila. Pesa menos que el
+   estado y el pendiente a proposito (regla R19: la fila decide con el
+   pendiente, el historial solo se consulta). `<details>` nativo, cero JS,
+   mismo mecanismo que los desplegables de Ajustes. */
+.personal-item__abonos {
+  margin-top: var(--fk-space-2);
+}
+
+.personal-item__abonos-summary {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  cursor: pointer;
+  list-style: none;
+  padding: var(--fk-space-1) 0;
+}
+
+.personal-item__abonos-summary::-webkit-details-marker { display: none; }
+
+.personal-item__abonos-summary::before { content: '▸ '; }
+
+.personal-item__abonos[open] > .personal-item__abonos-summary::before { content: '▾ '; }
+
+.personal-item__abonos-lista {
+  list-style: none;
+  margin: var(--fk-space-1) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+}
+
+.personal-abono {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0 var(--fk-space-2);
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+}
+
+.personal-abono__monto {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* El desglose ocupa las dos columnas: en movil no cabe al lado del monto y
+   partirlo en dos columnas lo dejaba ilegible. */
+.personal-abono__desglose {
+  grid-column: 1 / -1;
+  color: var(--fk-text-muted);
+}
+
 /* ── PANEL DE ALERTAS DE LÍMITES (dashboard) ──────────────────── */
 .limites-card {
   display: flex;

@@ -246,11 +246,14 @@ function _confirmarPagoPersonal() {
   }
 
   const desglose    = desglosarPago(prestamo, monto);
-  const actualizado = aplicarPago(prestamo, monto);
+  // PE.6b: la cuenta destino entra al abono del historial, no solo al saldo. Es
+  // lo que permite saber después por dónde volvió el dinero de cada cobro.
+  const actualizado = aplicarPago(prestamo, monto, undefined, cuentaDestinoId);
   const patch = {
     pagado:     actualizado.pagado,
     liquidado:  actualizado.liquidado,
     ultimoPago: actualizado.ultimoPago,
+    abonos:     actualizado.abonos ?? prestamo.abonos ?? [],
   };
   if (tieneInteres(prestamo)) {
     patch.capitalPagado    = actualizado.capitalPagado;

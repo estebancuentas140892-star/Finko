@@ -10,6 +10,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(me-deben): PE.6b, historial de abonos con bump de schema · 2026-08-05
+
+Cierra **PE.6b**, la rebanada bisagra de [PE.6](BOARD.md): D4 (rendimiento) y D5 (confianza) del [ADR 047](DECISIONS/047-me-deben-v2-intereses-e-historial.md) dependen de ella. Ficha: [`contexto/me-deben.md`](contexto/me-deben.md).
+
+- **`Personal.abonos[]`, schema v34.** Hasta ahora solo existía el acumulador `pagado`: un préstamo con cinco abonos y otro con un solo pago eran indistinguibles. Cada abono guarda `fecha`, `monto`, `aCapital`, `aInteres` y la `cuentaId` donde entró el dinero.
+- **El desglose se guarda, no se recalcula.** Reconstruirlo después es imposible: depende del interés devengado a esa fecha, que el abono siguiente ya movió.
+- **Resuelto el punto 1 de "Qué falta para cerrarlo" del ADR 047** (historial vacío vs. abono sintético) **a favor del abono sintético.** Un préstamo con `pagado > 0` migra con UN abono `agrupado: true` que refleja el acumulado, sin tocarlo. Con historial vacío, la suma del historial y `pagado` discreparían desde el día uno y todo lo que se derive de él cargaría una rama de excepción permanente. La migración no inventa lo que no sabe: no reparte el acumulado en fechas, no adivina la cuenta, y la marca `agrupado` es lo que le dice a la vista que no presuma precisión ("Antes de este historial", no una fecha). El desglose capital/interés sí se reconstruye, porque `interesPagado` ya lo venía acumulando.
+- **Invariante nuevo:** la suma de `monto` del historial es igual a `pagado`. Por eso el alta con algo ya abonado siembra su primer abono en vez de nacer vacía.
+- **Cambiar la tasa no reescribe los abonos ya recibidos.** El historial es registro de lo que pasó: su desglose fue real cuando se cobró y reetiquetarlo hacia atrás sería inventar historia. Los acumuladores del préstamo sí se recalculan, como desde EDIT.1.
+- **En la fila, plegado.** `<details>` nativo bajo el resto de hints, cero JS, mismo mecanismo que los desplegables de Ajustes. La fila sigue anclando el pendiente (regla R19): el historial es consulta, no lo que se decide de un vistazo. Los montos pasan por el helper `m()` y respetan el ojo de Inicio (regla R20).
+- Verificado en la app real con un estado v33 sembrado: los dos préstamos con pagos previos migraron a un abono agrupado (uno de ellos con su reparto $100.000 capital / $20.000 interés), el de $0 quedó con historial vacío, y cobrar $50.000 de Tía Marta anexó un abono fechado con `cuentaId`, subió el saldo de $1.000.000 a $1.050.000 y dejó `_version: 34` con la suma del historial igual a `pagado`. 31 tests unitarios nuevos (3788 unit + 263 E2E + lint verdes). SW v492 a v493.
+- **Fuera de esta rebanada:** PE.6a (D1/D2) ya la cubrían PE.1 y PE.7, el modal de cobro muestra pendiente, capital e interés acumulado desde entonces; PE.6d sigue esperando a IV.2 en producción, como manda el punto 2 del ADR 047.
+
 ### feat(tesoreria): MC.13e-2g, el asistente abre educando y reparte sus accesos por paso · 2026-08-05
 
 Cierra **MC.13e-2g**, el rediseño del asistente (MC.13e-2 completo) y con él **MC.13** entera: motor y asistente en producción. Commit `f755c40`. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). Decisiones: [ADR 061](DECISIONS/061-educacion-antes-de-repartir.md).

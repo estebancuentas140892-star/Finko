@@ -1,6 +1,6 @@
 # ADR 047 - Me deben v2: intereses acumulados, historial de abonos y confianza
 
-**Estado:** Aceptada en alcance (triaje del brief de Esteban del 2026-07-08, 8 puntos). Implementación pendiente: tarjeta **PE.6** en [BOARD.md](../BOARD.md). Dos puntos siguen abiertos, ver "Qué falta para cerrarlo".
+**Estado:** Aceptada en alcance (triaje del brief de Esteban del 2026-07-08, 8 puntos). Implementación en curso: tarjeta **PE.6** en [BOARD.md](../BOARD.md). **D1 y D2 entregadas** por PE.1 y PE.7 (el modal de cobro ya muestra pendiente, capital e interés acumulado); **D3 entregada** por PE.6b el 2026-08-05 (schema v34). Faltan D4, D5 y D6.
 **Fecha:** 2026-07-24
 **Autores:** Esteban (producto, brief del 2026-07-08), Claude Opus 5 (triaje y redacción)
 **Relación:** extiende la base que dejaron PE.1 a PE.5 (cerradas). Deriva dos puntos del brief a sus dueños externos: los recordatorios de vencimiento al [ADR 044](044-motor-unico-de-sugerencia-por-categoria.md) por la vía de CFG.3 (motor único de notificaciones), y "fecha por defecto = hoy" a la tarjeta transversal CAT.4. Los estados visuales consumen los semánticos del [ADR 031](031-identidad-de-color-por-seccion.md); el tono lo fija el [ADR 003](003-tono-neutral-profesional.md).
@@ -69,5 +69,5 @@ Los cinco estados identificables de un vistazo (al día / próximo a vencer / pa
 
 ## Qué falta para cerrarlo
 
-1. **Cómo migran los préstamos existentes al historial de D3:** historial vacío, o un abono sintético inicial que represente el acumulado `pagado`. Se decide en el análisis de la rebanada, con el dato real a la vista.
-2. **El punto 7 (estados visuales) conviene después de IV.2**, para no pintar dos veces.
+1. ~~**Cómo migran los préstamos existentes al historial de D3:** historial vacío, o un abono sintético inicial que represente el acumulado `pagado`.~~ **Resuelto en PE.6b (2026-08-05): abono sintético, marcado `agrupado: true`.** El historial vacío dejaba la suma del historial y el acumulado `pagado` en desacuerdo desde el día uno, y todo lo que D4 y D5 derivan de él cargaría una rama de excepción permanente. La marca es lo que evita que el sintético finja precisión: la vista lo rotula "Antes de este historial" en vez de una fecha, porque su fecha es la del último abono conocido y no la de cada pago.
+2. **El punto 7 (estados visuales, D6) conviene después de IV.2**, para no pintar dos veces. Sigue abierto: IV.2 no está en producción.

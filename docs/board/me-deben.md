@@ -6,13 +6,13 @@
 
 ### Me deben (dominio `personales`)
 
-#### PE.6 - Me deben v2: intereses acumulados, historial de abonos, rendimiento y confianza
+#### PE.6 - Me deben v2: rendimiento, estados visuales y confianza
 - Prioridad  : media-alta
-- Estado     : pendiente de análisis (no iniciar). Alcance y las 6 decisiones: **[ADR 047](../DECISIONS/047-me-deben-v2-intereses-e-historial.md)**, su dueño.
-- Objetivo   : que la sección deje de ser un registro y pase a seguimiento: total sugerido con intereses al cobrar, historial de abonos, rendimiento y estadísticas por persona.
+- Estado     : en curso. Alcance y las 6 decisiones: **[ADR 047](../DECISIONS/047-me-deben-v2-intereses-e-historial.md)**, su dueño.
+- Objetivo   : que la sección deje de ser un registro y pase a seguimiento: rendimiento del préstamo y estadísticas por persona, ambos derivados del historial.
 - Secciones  : Me deben (`personales`)
-- Archivos   : `modules/dominio/personales/logic.js`, `state.js`/`storage.js` (historial, bump), `personales/view.js`
-- Depende de : nada duro; el punto 7 conviene tras IV.2
-- Riesgo     : el bump de schema toca préstamos ya existentes en dispositivos reales; la migración debe conservar el acumulado `pagado` (ADR 047 D3)
-- Modelo     : Alta capacidad - Alto (intereses acumulados con pagos parciales; el resto de rebanadas puede bajar)
-- Rebanadas  : PE.6a intereses+desglose, PE.6b historial+schema, PE.6c rendimiento, PE.6d estados visuales, PE.6e confianza
+- Archivos   : `modules/dominio/personales/logic.js`, `personales/view.js`
+- Depende de : PE.6d espera a IV.2 en producción (ADR 047, punto 2 de "Qué falta para cerrarlo")
+- Riesgo     : D5 exige copy que describa, no que califique a la persona; nada de scores ni semáforos de reputación
+- Modelo     : Alta capacidad - Medio (las tres rebanadas son derivadas puras sobre `abonos[]`)
+- Rebanadas  : PE.6c rendimiento, PE.6d estados visuales, PE.6e confianza
