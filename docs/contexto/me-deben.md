@@ -8,7 +8,7 @@
 
 - **Objetivo**          : registrar dinero que TÚ prestaste (espejo de `compromisos.deuda`, donde tú debes). Desde PE.7 el préstamo deja de vivir en paralelo al resto de la app: prestar **descuenta** la cuenta de donde salió el dinero, cobrar **acredita** la cuenta donde entró, y el capital pendiente cuenta como activo ("Por cobrar") en el patrimonio de Análisis.
 - **Estado actual**     : estable. **PE.6b cerrada** (2026-08-05, historial de abonos con schema v34: el dominio pasa de guardar un acumulado a guardar los hechos). Antes: **EDIT.1** (2026-08-04, patrón P3 de la auditoría: editar un préstamo ya no obliga a eliminar y recrear), **DIS.3** (2026-07-26, las 11 correcciones aplicables de la auditoría de diseño de la sección), **PE.7** (2026-07-22, hallazgo P5 de la auditoría de UX/producto: el dominio no tenía un solo `cuentaId` y obligaba al usuario a registrar un gasto "espejo" a mano para cuadrar el saldo), PE.1 (tasa opcional + reparto capital/interés, schema v21), PE.2 a PE.5 (estados humanizados). Pendiente de PE.6: **PE.6c** (rendimiento), **PE.6d** (estados visuales, espera a IV.2) y **PE.6e** (confianza). **PE.6a no genera trabajo:** el total sugerido con su desglose (ADR 047 D1/D2) ya lo entregaron PE.1 y PE.7 en el modal de cobro.
-- **Verificado contra** : commit `9e2f2cc` (PE.6b, 2026-08-05). Antes: EDIT.1 (2026-08-04), DIS.3 (2026-07-26, auditoría de diseño), commit de PE.7 (2026-07-22, primera ficha de esta sección).
+- **Verificado contra** : commit `4e9d0d0` (PE.6b, 2026-08-05). Antes: EDIT.1 (2026-08-04), DIS.3 (2026-07-26, auditoría de diseño), commit de PE.7 (2026-07-22, primera ficha de esta sección).
 
 **Dónde vive**
 
