@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-05. Última tarea cerrada: INT.1c e INT.1d, barra superior de escritorio con cinta de saldo (Transversal).
+> Revisado: 2026-08-06. Última tarea cerrada: INT.1e, el primario de sección sube a la barra (Transversal).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 3814/3814 verdes en el índice de INT.1f |
-| Tests E2E | 263/263 verdes, sello escrito sobre el índice de CFG.7. **Compuerta** desde el 2026-07-30. **Sesiones paralelas:** árbol compartido con otra sesión durante todo el cierre; el hunk de `applyTheme` en `modules/ui/shell.js` se extrajo a mano con `git apply --cached` para no arrastrar su trabajo en curso (`_syncTopbar`, INT.1c) al commit |
+| Tests unitarios + integración | 3825/3825 verdes en el índice de INT.1e |
+| Tests E2E | Verdes en dos corridas independientes (aislada 262+1 flaky; contra el árbol completo 261+2 flaky), sello escrito sobre el índice de INT.1e. **Compuerta** desde el 2026-07-30. **Sesiones paralelas:** árbol compartido con otra sesión durante todo el cierre, con colisiones activas en el índice (staging robado y recuperado varias veces); `index.html`, `styles/responsive.css`, `modules/ui/shell.js` y `service-worker.js` se aislaron a mano con `git apply --cached` / `git hash-object -w` para no arrastrar el trabajo en curso ajeno (INT.1g, INT.1h) al commit. Mismo patrón que dejó CFG.7 |
 | Schema version (`localStorage`) | v34 (`Personal.abonos[]`, PE.6b; los préstamos ya cobrados migran con un abono agrupado y conservan `pagado`) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**INT.1e - el primario de sección sube a la barra (Transversal), 2026-08-06**
+`#topbar-primario` en la barra superior, en secundario ([ADR 059](DECISIONS/059-interfaz-de-escritorio.md) D3, R38). `_syncPrimarioTopbar()` lee el único `.btn-primary` del encabezado activo (8 de las 13 secciones lo tienen) y copia texto, `aria-label` y `data-action`/`data-modal`, sin mapa nuevo por sección; se resincroniza ante cada navegación y `state:change`. El botón original se oculta en desktop y se restaura bajo 1024px. Commit `63f95f5`.
 
 **INT.1c e INT.1d - barra superior de escritorio con cinta de saldo (Transversal), 2026-08-05**
 Barra fija de 56px ([ADR 059](DECISIONS/059-interfaz-de-escritorio.md) D1/D2/D5): teja+título de la sección activa, "Registrar" (misma hoja que móvil), tema y Ajustes; fondo opaco sin `backdrop-filter` para no arriesgar Lighthouse (99/100/100/100). La cinta de saldo (D9) vuelve `.sidebar__saldo` un componente real, con su ojo de privacidad, oculta en Inicio (el hero ya lo dice) y sin cuentas. Commit `a6eb349`.
@@ -36,9 +39,6 @@ El modal base sube de 520 a 840px desde 1024px de ventana ([ADR 059](DECISIONS/0
 
 **PE.6c y PE.6e - rendimiento del préstamo e historial por persona (Me deben), 2026-08-05**
 Derivaciones puras sobre el historial que dejó PE.6b, sin schema. `calcularRendimiento()` dice cuánto ganaste y qué porcentaje de lo prestado es, **sin anualizar**: anualizar convertiría un préstamo informal en una promesa de retorno comparable con un CDT. `estadisticasPorPersona()` alimenta un bloque plegado bajo el resumen, solo para quien tiene más de un préstamo, que **describe y no califica** ([ADR 047](DECISIONS/047-me-deben-v2-intereses-e-historial.md) D5): sin score, y ordenado por total prestado, no por puntualidad. La puntualidad solo cuenta préstamos con fecha pactada. Commit `a188744`.
-
-**PE.6b - historial de abonos con schema v34 (Me deben), 2026-08-05**
-`Personal.abonos[]` guarda fecha, monto, desglose capital/interés y cuenta destino de cada abono: hasta ahora solo existía el acumulador `pagado` y un préstamo con cinco abonos era indistinguible de uno con un solo pago. Resuelve el punto abierto del [ADR 047](DECISIONS/047-me-deben-v2-intereses-e-historial.md) a favor del **abono sintético**: lo ya cobrado migra agrupado en un abono marcado `agrupado`, que la vista rotula "Antes de este historial" en vez de inventarle fecha. Es la precondición de PE.6c y PE.6e. Commit `4e9d0d0`.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 

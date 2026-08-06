@@ -46,8 +46,7 @@ Las 29 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
-| INT.1e | El primario de cada sección sube a la barra | Transversal | media | INT.1c; pendiente P1 (recorrer 13) |
-| INT.1g | Carril derecho de 320px desde 1.680px | Transversal | baja | INT.1a cerrada; pendiente P1 |
+| INT.1g | Carril derecho de 320px desde 1.680px | Transversal | baja | INT.1e cerrada |
 | INT.1h | Cuatro atajos de teclado | Transversal | baja | INT.1c; pendiente P8 (validación a11y) |
 | MC.17f | Deshacer o editar una transferencia | Mis cuentas | media | coordinar con MOV.1 |
 | MT.6 | Metas v2: subcategorías inteligentes + plan de aportes | Metas | media-alta | nada (el motor de MC.13 ya está); ADR 029 D3 |

@@ -8,21 +8,15 @@
 
 > **Auditoría de rendimiento 2026-07 completa** (PERF.0 a PERF.4 cerradas, ver [`scripts/perf/BASELINE.md`](../../scripts/perf/BASELINE.md)). Los dos hallazgos que siguen mandando: `renderSmart()` ya evita el recálculo cruzado, y guardar cuesta ~5 ms debounced, así que la persistencia NO se reescribió ([ADR 030](../DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md), disparadores en su D4). **Disciplina obligatoria de toda tarjeta PERF: correr `pnpm perf` antes y después y comparar contra BASELINE.md.**
 
-> **Iniciativa "INT.1 - Interfaz de escritorio"** ([ADR 059](../DECISIONS/059-interfaz-de-escritorio.md), aceptado 2026-08-02). Fuente única del chrome de escritorio, 8 decisiones en 8 rebanadas. Móvil no cambia. **INT.1a, INT.1b e INT.1c cerradas**; detalle e historia en el CHANGELOG y [`contexto/transversal.md`](../contexto/transversal.md). **Coordinar con AH.7a** (mismo marcado de nav, otra plataforma).
+> **Iniciativa "INT.1 - Interfaz de escritorio"** ([ADR 059](../DECISIONS/059-interfaz-de-escritorio.md), aceptado 2026-08-02). Fuente única del chrome de escritorio, 8 decisiones en 8 rebanadas. Móvil no cambia. **INT.1a, INT.1b, INT.1c e INT.1e cerradas**; detalle e historia en el CHANGELOG y [`contexto/transversal.md`](../contexto/transversal.md). **Coordinar con AH.7a** (mismo marcado de nav, otra plataforma).
 
-> **Las tres rebanadas restantes**, en una línea cada una: su alcance completo, con medición y contra declarado, vive en el [ADR 059](../DECISIONS/059-interfaz-de-escritorio.md) y no se repite acá. Se re-expanden a tarjeta completa al iniciarlas.
-
-#### INT.1e - El primario de cada sección sube a la barra
-- Estado     : pendiente, prioridad media. D3. **Bloqueada por el pendiente P1:** hay secciones con dos acciones (Mis cuentas) y otras sin ninguna (Análisis, Ahorro, Movimientos); hay que recorrer las 13 antes de codificar. Área: ambos.
-- Objetivo   : el primario pasa a secundario en la barra (R38, R1) y la página arranca en el dato. ~70px por sección.
-- Archivos   : `index.html`, `modules/ui/shell.js`, las vistas con encabezado propio
-- Depende de : INT.1c + P1 resuelto · Modelo: Alta capacidad - Alto
+> **Las dos rebanadas restantes**, en una línea cada una: su alcance completo, con medición y contra declarado, vive en el [ADR 059](../DECISIONS/059-interfaz-de-escritorio.md) y no se repite acá. Se re-expanden a tarjeta completa al iniciarlas.
 
 #### INT.1g - Carril derecho de 320px desde 1.680px
-- Estado     : mecanismo cerrado (commit `4f87f77`, dentro de INT.1b). `.section--con-carril` en `styles/layout.css:296-312`: grid `1fr 320px` desde 1.680px; entre 1.024 y 1.680px una columna centrada (INT.1a). **Sigue bloqueada para uso real por el mismo P1 que INT.1e:** ninguna sección tiene todavía qué poner en el carril, así que ninguna usa la clase. Área: ambos.
+- Estado     : mecanismo cerrado (commit `4f87f77`, dentro de INT.1b). `.section--con-carril` en `styles/layout.css:296-312`: grid `1fr 320px` desde 1.680px; entre 1.024 y 1.680px una columna centrada (INT.1a). **P1 ya resuelto por INT.1e** (recorrido de las 13, ver `contexto/transversal.md`): ninguna sección tiene todavía qué poner en el carril, así que ninguna usa la clase; sigue sin uso real hasta que una sección declare su contenido. Área: ambos.
 - Objetivo   : lo urgente deja de obligar a bajar un pliegue.
-- Archivos   : `styles/layout.css` (mecanismo listo); falta aplicar `.section--con-carril` por sección cuando P1 resuelva contenido
-- Depende de : P1 resuelto (scope de INT.1e, recorrido de las 13 secciones) · Modelo: Equilibrado - Alto
+- Archivos   : `styles/layout.css` (mecanismo listo); falta aplicar `.section--con-carril` por sección
+- Depende de : INT.1e cerrada · Modelo: Equilibrado - Alto
 
 #### INT.1h - Cuatro atajos de teclado
 - Estado     : pendiente, prioridad baja. **Pendiente P8: la única decisión del informe que puede fallar por implementación, no por diseño.** Área: code.

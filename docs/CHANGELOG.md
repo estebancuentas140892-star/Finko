@@ -10,6 +10,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(shell): INT.1e, el primario de sección sube a la barra · 2026-08-06
+
+Cierra **INT.1e** (D3 del [ADR 059](DECISIONS/059-interfaz-de-escritorio.md)), resolviendo el pendiente **P1** (recorrido de las 13 secciones). Commit `63f95f5`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
+
+- **Recorrido de las 13 secciones:** 8 tienen un primario de encabezado (`.section__header > .btn-primary`, el mismo botón que R1 ya exige único por pantalla); Análisis, Ahorro (casa) y Movimientos no tienen ninguno (confirmado); Fondo e Inversión tampoco, porque su CTA vive en contenido dinámico y no en el encabezado, fuera del alcance mecánico de esta rebanada.
+- **`#topbar-primario`** en la barra superior, en secundario (R38: mover dinero pesa más que crear una ficha, no compite en verde con "Registrar"). `shell.js` (`_syncPrimarioTopbar`) copia texto, `aria-label` y `data-action`/`data-modal` del botón original, sin mapa de acciones nuevo por sección. Se resincroniza en cada navegación y ante cualquier `state:change` (cubre Deudas sin deudas activas y Límites sin plan del mes, que ocultan su botón sin navegar).
+- **El botón original se oculta en desktop** (`styles/responsive.css`, recupera el alto de esa fila del encabezado) y se restaura bajo 1024px con `:not([hidden])`, para no pisar por especificidad el `hidden` que cada dominio ya controla. Mis cuentas conserva "+ Fijo"/"+ Puntual" en su sitio: viven en `.section__sub-header`, fuera de `.section__header`, y R38 ya descartó subirlos a primario.
+- Verificado en la app real, 13 secciones, desktop y móvil. 3825 unit + lint + E2E verdes (dos corridas independientes: aislada 262+1 flaky, contra el árbol completo 261+2 flaky, 0 failed en ambas). SW v497 a v498.
+
 ### feat(shell): INT.1c e INT.1d, barra superior de escritorio con cinta de saldo · 2026-08-05
 
 Cierra **INT.1c** (D1/D2/D5) e **INT.1d** (D9) del [ADR 059](DECISIONS/059-interfaz-de-escritorio.md). Commit `a6eb349`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
