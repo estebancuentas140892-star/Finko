@@ -423,6 +423,16 @@
         <h2 class="topbar__title" id="topbar-title">Inicio</h2>
       </div>
 
+      <!-- Primario de la sección, en secundario (INT.1e, ADR 059 D3): el
+           botón `.btn-primary` del encabezado de cada sección se retira ahí
+           (responsive.css, oculto desde 1024px) y su texto/acción viajan
+           acá. shell.js (_syncPrimarioTopbar) lo llena leyendo
+           `.section__header > .btn-primary` de la sección activa, sin mapa
+           nuevo por sección; queda oculto si esa sección no tiene primario
+           (Análisis, Ahorro, Movimientos, Fondo, Inversión, Ajustes) o si su
+           propio dominio lo oculta (ej. Deudas sin deudas activas). -->
+      <button class="btn btn-secondary topbar__primario" type="button" id="topbar-primario" aria-label="Acción principal de la sección" hidden></button>
+
       <!-- Cinta de saldo (INT.1d, ADR 059 D9): `.sidebar__saldo` era CSS sin
            marcado, nunca se pintó. render.js (updSaldo) la llena y la oculta
            en Inicio, donde el hero ya muestra el mismo dato (R27), y sin

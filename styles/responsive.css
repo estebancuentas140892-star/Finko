@@ -23,11 +23,23 @@
    sigue siendo la única salida vertical. */
 .section__volver--ahorro-hija { display: none; }
 
+/* Primario del encabezado de sección (INT.1e, ADR 059 D3): oculto en
+   desktop por defecto, sube a la barra superior (topbar__primario, shell.js).
+   Recupera el alto que el botón le costaba a la fila del encabezado. Se
+   restaura bajo 1024px, donde no hay barra superior. */
+.section__header > .btn-primary { display: none; }
+
 /* ── TABLET + MÓVIL: SIDEBAR INFERIOR + TOUCH TARGETS (< 1024px) ─ */
 @media (max-width: 1023px) {
 
   /* Volver de las 4 hijas de Ahorro: vuelve a ser la única salida vertical. */
   .section__volver--ahorro-hija { display: inline-flex; }
+
+  /* Primario del encabezado: vuelve a mostrarse en su sitio de siempre.
+     :not([hidden]) respeta el ocultamiento propio del dominio (ej. Deudas
+     sin deudas activas, Límites sin plan del mes), que no debe perder
+     contra esta regla por especificidad. */
+  .section__header > .btn-primary:not([hidden]) { display: inline-flex; }
 
   /* Items secundarios del bottom nav: ocultos en mobile (van al menu Mas) */
   .nav-item--no-mobile { display: none !important; }

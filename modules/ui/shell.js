@@ -181,9 +181,9 @@ export function markActiveNav(hash) {
  * header es `.perfil-inicio`, sin `.cat-teja` propia (el hero ya nombra la
  * app), así que cae al rótulo neutro.
  *
- * @param {string} hash
+ * @param {string} _hash
  */
-function _syncTopbar(hash) {
+function _syncTopbar(_hash) {
   const iconWrap = document.getElementById('topbar-icon');
   const iconUse  = document.getElementById('topbar-icon-use');
   const titleEl  = document.getElementById('topbar-title');
@@ -201,6 +201,39 @@ function _syncTopbar(hash) {
   else delete iconWrap.dataset.dom;
   iconUse.setAttribute('href', icono);
   titleEl.textContent = titulo;
+
+  _syncPrimarioTopbar(activo);
+}
+
+/**
+ * Espeja el primario del encabezado de la sección activa en la barra
+ * (INT.1e, ADR 059 D3), en secundario. No duplica un mapa de acciones por
+ * sección: lee el único `.btn-primary` que cada encabezado ya declara (R1,
+ * un solo primario por pantalla) y copia texto + aria-label + data-action.
+ * Sin ese botón (Análisis, Ahorro, Movimientos, Fondo, Inversión, Ajustes)
+ * o con `hidden` propio del dominio (ej. Deudas sin deudas activas), el
+ * botón de la barra se oculta.
+ *
+ * @param {Element|null} activo - `.section.active`.
+ */
+function _syncPrimarioTopbar(activo) {
+  const btnTop = document.getElementById('topbar-primario');
+  if (!btnTop) return;
+
+  const origen = activo?.querySelector('.section__header > .btn-primary');
+  if (!origen || origen.hidden) {
+    btnTop.hidden = true;
+    return;
+  }
+
+  btnTop.textContent = origen.textContent.trim();
+  const aria = origen.getAttribute('aria-label');
+  if (aria) btnTop.setAttribute('aria-label', aria);
+  else btnTop.removeAttribute('aria-label');
+  btnTop.dataset.action = origen.dataset.action;
+  if (origen.dataset.modal) btnTop.dataset.modal = origen.dataset.modal;
+  else delete btnTop.dataset.modal;
+  btnTop.hidden = false;
 }
 
 /**
@@ -308,4 +341,14 @@ export function initSidebarCollapse() {
 export function initShell() {
   const saved = localStorage.getItem(THEME_KEY);
   applyTheme(saved === 'light');
+
+  // El primario de la barra (INT.1e) puede quedar desactualizado sin
+  // navegar: Deudas oculta "+ Nueva deuda" al saldar la última, Límites
+  // oculta "+ Límite" sin plan del mes. Un solo listener genérico evita un
+  // mapa sección → evento (los nombres de section de state:change no son
+  // 1:1 con el hash, ej. presupuesto emite 'presupuestos'), y el costo de
+  // releer un `.btn-primary` en cada cambio es despreciable.
+  EventBus.on('state:change', () => {
+    _syncPrimarioTopbar(document.querySelector('.section.active'));
+  });
 }
