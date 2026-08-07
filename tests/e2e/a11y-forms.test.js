@@ -138,7 +138,7 @@ test.describe('A11Y.5 - axe sobre formularios dinámicos', () => {
   test('el modal "Nuevo apartado" no tiene violaciones graves', async ({ page }) => {
     await seedEstadoBase(page);
     await page.goto('/#apartados');
-    await page.click('#sec-apartados [data-action="nuevo-apartado"]');
+    await page.locator('#topbar-primario[data-action="nuevo-apartado"]:visible, #sec-apartados .section__header [data-action="nuevo-apartado"]:visible').click();
     await page.waitForSelector('#modal-apartado[data-open]');
 
     const violaciones = await violacionesGraves(page, '#modal-apartado');

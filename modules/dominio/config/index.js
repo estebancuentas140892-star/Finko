@@ -135,6 +135,15 @@ function _toggleNotificaciones(el) {
   announce(el.checked ? 'Recordatorios activados.' : 'Recordatorios desactivados.');
 }
 
+/** @param {HTMLElement} el - el <input type="checkbox"> */
+function _toggleAtajos(el) {
+  if (!S.config) S.config = {};
+  S.config.atajosTeclado = el.checked;
+  save();
+  renderPanelConfig();
+  announce(el.checked ? 'Atajos de teclado activados.' : 'Atajos de teclado desactivados.');
+}
+
 function _exportarGastosCSV() {
   const csv = gastosACSV(S.gastos ?? [], S.cuentas ?? []);
   if (!csv) {
@@ -302,6 +311,7 @@ export function initConfig() {
   registrarAccion('resetear-app',           _resetearApp);
   registrarAccion('activar-notificaciones', _activarNotificaciones);
   registrarAccion('toggle-notificaciones',  _toggleNotificaciones);
+  registrarAccion('toggle-atajos',          _toggleAtajos);
   registrarAccion('abrir-legal', (el) => _mostrarDocumentoLegal(el.dataset.doc));
   _wireLegalLinks();
 

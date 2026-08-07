@@ -59,7 +59,7 @@ export function renderPanelConfig() {
 
   el.innerHTML = `
     ${_renderAvisoVigencia()}
-    ${_grupo('La app',      [_renderTema(), _renderNotificaciones(), _renderInstalarApp()])}
+    ${_grupo('La app',      [_renderTema(), _renderAtajos(), _renderNotificaciones(), _renderInstalarApp()])}
     ${_grupo('Tu cuenta',   [_renderPerfil()])}
     ${_grupo('Tus datos',   [_renderDatos()])}
     ${_grupo('Impuestos',   [_renderImpuestos()])}
@@ -141,6 +141,37 @@ function _renderTema() {
         </span>
         <span class="config-toggle__label">${icono} ${label}</span>
       </label>
+    </section>`;
+}
+
+/**
+ * Interruptor de los atajos de teclado de escritorio (INT.1h). WCAG 2.1.4
+ * exige poder apagar un atajo de una sola tecla: este es el apagador.
+ */
+function _renderAtajos() {
+  const activo = S.config?.atajosTeclado !== false;
+  return `
+    <section class="config-section" aria-labelledby="config-atajos-title">
+      <h2 class="config-section__title" id="config-atajos-title">Atajos de teclado</h2>
+      <label class="config-toggle" for="toggle-atajos">
+        <span class="toggle">
+          <input
+            id="toggle-atajos"
+            type="checkbox"
+            data-action="toggle-atajos"
+            ${activo ? 'checked' : ''}
+            aria-label="Activar o desactivar los atajos de teclado"
+          />
+          <span class="toggle__track" aria-hidden="true"></span>
+        </span>
+        <span class="config-toggle__label">
+          ${activo ? 'Atajos activados' : 'Atajos desactivados'}
+        </span>
+      </label>
+      <p class="form-hint">
+        En pantallas de escritorio: <kbd>N</kbd> registra, <kbd>G</kbd> + letra salta de
+        sección, <kbd>?</kbd> muestra la lista completa.
+      </p>
     </section>`;
 }
 

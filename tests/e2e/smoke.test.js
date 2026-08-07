@@ -653,7 +653,7 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
   // sea exactamente el anillo lo fija `tests/unit/metas.test.js` contra
   // `SILUETAS.anillo`, que es donde se puede comparar el path sin acoplar el E2E.
   test('crear una meta con categoría "Boda" muestra su silueta en el arco (ID.3)', async ({ page }) => {
-    await page.click('#sec-metas [data-action="nueva-meta"]');
+    await page.locator('#topbar-primario[data-action="nueva-meta"]:visible, #sec-metas .section__header [data-action="nueva-meta"]:visible').click();
     await page.waitForSelector('#modal-meta[data-open]');
 
     const form = page.locator('#modal-meta-body form');
@@ -671,7 +671,7 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
   });
 
   test('MT.3: el campo de emoji está oculto salvo con categoría "Otra"', async ({ page }) => {
-    await page.click('#sec-metas [data-action="nueva-meta"]');
+    await page.locator('#topbar-primario[data-action="nueva-meta"]:visible, #sec-metas .section__header [data-action="nueva-meta"]:visible').click();
     await page.waitForSelector('#modal-meta[data-open]');
 
     const form = page.locator('#modal-meta-body form');
@@ -687,7 +687,7 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
   });
 
   test('CAT.2b: con categoría "Otra" el ícono elegido en el picker queda en la lista', async ({ page }) => {
-    await page.click('#sec-metas [data-action="nueva-meta"]');
+    await page.locator('#topbar-primario[data-action="nueva-meta"]:visible, #sec-metas .section__header [data-action="nueva-meta"]:visible').click();
     await page.waitForSelector('#modal-meta[data-open]');
 
     const form = page.locator('#modal-meta-body form');
@@ -707,7 +707,7 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
   });
 
   test('CAT.2b: volver de "Otra" a otra categoría limpia el ícono elegido a mano', async ({ page }) => {
-    await page.click('#sec-metas [data-action="nueva-meta"]');
+    await page.locator('#topbar-primario[data-action="nueva-meta"]:visible, #sec-metas .section__header [data-action="nueva-meta"]:visible').click();
     await page.waitForSelector('#modal-meta[data-open]');
 
     const form = page.locator('#modal-meta-body form');
@@ -752,7 +752,7 @@ test.describe('Metas - abono con selector de cuenta compartido (MT.5)', () => {
   async function crearMetaSimple(page, nombre, montoObjetivo) {
     await page.goto('/#metas');
     await expect(page.locator('#sec-metas.active')).toBeVisible();
-    await page.click('#sec-metas [data-action="nueva-meta"]');
+    await page.locator('#topbar-primario[data-action="nueva-meta"]:visible, #sec-metas .section__header [data-action="nueva-meta"]:visible').click();
     await page.waitForSelector('#modal-meta[data-open]');
     const form = page.locator('#modal-meta-body form');
     await form.locator('#meta-nombre').fill(nombre);
@@ -846,7 +846,7 @@ test.describe('Metas - ritmo de ahorro según frecuencia (MT.4)', () => {
     const mes  = String(futura.getMonth() + 1).padStart(2, '0');
     const dia  = String(futura.getDate()).padStart(2, '0');
 
-    await page.click('#sec-metas [data-action="nueva-meta"]');
+    await page.locator('#topbar-primario[data-action="nueva-meta"]:visible, #sec-metas .section__header [data-action="nueva-meta"]:visible').click();
     await page.waitForSelector('#modal-meta[data-open]');
     const form = page.locator('#modal-meta-body form');
     await form.locator('#meta-nombre').fill('Estudio de idiomas');
@@ -2315,7 +2315,7 @@ test.describe('Me deben conectado a cuentas y patrimonio (PE.7)', () => {
   });
 
   test('prestar descuenta la cuenta elegida', async ({ page }) => {
-    await page.locator('#sec-personales .section__header [data-action="nuevo-personal"]').click();
+    await page.locator('#topbar-primario[data-action="nuevo-personal"]:visible, #sec-personales .section__header [data-action="nuevo-personal"]:visible').click();
     await page.locator('#pers-persona').fill('Tía Marta');
     await page.locator('#pers-monto').fill('400000');
 
@@ -2327,7 +2327,7 @@ test.describe('Me deben conectado a cuentas y patrimonio (PE.7)', () => {
   });
 
   test('cobrar devuelve el dinero a la cuenta', async ({ page }) => {
-    await page.locator('#sec-personales .section__header [data-action="nuevo-personal"]').click();
+    await page.locator('#topbar-primario[data-action="nuevo-personal"]:visible, #sec-personales .section__header [data-action="nuevo-personal"]:visible').click();
     await page.locator('#pers-persona').fill('Tía Marta');
     await page.locator('#pers-monto').fill('400000');
     await page.locator('#form-personal button[type="submit"]').click();
@@ -2351,7 +2351,7 @@ test.describe('Me deben conectado a cuentas y patrimonio (PE.7)', () => {
     const netoAntes = await netoDelPanel();
 
     await page.goto('/#personales');
-    await page.locator('#sec-personales .section__header [data-action="nuevo-personal"]').click();
+    await page.locator('#topbar-primario[data-action="nuevo-personal"]:visible, #sec-personales .section__header [data-action="nuevo-personal"]:visible').click();
     await page.locator('#pers-persona').fill('Tía Marta');
     await page.locator('#pers-monto').fill('400000');
     await page.locator('#form-personal button[type="submit"]').click();
@@ -2364,7 +2364,7 @@ test.describe('Me deben conectado a cuentas y patrimonio (PE.7)', () => {
 
   test('sin cuenta vinculada el préstamo se registra igual y no toca ningún saldo', async ({ page }) => {
     // Se desmarca el radio para simular "no quiero vincular cuenta".
-    await page.locator('#sec-personales .section__header [data-action="nuevo-personal"]').click();
+    await page.locator('#topbar-primario[data-action="nuevo-personal"]:visible, #sec-personales .section__header [data-action="nuevo-personal"]:visible').click();
     await page.locator('#pers-persona').fill('Vecino');
     await page.locator('#pers-monto').fill('200000');
     await page.evaluate(() => {
@@ -4313,7 +4313,7 @@ test.describe('Apartados - selector de ícono compacto (CAT.2c)', () => {
     await saltearOnboarding(page);
     await page.goto('/#apartados');
     await page.waitForSelector('#sec-apartados.active', { timeout: 10_000 });
-    await page.click('#sec-apartados [data-action="nuevo-apartado"]');
+    await page.locator('#topbar-primario[data-action="nuevo-apartado"]:visible, #sec-apartados .section__header [data-action="nuevo-apartado"]:visible').click();
     await page.waitForSelector('#modal-apartado[data-open]');
 
     const form = page.locator('#modal-apartado-body form');
@@ -4336,7 +4336,7 @@ test.describe('Apartados - selector de ícono compacto (CAT.2c)', () => {
     await saltearOnboarding(page);
     await page.goto('/#apartados');
     await page.waitForSelector('#sec-apartados.active', { timeout: 10_000 });
-    await page.click('#sec-apartados [data-action="nuevo-apartado"]');
+    await page.locator('#topbar-primario[data-action="nuevo-apartado"]:visible, #sec-apartados .section__header [data-action="nuevo-apartado"]:visible').click();
     await page.waitForSelector('#modal-apartado[data-open]');
 
     const form = page.locator('#modal-apartado-body form');
@@ -4360,7 +4360,7 @@ test.describe('Apartados - selector de ícono compacto (CAT.2c)', () => {
     await saltearOnboarding(page);
     await page.goto('/#apartados');
     await page.waitForSelector('#sec-apartados.active', { timeout: 10_000 });
-    await page.click('#sec-apartados [data-action="nuevo-apartado"]');
+    await page.locator('#topbar-primario[data-action="nuevo-apartado"]:visible, #sec-apartados .section__header [data-action="nuevo-apartado"]:visible').click();
     await page.waitForSelector('#modal-apartado[data-open]');
 
     const form = page.locator('#modal-apartado-body form');
@@ -4946,7 +4946,7 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
   });
 
   test('editar prellena los campos actuales y actualiza nombre/objetivo/fecha', async ({ page }) => {
-    await page.click('#sec-metas [data-action="nueva-meta"]');
+    await page.locator('#topbar-primario[data-action="nueva-meta"]:visible, #sec-metas .section__header [data-action="nueva-meta"]:visible').click();
     await page.waitForSelector('#modal-meta[data-open]');
     const form = page.locator('#modal-meta-body form');
     await form.locator('#meta-nombre').fill('Viaje a la costa');
@@ -4983,7 +4983,7 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
 
     await page.goto('/#metas');
     await expect(page.locator('#sec-metas.active')).toBeVisible();
-    await page.click('#sec-metas [data-action="nueva-meta"]');
+    await page.locator('#topbar-primario[data-action="nueva-meta"]:visible, #sec-metas .section__header [data-action="nueva-meta"]:visible').click();
     await page.waitForSelector('#modal-meta[data-open]');
     const form = page.locator('#modal-meta-body form');
     await form.locator('#meta-nombre').fill('Laptop nueva');
@@ -5018,7 +5018,7 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
   });
 
   test('bajar el objetivo por debajo de lo ya aportado marca la meta como completada', async ({ page }) => {
-    await page.click('#sec-metas [data-action="nueva-meta"]');
+    await page.locator('#topbar-primario[data-action="nueva-meta"]:visible, #sec-metas .section__header [data-action="nueva-meta"]:visible').click();
     await page.waitForSelector('#modal-meta[data-open]');
     const form = page.locator('#modal-meta-body form');
     await form.locator('#meta-nombre').fill('Fondo cámara');
@@ -5052,7 +5052,7 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
   });
 
   test('editar preserva la categoría e ícono elegidos', async ({ page }) => {
-    await page.click('#sec-metas [data-action="nueva-meta"]');
+    await page.locator('#topbar-primario[data-action="nueva-meta"]:visible, #sec-metas .section__header [data-action="nueva-meta"]:visible').click();
     await page.waitForSelector('#modal-meta[data-open]');
     const form = page.locator('#modal-meta-body form');
     await form.locator('#meta-nombre').fill('Boda de mi hermana');

@@ -423,6 +423,8 @@ export function createInitialState() {
       ultimaVersionVista: ultimaVersionNovedadesConocida(),
       /** Aceptación versionada del paquete legal (LEG.2, schema v33). null = pendiente. */
       legalAceptado: null,
+      /** Atajos de teclado de escritorio (INT.1h, schema v35). WCAG 2.1.4: apagable. */
+      atajosTeclado: true,
     },
 
     /** Cuentas / tesorería. */

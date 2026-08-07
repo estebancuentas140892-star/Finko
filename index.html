@@ -1557,6 +1557,46 @@
     </div>
   </div>
 
+  <!-- Modal: Atajos de teclado (INT.1h, escritorio). Contenido estatico,
+       sin JS propio: la abre "?" (actions.js _handleKeydown) o el enlace de
+       Ajustes. Interruptor de Ajustes (WCAG 2.1.4) apaga N/G/? sin tocar Esc. -->
+  <div class="modal-overlay" id="modal-atajos"
+       role="dialog" aria-modal="true"
+       aria-labelledby="modal-atajos-title" aria-hidden="true">
+    <div class="modal modal--mas">
+      <header class="modal__header">
+        <h2 class="modal__title" id="modal-atajos-title">Atajos de teclado</h2>
+        <button class="modal__close" type="button"
+                data-action="modal-close" aria-label="Cerrar">
+          <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
+        </button>
+      </header>
+      <div class="modal__body">
+        <dl class="atajos-lista">
+          <div class="atajos-lista__item">
+            <dt><kbd>N</kbd></dt>
+            <dd>Abrir "¿Qué quieres registrar?"</dd>
+          </div>
+          <div class="atajos-lista__item">
+            <dt><kbd>G</kbd> + letra</dt>
+            <dd>Saltar de sección (ej. <kbd>G</kbd> <kbd>I</kbd> va a Inicio)</dd>
+          </div>
+          <div class="atajos-lista__item">
+            <dt><kbd>?</kbd></dt>
+            <dd>Esta lista</dd>
+          </div>
+          <div class="atajos-lista__item">
+            <dt><kbd>Esc</kbd></dt>
+            <dd>Cerrar la ventana abierta</dd>
+          </div>
+        </dl>
+        <p class="form-hint">
+          Se apagan desde Ajustes → La app → Atajos de teclado.
+        </p>
+      </div>
+    </div>
+  </div>
+
   <!-- ── MENU MAS (mobile bottom-sheet con opciones secundarias) ──── -->
   <!-- Menú "Más" v2 (NAV2.1a, ADR 040 D1-D3): hoja inferior agrupada.
        Revisa el D5 del ADR 024: vuelven los rótulos de grupo y las 4

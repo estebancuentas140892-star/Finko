@@ -49,12 +49,83 @@ function _handleClick(e) {
   if (el) dispatch(el, e);
 }
 
+// INT.1h: cuatro atajos de escritorio. N registra, G + inicial salta de
+// sección, ? abre la ayuda, Esc cierra (ya existía). Letra → sección, elegida
+// para no chocar entre sí (no es la inicial visible en todos los casos).
+const _MAPA_SECCION_ATAJO = {
+  i: 'dash',        // Inicio
+  g: 'gast',        // Gastos
+  c: 'agenda',      // Calendario
+  f: 'compromisos', // Gastos fijos
+  t: 'tesoreria',   // Mis cuentas (tesorería)
+  m: 'movimientos', // Movimientos
+  d: 'personales',  // Me deben
+  l: 'presupuesto', // Límites
+  a: 'analisis',    // Análisis
+  h: 'ahorro',      // Ahorro
+  j: 'config',      // Ajustes
+};
+
+/** Ventana para completar "G + letra" antes de que el prefijo caduque. */
+const _G_TIMEOUT_MS = 900;
+let _gArmado = false;
+let _gTimer = null;
+
+function _desarmarG() {
+  _gArmado = false;
+  clearTimeout(_gTimer);
+  _gTimer = null;
+}
+
+/**
+ * Riesgo P8 (ADR 059): un atajo de una sola tecla choca con el modo de
+ * navegación por letras de un lector de pantalla y con la escritura normal.
+ * Mitigación: campo de texto/contenteditable siempre gana, un modal abierto
+ * siempre gana (foco atrapado), y el interruptor de Ajustes (WCAG 2.1.4)
+ * apaga los tres atajos de letra sin tocar Escape.
+ */
+function _atajoBloqueado(e) {
+  if (e.ctrlKey || e.altKey || e.metaKey) return true;
+  const el = e.target;
+  if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return true;
+  if (document.querySelector('.modal-overlay[data-open]')) return true;
+  return false;
+}
+
 /** @param {KeyboardEvent} e */
 function _handleKeydown(e) {
-  if (e.key !== 'Escape') return;
-  const open = document.querySelector('.modal-overlay[data-open]');
-  // data-bloqueante (LEG.2): gate de aceptación legal, sin salida hasta aceptar.
-  if (open && !('bloqueante' in open.dataset)) cerrarModal(open);
+  if (e.key === 'Escape') {
+    const open = document.querySelector('.modal-overlay[data-open]');
+    // data-bloqueante (LEG.2): gate de aceptación legal, sin salida hasta aceptar.
+    if (open && !('bloqueante' in open.dataset)) cerrarModal(open);
+    return;
+  }
+
+  if (S.config?.atajosTeclado === false) return;
+  if (_atajoBloqueado(e)) { _desarmarG(); return; }
+
+  if (_gArmado) {
+    _desarmarG();
+    const destino = _MAPA_SECCION_ATAJO[e.key.toLowerCase()];
+    if (destino) navigate(destino);
+    return;
+  }
+
+  if (e.key.toLowerCase() === 'g') {
+    _gArmado = true;
+    _gTimer = setTimeout(_desarmarG, _G_TIMEOUT_MS);
+    return;
+  }
+
+  if (e.key.toLowerCase() === 'n') {
+    _acciones.get('registrar-abrir-hoja')?.();
+    return;
+  }
+
+  if (e.key === '?') {
+    const overlay = document.getElementById('modal-atajos');
+    if (overlay) abrirModal(overlay);
+  }
 }
 
 /**

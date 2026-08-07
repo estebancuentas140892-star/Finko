@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 34;
+const SCHEMA_VERSION = 35;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -538,6 +538,16 @@ function _migrate(raw) {
           agrupado: true,
         }];
       }
+    }
+  }
+
+  // v34 → v35: atajos de teclado de escritorio (INT.1h). Default encendido;
+  // apagable en Ajustes (exigencia WCAG 2.1.4 sobre atajos de una sola tecla).
+  // Idempotente: si el campo ya está presente, no se sobreescribe.
+  if ((typeof data._version === 'number' ? data._version : 1) < 35) {
+    if (!data.config || typeof data.config !== 'object') data.config = {};
+    if (!('atajosTeclado' in data.config)) {
+      data.config.atajosTeclado = true;
     }
   }
 

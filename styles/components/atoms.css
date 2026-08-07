@@ -701,4 +701,42 @@
   color: var(--fk-dom-compromisos-text);
   white-space: nowrap;
 }
+/* ── Tecla + lista de atajos (INT.1h, modal "Atajos de teclado") ── */
+kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.6em;
+  padding: 0 var(--fk-space-2);
+  border: 1px solid var(--fk-border-default);
+  border-radius: var(--fk-radius-sm);
+  background: var(--fk-bg-elevated);
+  font-family: inherit;
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+}
+.atajos-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+  margin: 0;
+}
+.atajos-lista__item {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+}
+.atajos-lista__item dt {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-1);
+  flex-shrink: 0;
+  min-width: 6em;
+}
+.atajos-lista__item dd {
+  margin: 0;
+  color: var(--fk-text-secondary);
+  font-size: var(--fk-text-sm);
+}
 .grupo-eyebrow-fila__extra .icon { --fk-icon-size: 0.8125rem; }
