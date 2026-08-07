@@ -8,22 +8,15 @@
 
 > **Auditoría de rendimiento 2026-07 completa** (PERF.0 a PERF.4 cerradas, ver [`scripts/perf/BASELINE.md`](../../scripts/perf/BASELINE.md)). Los dos hallazgos que siguen mandando: `renderSmart()` ya evita el recálculo cruzado, y guardar cuesta ~5 ms debounced, así que la persistencia NO se reescribió ([ADR 030](../DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md), disparadores en su D4). **Disciplina obligatoria de toda tarjeta PERF: correr `pnpm perf` antes y después y comparar contra BASELINE.md.**
 
-> **Iniciativa "INT.1 - Interfaz de escritorio"** ([ADR 059](../DECISIONS/059-interfaz-de-escritorio.md), aceptado 2026-08-02). Fuente única del chrome de escritorio, 8 decisiones en 8 rebanadas. Móvil no cambia. **INT.1a, INT.1b, INT.1c e INT.1e cerradas**; detalle e historia en el CHANGELOG y [`contexto/transversal.md`](../contexto/transversal.md). **Coordinar con AH.7a** (mismo marcado de nav, otra plataforma).
+> **Iniciativa "INT.1 - Interfaz de escritorio"** ([ADR 059](../DECISIONS/059-interfaz-de-escritorio.md), aceptado 2026-08-02). Fuente única del chrome de escritorio, 8 decisiones en 8 rebanadas. Móvil no cambia. **INT.1a, INT.1b, INT.1c, INT.1e e INT.1h cerradas**; detalle e historia en el CHANGELOG y [`contexto/transversal.md`](../contexto/transversal.md). **Coordinar con AH.7a** (mismo marcado de nav, otra plataforma).
 
-> **Las dos rebanadas restantes**, en una línea cada una: su alcance completo, con medición y contra declarado, vive en el [ADR 059](../DECISIONS/059-interfaz-de-escritorio.md) y no se repite acá. Se re-expanden a tarjeta completa al iniciarlas.
+> **La rebanada restante**, en una línea: su alcance completo, con medición y contra declarado, vive en el [ADR 059](../DECISIONS/059-interfaz-de-escritorio.md) y no se repite acá. Se re-expande a tarjeta completa al iniciarla.
 
 #### INT.1g - Carril derecho de 320px desde 1.680px
 - Estado     : mecanismo cerrado (commit `4f87f77`, dentro de INT.1b). `.section--con-carril` en `styles/layout.css:296-312`: grid `1fr 320px` desde 1.680px; entre 1.024 y 1.680px una columna centrada (INT.1a). **P1 ya resuelto por INT.1e** (recorrido de las 13, ver `contexto/transversal.md`): ninguna sección tiene todavía qué poner en el carril, así que ninguna usa la clase; sigue sin uso real hasta que una sección declare su contenido. Área: ambos.
 - Objetivo   : lo urgente deja de obligar a bajar un pliegue.
 - Archivos   : `styles/layout.css` (mecanismo listo); falta aplicar `.section--con-carril` por sección
 - Depende de : INT.1e cerrada · Modelo: Equilibrado - Alto
-
-#### INT.1h - Cuatro atajos de teclado
-- Estado     : pendiente, prioridad baja. **Pendiente P8: la única decisión del informe que puede fallar por implementación, no por diseño.** Área: code.
-- Objetivo   : `N` registrar, `G` + inicial saltar de sección, `?` la lista, `Esc` cerrar (ya existe). El quinto (`/`) entra con la auditoría del buscador.
-- Riesgo     : un `keydown` global debe ignorar campos de texto y no chocar con el navegador ni con el modo de navegación de un lector de pantalla. Hoy el único global es el `Escape` de `ui/actions.js`.
-- Archivos   : `modules/ui/actions.js`, `index.html` (panel de ayuda)
-- Depende de : INT.1c · Modelo: Alta capacidad - Alto (riesgo de accesibilidad real)
 
 #### PERF.5 (futura, no iniciar) - Migrar la persistencia a IndexedDB
 - Prioridad  : sin definir (se retoma solo si se dispara un criterio del [ADR 030](../DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) D4)

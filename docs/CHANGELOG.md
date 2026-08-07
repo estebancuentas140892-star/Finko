@@ -10,6 +10,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(shell): INT.1h, cuatro atajos de teclado en escritorio · 2026-08-06
+
+Cierra **INT.1h** del [ADR 059](DECISIONS/059-interfaz-de-escritorio.md), resolviendo el pendiente **P8** (validación de accesibilidad de un `keydown` global). Commit `f5fcda7`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
+
+- **Cuatro atajos** (`_handleKeydown()`, `ui/actions.js`): `N` abre "¿Qué quieres registrar?", `G` + letra salta de sección (mapa fijo de 11 destinos), `?` abre `#modal-atajos` (contenido estático en `index.html`), `Esc` sigue cerrando el modal abierto (comportamiento previo, sin cambios).
+- **P8 mitigado con tres guardas** en `_atajoBloqueado()`: un campo de texto o `contenteditable` con foco, un modal abierto (foco atrapado), o una tecla modificadora (Ctrl/Alt/Meta) presionada cancelan el atajo antes de actuar.
+- **Interruptor en Ajustes → La app** (`_renderAtajos()`, `config/view.js`): exigencia WCAG 2.1.4 de poder apagar un atajo de una sola tecla. `S.config.atajosTeclado`, default `true`, schema v34 a v35 con migración idempotente.
+- Verificado en la app real: los cuatro atajos, el interruptor de Ajustes apagándolos y prendiéndolos, y que escribir en un campo de texto no dispara nada. 3825 unit + lint + E2E verdes (263 E2E, 0 failed). SW v500 a v501.
+
 ### feat(shell): INT.1e, el primario de sección sube a la barra · 2026-08-06
 
 Cierra **INT.1e** (D3 del [ADR 059](DECISIONS/059-interfaz-de-escritorio.md)), resolviendo el pendiente **P1** (recorrido de las 13 secciones). Commit `63f95f5`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
