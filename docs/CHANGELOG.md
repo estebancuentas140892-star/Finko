@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(analisis): ANL.3, cada bloque declara su propio alcance · 2026-08-11
+
+Cierra **ANL.3**, triaje de la ficha 16 del handoff de Claude Design. Ficha: [`contexto/analisis.md`](contexto/analisis.md). Commit `3ca44ed`.
+
+- **Z1**: el chip de mes del header (`#analisis-chip-mes`) anclaba visualmente los 5 bloques del panel a un mes, pero solo "Por categoría" lo mide. Se movió al rótulo del grupo "A dónde va tu dinero"; patrimonio agrega "hoy" a su hint (tendencia y renta ya declaraban el suyo).
+- **Z2**: `calcularActivos()` expone `prestamosSinCuenta` (nuevo `calcularPrestamosSinCuenta()` en `personales/logic.js`); `_renderPatrimonio()` avisa cuando hay préstamos sin `cuentaId` que no suman al activo, con link a Me deben.
+- **Z3**: el link de deudas sin saldo pasa de "Compromisos" (nombre interno) a "Deudas" (nombre de producto que ya usa el nav); el destino sigue siendo `#compromisos`.
+- Tests: 8 unit nuevos (`analisis.test.js`, `personales.test.js`), 2 E2E actualizados. 263/263 E2E, lint verde, cero guión largo. SW `finko-v504` → `finko-v505`.
+
 ### feat(agenda): CAT.3c y CAT.3d, gastos fijos ofrecen y aceptan personalizadas · 2026-08-11
 
 Cierra **CAT.3** completa (sus cuatro rebanadas: CAT.3a y CAT.3b ya cerradas, esta tarea suma CAT.3c y CAT.3d). Ficha: [`contexto/transversal.md`](contexto/transversal.md), bloque "Categorías personalizadas del usuario"; decisión: [ADR 058](DECISIONS/058-categorias-personalizadas-globales.md). Commit `db81eee`.

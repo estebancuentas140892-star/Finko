@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-11. Última tarea cerrada: CAT.3c/CAT.3d, gastos fijos ofrecen y aceptan personalizadas (Transversal).
+> Revisado: 2026-08-11. Última tarea cerrada: ANL.3, cada bloque de Análisis declara su propio alcance (Análisis).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 3856/3856 verdes en el índice de CAT.3c/CAT.3d (16 nuevos: `compromisos.test.js`, `agenda.test.js`). La fuga de `vi.useFakeTimers()` reportada por sesiones anteriores no se reprodujo en esta corrida |
-| Tests E2E | 263/263 verdes, sello escrito sobre el índice de CAT.3c/CAT.3d. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 3810/3810 verdes (8 nuevos de ANL.3: `analisis.test.js`, `personales.test.js`). La fuga de `vi.useFakeTimers()` reportada por sesiones anteriores no se reprodujo en esta corrida |
+| Tests E2E | 263/263 verdes, sello escrito sobre el índice de ANL.3 (2 assertions actualizadas, sin tests nuevos). **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v35 (`config.atajosTeclado`, INT.1h; default encendido, apagable en Ajustes). GAS.2a/2b no bumpearon schema (no tocan `localStorage`) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**ANL.3 - cada bloque de Análisis declara su propio alcance (Análisis), 2026-08-11**
+Triaje de la ficha 16 del handoff de Claude Design. El chip de mes del header (`#analisis-chip-mes`) anclaba visualmente los 5 bloques del panel a un mes, pero solo "Por categoría" lo mide: se movió al rótulo del grupo "A dónde va tu dinero"; patrimonio agrega "hoy" a su hint. `calcularActivos()` expone `prestamosSinCuenta` (nuevo `calcularPrestamosSinCuenta()` en `personales/logic.js`) para avisar cuando hay préstamos sin cuenta vinculada que no suman al activo. El link de deudas sin saldo pasa de "Compromisos" a "Deudas". Commit `3ca44ed`.
 
 **CAT.3c/CAT.3d - gastos fijos ofrecen y aceptan personalizadas (Transversal), 2026-08-11**
 Cierra CAT.3 completa (4 rebanadas). `renderFormGastoFijo()` ofrece las personalizadas de `seccion: 'fijo'` + chip sentinela propio (`'Otro'` ya es miembro literal del catálogo, no sirve como disparador). `validarCompromiso()`/`normalizarCompromiso()` (`compromisos/logic/modelo.js`) reciben `personalizadasFijo`: el gate de escritura ya no rechaza ni descarta en silencio, y AG.4 (nombre automático) aplica igual que con una predefinida. CAT.3d (verificación end-to-end) confirmó sin cambios de código que las 3 superficies resueltas por CAT.3b pintan correcto. Commit `db81eee`.
@@ -36,9 +39,6 @@ Fase 4: los 10 movimientos de `MIGRACION.md` completos (incluido `settings.local
 
 **GAS.2b - segunda línea del toast con la consecuencia del gasto (Gastos), 2026-08-10**
 `consecuenciaDeGasto()` (`gastos/logic.js`, pura) decide la segunda línea con prioridad fija: límite excedido, límite en alerta, saldo restante de la cuenta, o nada. [ADR 060](DECISIONS/060-lectura-cross-domain-de-solo-lectura.md) formaliza cómo `gastos/index.js` lee `calcularProgreso()` de `presupuesto/logic.js` sin violar ADN 10 (el `logic.js` puro se comparte, no el `index.js`). Resuelve los 4 casos que la ficha 22 no cubría: repartido, consumo con tarjeta, edición, ojo de privacidad. De paso, BUG-027 (ADR 059 inexistente).
-
-**GAS.2a - toast compartido de confirmación (Gastos), 2026-08-10**
-Toast genérico (`ui/toast.js`, `mostrarToast()`) copiado del patrón de logros pero en `ui/` para no violar ADN 10; primer consumidor `_guardarGasto()`, primera línea con el nombre del gasto guardado. Corrige un hallazgo del handoff de Claude Design (ficha 22): el toast que asumía ya existente no existía, solo corría `announce()` (solo lector de pantalla).
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 
