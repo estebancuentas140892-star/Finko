@@ -19,6 +19,7 @@ import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { hoy, f } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
+import { mostrarToast } from '../../ui/toast.js';
 import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
 import { wireIconoPicker } from '../../infra/icon-picker.js';
 import {
@@ -86,6 +87,13 @@ async function _guardarGasto() {
     });
     datos.categoria = nueva.nombre;
   }
+
+  // GAS.2a: nombre + monto para el toast de confirmación. Se capturan aquí,
+  // antes de que cualquier rama transforme `datos` (reparto entre cuentas,
+  // consumo con tarjeta), porque el toast siempre nombra el gasto completo
+  // como lo escribió el usuario, no cada registro derivado de él.
+  const montoGasto     = Number(datos.monto);
+  const categoriaGasto = datos.categoria;
 
   if (idEdit) {
     // En edición calculamos los deltas a aplicar a los saldos comparando
@@ -166,7 +174,14 @@ async function _guardarGasto() {
 
   renderListaGastos();
   updSaldo();
-  announce(idEdit ? 'Gasto actualizado.' : 'Gasto guardado correctamente.');
+
+  // GAS.2a: el toast (role="status") es ahora el aviso de que el gasto se
+  // guardó, visual y para lector de pantalla a la vez; sustituye al
+  // announce() que había acá antes (mismo rol, doble anuncio si se conservan
+  // los dos). La segunda línea con la consecuencia (límite/saldo) es GAS.2b.
+  mostrarToast({
+    titulo: idEdit ? 'Gasto actualizado' : `${categoriaGasto} ${f(montoGasto)}`,
+  });
 }
 
 /** Abre el modal de gasto en modo edicion con datos pre-rellenados. */

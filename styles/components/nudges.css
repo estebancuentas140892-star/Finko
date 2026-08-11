@@ -262,6 +262,128 @@
 }
 
 /* ════════════════════════════════════════════════════════════
+   TOAST GENERICO (GAS.2a) - aviso efimero reusable por cualquier
+   dominio (ui/toast.js), primer consumidor Gastos. Mismo esqueleto
+   que .logro-toast/.sw-aviso, coloreado por tono en vez de fijo a
+   un solo estado; icono real (sprite) en vez de emoji.
+   ════════════════════════════════════════════════════════════ */
+
+.fk-toast {
+  position: fixed;
+  bottom: calc(var(--fk-space-6) + env(safe-area-inset-bottom, 0px));
+  left:  calc(var(--fk-space-4) + env(safe-area-inset-left,  0px));
+  right: calc(var(--fk-space-4) + env(safe-area-inset-right, 0px));
+  margin: 0 auto;
+  max-width: 420px;
+  width: fit-content;
+  z-index: var(--fk-z-toast);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fk-space-3);
+  background: var(--fk-bg-elevated);
+  border-radius: var(--fk-radius-xl);
+  padding: var(--fk-space-3) var(--fk-space-4);
+  box-shadow: var(--fk-shadow-lg);
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fk-toast {
+    animation: toastIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .fk-toast.fade {
+    animation: toastOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+}
+
+.fk-toast--ok {
+  border: 1px solid var(--fk-nudge-success-border);
+  border-left: 3px solid var(--fk-success);
+}
+.fk-toast--ok .fk-toast__icono {
+  color: var(--fk-success);
+}
+
+.fk-toast--alerta {
+  border: 1px solid var(--fk-nudge-medium-border);
+  border-left: 3px solid var(--fk-warning);
+}
+.fk-toast--alerta .fk-toast__icono {
+  color: var(--fk-warning);
+}
+
+.fk-toast--peligro {
+  border: 1px solid var(--fk-nudge-critical-border);
+  border-left: 3px solid var(--fk-danger);
+}
+.fk-toast--peligro .fk-toast__icono {
+  color: var(--fk-danger);
+}
+
+.fk-toast__icono {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.fk-toast__icono .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.fk-toast__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fk-toast__titulo {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  line-height: var(--fk-leading-snug);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.fk-toast__detalle {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  line-height: var(--fk-leading-snug);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.fk-toast__cerrar {
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-left: var(--fk-space-2);
+  padding: var(--fk-space-1);
+  background: none;
+  border: none;
+  border-radius: var(--fk-radius-sm);
+  color: var(--fk-text-muted);
+  font-size: var(--fk-text-lg);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.fk-toast__cerrar:hover,
+.fk-toast__cerrar:focus-visible {
+  color: var(--fk-text-primary);
+  background: var(--fk-bg-hover);
+}
+
+@media (max-width: 1023.98px) {
+  .fk-toast {
+    bottom: calc(
+      var(--fk-header-height)
+      + var(--fk-space-4)
+      + env(safe-area-inset-bottom, 0px)
+    );
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
    SW AVISO - version nueva lista, no se pudo recargar sola
    (modal abierto o input con foco al momento del cambio, ver
    sw-register.js). JS lo crea, lo agrega al body; el toque en

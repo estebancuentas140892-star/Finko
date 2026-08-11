@@ -42,10 +42,11 @@ Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (si
 
 ## Índice de pendientes
 
-Las 25 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+Las 26 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
+| GAS.2b | Segunda línea del toast de gasto (consecuencia: límite/saldo) | Gastos | media | GAS.2a cerrada |
 | INT.1g | Carril derecho de 320px desde 1.680px | Transversal | baja | INT.1e cerrada |
 | MC.17f | Deshacer o editar una transferencia | Mis cuentas | media | coordinar con MOV.1 |
 | MT.6 | Metas v2: subcategorías inteligentes + plan de aportes | Metas | media-alta | nada (el motor de MC.13 ya está); ADR 029 D3 |
@@ -91,6 +92,10 @@ Cada sección con tarjetas vivas tiene su satélite en `docs/board/`, mismo nomb
 
 _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI Calendario" ya tienen fuente única y no generan tarjeta aquí. Tinte de color en las tarjetas de evento → **IV.2c**; logos de marca en eventos → [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md); picker de icono y categorías personalizadas reutilizables → iniciativa **CAT** en Transversal.)_
 
+### Gastos (dominio `gastos`)
+
+GAS.2b → [`board/gastos.md`](board/gastos.md)
+
 ### Mis cuentas (dominio `tesoreria`)
 
 MC.17f → [`board/mis-cuentas.md`](board/mis-cuentas.md)
@@ -133,7 +138,6 @@ Se listan solo para que una idea nueva de estas secciones no vuelva a generar un
 
 | Sección | Dónde vive su trabajo futuro |
 |---|---|
-| Gastos | Iniciativa "Gastos v2" completa ([ADR 039](DECISIONS/039-gastos-v2-visual.md)), con 3 decisiones diferidas anotadas en el ADR: FAB, búsqueda en el header y comparación tangible del insight hormiga. La taxonomía de categorías ya cerró (**CAT.1**, [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md)); lo que queda de categorías es **CAT.3** (personalizadas globales) y el motor de sugerencia por categoría, la fusión LIM.1 / ANL.1 / ADR 029 |
 | Movimientos | Ledger accionable, con búsqueda y filtros, completo. El hueco que queda es **MC.17f** (deshacer transferencia); editar un aporte puntual no tiene tarjeta propia (ver `contexto/movimientos.md`) |
 | Deudas | Iniciativa "Deudas v2" completa ([ADR 036](DECISIONS/036-deudas-v2-visual.md)). Que un pago de deuda descuente de la cuenta ya existe desde el [ADR 002](DECISIONS/002-abono-deudas.md): si aparece un caso donde NO ocurra, es un bug para [`BUGS.md`](BUGS.md), no una feature |
 | Inversión | Sin pendientes propios. "Editar sin destruir" ya cerró (**EDIT.1**, 2026-08-02); su infraestructura compartida cerró con **ARQ.1** (2026-08-02) |

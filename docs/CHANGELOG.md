@@ -10,6 +10,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(gastos): GAS.2a, toast compartido de confirmación · 2026-08-10
+
+Cierra **GAS.2a**, primera rebanada del triaje de la ficha 22 ("Formulario de Gasto") del handoff de Claude Design. Ficha: [`contexto/gastos.md`](contexto/gastos.md), bloque "Confirmación tras guardar"; plan completo: [`board/gastos.md`](board/gastos.md).
+
+- **Toast genérico compartido** (`modules/ui/toast.js`, `mostrarToast()`): mismo patrón que el toast de logros (cola de uno a la vez, autocierre pausable por hover, cierre manual), pero en `ui/` para que cualquier dominio lo use sin importar el `index.js` privado de `logros` (ADN 10). Tres tonos (ok/alerta/peligro), CSS nuevo en `styles/components/nudges.css` reusando `@keyframes toastIn/toastOut` de `base.css`.
+- **Hallazgo del handoff, corregido**: la ficha 22 asumía que ese toast ya existía y ya mostraba «Gasto registrado». No existía: lo único que corría tras guardar era `announce()`, una live region que solo oye un lector de pantalla. GAS.2a construyó la pieza que la ficha daba por hecha.
+- **Primer consumidor**: `_guardarGasto()` (`modules/dominio/gastos/index.js`) muestra el nombre del gasto guardado (ej. "Mercado $182.400") o "Gasto actualizado" en edición. La segunda línea con la consecuencia (límite tocado, saldo restante) queda para **GAS.2b**, siguiente rebanada.
+- Verificado en la app real (creación, edición, autocierre a los 5s). 237/237 unit de `gastos.test.js`, 3820/3825 unit del índice completo (5 fallas preexistentes en `compromisos.test.js`, ajenas a esta tarea), 263/263 E2E, lint verde. SW v501 → v502.
+
 ### feat(shell): INT.1h, cuatro atajos de teclado en escritorio · 2026-08-06
 
 Cierra **INT.1h** del [ADR 059](DECISIONS/059-interfaz-de-escritorio.md), resolviendo el pendiente **P8** (validación de accesibilidad de un `keydown` global). Commit `f5fcda7`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).

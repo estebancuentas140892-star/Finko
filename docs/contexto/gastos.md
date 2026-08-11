@@ -57,8 +57,8 @@
 ## Formulario de gasto (TX.9 + FORM.1a)
 
 - **Objetivo**          : rediseñar el formulario de registrar gasto para que la categoría sea el dato principal (no la descripción), soporte categorías creadas por el usuario, y no pida una descripción redundante cuando la categoría ya representa el concepto. Desde FORM.1a ([ADR 042](../DECISIONS/042-formularios-v2-visual.md)) es además el flagship del lenguaje de formularios v2: monto hero al frente, categoría con chips de ícono (sin select), fecha con atajos Hoy/Ayer/Otra fecha.
-- **Estado actual**     : **TX.9 completa** (TX.9a: categoría primero, descripción ya no obligatoria; TX.9b: categorías personalizadas). **IN.5 cerrada** (2026-07-06). **FORM.1a cerrada** (2026-07-15): form v2 completo; **el orden de TX.9a quedó revisado por el ADR 042 D2** (monto primero; la categoría sigue antes de cuenta/fecha/nota).
-- **Verificado contra** : FORM.1a (2026-07-15).
+- **Estado actual**     : **TX.9 completa** (TX.9a: categoría primero, descripción ya no obligatoria; TX.9b: categorías personalizadas). **IN.5 cerrada** (2026-07-06). **FORM.1a cerrada** (2026-07-15): form v2 completo; **el orden de TX.9a quedó revisado por el ADR 042 D2** (monto primero; la categoría sigue antes de cuenta/fecha/nota). **GAS.2a cerrada** (2026-08-10): el formulario no cambió; ver bloque "Confirmación tras guardar" más abajo, que documenta el toast nuevo. **GAS.2b pendiente** (BOARD, satélite `board/gastos.md`).
+- **Verificado contra** : GAS.2a (2026-08-10).
 
 **Dónde vive (FORM.1a)**
 
@@ -118,6 +118,7 @@
 
 **Cambios realizados**:
 
+- 2026-08-10 (GAS.2a): ver bloque "Confirmación tras guardar" más abajo.
 - 2026-07-15 (FORM.1a): form v2 completo (monto hero, chips de categoría, atajos de fecha, teja del header, footer principal) + fix del hueco preexistente de `responsive.css` que achicaba `.input--big-amount` en móvil. Ver [CHANGELOG](../CHANGELOG.md) y [ADR 042](../DECISIONS/042-formularios-v2-visual.md).
 
 - 2026-07-06 (IN.5): se eliminó "Gasto rápido". Con TX.9 completa, el formulario completo ya registra un gasto en pocos toques (categoría + monto, con fecha y cuenta pre-rellenadas), así que mantener un segundo flujo paralelo solo sumaba complejidad y una cola de "pendientes por organizar" que el usuario tenía que volver a completar. Se retiró: el botón `.quick-add` y el modal `#modal-gasto-rapido` (`index.html`), `renderFormGastoRapido()`/`renderPendientesOrganizar()` (`view.js`), `validarGastoRapido()`/`normalizarGastoRapido()`/`esGastoPendiente()`/`gastosPendientes()` (`logic.js`), los handlers `_abrirGastoRapido`/`_guardarGastoRapido`/`_toastGastoRapido` y la acción `gasto-rapido` (`index.js`), el badge "📝 Pendiente" del ítem, el contenedor `#panel-gastos-pendientes` del bento y sus estilos, y los estilos `.quick-add*`/`.quick-toast*` (`forms.css`). El hero del dashboard pasa a ancho completo (`--full`) al desaparecer el panel que lo acompañaba. El flag `pendienteCompletar` se dejó de escribir en los 4 dominios que lo ponían (`gastos`, `agenda`, `compromisos`, `tesoreria/distribucion`); las keyframes `toastIn/toastOut` se conservan (las usa el toast de logros). 25 tests unit retirados (los del subsistema), reflow E2E repunteado al modal de ingreso puntual (mismo `.input--big-amount`). 2201/2201 unit + 151/151 E2E verdes; verificado además en la app (dashboard sin la card, sin huecos; lista de gastos sin badge). SW v329 → v330.
@@ -125,6 +126,35 @@
 - 2026-07-05 (TX.9a): categoría pasa a ser el primer campo del formulario completo de gasto (antes era el 4°); el campo Descripción se quitó del formulario (ya no se pide); descripción deja de ser obligatoria en `validarGasto()`. `normalizarGasto()` solo incluye la clave `descripcion` si el caller la trae (ningún caller ya lo hace desde el form), para que `editar()` (merge superficial vía `Object.assign`) no borre la descripción de gastos existentes que ya la tenían al editar otro campo. El título del ítem en la lista pasa a ser la categoría; una descripción legacy (gastos de antes de este cambio) y la nota se muestran en el subtítulo junto a la fecha. `esGastoPendiente()` redefinida: `pendienteCompletar === true && categoria === 'Otros'` (antes: `pendienteCompletar === true || !descripcion`), preservando la función del panel "Gastos por organizar" sin depender de un campo ya no obligatorio. Encontrados y corregidos 2 bugs de "undefined" en consumidores de `gasto.descripcion` sin fallback (mensaje de confirmación de borrado y `movimientosDesdeGastos()`). 24 tests nuevos/actualizados + 4 tests E2E actualizados. 2198/2198 unit + 148/148 E2E verdes.
 
 **Observaciones**: el campo **Nota** que pedía el brief de Esteban ya existía en el formulario antes de esta tarea (agregado en una fase anterior sin tarjeta propia); TX.9a no tuvo que crearlo, solo reordenar alrededor de él. El brief completo (categoría primero, categorías personalizadas, sin descripción redundante) está capturado en `BOARD.md`.
+
+---
+
+## Confirmación tras guardar (GAS.2, triaje del handoff "22 Formulario de Gasto")
+
+- **Objetivo**          : que guardar un gasto deje una prueba visual (no solo accesible) de qué se guardó, y en una rebanada futura (GAS.2b), qué consecuencia tuvo (límite tocado, saldo restante). Origen: auditoría de Claude Design de la ficha 22, que asumía un toast visual ya existente en Gastos; no existía (ver hallazgo abajo).
+- **Estado actual**     : **GAS.2a cerrada** (2026-08-10): toast genérico compartido (`ui/toast.js`) + primera línea (nombre del gasto guardado o "Gasto actualizado" en edición). **GAS.2b pendiente** (segunda línea con la consecuencia, consulta cross-domain a `presupuesto/logic.js`). **GAS.2c diferida** (extender a Abono/Aporte), no se activa sin GAS.2b verificada y aprobada. Plan completo, decisiones abiertas y verificación del handoff contra el código: [`board/gastos.md`](../board/gastos.md).
+- **Verificado contra** : GAS.2a (2026-08-10).
+
+**Dónde vive**
+
+| Pieza | Archivo | Ancla | Nota |
+|---|---|---|---|
+| Componente de toast genérico (cola, autocierre pausable, cierre manual) | `modules/ui/toast.js` | `mostrarToast({ titulo, detalle?, tono?, icono? })` | mismo patrón que el toast de logros (`dominio/logros/index.js`), copiado no importado: logros es privado de su dominio (ADN 10) |
+| Primer consumidor | `modules/dominio/gastos/index.js` | `_guardarGasto()` | dispara tras `announce()`, que se conserva (roles distintos: `announce` es solo para lector de pantalla, el toast es visual) |
+| CSS del toast (3 tonos: ok/alerta/peligro) | `styles/components/nudges.css` | bloque "TOAST GENERICO (GAS.2a)" | reusa `@keyframes toastIn/toastOut` de `base.css` y `--fk-z-toast`; icono real del sprite (`i-check-circle`/`i-alert`), no emoji |
+
+**Hallazgo del handoff, corregido**: la ficha 22 de Claude Design asumía "el toast ya existe, ya tiene cola y ya se muestra tras guardar", dibujando «Gasto registrado». Falso: lo único que corría tras guardar era `announce()` (`infra/a11y.js`), una live region `sr-only` que solo oye un lector de pantalla. El único toast visual de la app era `.logro-toast`, propiedad del dominio `logros`. GAS.2a construyó la pieza que la ficha daba por hecha.
+
+**Riesgos**:
+
+- **GAS.2b todavía no filtra los casos que la ficha no cubrió**: gasto repartido entre varias cuentas, consumo con tarjeta (`consumoTC`), edición, ojo de privacidad activo. Propuesta y verificación contra el código de cada uno: `board/gastos.md`.
+- **Cross-domain deliberado**: GAS.2b importará `calcularProgreso`/`UMBRAL_ALERTA`/`UMBRAL_EXCEDIDO` de `presupuesto/logic.js` desde `gastos/index.js` (no desde `gastos/logic.js`, que cerraría un ciclo porque `presupuesto/logic.js` ya importa `gastosMes` de `gastos/logic.js`). Precedente ya existente en el código: `analisis/logic.js` importa de `gastos/logic.js` y de `tesoreria/logic.js`.
+
+**Cambios pendientes**: GAS.2b (segunda línea), GAS.2c (diferida). Ver `board/gastos.md`.
+
+**Cambios realizados**:
+
+- 2026-08-10 (GAS.2a): toast genérico (`ui/toast.js`) + primera línea en `_guardarGasto()`. 237/237 unit de `gastos.test.js` + 263/263 E2E verdes, lint verde. Verificado en la app: creación muestra "Mercado $30.000", edición muestra "Gasto actualizado", autocierre a los 5s.
 
 ---
 
