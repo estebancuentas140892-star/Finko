@@ -151,7 +151,7 @@ Se listan solo para que una idea nueva de estas secciones no vuelva a generar un
 
 #### DOC.1 - Reorganización documental, fases 3 a 5
 - Prioridad  : media
-- Estado     : Fases 1, 2 y 3 cerradas. **Fase 4:** de los 10 de la tabla 11.1 están hechos 9; el **6** (`BOARD.md` partido en satélites por dominio, `docs/board/`) cerrado el 2026-08-03: BOARD.md baja de 60 KB a ~10 KB (índice + enganches), 8 satélites nuevos, ninguno sobre el techo de 40 KB. Solo falta el **9**, que sigue esperando la decisión de Esteban sobre los comodines amplios de `settings.local.json` (12.2). Plan completo: [`MIGRACION.md`](MIGRACION.md) sección 7.
+- Estado     : Fases 1, 2 y 3 cerradas. **Fase 4 cerrada el 2026-08-11**: los 10 movimientos de la tabla 11.1 hechos, incluido el 9 (comodines de `settings.local.json`, 12.2: Esteban decidió borrar `git rm *` y `git branch *`, mantener el resto). Falta la **Fase 5** (validación final + borrar `MIGRACION.md`). Plan completo: [`MIGRACION.md`](MIGRACION.md) sección 7.
 - Objetivo   : bajar el arranque de una tarea de ~69.400 a ~21.000 tokens sin perder información, moviendo cada bloque a su dueño documental.
 - Secciones  : ninguna de la app (solo documentación, `CLAUDE.md` y `.claude/`)
 - Archivos   : la tabla de trazabilidad de [`MIGRACION.md`](MIGRACION.md) sección 6 los lista uno por uno

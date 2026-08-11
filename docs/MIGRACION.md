@@ -2,7 +2,7 @@
 
 > **Archivo temporal de trabajo.** Nace con la auditoría documental del 2026-07-24 (7 agentes) y **se borra al cerrar la Fase 5**. No cuenta para los techos de tamaño: no es documentación del proyecto, es el contrato de una migración.
 >
-> **Estado:** dirección general aprobada por Esteban el 2026-07-24 con 8 ajustes, todos incorporados. **Fases 1, 2 y 3 cerradas el 2026-07-24** (11 commits). **Fase 4 en curso**, auditada contra el repo el 2026-07-31: de los 10 movimientos de la tabla 11.1 están **hechos 1, 2, 3, 4, 5, 7, 8 y 10**; **falta el 6** (`BOARD.md` tiene su índice tabular pero sigue en 80 KB contra un techo de 40) y el **9** está a medias (la limpieza mínima de 12.1 se ejecutó en el commit `03e0613`; los comodines amplios de 12.2 siguen esperando la decisión de Esteban). Detalle por movimiento en la tabla de estado de 11.1.
+> **Estado:** dirección general aprobada por Esteban el 2026-07-24 con 8 ajustes, todos incorporados. **Fases 1, 2 y 3 cerradas el 2026-07-24** (11 commits). **Fase 4 cerrada el 2026-08-11**: los 10 movimientos de la tabla 11.1 están hechos. Falta ejecutar la **Fase 5** (validación) antes de borrar este archivo. Detalle por movimiento en la tabla de estado de 11.1.
 
 ## Índice
 
@@ -646,7 +646,7 @@ Preparado a pedido de Esteban el 2026-07-24. **Nada de esta sección se ejecutó
 | 6 | `BOARD.md` índice tabular + partido en satélites | Hecho el 2026-08-03 | 60 KB a 15 KB. 8 satélites nuevos en `docs/board/` (uno por sección con tarjetas vivas), ninguno sobre el techo de 40 KB (el mayor, `transversal.md`, 21,6 KB). Ver 11.9 |
 | 7 | 9 briefs a ADR 043 a 051 | Hecho | Los 9 ADR existen; cero bloques de brief sin comprimir en el tablero. CFG.4 sin ADR propio a propósito (11.3) |
 | 8 | `transversal.md` partido | Hecho | Tres fichas medidas en 11.4 |
-| 9 | `.claude/settings.local.json` | **Parcial** | 12.1 ejecutado (commit `03e0613`, 146 a 131 entradas); 12.2 (comodines amplios) sigue esperando la decisión de Esteban |
+| 9 | `.claude/settings.local.json` | Hecho | 12.1 (commit `03e0613`, 146 a 131) + 12.2 (2026-08-11, 131 a 129: borrado `git rm *`, `git branch *`, resto mantenido por decisión de Esteban) |
 | 10 | Comentario de `core/state.js` | Hecho | Línea 464: `distribucion:aplicar` |
 
 | # | Origen | Destino | Acción | Riesgo | Validación posterior |
@@ -891,6 +891,8 @@ Los permisos de solo lectura o ya acotados por el propio verbo (fetch, remote, l
 
 **Propuesta mínima:** eliminar solo la entrada redundante de `git commit` (subconjunto exacto de la otra). El resto exige una decisión consciente de Esteban, uno por uno: estrechar un permiso sin su decisión puede romper un flujo de trabajo real que hoy funciona.
 
+**Decisión de Esteban (2026-08-11):** borrar `git rm *` y `git branch *`. Mantener sin cambios `python -c`, `git push *`, `git config *`, `git stash *`, `pnpm exec *`, `pnpm run *`, `npx * ` libres. Ejecutado: 131 a 129 entradas.
+
 ### 12.3 Comandos históricos, precisos (no son comodines, pero ya no se van a reutilizar)
 
 Alrededor de 100 de las 146 entradas son comandos literales, no comodín, congelados de sesiones de depuración pasadas: URLs de verificación con parámetros de invalidación de caché de un momento específico, filtros de texto con patrones exactos de una auditoría de CSS ya cerrada, extracciones de rangos de línea de un archivo en un estado que ya cambió, y el análisis de un log de pruebas que ya no existe. No son un riesgo de seguridad (no son comodines), son ruido: ninguno va a volver a coincidir tal cual.
@@ -903,5 +905,5 @@ Alrededor de 100 de las 146 entradas son comandos literales, no comodín, congel
 
 **Sigue pendiente de la decisión de Esteban, sin tocar:**
 
-- **12.2, los comodines amplios** (`python -c`, `git push`, `git rm`, `git config`, `git branch`, `git stash`, `pnpm exec`, `pnpm run`, `npx` con argumentos libres): siguen presentes tal cual. Son permisos de ejecución, no documentación: ninguno se toca sin su palabra.
+- **12.2, ejecutado el 2026-08-11.** Esteban decidió: borrar `git rm *` y `git branch *` (commit propio); mantener `python -c`, `git push`, `git config`, `git stash`, `pnpm exec`, `pnpm run`, `npx` con argumentos libres. 131 a 129 entradas.
 - **12.3, los ~100 comandos históricos precisos:** propuesta explícita de **no** borrarlos por juicio de utilidad.
