@@ -23,6 +23,7 @@ import {
   efectoEnCuotaMensual,
   deltasPorEdicionEnCuotaMensual,
   excesoDeCupo,
+  consecuenciaDeGasto,
 } from '../../modules/dominio/gastos/logic.js';
 import { renderFormGasto, renderListaGastos, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, irAMesActual, CATEGORIA_NUEVA_VALUE } from '../../modules/dominio/gastos/view.js';
 import { CATEGORIAS_GASTO, CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA } from '../../modules/core/constants.js';
@@ -512,6 +513,64 @@ describe('excesoDeCupo()', () => {
   it('monto vacío o cero no avisa nada', () => {
     expect(excesoDeCupo(tarjeta({ saldoTotal: 5_000_000 }), 0)).toBeNull();
     expect(excesoDeCupo(tarjeta({ saldoTotal: 5_000_000 }), NaN)).toBeNull();
+  });
+});
+
+// ── consecuenciaDeGasto() (GAS.2b, ADR 060) ──────────────────────
+
+describe('consecuenciaDeGasto()', () => {
+  const progresoOk       = { gastado: 100_000, asignado: 500_000, restante: 400_000, estado: 'ok' };
+  const progresoAlerta   = { gastado: 400_000, asignado: 500_000, restante: 100_000, estado: 'alerta' };
+  const progresoExcedido = { gastado: 600_000, asignado: 500_000, restante: -100_000, estado: 'excedido' };
+
+  it('prioridad 1: límite excedido, con el monto pasado en la cifra', () => {
+    const r = consecuenciaDeGasto({ progreso: progresoExcedido, categoria: 'Mercado', ocultarSaldo: false });
+    expect(r).toEqual({ texto: 'Te pasaste $100.000 del límite de Mercado este mes.', tono: 'peligro' });
+  });
+
+  it('prioridad 2: límite en alerta (75%-100%), con lo que resta', () => {
+    const r = consecuenciaDeGasto({ progreso: progresoAlerta, categoria: 'Mercado', ocultarSaldo: false });
+    expect(r).toEqual({ texto: 'Te quedan $100.000 en Mercado este mes.', tono: 'alerta' });
+  });
+
+  it('prioridad 3: sin límite que avisar, cae al saldo de la cuenta usada', () => {
+    const r = consecuenciaDeGasto({
+      progreso: progresoOk, categoria: 'Mercado',
+      saldoCuenta: 250_000, nombreCuenta: 'Bancolombia',
+      ocultarSaldo: false,
+    });
+    expect(r).toEqual({ texto: 'Quedan $250.000 en Bancolombia.', tono: 'ok' });
+  });
+
+  it('sin presupuesto para la categoría (progreso null) también cae al saldo de cuenta', () => {
+    const r = consecuenciaDeGasto({
+      progreso: null, categoria: 'Otros',
+      saldoCuenta: 900_000, nombreCuenta: 'Nequi',
+      ocultarSaldo: false,
+    });
+    expect(r).toEqual({ texto: 'Quedan $900.000 en Nequi.', tono: 'ok' });
+  });
+
+  it('caso "nada que decir": sin límite y sin cuenta (repartido o consumo con tarjeta)', () => {
+    expect(consecuenciaDeGasto({ progreso: progresoOk, categoria: 'Mercado', ocultarSaldo: false })).toBeNull();
+    expect(consecuenciaDeGasto({ progreso: null, categoria: 'Mercado', ocultarSaldo: false })).toBeNull();
+  });
+
+  it('gasto repartido o consumo con tarjeta: sin cuenta única, el límite sigue avisando', () => {
+    const r = consecuenciaDeGasto({ progreso: progresoExcedido, categoria: 'Mercado', saldoCuenta: null, ocultarSaldo: false });
+    expect(r?.tono).toBe('peligro');
+  });
+
+  it('ojo de privacidad activo: ninguna cifra, ni de límite ni de saldo', () => {
+    expect(consecuenciaDeGasto({
+      progreso: progresoExcedido, categoria: 'Mercado',
+      saldoCuenta: 250_000, nombreCuenta: 'Bancolombia',
+      ocultarSaldo: true,
+    })).toBeNull();
+    expect(consecuenciaDeGasto({
+      progreso: progresoAlerta, categoria: 'Mercado',
+      ocultarSaldo: true,
+    })).toBeNull();
   });
 });
 

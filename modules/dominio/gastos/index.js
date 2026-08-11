@@ -25,8 +25,12 @@ import { wireIconoPicker } from '../../infra/icon-picker.js';
 import {
   validarGasto, normalizarGasto,
   deltasPorEdicionDeGasto, deltasPorEdicionEnDeuda, deltasPorEdicionEnCuotaMensual,
-  validarCategoriaPersonalizada, excesoDeCupo,
+  validarCategoriaPersonalizada, excesoDeCupo, consecuenciaDeGasto,
 } from './logic.js';
+// ADR 060: lectura cross-domain de solo lectura, desde index.js (no desde
+// logic.js, que cerraría un ciclo: presupuesto/logic.js ya importa
+// gastosMes de gastos/logic.js).
+import { calcularProgreso } from '../presupuesto/logic.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { renderListaGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, irAMesActual, ayerIso, CATEGORIA_NUEVA_VALUE } from './view.js';
 
@@ -94,6 +98,13 @@ async function _guardarGasto() {
   // como lo escribió el usuario, no cada registro derivado de él.
   const montoGasto     = Number(datos.monto);
   const categoriaGasto = datos.categoria;
+  const fechaGasto     = datos.fecha;
+
+  // GAS.2b: cuenta a mostrar en la 3ª prioridad de la consecuencia (saldo
+  // restante). Solo tiene sentido con una sola cuenta descontada de verdad:
+  // un consumo con tarjeta no descuenta ninguna, y un gasto repartido entre
+  // varias no tiene "la" cuenta que nombrar. Se completa en la rama de abajo.
+  let cuentaIdConsecuencia = null;
 
   if (idEdit) {
     // En edición calculamos los deltas a aplicar a los saldos comparando
@@ -157,6 +168,8 @@ async function _guardarGasto() {
       }
 
       const repartido = splits.length > 1;
+      // GAS.2b: solo una cuenta real involucrada tiene "el" saldo que nombrar.
+      cuentaIdConsecuencia = repartido ? null : (splits[0]?.cuentaId || null);
       for (const s of splits) {
         guardar('gastos', {
           ...base,
@@ -178,9 +191,29 @@ async function _guardarGasto() {
   // GAS.2a: el toast (role="status") es ahora el aviso de que el gasto se
   // guardó, visual y para lector de pantalla a la vez; sustituye al
   // announce() que había acá antes (mismo rol, doble anuncio si se conservan
-  // los dos). La segunda línea con la consecuencia (límite/saldo) es GAS.2b.
+  // los dos).
+  //
+  // GAS.2b: la segunda línea, solo en creación (en edición no se recalcula
+  // la consecuencia: el plan de la ficha 22 la deja en una sola línea).
+  let detalle = null;
+  if (!idEdit) {
+    const [anio, mes] = fechaGasto.split('-').map(Number);
+    const presupuesto = S.presupuestos.find(p => p.activo && p.categoria === categoriaGasto) ?? null;
+    const progreso     = presupuesto ? calcularProgreso(presupuesto, S.gastos, anio, mes) : null;
+    const cuenta        = cuentaIdConsecuencia ? S.cuentas.find(c => c.id === cuentaIdConsecuencia) : null;
+    detalle = consecuenciaDeGasto({
+      progreso,
+      categoria:    categoriaGasto,
+      saldoCuenta:  cuenta ? cuenta.saldo : null,
+      nombreCuenta: cuenta ? cuenta.nombre : null,
+      ocultarSaldo: !!S.config.ocultarSaldo,
+    });
+  }
+
   mostrarToast({
-    titulo: idEdit ? 'Gasto actualizado' : `${categoriaGasto} ${f(montoGasto)}`,
+    titulo:  idEdit ? 'Gasto actualizado' : `${categoriaGasto} ${f(montoGasto)}`,
+    detalle: detalle?.texto,
+    tono:    detalle?.tono ?? 'ok',
   });
 }
 

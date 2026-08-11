@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-08-05. Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
+> Última actualización: 2026-08-10. Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
 
 ---
 
@@ -46,7 +46,7 @@ Las 26 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
-| GAS.2b | Segunda línea del toast de gasto (consecuencia: límite/saldo) | Gastos | media | GAS.2a cerrada |
+| GAS.2c | Extender el toast de confirmación a Abono y Aporte (diferida) | Gastos | baja (diferida) | GAS.2b cerrada; no se activa sin aprobación explícita |
 | INT.1g | Carril derecho de 320px desde 1.680px | Transversal | baja | INT.1e cerrada |
 | MC.17f | Deshacer o editar una transferencia | Mis cuentas | media | coordinar con MOV.1 |
 | MT.6 | Metas v2: subcategorías inteligentes + plan de aportes | Metas | media-alta | nada (el motor de MC.13 ya está); ADR 029 D3 |
@@ -94,7 +94,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 
 ### Gastos (dominio `gastos`)
 
-GAS.2b → [`board/gastos.md`](board/gastos.md)
+GAS.2c (diferida) → [`board/gastos.md`](board/gastos.md)
 
 ### Mis cuentas (dominio `tesoreria`)
 

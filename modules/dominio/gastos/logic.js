@@ -4,6 +4,7 @@
  */
 
 import { CATEGORIAS_AGENDA, CATEGORIAS_GASTO, ICONOS_CATEGORIA_PERSONALIZADA, TARJETA_PREFIJO, iconoDeCategoriaGasto } from '../../core/constants.js';
+import { f } from '../../infra/utils.js';
 
 // ── FILTROS Y AGRUPACIÓN ─────────────────────────────────────────
 
@@ -621,5 +622,53 @@ export function iconoPorOrigen(gasto, compromisos, personalizadas = []) {
   if (comp.tipo === 'deuda-entidad')  return 'i-cuentas';
   if (comp.tipo === 'deuda-personal') return 'i-personales';
   if (comp.tipo === 'fijo')           return comp.icono || (comp.categoria ? iconoDeCategoriaGasto(comp.categoria, personalizadas) : null);
+  return null;
+}
+
+// ── CONSECUENCIA TRAS GUARDAR (GAS.2b, ADR 060) ──────────────────
+
+/**
+ * Segunda línea del toast de confirmación (GAS.2a la deja en una sola línea;
+ * esta decide la segunda, solo cuando hay algo que decir). Prioridad fija de
+ * la ficha 22 del handoff: un límite excedido gana a uno cerca del tope, que
+ * gana al saldo de la cuenta usada. Con el ojo de privacidad activo no hay
+ * ninguna cifra que enseñar (ni de límite ni de saldo), así que corta antes
+ * de mirar nada más.
+ *
+ * `progreso` es el resultado ya calculado de `calcularProgreso()`
+ * (`presupuesto/logic.js`) para la categoría del gasto, o `null` si esa
+ * categoría no tiene un presupuesto activo (ADR 060: el caller cross-domain
+ * hace la lectura, esta función solo decide qué texto sale con el resultado).
+ *
+ * @param {{
+ *   progreso?:    { gastado: number, asignado: number, restante: number, estado: 'ok'|'alerta'|'excedido' } | null,
+ *   categoria:    string,
+ *   saldoCuenta?: number | null,
+ *   nombreCuenta?: string | null,
+ *   ocultarSaldo: boolean,
+ * }} datos
+ * @returns {{ texto: string, tono: 'peligro'|'alerta'|'ok' } | null}
+ */
+export function consecuenciaDeGasto({ progreso, categoria, saldoCuenta = null, nombreCuenta = null, ocultarSaldo }) {
+  if (ocultarSaldo) return null;
+
+  if (progreso?.estado === 'excedido') {
+    return {
+      texto: `Te pasaste ${f(progreso.gastado - progreso.asignado)} del límite de ${categoria} este mes.`,
+      tono:  'peligro',
+    };
+  }
+  if (progreso?.estado === 'alerta') {
+    return {
+      texto: `Te quedan ${f(progreso.restante)} en ${categoria} este mes.`,
+      tono:  'alerta',
+    };
+  }
+  if (saldoCuenta !== null && nombreCuenta) {
+    return {
+      texto: `Quedan ${f(saldoCuenta)} en ${nombreCuenta}.`,
+      tono:  'ok',
+    };
+  }
   return null;
 }

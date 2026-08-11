@@ -2,7 +2,7 @@
 
 > Tarjetas vivas de la sección Gastos. Índice y reglas del tablero en [`../BOARD.md`](../BOARD.md); contexto técnico en [`../contexto/gastos.md`](../contexto/gastos.md).
 > Creado: 2026-08-10, al triar la ficha 22 del handoff de Claude Design.
-> **Estado: GAS.2a cerrada (2026-08-10).** GAS.2b es la próxima rebanada, enganchada en el índice de [`BOARD.md`](../BOARD.md) y en su sección "Gastos".
+> **Estado: GAS.2a y GAS.2b cerradas (2026-08-10).** GAS.2c queda diferida (no se activa sin aprobación explícita), enganchada en el índice de [`BOARD.md`](../BOARD.md) y en su sección "Gastos".
 
 ---
 
@@ -121,7 +121,7 @@ Tres rebanadas, cada una commiteable y verificable por separado. **Ninguna toca 
 ### GAS.2b - La segunda línea: qué cambió con ese gasto
 
 - Prioridad  : media
-- Estado     : pendiente
+- Estado     : **CERRADA (2026-08-10)**. Ver `contexto/gastos.md`, bloque "Confirmación tras guardar", CHANGELOG del mes y [ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md).
 - Área       : ambos
 - Objetivo   : que la confirmación diga la consecuencia que Finko ya calculó, y solo cuando exista.
 - Depende de : GAS.2a
@@ -135,19 +135,18 @@ Tres rebanadas, cada una commiteable y verificable por separado. **Ninguna toca 
 | 3 | Ni lo uno ni lo otro | «Quedan $1.957.600 en Bancolombia.» | ok, neutro |
 | 4 | Nada de lo anterior, o el ojo de privacidad activo | sin segunda línea | ok |
 
-**Pasos**
+**Pasos (implementados; una corrección menor sobre el plan original)**
 
 1. Función pura nueva en `modules/dominio/gastos/logic.js`:
-   `consecuenciaDeGasto({ gasto, progresoCategoria, cuenta, ocultarSaldo })` devuelve `{ texto, tono } | null`. Sin DOM, sin leer `S` (regla ADN 9).
-2. `gastos/index.js` importa `calcularProgreso` y `UMBRAL_ALERTA`/`UMBRAL_EXCEDIDO` de `../presupuesto/logic.js` (ruta A corregida de C4), calcula el progreso de la categoría del gasto **después** de persistirlo y se lo pasa a la función pura.
-3. Los umbrales no se re-declaran: se importan. Un 75 % duplicado en dos archivos es el bug de mañana.
-4. Casos de C5: repartido y edición caen al caso 4; `consumoTC` salta la prioridad 3.
-5. Tests unit: los 4 casos de la tabla, más repartido, más `consumoTC`, más ojo de privacidad, más categoría sin límite definido.
-6. Verificar en la app los 4 casos con datos reales.
+   `consecuenciaDeGasto({ progreso, categoria, saldoCuenta, nombreCuenta, ocultarSaldo })` devuelve `{ texto, tono } | null`. Sin DOM, sin leer `S` (regla ADN 9). Firma final distinta a la planeada (`{ gasto, progresoCategoria, cuenta, ocultarSaldo }`): más plana, sin objetos anidados que la función tendría que desarmar.
+2. `gastos/index.js` importa `calcularProgreso` de `../presupuesto/logic.js` (ADR 060), calcula el progreso de la categoría del gasto **después** de persistirlo y se lo pasa a la función pura. **Corrección sobre el plan**: no se importan `UMBRAL_ALERTA`/`UMBRAL_EXCEDIDO`. `calcularProgreso()` ya devuelve `estado` ('ok'/'alerta'/'excedido') calculado con esos umbrales, así que la función pura solo lee `estado`, sin comparar de nuevo contra un umbral. Menos superficie de import, mismo resultado.
+3. Casos de C5: repartido y consumo con tarjeta pasan `saldoCuenta: null` (sin cuenta única), pero el aviso de límite (prioridad 1/2) sigue aplicando; edición no llama a la función en absoluto (toast de una línea).
+4. Tests unit: los 4 casos de la tabla, más repartido/`consumoTC` (mismo caso, sin cuenta), más ojo de privacidad, más categoría sin presupuesto.
+5. Verificado en la app real los 4 casos con datos reales (ver CHANGELOG).
 
 **Qué resuelve:** X1.
 
-**Archivos**: `modules/dominio/gastos/logic.js`, `modules/dominio/gastos/index.js`, `tests/unit/gastos.test.js`.
+**Archivos**: `modules/dominio/gastos/logic.js`, `modules/dominio/gastos/index.js`, `tests/unit/gastos.test.js`, `docs/DECISIONS/060-lectura-cross-domain-de-solo-lectura.md` (nuevo), `docs/BUGS.md` (BUG-027, hallazgo de paso).
 
 ---
 
@@ -164,12 +163,12 @@ Regla de la ficha, que se adopta tal cual: **si dos formularios más lo necesita
 
 ## Decisiones abiertas (no se ejecuta sin la palabra de Esteban)
 
-Dos de las cuatro se resolvieron al cerrar GAS.2a; quedan dos, y afectan a GAS.2b.
+Las cuatro originales quedaron resueltas al cerrar GAS.2a y GAS.2b. Ninguna queda pendiente para GAS.2c: si esa rebanada se activa alguna vez, hereda el ADR 060 y el patrón del toast tal cual, sin decisiones nuevas de arquitectura.
 
-1. **¿ADR o no?** GAS.2a agregó un componente de UI compartido; GAS.2b hará la primera lectura cross-domain deliberada desde un `index.js`. Ninguna rompe ADN 10 según el precedente de C4, pero la regla escrita en `CLAUDE.md` dice "Ningún dominio importa a otro". Dos salidas: (a) ADR corto que precise ADN 10 como "ningún dominio importa el `index.js` de otro; el `logic.js` puro sí se comparte", que es lo que el código ya hace en tres sitios; (b) ruta B de C4 y ninguna regla nueva. **Recomendada: (a)**, porque documenta lo que ya es cierto en vez de refactorizar para sostener una regla que el código dejó atrás hace tiempo. **Sigue abierta**, decide antes de empezar GAS.2b.
-2. **Numeración del ADR:** el último es el 061 y faltan el 059 y el 060. Confirmar con la sesión paralela antes de tomar un número. **Sigue abierta.**
+1. ~~**¿ADR o no?**~~ **Resuelta al cerrar GAS.2b: sí.** [ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md) precisa ADN 10: ningún dominio importa el `index.js`/`view.js`/`acciones/*.js` de otro; un `logic.js` puro sí puede importarse entre 1-2 dominios (a partir del tercero, sube a `core/`/`infra/`).
+2. ~~**Numeración del ADR**~~ **Resuelta: 060.** Verificado contra el repo, no adivinado: el 059 está reservado (citado como "aceptado" en 7 documentos de la iniciativa INT.1) aunque su archivo no exista (**BUG-027**, ajeno a esta tarjeta); el 060 no tenía ninguna referencia en ningún lado y quedó libre para este ADR; el 061 ya existe.
 3. ~~**¿El toast reemplaza a `announce()`?**~~ **Resuelta al cerrar GAS.2a: sí.** `_guardarGasto()` retiró el `announce()` de esa ruta; el toast (`role="status"`) es ahora el único aviso, igual que `.logro-toast`. `announce()` se conserva intacto en los otros dos call sites del dominio (prellenado de sugerencia, borrado).
-4. ~~**Enganche en el tablero**~~ **Resuelta al cerrar GAS.2a.** `GAS.2b` vive en el índice de `BOARD.md` y en su sección "Gastos"; la fila de Gastos se retiró de "Secciones sin tarjetas pendientes".
+4. ~~**Enganche en el tablero**~~ **Resuelta al cerrar GAS.2a.** `GAS.2c` (diferida) vive en el índice de `BOARD.md` y en su sección "Gastos"; la fila de Gastos se retiró de "Secciones sin tarjetas pendientes".
 
 ---
 

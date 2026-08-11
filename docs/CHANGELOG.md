@@ -10,6 +10,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(gastos): GAS.2b, segunda línea del toast con la consecuencia del gasto · 2026-08-10
+
+Cierra **GAS.2b**, segunda rebanada del triaje de la ficha 22. Ficha: [`contexto/gastos.md`](contexto/gastos.md), bloque "Confirmación tras guardar"; plan: [`board/gastos.md`](board/gastos.md); regla nueva: [ADR 060](DECISIONS/060-lectura-cross-domain-de-solo-lectura.md).
+
+- **`consecuenciaDeGasto()`** (`modules/dominio/gastos/logic.js`, pura): decide la segunda línea del toast con prioridad fija de la ficha (límite excedido, límite en alerta con 75%+, saldo restante de la cuenta usada, o nada si ninguna aplica). Con el ojo de privacidad activo (`S.config.ocultarSaldo`) corta antes de mirar cualquier cifra.
+- **ADR 060** formaliza cómo ADN 10 permite esta lectura: `gastos/index.js` importa `calcularProgreso()` de `presupuesto/logic.js` (no `gastos/logic.js`, que cerraría un ciclo, porque `presupuesto/logic.js` ya importa `gastosMes` de `gastos/logic.js`), y le pasa el resultado a la función pura como parámetro. El código ya hacía este tipo de lectura en otros 3 sitios (`presupuesto/logic.js`, `analisis/logic.js`, `analisis/view.js`); el ADR documenta la práctica, no crea una nueva.
+- **Casos que la ficha no cubría, resueltos**: gasto repartido entre cuentas y consumo con tarjeta (sin cuenta única, el aviso de límite sigue aplicando), edición (toast de una línea, sin recalcular), ojo de privacidad (ninguna cifra).
+- **Hallazgo de paso, sin relación con esta tarjeta**: verificando qué número de ADR estaba libre se encontró que **ADR 059 no existe en el repositorio** pese a estar citado como aceptado en 7 documentos de la iniciativa INT.1. Registrado como **BUG-027**.
+- Verificado en la app real los 4 casos de prioridad con datos reales (límite de $200.000 en Mercado: alerta a $160.000, excedido a $240.000; categoría sin límite mostrando saldo de cuenta; ojo de privacidad sin ninguna cifra). 244/244 unit de `gastos.test.js` (7 nuevos), 3827/3832 unit del índice completo (5 fallas preexistentes en `compromisos.test.js`, ajenas), 263/263 E2E, lint verde. SW v502 → v503.
+
 ### feat(gastos): GAS.2a, toast compartido de confirmación · 2026-08-10
 
 Cierra **GAS.2a**, primera rebanada del triaje de la ficha 22 ("Formulario de Gasto") del handoff de Claude Design. Ficha: [`contexto/gastos.md`](contexto/gastos.md), bloque "Confirmación tras guardar"; plan completo: [`board/gastos.md`](board/gastos.md).

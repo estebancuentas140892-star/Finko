@@ -57,8 +57,8 @@
 ## Formulario de gasto (TX.9 + FORM.1a)
 
 - **Objetivo**          : rediseñar el formulario de registrar gasto para que la categoría sea el dato principal (no la descripción), soporte categorías creadas por el usuario, y no pida una descripción redundante cuando la categoría ya representa el concepto. Desde FORM.1a ([ADR 042](../DECISIONS/042-formularios-v2-visual.md)) es además el flagship del lenguaje de formularios v2: monto hero al frente, categoría con chips de ícono (sin select), fecha con atajos Hoy/Ayer/Otra fecha.
-- **Estado actual**     : **TX.9 completa** (TX.9a: categoría primero, descripción ya no obligatoria; TX.9b: categorías personalizadas). **IN.5 cerrada** (2026-07-06). **FORM.1a cerrada** (2026-07-15): form v2 completo; **el orden de TX.9a quedó revisado por el ADR 042 D2** (monto primero; la categoría sigue antes de cuenta/fecha/nota). **GAS.2a cerrada** (2026-08-10): el formulario no cambió; ver bloque "Confirmación tras guardar" más abajo, que documenta el toast nuevo. **GAS.2b pendiente** (BOARD, satélite `board/gastos.md`).
-- **Verificado contra** : GAS.2a (2026-08-10).
+- **Estado actual**     : **TX.9 completa** (TX.9a: categoría primero, descripción ya no obligatoria; TX.9b: categorías personalizadas). **IN.5 cerrada** (2026-07-06). **FORM.1a cerrada** (2026-07-15): form v2 completo; **el orden de TX.9a quedó revisado por el ADR 042 D2** (monto primero; la categoría sigue antes de cuenta/fecha/nota). **GAS.2 cerrada** (GAS.2a y GAS.2b, 2026-08-10): el formulario no cambió; ver bloque "Confirmación tras guardar" más abajo. **GAS.2c diferida** (Abono, Aporte).
+- **Verificado contra** : GAS.2b (2026-08-10).
 
 **Dónde vive (FORM.1a)**
 
@@ -131,29 +131,41 @@
 
 ## Confirmación tras guardar (GAS.2, triaje del handoff "22 Formulario de Gasto")
 
-- **Objetivo**          : que guardar un gasto deje una prueba visual (no solo accesible) de qué se guardó, y en una rebanada futura (GAS.2b), qué consecuencia tuvo (límite tocado, saldo restante). Origen: auditoría de Claude Design de la ficha 22, que asumía un toast visual ya existente en Gastos; no existía (ver hallazgo abajo).
-- **Estado actual**     : **GAS.2a cerrada** (2026-08-10): toast genérico compartido (`ui/toast.js`) + primera línea (nombre del gasto guardado o "Gasto actualizado" en edición). **GAS.2b pendiente** (segunda línea con la consecuencia, consulta cross-domain a `presupuesto/logic.js`). **GAS.2c diferida** (extender a Abono/Aporte), no se activa sin GAS.2b verificada y aprobada. Plan completo, decisiones abiertas y verificación del handoff contra el código: [`board/gastos.md`](../board/gastos.md).
-- **Verificado contra** : GAS.2a (2026-08-10).
+- **Objetivo**          : que guardar un gasto deje una prueba visual (no solo accesible) de qué se guardó y, cuando existe, qué consecuencia tuvo (límite tocado, saldo restante). Origen: auditoría de Claude Design de la ficha 22, que asumía un toast visual ya existente en Gastos; no existía (ver hallazgo abajo).
+- **Estado actual**     : **GAS.2a cerrada** (2026-08-10): toast genérico compartido (`ui/toast.js`) + primera línea (nombre del gasto guardado o "Gasto actualizado" en edición). **GAS.2b cerrada** (2026-08-10): segunda línea con la consecuencia, prioridad fija de 3 casos, lectura cross-domain a `presupuesto/logic.js` formalizada por el [ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md). **GAS.2c diferida** (extender a Abono/Aporte), no se activa sin aprobación explícita. Plan completo y verificación del handoff contra el código: [`board/gastos.md`](../board/gastos.md).
+- **Verificado contra** : GAS.2b (2026-08-10).
 
 **Dónde vive**
 
 | Pieza | Archivo | Ancla | Nota |
 |---|---|---|---|
 | Componente de toast genérico (cola, autocierre pausable, cierre manual) | `modules/ui/toast.js` | `mostrarToast({ titulo, detalle?, tono?, icono? })` | mismo patrón que el toast de logros (`dominio/logros/index.js`), copiado no importado: logros es privado de su dominio (ADN 10) |
-| Primer consumidor | `modules/dominio/gastos/index.js` | `_guardarGasto()` | dispara tras `announce()`, que se conserva (roles distintos: `announce` es solo para lector de pantalla, el toast es visual) |
+| Primer consumidor | `modules/dominio/gastos/index.js` | `_guardarGasto()` | reemplaza al `announce()` que había ahí (mismo rol, `role="status"`); solo calcula la consecuencia en creación, no en edición |
 | CSS del toast (3 tonos: ok/alerta/peligro) | `styles/components/nudges.css` | bloque "TOAST GENERICO (GAS.2a)" | reusa `@keyframes toastIn/toastOut` de `base.css` y `--fk-z-toast`; icono real del sprite (`i-check-circle`/`i-alert`), no emoji |
+| Segunda línea, prioridad fija (excedido → alerta → saldo de cuenta → nada) | `modules/dominio/gastos/logic.js` | `consecuenciaDeGasto({ progreso, categoria, saldoCuenta, nombreCuenta, ocultarSaldo })` | pura, sin `S`; recibe el `progreso` ya calculado (ADR 060) |
+| Lectura cross-domain del progreso del límite | `modules/dominio/gastos/index.js` | `_guardarGasto()`, import de `calcularProgreso` desde `../presupuesto/logic.js` | en `index.js`, no en `logic.js` (evita el ciclo con `presupuesto/logic.js`, que ya importa `gastosMes` de `gastos/logic.js`) |
 
 **Hallazgo del handoff, corregido**: la ficha 22 de Claude Design asumía "el toast ya existe, ya tiene cola y ya se muestra tras guardar", dibujando «Gasto registrado». Falso: lo único que corría tras guardar era `announce()` (`infra/a11y.js`), una live region `sr-only` que solo oye un lector de pantalla. El único toast visual de la app era `.logro-toast`, propiedad del dominio `logros`. GAS.2a construyó la pieza que la ficha daba por hecha.
 
+**Casos que la ficha no cubrió, resueltos en GAS.2b**:
+
+| Caso | Cómo queda |
+|---|---|
+| Gasto repartido entre varias cuentas | sin cuenta única que nombrar; el aviso de límite (prioridad 1/2) sigue aplicando igual |
+| Consumo con tarjeta (`consumoTC`) | no descuenta ninguna cuenta; mismo tratamiento que el repartido |
+| Edición de un gasto existente | el toast queda en una línea ("Gasto actualizado"), sin recalcular consecuencia |
+| Ojo de privacidad activo (`S.config.ocultarSaldo`) | ninguna cifra, ni de límite ni de saldo: corta antes de mirar el progreso |
+
 **Riesgos**:
 
-- **GAS.2b todavía no filtra los casos que la ficha no cubrió**: gasto repartido entre varias cuentas, consumo con tarjeta (`consumoTC`), edición, ojo de privacidad activo. Propuesta y verificación contra el código de cada uno: `board/gastos.md`.
-- **Cross-domain deliberado**: GAS.2b importará `calcularProgreso`/`UMBRAL_ALERTA`/`UMBRAL_EXCEDIDO` de `presupuesto/logic.js` desde `gastos/index.js` (no desde `gastos/logic.js`, que cerraría un ciclo porque `presupuesto/logic.js` ya importa `gastosMes` de `gastos/logic.js`). Precedente ya existente en el código: `analisis/logic.js` importa de `gastos/logic.js` y de `tesoreria/logic.js`.
+- **ADR 060 formaliza una lectura cross-domain que el código ya hacía en otros 3 sitios** (`presupuesto/logic.js`, `analisis/logic.js`, `analisis/view.js` leyendo de `gastos/logic.js`/`tesoreria/logic.js`), pero solo cubre "un `logic.js` puro importado por otro dominio". Si una tarjeta futura necesita leer de un `view.js` o `index.js` ajeno, ese ADR no lo habilita: es exactamente el acoplamiento que ADN 10 sigue prohibiendo.
+- **De paso, verificando la numeración del ADR**, se encontró que **ADR 059 no existe en el repositorio** pese a estar citado como "aceptado" en 7 documentos (iniciativa INT.1). Registrado como **BUG-027**, ajeno a esta tarjeta.
 
-**Cambios pendientes**: GAS.2b (segunda línea), GAS.2c (diferida). Ver `board/gastos.md`.
+**Cambios pendientes**: GAS.2c (diferida, Abono/Aporte). Ver `board/gastos.md`.
 
 **Cambios realizados**:
 
+- 2026-08-10 (GAS.2b): segunda línea del toast (`consecuenciaDeGasto()`), lectura cross-domain de `calcularProgreso()` desde `gastos/index.js` ([ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md)). 244/244 unit de `gastos.test.js` (7 nuevos), 263/263 E2E, lint verde. Verificado en la app los 4 casos de prioridad con datos reales (excedido, alerta, saldo de cuenta, ojo de privacidad).
 - 2026-08-10 (GAS.2a): toast genérico (`ui/toast.js`) + primera línea en `_guardarGasto()`. 237/237 unit de `gastos.test.js` + 263/263 E2E verdes, lint verde. Verificado en la app: creación muestra "Mercado $30.000", edición muestra "Gasto actualizado", autocierre a los 5s.
 
 ---
