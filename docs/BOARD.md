@@ -42,12 +42,13 @@ Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (si
 
 ## Índice de pendientes
 
-Las 26 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+Las 27 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
+| ANL.3 | Cada bloque de Análisis declara su propio alcance (triaje ficha 16, plan sin ejecutar) | Análisis | media | nada; no depende de ADR 046/044 |
 | GAS.2c | Extender el toast de confirmación a Abono y Aporte (diferida) | Gastos | baja (diferida) | GAS.2b cerrada; no se activa sin aprobación explícita |
-| INT.1g | Carril derecho de 320px desde 1.680px | Transversal | baja | INT.1e cerrada |
+| INT.1g | Carril derecho de 320px desde 1.680px (diferida) | Transversal | baja (diferida) | sin sección candidata con contenido |
 | MC.17f | Deshacer o editar una transferencia | Mis cuentas | media | coordinar con MOV.1 |
 | MT.6 | Metas v2: subcategorías inteligentes + plan de aportes | Metas | media-alta | nada (el motor de MC.13 ya está); ADR 029 D3 |
 | LIM.1 | Límites v2: asistente preventivo de estilo de vida | Límites | sin definir | ADR 045 (base de cálculo); ADR 044 (sugerencias) |
@@ -118,7 +119,7 @@ PE.6d → [`board/me-deben.md`](board/me-deben.md)
 
 ### Análisis (dominio `analisis`)
 
-ANL.1 → [`board/analisis.md`](board/analisis.md)
+ANL.1, ANL.3 → [`board/analisis.md`](board/analisis.md)
 
 ### Configuración (dominio `config`)
 

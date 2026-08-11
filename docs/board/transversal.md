@@ -12,11 +12,13 @@
 
 > **La rebanada restante**, en una línea: su alcance completo, con medición y contra declarado, vive en el [ADR 059](../DECISIONS/059-interfaz-de-escritorio.md) y no se repite acá. Se re-expande a tarjeta completa al iniciarla.
 
-#### INT.1g - Carril derecho de 320px desde 1.680px
+#### INT.1g - Carril derecho de 320px desde 1.680px (diferida)
+- Prioridad  : baja (diferida)
 - Estado     : mecanismo cerrado (commit `4f87f77`, dentro de INT.1b). `.section--con-carril` en `styles/layout.css:296-312`: grid `1fr 320px` desde 1.680px; entre 1.024 y 1.680px una columna centrada (INT.1a). **P1 ya resuelto por INT.1e** (recorrido de las 13, ver `contexto/transversal.md`): ninguna sección tiene todavía qué poner en el carril, así que ninguna usa la clase; sigue sin uso real hasta que una sección declare su contenido. Área: ambos.
 - Objetivo   : lo urgente deja de obligar a bajar un pliegue.
 - Archivos   : `styles/layout.css` (mecanismo listo); falta aplicar `.section--con-carril` por sección
 - Depende de : INT.1e cerrada · Modelo: Equilibrado - Alto
+- Diferida 2026-08-11: sin sección candidata con contenido para carril. Se reactiva cuando una seccion declare que necesita.
 
 #### PERF.5 (futura, no iniciar) - Migrar la persistencia a IndexedDB
 - Prioridad  : sin definir (se retoma solo si se dispara un criterio del [ADR 030](../DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) D4)
