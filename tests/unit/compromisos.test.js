@@ -28,6 +28,7 @@ import {
   aplicarAbonoASaldo,
   revertirAbonoDeSaldo,
   ajustarMontoAbono,
+  consecuenciaDeAbono,
   validarAbono,
   deltasSaldoCompromisoPorEdicionGasto,
   detectarDeudaCreciente,
@@ -365,6 +366,21 @@ describe('validarCompromiso()', () => {
     expect(errores[0]).toMatch(/categor/i);
   });
 
+  // ── CAT.3c: personalizadas de sección 'fijo' ──────────────────────
+
+  it('CAT.3c: acepta una personalizada de sección fijo pasada por parámetro', () => {
+    const personalizadasFijo = [{ nombre: 'Netflix', icono: 'c-streaming' }];
+    expect(validarCompromiso(
+      { ...datosFormValidos, tipo: 'fijo', categoria: 'Netflix' },
+      personalizadasFijo,
+    )).toEqual([]);
+  });
+
+  it('CAT.3c: sin la lista de personalizadas, la misma categoría se rechaza (oferta por sección)', () => {
+    const errores = validarCompromiso({ ...datosFormValidos, tipo: 'fijo', categoria: 'Netflix' });
+    expect(errores[0]).toMatch(/categor/i);
+  });
+
   it('AG.4: con categoría predefinida (no "Otro"), la descripción puede ir vacía', () => {
     const errores = validarCompromiso({
       ...datosFormValidos, tipo: 'fijo', categoria: 'Mercado', descripcion: '',
@@ -384,6 +400,15 @@ describe('validarCompromiso()', () => {
     const errores = validarCompromiso({ ...datosFormValidos, tipo: 'fijo', descripcion: '' });
     expect(errores.length).toBeGreaterThan(0);
     expect(errores[0]).toMatch(/descripci/i);
+  });
+
+  it('CAT.3c: con una personalizada de sección fijo, la descripción puede ir vacía (mismo criterio AG.4)', () => {
+    const personalizadasFijo = [{ nombre: 'Netflix', icono: 'c-streaming' }];
+    const errores = validarCompromiso(
+      { ...datosFormValidos, tipo: 'fijo', categoria: 'Netflix', descripcion: '' },
+      personalizadasFijo,
+    );
+    expect(errores).toEqual([]);
   });
 
   // ── MC.16a (ADR 051 D1): cupoTotal de tarjeta de crédito ──────────
@@ -559,6 +584,30 @@ describe('normalizarCompromiso()', () => {
   it('para tipo=fijo con categoría inválida, queda categoria=null', () => {
     const result = normalizarCompromiso({ ...datosFormValidos, tipo: 'fijo', categoria: 'Inventada' });
     expect(result.categoria).toBeNull();
+  });
+
+  it('CAT.3c: para tipo=fijo guarda una personalizada de sección fijo pasada por parámetro', () => {
+    const personalizadasFijo = [{ nombre: 'Netflix', icono: 'c-streaming' }];
+    const result = normalizarCompromiso(
+      { ...datosFormValidos, tipo: 'fijo', categoria: 'Netflix' },
+      personalizadasFijo,
+    );
+    expect(result.categoria).toBe('Netflix');
+  });
+
+  it('CAT.3c: sin la lista de personalizadas, la misma categoría normaliza a null (oferta por sección)', () => {
+    const result = normalizarCompromiso({ ...datosFormValidos, tipo: 'fijo', categoria: 'Netflix' });
+    expect(result.categoria).toBeNull();
+  });
+
+  it('CAT.3c: con una personalizada de fijo, la descripción es la categoría y el texto pasa a nota (AG.4)', () => {
+    const personalizadasFijo = [{ nombre: 'Netflix', icono: 'c-streaming' }];
+    const result = normalizarCompromiso(
+      { ...datosFormValidos, tipo: 'fijo', categoria: 'Netflix', descripcion: 'Plan premium compartido' },
+      personalizadasFijo,
+    );
+    expect(result.descripcion).toBe('Netflix');
+    expect(result.nota).toBe('Plan premium compartido');
   });
 
   it('AG.4: con categoría predefinida, la descripción es la categoría y el texto del form pasa a nota', () => {
@@ -1910,6 +1959,25 @@ describe('ajustarMontoAbono()', () => {
   it('monto NaN: monto ajustado 0, no salda', () => {
     expect(ajustarMontoAbono(NaN, 500_000))
       .toEqual({ montoAjustado: 0, saldaDeuda: false });
+  });
+});
+
+// ── consecuenciaDeAbono() (GAS.2c, ADR 062) ──────────────────────
+
+describe('consecuenciaDeAbono()', () => {
+  it('deuda saldada: gana a cualquier saldo restante', () => {
+    const r = consecuenciaDeAbono({ saldaDeuda: true, saldoRestante: 0, ocultarSaldo: false });
+    expect(r).toEqual({ texto: 'Deuda saldada.', tono: 'ok' });
+  });
+
+  it('deuda no saldada: muestra el saldo restante', () => {
+    const r = consecuenciaDeAbono({ saldaDeuda: false, saldoRestante: 300_000, ocultarSaldo: false });
+    expect(r).toEqual({ texto: 'Te quedan $300.000 por pagar.', tono: 'ok' });
+  });
+
+  it('ojo de privacidad activo: ninguna cifra, ni saldada ni restante', () => {
+    expect(consecuenciaDeAbono({ saldaDeuda: true, saldoRestante: 0, ocultarSaldo: true })).toBeNull();
+    expect(consecuenciaDeAbono({ saldaDeuda: false, saldoRestante: 300_000, ocultarSaldo: true })).toBeNull();
   });
 });
 

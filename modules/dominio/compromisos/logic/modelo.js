@@ -45,18 +45,21 @@ export function esDeuda(tipo) {
 }
 
 /**
- * AG.4: con una categoría predefinida de Agenda (cualquiera salvo 'Otro'),
- * el nombre del gasto fijo es la propia categoría: pedir un nombre aparte
- * sería redundante ("Mercado" ya lo dice todo). Solo con 'Otro' (o sin
- * categoría) el usuario escribe su propio nombre.
+ * AG.4: con una categoría predefinida de Agenda o una personalizada de
+ * sección 'fijo' (CAT.3c: mismo criterio, una categoría reutilizable ya dice
+ * el nombre) el nombre del gasto fijo es la propia categoría: pedir un
+ * nombre aparte sería redundante ("Mercado" ya lo dice todo). Solo con
+ * 'Otro' (o sin categoría) el usuario escribe su propio nombre.
  * @param {{ tipo?: string, categoria?: string }} datos
+ * @param {{ nombre: string }[]} [personalizadasFijo] personalizadas de sección 'fijo'
  * @returns {boolean}
  */
-function _categoriaFijoConNombreAuto(datos) {
+function _categoriaFijoConNombreAuto(datos, personalizadasFijo = []) {
   return datos.tipo === 'fijo'
     && !!datos.categoria
-    && CATEGORIAS_AGENDA.includes(datos.categoria)
-    && datos.categoria !== 'Otro';
+    && datos.categoria !== 'Otro'
+    && (CATEGORIAS_AGENDA.includes(datos.categoria)
+      || personalizadasFijo.some(c => c.nombre === datos.categoria));
 }
 
 /**
@@ -247,14 +250,15 @@ export function nivelAlertaMora(proximos) {
  * - tipo='deuda-personal' → requiere saldoTotal, cuotaMensual; tasa opcional (% mensual).
  *
  * @param {Record<string, string>} datos
+ * @param {{ nombre: string }[]} [personalizadasFijo] personalizadas de sección 'fijo' (CAT.3c)
  * @returns {string[]} Mensajes de error (vacío = válido).
  */
-export function validarCompromiso(datos) {
+export function validarCompromiso(datos, personalizadasFijo = []) {
   const errores = [];
 
   // AG.4: con categoría predefinida (no 'Otro'), el nombre lo da la propia
   // categoría; el campo de texto queda libre para una nota opcional.
-  if (!_categoriaFijoConNombreAuto(datos) && !datos.descripcion?.trim()) {
+  if (!_categoriaFijoConNombreAuto(datos, personalizadasFijo) && !datos.descripcion?.trim()) {
     errores.push('La descripción del compromiso es obligatoria.');
   }
   if (!datos.frecuencia || !FRECUENCIAS.includes(datos.frecuencia)) {
@@ -273,7 +277,8 @@ export function validarCompromiso(datos) {
     if (isNaN(monto) || monto <= 0) {
       errores.push('El monto debe ser un número mayor a 0.');
     }
-    if (datos.categoria && !CATEGORIAS_AGENDA.includes(datos.categoria)) {
+    if (datos.categoria && !CATEGORIAS_AGENDA.includes(datos.categoria)
+      && !personalizadasFijo.some(c => c.nombre === datos.categoria)) {
       errores.push('La categoría seleccionada no es válida.');
     }
   } else if (esDeuda(datos.tipo)) {
@@ -413,8 +418,9 @@ export function detectarDeudaCreciente(datos) {
  *                       de categoría al editar, en vez de dejarlo huérfano.
  *
  * @param {Record<string, string>} datos
+ * @param {{ nombre: string }[]} [personalizadasFijo] personalizadas de sección 'fijo' (CAT.3c)
  */
-export function normalizarCompromiso(datos) {
+export function normalizarCompromiso(datos, personalizadasFijo = []) {
   const base = {
     descripcion: datos.descripcion.trim(),
     frecuencia:  datos.frecuencia,
@@ -424,10 +430,10 @@ export function normalizarCompromiso(datos) {
   };
 
   if (datos.tipo === 'fijo') {
-    const categoria = datos.categoria && CATEGORIAS_AGENDA.includes(datos.categoria)
-      ? datos.categoria
-      : null;
-    const nombreAuto = _categoriaFijoConNombreAuto(datos);
+    const categoriaValida = datos.categoria && (CATEGORIAS_AGENDA.includes(datos.categoria)
+      || personalizadasFijo.some(c => c.nombre === datos.categoria));
+    const categoria = categoriaValida ? datos.categoria : null;
+    const nombreAuto = _categoriaFijoConNombreAuto(datos, personalizadasFijo);
 
     base.monto = Number(datos.monto);
     base.categoria = categoria;

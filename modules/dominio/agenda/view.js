@@ -904,6 +904,9 @@ export function textoBannerGastoFijo(frecuencia, diaPago) {
   return `Aparecerá ${frase} en tu calendario ${diaTexto}.`;
 }
 
+/** Sentinela del chip "Categoría nueva" del formulario de gasto fijo (CAT.3c). */
+export const CATEGORIA_NUEVA_VALUE_FIJO = '__nueva__';
+
 export function renderFormGastoFijo() {
   const frecOpts = FRECUENCIAS
     .map(fr => `<option value="${_esc(fr)}"${fr === 'Mensual' ? ' selected' : ''}>${_esc(fr)}</option>`)
@@ -913,12 +916,21 @@ export function renderFormGastoFijo() {
   // columnas (mismo lenguaje que Registrar gasto y Nueva deuda), no un
   // desplegable. Radios reales name="categoria" dentro del label: el
   // contrato FormData y validarCompromiso() no cambian.
-  const chipsCategoria = CATEGORIAS_AGENDA.map(c => `
+  // CAT.3c: se suman las personalizadas de sección 'fijo' y, al final, el
+  // chip "Categoría nueva" (mismo lenguaje que "Otra categoría" de Gastos,
+  // con nombre distinto porque 'Otro' ya es miembro literal de este catálogo).
+  const chipCat = (valor, etiqueta, simbolo) => `
         <label class="chip-cat">
-          <input type="radio" name="categoria" class="chip-cat__radio" value="${_esc(c)}" />
-          <svg class="icon" aria-hidden="true"><use href="#${_esc(iconoDeCategoriaGasto(c, S.categoriasPersonalizadas))}"/></svg>
-          <span class="chip-cat__label">${_esc(c)}</span>
-        </label>`).join('');
+          <input type="radio" name="categoria" class="chip-cat__radio" value="${_esc(valor)}" />
+          <svg class="icon" aria-hidden="true"><use href="#${_esc(simbolo)}"/></svg>
+          <span class="chip-cat__label">${_esc(etiqueta)}</span>
+        </label>`;
+  const personalizadasFijo = (S.categoriasPersonalizadas ?? []).filter(c => c.seccion === 'fijo');
+  const chipsCategoria = [
+    ...CATEGORIAS_AGENDA.map(c => chipCat(c, c, iconoDeCategoriaGasto(c, S.categoriasPersonalizadas))),
+    ...personalizadasFijo.map(c => chipCat(c.nombre, c.nombre, iconoDeCategoriaGasto(c.nombre, S.categoriasPersonalizadas))),
+    chipCat(CATEGORIA_NUEVA_VALUE_FIJO, 'Categoría nueva', 'i-plus'),
+  ].join('');
 
   return `
     <form id="form-gasto-fijo" novalidate>
@@ -933,6 +945,13 @@ export function renderFormGastoFijo() {
 
       <div class="form-group" id="form-group-gfijo-icono" hidden>
         ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'gfijo-icono', label: 'Ícono' })}
+      </div>
+
+      <div class="form-group" id="gfijo-categoria-nueva-fields" hidden>
+        <label for="gfijo-categoria-nueva-nombre" class="label">Nombre de tu categoría</label>
+        <input id="gfijo-categoria-nueva-nombre" name="categoriaNuevaNombre" class="input" type="text"
+               placeholder="Ej. Gimnasio, Netflix" autocomplete="off" />
+        ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'gfijo-categoria-nueva-icono', nombreCampo: 'categoriaNuevaIcono' })}
       </div>
 
       <div class="form-group">

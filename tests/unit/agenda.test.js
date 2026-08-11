@@ -497,11 +497,34 @@ describe('renderFormGastoFijo() - selector de categoría', () => {
     const html = renderFormGastoFijo();
     expect(html).toContain('chips-cat');
     expect(html).not.toContain('<select id="gfijo-categoria"');
+    // CAT.3c: +1 por el chip sentinela "Categoría nueva" (S.categoriasPersonalizadas
+    // sin entradas de sección 'fijo' en este describe, así que no suma más chips).
     const radios = html.match(/name="categoria"/g) ?? [];
-    expect(radios).toHaveLength(CATEGORIAS_AGENDA.length);
+    expect(radios).toHaveLength(CATEGORIAS_AGENDA.length + 1);
     for (const c of CATEGORIAS_AGENDA) {
       expect(html).toContain(`value="${c}"`);
       expect(html).toContain(`<use href="#${CATEGORIA_AGENDA_ICONO[c]}"/>`);
+    }
+  });
+
+  it('CAT.3c: incluye el chip sentinela "Categoría nueva" al final del catálogo', () => {
+    const html = renderFormGastoFijo();
+    expect(html).toContain('value="__nueva__"');
+    expect(html).toContain('Categoría nueva');
+    expect(html).toContain('#i-plus');
+  });
+
+  it('CAT.3c: suma un chip por cada personalizada de sección fijo, filtrando las de gasto', () => {
+    S.categoriasPersonalizadas = [
+      { id: 'p1', nombre: 'Netflix', icono: 'c-streaming', seccion: 'fijo', fechaCreacion: '2026-01-01' },
+      { id: 'p2', nombre: 'Almuerzo', icono: 'c-mercado', seccion: 'gasto', fechaCreacion: '2026-01-01' },
+    ];
+    try {
+      const html = renderFormGastoFijo();
+      expect(html).toContain('value="Netflix"');
+      expect(html).not.toContain('value="Almuerzo"');
+    } finally {
+      S.categoriasPersonalizadas = [];
     }
   });
 
@@ -589,6 +612,17 @@ describe('renderFormGastoFijo() - picker de ícono para "Otro" (CAT.2f)', () => 
     const html = renderFormGastoFijo();
     expect(html).toMatch(/id="form-group-gfijo-icono"[^>]*hidden/);
     expect(html).toContain('data-icono-picker="gfijo-icono"');
+  });
+});
+
+// ── renderFormGastoFijo() - nombre + ícono de categoría nueva (CAT.3c) ──
+
+describe('renderFormGastoFijo() - campos de categoría nueva (CAT.3c)', () => {
+  it('incluye el grupo de nombre + ícono, oculto por defecto', () => {
+    const html = renderFormGastoFijo();
+    expect(html).toMatch(/id="gfijo-categoria-nueva-fields"[^>]*hidden/);
+    expect(html).toContain('name="categoriaNuevaNombre"');
+    expect(html).toContain('data-icono-picker="gfijo-categoria-nueva-icono"');
   });
 });
 

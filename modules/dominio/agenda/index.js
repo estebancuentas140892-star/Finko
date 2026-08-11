@@ -36,12 +36,18 @@ import { resolverPagoConSelector } from '../../infra/cuenta-helper.js';
 import { asignarSplitsPorItem } from '../../infra/distribuir-pago.js';
 import { ocurrenciasEnMes } from '../../infra/vencimientos.js';
 import { validarCompromiso, normalizarCompromiso } from '../compromisos/logic.js';
+import { validarCategoriaPersonalizada } from '../gastos/logic.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { CATEGORIAS_AGENDA } from '../../core/constants.js';
 import { wireIconoPicker, setIconoPickerValor } from '../../infra/icon-picker.js';
 import { iconoCategoria } from '../../infra/icons.js';
 import { eventosDelMes, pendientesDePagoDelMes } from './logic.js';
-import { renderAgenda, renderFormGastoFijo, renderFormPagoLote, textoBannerGastoFijo, navegarMes, mostrarDia, marcarEntradaSeccion, resumenMesVisible, diaSeleccionado } from './view.js';
+import { renderAgenda, renderFormGastoFijo, renderFormPagoLote, textoBannerGastoFijo, navegarMes, mostrarDia, marcarEntradaSeccion, resumenMesVisible, diaSeleccionado, CATEGORIA_NUEVA_VALUE_FIJO } from './view.js';
+
+/** Personalizadas de sección 'fijo' (CAT.3c): mismo criterio de oferta por sección del ADR 058 D2. */
+function _personalizadasFijo() {
+  return (S.categoriasPersonalizadas ?? []).filter(c => c.seccion === 'fijo');
+}
 
 // ── HANDLERS DE NAVEGACIÓN ───────────────────────────────────────
 
@@ -143,7 +149,8 @@ function _inyectarFormGastoFijo(compromiso = null) {
     const f_dia = form.querySelector('[name="diaPago"]');
     const f_btn = form.querySelector('[type="submit"]');
     const categoria = compromiso.categoria ?? '';
-    const nombreAuto = categoria && CATEGORIAS_AGENDA.includes(categoria) && categoria !== 'Otro';
+    const nombreAuto = categoria && categoria !== 'Otro'
+      && (CATEGORIAS_AGENDA.includes(categoria) || _personalizadasFijo().some(c => c.nombre === categoria));
     // FORM.1c: la categoría es un chip de radio, no un select; se marca el
     // que corresponda (si `categoria` no está en el catálogo, ninguno queda
     // marcado, igual que antes con un <select> sin esa opción).
@@ -180,6 +187,7 @@ function _inyectarFormGastoFijo(compromiso = null) {
   });
   form.addEventListener('input', () => _actualizarBannerGastoFijo(form));
   wireIconoPicker(form.querySelector('[data-icono-picker="gfijo-icono"]'));
+  wireIconoPicker(form.querySelector('[data-icono-picker="gfijo-categoria-nueva-icono"]'));
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -215,7 +223,8 @@ function _syncCategoriaGastoFijo(form) {
   // FORM.1c: la categoría son chips-radio; ninguno marcado equivale al
   // `<select>` vacío de antes.
   const categoria   = form.querySelector('[name="categoria"]:checked')?.value ?? '';
-  const nombreAuto  = categoria && CATEGORIAS_AGENDA.includes(categoria) && categoria !== 'Otro';
+  const nombreAuto  = categoria && categoria !== 'Otro'
+    && (CATEGORIAS_AGENDA.includes(categoria) || _personalizadasFijo().some(c => c.nombre === categoria));
 
   if (nombreAuto) {
     etiqueta.textContent = 'Nota (opcional)';
@@ -232,6 +241,10 @@ function _syncCategoriaGastoFijo(form) {
   // CAT.2f: el picker de ícono solo tiene sentido con la categoría "Otro".
   const grupoIcono = form.querySelector('#form-group-gfijo-icono');
   if (grupoIcono) grupoIcono.hidden = categoria !== 'Otro';
+
+  // CAT.3c: nombre + ícono de la categoría nueva solo con el chip sentinela.
+  const camposNueva = form.querySelector('#gfijo-categoria-nueva-fields');
+  if (camposNueva) camposNueva.hidden = categoria !== CATEGORIA_NUEVA_VALUE_FIJO;
 }
 
 function _guardarGastoFijo() {
@@ -239,19 +252,47 @@ function _guardarGastoFijo() {
   if (!form) return;
 
   const datos = Object.fromEntries(new FormData(form));
-  const errores = validarCompromiso(datos);
+  const esCategoriaNueva = datos.categoria === CATEGORIA_NUEVA_VALUE_FIJO;
+  const personalizadasFijo = _personalizadasFijo();
+
+  // CAT.3c: mismo patrón que "Otra categoría" en Gastos (gastos/index.js). El
+  // sentinela no es una categoría real todavía, así que se valida como si no
+  // hubiera categoría elegida (categoria: '' no dispara el rechazo del catálogo).
+  const errores = validarCompromiso(
+    esCategoriaNueva ? { ...datos, categoria: '' } : datos,
+    personalizadasFijo,
+  );
+  if (esCategoriaNueva) {
+    errores.push(...validarCategoriaPersonalizada(
+      { nombre: datos.categoriaNuevaNombre, icono: datos.categoriaNuevaIcono },
+      S.categoriasPersonalizadas,
+    ));
+  }
 
   if (errores.length > 0) {
     mostrarErroresForm(form, errores);
     return;
   }
 
+  // Crear y persistir la categoría antes de normalizar el compromiso, igual
+  // que en Gastos: `datos.categoria` pasa a ser su nombre.
+  if (esCategoriaNueva) {
+    const nueva = guardar('categoriasPersonalizadas', {
+      nombre:  datos.categoriaNuevaNombre.trim(),
+      icono:   datos.categoriaNuevaIcono,
+      seccion: 'fijo',
+    });
+    datos.categoria = nueva.nombre;
+    personalizadasFijo.push(nueva);
+  }
+
   const idEdit = form.dataset.id || null;
+  const normalizado = normalizarCompromiso(datos, personalizadasFijo);
 
   if (idEdit) {
-    editar('compromisos', idEdit, normalizarCompromiso(datos));
+    editar('compromisos', idEdit, normalizado);
   } else {
-    guardar('compromisos', normalizarCompromiso(datos));
+    guardar('compromisos', normalizado);
   }
 
   const overlay = document.getElementById('modal-gasto-fijo');
