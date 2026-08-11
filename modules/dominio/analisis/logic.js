@@ -15,7 +15,7 @@ import { calcularTotalCuentas }                         from '../tesoreria/logic
 import { metasActivas }                                 from '../metas/logic.js';
 import { apartadosActivos }                             from '../apartados/logic.js';
 import { calcularTotalInvertido }                       from '../inversiones/logic.js';
-import { calcularTotalPorCobrar }                       from '../personales/logic.js';
+import { calcularTotalPorCobrar, calcularPrestamosSinCuenta } from '../personales/logic.js';
 import { UVT, TOPES_RENTA_UVT, UMBRAL_ALERTA_RENTA }    from '../../core/constants.js';
 
 // Regex reutilizada en funciones de deteccion.
@@ -86,7 +86,7 @@ export function repartirPorcentajes(valores) {
  * @param {import('../../core/state.js').Apartado[]}  [apartados=[]]
  * @param {import('../../core/state.js').Inversion[]} [inversiones=[]]
  * @param {import('../personales/logic.js').Personal[]} [personales=[]]
- * @returns {{ totalCuentas: number, totalMetas: number, totalApartados: number, totalInversiones: number, totalPorCobrar: number, total: number }}
+ * @returns {{ totalCuentas: number, totalMetas: number, totalApartados: number, totalInversiones: number, totalPorCobrar: number, prestamosSinCuenta: number, total: number }}
  */
 export function calcularActivos(cuentas, metas, apartados = [], inversiones = [], personales = []) {
   const totalCuentas = calcularTotalCuentas(cuentas);
@@ -96,12 +96,16 @@ export function calcularActivos(cuentas, metas, apartados = [], inversiones = []
     .reduce((acc, a) => acc + (Number(a.montoActual) || 0), 0);
   const totalInversiones = calcularTotalInvertido(inversiones);
   const totalPorCobrar   = calcularTotalPorCobrar(personales);
+  // ANL.3: préstamos con saldo pendiente que no cuentan como activo (sin
+  // cuentaId), para que el patrimonio pueda explicar por qué no los incluye.
+  const prestamosSinCuenta = calcularPrestamosSinCuenta(personales);
   return {
     totalCuentas,
     totalMetas,
     totalApartados,
     totalInversiones,
     totalPorCobrar,
+    prestamosSinCuenta,
     total: totalCuentas + totalMetas + totalApartados + totalInversiones + totalPorCobrar,
   };
 }
@@ -212,7 +216,7 @@ export function proyeccionMultiHorizonte(patrimonioActual, ahorroMensual) {
  *   egresos: number,
  *   porCategoria: Record<string, number>,
  *   hormigas: Array<{categoria:string, total:number, cantidad:number, promedio:number}>,
- *   activos: { totalCuentas: number, totalMetas: number, totalApartados: number, totalInversiones: number, totalPorCobrar: number, total: number },
+ *   activos: { totalCuentas: number, totalMetas: number, totalApartados: number, totalInversiones: number, totalPorCobrar: number, prestamosSinCuenta: number, total: number },
  *   pasivos: { total: number, cantidadDeudas: number, deudasSinSaldo: number },
  *   patrimonioNeto: number,
  *   volatilidad: number,

@@ -149,12 +149,11 @@ export function renderAnalisis() {
   const anio = Number(fechaHoy.slice(0, 4));
   const mes  = Number(fechaHoy.slice(5, 7));
 
-  // ANL.2a (ADR 038 D6): el chip del header ancla el periodo del análisis.
-  // Vive en el shell estático (index.html); aquí solo se escribe el mes.
-  // DIS.10 (C12): con el año, porque el monitor de renta al final de la página
-  // habla de un año completo y el chip decía solo "Julio".
-  const chipMes = document.getElementById('analisis-chip-mes-label');
-  if (chipMes) chipMes.textContent = _MESES[mes - 1] ? `${_MESES[mes - 1]} ${anio}` : '';
+  // ANL.3: el chip de mes ya no vive en el header (anclaba visualmente los 5
+  // bloques de la página a un mes, cuando solo "Por categoría" lo mide). Se
+  // arma acá y se inserta en el rótulo del grupo "A dónde va tu dinero", que
+  // es donde vive el bloque mensual.
+  const mesTxt = _MESES[mes - 1] ? `${_MESES[mes - 1]} ${anio}` : '';
 
   // DIS.10 (C11): cada render reescribe `innerHTML`, así que los dos
   // `<details>` se recrean y lo que el usuario abrió se cerraba solo (y con
@@ -225,7 +224,7 @@ export function renderAnalisis() {
     ${_renderScoreSalud(resumen)}
     ${_renderPatrimonio(resumen)}
     <div class="analisis__group">
-      <h2 class="analisis__group-label">A dónde va tu dinero</h2>
+      <h2 class="analisis__group-label">A dónde va tu dinero${mesTxt ? ` · ${mesTxt}` : ''}</h2>
       ${grupoCuerpo}
     </div>
     ${mostrarDetalle ? _renderGrupoDetalle(cuerpoDetalle) : ''}
@@ -720,13 +719,26 @@ function _renderPatrimonio({ activos, pasivos, patrimonioNeto }) {
     ? buckets.map(b => `${b.label} ${b.pct}%`).join(' · ')
     : 'Sin activos registrados';
 
-  // CTA si hay deudas sin saldo registrado.
+  // CTA si hay deudas sin saldo registrado. ANL.3 (Z3): la etiqueta visible
+  // pasa de "Compromisos" (nombre interno) a "Deudas" (nombre de producto,
+  // el que ya usa el nav); el destino sigue siendo #compromisos.
   const ctaDeudas = pasivos.deudasSinSaldo > 0
     ? `<p class="analisis__hint">
         Tienes <strong>${pasivos.deudasSinSaldo} deuda${pasivos.deudasSinSaldo > 1 ? 's' : ''}</strong>
         sin saldo registrado. Complétalas en
-        <a href="#compromisos" class="link">Compromisos</a>
+        <a href="#compromisos" class="link">Deudas</a>
         para calcular tu patrimonio real.
+      </p>`
+    : '';
+
+  // ANL.3 (Z1 + Z2): patrimonio es una foto de hoy, y "Por cobrar" tiene una
+  // salvedad que la pantalla no decía: los préstamos sin cuenta vinculada no
+  // suman porque su dinero nunca salió de una cuenta (ver calcularActivos).
+  const ctaPrestamosSinCuenta = activos.prestamosSinCuenta > 0
+    ? `<p class="analisis__hint">
+        Tienes <strong>${activos.prestamosSinCuenta} préstamo${activos.prestamosSinCuenta > 1 ? 's' : ''}</strong>
+        que no salió de ninguna cuenta, así que no suma a tu patrimonio.
+        <a href="#personales" class="link">Ver en Me deben</a>.
       </p>`
     : '';
 
@@ -746,7 +758,7 @@ function _renderPatrimonio({ activos, pasivos, patrimonioNeto }) {
           <h2 class="patri-card__kicker" id="analisis-patrimonio-title">Patrimonio neto</h2>
         </div>
         <p class="patri-card__valor ${valorClase}">${netoTxt}</p>
-        <p class="patri-card__hint">activos − pasivos</p>
+        <p class="patri-card__hint">activos − pasivos · hoy</p>
         ${compBarra}
         <div class="patri-card__grid">
           <article class="patri-card__col">
@@ -767,6 +779,7 @@ function _renderPatrimonio({ activos, pasivos, patrimonioNeto }) {
         </div>
       </div>
       ${ctaDeudas}
+      ${ctaPrestamosSinCuenta}
     </section>`;
 }
 

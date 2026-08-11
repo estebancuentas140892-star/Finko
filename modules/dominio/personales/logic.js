@@ -322,6 +322,22 @@ export function calcularTotalPorCobrar(personales) {
 }
 
 /**
+ * Cuenta los préstamos con capital pendiente que NO cuentan como activo en el
+ * patrimonio (ANL.3): los que no tienen `cuentaId`, porque su dinero nunca
+ * salió de `cuentas` y sumarlo en "Por cobrar" lo duplicaría. Alimenta el
+ * aviso de `_renderPatrimonio` para que el usuario entienda por qué ese
+ * préstamo no aparece en su patrimonio.
+ *
+ * @param {Personal[]} personales
+ * @returns {number} Cantidad de préstamos sin cuenta vinculada y con saldo pendiente.
+ */
+export function calcularPrestamosSinCuenta(personales) {
+  return (Array.isArray(personales) ? personales : [])
+    .filter(p => p && !p.cuentaId && calcularCapitalPendiente(p) > 0)
+    .length;
+}
+
+/**
  * Resume el estado total de los préstamos.
  *
  * Con préstamos a interés (PE.1): `totalCobrado` incluye el interés recibido,

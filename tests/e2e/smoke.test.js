@@ -4514,10 +4514,10 @@ test.describe('Análisis v2 - score hero + chip de mes (ANL.2a)', () => {
 
     const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-    // DIS.10 (C12): el chip lleva el año, porque el panel mezcla cinco
-    // ventanas de tiempo y el monitor de renta habla de un año completo.
+    // ANL.3: el chip del header se movió al rótulo del grupo "A dónde va tu
+    // dinero" (el único bloque de la página que mide ese mes).
     const periodo = `${MESES[new Date().getMonth()]} ${new Date().getFullYear()}`;
-    await expect(page.locator('#analisis-chip-mes-label')).toHaveText(periodo);
+    await expect(page.locator('.analisis__group-label')).toHaveText(`A dónde va tu dinero · ${periodo}`);
 
     // DIS.10 (C3): la frase interpretativa vive a ancho completo, fuera de la
     // columna del anillo, entre el bloque superior y la grilla de factores.
@@ -4566,7 +4566,8 @@ test.describe('Análisis v2 - score hero + chip de mes (ANL.2a)', () => {
     await page.waitForSelector('#sec-analisis.active', { timeout: 10_000 });
 
     const grupo = page.locator('.analisis__group');
-    await expect(grupo.locator('.analisis__group-label')).toHaveText('A dónde va tu dinero');
+    // ANL.3: el rótulo lleva el mes que antes vivía en el chip del header.
+    await expect(grupo.locator('.analisis__group-label')).toContainText('A dónde va tu dinero');
     // Bajó el gasto → chip verde con la variación (ADR 019: solo bajar se celebra).
     await expect(grupo.locator('.tend-card__chip')).toContainText('↓ 25% vs mes anterior');
     await expect(grupo.locator('.tend-card__stat')).toHaveCount(3);

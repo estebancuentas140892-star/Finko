@@ -214,7 +214,7 @@ describe('calcularActivos()', () => {
     const r = calcularActivos([], []);
     expect(r).toEqual({
       totalCuentas: 0, totalMetas: 0, totalApartados: 0, totalInversiones: 0,
-      totalPorCobrar: 0, total: 0,
+      totalPorCobrar: 0, prestamosSinCuenta: 0, total: 0,
     });
   });
 
@@ -317,6 +317,15 @@ describe('calcularActivos()', () => {
     const r = calcularActivos([cuenta()], [meta()], [apartado()], [inversion()]);
     expect(r.totalPorCobrar).toBe(0);
     expect(r.total).toBe(3_700_000);
+  });
+
+  it('prestamosSinCuenta cuenta los préstamos con saldo pendiente que quedaron fuera del activo (ANL.3)', () => {
+    const r = calcularActivos([], [], [], [], [
+      { monto: 400_000, pagado: 0 },
+      { monto: 200_000, pagado: 0, cuentaId: 'cu1' },
+      { monto: 300_000, pagado: 300_000 },
+    ]);
+    expect(r.prestamosSinCuenta).toBe(1);
   });
 
   // ── invariante de patrimonio (ADR 053, propiedad "descuenta saldo") ──
@@ -1978,18 +1987,17 @@ describe('renderAnalisis() - ANL.2a score de salud como héroe', () => {
     expect(hero.querySelector('.score-hero__explicacion').textContent).toContain('Vas muy bien');
   });
 
-  it('escribe el mes y el año actuales en el chip del header (D6, DIS.10 C12)', () => {
-    document.body.innerHTML = `
-      <span id="analisis-chip-mes"><span id="analisis-chip-mes-label"></span></span>
-      <div id="panel-analisis"></div>`;
+  it('escribe el mes y el año actuales en el rótulo del grupo mensual (ANL.3)', () => {
+    document.body.innerHTML = `<div id="panel-analisis"></div>`;
     renderAnalisis();
 
     const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     // El año importa porque el monitor de renta al final de la página habla de
-    // un año completo: el chip decía "Julio" y el panel mezclaba 5 ventanas.
+    // un año completo. ANL.3: el chip del header se movió al rótulo del grupo
+    // "A dónde va tu dinero" (el único bloque de la página que mide ese mes).
     const esperado = `${MESES[new Date().getMonth()]} ${new Date().getFullYear()}`;
-    expect(document.getElementById('analisis-chip-mes-label').textContent).toBe(esperado);
+    expect(document.querySelector('.analisis__group-label').textContent).toBe(`A dónde va tu dinero · ${esperado}`);
   });
 });
 
@@ -1999,8 +2007,39 @@ describe('renderAnalisis() - ANL.2b patrimonio con composición y ojo', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="panel-analisis"></div>';
     S.gastos = []; S.compromisos = []; S.cuentas = [];
-    S.metas = []; S.apartados = []; S.inversiones = [];
+    S.metas = []; S.apartados = []; S.inversiones = []; S.personales = [];
     S.config.ocultarSaldo = false;
+  });
+
+  it('declara su propio alcance: "hoy" (ANL.3, Z1)', () => {
+    S.cuentas = [cuenta({ saldo: 500_000 })];
+    renderAnalisis();
+    expect(document.querySelector('.patri-card__hint').textContent).toContain('hoy');
+  });
+
+  it('el link de deudas sin saldo dice "Deudas", no "Compromisos" (ANL.3, Z3)', () => {
+    S.compromisos = [deuda({ saldoTotal: undefined })];
+    renderAnalisis();
+
+    const link = document.querySelector('.analisis__hint a[href="#compromisos"]');
+    expect(link.textContent).toBe('Deudas');
+  });
+
+  it('avisa cuando hay préstamos sin cuenta vinculada: no suman al patrimonio (ANL.3, Z2)', () => {
+    S.cuentas = [cuenta({ saldo: 500_000 })];
+    S.personales = [{ id: 'p1', monto: 400_000, pagado: 0 }];
+    renderAnalisis();
+
+    const hints = [...document.querySelectorAll('.analisis__hint')].map(p => p.textContent);
+    expect(hints.some(t => t.includes('1 préstamo') && t.includes('no suma a tu patrimonio'))).toBe(true);
+    expect(document.querySelector('a[href="#personales"]')).not.toBeNull();
+  });
+
+  it('sin préstamos excluidos no muestra el aviso', () => {
+    S.cuentas = [cuenta({ saldo: 500_000 })];
+    renderAnalisis();
+    const hints = [...document.querySelectorAll('.analisis__hint')].map(p => p.textContent);
+    expect(hints.some(t => t.includes('no suma a tu patrimonio'))).toBe(false);
   });
 
   it('neto positivo: cifra grande en positivo + columnas Activos/Pasivos con sus montos', () => {
@@ -2103,7 +2142,7 @@ describe('renderAnalisis() - ANL.2c tendencia con chip + categorías agrupadas',
 
     const grupo = document.querySelector('.analisis__group');
     expect(grupo).not.toBeNull();
-    expect(grupo.querySelector('.analisis__group-label').textContent).toBe('A dónde va tu dinero');
+    expect(grupo.querySelector('.analisis__group-label').textContent).toContain('A dónde va tu dinero');
     expect(grupo.querySelector('.tend-card')).not.toBeNull();
     expect(grupo.querySelector('.catg-card')).not.toBeNull();
   });

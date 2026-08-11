@@ -975,7 +975,7 @@
 
       <!-- FONDO DE EMERGENCIA (J.1). Su ruta pasó de #ahorro a #fondo en
            DIS.18: #ahorro es la casa. -->
-      <section class="section" id="sec-fondo" tabindex="-1" aria-labelledby="title-fondo">
+      <section class="section section--con-carril" id="sec-fondo" tabindex="-1" aria-labelledby="title-fondo">
         <!-- Volver a la casa (DIS.18): antes desde acá no se podía subir, solo
              saltar de lado con las pestañas. En la PWA instalada no hay botón
              "atrás" del navegador. Mismo patrón que #sec-movimientos.
@@ -991,12 +991,19 @@
             <h1 class="section__title" id="title-fondo">Fondo de emergencia</h1>
           </div>
         </header>
-        <div id="proposito-ahorro">
-          <!-- proposito.js inyecta el banner de propósito de sección (ADR 016) -->
+        <div class="section__main">
+          <div id="proposito-ahorro">
+            <!-- proposito.js inyecta el banner de propósito de sección (ADR 016) -->
+          </div>
+          <div id="panel-ahorro">
+            <!-- J.1: ahorro/view.js renderiza aquí -->
+          </div>
         </div>
-        <div id="panel-ahorro">
-          <!-- J.1: ahorro/view.js renderiza aquí -->
-        </div>
+        <!-- INT.1g (ADR 059 D7, P1): el compromiso del mes es lo unico de
+             esta pagina que hoy exige bajar un pliegue; desde 1.680px se
+             promueve aqui, siempre visible. ahorro/view.js lo llena. -->
+        <aside class="section__carril" id="fondo-carril" aria-label="Compromiso del mes">
+        </aside>
       </section>
 
       <!-- INVERSIÓN (J.2) - Portafolio real -->
@@ -1083,12 +1090,10 @@
             <h1 class="section__title" id="title-analisis">Análisis</h1>
           </div>
           <!-- ANL.2a (ADR 038 D6): Análisis no crea nada (solo lectura), su
-               header no lleva botón primario; el chip ancla el mes analizado.
-               analisis/view.js escribe el nombre del mes en cada render. -->
-          <span class="section__chip" id="analisis-chip-mes">
-            <svg class="icon" aria-hidden="true"><use href="#i-agenda"/></svg>
-            <span id="analisis-chip-mes-label"></span>
-          </span>
+               header no lleva botón primario. ANL.3: el chip de mes que vivía
+               acá se movió al rótulo del grupo "A dónde va tu dinero" (el
+               único bloque de la página que mide ese mes; los otros cuatro
+               declaran su propio alcance junto a su título). -->
         </header>
         <div id="proposito-analisis">
           <!-- proposito.js inyecta el banner de propósito de sección (ADR 016) -->

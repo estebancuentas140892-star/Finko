@@ -19,6 +19,7 @@ import {
   desglosarPago,
   tieneInteres,
   calcularTotalPorCobrar,
+  calcularPrestamosSinCuenta,
   historialAbonos,
   calcularRendimiento,
   estadisticasPorPersona,
@@ -100,6 +101,38 @@ describe('calcularTotalPorCobrar()', () => {
     expect(calcularTotalPorCobrar(null)).toBe(0);
     expect(calcularTotalPorCobrar(undefined)).toBe(0);
     expect(calcularTotalPorCobrar([null, undefined])).toBe(0);
+  });
+});
+
+// ── calcularPrestamosSinCuenta() - aviso del patrimonio (ANL.3) ────
+
+describe('calcularPrestamosSinCuenta()', () => {
+  it('cuenta los préstamos sin cuentaId que tienen capital pendiente', () => {
+    const lista = [
+      { monto: 500_000, pagado: 0 },
+      { monto: 300_000, pagado: 0, cuentaId: '' },
+    ];
+    expect(calcularPrestamosSinCuenta(lista)).toBe(2);
+  });
+
+  it('excluye los préstamos con cuentaId: esos ya suman en calcularTotalPorCobrar', () => {
+    const lista = [
+      { monto: 500_000, pagado: 0, cuentaId: 'c1' },
+      { monto: 300_000, pagado: 0 },
+    ];
+    expect(calcularPrestamosSinCuenta(lista)).toBe(1);
+  });
+
+  it('excluye los préstamos sin cuentaId ya liquidados: no queda nada por cobrar', () => {
+    const lista = [{ monto: 500_000, pagado: 500_000 }];
+    expect(calcularPrestamosSinCuenta(lista)).toBe(0);
+  });
+
+  it('tolera entradas vacías o inválidas', () => {
+    expect(calcularPrestamosSinCuenta([])).toBe(0);
+    expect(calcularPrestamosSinCuenta(null)).toBe(0);
+    expect(calcularPrestamosSinCuenta(undefined)).toBe(0);
+    expect(calcularPrestamosSinCuenta([null, undefined])).toBe(0);
   });
 });
 
