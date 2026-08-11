@@ -1,4 +1,6 @@
 ---
+
+> Revisado: 2026-08-11.
 name: triaje-tarea
 description: Decide qué hacer con una tarea o idea nueva de Finko antes de implementarla: si se ejecuta ahora, se integra a una tarjeta existente o se registra y se difiere. Incluye las preguntas de triaje, los criterios de priorización, la revisión de arquitectura previa y la plantilla de tarjeta. Usar cuando el usuario propone algo nuevo o cuando aparece trabajo no previsto.
 ---

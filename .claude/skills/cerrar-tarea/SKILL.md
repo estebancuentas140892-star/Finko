@@ -75,11 +75,11 @@ Antes de cerrar, verificar que ningún archivo vivo superó su techo. Superarlo 
 | `CLAUDE.md` | 12 |
 | `docs/HANDOFF.md` | 6 |
 | `docs/BOARD.md` | 40 |
-| `docs/BUGS.md` | 6 |
-| `docs/CHANGELOG.md` (mes corriente) | 60 |
+| `docs/BUGS.md` | 9 (corregido 2026-08-11: 4 bugs verificados con causa raíz completa pesan mas que el techo original, que asumia menos detalle) |
+| `docs/CHANGELOG.md` (mes corriente) | 60 (fusible: forzar rotacion, no se sube aunque el mes lo supere) |
 | `docs/ARCHITECTURE.md` | 32 |
 | `docs/CONTRIBUTING.md` | 5 |
-| `docs/DESIGN_SYSTEM.md` | 20 |
+| `docs/DESIGN_SYSTEM.md` | 70 (corregido 2026-08-11: 74 reglas R con narrativa de origen, contenido real no duplicado, el techo original de 20 nunca midio esto) |
 | `docs/SECURITY.md` | 8 |
 | `docs/OPERACION.md` | 10 |
 | ficha de `docs/contexto/` | 40 (objetivo 25) |

@@ -1,5 +1,7 @@
 # Ficha de contexto: Transversal
 
+> Revisado: 2026-08-11.
+
 > Funcionalidades que atraviesan varias secciones y no son visuales: taxonomía de categorías, persistencia, el CTA de cuenta y el sistema de logros. Reglas de uso y plantilla en [`README.md`](README.md).
 >
 > **Qué NO buscar acá** (partido el 2026-07-24): el lenguaje de formularios y el selector de ícono están en [`captura.md`](captura.md); la identidad de color, las tejas de marca y la navegación, en [`sistema-visual.md`](sistema-visual.md).

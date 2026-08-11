@@ -1,5 +1,7 @@
 # Tablero - Mis cuentas
 
+> Revisado: 2026-08-11.
+
 > Satélite de [`BOARD.md`](../BOARD.md) (dominio `tesoreria`). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
 
 ---

@@ -1,5 +1,7 @@
 # Ficha de contexto: Límites de gasto
 
+> Revisado: 2026-08-11.
+
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 > El dominio se llama `presupuesto` en el código; "Límites de gasto" es el nombre de cara al usuario (para no confundirlo con Apartados: guardar dinero vs. vigilar cuánto sale).
 

@@ -1,5 +1,7 @@
 # Tablero - Me deben
 
+> Revisado: 2026-08-11.
+
 > Satélite de [`BOARD.md`](../BOARD.md) (dominio `personales`). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
 
 ---

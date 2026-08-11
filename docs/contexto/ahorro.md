@@ -1,5 +1,7 @@
 # Ficha de contexto: Ahorro
 
+> Revisado: 2026-08-11.
+
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
 ---

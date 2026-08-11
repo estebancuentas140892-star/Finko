@@ -1,5 +1,7 @@
 # Tablero - Metas
 
+> Revisado: 2026-08-11.
+
 > Satélite de [`BOARD.md`](../BOARD.md) (dominio `metas`). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
 
 ---

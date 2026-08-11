@@ -1,5 +1,7 @@
 # Changelog - Finko Claude
 
+> Revisado: 2026-08-11.
+
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
@@ -9,6 +11,28 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-08)
+
+### feat(gastos): GAS.2c, toast de confirmacion generalizado a Abono y Aporte · 2026-08-11
+
+Cierra **GAS.2c**, tercera rebanada del triaje de la ficha 22, activada por aprobacion explicita de Esteban tras diferirse. Ficha: [`contexto/gastos.md`](contexto/gastos.md); plan: [`board/gastos.md`](board/gastos.md); regla nueva: [ADR 062](DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md).
+
+- **Abono a deuda** (`compromisos/index.js`, `_guardarAbono()`): `announce()` final sustituido por `mostrarToast()`. Segunda linea via `consecuenciaDeAbono()` nueva en `compromisos/logic/abonos.js`, prioridad deuda saldada > saldo restante.
+- **Aporte a meta** (`metas/index.js`, `_guardarAbonoMeta()`): mismo reemplazo. Segunda linea via `consecuenciaDeAporte()` nueva en `metas/logic.js`, prioridad meta completada > cuanto falta.
+- Ninguna funcion generica en `infra/`: los tres calculos (presupuesto, deuda, meta) difieren en forma; el ADR 062 documenta por que.
+- Tests: 6 unit nuevos (3 `consecuenciaDeAbono`, 3 `consecuenciaDeAporte`), suite completa verde. SW `finko-v503` → `finko-v505`.
+
+### docs(mantenimiento): DOC.1, fases 4 y 5 de la reorganización documental · 2026-08-11
+
+Cierra **DOC.1**. Fase 4: los 10 movimientos de la tabla 11.1 de `MIGRACION.md` completos, incluido el punto 9 (`settings.local.json` 12.2: Esteban decide borrar `git rm *` y `git branch *`, mantener el resto de comodines de ejecución; 131 a 129 entradas). Fase 5: validación final y borrado de `MIGRACION.md`.
+
+- **Enlaces `.md` vivos:** cero rotos (barrido sobre los 124 `.md` trackeados, excluida la historia congelada).
+- **Cero U+2014/U+2013** en archivos trackeados (verificado con el comando de la sección 5 de `MIGRACION.md`).
+- **Sellos `Revisado:`** puestos en los 37 documentos activos que no lo tenían (raíz, `docs/` raíz, `docs/board/`, `docs/contexto/`, skills). Ninguno pasa de 90 días.
+- **`docs/contexto/README.md`**: nueva sección 5 con los 11 principios de organización documental (vivían solo en `MIGRACION.md`, que se borra con esta tarea).
+- **Techos corregidos** (mismo criterio que la corrección de `ARCHITECTURE.md` 20→32 KB en Fase 2, cuando el dominio documental crece con razón en vez de grasa): `docs/BUGS.md` 6→9 KB (4 bugs verificados con causa raíz completa) y `docs/DESIGN_SYSTEM.md` 20→70 KB (74 reglas R con narrativa de origen, contenido no duplicado). `docs/CHANGELOG.md` mes corriente sigue en 60 KB a propósito: es un fusible para forzar la rotación mensual, no se sube aunque el mes lo supere; **riesgo abierto:** este mes va en 84 KB a 11 días de cerrar, por encima del fusible antes de tiempo.
+- **`README.md` adelgazado** a la meta original de 4 KB (era 5,3 KB): salen el árbol de carpetas (duplicaba `ARCHITECTURE.md`) y la copia del ADN (duplicaba `CLAUDE.md` sección 4), acción de Fase 2 que había quedado sin ejecutar.
+- **Medición real de la ruta de arranque:** `CLAUDE.md` (10,3 KB) + `HANDOFF.md` (5,4 KB) + `BOARD.md` completo (13,8 KB, ya no hace falta separar índice) = 29,5 KB, ≈7.400 tokens. Contra los ~69.400 tokens de arranque original: **89% de reducción**, mejor que el ~70% proyectado.
+- Tests: lint verde; suite unitaria con 3 fallas en `analisis.test.js` ajenas a esta tarea (otra sesión con 22 archivos de código sin commitear en curso al momento del cierre, no tocados).
 
 ### feat(gastos): GAS.2b, segunda línea del toast con la consecuencia del gasto · 2026-08-10
 

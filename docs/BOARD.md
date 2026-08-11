@@ -1,5 +1,7 @@
 # Tablero - Finko Claude
 
+> Revisado: 2026-08-11.
+
 > Tablero Kanban de trabajo pendiente. Reemplaza a `TASKS.md` y `ROADMAP.md` (retirados 2026-07-02, ver [CHANGELOG](CHANGELOG.md)).
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
@@ -42,12 +44,11 @@ Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (si
 
 ## Índice de pendientes
 
-Las 27 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+Las 26 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
 | ANL.3 | Cada bloque de Análisis declara su propio alcance (triaje ficha 16, plan sin ejecutar) | Análisis | media | nada; no depende de ADR 046/044 |
-| GAS.2c | Extender el toast de confirmación a Abono y Aporte (diferida) | Gastos | baja (diferida) | GAS.2b cerrada; no se activa sin aprobación explícita |
 | INT.1g | Carril derecho de 320px desde 1.680px (diferida) | Transversal | baja (diferida) | sin sección candidata con contenido |
 | MC.17f | Deshacer o editar una transferencia | Mis cuentas | media | coordinar con MOV.1 |
 | MT.6 | Metas v2: subcategorías inteligentes + plan de aportes | Metas | media-alta | nada (el motor de MC.13 ya está); ADR 029 D3 |
@@ -68,7 +69,6 @@ Las 27 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | LG.2d | Mudanza de la vitrina a Análisis + tarjeta en Inicio | Transversal | baja (bloqueada) | ANL.1 (layout) |
 | LG.2e | Familia comportamiento (interpretación de hábitos) | Transversal | baja | LG.2c; `ahorro-creciente` además depende de ANL.1 |
 | PA.1 | Pagos y créditos automáticos (débito automático simulado) | Transversal | media-alta | ADR 041 (motor); ADR 052 (Abierta) |
-| DOC.1 | Reorganización documental, fases 3 a 5 | Mantenimiento | media | nada |
 | A.5 | Dominio custom en Vercel | Mantenimiento | baja | que el usuario tenga el dominio registrado |
 | E.2-2027 | Actualizar SMMLV + UVT a valores 2027 | Mantenimiento | alta (enero 2027) | publicación oficial de los decretos 2027 |
 | E.3 | Verificar GMF y otras tasas si hay reforma tributaria | Mantenimiento | baja | que ocurra una reforma |
@@ -92,10 +92,6 @@ Cada sección con tarjetas vivas tiene su satélite en `docs/board/`, mismo nomb
 ### Calendario (dominio `agenda`)
 
 _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI Calendario" ya tienen fuente única y no generan tarjeta aquí. Tinte de color en las tarjetas de evento → **IV.2c**; logos de marca en eventos → [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md); picker de icono y categorías personalizadas reutilizables → iniciativa **CAT** en Transversal.)_
-
-### Gastos (dominio `gastos`)
-
-GAS.2c (diferida) → [`board/gastos.md`](board/gastos.md)
 
 ### Mis cuentas (dominio `tesoreria`)
 
@@ -140,6 +136,7 @@ Se listan solo para que una idea nueva de estas secciones no vuelva a generar un
 | Sección | Dónde vive su trabajo futuro |
 |---|---|
 | Movimientos | Ledger accionable, con búsqueda y filtros, completo. El hueco que queda es **MC.17f** (deshacer transferencia); editar un aporte puntual no tiene tarjeta propia (ver `contexto/movimientos.md`) |
+| Gastos | Iniciativa del toast de confirmación completa: **GAS.2a**, **GAS.2b** y **GAS.2c** cerradas ([ADR 062](DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md)), ver `board/gastos.md` |
 | Deudas | Iniciativa "Deudas v2" completa ([ADR 036](DECISIONS/036-deudas-v2-visual.md)). Que un pago de deuda descuente de la cuenta ya existe desde el [ADR 002](DECISIONS/002-abono-deudas.md): si aparece un caso donde NO ocurra, es un bug para [`BUGS.md`](BUGS.md), no una feature |
 | Inversión | Sin pendientes propios. "Editar sin destruir" ya cerró (**EDIT.1**, 2026-08-02); su infraestructura compartida cerró con **ARQ.1** (2026-08-02) |
 | Apartados | Iniciativa "Apartados v2" completa (**AP.5** cerrada, 2026-08-01). "Editar sin destruir" ya cerró (**EDIT.1**, 2026-08-02); el catálogo de plantillas queda fuera de **CAT.3** (razón en el [ADR 058](DECISIONS/058-categorias-personalizadas-globales.md)) |
@@ -148,15 +145,6 @@ Se listan solo para que una idea nueva de estas secciones no vuelva a generar un
 
 ---
 ## Mantenimiento
-
-#### DOC.1 - Reorganización documental, fases 3 a 5
-- Prioridad  : media
-- Estado     : Fases 1, 2 y 3 cerradas. **Fase 4 cerrada el 2026-08-11**: los 10 movimientos de la tabla 11.1 hechos, incluido el 9 (comodines de `settings.local.json`, 12.2: Esteban decidió borrar `git rm *` y `git branch *`, mantener el resto). Falta la **Fase 5** (validación final + borrar `MIGRACION.md`). Plan completo: [`MIGRACION.md`](MIGRACION.md) sección 7.
-- Objetivo   : bajar el arranque de una tarea de ~69.400 a ~21.000 tokens sin perder información, moviendo cada bloque a su dueño documental.
-- Secciones  : ninguna de la app (solo documentación, `CLAUDE.md` y `.claude/`)
-- Archivos   : la tabla de trazabilidad de [`MIGRACION.md`](MIGRACION.md) sección 6 los lista uno por uno
-- Depende de : nada. Cada fase es commiteable y verificable por separado; el orden 3 → 4 → 5 importa porque la tabla de documentos de CLAUDE.md debe apuntar a la estructura ya migrada
-- Modelo     : la Fase 3 pide criterio de redacción y arquitectura de información (comprimir sin perder reglas); la Fase 4 es mecánica pero con validación de destino en cada borrado
 
 #### A.5 - Dominio custom en Vercel
 - Prioridad  : baja

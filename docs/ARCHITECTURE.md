@@ -1,5 +1,7 @@
 # Arquitectura - Finko Claude
 
+> Revisado: 2026-08-11.
+
 > Documento vivo. Se actualiza cuando cambia una capa, se agrega un dominio, se mueve un archivo de estilos o se introduce un patrón nuevo.
 > Última revisión: 2026-07-29 (DIS.19 suma `infra/bolsas.js`, `infra/portafolio.js` y `ui/comparador.js`). Antes: 2026-07-24 (absorbe el mapa operativo del ex `MAPA.md` como sección 13).
 >

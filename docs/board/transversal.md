@@ -1,5 +1,7 @@
 # Tablero - Transversal
 
+> Revisado: 2026-08-11.
+
 > Satélite de [`BOARD.md`](../BOARD.md) (afecta varias secciones). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
 
 ---

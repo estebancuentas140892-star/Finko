@@ -1,5 +1,7 @@
 # SECURITY - Finko Claude
 
+> Revisado: 2026-08-11.
+
 > Política de seguridad, modelo de amenaza y prácticas recomendadas para el proyecto.
 > Última revisión: 2026-05-18
 

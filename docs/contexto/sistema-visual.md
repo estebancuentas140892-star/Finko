@@ -1,5 +1,7 @@
 # Ficha de contexto: Sistema visual
 
+> Revisado: 2026-08-11.
+
 > Identidad visual transversal: color por sección, tejas de marca y biblioteca gráfica, y navegación. Partida de `transversal.md` el 2026-07-24. Reglas de uso y plantilla en [`README.md`](README.md).
 >
 > **Qué NO buscar acá:** el lenguaje de los formularios y el selector de ícono (en [`captura.md`](captura.md)); los tokens con sus valores exactos (en `styles/tokens.css`, fuente de verdad).

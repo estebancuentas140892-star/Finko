@@ -1,5 +1,7 @@
 # Ficha de contexto: Captura (formularios y selector de ícono)
 
+> Revisado: 2026-08-11.
+
 > Cómo se capturan datos en un formulario de la app: el lenguaje visual compartido de los formularios y el selector de ícono que varios de ellos incrustan. Partida de `transversal.md` el 2026-07-24. Reglas de uso y plantilla en [`README.md`](README.md).
 >
 > **Qué NO buscar acá:** qué categorías existen y a qué sección pertenecen (eso es la taxonomía CAT.1, en [`transversal.md`](transversal.md)); la identidad de color y las tejas de marca (en [`sistema-visual.md`](sistema-visual.md)).

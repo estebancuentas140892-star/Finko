@@ -1,5 +1,7 @@
 # Contexto técnico por funcionalidad - Finko Claude
 
+> Revisado: 2026-08-11.
+
 > Registro técnico permanente. Una ficha por sección de la app; dentro de cada ficha, un bloque por funcionalidad.
 > Objetivo: cada funcionalidad se analiza a fondo **una sola vez**, el resultado queda escrito aquí y las sesiones futuras lo reutilizan en vez de volver a recorrer el proyecto.
 > Reglas de workflow asociadas: [`/CLAUDE.md`](../../CLAUDE.md) sección 2 (continuidad, fuente única) y sección 3 (antes de explorar), más las skills `triaje-tarea` y `cerrar-tarea`.
@@ -114,3 +116,21 @@ Una ficha por sección de la app (mismo agrupamiento que [`BOARD.md`](../BOARD.m
 | Captura (lenguaje de formularios v2, selector compacto de ícono) | [`captura.md`](captura.md) | activa (partida de `transversal.md` el 2026-07-24) |
 
 Al crear una ficha: actualizar su fila a "activa" y ordenar los bloques dentro del archivo por importancia de la funcionalidad.
+
+---
+
+## 5. Los 11 principios de organización documental
+
+Gobiernan toda la documentación viva, no solo las fichas. Se citan aquí porque una ficha que los rompe deja de ser fuente única.
+
+1. **Un dato, un dueño.** Cada hecho vive en un solo archivo oficial; los demás enlazan sin resumir.
+2. **No documentar lo que el código o git ya dicen.** Sin inventarios archivo por archivo ni copias de valores de tokens CSS.
+3. **La historia se escribe una sola vez.** El commit lleva el detalle; CHANGELOG una fila; la ficha una línea por hito (regla 2.3); el tablero borra la tarjeta.
+4. **Techo por archivo, verificado al cerrar tarea.** Ficha: **40 KB** (objetivo 25). Superarlo obliga a podar o partir por eje real (precedente: `transversal.md` partido en tres, 2026-07-25).
+5. **El tablero solo contiene pendientes.**
+6. **La norma va en CLAUDE.md; el procedimiento en skills; la referencia en docs.**
+7. **La historia congelada no se reescribe.** Los ADR son inmutables.
+8. **Casi nunca se crea un `.md` nuevo.** Whitelist: ficha bajo demanda, ADR real, mes de changelog.
+9. **Todo archivo de más de 20 KB abre con un índice tabular en sus primeras 40 líneas.**
+10. **Revisión trimestral ligera.** Tamaños contra techos, tarjetas con más de 90 días sin actividad, duplicados por `grep` de IDs.
+11. **Vigencia obligatoria.** Sello `Revisado: YYYY-MM-DD` en todo documento activo (esta carpeta incluida); más de 90 días sin cambios pasa a "por validar" contra el código.

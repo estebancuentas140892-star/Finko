@@ -1,5 +1,7 @@
 # Finko - Tu dinero, tu control
 
+> Revisado: 2026-08-11.
+
 PWA offline-first para gestión financiera personal en Colombia.
 Sin servidor. Sin cuenta. Sin rastreo. Tu información nunca sale de tu dispositivo.
 
@@ -65,33 +67,6 @@ pnpm run format
 
 ---
 
-## Estructura del proyecto
-
-```
-Finko/
-├─ CLAUDE.md               ← workflow + reglas para asistentes IA
-├─ index.html              ← shell principal de la app
-├─ manifest.json           ← PWA manifest
-├─ service-worker.js       ← cache-first offline
-├─ styles/                 ← CSS modular por capa (@layer)
-│  ├─ tokens.css           ← variables de diseño (--fk-*)
-│  └─ main.css             ← punto de entrada CSS
-├─ modules/
-│  ├─ core/                ← estado, persistencia, constantes
-│  ├─ infra/               ← utilidades, render, a11y, CRUD, router, financiero...
-│  ├─ ui/                  ← bootstrap, shell, actions, modales, onboarding
-│  └─ dominio/             ← 18 dominios activos (gastos, compromisos, tesoreria, metas...)
-├─ tests/
-│  ├─ unit/                ← tests sobre logic.js puro (Vitest + happy-dom)
-│  └─ e2e/                 ← smoke tests Playwright
-├─ scripts/                ← gen-icons.py, lighthouse.js
-└─ docs/                   ← documentación viva
-```
-
-Arquitectura detallada en [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
-
----
-
 ## Documentación
 
 | Documento | Propósito |
@@ -105,17 +80,7 @@ Arquitectura detallada en [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 | [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | Tokens, componentes, Bento Grid. |
 | [`docs/DECISIONS/`](docs/DECISIONS/) | ADRs (Architecture Decision Records). |
 
----
-
-## Principios del proyecto
-
-1. **Vanilla JS sin build step** - el navegador entiende ES6 modules directamente.
-2. **Offline-first** - el Service Worker garantiza operación sin red.
-3. **Sin servidor** - privacidad absoluta; `localStorage` es la única persistencia.
-4. **Lógica separada del DOM** - cada dominio tiene `logic.js` (puro, testeable) y `view.js` (render).
-5. **Cero `onclick=""` en HTML estático** - todo vía `data-action` delegado.
-6. **Cero `window.X`** - todo vía EventBus e imports explícitos.
-7. **Lenguaje humano, neutral y profesional** - "Tu dinero disponible hoy" antes que "Saldo disponible" (tuteo, sin voseo ni "plata").
+Reglas ADN y arquitectura detallada: [`CLAUDE.md`](CLAUDE.md) §4 y [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ---
 
