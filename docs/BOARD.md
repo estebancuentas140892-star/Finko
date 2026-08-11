@@ -6,7 +6,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-08-10. Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
+> Última actualización: 2026-08-11. Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
 
 ---
 
@@ -44,7 +44,7 @@ Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (si
 
 ## Índice de pendientes
 
-Las 26 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+Las 25 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
@@ -65,7 +65,6 @@ Las 26 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | PERF.6 | Coalescer de renders por microtask | Transversal | baja | decidir si el beneficio lo justifica |
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | P4 del ADR 033 + cola de diseño |
 | IV.4 | Iconografía dirigida post-color | Transversal | tras IV.2 | IV.2 en producción + revisión visual |
-| CAT.3 | Categorías personalizadas globales (4 rebanadas, ADR 058) | Transversal | media | nada; decidida el 2026-07-31 |
 | LG.2d | Mudanza de la vitrina a Análisis + tarjeta en Inicio | Transversal | baja (bloqueada) | ANL.1 (layout) |
 | LG.2e | Familia comportamiento (interpretación de hábitos) | Transversal | baja | LG.2c; `ahorro-creciente` además depende de ANL.1 |
 | PA.1 | Pagos y créditos automáticos (débito automático simulado) | Transversal | media-alta | ADR 041 (motor); ADR 052 (Abierta) |
@@ -125,7 +124,7 @@ CFG.2c, CFG.2a, CFG.3, CFG.4, CFG.5, CFG.6 → [`board/configuracion.md`](board/
 
 ## Transversal (afecta varias secciones)
 
-INT.1a a INT.1h, PERF.5, PERF.6, DV.2d, IV.4, CAT.3 (+ CAT.3c, CAT.3d), LG.2d, LG.2e, PA.1 → [`board/transversal.md`](board/transversal.md)
+INT.1a a INT.1h, PERF.5, PERF.6, DV.2d, IV.4, LG.2d, LG.2e, PA.1 → [`board/transversal.md`](board/transversal.md)
 
 ---
 

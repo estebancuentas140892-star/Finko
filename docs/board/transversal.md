@@ -62,24 +62,7 @@
 - Depende de : IV.2 en producción + revisión visual + diseños de Esteban
 - Modelo     : Equilibrado - Alto (revisión de assets contra spec; el diseño es de Esteban)
 
-> **Iniciativa CAT: taxonomía + picker de ícono compartido.** Fuente única para categorías entre secciones. CAT.1, CAT.2 y CAT.4 cerradas (reglas heredadas en [`contexto/transversal.md`](../contexto/transversal.md)). Queda CAT.3.
-
-#### CAT.3 - Categorías personalizadas globales (mismo estatus que las nativas, en toda la app)
-- Prioridad  : media
-- Estado     : **decidida el 2026-07-31, [ADR 058](../DECISIONS/058-categorias-personalizadas-globales.md)**, en cuatro rebanadas. **CAT.3a y CAT.3b cerradas**, quedan dos.
-- Objetivo   : las personalizadas de TX.9b valen hoy solo para Gastos; extenderlas a Gastos fijos con la sección como campo del objeto (`seccion: 'gasto' | 'fijo'`), oferta filtrada por sección y resolución de ícono global.
-- Secciones  : transversal (Gastos, Gastos fijos, Presupuesto, Inicio, Calendario, Tesorería)
-- Depende de : nada. CAT.1 (a qué sección pertenece una categoría) y CAT.2 (cómo se crea) ya cerraron
-- **Alcance corregido en el mapeo del 2026-07-31:** gráficos, CSV y 8 de 9 filtros **ya funcionan** con personalizadas (el color viene del dominio y del ranking, no de la categoría; no existe ningún mapa `categoría` a `color` en el repo). El trabajo real era el gate de escritura de fijos (CAT.3c, pendiente) y los 7 accesos crudos al mapa de íconos (CAT.3b, cerrada).
-- Modelo     : Alta capacidad - Alto (bump de schema + propagación transversal)
-
-##### CAT.3c - Gastos fijos ofrece y acepta personalizadas
-- Estado     : pendiente
-- Alcance    : chip de categoría nueva en `renderFormGastoFijo()`, decidiendo cómo convive con `'Otro'` (que es miembro literal del catálogo, no sentinela), y los tres gates de escritura de `compromisos/logic/modelo.js` (`:276` rechaza duro, `:414` descarta a `null` en silencio, `:55`) más sus dos espejos en `agenda/index.js:145` y `:217`
-
-##### CAT.3d - las superficies de fijos resuelven el ícono de una personalizada
-- Estado     : pendiente, última rebanada
-- Alcance    : detalle del día del calendario, checklist de Necesidades de Tesorería y el gasto nacido de un fijo (`iconoPorOrigen`) ya pasan por la resolutora desde CAT.3b; esta rebanada es la verificación end-to-end con una personalizada real de sección `'fijo'`, que solo existe una vez CAT.3c la habilite
+> **Iniciativa CAT: taxonomía + picker de ícono compartido, completa.** Fuente única para categorías entre secciones. CAT.1, CAT.2, CAT.3 y CAT.4 cerradas (reglas heredadas en [`contexto/transversal.md`](../contexto/transversal.md), bloque "Categorías personalizadas del usuario").
 
 > **Iniciativa GU.1: guía por navegación (aprender usando, no leyendo)** (6.º lote, 2026-07-08, brief General puntos 4+5). **GU.1a cerrada (2026-08-03):** [ADR 016](../DECISIONS/016-banner-proposito-de-seccion.md) auditado y vigente sin desviaciones; detalle en [`contexto/transversal.md`](../contexto/transversal.md). **Regla anti-doble-trabajo:** GU.1 define el principio y audita el sistema transversal (banners, hints); los rediseños internos de cada sección viven en sus iniciativas v2, que aplican este principio en vez de duplicarlo.
 

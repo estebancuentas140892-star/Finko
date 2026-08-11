@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(agenda): CAT.3c y CAT.3d, gastos fijos ofrecen y aceptan personalizadas · 2026-08-11
+
+Cierra **CAT.3** completa (sus cuatro rebanadas: CAT.3a y CAT.3b ya cerradas, esta tarea suma CAT.3c y CAT.3d). Ficha: [`contexto/transversal.md`](contexto/transversal.md), bloque "Categorías personalizadas del usuario"; decisión: [ADR 058](DECISIONS/058-categorias-personalizadas-globales.md). Commit `db81eee`.
+
+- **CAT.3c**: `renderFormGastoFijo()` ofrece las personalizadas de `seccion: 'fijo'` como chips y suma un chip sentinela propio (`CATEGORIA_NUEVA_VALUE_FIJO`, `'__nueva__'`) para crear una nueva, distinto del sentinela de Gastos porque `'Otro'` ya es miembro literal del catálogo de Agenda y no sirve como disparador.
+- **`validarCompromiso()`, `normalizarCompromiso()` y `_categoriaFijoConNombreAuto()`** (`compromisos/logic/modelo.js`) reciben `personalizadasFijo` (tercer parámetro, default `[]`, retrocompatible con Deudas que no lo pasa): el gate de escritura ya no rechaza ni descarta en silencio una personalizada de la sección, y AG.4 (nombre automático desde la categoría) aplica igual que con una predefinida.
+- **Los dos espejos de la UI** (`agenda/index.js`: prefill al editar y `_syncCategoriaGastoFijo()`) resueltos con el mismo criterio; `_guardarGastoFijo()` crea la personalizada (`seccion: 'fijo'`) antes de normalizar, mismo patrón que `_guardarGasto()`.
+- **CAT.3d** (verificación end-to-end, sin cambios de código): las 3 superficies que ya resolvían por CAT.3b (detalle del día del calendario, checklist de Necesidades de Tesorería, `iconoPorOrigen`) pintan correcto con una personalizada real de `seccion: 'fijo'` vía la resolutora global existente.
+- Tests: 16 nuevos (`compromisos.test.js`, `agenda.test.js`). 3856/3856 unit, 263/263 E2E, lint verde, cero guión largo. **Nota de proceso:** el árbol de trabajo tenía un lote grande de otra sesión en curso (staged, sin commitear); el primer intento de commit lo arrastró por no pasar pathspec explícito, corregido con `git reset --soft` antes de push (nunca llegó a remoto) y recommiteado limitado a los 5 archivos de esta tarea.
+
 ### feat(gastos): GAS.2c, toast de confirmacion generalizado a Abono y Aporte · 2026-08-11
 
 Cierra **GAS.2c**, tercera rebanada del triaje de la ficha 22, activada por aprobacion explicita de Esteban tras diferirse. Ficha: [`contexto/gastos.md`](contexto/gastos.md); plan: [`board/gastos.md`](board/gastos.md); regla nueva: [ADR 062](DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md).

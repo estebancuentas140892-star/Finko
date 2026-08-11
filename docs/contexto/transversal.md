@@ -33,7 +33,7 @@
 - **El guardarraíl de consistencia de TX.4** (misma etiqueta ⇒ mismo emoji entre catálogos) debe seguir verde tras cada rebanada: al renombrar o retirar, revisar que no queden etiquetas compartidas divergentes. TX.4 lee `CATEGORIA_META_ICONO`, que sigue cubriendo el catálogo base completo: retirar una categoría del formulario no la saca de ese guardarraíl.
 - **Retirar una categoría de un catálogo que se puede editar (hallazgo de CAT.1c)**: filtrar el formulario no basta cuando la sección permite editar el registro (EDIT.1). Si el selector no ofrece la categoría guardada, al editar cae en la primera opción y una corrección de nombre borra la categoría y cambia el ícono. Regla: el selector reinyecta la categoría retirada **solo cuando ya estaba elegida**. Aplica a cualquier retiro futuro (CAT.3) en Metas y en las secciones que EDIT.1 vaya abriendo.
 
-**Cambios pendientes**: ninguno de CAT.1 (iniciativa completa; la tarjeta sale del BOARD). **CAT.3 decidida el 2026-07-31 ([ADR 058](../DECISIONS/058-categorias-personalizadas-globales.md))**, cuatro rebanadas sin iniciar: ver el bloque "Categorías personalizadas del usuario" más abajo. **CAT.4 cerrada (2026-07-31)**: sin hallazgos.
+**Cambios pendientes**: ninguno de CAT.1 (iniciativa completa; la tarjeta sale del BOARD). **CAT.3 completa (2026-08-11, [ADR 058](../DECISIONS/058-categorias-personalizadas-globales.md))**, sus cuatro rebanadas cerradas: ver el bloque "Categorías personalizadas del usuario" más abajo. **CAT.4 cerrada (2026-07-31)**: sin hallazgos.
 
 **Cambios realizados**:
 
@@ -47,9 +47,9 @@
 
 ## Categorías personalizadas del usuario (TX.9b, y su extensión CAT.3)
 
-- **Objetivo**          : el usuario crea sus propias categorías con nombre e ícono, y valen igual que las nativas. Hoy solo en Gastos; **CAT.3** las extiende a Gastos fijos con la sección como campo del objeto, oferta filtrada por sección y resolución de ícono global ([ADR 058](../DECISIONS/058-categorias-personalizadas-globales.md), 5 decisiones).
-- **Estado actual**     : **TX.9b en producción, CAT.3a y CAT.3b cerradas**, quedan CAT.3c y CAT.3d. `S.categoriasPersonalizadas` es `{id, nombre, icono, fechaCreacion, seccion}[]` (`seccion: 'gasto' | 'fijo'`, D1, migración v30 a v31; existentes backfilleadas a `'gasto'`); la clave funcional sigue siendo el **`nombre`**, que es lo que se guarda en `Gasto.categoria` igual que una nativa. `id` y `fechaCreacion` los inyecta el helper genérico `guardar()` de `infra/crud.js`. La **resolutora** (D2) ahora fusiona `CATEGORIA_ICONO` y `CATEGORIA_AGENDA_ICONO` antes de caer a la personalizada, e ignora `seccion` a propósito. El **validador** (D4) compara contra los dos catálogos nativos completos. Hasta CAT.3c el formulario de gasto sigue siendo la única fuente: `gastos/index.js` estampa `seccion: 'gasto'` al crear. **No hay edición ni borrado**: la única operación sobre la colección es `guardar()`, así que una vez creada es permanente. Eso queda **fuera** del ADR 058 y sale a tarjeta propia.
-- **Verificado contra** : `727d8c9` (2026-08-03, CAT.3b).
+- **Objetivo**          : el usuario crea sus propias categorías con nombre e ícono, y valen igual que las nativas. **CAT.3** las extendió a Gastos fijos con la sección como campo del objeto, oferta filtrada por sección y resolución de ícono global ([ADR 058](../DECISIONS/058-categorias-personalizadas-globales.md), 5 decisiones).
+- **Estado actual**     : **TX.9b y CAT.3 (las cuatro rebanadas) en producción.** `S.categoriasPersonalizadas` es `{id, nombre, icono, fechaCreacion, seccion}[]` (`seccion: 'gasto' | 'fijo'`, D1, migración v30 a v31; existentes backfilleadas a `'gasto'`); la clave funcional sigue siendo el **`nombre`**, que es lo que se guarda en `Gasto.categoria`/`Compromiso.categoria` igual que una nativa. `id` y `fechaCreacion` los inyecta el helper genérico `guardar()` de `infra/crud.js`. La **resolutora** (D2) fusiona `CATEGORIA_ICONO` y `CATEGORIA_AGENDA_ICONO` antes de caer a la personalizada, e ignora `seccion` a propósito. El **validador** (D4) compara contra los dos catálogos nativos completos. El formulario de gasto fijo (`renderFormGastoFijo()`) ofrece las personalizadas de `seccion: 'fijo'` y un chip sentinela propio (`'__nueva__'`, distinto del `'__nueva__'` de Gastos: son sentinelas locales a cada form, nunca se comparan entre sí) porque `'Otro'` ya es miembro literal del catálogo de Agenda y no puede reusarse como disparador. `validarCompromiso()`/`normalizarCompromiso()` reciben `personalizadasFijo` (tercer parámetro, default `[]`, retrocompatible con Deudas que no lo pasa). **No hay edición ni borrado**: la única operación sobre la colección es `guardar()`, así que una vez creada es permanente. Eso queda **fuera** del ADR 058 y sale a tarjeta propia.
+- **Verificado contra** : `db81eee` (2026-08-11, CAT.3c/CAT.3d).
 
 **Dónde vive**
 
@@ -60,8 +60,11 @@
 | **Resolutora, punto único** | `modules/core/constants.js` | `iconoDeCategoriaGasto(categoria, personalizadas)` | ~529 |
 | Catálogo de íconos elegibles (29, cerrado) | `modules/core/constants.js` | `ICONOS_CATEGORIA_PERSONALIZADA` | ~487 |
 | Validador del alta (D4: dos catálogos nativos) | `modules/dominio/gastos/logic.js` | `validarCategoriaPersonalizada()` | ~314 |
-| Alta (dentro del guardado del gasto, estampa `seccion: 'gasto'`) | `modules/dominio/gastos/index.js` | `_guardarGasto()`, chip sentinela `'__nueva__'` | ~66 |
+| Alta desde Gastos (estampa `seccion: 'gasto'`) | `modules/dominio/gastos/index.js` | `_guardarGasto()`, chip sentinela `'__nueva__'` | ~66 |
 | Chips del formulario de gasto | `modules/dominio/gastos/view.js` | nativas, personalizadas, sentinela | ~612 |
+| Alta desde Gastos fijos (CAT.3c, estampa `seccion: 'fijo'`) | `modules/dominio/agenda/index.js` | `_guardarGastoFijo()`, chip sentinela `CATEGORIA_NUEVA_VALUE_FIJO` | ~237 |
+| Chips del formulario de gasto fijo (CAT.3c) | `modules/dominio/agenda/view.js` | `renderFormGastoFijo()`: nativas, personalizadas de `seccion: 'fijo'`, sentinela | ~907 |
+| Gate de escritura de Gastos fijos (CAT.3c) | `modules/dominio/compromisos/logic/modelo.js` | `validarCompromiso()`, `normalizarCompromiso()`, `_categoriaFijoConNombreAuto()`: tercer parámetro `personalizadasFijo` | ~55, ~252, ~417 |
 
 **Las 7 superficies que leían el mapa crudo, cerradas por CAT.3b**: las tres últimas fallaban con una personalizada de Gastos antes del cierre (D3 del ADR 058). Las 7 pasan ahora por `iconoDeCategoriaGasto()`:
 
@@ -75,7 +78,7 @@
 | C6 | `modules/dominio/presupuesto/view.js` (`renderPanelLimites`) | banner de alertas de límite |
 | C7 | `modules/dominio/resumen/view.js` (`renderPanelResumen`) | categoría top de la semana, en Inicio |
 
-**Los 3 gates de escritura de Gastos fijos** (alcance de CAT.3c): `compromisos/logic/modelo.js:276` rechaza con error toda categoría fuera de `CATEGORIAS_AGENDA`; `:414` la descarta a `null` **en silencio**; `:55` decide si `descripcion` es la categoría o texto libre. Dos espejos en la UI: `agenda/index.js:145` (prefill al editar) y `:217` (`_syncCategoriaGastoFijo`).
+**Los 3 gates de escritura de Gastos fijos, cerrados por CAT.3c**: `compromisos/logic/modelo.js:276` (rechazo duro), `:414` (descarte a `null` en silencio) y `:55` (auto-nombre de AG.4) ya aceptan una personalizada de `seccion: 'fijo'`, no solo `CATEGORIAS_AGENDA`. Los dos espejos de la UI, cerrados igual: `agenda/index.js` prefill al editar y `_syncCategoriaGastoFijo()` (toggle de nombre-auto y de los campos de categoría nueva).
 
 **Dependencias y relaciones**: `iconoDeCategoriaGasto()` es pura (recibe las personalizadas por parámetro, el caller lee `S`) y está cableada en 7 sitios del lado Gastos y Presupuesto. `validarPresupuesto` es el **único** validador que ya recibe las personalizadas (`presupuesto/logic.js:558`, cableado en `presupuesto/index.js:97`). **TX.4 sube de guardarraíl a dependencia** con el ADR 058 D2: la resolución global se apoya en que dos catálogos nativos nunca den símbolos distintos a la misma etiqueta, y las 5 etiquetas compartidas (Servicios públicos, Mercado, Educación, Transporte, Mascotas) hoy coinciden.
 
@@ -87,9 +90,9 @@
 - **Una personalizada sin uso sigue apareciendo**: borrar su último gasto no la retira del catálogo, porque no hay borrado.
 - **Precedencia de `iconoPorOrigen`**: un gasto nacido de un fijo o de un abono hereda el ícono del compromiso y la personalizada nunca se consulta (`gastos/view.js:441`).
 
-**Cambios pendientes**: CAT.3c y CAT.3d (detalle y alcance por rebanada en el BOARD). Fuera de alcance por decisión del ADR 058: renombrar y eliminar (tarjeta propia), Apartados y Metas (catálogos de otra naturaleza), Ingresos.
+**Cambios pendientes**: ninguno de CAT.3 (iniciativa completa, sale del BOARD). Fuera de alcance por decisión del ADR 058: renombrar y eliminar (tarjeta propia), Apartados y Metas (catálogos de otra naturaleza), Ingresos, roundtrip de CSV (riesgo ya documentado arriba).
 
-**Cambios realizados**: `TX.9b`: creación de la funcionalidad (detalle en el CHANGELOG). `2026-07-31 (ADR 058)`: mapeo completo de origen y destino, sin cambios de código. `2026-08-01 (CAT.3a)`: campo `seccion`, migración v30 a v31, resolutora global, validador D4 (detalle en el CHANGELOG). `2026-08-03 (CAT.3b)`: los 7 accesos crudos pasan por la resolutora, incluidos los 3 que ya fallaban (detalle en el CHANGELOG).
+**Cambios realizados**: `TX.9b`: creación de la funcionalidad (detalle en el CHANGELOG). `2026-07-31 (ADR 058)`: mapeo completo de origen y destino, sin cambios de código. `2026-08-01 (CAT.3a)`: campo `seccion`, migración v30 a v31, resolutora global, validador D4 (detalle en el CHANGELOG). `2026-08-03 (CAT.3b)`: los 7 accesos crudos pasan por la resolutora, incluidos los 3 que ya fallaban (detalle en el CHANGELOG). `2026-08-11 (CAT.3c/CAT.3d)`: Gastos fijos ofrece y acepta personalizadas (chip sentinela propio, tres gates de escritura + dos espejos de UI); CAT.3d verificó end-to-end que las 3 superficies ya resueltas por CAT.3b pintan correcto con una personalizada real de `seccion: 'fijo'`, sin cambios de código adicionales.
 
 ---
 
