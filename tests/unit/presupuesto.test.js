@@ -10,6 +10,7 @@ import {
   generarMensajesLimites,
   totalAsignadoMensual,
   coberturaLimitesEstiloVida,
+  extraordinarioDelMes,
   categoriasSinPresupuesto,
   tienePresupuesto,
   validarPresupuesto,
@@ -693,6 +694,60 @@ describe('coberturaLimitesEstiloVida()', () => {
   });
 });
 
+// ── extraordinarioDelMes() (LIM.1a, ADR 045 D3) ───────────────────────────────
+
+describe('extraordinarioDelMes()', () => {
+  const puntual = (overrides = {}) => ({
+    id: 'ip1', descripcion: 'Venta bici', monto: 500_000,
+    categoria: null, cuentaId: 'c1', fecha: '2026-05-10',
+    fechaCreacion: '2026-05-10T00:00:00.000Z',
+    ...overrides,
+  });
+
+  it('suma los ingresos puntuales del mes indicado', () => {
+    const lista = [
+      puntual({ id: 'a', monto: 500_000, fecha: '2026-05-02' }),
+      puntual({ id: 'b', monto: 250_000, fecha: '2026-05-28' }),
+    ];
+    expect(extraordinarioDelMes(lista, 2026, 5)).toBe(750_000);
+  });
+
+  it('ignora los de otro mes y los de otro año', () => {
+    const lista = [
+      puntual({ id: 'a', monto: 500_000, fecha: '2026-04-30' }),
+      puntual({ id: 'b', monto: 100_000, fecha: '2025-05-15' }),
+      puntual({ id: 'c', monto: 300_000, fecha: '2026-05-15' }),
+    ];
+    expect(extraordinarioDelMes(lista, 2026, 5)).toBe(300_000);
+  });
+
+  it('el mes se compara con dos dígitos: mayo no atrapa a diciembre', () => {
+    const lista = [puntual({ monto: 400_000, fecha: '2026-12-15' })];
+    expect(extraordinarioDelMes(lista, 2026, 5)).toBe(0);
+    expect(extraordinarioDelMes(lista, 2026, 12)).toBe(400_000);
+  });
+
+  it('monto ausente o no numérico cuenta como 0, sin romper la suma', () => {
+    const lista = [
+      puntual({ id: 'a', monto: undefined }),
+      puntual({ id: 'b', monto: 'x' }),
+      puntual({ id: 'c', monto: 200_000 }),
+    ];
+    expect(extraordinarioDelMes(lista, 2026, 5)).toBe(200_000);
+  });
+
+  it('registros sin fecha no entran (el corte es por mes calendario)', () => {
+    const lista = [{ id: 'a', monto: 900_000 }, puntual({ id: 'b', monto: 100_000 })];
+    expect(extraordinarioDelMes(lista, 2026, 5)).toBe(100_000);
+  });
+
+  it('lista vacía, null o undefined devuelve 0', () => {
+    expect(extraordinarioDelMes([], 2026, 5)).toBe(0);
+    expect(extraordinarioDelMes(null, 2026, 5)).toBe(0);
+    expect(extraordinarioDelMes(undefined, 2026, 5)).toBe(0);
+  });
+});
+
 // ── categoriasSinPresupuesto() ────────────────────────────────────────────────
 
 describe('categoriasSinPresupuesto()', () => {
@@ -1046,6 +1101,87 @@ describe('renderPanelPresupuesto() - correcciones de la auditoría (DIS.7)', () 
     renderPanelPresupuesto();
     const chevron = panel().querySelector('.grupo-card__desglose .analisis-grupo__chevron use');
     expect(chevron.getAttribute('href')).toBe('#i-chevron-right');
+  });
+});
+
+describe('renderPanelPresupuesto() - dinero extraordinario del mes (LIM.1a, ADR 045 D3)', () => {
+  const hoy  = new Date();
+  const anio = hoy.getFullYear();
+  const mes  = String(hoy.getMonth() + 1).padStart(2, '0');
+  const dia  = (n) => `${anio}-${mes}-${String(n).padStart(2, '0')}`;
+
+  beforeEach(() => {
+    document.body.innerHTML = '<button id="btn-nuevo-presupuesto"></button><div id="panel-presupuesto"></div>';
+    S.presupuestos = [];
+    S.gastos = [];
+    S.categoriasPersonalizadas = [];
+    S.compromisos = [];
+    S.metas = [];
+    S.apartados = [];
+    S.inversiones = [];
+    S.cuentas = [];
+    S.ahorro = null;
+    S.ingresosPuntuales = [];
+    S.ingresos = [{
+      id: 'i1', descripcion: 'Salario', monto: 3_200_000,
+      frecuencia: 'Mensual', diaPago: 30, categoria: 'Salario', fecha: dia(1),
+    }];
+  });
+
+  const panel = () => document.getElementById('panel-presupuesto');
+  const linea = () => panel().querySelector('.estilo-olla--extra');
+
+  it('con plan y un ingreso puntual del mes, la línea aparece con el monto', () => {
+    S.ingresosPuntuales = [{ id: 'ip1', descripcion: 'Prima', monto: 1_500_000, cuentaId: 'c1', fecha: dia(10) }];
+    renderPanelPresupuesto();
+    expect(linea()).not.toBeNull();
+    expect(linea().textContent).toContain('1.500.000');
+    expect(linea().textContent).toContain('no son parte de tu plan');
+  });
+
+  it('sin ingresos puntuales no dibuja nada', () => {
+    renderPanelPresupuesto();
+    expect(linea()).toBeNull();
+  });
+
+  it('un ingreso puntual de otro mes no cuenta', () => {
+    S.ingresosPuntuales = [{ id: 'ip1', descripcion: 'Venta', monto: 800_000, cuentaId: 'c1', fecha: '2020-01-15' }];
+    renderPanelPresupuesto();
+    expect(linea()).toBeNull();
+  });
+
+  // Sin plan del mes, "no son parte de tu plan" no significa nada: el estado
+  // vacío ya manda al usuario a Mis cuentas.
+  it('sin plan del mes (sin ingresos recurrentes) la línea no aparece', () => {
+    S.ingresos = [];
+    S.ingresosPuntuales = [{ id: 'ip1', descripcion: 'Prima', monto: 1_500_000, cuentaId: 'c1', fecha: dia(10) }];
+    renderPanelPresupuesto();
+    expect(linea()).toBeNull();
+  });
+
+  // El punto de la decisión: informa y no reparte. El asignado de Estilo de
+  // vida y la olla finita no se mueven un peso por registrar un extraordinario.
+  it('no cambia el asignado de Estilo de vida ni la olla finita', () => {
+    const asignadoEV = () => panel()
+      .querySelector('.grupo-card[data-grupo="estilo-de-vida"] .grupo-card__figs')
+      .textContent;
+
+    renderPanelPresupuesto();
+    const figsSin = asignadoEV();
+    const ollaSin = panel().querySelector('.estilo-olla').textContent;
+
+    S.ingresosPuntuales = [{ id: 'ip1', descripcion: 'Prima', monto: 1_500_000, cuentaId: 'c1', fecha: dia(10) }];
+    renderPanelPresupuesto();
+
+    expect(asignadoEV()).toBe(figsSin);
+    expect(panel().querySelector('.estilo-olla').textContent).toBe(ollaSin);
+    expect(linea()).not.toBeNull();
+  });
+
+  it('la salida de la línea es Mis cuentas', () => {
+    S.ingresosPuntuales = [{ id: 'ip1', descripcion: 'Prima', monto: 1_500_000, cuentaId: 'c1', fecha: dia(10) }];
+    renderPanelPresupuesto();
+    expect(linea().querySelector('.estilo-olla__link').getAttribute('href')).toBe('#tesoreria');
   });
 });
 

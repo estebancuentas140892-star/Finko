@@ -24,6 +24,7 @@ import {
   desgloseAhorroDelMes,
   generarMensajesLimites,
   coberturaLimitesEstiloVida,
+  extraordinarioDelMes,
 } from './logic.js';
 import { estimarSalarioMensual } from '../../infra/financiero.js';
 import {
@@ -412,9 +413,10 @@ function _renderResumenGruposVacio(anio, mes) {
  * Muestra, en orden:
  *   1. la "olla finita": cuánto del presupuesto de Estilo de vida cubren los
  *      topes actuales y cuánto queda sin tope (sin obligar a asignar el 100%);
- *   2. los envelopes activos, o un mensaje breve si no hay ninguno;
- *   3. las categorías con gasto pero sin tope (sugerencia de dónde poner uno);
- *   4. el botón "Agregar límite" (topes bajo demanda).
+ *   2. el dinero extraordinario del mes, informado y no repartido (LIM.1a);
+ *   3. los envelopes activos, o un mensaje breve si no hay ninguno;
+ *   4. las categorías con gasto pero sin tope (sugerencia de dónde poner uno);
+ *   5. el botón "Agregar límite" (topes bajo demanda).
  *
  * @param {number} anio
  * @param {number} mes - 1-12
@@ -436,6 +438,7 @@ function _renderDetalleEstiloVida(anio, mes, presupuestoEV, notasCategoria = new
     <div class="estilo-limites">
       <p class="estilo-limites__intro">Ponle un máximo mensual a las categorías donde más gastas y te aviso antes de pasarte. Es un tope a lo que gastas, no un ahorro.</p>
       ${_renderOllaFinita(cobertura)}
+      ${_renderExtraordinario(extraordinarioDelMes(S.ingresosPuntuales, anio, mes), presupuestoEV)}
       ${lista}
       ${_renderSinPresupuesto(activos)}
       <div class="estilo-limites__actions">
@@ -469,6 +472,27 @@ function _renderOllaFinita({ limites, presupuesto, sinTope, excede }) {
     return `<p class="estilo-olla">Tus límites cubren todo tu Estilo de vida (${f(presupuesto)}). No te queda dinero sin tope.</p>`;
   }
   return `<p class="estilo-olla">Tus límites cubren ${f(limites)} de los ${f(presupuesto)} de tu Estilo de vida. Te quedan ${f(sinTope)} sin tope.</p>`;
+}
+
+/**
+ * El dinero extraordinario del mes, junto a la olla finita ([ADR 045](../../../docs/DECISIONS/045-base-de-calculo-del-disponible-para-limites.md)
+ * D3, copy de su D5). Una prima o una venta **sí** son capacidad real de gasto,
+ * y hasta ahora Límites no las nombraba; lo que la línea no hace es sumarlas al
+ * plan, porque el excedente terminaría casi entero en gasto discrecional. La
+ * salida es Mis cuentas, donde ese dinero puede ir al fondo, a una meta o a una
+ * deuda.
+ *
+ * Solo se dibuja cuando hay plan del mes: sin plan, "no son parte de tu plan"
+ * no significa nada y el estado vacío ya manda al usuario a Mis cuentas.
+ *
+ * @param {number} total - dinero extraordinario del mes (`extraordinarioDelMes`).
+ * @param {number} presupuestoEV - monto del grupo Estilo de vida (distribución).
+ * @returns {string} HTML. `''` si no hubo dinero extraordinario o no hay plan.
+ */
+function _renderExtraordinario(total, presupuestoEV) {
+  if (total <= 0 || presupuestoEV <= 0) return '';
+  return `
+    <p class="estilo-olla estilo-olla--extra">Este mes entraron ${f(total)} que no son parte de tu plan. <a href="#tesoreria" class="estilo-olla__link">Decide dónde va</a></p>`;
 }
 
 // ── ENVELOPE INDIVIDUAL ──────────────────────────────────────────

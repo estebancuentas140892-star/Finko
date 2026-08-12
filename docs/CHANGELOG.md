@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(limites): LIM.1a, el dinero extra del mes informado sin repartir · 2026-08-12
+
+Primera rebanada de **LIM.1**, la que ejecuta el D3 del [ADR 045](DECISIONS/045-base-de-calculo-del-disponible-para-limites.md). Ficha: [`contexto/limites.md`](contexto/limites.md).
+
+- **Lo que el usuario abrió como problema:** una prima, una venta o un préstamo cobrado son capacidad real de gasto y Límites no los nombraba en ninguna parte. Ahora la tarjeta de Estilo de vida lo dice: "Este mes entraron $1.500.000 que no son parte de tu plan", con salida a Mis cuentas para decidir su destino.
+- **Informa y no reparte, que es el punto entero de la decisión.** `extraordinarioDelMes()` (pura, en `logic.js`) suma `S.ingresosPuntuales` fechados en el mes, y esa cifra **no entra** en la base del plan: el presupuesto de Estilo de vida, la olla finita y los topes quedan idénticos con prima y sin ella (verificado en la app: $2.560.000 en los dos casos, y un test lo fija como regresión). Si entrara, engordaría casi solo el permiso de gasto discrecional, porque el ingreso es el denominador de todos los pisos de la distribución y el ahorro ideal es un importe absoluto.
+- **Solo con plan del mes.** Sin ingresos recurrentes, "no son parte de tu plan" no significa nada y la sección ya manda a Mis cuentas: `_renderExtraordinario()` devuelve cadena vacía cuando el presupuesto de Estilo de vida es 0, igual que la olla finita.
+- **`ingresosPuntuales` entra al observador de la sección** (`presupuesto/index.js`): sin eso, registrar un ingreso puntual no refrescaba Límites hasta navegar. El `hashchange` lo tapaba a medias, que es peor que no tenerlo.
+- **Sin par de color nuevo:** `.estilo-olla--extra` reusa la anatomía de `.estilo-olla` (misma clase de dato: una lectura del plan, no una alerta) y el enlace usa el acento que ya lleva `.grupos-resumen__link`. Contraste medido en oscuro: 7,99 el texto y 9,45 el enlace. Ninguna regla R nueva.
+- **Fuera de alcance:** el panel de Límites en Inicio no lo muestra (decisión de producto, no olvido), y las otras dos rebanadas siguen abiertas: LIM.1b (fijos no esenciales) y LIM.1c (sugerencias, esperando el ADR 044).
+- Tests: 13 unitarios nuevos (6 de la función pura, 7 de render, incluida la regresión "no cambia el asignado ni la olla"). Suite completa verde. SW `finko-v510` → `finko-v511`.
+
 ### feat(analisis): ANL.1b, titulares de Análisis en lenguaje corriente · 2026-08-12
 
 Tercera rebanada de la iniciativa **ANL.1**. Commit `<PENDIENTE>`. Ficha: [`contexto/analisis.md`](contexto/analisis.md).

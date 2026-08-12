@@ -16,15 +16,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 >
 > **Lo que cerró el ADR 045 y ahorra trabajo:** la base sigue siendo el ingreso recurrente y lo comprometido ya está descontado por el piso de Necesidades del [ADR 013](../DECISIONS/013-distribucion-automatica-inteligente.md), así que **la aritmética del asignado no cambia y `distribucion.js` no se toca por la base**. Los saldos en cuenta nunca entran (stock contra flujo, doble conteo). El dinero extraordinario se informa y no se reparte: eso es LIM.1a.
 
-#### LIM.1a - El dinero extra del mes, informado sin repartir
-- Prioridad  : media
-- Estado     : lista para trabajar ([ADR 045](../DECISIONS/045-base-de-calculo-del-disponible-para-limites.md) D3 y D5, copy incluido)
-- Área       : ambos
-- Objetivo   : una prima, una venta o un préstamo cobrado hoy son invisibles en Límites. Una línea informativa en Estilo de vida dice cuánto entró fuera del plan, con salida a Mis cuentas para decidir su destino. No entra al split, no sube el presupuesto del grupo, no sube ningún tope.
-- Secciones  : Límites de gasto (`presupuesto`)
-- Archivos   : `modules/dominio/presupuesto/logic.js` (función pura que suma `S.ingresosPuntuales` del mes), `modules/dominio/presupuesto/view.js` (`_renderOllaFinita()` y su vecindad), `styles/components/analysis.css`, `tests/unit/presupuesto.test.js`
-- Depende de : nada. Sin schema y sin tocar el motor de reparto
-- Modelo     : Equilibrado - Medio
+> **LIM.1a cerrada el 2026-08-12** (`extraordinarioDelMes()`, `.estilo-olla--extra`). Detalle en el CHANGELOG.
 
 #### LIM.1b - Los fijos no esenciales cuentan contra Estilo de vida
 - Prioridad  : media

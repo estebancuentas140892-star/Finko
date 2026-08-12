@@ -10,8 +10,8 @@
 ## La sección completa: tres grupos con tratamiento asimétrico por rol (MC.8, ADR 019)
 
 - **Objetivo**          : un solo relato por grupo financiero. Necesidades se **monitorea** (neutro), Ahorro se **celebra** (verde de logro) y Estilo de vida se **controla** (único con topes por categoría y alertas). Los topes viven **dentro** de la tarjeta de Estilo de vida, no en un bloque suelto.
-- **Estado actual**     : estable. **DIS.7 cerrada** (2026-07-26): las 9 correcciones aplicables de la auditoría de diseño de la sección. La iniciativa **LIM.1** (asistente preventivo de estilo de vida) sigue abierta y no la pisa: DIS.7 abre la puerta que el [ADR 019](../DECISIONS/019-limites-por-rol.md) D2 ya prometía, pero **no sugiere montos**: eso es [ADR 044](../DECISIONS/044-motor-unico-de-sugerencia-por-categoria.md) y LIM.1c. **ADR 045 Aceptada el 2026-08-12** y LIM.1 partida en tres rebanadas: LIM.1a (informar el dinero extraordinario del mes), LIM.1b (Streaming y Suscripciones cuentan contra Estilo de vida) y LIM.1c (sugerencias, bloqueada por el ADR 044). Nada de esto está implementado todavía.
-- **Verificado contra** : commit `8d4a5be` (2026-07-26, DIS.7).
+- **Estado actual**     : estable. **DIS.7 cerrada** (2026-07-26): las 9 correcciones aplicables de la auditoría de diseño de la sección. La iniciativa **LIM.1** (asistente preventivo de estilo de vida) sigue abierta y no la pisa: DIS.7 abre la puerta que el [ADR 019](../DECISIONS/019-limites-por-rol.md) D2 ya prometía, pero **no sugiere montos**: eso es [ADR 044](../DECISIONS/044-motor-unico-de-sugerencia-por-categoria.md) y LIM.1c. **ADR 045 Aceptada el 2026-08-12** y LIM.1 partida en tres rebanadas: **LIM.1a cerrada** (la línea de dinero extraordinario del mes), LIM.1b (Streaming y Suscripciones cuentan contra Estilo de vida) y LIM.1c (sugerencias, bloqueada por el ADR 044).
+- **Verificado contra** : commit de LIM.1a (2026-08-12); el resto de la sección, contra `8d4a5be` (2026-07-26, DIS.7).
 
 **Dónde vive**
 
@@ -26,6 +26,8 @@
 | Formulario del modal | `modules/dominio/presupuesto/view.js` | `renderFormPresupuesto(actual, categoriaPrecargada)` | FORM.1b: chips + `monto-hero`; al editar, categoría en campo oculto |
 | Chips de categoría del form | `modules/dominio/presupuesto/view.js` | `_renderChipsCategoria()` | nativas de `CATEGORIAS_GASTO_USUARIO` + personalizadas de `S.categoriasPersonalizadas` |
 | "Olla finita" | `modules/dominio/presupuesto/view.js` | `_renderOllaFinita()` | consume `coberturaLimitesEstiloVida()` |
+| Dinero extraordinario del mes | `modules/dominio/presupuesto/view.js` | `_renderExtraordinario(total, presupuestoEV)` | LIM.1a: va debajo de la olla finita y solo con plan del mes (`presupuestoEV > 0`) |
+| Suma del extraordinario (puro) | `modules/dominio/presupuesto/logic.js` | `extraordinarioDelMes()` | suma `S.ingresosPuntuales` fechados en el mes; mismo corte que `ejecutadoPorGrupoDelMes` |
 | Panel de alertas del dashboard | `modules/dominio/presupuesto/view.js` | `renderPanelLimites()` | escribe `#panel-limites` en Inicio; **no auditado a fondo en DIS.7** |
 | Abrir modal (crear / editar) | `modules/dominio/presupuesto/index.js` | `_nuevoPresupuesto(el)`, `_editarPresupuesto(el)`, `_setTitulo()` | el título del modal se escribe al abrir, como en el resto de los dominios |
 | Cableado del formulario | `modules/dominio/presupuesto/index.js` | `_wireForm()` | submit + listener de `change` en `.chips-cat` que actualiza la pista del monto |
@@ -38,9 +40,9 @@
 | Barra neutra | `styles/components/atoms.css` | `.progress-bar--neutro` | `--fk-text-muted`; no es capa semántica |
 | 44px del "+ Límite" de la tarjeta | `styles/responsive.css` | `.estilo-limites__actions .btn` | va acá y no en `analysis.css`: `.btn-sm` a 36px se declara en esta capa, que gana por orden (corolario de R23) |
 
-**Recursos**: símbolos `i-alert`, `i-trending-up`, `i-info`, `i-check-circle`, `i-chevron-right`, `i-edit`, `i-trash`, `i-presupuesto`, más los `c-*` de categoría vía `iconoDeCategoriaGasto()`. Clases nuevas de DIS.7: `.progress-bar--neutro`, `.envelope__nota`, `.envelope-huerfanas__btn`, `.envelope-huerfanas__fija`, `.envelope-huerfanas__motivo`, `.envelope-huerfanas__accion`, `.presupuesto-cat-fija`. Estado `S`: `S.presupuestos`, `S.gastos`, `S.ingresos`, `S.categoriasPersonalizadas`.
+**Recursos**: símbolos `i-alert`, `i-trending-up`, `i-info`, `i-check-circle`, `i-chevron-right`, `i-edit`, `i-trash`, `i-presupuesto`, más los `c-*` de categoría vía `iconoDeCategoriaGasto()`. Clases nuevas de DIS.7: `.progress-bar--neutro`, `.envelope__nota`, `.envelope-huerfanas__btn`, `.envelope-huerfanas__fija`, `.envelope-huerfanas__motivo`, `.envelope-huerfanas__accion`, `.presupuesto-cat-fija`. Clase nueva de LIM.1a: `.estilo-olla--extra` (con `.estilo-olla__link`), que reusa la anatomía de `.estilo-olla` y el acento de `.grupos-resumen__link`, así que no introduce un par de color nuevo. Estado `S`: `S.presupuestos`, `S.gastos`, `S.ingresos`, `S.ingresosPuntuales`, `S.categoriasPersonalizadas`.
 
-**Dependencias y relaciones**: el "Presupuesto" de cada grupo **no es un dato propio**: sale de `sugerirDistribucionIngreso()` + `construirContextoDistribucion()` de `tesoreria/logic.js`, la misma función que "Distribuir mi ingreso". Sin ingresos registrados no hay plan y la sección cae al estado vacío. Se re-renderiza ante `state:change` de `presupuestos`, `gastos` o `ingresos`, y en cada `hashchange`.
+**Dependencias y relaciones**: el "Presupuesto" de cada grupo **no es un dato propio**: sale de `sugerirDistribucionIngreso()` + `construirContextoDistribucion()` de `tesoreria/logic.js`, la misma función que "Distribuir mi ingreso". Sin ingresos registrados no hay plan y la sección cae al estado vacío. Se re-renderiza ante `state:change` de `presupuestos`, `gastos`, `ingresos` o `ingresosPuntuales` (este último lo agregó LIM.1a), y en cada `hashchange`.
 
 **Riesgos**:
 
@@ -58,9 +60,11 @@
 - Los mismos cuatro emoji que DIS.7 sacó de acá siguen en **Análisis, Ajustes e Importar** (lote corto, sin tarjeta).
 - El desplegable de **Análisis** sigue dibujando su chevron con el carácter `▾` del `::after`; el de Límites ya no.
 - El panel de esta sección en Inicio (`renderPanelLimites`) no se auditó a fondo.
+- **LIM.1a no toca el panel de Inicio**: el dinero extraordinario solo se informa en la sección. Si alguna vez debe salir en Inicio, es decisión de producto, no un olvido.
 
 **Cambios realizados**:
 
+- `2026-08-12 LIM.1a`: la línea de dinero extraordinario del mes en Estilo de vida (`extraordinarioDelMes()` + `_renderExtraordinario()`), informada y sin repartir (ADR 045 D3).
 - `2026-07-26 DIS.7`: 9 correcciones de la auditoría de diseño (iconografía, barra neutra, puerta de las categorías sin tope, formulario FORM.1b, 44px, encabezados, mensaje en su sobre, un verbo, título del modal). Detalle en [CHANGELOG](../CHANGELOG.md).
 
 **Observaciones**: el modelo del [ADR 019](../DECISIONS/019-limites-por-rol.md) es lo mejor de la sección y DIS.7 no lo revisa, lo ejecuta mejor. La única propuesta de la auditoría que **sí** lo revisaría (VL1: que Estilo de vida abra la sección en móvil, contra la decisión D4 que fijó el orden) quedó fuera a la espera de decisión explícita. El copy de los mensajes es del D3 del mismo ADR y no se toca: DIS.7 lo mueve de sitio, no lo reescribe.

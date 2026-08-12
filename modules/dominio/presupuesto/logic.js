@@ -470,6 +470,31 @@ export function coberturaLimitesEstiloVida(presupuestos, presupuestoEstiloVida) 
 }
 
 /**
+ * Dinero extraordinario recibido en el mes: la suma de `S.ingresosPuntuales`
+ * fechados en ese mes (una prima, una venta, un préstamo que te devolvieron).
+ *
+ * **Se informa y no se reparte** ([ADR 045](../../../docs/DECISIONS/045-base-de-calculo-del-disponible-para-limites.md)
+ * D3). No entra en la base del plan: el ingreso es el denominador de todos los
+ * pisos de la distribución y el excedente cae en el residuo, así que sumarlo
+ * engordaría sobre todo el presupuesto de Estilo de vida y dejaría el ahorro
+ * igual. La cifra sirve para decirle al usuario que ese dinero existe y que
+ * decida su destino, no para ampliarle el permiso de gasto.
+ *
+ * Mismo corte por mes calendario que `ejecutadoPorGrupoDelMes`.
+ *
+ * @param {import('../../core/state.js').IngresoPuntual[]} ingresosPuntuales
+ * @param {number} anio
+ * @param {number} mes - 1-12
+ * @returns {number} Total en COP (0 si no hubo ninguno).
+ */
+export function extraordinarioDelMes(ingresosPuntuales, anio, mes) {
+  const prefijo = `${anio}-${String(mes).padStart(2, '0')}`;
+  return (ingresosPuntuales ?? [])
+    .filter(i => typeof i?.fecha === 'string' && i.fecha.startsWith(prefijo))
+    .reduce((acc, i) => acc + (Number(i.monto) || 0), 0);
+}
+
+/**
  * Categorías que tienen gastos en el mes actual pero no tienen envelope creado.
  * Útil para mostrar al usuario qué presupuestos le faltan.
  *

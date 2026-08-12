@@ -142,9 +142,11 @@ export function initPresupuesto() {
   registrarAccion('eliminar-presupuesto', _eliminarPresupuesto);
 
   // Los gastos afectan el progreso visual; re-render ante cualquier cambio
-  // de gastos o de presupuestos.
+  // de gastos o de presupuestos. `ingresosPuntuales` entra en LIM.1a: la línea
+  // de dinero extraordinario del mes se calcula sobre esa colección.
   EventBus.on('state:change', ({ section }) => {
-    if (section === 'presupuestos' || section === 'gastos' || section === 'ingresos') {
+    if (section === 'presupuestos' || section === 'gastos' || section === 'ingresos'
+      || section === 'ingresosPuntuales') {
       renderBannerProposito('presupuesto', _tienePlanOTope());
       renderSmart(renderPanelPresupuesto, 'presupuesto');
       renderSmart(renderPanelLimites, 'dash');
