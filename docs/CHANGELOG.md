@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-08-11.
+> Revisado: 2026-08-12.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-08)
+
+### docs(limites): ADR 045 resuelto, LIM.1 partida en tres rebanadas · 2026-08-12
+
+LIM.1 llevaba desde el 2026-07-24 con su base de cálculo sin dueño y la instrucción textual "no implementar nada de este ADR". Esteban pidió trabajar LIM.1 y delegó la elección, igual que en el ADR 046 y el 063. Sin cambios de código, tests ni SW. [ADR 045](DECISIONS/045-base-de-calculo-del-disponible-para-limites.md). Ficha: [`contexto/limites.md`](contexto/limites.md).
+
+- **El inventario del código descartó dos de las cuatro alternativas antes de elegir.** El ADR planteaba sumar saldos en cuenta (C) y restarles lo comprometido con `infra/vencimientos.js` (D). Verificado contra `distribucion.js`: el modelo de pisos del [ADR 013](DECISIONS/013-distribucion-automatica-inteligente.md) ya pone gastos fijos más cuotas de deuda como piso duro de Necesidades **antes** de repartir, y Estilo de vida es el residuo. Lo comprometido nunca llegó a Estilo de vida: no hay nada que restar, ni ventana temporal que decidir. Y sumar un saldo al ingreso del mes cuenta dos veces el mismo dinero (el saldo **es** el ingreso que ya entró): C y D caen por error de categoría, no por riesgo.
+- **Una premisa del ADR era falsa.** Decía que `S.ingresos` distingue fijos de esporádicos. No: `S.ingresos` son plantillas recurrentes y el evento puntual vive en `S.ingresosPuntuales`, colección aparte por decisión explícita del [ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md) D3. La pregunta real no era filtrar por tipo, era si el plan suma otra colección.
+- **El hallazgo que decidió el resto: el ingreso es el denominador de todos los pisos.** Con ingreso de $3.000.000, obligaciones de $1.500.000 y ahorro ideal de $300.000 (importe absoluto), Estilo de vida recibe $1.200.000. Sumar una prima de $1.500.000 al ingreso del mes deja el ahorro igual y **Estilo de vida pasa a $2.700.000**: el permiso de gasto discrecional se duplica y el ahorro no se mueve un peso. La alternativa B habría convertido cada prima en permiso de gasto.
+- **D1 y D2: la base es el ingreso recurrente y la aritmética del asignado no cambia.** Statu quo elegido a propósito, no por inercia. Límites no importa `infra/vencimientos.js` y ninguna rebanada toca `distribucion.js` por la base. Mis cuentas y Límites conservan la fuente única del [ADR 017](DECISIONS/017-limites-centro-de-control.md).
+- **D3 responde el punto 7 del brief sin volverlo peligroso**: el dinero extraordinario del mes **se informa y no se reparte**. Una línea en Estilo de vida dice cuánto entró fuera del plan, con salida a Mis cuentas para decidir su destino; no entra al split, no sube el presupuesto del grupo ni ningún tope. Coherente con el ADR 024 D3: el ingreso puntual se refleja por su efecto, no como flujo nuevo.
+- **D4: un tope fijado nunca se recalcula solo** (es dato del usuario). **D5**: la cifra se explica en una línea, "Tu plan del mes sale de tus ingresos recurrentes, después de tus gastos fijos y las cuotas de tus deudas".
+- **D6 desbloquea el [ADR 044](DECISIONS/044-motor-unico-de-sugerencia-por-categoria.md)**, que declaraba no poder cerrarse antes de este: el monto sugerido se calcula sobre el presupuesto de Estilo de vida y su parte sin tope (`coberturaLimitesEstiloVida`), nunca sobre saldos ni sobre dinero extraordinario.
+- **Rebanadas**: **LIM.1a** (la línea de D3, la más barata: función pura más render, sin schema), **LIM.1b** (punto 8, Streaming y Suscripciones cuentan contra Estilo de vida; hay que mover ejecutado y asignado en la misma rebanada o el grupo aparece excedido) y **LIM.1c** (sugerencias, sigue esperando el ADR 044). Corregida en el tablero la nota que afirmaba que LIM.1 revisa el [ADR 019](DECISIONS/019-limites-por-rol.md): lo confirma.
+- **Hueco conocido que queda anotado y no es de este ADR**: los ingresos Bimestral y Anual no entran en `FACTOR_MENSUAL_INGRESO`, así que no cuentan en el ingreso recurrente. Si molesta, es tarjeta propia de tesorería.
 
 ### feat(analisis): ANL.1a, la lectura de las tres cards principales · 2026-08-12
 

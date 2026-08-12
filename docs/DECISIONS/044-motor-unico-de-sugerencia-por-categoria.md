@@ -1,6 +1,6 @@
 # ADR 044 - Motor único de sugerencia por categoría
 
-**Estado:** Abierta (decisión sin tomar). No implementar nada de este ADR.
+**Estado:** Abierta (decisión sin tomar). No implementar nada de este ADR. **Su bloqueo declarado ya no existe:** el [ADR 045](045-base-de-calculo-del-disponible-para-limites.md) se aceptó el 2026-08-12 y su D6 fija la base del monto sugerido (el presupuesto de Estilo de vida y su parte sin tope, `coberturaLimitesEstiloVida`, más el histórico de la categoría; nunca saldos ni dinero extraordinario). El [ADR 046](046-analisis-interpreta-criterio-y-lenguaje.md) D3 además dejó de depender de este motor: la lectura de Análisis describe, no ordena. Queda un solo consumidor esperando: **LIM.1c**.
 **Fecha:** 2026-07-24
 **Autores:** Esteban (producto), Claude Opus 5 (análisis)
 **Relación:** consume el catálogo del [ADR 029](029-catalogo-de-marcas-por-categoria.md). Lo consumirían los ADR [045](045-base-de-calculo-del-disponible-para-limites.md) (Límites) y [046](046-analisis-interpreta-criterio-y-lenguaje.md) (Análisis), que quedan como **consumidores, no dueños**. Restringido por la regla ADN 10 (ningún dominio importa a otro).
@@ -135,6 +135,6 @@ Ningún ADR existente define un motor de sugerencia por categoría. Verificado a
 ## Qué falta para cerrarlo
 
 1. Decidir entre las alternativas A, B y C.
-2. Cerrar antes el [ADR 045](045-base-de-calculo-del-disponible-para-limites.md), del que depende el monto sugerido.
+2. ~~Cerrar antes el [ADR 045](045-base-de-calculo-del-disponible-para-limites.md)~~: **hecho el 2026-08-12**. Su D6 fija la base del monto sugerido.
 3. Fijar el contrato exacto de entrada y salida.
 4. Fijar la regla de frecuencia, o delegarla por escrito a cada superficie.

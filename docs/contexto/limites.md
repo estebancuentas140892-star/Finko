@@ -1,6 +1,6 @@
 # Ficha de contexto: Límites de gasto
 
-> Revisado: 2026-08-11.
+> Revisado: 2026-08-12.
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 > El dominio se llama `presupuesto` en el código; "Límites de gasto" es el nombre de cara al usuario (para no confundirlo con Apartados: guardar dinero vs. vigilar cuánto sale).
@@ -10,7 +10,7 @@
 ## La sección completa: tres grupos con tratamiento asimétrico por rol (MC.8, ADR 019)
 
 - **Objetivo**          : un solo relato por grupo financiero. Necesidades se **monitorea** (neutro), Ahorro se **celebra** (verde de logro) y Estilo de vida se **controla** (único con topes por categoría y alertas). Los topes viven **dentro** de la tarjeta de Estilo de vida, no en un bloque suelto.
-- **Estado actual**     : estable. **DIS.7 cerrada** (2026-07-26): las 9 correcciones aplicables de la auditoría de diseño de la sección. La iniciativa **LIM.1** (asistente preventivo de estilo de vida) sigue abierta y no la pisa: DIS.7 abre la puerta que el [ADR 019](../DECISIONS/019-limites-por-rol.md) D2 ya prometía, pero **no sugiere montos**: eso es [ADR 044](../DECISIONS/044-motor-unico-de-sugerencia-por-categoria.md) y LIM.1.
+- **Estado actual**     : estable. **DIS.7 cerrada** (2026-07-26): las 9 correcciones aplicables de la auditoría de diseño de la sección. La iniciativa **LIM.1** (asistente preventivo de estilo de vida) sigue abierta y no la pisa: DIS.7 abre la puerta que el [ADR 019](../DECISIONS/019-limites-por-rol.md) D2 ya prometía, pero **no sugiere montos**: eso es [ADR 044](../DECISIONS/044-motor-unico-de-sugerencia-por-categoria.md) y LIM.1c. **ADR 045 Aceptada el 2026-08-12** y LIM.1 partida en tres rebanadas: LIM.1a (informar el dinero extraordinario del mes), LIM.1b (Streaming y Suscripciones cuentan contra Estilo de vida) y LIM.1c (sugerencias, bloqueada por el ADR 044). Nada de esto está implementado todavía.
 - **Verificado contra** : commit `8d4a5be` (2026-07-26, DIS.7).
 
 **Dónde vive**
@@ -48,10 +48,13 @@
 - **La barra sin modificador cae al acento de marca** (`--fk-section-accent, --fk-accent`), que significa dinero disponible y logro. Ninguna sección declara `data-dom` en su cuerpo, así que ese fallback nunca resuelve a color de sección: si un grupo debe verse neutro, el neutro se declara (regla R34).
 - **`categoriasSinPresupuesto()` no filtra por lo que el formulario puede ofrecer.** Devuelve también las categorías internas ('Deudas', 'Ahorro', que la app escribe sola al registrar un abono o un aporte) y las que CAT.1 movió a Calendario ('Vivienda', 'Servicios públicos'). El filtro vive en la vista (`_puedeTenerTope()`), no en `logic.js`: si se cambia el catálogo, revisar `_MOTIVO_SIN_TOPE`.
 - **Un control deshabilitado no entra en `FormData`.** Fue la causa del defecto latente que DIS.7 corrigió: el `<select disabled>` del modo edición dejaba a `validarPresupuesto` sin categoría y guardar un cambio siempre fallaba con "Debes elegir una categoría". La categoría fija viaja ahora en un campo oculto.
-- La base de cálculo del "disponible" es el **[ADR 045](../DECISIONS/045-base-de-calculo-del-disponible-para-limites.md)**, abierto: no tocar la aritmética del asignado por grupo sin resolverlo.
+- **La aritmética del asignado por grupo no se toca** (**[ADR 045](../DECISIONS/045-base-de-calculo-del-disponible-para-limites.md)**, Aceptada el 2026-08-12): la base es el ingreso recurrente de `estimarSalarioMensual(S.ingresos)` y lo comprometido ya está descontado porque el piso de Necesidades del [ADR 013](../DECISIONS/013-distribucion-automatica-inteligente.md) (fijos + cuotas de deuda) sale del ingreso **antes** de repartir: Estilo de vida es el residuo. Los saldos en cuenta nunca entran (stock contra flujo: el saldo es el ingreso ya contado). Límites no importa `infra/vencimientos.js`.
+- **El ingreso es el denominador de todos los pisos**, y el excedente cae en el residuo: cualquier peso que se sume a `ingresoMensual` engorda sobre todo el presupuesto de Estilo de vida y deja el ahorro ideal igual (es un importe absoluto). Por eso el dinero extraordinario de `S.ingresosPuntuales` se informa y no se reparte (ADR 045 D3, rebanada LIM.1a).
+- **`ejecutadoPorGrupoDelMes` clasifica por `compromisoId`:** todo gasto ligado a un compromiso cuenta como Necesidades, así que hoy el streaming pesa igual que el arriendo. Moverlo es LIM.1b, y hay que mover el asignado (`calcularGastosFijosMensuales`, en tesorería) en la misma rebanada o Estilo de vida aparece excedido.
 
 **Cambios pendientes**:
 
+- Las tres rebanadas de LIM.1 (`docs/board/limites.md`): **LIM.1a** y **LIM.1b** listas para trabajar, **LIM.1c** bloqueada por el ADR 044.
 - Los mismos cuatro emoji que DIS.7 sacó de acá siguen en **Análisis, Ajustes e Importar** (lote corto, sin tarjeta).
 - El desplegable de **Análisis** sigue dibujando su chevron con el carácter `▾` del `::after`; el de Límites ya no.
 - El panel de esta sección en Inicio (`renderPanelLimites`) no se auditó a fondo.

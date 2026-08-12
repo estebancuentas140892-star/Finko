@@ -44,13 +44,15 @@ Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (si
 
 ## Índice de pendientes
 
-Las 23 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+Las 25 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
 | INT.1g | Carril derecho de 320px desde 1.680px (diferida) | Transversal | baja (diferida) | sin sección candidata con contenido |
 | MT.6 | Metas v2: subcategorías inteligentes + plan de aportes (en curso, faltan MT.6b/c/d) | Metas | media-alta | nada: ADR 064 cerró la estructura de dos niveles |
-| LIM.1 | Límites v2: asistente preventivo de estilo de vida | Límites | sin definir | ADR 045 (base de cálculo); ADR 044 (sugerencias) |
+| LIM.1a | El dinero extra del mes, informado sin repartir | Límites | media | nada: ADR 045 D3 cerró el criterio |
+| LIM.1b | Los fijos no esenciales cuentan contra Estilo de vida | Límites | media | nada; mueve el reparto en Límites y Mis cuentas a la vez |
+| LIM.1c | Sugerir dónde y cuánto poner tope (bloqueada) | Límites | sin definir | ADR 044 (motor único de sugerencia) |
 | PE.6d | Me deben: los cinco estados de un vistazo | Me deben | media-alta | bloqueada por IV.2 en producción |
 | ANL.1b | Titulares de Análisis en lenguaje corriente | Análisis | media | nada: ANL.1a cerrada |
 | ANL.1c | Lectura del colapsable de detalle de Análisis | Análisis | baja | nada: ANL.1a cerrada |
@@ -76,7 +78,7 @@ Las 23 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 
 ## Pendientes por sección
 
-> **Lente de la auditoría de UX/producto (2026-07-21).** Recorrido de toda la app simulando a un usuario colombiano real. Sus 7 patrones son criterio de priorización, no tareas, y explican casi toda la lista de abajo. **Cerrados:** P2 (trabajo manual uno por uno), P4 (ledger de solo lectura), P5 (módulos que no comparten datos con el saldo) y P3 editar sin destruir (EDIT.1 cerrada el 2026-08-04 en sus 4 secciones; MC.17f cerrada el 2026-08-12 cierra el caso distinto de deshacer una transferencia). **Abiertos:** P1 datos que la app ya tiene y vuelve a pedir (LIM.1, CFG.2a; la mitad `cuentaId` de MC.13e-2f ya cerró), P6 se informa pero no se acciona (motor único de sugerencia por categoría: LIM.1 / ANL.1 / [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md)), P7 un concepto con cuatro implementaciones (ARQ.1 y ARQ.2 cerradas el 2026-08-02, ver `contexto/transversal.md`).
+> **Lente de la auditoría de UX/producto (2026-07-21).** Recorrido de toda la app simulando a un usuario colombiano real. Sus 7 patrones son criterio de priorización, no tareas, y explican casi toda la lista de abajo. **Cerrados:** P2 (trabajo manual uno por uno), P4 (ledger de solo lectura), P5 (módulos que no comparten datos con el saldo) y P3 editar sin destruir (EDIT.1 cerrada el 2026-08-04 en sus 4 secciones; MC.17f cerrada el 2026-08-12 cierra el caso distinto de deshacer una transferencia). **Abiertos:** P1 datos que la app ya tiene y vuelve a pedir (LIM.1a, CFG.2a; la mitad `cuentaId` de MC.13e-2f ya cerró), P6 se informa pero no se acciona (motor único de sugerencia por categoría: LIM.1c / ANL.1 / [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md)), P7 un concepto con cuatro implementaciones (ARQ.1 y ARQ.2 cerradas el 2026-08-02, ver `contexto/transversal.md`).
 >
 > **Alcance honesto del triaje:** se trió todo lo que el informe entregó enumerado. Su tabla "hallazgos por módulo" vino como vista filtrable y las fichas individuales no llegaron en texto: si Esteban quiere ese detalle triado uno por uno, hay que recuperarlo de la fuente.
 
@@ -100,7 +102,7 @@ AH.7a → [`board/ahorro.md`](board/ahorro.md)
 
 ### Límites de gasto (dominio `presupuesto`)
 
-LIM.1 → [`board/limites.md`](board/limites.md)
+LIM.1a, LIM.1b, LIM.1c → [`board/limites.md`](board/limites.md)
 
 ### Me deben (dominio `personales`)
 
