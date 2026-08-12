@@ -1,6 +1,6 @@
 # ADR 048 - Metas v2: subcategorías inteligentes y plan de aportes generado
 
-**Estado:** Aceptada en alcance (triaje del brief de Esteban del 2026-07-08, 7 puntos). Implementación pendiente: tarjeta **MT.6** en [BOARD.md](../BOARD.md). Una decisión de estructura de datos queda delegada, ver "Qué falta para cerrarlo".
+**Estado:** Aceptada en alcance (triaje del brief de Esteban del 2026-07-08, 7 puntos). Implementación en curso, tarjeta **MT.6** en [BOARD.md](../BOARD.md). **D1:** la estructura de datos delegada quedó decidida en el [ADR 064](064-estructura-de-dos-niveles.md) (2026-08-12) y su fundación está construida (MT.6a: `SUBCATEGORIAS_META` + `infra/taxonomia.js`); falta la UI y el campo almacenado (MT.6b). **D2: cumplida sin código nuevo**, la entregaron MT.4 y MC.13b (`calcularAhorroPorPeriodo` ya consume `frecuenciaPrincipalIngresos` del motor del ADR 041). **D3:** pendiente (MT.6c).
 **Fecha:** 2026-07-24
 **Autores:** Esteban (producto, brief del 2026-07-08), Claude Opus 5 (triaje y redacción)
 **Relación:** consume el motor de vencimientos del [ADR 041](041-motor-vencimientos-y-distribucion-v2.md) para el cálculo por período. La estructura de dos niveles de D1 se decide junto con la validación D3 del [ADR 029](029-catalogo-de-marcas-por-categoria.md). La variante automatizada de D3 pertenece al ADR de pagos automáticos (tarjeta PA.1), no a este.
@@ -59,5 +59,5 @@ El límite es explícito: el plan es **visible y recordatorio**, no ejecución. 
 
 ## Qué falta para cerrarlo
 
-1. **La estructura de datos de dos niveles de D1** se fija en la validación D3 del [ADR 029](029-catalogo-de-marcas-por-categoria.md), junto con entidad a producto. Este ADR la consume; no la define por su cuenta.
+1. ~~**La estructura de datos de dos niveles de D1** se fija en la validación D3 del [ADR 029](029-catalogo-de-marcas-por-categoria.md).~~ **Resuelto el 2026-08-12 por el [ADR 064](064-estructura-de-dos-niveles.md).** La validación del ADR 029 fijó la taxonomía de tags, pero no la forma de datos, y su Fase 0 nunca se construyó: la delegación apuntaba a un lugar donde la respuesta no estaba. El ADR 064 la escribe (catálogo plano de hijos etiquetados con su padre) y los tres consumidores la comparten.
 2. **Coordinar con la iniciativa PA** si en algún momento el plan pasa de recordatorio a ejecución.

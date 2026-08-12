@@ -1,6 +1,6 @@
 # Ficha de contexto: Metas
 
-> Revisado: 2026-08-11.
+> Revisado: 2026-08-12.
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -10,7 +10,7 @@
 
 - **Objetivo**          : bolsas de ahorro con nombre, objetivo, fecha límite opcional y categoría (dueño de su propio `montoActual`, a diferencia de Deudas que deriva el progreso del historial de gastos). El usuario crea, abona, edita y elimina; la fecha límite alimenta un ritmo de ahorro sugerido (MT.4) según la frecuencia real de sus ingresos.
 - **Estado actual**     : estable. **DIS.19** (2026-07-29) pone la silueta de la meta en el centro del arco: la figura de lo que persigues es también el medidor, porque se llena de abajo hacia arriba. **DIS.14** (2026-07-28) aplica la arquitectura A2 de la auditoría por secciones: la meta dejó de ser una fila y es una tarjeta vertical (`.meta-card`) con medidor semicircular, el ícono en el centro del arco, el objetivo como extremo de la escala y el copy en "aporte". **MT.7** (2026-07-27) prellena el monto del aporte con la cuota del período (mismo criterio que Apartados y Fondo). **DIS.13** (2026-07-27) había aplicado la primera pasada de diseño: el ojo de privacidad, el bloque de metas cumplidas y el anillo accesible siguen vigentes; su capa de layout la reemplazó DIS.14. **EDIT.1a** (2026-07-23) cerró el hueco de edición: antes, corregir un nombre o un objetivo mal escrito obligaba a eliminar y recrear, perdiendo el progreso acumulado.
-- **Verificado contra** : ARQ.1a, commit `87b6b04` (2026-08-02).
+- **Verificado contra** : MT.6a, commit `57b3cdb` (2026-08-12).
 
 **Dónde vive**
 
@@ -29,6 +29,8 @@
 | (Re)inyección del form + wiring, único punto de entrada crear/editar | `modules/dominio/metas/index.js` | `_inyectarFormMeta(meta = null)` |
 | Handlers de acción | `modules/dominio/metas/index.js` | `_nuevaMeta()`, `_editarMeta()`, `_guardarMeta()`, `_eliminarMeta()`, `_abrirAbonoMeta()`, `_guardarAbonoMeta()` |
 | Segunda linea del toast de confirmacion (GAS.2c, [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md)) | `modules/dominio/metas/logic.js` | `consecuenciaDeAporte({ completada, faltante, ocultarSaldo })` |
+| Subcategorías de meta, catálogo de datos (MT.6a) | `modules/core/constants.js` | `SUBCATEGORIAS_META` |
+| Lectura de la estructura de dos niveles (MT.6a, [ADR 064](../DECISIONS/064-estructura-de-dos-niveles.md)) | `modules/infra/taxonomia.js` | `hijosDeCategoria()`, `hijoPorId()`, `categoriasConHijos()` |
 
 **Recursos**: medidor semicircular compartido (`infra/svg.js`, `arcoProgreso()`, hermano de `progressRing()` y con el mismo `.progress-ring-wrap` alrededor); silueta que se llena (`infra/svg.js`, `siluetaMeta()` + `SILUETAS`, tercer hermano de los dos anteriores, estilada en `.silueta__*` de `atoms.css`) y su mapeo `CATEGORIA_META_SILUETA` en `core/constants.js`; selector de cuenta compartido (`infra/cuenta-helper.js`, `renderSelectorCuenta`, usado en el abono); picker de ícono compacto (`infra/icon-picker.js`, CAT.2b) para la categoría "Otra"; catálogo `CATEGORIAS_META`/`CATEGORIA_META_ICONO`/`ICONOS_CATEGORIA_PERSONALIZADA` de `core/constants.js` (el mismo catálogo de íconos personalizados que usan Gastos y Agenda).
 
@@ -43,7 +45,7 @@
 - **`_iconoMeta()` distingue dos formatos históricos de `meta.icono`**: un id de sprite (`c-*`, patrón `/^[a-z]-/`) o un emoji crudo (metas creadas antes de CAT.2b con el campo de texto libre de MT.3). El picker de EDIT.1a (`renderFormMeta`) hereda la misma distinción al prellenar: un emoji legacy no se pasa como `valorActual` al picker (ningún botón del catálogo lo representa; se dejaría el recuadro vacío en vez de romper el glifo con un `href` inválido).
 - **El form pasó de singleton reusado a reinyectado en cada apertura (EDIT.1a)**: antes `_inyectarForm()` se llamaba una sola vez en `initMetas()` y cada apertura de "Nueva meta" limpiaba manualmente el picker de ícono (`resetIconoPicker`) porque el DOM persistía entre aperturas. Ahora `_inyectarFormMeta(meta)` reconstruye el HTML completo en cada apertura (crear o editar), mismo patrón que Gastos/Agenda/Compromisos: más simple de razonar, y necesario para poder prellenar una meta existente sin arrastrar el estado visual de la apertura anterior.
 
-**Cambios pendientes**: **La máscara del ojo en el consolidado "Tu ahorro total"** (`ahorro/view.js`, común a Fondo, Metas, Apartados e Inversión: es la cifra más sensible del hub y sigue a la vista con el saldo oculto). **El `select` nativo de categoría** sin adoptar FORM.1b: el propio informe pide dejarlo para MT.6, porque el [ADR 048](../DECISIONS/048-metas-v2-subcategorias-y-plan-de-aportes.md) D1 va a meter subcategorías en ese mismo control. **La historia de la meta cumplida** que pide el estado 4 de la arquitectura A2 ("12 aportes en 6 meses", "Lograda el 12 de julio"): no hay de dónde sacarla. `montoActual` es un campo cacheado sin ledger de aportes y no existe `fechaCumplida`, así que exige modelo de datos nuevo y bump de schema; queda como insumo de **ARQ.1** (que unifica las cuatro bolsas) o de una tarjeta propia. **`btn-sm` a 36px** sigue abierto para el resto de la app: Metas ya no lo sufre porque sus tres acciones declaran 44px, pero la decisión global viene arrastrada desde el Fondo.
+**Cambios pendientes**: **La máscara del ojo en el consolidado "Tu ahorro total"** (`ahorro/view.js`, común a Fondo, Metas, Apartados e Inversión: es la cifra más sensible del hub y sigue a la vista con el saldo oculto). **El `select` nativo de categoría** sin adoptar FORM.1b: el propio informe pide dejarlo para MT.6, porque el [ADR 048](../DECISIONS/048-metas-v2-subcategorias-y-plan-de-aportes.md) D1 va a meter subcategorías en ese mismo control. Desde MT.6a el catálogo de subcategorías ya existe y nadie lo consume todavía: **MT.6b** es la rebanada que rehace ese control y guarda `subcategoriaId` en la meta. **La historia de la meta cumplida** que pide el estado 4 de la arquitectura A2 ("12 aportes en 6 meses", "Lograda el 12 de julio"): no hay de dónde sacarla. `montoActual` es un campo cacheado sin ledger de aportes y no existe `fechaCumplida`, así que exige modelo de datos nuevo y bump de schema; queda como insumo de **ARQ.1** (que unifica las cuatro bolsas) o de una tarjeta propia. **`btn-sm` a 36px** sigue abierto para el resto de la app: Metas ya no lo sufre porque sus tres acciones declaran 44px, pero la decisión global viene arrastrada desde el Fondo.
 
 **Riesgos añadidos por DIS.19**:
 
@@ -54,6 +56,8 @@
 - **El `clipPath` toma su id de `meta.id`.** Dos siluetas en pantalla con el mismo id se recortan con la figura equivocada. La sección Metas usa `silueta-<id>` y el carril del hub `silueta-carril-<id>` para no colisionar entre sí.
 
 **Cambios realizados**:
+
+- 2026-08-12 (MT.6a): fundación de subcategorías. `SUBCATEGORIAS_META` (32 filas, 9 categorías) en `core/constants.js` y `infra/taxonomia.js` con las tres lecturas de la estructura de dos niveles ([ADR 064](../DECISIONS/064-estructura-de-dos-niveles.md)). Sin UI y sin campo nuevo en la meta: nada cambia en pantalla todavía.
 
 - 2026-08-11 (GAS.2c): `_guardarAbonoMeta()` sustituye su `announce()` final por `mostrarToast()`, con segunda linea via `consecuenciaDeAporte()` nueva (prioridad meta completada > cuanto falta). Mismo patron de Gastos (GAS.2a/2b), formalizado en [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md). Detalle completo: `contexto/gastos.md`.
 

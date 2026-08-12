@@ -3,7 +3,7 @@
 > Revisado: 2026-08-11.
 
 > Documento vivo. Se actualiza cuando cambia una capa, se agrega un dominio, se mueve un archivo de estilos o se introduce un patrón nuevo.
-> Última revisión: 2026-07-29 (DIS.19 suma `infra/bolsas.js`, `infra/portafolio.js` y `ui/comparador.js`). Antes: 2026-07-24 (absorbe el mapa operativo del ex `MAPA.md` como sección 13).
+> Última revisión: 2026-08-12 (MT.6a suma `infra/taxonomia.js`). Antes: 2026-07-29 (DIS.19 suma `infra/bolsas.js`, `infra/portafolio.js` y `ui/comparador.js`). Antes: 2026-07-24 (absorbe el mapa operativo del ex `MAPA.md` como sección 13).
 >
 > **Dos preguntas distintas, dos mitades:** las secciones 1 a 12 responden **cómo está construido** el sistema (capas, dominios, eventos, reglas técnicas). La sección 13 responde **dónde está cada cosa y cómo localizarla** (sección visible → carpeta, índice de estilos, síntoma → dónde mirar). Si vienes a arreglar algo y no sabes por dónde empezar, ve directo a la 13.
 
@@ -76,6 +76,7 @@ Utilidades transversales sin dependencias de dominio.
 | `svg.js` | Gráficos SVG generados: `sparkline`/`donut` para Análisis, `progressRing`/`arcoProgreso` y `siluetaMeta` (silueta que se llena por altura, DIS.19) |
 | `bolsas.js` | El plan de aportes de una bolsa con fecha: `diasHastaFecha`, `planDeReferencia`, `estadoDeBolsa`. Lo comparten Apartados y la casa de Ahorro (DIS.19), primer paso de ARQ.1 |
 | `portafolio.js` | Lo invertido, su proyección al vencimiento y la geometría del gráfico de dos columnas: de `esProyectable` a `columnasPortafolio`. Lo comparten Inversión y la casa de Ahorro (DIS.19) |
+| `taxonomia.js` | La estructura de dos niveles, una sola vez ([ADR 064](DECISIONS/064-estructura-de-dos-niveles.md)): `hijosDeCategoria`, `hijoPorId`, `categoriasConHijos`. Recibe el catálogo por parámetro, así que sirve a subcategoría de meta, marca por categoría y entidad a producto sin conocer a ninguno |
 | `csv.js` | Parser/serializador CSV (RFC 4180 simplificado) para importar/exportar gastos |
 | `notificaciones.js` | Web Notifications API para recordatorios de compromisos próximos |
 | `form-errors.js` | Helpers de validación y mensajes de error en formularios |

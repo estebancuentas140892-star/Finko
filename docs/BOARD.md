@@ -1,12 +1,12 @@
 # Tablero - Finko Claude
 
-> Revisado: 2026-08-11.
+> Revisado: 2026-08-12.
 
 > Tablero Kanban de trabajo pendiente. Reemplaza a `TASKS.md` y `ROADMAP.md` (retirados 2026-07-02, ver [CHANGELOG](CHANGELOG.md)).
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-08-11. Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
+> Última actualización: 2026-08-12. Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
 
 ---
 
@@ -44,13 +44,12 @@ Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (si
 
 ## Índice de pendientes
 
-Las 24 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+Las 22 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
 | INT.1g | Carril derecho de 320px desde 1.680px (diferida) | Transversal | baja (diferida) | sin sección candidata con contenido |
-| MC.17f | Deshacer o editar una transferencia | Mis cuentas | media | coordinar con MOV.1 |
-| MT.6 | Metas v2: subcategorías inteligentes + plan de aportes | Metas | media-alta | nada (el motor de MC.13 ya está); ADR 029 D3 |
+| MT.6 | Metas v2: subcategorías inteligentes + plan de aportes (en curso, faltan MT.6b/c/d) | Metas | media-alta | nada: ADR 064 cerró la estructura de dos niveles |
 | LIM.1 | Límites v2: asistente preventivo de estilo de vida | Límites | sin definir | ADR 045 (base de cálculo); ADR 044 (sugerencias) |
 | PE.6d | Me deben: los cinco estados de un vistazo | Me deben | media-alta | bloqueada por IV.2 en producción |
 | ANL.1 | Análisis como centro de interpretación financiera | Análisis | sin definir | ADR 046 (criterio y lenguaje); ADR 044 (recomendaciones) |
@@ -58,8 +57,9 @@ Las 24 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | CFG.2a | Auto-derivar ingresos brutos al monitor de renta | Configuración | sin definir | CFG.1a (cerrada) |
 | CFG.3 | Notificaciones inteligentes anticipatorias | Configuración | sin definir | nada; riesgo técnico a evaluar primero |
 | CFG.4 | Respaldo, cuentas y sincronización [DECISIÓN DE ADN] | Configuración | sin definir | ADR 043 resuelto |
-| CFG.5 | Seguridad de acceso: PIN, patrón, biometría | Configuración | sin definir | nada para PIN local; cuenta depende de CFG.4 |
-| CFG.6 | Revisión general de la sección Ajustes | Configuración | sin definir | CFG.1 a CFG.5 |
+| CFG.5b | Re-autenticación con PIN en acciones críticas | Configuración | sin definir | CFG.5a (cerrada) |
+| CFG.5c | Biometría en PWA: verificar antes de prometer | Configuración | sin definir | CFG.5a (cerrada) + dispositivo real |
+| CFG.6 | Revisión general de la sección Ajustes | Configuración | sin definir | CFG.2a/2c, CFG.3, CFG.4 |
 | PERF.5 | Migrar la persistencia a IndexedDB (futura, no iniciar) | Transversal | sin definir | un disparador del ADR 030 D4 |
 | PERF.6 | Coalescer de renders por microtask | Transversal | baja | decidir si el beneficio lo justifica |
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | P4 del ADR 033 + cola de diseño |
@@ -75,9 +75,7 @@ Las 24 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 
 ## Pendientes por sección
 
-> **Lente de la auditoría de UX/producto (2026-07-21).** Recorrido de toda la app simulando a un usuario colombiano real. Sus 7 patrones son criterio de priorización, no tareas, y explican casi toda la lista de abajo. **Cerrados:** P2 (trabajo manual uno por uno), P4 (ledger de solo lectura), P5 (módulos que no comparten datos con el saldo) y P3 editar sin destruir (EDIT.1 cerrada el 2026-08-04 en sus 4 secciones; queda **MC.17f**, deshacer una transferencia, que es un caso distinto). **Abiertos:** P1 datos que la app ya tiene y vuelve a pedir (LIM.1, CFG.2a; la mitad `cuentaId` de MC.13e-2f ya cerró), P6 se informa pero no se acciona (motor único de sugerencia por categoría: LIM.1 / ANL.1 / [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md)), P7 un concepto con cuatro implementaciones (ARQ.1 y ARQ.2 cerradas el 2026-08-02, ver `contexto/transversal.md`).
->
-> **Un hallazgo sigue cuestionando una decisión vigente y no se ejecuta sin la palabra de Esteban** (regla 2.7: un ADR no se revierte en silencio): MC.17f frente al cierre de MC.17 como "completa". Su tarjeta lo dice en su Estado. La propuesta de distribución de un toque quedó resuelta por el [ADR 061](DECISIONS/061-educacion-antes-de-repartir.md): la educación va delante sin cobrar un clic, y colapsar los tres pasos en una sola pantalla se descartó como reordenamiento (son tres decisiones distintas) y sale a triaje si Esteban lo quiere como tarjeta propia.
+> **Lente de la auditoría de UX/producto (2026-07-21).** Recorrido de toda la app simulando a un usuario colombiano real. Sus 7 patrones son criterio de priorización, no tareas, y explican casi toda la lista de abajo. **Cerrados:** P2 (trabajo manual uno por uno), P4 (ledger de solo lectura), P5 (módulos que no comparten datos con el saldo) y P3 editar sin destruir (EDIT.1 cerrada el 2026-08-04 en sus 4 secciones; MC.17f cerrada el 2026-08-12 cierra el caso distinto de deshacer una transferencia). **Abiertos:** P1 datos que la app ya tiene y vuelve a pedir (LIM.1, CFG.2a; la mitad `cuentaId` de MC.13e-2f ya cerró), P6 se informa pero no se acciona (motor único de sugerencia por categoría: LIM.1 / ANL.1 / [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md)), P7 un concepto con cuatro implementaciones (ARQ.1 y ARQ.2 cerradas el 2026-08-02, ver `contexto/transversal.md`).
 >
 > **Alcance honesto del triaje:** se trió todo lo que el informe entregó enumerado. Su tabla "hallazgos por módulo" vino como vista filtrable y las fichas individuales no llegaron en texto: si Esteban quiere ese detalle triado uno por uno, hay que recuperarlo de la fuente.
 
@@ -90,10 +88,6 @@ Cada sección con tarjetas vivas tiene su satélite en `docs/board/`, mismo nomb
 ### Calendario (dominio `agenda`)
 
 _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI Calendario" ya tienen fuente única y no generan tarjeta aquí. Tinte de color en las tarjetas de evento → **IV.2c**; logos de marca en eventos → [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md); picker de icono y categorías personalizadas reutilizables → iniciativa **CAT** en Transversal.)_
-
-### Mis cuentas (dominio `tesoreria`)
-
-MC.17f → [`board/mis-cuentas.md`](board/mis-cuentas.md)
 
 ### Metas (dominio `metas`)
 
@@ -117,7 +111,7 @@ ANL.1 → [`board/analisis.md`](board/analisis.md)
 
 ### Configuración (dominio `config`)
 
-CFG.2c, CFG.2a, CFG.3, CFG.4, CFG.5, CFG.6 → [`board/configuracion.md`](board/configuracion.md)
+CFG.2c, CFG.2a, CFG.3, CFG.4, CFG.5b, CFG.5c, CFG.6 → [`board/configuracion.md`](board/configuracion.md)
 
 ---
 
@@ -133,7 +127,8 @@ Se listan solo para que una idea nueva de estas secciones no vuelva a generar un
 
 | Sección | Dónde vive su trabajo futuro |
 |---|---|
-| Movimientos | Ledger accionable, con búsqueda y filtros, completo. El hueco que queda es **MC.17f** (deshacer transferencia); editar un aporte puntual no tiene tarjeta propia (ver `contexto/movimientos.md`) |
+| Movimientos | Ledger accionable, con búsqueda y filtros, completo. Deshacer una transferencia (**MC.17f**) cerró el 2026-08-12; editar un aporte puntual no tiene tarjeta propia (ver `contexto/movimientos.md`) |
+| Mis cuentas | Iniciativa "Mis Cuentas v2" completa: **MC.13**, **MC.16**, **MC.17** (incluye MC.17f) y **MC.18** en producción (ver `contexto/mis-cuentas.md`) |
 | Gastos | Iniciativa del toast de confirmación completa: **GAS.2a**, **GAS.2b** y **GAS.2c** cerradas ([ADR 062](DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md)), ver `board/gastos.md` |
 | Deudas | Iniciativa "Deudas v2" completa ([ADR 036](DECISIONS/036-deudas-v2-visual.md)). Que un pago de deuda descuente de la cuenta ya existe desde el [ADR 002](DECISIONS/002-abono-deudas.md): si aparece un caso donde NO ocurra, es un bug para [`BUGS.md`](BUGS.md), no una feature |
 | Inversión | Sin pendientes propios. "Editar sin destruir" ya cerró (**EDIT.1**, 2026-08-02); su infraestructura compartida cerró con **ARQ.1** (2026-08-02) |

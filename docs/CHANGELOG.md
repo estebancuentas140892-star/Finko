@@ -12,6 +12,42 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(metas): MT.6a, fundación de subcategorías de meta · 2026-08-12
+
+Primera rebanada de **MT.6** (Metas v2), que llevaba desde el triaje del brief en "pendiente de análisis". Commit `57b3cdb`. Ficha: [`contexto/metas.md`](contexto/metas.md).
+
+- **Lo que estaba realmente bloqueado no era el trabajo, era una delegación circular.** El [ADR 048](DECISIONS/048-metas-v2-subcategorias-y-plan-de-aportes.md) D1 delegó la estructura de dos niveles en la validación D3 del [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md); esa validación fijó la taxonomía de tags de marcas pero **no la forma de datos**, y la Fase 0 del ADR 029 nunca se construyó (hoy no existen ni `marcasDeCategoria` ni el campo `categorias` en `MARCAS`). La delegación apuntaba a un lugar donde la respuesta no estaba. El **[ADR 064](DECISIONS/064-estructura-de-dos-niveles.md)** la escribe.
+- **La forma elegida es catálogo plano de hijos etiquetados con su padre**, no mapa de padre a lista de hijos. El motivo es que un hijo puede tener varios padres (Amazon está en compras y en streaming, el propio ADR 029 D1 lo previó) y el mapa obliga a repetir la fila, con dos copias que divergen. La relación de un solo padre (subcategoría, producto) cabe en la misma forma con un array de un elemento; la inversa no.
+- `modules/infra/taxonomia.js`: `hijosDeCategoria()`, `hijoPorId()` y `categoriasConHijos()`. **El catálogo entra por parámetro**, así el módulo sirve a los tres consumidores (subcategoría de meta, marca por categoría, entidad a producto de MC.16) sin conocer a ninguno y sin reintroducir por la puerta de atrás la dependencia entre dominios que prohíbe ADN 10.
+- Contrato de bordes fijado una vez para los tres: categoría sin hijos devuelve **array vacío** (un catálogo de dos niveles crece agregando filas, así que "todavía no tiene hijos" es el estado normal, no un fallo) y un id que ya no está devuelve **`null`**, con el consumidor cayendo a la categoría sola, mismo patrón de fallback que `resolverMarca`.
+- `SUBCATEGORIAS_META` en `core/constants.js`: 32 filas sobre las 9 categorías que ofrece el formulario. **'Otra' queda fuera a propósito**: es el cajón donde el usuario nombra a mano (MT.3), así que un segundo nivel predefinido no tendría qué reconocer.
+- **El D2 del ADR 048 se declara cumplido sin escribir código**: `calcularAhorroPorPeriodo` ya consume `frecuenciaPrincipalIngresos` del motor del [ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md). Lo entregaron MT.4 y MC.13b; la tarjeta lo pedía por segunda vez.
+- **Fuera de alcance**: la UI y el campo `subcategoriaId` en la meta (MT.6b, que además rehace el `select` de categoría con FORM.1b y absorbe el pendiente MT.h de DIS.13), el plan de aportes (MT.6c, ADR 048 D3), el plan visible en Calendario (MT.6d) y los glifos por subcategoría (cola de diseño, ADR 026). **Nada cambia en pantalla todavía**: el catálogo existe y no lo consume nadie.
+- Tests: 15 nuevos (`taxonomia.test.js`), partidos entre el contrato de las funciones puras contra catálogos de juguete y la integridad del catálogo real (ids únicos, ninguna etiqueta de padre que no sea categoría de meta). SW `finko-v506` → `finko-v507`.
+
+### feat(config): CFG.5a, candado de acceso local con PIN · 2026-08-12
+
+Arranca **CFG.5** (hasta hoy "pendiente de análisis") por la rebanada que no depende de CFG.4: un PIN local no necesita cuenta ni servidor. Decisión completa con alternativas rechazadas: [ADR 063](DECISIONS/063-candado-de-acceso-local.md). Ficha: [`contexto/configuracion.md`](contexto/configuracion.md).
+
+- **Lo que no es, y se dice en la propia tarjeta de Ajustes**: el candado tapa la pantalla frente a otra persona que use el dispositivo; **no cifra** `fk_v1`. Cifrar de verdad (PBKDF2 + AES-GCM) se rechazó por costo y por promesa que un PIN de 4 dígitos no sostiene: rompía ADN 5 (`save()` pasa a asincrónico y cifrado), ADN 6 (las migraciones dejan de leer el JSON) y los 263 E2E que siembran `fk_v1` plano, y convertía "olvidé el PIN" en pérdida definitiva del historial.
+- `modules/dominio/config/bloqueo.js` (lógica sin DOM): `SHA-256` sobre `salt + ':' + pin` con salt de 16 bytes por usuario (`crypto.getRandomValues`); el PIN en claro no se persiste ni viaja en ningún evento. `cryptoDisponible()` degrada con mensaje honesto donde `crypto.subtle` no existe (contexto no seguro).
+- **Freno a la fuerza bruta en `sessionStorage`** (clave `fk_bloqueo_freno`), no en memoria: 5 fallos bloquean 30 s y escalan 30 s por tanda. En memoria, recargar la pestaña saltaba la espera que la pantalla acababa de anunciar.
+- `modules/ui/bloqueo-acceso.js`: gate de arranque con el patrón de LEG.2 (`data-bloqueante`, sin cerrar, Escape ignorado) y fondo **opaco** (`--fk-bg-base`, regla nueva en `modals.css`) en vez del overlay translúcido con blur, que dejaba leer los saldos detrás. `bootstrap.js` pone el gate legal y las novedades **detrás** del candado (evento `bloqueo:abierto`): dos overlays bloqueantes a la vez se pelean el foco.
+- **"Olvidé mi PIN" borra todo y arranca de cero**, con la misma confirmación peligrosa que "Borrar todos mis datos": sin cifrado no hay nada que recuperar ni servidor que reponga una credencial, y desinstalar la app ya borraba todo sin pasar por ahí.
+- `mostrarErroresForm()` acepta título propio: el default ("Falta información para guardar:") mentía sobre un PIN que no coincide.
+- Schema v35 → v36 (`config.bloqueo`, default `null`: nadie se encuentra la app cerrada sin pedirlo). SW `finko-v506` → `finko-v507`.
+- **Fuera de alcance, por decisión del ADR**: patrón de puntos (misma protección, segunda UI), biometría/WebAuthn (hay que verificarla en el dispositivo real antes de prometerla: CFG.5c) y la re-autenticación de acciones críticas (CFG.5b).
+- Tests: 27 unit nuevos (`bloqueo.test.js` 22, `form-errors.test.js` 5), 8 de render en `config.test.js`, 3 de migración en `storage.test.js`.
+
+### feat(tesoreria): MC.17f, deshacer una transferencia desde el ledger · 2026-08-12
+
+Cierra **MC.17f**, el hallazgo de la auditoría de UX/producto sobre MC.17: hasta hoy una transferencia no se podía revertir ni editar, y un error de cuenta o monto descuadraba dos saldos a la vez sin salida dentro de la app. Fichas: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md), [`contexto/movimientos.md`](contexto/movimientos.md).
+
+- `_eliminarTransferencia()` nueva en `tesoreria/acciones/transferencias.js`: revierte los deltas exactos de `calcularTransferencia()` (devuelve `monto + costoGMF` al origen, descuenta `monto` del destino) y borra el registro, mismo mecanismo que `_eliminarGasto`/`_eliminarIngresoPuntual`. Si una de las dos cuentas ya no existe, revierte solo la que sigue existiendo y borra igual (no bloquea el deshacer).
+- **Cierra el último hueco de MOV.1**: `transferencia` entra a `_ACCIONES_POR_TIPO` (`movimientos/view.js`) con `eliminar: 'eliminar-transferencia'`, sin `editar`. Coordinado con MOV.1 como preveía la ficha: sin UI propia en Mis cuentas.
+- **Decisión**: deshacer = eliminar + revertir, sin editar y sin una fila de reversa visible nueva. Se descarta esa parte del diseño original de la ficha (movimiento inverso como fila propia) porque ningún dominio de la app la implementa hoy, y sumarla solo para transferencias habría sido vocabulario nuevo sin precedente para un caso que la convención existente (borrar + revertir) ya cubre.
+- Tests: 4 unit nuevos (`tesoreria.test.js`), 1 actualizado (`movimientos.test.js`, la fila de transferencia dejaba de estar vacía).
+
 ### feat(diseno): DV.2d, infraestructura de ilustraciones · 2026-08-12
 
 Adelanta **DV.2d** (D3 del ADR 033) en lo único que no depende de la decisión de diseño de Esteban: el riel técnico. Ficha: [`contexto/sistema-visual.md`](contexto/sistema-visual.md).
