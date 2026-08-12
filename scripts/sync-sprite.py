@@ -18,10 +18,12 @@ un artefacto derivado. El script:
      con ErrorRecurso explicito, nunca se borra en silencio).
   1. Recorre iconos/{secciones,simbolos,utilitarios} (prefijo i-),
      iconos/categorias (prefijo c-), logos/** en cualquier subcarpeta
-     (prefijo b-) y decoracion/ (prefijo d-, formas organicas del ADR
-     033 D3: viewBox propio, sin roles centinela, fill="currentColor").
-     identidad/ e ilustraciones/ son "futuro" (README seccion 2) y
-     todavia no se conectan al sprite.
+     (prefijo b-), decoracion/ (prefijo d-, formas organicas del ADR
+     033 D3: viewBox propio, sin roles centinela, fill="currentColor")
+     e ilustraciones/ (prefijo il-, DV.2d/ADR 033 D3: viewBox propio
+     120x120, color solo por rol: currentColor o var(--fk-*), nunca
+     un valor absoluto). identidad/ sigue siendo "futuro" (README
+     seccion 2) y todavia no se conecta al sprite.
   2. Excluye los archivos con data-placeholder="true" (recurso aun sin
      disenar): el fallback de iniciales los cubre mientras tanto.
   3. Convierte los colores centinela de Illustrator a los 3 roles finales
@@ -128,9 +130,11 @@ def prefijo_de(ruta_relativa: Path):
         return 'b-'
     if partes[0] == 'decoracion':
         return 'd-'
+    if partes[0] == 'ilustraciones':
+        return 'il-'
     if partes[0] == 'iconos' and len(partes) >= 2 and partes[1] in CARPETAS_ICONOS:
         return CARPETAS_ICONOS[partes[1]]
-    return None  # identidad/, ilustraciones/: fuera del alcance del sync
+    return None  # identidad/: fuera del alcance del sync
 
 
 def es_plantilla(contenido: str) -> bool:
@@ -342,10 +346,11 @@ def validar_y_convertir(id_symbol: str, contenido: str, advertencias: list) -> t
     atributos = dict(RE_ATTR.findall(attrs_raiz))
 
     es_decor = id_symbol.startswith('d-')
+    es_ilustracion = id_symbol.startswith('il-')
     viewbox = atributos.get('viewBox')
     if not viewbox:
         raise ErrorRecurso(f'{id_symbol}: viewBox debe estar declarado')
-    if not es_decor and viewbox != '0 0 24 24':
+    if not (es_decor or es_ilustracion) and viewbox != '0 0 24 24':
         raise ErrorRecurso(f'{id_symbol}: viewBox debe ser "0 0 24 24"')
     prohibidos = ATRIBUTOS_PROHIBIDOS_RAIZ & atributos.keys()
     if prohibidos:
@@ -387,6 +392,21 @@ def validar_y_convertir(id_symbol: str, contenido: str, advertencias: list) -> t
             raise ErrorRecurso(
                 f'{id_symbol}: color(es) propio(s) en el archivo ({", ".join(sorted(colores))}); '
                 f'las formas decorativas son fill="currentColor", el color lo pone el dominio via CSS'
+            )
+    elif es_ilustracion:
+        # Ilustracion spot (ADR 033 D3, DV.2d): retirucula 120, color solo por
+        # rol para sobrevivir a ambos temas. A diferencia de decoracion/, una
+        # ilustracion puede tener mas de un rol de color (varios --fk-*), no
+        # solo currentColor, porque compone varias formas con jerarquia propia.
+        for valor in re.findall(r'fill="([^"]*)"', cuerpo):
+            v = valor.strip().lower()
+            if v in ('none', 'currentcolor'):
+                continue
+            if re.match(r'^var\(--fk-[\w-]+(?:,\s*[^)]*)?\)$', valor.strip(), re.IGNORECASE):
+                continue
+            raise ErrorRecurso(
+                f'{id_symbol}: fill="{valor}" no es un rol valido; usar currentColor '
+                f'o var(--fk-*) (nunca un color absoluto, README seccion 2.2)'
             )
     else:
         cuerpo = _convertir_centinela(id_symbol, cuerpo, es_logo)

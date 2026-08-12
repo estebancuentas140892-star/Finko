@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-11. Última tarea cerrada: ANL.3, cada bloque de Análisis declara su propio alcance (Análisis).
+> Revisado: 2026-08-12. Última tarea cerrada: DV.2d, infraestructura de ilustraciones (Transversal, ADR 033 D3).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -25,6 +25,9 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**DV.2d (infraestructura) - riel técnico de ilustraciones (Transversal), 2026-08-12**
+`scripts/sync-sprite.py` extendido a `assets/svg/ilustraciones/` (prefijo `il-`, viewBox 120x120, color solo por rol: `currentColor` o `var(--fk-*)`). 2 plantillas draft (`metas.svg`, `deudas.svg`, `data-placeholder="true"`), mismo patrón de DV.2b: el sync las excluye del sprite hasta que Esteban las sobrescriba en Illustrator. Sin cambios de consumidor (`emptyArt()` sigue igual); sigue abierta P4 del ADR 033 (lote completo de superficies).
+
 **ANL.3 - cada bloque de Análisis declara su propio alcance (Análisis), 2026-08-11**
 Triaje de la ficha 16 del handoff de Claude Design. El chip de mes del header (`#analisis-chip-mes`) anclaba visualmente los 5 bloques del panel a un mes, pero solo "Por categoría" lo mide: se movió al rótulo del grupo "A dónde va tu dinero"; patrimonio agrega "hoy" a su hint. `calcularActivos()` expone `prestamosSinCuenta` (nuevo `calcularPrestamosSinCuenta()` en `personales/logic.js`) para avisar cuando hay préstamos sin cuenta vinculada que no suman al activo. El link de deudas sin saldo pasa de "Compromisos" a "Deudas". Commit `3ca44ed`.
 
@@ -36,9 +39,6 @@ Cierra CAT.3 completa (4 rebanadas). `renderFormGastoFijo()` ofrece las personal
 
 **DOC.1 - reorganización documental, fases 4 y 5 (Mantenimiento), 2026-08-11**
 Fase 4: los 10 movimientos de `MIGRACION.md` completos (incluido `settings.local.json` 12.2: Esteban decide borrar `git rm *`/`git branch *`, mantener el resto). Fase 5: cero enlaces `.md` rotos, cero guiones largos, sellos `Revisado:` en 37 docs que no lo tenían, techos corregidos (`BUGS.md` 9 KB, `DESIGN_SYSTEM.md` 70 KB), `README.md` adelgazado a 4 KB, `contexto/README.md` con los 11 principios, arranque medido en 29,5 KB (~7.400 tokens, 89% de reducción). `MIGRACION.md` borrado. Riesgo abierto: `CHANGELOG.md` del mes ya supera su fusible de 60 KB a 11 días de cerrar agosto.
-
-**GAS.2b - segunda línea del toast con la consecuencia del gasto (Gastos), 2026-08-10**
-`consecuenciaDeGasto()` (`gastos/logic.js`, pura) decide la segunda línea con prioridad fija: límite excedido, límite en alerta, saldo restante de la cuenta, o nada. [ADR 060](DECISIONS/060-lectura-cross-domain-de-solo-lectura.md) formaliza cómo `gastos/index.js` lee `calcularProgreso()` de `presupuesto/logic.js` sin violar ADN 10 (el `logic.js` puro se comparte, no el `index.js`). Resuelve los 4 casos que la ficha 22 no cubría: repartido, consumo con tarjeta, edición, ojo de privacidad. De paso, BUG-027 (ADR 059 inexistente).
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 

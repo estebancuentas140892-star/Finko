@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(diseno): DV.2d, infraestructura de ilustraciones · 2026-08-12
+
+Adelanta **DV.2d** (D3 del ADR 033) en lo único que no depende de la decisión de diseño de Esteban: el riel técnico. Ficha: [`contexto/sistema-visual.md`](contexto/sistema-visual.md).
+
+- `scripts/sync-sprite.py` extendido a `assets/svg/ilustraciones/` (prefijo `il-`, viewBox 120x120 propio, color solo por rol: `currentColor` o `var(--fk-*)`, nunca un valor absoluto).
+- 2 plantillas draft (`metas.svg`, `deudas.svg`) con `data-placeholder="true"`, mismo patrón de DV.2b: el sync las excluye del sprite hasta que Esteban las sobrescriba en Illustrator (ADR 026).
+- Sin cambios de consumidor: `emptyArt()` sigue igual. Sigue abierta P4 (lote completo de superficies) y el reemplazo real de las plantillas.
+- Tests: sin nuevos (infra de build, no lógica de dominio); 3856/3856 verdes, cero guión largo.
+
 ### feat(analisis): ANL.3, cada bloque declara su propio alcance · 2026-08-11
 
 Cierra **ANL.3**, triaje de la ficha 16 del handoff de Claude Design. Ficha: [`contexto/analisis.md`](contexto/analisis.md). Commit `3ca44ed`.

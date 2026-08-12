@@ -48,7 +48,7 @@ assets/svg/
 │   ├── movilidad/         → uber, rappi
 │   └── educacion/         → duolingo, platzi
 ├── decoracion/            → formas orgánicas de fondo (DV.2b, ADR 033 D3)
-├── ilustraciones/         → ilustraciones spot y pictogramas (futuro)
+├── ilustraciones/         → ilustraciones spot y pictogramas (DV.2d, ADR 033 D3)
 └── identidad/             → marca propia de Finko: logo, wordmark (futuro)
 ```
 
@@ -60,6 +60,7 @@ assets/svg/
 | `iconos/categorias` | `c-` | `mercado.svg` → `c-mercado` | CSS (teja de dominio, `tejaCategoria`) |
 | `logos/**` (cualquier subcarpeta) | `b-` | `bancos/nequi.svg` → `b-nequi` | Catálogo (`color` + `texto` de `MARCAS` / `BANCOS_CO`) |
 | `decoracion/` | `d-` | `blob.svg` → `d-blob` | CSS (`.decor`, `currentColor` hereda `--fk-section-color` del hero anfitrión) |
+| `ilustraciones/` | `il-` | `metas.svg` → `il-metas` | CSS (`currentColor` o `var(--fk-*)` por rol, nunca color absoluto) |
 
 Las subcarpetas de `logos/` son solo organización humana: mover un logo de
 `streaming/` a `tecnologia/` **no cambia su id**. En cambio, mover un archivo entre
@@ -74,13 +75,15 @@ Carpeta para el isotipo, el logotipo (wordmark) y sus variantes. Se llama `ident
 
 Cuando se diseñe el isotipo definitivo, entra aquí primero (fuente vectorial) y de aquí se derivan favicon e íconos PWA. Nomenclatura sugerida: `isotipo.svg`, `wordmark.svg`, `isotipo-monocromo.svg`.
 
-### 2.2 `ilustraciones/` (ilustraciones spot y pictogramas, reservada)
+### 2.2 `ilustraciones/` (ilustraciones spot y pictogramas, DV.2d)
 
-Carpeta para ilustraciones spot y pictogramas (onboarding, momentos de celebración, educación financiera). Ver también [ADR 033](../../docs/DECISIONS/033-direccion-visual-premium.md) D3.
+Carpeta para ilustraciones spot y pictogramas (onboarding, momentos de celebración, educación financiera). Definida en el [ADR 033](../../docs/DECISIONS/033-direccion-visual-premium.md) D3, integrada al sync en DV.2d.
 
-**Estado actual:** vacía a propósito. Los empty states de hoy son una composición generada en JS (`emptyArt()` en `modules/infra/icons.js`) que orbita alrededor de los iconos de sección, y no requieren archivos.
-
-Reglas cuando lleguen las primeras piezas: mismo lenguaje visual del sistema (redondez, trazo cálido, chispa) aplicado a escala mayor; retícula recomendada 120×120 (la de `emptyArt`), `viewBox` propio documentado en este README al definirse; colores solo por rol (`currentColor`, variables `--fk-*`, nunca absolutos, para sobrevivir a ambos temas); mismo flujo de nomenclatura y revisión que el resto de la biblioteca (secciones 3 y 9).
+- **`viewBox="0 0 120 120"` propio** (retícula de `emptyArt()`), no forzado a 24×24; el sync lo preserva tal cual, igual que `decoracion/`.
+- **Color solo por rol:** `fill="currentColor"` o `fill="var(--fk-*)"`, nunca un valor absoluto. A diferencia de `decoracion/`, una ilustración puede combinar más de un rol de color (varias `--fk-*`) porque compone formas con jerarquía propia, no una sola mancha de fondo.
+- **Primitivas y prohibiciones idénticas a `iconos/`**: `path`/`circle`/`rect`/`line`, cero `<image>`, cero `transform`/`class`/`style`.
+- **Catálogo inicial (2 piezas, borrador de Claude que Esteban sobrescribe en Illustrator, mismo principio "la biblioteca nace poblada" del ADR 026):** `metas.svg` y `deudas.svg`, ambas con `data-placeholder="true"` (el sync las excluye del sprite hasta que se reemplacen; el empty state sigue usando `emptyArt()` mientras tanto). Lote completo y superficies restantes: P4 del ADR 033, pendiente de decisión.
+- **Uso:** al reemplazar un placeholder por la pieza final, conecta el consumidor en `modules/infra/icons.js` (`emptyArt()`) para que la vista de dominio use el `<symbol>` `il-*` en vez de la composición geométrica generada.
 
 ### 2.3 `decoracion/` (formas orgánicas de fondo, DV.2b)
 

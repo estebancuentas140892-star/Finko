@@ -41,15 +41,15 @@
 - Modelo     : Alta capacidad - Alto (si se hace)
 - Decision 2026-08-05: no se hace. PERF.7 (la alternativa recomendada) ya cerro con ganancia medida e incondicional. Lo que queda de PERF.6 es beneficio situacional y bajo (paneles de Inicio, 2-3 repintados en una accion multi-seccion) contra riesgo real: cambiar el pipeline de render de sincrono a microtask. No hay disparador nuevo que lo justifique. Se reabre solo si aparece evidencia de costo real medido (nuevo escenario de harness, disciplina ADR 030).
 
-> **Iniciativa Dirección Visual premium** ([ADR 033](../DECISIONS/033-direccion-visual-premium.md)). DV.2a/b/c cerradas. Solo **P4** (lote inicial de ilustraciones) sigue abierta, se decide al iniciar DV.2d.
+> **Iniciativa Dirección Visual premium** ([ADR 033](../DECISIONS/033-direccion-visual-premium.md)). DV.2a/b/c cerradas. DV.2d: infraestructura lista (2026-08-12), falta P4 (lote completo) y el arte final.
 
 #### DV.2d - Ilustraciones como clase nueva de asset (D3 del ADR 033)
 - Prioridad  : media
 - Área       : design
-- Estado     : **bloqueada.** Es la única rebanada que sigue esperando: **P4 del ADR 033 sin resolver** (lote inicial de ilustraciones; se decide al iniciarla) y **cola de diseño de Esteban** (los drafts de Claude entran como plantillas que él sobrescribe, principio ADR 026)
-- Objetivo   : carpeta `assets/svg/ilustraciones/` (prefijo `il-*`) + spec (retícula 120, trazo del lenguaje v2 escalado, paleta limitada a tokens, ambos temas) + extensión del sync; los empty states del lote P4 (recomendado: las 6 superficies más visitadas) reemplazan el arte geométrico de `emptyArt()`. Presupuesto de sprite ≤ ~25 KB fuente por lote; Lighthouse 100 como gate.
+- Estado     : **infraestructura lista, 2026-08-12.** `scripts/sync-sprite.py` extendido a `assets/svg/ilustraciones/` (prefijo `il-`, viewBox 120x120, color solo por rol) y 2 plantillas draft (`metas.svg`, `deudas.svg`, `data-placeholder="true"`, mismo principio ADR 026 de DV.2b). Falta: **P4 del ADR 033 sin resolver** (lote completo, hoy solo 2 de las ~6 superficies recomendadas tienen plantilla) y **cola de diseño de Esteban** (reemplazar los drafts en Illustrator antes de conectar `emptyArt()`)
+- Objetivo   : spec ya integrada en `assets/svg/README.md` 2.2; falta decidir el lote completo de superficies, dibujar el arte final y conectar el consumidor en `modules/infra/icons.js` (`emptyArt()`). Presupuesto de sprite ≤ ~25 KB fuente por lote; Lighthouse 100 como gate.
 - Secciones  : Transversal (sprite, `infra/icons.js` `emptyArt()`, empty states de las vistas del lote)
-- Depende de : DV.2b (pipeline de decoración ya extendido); diseños o drafts aprobados
+- Depende de : DV.2b (pipeline de decoración ya extendido, cerrada); diseños o drafts aprobados para el lote completo
 - Modelo     : Equilibrado - Alto (spec + integración; el diseño es de Esteban)
 
 #### IV.4 - Iconografía dirigida post-color
