@@ -1,6 +1,6 @@
 # Tablero - Configuración
 
-> Revisado: 2026-08-11.
+> Revisado: 2026-08-12.
 
 > Satélite de [`BOARD.md`](../BOARD.md) (dominio `config`). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
 
@@ -46,14 +46,27 @@
 - Depende de : el ADR 043 resuelto. Ese ADR trae, si avanza, sus propios avisos: activar el disparador D4 del [ADR 030](../DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) y avisar a la iniciativa LEG antes de que redacte
 - Modelo     : ver el ADR 043 antes de iniciar cualquier cosa
 
-#### CFG.5 - Seguridad de acceso a la app (PIN, patrón, biometría) + re-autenticación en acciones críticas
+> **Iniciativa CFG.5** ("Seguridad de acceso"). Alcance, framing honesto y alternativas rechazadas (cifrado real, patrón, biometría, contraseña de cuenta): **[ADR 063](../DECISIONS/063-candado-de-acceso-local.md)**, su dueño. CFG.5a (candado con PIN local) cerró el 2026-08-12. Quedan las dos de abajo.
+
+#### CFG.5b - Re-autenticación con PIN en acciones críticas
 - Prioridad  : sin definir
-- Estado     : pendiente de análisis (no iniciar)
-- Objetivo   : agregar un método de bloqueo elegible por el usuario (PIN numérico, patrón, contraseña, huella o reconocimiento facial si el dispositivo lo permite) para proteger la información financiera si el dispositivo se pierde o lo roban. **Ampliado por el 6.º lote (2026-07-08, brief General punto 3):** las **acciones críticas exigen re-autenticación** aunque la app ya esté desbloqueada: restablecer la aplicación (hoy solo pide un `confirmar()` de texto), eliminar toda la información, exportar datos sensibles y, si CFG.4 se aprueba, cerrar cuenta / cambiar contraseña. La parte "usuario y contraseña" del brief pertenece a CFG.4 (no hay cuenta que autenticar sin esa decisión); un PIN/patrón local NO la necesita y puede implementarse antes.
-- Secciones  : Configuración (Ajustes), transversal (el guard de re-autenticación envuelve acciones de varios lugares)
-- Archivos   : sin explorar; biometría real depende de WebAuthn/Credential Management API (soporte y UX varían por navegador/SO); un PIN/patrón simple se puede resolver 100% client side sin APIs nuevas
-- Depende de : nada para PIN/patrón local + re-auth de acciones críticas; la credencial de cuenta depende de CFG.4. Viabilidad de biometría en PWA hay que verificarla antes de prometerla en el diseño.
-- Modelo     : Alta capacidad - Alto (decisión de qué mecanismos son viables en PWA vs. cuáles prometer a futuro; UX de bloqueo con riesgo de dejar al usuario fuera de sus propios datos si algo falla)
+- Área       : code
+- Estado     : pendiente. Habilitada por CFG.5a: `verificarPin()` y el freno ya existen (`modules/dominio/config/bloqueo.js`).
+- Objetivo   : las acciones que no se pueden deshacer exigen el PIN aunque la app ya esté abierta: restablecer la app, borrar toda la información y exportar el respaldo completo (hoy solo piden `confirmar()`). Con candado apagado no piden nada: el guard no puede convertirse en un muro para quien nunca activó el candado.
+- Secciones  : Configuración (Ajustes), transversal (el guard envuelve acciones de varios lugares)
+- Archivos   : `modules/ui/bloqueo-acceso.js` (diálogo en promesa, mismo contrato que `confirmar()` de `modules/ui/confirm.js`), `modules/dominio/config/index.js` (`_resetearApp`, `_exportarDatos`, `_importarDatos`)
+- Depende de : CFG.5a (cerrada). Si CFG.4 avanza, suma cerrar cuenta / cambiar contraseña.
+- Modelo     : Equilibrado - Alto (patrón ya fijado por el ADR 063; el trabajo es el guard y su cobertura)
+
+#### CFG.5c - Biometría en PWA: verificar antes de prometer
+- Prioridad  : sin definir
+- Área       : code
+- Estado     : pendiente. **Spike, no implementación:** el ADR 063 rechazó prometerla sin evidencia en el dispositivo real de Esteban (mismo criterio del ADR 030).
+- Objetivo   : responder si huella o rostro pueden desbloquear Finko sin servidor. WebAuthn no entrega una credencial comparable contra un hash local sin un verificador, y el soporte de `navigator.credentials` varía por navegador y por sistema operativo. Salida esperada: un ADR que decida implementarla o descartarla por escrito, no una pantalla nueva.
+- Secciones  : Configuración (Ajustes)
+- Archivos   : sin explorar (depende del resultado del spike)
+- Depende de : CFG.5a (cerrada) + prueba en el dispositivo real, no en el emulador
+- Modelo     : Alta capacidad - Alto (viabilidad de plataforma con restricciones no triviales; la conclusión importa más que el código)
 
 #### CFG.6 - Revisión general de la sección Ajustes
 - Prioridad  : sin definir
@@ -62,5 +75,5 @@
 - Objetivo   : el usuario pidió revisar si faltan configuraciones que deberían vivir en Ajustes, con el objetivo de que la sección se convierta en el centro de configuración de Finko (seguridad, personalización, notificaciones, respaldo y cualquier otra opción relevante), con interfaz clara y organizada. **Ampliado por triaje del 4.º lote (2026-07-08, brief de Ajustes punto 2):** rediseño visual de la sección con tarjetas de tamaño uniforme, Bento Grid donde aporte, bloques compactos y alineados, sin botones que ocupen todo el ancho en desktop (hoy: "Instalar aplicación", "Recordatorios"); misma sensación de orden que el resto de la app (coordina con IV.2). **7.º lote:** el layout debe reservar el bloque del **Centro Legal** (iniciativa LEG, Transversal).
 - Secciones  : Configuración (Ajustes)
 - Archivos   : `modules/dominio/config/view.js`, `styles/components/config.css`
-- Depende de : CFG.1 a CFG.5 (esta es la pasada de auditoría/orden final, tiene sentido hacerla después o junto con las demás, no antes)
+- Depende de : CFG.2a/CFG.2c, CFG.3 y CFG.4 (esta es la pasada de auditoría/orden final, tiene sentido hacerla después o junto con las demás, no antes). El frente de seguridad ya dejó su bloque en el layout con CFG.5a.
 - Modelo     : Equilibrado - Alto (auditoría de una sección existente con criterio de UX, sin lógica financiera nueva)
