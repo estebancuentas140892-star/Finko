@@ -1,6 +1,6 @@
 # Ficha de contexto: Mis cuentas
 
-> Revisado: 2026-08-11.
+> Revisado: 2026-08-12.
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -8,7 +8,7 @@
 
 ## Cuentas (dominio `tesoreria`, subsistema cuentas)
 
-- **Objetivo**          : registro de las cuentas del usuario (banco, billetera digital, efectivo, otro) con saldo, cuota de manejo opcional (genera un Compromiso fijo mensual vinculado), GMF (4x1000) opcional, datos de transferencia opcionales para consulta rápida (MC.14) y, desde MC.17b, transferencias reales entre cuentas propias (desde MC.17c, con rastro visible en el ledger de Movimientos). Es la fuente de verdad del saldo total mostrado en Inicio.
+- **Objetivo**          : registro de las cuentas del usuario (banco, billetera digital, efectivo, otro) con saldo, cuota de manejo opcional (genera un Compromiso fijo mensual vinculado), GMF (4x1000) opcional, datos de transferencia opcionales para consulta rápida (MC.14) y, desde MC.17b, transferencias reales entre cuentas propias (con rastro en el ledger de Movimientos y deshacer, MC.17c/f). Es la fuente de verdad del saldo total mostrado en Inicio.
 - **Estado actual**     : estable. Rediseño visual completo ([ADR 035](../DECISIONS/035-mis-cuentas-v2.md), MC.18a a MC.18e cerradas) y las tres iniciativas de la sección cerradas: **MC.18** (visual), **MC.17** (transferencias, bloque propio abajo) y **MC.13** (distribución, bloque propio abajo). Cada hito tiene su línea fechada en "Cambios realizados", con el detalle en el CHANGELOG: no se repite acá. Lo único que no cabe en una línea porque es un contrato: **MC.16c** (2026-07-30, ADR 051 D6), el bloque de tarjetas de crédito es **solo lectura y queda fuera del total de dinero disponible**; `tarjetasCredito()` duplica el filtro de `gastos/logic.js` sin importar el dominio (ADN 10), cupo/usado/disponible reusan la anatomía de `.cuenta-card`, y el enlace "Ver en Deudas" apunta a `#compromisos`.
 - **Verificado contra** : MC.13e-2g (f755c40, 2026-08-05); el subsistema de cuentas, contra MC.16c (1e0e143, 2026-07-30).
 
@@ -103,11 +103,12 @@ Además: rediseño visual ADR 035 completo. Ver "Transferencias" y "Distribució
 - **Forward-compat MC.16 (confirmado por el ADR 051, aceptado el 2026-07-27)**: "pagar la tarjeta" es un abono a deuda, NO una transferencia, y **una tarjeta nunca será una `Cuenta`**, así que no puede ser endpoint de una transferencia ni por accidente. El aviso se cumplió: MC.17 no necesita cambios por MC.16.
 - **Rebanadas**: MC.17a (schema + lógica pura + apply, solo-unit) → MC.17b (form + acción, patrón 0/1/2/varias) → MC.17c (ledger neutro) → MC.17d (GMF) → MC.17e (teja en Registrar). Las 5 cerradas el 2026-07-12. Detalle en `docs/BOARD.md`.
 
-**Cambios pendientes**: **MC.17f** (deshacer o editar una transferencia): hoy no se puede revertir ni editar, y un error de cuenta o monto descuadra dos saldos a la vez sin salida dentro de la app. Diseño recomendado: "deshacer" que aplica el movimiento inverso y deja rastro (coherente con el ledger), no borrado silencioso; decidir si además se permite editar o solo deshacer + recrear. `calcularTransferencia()` ya es apply atómico puro, la reversa es su espejo. Ojo: revertir debe devolver también el `costoGMF` cobrado, o el patrimonio queda mal por el gravamen. Coordina con MOV.1 (si el ledger gana acciones por fila, la reversa podría vivir ahí sin UI propia acá). Detalle en `docs/BOARD.md`.
+**MC.17f - Deshacer una transferencia (cerrada 2026-08-12)**: `_eliminarTransferencia()` (`acciones/transferencias.js`) revierte los deltas exactos de `calcularTransferencia()` (`monto + costoGMF` al origen, `-monto` al destino) y borra el registro. **Decisión: deshacer = eliminar + revertir, sin editar y sin fila de reversa propia**, mismo mecanismo que `eliminar-gasto`/`eliminar-ingreso-puntual`. Se descarta la idea original de esta ficha (fila de reversa nueva): ningún dominio de la app la usa hoy, y sumarla solo acá es vocabulario nuevo sin resolver algo que la convención existente no cubra (CLAUDE.md sección 2). El `costoGMF` se devuelve completo porque deshacer corrige un error de captura, no repite un retiro real. Sin editar: dos saldos con GMF de por medio es más complejo que EDIT.1 (un solo saldo); deshacer + recrear alcanza. Si una cuenta ya se eliminó, revierte solo la que existe y borra igual. Cierra MOV.1: `transferencia` entra a `_ACCIONES_POR_TIPO` con `eliminar: 'eliminar-transferencia'`, sin UI propia acá.
 
 **Cambios realizados**:
 
-- 2026-07-12 (MC.17e, cierra la iniciativa MC.17): teja "Transferir" en la hoja Registrar, visible solo con 2+ cuentas activas; reutiliza la accion ya registrada por MC.17b.
+- 2026-08-12 (MC.17f): deshacer transferencia desde el ledger (eliminar + revertir saldos y GMF).
+- 2026-07-12 (MC.17e, cierra MC.17): teja "Transferir" en Registrar, visible solo con 2+ cuentas; reutiliza la accion de MC.17b.
 - 2026-07-12 (MC.17d): GMF del retiro como campo opcional `costoGMF` de la Transferencia (no un Gasto), checkbox marcado por defecto y salvaguarda dura `origenSujetoAGMF`.
 - 2026-07-12 (MC.17c): la transferencia entra al ledger de Movimientos como fila unica de direccion neutra; simbolo `i-transferencia` nuevo en el sprite.
 - 2026-07-12 (MC.17b): boton, modal y accion con el patron 0/1/2/varias; `renderSelectorCuenta()` gana el parametro opcional `name`.
