@@ -4470,6 +4470,70 @@ describe('acciones de transferencias: GMF del retiro (MC.17d)', () => {
   });
 });
 
+describe('acciones de transferencias: deshacer (MC.17f)', () => {
+  const botonEliminar = (id) => {
+    document.body.insertAdjacentHTML('beforeend',
+      `<button data-action="eliminar-transferencia" data-id="${id}"></button>`);
+    return document.querySelector(`[data-action="eliminar-transferencia"][data-id="${id}"]`);
+  };
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div class="app-shell"></div>';
+    S.cuentas = [
+      cuentaBase({ id: 'c1', nombre: 'Nequi', saldo: 400_000 }),
+      cuentaBase({ id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', saldo: 700_200 }),
+    ];
+    S.transferencias = [];
+    initAccionesTransferencias();
+  });
+
+  it('confirmar: devuelve el monto al origen, lo descuenta del destino y borra el registro', async () => {
+    S.transferencias = [{ id: 't1', cuentaOrigenId: 'c2', cuentaDestinoId: 'c1', monto: 100_000, fecha: '2026-08-01', fechaCreacion: 'x' }];
+
+    dispatch(botonEliminar('t1'), new Event('click'));
+    document.querySelector('[data-role="confirmar"]')?.click();
+    await new Promise(r => setTimeout(r, 0));
+
+    expect(S.cuentas.find(c => c.id === 'c2').saldo).toBe(800_200); // 700.200 + 100.000
+    expect(S.cuentas.find(c => c.id === 'c1').saldo).toBe(300_000); // 400.000 - 100.000
+    expect(S.transferencias).toHaveLength(0);
+  });
+
+  it('confirmar con GMF: el origen recupera también el costoGMF cobrado', async () => {
+    S.transferencias = [{ id: 't1', cuentaOrigenId: 'c2', cuentaDestinoId: 'c1', monto: 100_000, costoGMF: 400, fecha: '2026-08-01', fechaCreacion: 'x' }];
+
+    dispatch(botonEliminar('t1'), new Event('click'));
+    document.querySelector('[data-role="confirmar"]')?.click();
+    await new Promise(r => setTimeout(r, 0));
+
+    expect(S.cuentas.find(c => c.id === 'c2').saldo).toBe(800_600); // 700.200 + 100.000 + 400
+    expect(S.cuentas.find(c => c.id === 'c1').saldo).toBe(300_000);
+  });
+
+  it('cancelar: no toca saldos ni borra el registro', async () => {
+    S.transferencias = [{ id: 't1', cuentaOrigenId: 'c2', cuentaDestinoId: 'c1', monto: 100_000, fecha: '2026-08-01', fechaCreacion: 'x' }];
+
+    dispatch(botonEliminar('t1'), new Event('click'));
+    document.querySelector('[data-role="cancelar"]')?.click();
+    await new Promise(r => setTimeout(r, 0));
+
+    expect(S.cuentas.find(c => c.id === 'c2').saldo).toBe(700_200);
+    expect(S.cuentas.find(c => c.id === 'c1').saldo).toBe(400_000);
+    expect(S.transferencias).toHaveLength(1);
+  });
+
+  it('cuenta destino ya eliminada: revierte solo lo que existe y borra el registro igual', async () => {
+    S.transferencias = [{ id: 't1', cuentaOrigenId: 'c2', cuentaDestinoId: 'ya-no-existe', monto: 100_000, fecha: '2026-08-01', fechaCreacion: 'x' }];
+
+    dispatch(botonEliminar('t1'), new Event('click'));
+    document.querySelector('[data-role="confirmar"]')?.click();
+    await new Promise(r => setTimeout(r, 0));
+
+    expect(S.cuentas.find(c => c.id === 'c2').saldo).toBe(800_200); // 700.200 + 100.000
+    expect(S.transferencias).toHaveLength(0);
+  });
+});
+
 // ── cuentaId del ingreso fijo (MC.13d) ────────────────────────────
 
 describe('normalizarIngreso() - cuentaId (MC.13d)', () => {

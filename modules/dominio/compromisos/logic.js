@@ -64,6 +64,7 @@ export {
   aplicarAbonoASaldo,
   revertirAbonoDeSaldo,
   ajustarMontoAbono,
+  consecuenciaDeAbono,
   validarAbono,
   calcularAbonosDelMes,
   fechaUltimoAbono,

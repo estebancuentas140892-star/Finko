@@ -16,10 +16,11 @@ import { renderSmart, updSaldo } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { confirmar } from '../../ui/confirm.js';
+import { mostrarToast } from '../../ui/toast.js';
 import { f } from '../../infra/utils.js';
 import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
 import { wireIconoPicker, resetIconoPicker } from '../../infra/icon-picker.js';
-import { validarMeta, normalizarMeta, validarAbono, calcularProgreso } from './logic.js';
+import { validarMeta, normalizarMeta, validarAbono, calcularProgreso, consecuenciaDeAporte } from './logic.js';
 import { renderListaMetas, renderFormMeta, renderFormAbonoMeta } from './view.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 
@@ -212,7 +213,7 @@ async function _guardarAbonoMeta() {
   }
 
   const nuevoMonto = (meta.montoActual ?? 0) + abono;
-  const { completada } = calcularProgreso({ ...meta, montoActual: nuevoMonto });
+  const { completada, faltante } = calcularProgreso({ ...meta, montoActual: nuevoMonto });
 
   editar('metas', datos.metaId, { montoActual: nuevoMonto, completada });
 
@@ -225,10 +226,19 @@ async function _guardarAbonoMeta() {
 
   renderListaMetas();
   updSaldo();
-  announce(completada
-    ? `¡Meta "${meta.nombre}" completada! 🎉`
-    : `Aporte de ${f(abono)} registrado.`
-  );
+
+  // ADR 062: mismo patron de gastos (GAS.2a/2b), el toast sustituye a announce().
+  const detalle = consecuenciaDeAporte({
+    completada,
+    faltante,
+    ocultarSaldo: !!S.config.ocultarSaldo,
+  });
+
+  mostrarToast({
+    titulo:  `Aporte ${f(abono)} a ${meta.nombre}`,
+    detalle: detalle?.texto,
+    tono:    detalle?.tono ?? 'ok',
+  });
 }
 
 /**

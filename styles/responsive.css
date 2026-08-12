@@ -627,3 +627,15 @@
     gap: var(--fk-space-6);
   }
 }
+
+/* ── CARRIL DEL FONDO (≥ 1680px, INT.1g, ADR 059 D7) ──────────
+   El compromiso del mes vive en dos copias del mismo marcado: la de
+   siempre dentro de `_renderHabitoSection` (sigue siendo la unica visible
+   bajo 1.680px) y la del carril (`#fondo-carril`, layout.css). Desde
+   1.680px la copia inline se apaga para no repetir el mismo dato dos veces
+   en la misma pantalla. */
+@media (min-width: 1680px) {
+  .section--con-carril .ahorro-habito:not(.ahorro-habito--carril) .ahorro-habito__compromiso {
+    display: none;
+  }
+}

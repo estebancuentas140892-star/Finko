@@ -733,6 +733,70 @@ export const CATEGORIAS_META_USUARIO = CATEGORIAS_META.filter(
 );
 
 /**
+ * Subcategorías de meta (MT.6a, [ADR 048](../../docs/DECISIONS/048-metas-v2-subcategorias-y-plan-de-aportes.md) D1).
+ *
+ * Segundo nivel de la categoría: "Vehículo" dice de qué habla la meta, "Carro"
+ * dice **qué** es. Ese dato es el que habilita reconocer el tipo de meta, y con
+ * él las automatizaciones y las estadísticas que el ADR persigue.
+ *
+ * La forma es la que fija el [ADR 064](../../docs/DECISIONS/064-estructura-de-dos-niveles.md):
+ * catálogo plano de hijos etiquetados con su padre, no un mapa de padre a lista
+ * de hijos. Es la misma estructura que van a usar categoría a marca (ADR 029) y
+ * entidad a producto (MC.16), y se lee con `hijosDeCategoria`/`hijoPorId` de
+ * `infra/taxonomia.js`.
+ *
+ * El `id` es estable y es lo que se guarda en el registro: no se renombra
+ * nunca. El `nombre` es texto visible y sí puede cambiar. Igual que `MARCAS`,
+ * esto es **solo datos**: agregar una subcategoría es agregar una fila.
+ *
+ * 'Otra' no aparece a propósito: es el cajón de lo que el usuario nombra a mano
+ * (MT.3), así que un segundo nivel predefinido ahí no tendría qué reconocer.
+ */
+export const SUBCATEGORIAS_META = [
+  // Viajes
+  { id: 'viajes-vuelo',          nombre: 'Vuelos o tiquetes',        categorias: ['Viajes'] },
+  { id: 'viajes-hospedaje',      nombre: 'Hospedaje',                categorias: ['Viajes'] },
+  { id: 'viajes-plan',           nombre: 'Plan o paquete completo',  categorias: ['Viajes'] },
+  { id: 'viajes-documentos',     nombre: 'Pasaporte o visa',         categorias: ['Viajes'] },
+  // Boda
+  { id: 'boda-celebracion',      nombre: 'Ceremonia y celebración',  categorias: ['Boda'] },
+  { id: 'boda-anillos',          nombre: 'Anillos',                  categorias: ['Boda'] },
+  { id: 'boda-vestuario',        nombre: 'Vestuario',                categorias: ['Boda'] },
+  { id: 'boda-luna-de-miel',     nombre: 'Luna de miel',             categorias: ['Boda'] },
+  // Vivienda
+  { id: 'vivienda-cuota-inicial', nombre: 'Cuota inicial',           categorias: ['Vivienda'] },
+  { id: 'vivienda-remodelacion',  nombre: 'Remodelación',            categorias: ['Vivienda'] },
+  { id: 'vivienda-muebles',       nombre: 'Muebles y electrodomésticos', categorias: ['Vivienda'] },
+  { id: 'vivienda-mudanza',       nombre: 'Mudanza o arriendo por adelantado', categorias: ['Vivienda'] },
+  // Vehículo
+  { id: 'vehiculo-carro',        nombre: 'Carro',                    categorias: ['Vehículo'] },
+  { id: 'vehiculo-moto',         nombre: 'Moto',                     categorias: ['Vehículo'] },
+  { id: 'vehiculo-bicicleta',    nombre: 'Bicicleta',                categorias: ['Vehículo'] },
+  { id: 'vehiculo-cuota-inicial', nombre: 'Cuota inicial',           categorias: ['Vehículo'] },
+  // Computador
+  { id: 'computador-portatil',   nombre: 'Portátil',                 categorias: ['Computador'] },
+  { id: 'computador-escritorio', nombre: 'De escritorio',            categorias: ['Computador'] },
+  { id: 'computador-tableta',    nombre: 'Tableta',                  categorias: ['Computador'] },
+  // Celular
+  { id: 'celular-nuevo',         nombre: 'Celular nuevo',            categorias: ['Celular'] },
+  { id: 'celular-reposicion',    nombre: 'Reposición o cambio',      categorias: ['Celular'] },
+  { id: 'celular-accesorios',    nombre: 'Accesorios',               categorias: ['Celular'] },
+  // Educación
+  { id: 'educacion-matricula',   nombre: 'Matrícula o semestre',     categorias: ['Educación'] },
+  { id: 'educacion-posgrado',    nombre: 'Posgrado',                 categorias: ['Educación'] },
+  { id: 'educacion-curso',       nombre: 'Curso o diplomado',        categorias: ['Educación'] },
+  { id: 'educacion-idiomas',     nombre: 'Idiomas',                  categorias: ['Educación'] },
+  // Hijo(s)
+  { id: 'hijos-nacimiento',      nombre: 'Nacimiento',               categorias: ['Hijo(s)'] },
+  { id: 'hijos-educacion',       nombre: 'Educación',                categorias: ['Hijo(s)'] },
+  { id: 'hijos-salud',           nombre: 'Salud',                    categorias: ['Hijo(s)'] },
+  // Emprendimiento
+  { id: 'emprendimiento-capital', nombre: 'Capital inicial',         categorias: ['Emprendimiento'] },
+  { id: 'emprendimiento-equipos', nombre: 'Equipos y herramientas',  categorias: ['Emprendimiento'] },
+  { id: 'emprendimiento-local',   nombre: 'Local o puesto',          categorias: ['Emprendimiento'] },
+];
+
+/**
  * Ícono del sprite por categoría de meta. Solo UI; nunca en el valor
  * almacenado (el campo `icono` de la meta guarda únicamente el emoji que el
  * usuario elige a mano con la categoría 'Otra', MT.3/ID.3). Con el paso a

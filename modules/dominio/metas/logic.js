@@ -16,7 +16,7 @@ import {
   frecuenciaPrincipalIngresos,
 } from '../../infra/vencimientos.js';
 import { progresoDeBolsa } from '../../infra/bolsas.js';
-import { hoy } from '../../infra/utils.js';
+import { hoy, f } from '../../infra/utils.js';
 
 // ── RITMO DE AHORRO (MT.4, motor compartido desde MC.13b) ─────────
 
@@ -73,6 +73,21 @@ export function metasCumplidas(metas) {
 export function calcularProgreso(meta) {
   const { porcentaje, faltante, completado } = progresoDeBolsa(meta?.montoObjetivo, meta?.montoActual);
   return { porcentaje, faltante, completada: completado };
+}
+
+/**
+ * Segunda linea del toast de confirmacion (ADR 062, mismo patron que
+ * `consecuenciaDeGasto` de `gastos/logic.js`). Prioridad: meta completada
+ * gana a cuanto falta. Con el ojo de privacidad activo no hay cifra que
+ * mostrar, asi que corta antes de mirar nada mas.
+ *
+ * @param {{ completada: boolean, faltante: number, ocultarSaldo: boolean }} datos
+ * @returns {{ texto: string, tono: 'ok' } | null}
+ */
+export function consecuenciaDeAporte({ completada, faltante, ocultarSaldo }) {
+  if (ocultarSaldo) return null;
+  if (completada) return { texto: 'Meta completada.', tono: 'ok' };
+  return { texto: `Faltan ${f(faltante)} para tu meta.`, tono: 'ok' };
 }
 
 /**

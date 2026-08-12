@@ -3,6 +3,7 @@ import {
   metasActivas,
   metasCumplidas,
   calcularProgreso,
+  consecuenciaDeAporte,
   calcularAhorroPorPeriodo,
   frecuenciaPrincipalIngresos,
   etiquetaPeriodoAhorro,
@@ -141,6 +142,25 @@ describe('calcularProgreso()', () => {
   it('redondea al entero más cercano', () => {
     const meta = metaBase({ montoActual: 1_000_000, montoObjetivo: 3_000_000 });
     expect(calcularProgreso(meta).porcentaje).toBe(33);
+  });
+});
+
+// ── consecuenciaDeAporte() (GAS.2c, ADR 062) ─────────────────────
+
+describe('consecuenciaDeAporte()', () => {
+  it('meta completada: gana a cuanto falta', () => {
+    const r = consecuenciaDeAporte({ completada: true, faltante: 0, ocultarSaldo: false });
+    expect(r).toEqual({ texto: 'Meta completada.', tono: 'ok' });
+  });
+
+  it('meta incompleta: muestra cuanto falta', () => {
+    const r = consecuenciaDeAporte({ completada: false, faltante: 500_000, ocultarSaldo: false });
+    expect(r).toEqual({ texto: 'Faltan $500.000 para tu meta.', tono: 'ok' });
+  });
+
+  it('ojo de privacidad activo: ninguna cifra, ni completada ni cuanto falta', () => {
+    expect(consecuenciaDeAporte({ completada: true, faltante: 0, ocultarSaldo: true })).toBeNull();
+    expect(consecuenciaDeAporte({ completada: false, faltante: 500_000, ocultarSaldo: true })).toBeNull();
   });
 });
 

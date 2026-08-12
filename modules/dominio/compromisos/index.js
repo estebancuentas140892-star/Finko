@@ -18,11 +18,12 @@ import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { f, hoy } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
+import { mostrarToast } from '../../ui/toast.js';
 import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
 import { gastoDePagoCompromiso, bajarSaldoDeuda } from '../../infra/pago-compromiso.js';
 import { wireIconoPicker } from '../../infra/icon-picker.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
-import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, repartirExtraEnCuotas, tasaMensualToEA, tasaMensualDecimal, esDeuda } from './logic.js';
+import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono, consecuenciaDeAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, repartirExtraEnCuotas, tasaMensualToEA, tasaMensualDecimal, esDeuda } from './logic.js';
 import {
   renderHeroCompromisos,
   renderListaCompromisos,
@@ -452,10 +453,18 @@ async function _guardarAbono() {
   _renderTodo();
   updSaldo();
 
-  const msg = saldaDeuda
-    ? `Deuda "${deuda.descripcion}" saldada.`
-    : `Abono de ${f(montoAjustado)} registrado en "${deuda.descripcion}".`;
-  announce(msg);
+  // ADR 062: mismo patron de gastos (GAS.2a/2b), el toast sustituye a announce().
+  const detalle = consecuenciaDeAbono({
+    saldaDeuda,
+    saldoRestante: deuda.saldoTotal,
+    ocultarSaldo:  !!S.config.ocultarSaldo,
+  });
+
+  mostrarToast({
+    titulo:  `Abono ${f(montoAjustado)} a ${deuda.descripcion}`,
+    detalle: detalle?.texto,
+    tono:    detalle?.tono ?? 'ok',
+  });
 }
 
 /** @param {HTMLElement} el */

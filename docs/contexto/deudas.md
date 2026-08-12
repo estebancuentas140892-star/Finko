@@ -1,5 +1,7 @@
 # Ficha de contexto: Deudas
 
+> Revisado: 2026-08-11.
+
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
 ---
@@ -85,6 +87,7 @@ Fuera de esas dos, la iniciativa "Deudas v2: de registro a asesor" (brief 2026-0
 
 **Cambios realizados**:
 
+- 2026-08-11 (GAS.2c): `_guardarAbono()` (`compromisos/index.js`) sustituye su `announce()` final por `mostrarToast()`, con segunda linea via `consecuenciaDeAbono()` nueva en `compromisos/logic/abonos.js` (prioridad deuda saldada > saldo restante). Mismo patron de Gastos (GAS.2a/2b), formalizado en [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md). Detalle completo: `contexto/gastos.md`.
 - 2026-08-02 (**BUG-018**): la fecha por defecto del abono sale de `hoy()` (`infra/utils.js`, getters locales) y no de `toISOString()`. Desde las 7 p.m. hora Colombia el abono quedaba fechado al dia siguiente. Mismo cambio en `views/alertas.js` (umbral de deudas durmiendo). Queda abierto **BUG-025**: `fechaCreacion` arrastra el mismo defecto de huso del lado de la lectura.
 - 2026-07-15 (FORM.1b): form v2 completo (segmented, chips, monto hero, disclosure de tasa, toggle D.14, teja del header) + retiro completo del chooser de dos pasos (JS y CSS muertos). Ver [CHANGELOG](../CHANGELOG.md).
 

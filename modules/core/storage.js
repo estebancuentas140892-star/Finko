@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 35;
+const SCHEMA_VERSION = 36;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -548,6 +548,17 @@ function _migrate(raw) {
     if (!data.config || typeof data.config !== 'object') data.config = {};
     if (!('atajosTeclado' in data.config)) {
       data.config.atajosTeclado = true;
+    }
+  }
+
+  // v35 → v36: candado de acceso local (CFG.5a, ADR 063). Default apagado
+  // (`null`): nadie se encuentra la app cerrada sin haberlo pedido. El campo
+  // guarda solo `{ hash, salt, creado }`, nunca el PIN.
+  // Idempotente: si el campo ya está presente, no se sobreescribe.
+  if ((typeof data._version === 'number' ? data._version : 1) < 36) {
+    if (!data.config || typeof data.config !== 'object') data.config = {};
+    if (!('bloqueo' in data.config)) {
+      data.config.bloqueo = null;
     }
   }
 

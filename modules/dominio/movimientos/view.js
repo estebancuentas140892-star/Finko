@@ -356,14 +356,19 @@ function _agruparPorMes(movs) {
  * su crédito). Mismo criterio que `_VEHICULO_META` en `ahorro/view.js`.
  *
  * Un tipo sin entrada (o sin una de las dos claves) simplemente no ofrece esa
- * acción: hoy `transferencia` no aparece porque su dominio aún no sabe
- * deshacerla (MC.17f), y `ingreso`/`aporte` no se editan (EDIT.1). Cuando esas
- * tarjetas cierren, basta sumar la entrada acá.
+ * acción: `ingreso`/`aporte` no se editan (EDIT.1). Cuando esas tarjetas
+ * cierren, basta sumar la entrada acá.
+ *
+ * `transferencia` (MC.17f) solo ofrece `eliminar`, no `editar`: deshacer
+ * devuelve el traslado (y el GMF) a ambas cuentas y borra el registro, mismo
+ * mecanismo que `eliminar-gasto`. Editar una transferencia ya aplicada tocaría
+ * dos saldos a la vez con GMF de por medio; se prefiere deshacer + recrear.
  */
 const _ACCIONES_POR_TIPO = {
-  gasto:   { editar: 'editar-gasto', eliminar: 'eliminar-gasto', nombre: 'gasto' },
-  ingreso: { eliminar: 'eliminar-ingreso-puntual',               nombre: 'ingreso' },
-  aporte:  { eliminar: 'ahorro-eliminar-aporte',                 nombre: 'aporte al fondo' },
+  gasto:         { editar: 'editar-gasto', eliminar: 'eliminar-gasto', nombre: 'gasto' },
+  ingreso:       { eliminar: 'eliminar-ingreso-puntual',               nombre: 'ingreso' },
+  aporte:        { eliminar: 'ahorro-eliminar-aporte',                 nombre: 'aporte al fondo' },
+  transferencia: { eliminar: 'eliminar-transferencia',                 nombre: 'transferencia' },
 };
 
 /**

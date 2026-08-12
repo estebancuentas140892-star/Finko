@@ -2,6 +2,8 @@
  * tesoreria/acciones/transferencias.js - handlers de "Transferir dinero"
  * entre cuentas propias (MC.17b): abrir el modal, invertir el par de 2
  * cuentas, validar, confirmar sobregiro y aplicar el traslado atómico.
+ * Tambien deshacer una transferencia ya aplicada (MC.17f), enrutado desde
+ * el ledger de Movimientos.
  *
  * Sub-modulo de tesoreria/index.js. Reglas de la capa:
  * - Handlers de data-action y wiring de formularios del subsistema.
@@ -9,7 +11,7 @@
  */
 
 import { S } from '../../../core/state.js';
-import { guardar, editar } from '../../../infra/crud.js';
+import { guardar, editar, eliminar } from '../../../infra/crud.js';
 import { registrarAccion } from '../../../ui/actions.js';
 import { abrirModal, cerrarModal } from '../../../ui/modales.js';
 import { confirmar } from '../../../ui/confirm.js';
@@ -193,10 +195,71 @@ async function _guardarTransferencia() {
     : `Transferiste ${f(transferencia.monto)}.`);
 }
 
+// ── DESHACER (MC.17f) ─────────────────────────────────────────────
+
+/**
+ * Ajusta el saldo de una cuenta en `delta`. No-op si la cuenta no existe.
+ * Espejo del helper de Gastos e Ingresos puntuales (mismo criterio: el
+ * ledger mueve el saldo, y si la cuenta ya se eliminó, solo se ajusta lo
+ * que sigue existiendo).
+ * @param {string} cuentaId
+ * @param {number} delta
+ */
+function _ajustarSaldoCuenta(cuentaId, delta) {
+  if (!cuentaId || delta === 0) return;
+  const cuenta = _cuenta(cuentaId);
+  if (!cuenta) return;
+  editar('cuentas', cuentaId, { saldo: (cuenta.saldo ?? 0) + delta });
+}
+
+/**
+ * Deshace una transferencia ya aplicada (MC.17f): devuelve `monto + costoGMF`
+ * al origen y descuenta `monto` del destino (espejo exacto de
+ * `calcularTransferencia`, MC.17a), y borra el registro. El GMF se devuelve
+ * completo porque deshacer corrige un error de cuenta o monto, no repite un
+ * retiro real: si no se devolviera, el patrimonio quedaría descuadrado por un
+ * gravamen que nunca debió cobrarse dos veces.
+ *
+ * Enrutado desde el ledger de Movimientos (`eliminar-transferencia` en
+ * `_ACCIONES_POR_TIPO`), mismo mecanismo que `eliminar-gasto` y
+ * `eliminar-ingreso-puntual`: la fila desaparece porque el registro que la
+ * origina se borró, sin UI propia en Mis cuentas.
+ * @param {HTMLElement} el - el botón con data-id.
+ */
+async function _eliminarTransferencia(el) {
+  const id = el.dataset.id;
+  if (!id) return;
+  const transferencia = (S.transferencias ?? []).find(t => t.id === id);
+  if (!transferencia) return;
+
+  const origen  = _cuenta(transferencia.cuentaOrigenId);
+  const destino = _cuenta(transferencia.cuentaDestinoId);
+  const costoGMF = Number(transferencia.costoGMF) || 0;
+  const detalleGMF = costoGMF > 0 ? ` (incluye ${f(costoGMF)} de 4x1000)` : '';
+
+  const ok = await confirmar({
+    titulo:         'Deshacer transferencia',
+    mensaje:        `¿Quieres deshacer esta transferencia de ${f(transferencia.monto)}${detalleGMF}? ` +
+                     `Se devolverá a "${origen?.nombre ?? 'la cuenta de origen'}" y se descontará de ` +
+                     `"${destino?.nombre ?? 'la cuenta de destino'}". Esta acción no se puede deshacer.`,
+    confirmarTexto: 'Deshacer',
+    peligroso:      true,
+  });
+  if (!ok) return;
+
+  _ajustarSaldoCuenta(transferencia.cuentaOrigenId,  +(transferencia.monto + costoGMF));
+  _ajustarSaldoCuenta(transferencia.cuentaDestinoId, -transferencia.monto);
+  eliminar('transferencias', id);
+
+  updSaldo();
+  announce(`Transferencia de ${f(transferencia.monto)} deshecha.`);
+}
+
 // ── REGISTRO ─────────────────────────────────────────────────────
 
 /** Registra los data-action del subsistema de transferencias. */
 export function initAccionesTransferencias() {
   registrarAccion('abrir-transferencia',    _abrirTransferencia);
   registrarAccion('invertir-transferencia', _invertirTransferencia);
+  registrarAccion('eliminar-transferencia', _eliminarTransferencia);
 }

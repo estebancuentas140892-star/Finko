@@ -20,7 +20,7 @@ export function renderImportPicker() {
   return `
     <div class="import-picker">
       <p class="import-intro">
-        Importá tus gastos desde un archivo CSV. Se omiten los duplicados
+        Importa tus gastos desde un archivo CSV. Se omiten los duplicados
         (misma fecha, monto y descripción) automáticamente.
       </p>
 

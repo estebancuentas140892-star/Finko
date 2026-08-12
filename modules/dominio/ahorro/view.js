@@ -56,14 +56,46 @@ export function renderAhorro(gastosFijosMensuales, tasaAhorro = null, sugerencia
   const el = document.getElementById('panel-ahorro');
   if (!el) return;
 
+  const carrilEl = document.getElementById('fondo-carril');
   const fondo = S.ahorro?.fondoEmergencia ?? { activo: false, metaMeses: 3, montoActual: 0 };
 
   if (!fondo.activo) {
     el.innerHTML = _renderEmptyState(gastosFijosMensuales);
+    if (carrilEl) carrilEl.innerHTML = '';
     return;
   }
 
   el.innerHTML = _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia, frecuencia);
+
+  // INT.1g (ADR 059 D7, P1): el compromiso del mes es lo unico de esta
+  // pagina que hoy exige bajar un pliegue para saber si el mes va cumplido.
+  // Desde 1.680px se repite aqui, en el carril siempre visible; debajo de
+  // esa ventana .section__carril queda oculto (responsive.css) y la copia
+  // de _renderHabitoSection sigue siendo la unica visible.
+  if (carrilEl) {
+    const aportes = Array.isArray(S.ahorro?.aportes) ? S.ahorro.aportes : [];
+    const compromisoMensual = Number(S.ahorro?.compromisoMensual) || 0;
+    carrilEl.innerHTML = _renderCompromisoCarril(aportes, compromisoMensual, frecuencia);
+  }
+}
+
+/**
+ * Copia del medidor de compromiso para el carril derecho (INT.1g). Mismo
+ * calculo que `_renderMedidorCompromiso` dentro de `_renderHabitoSection`;
+ * CSS decide cual de las dos copias se ve segun el ancho de ventana, para
+ * no perder la posicion actual en portatiles bajo 1.680px.
+ */
+function _renderCompromisoCarril(aportes, compromisoMensual, frecuencia) {
+  if (compromisoMensual <= 0) return '';
+  const medidor = _renderMedidorCompromiso(compromisoMensual, aportes, frecuencia);
+  if (!medidor) return '';
+  return `
+    <section class="ahorro-habito ahorro-habito--carril" aria-label="Compromiso de este mes">
+      <div class="ahorro-habito__header">
+        <h2 class="ahorro-habito__title">Compromiso del mes</h2>
+      </div>
+      ${medidor}
+    </section>`;
 }
 
 // ── CASA DE AHORRO: LOS CUATRO CARRILES (DIS.19, arquitectura 1c) ─

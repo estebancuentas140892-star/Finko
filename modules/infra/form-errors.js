@@ -46,8 +46,12 @@ function _campoDeError(mensaje) {
  *
  * @param {HTMLFormElement} form      Formulario donde insertar el bloque de errores.
  * @param {string[]}        errores   Array de mensajes de error (de validarX()).
+ * @param {string}          [titulo]  Encabezado del bloque. El default habla de
+ *   campos que faltan, que es el caso de la mayoría de formularios; un
+ *   formulario donde el error no es "falta algo" (ej. un PIN que no coincide,
+ *   CFG.5a) pasa el suyo en vez de heredar una frase que miente.
  */
-export function mostrarErroresForm(form, errores) {
+export function mostrarErroresForm(form, errores, titulo) {
   if (!form || !Array.isArray(errores) || errores.length === 0) return;
 
   // Quitar bloque anterior si existe (re-render).
@@ -58,13 +62,13 @@ export function mostrarErroresForm(form, errores) {
   const box = document.createElement('div');
   box.className = 'form-errors';
   box.setAttribute('role', 'alert');
-  const titulo = errores.length === 1
+  const encabezado = titulo ?? (errores.length === 1
     ? 'Falta información para guardar:'
-    : `Faltan ${errores.length} campos por completar:`;
+    : `Faltan ${errores.length} campos por completar:`);
   box.innerHTML = `
     <span class="form-errors__icon" aria-hidden="true">⚠️</span>
     <div class="form-errors__content">
-      <p class="form-errors__title">${titulo}</p>
+      <p class="form-errors__title">${_esc(encabezado)}</p>
       <ul class="form-errors__list">
         ${errores.map(e => `<li>${_esc(e)}</li>`).join('')}
       </ul>

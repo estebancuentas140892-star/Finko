@@ -1053,12 +1053,10 @@ describe('renderMovimientosCompletos() - acciones por fila (MOV.1)', () => {
     expect(accionesDe('a1')).toEqual(['ahorro-eliminar-aporte']);
   });
 
-  it('una transferencia no ofrece ninguna acción todavía (es MC.17f) y no deja el contenedor vacío', () => {
+  it('una transferencia ofrece solo eliminar (deshacer, MC.17f), sin editar', () => {
     S.transferencias = [transferencia({ id: 't1' })];
     renderMovimientosCompletos();
-    const fila = elLista().querySelector('.list-item[data-id="t1"]');
-    expect(fila.querySelectorAll('[data-action]')).toHaveLength(0);
-    expect(fila.querySelector('.list-item__action')).toBeNull();
+    expect(accionesDe('t1')).toEqual(['eliminar-transferencia']);
   });
 
   it('un gasto de categoría interna se enruta por TIPO, no por su dominio visual', () => {

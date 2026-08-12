@@ -7,6 +7,7 @@
  */
 
 import { esDeuda } from './modelo.js';
+import { f } from '../../../infra/utils.js';
 
 // ── ABONOS A DEUDAS (ADR 002) ────────────────────────────────────
 //
@@ -69,6 +70,21 @@ export function ajustarMontoAbono(monto, saldoActual) {
     return { montoAjustado: s, saldaDeuda: true };
   }
   return { montoAjustado: m, saldaDeuda: false };
+}
+
+/**
+ * Segunda linea del toast de confirmacion (ADR 062, mismo patron que
+ * `consecuenciaDeGasto` de `gastos/logic.js`). Prioridad: deuda saldada gana
+ * a saldo restante. Con el ojo de privacidad activo no hay cifra que
+ * mostrar, asi que corta antes de mirar nada mas.
+ *
+ * @param {{ saldaDeuda: boolean, saldoRestante: number, ocultarSaldo: boolean }} datos
+ * @returns {{ texto: string, tono: 'ok' } | null}
+ */
+export function consecuenciaDeAbono({ saldaDeuda, saldoRestante, ocultarSaldo }) {
+  if (ocultarSaldo) return null;
+  if (saldaDeuda) return { texto: 'Deuda saldada.', tono: 'ok' };
+  return { texto: `Te quedan ${f(saldoRestante)} por pagar.`, tono: 'ok' };
 }
 
 /**

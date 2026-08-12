@@ -1,5 +1,7 @@
 # Ficha de contexto: Gastos
 
+> Revisado: 2026-08-11.
+
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
 ---
@@ -132,8 +134,8 @@
 ## Confirmación tras guardar (GAS.2, triaje del handoff "22 Formulario de Gasto")
 
 - **Objetivo**          : que guardar un gasto deje una prueba visual (no solo accesible) de qué se guardó y, cuando existe, qué consecuencia tuvo (límite tocado, saldo restante). Origen: auditoría de Claude Design de la ficha 22, que asumía un toast visual ya existente en Gastos; no existía (ver hallazgo abajo).
-- **Estado actual**     : **GAS.2a cerrada** (2026-08-10): toast genérico compartido (`ui/toast.js`) + primera línea (nombre del gasto guardado o "Gasto actualizado" en edición). **GAS.2b cerrada** (2026-08-10): segunda línea con la consecuencia, prioridad fija de 3 casos, lectura cross-domain a `presupuesto/logic.js` formalizada por el [ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md). **GAS.2c diferida** (extender a Abono/Aporte), no se activa sin aprobación explícita. Plan completo y verificación del handoff contra el código: [`board/gastos.md`](../board/gastos.md).
-- **Verificado contra** : GAS.2b (2026-08-10).
+- **Estado actual**     : **GAS.2a cerrada** (2026-08-10): toast genérico compartido (`ui/toast.js`) + primera línea (nombre del gasto guardado o "Gasto actualizado" en edición). **GAS.2b cerrada** (2026-08-10): segunda línea con la consecuencia, prioridad fija de 3 casos, lectura cross-domain a `presupuesto/logic.js` formalizada por el [ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md). **GAS.2c cerrada** (2026-08-11): la misma regla se generalizo a Abono (deudas) y Aporte (metas), con [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md). Plan completo y verificación del handoff contra el código: [`board/gastos.md`](../board/gastos.md).
+- **Verificado contra** : GAS.2c (2026-08-11).
 
 **Dónde vive**
 
@@ -161,10 +163,11 @@
 - **ADR 060 formaliza una lectura cross-domain que el código ya hacía en otros 3 sitios** (`presupuesto/logic.js`, `analisis/logic.js`, `analisis/view.js` leyendo de `gastos/logic.js`/`tesoreria/logic.js`), pero solo cubre "un `logic.js` puro importado por otro dominio". Si una tarjeta futura necesita leer de un `view.js` o `index.js` ajeno, ese ADR no lo habilita: es exactamente el acoplamiento que ADN 10 sigue prohibiendo.
 - **De paso, verificando la numeración del ADR**, se encontró que **ADR 059 no existe en el repositorio** pese a estar citado como "aceptado" en 7 documentos (iniciativa INT.1). Registrado como **BUG-027**, ajeno a esta tarjeta.
 
-**Cambios pendientes**: GAS.2c (diferida, Abono/Aporte). Ver `board/gastos.md`.
+**Cambios pendientes**: ninguno. Iniciativa GAS.2 completa.
 
 **Cambios realizados**:
 
+- 2026-08-11 (GAS.2c): la regla de confirmacion se generalizo a Abono (`compromisos/logic/abonos.js`, `consecuenciaDeAbono()`) y Aporte (`metas/logic.js`, `consecuenciaDeAporte()`), [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md). Detalle y verificacion: `contexto/deudas.md` y `contexto/metas.md`.
 - 2026-08-10 (GAS.2b): segunda línea del toast (`consecuenciaDeGasto()`), lectura cross-domain de `calcularProgreso()` desde `gastos/index.js` ([ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md)). 244/244 unit de `gastos.test.js` (7 nuevos), 263/263 E2E, lint verde. Verificado en la app los 4 casos de prioridad con datos reales (excedido, alerta, saldo de cuenta, ojo de privacidad).
 - 2026-08-10 (GAS.2a): toast genérico (`ui/toast.js`) + primera línea en `_guardarGasto()`. 237/237 unit de `gastos.test.js` + 263/263 E2E verdes, lint verde. Verificado en la app: creación muestra "Mercado $30.000", edición muestra "Gasto actualizado", autocierre a los 5s.
 

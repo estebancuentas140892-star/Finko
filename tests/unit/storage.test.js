@@ -1506,3 +1506,35 @@ describe('Migración v31 → v32 (ultimaVersionVista en config, UPD.1)', () => {
     expect(S.config.ultimaVersionVista).toBe(999);
   });
 });
+
+describe('Migración v35 → v36 (candado de acceso en config, CFG.5a)', () => {
+  it('un usuario existente arranca sin candado', () => {
+    const v35 = { ...createInitialState(), _version: 35 };
+    delete v35.config.bloqueo;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v35));
+
+    loadData();
+
+    expect(S.config.bloqueo).toBeNull();
+    expect(S._version).toBe(SCHEMA_VERSION);
+  });
+
+  it('un estado v35 sin config en absoluto no revienta la migración', () => {
+    const v35 = { ...createInitialState(), _version: 35 };
+    delete v35.config;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v35));
+
+    expect(() => loadData()).not.toThrow();
+    expect(S.config.bloqueo).toBeNull();
+  });
+
+  it('es idempotente: no sobrescribe un candado ya configurado', () => {
+    const v36 = { ...createInitialState(), _version: 36 };
+    v36.config.bloqueo = { hash: 'abc', salt: 'def', creado: '2026-08-12' };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v36));
+
+    loadData();
+
+    expect(S.config.bloqueo).toEqual({ hash: 'abc', salt: 'def', creado: '2026-08-12' });
+  });
+});

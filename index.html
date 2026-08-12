@@ -1502,6 +1502,22 @@
     </div>
   </div>
 
+  <!-- Modal: Candado de acceso (CFG.5a, ADR 063) - pide el PIN al abrir la app
+       si el usuario activó el candado en Ajustes. Bloqueante (data-bloqueante)
+       y con fondo OPACO (ver modals.css): una pantalla de privacidad que deja
+       leer los saldos detrás del blur no cumple su único trabajo. NO cifra los
+       datos: eso lo dice la propia tarjeta de Ajustes. Va antes del gate legal
+       en el arranque; mientras esté cerrado, ese gate espera (bootstrap.js). -->
+  <div class="modal-overlay" id="bloqueo-acceso" data-bloqueante
+       role="dialog" aria-modal="true"
+       aria-label="Candado de acceso" aria-hidden="true">
+    <div class="modal modal--onboarding">
+      <div class="modal__body" id="bloqueo-acceso-body">
+        <!-- bloqueo-acceso.js inyecta el formulario del candado aquí -->
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Aceptación legal obligatoria (LEG.2) - gate de re-aceptación para
        usuarios existentes cuya versión aceptada quedó vieja. Bloqueante a
        propósito (data-bloqueante): sin botón de cerrar y el Escape global lo

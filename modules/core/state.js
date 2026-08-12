@@ -425,6 +425,12 @@ export function createInitialState() {
       legalAceptado: null,
       /** Atajos de teclado de escritorio (INT.1h, schema v35). WCAG 2.1.4: apagable. */
       atajosTeclado: true,
+      /**
+       * Candado de acceso local (CFG.5a, schema v36, ADR 063). null = sin
+       * candado (default). Activo: `{ hash, salt, creado }`. Es pantalla de
+       * privacidad, no cifrado: `fk_v1` sigue en texto plano.
+       */
+      bloqueo: null,
     },
 
     /** Cuentas / tesorería. */

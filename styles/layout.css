@@ -390,22 +390,42 @@
   display: block;
 }
 
+.section__main {
+  min-width: 0;
+}
+
+.section__carril {
+  min-width: 0;
+  display: none;
+}
+
 /* INT.1g (ADR 059 D7, regla R77): carril derecho de 320px desde 1.680px de
-   ventana. Solo el mecanismo: que pone cada seccion en el carril es el
-   pendiente P1 (recorrido de las 13, INT.1e), todavia sin resolver. Ninguna
-   seccion usa `.section--con-carril` todavia; sin ella, `.section` sigue
-   centrada tal como la dejo INT.1a. */
+   ventana. P1 (recorrido de las 13, INT.1e) resolvio el mecanismo contra un
+   primer caso real: el compromiso mensual de Ahorro/Fondo, hoy enterrado
+   despues de seis bloques de la tarjeta del fondo (ver contexto/ahorro.md).
+   Las otras 12 secciones no tenian, al recorrerlas, un bloque igual de
+   urgente y enterrado: forzar `.section--con-carril` ahi habria sido
+   relleno, no la funcionalidad que el ADR pide. Se suman a medida que cada
+   una lo necesite, con el mismo criterio. */
 @media (min-width: 1680px) {
-  .section--con-carril {
+  /* `.section.active` (arriba) pesa dos clases y gana el empate de
+     especificidad contra un solo `.section--con-carril`: el selector repite
+     `.section` para emparejar. */
+  .section--con-carril.active {
     display: grid;
     grid-template-columns: 1fr 320px;
     gap: var(--fk-space-8);
     align-items: start;
   }
-}
-
-.section__carril {
-  min-width: 0;
+  /* El encabezado y el volver ocupan las dos columnas; el contenido
+     principal y el carril se reparten la fila que sigue. */
+  .section--con-carril > .section__volver,
+  .section--con-carril > .section__header {
+    grid-column: 1 / -1;
+  }
+  .section--con-carril .section__carril {
+    display: block;
+  }
 }
 
 /* Regreso explícito para las secciones sin ícono en la barra (#movimientos):

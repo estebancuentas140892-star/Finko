@@ -10,7 +10,7 @@
  *     o los usuarios seguirán viendo la versión vieja.
  */
 
-const CACHE_NAME = 'finko-v505';
+const CACHE_NAME = 'finko-v507';
 
 // ── Assets críticos - si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [
@@ -74,6 +74,7 @@ const CORE_ASSETS = [
   './modules/ui/confirm.js',
   './modules/ui/onboarding.js',
   './modules/ui/aceptacion-legal.js',
+  './modules/ui/bloqueo-acceso.js',
   './modules/ui/shell.js',
   './modules/ui/menu-mas.js',
   './modules/ui/registrar.js',
@@ -143,6 +144,7 @@ const CORE_ASSETS = [
   './modules/dominio/config/view.js',
   './modules/dominio/config/index.js',
   './modules/dominio/config/legal.js',
+  './modules/dominio/config/bloqueo.js',
 
   // Centro Legal (LEG.1) - textos fuente, docs/legal/ es la fuente de verdad.
   './docs/legal/terminos-y-condiciones.md',

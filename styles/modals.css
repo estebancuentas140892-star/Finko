@@ -217,6 +217,17 @@
   line-height: 1.2;
 }
 
+/* ── CANDADO DE ACCESO (CFG.5a, ADR 063) ─────────────────────────── */
+
+/* El overlay por defecto es translúcido con blur de 4px: detrás se siguen
+   leyendo los montos. El candado es una pantalla de privacidad, así que su
+   fondo es opaco (el mismo del tema activo, así funciona en claro y oscuro) y
+   el blur queda sin efecto. Sin esto la tarjeta de Ajustes prometería algo que
+   la pantalla no cumple. */
+#bloqueo-acceso {
+  background: var(--fk-bg-base);
+}
+
 /* ── MENÚ "MÁS" v2 (NAV2.1a, ADR 040 D1-D3): hoja inferior agrupada ── */
 
 /* Presentación de hoja: anclada al borde inferior con esquinas superiores

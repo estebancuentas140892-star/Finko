@@ -1178,6 +1178,16 @@
   margin-top: var(--fk-space-4);
 }
 
+/* INT.1g: la copia del carril derecho vive fuera de la tarjeta del fondo,
+   asi que necesita su propio marco de tarjeta (mismo patron que `.card`). */
+.ahorro-habito--carril {
+  margin-top: 0;
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  padding: var(--fk-space-6);
+}
+
 .ahorro-habito__header {
   display: flex;
   align-items: center;

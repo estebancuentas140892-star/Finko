@@ -11,6 +11,7 @@ import { estadoCuota } from '../../core/storage.js';
 import { legalVigente, estadoVigenciaLegal, APP_VERSION, SITUACIONES_LABORALES } from '../../core/constants.js';
 import { estaInstalada } from '../../ui/install-prompt.js';
 import { DOCUMENTOS_LEGALES } from './legal.js';
+import { candadoActivo, cryptoDisponible, PIN_LARGO_MIN, PIN_LARGO_MAX } from './bloqueo.js';
 
 // ── FORMATO DE MONTOS EN CAPTURA (B4/R16) ────────────────────────
 //
@@ -60,7 +61,7 @@ export function renderPanelConfig() {
   el.innerHTML = `
     ${_renderAvisoVigencia()}
     ${_grupo('La app',      [_renderTema(), _renderAtajos(), _renderNotificaciones(), _renderInstalarApp()])}
-    ${_grupo('Tu cuenta',   [_renderPerfil()])}
+    ${_grupo('Tu cuenta',   [_renderPerfil(), _renderBloqueo()])}
     ${_grupo('Tus datos',   [_renderDatos()])}
     ${_grupo('Impuestos',   [_renderImpuestos()])}
     ${_grupo('Información', [_renderLegal(), _renderAcercaDe()])}
@@ -233,6 +234,110 @@ function _renderPerfil() {
         </div>
         ${_botonGuardar('config-perfil-ok', 'Guardar perfil')}
       </form>
+    </section>`;
+}
+
+/**
+ * Candado de acceso local (CFG.5a, ADR 063).
+ *
+ * El alcance real va en el cuerpo de la tarjeta, no en un hint gris: el candado
+ * tapa la pantalla frente a otra persona, no cifra los datos. Decirlo de frente
+ * es la decisión 1 del ADR 063 y ADN 11.
+ */
+function _renderBloqueo() {
+  const activo = candadoActivo(S.config?.bloqueo);
+
+  if (!cryptoDisponible()) {
+    return `
+      <section class="config-section" aria-labelledby="config-bloqueo-title">
+        <h2 class="config-section__title" id="config-bloqueo-title">Candado de acceso</h2>
+        <p class="form-hint form-hint--muted">
+          El candado necesita una conexión segura (https) o abrir Finko desde este mismo
+          dispositivo. Acá no está disponible.
+        </p>
+      </section>`;
+  }
+
+  const explicacion = `
+    <p class="form-hint">
+      Pide un PIN al abrir Finko. Sirve para que otra persona que use tu dispositivo no
+      vea tus cuentas de una. <strong>No cifra tus datos:</strong> siguen guardados en
+      este navegador tal cual, así que quien sepa buscarlos ahí o abra un respaldo tuyo
+      los va a ver igual.
+    </p>`;
+
+  if (!activo) {
+    return `
+      <section class="config-section" aria-labelledby="config-bloqueo-title">
+        <h2 class="config-section__title" id="config-bloqueo-title">Candado de acceso</h2>
+        ${explicacion}
+        <form id="form-bloqueo-crear" class="config-form" novalidate>
+          <div class="form-group">
+            <label for="bloqueo-pin" class="label">PIN nuevo</label>
+            <input id="bloqueo-pin" name="pin" class="input" type="password"
+                   inputmode="numeric" autocomplete="new-password"
+                   maxlength="${PIN_LARGO_MAX}" placeholder="${PIN_LARGO_MIN} a ${PIN_LARGO_MAX} números" />
+          </div>
+          <div class="form-group">
+            <label for="bloqueo-pin2" class="label">Repite el PIN</label>
+            <input id="bloqueo-pin2" name="pin2" class="input" type="password"
+                   inputmode="numeric" autocomplete="new-password"
+                   maxlength="${PIN_LARGO_MAX}" placeholder="Otra vez" />
+            <p class="form-hint">Si lo olvidas, la única salida es borrar todo y empezar de cero.</p>
+          </div>
+          <div class="config-form__guardar">
+            <button type="submit" class="btn btn-secondary">Activar candado</button>
+          </div>
+        </form>
+      </section>`;
+  }
+
+  const creado = String(S.config.bloqueo.creado || '');
+  return `
+    <section class="config-section" aria-labelledby="config-bloqueo-title">
+      <h2 class="config-section__title" id="config-bloqueo-title">Candado de acceso</h2>
+      <p class="chip chip-success" id="config-bloqueo-estado">
+        ${icon('check-circle')} Candado activo${creado ? ` desde el ${_esc(creado)}` : ''}
+      </p>
+      ${explicacion}
+      <details class="config-desplegable">
+        <summary>Cambiar o quitar el PIN</summary>
+        <form id="form-bloqueo-cambiar" class="config-form" novalidate>
+          <div class="form-group">
+            <label for="bloqueo-actual" class="label">PIN actual</label>
+            <input id="bloqueo-actual" name="pinActual" class="input" type="password"
+                   inputmode="numeric" autocomplete="current-password"
+                   maxlength="${PIN_LARGO_MAX}" />
+          </div>
+          <div class="form-group">
+            <label for="bloqueo-nuevo" class="label">PIN nuevo</label>
+            <input id="bloqueo-nuevo" name="pin" class="input" type="password"
+                   inputmode="numeric" autocomplete="new-password"
+                   maxlength="${PIN_LARGO_MAX}" />
+          </div>
+          <div class="form-group">
+            <label for="bloqueo-nuevo2" class="label">Repite el PIN nuevo</label>
+            <input id="bloqueo-nuevo2" name="pin2" class="input" type="password"
+                   inputmode="numeric" autocomplete="new-password"
+                   maxlength="${PIN_LARGO_MAX}" />
+          </div>
+          <div class="config-form__guardar">
+            <button type="submit" class="btn btn-secondary">Cambiar PIN</button>
+          </div>
+        </form>
+        <form id="form-bloqueo-quitar" class="config-form" novalidate>
+          <div class="form-group">
+            <label for="bloqueo-quitar-pin" class="label">Quitar el candado</label>
+            <input id="bloqueo-quitar-pin" name="pinActual" class="input" type="password"
+                   inputmode="numeric" autocomplete="current-password"
+                   maxlength="${PIN_LARGO_MAX}" placeholder="Tu PIN actual" />
+            <p class="form-hint">Finko vuelve a abrirse sin pedir nada. Tus datos no se tocan.</p>
+          </div>
+          <div class="config-form__guardar">
+            <button type="submit" class="btn btn-secondary">Quitar candado</button>
+          </div>
+        </form>
+      </details>
     </section>`;
 }
 

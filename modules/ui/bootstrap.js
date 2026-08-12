@@ -8,18 +8,22 @@
  * 3. initShell()     - aplica tema guardado.
  * 4. initRouter()    - activa la sección del hash actual y escucha hashchange.
  * 5. initOnboarding()      - wizard si es primera vez, no-op si ya completó.
- * 5b. initAceptacionLegal()- gate de re-aceptación si el usuario existente
- *                            quedó con una versión legal vieja (LEG.2).
+ * 5b. initBloqueoAcceso()  - candado de acceso (CFG.5a) si el usuario activó
+ *                            PIN. Va antes del gate legal: mientras el candado
+ *                            esté cerrado, ese gate y las novedades esperan.
  * 6. renderAll()     - pinta el estado inicial en el DOM.
+ * 6b. initAceptacionLegal()- gate de re-aceptación si el usuario existente
+ *                            quedó con una versión legal vieja (LEG.2).
  */
 
 import { loadData, initFlushOnHide } from '../core/storage.js';
-import { S } from '../core/state.js';
+import { S, EventBus } from '../core/state.js';
 import { initShell, markActiveNav, initSidebarCollapse } from './shell.js';
 import { initRouter } from '../infra/router.js';
 import { initAcciones } from './actions.js';
 import { initOnboarding } from './onboarding.js';
 import { initAceptacionLegal, faltaAceptarLegal } from './aceptacion-legal.js';
+import { initBloqueoAcceso, faltaDesbloquear } from './bloqueo-acceso.js';
 import { renderAll } from '../infra/render.js';
 import { verificarYNotificar } from '../infra/notificaciones.js';
 import { precalentarAnalisis } from '../dominio/analisis/view.js';
@@ -73,16 +77,32 @@ initShell();
 initSidebarCollapse();
 initRouter(markActiveNav);
 initOnboarding();
-initAceptacionLegal();
+initBloqueoAcceso();
 initMenuMas();
 initRegistrar();
 initInstallPrompt();
 renderAll();
 initLogros();
 initSwAviso();
-// Si el gate de aceptación legal quedó abierto (usuario existente con versión
+// Gates que van DETRÁS del candado (CFG.5a): dos overlays bloqueantes a la vez
+// se pelean el foco y el opaco del candado taparía al de aceptación legal, así
+// que si hay PIN pendiente esperan a que se abra.
+// Si el gate de aceptación legal queda abierto (usuario existente con versión
 // vieja), las novedades esperan: aceptacion-legal.js las dispara al aceptar.
-if (!faltaAceptarLegal()) mostrarNovedadesSiHay();
+function _gatesTrasCandado() {
+  initAceptacionLegal();
+  if (!faltaAceptarLegal()) mostrarNovedadesSiHay();
+}
+
+if (faltaDesbloquear()) {
+  const _alDesbloquear = () => {
+    EventBus.off('bloqueo:abierto', _alDesbloquear);
+    _gatesTrasCandado();
+  };
+  EventBus.on('bloqueo:abierto', _alDesbloquear);
+} else {
+  _gatesTrasCandado();
+}
 
 // Verificar compromisos próximos y mostrar notificación si el usuario optó-in.
 // Se ejecuta después del primer render para no bloquear el arranque.

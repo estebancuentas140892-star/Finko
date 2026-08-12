@@ -22,6 +22,9 @@ import { abrirModal } from '../../ui/modales.js';
 import { renderPanelConfig, miles, desdeMiles } from './view.js';
 import { gastosACSV } from '../export/logic.js';
 import { documentoLegalPorId, cargarDocumentoLegal, VERSION_LEGAL } from './legal.js';
+import { validarPin, crearBloqueo, verificarPin, limpiarFallos } from './bloqueo.js';
+import { mostrarErroresForm } from '../../infra/form-errors.js';
+import { mostrarToast } from '../../ui/toast.js';
 
 // ── CONFIRMACIÓN VISIBLE DE GUARDADO (R14/R15) ───────────────────
 //
@@ -65,7 +68,7 @@ function _exportarDatos() {
     announce('Datos exportados correctamente.');
   } catch (err) {
     console.error('[config] exportarDatos falló:', err);
-    announce('No se pudo exportar. Intentá de nuevo.', 'assertive');
+    announce('No se pudo exportar. Intenta de nuevo.', 'assertive');
   }
 }
 
@@ -120,7 +123,7 @@ async function _activarNotificaciones() {
     renderPanelConfig();
     announce('Recordatorios activados. Recibirás una alerta al abrir Finko si tienes compromisos próximos.');
   } else if (resultado === 'denied') {
-    announce('El navegador bloqueó las notificaciones. Habilitá el permiso desde la configuración del navegador.', 'assertive');
+    announce('El navegador bloqueó las notificaciones. Habilita el permiso desde la configuración del navegador.', 'assertive');
   } else {
     announce('No se pudo activar los recordatorios en este momento.', 'assertive');
   }
@@ -163,7 +166,7 @@ function _exportarGastosCSV() {
     announce(`${n} gasto${n === 1 ? '' : 's'} exportado${n === 1 ? '' : 's'} a CSV.`);
   } catch (err) {
     console.error('[config] exportarGastosCSV falló:', err);
-    announce('No se pudo exportar. Intentá de nuevo.', 'assertive');
+    announce('No se pudo exportar. Intenta de nuevo.', 'assertive');
   }
 }
 
@@ -302,6 +305,94 @@ function _inyectarPanel() {
   // Importar: el input file no dispara data-action click - usamos change.
   panel.querySelector('#config-importar-json')
     ?.addEventListener('change', (e) => _importarDatos(e.target));
+
+  // Candado de acceso (CFG.5a). Los tres formularios re-renderizan el panel a
+  // propósito: la tarjeta cambia de forma (sin candado ↔ con candado), no es
+  // el caso de "los campos ya muestran lo guardado" de los tres de arriba.
+  panel.querySelector('#form-bloqueo-crear')?.addEventListener('submit', _crearCandado);
+  panel.querySelector('#form-bloqueo-cambiar')?.addEventListener('submit', _crearCandado);
+  panel.querySelector('#form-bloqueo-quitar')?.addEventListener('submit', _quitarCandado);
+}
+
+// ── CANDADO DE ACCESO (CFG.5a, ADR 063) ──────────────────────────
+
+/**
+ * Encabezado del bloque de errores de los tres formularios del candado. El
+ * default de `mostrarErroresForm()` habla de campos que faltan y acá el error
+ * casi nunca es eso: es un PIN que no coincide.
+ */
+const _TITULO_ERROR_PIN = 'Revisa lo que escribiste:';
+
+/**
+ * Activa o cambia el PIN. Un solo handler para los dos formularios: cambiar es
+ * crear con un paso previo de verificación, y el campo `pinActual` es lo único
+ * que los distingue.
+ * @param {SubmitEvent} e
+ */
+async function _crearCandado(e) {
+  e.preventDefault();
+  const form  = /** @type {HTMLFormElement} */ (e.target);
+  const datos = Object.fromEntries(new FormData(form));
+  const pin   = String(datos.pin ?? '');
+  const pin2  = String(datos.pin2 ?? '');
+
+  // Cambio de PIN: sin el actual correcto no se sigue.
+  const cambio = 'pinActual' in datos;
+  if (cambio) {
+    const ok = await verificarPin(String(datos.pinActual ?? ''), S.config?.bloqueo);
+    if (!ok) {
+      mostrarErroresForm(form, ['El PIN actual no coincide.'], _TITULO_ERROR_PIN);
+      return;
+    }
+  }
+
+  const error = validarPin(pin);
+  if (error) {
+    mostrarErroresForm(form, [error], _TITULO_ERROR_PIN);
+    return;
+  }
+  if (pin !== pin2) {
+    mostrarErroresForm(form, ['Los dos PIN no coinciden.'], _TITULO_ERROR_PIN);
+    return;
+  }
+
+  if (!S.config || typeof S.config !== 'object') S.config = {};
+  S.config.bloqueo = await crearBloqueo(pin);
+  save();
+  limpiarFallos();
+  // El panel se repinta (la tarjeta cambia de forma) y con eso el chip de
+  // guardado se iría con el DOM viejo: la confirmación va por toast.
+  renderSmart(_inyectarPanel, 'config');
+  mostrarToast({
+    titulo:  cambio ? 'PIN actualizado' : 'Candado activado',
+    detalle: 'Finko va a pedir tu PIN al abrir.',
+  });
+}
+
+/**
+ * Quita el candado. Pide el PIN actual: sin eso, cualquiera que llegue al panel
+ * con la app ya abierta lo desactiva.
+ * @param {SubmitEvent} e
+ */
+async function _quitarCandado(e) {
+  e.preventDefault();
+  const form  = /** @type {HTMLFormElement} */ (e.target);
+  const datos = Object.fromEntries(new FormData(form));
+
+  const ok = await verificarPin(String(datos.pinActual ?? ''), S.config?.bloqueo);
+  if (!ok) {
+    mostrarErroresForm(form, ['El PIN actual no coincide.'], _TITULO_ERROR_PIN);
+    return;
+  }
+
+  S.config.bloqueo = null;
+  save();
+  limpiarFallos();
+  renderSmart(_inyectarPanel, 'config');
+  mostrarToast({
+    titulo:  'Candado quitado',
+    detalle: 'Finko ya no va a pedir PIN al abrir.',
+  });
 }
 
 export function initConfig() {

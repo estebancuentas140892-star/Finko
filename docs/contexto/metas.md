@@ -1,5 +1,7 @@
 # Ficha de contexto: Metas
 
+> Revisado: 2026-08-11.
+
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
 ---
@@ -26,6 +28,7 @@
 | Ícono de categoría/legacy en el título | `modules/dominio/metas/view.js` | `_iconoMeta()` |
 | (Re)inyección del form + wiring, único punto de entrada crear/editar | `modules/dominio/metas/index.js` | `_inyectarFormMeta(meta = null)` |
 | Handlers de acción | `modules/dominio/metas/index.js` | `_nuevaMeta()`, `_editarMeta()`, `_guardarMeta()`, `_eliminarMeta()`, `_abrirAbonoMeta()`, `_guardarAbonoMeta()` |
+| Segunda linea del toast de confirmacion (GAS.2c, [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md)) | `modules/dominio/metas/logic.js` | `consecuenciaDeAporte({ completada, faltante, ocultarSaldo })` |
 
 **Recursos**: medidor semicircular compartido (`infra/svg.js`, `arcoProgreso()`, hermano de `progressRing()` y con el mismo `.progress-ring-wrap` alrededor); silueta que se llena (`infra/svg.js`, `siluetaMeta()` + `SILUETAS`, tercer hermano de los dos anteriores, estilada en `.silueta__*` de `atoms.css`) y su mapeo `CATEGORIA_META_SILUETA` en `core/constants.js`; selector de cuenta compartido (`infra/cuenta-helper.js`, `renderSelectorCuenta`, usado en el abono); picker de ícono compacto (`infra/icon-picker.js`, CAT.2b) para la categoría "Otra"; catálogo `CATEGORIAS_META`/`CATEGORIA_META_ICONO`/`ICONOS_CATEGORIA_PERSONALIZADA` de `core/constants.js` (el mismo catálogo de íconos personalizados que usan Gastos y Agenda).
 
@@ -51,6 +54,8 @@
 - **El `clipPath` toma su id de `meta.id`.** Dos siluetas en pantalla con el mismo id se recortan con la figura equivocada. La sección Metas usa `silueta-<id>` y el carril del hub `silueta-carril-<id>` para no colisionar entre sí.
 
 **Cambios realizados**:
+
+- 2026-08-11 (GAS.2c): `_guardarAbonoMeta()` sustituye su `announce()` final por `mostrarToast()`, con segunda linea via `consecuenciaDeAporte()` nueva (prioridad meta completada > cuanto falta). Mismo patron de Gastos (GAS.2a/2b), formalizado en [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md). Detalle completo: `contexto/gastos.md`.
 
 - 2026-08-02 (**ARQ.1a**, commit `87b6b04`): `calcularProgreso(meta)` pasa a envoltorio de `progresoDeBolsa()` (`infra/bolsas.js`); su propio `diasHastaFecha` de un argumento se retira sin reemplazo (sin llamadores en `modules/`).
 

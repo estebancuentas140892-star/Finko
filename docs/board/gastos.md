@@ -1,8 +1,10 @@
 # Tablero satélite: Gastos (dominio `gastos`)
 
+> Revisado: 2026-08-11.
+
 > Tarjetas vivas de la sección Gastos. Índice y reglas del tablero en [`../BOARD.md`](../BOARD.md); contexto técnico en [`../contexto/gastos.md`](../contexto/gastos.md).
 > Creado: 2026-08-10, al triar la ficha 22 del handoff de Claude Design.
-> **Estado: GAS.2a y GAS.2b cerradas (2026-08-10).** GAS.2c queda diferida (no se activa sin aprobación explícita), enganchada en el índice de [`BOARD.md`](../BOARD.md) y en su sección "Gastos".
+> **Estado: GAS.2a, GAS.2b y GAS.2c cerradas.** GAS.2c cerrada el 2026-08-11: Esteban aprobo activarla.
 
 ---
 
@@ -150,14 +152,24 @@ Tres rebanadas, cada una commiteable y verificable por separado. **Ninguna toca 
 
 ---
 
-### GAS.2c - Extender a los otros formularios (diferida)
+### GAS.2c - Extender a los otros formularios
 
 - Prioridad  : baja
-- Estado     : **no iniciar.** Se activa solo si GAS.2b se verifica en la app y Esteban la aprueba
+- Estado     : **CERRADA (2026-08-11)**. Esteban aprobo activarla. Ver [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md) y `contexto/gastos.md`.
 - Objetivo   : misma confirmación en Abono (cuánto queda de la deuda) y Aporte (cuánto falta para la meta).
 - Depende de : GAS.2b cerrada
 
-Regla de la ficha, que se adopta tal cual: **si dos formularios más lo necesitan, deja de ser un arreglo local y pasa a ser una regla de confirmación con ADR propio.** Antes de eso, no se generaliza nada.
+Regla de la ficha, adoptada tal cual: dos formularios más la necesitaban, asi que dejo de ser un arreglo local y paso a ser una regla de confirmacion con ADR propio (ADR 062).
+
+**Implementado:**
+
+1. `consecuenciaDeAbono({ saldaDeuda, saldoRestante, ocultarSaldo })` en `modules/dominio/compromisos/logic/abonos.js`: prioridad deuda saldada > saldo restante.
+2. `consecuenciaDeAporte({ completada, faltante, ocultarSaldo })` en `modules/dominio/metas/logic.js`: prioridad meta completada > cuanto falta.
+3. `_guardarAbono()` (`compromisos/index.js`) y `_guardarAbonoMeta()` (`metas/index.js`) importan `mostrarToast` y sustituyen su `announce()` final por el toast, mismo patron de GAS.2a.
+
+**Qué resuelve:** generaliza X1/X2 a Abono y Aporte.
+
+**Archivos**: `modules/dominio/compromisos/index.js`, `modules/dominio/compromisos/logic.js`, `modules/dominio/compromisos/logic/abonos.js`, `modules/dominio/metas/index.js`, `modules/dominio/metas/logic.js`, `tests/unit/compromisos.test.js`, `tests/unit/metas.test.js`, `docs/DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md` (nuevo).
 
 ---
 

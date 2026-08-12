@@ -272,3 +272,63 @@ describe('documentoLegalPorId()', () => {
     expect(documentoLegalPorId('no-existe')).toBeNull();
   });
 });
+
+// ── CANDADO DE ACCESO (CFG.5a, ADR 063) ──────────────────────────
+
+describe('renderPanelConfig() - candado de acceso (CFG.5a)', () => {
+  beforeEach(() => {
+    Object.assign(S, createInitialState());
+    document.body.innerHTML = '<div id="panel-config"></div>';
+  });
+
+  const html = () => document.getElementById('panel-config').innerHTML;
+
+  it('sin candado ofrece activarlo con PIN y confirmación', () => {
+    renderPanelConfig();
+    expect(document.getElementById('form-bloqueo-crear')).not.toBeNull();
+    expect(document.getElementById('bloqueo-pin')).not.toBeNull();
+    expect(document.getElementById('bloqueo-pin2')).not.toBeNull();
+    expect(document.getElementById('form-bloqueo-quitar')).toBeNull();
+  });
+
+  it('dice de frente que no cifra los datos (ADR 063, ADN 11)', () => {
+    renderPanelConfig();
+    expect(html()).toContain('No cifra tus datos');
+  });
+
+  it('avisa que si se olvida el PIN la unica salida es borrar todo', () => {
+    renderPanelConfig();
+    expect(html()).toContain('borrar todo');
+  });
+
+  it('el PIN se captura como password, nunca como texto visible', () => {
+    renderPanelConfig();
+    expect(document.getElementById('bloqueo-pin').type).toBe('password');
+    expect(document.getElementById('bloqueo-pin').getAttribute('inputmode')).toBe('numeric');
+  });
+
+  it('con candado activo muestra el estado y ofrece cambiarlo o quitarlo', () => {
+    S.config.bloqueo = { hash: 'a'.repeat(64), salt: 'b'.repeat(32), creado: '2026-08-12' };
+    renderPanelConfig();
+
+    expect(document.getElementById('config-bloqueo-estado')?.textContent).toContain('Candado activo');
+    expect(document.getElementById('form-bloqueo-cambiar')).not.toBeNull();
+    expect(document.getElementById('form-bloqueo-quitar')).not.toBeNull();
+    expect(document.getElementById('form-bloqueo-crear')).toBeNull();
+  });
+
+  it('quitar el candado exige el PIN actual', () => {
+    S.config.bloqueo = { hash: 'a'.repeat(64), salt: 'b'.repeat(32), creado: '2026-08-12' };
+    renderPanelConfig();
+
+    const campo = document.querySelector('#form-bloqueo-quitar [name="pinActual"]');
+    expect(campo).not.toBeNull();
+    expect(campo.type).toBe('password');
+  });
+
+  it('el bloque vive en el grupo "Tu cuenta", junto al perfil', () => {
+    renderPanelConfig();
+    const grupo = document.getElementById('form-bloqueo-crear').closest('.config-grupo');
+    expect(grupo.querySelector('.config-grupo__label').textContent.trim()).toBe('Tu cuenta');
+  });
+});
