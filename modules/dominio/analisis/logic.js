@@ -459,6 +459,113 @@ export function seriePorCategoria(gastosDelMes, maxSegmentos = 6) {
   return segmentos.map((s, i) => ({ ...s, pct: pcts[i] }));
 }
 
+// ── LECTURA INTERPRETATIVA DE LAS CARDS (ANL.1a, ADR 046 D3) ─────
+
+/*
+ * Las tres funciones de abajo escriben la línea que explica qué significa el
+ * número que la card ya muestra. Extienden el patrón que `_fraseScore()`
+ * (view.js) fundó en el hero del score, con las reglas del ADR 046 D3:
+ *
+ *   - Una sola línea, derivada del dato real: nunca una frase fija (el ADR 038
+ *     ya descartó las del mockup por ser falsas para un usuario concreto).
+ *   - Describe, no ordena. Convertir el hallazgo en acción es del ADR 044.
+ *   - Cadena vacía cuando el dato no alcanza para decir algo cierto. La card
+ *     ya tiene su propio vacío; inventar una lectura sería peor que callar.
+ *
+ * Son puras y sin DOM: la vista solo las imprime.
+ */
+
+/**
+ * Lectura de la card de patrimonio: qué parte de lo que tienes está
+ * comprometida con deudas. Es el significado de "activos menos pasivos", que
+ * hoy la card muestra como cifra sin explicar.
+ *
+ * @param {{total:number}} activos
+ * @param {{total:number}} pasivos
+ * @param {number} patrimonioNeto
+ * @returns {string} Línea lista para imprimir, o '' si no hay nada que leer.
+ */
+export function lecturaPatrimonio(activos, pasivos, patrimonioNeto) {
+  const totalActivos = Number(activos?.total) || 0;
+  const totalPasivos = Number(pasivos?.total) || 0;
+
+  // Sin ninguna de las dos mitades no hay patrimonio del que hablar.
+  if (totalActivos <= 0 && totalPasivos <= 0) return '';
+
+  if (patrimonioNeto < 0) {
+    return 'Hoy debes más de lo que tienes: por eso tu patrimonio es negativo.';
+  }
+  if (totalPasivos <= 0) {
+    return 'Nada de lo que tienes está comprometido: hoy no registras deudas.';
+  }
+
+  const pct = Math.round((totalPasivos / totalActivos) * 100);
+  if (pct >= 50) return 'Tus deudas pesan más de la mitad de lo que tienes.';
+  return `Tus deudas equivalen al ${pct}% de lo que tienes.`;
+}
+
+/**
+ * Lectura de la card de tendencia: el mes en curso contra el promedio de los
+ * meses anteriores con gasto. El chip de la card ya compara contra el mes
+ * pasado; el promedio dice si ese mes pasado era representativo.
+ *
+ * Los meses en cero no entran al promedio: son meses sin registro, y contarlos
+ * como "gasté cero" hundiría la base y haría ver cualquier mes normal como un
+ * desborde.
+ *
+ * @param {ReturnType<serieGastosMensual>} serie
+ * @returns {string} Línea lista para imprimir, o '' si no hay base de comparación.
+ */
+export function lecturaTendencia(serie) {
+  if (!Array.isArray(serie) || serie.length < 2) return '';
+
+  const actual    = Number(serie[serie.length - 1]?.total) || 0;
+  const previos   = serie.slice(0, -1).map(p => Number(p?.total) || 0).filter(t => t > 0);
+  if (previos.length === 0) return '';
+
+  if (actual <= 0) return 'Este mes todavía no registras gastos.';
+
+  const promedio = previos.reduce((acc, t) => acc + t, 0) / previos.length;
+  const pct      = Math.round(((actual - promedio) / promedio) * 100);
+
+  // Margen de ruido: un 10 % arriba o abajo no es un cambio de hábito, y
+  // anunciarlo como tal entrenaría al usuario a ignorar la línea.
+  if (Math.abs(pct) <= 10) {
+    return 'Este mes vas en línea con tu promedio de los últimos meses.';
+  }
+  return pct > 0
+    ? `Este mes vas ${pct}% por encima de tu promedio de los últimos meses.`
+    : `Este mes vas ${Math.abs(pct)}% por debajo de tu promedio de los últimos meses.`;
+}
+
+/**
+ * Lectura de la card de categorías: qué tan concentrado está el gasto del mes.
+ * La dona ya nombra la categoría más grande; lo que falta es si esa categoría
+ * manda sobre el resto o si el gasto está repartido.
+ *
+ * @param {ReturnType<seriePorCategoria>} segmentos  Ordenados de mayor a menor.
+ * @returns {string} Línea lista para imprimir, o '' si no hay gasto este mes.
+ */
+export function lecturaCategorias(segmentos) {
+  if (!Array.isArray(segmentos) || segmentos.length === 0) return '';
+
+  const top = segmentos[0];
+  const cat = String(top?.categoria ?? '');
+  const pct = Number(top?.pct) || 0;
+  if (cat === '') return '';
+
+  if (segmentos.length === 1) return `Todo tu gasto de este mes está en ${cat}.`;
+
+  // 'Otros' es la cola larga que agrupa `seriePorCategoria`: que encabece
+  // significa lo contrario a una categoría dominante.
+  if (cat === 'Otros') {
+    return 'Tu gasto de este mes está repartido en muchas categorías pequeñas.';
+  }
+
+  if (pct >= 50) return `Más de la mitad de tu gasto de este mes se va en ${cat}.`;
+  return `${cat} concentra el ${pct}% de tu gasto de este mes.`;
+}
+
 // ── COMPARACIÓN DE CATEGORÍAS MES ACTUAL vs MES ANTERIOR (G.2) ───
 
 /**

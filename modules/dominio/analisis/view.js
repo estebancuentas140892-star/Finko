@@ -17,6 +17,7 @@ import {
   calcularComparacionCategorias, detectarPatronGastoSemanal,
   calcularEstadoRenta, detectarNudgesRenta, inferirEstadoDeclarante,
   repartirPorcentajes,
+  lecturaPatrimonio, lecturaTendencia, lecturaCategorias,
 } from './logic.js';
 
 /**
@@ -66,9 +67,21 @@ function _calcularDatosAnalisis(gastos, compromisos, cuentas, metas, apartados, 
   // Series para gráficos (D.3). Se calculan aquí para no inflar generarResumen.
   const serieGastos  = serieGastosMensual(gastos, anio, mes, 12);
   const gastosDelMes = gastosMes(gastos, anio, mes);
-  const segmentosCat = colorearSegmentos(seriePorCategoria(gastosDelMes, 6));
+  const catSerie     = seriePorCategoria(gastosDelMes, 6);
+  const segmentosCat = colorearSegmentos(catSerie);
 
-  return { resumen, serieGastos, segmentosCat };
+  // ANL.1a (ADR 046 D3): las tres lecturas viajan en el mismo bundle que los
+  // datos que interpretan. No agregan ni un barrido de `gastos`: leen lo que
+  // esta función ya calculó, así que entran gratis a la memoización de PERF.2.
+  // `catSerie` es la serie sin color: `colorearSegmentos` es capa de vista y la
+  // lógica no la necesita para contar.
+  const lecturas = {
+    patrimonio: lecturaPatrimonio(resumen.activos, resumen.pasivos, resumen.patrimonioNeto),
+    tendencia:  lecturaTendencia(serieGastos),
+    categorias: lecturaCategorias(catSerie),
+  };
+
+  return { resumen, serieGastos, segmentosCat, lecturas };
 }
 
 // PE.7: `personales` entra a las claves de invalidación porque ahora alimenta
@@ -165,7 +178,7 @@ export function renderAnalisis() {
   const abiertoDetalle = previoDetalle ? previoDetalle.open : null;
   const abiertoRenta   = previoRenta   ? previoRenta.open   : null;
 
-  const { resumen, serieGastos, segmentosCat } = _calcularDatosAnalisisMemo(
+  const { resumen, serieGastos, segmentosCat, lecturas } = _calcularDatosAnalisisMemo(
     S.gastos, S.compromisos, S.cuentas, S.metas, S.apartados, S.inversiones, S.personales, anio, mes,
   );
 
@@ -206,8 +219,8 @@ export function renderAnalisis() {
   // vacío bajo el mismo rótulo, con dos redacciones distintas. Ahora las dos
   // devuelven '' sin datos y el grupo pone un solo mensaje, con la superficie
   // de card que tienen sus hermanos.
-  const tendenciaHtml  = _renderTendencia(serieGastos);
-  const categoriasHtml = _renderPorCategoria(resumen.gastoMes, segmentosCat);
+  const tendenciaHtml  = _renderTendencia(serieGastos, lecturas.tendencia);
+  const categoriasHtml = _renderPorCategoria(resumen.gastoMes, segmentosCat, lecturas.categorias);
   const grupoCuerpo = `${tendenciaHtml}${categoriasHtml}`.trim() !== ''
     ? `${tendenciaHtml}${categoriasHtml}`
     : `<p class="analisis__empty">Aún no registras gastos este mes. Cuando lo hagas verás en qué se va tu dinero y cómo cambia mes a mes.</p>`;
@@ -222,7 +235,7 @@ export function renderAnalisis() {
   // clase, así que el cambio de etiqueta no se ve.
   el.innerHTML = `
     ${_renderScoreSalud(resumen)}
-    ${_renderPatrimonio(resumen)}
+    ${_renderPatrimonio(resumen, lecturas.patrimonio)}
     <div class="analisis__group">
       <h2 class="analisis__group-label">A dónde va tu dinero${mesTxt ? ` · ${mesTxt}` : ''}</h2>
       ${grupoCuerpo}
@@ -329,6 +342,19 @@ function _renderDetalleGastos(hormigas, anio, mes, fechaHoy) {
     ${_renderPatronSemanal(patronSemanal)}
     ${_renderHormigas(hormigas)}
   `;
+}
+
+/**
+ * ANL.1a (ADR 046 D3): imprime la lectura de una card. Una sola envoltura para
+ * las tres, así la línea que interpreta se ve igual en todas y no hay que
+ * decidir su tipografía card por card. Cadena vacía no dibuja nada: la lógica
+ * calla cuando el dato no alcanza, y la card conserva su vacío propio.
+ *
+ * @param {string} texto
+ * @returns {string}
+ */
+function _renderLectura(texto) {
+  return texto ? `<p class="analisis-lectura">${_esc(texto)}</p>` : '';
 }
 
 // ── SECCIONES INTERNAS ───────────────────────────────────────────
@@ -684,7 +710,7 @@ const _BUCKETS_ACTIVOS = [
   { key: 'totalPorCobrar',   label: 'Por cobrar', mod: 'porcobrar' },
 ];
 
-function _renderPatrimonio({ activos, pasivos, patrimonioNeto }) {
+function _renderPatrimonio({ activos, pasivos, patrimonioNeto }, lectura = '') {
   const esPositivo = patrimonioNeto >= 0;
   const valorClase = esPositivo ? 'patri-card__valor--positivo' : 'patri-card__valor--negativo';
   const signo      = esPositivo ? '' : '−';
@@ -759,6 +785,7 @@ function _renderPatrimonio({ activos, pasivos, patrimonioNeto }) {
         </div>
         <p class="patri-card__valor ${valorClase}">${netoTxt}</p>
         <p class="patri-card__hint">activos − pasivos · hoy</p>
+        ${_renderLectura(lectura)}
         ${compBarra}
         <div class="patri-card__grid">
           <article class="patri-card__col">
@@ -793,7 +820,7 @@ function _renderPatrimonio({ activos, pasivos, patrimonioNeto }) {
  * @param {number} gastoMes Total del mes (ancla del encabezado).
  * @param {ReturnType<import('../../infra/svg.js').colorearSegmentos>} segmentos
  */
-function _renderPorCategoria(gastoMes, segmentos = []) {
+function _renderPorCategoria(gastoMes, segmentos = [], lectura = '') {
   // DIS.10 (C6): sin datos no emite su propio vacío; el rótulo del grupo pone
   // un solo mensaje para tendencia y categorías juntas.
   if (segmentos.length === 0) return '';
@@ -820,6 +847,7 @@ function _renderPorCategoria(gastoMes, segmentos = []) {
           </div>
           <span class="catg-card__total">${f(gastoMes)}</span>
         </div>
+        ${_renderLectura(lectura)}
         <div class="catg-card__layout">
           <div class="catg-card__donut">
             ${donut(segmentos, { size: 120, strokeWidth: 18, ariaLabel: 'Distribución de gastos por categoría' })}
@@ -835,7 +863,7 @@ function _renderPorCategoria(gastoMes, segmentos = []) {
     </section>`;
 }
 
-function _renderTendencia(serie) {
+function _renderTendencia(serie, lectura = '') {
   if (!serie || serie.length === 0) return '';
 
   const valores = serie.map(p => p.total);
@@ -908,6 +936,8 @@ function _renderTendencia(serie) {
           </div>
           <span class="tend-card__chip${chipClase}">${chipIcono}<span>${chipTexto}</span></span>
         </div>
+
+        ${_renderLectura(lectura)}
 
         <div class="chart-sparkline-wrap">
           <div class="chart-sparkline__svg" aria-hidden="false">${svg}</div>

@@ -12,6 +12,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(analisis): ANL.1a, la lectura de las tres cards principales · 2026-08-12
+
+Primera rebanada de **ANL.1**, la que responde el planteamiento que la abrió: Análisis muestra datos y no los explica. Ejecuta el D3 del [ADR 046](DECISIONS/046-analisis-interpreta-criterio-y-lenguaje.md). Ficha: [`contexto/analisis.md`](contexto/analisis.md).
+
+- **El patrón no se inventó: ya estaba en el archivo.** `_fraseScore()` interpretaba el score desde ANL.2a, y las otras tres cards de números grandes (patrimonio, tendencia, categorías) seguían mudas. `lecturaPatrimonio()`, `lecturaTendencia()` y `lecturaCategorias()` extienden ese mismo patrón: puras, en `logic.js`, con tests, y **la vista solo las imprime**.
+- **Qué dice cada una, siempre desde el dato real.** Patrimonio: qué parte de lo que tienes está comprometida con deudas (que es lo que significa "activos menos pasivos", y la card no lo decía). Tendencia: el mes en curso contra el **promedio** de los meses anteriores con gasto, porque el chip ya compara contra el mes pasado y no dice si ese mes era representativo. Categorías: si el gasto está concentrado en una categoría o repartido.
+- **Los meses en cero no entran al promedio de la tendencia.** Un mes sin registro no es un mes de gasto cero: contarlo hundiría la base y haría ver cualquier mes normal como un desborde. Con la serie `[1M, 0, 0, 0, 1M]` la lectura dice "en línea"; con los ceros dentro habría anunciado un exceso del 150 %.
+- **Margen de ruido del 10 %**: por debajo de eso la lectura dice "en línea con tu promedio". Anunciar como cambio de hábito lo que es variación normal entrena al usuario a ignorar la línea.
+- **Describe, no ordena** (ADR 046 D3). Ninguna de las tres sugiere una acción: eso es del [ADR 044](DECISIONS/044-motor-unico-de-sugerencia-por-categoria.md), que sigue Abierto, y por eso esta rebanada no lo esperó. Cuando el dato no alcanza para decir algo cierto, la función devuelve cadena vacía y no se dibuja nada: la card conserva su vacío propio.
+- **Sin costo de rendimiento**: las tres viajan dentro de `_calcularDatosAnalisis()`, así que entran gratis a la memoización de PERF.2 y no agregan ni un barrido de `S.gastos`. La serie de categorías se computa una sola vez y se colorea después (`colorearSegmentos` es capa de vista; la lógica no necesita color para contar).
+- `.analisis-lectura` (nueva, `analysis.css`) copia la anatomía de `.score-hero__explicacion`: `sm` sobre `--fk-text-secondary`, no `xs` sobre `--fk-text-muted` como `.analisis__hint`. La distinción es deliberada: el hint es nota al pie, la lectura es contenido. Contraste medido en la app: **7,35 en oscuro y 8,51 en claro**. `DESIGN_SYSTEM.md` gana **R75**.
+- **Fuera de alcance**: los titulares en lenguaje corriente (ANL.1b) y la lectura del colapsable de detalle (ANL.1c). Ninguna card se elimina ni se agrega, por D1 y D4.
+- Tests: 18 unitarios nuevos, incluida la regresión del promedio con meses en cero. 3930/3930 unit + 263/263 E2E verdes. SW `finko-v507` → `finko-v508`.
+
 ### docs(analisis): ADR 046 resuelto, ANL.1 partida en tres rebanadas · 2026-08-12
 
 ANL.1 llevaba desde el 2026-07-24 sin poder iniciarse: su ADR estaba **Abierto** con la instrucción textual "no implementar nada de este ADR". Esteban pidió trabajar ANL.1 y delegó la elección. Sin cambios de código, tests ni SW. [ADR 046](DECISIONS/046-analisis-interpreta-criterio-y-lenguaje.md).

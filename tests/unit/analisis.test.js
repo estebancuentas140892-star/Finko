@@ -19,6 +19,9 @@ import {
   detectarNudgesRenta,
   inferirEstadoDeclarante,
   repartirPorcentajes,
+  lecturaPatrimonio,
+  lecturaTendencia,
+  lecturaCategorias,
 } from '../../modules/dominio/analisis/logic.js';
 import { descuentaSaldo } from '../../modules/infra/bolsas.js';
 import { UVT, TOPES_RENTA_UVT } from '../../modules/core/constants.js';
@@ -2507,5 +2510,108 @@ describe('repartirPorcentajes()', () => {
     expect(repartirPorcentajes([])).toEqual([]);
     expect(repartirPorcentajes([0, 0])).toEqual([0, 0]);
     expect(repartirPorcentajes(null)).toEqual([]);
+  });
+});
+
+// ── LECTURA INTERPRETATIVA - ANL.1a (ADR 046 D3) ──────────────────
+
+describe('lecturaPatrimonio()', () => {
+  it('calla cuando no hay ni activos ni pasivos', () => {
+    expect(lecturaPatrimonio({ total: 0 }, { total: 0 }, 0)).toBe('');
+  });
+
+  it('nombra el caso negativo sin culpar al usuario', () => {
+    const txt = lecturaPatrimonio({ total: 1_000_000 }, { total: 3_000_000 }, -2_000_000);
+    expect(txt).toBe('Hoy debes más de lo que tienes: por eso tu patrimonio es negativo.');
+  });
+
+  it('sin deudas dice que nada esta comprometido', () => {
+    const txt = lecturaPatrimonio({ total: 5_000_000 }, { total: 0 }, 5_000_000);
+    expect(txt).toContain('no registras deudas');
+  });
+
+  it('con deudas por encima de la mitad usa la fraccion, no el porcentaje', () => {
+    const txt = lecturaPatrimonio({ total: 10_000_000 }, { total: 6_000_000 }, 4_000_000);
+    expect(txt).toBe('Tus deudas pesan más de la mitad de lo que tienes.');
+  });
+
+  it('con deudas por debajo de la mitad da el porcentaje exacto', () => {
+    const txt = lecturaPatrimonio({ total: 10_000_000 }, { total: 2_500_000 }, 7_500_000);
+    expect(txt).toBe('Tus deudas equivalen al 25% de lo que tienes.');
+  });
+
+  it('tolera entradas incompletas sin romper', () => {
+    expect(lecturaPatrimonio(null, null, 0)).toBe('');
+    expect(lecturaPatrimonio(undefined, { total: 500 }, -500)).toContain('negativo');
+  });
+});
+
+describe('lecturaTendencia()', () => {
+  const serie = totales => totales.map((total, i) => ({ anio: 2026, mes: i + 1, total, label: 'x' }));
+
+  it('calla sin base de comparacion', () => {
+    expect(lecturaTendencia([])).toBe('');
+    expect(lecturaTendencia(serie([500_000]))).toBe('');
+    // Todos los meses previos en cero: no hay promedio real contra el cual leer.
+    expect(lecturaTendencia(serie([0, 0, 500_000]))).toBe('');
+  });
+
+  it('avisa cuando el mes en curso aun no tiene gasto', () => {
+    expect(lecturaTendencia(serie([500_000, 0]))).toBe('Este mes todavía no registras gastos.');
+  });
+
+  it('trata un desvio de hasta 10 % como estar en linea', () => {
+    // Promedio de los previos = 1.000.000; el mes en curso queda 5 % arriba.
+    const txt = lecturaTendencia(serie([1_000_000, 1_000_000, 1_050_000]));
+    expect(txt).toBe('Este mes vas en línea con tu promedio de los últimos meses.');
+  });
+
+  it('cuantifica el exceso sobre el promedio', () => {
+    const txt = lecturaTendencia(serie([1_000_000, 1_000_000, 1_500_000]));
+    expect(txt).toBe('Este mes vas 50% por encima de tu promedio de los últimos meses.');
+  });
+
+  it('cuantifica la baja en positivo, sin signo negativo', () => {
+    const txt = lecturaTendencia(serie([1_000_000, 1_000_000, 600_000]));
+    expect(txt).toBe('Este mes vas 40% por debajo de tu promedio de los últimos meses.');
+  });
+
+  it('los meses sin registro no hunden el promedio', () => {
+    // Con los ceros dentro, el promedio caeria a 400.000 y un mes normal
+    // aparentaria un desborde del 150 %.
+    const txt = lecturaTendencia(serie([1_000_000, 0, 0, 0, 1_000_000]));
+    expect(txt).toBe('Este mes vas en línea con tu promedio de los últimos meses.');
+  });
+});
+
+describe('lecturaCategorias()', () => {
+  const seg = (categoria, pct) => ({ categoria, total: pct * 1000, pct });
+
+  it('calla sin gasto este mes', () => {
+    expect(lecturaCategorias([])).toBe('');
+    expect(lecturaCategorias(null)).toBe('');
+  });
+
+  it('con una sola categoria lo dice sin porcentaje', () => {
+    expect(lecturaCategorias([seg('Mercado', 100)])).toBe('Todo tu gasto de este mes está en Mercado.');
+  });
+
+  it('con la categoria top por encima de la mitad usa la fraccion', () => {
+    const txt = lecturaCategorias([seg('Mercado', 62), seg('Transporte', 38)]);
+    expect(txt).toBe('Más de la mitad de tu gasto de este mes se va en Mercado.');
+  });
+
+  it('con gasto repartido nombra la categoria y su porcentaje', () => {
+    const txt = lecturaCategorias([seg('Mercado', 40), seg('Transporte', 35), seg('Ocio', 25)]);
+    expect(txt).toBe('Mercado concentra el 40% de tu gasto de este mes.');
+  });
+
+  it('si "Otros" encabeza, la lectura es lo contrario a una categoria dominante', () => {
+    const txt = lecturaCategorias([seg('Otros', 45), seg('Mercado', 30), seg('Ocio', 25)]);
+    expect(txt).toBe('Tu gasto de este mes está repartido en muchas categorías pequeñas.');
+  });
+
+  it('calla si el segmento top no tiene nombre', () => {
+    expect(lecturaCategorias([{ categoria: '', total: 100, pct: 100 }])).toBe('');
   });
 });

@@ -44,7 +44,7 @@ Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (si
 
 ## Índice de pendientes
 
-Las 24 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+Las 23 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
@@ -52,9 +52,8 @@ Las 24 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | MT.6 | Metas v2: subcategorías inteligentes + plan de aportes (en curso, faltan MT.6b/c/d) | Metas | media-alta | nada: ADR 064 cerró la estructura de dos niveles |
 | LIM.1 | Límites v2: asistente preventivo de estilo de vida | Límites | sin definir | ADR 045 (base de cálculo); ADR 044 (sugerencias) |
 | PE.6d | Me deben: los cinco estados de un vistazo | Me deben | media-alta | bloqueada por IV.2 en producción |
-| ANL.1a | Lectura de las tres cards principales de Análisis | Análisis | media-alta | nada: ADR 046 cerró criterio, lenguaje y layout |
-| ANL.1b | Titulares de Análisis en lenguaje corriente | Análisis | media | ANL.1a |
-| ANL.1c | Lectura del colapsable de detalle de Análisis | Análisis | baja | ANL.1a |
+| ANL.1b | Titulares de Análisis en lenguaje corriente | Análisis | media | nada: ANL.1a cerrada |
+| ANL.1c | Lectura del colapsable de detalle de Análisis | Análisis | baja | nada: ANL.1a cerrada |
 | CFG.2c | Reubicar lo fiscal: asistente en Ajustes + Análisis | Configuración | sin definir | CFG.2a |
 | CFG.2a | Auto-derivar ingresos brutos al monitor de renta | Configuración | sin definir | CFG.1a (cerrada) |
 | CFG.3 | Notificaciones inteligentes anticipatorias | Configuración | sin definir | nada; riesgo técnico a evaluar primero |
@@ -109,7 +108,7 @@ PE.6d → [`board/me-deben.md`](board/me-deben.md)
 
 ### Análisis (dominio `analisis`)
 
-ANL.1a, ANL.1b, ANL.1c → [`board/analisis.md`](board/analisis.md)
+ANL.1b, ANL.1c → [`board/analisis.md`](board/analisis.md)
 
 ### Configuración (dominio `config`)
 

@@ -46,6 +46,19 @@
   margin: 0;
 }
 .analisis-grupo__body > .analisis__hint { margin-bottom: var(--fk-space-3); }
+
+/* ANL.1a (ADR 046 D3): la línea que interpreta el número de la card. Misma
+   anatomía que `.score-hero__explicacion`, que ya cumple ese papel dentro del
+   hero: `sm` sobre `--fk-text-secondary`, no `xs` sobre `--fk-text-muted` como
+   `.analisis__hint`. La diferencia es deliberada: el hint es una nota al pie
+   (fórmula, aviso correctivo), la lectura es contenido de la card. */
+.analisis-lectura {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  line-height: var(--fk-leading-relaxed);
+  margin: var(--fk-space-2) 0 0;
+}
+
 .analisis__empty {
   font-size: var(--fk-text-sm);
   color: var(--fk-text-muted);
