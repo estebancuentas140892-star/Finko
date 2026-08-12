@@ -253,6 +253,7 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  * @property {string} [icono]
  * @property {string} [nota]          Texto libre opcional (MC.13e-2c). Se muestra
  *                                    junto a la meta en el asistente de distribución.
+ * @property {string|null} [subcategoriaId] Id de `SUBCATEGORIAS_META` (MT.6b, ADR 064).
  * @property {boolean} completada
  */
 

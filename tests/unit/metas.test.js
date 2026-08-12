@@ -423,24 +423,55 @@ describe('normalizarMeta() - categoría', () => {
   });
 });
 
-// ── renderFormMeta() - selector de categoría (MT.1) ───────────────
+// ── normalizarMeta() - subcategoriaId (MT.6b, ADR 048 D1 / ADR 064) ──
 
-describe('renderFormMeta() - selector de categoría', () => {
-  it('incluye un select con name="categoria"', () => {
+describe('normalizarMeta() - subcategoriaId', () => {
+  it('sin subcategoriaId enviado, queda null', () => {
+    const result = normalizarMeta({ ...datosFormValidos, categoria: 'Vehículo' });
+    expect(result.subcategoriaId).toBeNull();
+  });
+
+  it('con subcategoriaId hija de la categoría enviada, se guarda', () => {
+    const result = normalizarMeta({ ...datosFormValidos, categoria: 'Vehículo', subcategoriaId: 'vehiculo-moto' });
+    expect(result.subcategoriaId).toBe('vehiculo-moto');
+  });
+
+  it('un subcategoriaId que no es hija de la categoría enviada se descarta (riesgo de padre huérfano)', () => {
+    const result = normalizarMeta({ ...datosFormValidos, categoria: 'Educación', subcategoriaId: 'vehiculo-moto' });
+    expect(result.subcategoriaId).toBeNull();
+  });
+
+  it('sin categoría, cualquier subcategoriaId enviado se descarta', () => {
+    const result = normalizarMeta({ ...datosFormValidos, categoria: '', subcategoriaId: 'vehiculo-moto' });
+    expect(result.subcategoriaId).toBeNull();
+  });
+
+  it('categoría "Otra" (sin hijos en el catálogo) descarta cualquier subcategoriaId', () => {
+    const result = normalizarMeta({ ...datosFormValidos, categoria: 'Otra', subcategoriaId: 'vehiculo-moto' });
+    expect(result.subcategoriaId).toBeNull();
+  });
+});
+
+// ── renderFormMeta() - chips de categoría (MT.1, MT.6b) ───────────
+
+describe('renderFormMeta() - chips de categoría', () => {
+  it('incluye radios con name="categoria" dentro del grupo de chips', () => {
     const html = renderFormMeta();
-    expect(html).toContain('id="meta-categoria"');
+    expect(html).toContain('id="meta-categoria-chips"');
     expect(html).toContain('name="categoria"');
   });
 
-  it('la opción "Sin categoría" tiene value vacío', () => {
+  it('el chip "Sin categoría" tiene value vacío y viene marcado por defecto', () => {
     const html = renderFormMeta();
-    expect(html).toContain('<option value="">Sin categoría</option>');
+    expect(html).toMatch(/value=""[^>]*checked/);
+    expect(html).toContain('>Sin categoría<');
   });
 
-  it('lista todas las CATEGORIAS_META_USUARIO en texto plano (ID.3)', () => {
+  it('lista todas las CATEGORIAS_META_USUARIO como chips', () => {
     const html = renderFormMeta();
     for (const cat of CATEGORIAS_META_USUARIO) {
-      expect(html).toContain(`<option value="${cat}">${cat}</option>`);
+      expect(html).toContain(`value="${cat}"`);
+      expect(html).toContain(`>${cat}<`);
     }
   });
 
@@ -451,15 +482,20 @@ describe('renderFormMeta() - selector de categoría', () => {
     expect(html).toContain('>Viajes<');
   });
 
-  it('CAT.1c: al editar una meta con categoría retirada, la conserva seleccionada', () => {
+  it('CAT.1c: al editar una meta con categoría retirada, la conserva marcada', () => {
     const html = renderFormMeta(metaBase({ categoria: 'Vacaciones' }));
-    expect(html).toContain('<option value="Vacaciones" selected>Vacaciones</option>');
+    expect(html).toMatch(/value="Vacaciones"[^>]*checked/);
   });
 
   it('CAT.1c: la categoría retirada no se duplica ni desordena el catálogo vigente', () => {
     const html = renderFormMeta(metaBase({ categoria: 'Cumpleaños' }));
     expect(html.match(/>Cumpleaños</g)).toHaveLength(1);
     expect(html.indexOf('>Viajes<')).toBeLessThan(html.indexOf('>Cumpleaños<'));
+  });
+
+  it('ADR 042 D6: ningún select nuevo para elegir categoría', () => {
+    const html = renderFormMeta();
+    expect(html).not.toContain('<select');
   });
 
   it('conserva el campo de emoji libre, oculto por defecto (MT.3)', () => {
@@ -474,6 +510,39 @@ describe('renderFormMeta() - selector de categoría', () => {
     expect(html).toContain('data-icono-picker="meta-icono"');
     expect(html).toContain('icono-picker__recuadro');
     expect(html).not.toContain('placeholder="🎯"');
+  });
+});
+
+// ── renderFormMeta() - chips de subcategoría (MT.6b, ADR 048 D1/ADR 064) ──
+
+describe('renderFormMeta() - chips de subcategoría', () => {
+  it('sin meta (categoría "Sin categoría"), todos los grupos de subcategoría vienen ocultos y deshabilitados', () => {
+    const html = renderFormMeta();
+    expect(html).toContain('name="subcategoriaId"');
+    expect(html).toMatch(/data-subcategoria-grupo="Vehículo"[^>]* hidden disabled/);
+  });
+
+  it('categoría "Otra" no tiene grupo de subcategoría (no está en SUBCATEGORIAS_META)', () => {
+    const html = renderFormMeta(metaBase({ categoria: 'Otra' }));
+    expect(html).not.toContain('data-subcategoria-grupo="Otra"');
+  });
+
+  it('categoría con hijos (Vehículo): su grupo queda visible y habilitado', () => {
+    const html = renderFormMeta(metaBase({ categoria: 'Vehículo' }));
+    expect(html).toMatch(/<fieldset class="subcategoria-fieldset" data-subcategoria-grupo="Vehículo">/);
+    expect(html).toContain('value="vehiculo-carro"');
+    expect(html).toContain('value="vehiculo-moto"');
+  });
+
+  it('categoría sin hijos (Boda no tiene, Educación sí): solo el grupo con hijos aparece habilitado', () => {
+    const html = renderFormMeta(metaBase({ categoria: 'Educación' }));
+    expect(html).toMatch(/data-subcategoria-grupo="Educación">/);
+    expect(html).toMatch(/data-subcategoria-grupo="Viajes"[^>]* hidden disabled/);
+  });
+
+  it('con subcategoriaId guardado, el chip correspondiente viene checked', () => {
+    const html = renderFormMeta(metaBase({ categoria: 'Vehículo', subcategoriaId: 'vehiculo-moto' }));
+    expect(html).toMatch(/value="vehiculo-moto"[^>]*checked/);
   });
 });
 
@@ -1037,10 +1106,10 @@ describe('renderFormMeta() - modo edición (EDIT.1)', () => {
     expect(html).not.toContain('>Guardar meta<');
   });
 
-  it('marca la categoría actual como seleccionada en el <select>', () => {
+  it('marca el chip de la categoría actual como checked', () => {
     const meta = metaBase({ categoria: 'Boda' });
     const html = renderFormMeta(meta);
-    expect(html).toContain(`<option value="Boda" selected>Boda</option>`);
+    expect(html).toMatch(/value="Boda"[^>]*checked/);
   });
 
   it('con categoría "Otra", el grupo de ícono NO viene oculto', () => {

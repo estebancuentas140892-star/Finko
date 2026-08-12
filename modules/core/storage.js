@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 36;
+const SCHEMA_VERSION = 37;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -559,6 +559,19 @@ function _migrate(raw) {
     if (!data.config || typeof data.config !== 'object') data.config = {};
     if (!('bloqueo' in data.config)) {
       data.config.bloqueo = null;
+    }
+  }
+
+  // v36 → v37: subcategoría de meta (MT.6b, ADR 048 D1 / ADR 064). Default
+  // null: una meta existente no reconoce todavía un tipo más específico que
+  // su categoría. Idempotente: si el campo ya está presente, no se sobreescribe.
+  if ((typeof data._version === 'number' ? data._version : 1) < 37) {
+    if (Array.isArray(data.metas)) {
+      for (const m of data.metas) {
+        if (m && typeof m === 'object' && !('subcategoriaId' in m)) {
+          m.subcategoriaId = null;
+        }
+      }
     }
   }
 

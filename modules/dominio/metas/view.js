@@ -12,8 +12,9 @@ import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
 import {
   CATEGORIAS_META_USUARIO, CATEGORIA_META_ICONO, CATEGORIA_META_SILUETA,
-  ICONOS_CATEGORIA_PERSONALIZADA,
+  ICONOS_CATEGORIA_PERSONALIZADA, SUBCATEGORIAS_META,
 } from '../../core/constants.js';
+import { categoriasConHijos, hijosDeCategoria } from '../../infra/taxonomia.js';
 import {
   metasActivas, metasCumplidas, calcularProgreso, calcularAhorroPorPeriodo,
   etiquetaPeriodoAhorro, frecuenciaPrincipalIngresos,
@@ -304,13 +305,13 @@ export function renderFormMeta(meta = null) {
         <p class="form-hint">Sin fecha, la meta queda abierta. Con fecha, Finko muestra cuánto guardar por día para llegar a tiempo.</p>
       </div>
       <div class="form-group">
-        <label for="meta-categoria" class="label">Categoría (opcional)</label>
-        <select id="meta-categoria" name="categoria" class="input">
-          <option value="">Sin categoría</option>
-          ${_renderOpcionesCategoria(categoriaActual)}
-        </select>
+        <span class="label" id="meta-categoria-label">Categoría <span class="form-optional">opcional</span></span>
+        <div class="chips-cat" id="meta-categoria-chips" role="radiogroup" aria-labelledby="meta-categoria-label">
+          ${_chipsCategoria(categoriaActual)}
+        </div>
         <p class="form-hint">Elige una categoría y Finko le pone el ícono automáticamente.</p>
       </div>
+      ${_gruposSubcategoria(categoriaActual, meta?.subcategoriaId ?? null)}
       <!-- CAT.2b: el ícono ya no es un campo suelto para toda meta; solo con
            categoría "Otra" tiene sentido elegirlo (el resto ya trae el ícono
            de su categoría). index.js (_syncCategoriaMeta) alterna [hidden] al
@@ -335,27 +336,72 @@ export function renderFormMeta(meta = null) {
 // ── HELPERS ──────────────────────────────────────────────────────
 
 /**
- * Devuelve las `<option>` de CATEGORIAS_META_USUARIO en el orden del catálogo
- * (texto plano: un <option> nativo no renderiza SVG, ADR 025).
+ * Chips de categoría (MT.6b, ADR 042 D6: "ningún formulario nuevo introduce
+ * un select de categoría"). Mismo componente `.chips-cat`/`.chip-cat` del
+ * lenguaje de formularios (FORM.1a), con radios reales `name="categoria"`:
+ * el contrato FormData no cambia, solo el control visual.
  *
  * CAT.1c: si se edita una meta guardada con una categoría ya retirada
- * ('Cumpleaños', 'Vacaciones'), esa categoría se agrega al final como opción
- * propia. Sin eso el select caería en "Sin categoría" y corregir el nombre de
- * la meta le borraría la categoría y le cambiaría el ícono, que es
+ * ('Cumpleaños', 'Vacaciones'), esa categoría se agrega al final como chip
+ * propio. Sin eso el control caería en "Sin categoría" y corregir el nombre
+ * de la meta le borraría la categoría y le cambiaría el ícono, que es
  * exactamente lo que EDIT.1 vino a evitar. La opción retirada no se ofrece
  * para metas nuevas: solo sobrevive donde ya estaba elegida.
  *
- * @param {string} [seleccionada] categoría a marcar `selected` (edición).
+ * @param {string} [seleccionada] categoría a marcar `checked` (edición).
  * @returns {string}
  */
-function _renderOpcionesCategoria(seleccionada = '') {
+function _chipsCategoria(seleccionada = '') {
   const catalogo = seleccionada && !CATEGORIAS_META_USUARIO.includes(seleccionada)
     ? [...CATEGORIAS_META_USUARIO, seleccionada]
     : CATEGORIAS_META_USUARIO;
 
-  return catalogo
-    .map(cat => `<option value="${_esc(cat)}"${cat === seleccionada ? ' selected' : ''}>${_esc(cat)}</option>`)
-    .join('');
+  const chip = (valor, etiqueta, simbolo) => `
+        <label class="chip-cat">
+          <input type="radio" name="categoria" class="chip-cat__radio" value="${_esc(valor)}"${valor === seleccionada ? ' checked' : ''} />
+          ${iconoCategoria(simbolo, 'icon')}
+          <span class="chip-cat__label">${_esc(etiqueta)}</span>
+        </label>`;
+
+  return [
+    chip('', 'Sin categoría', 'i-metas'),
+    ...catalogo.map(cat => chip(cat, cat, CATEGORIA_META_ICONO[cat] ?? 'i-metas')),
+  ].join('');
+}
+
+/**
+ * Segundo control del form (MT.6b, ADR 048 D1 / ADR 064): un grupo de chips
+ * de subcategoría por cada categoría que tiene hijos declarados en
+ * `SUBCATEGORIAS_META`. Solo el grupo de la categoría elegida se ve; el resto
+ * viaja `hidden` **y** `disabled` en el mismo `<fieldset>`.
+ *
+ * El `disabled` no es solo visual: un `<fieldset disabled>` excluye a sus
+ * radios de `FormData` sin JS adicional, así que cambiar de categoría no
+ * puede dejar un `subcategoriaId` huérfano apuntando al padre anterior (el
+ * riesgo que anotó la tarjeta MT.6b). `index.js` (`_syncCategoriaMeta`)
+ * alterna cuál de los grupos queda visible/habilitado al cambiar de chip.
+ *
+ * @param {string} categoriaActual
+ * @param {string|null} subcategoriaActual
+ * @returns {string}
+ */
+function _gruposSubcategoria(categoriaActual, subcategoriaActual) {
+  return categoriasConHijos(SUBCATEGORIAS_META).map(cat => {
+    const hijos   = hijosDeCategoria(SUBCATEGORIAS_META, cat);
+    const visible = cat === categoriaActual;
+
+    const chips = hijos.map(h => `
+          <label class="chip-cat">
+            <input type="radio" name="subcategoriaId" class="chip-cat__radio" value="${_esc(h.id)}"${h.id === subcategoriaActual ? ' checked' : ''} />
+            <span class="chip-cat__label">${_esc(h.nombre)}</span>
+          </label>`).join('');
+
+    return `
+      <fieldset class="subcategoria-fieldset" data-subcategoria-grupo="${_esc(cat)}"${visible ? '' : ' hidden disabled'}>
+        <legend>Sé más específico <span class="form-optional">opcional</span></legend>
+        <div class="chips-cat">${chips}</div>
+      </fieldset>`;
+  }).join('');
 }
 
 /**

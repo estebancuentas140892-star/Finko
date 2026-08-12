@@ -1538,3 +1538,34 @@ describe('Migración v35 → v36 (candado de acceso en config, CFG.5a)', () => {
     expect(S.config.bloqueo).toEqual({ hash: 'abc', salt: 'def', creado: '2026-08-12' });
   });
 });
+
+describe('Migración v36 → v37 (subcategoría de meta, MT.6b)', () => {
+  it('una meta existente arranca sin subcategoría', () => {
+    const v36 = { ...createInitialState(), _version: 36 };
+    v36.metas = [{ id: 'm1', nombre: 'Viaje', montoObjetivo: 1000, montoActual: 0, completada: false }];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v36));
+
+    loadData();
+
+    expect(S.metas[0].subcategoriaId).toBeNull();
+    expect(S._version).toBe(SCHEMA_VERSION);
+  });
+
+  it('un estado v36 sin metas en absoluto no revienta la migración', () => {
+    const v36 = { ...createInitialState(), _version: 36 };
+    delete v36.metas;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v36));
+
+    expect(() => loadData()).not.toThrow();
+  });
+
+  it('es idempotente: no sobrescribe una subcategoría ya guardada', () => {
+    const v37 = { ...createInitialState(), _version: 37 };
+    v37.metas = [{ id: 'm1', nombre: 'Carro', montoObjetivo: 1000, montoActual: 0, completada: false, subcategoriaId: 'vehiculo-carro' }];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v37));
+
+    loadData();
+
+    expect(S.metas[0].subcategoriaId).toBe('vehiculo-carro');
+  });
+});

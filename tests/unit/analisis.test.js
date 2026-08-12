@@ -2447,7 +2447,7 @@ describe('renderAnalisis() - DIS.10 auditoría de diseño', () => {
   it('C12: la card de categorías declara que es de este mes', () => {
     S.gastos = [gasto({ fecha: fechaMesActual(2) })];
     renderAnalisis();
-    expect(document.querySelector('.catg-card__sub').textContent).toBe('Este mes');
+    expect(document.querySelector('.catg-card__sub').textContent).toBe('Por categoría, este mes');
   });
 
   it('C12: el monitor de renta nombra el año corriente', () => {

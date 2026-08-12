@@ -12,6 +12,26 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(analisis): ANL.1b, titulares de Análisis en lenguaje corriente · 2026-08-12
+
+Tercera rebanada de la iniciativa **ANL.1**. Commit `<PENDIENTE>`. Ficha: [`contexto/analisis.md`](contexto/analisis.md).
+
+- Ejecuta el [ADR 046](DECISIONS/046-analisis-interpreta-criterio-y-lenguaje.md) D2: los 5 titulares de la tabla de equivalencias pasan a lenguaje corriente, con el término técnico como secundario en la misma card, nunca eliminado.
+- `view.js`: "Score de salud" → "Salud de tu dinero" (secundaria nueva `.score-hero__sub`); "Patrimonio neto" → "Lo que realmente tienes" (`.patri-card__hint` ahora nombra el término técnico); "Activos"/"Pasivos" → "Lo que tienes"/"Lo que debes" (término técnico en `.patri-card__col-tech`); "Tendencia de gastos" → "Cómo cambia tu gasto"; "Por categoría" → "En qué gastas".
+- Puro texto y CSS (dos clases nuevas, sin tokens hardcodeados); sin cambios de lógica ni de schema.
+- 1 test unitario ajustado (`analisis.test.js`, C12). 3930/3930 unit + 237/237 E2E (6 flaky, no relacionados) verdes. SW `finko-v509` → `finko-v510`.
+
+### feat(metas): MT.6b, la subcategoría entra al formulario y al dato · 2026-08-12
+
+Segunda rebanada de **MT.6** (Metas v2). Commit `<PENDIENTE>`. Ficha: [`contexto/metas.md`](contexto/metas.md).
+
+- **El `select` nativo de categoría se rehace en chips** (`_chipsCategoria()`, `metas/view.js`), mismo componente `.chips-cat`/`.chip-cat` del lenguaje de formularios (FORM.1a): radios reales `name="categoria"`, el contrato `FormData` no cambia. Cumple el [ADR 042](DECISIONS/042-formularios-v2-visual.md) D6 ("ningún formulario nuevo introduce un select de categoría") y absorbe el pendiente MT.h de DIS.13.
+- **Segundo control: un `<fieldset>` de subcategoría por cada categoría con hijos** en `SUBCATEGORIAS_META` (`_gruposSubcategoria()`). Solo el de la categoría elegida queda visible y habilitado; los demás viajan `hidden` **y** `disabled` a la vez.
+- **El riesgo que anotaba la tarjeta (un `subcategoriaId` huérfano de otro padre al cambiar de categoría) se resuelve en el DOM, no solo en la lógica**: un `<fieldset disabled>` excluye a sus radios de `FormData` sin JS adicional. `normalizarMeta()` valida igual con `hijosDeCategoria()` antes de guardar, por si algún otro llamador no pasa por el form.
+- `metas/index.js` (`_syncCategoriaMeta`) alterna el grupo de subcategoría visible junto con el picker de ícono de "Otra", al mismo cambio de chip.
+- Schema v36 → v37: `subcategoriaId` default `null` en metas existentes.
+- Tests: 21 unit nuevos (`metas.test.js`: chips de categoría, chips de subcategoría, `normalizarMeta`), 3 de migración (`storage.test.js`), 1 E2E nuevo + 6 reescritos (chips en vez de `selectOption`). SW `finko-v508` → `finko-v509`.
+
 ### docs(limites): ADR 045 resuelto, LIM.1 partida en tres rebanadas · 2026-08-12
 
 LIM.1 llevaba desde el 2026-07-24 con su base de cálculo sin dueño y la instrucción textual "no implementar nada de este ADR". Esteban pidió trabajar LIM.1 y delegó la elección, igual que en el ADR 046 y el 063. Sin cambios de código, tests ni SW. [ADR 045](DECISIONS/045-base-de-calculo-del-disponible-para-limites.md). Ficha: [`contexto/limites.md`](contexto/limites.md).

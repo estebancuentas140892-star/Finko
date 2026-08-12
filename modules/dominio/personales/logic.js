@@ -243,7 +243,7 @@ export function labelEstado(estado) {
     case 'hoy':
       return 'Pago programado para hoy';
     case 'vencido':
-      return `La fecha de pago pasó ${tiempoRelativo(estado.dias)}`;
+      return `Venció ${tiempoRelativo(estado.dias)}`;
     case 'abonado':
       return estado.dias === 0 ? 'Recibiste un abono hoy' : `Último abono ${tiempoRelativo(estado.dias)}`;
     default:

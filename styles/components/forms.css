@@ -857,6 +857,27 @@ textarea.input {
   border-color: color-mix(in srgb, var(--fk-danger) 45%, transparent);
 }
 
+/* Fieldset condicional de subcategoría (MT.6b, ADR 064): un grupo por cada
+   categoría que tiene hijos en el catálogo de dos niveles; solo el de la
+   categoría elegida queda visible y habilitado a la vez. Mismo patrón de
+   .cuota-fieldset: borde sutil, [hidden] lo oculta del todo. */
+.subcategoria-fieldset {
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-md);
+  padding: var(--fk-space-3) var(--fk-space-4);
+  margin: 0 0 var(--fk-space-5);
+  background: var(--fk-bg-hover);
+}
+.subcategoria-fieldset[hidden] {
+  display: none;
+}
+.subcategoria-fieldset legend {
+  padding: 0;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  margin-bottom: var(--fk-space-2);
+}
+
 /* ── Chips de fecha: atajos Hoy / Ayer / Otra fecha (énfasis neutro) ── */
 .fecha-chips {
   display: flex;

@@ -282,8 +282,8 @@ describe('labelEstado() (PE.3/PE.4, copy de seguimiento)', () => {
   });
 
   it('vencido humaniza los días transcurridos', () => {
-    expect(labelEstado({ tipo: 'vencido', dias: 1 })).toBe('La fecha de pago pasó ayer');
-    expect(labelEstado({ tipo: 'vencido', dias: 60 })).toBe('La fecha de pago pasó hace 2 meses');
+    expect(labelEstado({ tipo: 'vencido', dias: 1 })).toBe('Venció ayer');
+    expect(labelEstado({ tipo: 'vencido', dias: 60 })).toBe('Venció hace 2 meses');
   });
 
   it('abonado: hoy con copy propio, resto humanizado', () => {

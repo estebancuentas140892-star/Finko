@@ -14,15 +14,7 @@
 
 > **ANL.1a cerrada el 2026-08-12** (`.analisis-lectura`, `lecturaPatrimonio` / `lecturaTendencia` / `lecturaCategorias`, regla R75). Fundó el patrón de lectura que ANL.1c reutiliza.
 
-#### ANL.1b - Titulares en lenguaje corriente
-- Prioridad  : media
-- Estado     : lista para trabajar (ADR 046 D2, tabla de equivalencias cerrada)
-- Área       : design
-- Objetivo   : "Score de salud" pasa a "Salud de tu dinero", "Patrimonio neto" a "Lo que realmente tienes", y el término técnico baja al subtítulo de la misma card en vez de desaparecer.
-- Secciones  : Análisis
-- Archivos   : `modules/dominio/analisis/view.js`, `tests/e2e/smoke.test.js` (los que buscan el texto viejo)
-- Depende de : nada (ANL.1a ya cerró)
-- Modelo     : ver la skill `elegir-modelo`
+> **ANL.1b cerrada el 2026-08-12** (ADR 046 D2). Titulares de las 5 filas de la tabla de equivalencias, en `view.js`.
 
 #### ANL.1c - Lectura del colapsable de detalle
 - Prioridad  : baja

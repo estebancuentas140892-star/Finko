@@ -27,24 +27,41 @@ import { renderBannerProposito } from '../../ui/proposito.js';
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
 /**
- * Alterna el selector de ícono (CAT.2b, ex MT.3 con campo de emoji libre):
- * solo tiene sentido con la categoría "Otra" (las demás ya traen su ícono,
- * ver `normalizarMeta`). Al ocultarlo resetea el picker (`resetIconoPicker`)
- * para que un ícono elegido con "Otra" no sobreviva un cambio posterior a
- * otra categoría (`FormData` sigue enviando los campos ocultos, y
- * `normalizarMeta` prioriza el ícono explícito sobre el de la categoría).
+ * Alterna el selector de ícono (CAT.2b, ex MT.3 con campo de emoji libre) y
+ * el grupo de subcategoría (MT.6b) cuando cambia el chip de categoría.
+ *
+ * Ícono: solo tiene sentido con la categoría "Otra" (las demás ya traen su
+ * ícono, ver `normalizarMeta`). Al ocultarlo resetea el picker
+ * (`resetIconoPicker`) para que un ícono elegido con "Otra" no sobreviva un
+ * cambio posterior a otra categoría (`FormData` sigue enviando los campos
+ * ocultos, y `normalizarMeta` prioriza el ícono explícito sobre el de la
+ * categoría).
+ *
+ * Subcategoría: cada categoría con hijos tiene su propio `<fieldset>`
+ * (`view.js`, `_gruposSubcategoria`). Al cambiar de chip, solo el que
+ * coincide con la categoría elegida queda visible y habilitado; los demás
+ * quedan `hidden` + `disabled`, que es lo que evita que `FormData` mande un
+ * `subcategoriaId` de un padre distinto al enviado.
  *
  * @param {HTMLFormElement} form
  */
 function _syncCategoriaMeta(form) {
-  const selCategoria = form.querySelector('#meta-categoria');
-  const grupoIcono   = form.querySelector('#form-group-meta-icono');
-  const pickerIcono  = form.querySelector('[data-icono-picker="meta-icono"]');
-  if (!selCategoria || !grupoIcono || !pickerIcono) return;
+  const chipsCategoria = form.querySelector('#meta-categoria-chips');
+  const grupoIcono     = form.querySelector('#form-group-meta-icono');
+  const pickerIcono    = form.querySelector('[data-icono-picker="meta-icono"]');
+  if (!chipsCategoria || !grupoIcono || !pickerIcono) return;
 
-  const esOtra = selCategoria.value === 'Otra';
+  const categoria = chipsCategoria.querySelector('input[name="categoria"]:checked')?.value ?? '';
+
+  const esOtra = categoria === 'Otra';
   grupoIcono.hidden = !esOtra;
   if (!esOtra) resetIconoPicker(pickerIcono);
+
+  for (const grupo of form.querySelectorAll('[data-subcategoria-grupo]')) {
+    const visible = grupo.dataset.subcategoriaGrupo === categoria;
+    grupo.hidden   = !visible;
+    grupo.disabled = !visible;
+  }
 }
 
 function _nuevaMeta() {
@@ -282,7 +299,7 @@ function _inyectarFormMeta(meta = null) {
     e.preventDefault();
     _guardarMeta();
   });
-  form.querySelector('#meta-categoria')?.addEventListener('change', () => _syncCategoriaMeta(form));
+  form.querySelector('#meta-categoria-chips')?.addEventListener('change', () => _syncCategoriaMeta(form));
   wireIconoPicker(form.querySelector('[data-icono-picker="meta-icono"]'));
 }
 

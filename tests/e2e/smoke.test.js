@@ -659,7 +659,7 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
     const form = page.locator('#modal-meta-body form');
     await form.locator('#meta-nombre').fill('Fiesta de matrimonio');
     await form.locator('#meta-objetivo').fill('5000000');
-    await form.locator('#meta-categoria').selectOption('Boda');
+    await elegirChip(form, 'Boda');
     await form.locator('button[type="submit"]').click();
 
     await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
@@ -678,11 +678,11 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
     await expect(form.locator('#form-group-meta-icono')).toBeHidden();
 
     // Cualquier categoría predefinida mantiene el emoji oculto: ya trae el suyo.
-    await form.locator('#meta-categoria').selectOption('Viajes');
+    await elegirChip(form, 'Viajes');
     await expect(form.locator('#form-group-meta-icono')).toBeHidden();
 
     // Solo "Otra" habilita elegir el emoji a mano.
-    await form.locator('#meta-categoria').selectOption('Otra');
+    await elegirChip(form, 'Otra');
     await expect(form.locator('#form-group-meta-icono')).toBeVisible();
   });
 
@@ -693,7 +693,7 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
     const form = page.locator('#modal-meta-body form');
     await form.locator('#meta-nombre').fill('Estudio de grabación');
     await form.locator('#meta-objetivo').fill('3000000');
-    await form.locator('#meta-categoria').selectOption('Otra');
+    await elegirChip(form, 'Otra');
     // El selector compacto (CAT.2b) reemplazó al input de emoji libre: tocar
     // el recuadro despliega la grilla, elegir un ícono la cierra.
     await form.locator('[data-icono-picker="meta-icono"] .icono-picker__recuadro').click();
@@ -716,10 +716,10 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
 
     // El usuario prueba "Otra" y elige un ícono, pero se arrepiente y vuelve
     // a una categoría predefinida antes de guardar.
-    await form.locator('#meta-categoria').selectOption('Otra');
+    await elegirChip(form, 'Otra');
     await form.locator('[data-icono-picker="meta-icono"] .icono-picker__recuadro').click();
     await form.locator('[data-icono-picker="meta-icono"] [data-icon="c-torta"]').click();
-    await form.locator('#meta-categoria').selectOption('Vivienda');
+    await elegirChip(form, 'Vivienda');
     await form.locator('button[type="submit"]').click();
 
     await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
@@ -5058,14 +5058,14 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
     const form = page.locator('#modal-meta-body form');
     await form.locator('#meta-nombre').fill('Boda de mi hermana');
     await form.locator('#meta-objetivo').fill('4000000');
-    await form.locator('#meta-categoria').selectOption('Boda');
+    await elegirChip(form, 'Boda');
     await form.locator('button[type="submit"]').click();
     await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
 
     await page.click('.meta-card__secundaria[data-action="editar-meta"]');
     await page.waitForSelector('#modal-meta[data-open]');
     const formEdit = page.locator('#modal-meta-body form');
-    await expect(formEdit.locator('#meta-categoria')).toHaveValue('Boda');
+    await expect(formEdit.locator('.chip-cat:has(input[value="Boda"]) input')).toBeChecked();
     // El grupo de ícono sigue oculto: "Boda" ya trae su propio glifo.
     await expect(formEdit.locator('#form-group-meta-icono')).toBeHidden();
 
@@ -5078,5 +5078,42 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
     const glifo = page.locator('#lista-metas .meta-card__arco-icono');
     await expect(glifo).toHaveClass(/meta-card__arco-icono--silueta/);
     await expect(glifo.locator('svg.silueta')).toHaveCount(1);
+  });
+
+  // MT.6b (ADR 048 D1 / ADR 064): la subcategoría es el segundo control, y el
+  // riesgo que anotó la tarjeta era que cambiar de categoría dejara un
+  // subcategoriaId huérfano de otro padre. El fieldset disabled lo evita en
+  // el DOM, no solo en la lógica: se verifica guardando y reabriendo.
+  test('MT.6b: elegir subcategoría la guarda, y cambiar de categoría la limpia', async ({ page }) => {
+    await page.locator('#topbar-primario[data-action="nueva-meta"]:visible, #sec-metas .section__header [data-action="nueva-meta"]:visible').click();
+    await page.waitForSelector('#modal-meta[data-open]');
+    const form = page.locator('#modal-meta-body form');
+    await form.locator('#meta-nombre').fill('Moto nueva');
+    await form.locator('#meta-objetivo').fill('8000000');
+    await elegirChip(form, 'Vehículo');
+
+    const grupoVehiculo = form.locator('[data-subcategoria-grupo="Vehículo"]');
+    await expect(grupoVehiculo).toBeVisible();
+    await grupoVehiculo.locator('.chip-cat:has(input[value="vehiculo-moto"])').click();
+
+    await form.locator('button[type="submit"]').click();
+    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+
+    await page.click('.meta-card__secundaria[data-action="editar-meta"]');
+    await page.waitForSelector('#modal-meta[data-open]');
+    const formEdit = page.locator('#modal-meta-body form');
+    await expect(formEdit.locator('.chip-cat:has(input[value="vehiculo-moto"]) input')).toBeChecked();
+
+    // Cambia a una categoría sin relación con "moto": el grupo de Vehículo se
+    // oculta y deshabilita, así que guardar no manda ese subcategoriaId.
+    await elegirChip(formEdit, 'Educación');
+    await expect(formEdit.locator('[data-subcategoria-grupo="Vehículo"]')).toBeHidden();
+    await formEdit.locator('button[type="submit"]').click();
+    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+
+    await page.click('.meta-card__secundaria[data-action="editar-meta"]');
+    await page.waitForSelector('#modal-meta[data-open]');
+    const formReabierto = page.locator('#modal-meta-body form');
+    await expect(formReabierto.locator('.chip-cat:has(input[value="vehiculo-moto"]) input')).not.toBeChecked();
   });
 });

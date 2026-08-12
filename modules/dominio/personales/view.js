@@ -12,8 +12,6 @@ import {
   calcularPendiente,
   calcularCapitalPendiente,
   calcularInteresPendiente,
-  calcularDias,
-  clasificarAntiguedad,
   estadoPrestamo,
   labelEstado,
   porcentajePagado,
@@ -180,17 +178,16 @@ function _renderPersonalItem(prestamo, hoy, oculto = false) {
   const pct        = porcentajePagado(prestamo);
   const m          = (n) => oculto ? SALDO_MASCARA_CUENTA : f(n);
 
-  // Copy por estado (fecha pactada > último abono > antigüedad); el tono del
-  // chip sigue saliendo del reloj de incomodidad (que un abono reinicia).
+  // PE.6d (ADR 047 D6): los cinco estados (al día, próximo a vencer, pago
+  // parcial, vencido, finalizado) se distinguen de un vistazo por tipo, no por
+  // antigüedad en días: un vencido es vencido aunque sea reciente, y mezclar
+  // el reloj de incomodidad aquí volvía indistinguibles pago parcial y al día.
   const estado = estadoPrestamo(prestamo, hoy);
-  const antig  = clasificarAntiguedad(calcularDias(prestamo, hoy));
 
   const chipClase =
     estado.tipo === 'liquidado' ? 'chip chip-success'
-    : estado.tipo === 'hoy'     ? 'chip chip-warning'
-    : estado.tipo === 'vencido' ? (antig === 'viejo' ? 'chip chip-danger' : 'chip chip-warning')
-    : antig === 'viejo'         ? 'chip chip-danger'
-    : antig === 'mediano'       ? 'chip chip-warning'
+    : estado.tipo === 'vencido' ? 'chip chip-danger'
+    : (estado.tipo === 'proximo' || estado.tipo === 'hoy') ? 'chip chip-warning'
     : 'chip';
 
   const chipLabel = labelEstado(estado);

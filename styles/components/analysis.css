@@ -369,6 +369,11 @@
   color: var(--fk-text-secondary);
   margin: 0;
 }
+.score-hero__sub {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  margin: 0;
+}
 .score-hero__pill {
   display: inline-flex;
   align-items: center;
@@ -671,6 +676,14 @@
 }
 
 .estilo-olla--excede { color: var(--fk-warning); }
+
+/* LIM.1a: el dinero extraordinario del mes. Comparte la anatomía de la olla
+   finita porque es la misma clase de dato (una lectura del plan, no una
+   alerta): sin color de estado, con su salida a Mis cuentas al final. */
+.estilo-olla__link {
+  color: var(--fk-accent);
+  text-decoration: underline;
+}
 
 .estilo-limites__vacio {
   font-size: var(--fk-fs-sm);
@@ -2138,6 +2151,11 @@
   letter-spacing: 0.05em;
   color: var(--fk-text-secondary);
   margin: 0;
+}
+.patri-card__col-tech {
+  text-transform: none;
+  font-weight: var(--fk-font-regular);
+  color: var(--fk-text-muted);
 }
 .patri-card__col-valor {
   font-family: var(--fk-font-mono);

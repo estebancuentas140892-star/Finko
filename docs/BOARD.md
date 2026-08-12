@@ -49,12 +49,11 @@ Las 25 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
 | INT.1g | Carril derecho de 320px desde 1.680px (diferida) | Transversal | baja (diferida) | sin sección candidata con contenido |
-| MT.6 | Metas v2: subcategorías inteligentes + plan de aportes (en curso, faltan MT.6b/c/d) | Metas | media-alta | nada: ADR 064 cerró la estructura de dos niveles |
+| MT.6 | Metas v2: subcategorías inteligentes + plan de aportes (en curso, faltan MT.6c/d) | Metas | media-alta | nada: ADR 064 cerró la estructura de dos niveles |
 | LIM.1a | El dinero extra del mes, informado sin repartir | Límites | media | nada: ADR 045 D3 cerró el criterio |
 | LIM.1b | Los fijos no esenciales cuentan contra Estilo de vida | Límites | media | nada; mueve el reparto en Límites y Mis cuentas a la vez |
 | LIM.1c | Sugerir dónde y cuánto poner tope (bloqueada) | Límites | sin definir | ADR 044 (motor único de sugerencia) |
 | PE.6d | Me deben: los cinco estados de un vistazo | Me deben | media-alta | bloqueada por IV.2 en producción |
-| ANL.1b | Titulares de Análisis en lenguaje corriente | Análisis | media | nada: ANL.1a cerrada |
 | ANL.1c | Lectura del colapsable de detalle de Análisis | Análisis | baja | nada: ANL.1a cerrada |
 | CFG.2c | Reubicar lo fiscal: asistente en Ajustes + Análisis | Configuración | sin definir | CFG.2a |
 | CFG.2a | Auto-derivar ingresos brutos al monitor de renta | Configuración | sin definir | CFG.1a (cerrada) |
@@ -110,7 +109,7 @@ PE.6d → [`board/me-deben.md`](board/me-deben.md)
 
 ### Análisis (dominio `analisis`)
 
-ANL.1b, ANL.1c → [`board/analisis.md`](board/analisis.md)
+ANL.1c → [`board/analisis.md`](board/analisis.md)
 
 ### Configuración (dominio `config`)
 

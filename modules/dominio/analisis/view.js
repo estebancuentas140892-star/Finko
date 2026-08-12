@@ -683,7 +683,8 @@ function _renderScoreSalud(resumen) {
             </div>
           </div>
           <div class="score-hero__info">
-            <h2 class="score-hero__kicker" id="analisis-score-title">Score de salud</h2>
+            <h2 class="score-hero__kicker" id="analisis-score-title">Salud de tu dinero</h2>
+            <p class="score-hero__sub">Score de salud: 0 a 100</p>
             <span class="score-hero__pill">
               ${icon(iconoBanda, 'icon score-hero__pill-icon')}
               ${label}
@@ -781,20 +782,20 @@ function _renderPatrimonio({ activos, pasivos, patrimonioNeto }, lectura = '') {
           <span class="patri-card__teja" aria-hidden="true">
             ${icon('saldo', 'icon patri-card__teja-icon')}
           </span>
-          <h2 class="patri-card__kicker" id="analisis-patrimonio-title">Patrimonio neto</h2>
+          <h2 class="patri-card__kicker" id="analisis-patrimonio-title">Lo que realmente tienes</h2>
         </div>
         <p class="patri-card__valor ${valorClase}">${netoTxt}</p>
-        <p class="patri-card__hint">activos − pasivos · hoy</p>
+        <p class="patri-card__hint">Patrimonio neto: activos menos pasivos, hoy</p>
         ${_renderLectura(lectura)}
         ${compBarra}
         <div class="patri-card__grid">
           <article class="patri-card__col">
-            <p class="patri-card__col-label">Activos</p>
+            <p class="patri-card__col-label">Lo que tienes <span class="patri-card__col-tech">Activos</span></p>
             <p class="patri-card__col-valor">${activosTxt}</p>
             <p class="patri-card__col-desc">${activosDesc}</p>
           </article>
           <article class="patri-card__col">
-            <p class="patri-card__col-label">Pasivos</p>
+            <p class="patri-card__col-label">Lo que debes <span class="patri-card__col-tech">Pasivos</span></p>
             <p class="patri-card__col-valor ${pasivos.total > 0 ? 'patri-card__col-valor--pasivo' : ''}">${pasivosTxt}</p>
             <p class="patri-card__col-desc">
               ${pasivos.cantidadDeudas === 0
@@ -842,8 +843,8 @@ function _renderPorCategoria(gastoMes, segmentos = [], lectura = '') {
       <div class="catg-card">
         <div class="catg-card__head">
           <div class="catg-card__head-texto">
-            <h3 class="catg-card__title" id="analisis-cat-title">Por categoría</h3>
-            <p class="catg-card__sub">Este mes</p>
+            <h3 class="catg-card__title" id="analisis-cat-title">En qué gastas</h3>
+            <p class="catg-card__sub">Por categoría, este mes</p>
           </div>
           <span class="catg-card__total">${f(gastoMes)}</span>
         </div>
@@ -931,8 +932,8 @@ function _renderTendencia(serie, lectura = '') {
       <div class="tend-card">
         <div class="tend-card__head">
           <div class="tend-card__head-texto">
-            <h3 class="tend-card__title" id="analisis-tendencia-title">Tendencia de gastos</h3>
-            <p class="tend-card__sub">Últimos ${serie.length} meses</p>
+            <h3 class="tend-card__title" id="analisis-tendencia-title">Cómo cambia tu gasto</h3>
+            <p class="tend-card__sub">Tendencia, últimos ${serie.length} meses</p>
           </div>
           <span class="tend-card__chip${chipClase}">${chipIcono}<span>${chipTexto}</span></span>
         </div>

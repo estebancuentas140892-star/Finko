@@ -16,6 +16,8 @@ import {
   frecuenciaPrincipalIngresos,
 } from '../../infra/vencimientos.js';
 import { progresoDeBolsa } from '../../infra/bolsas.js';
+import { hijosDeCategoria } from '../../infra/taxonomia.js';
+import { SUBCATEGORIAS_META } from '../../core/constants.js';
 import { hoy, f } from '../../infra/utils.js';
 
 // ── RITMO DE AHORRO (MT.4, motor compartido desde MC.13b) ─────────
@@ -183,6 +185,12 @@ export function validarAbono(monto) {
  * cruzar el umbral de cumplimiento en cualquier dirección con el mismo
  * `montoActual` de siempre.
  *
+ * MT.6b: `subcategoriaId` (ADR 048 D1, estructura del ADR 064) solo se
+ * guarda si de verdad es hija de la categoría enviada. El form ya lo
+ * garantiza (el `<fieldset>` de la subcategoría de otra categoría llega
+ * `disabled` y no manda su valor), pero la función valida igual: es la
+ * única puerta de guardado y no debe confiar en que el DOM se comportó.
+ *
  * @param {Record<string, string>} datos
  * @param {import('../../core/state.js').Meta|null} [metaExistente] modo edición si se pasa.
  */
@@ -192,12 +200,19 @@ export function normalizarMeta(datos, metaExistente = null) {
   const montoActual   = metaExistente ? (metaExistente.montoActual ?? 0) : 0;
   const { completada } = calcularProgreso({ montoObjetivo, montoActual });
 
+  const subcategoriaBruta = datos.subcategoriaId?.trim() || null;
+  const subcategoriaId = subcategoriaBruta
+    && hijosDeCategoria(SUBCATEGORIAS_META, categoria).some(h => h.id === subcategoriaBruta)
+    ? subcategoriaBruta
+    : null;
+
   return {
     nombre:        datos.nombre.trim(),
     montoObjetivo,
     montoActual,
     fechaLimite:   datos.fechaLimite?.trim() || null,
     categoria,
+    subcategoriaId,
     icono:         datos.icono?.trim() || null,
     nota:          datos.nota?.trim() || '',
     completada,
