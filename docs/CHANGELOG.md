@@ -23,7 +23,9 @@ Tercera rebanada de la iniciativa **ANL.1**. Commit `<PENDIENTE>`. Ficha: [`cont
 
 ### feat(metas): MT.6b, la subcategoría entra al formulario y al dato · 2026-08-12
 
-Segunda rebanada de **MT.6** (Metas v2). Commit `<PENDIENTE>`. Ficha: [`contexto/metas.md`](contexto/metas.md).
+Segunda rebanada de **MT.6** (Metas v2). Commit `2d1eca1`. Ficha: [`contexto/metas.md`](contexto/metas.md).
+
+- **Nota de proceso**: el árbol de trabajo tenía otra sesión en curso cerrando ANL.1b al mismo tiempo. El intento de commit de esta tarea corrió sin pathspec explícito en el momento exacto en que esa sesión commiteaba, y arrastró los archivos de MT.6b dentro de `2d1eca1` ("feat(analisis): ANL.1b..."). El commit ya está hecho y sin push; separarlo con `git reset --soft` mientras la otra sesión sigue activa era más riesgo que dejarlo documentado así. Contenido y tests de las dos tareas están completos y correctos, solo el mensaje del commit no nombra a MT.6b.
 
 - **El `select` nativo de categoría se rehace en chips** (`_chipsCategoria()`, `metas/view.js`), mismo componente `.chips-cat`/`.chip-cat` del lenguaje de formularios (FORM.1a): radios reales `name="categoria"`, el contrato `FormData` no cambia. Cumple el [ADR 042](DECISIONS/042-formularios-v2-visual.md) D6 ("ningún formulario nuevo introduce un select de categoría") y absorbe el pendiente MT.h de DIS.13.
 - **Segundo control: un `<fieldset>` de subcategoría por cada categoría con hijos** en `SUBCATEGORIAS_META` (`_gruposSubcategoria()`). Solo el de la categoría elegida queda visible y habilitado; los demás viajan `hidden` **y** `disabled` a la vez.
