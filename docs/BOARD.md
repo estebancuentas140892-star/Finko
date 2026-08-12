@@ -44,7 +44,7 @@ Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (si
 
 ## Índice de pendientes
 
-Las 22 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+Las 24 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
@@ -52,7 +52,9 @@ Las 22 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | MT.6 | Metas v2: subcategorías inteligentes + plan de aportes (en curso, faltan MT.6b/c/d) | Metas | media-alta | nada: ADR 064 cerró la estructura de dos niveles |
 | LIM.1 | Límites v2: asistente preventivo de estilo de vida | Límites | sin definir | ADR 045 (base de cálculo); ADR 044 (sugerencias) |
 | PE.6d | Me deben: los cinco estados de un vistazo | Me deben | media-alta | bloqueada por IV.2 en producción |
-| ANL.1 | Análisis como centro de interpretación financiera | Análisis | sin definir | ADR 046 (criterio y lenguaje); ADR 044 (recomendaciones) |
+| ANL.1a | Lectura de las tres cards principales de Análisis | Análisis | media-alta | nada: ADR 046 cerró criterio, lenguaje y layout |
+| ANL.1b | Titulares de Análisis en lenguaje corriente | Análisis | media | ANL.1a |
+| ANL.1c | Lectura del colapsable de detalle de Análisis | Análisis | baja | ANL.1a |
 | CFG.2c | Reubicar lo fiscal: asistente en Ajustes + Análisis | Configuración | sin definir | CFG.2a |
 | CFG.2a | Auto-derivar ingresos brutos al monitor de renta | Configuración | sin definir | CFG.1a (cerrada) |
 | CFG.3 | Notificaciones inteligentes anticipatorias | Configuración | sin definir | nada; riesgo técnico a evaluar primero |
@@ -64,8 +66,8 @@ Las 22 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | PERF.6 | Coalescer de renders por microtask | Transversal | baja | decidir si el beneficio lo justifica |
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | P4 del ADR 033 + cola de diseño |
 | IV.4 | Iconografía dirigida post-color | Transversal | tras IV.2 | IV.2 en producción + revisión visual |
-| LG.2d | Mudanza de la vitrina a Análisis + tarjeta en Inicio | Transversal | baja (bloqueada) | ANL.1 (layout) |
-| LG.2e | Familia comportamiento (interpretación de hábitos) | Transversal | baja | LG.2c; `ahorro-creciente` además depende de ANL.1 |
+| LG.2d | Mudanza de la vitrina a Análisis + tarjeta en Inicio | Transversal | media | nada: ADR 046 D4 reservó el bloque en Análisis |
+| LG.2e | Familia comportamiento (interpretación de hábitos) | Transversal | baja | LG.2c; `ahorro-creciente` sigue sin derivación de ingreso mensual |
 | PA.1 | Pagos y créditos automáticos (débito automático simulado) | Transversal | media-alta | ADR 041 (motor); ADR 052 (Abierta) |
 | A.5 | Dominio custom en Vercel | Mantenimiento | baja | que el usuario tenga el dominio registrado |
 | E.2-2027 | Actualizar SMMLV + UVT a valores 2027 | Mantenimiento | alta (enero 2027) | publicación oficial de los decretos 2027 |
@@ -107,7 +109,7 @@ PE.6d → [`board/me-deben.md`](board/me-deben.md)
 
 ### Análisis (dominio `analisis`)
 
-ANL.1 → [`board/analisis.md`](board/analisis.md)
+ANL.1a, ANL.1b, ANL.1c → [`board/analisis.md`](board/analisis.md)
 
 ### Configuración (dominio `config`)
 

@@ -10,12 +10,34 @@
 
 > Iniciativa "Análisis v2: rediseño visual" completa ([ADR 038](../DECISIONS/038-analisis-v2-visual.md)): avanzó los puntos 4, 5, 7 y 8 del brief de ANL.1 (reorganización, jerarquía, carga cognitiva, coherencia visual). **ANL.1 hereda el lienzo v2 ya montado:** cuando se inicie, escribe copy y recomendaciones sobre esas cards, no rediseña de cero.
 
-#### ANL.1 - Análisis como centro de interpretación financiera (no solo panel de estadísticas)
-- Prioridad  : sin definir
-- Estado     : criterio y lenguaje sin decidir. Ver **[ADR 046](../DECISIONS/046-analisis-interpreta-criterio-y-lenguaje.md)** (Abierta). No implementar el criterio de permanencia ni el nivel de traducción sin ese ADR resuelto.
-- Objetivo   : el usuario considera que Análisis hoy es una gran cantidad de gráficos e indicadores que puede resultar abrumadora para alguien sin conocimientos financieros; pide que Finko explique e interprete, no solo muestre datos.
-- Motivo     : pidió analizar la sección completa antes de implementar cualquier cambio, para decidir qué simplificar, reorganizar, unificar o eliminar, sin perder profundidad de análisis.
-- Decidido ya: jerarquía de lectura y colapsables → **[ADR 010](../DECISIONS/010-simplificacion-analisis.md)**. Reorganización visual v2 → **[ADR 038](../DECISIONS/038-analisis-v2-visual.md)** (ANL.1 hereda el lienzo ya montado). Motor de recomendaciones accionables (punto 6, punto 10 y el refuerzo P6 de la auditoría) → **[ADR 044](../DECISIONS/044-motor-unico-de-sugerencia-por-categoria.md)**, motor compartido con Límites e Inicio.
-- Secciones  : Análisis (dominio `analisis`); transversal por el motor de recomendaciones (ADR 044) y coordinación con CFG.2c (interpretación fiscal) y LG.2 (logros)
-- Depende de : ADR 046 resuelto para el criterio de permanencia y el lenguaje; ADR 044 resuelto para las recomendaciones accionables
-- Modelo     : ver el ADR correspondiente a cada parte antes de iniciar
+> **Iniciativa ANL.1: Análisis interpreta.** Criterio de permanencia, lenguaje y layout cerrados por el **[ADR 046](../DECISIONS/046-analisis-interpreta-criterio-y-lenguaje.md)** (Aceptada el 2026-08-12, Esteban delegó la elección). Lo que decidió, para no volver a discutirlo: ninguna card se elimina (D1); el titular habla claro y el término técnico baja a secundario (D2); interpretar es **una línea por card derivada del dato real**, función pura en `logic.js`, nunca imperativa (D3); la sección no gana cards y el layout queda cerrado en 6 bloques, con el sexto reservado para logros (D4). El inventario card por card vive en el ADR. **Efecto colateral: LG.2d queda desbloqueada** (esperaba justo esa definición de layout).
+
+#### ANL.1a - Lectura de las tres cards principales
+- Prioridad  : media-alta
+- Estado     : lista para trabajar (ADR 046 D3)
+- Área       : ambos (lógica pura nueva + una línea de texto por card)
+- Objetivo   : patrimonio, tendencia y categorías muestran números grandes sin decir qué significan. Cada una gana una lectura de una línea, derivada de sus datos reales, con el patrón que `_fraseScore()` ya usa en el hero del score.
+- Secciones  : Análisis
+- Archivos   : `modules/dominio/analisis/logic.js` (3 funciones puras nuevas), `modules/dominio/analisis/view.js` (`_renderPatrimonio`, `_renderTendencia`, `_renderPorCategoria`), `styles/components/analysis.css`, `tests/unit/analisis.test.js`
+- Depende de : nada. **No espera al ADR 044**: la lectura describe, no ordena (D3)
+- Modelo     : ver la skill `elegir-modelo`
+
+#### ANL.1b - Titulares en lenguaje corriente
+- Prioridad  : media
+- Estado     : lista para trabajar (ADR 046 D2, tabla de equivalencias cerrada)
+- Área       : design
+- Objetivo   : "Score de salud" pasa a "Salud de tu dinero", "Patrimonio neto" a "Lo que realmente tienes", y el término técnico baja al subtítulo de la misma card en vez de desaparecer.
+- Secciones  : Análisis
+- Archivos   : `modules/dominio/analisis/view.js`, `tests/e2e/smoke.test.js` (los que buscan el texto viejo)
+- Depende de : ANL.1a (misma zona de markup; evita dos pasadas sobre los mismos encabezados)
+- Modelo     : ver la skill `elegir-modelo`
+
+#### ANL.1c - Lectura del colapsable de detalle
+- Prioridad  : baja
+- Estado     : lista para trabajar (ADR 046 D3 sobre las unidades 5 a 7 del inventario)
+- Área       : ambos
+- Objetivo   : la comparación vs mes anterior entrega deltas sin conclusión. Patrón semanal y hormigas ya interpretan: se revisan contra el criterio, no se reescriben.
+- Secciones  : Análisis
+- Archivos   : `modules/dominio/analisis/logic.js`, `modules/dominio/analisis/view.js`, `tests/unit/analisis.test.js`
+- Depende de : ANL.1a (reutiliza el patrón de lectura que esa rebanada funda)
+- Modelo     : ver la skill `elegir-modelo`

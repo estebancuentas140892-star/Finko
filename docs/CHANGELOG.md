@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### docs(analisis): ADR 046 resuelto, ANL.1 partida en tres rebanadas · 2026-08-12
+
+ANL.1 llevaba desde el 2026-07-24 sin poder iniciarse: su ADR estaba **Abierto** con la instrucción textual "no implementar nada de este ADR". Esteban pidió trabajar ANL.1 y delegó la elección. Sin cambios de código, tests ni SW. [ADR 046](DECISIONS/046-analisis-interpreta-criterio-y-lenguaje.md).
+
+- **El inventario que el ADR pedía como insumo cambió la decisión.** Ocho unidades visibles, no un muro: **cinco ya están colapsadas o ya interpretan** (patrón semanal, hormigas, renta con el veredicto de CFG.2b, el hero del score con `_fraseScore()`, los highlights de la comparación). Lo que falta es la lectura de las tres cards que más pesan en pantalla: patrimonio, tendencia y categorías, justo las de números grandes y crudos. La alternativa B del ADR ("auditar y eliminar lo que no responda una pregunta") quedó sin premisa.
+- **D1: el criterio de permanencia es una auditoría única, no una regla general.** Tres salidas posibles (conservar, conservar con lectura, relegar a colapsable) y **eliminar no es una de ellas**. Una card solo sale si cumple las dos condiciones que el ADR 010 verificó para "Resumen del mes" (no interpreta **y** ya se ve en otra sección), y eso se decide con Esteban en el momento. Lo permanente es solo la **compuerta de entrada**: card nueva declara qué pregunta responde. Motivo: la asimetría que el propio ADR anotó, añadir un gráfico que sobra cuesta ruido, quitar uno que usabas cuesta funcionalidad y confianza.
+- **D2: titular en lenguaje corriente, término técnico como secundario en la misma card.** Es la única variante que cumple las dos mitades del brief a la vez ("Estado de tu dinero" en vez de "Score financiero", pero "sin necesariamente eliminar el término técnico"). Tabla de equivalencias cerrada en el ADR, así que ANL.1b es ejecución, no diseño.
+- **D3: interpretar es una línea por card derivada del dato real**, con el patrón que `_fraseScore()` ya usa en el archivo: función pura en `logic.js`, con tests, nunca frase fija, nunca imperativa. Al declarar que la lectura **describe y no ordena**, ANL.1 deja de depender del [ADR 044](DECISIONS/044-motor-unico-de-sugerencia-por-categoria.md), que sigue Abierto: convertir el hallazgo en acción sigue siendo suyo.
+- **D4 cierra el layout en 6 bloques y reserva el sexto para logros. Eso desbloquea LG.2d**, que llevaba desde el 2026-07-12 esperando exactamente esa definición (ADR 032 D6: no posicionar dos veces). CFG.2c entra dentro del colapsable de renta, sin bloque propio.
+- **Respondida la duda que la ficha de contexto arrastraba** desde DIS.10: `proyectarPatrimonio()` no está desconectada por accidente, no tiene ningún llamador de vista. Se queda así (pintarla sería una card nueva, contra D4, y una proyección a 24 meses sobre un ahorro estimado promete más de lo que el dato sostiene). Conserva sus 8 tests.
+- **Rebanadas**: ANL.1a (lectura de patrimonio, tendencia y categorías), ANL.1b (titulares de D2), ANL.1c (lectura del colapsable de detalle). Ninguna toca el schema, las migraciones ni el bundle memoizado de PERF.2: las lecturas derivan de datos que ese bundle ya calcula.
+
 ### feat(metas): MT.6a, fundación de subcategorías de meta · 2026-08-12
 
 Primera rebanada de **MT.6** (Metas v2), que llevaba desde el triaje del brief en "pendiente de análisis". Commit `57b3cdb`. Ficha: [`contexto/metas.md`](contexto/metas.md).

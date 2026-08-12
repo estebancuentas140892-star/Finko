@@ -68,14 +68,14 @@
 
 > **Iniciativa LEG: Centro Legal y cumplimiento.** El paquete, su estado por documento y el checklist de datos pendientes viven en [`legal/README.md`](../legal/README.md), su dueño. **LEG.1** (Centro Legal, borradores + UI) y **LEG.2** (aceptación obligatoria versionada, onboarding + gate de re-aceptación) cerradas, detalle en [`contexto/transversal.md`](../contexto/transversal.md) y el CHANGELOG. El checklist de contenido (responsable, contacto, licencia, revisión de abogado colombiano) sigue abierto y bloquea el paso del paquete a v1.0, no el mecanismo de aceptación, que ya corre sobre la versión vigente. La revisión del abogado es trabajo profesional externo, no una tarea de código.
 
-> **Iniciativa LG.2: Logros v2, gamificación de hábitos.** Alcance, regla anti-gaming y catálogo: **[ADR 032](../DECISIONS/032-logros-v2-niveles-y-habitos.md)** (Aceptada). Quedan LG.2d y LG.2e. **Sin cerrar por el ADR:** nombres de niveles de usuario provisionales hasta que Esteban entregue los definitivos; al cerrar LG.2d, marcar el [ADR 022](../DECISIONS/022-vitrina-de-logros-en-ajustes.md) como Superada (la vitrina se muda de Ajustes). Disciplina de ADR 022 vigente: evaluadores O(1), evaluación barata por `state:change`.
+> **Iniciativa LG.2: Logros v2, gamificación de hábitos.** Alcance, regla anti-gaming y catálogo: **[ADR 032](../DECISIONS/032-logros-v2-niveles-y-habitos.md)** (Aceptada). Quedan LG.2d (ya sin bloqueos desde el 2026-08-12: el ADR 046 D4 le reservó su bloque en Análisis) y LG.2e. **Sin cerrar por el ADR:** nombres de niveles de usuario provisionales hasta que Esteban entregue los definitivos; al cerrar LG.2d, marcar el [ADR 022](../DECISIONS/022-vitrina-de-logros-en-ajustes.md) como Superada (la vitrina se muda de Ajustes). Disciplina de ADR 022 vigente: evaluadores O(1), evaluación barata por `state:change`.
 
 #### LG.2d - Mudanza de la vitrina: "Tu progreso" en Análisis + tarjeta en Inicio
-- Prioridad  : baja (bloqueada)
-- Estado     : **bloqueada por ANL.1** (ADR 032 D6: no posicionar dos veces). El otro bloqueo (IN.8) ya se levantó: "Inicio v2" está completa en producción, pero su layout (ADR 034) no reservó bloque para logros, así que la tarjeta compacta de Inicio es diseño nuevo a proponer al iniciar LG.2d. La vitrina sigue en Ajustes (ADR 022 vigente) hasta que ANL.1 defina el layout de Análisis.
-- Objetivo   : mover la vitrina a un apartado "Tu progreso" en Análisis y agregar la tarjeta compacta en Inicio (nivel actual + último logro + próximo objetivo, ubicación a definir dentro del bento de Inicio v2); al cerrar, marcar el ADR 022 como Superada.
+- Prioridad  : media
+- Estado     : **desbloqueada el 2026-08-12**. Sus dos bloqueos cayeron: IN.8 ("Inicio v2" completa en producción) y ANL.1, que era el que faltaba. El **[ADR 046](../DECISIONS/046-analisis-interpreta-criterio-y-lenguaje.md) D4** cerró el layout de Análisis y le reservó el sexto y último bloque, después del colapsable de renta, como una sola card compacta. El ADR 034 (Inicio) no reservó bloque para logros, así que la tarjeta compacta de Inicio sigue siendo diseño nuevo a proponer al iniciar la rebanada. La vitrina sigue en Ajustes (ADR 022 vigente) hasta que esta tarjeta se ejecute.
+- Objetivo   : mover la vitrina a un apartado "Tu progreso" en Análisis (bloque 6 del layout del ADR 046 D4) y agregar la tarjeta compacta en Inicio (nivel actual + último logro + próximo objetivo, ubicación a definir dentro del bento de Inicio v2); al cerrar, marcar el ADR 022 como Superada.
 - Secciones  : Análisis, Inicio, Ajustes (`logros`)
-- Depende de : ANL.1 (layout de Análisis)
+- Depende de : nada. El contenido de la card lo manda el ADR 032; el lugar, el ADR 046 D4
 - Modelo     : Equilibrado - Alto (reubicación cross-sección con coordinación de layouts)
 
 #### LG.2e - Familia comportamiento (interpretación de hábitos)
@@ -83,7 +83,7 @@
 - Estado     : pendiente; parcialmente bloqueada por datos
 - Objetivo   : 3 logros de comportamiento (`hormiga-a-raya` implementable ya, `ahorro-creciente` bloqueado por falta de derivación de ingreso mensual, `pagador-puntual` a verificar). Detalle en [`contexto/transversal.md`](../contexto/transversal.md), sección Logros.
 - Secciones  : Transversal (`logros`)
-- Depende de : LG.2c (usa "mes completo de registro" como guardia); `ahorro-creciente` además de ANL.1
+- Depende de : LG.2c (usa "mes completo de registro" como guardia). `ahorro-creciente` esperaba de ANL.1 una derivación canónica de ingreso mensual: el [ADR 046](../DECISIONS/046-analisis-interpreta-criterio-y-lenguaje.md) **no la entrega** (decide interpretación y lenguaje, no cálculos nuevos), así que ese logro sigue bloqueado por falta de dato, no por ANL.1
 - Modelo     : Alta capacidad - Alto (detectores de comportamiento con riesgo real de incentivos perversos)
 
 #### PA.1 - Pagos y créditos automáticos (débito automático simulado)
