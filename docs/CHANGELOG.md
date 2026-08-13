@@ -24,7 +24,7 @@ Resuelve D1 y D2 del [ADR 052](DECISIONS/052-pagos-automaticos.md), abiertas des
 - **La captura es un bloque compartido en infra** (`renderBloqueDebitoAutomatico` + `wireToggleDebitoAutomatico` en `cuenta-helper.js`): lo usan el formulario de gasto fijo (Agenda) y el de deuda (Compromisos), que no pueden importarse entre sí (ADN 10). **La cuenta no se pre-selecciona**: es un hecho del arreglo del usuario con su banco, no una comodidad de pago, y adivinarla guardaría un dato que nadie eligió; sin cuenta elegida, el formulario no deja guardar.
 - Schema **v38 → v39**: `debitoAutomatico` y `cuentaDebitoId` opcionales en `Compromiso`, migración no-op (nada en un registro existente dice si el banco lo debita solo, y adivinarlo haría que Finko reclamara confirmaciones de pagos manuales).
 - Verificado en la app con 3 compromisos automáticos y una cuenta de $500.000: la hoja se abrió sola con 6 filas (dos meses), confirmó los dos que cabían, dejó 4 bloqueadas con su motivo, escribió los gastos fechados el 1 de julio y el 1 de agosto y bajó la cuenta a $300.000.
-- Tests: 22 unitarios nuevos (13 en `agenda.test.js` entre motor y hoja, 9 en `compromisos.test.js` entre `esDebitoAutomatico`, validación y normalización) + 2 E2E nuevos. 4129/4129 unit + lint verdes. SW `finko-v525` → `finko-v526`.
+- Commit `d1740e1`. Tests: 22 unitarios nuevos (13 en `agenda.test.js` entre motor y hoja, 9 en `compromisos.test.js` entre `esDebitoAutomatico`, validación y normalización) + 2 E2E nuevos. 4129/4129 unit + lint verdes. SW `finko-v525` → `finko-v526`.
 
 
 ### feat(config): CFG.2c, lo fiscal sale de Ajustes y pasa a un asistente tras botón · 2026-08-13

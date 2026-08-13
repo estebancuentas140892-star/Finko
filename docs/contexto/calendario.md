@@ -98,7 +98,7 @@ Lo que **DIS.11 dejó abierto**, con su medición: (1) **el alto del formulario 
 
 - **Objetivo**          : el compromiso que el banco debita solo (suscripción, cuota) se marca como tal, y al abrir la app Finko muestra lo que ya venció listo para confirmar de un toque, con su fecha real y su cuenta. Nunca registra sin confirmación.
 - **Estado actual**     : **PA.1a cerrada** (2026-08-13, [ADR 052](../DECISIONS/052-pagos-automaticos.md) D1/D2/D4): débitos de compromisos completos. Falta **PA.1b**, el crédito automático del ingreso fijo, sobre la misma hoja.
-- **Verificado contra** : PA.1a (2026-08-13).
+- **Verificado contra** : commit `d1740e1` (2026-08-13, PA.1a).
 
 **Dónde vive**
 
