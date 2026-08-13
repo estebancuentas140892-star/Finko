@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-08-12.
+> Revisado: 2026-08-13.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-08)
+
+### perf(render): PERF.6, los renders reactivos se colapsan a uno por tick · 2026-08-13
+
+Tarjeta reabierta con la evidencia que ella misma exigía (disciplina [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md)). Cifras y método: [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md). Ficha: [`contexto/transversal.md`](contexto/transversal.md).
+
+- **La estimación con la que se cerró en "no se hace" (2026-08-05) estaba corta por un orden de magnitud.** Decía "2-3 repintados, costo bajo". El escenario nuevo del harness midió **398 ms** de JavaScript con 10.000 gastos para una sola distribución del ingreso estando en Inicio, porque `infra/crud.js` emite un `state:change` **por mutación** y esa acción emite 12 veces en un solo tick.
+- **`programarRender(fn)` en `infra/render.js`:** cola `Set` (dedup por identidad de la función), vaciada en `queueMicrotask`, cada render aislado con try/catch igual que `renderAll`. Resultado: **398,3 → 94,5 ms** a 10.000 gastos, **198,7 → 47,5** a 5.000 y **42,0 → 9,7** a 1.000. El valor de después coincide con la columna "Inicio frío": es un solo pintado, no menos pintados.
+- **Dedup por identidad, no por contenido.** Cada listener migrado agenda una función de módulo (`_renderReactivo`, `_renderTodo`, `_renderSegunSeccion`); una flecha creada dentro del callback no se deduplicaría nunca. Es la única regla nueva que hay que respetar al escribir un listener.
+- **Ocho listeners migran, el resto no.** Agendan los que repintan paneles: resumen, movimientos, compromisos (sección + dashboard), presupuesto, ahorro, tesorería, análisis y agenda. Siguen directos los que no pintan (logros evalúa, metas regenera planes), `updSaldo()` (es O(cuentas), no barre historial, y es el que anima el hero) y **todos los renders de navegación, arranque y `renderAll`**: ahí no hay ráfaga que colapsar.
+- **Riesgo aceptado:** un `state:change` ya no deja el DOM actualizado en la línea siguiente. El microtask corre antes del paint, así que no hay parpadeo; lo que cambia es el contrato para código nuevo que emita y después lea el DOM.
+- **Lo que no arregla:** la cantidad de emisiones. Siguen siendo 12 por distribución con sus vueltas de contadores de revisión de `infra/memo.js` (baratas, O(secciones)). Bajarlas sería cambiar el contrato de `crud.js`: otra tarea, otro riesgo.
+- Tests: 8 unitarios nuevos en `render.test.js` (no pinta en el mismo tick, colapsa 12 agendas en 1, renders distintos corren todos, agendar en un tick posterior vuelve a pintar, un render que lanza no deja sin pintar a los demás, un render que agenda otro no entra en bucle, ignora lo que no es función, cola vacía tras el vaciado). **4066/4066 unit** + 266/266 E2E + lint verdes. SW `finko-v523` → `finko-v524`.
 
 ### feat(logros): LG.2e, familia comportamiento con un solo logro y catálogo cerrado en 18 · 2026-08-13
 

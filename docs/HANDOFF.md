@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-13. Última tarea cerrada: LG.2e, familia comportamiento de logros.
+> Revisado: 2026-08-13. Última tarea cerrada: PERF.6, coalescer de renders reactivos.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 4058/4058 verdes. 16 nuevos de LG.2e sobre los 4042 de AH.7a |
-| Tests E2E | 266/266 verdes, sello escrito sobre el runtime de LG.2e. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 4066/4066 verdes. 8 nuevos de PERF.6 sobre los 4058 de LG.2e |
+| Tests E2E | 266/266 verdes, sello escrito sobre el runtime de PERF.6. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v38 (`metas[].planAportes`, MT.6c; default `[]`) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**PERF.6 - coalescer de renders reactivos por microtask (Transversal / `infra/render.js`), 2026-08-13**
+Reabierta con la evidencia que la propia tarjeta exigía: el escenario nuevo del harness midió **398 ms** por una sola distribución del ingreso estando en Inicio con 10.000 gastos, no los "2-3 repintados de costo bajo" con los que se cerró en "no se hace" el 2026-08-05. Causa: `crud.js` emite un `state:change` **por mutación**, 12 en un tick. `programarRender()` los colapsa a un pintado: **398,3 → 94,5 ms** (4,2x a los 3 volúmenes). **Dedup por identidad:** agendar una flecha creada en el callback no deduplica nada. Migran los 8 listeners que pintan paneles; navegación, arranque y `renderAll` siguen síncronos. SW v523 → v524.
 
 **LG.2e - familia comportamiento de logros (Transversal / `logros`), 2026-08-13**
 Última rebanada de código del [ADR 032](DECISIONS/032-logros-v2-niveles-y-habitos.md): entra `hormiga-a-raya` (catálogo 17 → 18) y los otros dos logros del D4 quedan diferidos por datos, con la verificación en el ADR (`pagador-puntual` no es reconstruible: `S.compromisos` solo guarda el estado actual). **Hormiga se mide por monto (≤20.000), no por categoría**, que se desactiva recategorizando. `NIVELES_USUARIO`: tramo superior min 18 → 16. SW v522 → v523.
@@ -36,9 +39,6 @@ Cierra el hueco de captura que el [ADR 050](DECISIONS/050-perfil-fiscal-ubicacio
 
 **ANL.1c - lectura de la card "Vs mes anterior" (Análisis), 2026-08-12**
 Cierra **ANL.1 (Análisis interpreta) completa**, [ADR 046](DECISIONS/046-analisis-interpreta-criterio-y-lenguaje.md) D3. `lecturaComparacion()` responde lo que deltas y highlights no decían: si el mes en conjunto subió o bajó, con el mismo margen de ruido del 10 % de `lecturaTendencia()`. Reusa `totalActual`/`totalAnterior` que la comparación ya devolvía: sin barridos nuevos y dentro del memo diferido de PERF.3. Patrón semanal y hormigas se revisaron contra D3 y no se tocaron. SW v518 → v519.
-
-**LIM.1b - los fijos no esenciales cuentan contra Estilo de vida (Límites / Mis cuentas), 2026-08-12**
-Ejecuta el punto 8 de LIM.1 con el catálogo del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md): Streaming y Suscripciones dejan de pesar como el arriendo. `CATEGORIAS_AGENDA_NO_ESENCIALES` es la fuente única; el ejecutado se reclasifica por `compromisoId` (el gasto se guarda como `'Gastos fijos'`, no con la categoría del compromiso) y el asignado resta `calcularFijosNoEsencialesMensuales()` del piso de Necesidades. **Estilo de vida es el residuo, así que absorbe la diferencia sin aritmética nueva.** `calcularGastosFijosMensuales` no cambia a propósito: de ella sale el objetivo del fondo de emergencia. SW v517 → v518.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 

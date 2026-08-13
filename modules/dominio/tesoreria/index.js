@@ -13,13 +13,24 @@
  */
 
 import { S, EventBus } from '../../core/state.js';
-import { renderSmart, registrarRender, updSaldo } from '../../infra/render.js';
+import { renderSmart, registrarRender, updSaldo, programarRender } from '../../infra/render.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { initAccionesCuentas, inyectarFormCuenta } from './acciones/cuentas.js';
 import { initAccionesIngresos } from './acciones/ingresos.js';
 import { initAccionesDistribucion, abrirAsistenteDistribucion } from './acciones/distribucion.js';
 import { initAccionesTransferencias } from './acciones/transferencias.js';
 import { renderTesoreria, renderNudgeDistribucionInicio } from './view.js';
+
+/**
+ * Render reactivo del dominio (seccion + nudge del dashboard), con identidad
+ * estable para el coalescer de PERF.6: 7 secciones observadas y varias de ellas
+ * se emiten dentro de una misma accion del usuario.
+ */
+function _renderReactivo() {
+  renderBannerProposito('tesoreria', _tieneDatosTesoreria());
+  renderSmart(renderTesoreria, 'tesoreria');
+  renderSmart(renderNudgeDistribucionInicio, 'dash');
+}
 
 /**
  * Inicializa el dominio de tesoreria.
@@ -43,9 +54,10 @@ export function initTesoreria() {
       section === 'ahorro'     ||
       section === 'inversiones'
     ) {
-      renderBannerProposito('tesoreria', _tieneDatosTesoreria());
-      renderSmart(renderTesoreria, 'tesoreria');
-      renderSmart(renderNudgeDistribucionInicio, 'dash');
+      // Los renders se agendan (PERF.6): una distribución del ingreso emite 5
+      // de estas 7 secciones en el mismo tick. `updSaldo()` sigue directo: es
+      // O(cuentas), no barre historial, y es el que anima el hero.
+      programarRender(_renderReactivo);
       updSaldo();
     }
   });

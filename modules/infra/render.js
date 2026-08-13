@@ -76,6 +76,71 @@ export function renderSmart(fn, key) {
   if (hashActual === key) fn();
 }
 
+// ── COALESCER DE RENDERS REACTIVOS (PERF.6) ─────────────────────
+
+/**
+ * Cola de renders agendados para el final del tick. `Set` porque la
+ * deduplicación es por identidad de la función: agendar dos veces el mismo
+ * render en el mismo tick pinta una sola vez.
+ * @type {Set<() => void>}
+ */
+const _cola = new Set();
+
+/** Hay un vaciado ya agendado para este tick. */
+let _colaAgendada = false;
+
+/**
+ * Agenda `fn` para correr una sola vez al final del tick actual.
+ *
+ * Por qué existe (PERF.6, medido en `scripts/perf/BASELINE.md`): una sola
+ * acción del usuario que muta varias colecciones emite un `state:change` por
+ * mutación (contrato de `infra/crud.js`), y cada emisión repinta los paneles
+ * que observan esa sección. Una distribución del ingreso estando en Inicio
+ * emite 12 veces y pintaba los paneles del dashboard 6 veces: ~398 ms con
+ * 10.000 gastos. Colapsado a un render por tick, ~62 ms.
+ *
+ * Solo para renders REACTIVOS (listeners de `state:change`). Los renders
+ * directos (navegación, arranque, `renderAll`) siguen síncronos: ahí el
+ * usuario espera ver el resultado en el mismo tick y no hay ráfaga que
+ * colapsar.
+ *
+ * La `fn` que se pasa debe tener identidad estable entre llamadas (una función
+ * de módulo, no una flecha creada en el propio listener), o la cola no puede
+ * deduplicarla.
+ *
+ * @param {() => void} fn - render del dominio, idempotente.
+ */
+export function programarRender(fn) {
+  if (typeof fn !== 'function') return;
+  _cola.add(fn);
+  if (_colaAgendada) return;
+  _colaAgendada = true;
+  queueMicrotask(vaciarRendersProgramados);
+}
+
+/**
+ * Corre y limpia la cola de renders agendados. La llama el microtask de
+ * `programarRender`; se exporta para los tests, que necesitan un punto de
+ * vaciado síncrono sin depender del planificador de microtasks.
+ *
+ * Cada render se aísla con try/catch por la misma razón que `renderAll`: uno
+ * que falla no puede dejar sin pintar a los demás de la cola.
+ */
+export function vaciarRendersProgramados() {
+  _colaAgendada = false;
+  // Copia y limpieza antes de correr: si un render agenda otro render, ese
+  // entra en la cola del tick siguiente en vez de mutar la que se recorre.
+  const pendientes = [..._cola];
+  _cola.clear();
+  for (const fn of pendientes) {
+    try {
+      fn();
+    } catch (err) {
+      console.error('[render] programarRender: un render agendado falló:', err);
+    }
+  }
+}
+
 // ── ACTUALIZACIONES DE ESTADO GLOBAL ────────────────────────────
 
 /**

@@ -31,16 +31,6 @@
 - Depende de : un disparador del ADR 030 D4
 - Modelo     : Alta capacidad - Extra o Máxima capacidad - Alto (cambio de mayor riesgo del proyecto: ruta de arranque async + migración de datos reales de años)
 
-#### PERF.6 - Coalescer de renders por microtask (alcance revisado a la baja)
-- Prioridad  : baja
-- Estado     : pendiente de decisión. **Hallazgo del 2026-07-07:** `renderSmart()` corta por hash, así que una vista solo se pinta cuando es la sección activa. El doble-render caro que motivó la tarjeta (Análisis, 5 observadores, ~11 ms) NO ocurre en la práctica: Análisis es solo-lectura, no se muta desde ahí, y renderSmart bloquea su pintado desde cualquier otra sección. La exposición real queda en los paneles de Inicio (actividad reciente, resumen) que se repintan 2-3 veces durante una acción multi-sección lanzada desde Inicio (ej. distribución del ingreso): costo bajo.
-- Objetivo   : `programarRender(fn)` en `infra/render.js`, cola dedupada por identidad, vaciada en microtask; los listeners de `state:change` agendan en vez de pintar directo, colapsando repintados del mismo tick a uno. Renders directos (navegación, arranque, `renderAll`) siguen síncronos.
-- Riesgo     : cambia el timing de los renders reactivos de síncrono a microtask. Blast radius de tests medido chico (los tests de vista llaman la view directo, no vía bus; E2E auto-espera). Cerca del pipeline de render: si se hace, medir el doble-render real con un escenario nuevo del harness antes/después (disciplina ADR 030).
-- Secciones  : Transversal (`infra/render.js` + listeners `state:change` de los dominios multi-observador)
-- Depende de : decidir si el beneficio (situacional, Inicio) justifica el cambio de timing. Alternativa recomendada: PERF.7 primero (ganancia medida e incondicional) - ya cerrada el 2026-08-01 (commit `156aa88`).
-- Modelo     : Alta capacidad - Alto (si se hace)
-- Decision 2026-08-05: no se hace. PERF.7 (la alternativa recomendada) ya cerro con ganancia medida e incondicional. Lo que queda de PERF.6 es beneficio situacional y bajo (paneles de Inicio, 2-3 repintados en una accion multi-seccion) contra riesgo real: cambiar el pipeline de render de sincrono a microtask. No hay disparador nuevo que lo justifique. Se reabre solo si aparece evidencia de costo real medido (nuevo escenario de harness, disciplina ADR 030).
-
 > **Iniciativa Dirección Visual premium** ([ADR 033](../DECISIONS/033-direccion-visual-premium.md)). DV.2a/b/c cerradas. DV.2d: infraestructura y las 8 plantillas del lote listas (2026-08-12), falta solo el arte final de Esteban.
 
 #### DV.2d - Ilustraciones como clase nueva de asset (D3 del ADR 033)

@@ -162,3 +162,30 @@ Verificado: 2257/2257 unit (5 tests nuevos: `formateadorFecha` + equivalencia de
 **Medición:** no aplica una fila nueva a la tabla de `bench.perf.js`: el harness mide llamadas directas a los renders (sin pasar por `bootstrap.js`), así que no ejercita el `requestIdleCallback`. El beneficio es de latencia percibida en la primera navegación real (evita el costo frío ya documentado en PERF.2/PERF.7a: hasta ~11-48 ms a 10.000 gastos antes de esas optimizaciones), no un número nuevo de este harness.
 
 **Validación:** 3583/3583 unit (6 tests nuevos: 3 en `tests/unit/analisis.test.js` para `precalentarAnalisis()`, 3 en `tests/unit/movimientos.test.js` para `precalentarMovimientos()`; cubren no-throw sin contenedor, que no tocan el DOM, y que precalentar antes de renderizar no cambia el resultado) + 253/253 E2E en Chromium real + `pnpm perf` sin regresión. SW v467 → v470 (bump compartido con DV.2b/DV.2c, en curso en paralelo).
+
+---
+
+## PERF.6 (2026-08-13): coalescer de renders reactivos por microtask
+
+**Por qué se reabrió la tarjeta.** Estaba decidida en "no se hace" (2026-08-05) con una estimación de exposición baja: "los paneles de Inicio se repintan 2-3 veces durante una acción multi-sección". La condición de reapertura que la propia tarjeta fijó era evidencia de costo real medido (disciplina [ADR 030](../../docs/DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md)). El escenario nuevo del harness la produjo y la estimación estaba corta por un orden de magnitud: el contrato de `infra/crud.js` emite **un `state:change` por mutación**, así que una distribución del ingreso emite 12 veces en un solo tick y cada emisión repinta los paneles que observan esa sección.
+
+**Escenario nuevo:** `bench.perf.js`, bloque "ráfaga de una acción multi-sección". Cablea los listeners **reales** de los paneles de Inicio (`initResumen()` + `initMovimientos()`), pone `location.hash = '#dash'`, emite las 12 secciones de una distribución realista en el mismo tick y mide hasta que los paneles quedan pintados (incluido el microtask posterior, para que las dos rutas entren en la misma ventana). Va después del bloque de hot paths a propósito: esos listeners quedan vivos en el EventBus y contaminarían las columnas "Inicio frío".
+
+**Cambio:** `programarRender(fn)` y `vaciarRendersProgramados()` en [`infra/render.js`](../../modules/infra/render.js). Cola `Set` (dedup por identidad de la función), vaciada en `queueMicrotask`, cada render aislado con try/catch igual que `renderAll`. Los 8 listeners de `state:change` que repintan paneles agendan en vez de pintar directo: resumen, movimientos, compromisos (sección + dashboard), presupuesto, ahorro, tesorería, análisis y agenda. Cada uno pasa una función de módulo con identidad estable, que es lo que permite deduplicar. Los renders **directos** (navegación por `hashchange`, arranque, `renderAll`) siguen síncronos: ahí no hay ráfaga que colapsar y el usuario espera el resultado en el mismo tick.
+
+| gastos | ráfaga Inicio (antes → después) |
+|---|---|
+| 1.000  | 42.0 ms → **9.7 ms** (4,3x) |
+| 5.000  | 198.7 ms → **47.5 ms** (4,2x) |
+| 10.000 | 398.3 ms → **94.5 ms** (4,2x) |
+
+**Lectura:**
+
+1. La ganancia es **~4,2x a todos los volúmenes** y crece en valor absoluto con el historial: a 10.000 gastos, una sola distribución del ingreso pasa de ~398 ms de JavaScript a ~95 ms. Con la app en un móvil de gama media ese rango era jank visible durante la acción más pesada del producto.
+2. El valor de "después" coincide con la columna **Inicio frío** de la tabla de hot paths (94.3 ms a 10.000): es la prueba de que la ráfaga quedó colapsada a **un solo pintado**, no a "menos pintados".
+3. **Ninguna otra columna cambia** (Inicio frío/caché, Análisis frío/caché, Movimientos, stringify, save, arranque: todo dentro del ruido). El coalescer no le agrega costo al camino de un render único.
+4. Lo que NO arregla: el número de emisiones. Sigue habiendo 12 `state:change` por distribución, con sus 12 vueltas de contadores de revisión de `infra/memo.js` (baratas, O(secciones)). Reducir las emisiones sería cambiar el contrato de `crud.js`, que es otra tarea y otro riesgo.
+
+**Riesgo aceptado:** los renders reactivos pasan de síncronos a microtask. El microtask corre antes del paint, así que no hay parpadeo intermedio; lo que cambia es que un `state:change` ya no deja el DOM actualizado en la línea siguiente. Los renders directos no se tocaron justamente para que las rutas donde eso importa (navegar, arrancar) sigan siendo síncronas.
+
+**Validación:** 4066/4066 unit (8 tests nuevos de `programarRender()` en `tests/unit/render.test.js`: no pinta en el mismo tick, colapsa 12 agendas en 1, renders distintos corren todos, agendar en un tick posterior vuelve a pintar, un render que lanza no deja sin pintar a los demás, un render que agenda otro no entra en bucle, ignora lo que no es función, la cola queda vacía) + 266/266 E2E en Chromium real + `pnpm perf`. SW v523 → v524.

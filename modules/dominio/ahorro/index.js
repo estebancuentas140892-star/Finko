@@ -15,7 +15,7 @@ import { S, EventBus }              from '../../core/state.js';
 import { save }                     from '../../core/storage.js';
 import { registrarAccion }          from '../../ui/actions.js';
 import { abrirModal, cerrarModal }  from '../../ui/modales.js';
-import { renderSmart, registrarRender } from '../../infra/render.js';
+import { renderSmart, registrarRender, programarRender } from '../../infra/render.js';
 import { announce }                 from '../../infra/a11y.js';
 import { mostrarErroresForm }       from '../../infra/form-errors.js';
 import { confirmar }                from '../../ui/confirm.js';
@@ -554,7 +554,10 @@ export function initAhorro() {
       section === 'apartados'   ||
       section === 'inversiones'
     ) {
-      _renderSegunSeccion();
+      // Agendado (PERF.6): son 7 secciones observadas y una distribución del
+      // ingreso toca 5 de ellas en el mismo tick. `_renderSegunSeccion` tiene
+      // identidad estable, así que la cola lo colapsa a un solo pintado.
+      programarRender(_renderSegunSeccion);
     }
   });
 

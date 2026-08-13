@@ -13,7 +13,7 @@ import { S, EventBus }                from '../../core/state.js';
 import { guardar, editar, eliminar } from '../../infra/crud.js';
 import { registrarAccion }           from '../../ui/actions.js';
 import { abrirModal, cerrarModal }   from '../../ui/modales.js';
-import { renderSmart, registrarRender } from '../../infra/render.js';
+import { renderSmart, registrarRender, programarRender } from '../../infra/render.js';
 import { announce }                  from '../../infra/a11y.js';
 import { mostrarErroresForm }        from '../../infra/form-errors.js';
 import { confirmar }                 from '../../ui/confirm.js';
@@ -134,6 +134,18 @@ async function _eliminarPresupuesto(el) {
   announce(`Límite de gasto de "${p.categoria}" eliminado.`);
 }
 
+/**
+ * Render reactivo de los dos paneles del dominio (sección + dashboard), con
+ * identidad estable para el coalescer de PERF.6: `gastos` se emite una vez por
+ * gasto registrado, así que una acción que registra varios pintaba el panel de
+ * límites tantas veces como gastos hubiera.
+ */
+function _renderReactivo() {
+  renderBannerProposito('presupuesto', _tienePlanOTope());
+  renderSmart(renderPanelPresupuesto, 'presupuesto');
+  renderSmart(renderPanelLimites, 'dash');
+}
+
 // ── INIT ─────────────────────────────────────────────────────────
 
 export function initPresupuesto() {
@@ -147,9 +159,7 @@ export function initPresupuesto() {
   EventBus.on('state:change', ({ section }) => {
     if (section === 'presupuestos' || section === 'gastos' || section === 'ingresos'
       || section === 'ingresosPuntuales') {
-      renderBannerProposito('presupuesto', _tienePlanOTope());
-      renderSmart(renderPanelPresupuesto, 'presupuesto');
-      renderSmart(renderPanelLimites, 'dash');
+      programarRender(_renderReactivo);
     }
   });
 

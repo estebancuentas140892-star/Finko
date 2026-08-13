@@ -10,7 +10,7 @@
 
 import { S, EventBus } from '../../core/state.js';
 import { save } from '../../core/storage.js';
-import { renderSmart, registrarRender, updSaldo } from '../../infra/render.js';
+import { renderSmart, registrarRender, updSaldo, programarRender } from '../../infra/render.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { renderAnalisis } from './view.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
@@ -23,6 +23,17 @@ const SECCIONES_OBSERVADAS = new Set([
   'gastos', 'compromisos', 'cuentas', 'metas', 'ahorro',
   'ingresos', 'ingresosPuntuales',
 ]);
+
+/**
+ * Render reactivo de la seccion, con identidad estable para el coalescer de
+ * PERF.6: son 7 secciones observadas y el render hace ~15 pasadas sobre
+ * `S.gastos`, asi que repintarlo una vez por emision de una misma accion es el
+ * peor caso de la app.
+ */
+function _renderReactivo() {
+  renderBannerProposito('analisis', S.gastos.length > 0);
+  renderSmart(renderAnalisis, 'analisis');
+}
 
 export function initAnalisis() {
   // Registrar en renderAll para que se actualice con cualquier render global.
@@ -42,8 +53,7 @@ export function initAnalisis() {
   // Re-renderizar cuando cambia cualquier sección relevante.
   EventBus.on('state:change', ({ section }) => {
     if (SECCIONES_OBSERVADAS.has(section)) {
-      renderBannerProposito('analisis', S.gastos.length > 0);
-      renderSmart(renderAnalisis, 'analisis');
+      programarRender(_renderReactivo);
     }
   });
 

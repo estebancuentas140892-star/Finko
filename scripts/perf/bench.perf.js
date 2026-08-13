@@ -49,6 +49,8 @@ import { renderPanelResumen } from '../../modules/dominio/resumen/view.js';
 import { renderActividadReciente, renderMovimientosCompletos, cargarMasMovimientos } from '../../modules/dominio/movimientos/view.js';
 import { movimientosCompletos } from '../../modules/dominio/movimientos/logic.js';
 import { renderAnalisis } from '../../modules/dominio/analisis/view.js';
+import { initResumen } from '../../modules/dominio/resumen/index.js';
+import { initMovimientos } from '../../modules/dominio/movimientos/index.js';
 import { construirEstadoGrande } from './seed.js';
 
 /** Tamaños de historial a medir (cantidad de gastos). */
@@ -165,6 +167,93 @@ describe('Rendimiento - hot paths (PERF.0 línea base, PERF.1 windowing, PERF.2 
 
     // eslint-disable-next-line no-console
     console.log('\nRendimiento de hot paths (ms: mediana / p95, happy-dom):');
+    // eslint-disable-next-line no-console
+    console.table(filas);
+  }, 120_000);
+});
+
+/**
+ * Escenario de ráfaga (PERF.6): una sola acción del usuario que muta varias
+ * colecciones emite un `state:change` por mutación (contrato de `infra/crud.js`),
+ * y cada uno dispara los listeners de los paneles de Inicio. Este bloque mide
+ * lo que cuesta esa ráfaga completa con los listeners REALES cableados, que es
+ * la única forma de saber si el coalescer de renders vale el cambio de timing.
+ *
+ * Va después del bloque de hot paths a propósito: `initResumen()`/`initMovimientos()`
+ * dejan listeners vivos en el EventBus para el resto del archivo, y medir "Inicio
+ * frío" con esos listeners activos contaminaría la comparación contra BASELINE.md
+ * (cada `invalidar()` pintaría de más).
+ */
+describe('Rendimiento - ráfaga de una acción multi-sección (PERF.6)', () => {
+  /**
+   * Secciones que emite una distribución del ingreso realista, en orden: cuatro
+   * necesidades pagadas (`gastoDePagoCompromiso` = un `guardar('gastos')` cada
+   * una, más un `editar('compromisos')` cuando la necesidad es deuda), el saldo
+   * de la cuenta de origen, el aporte a ahorro, el abono extra a una deuda, una
+   * inversión, y el cierre de logros y config. Todas caen en el MISMO tick: son
+   * una sola acción del usuario.
+   */
+  const RAFAGA_DISTRIBUCION = [
+    'gastos', 'compromisos', 'gastos', 'compromisos', 'gastos', 'gastos',
+    'cuentas', 'ahorro', 'compromisos', 'inversiones', 'logros', 'config',
+  ];
+
+  /** Deja correr los renders agendados en microtask (no-op sin coalescer). */
+  async function vaciarMicrotasks() {
+    for (let i = 0; i < 3; i++) await Promise.resolve();
+  }
+
+  /**
+   * Mide la ráfaga completa: emitir todo + esperar a que los paneles queden
+   * pintados. Sin coalescer el costo se paga durante los emit; con coalescer,
+   * en el microtask posterior. Ambos entran en la misma ventana medida.
+   */
+  async function medirRafaga({ iteraciones = 10, warmup = 2 } = {}) {
+    const muestras = [];
+    for (let i = 0; i < warmup + iteraciones; i++) {
+      const t0 = performance.now();
+      for (const s of RAFAGA_DISTRIBUCION) EventBus.emit('state:change', { section: s });
+      await vaciarMicrotasks();
+      const dt = performance.now() - t0;
+      if (i >= warmup) muestras.push(dt);
+    }
+    muestras.sort((a, b) => a - b);
+    return {
+      mediana: muestras[Math.floor(muestras.length / 2)],
+      p95: muestras[Math.min(muestras.length - 1, Math.floor(muestras.length * 0.95))],
+    };
+  }
+
+  it('mide el costo de una distribución del ingreso estando en Inicio', async () => {
+    const filas = [];
+    let htmlFinal = '';
+
+    // Inicio activo: es la condición que hace visible el problema (renderSmart
+    // corta el pintado desde cualquier otra sección).
+    location.hash = '#dash';
+
+    for (const n of TAMANOS) {
+      Object.assign(S, construirEstadoGrande({ gastos: n }));
+      montarContenedores();
+      // Cablear una sola vez los listeners reales de los paneles de Inicio.
+      if (n === TAMANOS[0]) { initResumen(); initMovimientos(); }
+
+      const conListeners = await medirRafaga();
+
+      filas.push({
+        'gastos':                 n,
+        'ráfaga Inicio ms':       fmt(conListeners),
+        'emits por acción':       RAFAGA_DISTRIBUCION.length,
+      });
+      htmlFinal = document.getElementById('panel-actividad-reciente').innerHTML;
+    }
+
+    // Smoke: la ráfaga sí dejó los paneles pintados (el coalescer no puede
+    // "ganar" simplemente no pintando).
+    expect(htmlFinal.length).toBeGreaterThan(0);
+
+    // eslint-disable-next-line no-console
+    console.log('\nRáfaga de una acción multi-sección estando en Inicio (ms: mediana / p95):');
     // eslint-disable-next-line no-console
     console.table(filas);
   }, 120_000);

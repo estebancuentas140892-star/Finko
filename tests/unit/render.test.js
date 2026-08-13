@@ -10,6 +10,8 @@
  * - Sync del botón #saldo-ojo: aria-pressed + swap de icono ojo/ojo tachado.
  * - Empty state sin cuentas: guía visible, ojo/valor/desc ocultos.
  * - Acción `saldo-visibilidad` (actions.js): flip + re-render.
+ * - `programarRender()`: coalescer de renders reactivos (PERF.6), dedup por
+ *   identidad, vaciado en microtask y aislamiento de un render que lanza.
  *
  * Nota: los tests corren con location.hash = '#gast' (fuera del dashboard)
  * para que updSaldo escriba el texto directo sin countUp: las aserciones
@@ -20,6 +22,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { S } from '../../modules/core/state.js';
 import {
   updSaldo, updSaludo, alternarDetalleCuentas, renderAll,
+  programarRender, vaciarRendersProgramados,
   SALDO_MASCARA, SALDO_MASCARA_CUENTA,
 } from '../../modules/infra/render.js';
 import { initAcciones, dispatch } from '../../modules/ui/actions.js';
@@ -520,5 +523,82 @@ describe('updSaludo()', () => {
   it('no-op si los contenedores no existen', () => {
     document.body.innerHTML = '';
     expect(() => updSaludo()).not.toThrow();
+  });
+});
+
+// ── COALESCER DE RENDERS (PERF.6) ────────────────────────────────────────────
+
+describe('programarRender() - coalescer de renders reactivos (PERF.6)', () => {
+  it('no pinta en el mismo tick: el render corre en el microtask', async () => {
+    const fn = vi.fn();
+    programarRender(fn);
+    expect(fn).not.toHaveBeenCalled();
+    await Promise.resolve();
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
+  it('colapsa N agendas del mismo render en un solo pintado', async () => {
+    const fn = vi.fn();
+    for (let i = 0; i < 12; i++) programarRender(fn);
+    await Promise.resolve();
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders distintos corren todos, una vez cada uno', async () => {
+    const a = vi.fn();
+    const b = vi.fn();
+    programarRender(a);
+    programarRender(b);
+    programarRender(a);
+    await Promise.resolve();
+    expect(a).toHaveBeenCalledTimes(1);
+    expect(b).toHaveBeenCalledTimes(1);
+  });
+
+  it('agendar en un tick posterior vuelve a pintar', async () => {
+    const fn = vi.fn();
+    programarRender(fn);
+    await Promise.resolve();
+    programarRender(fn);
+    await Promise.resolve();
+    expect(fn).toHaveBeenCalledTimes(2);
+  });
+
+  it('un render que lanza no deja sin pintar a los demás', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const revienta = vi.fn(() => { throw new Error('render roto'); });
+    const sano = vi.fn();
+    programarRender(revienta);
+    programarRender(sano);
+    await Promise.resolve();
+    expect(revienta).toHaveBeenCalledTimes(1);
+    expect(sano).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it('un render que agenda otro render no entra en bucle en el mismo vaciado', () => {
+    const interno = vi.fn();
+    const externo = vi.fn(() => programarRender(interno));
+    programarRender(externo);
+    vaciarRendersProgramados();
+    expect(externo).toHaveBeenCalledTimes(1);
+    expect(interno).not.toHaveBeenCalled();
+    vaciarRendersProgramados();
+    expect(interno).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignora lo que no es función', async () => {
+    expect(() => programarRender(null)).not.toThrow();
+    expect(() => programarRender('renderizame')).not.toThrow();
+    await Promise.resolve();
+  });
+
+  it('vaciarRendersProgramados() deja la cola vacía', () => {
+    const fn = vi.fn();
+    programarRender(fn);
+    vaciarRendersProgramados();
+    vaciarRendersProgramados();
+    expect(fn).toHaveBeenCalledTimes(1);
   });
 });

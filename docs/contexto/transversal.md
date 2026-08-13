@@ -1,8 +1,8 @@
 # Ficha de contexto: Transversal
 
-> Revisado: 2026-08-11.
+> Revisado: 2026-08-13.
 
-> Funcionalidades que atraviesan varias secciones y no son visuales: taxonomía de categorías, persistencia, el CTA de cuenta y el sistema de logros. Reglas de uso y plantilla en [`README.md`](README.md).
+> Funcionalidades que atraviesan varias secciones y no son visuales: taxonomía de categorías, persistencia, el pipeline de render, el CTA de cuenta y el sistema de logros. Reglas de uso y plantilla en [`README.md`](README.md).
 >
 > **Qué NO buscar acá** (partido el 2026-07-24): el lenguaje de formularios y el selector de ícono están en [`captura.md`](captura.md); la identidad de color, las tejas de marca y la navegación, en [`sistema-visual.md`](sistema-visual.md).
 
@@ -121,6 +121,32 @@
 **Riesgos**: `LIMITE_LOCALSTORAGE_CHARS` (4.5 M chars) es un piso conservador, no el cupo exacto (varía por navegador); por eso `falloUltimoGuardado` (fallo real) manda sobre la estimación. Si algún día se migra a IndexedDB (PERF.5), `loadData()` pasa a async → bootstrap async, y el sembrado E2E (escribe `fk_v1`) hay que reescribirlo: es el cambio de mayor riesgo del proyecto.
 
 **Cambios realizados**: `2026-07-06 (PERF.4, ADR 030)`: salvaguarda de cuota + guardado que ya no falla en silencio (detalle en CHANGELOG). `2026-07-31 (PERF.8)`: columna "arranque" en el harness, el dato que el D4 pedía.
+
+---
+
+---
+
+## Pipeline de render: directo vs. agendado (PERF.6)
+
+- **Objetivo**          : hay dos rutas de render y la diferencia importa. **Directo y síncrono**: `renderAll()` (arranque), los listeners de `hashchange` (navegación) y los handlers que pintan su propia vista tras una acción. **Reactivo y agendado**: los listeners de `state:change` que repintan paneles pasan por `programarRender(fn)`, que los colapsa a un solo pintado por tick.
+- **Estado actual**     : estable. `infra/crud.js` emite **un `state:change` por mutación**, así que una acción multi-sección emite muchas veces en un solo tick (una distribución del ingreso: 12). Antes de PERF.6 cada emisión repintaba: **~398 ms** de JavaScript con 10.000 gastos estando en Inicio. Con la cola, **~94,5 ms**, que es exactamente el costo de un render único (4,2x, medido a 3 volúmenes en [`BASELINE.md`](../../scripts/perf/BASELINE.md)). Ocho listeners agendan; los que no pintan paneles (logros evalúa, gastos actualiza el saldo, metas regenera planes) siguen directos a propósito.
+- **Verificado contra** : `PENDIENTE` (2026-08-13, PERF.6).
+
+**Dónde vive**
+
+| Pieza | Archivo | Ancla | Línea |
+|---|---|---|---|
+| Cola, dedup y vaciado en microtask | `modules/infra/render.js` | `programarRender()`, `vaciarRendersProgramados()` | ~78 |
+| Render condicional por sección visible | `modules/infra/render.js` | `renderSmart()` | ~74 |
+| Orquestador síncrono del arranque | `modules/infra/render.js` | `renderAll()`, `registrarRender()` | ~415 |
+| Los 8 listeners que agendan | `modules/dominio/{resumen,movimientos,compromisos,presupuesto,ahorro,tesoreria,analisis,agenda}/index.js` | `_renderReactivo` / `_renderTodo` / `_renderSegunSeccion` | |
+| Medición de la ráfaga | `scripts/perf/bench.perf.js` | bloque "ráfaga de una acción multi-sección" | |
+
+**Dependencias y relaciones**: el dedup es **por identidad de la función**, así que un listener que agende una flecha creada en el propio callback no se deduplica nunca (pinta una vez por emisión, como antes). De ahí la regla: agendar siempre una función de módulo. La cola es independiente de `infra/memo.js`: memo evita **recalcular** lo mismo, la cola evita **pintar** lo mismo, y se necesitan las dos (dentro de una ráfaga cada emisión invalida el memo de su sección, así que sin la cola cada repintado era un recálculo genuino).
+
+**Riesgos**: un `state:change` ya no deja el DOM actualizado en la línea siguiente. Cualquier código nuevo que emita y después lea el DOM que ese render produce tiene que agendar su lectura igual, o pintar directo. Los renders de navegación y arranque quedaron síncronos justamente para no arrastrar ese contrato a las rutas donde el usuario espera ver el resultado ya. En tests, `vaciarRendersProgramados()` da un punto de vaciado síncrono; en E2E no hace falta (Playwright auto-espera y el microtask corre antes del paint).
+
+**Cambios realizados**: `2026-08-13 (PERF.6)`: cola de renders reactivos, 8 listeners migrados y escenario de ráfaga en el harness (cifras en `BASELINE.md`).
 
 ---
 

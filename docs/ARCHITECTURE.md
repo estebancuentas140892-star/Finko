@@ -1,11 +1,10 @@
 # Arquitectura - Finko Claude
 
-> Revisado: 2026-08-11.
+> Revisado: 2026-08-13.
 
-> Documento vivo. Se actualiza cuando cambia una capa, se agrega un dominio, se mueve un archivo de estilos o se introduce un patrón nuevo.
-> Última revisión: 2026-08-12 (MT.6a suma `infra/taxonomia.js`). Antes: 2026-07-29 (DIS.19 suma `infra/bolsas.js`, `infra/portafolio.js` y `ui/comparador.js`). Antes: 2026-07-24 (absorbe el mapa operativo del ex `MAPA.md` como sección 13).
+> Documento vivo: se actualiza cuando cambia una capa, entra un dominio o se introduce un patrón nuevo. Historial: `git log -- docs/ARCHITECTURE.md` (la cadena de "última revisión" se podó el 2026-08-13 al tocar el techo de 32 KB).
 >
-> **Dos preguntas distintas, dos mitades:** las secciones 1 a 12 responden **cómo está construido** el sistema (capas, dominios, eventos, reglas técnicas). La sección 13 responde **dónde está cada cosa y cómo localizarla** (sección visible → carpeta, índice de estilos, síntoma → dónde mirar). Si vienes a arreglar algo y no sabes por dónde empezar, ve directo a la 13.
+> **Dos mitades:** las secciones 1 a 12 responden **cómo está construido** el sistema. La 13 responde **dónde está cada cosa**: si vienes a arreglar algo y no sabes por dónde empezar, ve directo a la 13.
 
 ## Índice
 
@@ -16,7 +15,7 @@
 | [3. Flujo de datos](#3-flujo-de-datos) | la secuencia invariante desde el clic hasta el re-render |
 | [4. Estado - Singleton `S`](#4-estado---singleton-s) | cómo se lee y se muta el estado, y qué está prohibido |
 | [5. Persistencia](#5-persistencia---storagejs) | `localStorage`, el debounce de `save()` y el patrón de migración |
-| [6. Sistema de eventos](#6-sistema-de-eventos---eventbus) | los 9 eventos reales, quién los emite y quién los escucha |
+| [6. Sistema de eventos](#6-sistema-de-eventos---eventbus) | los 10 eventos reales, quién los emite y quién los escucha |
 | [7. HTML - contrato de eventos](#7-html---contrato-de-eventos) | por qué no hay `onclick` y cómo funciona `data-action` |
 | [8. CSS - capas `@layer`](#8-css---capas-layer) | el orden de cascada, el sistema de íconos SVG y la tipografía |
 | [9. PWA y Service Worker](#9-pwa-y-service-worker) | qué se precachea y cuándo hay que bumpear `CACHE_NAME` |
@@ -65,7 +64,7 @@ Utilidades transversales sin dependencias de dominio.
 | Archivo | Responsabilidad |
 |---|---|
 | `utils.js` | Formateo de moneda (`f()`), fechas, diálogos (`dialogo()`) |
-| `render.js` | `renderSmart()`, `updSaldo()`, `updateBadge()`, `renderAll()`, `registrarRender()` |
+| `render.js` | `renderSmart()`, `programarRender()`, `updSaldo()`, `updateBadge()`, `renderAll()`, `registrarRender()` |
 | `a11y.js` | `announce()` para lectores de pantalla, `trapFocus()`/`releaseFocus()` para modales |
 | `crud.js` | Helper genérico: `guardar()`/`editar()`/`eliminar()` sobre `S`, emite `state:change` |
 | `router.js` | Hash routing (`#dash`, `#gastos`, `#metas`, …) |
@@ -172,14 +171,16 @@ save()          → localStorage (debounced 200ms) + flush inmediato en visibili
 EventBus.emit('state:change', { section })
   │
   ▼
-render.js       → renderSmart(fn, key) → solo re-renderiza si la sección es visible
-  │
+render.js       → programarRender(fn) → cola dedupada, vaciada en microtask (PERF.6)
+  │                 renderSmart(fn, key) → solo pinta si la sección es visible
   ▼
 view.js del dominio → innerHTML actualizado
 ```
 
 **Regla invariante:** toda mutación de `S` debe seguir esta secuencia exacta.
 Nunca mutar `S` sin `save()`. Nunca renderizar sin que `S` esté actualizado.
+
+**Reactivo vs. directo (PERF.6).** Un listener de `state:change` que pinta un panel **agenda** con `programarRender(fn)`, y `fn` es una función de módulo (el dedup es por identidad). Navegación, arranque y `renderAll` siguen síncronos. Consecuencia: tras emitir, el DOM del panel no está actualizado en la línea siguiente.
 
 ---
 

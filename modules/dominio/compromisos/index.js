@@ -13,7 +13,7 @@ import { save } from '../../core/storage.js';
 import { guardar, editar, eliminar } from '../../infra/crud.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal } from '../../ui/modales.js';
-import { renderSmart, updSaldo, registrarRender } from '../../infra/render.js';
+import { renderSmart, updSaldo, registrarRender, programarRender } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { f, hoy } from '../../infra/utils.js';
@@ -59,6 +59,20 @@ function _renderTodo() {
   renderEstrategiaPago();
   renderAlertaDeudasDurmiendo();
   renderListaCompromisos();
+}
+
+/**
+ * Los dos renders reactivos del dominio, con identidad estable para que el
+ * coalescer de PERF.6 los deduplique: una acción que paga varios compromisos
+ * de una vez emite `compromisos` y `gastos` varias veces en el mismo tick.
+ */
+function _renderSeccionReactivo() {
+  renderBannerProposito('compromisos', S.compromisos.some(c => esDeuda(c.tipo)));
+  renderSmart(_renderTodo, 'compromisos');
+}
+
+function _renderDashboardReactivo() {
+  renderSmart(_renderDashboardPanels, 'dash');
 }
 
 /**
@@ -874,8 +888,7 @@ export function initCompromisos() {
 
   EventBus.on('state:change', ({ section }) => {
     if (section === 'compromisos') {
-      renderBannerProposito('compromisos', S.compromisos.some(c => esDeuda(c.tipo)));
-      renderSmart(_renderTodo, 'compromisos');
+      programarRender(_renderSeccionReactivo);
     }
     // El dashboard también depende de compromisos: si el usuario crea/edita/
     // elimina uno y luego vuelve a #dash, el panel debe reflejarlo. renderSmart
@@ -884,7 +897,7 @@ export function initCompromisos() {
     // (`vencidosSinPagar`), así que registrar un pago desde el lote o desde el
     // calendario tiene que repintarlo. Pagar un fijo no toca `compromisos`.
     if (section === 'compromisos' || section === 'gastos') {
-      renderSmart(_renderDashboardPanels, 'dash');
+      programarRender(_renderDashboardReactivo);
     }
   });
 

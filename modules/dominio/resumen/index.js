@@ -10,8 +10,18 @@
  */
 
 import { EventBus } from '../../core/state.js';
-import { registrarRender, renderSmart } from '../../infra/render.js';
+import { registrarRender, renderSmart, programarRender } from '../../infra/render.js';
 import { renderPanelResumen } from './view.js';
+
+/**
+ * Render reactivo del panel, con identidad estable para que el coalescer de
+ * PERF.6 pueda deduplicarlo: una acción que registra varios gastos de una vez
+ * (ej. distribuir el ingreso) emite un `state:change` por gasto y este panel
+ * barre todo el historial en cada uno.
+ */
+function _renderReactivo() {
+  renderSmart(renderPanelResumen, 'dash');
+}
 
 export function initResumen() {
   // El resumen vive en el dashboard: se actualiza en cada renderAll() para
@@ -20,7 +30,7 @@ export function initResumen() {
   registrarRender(() => renderSmart(renderPanelResumen, 'dash'));
 
   EventBus.on('state:change', ({ section }) => {
-    if (section === 'gastos') renderSmart(renderPanelResumen, 'dash');
+    if (section === 'gastos') programarRender(_renderReactivo);
   });
 
   // Re-render al navegar a #dash.

@@ -9,7 +9,7 @@
 
 import { EventBus } from '../../core/state.js';
 import { registrarAccion } from '../../ui/actions.js';
-import { renderSmart, registrarRender } from '../../infra/render.js';
+import { renderSmart, registrarRender, programarRender } from '../../infra/render.js';
 import {
   renderActividadReciente, renderMovimientosCompletos, cargarMasMovimientos,
   renderFiltrosMovimientos, setFiltroTexto, setFiltroDominio,
@@ -87,7 +87,12 @@ export function initMovimientos() {
   registrarAccion('movimientos-limpiar-filtros', _limpiarFiltrosMovimientos);
 
   EventBus.on('state:change', ({ section }) => {
-    if (_SECCIONES_FUENTE.includes(section)) _renderTodo();
+    // Agendado, no directo (PERF.6): las 4 secciones fuente se emiten varias
+    // veces dentro de una misma acción (distribuir el ingreso registra un gasto
+    // por necesidad más el aporte a ahorro), y cada pasada deriva y ordena todo
+    // el historial. `_renderTodo` tiene identidad estable: la cola lo colapsa
+    // a un solo pintado por tick.
+    if (_SECCIONES_FUENTE.includes(section)) programarRender(_renderTodo);
   });
 
   // Re-render al navegar a #dash o #movimientos - sin esto el panel/vista

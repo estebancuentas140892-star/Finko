@@ -25,7 +25,7 @@ import { S, EventBus } from '../../core/state.js';
 import { save } from '../../core/storage.js';
 import { guardar, editar, eliminar } from '../../infra/crud.js';
 import { gastoDePagoCompromiso, bajarSaldoDeuda, esCompromisoDeuda } from '../../infra/pago-compromiso.js';
-import { renderSmart, updSaldo } from '../../infra/render.js';
+import { renderSmart, updSaldo, programarRender } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal } from '../../ui/modales.js';
@@ -701,6 +701,16 @@ function _fechaPagoDelMes(comp, prefijoMes) {
   return `${prefijoMes}-${String(dia).padStart(2, '0')}`;
 }
 
+/**
+ * Render reactivo del calendario, con identidad estable para el coalescer de
+ * PERF.6: observa 4 secciones y un lote de pagos emite `compromisos` y `gastos`
+ * varias veces dentro del mismo tick.
+ */
+function _renderReactivo() {
+  renderBannerProposito('agenda', S.compromisos.length > 0);
+  renderSmart(renderAgenda, 'agenda');
+}
+
 // ── INIT ─────────────────────────────────────────────────────────
 
 export function initAgenda() {
@@ -754,8 +764,7 @@ export function initAgenda() {
     // MT.6d: el plan de aportes de una meta (generado/regenerado por Metas)
     // también se pinta acá, así que un cambio de metas repinta el calendario.
     if (section === 'compromisos' || section === 'ingresos' || section === 'gastos' || section === 'metas') {
-      renderBannerProposito('agenda', S.compromisos.length > 0);
-      renderSmart(renderAgenda, 'agenda');
+      programarRender(_renderReactivo);
     }
   });
 
