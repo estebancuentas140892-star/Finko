@@ -3334,6 +3334,100 @@ button.chip:focus-visible {
   color: var(--fk-warning-text);
 }
 
+/* ── AVISOS (CFG.3b, ADR 066): mismo patrón visual que .limites-card,
+   namespace propio a propósito (cada card del dashboard conserva el suyo,
+   ver el mismo criterio en .resumen-semana__*). ─────────────────────── */
+.avisos-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+}
+
+.avisos-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.avisos-card__title {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+}
+
+.avisos-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+}
+
+.avisos-card__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+}
+
+.avisos-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.avisos-card__name {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-medium);
+  color: var(--fk-text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+}
+
+.avisos-card__sub {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  margin: 0;
+}
+
+.avisos-card__badge {
+  flex-shrink: 0;
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  padding: 2px 8px;
+  border-radius: var(--fk-radius-sm);
+  white-space: nowrap;
+}
+
+.avisos-card__badge--info {
+  background: var(--fk-info-bg);
+  color: var(--fk-info-text);
+}
+
+.avisos-card__badge--listo {
+  background: var(--fk-success-bg);
+  color: var(--fk-success-text);
+}
+
+.avisos-card__mas {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  margin: 0;
+  text-align: center;
+}
+
 /* ── APARTADOS: FORM REDISEÑO (F7) ────────────────────────────── */
 .apartado-nombre-row {
   display: grid;

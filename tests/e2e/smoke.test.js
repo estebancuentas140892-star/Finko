@@ -464,6 +464,50 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await expect(page.locator('#sec-agenda.active')).toBeVisible();
   });
 
+  test('Avisos: apartado listo, día de pago y préstamo vencido, sin repetir lo de otros paneles (CFG.3b, ADR 066)', async ({ page }) => {
+    const DIA = 15;
+    await page.clock.setFixedTime(new Date(`2026-03-${DIA}T10:00:00`));
+    await page.addInitScript(({ dia }) => {
+      if (localStorage.getItem('fk_v1')) return;
+      const estado = {
+        version: 1,
+        perfil: { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas: [],
+        ingresos: [
+          { id: 'i1', descripcion: 'Salario', monto: 2000000, frecuencia: 'Mensual', categoria: 'Salario', diaPago: dia, activo: true, fechaCreacion: '2025-01-01T00:00:00.000Z' },
+        ],
+        gastos: [],
+        compromisos: [],
+        presupuestos: [],
+        apartados: [
+          { id: 'a1', nombre: 'SOAT', icono: '📦', montoObjetivo: 500000, montoActual: 500000, fechaObjetivo: null, frecuenciaAporte: 'Mensual', recurrente: true, periodoMeses: 12, completado: true, fechaCreacion: '2025-01-01T00:00:00.000Z' },
+        ],
+        personales: [
+          { id: 'pe1', persona: 'Juan', monto: 300000, pagado: 0, fecha: '2026-01-01', fechaLimite: `2026-03-${dia - 5}`, liquidado: false, fechaCreacion: '2026-01-01T00:00:00.000Z' },
+        ],
+        metas: [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    }, { dia: DIA });
+    await page.goto('/');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+
+    const panel = page.locator('#panel-avisos');
+    await expect(panel).toBeVisible();
+    await expect(panel.locator('.avisos-card__title')).toHaveText('3 avisos');
+
+    const items = panel.locator('.avisos-card__item');
+    await expect(items).toHaveCount(3);
+    await expect(panel.locator('.avisos-card__badge--listo')).toHaveText('Listo');
+    await expect(panel).toContainText('SOAT');
+    await expect(panel).toContainText('Ya reuniste $500.000');
+    await expect(panel).toContainText('Salario');
+    await expect(panel).toContainText('Te llega hoy · $2.000.000');
+    await expect(panel).toContainText('Juan');
+    await expect(panel).toContainText('Acordaron esta fecha hace 5 días');
+  });
+
   test('Resumen de la semana visual: monto, chip, barras y categoría top (IN.8f, ADR 034 D6)', async ({ page }) => {
     await page.addInitScript(() => {
       if (localStorage.getItem('fk_v1')) return;

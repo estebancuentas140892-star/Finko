@@ -10,7 +10,7 @@ import {
   resumenSemanal,
   hayResumen,
 } from '../../modules/dominio/resumen/logic.js';
-import { renderPanelResumen } from '../../modules/dominio/resumen/view.js';
+import { renderPanelResumen, renderPanelAvisos } from '../../modules/dominio/resumen/view.js';
 import { S } from '../../modules/core/state.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -377,5 +377,116 @@ describe('renderPanelResumen()', () => {
     expect(() => renderPanelResumen()).not.toThrow();
     // Sin top (categoriaTopSemana excluye compromisoId), no se dibuja la fila.
     expect(elPanel().innerHTML).not.toContain('resumen-semana__top-titulo');
+  });
+});
+
+// ── renderPanelAvisos() (CFG.3b, ADR 066) ────────────────────────────
+
+describe('renderPanelAvisos()', () => {
+  const elPanel = () => document.getElementById('panel-avisos');
+
+  const apartado = (overrides = {}) => ({
+    id: 'a1', nombre: 'SOAT', montoObjetivo: 500_000, montoActual: 500_000,
+    fechaObjetivo: null, recurrente: true, completado: true, ...overrides,
+  });
+
+  const prestamo = (overrides = {}) => ({
+    id: 'pe1', persona: 'Juan', monto: 300_000, pagado: 0,
+    fecha: '2026-04-01', fechaLimite: '2026-06-01', liquidado: false, ...overrides,
+  });
+
+  const ingreso = (overrides = {}) => ({
+    id: 'i1', descripcion: 'Salario', monto: 2_000_000, frecuencia: 'Mensual',
+    diaPago: 13, activo: true, fechaCreacion: '2025-01-01T00:00:00.000Z', ...overrides,
+  });
+
+  beforeEach(() => {
+    document.body.innerHTML = '<section id="panel-avisos"></section>';
+    S.compromisos  = [];
+    S.gastos       = [];
+    S.presupuestos = [];
+    S.apartados    = [];
+    S.personales   = [];
+    S.ingresos     = [];
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 13)); // 2026-06-13, mismo HOY que el resto del archivo
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('no revienta si el contenedor no existe', () => {
+    document.body.innerHTML = '';
+    S.apartados = [apartado()];
+    expect(() => renderPanelAvisos()).not.toThrow();
+  });
+
+  it('sin avisos de los tres tipos que le tocan, el panel queda oculto y vacío', () => {
+    renderPanelAvisos();
+    expect(elPanel().hidden).toBe(true);
+    expect(elPanel().innerHTML).toBe('');
+  });
+
+  it('un apartado listo para reiniciar se muestra con badge "Listo"', () => {
+    S.apartados = [apartado()];
+    renderPanelAvisos();
+    expect(elPanel().hidden).toBe(false);
+    expect(elPanel().innerHTML).toContain('SOAT');
+    expect(elPanel().innerHTML).toContain('Ya reuniste $500.000');
+    expect(elPanel().innerHTML).toContain('avisos-card__badge--listo');
+    expect(elPanel().innerHTML).toContain('Listo');
+  });
+
+  it('un ingreso que cae hoy se muestra con badge "Hoy"', () => {
+    S.ingresos = [ingreso()];
+    renderPanelAvisos();
+    expect(elPanel().innerHTML).toContain('Salario');
+    expect(elPanel().innerHTML).toContain('Te llega hoy · $2.000.000');
+    expect(elPanel().innerHTML).toContain('Hoy');
+  });
+
+  it('un préstamo con la fecha pactada pasada dice hace cuántos días, sin lenguaje de cobro', () => {
+    S.personales = [prestamo()];
+    renderPanelAvisos();
+    const html = elPanel().innerHTML;
+    expect(html).toContain('Juan');
+    expect(html).toContain('Acordaron esta fecha hace 12 días');
+    expect(html).not.toMatch(/cobra|debe|reclama|exige/i);
+  });
+
+  it('no repite lo que ya muestran Pendientes del mes / Próximas prioridades / Alertas de límites', () => {
+    S.compromisos = [{
+      id: 'c1', descripcion: 'Arriendo', tipo: 'fijo', monto: 1_500_000,
+      frecuencia: 'Mensual', diaPago: 1, activo: true, fechaCreacion: '2025-01-01T00:00:00.000Z',
+    }];
+    S.presupuestos = [{ id: 'p1', categoria: 'Restaurantes', montoMensual: 100_000, activo: true, fechaCreacion: '2025-01-01T00:00:00.000Z' }];
+    S.gastos = [{ id: 'g1', descripcion: 'Cena', monto: 150_000, categoria: 'Restaurantes', fecha: '2026-06-10' }];
+    S.apartados = [apartado({ id: 'a2', completado: false, recurrente: false, fechaObjetivo: '2026-06-15' })];
+    renderPanelAvisos();
+    // Vencido de arriendo (compromiso-vencido) y tope excedido (limite-excedido)
+    // y apartado próximo (apartado-proximo) ya viven en otros paneles: acá no aparecen.
+    expect(elPanel().hidden).toBe(true);
+  });
+
+  it('avisos de varias fuentes conviven en el mismo panel, con el conteo correcto', () => {
+    S.apartados  = [apartado()];
+    S.ingresos   = [ingreso()];
+    S.personales = [prestamo()];
+    renderPanelAvisos();
+    expect(elPanel().innerHTML).toContain('3 avisos');
+  });
+
+  it('más del tope visible resume el resto en un texto, sin recortar el conteo del título', () => {
+    S.apartados = [
+      apartado({ id: 'a1', nombre: 'SOAT' }),
+      apartado({ id: 'a2', nombre: 'Seguro' }),
+      apartado({ id: 'a3', nombre: 'Impuesto' }),
+    ];
+    S.ingresos = [ingreso({ id: 'i1', descripcion: 'Salario' }), ingreso({ id: 'i2', descripcion: 'Freelance' })];
+    renderPanelAvisos();
+    const html = elPanel().innerHTML;
+    expect(html).toContain('5 avisos');
+    expect(html).toContain('y 1 más');
   });
 });
