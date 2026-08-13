@@ -1,7 +1,7 @@
 # ADR 044 - Motor único de sugerencia por categoría
 
-**Estado:** Abierta (decisión sin tomar). No implementar nada de este ADR. **Su bloqueo declarado ya no existe:** el [ADR 045](045-base-de-calculo-del-disponible-para-limites.md) se aceptó el 2026-08-12 y su D6 fija la base del monto sugerido (el presupuesto de Estilo de vida y su parte sin tope, `coberturaLimitesEstiloVida`, más el histórico de la categoría; nunca saldos ni dinero extraordinario). El [ADR 046](046-analisis-interpreta-criterio-y-lenguaje.md) D3 además dejó de depender de este motor: la lectura de Análisis describe, no ordena. Queda un solo consumidor esperando: **LIM.1c**.
-**Fecha:** 2026-07-24
+**Estado:** Aceptada el 2026-08-13. Esteban pidió trabajar LIM.1c y delegó explícitamente la elección ("tú tomas las decisiones"), igual que en el [ADR 045](045-base-de-calculo-del-disponible-para-limites.md) y el [ADR 046](046-analisis-interpreta-criterio-y-lenguaje.md). Su bloqueo declarado había desaparecido el 2026-08-12 con la D6 del ADR 045, que fija la base del monto sugerido (el presupuesto de Estilo de vida y su parte sin tope, `coberturaLimitesEstiloVida`, más el histórico de la categoría; nunca saldos ni dinero extraordinario). Implementado en la rebanada **LIM.1c**, con Límites de gasto como único consumidor por ahora.
+**Fecha:** 2026-07-24 (abierta), 2026-08-13 (decidida)
 **Autores:** Esteban (producto), Claude Opus 5 (análisis)
 **Relación:** consume el catálogo del [ADR 029](029-catalogo-de-marcas-por-categoria.md). Lo consumirían los ADR [045](045-base-de-calculo-del-disponible-para-limites.md) (Límites) y [046](046-analisis-interpreta-criterio-y-lenguaje.md) (Análisis), que quedan como **consumidores, no dueños**. Restringido por la regla ADN 10 (ningún dominio importa a otro).
 
@@ -29,70 +29,84 @@ La restricción de fondo es la **regla ADN 10**: ningún dominio importa a otro.
 
 ---
 
-## La decisión pendiente
+## Decisión
 
-**Dónde vive el motor, qué recibe, qué devuelve y quién puede llamarlo.**
+### D1. El motor vive en `infra/`, en un archivo propio
 
-Nada de esto está decidido. Lo que sigue enmarca la decisión, no la toma.
+`modules/infra/sugerencias-categoria.js`, funciones puras sin DOM y sin `S`. Es la alternativa A: la ADN 10 deja fuera de discusión la B (duplicar por dominio) y la C (dueño en `analisis/`) acopla por orden de render, que se rompe más callado que un import. El precedente decide el resto: `infra/vencimientos.js` es exactamente esta forma, y su historia (dos dominios con la misma tabla de frecuencias copiada carácter por carácter hasta el [ADR 041](041-motor-vencimientos-y-distribucion-v2.md)) es la razón de no volver a repartir la lógica.
 
-### Propósito que tendría que cumplir
+### D2. El motor devuelve datos, nunca frases
 
-Dado un patrón de gasto por categoría, devolver un **diagnóstico acompañado de un monto sugerido y una acción ejecutable**, para que la superficie que lo muestra pueda resolver la situación sin mandarte a otra pantalla.
+Cada función devuelve objetos con las cifras y el motivo; el copy lo escribe la superficie dentro del [ADR 003](003-tono-neutral-profesional.md). Tres superficies repitiendo el mismo texto sonarían a plantilla, y un motor que arma strings obliga a fijar el copy en los tests: cambiar una palabra rompería la lógica.
 
-El "monto sugerido más acción" es el punto que separa este motor de lo que ya existe: hoy sobra diagnóstico y falta salida accionable.
+### D3. Tres entradas, no un `sugerir()` que lo hace todo
 
-### Entradas candidatas (a confirmar al cerrar)
-
-| Entrada | De dónde sale hoy | Nota |
+| Función | Responde | Devuelve |
 |---|---|---|
-| Gasto histórico por categoría | `calcularGastadoCategoria` | ya existe y ya se calcula |
-| Categoría y su grupo financiero | `core/constants.js` | mapeo sección a grupo, ya existe |
-| Topes vigentes | `S.presupuestos` | para saber qué categoría no tiene tope |
-| Marca o suscripción detectada | catálogo del [ADR 029](029-catalogo-de-marcas-por-categoria.md) | precondición del caso "gasto fantasma" |
-| Capacidad de gasto del período | pendiente del [ADR 045](045-base-de-calculo-del-disponible-para-limites.md) | **el monto sugerido depende de esa decisión** |
-| Fecha de referencia (`hoyISO`) | inyectada | para que la función sea pura y testeable |
+| `historicoCategoria(gastos, categoria, hoyISO, meses?)` | cuánto se gasta habitualmente acá | `{ actual, promedio, mesesConGasto, cerrados }` |
+| `sugerirMontoTope(gastos, categoria, hoyISO, { sinTope })` | cuánto poner de tope | `{ monto, base, promedio, mesesConGasto, acotado }` o `null` |
+| `sugerirCategoriasParaTope(gastos, categorias, hoyISO, { sinTope, umbral })` | dónde conviene poner uno | lista ordenada con `motivo: 'creciente'\|'recurrente'` |
+| `detectarSuscripcionesLargas(compromisos, gastos, hoyISO, { mesesMinimos, ventana })` | qué suscripción vale la pena revisar | lista con `mesesPagados` y `costoAnual` |
 
-### Salidas candidatas
+El módulo es el motor; que tenga cuatro puertas no lo vuelve tres motores. La regla que el tablero declaró dos veces es "una sola implementación", y eso se cumple.
 
-Un diagnóstico legible, un monto sugerido cuando aplique, y una acción identificable que el consumidor sepa ejecutar. La forma exacta del contrato se fija al cerrar este ADR.
+**`hoyISO` entra por parámetro** (mismo criterio que `infra/vencimientos.js`): sin eso, ninguna de las cuatro es testeable sin congelar el reloj.
 
-### Consumidores previstos
+**El consumidor filtra las categorías candidatas.** El motor no conoce `S.presupuestos` ni el catálogo visible de cada superficie (ADN 10): recibe la lista de categorías que **pueden** recibir un tope y todavía no lo tienen. Es la misma lista que el formulario ofrece como chips, así que ninguna sugerencia queda sin puerta (regla R35).
 
-Límites de gasto, Análisis e Inicio. Ninguno de los tres sería dueño del motor.
+### D4. La base del monto es el histórico, y el techo es lo que el plan deja sin tope
+
+El promedio de los meses cerrados con gasto (tres por defecto); sin histórico, lo que va corrido del mes en curso. El mes en curso no entra al promedio: está incompleto y movería la cifra según el día.
+
+**Nunca se propone un recorte.** Un tope por debajo de lo que la persona ya gasta es una dieta que no pidió; el tope nace en su gasto habitual y bajarlo es decisión suya (ADR 003).
+
+El techo es `coberturaLimitesEstiloVida().sinTope` ([ADR 045](045-base-de-calculo-del-disponible-para-limites.md) D6): sugerir más que eso repartiría dinero que el plan no tiene. Saldos y dinero extraordinario nunca entran.
+
+### D5. La suscripción se detecta por antigüedad y costo, no por uso
+
+Finko **no sabe** si algo se usa: no hay dato de uso y no se inventa uno. Lo que sí sabe es cuántos meses lleva cobrada una suscripción y cuánto suma al año, que es la cifra que nadie tiene en la cabeza. El motor solo mira los fijos **no esenciales** del [ADR 014](014-taxonomia-categorias-transversal.md) (Streaming y Suscripciones, la misma lista cerrada de LIM.1b): el arriendo también lleva doce meses cobrándose y no es un hallazgo.
+
+El catálogo de marcas del [ADR 029](029-catalogo-de-marcas-por-categoria.md) queda **fuera de esta primera entrega**: la señal que importa (cuántos meses lleva cobrándose, cuánto suma al año) sale de los compromisos y sus pagos, y esperar la Fase 1 de ese ADR habría bloqueado la rebanada sin mejorar la detección. Cuando exista `marcaId`, el motor puede agrupar por marca sin cambiar su contrato.
+
+### D6. La regla de frecuencia es de cada superficie, con un tope escrito
+
+El motor devuelve **listas ordenadas**; cuántas se muestran lo decide quien las muestra, porque el ruido depende de lo que ya haya en pantalla. Límites de gasto adopta **una sugerencia de tope y una de suscripción por render**, las de mayor monto, porque la sección ya tiene sus propias alertas por sobre. Sin persistencia de descartes: guardar "no me muestres esto" es schema nuevo y nadie lo ha pedido.
+
+### Consumidores
+
+Límites de gasto es el único hoy. Análisis dejó de depender del motor con el [ADR 046](046-analisis-interpreta-criterio-y-lenguaje.md) D3 (su lectura describe, no ordena) e Inicio queda como consumidor futuro: puede importar el mismo módulo sin tocarlo.
 
 ---
 
-## Alternativas sobre la mesa
+## Alternativas
 
-Ninguna está elegida ni descartada.
-
-### A. Motor compartido en `modules/infra/`
+### A. Motor compartido en `modules/infra/` (elegida, D1)
 
 Un archivo de funciones puras, sin DOM, importable por cualquier dominio. Es el patrón que el proyecto ya usa para piezas transversales: `infra/vencimientos.js` (la única tabla de frecuencias, que el [ADR 041](041-motor-vencimientos-y-distribucion-v2.md) dejó como regla), `infra/financiero.js`, `infra/cuenta-helper.js` y `infra/distribuir-pago.js`.
 
 A favor: cumple la ADN 10 sin esfuerzo, es testeable en Node, y hay cuatro precedentes vivos del mismo patrón. En contra: suma un archivo más a una carpeta que ya es grande.
 
-### B. Lógica duplicada por dominio (statu quo)
+### B. Lógica duplicada por dominio (statu quo, descartada)
 
 Cada superficie implementa su propia versión. A favor: cero coordinación. En contra: es exactamente lo que el tablero ya declaró que no quiere, y el precedente reciente es malo: `MAPA_FRECUENCIA_A_*` estuvo duplicado carácter por carácter en dos dominios hasta que el ADR 041 lo unificó.
 
-### C. Motor dentro de `analisis/`, los demás leen su salida por EventBus
+### C. Motor dentro de `analisis/`, los demás leen su salida por EventBus (descartada)
 
 Vive donde ya está la detección de patrones. A favor: aprovecha que Análisis ya calcula casi todo. En contra: convierte a un dominio en dueño de una pieza transversal, y obliga a que Límites e Inicio dependan de que Análisis se haya ejecutado. Acopla por orden de render, que es más frágil que acoplar por import.
 
 ---
 
-## Consecuencias esperadas
+## Consecuencias
 
-**La ADN 10 restringe el espacio de soluciones antes de empezar.** Un motor consumido por tres dominios vive en `infra/` o se comunica por EventBus. La opción B queda fuera de la ADN por duplicación, no por gusto; la C cumple la letra de la regla pero traslada el acoplamiento al orden de ejecución.
+**Sin schema y sin tocar el reparto.** El motor solo lee lo que ya está guardado (`S.gastos`, `S.compromisos`) y el techo sale de una función que ya existía. No hay bump de `SCHEMA_VERSION` y `distribucion.js` no se toca, coherente con el ADR 045.
 
-**El monto sugerido no se puede cerrar sin el ADR 045.** Sugerir un tope exige saber cuánto dinero hay realmente disponible. Si ese ADR concluye que la base incluye saldos, el motor puede sugerir montos que estén comprometidos con obligaciones futuras. **Este ADR no debería cerrarse antes que el 045**, o el contrato de salida nacería apoyado en una cifra sin definir.
+**El hallazgo P6 queda cerrado en Límites.** El aviso trae el monto y su botón abre el formulario con la cifra puesta: se resuelve sin cambiar de pantalla. La excepción declarada es la suscripción, cuya acción (dar de baja un fijo) vive en Calendario: duplicar ese control acá rompería la fuente única, así que el aviso lleva enlace y no botón.
 
-**El contrato de salida decide si el problema se resuelve o se renombra.** Si el motor devuelve solo diagnóstico, la app queda igual que hoy con una capa más de indirección: el hallazgo P6 seguiría vigente.
+**El copy queda como riesgo vivo.** Convertir diagnóstico en acción acerca el producto a prescribir. La mitigación es estructural (D2: el motor no escribe frases) y de forma: el aviso dice el hecho y ofrece, nunca ordena.
 
-**Riesgo de tono.** Convertir diagnóstico en acción acerca el producto a prescribir. El [ADR 003](003-tono-neutral-profesional.md) es ADN: Finko sugiere, nunca impone. El copy de cada sugerencia debe seguir siendo orientativo.
+**La sugerencia sube con el gasto.** Como el monto propuesto es el promedio y nunca un recorte, una racha de gasto alto propone topes altos. Es el costo aceptado de no imponer dietas: el tope es un aviso, no un permiso, y el techo del plan lo acota por arriba.
 
-**Riesgo de saturación.** Tres superficies emitiendo sugerencias del mismo motor pueden convertirse en ruido. Tu propio brief pidió avisos "nunca invasivos ni constantes". Hace falta una regla de frecuencia, y este ADR debería fijarla o delegarla explícitamente.
+**Un tope creado ya no vuelve a sugerirse**, porque la categoría sale de la lista de candidatas. La regla de frecuencia de D6 evita el otro extremo, el de tres avisos apilados en la misma tarjeta.
 
 ---
 
@@ -132,9 +146,11 @@ Ningún ADR existente define un motor de sugerencia por categoría. Verificado a
 
 ---
 
-## Qué falta para cerrarlo
+## Qué queda cerrado
 
-1. Decidir entre las alternativas A, B y C.
-2. ~~Cerrar antes el [ADR 045](045-base-de-calculo-del-disponible-para-limites.md)~~: **hecho el 2026-08-12**. Su D6 fija la base del monto sugerido.
-3. Fijar el contrato exacto de entrada y salida.
-4. Fijar la regla de frecuencia, o delegarla por escrito a cada superficie.
+1. **Alternativa A, B o C:** A, motor propio en `infra/` (D1).
+2. **Base del monto:** el histórico de la categoría, acotado por lo que el plan deja sin tope (D4, sobre el ADR 045 D6).
+3. **Contrato de entrada y salida:** las cuatro funciones de D3, datos y nunca frases (D2).
+4. **Regla de frecuencia:** delegada a cada superficie, con el tope de Límites escrito (D6).
+
+Implementación: rebanada **LIM.1c**, cerrada el 2026-08-13 (`modules/infra/sugerencias-categoria.js` más su consumo en Límites de gasto). Detalle en el [CHANGELOG](../CHANGELOG.md) y en [`contexto/limites.md`](../contexto/limites.md).

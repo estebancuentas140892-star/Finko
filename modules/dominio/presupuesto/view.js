@@ -4,7 +4,7 @@
  */
 
 import { S }                  from '../../core/state.js';
-import { f, esc as _esc }     from '../../infra/utils.js';
+import { f, esc as _esc, hoy } from '../../infra/utils.js';
 import { icon, iconoCategoria } from '../../infra/icons.js';
 import {
   CATEGORIAS_GASTO_USUARIO,
@@ -27,6 +27,11 @@ import {
   extraordinarioDelMes,
 } from './logic.js';
 import { estimarSalarioMensual } from '../../infra/financiero.js';
+import {
+  sugerirMontoTope,
+  sugerirCategoriasParaTope,
+  detectarSuscripcionesLargas,
+} from '../../infra/sugerencias-categoria.js';
 import {
   construirContextoDistribucion,
   sugerirDistribucionIngreso,
@@ -417,8 +422,14 @@ function _renderResumenGruposVacio(anio, mes) {
  *      topes actuales y cuánto queda sin tope (sin obligar a asignar el 100%);
  *   2. el dinero extraordinario del mes, informado y no repartido (LIM.1a);
  *   3. los envelopes activos, o un mensaje breve si no hay ninguno;
- *   4. las categorías con gasto pero sin tope (sugerencia de dónde poner uno);
- *   5. el botón "Agregar límite" (topes bajo demanda).
+ *   4. la categoría que más pide un tope, con su monto (LIM.1c);
+ *   5. las categorías con gasto pero sin tope (sugerencia de dónde poner uno);
+ *   6. la suscripción que lleva más tiempo cobrándose (LIM.1c);
+ *   7. el botón "Agregar límite" (topes bajo demanda).
+ *
+ * Regla de frecuencia (ADR 044 D6): **una** sugerencia de tope y **una** de
+ * suscripción por render, las de mayor monto. El brief pidió avisos "nunca
+ * invasivos ni constantes" y la sección ya tiene sus propias alertas por sobre.
  *
  * @param {number} anio
  * @param {number} mes - 1-12
@@ -432,8 +443,21 @@ function _renderDetalleEstiloVida(anio, mes, presupuestoEV, notasCategoria = new
   const gastos    = S.gastos ?? [];
   const cobertura = coberturaLimitesEstiloVida(activos, presupuestoEV);
 
+  const hoyISO      = hoy();
+  const sugerencia  = sugerirCategoriasParaTope(
+    gastos, _categoriasDisponibles(), hoyISO, { sinTope: cobertura.sinTope },
+  )[0];
+  const suscripcion = detectarSuscripcionesLargas(S.compromisos ?? [], gastos, hoyISO)[0];
+
+  // Sin topes y con una sugerencia real, el ejemplo inventado del estado vacío
+  // sobra: dos consejos seguidos, uno genérico y otro con la cifra de la
+  // persona, compiten entre sí.
+  const vacio = sugerencia
+    ? 'Aún no le has puesto tope a ninguna categoría.'
+    : 'Aún no le has puesto tope a ninguna categoría. Empieza por donde más gastas: por ejemplo, un máximo de $300.000 para Restaurantes.';
+
   const lista = activos.length === 0
-    ? `<p class="estilo-limites__vacio">Aún no le has puesto tope a ninguna categoría. Empieza por donde más gastas: por ejemplo, un máximo de $300.000 para Restaurantes.</p>`
+    ? `<p class="estilo-limites__vacio">${vacio}</p>`
     : `<div class="envelope-list">${activos.map(p => _renderEnvelope(p, gastos, anio, mes, notasCategoria.get(p.categoria))).join('')}</div>`;
 
   return `
@@ -442,9 +466,79 @@ function _renderDetalleEstiloVida(anio, mes, presupuestoEV, notasCategoria = new
       ${_renderOllaFinita(cobertura)}
       ${_renderExtraordinario(extraordinarioDelMes(S.ingresosPuntuales, anio, mes), presupuestoEV)}
       ${lista}
+      ${_renderSugerenciaTope(sugerencia)}
       ${_renderSinPresupuesto(activos)}
+      ${_renderSuscripcionLarga(suscripcion)}
       <div class="estilo-limites__actions">
         <button class="btn btn-secondary btn-sm" data-action="nuevo-presupuesto">+ Límite</button>
+      </div>
+    </div>`;
+}
+
+// ── SUGERENCIAS DEL MOTOR (LIM.1c, ADR 044) ──────────────────────
+
+/**
+ * La categoría que más pide un tope, con el monto ya propuesto y su puerta
+ * (regla R35: el consejo y el control son lo mismo). El motor devuelve datos;
+ * el copy es de acá (ADR 044 D5) y sigue el ADR 003: dice el hecho y ofrece,
+ * nunca ordena.
+ *
+ * El botón solo lleva la categoría: el monto lo vuelve a pedir el formulario al
+ * mismo motor, con los mismos datos, así que la cifra del aviso y la del campo
+ * son la misma sin pasarla de mano en mano (una copia en el DOM se queda vieja
+ * en cuanto se registra un gasto).
+ *
+ * @param {ReturnType<typeof sugerirCategoriasParaTope>[number]|undefined} s
+ * @returns {string} HTML. `''` si no hay ninguna candidata.
+ */
+function _renderSugerenciaTope(s) {
+  if (!s) return '';
+
+  const cat = _esc(s.categoria);
+  const hecho = s.motivo === 'creciente'
+    ? `Llevas ${f(s.actual)} en ${cat} este mes, más que tus ${f(s.promedio)} habituales.`
+    : s.base === 'promedio'
+      ? `Gastas ${f(s.promedio)} al mes en ${cat}.`
+      : `Llevas ${f(s.actual)} en ${cat} este mes.`;
+  const oferta = s.acotado
+    ? `Puedes ponerle un tope de ${f(s.monto)}: es lo que tu plan deja sin asignar.`
+    : `Un tope de ${f(s.monto)} te avisa antes de pasarte.`;
+
+  return `
+    <div class="nudge nudge-info" role="status">
+      <span class="nudge__icon" aria-hidden="true">${iconoCategoria('i-trending-up')}</span>
+      <div class="nudge__body">
+        <p class="nudge__title">${hecho}</p>
+        <p class="nudge__desc">${oferta}</p>
+      </div>
+      <button type="button" class="nudge__cta btn btn-primary btn-sm"
+              data-action="nuevo-presupuesto"
+              data-categoria="${cat}"
+              aria-label="Ponerle un límite de ${f(s.monto)} a ${cat}">Ponerle tope</button>
+    </div>`;
+}
+
+/**
+ * La suscripción que lleva más meses cobrándose. Finko no sabe si se usa (no
+ * hay dato de uso y no se inventa): dice cuánto lleva cobrada y cuánto suma al
+ * año, que es la cifra que nadie tiene en la cabeza, y deja la decisión.
+ *
+ * La salida es Calendario, no un control acá: dar de baja un fijo es del
+ * dominio `compromisos` y duplicar esa acción en Límites rompería la fuente
+ * única (y la regla ADN #10 en su espíritu).
+ *
+ * @param {ReturnType<typeof detectarSuscripcionesLargas>[number]|undefined} s
+ * @returns {string} HTML. `''` si no hay ninguna.
+ */
+function _renderSuscripcionLarga(s) {
+  if (!s) return '';
+
+  return `
+    <div class="nudge nudge-info" role="status">
+      <span class="nudge__icon" aria-hidden="true">${iconoCategoria('i-info')}</span>
+      <div class="nudge__body">
+        <p class="nudge__title">Llevas ${s.mesesPagados} meses pagando ${_esc(s.descripcion)}: ${f(s.costoAnual)} al año.</p>
+        <p class="nudge__desc">Si ya no lo usas, darlo de baja libera ese dinero. <a href="#agenda" class="estilo-olla__link">Revisar en Calendario</a></p>
       </div>
     </div>`;
 }
@@ -639,9 +733,13 @@ function _puedeTenerTope(categoria, personalizadas) {
  * y viaja en un campo oculto: un control deshabilitado no entra en `FormData`,
  * así que la validación se quedaba sin categoría y el guardado fallaba.
  *
+ * LIM.1c: al crear, el campo abre con el monto sugerido por el motor (punto 3
+ * del brief: nadie tiene que inventar un tope de la nada). El número es una
+ * propuesta editable, no un valor impuesto: la pista dice de dónde sale.
+ *
  * @param {import('../../core/state.js').Presupuesto|null} [actual=null]
  * @param {string} [categoriaPrecargada=''] - categoría que llega desde su fila
- *   en "Gastas acá y no tiene tope"; queda marcada al abrir.
+ *   en "Gastas acá y no tiene tope" o desde la sugerencia; queda marcada al abrir.
  * @returns {string}
  */
 export function renderFormPresupuesto(actual = null, categoriaPrecargada = '') {
@@ -651,9 +749,22 @@ export function renderFormPresupuesto(actual = null, categoriaPrecargada = '') {
   const mes   = ahora.getMonth() + 1;
   const personalizadas = S.categoriasPersonalizadas ?? [];
   const gastos = S.gastos ?? [];
+  const hoyISO = hoy();
+  const sinTope = _sinTopeDelPlan();
 
-  /** Pista del monto: cuánto se lleva gastado este mes en esa categoría. */
+  /** Monto propuesto para una categoría, o null si no hay con qué estimarlo. */
+  const sugeridoDe = (categoria) => sugerirMontoTope(gastos, categoria, hoyISO, { sinTope });
+
+  /**
+   * Pista del monto: de dónde sale la cifra propuesta y, si no hay ninguna,
+   * cuánto se lleva gastado este mes (la pista de FORM.1b, que sigue vigente).
+   */
   const hintDe = (categoria) => {
+    const s = sugeridoDe(categoria);
+    if (s?.acotado)               return `Es lo que tu plan deja sin asignar este mes`;
+    if (s?.base === 'promedio')   return `Tu promedio de los últimos meses acá`;
+    if (s?.base === 'mes-actual') return `Es lo que llevas gastado acá este mes`;
+
     const gastado = calcularGastadoCategoria(gastos, categoria, anio, mes);
     return gastado > 0
       ? `Gastaste ${f(gastado)} acá este mes`
@@ -668,9 +779,15 @@ export function renderFormPresupuesto(actual = null, categoriaPrecargada = '') {
         <input type="hidden" name="categoria" value="${_esc(actual.categoria)}" />
         <p class="form-hint">La categoría no se puede cambiar. Si necesitas otra, elimina este límite y crea uno nuevo.</p>
       </div>`
-    : _renderChipsCategoria(categoriaPrecargada, personalizadas, hintDe);
+    : _renderChipsCategoria(categoriaPrecargada, personalizadas, hintDe, sugeridoDe);
 
   const categoriaInicial = editando ? actual.categoria : categoriaPrecargada;
+  // Al editar manda el monto guardado; al crear, la propuesta del motor para la
+  // categoría precargada. `data-sugerido` marca que el valor lo puso Finko: el
+  // cableado solo puede reemplazar lo que Finko escribió, nunca lo que tú.
+  const montoInicial = editando
+    ? actual.montoMensual
+    : (categoriaInicial ? (sugeridoDe(categoriaInicial)?.monto ?? '') : '');
 
   return `
     <form id="form-presupuesto" novalidate ${editando ? `data-id="${_esc(actual.id)}"` : ''}>
@@ -681,7 +798,7 @@ export function renderFormPresupuesto(actual = null, categoriaPrecargada = '') {
           <span class="monto-hero__prefijo" aria-hidden="true">$</span>
           <input id="presupuesto-monto" name="montoMensual" class="input input--big-amount" type="number"
                  min="1" step="10000" required aria-required="true"
-                 value="${editando ? actual.montoMensual : ''}"
+                 value="${montoInicial}"${!editando && montoInicial ? ' data-sugerido="1"' : ''}
                  placeholder="0" autocomplete="off" inputmode="numeric" />
         </div>
         <span class="monto-hero__hint" id="presupuesto-monto-hint">${categoriaInicial ? hintDe(categoriaInicial) : 'COP'}</span>
@@ -698,27 +815,29 @@ export function renderFormPresupuesto(actual = null, categoriaPrecargada = '') {
  * creó en Gastos (TX.9b): sin ellas, la sección listaba "Domicilios" entre las
  * categorías sin tope y el formulario no la ofrecía (regla R35).
  *
+ * Cada chip trae ya calculada su pista y su monto sugerido (LIM.1c): elegir
+ * categoría escribe el número en el campo sin volver a consultar nada.
+ *
  * @param {string} precargada
  * @param {{nombre:string, icono:string}[]} personalizadas
  * @param {(categoria:string) => string} hintDe
+ * @param {(categoria:string) => {monto:number}|null} sugeridoDe
  * @returns {string} HTML.
  */
-function _renderChipsCategoria(precargada, personalizadas, hintDe) {
+function _renderChipsCategoria(precargada, personalizadas, hintDe, sugeridoDe) {
   const chip = (valor) => {
-    const marcada = valor === precargada ? ' checked' : '';
+    const marcada  = valor === precargada ? ' checked' : '';
+    const sugerido = sugeridoDe(valor)?.monto;
     return `
         <label class="chip-cat">
           <input type="radio" name="categoria" class="chip-cat__radio" value="${_esc(valor)}"
-                 data-hint="${_esc(hintDe(valor))}"${marcada} />
+                 data-hint="${_esc(hintDe(valor))}"${sugerido ? ` data-sugerido="${sugerido}"` : ''}${marcada} />
           ${iconoCategoria(iconoDeCategoriaGasto(valor, personalizadas))}
           <span class="chip-cat__label">${_esc(valor)}</span>
         </label>`;
   };
 
-  const disponibles = [
-    ...CATEGORIAS_GASTO_USUARIO,
-    ...personalizadas.map(c => c.nombre),
-  ].filter(c => !tienePresupuesto(c, S.presupuestos));
+  const disponibles = _categoriasDisponibles(personalizadas);
 
   if (disponibles.length === 0) {
     return `
@@ -737,6 +856,39 @@ function _renderChipsCategoria(precargada, personalizadas, hintDe) {
 }
 
 // ── HELPERS ──────────────────────────────────────────────────────
+
+/**
+ * Categorías a las que hoy se les puede poner un tope: las que el formulario
+ * ofrece (nativas visibles más las propias del usuario, TX.9b) y que todavía
+ * no tienen uno. Es la lista de chips del modal y, desde LIM.1c, también las
+ * candidatas que el motor de sugerencia mira: si el motor propusiera una
+ * categoría que el formulario no ofrece, el consejo no tendría puerta (R35).
+ *
+ * @param {{nombre:string}[]} [personalizadas]
+ * @returns {string[]}
+ */
+function _categoriasDisponibles(personalizadas = S.categoriasPersonalizadas ?? []) {
+  return [
+    ...CATEGORIAS_GASTO_USUARIO,
+    ...personalizadas.map(c => c.nombre),
+  ].filter(c => !tienePresupuesto(c, S.presupuestos));
+}
+
+/**
+ * Lo que el plan del mes deja sin ningún tope (`coberturaLimitesEstiloVida`),
+ * el techo del monto sugerido (ADR 045 D6). Devuelve 0 sin plan del mes, que
+ * el motor interpreta como "sin techo": un usuario sin ingresos registrados
+ * igual puede ponerle tope a lo que gasta.
+ *
+ * @returns {number}
+ */
+function _sinTopeDelPlan() {
+  const ingresoMensual = estimarSalarioMensual(S.ingresos ?? []);
+  if (!ingresoMensual) return 0;
+  const dist = sugerirDistribucionIngreso(ingresoMensual, construirContextoDistribucion(S));
+  const activos = presupuestosActivos(S.presupuestos);
+  return coberturaLimitesEstiloVida(activos, dist?.split?.estiloVida?.monto ?? 0).sinTope;
+}
 
 function _claseProgreso(porcentaje) {
   if (porcentaje > 100) return 'progress-bar--danger';

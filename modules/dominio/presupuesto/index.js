@@ -46,14 +46,31 @@ function _wireForm() {
     _guardarPresupuesto(form);
   });
 
-  // La pista del monto sigue a la categoría elegida: cada chip trae su propio
-  // texto ya calculado por la vista (cuánto se gastó ahí este mes).
+  // La pista y el monto propuesto siguen a la categoría elegida: cada chip trae
+  // los dos ya calculados por la vista (LIM.1c).
   const chips = form.querySelector('.chips-cat');
   const hint  = document.getElementById('presupuesto-monto-hint');
+  const monto = document.getElementById('presupuesto-monto');
+
+  // El monto solo se reemplaza mientras lo haya escrito Finko (`data-sugerido`).
+  // En cuanto el usuario teclea, el campo es suyo y cambiar de categoría ya no
+  // le pisa el número: la sugerencia es una propuesta, no un valor impuesto.
+  monto?.addEventListener('input', () => { delete monto.dataset.sugerido; });
+
   if (chips && hint) {
     chips.addEventListener('change', (e) => {
-      const texto = e.target?.dataset?.hint;
-      if (texto) hint.textContent = texto;
+      const datos = e.target?.dataset ?? {};
+      if (datos.hint) hint.textContent = datos.hint;
+      if (!monto) return;
+      if (monto.dataset.sugerido !== '1' && monto.value !== '') return;
+
+      if (datos.sugerido) {
+        monto.value = datos.sugerido;
+        monto.dataset.sugerido = '1';
+      } else {
+        monto.value = '';
+        delete monto.dataset.sugerido;
+      }
     });
   }
 }
@@ -62,8 +79,10 @@ function _wireForm() {
 
 /**
  * Abre el formulario de creación. Si la acción viene de una fila de "Gastas
- * acá y no tiene tope", esa categoría llega precargada (regla R35): el consejo
- * y su puerta son el mismo control.
+ * acá y no tiene tope" o del aviso de sugerencia (LIM.1c), esa categoría llega
+ * precargada (regla R35): el consejo y su puerta son el mismo control. El monto
+ * propuesto lo calcula el formulario a partir de la categoría, no viaja en el
+ * DOM.
  * @param {HTMLElement} [el]
  */
 function _nuevoPresupuesto(el) {

@@ -1016,11 +1016,17 @@ describe('renderFormPresupuesto() - patrón de captura FORM.1b (DIS.7, hallazgo 
     expect(html).toMatch(/value="Transporte"[\s\S]*?checked/);
   });
 
-  it('la pista del monto dice cuánto se gastó este mes en la categoría precargada', () => {
+  // LIM.1c cambió esta pista: cuando hay una cifra propuesta en el campo, la
+  // pista explica de dónde sale (el gasto del mes ya es el propio número).
+  it('la pista del monto dice de dónde sale la cifra propuesta', () => {
     const hoy = new Date();
     const iso = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-05`;
     S.gastos = [gasto({ id: 'g1', categoria: 'Transporte', monto: 145_000, fecha: iso })];
-    expect(renderFormPresupuesto(null, 'Transporte')).toContain('Gastaste $145.000 acá este mes');
+    expect(renderFormPresupuesto(null, 'Transporte')).toContain('Es lo que llevas gastado acá este mes');
+  });
+
+  it('sin ningún gasto en la categoría, la pista sigue siendo la de FORM.1b', () => {
+    expect(renderFormPresupuesto(null, 'Transporte')).toContain('Aún no registras gastos acá este mes');
   });
 
   it('una categoría que ya tiene tope no se ofrece de nuevo', () => {
@@ -1278,5 +1284,154 @@ describe('renderPanelLimites() - banner de alertas del dashboard (CAT.3b, ADR 05
     const panel = document.getElementById('panel-limites');
     const uso = panel.querySelector('.limites-card__name use');
     expect(uso.getAttribute('href')).toBe('#c-tienda');
+  });
+});
+
+// ── LIM.1c: sugerencias del motor (ADR 044) ───────────────────────────────────
+
+describe('renderFormPresupuesto() - monto propuesto (LIM.1c, ADR 044)', () => {
+  const hoy = new Date();
+  /** Día 5 del mes `atras` meses hacia atrás (0 = mes en curso). */
+  const mesISO = (atras) => {
+    const d = new Date(hoy.getFullYear(), hoy.getMonth() - atras, 5);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-05`;
+  };
+
+  beforeEach(() => {
+    S.presupuestos = [];
+    S.gastos = [];
+    S.ingresos = [];
+    S.categoriasPersonalizadas = [];
+  });
+
+  it('la categoría precargada abre con su monto ya escrito', () => {
+    S.gastos = [
+      gasto({ id: 'g1', categoria: 'Transporte', monto: 200_000, fecha: mesISO(1) }),
+      gasto({ id: 'g2', categoria: 'Transporte', monto: 200_000, fecha: mesISO(2) }),
+    ];
+    const html = renderFormPresupuesto(null, 'Transporte');
+    expect(html).toContain('value="200000" data-sugerido="1"');
+    expect(html).toContain('Tu promedio de los últimos meses acá');
+  });
+
+  it('cada chip trae su propio monto para cuando cambias de categoría', () => {
+    S.gastos = [gasto({ id: 'g1', categoria: 'Transporte', monto: 200_000, fecha: mesISO(1) })];
+    expect(renderFormPresupuesto()).toMatch(/value="Transporte"[\s\S]*?data-sugerido="200000"/);
+  });
+
+  it('una categoría sin gastos no propone nada', () => {
+    const html = renderFormPresupuesto(null, 'Transporte');
+    expect(html).toContain('value=""');
+    expect(html).not.toContain('data-sugerido');
+  });
+
+  it('al editar manda el monto guardado, no una propuesta', () => {
+    S.gastos = [gasto({ id: 'g1', categoria: 'Salud', monto: 900_000, fecha: mesISO(1) })];
+    const html = renderFormPresupuesto(presupuesto({ categoria: 'Salud', montoMensual: 120_000 }));
+    expect(html).toContain('value="120000"');
+    expect(html).not.toContain('data-sugerido');
+  });
+});
+
+describe('renderPanelPresupuesto() - avisos del motor (LIM.1c, ADR 044)', () => {
+  const hoy = new Date();
+  const mesISO = (atras, dia = 5) => {
+    const d = new Date(hoy.getFullYear(), hoy.getMonth() - atras, dia);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+  };
+  /** Gasto recurrente de una categoría en los dos meses cerrados anteriores. */
+  const recurrente = (categoria, monto) => [
+    gasto({ id: `${categoria}-1`, categoria, monto, fecha: mesISO(1) }),
+    gasto({ id: `${categoria}-2`, categoria, monto, fecha: mesISO(2) }),
+  ];
+
+  beforeEach(() => {
+    document.body.innerHTML = '<button id="btn-nuevo-presupuesto"></button><div id="panel-presupuesto"></div>';
+    S.presupuestos = [];
+    S.gastos = [];
+    S.categoriasPersonalizadas = [];
+    S.compromisos = [];
+    S.metas = [];
+    S.apartados = [];
+    S.inversiones = [];
+    S.cuentas = [];
+    S.ahorro = null;
+    S.ingresosPuntuales = [];
+    S.ingresos = [{
+      id: 'i1', descripcion: 'Salario', monto: 3_200_000,
+      frecuencia: 'Mensual', diaPago: 30, categoria: 'Salario', fecha: mesISO(0, 1),
+    }];
+  });
+
+  const panel = () => document.getElementById('panel-presupuesto');
+  const ctas  = () => panel().querySelectorAll('.nudge__cta[data-action="nuevo-presupuesto"]');
+
+  it('propone tope para la categoría recurrente, con su monto y su puerta', () => {
+    S.gastos = recurrente('Restaurantes', 200_000);
+    renderPanelPresupuesto();
+    const cta = ctas()[0];
+    expect(cta.dataset.categoria).toBe('Restaurantes');
+    expect(panel().innerHTML).toContain('Gastas $200.000 al mes en Restaurantes.');
+    expect(panel().innerHTML).toContain('Un tope de $200.000 te avisa antes de pasarte.');
+  });
+
+  // El brief pidió avisos "nunca invasivos ni constantes" (ADR 044 D6).
+  it('muestra una sola sugerencia de tope aunque haya varias candidatas', () => {
+    S.gastos = [
+      ...recurrente('Restaurantes', 300_000),
+      ...recurrente('Ropa', 200_000),
+      ...recurrente('Entretenimiento', 100_000),
+    ];
+    renderPanelPresupuesto();
+    expect(ctas()).toHaveLength(1);
+    expect(ctas()[0].dataset.categoria).toBe('Restaurantes');
+  });
+
+  it('una categoría que ya tiene tope no se vuelve a proponer', () => {
+    S.presupuestos = [presupuesto({ categoria: 'Restaurantes', montoMensual: 250_000 })];
+    S.gastos = recurrente('Restaurantes', 200_000);
+    renderPanelPresupuesto();
+    expect(ctas()).toHaveLength(0);
+  });
+
+  it('sin candidatas no hay aviso y el estado vacío conserva su ejemplo', () => {
+    renderPanelPresupuesto();
+    expect(ctas()).toHaveLength(0);
+    expect(panel().innerHTML).toContain('un máximo de $300.000 para Restaurantes');
+  });
+
+  it('con una sugerencia real, el estado vacío no repite un ejemplo inventado', () => {
+    S.gastos = recurrente('Restaurantes', 200_000);
+    renderPanelPresupuesto();
+    expect(panel().innerHTML).not.toContain('un máximo de $300.000 para Restaurantes');
+  });
+
+  it('avisa de la suscripción que lleva meses cobrándose, con su costo anual', () => {
+    S.compromisos = [{
+      id: 'c1', descripcion: 'Netflix', tipo: 'fijo', categoria: 'Streaming',
+      monto: 44_900, frecuencia: 'Mensual', diaPago: 5, activo: true,
+      fechaCreacion: '2025-01-01T00:00:00.000Z',
+    }];
+    S.gastos = Array.from({ length: 7 }, (_, i) => gasto({
+      id: `pago-${i}`, compromisoId: 'c1', categoria: 'Gastos fijos',
+      monto: 44_900, fecha: mesISO(i),
+    }));
+    renderPanelPresupuesto();
+    expect(panel().innerHTML).toContain('Llevas 7 meses pagando Netflix: $538.800 al año.');
+    expect(panel().innerHTML).toContain('href="#agenda"');
+  });
+
+  it('un fijo esencial no genera aviso de suscripción', () => {
+    S.compromisos = [{
+      id: 'c1', descripcion: 'Arriendo', tipo: 'fijo', categoria: 'Arriendo',
+      monto: 1_200_000, frecuencia: 'Mensual', diaPago: 5, activo: true,
+      fechaCreacion: '2025-01-01T00:00:00.000Z',
+    }];
+    S.gastos = Array.from({ length: 8 }, (_, i) => gasto({
+      id: `pago-${i}`, compromisoId: 'c1', categoria: 'Gastos fijos',
+      monto: 1_200_000, fecha: mesISO(i),
+    }));
+    renderPanelPresupuesto();
+    expect(panel().innerHTML).not.toContain('meses pagando');
   });
 });
