@@ -24,6 +24,7 @@ import { renderPanelConfig, renderModalFiscal, miles, desdeMiles } from './view.
 import { gastosACSV } from '../export/logic.js';
 import { documentoLegalPorId, cargarDocumentoLegal, VERSION_LEGAL } from './legal.js';
 import { validarPin, crearBloqueo, verificarPin, limpiarFallos } from './bloqueo.js';
+import { confirmarPin } from '../../ui/bloqueo-acceso.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { mostrarToast } from '../../ui/toast.js';
 
@@ -55,7 +56,9 @@ function _confirmarGuardado(id) {
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
-function _exportarDatos() {
+async function _exportarDatos() {
+  const ok = await confirmarPin();
+  if (!ok) return;
   try {
     const json  = JSON.stringify(S, null, 2);
     const blob  = new Blob([json], { type: 'application/json' });
@@ -96,6 +99,12 @@ async function _importarDatos(el) {
     peligroso:      true,
   });
   if (!ok) {
+    el.value = '';
+    return;
+  }
+
+  const okPin = await confirmarPin();
+  if (!okPin) {
     el.value = '';
     return;
   }
@@ -315,6 +324,8 @@ async function _resetearApp() {
     peligroso:      true,
   });
   if (!ok) return;
+  const okPin = await confirmarPin();
+  if (!okPin) return;
   localStorage.clear();
   announce('App reseteada. Recargando…');
   setTimeout(() => location.reload(), 800);

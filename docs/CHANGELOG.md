@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(logros): LG.2d, mudanza de la vitrina a "Tu progreso" en Analisis + tarjeta en Inicio · 2026-08-13
+
+Cierra la iniciativa "Logros v2" completa (LG.2b, LG.2c, LG.2d, LG.2e). [ADR 032](DECISIONS/032-logros-v2-niveles-y-habitos.md) D6. El [ADR 022](DECISIONS/022-vitrina-de-logros-en-ajustes.md) (vitrina en Ajustes) pasa a Superada. Fichas: [`contexto/transversal.md`](contexto/transversal.md), [`contexto/analisis.md`](contexto/analisis.md), [`contexto/inicio.md`](contexto/inicio.md).
+
+- **`renderPanelLogros()` se reparte en dos funciones de `logros/view.js`:** `renderProgresoAnalisis()` puebla el sexto bloque "Tu progreso" que el [ADR 046](DECISIONS/046-analisis-interpreta-criterio-y-lenguaje.md) D4 reservó en Análisis, y `renderTarjetaProgresoInicio()` puebla una tarjeta compacta nueva en el bento de Inicio (nivel actual, último logro desbloqueado y próximo objetivo vía `_proximoObjetivo()`, nueva).
+- **Mismo mecanismo del ADR 022, reubicado:** `#panel-analisis-progreso` (sibling de `#panel-analisis`) y `#panel-progreso-inicio` (celda propia del bento de Inicio) son contenedores del shell que el dominio `logros` llena solo, sin que `analisis` o `resumen` lo importen (ADN 10). `#panel-logros` sale de Ajustes.
+- **"Tu progreso" en Análisis es un colapsable más** (`analisis-grupo--fila`, mismo lenguaje que "Más detalle de tus gastos" y "Estado de tu renta"): teja, título, subtítulo con nivel + conteo, chevron, y preserva el estado abierto/cerrado entre renders (mismo criterio DIS.10 C11) porque el contenedor se repinta en cada `state:change` global, no solo al navegar a Análisis.
+- **Cero cambios en `logros/logic.js`:** la mudanza es pura reubicación de vista + wiring de `renderSmart()`. `.logros-lista`/`.logro-item*` (config.css) se reusan tal cual en las dos superficies nuevas, sin CSS nueva.
+- Tests: 8 unitarios nuevos en `logros.test.js` (apartado de Análisis: preservación de estado abierto/cerrado; tarjeta de Inicio: oculta sin logros, nivel + último + objetivo, catálogo completo sin romper) + 2 E2E ajustados (navegan a `#analisis` en vez de `#config`). 4212/4212 unit + 172/172 E2E verdes. SW `finko-v531` → `finko-v532`.
+
 ### docs(transversal): IV.4, revision visual post-color + spec de metafora para avalancha y bola de nieve · 2026-08-13
 
 Adelanta **IV.4** en lo unico que no depende del arte final de Esteban. Ficha: [`board/transversal.md`](board/transversal.md). Sin cambios de codigo.
@@ -21,6 +31,28 @@ Adelanta **IV.4** en lo unico que no depende del arte final de Esteban. Ficha: [
 - **Direccion propuesta para Bola de nieve (`i-snowball`):** el par de circulos chico/grande ya comunica crecimiento; le falta movimiento. Probar un arco corto de rastro detras del circulo grande, descartable si compite con el reconocimiento a 16px (regla 5 del ADR 023).
 - **Hallazgo adicional:** ninguno de los dos tiene hoy un uso real a 16px (solo se ven a 28px en la card de estrategia); verificar ahi tambien antes de entrar al sprite, no solo a 22/48.
 - Unico bloqueo restante: arte final de Esteban en Illustrator (pipeline ADR 026 + `sync-sprite.py`). Sin tests ni bump de SW: cero archivo de codigo tocado.
+
+### feat(config): CFG.5b, re-autenticacion con PIN en acciones criticas · 2026-08-13
+
+Cierra la iniciativa CFG.5 completa (CFG.5a, CFG.5b, CFG.5c). [ADR 063](DECISIONS/063-candado-de-acceso-local.md). Ficha: [`contexto/configuracion.md`](contexto/configuracion.md).
+
+- **`confirmarPin()` nueva en `modules/ui/bloqueo-acceso.js`, mismo contrato que `confirmar()`:** Promise<boolean>, y si no hay candado activo resuelve `true` de inmediato sin mostrar nada. La tarjeta lo pedía con esas palabras: "el guard no puede convertirse en un muro para quien nunca activó el candado".
+- **`_intentoPin()` privada comparte el freno de intentos entre el gate de arranque y el guard nuevo**: mismo `verificarPin()`, mismo `registrarFallo()`/`msDeFreno()` de CFG.5a, mismos tres mensajes (freno activo, PIN correcto, PIN incorrecto). El gate de `initBloqueoAcceso()` se refactorizó para llamar a la misma función en vez de duplicar la lógica.
+- **Tres call-sites en `config/index.js`:** `_resetearApp()` y `_importarDatos()` ya pedían `confirmar()` ("¿estás seguro?"); ahora, tras esa confirmación, piden además el PIN si el candado está activo. `_exportarDatos()` no tenía ninguna pregunta (exportar no es destructivo) y ahora pide solo el PIN, sin el paso de "¿estás seguro?".
+- **Verificado en la app real** (candado activo con PIN `1234`): exportar respaldo, borrar todo y quitar el candado sin PIN correcto no ejecutan nada; con PIN correcto sí. Con el candado apagado, exportar no muestra ningún modal.
+- Tests: 8 unitarios nuevos en `bloqueo-acceso.test.js` (bypass sin candado, modal con candado, PIN correcto/incorrecto, freno tras 5 fallos, título/mensaje por defecto y personalizados). 4207/4207 unit + 269/269 E2E (1 flaky en `smoke.test.js`, checklist de Necesidades de Tesorería, ajeno; verde al reintentar) + lint verdes. SW `finko-v530` → `finko-v531`.
+
+
+### docs(config): CFG.5c, la biometria es viable y aun asi no entra · 2026-08-13
+
+Cierra la tarjeta CFG.5c. Spike, sin cambio de código. Decisión: [ADR 067](DECISIONS/067-biometria-descartada-como-desbloqueo.md) (y nota nueva en el [ADR 063](DECISIONS/063-candado-de-acceso-local.md), que queda corregido en su motivo técnico). Ficha: [`contexto/configuracion.md`](contexto/configuracion.md).
+
+- **La pregunta se respondió midiendo, no citando**: Chromium con autenticador virtual de plataforma por CDP, ciclo completo de WebAuthn (`create` → `get` → verificación de la firma ECDSA P-256 con `crypto.subtle.verify()` sobre `authenticatorData || SHA-256(clientDataJSON)`). **Resultado: `true`, sin ningún servidor en el circuito.** La contraprueba con el buffer manipulado devolvió `false`.
+- **El motivo del ADR 063 era falso**: sí hay verificador local y es WebCrypto. Se corrige por escrito en aquel ADR en vez de dejarlo pasar.
+- **Se descarta igual, por cinco motivos** (ADR 067): no sube el techo de seguridad (termina en un booleano del cliente, igual que `verificarPin()`, y `fk_v1` sigue en texto plano); la credencial vive en el llavero del sistema, **fuera de `fk_v1`**, así que desinstalar, limpiar datos o cambiar de equipo la borra sin tocar los datos y ningún respaldo se la lleva; eso convierte "Olvidé mi PIN borra todo" en una trampa para quien deje de teclear el PIN; el RP ID es el dominio, así que mudar a dominio propio (A.5) invalidaría todas las credenciales; y cuesta cobertura (happy-dom no trae WebAuthn, el E2E necesita autenticador virtual).
+- **Reabre solo con las dos condiciones juntas**: ADR 043 resuelto con respaldo real **y** dominio fijo. Sin eso, volver a discutirlo es repetir el ADR 067.
+- **Fuera de alcance por diseño**: no hay pantalla nueva, ni la palabra "huella" o "rostro" en la UI. El script del spike no entra al repo (uso único); lo esencial para repetirlo quedó transcrito en el ADR. Compuerta 3 (cero guion largo) verificada; sin `modules/` ni `tests/` tocados, no aplican las demás compuertas.
+
 
 ### docs(config): CFG.6, cierra el inventario de configuraciones faltantes · 2026-08-13
 

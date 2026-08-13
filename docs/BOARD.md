@@ -44,18 +44,15 @@ Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (si
 
 ## Índice de pendientes
 
-Las 15 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+Las 12 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
 | INT.1g | Carril derecho de 320px desde 1.680px (diferida) | Transversal | baja (diferida) | sin sección candidata con contenido |
 | CFG.4 | Respaldo, cuentas y sincronización [DECISIÓN DE ADN] | Configuración | sin definir | ADR 043 resuelto |
-| CFG.5b | Re-autenticación con PIN en acciones críticas | Configuración | sin definir | CFG.5a (cerrada) |
-| CFG.5c | Biometría en PWA: verificar antes de prometer | Configuración | sin definir | CFG.5a (cerrada) + dispositivo real |
 | PERF.5 | Migrar la persistencia a IndexedDB (futura, no iniciar) | Transversal | sin definir | un disparador del ADR 030 D4 |
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | P4 del ADR 033 + cola de diseño |
 | IV.4 | Iconografía dirigida post-color | Transversal | media | diseños de Esteban (avalancha + bola de nieve) |
-| LG.2d | Mudanza de la vitrina a Análisis + tarjeta en Inicio | Transversal | media | nada: ADR 046 D4 reservó el bloque en Análisis |
 | PA.1b | Crédito automático del ingreso fijo | Transversal | media-alta | ADR 052 D4 (Aceptada); PA.1a cerrada |
 | A.5 | Dominio custom en Vercel | Mantenimiento | baja | que el usuario tenga el dominio registrado |
 | E.2-2027 | Actualizar SMMLV + UVT a valores 2027 | Mantenimiento | alta (enero 2027) | publicación oficial de los decretos 2027 |
@@ -81,13 +78,13 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 
 ### Configuración (dominio `config`)
 
-CFG.4, CFG.5b, CFG.5c → [`board/configuracion.md`](board/configuracion.md)
+CFG.4 → [`board/configuracion.md`](board/configuracion.md)
 
 ---
 
 ## Transversal (afecta varias secciones)
 
-INT.1a a INT.1h, PERF.5, DV.2d, IV.4, LG.2d, PA.1b → [`board/transversal.md`](board/transversal.md)
+INT.1a a INT.1h, PERF.5, DV.2d, IV.4, PA.1b → [`board/transversal.md`](board/transversal.md)
 
 ---
 

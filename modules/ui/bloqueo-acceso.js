@@ -16,7 +16,8 @@
 
 import { S, EventBus } from '../core/state.js';
 import { abrirModal, cerrarModal } from './modales.js';
-import { announce } from '../infra/a11y.js';
+import { announce, trapFocus, releaseFocus } from '../infra/a11y.js';
+import { esc as _esc } from '../infra/utils.js';
 import { confirmar } from './confirm.js';
 import {
   candadoActivo, verificarPin, registrarFallo, msDeFreno, limpiarFallos,
@@ -69,23 +70,42 @@ function _error(texto) {
   if (texto) announce(texto, 'assertive');
 }
 
+/**
+ * Verifica un PIN contra el freno de intentos vigente. Comparte el desenlace
+ * (freno activo, PIN correcto, PIN incorrecto) entre el gate de arranque y el
+ * guard de acciones críticas (CFG.5b): mismo freno, mismos mensajes.
+ * @param {string} pin
+ * @returns {Promise<{ok: boolean, mensaje: string|null}>}
+ */
+async function _intentoPin(pin) {
+  const espera = msDeFreno();
+  if (espera > 0) {
+    return { ok: false, mensaje: `Demasiados intentos. Espera ${Math.ceil(espera / 1000)} segundos.` };
+  }
+  if (await verificarPin(pin, S.config?.bloqueo)) {
+    limpiarFallos();
+    return { ok: true, mensaje: null };
+  }
+  const freno = registrarFallo();
+  return {
+    ok: false,
+    mensaje: freno > 0
+      ? `PIN incorrecto. Van ${FALLOS_ANTES_DE_FRENO} intentos: espera ${Math.ceil(freno / 1000)} segundos.`
+      : 'PIN incorrecto. Intenta de nuevo.',
+  };
+}
+
 /** @param {SubmitEvent} e */
 async function _onSubmit(e) {
   e.preventDefault();
   const form = /** @type {HTMLFormElement} */ (e.target);
   if (form.id !== 'form-bloqueo-acceso') return;
 
-  const espera = msDeFreno();
-  if (espera > 0) {
-    _error(`Demasiados intentos. Espera ${Math.ceil(espera / 1000)} segundos.`);
-    return;
-  }
-
   const campo = /** @type {HTMLInputElement|null} */ (form.querySelector('[name="pin"]'));
   const pin   = campo?.value ?? '';
+  const { ok, mensaje } = await _intentoPin(pin);
 
-  if (await verificarPin(pin, S.config?.bloqueo)) {
-    limpiarFallos();
+  if (ok) {
     if (campo) campo.value = '';
     _error('');
     const overlay = document.getElementById('bloqueo-acceso');
@@ -96,14 +116,11 @@ async function _onSubmit(e) {
     return;
   }
 
-  const freno = registrarFallo();
   if (campo) {
     campo.value = '';
     campo.focus();
   }
-  _error(freno > 0
-    ? `PIN incorrecto. Van ${FALLOS_ANTES_DE_FRENO} intentos: espera ${Math.ceil(freno / 1000)} segundos.`
-    : 'PIN incorrecto. Intenta de nuevo.');
+  _error(mensaje);
 }
 
 /** @param {MouseEvent} e */
@@ -124,4 +141,112 @@ async function _onClick(e) {
   localStorage.clear();
   announce('Datos borrados. Recargando…');
   setTimeout(() => location.reload(), 800);
+}
+
+// ── RE-AUTENTICACIÓN EN ACCIONES CRÍTICAS (CFG.5b, ADR 063) ──────
+//
+// Restablecer la app, borrar toda la información y exportar el respaldo
+// completo no se pueden deshacer: con el candado activo, exigen el PIN aunque
+// la app ya esté abierta. Con el candado apagado no piden nada: el guard no
+// se puede convertir en un muro para quien nunca activó el candado.
+
+/**
+ * Pide el PIN antes de ejecutar una acción crítica. Mismo contrato que
+ * `confirmar()`: Promise<boolean>. Si no hay candado activo, resuelve `true`
+ * sin mostrar nada.
+ * @param {{titulo?: string, mensaje?: string}} [opciones]
+ * @returns {Promise<boolean>}
+ */
+export function confirmarPin(opciones = {}) {
+  if (!candadoActivo(S.config?.bloqueo)) return Promise.resolve(true);
+
+  const {
+    titulo  = 'Confirma tu PIN',
+    mensaje = 'Escribe tu PIN para confirmar esta acción.',
+  } = opciones;
+
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.dataset.open = '';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-labelledby', 'confirm-pin-title');
+    overlay.innerHTML = `
+      <div class="modal modal--confirm" role="document">
+        <header class="modal__header">
+          <h2 id="confirm-pin-title" class="modal__title">${_esc(titulo)}</h2>
+        </header>
+        <div class="modal__body">
+          <p class="confirm__mensaje">${_esc(mensaje)}</p>
+          <div class="form-group">
+            <label for="confirm-pin-input" class="label">Tu PIN</label>
+            <input id="confirm-pin-input" class="input" type="password"
+                   inputmode="numeric" autocomplete="current-password"
+                   maxlength="${PIN_LARGO_MAX}" autofocus />
+          </div>
+          <p class="form-hint form-hint--muted" id="confirm-pin-error" role="alert"></p>
+        </div>
+        <div class="modal__footer">
+          <button type="button" class="btn btn-ghost" data-role="cancelar">Cancelar</button>
+          <button type="button" class="btn btn-primary" data-role="confirmar">Continuar</button>
+        </div>
+      </div>`;
+
+    document.body.appendChild(overlay);
+
+    const panel = overlay.querySelector('.modal');
+    trapFocus(panel);
+    setTimeout(() => {
+      overlay.querySelector('#confirm-pin-input')?.focus();
+    }, 0);
+
+    function _cerrar(valor) {
+      releaseFocus();
+      overlay.remove();
+      document.removeEventListener('keydown', _onKey);
+      resolve(valor);
+    }
+
+    function _error(texto) {
+      const el = overlay.querySelector('#confirm-pin-error');
+      if (el) el.textContent = texto;
+      if (texto) announce(texto, 'assertive');
+    }
+
+    async function _intentar() {
+      const campo = /** @type {HTMLInputElement|null} */ (overlay.querySelector('#confirm-pin-input'));
+      const pin   = campo?.value ?? '';
+      const { ok, mensaje: error } = await _intentoPin(pin);
+
+      if (ok) {
+        _cerrar(true);
+        return;
+      }
+      if (campo) {
+        campo.value = '';
+        campo.focus();
+      }
+      _error(error);
+    }
+
+    function _onKey(e) {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        _cerrar(false);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        _intentar();
+      }
+    }
+
+    overlay.addEventListener('click', e => {
+      const target = e.target.closest('[data-role]');
+      if (target?.dataset.role === 'confirmar') _intentar();
+      else if (target?.dataset.role === 'cancelar') _cerrar(false);
+      else if (e.target === overlay) _cerrar(false);
+    });
+
+    document.addEventListener('keydown', _onKey);
+  });
 }
