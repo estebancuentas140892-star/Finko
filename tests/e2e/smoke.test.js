@@ -1759,29 +1759,30 @@ test.describe('Centro Legal', () => {
   });
 });
 
-// ── SUITE 8d: Vitrina de logros con niveles (LG.2b, ADR 032) ─────────────────
-// La vitrina de Ajustes agrupa por familia y muestra el nivel de usuario
-// derivado del conteo. El seed trae onboarded=true (logro primer-paso vivo).
+// ── SUITE 8d: "Tu progreso" en Análisis con niveles (LG.2d, ADR 032) ─────────
+// El apartado "Tu progreso" (mudado desde Ajustes, ADR 022 Superada) agrupa
+// por familia y muestra el nivel de usuario derivado del conteo. El seed
+// trae onboarded=true (logro primer-paso vivo).
 
-test.describe('Vitrina de logros (niveles)', () => {
+test.describe('Tu progreso (niveles)', () => {
   test.beforeEach(async ({ page }) => {
     await saltearOnboarding(page);
-    await page.goto('/#config');
-    await page.waitForSelector('#sec-config.active', { timeout: 10_000 });
+    await page.goto('/#analisis');
+    await page.waitForSelector('#sec-analisis.active', { timeout: 10_000 });
   });
 
   test('muestra el nivel de usuario y la familia agrupada sin listar sus niveles sueltos', async ({ page }) => {
-    const panel = page.locator('#panel-logros');
-    await expect(panel).toContainText('Tu nivel:');
+    const panel = page.locator('#panel-analisis-progreso');
+    await expect(panel).toContainText('Tu progreso');
     await expect(panel).toContainText('Constancia de registro');
     // La familia colapsa a una tarjeta: el nivel 2 no aparece como item propio.
     await expect(panel).not.toContainText('Hábito registrado');
   });
 });
 
-// ── SUITE 8e: Familia "deudas saldadas" en la vitrina (LG.2c, ADR 032) ───────
+// ── SUITE 8e: Familia "deudas saldadas" en "Tu progreso" (LG.2c, ADR 032) ────
 
-test.describe('Vitrina de logros - familia deudas (LG.2c)', () => {
+test.describe('Tu progreso - familia deudas (LG.2c)', () => {
   test('saldar una deuda desbloquea "Una deuda menos" agrupado en la familia', async ({ page }) => {
     await page.addInitScript(() => {
       const estado = {
@@ -1798,10 +1799,10 @@ test.describe('Vitrina de logros - familia deudas (LG.2c)', () => {
       };
       localStorage.setItem('fk_v1', JSON.stringify(estado));
     });
-    await page.goto('/#config');
-    await page.waitForSelector('#sec-config.active', { timeout: 10_000 });
+    await page.goto('/#analisis');
+    await page.waitForSelector('#sec-analisis.active', { timeout: 10_000 });
 
-    const panel = page.locator('#panel-logros');
+    const panel = page.locator('#panel-analisis-progreso');
     await expect(panel).toContainText('Deudas saldadas');
     await expect(panel).toContainText('Nivel 1 de 2');
     await expect(panel).toContainText('Saldaste una deuda por completo.');

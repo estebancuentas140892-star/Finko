@@ -460,10 +460,12 @@
 }
 
 /* ════════════════════════════════════════════════════════════
-   VITRINA DE LOGROS (LG.1b, ADR 022)
-   Card "🏆 Logros" al final de Ajustes, renderizada por el dominio
-   logros en #panel-logros. Los pendientes van atenuados y con el
-   emoji en escala de grises; los de conteo muestran barra de progreso.
+   LOGROS: ITEM COMPARTIDO (LG.1b origen Ajustes/ADR 022, ahora Superada)
+   `.logros-lista`/`.logro-item*` viven acá por origen histórico, pero el
+   dominio logros los reusa en sus dos superficies vigentes (LG.2d, ADR 032
+   D6): el apartado "Tu progreso" de Análisis y la tarjeta compacta de
+   Inicio. Los pendientes van atenuados y con el emoji en escala de grises;
+   los de conteo muestran barra de progreso.
    ════════════════════════════════════════════════════════════ */
 
 .logros-lista {

@@ -193,9 +193,9 @@
 
 ## Sistema de logros (dominio `logros`)
 
-- **Objetivo**          : gamificación ligera de hábitos: catálogo de logros con evaluación automática, toast con confetti al desbloquear y vitrina de solo lectura al final de Ajustes.
-- **Estado actual**     : estable. **Logros v2 en curso** ([ADR 032](../DECISIONS/032-logros-v2-niveles-y-habitos.md) Aceptada el 2026-07-09): LG.2b (2026-07-09), LG.2c (2026-07-12) y **LG.2e cerrada el 2026-08-13** (familia comportamiento con un solo logro, `hormiga-a-raya`). Queda **LG.2d** (mudanza a Análisis+Inicio, sin bloqueos desde el 2026-08-12), ver BOARD. Catálogo: 18 logros (antes 11), familias `registro` 6, `metas` 1, `deudas` 2, `comportamiento` 1.
-- **Verificado contra** : commit de LG.2e (2026-08-13).
+- **Objetivo**          : gamificación ligera de hábitos: catálogo de logros con evaluación automática, toast con confetti al desbloquear y "Tu progreso" (apartado de Análisis + tarjeta compacta en Inicio).
+- **Estado actual**     : estable. **Logros v2 completa** ([ADR 032](../DECISIONS/032-logros-v2-niveles-y-habitos.md) Aceptada el 2026-07-09): LG.2b (2026-07-09), LG.2c (2026-07-12), LG.2e (2026-08-13, familia comportamiento con un solo logro, `hormiga-a-raya`) y **LG.2d cerrada el 2026-08-13** (mudanza a Análisis + tarjeta en Inicio; el [ADR 022](../DECISIONS/022-vitrina-de-logros-en-ajustes.md) pasa a Superada). Catálogo: 18 logros (antes 11), familias `registro` 6, `metas` 1, `deudas` 2, `comportamiento` 1.
+- **Verificado contra** : commit de LG.2d (2026-08-13).
 
 **Dónde vive**
 
@@ -215,11 +215,12 @@
 | Nivel de usuario derivado del conteo (nombres provisionales, tramo superior min 16) | `modules/dominio/logros/logic.js` | `nivelUsuario()`, `NIVELES_USUARIO` | ~597 |
 | Detección + persistencia + toast (cola de a uno) | `modules/dominio/logros/index.js` | `_checkYMostrar()`, `_encolarToast()` | ~59, ~97 |
 | Confetti (24 piezas, ajuste mobile por bottom-nav) | `modules/dominio/logros/index.js` | `_lanzarConfetti()` | ~193 |
-| Vitrina en Ajustes (agrupada + nivel en el encabezado) | `modules/dominio/logros/view.js` | `renderPanelLogros()`, `_renderFamiliaItem()` | ~24, ~62 |
+| Apartado "Tu progreso" en Análisis (agrupado + nivel en el encabezado, colapsable) | `modules/dominio/logros/view.js` | `renderProgresoAnalisis()`, `_renderFamiliaItem()` | ~28, ~99 |
+| Tarjeta compacta en Inicio (nivel + último logro + próximo objetivo) | `modules/dominio/logros/view.js` | `renderTarjetaProgresoInicio()`, `_proximoObjetivo()` | ~64, ~112 |
 
-**Recursos**: emojis por logro (se conservan por ADR 025 D6). CSS: `.logro-toast*`, `.confetti-piece` (nudges.css/base.css), `.logros-lista`, `.logro-item*` (config.css). Estado: `S.logros` (`string[]` de ids, orden de inserción = orden de desbloqueo).
+**Recursos**: emojis por logro (se conservan por ADR 025 D6). CSS: `.logro-toast*`, `.confetti-piece` (nudges.css/base.css), `.logros-lista`, `.logro-item*` (config.css, origen histórico del ADR 022; reusadas tal cual en las dos superficies vigentes). Estado: `S.logros` (`string[]` de ids, orden de inserción = orden de desbloqueo).
 
-**Dependencias y relaciones**: escucha `state:change` (re-evalúa y re-renderiza) y `onboarding:completado` (toast retrasado 4 s, NAV.C/ADR 024 D6). El shell expone `#panel-logros` junto a `#panel-config` porque `config` no puede importar `logros` (ADN 10, ver ADR 022 punto 4). No emite eventos propios. Sin imports de otros dominios: los `eval` leen `S` directo; los evaluadores de la familia "registro" (LG.2c) importan `hoy()` de `infra/utils.js` (infra, no dominio, permitido) para obtener la fecha actual, y los de "deudas" comparan `c.tipo === 'deuda-entidad' || 'deuda-personal'` como literales en vez de importar `esDeuda()` de `compromisos/logic.js`.
+**Dependencias y relaciones**: escucha `state:change` (re-evalúa y re-renderiza) y `onboarding:completado` (toast retrasado 4 s, NAV.C/ADR 024 D6). El shell expone `#panel-analisis-progreso` junto a `#panel-analisis` y `#panel-progreso-inicio` dentro del bento de Inicio, porque ni `analisis` ni `resumen` pueden importar `logros` (ADN 10, mismo mecanismo que el ADR 022 estableció para Ajustes). No emite eventos propios. Sin imports de otros dominios: los `eval` leen `S` directo; los evaluadores de la familia "registro" (LG.2c) importan `hoy()` de `infra/utils.js` (infra, no dominio, permitido) para obtener la fecha actual, y los de "deudas" comparan `c.tipo === 'deuda-entidad' || 'deuda-personal'` como literales en vez de importar `esDeuda()` de `compromisos/logic.js`.
 
 **Riesgos**:
 
@@ -230,10 +231,11 @@
 - **`NIVELES_USUARIO` (D5) se calibró para ~20 logros y el catálogo cerró en 18**: LG.2e bajó el tramo superior de min 18 a **min 16** para que no exija el 100 % del catálogo (incluidos `prestamista` y el fondo completo). El test "el tramo superior es alcanzable sin el 100 % del catálogo" defiende la relación; si algún día entran más logros, revisar el umbral, no borrar el test.
 - **`rachaMesesCompletos()` se ancla en "el mes anterior a hoy"**: solo detecta una racha activa si el usuario sigue usando la app (dispara `state:change`) mientras la racha está vigente. Una racha pasada y luego abandonada ya quedó persistida en `S.logros` si se evaluó en su momento (no se revoca); el riesgo real es solo si el usuario NUNCA vuelve a abrir la app durante el mes en que la racha era detectable, caso de borde aceptado (mismo patrón que otros logros de conteo simple).
 
-**Cambios pendientes**: **LG.2d** (mudanza de la vitrina a Análisis + tarjeta en Inicio), única rebanada viva de la iniciativa. **Dos logros del catálogo D4 quedaron diferidos por datos, sin tarjeta**: `ahorro-creciente` espera la derivación canónica de ingreso mensual (el ADR 046 no la entregó; no construir una paralela) y `pagador-puntual` espera historial de vencimientos pagados, que `S.compromisos` no guarda (solo estado actual): la verificación y sus razones quedaron en el ADR 032, sección "Resolución de LG.2e en implementación". Los nombres de `NIVELES_USUARIO` son provisionales: cuando Esteban entregue los definitivos, se cambia la constante (sin tocar datos, nada se persiste).
+**Cambios pendientes**: ninguno propio de la iniciativa "Logros v2": las 4 rebanadas (LG.2b/c/d/e) cerraron. **Dos logros del catálogo D4 quedaron diferidos por datos, sin tarjeta**: `ahorro-creciente` espera la derivación canónica de ingreso mensual (el ADR 046 no la entregó; no construir una paralela) y `pagador-puntual` espera historial de vencimientos pagados, que `S.compromisos` no guarda (solo estado actual): la verificación y sus razones quedaron en el ADR 032, sección "Resolución de LG.2e en implementación". Los nombres de `NIVELES_USUARIO` son provisionales: cuando Esteban entregue los definitivos, se cambia la constante (sin tocar datos, nada se persiste).
 
 **Cambios realizados**:
 
+- 2026-08-13 (LG.2d, ADR 032 D6, **cierra la iniciativa "Logros v2"**): mudanza de la vitrina. `renderPanelLogros()` se reparte en `renderProgresoAnalisis()` (apartado colapsable "Tu progreso", bloque 6 del [ADR 046](../DECISIONS/046-analisis-interpreta-criterio-y-lenguaje.md) D4, mismo lenguaje `analisis-grupo--fila` que los otros dos colapsables de Análisis, con preservación de estado abierto/cerrado entre renders) y `renderTarjetaProgresoInicio()` (tarjeta compacta nueva en el bento de Inicio: nivel + último logro desbloqueado + próximo objetivo, `_proximoObjetivo()` nuevo). `#panel-logros` sale de Ajustes; el [ADR 022](../DECISIONS/022-vitrina-de-logros-en-ajustes.md) pasa a Superada. Cero cambios en `logic.js` (la mudanza es pura reubicación de vista + wiring); `.logros-lista`/`.logro-item*` se reusan tal cual en las dos superficies nuevas, sin CSS nueva. 8 tests unitarios nuevos + 2 E2E ajustados (navegan a `#analisis` en vez de `#config`).
 - 2026-08-13 (LG.2e, ADR 032 D4): familia `comportamiento` con `hormiga-a-raya`; `gastoHormigaMes()` y `hormigaALaRaya()` nuevas, tramo superior de `NIVELES_USUARIO` recalibrado a min 16.
 - 2026-07-12 (LG.2c, ADR 032 D3/D4): constancia de registro y deudas saldadas; `mesCompleto()` y `rachaMesesCompletos()` nuevas.
 - 2026-07-09 (LG.2b, ADR 032 D1/D5): fundacion de progresion: `familia`/`nivel` en el catalogo, `FAMILIAS` y `agruparVitrina()` (una tarjeta por familia), sin bump de schema.
@@ -241,7 +243,7 @@
 - 2026-07-04 (LG.1b, ADR 022): vitrina en Ajustes con hint y progreso parcial.
 - 2026-07-04 (LG.1a): toast mas legible, cola de a uno, pausa por hover.
 
-**Observaciones**: ADRs relacionados: 022 (vitrina en Ajustes, vigente operativamente hasta la rebanada LG.2d), 032 (v2, Aceptada), 025 D6 (emojis se conservan). La regla anti-gaming del ADR 032 D2 es principio innegociable: logros que premien la omisión de registro ("día sin gastos") no entran al catálogo bajo ninguna forma; las familias "registro" y "deudas" de LG.2c son ambas ADITIVAS (más registro = más progreso), así que no necesitan la guardia de "mes completo" que sí lleva el único logro de reducción del catálogo (`hormiga-a-raya`, LG.2e: los 4 meses de la comparación deben ser mes completo, el mes en curso no participa y el promedio previo debe superar 100.000). Riesgo residual anotado en el código: un mes completo se cumple con gastos en 3 semanas aunque sean todos grandes; no se agregó una segunda guardia por conteo de transacciones porque castigaría al usuario que sí redujo.
+**Observaciones**: ADRs relacionados: 022 (vitrina en Ajustes, Superada por LG.2d), 032 (v2, Aceptada), 025 D6 (emojis se conservan). La regla anti-gaming del ADR 032 D2 es principio innegociable: logros que premien la omisión de registro ("día sin gastos") no entran al catálogo bajo ninguna forma; las familias "registro" y "deudas" de LG.2c son ambas ADITIVAS (más registro = más progreso), así que no necesitan la guardia de "mes completo" que sí lleva el único logro de reducción del catálogo (`hormiga-a-raya`, LG.2e: los 4 meses de la comparación deben ser mes completo, el mes en curso no participa y el promedio previo debe superar 100.000). Riesgo residual anotado en el código: un mes completo se cumple con gastos en 3 semanas aunque sean todos grandes; no se agregó una segunda guardia por conteo de transacciones porque castigaría al usuario que sí redujo.
 
 ---
 
@@ -250,8 +252,8 @@
 ## Motor único de avisos (CFG.3, iniciativa transversal)
 
 - **Objetivo**          : responder "de todo lo que le pasa al usuario hoy, qué merece avisarle", mirando todas las secciones a la vez. Los `nudge` de cada sección son la señal en contexto dentro de su pantalla y no se comparan entre sí; este motor es el único que puede decir si va primero un arriendo vencido o un tope excedido.
-- **Estado actual**     : **CFG.3a y CFG.3b cerradas (2026-08-13)**, dos de las tres rebanadas del **[ADR 066](../DECISIONS/066-motor-unico-de-avisos.md)**. Existe el motor (`infra/avisos.js`, ocho tipos de aviso de siete fuentes), la notificación del sistema al abrir (CFG.3a) y un panel nuevo en Inicio, "Avisos" (CFG.3b), que muestra solo lo que ningún otro panel del dashboard ya cubre: apartado listo, día de pago, préstamo vencido. Detalle del panel: [`contexto/inicio.md`](inicio.md). Queda **CFG.3c** (preferencias por tipo, la única que tocaría schema).
-- **Verificado contra** : CFG.3b (2026-08-13).
+- **Estado actual**     : **iniciativa CFG.3 completa (2026-08-13)**, las tres rebanadas del **[ADR 066](../DECISIONS/066-motor-unico-de-avisos.md)**. Existe el motor (`infra/avisos.js`, ocho tipos de aviso de siete fuentes), la notificación del sistema al abrir (CFG.3a), el panel "Avisos" en Inicio con lo que ningún otro panel del dashboard ya cubre (CFG.3b, detalle en [`contexto/inicio.md`](inicio.md)) y el interruptor por sección en Ajustes + el sello persistido de "ya avisó hoy" (CFG.3c, schema v40, detalle en [`contexto/configuracion.md`](configuracion.md)).
+- **Verificado contra** : CFG.3c (2026-08-13).
 
 **Dónde vive**
 
@@ -265,6 +267,9 @@
 | Copy de esa superficie | `modules/infra/notificaciones.js` | `formatearAvisoSistema()`, `_frase()` | ~160, ~190 |
 | Disparo al arrancar (detrás del primer render) | `modules/ui/bootstrap.js` | `verificarYNotificar()` | ~116 |
 | Superficie: panel "Avisos" en Inicio (CFG.3b) | `modules/dominio/resumen/view.js` | `renderPanelAvisos()`, `_TIPOS_SIN_PANEL_PROPIO` | ~155 |
+| Preferencia por sección + sello del día (CFG.3c) | `modules/infra/avisos.js` | `SECCIONES_AVISO`, `LABEL_SECCION_AVISO`, `filtrarPorPreferencia()` | ~78 |
+| Interruptor en Ajustes (CFG.3c) | `modules/dominio/config/view.js` / `index.js` | `_renderPreferenciasAvisos()`, `_toggleAvisoSeccion()` | |
+| Migración v39 → v40 | `modules/core/storage.js` | bloque `< 40` en `_migrate` | ~592 |
 
 **Las siete fuentes y quién detecta cada una** (el motor no reimplementa ninguna regla de fecha ni de umbral):
 
@@ -287,11 +292,15 @@
 - **Los préstamos personales nunca pasan de severidad `media`**, ni con un año de atraso: el [ADR 047](../DECISIONS/047-me-deben-v2-intereses-e-historial.md) fija que esa sección recuerda y no presiona, y una notificación del sistema por dinero que le deben al usuario es justo esa presión. Interrumpir queda para lo que él debe.
 - **El motor no recorta la lista** (ADR 066 D4): si una superficie nueva muestra solo tres avisos, el `slice` va en la superficie. Recortar en el motor se lo esconde a todas a la vez.
 - **`nombre` es dato del usuario, nunca copy**: hay un test que verifica que no contenga palabras como "vence" u "hoy". Meter una frase ahí rompe la separación que hace testeable al motor sin fijar el copy.
-- **Sin sello de "ya te avisé esto"**: la de-duplicación es el flag de sesión de `notificaciones.js` (una notificación por apertura). Abrir y cerrar la app cinco veces en un día puede repetir el mismo aviso cinco veces. Persistirlo es schema y quedó para CFG.3c, detrás de evidencia de uso.
+- **El sello de "ya avisó hoy" (CFG.3c) reemplazó el flag de sesión, no lo sumó**: `S.config.ultimoAvisoISO` es lo único que decide si `verificarYNotificar()` avisa; ya no existe un flag en memoria ni su reset de test (`_resetNotificadoEstasSesion` se eliminó de `notificaciones.js`). Cualquier test que necesite reabrir el día siguiente debe mutar `S.config.ultimoAvisoISO` directo, no llamar a una función de reset.
+- **La preferencia por sección (CFG.3c) es por `SECCIONES_AVISO` (cinco), no por los nueve `TIPOS_AVISO`**: decisión y alternativa rechazada en la nota del 2026-08-13 del ADR 066. Un tipo nuevo que se agregue al motor hereda automáticamente la preferencia de su sección; no hace falta tocar el interruptor de Ajustes.
+- **Apagar una sección en Ajustes no repinta el panel de Inicio al instante**: `_toggleAvisoSeccion()` solo re-renderiza `#panel-config` (mismo patrón que el resto de toggles de esa pantalla, ninguno emite `state:change`). El panel de Inicio respeta la preferencia en su próximo render, no en vivo.
 
-**Cambios pendientes**: **CFG.3c** (preferencias por tipo en Ajustes, la única rebanada que toca schema). Sigue en `board/configuracion.md`.
+**Cambios pendientes**: ninguno. Iniciativa completa.
 
 **Cambios realizados**:
+
+- 2026-08-13 (CFG.3c, cierra la iniciativa, [ADR 066](../DECISIONS/066-motor-unico-de-avisos.md) nota de la misma fecha): interruptor por sección en Ajustes (`filtrarPorPreferencia()` en el motor, consumido por `notificaciones.js` y por el panel de Inicio) + sello persistido `config.ultimoAvisoISO` que reemplaza el flag de sesión. Schema v39 → v40. Detalle completo: [`contexto/configuracion.md`](configuracion.md).
 
 - **CFG.3b (2026-08-13)**: panel "Avisos" en Inicio (`resumen/view.js`, `renderPanelAvisos()`), quinta celda del grupo "Atención hoy". Filtra el motor a los tres tipos sin superficie propia (`apartado-listo`, `dia-de-pago`, `prestamo-vencido`): los demás ya viven en "Pendientes del mes", "Próximas prioridades" y "Alertas de límites", sin tocar esa lógica. Detalle completo: [`contexto/inicio.md`](inicio.md).
 - **CFG.3a (2026-08-13)**: motor `infra/avisos.js` (ocho tipos, siete fuentes, severidad y orden) y `infra/notificaciones.js` consumiéndolo; `verificarYNotificar()` pasa a leer `S` completo en vez de recibir `S.compromisos`. Riesgo técnico resuelto y escrito en el ADR 066. Sin schema, sin UI nueva.

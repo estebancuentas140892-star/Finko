@@ -717,6 +717,13 @@
           <div id="panel-actividad-reciente-escritorio" class="bento__cell bento__cell--half"
                role="region" aria-label="Actividad reciente" hidden></div>
 
+          <!-- TU PROGRESO (LG.2d, ADR 032 D6): tarjeta compacta de logros
+               (nivel actual + último logro + próximo objetivo), universal en
+               las dos plataformas. logros/view.js la llena; [hidden] hasta
+               el primer logro desbloqueado. -->
+          <div id="panel-progreso-inicio" class="bento__cell bento__cell--half"
+               role="region" aria-label="Tu progreso" hidden></div>
+
           <!-- ACCESOS RÁPIDOS + ACTIVIDAD RECIENTE EN MÓVIL (IN.8g, ADR 034
                D7; acotada a móvil desde IN.9d, ADR 057 D4). Un solo
                bento__cell, cierre de la pantalla bajo 1024px. Accesos arriba
@@ -1122,6 +1129,14 @@
         <div id="panel-analisis">
           <!-- Fase 10: analisis/view.js renderiza aquí -->
         </div>
+        <!-- TU PROGRESO (LG.2d, ADR 046 D4 bloque 6, ADR 032 D6): mudanza de
+             la vitrina de logros desde Ajustes (ADR 022, Superada). Sigue
+             renderizada por el dominio logros (ningún dominio importa a
+             otro, ADN 10): logros/view.js llena este contenedor hermano,
+             que analisis/view.js nunca reescribe. -->
+        <div id="panel-analisis-progreso">
+          <!-- LG.2d: logros/view.js renderiza aquí "Tu progreso" -->
+        </div>
 
       </section>
 
@@ -1135,9 +1150,6 @@
         </header>
         <div id="panel-config">
           <!-- Fase 12: config/view.js renderiza aquí -->
-        </div>
-        <div id="panel-logros">
-          <!-- LG.1b (ADR 022): logros/view.js renderiza aquí su vitrina -->
         </div>
       </section>
 

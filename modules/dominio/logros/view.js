@@ -1,25 +1,32 @@
 /**
- * logros/view.js - vitrina de logros (LG.1b, ADR 022).
+ * logros/view.js - "Tu progreso" (LG.2d, ADR 032 D6) y la vitrina de logros.
  *
- * Renderiza la card "🏆 Logros" en `#panel-logros`, contenedor del shell
- * dentro de la sección Ajustes. La renderiza este dominio (no config):
- * ningún dominio importa a otro (ADN #10), así que config no puede pedirla.
- * Puede leer S. No puede mutarlo. Sin lógica de negocio (delega a logic.js).
+ * Dos superficies, un solo dominio (ningún dominio importa a otro, ADN #10):
+ * - `renderProgresoAnalisis()`: apartado colapsable en Análisis (bloque 6 del
+ *   ADR 046 D4), la vitrina completa agrupada por familia.
+ * - `renderTarjetaProgresoInicio()`: tarjeta compacta en Inicio (nivel actual
+ *   + último logro + próximo objetivo).
+ * Mudanza desde Ajustes: el ADR 022 (vitrina en `#panel-logros`) queda
+ * Superada. Puede leer S. No puede mutarlo. Sin lógica de negocio (delega a
+ * logic.js).
  */
 
 import { S } from '../../core/state.js';
 import { esc as _esc } from '../../infra/utils.js';
+import { icon } from '../../infra/icons.js';
 import { estadoLogros, agruparVitrina, nivelUsuario } from './logic.js';
 
 /**
- * Renderiza la vitrina completa en `#panel-logros`.
- * LG.2b (ADR 032): encabezado con el nivel de usuario derivado del conteo y
- * lista agrupada por familia (una tarjeta por familia: nivel más alto
- * desbloqueado + siguiente nivel como objetivo).
- * No-op si el contenedor no existe.
+ * Renderiza el apartado "Tu progreso" en `#panel-analisis-progreso`, fila
+ * colapsable (mismo lenguaje que los otros grupos de Análisis: teja + título
+ * + subtítulo + chevron, DIS.10). No-op si el contenedor no existe.
+ *
+ * Preserva el estado abierto/cerrado entre renders (mismo criterio DIS.10 C11
+ * que `analisis/view.js` aplica a sus dos colapsables): este contenedor se
+ * repinta en cada `state:change` global, no solo al navegar a Análisis.
  */
-export function renderPanelLogros() {
-  const el = document.getElementById('panel-logros');
+export function renderProgresoAnalisis() {
+  const el = document.getElementById('panel-analisis-progreso');
   if (!el) return;
 
   const estados = estadoLogros(S, S.logros);
@@ -27,24 +34,86 @@ export function renderPanelLogros() {
   const total   = estados.length;
   const nivel   = nivelUsuario(n);
 
-  const resumen = n === 0
-    ? `Aún no has desbloqueado logros. Cada uno te dice cómo conseguirlo.`
-    : n === total
-      ? `¡Los desbloqueaste todos! ${n} de ${total} logros conseguidos.`
-      : `Llevas ${n} de ${total} logros desbloqueados. Los pendientes te dicen cómo conseguirlos.`;
-
   const items = agruparVitrina(estados)
     .map(item => item.tipo === 'familia' ? _renderFamiliaItem(item) : _renderLogroItem(item.logro))
     .join('');
 
+  const previo  = el.querySelector('.analisis-grupo--progreso');
+  const abierto = previo ? previo.open : null;
+
   el.innerHTML = `
-    <section class="config-section" aria-labelledby="config-logros-title">
-      <h2 class="config-section__title" id="config-logros-title">🏆 Logros</h2>
-      <p class="config-section__desc">Tu nivel: <strong>${_esc(nivel.nombre)}</strong>. ${resumen}</p>
-      <ul class="logros-lista" role="list">
-        ${items}
-      </ul>
-    </section>`;
+    <details class="analisis-grupo analisis-grupo--fila analisis-grupo--progreso">
+      <summary class="analisis-grupo__summary">
+        <span class="analisis-grupo__teja" aria-hidden="true">${icon('trophy')}</span>
+        <span class="analisis-grupo__texto">
+          <h2 class="analisis-grupo__title">Tu progreso</h2>
+          <span class="analisis-grupo__sub">Nivel ${_esc(nivel.nombre)} · ${n} de ${total} logros</span>
+        </span>
+        <svg class="icon analisis-grupo__chevron" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+      </summary>
+      <div class="analisis-grupo__body">
+        <ul class="logros-lista" role="list">${items}</ul>
+      </div>
+    </details>`;
+
+  const nodo = el.querySelector('.analisis-grupo--progreso');
+  if (nodo && abierto !== null) nodo.open = abierto;
+}
+
+/**
+ * Renderiza la tarjeta compacta en `#panel-progreso-inicio` (ADR 032 D6):
+ * nivel actual, último logro desbloqueado y próximo objetivo. Oculta hasta
+ * el primer logro (una tarjeta vacía no orienta a nadie). No-op si el
+ * contenedor no existe.
+ */
+export function renderTarjetaProgresoInicio() {
+  const el = document.getElementById('panel-progreso-inicio');
+  if (!el) return;
+
+  const estados = estadoLogros(S, S.logros);
+  const n = estados.filter(e => e.desbloqueado).length;
+  if (n === 0) { el.hidden = true; return; }
+
+  const total = estados.length;
+  const nivel = nivelUsuario(n);
+
+  // Sin fecha de desbloqueo (ADR 032 D1): el orden de inserción de S.logros
+  // es el mejor proxy de "último logro" disponible.
+  const ultimoId = S.logros[S.logros.length - 1];
+  const ultimo   = ultimoId ? estados.find(e => e.id === ultimoId) : null;
+  const objetivo = _proximoObjetivo(agruparVitrina(estados));
+
+  el.hidden = false;
+  el.innerHTML = `
+    <div class="card__header">
+      <h2 class="card__title">Tu progreso</h2>
+      <span class="chip chip-success">Nivel ${_esc(nivel.nombre)}</span>
+    </div>
+    <p class="config-section__desc">${n} de ${total} logros desbloqueados.</p>
+    <ul class="logros-lista" role="list">
+      ${ultimo ? _renderLogroItem(ultimo) : ''}
+      ${objetivo ? _renderLogroItem(objetivo) : ''}
+    </ul>
+    <a href="#analisis" class="link">Ver todo tu progreso</a>`;
+}
+
+/**
+ * Primer objetivo pendiente en orden de vitrina: el siguiente nivel de la
+ * primera familia que aún tenga uno, o el primer logro suelto sin desbloquear.
+ * `null` si ya no queda nada pendiente (catálogo completo).
+ *
+ * @param {ReturnType<typeof agruparVitrina>} vitrina
+ * @returns {ReturnType<typeof estadoLogros>[number] | null}
+ */
+function _proximoObjetivo(vitrina) {
+  for (const item of vitrina) {
+    if (item.tipo === 'familia') {
+      if (item.siguiente) return item.siguiente;
+    } else if (!item.logro.desbloqueado) {
+      return item.logro;
+    }
+  }
+  return null;
 }
 
 /**

@@ -1,6 +1,6 @@
 # ADR 022 - Vitrina de logros: card en Ajustes, no sección propia
 
-**Estado:** Aceptada
+**Estado:** Superada por el [ADR 032](032-logros-v2-niveles-y-habitos.md) D6, ejecutada por LG.2d (2026-08-13): la vitrina se muda a un apartado colapsable en Análisis + tarjeta compacta en Inicio. `#panel-logros` sale de Ajustes.
 **Fecha:** 2026-07-04
 **Autores:** Claude Fable 5 (análisis y decisión, sesión autónoma autorizada por Esteban)
 **Resuelve:** LG.1b (sección de Logros).

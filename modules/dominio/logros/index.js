@@ -17,22 +17,24 @@ import { save }        from '../../core/storage.js';
 import { esc as _esc } from '../../infra/utils.js';
 import { renderSmart, registrarRender } from '../../infra/render.js';
 import { evaluarLogros, LOGROS } from './logic.js';
-import { renderPanelLogros } from './view.js';
+import { renderProgresoAnalisis, renderTarjetaProgresoInicio } from './view.js';
 
 // ── PUNTO DE ENTRADA ─────────────────────────────────────────────
 
 /**
  * Inicializa el sistema de logros.
  * Llama evaluar al arrancar y se suscribe a state:change para futuras
- * evaluaciones. Además renderiza la vitrina de logros en Ajustes
- * (#panel-logros, LG.1b/ADR 022) al arrancar, en cada cambio de estado y
- * al navegar a #config.
+ * evaluaciones. Además renderiza "Tu progreso" (LG.2d, ADR 032 D6): el
+ * apartado colapsable en Análisis (#panel-analisis-progreso) y la tarjeta
+ * compacta en Inicio (#panel-progreso-inicio), al arrancar, en cada cambio
+ * de estado y al navegar a esas dos secciones.
  */
 export function initLogros() {
   _checkYMostrar();
   EventBus.on('state:change', () => {
     _checkYMostrar();
-    renderSmart(renderPanelLogros, 'config');
+    renderSmart(renderProgresoAnalisis, 'analisis');
+    renderSmart(renderTarjetaProgresoInicio, 'dash');
   });
   // Tambien escuchar el evento de onboarding, ya que setea s.onboarded=true
   // pero no emite state:change. Sin esto, el logro "primer-paso" no aparecia
@@ -44,10 +46,13 @@ export function initLogros() {
   EventBus.on('onboarding:completado', () => setTimeout(_checkYMostrar, RETRASO_TOAST_ONBOARDING_MS));
 
   window.addEventListener('hashchange', () => {
-    renderSmart(renderPanelLogros, 'config');
+    renderSmart(renderProgresoAnalisis, 'analisis');
+    renderSmart(renderTarjetaProgresoInicio, 'dash');
   });
-  registrarRender(() => renderSmart(renderPanelLogros, 'config'));
-  renderSmart(renderPanelLogros, 'config');
+  registrarRender(() => renderSmart(renderProgresoAnalisis, 'analisis'));
+  registrarRender(() => renderSmart(renderTarjetaProgresoInicio, 'dash'));
+  renderSmart(renderProgresoAnalisis, 'analisis');
+  renderSmart(renderTarjetaProgresoInicio, 'dash');
 }
 
 // ── LOGICA INTERNA ───────────────────────────────────────────────

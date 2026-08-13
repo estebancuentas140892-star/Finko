@@ -1,9 +1,10 @@
 /**
  * tests/unit/logros.test.js - cobertura de evaluarLogros(), estadoLogros()
- * y la vitrina de logros (LG.1b, ADR 022).
+ * y "Tu progreso" (LG.2d, ADR 032 D6): apartado de Análisis + tarjeta de
+ * Inicio. El ADR 022 (vitrina en Ajustes) quedó Superada.
  *
  * El toast y confetti (index.js) requieren DOM completo y se verifican
- * manualmente en la app; la vitrina se prueba con happy-dom.
+ * manualmente en la app; las dos superficies se prueban con happy-dom.
  */
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -14,7 +15,7 @@ import {
   gastoHormigaMes, hormigaALaRaya,
   UMBRAL_GASTO_HORMIGA, UMBRAL_HORMIGA_RELEVANTE,
 } from '../../modules/dominio/logros/logic.js';
-import { renderPanelLogros } from '../../modules/dominio/logros/view.js';
+import { renderProgresoAnalisis, renderTarjetaProgresoInicio } from '../../modules/dominio/logros/view.js';
 import { S, createInitialState } from '../../modules/core/state.js';
 
 // Items visibles de la vitrina: los singles pasan tal cual y cada familia
@@ -452,22 +453,21 @@ describe('estadoLogros()', () => {
   });
 });
 
-// ── renderPanelLogros() (vitrina, happy-dom) ──────────────────────
+// ── renderProgresoAnalisis() (apartado de Análisis, happy-dom) ────
 
-describe('renderPanelLogros()', () => {
+describe('renderProgresoAnalisis()', () => {
   beforeEach(() => {
-    document.body.innerHTML = '<div id="panel-logros"></div>';
+    document.body.innerHTML = '<div id="panel-analisis-progreso"></div>';
     const base = createInitialState();
     for (const k of Object.keys(base)) S[k] = base[k];
   });
 
-  test('renderiza la card con el resumen, el nivel de usuario y los items agrupados', () => {
+  test('renderiza el apartado con el nivel de usuario y los items agrupados', () => {
     S.logros = ['primer-paso', 'primer-gasto'];
-    renderPanelLogros();
-    const panel = document.getElementById('panel-logros');
-    expect(panel.textContent).toContain('🏆 Logros');
-    expect(panel.textContent).toContain('Tu nivel:');
-    expect(panel.textContent).toContain(`2 de ${LOGROS.length}`);
+    renderProgresoAnalisis();
+    const panel = document.getElementById('panel-analisis-progreso');
+    expect(panel.textContent).toContain('Tu progreso');
+    expect(panel.textContent).toContain(`${2} de ${LOGROS.length} logros`);
     // LG.2b: cada familia colapsa a una tarjeta; singles pasan tal cual.
     expect(panel.querySelectorAll('.logro-item')).toHaveLength(N_ITEMS_VITRINA);
     // primer-paso (single) + familia registro (tiene un nivel ganado) = 2 activas.
@@ -476,16 +476,16 @@ describe('renderPanelLogros()', () => {
 
   test('los desbloqueados muestran desc y los pendientes muestran hint', () => {
     S.logros = ['primer-gasto'];
-    renderPanelLogros();
-    const panel = document.getElementById('panel-logros');
+    renderProgresoAnalisis();
+    const panel = document.getElementById('panel-analisis-progreso');
     expect(panel.textContent).toContain('Registraste tu primer gasto.');
     expect(panel.textContent).toContain('Registra 10 gastos: el hábito es lo que cuenta.');
   });
 
   test('la familia con un nivel ganado muestra el chip de nivel y el siguiente objetivo', () => {
     S.logros = ['primer-gasto'];
-    renderPanelLogros();
-    const panel = document.getElementById('panel-logros');
+    renderProgresoAnalisis();
+    const panel = document.getElementById('panel-analisis-progreso');
     expect(panel.textContent).toContain('Constancia de registro');
     expect(panel.textContent).toContain('Nivel 1 de 6');
     expect(panel.textContent).toContain('Siguiente:');
@@ -493,16 +493,66 @@ describe('renderPanelLogros()', () => {
 
   test('los pendientes de conteo muestran barra y texto de progreso', () => {
     S.gastos = Array.from({ length: 4 }, (_, i) => ({ id: String(i) }));
-    renderPanelLogros();
-    const panel = document.getElementById('panel-logros');
+    renderProgresoAnalisis();
+    const panel = document.getElementById('panel-analisis-progreso');
     const barras = panel.querySelectorAll('.progress[role="progressbar"]');
     expect(barras.length).toBeGreaterThan(0);
     expect(panel.textContent).toContain('4 de 10');
   });
 
+  test('conserva el estado abierto/cerrado entre renders (DIS.10 C11)', () => {
+    S.logros = ['primer-gasto'];
+    renderProgresoAnalisis();
+    const panel = document.getElementById('panel-analisis-progreso');
+    panel.querySelector('.analisis-grupo--progreso').open = true;
+    renderProgresoAnalisis();
+    expect(panel.querySelector('.analisis-grupo--progreso').open).toBe(true);
+  });
+
   test('no-op si el contenedor no existe', () => {
     document.body.innerHTML = '';
-    expect(() => renderPanelLogros()).not.toThrow();
+    expect(() => renderProgresoAnalisis()).not.toThrow();
+  });
+});
+
+// ── renderTarjetaProgresoInicio() (tarjeta compacta, happy-dom) ───
+
+describe('renderTarjetaProgresoInicio()', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-progreso-inicio" hidden></div>';
+    const base = createInitialState();
+    for (const k of Object.keys(base)) S[k] = base[k];
+  });
+
+  test('oculta la tarjeta sin logros desbloqueados', () => {
+    renderTarjetaProgresoInicio();
+    const panel = document.getElementById('panel-progreso-inicio');
+    expect(panel.hidden).toBe(true);
+  });
+
+  test('muestra nivel, último logro y próximo objetivo', () => {
+    S.logros = ['primer-paso', 'primer-gasto'];
+    renderTarjetaProgresoInicio();
+    const panel = document.getElementById('panel-progreso-inicio');
+    expect(panel.hidden).toBe(false);
+    expect(panel.textContent).toContain('Tu progreso');
+    expect(panel.textContent).toContain(`${2} de ${LOGROS.length} logros`);
+    // Último logro persistido: el último id de S.logros.
+    expect(panel.textContent).toContain('Registraste tu primer gasto.');
+    // Próximo objetivo: primer pendiente en orden de vitrina.
+    expect(panel.querySelectorAll('.logro-item')).toHaveLength(2);
+  });
+
+  test('sin objetivo pendiente (catálogo completo) no rompe', () => {
+    S.logros = LOGROS.map(l => l.id);
+    expect(() => renderTarjetaProgresoInicio()).not.toThrow();
+    const panel = document.getElementById('panel-progreso-inicio');
+    expect(panel.querySelectorAll('.logro-item')).toHaveLength(1);
+  });
+
+  test('no-op si el contenedor no existe', () => {
+    document.body.innerHTML = '';
+    expect(() => renderTarjetaProgresoInicio()).not.toThrow();
   });
 });
 
