@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(agenda): MT.6d, el plan de aportes de meta se ve en Calendario · 2026-08-12
+
+Cierra **MT.6 (Metas v2) completa** (MT.6a-d), coordinación final del [ADR 048](DECISIONS/048-metas-v2-subcategorias-y-plan-de-aportes.md) D3. Commit `3e75151`. Fichas: [`contexto/metas.md`](contexto/metas.md), [`contexto/calendario.md`](contexto/calendario.md).
+
+- **`eventosMetasDelMes()` nueva en `agenda/logic.js`**: filtra `Meta.planAportes` (generado y regenerado por MT.6c) a los días del mes visible. A diferencia de `eventosDelMes`/`eventosIngresosDelMes`, no recalcula ocurrencias por frecuencia: el plan ya trae fechas concretas.
+- **Tipo `'meta'` nuevo en la grilla, la leyenda y el detalle del día**, con color propio `--fk-dom-metas` (el mismo púrpura de `.meta-card`). Excluido de `totalDia()`/`totalesDelMes()`: un aporte a una meta propia no es una obligación con un tercero, mismo criterio que ya aplicaba a `ingreso` (ADR 048 D3: "visible y recordatorio, nunca ejecución").
+- **El CTA "Aportar" reutiliza `data-action="abonar-meta"`**, ya registrada por `metas/index.js` en el bootstrap de la app: Agenda no importa Metas (ADN 10), solo dispara la acción global (mismo patrón que `agenda-distribuir-ingreso` con Tesorería). Verificado en la app real: el botón abre el modal de aporte de la meta correcta, prellenado.
+- `agenda/index.js` repinta con `state:change` de `metas` (nuevo, sumado a `compromisos`/`ingresos`/`gastos`).
+- **Sin cambio en Metas**: la tarjeta de la sección sigue mostrando su ritmo estimado de siempre; el plan generado se consume solo acá, tal como quedó anotado en MT.6c.
+- Tests: 12 unitarios nuevos (`agenda.test.js`: `eventosMetasDelMes`, `totalDia` con tipo meta, render del dot/leyenda/detalle/CTA). 3980/3985 unit (5 fallas preexistentes en `compromisos.test.js`, ajenas) + 264/264 E2E + lint verdes. SW `finko-v512` → `finko-v513`.
+
 ### feat(metas): MT.6c, plan de aportes generado y recalculado · 2026-08-12
 
 Tercera decisión del [ADR 048](DECISIONS/048-metas-v2-subcategorias-y-plan-de-aportes.md) (D3). Commit `d0f2f6c`. Ficha: [`contexto/metas.md`](contexto/metas.md).
