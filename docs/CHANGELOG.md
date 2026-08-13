@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(metas): MT.6c, plan de aportes generado y recalculado · 2026-08-12
+
+Tercera decisión del [ADR 048](DECISIONS/048-metas-v2-subcategorias-y-plan-de-aportes.md) (D3). Commit `d0f2f6c`. Ficha: [`contexto/metas.md`](contexto/metas.md).
+
+- **`fechasAportePlan()` nueva en `infra/vencimientos.js`**: con día de pago datable, ancla el plan en las fechas reales del ingreso vía `ocurrenciasEnRango` (el usuario ve las mismas fechas en que efectivamente cobra); sin él (Diario/Semanal sin día, o ningún ingreso), cae a fechas espaciadas uniformemente con el mismo `numPeriodos` que ya calculaba `aportePorPeriodo`. El monto por aporte redondea hacia arriba, mismo criterio que la cuota por período: la suma nunca queda corta.
+- **`generarPlanAportes()` (`metas/logic.js`)** elige el ingreso ancla: el de mayor monto entre los activos que cobran en la frecuencia principal. Sin fecha límite, meta cumplida o sin faltante, el plan es `[]`.
+- **El plan se regenera completo, nunca se parcha** (el criterio explícito de D3): `_guardarMeta()` (crear/editar), `_guardarAbonoMeta()` y el handler de `distribucion:aplicar` lo recalculan con el shape completo de la meta después del cambio. **Nuevo**: `metas/index.js` escucha `state:change` de `ingresos` (el evento que ya emite `tesoreria/acciones/ingresos.js`) y regenera el plan de cada meta activa con fecha límite cuando cambia la frecuencia de cobro, sin importar Tesorería (ADN 10).
+- **Sin cambio visible en Metas, a propósito**: `_renderMetaCard()` sigue leyendo `calcularAhorroPorPeriodo()` en vivo. El plan generado y guardado es el insumo de **MT.6d**, que es donde el board ya lo declaraba visible (Calendario); tocar la tarjeta de Metas acá habría duplicado la fuente de la cifra mostrada.
+- `Meta.planAportes`. Schema v37 → v38 (default `[]`, se regenera solo). SW `finko-v511` → `finko-v512`.
+- Tests: 17 unitarios nuevos (`vencimientos.test.js`: 6 de `fechasAportePlan`; `metas.test.js`: 8 de `generarPlanAportes`; `storage.test.js`: 3 de la migración). 3973/3973 unit + 264/264 E2E + lint verdes.
+
 ### feat(limites): LIM.1a, el dinero extra del mes informado sin repartir · 2026-08-12
 
 Primera rebanada de **LIM.1**, la que ejecuta el D3 del [ADR 045](DECISIONS/045-base-de-calculo-del-disponible-para-limites.md). Ficha: [`contexto/limites.md`](contexto/limites.md).

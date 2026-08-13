@@ -49,7 +49,7 @@ Las 24 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
 | INT.1g | Carril derecho de 320px desde 1.680px (diferida) | Transversal | baja (diferida) | sin sección candidata con contenido |
-| MT.6 | Metas v2: subcategorías inteligentes + plan de aportes (en curso, faltan MT.6c/d) | Metas | media-alta | nada: ADR 064 cerró la estructura de dos niveles |
+| MT.6 | Metas v2: subcategorías inteligentes + plan de aportes (en curso, falta MT.6d) | Metas | media-alta | nada: ADR 064 cerró la estructura de dos niveles |
 | LIM.1b | Los fijos no esenciales cuentan contra Estilo de vida | Límites | media | nada; mueve el reparto en Límites y Mis cuentas a la vez |
 | LIM.1c | Sugerir dónde y cuánto poner tope (bloqueada) | Límites | sin definir | ADR 044 (motor único de sugerencia) |
 | PE.6d | Me deben: los cinco estados de un vistazo | Me deben | media-alta | bloqueada por IV.2 en producción |
