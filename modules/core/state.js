@@ -331,6 +331,15 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  *                                           = todavía no aceptó la versión vigente
  *                                           (`VERSION_LEGAL`): la app pide aceptación antes
  *                                           de continuar. Se añade en v33.
+ * @property {Record<string, boolean>} [avisosPorSeccion] - Interruptor de avisos por
+ *                                           sección de origen (CFG.3c, ADR 066, schema
+ *                                           v40). Ids de `SECCIONES_AVISO`
+ *                                           (`infra/avisos.js`); sección ausente = activada.
+ * @property {string|null} [ultimoAvisoISO] - 'YYYY-MM-DD' de la última notificación del
+ *                                           sistema mostrada (CFG.3c, schema v40). Evita
+ *                                           repetir la misma notificación si el usuario
+ *                                           abre y cierra la app varias veces el mismo día.
+ *                                           `null` = todavía no se mostró ninguna.
  */
 
 /**
@@ -451,6 +460,19 @@ export function createInitialState() {
        * privacidad, no cifrado: `fk_v1` sigue en texto plano.
        */
       bloqueo: null,
+      /**
+       * Interruptor de avisos por sección (CFG.3c, schema v40, ADR 066). Todas
+       * activas por defecto: apagar una no apaga las demás.
+       */
+      avisosPorSeccion: {
+        compromisos: true,
+        presupuesto: true,
+        apartados:   true,
+        personales:  true,
+        tesoreria:   true,
+      },
+      /** Sello de la última notificación del sistema (CFG.3c, schema v40). */
+      ultimoAvisoISO: null,
     },
 
     /** Cuentas / tesorería. */

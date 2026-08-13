@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 39;
+const SCHEMA_VERSION = 40;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -595,6 +595,28 @@ function _migrate(raw) {
   // (nada en el registro dice si el banco lo debita solo, y adivinarlo haría que
   // Finko reclamara confirmaciones de pagos que el usuario hace a mano).
   // Migración intencionalmente no-op, mismo precedente de v26 → v27.
+
+  // v39 → v40: `config.avisosPorSeccion` y `config.ultimoAvisoISO` (CFG.3c,
+  // ADR 066). Default de la preferencia: todas activas (ausente = activada,
+  // el motor ya lo lee así), así que un usuario existente no pierde ningún
+  // aviso al actualizar. `ultimoAvisoISO` arranca en `null`: sin sello previo,
+  // el próximo aviso grave se muestra normal. Idempotente: si el campo ya
+  // está presente, no se sobreescribe.
+  if ((typeof data._version === 'number' ? data._version : 1) < 40) {
+    if (!data.config || typeof data.config !== 'object') data.config = {};
+    if (!data.config.avisosPorSeccion || typeof data.config.avisosPorSeccion !== 'object') {
+      data.config.avisosPorSeccion = {
+        compromisos: true,
+        presupuesto: true,
+        apartados:   true,
+        personales:  true,
+        tesoreria:   true,
+      };
+    }
+    if (!('ultimoAvisoISO' in data.config)) {
+      data.config.ultimoAvisoISO = null;
+    }
+  }
 
   if (typeof data._version !== 'number' || data._version < SCHEMA_VERSION) {
     data._version = SCHEMA_VERSION;

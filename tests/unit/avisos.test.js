@@ -11,9 +11,12 @@ import { describe, it, expect } from 'vitest';
 import {
   recolectarAvisos,
   avisosQueInterrumpen,
+  filtrarPorPreferencia,
   TIPOS_AVISO,
   SEVERIDADES,
   SEVERIDADES_QUE_INTERRUMPEN,
+  SECCIONES_AVISO,
+  LABEL_SECCION_AVISO,
   DIAS_APARTADO_PROXIMO,
 } from '../../modules/infra/avisos.js';
 
@@ -441,5 +444,83 @@ describe('avisosQueInterrumpen()', () => {
   it('las severidades que interrumpen son las dos primeras del ranking', () => {
     expect(SEVERIDADES_QUE_INTERRUMPEN).toEqual(['urgente', 'alta']);
     expect(SEVERIDADES.slice(0, 2)).toEqual([...SEVERIDADES_QUE_INTERRUMPEN]);
+  });
+});
+
+// ── filtrarPorPreferencia() (CFG.3c) ─────────────────────────────
+
+describe('filtrarPorPreferencia()', () => {
+  it('sin preferencias, todo pasa: sección ausente del mapa = activada', () => {
+    const avisos = recolectarAvisos({ compromisos: [fijo({ diaPago: 5 })], hoyISO: HOY });
+    expect(filtrarPorPreferencia(avisos, undefined)).toEqual(avisos);
+    expect(filtrarPorPreferencia(avisos, {})).toEqual(avisos);
+  });
+
+  it('una sección en false saca solo los avisos de esa sección', () => {
+    const avisos = recolectarAvisos({
+      compromisos: [fijo({ diaPago: 5 })],
+      apartados:   [apartado()],
+      hoyISO:      HOY,
+    });
+    expect(avisos.length).toBe(2);
+
+    const filtrados = filtrarPorPreferencia(avisos, { compromisos: false });
+    expect(filtrados.length).toBe(1);
+    expect(filtrados[0].seccion).toBe('apartados');
+  });
+
+  it('una sección en true explícito no cambia nada', () => {
+    const avisos = recolectarAvisos({ compromisos: [fijo({ diaPago: 5 })], hoyISO: HOY });
+    expect(filtrarPorPreferencia(avisos, { compromisos: true })).toEqual(avisos);
+  });
+
+  it('con todas las secciones apagadas devuelve lista vacía', () => {
+    const avisos = recolectarAvisos({
+      compromisos: [fijo({ diaPago: 5 })],
+      apartados:   [apartado()],
+      hoyISO:      HOY,
+    });
+    const prefs = Object.fromEntries(SECCIONES_AVISO.map(s => [s, false]));
+    expect(filtrarPorPreferencia(avisos, prefs)).toEqual([]);
+  });
+
+  it('con una entrada que no es lista devuelve lista vacía', () => {
+    expect(filtrarPorPreferencia(null, {})).toEqual([]);
+    expect(filtrarPorPreferencia(undefined, {})).toEqual([]);
+  });
+
+  it('conserva el orden de la lista original', () => {
+    const avisos = recolectarAvisos({
+      compromisos: [fijo({ id: 'c1', diaPago: 1 }), fijo({ id: 'c2', descripcion: 'Internet', diaPago: 14 })],
+      apartados:   [apartado()],
+      hoyISO:      HOY,
+    });
+    const filtrados = filtrarPorPreferencia(avisos, { presupuesto: false });
+    expect(filtrados.map(a => a.id)).toEqual(avisos.map(a => a.id));
+  });
+});
+
+describe('SECCIONES_AVISO / LABEL_SECCION_AVISO', () => {
+  it('cada sección tiene una etiqueta legible', () => {
+    for (const seccion of SECCIONES_AVISO) {
+      expect(typeof LABEL_SECCION_AVISO[seccion]).toBe('string');
+      expect(LABEL_SECCION_AVISO[seccion].length).toBeGreaterThan(0);
+    }
+  });
+
+  it('cada aviso que devuelve el motor cae en una de las cinco secciones', () => {
+    const avisos = recolectarAvisos({
+      compromisos:  [fijo({ diaPago: 5 })],
+      presupuestos: [{ id: 'p1', categoria: 'Restaurantes', montoMensual: 100_000, activo: true, fechaCreacion: '2025-01-01T00:00:00.000Z' }],
+      gastos:       [{ id: 'g1', descripcion: 'Cena', monto: 150_000, categoria: 'Restaurantes', fecha: HOY }],
+      apartados:    [apartado()],
+      personales:   [prestamo()],
+      ingresos:     [ingreso()],
+      hoyISO:       HOY,
+    });
+    expect(avisos.length).toBeGreaterThan(0);
+    for (const a of avisos) {
+      expect(SECCIONES_AVISO).toContain(a.seccion);
+    }
   });
 });

@@ -73,6 +73,25 @@ export const DIAS_APARTADO_PROXIMO = 7;
 /** Días de anticipación de `prestamo-proximo` (fecha pactada de devolución). */
 export const DIAS_PRESTAMO_PROXIMO = 3;
 
+/**
+ * Las cinco secciones de origen de un aviso (CFG.3c, ADR 066 nota 2026-08-13).
+ * Es la granularidad que expone la preferencia del usuario: por sección, no
+ * por los nueve `TIPOS_AVISO` uno por uno. Un compromiso vencido y uno próximo
+ * son la misma fuente para quien decide si quiere o no avisos de esa fuente;
+ * separarlos en el interruptor multiplicaría los controles sin agregar una
+ * decisión real (ver ADR 066, alternativas rechazadas).
+ */
+export const SECCIONES_AVISO = Object.freeze(['compromisos', 'presupuesto', 'apartados', 'personales', 'tesoreria']);
+
+/** Etiqueta legible de cada sección, para el interruptor de Ajustes (CFG.3c). */
+export const LABEL_SECCION_AVISO = Object.freeze({
+  compromisos: 'Deudas y pagos fijos',
+  presupuesto: 'Límites de gasto',
+  apartados:   'Apartados',
+  personales:  'Préstamos personales',
+  tesoreria:   'Día de pago',
+});
+
 const _RX_HOY = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 /** Mapea la severidad de `vencidosSinPagar` a la escala del motor. */
@@ -322,6 +341,22 @@ export function recolectarAvisos({
 export function avisosQueInterrumpen(avisos) {
   if (!Array.isArray(avisos)) return [];
   return avisos.filter(a => SEVERIDADES_QUE_INTERRUMPEN.includes(a?.severidad));
+}
+
+/**
+ * Aplica la preferencia del usuario por sección (CFG.3c, `S.config.avisosPorSeccion`).
+ * Conserva el orden. Sección ausente del mapa de preferencias = activada: el
+ * campo es aditivo (schema v40) y un usuario que nunca tocó el interruptor
+ * sigue viendo todo, mismo criterio que el resto de preferencias opcionales
+ * de `S.config` (ver `contexto/inicio.md`, `ocultarSaldo`).
+ *
+ * @param {Aviso[]} avisos Salida de `recolectarAvisos`.
+ * @param {Record<string, boolean>} [prefs] `S.config.avisosPorSeccion`.
+ * @returns {Aviso[]}
+ */
+export function filtrarPorPreferencia(avisos, prefs) {
+  if (!Array.isArray(avisos)) return [];
+  return avisos.filter(a => (prefs?.[a?.seccion]) !== false);
 }
 
 /**

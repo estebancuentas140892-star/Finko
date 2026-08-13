@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { renderPanelConfig, renderModalFiscal, miles, desdeMiles } from '../../modules/dominio/config/view.js';
 import { S, createInitialState } from '../../modules/core/state.js';
 import { DOCUMENTOS_LEGALES, documentoLegalPorId } from '../../modules/dominio/config/legal.js';
@@ -278,6 +278,66 @@ describe('renderPanelConfig() - toggle de tema con el switch único (TX.11)', ()
     expect(input).not.toBeNull();
     expect(input.closest('.toggle')).not.toBeNull();
     expect(input.dataset.action).toBe('theme-toggle');
+  });
+});
+
+// ── AVISOS POR SECCIÓN (CFG.3c, ADR 066 nota 2026-08-13) ─────────
+
+describe('renderPanelConfig() - preferencias de avisos por tipo (CFG.3c)', () => {
+  beforeEach(() => {
+    Object.assign(S, createInitialState());
+    S.config.notificaciones = true;
+    document.body.innerHTML = '<div id="panel-config"></div>';
+    // La rama 'granted' de _renderNotificaciones() es la única que muestra el
+    // fieldset nuevo; happy-dom no trae `Notification`, así que se stubea acá
+    // (primer test de este archivo que necesita esa rama).
+    globalThis.Notification = { permission: 'granted' };
+  });
+
+  afterEach(() => {
+    delete globalThis.Notification;
+  });
+
+  it('con recordatorios activos, muestra un interruptor por cada sección', () => {
+    renderPanelConfig();
+    const fieldset = document.querySelector('.config-avisos-tipos');
+    expect(fieldset).not.toBeNull();
+    expect(fieldset.querySelectorAll('.config-toggle').length).toBe(5);
+    expect(fieldset.textContent).toContain('Deudas y pagos fijos');
+    expect(fieldset.textContent).toContain('Límites de gasto');
+    expect(fieldset.textContent).toContain('Apartados');
+    expect(fieldset.textContent).toContain('Préstamos personales');
+    expect(fieldset.textContent).toContain('Día de pago');
+  });
+
+  it('sin recordatorios activos, no se muestra ningún interruptor por sección', () => {
+    S.config.notificaciones = false;
+    renderPanelConfig();
+    expect(document.querySelector('.config-avisos-tipos')).toBeNull();
+  });
+
+  it('una sección apagada en S nace desmarcada; las demás siguen marcadas', () => {
+    S.config.avisosPorSeccion = { compromisos: false, presupuesto: true, apartados: true, personales: true, tesoreria: true };
+    renderPanelConfig();
+    const compromisos = document.getElementById('toggle-aviso-compromisos');
+    const presupuesto = document.getElementById('toggle-aviso-presupuesto');
+    expect(compromisos.checked).toBe(false);
+    expect(presupuesto.checked).toBe(true);
+  });
+
+  it('sin preferencia guardada, las cinco secciones nacen activas', () => {
+    delete S.config.avisosPorSeccion;
+    renderPanelConfig();
+    const inputs = document.querySelectorAll('.config-avisos-tipos input[type="checkbox"]');
+    expect(inputs.length).toBe(5);
+    for (const input of inputs) expect(input.checked).toBe(true);
+  });
+
+  it('cada input trae data-action y data-seccion para el delegador', () => {
+    renderPanelConfig();
+    const input = document.getElementById('toggle-aviso-tesoreria');
+    expect(input.dataset.action).toBe('toggle-aviso-seccion');
+    expect(input.dataset.seccion).toBe('tesoreria');
   });
 });
 

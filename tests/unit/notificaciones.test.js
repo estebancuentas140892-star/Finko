@@ -10,16 +10,8 @@
  * devuelve datos y esta función los redacta.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import {
-  formatearAvisoSistema,
-  _resetNotificadoEstasSesion,
-} from '../../modules/infra/notificaciones.js';
-
-// Resetear flag de sesión antes de cada test para aislamiento.
-beforeEach(() => {
-  _resetNotificadoEstasSesion();
-});
+import { describe, it, expect } from 'vitest';
+import { formatearAvisoSistema } from '../../modules/infra/notificaciones.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
 

@@ -7,6 +7,7 @@ import { S } from '../../core/state.js';
 import { f, hoy, esc as _esc } from '../../infra/utils.js';
 import { icon } from '../../infra/icons.js';
 import { estadoPermiso } from '../../infra/notificaciones.js';
+import { SECCIONES_AVISO, LABEL_SECCION_AVISO } from '../../infra/avisos.js';
 import { estadoCuota } from '../../core/storage.js';
 import { legalVigente, estadoVigenciaLegal, APP_VERSION, SITUACIONES_LABORALES } from '../../core/constants.js';
 import { estaInstalada } from '../../ui/install-prompt.js';
@@ -383,8 +384,8 @@ function _renderNotificaciones() {
       <section class="config-section" aria-labelledby="config-notif-title">
         <h2 class="config-section__title" id="config-notif-title">Recordatorios</h2>
         <p class="config-section__desc">
-          Recibes una notificación cada vez que abres Finko si tienes compromisos
-          que vencen en los próximos 3 días.
+          Recibes una notificación al abrir Finko si hay algo importante: un pago
+          por vencer, un tope superado, un préstamo con la fecha pactada cumplida.
         </p>
         <button class="btn btn-secondary" data-action="activar-notificaciones"
                 aria-label="Activar recordatorios de compromisos">
@@ -413,10 +414,50 @@ function _renderNotificaciones() {
         </span>
       </label>
       <p class="form-hint">
-        Recibes una notificación al abrir la app si hay compromisos que vencen
-        en los próximos 3 días.
+        Recibes una notificación al abrir la app si hay algo importante y no te
+        avisó ya hoy.
       </p>
+      ${habilitado ? _renderPreferenciasAvisos() : ''}
     </section>`;
+}
+
+/**
+ * Interruptor por sección de aviso (CFG.3c, ADR 066 nota 2026-08-13). Solo se
+ * muestra con los recordatorios activos: apagar la fuente sin apagar antes el
+ * interruptor general no tiene sentido (nada se muestra de todos modos).
+ * `<fieldset>`/`<legend>` en vez de un `<h3>` propio: agrupa los cinco
+ * controles sin CSS nuevo (`fieldset` ya llega borderless por `reset.css`) y
+ * `<legend>` reusa `.form-hint`, mismo criterio de "menos vocabulario nuevo".
+ */
+function _renderPreferenciasAvisos() {
+  const prefs = S.config?.avisosPorSeccion ?? {};
+
+  const filas = SECCIONES_AVISO.map(seccion => {
+    const id     = `toggle-aviso-${seccion}`;
+    const label  = LABEL_SECCION_AVISO[seccion];
+    const activo = prefs[seccion] !== false;
+    return `
+      <label class="config-toggle" for="${id}">
+        <span class="toggle">
+          <input
+            id="${id}"
+            type="checkbox"
+            data-action="toggle-aviso-seccion"
+            data-seccion="${seccion}"
+            ${activo ? 'checked' : ''}
+            aria-label="Avisos de ${_esc(label)}"
+          />
+          <span class="toggle__track" aria-hidden="true"></span>
+        </span>
+        <span class="config-toggle__label">${_esc(label)}</span>
+      </label>`;
+  }).join('');
+
+  return `
+    <fieldset class="config-avisos-tipos">
+      <legend class="form-hint">Qué te avisa</legend>
+      ${filas}
+    </fieldset>`;
 }
 
 /**

@@ -14,7 +14,7 @@ import { icon, tejaCategoria } from '../../infra/icons.js';
 import { iconoDeCategoriaGasto } from '../../core/constants.js';
 import { memoizar } from '../../infra/memo.js';
 import { resumenSemanal } from './logic.js';
-import { recolectarAvisos } from '../../infra/avisos.js';
+import { recolectarAvisos, filtrarPorPreferencia } from '../../infra/avisos.js';
 
 /**
  * PERF.2: `resumenSemanal()` barre `S.gastos` varias veces (ventanas de 7 y
@@ -202,6 +202,8 @@ function _filaAviso(a) {
  * listos para reiniciar, ingresos que llegan hoy y préstamos personales con
  * la fecha pactada ya pasada. El resto de tipos ya vive en sus paneles
  * propios (`_TIPOS_SIN_PANEL_PROPIO`), así que este panel no los repite.
+ * Respeta además el interruptor por sección (CFG.3c, `S.config.avisosPorSeccion`):
+ * una sección apagada en Ajustes tampoco aparece acá.
  *
  * No-op si el contenedor no existe.
  */
@@ -209,15 +211,18 @@ export function renderPanelAvisos() {
   const el = document.getElementById('panel-avisos');
   if (!el) return;
 
-  const avisos = recolectarAvisos({
-    compromisos:  S.compromisos,
-    gastos:       S.gastos,
-    presupuestos: S.presupuestos,
-    apartados:    S.apartados,
-    personales:   S.personales,
-    ingresos:     S.ingresos,
-    hoyISO:       hoy(),
-  }).filter(a => _TIPOS_SIN_PANEL_PROPIO.includes(a.tipo));
+  const avisos = filtrarPorPreferencia(
+    recolectarAvisos({
+      compromisos:  S.compromisos,
+      gastos:       S.gastos,
+      presupuestos: S.presupuestos,
+      apartados:    S.apartados,
+      personales:   S.personales,
+      ingresos:     S.ingresos,
+      hoyISO:       hoy(),
+    }),
+    S.config?.avisosPorSeccion,
+  ).filter(a => _TIPOS_SIN_PANEL_PROPIO.includes(a.tipo));
 
   if (avisos.length === 0) {
     el.innerHTML = '';

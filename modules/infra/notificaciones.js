@@ -32,11 +32,9 @@
  */
 
 import { S } from '../core/state.js';
+import { save } from '../core/storage.js';
 import { f, hoy } from './utils.js';
-import { recolectarAvisos, avisosQueInterrumpen } from './avisos.js';
-
-/** Flag de sesión: solo notificamos una vez por apertura de app. */
-let _yaNotificadoEstasSesion = false;
+import { recolectarAvisos, avisosQueInterrumpen, filtrarPorPreferencia } from './avisos.js';
 
 /** Emoji por tipo de aviso. El título de una notificación sí los usa: es la única señal de qué es antes de leer. */
 const _EMOJI = {
@@ -123,31 +121,39 @@ export async function mostrarNotificacion(titulo, opciones = {}) {
  * Recolecta los avisos del día y muestra una notificación si:
  * - El usuario optó-in (`S.config.notificaciones === true`).
  * - El permiso del navegador es 'granted'.
- * - Hay al menos un aviso de severidad `urgente` o `alta`.
- * - No se ha notificado ya en esta sesión.
+ * - Hay al menos un aviso de severidad `urgente` o `alta` que su sección no
+ *   tiene apagada (`S.config.avisosPorSeccion`, CFG.3c).
+ * - No se avisó ya **hoy** (`S.config.ultimoAvisoISO`, CFG.3c, schema v40).
  *
- * Una sola notificación por apertura, no una por aviso.
+ * El sello es persistido, no de sesión: antes, cerrar y volver a abrir la app
+ * el mismo día repetía la notificación porque el guard vivía solo en memoria.
+ * Una sola notificación por día, no una por aviso ni una por apertura.
  *
  * @param {string} [hoyISO] Fecha de referencia (inyectable; default: hoy).
  * @returns {Promise<void>}
  */
 export async function verificarYNotificar(hoyISO = hoy()) {
-  if (_yaNotificadoEstasSesion) return;
+  if (S.config?.ultimoAvisoISO === hoyISO) return;
   if (!S.config?.notificaciones) return;
   if (estadoPermiso() !== 'granted') return;
 
-  const avisos = avisosQueInterrumpen(recolectarAvisos({
-    compromisos:  S.compromisos,
-    gastos:       S.gastos,
-    presupuestos: S.presupuestos,
-    apartados:    S.apartados,
-    personales:   S.personales,
-    ingresos:     S.ingresos,
-    hoyISO,
-  }));
+  const avisos = filtrarPorPreferencia(
+    avisosQueInterrumpen(recolectarAvisos({
+      compromisos:  S.compromisos,
+      gastos:       S.gastos,
+      presupuestos: S.presupuestos,
+      apartados:    S.apartados,
+      personales:   S.personales,
+      ingresos:     S.ingresos,
+      hoyISO,
+    })),
+    S.config?.avisosPorSeccion,
+  );
   if (avisos.length === 0) return;
 
-  _yaNotificadoEstasSesion = true;
+  if (!S.config) S.config = {};
+  S.config.ultimoAvisoISO = hoyISO;
+  save();
 
   const { titulo, cuerpo } = formatearAvisoSistema(avisos[0], avisos.length);
   await mostrarNotificacion(titulo, { body: cuerpo });
@@ -229,12 +235,3 @@ function _frase(aviso, nombre) {
   }
 }
 
-// ── UTILIDAD DE RESET (solo para tests) ─────────────────────────
-
-/**
- * Restablece el flag de sesión. Solo para uso en tests.
- * @internal
- */
-export function _resetNotificadoEstasSesion() {
-  _yaNotificadoEstasSesion = false;
-}

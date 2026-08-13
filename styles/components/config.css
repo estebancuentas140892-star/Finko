@@ -244,6 +244,14 @@
   color: var(--fk-text-primary);
 }
 
+/* Interruptores por sección de aviso (CFG.3c): mismo `.config-toggle` de
+   arriba, uno por fila; solo agrega el layout que un <fieldset> no trae. */
+.config-avisos-tipos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+}
+
 /* Botones de exportar/importar */
 .config-actions {
   display: flex;

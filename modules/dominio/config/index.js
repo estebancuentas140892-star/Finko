@@ -18,6 +18,7 @@ import { mdToHtml } from '../../infra/markdown.js';
 import { SITUACIONES_LABORALES } from '../../core/constants.js';
 import { confirmar } from '../../ui/confirm.js';
 import { pedirPermiso } from '../../infra/notificaciones.js';
+import { LABEL_SECCION_AVISO } from '../../infra/avisos.js';
 import { abrirModal } from '../../ui/modales.js';
 import { renderPanelConfig, renderModalFiscal, miles, desdeMiles } from './view.js';
 import { gastosACSV } from '../export/logic.js';
@@ -136,6 +137,22 @@ function _toggleNotificaciones(el) {
   save();
   renderPanelConfig();
   announce(el.checked ? 'Recordatorios activados.' : 'Recordatorios desactivados.');
+}
+
+/**
+ * Interruptor por sección de aviso (CFG.3c, ADR 066 nota 2026-08-13).
+ * @param {HTMLElement} el - el <input type="checkbox"> con data-seccion.
+ */
+function _toggleAvisoSeccion(el) {
+  const seccion = el.dataset.seccion;
+  if (!seccion) return;
+  if (!S.config) S.config = {};
+  if (!S.config.avisosPorSeccion) S.config.avisosPorSeccion = {};
+  S.config.avisosPorSeccion[seccion] = el.checked;
+  save();
+  renderPanelConfig();
+  const label = LABEL_SECCION_AVISO[seccion] ?? seccion;
+  announce(`Avisos de ${label} ${el.checked ? 'activados' : 'desactivados'}.`);
 }
 
 /** @param {HTMLElement} el - el <input type="checkbox"> */
@@ -428,6 +445,7 @@ export function initConfig() {
   registrarAccion('activar-notificaciones', _activarNotificaciones);
   registrarAccion('toggle-notificaciones',  _toggleNotificaciones);
   registrarAccion('toggle-atajos',          _toggleAtajos);
+  registrarAccion('toggle-aviso-seccion',   _toggleAvisoSeccion);
   registrarAccion('abrir-legal', (el) => _mostrarDocumentoLegal(el.dataset.doc));
   registrarAccion('abrir-perfil-fiscal', _abrirPerfilFiscal);
   _wireLegalLinks();

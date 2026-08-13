@@ -1570,6 +1570,45 @@ describe('Migración v36 → v37 (subcategoría de meta, MT.6b)', () => {
   });
 });
 
+describe('Migración v39 → v40 (avisosPorSeccion y ultimoAvisoISO en config, CFG.3c)', () => {
+  it('un usuario existente arranca con las cinco secciones activas', () => {
+    const v39 = { ...createInitialState(), _version: 39 };
+    delete v39.config.avisosPorSeccion;
+    delete v39.config.ultimoAvisoISO;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v39));
+
+    loadData();
+
+    expect(S.config.avisosPorSeccion).toEqual({
+      compromisos: true, presupuesto: true, apartados: true, personales: true, tesoreria: true,
+    });
+    expect(S.config.ultimoAvisoISO).toBeNull();
+    expect(S._version).toBe(SCHEMA_VERSION);
+  });
+
+  it('un estado v39 sin config en absoluto no revienta la migración', () => {
+    const v39 = { ...createInitialState(), _version: 39 };
+    delete v39.config;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v39));
+
+    expect(() => loadData()).not.toThrow();
+    expect(S.config.avisosPorSeccion.compromisos).toBe(true);
+    expect(S.config.ultimoAvisoISO).toBeNull();
+  });
+
+  it('es idempotente: no sobrescribe una preferencia ya apagada ni un sello ya escrito', () => {
+    const v40 = { ...createInitialState(), _version: 40 };
+    v40.config.avisosPorSeccion = { compromisos: false, presupuesto: true, apartados: true, personales: true, tesoreria: true };
+    v40.config.ultimoAvisoISO = '2026-08-13';
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v40));
+
+    loadData();
+
+    expect(S.config.avisosPorSeccion.compromisos).toBe(false);
+    expect(S.config.ultimoAvisoISO).toBe('2026-08-13');
+  });
+});
+
 describe('Migración v37 → v38 (plan de aportes de meta, MT.6c)', () => {
   it('una meta existente arranca sin plan de aportes', () => {
     const v37 = { ...createInitialState(), _version: 37 };
