@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-13. Última tarea cerrada: CFG.5b, re-autenticación con PIN (cierra CFG.5 completa).
+> Revisado: 2026-08-13. Última tarea cerrada: PERF.5, compuerta del ADR 030 D4 verificada y sigue cerrada (evaluación, sin código).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,7 +13,7 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 4207/4207 verdes, 8 de ellos del guard de PIN en acciones críticas (CFG.5b) |
+| Tests unitarios + integración | 4212/4212 verdes (corrido el 2026-08-13 como línea base de PERF.5) |
 | Tests E2E | 269/269 verdes, sello escrito sobre el runtime de CFG.5b (1 flaky en `smoke.test.js`, checklist de Necesidades de Tesorería, ajeno; verde al reintentar). **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v40 (`config.avisosPorSeccion` y `.ultimoAvisoISO`, CFG.3c; migración aditiva) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
@@ -25,6 +25,12 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**PERF.5 - la compuerta del ADR 030 D4 se verifica y sigue cerrada (Transversal), 2026-08-13**
+Pedido de ejecutar la migración a IndexedDB. **No se ejecutó, y esa es la entrega.** Los tres disparadores del [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) D4 se verificaron uno por uno y siguen cerrados: sin jank de guardado en dispositivo real (toda cifra es de happy-dom), sin evidencia de cuota (la app no tiene telemetría: este disparador no puede dispararse solo) y CFG.4 bloqueada por el [ADR 043](DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md), Abierta. Hallazgo nuevo: el costo de PERF.5 está en los tests, no en el runtime (13 suites E2E siembran `fk_v1` sin helper central; 33 `save()` sin `await` sí cooperarían). Sin cambios de código.
+
+**LG.2d - mudanza de la vitrina a "Tu progreso" en Análisis + tarjeta en Inicio (Logros), 2026-08-13**
+Cierra la iniciativa "Logros v2" completa. `renderPanelLogros()` se parte en `renderProgresoAnalisis()` y `renderTarjetaProgresoInicio()`; el [ADR 022](DECISIONS/022-vitrina-de-logros-en-ajustes.md) pasa a Superada. Cero cambios en `logros/logic.js`. SW v531 → v532.
+
 **CFG.5b - re-autenticación con PIN en acciones críticas (Configuración), 2026-08-13**
 Cierra la iniciativa CFG.5 completa (CFG.5a, CFG.5b, CFG.5c). `confirmarPin()` nueva en `modules/ui/bloqueo-acceso.js`, mismo contrato Promise<boolean> que `confirmar()`: sin candado activo resuelve `true` de inmediato, sin mostrar nada. Comparte el freno de intentos con el gate de arranque (`_intentoPin()` extraída). Borrar todo, importar respaldo y exportar respaldo piden el PIN; los dos primeros ya pedían "¿estás seguro?", exportar no tenía ninguna pregunta y ahora pide solo el PIN. Verificado en la app real. [ADR 063](DECISIONS/063-candado-de-acceso-local.md). SW v530 → v531.
 
@@ -34,19 +40,13 @@ Spike, sin código. Se midió el ciclo completo de WebAuthn con autenticador vir
 **CFG.6 - revisión general de Ajustes, inventario final (Configuración), 2026-08-13**
 Cierra la tarjeta. Los pases visuales ya estaban hechos (2026-07-25, 2026-08-02); quedaba el punto 1, inventario de configs que faltan en Ajustes. Revisado el panel completo (`config/view.js`) contra CFG.1 a CFG.5: **sin hallazgos nuevos**, lo único ausente (respaldo/sync, re-autenticación, biometría) ya tiene tarjeta propia. Sin cambios de código.
 
-**CFG.3c - avisos por sección y sello de día persistido (Configuración), 2026-08-13**
-Cierra la iniciativa CFG.3 ([ADR 066](DECISIONS/066-motor-unico-de-avisos.md)). Esteban pidió ejecutarla ya, sin esperar la evidencia de uso que el D6 del ADR pedía. **Granularidad por sección** (`SECCIONES_AVISO`, cinco), no por los nueve tipos: nueve toggles habrían sido ruido sin decisión real. `filtrarPorPreferencia()` nuevo en `infra/avisos.js`, consumido por las dos superficies existentes. **El sello persistido (`config.ultimoAvisoISO`) reemplaza el flag de sesión**: antes, cerrar y volver a abrir la app el mismo día repetía la notificación. Schema v39 → v40, aditiva. SW v529 → v530.
-
-**CFG.3b - panel "Avisos" en Inicio (Configuración / transversal), 2026-08-13**
-Segunda rebanada del ADR 066. El motor de CFG.3a ya devolvía la lista; el terreno de Inicio ya estaba ocupado por tres paneles que cubren la mayoría de tipos con su lógica de siempre (sin pasar por el motor). El panel nuevo filtra a lo que hoy no tiene casa: apartado listo, día de pago, préstamo con fecha vencida. Vive en `resumen/` (mismo dominio agregador del dashboard). SW v528 → v529.
-
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 
 ---
 
 ## 3. Qué sigue
 
-- **En proceso:** nada. **CFG.3 completa** (sus tres rebanadas, [ADR 066](DECISIONS/066-motor-unico-de-avisos.md)). **CFG.5 completa** (CFG.5a, CFG.5b, CFG.5c). **CFG.6 completa** (inventario sin hallazgos nuevos). **LIM.1 completa** (ADR 044 Aceptado). De PA.1 vive **PA.1b** (crédito automático del ingreso fijo, misma hoja). **MT.6**, **PE.6**, **ANL.1**, **AH.7**, **CFG.1+CFG.2**, **CAT** y **GAS.2** completas. De LG.2 queda **LG.2d**; de CFG queda solo **CFG.4** (respaldo/sync, ADN, ADR 043 abierto). La siguiente tarjeta se elige del índice de pendientes de [`BOARD.md`](BOARD.md) (primeras ~50 líneas, no hace falta cargar el archivo completo).
+- **En proceso:** nada. **CFG.3 completa** (sus tres rebanadas, [ADR 066](DECISIONS/066-motor-unico-de-avisos.md)). **CFG.5 completa** (CFG.5a, CFG.5b, CFG.5c). **CFG.6 completa** (inventario sin hallazgos nuevos). **LIM.1 completa** (ADR 044 Aceptado). De PA.1 vive **PA.1b** (crédito automático del ingreso fijo, misma hoja). **MT.6**, **PE.6**, **ANL.1**, **AH.7**, **CFG.1+CFG.2**, **CAT** y **GAS.2** completas. **LG.2 completa**; de CFG queda solo **CFG.4** (respaldo/sync, ADN, ADR 043 abierto). **PERF.5 sigue sin iniciar**, con su compuerta reverificada el 2026-08-13. La siguiente tarjeta se elige del índice de pendientes de [`BOARD.md`](BOARD.md) (primeras ~50 líneas, no hace falta cargar el archivo completo).
 - **Fase actual:** post-v1.0, mantenimiento y mejoras por sección.
 - **Decisiones de fondo abiertas** que bloquean sus tarjetas: sincronización multidispositivo ([ADR 043](DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md)) y los demás ADR en estado Abierta (ver la columna Estado de cada tarjeta del tablero).
 - **Antes de tocar una sección:** su ficha en [`contexto/`](contexto/README.md). Antes de explorar el código: [`ARCHITECTURE.md`](ARCHITECTURE.md) sección 13.

@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### docs(transversal): PERF.5, la compuerta del ADR 030 D4 se verifica y sigue cerrada · 2026-08-13
+
+Pedido de ejecutar PERF.5 (migrar la persistencia a IndexedDB). **No se ejecutó**: la tarjeta tiene una compuerta explícita y ninguno de sus tres disparadores está activo. [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) D4, sin ADR nuevo (no hay decisión nueva que tomar: se aplicó la que ya existe). Ficha: [`contexto/transversal.md`](contexto/transversal.md). Sin cambios de código.
+
+- **Los tres disparadores del D4, verificados uno por uno contra evidencia, siguen cerrados.** Jank en dispositivo real: no, toda cifra de persistencia es de happy-dom, y la auditoría de jank móvil descarta el guardado como causa ("contribuye, no domina... fuera del camino crítico del frame"). Cuota: no, y **la app no tiene telemetría por diseño**, así que este disparador no puede producir evidencia sola: depende de un reporte manual que no existe. Feature que exija async o más cupo: no, CFG.4 sigue bloqueada por el [ADR 043](DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md), que está Abierta y cuyo propio checklist condiciona la activación del D4 a "si se elige D o E".
+- **El hallazgo nuevo, y la razón por la que la decisión no fue solo obediencia al ADR: el costo de PERF.5 vive en los tests, no en el runtime.** El runtime coopera (33 call sites de `save()`, ninguno con `await`: volverla asíncrona sería transparente). Lo que no coopera es la red de seguridad: 13 suites E2E con 197 referencias a `fk_v1` y 163 `addInitScript`/`evaluate`, **sin helper central de sembrado**, más `storage.test.js` con 109 usos de `localStorage`. Migrar obliga a reescribir a la vez la ruta de arranque, los datos reales y la única prueba capaz de detectar que algo se rompió.
+- **Lo que sí queda en el repo:** la tarjeta de [`board/transversal.md`](board/transversal.md) pasa de "no iniciar" genérico a compuerta verificada con fecha, cita y tamaño medido del cambio, para que el próximo intento solo tenga que mirar si un disparador cambió de estado en vez de repetir la investigación.
+- Tests: sin tocar `modules/`, no hay nada que probar. Suite corrida igual como línea base: 4212/4212 unitarios verdes. Sin bump de SW (cero archivo precacheado tocado).
+
 ### feat(logros): LG.2d, mudanza de la vitrina a "Tu progreso" en Analisis + tarjeta en Inicio · 2026-08-13
 
 Cierra la iniciativa "Logros v2" completa (LG.2b, LG.2c, LG.2d, LG.2e). [ADR 032](DECISIONS/032-logros-v2-niveles-y-habitos.md) D6. El [ADR 022](DECISIONS/022-vitrina-de-logros-en-ajustes.md) (vitrina en Ajustes) pasa a Superada. Fichas: [`contexto/transversal.md`](contexto/transversal.md), [`contexto/analisis.md`](contexto/analisis.md), [`contexto/inicio.md`](contexto/inicio.md).
