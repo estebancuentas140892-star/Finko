@@ -97,6 +97,18 @@ El interruptor sigue siendo el que ya está (`S.config.notificaciones`, un solo 
 
 Tres rebanadas. La primera es la que ejecuta esta tarjeta.
 
-1. **CFG.3a** (esta): ADR + `infra/avisos.js` con los ocho tipos + `infra/notificaciones.js` consumiendo el motor. Sin UI nueva.
-2. **CFG.3b**: centro de avisos en la app (superficie que muestra la lista ordenada, con su propio tope y su copy). Es la que decide dónde vive: Inicio o barra superior.
-3. **CFG.3c**: preferencias por tipo en Ajustes, solo si el uso real muestra que algún tipo molesta. Ahí sí entra schema.
+1. **CFG.3a** (2026-08-13, cerrada): ADR + `infra/avisos.js` con los ocho tipos + `infra/notificaciones.js` consumiendo el motor. Sin UI nueva.
+2. **CFG.3b** (2026-08-13, cerrada): panel "Avisos" en Inicio, filtrado a los tres tipos que ningún otro panel del dashboard ya cubre (`apartado-listo`, `dia-de-pago`, `prestamo-vencido`). Detalle: `contexto/inicio.md`.
+3. **CFG.3c** (2026-08-13, cerrada): preferencias por sección en Ajustes. Ver nota de abajo.
+
+### Nota (2026-08-13, CFG.3c): granularidad por sección, no por los nueve tipos, y sin esperar evidencia de uso
+
+D6 diferia esta rebanada "detrás del uso real". Esteban decidió ejecutarla ahora, delegando la decisión de diseño ("toma tú las decisiones"): no hay evidencia todavía de qué tipo molesta, pero el costo de construir el interruptor es bajo y Esteban prefirió tenerlo antes que esperar.
+
+**Granularidad elegida: por sección (`SECCIONES_AVISO`, cinco), no por `TIPOS_AVISO` (nueve).** Un interruptor por cada uno de los nueve tipos multiplicaría los controles de Ajustes sin ofrecer una decisión real: quien no quiere que Finko le avise de compromisos no distingue "vencido" de "próximo", es la misma fuente de ansiedad. Las cinco secciones ya existían como campo (`aviso.seccion`) desde CFG.3a; agruparlas es leer el dato que el motor ya expone, no inventar un eje nuevo.
+
+**Alternativa rechazada**: un toggle por cada uno de los nueve `TIPOS_AVISO`. Se descarta por ruido de UI (nueve switches en una pantalla que ya tiene "Recordatorios activos" arriba) y porque no hay evidencia de que la distinción fina importe; si aparece esa evidencia, `SECCIONES_AVISO` se puede partir más fino sin romper el schema (el mapa es por clave string, agregar una no rompe las demás).
+
+**Entra el sello persistido de "ya te avisé hoy" que D6 también diferia** (`config.ultimoAvisoISO`, schema v40): el guard de sesión en memoria repetía la notificación si el usuario cerraba y volvía a abrir la app el mismo día. Ahora se compara contra la fecha de la última notificación mostrada, persistida.
+
+**Schema v40**: `config.avisosPorSeccion` (las cinco activas por defecto: apagar una no apaga las demás) y `config.ultimoAvisoISO` (`null` por defecto). Migración aditiva, sin backfill: un usuario existente arranca con todo activo, exactamente el comportamiento que ya tenía.
