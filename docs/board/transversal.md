@@ -45,11 +45,15 @@
 #### IV.4 - Iconografía dirigida post-color
 - Prioridad  : decidir tras IV.2
 - Área       : design (el diseño de los assets es de Esteban; Code solo integra)
-- Estado     : bloqueada por revisión visual con capturas después de IV.2
+- Estado     : **revisión visual hecha, 2026-08-13.** IV.2 (a-d) ya está en producción y la app, revisada en Deudas > Estrategia de pago (ambos iconos en `.estrategia-card-pick__icono`, 28px, sin `--sm`), ya no se percibe fría/genérica en general: el color por dominio de IV.2a/d cumple. El único hallazgo real sigue siendo el que trajo el triaje: estos dos iconos puntuales. **Único bloqueo restante: arte final de Esteban.**
 - Objetivo   : si tras el despliegue del color la app aún se percibe fría/genérica, definir la spec por dominio y redibujar en lotes dirigidos (Esteban en Illustrator, pipeline ADR 026 + `sync-sprite.py`, revisión de legibilidad 16/22/48px en ambos temas). NO es un redibujo global del sprite.
 - **Spec integrada por triaje 2026-07-08 (brief de Deudas, punto 13):** los iconos de **Avalancha** y **Bola de nieve** no representan el concepto de cada estrategia; rediseñarlos con metáfora clara (regla 5 del ADR 023: metáfora primero) manteniendo el lenguaje v2. Nota: `i-mountain` conserva sus picos agudos a propósito (decisión de ID.7); el problema reportado es de metáfora, no de estilo. Primer lote candidato de esta tarjeta.
+- **Direcciones propuestas para Esteban (2026-08-13, a validar en Illustrator):**
+  - **Avalancha (`i-mountain`):** el pico agudo se queda (ID.7 lo fija a propósito), pero un pico solo no distingue "avalancha" de "meta/logro" (`i-star`, `i-trophy` ya cubren ese territorio). Falta la caída: 2-3 puntos sólidos (chispa) en trayectoria diagonal descendiente desde el pico, como nieve/roca cayendo. La metáfora a comunicar es "ataca la tasa más alta primero y las demás caen más rápido", no solo "lo más alto".
+  - **Bola de nieve (`i-snowball`):** el par de círculos chico/grande (crece) ya apunta bien; hoy le falta el movimiento. Probar un arco corto de rastro/rodado detrás del círculo grande. Si compite con el reconocimiento a 16px (regla 5), se descarta el arco y se queda solo el crecimiento.
+  - Ninguno de los dos tiene hoy un uso a 16px real (solo se ven a 28px en la card de estrategia): verificar ahí también antes de entrar al sprite, no solo a 22/48.
 - Secciones  : `assets/svg/`, sprite de `index.html`
-- Depende de : IV.2 en producción + revisión visual + diseños de Esteban
+- Depende de : IV.2 en producción (cerrado) + revisión visual (hecha) + diseños de Esteban (pendiente, único bloqueo)
 - Modelo     : Equilibrado - Alto (revisión de assets contra spec; el diseño es de Esteban)
 
 > **Iniciativa CAT: taxonomía + picker de ícono compartido, completa.** Fuente única para categorías entre secciones. CAT.1, CAT.2, CAT.3 y CAT.4 cerradas (reglas heredadas en [`contexto/transversal.md`](../contexto/transversal.md), bloque "Categorías personalizadas del usuario").

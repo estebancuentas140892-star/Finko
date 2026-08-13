@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### docs(transversal): IV.4, revision visual post-color + spec de metafora para avalancha y bola de nieve · 2026-08-13
+
+Adelanta **IV.4** en lo unico que no depende del arte final de Esteban. Ficha: [`board/transversal.md`](board/transversal.md). Sin cambios de codigo.
+
+- **IV.2 (a-d) ya en produccion; revision visual hecha en Deudas > Estrategia de pago** (los dos iconos en `.estrategia-card-pick__icono`, 28px sin `--sm`): el color por dominio de IV.2a/d ya resuelve la sensacion fria/generica a nivel de app. El unico hallazgo real sigue siendo el que trajo el triaje del 2026-07-08: estos dos iconos puntuales, no un redibujo global.
+- **Direccion propuesta para Avalancha (`i-mountain`):** el pico agudo se conserva (ID.7 lo fija a proposito), pero le falta la caida. Sumar 2-3 puntos solidos en trayectoria diagonal descendente desde el pico (nieve/roca cayendo), para que la metafora sea "ataca la tasa mas alta y las demas caen mas rapido", no solo "lo mas alto" (que ya cubren `i-star`/`i-trophy`).
+- **Direccion propuesta para Bola de nieve (`i-snowball`):** el par de circulos chico/grande ya comunica crecimiento; le falta movimiento. Probar un arco corto de rastro detras del circulo grande, descartable si compite con el reconocimiento a 16px (regla 5 del ADR 023).
+- **Hallazgo adicional:** ninguno de los dos tiene hoy un uso real a 16px (solo se ven a 28px en la card de estrategia); verificar ahi tambien antes de entrar al sprite, no solo a 22/48.
+- Unico bloqueo restante: arte final de Esteban en Illustrator (pipeline ADR 026 + `sync-sprite.py`). Sin tests ni bump de SW: cero archivo de codigo tocado.
+
 ### docs(config): CFG.6, cierra el inventario de configuraciones faltantes · 2026-08-13
 
 Cierra la tarjeta CFG.6. Sin cambio de código: auditoría documental. Ficha: [`contexto/configuracion.md`](contexto/configuracion.md).
