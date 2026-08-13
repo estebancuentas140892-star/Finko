@@ -1,8 +1,12 @@
 /**
  * infra/notificaciones.js - abstracción de la Web Notifications API.
  *
- * Diseño para PWA offline-first sin servidor:
+ * Diseño para PWA offline-first sin servidor
+ * ([ADR 066](../../docs/DECISIONS/066-motor-unico-de-avisos.md) D1):
  * - Las notificaciones se disparan al abrir la app (on-load), no en background.
+ *   Un service worker no puede leer `localStorage`, así que no tiene con qué
+ *   calcular un vencimiento estando la app cerrada; ese límite es honesto y
+ *   está escrito en el ADR, con PERF.5 como su único disparador de revisión.
  * - No requiere push server, VAPID keys ni suscripciones.
  * - El usuario opt-in explícito via un botón en Configuración.
  *
@@ -10,25 +14,42 @@
  *   1. Usuario toca "Activar recordatorios" (gesto de usuario requerido).
  *   2. `pedirPermiso()` solicita Notification.permission.
  *   3. Si 'granted', `S.config.notificaciones = true` y se persiste.
- *   4. En cada apertura de la app: `verificarYNotificar(S.compromisos)` muestra
- *      una sola notificación si hay compromisos próximos.
+ *   4. En cada apertura de la app: `verificarYNotificar()` recolecta los avisos
+ *      del día con el motor único (`infra/avisos.js`) y muestra **una** sola
+ *      notificación, con el más grave como protagonista.
  *
- * Constantes de umbral:
- * - DIAS_UMBRAL = 3  → días restantes para que un compromiso sea "próximo".
+ * Qué interrumpe y qué no (ADR 066 D5): solo los avisos de severidad `urgente` o
+ * `alta` llegan acá. Un apartado a seis días o un préstamo que te deben esperan
+ * dentro de la app: interrumpir el teléfono queda para lo que el usuario debe.
+ *
+ * Esta es una **superficie**, así que el copy vive acá (ADR 066 D2): el motor
+ * devuelve datos y cada superficie los redacta en el tono del
+ * [ADR 003](../../docs/DECISIONS/003-tono-neutral-profesional.md).
  *
  * Funciones testables en Node (sin DOM):
  * - `estadoPermiso()` - guardada como string, no lee API directamente.
- * - `formatearMensajeNotificacion(proximos)` - pura, sin side effects.
+ * - `formatearAvisoSistema(aviso, total)` - pura, sin side effects.
  */
 
 import { S } from '../core/state.js';
-import { compromisosProximos } from '../dominio/compromisos/logic.js';
-
-/** Umbral en días para considerar un compromiso "próximo". */
-const DIAS_UMBRAL = 3;
+import { f, hoy } from './utils.js';
+import { recolectarAvisos, avisosQueInterrumpen } from './avisos.js';
 
 /** Flag de sesión: solo notificamos una vez por apertura de app. */
 let _yaNotificadoEstasSesion = false;
+
+/** Emoji por tipo de aviso. El título de una notificación sí los usa: es la única señal de qué es antes de leer. */
+const _EMOJI = {
+  'compromiso-vencido': '⏰',
+  'compromiso-proximo': '⏰',
+  'limite-excedido':    '⚠️',
+  'limite-alerta':      '⚠️',
+  'apartado-proximo':   '📦',
+  'apartado-listo':     '📦',
+  'prestamo-vencido':   '🤝',
+  'prestamo-proximo':   '🤝',
+  'dia-de-pago':        '💰',
+};
 
 // ── API PÚBLICA ──────────────────────────────────────────────────
 
@@ -99,77 +120,113 @@ export async function mostrarNotificacion(titulo, opciones = {}) {
 }
 
 /**
- * Verifica si hay compromisos próximos y muestra una notificación si:
+ * Recolecta los avisos del día y muestra una notificación si:
  * - El usuario optó-in (`S.config.notificaciones === true`).
  * - El permiso del navegador es 'granted'.
- * - Hay compromisos activos con vencimiento ≤ DIAS_UMBRAL días.
+ * - Hay al menos un aviso de severidad `urgente` o `alta`.
  * - No se ha notificado ya en esta sesión.
  *
- * Llama solo una notificación por sesión (no una por compromiso).
+ * Una sola notificación por apertura, no una por aviso.
  *
- * @param {import('../core/state.js').Compromiso[]} compromisos
+ * @param {string} [hoyISO] Fecha de referencia (inyectable; default: hoy).
  * @returns {Promise<void>}
  */
-export async function verificarYNotificar(compromisos) {
+export async function verificarYNotificar(hoyISO = hoy()) {
   if (_yaNotificadoEstasSesion) return;
   if (!S.config?.notificaciones) return;
   if (estadoPermiso() !== 'granted') return;
 
-  const proximos = compromisosProximos(compromisos, DIAS_UMBRAL);
-  if (proximos.length === 0) return;
+  const avisos = avisosQueInterrumpen(recolectarAvisos({
+    compromisos:  S.compromisos,
+    gastos:       S.gastos,
+    presupuestos: S.presupuestos,
+    apartados:    S.apartados,
+    personales:   S.personales,
+    ingresos:     S.ingresos,
+    hoyISO,
+  }));
+  if (avisos.length === 0) return;
 
   _yaNotificadoEstasSesion = true;
 
-  const { titulo, cuerpo } = formatearMensajeNotificacion(proximos);
+  const { titulo, cuerpo } = formatearAvisoSistema(avisos[0], avisos.length);
   await mostrarNotificacion(titulo, { body: cuerpo });
 }
 
 // ── HELPERS PUROS (testeables) ───────────────────────────────────
 
 /**
- * Formatea el título y cuerpo de la notificación según cuántos compromisos
- * están próximos a vencer. Función pura - sin side effects, testeable en Node.
+ * Título y cuerpo de la notificación a partir del aviso más grave del día.
+ * Función pura, sin side effects, testeable en Node.
  *
- * @param {Array<{ descripcion: string, diasRestantes: number, monto: number }>} proximos
- * @returns {{ titulo: string, cuerpo: string }}
+ * El aviso protagonista da el título; el cuerpo dice la cifra en juego y, si hay
+ * más de un aviso, cuántos esperan en la app. Nunca lista los demás: una
+ * notificación con seis nombres no se lee.
+ *
+ * @param {import('./avisos.js').Aviso} aviso Aviso protagonista (el primero de la lista ordenada).
+ * @param {number} [total=1] Cuántos avisos interrumpen hoy, incluido este.
+ * @returns {{ titulo: string, cuerpo: string }} Strings vacíos si no hay aviso.
  */
-export function formatearMensajeNotificacion(proximos) {
-  if (proximos.length === 0) {
-    return { titulo: '', cuerpo: '' };
+export function formatearAvisoSistema(aviso, total = 1) {
+  if (!aviso || typeof aviso !== 'object') return { titulo: '', cuerpo: '' };
+
+  const emoji  = _EMOJI[aviso.tipo] ?? '⏰';
+  const nombre = aviso.nombre || 'Un pendiente';
+  const titulo = `${emoji} ${_frase(aviso, nombre)}`;
+
+  const restantes = Math.max(0, (Number(total) || 1) - 1);
+  const partes = [];
+  if (Number(aviso.monto) > 0) partes.push(f(aviso.monto));
+  if (restantes === 1)         partes.push('Tienes otro aviso en Finko.');
+  else if (restantes > 1)      partes.push(`Tienes ${restantes} avisos más en Finko.`);
+  else if (partes.length === 0) partes.push('Recordatorio de Finko.');
+
+  return { titulo, cuerpo: partes.join('. ') };
+}
+
+/** La frase del título según el tipo de aviso. Tuteo, sin presionar (ADR 003). */
+function _frase(aviso, nombre) {
+  const dias = Number(aviso.dias);
+
+  switch (aviso.tipo) {
+    case 'compromiso-vencido':
+      return dias === 1
+        ? `${nombre} venció ayer`
+        : `${nombre} venció hace ${dias} días`;
+
+    case 'compromiso-proximo':
+      if (dias === 0) return `${nombre} vence hoy`;
+      if (dias === 1) return `${nombre} vence mañana`;
+      return `${nombre} vence en ${dias} días`;
+
+    case 'limite-excedido':
+      return `Pasaste tu tope de ${nombre}`;
+
+    case 'limite-alerta':
+      return `Vas en el ${Number(aviso.extra?.porcentaje) || 0}% de tu tope de ${nombre}`;
+
+    case 'apartado-proximo':
+      if (dias === 0) return `Hoy necesitas el dinero de ${nombre}`;
+      if (dias === 1) return `Mañana necesitas el dinero de ${nombre}`;
+      return `En ${dias} días necesitas el dinero de ${nombre}`;
+
+    case 'apartado-listo':
+      return `Ya reuniste el dinero de ${nombre}`;
+
+    case 'prestamo-vencido':
+      return `La fecha que acordaste con ${nombre} ya pasó`;
+
+    case 'prestamo-proximo':
+      return dias === 0
+        ? `Hoy acordaste que ${nombre} te devuelve`
+        : `${nombre} te devuelve en ${dias} días`;
+
+    case 'dia-de-pago':
+      return `Hoy te llega ${nombre}`;
+
+    default:
+      return nombre;
   }
-
-  if (proximos.length === 1) {
-    const c = proximos[0];
-    const cuandoLabel = c.diasRestantes === 0
-      ? 'vence hoy'
-      : c.diasRestantes === 1
-        ? 'vence mañana'
-        : `vence en ${c.diasRestantes} días`;
-    return {
-      titulo: `⏰ ${c.descripcion} ${cuandoLabel}`,
-      cuerpo: `Recordatorio de Finko. No olvides este compromiso.`,
-    };
-  }
-
-  const hoy    = proximos.filter(c => c.diasRestantes === 0).length;
-  const manana = proximos.filter(c => c.diasRestantes === 1).length;
-
-  let cuandoResumen = '';
-  if (hoy > 0 && manana > 0)       cuandoResumen = 'hoy y mañana';
-  else if (hoy > 0)                 cuandoResumen = 'hoy';
-  else if (manana > 0)              cuandoResumen = 'mañana';
-  else                              cuandoResumen = `en los próximos ${DIAS_UMBRAL} días`;
-
-  const nombres = proximos
-    .slice(0, 3) // máximo 3 en el cuerpo
-    .map(c => c.descripcion)
-    .join(', ');
-  const extra = proximos.length > 3 ? ` y ${proximos.length - 3} más` : '';
-
-  return {
-    titulo: `⏰ ${proximos.length} compromisos vencen ${cuandoResumen}`,
-    cuerpo: `${nombres}${extra}`,
-  };
 }
 
 // ── UTILIDAD DE RESET (solo para tests) ─────────────────────────

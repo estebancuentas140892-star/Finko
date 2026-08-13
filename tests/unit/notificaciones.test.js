@@ -5,12 +5,14 @@
  * mostrarNotificacion, verificarYNotificar, estadoPermiso) no se testean
  * aquí porque requieren un entorno real de navegador.
  *
- * Lo que sí se testea: formatearMensajeNotificacion() - pura y sin side effects.
+ * Lo que sí se testea: `formatearAvisoSistema()`, pura y sin side effects. Es el
+ * copy de una superficie (CFG.3a, ADR 066 D2): el motor `infra/avisos.js`
+ * devuelve datos y esta función los redacta.
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
-  formatearMensajeNotificacion,
+  formatearAvisoSistema,
   _resetNotificadoEstasSesion,
 } from '../../modules/infra/notificaciones.js';
 
@@ -21,110 +23,154 @@ beforeEach(() => {
 
 // ── FIXTURES ─────────────────────────────────────────────────────
 
-const compromiso = (overrides = {}) => ({
-  id:            'c1',
-  descripcion:   'Arriendo',
-  monto:         1_500_000,
-  diasRestantes: 0,
+const aviso = (overrides = {}) => ({
+  id:        'compromiso-proximo:c1',
+  tipo:      'compromiso-proximo',
+  severidad: 'alta',
+  nombre:    'Arriendo',
+  monto:     1_500_000,
+  dias:      0,
+  sentido:   'restante',
+  seccion:   'compromisos',
+  extra:     null,
   ...overrides,
 });
 
-// ── formatearMensajeNotificacion() ────────────────────────────────
+// ── CONTRATO ─────────────────────────────────────────────────────
 
-describe('formatearMensajeNotificacion()', () => {
-  it('devuelve strings vacíos con array vacío', () => {
-    const { titulo, cuerpo } = formatearMensajeNotificacion([]);
-    expect(titulo).toBe('');
-    expect(cuerpo).toBe('');
+describe('formatearAvisoSistema() - contrato', () => {
+  it('devuelve objeto con claves titulo y cuerpo', () => {
+    const r = formatearAvisoSistema(aviso());
+    expect(typeof r.titulo).toBe('string');
+    expect(typeof r.cuerpo).toBe('string');
   });
 
-  it('un compromiso que vence hoy - título dice "vence hoy"', () => {
-    const { titulo } = formatearMensajeNotificacion([compromiso({ diasRestantes: 0 })]);
+  it('sin aviso devuelve strings vacíos', () => {
+    expect(formatearAvisoSistema(null)).toEqual({ titulo: '', cuerpo: '' });
+    expect(formatearAvisoSistema(undefined)).toEqual({ titulo: '', cuerpo: '' });
+  });
+
+  it('el título abre con el emoji del tipo', () => {
+    expect(formatearAvisoSistema(aviso()).titulo).toMatch(/^⏰/);
+    expect(formatearAvisoSistema(aviso({ tipo: 'limite-excedido' })).titulo).toMatch(/^⚠️/);
+    expect(formatearAvisoSistema(aviso({ tipo: 'dia-de-pago' })).titulo).toMatch(/^💰/);
+    expect(formatearAvisoSistema(aviso({ tipo: 'prestamo-vencido' })).titulo).toMatch(/^🤝/);
+    expect(formatearAvisoSistema(aviso({ tipo: 'apartado-listo' })).titulo).toMatch(/^📦/);
+  });
+
+  it('un tipo desconocido cae al nombre, sin romper', () => {
+    const { titulo } = formatearAvisoSistema(aviso({ tipo: 'inventado' }));
+    expect(titulo).toBe('⏰ Arriendo');
+  });
+
+  it('un aviso sin nombre no deja el título colgando', () => {
+    const { titulo } = formatearAvisoSistema(aviso({ nombre: '', tipo: 'inventado' }));
+    expect(titulo).toBe('⏰ Un pendiente');
+  });
+});
+
+// ── COPY POR TIPO ────────────────────────────────────────────────
+
+describe('formatearAvisoSistema() - copy de compromisos', () => {
+  it('lo que vence hoy dice "vence hoy" y nombra el compromiso', () => {
+    const { titulo } = formatearAvisoSistema(aviso({ dias: 0 }));
     expect(titulo).toMatch(/hoy/i);
     expect(titulo).toContain('Arriendo');
   });
 
-  it('un compromiso que vence mañana - título dice "mañana"', () => {
-    const { titulo } = formatearMensajeNotificacion([compromiso({ diasRestantes: 1 })]);
-    expect(titulo).toMatch(/ma[ñn]ana/i);
+  it('lo que vence mañana dice "mañana"', () => {
+    expect(formatearAvisoSistema(aviso({ dias: 1 })).titulo).toMatch(/ma[ñn]ana/i);
   });
 
-  it('un compromiso que vence en N días - título contiene el número', () => {
-    const { titulo } = formatearMensajeNotificacion([compromiso({ diasRestantes: 3 })]);
+  it('lo que vence en N días dice el número', () => {
+    const { titulo } = formatearAvisoSistema(aviso({ dias: 3 }));
     expect(titulo).toContain('3');
     expect(titulo).toMatch(/días?/i);
   });
 
-  it('título de único compromiso empieza con emoji ⏰', () => {
-    const { titulo } = formatearMensajeNotificacion([compromiso()]);
-    expect(titulo).toMatch(/^⏰/);
+  it('lo vencido ayer se dice "ayer", no "hace 1 días"', () => {
+    const { titulo } = formatearAvisoSistema(aviso({ tipo: 'compromiso-vencido', dias: 1, sentido: 'atraso' }));
+    expect(titulo).toMatch(/ayer/i);
+    expect(titulo).not.toMatch(/1 días/);
   });
 
-  it('cuerpo de único compromiso menciona "Recordatorio"', () => {
-    const { cuerpo } = formatearMensajeNotificacion([compromiso()]);
+  it('lo vencido hace varios días dice cuántos', () => {
+    const { titulo } = formatearAvisoSistema(aviso({ tipo: 'compromiso-vencido', dias: 8, sentido: 'atraso' }));
+    expect(titulo).toMatch(/venció hace 8 días/i);
+  });
+});
+
+describe('formatearAvisoSistema() - copy del resto de fuentes', () => {
+  it('el tope excedido nombra la categoría', () => {
+    const { titulo } = formatearAvisoSistema(aviso({
+      tipo: 'limite-excedido', nombre: 'Restaurantes', monto: 250_000, dias: null,
+    }));
+    expect(titulo).toContain('Restaurantes');
+    expect(titulo).toMatch(/tope/i);
+  });
+
+  it('el tope cerca del límite dice el porcentaje que trae extra', () => {
+    const { titulo } = formatearAvisoSistema(aviso({
+      tipo: 'limite-alerta', nombre: 'Restaurantes', dias: null, extra: { porcentaje: 82 },
+    }));
+    expect(titulo).toContain('82%');
+  });
+
+  it('el día de pago habla del ingreso, no de un vencimiento', () => {
+    const { titulo } = formatearAvisoSistema(aviso({ tipo: 'dia-de-pago', nombre: 'Salario', dias: 0 }));
+    expect(titulo).toMatch(/hoy te llega/i);
+    expect(titulo).toContain('Salario');
+    expect(titulo).not.toMatch(/vence/i);
+  });
+
+  it('el apartado próximo habla de cuándo se necesita el dinero', () => {
+    const { titulo } = formatearAvisoSistema(aviso({ tipo: 'apartado-proximo', nombre: 'SOAT', dias: 3 }));
+    expect(titulo).toMatch(/en 3 días necesitas el dinero de SOAT/i);
+  });
+
+  it('el apartado listo es buena noticia, sin urgencia', () => {
+    const { titulo } = formatearAvisoSistema(aviso({ tipo: 'apartado-listo', nombre: 'SOAT', dias: null }));
+    expect(titulo).toMatch(/ya reuniste/i);
+  });
+
+  it('el préstamo vencido recuerda sin presionar: ni "debes" ni "cobra"', () => {
+    const { titulo } = formatearAvisoSistema(aviso({
+      tipo: 'prestamo-vencido', nombre: 'Juan', dias: 12, sentido: 'atraso',
+    }));
+    expect(titulo).toContain('Juan');
+    expect(titulo).not.toMatch(/cobra|debe|reclama|exige/i);
+  });
+});
+
+// ── CUERPO ───────────────────────────────────────────────────────
+
+describe('formatearAvisoSistema() - cuerpo', () => {
+  it('el cuerpo trae la cifra en juego', () => {
+    expect(formatearAvisoSistema(aviso()).cuerpo).toContain('$1.500.000');
+  });
+
+  it('con un aviso más, el cuerpo lo dice en singular', () => {
+    const { cuerpo } = formatearAvisoSistema(aviso(), 2);
+    expect(cuerpo).toMatch(/otro aviso/i);
+  });
+
+  it('con varios avisos más, el cuerpo dice cuántos', () => {
+    const { cuerpo } = formatearAvisoSistema(aviso(), 4);
+    expect(cuerpo).toMatch(/3 avisos más/i);
+  });
+
+  it('nunca lista los otros avisos por nombre', () => {
+    const { cuerpo } = formatearAvisoSistema(aviso(), 6);
+    expect(cuerpo).not.toContain('Arriendo');
+  });
+
+  it('sin cifra y sin más avisos, el cuerpo no queda vacío', () => {
+    const { cuerpo } = formatearAvisoSistema(aviso({ monto: null }), 1);
     expect(cuerpo).toMatch(/recordatorio/i);
   });
 
-  it('múltiples compromisos - título dice cuántos y usa ⏰', () => {
-    const proximos = [
-      compromiso({ id: 'c1', descripcion: 'Arriendo',  diasRestantes: 0 }),
-      compromiso({ id: 'c2', descripcion: 'Netflix',   diasRestantes: 1 }),
-      compromiso({ id: 'c3', descripcion: 'Internet',  diasRestantes: 2 }),
-    ];
-    const { titulo } = formatearMensajeNotificacion(proximos);
-    expect(titulo).toMatch(/^⏰/);
-    expect(titulo).toContain('3');
-  });
-
-  it('múltiples compromisos - cuerpo contiene nombres de los compromisos', () => {
-    const proximos = [
-      compromiso({ id: 'c1', descripcion: 'Arriendo', diasRestantes: 0 }),
-      compromiso({ id: 'c2', descripcion: 'Netflix',  diasRestantes: 1 }),
-    ];
-    const { cuerpo } = formatearMensajeNotificacion(proximos);
-    expect(cuerpo).toContain('Arriendo');
-    expect(cuerpo).toContain('Netflix');
-  });
-
-  it('cuando hay varios compromisos hoy - resumen dice "hoy"', () => {
-    const proximos = [
-      compromiso({ id: 'c1', descripcion: 'A', diasRestantes: 0 }),
-      compromiso({ id: 'c2', descripcion: 'B', diasRestantes: 0 }),
-    ];
-    const { titulo } = formatearMensajeNotificacion(proximos);
-    expect(titulo).toMatch(/hoy/i);
-  });
-
-  it('cuando hay varios compromisos mañana - resumen dice "mañana"', () => {
-    const proximos = [
-      compromiso({ id: 'c1', descripcion: 'A', diasRestantes: 1 }),
-      compromiso({ id: 'c2', descripcion: 'B', diasRestantes: 1 }),
-    ];
-    const { titulo } = formatearMensajeNotificacion(proximos);
-    expect(titulo).toMatch(/ma[ñn]ana/i);
-  });
-
-  it('más de 3 compromisos - cuerpo trunca y añade "y N más"', () => {
-    const proximos = Array.from({ length: 5 }, (_, i) =>
-      compromiso({ id: `c${i}`, descripcion: `Pago ${i}`, diasRestantes: 0 })
-    );
-    const { cuerpo } = formatearMensajeNotificacion(proximos);
-    expect(cuerpo).toMatch(/y \d+ más/);
-  });
-
-  it('exactamente 3 compromisos - cuerpo NO agrega "y N más"', () => {
-    const proximos = Array.from({ length: 3 }, (_, i) =>
-      compromiso({ id: `c${i}`, descripcion: `Pago ${i}`, diasRestantes: 0 })
-    );
-    const { cuerpo } = formatearMensajeNotificacion(proximos);
-    expect(cuerpo).not.toMatch(/y \d+ más/);
-  });
-
-  it('devuelve objeto con claves titulo y cuerpo', () => {
-    const result = formatearMensajeNotificacion([compromiso()]);
-    expect(result).toHaveProperty('titulo');
-    expect(result).toHaveProperty('cuerpo');
-    expect(typeof result.titulo).toBe('string');
-    expect(typeof result.cuerpo).toBe('string');
+  it('un total inválido se lee como un solo aviso', () => {
+    const { cuerpo } = formatearAvisoSistema(aviso(), 0);
+    expect(cuerpo).not.toMatch(/avisos? más|otro aviso/i);
   });
 });

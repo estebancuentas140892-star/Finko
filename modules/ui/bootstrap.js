@@ -19,7 +19,7 @@
  */
 
 import { loadData, initFlushOnHide } from '../core/storage.js';
-import { S, EventBus } from '../core/state.js';
+import { EventBus } from '../core/state.js';
 import { initShell, markActiveNav, initSidebarCollapse } from './shell.js';
 import { initRouter } from '../infra/router.js';
 import { initAcciones } from './actions.js';
@@ -111,9 +111,10 @@ if (faltaDesbloquear()) {
   _gatesTrasCandado();
 }
 
-// Verificar compromisos próximos y mostrar notificación si el usuario optó-in.
-// Se ejecuta después del primer render para no bloquear el arranque.
-verificarYNotificar(S.compromisos);
+// CFG.3a (ADR 066): recolectar los avisos del día con el motor único y mostrar
+// una notificación si el usuario optó-in y hay algo grave. Se ejecuta después
+// del primer render para no bloquear el arranque.
+verificarYNotificar();
 
 // PERF.7c: precalienta en idle el bundle memoizado de Análisis y el
 // historial completo de Movimientos, para que la primera navegación a esas
