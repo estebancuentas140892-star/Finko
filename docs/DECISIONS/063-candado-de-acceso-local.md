@@ -40,7 +40,7 @@ De ahi sale la pregunta que esta ADR responde: **el candado protege de que?** Si
 |---|---|
 | **Cifrar `fk_v1` de verdad** (PBKDF2 desde el PIN + AES-GCM sobre el blob) | Es la unica opcion que protegeria de un atacante con acceso al dispositivo, y aun asi un PIN de 4 digitos se rompe por fuerza bruta offline. A cambio: cada `save()` pasa a ser asincrono y cifrado (toca ADN 5), las migraciones dejan de poder leer el JSON (toca ADN 6), los 263 E2E que siembran `fk_v1` plano se caen todos, y olvidar el PIN pasa a significar perdida definitiva del historial sin ninguna via de rescate (no hay servidor, ADN 3). Coste enorme, promesa que el PIN de 4 digitos no puede sostener. Queda registrada como la direccion correcta **solo si** algun dia se decide contrasena larga y se acepta la perdida irreversible. |
 | **Patron de puntos** ademas del PIN | Segundo mecanismo, segunda UI de captura, segundo formato a validar y a testear, para la misma proteccion exacta (el patron es un PIN con otra piel, y su espacio de combinaciones tipico es menor). "Elegible por el usuario" no vale lo que cuesta cuando las dos opciones protegen igual. |
-| **Biometria (WebAuthn) en esta rebanada** | La huella o el rostro no entregan una credencial que la app pueda comparar contra un hash local sin un verificador; en PWA depende de `navigator.credentials` con soporte y UX que varian por navegador y por sistema operativo. Hay que verificarlo en el dispositivo real antes de prometerlo en una pantalla, mismo criterio de evidencia del [ADR 030](030-persistencia-diferir-rewrite-salvaguarda-cuota.md). Queda como rebanada aparte (CFG.5c), no como promesa. |
+| **Biometria (WebAuthn) en esta rebanada** | La huella o el rostro no entregan una credencial que la app pueda comparar contra un hash local sin un verificador; en PWA depende de `navigator.credentials` con soporte y UX que varian por navegador y por sistema operativo. Hay que verificarlo en el dispositivo real antes de prometerlo en una pantalla, mismo criterio de evidencia del [ADR 030](030-persistencia-diferir-rewrite-salvaguarda-cuota.md). Queda como rebanada aparte (CFG.5c), no como promesa. **Motivo corregido el 2026-08-13:** ver la nota al pie. |
 | **Contrasena de usuario** | No hay cuenta que autenticar sin resolver el [ADR 043](043-sincronizacion-multidispositivo-y-cuentas.md). Fuera de alcance por dependencia, no por criterio. |
 | **Gate antes de `renderAll()`**, para que la app nunca se pinte bloqueada | Obligaria a partir el arranque en dos caminos y a diferir `renderAll()` tras el desbloqueo, con `initLogros()`, novedades y notificaciones colgando de ese mismo condicional. El overlay opaco ya cumple el objetivo visible con una regla de CSS. Se documenta la limitacion: el DOM se pinta detras del candado, y quien tenga devtools lo ve, igual que ve `localStorage`. |
 
@@ -58,3 +58,11 @@ De ahi sale la pregunta que esta ADR responde: **el candado protege de que?** Si
 ## Implementacion
 
 Rebanadas en `board/configuracion.md`: **CFG.5a** (esta ADR, PIN local + gate), **CFG.5b** (re-autenticacion en acciones criticas), **CFG.5c** (viabilidad de biometria, spike antes de prometer).
+
+---
+
+## Nota del 2026-08-13 (CFG.5c): un motivo corregido, la decision intacta
+
+El spike de CFG.5c ([ADR 067](067-biometria-descartada-como-desbloqueo.md)) midio el ciclo completo de WebAuthn con un autenticador virtual de plataforma y **refuto el motivo tecnico** con el que esta ADR aparto la biometria: si existe un verificador local, es `crypto.subtle.verify()`, y valida la asercion en el navegador sin ningun servidor.
+
+Lo que no cambia: la biometria sigue fuera de Finko, ahora por decision definitiva y por otros motivos (no sube el techo de seguridad, la credencial vive fuera de `fk_v1` y convierte "Olvide mi PIN borra todo" en una trampa). El ADR 067 es el dueno de ese razonamiento y de las condiciones para reabrirlo.
