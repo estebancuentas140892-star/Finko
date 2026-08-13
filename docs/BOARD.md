@@ -44,13 +44,12 @@ Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (si
 
 ## Índice de pendientes
 
-Las 20 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+Las 19 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
 | INT.1g | Carril derecho de 320px desde 1.680px (diferida) | Transversal | baja (diferida) | sin sección candidata con contenido |
 | LIM.1c | Sugerir dónde y cuánto poner tope (bloqueada) | Límites | sin definir | ADR 044 (motor único de sugerencia) |
-| ANL.1c | Lectura del colapsable de detalle de Análisis | Análisis | baja | nada: ANL.1a cerrada |
 | CFG.2c | Reubicar lo fiscal: asistente en Ajustes + Análisis | Configuración | sin definir | CFG.2a |
 | CFG.2a | Auto-derivar ingresos brutos al monitor de renta | Configuración | sin definir | CFG.1a (cerrada) |
 | CFG.3 | Notificaciones inteligentes anticipatorias | Configuración | sin definir | nada; riesgo técnico a evaluar primero |
@@ -73,7 +72,7 @@ Las 20 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 
 ## Pendientes por sección
 
-> **Lente de la auditoría de UX/producto (2026-07-21).** Recorrido de toda la app simulando a un usuario colombiano real. Sus 7 patrones son criterio de priorización, no tareas, y explican casi toda la lista de abajo. **Cerrados:** P2 (trabajo manual uno por uno), P4 (ledger de solo lectura), P5 (módulos que no comparten datos con el saldo) y P3 editar sin destruir (EDIT.1 cerrada el 2026-08-04 en sus 4 secciones; MC.17f cerrada el 2026-08-12 cierra el caso distinto de deshacer una transferencia). **Abiertos:** P1 datos que la app ya tiene y vuelve a pedir (CFG.2a; la mitad `cuentaId` de MC.13e-2f ya cerró), P6 se informa pero no se acciona (motor único de sugerencia por categoría: LIM.1c / ANL.1 / [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md)), P7 un concepto con cuatro implementaciones (ARQ.1 y ARQ.2 cerradas el 2026-08-02, ver `contexto/transversal.md`).
+> **Lente de la auditoría de UX/producto (2026-07-21).** Recorrido de toda la app simulando a un usuario colombiano real. Sus 7 patrones son criterio de priorización, no tareas, y explican casi toda la lista de abajo. **Cerrados:** P2 (trabajo manual uno por uno), P4 (ledger de solo lectura), P5 (módulos que no comparten datos con el saldo) y P3 editar sin destruir (EDIT.1 cerrada el 2026-08-04 en sus 4 secciones; MC.17f cerrada el 2026-08-12 cierra el caso distinto de deshacer una transferencia). **Abiertos:** P1 datos que la app ya tiene y vuelve a pedir (CFG.2a; la mitad `cuentaId` de MC.13e-2f ya cerró), P6 se informa pero no se acciona (motor único de sugerencia por categoría: LIM.1c / [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md); **ANL.1 cerró completa el 2026-08-12** y cubrió la mitad "informar bien", no la de accionar, por decisión del [ADR 046](DECISIONS/046-analisis-interpreta-criterio-y-lenguaje.md) D3), P7 un concepto con cuatro implementaciones (ARQ.1 y ARQ.2 cerradas el 2026-08-02, ver `contexto/transversal.md`).
 >
 > **Alcance honesto del triaje:** se trió todo lo que el informe entregó enumerado. Su tabla "hallazgos por módulo" vino como vista filtrable y las fichas individuales no llegaron en texto: si Esteban quiere ese detalle triado uno por uno, hay que recuperarlo de la fuente.
 
@@ -94,10 +93,6 @@ AH.7a → [`board/ahorro.md`](board/ahorro.md)
 ### Límites de gasto (dominio `presupuesto`)
 
 LIM.1c → [`board/limites.md`](board/limites.md)
-
-### Análisis (dominio `analisis`)
-
-ANL.1c → [`board/analisis.md`](board/analisis.md)
 
 ### Configuración (dominio `config`)
 

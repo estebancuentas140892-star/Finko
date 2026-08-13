@@ -17,7 +17,7 @@ import {
   calcularComparacionCategorias, detectarPatronGastoSemanal,
   calcularEstadoRenta, detectarNudgesRenta, inferirEstadoDeclarante,
   repartirPorcentajes,
-  lecturaPatrimonio, lecturaTendencia, lecturaCategorias,
+  lecturaPatrimonio, lecturaTendencia, lecturaCategorias, lecturaComparacion,
 } from './logic.js';
 
 /**
@@ -1018,6 +1018,7 @@ function _renderComparacionCategorias(comparacion) {
     <section class="analisis__section" aria-labelledby="analisis-comparacion-title">
       <h3 class="analisis__section-title" id="analisis-comparacion-title">${icon('bar-chart')}Vs mes anterior</h3>
       <p class="analisis__desc">Comparación de gastos por categoría respecto al mes pasado.</p>
+      ${_renderLectura(lecturaComparacion(comparacion))}
       <p class="comparacion__delta ${deltaClase}">${deltaLabel}</p>
       ${highlights.length > 0 ? `<ul class="comparacion__highlights" aria-label="Cambios destacados">${hilightHtml}</ul>` : ''}
       <ul class="comparacion__lista" aria-label="Gastos por categoría">${filasHtml}</ul>

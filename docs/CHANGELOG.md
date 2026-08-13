@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(analisis): ANL.1c, lectura de la card "Vs mes anterior" · 2026-08-12
+
+Cierra **ANL.1 completa** (ANL.1a-c), última aplicación del [ADR 046](DECISIONS/046-analisis-interpreta-criterio-y-lenguaje.md) D3, sobre la unidad 5 del inventario. Ficha: [`contexto/analisis.md`](contexto/analisis.md).
+
+- **Qué faltaba con deltas y highlights ya en pantalla**: los dos hablan por categoría ("Mercado subió 20 %", "empezaste a gastar en X"), y ninguno respondía la pregunta del usuario que abre esa card: el mes en conjunto, ¿subió o bajó? `lecturaComparacion()` lo dice en una línea.
+- **Reusa el objeto que ya existía**: `calcularComparacionCategorias()` venía devolviendo `totalActual` y `totalAnterior` sin que nadie los comparara entre sí. Cero barridos nuevos sobre `S.gastos`, y la lectura viaja dentro del memo diferido de PERF.3, así que el colapsable sigue sin calcularse hasta que el usuario lo abre.
+- **Mismo margen de ruido del 10 % que `lecturaTendencia()`**, no un umbral nuevo: un vaivén chico no es un cambio de hábito. Sin mes anterior, lo dice en vez de callar (la card ya está en pantalla con sus filas; una lectura vacía ahí se leería como error).
+- **Las unidades 6 y 7 del inventario se revisaron y no se tocaron**, que era lo que la tarjeta pedía: `_renderPatronSemanal()` y `_renderHormigas()` ya derivan su frase del dato y cumplen D3. Reescribirlas habría sido trabajo sin hallazgo.
+- Sin CSS nueva (`.analisis-lectura` y `_renderLectura()` vienen de ANL.1a), sin regla R nueva, sin tocar el criterio neutro-nunca-rojo que IV.3 fijó en esta misma card ni la anatomía de fila del [ADR 055](DECISIONS/055-cuerpo-de-los-colapsables-de-analisis.md).
+- **Nota de proceso**: el código de esta tarea quedó *staged* sin commitear el 2026-08-12, y el commit `0c3aa1d` (que lleva su mensaje) se llevó el contenido de otra sesión en curso, sin un solo archivo de `analisis/`. Es la segunda vez que el árbol compartido cruza dos cierres: la primera fue ANL.1b/MT.6b en `2d1eca1`. Mitigación aplicada acá: `git add` con pathspec explícito y verificación de `git show --stat` después de commitear.
+- Tests: 5 unitarios nuevos en `analisis.test.js`. **4011/4011 unit** (los 5 ya venían contados en la medición de LIM.1b: su código estaba en el árbol sin commitear) + **264/264 E2E** (1 flaky en `a11y-forms.test.js`, modal de gasto fijo en Calendario, ajeno a esta tarea; verde al reintentar) + lint verdes. SW `finko-v518` → `finko-v519`.
+
 ### feat(limites): LIM.1b, los fijos no esenciales cuentan contra Estilo de vida · 2026-08-12
 
 Punto 8 del brief de LIM.1, con el catálogo que cerró el [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md) el 2026-07-13 (Streaming y Suscripciones, nada más; Gimnasio y Telefonía quedan esenciales por decisión explícita de Esteban). Fichas: [`contexto/limites.md`](contexto/limites.md), [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md).
@@ -69,7 +81,7 @@ Primera rebanada de **LIM.1**, la que ejecuta el D3 del [ADR 045](DECISIONS/045-
 
 ### feat(analisis): ANL.1b, titulares de Análisis en lenguaje corriente · 2026-08-12
 
-Tercera rebanada de la iniciativa **ANL.1**. Commit `<PENDIENTE>`. Ficha: [`contexto/analisis.md`](contexto/analisis.md).
+Tercera rebanada de la iniciativa **ANL.1**. Commit `2d1eca1`. Ficha: [`contexto/analisis.md`](contexto/analisis.md).
 
 - Ejecuta el [ADR 046](DECISIONS/046-analisis-interpreta-criterio-y-lenguaje.md) D2: los 5 titulares de la tabla de equivalencias pasan a lenguaje corriente, con el término técnico como secundario en la misma card, nunca eliminado.
 - `view.js`: "Score de salud" → "Salud de tu dinero" (secundaria nueva `.score-hero__sub`); "Patrimonio neto" → "Lo que realmente tienes" (`.patri-card__hint` ahora nombra el término técnico); "Activos"/"Pasivos" → "Lo que tienes"/"Lo que debes" (término técnico en `.patri-card__col-tech`); "Tendencia de gastos" → "Cómo cambia tu gasto"; "Por categoría" → "En qué gastas".

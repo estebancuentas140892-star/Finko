@@ -22,6 +22,7 @@ import {
   lecturaPatrimonio,
   lecturaTendencia,
   lecturaCategorias,
+  lecturaComparacion,
 } from '../../modules/dominio/analisis/logic.js';
 import { descuentaSaldo } from '../../modules/infra/bolsas.js';
 import { UVT, TOPES_RENTA_UVT } from '../../modules/core/constants.js';
@@ -2613,5 +2614,35 @@ describe('lecturaCategorias()', () => {
 
   it('calla si el segmento top no tiene nombre', () => {
     expect(lecturaCategorias([{ categoria: '', total: 100, pct: 100 }])).toBe('');
+  });
+});
+
+describe('lecturaComparacion()', () => {
+  const comp = (totalActual, totalAnterior) => ({
+    categorias: [{ cat: 'Mercado', actual: totalActual, anterior: totalAnterior, delta: totalActual - totalAnterior, deltaPct: 0, direccion: 'igual' }],
+    highlights: [],
+    totalActual,
+    totalAnterior,
+  });
+
+  it('calla sin categorias que comparar', () => {
+    expect(lecturaComparacion(null)).toBe('');
+    expect(lecturaComparacion({ categorias: [], totalActual: 0, totalAnterior: 0 })).toBe('');
+  });
+
+  it('calla si no hay mes anterior con qué comparar', () => {
+    expect(lecturaComparacion(comp(500_000, 0))).toBe('Todavía no tienes un mes anterior con qué comparar.');
+  });
+
+  it('dentro del margen de ruido del 10% dice que se mantuvo estable', () => {
+    expect(lecturaComparacion(comp(1_050_000, 1_000_000))).toBe('Tu gasto total se mantuvo estable frente al mes anterior.');
+  });
+
+  it('por encima del margen dice cuánto más gastó', () => {
+    expect(lecturaComparacion(comp(1_500_000, 1_000_000))).toBe('Gastaste 50% más que el mes anterior.');
+  });
+
+  it('por debajo del margen dice cuánto menos gastó', () => {
+    expect(lecturaComparacion(comp(600_000, 1_000_000))).toBe('Gastaste 40% menos que el mes anterior.');
   });
 });

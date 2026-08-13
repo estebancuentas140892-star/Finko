@@ -1,6 +1,6 @@
 # Tablero - Análisis
 
-> Revisado: 2026-08-11.
+> Revisado: 2026-08-12.
 
 > Satélite de [`BOARD.md`](../BOARD.md) (dominio `analisis`). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
 
@@ -16,12 +16,6 @@
 
 > **ANL.1b cerrada el 2026-08-12** (ADR 046 D2). Titulares de las 5 filas de la tabla de equivalencias, en `view.js`.
 
-#### ANL.1c - Lectura del colapsable de detalle
-- Prioridad  : baja
-- Estado     : lista para trabajar (ADR 046 D3 sobre las unidades 5 a 7 del inventario)
-- Área       : ambos
-- Objetivo   : la comparación vs mes anterior entrega deltas sin conclusión. Patrón semanal y hormigas ya interpretan: se revisan contra el criterio, no se reescriben.
-- Secciones  : Análisis
-- Archivos   : `modules/dominio/analisis/logic.js`, `modules/dominio/analisis/view.js`, `tests/unit/analisis.test.js`
-- Depende de : nada. Reutiliza `_renderLectura()` y el patrón que ANL.1a ya fundó
-- Modelo     : ver la skill `elegir-modelo`
+> **ANL.1c cerrada el 2026-08-12** (ADR 046 D3, unidad 5). `lecturaComparacion()` en la card "Vs mes anterior". Patrón semanal y hormigas se revisaron contra D3 y no se tocaron. **Con esto la iniciativa ANL.1 queda completa.**
+
+**Sin tarjetas pendientes en este dominio.** Lo que Análisis todavía debe, y no tiene tarjeta propia: el sexto bloque del layout (LG.2d, en `board/transversal.md`), lo fiscal de CFG.2c y los tres frentes que la auditoría de diseño dejó abiertos (ver `contexto/analisis.md`).

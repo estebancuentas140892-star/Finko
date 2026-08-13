@@ -566,6 +566,30 @@ export function lecturaCategorias(segmentos) {
   return `${cat} concentra el ${pct}% de tu gasto de este mes.`;
 }
 
+/**
+ * Lectura de la card "Vs mes anterior" (ANL.1c, ADR 046 D3): la comparación
+ * ya entrega deltas por categoría y highlights, pero ninguno dice si el total
+ * del mes, en conjunto, subió o bajó. Mismo margen de ruido del 10% que
+ * `lecturaTendencia`: un vaivén chico no es un cambio de hábito.
+ *
+ * @param {ReturnType<calcularComparacionCategorias>} comparacion
+ * @returns {string} Línea lista para imprimir, o '' si no hay base de comparación.
+ */
+export function lecturaComparacion(comparacion) {
+  if (!comparacion || !Array.isArray(comparacion.categorias) || comparacion.categorias.length === 0) return '';
+
+  const { totalActual, totalAnterior } = comparacion;
+  if (totalAnterior <= 0) return 'Todavía no tienes un mes anterior con qué comparar.';
+
+  const delta = totalActual - totalAnterior;
+  const pct   = Math.round((delta / totalAnterior) * 100);
+
+  if (Math.abs(pct) <= 10) return 'Tu gasto total se mantuvo estable frente al mes anterior.';
+  return pct > 0
+    ? `Gastaste ${pct}% más que el mes anterior.`
+    : `Gastaste ${Math.abs(pct)}% menos que el mes anterior.`;
+}
+
 // ── COMPARACIÓN DE CATEGORÍAS MES ACTUAL vs MES ANTERIOR (G.2) ───
 
 /**
