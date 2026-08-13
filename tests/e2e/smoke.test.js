@@ -4824,6 +4824,92 @@ test.describe('Lote con deudas y entrada desde Inicio (CAL.5b)', () => {
   });
 });
 
+// ── SUITE 12f-ter: pagos automáticos al abrir la app (PA.1a, ADR 052) ───────
+// El compromiso marcado como débito automático no se registra solo: al abrir,
+// Finko abre la hoja con lo vencido ya resuelto (monto, cuenta y fecha real) y
+// el usuario confirma de un toque. Lo que la cuenta no alcanza a cubrir llega
+// bloqueado y con el motivo escrito, nunca registrado a medias.
+
+test.describe('Pagos automáticos al abrir (PA.1a)', () => {
+  /**
+   * Dos débitos automáticos vencidos el día 1 sobre la misma cuenta de 500.000:
+   * el primero cabe (100.000), el segundo no (900.000). El orden importa: el
+   * saldo se consume en cascada.
+   */
+  async function sembrarAutomaticos(page) {
+    await page.addInitScript(() => {
+      const estado = {
+        version:   1,
+        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas: [{
+          id: 'cta-pa1-e2e', nombre: 'Ahorros PA1', tipo: 'ahorros',
+          banco: 'Bancolombia', saldo: 500000, activa: true,
+        }],
+        ingresos: [],
+        gastos:   [],
+        compromisos: [
+          {
+            id: 'auto-ok-e2e', tipo: 'fijo', descripcion: 'Netflix PA1',
+            monto: 100000, frecuencia: 'Mensual', diaPago: 1,
+            debitoAutomatico: true, cuentaDebitoId: 'cta-pa1-e2e',
+          },
+          {
+            id: 'auto-sin-saldo-e2e', tipo: 'fijo', descripcion: 'Arriendo PA1',
+            monto: 900000, frecuencia: 'Mensual', diaPago: 1,
+            debitoAutomatico: true, cuentaDebitoId: 'cta-pa1-e2e',
+          },
+        ],
+        metas: [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    });
+  }
+
+  test('la hoja se abre sola, confirma con la fecha real y descuenta la cuenta', async ({ page }) => {
+    await sembrarAutomaticos(page);
+    await page.goto('/');
+
+    // El modal cerrado sigue en el DOM con opacity 0 (contrato de modals.css),
+    // así que el estado se lee por `[data-open]`, no por visibilidad.
+    await page.waitForSelector('#modal-automaticos[data-open]', { timeout: 10_000 });
+    const hoja = page.locator('#modal-automaticos');
+    // Dos compromisos por los dos meses de la ventana del catch-up (ADR 052 D1).
+    await expect(hoja.locator('.lote-row')).toHaveCount(4);
+
+    // Solo lo que la cuenta cubre viene marcado; el resto llega bloqueado y explicado.
+    await expect(hoja.locator('[data-role="auto-total"]')).toContainText('$200.000');
+    await expect(hoja.locator('[data-role="auto-cta-texto"]')).toHaveText('Confirmar 2 pagos');
+    const bloqueada = hoja.locator('.lote-row--bloqueada');
+    await expect(bloqueada).toHaveCount(2);
+    await expect(bloqueada.first().locator('.lote-row__sub')).toContainText('le faltan');
+    await expect(hoja.locator('.form-hint--danger')).toContainText('no se pueden registrar');
+
+    await hoja.locator('[data-action="agenda-confirmar-automaticos"]').click();
+    await page.waitForSelector(modalCerrado('modal-automaticos'), { timeout: 5_000 });
+
+    // Cada gasto queda fechado el día de SU vencimiento, no hoy, y la cuenta baja.
+    const prefijoMes = hoyLocal().slice(0, 7);
+    await expect.poll(async () => page.evaluate(() => {
+      const s = JSON.parse(localStorage.getItem('fk_v1'));
+      const g = s.gastos.filter(x => x.compromisoId === 'auto-ok-e2e');
+      return { fechas: g.map(x => x.fecha).sort(), montos: g.map(x => x.monto), cuenta: s.cuentas[0].saldo, gastos: s.gastos.length };
+    }), { timeout: 5_000 }).toMatchObject({ montos: [100000, 100000], cuenta: 300000, gastos: 2 });
+
+    // El del mes en curso lleva el día 1 de este mes; el otro, el del mes anterior.
+    const fechas = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1'))
+      .gastos.map(g => g.fecha).sort());
+    expect(fechas[1]).toBe(`${prefijoMes}-01`);
+  });
+
+  test('sin nada vencido la hoja no aparece', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.goto('/');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+    await expect(page.locator('#modal-automaticos[data-open]')).toHaveCount(0);
+  });
+});
+
 // ── SUITE 12g: Gastos - gastos frecuentes y "Repetir" (TX.12) ────────────────
 // El gasto cotidiano (almuerzo, café, Uber) se repite; el formulario ofrece
 // chips derivados del historial que prellenan todo, y cada fila de la lista

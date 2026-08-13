@@ -17,6 +17,7 @@ import { icon, tejaCategoria } from '../../infra/icons.js';
 import { resolverMarca, tejaMarca } from '../../infra/marcas.js';
 import { FRECUENCIAS, CATEGORIAS_AGENDA, CATEGORIA_INGRESO_ICONO, ICONOS_CATEGORIA_PERSONALIZADA, iconoDeCategoriaGasto } from '../../core/constants.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
+import { renderBloqueDebitoAutomatico } from '../../infra/cuenta-helper.js';
 import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { LABEL_TIPO, ICONO_TIPO, calcularAbonosDelMes, estadoPagoMes } from '../compromisos/logic.js';
 import { eventosDelMes, eventosIngresosDelMes, eventosMetasDelMes, totalEventosDelMes, totalDia, tiposPresentesEnMes, totalesDelMes, pendientesDePagoDelMes } from './logic.js';
@@ -418,6 +419,92 @@ export function renderFormPagoLote(pendientes) {
       <button type="button" class="btn btn-primary" data-action="agenda-confirmar-lote">
         <svg class="icon" aria-hidden="true"><use href="#i-check-circle"/></svg>
         <span data-role="lote-cta-texto">Registrar pagos</span>
+      </button>
+    </div>`;
+}
+
+/**
+ * "5 de agosto" a partir de un 'YYYY-MM-DD'. Sin año a propósito: la ventana
+ * del catch-up es de dos meses (ADR 052 D1), así que el año no desambigua nada
+ * y alarga la fila. Reusa el catálogo `MONTHS` de esta misma vista en vez de
+ * pagar un `Intl.DateTimeFormat` por fila.
+ * @param {string} iso
+ * @returns {string}
+ */
+function _fechaCorta(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso ?? '');
+  if (!m) return '';
+  const mes = MONTHS[+m[2] - 1];
+  return mes ? `${+m[3]} de ${mes.toLowerCase()}` : '';
+}
+
+/**
+ * Subtítulo de una fila de la hoja de pagos automáticos: la fecha real del
+ * débito y, cuando la fila está bloqueada, por qué no se puede confirmar.
+ *
+ * @param {{fecha:string, cuentaNombre:string|null, bloqueo:string|null, falta:number}} it
+ * @returns {string}
+ */
+function _subFilaAutomatico(it) {
+  const cuando = `Venció el ${_fechaCorta(it.fecha)}`;
+  if (it.bloqueo === 'cuenta') {
+    return `${cuando} &middot; sin cuenta asignada: edítalo y elige de cuál sale`;
+  }
+  if (it.bloqueo === 'saldo') {
+    return `${cuando} &middot; a ${_esc(it.cuentaNombre ?? 'la cuenta')} le faltan ${f(it.falta)}`;
+  }
+  return `${cuando} &middot; ${_esc(it.cuentaNombre ?? 'tu cuenta')}`;
+}
+
+/**
+ * Cuerpo de la hoja "Pagos automáticos" (PA.1a, ADR 052 D1 y D2): lo que el
+ * banco debitó solo mientras la app estaba cerrada, listo para confirmar.
+ *
+ * Reusa el lenguaje visual del pago en lote (`lote-*`): es la misma operación
+ * vista desde el otro lado, y darle un componente propio sería vocabulario
+ * nuevo sin nada nuevo que decir. La diferencia real está en el intro (acá el
+ * usuario no eligió pagar: viene a revisar lo que ya pasó) y en la fila
+ * bloqueada, que explica qué falta en vez de dejar registrar a ciegas.
+ *
+ * Las filas bloqueadas van desmarcadas y deshabilitadas, nunca ocultas: el
+ * usuario tiene que enterarse de que ese débito no se pudo cubrir (esa es la
+ * alerta accionable que pedía el brief), no descubrirlo por ausencia.
+ *
+ * @param {Array<{id:string, descripcion:string, monto:number, fecha:string,
+ *   tipo:string, cuentaNombre:string|null, bloqueo:string|null, falta:number}>} items
+ * @returns {string}
+ */
+export function renderFormAutomaticos(items) {
+  const lista = items ?? [];
+
+  const filas = lista.map(it => `
+    <label class="lote-row${it.bloqueo ? ' lote-row--bloqueada' : ''}">
+      <input type="checkbox" class="lote-row__check"${it.bloqueo ? ' disabled' : ' checked'}
+             data-auto-id="${_esc(it.id)}" data-auto-fecha="${_esc(it.fecha)}"
+             data-lote-monto="${Number(it.monto) || 0}" />
+      <span class="lote-row__body">
+        <span class="lote-row__name">${_esc(it.descripcion || 'Sin nombre')}</span>
+        <span class="lote-row__sub">${_subFilaAutomatico(it)}</span>
+      </span>
+      <span class="lote-row__amount">${f(Number(it.monto) || 0)}</span>
+    </label>`).join('');
+
+  const bloqueadas = lista.filter(it => it.bloqueo).length;
+  const aviso = bloqueadas === 0 ? '' : `
+    <p class="form-hint form-hint--danger">${bloqueadas === 1
+      ? 'Uno de estos débitos no se puede registrar todavía. La fila dice qué falta.'
+      : `${bloqueadas} de estos débitos no se pueden registrar todavía. Cada fila dice qué falta.`}</p>`;
+
+  return `
+    <p class="lote-intro">Estos pagos se descuentan solos de tus cuentas y ya vencieron. Confírmalos para registrarlos con su fecha real, o desmarca los que tu banco no haya cobrado.</p>
+    <div class="lote-lista">${filas}</div>
+    ${aviso}
+    <p class="lote-total" data-role="auto-total" aria-live="polite"></p>
+    <div class="modal__footer modal__footer--principal">
+      <button type="button" class="btn btn-ghost" data-action="modal-close">Ahora no</button>
+      <button type="button" class="btn btn-primary" data-action="agenda-confirmar-automaticos">
+        <svg class="icon" aria-hidden="true"><use href="#i-check-circle"/></svg>
+        <span data-role="auto-cta-texto">Confirmar pagos</span>
       </button>
     </div>`;
 }
@@ -1047,6 +1134,8 @@ export function renderFormGastoFijo() {
       </div>
 
       <p class="form-hint form-hint--info" id="gfijo-banner" aria-live="polite">${textoBannerGastoFijo('Mensual', '')}</p>
+
+      ${renderBloqueDebitoAutomatico(S.cuentas ?? [], { id: 'gfijo-debito' })}
 
       <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>

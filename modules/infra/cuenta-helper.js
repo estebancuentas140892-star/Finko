@@ -96,6 +96,72 @@ export function renderSelectorCuenta(cuentas, { selectedId = null, label = '¿De
 }
 
 /**
+ * Bloque de captura del débito automático (PA.1a, ADR 052): el toggle "Se
+ * descuenta automáticamente" más el selector de la cuenta de la que sale,
+ * oculto mientras el toggle esté apagado.
+ *
+ * Vive en infra y no en un dominio porque lo usan dos formularios de dominios
+ * distintos (el gasto fijo en Agenda y la deuda en Compromisos) y ADN 10 impide
+ * que uno importe del otro. El contrato de `FormData` que produce es el que
+ * leen `validarCompromiso` y `normalizarCompromiso`: `debitoAutomatico` ('on' o
+ * ausente) y `cuentaDebitoId`.
+ *
+ * **La cuenta no se pre-selecciona**: no es una comodidad de pago (donde la de
+ * mayor saldo es un default razonable) sino un hecho del arreglo del usuario con
+ * su banco. Adivinarlo guardaría un dato que nadie eligió.
+ *
+ * Devuelve '' si no hay cuentas activas: sin cuenta no hay débito que preparar.
+ *
+ * @param {import('../core/state.js').Cuenta[]} cuentas
+ * @param {{ id?: string, activo?: boolean, selectedId?: string|null }} [opts]
+ *   `id` prefija los ids del DOM (dos formularios distintos, ninguno colisiona).
+ * @returns {string}
+ */
+export function renderBloqueDebitoAutomatico(cuentas, { id = 'debito-auto', activo = false, selectedId = null } = {}) {
+  const activas = (cuentas ?? []).filter(c => c.activa !== false);
+  if (activas.length === 0) return '';
+
+  return `
+      <div class="form-group">
+        <label class="toggle-row">
+          <span class="toggle">
+            <input type="checkbox" id="${_esc(id)}-check" name="debitoAutomatico"${activo ? ' checked' : ''} />
+            <span class="toggle__track" aria-hidden="true"></span>
+          </span>
+          <span class="toggle-row__text">
+            <span class="toggle-row__label">Se descuenta automáticamente de mi cuenta</span>
+            <span class="toggle-row__hint">Actívalo si tu banco lo debita solo cada vez que vence. Finko no registra el pago por su cuenta: al abrir la app te lo deja listo y tú lo confirmas de un toque.</span>
+          </span>
+        </label>
+      </div>
+      <div id="grupo-${_esc(id)}-cuenta"${activo ? '' : ' hidden'}>
+        ${renderSelectorCuenta(activas, {
+          label:          '¿De qué cuenta lo descuentan?',
+          name:           'cuentaDebitoId',
+          selectedId,
+          preseleccionar: false,
+        })}
+      </div>`;
+}
+
+/**
+ * Conecta el toggle de débito automático con su selector de cuenta, que arranca
+ * oculto, y sincroniza la visibilidad inicial (el caller puede haber marcado el
+ * checkbox al pre-rellenar un formulario de edición). No-op si el bloque no se
+ * renderizó (sin cuentas activas).
+ *
+ * @param {ParentNode} root Contenedor del formulario ya inyectado.
+ * @param {string} [id] El mismo `id` que se pasó a `renderBloqueDebitoAutomatico`.
+ */
+export function wireToggleDebitoAutomatico(root, id = 'debito-auto') {
+  const check = root?.querySelector(`#${id}-check`);
+  const grupo = root?.querySelector(`#grupo-${id}-cuenta`);
+  if (!check || !grupo) return;
+  grupo.hidden = !check.checked;
+  check.addEventListener('change', () => { grupo.hidden = !check.checked; });
+}
+
+/**
  * Teja de una tarjeta en el selector: la marca que mencione su descripción
  * ("Tarjeta Bancolombia"), y si no hay match, la teja de tipo de deuda. Misma
  * cadena que la card de Deudas, para que la tarjeta se vea igual en los dos

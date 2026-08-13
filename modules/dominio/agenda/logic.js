@@ -409,6 +409,70 @@ export function pendientesDePagoDelMes(eventos, gastos, prefijoMes, hoyISO) {
 }
 
 /**
+ * Meses hacia atrás que revisa el catch-up de pagos automáticos, además del mes
+ * en curso (ADR 052 D1): uno. Un débito que lleva dos meses sin registrarse ya
+ * no es catch-up, es historia que se revisa a mano en el calendario, y
+ * arrastrarla a cada apertura vuelve la hoja inservible.
+ */
+export const MESES_CATCHUP_AUTOMATICOS = 1;
+
+/**
+ * Débitos automáticos que ya vencieron y siguen sin registrarse (PA.1a,
+ * ADR 052 D1): la lista que alimenta la hoja "Pagos automáticos" al abrir la app.
+ *
+ * No es un motor nuevo: filtra los compromisos marcados con `debitoAutomatico`
+ * y recorre con ellos el mes en curso y los `mesesAtras` anteriores, aplicando
+ * en cada uno la MISMA regla del pago en lote (`pendientesDePagoDelMes`). Así
+ * la hoja nunca puede ofrecer un pago que el lote no ofrecería, y hereda gratis
+ * la aritmética de deudas (resto de la cuota, tope en el saldo) y el criterio
+ * temporal de BUG-015 (en el mes en curso, solo lo que ya venció).
+ *
+ * Igual que el lote, un compromiso aparece **una vez por mes** aunque caiga
+ * varias veces en él (un quincenal): el estado de pago es por mes, no por
+ * ocurrencia. `fecha` es la del vencimiento más antiguo sin cubrir de ese mes,
+ * que es con la que se registra el gasto (ADR 052 D2).
+ *
+ * @param {import('../../core/state.js').Compromiso[]} compromisos
+ * @param {Array<{compromisoId?:string, fecha?:string, monto?:number}>} gastos
+ * @param {string} hoyISO 'YYYY-MM-DD'.
+ * @param {number} [mesesAtras=MESES_CATCHUP_AUTOMATICOS] Meses previos a revisar.
+ * @returns {Array<{id:string, descripcion:string, monto:number, dia:number,
+ *   tipo:string, parcial:boolean, fecha:string, cuentaDebitoId:string|null}>}
+ *   Del vencimiento más antiguo al más reciente.
+ */
+export function debitosAutomaticosVencidos(compromisos, gastos, hoyISO, mesesAtras = MESES_CATCHUP_AUTOMATICOS) {
+  const mh = /^(\d{4})-(\d{2})-(\d{2})/.exec(hoyISO ?? '');
+  if (!mh || !Array.isArray(compromisos)) return [];
+
+  const automaticos = compromisos.filter(c => c?.debitoAutomatico === true && c.activo !== false);
+  if (automaticos.length === 0) return [];
+
+  const meses = Number.isInteger(mesesAtras) && mesesAtras >= 0 ? mesesAtras : MESES_CATCHUP_AUTOMATICOS;
+  const anioHoy = +mh[1];
+  const mesHoy  = +mh[2] - 1; // 0-indexed
+
+  const out = [];
+  for (let i = meses; i >= 0; i--) {
+    // `new Date(anio, mes - i, 1)` normaliza el cruce de año solo.
+    const inicio  = new Date(anioHoy, mesHoy - i, 1);
+    const anio    = inicio.getFullYear();
+    const mes     = inicio.getMonth();
+    const prefijo = `${anio}-${String(mes + 1).padStart(2, '0')}`;
+
+    const eventos = eventosDelMes(automaticos, anio, mes);
+    for (const p of pendientesDePagoDelMes(eventos, gastos, prefijo, hoyISO)) {
+      const comp = automaticos.find(c => c.id === p.id);
+      out.push({
+        ...p,
+        fecha:          `${prefijo}-${String(p.dia).padStart(2, '0')}`,
+        cuentaDebitoId: comp?.cuentaDebitoId ?? null,
+      });
+    }
+  }
+  return out;
+}
+
+/**
  * Busca el primer día con compromisos dentro de los próximos `diasMax` días
  * (sin incluir hoy). Útil para el mensaje "próximo vencimiento" cuando hoy
  * no tiene eventos.

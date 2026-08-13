@@ -1642,6 +1642,23 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* PA.1a: fila de pago automático que no se puede confirmar (sin cuenta o sin
+   saldo). Se ve, pero no invita: el usuario tiene que enterarse de que ese
+   débito quedó fuera, y el motivo lo dice su subtítulo. */
+.lote-row--bloqueada {
+  cursor: not-allowed;
+  border-color: var(--fk-border-subtle);
+  background: var(--fk-bg-surface);
+}
+
+.lote-row--bloqueada:hover,
+.lote-row--bloqueada:focus-within { border-color: var(--fk-border-subtle); }
+
+.lote-row--bloqueada .lote-row__name,
+.lote-row--bloqueada .lote-row__amount { color: var(--fk-text-secondary); }
+
+.lote-row--bloqueada .lote-row__sub { color: var(--fk-danger-text); }
+
 .lote-total {
   margin: var(--fk-space-4) 0 0;
   font-size: var(--fk-text-base);

@@ -19,7 +19,7 @@ import {
   CATEGORIA_DEUDA_PERSONAL_ICONO,
   ICONOS_CATEGORIA_PERSONALIZADA,
 } from '../../../core/constants.js';
-import { renderSelectorCuenta } from '../../../infra/cuenta-helper.js';
+import { renderSelectorCuenta, renderBloqueDebitoAutomatico } from '../../../infra/cuenta-helper.js';
 import { renderIconoPicker } from '../../../infra/icon-picker.js';
 
 // ── FORMULARIO MODAL: ABONAR A DEUDA (ADR 002) ───────────────────
@@ -323,6 +323,12 @@ export function renderFormDeuda(tipo, deuda = null) {
       </div>
 
       ${bloqueOrigen}
+
+      ${renderBloqueDebitoAutomatico(cuentasActivas, {
+        id:         'comp-debito',
+        activo:     modoEdit && deuda.debitoAutomatico === true,
+        selectedId: modoEdit ? (deuda.cuentaDebitoId ?? null) : null,
+      })}
 
       <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>

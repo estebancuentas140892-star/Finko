@@ -90,3 +90,44 @@ Lo que **DIS.11 dejó abierto**, con su medición: (1) **el alto del formulario 
 - 2026-07-10 (CAL.3): al navegar hacia Calendario desde otra sección (`hashchange`), si hoy tiene compromisos/ingresos y no hay ningún día ya seleccionado, el detalle se auto-abre sin click (`marcarEntradaSeccion()` arma un flag de un solo uso, consumido por el próximo `renderAgenda()`; no se dispara por re-renders de `state:change` ni por navegar meses/días). Se elimina la restricción "solo días con eventos son interactivos" en `_renderGrid()`: ahora TODOS los días del grid llevan `data-action="agenda-mostrar-dia"`, incluidos los vacíos (antes tenían `aria-disabled`/`tabindex="-1"` y no respondían al click); `.cal-day--inactive` (CSS que comunicaba "no clickeable") se eliminó por quedar sin uso. `_renderDetalleDia()` ya no cierra el panel cuando el día seleccionado no tiene eventos (antes `renderAgenda()` anulaba `_diaSeleccionado` en ese caso): ahora muestra "Sin compromisos ni ingresos este día" con el mismo encabezado y botón de cerrar, sin total ni lista. 8 tests nuevos en `tests/unit/agenda.test.js` (auto-select con/sin `marcarEntradaSeccion()`, no pisa selección manual previa, se consume una sola vez, día vacío clickeable, mensaje de estado vacío, toggle intacto en día vacío) + 3 tests E2E nuevos en `smoke.test.js` (navegación real vía `.nav-item[href="#agenda"]` auto-abre hoy con fixture cuyo `diaPago` se calcula en el navegador para no depender de la fecha de ejecución; `page.goto('/#agenda')` directo NO auto-abre nada, a propósito; seleccionar un día sin compromisos muestra el mensaje). 2307/2307 unit + 162/162 E2E verdes. **El preview local de este entorno no cargó** (limitación ya documentada); verificación real vía Playwright headless (no solo unit) en vez de captura manual en Chromium.
 - 2026-07-10 (IV.2c, ADR 031): `.cal-dot--fijo` (y `.cal-detail__icon--fijo`, `.vencidos-card__icon--fijo` en Inicio) pasan de `--fk-dom-presupuesto` a `--fk-dom-agenda`: resuelve la ambigüedad "amarillo = ¿fijo o límite?" que el ADR 031 diagnosticó (hallazgo 3), dejando el amarillo exclusivo de Límites. `.cal-detail__item--*` abandona `border-left` (franja de 3px, AG.7) y pasa a `background: color-mix(in srgb, var(--fk-dom-X) 8%, var(--fk-bg-elevated))`: el texto de la tarjeta es neutro (no del color del dominio), así que el 8% no compite con el hallazgo de IV.2a sobre texto coloreado (ese exige ~6%, este caso no aplica). Todos los `color:` de glifo en `.cal-dot--*`/`.cal-detail__icon--*` migraron a `-text` (mismo criterio de IV.2d: el crudo falla el umbral no textual 3:1 en tema claro para varios dominios). Nuevo `.cal-dot--apartado` (familia menta de Ahorro): antes `prioridades-card__dot` de un apartado en Inicio pedía prestado el color de "fijo" por error (bug real, corregido). E2E `smoke.test.js` "marca de color por tipo" actualizado de `borderLeftColor` a `backgroundColor`. Sin bump de schema. 2295/2295 unit + 159/159 E2E verdes. SW v343 → v344.
 - 2026-07-06 (CAL.2, leyenda dinámica): la leyenda bajo el calendario mostraba siempre las 4 entradas posibles (día de ingreso, gasto fijo, deuda entidad, deuda personal) aunque el usuario no tuviera registros de varias de ellas en el mes visible. Se agregó `tiposPresentesEnMes()` (nuevo, `agenda/logic.js`, puro): recorre el mapa de eventos del mes y devuelve solo los tipos presentes, en el orden canónico de la leyenda. `_renderLeyenda()` (`agenda/view.js`) pasó a recibir `eventos` y renderizar solo esas entradas (color, ícono y nomenclatura siguen siendo los oficiales `cal-dot--*`, sin presentación nueva); devuelve `''` si no hay ningún tipo presente (sin compromisos ni ingresos este mes, no se dibuja el contenedor). Primer análisis a fondo del dominio, ficha nueva. 10 tests nuevos en `tests/unit/agenda.test.js` (`tiposPresentesEnMes` + render dinámico de la leyenda) + 2 tests E2E nuevos/reescritos en `smoke.test.js` (con los 3 tipos presentes muestra los 3; sin nada, no dibuja la leyenda). 2243/2243 unit + 153/153 E2E verdes. SW v334 → v335.
+
+
+---
+
+## Pagos automáticos: débito automático simulado (dominio `agenda`)
+
+- **Objetivo**          : el compromiso que el banco debita solo (suscripción, cuota) se marca como tal, y al abrir la app Finko muestra lo que ya venció listo para confirmar de un toque, con su fecha real y su cuenta. Nunca registra sin confirmación.
+- **Estado actual**     : **PA.1a cerrada** (2026-08-13, [ADR 052](../DECISIONS/052-pagos-automaticos.md) D1/D2/D4): débitos de compromisos completos. Falta **PA.1b**, el crédito automático del ingreso fijo, sobre la misma hoja.
+- **Verificado contra** : PA.1a (2026-08-13).
+
+**Dónde vive**
+
+| Pieza | Archivo | Ancla | Línea |
+|---|---|---|---|
+| Campos del schema (v39) | `modules/core/state.js` | `Compromiso.debitoAutomatico`, `.cuentaDebitoId` | ~220 |
+| Lectura única de la marca (form u objeto guardado) | `modules/dominio/compromisos/logic/modelo.js` | `esDebitoAutomatico()` | ~68 |
+| Validación y normalización de los dos campos | `modules/dominio/compromisos/logic/modelo.js` | `validarCompromiso()`, `normalizarCompromiso()` | |
+| Bloque de captura compartido (toggle + selector de cuenta) | `modules/infra/cuenta-helper.js` | `renderBloqueDebitoAutomatico()`, `wireToggleDebitoAutomatico()` | ~98 |
+| Detección de vencidos sin registrar | `modules/dominio/agenda/logic.js` | `debitosAutomaticosVencidos()`, `MESES_CATCHUP_AUTOMATICOS` | ~440 |
+| Resolución contra cuentas (cuál paga, si alcanza) | `modules/dominio/agenda/index.js` | `_automaticosPendientes()` | |
+| Apertura al arrancar y confirmación | `modules/dominio/agenda/index.js` | `revisarDebitosAutomaticos()`, `_confirmarAutomaticos()` | |
+| Hoja de confirmación | `modules/dominio/agenda/view.js` | `renderFormAutomaticos()`, `_subFilaAutomatico()` | ~450 |
+| Modal contenedor | `index.html` | `#modal-automaticos` | ~1249 |
+
+**Recursos**: reusa las clases `lote-*` de `styles/components/config.css` (misma operación vista desde el otro lado) más `.lote-row--bloqueada`, y `form-hint--danger` para el aviso.
+
+**Dependencias y relaciones**: `debitosAutomaticosVencidos()` compone `eventosDelMes` + `pendientesDePagoDelMes` del mismo archivo, así que hereda la aritmética de deudas de CAL.5b y la regla temporal de BUG-015. El registro reusa `_registrarPagosCompromisos()` (el mismo del lote y del pago individual), que a su vez usa `infra/pago-compromiso.js`. `bootstrap.js` llama `revisarDebitosAutomaticos()` dentro de `_gatesTrasCandado()`, detrás del candado, el gate legal y las novedades.
+
+**Riesgos**:
+
+- **Un compromiso aparece una vez por mes, no una por ocurrencia**: lo hereda de `pendientesDePagoDelMes` (el estado de pago es por mes). Un fijo Quincenal automático que cayó dos veces en el mes se confirma con UN movimiento, no dos. Cambiar eso obliga a cambiar antes el criterio del lote, no solo esta función.
+- **El saldo se consume en cascada dentro de `_automaticosPendientes()`**, en orden de vencimiento. Cambiar el orden de las filas cambia cuál queda bloqueada.
+- **La hoja no se apila sobre otro overlay**: si el gate legal o las novedades quedaron abiertos, no se abre y espera a la siguiente apertura. Es deliberado (ADR 052 D1), no un fallo de arranque.
+- **La ventana es de dos meses** (`MESES_CATCHUP_AUTOMATICOS = 1` más el mes en curso). Lo más viejo no reaparece nunca en la hoja: se registra a mano desde el Calendario.
+- **La cuenta del débito no se pre-selecciona en el formulario** (`preseleccionar: false`): es un hecho del arreglo con el banco, no una comodidad de pago. Si alguien la pre-selecciona "para ahorrar un clic", guarda un dato que el usuario no eligió.
+
+**Cambios pendientes**: PA.1b (crédito automático del ingreso fijo). Las alertas de "sin saldo" viven solo dentro de la hoja: llevarlas al motor de notificaciones depende de CFG.3.
+
+**Cambios realizados**:
+
+- 2026-08-13 (**PA.1a**, ADR 052): captura en los formularios de gasto fijo y de deuda, `debitosAutomaticosVencidos()`, hoja `#modal-automaticos` al abrir, registro con la fecha real del vencimiento y bloqueo explicado por falta de saldo o de cuenta. Schema v38 → v39 (migración no-op). Ver CHANGELOG.

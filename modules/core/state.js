@@ -217,6 +217,17 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  *                                       adelante sin que abonos posteriores lo afecten.
  *                                       Solo presente junto con cuentaOrigenId.
  *
+ * @property {boolean} [debitoAutomatico] PA.1a (ADR 052 D2). true cuando el banco
+ *                                       descuenta este pago solo. Finko NO lo
+ *                                       registra por su cuenta: al abrir, la hoja
+ *                                       de pagos automáticos lo deja listo y el
+ *                                       usuario confirma de un toque. Ausente = false.
+ * @property {string|null} [cuentaDebitoId] FK a Cuenta.id (PA.1a). Cuenta de la que
+ *                                       sale el débito automático. Solo tiene sentido
+ *                                       junto a `debitoAutomatico`; sin ella la hoja
+ *                                       muestra la fila bloqueada en vez de adivinar
+ *                                       una cuenta (ADN 11: no inventar datos del usuario).
+ *
  * @property {number}  [cupoTotal]       COP (ADR 051 D1). Cupo aprobado de una
  *                                       tarjeta de crédito (categoria='Tarjeta de
  *                                       crédito'). Discriminador de "tarjeta operable":

@@ -1,8 +1,8 @@
 # ADR 052 - Pagos y créditos automáticos (débito automático simulado)
 
-**Estado:** **Abierta** (las dos decisiones de filosofía siguen sin tomar). No implementar nada de este ADR. La secuencia previa sí está decidida, ver D0. Tarjeta de seguimiento: **PA.1** en [BOARD.md](../BOARD.md).
-**Fecha:** 2026-07-24
-**Autores:** Esteban (producto, brief "Integración Deudas/Cuentas/Pagos automáticos" y brief de Mis Cuentas, ambos del 2026-07-08), Claude Opus 5 (triaje y redacción)
+**Estado:** **Aceptada** (2026-08-13). D1 y D2 resueltas; ver también D4, que fija el alcance de la primera rebanada. Tarjeta de seguimiento: **PA.1** en [BOARD.md](../BOARD.md).
+**Fecha:** 2026-07-24. **Resuelta:** 2026-08-13.
+**Autores:** Esteban (producto, brief "Integración Deudas/Cuentas/Pagos automáticos" y brief de Mis Cuentas, ambos del 2026-07-08; delega la decisión de D1 y D2 el 2026-08-13), Claude Opus 5 (triaje, redacción y decisión delegada)
 **Relación:** consume el motor de vencimientos del [ADR 041](041-motor-vencimientos-y-distribucion-v2.md); no se construye un segundo motor. Sus alertas se conectarían al motor único de notificaciones de CFG.3 cuando exista. La restricción de fondo es la ADN 2 y 3 (offline-first, sin servidor).
 
 ---
@@ -29,21 +29,39 @@ Esta tarjeta **sigue viva y no fue absorbida** por CAL.5a.
 
 ---
 
-## D1. Cómo se ejecuta un pago "a la fecha" sin servidor (ABIERTA)
+## D1. El catch-up se ejecuta al abrir y se comunica como una hoja de revisión (RESUELTA)
 
-**En una PWA offline sin servidor no existe "ejecutar a la fecha".** Nadie corre nada mientras la app está cerrada. El procesamiento real sería **catch-up al abrir**: al arrancar, Finko procesaría los débitos vencidos desde la última apertura.
+**En una PWA offline sin servidor no existe "ejecutar a la fecha".** Nadie corre nada mientras la app está cerrada. El procesamiento real es **catch-up al abrir**: al arrancar, Finko mira qué débitos automáticos vencieron y siguen sin registrarse.
 
-La decisión pendiente es **cómo se le comunica eso al usuario** sin que la app parezca rota ni mentirosa. Alguien que abre la app el día 20 vería aparecer de golpe movimientos fechados los días 5, 12 y 18. Si no se explica, parece un error; si se explica mal, parece que la app hizo cosas a sus espaldas.
+**Decisión:** el catch-up **no escribe nada**. Al abrir, y detrás de los gates existentes (candado, aceptación legal, novedades), Finko abre una hoja titulada "Pagos automáticos" que lista cada débito vencido con su fecha real, su monto y la cuenta de la que sale, y pide una sola confirmación para registrarlos todos. Nada aparece de golpe en el ledger: lo que el usuario ve primero es la lista, no el resultado.
+
+**Ventana del catch-up: el mes en curso y el anterior.** Más atrás no se ofrece. Un débito que lleva dos meses sin registrarse ya no es catch-up, es historia que el usuario debe revisar a mano en el Calendario, y arrastrarla a la hoja de cada apertura la vuelve inservible.
+
+**Por qué así:** el problema que planteaba la decisión ("movimientos fechados el 5, el 12 y el 18 aparecen de golpe") desaparece si nunca aparecen solos. La hoja es la explicación, no un aviso posterior a un hecho consumado.
+
+**Si otro overlay está abierto** (gate legal, novedades, candado), la hoja no se apila: espera a la siguiente apertura. No se pierde nada, porque no había nada escrito.
 
 ---
 
-## D2. Registrar un movimiento que el usuario no confirmó (ABIERTA)
+## D2. Finko no registra un movimiento que el usuario no confirmó (RESUELTA)
 
-Es la decisión de fondo. Finko registraría movimientos **sin confirmación del usuario**, y el débito real en el banco **puede fallar o diferirse**. El resultado sería divergencia entre lo que Finko afirma y lo que pasó de verdad, que es justo lo que el producto promete no hacer.
+**Decisión: no se registra nada sin confirmación.** Lo automático es la **preparación**, no la escritura: Finko sabe qué venció, cuánto, de qué cuenta sale y con qué fecha, y lo deja listo para confirmar de un toque. El usuario nunca teclea el monto, la cuenta ni la fecha, y Finko nunca afirma un movimiento que no ocurrió.
 
-Opciones que el triaje dejó anotadas, ninguna elegida: **confirmación diferida** (Finko registra y luego pregunta), o un **estado intermedio explícito** del tipo "registrado automáticamente, confírmalo", que separa lo que la app supone de lo que el usuario verificó.
+**Alternativa rechazada: registrar con estado intermedio** ("registrado automáticamente, confírmalo"). Obligaría a cada consumidor de `S.gastos` (Movimientos, Análisis, ejecutado de Límites, patrimonio, logros, presupuestos) a decidir si un movimiento sin confirmar cuenta o no: es un cambio de invariante transversal, con superficie de error en toda la app, **a cambio de ahorrar un toque**. Y ahorra solo un toque porque, por D1, la ejecución ocurre igual al abrir la app: el usuario ya está ahí mirando.
 
-La restricción que enmarca la decisión es la filosofía declarada del producto: **Finko refleja la realidad, no la inventa.**
+**Alternativa rechazada: confirmación diferida** (registrar y preguntar después). Misma divergencia que la anterior durante la ventana de duda, sin el estado explícito que al menos la señalizaba.
+
+**Consecuencia de diseño:** la fecha del gasto es la del vencimiento real (el 5, no hoy), y el descuento de la cuenta ocurre al confirmar. Es el mismo criterio ya escrito en `_marcarPagadoGastoFijo` (Agenda): el saldo de una cuenta es un valor de hoy, no un histórico.
+
+**Sin saldo suficiente no se ofrece el registro.** La fila queda bloqueada, nombra la cuenta y lo que falta, y el resto de los débitos sí se puede confirmar. Es lo que ya pedía el brief y encaja con la decisión: Finko no simula un débito que el banco no pudo hacer.
+
+---
+
+## D4. Alcance de la primera rebanada: débitos primero, créditos después (RESUELTA)
+
+D3 fija que débito y crédito comparten criterio, no que se implementen el mismo día. La primera rebanada (**PA.1a**) entrega el **débito automático de compromisos** completo (captura, catch-up, hoja, registro, bloqueo por saldo); el **crédito automático del ingreso fijo** entra en **PA.1b** reusando la misma hoja y el mismo criterio de confirmación.
+
+**Por qué en ese orden:** el débito es el caso que el brief describe con más detalle y el que ya tiene motor, aritmética de reparto y flujo de registro escritos (`vencimientos.js`, `pago-compromiso.js`, el lote de CAL.5a). El crédito necesita además decidir qué colección recibe el abono recurrente, que es una pregunta propia y no debe contaminar la rebanada del débito.
 
 ---
 
@@ -76,8 +94,8 @@ El mismo ADR cubre el **crédito automático del ingreso fijo** que pide el brie
 
 ---
 
-## Qué falta para cerrarlo
+## Rebanadas
 
-1. **Resolver D1**: cómo se comunica el catch-up al abrir la app.
-2. **Resolver D2**: si Finko registra sin confirmar, y con qué estado intermedio si lo hace.
-3. Aprobación explícita de Esteban antes de la primera rebanada de implementación.
+1. **PA.1a** (cerrada 2026-08-13): débito automático de compromisos. Campos `debitoAutomatico` y `cuentaDebitoId` en `Compromiso` (schema v39), captura en el formulario de gasto fijo y en el de deuda, detección de vencidos en `agenda/logic.js`, hoja de confirmación al abrir y registro con la fecha real del vencimiento.
+2. **PA.1b**: crédito automático del ingreso fijo, sobre la misma hoja y el mismo criterio de D2.
+3. **PA.1c** (opcional, depende de CFG.3): llevar el aviso de "sin saldo" al motor único de notificaciones cuando exista.

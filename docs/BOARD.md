@@ -1,6 +1,6 @@
 # Tablero - Finko Claude
 
-> Revisado: 2026-08-12.
+> Revisado: 2026-08-13.
 
 > Tablero Kanban de trabajo pendiente. Reemplaza a `TASKS.md` y `ROADMAP.md` (retirados 2026-07-02, ver [CHANGELOG](CHANGELOG.md)).
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
@@ -59,7 +59,7 @@ Las 17 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | P4 del ADR 033 + cola de diseño |
 | IV.4 | Iconografía dirigida post-color | Transversal | media | diseños de Esteban (avalancha + bola de nieve) |
 | LG.2d | Mudanza de la vitrina a Análisis + tarjeta en Inicio | Transversal | media | nada: ADR 046 D4 reservó el bloque en Análisis |
-| PA.1 | Pagos y créditos automáticos (débito automático simulado) | Transversal | media-alta | ADR 041 (motor); ADR 052 (Abierta) |
+| PA.1b | Crédito automático del ingreso fijo | Transversal | media-alta | ADR 052 D4 (Aceptada); PA.1a cerrada |
 | A.5 | Dominio custom en Vercel | Mantenimiento | baja | que el usuario tenga el dominio registrado |
 | E.2-2027 | Actualizar SMMLV + UVT a valores 2027 | Mantenimiento | alta (enero 2027) | publicación oficial de los decretos 2027 |
 | E.3 | Verificar GMF y otras tasas si hay reforma tributaria | Mantenimiento | baja | que ocurra una reforma |
@@ -94,7 +94,7 @@ CFG.3, CFG.4, CFG.5b, CFG.5c, CFG.6 → [`board/configuracion.md`](board/configu
 
 ## Transversal (afecta varias secciones)
 
-INT.1a a INT.1h, PERF.5, DV.2d, IV.4, LG.2d, PA.1 → [`board/transversal.md`](board/transversal.md)
+INT.1a a INT.1h, PERF.5, DV.2d, IV.4, LG.2d, PA.1b → [`board/transversal.md`](board/transversal.md)
 
 ---
 

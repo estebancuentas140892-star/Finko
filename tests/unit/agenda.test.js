@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { eventosDelMes, eventosIngresosDelMes, eventosMetasDelMes, totalEventosDelMes, totalDia, eventosDeHoy, eventosEnProximos, tiposPresentesEnMes, totalesDelMes, pendientesDePagoDelMes } from '../../modules/dominio/agenda/logic.js';
-import { renderFormGastoFijo, renderFormPagoLote, textoBannerGastoFijo, renderAgenda, mostrarDia, navegarMes, resetearVistaAlMesActual, marcarEntradaSeccion, resumenMesVisible, diaSeleccionado } from '../../modules/dominio/agenda/view.js';
+import { eventosDelMes, eventosIngresosDelMes, eventosMetasDelMes, totalEventosDelMes, totalDia, eventosDeHoy, eventosEnProximos, tiposPresentesEnMes, totalesDelMes, pendientesDePagoDelMes, debitosAutomaticosVencidos } from '../../modules/dominio/agenda/logic.js';
+import { renderFormGastoFijo, renderFormPagoLote, renderFormAutomaticos, textoBannerGastoFijo, renderAgenda, mostrarDia, navegarMes, resetearVistaAlMesActual, marcarEntradaSeccion, resumenMesVisible, diaSeleccionado } from '../../modules/dominio/agenda/view.js';
 import { S } from '../../modules/core/state.js';
 import { CATEGORIAS_AGENDA, CATEGORIA_AGENDA_ICONO } from '../../modules/core/constants.js';
 
@@ -2369,5 +2369,127 @@ describe('renderFormPagoLote (CAL.5a)', () => {
       { id: 'a', descripcion: 'Arriendo', monto: 900_000, dia: 5, tipo: 'fijo', parcial: false },
     ]);
     expect(document.querySelector('.lote-intro').textContent).not.toContain('saldo');
+  });
+});
+
+// ── PAGOS AUTOMÁTICOS (PA.1a, ADR 052) ───────────────────────────
+
+describe('debitosAutomaticosVencidos (PA.1a)', () => {
+  const auto = (overrides = {}) => compromisoBase({
+    debitoAutomatico: true,
+    cuentaDebitoId:   'cta1',
+    ...overrides,
+  });
+
+  it('devuelve [] sin hoyISO válido o sin lista', () => {
+    expect(debitosAutomaticosVencidos([auto()], [], '')).toEqual([]);
+    expect(debitosAutomaticosVencidos(null, [], '2026-08-20')).toEqual([]);
+  });
+
+  it('ignora los compromisos sin la marca y los inactivos', () => {
+    const lista = [
+      compromisoBase({ id: 'manual' }),
+      auto({ id: 'apagado', debitoAutomatico: false }),
+      auto({ id: 'inactivo', activo: false }),
+    ];
+    expect(debitosAutomaticosVencidos(lista, [], '2026-08-20')).toEqual([]);
+  });
+
+  it('trae el vencido del mes en curso con su fecha real y su cuenta', () => {
+    const r = debitosAutomaticosVencidos([auto()], [], '2026-08-20', 0);
+    expect(r).toHaveLength(1);
+    expect(r[0]).toMatchObject({
+      id: 'c1', monto: 1_500_000, fecha: '2026-08-05', cuentaDebitoId: 'cta1', tipo: 'fijo',
+    });
+  });
+
+  it('no trae lo que aún no vence en el mes en curso', () => {
+    expect(debitosAutomaticosVencidos([auto({ diaPago: 25 })], [], '2026-08-20', 0)).toEqual([]);
+  });
+
+  it('no trae lo que ya está registrado ese mes', () => {
+    const gastos = [{ compromisoId: 'c1', fecha: '2026-08-05', monto: 1_500_000 }];
+    expect(debitosAutomaticosVencidos([auto()], gastos, '2026-08-20', 0)).toEqual([]);
+  });
+
+  it('mira el mes anterior por defecto y lo pone primero', () => {
+    const r = debitosAutomaticosVencidos([auto()], [], '2026-08-20');
+    expect(r).toEqual(debitosAutomaticosVencidos([auto()], [], '2026-08-20', 1));
+    expect(r.map(x => x.fecha)).toEqual(['2026-07-05', '2026-08-05']);
+  });
+
+  it('con mesesAtras=0 solo mira el mes en curso', () => {
+    const gastos = [{ compromisoId: 'c1', fecha: '2026-08-05', monto: 1_500_000 }];
+    expect(debitosAutomaticosVencidos([auto()], gastos, '2026-08-20', 0)).toEqual([]);
+  });
+
+  it('cruza el año hacia atrás sin inventar fechas', () => {
+    const r = debitosAutomaticosVencidos([auto()], [], '2026-01-10', 1);
+    expect(r.map(x => x.fecha)).toEqual(['2025-12-05', '2026-01-05']);
+  });
+
+  it('una deuda trae lo que falta de la cuota, no la cuota completa', () => {
+    const deuda = auto({
+      id: 'd1', tipo: 'deuda-entidad', descripcion: 'Visa',
+      monto: undefined, cuotaMensual: 300_000, saldoTotal: 2_000_000,
+    });
+    const gastos = [{ compromisoId: 'd1', fecha: '2026-08-05', monto: 100_000 }];
+    const r = debitosAutomaticosVencidos([deuda], gastos, '2026-08-20', 0);
+    expect(r).toHaveLength(1);
+    expect(r[0].monto).toBe(200_000);
+    expect(r[0].parcial).toBe(true);
+  });
+
+  it('sin cuenta asignada igual aparece, con cuentaDebitoId null', () => {
+    const r = debitosAutomaticosVencidos([auto({ cuentaDebitoId: null })], [], '2026-08-20', 0);
+    expect(r[0].cuentaDebitoId).toBeNull();
+  });
+});
+
+describe('renderFormAutomaticos (PA.1a)', () => {
+  const item = (overrides = {}) => ({
+    id: 'c1', descripcion: 'Arriendo', monto: 900_000, fecha: '2026-08-05',
+    tipo: 'fijo', cuentaNombre: 'Ahorros', bloqueo: null, falta: 0,
+    ...overrides,
+  });
+
+  it('pinta una fila marcada por débito, con su fecha real y su cuenta', () => {
+    document.body.innerHTML = renderFormAutomaticos([item()]);
+    const check = document.querySelector('.lote-row__check');
+    expect(check.checked).toBe(true);
+    expect(check.disabled).toBe(false);
+    expect(check.dataset.autoId).toBe('c1');
+    expect(check.dataset.autoFecha).toBe('2026-08-05');
+    expect(document.querySelector('.lote-row__sub').textContent).toBe('Venció el 5 de agosto · Ahorros');
+  });
+
+  it('la fila sin saldo queda bloqueada, desmarcada y dice cuánto falta', () => {
+    document.body.innerHTML = renderFormAutomaticos([item({ bloqueo: 'saldo', falta: 100_000 })]);
+    const check = document.querySelector('.lote-row__check');
+    expect(check.disabled).toBe(true);
+    expect(check.checked).toBe(false);
+    expect(document.querySelector('.lote-row--bloqueada')).not.toBeNull();
+    expect(document.querySelector('.lote-row__sub').textContent).toContain('le faltan');
+    expect(document.querySelector('.lote-row__sub').textContent).toContain('100.000');
+  });
+
+  it('la fila sin cuenta explica que hay que elegirla', () => {
+    document.body.innerHTML = renderFormAutomaticos([item({ bloqueo: 'cuenta', cuentaNombre: null })]);
+    expect(document.querySelector('.lote-row__sub').textContent).toContain('sin cuenta asignada');
+  });
+
+  it('el aviso de bloqueadas solo aparece si hay alguna', () => {
+    document.body.innerHTML = renderFormAutomaticos([item()]);
+    expect(document.querySelector('.form-hint--danger')).toBeNull();
+
+    document.body.innerHTML = renderFormAutomaticos([item(), item({ id: 'c2', bloqueo: 'saldo', falta: 1 })]);
+    expect(document.querySelector('.form-hint--danger').textContent).toContain('no se puede registrar');
+  });
+
+  it('el botón lleva la acción de la hoja y sus slots vivos', () => {
+    document.body.innerHTML = renderFormAutomaticos([item()]);
+    expect(document.querySelector('[data-action="agenda-confirmar-automaticos"]')).not.toBeNull();
+    expect(document.querySelector('[data-role="auto-cta-texto"]')).not.toBeNull();
+    expect(document.querySelector('[data-role="auto-total"]')).not.toBeNull();
   });
 });

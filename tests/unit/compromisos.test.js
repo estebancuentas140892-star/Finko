@@ -10,6 +10,7 @@ import {
   nivelAlertaMora,
   validarCompromiso,
   normalizarCompromiso,
+  esDebitoAutomatico,
   filtrarDeudasPagables,
   simularPagoDeuda,
   simularEstrategiaPago,
@@ -4631,5 +4632,70 @@ describe('renderListaCompromisos() - tarjeta de deuda D.16d', () => {
     S.compromisos = [deudaCard()];
     renderListaCompromisos();
     expect(document.getElementById('compromisos-nueva-deuda').hidden).toBe(false);
+  });
+});
+
+// ── DÉBITO AUTOMÁTICO (PA.1a, ADR 052) ────────────────────────────
+
+describe('esDebitoAutomatico() (PA.1a)', () => {
+  it('acepta el "on" del checkbox y el true del compromiso guardado', () => {
+    expect(esDebitoAutomatico({ debitoAutomatico: 'on' })).toBe(true);
+    expect(esDebitoAutomatico({ debitoAutomatico: true })).toBe(true);
+  });
+
+  it('todo lo demás es no', () => {
+    expect(esDebitoAutomatico({})).toBe(false);
+    expect(esDebitoAutomatico(null)).toBe(false);
+    expect(esDebitoAutomatico({ debitoAutomatico: 'off' })).toBe(false);
+    expect(esDebitoAutomatico({ debitoAutomatico: false })).toBe(false);
+  });
+});
+
+describe('validarCompromiso() - débito automático (PA.1a)', () => {
+  it('exige la cuenta cuando el débito automático está activo', () => {
+    const errores = validarCompromiso({ ...datosFormValidos, debitoAutomatico: 'on' });
+    expect(errores).toContain('Elige la cuenta de la que sale el débito automático.');
+  });
+
+  it('con cuenta elegida no protesta', () => {
+    const errores = validarCompromiso({
+      ...datosFormValidos, debitoAutomatico: 'on', cuentaDebitoId: 'cta1',
+    });
+    expect(errores).toEqual([]);
+  });
+
+  it('sin débito automático la cuenta no hace falta', () => {
+    expect(validarCompromiso(datosFormValidos)).toEqual([]);
+  });
+});
+
+describe('normalizarCompromiso() - débito automático (PA.1a)', () => {
+  it('guarda la marca y la cuenta cuando el toggle viene activo', () => {
+    const r = normalizarCompromiso({
+      ...datosFormValidos, debitoAutomatico: 'on', cuentaDebitoId: 'cta1',
+    });
+    expect(r.debitoAutomatico).toBe(true);
+    expect(r.cuentaDebitoId).toBe('cta1');
+  });
+
+  it('sin toggle escribe false y null explícitos, para que editar() los limpie', () => {
+    const r = normalizarCompromiso(datosFormValidos);
+    expect(r.debitoAutomatico).toBe(false);
+    expect(r.cuentaDebitoId).toBeNull();
+  });
+
+  it('con toggle pero sin cuenta deja la cuenta en null (la validación ya lo rechazó)', () => {
+    const r = normalizarCompromiso({ ...datosFormValidos, debitoAutomatico: 'on' });
+    expect(r.debitoAutomatico).toBe(true);
+    expect(r.cuentaDebitoId).toBeNull();
+  });
+
+  it('la marca también viaja en una deuda (ADR 052 D3: un solo criterio)', () => {
+    const r = normalizarCompromiso({
+      ...datosFormValidos, tipo: 'deuda-entidad', saldoTotal: '5000000', cuotaMensual: '300000',
+      debitoAutomatico: 'on', cuentaDebitoId: 'cta2',
+    });
+    expect(r.debitoAutomatico).toBe(true);
+    expect(r.cuentaDebitoId).toBe('cta2');
   });
 });

@@ -19,7 +19,7 @@ import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { f, hoy } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
 import { mostrarToast } from '../../ui/toast.js';
-import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
+import { resolverPagoConPreferida, wireToggleDebitoAutomatico } from '../../infra/cuenta-helper.js';
 import { gastoDePagoCompromiso, bajarSaldoDeuda } from '../../infra/pago-compromiso.js';
 import { wireIconoPicker } from '../../infra/icon-picker.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
@@ -116,6 +116,10 @@ function _mostrarFormDeuda(overlay, tipo, deuda = null) {
   _wireIconoOtraCategoria(body);
   _wireCupoTarjeta(body);
   _wireCondicionesColapsable(body);
+  // PA.1a: el débito automático sí aplica al editar (una deuda existente puede
+  // pasar a debitarse sola, o dejar de hacerlo), a diferencia de la cuenta de
+  // origen, que solo se fija al crear.
+  wireToggleDebitoAutomatico(body, 'comp-debito');
 
   // El segmented y el foco inicial en descripción solo aplican al crear:
   // editar no permite cambiar el tipo (ver renderFormDeuda) ni necesita

@@ -14,6 +14,8 @@
  * 6. renderAll()     - pinta el estado inicial en el DOM.
  * 6b. initAceptacionLegal()- gate de re-aceptación si el usuario existente
  *                            quedó con una versión legal vieja (LEG.2).
+ * 6c. revisarDebitosAutomaticos() - hoja de pagos automáticos vencidos (PA.1a).
+ *                            Va detrás de todos los gates y no escribe nada.
  */
 
 import { loadData, initFlushOnHide } from '../core/storage.js';
@@ -38,7 +40,7 @@ import { initCompromisos } from '../dominio/compromisos/index.js';
 import { initResumen } from '../dominio/resumen/index.js';
 import { initMovimientos } from '../dominio/movimientos/index.js';
 import { initAccesos } from '../dominio/accesos/index.js';
-import { initAgenda } from '../dominio/agenda/index.js';
+import { initAgenda, revisarDebitosAutomaticos } from '../dominio/agenda/index.js';
 import { initPersonales } from '../dominio/personales/index.js';
 import { initPresupuesto } from '../dominio/presupuesto/index.js';
 import { initAnalisis } from '../dominio/analisis/index.js';
@@ -92,6 +94,11 @@ initSwAviso();
 function _gatesTrasCandado() {
   initAceptacionLegal();
   if (!faltaAceptarLegal()) mostrarNovedadesSiHay();
+  // PA.1a (ADR 052 D1): el catch-up de pagos automáticos va al final de la
+  // cadena y no escribe nada: solo abre la hoja de confirmación si hay débitos
+  // vencidos. Si alguno de los gates de arriba dejó su overlay abierto, la hoja
+  // se salta sola esta apertura (no se apilan dos diálogos modales).
+  revisarDebitosAutomaticos();
 }
 
 if (faltaDesbloquear()) {

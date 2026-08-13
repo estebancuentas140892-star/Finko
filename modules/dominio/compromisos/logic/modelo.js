@@ -63,6 +63,20 @@ function _categoriaFijoConNombreAuto(datos, personalizadasFijo = []) {
 }
 
 /**
+ * PA.1a (ADR 052 D2): lee la marca de débito automático tal como puede llegar,
+ * del `FormData` de un formulario (`'on'` cuando el checkbox está marcado,
+ * ausente cuando no) o de un compromiso ya guardado (`true`/ausente). Un solo
+ * lugar donde se decide qué cuenta como "sí": la validación y la normalización
+ * no pueden discrepar.
+ *
+ * @param {{ debitoAutomatico?: string|boolean }} datos
+ * @returns {boolean}
+ */
+export function esDebitoAutomatico(datos) {
+  return datos?.debitoAutomatico === true || datos?.debitoAutomatico === 'on';
+}
+
+/**
  * Convierte una tasa mensual a su equivalente efectivo anual exacto.
  * tasaEA = (1 + tasaMensual)^12 - 1
  * @param {number} tasaMensual decimal (0.10 = 10% mensual)
@@ -271,6 +285,11 @@ export function validarCompromiso(datos, personalizadasFijo = []) {
   if (!datos.tipo || !TIPOS_COMPROMISO.includes(datos.tipo)) {
     errores.push('Debes elegir el tipo de compromiso.');
   }
+  // PA.1a (ADR 052 D2): sin cuenta no hay débito automático que preparar, y
+  // elegirla por el usuario sería inventar de dónde sale su dinero.
+  if (esDebitoAutomatico(datos) && !datos.cuentaDebitoId) {
+    errores.push('Elige la cuenta de la que sale el débito automático.');
+  }
 
   if (datos.tipo === 'fijo') {
     const monto = Number(datos.monto);
@@ -421,12 +440,20 @@ export function detectarDeudaCreciente(datos) {
  * @param {{ nombre: string }[]} [personalizadasFijo] personalizadas de sección 'fijo' (CAT.3c)
  */
 export function normalizarCompromiso(datos, personalizadasFijo = []) {
+  // PA.1a (ADR 052 D2): los dos campos van en `base` porque aplican a fijos y a
+  // deudas por igual (D3: un solo criterio, no dos). Siempre explícitos, nunca
+  // ausentes, mismo patrón que `icono` y `cupoTotal`: `editar()` hace un
+  // Object.assign shallow, así que apagar el débito debe escribir el `false` y
+  // el `null` para limpiar lo que había.
+  const automatico = esDebitoAutomatico(datos);
   const base = {
     descripcion: datos.descripcion.trim(),
     frecuencia:  datos.frecuencia,
     diaPago:     Number(datos.diaPago),
     tipo:        datos.tipo,
     activo:      true,
+    debitoAutomatico: automatico,
+    cuentaDebitoId:   automatico ? (datos.cuentaDebitoId || null) : null,
   };
 
   if (datos.tipo === 'fijo') {

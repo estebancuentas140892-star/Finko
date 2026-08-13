@@ -12,6 +12,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(agenda): PA.1a, el debito automatico se prepara solo y se confirma de un toque · 2026-08-13
+
+Resuelve D1 y D2 del [ADR 052](DECISIONS/052-pagos-automaticos.md), abiertas desde el 2026-07-24, y agrega su D4 (orden de rebanadas). Ficha: [`contexto/calendario.md`](contexto/calendario.md).
+
+- **D2, la decisión de fondo: Finko no registra nada que el usuario no confirme.** Lo automático es la preparación, no la escritura: la app sabe qué venció, cuánto, de qué cuenta sale y con qué fecha, y lo deja listo. Rechazada la alternativa de registrar con estado intermedio ("registrado automáticamente, confírmalo") porque obligaría a cada consumidor de `S.gastos` (Movimientos, Análisis, ejecutado de Límites, patrimonio, logros, presupuestos) a decidir si un movimiento sin confirmar cuenta, un cambio de invariante transversal **a cambio de ahorrar un solo toque**: por D1 la ejecución ocurre igual al abrir la app, con el usuario mirando.
+- **D1, el catch-up al abrir es una hoja de revisión, no un hecho consumado.** `#modal-automaticos` se abre detrás de todos los gates (candado, aceptación legal, novedades) y lista cada débito vencido con su fecha real, su monto y su cuenta. Si algún gate dejó su overlay abierto, la hoja se salta esa apertura: no se pierde nada porque no había nada escrito. Ventana de dos meses (el corriente y el anterior): más atrás no es catch-up, es historia que se revisa a mano.
+- **La detección no es un motor nuevo.** `debitosAutomaticosVencidos()` filtra los compromisos marcados y recorre esos dos meses aplicando `pendientesDePagoDelMes`, la misma función del pago en lote: la hoja no puede ofrecer un pago que el lote no ofrecería, y hereda gratis la aritmética de deudas de CAL.5b (resto de la cuota, tope en el saldo) y la regla temporal de BUG-015.
+- **Sin saldo no se registra: la fila queda bloqueada y dice qué falta** ("a Ahorros le faltan $400.000"), y el resto sí se puede confirmar. El saldo se consume **en cascada** por orden de vencimiento: si una cuenta debe cubrir tres débitos, el tercero se bloquea cuando el dinero se acabó en los dos primeros. Sumar cada uno contra el saldo completo diría que los tres caben y el banco solo pudo cobrar dos.
+- **El gasto se fecha con el vencimiento real** (el 5, no hoy) y el descuento de la cuenta ocurre al confirmar, mismo criterio ya escrito en `_marcarPagadoGastoFijo` (el saldo es un valor de hoy, no un histórico). El registro reusa `_registrarPagosCompromisos()`, así que no hay una segunda aritmética de pago en el proyecto.
+- **La captura es un bloque compartido en infra** (`renderBloqueDebitoAutomatico` + `wireToggleDebitoAutomatico` en `cuenta-helper.js`): lo usan el formulario de gasto fijo (Agenda) y el de deuda (Compromisos), que no pueden importarse entre sí (ADN 10). **La cuenta no se pre-selecciona**: es un hecho del arreglo del usuario con su banco, no una comodidad de pago, y adivinarla guardaría un dato que nadie eligió; sin cuenta elegida, el formulario no deja guardar.
+- Schema **v38 → v39**: `debitoAutomatico` y `cuentaDebitoId` opcionales en `Compromiso`, migración no-op (nada en un registro existente dice si el banco lo debita solo, y adivinarlo haría que Finko reclamara confirmaciones de pagos manuales).
+- Verificado en la app con 3 compromisos automáticos y una cuenta de $500.000: la hoja se abrió sola con 6 filas (dos meses), confirmó los dos que cabían, dejó 4 bloqueadas con su motivo, escribió los gastos fechados el 1 de julio y el 1 de agosto y bajó la cuenta a $300.000.
+- Tests: 22 unitarios nuevos (13 en `agenda.test.js` entre motor y hoja, 9 en `compromisos.test.js` entre `esDebitoAutomatico`, validación y normalización) + 2 E2E nuevos. 4129/4129 unit + lint verdes. SW `finko-v525` → `finko-v526`.
+
+
 ### feat(config): CFG.2c, lo fiscal sale de Ajustes y pasa a un asistente tras botón · 2026-08-13
 
 Ejecuta D1 del [ADR 050](DECISIONS/050-perfil-fiscal-ubicacion-y-framing.md) (ya decidida, pendiente desde el 2026-07-24). Cierra la iniciativa fusionada CFG.1+CFG.2. Fichas: [`contexto/configuracion.md`](contexto/configuracion.md), [`contexto/analisis.md`](contexto/analisis.md).

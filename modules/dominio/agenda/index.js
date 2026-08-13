@@ -32,7 +32,7 @@ import { abrirModal, cerrarModal } from '../../ui/modales.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { hoy, f } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
-import { resolverPagoConSelector } from '../../infra/cuenta-helper.js';
+import { resolverPagoConSelector, wireToggleDebitoAutomatico } from '../../infra/cuenta-helper.js';
 import { asignarSplitsPorItem } from '../../infra/distribuir-pago.js';
 import { ocurrenciasEnMes } from '../../infra/vencimientos.js';
 import { validarCompromiso, normalizarCompromiso } from '../compromisos/logic.js';
@@ -41,8 +41,8 @@ import { renderBannerProposito } from '../../ui/proposito.js';
 import { CATEGORIAS_AGENDA } from '../../core/constants.js';
 import { wireIconoPicker, setIconoPickerValor } from '../../infra/icon-picker.js';
 import { iconoCategoria } from '../../infra/icons.js';
-import { eventosDelMes, pendientesDePagoDelMes } from './logic.js';
-import { renderAgenda, renderFormGastoFijo, renderFormPagoLote, textoBannerGastoFijo, navegarMes, mostrarDia, marcarEntradaSeccion, resumenMesVisible, diaSeleccionado, CATEGORIA_NUEVA_VALUE_FIJO } from './view.js';
+import { eventosDelMes, pendientesDePagoDelMes, debitosAutomaticosVencidos } from './logic.js';
+import { renderAgenda, renderFormGastoFijo, renderFormPagoLote, renderFormAutomaticos, textoBannerGastoFijo, navegarMes, mostrarDia, marcarEntradaSeccion, resumenMesVisible, diaSeleccionado, CATEGORIA_NUEVA_VALUE_FIJO } from './view.js';
 
 /** Personalizadas de sección 'fijo' (CAT.3c): mismo criterio de oferta por sección del ADR 058 D2. */
 function _personalizadasFijo() {
@@ -174,7 +174,21 @@ function _inyectarFormGastoFijo(compromiso = null) {
         iconoCategoria(compromiso.icono),
       );
     }
+
+    // PA.1a: el débito automático y su cuenta, si el compromiso ya los tenía.
+    // El bloque no existe cuando no hay cuentas activas (ver
+    // `renderBloqueDebitoAutomatico`), por eso todo es opcional-safe.
+    if (compromiso.debitoAutomatico === true) {
+      const check = form.querySelector('#gfijo-debito-check');
+      if (check) check.checked = true;
+      const cuenta = compromiso.cuentaDebitoId
+        ? form.querySelector(`[name="cuentaDebitoId"][value="${CSS.escape(compromiso.cuentaDebitoId)}"]`)
+        : null;
+      if (cuenta) cuenta.checked = true;
+    }
   }
+
+  wireToggleDebitoAutomatico(form, 'gfijo-debito');
 
   _syncCategoriaGastoFijo(form);
   _actualizarBannerGastoFijo(form);
@@ -641,6 +655,155 @@ async function _confirmarLote() {
     : `${pagos.length} pagos registrados por ${f(total)}.`);
 }
 
+// ── HANDLERS: PAGOS AUTOMÁTICOS (PA.1a, ADR 052) ────────────────
+
+/**
+ * Los débitos automáticos vencidos, resueltos contra las cuentas de S: cuál
+ * paga cada uno y si alcanza el saldo.
+ *
+ * El saldo se consume **en cascada y en orden de vencimiento**: si la misma
+ * cuenta debe cubrir tres débitos, el tercero se bloquea cuando el dinero se
+ * acabó en los dos primeros. Sumar cada uno contra el saldo completo diría que
+ * los tres caben y el banco solo pudo cobrar dos.
+ *
+ * Motivos de bloqueo (la fila los explica, nunca se ocultan):
+ *   - `'cuenta'`: el compromiso no dice de qué cuenta sale, o esa cuenta ya no
+ *     existe o está inactiva. Registrarlo obligaría a elegir por el usuario.
+ *   - `'saldo'`: la cuenta no alcanza. Finko no simula un débito que el banco
+ *     no pudo hacer (ADR 052 D2).
+ *
+ * @returns {Array<{id:string, descripcion:string, monto:number, fecha:string,
+ *   tipo:string, cuentaDebitoId:string|null, cuentaNombre:string|null,
+ *   bloqueo:'cuenta'|'saldo'|null, falta:number}>}
+ */
+function _automaticosPendientes() {
+  const vencidos = debitosAutomaticosVencidos(S.compromisos ?? [], S.gastos ?? [], hoy());
+  if (vencidos.length === 0) return [];
+
+  /** @type {Map<string, number>} Saldo que le va quedando a cada cuenta. */
+  const restante = new Map();
+  for (const c of S.cuentas ?? []) {
+    if (c?.activa !== false) restante.set(c.id, Number(c.saldo) || 0);
+  }
+
+  return vencidos.map((v) => {
+    const cuenta = (S.cuentas ?? []).find(c => c.id === v.cuentaDebitoId && c.activa !== false);
+    if (!cuenta) {
+      return { ...v, cuentaNombre: null, bloqueo: 'cuenta', falta: 0 };
+    }
+
+    const disponible = restante.get(cuenta.id) ?? 0;
+    if (disponible < v.monto) {
+      return { ...v, cuentaNombre: cuenta.nombre, bloqueo: 'saldo', falta: v.monto - disponible };
+    }
+
+    restante.set(cuenta.id, disponible - v.monto);
+    return { ...v, cuentaNombre: cuenta.nombre, bloqueo: null, falta: 0 };
+  });
+}
+
+/**
+ * Abre la hoja de pagos automáticos si hay algo que confirmar. La llama
+ * `bootstrap.js` al arrancar, detrás de los gates (ADR 052 D1).
+ *
+ * No se apila sobre otro overlay abierto (candado, aceptación legal, novedades):
+ * dos diálogos modales se pelean el foco. Si hay uno, la hoja espera a la
+ * siguiente apertura, y no se pierde nada porque no había nada escrito.
+ */
+export function revisarDebitosAutomaticos() {
+  const overlay = document.getElementById('modal-automaticos');
+  const body    = document.getElementById('modal-automaticos-body');
+  if (!overlay || !body) return;
+  if (document.querySelector('.modal-overlay[aria-hidden="false"]')) return;
+
+  const items = _automaticosPendientes();
+  if (items.length === 0) return;
+
+  body.innerHTML = renderFormAutomaticos(items);
+  _actualizarTotalAutomaticos();
+  abrirModal(overlay);
+}
+
+/**
+ * Recalcula el total y el texto del botón de la hoja según lo que quede
+ * marcado. Mismo criterio que `_actualizarTotalLote`: solo toca los nodos del
+ * resumen, repintar el cuerpo desmarcaría las casillas del usuario.
+ */
+function _actualizarTotalAutomaticos() {
+  const body = document.getElementById('modal-automaticos-body');
+  if (!body) return;
+
+  const marcados = [...body.querySelectorAll('.lote-row__check:checked')];
+  const total    = marcados.reduce((acc, ch) => acc + (Number(ch.dataset.loteMonto) || 0), 0);
+
+  const totalEl = body.querySelector('[data-role="auto-total"]');
+  if (totalEl) {
+    totalEl.textContent = marcados.length === 0
+      ? 'Selecciona al menos un pago.'
+      : `Total a registrar: ${f(total)}`;
+    totalEl.classList.toggle('lote-total--vacio', marcados.length === 0);
+  }
+
+  const textoEl = body.querySelector('[data-role="auto-cta-texto"]');
+  if (textoEl) {
+    textoEl.textContent = marcados.length === 1 ? 'Confirmar 1 pago' : `Confirmar ${marcados.length} pagos`;
+  }
+
+  const btn = body.querySelector('[data-action="agenda-confirmar-automaticos"]');
+  if (btn) btn.disabled = marcados.length === 0;
+}
+
+/**
+ * Registra los débitos automáticos que el usuario confirmó.
+ *
+ * A diferencia del lote, **no pregunta de qué cuenta sale**: eso es lo que el
+ * usuario ya declaró al marcar el compromiso como automático, y volver a
+ * preguntarlo anularía el sentido de la hoja. Por lo mismo no hay reparto entre
+ * cuentas ni confirmación de sobregiro: lo que no alcanza llega bloqueado desde
+ * `_automaticosPendientes` y no se puede marcar.
+ *
+ * Cada pago se fecha con su vencimiento real (el 5, no hoy) y el descuento de
+ * la cuenta ocurre ahora, mismo criterio que `_marcarPagadoGastoFijo`: el saldo
+ * de una cuenta es un valor de hoy, no un histórico.
+ */
+function _confirmarAutomaticos() {
+  const body = document.getElementById('modal-automaticos-body');
+  if (!body) return;
+
+  const marcados = [...body.querySelectorAll('.lote-row__check:checked')]
+    .map(ch => `${ch.dataset.autoId}|${ch.dataset.autoFecha}`);
+  if (marcados.length === 0) return;
+
+  const overlay = document.getElementById('modal-automaticos');
+  if (overlay) cerrarModal(overlay);
+
+  // La fuente de verdad es S, no el DOM con el que se pintó la hoja: entre
+  // abrirla y confirmar, el usuario pudo registrar uno desde otra pestaña.
+  const items = _automaticosPendientes()
+    .filter(it => !it.bloqueo && marcados.includes(`${it.id}|${it.fecha}`));
+  if (items.length === 0) {
+    announce('No quedan pagos automáticos por confirmar.');
+    return;
+  }
+
+  const pagos = [];
+  for (const it of items) {
+    const comp = S.compromisos.find(c => c.id === it.id);
+    if (!comp) continue;
+    pagos.push({ comp, fecha: it.fecha, partes: [{ cuentaId: it.cuentaDebitoId, monto: it.monto }] });
+  }
+  if (pagos.length === 0) return;
+
+  _registrarPagosCompromisos(pagos);
+
+  const total = pagos.reduce((acc, p) => acc + p.partes[0].monto, 0);
+  renderAgenda();
+  updSaldo();
+  announce(pagos.length === 1
+    ? `1 pago automático confirmado por ${f(total)}.`
+    : `${pagos.length} pagos automáticos confirmados por ${f(total)}.`);
+}
+
 // ── HANDLER: DISTRIBUIR DESDE EL DÍA DE INGRESO (ADR 021) ───────
 
 /**
@@ -724,6 +887,7 @@ export function initAgenda() {
   registrarAccion('agenda-distribuir-ingreso', _distribuirDesdeAgenda);
   registrarAccion('agenda-pagar-lote',        _pagarLote);
   registrarAccion('agenda-confirmar-lote',    _confirmarLote);
+  registrarAccion('agenda-confirmar-automaticos', _confirmarAutomaticos);
 
   // CAL.5b: Inicio ofrece el mismo lote desde su bloque de vencidos sin
   // navegar. `compromisos/` emite y Agenda abre: es el mismo patrón que
@@ -738,6 +902,12 @@ export function initAgenda() {
   document.getElementById('modal-pago-lote-body')
     ?.addEventListener('change', (e) => {
       if (e.target.classList?.contains('lote-row__check')) _actualizarTotalLote();
+    });
+
+  // PA.1a: mismo patrón que el lote, contenedor persistente y cuerpo re-inyectado.
+  document.getElementById('modal-automaticos-body')
+    ?.addEventListener('change', (e) => {
+      if (e.target.classList?.contains('lote-row__check')) _actualizarTotalAutomaticos();
     });
 
   // CAL.4a (ADR 037 D7): el ojo del hero del mes comparte el flag

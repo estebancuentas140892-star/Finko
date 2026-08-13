@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 38;
+const SCHEMA_VERSION = 39;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -588,6 +588,13 @@ function _migrate(raw) {
       }
     }
   }
+
+  // v38 → v39: `debitoAutomatico` y `cuentaDebitoId` en Compromiso (PA.1a,
+  // ADR 052 D2). Ambos opcionales y `undefined`-safe: un compromiso ya guardado
+  // se sigue leyendo como pago manual, que es lo que era. Sin backfill posible
+  // (nada en el registro dice si el banco lo debita solo, y adivinarlo haría que
+  // Finko reclamara confirmaciones de pagos que el usuario hace a mano).
+  // Migración intencionalmente no-op, mismo precedente de v26 → v27.
 
   if (typeof data._version !== 'number' || data._version < SCHEMA_VERSION) {
     data._version = SCHEMA_VERSION;

@@ -1,6 +1,6 @@
 # Tablero - Transversal
 
-> Revisado: 2026-08-11.
+> Revisado: 2026-08-13.
 
 > Satélite de [`BOARD.md`](../BOARD.md) (afecta varias secciones). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
 
@@ -68,13 +68,12 @@
 - Depende de : nada. El contenido de la card lo manda el ADR 032; el lugar, el ADR 046 D4
 - Modelo     : Equilibrado - Alto (reubicación cross-sección con coordinación de layouts)
 
-#### PA.1 - Pagos y créditos automáticos (débito automático simulado)
-- Prioridad  : media-alta (caso muy común: suscripciones y cuotas con débito automático)
-- Estado     : **no iniciar**: las 2 decisiones de filosofía siguen sin tomar. Ver **[ADR 052](../DECISIONS/052-pagos-automaticos.md)** (Abierta), su dueño. La secuencia "lote manual primero" ya se cumplió (CAL.5a cerrada); esta tarjeta sigue viva, no absorbida.
-- Objetivo   : pregunta opcional "¿este pago se descuenta automáticamente?" al registrar un gasto fijo, deuda o suscripción, y su procesamiento al llegar la fecha. Cubre también el crédito automático del ingreso fijo: un solo criterio, no dos.
-- Secciones  : Deudas, Calendario (fijos), Mis cuentas, Inicio (alertas), transversal
-- Riesgo     : registrar un movimiento que el usuario no confirmó rompe la filosofía "Finko refleja la realidad, no la inventa" si el débito real falla o se difiere (ADR 052 D2)
-- Depende de : motor de vencimientos (ADR 041, no construir un segundo); ADR 052 resuelto y aprobado por Esteban
-- Modelo     : Máxima capacidad - Alto para el ADR (filosofía de producto con riesgo de confianza del usuario); implementación por rebanadas después
+#### PA.1b - Crédito automático del ingreso fijo
+- Prioridad  : media-alta (mismo caso común que el débito, visto desde el lado del ingreso)
+- Estado     : lista para trabajar. El [ADR 052](../DECISIONS/052-pagos-automaticos.md) quedó **Aceptado** (2026-08-13) y su D4 pone esta rebanada después de PA.1a, ya cerrada.
+- Objetivo   : marcar un ingreso fijo como "me lo abonan solo" y ofrecerlo en la misma hoja `#modal-automaticos`, con el mismo criterio de D2 (Finko prepara, el usuario confirma). La pregunta propia a resolver: qué colección recibe el abono recurrente, porque `Ingreso` es una plantilla y no un evento del ledger.
+- Secciones  : Mis cuentas (ingresos), Calendario (hoja), Movimientos
+- Depende de : PA.1a (cerrada); `Ingreso.cuentaId` ya existe desde MC.13d
+- Modelo     : Equilibrado - Alto (la filosofía ya está decidida; falta el dueño del dato)
 
 > **Diferido del [ADR 040](../DECISIONS/040-navegacion-v2-visual.md):** badges de notificación en el nav. Es decisión de producto de Esteban (¿qué cuenta el badge?); al retomarse nace como tarjeta nueva.

@@ -22,6 +22,7 @@ export {
   LABEL_TIPO,
   ICONO_TIPO,
   esDeuda,
+  esDebitoAutomatico,
   tasaMensualToEA,
   tasaEADe,
   compromisosActivos,
