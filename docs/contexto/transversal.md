@@ -250,8 +250,8 @@
 ## Motor único de avisos (CFG.3, iniciativa transversal)
 
 - **Objetivo**          : responder "de todo lo que le pasa al usuario hoy, qué merece avisarle", mirando todas las secciones a la vez. Los `nudge` de cada sección son la señal en contexto dentro de su pantalla y no se comparan entre sí; este motor es el único que puede decir si va primero un arriendo vencido o un tope excedido.
-- **Estado actual**     : **CFG.3a cerrada (2026-08-13)**, primera de las tres rebanadas del **[ADR 066](../DECISIONS/066-motor-unico-de-avisos.md)**. Existe el motor (`infra/avisos.js`, ocho tipos de aviso de siete fuentes) y su primera superficie: la notificación del sistema al abrir la app, que dejó de saber solo de compromisos. **Sin UI nueva todavía:** el centro de avisos dentro de la app es CFG.3b y las preferencias por tipo son CFG.3c. Sin cambio de schema.
-- **Verificado contra** : `c9fdb2a` (2026-08-13, CFG.3a).
+- **Estado actual**     : **CFG.3a y CFG.3b cerradas (2026-08-13)**, dos de las tres rebanadas del **[ADR 066](../DECISIONS/066-motor-unico-de-avisos.md)**. Existe el motor (`infra/avisos.js`, ocho tipos de aviso de siete fuentes), la notificación del sistema al abrir (CFG.3a) y un panel nuevo en Inicio, "Avisos" (CFG.3b), que muestra solo lo que ningún otro panel del dashboard ya cubre: apartado listo, día de pago, préstamo vencido. Detalle del panel: [`contexto/inicio.md`](inicio.md). Queda **CFG.3c** (preferencias por tipo, la única que tocaría schema).
+- **Verificado contra** : CFG.3b (2026-08-13).
 
 **Dónde vive**
 
@@ -264,6 +264,7 @@
 | Superficie: notificación del sistema | `modules/infra/notificaciones.js` | `verificarYNotificar()` | ~120 |
 | Copy de esa superficie | `modules/infra/notificaciones.js` | `formatearAvisoSistema()`, `_frase()` | ~160, ~190 |
 | Disparo al arrancar (detrás del primer render) | `modules/ui/bootstrap.js` | `verificarYNotificar()` | ~116 |
+| Superficie: panel "Avisos" en Inicio (CFG.3b) | `modules/dominio/resumen/view.js` | `renderPanelAvisos()`, `_TIPOS_SIN_PANEL_PROPIO` | ~155 |
 
 **Las siete fuentes y quién detecta cada una** (el motor no reimplementa ninguna regla de fecha ni de umbral):
 
@@ -288,10 +289,11 @@
 - **`nombre` es dato del usuario, nunca copy**: hay un test que verifica que no contenga palabras como "vence" u "hoy". Meter una frase ahí rompe la separación que hace testeable al motor sin fijar el copy.
 - **Sin sello de "ya te avisé esto"**: la de-duplicación es el flag de sesión de `notificaciones.js` (una notificación por apertura). Abrir y cerrar la app cinco veces en un día puede repetir el mismo aviso cinco veces. Persistirlo es schema y quedó para CFG.3c, detrás de evidencia de uso.
 
-**Cambios pendientes**: **CFG.3b** (centro de avisos dentro de la app: dónde vive, cuántos muestra y su copy) y **CFG.3c** (preferencias por tipo en Ajustes, la única rebanada que toca schema). Las dos siguen en `board/configuracion.md`.
+**Cambios pendientes**: **CFG.3c** (preferencias por tipo en Ajustes, la única rebanada que toca schema). Sigue en `board/configuracion.md`.
 
 **Cambios realizados**:
 
+- **CFG.3b (2026-08-13)**: panel "Avisos" en Inicio (`resumen/view.js`, `renderPanelAvisos()`), quinta celda del grupo "Atención hoy". Filtra el motor a los tres tipos sin superficie propia (`apartado-listo`, `dia-de-pago`, `prestamo-vencido`): los demás ya viven en "Pendientes del mes", "Próximas prioridades" y "Alertas de límites", sin tocar esa lógica. Detalle completo: [`contexto/inicio.md`](inicio.md).
 - **CFG.3a (2026-08-13)**: motor `infra/avisos.js` (ocho tipos, siete fuentes, severidad y orden) y `infra/notificaciones.js` consumiéndolo; `verificarYNotificar()` pasa a leer `S` completo en vez de recibir `S.compromisos`. Riesgo técnico resuelto y escrito en el ADR 066. Sin schema, sin UI nueva.
 
 ---

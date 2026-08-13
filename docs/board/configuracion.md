@@ -10,17 +10,7 @@
 
 > **Iniciativa fusionada CFG.1 + CFG.2** ("Perfil fiscal/financiero en Ajustes"), **completa**. Alcance y sus dos decisiones: **[ADR 050](../DECISIONS/050-perfil-fiscal-ubicacion-y-framing.md)**, su dueño. Ficha: [`contexto/configuracion.md`](../contexto/configuracion.md). CFG.2a cerró el 2026-08-13 (ingresos brutos derivados) y CFG.2c cerró el mismo día (D1: lo fiscal pasa a un asistente tras botón).
 
-> **Iniciativa CFG.3** ("Avisos anticipatorios"). Alcance, el límite técnico y las alternativas rechazadas (push, background sync, meta alcanzada, aporte recomendado): **[ADR 066](../DECISIONS/066-motor-unico-de-avisos.md)**, su dueño. CFG.3a (motor `infra/avisos.js` + la notificación al abrir) cerró el 2026-08-13. Ficha: [`contexto/transversal.md`](../contexto/transversal.md). Quedan las dos de abajo.
-
-#### CFG.3b - Centro de avisos dentro de la app
-- Prioridad  : sin definir
-- Área       : ambos (superficie nueva: dónde vive, cómo se ve y qué dice)
-- Estado     : pendiente. Habilitada por CFG.3a: el motor ya devuelve la lista ordenada; falta la pantalla que la muestra.
-- Objetivo   : hoy los avisos solo salen por la notificación del sistema, y solo los de severidad `urgente` o `alta`. Los demás (apartado próximo, apartado listo, préstamo con fecha pasada, día de pago) se calculan y no se ven en ninguna parte. Falta la superficie que los muestre, con su propio tope de cuántos y su propio copy (el motor devuelve datos, no frases).
-- Secciones  : por decidir entre Inicio y la barra superior; transversal en origen (los avisos vienen de seis dominios)
-- Archivos   : `modules/infra/avisos.js` (solo se consume, no se toca), la vista que se elija, `styles/components/*`
-- Depende de : CFG.3a (cerrada). Coordina con LG.2d e IN.9 si el destino es Inicio: son tres bloques peleando el mismo espacio.
-- Modelo     : Equilibrado - Alto (el motor ya existe; el trabajo es de UX y de copy)
+> **Iniciativa CFG.3** ("Avisos anticipatorios"). Alcance, el límite técnico y las alternativas rechazadas (push, background sync, meta alcanzada, aporte recomendado): **[ADR 066](../DECISIONS/066-motor-unico-de-avisos.md)**, su dueño. CFG.3a (motor `infra/avisos.js` + la notificación al abrir) y **CFG.3b** (panel "Avisos" en Inicio) cerraron el 2026-08-13. Ficha: [`contexto/inicio.md`](../contexto/inicio.md) (el panel) y [`contexto/transversal.md`](../contexto/transversal.md) (el motor). Queda la de abajo.
 
 #### CFG.3c - Preferencias de avisos por tipo
 - Prioridad  : sin definir
@@ -29,7 +19,7 @@
 - Objetivo   : hoy el interruptor de Ajustes es un solo booleano para todo. Si el uso muestra que un tipo cansa (ej. día de pago), poder apagarlo sin apagar los demás. Acá también entraría el sello de "ya te avisé esto hoy", que hoy no existe: la de-duplicación es por sesión, así que abrir y cerrar la app repite el aviso.
 - Secciones  : Configuración (Ajustes)
 - Archivos   : `modules/dominio/config/view.js`, `modules/dominio/config/index.js`, `modules/core/state.js`, `modules/core/storage.js` (migración)
-- Depende de : CFG.3b y evidencia de uso. **Es la única rebanada de CFG.3 que toca schema.**
+- Depende de : evidencia de uso. **Es la única rebanada de CFG.3 que toca schema.**
 - Modelo     : Equilibrado - Medio (patrón de preferencias ya conocido; el cuidado está en la migración)
 
 #### CFG.4 - Respaldo, cuentas de usuario y sincronización multi-dispositivo [DECISIÓN DE ADN]

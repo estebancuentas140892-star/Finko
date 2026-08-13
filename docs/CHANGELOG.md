@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(config): CFG.3b, panel "Avisos" en Inicio · 2026-08-13
+
+Segunda rebanada del [ADR 066](DECISIONS/066-motor-unico-de-avisos.md). Ficha: [`contexto/inicio.md`](contexto/inicio.md).
+
+- **El motor de CFG.3a ya devolvía la lista; faltaba dónde mostrarla, y ya había tres paneles ocupando ese terreno.** "Pendientes del mes", "Próximas prioridades" y "Alertas de límites" ya cubren compromiso-vencido/proximo, limite-excedido/alerta, apartado-proximo y prestamo-proximo con su lógica de siempre (no pasan por el motor). Mostrarlos también en el panel nuevo habría sido el mismo aviso dos veces en la misma pantalla, así que el panel filtra a los tres tipos que hoy no tienen casa: `apartado-listo`, `dia-de-pago`, `prestamo-vencido`.
+- **Vive en `resumen/` (el dominio agregador del dashboard), no en un dominio nuevo**: mismo criterio que ya usa el resumen semanal, cero imports cross-dominio porque el motor es infra.
+- **Copy propio por tipo** (ADR 066 D2): "Ya reuniste $X" para el apartado listo, "Te llega hoy" para el ingreso, "Acordaron esta fecha hace N días" para el préstamo vencido, sin lenguaje de cobro (ADR 047: recuerda, no presiona).
+- **Reactivo a las seis fuentes que el motor lee** (compromisos, gastos, presupuestos, apartados, personales, ingresos): cualquiera puede mover la lista de avisos, aunque el panel solo pinte tres tipos.
+- Commit pendiente. Tests: 15 unitarios nuevos en `resumen.test.js` + 1 E2E. 4183/4183 unit + lint + 269/269 E2E verdes. SW `finko-v528` → `finko-v529`.
+
+
 ### feat(config): CFG.3a, motor único de avisos y notificación al abrir · 2026-08-13
 
 Primera de las tres rebanadas del [ADR 066](DECISIONS/066-motor-unico-de-avisos.md), que además desbloquea CFG.3 (estaba en "pendiente de análisis, no iniciar" hasta evaluar su riesgo técnico). Ficha: [`contexto/transversal.md`](contexto/transversal.md).
