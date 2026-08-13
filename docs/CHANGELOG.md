@@ -12,6 +12,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(limites): LIM.1c, la app propone dónde y cuánto poner tope · 2026-08-13
+
+Cierra el [ADR 044](DECISIONS/044-motor-unico-de-sugerencia-por-categoria.md) (Abierta desde el 2026-07-24) y con él la iniciativa LIM.1. Ficha: [`contexto/limites.md`](contexto/limites.md).
+
+- **El motor vive en `infra/sugerencias-categoria.js` y devuelve datos, nunca frases** (ADR 044 D1 y D2). La alternativa de dejarlo en `analisis/` se descartó porque acopla por orden de render, más frágil que acoplar por import; la de duplicar por dominio ya tenía mal precedente (`MAPA_FRECUENCIA_A_*`, que el ADR 041 tuvo que unificar). Que el copy sea de cada superficie evita que tres pantallas suenen a plantilla y que cambiar una palabra rompa un test de lógica.
+- **El monto propuesto es el promedio de los meses cerrados con gasto, nunca un recorte.** El mes en curso no entra al promedio (está incompleto: movería la cifra según el día) y sirve solo de respaldo cuando no hay histórico. Proponer menos de lo que la persona ya gasta sería imponerle una dieta que no pidió (ADR 003); el techo es lo que el plan deja sin tope (`coberturaLimitesEstiloVida().sinTope`, ADR 045 D6), porque sugerir más sería repartir dinero que el plan no tiene.
+- **Entra la categoría recurrente o creciente, no cualquiera con gasto:** dos o más meses cerrados con gasto, o un mes en curso que ya supera el promedio en 25%, y siempre por encima de $50.000 mensuales. Un gasto de un solo mes que no crece es un evento, no un patrón.
+- **La suscripción se detecta por antigüedad y costo, no por uso.** Finko no sabe si algo se usa y no lo inventa: dice cuántos meses lleva cobrada y cuánto suma al año (seis meses o más, solo Streaming y Suscripciones, la lista cerrada del ADR 014). El arriendo también lleva doce meses cobrándose y no es un hallazgo. El catálogo de marcas del ADR 029 queda fuera: la señal sale de los compromisos y sus pagos, y esperar su Fase 1 habría bloqueado la rebanada sin mejorar la detección.
+- **Una sugerencia de cada tipo por render** (ADR 044 D6), sin persistir descartes: guardar "no me muestres esto" es schema nuevo que nadie pidió. Cuando hay sugerencia real, el estado vacío deja de dar su ejemplo inventado ("un máximo de $300.000 para Restaurantes"): dos consejos seguidos compiten entre sí.
+- **El aviso de tope lleva botón; el de suscripción, enlace.** Dar de baja un fijo es de Calendario y duplicar ese control acá rompería la fuente única. El botón solo carga la categoría: el monto lo vuelve a pedir el formulario al mismo motor, porque una copia en el DOM se queda vieja apenas se registra un gasto.
+- **El formulario abre con la cifra puesta y cada chip trae la suya** (punto 3 del brief). En cuanto el usuario teclea, el campo es suyo y cambiar de categoría ya no le pisa el número. La pista del monto pasa a explicar de dónde sale la cifra ("Tu promedio de los últimos meses acá"); cuando no hay nada que proponer, conserva la de FORM.1b.
+- Verificado en la app con Restaurantes en $210.000 y $190.000 los dos meses cerrados: el aviso propuso $200.000, el botón abrió el formulario con ese monto y la categoría marcada, cambiar a Ropa lo bajó a $150.000, escribir $99.000 a mano sobrevivió al cambio de chip, y Netflix con 7 pagos apareció como "$538.800 al año".
+- Commit `34dc9d5`. Tests: 37 unitarios nuevos (26 en `sugerencias-categoria.test.js`, 11 en `presupuesto.test.js`) y 1 reescrito (la pista del monto del formulario). 4105/4105 unit + lint + 268 E2E verdes. SW `finko-v526` → `finko-v527`.
+
+
 ### feat(agenda): PA.1a, el debito automatico se prepara solo y se confirma de un toque · 2026-08-13
 
 Resuelve D1 y D2 del [ADR 052](DECISIONS/052-pagos-automaticos.md), abiertas desde el 2026-07-24, y agrega su D4 (orden de rebanadas). Ficha: [`contexto/calendario.md`](contexto/calendario.md).

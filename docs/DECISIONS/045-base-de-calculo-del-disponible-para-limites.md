@@ -156,4 +156,4 @@ La tarjeta LIM.1 afirmaba que sacar Necesidades y Ahorro de la sección *"revisa
 3. **Si los topes se recalculan:** no, nunca solos (D4).
 4. **Línea de explicación en lenguaje humano:** redactada (D5).
 
-Implementación: rebanadas **LIM.1a** (la línea de D3) y **LIM.1b** (punto 8, fijos no esenciales) en [`board/limites.md`](../board/limites.md). **LIM.1c** (sugerencias) sigue esperando el ADR 044, que este ADR desbloquea con D6.
+Implementación: rebanadas **LIM.1a** (la línea de D3), **LIM.1b** (punto 8, fijos no esenciales) y **LIM.1c** (sugerencias, sobre el [ADR 044](044-motor-unico-de-sugerencia-por-categoria.md) que esta D6 desbloqueó), las tres cerradas. Detalle en el [CHANGELOG](../CHANGELOG.md) y en [`contexto/limites.md`](../contexto/limites.md).

@@ -1,6 +1,6 @@
 # Ficha de contexto: Límites de gasto
 
-> Revisado: 2026-08-12 (LIM.1b).
+> Revisado: 2026-08-13 (LIM.1c).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 > El dominio se llama `presupuesto` en el código; "Límites de gasto" es el nombre de cara al usuario (para no confundirlo con Apartados: guardar dinero vs. vigilar cuánto sale).
@@ -10,8 +10,8 @@
 ## La sección completa: tres grupos con tratamiento asimétrico por rol (MC.8, ADR 019)
 
 - **Objetivo**          : un solo relato por grupo financiero. Necesidades se **monitorea** (neutro), Ahorro se **celebra** (verde de logro) y Estilo de vida se **controla** (único con topes por categoría y alertas). Los topes viven **dentro** de la tarjeta de Estilo de vida, no en un bloque suelto.
-- **Estado actual**     : estable. **DIS.7 cerrada** (2026-07-26): las 9 correcciones aplicables de la auditoría de diseño de la sección. La iniciativa **LIM.1** (asistente preventivo de estilo de vida) sigue abierta y no la pisa: DIS.7 abre la puerta que el [ADR 019](../DECISIONS/019-limites-por-rol.md) D2 ya prometía, pero **no sugiere montos**: eso es [ADR 044](../DECISIONS/044-motor-unico-de-sugerencia-por-categoria.md) y LIM.1c. **ADR 045 Aceptada el 2026-08-12** y LIM.1 partida en tres rebanadas: **LIM.1a y LIM.1b cerradas** (el dinero extraordinario del mes; Streaming y Suscripciones contra Estilo de vida), LIM.1c pendiente (sugerencias, bloqueada por el ADR 044).
-- **Verificado contra** : commit de LIM.1b (2026-08-12); el resto de la sección, contra `8d4a5be` (2026-07-26, DIS.7).
+- **Estado actual**     : estable, **iniciativa LIM.1 cerrada** con sus tres rebanadas (LIM.1a el dinero extraordinario, LIM.1b Streaming y Suscripciones contra Estilo de vida, LIM.1c las sugerencias). Los ADR 044 y 045 quedaron Aceptados. La sección ya no solo controla: **propone dónde y cuánto poner tope**, y avisa de la suscripción que lleva medio año cobrándose. DIS.7 (2026-07-26) sigue siendo la base visual de la sección.
+- **Verificado contra** : `34dc9d5` (2026-08-13, LIM.1c); el resto de la sección, contra `8d4a5be` (2026-07-26, DIS.7).
 
 **Dónde vive**
 
@@ -23,6 +23,9 @@
 | Detalle de Estilo de vida (topes) | `modules/dominio/presupuesto/view.js` | `_renderDetalleEstiloVida()` | recibe `notasCategoria` (Map categoría → mensaje) |
 | Un tope por categoría | `modules/dominio/presupuesto/view.js` | `_renderEnvelope(p, gastos, anio, mes, nota)` | 5.º parámetro = el mensaje de estado que se dibuja dentro del sobre |
 | Categorías con gasto y sin tope | `modules/dominio/presupuesto/view.js` | `_renderSinPresupuesto()`, `_puedeTenerTope()` | cada fila **es** el botón que abre el modal precargado |
+| Motor de sugerencia (puro, infra) | `modules/infra/sugerencias-categoria.js` | `historicoCategoria()`, `sugerirMontoTope()`, `sugerirCategoriasParaTope()`, `detectarSuscripcionesLargas()` | LIM.1c, [ADR 044](../DECISIONS/044-motor-unico-de-sugerencia-por-categoria.md): devuelve datos, nunca frases; `hoyISO` entra por parámetro |
+| Avisos del motor | `modules/dominio/presupuesto/view.js` | `_renderSugerenciaTope()`, `_renderSuscripcionLarga()` | uno de cada por render; reusan `.nudge nudge-info` sin CSS nuevo |
+| Candidatas y techo del monto | `modules/dominio/presupuesto/view.js` | `_categoriasDisponibles()`, `_sinTopeDelPlan()` | la misma lista que ofrecen los chips del modal, así ninguna sugerencia queda sin puerta (R35) |
 | Formulario del modal | `modules/dominio/presupuesto/view.js` | `renderFormPresupuesto(actual, categoriaPrecargada)` | FORM.1b: chips + `monto-hero`; al editar, categoría en campo oculto |
 | Chips de categoría del form | `modules/dominio/presupuesto/view.js` | `_renderChipsCategoria()` | nativas de `CATEGORIAS_GASTO_USUARIO` + personalizadas de `S.categoriasPersonalizadas` |
 | "Olla finita" | `modules/dominio/presupuesto/view.js` | `_renderOllaFinita()` | consume `coberturaLimitesEstiloVida()` |
@@ -49,6 +52,9 @@
 
 **Riesgos**:
 
+- **El motor confía en que las candidatas ya vienen filtradas** (LIM.1c): no conoce `S.presupuestos` ni el catálogo visible de cada superficie. Un consumidor que le pase todas las categorías propondrá topes para categorías que el formulario no ofrece, y el consejo quedaría sin puerta (R35). La lista canónica es `_categoriasDisponibles()`.
+- **La cifra del aviso y la del formulario se calculan por separado y tienen que coincidir** (LIM.1c): las dos salen de `sugerirMontoTope` con el mismo techo, pero el techo se arma en dos sitios (`cobertura.sinTope` en el detalle, `_sinTopeDelPlan()` en el modal). Si uno de los dos cambia de fuente, el aviso ofrece un número y el campo abre con otro.
+- **El motor lee la fecha con `hoy()`, no con el `anio`/`mes` que recibe el detalle** (LIM.1c). Hoy coinciden siempre porque la sección solo pinta el mes en curso; si alguna vez navega a meses pasados, los avisos seguirían hablando de hoy.
 - **`.analisis-grupo` es compartido con Análisis.** Toda corrección al desplegable se acota a `.grupo-card__desglose` o se ve también allá (así está hecho el chevron de DIS.7).
 - **La barra sin modificador cae al acento de marca** (`--fk-section-accent, --fk-accent`), que significa dinero disponible y logro. Ninguna sección declara `data-dom` en su cuerpo, así que ese fallback nunca resuelve a color de sección: si un grupo debe verse neutro, el neutro se declara (regla R34).
 - **`categoriasSinPresupuesto()` no filtra por lo que el formulario puede ofrecer.** Devuelve también las categorías internas ('Deudas', 'Ahorro', que la app escribe sola al registrar un abono o un aporte) y las que CAT.1 movió a Calendario ('Vivienda', 'Servicios públicos'). El filtro vive en la vista (`_puedeTenerTope()`), no en `logic.js`: si se cambia el catálogo, revisar `_MOTIVO_SIN_TOPE`.
@@ -62,7 +68,6 @@
 
 **Cambios pendientes**:
 
-- De LIM.1 queda **LIM.1c** (`docs/board/limites.md`), bloqueada por el ADR 044.
 - Los mismos cuatro emoji que DIS.7 sacó de acá siguen en **Análisis, Ajustes e Importar** (lote corto, sin tarjeta).
 - El desplegable de **Análisis** sigue dibujando su chevron con el carácter `▾` del `::after`; el de Límites ya no.
 - El panel de esta sección en Inicio (`renderPanelLimites`) no se auditó a fondo.
@@ -70,6 +75,7 @@
 
 **Cambios realizados**:
 
+- `2026-08-13 LIM.1c`: motor de sugerencia en infra y su consumo acá (aviso de tope con monto, aviso de suscripción larga, formulario que abre con la cifra puesta).
 - `2026-08-12 LIM.1b`: Streaming y Suscripciones dejan de cargar Necesidades y cuentan contra Estilo de vida, en sus dos lados a la vez (ejecutado acá, asignado en tesorería).
 - `2026-08-12 LIM.1a`: la línea de dinero extraordinario del mes en Estilo de vida (`extraordinarioDelMes()` + `_renderExtraordinario()`), informada y sin repartir (ADR 045 D3).
 - `2026-07-26 DIS.7`: 9 correcciones de la auditoría de diseño (iconografía, barra neutra, puerta de las categorías sin tope, formulario FORM.1b, 44px, encabezados, mensaje en su sobre, un verbo, título del modal). Detalle en [CHANGELOG](../CHANGELOG.md).
