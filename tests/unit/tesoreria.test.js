@@ -30,6 +30,7 @@ import {
   construirDesgloseNecesidades,
   presupuestosSobreRemanente,
   calcularGastosFijosMensuales,
+  calcularFijosNoEsencialesMensuales,
   esDistribucionPersonalizadaValida,
   resumirPlanDistribucion,
   planComplementoDeficit,
@@ -454,6 +455,57 @@ describe('calcularGastosFijosMensuales()', () => {
   it('excluye compromisos inactivos', () => {
     const comps = [compFijoBase({ monto: 300_000, activo: false })];
     expect(calcularGastosFijosMensuales(comps)).toBe(0);
+  });
+
+  it('LIM.1b: sigue devolviendo el total, no esenciales incluidos (el fondo depende de esta cifra)', () => {
+    const comps = [
+      compFijoBase({ id: 'c1', categoria: 'Arriendo',  monto: 800_000 }),
+      compFijoBase({ id: 'c2', categoria: 'Streaming', monto: 30_000 }),
+    ];
+    expect(calcularGastosFijosMensuales(comps)).toBe(830_000);
+  });
+});
+
+// ── calcularFijosNoEsencialesMensuales() (LIM.1b, ADR 014) ───────
+
+describe('calcularFijosNoEsencialesMensuales()', () => {
+  it('solo suma Streaming y Suscripciones', () => {
+    const comps = [
+      compFijoBase({ id: 'c1', categoria: 'Arriendo',      monto: 800_000 }),
+      compFijoBase({ id: 'c2', categoria: 'Streaming',     monto: 30_000 }),
+      compFijoBase({ id: 'c3', categoria: 'Suscripciones', monto: 90_000 }),
+    ];
+    expect(calcularFijosNoEsencialesMensuales(comps)).toBe(120_000);
+  });
+
+  it('Gimnasio y Telefonia quedan como esenciales (decision explicita del ADR 014)', () => {
+    const comps = [
+      compFijoBase({ id: 'c1', categoria: 'Gimnasio',  monto: 120_000 }),
+      compFijoBase({ id: 'c2', categoria: 'Telefonía', monto: 60_000 }),
+    ];
+    expect(calcularFijosNoEsencialesMensuales(comps)).toBe(0);
+  });
+
+  it('usa el mismo factor de frecuencia que el total', () => {
+    const comps = [compFijoBase({ categoria: 'Streaming', monto: 15_000, frecuencia: 'Quincenal' })];
+    expect(calcularFijosNoEsencialesMensuales(comps)).toBe(30_000);
+  });
+
+  it('excluye inactivos, deudas y argumentos no-array', () => {
+    expect(calcularFijosNoEsencialesMensuales([compFijoBase({ categoria: 'Streaming', activo: false })])).toBe(0);
+    expect(calcularFijosNoEsencialesMensuales([compFijoBase({ categoria: 'Suscripciones', tipo: 'deuda-entidad' })])).toBe(0);
+    expect(calcularFijosNoEsencialesMensuales(null)).toBe(0);
+    expect(calcularFijosNoEsencialesMensuales([])).toBe(0);
+  });
+
+  it('nunca supera el total de fijos: restarlo da la parte esencial', () => {
+    const comps = [
+      compFijoBase({ id: 'c1', categoria: 'Arriendo',  monto: 800_000 }),
+      compFijoBase({ id: 'c2', categoria: 'Streaming', monto: 30_000 }),
+    ];
+    const total = calcularGastosFijosMensuales(comps);
+    const noEsenciales = calcularFijosNoEsencialesMensuales(comps);
+    expect(total - noEsenciales).toBe(800_000);
   });
 });
 
@@ -2967,6 +3019,29 @@ describe('construirContextoDistribucion()', () => {
     const aMano    = sugerirDistribucionIngreso(3_000_000, { gastosFijosMensuales: 1_200_000 });
     expect(derivado.split).toEqual(aMano.split);
   });
+
+  it('LIM.1b: expone fijosNoEsencialesMensuales sin tocar gastosFijosMensuales', () => {
+    const ctx = construirContextoDistribucion({
+      compromisos: [
+        compFijoBase({ id: 'f1', categoria: 'Arriendo',  monto: 1_200_000 }),
+        compFijoBase({ id: 'f2', categoria: 'Streaming', monto: 100_000 }),
+      ],
+    });
+    expect(ctx.gastosFijosMensuales).toBe(1_300_000);
+    expect(ctx.fijosNoEsencialesMensuales).toBe(100_000);
+    expect(construirContextoDistribucion({}).fijosNoEsencialesMensuales).toBe(0);
+  });
+
+  it('LIM.1b: el objetivo del fondo sigue saliendo del total de fijos, no de la parte esencial', () => {
+    const ctx = construirContextoDistribucion({
+      compromisos: [
+        compFijoBase({ id: 'f1', categoria: 'Arriendo',  monto: 1_200_000 }),
+        compFijoBase({ id: 'f2', categoria: 'Streaming', monto: 100_000 }),
+      ],
+      ahorro: { fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 0 }, aportes: [] },
+    });
+    expect(ctx.faltanteFondo).toBe(1_300_000 * 3);
+  });
 });
 
 // ── sugerirDistribucionIngreso() (Fase 3) ─────────────────────────
@@ -3013,6 +3088,43 @@ describe('sugerirDistribucionIngreso()', () => {
     expect(r.split.necesidades.pct + r.split.estiloVida.pct + r.split.ahorro.pct).toBe(100);
     expect(r.split.ahorro.pct).toBeGreaterThanOrEqual(0);
     expect(r.alertas.some(a => a.includes('80%') || a.includes('obligaciones'))).toBe(true);
+  });
+
+  it('LIM.1b: los fijos no esenciales salen de Necesidades y caen en el residuo de Estilo de vida', () => {
+    const conNoEsenciales = sugerirDistribucionIngreso(3_000_000, {
+      gastosFijosMensuales:       1_500_000,
+      fijosNoEsencialesMensuales:   300_000,
+    });
+    const soloEsenciales = sugerirDistribucionIngreso(3_000_000, { gastosFijosMensuales: 1_200_000 });
+    expect(conNoEsenciales.split).toEqual(soloEsenciales.split);
+    expect(conNoEsenciales.pctFijos).toBe(40);
+  });
+
+  it('LIM.1b: sin fijos no esenciales el reparto es el de antes', () => {
+    const r = sugerirDistribucionIngreso(3_000_000, {
+      gastosFijosMensuales:       1_200_000,
+      fijosNoEsencialesMensuales:         0,
+    });
+    expect(r.split).toEqual(sugerirDistribucionIngreso(3_000_000, { gastosFijosMensuales: 1_200_000 }).split);
+  });
+
+  it('LIM.1b: pctObligaciones tampoco carga los no esenciales', () => {
+    const r = sugerirDistribucionIngreso(3_000_000, {
+      gastosFijosMensuales:       1_500_000,
+      fijosNoEsencialesMensuales:   300_000,
+      cuotasDeudaMensuales:         300_000,
+    });
+    expect(r.pctObligaciones).toBe(50); // (1.2M esenciales + 300k cuota) / 3M
+  });
+
+  it('LIM.1b: un dato inconsistente (no esenciales mayor al total) no produce un piso negativo', () => {
+    const r = sugerirDistribucionIngreso(3_000_000, {
+      gastosFijosMensuales:         300_000,
+      fijosNoEsencialesMensuales: 9_000_000,
+    });
+    expect(r.pctFijos).toBe(0);
+    expect(r.split.necesidades.pct).toBe(0);
+    expect(r.split.necesidades.pct + r.split.estiloVida.pct + r.split.ahorro.pct).toBe(100);
   });
 
   it('el split siempre suma 100 para distintos niveles de pctFijos', () => {

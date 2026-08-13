@@ -1,6 +1,6 @@
 # Tablero - Límites de gasto
 
-> Revisado: 2026-08-12.
+> Revisado: 2026-08-12 (LIM.1b).
 
 > Satélite de [`BOARD.md`](../BOARD.md) (dominio `presupuesto`). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
 
@@ -16,18 +16,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 >
 > **Lo que cerró el ADR 045 y ahorra trabajo:** la base sigue siendo el ingreso recurrente y lo comprometido ya está descontado por el piso de Necesidades del [ADR 013](../DECISIONS/013-distribucion-automatica-inteligente.md), así que **la aritmética del asignado no cambia y `distribucion.js` no se toca por la base**. Los saldos en cuenta nunca entran (stock contra flujo, doble conteo). El dinero extraordinario se informa y no se reparte: eso es LIM.1a.
 
-> **LIM.1a cerrada el 2026-08-12** (`extraordinarioDelMes()`, `.estilo-olla--extra`). Detalle en el CHANGELOG.
-
-#### LIM.1b - Los fijos no esenciales cuentan contra Estilo de vida
-- Prioridad  : media
-- Estado     : lista para trabajar, con el riesgo declarado abajo. Es el punto 8 del brief; el catálogo lo cerró el [ADR 014](../DECISIONS/014-taxonomia-categorias-transversal.md) el 2026-07-13
-- Área       : code
-- Objetivo   : hoy todo gasto con `compromisoId` se cuenta como Necesidades (`ejecutadoPorGrupoDelMes`), así que el streaming pesa igual que el arriendo. Streaming y Suscripciones pasan a Estilo de vida, que es donde el usuario decide.
-- Riesgo     : **hay que mover los dos lados en la misma rebanada.** El asignado de Necesidades sale de `calcularGastosFijosMensuales()`, que suma todos los fijos: si solo se mueve el ejecutado, Estilo de vida aparece excedido contra un asignado que no incluye esas categorías. Toca el piso del ADR 013 y con eso la superficie de Mis cuentas, no solo Límites.
-- Secciones  : Límites de gasto (`presupuesto`), Mis cuentas (`tesoreria`)
-- Archivos   : `modules/core/constants.js` (la lista de no esenciales, fuente única), `modules/dominio/presupuesto/logic.js` (`ejecutadoPorGrupoDelMes`, `desgloseNecesidadesDelMes`), `modules/dominio/tesoreria/logic/distribucion.js` (`calcularGastosFijosMensuales` y su uso en `construirContextoDistribucion`), `tests/unit/presupuesto.test.js`, `tests/unit/tesoreria*.test.js`, E2E de ambas secciones
-- Depende de : nada, pero conviene después de LIM.1a (la más barata primero)
-- Modelo     : Alta capacidad - Alto (cambia el reparto del ingreso en dos superficies)
+> **LIM.1a y LIM.1b cerradas el 2026-08-12.** Detalle en el CHANGELOG y en [`contexto/limites.md`](../contexto/limites.md).
 
 #### LIM.1c - Sugerir dónde y cuánto poner tope (bloqueada)
 - Prioridad  : sin definir

@@ -2128,7 +2128,13 @@ describe('renderFormAbono() - formulario', () => {
     const tzOriginal = process.env.TZ;
 
     afterEach(() => {
-      process.env.TZ = tzOriginal;
+      // Sin TZ previa, asignar `undefined` deja la cadena "undefined" en el
+      // entorno y Node cae a UTC para el resto del archivo: los describe de
+      // abajo calculan "mañana" con la fecha local del import y lo comparan
+      // contra un render que ya corre en UTC, así que después de las 7 p.m.
+      // en Bogotá "mañana" pasa a ser "hoy" y el panel lo oculta (IN.7).
+      if (tzOriginal === undefined) delete process.env.TZ;
+      else                          process.env.TZ = tzOriginal;
       vi.useRealTimers();
     });
 

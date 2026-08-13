@@ -9,7 +9,7 @@
  * Sin DOM. Sin S directo. Testeable en Node/Vitest.
  */
 
-import { CATEGORIAS_GASTO, GRUPOS_FINANCIEROS } from '../../core/constants.js';
+import { CATEGORIAS_GASTO, GRUPOS_FINANCIEROS, CATEGORIAS_AGENDA_NO_ESENCIALES } from '../../core/constants.js';
 import { gastosMes }        from '../gastos/logic.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
@@ -131,6 +131,23 @@ export function resumenGrupos(asignadoPorGrupo = {}, ejecutadoPorGrupo = {}) {
 }
 
 /**
+ * Ids de los gastos fijos que no son esenciales (Streaming y Suscripciones,
+ * lista cerrada del ADR 014). Con ellos, un gasto ligado a un compromiso se
+ * puede mandar a Estilo de vida sin importar otro dominio (regla ADN #10):
+ * el criterio es la categoría del compromiso, que ya vive en `S.compromisos`.
+ *
+ * @param {import('../../core/state.js').Compromiso[]} compromisos
+ * @returns {Set<string>}
+ */
+export function idsFijosNoEsenciales(compromisos) {
+  return new Set(
+    (compromisos ?? [])
+      .filter(c => c.tipo === 'fijo' && CATEGORIAS_AGENDA_NO_ESENCIALES.includes(c.categoria))
+      .map(c => c.id),
+  );
+}
+
+/**
  * Deriva el ejecutado del mes por grupo financiero desde los flujos ya
  * registrados en Finko (ADR 017, decisión 3). Sin schema nuevo: todo sale de
  * datos que cada dominio ya guarda.
@@ -138,7 +155,17 @@ export function resumenGrupos(asignadoPorGrupo = {}, ejecutadoPorGrupo = {}) {
  * Partición de `gastos` (evita doble conteo entre Necesidades y Estilo de vida):
  *   - **Necesidades:** gastos del mes vinculados a un compromiso (`compromisoId`),
  *     es decir pagos de gastos fijos marcados en Calendario y abonos a deudas.
- *   - **Estilo de vida:** gastos variables del mes (sin `compromisoId`).
+ *   - **Estilo de vida:** gastos variables del mes (sin `compromisoId`) y, desde
+ *     LIM.1b, los pagos de fijos **no esenciales** (Streaming y Suscripciones,
+ *     ADR 014): el streaming no puede pesar igual que el arriendo, porque es
+ *     justo donde el usuario decide. Su asignado se mueve en la misma rebanada
+ *     (`calcularFijosNoEsencialesMensuales` en tesorería), o Estilo de vida
+ *     aparecería excedido contra un plan que no lo incluye.
+ *
+ * El pago de un fijo se registra con categoría 'Gastos fijos' (no la del
+ * compromiso), así que la clasificación va por `compromisoId` y necesita la
+ * lista de compromisos. **No filtra por `activo`**: un fijo dado de baja a mitad
+ * de mes ya salió del asignado, y su pago del día 5 sigue siendo streaming.
  *
  * Ahorro se toma de los aportes fechados al fondo de emergencia
  * (`S.ahorro.aportes`). Metas, apartados e inversiones no guardan un historial
@@ -151,17 +178,21 @@ export function resumenGrupos(asignadoPorGrupo = {}, ejecutadoPorGrupo = {}) {
  * @param {import('../../core/state.js').Aporte[]} aportesFondo  S.ahorro.aportes
  * @param {number} anio
  * @param {number} mes - 1-12
+ * @param {import('../../core/state.js').Compromiso[]} [compromisos]  S.compromisos
  * @returns {Record<'necesidades'|'estilo-de-vida'|'ahorro', number>}
  */
-export function ejecutadoPorGrupoDelMes(gastos, aportesFondo, anio, mes) {
+export function ejecutadoPorGrupoDelMes(gastos, aportesFondo, anio, mes, compromisos = []) {
   const delMes = gastosMes(gastos ?? [], anio, mes);
+  const noEsenciales = idsFijosNoEsenciales(compromisos);
+
+  const esNecesidad = g => !!g.compromisoId && !noEsenciales.has(g.compromisoId);
 
   const necesidades = delMes
-    .filter(g => !!g.compromisoId)
+    .filter(esNecesidad)
     .reduce((acc, g) => acc + (Number(g.monto) || 0), 0);
 
   const estiloVida = delMes
-    .filter(g => !g.compromisoId)
+    .filter(g => !esNecesidad(g))
     .reduce((acc, g) => acc + (Number(g.monto) || 0), 0);
 
   const prefijo = `${anio}-${String(mes).padStart(2, '0')}`;
@@ -180,6 +211,10 @@ export function ejecutadoPorGrupoDelMes(gastos, aportesFondo, anio, mes) {
  * ADR 017 decisión 4: en v1 no hay presupuesto por item (el presupuesto es el
  * del grupo); aquí solo se informa el monto de referencia del compromiso
  * (`monto` para fijos, `cuotaMensual` para deudas) y si ya se pagó este mes.
+ *
+ * LIM.1b: los fijos no esenciales no salen acá, porque ya no cargan Necesidades
+ * (`ejecutadoPorGrupoDelMes`); listarlos dejaría un desglose que no suma lo que
+ * la tarjeta del grupo muestra arriba.
  *
  * Pura: recibe compromisos y gastos ya extraídos de S; no importa
  * `compromisos/logic.js` (regla ADN #10, misma decisión que MC.5a/MC.5b).
@@ -200,9 +235,11 @@ export function ejecutadoPorGrupoDelMes(gastos, aportesFondo, anio, mes) {
  */
 export function desgloseNecesidadesDelMes(compromisos, gastos, anio, mes) {
   const delMes = gastosMes(gastos ?? [], anio, mes);
+  const noEsenciales = idsFijosNoEsenciales(compromisos);
 
   const items = (compromisos ?? [])
     .filter(c => c.activo !== false
+      && !noEsenciales.has(c.id)
       && (c.tipo === 'fijo' || c.tipo === 'deuda-entidad' || c.tipo === 'deuda-personal'))
     .map(c => {
       const esDeudaTipo = c.tipo !== 'fijo';

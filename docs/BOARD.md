@@ -44,14 +44,12 @@ Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (si
 
 ## Índice de pendientes
 
-Las 23 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+Las 20 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
 | INT.1g | Carril derecho de 320px desde 1.680px (diferida) | Transversal | baja (diferida) | sin sección candidata con contenido |
-| LIM.1b | Los fijos no esenciales cuentan contra Estilo de vida | Límites | media | nada; mueve el reparto en Límites y Mis cuentas a la vez |
 | LIM.1c | Sugerir dónde y cuánto poner tope (bloqueada) | Límites | sin definir | ADR 044 (motor único de sugerencia) |
-| PE.6d | Me deben: los cinco estados de un vistazo | Me deben | media-alta | bloqueada por IV.2 en producción |
 | ANL.1c | Lectura del colapsable de detalle de Análisis | Análisis | baja | nada: ANL.1a cerrada |
 | CFG.2c | Reubicar lo fiscal: asistente en Ajustes + Análisis | Configuración | sin definir | CFG.2a |
 | CFG.2a | Auto-derivar ingresos brutos al monitor de renta | Configuración | sin definir | CFG.1a (cerrada) |
@@ -63,7 +61,7 @@ Las 23 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | PERF.5 | Migrar la persistencia a IndexedDB (futura, no iniciar) | Transversal | sin definir | un disparador del ADR 030 D4 |
 | PERF.6 | Coalescer de renders por microtask | Transversal | baja | decidir si el beneficio lo justifica |
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | P4 del ADR 033 + cola de diseño |
-| IV.4 | Iconografía dirigida post-color | Transversal | tras IV.2 | IV.2 en producción + revisión visual |
+| IV.4 | Iconografía dirigida post-color | Transversal | media | diseños de Esteban (avalancha + bola de nieve) |
 | LG.2d | Mudanza de la vitrina a Análisis + tarjeta en Inicio | Transversal | media | nada: ADR 046 D4 reservó el bloque en Análisis |
 | LG.2e | Familia comportamiento (interpretación de hábitos) | Transversal | baja | LG.2c; `ahorro-creciente` sigue sin derivación de ingreso mensual |
 | PA.1 | Pagos y créditos automáticos (débito automático simulado) | Transversal | media-alta | ADR 041 (motor); ADR 052 (Abierta) |
@@ -95,11 +93,7 @@ AH.7a → [`board/ahorro.md`](board/ahorro.md)
 
 ### Límites de gasto (dominio `presupuesto`)
 
-LIM.1b, LIM.1c → [`board/limites.md`](board/limites.md)
-
-### Me deben (dominio `personales`)
-
-PE.6d → [`board/me-deben.md`](board/me-deben.md)
+LIM.1c → [`board/limites.md`](board/limites.md)
 
 ### Análisis (dominio `analisis`)
 
@@ -124,6 +118,7 @@ Se listan solo para que una idea nueva de estas secciones no vuelva a generar un
 | Sección | Dónde vive su trabajo futuro |
 |---|---|
 | Movimientos | Ledger accionable, con búsqueda y filtros, completo. Deshacer una transferencia (**MC.17f**) cerró el 2026-08-12; editar un aporte puntual no tiene tarjeta propia (ver `contexto/movimientos.md`) |
+| Me deben | Iniciativa **PE.6** completa (**PE.6a-e**; PE.6d cerró el 2026-08-12, [ADR 047](DECISIONS/047-me-deben-v2-intereses-e-historial.md)), ver `contexto/me-deben.md` |
 | Mis cuentas | Iniciativa "Mis Cuentas v2" completa: **MC.13**, **MC.16**, **MC.17** (incluye MC.17f) y **MC.18** en producción (ver `contexto/mis-cuentas.md`) |
 | Gastos | Iniciativa del toast de confirmación completa: **GAS.2a**, **GAS.2b** y **GAS.2c** cerradas ([ADR 062](DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md)), ver `board/gastos.md` |
 | Metas | Iniciativa "Metas v2" completa: **MT.6a-d** cerradas ([ADR 048](DECISIONS/048-metas-v2-subcategorias-y-plan-de-aportes.md), [ADR 064](DECISIONS/064-estructura-de-dos-niveles.md)), ver `contexto/metas.md` |

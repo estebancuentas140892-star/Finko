@@ -9,6 +9,7 @@
 
 import { obligacionesYAportesDelCobro, frecuenciaPrincipalIngresos, normalizarFrecuenciaAporte, aportePorPeriodo } from '../../../infra/vencimientos.js';
 import { distribuirPago } from '../../../infra/distribuir-pago.js';
+import { CATEGORIAS_AGENDA_NO_ESENCIALES } from '../../../core/constants.js';
 import { FACTOR_MENSUAL, isoFecha, ultimoPagoHasta } from './ingresos.js';
 
 /**
@@ -22,6 +23,29 @@ export function calcularGastosFijosMensuales(compromisos) {
   if (!Array.isArray(compromisos)) return 0;
   return compromisos
     .filter(c => c.activo !== false && c.tipo === 'fijo')
+    .reduce((acc, c) => acc + (c.monto ?? 0) * (FACTOR_MENSUAL[c.frecuencia] ?? 0), 0);
+}
+
+/**
+ * Parte no esencial de los gastos fijos activos, proyectada a unidad mensual
+ * (LIM.1b): Streaming y Suscripciones, la lista cerrada del ADR 014. Es un
+ * subconjunto de `calcularGastosFijosMensuales`, con su mismo filtro y su mismo
+ * factor de frecuencia, así que restarla da la parte esencial.
+ *
+ * **No se resta de `calcularGastosFijosMensuales`**, que sigue devolviendo el
+ * total: esa función también define el objetivo del fondo de emergencia
+ * ("cada nivel es un mes más de lo que pagas sí o sí") y Ahorro la replica
+ * localmente, así que cambiarla movería el objetivo del fondo en una superficie
+ * y no en la otra. Quien necesita el piso de Necesidades resta acá.
+ *
+ * @param {import('../../../core/state.js').Compromiso[]} compromisos
+ * @returns {number} COP/mes equivalente.
+ */
+export function calcularFijosNoEsencialesMensuales(compromisos) {
+  if (!Array.isArray(compromisos)) return 0;
+  return compromisos
+    .filter(c => c.activo !== false && c.tipo === 'fijo'
+      && CATEGORIAS_AGENDA_NO_ESENCIALES.includes(c.categoria))
     .reduce((acc, c) => acc + (c.monto ?? 0) * (FACTOR_MENSUAL[c.frecuencia] ?? 0), 0);
 }
 
@@ -515,6 +539,9 @@ export function construirContextoDistribucion({
   config       = null,
 } = {}) {
   const gastosFijosMensuales = calcularGastosFijosMensuales(compromisos ?? []);
+  // LIM.1b: la parte que no es esencial no carga Necesidades; el objetivo del
+  // fondo de emergencia sigue usando el total de arriba.
+  const fijosNoEsencialesMensuales = calcularFijosNoEsencialesMensuales(compromisos ?? []);
 
   const tieneDeudas = (compromisos ?? [])
     .some(c => c.activo !== false && (c.tipo === 'deuda-entidad' || c.tipo === 'deuda-personal'));
@@ -569,6 +596,7 @@ export function construirContextoDistribucion({
 
   return {
     gastosFijosMensuales,
+    fijosNoEsencialesMensuales,
     cuotasDeudaMensuales,
     faltanteFondo,
     aporteMensualObjetivos,
@@ -599,6 +627,7 @@ const _BASE_AHORRO_PCT = 20;  // ahorro base sano cuando no hay prioridades acti
  * @param {number} ingresoMensual
  * @param {{
  *   gastosFijosMensuales?:    number,
+ *   fijosNoEsencialesMensuales?: number,
  *   cuotasDeudaMensuales?:    number,
  *   faltanteFondo?:           number,
  *   aporteMensualObjetivos?:  number,
@@ -629,6 +658,7 @@ const _BASE_AHORRO_PCT = 20;  // ahorro base sano cuando no hay prioridades acti
  */
 export function sugerirDistribucionIngreso(ingresoMensual, {
   gastosFijosMensuales    = 0,
+  fijosNoEsencialesMensuales = 0,
   cuotasDeudaMensuales    = 0,
   faltanteFondo           = 0,
   aporteMensualObjetivos  = 0,
@@ -644,11 +674,22 @@ export function sugerirDistribucionIngreso(ingresoMensual, {
 } = {}) {
   if (!ingresoMensual || ingresoMensual <= 0) return null;
 
-  const pctFijos = gastosFijosMensuales > 0
-    ? Math.round((gastosFijosMensuales / ingresoMensual) * 100)
+  // LIM.1b (ADR 014): Streaming y Suscripciones son fijos que el usuario puede
+  // dar de baja, así que no cargan Necesidades. Estilo de vida es el residuo,
+  // de modo que lo que sale de acá le entra allá sin aritmética extra, que es
+  // justo donde Límites cuenta su ejecutado.
+  const fijosEsenciales = Math.max(
+    0,
+    (Number(gastosFijosMensuales) || 0) - (Number(fijosNoEsencialesMensuales) || 0),
+  );
+
+  // El % que se informa y se compara contra lo asignado a Necesidades es el de
+  // los fijos que de verdad la cargan; los no esenciales viajan en Estilo de vida.
+  const pctFijos = fijosEsenciales > 0
+    ? Math.round((fijosEsenciales / ingresoMensual) * 100)
     : 0;
 
-  const montoNec = (Number(gastosFijosMensuales) || 0) + (Number(cuotasDeudaMensuales) || 0);
+  const montoNec = fijosEsenciales + (Number(cuotasDeudaMensuales) || 0);
   const pctObligaciones = montoNec > 0
     ? Math.min(100, Math.round(montoNec / ingresoMensual * 100))
     : 0;

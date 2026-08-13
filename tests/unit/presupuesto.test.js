@@ -313,6 +313,68 @@ describe('ejecutadoPorGrupoDelMes()', () => {
   });
 });
 
+// ── LIM.1b: los fijos no esenciales cuentan contra Estilo de vida (ADR 014) ───
+
+describe('ejecutadoPorGrupoDelMes() con fijos no esenciales (LIM.1b)', () => {
+  const netflix  = { id: 'cf-net', tipo: 'fijo', categoria: 'Streaming',     monto: 30_000,  activo: true };
+  const chatgpt  = { id: 'cf-gpt', tipo: 'fijo', categoria: 'Suscripciones', monto: 90_000,  activo: true };
+  const arriendo = { id: 'cf-arr', tipo: 'fijo', categoria: 'Arriendo',      monto: 800_000, activo: true };
+
+  it('el pago de un fijo de Streaming cuenta como Estilo de vida, no como Necesidades', () => {
+    const gastos = [
+      gasto({ id: 'g1', monto: 800_000, categoria: 'Gastos fijos', compromisoId: 'cf-arr', fecha: '2026-05-05' }),
+      gasto({ id: 'g2', monto: 30_000,  categoria: 'Gastos fijos', compromisoId: 'cf-net', fecha: '2026-05-05' }),
+    ];
+    const r = ejecutadoPorGrupoDelMes(gastos, [], 2026, 5, [arriendo, netflix]);
+    expect(r.necesidades).toBe(800_000);
+    expect(r['estilo-de-vida']).toBe(30_000);
+  });
+
+  it('Suscripciones también, y suma con los gastos variables del mes', () => {
+    const gastos = [
+      gasto({ id: 'g1', monto: 90_000, categoria: 'Gastos fijos', compromisoId: 'cf-gpt', fecha: '2026-05-03' }),
+      gasto({ id: 'g2', monto: 60_000, fecha: '2026-05-12' }),
+    ];
+    const r = ejecutadoPorGrupoDelMes(gastos, [], 2026, 5, [chatgpt]);
+    expect(r.necesidades).toBe(0);
+    expect(r['estilo-de-vida']).toBe(150_000);
+  });
+
+  it('Gimnasio y Telefonía siguen siendo esenciales (decisión explícita del ADR 014)', () => {
+    const compromisos = [
+      { id: 'cf-gym', tipo: 'fijo', categoria: 'Gimnasio',  monto: 120_000, activo: true },
+      { id: 'cf-tel', tipo: 'fijo', categoria: 'Telefonía', monto: 60_000,  activo: true },
+    ];
+    const gastos = [
+      gasto({ id: 'g1', monto: 120_000, categoria: 'Gastos fijos', compromisoId: 'cf-gym', fecha: '2026-05-04' }),
+      gasto({ id: 'g2', monto: 60_000,  categoria: 'Gastos fijos', compromisoId: 'cf-tel', fecha: '2026-05-04' }),
+    ];
+    const r = ejecutadoPorGrupoDelMes(gastos, [], 2026, 5, compromisos);
+    expect(r.necesidades).toBe(180_000);
+    expect(r['estilo-de-vida']).toBe(0);
+  });
+
+  it('un abono a deuda nunca se reclasifica, aunque comparta nombre de categoría', () => {
+    const deuda  = { id: 'cd1', tipo: 'deuda-entidad', categoria: 'Suscripciones', cuotaMensual: 150_000, activo: true };
+    const gastos = [gasto({ id: 'g1', monto: 150_000, categoria: 'Deudas', compromisoId: 'cd1', fecha: '2026-05-10' })];
+    const r = ejecutadoPorGrupoDelMes(gastos, [], 2026, 5, [deuda]);
+    expect(r.necesidades).toBe(150_000);
+    expect(r['estilo-de-vida']).toBe(0);
+  });
+
+  it('un fijo no esencial dado de baja sigue clasificando su pago ya registrado', () => {
+    const gastos = [gasto({ id: 'g1', monto: 30_000, categoria: 'Gastos fijos', compromisoId: 'cf-net', fecha: '2026-05-05' })];
+    const r = ejecutadoPorGrupoDelMes(gastos, [], 2026, 5, [{ ...netflix, activo: false }]);
+    expect(r['estilo-de-vida']).toBe(30_000);
+    expect(r.necesidades).toBe(0);
+  });
+
+  it('sin compromisos, todo gasto con compromisoId sigue siendo Necesidades', () => {
+    const gastos = [gasto({ id: 'g1', monto: 30_000, compromisoId: 'cf-net', fecha: '2026-05-05' })];
+    expect(ejecutadoPorGrupoDelMes(gastos, [], 2026, 5).necesidades).toBe(30_000);
+  });
+});
+
 // ── desgloseNecesidadesDelMes() (MC.5c, ADR 017) ──────────────────────────────
 
 const compromisoFijo = (overrides = {}) => ({
@@ -406,6 +468,16 @@ describe('desgloseNecesidadesDelMes()', () => {
   it('sin compromisos devuelve array vacío', () => {
     expect(desgloseNecesidadesDelMes([], [], 2026, 5)).toEqual([]);
     expect(desgloseNecesidadesDelMes(null, null, 2026, 5)).toEqual([]);
+  });
+
+  it('LIM.1b: los fijos no esenciales no salen en el desglose de Necesidades', () => {
+    const compromisos = [
+      compromisoFijo({ id: 'cf-arr', categoria: 'Arriendo' }),
+      compromisoFijo({ id: 'cf-net', categoria: 'Streaming',     monto: 30_000 }),
+      compromisoFijo({ id: 'cf-gpt', categoria: 'Suscripciones', monto: 90_000 }),
+    ];
+    const ids = desgloseNecesidadesDelMes(compromisos, [], 2026, 5).map(i => i.id);
+    expect(ids).toEqual(['cf-arr']);
   });
 });
 

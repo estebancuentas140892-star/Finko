@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(limites): LIM.1b, los fijos no esenciales cuentan contra Estilo de vida · 2026-08-12
+
+Punto 8 del brief de LIM.1, con el catálogo que cerró el [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md) el 2026-07-13 (Streaming y Suscripciones, nada más; Gimnasio y Telefonía quedan esenciales por decisión explícita de Esteban). Fichas: [`contexto/limites.md`](contexto/limites.md), [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md).
+
+- **La categoría del gasto no servía**: pagar un fijo guarda un `Gasto` con categoría `'Gastos fijos'`, no con la del compromiso, así que "esto era Netflix" solo se sabe por `compromisoId`. Por eso `ejecutadoPorGrupoDelMes` recibe un 5.º parámetro `compromisos` (opcional, con default: un consumidor que lo omita vuelve al comportamiento viejo sin error) y `idsFijosNoEsenciales()` resuelve el Set. `desgloseNecesidadesDelMes` los saca del colapsable, o el detalle no sumaría lo que la tarjeta muestra arriba.
+- **Los dos lados se movieron juntos**, que era el riesgo declarado de la tarjeta: `calcularFijosNoEsencialesMensuales()` nueva en `tesoreria/logic/distribucion.js` y `fijosNoEsencialesMensuales` en el contexto; `sugerirDistribucionIngreso` la resta del piso de Necesidades del [ADR 013](DECISIONS/013-distribucion-automatica-inteligente.md). Como Estilo de vida es el **residuo**, la diferencia le entra sola: cero aritmética nueva en el reparto.
+- **`calcularGastosFijosMensuales` no se tocó, a propósito.** De esa misma cifra sale el objetivo del fondo de emergencia ("cada nivel es un mes más de lo que pagas sí o sí") y Ahorro la replica localmente en `ahorro/index.js` por la regla ADN 10: restarle los no esenciales habría movido el objetivo del fondo en una superficie y no en la otra. Si algún día el fondo debe medirse contra lo esencial, es decisión de producto con ADR, no un efecto colateral de esta rebanada.
+- **`pctFijos` pasa a ser el % de los fijos esenciales**: es el número que se compara contra lo asignado a Necesidades, y con el total la alerta de preset ("tus gastos fijos superan lo asignado") dispararía falso. Consecuencia asumida: quien tenga Streaming ve acá un porcentaje menor que la suma de sus fijos en Calendario.
+- `_MOTIVO_SIN_TOPE` gana `'Gastos fijos': 'Se controla en Calendario'` (`presupuesto/view.js`): esa fila ya salía en la lista de huérfanas de Estilo de vida y caía al genérico "No lleva tope".
+- **Defecto preexistente arreglado de paso, porque bloqueaba la compuerta 1**: las 5 fallas de `compromisos.test.js` que los últimos cierres reportaron como "ajenas, patrón de reloj fijo" eran una fuga de `process.env.TZ`. El `afterEach` de BUG-018 restauraba `process.env.TZ = tzOriginal` con `tzOriginal` indefinido, lo que deja la cadena `"undefined"` y manda a Node a UTC para el resto del archivo; después de las 7 p.m. en Bogotá, "mañana" pasaba a ser "hoy" y el panel de prioridades lo ocultaba (IN.7). Ahora borra la variable en vez de asignarla.
+- Tests: 14 unitarios nuevos (6 en `presupuesto.test.js`, 8 en `tesoreria.test.js`). **4011/4011 unit** (por primera vez sin las 5 fallas heredadas) + E2E + lint verdes. SW `finko-v517` → `finko-v518`.
+
 ### feat(me-deben): PE.6d, los cinco estados de un vistazo · 2026-08-12
 
 Cierra **PE.6 (Me deben v2) completa** (PE.6a-e), D6 del [ADR 047](DECISIONS/047-me-deben-v2-intereses-e-historial.md). Ficha: [`contexto/me-deben.md`](contexto/me-deben.md).

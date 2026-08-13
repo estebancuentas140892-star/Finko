@@ -92,8 +92,10 @@ function _renderResumenGrupos(anio, mes) {
     'estilo-de-vida': dist.split.estiloVida.monto,
     'ahorro':         dist.split.ahorro.monto,
   };
+  // LIM.1b: los compromisos entran porque el pago de un fijo se guarda con
+  // categoría 'Gastos fijos'; sin ellos no se sabe cuál era Streaming.
   const ejecutadoPorGrupo = ejecutadoPorGrupoDelMes(
-    S.gastos ?? [], S.ahorro?.aportes ?? [], anio, mes,
+    S.gastos ?? [], S.ahorro?.aportes ?? [], anio, mes, S.compromisos ?? [],
   );
   const resumen = resumenGrupos(asignadoPorGrupo, ejecutadoPorGrupo);
 
@@ -552,10 +554,14 @@ function _renderEnvelope(presupuesto, gastos, anio, mes, nota = '') {
 // desde acá: son las que el formulario no ofrece. "Vivienda" y "Servicios
 // públicos" salieron del selector con CAT.1 (siempre recurrentes con fecha,
 // viven en Calendario); "Deudas" y "Ahorro" son categorías internas que la app
-// escribe sola al registrar un abono o un aporte.
+// escribe sola al registrar un abono o un aporte. "Gastos fijos" es la que la
+// app le pone al pago de un compromiso de Calendario: desde LIM.1b, la parte no
+// esencial de esos pagos cuenta acá dentro, así que la fila dice dónde se
+// controla en vez de caer al genérico "No lleva tope".
 const _MOTIVO_SIN_TOPE = {
   'Vivienda':           'Se controla en Calendario',
   'Servicios públicos': 'Se controla en Calendario',
+  'Gastos fijos':       'Se controla en Calendario',
   'Deudas':             'Se controla en Deudas',
   'Ahorro':             'Se controla en Ahorro',
 };

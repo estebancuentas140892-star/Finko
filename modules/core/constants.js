@@ -610,6 +610,21 @@ export const CATEGORIAS_AGENDA = [
   'Otro',
 ];
 
+/**
+ * Categorías de gasto fijo que NO son esenciales: se pueden dar de baja sin
+ * poner en riesgo la vida diaria, así que cuentan contra Estilo de vida (donde
+ * el usuario decide) y no contra Necesidades. Lista cerrada por el
+ * [ADR 014](../../docs/DECISIONS/014-taxonomia-categorias-transversal.md),
+ * validación del 2026-07-13: Streaming y Suscripciones, nada más. Gimnasio y
+ * Telefonía quedan como esenciales por decisión explícita.
+ *
+ * Fuente única de la dimensión (LIM.1b): la consumen el ejecutado de Límites
+ * (`presupuesto/logic.js`) y el piso de Necesidades de la distribución
+ * (`tesoreria/logic/distribucion.js`), que tienen que moverse juntos o Estilo
+ * de vida aparece excedido contra un asignado que no lo incluye.
+ */
+export const CATEGORIAS_AGENDA_NO_ESENCIALES = ['Streaming', 'Suscripciones'];
+
 /** Ícono del sprite por categoría de gasto fijo (Agenda). Solo UI; nunca en el valor almacenado. */
 export const CATEGORIA_AGENDA_ICONO = {
   'Arriendo':           'i-home',
