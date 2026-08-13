@@ -1569,3 +1569,37 @@ describe('Migración v36 → v37 (subcategoría de meta, MT.6b)', () => {
     expect(S.metas[0].subcategoriaId).toBe('vehiculo-carro');
   });
 });
+
+describe('Migración v37 → v38 (plan de aportes de meta, MT.6c)', () => {
+  it('una meta existente arranca sin plan de aportes', () => {
+    const v37 = { ...createInitialState(), _version: 37 };
+    v37.metas = [{ id: 'm1', nombre: 'Viaje', montoObjetivo: 1000, montoActual: 0, completada: false, subcategoriaId: null }];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v37));
+
+    loadData();
+
+    expect(S.metas[0].planAportes).toEqual([]);
+    expect(S._version).toBe(SCHEMA_VERSION);
+  });
+
+  it('un estado v37 sin metas en absoluto no revienta la migración', () => {
+    const v37 = { ...createInitialState(), _version: 37 };
+    delete v37.metas;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v37));
+
+    expect(() => loadData()).not.toThrow();
+  });
+
+  it('es idempotente: no sobrescribe un plan de aportes ya guardado', () => {
+    const v38 = { ...createInitialState(), _version: 38 };
+    v38.metas = [{
+      id: 'm1', nombre: 'Carro', montoObjetivo: 1000, montoActual: 0, completada: false,
+      planAportes: [{ fecha: '2026-08-01', monto: 500 }],
+    }];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v38));
+
+    loadData();
+
+    expect(S.metas[0].planAportes).toEqual([{ fecha: '2026-08-01', monto: 500 }]);
+  });
+});

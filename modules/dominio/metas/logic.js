@@ -14,6 +14,8 @@ import {
   aportePorPeriodo,
   etiquetaPeriodo,
   frecuenciaPrincipalIngresos,
+  normalizarFrecuenciaAporte,
+  fechasAportePlan,
 } from '../../infra/vencimientos.js';
 import { progresoDeBolsa } from '../../infra/bolsas.js';
 import { hijosDeCategoria } from '../../infra/taxonomia.js';
@@ -128,6 +130,48 @@ export function calcularAhorroPorPeriodo(meta, frecuenciaIngresos) {
     frecuencia:      r.frecuencia,
     etiqueta:        r.etiqueta,
   };
+}
+
+/**
+ * Genera el plan de aportes de una meta (MT.6c, ADR 048 D3): un registro de
+ * aporte por cada fecha de ingreso hasta `meta.fechaLimite`. Se llama al
+ * crear la meta, al editarla, al registrar un aporte y cuando cambia la
+ * frecuencia del ingreso principal: el plan **se regenera completo**, nunca
+ * se parcha (un ajuste manual sobre un aporte suelto no sobrevive).
+ *
+ * Sin fecha límite, meta ya cumplida o sin faltante, no hay plan: `[]`.
+ *
+ * El día de pago que ancla las fechas es el del ingreso de mayor monto entre
+ * los que cobran en la frecuencia principal (el más representativo del
+ * ritmo real); sin ninguno con día datable, `fechasAportePlan` cae a fechas
+ * espaciadas uniformemente.
+ *
+ * @param {import('../../core/state.js').Meta} meta
+ * @param {import('../../core/state.js').Ingreso[]} ingresos
+ * @param {string} hoyISO 'YYYY-MM-DD' de referencia (inyectable).
+ * @returns {{fecha: string, monto: number}[]}
+ */
+export function generarPlanAportes(meta, ingresos, hoyISO = hoy()) {
+  if (!meta?.fechaLimite) return [];
+
+  const { faltante, completada } = calcularProgreso(meta);
+  if (completada || faltante <= 0) return [];
+
+  const activos     = (ingresos ?? []).filter(i => i?.activo !== false);
+  const frecuencia  = frecuenciaPrincipalIngresos(activos);
+  const principal   = activos
+    .filter(i => normalizarFrecuenciaAporte(i.frecuencia) === frecuencia)
+    .sort((a, b) => (Number(b.monto) || 0) - (Number(a.monto) || 0))
+    .at(0);
+
+  return fechasAportePlan({
+    faltante,
+    fechaObjetivoISO: meta.fechaLimite,
+    frecuencia,
+    diaPago:        principal?.diaPago ?? null,
+    fechaCreacion:  principal?.fechaCreacion,
+    hoyISO,
+  });
 }
 
 // ── VALIDACIÓN ───────────────────────────────────────────────────

@@ -27,6 +27,7 @@ import {
   aportePorPeriodo,
   diasPorPeriodo,
   etiquetaPeriodo,
+  fechasAportePlan,
   frecuenciaPrincipalIngresos,
   montoCobroPrincipal,
   normalizarFrecuenciaAporte,
@@ -922,5 +923,57 @@ describe('obligacionesYAportesDelCobro - aportes', () => {
       apartados: [apartado()],
     });
     expect(r.aportes.map(a => a.tipo)).toEqual(['fondo', 'meta', 'apartado']);
+  });
+});
+
+// ── fechasAportePlan (MT.6c, ADR 048 D3) ──────────────────────────
+
+describe('fechasAportePlan', () => {
+  it('sin ritmo que sugerir (mismos casos de aportePorPeriodo), devuelve []', () => {
+    expect(fechasAportePlan({ faltante: 0, fechaObjetivoISO: '2026-12-31', frecuencia: 'Mensual', hoyISO: '2026-07-14' })).toEqual([]);
+    expect(fechasAportePlan({ faltante: 100_000, fechaObjetivoISO: null, frecuencia: 'Mensual', hoyISO: '2026-07-14' })).toEqual([]);
+    expect(fechasAportePlan({ faltante: 100_000, fechaObjetivoISO: '2026-01-01', frecuencia: 'Mensual', hoyISO: '2026-07-14' })).toEqual([]);
+  });
+
+  it('con día de pago datable, usa las fechas reales de ocurrenciasEnRango', () => {
+    const esperadas = ocurrenciasEnRango({ frecuencia: 'Mensual', diaPago: 20 }, '2026-07-14', '2026-10-20');
+    const r = fechasAportePlan({
+      faltante: 300_000, fechaObjetivoISO: '2026-10-20', frecuencia: 'Mensual',
+      diaPago: 20, hoyISO: '2026-07-14',
+    });
+    expect(r.map(a => a.fecha)).toEqual(esperadas);
+    expect(r.every(a => a.monto === Math.ceil(300_000 / esperadas.length))).toBe(true);
+  });
+
+  it('la suma de montos cubre el faltante (redondeo hacia arriba, nunca corto)', () => {
+    const r = fechasAportePlan({
+      faltante: 100_000, fechaObjetivoISO: '2026-10-12', frecuencia: 'Quincenal',
+      diaPago: 5, hoyISO: '2026-07-14',
+    });
+    const total = r.reduce((acc, a) => acc + a.monto, 0);
+    expect(total).toBeGreaterThanOrEqual(100_000);
+  });
+
+  it('sin día de pago datable, cae a fechas espaciadas uniformemente (mismo numPeriodos que aportePorPeriodo)', () => {
+    const base = aportePorPeriodo(600_000, '2026-10-12', 'Quincenal', '2026-07-14');
+    const r = fechasAportePlan({
+      faltante: 600_000, fechaObjetivoISO: '2026-10-12', frecuencia: 'Quincenal',
+      diaPago: null, hoyISO: '2026-07-14',
+    });
+    expect(r).toHaveLength(base.numPeriodos);
+    expect(r[0].fecha).toBe('2026-07-29'); // 14 jul + 15 dias
+    expect(r.every((a, i) => i === 0 || a.fecha > r[i - 1].fecha)).toBe(true);
+  });
+
+  it('un diaPago fuera de rango (0, 32, no entero) también cae al fallback espaciado', () => {
+    const r0  = fechasAportePlan({ faltante: 100_000, fechaObjetivoISO: '2026-09-14', frecuencia: 'Mensual', diaPago: 0, hoyISO: '2026-07-14' });
+    const r32 = fechasAportePlan({ faltante: 100_000, fechaObjetivoISO: '2026-09-14', frecuencia: 'Mensual', diaPago: 32, hoyISO: '2026-07-14' });
+    expect(r0.length).toBeGreaterThan(0);
+    expect(r32.length).toBeGreaterThan(0);
+  });
+
+  it('ninguna fecha cae después de la fecha objetivo', () => {
+    const r = fechasAportePlan({ faltante: 300_000, fechaObjetivoISO: '2026-10-20', frecuencia: 'Mensual', diaPago: 20, hoyISO: '2026-07-14' });
+    expect(r.every(a => a.fecha <= '2026-10-20')).toBe(true);
   });
 });

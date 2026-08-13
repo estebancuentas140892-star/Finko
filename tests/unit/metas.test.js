@@ -10,6 +10,7 @@ import {
   validarMeta,
   validarAbono,
   normalizarMeta,
+  generarPlanAportes,
 } from '../../modules/dominio/metas/logic.js';
 import { renderFormAbonoMeta, renderFormMeta, renderListaMetas } from '../../modules/dominio/metas/view.js';
 import { CATEGORIAS_META_USUARIO } from '../../modules/core/constants.js';
@@ -281,6 +282,72 @@ describe('calcularAhorroPorPeriodo()', () => {
     const meta = metaBase({ montoActual: 0, montoObjetivo: 100_000, fechaLimite: isoEnDias(1) });
     const r = calcularAhorroPorPeriodo(meta, 'Mensual');
     expect(r.numPeriodos).toBeGreaterThanOrEqual(1);
+  });
+});
+
+// ── generarPlanAportes() (MT.6c, ADR 048 D3) ──────────────────────
+
+describe('generarPlanAportes()', () => {
+  const ingreso = (overrides = {}) => ({
+    id: 'i1', descripcion: 'Nómina', monto: 3_000_000, frecuencia: 'Mensual',
+    diaPago: 20, activo: true, fechaCreacion: '2026-01-01', ...overrides,
+  });
+
+  it('sin fechaLimite, no hay plan', () => {
+    const meta = metaBase({ fechaLimite: null });
+    expect(generarPlanAportes(meta, [ingreso()], '2026-07-14')).toEqual([]);
+  });
+
+  it('meta ya cumplida, no hay plan', () => {
+    const meta = metaBase({ montoActual: 5_000_000, montoObjetivo: 5_000_000, fechaLimite: isoEnDias(90), completada: true });
+    expect(generarPlanAportes(meta, [ingreso()], '2026-07-14')).toEqual([]);
+  });
+
+  it('sin faltante, no hay plan aunque haya fechaLimite', () => {
+    const meta = metaBase({ montoActual: 5_000_000, montoObjetivo: 5_000_000, fechaLimite: isoEnDias(90) });
+    expect(generarPlanAportes(meta, [ingreso()], '2026-07-14')).toEqual([]);
+  });
+
+  it('con un ingreso mensual con día de pago, ancla el plan a esas fechas reales', () => {
+    const meta = metaBase({ montoActual: 0, montoObjetivo: 300_000, fechaLimite: '2026-10-20' });
+    const plan = generarPlanAportes(meta, [ingreso()], '2026-07-14');
+    expect(plan.map(a => a.fecha)).toEqual(['2026-07-20', '2026-08-20', '2026-09-20', '2026-10-20']);
+    expect(plan.every(a => a.monto === Math.ceil(300_000 / 4))).toBe(true);
+  });
+
+  it('la suma de montos del plan cubre el faltante', () => {
+    const meta = metaBase({ montoActual: 0, montoObjetivo: 310_000, fechaLimite: '2026-10-20' });
+    const plan = generarPlanAportes(meta, [ingreso()], '2026-07-14');
+    expect(plan.reduce((acc, a) => acc + a.monto, 0)).toBeGreaterThanOrEqual(310_000);
+  });
+
+  it('entre dos ingresos de distinta frecuencia (1 a 1), la más granular gana y su día de pago ancla el plan', () => {
+    const meta = metaBase({ montoActual: 0, montoObjetivo: 300_000, fechaLimite: '2026-10-15' });
+    const plan = generarPlanAportes(meta, [
+      ingreso({ id: 'i1', monto: 500_000, frecuencia: 'Quincenal', diaPago: 1 }),
+      ingreso({ id: 'i2', monto: 3_000_000, frecuencia: 'Mensual', diaPago: 20 }),
+    ], '2026-07-14');
+    // Empate 1 a 1: gana Quincenal (más granular, mismo criterio de
+    // frecuenciaPrincipalIngresos), así que ancla en el día de pago de i1 (1),
+    // no en el mayor monto de i2. Primera fecha: día 1 de julio ya pasó
+    // (hoy es el 14), la siguiente ocurrencia quincenal es el 16.
+    expect(plan[0].fecha).toBe('2026-07-16');
+    expect(plan.every(a => a.fecha.endsWith('-01') || a.fecha.endsWith('-16'))).toBe(true);
+  });
+
+  it('sin ingresos activos, cae a Mensual sin día de pago (fechas espaciadas)', () => {
+    const meta = metaBase({ montoActual: 0, montoObjetivo: 100_000, fechaLimite: isoEnDias(60) });
+    const plan = generarPlanAportes(meta, [], '2026-07-14');
+    expect(plan.length).toBeGreaterThan(0);
+  });
+
+  it('ignora los ingresos inactivos al elegir el ancla del plan', () => {
+    const meta = metaBase({ montoActual: 0, montoObjetivo: 300_000, fechaLimite: '2026-10-20' });
+    const plan = generarPlanAportes(meta, [
+      ingreso({ id: 'i1', monto: 10_000_000, diaPago: 1, activo: false }),
+      ingreso({ id: 'i2', monto: 3_000_000, diaPago: 20, activo: true }),
+    ], '2026-07-14');
+    expect(plan.every(a => a.fecha.endsWith('-20'))).toBe(true);
   });
 });
 

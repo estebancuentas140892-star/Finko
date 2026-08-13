@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 37;
+const SCHEMA_VERSION = 38;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -570,6 +570,20 @@ function _migrate(raw) {
       for (const m of data.metas) {
         if (m && typeof m === 'object' && !('subcategoriaId' in m)) {
           m.subcategoriaId = null;
+        }
+      }
+    }
+  }
+
+  // v37 → v38: plan de aportes de meta (MT.6c, ADR 048 D3). Default `[]`: se
+  // regenera solo (crear/editar meta, registrar aporte, cambio de frecuencia
+  // de ingreso), no hace falta calcularlo en la migración. Idempotente: si el
+  // campo ya está presente, no se sobreescribe.
+  if ((typeof data._version === 'number' ? data._version : 1) < 38) {
+    if (Array.isArray(data.metas)) {
+      for (const m of data.metas) {
+        if (m && typeof m === 'object' && !('planAportes' in m)) {
+          m.planAportes = [];
         }
       }
     }

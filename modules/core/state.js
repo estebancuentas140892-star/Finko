@@ -254,6 +254,8 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  * @property {string} [nota]          Texto libre opcional (MC.13e-2c). Se muestra
  *                                    junto a la meta en el asistente de distribución.
  * @property {string|null} [subcategoriaId] Id de `SUBCATEGORIAS_META` (MT.6b, ADR 064).
+ * @property {{fecha: string, monto: number}[]} [planAportes] Plan generado y
+ *   recalculado (MT.6c, ADR 048 D3); `[]` sin fecha límite o meta cumplida.
  * @property {boolean} completada
  */
 

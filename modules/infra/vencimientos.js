@@ -490,6 +490,53 @@ export function aportePorPeriodo(faltante, fechaObjetivoISO, frecuencia, hoyISO)
   };
 }
 
+/**
+ * Fechas y monto del plan de aportes hasta la fecha objetivo (MT.6c, ADR 048
+ * D3): un registro por cada fecha de ingreso hasta la fecha objetivo, no una
+ * cuota teórica suelta. Reutiliza `aportePorPeriodo` para el número de
+ * períodos y el criterio de "sin ritmo que sugerir" (mismos `null`).
+ *
+ * Con un día de pago datable (`diaPago` 1-31), las fechas son las ocurrencias
+ * reales del ingreso (`ocurrenciasEnRango`): el plan cae los mismos días en
+ * que el usuario efectivamente cobra. Sin día datable (ingreso Diario/Semanal
+ * sin día registrado, o ninguno), cae a fechas espaciadas uniformemente desde
+ * hoy cada `diasPorPeriodo(frecuencia)` días, mismo número de períodos que ya
+ * calculaba `aportePorPeriodo`: sigue habiendo un plan, solo sin fecha exacta
+ * de cobro con qué anclarlo.
+ *
+ * El monto por aporte es `faltante` dividido en partes iguales entre las
+ * fechas encontradas (redondeado hacia arriba, mismo criterio de
+ * `aportePorPeriodo`): la suma puede exceder el faltante en unos pesos, nunca
+ * quedarse corta.
+ *
+ * @param {object} params
+ * @param {number} params.faltante          COP que faltan por reunir.
+ * @param {string} params.fechaObjetivoISO  'YYYY-MM-DD' en que se necesita el dinero.
+ * @param {string} params.frecuencia        Frecuencia de cobro; se normaliza a FRECUENCIAS_APORTE.
+ * @param {number|null} [params.diaPago]    Día del mes (1-31) del ingreso que marca el plan.
+ * @param {string} [params.fechaCreacion]   Del ingreso, para frecuencias largas con ciclo.
+ * @param {string} params.hoyISO            'YYYY-MM-DD' de referencia (inyectable).
+ * @returns {{fecha: string, monto: number}[]} `[]` si no hay ritmo que sugerir.
+ */
+export function fechasAportePlan({ faltante, fechaObjetivoISO, frecuencia, diaPago = null, fechaCreacion, hoyISO }) {
+  const r = aportePorPeriodo(faltante, fechaObjetivoISO, frecuencia, hoyISO);
+  if (!r) return [];
+
+  const diaPagoValido = Number.isInteger(diaPago) && diaPago >= 1 && diaPago <= 31;
+  let fechas = diaPagoValido
+    ? ocurrenciasEnRango({ frecuencia: r.frecuencia, diaPago, fechaCreacion }, hoyISO, fechaObjetivoISO)
+    : [];
+
+  if (fechas.length === 0) {
+    const hoy = _fechaDesdeISO(hoyISO);
+    const paso = diasPorPeriodo(r.frecuencia);
+    fechas = Array.from({ length: r.numPeriodos }, (_, i) => _iso(_addDias(hoy, paso * (i + 1))));
+  }
+
+  const monto = Math.ceil(Number(faltante) / fechas.length);
+  return fechas.map(fecha => ({ fecha, monto }));
+}
+
 // ── COMPOSICIÓN: QUÉ TOCA CON ESTE COBRO (MC.13c, ADR 041 D2) ────
 
 /** Día anterior a una fecha ISO. null si no es una fecha real. */

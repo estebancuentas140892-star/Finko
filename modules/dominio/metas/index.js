@@ -20,7 +20,7 @@ import { mostrarToast } from '../../ui/toast.js';
 import { f } from '../../infra/utils.js';
 import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
 import { wireIconoPicker, resetIconoPicker } from '../../infra/icon-picker.js';
-import { validarMeta, normalizarMeta, validarAbono, calcularProgreso, consecuenciaDeAporte } from './logic.js';
+import { validarMeta, normalizarMeta, validarAbono, calcularProgreso, consecuenciaDeAporte, generarPlanAportes } from './logic.js';
 import { renderListaMetas, renderFormMeta, renderFormAbonoMeta } from './view.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 
@@ -111,13 +111,17 @@ function _guardarMeta() {
     return;
   }
 
-  const idEdit = form.dataset.id || null;
+  const idEdit    = form.dataset.id || null;
+  const existente = idEdit ? S.metas.find(m => m.id === idEdit) : null;
+  const normalizado  = normalizarMeta(datos, existente);
+  // MT.6c (ADR 048 D3): fecha límite, objetivo o histórico cambiaron, el plan
+  // se regenera completo, nunca se parcha.
+  const planAportes  = generarPlanAportes(normalizado, S.ingresos);
 
   if (idEdit) {
-    const existente = S.metas.find(m => m.id === idEdit);
-    editar('metas', idEdit, normalizarMeta(datos, existente));
+    editar('metas', idEdit, { ...normalizado, planAportes });
   } else {
-    guardar('metas', normalizarMeta(datos));
+    guardar('metas', { ...normalizado, planAportes });
   }
 
   const overlay = document.getElementById('modal-meta');
@@ -231,8 +235,10 @@ async function _guardarAbonoMeta() {
 
   const nuevoMonto = (meta.montoActual ?? 0) + abono;
   const { completada, faltante } = calcularProgreso({ ...meta, montoActual: nuevoMonto });
+  // MT.6c: el aporte cambia el faltante, el plan se regenera completo.
+  const planAportes = generarPlanAportes({ ...meta, montoActual: nuevoMonto, completada }, S.ingresos);
 
-  editar('metas', datos.metaId, { montoActual: nuevoMonto, completada });
+  editar('metas', datos.metaId, { montoActual: nuevoMonto, completada, planAportes });
 
   for (const s of splits) {
     _ajustarSaldoCuenta(s.cuentaId, -s.monto);
@@ -314,6 +320,16 @@ export function initMetas() {
       renderBannerProposito('metas', S.metas.length > 0);
       renderSmart(renderListaMetas, 'metas');
     }
+
+    // MT.6c: la frecuencia real de cobro cambió (Tesorería). El plan de cada
+    // meta activa con fecha límite se regenera completo, no se parcha.
+    // ADN 10: Metas no importa Tesorería, escucha el evento genérico de crud.js.
+    if (section === 'ingresos') {
+      for (const meta of S.metas) {
+        if (!meta.fechaLimite || meta.completada === true) continue;
+        editar('metas', meta.id, { planAportes: generarPlanAportes(meta, S.ingresos) });
+      }
+    }
   });
 
   // "Distribuir mi ingreso" (ADR 012, MC.4a): aplica los abonos a metas del plan.
@@ -326,7 +342,8 @@ export function initMetas() {
       if (!meta) continue;
       const nuevoMonto = (meta.montoActual ?? 0) + it.monto;
       const { completada } = calcularProgreso({ ...meta, montoActual: nuevoMonto });
-      editar('metas', it.id, { montoActual: nuevoMonto, completada });
+      const planAportes = generarPlanAportes({ ...meta, montoActual: nuevoMonto, completada }, S.ingresos);
+      editar('metas', it.id, { montoActual: nuevoMonto, completada, planAportes });
     }
   });
 
