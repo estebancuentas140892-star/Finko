@@ -12,6 +12,29 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### docs(config): CFG.6, cierra el inventario de configuraciones faltantes · 2026-08-13
+
+Cierra la tarjeta CFG.6. Sin cambio de código: auditoría documental. Ficha: [`contexto/configuracion.md`](contexto/configuracion.md).
+
+- **El pase de diseño ya estaba hecho (2026-07-25 y 2026-08-02); quedaba solo el inventario de configs que faltan en Ajustes** (punto 1 de la tarjeta), la pieza que la ataba a CFG.1-CFG.5.
+- **Revisado el panel completo (`config/view.js`) contra las cinco tarjetas que lo tocan: sin hallazgos nuevos.** Lo único ausente hoy (respaldo/sincronización, re-autenticación en acciones críticas, biometría) ya tiene tarjeta propia: CFG.4, CFG.5b, CFG.5c. LEG.2 (contenido legal) tampoco es un hueco de layout.
+- **Veredicto:** Ajustes ya es el centro de configuración que pedía el objetivo original; el Bento Grid a escritorio sigue como mejora futura, no bloquea el cierre. Compuerta 3 (cero guion largo) verificada; sin `modules/` ni `tests/` tocados, no aplican las demás compuertas.
+
+
+### feat(config): CFG.3c, avisos por sección y sello de día persistido · 2026-08-13
+
+Cierra la iniciativa CFG.3 completa. Nota del [ADR 066](DECISIONS/066-motor-unico-de-avisos.md) de la misma fecha. Ficha: [`contexto/configuracion.md`](contexto/configuracion.md).
+
+- **Esteban pidió ejecutarla ya, sin esperar la evidencia de uso que el D6 del ADR pedía**, y delegó la granularidad y el diseño ("toma tú las decisiones"). Es una excepción explícita a "detrás del uso real", no un revertir en silencio: quedó escrita en el ADR.
+- **Granularidad por sección, no por los nueve tipos.** `SECCIONES_AVISO` (cinco: compromisos, presupuesto, apartados, personales, tesorería) ya vivía como `aviso.seccion` desde CFG.3a; agruparla es leer un dato existente, no inventar un eje. Nueve toggles habrían sido ruido sin decisión real: apagar "compromiso vencido" sin apagar "compromiso próximo" no distingue nada para quien decide si esa fuente le molesta.
+- **`filtrarPorPreferencia()` nuevo en `infra/avisos.js`**, una sola función consumida por las dos superficies que ya existían (la notificación del sistema de CFG.3a y el panel de Inicio de CFG.3b): ninguna de las dos duplica el filtro.
+- **El sello persistido reemplaza el flag de sesión, no lo suma.** `config.ultimoAvisoISO` decide si ya se avisó hoy; antes, cerrar y volver a abrir la app el mismo día repetía la notificación porque el guard vivía solo en memoria. `_resetNotificadoEstasSesion()` se elimina de `notificaciones.js`.
+- **Schema v39 → v40, aditiva.** Las cinco secciones activas por defecto y el sello en `null`: un usuario existente no pierde ningún aviso al actualizar.
+- **UI: un `<fieldset>` reutiliza `.config-toggle` cinco veces**, sin CSS nueva más allá del layout (`reset.css` ya deja `fieldset`/`legend` sin caja). Un solo handler (`data-seccion` en el dataset) para las cinco filas, visible solo con los recordatorios ya activos.
+- **Sin cobertura E2E de la interacción**: Chromium headless devuelve `Notification.permission` en `'denied'` aunque Playwright conceda el permiso de contexto, así que la rama que pinta el interruptor no se alcanza en un test de navegador real (mismo límite que ya tenían `toggle-notif`/`toggle-atajos`, nunca probados en E2E). Cubierto por unidad, stubeando `globalThis.Notification`.
+- Commit `bc967ec`. Tests: 37 unitarios nuevos/reescritos (`avisos.test.js`, `storage.test.js`, `config.test.js`); `notificaciones.test.js` pierde el reset del flag de sesión. 4199/4199 unit + lint + 269/269 E2E verdes. SW `finko-v529` → `finko-v530`.
+
+
 ### feat(config): CFG.3b, panel "Avisos" en Inicio · 2026-08-13
 
 Segunda rebanada del [ADR 066](DECISIONS/066-motor-unico-de-avisos.md). Ficha: [`contexto/inicio.md`](contexto/inicio.md).

@@ -10,17 +10,7 @@
 
 > **Iniciativa fusionada CFG.1 + CFG.2** ("Perfil fiscal/financiero en Ajustes"), **completa**. Alcance y sus dos decisiones: **[ADR 050](../DECISIONS/050-perfil-fiscal-ubicacion-y-framing.md)**, su dueño. Ficha: [`contexto/configuracion.md`](../contexto/configuracion.md). CFG.2a cerró el 2026-08-13 (ingresos brutos derivados) y CFG.2c cerró el mismo día (D1: lo fiscal pasa a un asistente tras botón).
 
-> **Iniciativa CFG.3** ("Avisos anticipatorios"). Alcance, el límite técnico y las alternativas rechazadas (push, background sync, meta alcanzada, aporte recomendado): **[ADR 066](../DECISIONS/066-motor-unico-de-avisos.md)**, su dueño. CFG.3a (motor `infra/avisos.js` + la notificación al abrir) y **CFG.3b** (panel "Avisos" en Inicio) cerraron el 2026-08-13. Ficha: [`contexto/inicio.md`](../contexto/inicio.md) (el panel) y [`contexto/transversal.md`](../contexto/transversal.md) (el motor). Queda la de abajo.
-
-#### CFG.3c - Preferencias de avisos por tipo
-- Prioridad  : sin definir
-- Área       : code
-- Estado     : pendiente, y **a propósito detrás del uso real** (ADR 066 D6): hoy no hay evidencia de qué tipo molesta, y cada preferencia es una migración más un formulario.
-- Objetivo   : hoy el interruptor de Ajustes es un solo booleano para todo. Si el uso muestra que un tipo cansa (ej. día de pago), poder apagarlo sin apagar los demás. Acá también entraría el sello de "ya te avisé esto hoy", que hoy no existe: la de-duplicación es por sesión, así que abrir y cerrar la app repite el aviso.
-- Secciones  : Configuración (Ajustes)
-- Archivos   : `modules/dominio/config/view.js`, `modules/dominio/config/index.js`, `modules/core/state.js`, `modules/core/storage.js` (migración)
-- Depende de : evidencia de uso. **Es la única rebanada de CFG.3 que toca schema.**
-- Modelo     : Equilibrado - Medio (patrón de preferencias ya conocido; el cuidado está en la migración)
+> **Iniciativa CFG.3** ("Avisos anticipatorios"), **completa** (2026-08-13, sus tres rebanadas). Alcance, el límite técnico y las alternativas rechazadas: **[ADR 066](../DECISIONS/066-motor-unico-de-avisos.md)**, su dueño. Ficha: [`contexto/inicio.md`](../contexto/inicio.md) (el panel de Inicio), [`contexto/configuracion.md`](../contexto/configuracion.md) (el interruptor de Ajustes) y [`contexto/transversal.md`](../contexto/transversal.md) (el motor).
 
 #### CFG.4 - Respaldo, cuentas de usuario y sincronización multi-dispositivo [DECISIÓN DE ADN]
 - Prioridad  : sin definir (la decisión es la de mayor alcance del proyecto)
@@ -52,13 +42,3 @@
 - Archivos   : sin explorar (depende del resultado del spike)
 - Depende de : CFG.5a (cerrada) + prueba en el dispositivo real, no en el emulador
 - Modelo     : Alta capacidad - Alto (viabilidad de plataforma con restricciones no triviales; la conclusión importa más que el código)
-
-#### CFG.6 - Revisión general de la sección Ajustes
-- Prioridad  : sin definir
-- Área       : design (auditoría visual y de layout, sin lógica nueva)
-- Estado     : **parcialmente ejecutada (2026-08-02).** Los pases de 2026-07-25 y 2026-08-02 ya aplicaron 12 de 13 hallazgos. El pase 2026-08-02 (escritorio/tablet + tema claro) corrigió "Instalar Finko" y "Activar recordatorios", que se estiraban a ancho completo en tablet (768px) y escritorio (1280px): mismo `align-self: flex-start` que ya tenían "Guardar perfil" y los botones de zona de peligro (ver CHANGELOG). Tema claro revisado por código (100% `var(--fk-*)`, sin color hardcodeado); sin captura visual real, el Browser pane no compuso frames en esa sesión. **Lo que sigue abierto en esta tarjeta:** (1) el inventario de qué configuraciones *faltan* en Ajustes, que es lo que la ata a CFG.1 a CFG.5; el Bento Grid a escritorio queda como mejora futura, no bloquea nada (medido: panel de 982px a 1280px, columna única, sin bug).
-- Objetivo   : el usuario pidió revisar si faltan configuraciones que deberían vivir en Ajustes, con el objetivo de que la sección se convierta en el centro de configuración de Finko (seguridad, personalización, notificaciones, respaldo y cualquier otra opción relevante), con interfaz clara y organizada. **Ampliado por triaje del 4.º lote (2026-07-08, brief de Ajustes punto 2):** rediseño visual de la sección con tarjetas de tamaño uniforme, Bento Grid donde aporte, bloques compactos y alineados, sin botones que ocupen todo el ancho en desktop (hoy: "Instalar aplicación", "Recordatorios"); misma sensación de orden que el resto de la app (coordina con IV.2). **7.º lote:** el layout debe reservar el bloque del **Centro Legal** (iniciativa LEG, Transversal).
-- Secciones  : Configuración (Ajustes)
-- Archivos   : `modules/dominio/config/view.js`, `styles/components/config.css`
-- Depende de : CFG.3 y CFG.4 (esta es la pasada de auditoría/orden final, tiene sentido hacerla después o junto con las demás, no antes; CFG.2c ya cerró). El frente de seguridad ya dejó su bloque en el layout con CFG.5a.
-- Modelo     : Equilibrado - Alto (auditoría de una sección existente con criterio de UX, sin lógica financiera nueva)
