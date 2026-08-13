@@ -239,13 +239,13 @@ export function labelEstado(estado) {
     case 'liquidado':
       return 'Liquidado';
     case 'proximo':
-      return estado.dias === 1 ? 'Próximo pago mañana' : `Próximo pago en ${estado.dias} días`;
+      return estado.dias === 1 ? 'Vence mañana' : `Vence en ${estado.dias} días`;
     case 'hoy':
-      return 'Pago programado para hoy';
+      return 'Vence hoy';
     case 'vencido':
       return `Venció ${tiempoRelativo(estado.dias)}`;
     case 'abonado':
-      return estado.dias === 0 ? 'Recibiste un abono hoy' : `Último abono ${tiempoRelativo(estado.dias)}`;
+      return estado.dias === 0 ? 'Abono hoy' : `Abono ${tiempoRelativo(estado.dias)}`;
     default:
       return `Prestado ${tiempoRelativo(estado.dias)}`;
   }

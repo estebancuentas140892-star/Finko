@@ -273,12 +273,12 @@ describe('labelEstado() (PE.3/PE.4, copy de seguimiento)', () => {
   });
 
   it('proximo: singular mañana, plural en N días', () => {
-    expect(labelEstado({ tipo: 'proximo', dias: 1 })).toBe('Próximo pago mañana');
-    expect(labelEstado({ tipo: 'proximo', dias: 5 })).toBe('Próximo pago en 5 días');
+    expect(labelEstado({ tipo: 'proximo', dias: 1 })).toBe('Vence mañana');
+    expect(labelEstado({ tipo: 'proximo', dias: 5 })).toBe('Vence en 5 días');
   });
 
   it('hoy', () => {
-    expect(labelEstado({ tipo: 'hoy', dias: 0 })).toBe('Pago programado para hoy');
+    expect(labelEstado({ tipo: 'hoy', dias: 0 })).toBe('Vence hoy');
   });
 
   it('vencido humaniza los días transcurridos', () => {
@@ -287,9 +287,9 @@ describe('labelEstado() (PE.3/PE.4, copy de seguimiento)', () => {
   });
 
   it('abonado: hoy con copy propio, resto humanizado', () => {
-    expect(labelEstado({ tipo: 'abonado', dias: 0 })).toBe('Recibiste un abono hoy');
-    expect(labelEstado({ tipo: 'abonado', dias: 1 })).toBe('Último abono ayer');
-    expect(labelEstado({ tipo: 'abonado', dias: 15 })).toBe('Último abono hace 2 semanas');
+    expect(labelEstado({ tipo: 'abonado', dias: 0 })).toBe('Abono hoy');
+    expect(labelEstado({ tipo: 'abonado', dias: 1 })).toBe('Abono ayer');
+    expect(labelEstado({ tipo: 'abonado', dias: 15 })).toBe('Abono hace 2 semanas');
   });
 
   it('pendiente humaniza la antigüedad (adiós "1.825 días")', () => {
@@ -992,6 +992,32 @@ describe('renderListaPersonales() - fila de préstamo (DIS.3)', () => {
     expect(el.querySelector('.list-item__title .chip')).toBeNull();
     expect(el.querySelector('.personal-item__estado .chip')).not.toBeNull();
     expect(el.querySelector('.list-item__title').textContent.trim()).toBe('Camilo Restrepo');
+  });
+
+  // ── PE.6d / ADR 047 D6: los cinco estados se distinguen por chip ──
+
+  it('PE.6d: pago parcial (abonado) usa chip-info, distinto del neutro "al día"', () => {
+    const conAbono = render([prestamo({ monto: 1_000_000, pagado: 400_000, ultimoPago: '2026-08-01' })]);
+    const chipAbonado = conAbono.querySelector('.personal-item__estado .chip');
+    expect(chipAbonado.className).toContain('chip-info');
+
+    const sinAbono = render([prestamo({ id: 'p2', fecha: '2026-08-01' })]);
+    const chipAlDia = sinAbono.querySelector('.personal-item__estado .chip');
+    expect(chipAlDia.className).not.toContain('chip-info');
+    expect(chipAlDia.className).not.toContain('chip-success');
+    expect(chipAlDia.className).not.toContain('chip-warning');
+    expect(chipAlDia.className).not.toContain('chip-danger');
+  });
+
+  it('PE.6d: finalizado (success), vencido (danger) y próximo a vencer (warning) no cambian', () => {
+    const finalizado = render([prestamo({ monto: 200_000, pagado: 200_000, liquidado: true })]);
+    expect(finalizado.querySelector('.personal-item__estado .chip').className).toContain('chip-success');
+
+    const vencido = render([prestamo({ id: 'p3', fechaLimite: '2026-01-01' })]);
+    expect(vencido.querySelector('.personal-item__estado .chip').className).toContain('chip-danger');
+
+    const proximo = render([prestamo({ id: 'p4', fechaLimite: '2099-01-01' })]);
+    expect(proximo.querySelector('.personal-item__estado .chip').className).toContain('chip-warning');
   });
 
   // ── V-9: un solo verbo para la métrica de recuperación ─────────

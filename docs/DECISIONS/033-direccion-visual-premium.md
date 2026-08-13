@@ -118,7 +118,7 @@ La frase del brief "una familia de iconos propia por sección" **se resuelve rat
 - **P1. Alcance del degradado de identidad:** ¿piloto en los 3 heroes existentes (Inicio, Fondo, Inversión) y de ahí a donde las iniciativas v2 lo pidan (**recomendado**), o desplegarlo de una vez en las 13 secciones?
 - **P2. Formas orgánicas:** ¿catálogo neutro compartido teñido por dominio vía `currentColor` (**recomendado**: 3-5 assets, coherencia garantizada) o diseño único por sección (cola de diseño x13)?
 - **P3. Iconografía:** ¿ratificar el lenguaje único con acento por dominio (D5, **recomendado**) o abrir familias por sección (revierte ADR 023)?
-- **P4. Ilustraciones, lote inicial:** ¿empty states de las 6 superficies más visitadas (**recomendado**: Inicio/Movimientos, Gastos, Cuentas, Deudas, Calendario, hub Ahorros) o el catálogo completo de una vez?
+- **P4. Ilustraciones, lote inicial: RESUELTO 2026-08-12.** El lote son las 8 superficies que hoy tienen empty state con `emptyArt()` geométrico (Ahorro, Apartados, Cuentas, Deudas, Inversión, Metas, Personales, Movimientos), no las "6 más visitadas" que sugería esta pregunta: Inicio, Gastos y Calendario no tienen empty state propio todavía, así que dárselo es UX nueva, no un reemplazo de arte existente. Detalle en `assets/svg/README.md` 2.2.
 - **P5. Sombra en reposo:** ¿en ambos temas (**recomendado**: sutil en oscuro, protagonista en claro) o solo en tema claro?
 
 ## Plan de rebanadas (tarjetas DV.2*, no iniciar sin aprobar este ADR)
@@ -126,7 +126,7 @@ La frase del brief "una familia de iconos propia por sección" **se resuelve rat
 - **DV.2a - Tokens de superficie/elevación + degradado de identidad:** escala de 4 niveles (D1) aplicada a `.card`/`.bento__cell`/`.list-item`, sombras doble capa en claro, `--fk-section-color` + `--fk-grad-identity` (D2) con piloto en los heroes; DESIGN_SYSTEM.md actualizado (sección "Elevación" nueva).
 - **DV.2b - Riqueza visual piloto:** extensión del sync a `decoracion/` (`d-*`), clase `.decor`, 3-5 formas draft (plantillas para Esteban), `--fk-pattern-dots`; piloto en 2 heroes + 2 empty states (D3).
 - **DV.2c - Catálogo de movimiento:** cascada acotada de listas, resaltado de fila nueva, retiro de `empty-orbit`/`empty-float` + auditoría de `infinite`, doctrina del catálogo cerrado en DESIGN_SYSTEM.md (D4).
-- **DV.2d - Ilustraciones:** carpeta `ilustraciones/` (`il-*`) + spec + extensión del sync; empty states del lote P4 reemplazan `emptyArt()` geométrico. Bloqueada por la cola de diseño de Esteban (drafts de Claude como plantillas).
+- **DV.2d - Ilustraciones:** carpeta `ilustraciones/` (`il-*`) + spec + extensión del sync; empty states del lote P4 (8 superficies, resuelto arriba) reemplazan `emptyArt()` geométrico. Infraestructura y 8 plantillas draft listas; falta solo la cola de diseño de Esteban (drafts de Claude como plantillas que él sobrescribe en Illustrator).
 - **Las iniciativas v2 por sección (IN.8, D.15, ANL.1, Mis Cuentas v2...) consumen este sistema**: la jerarquía y la "riqueza" pantalla por pantalla se ejecutan allá, nunca como sistemas paralelos (regla anti-doble-trabajo del triaje).
 
 ## Alternativas rechazadas

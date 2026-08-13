@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(me-deben): PE.6d, los cinco estados de un vistazo · 2026-08-12
+
+Cierra **PE.6 (Me deben v2) completa** (PE.6a-e), D6 del [ADR 047](DECISIONS/047-me-deben-v2-intereses-e-historial.md). Ficha: [`contexto/me-deben.md`](contexto/me-deben.md).
+
+- **`chip-info` distingue "pago parcial" de "al día"**: `_renderPersonalItem()` (`personales/view.js`) mapeaba `estado.tipo === 'abonado'` al mismo `chip` neutro que `pendiente`, indistinguibles a simple vista. `chip-info` ya vivía en `atoms.css` (usa `--fk-info`/`--fk-info-bg`), así que los cinco estados del punto 7 del ADR 047 quedan cubiertos sin abrir ningún color nuevo (regla del ADR 031): `chip-success` (finalizado), `chip-danger` (vencido), `chip-warning` (próximo a vencer / hoy), `chip-info` (pago parcial), `chip` neutro (al día).
+- **V3 de la auditoría de diseño, `labelEstado()` acorta el copy** (`personales/logic.js`): "Próximo pago en N días"/"Pago programado para hoy" → "Vence en N días"/"Vence hoy" (simétrico con "Venció" del vencido); "Recibiste un abono hoy"/"Último abono..." → "Abono hoy"/"Abono...". Motivo original (M3, DIS.3, 2026-07-26): el label más largo era el del estado más urgente, y en la columna angosta de 390px se solapaba con el botón "Me pagaron".
+- **Bloqueado desde el 2026-07-22 (PE.6, "Qué falta para cerrarlo" del ADR 047), desbloqueado por el paso del tiempo, no por una tarea nueva**: IV.2 (el sistema de color por dominio) cerró completo el 2026-07-10 y lleva más de un mes en `main`/producción; la documentación (`BOARD.md`, `HANDOFF.md`, el propio ADR 047) seguía diciendo "IV.2 no está en producción" por desactualización, no porque el bloqueo siguiera vigente. Verificado con `git log` sobre el commit que cierra IV.2c (`82e54d8`, 2026-07-10) antes de empezar esta tarea.
+- `logic.js` y el schema no se tocan. 2 tests unitarios nuevos en `personales.test.js` (chip de `abonado` vs. `pendiente`, y que success/danger/warning no cambiaron), copy actualizado en los 3 tests existentes de `labelEstado()`. 3987/3992 unit (5 fallas preexistentes en `compromisos.test.js`, ajenas, patrón de reloj fijo) + lint verdes. SW `finko-v513` → `finko-v514`.
+
 ### feat(agenda): MT.6d, el plan de aportes de meta se ve en Calendario · 2026-08-12
 
 Cierra **MT.6 (Metas v2) completa** (MT.6a-d), coordinación final del [ADR 048](DECISIONS/048-metas-v2-subcategorias-y-plan-de-aportes.md) D3. Commit `3e75151`. Fichas: [`contexto/metas.md`](contexto/metas.md), [`contexto/calendario.md`](contexto/calendario.md).

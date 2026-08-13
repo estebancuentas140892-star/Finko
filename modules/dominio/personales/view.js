@@ -182,12 +182,16 @@ function _renderPersonalItem(prestamo, hoy, oculto = false) {
   // parcial, vencido, finalizado) se distinguen de un vistazo por tipo, no por
   // antigüedad en días: un vencido es vencido aunque sea reciente, y mezclar
   // el reloj de incomodidad aquí volvía indistinguibles pago parcial y al día.
+  // `abonado` (pago parcial) gana chip-info: sin eso caía en el mismo `chip`
+  // plano que `pendiente` (al día), el par que el punto 7 del ADR 047 pedía
+  // distinguir. Sin colores nuevos: chip-info ya existe en atoms.css.
   const estado = estadoPrestamo(prestamo, hoy);
 
   const chipClase =
     estado.tipo === 'liquidado' ? 'chip chip-success'
     : estado.tipo === 'vencido' ? 'chip chip-danger'
     : (estado.tipo === 'proximo' || estado.tipo === 'hoy') ? 'chip chip-warning'
+    : estado.tipo === 'abonado' ? 'chip chip-info'
     : 'chip';
 
   const chipLabel = labelEstado(estado);
