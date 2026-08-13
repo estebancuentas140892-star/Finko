@@ -10,14 +10,27 @@
 
 > **Iniciativa fusionada CFG.1 + CFG.2** ("Perfil fiscal/financiero en Ajustes"), **completa**. Alcance y sus dos decisiones: **[ADR 050](../DECISIONS/050-perfil-fiscal-ubicacion-y-framing.md)**, su dueño. Ficha: [`contexto/configuracion.md`](../contexto/configuracion.md). CFG.2a cerró el 2026-08-13 (ingresos brutos derivados) y CFG.2c cerró el mismo día (D1: lo fiscal pasa a un asistente tras botón).
 
-#### CFG.3 - Notificaciones inteligentes anticipatorias
+> **Iniciativa CFG.3** ("Avisos anticipatorios"). Alcance, el límite técnico y las alternativas rechazadas (push, background sync, meta alcanzada, aporte recomendado): **[ADR 066](../DECISIONS/066-motor-unico-de-avisos.md)**, su dueño. CFG.3a (motor `infra/avisos.js` + la notificación al abrir) cerró el 2026-08-13. Ficha: [`contexto/transversal.md`](../contexto/transversal.md). Quedan las dos de abajo.
+
+#### CFG.3b - Centro de avisos dentro de la app
 - Prioridad  : sin definir
-- Estado     : pendiente de análisis (no iniciar)
-- Objetivo   : hoy el recordatorio existente solo avisa al abrir la app; el usuario quiere alertas que se anticipen a eventos (día de pago hoy, deuda vence mañana, pago con 2 días de atraso, cerca de superar presupuesto de una categoría, meta de ahorro alcanzada, aporte recomendado de la semana, apartado próximo a vencer). Pidió explícitamente que sean útiles y no invasivas: solo cuando realmente ayuden a decidir mejor. **Fuente añadida por triaje del 3.er lote (2026-07-08, brief Me deben punto 6):** vencimientos de préstamos personales ("mañana vence el préstamo de Juan", "han pasado 5 días desde el vencimiento"), con lenguaje amable orientado a recordar, nunca a presionar; `Personal.fechaLimite` ya existe como dato. Un solo motor de recordatorios para todas las fuentes, no uno por sección.
-- Secciones  : Configuración (Ajustes, activación), transversal (agenda, presupuesto, metas, apartados, compromisos, personales como fuentes de los eventos)
-- Archivos   : sin explorar; depende de si Finko ya usa alguna API de notificaciones del navegador/PWA (revisar `modules/infra/notificaciones.js` y el service worker) o si hay que incorporar Push API / Notification API, lo cual tiene restricciones de permisos y de plataforma (iOS Safari limita notificaciones push de PWA)
-- Depende de : nada. Riesgo técnico a evaluar primero: viabilidad real de notificaciones push offline-first sin servidor (ADN 2 y 3); puede requerir ADR si la solución técnica choca con "sin servidor".
-- Modelo     : Máxima capacidad - Alto (multidominio, con una restricción técnica de plataforma no trivial que hay que investigar antes de diseñar)
+- Área       : ambos (superficie nueva: dónde vive, cómo se ve y qué dice)
+- Estado     : pendiente. Habilitada por CFG.3a: el motor ya devuelve la lista ordenada; falta la pantalla que la muestra.
+- Objetivo   : hoy los avisos solo salen por la notificación del sistema, y solo los de severidad `urgente` o `alta`. Los demás (apartado próximo, apartado listo, préstamo con fecha pasada, día de pago) se calculan y no se ven en ninguna parte. Falta la superficie que los muestre, con su propio tope de cuántos y su propio copy (el motor devuelve datos, no frases).
+- Secciones  : por decidir entre Inicio y la barra superior; transversal en origen (los avisos vienen de seis dominios)
+- Archivos   : `modules/infra/avisos.js` (solo se consume, no se toca), la vista que se elija, `styles/components/*`
+- Depende de : CFG.3a (cerrada). Coordina con LG.2d e IN.9 si el destino es Inicio: son tres bloques peleando el mismo espacio.
+- Modelo     : Equilibrado - Alto (el motor ya existe; el trabajo es de UX y de copy)
+
+#### CFG.3c - Preferencias de avisos por tipo
+- Prioridad  : sin definir
+- Área       : code
+- Estado     : pendiente, y **a propósito detrás del uso real** (ADR 066 D6): hoy no hay evidencia de qué tipo molesta, y cada preferencia es una migración más un formulario.
+- Objetivo   : hoy el interruptor de Ajustes es un solo booleano para todo. Si el uso muestra que un tipo cansa (ej. día de pago), poder apagarlo sin apagar los demás. Acá también entraría el sello de "ya te avisé esto hoy", que hoy no existe: la de-duplicación es por sesión, así que abrir y cerrar la app repite el aviso.
+- Secciones  : Configuración (Ajustes)
+- Archivos   : `modules/dominio/config/view.js`, `modules/dominio/config/index.js`, `modules/core/state.js`, `modules/core/storage.js` (migración)
+- Depende de : CFG.3b y evidencia de uso. **Es la única rebanada de CFG.3 que toca schema.**
+- Modelo     : Equilibrado - Medio (patrón de preferencias ya conocido; el cuidado está en la migración)
 
 #### CFG.4 - Respaldo, cuentas de usuario y sincronización multi-dispositivo [DECISIÓN DE ADN]
 - Prioridad  : sin definir (la decisión es la de mayor alcance del proyecto)

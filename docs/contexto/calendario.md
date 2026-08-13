@@ -126,7 +126,7 @@ Lo que **DIS.11 dejó abierto**, con su medición: (1) **el alto del formulario 
 - **La ventana es de dos meses** (`MESES_CATCHUP_AUTOMATICOS = 1` más el mes en curso). Lo más viejo no reaparece nunca en la hoja: se registra a mano desde el Calendario.
 - **La cuenta del débito no se pre-selecciona en el formulario** (`preseleccionar: false`): es un hecho del arreglo con el banco, no una comodidad de pago. Si alguien la pre-selecciona "para ahorrar un clic", guarda un dato que el usuario no eligió.
 
-**Cambios pendientes**: PA.1b (crédito automático del ingreso fijo). Las alertas de "sin saldo" viven solo dentro de la hoja: llevarlas al motor de notificaciones depende de CFG.3.
+**Cambios pendientes**: PA.1b (crédito automático del ingreso fijo). Las alertas de "sin saldo" viven solo dentro de la hoja: el motor único ya existe desde CFG.3a ([ADR 066](../DECISIONS/066-motor-unico-de-avisos.md), `infra/avisos.js`), así que llevarlas allá es sumar una fuente más, y su superficie en la app la trae CFG.3b.
 
 **Cambios realizados**:
 

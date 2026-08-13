@@ -12,6 +12,22 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(config): CFG.3a, motor único de avisos y notificación al abrir · 2026-08-13
+
+Primera de las tres rebanadas del [ADR 066](DECISIONS/066-motor-unico-de-avisos.md), que además desbloquea CFG.3 (estaba en "pendiente de análisis, no iniciar" hasta evaluar su riesgo técnico). Ficha: [`contexto/transversal.md`](contexto/transversal.md).
+
+- **El riesgo técnico se resolvió en contra, y por una razón que no es el soporte de plataforma: un service worker no puede leer `localStorage`.** Todo `fk_v1` vive ahí (ADN 3), así que el worker no tiene con qué calcular un vencimiento con la app cerrada: Periodic Background Sync no falla por ser Chromium, falla por no tener datos. Push API queda descartada por servidor. Conclusión escrita: los avisos existen al abrir y dentro de la app, y el copy no debe prometer otra cosa. Único disparador de revisión: PERF.5 (IndexedDB), que resolvería la mitad técnica y ninguna otra.
+- **Un motor, no un avisador por sección** (lo que la tarjeta pedía de forma explícita y lo que los ADR 047 y 052 ya citaban como destino). `infra/avisos.js` recolecta ocho tipos de aviso de siete fuentes, les pone severidad y los ordena. Con seis avisadores nadie podía responder "cuál es lo más urgente hoy".
+- **No detecta nada nuevo: compone.** Cada tipo se apoya en la función que ya vive en su dominio (`vencidosSinPagar`, `alertasLimites`, `apartadosProximos`, `estaListoParaReiniciar`, `estadoPrestamo`, `ocurrenciasEnMes`). Por eso `infra/` importa cinco `logic.js`, solo lectura y nunca un `index.js`: la vía del [ADR 060](DECISIONS/060-lectura-cross-domain-de-solo-lectura.md), con el precedente que ya tenía `infra/notificaciones.js`.
+- **Devuelve datos, nunca frases, y no recorta la lista.** El copy es de cada superficie (mismo criterio del ADR 044 D5) y el tope de cuántos mostrar también: un motor que recorta a tres se lo esconde a todas sus superficies a la vez. Un test verifica que `nombre` no contenga copy.
+- **"No invasivo" se volvió una regla verificable**: solo los avisos `urgente` o `alta` disparan la notificación del sistema. Un apartado a seis días o un préstamo que te deben esperan dentro de la app. Los préstamos personales **nunca** pasan de `media`, ni con un año de atraso: el ADR 047 fija que esa sección recuerda y no presiona, así que interrumpir queda para lo que el usuario debe, no para lo que le deben.
+- **Dos cosas del brief no entraron, con razón escrita.** "Meta alcanzada" es noticia vieja: `completada` se marca sola en el mismo abono y el toast del ADR 062 ya lo dijo en ese instante; su versión útil sí entró como `apartado-listo`, que es un estado que persiste hasta que el usuario usa el dinero. "Aporte recomendado de la semana" no es un evento con fecha sino una sugerencia permanente, y un aviso que nunca se apaga es la definición de invasivo; ya tiene dueño en el asistente de distribución.
+- **Lo que vence hoy no se avisa dos veces**: el motor le pide a `vencidosSinPagar` un `umbralDiasAtraso: 1`, así que el día del vencimiento lo cubre solo `compromiso-proximo` con `dias: 0`, sin de-duplicar nada después.
+- **Cero schema** (ADR 066 D6): el interruptor sigue siendo el booleano que ya existía y la de-duplicación sigue siendo el flag de sesión. Preferencias por tipo y sellos persistidos quedan para CFG.3c, detrás de evidencia de uso.
+- Commit `c9fdb2a`. Tests: 37 unitarios nuevos en `avisos.test.js` y 22 reescritos en `notificaciones.test.js` (el formateador dejó de recibir compromisos con `diasRestantes` y pasa a recibir avisos; eran 13). 4175/4175 unit + lint + 268/268 E2E verdes. SW `finko-v527` → `finko-v528`.
+- **Fuera de alcance, con tarjeta**: el centro de avisos dentro de la app (CFG.3b) y las preferencias por tipo (CFG.3c). Esta rebanada no agrega ni una pantalla: su única superficie es la notificación que ya existía.
+
+
 ### feat(limites): LIM.1c, la app propone dónde y cuánto poner tope · 2026-08-13
 
 Cierra el [ADR 044](DECISIONS/044-motor-unico-de-sugerencia-por-categoria.md) (Abierta desde el 2026-07-24) y con él la iniciativa LIM.1. Ficha: [`contexto/limites.md`](contexto/limites.md).

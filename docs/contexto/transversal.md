@@ -2,7 +2,7 @@
 
 > Revisado: 2026-08-13.
 
-> Funcionalidades que atraviesan varias secciones y no son visuales: taxonomía de categorías, persistencia, el pipeline de render, el CTA de cuenta y el sistema de logros. Reglas de uso y plantilla en [`README.md`](README.md).
+> Funcionalidades que atraviesan varias secciones y no son visuales: taxonomía de categorías, persistencia, el pipeline de render, el CTA de cuenta, el motor único de avisos y el sistema de logros. Reglas de uso y plantilla en [`README.md`](README.md).
 >
 > **Qué NO buscar acá** (partido el 2026-07-24): el lenguaje de formularios y el selector de ícono están en [`captura.md`](captura.md); la identidad de color, las tejas de marca y la navegación, en [`sistema-visual.md`](sistema-visual.md).
 
@@ -244,6 +244,55 @@
 **Observaciones**: ADRs relacionados: 022 (vitrina en Ajustes, vigente operativamente hasta la rebanada LG.2d), 032 (v2, Aceptada), 025 D6 (emojis se conservan). La regla anti-gaming del ADR 032 D2 es principio innegociable: logros que premien la omisión de registro ("día sin gastos") no entran al catálogo bajo ninguna forma; las familias "registro" y "deudas" de LG.2c son ambas ADITIVAS (más registro = más progreso), así que no necesitan la guardia de "mes completo" que sí lleva el único logro de reducción del catálogo (`hormiga-a-raya`, LG.2e: los 4 meses de la comparación deben ser mes completo, el mes en curso no participa y el promedio previo debe superar 100.000). Riesgo residual anotado en el código: un mes completo se cumple con gastos en 3 semanas aunque sean todos grandes; no se agregó una segunda guardia por conteo de transacciones porque castigaría al usuario que sí redujo.
 
 ---
+
+---
+
+## Motor único de avisos (CFG.3, iniciativa transversal)
+
+- **Objetivo**          : responder "de todo lo que le pasa al usuario hoy, qué merece avisarle", mirando todas las secciones a la vez. Los `nudge` de cada sección son la señal en contexto dentro de su pantalla y no se comparan entre sí; este motor es el único que puede decir si va primero un arriendo vencido o un tope excedido.
+- **Estado actual**     : **CFG.3a cerrada (2026-08-13)**, primera de las tres rebanadas del **[ADR 066](../DECISIONS/066-motor-unico-de-avisos.md)**. Existe el motor (`infra/avisos.js`, ocho tipos de aviso de siete fuentes) y su primera superficie: la notificación del sistema al abrir la app, que dejó de saber solo de compromisos. **Sin UI nueva todavía:** el centro de avisos dentro de la app es CFG.3b y las preferencias por tipo son CFG.3c. Sin cambio de schema.
+- **Verificado contra** : `c9fdb2a` (2026-08-13, CFG.3a).
+
+**Dónde vive**
+
+| Pieza | Archivo | Ancla | Línea |
+|---|---|---|---|
+| Motor: recolecta, clasifica y ordena | `modules/infra/avisos.js` | `recolectarAvisos()` | ~250 |
+| Filtro de lo que justifica interrumpir | `modules/infra/avisos.js` | `avisosQueInterrumpen()`, `SEVERIDADES_QUE_INTERRUMPEN` | ~300, ~60 |
+| Umbrales del motor (3 días, 7 días) | `modules/infra/avisos.js` | `DIAS_COMPROMISO_PROXIMO`, `DIAS_APARTADO_PROXIMO`, `DIAS_PRESTAMO_PROXIMO` | ~63 |
+| Recolector por fuente (uno por dominio) | `modules/infra/avisos.js` | `_deCompromisosVencidos()` ... `_deDiaDePago()` | ~110 |
+| Superficie: notificación del sistema | `modules/infra/notificaciones.js` | `verificarYNotificar()` | ~120 |
+| Copy de esa superficie | `modules/infra/notificaciones.js` | `formatearAvisoSistema()`, `_frase()` | ~160, ~190 |
+| Disparo al arrancar (detrás del primer render) | `modules/ui/bootstrap.js` | `verificarYNotificar()` | ~116 |
+
+**Las siete fuentes y quién detecta cada una** (el motor no reimplementa ninguna regla de fecha ni de umbral):
+
+| Tipo | Función | Dónde vive |
+|---|---|---|
+| `compromiso-vencido` | `vencidosSinPagar` (atraso >= 1 día) | `dominio/compromisos/logic.js` |
+| `compromiso-proximo` | `compromisosProximos` (0 a 3 días) | `dominio/compromisos/logic.js` |
+| `limite-excedido`, `limite-alerta` | `alertasLimites` | `dominio/presupuesto/logic.js` |
+| `apartado-proximo`, `apartado-listo` | `apartadosProximos`, `estaListoParaReiniciar` | `dominio/apartados/logic.js` |
+| `prestamo-vencido`, `prestamo-proximo` | `estadoPrestamo` | `dominio/personales/logic.js` |
+| `dia-de-pago` | `ocurrenciasEnMes` sobre los ingresos activos | `infra/vencimientos.js` |
+
+**Dependencias y relaciones**: `infra/avisos.js` importa cinco `logic.js` de dominios, solo lectura y nunca un `index.js`/`view.js` ([ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md)); el precedente ya existía en `infra/notificaciones.js`. Es puro: no lee `S`, no toca el DOM, la fecha entra como `hoyISO`. Quien lee `S` es `verificarYNotificar()`, que le pasa las seis colecciones. Desbloquea **PA.1c** (aviso de débito sin saldo, [ADR 052](../DECISIONS/052-pagos-automaticos.md)) y los recordatorios de préstamos del [ADR 047](../DECISIONS/047-me-deben-v2-intereses-e-historial.md): entran como una fuente más de la tabla de arriba.
+
+**Riesgos**:
+
+- **Con la app cerrada no hay aviso, y no es una limitación temporal**: un service worker no puede leer `localStorage`, donde vive todo `fk_v1`, así que no tiene con qué calcular un vencimiento (ADR 066 D1). El copy de Ajustes no debe prometer lo contrario. Único disparador de revisión: **PERF.5** (persistencia a IndexedDB), que resolvería la mitad técnica; la mitad de soporte de plataforma (`periodicsync` es Chromium con PWA instalada, iOS no lo implementa) seguiría igual.
+- **`DIAS_APARTADO_PROXIMO` es 7, no el `DIAS_PROXIMO` (30) del dominio**: son dos preguntas distintas (listar en la sección contra avisar hoy) y a propósito no comparten constante. Bajarlas a una sola volvería a llenar el aviso todos los días.
+- **Lo que vence hoy nunca es `compromiso-vencido`**: el motor le pide a `vencidosSinPagar` un `umbralDiasAtraso: 1` para que el día del vencimiento lo cubra solo `compromiso-proximo` con `dias: 0`. Si alguien baja ese umbral a 0, el mismo compromiso genera dos avisos el mismo día.
+- **Los préstamos personales nunca pasan de severidad `media`**, ni con un año de atraso: el [ADR 047](../DECISIONS/047-me-deben-v2-intereses-e-historial.md) fija que esa sección recuerda y no presiona, y una notificación del sistema por dinero que le deben al usuario es justo esa presión. Interrumpir queda para lo que él debe.
+- **El motor no recorta la lista** (ADR 066 D4): si una superficie nueva muestra solo tres avisos, el `slice` va en la superficie. Recortar en el motor se lo esconde a todas a la vez.
+- **`nombre` es dato del usuario, nunca copy**: hay un test que verifica que no contenga palabras como "vence" u "hoy". Meter una frase ahí rompe la separación que hace testeable al motor sin fijar el copy.
+- **Sin sello de "ya te avisé esto"**: la de-duplicación es el flag de sesión de `notificaciones.js` (una notificación por apertura). Abrir y cerrar la app cinco veces en un día puede repetir el mismo aviso cinco veces. Persistirlo es schema y quedó para CFG.3c, detrás de evidencia de uso.
+
+**Cambios pendientes**: **CFG.3b** (centro de avisos dentro de la app: dónde vive, cuántos muestra y su copy) y **CFG.3c** (preferencias por tipo en Ajustes, la única rebanada que toca schema). Las dos siguen en `board/configuracion.md`.
+
+**Cambios realizados**:
+
+- **CFG.3a (2026-08-13)**: motor `infra/avisos.js` (ocho tipos, siete fuentes, severidad y orden) y `infra/notificaciones.js` consumiéndolo; `verificarYNotificar()` pasa a leer `S` completo en vez de recibir `S.compromisos`. Riesgo técnico resuelto y escrito en el ADR 066. Sin schema, sin UI nueva.
 
 ---
 
