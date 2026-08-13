@@ -153,14 +153,15 @@ Cierra **MC.17f**, el hallazgo de la auditoría de UX/producto sobre MC.17: hast
 - **Decisión**: deshacer = eliminar + revertir, sin editar y sin una fila de reversa visible nueva. Se descarta esa parte del diseño original de la ficha (movimiento inverso como fila propia) porque ningún dominio de la app la implementa hoy, y sumarla solo para transferencias habría sido vocabulario nuevo sin precedente para un caso que la convención existente (borrar + revertir) ya cubre.
 - Tests: 4 unit nuevos (`tesoreria.test.js`), 1 actualizado (`movimientos.test.js`, la fila de transferencia dejaba de estar vacía).
 
-### feat(diseno): DV.2d, infraestructura de ilustraciones · 2026-08-12
+### feat(diseno): DV.2d, riel técnico + lote completo de plantillas · 2026-08-12
 
-Adelanta **DV.2d** (D3 del ADR 033) en lo único que no depende de la decisión de diseño de Esteban: el riel técnico. Ficha: [`contexto/sistema-visual.md`](contexto/sistema-visual.md).
+Adelanta **DV.2d** (D3 del ADR 033) en lo único que no depende de la decisión de diseño de Esteban: el riel técnico y el lote completo de plantillas draft. Ficha: [`contexto/sistema-visual.md`](contexto/sistema-visual.md).
 
 - `scripts/sync-sprite.py` extendido a `assets/svg/ilustraciones/` (prefijo `il-`, viewBox 120x120 propio, color solo por rol: `currentColor` o `var(--fk-*)`, nunca un valor absoluto).
-- 2 plantillas draft (`metas.svg`, `deudas.svg`) con `data-placeholder="true"`, mismo patrón de DV.2b: el sync las excluye del sprite hasta que Esteban las sobrescriba en Illustrator (ADR 026).
-- Sin cambios de consumidor: `emptyArt()` sigue igual. Sigue abierta P4 (lote completo de superficies) y el reemplazo real de las plantillas.
-- Tests: sin nuevos (infra de build, no lógica de dominio); 3856/3856 verdes, cero guión largo.
+- **P4 del ADR 033, resuelto:** el lote son las 8 superficies que hoy usan `emptyArt()` geométrico (Ahorro, Apartados, Cuentas, Deudas, Inversión, Metas, Personales, Movimientos), no las "6 más visitadas" de la pregunta original: Inicio, Gastos y Calendario no tienen empty state propio todavía, así que dárselo es UX nueva, no un reemplazo de arte existente (tarjeta aparte si se quiere).
+- **8 plantillas draft** (`ahorro.svg`, `apartados.svg`, `cuentas.svg`, `deudas.svg`, `inversion.svg`, `metas.svg`, `personales.svg`, `recurring.svg`) con `data-placeholder="true"`, mismo patrón de DV.2b: el sync las excluye del sprite hasta que Esteban las sobrescriba en Illustrator (ADR 026). Verificado: `python scripts/sync-sprite.py` reporta las 15 plantillas (8 ilustraciones + 7 decoración) excluidas, cero cambio en `index.html`.
+- Sin cambios de consumidor: `emptyArt()` sigue igual. Único bloqueo restante: el arte final de Esteban.
+- Tests: sin nuevos (infra de build, no lógica de dominio); suite unit verde, cero guión largo.
 
 ### feat(analisis): ANL.3, cada bloque declara su propio alcance · 2026-08-11
 
