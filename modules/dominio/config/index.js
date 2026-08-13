@@ -19,7 +19,7 @@ import { SITUACIONES_LABORALES } from '../../core/constants.js';
 import { confirmar } from '../../ui/confirm.js';
 import { pedirPermiso } from '../../infra/notificaciones.js';
 import { abrirModal } from '../../ui/modales.js';
-import { renderPanelConfig, miles, desdeMiles } from './view.js';
+import { renderPanelConfig, renderModalFiscal, miles, desdeMiles } from './view.js';
 import { gastosACSV } from '../export/logic.js';
 import { documentoLegalPorId, cargarDocumentoLegal, VERSION_LEGAL } from './legal.js';
 import { validarPin, crearBloqueo, verificarPin, limpiarFallos } from './bloqueo.js';
@@ -200,6 +200,86 @@ async function _mostrarDocumentoLegal(id) {
   }
 }
 
+// ── ASISTENTE FISCAL (CFG.2c, ADR 050 D1) ────────────────────────
+
+/**
+ * Cablea los dos formularios del asistente fiscal dentro del nodo que los
+ * contiene. Mismo contrato de guardado que tenían montados en Ajustes: cada
+ * uno persiste, enciende su propio chip y no cierra el modal (el usuario
+ * puede llenar los dos sin que el primero le tape el segundo).
+ * @param {HTMLElement} root - `#modal-fiscal-body`, ya con el HTML inyectado.
+ */
+function _wireFormularioFiscal(root) {
+  // Guardar perfil fiscal (K.2).
+  root.querySelector('#form-perfil-fiscal')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const datos = Object.fromEntries(new FormData(e.target));
+    if (!S.config) S.config = {};
+    if (typeof S.config.perfilFiscal !== 'object' || S.config.perfilFiscal === null) {
+      S.config.perfilFiscal = {};
+    }
+    S.config.perfilFiscal.ivaResponsable       = datos.ivaResponsable      === 'on';
+    S.config.perfilFiscal.obligadoContabilidad = datos.obligadoContabilidad === 'on';
+    S.config.perfilFiscal.declaranteObligado   = datos.declaranteObligado   === 'on';
+    save();
+    _confirmarGuardado('config-fiscal-ok');
+    announce('Perfil fiscal guardado.');
+  });
+
+  // Guardar datos de renta manuales del año (K.4).
+  root.querySelector('#form-datos-fiscales')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const anio  = Number(hoy().slice(0, 4));
+    const datos = Object.fromEntries(new FormData(e.target));
+    if (!S.config) S.config = {};
+    if (typeof S.config.datosFiscales !== 'object' || S.config.datosFiscales === null
+        || Array.isArray(S.config.datosFiscales)) {
+      S.config.datosFiscales = {};
+    }
+    // Solo guardamos los campos efectivamente registrados (vacío = no provisto).
+    // Los campos son `type="text"` con separador de miles (B4): `desdeMiles`
+    // devuelve null cuando no quedó ningún dígito escrito.
+    const entrada = {};
+    for (const campo of ['ingresosBrutos', 'consumosTC', 'consignaciones']) {
+      const n = desdeMiles(datos[campo]);
+      if (n !== null && Number.isFinite(n) && n >= 0) entrada[campo] = n;
+    }
+    if (Object.keys(entrada).length > 0) {
+      S.config.datosFiscales[anio] = entrada;
+    } else {
+      delete S.config.datosFiscales[anio];
+    }
+    save();
+    _confirmarGuardado('config-renta-ok');
+    announce('Datos de renta guardados.');
+  });
+
+  // Separador de miles mientras se escribe (B4/R16). El cursor queda al final:
+  // son campos que se teclean de izquierda a derecha una vez al año.
+  for (const campo of root.querySelectorAll('[data-miles]')) {
+    campo.addEventListener('input', () => {
+      const formateado = miles(campo.value);
+      if (formateado === campo.value) return;
+      campo.value = formateado;
+      campo.setSelectionRange(formateado.length, formateado.length);
+    });
+  }
+}
+
+/**
+ * Abre el asistente fiscal (botón "Completar perfil fiscal"). El HTML de los
+ * dos formularios se inyecta recién acá, no en `renderPanelConfig()`: es la
+ * ejecución de D1 del ADR 050, lo fiscal deja de ocupar Ajustes en reposo.
+ */
+function _abrirPerfilFiscal() {
+  const overlay = document.getElementById('modal-fiscal');
+  const body    = document.getElementById('modal-fiscal-body');
+  if (!overlay || !body) return;
+  body.innerHTML = renderModalFiscal();
+  _wireFormularioFiscal(body);
+  abrirModal(overlay);
+}
+
 /** Delegación de clicks dentro del visor: enlaces `[texto](otro.md)` cambian de documento sin cerrar el modal. */
 function _wireLegalLinks() {
   document.getElementById('modal-legal-body')?.addEventListener('click', (e) => {
@@ -246,61 +326,6 @@ function _inyectarPanel() {
     _confirmarGuardado('config-perfil-ok');
     announce('Perfil actualizado.');
   });
-
-  // Guardar perfil fiscal (K.2).
-  panel.querySelector('#form-perfil-fiscal')?.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const datos = Object.fromEntries(new FormData(e.target));
-    if (!S.config) S.config = {};
-    if (typeof S.config.perfilFiscal !== 'object' || S.config.perfilFiscal === null) {
-      S.config.perfilFiscal = {};
-    }
-    S.config.perfilFiscal.ivaResponsable       = datos.ivaResponsable      === 'on';
-    S.config.perfilFiscal.obligadoContabilidad = datos.obligadoContabilidad === 'on';
-    S.config.perfilFiscal.declaranteObligado   = datos.declaranteObligado   === 'on';
-    save();
-    _confirmarGuardado('config-fiscal-ok');
-    announce('Perfil fiscal guardado.');
-  });
-
-  // Guardar datos de renta manuales del año (K.4).
-  panel.querySelector('#form-datos-fiscales')?.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const anio  = Number(hoy().slice(0, 4));
-    const datos = Object.fromEntries(new FormData(e.target));
-    if (!S.config) S.config = {};
-    if (typeof S.config.datosFiscales !== 'object' || S.config.datosFiscales === null
-        || Array.isArray(S.config.datosFiscales)) {
-      S.config.datosFiscales = {};
-    }
-    // Solo guardamos los campos efectivamente registrados (vacío = no provisto).
-    // Los campos son `type="text"` con separador de miles (B4): `desdeMiles`
-    // devuelve null cuando no quedó ningún dígito escrito.
-    const entrada = {};
-    for (const campo of ['ingresosBrutos', 'consumosTC', 'consignaciones']) {
-      const n = desdeMiles(datos[campo]);
-      if (n !== null && Number.isFinite(n) && n >= 0) entrada[campo] = n;
-    }
-    if (Object.keys(entrada).length > 0) {
-      S.config.datosFiscales[anio] = entrada;
-    } else {
-      delete S.config.datosFiscales[anio];
-    }
-    save();
-    _confirmarGuardado('config-renta-ok');
-    announce('Datos de renta guardados.');
-  });
-
-  // Separador de miles mientras se escribe (B4/R16). El cursor queda al final:
-  // son campos que se teclean de izquierda a derecha una vez al año.
-  for (const campo of panel.querySelectorAll('[data-miles]')) {
-    campo.addEventListener('input', () => {
-      const formateado = miles(campo.value);
-      if (formateado === campo.value) return;
-      campo.value = formateado;
-      campo.setSelectionRange(formateado.length, formateado.length);
-    });
-  }
 
   // Importar: el input file no dispara data-action click - usamos change.
   panel.querySelector('#config-importar-json')
@@ -404,6 +429,7 @@ export function initConfig() {
   registrarAccion('toggle-notificaciones',  _toggleNotificaciones);
   registrarAccion('toggle-atajos',          _toggleAtajos);
   registrarAccion('abrir-legal', (el) => _mostrarDocumentoLegal(el.dataset.doc));
+  registrarAccion('abrir-perfil-fiscal', _abrirPerfilFiscal);
   _wireLegalLinks();
 
   // El panel se inyecta la primera vez que la sección está activa.

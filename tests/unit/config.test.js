@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { renderPanelConfig, miles, desdeMiles } from '../../modules/dominio/config/view.js';
+import { renderPanelConfig, renderModalFiscal, miles, desdeMiles } from '../../modules/dominio/config/view.js';
 import { S, createInitialState } from '../../modules/core/state.js';
 import { DOCUMENTOS_LEGALES, documentoLegalPorId } from '../../modules/dominio/config/legal.js';
 
@@ -84,9 +84,9 @@ describe('renderPanelConfig() - grupos, jerarquía de botón y sprite (B1, B2, B
   });
 
   it('deja un solo botón primario en reposo: el de guardar perfil', () => {
-    // Los dos formularios de impuestos viven plegados, así que sus botones
-    // solo existen en el DOM dentro del <details>; los de instalar y activar
-    // recordatorios pasaron a secundario (R11).
+    // Los dos formularios de impuestos ya no viven montados en el panel
+    // (CFG.2c: pasaron al asistente); los de instalar y activar recordatorios
+    // pasaron a secundario (R11).
     const primarios = [...document.querySelectorAll('#panel-config .btn-primary')]
       .filter(b => !b.closest('details'));
     expect(primarios).toHaveLength(1);
@@ -95,12 +95,17 @@ describe('renderPanelConfig() - grupos, jerarquía de botón y sprite (B1, B2, B
       .toContain('btn-secondary');
   });
 
-  it('los dos bloques fiscales quedan plegados en un solo <details>', () => {
-    const det = document.querySelector('.config-desplegable');
-    expect(det.tagName).toBe('DETAILS');
-    expect(det.hasAttribute('open')).toBe(false);
-    expect(det.querySelector('#form-perfil-fiscal')).not.toBeNull();
-    expect(det.querySelector('#form-datos-fiscales')).not.toBeNull();
+  // CFG.2c/ADR 050 D1: lo fiscal ya no vive montado en Ajustes, ni plegado.
+  it('lo fiscal ya no se renderiza en el panel: solo queda el botón del asistente', () => {
+    const fiscal = document.querySelector('section[aria-labelledby="config-fiscal-title"]');
+    expect(fiscal.querySelector('details')).toBeNull();
+    expect(document.getElementById('form-perfil-fiscal')).toBeNull();
+    expect(document.getElementById('form-datos-fiscales')).toBeNull();
+
+    const boton = fiscal.querySelector('[data-action="abrir-perfil-fiscal"]');
+    expect(boton).not.toBeNull();
+    expect(boton.textContent.trim()).toBe('Completar perfil fiscal');
+    expect(boton.className).toContain('btn-secondary');
   });
 
   it('ningún título de tarjeta lleva emoji: la sección usa el sprite como el resto de la app', () => {
@@ -173,14 +178,27 @@ describe('miles() y desdeMiles()', () => {
   });
 });
 
-describe('renderPanelConfig() - datos de renta (B4)', () => {
+// CFG.2c: los dos formularios fiscales viven en el asistente (modal), no en
+// el panel. `renderModalFiscal()` es el HTML que `config/index.js` inyecta
+// en `#modal-fiscal-body` al abrirlo.
+describe('renderModalFiscal() - asistente fiscal (B4, CFG.2c)', () => {
   beforeEach(() => {
     Object.assign(S, createInitialState());
-    document.body.innerHTML = '<div id="panel-config"></div>';
+    document.body.innerHTML = '<div id="modal-fiscal-body"></div>';
+  });
+
+  const render = () => {
+    document.getElementById('modal-fiscal-body').innerHTML = renderModalFiscal();
+  };
+
+  it('incluye el formulario de perfil fiscal y el de datos de renta', () => {
+    render();
+    expect(document.getElementById('form-perfil-fiscal')).not.toBeNull();
+    expect(document.getElementById('form-datos-fiscales')).not.toBeNull();
   });
 
   it('los tres campos son texto numérico con separador, no type=number pelado', () => {
-    renderPanelConfig();
+    render();
     for (const id of ['df-ingresos', 'df-tc', 'df-consig']) {
       const campo = document.getElementById(id);
       expect(campo.getAttribute('type')).toBe('text');
@@ -192,7 +210,7 @@ describe('renderPanelConfig() - datos de renta (B4)', () => {
   it('un valor ya guardado se muestra con puntos de miles', () => {
     const anio = new Date().getFullYear();
     S.config = { datosFiscales: { [anio]: { ingresosBrutos: 72000000 } } };
-    renderPanelConfig();
+    render();
     expect(document.getElementById('df-ingresos').getAttribute('value')).toBe('72.000.000');
   });
 });

@@ -8,16 +8,7 @@
 
 ### Configuración (dominio `config`)
 
-> **Iniciativa fusionada CFG.1 + CFG.2** ("Perfil fiscal/financiero en Ajustes"). **No iniciar ninguna sin instrucción explícita.** Alcance y sus dos decisiones, ambas tomadas: **[ADR 050](../DECISIONS/050-perfil-fiscal-ubicacion-y-framing.md)**, su dueño. Ficha: [`contexto/configuracion.md`](../contexto/configuracion.md). CFG.2a cerró el 2026-08-13; solo queda CFG.2c, que ejecuta la reubicación.
-
-#### CFG.2c - Reubicar lo fiscal: asistente bajo demanda en Ajustes + interpretación en Análisis
-- Prioridad  : sin definir
-- Estado     : pendiente. Ejecuta la decisión D1 del **[ADR 050](../DECISIONS/050-perfil-fiscal-ubicacion-y-framing.md)** (ya tomada). Con CFG.2a cerrada, al asistente le quedan dos preguntas: consumos con tarjeta de crédito y consignaciones.
-- Objetivo   : los 2 bloques fiscales dejan de renderizarse permanentes en Ajustes y pasan a un asistente tras botón; la interpretación se consolida en Análisis (coordinar con el layout de ANL.1).
-- Secciones  : Configuración (Ajustes), Análisis
-- Archivos   : `modules/dominio/config/view.js`/`index.js` (los 2 forms actuales), `modules/dominio/analisis/view.js`
-- Depende de : CFG.2a (cerrada); coordinar con ANL.1
-- Modelo     : Equilibrado - Alto (reubicación de UX sin lógica fiscal nueva)
+> **Iniciativa fusionada CFG.1 + CFG.2** ("Perfil fiscal/financiero en Ajustes"), **completa**. Alcance y sus dos decisiones: **[ADR 050](../DECISIONS/050-perfil-fiscal-ubicacion-y-framing.md)**, su dueño. Ficha: [`contexto/configuracion.md`](../contexto/configuracion.md). CFG.2a cerró el 2026-08-13 (ingresos brutos derivados) y CFG.2c cerró el mismo día (D1: lo fiscal pasa a un asistente tras botón).
 
 #### CFG.3 - Notificaciones inteligentes anticipatorias
 - Prioridad  : sin definir
@@ -66,5 +57,5 @@
 - Objetivo   : el usuario pidió revisar si faltan configuraciones que deberían vivir en Ajustes, con el objetivo de que la sección se convierta en el centro de configuración de Finko (seguridad, personalización, notificaciones, respaldo y cualquier otra opción relevante), con interfaz clara y organizada. **Ampliado por triaje del 4.º lote (2026-07-08, brief de Ajustes punto 2):** rediseño visual de la sección con tarjetas de tamaño uniforme, Bento Grid donde aporte, bloques compactos y alineados, sin botones que ocupen todo el ancho en desktop (hoy: "Instalar aplicación", "Recordatorios"); misma sensación de orden que el resto de la app (coordina con IV.2). **7.º lote:** el layout debe reservar el bloque del **Centro Legal** (iniciativa LEG, Transversal).
 - Secciones  : Configuración (Ajustes)
 - Archivos   : `modules/dominio/config/view.js`, `styles/components/config.css`
-- Depende de : CFG.2c, CFG.3 y CFG.4 (esta es la pasada de auditoría/orden final, tiene sentido hacerla después o junto con las demás, no antes). El frente de seguridad ya dejó su bloque en el layout con CFG.5a.
+- Depende de : CFG.3 y CFG.4 (esta es la pasada de auditoría/orden final, tiene sentido hacerla después o junto con las demás, no antes; CFG.2c ya cerró). El frente de seguridad ya dejó su bloque en el layout con CFG.5a.
 - Modelo     : Equilibrado - Alto (auditoría de una sección existente con criterio de UX, sin lógica financiera nueva)

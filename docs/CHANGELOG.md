@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(config): CFG.2c, lo fiscal sale de Ajustes y pasa a un asistente tras botón · 2026-08-13
+
+Ejecuta D1 del [ADR 050](DECISIONS/050-perfil-fiscal-ubicacion-y-framing.md) (ya decidida, pendiente desde el 2026-07-24). Cierra la iniciativa fusionada CFG.1+CFG.2. Fichas: [`contexto/configuracion.md`](contexto/configuracion.md), [`contexto/analisis.md`](contexto/analisis.md).
+
+- **El bloque "Perfil fiscal y datos de renta" deja de montarse en Ajustes**, ni siquiera plegado en el `<details>` que dejó CFG.6: el grupo "Impuestos" pasa a una sola tarjeta con descripción corta y el botón "Completar perfil fiscal". Los dos formularios (`#form-perfil-fiscal`, `#form-datos-fiscales`) se inyectan recién al abrir un modal nuevo (`#modal-fiscal`), mismo patrón que el visor del Centro Legal.
+- **Reubicación de UX, sin lógica fiscal nueva** (como pedía la tarjeta): el HTML de los dos formularios no cambió una línea, solo el lugar donde vive (`renderModalFiscal()` nueva en `view.js`, exportada para que `config/index.js` la inyecte). El contrato de guardado tampoco cambió: cada formulario persiste y enciende su propio chip sin cerrar el modal, para que el usuario pueda llenar los dos sin que el primero le tape el segundo.
+- **El override de "Ingresos brutos" se conserva dentro del asistente.** CFG.2a lo dejó como override de la estimación automática, no como pregunta obligatoria; sacarlo habría dejado sin lugar de captura a quien necesita corregir un año atípico, y los `tip` del monitor de renta (`analisis/logic.js`) siguen apuntando a "Configuración" sin que ese texto se volviera falso.
+- **La interpretación no se movió, porque ya estaba en Análisis** desde CFG.2b/K.3: `_renderEstadoRenta()` es el único lugar que explica el estado de renta desde el ADR 038. D1 solo tenía pendiente el lado de captura.
+- Verificado en la app: abrir el modal, marcar un checkbox del perfil fiscal y guardar consumos con tarjeta + consignaciones, cerrar el modal y confirmar que Análisis muestra los criterios medidos (ya no "sin dato") con el estado de renta actualizado.
+- Tests: 3 unitarios reescritos en `config.test.js` (el botón reemplaza al `<details>` permanente; `renderModalFiscal()` prueba el HTML de los dos formularios que antes se probaba contra el panel). 4067/4067 unit + lint verdes. SW `finko-v524` → `finko-v525`.
+
 ### perf(render): PERF.6, los renders reactivos se colapsan a uno por tick · 2026-08-13
 
 Tarjeta reabierta con la evidencia que ella misma exigía (disciplina [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md)). Cifras y método: [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md). Ficha: [`contexto/transversal.md`](contexto/transversal.md).

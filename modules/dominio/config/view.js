@@ -420,27 +420,33 @@ function _renderNotificaciones() {
 }
 
 /**
- * Bloque "Impuestos" (B1/B2): perfil fiscal y datos de renta son opcionales,
- * alimentan el mismo monitor de Análisis y entre los dos medían más de mil
- * píxeles al abrir la sección. Plegados en un `<details>` nativo (cero JS,
- * accesible por teclado) quedan descubribles sin ocupar la primera pantalla,
- * y sus dos botones "Guardar" solo existen cuando el usuario los abre.
+ * Bloque "Impuestos" (CFG.2c, ADR 050 D1): perfil fiscal y datos de renta
+ * dejan de renderizarse permanentes en Ajustes (ni siquiera plegados) y pasan
+ * a un asistente que se abre tras este botón. La interpretación sigue
+ * viviendo solo en Análisis (K.3): acá no queda más que la puerta de entrada.
  */
 function _renderImpuestos() {
   return `
     <section class="config-section" aria-labelledby="config-fiscal-title">
-      <details class="config-desplegable">
-        <summary>
-          <h2 class="config-section__title" id="config-fiscal-title">Perfil fiscal y datos de renta</h2>
-          ${icon('chevron-right', 'icon icon--sm')}
-        </summary>
-        <p class="config-section__desc">
-          Opcional. Si los registras, el monitor de renta de Análisis deja de mostrar "Sin datos".
-        </p>
-        ${_renderPerfilFiscal()}
-        ${_renderDatosRenta()}
-      </details>
+      <h2 class="config-section__title" id="config-fiscal-title">Impuestos</h2>
+      <p class="config-section__desc">
+        Perfil fiscal y datos de renta, opcionales. Si los registras, el monitor de renta
+        de Análisis deja de mostrar "Sin datos".
+      </p>
+      <button class="btn btn-secondary" type="button" data-action="abrir-perfil-fiscal">
+        Completar perfil fiscal
+      </button>
     </section>`;
+}
+
+/**
+ * Contenido del asistente fiscal (CFG.2c): los dos formularios que antes
+ * vivían siempre montados en Ajustes, ahora inyectados en `#modal-fiscal-body`
+ * solo cuando el usuario abre el modal. Mismo HTML, mismo contrato de guardado
+ * (`config/index.js` los cablea al abrir); sin lógica fiscal nueva.
+ */
+export function renderModalFiscal() {
+  return `${_renderPerfilFiscal()}${_renderDatosRenta()}`;
 }
 
 function _renderPerfilFiscal() {

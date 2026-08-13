@@ -1,6 +1,6 @@
 # ADR 050 - Perfil fiscal: ubicación bajo demanda y framing de la obligación de declarar
 
-**Estado:** **Aceptada.** D1 (ubicación) decidida por Esteban el 2026-07-08, pendiente de ejecución en la tarjeta **CFG.2c**. **D2 (framing legal) decidida el 2026-08-03** por delegación explícita de Esteban ("toma tú las decisiones que sean mejor para la app"): alternativa **C acotada**, implementada y en producción con CFG.2b.
+**Estado:** **Aceptada e implementada.** D1 (ubicación) decidida por Esteban el 2026-07-08, ejecutada el 2026-08-13 en la tarjeta **CFG.2c**. **D2 (framing legal) decidida el 2026-08-03** por delegación explícita de Esteban ("toma tú las decisiones que sean mejor para la app"): alternativa **C acotada**, implementada y en producción con CFG.2b.
 **Fecha:** 2026-07-24. Revisado: 2026-08-13.
 **Autores:** Esteban (producto, decisión del 2026-07-06 y brief de Ajustes del 2026-07-08), Claude Opus 5 (triaje y redacción)
 **Relación:** el tono lo restringe el [ADR 003](003-tono-neutral-profesional.md) (Finko orienta, no dictamina). Las constantes anuales que alimentan los topes son ADN regla 12 y el [ADR 004](004-eliminar-tasa-usura.md) fija qué indicadores quedan fuera por costo de mantenimiento. La ubicación de la interpretación en Análisis coordina con el layout de ANL.1 / [ADR 046](046-analisis-interpreta-criterio-y-lenguaje.md). Ficha de la sección: [`contexto/configuracion.md`](../contexto/configuracion.md).
@@ -29,7 +29,7 @@ Toda la **interpretación y las recomendaciones se consultan en Análisis**, que
 
 **Por qué:** un formulario fiscal permanente en Ajustes cobra un costo visual a todos los usuarios en todas las visitas, para un dato que se toca una o dos veces al año. Y tener el dato en Ajustes y su interpretación en Análisis partiría la lectura en dos pantallas.
 
-**Consecuencia:** la ejecución es la tarjeta CFG.2c, y conviene después de CFG.2a y CFG.2b porque esas dos reducen cuántas preguntas quedan vivas en el asistente. El layout del bloque en Análisis se coordina con ANL.1.
+**Consecuencia:** la ejecución fue la tarjeta CFG.2c (cerrada el 2026-08-13), después de CFG.2a y CFG.2b porque esas dos redujeron cuántas preguntas quedaron vivas en el asistente. El layout del bloque en Análisis lo cerró ANL.1 (ADR 046 D4).
 
 ---
 
@@ -67,7 +67,7 @@ Esteban delegó la decisión de forma explícita el 2026-08-03 al abrir CFG.2b (
 
 ## Consecuencias
 
-**El orden de las tarjetas queda fijado por D1.** CFG.2c ejecuta la reubicación y conviene al final, porque CFG.2a y CFG.2b determinan cuántas preguntas sobreviven en el asistente.
+**El orden de las tarjetas quedó fijado por D1.** CFG.2c ejecutó la reubicación al final, porque CFG.2a y CFG.2b determinaron cuántas preguntas sobrevivieron en el asistente.
 
 **CFG.2b cerró el 2026-08-03 con D2 resuelta y CFG.2a el 2026-08-13**, esta última sin depender del framing: la derivación de ingresos brutos era independiente. Con las dos cerradas, el usuario que registró sus ingresos ya recibe un veredicto en vez de `sin-conclusion`, y al asistente de CFG.2c le quedan dos preguntas (consumos con tarjeta de crédito y consignaciones).
 
@@ -86,4 +86,4 @@ Esteban delegó la decisión de forma explícita el 2026-08-03 al abrir CFG.2b (
 
 ## Qué falta para cerrarlo
 
-Nada de este ADR: las dos decisiones están tomadas. Falta **ejecutar D1**, que es la tarjeta CFG.2c del tablero.
+Nada. Las dos decisiones están tomadas y ambas ejecutadas: D1 en CFG.2c (2026-08-13, reubicación a un asistente en Ajustes) y D2 en CFG.2b (2026-08-03, framing C acotada).
