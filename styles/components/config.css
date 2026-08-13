@@ -1048,6 +1048,11 @@
 .cal-dot--fijo           { background: var(--fk-dom-agenda-text);      color: var(--fk-dom-agenda-text); }
 .cal-dot--deuda-entidad  { background: var(--fk-dom-compromisos-text); color: var(--fk-dom-compromisos-text); }
 .cal-dot--deuda-personal { background: var(--fk-dom-personales-text);  color: var(--fk-dom-personales-text); }
+/* MT.6d: aporte de plan de meta. Color propio de Metas (púrpura), el mismo
+   que ya usa `.meta-card` (`data-dom="metas"`): un aporte no es un pago a
+   terceros ni dinero que entra, es un tercer estado y necesita su propio
+   color, no el verde de Ahorro que ya usa `.cal-dot--apartado` fuera de acá. */
+.cal-dot--meta           { background: var(--fk-dom-metas-text);       color: var(--fk-dom-metas-text); }
 /* Reutilizado fuera del calendario, en "Próximas prioridades" de Inicio
    (IV.2c): apartados no tienen dot propio en la grilla del mes (no son
    un tipo de evento de agenda), pero sí necesitan su propia identidad
@@ -1228,6 +1233,10 @@
   background: color-mix(in srgb, var(--fk-dom-personales) 8%, var(--fk-bg-elevated));
   border-color: color-mix(in srgb, var(--fk-dom-personales) 20%, transparent);
 }
+.cal-detail__item--meta {
+  background: color-mix(in srgb, var(--fk-dom-metas) 8%, var(--fk-bg-elevated));
+  border-color: color-mix(in srgb, var(--fk-dom-metas) 20%, transparent);
+}
 
 .cal-detail__icon {
   display: inline-flex;
@@ -1258,6 +1267,10 @@
 .cal-detail__icon--deuda-personal {
   color: var(--fk-dom-personales-text);
   background: color-mix(in srgb, var(--fk-dom-personales) 14%, var(--fk-bg-surface));
+}
+.cal-detail__icon--meta {
+  color: var(--fk-dom-metas-text);
+  background: color-mix(in srgb, var(--fk-dom-metas) 14%, var(--fk-bg-surface));
 }
 
 /* MK.2/ID.3 (ADR 025): con una teja dentro (de marca o de categoría), el

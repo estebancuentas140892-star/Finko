@@ -19,7 +19,7 @@ import { FRECUENCIAS, CATEGORIAS_AGENDA, CATEGORIA_INGRESO_ICONO, ICONOS_CATEGOR
 import { renderIconoPicker } from '../../infra/icon-picker.js';
 import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { LABEL_TIPO, ICONO_TIPO, calcularAbonosDelMes, estadoPagoMes } from '../compromisos/logic.js';
-import { eventosDelMes, eventosIngresosDelMes, totalEventosDelMes, totalDia, tiposPresentesEnMes, totalesDelMes, pendientesDePagoDelMes } from './logic.js';
+import { eventosDelMes, eventosIngresosDelMes, eventosMetasDelMes, totalEventosDelMes, totalDia, tiposPresentesEnMes, totalesDelMes, pendientesDePagoDelMes } from './logic.js';
 
 // ── ESTADO LOCAL ─────────────────────────────────────────────────
 
@@ -120,9 +120,19 @@ export function renderAgenda() {
   const ingresos    = Array.isArray(S.ingresos) ? S.ingresos : [];
   const eventosIng  = eventosIngresosDelMes(ingresos, _viewYear, _viewMonth);
 
+  // MT.6d (ADR 048 D3): el plan de aportes de cada meta activa, ya generado y
+  // guardado por Metas (MT.6c). Igual que el ingreso, es recordatorio, no
+  // pago: entra al mismo mapa mergeado para compartir grilla, detalle del
+  // día y leyenda, pero `totalDia`/`totalesDelMes` lo excluyen de la suma.
+  const metas       = Array.isArray(S.metas) ? S.metas : [];
+  const eventosMeta = eventosMetasDelMes(metas, _viewYear, _viewMonth);
+
   /** @type {Record<number, any[]>} */
   const eventos = {};
   for (const [d, evs] of Object.entries(eventosIng)) eventos[d] = [...evs];
+  for (const [d, evs] of Object.entries(eventosMeta)) {
+    eventos[d] = eventos[d] ? [...eventos[d], ...evs] : [...evs];
+  }
   for (const [d, evs] of Object.entries(eventosComp)) {
     eventos[d] = eventos[d] ? [...eventos[d], ...evs] : [...evs];
   }
@@ -182,7 +192,7 @@ export function renderAgenda() {
     ${_renderHeroMes(eventos, _viewYear, _viewMonth, prefijoMes)}
     ${_renderLoteCard(pendientes, prefijoMes)}
     <article class="cal-card">
-      ${_renderCabecera(_viewYear, _viewMonth, eventosComp, eventosIng)}
+      ${_renderCabecera(_viewYear, _viewMonth, eventosComp, eventosIng, eventosMeta)}
       ${_renderDiasSemana()}
       ${_renderGrid(_viewYear, _viewMonth, eventos, vencidosPorDia)}
       ${_renderLeyenda(eventos)}
@@ -203,15 +213,18 @@ export function resumenMesVisible() {
   _ensureFecha();
   const compromisos = Array.isArray(S.compromisos) ? S.compromisos : [];
   const ingresos    = Array.isArray(S.ingresos) ? S.ingresos : [];
+  const metas       = Array.isArray(S.metas) ? S.metas : [];
   const nComp = totalEventosDelMes(eventosDelMes(compromisos, _viewYear, _viewMonth));
   const nIng  = totalEventosDelMes(eventosIngresosDelMes(ingresos, _viewYear, _viewMonth));
+  const nMeta = totalEventosDelMes(eventosMetasDelMes(metas, _viewYear, _viewMonth));
 
   const partes = [
     nComp === 0 ? 'sin compromisos'
       : nComp === 1 ? '1 compromiso'
       : `${nComp} compromisos`,
   ];
-  if (nIng > 0) partes.push(nIng === 1 ? '1 ingreso' : `${nIng} ingresos`);
+  if (nIng > 0)  partes.push(nIng === 1 ? '1 ingreso' : `${nIng} ingresos`);
+  if (nMeta > 0) partes.push(nMeta === 1 ? '1 aporte a meta' : `${nMeta} aportes a metas`);
 
   return `${MONTHS[_viewMonth]} ${_viewYear}, ${partes.join(' y ')}`;
 }
@@ -409,11 +422,13 @@ export function renderFormPagoLote(pendientes) {
     </div>`;
 }
 
-function _renderCabecera(year, month, eventos, eventosIng = {}) {
+function _renderCabecera(year, month, eventos, eventosIng = {}, eventosMeta = {}) {
   const total = totalEventosDelMes(eventos);
   // CAL.4b (ADR 037 D2): el subtítulo separa compromisos de ingresos; el
   // día de ingreso no es un pago y no debe contarse como tal (ADR 021).
+  // MT.6d: los aportes de meta se cuentan aparte, mismo criterio.
   const nIng  = totalEventosDelMes(eventosIng);
+  const nMeta = totalEventosDelMes(eventosMeta);
   const partes = [
     total === 0
       ? 'Sin compromisos este mes'
@@ -421,7 +436,8 @@ function _renderCabecera(year, month, eventos, eventosIng = {}) {
       ? '1 compromiso este mes'
       : `${total} compromisos este mes`,
   ];
-  if (nIng > 0) partes.push(nIng === 1 ? '1 ingreso' : `${nIng} ingresos`);
+  if (nIng > 0)  partes.push(nIng === 1 ? '1 ingreso' : `${nIng} ingresos`);
+  if (nMeta > 0) partes.push(nMeta === 1 ? '1 aporte a meta' : `${nMeta} aportes a metas`);
   const subtitle = partes.join(' · ');
 
   return `
@@ -502,10 +518,13 @@ function _renderGrid(year, month, eventos, vencidosPorDia = {}) {
     ].filter(Boolean).join(' ');
 
     // ADR 021: el aria-label distingue día de ingreso de compromisos a pagar.
+    // MT.6d: un aporte de meta tampoco es un compromiso, se nombra aparte.
     const nIng  = evs.filter(e => e?.tipo === 'ingreso').length;
-    const nComp = evs.length - nIng;
+    const nMeta = evs.filter(e => e?.tipo === 'meta').length;
+    const nComp = evs.length - nIng - nMeta;
     const partes = [];
     if (nIng > 0)  partes.push('día de ingreso');
+    if (nMeta > 0) partes.push(`${nMeta} ${nMeta === 1 ? 'aporte a meta' : 'aportes a metas'}`);
     if (nComp > 0) partes.push(`${nComp} ${nComp === 1 ? 'compromiso' : 'compromisos'}`);
     if (nVencidos > 0) partes.push(`${nVencidos} ${nVencidos === 1 ? 'vencido' : 'vencidos'}`);
     const aria = hayEvs
@@ -552,6 +571,7 @@ function _renderDots(evs) {
 /** Etiqueta de leyenda por tipo de evento (color e ícono ya los da `cal-dot--*`, CSS). */
 const _LABEL_LEYENDA = {
   'ingreso':        'Día de ingreso',
+  'meta':           'Aporte a meta',
   'fijo':           'Gasto fijo',
   'deuda-entidad':  'Deuda entidad',
   'deuda-personal': 'Deuda personal',
@@ -635,10 +655,13 @@ function _renderDetalleDia(evs, year, month, dia) {
   }
 
   // ADR 021: el resumen separa el día de ingreso de los compromisos a pagar.
+  // MT.6d: el aporte de meta se nombra aparte, mismo criterio.
   const nIng    = evs.filter(e => e?.tipo === 'ingreso').length;
-  const nComp   = evs.length - nIng;
+  const nMeta   = evs.filter(e => e?.tipo === 'meta').length;
+  const nComp   = evs.length - nIng - nMeta;
   const partes  = [];
   if (nIng > 0)  partes.push('día de ingreso');
+  if (nMeta > 0) partes.push(nMeta === 1 ? '1 aporte a meta' : `${nMeta} aportes a metas`);
   if (nComp > 0) partes.push(nComp === 1 ? '1 compromiso' : `${nComp} compromisos`);
   const resumen = partes.join(' · ');
   // AG.5: total a pagar ese día, visible de inmediato junto al título (no
@@ -650,7 +673,7 @@ function _renderDetalleDia(evs, year, month, dia) {
   const prefijo = `${year}-${String(month + 1).padStart(2, '0')}`;
   const gastos  = Array.isArray(S.gastos) ? S.gastos : [];
   const oculto  = S.config?.ocultarSaldo === true;
-  const comps   = evs.filter(e => e?.tipo !== 'ingreso');
+  const comps   = evs.filter(e => e?.tipo !== 'ingreso' && e?.tipo !== 'meta');
   const todoPagado = comps.length > 0 &&
     comps.every(c => estadoPagoMes(gastos, c, prefijo) === 'completo');
 
@@ -660,9 +683,11 @@ function _renderDetalleDia(evs, year, month, dia) {
     ? `<p class="cal-detail__total${todoPagado ? ' cal-detail__total--pagado' : ''}">${todoPagado ? 'Pagado este día' : 'Total a pagar'}: <strong>${totalTxt}</strong></p>`
     : '';
 
-  const items = evs.map(c => c?.tipo === 'ingreso'
-    ? _renderDetalleItemIngreso(c)
-    : _renderDetalleItem(c, year, month)).join('');
+  const items = evs.map(c => {
+    if (c?.tipo === 'ingreso') return _renderDetalleItemIngreso(c);
+    if (c?.tipo === 'meta')    return _renderDetalleItemMeta(c);
+    return _renderDetalleItem(c, year, month);
+  }).join('');
 
   return `
     <section class="cal-detail" aria-label="Compromisos del ${titulo}">
@@ -720,6 +745,41 @@ function _renderDetalleItemIngreso(ing) {
                 data-action="agenda-distribuir-ingreso"
                 aria-label="Distribuir el ingreso ${desc} entre tus objetivos">
           Distribuir →
+        </button>
+      </div>
+    </li>`;
+}
+
+/**
+ * Item de detalle para un aporte del plan de una meta (MT.6d, ADR 048 D3).
+ * El plan es **visible y recordatorio, nunca ejecución**: no hay botón que
+ * registre el aporte solo, el CTA abre el mismo modal de aporte que ya usa
+ * Metas (`data-action="abonar-meta"`, registrado por `metas/index.js` en el
+ * bootstrap de la app). Agenda no importa Metas (ADN #10): solo reutiliza la
+ * acción global ya cableada.
+ *
+ * @param {{ id:string, descripcion?:string, monto?:number }} m
+ * @returns {string}
+ */
+function _renderDetalleItemMeta(m) {
+  const desc  = _esc(m.descripcion || 'Meta');
+  const monto = Number(m.monto) || 0;
+  const oculto   = S.config?.ocultarSaldo === true;
+  const montoTxt = oculto ? SALDO_MASCARA_CUENTA : f(monto);
+
+  return `
+    <li class="cal-detail__item cal-detail__item--meta">
+      <span class="cal-detail__icon cal-detail__icon--meta" aria-hidden="true">${tejaCategoria('i-metas', 'metas')}</span>
+      <div class="cal-detail__body">
+        <p class="cal-detail__name">${desc}</p>
+        <p class="cal-detail__sub">Aporte sugerido a tu meta</p>
+      </div>
+      ${monto > 0 ? `<p class="cal-detail__amount">${montoTxt}</p>` : ''}
+      <div class="cal-detail__actions">
+        <button type="button" class="btn btn-sm btn-primary"
+                data-action="abonar-meta" data-id="${_esc(m.id)}"
+                aria-label="Aportar a ${desc}">
+          Aportar →
         </button>
       </div>
     </li>`;

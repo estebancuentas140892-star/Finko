@@ -751,7 +751,9 @@ export function initAgenda() {
   // sección también refresca (renderSmart solo pinta si la sección está
   // visible; con el calendario cerrado no cuesta nada).
   EventBus.on('state:change', ({ section }) => {
-    if (section === 'compromisos' || section === 'ingresos' || section === 'gastos') {
+    // MT.6d: el plan de aportes de una meta (generado/regenerado por Metas)
+    // también se pinta acá, así que un cambio de metas repinta el calendario.
+    if (section === 'compromisos' || section === 'ingresos' || section === 'gastos' || section === 'metas') {
       renderBannerProposito('agenda', S.compromisos.length > 0);
       renderSmart(renderAgenda, 'agenda');
     }

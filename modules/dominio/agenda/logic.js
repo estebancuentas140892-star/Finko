@@ -93,6 +93,48 @@ export function eventosIngresosDelMes(ingresos, year, month) {
 }
 
 /**
+ * Mapea el plan de aportes de cada meta activa a los días del mes en que cae
+ * (MT.6d, ADR 048 D3). A diferencia de `eventosDelMes`/`eventosIngresosDelMes`,
+ * no recalcula ocurrencias por frecuencia: `Meta.planAportes` (MT.6c) ya trae
+ * fechas concretas generadas y regeneradas por el dominio Metas, así que acá
+ * solo se filtran las que caen en el mes visible. Cada evento queda marcado
+ * con `tipo: 'meta'` para que la vista lo distinga de un compromiso o un
+ * ingreso, y `totalDia`/`totalesDelMes` no lo sumen como dinero a pagar (un
+ * aporte a una meta propia no es una obligación con un tercero).
+ *
+ * @param {import('../../core/state.js').Meta[]} metas
+ * @param {number} year   Año completo (ej. 2026).
+ * @param {number} month  Mes 0-indexed (0=Enero, 11=Diciembre).
+ * @returns {Record<number, Array<{id:string, descripcion:string, monto:number, dia:number, tipo:'meta'}>>}
+ */
+export function eventosMetasDelMes(metas, year, month) {
+  if (!Array.isArray(metas)) return {};
+  if (!Number.isInteger(year))  return {};
+  if (!Number.isInteger(month) || month < 0 || month > 11) return {};
+
+  const prefijo = `${year}-${String(month + 1).padStart(2, '0')}-`;
+
+  /** @type {Record<number, any[]>} */
+  const eventos = {};
+
+  for (const m of metas) {
+    if (!m || typeof m !== 'object') continue;
+    if (m.completada === true) continue;
+    if (!Array.isArray(m.planAportes)) continue;
+
+    for (const aporte of m.planAportes) {
+      if (!aporte || typeof aporte.fecha !== 'string' || !aporte.fecha.startsWith(prefijo)) continue;
+      const dia = Number(aporte.fecha.slice(8, 10));
+      if (!Number.isInteger(dia)) continue;
+      if (!eventos[dia]) eventos[dia] = [];
+      eventos[dia].push({ id: m.id, descripcion: m.nombre ?? '', monto: Number(aporte.monto) || 0, dia, tipo: 'meta' });
+    }
+  }
+
+  return eventos;
+}
+
+/**
  * Cuenta total de eventos en el mes (suma de longitudes de cada día).
  * Útil para badges o resúmenes en la cabecera del calendario.
  *
@@ -114,7 +156,7 @@ export function totalEventosDelMes(eventos) {
  * @returns {string[]}
  */
 export function tiposPresentesEnMes(eventos) {
-  const ORDEN = ['ingreso', 'fijo', 'deuda-entidad', 'deuda-personal'];
+  const ORDEN = ['ingreso', 'meta', 'fijo', 'deuda-entidad', 'deuda-personal'];
   if (!eventos || typeof eventos !== 'object') return [];
 
   const presentes = new Set();
@@ -157,7 +199,10 @@ export function totalDia(evs) {
   for (const c of evs) {
     if (!c || typeof c !== 'object') continue;
     // Un día de ingreso (ADR 021) no es dinero a pagar: se excluye del total.
-    if (c.tipo === 'ingreso') continue;
+    // Un aporte de meta (MT.6d) tampoco: es recordatorio de ahorro propio, no
+    // una obligación con un tercero (ADR 048 D3, "visible y recordatorio,
+    // nunca ejecución").
+    if (c.tipo === 'ingreso' || c.tipo === 'meta') continue;
     const raw = c.tipo === 'fijo' ? c.monto : c.cuotaMensual;
     const n = Number(raw);
     if (Number.isFinite(n)) total += n;
@@ -195,7 +240,7 @@ export function totalesDelMes(eventos, gastos, prefijoMes) {
     if (!Array.isArray(evs)) continue;
     for (const c of evs) {
       if (!c || typeof c !== 'object') continue;
-      if (c.tipo === 'ingreso') continue;
+      if (c.tipo === 'ingreso' || c.tipo === 'meta') continue;
       const raw = c.tipo === 'fijo' ? c.monto : c.cuotaMensual;
       const n = Number(raw);
       if (!Number.isFinite(n) || n <= 0) continue;

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { eventosDelMes, eventosIngresosDelMes, totalEventosDelMes, totalDia, eventosDeHoy, eventosEnProximos, tiposPresentesEnMes, totalesDelMes, pendientesDePagoDelMes } from '../../modules/dominio/agenda/logic.js';
+import { eventosDelMes, eventosIngresosDelMes, eventosMetasDelMes, totalEventosDelMes, totalDia, eventosDeHoy, eventosEnProximos, tiposPresentesEnMes, totalesDelMes, pendientesDePagoDelMes } from '../../modules/dominio/agenda/logic.js';
 import { renderFormGastoFijo, renderFormPagoLote, textoBannerGastoFijo, renderAgenda, mostrarDia, navegarMes, resetearVistaAlMesActual, marcarEntradaSeccion, resumenMesVisible, diaSeleccionado } from '../../modules/dominio/agenda/view.js';
 import { S } from '../../modules/core/state.js';
 import { CATEGORIAS_AGENDA, CATEGORIA_AGENDA_ICONO } from '../../modules/core/constants.js';
@@ -1153,6 +1153,61 @@ describe('totalDia() con día de ingreso (ADR 021)', () => {
   });
 });
 
+// ── eventosMetasDelMes() (MT.6d, ADR 048 D3) ──────────────────────
+
+const metaBase = (overrides = {}) => ({
+  id: 'm1', nombre: 'Viaje', montoObjetivo: 1_000_000, montoActual: 0,
+  completada: false, planAportes: [{ fecha: '2026-06-20', monto: 250_000 }],
+  ...overrides,
+});
+
+describe('eventosMetasDelMes()', () => {
+  it('mapea el aporte del plan a su día con tipo meta', () => {
+    const evs = eventosMetasDelMes([metaBase()], 2026, 5);
+    expect(Object.keys(evs)).toEqual(['20']);
+    expect(evs[20][0]).toMatchObject({ id: 'm1', descripcion: 'Viaje', monto: 250_000, dia: 20, tipo: 'meta' });
+  });
+
+  it('varios aportes del mismo plan caen en sus propios días', () => {
+    const meta = metaBase({ planAportes: [
+      { fecha: '2026-06-05', monto: 100_000 },
+      { fecha: '2026-06-20', monto: 100_000 },
+    ] });
+    const evs = eventosMetasDelMes([meta], 2026, 5);
+    expect(Object.keys(evs).sort()).toEqual(['20', '5']);
+  });
+
+  it('ignora aportes de otro mes', () => {
+    const meta = metaBase({ planAportes: [{ fecha: '2026-07-01', monto: 100_000 }] });
+    expect(eventosMetasDelMes([meta], 2026, 5)).toEqual({});
+  });
+
+  it('una meta cumplida no aporta eventos aunque su plan tenga fechas del mes', () => {
+    const meta = metaBase({ completada: true });
+    expect(eventosMetasDelMes([meta], 2026, 5)).toEqual({});
+  });
+
+  it('una meta sin planAportes (aún no migrada, o sin fecha límite) no rompe nada', () => {
+    const meta = metaBase({ planAportes: undefined });
+    expect(eventosMetasDelMes([meta], 2026, 5)).toEqual({});
+  });
+
+  it('tolera input inválido', () => {
+    expect(eventosMetasDelMes(null, 2026, 5)).toEqual({});
+    expect(eventosMetasDelMes([metaBase()], 2026, 99)).toEqual({});
+  });
+});
+
+describe('totalDia() con aporte de meta (MT.6d)', () => {
+  it('no suma el aporte de meta al total a pagar del día', () => {
+    const evs = [
+      { tipo: 'meta', monto: 250_000 },
+      { tipo: 'fijo', monto: 100_000 },
+    ];
+    expect(totalDia(evs)).toBe(100_000);
+  });
+});
+
 // ── renderAgenda() - día de ingreso (ADR 021) ────────────────────
 
 describe('renderAgenda() - día de ingreso (ADR 021)', () => {
@@ -1227,6 +1282,73 @@ describe('renderAgenda() - día de ingreso (ADR 021)', () => {
     const sub = document.querySelector('.cal-detail__subtitle');
     expect(sub.textContent).toContain('día de ingreso');
     expect(sub.textContent).toContain('1 compromiso');
+  });
+});
+
+// ── renderAgenda() - plan de aportes de meta (MT.6d, ADR 048 D3) ──
+
+describe('renderAgenda() - plan de aportes de meta (MT.6d)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-agenda"></div>';
+    S.compromisos = [];
+    S.gastos = [];
+    S.ingresos = [];
+    S.metas = [];
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15)); // 15 jun 2026
+    resetearVistaAlMesActual();
+  });
+
+  afterEach(() => {
+    S.metas = [];
+    vi.useRealTimers();
+  });
+
+  it('el día del aporte muestra el dot morado de meta y detalle con CTA Aportar', () => {
+    S.metas = [metaBase({ planAportes: [{ fecha: '2026-06-20', monto: 250_000 }] })];
+    renderAgenda();
+    expect(document.querySelector('.cal-dot--meta')).not.toBeNull();
+
+    mostrarDia(20);
+    renderAgenda();
+    const item = document.querySelector('.cal-detail__item--meta');
+    expect(item).not.toBeNull();
+    expect(item.textContent).toContain('Viaje');
+    expect(item.textContent).toContain('$250.000');
+    const cta = item.querySelector('[data-action="abonar-meta"]');
+    expect(cta).not.toBeNull();
+    expect(cta.dataset.id).toBe('m1');
+  });
+
+  it('el aporte de meta no infla el "Total a pagar" del día', () => {
+    S.metas       = [metaBase({ planAportes: [{ fecha: '2026-06-15', monto: 250_000 }] })];
+    S.compromisos = [compromisoBase({ diaPago: 15 })];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    const total = document.querySelector('.cal-detail__total');
+    expect(total.textContent).toContain('$1.500.000');
+    expect(total.textContent).not.toContain('$1.750.000');
+  });
+
+  it('la leyenda incluye "Aporte a meta" cuando hay un plan este mes', () => {
+    S.metas = [metaBase({ planAportes: [{ fecha: '2026-06-20', monto: 250_000 }] })];
+    renderAgenda();
+    expect(document.querySelector('.cal-legend').textContent).toContain('Aporte a meta');
+  });
+
+  it('la cabecera cuenta el aporte de meta aparte de los compromisos', () => {
+    S.metas = [metaBase({ planAportes: [{ fecha: '2026-06-20', monto: 250_000 }] })];
+    renderAgenda();
+    const sub = document.querySelector('.cal-card__subtitle').textContent;
+    expect(sub).toContain('Sin compromisos');
+    expect(sub).toContain('1 aporte a meta');
+  });
+
+  it('una meta cumplida no aparece en el calendario', () => {
+    S.metas = [metaBase({ completada: true, planAportes: [{ fecha: '2026-06-20', monto: 250_000 }] })];
+    renderAgenda();
+    expect(document.querySelector('.cal-dot--meta')).toBeNull();
   });
 });
 
