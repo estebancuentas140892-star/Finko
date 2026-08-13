@@ -1,6 +1,6 @@
 # ADR 032 - Logros v2: niveles progresivos, niveles de usuario y regla anti-gaming
 
-**Estado:** Aceptada (validada por Esteban el 2026-07-09): (1) catálogo D4 aprobado como está, (2) nombres de niveles de usuario de D5 quedan como **provisionales** hasta que Esteban entregue los definitivos (cambiarlos es editar la constante `NIVELES_USUARIO`, sin tocar datos), (3) reubicación en dos tiempos de D6 aprobada. **LG.2b implementada el mismo día** (fundación de progresión); siguen LG.2c, LG.2d (bloqueada por ANL.1/IN.8) y LG.2e.
+**Estado:** Aceptada (validada por Esteban el 2026-07-09): (1) catálogo D4 aprobado como está, (2) nombres de niveles de usuario de D5 quedan como **provisionales** hasta que Esteban entregue los definitivos (cambiarlos es editar la constante `NIVELES_USUARIO`, sin tocar datos), (3) reubicación en dos tiempos de D6 aprobada. **LG.2b implementada el mismo día** (fundación de progresión); LG.2c cerrada el 2026-07-12 y **LG.2e el 2026-08-13** (ver "Resolución de LG.2e en implementación": entra `hormiga-a-raya`, se difiere `pagador-puntual`, `ahorro-creciente` sigue bloqueado por datos y el tramo superior de D5 baja a min 16). Queda LG.2d.
 **Fecha:** 2026-07-09
 **Autores:** Esteban (visión de producto, brief de Análisis puntos 1-5 del 4.º lote), Claude Fable 5 (análisis y diseño)
 **Relación:** **revisa el [ADR 022](022-vitrina-de-logros-en-ajustes.md)** (vitrina en Ajustes: su decisión de ubicación se supera en dos tiempos, ver D6; su disciplina de evaluación barata y su modelo de persistencia se conservan y se refuerzan). Toca de lado el [ADR 028](028-inicio-centro-de-control.md) (una tarjeta nueva en Inicio pasa por la revisión de Inicio v2/IN.8, no por esta ADR). Conserva la decisión D6 del [ADR 025](025-logotipos-de-marca-y-tejas.md): los emojis de logros se quedan (momentos expresivos, no UI estructural).
@@ -133,6 +133,15 @@ El nivel del usuario se **calcula** del total de logros desbloqueados (`S.logros
 | **LG.2c** | Derivación "mes completo de registro" + rachas (memoizadas) + niveles 3-6 de registro + familia deudas | LG.2b |
 | **LG.2d** | Mudanza: apartado "Tu progreso" en Análisis + tarjeta en Inicio; ADR 022 pasa a Superada | ANL.1 (layout) e IN.8 (Inicio v2) |
 | **LG.2e** | Familia comportamiento (hormiga-a-raya; ahorro-creciente y pagador-puntual según disponibilidad de datos), cada logro con test de gaming explícito en el PR | LG.2c; ahorro-creciente además de la derivación de ingreso mensual (ANL.1) |
+
+### Resolución de LG.2e en implementación (2026-08-13)
+
+La rebanada cerró la familia "comportamiento" con **un solo logro** de los tres del catálogo D4. Lo verificado contra el código:
+
+- **`hormiga-a-raya` entra.** "Gasto hormiga" se mide por **tamaño de transacción** (≤ 20.000 COP, mismo umbral que `detectarHormigas()` de gastos/logic.js), no por la categoría "Gastos hormiga" que el usuario haya elegido. Motivo: el criterio por categoría depende de que el usuario etiquete bien y se desactiva recategorizando; el criterio por monto funciona para todos y no es manipulable sin dejar de registrar (que es lo que la guardia D2.3 bloquea). Compara el **último mes cerrado** contra el promedio de los 3 anteriores, exige que los 4 sean mes completo (D2.3) y un piso de relevancia de 100.000 COP de promedio previo, para no premiar bajar de 8.000 a 7.000.
+- **`ahorro-creciente` sigue bloqueado.** El [ADR 046](046-analisis-interpreta-criterio-y-lenguaje.md) no entregó la derivación canónica de ingreso mensual y no se construye una paralela.
+- **`pagador-puntual` se difiere** (la ADR ya lo condicionaba a "verificar en implementación si el histórico de abonos por fecha alcanza"). No alcanza: los abonos sí tienen fecha (gastos con `compromisoId`), pero `S.compromisos` guarda **solo el estado actual**. Un mes pasado no se puede reconstruir: no hay registro de qué deudas estaban vigentes ni con qué saldo, una deuda saldada y luego borrada desaparece del cálculo, y un usuario sin deudas cumpliría "pagó todo a tiempo" de forma vacía. Además falla el test D2.2: borrar la deuda que se pagó tarde acerca al logro. Se reevalúa si algún día existe historial de vencimientos pagados (ADR 041/052).
+- **D5 recalibrado: el tramo superior baja de min 18 a min 16.** D5 se calibró para ~20 logros y el catálogo cierra en 18 con los dos diferidos, así que "min 18" exigía el 100 % del catálogo, incluidos logros que dependen de tener un préstamo a favor (`prestamista`) o el fondo de emergencia completo. Los nombres siguen provisionales; cambiar umbral o nombre no toca datos (nada se persiste).
 
 ## Alternativas consideradas
 

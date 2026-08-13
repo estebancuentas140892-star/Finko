@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(logros): LG.2e, familia comportamiento con un solo logro y catálogo cerrado en 18 · 2026-08-13
+
+Última rebanada de código del [ADR 032](DECISIONS/032-logros-v2-niveles-y-habitos.md) (D4, familia "comportamiento"); queda LG.2d, que es mudanza de UI. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
+
+- **De los 3 logros del catálogo D4 entra 1.** `hormiga-a-raya` se implementa; `ahorro-creciente` sigue bloqueado por la derivación canónica de ingreso mensual que el ADR 046 no entregó; `pagador-puntual` se difiere con la verificación hecha, que era la condición que la propia ADR le puso.
+- **Por qué `pagador-puntual` no alcanza:** los abonos sí tienen fecha (gastos con `compromisoId`), pero `S.compromisos` guarda solo el estado actual. Un mes pasado no se reconstruye: no hay registro de qué deudas estaban vigentes ni con qué saldo, y una deuda saldada y luego borrada desaparece. Falla además el test anti-gaming D2.2: borrar la deuda que se pagó tarde acerca al logro, y un usuario sin deudas lo cumpliría de forma vacía.
+- **"Gasto hormiga" se mide por monto, no por categoría.** ≤ 20.000 COP por transacción, mismo umbral que `detectarHormigas()` de `gastos/logic.js` (duplicado intencional, ADN 10). El criterio por categoría "Gastos hormiga" se descartó: depende de que el usuario etiquete bien y se desactiva recategorizando; el de monto funciona para todos y solo es manipulable dejando de registrar, que es lo que bloquea la guardia D2.3.
+- **La comparación usa el último mes cerrado contra el promedio de los 3 anteriores**, con los 4 exigidos como mes completo de registro y un piso de 100.000 COP de promedio previo. El piso evita premiar bajar de 8.000 a 7.000; el mes en curso nunca participa (D3), así que el logro necesita 4 meses de historia honesta.
+- **Riesgo residual aceptado y anotado:** un mes completo se cumple con gastos en 3 semanas aunque sean todos grandes. No se agregó una segunda guardia por conteo de transacciones porque castigaría justamente al usuario que sí redujo (menos hormigas = menos transacciones).
+- **`NIVELES_USUARIO` recalibrado: tramo superior de min 18 a min 16.** D5 se calibró para ~20 logros y el catálogo cierra en 18 con los dos diferidos, así que "Leyenda del ahorro" exigía el 100 % del catálogo, incluidos `prestamista` (tener un préstamo a favor) y el fondo de emergencia completo. Es cambio de constante derivada: cero datos tocados. Queda un test que defiende la relación (`min` del último tramo < `LOGROS.length`).
+- Tests: 16 unitarios nuevos en `logros.test.js` (`gastoHormigaMes`, `hormigaALaRaya` con sus 4 guardias, integración de la familia y el borde de nivel recalibrado). **4058/4058 unit** + lint verdes. SW `finko-v522` → `finko-v523`.
+
 ### feat(navegacion): AH.7a, Ahorro sube a la barra inferior y Calendario baja a "Más" · 2026-08-13
 
 Supersede el **D1 del [ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md)** con el [ADR 065](DECISIONS/065-ahorro-en-la-barra-inferior.md) nuevo. Fichas: [`contexto/ahorro.md`](contexto/ahorro.md), [`contexto/calendario.md`](contexto/calendario.md), [`contexto/transversal.md`](contexto/transversal.md).

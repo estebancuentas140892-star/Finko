@@ -11,6 +11,8 @@ import {
   evaluarLogros, estadoLogros, LOGROS,
   FAMILIAS, agruparVitrina, nivelUsuario, NIVELES_USUARIO,
   mesCompleto, rachaMesesCompletos, deudasSaldadas,
+  gastoHormigaMes, hormigaALaRaya,
+  UMBRAL_GASTO_HORMIGA, UMBRAL_HORMIGA_RELEVANTE,
 } from '../../modules/dominio/logros/logic.js';
 import { renderPanelLogros } from '../../modules/dominio/logros/view.js';
 import { S, createInitialState } from '../../modules/core/state.js';
@@ -380,8 +382,9 @@ describe('nivelUsuario()', () => {
     expect(nivelUsuario(6).min).toBe(6);
     expect(nivelUsuario(10).min).toBe(10);
     expect(nivelUsuario(14).min).toBe(14);
-    expect(nivelUsuario(18).min).toBe(18);
-    expect(nivelUsuario(50).min).toBe(18);
+    // Umbral superior recalibrado en LG.2e: el catálogo cerró en 18 logros.
+    expect(nivelUsuario(16).min).toBe(16);
+    expect(nivelUsuario(50).min).toBe(16);
   });
 
   test('entrada inválida cae al primer nivel', () => {
@@ -392,6 +395,10 @@ describe('nivelUsuario()', () => {
   test('NIVELES_USUARIO está ordenado por min ascendente', () => {
     const mins = NIVELES_USUARIO.map(n => n.min);
     expect(mins).toEqual([...mins].sort((a, b) => a - b));
+  });
+
+  test('el tramo superior es alcanzable sin el 100 % del catálogo (LG.2e)', () => {
+    expect(NIVELES_USUARIO[NIVELES_USUARIO.length - 1].min).toBeLessThan(LOGROS.length);
   });
 });
 
@@ -726,5 +733,171 @@ describe('evaluarLogros() - familia deudas (LG.2c)', () => {
   test('una deuda consolidada (activo:false, saldo > 0) no cuenta para el logro', () => {
     const s = estado({ compromisos: [{ tipo: 'deuda-entidad', saldoTotal: 200000, activo: false }] });
     expect(evaluarLogros(s)).not.toContain('primera-deuda-saldada');
+  });
+});
+
+// ── Gasto hormiga (LG.2e, ADR 032 D4) ─────────────────────────────
+
+/** 3 gastos grandes (no hormiga) en 3 semanas distintas: vuelven el mes completo. */
+const anclasMesCompleto = (mesISO) => ([
+  { fecha: `${mesISO}-03`, monto: 500_000 },
+  { fecha: `${mesISO}-10`, monto: 500_000 },
+  { fecha: `${mesISO}-17`, monto: 500_000 },
+]);
+
+/** `total` COP en gastos hormiga de 10.000 c/u, dentro del mes `mesISO`. */
+const hormigasDelMes = (mesISO, total, unitario = 10_000) =>
+  Array.from({ length: Math.round(total / unitario) }, (_, i) => ({
+    fecha: `${mesISO}-0${(i % 3) + 1}`,
+    monto: unitario,
+  }));
+
+/** Mes completo de registro con `totalHormiga` COP en gasto hormiga. */
+const mesConHormiga = (mesISO, totalHormiga) => ([
+  ...anclasMesCompleto(mesISO),
+  ...hormigasDelMes(mesISO, totalHormiga),
+]);
+
+describe('gastoHormigaMes()', () => {
+  test('suma solo las transacciones que no superan el umbral', () => {
+    const gastos = [
+      { fecha: '2026-05-03', monto: UMBRAL_GASTO_HORMIGA },      // cuenta
+      { fecha: '2026-05-04', monto: UMBRAL_GASTO_HORMIGA + 1 },  // no cuenta
+      { fecha: '2026-05-05', monto: 5_000 },                     // cuenta
+    ];
+    expect(gastoHormigaMes(gastos, '2026-05')).toBe(UMBRAL_GASTO_HORMIGA + 5_000);
+  });
+
+  test('ignora gastos de otros meses', () => {
+    expect(gastoHormigaMes(hormigasDelMes('2026-04', 50_000), '2026-05')).toBe(0);
+  });
+
+  test('ignora montos no numéricos, negativos y fechas inválidas', () => {
+    const gastos = [
+      { fecha: '2026-05-03', monto: 'abc' },
+      { fecha: '2026-05-03', monto: -5_000 },
+      { fecha: '2026-05', monto: 5_000 },
+      { monto: 5_000 },
+    ];
+    expect(gastoHormigaMes(gastos, '2026-05')).toBe(5_000);
+  });
+
+  test('acepta un ISO completo como mesISO y 0 con entradas inválidas', () => {
+    const gastos = hormigasDelMes('2026-05', 30_000);
+    expect(gastoHormigaMes(gastos, '2026-05-15')).toBe(30_000);
+    expect(gastoHormigaMes(gastos, '')).toBe(0);
+    expect(gastoHormigaMes(undefined, '2026-05')).toBe(0);
+  });
+});
+
+describe('hormigaALaRaya()', () => {
+  const HOY_ISO = '2026-06-15'; // mes cerrado = 2026-05; previos = 04, 03, 02
+
+  const cuatroMeses = (cerrado, previos) => ([
+    ...mesConHormiga('2026-05', cerrado),
+    ...mesConHormiga('2026-04', previos),
+    ...mesConHormiga('2026-03', previos),
+    ...mesConHormiga('2026-02', previos),
+  ]);
+
+  test('true cuando el mes cerrado baja del promedio de los 3 anteriores', () => {
+    expect(hormigaALaRaya(cuatroMeses(120_000, 200_000), HOY_ISO)).toBe(true);
+  });
+
+  test('false cuando el mes cerrado iguala o supera el promedio', () => {
+    expect(hormigaALaRaya(cuatroMeses(200_000, 200_000), HOY_ISO)).toBe(false);
+    expect(hormigaALaRaya(cuatroMeses(250_000, 200_000), HOY_ISO)).toBe(false);
+  });
+
+  test('guardia D2.3: false si alguno de los 4 meses no es mes completo', () => {
+    const gastos = [
+      ...mesConHormiga('2026-05', 120_000),
+      ...mesConHormiga('2026-04', 200_000),
+      ...hormigasDelMes('2026-03', 200_000), // sin anclas: solo 1 semana
+      ...mesConHormiga('2026-02', 200_000),
+    ];
+    expect(hormigaALaRaya(gastos, HOY_ISO)).toBe(false);
+  });
+
+  test('no premia bajadas irrelevantes: promedio previo bajo el piso', () => {
+    const bajoElPiso = UMBRAL_HORMIGA_RELEVANTE - 40_000;
+    expect(hormigaALaRaya(cuatroMeses(10_000, bajoElPiso), HOY_ISO)).toBe(false);
+  });
+
+  test('el mes en curso no participa: su gasto hormiga no rompe el logro', () => {
+    const gastos = [
+      ...mesConHormiga('2026-06', 900_000), // mes en curso
+      ...cuatroMeses(120_000, 200_000),
+    ];
+    expect(hormigaALaRaya(gastos, HOY_ISO)).toBe(true);
+  });
+
+  test('false si falta historial: solo 2 meses completos', () => {
+    const gastos = [
+      ...mesConHormiga('2026-05', 120_000),
+      ...mesConHormiga('2026-04', 200_000),
+    ];
+    expect(hormigaALaRaya(gastos, HOY_ISO)).toBe(false);
+  });
+
+  test('la comparación cruza el cambio de año', () => {
+    const gastos = [
+      ...mesConHormiga('2025-12', 120_000),
+      ...mesConHormiga('2025-11', 200_000),
+      ...mesConHormiga('2025-10', 200_000),
+      ...mesConHormiga('2025-09', 200_000),
+    ];
+    expect(hormigaALaRaya(gastos, '2026-01-10')).toBe(true);
+  });
+
+  test('false con lista vacía o hoyISO inválido', () => {
+    expect(hormigaALaRaya([], HOY_ISO)).toBe(false);
+    expect(hormigaALaRaya(cuatroMeses(120_000, 200_000), '')).toBe(false);
+    expect(hormigaALaRaya(cuatroMeses(120_000, 200_000), undefined)).toBe(false);
+  });
+});
+
+// ── Catálogo v2: familia "comportamiento" (LG.2e, integración) ────
+
+describe('evaluarLogros() - familia comportamiento (LG.2e)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15)); // 2026-06-15
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  test('hormiga-a-raya se desbloquea con 4 meses completos y bajada real', () => {
+    const s = estado({
+      gastos: [
+        ...mesConHormiga('2026-05', 120_000),
+        ...mesConHormiga('2026-04', 200_000),
+        ...mesConHormiga('2026-03', 200_000),
+        ...mesConHormiga('2026-02', 200_000),
+      ],
+    });
+    expect(evaluarLogros(s)).toContain('hormiga-a-raya');
+  });
+
+  test('no se desbloquea dejando de registrar el mes cerrado', () => {
+    const s = estado({
+      gastos: [
+        ...hormigasDelMes('2026-05', 10_000), // 1 sola semana: mes incompleto
+        ...mesConHormiga('2026-04', 200_000),
+        ...mesConHormiga('2026-03', 200_000),
+        ...mesConHormiga('2026-02', 200_000),
+      ],
+    });
+    expect(evaluarLogros(s)).not.toContain('hormiga-a-raya');
+  });
+
+  test('la familia comportamiento colapsa a una tarjeta en la vitrina', () => {
+    const items = agruparVitrina(estadoLogros(estado(), []));
+    const fam = items.find(i => i.tipo === 'familia' && i.familia === 'comportamiento');
+    expect(fam.nombre).toBe(FAMILIAS.comportamiento.nombre);
+    expect(fam.totalNiveles).toBe(1);
+    expect(fam.siguiente.id).toBe('hormiga-a-raya');
   });
 });

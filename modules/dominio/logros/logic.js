@@ -45,9 +45,10 @@ import { memoizar } from '../../infra/memo.js';
  * Familias futuras (deudas en LG.2c, comportamiento en LG.2e) se agregan aquí.
  */
 export const FAMILIAS = {
-  registro: { nombre: 'Constancia de registro' },
-  metas:    { nombre: 'Metas cumplidas' },
-  deudas:   { nombre: 'Deudas saldadas' },
+  registro:       { nombre: 'Constancia de registro' },
+  metas:          { nombre: 'Metas cumplidas' },
+  deudas:         { nombre: 'Deudas saldadas' },
+  comportamiento: { nombre: 'Hábitos de gasto' },
 };
 
 // ── DERIVACIONES DE CONSTANCIA (LG.2c, ADR 032 D3) ───────────────
@@ -145,6 +146,113 @@ export function deudasSaldadas(compromisos) {
     Number(c.saldoTotal) === 0
   ).length;
 }
+
+// ── DERIVACIONES DE COMPORTAMIENTO (LG.2e, ADR 032 D4) ───────────
+
+/**
+ * Monto máximo de una transacción para contar como "gasto hormiga". El
+ * criterio de Finko para hormiga es el tamaño de la transacción, no la
+ * categoría que el usuario haya elegido: así el logro funciona para todos y
+ * no se puede desactivar recategorizando. Mismo umbral que
+ * `detectarHormigas()` (gastos/logic.js): duplicado intencional y no una
+ * importación cruzada (ADN 10), igual que los abonos en agenda/logic.js.
+ */
+export const UMBRAL_GASTO_HORMIGA = 20_000;
+
+/**
+ * Piso de relevancia del promedio hormiga mensual: por debajo de esto la
+ * comparación no premia nada (bajar de 8.000 a 7.000 al mes no es un hábito).
+ * Mismo valor que el `umbralTotal` de `detectarHormigas()`.
+ */
+export const UMBRAL_HORMIGA_RELEVANTE = 100_000;
+
+/**
+ * Cuánto suma al mes el gasto hormiga (transacciones ≤ UMBRAL_GASTO_HORMIGA).
+ * Un solo pase O(gastos), igual que `_semanasPorMes`.
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @returns {Map<string, number>} mesISO ('YYYY-MM') → COP en gasto hormiga.
+ */
+function _hormigaPorMes(gastos) {
+  const totales = new Map();
+  for (const g of gastos ?? []) {
+    if (typeof g?.fecha !== 'string' || g.fecha.length < 7) continue;
+    const monto = Number(g.monto);
+    if (!Number.isFinite(monto) || monto <= 0 || monto > UMBRAL_GASTO_HORMIGA) continue;
+    const mesISO = g.fecha.slice(0, 7);
+    totales.set(mesISO, (totales.get(mesISO) ?? 0) + monto);
+  }
+  return totales;
+}
+
+/**
+ * Gasto hormiga de un mes calendario.
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {string} mesISO - `YYYY-MM` (o un ISO completo, se usa el prefijo).
+ * @returns {number} COP.
+ */
+export function gastoHormigaMes(gastos, mesISO) {
+  if (typeof mesISO !== 'string' || mesISO.length < 7) return 0;
+  return _hormigaPorMes(gastos).get(mesISO.slice(0, 7)) ?? 0;
+}
+
+/**
+ * Los `cuantos` meses cerrados anteriores a `hoyISO`, del más reciente al más
+ * viejo. El mes en curso nunca entra: todavía no terminó (D3).
+ *
+ * @param {string} hoyISO - `YYYY-MM-DD`.
+ * @param {number} cuantos
+ * @returns {string[]} mesISO ('YYYY-MM').
+ */
+function _mesesCerradosAtras(hoyISO, cuantos) {
+  let [anio, mes] = hoyISO.slice(0, 7).split('-').map(Number);
+  if (!Number.isFinite(anio) || !Number.isFinite(mes)) return [];
+  const meses = [];
+  for (let i = 0; i < cuantos; i++) {
+    mes -= 1;
+    if (mes < 1) { mes = 12; anio -= 1; }
+    meses.push(`${anio}-${String(mes).padStart(2, '0')}`);
+  }
+  return meses;
+}
+
+/**
+ * ¿El gasto hormiga del último mes cerrado quedó por debajo del promedio de
+ * los 3 meses anteriores? Único logro de interpretación de la familia
+ * "comportamiento" (ADR 032 D4).
+ *
+ * Guardias anti-gaming (D2): los 4 meses deben ser "mes completo de registro"
+ * (D2.3, reducir dejando de registrar no desbloquea nada), el mes en curso no
+ * participa (D3) y el promedio previo debe superar UMBRAL_HORMIGA_RELEVANTE.
+ * Riesgo residual asumido: un mes completo se cumple con gastos en 3 semanas
+ * aunque sean todos grandes. La guardia de la ADR es la de mes completo; no se
+ * agrega una segunda por conteo de transacciones porque castigaría al usuario
+ * que sí redujo (menos hormigas = menos transacciones).
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {string} hoyISO - `YYYY-MM-DD`.
+ * @returns {boolean}
+ */
+export function hormigaALaRaya(gastos, hoyISO) {
+  if (typeof hoyISO !== 'string' || hoyISO.length < 10) return false;
+  const meses = _mesesCerradosAtras(hoyISO, 4);
+  if (meses.length < 4) return false;
+
+  const semanas = _semanasPorMes(gastos);
+  if (meses.some(m => (semanas.get(m) ?? 0) < 3)) return false;
+
+  const hormiga = _hormigaPorMes(gastos);
+  const [cerrado, ...previos] = meses;
+  const promedio = previos.reduce((suma, m) => suma + (hormiga.get(m) ?? 0), 0) / previos.length;
+  if (promedio < UMBRAL_HORMIGA_RELEVANTE) return false;
+
+  return (hormiga.get(cerrado) ?? 0) < promedio;
+}
+
+/** D7: dos pasadas por `S.gastos` por cada `state:change` (evaluarLogros +
+ * la vitrina) se sirven de la misma caché. */
+const _hormigaALaRayaMemo = memoizar(hormigaALaRaya, ['gastos']);
 
 /** @type {Logro[]} */
 export const LOGROS = [
@@ -308,6 +416,16 @@ export const LOGROS = [
     progreso: s => ({ actual: Math.min(deudasSaldadas(s.compromisos), 3), meta: 3 }),
   },
   {
+    id:      'hormiga-a-raya',
+    familia: 'comportamiento',
+    nivel:   1,
+    nombre:  'Hormiga a raya',
+    emoji:   '🐜',
+    desc:    'Bajaste tus gastos hormiga por debajo del promedio de los 3 meses anteriores.',
+    hint:    'Registra 4 meses seguidos y baja tus gastos pequeños frente al promedio de los 3 anteriores.',
+    eval:    s => _hormigaALaRayaMemo(s.gastos, hoy()),
+  },
+  {
     id:     'fondo-emergencia',
     nombre: 'Red de seguridad',
     emoji:  '🛡️',
@@ -455,6 +573,12 @@ export function agruparVitrina(estados) {
  * Sin puntos ni persistencia: el nivel se calcula siempre en vivo.
  * NOMBRES PROVISIONALES (ADR 032 D5): Esteban define los definitivos;
  * cambiar un nombre aquí no toca datos (nada de esto se persiste).
+ *
+ * Umbral superior recalibrado en LG.2e (18 → 16): D5 se calibró para ~20
+ * logros y el catálogo cerró en 18, así que "min 18" exigía el 100 % del
+ * catálogo, incluidos logros que dependen de tener un préstamo a favor
+ * (`prestamista`) o el fondo de emergencia completo. Con 16 el tramo superior
+ * es alcanzable sin ser regalado.
  */
 export const NIVELES_USUARIO = [
   { min: 0,  nombre: 'Semilla' },
@@ -462,7 +586,7 @@ export const NIVELES_USUARIO = [
   { min: 6,  nombre: 'Constante' },
   { min: 10, nombre: 'Organizado' },
   { min: 14, nombre: 'Estratega' },
-  { min: 18, nombre: 'Leyenda del ahorro' },
+  { min: 16, nombre: 'Leyenda del ahorro' },
 ];
 
 /**

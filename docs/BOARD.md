@@ -61,7 +61,6 @@ Las 18 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | P4 del ADR 033 + cola de diseño |
 | IV.4 | Iconografía dirigida post-color | Transversal | media | diseños de Esteban (avalancha + bola de nieve) |
 | LG.2d | Mudanza de la vitrina a Análisis + tarjeta en Inicio | Transversal | media | nada: ADR 046 D4 reservó el bloque en Análisis |
-| LG.2e | Familia comportamiento (interpretación de hábitos) | Transversal | baja | LG.2c; `ahorro-creciente` sigue sin derivación de ingreso mensual |
 | PA.1 | Pagos y créditos automáticos (débito automático simulado) | Transversal | media-alta | ADR 041 (motor); ADR 052 (Abierta) |
 | A.5 | Dominio custom en Vercel | Mantenimiento | baja | que el usuario tenga el dominio registrado |
 | E.2-2027 | Actualizar SMMLV + UVT a valores 2027 | Mantenimiento | alta (enero 2027) | publicación oficial de los decretos 2027 |
@@ -97,7 +96,7 @@ CFG.2c, CFG.3, CFG.4, CFG.5b, CFG.5c, CFG.6 → [`board/configuracion.md`](board
 
 ## Transversal (afecta varias secciones)
 
-INT.1a a INT.1h, PERF.5, PERF.6, DV.2d, IV.4, LG.2d, LG.2e, PA.1 → [`board/transversal.md`](board/transversal.md)
+INT.1a a INT.1h, PERF.5, PERF.6, DV.2d, IV.4, LG.2d, PA.1 → [`board/transversal.md`](board/transversal.md)
 
 ---
 
