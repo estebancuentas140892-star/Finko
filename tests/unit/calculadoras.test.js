@@ -7,6 +7,9 @@ import {
   calcularRegla72,
   calcularRentabilidadReal,
   validarCampos,
+  estimarIngresoAnual,
+  FACTOR_ANUAL_INGRESO,
+  FACTOR_MENSUAL_INGRESO,
 } from '../../modules/infra/financiero.js';
 
 // ── calcularInteresSimple() (PE.1) ────────────────────────────────
@@ -291,3 +294,60 @@ describe('calcularRentabilidadReal()', () => {
   });
 });
 
+
+// ── estimarIngresoAnual() (CFG.2a) ────────────────────────────────
+
+describe('FACTOR_ANUAL_INGRESO', () => {
+  it('cubre las 8 frecuencias periódicas y deja fuera "Única vez"', () => {
+    expect(Object.keys(FACTOR_ANUAL_INGRESO)).toEqual([
+      'Diario', 'Semanal', 'Quincenal', 'Mensual',
+      'Bimestral', 'Trimestral', 'Semestral', 'Anual',
+    ]);
+    expect(FACTOR_ANUAL_INGRESO['Única vez']).toBeUndefined();
+  });
+
+  it('incluye las frecuencias de baja periodicidad que la tabla mensual descarta', () => {
+    for (const f of ['Bimestral', 'Trimestral', 'Semestral', 'Anual']) {
+      expect(FACTOR_MENSUAL_INGRESO[f]).toBeUndefined();
+      expect(FACTOR_ANUAL_INGRESO[f]).toBeGreaterThan(0);
+    }
+  });
+
+  it('cada factor es el número real de pagos del año', () => {
+    expect(FACTOR_ANUAL_INGRESO.Diario).toBe(365);
+    expect(FACTOR_ANUAL_INGRESO.Semanal).toBe(52);
+    expect(FACTOR_ANUAL_INGRESO.Quincenal).toBe(24);
+    expect(FACTOR_ANUAL_INGRESO.Mensual).toBe(12);
+    expect(FACTOR_ANUAL_INGRESO.Bimestral).toBe(6);
+    expect(FACTOR_ANUAL_INGRESO.Trimestral).toBe(4);
+    expect(FACTOR_ANUAL_INGRESO.Semestral).toBe(2);
+    expect(FACTOR_ANUAL_INGRESO.Anual).toBe(1);
+  });
+});
+
+describe('estimarIngresoAnual()', () => {
+  const ing = (o = {}) => ({ monto: 1_000_000, frecuencia: 'Mensual', activo: true, ...o });
+
+  it('sin ingresos devuelve 0', () => {
+    expect(estimarIngresoAnual([])).toBe(0);
+    expect(estimarIngresoAnual(undefined)).toBe(0);
+  });
+
+  it('suma varias fuentes con frecuencias distintas', () => {
+    const r = estimarIngresoAnual([
+      ing({ monto: 3_000_000, frecuencia: 'Mensual' }),   // 36.000.000
+      ing({ monto: 1_500_000, frecuencia: 'Semestral' }), //  3.000.000
+      ing({ monto: 500_000,   frecuencia: 'Anual' }),     //    500.000
+    ]);
+    expect(r).toBe(39_500_000);
+  });
+
+  it('excluye los inactivos', () => {
+    expect(estimarIngresoAnual([ing({ activo: false })])).toBe(0);
+  });
+
+  it('una frecuencia desconocida aporta 0 en vez de romper', () => {
+    expect(estimarIngresoAnual([ing({ frecuencia: 'Única vez' })])).toBe(0);
+    expect(estimarIngresoAnual([ing({ frecuencia: 'Bisiesto' })])).toBe(0);
+  });
+});

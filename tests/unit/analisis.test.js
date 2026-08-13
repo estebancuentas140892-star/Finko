@@ -16,6 +16,7 @@ import {
   patrimonioBruto,
   totalGastosAnio,
   calcularEstadoRenta,
+  estimarIngresosBrutosAnio,
   detectarNudgesRenta,
   inferirEstadoDeclarante,
   repartirPorcentajes,
@@ -67,6 +68,18 @@ const apartado = (overrides = {}) => ({
 const inversion = (overrides = {}) => ({
   id: 'inv1', tipo: 'CDT', nombre: 'CDT Bancolombia', monto: 2_000_000,
   tasaEA: 10.5, plazoMeses: 12, fechaInicio: '2026-03-01', ...overrides,
+});
+
+const ingreso = (overrides = {}) => ({
+  id: 'in1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual',
+  categoria: 'Salario', diaPago: 30, activo: true,
+  fechaCreacion: '2026-01-01T00:00:00Z', ...overrides,
+});
+
+const ingresoPuntual = (overrides = {}) => ({
+  id: 'ip1', descripcion: 'Freelance', monto: 2_000_000, categoria: 'Otros',
+  cuentaId: 'cu1', fecha: '2026-04-10',
+  fechaCreacion: '2026-04-10T00:00:00Z', ...overrides,
 });
 
 // ── generarResumen() ──────────────────────────────────────────────
@@ -1253,7 +1266,7 @@ describe('calcularEstadoRenta()', () => {
     expect(m.consignaciones.tope).toBe(TOPES_RENTA_UVT.consignaciones * UVT);
   });
 
-  it('ingresosBrutos, consumosTC y consignaciones siempre son "sin-datos"', () => {
+  it('sin ingresos registrados ni datos manuales, los 3 criterios quedan "sin-datos"', () => {
     const r = estado({
       cuentas:     [{ id: 'c', saldo: 999_999_999, activa: true, nombre: 'X', banco: 'Y', tipo: 'Ahorros', fechaCreacion: '2026-01-01T00:00:00Z' }],
       inversiones: [{ id: 'i', tipo: 'CDT', monto: 999_999_999, nombre: 'X', tasaEA: 0, plazoMeses: 12, fechaInicio: '2026-01-01', fechaCreacion: '2026-01-01T00:00:00Z' }],
@@ -1549,7 +1562,7 @@ describe('calcularEstadoRenta() con datos fiscales manuales', () => {
     expect(c.valor).toBe(40_000_000);
   });
 
-  it('sin datosFiscales, los 3 criterios siguen en sin-datos', () => {
+  it('sin datosFiscales y sin ingresos, los 3 criterios siguen en sin-datos', () => {
     const r = calcularEstadoRenta({ cuentas: [], inversiones: [], gastos: [], config: { datosFiscales: {} } }, 2026);
     for (const id of ['ingresosBrutos', 'consumosTC', 'consignaciones']) {
       expect(crit(r, id).estado).toBe('sin-datos');
@@ -1609,6 +1622,127 @@ describe('calcularEstadoRenta() con datos fiscales manuales', () => {
     }, 2026);
     expect(crit(r, 'patrimonioBruto').valor).toBe(5_000_000);
     expect(crit(r, 'consumosTotales').valor).toBe(1_000_000);
+  });
+});
+
+// ── CFG.2a: ingresos brutos derivados ─────────────────────────────
+
+describe('estimarIngresosBrutosAnio()', () => {
+  it('sin nada que proyectar devuelve 0', () => {
+    expect(estimarIngresosBrutosAnio([], [], 2026)).toBe(0);
+    expect(estimarIngresosBrutosAnio(undefined, undefined, 2026)).toBe(0);
+    expect(estimarIngresosBrutosAnio(null, null, 2026)).toBe(0);
+  });
+
+  it('un año no finito devuelve 0', () => {
+    expect(estimarIngresosBrutosAnio([ingreso()], [], NaN)).toBe(0);
+  });
+
+  it('proyecta el sueldo mensual a los 12 meses del año', () => {
+    expect(estimarIngresosBrutosAnio([ingreso({ monto: 3_000_000 })], [], 2026)).toBe(36_000_000);
+  });
+
+  it('la quincena se proyecta a 24 pagos', () => {
+    const i = ingreso({ monto: 1_500_000, frecuencia: 'Quincenal' });
+    expect(estimarIngresosBrutosAnio([i], [], 2026)).toBe(36_000_000);
+  });
+
+  it('incluye las frecuencias que la proyección mensual descarta (prima semestral)', () => {
+    const prima = ingreso({ id: 'in2', descripcion: 'Prima', monto: 3_000_000, frecuencia: 'Semestral' });
+    expect(estimarIngresosBrutosAnio([prima], [], 2026)).toBe(6_000_000);
+  });
+
+  it('"Única vez" no se proyecta: no se puede atribuir a un año', () => {
+    const i = ingreso({ monto: 5_000_000, frecuencia: 'Única vez' });
+    expect(estimarIngresosBrutosAnio([i], [], 2026)).toBe(0);
+  });
+
+  it('los ingresos inactivos no cuentan', () => {
+    const i = ingreso({ activo: false });
+    expect(estimarIngresosBrutosAnio([i], [], 2026)).toBe(0);
+  });
+
+  it('suma los ingresos puntuales del año consultado', () => {
+    const r = estimarIngresosBrutosAnio([ingreso()], [ingresoPuntual({ monto: 2_000_000 })], 2026);
+    expect(r).toBe(38_000_000);
+  });
+
+  it('los ingresos puntuales de otro año no entran', () => {
+    const viejo = ingresoPuntual({ fecha: '2025-12-31', monto: 9_000_000 });
+    expect(estimarIngresosBrutosAnio([], [viejo], 2026)).toBe(0);
+  });
+
+  it('ignora puntuales sin fecha válida o con monto no positivo', () => {
+    const malos = [
+      ingresoPuntual({ id: 'a', fecha: null }),
+      ingresoPuntual({ id: 'b', monto: -100 }),
+      ingresoPuntual({ id: 'c', monto: 'x' }),
+    ];
+    expect(estimarIngresosBrutosAnio([], malos, 2026)).toBe(0);
+  });
+
+  it('un monto corrupto no propaga NaN al resultado', () => {
+    expect(estimarIngresosBrutosAnio([ingreso({ monto: NaN })], [], 2026)).toBe(0);
+  });
+});
+
+describe('calcularEstadoRenta() con ingresos derivados (CFG.2a)', () => {
+  const conIngresos = (ingresos, puntuales = [], extra = {}) => calcularEstadoRenta({
+    cuentas: [], inversiones: [], gastos: [],
+    ingresos, ingresosPuntuales: puntuales, ...extra,
+  }, 2026);
+
+  const crit = (r) => r.criterios.find(c => c.id === 'ingresosBrutos');
+
+  it('con ingresos registrados el criterio deja de ser "sin-datos"', () => {
+    const c = crit(conIngresos([ingreso({ monto: 3_000_000 })]));
+    expect(c.medible).toBe(true);
+    expect(c.estado).not.toBe('sin-datos');
+    expect(c.valor).toBe(36_000_000);
+  });
+
+  it('el tip dice que es una estimación, no un valor medido', () => {
+    const c = crit(conIngresos([ingreso()]));
+    expect(c.tip).toMatch(/estimación/i);
+    expect(c.tip).not.toMatch(/manualmente/i);
+  });
+
+  it('el valor manual manda sobre la estimación', () => {
+    const c = crit(conIngresos([ingreso({ monto: 3_000_000 })], [], {
+      config: { datosFiscales: { 2026: { ingresosBrutos: 10_000_000 } } },
+    }));
+    expect(c.valor).toBe(10_000_000);
+    expect(c.tip).toMatch(/manualmente/i);
+  });
+
+  it('un 0 manual también manda: apaga la estimación', () => {
+    const c = crit(conIngresos([ingreso({ monto: 3_000_000 })], [], {
+      config: { datosFiscales: { 2026: { ingresosBrutos: 0 } } },
+    }));
+    expect(c.valor).toBe(0);
+    expect(c.estado).toBe('ok');
+  });
+
+  it('un sueldo sobre el tope pasa el criterio a "supera" sin captura manual', () => {
+    const tope  = TOPES_RENTA_UVT.ingresosBrutos * UVT;
+    const suelo = Math.ceil((tope * 1.2) / 12);
+    const c = crit(conIngresos([ingreso({ monto: suelo })]));
+    expect(c.estado).toBe('supera');
+  });
+
+  it('la estimación alcanza para que el veredicto deje de ser sin-conclusión', () => {
+    const tope  = TOPES_RENTA_UVT.ingresosBrutos * UVT;
+    const suelo = Math.ceil((tope * 1.2) / 12);
+    const v = inferirEstadoDeclarante(conIngresos([ingreso({ monto: suelo })]));
+    expect(v.estado).toBe('probable');
+    expect(v.superados).toContain('Ingresos brutos');
+  });
+
+  it('sin ingresos ni valor manual el criterio sigue en sin-datos', () => {
+    const c = crit(conIngresos([], []));
+    expect(c.estado).toBe('sin-datos');
+    expect(c.medible).toBe(false);
+    expect(c.tip).toMatch(/Regístralo|Agrégalos/i);
   });
 });
 
@@ -1717,6 +1851,7 @@ describe('renderAnalisis() - PERF.3 detalle de gastos diferido', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="panel-analisis"></div>';
     S.gastos = []; S.compromisos = []; S.cuentas = [];
+    S.ingresos = []; S.ingresosPuntuales = [];
     S.metas = []; S.apartados = []; S.inversiones = [];
   });
 
@@ -1821,6 +1956,7 @@ describe('renderAnalisis() - PERF.7d Estado de tu renta memoizado, sin quedar ob
     // panel al empty state. No toca el criterio consultado (Ingresos brutos
     // es manual) y su identidad es estable dentro de cada test (memo intacta).
     S.gastos = []; S.compromisos = []; S.cuentas = [cuenta({ saldo: 500_000 })];
+    S.ingresos = []; S.ingresosPuntuales = [];
     S.metas = []; S.apartados = []; S.inversiones = [];
     S.config = { datosFiscales: {} };
   });
@@ -1869,6 +2005,33 @@ describe('renderAnalisis() - PERF.7d Estado de tu renta memoizado, sin quedar ob
     renderAnalisis();
     expect(criterioIngresos().querySelector('.renta-criterio__valor').textContent).toContain('$10.000.000');
   });
+
+  // CFG.2a: el criterio ya no depende solo de datosFiscales. Registrar un
+  // ingreso tiene que invalidar la misma caché, o el usuario guarda su sueldo
+  // y Análisis le sigue diciendo que le faltan datos.
+  it('registrar un ingreso entre dos renders saca al criterio de sin-datos', () => {
+    renderAnalisis();
+    expect(ingresosSinDato()).not.toBeUndefined();
+
+    S.ingresos = [ingreso({ monto: 4_000_000 })];
+    renderAnalisis();
+
+    const art = criterioIngresos();
+    expect(art).not.toBeUndefined();
+    expect(art.querySelector('.renta-criterio__valor').textContent).toContain('$48.000.000');
+    expect(ingresosSinDato()).toBeUndefined();
+  });
+
+  it('un ingreso puntual del año también invalida la caché', () => {
+    S.ingresos = [ingreso({ monto: 1_000_000 })];
+    renderAnalisis();
+    expect(criterioIngresos().querySelector('.renta-criterio__valor').textContent).toContain('$12.000.000');
+
+    S.ingresosPuntuales = [ingresoPuntual({ monto: 3_000_000, fecha: `${anioActual}-04-10` })];
+    renderAnalisis();
+
+    expect(criterioIngresos().querySelector('.renta-criterio__valor').textContent).toContain('$15.000.000');
+  });
 });
 
 // ── precalentarAnalisis() - PERF.7c warm-up en idle ────────────────
@@ -1877,6 +2040,7 @@ describe('precalentarAnalisis()', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="panel-analisis"></div>';
     S.gastos = [gasto()]; S.compromisos = []; S.cuentas = [cuenta({ saldo: 500_000 })];
+    S.ingresos = []; S.ingresosPuntuales = [];
     S.metas = []; S.apartados = []; S.inversiones = []; S.personales = [];
     S.config = { datosFiscales: {} };
   });
@@ -1928,6 +2092,7 @@ describe('renderAnalisis() - ANL.2a score de salud como héroe', () => {
     // del score son los mismos del estado vacío: 20, banda crítica.
     S.gastos = [gasto({ fecha: fechaAntigua() })];
     S.compromisos = []; S.cuentas = [];
+    S.ingresos = []; S.ingresosPuntuales = [];
     S.metas = []; S.apartados = []; S.inversiones = [];
     S.ahorro = { fondoEmergencia: { activo: false, completado: false } };
   });
@@ -2011,6 +2176,7 @@ describe('renderAnalisis() - ANL.2b patrimonio con composición y ojo', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="panel-analisis"></div>';
     S.gastos = []; S.compromisos = []; S.cuentas = [];
+    S.ingresos = []; S.ingresosPuntuales = [];
     S.metas = []; S.apartados = []; S.inversiones = []; S.personales = [];
     S.config.ocultarSaldo = false;
   });
@@ -2137,6 +2303,7 @@ describe('renderAnalisis() - ANL.2c tendencia con chip + categorías agrupadas',
   beforeEach(() => {
     document.body.innerHTML = '<div id="panel-analisis"></div>';
     S.gastos = []; S.compromisos = []; S.cuentas = [];
+    S.ingresos = []; S.ingresosPuntuales = [];
     S.metas = []; S.apartados = []; S.inversiones = [];
   });
 
@@ -2221,6 +2388,7 @@ describe('renderAnalisis() - ANL.2d filas colapsables limpias + empty state úni
   beforeEach(() => {
     document.body.innerHTML = '<div id="panel-analisis"></div>';
     S.gastos = []; S.compromisos = []; S.cuentas = [];
+    S.ingresos = []; S.ingresosPuntuales = [];
     S.metas = []; S.apartados = []; S.inversiones = [];
     S.config = {};
   });
@@ -2312,6 +2480,7 @@ describe('renderAnalisis() - DIS.10 auditoría de diseño', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="panel-analisis"></div>';
     S.gastos = []; S.compromisos = []; S.cuentas = [];
+    S.ingresos = []; S.ingresosPuntuales = [];
     S.metas = []; S.apartados = []; S.inversiones = []; S.personales = [];
     S.config = {};
   });

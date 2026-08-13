@@ -129,10 +129,16 @@ const _calcularDetalleGastosMemo = memoizar(_calcularDetalleGastos, ['gastos']);
  * `gastos` siguen cubiertos por el mecanismo de revisión existente (igual que
  * el resto de los memos de este archivo).
  */
+// CFG.2a suma `ingresos` e `ingresosPuntuales`: desde que "Ingresos brutos" se
+// deriva, registrar un ingreso cambia el resultado y la cache tiene que verlo.
 const _calcularEstadoRentaMemo = memoizar(
   calcularEstadoRenta,
-  ['gastos', 'cuentas', 'inversiones'],
-  (state, anio) => [state.cuentas, state.inversiones, state.gastos, state.config?.datosFiscales?.[anio] ?? null, anio],
+  ['gastos', 'cuentas', 'inversiones', 'ingresos', 'ingresosPuntuales'],
+  (state, anio) => [
+    state.cuentas, state.inversiones, state.gastos,
+    state.ingresos, state.ingresosPuntuales,
+    state.config?.datosFiscales?.[anio] ?? null, anio,
+  ],
 );
 
 /**

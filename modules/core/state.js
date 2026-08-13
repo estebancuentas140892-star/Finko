@@ -83,9 +83,14 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  * del ledger, no una plantilla: tiene fecha y cuenta destino, y al registrarlo
  * acredita el saldo de esa cuenta (espejo de un Gasto, que lo descuenta).
  *
- * Solo tesorería lo lee. Análisis y el resumen semanal no lo consideran como
- * flujo de ingreso: desde v8.8 la app no rastrea ingresos como flujo, solo
- * refleja el efecto vía patrimonio (saldos − deudas). Ver NAV.A1 / ADR 024.
+ * El resumen semanal y el score/patrimonio de Análisis NO lo consideran flujo
+ * de ingreso: desde v8.8 la app no rastrea ingresos como flujo, solo refleja
+ * el efecto vía patrimonio (saldos − deudas). Ver NAV.A1 / ADR 024.
+ *
+ * CFG.2a abrió la única excepción, y no contradice esa decisión: el monitor de
+ * renta lo suma para estimar los ingresos brutos del año contra el tope de la
+ * DIAN, que es una pregunta fiscal, no la lectura de flujo que la v8.8 quitó.
+ * Alcance sancionado por el [ADR 050], "Fuera de alcance".
  *
  * @typedef {Object} IngresoPuntual
  * @property {string}      id
@@ -288,7 +293,8 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
 
 /**
  * @typedef {Object} DatosFiscalesAnio
- * @property {number} [ingresosBrutos]  COP. Ingresos brutos del año (Finko no los rastrea).
+ * @property {number} [ingresosBrutos]  COP. Ingresos brutos del año. Desde CFG.2a es un
+ *   override: si falta, Análisis los estima con `ingresos` + `ingresosPuntuales`.
  * @property {number} [consumosTC]      COP. Consumos con tarjeta de crédito del año.
  * @property {number} [consignaciones]  COP. Consignaciones y depósitos del año.
  */

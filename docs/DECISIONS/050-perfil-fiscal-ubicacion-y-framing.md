@@ -1,7 +1,7 @@
 # ADR 050 - Perfil fiscal: ubicación bajo demanda y framing de la obligación de declarar
 
 **Estado:** **Aceptada.** D1 (ubicación) decidida por Esteban el 2026-07-08, pendiente de ejecución en la tarjeta **CFG.2c**. **D2 (framing legal) decidida el 2026-08-03** por delegación explícita de Esteban ("toma tú las decisiones que sean mejor para la app"): alternativa **C acotada**, implementada y en producción con CFG.2b.
-**Fecha:** 2026-07-24. Revisado: 2026-08-03.
+**Fecha:** 2026-07-24. Revisado: 2026-08-13.
 **Autores:** Esteban (producto, decisión del 2026-07-06 y brief de Ajustes del 2026-07-08), Claude Opus 5 (triaje y redacción)
 **Relación:** el tono lo restringe el [ADR 003](003-tono-neutral-profesional.md) (Finko orienta, no dictamina). Las constantes anuales que alimentan los topes son ADN regla 12 y el [ADR 004](004-eliminar-tasa-usura.md) fija qué indicadores quedan fuera por costo de mantenimiento. La ubicación de la interpretación en Análisis coordina con el layout de ANL.1 / [ADR 046](046-analisis-interpreta-criterio-y-lenguaje.md). Ficha de la sección: [`contexto/configuracion.md`](../contexto/configuracion.md).
 
@@ -69,7 +69,7 @@ Esteban delegó la decisión de forma explícita el 2026-08-03 al abrir CFG.2b (
 
 **El orden de las tarjetas queda fijado por D1.** CFG.2c ejecuta la reubicación y conviene al final, porque CFG.2a y CFG.2b determinan cuántas preguntas sobreviven en el asistente.
 
-**CFG.2b cerró el 2026-08-03 con D2 resuelta.** CFG.2a sigue abierta y no dependía del framing: la derivación automática de ingresos brutos es independiente. Mientras no cierre, el veredicto que ve un usuario sin datos manuales es el estado `sin-conclusion` ("faltan 3 de los 5 criterios"), que es honesto pero no es el objetivo final.
+**CFG.2b cerró el 2026-08-03 con D2 resuelta y CFG.2a el 2026-08-13**, esta última sin depender del framing: la derivación de ingresos brutos era independiente. Con las dos cerradas, el usuario que registró sus ingresos ya recibe un veredicto en vez de `sin-conclusion`, y al asistente de CFG.2c le quedan dos preguntas (consumos con tarjeta de crédito y consignaciones).
 
 **El checkbox "La DIAN me notificó como declarante" sobrevive, pero solo como override positivo.** Marcarlo fuerza el veredicto a `probable`; dejarlo en blanco no niega nada, porque la conclusión la calculan los criterios. Se conserva porque la DIAN notifica con datos que Finko no ve (rentas de terceros, reportes de exógena), así que es información que la app no puede derivar. Lo que cambió es el encuadre: su ayuda dice que dejarlo en blanco es lo correcto si no se sabe, y ya no aparece en la lista de "situaciones que pueden requerir atención" del perfil fiscal, porque decir lo mismo dos veces en la misma card era ruido.
 
@@ -77,7 +77,7 @@ Esteban delegó la decisión de forma explícita el 2026-08-03 al abrir CFG.2b (
 
 ## Fuera de alcance
 
-- **La anualización de `S.ingresos` y la suma de `S.ingresosPuntuales`** para estimar ingresos brutos. Es plan de implementación de CFG.2a, no una decisión: se queda en el tablero.
+- **La anualización de `S.ingresos` y la suma de `S.ingresosPuntuales`** para estimar ingresos brutos. Era plan de implementación de CFG.2a, no una decisión; se ejecutó el 2026-08-13 (ver CHANGELOG y [`contexto/analisis.md`](../contexto/analisis.md)).
 - **`consumosTC` y `consignaciones`.** Siguen siendo captura manual porque no hay de dónde derivarlos. `consumosTC` pasaría a derivable si se implementa la tarjeta de crédito integrada (MC.16 / [ADR 051](051-tarjeta-de-credito-producto-integrado.md)); revisar en ese momento.
 - **El layout del bloque de renta dentro de Análisis.** Es de ANL.1 / [ADR 046](046-analisis-interpreta-criterio-y-lenguaje.md).
 - **Los valores de los topes.** Son constantes legales con fecha de revisión (ADN regla 12), se actualizan cada enero.

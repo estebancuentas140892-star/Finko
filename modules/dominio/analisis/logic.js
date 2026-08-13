@@ -17,6 +17,7 @@ import { apartadosActivos }                             from '../apartados/logic
 import { calcularTotalInvertido }                       from '../inversiones/logic.js';
 import { calcularTotalPorCobrar, calcularPrestamosSinCuenta } from '../personales/logic.js';
 import { UVT, TOPES_RENTA_UVT, UMBRAL_ALERTA_RENTA }    from '../../core/constants.js';
+import { estimarIngresoAnual }                          from '../../infra/financiero.js';
 
 // Regex reutilizada en funciones de deteccion.
 const _RX_FECHA_ANA = /^(\d{4})-(\d{2})-(\d{2})/;
@@ -834,6 +835,45 @@ export function totalGastosAnio(gastos, anio) {
 }
 
 /**
+ * Estima los ingresos brutos del año (criterio 1 del monitor de renta) con lo
+ * que la app ya conoce: los ingresos recurrentes proyectados al año completo
+ * más los ingresos puntuales con fecha dentro del año.
+ *
+ * Por qué proyecta el año completo y no lo transcurrido: el tope de la DIAN es
+ * anual y la card existe para anticipar. Prorratear por el mes en curso diría
+ * "vas bien" en marzo y "superas el tope" en diciembre, que es justo el aviso
+ * tarde que se quiere evitar. Por eso el resultado se rotula como estimación y
+ * el valor manual de Ajustes (K.4) lo reemplaza cuando existe.
+ *
+ * No se prorratea tampoco desde `fechaCreacion` del ingreso: esa fecha dice
+ * cuándo se registró en Finko, no desde cuándo se recibe. Quien instala la app
+ * en noviembre con un salario de años vería su año subestimado a una sexta
+ * parte, que es el error más caro de los dos.
+ *
+ * @param {import('../../core/state.js').Ingreso[]} ingresos
+ * @param {import('../../core/state.js').IngresoPuntual[]} ingresosPuntuales
+ * @param {number} anio
+ * @returns {number} COP estimados para el año (0 si no hay nada que proyectar).
+ */
+export function estimarIngresosBrutosAnio(ingresos, ingresosPuntuales, anio) {
+  if (!Number.isFinite(anio)) return 0;
+
+  const recurrente = estimarIngresoAnual(Array.isArray(ingresos) ? ingresos : []);
+
+  const pref = `${anio}-`;
+  let puntual = 0;
+  for (const p of (Array.isArray(ingresosPuntuales) ? ingresosPuntuales : [])) {
+    if (!p || typeof p.fecha !== 'string') continue;
+    if (!p.fecha.startsWith(pref))         continue;
+    const m = Number(p.monto);
+    if (Number.isFinite(m) && m > 0) puntual += m;
+  }
+
+  const total = recurrente + puntual;
+  return Number.isFinite(total) && total > 0 ? total : 0;
+}
+
+/**
  * Construye el estado de renta del año indicado a partir de los datos del
  * usuario y la UVT del año vigente. Devuelve los 5 criterios con su tope
  * en pesos, el valor actual (si es medible), el porcentaje sobre el tope y
@@ -845,16 +885,22 @@ export function totalGastosAnio(gastos, anio) {
  *   - `'cerca'`:  80 % ≤ porcentaje < 100 %.
  *   - `'supera'`: porcentaje ≥ 100 %.
  *
- * Tres criterios no se pueden derivar de los datos de Finko (ingresos brutos,
- * consumos con tarjeta de crédito, consignaciones). Para ellos se leen los
- * valores que el usuario haya registrado manualmente en
- * `config.datosFiscales[anio]` (K.4). Si no hay valor registrado, el criterio
- * queda en `sin-datos`; si lo hay (incluido un 0 explícito), pasa a medible.
+ * Dos criterios no se pueden derivar de los datos de Finko (consumos con
+ * tarjeta de crédito, consignaciones). Para ellos se leen los valores que el
+ * usuario haya registrado manualmente en `config.datosFiscales[anio]` (K.4).
+ * Si no hay valor registrado, el criterio queda en `sin-datos`; si lo hay
+ * (incluido un 0 explícito), pasa a medible.
+ *
+ * "Ingresos brutos" era el tercero de esa lista hasta CFG.2a: ahora sale de
+ * `estimarIngresosBrutosAnio()` cuando el usuario tiene ingresos registrados,
+ * y el valor manual pasa a ser un override que manda sobre la estimación.
  *
  * @param {{
- *   cuentas:     import('../../core/state.js').Cuenta[],
- *   inversiones: import('../../core/state.js').Inversion[],
- *   gastos:      import('../../core/state.js').Gasto[],
+ *   cuentas:            import('../../core/state.js').Cuenta[],
+ *   inversiones:        import('../../core/state.js').Inversion[],
+ *   gastos:             import('../../core/state.js').Gasto[],
+ *   ingresos?:          import('../../core/state.js').Ingreso[],
+ *   ingresosPuntuales?: import('../../core/state.js').IngresoPuntual[],
  *   config?:     { datosFiscales?: Record<string, { ingresosBrutos?: number, consumosTC?: number, consignaciones?: number }> },
  * }} state - usualmente `S` completo, o un subset para tests.
  * @param {number} anio
@@ -882,6 +928,7 @@ export function calcularEstadoRenta(state, anio) {
 
   const valorPB = patrimonioBruto(s.cuentas, s.inversiones);
   const valorCG = totalGastosAnio(s.gastos, anio);
+  const valorIB = estimarIngresosBrutosAnio(s.ingresos, s.ingresosPuntuales, anio);
 
   // Valores manuales del año (K.4). Solo cuentan los campos efectivamente
   // registrados como número finito; un 0 explícito es "medido en cero".
@@ -921,9 +968,15 @@ export function calcularEstadoRenta(state, anio) {
     uvt,
     umbralAlerta: UMBRAL_ALERTA_RENTA,
     criterios: [
+      // CFG.2a: el manual manda; si no lo hay, la estimación entra sola. El tip
+      // dice cuál de los dos se está viendo: un número estimado que se lee como
+      // medido sería justo lo que el ADR 003 prohíbe (Finko orienta, no dictamina).
       construir('ingresosBrutos',  'Ingresos brutos',                t.ingresosBrutos,
-        valorManual('ingresosBrutos'), provisto('ingresosBrutos'),
-        tipManual('ingresosBrutos', 'Finko no rastrea ingresos. Regístralos en Configuración para incluirlos.')),
+        provisto('ingresosBrutos') ? valorManual('ingresosBrutos') : valorIB,
+        provisto('ingresosBrutos') || valorIB > 0,
+        tipManual('ingresosBrutos', valorIB > 0
+          ? `Estimación: tus ingresos registrados proyectados al año completo, más los ingresos puntuales de ${anio}. Regístralo en Configuración si tu año real fue otro.`
+          : 'Finko no ve ingresos registrados. Agrégalos en Ingresos, o escribe el total del año en Configuración.')),
       construir('patrimonioBruto', 'Patrimonio bruto a 31 dic',      t.patrimonioBruto, valorPB, true,
         'Saldos de cuentas activas más monto invertido.'),
       construir('consumosTotales', 'Compras y consumos totales',     t.consumosTotales, valorCG, true,

@@ -16,8 +16,12 @@ import { renderAnalisis } from './view.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 
 // Secciones cuyos cambios requieren re-analisis.
+// CFG.2a suma `ingresos` e `ingresosPuntuales`: el criterio "Ingresos brutos"
+// del monitor de renta se deriva de ellos, así que registrar un ingreso con
+// Análisis en pantalla tiene que repintar el panel.
 const SECCIONES_OBSERVADAS = new Set([
   'gastos', 'compromisos', 'cuentas', 'metas', 'ahorro',
+  'ingresos', 'ingresosPuntuales',
 ]);
 
 export function initAnalisis() {

@@ -1,6 +1,6 @@
 # Tablero - Configuración
 
-> Revisado: 2026-08-12.
+> Revisado: 2026-08-13.
 
 > Satélite de [`BOARD.md`](../BOARD.md) (dominio `config`). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
 
@@ -8,25 +8,16 @@
 
 ### Configuración (dominio `config`)
 
-> **Iniciativa fusionada CFG.1 + CFG.2** ("Perfil fiscal/financiero en Ajustes"). **No iniciar ninguna sin instrucción explícita.** Alcance y sus dos decisiones, ambas tomadas: **[ADR 050](../DECISIONS/050-perfil-fiscal-ubicacion-y-framing.md)**, su dueño. Ficha: [`contexto/configuracion.md`](../contexto/configuracion.md). El hueco que queda es el de CFG.2a, abajo; CFG.2c ejecuta la reubicación.
+> **Iniciativa fusionada CFG.1 + CFG.2** ("Perfil fiscal/financiero en Ajustes"). **No iniciar ninguna sin instrucción explícita.** Alcance y sus dos decisiones, ambas tomadas: **[ADR 050](../DECISIONS/050-perfil-fiscal-ubicacion-y-framing.md)**, su dueño. Ficha: [`contexto/configuracion.md`](../contexto/configuracion.md). CFG.2a cerró el 2026-08-13; solo queda CFG.2c, que ejecuta la reubicación.
 
 #### CFG.2c - Reubicar lo fiscal: asistente bajo demanda en Ajustes + interpretación en Análisis
 - Prioridad  : sin definir
-- Estado     : pendiente. Ejecuta la decisión D1 del **[ADR 050](../DECISIONS/050-perfil-fiscal-ubicacion-y-framing.md)** (ya tomada). Conviene DESPUÉS de CFG.2a, que reduce cuántas preguntas quedan en el asistente.
+- Estado     : pendiente. Ejecuta la decisión D1 del **[ADR 050](../DECISIONS/050-perfil-fiscal-ubicacion-y-framing.md)** (ya tomada). Con CFG.2a cerrada, al asistente le quedan dos preguntas: consumos con tarjeta de crédito y consignaciones.
 - Objetivo   : los 2 bloques fiscales dejan de renderizarse permanentes en Ajustes y pasan a un asistente tras botón; la interpretación se consolida en Análisis (coordinar con el layout de ANL.1).
 - Secciones  : Configuración (Ajustes), Análisis
 - Archivos   : `modules/dominio/config/view.js`/`index.js` (los 2 forms actuales), `modules/dominio/analisis/view.js`
-- Depende de : CFG.2a; coordinar con ANL.1
+- Depende de : CFG.2a (cerrada); coordinar con ANL.1
 - Modelo     : Equilibrado - Alto (reubicación de UX sin lógica fiscal nueva)
-
-#### CFG.2a - Auto-derivar ingresos brutos del año al monitor de renta
-- Prioridad  : sin definir
-- Estado     : pendiente (parte 2 de la iniciativa fusionada; depende de CFG.1a, cerrada)
-- Objetivo   : el criterio "Ingresos brutos" del monitor de renta (K.3) hoy exige que el usuario lo teclee a mano en Datos de renta. Anualizar `S.ingresos` (recurrentes, por `frecuencia`) + sumar `S.ingresosPuntuales` del año para estimarlo automáticamente, de modo que pase de "Sin datos" a medible sin captura manual. Mantener el override manual si el usuario prefiere. `consumosTC` y `consignaciones` siguen manuales (no derivables: no hay tipo de cuenta "tarjeta de crédito", ni movimientos bancarios crudos). _(Nota de triaje 2026-07-08: si **MC.16** (tarjeta de crédito como producto integrado) se implementa, `consumosTC` pasaría a ser derivable automáticamente; revisar esta tarjeta en ese momento.)_
-- Secciones  : Configuración (Ajustes), Análisis (monitor de renta), transversal (lee ingresos)
-- Archivos   : `modules/dominio/analisis/logic.js` (`calcularEstadoRenta`, nueva `estimarIngresosBrutosAnio`), `modules/dominio/tesoreria/logic/ingresos.js` (helper de anualización si aplica)
-- Depende de : CFG.1a (cerrada)
-- Modelo     : Alta capacidad - Alto (lógica financiera CO no trivial: anualización de ingresos + interpretación de "ingresos brutos" DIAN)
 
 #### CFG.3 - Notificaciones inteligentes anticipatorias
 - Prioridad  : sin definir
@@ -75,5 +66,5 @@
 - Objetivo   : el usuario pidió revisar si faltan configuraciones que deberían vivir en Ajustes, con el objetivo de que la sección se convierta en el centro de configuración de Finko (seguridad, personalización, notificaciones, respaldo y cualquier otra opción relevante), con interfaz clara y organizada. **Ampliado por triaje del 4.º lote (2026-07-08, brief de Ajustes punto 2):** rediseño visual de la sección con tarjetas de tamaño uniforme, Bento Grid donde aporte, bloques compactos y alineados, sin botones que ocupen todo el ancho en desktop (hoy: "Instalar aplicación", "Recordatorios"); misma sensación de orden que el resto de la app (coordina con IV.2). **7.º lote:** el layout debe reservar el bloque del **Centro Legal** (iniciativa LEG, Transversal).
 - Secciones  : Configuración (Ajustes)
 - Archivos   : `modules/dominio/config/view.js`, `styles/components/config.css`
-- Depende de : CFG.2a/CFG.2c, CFG.3 y CFG.4 (esta es la pasada de auditoría/orden final, tiene sentido hacerla después o junto con las demás, no antes). El frente de seguridad ya dejó su bloque en el layout con CFG.5a.
+- Depende de : CFG.2c, CFG.3 y CFG.4 (esta es la pasada de auditoría/orden final, tiene sentido hacerla después o junto con las demás, no antes). El frente de seguridad ya dejó su bloque en el layout con CFG.5a.
 - Modelo     : Equilibrado - Alto (auditoría de una sección existente con criterio de UX, sin lógica financiera nueva)

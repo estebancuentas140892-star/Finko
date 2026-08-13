@@ -12,6 +12,32 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(navegacion): AH.7a, Ahorro sube a la barra inferior y Calendario baja a "Más" · 2026-08-13
+
+Supersede el **D1 del [ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md)** con el [ADR 065](DECISIONS/065-ahorro-en-la-barra-inferior.md) nuevo. Fichas: [`contexto/ahorro.md`](contexto/ahorro.md), [`contexto/calendario.md`](contexto/calendario.md), [`contexto/transversal.md`](contexto/transversal.md).
+
+- **Lo que el ADR 024 nunca decidió**: su D1 gastó la decisión en el botón central y dejó los cuatro destinos "en su lugar" por herencia. Calendario estaba en la barra porque ya estaba, no porque se hubiera comparado con nada.
+- **El canje**: una sección de consulta periódica (Calendario: qué llega este mes, una o dos veces) por la casa de cuatro secciones (fondo, metas, reservas, inversión), que en móvil es su única puerta y estaba a tres toques.
+- **Entrada nueva, no mudanza**: la casa sigue encabezando el grupo 3 del sidebar con sus 4 hijas anidadas (INT.1b). En móvil solo se pinta el primer `nav-group` (`responsive.css`), así que la barra recibe un `.nav-item--mobile-only` propio a `#ahorro`. Mover la casa habría desarmado el anidado que hace caber el sidebar a 1280x799.
+- **Consecuencia que hay que respetar**: `[href="#ahorro"]` deja de ser único en el DOM. Los tests que lo clickeaban pasaron a `.nav-item--no-mobile[href="#ahorro"]` (escritorio) y `.nav-item--mobile-only[href="#ahorro"]` (móvil); el sub-nivel del sidebar ya se gobernaba por `aria-controls`, no por `data-section`, así que no se tocó.
+- **El "estás aquí" del grupo cambia de dueño**: antes lo daba el botón "Más" (que en `#metas` decía "Metas"); ahora lo da la pestaña de Ahorro, encendida en la casa y en las 4 hijas. `MAS_SECTIONS` pierde el grupo de ahorro y gana `agenda`; `SECCION_NAV` queda con las 8 secciones que sí viven detrás del menú.
+- **En la hoja "Más", Calendario hereda el slot de ancho completo** que tenía Ahorro, encima de Ajustes: baja de la barra, no es una teja más, y la grilla conserva 6 tejas en 3 filas (con 7 quedaba una huérfana).
+- **Escritorio sin cambios**, verificado a 1280x800: sidebar de 16 filas, Calendario en su sitio y el sub-nivel de Ahorro desplegándose igual. La coordinación con INT.1 se resolvió por orden: AH.7a pasó primero y la rebanada que queda (INT.1g) rebasa.
+- Tests: 3 unitarios nuevos del resaltado de grupo y 1 de `MAS_SECTIONS` en `shell-nav.test.js`; 3 E2E nuevos o reescritos en `hub-ahorros.test.js` (tejas de la hoja, casa desde la barra, pestaña encendida en las 4 hijas). **4042/4042 unit** (4 de esta tarea; los 27 de CFG.2a entraron al árbol compartido a mitad del cierre) + **266/266 E2E** (1 flaky en `smoke.test.js`, posición del ojo del hero de Inicio, ajeno; verde al reintentar) + lint verdes. SW `finko-v520` → `finko-v521`.
+
+### feat(analisis): CFG.2a, los ingresos brutos del monitor de renta se derivan solos · 2026-08-13
+
+Cierra el hueco de **captura** que el [ADR 050](DECISIONS/050-perfil-fiscal-ubicacion-y-framing.md) dejó fuera de su alcance a propósito. Fichas: [`contexto/analisis.md`](contexto/analisis.md), [`contexto/configuracion.md`](contexto/configuracion.md).
+
+- **El patrón P1 de la auditoría de UX en su caso más caro**: la app conocía los ingresos del usuario y el criterio "Ingresos brutos" igual le exigía teclear el total del año en Ajustes. Sin ese número, el veredicto de renta se quedaba en `sin-conclusion` ("faltan 3 de los 5 criterios") por más datos que hubiera cargado.
+- **La tabla anual es nueva, no `FACTOR_MENSUAL_INGRESO × 12`**: esa tabla excluye a propósito Bimestral, Trimestral, Semestral y Anual porque no son flujo mensual, y para un total del año sí cuentan (una prima semestral es ingreso). `FACTOR_ANUAL_INGRESO` + `estimarIngresoAnual()` viven en `infra/financiero.js`, al lado de su par mensual: Análisis no puede importar tesorería (ADN 10) y ese archivo ya era el hogar sin dueño de dominio de la proyección de ingreso.
+- **`'Única vez'` queda fuera de la tabla**: un `Ingreso` no guarda cuándo entró el dinero (`fechaCreacion` es cuándo se registró en Finko), así que no se puede atribuir a un año. Ese caso lo cubre `ingresosPuntuales`, que sí tiene `fecha`, y de ahí sale la segunda mitad de la estimación.
+- **Proyecta el año completo, no lo transcurrido.** Es la decisión de fondo de la tarjeta: prorratear por el mes en curso diría "vas bien" en marzo y "superas el tope" en diciembre, que es justo el aviso tarde que la card existe para evitar. Tampoco se prorratea desde `fechaCreacion` del ingreso: quien instala la app en noviembre con un salario de años vería su año subestimado a una sexta parte, que es el error más caro de los dos. El precio asumido: el número es una proyección, y el `tip` del criterio arranca con "Estimación" para que no se lea como medido (ADR 003).
+- **El valor manual pasa de captura a override.** Si `datosFiscales[anio].ingresosBrutos` existe (incluido un 0 explícito), manda sobre la estimación y el `tip` vuelve a decir "registraste manualmente". El formulario de Ajustes lo dice ahora en su encabezado: ese campo se llena solo para reemplazar la estimación.
+- **La memo de PERF.7d suma `ingresos` e `ingresosPuntuales`** en sus dos señales (secciones observadas y clave por referencia). Sin eso, el usuario registraba su sueldo y Análisis le seguía diciendo que le faltaban datos: el criterio ya no depende solo de `datosFiscales`.
+- **Fuera de alcance, sin cambio**: `consumosTC` y `consignaciones` siguen manuales (no hay tipo de cuenta "tarjeta de crédito" ni movimientos bancarios crudos). La nota de triaje sigue viva: si **MC.16** se implementa, `consumosTC` pasa a ser derivable.
+- Tests: 27 unitarios nuevos (20 en `analisis.test.js`, 7 en `calculadoras.test.js`). **4042/4042 unit** (los 4 restantes sobre 4011 son de AH.7a, cerrada en paralelo en el mismo árbol) + **266/266 E2E** + lint verdes. SW `finko-v519` → `finko-v521`: el bump viaja en este commit porque AH.7a ya había subido el contador a v521 antes de que este cerrara.
+
 ### feat(analisis): ANL.1c, lectura de la card "Vs mes anterior" · 2026-08-12
 
 Cierra **ANL.1 completa** (ANL.1a-c), última aplicación del [ADR 046](DECISIONS/046-analisis-interpreta-criterio-y-lenguaje.md) D3, sobre la unidad 5 del inventario. Ficha: [`contexto/analisis.md`](contexto/analisis.md).

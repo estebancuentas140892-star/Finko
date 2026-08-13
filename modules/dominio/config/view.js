@@ -502,8 +502,9 @@ function _renderDatosRenta() {
     <div class="config-bloque">
       <h3 class="config-bloque__title">Datos de renta ${anio}</h3>
       <p class="config-section__desc">
-        Finko no puede calcular estos tres valores por su cuenta. Déjalos en
-        blanco si no aplican.
+        Finko estima tus ingresos brutos con los ingresos que ya registraste:
+        llena ese campo solo si quieres reemplazar la estimación. Los otros dos
+        no los puede calcular. Déjalos en blanco si no aplican.
       </p>
       <form id="form-datos-fiscales" class="config-form" novalidate>
         <div class="form-group">
@@ -511,7 +512,7 @@ function _renderDatosRenta() {
           <input id="df-ingresos" name="ingresosBrutos" class="input" type="text"
                  inputmode="numeric" autocomplete="off" data-miles
                  value="${val('ingresosBrutos')}" placeholder="Ej: 50.000.000" />
-          <p class="form-hint">Todo lo que te entró en ${anio} antes de descuentos.</p>
+          <p class="form-hint">Todo lo que te entró en ${anio} antes de descuentos. En blanco, Análisis usa su estimación.</p>
         </div>
         <div class="form-group">
           <label for="df-tc" class="label">Consumos con tarjeta de crédito</label>

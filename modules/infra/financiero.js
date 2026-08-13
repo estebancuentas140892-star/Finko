@@ -236,6 +236,49 @@ export function estimarSalarioMensual(ingresos) {
     .reduce((acc, i) => acc + (i.monto ?? 0) * (FACTOR_MENSUAL_INGRESO[i.frecuencia] ?? 0), 0);
 }
 
+// ── PROYECCIÓN DE INGRESO ANUAL (CFG.2a) ──────────────────────────
+
+/**
+ * Tabla de proyección a base anual: cuántas veces ocurre cada frecuencia de
+ * pago en un año completo.
+ *
+ * Por qué no basta con multiplicar `FACTOR_MENSUAL_INGRESO` por 12: esa tabla
+ * excluye a propósito las frecuencias de baja periodicidad porque no son flujo
+ * mensual. Para un total anual sí cuentan: una prima semestral o un pago anual
+ * son ingreso del año aunque no lleguen todos los meses.
+ *
+ * `'Única vez'` queda fuera: un `Ingreso` no guarda cuándo entró el dinero
+ * (`fechaCreacion` es cuándo se registró en Finko), así que no se puede
+ * atribuir a un año. Ese caso lo cubre `ingresosPuntuales`, que sí tiene
+ * `fecha`.
+ */
+export const FACTOR_ANUAL_INGRESO = {
+  'Diario':     365,
+  'Semanal':    52,
+  'Quincenal':  24,
+  'Mensual':    12,
+  'Bimestral':  6,
+  'Trimestral': 4,
+  'Semestral':  2,
+  'Anual':      1,
+};
+
+/**
+ * Suma todos los ingresos activos proyectados a un año completo.
+ *
+ * Proyecta el año entero, no lo que va corrido: quien la consume (el monitor
+ * de renta, CFG.2a) compara contra un tope anual de la DIAN y necesita saber
+ * cómo cerraría el año, no cuánto lleva.
+ *
+ * @param {import('../core/state.js').Ingreso[]} ingresos
+ * @returns {number} COP/año equivalente (0 si no hay ingresos con frecuencia reconocida).
+ */
+export function estimarIngresoAnual(ingresos) {
+  return (ingresos ?? [])
+    .filter(i => i.activo !== false)
+    .reduce((acc, i) => acc + (i.monto ?? 0) * (FACTOR_ANUAL_INGRESO[i.frecuencia] ?? 0), 0);
+}
+
 // ── VALIDADORES ───────────────────────────────────────────────────
 
 /**
