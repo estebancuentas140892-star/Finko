@@ -68,7 +68,7 @@ test.describe('Render tras navegación (regresión hashchange)', () => {
   test('Fondo de emergencia muestra empty state al entrar desde la casa de Ahorro', async ({ page }) => {
     await saltearOnboardingYIrADash(page);
 
-    await page.click('a[href="#ahorro"]');
+    await page.click('.nav-item--no-mobile[href="#ahorro"]');
     await expect(page.locator('#sec-ahorro.active')).toBeVisible();
 
     // DIS.19: la casa es el destino, y la salida de cada carril es "Ver todo".

@@ -54,7 +54,7 @@ async function seedConAhorros(page) {
 test.describe('DIS.18 - la casa de Ahorro (móvil)', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('el menú Más deja un solo grupo rotulado y una entrada de Ahorro (DIS.18)', async ({ page }) => {
+  test('el menú Más deja un solo grupo rotulado y Calendario en el slot de ancho completo (AH.7a)', async ({ page }) => {
     await seedVacio(page);
     await page.goto('/#dash');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
@@ -68,26 +68,39 @@ test.describe('DIS.18 - la casa de Ahorro (móvil)', () => {
       els.map(e => e.textContent.trim()));
     expect(grupos).toEqual(['Gestión del dinero']);
 
+    // AH.7a (ADR 065 D2): Ahorro se fue a la barra inferior y Calendario
+    // hereda su slot de ancho completo. La grilla sigue en 6 tejas.
     const labels = await page.$$eval('#modal-mas .mas-tile__label', els =>
       els.map(e => e.textContent.trim()));
     expect(labels).toEqual([
       'Deudas', 'Mis cuentas', 'Movimientos', 'Me deben', 'Límites de gasto', 'Análisis',
-      'Ahorro',
+      'Calendario',
       'Ajustes',
     ]);
   });
 
-  test('el tile "Ahorro" abre la casa (#ahorro) y cierra la hoja', async ({ page }) => {
+  test('la casa (#ahorro) se alcanza desde la barra inferior, sin abrir "Más" (AH.7a)', async ({ page }) => {
+    await seedVacio(page);
+    await page.goto('/#dash');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+
+    await expect(page.locator('#modal-mas a[href="#ahorro"]')).toHaveCount(0);
+    await page.click('.nav-item--mobile-only[href="#ahorro"]');
+
+    await expect(page.locator('#sec-ahorro.active')).toBeVisible();
+    await expect(page.locator('#title-ahorro')).toHaveText('Ahorro');
+  });
+
+  test('el tile "Calendario" abre la sección y cierra la hoja (AH.7a)', async ({ page }) => {
     await seedVacio(page);
     await page.goto('/#dash');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
 
     await page.click('.nav-item[data-modal="modal-mas"]');
-    await page.click('#modal-mas a[href="#ahorro"]');
+    await page.click('#modal-mas a[href="#agenda"]');
 
     await expect(page.locator('#modal-mas[data-open]')).toHaveCount(0);
-    await expect(page.locator('#sec-ahorro.active')).toBeVisible();
-    await expect(page.locator('#title-ahorro')).toHaveText('Ahorro');
+    await expect(page.locator('#sec-agenda.active')).toBeVisible();
   });
 
   test('la hoja marca la sección activa y el botón de tema alterna sin cerrarla (NAV2.1a, ADR 040 D2/D3)', async ({ page }) => {
@@ -179,23 +192,44 @@ test.describe('DIS.18 - la casa de Ahorro (móvil)', () => {
       .toContainText('sin empezar');
   });
 
-  test('el botón "Más" se resalta y nombra la sección en la casa y en sus hijas', async ({ page }) => {
+  test('la pestaña "Ahorro" se resalta en la casa y en sus hijas, y "Más" se queda apagado (AH.7a)', async ({ page }) => {
     await seedVacio(page);
     await page.goto('/#ahorro');
     await page.waitForSelector('#sec-ahorro.active', { timeout: 10_000 });
 
+    const ahorroBtn = page.locator('.nav-item--mobile-only[href="#ahorro"]');
+    const masBtn = page.locator('.nav-item[data-modal="modal-mas"]');
+    await expect(ahorroBtn).toHaveClass(/active/);
+    await expect(masBtn).not.toHaveClass(/active/);
+    await expect(masBtn.locator('.nav-item__label')).toHaveText('Más');
+
+    for (const hija of ['fondo', 'metas', 'apartados', 'inversion']) {
+      await page.evaluate((h) => { window.location.hash = `#${h}`; }, hija);
+      await page.waitForSelector(`#sec-${hija}.active`, { timeout: 5_000 });
+      await expect(ahorroBtn).toHaveClass(/active/);
+      await expect(ahorroBtn).toHaveAttribute('aria-current', 'page');
+      await expect(masBtn).not.toHaveClass(/active/);
+    }
+
+    // Fuera del grupo la pestaña se apaga.
+    await page.evaluate(() => { window.location.hash = '#gast'; });
+    await page.waitForSelector('#sec-gast.active', { timeout: 5_000 });
+    await expect(ahorroBtn).not.toHaveClass(/active/);
+  });
+
+  test('el botón "Más" se resalta y nombra la sección que sí vive detrás del menú', async ({ page }) => {
+    await seedVacio(page);
+    await page.goto('/#agenda');
+    await page.waitForSelector('#sec-agenda.active', { timeout: 10_000 });
+
     const masBtn = page.locator('.nav-item[data-modal="modal-mas"]');
     await expect(masBtn).toHaveClass(/active/);
-    await expect(masBtn.locator('.nav-item__label')).toHaveText('Ahorro');
+    await expect(masBtn.locator('.nav-item__label')).toHaveText('Calendario');
 
-    await page.evaluate(() => { window.location.hash = '#fondo'; });
-    await page.waitForSelector('#sec-fondo.active', { timeout: 5_000 });
+    await page.evaluate(() => { window.location.hash = '#analisis'; });
+    await page.waitForSelector('#sec-analisis.active', { timeout: 5_000 });
     await expect(masBtn).toHaveClass(/active/);
-    await expect(masBtn.locator('.nav-item__label')).toHaveText('Fondo');
-
-    await page.evaluate(() => { window.location.hash = '#inversion'; });
-    await page.waitForSelector('#sec-inversion.active', { timeout: 5_000 });
-    await expect(masBtn).toHaveClass(/active/);
+    await expect(masBtn.locator('.nav-item__label')).toHaveText('Análisis');
   });
 });
 

@@ -90,12 +90,22 @@ describe('el botón "Más" nombra la sección donde estás (DIS.6/C3)', () => {
 
   it('al pasar de una sección del menú a otra, cambia de nombre y de color', () => {
     markActiveNav('analisis');
-    markActiveNav('metas');
+    markActiveNav('presupuesto');
     const btn = masBtn();
-    expect(btn.dataset.section).toBe('metas');
-    expect(btn.querySelector('.nav-item__label').textContent).toBe('Metas');
-    expect(btn.querySelector('use').getAttribute('href')).toBe('#i-metas');
+    expect(btn.dataset.section).toBe('presupuesto');
+    expect(btn.querySelector('.nav-item__label').textContent).toBe('Límites');
+    expect(btn.querySelector('use').getAttribute('href')).toBe('#i-presupuesto');
     expect(btn.classList.contains('active')).toBe(true);
+  });
+
+  it('Calendario cuenta como sección del menú y Ahorro ya no (AH.7a)', () => {
+    markActiveNav('agenda');
+    expect(masBtn().querySelector('.nav-item__label').textContent).toBe('Calendario');
+    expect(masBtn().querySelector('use').getAttribute('href')).toBe('#i-agenda');
+
+    markActiveNav('ahorro');
+    expect(masBtn().classList.contains('active')).toBe(false);
+    expect(masBtn().querySelector('.nav-item__label').textContent).toBe('Más');
   });
 
   it('al volver a una sección de la barra limpia el data-section y vuelve a "Más"', () => {
@@ -156,6 +166,43 @@ describe('el sub-nivel del grupo Ahorro se despliega dentro del grupo (INT.1b)',
     markActiveNav('gast');
     expect(subnav().hidden).toBe(true);
     expect(trigger().getAttribute('aria-expanded')).toBe('false');
+  });
+});
+
+describe('la pestaña Ahorro de la barra inferior se resalta en todo el grupo (AH.7a)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <a class="nav-item" data-section="gast"></a>
+      <button class="nav-item" data-modal="modal-mas"></button>
+      <a class="nav-item nav-item--mobile-only" href="#ahorro" data-section="ahorro"></a>
+      <a class="nav-item nav-item--no-mobile" href="#ahorro" data-section="ahorro"
+         aria-expanded="false" aria-controls="nav-subnav-ahorro"></a>
+    `;
+  });
+
+  const pestana = () => document.querySelector('.nav-item--mobile-only[data-section="ahorro"]');
+  const casa    = () => document.querySelector('.nav-item--no-mobile[data-section="ahorro"]');
+
+  it('se enciende en la casa y en cada una de las 4 hijas', () => {
+    for (const hash of ['ahorro', 'fondo', 'metas', 'apartados', 'inversion']) {
+      markActiveNav(hash);
+      expect(pestana().classList.contains('active')).toBe(true);
+      expect(pestana().getAttribute('aria-current')).toBe('page');
+    }
+  });
+
+  it('se apaga fuera del grupo', () => {
+    markActiveNav('metas');
+    markActiveNav('gast');
+    expect(pestana().classList.contains('active')).toBe(false);
+    expect(pestana().getAttribute('aria-current')).toBe('false');
+  });
+
+  it('la entrada de desktop sigue marcándose solo en la casa: allá cada hija tiene su fila', () => {
+    markActiveNav('metas');
+    expect(casa().classList.contains('active')).toBe(false);
+    markActiveNav('ahorro');
+    expect(casa().classList.contains('active')).toBe(true);
   });
 });
 

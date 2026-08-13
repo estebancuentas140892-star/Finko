@@ -225,7 +225,7 @@
 
         <!-- GRUPO 1: Uso diario. En mobile estos items forman el bottom nav visible.
              Solo los que NO tienen nav-item--no-mobile aparecen en mobile.
-             Bottom nav mobile: Inicio · Gastos · Calendario · [Más] -->
+             Bottom nav mobile: Inicio · Gastos · [+] · Ahorro · [Más] -->
         <!-- Sin rótulo visible desde NAV2.1b (ADR 040 D4): el grupo de uso
              diario abre directo bajo la marca; el nombre queda para
              lectores de pantalla vía aria-label. -->
@@ -254,11 +254,25 @@
               <span class="nav-item__label">Registrar</span>
             </button>
 
-            <!-- Calendario (dominio interno: agenda): visible en mobile (cuarto slot del bottom nav) -->
-            <a class="nav-item" href="#agenda" data-section="agenda"
+            <!-- Calendario (dominio interno: agenda): solo desktop desde AH.7a
+                 (ADR 065 D1). Cede el cuarto slot del bottom nav a Ahorro y
+                 baja a teja del menú "Más": se consulta, no se opera. -->
+            <a class="nav-item nav-item--no-mobile" href="#agenda" data-section="agenda"
                aria-label="Calendario de pagos y compromisos">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-agenda"/></svg>
               <span class="nav-item__label">Calendario</span>
+            </a>
+
+            <!-- Ahorro en el bottom nav (AH.7a, ADR 065 D1): cuarto slot en
+                 móvil. Es una entrada duplicada a propósito: la casa vive en
+                 el grupo 3 con sus 4 hijas anidadas (INT.1b), y ese grupo no
+                 se pinta en móvil (.nav-group:not(:first-child) en
+                 responsive.css). Sin aria-controls: el sub-nivel del sidebar
+                 lo gobierna solo la entrada de desktop. -->
+            <a class="nav-item nav-item--mobile-only" href="#ahorro" data-section="ahorro"
+               aria-label="Ahorro: fondo, metas, reservas e inversión">
+              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-ahorro"/></svg>
+              <span class="nav-item__label">Ahorro</span>
             </a>
 
             <!-- Deudas: solo desktop (demasiados slots para mobile) -->
@@ -1623,8 +1637,9 @@
        Revisa el D5 del ADR 024: vuelven los rótulos de grupo y las 4
        secciones de ahorro recuperan entrada directa (el hub NAV.B con
        pestañas + consolidado sigue intacto en las secciones mismas).
-       Calendario, Gastos e Inicio ya están en la barra inferior de
-       móvil, no se repiten aquí. Las clases .mas-* son propias del
+       Inicio, Gastos y Ahorro ya están en la barra inferior de móvil,
+       no se repiten aquí; Calendario entró al bajar de la barra
+       (AH.7a, ADR 065). Las clases .mas-* son propias del
        sheet: .menu-mas__* siguen siendo el launcher de Registrar y de
        los accesos de Inicio. -->
   <div class="modal-overlay modal-overlay--sheet" id="modal-mas"
@@ -1675,15 +1690,14 @@
           </a>
         </div>
 
-        <!-- DIS.18: las 4 tejas del grupo "Ahorros" se reducen a una. Un
-             destino, una entrada: elegir entre fondo, metas, apartados e
-             inversión deja de ser una decisión de menú global y se toma dentro
-             de la casa, que es el único lugar donde los cuatro nombres
-             conviven y se pueden comparar. Va a ancho completo, como Ajustes:
-             no es una más de la grilla, es la puerta de un tema. -->
-        <a class="mas-tile mas-tile--full" href="#ahorro" data-section="ahorro">
-          <span class="mas-tile__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-ahorro"/></svg></span>
-          <span class="mas-tile__label">Ahorro</span>
+        <!-- Calendario hereda el slot de ancho completo que dejó Ahorro al
+             subir a la barra (AH.7a, ADR 065 D2). Va suelto y a ancho
+             completo, no dentro de la grilla: baja de la barra inferior, no
+             es una teja más de "Gestión del dinero", y la grilla conserva sus
+             6 tejas en 3 filas limpias. -->
+        <a class="mas-tile mas-tile--full" href="#agenda" data-section="agenda">
+          <span class="mas-tile__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-agenda"/></svg></span>
+          <span class="mas-tile__label">Calendario</span>
         </a>
 
         <div class="mas-sheet__footer">

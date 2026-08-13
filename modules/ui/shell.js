@@ -13,21 +13,26 @@ const SIDEBAR_KEY  = 'fk_sidebar_collapsed';
  * Secciones que en móvil NO están en la barra inferior y viven dentro del
  * menú "Más". Cuando el usuario está en una de ellas, el botón "Más" se
  * resalta como activo (antes ninguna pestaña se resaltaba: cero "estás aquí").
- * Al sumar secciones nuevas al menú "Más", agregarlas aquí. Las 4 modalidades
- * de ahorro cuentan aunque el menú ya no las liste una por una (DIS.18): se
- * llega a ellas desde la casa, que sí es una teja de "Más".
+ * Al sumar secciones nuevas al menú "Más", agregarlas aquí. Ahorro y sus 4
+ * modalidades salieron del set en AH.7a (ADR 065): la casa subió a la barra
+ * inferior y se resalta ella misma, con o sin hija adentro. Calendario entró
+ * en el mismo movimiento, al bajar de la barra al menú.
  */
 const MAS_SECTIONS = new Set([
   'compromisos', 'tesoreria', 'movimientos', 'personales',
-  'ahorro', 'fondo', 'metas', 'apartados', 'inversion',
-  'presupuesto', 'analisis', 'config',
+  'agenda', 'presupuesto', 'analisis', 'config',
 ]);
 
 /**
- * Grupo Ahorro en el sidebar de desktop (INT.1b, ADR 059 D6): la casa
- * (`ahorro`) y sus 4 hijas. `.nav-subnav` solo se despliega mientras el
- * hash activo pertenece a este set; el resto del tiempo el grupo paga 1
- * fila en vez de 5.
+ * Grupo Ahorro: la casa (`ahorro`) y sus 4 hijas. Dos usos, uno por
+ * plataforma:
+ *
+ * - Desktop (INT.1b, ADR 059 D6): `.nav-subnav` solo se despliega mientras el
+ *   hash activo pertenece al set; el resto del tiempo el grupo paga 1 fila en
+ *   vez de 5.
+ * - Móvil (AH.7a, ADR 065 D3): la entrada de la barra inferior se resalta en
+ *   toda la casa, hijas incluidas. En móvil es la única puerta al grupo, así
+ *   que hereda el "estás aquí" de grupo que antes daba el botón "Más".
  */
 const GRUPO_AHORRO = new Set(['ahorro', 'fondo', 'metas', 'apartados', 'inversion']);
 
@@ -48,13 +53,9 @@ const SECCION_NAV = {
   tesoreria:   ['Cuentas',     'i-cuentas'],
   movimientos: ['Movimientos', 'i-saldo'],
   personales:  ['Me deben',    'i-personales'],
+  agenda:      ['Calendario',  'i-agenda'],
   presupuesto: ['Límites',     'i-presupuesto'],
   analisis:    ['Análisis',    'i-analisis'],
-  ahorro:      ['Ahorro',      'i-ahorro'],
-  fondo:       ['Fondo',       'i-ahorro'],
-  metas:       ['Metas',       'i-metas'],
-  apartados:   ['Reservas',    'i-apartados'],
-  inversion:   ['Inversión',   'i-inversion'],
   config:      ['Ajustes',     'i-ajustes'],
 };
 
@@ -149,10 +150,21 @@ export function markActiveNav(hash) {
     _rotularMas(masBtn, enMas ? hash : null);
   }
 
+  // La entrada de Ahorro en la barra inferior (AH.7a) se resalta en la casa y
+  // en sus 4 hijas: en móvil es la única puerta al grupo, y sin esto navegar
+  // de la casa a Metas apagaba la pestaña y dejaba la barra sin "estás aquí".
+  // La entrada de desktop no entra: allá cada hija tiene su propia fila.
+  const ahorroBtn = document.querySelector('.nav-item--mobile-only[data-section="ahorro"]');
+  if (ahorroBtn) {
+    const enGrupo = GRUPO_AHORRO.has(hash);
+    ahorroBtn.classList.toggle('active', enGrupo);
+    ahorroBtn.setAttribute('aria-current', enGrupo ? 'page' : 'false');
+  }
+
   // Sub-nivel del grupo Ahorro (INT.1b): se despliega solo dentro del grupo.
-  // aria-controls, no data-section: el botón "Más" también gana
-  // data-section="ahorro" cuando el hash es 'ahorro' (_rotularMas, arriba),
-  // y data-section no es único en ese caso.
+  // aria-controls, no data-section: la barra inferior también lleva una
+  // entrada con data-section="ahorro" desde AH.7a, así que data-section no
+  // identifica a la casa del sidebar.
   const subnav = document.getElementById('nav-subnav-ahorro');
   const triggerAhorro = document.querySelector('[aria-controls="nav-subnav-ahorro"]');
   if (subnav && triggerAhorro) {

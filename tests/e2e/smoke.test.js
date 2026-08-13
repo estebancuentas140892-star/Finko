@@ -946,15 +946,18 @@ test.describe('Navegación hash', () => {
     { href: '#dash',        seccion: 'sec-dash' },
   ];
 
+  // El viewport por defecto es de escritorio, y desde AH.7a (ADR 065 D1)
+  // "Ahorro" tiene dos entradas de nav: la casa del sidebar y la pestaña
+  // mobile-only de la barra inferior. Se apunta siempre a la de escritorio.
   for (const { href, seccion } of secciones) {
     test(`navega a ${href} y activa #${seccion}`, async ({ page }) => {
-      await page.click(`.nav-item[href="${href}"]`);
+      await page.click(`.nav-item:not(.nav-item--mobile-only)[href="${href}"]`);
       await expect(page.locator(`#${seccion}`)).toHaveClass(/active/);
     });
   }
 
   test('una hija de Ahorro (ej. Metas) se alcanza en dos clics: Ahorro despliega el sub-nivel (INT.1b)', async ({ page }) => {
-    await page.click('.nav-item[href="#ahorro"]');
+    await page.click('.nav-item--no-mobile[href="#ahorro"]');
     await page.click('.nav-item[href="#metas"]');
     await expect(page.locator('#sec-metas')).toHaveClass(/active/);
   });

@@ -1,6 +1,6 @@
 # Ficha de contexto: Ahorro
 
-> Revisado: 2026-08-11.
+> Revisado: 2026-08-13.
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -80,8 +80,8 @@
 ## Casa de Ahorro: los cuatro carriles (dominio `ahorro`, hub `#ahorro`)
 
 - **Objetivo**          : que el usuario decida **a cuál de las cuatro modalidades entrar, y con información**. Es el único lugar donde los cuatro nombres conviven, así que también es donde se enseña la diferencia entre ellos; y como cada carril trae su propio gráfico, la pantalla enseña además a leer la sección a la que lleva.
-- **Estado actual**     : estable. **DIS.19 cerrada** (2026-07-29, arquitectura 1c del informe "Auditoría Ahorro"): las cuatro filas de monto y estado en texto pasan a cuatro **carriles**, cada uno con su gráfico en su propia unidad, su rótulo de momento de uso y su acción. El total baja al pie en una línea. **DIS.18 cerrada** (2026-07-28): nace la pantalla y reemplaza al consolidado de solo lectura que se repetía en las cuatro hijas (F6, ADR 024 D4), restaurando la intención del [ADR 009](../DECISIONS/009-fondo-de-emergencia.md).
-- **Verificado contra** : ARQ.1c (2026-08-02).
+- **Estado actual**     : estable. **AH.7a cerrada** (2026-08-13, [ADR 065](../DECISIONS/065-ahorro-en-la-barra-inferior.md)): la casa sube al cuarto slot de la barra inferior de móvil y Calendario baja a la hoja "Más". La pestaña se resalta en la casa y en las cuatro hijas: en móvil es la única puerta al grupo. Escritorio no cambia. **DIS.19 cerrada** (2026-07-29, arquitectura 1c del informe "Auditoría Ahorro"): las cuatro filas de monto y estado en texto pasan a cuatro **carriles**, cada uno con su gráfico en su propia unidad, su rótulo de momento de uso y su acción. El total baja al pie en una línea. **DIS.18 cerrada** (2026-07-28): nace la pantalla y reemplaza al consolidado de solo lectura que se repetía en las cuatro hijas (F6, ADR 024 D4), restaurando la intención del [ADR 009](../DECISIONS/009-fondo-de-emergencia.md).
+- **Verificado contra** : AH.7a (2026-08-13).
 
 **Dónde vive**
 
@@ -98,6 +98,8 @@
 | Volver a la casa desde cada hija | `index.html` | `.section__volver` en `#sec-fondo`, `#sec-metas`, `#sec-apartados`, `#sec-inversion` | |
 | Rutas | `modules/infra/router.js` | `SECTIONS`: `ahorro` a `sec-ahorro`, `fondo` a `sec-fondo` | ~11 |
 | Rótulo del botón "Más" por sección | `modules/ui/shell.js` | `SECCION_NAV`, `MAS_SECTIONS` | ~20 |
+| Pestaña de la barra inferior (AH.7a, solo móvil) | `index.html` | `.nav-item--mobile-only[href="#ahorro"]`, dentro del grupo de uso diario | |
+| Resaltado de la pestaña en la casa y sus 4 hijas (AH.7a) | `modules/ui/shell.js` | `markActiveNav()`, `GRUPO_AHORRO` | ~155 |
 
 **Recursos**: `.hub__*`, `.lane__*`, `.silrow`/`.silbtn__*` y `.grow__*` en `styles/components/domain.css`; `.cmp__*` en `styles/components/charts.css`; `.cov__*` en `styles/components/analysis.css`; el ajuste móvil de la leyenda de `.grow` en `styles/responsive.css`; `[data-section="fondo"]` en `styles/layout.css` para el acento de navegación; símbolos `i-ahorro`, `i-metas`, `i-apartados`, `i-inversion`; lee `S.ahorro`, `S.metas`, `S.apartados`, `S.inversiones` y `S.config.ocultarSaldo`.
 
@@ -110,15 +112,17 @@
 - **Ningún carril en cero dibuja un gráfico vacío.** Muestra qué hace la modalidad y ofrece su primer paso con la acción de su dominio. Un gráfico en cero es una promesa mal contada: cuatro rieles vacíos se leen como error, no como invitación.
 - **La columna y la silueta SON la acción, no una selección.** El prototipo elegía un item y luego pulsaba un botón; acá el toque abre el aporte directo. Es un toque menos y, sobre todo, cero estado de UI que mantener entre renders (el hub se re-renderiza con cada `state:change` de las cuatro slices, y una selección guardada se perdería o habría que persistirla en `S`, que no es su sitio).
 - **Los chips no navegan, mueven el scroll.** Son botones con `ahorro-ir-a-carril` y `scrollIntoView`, no enlaces con hash: el router leería `#carril-metas` como sección inexistente y llevaría a Inicio.
-- **El carril usa el nombre de la sección, no la frase descriptiva del prototipo.** El mockup rotulaba "Pagos que ya sabes que llegan" en vez de "Apartados". Renombrar solo en el hub dejaría dos nombres para una cosa mientras la sección hija sigue diciendo el suyo; el nombre "Apartados" está en revisión abierta en **AH.7**.
+- **El carril usa el nombre de la sección, no la frase descriptiva del prototipo.** El mockup rotulaba "Pagos que ya sabes que llegan" en vez de "Apartados". Renombrar solo en el hub dejaría dos nombres para una cosa mientras la sección hija sigue diciendo el suyo; **AH.7b** (2026-07-31) resolvió el caso renombrando el copy visible de las dos a "Reservas".
 - **`_estadoApartados()` chequea el tipo antes de convertir.** `Number(null)` es 0 y 0 días significa "vence hoy": sin ese chequeo, un apartado sin fecha se anuncia como si venciera hoy. Hay test que lo fija.
 - **`#ahorro` cambió de dueño.** Un enlace que quiera el fondo tiene que apuntar a `#fondo` (hoy: `analisis/view.js` y `inversiones/view.js`). Los bookmarks viejos a `#ahorro` llegan a la casa a propósito: suben un nivel, no se pierden.
 - **Cada `.lane__cta` repite la `data-action` de su sección, y eso rompe tests ajenos.** `nueva-meta`, `nuevo-apartado`, `inversion-nueva`, `ahorro-activar-fondo` y `ahorro-nuevo-aporte` existen ahora dos o tres veces en el DOM, y como las 15 secciones coexisten (solo cambia `display`), un selector suelto `[data-action="..."]` puede quedarse con el botón del carril oculto. Tumbó 16 tests E2E de Metas, Apartados e Inversión que no tocaban esta sección (**BUG-019**). Al agregar un CTA nuevo a un carril, el selector de todo test que use esa acción va acotado a su sección. La regla quedó en [`CONTRIBUTING.md`](../CONTRIBUTING.md).
 - **Los selectores E2E de esta pantalla son `.lane` y `#carril-<clave>`**, y la salida es `a.lane__ver`. Al cambiar el markup del hub hay que correr `pnpm run test:e2e`: no es compuerta de cada commit, y DIS.19 dejó la suite dos días en rojo justamente por eso.
 
-**Cambios pendientes**: **promover "Ahorro" a la barra inferior** queda sin decidir (hoy vive en "Más"); mover Calendario para hacerle sitio es una decisión de otra sección, con tarjeta **AH.7a**. El nombre **"Apartados"**, que colisiona con "apartar" (el verbo genérico de ahorrar en toda la app), quedó señalado y sin resolver: es lenguaje de producto y toca varias pantallas.
+**Cambios pendientes**: ninguno. Las dos revisiones abiertas de AH.7 quedaron cerradas: el nombre "Apartados" pasó a "Reservas" en AH.7b (2026-07-31) y la promoción de la casa a la barra inferior, en AH.7a (2026-08-13).
 
 **Cambios realizados**:
+
+- 2026-08-13 (**AH.7a**): la casa sube al cuarto slot de la barra inferior de móvil (entrada nueva `nav-item--mobile-only`, la del sidebar no se mueve) y Calendario baja al slot de ancho completo de la hoja "Más". `MAS_SECTIONS` cambia de manos: sale el grupo de ahorro, entra `agenda`. Ver CHANGELOG y [ADR 065](../DECISIONS/065-ahorro-en-la-barra-inferior.md).
 
 - 2026-08-02 (**AH.8**): el carril de Inversión pasa de "2 inversiones" a "2 inversiones, construyendo"; `casaAhorro()` recibe `etapaInversion` y el conteo pasa a filtrar por monto igual que la etapa. Cierra la consecuencia pendiente del ADR 056. Ver CHANGELOG.
 

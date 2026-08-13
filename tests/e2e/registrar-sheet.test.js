@@ -33,7 +33,8 @@ test.describe('NAV.A2a - hoja Registrar', () => {
     const labels = await page.$$eval('#sidebar .nav-item', els =>
       els.filter(e => e.offsetParent !== null)
          .map(e => e.querySelector('.nav-item__label')?.textContent?.trim()));
-    expect(labels).toEqual(['Inicio', 'Gastos', 'Registrar', 'Calendario', 'Más']);
+    // AH.7a (ADR 065 D1): Ahorro toma el cuarto slot y Calendario baja a "Más".
+    expect(labels).toEqual(['Inicio', 'Gastos', 'Registrar', 'Ahorro', 'Más']);
   });
 
   test('el botón central abre la hoja y la teja Ingreso abre su modal', async ({ page }) => {
