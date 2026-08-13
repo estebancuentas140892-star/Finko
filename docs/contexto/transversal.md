@@ -130,7 +130,7 @@
 
 - **Objetivo**          : hay dos rutas de render y la diferencia importa. **Directo y síncrono**: `renderAll()` (arranque), los listeners de `hashchange` (navegación) y los handlers que pintan su propia vista tras una acción. **Reactivo y agendado**: los listeners de `state:change` que repintan paneles pasan por `programarRender(fn)`, que los colapsa a un solo pintado por tick.
 - **Estado actual**     : estable. `infra/crud.js` emite **un `state:change` por mutación**, así que una acción multi-sección emite muchas veces en un solo tick (una distribución del ingreso: 12). Antes de PERF.6 cada emisión repintaba: **~398 ms** de JavaScript con 10.000 gastos estando en Inicio. Con la cola, **~94,5 ms**, que es exactamente el costo de un render único (4,2x, medido a 3 volúmenes en [`BASELINE.md`](../../scripts/perf/BASELINE.md)). Ocho listeners agendan; los que no pintan paneles (logros evalúa, gastos actualiza el saldo, metas regenera planes) siguen directos a propósito.
-- **Verificado contra** : `PENDIENTE` (2026-08-13, PERF.6).
+- **Verificado contra** : `9d40e00` (2026-08-13, PERF.6).
 
 **Dónde vive**
 
