@@ -1,9 +1,11 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { S, EventBus, createInitialState } from '../../modules/core/state.js';
 import {
   loadData,
   save,
   _flushNow,
+  restaurarBlob,
+  borrarTodo,
   STORAGE_KEY,
   SCHEMA_VERSION,
   LIMITE_LOCALSTORAGE_CHARS,
@@ -188,6 +190,97 @@ describe('_flush() - guardado que falla (cupo lleno, ADR 030)', () => {
     save();
     _flushNow();
     expect(estadoCuota().falloUltimoGuardado).toBe(false);
+  });
+});
+
+describe('restaurarBlob() - importar respaldo (PERF.10)', () => {
+  it('escribe el blob bajo fk_v1 y devuelve ok', () => {
+    const blob = JSON.stringify({ ...createInitialState(), onboarded: true });
+
+    expect(restaurarBlob(blob)).toBe('ok');
+    expect(localStorage.getItem(STORAGE_KEY)).toBe(blob);
+  });
+
+  it('un JSON inválido devuelve json-invalido y no escribe nada', () => {
+    localStorage.setItem(STORAGE_KEY, '{"previo":true}');
+
+    expect(restaurarBlob('{esto no es json')).toBe('json-invalido');
+    expect(localStorage.getItem(STORAGE_KEY)).toBe('{"previo":true}');
+  });
+
+  it('un cupo lleno devuelve error-escritura, marca el fallo y emite storage:error', () => {
+    // Mismo stub que el test de _flush(): storage.js lee el global en cada
+    // llamada. Antes esta ruta reportaba "archivo no válido" y no activaba la
+    // salvaguarda del ADR 030 D2.
+    vi.stubGlobal('localStorage', {
+      getItem:    () => null,
+      setItem:    () => { throw new DOMException('quota', 'QuotaExceededError'); },
+      removeItem: () => {},
+      clear:      () => {},
+    });
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const errores = [];
+    const onError = (e) => errores.push(e);
+    EventBus.on('storage:error', onError);
+
+    let resultado;
+    try {
+      resultado = restaurarBlob(JSON.stringify(createInitialState()));
+    } finally {
+      vi.unstubAllGlobals();
+      errorSpy.mockRestore();
+      EventBus.off('storage:error', onError);
+    }
+
+    expect(resultado).toBe('error-escritura');
+    expect(errores).toHaveLength(1);
+    expect(errores[0].falloUltimoGuardado).toBe(true);
+    expect(estadoCuota().falloUltimoGuardado).toBe(true);
+
+    // Un guardado exitoso vuelve a limpiar el fallo.
+    save();
+    _flushNow();
+    expect(estadoCuota().falloUltimoGuardado).toBe(false);
+  });
+});
+
+describe('borrarTodo() - reset y "olvidé mi PIN" (PERF.10)', () => {
+  it('borra fk_v1 y las preferencias de UI', () => {
+    localStorage.setItem(STORAGE_KEY, '{"a":1}');
+    localStorage.setItem('fk_theme', 'light');
+
+    borrarTodo();
+
+    expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+    expect(localStorage.getItem('fk_theme')).toBeNull();
+  });
+
+});
+
+describe('la fachada cancela el save() debounced pendiente (PERF.10)', () => {
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(()  => { vi.useRealTimers(); });
+
+  it('restaurarBlob(): el save() agendado no pisa el respaldo importado', () => {
+    S.perfil.nombre = 'Estado en memoria';
+    save(); // debounced 200 ms
+    const blob = JSON.stringify({ ...createInitialState(), onboarded: true });
+
+    expect(restaurarBlob(blob)).toBe('ok');
+    vi.advanceTimersByTime(500);
+
+    expect(localStorage.getItem(STORAGE_KEY)).toBe(blob);
+  });
+
+  it('borrarTodo(): el save() agendado no resucita los datos borrados', () => {
+    S.perfil.nombre = 'Esteban';
+    save(); // agendado justo antes del borrado
+
+    borrarTodo();
+    vi.advanceTimersByTime(500);
+
+    expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
   });
 });
 

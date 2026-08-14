@@ -723,14 +723,89 @@ function _flush() {
   }
 }
 
+/** Cancela un guardado debounced pendiente, si hay uno agendado. */
+function _cancelarPendiente() {
+  if (_saveTimer != null) {
+    clearTimeout(_saveTimer);
+    _saveTimer = null;
+  }
+}
+
 /**
  * Fuerza un flush inmediato sin esperar al debounce. Uso normal: siempre
  * llamar a save(). Excepciones válidas: tests, y `initFlushOnHide()` abajo
  * (cierre de pestaña, donde no hay tiempo de esperar los 200ms).
  */
 export function _flushNow() {
-  if (_saveTimer != null) clearTimeout(_saveTimer);
+  _cancelarPendiente();
   _flush();
+}
+
+// ── ESCRITURAS QUE NO PASAN POR save() (PERF.10) ──────────────────
+//
+// Restaurar un respaldo y borrar todo no serializan S: reemplazan o eliminan
+// lo persistido y recargan la página. Antes cada call site hablaba con
+// `localStorage` a mano (`config/index.js`, `ui/bloqueo-acceso.js`), así que
+// `fk_v1` se nombraba en tres sitios y los dos `clear()` no tenían dueño.
+// Ahora la clave y el motor viven solo acá: cambiar de motor es cambiar estas
+// dos funciones.
+
+/**
+ * Reemplaza lo persistido por el blob de un respaldo importado, sin tocar S
+ * (el caller recarga la página y `loadData()` migra lo que quedó escrito).
+ *
+ * Distingue los dos fallos que antes morían en el mismo `catch` del importador
+ * y se le reportaban al usuario como "archivo corrupto": un JSON inválido no
+ * es lo mismo que una escritura rechazada por cupo lleno. El segundo caso sí
+ * marca `falloUltimoGuardado` y emite `storage:error`, la salvaguarda del
+ * ADR 030 D2 que esta ruta no estaba activando.
+ *
+ * @param {string} texto  Contenido crudo del archivo de respaldo.
+ * @returns {'ok'|'json-invalido'|'error-escritura'}
+ */
+export function restaurarBlob(texto) {
+  try {
+    JSON.parse(texto);
+  } catch {
+    return 'json-invalido';
+  }
+
+  // Un save() agendado escribiría S encima del respaldo recién importado.
+  _cancelarPendiente();
+
+  try {
+    localStorage.setItem(STORAGE_KEY, texto);
+  } catch (err) {
+    // Lo que no cupo es el blob, no S: la cuota se reporta contra su tamaño.
+    _falloUltimoGuardado = true;
+    _ultimoNivelCuota = 'critico';
+    console.error('[storage] restaurarBlob() falló (posible cupo lleno):', err);
+    EventBus.emit('storage:error', {
+      ...evaluarCuota(String(texto).length),
+      falloUltimoGuardado: true,
+    });
+    return 'error-escritura';
+  }
+
+  _falloUltimoGuardado = false;
+  return 'ok';
+}
+
+/**
+ * Borra todo lo que Finko guardó en este dispositivo: el estado (`fk_v1`) y
+ * las preferencias de UI (tema, sidebar, aviso de instalación). No re-hidrata
+ * S: sus dos call sites (resetear la app y "olvidé mi PIN") recargan la página
+ * enseguida.
+ *
+ * Cancelar el guardado pendiente es parte del contrato: sin eso, un save()
+ * agendado antes del borrado reescribía `fk_v1` en los 200 ms siguientes y la
+ * recarga resucitaba los datos que el usuario acababa de borrar.
+ */
+export function borrarTodo() {
+  _cancelarPendiente();
+  localStorage.clear();
+  _falloUltimoGuardado = false;
+  _ultimoNivelCuota = 'ok';
 }
 
 /**

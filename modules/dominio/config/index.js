@@ -8,7 +8,7 @@
  */
 
 import { S, EventBus } from '../../core/state.js';
-import { save, STORAGE_KEY } from '../../core/storage.js';
+import { save, restaurarBlob, borrarTodo } from '../../core/storage.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { renderSmart } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
@@ -111,15 +111,22 @@ async function _importarDatos(el) {
 
   const reader = new FileReader();
   reader.onload = (e) => {
-    try {
-      JSON.parse(e.target.result); // Valida JSON antes de escribir.
-      localStorage.setItem(STORAGE_KEY, e.target.result);
+    const resultado = restaurarBlob(e.target.result);
+
+    if (resultado === 'ok') {
       announce('Datos importados. Recargando…');
       setTimeout(() => location.reload(), 800);
-    } catch {
-      announce('El archivo no es un JSON válido de Finko.', 'assertive');
-      el.value = '';
+      return;
     }
+
+    // 'error-escritura' (cupo lleno) no se anuncia acá: `restaurarBlob()` ya
+    // emitió `storage:error` y el listener de abajo lo anuncia y repinta el
+    // panel con el aviso persistente. Dos mensajes en la misma live region se
+    // pisarían entre ellos.
+    if (resultado === 'json-invalido') {
+      announce('El archivo no es un JSON válido de Finko.', 'assertive');
+    }
+    el.value = '';
   };
   reader.readAsText(file);
 }
@@ -326,7 +333,7 @@ async function _resetearApp() {
   if (!ok) return;
   const okPin = await confirmarPin();
   if (!okPin) return;
-  localStorage.clear();
+  borrarTodo();
   announce('App reseteada. Recargando…');
   setTimeout(() => location.reload(), 800);
 }

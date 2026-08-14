@@ -15,6 +15,7 @@
  */
 
 import { S, EventBus } from '../core/state.js';
+import { borrarTodo } from '../core/storage.js';
 import { abrirModal, cerrarModal } from './modales.js';
 import { announce, trapFocus, releaseFocus } from '../infra/a11y.js';
 import { esc as _esc } from '../infra/utils.js';
@@ -138,7 +139,7 @@ async function _onClick(e) {
   });
   if (!ok) return;
 
-  localStorage.clear();
+  borrarTodo();
   announce('Datos borrados. Recargando…');
   setTimeout(() => location.reload(), 800);
 }
