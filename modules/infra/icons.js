@@ -56,18 +56,35 @@ export function tejaCategoria(id, dominio) {
 }
 
 /**
- * Ilustración geométrica para empty states (rediseño 2026, F7).
+ * Dominios del lote P4 (ADR 033 D3, DV.2d): cada uno tiene una ilustración
+ * en assets/svg/ilustraciones/ pendiente de arte final (data-placeholder).
+ * Mientras el placeholder siga fuera del sprite, `document.getElementById`
+ * no la encuentra y `emptyArt()` sigue devolviendo la composición geométrica.
+ */
+const DOMINIOS_CON_ILUSTRACION = new Set([
+  'ahorro', 'apartados', 'cuentas', 'deudas',
+  'inversion', 'metas', 'personales', 'recurring',
+]);
+
+/**
+ * Ilustración para empty states (rediseño 2026, F7; DV.2d).
  *
- * Composición: círculo de fondo sutil, órbita punteada, puntos
+ * Si el sprite ya trae el symbol `il-<id>` (arte final de Esteban
+ * reemplazó el placeholder y sync-sprite.py lo integró), la usa tal
+ * cual, sin composición adicional. Si no, cae a la ilustración
+ * geométrica original: círculo de fondo sutil, órbita punteada, puntos
  * decorativos flotantes y el icono del dominio centrado. Todo el color
- * vive en CSS (.empty-art__* en atoms.css), cero estilos inline; la
- * animación de órbita/flotado también es CSS y respeta
- * prefers-reduced-motion.
+ * vive en CSS (.empty-art__* en atoms.css) o en roles de token dentro
+ * del propio SVG de ilustración, cero estilos inline; la animación de
+ * órbita/flotado también es CSS y respeta prefers-reduced-motion.
  *
  * @param {string} id - nombre del symbol sin '#i-' (ej: 'metas', 'ahorro')
  * @returns {string}
  */
 export function emptyArt(id) {
+  if (DOMINIOS_CON_ILUSTRACION.has(id) && document.getElementById(`il-${id}`)) {
+    return `<svg class="empty-art" viewBox="0 0 120 120" aria-hidden="true"><use href="#il-${id}"/></svg>`;
+  }
   return `<svg class="empty-art" viewBox="0 0 120 120" aria-hidden="true">
     <circle class="empty-art__bg" cx="60" cy="60" r="44"/>
     <circle class="empty-art__orbit" cx="60" cy="60" r="55" fill="none" stroke-dasharray="3 8"/>

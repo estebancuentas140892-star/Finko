@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-14. Última tarea cerrada: PERF.9, peso serializado real del estado en el harness.
+> Revisado: 2026-08-14. Última tarea cerrada: DV.2d, cableado de emptyArt() al symbol il-*.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -14,7 +14,7 @@
 | Métrica | Valor |
 |---|---|
 | Tests unitarios + integración | 4236/4237 (2026-08-14). El único rojo es **BUG-028**, ajeno a la última tarea y verificado con `git stash` |
-| Tests E2E | 271/271 verdes, sello `c5283d3158bf` (2026-08-14, PA.1b). **Compuerta** desde el 2026-07-30 |
+| Tests E2E | 267/267 verdes, sello `f9296ca0d07c` (2026-08-14, DV.2d). **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v41 (`Ingreso.creditoAutomatico`, `IngresoPuntual.ingresoId`, PA.1b; migración no-op) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
