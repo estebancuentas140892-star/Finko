@@ -1,11 +1,11 @@
 # Registro de errores - Finko Claude
 
-> Revisado: 2026-08-13.
+> Revisado: 2026-08-14.
 
 > Errores detectados durante el desarrollo, con toda la información necesaria para resolverlos sin tener que volver a buscar dónde están.
 > Al solucionarse, el error se **elimina** de este archivo y el fix queda documentado en [`CHANGELOG.md`](CHANGELOG.md) con referencia al ID.
 > Solo entra lo **verificado** contra el código (archivo, función, línea). Una sospecha no es un error: es una tarjeta de investigación en [`BOARD.md`](BOARD.md).
-> Última actualización: 2026-08-13 (auditoría documental transversal). **BUG-016 y BUG-013 se retiran: verificados como ya corregidos en el código**, sin que ningún commit los hubiera dado de baja acá. BUG-016: cero cadenas de voseo en `modules/` e `index.html`. BUG-013: `tests/e2e/a11y-forms.test.js:66` implementa `esperarFundidoDeEntrada()`, que espera `opacity === '1'` antes de llamar a axe, exactamente el arreglo sugerido. Antes: BUG-026 solucionado (2026-08-03); BUG-017 y BUG-018 solucionados y retirados. **2 errores abiertos:** BUG-025 (`fechaCreacion` se guarda en UTC y se lee como fecha local) y BUG-027 (ADR 059 inexistente).
+> Última actualización: 2026-08-13 (auditoría documental transversal). **BUG-016 y BUG-013 se retiran: verificados como ya corregidos en el código**, sin que ningún commit los hubiera dado de baja acá. BUG-016: cero cadenas de voseo en `modules/` e `index.html`. BUG-013: `tests/e2e/a11y-forms.test.js:66` implementa `esperarFundidoDeEntrada()`, que espera `opacity === '1'` antes de llamar a axe, exactamente el arreglo sugerido. Antes: BUG-026 solucionado (2026-08-03); BUG-017 y BUG-018 solucionados y retirados. **3 errores abiertos:** BUG-025 (`fechaCreacion` se guarda en UTC y se lee como fecha local), BUG-027 (ADR 059 inexistente) y BUG-028 (el aviso de compromiso próximo ignora el `hoyISO` inyectado; abierto el 2026-08-14 al cerrar PERF.10a).
 >
 > **Patrón recurrente que conviene vigilar (cerrado 3 veces el 2026-08-01):** tests con **fechas fijas** o con un día derivado a módulo 28 se ponen rojos según el día en que se corran, casi siempre los primeros días del mes. La regla es derivar las fechas del reloj, y **fijar el reloj** (`vi.setSystemTime`) cuando el test afirma una distancia exacta o necesita un día ya pasado dentro del mes.
 
@@ -30,6 +30,17 @@ Numerar `BUG-001`, `BUG-002`... de forma consecutiva y sin reutilizar números a
 ---
 
 ## Pendientes
+
+### BUG-028 - el aviso "compromiso próximo" ignora el `hoyISO` inyectado y lee el reloj real
+- Estado    : pendiente
+- Prioridad : media (en producción `hoyISO` **es** el día real, así que el usuario no ve una fecha mal; lo que rompe es el contrato de inyectabilidad del módulo, y con él el test, que se pone rojo cualquier día distinto al del fixture)
+- Problema  : `tests/unit/avisos.test.js:183` ("lo que vence hoy es próximo con 0 días, nunca vencido") falla desde el 2026-08-14. El test fija `HOY = '2026-08-13'` y pasa `hoyISO`, pero el aviso se calcula contra la fecha del sistema, así que pasó el día que se escribió y falla desde el siguiente. Tercera repetición del patrón que este archivo ya vigila (ver la nota de arriba).
+- Causa     : `recolectarAvisos()` reparte `hoyISO` a **todas** sus fuentes menos una: `_deCompromisosProximos(compromisos)` se llama sin la fecha y delega en `compromisosProximos()`, que calcula con `proximoVencimiento(c)`, y esa función lee el reloj real. Arreglarlo no es una línea: hay que propagar la fecha por `compromisosProximos()` y `proximoVencimiento()`, que tienen otros consumidores en el dominio Compromisos.
+- Archivo   : `modules/infra/avisos.js` (origen) y `modules/dominio/compromisos/logic/modelo.js` (las dos funciones que hay que abrir a la fecha inyectada)
+- Función   : `_deCompromisosProximos()`; `compromisosProximos()` y `proximoVencimiento()` en `modelo.js`
+- Líneas    : `avisos.js:153` y `:318`; `modelo.js:233`
+- Secciones : Inicio (panel "Avisos", CFG.3b), Calendario, notificación del sistema (`infra/notificaciones.js`)
+- Encontrado el 2026-08-14 cerrando PERF.10a, con `pnpm test`. **Verificado ajeno** con `git stash`: la suite falla igual sin ese cambio. Llega con CFG.3a ([ADR 066](DECISIONS/066-motor-unico-de-avisos.md)), no con PERF.10.
 
 ### BUG-027 - ADR 059 no existe en el repositorio pese a estar citado como "aceptado" en 5 documentos vivos
 - Estado    : pendiente

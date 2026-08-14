@@ -10,7 +10,7 @@
 
 > **Auditoría de rendimiento 2026-07 completa** (PERF.0 a PERF.4 cerradas, ver [`scripts/perf/BASELINE.md`](../../scripts/perf/BASELINE.md)). Los dos hallazgos que siguen mandando: `renderSmart()` ya evita el recálculo cruzado, y guardar cuesta ~5 ms debounced, así que la persistencia NO se reescribió ([ADR 030](../DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md); sus disparadores del D4 quedaron acotados a dos, T1 y T2, por el [ADR 068](../DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md)). **Disciplina obligatoria de toda tarjeta PERF: correr `pnpm perf` antes y después y comparar contra BASELINE.md.**
 
-> **Iniciativa "INT.1 - Interfaz de escritorio"** (ADR 059, aceptado 2026-08-02). Fuente única del chrome de escritorio, 8 decisiones en 8 rebanadas. Móvil no cambia. **Siete de las ocho rebanadas cerradas** (INT.1a, INT.1b, INT.1c, INT.1d, INT.1e, INT.1f, INT.1h); solo queda INT.1g, diferida; detalle e historia en el CHANGELOG y [`contexto/transversal.md`](../contexto/transversal.md). **Coordinar con AH.7a** (mismo marcado de nav, otra plataforma).
+> **Iniciativa "INT.1 - Interfaz de escritorio"** (ADR 059, aceptado 2026-08-02). Fuente única del chrome de escritorio, 8 decisiones en 8 rebanadas. Móvil no cambia. **Siete de las ocho rebanadas cerradas** (INT.1a, INT.1b, INT.1c, INT.1d, INT.1e, INT.1f, INT.1h); solo queda INT.1g, diferida; detalle e historia en el CHANGELOG y [`contexto/escritorio.md`](../contexto/escritorio.md). **Coordinar con AH.7a** (mismo marcado de nav, otra plataforma).
 
 > **La rebanada restante**, en una línea: su alcance completo, con medición y contra declarado, vive en el ADR 059 y no se repite acá. Se re-expande a tarjeta completa al iniciarla.
 
@@ -22,7 +22,7 @@
 - Depende de : INT.1e cerrada · Modelo: Equilibrado - Alto
 - Diferida 2026-08-11: sin sección candidata con contenido para carril. Se reactiva cuando una seccion declare que necesita.
 
-> **Diferida del [ADR 068](../DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md): la migración a IndexedDB (antes PERF.5) ya no es tarjeta.** Su decisión, su alcance fijado (blob-en-IDB, no store por colección) y sus **dos** disparadores verificables viven en ese ADR, que reemplaza los tres del ADR 030 D4. **No re-auditar el código ante un pedido de ejecución:** la verificación está hecha y fechada allí; basta mirar si T1 o T2 cambiaron de estado. Al reabrirse nace como tarjeta nueva. Lo que sí rinde hoy salió a la luz como **PERF.9** y **PERF.10**, abajo.
+> **Diferida del [ADR 068](../DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md): la migración a IndexedDB (antes PERF.5) ya no es tarjeta.** Su decisión, su alcance fijado (blob-en-IDB, no store por colección) y sus **dos** disparadores verificables viven en ese ADR, que reemplaza los tres del ADR 030 D4. **No re-auditar el código ante un pedido de ejecución:** la verificación está hecha y fechada allí; basta mirar si T1 o T2 cambiaron de estado. Al reabrirse nace como tarjeta nueva. Lo que sí rinde hoy salió a la luz como **PERF.9** y **PERF.10**, abajo; de PERF.10 solo queda la rebanada de tests (**PERF.10b**).
 
 #### PERF.9 - Peso serializado real del estado en el harness
 - Prioridad  : media (es la medición que hace verificable el disparador T1 del ADR 068; sin ella la cuota se sigue vigilando a ojo)
@@ -34,30 +34,17 @@
 - Depende de : nada. **Disciplina PERF obligatoria:** `pnpm perf` antes y después contra BASELINE.md
 - Modelo     : Equilibrado - Medio (harness, cero runtime de producción)
 
-#### PERF.10 - Un solo punto de acceso a `localStorage`
+#### PERF.10b - Helper único de estado para las 13 suites E2E
 - Prioridad  : baja (deuda que crece sola: la huella E2E subió ~62 % en cinco semanas sin que nadie tocara la persistencia)
 - Área       : code
-- Estado     : pendiente, y **vale aunque la migración a IndexedDB no ocurra nunca**. Hoy hay dos fugas del mismo concepto (patrón P7): las **13 suites E2E** siembran y leen `fk_v1` a mano (197 referencias, 105 siembras, 89 lecturas de vuelta, 163 `addInitScript`/`evaluate`, **cero helper central**: no existe ni el directorio `tests/e2e/helpers/`), y **tres módulos escriben la clave cruda saltándose `storage.js`**: `config/index.js:116` (restaurar respaldo), `config/index.js:329` (borrar todo) y `ui/bloqueo-acceso.js:141` (olvidé mi PIN). Bajo cualquier motor que no sea `localStorage`, esos dos `clear()` seguirían compilando sin borrar nada.
-- Hueco presente, no hipotético : el `setItem` crudo de `config/index.js:116` está dentro de un `try` cuyo `catch` (`:119-121`) dice "El archivo no es un JSON válido de Finko". Un `QuotaExceededError` al restaurar respaldo se reporta como archivo corrupto y no marca `falloUltimoGuardado` ni emite `storage:error`: la salvaguarda del [ADR 030](../DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) D2 no cubre esa ruta. La fachada debe distinguir los dos errores.
-- Objetivo   : que `fk_v1` se nombre en un solo sitio por lado. Compuerta objetiva del lado tests: `grep -rl "fk_v1" tests/e2e/` pasa de 13 archivos a 1.
-- Secciones  : Transversal (`tests/e2e/`, `modules/core/storage.js`, `modules/dominio/config/`, `modules/ui/bloqueo-acceso.js`)
-- Archivos   : `tests/e2e/helpers/estado.js` (nuevo: `sembrar`, `leerEstado`, `irA`), fachada `borrarTodo()` / `restaurarBlob()` en `storage.js` y sus 3 call sites
-- Depende de : nada. Partir en dos rebanadas (tests primero, runtime después): `tests/` no está en `RUTAS_RUNTIME`, así que la rebanada de tests no invalida el sello E2E ni toca producción
+- Estado     : pendiente. Las **13 suites E2E** siembran y leen `fk_v1` a mano (197 referencias, 105 siembras, 89 lecturas de vuelta, 163 `addInitScript`/`evaluate`, **cero helper central**: no existe ni el directorio `tests/e2e/helpers/`). El lado runtime ya cerró en PERF.10a: la fachada `restaurarBlob()` / `borrarTodo()` vive en `storage.js` y los 3 call sites la usan.
+- Objetivo   : que `fk_v1` se nombre en un solo sitio del lado tests. Compuerta objetiva: `grep -rl "fk_v1" tests/e2e/` pasa de 13 archivos a 1.
+- Secciones  : Transversal (`tests/e2e/`)
+- Archivos   : `tests/e2e/helpers/estado.js` (nuevo: `sembrar`, `leerEstado`, `irA`) + las 13 suites
+- Depende de : nada. `tests/` no está en `RUTAS_RUNTIME`, así que esta rebanada no invalida el sello E2E ni toca producción
 - Modelo     : Alta capacidad - Alto (mecánico pero grande: `smoke.test.js` son 262 KB con 92 `addInitScript` inline)
 
 > **Iniciativa Dirección Visual premium** ([ADR 033](../DECISIONS/033-direccion-visual-premium.md)). DV.2a/b/c cerradas. DV.2d: infraestructura y las 8 plantillas del lote listas (2026-08-12), falta solo el arte final de Esteban.
-
-#### DOC.3 - Fichas de contexto sobre el techo y sellos `Verificado contra` vencidos
-- Prioridad  : media (no rompe nada hoy; encarece cada sesión que abre una de esas fichas)
-- Área       : code (documentación técnica)
-- Estado     : **medido, no ejecutado.** Lo levantó la auditoría DOC.2 del 2026-08-13 y se dejó fuera a propósito: partir una ficha es mover conocimiento entre archivos, no editar texto, y merece su propia tarea verificada.
-  - **Techo roto:** `contexto/transversal.md` 66 KB y `contexto/inicio.md` 50 KB contra un techo de 40. `mis-cuentas.md` está en 40 exactos, sin margen. En `inicio.md` y `calendario.md` el bloque "Cambios realizados" es cerca de la mitad del archivo, escrito como párrafos que reproducen el CHANGELOG en vez de la línea por hito que pide la convención.
-  - **Eje de partición sugerido, ya identificado:** de `transversal.md` salen el shell de escritorio (10,5 KB) y logros (9,4 KB); las anclas de navegación de `ui/shell.js` están mapeadas **tres veces** (`sistema-visual.md`, `transversal.md`, `ahorro.md`) y su dueño natural es `sistema-visual.md`.
-  - **Sellos vencidos:** `transversal.md:159`, `sistema-visual.md:15` y `captura.md:48` dicen "Verificado contra" un commit de hace más de un mes, con los archivos que describen tocados hasta el 2026-08-13. **No se actualizaron a propósito**: cambiar el hash sin volver a verificar el contenido convierte un sello honesto en uno falso. El que toque esas fichas re-verifica y sella.
-- Objetivo   : que ninguna ficha supere su techo y que ningún sello afirme una verificación que no ocurrió.
-- Secciones  : `docs/contexto/`
-- Depende de : nada
-- Modelo     : Alta capacidad - Alto (mover conocimiento sin perderlo, con verificación contra el código)
 
 #### DOC.4 - Automatizar la compuerta 3 (guiones largos) en el pre-commit
 - Prioridad  : baja (la compuerta ya es obligatoria y se corre a mano; esto solo baja el riesgo de saltarla por olvido)
@@ -91,13 +78,13 @@
 - Depende de : IV.2 en producción (cerrado) + revisión visual (hecha) + diseños de Esteban (pendiente, único bloqueo)
 - Modelo     : Equilibrado - Alto (revisión de assets contra spec; el diseño es de Esteban)
 
-> **Iniciativa CAT: taxonomía + picker de ícono compartido, completa.** Fuente única para categorías entre secciones. CAT.1, CAT.2, CAT.3 y CAT.4 cerradas (reglas heredadas en [`contexto/transversal.md`](../contexto/transversal.md), bloque "Categorías personalizadas del usuario").
+> **Iniciativa CAT: taxonomía + picker de ícono compartido, completa.** Fuente única para categorías entre secciones. CAT.1, CAT.2, CAT.3 y CAT.4 cerradas (reglas heredadas en [`contexto/categorias.md`](../contexto/categorias.md), bloque "Categorías personalizadas del usuario").
 
 > **Iniciativa GU.1: guía por navegación (aprender usando, no leyendo)** (6.º lote, 2026-07-08, brief General puntos 4+5). **GU.1a cerrada (2026-08-03):** [ADR 016](../DECISIONS/016-banner-proposito-de-seccion.md) auditado y vigente sin desviaciones; detalle en [`contexto/transversal.md`](../contexto/transversal.md). **Regla anti-doble-trabajo:** GU.1 define el principio y audita el sistema transversal (banners, hints); los rediseños internos de cada sección viven en sus iniciativas v2, que aplican este principio en vez de duplicarlo.
 
 > **Iniciativa LEG: Centro Legal y cumplimiento.** El paquete, su estado por documento y el checklist de datos pendientes viven en [`legal/README.md`](../legal/README.md), su dueño. **LEG.1** (Centro Legal, borradores + UI) y **LEG.2** (aceptación obligatoria versionada, onboarding + gate de re-aceptación) cerradas, detalle en [`contexto/transversal.md`](../contexto/transversal.md) y el CHANGELOG. El checklist de contenido (responsable, contacto, licencia, revisión de abogado colombiano) sigue abierto y bloquea el paso del paquete a v1.0, no el mecanismo de aceptación, que ya corre sobre la versión vigente. La revisión del abogado es trabajo profesional externo, no una tarea de código.
 
-> **Iniciativa LG.2: Logros v2, gamificación de hábitos, completa.** Alcance, regla anti-gaming y catálogo: **[ADR 032](../DECISIONS/032-logros-v2-niveles-y-habitos.md)** (Aceptada). **LG.2d cerró el 2026-08-13** (mudanza a "Tu progreso" en Análisis + tarjeta en Inicio): el [ADR 022](../DECISIONS/022-vitrina-de-logros-en-ajustes.md) pasa a Superada, ver [`contexto/transversal.md`](../contexto/transversal.md). Los dos logros diferidos por datos (`ahorro-creciente`, `pagador-puntual`) NO son tarjeta: su verificación y condición de reapertura viven en el ADR 032, sección "Resolución de LG.2e en implementación". Nombres de niveles de usuario siguen provisionales hasta que Esteban entregue los definitivos (cambiarlos no toca datos).
+> **Iniciativa LG.2: Logros v2, gamificación de hábitos, completa.** Alcance, regla anti-gaming y catálogo: **[ADR 032](../DECISIONS/032-logros-v2-niveles-y-habitos.md)** (Aceptada). **LG.2d cerró el 2026-08-13** (mudanza a "Tu progreso" en Análisis + tarjeta en Inicio): el [ADR 022](../DECISIONS/022-vitrina-de-logros-en-ajustes.md) pasa a Superada, ver [`contexto/logros.md`](../contexto/logros.md). Los dos logros diferidos por datos (`ahorro-creciente`, `pagador-puntual`) NO son tarjeta: su verificación y condición de reapertura viven en el ADR 032, sección "Resolución de LG.2e en implementación". Nombres de niveles de usuario siguen provisionales hasta que Esteban entregue los definitivos (cambiarlos no toca datos).
 
 #### PA.1b - Crédito automático del ingreso fijo
 - Prioridad  : media-alta (mismo caso común que el débito, visto desde el lado del ingreso)
