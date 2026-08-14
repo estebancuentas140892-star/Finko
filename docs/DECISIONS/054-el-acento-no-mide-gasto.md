@@ -4,7 +4,7 @@
 **Fecha:** 2026-07-25
 **Autores:** Esteban (decisión), Claude Design (auditoría de diseño de Inicio, hallazgo H7), Claude Opus 5 (verificación contra el código y formalización).
 **Origen:** hallazgo H7 y variante V1 de la auditoría de diseño de Inicio del 2026-07-25.
-**Relación:** **revisa** el [ADR 034](034-inicio-v2-dashboard-decision.md) D6 (resumen semanal como el bloque más visual), que fijó `--fk-accent` en la barra del día pico. Conserva el resto del D6 sin tocar: la fila superior, el chip comparativo, el mini gráfico de 7 días, la fila de categoría top y la serie diaria de `resumen/logic.js`. Aplica el [ADR 031](031-identidad-de-color-por-seccion.md) (tokens de dominio, "el color nunca viaja solo") y respeta el [ADR 019](019-limites-por-rol.md) ("gastar no es incumplir").
+**Relación:** **revisa** el [ADR 034](034-inicio-v2.md) D6 (resumen semanal como el bloque más visual), que fijó `--fk-accent` en la barra del día pico. Conserva el resto del D6 sin tocar: la fila superior, el chip comparativo, el mini gráfico de 7 días, la fila de categoría top y la serie diaria de `resumen/logic.js`. Aplica el [ADR 031](031-identidad-de-color-por-seccion.md) (tokens de dominio, "el color nunca viaja solo") y respeta el [ADR 019](019-limites-por-rol.md) ("gastar no es incumplir").
 
 ---
 

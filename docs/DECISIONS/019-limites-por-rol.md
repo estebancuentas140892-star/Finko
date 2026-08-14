@@ -1,6 +1,6 @@
 # ADR 019 - Límites de gasto con tratamiento asimétrico por rol
 
-**Estado:** Propuesta (diseño). Decisiones de modelo cerradas con el usuario; el detalle de cada slice se afina al implementarlo.
+**Estado:** Aceptada. El estado quedó en "Propuesta" hasta el 2026-08-13; se corrige en la auditoría documental de esa fecha, sin decidir nada nuevo: LIM.1 cerró y `board/limites.md` ya lo listaba entre los ADR Aceptados de la iniciativa.
 **Fecha:** 2026-07-01
 **Autores:** Esteban (producto), Claude Opus 4.8 (diseño)
 **Relación:** **revisa las decisiones 1, 4 y 5 del [ADR 017](017-limites-centro-de-control.md)** (Límites como centro de control de los 3 grupos). No revierte el ADR 017: mantiene su núcleo (presupuesto por grupo desde la distribución, sin schema nuevo) y corrige cómo se presenta cada grupo. Reusa la distribución de [ADR 013](013-distribucion-automatica-inteligente.md) y el mapeo de [ADR 014](014-taxonomia-categorias-transversal.md).

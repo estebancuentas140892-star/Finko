@@ -82,7 +82,7 @@
 | Marcado del tile activo | `modules/ui/shell.js` | `markActiveNav()` (selector `.nav-item, .mas-tile`) | ~85 |
 | Sincronización de TODOS los toggles de tema | `modules/ui/shell.js` | `_syncThemeButton()` (`querySelectorAll`, swap `#i-moon`/`#i-sun`) | ~58 |
 | Cierre al navegar (el botón de tema NO cierra) | `modules/ui/menu-mas.js` | `initMenuMas()` (click en `a[href]`) | ~20 |
-| Resaltado del botón "Más" por sección | `modules/ui/shell.js` | `MAS_SECTIONS` (11 secciones con Movimientos) | ~18 |
+| Resaltado del botón "Más" por sección | `modules/ui/shell.js` | `MAS_SECTIONS` (8 secciones; AH.7a sacó el grupo Ahorro y sumó Agenda) | ~18 |
 | Marca "F" del sidebar (NAV2.1b) | `styles/layout.css` + `index.html` | `.sidebar__logo-mark` | ~41 |
 | Pastilla "Registrar" + indicador fijo del bottom nav (NAV2.1c) | `styles/responsive.css` | `.nav-item__fab`, `.nav-item.active::before` (bloque móvil) | ~104, ~136 |
 | Nombre, ícono y color de la sección en el botón "Más" (DIS.6/C3) | `modules/ui/shell.js` | `SECCION_NAV`, `_rotularMas()` | ~30, ~135 |

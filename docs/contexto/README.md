@@ -1,11 +1,10 @@
 # Contexto técnico por funcionalidad - Finko Claude
 
-> Revisado: 2026-08-11.
+> Revisado: 2026-08-13.
 
 > Registro técnico permanente. Una ficha por sección de la app; dentro de cada ficha, un bloque por funcionalidad.
 > Objetivo: cada funcionalidad se analiza a fondo **una sola vez**, el resultado queda escrito aquí y las sesiones futuras lo reutilizan en vez de volver a recorrer el proyecto.
 > Reglas de workflow asociadas: [`/CLAUDE.md`](../../CLAUDE.md) sección 2 (continuidad, fuente única) y sección 3 (antes de explorar), más las skills `triaje-tarea` y `cerrar-tarea`.
-> Última revisión: 2026-07-05.
 
 ---
 

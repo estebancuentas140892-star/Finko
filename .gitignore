@@ -38,3 +38,14 @@ __pycache__/
 
 # Sello de la ultima corrida E2E verde (hecho local, no del proyecto)
 .e2e-sello.json
+
+# Handoffs de Claude Design y auditorias visuales: entregables externos que se
+# revisan y se traducen a ADR o tarjeta. Pesan cientos de MB y contienen copias
+# congeladas de docs/, que ensucian todo grep documental.
+*-handoff/
+*-handoff.zip
+Auditoria*.zip
+Auditoria*/
+Auditor*/
+Cambios Dise*/
+Dise* Secciones/

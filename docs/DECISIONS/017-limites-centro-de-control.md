@@ -1,6 +1,6 @@
 # ADR 017 - Límites de gasto como centro de control de los 3 grupos financieros
 
-**Estado:** Propuesta (diseño). Decisiones de modelo cerradas con el usuario; el detalle de cada slice se afina al implementarlo.
+**Estado:** Aceptada. El estado quedó en "Propuesta" hasta el 2026-08-13; se corrige en la auditoría documental de esa fecha, sin decidir nada nuevo: LIM.1 (a, b y c) cerró y `board/limites.md` ya declaraba Aceptados los ADR de la iniciativa. Las decisiones de modelo se cerraron con el usuario en su momento; el detalle de cada slice se afinó al implementarlo.
 **Fecha:** 2026-06-30
 **Autores:** Esteban (producto), Claude Opus 4.8 (diseño)
 **Relación:** implementa la épica **MC.5**. Reutiliza el mapeo sección → grupo de [ADR 014](014-taxonomia-categorias-transversal.md) (TX.5) y toma el presupuesto por grupo del modelo de distribución de [ADR 013](013-distribucion-automatica-inteligente.md) (MC.6a). Se beneficia de los refinamientos [MC.10 y MC.11](../BOARD.md) del modelo de distribución.

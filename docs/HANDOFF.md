@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-13. Última tarea cerrada: PERF.5, compuerta del ADR 030 D4 verificada y sigue cerrada (evaluación, sin código).
+> Revisado: 2026-08-13. Última tarea cerrada: DOC.2, auditoría documental transversal (sin código de producto).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,20 +13,23 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 4212/4212 verdes (corrido el 2026-08-13 como línea base de PERF.5) |
+| Tests unitarios + integración | 4212/4212 verdes (2026-08-13) |
 | Tests E2E | 269/269 verdes, sello escrito sobre el runtime de CFG.5b (1 flaky en `smoke.test.js`, checklist de Necesidades de Tesorería, ajeno; verde al reintentar). **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v40 (`config.avisosPorSeccion` y `.ultimoAvisoISO`, CFG.3c; migración aditiva) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
-| `onclick` / `style=""` / `window.X` en módulos | 0 / 0 / 0 |
-| Errores abiertos | **4**: ver [BUGS.md](BUGS.md). BUG-025 es el único con impacto en el uso diario y necesita decisión; BUG-027 (ADR 059 inexistente) es nuevo, solo documental |
+| `onclick` / `window.X` en módulos | 0 / 0. `style=""` es 0 en HTML estático, no en el HTML que generan los módulos (29 usos) |
+| Errores abiertos | **2** (eran 4: BUG-016 y BUG-013 se retiraron en DOC.2, ya corregidos): BUG-025, con impacto en el uso diario, y BUG-027, documental |
 
 ---
 
 ## 2. Últimas 5 tareas cerradas
 
+**DOC.2 - auditoría documental transversal (Transversal), 2026-08-13**
+Seis agentes en paralelo sobre 116 Markdown, 5 skills y 66 ADR. **Tres skills tenían el frontmatter YAML roto y nunca se autoactivaban** (el sello `> Revisado:` quedó dentro del bloque `---`): corregido y verificado en runtime. `elegir-modelo` contradecía el Estándar de comunicación de `CLAUDE.md` y se reescribió. **BUGS.md bajó de 4 a 2 errores abiertos**: BUG-016 y BUG-013 estaban corregidos en el código sin darse de baja. 16 enlaces rotos en documentos vivos, ahora cero. `ARCHITECTURE.md` corregido en 14 puntos verificables contra el código. Sin cambios de código de producto.
+
 **PERF.5 - la compuerta del ADR 030 D4 se verifica y sigue cerrada (Transversal), 2026-08-13**
-Pedido de ejecutar la migración a IndexedDB. **No se ejecutó, y esa es la entrega.** Los tres disparadores del [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) D4 se verificaron uno por uno y siguen cerrados: sin jank de guardado en dispositivo real (toda cifra es de happy-dom), sin evidencia de cuota (la app no tiene telemetría: este disparador no puede dispararse solo) y CFG.4 bloqueada por el [ADR 043](DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md), Abierta. Hallazgo nuevo: el costo de PERF.5 está en los tests, no en el runtime (13 suites E2E siembran `fk_v1` sin helper central; 33 `save()` sin `await` sí cooperarían). Sin cambios de código.
+Pedido de ejecutar la migración a IndexedDB. **No se ejecutó, y esa es la entrega.** Los tres disparadores del [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) D4 siguen cerrados: sin jank en dispositivo real (toda cifra es de happy-dom), sin evidencia de cuota (la app no tiene telemetría: el disparador no puede dispararse solo) y CFG.4 bloqueada por el [ADR 043](DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md), Abierta. Hallazgo nuevo: el costo está en los tests, no en el runtime. Sin código.
 
 **LG.2d - mudanza de la vitrina a "Tu progreso" en Análisis + tarjeta en Inicio (Logros), 2026-08-13**
 Cierra la iniciativa "Logros v2" completa. `renderPanelLogros()` se parte en `renderProgresoAnalisis()` y `renderTarjetaProgresoInicio()`; el [ADR 022](DECISIONS/022-vitrina-de-logros-en-ajustes.md) pasa a Superada. Cero cambios en `logros/logic.js`. SW v531 → v532.
@@ -36,9 +39,6 @@ Cierra la iniciativa CFG.5 completa (CFG.5a, CFG.5b, CFG.5c). `confirmarPin()` n
 
 **CFG.5c - biometría en PWA: viable y aun así descartada (Configuración), 2026-08-13**
 Spike, sin código. Se midió el ciclo completo de WebAuthn con autenticador virtual de plataforma: registro, desbloqueo y **verificación de la firma con `crypto.subtle.verify()` en el cliente, sin servidor**: funciona, así que el motivo técnico del [ADR 063](DECISIONS/063-candado-de-acceso-local.md) era falso y queda corregido. Se descarta igual ([ADR 067](DECISIONS/067-biometria-descartada-como-desbloqueo.md)): no sube el techo de seguridad y la credencial vive fuera de `fk_v1`, lo que vuelve trampa el "Olvidé mi PIN borra todo". Reabre solo con ADR 043 resuelto **y** dominio fijo.
-
-**CFG.6 - revisión general de Ajustes, inventario final (Configuración), 2026-08-13**
-Cierra la tarjeta. Los pases visuales ya estaban hechos (2026-07-25, 2026-08-02); quedaba el punto 1, inventario de configs que faltan en Ajustes. Revisado el panel completo (`config/view.js`) contra CFG.1 a CFG.5: **sin hallazgos nuevos**, lo único ausente (respaldo/sync, re-autenticación, biometría) ya tiene tarjeta propia. Sin cambios de código.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 

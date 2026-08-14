@@ -7,7 +7,7 @@ description: Ejecuta el cierre de una tarea de Finko: las compuertas de verifica
 
 **Punto único de ejecución del cierre.** `CONTRIBUTING.md` es dueño de qué se exige; este archivo, de cómo se ejecuta.
 
-Orden: compuertas → commit → documentos → techos → reporte. No saltarse el orden: commitear antes de verificar deja la rama en rojo, y actualizar documentos antes del commit deja el hash sin conocer.
+Orden: compuertas, commit, documentos, techos, reporte. No saltarse el orden: commitear antes de verificar deja la rama en rojo, y actualizar documentos antes del commit deja el hash sin conocer.
 
 ---
 
@@ -51,7 +51,7 @@ Formato, tipos y reglas del mensaje: `CONTRIBUTING.md` sección "Commits". Acá 
 Cuatro ediciones siempre, dos condicionales. La única larga es la ficha de contexto: es la que se lee antes de volver a tocar esa funcionalidad.
 
 1. **`docs/contexto/<sección>.md`** (edición sustantiva). Actualizar el bloque de la funcionalidad tocada: `Estado actual`, `Cambios pendientes`, `Riesgos` si aparecieron, y `Verificado contra` con el commit nuevo. En `Cambios realizados` va **una línea por hito** (`YYYY-MM-DD <ID>: qué`), nunca un párrafo: el detalle vive en el CHANGELOG. Si el bloque no existía, se escribió al empezar la tarea, no ahora.
-2. **`docs/CHANGELOG.md`** (una entrada). Antes de escribir, comprobar la rotación: si el mes de la última entrada no es el mes actual, mover el mes cerrado a `docs/changelog/YYYY-MM.md` y dejar CHANGELOG.md con el mes nuevo más el índice. Desde 2026-08 el formato de entrada es **una fila de tabla por tarea**: fecha, ID, tipo(área), qué cambió, commit, puntero a la ficha. La columna "qué cambió" contiene el punto que **no** se deduce del diff.
+2. **`docs/CHANGELOG.md`** (una entrada). Antes de escribir, comprobar la rotación: si el mes de la última entrada no es el mes actual, mover el mes cerrado a `docs/changelog/YYYY-MM.md` y dejar CHANGELOG.md con el mes nuevo más el índice. Formato real del archivo, verificado el 2026-08-13: encabezado `### tipo(área): ID, título · fecha`, una línea de contexto con los ADR y la ficha, y viñetas. Cada viñeta trae el punto que **no** se deduce del diff.
 3. **`docs/HANDOFF.md`** (una a tres líneas). Agregar la tarea al tope de "Últimas 5 tareas cerradas", **borrar la sexta** (su detalle vive en el CHANGELOG), y actualizar el sello `Revisado:` y la tabla de métricas si alguna cifra cambió. Su cabecera imprime el contrato: nada de comandos, runbooks, arquitectura ni identidad.
 4. **`docs/BOARD.md`** (borrar). Eliminar la tarjeta cerrada. Si la tarea era una rebanada, dejar la tarjeta padre con las rebanadas que faltan y **cero narrativa de lo que ya cerró**. Si la tarea destapó trabajo nuevo, entra por la skill `triaje-tarea`, no directo.
 
@@ -75,11 +75,11 @@ Antes de cerrar, verificar que ningún archivo vivo superó su techo. Superarlo 
 | `CLAUDE.md` | 12 |
 | `docs/HANDOFF.md` | 6 |
 | `docs/BOARD.md` | 40 |
-| `docs/BUGS.md` | 9 (corregido 2026-08-11: 4 bugs verificados con causa raíz completa pesan mas que el techo original, que asumia menos detalle) |
+| `docs/BUGS.md` | 9 (corregido 2026-08-11) |
 | `docs/CHANGELOG.md` (mes corriente) | 60 (fusible: forzar rotacion, no se sube aunque el mes lo supere) |
-| `docs/ARCHITECTURE.md` | 32 |
+| `docs/ARCHITECTURE.md` | 36 (corregido 2026-08-13: el techo de 32 se fijo con las tablas 2.2 y 2.3 incompletas) |
 | `docs/CONTRIBUTING.md` | 5 |
-| `docs/DESIGN_SYSTEM.md` | 70 (corregido 2026-08-11: 74 reglas R con narrativa de origen, contenido real no duplicado, el techo original de 20 nunca midio esto) |
+| `docs/DESIGN_SYSTEM.md` | 70 (corregido 2026-08-11) |
 | `docs/SECURITY.md` | 8 |
 | `docs/OPERACION.md` | 10 |
 | ficha de `docs/contexto/` | 40 (objetivo 25) |
@@ -101,12 +101,7 @@ git ls-files -- '*.md' ':(exclude)docs/DECISIONS/*' ':(exclude)docs/changelog/*'
 
 ## 5. Reporte de supervisión
 
-El usuario no lee el diff: verifica en la app. El reporte va **siempre**, en este orden.
-
-1. **Qué archivos cambiaron**, con rutas relativas y enlazadas.
-2. **Qué cambió en cada uno**, una o dos líneas por archivo.
-3. **Cómo verificarlo en la app**, paso a paso: ruta visual, sección, modal, botón, y el dato exacto que debe verse distinto. Si hace falta servidor (`python -m http.server 8080`) o un script, decirlo.
-4. **Qué tests cubren el cambio** y con qué cifras quedaron.
+El usuario no lee el diff: verifica en la app. **Los cuatro puntos del reporte y su orden los fija `CLAUDE.md` seccion 2** (archivos, qué cambió en cada uno, cómo verificarlo paso a paso, qué tests lo cubren); no se copian acá. Dos precisiones de ejecución: el paso a paso nombra ruta visual, sección, modal, botón y el dato exacto que debe verse distinto, y si hace falta servidor se dice el comando (`pnpm run serve`).
 
 Reglas del reporte:
 

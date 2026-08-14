@@ -12,6 +12,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### docs(transversal): DOC.2, auditoria documental transversal con seis frentes en paralelo · 2026-08-13
+
+Auditoría de todo el material escrito del repo (116 Markdown, 5 skills, 66 ADR) con seis agentes en paralelo, para bajar el contexto que Claude tiene que leer y dejar una sola fuente de verdad por conocimiento. **Cero cambios de código de producto.** Ficha: [`contexto/transversal.md`](contexto/transversal.md).
+
+- **El hallazgo con impacto operativo real: tres de las cinco skills tenían el frontmatter YAML roto.** El sello `> Revisado:` había quedado **dentro** del bloque `---`, antes de `name:`, así que `auditor-finko`, `design-auditor-finko` y `triaje-tarea` se registraban con su H1 como descripción y **nunca se autoactivaban por contexto**. Corregido y verificado en runtime: el registro de skills ya lista las tres descripciones completas.
+- **`elegir-modelo` contradecía a `CLAUDE.md`:** su sección 6 traía la plantilla del bloque `Próximo paso` con "Modelo sugerido", derogado y prohibido por el Estándar de comunicación desde el 2026-07-25. Reescrita: la skill responde en tres líneas y solo cuando se le pregunta.
+- **BUGS.md tenía 2 de sus 4 errores ya corregidos en el código.** BUG-016 (voseo): cero cadenas en `modules/` e `index.html`. BUG-013 (contraste durante el fundido): `tests/e2e/a11y-forms.test.js:66` ya implementa `esperarFundidoDeEntrada()`, el arreglo que el propio bug sugería. Retirados con la evidencia escrita. Quedan **2 abiertos**: BUG-025 y BUG-027.
+- **16 enlaces relativos rotos en documentos vivos, ahora cero.** Los 11 del ADR 059 (que no existe, BUG-027) pasaron a cita en texto plano con el patrón que ya usaba el ADR 065; los otros 5 apuntaban a nombres de archivo que nunca existieron (`009-fondo-de-emergencia.md`, `011-estrategia-pago-deudas.md`, `034-inicio-v2-dashboard-decision.md` y dos más).
+- **`ARCHITECTURE.md` es el mapa que se lee antes de explorar, y mentía en 14 puntos verificables:** decía 10 eventos (son 12, faltaban `bloqueo:abierto` y `legal:aceptado`), `#gastos` como hash del router (es `#gast`), `logros/` sin `view.js` (existe desde LG.2d), `config/` con 2 archivos (son 4), y omitía **14 módulos reales** de `infra/` y `ui/` (`avisos`, `vencimientos`, `memo`, `toast`, `bloqueo-acceso`...). Las citas de línea de CSS estaban todas corridas: se quitaron, quedan los nombres de bloque, que no rotan.
+- **Contradicciones de estado saldadas sin decidir nada nuevo:** ADR 017 y 019 decían "Propuesta" con LIM.1 cerrada y `board/limites.md` declarándolos Aceptados; ADR 024 no registraba que su D1, D4 y D3 fueron superados por los ADR 065, 056 y 041; el D6 del ADR 066 ("cero cambio de schema") quedó falso cuando CFG.3c entró con schema v40. Los tres casos quedan anotados con fecha, conservando el texto original.
+- **Purga de tablero:** `board/gastos.md` pasó de 193 líneas de tarjetas cerradas a un stub, conservando los dos hallazgos que no viven en ningún ADR (la ficha 12 del handoff es infiel; no existe mapeo de categoría a grupo financiero). El índice de `BOARD.md` decía 12 tarjetas y enganchaba `INT.1a a INT.1h`: son 9 y solo vive INT.1g.
+- **`contexto/transversal.md`:** el bloque "Refactors transversales **pendientes**" no tenía nada pendiente (7,1 KB de relato de ARQ.1 y ARQ.2, cerradas). Reescrito a 3,8 KB como tabla de fuentes únicas más la lista de **duplicaciones intencionales** que Esteban decidió no tocar, que es lo único que no se deduce del código.
+- **`.gitignore`:** los handoffs de Claude Design y las auditorías visuales (5 carpetas y 4 ZIP, cientos de MB, con copias congeladas de `docs/` dentro) ensuciaban todo `grep` documental. Ignorados.
+- Sin tests nuevos: cero archivos de `modules/`. Suite corrida como línea base, **4212/4212 verdes**. Sin bump de SW.
+
 ### docs(transversal): PERF.5, la compuerta del ADR 030 D4 se verifica y sigue cerrada · 2026-08-13
 
 Pedido de ejecutar PERF.5 (migrar la persistencia a IndexedDB). **No se ejecutó**: la tarjeta tiene una compuerta explícita y ninguno de sus tres disparadores está activo. [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) D4, sin ADR nuevo (no hay decisión nueva que tomar: se aplicó la que ya existe). Ficha: [`contexto/transversal.md`](contexto/transversal.md). Sin cambios de código.
@@ -442,7 +457,7 @@ Cierra **GAS.2a**, primera rebanada del triaje de la ficha 22 ("Formulario de Ga
 
 ### feat(shell): INT.1h, cuatro atajos de teclado en escritorio · 2026-08-06
 
-Cierra **INT.1h** del [ADR 059](DECISIONS/059-interfaz-de-escritorio.md), resolviendo el pendiente **P8** (validación de accesibilidad de un `keydown` global). Commit `f5fcda7`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
+Cierra **INT.1h** del ADR 059, resolviendo el pendiente **P8** (validación de accesibilidad de un `keydown` global). Commit `f5fcda7`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
 
 - **Cuatro atajos** (`_handleKeydown()`, `ui/actions.js`): `N` abre "¿Qué quieres registrar?", `G` + letra salta de sección (mapa fijo de 11 destinos), `?` abre `#modal-atajos` (contenido estático en `index.html`), `Esc` sigue cerrando el modal abierto (comportamiento previo, sin cambios).
 - **P8 mitigado con tres guardas** en `_atajoBloqueado()`: un campo de texto o `contenteditable` con foco, un modal abierto (foco atrapado), o una tecla modificadora (Ctrl/Alt/Meta) presionada cancelan el atajo antes de actuar.
@@ -451,7 +466,7 @@ Cierra **INT.1h** del [ADR 059](DECISIONS/059-interfaz-de-escritorio.md), resolv
 
 ### feat(shell): INT.1e, el primario de sección sube a la barra · 2026-08-06
 
-Cierra **INT.1e** (D3 del [ADR 059](DECISIONS/059-interfaz-de-escritorio.md)), resolviendo el pendiente **P1** (recorrido de las 13 secciones). Commit `63f95f5`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
+Cierra **INT.1e** (D3 del ADR 059), resolviendo el pendiente **P1** (recorrido de las 13 secciones). Commit `63f95f5`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
 
 - **Recorrido de las 13 secciones:** 8 tienen un primario de encabezado (`.section__header > .btn-primary`, el mismo botón que R1 ya exige único por pantalla); Análisis, Ahorro (casa) y Movimientos no tienen ninguno (confirmado); Fondo e Inversión tampoco, porque su CTA vive en contenido dinámico y no en el encabezado, fuera del alcance mecánico de esta rebanada.
 - **`#topbar-primario`** en la barra superior, en secundario (R38: mover dinero pesa más que crear una ficha, no compite en verde con "Registrar"). `shell.js` (`_syncPrimarioTopbar`) copia texto, `aria-label` y `data-action`/`data-modal` del botón original, sin mapa de acciones nuevo por sección. Se resincroniza en cada navegación y ante cualquier `state:change` (cubre Deudas sin deudas activas y Límites sin plan del mes, que ocultan su botón sin navegar).
@@ -460,7 +475,7 @@ Cierra **INT.1e** (D3 del [ADR 059](DECISIONS/059-interfaz-de-escritorio.md)), r
 
 ### feat(shell): INT.1c e INT.1d, barra superior de escritorio con cinta de saldo · 2026-08-05
 
-Cierra **INT.1c** (D1/D2/D5) e **INT.1d** (D9) del [ADR 059](DECISIONS/059-interfaz-de-escritorio.md). Commit `a6eb349`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
+Cierra **INT.1c** (D1/D2/D5) e **INT.1d** (D9) del ADR 059. Commit `a6eb349`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
 
 - **Barra fija de 56px** (`#topbar`, `index.html`), corazón de la propuesta: teja + título de la sección activa (`shell.js`, `_syncTopbar`, sin duplicar el mapa de nombres/íconos), "Registrar" (misma hoja que móvil, otro disparador), toggle de tema y acceso a Ajustes. Reemplaza el `h1` que se iba con el scroll de cada sección.
 - **Fondo opaco sin `backdrop-filter`**: la alternativa que el ADR ya dejaba lista para no arriesgar Lighthouse (verificado: 99/100/100/100).
@@ -478,7 +493,7 @@ Cierra **CFG.7**. Commit `4a7eda0`. Ficha: [`contexto/sistema-visual.md`](contex
 
 ### feat(transversal): INT.1f, formulario de escritorio a 840px y dos columnas · 2026-08-05
 
-Cierra **INT.1f** (D8 del [ADR 059](DECISIONS/059-interfaz-de-escritorio.md)). Commit `bf37761`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
+Cierra **INT.1f** (D8 del ADR 059). Commit `bf37761`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
 
 - **El defecto:** `.modal` medía 520px sin ninguna regla sobre 1024px, así que un formulario de 8 campos se apilaba con scroll interno mientras 1.400px quedaban libres al lado.
 - **El modal base sube a 840px** desde 1024px de ventana. Los modificadores de tamaño (`--sm/--lg/--xl/--mas/--confirm/--sheet`) declaran su propio ancho sin condición y ganan por orden de cascada a igual especificidad; `--onboarding` (wizard centrado) se excluye a mano con la misma técnica.
@@ -557,7 +572,7 @@ Rebanada Me deben de **EDIT.1** (patrón P3 de la auditoría de UX/producto), **
 
 ### feat(shell): INT.1b, las hijas de Ahorro se anidan y el sidebar cabe · 2026-08-03
 
-Cierra **INT.1b** (D6 del [ADR 059](DECISIONS/059-interfaz-de-escritorio.md), mitad) y **BUG-026**. Commit `4f87f77`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
+Cierra **INT.1b** (D6 del ADR 059, mitad) y **BUG-026**. Commit `4f87f77`. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
 
 - **El defecto que cierra:** a 1280x799 (portátil de 13") el nav desbordaba 41px bajo su propio scroll interno. La mitigación que el proyecto creía tener (`@media (max-height: 800px)`, compactando filas/grupos/rótulos) nunca se aplicaba: sus cuatro declaraciones tenían la misma especificidad que las reglas incondicionales del mismo archivo, escritas más abajo, y perdían la cascada (BUG-026, hallado al verificar la auditoría de Interfaz contra el código).
 - **Fondo, Metas, Reservas e Inversión pasan de filas permanentes a sub-nivel** (`.nav-subnav`): `shell.js` (`markActiveNav`, `GRUPO_AHORRO`) lo despliega solo mientras el hash activo pertenece al grupo Ahorro. El sidebar baja de 14 filas fijas a 9 (grupo cerrado) y recupera los ~160px que le faltaban: medido, el nav pasa de 648px/607 disponibles a 608px/608, sin desborde. La regla de compactación de emergencia se **borró en vez de repararse**: dejó de tener razón de ser.
@@ -611,7 +626,7 @@ El código entró en el commit `e7703f0` (INT.1a, sesión paralela) sin su propi
 
 ### feat(shell): INT.1a, el contenido de escritorio se centra y Movimientos entra al sidebar · 2026-08-02
 
-Abre la iniciativa **INT.1** con su rebanada de menor riesgo, tras escribir el **[ADR 059](DECISIONS/059-interfaz-de-escritorio.md)** que formaliza las ocho decisiones de la auditoría de Interfaz. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
+Abre la iniciativa **INT.1** con su rebanada de menor riesgo, tras escribir el **ADR 059** que formaliza las ocho decisiones de la auditoría de Interfaz. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
 
 > **Nota de historia, no de producto.** El commit `e7703f0` lleva el mensaje de esta tarea y **no contiene su código**: dos sesiones compartían el índice de git y ese `git commit` recogió lo que la sesión de Ahorro tenía staged (ver la entrada de **AH.5b**, que documenta el otro lado del mismo cruce). El código real de INT.1a viaja en el commit siguiente. La historia no se reescribió a propósito: `e7703f0` ya estaba citado por hash en la entrada de AH.5b, así que rehacerla habría roto esa referencia para dejar el mismo hecho sin explicar en ningún lado.
 

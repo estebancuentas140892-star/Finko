@@ -67,7 +67,7 @@ Cada fase: tests verdes + bump de SW + verificación visual en la app + commit a
 | **F5. Secciones de progreso** | Metas, Apartados y Ahorro con anillo/barra protagonista, hitos y jerarquía nueva. Score de salud de Análisis con gauge mejorado. | views de `metas`, `apartados`, `ahorro` (tesoreria), `analisis`; `domain.css` | Sonnet 4.6 - Medio |
 | **F6. Microinteracciones** | Hover/press en cards y botones, llenado animado de progreso al entrar en viewport, count-up reutilizable, checkmark animado al pagar/completar. | `base.css`, `utils` (helper count-up), components | Sonnet 4.6 - Medio |
 | **F7. Estados vacíos + navegación** | Ilustraciones SVG inline geométricas para empty states; pulido de sidebar/bottom nav (estados activos, transiciones). | `atoms.css`, `layout.css`, views, `infra/icons.js` | Sonnet 4.6 - Medio |
-| **F8 (producto)** | Implementada ([ADR 008](DECISIONS/008-mecanicas-de-habito.md)): card de resumen semanal en el dashboard (gasto de 7 días + comparación, categoría top, "días activos del mes"); sin racha con castigo. Nuevo dominio `resumen/` de solo lectura, sin schema. | `resumen/{logic,view,index}.js`, `index.html`, `domain.css` | Sonnet 4.6 - Medio |
+| **F8 (producto)** | Implementada ([ADR 008](../DECISIONS/008-mecanicas-de-habito.md)): card de resumen semanal en el dashboard (gasto de 7 días + comparación, categoría top, "días activos del mes"); sin racha con castigo. Nuevo dominio `resumen/` de solo lectura, sin schema. | `resumen/{logic,view,index}.js`, `index.html`, `domain.css` | Sonnet 4.6 - Medio |
 
 **Orden razonado:** tokens primero (todo lo demás hereda), iconos segundo (los componentes los embeben), componentes tercero (las secciones los usan), y recién entonces composición por sección.
 

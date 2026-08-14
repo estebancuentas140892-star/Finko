@@ -10,9 +10,9 @@
 
 > **Auditoría de rendimiento 2026-07 completa** (PERF.0 a PERF.4 cerradas, ver [`scripts/perf/BASELINE.md`](../../scripts/perf/BASELINE.md)). Los dos hallazgos que siguen mandando: `renderSmart()` ya evita el recálculo cruzado, y guardar cuesta ~5 ms debounced, así que la persistencia NO se reescribió ([ADR 030](../DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md), disparadores en su D4). **Disciplina obligatoria de toda tarjeta PERF: correr `pnpm perf` antes y después y comparar contra BASELINE.md.**
 
-> **Iniciativa "INT.1 - Interfaz de escritorio"** ([ADR 059](../DECISIONS/059-interfaz-de-escritorio.md), aceptado 2026-08-02). Fuente única del chrome de escritorio, 8 decisiones en 8 rebanadas. Móvil no cambia. **INT.1a, INT.1b, INT.1c, INT.1e e INT.1h cerradas**; detalle e historia en el CHANGELOG y [`contexto/transversal.md`](../contexto/transversal.md). **Coordinar con AH.7a** (mismo marcado de nav, otra plataforma).
+> **Iniciativa "INT.1 - Interfaz de escritorio"** (ADR 059, aceptado 2026-08-02). Fuente única del chrome de escritorio, 8 decisiones en 8 rebanadas. Móvil no cambia. **Siete de las ocho rebanadas cerradas** (INT.1a, INT.1b, INT.1c, INT.1d, INT.1e, INT.1f, INT.1h); solo queda INT.1g, diferida; detalle e historia en el CHANGELOG y [`contexto/transversal.md`](../contexto/transversal.md). **Coordinar con AH.7a** (mismo marcado de nav, otra plataforma).
 
-> **La rebanada restante**, en una línea: su alcance completo, con medición y contra declarado, vive en el [ADR 059](../DECISIONS/059-interfaz-de-escritorio.md) y no se repite acá. Se re-expande a tarjeta completa al iniciarla.
+> **La rebanada restante**, en una línea: su alcance completo, con medición y contra declarado, vive en el ADR 059 y no se repite acá. Se re-expande a tarjeta completa al iniciarla.
 
 #### INT.1g - Carril derecho de 320px desde 1.680px (diferida)
 - Prioridad  : baja (diferida)
@@ -25,19 +25,31 @@
 #### PERF.5 (futura, no iniciar) - Migrar la persistencia a IndexedDB
 - Prioridad  : sin definir (se retoma solo si se dispara un criterio del [ADR 030](../DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) D4)
 - Estado     : diferida por decisión del ADR 030. **NO iniciar** sin uno de sus disparadores: jank de guardado medido en dispositivo real, usuarios reales acercándose a la cuota (el aviso de PERF.4 disparándose en la práctica), o una feature que necesite persistencia asíncrona / mayor cupo (ej. CFG.4).
+- Objetivo   : mover de la clave única `fk_v1` en `localStorage` a IndexedDB (cupo mucho mayor + escritura por registro), resolviendo cuota y costo de `JSON.stringify(S)` completo. El ADR 030 D3 rechaza explícitamente partir `localStorage` por clave (no sube la cuota).
+- Secciones  : Transversal (`core/storage.js`, `bootstrap.js` pasa a async, sembrado E2E)
+- Archivos   : `modules/core/storage.js` (motor async), `modules/ui/bootstrap.js` (loadData async), migración de datos localStorage → IDB sin pérdida, reescritura del sembrado de las 11 suites E2E
+- Depende de : un disparador del ADR 030 D4
+- Modelo     : Alta capacidad - Extra o Máxima capacidad - Alto (cambio de mayor riesgo del proyecto: ruta de arranque async + migración de datos reales de años)
 - **Compuerta verificada 2026-08-13** (pedido de ejecución, evaluación sin código). Los tres disparadores del D4 siguen **cerrados**, con la evidencia contra la que se verificó:
   - *Jank en dispositivo real*: **no**. Toda cifra de persistencia del proyecto es de happy-dom (`scripts/perf/BASELINE.md:4`); la auditoría de jank móvil se declara a sí misma "rango de referencia de la industria, no una medición de este proyecto" y descarta el guardado como causa ("contribuye, no domina: 4,8 ms a 10.000 gastos, fuera del camino crítico del frame"). PERF.6 sí atacó jank móvil, pero de render, y dejó `save` "dentro del ruido" (`BASELINE.md:186`).
   - *Usuarios cerca de la cuota*: **no**, y **no existe canal para que esta evidencia aparezca sola**: la app no tiene telemetría por diseño. El único reporte posible es manual de Esteban, y no hay ninguno en BUGS.md ni en el CHANGELOG. En operación normal el aviso de PERF.4 devuelve string vacío.
   - *Feature que exija async o más cupo*: **no**. CFG.4 está bloqueada por el [ADR 043](../DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md), que sigue **Abierta** y cuyo checklist de cierre dice que la activación del D4 ocurre "si se elige D o E": no se eligió. Ninguna otra tarjeta viva toca persistencia.
 - **Tamaño real del cambio, medido el 2026-08-13** (sirve para no volver a levantarlo): `core/storage.js` 753 líneas con 40 migraciones acumuladas y 6 exports síncronos; `loadData()` es el primer paso de `bootstrap.js:56`, con todo el arranque síncrono detrás; 33 call sites de `save()`, ninguno con `await` (esto sí juega a favor: volverla async es transparente para los callers, como anticipó el ADR 030); y **la factura está en los tests, no en el runtime**: 13 suites E2E con 197 referencias a `fk_v1` y 163 `addInitScript`/`evaluate`, **sin helper central de sembrado** (cada archivo tiene el suyo), más `storage.test.js` con 109 usos de `localStorage`. Reescribir eso sin red de seguridad es reescribir la red de seguridad misma.
 - Conclusión de la evaluación: mientras el D4 siga cerrado, ejecutar esta tarjeta cambia la ruta de arranque y migra datos reales **quedándose sin la única prueba que detectaría el daño**. La tarjeta sigue viva y sin iniciar; el próximo intento no necesita repetir esta verificación, solo mirar si algún disparador cambió de estado.
-- Objetivo   : mover de la clave única `fk_v1` en `localStorage` a IndexedDB (cupo mucho mayor + escritura por registro), resolviendo cuota y costo de `JSON.stringify(S)` completo. El ADR 030 D3 rechaza explícitamente partir `localStorage` por clave (no sube la cuota).
-- Secciones  : Transversal (`core/storage.js`, `bootstrap.js` pasa a async, sembrado E2E)
-- Archivos   : `modules/core/storage.js` (motor async), `modules/ui/bootstrap.js` (loadData async), migración de datos localStorage → IDB sin pérdida, reescritura del sembrado de las 11 suites E2E
-- Depende de : un disparador del ADR 030 D4
-- Modelo     : Alta capacidad - Extra o Máxima capacidad - Alto (cambio de mayor riesgo del proyecto: ruta de arranque async + migración de datos reales de años)
 
 > **Iniciativa Dirección Visual premium** ([ADR 033](../DECISIONS/033-direccion-visual-premium.md)). DV.2a/b/c cerradas. DV.2d: infraestructura y las 8 plantillas del lote listas (2026-08-12), falta solo el arte final de Esteban.
+
+#### DOC.3 - Fichas de contexto sobre el techo y sellos `Verificado contra` vencidos
+- Prioridad  : media (no rompe nada hoy; encarece cada sesión que abre una de esas fichas)
+- Área       : code (documentación técnica)
+- Estado     : **medido, no ejecutado.** Lo levantó la auditoría DOC.2 del 2026-08-13 y se dejó fuera a propósito: partir una ficha es mover conocimiento entre archivos, no editar texto, y merece su propia tarea verificada.
+  - **Techo roto:** `contexto/transversal.md` 66 KB y `contexto/inicio.md` 50 KB contra un techo de 40. `mis-cuentas.md` está en 40 exactos, sin margen. En `inicio.md` y `calendario.md` el bloque "Cambios realizados" es cerca de la mitad del archivo, escrito como párrafos que reproducen el CHANGELOG en vez de la línea por hito que pide la convención.
+  - **Eje de partición sugerido, ya identificado:** de `transversal.md` salen el shell de escritorio (10,5 KB) y logros (9,4 KB); las anclas de navegación de `ui/shell.js` están mapeadas **tres veces** (`sistema-visual.md`, `transversal.md`, `ahorro.md`) y su dueño natural es `sistema-visual.md`.
+  - **Sellos vencidos:** `transversal.md:159`, `sistema-visual.md:15` y `captura.md:48` dicen "Verificado contra" un commit de hace más de un mes, con los archivos que describen tocados hasta el 2026-08-13. **No se actualizaron a propósito**: cambiar el hash sin volver a verificar el contenido convierte un sello honesto en uno falso. El que toque esas fichas re-verifica y sella.
+- Objetivo   : que ninguna ficha supere su techo y que ningún sello afirme una verificación que no ocurrió.
+- Secciones  : `docs/contexto/`
+- Depende de : nada
+- Modelo     : Alta capacidad - Alto (mover conocimiento sin perderlo, con verificación contra el código)
 
 #### DV.2d - Ilustraciones como clase nueva de asset (D3 del ADR 033)
 - Prioridad  : media

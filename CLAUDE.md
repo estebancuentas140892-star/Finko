@@ -2,7 +2,7 @@
 
 > Punto de entrada para Claude Code y cualquier asistente de IA al abrir esta carpeta.
 > Acá vive la **norma**. Los procedimientos viven en `.claude/skills/`; la referencia, en `docs/`.
-> Revisado: 2026-07-24.
+> Revisado: 2026-08-13.
 
 ---
 

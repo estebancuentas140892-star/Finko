@@ -53,7 +53,7 @@ La causa no era la card ni las pestañas: era que **el concepto padre no tenía 
 
 ## Actualización (INT.1b, 2026-08-03, acota el D8)
 
-El [ADR 059](059-interfaz-de-escritorio.md) D6 acota, no revierte, el punto 8: en el sidebar de desktop las cuatro entradas directas dejan de ser **permanentes** y pasan a **contextuales**, anidadas bajo la casa (`.nav-subnav`) y desplegadas solo mientras el hash activo pertenece al grupo. Motivo: medidas y sin funcionalidad nueva, las cuatro filas costaban ~160px de sidebar todo el tiempo aunque el usuario estuviera en Gastos o Calendario (BUG-026). Siguen siendo atajos declarados a destinos que la casa también ofrece, nunca rutas paralelas: el punto 8 se cumple igual, solo que el sidebar ya no las paga cuando no aplican.
+El ADR 059 D6 acota, no revierte, el punto 8: en el sidebar de desktop las cuatro entradas directas dejan de ser **permanentes** y pasan a **contextuales**, anidadas bajo la casa (`.nav-subnav`) y desplegadas solo mientras el hash activo pertenece al grupo. Motivo: medidas y sin funcionalidad nueva, las cuatro filas costaban ~160px de sidebar todo el tiempo aunque el usuario estuviera en Gastos o Calendario (BUG-026). Siguen siendo atajos declarados a destinos que la casa también ofrece, nunca rutas paralelas: el punto 8 se cumple igual, solo que el sidebar ya no las paga cuando no aplican.
 
 ## Alternativas consideradas
 

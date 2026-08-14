@@ -18,4 +18,4 @@
 
 > **ANL.1c cerrada el 2026-08-12** (ADR 046 D3, unidad 5). `lecturaComparacion()` en la card "Vs mes anterior". Patrón semanal y hormigas se revisaron contra D3 y no se tocaron. **Con esto la iniciativa ANL.1 queda completa.**
 
-**Sin tarjetas pendientes en este dominio.** Lo que Análisis todavía debe, y no tiene tarjeta propia: el sexto bloque del layout (LG.2d, en `board/transversal.md`), lo fiscal de CFG.2c y los tres frentes que la auditoría de diseño dejó abiertos (ver `contexto/analisis.md`).
+**Sin tarjetas pendientes en este dominio.** Lo que Análisis todavía debe, y no tiene tarjeta propia: lo fiscal de CFG.2c y los tres frentes que la auditoría de diseño dejó abiertos (ver `contexto/analisis.md`).

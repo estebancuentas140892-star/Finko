@@ -1,6 +1,11 @@
 # ADR 024 - Reorganización de la navegación móvil: botón "Registrar" central y hub "Ahorros"
 
-**Estado:** Aprobada (diseño). Implementación en NAV.A1, NAV.A2, NAV.B y NAV.C (ver [BOARD.md](../BOARD.md)).
+**Estado:** Aceptada, con tres decisiones superadas después (anotado en la auditoría documental del 2026-08-13, que no cambia ninguna decisión de este ADR):
+- **D1** (los 5 slots de la barra inferior) lo supera el [ADR 065](065-ahorro-en-la-barra-inferior.md): Ahorro toma el cuarto slot y Calendario baja a la hoja "Más".
+- **D4** lo supera el [ADR 056](056-la-casa-de-ahorro.md), que además revisa su D6.
+- **D3** queda revisado por el [ADR 041](041-motor-vencimientos-y-distribucion-v2.md) (conflicto a).
+
+Implementación original en NAV.A1, NAV.A2, NAV.B y NAV.C.
 **Fecha:** 2026-07-04
 **Autores:** Esteban (producto), Claude Fable 5 (auditoría y diseño)
 **Relación:** revisa **a nivel de navegación** la decisión de la revisión UX 2026-06 ("las 4 secciones de ahorro no se fusionan; la diferenciación es por copy"): los dominios siguen separados (regla ADN 10 intacta), lo que se unifica es la entrada. Se apoya en [ADR 009](009-consolidado-de-ahorro.md) (el consolidado pasa a ser la cabecera del hub), [ADR 016](016-banner-proposito-de-seccion.md) (los banners de propósito no cambian) y [ADR 018](018-asistente-distribuir-ingreso.md) (el ingreso puntual ofrece el asistente al cerrar). Registra [BUG-010](../BUGS.md) (safe area del bottom nav).

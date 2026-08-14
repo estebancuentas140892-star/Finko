@@ -63,6 +63,12 @@ pnpm run lighthouse
 # Lint y formato
 pnpm run lint
 pnpm run format
+
+# Servidor local (los ES6 modules no cargan abriendo index.html directo)
+pnpm run serve               # http://localhost:8080
+
+# Harness de rendimiento (comparar contra scripts/perf/BASELINE.md)
+pnpm perf
 ```
 
 ---
@@ -93,7 +99,7 @@ Cifras de tests y cobertura vivas en [`docs/HANDOFF.md`](docs/HANDOFF.md) secci�
 | Lighthouse Performance / Accessibility / Best Practices / SEO | ≥ 99 en las 4 |
 | `onclick=""` en HTML | 0 |
 | `window.X` en módulos | 0 |
-| `style=""` inline en HTML | 0 |
+| `style=""` inline en `index.html` | 1 (el wrapper oculto del sprite SVG, deliberado) |
 | Cobertura lógica (`core/` + `dominio/*/logic.js`) | ≥ 90% |
 
 ---

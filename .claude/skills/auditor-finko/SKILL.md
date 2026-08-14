@@ -1,9 +1,9 @@
 ---
-
-> Revisado: 2026-08-11.
 name: auditor-finko
 description: Auditoría integral de Finko simulando un usuario colombiano real, para detectar reprocesos, trabajo manual evitable, oportunidades de automatización, fricción de UX, cuellos de botella de rendimiento, duplicación de datos y problemas de arquitectura o persistencia. Usar al auditar la app o una sección, al buscar qué simplificar antes de agregar funcionalidad nueva, o al revisar flujos completos de principio a fin.
 ---
+
+> Revisado: 2026-08-11.
 
 # Auditor Finko
 

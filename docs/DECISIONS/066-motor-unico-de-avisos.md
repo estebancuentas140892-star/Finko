@@ -68,7 +68,9 @@ Cuatro niveles: `urgente`, `alta`, `media`, `baja`. El motor ordena por severida
 
 "No invasivo" se traduce en una regla verificable: de todos los avisos del día, solo los de severidad `urgente` o `alta` justifican interrumpir con una notificación del sistema operativo. Un apartado a 6 días o una meta lista para reiniciar no despiertan el teléfono: esperan dentro de la app. Sigue siendo **una** notificación por apertura, con el guard de sesión que ya existía.
 
-### D6. Cero cambio de schema en esta iniciativa
+### D6. Cero cambio de schema en esta iniciativa (revisada al ejecutar CFG.3c)
+
+> **Revisión, 2026-08-13:** este D6 **ya no describe el estado del sistema**. CFG.3c entró con schema v40 (`config.avisosPorSeccion` y `config.ultimoAvisoISO`), es decir preferencias por sección y sello de día persistido, exactamente lo que este D6 dejaba fuera. La Nota al pie de este mismo ADR lo documenta. Se conserva el texto original porque explica el criterio con el que se decidió en su momento.
 
 El interruptor sigue siendo el que ya está (`S.config.notificaciones`, un solo booleano) y la de-duplicación sigue siendo el flag de sesión de `notificaciones.js`. No entra `S.config.avisos`, ni preferencias por tipo, ni sellos de "ya te avisé esto hoy" persistidos. Motivo: cada campo nuevo es una migración y un formulario, y todavía no hay evidencia de uso que diga qué tipo molesta. Las preferencias por tipo quedan diferidas a CFG.3c, detrás del uso real.
 

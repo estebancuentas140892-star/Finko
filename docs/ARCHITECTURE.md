@@ -15,7 +15,7 @@
 | [3. Flujo de datos](#3-flujo-de-datos) | la secuencia invariante desde el clic hasta el re-render |
 | [4. Estado - Singleton `S`](#4-estado---singleton-s) | cómo se lee y se muta el estado, y qué está prohibido |
 | [5. Persistencia](#5-persistencia---storagejs) | `localStorage`, el debounce de `save()` y el patrón de migración |
-| [6. Sistema de eventos](#6-sistema-de-eventos---eventbus) | los 10 eventos reales, quién los emite y quién los escucha |
+| [6. Sistema de eventos](#6-sistema-de-eventos---eventbus) | los 12 eventos reales, quién los emite y quién los escucha |
 | [7. HTML - contrato de eventos](#7-html---contrato-de-eventos) | por qué no hay `onclick` y cómo funciona `data-action` |
 | [8. CSS - capas `@layer`](#8-css---capas-layer) | el orden de cascada, el sistema de íconos SVG y la tipografía |
 | [9. PWA y Service Worker](#9-pwa-y-service-worker) | qué se precachea y cuándo hay que bumpear `CACHE_NAME` |
@@ -67,7 +67,7 @@ Utilidades transversales sin dependencias de dominio.
 | `render.js` | `renderSmart()`, `programarRender()`, `updSaldo()`, `updateBadge()`, `renderAll()`, `registrarRender()` |
 | `a11y.js` | `announce()` para lectores de pantalla, `trapFocus()`/`releaseFocus()` para modales |
 | `crud.js` | Helper genérico: `guardar()`/`editar()`/`eliminar()` sobre `S`, emite `state:change` |
-| `router.js` | Hash routing (`#dash`, `#gastos`, `#metas`, …) |
+| `router.js` | Hash routing. Los hashes son abreviados y no coinciden con el nombre de la sección: `#dash`, `#gast`, `#metas`, … (tabla `SECTIONS`, `router.js:10`) |
 | `financiero.js` | Fórmulas financieras puras compartidas: `calcularCDT`, `calcularCredito` (sistema francés), `calcularInteresCompuesto`, `calcularRegla72`, `calcularRentabilidadReal`, `validarCampos` |
 | `cuenta-helper.js` | Patrón compartido "0/1/varias cuentas": `renderSelectorCuenta()` + `resolverPagoConPreferida()`, usado por Gastos, Deudas, Apartados y Metas |
 | `distribuir-pago.js` | `distribuirPago()`: reparte un monto entre varias cuentas cuando ninguna alcanza sola |
@@ -82,6 +82,14 @@ Utilidades transversales sin dependencias de dominio.
 | `bancos.js` | Catálogo de bancos colombianos + resolución de ícono por banco |
 | `animate.js` | Helpers de animación (count-up, llenado de progreso) respetando `prefers-reduced-motion` |
 | `sw-register.js` | Registro del Service Worker |
+| `avisos.js` | Motor único de avisos: arma la lista y la filtra por preferencia de sección ([ADR 066](DECISIONS/066-motor-unico-de-avisos.md)) |
+| `vencimientos.js` | Motor compartido de vencimientos: ocurrencias de una obligación o ingreso según su periodicidad ([ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md)) |
+| `pago-compromiso.js` | Registrar el pago o abono de un compromiso, un solo camino para todas las superficies (ARQ.2) |
+| `sugerencias-categoria.js` | Motor único de sugerencia por categoría ([ADR 044](DECISIONS/044-motor-unico-de-sugerencia-por-categoria.md)) |
+| `memo.js` | Memoización de derivaciones puras costosas, invalidada por `state:change` (PERF.2) |
+| `marcas.js` | Resolución de identidad de marca desde texto libre ([ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md) D4) |
+| `icon-picker.js` | Selector compacto de ícono para categorías y entidades personalizadas (CAT.2) |
+| `markdown.js` | Conversor mínimo de Markdown a HTML, solo el subconjunto que usan los documentos legales |
 
 ### 2.3 `modules/ui/`
 
@@ -95,10 +103,16 @@ Bootstrap y orquestación de la interfaz.
 | `modales.js` | Factory de modales: `abrirModal()` (trapFocus + `inert` en el fondo), `cerrarModal()` (releaseFocus), `resetModal()` |
 | `confirm.js` | Overlay de confirmación (reemplaza `confirm()` nativo) |
 | `onboarding.js` | Wizard de bienvenida para usuario nuevo (`!S.onboarded`) |
-| `proposito.js` | Banner colapsable de "propósito de sección" (qué resuelve cada sección), patrón de [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md) |
+| `proposito.js` | Banner de "propósito de sección" (qué resuelve cada sección), patrón de [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md). Desde la revisión del ADR ya no colapsa: es divulgación progresiva, sin acciones de colapsar/expandir |
 | `comparador.js` | Columnas comparables de varias bolsas contra la marca de su plan: `htmlComparador()` + `pieComparador()`. Puro, sin DOM. Lo comparten la lista de Apartados y la casa de Ahorro (DIS.19) |
 | `menu-mas.js` | Menú "Más" (secciones que no caben en la bottom nav móvil) |
 | `install-prompt.js` | Prompt de instalación de la PWA (`beforeinstallprompt`) |
+| `bloqueo-acceso.js` | Candado de acceso local: gate de PIN al abrir y `confirmarPin()` para acciones críticas ([ADR 063](DECISIONS/063-candado-de-acceso-local.md)) |
+| `aceptacion-legal.js` | Aceptación obligatoria versionada del paquete legal (LEG.2) |
+| `registrar.js` | Contenido dinámico de la hoja "Registrar" ([ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md)) |
+| `novedades.js` | Resumen de novedades tras actualizar, contra `S.config.ultimaVersionVista` (UPD.1) |
+| `sw-aviso.js` | Aviso discreto cuando el SW aplicó una versión nueva y no pudo recargar solo |
+| `toast.js` | Aviso visual efímero genérico de la app (GAS.2a); `.logro-toast` es el caso previo y propio de Logros |
 
 ### 2.4 `modules/dominio/`
 
@@ -136,18 +150,18 @@ Los barrels mantienen la API estable: tests y consumidores siguen importando de 
 | `analisis/` | Salud financiera, patrimonio neto, gráficos, comparaciones | |
 | `apartados/` | Sobres para gastos previsibles (SOAT, impuestos, etc.) | |
 | `compromisos/` | Gastos fijos + deudas (Avalancha/Bola de nieve) + agenda de pagos | `view.js` partido en `views/` (alertas, dashboard, estrategia, estrategia-impacto, formularios, lista); `logic.js` partido en `logic/` (modelo, alertas, estrategia, abonos), ambos con barrel |
-| `config/` | Ajustes, perfil, exportar/importar backup completo | sin `logic.js` propio |
+| `config/` | Ajustes, perfil, exportar/importar backup completo | sin `logic.js` propio; suma `bloqueo.js` (candado con PIN) y `legal.js` (aceptación versionada) |
 | `export/` | Serialización de gastos a CSV (`gastosACSV`) | solo `logic.js`, sin UI propia (se invoca desde `config`) |
 | `gastos/` | Gastos variables, categorías, detector de hormigas | |
 | `import/` | Importación de gastos desde CSV con preview y detección de duplicados | |
 | `inversiones/` | Portafolio real (CDT, fondo, cripto, acciones) | |
-| `logros/` | Sistema de logros y rachas (gamificación) | sin `view.js` propio (toast) |
+| `logros/` | Sistema de logros y rachas (gamificación) | `view.js` propio desde LG.2d: llena "Tu progreso" en Análisis y la tarjeta de Inicio, sin que esos dominios lo importen |
 | `metas/` | Objetivos de ahorro con fecha límite | |
 | `movimientos/` | Ledger unificado: deriva la actividad de gastos, ingresos puntuales, aportes y transferencias | sin colección propia, es una vista derivada; las acciones de cada fila las delega al dominio dueño según `m.tipo` |
 | `personales/` | Préstamos que el usuario otorga a terceros ("Me deben") | |
 | `presupuesto/` | Límites de gasto (envelope budgeting) por categoría y por grupo financiero | |
 | `resumen/` | Card de resumen semanal en Inicio (agregación de solo lectura) | |
-| `tesoreria/` | Cuentas bancarias, ingresos, "Distribuir mi ingreso" (sección visible "Mis cuentas") | dividido por subsistema: `logic/`, `views/` y `acciones/` con `cuentas.js`, `ingresos.js` y `distribucion.js` cada una; `logic.js`/`view.js` son barrels |
+| `tesoreria/` | Cuentas bancarias, ingresos, "Distribuir mi ingreso" (sección visible "Mis cuentas") | dividido por subsistema: `logic/`, `views/` y `acciones/` con `cuentas.js`, `ingresos.js`, `distribucion.js` y `transferencias.js` cada una; `logic.js`/`view.js` son barrels |
 
 > Para ubicar rápido qué archivo tocar por sección visible, estilos y test, ver la **sección 13 (mapa operativo)** de este mismo documento.
 
@@ -239,7 +253,7 @@ EventBus.emit('state:change', { section: 'gastos' });
 EventBus.on('state:change', ({ section }) => renderSmart(renderGastos, section));
 ```
 
-Los 10 eventos reales del sistema (verificados contra el código el 2026-08-02; no hay otros):
+Los 12 eventos reales del sistema (verificados contra el código el 2026-08-13; no hay otros):
 
 | Evento | Quién lo emite | Quién lo escucha |
 |---|---|---|
@@ -253,6 +267,8 @@ Los 10 eventos reales del sistema (verificados contra el código el 2026-08-02; 
 | `cuenta:crear` | `infra/cuenta-helper.js` y `ui/actions.js` cuando una acción necesita una cuenta y no hay ninguna | `tesoreria/acciones/cuentas.js` (abre el formulario de cuenta nueva) |
 | `storage:cuota` | `core/storage.js` cuando el uso de `localStorage` deja de estar en nivel `ok` | `config/index.js` (aviso de cuota en Ajustes) |
 | `storage:error` | `core/storage.js` cuando un guardado falla | `config/index.js` (aviso de error de persistencia) |
+| `bloqueo:abierto` | `ui/bloqueo-acceso.js` cuando el gate de PIN se resuelve y libera la app | `bootstrap.js` (encadena el gate legal detrás del candado) |
+| `legal:aceptado` | `ui/aceptacion-legal.js` al aceptar la versión vigente de los documentos | `bootstrap.js` (cierra el gate y sigue el arranque) |
 
 `distribucion:aplicar` es el ejemplo canónico de orquestación cross-dominio sin acoplar dominios entre sí: `tesoreria` no importa `metas` ni `apartados`, solo emite un evento con la lista de `items`; cada dominio destino decide si le corresponde algo y lo aplica.
 
@@ -296,7 +312,7 @@ document.addEventListener('click', e => {
 | `modals` | Overlay, animaciones de apertura/cierre |
 | `themes` | Modo oscuro (default) y claro (`body.light-theme`) |
 | `a11y` | `prefers-reduced-motion`, alto contraste, `forced-colors` |
-| `responsive` | Breakpoints: 1440px / 1024px / 768px / 480px / 360px |
+| `responsive` | Breakpoints: 1680px / 1440px / 1024px / 768px / 540px / 360px |
 | `utils` | `.sr-only`, `.visually-hidden`, helpers de display |
 
 ### 8.1 Sistema de íconos SVG
@@ -410,18 +426,18 @@ El dashboard (`#dash`) no tiene carpeta propia en `modules/dominio/`: es una com
 | Calendario | `agenda/` | los 3 estándar | `config.css` (bloque AGENDA, línea 449) | `agenda.test.js` |
 | Deudas | `compromisos/` | entrar por `logic/` o `views/` según el corte de la 2.4; `index.js` es el wiring | `charts.css` (chooser entidad/personal, estrategia de pago), `domain.css` (abono-btn, cal-detail) | `compromisos.test.js`, `estrategia-pago.test.js` (e2e) |
 | Mis cuentas | `tesoreria/` | entrar por `logic/`, `views/` o `acciones/` según el subsistema (ver 2.4); `index.js` es el coordinador | `domain.css` (ingresos-card, distribuir-card, distribuir-edu, distribucion-clasicos), `forms.css` (bloque `.distribuir__*` del asistente) | `tesoreria.test.js`, `cuenta-helper.test.js`, `distribuir-pago.test.js` |
-| Apartados | `apartados/` | los 3 estándar | `domain.css` (bloque APARTADOS línea 530, form rediseño línea 1305) | `apartados.test.js` |
+| Apartados | `apartados/` | los 3 estándar | `domain.css` (bloques APARTADOS y form de apartados) | `apartados.test.js` |
 | Ahorro (la casa, `#ahorro`) y Fondo de emergencia (`#fondo`) | `ahorro/` | los 3 estándar | `domain.css` (`.casa-ahorro__*`), `analysis.css` (bloque J.1/J.1b) | `ahorro.test.js`, `hub-ahorros.test.js` (e2e), `ahorro-inversion.test.js` (e2e) |
 | Presupuesto | `presupuesto/` | los 3 estándar | `analysis.css` (D.5 envelope budgeting, MC.8b) | `presupuesto.test.js` |
 | Metas | `metas/` | los 3 estándar | `analysis.css` | `metas.test.js` |
 | Me deben | `personales/` | los 3 estándar | `domain.css` (personales-resumen) | `personales.test.js` |
 | Inversiones | `inversiones/` | los 3 estándar | `analysis.css` (bloque J.2a/J.2b/J.2c) | `inversiones.test.js` |
 | Análisis | `analisis/` | los 3 estándar | `analysis.css` (panel completo: bento, métricas, salud, patrimonio, proyección) | `analisis.test.js` |
-| Configuración | `config/` | `index.js`, `view.js` (sin `logic.js` propio) | `config.css` (bloque CONFIGURACION línea 7) | *(sin test unitario dedicado, ver `import.test.js`/`export.test.js`)* |
+| Configuración | `config/` | `index.js`, `view.js`, `bloqueo.js`, `legal.js` (sin `logic.js` propio) | `config.css` (bloques CONFIGURACION y AGENDA) | `config.test.js`, `bloqueo.test.js` |
 | *(sin sección propia)* | `export/` | `logic.js` (invocado desde `config`) | | `export.test.js` |
-| *(sin sección propia)* | `import/` | los 3 estándar | `charts.css` (bloque IMPORT CSV línea 154) | `import.test.js` |
-| *(toast, sin vista propia)* | `logros/` | `logic.js`, `index.js` | `nudges.css` (bloque LOGRO TOAST línea 127) | `logros.test.js` |
-| *(card en Inicio)* | `resumen/` | los 3 estándar | `domain.css` (RESUMEN-CARD línea 1070) | `resumen.test.js` |
+| *(sin sección propia)* | `import/` | los 3 estándar | `charts.css` (bloque IMPORT CSV) | `import.test.js` |
+| Toast + "Tu progreso" en Análisis + tarjeta en Inicio | `logros/` | los 3 estándar | `nudges.css` (bloque LOGRO TOAST) | `logros.test.js` |
+| *(card en Inicio)* | `resumen/` | los 3 estándar | `domain.css` (bloque RESUMEN-CARD) | `resumen.test.js` |
 | Movimientos (card "Actividad reciente" en Inicio + ruta `#movimientos` sin ícono de nav) | `movimientos/` | los 3 estándar (TX.8a panel, TX.8b vista completa, [ADR 028](DECISIONS/028-inicio-centro-de-control.md)) | `domain.css` (ACTIVIDAD-RECIENTE, MOVIMIENTOS), `atoms.css` (`.list-item__amount--ingreso`) | `movimientos.test.js` |
 | Accesos rápidos (tiles bajo el hero de Inicio + modal "Personalizar") | `accesos/` | los 3 estándar (IN.4a, [ADR 028](DECISIONS/028-inicio-centro-de-control.md)) | `domain.css` (ACCESOS-INICIO), `atoms.css` (`.accesos-row*`) | `accesos.test.js` |
 
@@ -435,7 +451,7 @@ Estos archivos **no están organizados por dominio**, sino por tipo de widget o 
 | `buttons.css` | Botones y cards genéricas |
 | `charts.css` | Sparkline + donut, modal de importar CSV, chooser entidad/personal, estrategia de pago de deudas |
 | `config.css` | Configuración (perfil, notificaciones, datos, acerca de), install PWA, Agenda/Calendario |
-| `domain.css` | Grupo grande y heterogéneo: calculadoras (posible código muerto, ver nota abajo), herramienta-inline, ingresos-card, mes-nav, filtros-bar/chip, distribución de ingreso, gastos-resumen, apartados, abono a deudas, cuenta-picker/multi/sel (compartido por Gastos/Deudas/Apartados/Metas), widgets de Inicio (hero-saldo, vencidos-card, prioridades-card, actividad-reciente, resumen-card, balance-tira, limites-card), personales-resumen, form de apartados, casa de Ahorro, banner-propósito (compartido por las 10 secciones) |
+| `domain.css` | Grupo grande y heterogéneo: calculadoras (posible código muerto, ver nota abajo), herramienta-inline, ingresos-card, mes-nav, filtros-bar/chip, distribución de ingreso, gastos-resumen, apartados, abono a deudas, cuenta-picker/multi/sel (compartido por Gastos/Deudas/Apartados/Metas), widgets de Inicio (hero-saldo, vencidos-card, prioridades-card, actividad-reciente, resumen-card, balance-tira, limites-card), personales-resumen, form de apartados, casa de Ahorro, banner-propósito (compartido por las 11 secciones con propósito declarado) |
 | `forms.css` | Sistema de íconos SVG de línea, inputs/formularios |
 | `nudges.css` | Sistema de nudges (5 niveles), logro toast, bank avatar/picker, badges de dominio |
 | `analysis.css` | Todo el panel de Análisis: bento, métricas, salud financiera, presupuesto, ahorro, inversión, gastos, patrimonio |

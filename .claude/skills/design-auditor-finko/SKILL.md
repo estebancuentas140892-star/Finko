@@ -1,9 +1,9 @@
 ---
-
-> Revisado: 2026-08-11.
 name: design-auditor-finko
 description: Auditoría visual y UX/UI integral de Finko usando Claude Design. Analiza cada sección de la aplicación para detectar problemas de jerarquía visual, legibilidad, consistencia de componentes, formularios, textos, colores, tipografía, accesibilidad y experiencia del usuario. Usar al revisar diseño existente, antes de crear nuevas pantallas o para mejorar una sección completa de la aplicación.
 ---
+
+> Revisado: 2026-08-11.
 
 # Design Auditor Finko
 
