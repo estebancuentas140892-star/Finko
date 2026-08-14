@@ -1,12 +1,12 @@
 # Tablero - Finko Claude
 
-> Revisado: 2026-08-13.
+> Revisado: 2026-08-14.
 
 > Tablero Kanban de trabajo pendiente. Reemplaza a `TASKS.md` y `ROADMAP.md` (retirados 2026-07-02, ver [CHANGELOG](CHANGELOG.md)).
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-08-13. Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
+> Última actualización: 2026-08-14. Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
 
 ---
 
@@ -44,13 +44,14 @@ Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (si
 
 ## Índice de pendientes
 
-Las 11 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+Las 12 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
 | INT.1g | Carril derecho de 320px desde 1.680px (diferida) | Transversal | baja (diferida) | sin sección candidata con contenido |
 | CFG.4 | Respaldo, cuentas y sincronización [DECISIÓN DE ADN] | Configuración | sin definir | ADR 043 resuelto |
-| PERF.5 | Migrar la persistencia a IndexedDB (futura, no iniciar) | Transversal | sin definir | un disparador del ADR 030 D4 |
+| PERF.9 | Peso serializado real del estado en el harness | Transversal | media | nada |
+| PERF.10 | Un solo punto de acceso a `localStorage` | Transversal | baja | nada |
 | DOC.3 | Fichas de contexto sobre el techo y sellos vencidos | Transversal | media | nada (medido en DOC.2) |
 | DOC.4 | Automatizar la compuerta 3 en el pre-commit | Transversal | baja | nada |
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | P4 del ADR 033 + cola de diseño |
@@ -86,7 +87,7 @@ CFG.4 → [`board/configuracion.md`](board/configuracion.md)
 
 ## Transversal (afecta varias secciones)
 
-INT.1g, PERF.5, DOC.3, DOC.4, DV.2d, IV.4, PA.1b → [`board/transversal.md`](board/transversal.md)
+INT.1g, PERF.9, PERF.10, DOC.3, DOC.4, DV.2d, IV.4, PA.1b → [`board/transversal.md`](board/transversal.md)
 
 ---
 

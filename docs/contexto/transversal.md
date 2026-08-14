@@ -1,6 +1,6 @@
 # Ficha de contexto: Transversal
 
-> Revisado: 2026-08-13.
+> Revisado: 2026-08-14.
 
 > Funcionalidades que atraviesan varias secciones y no son visuales: taxonomía de categorías, persistencia, el pipeline de render, el CTA de cuenta, el motor único de avisos y el sistema de logros. Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -101,8 +101,8 @@
 ## Persistencia y salvaguarda de cuota (localStorage)
 
 - **Objetivo**          : todo el estado vive en `localStorage` bajo la clave única `fk_v1` (ADN 3). `save()` está debounced 200 ms; `_flush()` serializa `S` entero y escribe. Una salvaguarda avisa antes de llenar la cuota y evita que un guardado fallido se pierda en silencio (ADR 030).
-- **Estado actual**     : estable. **PERF.4** ([ADR 030](../DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md), 2026-07-06) decidió **no** reescribir la persistencia (el costo de guardar es ~5 ms debounced, medido en `scripts/perf/`) y en su lugar agregó la salvaguarda de cuota. **IndexedDB** queda como dirección futura (**PERF.5** en BOARD, no iniciar sin un disparador del ADR 030 D4). Partir `localStorage` por clave está **rechazado** (no sube la cuota). Desde **PERF.8** el harness también mide el arranque (`loadData()`: `JSON.parse` + migraciones), la otra mitad de la ruta: **0,6 / 2,6 / 5,1 ms** de mediana a 1.000 / 5.000 / 10.000 gastos. Lineal y lejos del disparador; el D4 sigue exigiendo jank en dispositivo real, no esta cifra de happy-dom. **Compuerta reverificada el 2026-08-13** ante un pedido de ejecutar PERF.5: los tres disparadores del D4 siguen cerrados y la tarjeta no se inició. Evidencia y tamaño medido del cambio, en la tarjeta de [`board/transversal.md`](../board/transversal.md); el hallazgo que manda es que el costo vive en los tests (13 suites E2E siembran `fk_v1` sin helper central), no en el runtime.
-- **Verificado contra** : `8bfd40e` (2026-07-31, PERF.8).
+- **Estado actual**     : estable. **PERF.4** ([ADR 030](../DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md), 2026-07-06) decidió **no** reescribir la persistencia y en su lugar agregó la salvaguarda de cuota. **IndexedDB** sigue siendo la dirección futura y desde el [ADR 068](../DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md) (2026-08-14) **ya no es tarjeta del tablero**: ese ADR es su fuente única, fija el alcance (el mismo blob JSON en un registro de IndexedDB, **no** un store por colección) y reemplaza los tres disparadores del D4 por dos verificables (**T1** cuota medida, **T2** decisión de producto). Partir `localStorage` por clave sigue **rechazado**. Desde **PERF.8** el harness mide también el arranque: **0,6 / 2,6 / 5,1 ms** de mediana a 1.000 / 5.000 / 10.000 gastos, lineal. Lo que **no** mide es el peso serializado del estado (esa es **PERF.9**) ni el `setItem` real: en happy-dom `localStorage` es un Map en memoria.
+- **Verificado contra** : `4b725d1` (2026-08-14, ADR 068).
 
 **Dónde vive**
 
@@ -118,9 +118,9 @@
 
 **Dependencias y relaciones**: `_flush()` emite `state:save` (éxito), `storage:cuota` (al cruzar de nivel de uso) y `storage:error` (guardado rechazado). `config/` los escucha para avisar. `infra/memo.js` (PERF.2) escucha `state:change`, no estos. Exportar backup (`config/_exportarDatos`) usa `JSON.stringify(S)` en memoria: es independiente del layout de storage.
 
-**Riesgos**: `LIMITE_LOCALSTORAGE_CHARS` (4.5 M chars) es un piso conservador, no el cupo exacto (varía por navegador); por eso `falloUltimoGuardado` (fallo real) manda sobre la estimación. Si algún día se migra a IndexedDB (PERF.5), `loadData()` pasa a async → bootstrap async, y el sembrado E2E (escribe `fk_v1`) hay que reescribirlo: es el cambio de mayor riesgo del proyecto.
+**Riesgos**: `LIMITE_LOCALSTORAGE_CHARS` (4.5 M chars) es un piso conservador, no el cupo exacto (varía por navegador); por eso `falloUltimoGuardado` (fallo real) manda sobre la estimación. Si algún día se migra a IndexedDB (ADR 068), `loadData()` pasa a async → bootstrap async, y el sembrado E2E (escribe `fk_v1`) hay que reescribirlo: es el cambio de mayor riesgo del proyecto. Riesgo **presente**: el `catch` de restaurar respaldo (`config/index.js:119`) reporta cualquier fallo como "archivo no válido", así que un `QuotaExceededError` ahí no activa la salvaguarda (**PERF.10**).
 
-**Cambios realizados**: `2026-07-06 (PERF.4, ADR 030)`: salvaguarda de cuota + guardado que ya no falla en silencio (detalle en CHANGELOG). `2026-07-31 (PERF.8)`: columna "arranque" en el harness, el dato que el D4 pedía. `2026-08-13 (PERF.5)`: pedido de ejecución evaluado y **rechazado**, los tres disparadores del D4 siguen cerrados; sin cambios de código (detalle en el CHANGELOG).
+**Cambios realizados**: `2026-07-06 (PERF.4, ADR 030)`: salvaguarda de cuota + guardado que ya no falla en silencio (detalle en CHANGELOG). `2026-07-31 (PERF.8)`: columna "arranque" en el harness, el dato que el D4 pedía. `2026-08-13 (PERF.5)`: pedido de ejecución evaluado y **rechazado**, los tres disparadores del D4 siguen cerrados; sin cambios de código. `2026-08-14 (ADR 068)`: PERF.5 sale del tablero, el alcance queda fijado en blob-en-IndexedDB y los disparadores pasan a dos verificables; nacen PERF.9 y PERF.10; sin cambios de código.
 
 ---
 
@@ -286,7 +286,7 @@
 
 **Riesgos**:
 
-- **Con la app cerrada no hay aviso, y no es una limitación temporal**: un service worker no puede leer `localStorage`, donde vive todo `fk_v1`, así que no tiene con qué calcular un vencimiento (ADR 066 D1). El copy de Ajustes no debe prometer lo contrario. Único disparador de revisión: **PERF.5** (persistencia a IndexedDB), que resolvería la mitad técnica; la mitad de soporte de plataforma (`periodicsync` es Chromium con PWA instalada, iOS no lo implementa) seguiría igual.
+- **Con la app cerrada no hay aviso, y no es una limitación temporal**: un service worker no puede leer `localStorage`, donde vive todo `fk_v1`, así que no tiene con qué calcular un vencimiento (ADR 066 D1). El copy de Ajustes no debe prometer lo contrario. Único disparador de revisión: mudar la persistencia a IndexedDB ([ADR 068](../DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md), ya no es tarjeta). Resolvería el **acceso al dato**, no la **ejecución**: sin push server (ADN 3) y con `periodicsync` solo en Chromium con PWA instalada, el worker igual no corre con la app cerrada.
 - **`DIAS_APARTADO_PROXIMO` es 7, no el `DIAS_PROXIMO` (30) del dominio**: son dos preguntas distintas (listar en la sección contra avisar hoy) y a propósito no comparten constante. Bajarlas a una sola volvería a llenar el aviso todos los días.
 - **Lo que vence hoy nunca es `compromiso-vencido`**: el motor le pide a `vencidosSinPagar` un `umbralDiasAtraso: 1` para que el día del vencimiento lo cubra solo `compromiso-proximo` con `dias: 0`. Si alguien baja ese umbral a 0, el mismo compromiso genera dos avisos el mismo día.
 - **Los préstamos personales nunca pasan de severidad `media`**, ni con un año de atraso: el [ADR 047](../DECISIONS/047-me-deben-v2-intereses-e-historial.md) fija que esa sección recuerda y no presiona, y una notificación del sistema por dinero que le deben al usuario es justo esa presión. Interrumpir queda para lo que él debe.

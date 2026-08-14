@@ -112,7 +112,7 @@ Orden recomendado: a → b → c → d → e → f → g (primero la estructura,
 ## Alternativas consideradas
 
 - **Persistir el estado del detalle por cuenta (`S.config.detalleCuentasInicio`):** descartada en v1; ahorraría un toque a quien siempre lo quiere abierto, pero agrega un campo de config y un bump de schema para una preferencia aún sin evidencia de uso. Revisable si el uso real lo pide.
-- **Foto de perfil:** descartada de nuevo (tercera vez: ADR 028 D3, ADR 030 y este ADR); el riesgo de `QuotaExceededError` sobre los datos financieros sigue vigente mientras PERF.5 (IndexedDB) no exista.
+- **Foto de perfil:** descartada de nuevo (tercera vez: ADR 028 D3, ADR 030 y este ADR); el riesgo de `QuotaExceededError` sobre los datos financieros sigue vigente mientras la persistencia siga en `localStorage`. Aprobar la foto es, además, uno de los dos disparadores T2 del [ADR 068](068-perf5-sale-del-tablero-disparadores-verificables.md): decidirla a favor abre la migración a IndexedDB.
 - **Desplegar la sombra en reposo a toda la app en esta iniciativa:** descartada; ese es exactamente el alcance de DV.2a y hacerlo aquí duplicaría la decisión pendiente del ADR 033 (regla anti-doble-trabajo del triaje).
 - **Mantener los accesos rápidos bajo el hero (ADR 028 D1):** descartada por el propio Esteban en el brief: los atajos son estáticos y empujaban lo urgente fuera del primer pantallazo; la fusión con actividad reciente les da un cierre coherente sin perder el 1 tap.
 

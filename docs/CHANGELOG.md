@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-08-13.
+> Revisado: 2026-08-14.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-08)
+
+### docs(transversal): ADR 068, PERF.5 sale del tablero y sus disparadores se vuelven verificables · 2026-08-14
+
+Decisión definitiva sobre PERF.5 (migrar la persistencia de `localStorage` a IndexedDB), delegada por Esteban. **No se implementa, y tampoco sigue siendo tarjeta.** Seis revisiones independientes en paralelo, cada una con la orden de refutar: necesidad técnica, límites reales, riesgo de migración y tests, offline-first y mantenimiento, relación con los ADR vigentes, gobernanza documental. [ADR 068](DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md), que **acota** el [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) D3 y D4 sin revertirlo. Ficha: [`contexto/transversal.md`](contexto/transversal.md). **Sin cambios de código.**
+
+- **El motivo de fondo: la tarjeta era inelegible por construcción.** Sus tres disparadores solo podían cambiar de estado por hechos externos al tablero (telemetría que el ADN 3 prohíbe recolectar, jank que ningún instrumento del repo mide, una decisión de producto de Esteban). En cinco semanas se tocó seis veces sin ejecutarse nunca, incluida la sesión completa del 2026-08-13. El precedente del proyecto ya existía: los logros diferidos del [ADR 032](DECISIONS/032-logros-v2-niveles-y-habitos.md) "**NO son tarjeta**: su verificación y condición de reapertura viven en el ADR".
+- **Dos disparadores verificables reemplazan a los tres.** **T1**, cuota medida: el harness cruza el 80 % de `LIMITE_LOCALSTORAGE_CHARS` **o** entra un `storage:error` a BUGS.md. **T2**, decisión de producto: el [ADR 043](DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md) se resuelve como D o E, **o** se aprueba la foto de perfil del [ADR 034](DECISIONS/034-inicio-v2.md). Nada más abre la decisión, y un pedido de ejecución sin T1 ni T2 se responde con el ADR, sin volver a auditar el código.
+- **El alcance ambiguo queda resuelto antes de costar trabajo.** El ADR 030 D3 prometía "escritura por registro, resolviendo cuota **y** CPU", que exige un object store por colección; la tarjeta listaba los archivos de la variante barata. Se fija la barata: **el mismo blob JSON en un único registro de IndexedDB**. La escritura por registro queda rechazada, porque rompería los 33 bloques de migración (schema v40), `_applyToS()` y `estadoCuota()` a cambio de un beneficio de CPU que no existe.
+- **Corrección medida, no estimada:** el costo de `save()` es función de los caracteres, no del número de registros. Al tope del cupo el guardado cuesta ~20 ms de mediana y ~49 de p95, así que **la cuota se cruza primero o a la vez y T1 absorbe el eje de CPU**. Un gasto real serializa a ~283 caracteres contra 95 de la semilla del harness (factor 2,98x): en el cupo caben ~15.900 gastos reales, no los ~47.000 que sugiere la semilla.
+- **Hallazgo que no depende de IndexedDB y ya cuesta hoy:** el `setItem` crudo de `config/index.js:116` (restaurar respaldo) vive en un `try` cuyo `catch` anuncia "El archivo no es un JSON válido de Finko". Un `QuotaExceededError` al restaurar se le reporta al usuario como archivo corrupto y **no** activa la salvaguarda del ADR 030 D2. Entra al alcance de PERF.10.
+- **Y una mejora de durabilidad que nadie tomó:** `navigator.storage.persist()` tiene **cero ocurrencias** en el repo. Protege el bucket de origen completo sin migrar nada, que es más de lo que aporta IndexedDB (el desalojo del navegador se lleva `localStorage` e IndexedDB juntos). Queda anotado en el ADR como candidato que **requiere triaje**, no como tarjeta: toca runtime y puede mostrar un permiso del navegador.
+- **Lo que sí rinde hoy sale a la luz como dos tarjetas independientes**, ninguna condicionada a IndexedDB: **PERF.9** (peso serializado real en el harness, la medición que hace verificable a T1) y **PERF.10** (un solo punto de acceso a `localStorage`: helper central para las 13 suites E2E, que ya acumulan 197 referencias a `fk_v1` sin uno, y fachada en `storage.js` para los tres módulos que escriben la clave cruda).
+- Documentos actualizados: [`BOARD.md`](BOARD.md) (índice de 11 a 12 tarjetas), [`board/transversal.md`](board/transversal.md) (la tarjeta se reemplaza por una nota de una línea al ADR), [`contexto/transversal.md`](contexto/transversal.md), [`HANDOFF.md`](HANDOFF.md), y los ADR [030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md), [034](DECISIONS/034-inicio-v2.md) y [066](DECISIONS/066-motor-unico-de-avisos.md), que citaban a PERF.5 como tarjeta viva.
+- Tests: sin tocar `modules/`, no hay nada que probar. Sin bump de SW. El comentario de `modules/infra/notificaciones.js:9` sigue citando "PERF.5" y queda como deuda declarada: no se toca runtime en una tarea documental.
 
 ### docs(transversal): DOC.2, auditoria documental transversal con seis frentes en paralelo · 2026-08-13
 

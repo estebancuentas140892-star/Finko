@@ -3,7 +3,7 @@
 **Estado:** Aceptada por Esteban el 2026-07-06 (delegó la decisión tras el análisis de la auditoría de rendimiento).
 **Fecha:** 2026-07-06
 **Autores:** Esteban (decisión), Claude Opus 4.8 (análisis y diseño).
-**Relación:** cierra **PERF.4** de la auditoría de rendimiento 2026-07 ([BOARD.md](../BOARD.md), tras PERF.0/PERF.1/PERF.2). Toca la **regla 3 del ADN** ([`/CLAUDE.md`](../../CLAUDE.md) sección 4: "Sin servidor, solo `localStorage`, clave `fk_v1`"): esta ADR la **reafirma**, no la cambia, y documenta la condición bajo la cual se revisaría. Base técnica en [`docs/contexto/transversal.md`](../contexto/transversal.md) y `scripts/perf/BASELINE.md`.
+**Relación:** cierra **PERF.4** de la auditoría de rendimiento 2026-07 ([BOARD.md](../BOARD.md), tras PERF.0/PERF.1/PERF.2). Toca la **regla 3 del ADN** ([`/CLAUDE.md`](../../CLAUDE.md) sección 4: "Sin servidor, solo `localStorage`, clave `fk_v1`"): esta ADR la **reafirma**, no la cambia, y documenta la condición bajo la cual se revisaría. Base técnica en [`docs/contexto/transversal.md`](../contexto/transversal.md) y `scripts/perf/BASELINE.md`. **D3 y D4 quedan acotados por el [ADR 068](068-perf5-sale-del-tablero-disparadores-verificables.md)** (2026-08-14): el D3 pierde la mitad "y CPU" de su justificación y el alcance se fija en blob-en-IndexedDB; los tres disparadores del D4 se reemplazan por dos verificables. La decisión de fondo (no reescribir, salvaguarda de cuota, IndexedDB como dirección futura) sigue vigente.
 
 ---
 

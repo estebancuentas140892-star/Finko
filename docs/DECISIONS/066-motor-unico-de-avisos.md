@@ -30,7 +30,7 @@ La pregunta que bloqueaba la tarjeta era si Finko puede notificar **sin la app a
 
 Conclusión: **los avisos existen al abrir la app y mientras está abierta.** Cualquier promesa distinta sería falsa, y el mismo criterio del [ADR 030](030-persistencia-diferir-rewrite-salvaguarda-cuota.md) y del [ADR 063](063-candado-de-acceso-local.md) aplica acá: no se promete lo que no se puede sostener en el dispositivo real.
 
-Esto **no** obliga a un ADR sobre el ADN: no se propone cambiar las reglas 2 ni 3, se acepta su consecuencia. El punto 2 queda anotado con su disparador: si algún día se ejecuta **PERF.5** (migrar la persistencia a IndexedDB, hoy "futura, no iniciar"), la mitad técnica del background sync se desbloquea y esta decisión se puede revisar. La mitad de soporte de plataforma seguiría igual.
+Esto **no** obliga a un ADR sobre el ADN: no se propone cambiar las reglas 2 ni 3, se acepta su consecuencia. El punto 2 queda anotado con su disparador: si algún día se migra la persistencia a IndexedDB (diferida por el [ADR 068](068-perf5-sale-del-tablero-disparadores-verificables.md), ya no es tarjeta del tablero), el service worker podría **leer** el estado y esta decisión se puede revisar. No basta: sin push server y con `periodicsync` solo en Chromium, seguiría sin **ejecutarse** con la app cerrada. La mitad de soporte de plataforma seguiría igual.
 
 ## Decisión
 
@@ -93,7 +93,7 @@ El interruptor sigue siendo el que ya está (`S.config.notificaciones`, un solo 
 - **Los `nudge` de cada sección no cambian.** Siguen siendo la señal en contexto, dentro de su pantalla. El motor no los reemplaza: responde otra pregunta ("qué es lo más urgente hoy, mirando todo"). Unificarlos sería otra tarjeta y otro ADR.
 - **Las tarjetas que esperaban este motor quedan desbloqueadas**: PA.1c (aviso de débito sin saldo, ADR 052) y los recordatorios de préstamos del ADR 047 ya tienen dónde conectarse, como una fuente más de la tabla de D3.
 - **Ninguna migración.** Schema intacto (D6), así que la tarjeta no toca `storage.js`.
-- **Se documenta un límite honesto, no una función.** Si Esteban espera que el teléfono suene con la app cerrada, la respuesta escrita es no, y el disparador para revisarla es PERF.5.
+- **Se documenta un límite honesto, no una función.** Si Esteban espera que el teléfono suene con la app cerrada, la respuesta escrita es no, y el disparador para revisarla es que la persistencia se mude a IndexedDB ([ADR 068](068-perf5-sale-del-tablero-disparadores-verificables.md)), que aun así solo resolvería la mitad del problema.
 
 ## Implementación
 
