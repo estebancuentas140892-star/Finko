@@ -1,6 +1,6 @@
 # Ficha de contexto: Sistema visual
 
-> Revisado: 2026-08-11.
+> Revisado: 2026-08-14.
 
 > Identidad visual transversal: color por sección, tejas de marca y biblioteca gráfica, y navegación. Partida de `transversal.md` el 2026-07-24. Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -11,23 +11,23 @@
 ## Tejas de marca y biblioteca gráfica (logos de bancos y marcas)
 
 - **Objetivo**          : mostrar el logotipo oficial de cada banco/billetera/marca en una teja de color, con fallback de iniciales, en Mis cuentas, Gastos, Deudas, fijos y suscripciones. `assets/svg/` es la fuente de verdad de diseño (ADR 026); el sprite de `index.html` es artefacto generado.
-- **Estado actual**     : BR.3 completa (2026-07-05): los 11 bancos/billeteras reales de `BANCOS_CO` tienen glifo a color; solo "Otro" (no es una entidad real) sigue con iniciales. BR.5 (normalización automática de exports crudos) y BR.4 (ADR 027, excepción de logo a color) cerradas. Iniciativa Biblioteca de recursos gráficos completa.
-- **Verificado contra** : `92934a0` (BR.3) más el ADR 027 de este cierre (BR.4), 2026-07-05.
+- **Estado actual**     : BR.3 completa (2026-07-05). Hoy `BANCOS_CO` tiene **14 entradas**: 12 bancos/billeteras con glifo a color (un `.svg` con `data-fullcolor="true"` por entidad en `assets/svg/logos/bancos/`), Efectivo con el ícono estructural `i-saldo` y solo **"Otro"** (no es una entidad real) con fallback de iniciales, la única sin campo `simbolo`. El sello viejo decía 11: el catálogo creció desde entonces. BR.5 (normalización automática de exports crudos) y BR.4 (ADR 027, excepción de logo a color) cerradas. Iniciativa Biblioteca de recursos gráficos completa.
+- **Verificado contra** : `7e11afe` (2026-08-14, DOC.3: catálogo, anclas y pipeline re-verificados uno por uno; el sello anterior era `92934a0` del 2026-07-05).
 
 **Dónde vive**
 
 | Pieza | Archivo | Ancla | Línea |
 |---|---|---|---|
-| Catálogo de bancos CO (id, color, texto, simbolo, aliases) | `modules/core/constants.js` | `BANCOS_CO` | ~283 |
-| Catálogo de marcas globales | `modules/core/constants.js` | `MARCAS` | antes de BANCOS_CO |
+| Catálogo de bancos CO (id, color, texto, simbolo, aliases) | `modules/core/constants.js` | `BANCOS_CO` | ~285 |
+| Catálogo de marcas globales | `modules/core/constants.js` | `MARCAS`, justo después de `BANCOS_CO` | ~330 |
 | Render de la teja (glifo o iniciales sobre color) | `modules/infra/marcas.js` | `tejaMarca()` | ~90 |
-| Detección de marca en texto libre | `modules/infra/marcas.js` | `resolverMarca()`, `normalizarAlias()` | ~35 |
-| Avatar de banco (delega en tejaMarca) | `modules/infra/bancos.js` | `bancoAvatar()` | |
+| Detección de marca en texto libre | `modules/infra/marcas.js` | `resolverMarca()`, `normalizarAlias()` | ~66, ~34 |
+| Avatar de banco (delega en tejaMarca; guard de forma del id de sprite) | `modules/infra/bancos.js` | `bancoAvatar()` | ~42 |
 | Sprite generado (símbolos `b-*`) | `index.html` | marcadores `INICIO/FIN bloque generado por scripts/sync-sprite.py` | |
 | Pipeline biblioteca → sprite | `scripts/sync-sprite.py` | `normalizar_export_illustrator()` (paso 0, BR.5), `validar_y_convertir()`, `_validar_fullcolor()`, `orden_final()` | |
 | Archivos de diseño | `assets/svg/logos/**` | 1 archivo = 1 símbolo (`<slug>.svg` → `b-<slug>`) | |
 | Estándar técnico y flujo de trabajo | `assets/svg/README.md` | secciones 6, 6b (logos a color), 7 (export), 9 (flujo en pareja) | |
-| CSS de la teja | `styles/components/nudges.css` | `.bank-avatar`, `.bank-avatar__glifo` | ~275 |
+| CSS de la teja | `styles/components/nudges.css` | `.bank-avatar`, `.bank-avatar__glifo` | ~453, ~474 |
 | CSS base de iconos (fuente de la herencia de stroke) | `styles/components/forms.css` | `.icon` | ~15 |
 
 **Recursos**: símbolos `b-*` del sprite; `i-saldo` (Efectivo usa un icono estructural como glifo); tokens `--fk-teja-*` (tamaños de teja); campos `color`/`texto` del catálogo pintan la teja vía estilo inline.
@@ -37,7 +37,7 @@
 **Riesgos**:
 
 - **Herencia CSS a través de `<use>` (la trampa grande):** `.icon` pone `fill:none; stroke:currentColor; stroke-width:2.35` en el `<svg>` anfitrión y eso SE HEREDA hacia adentro del `<use>`. Todo elemento pintable de un logo a color debe declarar `fill` y `stroke` explícitos o recibe un contorno fantasma del color `texto` de la teja (pasó con Banco de Bogotá y Nequi, 2026-07-05; fix en `0f143f9`). Validador y guardarraíl lo exigen desde entonces.
-- Logos a color (`data-fullcolor="true"`): el cuerpo se conserva byte a byte; su teja se pinta del color del propio fondo del logo; `texto` no pinta el glifo (solo el fallback de iniciales).
+- Logos a color (`data-fullcolor="true"`): el cuerpo se conserva byte a byte; su teja se pinta del color del propio fondo del logo; `texto` no pinta el glifo (solo el fallback de iniciales). El atributo vive **solo en el archivo fuente** de `assets/svg/logos/`: el sync lo consume para decidir cómo validar y el sprite generado de `index.html` no lo lleva, así que buscarlo ahí da cero y no significa que no haya logos a color.
 - IDs internos de gradiente deben ser únicos en todo el sprite (prefijo del slug, ej. `bbog-g0`); el sync lo verifica.
 - `BANCOS_CO[].id` se guarda en `localStorage` (datos del usuario): **nunca renombrar ids**. Renombrar un archivo `.svg` publicado rompe el campo `simbolo` (breaking change; ver `ID_ANTERIOR` en el sync para preservar posición).
 - El sync aborta sin escribir (`ErrorProduccion`) si un símbolo publicado perdería su archivo fuente; un archivo a medio pulir se excluye sin bloquear (`ErrorRecurso`).
@@ -50,6 +50,7 @@
 
 **Cambios realizados**:
 
+- 2026-08-14 (DOC.3, sin código): sello re-verificado contra el código. Las anclas siguen vivas y el pipeline no cambió; se corrigieron las líneas orientativas, la posición de `MARCAS` (está después de `BANCOS_CO`, no antes) y el conteo de entidades con glifo, que era 11 y hoy es 12 sobre 14 entradas.
 - 2026-07-05 (BR.4, [ADR 027](../DECISIONS/027-logos-de-marca-a-color-excepcion-monocromo.md)): formaliza la excepcion de logo a color (`data-fullcolor`), su archivo autonomo y el color de teja.
 - 2026-07-05 (BR.3, completa): 9 bancos y billeteras mas a color de un tiron, todos con la misma imagen de calco incrustada.
 - 2026-07-05 (BR.5): el sync normaliza exports crudos de Illustrator antes de validar y reescribe el archivo.
@@ -79,7 +80,7 @@
 | Presentación de hoja inferior (reutilizable) | `styles/modals.css` | `.modal-overlay--sheet`, `.modal--sheet` | ~207 |
 | Tiles con teja por dominio + estado activo | `styles/modals.css` | `.mas-tile`, `.mas-tile__teja`, `.mas-tile.active` | ~270 |
 | Botón de tema de la hoja | `styles/modals.css` + `index.html` | `.mas-sheet__theme` (acción `theme-toggle`) | ~330 |
-| Marcado del tile activo | `modules/ui/shell.js` | `markActiveNav()` (selector `.nav-item, .mas-tile`) | ~85 |
+| Marcado del tile activo, y despliegue del sub-nivel de Ahorro en escritorio (INT.1b/AH.7a) | `modules/ui/shell.js` | `markActiveNav()` (selector `.nav-item, .mas-tile`), `GRUPO_AHORRO` | ~85 |
 | Sincronización de TODOS los toggles de tema | `modules/ui/shell.js` | `_syncThemeButton()` (`querySelectorAll`, swap `#i-moon`/`#i-sun`) | ~58 |
 | Cierre al navegar (el botón de tema NO cierra) | `modules/ui/menu-mas.js` | `initMenuMas()` (click en `a[href]`) | ~20 |
 | Resaltado del botón "Más" por sección | `modules/ui/shell.js` | `MAS_SECTIONS` (8 secciones; AH.7a sacó el grupo Ahorro y sumó Agenda) | ~18 |

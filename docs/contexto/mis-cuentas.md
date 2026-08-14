@@ -1,6 +1,6 @@
 # Ficha de contexto: Mis cuentas
 
-> Revisado: 2026-08-12.
+> Revisado: 2026-08-14.
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -89,7 +89,7 @@ Además: rediseño visual ADR 035 completo. Ver "Transferencias" y "Distribució
 
 ## Transferencias entre cuentas propias (MC.17, diseño 2026-07-12)
 
-> Bloque de diseño escrito en la fase de análisis (Opus 4.8), **antes de codificar** (regla 2.6). Se implementa por rebanadas MC.17a-e (ver `docs/BOARD.md`), **todas cerradas el 2026-07-12**. **MC.17a**: colección `S.transferencias` + typedef `Transferencia` (`state.js`), bump v25→v26 + migración (`storage.js`), y lógica pura `logic/transferencias.js` (`validarTransferencia`, `saldoSuficiente`, `normalizarTransferencia`, `calcularTransferencia`, exportadas por el barrel `logic.js`). **MC.17b**: botón de entrada + modal + acción, ver "Dónde vive" abajo y el detalle en "Cambios realizados". **MC.17c**: la transferencia aparece en el ledger de Movimientos, ver detalle abajo y en "Cambios realizados". **MC.17d**: GMF del retiro (4x1000) opcional, ver detalle abajo. **MC.17e**: teja "Transferir" en la hoja Registrar, segundo punto de entrada, cierra la iniciativa completa.
+> Bloque de diseño escrito en la fase de análisis, **antes de codificar**. Las 5 rebanadas (MC.17a a MC.17e) cerraron el 2026-07-12 y MC.17f el 2026-08-12: qué hizo cada una está en "Cambios realizados", al final del bloque.
 
 - **Objetivo**: mover dinero entre dos cuentas propias en un solo paso, con ambas cuentas actualizadas solas y rastro en el historial. Hoy exige editar dos saldos a mano (propenso a error, sin atomicidad, sin registro).
 - **Invariante crítico (lo que no se puede romper)**: una transferencia NO es ingreso ni gasto, es traslado interno. El patrimonio neto (Σ saldos - Σ deudas) no cambia. Por eso NO entra a `S.gastos` (Análisis, Límites de gasto, resumen semanal y monitor de renta no la ven, y así debe ser). En el ledger de Movimientos es un tipo propio con dirección **neutra** (ni `+` verde ni `-` rojo).
@@ -101,7 +101,6 @@ Además: rediseño visual ADR 035 completo. Ver "Transferencias" y "Distribució
 - **Historial = el ledger**: la vista completa `#movimientos` ES el historial de transferencias. No se crea una lista aparte en Mis cuentas (cero duplicación).
 - **Punto de entrada**: dos accesos, ambos cerrados. **MC.17b**: botón "Transferir entre cuentas" en Mis cuentas, bajo la lista de cuentas. **MC.17e**: teja "Transferir" en la hoja "Registrar" (accesible desde cualquier sección), visible solo con 2+ cuentas (patrón 0/1/varias de `registrar.js`), reutiliza la misma acción `abrir-transferencia`.
 - **Forward-compat MC.16 (confirmado por el ADR 051, aceptado el 2026-07-27)**: "pagar la tarjeta" es un abono a deuda, NO una transferencia, y **una tarjeta nunca será una `Cuenta`**, así que no puede ser endpoint de una transferencia ni por accidente. El aviso se cumplió: MC.17 no necesita cambios por MC.16.
-- **Rebanadas**: MC.17a (schema + lógica pura + apply, solo-unit) → MC.17b (form + acción, patrón 0/1/2/varias) → MC.17c (ledger neutro) → MC.17d (GMF) → MC.17e (teja en Registrar). Las 5 cerradas el 2026-07-12. Detalle en `docs/BOARD.md`.
 
 **MC.17f - Deshacer una transferencia (cerrada 2026-08-12)**: `_eliminarTransferencia()` (`acciones/transferencias.js`) revierte los deltas exactos de `calcularTransferencia()` (`monto + costoGMF` al origen, `-monto` al destino) y borra el registro. **Decisión: deshacer = eliminar + revertir, sin editar y sin fila de reversa propia**, mismo mecanismo que `eliminar-gasto`/`eliminar-ingreso-puntual`. Se descarta la idea original de esta ficha (fila de reversa nueva): ningún dominio de la app la usa hoy, y sumarla solo acá es vocabulario nuevo sin resolver algo que la convención existente no cubra (CLAUDE.md sección 2). El `costoGMF` se devuelve completo porque deshacer corrige un error de captura, no repite un retiro real. Sin editar: dos saldos con GMF de por medio es más complejo que EDIT.1 (un solo saldo); deshacer + recrear alcanza. Si una cuenta ya se eliminó, revierte solo la que existe y borra igual. Cierra MOV.1: `transferencia` entra a `_ACCIONES_POR_TIPO` con `eliminar: 'eliminar-transferencia'`, sin UI propia acá.
 

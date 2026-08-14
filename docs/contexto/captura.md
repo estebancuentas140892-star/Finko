@@ -1,10 +1,10 @@
 # Ficha de contexto: Captura (formularios y selector de ícono)
 
-> Revisado: 2026-08-11.
+> Revisado: 2026-08-14.
 
 > Cómo se capturan datos en un formulario de la app: el lenguaje visual compartido de los formularios y el selector de ícono que varios de ellos incrustan. Partida de `transversal.md` el 2026-07-24. Reglas de uso y plantilla en [`README.md`](README.md).
 >
-> **Qué NO buscar acá:** qué categorías existen y a qué sección pertenecen (eso es la taxonomía CAT.1, en [`transversal.md`](transversal.md)); la identidad de color y las tejas de marca (en [`sistema-visual.md`](sistema-visual.md)).
+> **Qué NO buscar acá:** qué categorías existen y a qué sección pertenecen (eso es la taxonomía CAT.1, en [`categorias.md`](categorias.md)); la identidad de color y las tejas de marca (en [`sistema-visual.md`](sistema-visual.md)).
 
 ---
 
@@ -45,7 +45,7 @@
 
 - **Objetivo**          : un solo componente reutilizable para elegir un ícono de categoría/entidad personalizada en cualquier formulario de la app: un recuadro (ícono elegido o placeholder vacío) que, al tocarlo, despliega una grilla colapsable de íconos; elegir uno cierra la grilla y actualiza el recuadro. Reemplaza el patrón de TX.9b (Gastos), que mostraba la grilla completa (29 íconos) SIEMPRE visible en cuanto se elegía "+ Otra categoría", invasivo en pantalla (punto del brief CAT.2). Seis consumidores identificados en el triaje: Gastos (ya tenía selección propia, TX.9b), Gasto fijo/Calendario (hoy sin ícono en "Otro", solo texto libre), Deudas (categoría "Otra"/"Otro" con ícono fijo `c-otros`, sin elección del usuario), Mis cuentas (banco "Otro" con fallback de iniciales "?", sin ícono elegible), Apartados y Metas (ambos con un `<input type="text" maxlength="4">` para pegar un emoji a mano, dependiente del selector de emojis del sistema operativo, Win+.).
 - **Estado actual**     : **CAT.2 COMPLETA, CAT.2a a CAT.2f CERRADAS (2026-07-13)**. CAT.2a: componente compartido `infra/icon-picker.js` (`renderIconoPicker`/`wireIconoPicker`/`resetIconoPicker`/`setIconoPickerValor`) construido y migrado como primer consumidor en **Gastos** (TX.9b), reemplazando la grilla siempre-visible por el recuadro colapsable. CAT.2b: **Metas** migrada (categoría "Otra"): `meta.icono` ahora puede guardar un id de símbolo del sprite (elegido con el picker) O un emoji crudo (metas viejas, backward-compat sin bump de schema, ver Riesgos). CAT.2c: **Apartados** migrado (nombre del apartado): el `<input type="text" maxlength="4">` para pegar un emoji a mano se reemplaza por el picker en la columna angosta del layout existente (el panel pasa a popover flotante, no reflowa el form); las **plantillas rápidas** (SOAT, Regalos...) conservan su propio catálogo de 17 emojis curados (más específico que el genérico de 29 íconos del picker) vía `setIconoPickerValor`, nuevo en esta rebanada para fijar un valor externo sin pasar por la grilla. CAT.2d: **Deudas** migrada (categoría "Otra"/"Otro"), a diferencia de los 3 consumidores previos esta rebanada AGREGA una capacidad (antes "Otra"/"Otro" caía al ícono fijo `c-otros`, sin elección posible): `compromiso.icono` nuevo, campo opcional siempre explícito (`null` si no aplica, nunca ausente) para que sobreviva el merge shallow de `editar()`. CAT.2e: **Mis cuentas** migrada (banco "Otro"), misma naturaleza que CAT.2d (agrega elección, no reemplaza campo existente) con un hallazgo adicional: `cuenta.icono` YA EXISTÍA en el schema, pero era dato muerto (`_iconoPorBanco()` asignaba un emoji que ningún render leía). Esta rebanada reutiliza el campo con semántica nueva (id de sprite solo para "Otro") y hace que `bancoAvatar()` lo lea de verdad; el emoji legado de cuentas viejas se descarta con un guard de forma (`/^[a-z]-[a-z0-9-]+$/`) para no romper la teja con un `<use href="#💚">` inválido. CAT.2f: **Gasto fijo/Calendario** migrado (categoría "Otro"), sexto y último consumidor, cierra la iniciativa: alcance mínimo decidido con Esteban (triaje 2.7), mismo patrón que CAT.2d/2e sin tocar `CATEGORIAS_AGENDA`. `normalizarCompromiso()` ganó `base.icono` también en la rama `tipo==='fijo'` (antes solo existía para deudas); `_renderDetalleItem()` (Calendario) e `iconoPorOrigen()` (herencia de ícono TX.6/TX.7: un gasto nacido de pagar un fijo hereda su ícono) resuelven `compromiso.icono` antes que `CATEGORIA_AGENDA_ICONO`. El checklist de "Distribuir mi ingreso" no necesitó ningún cambio: ya generalizaba por `it.icono` sin distinguir tipo desde CAT.2d. Sin modal anidado a propósito (mismo criterio que TX.9b ya declaraba en su comentario original): un panel dentro del mismo formulario, no un overlay nuevo (evita además el bug latente de foco anidado que ya existe en los pickers dinámicos de `cuenta-helper.js`, cuyo `trapFocus`/`releaseFocus` es singleton, no una pila). La creación de categorías nombradas nuevas (no solo el ícono de "Otro") en cualquier dominio queda para **CAT.3**.
-- **Verificado contra** : commit de CAT.2f (2026-07-13).
+- **Verificado contra** : `7e11afe` (2026-08-14, DOC.3: los 4 exports y los 6 consumidores re-verificados uno por uno; el sello anterior era el commit de CAT.2f, 2026-07-13). `infra/icon-picker.js` no se toca desde CAT.2c: el componente está estable y lo que se movió fue el lado de los consumidores. Hay **siete** pickers montados, no seis: `agenda/view.js` monta dos (`gfijo-icono` para la categoría "Otro" y `gfijo-categoria-nueva-icono` que agregó CAT.3c para la categoría personalizada de gasto fijo, ver [`categorias.md`](categorias.md)).
 
 **Dónde vive**
 
@@ -94,6 +94,8 @@
 **Cambios pendientes**: ninguno. La iniciativa CAT.2 queda completa con sus 6 rebanadas cerradas.
 
 **Cambios realizados**:
+
+- 2026-08-14 (DOC.3, sin código): sello re-verificado contra el código. Los 4 exports y los 6 consumidores siguen vivos y el componente no cambió desde CAT.2c; se registró el séptimo picker montado, que llegó con CAT.3c.
 
 - 2026-07-13 (CAT.2f, cierra la iniciativa CAT.2): Gasto fijo/Calendario migrado como sexto y ultimo consumidor, categoria "Otro".
 

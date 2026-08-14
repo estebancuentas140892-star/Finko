@@ -1,6 +1,6 @@
 # Contexto técnico por funcionalidad - Finko Claude
 
-> Revisado: 2026-08-13.
+> Revisado: 2026-08-14.
 
 > Registro técnico permanente. Una ficha por sección de la app; dentro de cada ficha, un bloque por funcionalidad.
 > Objetivo: cada funcionalidad se analiza a fondo **una sola vez**, el resultado queda escrito aquí y las sesiones futuras lo reutilizan en vez de volver a recorrer el proyecto.
@@ -49,6 +49,7 @@ Actualizar el bloque tocado como **paso 1** de la secuencia de cierre de docs (v
 
 - **Ancla primaria:** nombre de función, export, clase CSS o `data-action`. Sobrevive a ediciones y se encuentra con `grep -n`.
 - **Línea:** solo referencia orientativa (`~120`). Si al abrir el archivo no coincide, manda el ancla; la línea se corrige al actualizar el bloque.
+- **Un archivo compartido tiene una sola ficha dueña de sus anclas** (principio 1 aplicado a las tablas "Dónde vive"). Caso resuelto en DOC.3: las anclas de navegación de `ui/shell.js` (`markActiveNav()`, `SECCION_NAV`, `MAS_SECTIONS`, `GRUPO_AHORRO`, `_rotularMas()`) viven solo en [`sistema-visual.md`](sistema-visual.md); `ahorro.md` y `escritorio.md` enlazan en vez de remapearlas.
 
 ---
 
@@ -110,9 +111,12 @@ Una ficha por sección de la app (mismo agrupamiento que [`BOARD.md`](../BOARD.m
 | Movimientos | [`movimientos.md`](movimientos.md) | activa (ledger unificado, accionable y con búsqueda/filtros, MOV.1/MOV.2) |
 | Análisis | [`analisis.md`](analisis.md) | activa (panel de análisis, PERF.2) |
 | Configuración | [`configuracion.md`](configuracion.md) | activa (panel de Ajustes, CFG.1a situación laboral) |
-| Transversal no visual (taxonomía de categorías, persistencia y cuota, CTA de cuenta, logros) | [`transversal.md`](transversal.md) | activa |
+| Transversal no visual (persistencia y cuota, pipeline de render, CTA de cuenta, motor de avisos, infra compartida, aviso de versión, guía, legal) | [`transversal.md`](transversal.md) | activa |
 | Sistema visual (identidad de color por sección, tejas de marca y biblioteca gráfica, navegación) | [`sistema-visual.md`](sistema-visual.md) | activa (partida de `transversal.md` el 2026-07-24) |
 | Captura (lenguaje de formularios v2, selector compacto de ícono) | [`captura.md`](captura.md) | activa (partida de `transversal.md` el 2026-07-24) |
+| Categorías (taxonomía global CAT.1, categorías personalizadas del usuario) | [`categorias.md`](categorias.md) | activa (partida de `transversal.md` el 2026-08-14) |
+| Logros (catálogo, evaluación, toast, "Tu progreso") | [`logros.md`](logros.md) | activa (partida de `transversal.md` el 2026-08-14) |
+| Escritorio (shell de escritorio: sidebar, barra superior, atajos, iniciativa INT.1) | [`escritorio.md`](escritorio.md) | activa (partida de `transversal.md` el 2026-08-14) |
 
 Al crear una ficha: actualizar su fila a "activa" y ordenar los bloques dentro del archivo por importancia de la funcionalidad.
 
@@ -125,7 +129,7 @@ Gobiernan toda la documentación viva, no solo las fichas. Se citan aquí porque
 1. **Un dato, un dueño.** Cada hecho vive en un solo archivo oficial; los demás enlazan sin resumir.
 2. **No documentar lo que el código o git ya dicen.** Sin inventarios archivo por archivo ni copias de valores de tokens CSS.
 3. **La historia se escribe una sola vez.** El commit lleva el detalle; CHANGELOG una fila; la ficha una línea por hito (regla 2.3); el tablero borra la tarjeta.
-4. **Techo por archivo, verificado al cerrar tarea.** Ficha: **40 KB** (objetivo 25). Superarlo obliga a podar o partir por eje real (precedente: `transversal.md` partido en tres, 2026-07-25).
+4. **Techo por archivo, verificado al cerrar tarea.** Ficha: **40 KB** (objetivo 25). Superarlo obliga a podar o partir por eje real (precedentes: `transversal.md` partido en tres el 2026-07-25, y otra vez en cuatro el 2026-08-14 con DOC.3). Antes de partir, podar: en las fichas que rompieron el techo, el bloque "Cambios realizados" reproducía el CHANGELOG en párrafos y era cerca de la mitad del archivo (regla 2.3: una línea por hito).
 5. **El tablero solo contiene pendientes.**
 6. **La norma va en CLAUDE.md; el procedimiento en skills; la referencia en docs.**
 7. **La historia congelada no se reescribe.** Los ADR son inmutables.

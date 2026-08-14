@@ -2,99 +2,9 @@
 
 > Revisado: 2026-08-14.
 
-> Funcionalidades que atraviesan varias secciones y no son visuales: taxonomía de categorías, persistencia, el pipeline de render, el CTA de cuenta, el motor único de avisos y el sistema de logros. Reglas de uso y plantilla en [`README.md`](README.md).
+> Infraestructura que atraviesa varias secciones y no es visual: persistencia y cuota, el pipeline de render, el CTA de cuenta, el motor único de avisos, la infra compartida, el aviso de versión nueva, la guía por navegación y la aceptación legal. Reglas de uso y plantilla en [`README.md`](README.md).
 >
-> **Qué NO buscar acá** (partido el 2026-07-24): el lenguaje de formularios y el selector de ícono están en [`captura.md`](captura.md); la identidad de color, las tejas de marca y la navegación, en [`sistema-visual.md`](sistema-visual.md).
-
----
-
-## Taxonomía global de categorías (CAT.1, iniciativa transversal)
-
-- **Objetivo**          : una sola clasificación de categorías entre secciones (Gastos↔Fijos y Apartados↔Metas), decidida una vez y consumida por los catálogos de cada sección, los límites (LIM.1 punto 8) y el catálogo de marcas (ADR 029 D3). Criterios: **fijo** = recurrente con frecuencia definida, parte de la rutina; **gasto** = día a día variable; **apartado** = gasto esporádico previsible que se olvida presupuestar; **meta** = objetivo grande de mediano/largo plazo.
-- **Estado actual**     : **iniciativa CAT.1 COMPLETA** (decisión validada con Esteban el 2026-07-13, ADR 014 sección "Validación 2026-07-13"). **CAT.1a** (Gastos↔Fijos): `CATEGORIAS_GASTO_USUARIO` ya no ofrece Vivienda ni Servicios públicos, hint retirado por completo (revisa la decisión 4 del ADR 014, ratificado por Esteban). **CAT.1b** (Apartados↔Metas): `PLANTILLAS_APARTADO` pasa de 17 a 20; sale Vacaciones (vive en Metas), "Matrícula o semestre" se divide en "Matrícula escolar" (el semestre universitario es Meta), "Útiles escolares" se amplía a "Útiles y uniformes", entran Veterinario/Mantenimiento del hogar/Seguro del hogar/Reparaciones inesperadas. **CAT.1c** (Metas): `CATEGORIAS_META_USUARIO` es el catálogo del formulario y ya no ofrece Cumpleaños ni Vacaciones. Fijos no esenciales (para LIM.1 punto 8) = **Streaming y Suscripciones** (Gimnasio y Telefonía esenciales, decisión explícita). ADR 029 D3 validada tal cual (su Fase 0 queda desbloqueada). **Sin bump de schema en ninguna rebanada**: precedente "Alimentación" v15 (CAT.1a), catálogo de plantillas sin referencia inversa (CAT.1b) y catálogo base intacto (CAT.1c), ver Riesgos.
-- **Verificado contra** : `28468b5` (2026-07-27, CAT.1c).
-
-**Dónde vive**
-
-| Pieza | Archivo | Ancla | Línea |
-|---|---|---|---|
-| Catálogo de Gastos + filtro del formulario (CAT.1a cerrada) | `modules/core/constants.js` | `CATEGORIAS_GASTO`, `CATEGORIAS_GASTO_USUARIO` | ~414 |
-| Catálogo de gastos fijos | `modules/core/constants.js` | `CATEGORIAS_AGENDA`, `CATEGORIA_AGENDA_ICONO` | ~596 |
-| Plantillas de Apartados (CAT.1b cerrada) | `modules/dominio/apartados/logic.js` | `PLANTILLAS_APARTADO` | ~54 |
-| Catálogo de Metas + filtro del formulario (CAT.1c cerrada) | `modules/core/constants.js` | `CATEGORIAS_META`, `CATEGORIAS_META_USUARIO`, `CATEGORIA_META_ICONO` | ~690 |
-| Opciones del selector de meta (reinyecta la categoría retirada al editar) | `modules/dominio/metas/view.js` | inline en `renderFormMeta()`, sobre `CATEGORIAS_META_USUARIO` | ~355 |
-
-**Dependencias y relaciones**: la decisión desbloquea CAT.3 (a qué sección pertenece una categoría personalizada), AP.5 (catálogo de la filosofía redefinida de Apartados), LIM.1 punto 8 (fijos no esenciales) y la Fase 0 del ADR 029 (etiquetado del catálogo de marcas).
-
-**Riesgos**:
-
-- **Registros viejos con categorías retiradas (Gastos)**: gastos con "Vivienda"/"Servicios públicos" siguen mostrando su ícono vía `CATEGORIA_ICONO`, que conserva la entrada aunque el formulario ya no la ofrezca. La regla es filtrar solo el FORMULARIO, nunca borrar la entrada del mapa de íconos al retirar una categoría del catálogo visible.
-- **`PLANTILLAS_APARTADO` no tiene esta trampa (hallazgo de CAT.1b)**: a diferencia de `CATEGORIA_ICONO`, un apartado ya creado NO referencia el catálogo de plantillas en su render; guarda su propio `nombre`/`icono` en el momento de crearlo (`_aplicarPlantilla()` copia el valor una sola vez). Retirar o renombrar una plantilla (Vacaciones, Matrícula o semestre, Útiles escolares) es seguro: los apartados existentes creados desde esas plantillas conservan su nombre e ícono guardados sin cambios, y la plantilla retirada simplemente deja de ofrecerse para apartados nuevos.
-- **El guardarraíl de consistencia de TX.4** (misma etiqueta ⇒ mismo emoji entre catálogos) debe seguir verde tras cada rebanada: al renombrar o retirar, revisar que no queden etiquetas compartidas divergentes. TX.4 lee `CATEGORIA_META_ICONO`, que sigue cubriendo el catálogo base completo: retirar una categoría del formulario no la saca de ese guardarraíl.
-- **Retirar una categoría de un catálogo que se puede editar (hallazgo de CAT.1c)**: filtrar el formulario no basta cuando la sección permite editar el registro (EDIT.1). Si el selector no ofrece la categoría guardada, al editar cae en la primera opción y una corrección de nombre borra la categoría y cambia el ícono. Regla: el selector reinyecta la categoría retirada **solo cuando ya estaba elegida**. Aplica a cualquier retiro futuro (CAT.3) en Metas y en las secciones que EDIT.1 vaya abriendo.
-
-**Cambios pendientes**: ninguno de CAT.1 (iniciativa completa; la tarjeta sale del BOARD). **CAT.3 completa (2026-08-11, [ADR 058](../DECISIONS/058-categorias-personalizadas-globales.md))**, sus cuatro rebanadas cerradas: ver el bloque "Categorías personalizadas del usuario" más abajo. **CAT.4 cerrada (2026-07-31)**: sin hallazgos.
-
-**Cambios realizados**:
-
-- **CAT.4 (2026-07-31)**: auditoría de las dos reglas (categoría/tipo antes que descripción, fecha por defecto = hoy en creación) sobre los ~8 formularios en alcance (Gastos, Ingresos fijos y puntuales, Transferencias, Deuda nueva, Abono a deuda, Gasto fijo, Inversiones, Personales/préstamos, Ahorro/aporte): las dos reglas ya se cumplían en todos. `fechaObjetivo` (Apartados) y `fechaLimite` (Metas) quedan fuera de alcance: son fecha meta futura opcional, no fecha de registro/movimiento. Cierre sin cambios de código.
-
-- **CAT.1a (2026-07-13)**: `CATEGORIAS_GASTO_USUARIO` excluye Vivienda y Servicios públicos (además de Deudas/Ahorro/Alimentación, ya excluidas); `CATEGORIAS_GASTO` (catálogo base) las conserva para `CATEGORIA_ICONO` y la validación de límites existentes. `CATEGORIAS_TIPICAMENTE_FIJAS` eliminada de `constants.js`; `#hint-categoria-fija` eliminado de `renderFormGasto()`; su listener de `change` eliminado de `_montarFormGasto()`. Sin bump de schema.
-- **CAT.1c (2026-07-27)**: `CATEGORIAS_META_USUARIO` (nueva, filtra `CATEGORIAS_META`) excluye Cumpleaños y Vacaciones; el catálogo base y `CATEGORIA_META_ICONO` los conservan para el render legado. El armado de opciones de `metas/view.js` (inline, no es función propia) lee el catálogo curado y reinyecta la categoría retirada cuando la meta editada ya la tenía. Sin bump de schema.
-- **CAT.1b (2026-07-13)**: `PLANTILLAS_APARTADO` (`apartados/logic.js`) 17→20 plantillas. Sale Vacaciones ✈️. "Matrícula o semestre" 🎓 → "Matrícula escolar" 🎓. "Útiles escolares" 📚 → "Útiles y uniformes" 🎒. Entran Veterinario 🩺, Mantenimiento del hogar 🛠️, Seguro del hogar 🛡️, Reparaciones inesperadas 🧰. Sin cambios en `_aplicarPlantilla()`/`renderFormApartado()` (agnósticos al contenido del catálogo). Sin bump de schema.
-
----
-
-## Categorías personalizadas del usuario (TX.9b, y su extensión CAT.3)
-
-- **Objetivo**          : el usuario crea sus propias categorías con nombre e ícono, y valen igual que las nativas. **CAT.3** las extendió a Gastos fijos con la sección como campo del objeto, oferta filtrada por sección y resolución de ícono global ([ADR 058](../DECISIONS/058-categorias-personalizadas-globales.md), 5 decisiones).
-- **Estado actual**     : **TX.9b y CAT.3 (las cuatro rebanadas) en producción.** `S.categoriasPersonalizadas` es `{id, nombre, icono, fechaCreacion, seccion}[]` (`seccion: 'gasto' | 'fijo'`, D1, migración v30 a v31; existentes backfilleadas a `'gasto'`); la clave funcional sigue siendo el **`nombre`**, que es lo que se guarda en `Gasto.categoria`/`Compromiso.categoria` igual que una nativa. `id` y `fechaCreacion` los inyecta el helper genérico `guardar()` de `infra/crud.js`. La **resolutora** (D2) fusiona `CATEGORIA_ICONO` y `CATEGORIA_AGENDA_ICONO` antes de caer a la personalizada, e ignora `seccion` a propósito. El **validador** (D4) compara contra los dos catálogos nativos completos. El formulario de gasto fijo (`renderFormGastoFijo()`) ofrece las personalizadas de `seccion: 'fijo'` y un chip sentinela propio (`'__nueva__'`, distinto del `'__nueva__'` de Gastos: son sentinelas locales a cada form, nunca se comparan entre sí) porque `'Otro'` ya es miembro literal del catálogo de Agenda y no puede reusarse como disparador. `validarCompromiso()`/`normalizarCompromiso()` reciben `personalizadasFijo` (tercer parámetro, default `[]`, retrocompatible con Deudas que no lo pasa). **No hay edición ni borrado**: la única operación sobre la colección es `guardar()`, así que una vez creada es permanente. Eso queda **fuera** del ADR 058 y sale a tarjeta propia.
-- **Verificado contra** : `db81eee` (2026-08-11, CAT.3c/CAT.3d).
-
-**Dónde vive**
-
-| Pieza | Archivo | Ancla | Línea |
-|---|---|---|---|
-| El array en el estado (contrato en JSDoc) | `modules/core/state.js` | `categoriasPersonalizadas` | ~421 |
-| Migración v30 a v31 (`seccion`) | `modules/core/storage.js` | idempotente, backfill `'gasto'` | ~447 |
-| **Resolutora, punto único** | `modules/core/constants.js` | `iconoDeCategoriaGasto(categoria, personalizadas)` | ~529 |
-| Catálogo de íconos elegibles (29, cerrado) | `modules/core/constants.js` | `ICONOS_CATEGORIA_PERSONALIZADA` | ~487 |
-| Validador del alta (D4: dos catálogos nativos) | `modules/dominio/gastos/logic.js` | `validarCategoriaPersonalizada()` | ~314 |
-| Alta desde Gastos (estampa `seccion: 'gasto'`) | `modules/dominio/gastos/index.js` | `_guardarGasto()`, chip sentinela `'__nueva__'` | ~66 |
-| Chips del formulario de gasto | `modules/dominio/gastos/view.js` | nativas, personalizadas, sentinela | ~612 |
-| Alta desde Gastos fijos (CAT.3c, estampa `seccion: 'fijo'`) | `modules/dominio/agenda/index.js` | `_guardarGastoFijo()`, chip sentinela `CATEGORIA_NUEVA_VALUE_FIJO` | ~237 |
-| Chips del formulario de gasto fijo (CAT.3c) | `modules/dominio/agenda/view.js` | `renderFormGastoFijo()`: nativas, personalizadas de `seccion: 'fijo'`, sentinela | ~907 |
-| Gate de escritura de Gastos fijos (CAT.3c) | `modules/dominio/compromisos/logic/modelo.js` | `validarCompromiso()`, `normalizarCompromiso()`, `_categoriaFijoConNombreAuto()`: tercer parámetro `personalizadasFijo` | ~55, ~252, ~417 |
-
-**Las 7 superficies que leían el mapa crudo, cerradas por CAT.3b**: las tres últimas fallaban con una personalizada de Gastos antes del cierre (D3 del ADR 058). Las 7 pasan ahora por `iconoDeCategoriaGasto()`:
-
-| # | Archivo | Qué pinta |
-|---|---|---|
-| C1 | `modules/dominio/agenda/view.js` (`_renderDetalleItem`) | detalle del día del calendario |
-| C2 | `modules/dominio/agenda/view.js` (`renderFormGastoFijo`) | chips del formulario de gasto fijo |
-| C3 | `modules/dominio/gastos/logic.js` (`iconoPorOrigen`, 3er parámetro `personalizadas`) | gasto nacido de un fijo |
-| C4 | `modules/dominio/tesoreria/views/distribucion.js` (`_iconoNecesidad`) | checklist de Necesidades |
-| C5 | `modules/dominio/presupuesto/view.js` (`_renderEnvelope`) | envelope de un límite |
-| C6 | `modules/dominio/presupuesto/view.js` (`renderPanelLimites`) | banner de alertas de límite |
-| C7 | `modules/dominio/resumen/view.js` (`renderPanelResumen`) | categoría top de la semana, en Inicio |
-
-**Los 3 gates de escritura de Gastos fijos, cerrados por CAT.3c**: `compromisos/logic/modelo.js:276` (rechazo duro), `:414` (descarte a `null` en silencio) y `:55` (auto-nombre de AG.4) ya aceptan una personalizada de `seccion: 'fijo'`, no solo `CATEGORIAS_AGENDA`. Los dos espejos de la UI, cerrados igual: `agenda/index.js` prefill al editar y `_syncCategoriaGastoFijo()` (toggle de nombre-auto y de los campos de categoría nueva).
-
-**Dependencias y relaciones**: `iconoDeCategoriaGasto()` es pura (recibe las personalizadas por parámetro, el caller lee `S`) y está cableada en 7 sitios del lado Gastos y Presupuesto. `validarPresupuesto` es el **único** validador que ya recibe las personalizadas (`presupuesto/logic.js:558`, cableado en `presupuesto/index.js:97`). **TX.4 sube de guardarraíl a dependencia** con el ADR 058 D2: la resolución global se apoya en que dos catálogos nativos nunca den símbolos distintos a la misma etiqueta, y las 5 etiquetas compartidas (Servicios públicos, Mercado, Educación, Transporte, Mascotas) hoy coinciden.
-
-**Riesgos**:
-
-- **Colisión de nombre con el catálogo de Agenda: cerrada por CAT.3a.** `validarCategoriaPersonalizada` ya compara también contra `CATEGORIAS_AGENDA`. Una personalizada creada **antes** de CAT.3a con un nombre que hoy colisiona (ej. "Arriendo") conserva su categoría y sus gastos: D4 valida altas nuevas, nunca reescribe lo guardado (misma regla que CAT.1a).
-- **Sin validación de longitud ni de cantidad**: el input no tiene `maxlength` y no existe ningún tope de cuántas personalizadas se pueden crear.
-- **El roundtrip de CSV no recrea la entrada**: `import/logic.js:176` acepta cualquier texto como categoría, así que exportar e importar conserva el **nombre** pero no vuelve a crear la personalizada en `S`; el gasto importado queda sin ícono asociado.
-- **Una personalizada sin uso sigue apareciendo**: borrar su último gasto no la retira del catálogo, porque no hay borrado.
-- **Precedencia de `iconoPorOrigen`**: un gasto nacido de un fijo o de un abono hereda el ícono del compromiso y la personalizada nunca se consulta (`gastos/view.js:441`).
-
-**Cambios pendientes**: ninguno de CAT.3 (iniciativa completa, sale del BOARD). Fuera de alcance por decisión del ADR 058: renombrar y eliminar (tarjeta propia), Apartados y Metas (catálogos de otra naturaleza), Ingresos, roundtrip de CSV (riesgo ya documentado arriba).
-
-**Cambios realizados**: `TX.9b`: creación de la funcionalidad (detalle en el CHANGELOG). `2026-07-31 (ADR 058)`: mapeo completo de origen y destino, sin cambios de código. `2026-08-01 (CAT.3a)`: campo `seccion`, migración v30 a v31, resolutora global, validador D4 (detalle en el CHANGELOG). `2026-08-03 (CAT.3b)`: los 7 accesos crudos pasan por la resolutora, incluidos los 3 que ya fallaban (detalle en el CHANGELOG). `2026-08-11 (CAT.3c/CAT.3d)`: Gastos fijos ofrece y acepta personalizadas (chip sentinela propio, tres gates de escritura + dos espejos de UI); CAT.3d verificó end-to-end que las 3 superficies ya resueltas por CAT.3b pintan correcto con una personalizada real de `seccion: 'fijo'`, sin cambios de código adicionales.
-
----
+> **Qué NO buscar acá.** Partido el 2026-07-24: el lenguaje de formularios y el selector de ícono están en [`captura.md`](captura.md); la identidad de color, las tejas de marca y la navegación, en [`sistema-visual.md`](sistema-visual.md). Partido de nuevo el 2026-08-14 (DOC.3, por techo): la taxonomía de categorías y las personalizadas del usuario están en [`categorias.md`](categorias.md); el sistema de logros, en [`logros.md`](logros.md); el shell de escritorio (INT.1), en [`escritorio.md`](escritorio.md).
 
 ---
 
@@ -124,8 +34,6 @@
 
 ---
 
----
-
 ## Pipeline de render: directo vs. agendado (PERF.6)
 
 - **Objetivo**          : hay dos rutas de render y la diferencia importa. **Directo y síncrono**: `renderAll()` (arranque), los listeners de `hashchange` (navegación) y los handlers que pintan su propia vista tras una acción. **Reactivo y agendado**: los listeners de `state:change` que repintan paneles pasan por `programarRender(fn)`, que los colapsa a un solo pintado por tick.
@@ -150,24 +58,22 @@
 
 ---
 
----
-
 ## CTA "necesitas una cuenta" (registro bloqueado por falta de cuenta)
 
 - **Objetivo**          : cuando el usuario intenta registrar un ingreso, un gasto o un abono sin ninguna cuenta activa, el mensaje no se limita a informar el requisito: ofrece una acción única que lo lleva directo a crear la cuenta (cierra el modal actual, navega a Mis cuentas y abre el formulario de nueva cuenta). Reduce la fricción del onboarding: si falta un requisito, se guía a resolverlo, no solo se avisa.
-- **Estado actual**     : unificado (2026-07-06). Un solo mecanismo: `data-action="ir-a-crear-cuenta"` → EventBus `'cuenta:crear'` → `_nuevaCuenta` abre `#modal-cuenta`. Copy común "Crear una cuenta" en los 5 puntos de entrada. Antes cada surface hacía algo distinto: ingreso puntual solo cerraba el modal (bug: no navegaba), gastos navegaban sin abrir el form, el abono era un callejón sin salida ("Cerrar").
-- **Verificado contra** : `9eaeb4d` (unificación del CTA, SW v329), 2026-07-06.
+- **Estado actual**     : unificado (2026-07-06). Un solo mecanismo: `data-action="ir-a-crear-cuenta"` → EventBus `'cuenta:crear'` → `_nuevaCuenta` abre `#modal-cuenta`. Copy común "Crear una cuenta" en las **cuatro superficies** que lo ofrecen hoy: los tres empty states de la tabla más el modal guiado de 0 cuentas (que usa `data-role="ir"`, no la acción, porque vive en `infra/`). El sello viejo decía "5 puntos de entrada": ya no coincide con el código, el conteo verificado es 4. Antes cada surface hacía algo distinto: ingreso puntual solo cerraba el modal (bug: no navegaba), gastos navegaban sin abrir el form, el abono era un callejón sin salida ("Cerrar").
+- **Verificado contra** : `7e11afe` (2026-08-14, DOC.3: anclas y comportamiento re-verificados uno por uno; el sello anterior era `9eaeb4d` del 2026-07-06 y sus líneas ya no coincidían).
 
 **Dónde vive**
 
 | Pieza | Archivo | Ancla | Línea |
 |---|---|---|---|
-| Acción unificada (cierra modal + navega + emite evento) | `modules/ui/actions.js` | `registrarAccion('ir-a-crear-cuenta', ...)` | ~91 |
-| Suscripción que abre el form de nueva cuenta | `modules/dominio/tesoreria/acciones/cuentas.js` | `EventBus.on('cuenta:crear', _nuevaCuenta)` en `initAccionesCuentas()` | ~478 |
-| Modal guiado de flujos de un clic (0 cuentas) | `modules/infra/cuenta-helper.js` | `_mostrarGuiadoCero()` (botón `data-role="ir"`) | ~206 |
-| Empty state Nuevo ingreso | `modules/dominio/tesoreria/views/ingresos.js` | `renderFormIngresoPuntual()` (rama `cuentas.length === 0`) | ~234 |
-| Empty state Gasto | `modules/dominio/gastos/view.js` | `renderFormGasto()` | ~392 |
-| Empty state Abono a deuda | `modules/dominio/compromisos/views/formularios.js` | `renderFormAbono()` (rama `cuentas.length === 0`) | ~37 |
+| Acción unificada (cierra modal + navega + emite evento) | `modules/ui/actions.js` | `registrarAccion('ir-a-crear-cuenta', ...)` | ~170 |
+| Suscripción que abre el form de nueva cuenta | `modules/dominio/tesoreria/acciones/cuentas.js` | `EventBus.on('cuenta:crear', _nuevaCuenta)` en `initAccionesCuentas()` | ~573 |
+| Modal guiado de flujos de un clic (0 cuentas) | `modules/infra/cuenta-helper.js` | `_mostrarGuiadoCero()` (botón `data-role="ir"`), emite `'cuenta:crear'` | ~321, ~366 |
+| Empty state Nuevo ingreso | `modules/dominio/tesoreria/views/ingresos.js` | `renderFormIngresoPuntual()` (rama `cuentas.length === 0`) | ~331 |
+| Empty state Gasto | `modules/dominio/gastos/view.js` | `renderFormGasto()` (rama `cuentas.length === 0`) | ~584 |
+| Empty state Abono a deuda | `modules/dominio/compromisos/views/formularios.js` | `renderFormAbono()` (rama `cuentas.length === 0`) | ~41 |
 
 **Recursos**: ninguno gráfico propio; reusa `#modal-cuenta` (form de nueva cuenta, estático en `index.html`), la clase `.form-empty`/`.empty-state` y los botones estándar.
 
@@ -183,69 +89,10 @@
 
 **Cambios realizados**:
 
-- 2026-07-06: unificacion del CTA. Accion `ir-a-crear-cuenta` y evento `cuenta:crear` nuevos; los 5 empty states y modales convergen en el mismo copy y comportamiento.
+- 2026-08-14 (DOC.3, sin código): sello re-verificado contra el código. Las 6 anclas siguen vivas y el mecanismo no cambió; se corrigieron las 6 líneas orientativas (habían corrido entre 4 y 200 líneas) y el conteo de superficies, que era 5 y hoy es 4.
+- 2026-07-06: unificacion del CTA. Accion `ir-a-crear-cuenta` y evento `cuenta:crear` nuevos; los empty states y modales convergen en el mismo copy y comportamiento.
 
 **Observaciones**: el mismo principio ("no informar un requisito sin ofrecer la acción para resolverlo") aplica a futuros bloqueos; si aparece otro requisito duro (ej. registrar un abono sin deudas, aportar sin metas), replicar el patrón antes que dejar un mensaje muerto.
-
----
-
----
-
-## Sistema de logros (dominio `logros`)
-
-- **Objetivo**          : gamificación ligera de hábitos: catálogo de logros con evaluación automática, toast con confetti al desbloquear y "Tu progreso" (apartado de Análisis + tarjeta compacta en Inicio).
-- **Estado actual**     : estable. **Logros v2 completa** ([ADR 032](../DECISIONS/032-logros-v2-niveles-y-habitos.md) Aceptada el 2026-07-09): LG.2b (2026-07-09), LG.2c (2026-07-12), LG.2e (2026-08-13, familia comportamiento con un solo logro, `hormiga-a-raya`) y **LG.2d cerrada el 2026-08-13** (mudanza a Análisis + tarjeta en Inicio; el [ADR 022](../DECISIONS/022-vitrina-de-logros-en-ajustes.md) pasa a Superada). Catálogo: 18 logros (antes 11), familias `registro` 6, `metas` 1, `deudas` 2, `comportamiento` 1.
-- **Verificado contra** : commit de LG.2d (2026-08-13).
-
-**Dónde vive**
-
-| Pieza | Archivo | Ancla | Línea |
-|---|---|---|---|
-| Catálogo (18 logros; familias `registro` 6 niveles, `metas` 1, `deudas` 2, `comportamiento` 1) | `modules/dominio/logros/logic.js` | `LOGROS` | ~258 |
-| Metadata de familias (nombre por familia) | `modules/dominio/logros/logic.js` | `FAMILIAS` | ~47 |
-| Derivación "mes completo de registro" (D3, ≥3 semanas del mes) | `modules/dominio/logros/logic.js` | `mesCompleto()`, helper interno `_semanasPorMes()` | ~92 |
-| Racha de meses completos consecutivos (memoizada por gastos) | `modules/dominio/logros/logic.js` | `rachaMesesCompletos()`, `_rachaMesesCompletosMemo` | ~106, ~129 |
-| Conteo de deudas saldadas (excluye consolidadas) | `modules/dominio/logros/logic.js` | `deudasSaldadas()` | ~142 |
-| Umbrales de gasto hormiga (≤20.000 por transacción; piso de relevancia 100.000) | `modules/dominio/logros/logic.js` | `UMBRAL_GASTO_HORMIGA`, `UMBRAL_HORMIGA_RELEVANTE` | ~160, ~168 |
-| Gasto hormiga por mes (LG.2e) | `modules/dominio/logros/logic.js` | `gastoHormigaMes()`, helper interno `_hormigaPorMes()` | ~195 |
-| Bajada de hormiga vs promedio de 3 meses (memoizada por gastos) | `modules/dominio/logros/logic.js` | `hormigaALaRaya()`, `_hormigaALaRayaMemo` | ~237, ~255 |
-| Evaluación (ids cumplidos ahora, try/catch por logro) | `modules/dominio/logros/logic.js` | `evaluarLogros()` | ~447 |
-| Estado render-ready de la vitrina (incluye familia/nivel) | `modules/dominio/logros/logic.js` | `estadoLogros()` | ~480 |
-| Agrupación por familia (una tarjeta por familia) | `modules/dominio/logros/logic.js` | `agruparVitrina()` | ~535 |
-| Nivel de usuario derivado del conteo (nombres provisionales, tramo superior min 16) | `modules/dominio/logros/logic.js` | `nivelUsuario()`, `NIVELES_USUARIO` | ~597 |
-| Detección + persistencia + toast (cola de a uno) | `modules/dominio/logros/index.js` | `_checkYMostrar()`, `_encolarToast()` | ~59, ~97 |
-| Confetti (24 piezas, ajuste mobile por bottom-nav) | `modules/dominio/logros/index.js` | `_lanzarConfetti()` | ~193 |
-| Apartado "Tu progreso" en Análisis (agrupado + nivel en el encabezado, colapsable) | `modules/dominio/logros/view.js` | `renderProgresoAnalisis()`, `_renderFamiliaItem()` | ~28, ~99 |
-| Tarjeta compacta en Inicio (nivel + último logro + próximo objetivo) | `modules/dominio/logros/view.js` | `renderTarjetaProgresoInicio()`, `_proximoObjetivo()` | ~64, ~112 |
-
-**Recursos**: emojis por logro (se conservan por ADR 025 D6). CSS: `.logro-toast*`, `.confetti-piece` (nudges.css/base.css), `.logros-lista`, `.logro-item*` (config.css, origen histórico del ADR 022; reusadas tal cual en las dos superficies vigentes). Estado: `S.logros` (`string[]` de ids, orden de inserción = orden de desbloqueo).
-
-**Dependencias y relaciones**: escucha `state:change` (re-evalúa y re-renderiza) y `onboarding:completado` (toast retrasado 4 s, NAV.C/ADR 024 D6). El shell expone `#panel-analisis-progreso` junto a `#panel-analisis` y `#panel-progreso-inicio` dentro del bento de Inicio, porque ni `analisis` ni `resumen` pueden importar `logros` (ADN 10, mismo mecanismo que el ADR 022 estableció para Ajustes). No emite eventos propios. Sin imports de otros dominios: los `eval` leen `S` directo; los evaluadores de la familia "registro" (LG.2c) importan `hoy()` de `infra/utils.js` (infra, no dominio, permitido) para obtener la fecha actual, y los de "deudas" comparan `c.tipo === 'deuda-entidad' || 'deuda-personal'` como literales en vez de importar `esDeuda()` de `compromisos/logic.js`.
-
-**Riesgos**:
-
-- **La persistencia manda sobre la evaluación**: un logro en `S.logros` no se revoca aunque el estado retroceda (borrar gastos, etc.). Cualquier lógica nueva debe respetarlo.
-- **Los `eval` corren en cada `state:change`**: mantenerlos O(1) o memoizados (disciplina del ADR 022, reforzada en ADR 032 D7); un evaluador O(historial) sin memo degrada toda la app. `rachaMesesCompletos()` se memoiza (`_rachaMesesCompletosMemo`, PERF.2) porque los 4 niveles de la familia registro (mes-completo a doce-meses-seguidos) la llaman con los mismos argumentos dentro de una sola pasada de `evaluarLogros()`.
-- **3+ logros simultáneos** (import de respaldo/CSV) colapsan a un solo toast resumen; no romper ese guard al agregar logros.
-- **Ids del catálogo son valores persistidos**: nunca renombrarlos (mismo criterio que los ids de `MARCAS`).
-- **`NIVELES_USUARIO` (D5) se calibró para ~20 logros y el catálogo cerró en 18**: LG.2e bajó el tramo superior de min 18 a **min 16** para que no exija el 100 % del catálogo (incluidos `prestamista` y el fondo completo). El test "el tramo superior es alcanzable sin el 100 % del catálogo" defiende la relación; si algún día entran más logros, revisar el umbral, no borrar el test.
-- **`rachaMesesCompletos()` se ancla en "el mes anterior a hoy"**: solo detecta una racha activa si el usuario sigue usando la app (dispara `state:change`) mientras la racha está vigente. Una racha pasada y luego abandonada ya quedó persistida en `S.logros` si se evaluó en su momento (no se revoca); el riesgo real es solo si el usuario NUNCA vuelve a abrir la app durante el mes en que la racha era detectable, caso de borde aceptado (mismo patrón que otros logros de conteo simple).
-
-**Cambios pendientes**: ninguno propio de la iniciativa "Logros v2": las 4 rebanadas (LG.2b/c/d/e) cerraron. **Dos logros del catálogo D4 quedaron diferidos por datos, sin tarjeta**: `ahorro-creciente` espera la derivación canónica de ingreso mensual (el ADR 046 no la entregó; no construir una paralela) y `pagador-puntual` espera historial de vencimientos pagados, que `S.compromisos` no guarda (solo estado actual): la verificación y sus razones quedaron en el ADR 032, sección "Resolución de LG.2e en implementación". Los nombres de `NIVELES_USUARIO` son provisionales: cuando Esteban entregue los definitivos, se cambia la constante (sin tocar datos, nada se persiste).
-
-**Cambios realizados**:
-
-- 2026-08-13 (LG.2d, ADR 032 D6, **cierra la iniciativa "Logros v2"**): mudanza de la vitrina. `renderPanelLogros()` se reparte en `renderProgresoAnalisis()` (apartado colapsable "Tu progreso", bloque 6 del [ADR 046](../DECISIONS/046-analisis-interpreta-criterio-y-lenguaje.md) D4, mismo lenguaje `analisis-grupo--fila` que los otros dos colapsables de Análisis, con preservación de estado abierto/cerrado entre renders) y `renderTarjetaProgresoInicio()` (tarjeta compacta nueva en el bento de Inicio: nivel + último logro desbloqueado + próximo objetivo, `_proximoObjetivo()` nuevo). `#panel-logros` sale de Ajustes; el [ADR 022](../DECISIONS/022-vitrina-de-logros-en-ajustes.md) pasa a Superada. Cero cambios en `logic.js` (la mudanza es pura reubicación de vista + wiring); `.logros-lista`/`.logro-item*` se reusan tal cual en las dos superficies nuevas, sin CSS nueva. 8 tests unitarios nuevos + 2 E2E ajustados (navegan a `#analisis` en vez de `#config`).
-- 2026-08-13 (LG.2e, ADR 032 D4): familia `comportamiento` con `hormiga-a-raya`; `gastoHormigaMes()` y `hormigaALaRaya()` nuevas, tramo superior de `NIVELES_USUARIO` recalibrado a min 16.
-- 2026-07-12 (LG.2c, ADR 032 D3/D4): constancia de registro y deudas saldadas; `mesCompleto()` y `rachaMesesCompletos()` nuevas.
-- 2026-07-09 (LG.2b, ADR 032 D1/D5): fundacion de progresion: `familia`/`nivel` en el catalogo, `FAMILIAS` y `agruparVitrina()` (una tarjeta por familia), sin bump de schema.
-- 2026-07-09 (LG.2a): ADR 032 escrito y validado por Esteban el mismo dia (Aceptada).
-- 2026-07-04 (LG.1b, ADR 022): vitrina en Ajustes con hint y progreso parcial.
-- 2026-07-04 (LG.1a): toast mas legible, cola de a uno, pausa por hover.
-
-**Observaciones**: ADRs relacionados: 022 (vitrina en Ajustes, Superada por LG.2d), 032 (v2, Aceptada), 025 D6 (emojis se conservan). La regla anti-gaming del ADR 032 D2 es principio innegociable: logros que premien la omisión de registro ("día sin gastos") no entran al catálogo bajo ninguna forma; las familias "registro" y "deudas" de LG.2c son ambas ADITIVAS (más registro = más progreso), así que no necesitan la guardia de "mes completo" que sí lleva el único logro de reducción del catálogo (`hormiga-a-raya`, LG.2e: los 4 meses de la comparación deben ser mes completo, el mes en curso no participa y el promedio previo debe superar 100.000). Riesgo residual anotado en el código: un mes completo se cumple con gastos en 3 semanas aunque sean todos grandes; no se agregó una segunda guardia por conteo de transacciones porque castigaría al usuario que sí redujo.
-
----
 
 ---
 
@@ -372,76 +219,6 @@
 
 ---
 
-## Shell de escritorio: sidebar, ancho de contenido y barra superior (iniciativa INT.1)
-
-- **Objetivo**          : el escritorio nunca se decidió. El sidebar existía desde antes de que la app tuviera dos topologías y las quince auditorías por sección midieron móvil a 390px, así que escritorio heredó el reparto móvil estirado. El ADR 059 lo decide en ocho rebanadas (INT.1a a INT.1h).
-- **Estado actual**     : **INT.1a, INT.1b, INT.1c, INT.1d, INT.1e, INT.1f e INT.1h cerradas**. INT.1a: contenido centrado + Movimientos en el sidebar. INT.1b: las 4 hijas de Ahorro se anidan bajo la casa (`.nav-subnav`, desplegado solo dentro del grupo) y `BUG-026` se cierra por eliminación de su causa. INT.1c: barra superior fija de 56px con teja+título de la sección activa, "Registrar", tema y Ajustes; fondo opaco sin `backdrop-filter` (Lighthouse 99/100/100/100). INT.1d: `#topbar-saldo` es la cinta de saldo con su ojo, oculta en Inicio (el hero ya lo dice) y sin cuentas; `updSaldo()` recorre todos los `[data-action="saldo-visibilidad"]` porque ahora hay dos ojos a la vez. INT.1e: el primario del encabezado de 8 de las 13 secciones sube a `#topbar-primario`, en secundario. INT.1f: el modal sube a 840px en escritorio y su `<form>` pasa a grid de 2 columnas. INT.1h: cuatro atajos de teclado (`N`, `G` + letra, `?`, `Esc`), apagables en Ajustes. Queda INT.1g.
-- **Verificado contra** : INT.1h, commit `f5fcda7` (2026-08-06); INT.1e, commit `63f95f5` (2026-08-06); INT.1f, commit `bf37761` (2026-08-05); INT.1c/INT.1d, commit `a6eb349` (2026-08-05).
-
-**Mediciones vigentes contra el código** (no contra la recreación del handoff):
-
-| Qué | Antes de INT.1 | Después de INT.1a | Después de INT.1b |
-|---|---|---|---|
-| Ancho huérfano a 1920 (`main` 1680, `.section` 1440) | 240px pegados al borde derecho | 120 + 120 | sin cambio |
-| Ancho huérfano a 2560 | 880px de un lado | 440 + 440 | sin cambio |
-| Destinos sin entrada en el sidebar | 1 (Movimientos) | 0 | sin cambio |
-| Filas visibles del sidebar en escritorio (grupo Ahorro cerrado) | 15 | 16 | 12 (las 4 hijas se anidan) |
-| Alto que necesita el nav a 1280x799 | 648px con 607 disponibles: desborda 41px | sin cambio | 608px con 608 disponibles: sin desborde |
-
-**BUG-026 cerrado por eliminación de causa, no reparado.** El bloque `@media (max-height: 800px) and (min-width: 1024px)` de `layout.css` (compactación de emergencia de filas/grupos/rótulos) nunca se aplicaba: sus cuatro declaraciones tenían la misma especificidad (0,1,0) que las reglas incondicionales del mismo archivo, escritas más abajo, y perdían la cascada. El anidado de INT.1b recuperó los ~160px que esa compactación intentaba ganar sin lograrlo, así que el bloque se borró completo en vez de repararse (medido: `scrollHeight` ≤ `clientHeight` del `.sidebar__nav` a 1280x799, sin la media query).
-
-**Dos premisas del handoff que el código desmiente** (verificadas el 2026-08-02, antes de escribir el ADR 059):
-
-- **PI7 es falso.** El informe de Inicio dio por hecho que `--fk-bg-glass` no tenía valor en tema claro y pintaría una banda negra sobre página blanca; el ADR 057 y el tablero lo registraron como decisión abierta que bloqueaba la barra superior. `themes.css` lo define en `rgba(255, 255, 255, 0.75)` desde el commit de CSS base. Cerrado por falso, nunca bloqueó nada.
-- **E3 acredita la mitigación equivocada**, que es BUG-026, arriba.
-
-**Dónde vive**
-
-| Pieza | Archivo | Ancla |
-|---|---|---|
-| Ancho de contenido y su centrado (INT.1a, D7, regla R77) | `styles/layout.css` | `.section { max-width: var(--fk-content-max); margin-inline: auto }` |
-| Tope de ancho (único consumidor: `.section`) | `styles/tokens.css` | `--fk-content-max: 1440px` |
-| Entrada de Movimientos en el sidebar (INT.1a, D6) | `index.html` | `.nav-item--no-mobile` con `href="#movimientos"`, grupo `nav-label-gestion` |
-| Entrada de Movimientos en móvil (sin cambios desde DIS.6/C6) | `index.html` | `.mas-tile` con `href="#movimientos"` |
-| Sub-nivel de las 4 hijas de Ahorro (INT.1b, D6) | `index.html` | `.nav-subnav#nav-subnav-ahorro`, `[hidden]` por defecto |
-| Despliegue del sub-nivel según el hash activo (INT.1b) | `modules/ui/shell.js` | `markActiveNav()`, `GRUPO_AHORRO` |
-| Indentación y borde del sub-nivel (INT.1b) | `styles/layout.css` | `.nav-subnav`, `.nav-item--sub` |
-| Clases de plataforma del nav | `styles/responsive.css` | `.nav-item--mobile-only`, `.nav-item--no-mobile` |
-| Disparador de Registrar en móvil | `index.html` | `.nav-item--registrar.nav-item--mobile-only` |
-| Hoja de registrar (existe en el DOM en las dos plataformas) | `index.html` | `#modal-registrar` |
-| Ancho de modal en escritorio (INT.1f, D8): 840px, `--onboarding` se excluye a mano | `styles/modals.css` | `.modal`, `.modal--sm/--lg/--xl/--mas/--onboarding` |
-| Grid de 2 columnas del `<form>` en escritorio (INT.1f, D8): emparejamiento vía `:has()` | `styles/responsive.css` | bloque "ESCRITORIO (>= 1024px): formulario de modal a dos columnas" |
-| Barra superior de 56px (INT.1c, D1/D2/D5): teja+título, Registrar, tema, Ajustes | `index.html`, `modules/ui/shell.js` | `#topbar`, `_syncTopbar()` |
-| Cinta de saldo con su ojo (INT.1d, D9), oculta en Inicio y sin cuentas | `index.html`, `modules/infra/render.js` | `#topbar-saldo`, `updSaldo()` |
-| Primario de sección en la barra, en secundario (INT.1e, D3) | `index.html`, `modules/ui/shell.js` | `#topbar-primario`, `_syncPrimarioTopbar()` |
-| Ocultar el primario original en desktop y restaurarlo bajo 1024px (INT.1e) | `styles/responsive.css` | `.section__header > .btn-primary` |
-| Volver de las 4 hijas de Ahorro, oculto en desktop (INT.1b) | `index.html` / `styles/responsive.css` | `.section__volver--ahorro-hija` |
-| Los cuatro atajos de teclado (INT.1h): `N`, `G` + letra, `?`, `Esc` | `modules/ui/actions.js` | `_handleKeydown()`, `_MAPA_SECCION_ATAJO`, `_atajoBloqueado()` |
-| Interruptor de los atajos en Ajustes (INT.1h, WCAG 2.1.4) | `modules/dominio/config/view.js`, `modules/dominio/config/index.js` | `_renderAtajos()`, `_toggleAtajos()`, `S.config.atajosTeclado` |
-| Modal "Atajos de teclado" (INT.1h) | `index.html` | `#modal-atajos` |
-
-**Riesgos**:
-
-- **El chrome cambia en las 13 secciones a la vez** desde INT.1c: no hay forma de pilotarlo en una sola. La suite completa es compuerta de cada rebanada.
-- **Tablet (768 a 1.023px) sigue sin auditar** (pendiente P4 del informe): hoy usa la topología móvil completa en una pantalla de 1.024 de ancho. El hueco crece con cada rebanada, igual que pasó con el ADR 057.
-- **Lighthouse 100 es innegociable** y `backdrop-filter` fijo sobre contenido que scrollea es el caso donde el filtro cuesta. **P9 resuelto en INT.1c**: la barra usa fondo opaco con borde inferior, sin `backdrop-filter`; verificado 99/100/100/100.
-- **AH.7a cerró primero** (2026-08-13, [ADR 065](../DECISIONS/065-ahorro-en-la-barra-inferior.md)): el grupo de uso diario de `index.html` ganó una entrada `nav-item--mobile-only` a `#ahorro` y Calendario pasó a `nav-item--no-mobile`. El sidebar y la barra superior de escritorio no se tocaron, pero **`[href="#ahorro"]` ya no es único en el DOM**: cualquier selector nuevo (INT.1g incluido) declara plataforma.
-- **Las reglas R75 a R77 están reservadas y sin escribir**: entran a `DESIGN_SYSTEM.md` cuando cierre la última rebanada, así que hoy la lista de principios tiene un hueco declarado entre R74 y R78.
-- **Una hija de Ahorro ya no es un clic directo desde cualquier sección** (INT.1b, tradeoff aceptado por el ADR): hace falta abrir "Ahorro" primero para desplegar el sub-nivel. Tests que clickeaban `#metas`/`#inversion` directo desde Dashboard se movieron a `page.goto()` o al camino de dos clics.
-
-**Cambios pendientes**: queda una rebanada (INT.1g, carril derecho sin sección que lo use todavía) en `docs/BOARD.md`.
-
-**Cambios realizados**:
-
-- **2026-08-06 (INT.1h)**: cuatro atajos de teclado en `_handleKeydown()` (`ui/actions.js`). `N` abre "¿Qué quieres registrar?", `G` + letra (mapa fijo de 11 secciones) navega, `?` abre `#modal-atajos`, `Esc` sigue cerrando el modal abierto (sin cambios). Riesgo P8 (choque con lector de pantalla / escritura normal) mitigado con tres guardas: campo de texto o `contenteditable` con foco, modal abierto (foco atrapado), o tecla modificadora presionada, todas cancelan el atajo antes de actuar. Interruptor en Ajustes → La app (WCAG 2.1.4, exige poder apagar un atajo de una sola tecla): `S.config.atajosTeclado`, default `true`, schema v35 con migración idempotente. Commit `f5fcda7`. Detalle en el CHANGELOG.
-- **2026-08-06 (INT.1e)**: `#topbar-primario` en la barra superior, en secundario (R38). `_syncPrimarioTopbar()` (`shell.js`) lee el único `.btn-primary` del encabezado activo (mismo botón que R1 ya exige único por pantalla) y copia texto, `aria-label` y `data-action`/`data-modal`, sin mapa nuevo por sección. Cubre 8 de las 13 secciones; Análisis, Ahorro, Movimientos, Fondo, Inversión y Ajustes no tienen primario de encabezado. Se resincroniza en cada navegación y ante `state:change` (Deudas sin deudas activas, Límites sin plan del mes). El botón original se oculta en desktop (`responsive.css`) y se restaura bajo 1024px con `:not([hidden])`. Commit `63f95f5`. Detalle en el CHANGELOG.
-- **2026-08-05 (INT.1c e INT.1d)**: barra superior fija de 56px con teja+título de la sección activa, "Registrar" (misma hoja que móvil, otro disparador), tema y Ajustes; fondo opaco sin `backdrop-filter` (P9 resuelto). Cinta de saldo con su ojo, oculta en Inicio y sin cuentas, mismo flag `ocultarSaldo` y misma acción `saldo-visibilidad` que el hero. Commit `a6eb349`. Detalle en el CHANGELOG.
-- **2026-08-05 (INT.1f)**: el modal base sube de 520 a 840px desde 1024px de ventana; su `<form>` interno pasa a grid de 2 columnas, con los `.form-group` simples (label + un solo `.input`/`.select`, sin hint ni picker) emparejados vía `:has()` y todo lo demás a ancho completo. Móvil no cambia. Detalle en el CHANGELOG.
-- **2026-08-03 (INT.1b)**: las 4 hijas de Ahorro se anidan bajo la casa en el sidebar de desktop, desplegadas solo dentro del grupo; `.section__volver` de las 4 se oculta en desktop; BUG-026 se cierra por eliminación de causa (el bloque de compactación de emergencia se borró). Detalle en el CHANGELOG.
-- **2026-08-02 (INT.1a)**: `.section` gana `margin-inline: auto` y Movimientos entra al grupo "Seguimiento" del sidebar. Detalle en el CHANGELOG.
-
----
-
 ## Sistema de guía por navegación (GU.1, auditoría GU.1a cerrada 2026-08-03)
 
 - **Objetivo**          : principio "aprender usando, no leyendo": el usuario descubre la app guiado en el momento de necesidad, no leyendo texto permanente. Ya se aplica en varios puntos (CTA de cuenta lleva a crearla, CAL.1 ofrece distribuir al llegar el ingreso, el fondo recomienda su aporte en la distribución) y se adopta como principio transversal.
@@ -488,3 +265,4 @@
 **Cambios realizados**:
 
 - **2026-08-04 (LEG.2)**: onboarding de 2 pasos, gate de re-aceptación, migración v33 grandfathered. Detalle en el CHANGELOG.
+
