@@ -10,7 +10,7 @@
 | [2. Constantes legales anuales](#2-constantes-legales-anuales-smmlv-auxilio-uvt) | cada enero (tarjeta E.2 del año) |
 | [3. Bump del Service Worker](#3-bump-del-service-worker) | en cada tarea que cambie un archivo cacheado |
 | [4. Harness de rendimiento](#4-harness-de-rendimiento) | antes y después de toda tarea PERF |
-| [5. Hook de pre-commit: la compuerta E2E](#5-hook-de-pre-commit-la-compuerta-e2e) | una vez por clon, para activarlo |
+| [5. Hook de pre-commit: compuertas E2E y guion largo](#5-hook-de-pre-commit-compuertas-e2e-y-guion-largo) | una vez por clon, para activarlo |
 
 ---
 
@@ -130,9 +130,11 @@ El harness es independiente de la suite de tests: no corre con `pnpm test` ni la
 
 ---
 
-## 5. Hook de pre-commit: la compuerta E2E
+## 5. Hook de pre-commit: compuertas E2E y guion largo
 
 **Qué resuelve.** E2E tarda ~3,5 min, así que nunca fue compuerta de cada commit. El precio se pagó en **BUG-019**: DIS.19 cambió el markup de la casa de Ahorro, actualizó los unit tests y no los E2E, y la suite quedó **dos días en rojo** con 146 tests sin ejecutar. Lo encontró el cierre de otra tarea, por casualidad.
+
+**DOC.4 (2026-08-14) sumó la compuerta 3 al mismo hook.** El chequeo de guion largo/medio (U+2014, U+2013) de `cerrar-tarea/SKILL.md` era manual y se corría a mano en cada cierre: el mismo riesgo de olvido que ya tenía la compuerta E2E antes de BUG-019. `.githooks/pre-commit` ahora corre `git diff --cached` sobre el index (`*.md`, `*.js`, `*.css`, `*.html` a commitear) y bloquea si encuentra alguno, con archivo y línea. Corre sobre el index, no el disco sucio: mismo criterio que la compuerta E2E de abajo, y no depende de Playwright ni agrega dependencias.
 
 **Activarlo (una vez por clon):**
 

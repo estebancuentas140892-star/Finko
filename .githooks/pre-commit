@@ -1,6 +1,13 @@
 #!/bin/sh
 #
-# pre-commit - Compuerta 5: E2E obligatoria cuando lo que se commitea toca markup.
+# pre-commit - Compuerta 3 (guion largo/medio) y Compuerta 5 (E2E obligatoria).
+#
+# Compuerta 3 (DOC.4): ningun archivo trackeado commitea con guion largo
+# (U+2014) o guion medio (U+2013), ver CLAUDE.md seccion 6. Corre sobre el
+# INDEX (lo que se va a commitear), no sobre lo que quede sucio en el disco:
+# mismo criterio que la compuerta 5 de abajo.
+#
+# Compuerta 5: E2E obligatoria cuando lo que se commitea toca markup.
 #
 # Nace de BUG-019: DIS.19 cambio el markup de la casa de Ahorro, actualizo los
 # tests unitarios y no los E2E, y la suite paso dos dias en rojo con 146 tests
@@ -18,6 +25,27 @@
 #   git config core.hooksPath .githooks
 #
 set -e
+
+GUION_ARCHIVOS=$(git diff --cached --name-only --diff-filter=ACMR -- '*.md' '*.js' '*.css' '*.html')
+GUION_HALLADOS=""
+
+for archivo in $GUION_ARCHIVOS; do
+  HALLAZGO=$(git show ":$archivo" | LC_ALL=C.UTF-8 grep -nP '[\x{2013}\x{2014}]' || true)
+  if [ -n "$HALLAZGO" ]; then
+    GUION_HALLADOS="$GUION_HALLADOS
+$archivo:
+$HALLAZGO"
+  fi
+done
+
+if [ -n "$GUION_HALLADOS" ]; then
+  echo ""
+  echo "BLOQUEADO: guion largo o medio (U+2014, U+2013) en archivo a commitear (compuerta 3)."
+  echo "$GUION_HALLADOS"
+  echo ""
+  echo "  Ver CLAUDE.md seccion 6."
+  exit 1
+fi
 
 SELLO=".e2e-sello.json"
 

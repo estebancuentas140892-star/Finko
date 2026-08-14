@@ -12,6 +12,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### chore(transversal): DOC.4, la compuerta 3 pasa de manual a automatica en el pre-commit · 2026-08-14
+
+`.githooks/pre-commit` ya bloqueaba el commit sin sello E2E (compuerta 5); la compuerta 3 (guion largo/medio, U+2014 y U+2013) seguia siendo manual y dependia de que quien cierra se acordara de correrla. Mismo patron, aplicado a un chequeo sin dependencias nuevas.
+
+- El hook corre `git diff --cached` sobre `*.md`, `*.js`, `*.css`, `*.html` **del index**, no del disco sucio: mismo criterio que la compuerta 5, para no bloquear por un archivo ajeno que quede modificado sin estar staged.
+- Bloquea con archivo y numero de linea del hallazgo. Probado en verde (archivo limpio) y en rojo (archivo con guion largo forzado).
+- Detalle del mecanismo: [`OPERACION.md`](OPERACION.md) runbook 5. Sin cambios de runtime: no aplica SW ni tests unitarios/E2E. Compuertas: solo la 3, verde.
+
 ### feat(agenda): PA.1b, crédito automático del ingreso fijo sobre la misma hoja de PA.1a · 2026-08-14
 
 Cierra la iniciativa **PA.1** completa ([ADR 052](DECISIONS/052-pagos-automaticos.md) D1-D4). El ingreso fijo que el banco abona solo se marca con un toggle nuevo y, al abrir la app, la hoja `#modal-automaticos` (la misma de PA.1a) lo lista junto a los débitos, con signo `+` y su fecha real, listo para confirmar de un toque. Ficha: [`contexto/calendario.md`](contexto/calendario.md).

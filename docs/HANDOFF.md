@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-14. Última tarea cerrada: PA.1b, crédito automático del ingreso fijo (cierra PA.1).
+> Revisado: 2026-08-14. Última tarea cerrada: DOC.4, compuerta 3 automatica en el pre-commit.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -25,6 +25,9 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**DOC.4 - compuerta 3 automatica en el pre-commit (Transversal), 2026-08-14**
+`.githooks/pre-commit` ya bloqueaba sin sello E2E (compuerta 5); ahora corre tambien la compuerta 3 (guion largo/medio) sobre el index en cada commit, mismo patron, sin dependencias nuevas. Probado en verde y en rojo. Sin runtime: sin SW, sin tests que correr.
+
 **PA.1b - crédito automático del ingreso fijo (Calendario/Mis cuentas), 2026-08-14**
 Cierra la iniciativa **PA.1** completa ([ADR 052](DECISIONS/052-pagos-automaticos.md)). El ingreso fijo que el banco abona solo se marca con un toggle y entra a la misma hoja `#modal-automaticos` de PA.1a, con signo `+` y sin cascada de saldo (abonar nunca "no alcanza"). Reusa `Ingreso.cuentaId` como destino en vez de una FK nueva. Schema v40 → v41 (migración no-op), SW v533 → v534.
 
@@ -36,9 +39,6 @@ Cierra **PERF.10** completa: `grep -rl "fk_v1" tests/e2e/` pasa de 13 archivos a
 
 **PERF.10a - fachada de `localStorage` en el runtime (Transversal), 2026-08-14**
 `fk_v1` y el motor dejan de nombrarse fuera de `modules/core/storage.js`. `restaurarBlob()` distingue JSON inválido de cupo lleno: la segunda ruta ya no se anuncia como "archivo corrupto" y sí activa la salvaguarda del [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) D2. `borrarTodo()` reemplaza los dos `localStorage.clear()` crudos. Las dos cancelan el `save()` pendiente, que podía resucitar datos borrados en el reload. SW v532 → v533.
-
-**ADR 068 - PERF.5 sale del tablero: la migración a IndexedDB se acota (Transversal), 2026-08-14**
-Decisión delegada por Esteban, seis revisiones en paralelo. **No se implementa y deja de ser tarjeta:** sus tres disparadores solo cambiaban de estado desde fuera del tablero, así que era inelegible por construcción. El [ADR 068](DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md) es su fuente única: fija el alcance (blob-en-IndexedDB) y deja **dos** disparadores comprobables, T1 (cuota medida) y T2 (ADR 043 resuelto como D o E, o foto de perfil aprobada). Nacen **PERF.9** y **PERF.10**. Sin código.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 
