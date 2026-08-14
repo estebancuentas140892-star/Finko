@@ -10,11 +10,10 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { sembrar, leerEstado } from './helpers/estado.js';
 
 async function seed(page, estado) {
-  await page.addInitScript((data) => {
-    localStorage.setItem('fk_v1', JSON.stringify(data));
-  }, { perfil: { nombre: 'Ana', smmlv: 1750905 }, onboarded: true, ...estado });
+  await sembrar(page, { perfil: { nombre: 'Ana', smmlv: 1750905 }, onboarded: true, ...estado });
   await page.goto('/#tesoreria');
   await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
 }
@@ -43,7 +42,7 @@ test.describe('MC.13e-1 - un ingreso esporádico ya no ofrece distribuirlo', () 
     await expect(page.locator('#distribuir-ingreso-panel')).toBeHidden();
 
     await page.waitForTimeout(400); // save() debounced (ADN #5)
-    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+    const st = await leerEstado(page);
     expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(2_000_000);
     expect((st.ingresosPuntuales ?? []).length).toBe(1);
     // El periodo del ingreso recurrente no se toca: un ingreso puntual no es una distribución.
@@ -60,7 +59,7 @@ test.describe('MC.13e-1 - un ingreso esporádico ya no ofrece distribuirlo', () 
     await expect(page.locator('#modal-ingreso-puntual')).not.toHaveAttribute('data-open', '', { timeout: 3_000 });
     await expect(page.locator('.modal--confirm')).toHaveCount(0);
     await page.waitForTimeout(400);
-    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+    const st = await leerEstado(page);
     expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(1_500_000);
   });
 

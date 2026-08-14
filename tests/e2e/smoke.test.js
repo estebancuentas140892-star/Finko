@@ -19,6 +19,8 @@ import { test, expect } from '@playwright/test';
 // MC.16a: la versión de schema se lee de su fuente, no se teclea. Antes estaba
 // hardcodeada (27) y el bump a v28 la dejó en rojo sin que el cambio la tocara.
 import { SCHEMA_VERSION as SCHEMA_VERSION_VIGENTE } from '../../modules/core/storage.js';
+// PERF.10b: la clave del estado se nombra en un solo sitio de los tests E2E.
+import { sembrar, sembrarSiVacio, parchar, leerEstado } from './helpers/estado.js';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -27,18 +29,15 @@ import { SCHEMA_VERSION as SCHEMA_VERSION_VIGENTE } from '../../modules/core/sto
  * Se llama en `page.addInitScript` antes de que la app cargue.
  */
 async function saltearOnboarding(page) {
-  await page.addInitScript(() => {
-    const estado = {
-      version: 1,
-      perfil: { nombre: 'TestUser', smmlv: 1750905 },
-      onboarded: true,
-      cuentas: [],
-      ingresos: [],
-      gastos: [],
-      compromisos: [],
-      metas: [],
-    };
-    localStorage.setItem('fk_v1', JSON.stringify(estado));
+  await sembrar(page, {
+    version: 1,
+    perfil: { nombre: 'TestUser', smmlv: 1750905 },
+    onboarded: true,
+    cuentas: [],
+    ingresos: [],
+    gastos: [],
+    compromisos: [],
+    metas: [],
   });
 }
 
@@ -159,10 +158,8 @@ test.describe('Dashboard', () => {
   test('con una cuenta nueva, el saldo total es $0', async ({ page }) => {
     // El beforeEach siembra estado vacío. Aquí agregamos una cuenta con saldo 0
     // (segundo addInitScript: lee el estado ya sembrado y agrega la cuenta).
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.cuentas = [{ id: 'c1', nombre: 'Efectivo', tipo: 'efectivo', saldo: 0, activa: true }];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+    await parchar(page, {
+      cuentas: [{ id: 'c1', nombre: 'Efectivo', tipo: 'efectivo', saldo: 0, activa: true }],
     });
     await page.goto('/');
     await page.waitForSelector('#saldo-total', { timeout: 10_000 });
@@ -185,10 +182,8 @@ test.describe('Dashboard', () => {
     // El beforeEach siembra estado vacío vía addInitScript. Como addInitScript
     // se acumula y corre en CADA navegación, agregamos otro que inyecta una
     // cuenta (corre después del seed base) y recién ahí navegamos.
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.cuentas = [{ id: 'c1', nombre: 'Efectivo', tipo: 'efectivo', saldo: 500000, activa: true }];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+    await parchar(page, {
+      cuentas: [{ id: 'c1', nombre: 'Efectivo', tipo: 'efectivo', saldo: 500000, activa: true }],
     });
     await page.goto('/');
     await page.waitForSelector('#saldo-total', { timeout: 10_000 });
@@ -208,19 +203,15 @@ test.describe('Dashboard', () => {
 
 test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
   test('el ojo oculta el saldo, persiste tras recargar y lo vuelve a mostrar', async ({ page }) => {
-    await page.addInitScript(() => {
-      if (localStorage.getItem('fk_v1')) return;
-      const estado = {
-        version: 1,
-        perfil: { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas: [{ id: 'c1', nombre: 'Efectivo', tipo: 'efectivo', saldo: 500000, activa: true }],
-        ingresos: [],
-        gastos: [],
-        compromisos: [],
-        metas: [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    await sembrarSiVacio(page, {
+      version: 1,
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [{ id: 'c1', nombre: 'Efectivo', tipo: 'efectivo', saldo: 500000, activa: true }],
+      ingresos: [],
+      gastos: [],
+      compromisos: [],
+      metas: [],
     });
     await page.goto('/');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
@@ -249,19 +240,15 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
   });
 
   test('la posición del ojo no cambia al alternar la máscara (IN.8b, ADR 034 D3)', async ({ page }) => {
-    await page.addInitScript(() => {
-      if (localStorage.getItem('fk_v1')) return;
-      const estado = {
-        version: 1,
-        perfil: { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas: [{ id: 'c1', nombre: 'Efectivo', tipo: 'efectivo', saldo: 2485000, activa: true }],
-        ingresos: [],
-        gastos: [],
-        compromisos: [],
-        metas: [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    await sembrarSiVacio(page, {
+      version: 1,
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [{ id: 'c1', nombre: 'Efectivo', tipo: 'efectivo', saldo: 2485000, activa: true }],
+      ingresos: [],
+      gastos: [],
+      compromisos: [],
+      metas: [],
     });
     await page.goto('/');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
@@ -295,22 +282,18 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     // IN.9c (ADR 057 D3) acota el acordeón a móvil: desde 1024px el detalle
     // vive en su columna propia y el pill no se pinta. El ancho se declara.
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.addInitScript(() => {
-      if (localStorage.getItem('fk_v1')) return;
-      const estado = {
-        version: 1,
-        perfil: { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas: [
-          { id: 'c1', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 1450000, activa: true },
-          { id: 'c2', nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo', saldo: 350000, activa: true },
-        ],
-        ingresos: [],
-        gastos: [],
-        compromisos: [],
-        metas: [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    await sembrarSiVacio(page, {
+      version: 1,
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [
+        { id: 'c1', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 1450000, activa: true },
+        { id: 'c2', nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo', saldo: 350000, activa: true },
+      ],
+      ingresos: [],
+      gastos: [],
+      compromisos: [],
+      metas: [],
     });
     await page.goto('/');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
@@ -354,22 +337,18 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     // las dos celdas comparten fila. El test de IN.9d, más abajo, hace lo
     // mismo por la misma razón.
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.addInitScript(() => {
-      if (localStorage.getItem('fk_v1')) return;
-      const estado = {
-        version: 1,
-        perfil: { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas: [
-          { id: 'c1', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 1450000, activa: true },
-          { id: 'c2', nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo', saldo: 350000, activa: true },
-        ],
-        ingresos: [],
-        gastos: [],
-        compromisos: [],
-        metas: [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    await sembrarSiVacio(page, {
+      version: 1,
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [
+        { id: 'c1', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 1450000, activa: true },
+        { id: 'c2', nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo', saldo: 350000, activa: true },
+      ],
+      ingresos: [],
+      gastos: [],
+      compromisos: [],
+      metas: [],
     });
     await page.goto('/');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
@@ -414,23 +393,21 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     const DIA = 15;
     const DIA_VENCIDO = DIA - 2;
     await page.clock.setFixedTime(new Date(`2026-03-${DIA}T10:00:00`));
-    await page.addInitScript(({ dia, diaPasado }) => {
-      if (localStorage.getItem('fk_v1')) return;
-      const estado = {
-        version: 1,
-        perfil: { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas: [],
-        ingresos: [],
-        gastos: [],
-        compromisos: [
-          { id: 'v1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad', cuotaMensual: 180000, diaPago: diaPasado, activo: true, frecuencia: 'Mensual' },
-          { id: 'v2', descripcion: 'Netflix', tipo: 'fijo', monto: 44900, diaPago: dia, activo: true, frecuencia: 'Mensual' },
-        ],
-        metas: [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
-    }, { dia: DIA, diaPasado: DIA_VENCIDO });
+    const dia = DIA;
+    const diaPasado = DIA_VENCIDO;
+    await sembrarSiVacio(page, {
+      version: 1,
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [],
+      ingresos: [],
+      gastos: [],
+      compromisos: [
+        { id: 'v1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad', cuotaMensual: 180000, diaPago: diaPasado, activo: true, frecuencia: 'Mensual' },
+        { id: 'v2', descripcion: 'Netflix', tipo: 'fijo', monto: 44900, diaPago: dia, activo: true, frecuencia: 'Mensual' },
+      ],
+      metas: [],
+    });
     await page.goto('/');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
 
@@ -467,29 +444,26 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
   test('Avisos: apartado listo, día de pago y préstamo vencido, sin repetir lo de otros paneles (CFG.3b, ADR 066)', async ({ page }) => {
     const DIA = 15;
     await page.clock.setFixedTime(new Date(`2026-03-${DIA}T10:00:00`));
-    await page.addInitScript(({ dia }) => {
-      if (localStorage.getItem('fk_v1')) return;
-      const estado = {
-        version: 1,
-        perfil: { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas: [],
-        ingresos: [
-          { id: 'i1', descripcion: 'Salario', monto: 2000000, frecuencia: 'Mensual', categoria: 'Salario', diaPago: dia, activo: true, fechaCreacion: '2025-01-01T00:00:00.000Z' },
-        ],
-        gastos: [],
-        compromisos: [],
-        presupuestos: [],
-        apartados: [
-          { id: 'a1', nombre: 'SOAT', icono: '📦', montoObjetivo: 500000, montoActual: 500000, fechaObjetivo: null, frecuenciaAporte: 'Mensual', recurrente: true, periodoMeses: 12, completado: true, fechaCreacion: '2025-01-01T00:00:00.000Z' },
-        ],
-        personales: [
-          { id: 'pe1', persona: 'Juan', monto: 300000, pagado: 0, fecha: '2026-01-01', fechaLimite: `2026-03-${dia - 5}`, liquidado: false, fechaCreacion: '2026-01-01T00:00:00.000Z' },
-        ],
-        metas: [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
-    }, { dia: DIA });
+    const dia = DIA;
+    await sembrarSiVacio(page, {
+      version: 1,
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [],
+      ingresos: [
+        { id: 'i1', descripcion: 'Salario', monto: 2000000, frecuencia: 'Mensual', categoria: 'Salario', diaPago: dia, activo: true, fechaCreacion: '2025-01-01T00:00:00.000Z' },
+      ],
+      gastos: [],
+      compromisos: [],
+      presupuestos: [],
+      apartados: [
+        { id: 'a1', nombre: 'SOAT', icono: '📦', montoObjetivo: 500000, montoActual: 500000, fechaObjetivo: null, frecuenciaAporte: 'Mensual', recurrente: true, periodoMeses: 12, completado: true, fechaCreacion: '2025-01-01T00:00:00.000Z' },
+      ],
+      personales: [
+        { id: 'pe1', persona: 'Juan', monto: 300000, pagado: 0, fecha: '2026-01-01', fechaLimite: `2026-03-${dia - 5}`, liquidado: false, fechaCreacion: '2026-01-01T00:00:00.000Z' },
+      ],
+      metas: [],
+    });
     await page.goto('/');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
 
@@ -509,34 +483,30 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
   });
 
   test('Resumen de la semana visual: monto, chip, barras y categoría top (IN.8f, ADR 034 D6)', async ({ page }) => {
-    await page.addInitScript(() => {
-      if (localStorage.getItem('fk_v1')) return;
-      const hoy = new Date();
-      const iso = (d) => {
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-        return `${yyyy}-${mm}-${dd}`;
-      };
-      const haceNDias = (n) => {
-        const d = new Date(hoy);
-        d.setDate(d.getDate() - n);
-        return iso(d);
-      };
-      const estado = {
-        version: 1,
-        perfil: { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas: [],
-        ingresos: [],
-        gastos: [
-          { id: 'g1', descripcion: 'Mercado semanal', categoria: 'Mercado', monto: 180000, fecha: iso(hoy), cuentaId: null, nota: '' },
-          { id: 'g2', descripcion: 'Bus', categoria: 'Transporte', monto: 20000, fecha: haceNDias(3), cuentaId: null, nota: '' },
-        ],
-        compromisos: [],
-        metas: [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    const hoy = new Date();
+    const iso = (d) => {
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    };
+    const haceNDias = (n) => {
+      const d = new Date(hoy);
+      d.setDate(d.getDate() - n);
+      return iso(d);
+    };
+    await sembrarSiVacio(page, {
+      version: 1,
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [],
+      ingresos: [],
+      gastos: [
+        { id: 'g1', descripcion: 'Mercado semanal', categoria: 'Mercado', monto: 180000, fecha: iso(hoy), cuentaId: null, nota: '' },
+        { id: 'g2', descripcion: 'Bus', categoria: 'Transporte', monto: 20000, fecha: haceNDias(3), cuentaId: null, nota: '' },
+      ],
+      compromisos: [],
+      metas: [],
     });
     await page.goto('/');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
@@ -561,28 +531,24 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     // Desde 1024px cada uno vive por separado (ver el test de escritorio,
     // más abajo); acá se verifica que la fusión móvil sigue intacta.
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.addInitScript(() => {
-      if (localStorage.getItem('fk_v1')) return;
-      const hoy = new Date();
-      const iso = (d) => {
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-        return `${yyyy}-${mm}-${dd}`;
-      };
-      const estado = {
-        version: 1,
-        perfil: { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas: [],
-        ingresos: [],
-        gastos: [
-          { id: 'g1', descripcion: 'Mercado semanal', categoria: 'Mercado', monto: 50000, fecha: iso(hoy), cuentaId: null, nota: '' },
-        ],
-        compromisos: [],
-        metas: [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    const hoy = new Date();
+    const iso = (d) => {
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    };
+    await sembrarSiVacio(page, {
+      version: 1,
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [],
+      ingresos: [],
+      gastos: [
+        { id: 'g1', descripcion: 'Mercado semanal', categoria: 'Mercado', monto: 50000, fecha: iso(hoy), cuentaId: null, nota: '' },
+      ],
+      compromisos: [],
+      metas: [],
     });
     await page.goto('/');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
@@ -616,28 +582,24 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     // dentro de un `@media no-preference`) y la medición deja de depender del
     // reloj.
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.addInitScript(() => {
-      if (localStorage.getItem('fk_v1')) return;
-      const hoy = new Date();
-      const iso = (d) => {
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-        return `${yyyy}-${mm}-${dd}`;
-      };
-      const estado = {
-        version: 1,
-        perfil: { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas: [],
-        ingresos: [],
-        gastos: [
-          { id: 'g1', descripcion: 'Mercado semanal', categoria: 'Mercado', monto: 50000, fecha: iso(hoy), cuentaId: null, nota: '' },
-        ],
-        compromisos: [],
-        metas: [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    const hoy = new Date();
+    const iso = (d) => {
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    };
+    await sembrarSiVacio(page, {
+      version: 1,
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [],
+      ingresos: [],
+      gastos: [
+        { id: 'g1', descripcion: 'Mercado semanal', categoria: 'Mercado', monto: 50000, fecha: iso(hoy), cuentaId: null, nota: '' },
+      ],
+      compromisos: [],
+      metas: [],
     });
     await page.goto('/');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
@@ -865,21 +827,18 @@ test.describe('Metas - abono con selector de cuenta compartido (MT.5)', () => {
 
 test.describe('Metas - ritmo de ahorro según frecuencia (MT.4)', () => {
   test('con un ingreso Quincenal, la meta muestra el monto "por quincena", no "por día"', async ({ page }) => {
-    await page.addInitScript(() => {
-      const estado = {
-        version: 1,
-        perfil: { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas: [],
-        ingresos: [{
-          id: 'i1', descripcion: 'Nómina', monto: 1500000,
-          frecuencia: 'Quincenal', activo: true, fechaCreacion: '2026-01-01',
-        }],
-        gastos: [],
-        compromisos: [],
-        metas: [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    await sembrar(page, {
+      version: 1,
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [],
+      ingresos: [{
+        id: 'i1', descripcion: 'Nómina', monto: 1500000,
+        frecuencia: 'Quincenal', activo: true, fechaCreacion: '2026-01-01',
+      }],
+      gastos: [],
+      compromisos: [],
+      metas: [],
     });
     await page.goto('/#metas');
     await expect(page.locator('#sec-metas.active')).toBeVisible();
@@ -1121,22 +1080,19 @@ test.describe('Gastos - CRUD', () => {
     // (se registra DESPUÉS del de saltearOnboarding, así que gana al re-boot)
     // + reload (un goto a la misma URL con hash es navegación same-document:
     // no re-ejecuta init scripts ni re-arranca la app).
-    await page.addInitScript(() => {
-      const d = new Date();
-      const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      const estado = {
-        version: 1,
-        perfil: { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas: [],
-        ingresos: [],
-        gastos: Array.from({ length: 6 }, (_, i) => ({
-          id: `h${i}`, categoria: 'Domicilios', monto: 18000, fecha: iso, cuentaId: null, nota: '',
-        })),
-        compromisos: [],
-        metas: [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    const d = new Date();
+    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    await sembrar(page, {
+      version: 1,
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [],
+      ingresos: [],
+      gastos: Array.from({ length: 6 }, (_, i) => ({
+        id: `h${i}`, categoria: 'Domicilios', monto: 18000, fecha: iso, cuentaId: null, nota: '',
+      })),
+      compromisos: [],
+      metas: [],
     });
     await page.reload();
     await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
@@ -1403,15 +1359,15 @@ test.describe('Tesorería - cuenta y saldo', () => {
     // una cuenta real (es lo que el asistente leerá en MC.13e). Se consulta con
     // reintento porque `save()` es debounced 200ms (ADN #5): leer de una sola
     // vez justo tras cerrar el modal gana la carrera y ve el estado anterior.
-    await expect.poll(async () => page.evaluate(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+    await expect.poll(async () => {
+      const st = await leerEstado(page);
       const ing = (st.ingresos ?? []).find(i => i.descripcion === 'Salario empresa');
       if (!ing) return null;
       return {
         version:      st._version,
         cuentaExiste: (st.cuentas ?? []).some(c => c.id === ing.cuentaId),
       };
-    }), { timeout: 5_000 }).toEqual({ version: SCHEMA_VERSION_VIGENTE, cuentaExiste: true });
+    }, { timeout: 5_000 }).toEqual({ version: SCHEMA_VERSION_VIGENTE, cuentaExiste: true });
   });
 });
 
@@ -1700,12 +1656,11 @@ test.describe('Perfil - situación laboral', () => {
 
     // Persistencia real: el dato queda en localStorage (save debounced 200 ms).
     // No se recarga porque el addInitScript de saltearOnboarding resembraría
-    // fk_v1 en cada carga; el chequeo del store es la prueba de persistencia.
-    await page.waitForFunction(() => {
-      try {
-        return JSON.parse(localStorage.getItem('fk_v1') || '{}')?.perfil?.situacionLaboral === 'independiente';
-      } catch { return false; }
-    });
+    // el estado en cada carga; el chequeo del store es la prueba de persistencia.
+    await expect.poll(
+      async () => (await leerEstado(page))?.perfil?.situacionLaboral,
+      { timeout: 5_000 },
+    ).toBe('independiente');
   });
 });
 
@@ -1784,20 +1739,17 @@ test.describe('Tu progreso (niveles)', () => {
 
 test.describe('Tu progreso - familia deudas (LG.2c)', () => {
   test('saldar una deuda desbloquea "Una deuda menos" agrupado en la familia', async ({ page }) => {
-    await page.addInitScript(() => {
-      const estado = {
-        version: 1,
-        perfil: { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas: [],
-        ingresos: [],
-        gastos: [],
-        compromisos: [
-          { id: 'd1', descripcion: 'Tarjeta pagada', tipo: 'deuda-entidad', saldoTotal: 0, cuotaMensual: 50000, diaPago: 5, activo: true },
-        ],
-        metas: [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    await sembrar(page, {
+      version: 1,
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [],
+      ingresos: [],
+      gastos: [],
+      compromisos: [
+        { id: 'd1', descripcion: 'Tarjeta pagada', tipo: 'deuda-entidad', saldoTotal: 0, cuotaMensual: 50000, diaPago: 5, activo: true },
+      ],
+      metas: [],
     });
     await page.goto('/#analisis');
     await page.waitForSelector('#sec-analisis.active', { timeout: 10_000 });
@@ -1934,23 +1886,20 @@ test.describe('Agenda - leyenda dinámica con los tres tipos de compromiso', () 
     const anio = hoy.getFullYear();
     const mes  = String(hoy.getMonth() + 1).padStart(2, '0');
 
-    await page.addInitScript(({ anio, mes }) => {
-      const estado = {
-        version:   1,
-        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas:   [],
-        ingresos:  [],
-        gastos:    [],
-        compromisos: [
-          { id: 'f1', tipo: 'fijo',           descripcion: 'Arriendo', monto: 500000,        frecuencia: 'Mensual', diaPago: 1, activo: true, fechaCreacion: `${anio}-${mes}-01T00:00:00Z` },
-          { id: 'd1', tipo: 'deuda-entidad',  descripcion: 'Crédito',  cuotaMensual: 200000,  frecuencia: 'Mensual', diaPago: 1, activo: true, fechaCreacion: `${anio}-${mes}-01T00:00:00Z` },
-          { id: 'd2', tipo: 'deuda-personal', descripcion: 'Préstamo',cuotaMensual: 100000,  frecuencia: 'Mensual', diaPago: 1, activo: true, fechaCreacion: `${anio}-${mes}-01T00:00:00Z` },
-        ],
-        metas: [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
-    }, { anio, mes });
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas:   [],
+      ingresos:  [],
+      gastos:    [],
+      compromisos: [
+        { id: 'f1', tipo: 'fijo',           descripcion: 'Arriendo', monto: 500000,        frecuencia: 'Mensual', diaPago: 1, activo: true, fechaCreacion: `${anio}-${mes}-01T00:00:00Z` },
+        { id: 'd1', tipo: 'deuda-entidad',  descripcion: 'Crédito',  cuotaMensual: 200000,  frecuencia: 'Mensual', diaPago: 1, activo: true, fechaCreacion: `${anio}-${mes}-01T00:00:00Z` },
+        { id: 'd2', tipo: 'deuda-personal', descripcion: 'Préstamo',cuotaMensual: 100000,  frecuencia: 'Mensual', diaPago: 1, activo: true, fechaCreacion: `${anio}-${mes}-01T00:00:00Z` },
+      ],
+      metas: [],
+    });
 
     await page.goto('/#agenda');
     await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
@@ -1974,37 +1923,34 @@ test.describe('Agenda - badge abono', () => {
     const mes     = String(hoy.getMonth() + 1).padStart(2, '0');
     const diaPago = 15;
 
-    await page.addInitScript(({ compromisoId, anio, mes, diaPago }) => {
-      const estado = {
-        version:   1,
-        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas:   [],
-        ingresos:  [],
-        gastos: [{
-          id:          'gasto-abono-badge',
-          compromisoId,
-          descripcion: 'Abono cuota E2E',
-          monto:       100000,
-          categoria:   'Compromisos',
-          cuentaId:    null,
-          fecha:       `${anio}-${mes}-10`,
-        }],
-        compromisos: [{
-          id:           compromisoId,
-          tipo:         'deuda-entidad',
-          descripcion:  'Deuda Badge E2E',
-          saldoTotal:   400000,
-          cuotaMensual: 100000,
-          tasa:         24,
-          tasaUnidad:   'EA',
-          frecuencia:   'Mensual',
-          diaPago,
-        }],
-        metas: [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
-    }, { compromisoId, anio, mes, diaPago });
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas:   [],
+      ingresos:  [],
+      gastos: [{
+        id:          'gasto-abono-badge',
+        compromisoId,
+        descripcion: 'Abono cuota E2E',
+        monto:       100000,
+        categoria:   'Compromisos',
+        cuentaId:    null,
+        fecha:       `${anio}-${mes}-10`,
+      }],
+      compromisos: [{
+        id:           compromisoId,
+        tipo:         'deuda-entidad',
+        descripcion:  'Deuda Badge E2E',
+        saldoTotal:   400000,
+        cuotaMensual: 100000,
+        tasa:         24,
+        tasaUnidad:   'EA',
+        frecuencia:   'Mensual',
+        diaPago,
+      }],
+      metas: [],
+    });
 
     await page.goto('/#agenda');
     await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
@@ -2027,29 +1973,26 @@ test.describe('Agenda - total a pagar por día', () => {
   test('el detalle del día suma el gasto fijo y la cuota de la deuda', async ({ page }) => {
     const diaPago = 20;
 
-    await page.addInitScript(({ diaPago }) => {
-      const estado = {
-        version:   1,
-        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas:   [],
-        ingresos:  [],
-        gastos:    [],
-        compromisos: [
-          {
-            id: 'fijo-total-e2e', tipo: 'fijo', descripcion: 'Arriendo E2E',
-            monto: 900000, frecuencia: 'Mensual', diaPago,
-          },
-          {
-            id: 'deuda-total-e2e', tipo: 'deuda-entidad', descripcion: 'Tarjeta E2E',
-            saldoTotal: 3000000, cuotaMensual: 150000, tasa: 24, tasaUnidad: 'EA',
-            frecuencia: 'Mensual', diaPago,
-          },
-        ],
-        metas: [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
-    }, { diaPago });
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas:   [],
+      ingresos:  [],
+      gastos:    [],
+      compromisos: [
+        {
+          id: 'fijo-total-e2e', tipo: 'fijo', descripcion: 'Arriendo E2E',
+          monto: 900000, frecuencia: 'Mensual', diaPago,
+        },
+        {
+          id: 'deuda-total-e2e', tipo: 'deuda-entidad', descripcion: 'Tarjeta E2E',
+          saldoTotal: 3000000, cuotaMensual: 150000, tasa: 24, tasaUnidad: 'EA',
+          frecuencia: 'Mensual', diaPago,
+        },
+      ],
+      metas: [],
+    });
 
     await page.goto('/#agenda');
     await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
@@ -2074,33 +2017,30 @@ test.describe('Agenda - hero del mes (CAL.4a)', () => {
     const anio = hoy.getFullYear();
     const mes  = String(hoy.getMonth() + 1).padStart(2, '0');
 
-    await page.addInitScript(({ anio, mes }) => {
-      const estado = {
-        version:   1,
-        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas:   [],
-        ingresos:  [],
-        gastos: [{
-          id: 'gasto-hero-e2e', compromisoId: 'fijo-hero-e2e',
-          descripcion: 'Pago: Arriendo Hero E2E', monto: 900000,
-          categoria: 'Gastos fijos', cuentaId: null, fecha: `${anio}-${mes}-05`,
-        }],
-        compromisos: [
-          {
-            id: 'fijo-hero-e2e', tipo: 'fijo', descripcion: 'Arriendo Hero E2E',
-            monto: 900000, frecuencia: 'Mensual', diaPago: 5,
-          },
-          {
-            id: 'deuda-hero-e2e', tipo: 'deuda-entidad', descripcion: 'Tarjeta Hero E2E',
-            saldoTotal: 3000000, cuotaMensual: 150000, tasa: 24, tasaUnidad: 'EA',
-            frecuencia: 'Mensual', diaPago: 20,
-          },
-        ],
-        metas: [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
-    }, { anio, mes });
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas:   [],
+      ingresos:  [],
+      gastos: [{
+        id: 'gasto-hero-e2e', compromisoId: 'fijo-hero-e2e',
+        descripcion: 'Pago: Arriendo Hero E2E', monto: 900000,
+        categoria: 'Gastos fijos', cuentaId: null, fecha: `${anio}-${mes}-05`,
+      }],
+      compromisos: [
+        {
+          id: 'fijo-hero-e2e', tipo: 'fijo', descripcion: 'Arriendo Hero E2E',
+          monto: 900000, frecuencia: 'Mensual', diaPago: 5,
+        },
+        {
+          id: 'deuda-hero-e2e', tipo: 'deuda-entidad', descripcion: 'Tarjeta Hero E2E',
+          saldoTotal: 3000000, cuotaMensual: 150000, tasa: 24, tasaUnidad: 'EA',
+          frecuencia: 'Mensual', diaPago: 20,
+        },
+      ],
+      metas: [],
+    });
 
     await page.goto('/#agenda');
     await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
@@ -2113,21 +2053,18 @@ test.describe('Agenda - hero del mes (CAL.4a)', () => {
   });
 
   test('el ojo enmascara los montos del hero y persiste el flag compartido', async ({ page }) => {
-    await page.addInitScript(() => {
-      const estado = {
-        version:   1,
-        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas:   [],
-        ingresos:  [],
-        gastos:    [],
-        compromisos: [{
-          id: 'fijo-ojo-e2e', tipo: 'fijo', descripcion: 'Arriendo Ojo E2E',
-          monto: 900000, frecuencia: 'Mensual', diaPago: 5,
-        }],
-        metas: [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas:   [],
+      ingresos:  [],
+      gastos:    [],
+      compromisos: [{
+        id: 'fijo-ojo-e2e', tipo: 'fijo', descripcion: 'Arriendo Ojo E2E',
+        monto: 900000, frecuencia: 'Mensual', diaPago: 5,
+      }],
+      metas: [],
     });
 
     await page.goto('/#agenda');
@@ -2141,10 +2078,10 @@ test.describe('Agenda - hero del mes (CAL.4a)', () => {
     await expect(hero.locator('[data-action="agenda-saldo-visibilidad"]'))
       .toHaveAttribute('aria-pressed', 'true');
 
-    // El flag es el mismo de toda la app (IN.2): queda persistido en fk_v1.
+    // El flag es el mismo de toda la app (IN.2): queda persistido en el estado.
     // save() es debounced 200ms (ADN 5), así que se espera con poll.
     await expect.poll(
-      () => page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')).config?.ocultarSaldo),
+      async () => (await leerEstado(page)).config?.ocultarSaldo,
       { timeout: 3_000 },
     ).toBe(true);
   });
@@ -2154,21 +2091,18 @@ test.describe('Agenda - hero del mes (CAL.4a)', () => {
   // desaparece: el banner de propósito, el hero y la card de vacío decían lo
   // mismo, con dos primarios a la vez.
   test('un mes solo con ingresos muestra la variante de guía sin ojo', async ({ page }) => {
-    await page.addInitScript(() => {
-      const estado = {
-        version:   1,
-        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas:   [],
-        ingresos:  [{
-          id: 'ing-guia-e2e', descripcion: 'Salario Guía E2E', monto: 2000000,
-          frecuencia: 'Mensual', diaPago: 15, activo: true,
-        }],
-        gastos:    [],
-        compromisos: [],
-        metas:     [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas:   [],
+      ingresos:  [{
+        id: 'ing-guia-e2e', descripcion: 'Salario Guía E2E', monto: 2000000,
+        frecuencia: 'Mensual', diaPago: 15, activo: true,
+      }],
+      gastos:    [],
+      compromisos: [],
+      metas:     [],
     });
 
     await page.goto('/#agenda');
@@ -2182,18 +2116,15 @@ test.describe('Agenda - hero del mes (CAL.4a)', () => {
   });
 
   test('DIS.11 C8: con el mes vacío el único mensaje es la card, con un solo primario', async ({ page }) => {
-    await page.addInitScript(() => {
-      const estado = {
-        version:   1,
-        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas:   [],
-        ingresos:  [],
-        gastos:    [],
-        compromisos: [],
-        metas:     [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas:   [],
+      ingresos:  [],
+      gastos:    [],
+      compromisos: [],
+      metas:     [],
     });
 
     await page.goto('/#agenda');
@@ -2222,33 +2153,30 @@ test.describe('Agenda - detalle del día accionable (CAL.4c)', () => {
     const anio = hoy.getFullYear();
     const mes  = String(hoy.getMonth() + 1).padStart(2, '0');
 
-    await page.addInitScript(({ anio, mes }) => {
-      const estado = {
-        version:   1,
-        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas:   [],
-        ingresos:  [],
-        gastos: [{
-          id: 'gasto-cal4c-e2e', compromisoId: 'fijo-cal4c-e2e',
-          descripcion: 'Pago: Arriendo CAL4c', monto: 900000,
-          categoria: 'Gastos fijos', cuentaId: null, fecha: `${anio}-${mes}-15`,
-        }],
-        compromisos: [
-          {
-            id: 'fijo-cal4c-e2e', tipo: 'fijo', descripcion: 'Arriendo CAL4c',
-            monto: 900000, frecuencia: 'Mensual', diaPago: 15,
-          },
-          {
-            id: 'deuda-cal4c-e2e', tipo: 'deuda-entidad', descripcion: 'Tarjeta CAL4c',
-            saldoTotal: 3000000, cuotaMensual: 150000, tasa: 24, tasaUnidad: 'EA',
-            frecuencia: 'Mensual', diaPago: 20,
-          },
-        ],
-        metas: [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
-    }, { anio, mes });
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas:   [],
+      ingresos:  [],
+      gastos: [{
+        id: 'gasto-cal4c-e2e', compromisoId: 'fijo-cal4c-e2e',
+        descripcion: 'Pago: Arriendo CAL4c', monto: 900000,
+        categoria: 'Gastos fijos', cuentaId: null, fecha: `${anio}-${mes}-15`,
+      }],
+      compromisos: [
+        {
+          id: 'fijo-cal4c-e2e', tipo: 'fijo', descripcion: 'Arriendo CAL4c',
+          monto: 900000, frecuencia: 'Mensual', diaPago: 15,
+        },
+        {
+          id: 'deuda-cal4c-e2e', tipo: 'deuda-entidad', descripcion: 'Tarjeta CAL4c',
+          saldoTotal: 3000000, cuotaMensual: 150000, tasa: 24, tasaUnidad: 'EA',
+          frecuencia: 'Mensual', diaPago: 20,
+        },
+      ],
+      metas: [],
+    });
 
     await page.goto('/#agenda');
     await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
@@ -2275,25 +2203,22 @@ test.describe('Agenda - detalle del día accionable (CAL.4c)', () => {
 // Ahora el pago pertenece al mes visible; un mes futuro no se puede pagar.
 
 test.describe('Agenda - marcar pagado usa el mes visible (BUG-015)', () => {
-  const estadoBug015 = () => {
-    const estado = {
-      version:   1,
-      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
-      onboarded: true,
-      cuentas:   [{ id: 'c-bug015', nombre: 'Bancolombia', tipo: 'ahorros', saldo: 5000000, activa: true }],
-      ingresos:  [],
-      gastos:    [],
-      compromisos: [{
-        id: 'fijo-bug015', tipo: 'fijo', descripcion: 'Arriendo BUG015',
-        monto: 900000, frecuencia: 'Mensual', diaPago: 15, activo: true, categoria: null,
-      }],
-      metas: [],
-    };
-    localStorage.setItem('fk_v1', JSON.stringify(estado));
+  const ESTADO_BUG015 = {
+    version:   1,
+    perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+    onboarded: true,
+    cuentas:   [{ id: 'c-bug015', nombre: 'Bancolombia', tipo: 'ahorros', saldo: 5000000, activa: true }],
+    ingresos:  [],
+    gastos:    [],
+    compromisos: [{
+      id: 'fijo-bug015', tipo: 'fijo', descripcion: 'Arriendo BUG015',
+      monto: 900000, frecuencia: 'Mensual', diaPago: 15, activo: true, categoria: null,
+    }],
+    metas: [],
   };
 
   test('marcar pagado en el mes anterior fecha el gasto en ESE mes, no hoy', async ({ page }) => {
-    await page.addInitScript(estadoBug015);
+    await sembrar(page, ESTADO_BUG015);
     await page.goto('/#agenda');
     await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
 
@@ -2312,7 +2237,7 @@ test.describe('Agenda - marcar pagado usa el mes visible (BUG-015)', () => {
 
     // El gasto queda fechado en el mes anterior (save() es debounced 200ms).
     await expect.poll(async () => {
-      const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+      const st = await leerEstado(page);
       const g = (st.gastos || []).find(x => x.compromisoId === 'fijo-bug015');
       return g ? g.fecha.slice(0, 7) : null;
     }, { timeout: 5_000 }).toBe(prefijoAnt);
@@ -2323,7 +2248,7 @@ test.describe('Agenda - marcar pagado usa el mes visible (BUG-015)', () => {
   });
 
   test('el mes siguiente no ofrece marcar pagado: aún no vence', async ({ page }) => {
-    await page.addInitScript(estadoBug015);
+    await sembrar(page, ESTADO_BUG015);
     await page.goto('/#agenda');
     await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
 
@@ -2342,21 +2267,19 @@ test.describe('Agenda - marcar pagado usa el mes visible (BUG-015)', () => {
 // el patrimonio neto: convierte efectivo en un derecho de cobro.
 
 test.describe('Me deben conectado a cuentas y patrimonio (PE.7)', () => {
-  const saldoDe = (page, id) => page.evaluate((cuentaId) => {
-    const st = JSON.parse(localStorage.getItem('fk_v1'));
-    return st.cuentas.find(c => c.id === cuentaId).saldo;
-  }, id);
+  const saldoDe = async (page, id) => {
+    const st = await leerEstado(page);
+    return st.cuentas.find(c => c.id === id).saldo;
+  };
 
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('fk_v1', JSON.stringify({
-        version:   1,
-        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas:   [{ id: 'c-pe7', nombre: 'Bancolombia', tipo: 'ahorros', saldo: 1000000, activa: true }],
-        ingresos: [], gastos: [], compromisos: [], metas: [],
-        apartados: [], inversiones: [], personales: [], transferencias: [],
-      }));
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas:   [{ id: 'c-pe7', nombre: 'Bancolombia', tipo: 'ahorros', saldo: 1000000, activa: true }],
+      ingresos: [], gastos: [], compromisos: [], metas: [],
+      apartados: [], inversiones: [], personales: [], transferencias: [],
     });
     await page.goto('/#personales');
     await page.waitForSelector('#sec-personales', { timeout: 10_000 });
@@ -2421,7 +2344,7 @@ test.describe('Me deben conectado a cuentas y patrimonio (PE.7)', () => {
     await page.locator('#form-personal button[type="submit"]').click();
 
     await expect.poll(async () => {
-      const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+      const st = await leerEstado(page);
       return st.personales.length;
     }, { timeout: 5_000 }).toBe(1);
     expect(await saldoDe(page, 'c-pe7')).toBe(1_000_000);
@@ -2435,23 +2358,21 @@ test.describe('Me deben conectado a cuentas y patrimonio (PE.7)', () => {
 
 test.describe('Movimientos - ledger accionable (MOV.1)', () => {
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('fk_v1', JSON.stringify({
-        version:   1,
-        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas:   [{ id: 'c-mov1', nombre: 'Bancolombia', tipo: 'ahorros', saldo: 500000, activa: true }],
-        gastos: [{
-          id: 'g-mov1', descripcion: 'Mercado MOV1', monto: 80000,
-          categoria: 'Mercado', fecha: '2026-07-04', cuentaId: 'c-mov1',
-        }],
-        ingresosPuntuales: [{
-          id: 'ip-mov1', descripcion: 'Venta bici', monto: 300000,
-          categoria: 'Otros', fecha: '2026-07-03', cuentaId: 'c-mov1',
-        }],
-        ingresos: [], compromisos: [], metas: [],
-        apartados: [], inversiones: [], personales: [], transferencias: [],
-      }));
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas:   [{ id: 'c-mov1', nombre: 'Bancolombia', tipo: 'ahorros', saldo: 500000, activa: true }],
+      gastos: [{
+        id: 'g-mov1', descripcion: 'Mercado MOV1', monto: 80000,
+        categoria: 'Mercado', fecha: '2026-07-04', cuentaId: 'c-mov1',
+      }],
+      ingresosPuntuales: [{
+        id: 'ip-mov1', descripcion: 'Venta bici', monto: 300000,
+        categoria: 'Otros', fecha: '2026-07-03', cuentaId: 'c-mov1',
+      }],
+      ingresos: [], compromisos: [], metas: [],
+      apartados: [], inversiones: [], personales: [], transferencias: [],
     });
     await page.goto('/#movimientos');
     await page.waitForSelector('#lista-movimientos .list-item', { timeout: 10_000 });
@@ -2468,10 +2389,10 @@ test.describe('Movimientos - ledger accionable (MOV.1)', () => {
     await page.locator('[data-role="confirmar"]').click();
 
     // La reversa la aplica el handler de Gastos, no el ledger: 500.000 + 80.000.
-    await expect.poll(async () => page.evaluate(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1'));
+    await expect.poll(async () => {
+      const st = await leerEstado(page);
       return st.cuentas.find(c => c.id === 'c-mov1').saldo;
-    }), { timeout: 5_000 }).toBe(580_000);
+    }, { timeout: 5_000 }).toBe(580_000);
 
     // Y el ledger se repinta solo (state:change de 'gastos').
     await expect(page.locator('#lista-movimientos .list-item[data-id="g-mov1"]')).toHaveCount(0);
@@ -2489,10 +2410,10 @@ test.describe('Movimientos - ledger accionable (MOV.1)', () => {
     await page.locator('#lista-movimientos .list-item[data-id="ip-mov1"] [data-action="eliminar-ingreso-puntual"]').click();
     await page.locator('[data-role="confirmar"]').click();
 
-    await expect.poll(async () => page.evaluate(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1'));
+    await expect.poll(async () => {
+      const st = await leerEstado(page);
       return st.cuentas.find(c => c.id === 'c-mov1').saldo;
-    }), { timeout: 5_000 }).toBe(200_000);
+    }, { timeout: 5_000 }).toBe(200_000);
     await expect(page.locator('#lista-movimientos .list-item[data-id="ip-mov1"]')).toHaveCount(0);
   });
 });
@@ -2504,19 +2425,17 @@ test.describe('Movimientos - ledger accionable (MOV.1)', () => {
 
 test.describe('Movimientos - búsqueda y filtros (MOV.2)', () => {
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('fk_v1', JSON.stringify({
-        version:   1,
-        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas:   [{ id: 'c-mov2', nombre: 'Bancolombia', tipo: 'ahorros', saldo: 1000000, activa: true }],
-        gastos: [
-          { id: 'g-mov2a', descripcion: 'Mercado', monto: 80000, categoria: 'Mercado', fecha: '2026-07-04', cuentaId: 'c-mov2' },
-          { id: 'g-mov2b', descripcion: 'Abono: Préstamo moto', monto: 150000, categoria: 'Deudas', fecha: '2026-07-15', cuentaId: 'c-mov2' },
-        ],
-        ingresos: [], ingresosPuntuales: [], compromisos: [], metas: [],
-        apartados: [], inversiones: [], personales: [], transferencias: [],
-      }));
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas:   [{ id: 'c-mov2', nombre: 'Bancolombia', tipo: 'ahorros', saldo: 1000000, activa: true }],
+      gastos: [
+        { id: 'g-mov2a', descripcion: 'Mercado', monto: 80000, categoria: 'Mercado', fecha: '2026-07-04', cuentaId: 'c-mov2' },
+        { id: 'g-mov2b', descripcion: 'Abono: Préstamo moto', monto: 150000, categoria: 'Deudas', fecha: '2026-07-15', cuentaId: 'c-mov2' },
+      ],
+      ingresos: [], ingresosPuntuales: [], compromisos: [], metas: [],
+      apartados: [], inversiones: [], personales: [], transferencias: [],
     });
     await page.goto('/#movimientos');
     await page.waitForSelector('#lista-movimientos .list-item', { timeout: 10_000 });
@@ -2581,18 +2500,15 @@ test.describe('Movimientos - búsqueda y filtros (MOV.2)', () => {
 
 test.describe('Agenda - empty state del mes (CAL.4b)', () => {
   test('mes vacío muestra "está despejado" y el CTA abre el modal de gasto fijo', async ({ page }) => {
-    await page.addInitScript(() => {
-      const estado = {
-        version:   1,
-        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas:   [],
-        ingresos:  [],
-        gastos:    [],
-        compromisos: [],
-        metas:     [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas:   [],
+      ingresos:  [],
+      gastos:    [],
+      compromisos: [],
+      metas:     [],
     });
 
     await page.goto('/#agenda');
@@ -2619,24 +2535,21 @@ test.describe('Agenda - empty state del mes (CAL.4b)', () => {
 
 test.describe('Agenda - CAL.3 selección automática del día actual', () => {
   test('navegar desde otra sección auto-abre el detalle de hoy si hay compromisos', async ({ page }) => {
-    await page.addInitScript(() => {
-      const diaPago = new Date().getDate();
-      const estado = {
-        version:   1,
-        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas:   [],
-        ingresos:  [],
-        gastos:    [],
-        compromisos: [
-          {
-            id: 'cal3-e2e', tipo: 'fijo', descripcion: 'Suscripción CAL.3 E2E',
-            monto: 45000, frecuencia: 'Mensual', diaPago,
-          },
-        ],
-        metas: [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    const diaPago = new Date().getDate();
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas:   [],
+      ingresos:  [],
+      gastos:    [],
+      compromisos: [
+        {
+          id: 'cal3-e2e', tipo: 'fijo', descripcion: 'Suscripción CAL.3 E2E',
+          monto: 45000, frecuencia: 'Mensual', diaPago,
+        },
+      ],
+      metas: [],
     });
 
     await page.goto('/#gast');
@@ -2651,24 +2564,21 @@ test.describe('Agenda - CAL.3 selección automática del día actual', () => {
   });
 
   test('cargar la app directo en #agenda no auto-abre el detalle (solo aplica a navegar hacia la sección)', async ({ page }) => {
-    await page.addInitScript(() => {
-      const diaPago = new Date().getDate();
-      const estado = {
-        version:   1,
-        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas:   [],
-        ingresos:  [],
-        gastos:    [],
-        compromisos: [
-          {
-            id: 'cal3-boot-e2e', tipo: 'fijo', descripcion: 'Suscripción CAL.3 boot',
-            monto: 45000, frecuencia: 'Mensual', diaPago,
-          },
-        ],
-        metas: [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    const diaPago = new Date().getDate();
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas:   [],
+      ingresos:  [],
+      gastos:    [],
+      compromisos: [
+        {
+          id: 'cal3-boot-e2e', tipo: 'fijo', descripcion: 'Suscripción CAL.3 boot',
+          monto: 45000, frecuencia: 'Mensual', diaPago,
+        },
+      ],
+      metas: [],
     });
 
     await page.goto('/#agenda');
@@ -2678,18 +2588,15 @@ test.describe('Agenda - CAL.3 selección automática del día actual', () => {
   });
 
   test('seleccionar un día sin compromisos muestra un mensaje explícito', async ({ page }) => {
-    await page.addInitScript(() => {
-      const estado = {
-        version:   1,
-        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas:   [],
-        ingresos:  [],
-        gastos:    [],
-        compromisos: [],
-        metas:     [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas:   [],
+      ingresos:  [],
+      gastos:    [],
+      compromisos: [],
+      metas:     [],
     });
 
     await page.goto('/#agenda');
@@ -2715,26 +2622,23 @@ test.describe('Agenda - leyenda al pie de la tarjeta', () => {
   test('la leyenda vive dentro de la tarjeta y el detalle nace pegado a la grilla', async ({ page }) => {
     const diaPago = 15;
 
-    await page.addInitScript(({ diaPago }) => {
-      const compromisos = [];
-      for (let i = 1; i <= 10; i++) {
-        compromisos.push({
-          id: `leyenda-e2e-${i}`, tipo: 'fijo', descripcion: `Fijo leyenda ${i}`,
-          monto: 50000, frecuencia: 'Mensual', diaPago,
-        });
-      }
-      const estado = {
-        version:   1,
-        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas:   [],
-        ingresos:  [],
-        gastos:    [],
-        compromisos,
-        metas:     [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
-    }, { diaPago });
+    const compromisos = [];
+    for (let i = 1; i <= 10; i++) {
+      compromisos.push({
+        id: `leyenda-e2e-${i}`, tipo: 'fijo', descripcion: `Fijo leyenda ${i}`,
+        monto: 50000, frecuencia: 'Mensual', diaPago,
+      });
+    }
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas:   [],
+      ingresos:  [],
+      gastos:    [],
+      compromisos,
+      metas:     [],
+    });
 
     await page.goto('/#agenda');
     await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
@@ -2759,22 +2663,19 @@ test.describe('Agenda - leyenda al pie de la tarjeta', () => {
   test('DIS.11 C1/V-1: abrir un día lleva el foco al título del panel', async ({ page }) => {
     const diaPago = 15;
 
-    await page.addInitScript(({ diaPago }) => {
-      const estado = {
-        version:   1,
-        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas:   [],
-        ingresos:  [],
-        gastos:    [],
-        compromisos: [{
-          id: 'foco-e2e-1', tipo: 'fijo', descripcion: 'Arriendo foco',
-          monto: 900000, frecuencia: 'Mensual', diaPago,
-        }],
-        metas:     [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
-    }, { diaPago });
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas:   [],
+      ingresos:  [],
+      gastos:    [],
+      compromisos: [{
+        id: 'foco-e2e-1', tipo: 'fijo', descripcion: 'Arriendo foco',
+        monto: 900000, frecuencia: 'Mensual', diaPago,
+      }],
+      metas:     [],
+    });
 
     await page.goto('/#agenda');
     await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
@@ -2793,18 +2694,15 @@ test.describe('Agenda - leyenda al pie de la tarjeta', () => {
   });
 
   test('DIS.11 V-4: navegar de mes conserva el foco en la flecha y anuncia el mes', async ({ page }) => {
-    await page.addInitScript(() => {
-      const estado = {
-        version:   1,
-        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas:   [],
-        ingresos:  [],
-        gastos:    [],
-        compromisos: [],
-        metas:     [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas:   [],
+      ingresos:  [],
+      gastos:    [],
+      compromisos: [],
+      metas:     [],
     });
 
     await page.goto('/#agenda');
@@ -2829,25 +2727,22 @@ test.describe('Agenda - marca de color por tipo', () => {
   test('un fijo y una deuda entidad el mismo día llevan fondos de color distintos', async ({ page }) => {
     const diaPago = 15;
 
-    await page.addInitScript(({ diaPago }) => {
-      const estado = {
-        version:   1,
-        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas:   [],
-        ingresos:  [],
-        gastos:    [],
-        compromisos: [
-          { id: 'fijo-color-e2e', tipo: 'fijo', descripcion: 'Mercado E2E',
-            monto: 100000, frecuencia: 'Mensual', diaPago },
-          { id: 'deuda-color-e2e', tipo: 'deuda-entidad', descripcion: 'Tarjeta E2E',
-            saldoTotal: 2000000, cuotaMensual: 200000, tasa: 24, tasaUnidad: 'EA',
-            frecuencia: 'Mensual', diaPago },
-        ],
-        metas: [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
-    }, { diaPago });
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas:   [],
+      ingresos:  [],
+      gastos:    [],
+      compromisos: [
+        { id: 'fijo-color-e2e', tipo: 'fijo', descripcion: 'Mercado E2E',
+          monto: 100000, frecuencia: 'Mensual', diaPago },
+        { id: 'deuda-color-e2e', tipo: 'deuda-entidad', descripcion: 'Tarjeta E2E',
+          saldoTotal: 2000000, cuotaMensual: 200000, tasa: 24, tasaUnidad: 'EA',
+          frecuencia: 'Mensual', diaPago },
+      ],
+      metas: [],
+    });
 
     await page.goto('/#agenda');
     await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
@@ -2887,22 +2782,19 @@ test.describe('Agenda - teja de categoría como ícono principal', () => {
   test('con categoría, el ícono principal es la teja con el glifo del sprite', async ({ page }) => {
     const diaPago = 15;
 
-    await page.addInitScript(({ diaPago }) => {
-      const estado = {
-        version:   1,
-        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas:   [],
-        ingresos:  [],
-        gastos:    [],
-        compromisos: [
-          { id: 'fijo-emoji-e2e', tipo: 'fijo', descripcion: 'Internet E2E',
-            categoria: 'Internet', monto: 100000, frecuencia: 'Mensual', diaPago },
-        ],
-        metas: [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
-    }, { diaPago });
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas:   [],
+      ingresos:  [],
+      gastos:    [],
+      compromisos: [
+        { id: 'fijo-emoji-e2e', tipo: 'fijo', descripcion: 'Internet E2E',
+          categoria: 'Internet', monto: 100000, frecuencia: 'Mensual', diaPago },
+      ],
+      metas: [],
+    });
 
     await page.goto('/#agenda');
     await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
@@ -2917,22 +2809,19 @@ test.describe('Agenda - teja de categoría como ícono principal', () => {
   test('sin categoría, el ícono principal es el genérico del tipo (con <svg>)', async ({ page }) => {
     const diaPago = 15;
 
-    await page.addInitScript(({ diaPago }) => {
-      const estado = {
-        version:   1,
-        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas:   [],
-        ingresos:  [],
-        gastos:    [],
-        compromisos: [
-          { id: 'fijo-sin-cat-e2e', tipo: 'fijo', descripcion: 'Sin categoría E2E',
-            monto: 100000, frecuencia: 'Mensual', diaPago },
-        ],
-        metas: [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
-    }, { diaPago });
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas:   [],
+      ingresos:  [],
+      gastos:    [],
+      compromisos: [
+        { id: 'fijo-sin-cat-e2e', tipo: 'fijo', descripcion: 'Sin categoría E2E',
+          monto: 100000, frecuencia: 'Mensual', diaPago },
+      ],
+      metas: [],
+    });
 
     await page.goto('/#agenda');
     await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
@@ -3083,10 +2972,8 @@ test.describe('Límites de gasto - resumen por grupo', () => {
   test('con ingreso registrado muestra las 3 tarjetas de grupo', async ({ page }) => {
     await saltearOnboarding(page);
     // Segundo addInitScript: agrega un ingreso mensual al estado ya sembrado.
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
     });
     await page.goto('/#presupuesto');
     await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
@@ -3099,20 +2986,19 @@ test.describe('Límites de gasto - resumen por grupo', () => {
 
   test('desglose de Necesidades (MC.5c): un fijo pagado este mes aparece en el detalle', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript((hoy) => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.compromisos = [{
+    const hoy = hoyLocal();
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
+      compromisos: [{
         id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', frecuencia: 'Mensual',
         diaPago: 5, monto: 800_000, activo: true, categoria: null,
         fechaCreacion: '2026-01-01T00:00:00.000Z',
-      }];
-      st.gastos = [{
+      }],
+      gastos: [{
         id: 'g1', descripcion: 'Pago arriendo', monto: 800_000, categoria: 'Vivienda',
         fecha: hoy, cuentaId: null, nota: '', compromisoId: 'cf1',
-      }];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
-    }, hoyLocal());
+      }],
+    });
 
     await page.goto('/#presupuesto');
     await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
@@ -3126,16 +3012,15 @@ test.describe('Límites de gasto - resumen por grupo', () => {
 
   test('desglose de Ahorro (MC.5c): fondo activo muestra aportado este mes', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript((hoy) => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.ahorro = {
+    const hoy = hoyLocal();
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
+      ahorro: {
         fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 100_000 },
         aportes: [{ id: 'a1', monto: 50_000, fecha: hoy }],
         compromisoMensual: 0,
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(st));
-    }, hoyLocal());
+      },
+    });
 
     await page.goto('/#presupuesto');
     await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
@@ -3153,13 +3038,12 @@ test.describe('Límites de gasto - resumen por grupo', () => {
   // describiendo un sobre que estaba unos 400px más abajo.
   test('alerta de Estilo de vida (MC.5d): un límite por categoría en 80% muestra el mensaje exacto del ADR en su sobre', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript((hoy) => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.presupuestos = [{ id: 'p1', categoria: 'Restaurantes', montoMensual: 100_000, activo: true, fechaCreacion: '2026-01-01T00:00:00.000Z' }];
-      st.gastos = [{ id: 'g1', descripcion: 'Almuerzo', monto: 80_000, categoria: 'Restaurantes', fecha: hoy, cuentaId: null, nota: '' }];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
-    }, hoyLocal());
+    const hoy = hoyLocal();
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
+      presupuestos: [{ id: 'p1', categoria: 'Restaurantes', montoMensual: 100_000, activo: true, fechaCreacion: '2026-01-01T00:00:00.000Z' }],
+      gastos: [{ id: 'g1', descripcion: 'Almuerzo', monto: 80_000, categoria: 'Restaurantes', fecha: hoy, cuentaId: null, nota: '' }],
+    });
 
     await page.goto('/#presupuesto');
     await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
@@ -3173,18 +3057,17 @@ test.describe('Límites de gasto - resumen por grupo', () => {
 
   test('refuerzo de Ahorro (MC.8a): cumplir justo el ahorro planeado muestra el refuerzo "Cumpliste"', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript((hoy) => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+    const hoy = hoyLocal();
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
       // Preset fijo 50/30/20: ahorro = 20% de 3.000.000 = 600.000. Se aporta justo eso.
-      st.config = { notificaciones: false, presetDistribucion: '50-30-20' };
-      st.ahorro = {
+      config: { notificaciones: false, presetDistribucion: '50-30-20' },
+      ahorro: {
         fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 },
         aportes: [{ id: 'a1', monto: 600_000, fecha: hoy }],
         compromisoMensual: 0,
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(st));
-    }, hoyLocal());
+      },
+    });
 
     await page.goto('/#presupuesto');
     await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
@@ -3196,18 +3079,17 @@ test.describe('Límites de gasto - resumen por grupo', () => {
 
   test('refuerzo de Ahorro (MC.8a): superar lo planeado muestra el refuerzo más cálido', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript((hoy) => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+    const hoy = hoyLocal();
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
       // Ahorro planeado 600.000; se aporta 900.000 (más de lo planeado).
-      st.config = { notificaciones: false, presetDistribucion: '50-30-20' };
-      st.ahorro = {
+      config: { notificaciones: false, presetDistribucion: '50-30-20' },
+      ahorro: {
         fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 },
         aportes: [{ id: 'a1', monto: 900_000, fecha: hoy }],
         compromisoMensual: 0,
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(st));
-    }, hoyLocal());
+      },
+    });
 
     await page.goto('/#presupuesto');
     await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
@@ -3219,17 +3101,16 @@ test.describe('Límites de gasto - resumen por grupo', () => {
 
   test('MC.8: superar la meta de Ahorro se ve en verde (logro), nunca en rojo', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript((hoy) => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.config = { notificaciones: false, presetDistribucion: '50-30-20' }; // ahorro planeado 600.000
-      st.ahorro = {
+    const hoy = hoyLocal();
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
+      config: { notificaciones: false, presetDistribucion: '50-30-20' }, // ahorro planeado 600.000
+      ahorro: {
         fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 },
         aportes: [{ id: 'a1', monto: 900_000, fecha: hoy }], // aporta más de lo planeado
         compromisoMensual: 0,
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(st));
-    }, hoyLocal());
+      },
+    });
 
     await page.goto('/#presupuesto');
     await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
@@ -3249,10 +3130,8 @@ test.describe('Límites de gasto - resumen por grupo', () => {
 
   test('EP.7b: la nota de complementariedad con Mis cuentas ya no vive en el resumen (la cubre el banner de propósito)', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
     });
     await page.goto('/#presupuesto');
     await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
@@ -3262,11 +3141,9 @@ test.describe('Límites de gasto - resumen por grupo', () => {
 
   test('MC.8b: los topes por categoría viven dentro de la tarjeta de Estilo de vida, sin bloque suelto', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.presupuestos = [{ id: 'p1', categoria: 'Restaurantes', montoMensual: 300_000, activo: true, fechaCreacion: '2026-01-01T00:00:00.000Z' }];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
+      presupuestos: [{ id: 'p1', categoria: 'Restaurantes', montoMensual: 300_000, activo: true, fechaCreacion: '2026-01-01T00:00:00.000Z' }],
     });
     await page.goto('/#presupuesto');
     await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
@@ -3285,13 +3162,11 @@ test.describe('Límites de gasto - resumen por grupo', () => {
 
   test('MC.8b: la "olla finita" indica cuánto del Estilo de vida cubren los topes', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+    await parchar(page, {
       // Preset 50/30/20: Estilo de vida = 30% de 3.000.000 = 900.000.
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.config = { notificaciones: false, presetDistribucion: '50-30-20' };
-      st.presupuestos = [{ id: 'p1', categoria: 'Restaurantes', montoMensual: 300_000, activo: true, fechaCreacion: '2026-01-01T00:00:00.000Z' }];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
+      config: { notificaciones: false, presetDistribucion: '50-30-20' },
+      presupuestos: [{ id: 'p1', categoria: 'Restaurantes', montoMensual: 300_000, activo: true, fechaCreacion: '2026-01-01T00:00:00.000Z' }],
     });
     await page.goto('/#presupuesto');
     await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
@@ -3305,23 +3180,22 @@ test.describe('Límites de gasto - resumen por grupo', () => {
 
   test('MC.8b: Necesidades se monitorea sin alarma, aunque supere lo previsto', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript((hoy) => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+    const hoy = hoyLocal();
+    await parchar(page, {
       // Preset 50/30/20 con ingreso 1.000.000: Necesidades asignado = 500.000.
       // Se ejecutan 600.000 (por encima). Antes de MC.8b la tarjeta iba en rojo.
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 1_000_000, frecuencia: 'Mensual', activo: true }];
-      st.config = { notificaciones: false, presetDistribucion: '50-30-20' };
-      st.compromisos = [{
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 1_000_000, frecuencia: 'Mensual', activo: true }],
+      config: { notificaciones: false, presetDistribucion: '50-30-20' },
+      compromisos: [{
         id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', frecuencia: 'Mensual',
         diaPago: 5, monto: 600_000, activo: true, categoria: null,
         fechaCreacion: '2026-01-01T00:00:00.000Z',
-      }];
-      st.gastos = [{
+      }],
+      gastos: [{
         id: 'g1', descripcion: 'Pago arriendo', monto: 600_000, categoria: 'Vivienda',
         fecha: hoy, cuentaId: null, nota: '', compromisoId: 'cf1',
-      }];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
-    }, hoyLocal());
+      }],
+    });
     await page.goto('/#presupuesto');
     await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
 
@@ -3342,10 +3216,8 @@ test.describe('Límites de gasto - resumen por grupo', () => {
 test.describe('Mis cuentas - Transferir entre cuentas propias (MC.17b)', () => {
   test('con menos de 2 cuentas activas, la entrada no aparece', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 300_000, activa: true }];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+    await parchar(page, {
+      cuentas: [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 300_000, activa: true }],
     });
     await page.goto('/#tesoreria');
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
@@ -3355,13 +3227,11 @@ test.describe('Mis cuentas - Transferir entre cuentas propias (MC.17b)', () => {
 
   test('con exactamente 2 cuentas: el widget de par transfiere y actualiza ambos saldos', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.cuentas = [
+    await parchar(page, {
+      cuentas: [
         { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 300_000, activa: true },
         { id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 900_000, activa: true },
-      ];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+      ],
     });
     await page.goto('/#tesoreria');
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
@@ -3379,7 +3249,7 @@ test.describe('Mis cuentas - Transferir entre cuentas propias (MC.17b)', () => {
     await page.waitForSelector(modalCerrado('modal-transferencia'), { timeout: 5_000 });
 
     await page.waitForTimeout(400); // save() debounced (ADN #5)
-    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+    const st = await leerEstado(page);
     expect(st.cuentas.find(c => c.id === 'c2').saldo).toBe(800_000); // origen: 900.000 - 100.000
     expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(400_000); // destino: 300.000 + 100.000
     expect(st.transferencias).toHaveLength(1);
@@ -3394,13 +3264,11 @@ test.describe('Mis cuentas - Transferir entre cuentas propias (MC.17b)', () => {
 
   test('invertir el par cambia cuál cuenta es el origen', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.cuentas = [
+    await parchar(page, {
+      cuentas: [
         { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 300_000, activa: true },
         { id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 900_000, activa: true },
-      ];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+      ],
     });
     await page.goto('/#tesoreria');
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
@@ -3417,14 +3285,12 @@ test.describe('Mis cuentas - Transferir entre cuentas propias (MC.17b)', () => {
 
   test('con 3+ cuentas: dos selectores independientes, la transferencia mueve el saldo correcto', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.cuentas = [
+    await parchar(page, {
+      cuentas: [
         { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 300_000, activa: true },
         { id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 900_000, activa: true },
         { id: 'c3', nombre: 'Daviplata', banco: 'Daviplata', tipo: 'Ahorros', saldo: 50_000, activa: true },
-      ];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+      ],
     });
     await page.goto('/#tesoreria');
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
@@ -3440,7 +3306,7 @@ test.describe('Mis cuentas - Transferir entre cuentas propias (MC.17b)', () => {
     await page.waitForSelector(modalCerrado('modal-transferencia'), { timeout: 5_000 });
 
     await page.waitForTimeout(400);
-    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+    const st = await leerEstado(page);
     expect(st.cuentas.find(c => c.id === 'c2').saldo).toBe(850_000);
     expect(st.cuentas.find(c => c.id === 'c3').saldo).toBe(100_000);
     expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(300_000); // sin tocar
@@ -3448,13 +3314,11 @@ test.describe('Mis cuentas - Transferir entre cuentas propias (MC.17b)', () => {
 
   test('GMF (MC.17d): origen no exento descuenta monto + 4x1000 y lo traza en el ledger', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.cuentas = [
+    await parchar(page, {
+      cuentas: [
         { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 300_000, activa: true, aplica4x1000: false },
         { id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 900_000, activa: true, aplica4x1000: true },
-      ];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+      ],
     });
     await page.goto('/#tesoreria');
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
@@ -3471,7 +3335,7 @@ test.describe('Mis cuentas - Transferir entre cuentas propias (MC.17b)', () => {
     await page.waitForSelector(modalCerrado('modal-transferencia'), { timeout: 5_000 });
 
     await page.waitForTimeout(400); // save() debounced (ADN #5)
-    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+    const st = await leerEstado(page);
     expect(st.cuentas.find(c => c.id === 'c2').saldo).toBe(699_200); // 900.000 - 200.000 - 800
     expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(500_000); // 300.000 + 200.000
     expect(st.transferencias[0].costoGMF).toBe(800);
@@ -3494,10 +3358,8 @@ test.describe('Mis cuentas - Transferir entre cuentas propias (MC.17b)', () => {
 test.describe('Mis cuentas - la tarjeta de distribución ya no muestra accesos cruzados', () => {
   test('sin enlace a Límites de gasto ni a ninguna otra sección', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
     });
     await page.goto('/#tesoreria');
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
@@ -3513,16 +3375,14 @@ test.describe('Mis cuentas - la tarjeta de distribución ya no muestra accesos c
 test.describe('Mis cuentas - Distribuir mi ingreso: educación primero, accesos por paso', () => {
   test.beforeEach(async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
-      st.compromisos = [
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
+      cuentas: [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }],
+      compromisos: [
         { id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', categoria: 'Arriendo', frecuencia: 'Mensual', diaPago: 5, monto: 800_000, activo: true },
         { id: 'd1', descripcion: 'Tarjeta', tipo: 'deuda-entidad', categoria: 'Tarjeta de crédito', saldoTotal: 2_000_000, cuotaMensual: 250_000, diaPago: 15, activo: true },
-      ];
-      st.metas = [{ id: 'm1', nombre: 'Viaje', montoObjetivo: 1_200_000, montoActual: 0, fechaLimite: null, completada: false }];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+      ],
+      metas: [{ id: 'm1', nombre: 'Viaje', montoObjetivo: 1_200_000, montoActual: 0, fechaLimite: null, completada: false }],
     });
     await page.goto('/#tesoreria');
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
@@ -3577,20 +3437,18 @@ test.describe('Mis cuentas - Distribuir mi ingreso: educación primero, accesos 
 test.describe('Mis cuentas - Distribuir mi ingreso: aporte por objetivo', () => {
   test('una meta con fecha muestra un aporte sugerido (no 0) y el fondo recibe el excedente', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      const futura = new Date();
-      futura.setMonth(futura.getMonth() + 6);
-      const fechaLimite = futura.toISOString().slice(0, 10);
+    const futura = new Date();
+    futura.setMonth(futura.getMonth() + 6);
+    const fechaLimite = futura.toISOString().slice(0, 10);
+    await parchar(page, {
 
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.config = { presetDistribucion: '50-30-20' }; // ahorro = 20% de 3.000.000 = 600.000
-      st.metas = [{ id: 'm1', nombre: 'Viaje', montoObjetivo: 1_200_000, montoActual: 0, fechaLimite, completada: false }];
-      st.ahorro = {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
+      config: { presetDistribucion: '50-30-20' }, // ahorro = 20% de 3.000.000 = 600.000
+      metas: [{ id: 'm1', nombre: 'Viaje', montoObjetivo: 1_200_000, montoActual: 0, fechaLimite, completada: false }],
+      ahorro: {
         fondoEmergencia: { activo: true, completado: false, metaMeses: 3, montoActual: 100_000 },
         aportes: [], compromisoMensual: 0,
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+      },
     });
 
     await page.goto('/#tesoreria');
@@ -3610,12 +3468,10 @@ test.describe('Mis cuentas - Distribuir mi ingreso: aporte por objetivo', () => 
 
   test('una meta sin fecha sugiere 0 y muestra el hint invitando a ponerle fecha', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.config = { presetDistribucion: '50-30-20' };
-      st.metas = [{ id: 'm1', nombre: 'Viaje', montoObjetivo: 1_200_000, montoActual: 0, fechaLimite: null, completada: false }];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
+      config: { presetDistribucion: '50-30-20' },
+      metas: [{ id: 'm1', nombre: 'Viaje', montoObjetivo: 1_200_000, montoActual: 0, fechaLimite: null, completada: false }],
     });
 
     await page.goto('/#tesoreria');
@@ -3637,16 +3493,14 @@ test.describe('Mis cuentas - Distribuir mi ingreso: aporte por objetivo', () => 
 test.describe('Mis cuentas - Distribuir mi ingreso: checklist de Necesidades', () => {
   test('lista lo que vence antes del próximo cobro: fijos de cualquier frecuencia y deudas, marcadas por defecto (MC.7g)', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
-      st.compromisos = [
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
+      cuentas: [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }],
+      compromisos: [
         { id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', categoria: 'Arriendo', frecuencia: 'Mensual', diaPago: 5, monto: 800_000, activo: true },
         { id: 'cf2', descripcion: 'Mercado', tipo: 'fijo', categoria: 'Mercado', frecuencia: 'Quincenal', diaPago: 1, monto: 150_000, activo: true },
         { id: 'd1', descripcion: 'Tarjeta Bancolombia', tipo: 'deuda-entidad', categoria: 'Tarjeta de crédito', saldoTotal: 2_000_000, cuotaMensual: 250_000, diaPago: 15, activo: true },
-      ];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+      ],
     });
 
     await page.goto('/#tesoreria');
@@ -3674,19 +3528,18 @@ test.describe('Mis cuentas - Distribuir mi ingreso: checklist de Necesidades', (
 
   test('una Necesidad ya pagada este periodo aparece marcada, deshabilitada, con "Ya pagado"', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript((hoy) => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
-      st.compromisos = [
+    const hoy = hoyLocal();
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
+      cuentas: [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }],
+      compromisos: [
         { id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', frecuencia: 'Mensual', diaPago: 5, monto: 800_000, activo: true, categoria: null },
-      ];
-      st.gastos = [{
+      ],
+      gastos: [{
         id: 'g1', descripcion: 'Pago: Arriendo', monto: 800_000, categoria: 'Gastos fijos',
         fecha: hoy, cuentaId: 'c1', compromisoId: 'cf1', nota: '',
-      }];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
-    }, hoyLocal());
+      }],
+    });
 
     await page.goto('/#tesoreria');
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
@@ -3700,14 +3553,12 @@ test.describe('Mis cuentas - Distribuir mi ingreso: checklist de Necesidades', (
 
   test('confirmar con una Necesidad de fijo marcada registra el mismo pago que "Marcar pagado" y descuenta la cuenta', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
-      st.compromisos = [
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
+      cuentas: [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }],
+      compromisos: [
         { id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', frecuencia: 'Mensual', diaPago: 5, monto: 800_000, activo: true, categoria: null },
-      ];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+      ],
     });
 
     await page.goto('/#tesoreria');
@@ -3720,7 +3571,7 @@ test.describe('Mis cuentas - Distribuir mi ingreso: checklist de Necesidades', (
 
     // save() está debounced 200ms (ADN #5): esperar el flush antes de leer localStorage.
     await page.waitForTimeout(400);
-    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+    const st = await leerEstado(page);
     expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(3_200_000); // 1.000.000 + 3.000.000 (ingreso) - 800.000 (pago)
     const gasto = st.gastos.find(g => g.compromisoId === 'cf1');
     expect(gasto).toBeTruthy();
@@ -3731,14 +3582,12 @@ test.describe('Mis cuentas - Distribuir mi ingreso: checklist de Necesidades', (
 
   test('Deshacer revierte el pago de una Necesidad: borra el gasto y restaura el saldo de la cuenta', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
-      st.compromisos = [
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
+      cuentas: [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }],
+      compromisos: [
         { id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', frecuencia: 'Mensual', diaPago: 5, monto: 800_000, activo: true, categoria: null },
-      ];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+      ],
     });
 
     await page.goto('/#tesoreria');
@@ -3752,27 +3601,26 @@ test.describe('Mis cuentas - Distribuir mi ingreso: checklist de Necesidades', (
 
     // save() está debounced 200ms (ADN #5): esperar el flush antes de leer localStorage.
     await page.waitForTimeout(400);
-    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+    const st = await leerEstado(page);
     expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(1_000_000);
     expect(st.gastos.find(g => g.compromisoId === 'cf1')).toBeUndefined();
   });
 
   test('BUG-003: confirmar con una Necesidad ya pagada presente no la vuelve a pagar', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript((hoy) => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
-      st.compromisos = [
+    const hoy = hoyLocal();
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
+      cuentas: [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }],
+      compromisos: [
         { id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', frecuencia: 'Mensual', diaPago: 5, monto: 800_000, activo: true, categoria: null },
         { id: 'cf2', descripcion: 'Internet', tipo: 'fijo', frecuencia: 'Mensual', diaPago: 10, monto: 200_000, activo: true, categoria: null },
-      ];
-      st.gastos = [{
+      ],
+      gastos: [{
         id: 'g1', descripcion: 'Pago: Arriendo', monto: 800_000, categoria: 'Gastos fijos',
         fecha: hoy, cuentaId: 'c1', compromisoId: 'cf1', nota: '',
-      }];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
-    }, hoyLocal());
+      }],
+    });
 
     await page.goto('/#tesoreria');
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
@@ -3789,7 +3637,7 @@ test.describe('Mis cuentas - Distribuir mi ingreso: checklist de Necesidades', (
     await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
 
     await page.waitForTimeout(400);
-    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+    const st = await leerEstado(page);
 
     expect(st.gastos.filter(g => g.compromisoId === 'cf1')).toHaveLength(1); // sigue existiendo solo el original
     expect(st.gastos.find(g => g.compromisoId === 'cf2')).toBeTruthy();
@@ -3799,15 +3647,13 @@ test.describe('Mis cuentas - Distribuir mi ingreso: checklist de Necesidades', (
 
   test('BUG-004: el checklist topa la cuota de una deuda a su saldo pendiente y excluye una deuda saldada', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
-      st.compromisos = [
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
+      cuentas: [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }],
+      compromisos: [
         { id: 'd1', descripcion: 'Tarjeta', tipo: 'deuda-entidad', saldoTotal: 50_000, cuotaMensual: 200_000, diaPago: 15, activo: true },
         { id: 'd2', descripcion: 'Ya saldada', tipo: 'deuda-entidad', saldoTotal: 0, cuotaMensual: 300_000, diaPago: 20, activo: true },
-      ];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+      ],
     });
 
     await page.goto('/#tesoreria');
@@ -3823,7 +3669,7 @@ test.describe('Mis cuentas - Distribuir mi ingreso: checklist de Necesidades', (
     await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
 
     await page.waitForTimeout(400);
-    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+    const st = await leerEstado(page);
 
     const abono = st.gastos.find(g => g.compromisoId === 'd1');
     expect(abono.monto).toBe(50_000);
@@ -3834,20 +3680,18 @@ test.describe('Mis cuentas - Distribuir mi ingreso: checklist de Necesidades', (
 
   test('BUG-005: una cuota de manejo guardada con frecuencia "mensual" se migra a "Mensual" y aparece en el checklist', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      // Estado pre-fix (schema v19): la cuota de manejo nació con 'mensual' minúscula.
-      // Al cargar, la migración v19→v20 debe capitalizarla, y entonces la cuota
-      // entra al checklist de Necesidades (antes quedaba excluida por el filtro Mensual).
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st._version = 19;
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true,
-        cuotaManejo: { monto: 15_000, diaCobro: 5 } }];
-      st.compromisos = [
+    // Estado pre-fix (schema v19): la cuota de manejo nació con 'mensual' minúscula.
+    // Al cargar, la migración v19→v20 debe capitalizarla, y entonces la cuota
+    // entra al checklist de Necesidades (antes quedaba excluida por el filtro Mensual).
+    await parchar(page, {
+      _version: 19,
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
+      cuentas: [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true,
+        cuotaManejo: { monto: 15_000, diaCobro: 5 } }],
+      compromisos: [
         { id: 'cm1', descripcion: 'Cuota de manejo Nequi', monto: 15_000, frecuencia: 'mensual',
           diaPago: 5, tipo: 'fijo', activo: true, cuentaId: 'c1', esCuotaManejo: true },
-      ];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+      ],
     });
 
     await page.goto('/#tesoreria');
@@ -3866,8 +3710,7 @@ test.describe('Mis cuentas - Distribuir mi ingreso: checklist de Necesidades', (
     await page.click('[data-action="confirmar-distribucion"]');
     await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
     await page.waitForTimeout(400); // flush del save() debounced (ADN #5)
-    const frec = await page.evaluate(() =>
-      JSON.parse(localStorage.getItem('fk_v1')).compromisos.find(c => c.id === 'cm1').frecuencia);
+    const frec = (await leerEstado(page)).compromisos.find(c => c.id === 'cm1').frecuencia;
     expect(frec).toBe('Mensual');
   });
 });
@@ -3877,19 +3720,17 @@ test.describe('Mis cuentas - Distribuir mi ingreso: checklist de Necesidades', (
 test.describe('Mis cuentas - Distribuir mi ingreso: asistente paginado (MC.7d)', () => {
   test('el panel navega Necesidades → Ahorro → Estilo de vida con Atrás/Siguiente y confirma solo al final', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
-      st.config = { presetDistribucion: '50-30-20' };
-      st.compromisos = [
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
+      cuentas: [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }],
+      config: { presetDistribucion: '50-30-20' },
+      compromisos: [
         { id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', frecuencia: 'Mensual', diaPago: 5, monto: 800_000, activo: true, categoria: null },
-      ];
-      st.ahorro = {
+      ],
+      ahorro: {
         fondoEmergencia: { activo: true, completado: false, metaMeses: 3, montoActual: 0 },
         aportes: [], compromisoMensual: 0,
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+      },
     });
 
     await page.goto('/#tesoreria');
@@ -3932,19 +3773,17 @@ test.describe('Mis cuentas - Distribuir mi ingreso: asistente paginado (MC.7d)',
 
   test('MC.7f: al avanzar/retroceder el foco se mueve al contenedor del paso (a11y)', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
-      st.config = { presetDistribucion: '50-30-20' };
-      st.compromisos = [
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
+      cuentas: [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }],
+      config: { presetDistribucion: '50-30-20' },
+      compromisos: [
         { id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', frecuencia: 'Mensual', diaPago: 5, monto: 800_000, activo: true, categoria: null },
-      ];
-      st.ahorro = {
+      ],
+      ahorro: {
         fondoEmergencia: { activo: true, completado: false, metaMeses: 3, montoActual: 0 },
         aportes: [], compromisoMensual: 0,
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+      },
     });
 
     await page.goto('/#tesoreria');
@@ -3967,17 +3806,15 @@ test.describe('Mis cuentas - Distribuir mi ingreso: asistente paginado (MC.7d)',
 
   test('MC.7f: con un solo paso no se muestra el indicador "Paso X de N"', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
       // Sin compromisos, sin ahorro/metas/apartados/inversiones: el único
       // contenido accionable es el reparto de Estilo de vida entre cuentas
       // (MC.7e), así que el asistente arranca y termina en un solo paso.
-      st.cuentas = [
+      cuentas: [
         { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true },
         { id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 500_000, activa: true },
-      ];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+      ],
     });
 
     await page.goto('/#tesoreria');
@@ -3991,17 +3828,15 @@ test.describe('Mis cuentas - Distribuir mi ingreso: asistente paginado (MC.7d)',
 
   test('MC.7f: sin Necesidades marcables, el Paso 2 no muestra la sugerencia de ahorro si no hay dónde ponerla', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
+      cuentas: [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }],
       // Sin fondo activo, sin metas ni apartados: ninguna fila de Ahorro. Con una
       // inversión para que el paso 2 sí exista, sin mostrar el hint de
       // "sugerencia de ahorro" (estado vacío corregido en MC.7f).
-      st.inversiones = [
+      inversiones: [
         { id: 'inv1', nombre: 'CDT', tipo: 'CDT', monto: 500_000 },
-      ];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+      ],
     });
 
     await page.goto('/#tesoreria');
@@ -4015,22 +3850,20 @@ test.describe('Mis cuentas - Distribuir mi ingreso: asistente paginado (MC.7d)',
 
   test('R3: la sugerencia de ahorro se recalcula sobre el remanente real y respeta la edición manual del fondo', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
+      cuentas: [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }],
       // Preset 50-30-20: teórico de ahorro = 600.000. El arriendo de 2.700.000
       // (marcado por defecto) deja un remanente de 300.000, que se reparte
       // 20:30 entre Ahorro y Estilo de vida: 120.000 y 180.000.
-      st.config = { presetDistribucion: '50-30-20' };
-      st.compromisos = [
+      config: { presetDistribucion: '50-30-20' },
+      compromisos: [
         { id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', frecuencia: 'Mensual', diaPago: 5, monto: 2_700_000, activo: true, categoria: null },
-      ];
-      st.ahorro = {
+      ],
+      ahorro: {
         fondoEmergencia: { activo: true, completado: false, metaMeses: 3, montoActual: 0 },
         aportes: [], compromisoMensual: 0,
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+      },
     });
 
     await page.goto('/#tesoreria');
@@ -4069,18 +3902,16 @@ test.describe('Mis cuentas - Distribuir mi ingreso: asistente paginado (MC.7d)',
 test.describe('Mis cuentas - Distribuir mi ingreso: reparto de Estilo de vida entre cuentas (MC.7e)', () => {
   test('con una sola cuenta activa, el paso final es solo informativo (sin filas de transferencia)', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
+      cuentas: [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }],
       // El fondo activo asegura que el panel tenga contenido que mostrar
       // (Ahorro): sin él, con una sola cuenta y sin compromisos, no habría
       // ningún destino ni Necesidad, y el botón "Distribuir" no aparecería.
-      st.ahorro = {
+      ahorro: {
         fondoEmergencia: { activo: true, completado: false, metaMeses: 3, montoActual: 0 },
         aportes: [], compromisoMensual: 0,
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+      },
     });
 
     await page.goto('/#tesoreria');
@@ -4094,15 +3925,13 @@ test.describe('Mis cuentas - Distribuir mi ingreso: reparto de Estilo de vida en
 
   test('con 2+ cuentas, el usuario reparte Estilo de vida sin marcar nada por defecto (todo queda en la cuenta de origen)', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.config = { presetDistribucion: '50-30-20' }; // Estilo de vida = 30% de 3.000.000 = 900.000
-      st.cuentas = [
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
+      config: { presetDistribucion: '50-30-20' }, // Estilo de vida = 30% de 3.000.000 = 900.000
+      cuentas: [
         { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true },
         { id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 500_000, activa: true },
-      ];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+      ],
     });
 
     await page.goto('/#tesoreria');
@@ -4124,15 +3953,13 @@ test.describe('Mis cuentas - Distribuir mi ingreso: reparto de Estilo de vida en
 
   test('marcar una transferencia se refleja en el resumen y bloquea "Distribuir" si excede el presupuesto de Estilo de vida', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.config = { presetDistribucion: '50-30-20' }; // Estilo de vida = 30% de 3.000.000 = 900.000
-      st.cuentas = [
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
+      config: { presetDistribucion: '50-30-20' }, // Estilo de vida = 30% de 3.000.000 = 900.000
+      cuentas: [
         { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true },
         { id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 500_000, activa: true },
-      ];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+      ],
     });
 
     await page.goto('/#tesoreria');
@@ -4157,15 +3984,13 @@ test.describe('Mis cuentas - Distribuir mi ingreso: reparto de Estilo de vida en
 
   test('confirmar con una transferencia marcada mueve el saldo entre cuentas (sin afectar Necesidades ni Ahorro)', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.config = { presetDistribucion: '50-30-20' }; // Estilo de vida = 30% de 3.000.000 = 900.000
-      st.cuentas = [
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
+      config: { presetDistribucion: '50-30-20' }, // Estilo de vida = 30% de 3.000.000 = 900.000
+      cuentas: [
         { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true },
         { id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 500_000, activa: true },
-      ];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+      ],
     });
 
     await page.goto('/#tesoreria');
@@ -4186,7 +4011,7 @@ test.describe('Mis cuentas - Distribuir mi ingreso: reparto de Estilo de vida en
     await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
 
     await page.waitForTimeout(400); // flush del save() debounced (ADN #5)
-    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+    const st = await leerEstado(page);
 
     // Bancolombia recibió la transferencia; Nequi (origen) la descontó junto al resto.
     expect(st.cuentas.find(c => c.id === 'c2').saldo).toBe(500_000 + 300_000);
@@ -4197,15 +4022,13 @@ test.describe('Mis cuentas - Distribuir mi ingreso: reparto de Estilo de vida en
 
   test('Deshacer revierte la transferencia entre cuentas junto con el resto de la distribución', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.config = { presetDistribucion: '50-30-20' }; // Estilo de vida = 30% de 3.000.000 = 900.000
-      st.cuentas = [
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
+      config: { presetDistribucion: '50-30-20' }, // Estilo de vida = 30% de 3.000.000 = 900.000
+      cuentas: [
         { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true },
         { id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 500_000, activa: true },
-      ];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+      ],
     });
 
     await page.goto('/#tesoreria');
@@ -4226,7 +4049,7 @@ test.describe('Mis cuentas - Distribuir mi ingreso: reparto de Estilo de vida en
     await page.click('[data-action="deshacer-distribucion"]');
 
     await page.waitForTimeout(400);
-    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+    const st = await leerEstado(page);
     expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(1_000_000);
     expect(st.cuentas.find(c => c.id === 'c2').saldo).toBe(500_000);
   });
@@ -4235,17 +4058,15 @@ test.describe('Mis cuentas - Distribuir mi ingreso: reparto de Estilo de vida en
 test.describe('Mis cuentas - Distribuir mi ingreso: cuenta del ingreso principal (MC.13e-2f-1)', () => {
   test('con Ingreso.cuentaId guardado, confirmar distribuye directo sin preguntar la cuenta', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true, cuentaId: 'c2' }];
-      st.cuentas = [
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true, cuentaId: 'c2' }],
+      cuentas: [
         { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true },
         { id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 500_000, activa: true },
-      ];
-      st.compromisos = [
+      ],
+      compromisos: [
         { id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', frecuencia: 'Mensual', diaPago: 5, monto: 800_000, activo: true, categoria: null },
-      ];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+      ],
     });
 
     await page.goto('/#tesoreria');
@@ -4261,24 +4082,22 @@ test.describe('Mis cuentas - Distribuir mi ingreso: cuenta del ingreso principal
     await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
 
     await page.waitForTimeout(400);
-    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+    const st = await leerEstado(page);
     expect(st.cuentas.find(c => c.id === 'c2').saldo).toBe(500_000 + 3_000_000 - 800_000);
     expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(1_000_000);
   });
 
   test('si la cuenta guardada ya no está activa, cae al picker como antes', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true, cuentaId: 'c2' }];
-      st.cuentas = [
+    await parchar(page, {
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true, cuentaId: 'c2' }],
+      cuentas: [
         { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true },
         { id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 500_000, activa: false },
-      ];
-      st.compromisos = [
+      ],
+      compromisos: [
         { id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', frecuencia: 'Mensual', diaPago: 5, monto: 800_000, activo: true, categoria: null },
-      ];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+      ],
     });
 
     await page.goto('/#tesoreria');
@@ -4292,7 +4111,7 @@ test.describe('Mis cuentas - Distribuir mi ingreso: cuenta del ingreso principal
     await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
 
     await page.waitForTimeout(400);
-    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+    const st = await leerEstado(page);
     expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(1_000_000 + 3_000_000 - 800_000);
   });
 });
@@ -4308,31 +4127,28 @@ test.describe('Agenda - día de ingreso (ADR 021)', () => {
     // queda en 'listo' y el panel existe al llegar desde el calendario.
     const diaPago = new Date().getDate();
 
-    await page.addInitScript(({ diaPago }) => {
-      const estado = {
-        version:   1,
-        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas:   [
-          { id: 'cta-ing-e2e', nombre: 'Nequi', tipo: 'Billetera digital', saldo: 500000, activa: true },
-          { id: 'cta-ing-e2e-2', nombre: 'Bancolombia', tipo: 'Ahorros', saldo: 200000, activa: true },
-        ],
-        ingresos:  [{
-          id: 'ing-e2e', descripcion: 'Salario', monto: 2000000,
-          frecuencia: 'Mensual', diaPago, categoria: null, activo: true,
-          fechaCreacion: '2026-01-10T10:00:00Z',
-        }],
-        gastos: [], compromisos: [],
-        // Una meta con fecha: destino de ahorro fondeable para que el
-        // asistente tenga pasos que mostrar.
-        metas: [{
-          id: 'meta-ing-e2e', nombre: 'Viaje', montoObjetivo: 3000000,
-          montoActual: 0, fechaLimite: '2027-06-01', completada: false,
-          fechaCreacion: '2026-01-10T10:00:00Z',
-        }],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
-    }, { diaPago });
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas:   [
+        { id: 'cta-ing-e2e', nombre: 'Nequi', tipo: 'Billetera digital', saldo: 500000, activa: true },
+        { id: 'cta-ing-e2e-2', nombre: 'Bancolombia', tipo: 'Ahorros', saldo: 200000, activa: true },
+      ],
+      ingresos:  [{
+        id: 'ing-e2e', descripcion: 'Salario', monto: 2000000,
+        frecuencia: 'Mensual', diaPago, categoria: null, activo: true,
+        fechaCreacion: '2026-01-10T10:00:00Z',
+      }],
+      gastos: [], compromisos: [],
+      // Una meta con fecha: destino de ahorro fondeable para que el
+      // asistente tenga pasos que mostrar.
+      metas: [{
+        id: 'meta-ing-e2e', nombre: 'Viaje', montoObjetivo: 3000000,
+        montoActual: 0, fechaLimite: '2027-06-01', completada: false,
+        fechaCreacion: '2026-01-10T10:00:00Z',
+      }],
+    });
 
     await page.goto('/#agenda');
     await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
@@ -4542,13 +4358,11 @@ test.describe('Análisis v2 - score hero + chip de mes (ANL.2a)', () => {
     await saltearOnboarding(page);
     // Una cuenta con saldo + un gasto del mes: datos suficientes para que el
     // panel calcule un score real (banda distinta de "sin datos").
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      const d = new Date();
-      const hoy = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      st.cuentas = [{ id: 'cu1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 2_000_000, activa: true }];
-      st.gastos  = [{ id: 'g1', descripcion: 'Mercado', monto: 300_000, categoria: 'Mercado', fecha: hoy, cuentaId: 'cu1' }];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+    const d = new Date();
+    const hoy = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    await parchar(page, {
+      cuentas: [{ id: 'cu1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 2_000_000, activa: true }],
+      gastos: [{ id: 'g1', descripcion: 'Mercado', monto: 300_000, categoria: 'Mercado', fecha: hoy, cuentaId: 'cu1' }],
     });
     await page.goto('/#analisis');
     await page.waitForSelector('#sec-analisis.active', { timeout: 10_000 });
@@ -4574,10 +4388,8 @@ test.describe('Análisis v2 - score hero + chip de mes (ANL.2a)', () => {
 
   test('el ojo del patrimonio enmascara neto, activos y pasivos (ANL.2b)', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.cuentas = [{ id: 'cu1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 800_000, activa: true }];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+    await parchar(page, {
+      cuentas: [{ id: 'cu1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 800_000, activa: true }],
     });
     await page.goto('/#analisis');
     await page.waitForSelector('#sec-analisis.active', { timeout: 10_000 });
@@ -4596,19 +4408,17 @@ test.describe('Análisis v2 - score hero + chip de mes (ANL.2a)', () => {
 
   test('"A dónde va tu dinero" agrupa tendencia (chip de variación) y categorías (top al centro) (ANL.2c)', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      const d = new Date();
-      const fecha = (offset, dia) => {
-        const x = new Date(d.getFullYear(), d.getMonth() + offset, dia);
-        return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
-      };
-      st.cuentas = [{ id: 'cu1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 2_000_000, activa: true }];
-      st.gastos = [
+    const d = new Date();
+    const fecha = (offset, dia) => {
+      const x = new Date(d.getFullYear(), d.getMonth() + offset, dia);
+      return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+    };
+    await parchar(page, {
+      cuentas: [{ id: 'cu1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 2_000_000, activa: true }],
+      gastos: [
         { id: 'g1', descripcion: 'Mercado', monto: 400_000, categoria: 'Mercado', fecha: fecha(-1, 2), cuentaId: 'cu1' },
         { id: 'g2', descripcion: 'Mercado', monto: 300_000, categoria: 'Mercado', fecha: fecha(0, 2), cuentaId: 'cu1' },
-      ];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+      ],
     });
     await page.goto('/#analisis');
     await page.waitForSelector('#sec-analisis.active', { timeout: 10_000 });
@@ -4625,20 +4435,18 @@ test.describe('Análisis v2 - score hero + chip de mes (ANL.2a)', () => {
 
   test('DIS.10: el cuerpo del colapsable es v2 (cards, sprite, lista) y sobrevive a registrar un gasto', async ({ page }) => {
     await saltearOnboarding(page);
-    await page.addInitScript(() => {
-      const d = new Date();
-      const fecha = (offset, dia) => {
-        const x = new Date(d.getFullYear(), d.getMonth() + offset, dia);
-        return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
-      };
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.cuentas = [{ id: 'cu1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 2_000_000, activa: true }];
-      st.gastos = [
+    const d = new Date();
+    const fecha = (offset, dia) => {
+      const x = new Date(d.getFullYear(), d.getMonth() + offset, dia);
+      return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+    };
+    await parchar(page, {
+      cuentas: [{ id: 'cu1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 2_000_000, activa: true }],
+      gastos: [
         { id: 'g1', descripcion: 'Mercado', monto: 500_000, categoria: 'Mercado', fecha: fecha(-1, 2), cuentaId: 'cu1' },
         { id: 'g2', descripcion: 'Mercado', monto: 300_000, categoria: 'Mercado', fecha: fecha(0, 2), cuentaId: 'cu1' },
         { id: 'g3', descripcion: 'Bus', monto: 120_000, categoria: 'Transporte', fecha: fecha(0, 3), cuentaId: 'cu1' },
-      ];
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+      ],
     });
     await page.goto('/#analisis');
     await page.waitForSelector('#sec-analisis.active', { timeout: 10_000 });
@@ -4702,30 +4510,27 @@ test.describe('Análisis v2 - score hero + chip de mes (ANL.2a)', () => {
 test.describe('Agenda - pago en lote (CAL.5a)', () => {
   /** Siembra dos fijos vencidos (día 1, siempre <= hoy) y una cuenta con saldo. */
   async function sembrarLote(page) {
-    await page.addInitScript(() => {
-      const estado = {
-        version:   1,
-        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas: [{
-          id: 'cta-lote-e2e', nombre: 'Ahorros E2E', tipo: 'ahorros',
-          banco: 'Bancolombia', saldo: 500000, activa: true,
-        }],
-        ingresos: [],
-        gastos:   [],
-        compromisos: [
-          {
-            id: 'lote-a-e2e', tipo: 'fijo', descripcion: 'Arriendo Lote E2E',
-            monto: 100000, frecuencia: 'Mensual', diaPago: 1,
-          },
-          {
-            id: 'lote-b-e2e', tipo: 'fijo', descripcion: 'Internet Lote E2E',
-            monto: 50000, frecuencia: 'Mensual', diaPago: 1,
-          },
-        ],
-        metas: [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [{
+        id: 'cta-lote-e2e', nombre: 'Ahorros E2E', tipo: 'ahorros',
+        banco: 'Bancolombia', saldo: 500000, activa: true,
+      }],
+      ingresos: [],
+      gastos:   [],
+      compromisos: [
+        {
+          id: 'lote-a-e2e', tipo: 'fijo', descripcion: 'Arriendo Lote E2E',
+          monto: 100000, frecuencia: 'Mensual', diaPago: 1,
+        },
+        {
+          id: 'lote-b-e2e', tipo: 'fijo', descripcion: 'Internet Lote E2E',
+          monto: 50000, frecuencia: 'Mensual', diaPago: 1,
+        },
+      ],
+      metas: [],
     });
   }
 
@@ -4791,30 +4596,27 @@ test.describe('Agenda - pago en lote (CAL.5a)', () => {
 test.describe('Lote con deudas y entrada desde Inicio (CAL.5b)', () => {
   /** Un fijo y una deuda, ambos vencidos el día 1, con una cuenta que alcanza. */
   async function sembrarMixto(page) {
-    await page.addInitScript(() => {
-      const estado = {
-        version:   1,
-        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas: [{
-          id: 'cta-5b-e2e', nombre: 'Ahorros E2E', tipo: 'ahorros',
-          banco: 'Bancolombia', saldo: 500000, activa: true,
-        }],
-        ingresos: [],
-        gastos:   [],
-        compromisos: [
-          {
-            id: 'fijo-5b-e2e', tipo: 'fijo', descripcion: 'Arriendo 5b E2E',
-            monto: 100000, frecuencia: 'Mensual', diaPago: 1,
-          },
-          {
-            id: 'deuda-5b-e2e', tipo: 'deuda-entidad', descripcion: 'Visa 5b E2E',
-            cuotaMensual: 80000, saldoTotal: 400000, frecuencia: 'Mensual', diaPago: 1,
-          },
-        ],
-        metas: [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [{
+        id: 'cta-5b-e2e', nombre: 'Ahorros E2E', tipo: 'ahorros',
+        banco: 'Bancolombia', saldo: 500000, activa: true,
+      }],
+      ingresos: [],
+      gastos:   [],
+      compromisos: [
+        {
+          id: 'fijo-5b-e2e', tipo: 'fijo', descripcion: 'Arriendo 5b E2E',
+          monto: 100000, frecuencia: 'Mensual', diaPago: 1,
+        },
+        {
+          id: 'deuda-5b-e2e', tipo: 'deuda-entidad', descripcion: 'Visa 5b E2E',
+          cuotaMensual: 80000, saldoTotal: 400000, frecuencia: 'Mensual', diaPago: 1,
+        },
+      ],
+      metas: [],
     });
   }
 
@@ -4839,11 +4641,11 @@ test.describe('Lote con deudas y entrada desde Inicio (CAL.5b)', () => {
     await expect(page.locator('.cal-lote')).toHaveCount(0, { timeout: 5_000 });
 
     // save() está debounced 200ms: se consulta el estado persistido con poll.
-    await expect.poll(async () => page.evaluate(() => {
-      const s = JSON.parse(localStorage.getItem('fk_v1'));
+    await expect.poll(async () => {
+      const s = await leerEstado(page);
       const d = s.compromisos.find(c => c.id === 'deuda-5b-e2e');
       return { saldo: d.saldoTotal, cuenta: s.cuentas[0].saldo };
-    }), { timeout: 5_000 }).toEqual({ saldo: 320000, cuenta: 320000 });
+    }, { timeout: 5_000 }).toEqual({ saldo: 320000, cuenta: 320000 });
   });
 
   test('Inicio ofrece el mismo lote sin salir del dashboard', async ({ page }) => {
@@ -4882,32 +4684,29 @@ test.describe('Pagos automáticos al abrir (PA.1a)', () => {
    * saldo se consume en cascada.
    */
   async function sembrarAutomaticos(page) {
-    await page.addInitScript(() => {
-      const estado = {
-        version:   1,
-        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas: [{
-          id: 'cta-pa1-e2e', nombre: 'Ahorros PA1', tipo: 'ahorros',
-          banco: 'Bancolombia', saldo: 500000, activa: true,
-        }],
-        ingresos: [],
-        gastos:   [],
-        compromisos: [
-          {
-            id: 'auto-ok-e2e', tipo: 'fijo', descripcion: 'Netflix PA1',
-            monto: 100000, frecuencia: 'Mensual', diaPago: 1,
-            debitoAutomatico: true, cuentaDebitoId: 'cta-pa1-e2e',
-          },
-          {
-            id: 'auto-sin-saldo-e2e', tipo: 'fijo', descripcion: 'Arriendo PA1',
-            monto: 900000, frecuencia: 'Mensual', diaPago: 1,
-            debitoAutomatico: true, cuentaDebitoId: 'cta-pa1-e2e',
-          },
-        ],
-        metas: [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [{
+        id: 'cta-pa1-e2e', nombre: 'Ahorros PA1', tipo: 'ahorros',
+        banco: 'Bancolombia', saldo: 500000, activa: true,
+      }],
+      ingresos: [],
+      gastos:   [],
+      compromisos: [
+        {
+          id: 'auto-ok-e2e', tipo: 'fijo', descripcion: 'Netflix PA1',
+          monto: 100000, frecuencia: 'Mensual', diaPago: 1,
+          debitoAutomatico: true, cuentaDebitoId: 'cta-pa1-e2e',
+        },
+        {
+          id: 'auto-sin-saldo-e2e', tipo: 'fijo', descripcion: 'Arriendo PA1',
+          monto: 900000, frecuencia: 'Mensual', diaPago: 1,
+          debitoAutomatico: true, cuentaDebitoId: 'cta-pa1-e2e',
+        },
+      ],
+      metas: [],
     });
   }
 
@@ -4924,7 +4723,7 @@ test.describe('Pagos automáticos al abrir (PA.1a)', () => {
 
     // Solo lo que la cuenta cubre viene marcado; el resto llega bloqueado y explicado.
     await expect(hoja.locator('[data-role="auto-total"]')).toContainText('$200.000');
-    await expect(hoja.locator('[data-role="auto-cta-texto"]')).toHaveText('Confirmar 2 pagos');
+    await expect(hoja.locator('[data-role="auto-cta-texto"]')).toHaveText('Confirmar 2 movimientos');
     const bloqueada = hoja.locator('.lote-row--bloqueada');
     await expect(bloqueada).toHaveCount(2);
     await expect(bloqueada.first().locator('.lote-row__sub')).toContainText('le faltan');
@@ -4935,15 +4734,14 @@ test.describe('Pagos automáticos al abrir (PA.1a)', () => {
 
     // Cada gasto queda fechado el día de SU vencimiento, no hoy, y la cuenta baja.
     const prefijoMes = hoyLocal().slice(0, 7);
-    await expect.poll(async () => page.evaluate(() => {
-      const s = JSON.parse(localStorage.getItem('fk_v1'));
+    await expect.poll(async () => {
+      const s = await leerEstado(page);
       const g = s.gastos.filter(x => x.compromisoId === 'auto-ok-e2e');
       return { fechas: g.map(x => x.fecha).sort(), montos: g.map(x => x.monto), cuenta: s.cuentas[0].saldo, gastos: s.gastos.length };
-    }), { timeout: 5_000 }).toMatchObject({ montos: [100000, 100000], cuenta: 300000, gastos: 2 });
+    }, { timeout: 5_000 }).toMatchObject({ montos: [100000, 100000], cuenta: 300000, gastos: 2 });
 
     // El del mes en curso lleva el día 1 de este mes; el otro, el del mes anterior.
-    const fechas = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1'))
-      .gastos.map(g => g.fecha).sort());
+    const fechas = (await leerEstado(page)).gastos.map(g => g.fecha).sort();
     expect(fechas[1]).toBe(`${prefijoMes}-01`);
   });
 
@@ -4952,6 +4750,81 @@ test.describe('Pagos automáticos al abrir (PA.1a)', () => {
     await page.goto('/');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
     await expect(page.locator('#modal-automaticos[data-open]')).toHaveCount(0);
+  });
+});
+
+// ── SUITE 12f-quater: créditos automáticos al abrir la app (PA.1b, ADR 052) ─
+// El ingreso fijo marcado como crédito automático es el mismo problema visto
+// del otro lado: al abrir, la misma hoja de PA.1a lo deja listo con su fecha
+// real y su cuenta, y el usuario lo confirma de un toque. Un ingreso sin
+// cuenta llega bloqueado, nunca registrado a ciegas.
+
+test.describe('Créditos automáticos al abrir (PA.1b)', () => {
+  async function sembrarCredito(page) {
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [{
+        id: 'cta-pa1b-e2e', nombre: 'Ahorros PA1b', tipo: 'ahorros',
+        banco: 'Bancolombia', saldo: 500000, activa: true,
+      }],
+      ingresos: [{
+        id: 'credito-ok-e2e', descripcion: 'Salario PA1b',
+        monto: 3000000, frecuencia: 'Mensual', diaPago: 1,
+        creditoAutomatico: true, cuentaId: 'cta-pa1b-e2e',
+      }],
+      gastos:      [],
+      compromisos: [],
+      metas:       [],
+    });
+  }
+
+  test('la hoja trae el crédito con signo +, confirma y abona la cuenta', async ({ page }) => {
+    await sembrarCredito(page);
+    await page.goto('/');
+
+    await page.waitForSelector('#modal-automaticos[data-open]', { timeout: 10_000 });
+    const hoja = page.locator('#modal-automaticos');
+    // Dos meses de ventana de catch-up (ADR 052 D1), igual que PA.1a.
+    await expect(hoja.locator('.lote-row')).toHaveCount(2);
+    await expect(hoja.locator('.lote-row__amount').first()).toHaveText('+$3.000.000');
+    await expect(hoja.locator('[data-role="auto-cta-texto"]')).toHaveText('Confirmar 2 movimientos');
+
+    await hoja.locator('[data-action="agenda-confirmar-automaticos"]').click();
+    await page.waitForSelector(modalCerrado('modal-automaticos'), { timeout: 5_000 });
+
+    const prefijoMes = hoyLocal().slice(0, 7);
+    await expect.poll(async () => {
+      const s = await leerEstado(page);
+      const ip = s.ingresosPuntuales.filter(x => x.ingresoId === 'credito-ok-e2e');
+      return { fechas: ip.map(x => x.fecha).sort(), montos: ip.map(x => x.monto), cuenta: s.cuentas[0].saldo, ingresosPuntuales: s.ingresosPuntuales.length };
+    }, { timeout: 5_000 }).toMatchObject({ montos: [3000000, 3000000], cuenta: 6500000, ingresosPuntuales: 2 });
+
+    const fechas = (await leerEstado(page)).ingresosPuntuales.map(ip => ip.fecha).sort();
+    expect(fechas[1]).toBe(`${prefijoMes}-01`);
+  });
+
+  test('sin cuenta asignada el crédito llega bloqueado y no se registra', async ({ page }) => {
+    await sembrar(page, {
+      version: 1, perfil: { nombre: 'TestUser', smmlv: 1750905 }, onboarded: true,
+      cuentas: [{ id: 'c1', nombre: 'Ahorros', tipo: 'ahorros', banco: 'Bancolombia', saldo: 500000, activa: true }],
+      ingresos: [{
+        id: 'credito-sin-cuenta-e2e', descripcion: 'Freelance PA1b',
+        monto: 1000000, frecuencia: 'Mensual', diaPago: 1, creditoAutomatico: true,
+      }],
+      gastos: [], compromisos: [], metas: [], ingresosPuntuales: [],
+    });
+    await page.goto('/');
+
+    await page.waitForSelector('#modal-automaticos[data-open]', { timeout: 10_000 });
+    const hoja = page.locator('#modal-automaticos');
+    await expect(hoja.locator('.lote-row--bloqueada').first().locator('.lote-row__sub')).toContainText('elige a cuál llega');
+
+    await expect.poll(
+      async () => ((await leerEstado(page)).ingresosPuntuales ?? []).length,
+      { timeout: 2_000 },
+    ).toBe(0);
   });
 });
 
@@ -4976,34 +4849,31 @@ test.describe('Gastos - gastos frecuentes y Repetir (TX.12)', () => {
     return `${yyyy}-${mm}-${dd}`;
   }
 
-  async function sembrar(page, fechas) {
-    await page.addInitScript(({ fechas }) => {
-      const estado = {
-        version:   1,
-        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
-        onboarded: true,
-        cuentas: [{
-          id: 'cta-tx12-e2e', nombre: 'Bancolombia', tipo: 'ahorros',
-          banco: 'Bancolombia', saldo: 500000, activa: true,
-        }],
-        ingresos: [],
-        gastos: [
-          // 3 repeticiones de "Mercado" $15.000: dispara el chip de frecuentes.
-          { id: 'f1', categoria: 'Mercado', monto: 15000, fecha: fechas[0], cuentaId: 'cta-tx12-e2e', nota: '' },
-          { id: 'f2', categoria: 'Mercado', monto: 15000, fecha: fechas[1], cuentaId: 'cta-tx12-e2e', nota: '' },
-          { id: 'f3', categoria: 'Mercado', monto: 15000, fecha: fechas[2], cuentaId: 'cta-tx12-e2e', nota: '' },
-          // 1 gasto puntual distinto, para probar "Repetir" desde su fila.
-          { id: 'g1', categoria: 'Transporte', monto: 20000, fecha: fechas[3], cuentaId: 'cta-tx12-e2e', nota: 'Uber al trabajo' },
-        ],
-        compromisos: [],
-        metas: [],
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(estado));
-    }, { fechas });
+  async function sembrarTx12(page, fechas) {
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [{
+        id: 'cta-tx12-e2e', nombre: 'Bancolombia', tipo: 'ahorros',
+        banco: 'Bancolombia', saldo: 500000, activa: true,
+      }],
+      ingresos: [],
+      gastos: [
+        // 3 repeticiones de "Mercado" $15.000: dispara el chip de frecuentes.
+        { id: 'f1', categoria: 'Mercado', monto: 15000, fecha: fechas[0], cuentaId: 'cta-tx12-e2e', nota: '' },
+        { id: 'f2', categoria: 'Mercado', monto: 15000, fecha: fechas[1], cuentaId: 'cta-tx12-e2e', nota: '' },
+        { id: 'f3', categoria: 'Mercado', monto: 15000, fecha: fechas[2], cuentaId: 'cta-tx12-e2e', nota: '' },
+        // 1 gasto puntual distinto, para probar "Repetir" desde su fila.
+        { id: 'g1', categoria: 'Transporte', monto: 20000, fecha: fechas[3], cuentaId: 'cta-tx12-e2e', nota: 'Uber al trabajo' },
+      ],
+      compromisos: [],
+      metas: [],
+    });
   }
 
   test('chip de gasto frecuente prellena monto, categoría y cuenta', async ({ page }) => {
-    await sembrar(page, [isoHaceNDias(10), isoHaceNDias(8), isoHaceNDias(6), isoHaceNDias(4)]);
+    await sembrarTx12(page, [isoHaceNDias(10), isoHaceNDias(8), isoHaceNDias(6), isoHaceNDias(4)]);
     await page.goto('/#gast');
     await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
 
@@ -5033,7 +4903,7 @@ test.describe('Gastos - gastos frecuentes y Repetir (TX.12)', () => {
   });
 
   test('"Repetir" desde una fila abre el modal en modo creación, prellenado y sin chips de frecuentes', async ({ page }) => {
-    await sembrar(page, [isoHaceNDias(10), isoHaceNDias(8), isoHaceNDias(6), isoHaceNDias(4)]);
+    await sembrarTx12(page, [isoHaceNDias(10), isoHaceNDias(8), isoHaceNDias(6), isoHaceNDias(4)]);
     await page.goto('/#gast');
     await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
 

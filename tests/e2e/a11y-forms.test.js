@@ -12,6 +12,7 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { sembrar, parchar, estadoBase } from './helpers/estado.js';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -21,25 +22,17 @@ import { test, expect } from '@playwright/test';
  * de gasto exige al menos una cuenta; "Distribuir mi ingreso" exige ingreso).
  */
 async function seedEstadoBase(page) {
-  await page.addInitScript(() => {
-    const estado = {
-      version: 1,
-      perfil: { nombre: 'TestUser', smmlv: 1750905 },
-      onboarded: true,
-      cuentas: [{
-        id: 'cta-1', nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo',
-        saldo: 2_000_000, activa: true, fechaCreacion: '2026-01-01T00:00:00.000Z',
-      }],
-      ingresos: [{
-        id: 'ing-1', descripcion: 'Salario', monto: 3_000_000,
-        frecuencia: 'Mensual', activo: true,
-      }],
-      gastos: [],
-      compromisos: [],
-      metas: [],
-    };
-    localStorage.setItem('fk_v1', JSON.stringify(estado));
-  });
+  await sembrar(page, estadoBase({
+    version:  1,
+    cuentas: [{
+      id: 'cta-1', nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo',
+      saldo: 2_000_000, activa: true, fechaCreacion: '2026-01-01T00:00:00.000Z',
+    }],
+    ingresos: [{
+      id: 'ing-1', descripcion: 'Salario', monto: 3_000_000,
+      frecuencia: 'Mensual', activo: true,
+    }],
+  }));
 }
 
 /**
@@ -159,13 +152,11 @@ test.describe('A11Y.5 - axe sobre formularios dinámicos', () => {
     await seedEstadoBase(page);
     // El asistente solo se muestra si hay algo que repartir: un fondo de
     // emergencia activo garantiza al menos una fila de Ahorro.
-    await page.addInitScript(() => {
-      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
-      st.ahorro = {
+    await parchar(page, {
+      ahorro: {
         fondoEmergencia: { activo: true, completado: false, metaMeses: 3, montoActual: 100_000 },
         aportes: [], compromisoMensual: 0,
-      };
-      localStorage.setItem('fk_v1', JSON.stringify(st));
+      },
     });
     await page.goto('/#tesoreria');
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });

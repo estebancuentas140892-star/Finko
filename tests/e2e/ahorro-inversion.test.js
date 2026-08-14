@@ -22,41 +22,39 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { sembrarSiVacio, leerEstado } from './helpers/estado.js';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+/** Estado mínimo v8 con onboarding hecho y los dominios Ahorro e Inversión vacíos. */
+const ESTADO_V8 = {
+  _version:    8,
+  perfil:      { nombre: 'TestUser', smmlv: 1750905 },
+  onboarded:   true,
+  cuentas:     [],
+  ingresos:    [],
+  gastos:      [],
+  compromisos: [],
+  metas:       [],
+  prestamos:   [],
+  presupuestos: [],
+  ahorro: {
+    fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0, completado: false },
+    aportes:         [],
+    compromisoMensual: 0,
+  },
+  inversiones: [],
+};
+
 /**
- * Inyecta el estado mínimo v8 con onboarding completado y los dominios
- * Ahorro e Inversión vacíos. Usa addInitScript para que corra antes de que
- * la app inicialice y lea localStorage.
+ * Siembra `ESTADO_V8` antes de que la app inicialice y lea localStorage.
  *
- * IMPORTANTE: addInitScript corre en CADA carga, incluida `page.reload()`.
- * Por eso solo siembra si `fk_v1` aún no existe: así los tests de persistencia
- * pueden crear datos, recargar, y que el seed NO los pise al re-ejecutarse.
+ * IMPORTANTE: `sembrarSiVacio` y no `sembrar`, porque `addInitScript` corre en
+ * CADA carga, incluida `page.reload()`: los tests de persistencia crean datos,
+ * recargan, y el seed no debe pisarlos al re-ejecutarse.
  */
 async function estadoBaseV8(page) {
-  await page.addInitScript(() => {
-    if (localStorage.getItem('fk_v1')) return; // ya sembrado o con datos del test
-    const estado = {
-      _version:    8,
-      perfil:      { nombre: 'TestUser', smmlv: 1750905 },
-      onboarded:   true,
-      cuentas:     [],
-      ingresos:    [],
-      gastos:      [],
-      compromisos: [],
-      metas:       [],
-      prestamos:   [],
-      presupuestos: [],
-      ahorro: {
-        fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0, completado: false },
-        aportes:         [],
-        compromisoMensual: 0,
-      },
-      inversiones: [],
-    };
-    localStorage.setItem('fk_v1', JSON.stringify(estado));
-  });
+  await sembrarSiVacio(page, ESTADO_V8);
 }
 
 /** Navega al Dashboard y espera que cargue antes de iniciar cada test. */
@@ -393,39 +391,19 @@ test.describe('Inversión - portafolio real (J.2)', () => {
  * preguntar de dónde sale el dinero.
  */
 async function estadoConCuenta(page) {
-  await page.addInitScript(() => {
-    if (localStorage.getItem('fk_v1')) return;
-    const estado = {
-      _version:    8,
-      perfil:      { nombre: 'TestUser', smmlv: 1750905 },
-      onboarded:   true,
-      cuentas: [{
-        id: 'cta-e2e', nombre: 'Ahorros E2E', banco: 'Bancolombia',
-        tipo: 'Ahorros', saldo: 6000000, activa: true,
-      }],
-      ingresos:    [],
-      gastos:      [],
-      compromisos: [],
-      metas:       [],
-      prestamos:   [],
-      presupuestos: [],
-      ahorro: {
-        fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0, completado: false },
-        aportes:         [],
-        compromisoMensual: 0,
-      },
-      inversiones: [],
-    };
-    localStorage.setItem('fk_v1', JSON.stringify(estado));
+  await sembrarSiVacio(page, {
+    ...ESTADO_V8,
+    cuentas: [{
+      id: 'cta-e2e', nombre: 'Ahorros E2E', banco: 'Bancolombia',
+      tipo: 'Ahorros', saldo: 6000000, activa: true,
+    }],
   });
 }
 
 /** Saldo de la cuenta sembrada, leído de localStorage. */
 async function saldoCuenta(page) {
-  return page.evaluate(() => {
-    const st = JSON.parse(localStorage.getItem('fk_v1'));
-    return st.cuentas.find(c => c.id === 'cta-e2e').saldo;
-  });
+  const st = await leerEstado(page);
+  return st.cuentas.find(c => c.id === 'cta-e2e').saldo;
 }
 
 /** Abre el formulario de inversión y devuelve su locator. */

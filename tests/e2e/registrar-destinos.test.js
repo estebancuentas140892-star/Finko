@@ -8,6 +8,7 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { sembrar } from './helpers/estado.js';
 
 test.use({ viewport: { width: 390, height: 844 } });
 
@@ -31,9 +32,7 @@ const AHORRO_TRES = {
 };
 
 async function seed(page, extra) {
-  await page.addInitScript((data) => {
-    localStorage.setItem('fk_v1', JSON.stringify(data));
-  }, { ...BASE, ...extra });
+  await sembrar(page, { ...BASE, ...extra });
   await page.goto('/#dash');
   await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
 }

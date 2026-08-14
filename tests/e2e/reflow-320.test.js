@@ -13,6 +13,7 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { sembrar } from './helpers/estado.js';
 
 test.use({ viewport: { width: 320, height: 568 } });
 
@@ -24,10 +25,9 @@ const SECCIONES = [
 ];
 
 async function seedDatos(page) {
-  await page.addInitScript(() => {
-    const d = new Date();
-    const fecha = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    const estado = {
+  const d = new Date();
+  const fecha = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  await sembrar(page, {
       version: 1,
       perfil: { nombre: 'Usuaria de prueba', smmlv: 1750905 },
       onboarded: true,
@@ -60,8 +60,6 @@ async function seedDatos(page) {
         fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 1_000_000 },
         aportes: [{ id: 'ap1', monto: 250_000, fecha, nota: 'Aporte de la quincena' }],
       },
-    };
-    localStorage.setItem('fk_v1', JSON.stringify(estado));
   });
 }
 

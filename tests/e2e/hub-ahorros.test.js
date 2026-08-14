@@ -15,29 +15,28 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { sembrar } from './helpers/estado.js';
+
+/** Cuenta única compartida por los dos estados de esta suite. */
+const CUENTAS = [
+  { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi', saldo: 100000, activa: true, fechaCreacion: '2026-07-01T00:00:00.000Z' },
+];
 
 /** Estado mínimo sin ahorros: la casa muestra las cuatro filas en cero. */
 async function seedVacio(page) {
-  await page.addInitScript(() => {
-    localStorage.setItem('fk_v1', JSON.stringify({
-      perfil: { nombre: 'Ana', smmlv: 1750905 },
-      onboarded: true,
-      cuentas: [
-        { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi', saldo: 100000, activa: true, fechaCreacion: '2026-07-01T00:00:00.000Z' },
-      ],
-    }));
+  await sembrar(page, {
+    perfil: { nombre: 'Ana', smmlv: 1750905 },
+    onboarded: true,
+    cuentas: CUENTAS,
   });
 }
 
 /** Estado con ahorros: fondo $1.000.000 + meta $500.000 → total $1.500.000. */
 async function seedConAhorros(page) {
-  await page.addInitScript(() => {
-    localStorage.setItem('fk_v1', JSON.stringify({
+  await sembrar(page, {
       perfil: { nombre: 'Ana', smmlv: 1750905 },
       onboarded: true,
-      cuentas: [
-        { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi', saldo: 100000, activa: true, fechaCreacion: '2026-07-01T00:00:00.000Z' },
-      ],
+      cuentas: CUENTAS,
       ahorro: {
         fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 1_000_000 },
         aportes: [],
@@ -45,7 +44,6 @@ async function seedConAhorros(page) {
       metas: [
         { id: 'm1', nombre: 'Viaje', montoObjetivo: 2_000_000, montoActual: 500_000, fechaCreacion: '2026-01-01' },
       ],
-    }));
   });
 }
 

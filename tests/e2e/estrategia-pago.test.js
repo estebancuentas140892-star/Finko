@@ -15,6 +15,7 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { sembrar, leerEstado } from './helpers/estado.js';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -23,107 +24,88 @@ const ID_A = 'deuda-a-e2e';
 const ID_B = 'deuda-b-e2e';
 
 /**
- * Inyecta estado con 2 deudas válidas y salta el onboarding.
- * _version: 3 coincide con el schema actual de Finko.
+ * Estado de partida de la suite, sin compromisos: cada helper de abajo le suma
+ * los suyos. `_version: 3` coincide con el schema que estas deudas usan
+ * (`tipo: 'deuda'` + `saldoPendiente` + `tasaEA`, previo a la migración v5 a v6).
  */
+const BASE_V3 = {
+  _version: 3,
+  perfil: { nombre: 'TestUser', smmlv: 1750905 },
+  onboarded: true,
+  cuentas: [],
+  ingresos: [],
+  gastos: [],
+  metas: [],
+  prestamos: [],
+  presupuestos: [],
+};
+
+/** Inyecta estado con 2 deudas válidas y salta el onboarding. */
 async function inyectarDosDeudas(page) {
-  await page.addInitScript(({ idA, idB }) => {
-    const estado = {
-      _version: 3,
-      perfil: { nombre: 'TestUser', smmlv: 1750905 },
-      onboarded: true,
-      cuentas: [],
-      ingresos: [],
-      gastos: [],
-      metas: [],
-      prestamos: [],
-      presupuestos: [],
-      compromisos: [
-        {
-          id: idA,
-          descripcion: 'Crédito caro E2E',
-          monto: 500000,
-          frecuencia: 'mensual',
-          diaPago: 5,
-          tipo: 'deuda',
-          activo: true,
-          saldoPendiente: 15000000,
-          tasaEA: 0.30,
-        },
-        {
-          id: idB,
-          descripcion: 'Préstamo barato E2E',
-          monto: 200000,
-          frecuencia: 'mensual',
-          diaPago: 15,
-          tipo: 'deuda',
-          activo: true,
-          saldoPendiente: 1500000,
-          tasaEA: 0.12,
-        },
-      ],
-    };
-    localStorage.setItem('fk_v1', JSON.stringify(estado));
-  }, { idA: ID_A, idB: ID_B });
+  await sembrar(page, {
+    ...BASE_V3,
+    compromisos: [
+      {
+        id: ID_A,
+        descripcion: 'Crédito caro E2E',
+        monto: 500000,
+        frecuencia: 'mensual',
+        diaPago: 5,
+        tipo: 'deuda',
+        activo: true,
+        saldoPendiente: 15000000,
+        tasaEA: 0.30,
+      },
+      {
+        id: ID_B,
+        descripcion: 'Préstamo barato E2E',
+        monto: 200000,
+        frecuencia: 'mensual',
+        diaPago: 15,
+        tipo: 'deuda',
+        activo: true,
+        saldoPendiente: 1500000,
+        tasaEA: 0.12,
+      },
+    ],
+  });
 }
 
 /** Inyecta estado con solo 1 deuda válida. */
 async function inyectarUnaDeuda(page) {
-  await page.addInitScript(({ idA }) => {
-    const estado = {
-      _version: 3,
-      perfil: { nombre: 'TestUser', smmlv: 1750905 },
-      onboarded: true,
-      cuentas: [],
-      ingresos: [],
-      gastos: [],
-      metas: [],
-      prestamos: [],
-      presupuestos: [],
-      compromisos: [
-        {
-          id: idA,
-          descripcion: 'Única deuda E2E',
-          monto: 300000,
-          frecuencia: 'mensual',
-          diaPago: 10,
-          tipo: 'deuda',
-          activo: true,
-          saldoPendiente: 5000000,
-          tasaEA: 0.20,
-        },
-      ],
-    };
-    localStorage.setItem('fk_v1', JSON.stringify(estado));
-  }, { idA: ID_A });
+  await sembrar(page, {
+    ...BASE_V3,
+    compromisos: [
+      {
+        id: ID_A,
+        descripcion: 'Única deuda E2E',
+        monto: 300000,
+        frecuencia: 'mensual',
+        diaPago: 10,
+        tipo: 'deuda',
+        activo: true,
+        saldoPendiente: 5000000,
+        tasaEA: 0.20,
+      },
+    ],
+  });
 }
 
 /** Inyecta estado sin deudas (solo un gasto fijo, no deuda). */
 async function inyectarSinDeudas(page) {
-  await page.addInitScript(() => {
-    const estado = {
-      _version: 3,
-      perfil: { nombre: 'TestUser', smmlv: 1750905 },
-      onboarded: true,
-      cuentas: [],
-      ingresos: [],
-      gastos: [],
-      metas: [],
-      prestamos: [],
-      presupuestos: [],
-      compromisos: [
-        {
-          id: 'fijo-e2e',
-          descripcion: 'Arriendo E2E',
-          monto: 1200000,
-          frecuencia: 'mensual',
-          diaPago: 1,
-          tipo: 'fijo',
-          activo: true,
-        },
-      ],
-    };
-    localStorage.setItem('fk_v1', JSON.stringify(estado));
+  await sembrar(page, {
+    ...BASE_V3,
+    compromisos: [
+      {
+        id: 'fijo-e2e',
+        descripcion: 'Arriendo E2E',
+        monto: 1200000,
+        frecuencia: 'mensual',
+        diaPago: 1,
+        tipo: 'fijo',
+        activo: true,
+      },
+    ],
   });
 }
 
@@ -266,31 +248,28 @@ test.describe('Estrategia de pago de deudas (F.4)', () => {
  * aparece el botón único de alerta (D.7/D.8) que abre el panel de alternativas.
  */
 async function inyectarPlanInviable(page) {
-  await page.addInitScript(() => {
-    const estado = {
-      _version: 18,
-      perfil: { nombre: 'TestUser', smmlv: 1750905 },
-      onboarded: true,
-      cuentas: [], ingresos: [], gastos: [], metas: [],
-      prestamos: [], presupuestos: [], apartados: [], config: {},
-      compromisos: [
-        {
-          id: 'reneg-a', descripcion: 'Tarjeta cara E2E',
-          monto: 50000, frecuencia: 'Mensual', diaPago: 5,
-          tipo: 'deuda-entidad', activo: true,
-          saldoTotal: 10000000, cuotaMensual: 50000,
-          tasa: 0.30, tasaUnidad: 'EA', categoria: null,
-        },
-        {
-          id: 'reneg-b', descripcion: 'Préstamo chico E2E',
-          monto: 100000, frecuencia: 'Mensual', diaPago: 15,
-          tipo: 'deuda-personal', activo: true,
-          saldoTotal: 500000, cuotaMensual: 100000,
-          tasa: 0.10, tasaUnidad: 'mensual', categoria: null,
-        },
-      ],
-    };
-    localStorage.setItem('fk_v1', JSON.stringify(estado));
+  await sembrar(page, {
+    _version: 18,
+    perfil: { nombre: 'TestUser', smmlv: 1750905 },
+    onboarded: true,
+    cuentas: [], ingresos: [], gastos: [], metas: [],
+    prestamos: [], presupuestos: [], apartados: [], config: {},
+    compromisos: [
+      {
+        id: 'reneg-a', descripcion: 'Tarjeta cara E2E',
+        monto: 50000, frecuencia: 'Mensual', diaPago: 5,
+        tipo: 'deuda-entidad', activo: true,
+        saldoTotal: 10000000, cuotaMensual: 50000,
+        tasa: 0.30, tasaUnidad: 'EA', categoria: null,
+      },
+      {
+        id: 'reneg-b', descripcion: 'Préstamo chico E2E',
+        monto: 100000, frecuencia: 'Mensual', diaPago: 15,
+        tipo: 'deuda-personal', activo: true,
+        saldoTotal: 500000, cuotaMensual: 100000,
+        tasa: 0.10, tasaUnidad: 'mensual', categoria: null,
+      },
+    ],
   });
 }
 
@@ -384,11 +363,11 @@ test.describe('Renegociar la tasa (D.3a) dentro del panel de alternativas (D.8)'
 
     // Y la deuda quedó con la nueva tasa (0.01 EA) en localStorage. save() está
     // debounced 200ms, así que se hace polling hasta que el escritura aterrice.
-    await expect.poll(async () => page.evaluate(() => {
-      const s = JSON.parse(localStorage.getItem('fk_v1'));
+    await expect.poll(async () => {
+      const s = await leerEstado(page);
       const t = s.compromisos.find(c => c.id === 'reneg-a')?.tasa;
       return Math.abs(t - 0.01) < 1e-6;
-    }), { timeout: 2_000 }).toBe(true);
+    }, { timeout: 2_000 }).toBe(true);
   });
 
 });
@@ -434,8 +413,8 @@ test.describe('Consolidar deudas (D.3b) dentro del panel de alternativas (D.8)',
 
     // Tras consolidar: las 2 deudas previas quedan archivadas (activo:false) y
     // hay una deuda nueva activa "Crédito de consolidación" con saldo 10.5 M.
-    await expect.poll(async () => page.evaluate(() => {
-      const s = JSON.parse(localStorage.getItem('fk_v1'));
+    await expect.poll(async () => {
+      const s = await leerEstado(page);
       const activas = s.compromisos.filter(c => c.activo !== false && (c.tipo === 'deuda-entidad' || c.tipo === 'deuda-personal'));
       const previasArchivadas = ['reneg-a', 'reneg-b'].every(id =>
         s.compromisos.find(c => c.id === id)?.activo === false);
@@ -446,7 +425,7 @@ test.describe('Consolidar deudas (D.3b) dentro del panel de alternativas (D.8)',
         nuevaSaldo: nueva?.saldoTotal,
         nuevaCuota: nueva?.cuotaMensual,
       };
-    }), { timeout: 2_000 }).toEqual({
+    }, { timeout: 2_000 }).toEqual({
       activasCount: 1,
       previasArchivadas: true,
       nuevaSaldo: 10_500_000,
@@ -480,10 +459,8 @@ test.describe('BUG-011: el extra simulado no reestructura la card ni se aplica s
     await expect(page.locator('.estrategia-card__acelerador')).toHaveCount(0);
 
     // Y las cuotas registradas no cambiaron: la simulación nunca se aplicó.
-    const cuotas = await page.evaluate(() => {
-      const s = JSON.parse(localStorage.getItem('fk_v1'));
-      return ['reneg-a', 'reneg-b'].map(id => s.compromisos.find(c => c.id === id)?.cuotaMensual);
-    });
+    const s = await leerEstado(page);
+    const cuotas = ['reneg-a', 'reneg-b'].map(id => s.compromisos.find(c => c.id === id)?.cuotaMensual);
     expect(cuotas).toEqual([50_000, 100_000]);
   });
 
@@ -531,12 +508,12 @@ test.describe('Aumentar la cuota (D.9) dentro del panel de alternativas', () => 
 
     // La deuda que crece (reneg-a, mayor déficit) sube su cuota de 50.000 a
     // 150.000; la chica sana (reneg-b) no se toca. save() está debounced 200ms.
-    await expect.poll(async () => page.evaluate(() => {
-      const s = JSON.parse(localStorage.getItem('fk_v1'));
+    await expect.poll(async () => {
+      const s = await leerEstado(page);
       const a = s.compromisos.find(c => c.id === 'reneg-a')?.cuotaMensual;
       const b = s.compromisos.find(c => c.id === 'reneg-b')?.cuotaMensual;
       return { a, b };
-    }), { timeout: 2_000 }).toEqual({ a: 150_000, b: 100_000 });
+    }, { timeout: 2_000 }).toEqual({ a: 150_000, b: 100_000 });
   });
 
 });
@@ -545,26 +522,23 @@ test.describe('Aumentar la cuota (D.9) dentro del panel de alternativas', () => 
 
 /** Inyecta una deuda con cuota fija + una cuenta activa, para abrir el modal de abono. */
 async function inyectarDeudaParaAbono(page) {
-  await page.addInitScript(() => {
-    const estado = {
-      _version: 26,
-      perfil: { nombre: 'TestUser', smmlv: 1750905 },
-      onboarded: true,
-      cuentas: [
-        { id: 'cta-abono', nombre: 'Bancolombia', saldo: 5_000_000, banco: 'Bancolombia', tipo: 'Ahorros', activa: true },
-      ],
-      ingresos: [], gastos: [], metas: [], prestamos: [], presupuestos: [], apartados: [], config: {},
-      compromisos: [
-        {
-          id: 'abono-e2e', descripcion: 'Tarjeta E2E',
-          frecuencia: 'Mensual', diaPago: 10,
-          tipo: 'deuda-entidad', activo: true,
-          saldoTotal: 500_000, cuotaMensual: 100_000,
-          tasa: 0.28, tasaUnidad: 'EA', categoria: null,
-        },
-      ],
-    };
-    localStorage.setItem('fk_v1', JSON.stringify(estado));
+  await sembrar(page, {
+    _version: 26,
+    perfil: { nombre: 'TestUser', smmlv: 1750905 },
+    onboarded: true,
+    cuentas: [
+      { id: 'cta-abono', nombre: 'Bancolombia', saldo: 5_000_000, banco: 'Bancolombia', tipo: 'Ahorros', activa: true },
+    ],
+    ingresos: [], gastos: [], metas: [], prestamos: [], presupuestos: [], apartados: [], config: {},
+    compromisos: [
+      {
+        id: 'abono-e2e', descripcion: 'Tarjeta E2E',
+        frecuencia: 'Mensual', diaPago: 10,
+        tipo: 'deuda-entidad', activo: true,
+        saldoTotal: 500_000, cuotaMensual: 100_000,
+        tasa: 0.28, tasaUnidad: 'EA', categoria: null,
+      },
+    ],
   });
 }
 

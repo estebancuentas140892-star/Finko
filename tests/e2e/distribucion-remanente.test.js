@@ -10,11 +10,10 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { sembrar, leerEstado } from './helpers/estado.js';
 
 async function seed(page, estado) {
-  await page.addInitScript((data) => {
-    localStorage.setItem('fk_v1', JSON.stringify(data));
-  }, { perfil: { nombre: 'Ana', smmlv: 1750905 }, onboarded: true, ...estado });
+  await sembrar(page, { perfil: { nombre: 'Ana', smmlv: 1750905 }, onboarded: true, ...estado });
   await page.goto('/#tesoreria');
   await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
 }
@@ -134,7 +133,7 @@ test.describe('MC.13e-2f-2 - decision explicita del remanente', () => {
     await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
 
     await page.waitForTimeout(400); // save() debounced (ADN #5)
-    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+    const st = await leerEstado(page);
 
     const aportado = (st.ahorro?.aportes ?? []).reduce((s, a) => s + a.monto, 0);
     expect(aportado).toBe(3_000_000);

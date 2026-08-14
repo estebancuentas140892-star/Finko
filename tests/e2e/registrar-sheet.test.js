@@ -7,18 +7,17 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { sembrar } from './helpers/estado.js';
 
 test.use({ viewport: { width: 390, height: 844 } });
 
 async function seed(page) {
-  await page.addInitScript(() => {
-    localStorage.setItem('fk_v1', JSON.stringify({
-      perfil: { nombre: 'Ana', smmlv: 1750905 },
-      onboarded: true,
-      cuentas: [
-        { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi', saldo: 100000, activa: true, fechaCreacion: '2026-07-01T00:00:00.000Z' },
-      ],
-    }));
+  await sembrar(page, {
+    perfil: { nombre: 'Ana', smmlv: 1750905 },
+    onboarded: true,
+    cuentas: [
+      { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi', saldo: 100000, activa: true, fechaCreacion: '2026-07-01T00:00:00.000Z' },
+    ],
   });
 }
 
@@ -60,12 +59,10 @@ test.describe('NAV.A2a - hoja Registrar', () => {
 test.describe('NAV.A2a - registro sin cuentas guía a crear la cuenta', () => {
   test.beforeEach(async ({ page }) => {
     // Usuario nuevo: onboarded pero sin ninguna cuenta creada.
-    await page.addInitScript(() => {
-      localStorage.setItem('fk_v1', JSON.stringify({
-        perfil: { nombre: 'Ana', smmlv: 1750905 },
-        onboarded: true,
-        cuentas: [],
-      }));
+    await sembrar(page, {
+      perfil: { nombre: 'Ana', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [],
     });
     await page.goto('/#dash');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });

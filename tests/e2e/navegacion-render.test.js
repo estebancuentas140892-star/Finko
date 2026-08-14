@@ -15,23 +15,14 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { sembrar, estadoBase } from './helpers/estado.js';
 
 async function saltearOnboardingYIrADash(page) {
-  await page.addInitScript(() => {
-    const estado = {
-      _version: 3,
-      perfil: { nombre: 'TestUser', smmlv: 1750905 },
-      onboarded: true,
-      cuentas: [],
-      ingresos: [],
-      gastos: [],
-      compromisos: [],
-      metas: [],
-      prestamos: [],
-      presupuestos: [],
-    };
-    localStorage.setItem('fk_v1', JSON.stringify(estado));
-  });
+  await sembrar(page, estadoBase({
+    _version:     3,
+    prestamos:    [],
+    presupuestos: [],
+  }));
   // Forzar arranque en dashboard, NO en la sección destino.
   await page.goto('/#dash');
   await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });

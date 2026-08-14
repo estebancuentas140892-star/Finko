@@ -17,6 +17,7 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { sembrar, estadoBase } from './helpers/estado.js';
 
 // UA real de iPhone Safari: el detector lee navigator.userAgent y busca iPhone.
 const UA_IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) ' +
@@ -32,25 +33,20 @@ const UA_IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) ' +
  * @param {object}  [opts.install]        - valor a guardar en fk_install (opcional).
  */
 async function inyectarEstado(page, { onboarded = true, install } = {}) {
-  await page.addInitScript(({ onboarded, install }) => {
-    const estado = {
-      _version: 4,
-      perfil: { nombre: 'TestUser', smmlv: 1750905 },
-      onboarded,
-      cuentas: [],
-      ingresos: [],
-      gastos: [],
-      compromisos: [],
-      metas: [],
-      prestamos: [],
-      presupuestos: [],
-      logros: [],
-    };
-    localStorage.setItem('fk_v1', JSON.stringify(estado));
-    if (install) {
-      localStorage.setItem('fk_install', JSON.stringify(install));
-    }
-  }, { onboarded, install });
+  await sembrar(page, estadoBase({
+    _version:     4,
+    onboarded,
+    prestamos:    [],
+    presupuestos: [],
+    logros:       [],
+  }));
+  // `fk_install` es otra clave y otro dueño (`ui/install-prompt.js`), fuera del
+  // alcance de PERF.10b, que solo unifica la clave del estado.
+  if (install) {
+    await page.addInitScript((valor) => {
+      localStorage.setItem('fk_install', JSON.stringify(valor));
+    }, install);
+  }
 }
 
 // ── Banner en UA iOS ─────────────────────────────────────────────────────────

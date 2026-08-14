@@ -11,11 +11,10 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { sembrar, leerEstado } from './helpers/estado.js';
 
 async function seed(page, estado) {
-  await page.addInitScript((data) => {
-    localStorage.setItem('fk_v1', JSON.stringify(data));
-  }, { perfil: { nombre: 'Ana', smmlv: 1750905 }, onboarded: true, ...estado });
+  await sembrar(page, { perfil: { nombre: 'Ana', smmlv: 1750905 }, onboarded: true, ...estado });
   await page.goto('/#tesoreria');
   await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
 }
@@ -84,7 +83,7 @@ test.describe('MC.13e-2e - completar el déficit con el saldo de otra cuenta', (
     await page.click('.cuenta-picker__btn[data-cuenta-id="c1"]');
 
     await page.waitForTimeout(500); // save() debounced (ADN #5)
-    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+    const st = await leerEstado(page);
 
     // Origen: 200.000 + 1.000.000 de ingreso + 500.000 de complemento - 1.500.000 del arriendo.
     expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(200_000);
