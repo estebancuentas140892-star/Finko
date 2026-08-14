@@ -22,7 +22,7 @@
 - Depende de : INT.1e cerrada · Modelo: Equilibrado - Alto
 - Diferida 2026-08-11: sin sección candidata con contenido para carril. Se reactiva cuando una seccion declare que necesita.
 
-> **Diferida del [ADR 068](../DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md): la migración a IndexedDB (antes PERF.5) ya no es tarjeta.** Su decisión, su alcance fijado (blob-en-IDB, no store por colección) y sus **dos** disparadores verificables viven en ese ADR, que reemplaza los tres del ADR 030 D4. **No re-auditar el código ante un pedido de ejecución:** la verificación está hecha y fechada allí; basta mirar si T1 o T2 cambiaron de estado. Al reabrirse nace como tarjeta nueva. Lo que sí rinde hoy salió a la luz como **PERF.9** y **PERF.10**, abajo; de PERF.10 solo queda la rebanada de tests (**PERF.10b**).
+> **Diferida del [ADR 068](../DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md): la migración a IndexedDB (antes PERF.5) ya no es tarjeta.** Su decisión, su alcance fijado (blob-en-IDB, no store por colección) y sus **dos** disparadores verificables viven en ese ADR, que reemplaza los tres del ADR 030 D4. **No re-auditar el código ante un pedido de ejecución:** la verificación está hecha y fechada allí; basta mirar si T1 o T2 cambiaron de estado. Al reabrirse nace como tarjeta nueva. Lo que sí rinde hoy salió a la luz como **PERF.9**, abajo, y **PERF.10**, cerrada completa el 2026-08-14 en dos rebanadas.
 
 #### PERF.9 - Peso serializado real del estado en el harness
 - Prioridad  : media (es la medición que hace verificable el disparador T1 del ADR 068; sin ella la cuota se sigue vigilando a ojo)
@@ -33,16 +33,6 @@
 - Archivos   : `scripts/perf/bench.perf.js` (columna nueva), `scripts/perf/seed.js` (UUID de `genId()` + `fechaCreacion` ISO), `scripts/perf/BASELINE.md` (línea base nueva; de paso faltan ahí las cifras de arranque de PERF.8, que solo viven en el CHANGELOG)
 - Depende de : nada. **Disciplina PERF obligatoria:** `pnpm perf` antes y después contra BASELINE.md
 - Modelo     : Equilibrado - Medio (harness, cero runtime de producción)
-
-#### PERF.10b - Helper único de estado para las 13 suites E2E
-- Prioridad  : baja (deuda que crece sola: la huella E2E subió ~62 % en cinco semanas sin que nadie tocara la persistencia)
-- Área       : code
-- Estado     : pendiente. Las **13 suites E2E** siembran y leen `fk_v1` a mano (197 referencias, 105 siembras, 89 lecturas de vuelta, 163 `addInitScript`/`evaluate`, **cero helper central**: no existe ni el directorio `tests/e2e/helpers/`). El lado runtime ya cerró en PERF.10a: la fachada `restaurarBlob()` / `borrarTodo()` vive en `storage.js` y los 3 call sites la usan.
-- Objetivo   : que `fk_v1` se nombre en un solo sitio del lado tests. Compuerta objetiva: `grep -rl "fk_v1" tests/e2e/` pasa de 13 archivos a 1.
-- Secciones  : Transversal (`tests/e2e/`)
-- Archivos   : `tests/e2e/helpers/estado.js` (nuevo: `sembrar`, `leerEstado`, `irA`) + las 13 suites
-- Depende de : nada. `tests/` no está en `RUTAS_RUNTIME`, así que esta rebanada no invalida el sello E2E ni toca producción
-- Modelo     : Alta capacidad - Alto (mecánico pero grande: `smoke.test.js` son 262 KB con 92 `addInitScript` inline)
 
 > **Iniciativa Dirección Visual premium** ([ADR 033](../DECISIONS/033-direccion-visual-premium.md)). DV.2a/b/c cerradas. DV.2d: infraestructura y las 8 plantillas del lote listas (2026-08-12), falta solo el arte final de Esteban.
 

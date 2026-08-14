@@ -44,14 +44,13 @@ Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (si
 
 ## Índice de pendientes
 
-Las 12 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+Las 10 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
 | INT.1g | Carril derecho de 320px desde 1.680px (diferida) | Transversal | baja (diferida) | sin sección candidata con contenido |
 | CFG.4 | Respaldo, cuentas y sincronización [DECISIÓN DE ADN] | Configuración | sin definir | ADR 043 resuelto |
 | PERF.9 | Peso serializado real del estado en el harness | Transversal | media | nada |
-| PERF.10b | Helper único de estado para las 13 suites E2E | Transversal | baja | nada |
 | DOC.4 | Automatizar la compuerta 3 en el pre-commit | Transversal | baja | nada |
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | P4 del ADR 033 + cola de diseño |
 | IV.4 | Iconografía dirigida post-color | Transversal | media | diseños de Esteban (avalancha + bola de nieve) |
@@ -86,7 +85,7 @@ CFG.4 → [`board/configuracion.md`](board/configuracion.md)
 
 ## Transversal (afecta varias secciones)
 
-INT.1g, PERF.9, PERF.10b, DOC.4, DV.2d, IV.4, PA.1b → [`board/transversal.md`](board/transversal.md)
+INT.1g, PERF.9, DOC.4, DV.2d, IV.4, PA.1b → [`board/transversal.md`](board/transversal.md)
 
 ---
 

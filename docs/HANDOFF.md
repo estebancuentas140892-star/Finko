@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-14. Última tarea cerrada: DOC.3, fichas de contexto bajo su techo y sellos vencidos re-verificados (sin código).
+> Revisado: 2026-08-14. Última tarea cerrada: PERF.10b, helper único de estado en las suites E2E (cierra PERF.10).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -14,7 +14,7 @@
 | Métrica | Valor |
 |---|---|
 | Tests unitarios + integración | 4217/4218 (2026-08-14). El único rojo es **BUG-028**, ajeno a la última tarea y verificado con `git stash` |
-| Tests E2E | 269/269 verdes, sello `14791f51971b` escrito sobre el runtime de PERF.10a. **Compuerta** desde el 2026-07-30 |
+| Tests E2E | 265/265 verdes (2026-08-14, PERF.10b). El sello `14791f51971b` sigue siendo el de PERF.10a: PERF.10b no toca runtime, así que no lo renueva. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v40 (`config.avisosPorSeccion` y `.ultimoAvisoISO`, CFG.3c; migración aditiva) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -25,20 +25,20 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**PERF.10b - helper único de estado en las 13 suites E2E (Transversal), 2026-08-14**
+Cierra **PERF.10** completa: `grep -rl "fk_v1" tests/e2e/` pasa de 13 archivos a 1. Es helper y no constante porque `addInitScript()` serializa su función al navegador y no puede cerrar sobre nada de Node: eso obligaba a teclear la clave 105 veces. Borra código: los 31 envoltorios que solo cruzaban valores al navegador desaparecen (neto -101 líneas). Sin runtime ni bump de SW.
+
 **DOC.3 - fichas de contexto bajo su techo y sellos vencidos re-verificados (Transversal), 2026-08-14**
 **El defecto no era el tamaño sino la historia duplicada:** en `inicio.md` y `calendario.md` "Cambios realizados" reproducía el CHANGELOG en párrafos; podarlo bastó, sin partirlas. `transversal.md` sí se partió en cuatro: nacen `categorias.md`, `logros.md` y `escritorio.md`. Los tres sellos se re-verificaron ancla por ancla y **dos afirmaban cifras ya falsas** (CTA de cuenta: 5 superficies, hoy 4; tejas de marca: 11 bancos, hoy 12). Ninguna ficha supera 40 KB. Sin código.
 
 **PERF.10a - fachada de `localStorage` en el runtime (Transversal), 2026-08-14**
-`fk_v1` y el motor dejan de nombrarse fuera de `modules/core/storage.js`. `restaurarBlob()` distingue JSON inválido de cupo lleno: la segunda ruta ya no se anuncia como "archivo corrupto" y sí activa la salvaguarda del [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) D2. `borrarTodo()` reemplaza los dos `localStorage.clear()` crudos. Las dos cancelan el `save()` pendiente, que podía resucitar datos borrados en el reload. **Falta PERF.10b** (helper E2E). SW v532 → v533.
+`fk_v1` y el motor dejan de nombrarse fuera de `modules/core/storage.js`. `restaurarBlob()` distingue JSON inválido de cupo lleno: la segunda ruta ya no se anuncia como "archivo corrupto" y sí activa la salvaguarda del [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) D2. `borrarTodo()` reemplaza los dos `localStorage.clear()` crudos. Las dos cancelan el `save()` pendiente, que podía resucitar datos borrados en el reload. SW v532 → v533.
 
 **ADR 068 - PERF.5 sale del tablero: la migración a IndexedDB se acota (Transversal), 2026-08-14**
 Decisión delegada por Esteban, seis revisiones en paralelo. **No se implementa y deja de ser tarjeta:** sus tres disparadores solo cambiaban de estado desde fuera del tablero, así que era inelegible por construcción. El [ADR 068](DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md) es su fuente única: fija el alcance (blob-en-IndexedDB) y deja **dos** disparadores comprobables, T1 (cuota medida) y T2 (ADR 043 resuelto como D o E, o foto de perfil aprobada). Nacen **PERF.9** y **PERF.10**. Sin código.
 
 **DOC.2 - auditoría documental transversal (Transversal), 2026-08-13**
 Seis agentes en paralelo sobre 116 Markdown, 5 skills y 66 ADR. **Tres skills tenían el frontmatter YAML roto y nunca se autoactivaban** (el sello `> Revisado:` quedó dentro del bloque `---`): corregido y verificado en runtime. `elegir-modelo` contradecía el Estándar de comunicación de `CLAUDE.md` y se reescribió. **BUGS.md bajó de 4 a 2 errores abiertos**: BUG-016 y BUG-013 estaban corregidos en el código sin darse de baja. 16 enlaces rotos en documentos vivos, ahora cero. `ARCHITECTURE.md` corregido en 14 puntos verificables contra el código. Sin cambios de código de producto.
-
-**LG.2d - mudanza de la vitrina a "Tu progreso" en Análisis + tarjeta en Inicio (Logros), 2026-08-13**
-Cierra la iniciativa "Logros v2" completa. `renderPanelLogros()` se parte en `renderProgresoAnalisis()` y `renderTarjetaProgresoInicio()`; el [ADR 022](DECISIONS/022-vitrina-de-logros-en-ajustes.md) pasa a Superada. Cero cambios en `logros/logic.js`. SW v531 → v532.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) (mes corriente) y [`docs/changelog/`](changelog/) (meses cerrados).
 
