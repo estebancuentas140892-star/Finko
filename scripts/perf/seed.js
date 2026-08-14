@@ -10,6 +10,7 @@
 
 import { createInitialState } from '../../modules/core/state.js';
 import { CATEGORIAS_GASTO_USUARIO } from '../../modules/core/constants.js';
+import { genId } from '../../modules/infra/crud.js';
 
 /**
  * PRNG determinista (mulberry32). Devuelve una función que produce floats en
@@ -88,15 +89,24 @@ export function construirEstadoGrande({ gastos = 5000, anios = 10, cuentas = 5, 
   const deudaIds = S.compromisos.filter((c) => c.tipo.startsWith('deuda')).map((c) => c.id);
 
   // Gastos repartidos en `anios`. 10 % son abonos a deuda (categoría 'Deudas').
+  // Forma real de un registro (PERF.9): los campos que `normalizarGasto()`
+  // (dominio/gastos/logic.js) siempre deja presentes, más `id`/`fechaCreacion`
+  // que agrega `infra/crud.js:guardar()`. Antes la semilla solo tenía 4 campos
+  // e `id` corto (`g-0`), subestimando el peso serializado real en ~3x.
   S.gastos = Array.from({ length: gastos }, (_, i) => {
     const esAbono = rnd() < 0.1 && deudaIds.length > 0;
     return {
-      id:       `g-${i}`,
-      monto:    entero(3_000, 400_000),
-      categoria: esAbono ? 'Deudas' : pick(CATEGORIAS_GASTO_USUARIO),
-      fecha:    fechaAleatoria(),
-      cuentaId: `cu-${entero(0, cuentas - 1)}`,
-      ...(esAbono ? { compromisoId: pick(deudaIds) } : {}),
+      monto:         entero(3_000, 400_000),
+      categoria:     esAbono ? 'Deudas' : pick(CATEGORIAS_GASTO_USUARIO),
+      fecha:         fechaAleatoria(),
+      cuentaId:      `cu-${entero(0, cuentas - 1)}`,
+      nota:          '',
+      compromisoId:  esAbono ? pick(deudaIds) : null,
+      consumoTC:     false,
+      cuotas:        null,
+      avanceTC:      false,
+      fechaCreacion: isoTs,
+      id:            genId(),
     };
   });
 

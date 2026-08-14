@@ -189,3 +189,27 @@ Verificado: 2257/2257 unit (5 tests nuevos: `formateadorFecha` + equivalencia de
 **Riesgo aceptado:** los renders reactivos pasan de síncronos a microtask. El microtask corre antes del paint, así que no hay parpadeo intermedio; lo que cambia es que un `state:change` ya no deja el DOM actualizado en la línea siguiente. Los renders directos no se tocaron justamente para que las rutas donde eso importa (navegar, arrancar) sigan siendo síncronas.
 
 **Validación:** 4066/4066 unit (8 tests nuevos de `programarRender()` en `tests/unit/render.test.js`: no pinta en el mismo tick, colapsa 12 agendas en 1, renders distintos corren todos, agendar en un tick posterior vuelve a pintar, un render que lanza no deja sin pintar a los demás, un render que agenda otro no entra en bucle, ignora lo que no es función, la cola queda vacía) + 266/266 E2E en Chromium real + `pnpm perf`. SW v523 → v524.
+
+---
+
+## PERF.9 (2026-08-14): peso serializado real del estado
+
+**Por qué.** El argumento de cuota de todo el proyecto ([ADR 030](../../docs/DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md)) descansaba en un estimado nunca medido ("~1.5-3 MB"). El [ADR 068](../../docs/DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md) midió a mano que un gasto sembrado serializaba a 95 caracteres contra ~283 de uno real (con `id` UUID y `fechaCreacion` ISO), factor 2,98x: la semilla subestimaba el peso real en el cupo declarado por casi 3 veces. Esta tarjeta convierte esa medición manual en columna del harness, para que T1 (cuota medida, D3 del ADR 068) tenga instrumento propio.
+
+**Cambio:** [seed.js](seed.js), `S.gastos` ahora replica la forma real de un registro: los campos que `normalizarGasto()` (`dominio/gastos/logic.js`) siempre deja presentes (`nota`, `compromisoId`, `consumoTC`, `cuotas`, `avanceTC`), más `id` (`genId()`, UUID vía `crypto.randomUUID()`) y `fechaCreacion` ISO que agrega `infra/crud.js:guardar()`. Antes el gasto sembrado solo tenía 4 campos e `id` corto (`g-0`).
+
+[bench.perf.js](bench.perf.js): columna nueva `caracteres` (`JSON.stringify(S).length`, el mismo string que ya medía `stringify ms`) y `% cupo` (contra `LIMITE_LOCALSTORAGE_CHARS`, importado de `storage.js`). Al final de la corrida, una extrapolación lineal (dos puntos medidos, `TAMANOS[0]` y `TAMANOS[TAMANOS.length - 1]`) reporta a qué volumen de gastos se cruza el 80 % del cupo.
+
+| gastos | caracteres | % cupo |
+|---|---|---|
+| 1.000  | 265.049   | 5,89 %  |
+| 5.000  | 1.288.767 | 28,64 % |
+| 10.000 | 2.568.242 | 57,07 % |
+
+**Resultado de la extrapolación:** ~255,9 caracteres por gasto real (consistente con el ~283 medido a mano en el ADR 068; la diferencia es que el harness incluye el ahorro de no repetir `descripcion`, casi siempre vacía en la semilla). El 80 % de `LIMITE_LOCALSTORAGE_CHARS` (4.500.000) se cruza en **~14.032 gastos**, no en los ~47.000 que sugería la semilla vieja. Es el dato que hace verificable a T1: mientras un usuario real esté por debajo de ese volumen, el aviso de cuota no debería dispararse; por encima, sí.
+
+**Traducir a años (nota aparte, no la mide el harness):** a un ritmo activo de referencia de ~300 gastos/año (~25/mes), 14.032 gastos son **~47 años** de historial; a un ritmo alto de ~1.000/año (~3/día), son **~14 años**. El harness reporta el volumen, no el tiempo: convertirlo a años exige asumir un ritmo de uso que Finko no mide (sin telemetría, ADN 3), así que cualquier cifra de "años" es una referencia orientativa, no una medición.
+
+**Lo que esto no resuelve:** `LIMITE_LOCALSTORAGE_CHARS` sigue siendo una suposición con comentario (code units vs. UTF-16 real de un navegador), tal como dejó anotado el ADR 068. Este harness mide el numerador (peso serializado), no el denominador (cupo real del navegador).
+
+Verificado: `pnpm perf` sin regresión en las demás columnas (Inicio/Análisis/Movimientos/stringify/save/arranque, dentro del ruido de medición habitual).

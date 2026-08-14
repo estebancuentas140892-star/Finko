@@ -44,7 +44,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { S, EventBus } from '../../modules/core/state.js';
-import { _flushNow, loadData, STORAGE_KEY } from '../../modules/core/storage.js';
+import { _flushNow, loadData, STORAGE_KEY, LIMITE_LOCALSTORAGE_CHARS } from '../../modules/core/storage.js';
 import { renderPanelResumen } from '../../modules/dominio/resumen/view.js';
 import { renderActividadReciente, renderMovimientosCompletos, cargarMasMovimientos } from '../../modules/dominio/movimientos/view.js';
 import { movimientosCompletos } from '../../modules/dominio/movimientos/logic.js';
@@ -102,6 +102,11 @@ describe('Rendimiento - hot paths (PERF.0 línea base, PERF.1 windowing, PERF.2 
     const filas = [];
     let nodosPrimerLote = 0;
     let totalDisponible = 0;
+    let caracteres = 0;
+    // Puntos (gastos, caracteres) para extrapolar a qué volumen se cruza el
+    // 80 % del cupo (T1 del ADR 068). Lineal: el peso por gasto es constante,
+    // solo cambian los ~2.000 caracteres fijos de las demás colecciones.
+    const puntosCuota = [];
 
     for (const n of TAMANOS) {
       // Volcar el estado grande al singleton real que leen los renders.
@@ -126,11 +131,19 @@ describe('Rendimiento - hot paths (PERF.0 línea base, PERF.1 windowing, PERF.2 
       const stringify = medir(() => JSON.stringify(S), { iteraciones: 15 });
       const save      = medir(() => _flushNow(), { iteraciones: 15 });
 
+      // Peso serializado real (PERF.9): mismo string que "stringify ms" acaba
+      // de medir, contra el cupo real de storage.js (no el "~1.5-3 MB" del
+      // ADR 030, nunca medido).
+      const serializado = JSON.stringify(S);
+      caracteres = serializado.length;
+      const pctCupo = (caracteres / LIMITE_LOCALSTORAGE_CHARS) * 100;
+      puntosCuota.push({ gastos: n, caracteres });
+
       // Arranque real (PERF.8): JSON.parse + migraciones sobre el mismo
       // payload que "stringify ms" acaba de medir, ya en localStorage bajo
       // la clave real. Es el costo que corre una sola vez al abrir la app y
       // que el D4 del ADR 030 exige medir para decidir IndexedDB.
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(S));
+      localStorage.setItem(STORAGE_KEY, serializado);
       const arranque = medir(() => loadData(), { iteraciones: 15 });
 
       renderMovimientosCompletos();
@@ -154,6 +167,8 @@ describe('Rendimiento - hot paths (PERF.0 línea base, PERF.1 windowing, PERF.2 
         'arranque ms':         fmt(arranque),
         'nodos 1er lote':      nodosPrimerLote,
         'total disponible':    totalDisponible,
+        'caracteres':          caracteres,
+        '% cupo':              `${pctCupo.toFixed(2)}%`,
       });
     }
 
@@ -164,11 +179,28 @@ describe('Rendimiento - hot paths (PERF.0 línea base, PERF.1 windowing, PERF.2 
     expect(document.getElementById('lista-movimientos').innerHTML.length).toBeGreaterThan(0);
     expect(nodosPrimerLote).toBeLessThan(200);
     expect(totalDisponible).toBeGreaterThan(TAMANOS[TAMANOS.length - 1]);
+    // Cuota (PERF.9): el peso serializado sube con el volumen, nunca al revés.
+    expect(caracteres).toBeGreaterThan(0);
 
     // eslint-disable-next-line no-console
     console.log('\nRendimiento de hot paths (ms: mediana / p95, happy-dom):');
     // eslint-disable-next-line no-console
     console.table(filas);
+
+    // Extrapolación lineal (PERF.9, T1 del ADR 068): con dos puntos medidos
+    // (caracteres crecen lineal con `gastos`, el resto del estado es fijo),
+    // a qué volumen de gastos se cruza el 80 % de LIMITE_LOCALSTORAGE_CHARS.
+    const [p1, p2] = [puntosCuota[0], puntosCuota[puntosCuota.length - 1]];
+    const charsPorGasto = (p2.caracteres - p1.caracteres) / (p2.gastos - p1.gastos);
+    const gastosBase    = p1.caracteres - charsPorGasto * p1.gastos;
+    const objetivoChars = LIMITE_LOCALSTORAGE_CHARS * 0.8;
+    const gastosEn80Pct = Math.round((objetivoChars - gastosBase) / charsPorGasto);
+    // eslint-disable-next-line no-console
+    console.log(
+      `\nExtrapolación T1 (ADR 068): ~${charsPorGasto.toFixed(1)} caracteres por gasto real. ` +
+      `El 80 % de LIMITE_LOCALSTORAGE_CHARS (${LIMITE_LOCALSTORAGE_CHARS.toLocaleString('es-CO')}) ` +
+      `se cruza en ~${gastosEn80Pct.toLocaleString('es-CO')} gastos (más el resto de colecciones).`,
+    );
   }, 120_000);
 });
 

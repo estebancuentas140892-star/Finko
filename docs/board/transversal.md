@@ -22,28 +22,18 @@
 - Depende de : INT.1e cerrada · Modelo: Equilibrado - Alto
 - Diferida 2026-08-11: sin sección candidata con contenido para carril. Se reactiva cuando una seccion declare que necesita.
 
-> **Diferida del [ADR 068](../DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md): la migración a IndexedDB (antes PERF.5) ya no es tarjeta.** Su decisión, su alcance fijado (blob-en-IDB, no store por colección) y sus **dos** disparadores verificables viven en ese ADR, que reemplaza los tres del ADR 030 D4. **No re-auditar el código ante un pedido de ejecución:** la verificación está hecha y fechada allí; basta mirar si T1 o T2 cambiaron de estado. Al reabrirse nace como tarjeta nueva. Lo que sí rinde hoy salió a la luz como **PERF.9**, abajo, y **PERF.10**, cerrada completa el 2026-08-14 en dos rebanadas.
+> **Diferida del [ADR 068](../DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md): la migración a IndexedDB (antes PERF.5) ya no es tarjeta.** Su decisión, su alcance fijado (blob-en-IDB, no store por colección) y sus **dos** disparadores verificables viven en ese ADR, que reemplaza los tres del ADR 030 D4. **No re-auditar el código ante un pedido de ejecución:** la verificación está hecha y fechada allí; basta mirar si T1 o T2 cambiaron de estado. Al reabrirse nace como tarjeta nueva. Lo que salió a la luz con ese ADR ya cerró completo: **PERF.9** (2026-08-14, columna de caracteres en el harness) y **PERF.10** (2026-08-14, dos rebanadas). T1 ya tiene instrumento: detalle en [`scripts/perf/BASELINE.md`](../../scripts/perf/BASELINE.md).
 
-#### PERF.9 - Peso serializado real del estado en el harness
-- Prioridad  : media (es la medición que hace verificable el disparador T1 del ADR 068; sin ella la cuota se sigue vigilando a ojo)
-- Área       : code
-- Estado     : pendiente. Todo el argumento de cuota del proyecto descansa en el estimado "~1.5-3 MB" del [ADR 030](../DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md), que nadie midió nunca: el harness cronometra ms, jamás caracteres. Y la semilla miente por defecto: un gasto sembrado serializa a **95** caracteres contra **~283** de uno real (con `id` UUID y `fechaCreacion` ISO), factor **2,98x**. En el cupo declarado caben ~15.900 gastos reales, no los ~47.000 que sugiere la semilla.
-- Objetivo   : columna de caracteres por volumen en el harness, con la semilla corregida a la forma real de un registro, para saber a qué volumen y en cuántos años se cruza el 80 % de `LIMITE_LOCALSTORAGE_CHARS`.
-- Secciones  : Transversal (`scripts/perf/`)
-- Archivos   : `scripts/perf/bench.perf.js` (columna nueva), `scripts/perf/seed.js` (UUID de `genId()` + `fechaCreacion` ISO), `scripts/perf/BASELINE.md` (línea base nueva; de paso faltan ahí las cifras de arranque de PERF.8, que solo viven en el CHANGELOG)
-- Depende de : nada. **Disciplina PERF obligatoria:** `pnpm perf` antes y después contra BASELINE.md
-- Modelo     : Equilibrado - Medio (harness, cero runtime de producción)
-
-> **Iniciativa Dirección Visual premium** ([ADR 033](../DECISIONS/033-direccion-visual-premium.md)). DV.2a/b/c cerradas. DV.2d: infraestructura y las 8 plantillas del lote listas (2026-08-12), falta solo el arte final de Esteban.
+> **Iniciativa Dirección Visual premium** ([ADR 033](../DECISIONS/033-direccion-visual-premium.md)). DV.2a/b/c cerradas. DV.2d: infraestructura, 8 plantillas y cableado de `emptyArt()` listos (2026-08-14), falta solo el arte final de Esteban.
 
 #### DV.2d - Ilustraciones como clase nueva de asset (D3 del ADR 033)
 - Prioridad  : media
 - Área       : design
-- Estado     : **lote completo con plantillas draft, 2026-08-12.** `scripts/sync-sprite.py` extendido a `assets/svg/ilustraciones/` (prefijo `il-`, viewBox 120x120, color solo por rol). **P4 del ADR 033 resuelto**: el lote son las 8 superficies que hoy usan `emptyArt()` geométrico (Ahorro, Apartados, Cuentas, Deudas, Inversión, Metas, Personales, Movimientos), no las "6 más visitadas" de la pregunta original del ADR (Inicio, Gastos y Calendario no tienen empty state propio: agregárselo es UX nueva, tarjeta aparte si se quiere). Las 8 tienen plantilla draft (`data-placeholder="true"`, mismo principio ADR 026 de DV.2b); `pnpm test` y `python scripts/sync-sprite.py` verificados sin regresión (15 plantillas excluidas del sprite, cero cambio en `index.html`). Falta únicamente: **cola de diseño de Esteban** (reemplazar cada draft por el arte final en Illustrator).
-- Objetivo   : spec y lote ya integrados en `assets/svg/README.md` 2.2; falta dibujar el arte final y conectar cada consumidor en `modules/infra/icons.js` (`emptyArt()`) a medida que cada pieza se reemplaza. Presupuesto de sprite ≤ ~25 KB fuente por lote; Lighthouse 100 como gate.
-- Secciones  : Transversal (sprite, `infra/icons.js` `emptyArt()`, empty states de las 8 vistas del lote)
-- Depende de : DV.2b (pipeline de decoración ya extendido, cerrada); arte final de Esteban en Illustrator (único bloqueo restante)
-- Modelo     : Equilibrado - Alto (spec + integración; el diseño es de Esteban)
+- Estado     : **solo falta el arte final de Esteban (2026-08-14).** `scripts/sync-sprite.py` extendido a `assets/svg/ilustraciones/` (prefijo `il-`, viewBox 120x120, color solo por rol). **P4 del ADR 033 resuelto**: el lote son las 8 superficies que hoy usan `emptyArt()` geométrico (Ahorro, Apartados, Cuentas, Deudas, Inversión, Metas, Personales, Movimientos), no las "6 más visitadas" de la pregunta original del ADR (Inicio, Gastos y Calendario no tienen empty state propio: agregárselo es UX nueva, tarjeta aparte si se quiere). Las 8 tienen plantilla draft (`data-placeholder="true"`, mismo principio ADR 026 de DV.2b). **Cableado del consumidor cerrado**: `emptyArt()` (`modules/infra/icons.js`) ya busca el symbol `il-<id>` y cae a la geometría mientras el placeholder siga fuera del sprite; ningún consumidor necesita tocarse pieza por pieza. `pnpm test` y `python scripts/sync-sprite.py` verificados sin regresión.
+- Objetivo   : único trabajo restante es que Esteban dibuje el arte final en Illustrator y sobrescriba cada placeholder (assets/svg/README.md 2.2); al correr el sync, `emptyArt()` la usa sola. Presupuesto de sprite ≤ ~25 KB fuente por lote; Lighthouse 100 como gate.
+- Secciones  : Transversal (sprite, empty states de las 8 vistas del lote)
+- Depende de : arte final de Esteban en Illustrator (único bloqueo restante, fuera del alcance de Code)
+- Modelo     : sin código pendiente; cola de diseño de Esteban
 
 #### IV.4 - Iconografía dirigida post-color
 - Prioridad  : decidir tras IV.2

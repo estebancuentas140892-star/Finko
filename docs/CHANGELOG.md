@@ -12,6 +12,25 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### perf(transversal): PERF.9, peso serializado real del estado en el harness · 2026-08-14
+
+El argumento de cuota de todo el proyecto ([ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md)) descansaba en un estimado nunca medido ("~1.5-3 MB"); el [ADR 068](DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md) midió a mano que la semilla del harness subestimaba el peso real de un gasto por un factor ~3x. Esta tarea convierte esa medición manual en columna del harness, dándole instrumento a **T1** (cuota medida, D3 del ADR 068). Ficha: [`contexto/transversal.md`](contexto/transversal.md). Detalle completo: [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md).
+
+- **`scripts/perf/seed.js`**: `S.gastos` ya replica la forma real de un registro (`id` UUID vía `genId()`, `fechaCreacion` ISO, más `nota`/`compromisoId`/`consumoTC`/`cuotas`/`avanceTC`, los campos que `normalizarGasto()` siempre deja presentes). Antes: 4 campos e `id` corto (`g-0`).
+- **`scripts/perf/bench.perf.js`**: columnas nuevas `caracteres` (`JSON.stringify(S).length`) y `% cupo` (contra `LIMITE_LOCALSTORAGE_CHARS`, importado de `storage.js`). Al final de la corrida, extrapolación lineal de dos puntos medidos reporta a qué volumen se cruza el 80 % del cupo.
+- **Resultado:** ~255,9 caracteres por gasto real (consistente con el ~283 medido a mano en el ADR 068). El 80 % del cupo se cruza en **~14.032 gastos**, no en los ~47.000 que sugería la semilla vieja.
+- **Fuera de alcance, anotado a propósito:** traducir el volumen a años exige asumir un ritmo de uso que Finko no mide (sin telemetría, ADN 3); el harness reporta el numerador (peso serializado), no el denominador (cupo real del navegador, que sigue siendo una suposición con comentario).
+- Sin runtime: sin bump de SW, sin tests unitarios nuevos que correr (solo `pnpm perf`, sin regresión en las demás columnas). Compuertas: guion largo verde; E2E no aplica (el cambio no toca `index.html`/`modules`/`styles`/`service-worker.js`).
+
+### feat(transversal): DV.2d, cableado de emptyArt() al symbol il-* del sprite · 2026-08-14
+
+`modules/infra/icons.js` (`emptyArt()`) ya busca el `<symbol id="il-<dominio>">` del sprite antes de componer la ilustración geométrica actual; sigue cayendo a esa composición mientras el placeholder del dominio siga fuera del sprite (`data-placeholder="true"`, DV.2d del 2026-08-12). Ficha: [`contexto/sistema-visual.md`](contexto/sistema-visual.md).
+
+- **Sin tocar ninguna vista consumidora**: las 8 llamadas a `emptyArt('dominio')` (Ahorro, Apartados, Cuentas, Deudas, Inversión, Metas, Personales, Movimientos) no cambian; el switch entre ilustración final y geométrica es interno a `emptyArt()`.
+- **Auto-conecta sin código nuevo por pieza**: el día que Esteban reemplace un draft por el arte final y corra `sync-sprite.py`, el symbol aparece en `index.html` y `emptyArt()` lo usa solo, sin volver a tocar `icons.js`.
+- Único bloqueo restante en DV.2d: el arte final de Esteban en Illustrator (sin cambio, ver ficha).
+- Compuertas: unitarios (4236/4237, el rojo es BUG-028 ajeno, verificado con `git stash`), lint, guion largo y E2E verdes. SW v534 → v535.
+
 ### chore(transversal): DOC.4, la compuerta 3 pasa de manual a automatica en el pre-commit · 2026-08-14
 
 `.githooks/pre-commit` ya bloqueaba el commit sin sello E2E (compuerta 5); la compuerta 3 (guion largo/medio, U+2014 y U+2013) seguia siendo manual y dependia de que quien cierra se acordara de correrla. Mismo patron, aplicado a un chequeo sin dependencias nuevas.
