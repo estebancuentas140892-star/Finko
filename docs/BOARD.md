@@ -54,7 +54,6 @@ Las 10 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | DOC.4 | Automatizar la compuerta 3 en el pre-commit | Transversal | baja | nada |
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | P4 del ADR 033 + cola de diseño |
 | IV.4 | Iconografía dirigida post-color | Transversal | media | diseños de Esteban (avalancha + bola de nieve) |
-| PA.1b | Crédito automático del ingreso fijo | Transversal | media-alta | ADR 052 D4 (Aceptada); PA.1a cerrada |
 | A.5 | Dominio custom en Vercel | Mantenimiento | baja | que el usuario tenga el dominio registrado |
 | E.2-2027 | Actualizar SMMLV + UVT a valores 2027 | Mantenimiento | alta (enero 2027) | publicación oficial de los decretos 2027 |
 | E.3 | Verificar GMF y otras tasas si hay reforma tributaria | Mantenimiento | baja | que ocurra una reforma |
@@ -85,7 +84,7 @@ CFG.4 → [`board/configuracion.md`](board/configuracion.md)
 
 ## Transversal (afecta varias secciones)
 
-INT.1g, PERF.9, DOC.4, DV.2d, IV.4, PA.1b → [`board/transversal.md`](board/transversal.md)
+INT.1g, PERF.9, DOC.4, DV.2d, IV.4 → [`board/transversal.md`](board/transversal.md)
 
 ---
 

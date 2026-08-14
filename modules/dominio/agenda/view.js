@@ -440,15 +440,20 @@ function _fechaCorta(iso) {
 
 /**
  * Subtítulo de una fila de la hoja de pagos automáticos: la fecha real del
- * débito y, cuando la fila está bloqueada, por qué no se puede confirmar.
+ * movimiento y, cuando la fila está bloqueada, por qué no se puede confirmar.
+ * PA.1b: un crédito (`tipo === 'ingreso'`) no tiene bloqueo por saldo, solo
+ * por cuenta, y su verbo es "llegar" en vez de "salir".
  *
- * @param {{fecha:string, cuentaNombre:string|null, bloqueo:string|null, falta:number}} it
+ * @param {{tipo:string, fecha:string, cuentaNombre:string|null, bloqueo:string|null, falta:number}} it
  * @returns {string}
  */
 function _subFilaAutomatico(it) {
-  const cuando = `Venció el ${_fechaCorta(it.fecha)}`;
+  const esCredito = it.tipo === 'ingreso';
+  const cuando = `${esCredito ? 'Debía llegar el' : 'Venció el'} ${_fechaCorta(it.fecha)}`;
   if (it.bloqueo === 'cuenta') {
-    return `${cuando} &middot; sin cuenta asignada: edítalo y elige de cuál sale`;
+    return esCredito
+      ? `${cuando} &middot; sin cuenta asignada: edítalo y elige a cuál llega`
+      : `${cuando} &middot; sin cuenta asignada: edítalo y elige de cuál sale`;
   }
   if (it.bloqueo === 'saldo') {
     return `${cuando} &middot; a ${_esc(it.cuentaNombre ?? 'la cuenta')} le faltan ${f(it.falta)}`;
@@ -457,18 +462,20 @@ function _subFilaAutomatico(it) {
 }
 
 /**
- * Cuerpo de la hoja "Pagos automáticos" (PA.1a, ADR 052 D1 y D2): lo que el
- * banco debitó solo mientras la app estaba cerrada, listo para confirmar.
+ * Cuerpo de la hoja "Pagos automáticos" (PA.1a débitos + PA.1b créditos, ADR
+ * 052 D1-D3): lo que el banco movió solo mientras la app estaba cerrada,
+ * listo para confirmar.
  *
  * Reusa el lenguaje visual del pago en lote (`lote-*`): es la misma operación
- * vista desde el otro lado, y darle un componente propio sería vocabulario
+ * vista desde los dos lados, y darle un componente propio sería vocabulario
  * nuevo sin nada nuevo que decir. La diferencia real está en el intro (acá el
- * usuario no eligió pagar: viene a revisar lo que ya pasó) y en la fila
- * bloqueada, que explica qué falta en vez de dejar registrar a ciegas.
+ * usuario no eligió el movimiento: viene a revisar lo que ya pasó), en la fila
+ * bloqueada (explica qué falta en vez de dejar registrar a ciegas) y en el
+ * signo del monto (`+` para un crédito, PA.1b).
  *
  * Las filas bloqueadas van desmarcadas y deshabilitadas, nunca ocultas: el
- * usuario tiene que enterarse de que ese débito no se pudo cubrir (esa es la
- * alerta accionable que pedía el brief), no descubrirlo por ausencia.
+ * usuario tiene que enterarse de que ese movimiento no se pudo cubrir (esa es
+ * la alerta accionable que pedía el brief), no descubrirlo por ausencia.
  *
  * @param {Array<{id:string, descripcion:string, monto:number, fecha:string,
  *   tipo:string, cuentaNombre:string|null, bloqueo:string|null, falta:number}>} items
@@ -486,17 +493,17 @@ export function renderFormAutomaticos(items) {
         <span class="lote-row__name">${_esc(it.descripcion || 'Sin nombre')}</span>
         <span class="lote-row__sub">${_subFilaAutomatico(it)}</span>
       </span>
-      <span class="lote-row__amount">${f(Number(it.monto) || 0)}</span>
+      <span class="lote-row__amount">${it.tipo === 'ingreso' ? '+' : ''}${f(Number(it.monto) || 0)}</span>
     </label>`).join('');
 
   const bloqueadas = lista.filter(it => it.bloqueo).length;
   const aviso = bloqueadas === 0 ? '' : `
     <p class="form-hint form-hint--danger">${bloqueadas === 1
-      ? 'Uno de estos débitos no se puede registrar todavía. La fila dice qué falta.'
-      : `${bloqueadas} de estos débitos no se pueden registrar todavía. Cada fila dice qué falta.`}</p>`;
+      ? 'Uno de estos movimientos no se puede registrar todavía. La fila dice qué falta.'
+      : `${bloqueadas} de estos movimientos no se pueden registrar todavía. Cada fila dice qué falta.`}</p>`;
 
   return `
-    <p class="lote-intro">Estos pagos se descuentan solos de tus cuentas y ya vencieron. Confírmalos para registrarlos con su fecha real, o desmarca los que tu banco no haya cobrado.</p>
+    <p class="lote-intro">Estos movimientos entran o salen solos de tus cuentas y ya vencieron. Confírmalos para registrarlos con su fecha real, o desmarca los que tu banco no haya movido.</p>
     <div class="lote-lista">${filas}</div>
     ${aviso}
     <p class="lote-total" data-role="auto-total" aria-live="polite"></p>
@@ -504,7 +511,7 @@ export function renderFormAutomaticos(items) {
       <button type="button" class="btn btn-ghost" data-action="modal-close">Ahora no</button>
       <button type="button" class="btn btn-primary" data-action="agenda-confirmar-automaticos">
         <svg class="icon" aria-hidden="true"><use href="#i-check-circle"/></svg>
-        <span data-role="auto-cta-texto">Confirmar pagos</span>
+        <span data-role="auto-cta-texto">Confirmar movimientos</span>
       </button>
     </div>`;
 }

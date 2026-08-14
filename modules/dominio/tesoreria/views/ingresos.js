@@ -159,7 +159,8 @@ function _renderGrupoCuentaIngreso(ingreso) {
         <span class="label">¿Dónde recibes este dinero?</span>
         <p class="form-hint form-hint--muted">Lo recibes en <strong>${_esc(c.nombre)}</strong>, tu única cuenta activa.</p>
         <input type="hidden" name="cuentaId" value="${_esc(c.id)}" />
-      </div>`;
+      </div>
+      ${_renderToggleCreditoAutomatico(ingreso)}`;
   }
 
   return `
@@ -168,7 +169,34 @@ function _renderGrupoCuentaIngreso(ingreso) {
       selectedId:     ingreso?.cuentaId ?? null,
       preseleccionar: false,
     })}
-    <p class="form-hint form-hint--muted">Opcional. Si lo indicas, al distribuir tu ingreso Finko parte de esa cuenta.</p>`;
+    <p class="form-hint form-hint--muted">Opcional. Si lo indicas, al distribuir tu ingreso Finko parte de esa cuenta.</p>
+    ${_renderToggleCreditoAutomatico(ingreso)}`;
+}
+
+/**
+ * Toggle "Se abona automáticamente" (PA.1b, ADR 052 D2/D3): el mismo criterio
+ * de confirmación que el débito automático de Compromisos (PA.1a), visto desde
+ * el otro lado. No trae selector de cuenta propio porque `Ingreso.cuentaId` ya
+ * lo resuelve arriba (0/1/varias): agregar uno segundo sería un dato duplicado
+ * que podría discrepar del ya elegido.
+ *
+ * @param {import('../../../core/state.js').Ingreso|null} ingreso
+ * @returns {string}
+ */
+function _renderToggleCreditoAutomatico(ingreso) {
+  return `
+      <div class="form-group">
+        <label class="toggle-row">
+          <span class="toggle">
+            <input type="checkbox" id="ingreso-credito-auto" name="creditoAutomatico"${ingreso?.creditoAutomatico ? ' checked' : ''} />
+            <span class="toggle__track" aria-hidden="true"></span>
+          </span>
+          <span class="toggle-row__text">
+            <span class="toggle-row__label">Se abona automáticamente a esta cuenta</span>
+            <span class="toggle-row__hint">Actívalo si tu banco te lo deposita solo cada vez que llega. Finko no lo registra por su cuenta: al abrir la app te lo deja listo y tú lo confirmas de un toque.</span>
+          </span>
+        </label>
+      </div>`;
 }
 
 /**

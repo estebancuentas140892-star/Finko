@@ -1932,6 +1932,43 @@ describe('validarIngreso() categoria', () => {
   });
 });
 
+// ── validarIngreso() / normalizarIngreso() - crédito automático (PA.1b) ──
+
+describe('validarIngreso() - crédito automático (PA.1b, ADR 052 D2)', () => {
+  const base = { descripcion: 'Salario', monto: '3500000', frecuencia: 'Mensual' };
+
+  it('creditoAutomatico sin cuentaId → error', () => {
+    const errores = validarIngreso({ ...base, creditoAutomatico: 'on' });
+    expect(errores).toContain('Elige la cuenta a la que llega el abono automático.');
+  });
+
+  it('creditoAutomatico con cuentaId → sin error', () => {
+    expect(validarIngreso({ ...base, creditoAutomatico: 'on', cuentaId: 'c1' })).toEqual([]);
+  });
+
+  it('sin creditoAutomatico, sin cuentaId → sin error (no aplica la regla)', () => {
+    expect(validarIngreso(base)).toEqual([]);
+  });
+
+  it('creditoAutomatico true (booleano) sin cuentaId → error', () => {
+    const errores = validarIngreso({ ...base, creditoAutomatico: true });
+    expect(errores).toContain('Elige la cuenta a la que llega el abono automático.');
+  });
+});
+
+describe('normalizarIngreso() - crédito automático (PA.1b)', () => {
+  it('creditoAutomatico "on" → true', () => {
+    const r = normalizarIngreso({ descripcion: 'x', monto: '1', frecuencia: 'Mensual', creditoAutomatico: 'on', cuentaId: 'c1' });
+    expect(r.creditoAutomatico).toBe(true);
+  });
+
+  it('sin creditoAutomatico → false explícito, no ausente', () => {
+    const r = normalizarIngreso({ descripcion: 'x', monto: '1', frecuencia: 'Mensual' });
+    expect(r.creditoAutomatico).toBe(false);
+    expect('creditoAutomatico' in r).toBe(true);
+  });
+});
+
 // ── validarIngresoPuntual() (NAV.A1) ────────────────────────────────
 
 describe('validarIngresoPuntual()', () => {

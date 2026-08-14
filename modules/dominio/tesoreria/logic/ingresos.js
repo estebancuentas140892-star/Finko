@@ -16,6 +16,20 @@ import { FRECUENCIAS_DATABLES, ultimoVencimientoHasta } from '../../../infra/ven
 // Compartida con logic/distribucion.js.
 export const FACTOR_MENSUAL = FACTOR_MENSUAL_INGRESO;
 
+/**
+ * PA.1b (ADR 052 D2/D3): lee la marca de crédito automático tal como puede
+ * llegar, del `FormData` de un formulario ('on'/ausente) o de un ingreso ya
+ * guardado (true/ausente). Mismo contrato que `esDebitoAutomatico` de
+ * Compromisos (no se importa de ahí, ADN #10: cada dominio guarda su propia
+ * copia de una función de una línea).
+ *
+ * @param {{ creditoAutomatico?: string|boolean }} datos
+ * @returns {boolean}
+ */
+export function esCreditoAutomatico(datos) {
+  return datos?.creditoAutomatico === true || datos?.creditoAutomatico === 'on';
+}
+
 // ── PRIMA DE SERVICIOS - recordatorio (G.3.F9) ──────────────────
 
 /**
@@ -248,6 +262,11 @@ export function validarIngreso(datos) {
         : 'El día de pago debe estar entre 1 y 31.');
     }
   }
+  // PA.1b (ADR 052 D2): sin cuenta no hay a dónde abonar el crédito automático,
+  // y elegirla por el usuario sería inventar dónde le cae su dinero.
+  if (esCreditoAutomatico(datos) && !datos.cuentaId?.trim()) {
+    errores.push('Elige la cuenta a la que llega el abono automático.');
+  }
   return errores;
 }
 
@@ -272,6 +291,11 @@ export function normalizarIngreso(datos) {
     ? datos.categoria
     : null;
   const cuentaId = typeof datos.cuentaId === 'string' ? datos.cuentaId.trim() : '';
+  // PA.1b (ADR 052 D2): a diferencia de `cuentaId`, `creditoAutomatico` va
+  // siempre explícito (true/false, nunca ausente), mismo criterio que
+  // `debitoAutomatico` en Compromisos: `editar()` (Object.assign shallow) debe
+  // poder escribir el `false` cuando el usuario apaga el toggle, no dejarlo
+  // huérfano con el valor anterior.
   return {
     descripcion: datos.descripcion.trim(),
     monto:       Number(datos.monto),
@@ -279,6 +303,7 @@ export function normalizarIngreso(datos) {
     categoria,
     activo:      true,
     diaPago,
+    creditoAutomatico: esCreditoAutomatico(datos),
     ...(cuentaId ? { cuentaId } : {}),
   };
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { eventosDelMes, eventosIngresosDelMes, eventosMetasDelMes, totalEventosDelMes, totalDia, eventosDeHoy, eventosEnProximos, tiposPresentesEnMes, totalesDelMes, pendientesDePagoDelMes, debitosAutomaticosVencidos } from '../../modules/dominio/agenda/logic.js';
+import { eventosDelMes, eventosIngresosDelMes, eventosMetasDelMes, totalEventosDelMes, totalDia, eventosDeHoy, eventosEnProximos, tiposPresentesEnMes, totalesDelMes, pendientesDePagoDelMes, debitosAutomaticosVencidos, pendientesDeCreditoDelMes, creditosAutomaticosVencidos } from '../../modules/dominio/agenda/logic.js';
 import { renderFormGastoFijo, renderFormPagoLote, renderFormAutomaticos, textoBannerGastoFijo, renderAgenda, mostrarDia, navegarMes, resetearVistaAlMesActual, marcarEntradaSeccion, resumenMesVisible, diaSeleccionado } from '../../modules/dominio/agenda/view.js';
 import { S } from '../../modules/core/state.js';
 import { CATEGORIAS_AGENDA, CATEGORIA_AGENDA_ICONO } from '../../modules/core/constants.js';
@@ -13,6 +13,16 @@ const compromisoBase = (overrides = {}) => ({
   frecuencia:  'Mensual',
   diaPago:     5,
   tipo:        'fijo',
+  activo:      true,
+  ...overrides,
+});
+
+const ingresoAutoBase = (overrides = {}) => ({
+  id:          'i1',
+  descripcion: 'Salario',
+  monto:       3_000_000,
+  frecuencia:  'Mensual',
+  diaPago:     5,
   activo:      true,
   ...overrides,
 });
@@ -2446,6 +2456,75 @@ describe('debitosAutomaticosVencidos (PA.1a)', () => {
   });
 });
 
+describe('creditosAutomaticosVencidos (PA.1b)', () => {
+  const auto = (overrides = {}) => ingresoAutoBase({
+    creditoAutomatico: true,
+    cuentaId:          'cta1',
+    ...overrides,
+  });
+
+  it('devuelve [] sin hoyISO válido o sin lista', () => {
+    expect(creditosAutomaticosVencidos([auto()], [], '')).toEqual([]);
+    expect(creditosAutomaticosVencidos(null, [], '2026-08-20')).toEqual([]);
+  });
+
+  it('ignora los ingresos sin la marca y los inactivos', () => {
+    const lista = [
+      ingresoAutoBase({ id: 'manual' }),
+      auto({ id: 'apagado', creditoAutomatico: false }),
+      auto({ id: 'inactivo', activo: false }),
+    ];
+    expect(creditosAutomaticosVencidos(lista, [], '2026-08-20')).toEqual([]);
+  });
+
+  it('trae el vencido del mes en curso con su fecha real y su cuenta', () => {
+    const r = creditosAutomaticosVencidos([auto()], [], '2026-08-20', 0);
+    expect(r).toHaveLength(1);
+    expect(r[0]).toMatchObject({
+      id: 'i1', monto: 3_000_000, fecha: '2026-08-05', cuentaId: 'cta1', tipo: 'ingreso',
+    });
+  });
+
+  it('no trae lo que aún no vence en el mes en curso', () => {
+    expect(creditosAutomaticosVencidos([auto({ diaPago: 25 })], [], '2026-08-20', 0)).toEqual([]);
+  });
+
+  it('no trae lo que ya está registrado ese mes', () => {
+    const ingresosPuntuales = [{ ingresoId: 'i1', fecha: '2026-08-05', monto: 3_000_000 }];
+    expect(creditosAutomaticosVencidos([auto()], ingresosPuntuales, '2026-08-20', 0)).toEqual([]);
+  });
+
+  it('mira el mes anterior por defecto y lo pone primero', () => {
+    const r = creditosAutomaticosVencidos([auto()], [], '2026-08-20');
+    expect(r).toEqual(creditosAutomaticosVencidos([auto()], [], '2026-08-20', 1));
+    expect(r.map(x => x.fecha)).toEqual(['2026-07-05', '2026-08-05']);
+  });
+
+  it('sin cuenta asignada igual aparece, con cuentaId null', () => {
+    const r = creditosAutomaticosVencidos([auto({ cuentaId: null })], [], '2026-08-20', 0);
+    expect(r[0].cuentaId).toBeNull();
+  });
+});
+
+describe('pendientesDeCreditoDelMes (PA.1b)', () => {
+  it('devuelve [] sin eventos, sin prefijoMes o sin hoyISO válidos', () => {
+    expect(pendientesDeCreditoDelMes(null, [], '2026-08', '2026-08-20')).toEqual([]);
+    expect(pendientesDeCreditoDelMes({}, [], '', '2026-08-20')).toEqual([]);
+    expect(pendientesDeCreditoDelMes({}, [], '2026-08', '')).toEqual([]);
+  });
+
+  it('no trae nada de un mes futuro', () => {
+    const eventos = eventosIngresosDelMes([ingresoAutoBase()], 2026, 8);
+    expect(pendientesDeCreditoDelMes(eventos, [], '2026-09', '2026-08-20')).toEqual([]);
+  });
+
+  it('un ingreso ya cobrado ese mes no vuelve a aparecer', () => {
+    const eventos = eventosIngresosDelMes([ingresoAutoBase()], 2026, 7);
+    const ingresosPuntuales = [{ ingresoId: 'i1', fecha: '2026-08-05', monto: 3_000_000 }];
+    expect(pendientesDeCreditoDelMes(eventos, ingresosPuntuales, '2026-08', '2026-08-20')).toEqual([]);
+  });
+});
+
 describe('renderFormAutomaticos (PA.1a)', () => {
   const item = (overrides = {}) => ({
     id: 'c1', descripcion: 'Arriendo', monto: 900_000, fecha: '2026-08-05',
@@ -2491,5 +2570,31 @@ describe('renderFormAutomaticos (PA.1a)', () => {
     expect(document.querySelector('[data-action="agenda-confirmar-automaticos"]')).not.toBeNull();
     expect(document.querySelector('[data-role="auto-cta-texto"]')).not.toBeNull();
     expect(document.querySelector('[data-role="auto-total"]')).not.toBeNull();
+  });
+});
+
+describe('renderFormAutomaticos - créditos (PA.1b)', () => {
+  const credito = (overrides = {}) => ({
+    id: 'i1', descripcion: 'Salario', monto: 3_000_000, fecha: '2026-08-05',
+    tipo: 'ingreso', cuentaNombre: 'Ahorros', bloqueo: null, falta: 0,
+    ...overrides,
+  });
+
+  it('pinta una fila de crédito con signo + y su fecha de llegada', () => {
+    document.body.innerHTML = renderFormAutomaticos([credito()]);
+    expect(document.querySelector('.lote-row__amount').textContent).toBe('+$3.000.000');
+    expect(document.querySelector('.lote-row__sub').textContent).toBe('Debía llegar el 5 de agosto · Ahorros');
+  });
+
+  it('la fila de crédito sin cuenta explica que hay que elegir a cuál llega', () => {
+    document.body.innerHTML = renderFormAutomaticos([credito({ bloqueo: 'cuenta', cuentaNombre: null })]);
+    expect(document.querySelector('.lote-row__sub').textContent).toContain('elige a cuál llega');
+  });
+
+  it('un débito y un crédito conviven en la misma hoja', () => {
+    const debito = { id: 'c1', descripcion: 'Arriendo', monto: 900_000, fecha: '2026-08-05', tipo: 'fijo', cuentaNombre: 'Ahorros', bloqueo: null, falta: 0 };
+    document.body.innerHTML = renderFormAutomaticos([debito, credito()]);
+    const montos = [...document.querySelectorAll('.lote-row__amount')].map(el => el.textContent);
+    expect(montos).toEqual(['$900.000', '+$3.000.000']);
   });
 });

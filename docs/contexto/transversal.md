@@ -130,7 +130,7 @@
 | `prestamo-vencido`, `prestamo-proximo` | `estadoPrestamo` | `dominio/personales/logic.js` |
 | `dia-de-pago` | `ocurrenciasEnMes` sobre los ingresos activos | `infra/vencimientos.js` |
 
-**Dependencias y relaciones**: `infra/avisos.js` importa cinco `logic.js` de dominios, solo lectura y nunca un `index.js`/`view.js` ([ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md)); el precedente ya existía en `infra/notificaciones.js`. Es puro: no lee `S`, no toca el DOM, la fecha entra como `hoyISO`. Quien lee `S` es `verificarYNotificar()`, que le pasa las seis colecciones. Desbloquea **PA.1c** (aviso de débito sin saldo, [ADR 052](../DECISIONS/052-pagos-automaticos.md)) y los recordatorios de préstamos del [ADR 047](../DECISIONS/047-me-deben-v2-intereses-e-historial.md): entran como una fuente más de la tabla de arriba.
+**Dependencias y relaciones**: `infra/avisos.js` importa cinco `logic.js` de dominios, solo lectura y nunca un `index.js`/`view.js` ([ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md)); el precedente ya existía en `infra/notificaciones.js`. Es puro: no lee `S`, no toca el DOM, la fecha entra como `hoyISO`. Quien lee `S` es `verificarYNotificar()`, que le pasa las seis colecciones. Desbloquea **PA.1c** (aviso de débito sin saldo o crédito sin cuenta, [ADR 052](../DECISIONS/052-pagos-automaticos.md); PA.1a y PA.1b ya cerradas) y los recordatorios de préstamos del [ADR 047](../DECISIONS/047-me-deben-v2-intereses-e-historial.md): entran como una fuente más de la tabla de arriba.
 
 **Riesgos**:
 

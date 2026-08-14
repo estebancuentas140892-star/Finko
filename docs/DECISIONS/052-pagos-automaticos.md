@@ -1,6 +1,6 @@
 # ADR 052 - Pagos y créditos automáticos (débito automático simulado)
 
-**Estado:** **Aceptada** (2026-08-13). D1 y D2 resueltas; ver también D4, que fija el alcance de la primera rebanada. Tarjeta de seguimiento: **PA.1** en [BOARD.md](../BOARD.md).
+**Estado:** **Aceptada** (2026-08-13). D1 y D2 resueltas; D4 fijó el alcance por rebanada. **PA.1a y PA.1b cerradas** (2026-08-13 y 2026-08-14): débito y crédito automático en producción, misma hoja. Queda **PA.1c**, opcional y sin tarjeta.
 **Fecha:** 2026-07-24. **Resuelta:** 2026-08-13.
 **Autores:** Esteban (producto, brief "Integración Deudas/Cuentas/Pagos automáticos" y brief de Mis Cuentas, ambos del 2026-07-08; delega la decisión de D1 y D2 el 2026-08-13), Claude Opus 5 (triaje, redacción y decisión delegada)
 **Relación:** consume el motor de vencimientos del [ADR 041](041-motor-vencimientos-y-distribucion-v2.md); no se construye un segundo motor. Sus alertas se conectarían al motor único de notificaciones de CFG.3 cuando exista. La restricción de fondo es la ADN 2 y 3 (offline-first, sin servidor).
@@ -97,5 +97,5 @@ El mismo ADR cubre el **crédito automático del ingreso fijo** que pide el brie
 ## Rebanadas
 
 1. **PA.1a** (cerrada 2026-08-13): débito automático de compromisos. Campos `debitoAutomatico` y `cuentaDebitoId` en `Compromiso` (schema v39), captura en el formulario de gasto fijo y en el de deuda, detección de vencidos en `agenda/logic.js`, hoja de confirmación al abrir y registro con la fecha real del vencimiento.
-2. **PA.1b**: crédito automático del ingreso fijo, sobre la misma hoja y el mismo criterio de D2.
-3. **PA.1c** (opcional, depende de CFG.3): llevar el aviso de "sin saldo" al motor único de notificaciones cuando exista.
+2. **PA.1b** (cerrada 2026-08-14): crédito automático del ingreso fijo, sobre la misma hoja y el mismo criterio de D2. Reusa `Ingreso.cuentaId` (MC.13d) como destino en vez de una FK nueva; campo `creditoAutomatico` en `Ingreso` y `ingresoId` en `IngresoPuntual` (schema v41), espejo de `Gasto.compromisoId`. Sin cascada de saldo del lado del crédito: abonar dinero nunca "no alcanza", así que su único bloqueo es la cuenta.
+3. **PA.1c** (opcional, sin tarjeta): llevar el aviso de "sin cuenta"/"sin saldo" al motor único de notificaciones. CFG.3 ya cerró, así que la dependencia está resuelta; se re-expande a tarjeta si Esteban la retoma.

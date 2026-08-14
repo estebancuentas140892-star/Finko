@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(agenda): PA.1b, crédito automático del ingreso fijo sobre la misma hoja de PA.1a · 2026-08-14
+
+Cierra la iniciativa **PA.1** completa ([ADR 052](DECISIONS/052-pagos-automaticos.md) D1-D4). El ingreso fijo que el banco abona solo se marca con un toggle nuevo y, al abrir la app, la hoja `#modal-automaticos` (la misma de PA.1a) lo lista junto a los débitos, con signo `+` y su fecha real, listo para confirmar de un toque. Ficha: [`contexto/calendario.md`](contexto/calendario.md).
+
+- **La pregunta propia de esta rebanada** (qué colección recibe el abono recurrente) se resolvió reusando `Ingreso.cuentaId` (MC.13d) como destino en vez de crear una FK nueva: menos vocabulario, mismo dato que ya usa el asistente de distribución. Campo nuevo `Ingreso.creditoAutomatico` (booleano, siempre explícito) y `IngresoPuntual.ingresoId` (espejo de `Gasto.compromisoId`, ADR 002) para no cobrar el mismo mes dos veces. Schema v40 → v41, migración no-op.
+- **Sin cascada de saldo del lado del crédito**: a diferencia del débito, abonar dinero nunca "no alcanza", así que `_creditosPendientes()` solo bloquea por cuenta ausente o inactiva, nunca por saldo.
+- **Funciones nuevas en `agenda/logic.js`**: `creditosAutomaticosVencidos()` y `pendientesDeCreditoDelMes()`, espejo de `debitosAutomaticosVencidos()`/`pendientesDePagoDelMes()` sin el concepto de deuda ni abono parcial (un ingreso fijo se cobra completo o no se cobra).
+- **Registro**: `infra/credito-ingreso.js` (`ingresoPuntualDeCreditoAutomatico()`) espeja `infra/pago-compromiso.js`; `agenda/index.js` acumula el abono por cuenta y lo aplica una sola vez, mismo criterio de batching que el débito.
+- **La hoja combina las dos direcciones** sin campo de dirección aparte: se distinguen por `tipo === 'ingreso'` (crédito) vs. cualquier otro valor (débito). Wording generalizado ("Movimientos automáticos" en vez de "Pagos automáticos") donde antes solo hablaba de pagos.
+- Compuertas: unitarios (4236/4237, el rojo es BUG-028 ajeno), lint, guion largo y E2E verdes. SW v533 → v534.
+
 ### docs(contexto): DOC.3, las fichas vuelven bajo su techo y los tres sellos vencidos se re-verifican · 2026-08-14
 
 Lo que midió la auditoría DOC.2 y dejó fuera a propósito. `contexto/transversal.md` (66 KB) e `inicio.md` (49 KB) rompían el techo de 40 KB, y tres bloques decían "Verificado contra" un commit de hace más de un mes. Fichas nuevas: [`categorias.md`](contexto/categorias.md), [`logros.md`](contexto/logros.md) y [`escritorio.md`](contexto/escritorio.md). **Sin cambios de código de producto.**

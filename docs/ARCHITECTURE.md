@@ -85,6 +85,7 @@ Utilidades transversales sin dependencias de dominio.
 | `avisos.js` | Motor único de avisos: arma la lista y la filtra por preferencia de sección ([ADR 066](DECISIONS/066-motor-unico-de-avisos.md)) |
 | `vencimientos.js` | Motor compartido de vencimientos: ocurrencias de una obligación o ingreso según su periodicidad ([ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md)) |
 | `pago-compromiso.js` | Registrar el pago o abono de un compromiso, un solo camino para todas las superficies (ARQ.2) |
+| `credito-ingreso.js` | Registrar el cobro de un crédito automático de ingreso fijo, espejo de `pago-compromiso.js` desde el otro lado (PA.1b, ADR 052) |
 | `sugerencias-categoria.js` | Motor único de sugerencia por categoría ([ADR 044](DECISIONS/044-motor-unico-de-sugerencia-por-categoria.md)) |
 | `memo.js` | Memoización de derivaciones puras costosas, invalidada por `state:change` (PERF.2) |
 | `marcas.js` | Resolución de identidad de marca desde texto libre ([ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md) D4) |

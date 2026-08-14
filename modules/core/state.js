@@ -74,7 +74,17 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  *                                          cuentas): el asistente cae al patrón
  *                                          de cuenta única / pregunta, como antes.
  *                                          Es solo un dato: NO implica que Finko
- *                                          abone el dinero solo (eso es PA.1).
+ *                                          abone el dinero solo (eso lo marca
+ *                                          `creditoAutomatico`, PA.1b).
+ * @property {boolean}     [creditoAutomatico] PA.1b (ADR 052 D2/D3). true cuando el
+ *                                          banco abona este ingreso solo. Finko NO
+ *                                          lo registra por su cuenta: al abrir, la
+ *                                          hoja de pagos automáticos (misma de
+ *                                          PA.1a) lo deja listo y el usuario lo
+ *                                          confirma de un toque. Solo tiene sentido
+ *                                          junto a `cuentaId`; sin ella la hoja
+ *                                          muestra la fila bloqueada en vez de
+ *                                          adivinar una cuenta (ADN 11).
  */
 
 /**
@@ -100,6 +110,11 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  * @property {string}      cuentaId        FK a Cuenta.id: cuenta que recibió el dinero.
  * @property {string}      fecha           ISO 8601 (YYYY-MM-DD): día en que se recibió.
  * @property {string}      fechaCreacion   ISO 8601 timestamp.
+ * @property {string}      [ingresoId]     Opcional (PA.1b). FK a Ingreso.id: marca este
+ *                                          ingreso puntual como el crédito automático de
+ *                                          un ingreso fijo, mismo criterio que
+ *                                          `Gasto.compromisoId` (ADR 002). Ausente = entrada
+ *                                          manual, la mayoría hoy.
  */
 
 /**

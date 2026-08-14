@@ -86,40 +86,44 @@ Lo que **DIS.11 dejó abierto**, con su medición: (1) **el alto del formulario 
 
 ---
 
-## Pagos automáticos: débito automático simulado (dominio `agenda`)
+## Pagos automáticos: débito y crédito automático simulados (dominio `agenda`)
 
-- **Objetivo**          : el compromiso que el banco debita solo (suscripción, cuota) se marca como tal, y al abrir la app Finko muestra lo que ya venció listo para confirmar de un toque, con su fecha real y su cuenta. Nunca registra sin confirmación.
-- **Estado actual**     : **PA.1a cerrada** (2026-08-13, [ADR 052](../DECISIONS/052-pagos-automaticos.md) D1/D2/D4): débitos de compromisos completos. Falta **PA.1b**, el crédito automático del ingreso fijo, sobre la misma hoja.
-- **Verificado contra** : commit `d1740e1` (2026-08-13, PA.1a).
+- **Objetivo**          : el compromiso que el banco debita solo (suscripción, cuota) o el ingreso fijo que abona solo (nómina) se marcan como tales, y al abrir la app Finko muestra lo que ya venció listo para confirmar de un toque, con su fecha real y su cuenta. Nunca registra sin confirmación.
+- **Estado actual**     : **PA.1a y PA.1b cerradas** (2026-08-13 y 2026-08-14, [ADR 052](../DECISIONS/052-pagos-automaticos.md) D1-D4 completos): débito de compromisos y crédito del ingreso fijo, misma hoja. Queda **PA.1c** (opcional, llevar el aviso de "sin saldo" al motor único de CFG.3 cuando exista): CFG.3 ya cerró, así que su dependencia está resuelta, pero no es tarjeta hasta que se triage.
+- **Verificado contra** : commit `d1740e1` (2026-08-13, PA.1a) y esta tarea (2026-08-14, PA.1b).
 
 **Dónde vive**
 
 | Pieza | Archivo | Ancla | Línea |
 |---|---|---|---|
-| Campos del schema (v39) | `modules/core/state.js` | `Compromiso.debitoAutomatico`, `.cuentaDebitoId` | ~220 |
-| Lectura única de la marca (form u objeto guardado) | `modules/dominio/compromisos/logic/modelo.js` | `esDebitoAutomatico()` | ~68 |
-| Validación y normalización de los dos campos | `modules/dominio/compromisos/logic/modelo.js` | `validarCompromiso()`, `normalizarCompromiso()` | |
-| Bloque de captura compartido (toggle + selector de cuenta) | `modules/infra/cuenta-helper.js` | `renderBloqueDebitoAutomatico()`, `wireToggleDebitoAutomatico()` | ~98 |
-| Detección de vencidos sin registrar | `modules/dominio/agenda/logic.js` | `debitosAutomaticosVencidos()`, `MESES_CATCHUP_AUTOMATICOS` | ~440 |
-| Resolución contra cuentas (cuál paga, si alcanza) | `modules/dominio/agenda/index.js` | `_automaticosPendientes()` | |
-| Apertura al arrancar y confirmación | `modules/dominio/agenda/index.js` | `revisarDebitosAutomaticos()`, `_confirmarAutomaticos()` | |
-| Hoja de confirmación | `modules/dominio/agenda/view.js` | `renderFormAutomaticos()`, `_subFilaAutomatico()` | ~450 |
+| Campos del schema (v39/v41) | `modules/core/state.js` | `Compromiso.debitoAutomatico`/`.cuentaDebitoId`, `Ingreso.creditoAutomatico`, `IngresoPuntual.ingresoId` | ~220 |
+| Lectura y normalización del débito | `modules/dominio/compromisos/logic/modelo.js` | `esDebitoAutomatico()`, `validarCompromiso()`, `normalizarCompromiso()` | ~68 |
+| Lectura y normalización del crédito (PA.1b) | `modules/dominio/tesoreria/logic/ingresos.js` | `esCreditoAutomatico()`, `validarIngreso()`, `normalizarIngreso()` | |
+| Bloque de captura del débito (toggle + selector de cuenta) | `modules/infra/cuenta-helper.js` | `renderBloqueDebitoAutomatico()`, `wireToggleDebitoAutomatico()` | ~98 |
+| Toggle del crédito (PA.1b, sin selector propio: reusa `Ingreso.cuentaId`) | `modules/dominio/tesoreria/views/ingresos.js` | `_renderToggleCreditoAutomatico()` | |
+| Detección de vencidos sin registrar (débito / crédito) | `modules/dominio/agenda/logic.js` | `debitosAutomaticosVencidos()`, `creditosAutomaticosVencidos()`, `pendientesDeCreditoDelMes()`, `MESES_CATCHUP_AUTOMATICOS` | ~440 |
+| Resolución contra cuentas y registro | `modules/dominio/agenda/index.js` | `_debitosPendientes()`, `_creditosPendientes()`, `_automaticosPendientes()`, `_registrarCobrosIngresos()` | |
+| Apertura al arrancar y confirmación conjunta | `modules/dominio/agenda/index.js` | `revisarDebitosAutomaticos()`, `_confirmarAutomaticos()` | |
+| Escritura del ingreso puntual del crédito (PA.1b) | `modules/infra/credito-ingreso.js` | `ingresoPuntualDeCreditoAutomatico()` | |
+| Hoja de confirmación (ambas direcciones, signo `+` en el crédito) | `modules/dominio/agenda/view.js` | `renderFormAutomaticos()`, `_subFilaAutomatico()` | ~450 |
 | Modal contenedor | `index.html` | `#modal-automaticos` | ~1249 |
 
-**Recursos**: reusa las clases `lote-*` de `styles/components/config.css` (misma operación vista desde el otro lado) más `.lote-row--bloqueada`, y `form-hint--danger` para el aviso.
+**Recursos**: reusa las clases `lote-*` de `styles/components/config.css` (misma operación vista desde los dos lados) más `.lote-row--bloqueada`, y `form-hint--danger` para el aviso.
 
-**Dependencias y relaciones**: `debitosAutomaticosVencidos()` compone `eventosDelMes` + `pendientesDePagoDelMes` del mismo archivo, así que hereda la aritmética de deudas de CAL.5b y la regla temporal de BUG-015. El registro reusa `_registrarPagosCompromisos()` (el mismo del lote y del pago individual), que a su vez usa `infra/pago-compromiso.js`. `bootstrap.js` llama `revisarDebitosAutomaticos()` dentro de `_gatesTrasCandado()`, detrás del candado, el gate legal y las novedades.
+**Dependencias y relaciones**: `debitosAutomaticosVencidos()` compone `eventosDelMes` + `pendientesDePagoDelMes`; `creditosAutomaticosVencidos()` (PA.1b) compone `eventosIngresosDelMes` + `pendientesDeCreditoDelMes`, mismo criterio temporal (BUG-015) sin el concepto de deuda ni abono parcial que sí tiene el débito. El registro del débito reusa `_registrarPagosCompromisos()` (el mismo del lote y del pago individual), que a su vez usa `infra/pago-compromiso.js`; el del crédito usa `_registrarCobrosIngresos()` → `infra/credito-ingreso.js`, mismo patrón de batching por cuenta. `bootstrap.js` llama `revisarDebitosAutomaticos()` dentro de `_gatesTrasCandado()`, detrás del candado, el gate legal y las novedades. Ambas direcciones se distinguen en el resultado combinado por `tipo === 'ingreso'` (crédito) vs. cualquier otro valor (débito): no hace falta un campo de dirección aparte.
 
 **Riesgos**:
 
-- **Un compromiso aparece una vez por mes, no una por ocurrencia**: lo hereda de `pendientesDePagoDelMes` (el estado de pago es por mes). Un fijo Quincenal automático que cayó dos veces en el mes se confirma con UN movimiento, no dos. Cambiar eso obliga a cambiar antes el criterio del lote, no solo esta función.
-- **El saldo se consume en cascada dentro de `_automaticosPendientes()`**, en orden de vencimiento. Cambiar el orden de las filas cambia cuál queda bloqueada.
+- **Un compromiso o un ingreso aparece una vez por mes, no una por ocurrencia**: lo hereda de `pendientesDePagoDelMes`/`pendientesDeCreditoDelMes` (el estado es por mes). Un fijo o un ingreso Quincenal que cayó dos veces en el mes se confirma con UN movimiento, no dos.
+- **El saldo del débito se consume en cascada dentro de `_debitosPendientes()`**, en orden de vencimiento. El crédito no tiene esta cascada: abonar dinero nunca "no alcanza", así que su único bloqueo es la cuenta.
 - **La hoja no se apila sobre otro overlay**: si el gate legal o las novedades quedaron abiertos, no se abre y espera a la siguiente apertura. Es deliberado (ADR 052 D1), no un fallo de arranque.
-- **La ventana es de dos meses** (`MESES_CATCHUP_AUTOMATICOS = 1` más el mes en curso). Lo más viejo no reaparece nunca en la hoja: se registra a mano desde el Calendario.
-- **La cuenta del débito no se pre-selecciona en el formulario** (`preseleccionar: false`): es un hecho del arreglo con el banco, no una comodidad de pago. Si alguien la pre-selecciona "para ahorrar un clic", guarda un dato que el usuario no eligió.
+- **La ventana es de dos meses** (`MESES_CATCHUP_AUTOMATICOS = 1` más el mes en curso), igual para las dos direcciones. Lo más viejo no reaparece nunca en la hoja: se registra a mano desde el Calendario o Mis cuentas.
+- **La cuenta no se pre-selecciona en ningún formulario** (débito: `preseleccionar: false`; crédito: reusa `Ingreso.cuentaId`, que ya nace sin preseleccionar desde MC.13d): es un hecho del arreglo con el banco, no una comodidad de pago.
+- **El crédito no trae selector de cuenta propio**: usa el mismo `Ingreso.cuentaId` que el asistente de distribución. Si un ingreso cambia de cuenta destino, el crédito automático cambia con él sin aviso aparte; es la misma cuenta, no dos datos que puedan divergir.
 
-**Cambios pendientes**: PA.1b (crédito automático del ingreso fijo). Las alertas de "sin saldo" viven solo dentro de la hoja: el motor único ya existe desde CFG.3a ([ADR 066](../DECISIONS/066-motor-unico-de-avisos.md), `infra/avisos.js`), así que llevarlas allá es sumar una fuente más, y su superficie en la app la trae CFG.3b.
+**Cambios pendientes**: PA.1c (opcional, sin tarjeta): llevar el aviso de "sin cuenta"/"sin saldo" al motor único de notificaciones. El motor ya existe desde CFG.3a ([ADR 066](../DECISIONS/066-motor-unico-de-avisos.md), `infra/avisos.js`), así que llevarlas allá es sumar una fuente más, y su superficie en la app la trae CFG.3b (ya cerrada).
 
 **Cambios realizados**:
 
+- 2026-08-14 (**PA.1b**, ADR 052 D2-D4 completos): crédito automático del ingreso fijo sobre la misma hoja `#modal-automaticos`. `Ingreso.creditoAutomatico` reusa `Ingreso.cuentaId` como destino (sin FK nueva); `IngresoPuntual.ingresoId` (espejo de `Gasto.compromisoId`) evita cobrar dos veces el mismo mes. Schema v40 → v41 (migración no-op). Ver CHANGELOG.
 - 2026-08-13 (**PA.1a**, ADR 052): captura en los formularios de gasto fijo y de deuda, `debitosAutomaticosVencidos()`, hoja `#modal-automaticos` al abrir, registro con la fecha real del vencimiento y bloqueo explicado por falta de saldo o de cuenta. Schema v38 → v39 (migración no-op). Ver CHANGELOG.

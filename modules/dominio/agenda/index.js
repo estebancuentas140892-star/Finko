@@ -25,6 +25,7 @@ import { S, EventBus } from '../../core/state.js';
 import { save } from '../../core/storage.js';
 import { guardar, editar, eliminar } from '../../infra/crud.js';
 import { gastoDePagoCompromiso, bajarSaldoDeuda, esCompromisoDeuda } from '../../infra/pago-compromiso.js';
+import { ingresoPuntualDeCreditoAutomatico } from '../../infra/credito-ingreso.js';
 import { renderSmart, updSaldo, programarRender } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { registrarAccion } from '../../ui/actions.js';
@@ -41,7 +42,7 @@ import { renderBannerProposito } from '../../ui/proposito.js';
 import { CATEGORIAS_AGENDA } from '../../core/constants.js';
 import { wireIconoPicker, setIconoPickerValor } from '../../infra/icon-picker.js';
 import { iconoCategoria } from '../../infra/icons.js';
-import { eventosDelMes, pendientesDePagoDelMes, debitosAutomaticosVencidos } from './logic.js';
+import { eventosDelMes, pendientesDePagoDelMes, debitosAutomaticosVencidos, creditosAutomaticosVencidos } from './logic.js';
 import { renderAgenda, renderFormGastoFijo, renderFormPagoLote, renderFormAutomaticos, textoBannerGastoFijo, navegarMes, mostrarDia, marcarEntradaSeccion, resumenMesVisible, diaSeleccionado, CATEGORIA_NUEVA_VALUE_FIJO } from './view.js';
 
 /** Personalizadas de sección 'fijo' (CAT.3c): mismo criterio de oferta por sección del ADR 058 D2. */
@@ -676,7 +677,7 @@ async function _confirmarLote() {
  *   tipo:string, cuentaDebitoId:string|null, cuentaNombre:string|null,
  *   bloqueo:'cuenta'|'saldo'|null, falta:number}>}
  */
-function _automaticosPendientes() {
+function _debitosPendientes() {
   const vencidos = debitosAutomaticosVencidos(S.compromisos ?? [], S.gastos ?? [], hoy());
   if (vencidos.length === 0) return [];
 
@@ -703,8 +704,44 @@ function _automaticosPendientes() {
 }
 
 /**
- * Abre la hoja de pagos automáticos si hay algo que confirmar. La llama
- * `bootstrap.js` al arrancar, detrás de los gates (ADR 052 D1).
+ * Los créditos automáticos vencidos, resueltos contra las cuentas de S (PA.1b,
+ * ADR 052 D2/D3): mismo criterio que `_debitosPendientes` visto desde el otro
+ * lado, sin cascada de saldo porque abonar dinero nunca puede "no alcanzar".
+ *
+ * Único motivo de bloqueo: `'cuenta'`, el ingreso no dice a qué cuenta llega,
+ * o esa cuenta ya no existe o está inactiva.
+ *
+ * @returns {Array<{id:string, descripcion:string, monto:number, fecha:string,
+ *   tipo:'ingreso', cuentaId:string|null, cuentaNombre:string|null,
+ *   bloqueo:'cuenta'|null, falta:number}>}
+ */
+function _creditosPendientes() {
+  const vencidos = creditosAutomaticosVencidos(S.ingresos ?? [], S.ingresosPuntuales ?? [], hoy());
+
+  return vencidos.map((v) => {
+    const cuenta = (S.cuentas ?? []).find(c => c.id === v.cuentaId && c.activa !== false);
+    return cuenta
+      ? { ...v, cuentaNombre: cuenta.nombre, bloqueo: null, falta: 0 }
+      : { ...v, cuentaNombre: null, bloqueo: 'cuenta', falta: 0 };
+  });
+}
+
+/**
+ * Débitos y créditos automáticos vencidos, combinados para la hoja "Pagos
+ * automáticos" (PA.1b une lo que PA.1a dejó solo del lado del débito). Se
+ * distinguen por `tipo`: `'ingreso'` es siempre un crédito, cualquier otro
+ * valor (`'fijo'`, `'deuda-entidad'`, `'deuda-personal'`) es un débito.
+ */
+function _automaticosPendientes() {
+  return [..._debitosPendientes(), ..._creditosPendientes()];
+}
+
+/**
+ * Abre la hoja de pagos automáticos si hay algo que confirmar: débitos de
+ * compromisos (PA.1a) y créditos de ingreso fijo (PA.1b), la misma hoja para
+ * los dos lados (ADR 052 D3). El nombre quedó del alcance original (PA.1a);
+ * renombrarlo no cambia el contrato que ya consume `bootstrap.js`. La llama al
+ * arrancar, detrás de los gates (ADR 052 D1).
  *
  * No se apila sobre otro overlay abierto (candado, aceptación legal, novedades):
  * dos diálogos modales se pelean el foco. Si hay uno, la hoja espera a la
@@ -739,14 +776,14 @@ function _actualizarTotalAutomaticos() {
   const totalEl = body.querySelector('[data-role="auto-total"]');
   if (totalEl) {
     totalEl.textContent = marcados.length === 0
-      ? 'Selecciona al menos un pago.'
-      : `Total a registrar: ${f(total)}`;
+      ? 'Selecciona al menos un movimiento.'
+      : `Total a mover: ${f(total)}`;
     totalEl.classList.toggle('lote-total--vacio', marcados.length === 0);
   }
 
   const textoEl = body.querySelector('[data-role="auto-cta-texto"]');
   if (textoEl) {
-    textoEl.textContent = marcados.length === 1 ? 'Confirmar 1 pago' : `Confirmar ${marcados.length} pagos`;
+    textoEl.textContent = marcados.length === 1 ? 'Confirmar 1 movimiento' : `Confirmar ${marcados.length} movimientos`;
   }
 
   const btn = body.querySelector('[data-action="agenda-confirmar-automaticos"]');
@@ -754,17 +791,42 @@ function _actualizarTotalAutomaticos() {
 }
 
 /**
- * Registra los débitos automáticos que el usuario confirmó.
+ * Registra los créditos automáticos confirmados: un ingreso puntual vinculado
+ * por cuenta (mismo criterio de batching que `_registrarPagosCompromisos`, un
+ * solo `editar` de saldo por cuenta al final) más el abono de esa cuenta.
  *
- * A diferencia del lote, **no pregunta de qué cuenta sale**: eso es lo que el
- * usuario ya declaró al marcar el compromiso como automático, y volver a
- * preguntarlo anularía el sentido de la hoja. Por lo mismo no hay reparto entre
- * cuentas ni confirmación de sobregiro: lo que no alcanza llega bloqueado desde
+ * @param {Array<{ing:import('../../core/state.js').Ingreso, fecha:string,
+ *   monto:number, cuentaId:string|null}>} cobros
+ */
+function _registrarCobrosIngresos(cobros) {
+  /** @type {Map<string, number>} Total a abonar por cuenta. */
+  const porCuenta = new Map();
+
+  for (const { ing, fecha, monto, cuentaId } of cobros) {
+    ingresoPuntualDeCreditoAutomatico(ing, { monto, fecha, cuentaId });
+    if (cuentaId) porCuenta.set(cuentaId, (porCuenta.get(cuentaId) ?? 0) + monto);
+  }
+
+  for (const [cuentaId, total] of porCuenta) {
+    const cuenta = S.cuentas.find(x => x.id === cuentaId);
+    if (cuenta) editar('cuentas', cuentaId, { saldo: (cuenta.saldo ?? 0) + total });
+  }
+}
+
+/**
+ * Registra los débitos y créditos automáticos que el usuario confirmó (PA.1a +
+ * PA.1b, misma hoja).
+ *
+ * A diferencia del lote, **no pregunta de qué cuenta sale ni a cuál llega**:
+ * eso es lo que el usuario ya declaró al marcar el compromiso o el ingreso
+ * como automático, y volver a preguntarlo anularía el sentido de la hoja. Por
+ * lo mismo no hay reparto entre cuentas ni confirmación de sobregiro: lo que
+ * no alcanza (débito) o no tiene cuenta (crédito) llega bloqueado desde
  * `_automaticosPendientes` y no se puede marcar.
  *
- * Cada pago se fecha con su vencimiento real (el 5, no hoy) y el descuento de
- * la cuenta ocurre ahora, mismo criterio que `_marcarPagadoGastoFijo`: el saldo
- * de una cuenta es un valor de hoy, no un histórico.
+ * Cada movimiento se fecha con su vencimiento real (el 5, no hoy) y el ajuste
+ * de la cuenta ocurre ahora, mismo criterio que `_marcarPagadoGastoFijo`: el
+ * saldo de una cuenta es un valor de hoy, no un histórico.
  */
 function _confirmarAutomaticos() {
   const body = document.getElementById('modal-automaticos-body');
@@ -782,26 +844,36 @@ function _confirmarAutomaticos() {
   const items = _automaticosPendientes()
     .filter(it => !it.bloqueo && marcados.includes(`${it.id}|${it.fecha}`));
   if (items.length === 0) {
-    announce('No quedan pagos automáticos por confirmar.');
+    announce('No quedan movimientos automáticos por confirmar.');
     return;
   }
 
   const pagos = [];
+  const cobros = [];
   for (const it of items) {
+    if (it.tipo === 'ingreso') {
+      const ing = S.ingresos.find(i => i.id === it.id);
+      if (!ing) continue;
+      cobros.push({ ing, fecha: it.fecha, monto: it.monto, cuentaId: it.cuentaId });
+      continue;
+    }
     const comp = S.compromisos.find(c => c.id === it.id);
     if (!comp) continue;
     pagos.push({ comp, fecha: it.fecha, partes: [{ cuentaId: it.cuentaDebitoId, monto: it.monto }] });
   }
-  if (pagos.length === 0) return;
+  if (pagos.length === 0 && cobros.length === 0) return;
 
-  _registrarPagosCompromisos(pagos);
+  if (pagos.length > 0) _registrarPagosCompromisos(pagos);
+  if (cobros.length > 0) _registrarCobrosIngresos(cobros);
 
-  const total = pagos.reduce((acc, p) => acc + p.partes[0].monto, 0);
+  const total = pagos.reduce((acc, p) => acc + p.partes[0].monto, 0)
+    + cobros.reduce((acc, c) => acc + c.monto, 0);
+  const cantidad = pagos.length + cobros.length;
   renderAgenda();
   updSaldo();
-  announce(pagos.length === 1
-    ? `1 pago automático confirmado por ${f(total)}.`
-    : `${pagos.length} pagos automáticos confirmados por ${f(total)}.`);
+  announce(cantidad === 1
+    ? `1 movimiento automático confirmado por ${f(total)}.`
+    : `${cantidad} movimientos automáticos confirmados por ${f(total)}.`);
 }
 
 // ── HANDLER: DISTRIBUIR DESDE EL DÍA DE INGRESO (ADR 021) ───────

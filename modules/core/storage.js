@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 40;
+const SCHEMA_VERSION = 41;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -617,6 +617,12 @@ function _migrate(raw) {
       data.config.ultimoAvisoISO = null;
     }
   }
+
+  // v40 → v41: `creditoAutomatico` en Ingreso e `ingresoId` en IngresoPuntual
+  // (PA.1b, ADR 052 D2/D3). Mismo criterio y mismo motivo de no-op que v38 → v39:
+  // ambos opcionales y `undefined`-safe, un ingreso ya guardado se sigue leyendo
+  // como cobro manual, y no hay forma de inferir del registro si el banco lo
+  // abona solo.
 
   if (typeof data._version !== 'number' || data._version < SCHEMA_VERSION) {
     data._version = SCHEMA_VERSION;

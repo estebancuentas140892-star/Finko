@@ -473,6 +473,127 @@ export function debitosAutomaticosVencidos(compromisos, gastos, hoyISO, mesesAtr
 }
 
 /**
+ * Ocurrencias de ingreso del mes que ya vencieron y siguen sin cobrarse
+ * (PA.1b, ADR 052 D2/D3): mismo criterio de `pendientesDePagoDelMes` visto
+ * desde el otro lado. No hay concepto de deuda ni de abono parcial: un ingreso
+ * fijo se cobra completo o no se cobra, así que basta con saber si ya existe
+ * un `IngresoPuntual` vinculado (`ingresoId`) fechado en el mismo mes.
+ *
+ * Un ingreso aparece **una sola vez** por mes aunque caiga varias veces (un
+ * quincenal), mismo motivo que un compromiso: el estado de cobro es por mes,
+ * no por ocurrencia.
+ *
+ * @param {ReturnType<typeof eventosIngresosDelMes>} eventos
+ * @param {Array<{ingresoId?:string, fecha?:string}>} ingresosPuntuales
+ * @param {string} prefijoMes 'YYYY-MM' del mes visible.
+ * @param {string} hoyISO 'YYYY-MM-DD'.
+ * @returns {Array<{id:string, descripcion:string, monto:number, dia:number, tipo:'ingreso'}>}
+ */
+export function pendientesDeCreditoDelMes(eventos, ingresosPuntuales, prefijoMes, hoyISO) {
+  if (!eventos || typeof eventos !== 'object') return [];
+
+  const mp = /^(\d{4})-(\d{2})$/.exec(prefijoMes ?? '');
+  const mh = /^(\d{4})-(\d{2})-(\d{2})/.exec(hoyISO ?? '');
+  if (!mp || !mh) return [];
+
+  const anio = +mp[1], mes = +mp[2];
+  if (mes < 1 || mes > 12) return [];
+  const anioHoy = +mh[1], mesHoy = +mh[2], diaHoy = +mh[3];
+
+  if (anio > anioHoy || (anio === anioHoy && mes > mesHoy)) return [];
+  const esMesEnCurso = anio === anioHoy && mes === mesHoy;
+
+  /** @type {Map<string, {id:string, descripcion:string, monto:number, dia:number}>} */
+  const porId = new Map();
+
+  for (const [diaStr, evs] of Object.entries(eventos)) {
+    const dia = Number(diaStr);
+    if (!Number.isInteger(dia)) continue;
+    if (esMesEnCurso && dia > diaHoy) continue;
+    if (!Array.isArray(evs)) continue;
+
+    for (const ing of evs) {
+      if (!ing || typeof ing !== 'object' || ing.tipo !== 'ingreso') continue;
+      if (!ing.id) continue;
+      const monto = Number(ing.monto);
+      if (!Number.isFinite(monto) || monto <= 0) continue;
+
+      const previo = porId.get(ing.id);
+      if (!previo) {
+        porId.set(ing.id, { id: ing.id, descripcion: ing.descripcion ?? '', monto, dia });
+      } else if (dia < previo.dia) {
+        previo.dia = dia;
+      }
+    }
+  }
+
+  if (porId.size === 0) return [];
+
+  const yaCobrados = new Set();
+  for (const ip of (Array.isArray(ingresosPuntuales) ? ingresosPuntuales : [])) {
+    if (!ip || typeof ip !== 'object') continue;
+    if (!ip.ingresoId || !porId.has(ip.ingresoId)) continue;
+    if (typeof ip.fecha !== 'string' || !ip.fecha.startsWith(prefijoMes)) continue;
+    yaCobrados.add(ip.ingresoId);
+  }
+
+  const out = [];
+  for (const p of porId.values()) {
+    if (yaCobrados.has(p.id)) continue;
+    out.push({ id: p.id, descripcion: p.descripcion, monto: p.monto, dia: p.dia, tipo: 'ingreso' });
+  }
+
+  return out.sort((a, b) => a.dia - b.dia || a.descripcion.localeCompare(b.descripcion, 'es'));
+}
+
+/**
+ * Créditos automáticos que ya vencieron y siguen sin registrarse (PA.1b, ADR
+ * 052 D2/D3): la mitad "ingreso" de la hoja "Pagos automáticos", mismo motor
+ * que `debitosAutomaticosVencidos` visto desde el otro lado. Recorre el mes en
+ * curso y los `mesesAtras` anteriores con `pendientesDeCreditoDelMes`, así
+ * hereda gratis la regla temporal de BUG-015 (en el mes en curso, solo lo que
+ * ya venció) y la ventana de catch-up de D1.
+ *
+ * @param {import('../../core/state.js').Ingreso[]} ingresos
+ * @param {Array<{ingresoId?:string, fecha?:string}>} ingresosPuntuales
+ * @param {string} hoyISO 'YYYY-MM-DD'.
+ * @param {number} [mesesAtras=MESES_CATCHUP_AUTOMATICOS] Meses previos a revisar.
+ * @returns {Array<{id:string, descripcion:string, monto:number, dia:number,
+ *   tipo:'ingreso', fecha:string, cuentaId:string|null}>} Del vencimiento más
+ *   antiguo al más reciente.
+ */
+export function creditosAutomaticosVencidos(ingresos, ingresosPuntuales, hoyISO, mesesAtras = MESES_CATCHUP_AUTOMATICOS) {
+  const mh = /^(\d{4})-(\d{2})-(\d{2})/.exec(hoyISO ?? '');
+  if (!mh || !Array.isArray(ingresos)) return [];
+
+  const automaticos = ingresos.filter(i => i?.creditoAutomatico === true && i.activo !== false);
+  if (automaticos.length === 0) return [];
+
+  const meses = Number.isInteger(mesesAtras) && mesesAtras >= 0 ? mesesAtras : MESES_CATCHUP_AUTOMATICOS;
+  const anioHoy = +mh[1];
+  const mesHoy  = +mh[2] - 1;
+
+  const out = [];
+  for (let i = meses; i >= 0; i--) {
+    const inicio  = new Date(anioHoy, mesHoy - i, 1);
+    const anio    = inicio.getFullYear();
+    const mes     = inicio.getMonth();
+    const prefijo = `${anio}-${String(mes + 1).padStart(2, '0')}`;
+
+    const eventos = eventosIngresosDelMes(automaticos, anio, mes);
+    for (const p of pendientesDeCreditoDelMes(eventos, ingresosPuntuales, prefijo, hoyISO)) {
+      const ing = automaticos.find(i => i.id === p.id);
+      out.push({
+        ...p,
+        fecha:    `${prefijo}-${String(p.dia).padStart(2, '0')}`,
+        cuentaId: ing?.cuentaId ?? null,
+      });
+    }
+  }
+  return out;
+}
+
+/**
  * Busca el primer día con compromisos dentro de los próximos `diasMax` días
  * (sin incluir hoy). Útil para el mensaje "próximo vencimiento" cuando hoy
  * no tiene eventos.

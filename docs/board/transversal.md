@@ -76,12 +76,6 @@
 
 > **Iniciativa LG.2: Logros v2, gamificación de hábitos, completa.** Alcance, regla anti-gaming y catálogo: **[ADR 032](../DECISIONS/032-logros-v2-niveles-y-habitos.md)** (Aceptada). **LG.2d cerró el 2026-08-13** (mudanza a "Tu progreso" en Análisis + tarjeta en Inicio): el [ADR 022](../DECISIONS/022-vitrina-de-logros-en-ajustes.md) pasa a Superada, ver [`contexto/logros.md`](../contexto/logros.md). Los dos logros diferidos por datos (`ahorro-creciente`, `pagador-puntual`) NO son tarjeta: su verificación y condición de reapertura viven en el ADR 032, sección "Resolución de LG.2e en implementación". Nombres de niveles de usuario siguen provisionales hasta que Esteban entregue los definitivos (cambiarlos no toca datos).
 
-#### PA.1b - Crédito automático del ingreso fijo
-- Prioridad  : media-alta (mismo caso común que el débito, visto desde el lado del ingreso)
-- Estado     : lista para trabajar. El [ADR 052](../DECISIONS/052-pagos-automaticos.md) quedó **Aceptado** (2026-08-13) y su D4 pone esta rebanada después de PA.1a, ya cerrada.
-- Objetivo   : marcar un ingreso fijo como "me lo abonan solo" y ofrecerlo en la misma hoja `#modal-automaticos`, con el mismo criterio de D2 (Finko prepara, el usuario confirma). La pregunta propia a resolver: qué colección recibe el abono recurrente, porque `Ingreso` es una plantilla y no un evento del ledger.
-- Secciones  : Mis cuentas (ingresos), Calendario (hoja), Movimientos
-- Depende de : PA.1a (cerrada); `Ingreso.cuentaId` ya existe desde MC.13d
-- Modelo     : Equilibrado - Alto (la filosofía ya está decidida; falta el dueño del dato)
+> **Iniciativa "PA.1 - Pagos y créditos automáticos" completa** ([ADR 052](../DECISIONS/052-pagos-automaticos.md) D1-D4, Aceptada). PA.1a (débito de compromisos) cerró 2026-08-13 y PA.1b (crédito del ingreso fijo, misma hoja `#modal-automaticos`) cerró 2026-08-14. Detalle en [`contexto/calendario.md`](../contexto/calendario.md). Queda **PA.1c**, opcional y sin tarjeta (llevar el aviso de "sin cuenta"/"sin saldo" al motor único de CFG.3, ya cerrado): se re-expande a tarjeta si Esteban la retoma.
 
 > **Diferido del [ADR 040](../DECISIONS/040-navegacion-v2-visual.md):** badges de notificación en el nav. Es decisión de producto de Esteban (¿qué cuenta el badge?); al retomarse nace como tarjeta nueva.
