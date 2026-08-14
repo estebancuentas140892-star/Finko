@@ -51,6 +51,15 @@
 - Depende de : nada
 - Modelo     : Alta capacidad - Alto (mover conocimiento sin perderlo, con verificación contra el código)
 
+#### DOC.4 - Automatizar la compuerta 3 (guiones largos) en el pre-commit
+- Prioridad  : baja (la compuerta ya es obligatoria y se corre a mano; esto solo baja el riesgo de saltarla por olvido)
+- Área       : code (tooling, `.githooks/`)
+- Estado     : **candidato sin ejecutar.** Encontrado en la auditoría DOC.2 (2026-08-13): `.githooks/pre-commit` ya bloquea el commit si falta el sello E2E (compuerta 5), pero la compuerta 3 (`git ls-files -z ... | grep -nP '[\x{2013}\x{2014}]'`, en `cerrar-tarea/SKILL.md`) sigue siendo manual. Es el mismo patrón que ya se automatizó para la compuerta 5, aplicado a un chequeo más simple y sin dependencias nuevas.
+- Objetivo   : que `.githooks/pre-commit` corra ese mismo comando y bloquee el commit si encuentra guion largo o medio en un archivo trackeado, sin esperar a que quien cierra se acuerde.
+- Secciones  : Transversal (`.githooks/pre-commit`)
+- Depende de : nada
+- Modelo     : Ligero - Medio (extender un hook ya existente con un comando ya escrito y probado)
+
 #### DV.2d - Ilustraciones como clase nueva de asset (D3 del ADR 033)
 - Prioridad  : media
 - Área       : design
