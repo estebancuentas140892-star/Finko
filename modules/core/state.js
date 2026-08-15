@@ -365,6 +365,11 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  *                                           el aviso de respaldo atrasado cuando nunca
  *                                           exportó uno: el reloj arranca cuando empezó a
  *                                           haber algo que perder, no antes.
+ * @property {boolean} [respaldoCifrado] - true si el usuario quiere que el respaldo
+ *                                           salga cifrado con contraseña (CFG.4c, ADR 043
+ *                                           D2.3, schema v43). Ausente = false: el respaldo
+ *                                           en claro sigue siendo el default. La contraseña
+ *                                           **no** se guarda acá ni en ningún lado.
  */
 
 /**
@@ -502,6 +507,8 @@ export function createInitialState() {
       ultimoRespaldoISO: null,
       /** Fin del onboarding (CFG.4b, schema v42): referencia si nunca respaldó. */
       primerUsoISO: null,
+      /** Cifrar el respaldo con contraseña (CFG.4c, schema v43). La clave no se guarda. */
+      respaldoCifrado: false,
     },
 
     /** Cuentas / tesorería. */

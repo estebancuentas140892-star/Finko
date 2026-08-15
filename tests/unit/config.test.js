@@ -240,6 +240,56 @@ describe('renderPanelConfig() - sello del último respaldo (CFG.4b)', () => {
   });
 });
 
+// ── RESPALDO CIFRADO (CFG.4c, ADR 043 D2.3) ──────────────────────
+
+describe('renderPanelConfig() - interruptor de respaldo cifrado (CFG.4c)', () => {
+  beforeEach(() => {
+    Object.assign(S, createInitialState());
+    document.body.innerHTML = '<div id="panel-config"></div>';
+  });
+
+  const datos = () => document.querySelector('section[aria-labelledby="config-datos-title"]');
+
+  it('nace apagado y dentro de "Tus datos"', () => {
+    renderPanelConfig();
+    const input = document.getElementById('toggle-respaldo-cifrado');
+    expect(input).not.toBeNull();
+    expect(input.checked).toBe(false);
+    expect(datos().contains(input)).toBe(true);
+    expect(input.dataset.action).toBe('toggle-respaldo-cifrado');
+  });
+
+  it('con la preferencia activa nace marcado', () => {
+    S.config.respaldoCifrado = true;
+    renderPanelConfig();
+    expect(document.getElementById('toggle-respaldo-cifrado').checked).toBe(true);
+  });
+
+  it('apagado advierte que el archivo va en texto plano', () => {
+    renderPanelConfig();
+    expect(datos().textContent).toContain('texto plano');
+  });
+
+  it('encendido advierte que la contraseña no se recupera', () => {
+    S.config.respaldoCifrado = true;
+    renderPanelConfig();
+    expect(datos().textContent).toContain('no se puede abrir');
+  });
+
+  it('usa el switch único de la app, no un checkbox suelto', () => {
+    renderPanelConfig();
+    const label = document.querySelector('label[for="toggle-respaldo-cifrado"]');
+    expect(label.classList.contains('config-toggle')).toBe(true);
+    expect(label.querySelector('.toggle .toggle__track')).not.toBeNull();
+  });
+
+  it('no agrega un tercer rótulo de ámbito a la sección', () => {
+    renderPanelConfig();
+    const rotulos = [...datos().querySelectorAll('.form-hint')].map(e => e.textContent.trim());
+    expect(rotulos).toEqual(['Toda la app', 'Solo tus gastos']);
+  });
+});
+
 // ── MONTOS DE RENTA CON SEPARADOR DE MILES (B4/R16) ──────────────
 
 describe('miles() y desdeMiles()', () => {

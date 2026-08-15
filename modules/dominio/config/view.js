@@ -10,6 +10,7 @@ import { estadoPermiso } from '../../infra/notificaciones.js';
 import { SECCIONES_AVISO, LABEL_SECCION_AVISO } from '../../infra/avisos.js';
 import { estadoCuota } from '../../core/storage.js';
 import { diasHastaFecha } from '../../infra/bolsas.js';
+import { cifradoDisponible } from '../../infra/cripto-respaldo.js';
 import { legalVigente, estadoVigenciaLegal, APP_VERSION, SITUACIONES_LABORALES } from '../../core/constants.js';
 import { estaInstalada } from '../../ui/install-prompt.js';
 import { DOCUMENTOS_LEGALES } from './legal.js';
@@ -665,6 +666,50 @@ export function textoUltimoRespaldo(ultimoRespaldoISO) {
   return `Guardaste tu último respaldo hace ${transcurridos} días.`;
 }
 
+/**
+ * Interruptor de respaldo cifrado (CFG.4c, ADR 043 D2.3). Vive dentro del
+ * ámbito "Toda la app" porque solo cambia lo que hace **ese** botón de
+ * respaldo: el CSV de gastos no se cifra.
+ *
+ * Reusa `.config-toggle` + `.toggle`, el switch único de la app (TX.11), como
+ * los cuatro interruptores que ya existen. Sin contexto seguro no se ofrece:
+ * `crypto.subtle` no existe, y un interruptor que no puede cumplir es peor que
+ * ninguno (mismo criterio que `cryptoDisponible()` con el candado).
+ *
+ * El texto de ayuda **no** es `.form-hint`: ese selector rotula los dos ámbitos
+ * de la sección y sumar un tercero rompería esa lectura.
+ */
+function _renderCifradoRespaldo() {
+  if (!cifradoDisponible()) {
+    return `
+      <p class="config-section__desc">
+        Este navegador no permite cifrar el respaldo (hace falta una conexión segura).
+        El archivo se guarda sin contraseña.
+      </p>`;
+  }
+
+  const activo = S.config?.respaldoCifrado === true;
+
+  return `
+    <label class="config-toggle" for="toggle-respaldo-cifrado">
+      <span class="toggle">
+        <input
+          id="toggle-respaldo-cifrado"
+          type="checkbox"
+          data-action="toggle-respaldo-cifrado"
+          ${activo ? 'checked' : ''}
+        />
+        <span class="toggle__track" aria-hidden="true"></span>
+      </span>
+      <span class="config-toggle__label">Proteger el respaldo con contraseña</span>
+    </label>
+    <p class="config-section__desc">
+      ${activo
+        ? 'Al guardar el respaldo te vamos a pedir una contraseña. Si la olvidas, el archivo no se puede abrir: nadie puede recuperarlo, ni Finko.'
+        : 'El archivo de respaldo se guarda en texto plano: quien lo abra ve todo tu historial.'}
+    </p>`;
+}
+
 function _renderDatos() {
   return `
     <section class="config-section" aria-labelledby="config-datos-title">
@@ -687,6 +732,7 @@ function _renderDatos() {
         </button>
       </div>
       <input type="file" accept=".json" id="config-importar-json" hidden />
+      ${_renderCifradoRespaldo()}
       <p class="form-hint">Solo tus gastos</p>
       <div class="config-actions config-actions--ambito">
         <button class="btn btn-secondary" data-action="exportar-gastos-csv"

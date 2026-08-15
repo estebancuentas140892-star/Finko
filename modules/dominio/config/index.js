@@ -20,6 +20,10 @@ import { confirmar } from '../../ui/confirm.js';
 import { pedirPermiso } from '../../infra/notificaciones.js';
 import { LABEL_SECCION_AVISO } from '../../infra/avisos.js';
 import { PERSISTENCIA, estadoPersistencia, solicitarPersistencia } from '../../infra/persistencia.js';
+import {
+  cifradoDisponible, cifrarRespaldo, descifrarRespaldo, esRespaldoCifrado,
+} from '../../infra/cripto-respaldo.js';
+import { pedirContrasenaRespaldo } from '../../ui/contrasena-respaldo.js';
 import { abrirModal } from '../../ui/modales.js';
 import { renderPanelConfig, renderModalFiscal, miles, desdeMiles, textoUltimoRespaldo } from './view.js';
 import { gastosACSV } from '../export/logic.js';
@@ -60,14 +64,30 @@ function _confirmarGuardado(id) {
 async function _exportarDatos() {
   const ok = await confirmarPin();
   if (!ok) return;
+
+  // Cifrado opcional (CFG.4c, ADR 043 D2.3). El PIN de arriba autoriza la
+  // acción dentro de la app; esta contraseña abre el archivo. Son secretos
+  // distintos y se piden por separado, en ese orden.
+  const cifrar = S.config?.respaldoCifrado === true && cifradoDisponible();
+  let contrasena = null;
+  if (cifrar) {
+    contrasena = await pedirContrasenaRespaldo({ modo: 'crear' });
+    if (contrasena === null) return; // canceló: no se exporta nada.
+  }
+
   try {
-    const json  = JSON.stringify(S, null, 2);
+    const plano = JSON.stringify(S, null, 2);
+    const json  = contrasena === null ? plano : await cifrarRespaldo(plano, contrasena);
     const blob  = new Blob([json], { type: 'application/json' });
     const url   = URL.createObjectURL(blob);
     const fecha = hoy();
     const a     = document.createElement('a');
     a.href     = url;
-    a.download = `finko-backup-${fecha}.json`;
+    // El nombre distingue los dos archivos: restaurar el que no era pide la
+    // contraseña equivocada y confunde justo cuando el usuario tiene prisa.
+    a.download = contrasena === null
+      ? `finko-backup-${fecha}.json`
+      : `finko-backup-cifrado-${fecha}.json`;
     a.click();
     URL.revokeObjectURL(url);
 
@@ -120,8 +140,20 @@ async function _importarDatos(el) {
   }
 
   const reader = new FileReader();
-  reader.onload = (e) => {
-    const resultado = restaurarBlob(e.target.result);
+  reader.onload = async (e) => {
+    const texto = e.target.result;
+
+    // Detección transparente (CFG.4c, ADR 043 D2.3): el usuario no elige
+    // "importar cifrado" en ningún lado; lo dice el archivo. Un respaldo en
+    // claro sigue el camino de siempre sin pedir nada.
+    let contenido = texto;
+    if (esRespaldoCifrado(texto)) {
+      const plano = await _descifrarConContrasena(texto);
+      if (plano === null) { el.value = ''; return; } // canceló o no acertó.
+      contenido = plano;
+    }
+
+    const resultado = restaurarBlob(contenido);
 
     if (resultado === 'ok') {
       announce('Datos importados. Recargando…');
@@ -139,6 +171,33 @@ async function _importarDatos(el) {
     el.value = '';
   };
   reader.readAsText(file);
+}
+
+/**
+ * Pide la contraseña y descifra, dejando reintentar sin cerrar el modal.
+ *
+ * El error de contraseña se resuelve **dentro** del modal (`verificar`) en vez
+ * de cerrarlo y volver a abrirlo: escribir mal una contraseña larga es lo
+ * normal, y reabrir el diálogo perdería el foco y el contexto en cada intento.
+ *
+ * @param {string} texto Contenido crudo del archivo cifrado.
+ * @returns {Promise<string|null>} El JSON en claro, o null si canceló.
+ */
+async function _descifrarConContrasena(texto) {
+  let plano = null;
+
+  await pedirContrasenaRespaldo({
+    modo: 'abrir',
+    verificar: async (contrasena) => {
+      const r = await descifrarRespaldo(texto, contrasena);
+      if (r.ok) { plano = r.json; return null; }
+      return r.motivo === 'contrasena-incorrecta'
+        ? 'Esa contraseña no abre este archivo.'
+        : 'El archivo está dañado o no es un respaldo de Finko.';
+    },
+  });
+
+  return plano;
 }
 
 // ── BORRADO AUTOMÁTICO DEL NAVEGADOR (CFG.4a, ADR 043 D2.1) ──────
@@ -181,6 +240,26 @@ async function _pintarPersistencia() {
 }
 
 /**
+ * Repinta el panel entero **y lo vuelve a cablear**. Es lo que tienen que usar
+ * los interruptores, no `renderPanelConfig()` a secas.
+ *
+ * `renderPanelConfig()` reemplaza el `innerHTML` de `#panel-config`, así que se
+ * lleva con él los listeners que `_inyectarPanel()` había puesto sobre nodos
+ * concretos: el `change` del `<input type="file">` que importa el respaldo y
+ * los `submit` del perfil y de los tres formularios del candado. Las acciones
+ * con `data-action` sobreviven porque están delegadas en `actions.js`; estas
+ * cuatro no. Desde CFG.4a se sumó un tercer efecto: el bloque de persistencia
+ * volvía a quedar `hidden` y vacío, porque su estado no vive en `S`.
+ *
+ * Los cuatro interruptores llamaban a `renderPanelConfig()` directo, así que
+ * tocar cualquiera de ellos dejaba "Restaurar desde un respaldo" sin efecto
+ * hasta salir de Ajustes y volver a entrar (CFG.4c).
+ */
+function _repintarPanel() {
+  _inyectarPanel();
+}
+
+/**
  * Pide la protección. Quien decide es el navegador (Chromium la concede sin
  * preguntar, Firefox abre un permiso), así que nunca se anuncia éxito por haber
  * llamado: se anuncia lo que devolvió.
@@ -209,7 +288,7 @@ async function _activarNotificaciones() {
     if (!S.config) S.config = {};
     S.config.notificaciones = true;
     save();
-    renderPanelConfig();
+    _repintarPanel();
     announce('Recordatorios activados. Recibirás una alerta al abrir Finko si tienes compromisos próximos.');
   } else if (resultado === 'denied') {
     announce('El navegador bloqueó las notificaciones. Habilita el permiso desde la configuración del navegador.', 'assertive');
@@ -223,7 +302,7 @@ function _toggleNotificaciones(el) {
   if (!S.config) S.config = {};
   S.config.notificaciones = el.checked;
   save();
-  renderPanelConfig();
+  _repintarPanel();
   announce(el.checked ? 'Recordatorios activados.' : 'Recordatorios desactivados.');
 }
 
@@ -238,9 +317,24 @@ function _toggleAvisoSeccion(el) {
   if (!S.config.avisosPorSeccion) S.config.avisosPorSeccion = {};
   S.config.avisosPorSeccion[seccion] = el.checked;
   save();
-  renderPanelConfig();
+  _repintarPanel();
   const label = LABEL_SECCION_AVISO[seccion] ?? seccion;
   announce(`Avisos de ${label} ${el.checked ? 'activados' : 'desactivados'}.`);
+}
+
+/**
+ * Interruptor de respaldo cifrado (CFG.4c, ADR 043 D2.3). Solo guarda la
+ * preferencia: la contraseña se pide al exportar y **nunca** se persiste.
+ * @param {HTMLElement} el - el <input type="checkbox">
+ */
+function _toggleRespaldoCifrado(el) {
+  if (!S.config) S.config = {};
+  S.config.respaldoCifrado = el.checked;
+  save();
+  _repintarPanel();
+  announce(el.checked
+    ? 'El respaldo se va a cifrar con la contraseña que elijas al guardarlo.'
+    : 'El respaldo se va a guardar sin contraseña.');
 }
 
 /** @param {HTMLElement} el - el <input type="checkbox"> */
@@ -248,7 +342,7 @@ function _toggleAtajos(el) {
   if (!S.config) S.config = {};
   S.config.atajosTeclado = el.checked;
   save();
-  renderPanelConfig();
+  _repintarPanel();
   announce(el.checked ? 'Atajos de teclado activados.' : 'Atajos de teclado desactivados.');
 }
 
@@ -541,6 +635,7 @@ export function initConfig() {
   registrarAccion('toggle-notificaciones',  _toggleNotificaciones);
   registrarAccion('toggle-atajos',          _toggleAtajos);
   registrarAccion('toggle-aviso-seccion',   _toggleAvisoSeccion);
+  registrarAccion('toggle-respaldo-cifrado', _toggleRespaldoCifrado);
   registrarAccion('abrir-legal', (el) => _mostrarDocumentoLegal(el.dataset.doc));
   registrarAccion('abrir-perfil-fiscal', _abrirPerfilFiscal);
   _wireLegalLinks();

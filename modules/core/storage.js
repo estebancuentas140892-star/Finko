@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 42;
+const SCHEMA_VERSION = 43;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -643,6 +643,13 @@ function _migrate(raw) {
       data.config.primerUsoISO = new Date().toISOString().slice(0, 10);
     }
   }
+
+  // v42 → v43: `config.respaldoCifrado` (CFG.4c, ADR 043 D2.3). Migración
+  // intencionalmente no-op, mismo criterio que v40 → v41: el campo es opcional
+  // y `undefined`-safe, y su ausencia significa exactamente el default que
+  // queremos (respaldo en claro, como hasta hoy). Escribir `false` en cada
+  // estado guardado no cambiaría ningún comportamiento. La contraseña nunca
+  // entra al estado: no hay nada más que migrar.
 
   if (typeof data._version !== 'number' || data._version < SCHEMA_VERSION) {
     data._version = SCHEMA_VERSION;

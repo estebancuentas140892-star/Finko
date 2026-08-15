@@ -1740,6 +1740,39 @@ describe('Migración v41 → v42 (ultimoRespaldoISO y primerUsoISO en config, CF
   });
 });
 
+describe('Migración v42 → v43 (respaldoCifrado en config, CFG.4c)', () => {
+  it('un usuario existente sigue con el respaldo en claro: ausente = false', () => {
+    const v42 = { ...createInitialState(), _version: 42 };
+    delete v42.config.respaldoCifrado;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v42));
+
+    loadData();
+
+    expect(S.config.respaldoCifrado).not.toBe(true);
+    expect(S._version).toBe(SCHEMA_VERSION);
+  });
+
+  it('es idempotente: no apaga una preferencia ya encendida', () => {
+    const v42 = { ...createInitialState(), _version: 42 };
+    v42.config.respaldoCifrado = true;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v42));
+
+    loadData();
+
+    expect(S.config.respaldoCifrado).toBe(true);
+  });
+
+  it('la contraseña nunca entra al estado persistido', () => {
+    const v43 = { ...createInitialState(), _version: 43 };
+    v43.config.respaldoCifrado = true;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v43));
+
+    loadData();
+
+    expect(JSON.stringify(S.config)).not.toMatch(/contrase|password|clave/i);
+  });
+});
+
 describe('Migración v37 → v38 (plan de aportes de meta, MT.6c)', () => {
   it('una meta existente arranca sin plan de aportes', () => {
     const v37 = { ...createInitialState(), _version: 37 };
