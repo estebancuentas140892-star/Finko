@@ -47,6 +47,7 @@ export const TIPOS_AVISO = Object.freeze([
   'prestamo-vencido',
   'prestamo-proximo',
   'dia-de-pago',
+  'respaldo-atrasado',
 ]);
 
 /** Severidades de mayor a menor. El orden del array ES el ranking. */
@@ -74,6 +75,21 @@ export const DIAS_APARTADO_PROXIMO = 7;
 export const DIAS_PRESTAMO_PROXIMO = 3;
 
 /**
+ * Días sin un respaldo (JSON) exportado que activan `respaldo-atrasado` en
+ * severidad `media` (CFG.4b, ADR 043 D2.2). Un mes de margen: bastante para no
+ * molestar por un respaldo reciente, poco para dejar pasar el problema que
+ * abrió el ADR (perder el historial por no acordarse de exportar).
+ */
+export const DIAS_RESPALDO_ATRASADO = 30;
+
+/**
+ * Días sin respaldo que escalan el aviso a `alta` (interrumpe con notificación
+ * del sistema, ADR 066 D5). Tres meses: bastante más que el umbral base, para
+ * que solo escale quien de verdad dejó pasar mucho tiempo.
+ */
+export const DIAS_RESPALDO_CRITICO = 90;
+
+/**
  * Las cinco secciones de origen de un aviso (CFG.3c, ADR 066 nota 2026-08-13).
  * Es la granularidad que expone la preferencia del usuario: por sección, no
  * por los nueve `TIPOS_AVISO` uno por uno. Un compromiso vencido y uno próximo
@@ -81,7 +97,7 @@ export const DIAS_PRESTAMO_PROXIMO = 3;
  * separarlos en el interruptor multiplicaría los controles sin agregar una
  * decisión real (ver ADR 066, alternativas rechazadas).
  */
-export const SECCIONES_AVISO = Object.freeze(['compromisos', 'presupuesto', 'apartados', 'personales', 'tesoreria']);
+export const SECCIONES_AVISO = Object.freeze(['compromisos', 'presupuesto', 'apartados', 'personales', 'tesoreria', 'respaldo']);
 
 /** Etiqueta legible de cada sección, para el interruptor de Ajustes (CFG.3c). */
 export const LABEL_SECCION_AVISO = Object.freeze({
@@ -90,6 +106,7 @@ export const LABEL_SECCION_AVISO = Object.freeze({
   apartados:   'Apartados',
   personales:  'Préstamos personales',
   tesoreria:   'Día de pago',
+  respaldo:    'Respaldo de tus datos',
 });
 
 const _RX_HOY = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -277,6 +294,65 @@ function _deDiaDePago(ingresos, anio, mes, dia) {
     }));
 }
 
+/**
+ * Días transcurridos entre `desde` (pasado) y `hoyISO`, siempre positivo o
+ * cero. Reusa `diasHastaFecha`, escrita para fechas futuras: para una fecha
+ * pasada devuelve negativo, así que acá se invierte el signo.
+ */
+function _diasTranscurridos(desde, hoyISO) {
+  const d = diasHastaFecha(desde, hoyISO);
+  return d === null ? null : Math.max(0, -d);
+}
+
+/**
+ * Aviso de respaldo atrasado (CFG.4b, ADR 043 D2.2).
+ *
+ * A diferencia de los demás recolectores, no detecta un registro nuevo: mide
+ * una **ausencia** (cuánto hace que nadie exporta), así que el disparador es
+ * el paso del tiempo. `desde` es el último respaldo si existe, o
+ * `primerUsoISO` si nunca hubo uno: el reloj arranca cuando empezó a haber
+ * algo que perder, no antes, para no molestar a un usuario que instaló la
+ * app ayer y todavía no tiene con qué perder nada.
+ *
+ * Sin datos que perder (`hayDatos` falso), no hay nada que avisar.
+ */
+function _deRespaldo(ultimoRespaldoISO, primerUsoISO, hoyISO, hayDatos) {
+  if (!hayDatos) return [];
+  const desde = ultimoRespaldoISO ?? primerUsoISO;
+  if (!desde) return [];
+
+  const dias = _diasTranscurridos(desde, hoyISO);
+  if (dias === null || dias < DIAS_RESPALDO_ATRASADO) return [];
+
+  return [_aviso({
+    tipo:      'respaldo-atrasado',
+    severidad: dias >= DIAS_RESPALDO_CRITICO ? 'alta' : 'media',
+    id:        'respaldo',
+    nombre:    'Respaldo de tus datos',
+    dias,
+    sentido:   'atraso',
+    seccion:   'respaldo',
+  })];
+}
+
+/**
+ * true si hay algo que perder si el dispositivo se pierde sin respaldo
+ * (CFG.4b). Cubre las seis colecciones financieras del estado: las cinco que
+ * ya recibe el motor (`compromisos`, `presupuestos`, `apartados`,
+ * `personales`, `ingresos`) más `gastos`, `cuentas`, `metas` e `inversiones`,
+ * que ningún otro tipo de aviso necesita pero que sí son datos que perder.
+ *
+ * @param {object} colecciones
+ * @returns {boolean}
+ */
+export function hayDatosParaRespaldar({
+  compromisos = [], presupuestos = [], apartados = [], personales = [], ingresos = [],
+  gastos = [], cuentas = [], metas = [], inversiones = [],
+} = {}) {
+  return [compromisos, presupuestos, apartados, personales, ingresos, gastos, cuentas, metas, inversiones]
+    .some(col => Array.isArray(col) && col.length > 0);
+}
+
 // ── API PÚBLICA ──────────────────────────────────────────────────
 
 /**
@@ -294,6 +370,11 @@ function _deDiaDePago(ingresos, anio, mes, dia) {
  * @param {Array}  [params.apartados]    `S.apartados`.
  * @param {Array}  [params.personales]   `S.personales` (lo que te deben).
  * @param {Array}  [params.ingresos]     `S.ingresos` (fijos, para el día de pago).
+ * @param {string|null} [params.ultimoRespaldoISO] `S.config.ultimoRespaldoISO` (CFG.4b).
+ * @param {string|null} [params.primerUsoISO]      `S.config.primerUsoISO` (CFG.4b), referencia
+ *                                                  si nunca hubo un respaldo.
+ * @param {boolean} [params.hayDatosParaRespaldar]  Si hay algo que perder (ver la función del
+ *                                                  mismo nombre exportada por este módulo).
  * @param {string} params.hoyISO         'YYYY-MM-DD' de referencia (inyectable).
  * @returns {Aviso[]} `[]` si `hoyISO` no es una fecha con forma válida.
  */
@@ -304,6 +385,9 @@ export function recolectarAvisos({
   apartados    = [],
   personales   = [],
   ingresos     = [],
+  ultimoRespaldoISO = null,
+  primerUsoISO = null,
+  hayDatosParaRespaldar: hayDatos = false,
   hoyISO,
 } = {}) {
   const m = _RX_HOY.exec(String(hoyISO ?? ''));
@@ -320,6 +404,7 @@ export function recolectarAvisos({
     ..._deApartados(apartados, hoyISO),
     ..._dePrestamos(personales, hoyISO),
     ..._deDiaDePago(ingresos, anio, mes, dia),
+    ..._deRespaldo(ultimoRespaldoISO, primerUsoISO, hoyISO, hayDatos),
   ];
 
   return avisos.sort((a, b) => {

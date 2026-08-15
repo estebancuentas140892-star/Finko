@@ -17,7 +17,7 @@ import { save } from '../core/storage.js';
 import { abrirModal, cerrarModal } from './modales.js';
 import { renderAll } from '../infra/render.js';
 import { announce } from '../infra/a11y.js';
-import { esc } from '../infra/utils.js';
+import { esc, hoy } from '../infra/utils.js';
 import { renderBloqueAceptacion, registrarAceptacion } from './aceptacion-legal.js';
 
 /** Nombre capturado en el paso 1, en memoria hasta que el paso 2 lo persiste. */
@@ -90,6 +90,10 @@ function _onSubmitPaso2(form) {
   S.perfil.nombre = _nombreTemp;
   registrarAceptacion();
   S.onboarded = true;
+  // Referencia del aviso de respaldo atrasado si el usuario nunca exporta uno
+  // (CFG.4b, ADR 043 D2.2): el reloj arranca acá, no antes.
+  if (!S.config || typeof S.config !== 'object') S.config = {};
+  S.config.primerUsoISO = hoy();
   save();
   EventBus.emit('onboarding:completado');
 

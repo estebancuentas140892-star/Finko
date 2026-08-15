@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 41;
+const SCHEMA_VERSION = 42;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -623,6 +623,26 @@ function _migrate(raw) {
   // ambos opcionales y `undefined`-safe, un ingreso ya guardado se sigue leyendo
   // como cobro manual, y no hay forma de inferir del registro si el banco lo
   // abona solo.
+
+  // v41 → v42: `config.ultimoRespaldoISO` y `config.primerUsoISO` (CFG.4b,
+  // ADR 043 D2.2). `ultimoRespaldoISO` arranca en `null`: sin sello previo, el
+  // aviso de respaldo atrasado usa `primerUsoISO` como referencia (mismo
+  // criterio del recolector, `infra/avisos.js`). Para `primerUsoISO` no hay
+  // forma de saber la fecha real en la que un usuario YA migrado empezó a usar
+  // Finko, así que se ancla al día de esta migración (mismo precedente que
+  // `legalAceptado` en v32 → v33: el reloj arranca hacia delante, no
+  // retroactivo). Un usuario nuevo sí arranca en null (createInitialState()):
+  // `initOnboarding()` lo fija al terminar el wizard. Idempotente: si el campo
+  // ya está presente, no se sobreescribe.
+  if ((typeof data._version === 'number' ? data._version : 1) < 42) {
+    if (!data.config || typeof data.config !== 'object') data.config = {};
+    if (!('ultimoRespaldoISO' in data.config)) {
+      data.config.ultimoRespaldoISO = null;
+    }
+    if (!('primerUsoISO' in data.config)) {
+      data.config.primerUsoISO = new Date().toISOString().slice(0, 10);
+    }
+  }
 
   if (typeof data._version !== 'number' || data._version < SCHEMA_VERSION) {
     data._version = SCHEMA_VERSION;

@@ -34,7 +34,7 @@
 import { S } from '../core/state.js';
 import { save } from '../core/storage.js';
 import { f, hoy } from './utils.js';
-import { recolectarAvisos, avisosQueInterrumpen, filtrarPorPreferencia } from './avisos.js';
+import { recolectarAvisos, avisosQueInterrumpen, filtrarPorPreferencia, hayDatosParaRespaldar } from './avisos.js';
 
 /** Emoji por tipo de aviso. El título de una notificación sí los usa: es la única señal de qué es antes de leer. */
 const _EMOJI = {
@@ -47,6 +47,7 @@ const _EMOJI = {
   'prestamo-vencido':   '🤝',
   'prestamo-proximo':   '🤝',
   'dia-de-pago':        '💰',
+  'respaldo-atrasado':  '💾',
 };
 
 // ── API PÚBLICA ──────────────────────────────────────────────────
@@ -145,6 +146,13 @@ export async function verificarYNotificar(hoyISO = hoy()) {
       apartados:    S.apartados,
       personales:   S.personales,
       ingresos:     S.ingresos,
+      ultimoRespaldoISO: S.config?.ultimoRespaldoISO ?? null,
+      primerUsoISO:      S.config?.primerUsoISO ?? null,
+      hayDatosParaRespaldar: hayDatosParaRespaldar({
+        compromisos: S.compromisos, presupuestos: S.presupuestos, apartados: S.apartados,
+        personales: S.personales, ingresos: S.ingresos, gastos: S.gastos,
+        cuentas: S.cuentas, metas: S.metas, inversiones: S.inversiones,
+      }),
       hoyISO,
     })),
     S.config?.avisosPorSeccion,
@@ -229,6 +237,9 @@ function _frase(aviso, nombre) {
 
     case 'dia-de-pago':
       return `Hoy te llega ${nombre}`;
+
+    case 'respaldo-atrasado':
+      return `Hace ${dias} días que no respaldas tus datos`;
 
     default:
       return nombre;

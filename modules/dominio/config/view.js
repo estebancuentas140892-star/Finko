@@ -9,6 +9,7 @@ import { icon } from '../../infra/icons.js';
 import { estadoPermiso } from '../../infra/notificaciones.js';
 import { SECCIONES_AVISO, LABEL_SECCION_AVISO } from '../../infra/avisos.js';
 import { estadoCuota } from '../../core/storage.js';
+import { diasHastaFecha } from '../../infra/bolsas.js';
 import { legalVigente, estadoVigenciaLegal, APP_VERSION, SITUACIONES_LABORALES } from '../../core/constants.js';
 import { estaInstalada } from '../../ui/install-prompt.js';
 import { DOCUMENTOS_LEGALES } from './legal.js';
@@ -643,6 +644,27 @@ function _renderPersistencia() {
     </div>`;
 }
 
+/**
+ * Sello del último respaldo en lenguaje humano (CFG.4b, ADR 043 D2.2).
+ * Exportada porque `config/index.js` la reusa para actualizar el texto tras
+ * exportar, sin re-renderizar el panel (mismo criterio que el chip de
+ * guardado y que el bloque de persistencia de CFG.4a).
+ *
+ * @param {string|null} ultimoRespaldoISO `S.config.ultimoRespaldoISO`.
+ * @returns {string}
+ */
+export function textoUltimoRespaldo(ultimoRespaldoISO) {
+  if (!ultimoRespaldoISO) return 'Nunca has guardado un respaldo.';
+
+  const dias = diasHastaFecha(ultimoRespaldoISO, hoy());
+  if (dias === null) return 'Nunca has guardado un respaldo.';
+
+  const transcurridos = Math.max(0, -dias);
+  if (transcurridos === 0) return 'Guardaste tu último respaldo hoy.';
+  if (transcurridos === 1) return 'Guardaste tu último respaldo ayer.';
+  return `Guardaste tu último respaldo hace ${transcurridos} días.`;
+}
+
 function _renderDatos() {
   return `
     <section class="config-section" aria-labelledby="config-datos-title">
@@ -653,6 +675,7 @@ function _renderDatos() {
         contigo: guarda un respaldo de vez en cuando.
       </p>
       ${_renderPersistencia()}
+      <p class="config-section__desc" id="config-ultimo-respaldo">${textoUltimoRespaldo(S.config?.ultimoRespaldoISO)}</p>
       <p class="form-hint">Toda la app</p>
       <div class="config-actions config-actions--ambito">
         <button class="btn btn-secondary" data-action="exportar-datos">

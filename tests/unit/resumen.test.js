@@ -408,6 +408,10 @@ describe('renderPanelAvisos()', () => {
     S.apartados    = [];
     S.personales   = [];
     S.ingresos     = [];
+    S.cuentas      = [];
+    S.metas        = [];
+    S.inversiones  = [];
+    S.config       = { ...S.config, ultimoRespaldoISO: null, primerUsoISO: null };
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 5, 13)); // 2026-06-13, mismo HOY que el resto del archivo
   });
@@ -475,6 +479,30 @@ describe('renderPanelAvisos()', () => {
     S.personales = [prestamo()];
     renderPanelAvisos();
     expect(elPanel().innerHTML).toContain('3 avisos');
+  });
+
+  it('un respaldo atrasado se muestra con badge "Respaldo" (CFG.4b)', () => {
+    S.apartados = [apartado()]; // hay algo que perder
+    S.config.ultimoRespaldoISO = '2026-04-15'; // 59 días antes del 2026-06-13
+    renderPanelAvisos();
+    const html = elPanel().innerHTML;
+    expect(html).toContain('Respaldo de tus datos');
+    expect(html).toContain('Hace 59 días que no lo respaldas');
+    expect(html).toContain('Respaldo');
+  });
+
+  it('sin nada que perder, un respaldo atrasado no avisa aunque nunca se haya exportado', () => {
+    S.config.primerUsoISO = '2026-01-01';
+    renderPanelAvisos();
+    expect(elPanel().hidden).toBe(true);
+  });
+
+  it('una sección apagada en Ajustes también apaga el respaldo atrasado', () => {
+    S.apartados = [apartado()];
+    S.config.ultimoRespaldoISO = '2026-04-15';
+    S.config.avisosPorSeccion = { respaldo: false };
+    renderPanelAvisos();
+    expect(elPanel().innerHTML).not.toContain('Respaldo de tus datos');
   });
 
   it('más del tope visible resume el resto en un texto, sin recortar el conteo del título', () => {

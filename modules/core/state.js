@@ -355,6 +355,16 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  *                                           repetir la misma notificación si el usuario
  *                                           abre y cierra la app varias veces el mismo día.
  *                                           `null` = todavía no se mostró ninguna.
+ * @property {string|null} [ultimoRespaldoISO] - 'YYYY-MM-DD' del último respaldo completo
+ *                                           (JSON) exportado (CFG.4b, ADR 043 D2.2, schema
+ *                                           v42). `null` = nunca exportó uno. La exportación
+ *                                           de solo gastos (CSV) no lo actualiza: no es un
+ *                                           respaldo completo.
+ * @property {string|null} [primerUsoISO] - 'YYYY-MM-DD' en que el usuario terminó el
+ *                                           onboarding (CFG.4b, schema v42). Referencia para
+ *                                           el aviso de respaldo atrasado cuando nunca
+ *                                           exportó uno: el reloj arranca cuando empezó a
+ *                                           haber algo que perder, no antes.
  */
 
 /**
@@ -488,6 +498,10 @@ export function createInitialState() {
       },
       /** Sello de la última notificación del sistema (CFG.3c, schema v40). */
       ultimoAvisoISO: null,
+      /** Último respaldo (JSON) exportado (CFG.4b, schema v42). null = nunca. */
+      ultimoRespaldoISO: null,
+      /** Fin del onboarding (CFG.4b, schema v42): referencia si nunca respaldó. */
+      primerUsoISO: null,
     },
 
     /** Cuentas / tesorería. */

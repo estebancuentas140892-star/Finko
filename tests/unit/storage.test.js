@@ -1702,6 +1702,44 @@ describe('Migración v39 → v40 (avisosPorSeccion y ultimoAvisoISO en config, C
   });
 });
 
+describe('Migración v41 → v42 (ultimoRespaldoISO y primerUsoISO en config, CFG.4b)', () => {
+  it('un usuario existente arranca sin sello de respaldo pero con primerUsoISO anclado al día de la migración', () => {
+    const v41 = { ...createInitialState(), _version: 41 };
+    delete v41.config.ultimoRespaldoISO;
+    delete v41.config.primerUsoISO;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v41));
+
+    const hoyISO = new Date().toISOString().slice(0, 10);
+    loadData();
+
+    expect(S.config.ultimoRespaldoISO).toBeNull();
+    expect(S.config.primerUsoISO).toBe(hoyISO);
+    expect(S._version).toBe(SCHEMA_VERSION);
+  });
+
+  it('un estado v41 sin config en absoluto no revienta la migración', () => {
+    const v41 = { ...createInitialState(), _version: 41 };
+    delete v41.config;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v41));
+
+    expect(() => loadData()).not.toThrow();
+    expect(S.config.ultimoRespaldoISO).toBeNull();
+    expect(typeof S.config.primerUsoISO).toBe('string');
+  });
+
+  it('es idempotente: no sobrescribe un sello de respaldo ya guardado', () => {
+    const v41 = { ...createInitialState(), _version: 41 };
+    v41.config.ultimoRespaldoISO = '2026-08-01';
+    v41.config.primerUsoISO = '2026-01-15';
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v41));
+
+    loadData();
+
+    expect(S.config.ultimoRespaldoISO).toBe('2026-08-01');
+    expect(S.config.primerUsoISO).toBe('2026-01-15');
+  });
+});
+
 describe('Migración v37 → v38 (plan de aportes de meta, MT.6c)', () => {
   it('una meta existente arranca sin plan de aportes', () => {
     const v37 = { ...createInitialState(), _version: 37 };

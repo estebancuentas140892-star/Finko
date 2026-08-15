@@ -14,7 +14,7 @@ import { icon, tejaCategoria } from '../../infra/icons.js';
 import { iconoDeCategoriaGasto } from '../../core/constants.js';
 import { memoizar } from '../../infra/memo.js';
 import { resumenSemanal } from './logic.js';
-import { recolectarAvisos, filtrarPorPreferencia } from '../../infra/avisos.js';
+import { recolectarAvisos, filtrarPorPreferencia, hayDatosParaRespaldar } from '../../infra/avisos.js';
 
 /**
  * PERF.2: `resumenSemanal()` barre `S.gastos` varias veces (ventanas de 7 y
@@ -162,15 +162,16 @@ export function renderPanelResumen() {
  * lógica de siempre (no pasan por el motor). Mostrarlos también acá sería el
  * mismo aviso dos veces en la misma pantalla.
  */
-const _TIPOS_SIN_PANEL_PROPIO = ['apartado-listo', 'dia-de-pago', 'prestamo-vencido'];
+const _TIPOS_SIN_PANEL_PROPIO = ['apartado-listo', 'dia-de-pago', 'prestamo-vencido', 'respaldo-atrasado'];
 
 /** Filas visibles antes de resumir el resto en un texto, mismo tope que "Pendientes del mes". */
 const MAX_VISIBLES_AVISOS = 4;
 
 const _ICONO_POR_TIPO_AVISO = {
-  'apartado-listo':  () => icon('apartados'),
-  'dia-de-pago':     () => icon('saldo'),
-  'prestamo-vencido': () => icon('personales'),
+  'apartado-listo':    () => icon('apartados'),
+  'dia-de-pago':       () => icon('saldo'),
+  'prestamo-vencido':  () => icon('personales'),
+  'respaldo-atrasado': () => icon('ajustes'),
 };
 
 /**
@@ -191,6 +192,10 @@ function _filaAviso(a) {
       const cuando = dias === 1 ? 'hace 1 día' : `hace ${dias} días`;
       return { sub: monto ? `Acordaron esta fecha ${cuando} · ${monto}` : `Acordaron esta fecha ${cuando}`, badge: 'Recordatorio', clase: 'info' };
     }
+    case 'respaldo-atrasado': {
+      const dias = Number(a.dias) || 0;
+      return { sub: `Hace ${dias} días que no lo respaldas`, badge: 'Respaldo', clase: 'info' };
+    }
     default:
       return { sub: monto, badge: '', clase: 'info' };
   }
@@ -199,11 +204,12 @@ function _filaAviso(a) {
 /**
  * Renderiza en `#panel-avisos` los avisos del motor único (`infra/avisos.js`,
  * CFG.3a) que ninguna otra superficie de Inicio muestra todavía: apartados
- * listos para reiniciar, ingresos que llegan hoy y préstamos personales con
- * la fecha pactada ya pasada. El resto de tipos ya vive en sus paneles
- * propios (`_TIPOS_SIN_PANEL_PROPIO`), así que este panel no los repite.
- * Respeta además el interruptor por sección (CFG.3c, `S.config.avisosPorSeccion`):
- * una sección apagada en Ajustes tampoco aparece acá.
+ * listos para reiniciar, ingresos que llegan hoy, préstamos personales con la
+ * fecha pactada ya pasada y respaldo atrasado (CFG.4b). El resto de tipos ya
+ * vive en sus paneles propios (`_TIPOS_SIN_PANEL_PROPIO`), así que este panel
+ * no los repite. Respeta además el interruptor por sección (CFG.3c,
+ * `S.config.avisosPorSeccion`): una sección apagada en Ajustes tampoco
+ * aparece acá.
  *
  * No-op si el contenedor no existe.
  */
@@ -219,6 +225,13 @@ export function renderPanelAvisos() {
       apartados:    S.apartados,
       personales:   S.personales,
       ingresos:     S.ingresos,
+      ultimoRespaldoISO: S.config?.ultimoRespaldoISO ?? null,
+      primerUsoISO:      S.config?.primerUsoISO ?? null,
+      hayDatosParaRespaldar: hayDatosParaRespaldar({
+        compromisos: S.compromisos, presupuestos: S.presupuestos, apartados: S.apartados,
+        personales: S.personales, ingresos: S.ingresos, gastos: S.gastos,
+        cuentas: S.cuentas, metas: S.metas, inversiones: S.inversiones,
+      }),
       hoyISO:       hoy(),
     }),
     S.config?.avisosPorSeccion,

@@ -12,12 +12,15 @@ import {
   recolectarAvisos,
   avisosQueInterrumpen,
   filtrarPorPreferencia,
+  hayDatosParaRespaldar,
   TIPOS_AVISO,
   SEVERIDADES,
   SEVERIDADES_QUE_INTERRUMPEN,
   SECCIONES_AVISO,
   LABEL_SECCION_AVISO,
   DIAS_APARTADO_PROXIMO,
+  DIAS_RESPALDO_ATRASADO,
+  DIAS_RESPALDO_CRITICO,
 } from '../../modules/infra/avisos.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -374,6 +377,91 @@ describe('recolectarAvisos() - día de pago', () => {
   });
 });
 
+// ── RESPALDO ATRASADO (CFG.4b, ADR 043 D2.2) ─────────────────────
+
+describe('recolectarAvisos() - respaldo atrasado', () => {
+  const conDatos = (overrides = {}) => ({
+    compromisos: [fijo({ diaPago: 20 })], // no vence, no genera otro aviso
+    hoyISO: HOY,
+    hayDatosParaRespaldar: true,
+    ...overrides,
+  });
+
+  it('sin datos que perder, nunca avisa aunque el respaldo sea viejo', () => {
+    const avisos = recolectarAvisos({
+      hoyISO: HOY,
+      ultimoRespaldoISO: '2026-01-01',
+      hayDatosParaRespaldar: false,
+    });
+    expect(de(avisos, 'respaldo-atrasado')).toBeUndefined();
+  });
+
+  it('sin último respaldo y sin primerUsoISO, no avisa: no hay referencia desde cuándo contar', () => {
+    const avisos = recolectarAvisos(conDatos({ ultimoRespaldoISO: null, primerUsoISO: null }));
+    expect(de(avisos, 'respaldo-atrasado')).toBeUndefined();
+  });
+
+  it('a 29 días del último respaldo, todavía no avisa', () => {
+    const avisos = recolectarAvisos(conDatos({ ultimoRespaldoISO: '2026-07-15' }));
+    expect(de(avisos, 'respaldo-atrasado')).toBeUndefined();
+  });
+
+  it(`a ${DIAS_RESPALDO_ATRASADO} días exactos, avisa en severidad media`, () => {
+    const avisos = recolectarAvisos(conDatos({ ultimoRespaldoISO: '2026-07-14' }));
+    const a = de(avisos, 'respaldo-atrasado');
+    expect(a.severidad).toBe('media');
+    expect(a.dias).toBe(30);
+    expect(a.seccion).toBe('respaldo');
+    expect(a.sentido).toBe('atraso');
+  });
+
+  it(`a ${DIAS_RESPALDO_CRITICO} días, escala a severidad alta`, () => {
+    const avisos = recolectarAvisos(conDatos({ ultimoRespaldoISO: '2026-05-15' }));
+    const a = de(avisos, 'respaldo-atrasado');
+    expect(a.severidad).toBe('alta');
+    expect(a.dias).toBe(90);
+  });
+
+  it('a 89 días sigue en media, un día antes de escalar', () => {
+    const avisos = recolectarAvisos(conDatos({ ultimoRespaldoISO: '2026-05-16' }));
+    expect(de(avisos, 'respaldo-atrasado').severidad).toBe('media');
+  });
+
+  it('sin respaldo nunca hecho, usa primerUsoISO como referencia', () => {
+    const avisos = recolectarAvisos(conDatos({ ultimoRespaldoISO: null, primerUsoISO: '2026-07-14' }));
+    const a = de(avisos, 'respaldo-atrasado');
+    expect(a.dias).toBe(30);
+  });
+
+  it('con un último respaldo presente, primerUsoISO no se usa aunque sea más viejo', () => {
+    const avisos = recolectarAvisos(conDatos({ ultimoRespaldoISO: '2026-08-12', primerUsoISO: '2026-01-01' }));
+    expect(de(avisos, 'respaldo-atrasado')).toBeUndefined();
+  });
+
+  it('un respaldo de hoy mismo no avisa', () => {
+    const avisos = recolectarAvisos(conDatos({ ultimoRespaldoISO: HOY }));
+    expect(de(avisos, 'respaldo-atrasado')).toBeUndefined();
+  });
+});
+
+describe('hayDatosParaRespaldar()', () => {
+  it('false sin ninguna colección', () => {
+    expect(hayDatosParaRespaldar()).toBe(false);
+    expect(hayDatosParaRespaldar({})).toBe(false);
+  });
+
+  it('true con cualquiera de las nueve colecciones no vacía', () => {
+    expect(hayDatosParaRespaldar({ gastos: [{ id: 'g1' }] })).toBe(true);
+    expect(hayDatosParaRespaldar({ cuentas: [{ id: 'c1' }] })).toBe(true);
+    expect(hayDatosParaRespaldar({ metas: [{ id: 'm1' }] })).toBe(true);
+    expect(hayDatosParaRespaldar({ inversiones: [{ id: 'i1' }] })).toBe(true);
+  });
+
+  it('ignora colecciones que no son arrays, sin lanzar', () => {
+    expect(hayDatosParaRespaldar({ gastos: null, cuentas: undefined })).toBe(false);
+  });
+});
+
 // ── ORDEN Y FILTRO DE INTERRUPCIÓN ───────────────────────────────
 
 describe('recolectarAvisos() - orden', () => {
@@ -508,7 +596,7 @@ describe('SECCIONES_AVISO / LABEL_SECCION_AVISO', () => {
     }
   });
 
-  it('cada aviso que devuelve el motor cae en una de las cinco secciones', () => {
+  it('cada aviso que devuelve el motor cae en una de las seis secciones', () => {
     const avisos = recolectarAvisos({
       compromisos:  [fijo({ diaPago: 5 })],
       presupuestos: [{ id: 'p1', categoria: 'Restaurantes', montoMensual: 100_000, activo: true, fechaCreacion: '2025-01-01T00:00:00.000Z' }],

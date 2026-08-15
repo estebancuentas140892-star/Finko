@@ -132,6 +132,14 @@ describe('formatearAvisoSistema() - copy del resto de fuentes', () => {
     expect(titulo).toContain('Juan');
     expect(titulo).not.toMatch(/cobra|debe|reclama|exige/i);
   });
+
+  it('el respaldo atrasado dice hace cuántos días, sin nombre de usuario que citar (CFG.4b)', () => {
+    const { titulo } = formatearAvisoSistema(aviso({
+      tipo: 'respaldo-atrasado', nombre: 'Respaldo de tus datos', dias: 45, sentido: 'atraso', monto: null,
+    }));
+    expect(titulo).toMatch(/hace 45 días que no respaldas tus datos/i);
+    expect(titulo).toMatch(/^💾/);
+  });
 });
 
 // ── CUERPO ───────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { renderPanelConfig, renderModalFiscal, miles, desdeMiles } from '../../modules/dominio/config/view.js';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { renderPanelConfig, renderModalFiscal, miles, desdeMiles, textoUltimoRespaldo } from '../../modules/dominio/config/view.js';
 import { S, createInitialState } from '../../modules/core/state.js';
 import { DOCUMENTOS_LEGALES, documentoLegalPorId } from '../../modules/dominio/config/legal.js';
 
@@ -181,6 +181,65 @@ describe('renderPanelConfig() - bloque de borrado automático (CFG.4a)', () => {
   });
 });
 
+// ── SELLO DEL ÚLTIMO RESPALDO (CFG.4b, ADR 043 D2.2) ─────────────
+
+describe('textoUltimoRespaldo()', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 15)); // 2026-08-15
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('nunca respaldó', () => {
+    expect(textoUltimoRespaldo(null)).toBe('Nunca has guardado un respaldo.');
+  });
+
+  it('respaldó hoy mismo', () => {
+    expect(textoUltimoRespaldo('2026-08-15')).toBe('Guardaste tu último respaldo hoy.');
+  });
+
+  it('respaldó ayer', () => {
+    expect(textoUltimoRespaldo('2026-08-14')).toBe('Guardaste tu último respaldo ayer.');
+  });
+
+  it('respaldó hace varios días', () => {
+    expect(textoUltimoRespaldo('2026-08-01')).toBe('Guardaste tu último respaldo hace 14 días.');
+  });
+});
+
+describe('renderPanelConfig() - sello del último respaldo (CFG.4b)', () => {
+  beforeEach(() => {
+    Object.assign(S, createInitialState());
+    document.body.innerHTML = '<div id="panel-config"></div>';
+  });
+
+  it('sin respaldo previo, muestra el aviso de "nunca"', () => {
+    renderPanelConfig();
+    const sello = document.getElementById('config-ultimo-respaldo');
+    expect(sello).not.toBeNull();
+    expect(sello.textContent).toBe('Nunca has guardado un respaldo.');
+  });
+
+  it('con un sello guardado, lo muestra en la misma sección de "Tus datos"', () => {
+    S.config.ultimoRespaldoISO = '2026-01-01';
+    renderPanelConfig();
+    const datos = document.querySelector('section[aria-labelledby="config-datos-title"]');
+    const sello = datos.querySelector('#config-ultimo-respaldo');
+    expect(sello).not.toBeNull();
+    expect(sello.textContent).toContain('Guardaste tu último respaldo hace');
+  });
+
+  it('el sello no es un .form-hint: no rompe el conteo de rótulos de ámbito', () => {
+    renderPanelConfig();
+    const datos = document.querySelector('section[aria-labelledby="config-datos-title"]');
+    const rotulos = [...datos.querySelectorAll('.form-hint')].map(e => e.textContent.trim());
+    expect(rotulos).toEqual(['Toda la app', 'Solo tus gastos']);
+  });
+});
+
 // ── MONTOS DE RENTA CON SEPARADOR DE MILES (B4/R16) ──────────────
 
 describe('miles() y desdeMiles()', () => {
@@ -335,12 +394,13 @@ describe('renderPanelConfig() - preferencias de avisos por tipo (CFG.3c)', () =>
     renderPanelConfig();
     const fieldset = document.querySelector('.config-avisos-tipos');
     expect(fieldset).not.toBeNull();
-    expect(fieldset.querySelectorAll('.config-toggle').length).toBe(5);
+    expect(fieldset.querySelectorAll('.config-toggle').length).toBe(6);
     expect(fieldset.textContent).toContain('Deudas y pagos fijos');
     expect(fieldset.textContent).toContain('Límites de gasto');
     expect(fieldset.textContent).toContain('Apartados');
     expect(fieldset.textContent).toContain('Préstamos personales');
     expect(fieldset.textContent).toContain('Día de pago');
+    expect(fieldset.textContent).toContain('Respaldo de tus datos');
   });
 
   it('sin recordatorios activos, no se muestra ningún interruptor por sección', () => {
@@ -358,11 +418,11 @@ describe('renderPanelConfig() - preferencias de avisos por tipo (CFG.3c)', () =>
     expect(presupuesto.checked).toBe(true);
   });
 
-  it('sin preferencia guardada, las cinco secciones nacen activas', () => {
+  it('sin preferencia guardada, las seis secciones nacen activas', () => {
     delete S.config.avisosPorSeccion;
     renderPanelConfig();
     const inputs = document.querySelectorAll('.config-avisos-tipos input[type="checkbox"]');
-    expect(inputs.length).toBe(5);
+    expect(inputs.length).toBe(6);
     for (const input of inputs) expect(input.checked).toBe(true);
   });
 

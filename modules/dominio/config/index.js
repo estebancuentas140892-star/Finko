@@ -21,7 +21,7 @@ import { pedirPermiso } from '../../infra/notificaciones.js';
 import { LABEL_SECCION_AVISO } from '../../infra/avisos.js';
 import { PERSISTENCIA, estadoPersistencia, solicitarPersistencia } from '../../infra/persistencia.js';
 import { abrirModal } from '../../ui/modales.js';
-import { renderPanelConfig, renderModalFiscal, miles, desdeMiles } from './view.js';
+import { renderPanelConfig, renderModalFiscal, miles, desdeMiles, textoUltimoRespaldo } from './view.js';
 import { gastosACSV } from '../export/logic.js';
 import { documentoLegalPorId, cargarDocumentoLegal, VERSION_LEGAL } from './legal.js';
 import { validarPin, crearBloqueo, verificarPin, limpiarFallos } from './bloqueo.js';
@@ -70,6 +70,15 @@ async function _exportarDatos() {
     a.download = `finko-backup-${fecha}.json`;
     a.click();
     URL.revokeObjectURL(url);
+
+    // Sello del último respaldo (CFG.4b, ADR 043 D2.2). Solo el respaldo
+    // completo lo actualiza: exportar gastos a CSV no cuenta, es parcial.
+    if (!S.config || typeof S.config !== 'object') S.config = {};
+    S.config.ultimoRespaldoISO = fecha;
+    save();
+    const sello = document.getElementById('config-ultimo-respaldo');
+    if (sello) sello.textContent = textoUltimoRespaldo(fecha);
+
     announce('Datos exportados correctamente.');
   } catch (err) {
     console.error('[config] exportarDatos falló:', err);
