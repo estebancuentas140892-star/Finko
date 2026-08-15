@@ -12,6 +12,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(nav): ficha 01 de la auditoría móvil, el bloque Gastos en la barra · 2026-08-15
+
+Primera de las 25 entregas del handoff "Mobile app design handoff" (Claude Design). Decisión completa en el [ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md). Ficha: [`contexto/sistema-visual.md`](contexto/sistema-visual.md).
+
+- **"Gastos" pasa de sección a bloque con tres lentes**: "Lo que gastaste" (la portada, la sección Gastos actual), "Por pagar" (`#compromisos`) y "Límites" (`#presupuesto`). Las tres siguen siendo secciones con hash propio: **el bloque es una capa de navegación, no un contenedor nuevo de estado**. Cero hashes nuevos en `router.js`, cero dominios nuevos, ninguna sección cambia de dueño.
+- **`modules/ui/bloque-gastos.js` (nuevo)**: inyecta la misma franja de pestañas en las tres lentes (slots `#tabs-gast`, `#tabs-compromisos`, `#tabs-presupuesto`), con el patrón de `ui/proposito.js`. Cada pestaña lleva su estado encima: "Por pagar" cuenta los vencidos con la **misma llamada** que el bloque "Atención hoy" de Inicio (`vencidosSinPagar`, sin config propia: dos conteos distintos para el mismo dato es peor que no mostrarlo) y "Límites" cuenta los topes excedidos (`alertasLimites`). La pastilla es `aria-hidden`: un número suelto leído en voz alta no dice de qué, así que el conteo viaja en el `aria-label` de la pestaña.
+- **La franja solo existe bajo 1024px**: en escritorio el sidebar ya lista las tres lentes en filas propias. Se inyecta **antes** de `initRouter` en `bootstrap.js`, porque `markActiveNav` corre en la primera pasada del router y necesita las pestañas ya en el DOM.
+- **El botón "Más" deja de cambiar de identidad** (hallazgo H5): en 11 de las 15 secciones el control que abre el mapa no se llamaba "Más". Se van `SECCION_NAV`, `_rotularMas()` y `.nav-item--mas-ubicado`; el resaltado se conserva. Quién dice el lugar: el encabezado de sección (R33), que ya alimenta la barra superior.
+- **La hoja "Más" cambia un rótulo que no agrupaba por dos que sí excluyen**: "Consultar" (Calendario, Movimientos, Análisis) y "Tu dinero" (Mis cuentas, Me deben). "Gestión del dinero" cubría las 15 secciones de una app de finanzas. Deudas y Límites salen de la hoja: son lentes del bloque. Ocho destinos pasan a seis.
+- **"Me deben" se queda fuera del bloque a propósito**: es el único dinero que va a entrar, y meterlo obligaba a un nombre de bloque que cubriera las dos direcciones. Criterio para reabrirlo, en el ADR.
+- **La barra no cambia de alto, de anatomía ni de ergonomía**: `Inicio · Gastos · [Registrar] · Ahorro · Más` es el mismo marcado del [ADR 065](DECISIONS/065-ahorro-en-la-barra-inferior.md). Lo que cambia es qué hay detrás de una de las etiquetas.
+- **Medido en la app a 390 px**: las tres pestañas caben sin desplazamiento (349 px de contenido en 349 px útiles); a 360 px la franja se desplaza 21 px en horizontal, y truncar los nombres sería peor porque los nombres son justo lo que se está enseñando.
+- **Efecto sobre selectores**: `[href="#gast"]`, `[href="#compromisos"]` y `[href="#presupuesto"]` dejan de ser únicos en el DOM. Dos tests E2E de `navegacion-render.test.js` pasan a `.nav-item[...]`, igual que el ADR 065 obligó a hacer con `#ahorro`.
+- 13 tests unitarios nuevos (`bloque-gastos.test.js`), el bloque del botón "Más" reescrito en `shell-nav.test.js` y 1 E2E nuevo. Compuertas: unitarios 4320/4326 (los 6 rojos son BUG-028, ajeno y documentado), lint, guion largo y E2E 272/272 verdes (sello `709b641682d6`). SW v539 → v540.
+
 ### docs(legal): CFG.4d, cláusula de cambio de modelo cerrada, iniciativa CFG.4 completa · 2026-08-15
 
 Cuarta y última rebanada de **CFG.4** ([ADR 043](DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md) D1). Los cinco documentos de `docs/legal/` con la cláusula "cambio de modelo (CFG.4)" describían una decisión pendiente ("si Finko llegara a incorporar cuentas..."); con el ADR Aceptado, esa reserva deja de ser reserva. Ficha: [`contexto/configuracion.md`](contexto/configuracion.md).

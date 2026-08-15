@@ -2,12 +2,12 @@
  * shell-nav.test.js - navegación del shell (NAV2.1a, ADR 040).
  *
  * Cubre:
- * - markActiveNav(): marca .nav-item Y .mas-tile de la sección activa
- *   (clase + aria-current), y resalta el botón "Más" cuando la sección
- *   vive detrás del menú (MAS_SECTIONS).
- * - El botón "Más" ubicado (DIS.6/C3, regla R30): dentro de una sección del
- *   menú dice su nombre, muestra su ícono y toma su data-section (de donde
- *   sale el color de dominio); al volver a la barra se limpia.
+ * - markActiveNav(): marca .nav-item, .mas-tile Y .bloque-tabs__tab de la
+ *   sección activa (clase + aria-current), y resalta el botón "Más" cuando
+ *   la sección vive detrás del menú (MAS_SECTIONS).
+ * - El botón "Más" no cambia de identidad (ADR 069, hallazgo H5): siempre
+ *   dice "Más", con su ícono y sin data-section, esté donde esté el usuario.
+ * - La entrada de Gastos se resalta en las tres lentes del bloque (ADR 069).
  * - _syncThemeButton vía toggleTheme(): sincroniza TODOS los toggles
  *   presentes (checkbox de Ajustes + botón de icono del sheet, que
  *   alterna el glifo luna/sol y aria-pressed).
@@ -65,7 +65,7 @@ describe('markActiveNav()', () => {
   });
 });
 
-describe('el botón "Más" nombra la sección donde estás (DIS.6/C3)', () => {
+describe('el botón "Más" siempre se llama "Más" (ADR 069, hallazgo H5)', () => {
   beforeEach(() => {
     document.body.innerHTML = `
       <a class="nav-item" data-section="gast"></a>
@@ -78,53 +78,82 @@ describe('el botón "Más" nombra la sección donde estás (DIS.6/C3)', () => {
 
   const masBtn = () => document.querySelector('.nav-item[data-modal="modal-mas"]');
 
-  it('dentro de una sección del menú toma su nombre, su ícono y su data-section', () => {
+  it('dentro de una sección del menú conserva nombre, ícono y nombre accesible', () => {
     markActiveNav('analisis');
-    const btn = masBtn();
-    expect(btn.dataset.section).toBe('analisis');
-    expect(btn.querySelector('.nav-item__label').textContent).toBe('Análisis');
-    expect(btn.querySelector('use').getAttribute('href')).toBe('#i-analisis');
-    expect(btn.getAttribute('aria-label')).toBe('Análisis. Abrir más opciones');
-    expect(btn.classList.contains('nav-item--mas-ubicado')).toBe(true);
-  });
-
-  it('al pasar de una sección del menú a otra, cambia de nombre y de color', () => {
-    markActiveNav('analisis');
-    markActiveNav('presupuesto');
-    const btn = masBtn();
-    expect(btn.dataset.section).toBe('presupuesto');
-    expect(btn.querySelector('.nav-item__label').textContent).toBe('Límites');
-    expect(btn.querySelector('use').getAttribute('href')).toBe('#i-presupuesto');
-    expect(btn.classList.contains('active')).toBe(true);
-  });
-
-  it('Calendario cuenta como sección del menú y Ahorro ya no (AH.7a)', () => {
-    markActiveNav('agenda');
-    expect(masBtn().querySelector('.nav-item__label').textContent).toBe('Calendario');
-    expect(masBtn().querySelector('use').getAttribute('href')).toBe('#i-agenda');
-
-    markActiveNav('ahorro');
-    expect(masBtn().classList.contains('active')).toBe(false);
-    expect(masBtn().querySelector('.nav-item__label').textContent).toBe('Más');
-  });
-
-  it('al volver a una sección de la barra limpia el data-section y vuelve a "Más"', () => {
-    markActiveNav('analisis');
-    markActiveNav('gast');
     const btn = masBtn();
     expect(btn.dataset.section).toBeUndefined();
     expect(btn.querySelector('.nav-item__label').textContent).toBe('Más');
     expect(btn.querySelector('use').getAttribute('href')).toBe('#i-mas');
     expect(btn.getAttribute('aria-label')).toBe('Mas opciones');
-    expect(btn.classList.contains('nav-item--mas-ubicado')).toBe(false);
   });
 
-  it('Movimientos ya cuenta como sección del menú (DIS.6/C6)', () => {
-    markActiveNav('movimientos');
-    const btn = masBtn();
-    expect(btn.classList.contains('active')).toBe(true);
-    expect(btn.querySelector('.nav-item__label').textContent).toBe('Movimientos');
-    expect(btn.querySelector('use').getAttribute('href')).toBe('#i-saldo');
+  it('se resalta en cada sección del menú, sin cambiar de palabra', () => {
+    for (const hash of ['analisis', 'agenda', 'movimientos', 'tesoreria', 'personales', 'config']) {
+      markActiveNav(hash);
+      expect(masBtn().classList.contains('active')).toBe(true);
+      expect(masBtn().querySelector('.nav-item__label').textContent).toBe('Más');
+    }
+  });
+
+  it('Deudas y Límites ya no viven detrás del menú: son lentes del bloque Gastos', () => {
+    for (const hash of ['compromisos', 'presupuesto']) {
+      markActiveNav(hash);
+      expect(masBtn().classList.contains('active')).toBe(false);
+      expect(masBtn().getAttribute('aria-current')).toBe('false');
+    }
+  });
+
+  it('Ahorro tampoco: subió a la barra inferior (AH.7a)', () => {
+    markActiveNav('ahorro');
+    expect(masBtn().classList.contains('active')).toBe(false);
+  });
+});
+
+describe('el bloque Gastos y sus tres lentes (ADR 069)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <a class="nav-item" href="#gast" data-section="gast">
+        <span class="nav-item__label">Gastos</span>
+      </a>
+      <button class="nav-item" data-modal="modal-mas"></button>
+      <nav class="bloque-tabs">
+        <a class="bloque-tabs__tab" href="#gast" data-section="gast"></a>
+        <a class="bloque-tabs__tab" href="#compromisos" data-section="compromisos"></a>
+        <a class="bloque-tabs__tab" href="#presupuesto" data-section="presupuesto"></a>
+      </nav>
+    `;
+  });
+
+  const tab      = (s) => document.querySelector(`.bloque-tabs__tab[data-section="${s}"]`);
+  const entrada  = () => document.querySelector('.nav-item[data-section="gast"]');
+
+  it('marca la pestaña de la lente activa con clase y aria-current', () => {
+    markActiveNav('compromisos');
+    expect(tab('compromisos').classList.contains('active')).toBe(true);
+    expect(tab('compromisos').getAttribute('aria-current')).toBe('page');
+    expect(tab('gast').classList.contains('active')).toBe(false);
+    expect(tab('presupuesto').getAttribute('aria-current')).toBe('false');
+  });
+
+  it('la entrada de la barra se marca como bloque activo en las otras dos lentes', () => {
+    for (const hash of ['compromisos', 'presupuesto']) {
+      markActiveNav(hash);
+      expect(entrada().classList.contains('nav-item--bloque-activo')).toBe(true);
+    }
+  });
+
+  it('en la portada la entrada se marca `active`, no como bloque activo', () => {
+    markActiveNav('gast');
+    expect(entrada().classList.contains('active')).toBe(true);
+    expect(entrada().classList.contains('nav-item--bloque-activo')).toBe(false);
+  });
+
+  it('fuera del bloque se apaga todo', () => {
+    markActiveNav('presupuesto');
+    markActiveNav('analisis');
+    expect(entrada().classList.contains('active')).toBe(false);
+    expect(entrada().classList.contains('nav-item--bloque-activo')).toBe(false);
+    expect(tab('presupuesto').classList.contains('active')).toBe(false);
   });
 });
 
@@ -141,9 +170,9 @@ describe('el sub-nivel del grupo Ahorro se despliega dentro del grupo (INT.1b)',
     `;
   });
 
-  // aria-controls, no data-section: el botón "Más" también gana
-  // data-section="ahorro" cuando el hash es 'ahorro' (_rotularMas), y
-  // data-section deja de ser único justo en ese caso.
+  // aria-controls, no data-section: la barra inferior también lleva una
+  // entrada con data-section="ahorro" desde AH.7a, así que data-section no
+  // identifica a la casa del sidebar.
   const subnav = () => document.getElementById('nav-subnav-ahorro');
   const trigger = () => document.querySelector('[aria-controls="nav-subnav-ahorro"]');
 

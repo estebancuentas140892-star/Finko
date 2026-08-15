@@ -49,7 +49,7 @@ Actualizar el bloque tocado como **paso 1** de la secuencia de cierre de docs (v
 
 - **Ancla primaria:** nombre de función, export, clase CSS o `data-action`. Sobrevive a ediciones y se encuentra con `grep -n`.
 - **Línea:** solo referencia orientativa (`~120`). Si al abrir el archivo no coincide, manda el ancla; la línea se corrige al actualizar el bloque.
-- **Un archivo compartido tiene una sola ficha dueña de sus anclas** (principio 1 aplicado a las tablas "Dónde vive"). Caso resuelto en DOC.3: las anclas de navegación de `ui/shell.js` (`markActiveNav()`, `SECCION_NAV`, `MAS_SECTIONS`, `GRUPO_AHORRO`, `_rotularMas()`) viven solo en [`sistema-visual.md`](sistema-visual.md); `ahorro.md` y `escritorio.md` enlazan en vez de remapearlas.
+- **Un archivo compartido tiene una sola ficha dueña de sus anclas** (principio 1 aplicado a las tablas "Dónde vive"). Caso resuelto en DOC.3: las anclas de navegación de `ui/shell.js` (`markActiveNav()`, `MAS_SECTIONS`, `GRUPO_AHORRO`, `GRUPO_GASTOS`) viven solo en [`sistema-visual.md`](sistema-visual.md); `ahorro.md` y `escritorio.md` enlazan en vez de remapearlas.
 
 ---
 

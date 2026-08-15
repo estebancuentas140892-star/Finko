@@ -535,6 +535,70 @@
 }
 
 /* ════════════════════════════════════════════════════════════
+   BLOQUE GASTOS - franja de lentes (ADR 069)
+   ════════════════════════════════════════════════════════════
+   Las tres lentes del bloque ("Lo que gastaste", "Por pagar", "Límites")
+   son secciones con hash propio: la franja es navegación, no un widget de
+   estado. La inyecta ui/bloque-gastos.js en las tres, y markActiveNav le
+   pone `.active` a la vigente con el mismo mecanismo del resto del nav.
+
+   Nace oculta: solo existe bajo 1024px (responsive.css), donde el bloque es
+   la única puerta a las tres. En escritorio el sidebar ya las lista en filas
+   propias y una franja repetiría la misma navegación dos veces. */
+.bloque-tabs {
+  display: none;
+  /* Sin gap: la pastilla de fondo de la pestaña activa ya separa las tres, y
+     a 390px cada píxel de la fila cuenta para que "Límites" no quede fuera. */
+  gap: 0;
+  margin-bottom: var(--fk-space-4);
+  padding: var(--fk-space-1);
+  border-radius: var(--fk-radius-full);
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border-subtle);
+  /* Con la etiqueta más larga y las dos pastillas, a 320px la fila no cabe:
+     se desplaza en vez de truncar los nombres, que es lo que se aprende. */
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.bloque-tabs::-webkit-scrollbar { display: none; }
+
+.bloque-tabs__tab {
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fk-space-2);
+  /* Piso táctil del proyecto, el mismo que respeta el slot de la barra. */
+  min-height: 44px;
+  padding: 0 var(--fk-space-2);
+  border-radius: var(--fk-radius-full);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-medium);
+  color: var(--fk-text-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color var(--fk-transition-fast),
+    color var(--fk-transition-fast);
+}
+
+.bloque-tabs__tab.active {
+  background: var(--fk-bg-surface);
+  color: var(--fk-text-primary);
+  font-weight: var(--fk-font-semibold);
+  box-shadow: var(--fk-shadow-sm);
+}
+
+/* La pastilla reusa `.badge` (atoms.css): mismo rojo, mismo peso y mismo
+   alto que cualquier otro conteo de la app. Acá solo se le quita el alto
+   fijo, que dentro de una pestaña de 44px se veía como un segundo bloque. */
+.bloque-tabs__badge {
+  height: auto;
+  padding: 2px var(--fk-space-1);
+  line-height: 1.2;
+}
+
+/* ════════════════════════════════════════════════════════════
    BENTO GRID - dashboard
    ════════════════════════════════════════════════════════════
    Vocabulario:

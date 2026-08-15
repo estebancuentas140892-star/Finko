@@ -52,7 +52,7 @@ async function seedConAhorros(page) {
 test.describe('DIS.18 - la casa de Ahorro (móvil)', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('el menú Más deja un solo grupo rotulado y Calendario en el slot de ancho completo (AH.7a)', async ({ page }) => {
+  test('el menú Más queda en dos rótulos que sí excluyen (ADR 069)', async ({ page }) => {
     await seedVacio(page);
     await page.goto('/#dash');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
@@ -60,19 +60,20 @@ test.describe('DIS.18 - la casa de Ahorro (móvil)', () => {
     await page.click('.nav-item[data-modal="modal-mas"]');
     await expect(page.locator('#modal-mas[data-open]')).toHaveCount(1);
 
-    // El rótulo "Ahorros" se retira con sus 4 tejas: sobre una sola entrada,
-    // un rótulo de grupo no agrupa nada.
+    // "Gestión del dinero" cubría las 15 secciones de una app de finanzas, así
+    // que no reducía nada (hallazgo H7). Lo reemplazan dos rótulos que sí
+    // dejan secciones fuera.
     const grupos = await page.$$eval('#modal-mas .mas-sheet__group-label', els =>
       els.map(e => e.textContent.trim()));
-    expect(grupos).toEqual(['Gestión del dinero']);
+    expect(grupos).toEqual(['Consultar', 'Tu dinero']);
 
-    // AH.7a (ADR 065 D2): Ahorro se fue a la barra inferior y Calendario
-    // hereda su slot de ancho completo. La grilla sigue en 6 tejas.
+    // Deudas y Límites salen de la hoja: son lentes del bloque Gastos. Ahorro
+    // ya se había ido a la barra inferior (AH.7a, ADR 065 D2).
     const labels = await page.$$eval('#modal-mas .mas-tile__label', els =>
       els.map(e => e.textContent.trim()));
     expect(labels).toEqual([
-      'Deudas', 'Mis cuentas', 'Movimientos', 'Me deben', 'Límites de gasto', 'Análisis',
-      'Calendario',
+      'Calendario', 'Movimientos', 'Análisis',
+      'Mis cuentas', 'Me deben',
       'Ajustes',
     ]);
   });
@@ -215,19 +216,58 @@ test.describe('DIS.18 - la casa de Ahorro (móvil)', () => {
     await expect(ahorroBtn).not.toHaveClass(/active/);
   });
 
-  test('el botón "Más" se resalta y nombra la sección que sí vive detrás del menú', async ({ page }) => {
+  test('el botón "Más" se resalta detrás del menú pero nunca cambia de palabra (ADR 069, H5)', async ({ page }) => {
     await seedVacio(page);
     await page.goto('/#agenda');
     await page.waitForSelector('#sec-agenda.active', { timeout: 10_000 });
 
     const masBtn = page.locator('.nav-item[data-modal="modal-mas"]');
     await expect(masBtn).toHaveClass(/active/);
-    await expect(masBtn.locator('.nav-item__label')).toHaveText('Calendario');
+    await expect(masBtn.locator('.nav-item__label')).toHaveText('Más');
 
     await page.evaluate(() => { window.location.hash = '#analisis'; });
     await page.waitForSelector('#sec-analisis.active', { timeout: 5_000 });
     await expect(masBtn).toHaveClass(/active/);
-    await expect(masBtn.locator('.nav-item__label')).toHaveText('Análisis');
+    await expect(masBtn.locator('.nav-item__label')).toHaveText('Más');
+    await expect(masBtn).toHaveAttribute('aria-label', 'Mas opciones');
+  });
+
+  test('el bloque Gastos enseña sus tres lentes y su estado (ADR 069)', async ({ page }) => {
+    // Un fijo vencido y un límite excedido: las dos pastillas con dato.
+    await sembrar(page, {
+      perfil: { nombre: 'Ana', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: CUENTAS,
+      compromisos: [
+        { id: 'k1', descripcion: 'Arriendo', tipo: 'fijo', monto: 1_150_000, diaPago: 1, activo: true },
+      ],
+      presupuestos: [
+        { id: 'p1', categoria: 'Restaurantes', montoMensual: 350_000, activo: true },
+      ],
+      gastos: [
+        { id: 'g1', monto: 412_000, fecha: `${new Date().toISOString().slice(0, 7)}-04`, categoria: 'Restaurantes' },
+      ],
+    });
+    await page.goto('/#gast');
+    await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
+
+    const franja = page.locator('#sec-gast .bloque-tabs');
+    await expect(franja.locator('.bloque-tabs__label')).toHaveText([
+      'Lo que gastaste', 'Por pagar', 'Límites',
+    ]);
+    await expect(franja.locator('.bloque-tabs__tab[data-section="gast"]')).toHaveClass(/active/);
+
+    // Cada pestaña lleva su estado encima: es lo que reemplaza al menú.
+    await expect(franja.locator('.bloque-tabs__tab[data-section="compromisos"] .bloque-tabs__badge'))
+      .toHaveText('1');
+    await expect(franja.locator('.bloque-tabs__tab[data-section="presupuesto"] .bloque-tabs__badge'))
+      .toHaveText('1');
+
+    // La lente se abre desde la franja y la barra sigue diciendo "Gastos".
+    await franja.locator('.bloque-tabs__tab[data-section="compromisos"]').click();
+    await page.waitForSelector('#sec-compromisos.active', { timeout: 5_000 });
+    await expect(page.locator('.nav-item[data-section="gast"]')).toHaveClass(/nav-item--bloque-activo/);
+    await expect(page.locator('.nav-item[data-modal="modal-mas"]')).not.toHaveClass(/active/);
   });
 });
 

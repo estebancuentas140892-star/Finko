@@ -74,7 +74,9 @@ test.describe('Render tras navegación (regresión hashchange)', () => {
   test('Gastos muestra empty state al navegar desde Dashboard', async ({ page }) => {
     await saltearOnboardingYIrADash(page);
 
-    await page.click('a[href="#gast"]');
+    // `.nav-item`: desde ADR 069 la franja del bloque Gastos también lleva un
+    // enlace a #gast en cada una de sus tres lentes.
+    await page.click('.nav-item[href="#gast"]');
     await expect(page.locator('#sec-gast.active')).toBeVisible();
 
     await expect(
@@ -85,7 +87,7 @@ test.describe('Render tras navegación (regresión hashchange)', () => {
   test('Compromisos muestra empty state al navegar desde Dashboard', async ({ page }) => {
     await saltearOnboardingYIrADash(page);
 
-    await page.click('a[href="#compromisos"]');
+    await page.click('.nav-item[href="#compromisos"]');
     await expect(page.locator('#sec-compromisos.active')).toBeVisible();
 
     await expect(

@@ -107,6 +107,7 @@ Bootstrap y orquestación de la interfaz.
 | `proposito.js` | Banner de "propósito de sección" (qué resuelve cada sección), patrón de [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md). Desde la revisión del ADR ya no colapsa: es divulgación progresiva, sin acciones de colapsar/expandir |
 | `comparador.js` | Columnas comparables de varias bolsas contra la marca de su plan: `htmlComparador()` + `pieComparador()`. Puro, sin DOM. Lo comparten la lista de Apartados y la casa de Ahorro (DIS.19) |
 | `menu-mas.js` | Menú "Más" (secciones que no caben en la bottom nav móvil) |
+| `bloque-gastos.js` | Franja de lentes del bloque Gastos en móvil ([ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md)): inyecta las pestañas "Lo que gastaste" / "Por pagar" / "Límites" en las tres secciones y pinta su estado. Navegación por hash, sin contenedor de estado nuevo |
 | `install-prompt.js` | Prompt de instalación de la PWA (`beforeinstallprompt`) |
 | `bloqueo-acceso.js` | Candado de acceso local: gate de PIN al abrir y `confirmarPin()` para acciones críticas ([ADR 063](DECISIONS/063-candado-de-acceso-local.md)) |
 | `aceptacion-legal.js` | Aceptación obligatoria versionada del paquete legal (LEG.2) |
@@ -423,7 +424,7 @@ El dashboard (`#dash`) no tiene carpeta propia en `modules/dominio/`: es una com
 | Sección visible | Carpeta (`modules/dominio/`) | Archivos clave | Estilos (`styles/components/`) | Test unitario |
 |---|---|---|---|---|
 | Inicio | *(sin carpeta propia, ver 13.2)* | `ui/bootstrap.js`, `infra/render.js` | `domain.css` (hero-saldo, vencidos-card, prioridades-card, resumen-card, balance-tira, limites-card) | `resumen.test.js`, `render.test.js` |
-| Gastos | `gastos/` | los 3 estándar | `domain.css` (mes-nav, filtros-bar/chip, gastos-resumen) | `gastos.test.js` |
+| Gastos (portada del bloque; sus otras dos lentes son Deudas y Presupuesto) | `gastos/` | los 3 estándar; la franja de pestañas es `ui/bloque-gastos.js` (ADR 069) | `domain.css` (mes-nav, filtros-bar/chip, gastos-resumen), `layout.css` (`.bloque-tabs`) | `gastos.test.js`, `bloque-gastos.test.js` |
 | Calendario | `agenda/` | los 3 estándar | `config.css` (bloque AGENDA, línea 449) | `agenda.test.js` |
 | Deudas | `compromisos/` | entrar por `logic/` o `views/` según el corte de la 2.4; `index.js` es el wiring | `charts.css` (chooser entidad/personal, estrategia de pago), `domain.css` (abono-btn, cal-detail) | `compromisos.test.js`, `estrategia-pago.test.js` (e2e) |
 | Mis cuentas | `tesoreria/` | entrar por `logic/`, `views/` o `acciones/` según el subsistema (ver 2.4); `index.js` es el coordinador | `domain.css` (ingresos-card, distribuir-card, distribuir-edu, distribucion-clasicos), `forms.css` (bloque `.distribuir__*` del asistente) | `tesoreria.test.js`, `cuenta-helper.test.js`, `distribuir-pago.test.js` |

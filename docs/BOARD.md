@@ -12,7 +12,16 @@
 
 ## En proceso
 
-_(vacío: elegir la siguiente tarjeta de "Pendientes")_
+### MOV.1 - auditoría UX/UI móvil de Claude Design, 25 entregas
+- Prioridad  : alta
+- Estado     : en proceso (iniciada 2026-08-15)
+- Área       : ambos
+- Objetivo   : implementar el handoff "Mobile app design handoff" ficha por ficha, en el orden que fijó Esteban, sin reinterpretar las propuestas
+- Secciones  : todas
+- Archivos   : según ficha
+- Depende de : nada
+- Avance     : **01/25 cerrada** (navegación móvil global, [ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md)). Sigue la 02 (Inicio).
+- Restricción: el orden no se altera. Cada ficha se implementa, se valida en la app y se cierra antes de abrir la siguiente. Lo que una ficha deja anotado para otra (ej. HR-1, o el destino de Logros) no se decide antes de llegar a ella.
 
 ---
 

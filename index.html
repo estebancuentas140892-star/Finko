@@ -795,6 +795,10 @@
             Registrar gasto
           </button>
         </header>
+        <!-- Franja de lentes del bloque Gastos (ADR 069). ui/bloque-gastos.js
+             inyecta la misma franja en las tres lentes; solo se ve bajo
+             1024px. -->
+        <div id="tabs-gast"></div>
         <div id="proposito-gast">
           <!-- proposito.js inyecta el banner de propósito de sección (ADR 016) -->
         </div>
@@ -826,6 +830,8 @@
             + Nueva deuda
           </button>
         </header>
+        <!-- Lente "Por pagar" del bloque Gastos (ADR 069). -->
+        <div id="tabs-compromisos"></div>
         <div id="proposito-compromisos">
           <!-- proposito.js inyecta el banner de propósito de sección (ADR 016) -->
         </div>
@@ -975,6 +981,8 @@
             + Límite
           </button>
         </header>
+        <!-- Lente "Límites" del bloque Gastos (ADR 069). -->
+        <div id="tabs-presupuesto"></div>
         <div id="proposito-presupuesto">
           <!-- proposito.js inyecta el banner de propósito de sección (ADR 016) -->
         </div>
@@ -1706,15 +1714,18 @@
       </button>
       <div class="mas-sheet__body">
 
-        <span class="mas-sheet__group-label" id="mas-label-gestion">Gestión del dinero</span>
-        <div class="mas-sheet__grid" role="group" aria-labelledby="mas-label-gestion">
-          <a class="mas-tile" href="#compromisos" data-section="compromisos">
-            <span class="mas-tile__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-deudas"/></svg></span>
-            <span class="mas-tile__label">Deudas</span>
-          </a>
-          <a class="mas-tile" href="#tesoreria" data-section="tesoreria">
-            <span class="mas-tile__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-cuentas"/></svg></span>
-            <span class="mas-tile__label">Mis cuentas</span>
+        <!-- Dos rótulos que sí excluyen (ADR 069, hallazgo H7): "Gestión del
+             dinero" cubría las 15 secciones de una app de finanzas, así que
+             no reducía nada. "Consultar" son lentes de lectura; "Tu dinero",
+             lo que el usuario tiene o va a tener. Deudas y Límites ya no
+             están acá: pasaron a ser lentes del bloque Gastos. -->
+        <span class="mas-sheet__group-label" id="mas-label-consultar">Consultar</span>
+        <div class="mas-sheet__grid" role="group" aria-labelledby="mas-label-consultar">
+          <!-- Calendario baja de la barra inferior a este grupo (AH.7a, ADR
+               065 D2): se consulta, no se opera. -->
+          <a class="mas-tile" href="#agenda" data-section="agenda">
+            <span class="mas-tile__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-agenda"/></svg></span>
+            <span class="mas-tile__label">Calendario</span>
           </a>
           <!-- Movimientos (DIS.6/C6, hallazgo H6, regla R32): era la única
                sección sin entrada de navegación. Se llegaba solo con "Ver
@@ -1722,19 +1733,10 @@
                que arranca [hidden] y solo se activa cuando ya hay
                movimientos: quien registra su primer gasto y quiere el
                historial completo no tenía por dónde. Reusa i-saldo (el
-               sprite no tiene un ícono propio) y la grilla de 2 columnas
-               absorbe el sexto tile sin crecer de alto. -->
+               sprite no tiene un ícono propio). -->
           <a class="mas-tile" href="#movimientos" data-section="movimientos">
             <span class="mas-tile__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-saldo"/></svg></span>
             <span class="mas-tile__label">Movimientos</span>
-          </a>
-          <a class="mas-tile" href="#personales" data-section="personales">
-            <span class="mas-tile__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-personales"/></svg></span>
-            <span class="mas-tile__label">Me deben</span>
-          </a>
-          <a class="mas-tile" href="#presupuesto" data-section="presupuesto">
-            <span class="mas-tile__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-presupuesto"/></svg></span>
-            <span class="mas-tile__label">Límites de gasto</span>
           </a>
           <a class="mas-tile" href="#analisis" data-section="analisis">
             <span class="mas-tile__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-analisis"/></svg></span>
@@ -1742,15 +1744,22 @@
           </a>
         </div>
 
-        <!-- Calendario hereda el slot de ancho completo que dejó Ahorro al
-             subir a la barra (AH.7a, ADR 065 D2). Va suelto y a ancho
-             completo, no dentro de la grilla: baja de la barra inferior, no
-             es una teja más de "Gestión del dinero", y la grilla conserva sus
-             6 tejas en 3 filas limpias. -->
-        <a class="mas-tile mas-tile--full" href="#agenda" data-section="agenda">
-          <span class="mas-tile__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-agenda"/></svg></span>
-          <span class="mas-tile__label">Calendario</span>
-        </a>
+        <!-- "Me deben" se queda fuera del bloque Gastos (ADR 069 D3): es el
+             único dinero que va a entrar, y meterlo obligaba a un nombre de
+             bloque que cubriera las dos direcciones. Acá vive junto a Mis
+             cuentas, que responde la misma pregunta: cuánto tengo o voy a
+             tener. Sigue a 2 toques, igual que dentro del bloque. -->
+        <span class="mas-sheet__group-label" id="mas-label-tu-dinero">Tu dinero</span>
+        <div class="mas-sheet__grid" role="group" aria-labelledby="mas-label-tu-dinero">
+          <a class="mas-tile" href="#tesoreria" data-section="tesoreria">
+            <span class="mas-tile__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-cuentas"/></svg></span>
+            <span class="mas-tile__label">Mis cuentas</span>
+          </a>
+          <a class="mas-tile" href="#personales" data-section="personales">
+            <span class="mas-tile__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-personales"/></svg></span>
+            <span class="mas-tile__label">Me deben</span>
+          </a>
+        </div>
 
         <div class="mas-sheet__footer">
           <a class="mas-tile mas-tile--full" href="#config" data-section="config">

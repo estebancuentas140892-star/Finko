@@ -35,6 +35,10 @@
   /* Volver de las 4 hijas de Ahorro: vuelve a ser la única salida vertical. */
   .section__volver--ahorro-hija { display: inline-flex; }
 
+  /* Franja de lentes del bloque Gastos (ADR 069): acá la barra inferior es
+     la única puerta a las tres, así que la franja es la que las enseña. */
+  .bloque-tabs { display: flex; }
+
   /* Primario del encabezado: vuelve a mostrarse en su sitio de siempre.
      :not([hidden]) respeta el ocultamiento propio del dominio (ej. Deudas
      sin deudas activas, Límites sin plan del mes), que no debe perder
@@ -214,12 +218,14 @@
   .nav-item__fab .icon { --fk-icon-size: var(--fk-icon-lg); stroke-width: 2.6; }
   .nav-item--registrar:active .nav-item__fab { transform: scale(0.94); }
 
-  /* Botón "Más" mientras nombra la sección donde estás (DIS.6/C3, hallazgo
-     H4, regla R30). El color y el tinte llegan solos: shell.js le escribe
-     el data-section vigente y el mapeo de IV.2a hace el resto. Acá solo se
-     declara el estado, para que sea visible en el marcado y no dependa de
-     que `.nav-item.active` conserve su peso. */
-  .nav-item--mas-ubicado .nav-item__label {
+  /* Entrada de Gastos mientras el usuario está en otra lente del bloque
+     (ADR 069). No usa `.active` porque en escritorio esa misma fila convive
+     con las de Deudas y Límites; acá esas filas no existen, así que el
+     bloque puede decir "estás aquí" sin encender dos sitios a la vez. */
+  .nav-item--bloque-activo {
+    color: var(--fk-text-primary);
+  }
+  .nav-item--bloque-activo .nav-item__label {
     font-weight: var(--fk-font-semibold);
   }
 

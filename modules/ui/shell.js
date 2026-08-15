@@ -16,12 +16,23 @@ const SIDEBAR_KEY  = 'fk_sidebar_collapsed';
  * Al sumar secciones nuevas al menú "Más", agregarlas aquí. Ahorro y sus 4
  * modalidades salieron del set en AH.7a (ADR 065): la casa subió a la barra
  * inferior y se resalta ella misma, con o sin hija adentro. Calendario entró
- * en el mismo movimiento, al bajar de la barra al menú.
+ * en el mismo movimiento, al bajar de la barra al menú. Deudas y Límites
+ * salieron en la ficha 01 de la auditoría móvil (ADR 069): pasaron a ser
+ * lentes del bloque Gastos, que se resalta él mismo.
  */
 const MAS_SECTIONS = new Set([
-  'compromisos', 'tesoreria', 'movimientos', 'personales',
-  'agenda', 'presupuesto', 'analisis', 'config',
+  'tesoreria', 'movimientos', 'personales',
+  'agenda', 'analisis', 'config',
 ]);
+
+/**
+ * Bloque Gastos (ADR 069): la portada (`gast`) y sus otras dos lentes. La
+ * entrada de la barra inferior se resalta en las tres, igual que la de
+ * Ahorro se resalta en sus 4 modalidades: en móvil es la única puerta al
+ * bloque, así que sin esto navegar a "Por pagar" dejaba la barra sin
+ * "estás aquí".
+ */
+const GRUPO_GASTOS = new Set(['gast', 'compromisos', 'presupuesto']);
 
 /**
  * Grupo Ahorro: la casa (`ahorro`) y sus 4 hijas. Dos usos, uno por
@@ -35,34 +46,6 @@ const MAS_SECTIONS = new Set([
  *   que hereda el "estás aquí" de grupo que antes daba el botón "Más".
  */
 const GRUPO_AHORRO = new Set(['ahorro', 'fondo', 'metas', 'apartados', 'inversion']);
-
-/**
- * Nombre corto e ícono del sprite de cada sección de MAS_SECTIONS
- * (DIS.6/C3, hallazgo H4, regla R30).
- *
- * Resaltar el botón "Más" no alcanzaba: al no tener data-section, el mapeo
- * de dominio de IV.2a no tenía de dónde tomar color y el botón caía al
- * acento genérico, el mismo de Inicio. Estar en Inicio y estar en
- * cualquiera de las 11 secciones del menú se veían idénticos.
- * Con este mapa el botón dice el nombre de la sección, muestra su ícono y
- * hereda su color sin un mapeo nuevo: markActiveNav le escribe el
- * data-section vigente y `[data-section="X"]` (layout.css) hace el resto.
- */
-const SECCION_NAV = {
-  compromisos: ['Deudas',      'i-deudas'],
-  tesoreria:   ['Cuentas',     'i-cuentas'],
-  movimientos: ['Movimientos', 'i-saldo'],
-  personales:  ['Me deben',    'i-personales'],
-  agenda:      ['Calendario',  'i-agenda'],
-  presupuesto: ['Límites',     'i-presupuesto'],
-  analisis:    ['Análisis',    'i-analisis'],
-  config:      ['Ajustes',     'i-ajustes'],
-};
-
-// Estado neutro del botón: lo que dice cuando estás en una sección de la barra.
-const MAS_LABEL = 'Más';
-const MAS_ICON  = 'i-mas';
-const MAS_ARIA  = 'Mas opciones';
 
 // ── THEME ───────────────────────────────────────────────────────
 
@@ -131,8 +114,11 @@ export function toggleTheme() {
 export function markActiveNav(hash) {
   // .nav-item: sidebar + barra inferior. .mas-tile: tiles del menú "Más"
   // v2 (NAV2.1a, ADR 040 D2), que resaltan la sección activa con el
-  // tinte de su dominio igual que el nav.
-  document.querySelectorAll('.nav-item[data-section], .mas-tile[data-section]').forEach(item => {
+  // tinte de su dominio igual que el nav. .bloque-tabs__tab: las tres lentes
+  // del bloque Gastos (ADR 069), que son navegación y ya traen data-section.
+  document.querySelectorAll(
+    '.nav-item[data-section], .mas-tile[data-section], .bloque-tabs__tab[data-section]'
+  ).forEach(item => {
     const active = item.dataset.section === hash;
     item.classList.toggle('active', active);
     item.setAttribute('aria-current', active ? 'page' : 'false');
@@ -140,14 +126,28 @@ export function markActiveNav(hash) {
 
   // El botón "Más" (barra inferior móvil) se resalta cuando el hash actual
   // pertenece a una sección que vive dentro del menú "Más", para que el
-  // usuario nunca pierda el "estás aquí" al navegar en móvil. Y además dice
-  // en cuál está (DIS.6/C3): sigue abriendo la hoja, gana una segunda función.
+  // usuario nunca pierda el "estás aquí" al navegar en móvil.
+  //
+  // Ya no toma el nombre ni el ícono de esa sección (hallazgo H5 de la ficha
+  // 01, ADR 069): el único rótulo estable del menú no puede cambiar de
+  // palabra según dónde estés, o el control que abre el mapa deja de
+  // reconocerse. Quién dice el lugar: el encabezado de sección (R33), que ya
+  // es obligatorio y ya alimenta la barra superior.
   const masBtn = document.querySelector('.nav-item[data-modal="modal-mas"]');
   if (masBtn) {
     const enMas = MAS_SECTIONS.has(hash);
     masBtn.classList.toggle('active', enMas);
     masBtn.setAttribute('aria-current', enMas ? 'page' : 'false');
-    _rotularMas(masBtn, enMas ? hash : null);
+  }
+
+  // La entrada de Gastos en la barra inferior (ADR 069) se resalta en las
+  // tres lentes del bloque. Clase propia y no `active`: en escritorio esa
+  // misma fila del sidebar convive con las filas de Deudas y de Límites, y
+  // encender dos a la vez diría que el usuario está en dos sitios. La clase
+  // solo se pinta bajo 1024px (responsive.css), donde esas filas no existen.
+  const gastosBtn = document.querySelector('.nav-item[data-section="gast"]');
+  if (gastosBtn) {
+    gastosBtn.classList.toggle('nav-item--bloque-activo', GRUPO_GASTOS.has(hash) && hash !== 'gast');
   }
 
   // La entrada de Ahorro en la barra inferior (AH.7a) se resalta en la casa y
@@ -246,37 +246,6 @@ function _syncPrimarioTopbar(activo) {
   if (origen.dataset.modal) btnTop.dataset.modal = origen.dataset.modal;
   else delete btnTop.dataset.modal;
   btnTop.hidden = false;
-}
-
-/**
- * Escribe en el botón "Más" el nombre, el ícono y el data-section de la
- * sección donde está el usuario, o lo devuelve a su estado neutro.
- *
- * El data-section es lo que le da el color de dominio (mapeo de IV.2a en
- * layout.css), así que se limpia al salir: si quedara escrito, el botón
- * seguiría teñido con una sección que ya no es la vigente.
- *
- * @param {HTMLElement} btn  - el botón "Más" de la barra inferior.
- * @param {string|null} hash - sección del menú "Más", o null para el estado neutro.
- */
-function _rotularMas(btn, hash) {
-  const [nombre, icono] = SECCION_NAV[hash] ?? [];
-  const ubicado = Boolean(nombre);
-
-  btn.classList.toggle('nav-item--mas-ubicado', ubicado);
-  if (ubicado) {
-    btn.dataset.section = hash;
-  } else {
-    delete btn.dataset.section;
-  }
-  // El botón nombra y abre: el nombre accesible dice las dos cosas.
-  btn.setAttribute('aria-label', ubicado ? `${nombre}. Abrir más opciones` : MAS_ARIA);
-
-  const label = btn.querySelector('.nav-item__label');
-  if (label) label.textContent = ubicado ? nombre : MAS_LABEL;
-
-  const use = btn.querySelector('.nav-item__icon use');
-  if (use) use.setAttribute('href', `#${ubicado ? icono : MAS_ICON}`);
 }
 
 // ── SIDEBAR COLLAPSE ────────────────────────────────────────────

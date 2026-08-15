@@ -98,7 +98,7 @@
 | Volver a la casa desde cada hija | `index.html` | `.section__volver` en `#sec-fondo`, `#sec-metas`, `#sec-apartados`, `#sec-inversion` | |
 | Rutas | `modules/infra/router.js` | `SECTIONS`: `ahorro` a `sec-ahorro`, `fondo` a `sec-fondo` | ~11 |
 | Pestaña de la barra inferior (AH.7a, solo móvil) | `index.html` | `.nav-item--mobile-only[href="#ahorro"]`, dentro del grupo de uso diario | |
-| Rótulo del botón "Más" y resaltado de la pestaña en la casa y sus 4 hijas (AH.7a) | ver [`sistema-visual.md`](sistema-visual.md), dueño único de las anclas de navegación de `ui/shell.js` | `SECCION_NAV`, `MAS_SECTIONS`, `markActiveNav()`, `GRUPO_AHORRO` | |
+| Resaltado de la pestaña en la casa y sus 4 hijas (AH.7a) | ver [`sistema-visual.md`](sistema-visual.md), dueño único de las anclas de navegación de `ui/shell.js` | `MAS_SECTIONS`, `markActiveNav()`, `GRUPO_AHORRO` | |
 
 **Recursos**: `.hub__*`, `.lane__*`, `.silrow`/`.silbtn__*` y `.grow__*` en `styles/components/domain.css`; `.cmp__*` en `styles/components/charts.css`; `.cov__*` en `styles/components/analysis.css`; el ajuste móvil de la leyenda de `.grow` en `styles/responsive.css`; `[data-section="fondo"]` en `styles/layout.css` para el acento de navegación; símbolos `i-ahorro`, `i-metas`, `i-apartados`, `i-inversion`; lee `S.ahorro`, `S.metas`, `S.apartados`, `S.inversiones` y `S.config.ocultarSaldo`.
 
