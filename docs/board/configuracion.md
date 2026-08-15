@@ -12,17 +12,7 @@
 
 > **Iniciativa CFG.3** ("Avisos anticipatorios"), **completa** (2026-08-13, sus tres rebanadas). Alcance, el límite técnico y las alternativas rechazadas: **[ADR 066](../DECISIONS/066-motor-unico-de-avisos.md)**, su dueño. Ficha: [`contexto/inicio.md`](../contexto/inicio.md) (el panel de Inicio), [`contexto/configuracion.md`](../contexto/configuracion.md) (el interruptor de Ajustes) y [`contexto/transversal.md`](../contexto/transversal.md) (el motor).
 
-> **Iniciativa CFG.4** ("Durabilidad de los datos"), **desbloqueada el 2026-08-15**. Alcance, las cuatro razones para descartar cuentas y sincronización, y las tres palancas elegidas: **[ADR 043](../DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md)**, su dueño (Aceptado). Lo que ese ADR decidió no se re-discute acá: **CFG.4a cerró el 2026-08-15** (`navigator.storage.persist()`, D2.1). Quedan tres rebanadas.
-
-#### CFG.4b - Sello del último respaldo y aviso cuando pasó demasiado tiempo
-- Prioridad  : alta (es la palanca que ataca el problema original: un respaldo que depende de acordarse no protege)
-- Estado     : pendiente. Ejecuta **D2.2** del [ADR 043](../DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md)
-- Área       : ambos
-- Objetivo   : que Finko sepa cuándo fue el último respaldo, lo diga en Ajustes en lenguaje humano y avise cuando pasó demasiado tiempo con datos nuevos sin respaldar
-- Secciones  : Configuración (Ajustes), Inicio (el panel de avisos de CFG.3b)
-- Archivos   : `modules/core/state.js` (`config.ultimoRespaldoISO`), `modules/core/storage.js` (migración v41 → v42), `modules/dominio/config/index.js` (`_exportarDatos()` sella), `modules/dominio/config/view.js`, `modules/infra/avisos.js` (tipo y sección de aviso nuevos)
-- Depende de : nada
-- Modelo     : capacidad alta, esfuerzo medio (toca schema, motor de avisos y UI)
+> **Iniciativa CFG.4** ("Durabilidad de los datos"), **desbloqueada el 2026-08-15**. Alcance, las cuatro razones para descartar cuentas y sincronización, y las tres palancas elegidas: **[ADR 043](../DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md)**, su dueño (Aceptado). Lo que ese ADR decidió no se re-discute acá: **CFG.4a** (`navigator.storage.persist()`, D2.1) y **CFG.4b** (sello del último respaldo + aviso, D2.2) cerraron el 2026-08-15. Quedan dos rebanadas.
 
 #### CFG.4c - Respaldo cifrado opcional con contraseña
 - Prioridad  : media

@@ -38,7 +38,7 @@ Numerar `BUG-001`, `BUG-002`... de forma consecutiva y sin reutilizar números a
 - Causa     : `recolectarAvisos()` reparte `hoyISO` a **todas** sus fuentes menos una: `_deCompromisosProximos(compromisos)` se llama sin la fecha y delega en `compromisosProximos()`, que calcula con `proximoVencimiento(c)`, y esa función lee el reloj real. Arreglarlo no es una línea: hay que propagar la fecha por `compromisosProximos()` y `proximoVencimiento()`, que tienen otros consumidores en el dominio Compromisos.
 - Archivo   : `modules/infra/avisos.js` (origen) y `modules/dominio/compromisos/logic/modelo.js` (las dos funciones que hay que abrir a la fecha inyectada)
 - Función   : `_deCompromisosProximos()`; `compromisosProximos()` y `proximoVencimiento()` en `modelo.js`
-- Líneas    : `avisos.js:153` y `:318`; `modelo.js:233`
+- Líneas    : `avisos.js:170` y `:402` (movidas por CFG.4b, sin tocar la función); `modelo.js:233`
 - Secciones : Inicio (panel "Avisos", CFG.3b), Calendario, notificación del sistema (`infra/notificaciones.js`)
 - Encontrado el 2026-08-14 cerrando PERF.10a, con `pnpm test`. **Verificado ajeno** con `git stash`: la suite falla igual sin ese cambio. Llega con CFG.3a ([ADR 066](DECISIONS/066-motor-unico-de-avisos.md)), no con PERF.10.
 - **Crece solo con el calendario (medido el 2026-08-15, cerrando CFG.4a):** de **1** test rojo a **6** en `avisos.test.js`, sin que nadie tocara el módulo. Confirmado ajeno otra vez con `git stash`. La prioridad no sube (en producción `hoyISO` sigue siendo el día real y el usuario no ve nada mal), pero el costo de convivir con él sí: la suite unitaria ya no puede leerse como "verde salvo un caso conocido".
