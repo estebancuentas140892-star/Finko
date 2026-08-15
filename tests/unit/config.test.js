@@ -148,6 +148,39 @@ describe('renderPanelConfig() - gestión de datos (B5, B6)', () => {
   });
 });
 
+// ── BORRADO AUTOMÁTICO DEL NAVEGADOR (CFG.4a, ADR 043 D2.1) ──────
+
+describe('renderPanelConfig() - bloque de borrado automático (CFG.4a)', () => {
+  beforeEach(() => {
+    Object.assign(S, createInitialState());
+    document.body.innerHTML = '<div id="panel-config"></div>';
+    renderPanelConfig();
+  });
+
+  it('el bloque vive dentro de "Tus datos", no en una sección propia', () => {
+    const datos = document.querySelector('section[aria-labelledby="config-datos-title"]');
+    expect(datos.querySelector('#config-persistencia')).not.toBeNull();
+  });
+
+  it('nace oculto y sin texto: el estado real es asíncrono y lo pinta index.js', () => {
+    const bloque = document.getElementById('config-persistencia');
+    expect(bloque.hasAttribute('hidden')).toBe(true);
+    expect(document.getElementById('config-persistencia-estado').textContent.trim()).toBe('');
+  });
+
+  it('el botón nace oculto: solo se muestra cuando hay algo que pedir', () => {
+    const boton = document.getElementById('config-persistencia-btn');
+    expect(boton.hasAttribute('hidden')).toBe(true);
+    expect(boton.dataset.action).toBe('proteger-datos');
+  });
+
+  it('no agrega un tercer rótulo de ámbito a la sección', () => {
+    const datos = document.querySelector('section[aria-labelledby="config-datos-title"]');
+    const rotulos = [...datos.querySelectorAll('.form-hint')].map(e => e.textContent.trim());
+    expect(rotulos).toEqual(['Toda la app', 'Solo tus gastos']);
+  });
+});
+
 // ── MONTOS DE RENTA CON SEPARADOR DE MILES (B4/R16) ──────────────
 
 describe('miles() y desdeMiles()', () => {

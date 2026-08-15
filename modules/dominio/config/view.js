@@ -622,6 +622,27 @@ function _renderAvisoAlmacenamiento() {
  * consecuencia. B5: el importador deja de ser un `<label>` con un input
  * `sr-only aria-hidden` que sí recibía foco.
  */
+/**
+ * Bloque de borrado automático del navegador (CFG.4a, ADR 043 D2.1).
+ *
+ * Nace `hidden` y con el cuerpo vacío a propósito: el estado real es asíncrono
+ * (`navigator.storage.persisted()` devuelve una promesa) y `view.js` es
+ * síncrono. Lo llena `_pintarPersistencia()` en `config/index.js` apenas
+ * resuelve. La alternativa era pintar una afirmación provisional y corregirla
+ * medio segundo después: en un bloque que habla de perder datos, eso no.
+ */
+function _renderPersistencia() {
+  return `
+    <div class="config-bloque" id="config-persistencia" hidden>
+      <h3 class="config-bloque__title">Borrado automático del navegador</h3>
+      <p class="config-section__desc" id="config-persistencia-estado"></p>
+      <button class="btn btn-secondary" type="button" id="config-persistencia-btn"
+              data-action="proteger-datos" hidden>
+        Proteger mis datos
+      </button>
+    </div>`;
+}
+
 function _renderDatos() {
   return `
     <section class="config-section" aria-labelledby="config-datos-title">
@@ -631,6 +652,7 @@ function _renderDatos() {
         Todo vive solo en este dispositivo. Si lo pierdes o borras la app, se va
         contigo: guarda un respaldo de vez en cuando.
       </p>
+      ${_renderPersistencia()}
       <p class="form-hint">Toda la app</p>
       <div class="config-actions config-actions--ambito">
         <button class="btn btn-secondary" data-action="exportar-datos">

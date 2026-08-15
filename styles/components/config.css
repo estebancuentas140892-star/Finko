@@ -185,6 +185,15 @@
   min-width: 160px;
 }
 
+/* CFG.4a: mismo defecto, un nivel más adentro. "Proteger mis datos" vive
+   dentro de un `.config-bloque` (también flex column) y se estiraba a 932px
+   en escritorio. Tercera y última superficie con botones sueltos: `.btn` de
+   `.config-form`, de `.config-section` y de `.config-bloque`. */
+.config-bloque > .btn {
+  align-self: flex-start;
+  min-width: 160px;
+}
+
 /* Fila del botón de guardar + la confirmación visible (B12/R14). El chip
    verde es el mismo `.chip-success` de atoms.css; nace apagado y
    `config/index.js` lo enciende unos segundos tras persistir. `.chip`

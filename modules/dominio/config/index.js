@@ -19,6 +19,7 @@ import { SITUACIONES_LABORALES } from '../../core/constants.js';
 import { confirmar } from '../../ui/confirm.js';
 import { pedirPermiso } from '../../infra/notificaciones.js';
 import { LABEL_SECCION_AVISO } from '../../infra/avisos.js';
+import { PERSISTENCIA, estadoPersistencia, solicitarPersistencia } from '../../infra/persistencia.js';
 import { abrirModal } from '../../ui/modales.js';
 import { renderPanelConfig, renderModalFiscal, miles, desdeMiles } from './view.js';
 import { gastosACSV } from '../export/logic.js';
@@ -129,6 +130,68 @@ async function _importarDatos(el) {
     el.value = '';
   };
   reader.readAsText(file);
+}
+
+// ── BORRADO AUTOMÁTICO DEL NAVEGADOR (CFG.4a, ADR 043 D2.1) ──────
+//
+// El bloque nace `hidden` en `view.js` porque el estado llega por promesa.
+// Estos dos handlers son toda su vida: uno lo pinta al abrir el panel, el otro
+// pide la protección y vuelve a pintarlo con lo que el navegador respondió.
+
+/** Copy de cada estado. Sin promesas que la API no cumple (ADR 043, "lo que NO resuelve"). */
+const _COPY_PERSISTENCIA = Object.freeze({
+  [PERSISTENCIA.CONCEDIDA]:
+    'Este navegador ya no borra los datos de Finko por su cuenta para liberar espacio. Aun así guarda un respaldo: esto no te cubre si pierdes el dispositivo.',
+  [PERSISTENCIA.NO_CONCEDIDA]:
+    'Si este dispositivo se queda sin espacio, el navegador puede borrar los datos de Finko sin avisarte. Puedes pedirle que no lo haga.',
+  [PERSISTENCIA.NO_SOPORTADO]:
+    'Este navegador no permite pedir esa protección. El respaldo es tu única red: guárdalo de vez en cuando.',
+});
+
+/**
+ * Pinta el bloque con el estado real. Se llama al inyectar el panel y otra vez
+ * después de pedir la protección.
+ *
+ * Toca solo el texto y los dos `hidden`: no re-renderiza el panel, mismo
+ * criterio que el chip de guardado. Un re-render acá cerraría el `<details>` de
+ * Impuestos y perdería el scroll por un párrafo que cambia.
+ */
+async function _pintarPersistencia() {
+  const bloque = document.getElementById('config-persistencia');
+  if (!bloque) return;
+
+  const estado = await estadoPersistencia();
+  const texto  = document.getElementById('config-persistencia-estado');
+  const boton  = document.getElementById('config-persistencia-btn');
+
+  if (texto) texto.textContent = _COPY_PERSISTENCIA[estado] ?? '';
+  // El botón solo existe cuando hay algo que pedir: concedida no se re-pide y
+  // no-soportado no tiene a quién pedirle.
+  if (boton) boton.hidden = estado !== PERSISTENCIA.NO_CONCEDIDA;
+  bloque.hidden = false;
+}
+
+/**
+ * Pide la protección. Quien decide es el navegador (Chromium la concede sin
+ * preguntar, Firefox abre un permiso), así que nunca se anuncia éxito por haber
+ * llamado: se anuncia lo que devolvió.
+ */
+async function _protegerDatos() {
+  const estado = await solicitarPersistencia();
+  await _pintarPersistencia();
+
+  if (estado === PERSISTENCIA.CONCEDIDA) {
+    mostrarToast({
+      titulo:  'Datos protegidos',
+      detalle: 'El navegador ya no los borra para liberar espacio.',
+    });
+    announce('Tus datos quedaron protegidos del borrado automático.');
+    return;
+  }
+
+  // Un "no" del navegador no es un error de la app y no se puede forzar: el
+  // botón queda visible para reintentar y el mensaje dice qué sí sirve.
+  announce('El navegador no concedió la protección. Guarda un respaldo para no depender de eso.', 'assertive');
 }
 
 async function _activarNotificaciones() {
@@ -372,6 +435,10 @@ function _inyectarPanel() {
   panel.querySelector('#form-bloqueo-crear')?.addEventListener('submit', _crearCandado);
   panel.querySelector('#form-bloqueo-cambiar')?.addEventListener('submit', _crearCandado);
   panel.querySelector('#form-bloqueo-quitar')?.addEventListener('submit', _quitarCandado);
+
+  // El bloque de borrado automático se llena aparte: su estado es asíncrono
+  // (CFG.4a). Sin `await`: el resto del panel ya está pintado y usable.
+  _pintarPersistencia();
 }
 
 // ── CANDADO DE ACCESO (CFG.5a, ADR 063) ──────────────────────────
@@ -460,6 +527,7 @@ export function initConfig() {
   registrarAccion('importar-datos',         _abrirImportadorDatos);
   registrarAccion('exportar-gastos-csv',    _exportarGastosCSV);
   registrarAccion('resetear-app',           _resetearApp);
+  registrarAccion('proteger-datos',         _protegerDatos);
   registrarAccion('activar-notificaciones', _activarNotificaciones);
   registrarAccion('toggle-notificaciones',  _toggleNotificaciones);
   registrarAccion('toggle-atajos',          _toggleAtajos);
