@@ -44,12 +44,11 @@ Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (si
 
 ## Índice de pendientes
 
-Las 7 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+Las 6 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
 | INT.1g | Carril derecho de 320px desde 1.680px (diferida) | Transversal | baja (diferida) | sin sección candidata con contenido |
-| CFG.4c | Respaldo cifrado opcional con contraseña | Configuración | media | nada (ADR 043 D2.3) |
 | CFG.4d | Cerrar la cláusula de cambio de modelo en `docs/legal/` | Configuración | baja | nada (ADR 043 D1) |
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | cola de diseño de Esteban |
 | A.5 | Dominio custom en Vercel | Mantenimiento | baja | que el usuario tenga el dominio registrado |
@@ -76,7 +75,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 
 ### Configuración (dominio `config`)
 
-CFG.4c, CFG.4d → [`board/configuracion.md`](board/configuracion.md)
+CFG.4d → [`board/configuracion.md`](board/configuracion.md)
 
 ---
 
