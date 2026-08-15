@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-15. Última tarea cerrada: ficha 02 de la auditoría móvil, Inicio apunta al mapa nuevo.
+> Revisado: 2026-08-15. Última tarea cerrada: ficha 03 de la auditoría móvil, techo y puerta para "Más".
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -14,7 +14,7 @@
 | Métrica | Valor |
 |---|---|
 | Tests unitarios + integración | 4323/4329 (2026-08-15). Los 6 rojos son **BUG-028**, ajeno y verificado con `git stash` |
-| Tests E2E | 272/272 verdes, sello `dda9314b1070` (2026-08-15, ficha 02). **Compuerta** desde el 2026-07-30 |
+| Tests E2E | 273/273 verdes, sello `8b3bedbe31ab` (2026-08-15, ficha 03). **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v43 (`config.respaldoCifrado`, CFG.4c; migración no-op) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**Ficha 03 de la auditoría móvil - techo y puerta para "Más" (Navegación), 2026-08-15**
+La hoja ya estaba ordenada; le faltaba resistencia a volver a llenarse. **R83**: no scrollea, techo de 444 px, un solo número para los cuatro anchos (mide 361), con compuerta E2E. **R84**: cuatro condiciones de admisión. Las seis entradas heredadas pasan; **Logros las falla y se queda en Ajustes** (H9 se resuelve haciendo que el aviso lleve al panel: ficha 17). H8 cerrado sin cambio. SW v541 → v542.
 
 **Ficha 02 de la auditoría móvil - Inicio apunta al mapa nuevo (Inicio), 2026-08-15**
 Inicio conserva forma, orden, hero y estado vacío; cambia a dónde apunta ([ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md)). Las salidas de "Pendientes del mes" van a la lente "Por pagar" en vez de a Calendario; los accesos rápidos se recalculan con un criterio nuevo (**un atajo solo se gana Inicio si ahorra un toque**) y quedan en Mis cuentas · Por pagar · Me deben; el resumen semanal declara que incluye fijos y cuotas; "Ver todo" solo aparece con más historial del que cabe. El lote sigue en Agenda: lo hereda la ficha 05. SW v540 → v541.
@@ -36,9 +39,6 @@ Cuarta y última rebanada ([ADR 043](DECISIONS/043-sincronizacion-multidispositi
 
 **CFG.4c - respaldo cifrado opcional con contraseña (Configuración), 2026-08-15**
 Tercera rebanada de **CFG.4** (D2.3). `infra/cripto-respaldo.js` nuevo: AES-GCM 256 + PBKDF2 600k sobre el `crypto.subtle` del candado, en un sobre JSON que lleva sus propios parámetros. Interruptor opcional en "Tus datos" (schema v43); importar detecta el formato solo. **La contraseña no se guarda y no se recupera**, y la pantalla lo dice. 29 tests nuevos. SW v538 → v539.
-
-**CFG.4b - sello del último respaldo y aviso de respaldo atrasado (Configuración), 2026-08-15**
-Segunda rebanada de **CFG.4** (D2.2): un respaldo que depende de acordarse no protege. `config.ultimoRespaldoISO` se sella al exportar y "Tus datos" lo muestra en lenguaje humano; `infra/avisos.js` suma el tipo `respaldo-atrasado` (media a 30 días, alta a 90). 26 tests nuevos.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

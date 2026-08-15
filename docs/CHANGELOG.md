@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(nav): ficha 03 de la auditoría móvil, techo y puerta para "Más" · 2026-08-15
+
+Tercera de las 25 entregas. La hoja pasó de once elementos a seis con las fichas anteriores; esta le pone lo que le faltaba, que no era orden sino **resistencia a volver a llenarse**. Ficha: [`contexto/sistema-visual.md`](contexto/sistema-visual.md).
+
+- **La causa raíz del cajón no era el contenido: era que admitir algo no costaba nada.** La barra tiene una restricción dura y visible (cinco ranuras); "Más" no tenía ninguna, así que cada función que no encajaba acababa ahí y la decisión de arquitectura se posponía disfrazada de decisión de menú.
+- **R83, la hoja no scrollea**: techo de 444 px, el 60 % de 740 (el alto útil más corto de los cuatro dispositivos de referencia). Es **un solo número para los cuatro anchos**, no uno por dispositivo: las tejas se ensanchan pero no crecen de alto. Medido en la app: **361 px** a 360 px y a 412 px, sin scroll interno. Queda holgura para exactamente una fila más. **La regla tiene compuerta**: un E2E nuevo en `hub-ahorros.test.js` mide la hoja a 360x740 y falla si rompe el techo o si scrollea.
+- **R84, la puerta de cuatro condiciones**: descuidarla no cuesta dinero; no hace falta para responder "¿cómo estoy?"; existe una pregunta que el usuario se hace en voz alta; y cabe bajo un rótulo que ya existe. Las seis entradas heredadas se volvieron a probar contra ella y las seis pasan (Calendario con matiz en la condición 1, que la ficha 08 debe verificar).
+- **Logros es el primer caso que la puerta rechaza**, y ese es su propósito. Falla la condición 3 (nadie abre una app de finanzas para mirar insignias) y la 4 (no cabe bajo "Consultar" ni bajo "Tu dinero", y crear un grupo para un solo elemento es cómo se reabre un cajón). Se queda dentro de Ajustes; **H9 se resuelve haciendo que el aviso de desbloqueo lleve al panel**, encargo de la ficha 17.
+- **H8 se cierra sin cambio**: el engranaje de Inicio y la teja de Ajustes se mantienen. No son puertas equivalentes (una es atajo, la otra es la entrada del mapa) y el engranaje ahorra un toque, que es el mismo criterio con el que la ficha 02 aprobó los accesos rápidos.
+- **Sin cambio de código en la hoja**: su estructura, orden y aplanado ya los dejó la ficha 01 ("Consultar" arriba, "Tu dinero" justo encima del pie, `.mas-tile--full` solo en la fila de utilidades). Lo que entra al repo es la compuerta y el criterio escrito donde se toma la decisión.
+- 1 test E2E nuevo. Compuertas: unitarios sin cambio (4323/4329, los 6 rojos son BUG-028), lint, guion largo y E2E 273/273 verdes. SW v541 → v542 (cambia `index.html`, aunque solo sea el comentario que documenta la puerta donde se toma la decisión).
+
 ### feat(inicio): ficha 02 de la auditoría móvil, Inicio apunta al mapa nuevo · 2026-08-15
 
 Segunda de las 25 entregas del handoff de Claude Design. Consecuencia directa del [ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md): Inicio no necesita otra forma, necesita que sus salidas y sus atajos hablen del mapa nuevo. Ficha: [`contexto/inicio.md`](contexto/inicio.md).

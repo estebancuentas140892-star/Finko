@@ -232,6 +232,30 @@ test.describe('DIS.18 - la casa de Ahorro (móvil)', () => {
     await expect(masBtn).toHaveAttribute('aria-label', 'Mas opciones');
   });
 
+  // Ficha 03 (ADR 069 D6): R83, "Más" no scrollea. El techo son 444 px (60%
+  // de 740, el alto útil más corto de los cuatro dispositivos de referencia) y
+  // es UN solo número para todos los anchos, no uno por dispositivo. Este test
+  // es la compuerta de esa regla: si una teja nueva rompe el techo, la teja no
+  // es el problema, es la señal de que algo ya no pertenece a la hoja.
+  test('la hoja "Más" cabe entera bajo el techo de 444 px y no scrollea (R83)', async ({ page }) => {
+    await seedVacio(page);
+    await page.setViewportSize({ width: 360, height: 740 });
+    await page.goto('/#dash');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+
+    await page.click('.nav-item[data-modal="modal-mas"]');
+    await expect(page.locator('#modal-mas[data-open]')).toHaveCount(1);
+
+    const medida = await page.$eval('#modal-mas .modal--sheet', (hoja) => ({
+      alto:    Math.round(hoja.getBoundingClientRect().height),
+      scrollH: hoja.scrollHeight,
+      clientH: hoja.clientHeight,
+    }));
+
+    expect(medida.alto).toBeLessThanOrEqual(444);
+    expect(medida.scrollH).toBeLessThanOrEqual(medida.clientH + 1);
+  });
+
   test('el bloque Gastos enseña sus tres lentes y su estado (ADR 069)', async ({ page }) => {
     // Un fijo vencido y un límite excedido: las dos pastillas con dato.
     await sembrar(page, {
