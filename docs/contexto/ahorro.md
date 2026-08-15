@@ -99,6 +99,9 @@
 | Rutas | `modules/infra/router.js` | `SECTIONS`: `ahorro` a `sec-ahorro`, `fondo` a `sec-fondo` | ~11 |
 | Pestaña de la barra inferior (AH.7a, solo móvil) | `index.html` | `.nav-item--mobile-only[href="#ahorro"]`, dentro del grupo de uso diario | |
 | Resaltado de la pestaña en la casa y sus 4 hijas (AH.7a) | ver [`sistema-visual.md`](sistema-visual.md), dueño único de las anclas de navegación de `ui/shell.js` | `MAS_SECTIONS`, `markActiveNav()`, `GRUPO_AHORRO` | |
+| Fila de chips de las cuatro hijas (ficha 04, [ADR 069](../DECISIONS/069-bloque-gastos-en-la-barra-movil.md) D7) | `modules/ui/bloque-ahorro.js` + `index.html` | `CHIPS_BLOQUE_AHORRO`, `initBloqueAhorro()`, slots `#chips-fondo`/`#chips-apartados`/`#chips-metas`/`#chips-inversion` | |
+| Presentación de la fila (solo bajo 1024px) | `styles/layout.css` + `styles/responsive.css` | `.bloque-chips`, `.bloque-chips__chip`, `.bloque-chips__chip.active` | |
+| Media línea de primacía del fondo (AH4) | `modules/dominio/ahorro/view.js` + `styles/components/domain.css` | `_htmlHub(..., fondoActivo)`, `.hub__primero` | |
 
 **Recursos**: `.hub__*`, `.lane__*`, `.silrow`/`.silbtn__*` y `.grow__*` en `styles/components/domain.css`; `.cmp__*` en `styles/components/charts.css`; `.cov__*` en `styles/components/analysis.css`; el ajuste móvil de la leyenda de `.grow` en `styles/responsive.css`; `[data-section="fondo"]` en `styles/layout.css` para el acento de navegación; símbolos `i-ahorro`, `i-metas`, `i-apartados`, `i-inversion`; lee `S.ahorro`, `S.metas`, `S.apartados`, `S.inversiones` y `S.config.ocultarSaldo`.
 
@@ -121,6 +124,7 @@
 
 **Cambios realizados**:
 
+- 2026-08-15 (**ficha 04 de la auditoría móvil**, [ADR 069](../DECISIONS/069-bloque-gastos-en-la-barra-movil.md) D7): la portada-resumen se **confirma** (es la única pantalla donde los cuatro términos conviven y desde donde se aporta a una meta concreta sin entrar). Cambia la circulación y la copia: `ui/bloque-ahorro.js` baja a las cuatro hijas la fila de chips de la casa, con la casa como primer chip, así que ir de Metas a Reservas pasa de 2 toques y un scroll a 1 toque; el orden sale de `MODALIDADES_AHORRO` y ninguna hija puede reordenarlo (AH3); los tres textos que citaban "la pestaña Fondo (arriba)" nombran la sección y enlazan a `#fondo` (AH1, regla candidata R85); y la cabecera de la casa gana media línea mientras el fondo no está activo (AH4). AH5 se cierra sin tocar el "volver". Ver CHANGELOG.
 - 2026-08-13 (**AH.7a**): la casa sube al cuarto slot de la barra inferior de móvil (entrada nueva `nav-item--mobile-only`, la del sidebar no se mueve) y Calendario baja al slot de ancho completo de la hoja "Más". `MAS_SECTIONS` cambia de manos: sale el grupo de ahorro, entra `agenda`. Ver CHANGELOG y [ADR 065](../DECISIONS/065-ahorro-en-la-barra-inferior.md).
 
 - 2026-08-02 (**AH.8**): el carril de Inversión pasa de "2 inversiones" a "2 inversiones, construyendo"; `casaAhorro()` recibe `etapaInversion` y el conteo pasa a filtrar por monto igual que la etapa. Cierra la consecuencia pendiente del ADR 056. Ver CHANGELOG.

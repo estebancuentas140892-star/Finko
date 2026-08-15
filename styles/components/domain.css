@@ -3522,6 +3522,18 @@ button.chip:focus-visible {
 }
 .hub__intro strong { color: var(--fk-text-primary); }
 
+/* Media línea de primacía del fondo (AH4, ADR 069 D7). Solo se pinta mientras
+   el fondo no está activo. Misma escala que el intro: dice el orden
+   recomendado sin agrandar ninguna caja, que es lo que reintroduciría la
+   jerarquía por tamaño. */
+.hub__primero {
+  margin: 0;
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  line-height: var(--fk-leading-snug);
+}
+.hub__primero strong { color: var(--fk-text-primary); }
+
 .hub__total {
   margin: 0;
   text-align: right;

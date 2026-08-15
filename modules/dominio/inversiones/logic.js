@@ -426,7 +426,12 @@ export function detectarNudgesInversion(inversiones, contexto = {}) {
       nivel:  'nudge-high',
       icono:  '🛡️',
       titulo: 'Asegura tu fondo de emergencia antes de invertir',
-      desc:   'Si surge un imprevisto sin un colchón, podrías tener que vender una inversión en mal momento o endeudarte. Actívalo en la pestaña Fondo.',
+      // R85 (ficha 04): la copia nombra la sección, no una posición de
+      // pantalla. "La pestaña Fondo (arriba)" describía la subnav de
+      // escritorio, que en móvil no existe. Este texto se pinta escapado, así
+      // que el enlace real lo pone la acción principal de la tarjeta
+      // (`_renderAcciones`, "Ir al Fondo de emergencia").
+      desc:   'Si surge un imprevisto sin un colchón, podrías tener que vender una inversión en mal momento o endeudarte. Actívalo en Fondo de emergencia.',
     });
   } else if (!fondoCompletado) {
     nudges.push({

@@ -6,9 +6,10 @@
  * 1b. initFlushOnHide() - flush inmediato de save() si la pestaña se oculta/cierra.
  * 2. initAcciones()    - registra delegación data-action en document.
  * 3. initShell()     - aplica tema guardado.
- * 3b. initBloqueGastos() - inyecta la franja de lentes del bloque Gastos, que
- *                          markActiveNav necesita en el DOM desde la primera
- *                          pasada del router.
+ * 3b. initBloqueGastos() e initBloqueAhorro() - inyectan la franja de lentes
+ *                          del bloque Gastos y la fila de chips del bloque
+ *                          Ahorro, que markActiveNav necesita en el DOM desde
+ *                          la primera pasada del router.
  * 4. initRouter()    - activa la sección del hash actual y escucha hashchange.
  * 5. initOnboarding()      - wizard si es primera vez, no-op si ya completó.
  * 5b. initBloqueoAcceso()  - candado de acceso (CFG.5a) si el usuario activó
@@ -52,6 +53,7 @@ import { initImport } from '../dominio/import/index.js';
 import { initLogros } from '../dominio/logros/index.js';
 import { initMenuMas } from './menu-mas.js';
 import { initBloqueGastos } from './bloque-gastos.js';
+import { initBloqueAhorro } from './bloque-ahorro.js';
 import { initRegistrar } from './registrar.js';
 import { initInstallPrompt } from './install-prompt.js';
 import { initSwAviso } from './sw-aviso.js';
@@ -85,6 +87,7 @@ initSidebarCollapse();
 // router: markActiveNav corre en la primera pasada de initRouter y necesita
 // las pestañas ya en el DOM para marcar la activa.
 initBloqueGastos();
+initBloqueAhorro();
 initRouter(markActiveNav);
 initOnboarding();
 initBloqueoAcceso();

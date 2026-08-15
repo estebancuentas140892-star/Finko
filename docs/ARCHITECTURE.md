@@ -108,6 +108,7 @@ Bootstrap y orquestación de la interfaz.
 | `comparador.js` | Columnas comparables de varias bolsas contra la marca de su plan: `htmlComparador()` + `pieComparador()`. Puro, sin DOM. Lo comparten la lista de Apartados y la casa de Ahorro (DIS.19) |
 | `menu-mas.js` | Menú "Más" (secciones que no caben en la bottom nav móvil) |
 | `bloque-gastos.js` | Franja de lentes del bloque Gastos en móvil ([ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md)): inyecta las pestañas "Lo que gastaste" / "Por pagar" / "Límites" en las tres secciones y pinta su estado. Navegación por hash, sin contenedor de estado nuevo |
+| `bloque-ahorro.js` | Fila de chips del bloque Ahorro en móvil (ADR 069 D7): inyecta en las cuatro hijas la misma fila que la casa, con la casa como primer chip. El orden lo deriva de `MODALIDADES_AHORRO`, así que ninguna hija puede reordenarlo |
 | `install-prompt.js` | Prompt de instalación de la PWA (`beforeinstallprompt`) |
 | `bloqueo-acceso.js` | Candado de acceso local: gate de PIN al abrir y `confirmarPin()` para acciones críticas ([ADR 063](DECISIONS/063-candado-de-acceso-local.md)) |
 | `aceptacion-legal.js` | Aceptación obligatoria versionada del paquete legal (LEG.2) |

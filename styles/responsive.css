@@ -39,6 +39,10 @@
      la única puerta a las tres, así que la franja es la que las enseña. */
   .bloque-tabs { display: flex; }
 
+  /* Fila de chips del bloque Ahorro (ADR 069 D7): acá no hay subnav, así que
+     es la única forma de ir de una modalidad a otra sin volver a la casa. */
+  .bloque-chips { display: flex; }
+
   /* Primario del encabezado: vuelve a mostrarse en su sitio de siempre.
      :not([hidden]) respeta el ocultamiento propio del dominio (ej. Deudas
      sin deudas activas, Límites sin plan del mes), que no debe perder

@@ -598,6 +598,45 @@
   line-height: 1.2;
 }
 
+/* ── Bloque Ahorro: fila de chips de las cuatro hijas (ADR 069 D7) ──
+   La misma fila que la casa ya tiene, con la casa incluida como primer chip.
+   Misma forma, comportamiento distinto: en la casa los chips mueven el scroll
+   (botones con acción) y acá navegan (enlaces con hash).
+
+   Desborda en horizontal en vez de envolverse, igual que `.hub .chips`: a
+   360px los cinco chips no caben, y el corte del último es la señal de que
+   hay más. Envuelta, empujaría el contenido de la sección fuera de la vista.
+
+   Nace oculta: en escritorio la subnav del sidebar ya permite el salto
+   lateral, y repetirlo sería la misma navegación dos veces. */
+.bloque-chips {
+  display: none;
+  gap: var(--fk-space-2);
+  margin-bottom: var(--fk-space-4);
+  overflow-x: auto;
+  padding-bottom: 3px;
+  scrollbar-width: none;
+}
+.bloque-chips::-webkit-scrollbar { display: none; }
+
+.bloque-chips__chip {
+  white-space: nowrap;
+  min-height: 36px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+/* Mismo lenguaje que el chip de categoría activo de Gastos (domain.css):
+   tinte del dominio, borde al 50% y texto primario. El tinte y el color
+   llegan del mapeo `[data-section]` que ya existe en este archivo, así que
+   no hay token nuevo: el chip de cada modalidad se tiñe con su dominio. */
+.bloque-chips__chip.active {
+  background: var(--fk-nav-bg, var(--fk-accent-subtle));
+  border-color: color-mix(in srgb, var(--fk-nav-text, var(--fk-accent)) 50%, transparent);
+  color: var(--fk-text-primary);
+  font-weight: var(--fk-font-semibold);
+}
+
 /* ════════════════════════════════════════════════════════════
    BENTO GRID - dashboard
    ════════════════════════════════════════════════════════════

@@ -766,6 +766,22 @@ describe('DIS.19 - el hub de cuatro carriles', () => {
     expect(ids).toEqual(['carril-fondo', 'carril-apartados', 'carril-metas', 'carril-inversiones']);
   });
 
+  // AH4 (ficha 04, ADR 069 D7): el fondo es precondición en tres sitios de la
+  // app y en la casa se dibuja como un igual. La primacía se dice mientras
+  // hace falta, no se infla la caja.
+  it('con el fondo activo no muestra la media línea de primacía', () => {
+    expect(document.querySelector('.hub__primero')).toBeNull();
+  });
+
+  it('sin fondo activo, la cabecera dice por dónde empezar', () => {
+    S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [] };
+    renderCasaAhorro(1_000_000);
+    const linea = document.querySelector('.hub__primero');
+    expect(linea).not.toBeNull();
+    expect(linea.textContent).toContain('Empieza por el fondo');
+    expect(linea.textContent).toContain('sostiene a los otros tres');
+  });
+
   it('cada carril encabeza con cuándo se usa ese dinero, encima del nombre', () => {
     const primero = document.querySelector('.lane');
     expect(primero.querySelector('.lane__cuando').textContent.trim()).toBe('Ojalá nunca lo uses');

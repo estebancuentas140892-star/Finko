@@ -232,6 +232,51 @@ test.describe('DIS.18 - la casa de Ahorro (móvil)', () => {
     await expect(masBtn).toHaveAttribute('aria-label', 'Mas opciones');
   });
 
+  // Ficha 04 (ADR 069 D7): dentro de Ahorro no se podía ir de lado. De Metas
+  // a Reservas había que subir a la casa y volver a bajar; en el bloque
+  // Gastos cambiar de lente cuesta 1 toque. La fila de chips cierra la
+  // brecha sin inventar un patrón: es la misma que la casa ya tenía.
+  test('las cuatro modalidades se alcanzan entre sí con un toque (ADR 069 D7)', async ({ page }) => {
+    await seedConAhorros(page);
+    await page.goto('/#metas');
+    await page.waitForSelector('#sec-metas.active', { timeout: 10_000 });
+
+    const chips = page.locator('#sec-metas .bloque-chips__chip');
+    await expect(chips).toHaveText([
+      'Ahorro', 'Fondo de emergencia', 'Reservas', 'Metas', 'Inversión',
+    ]);
+    await expect(chips.filter({ hasText: 'Metas' })).toHaveClass(/active/);
+
+    // De Metas a Reservas sin pasar por la casa.
+    await chips.nth(2).click();
+    await page.waitForSelector('#sec-apartados.active', { timeout: 5_000 });
+    await expect(page.locator('#sec-apartados .bloque-chips__chip[data-section="apartados"]'))
+      .toHaveClass(/active/);
+    // La barra sigue diciendo el bloque mientras los chips dicen el lugar.
+    await expect(page.locator('.nav-item--mobile-only[data-section="ahorro"]')).toHaveClass(/active/);
+
+    // Y el primer chip devuelve a la casa, que no lleva fila inyectada.
+    await page.locator('#sec-apartados .bloque-chips__chip[data-section="ahorro"]').click();
+    await page.waitForSelector('#sec-ahorro.active', { timeout: 5_000 });
+    await expect(page.locator('#sec-ahorro .bloque-chips')).toHaveCount(0);
+  });
+
+  // AH1: tres textos mandaban al usuario móvil a "la pestaña Fondo (arriba)",
+  // que solo existe en la subnav de escritorio, y dos de ellos son estados
+  // vacíos: el texto roto se le aparecía justo al usuario nuevo.
+  test('el estado vacío de Metas señala el fondo con un enlace, no con una posición (R85)', async ({ page }) => {
+    await seedVacio(page);
+    await page.goto('/#metas');
+    await page.waitForSelector('#sec-metas.active', { timeout: 10_000 });
+
+    const tip = page.locator('#sec-metas .empty-state__tip');
+    await expect(tip).not.toContainText('pestaña');
+    await expect(tip.locator('a')).toHaveAttribute('href', '#fondo');
+
+    await tip.locator('a').click();
+    await expect(page.locator('#sec-fondo.active')).toBeVisible();
+  });
+
   // Ficha 03 (ADR 069 D6): R83, "Más" no scrollea. El techo son 444 px (60%
   // de 740, el alto útil más corto de los cuatro dispositivos de referencia) y
   // es UN solo número para todos los anchos, no uno por dispositivo. Este test

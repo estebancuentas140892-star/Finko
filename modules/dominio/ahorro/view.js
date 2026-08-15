@@ -185,7 +185,7 @@ export function renderCasaAhorro(gastosFijosMensuales = 0) {
     inversiones: _graficoInversion(inversiones),
   };
 
-  el.innerHTML = _htmlHub(total, filas, graficos);
+  el.innerHTML = _htmlHub(total, filas, graficos, fondo.activo === true);
 }
 
 /**
@@ -199,8 +199,9 @@ export function renderCasaAhorro(gastosFijosMensuales = 0) {
  * @param {number} total
  * @param {Array<Object>} filas Salida de `casaAhorro()`, en orden de carril.
  * @param {Object<string, {html: string, accion: string}>} graficos
+ * @param {boolean} fondoActivo
  */
-function _htmlHub(total, filas, graficos) {
+function _htmlHub(total, filas, graficos, fondoActivo = true) {
   const oculto = S.config?.ocultarSaldo === true;
 
   const chipsHtml = filas.map(fila => `
@@ -210,9 +211,19 @@ function _htmlHub(total, filas, graficos) {
 
   const carrilesHtml = filas.map(fila => _htmlCarril(fila, graficos[fila.clave])).join('');
 
+  // AH4 (ficha 04, ADR 069 D7): el fondo es una precondición en tres sitios de
+  // la app y en la casa se dibuja como un igual. La primacía se dice, no se
+  // infla: media línea mientras el fondo no está activo, y desaparece cuando
+  // lo está, porque entonces deja de ser un consejo. Agrandar su carril sería
+  // reintroducir la jerarquía por tamaño que la ficha 03 retiró de "Más".
+  const primeroFondo = fondoActivo
+    ? ''
+    : '<p class="hub__primero"><strong>Empieza por el fondo</strong>: es el que sostiene a los otros tres.</p>';
+
   return `
     <div class="hub">
       <p class="hub__intro">Cuatro formas de guardar. La diferencia es <strong>cuándo vas a usar este dinero</strong>.</p>
+      ${primeroFondo}
       <div class="chips" role="group" aria-label="Saltar a una modalidad">${chipsHtml}</div>
       ${carrilesHtml}
       <p class="hub__total">

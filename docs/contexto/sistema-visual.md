@@ -87,6 +87,7 @@
 | Franja de lentes del bloque Gastos (ficha 01) | `modules/ui/bloque-gastos.js` + `index.html` | `LENTES_BLOQUE_GASTOS`, `initBloqueGastos()`, slots `#tabs-gast`/`#tabs-compromisos`/`#tabs-presupuesto` | ~28 |
 | Presentación de la franja (solo bajo 1024px) | `styles/layout.css` + `styles/responsive.css` | `.bloque-tabs`, `.bloque-tabs__tab`, `.bloque-tabs__badge` | ~537, ~38 |
 | Resaltado de la entrada de Gastos en las tres lentes (ficha 01) | `modules/ui/shell.js` + `styles/responsive.css` | `GRUPO_GASTOS`, `.nav-item--bloque-activo` | ~29, ~217 |
+| Fila de chips del bloque Ahorro (ficha 04) | `modules/ui/bloque-ahorro.js` + `styles/layout.css` | `CHIPS_BLOQUE_AHORRO`, `initBloqueAhorro()`, `.bloque-chips` | |
 | Marca "F" del sidebar (NAV2.1b) | `styles/layout.css` + `index.html` | `.sidebar__logo-mark` | ~41 |
 | Pastilla "Registrar" + indicador fijo del bottom nav (NAV2.1c) | `styles/responsive.css` | `.nav-item__fab`, `.nav-item.active::before` (bloque móvil) | ~104, ~136 |
 | Estilos del wizard de bienvenida (DIS.6/C1) | `styles/modals.css` | `.modal--onboarding`, `.onboarding__*` | ~444 |
