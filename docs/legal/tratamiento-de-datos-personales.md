@@ -53,7 +53,7 @@ El modelo local-only no requiere solicitar tu autorización para tratamiento de 
 
 ## 6. Cambio de modelo (cláusula CFG.4)
 
-Si Finko llegara a incorporar cuentas de usuario, respaldo en la nube o sincronización entre dispositivos:
+**Decidido el 2026-08-15:** Finko no incorpora cuentas de usuario ni sincronización entre dispositivos. Si esa decisión se reabriera en el futuro:
 
 - Finko pasaría a ser responsable del tratamiento de los datos que reciba, con todas las obligaciones de la Ley 1581 de 2012: política de tratamiento completa, aviso de privacidad, autorización previa e informada, registro de la base de datos si aplica, canales de atención y medidas de seguridad verificables.
 - Esta política se reemplazaría por una versión nueva **antes** de activar cualquiera de esas funciones, y la app pediría tu consentimiento expreso e informado.

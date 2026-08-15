@@ -40,4 +40,4 @@ Para funcionar sin conexión, la app guarda una copia local de sus propios archi
 
 ## 5. Cambios
 
-Si Finko llegara a necesitar cookies o tecnologías equivalentes (por ejemplo, por un cambio de modelo hacia cuentas de usuario), este aviso se actualizará antes de introducirlas y el cambio quedará en el [Historial de cambios](historial-de-cambios.md).
+Finko decidió el 2026-08-15 no incorporar cuentas de usuario ni sincronización, así que ese motivo para necesitar cookies queda descartado. Si Finko llegara a necesitar cookies o tecnologías equivalentes por otro motivo, este aviso se actualizará antes de introducirlas y el cambio quedará en el [Historial de cambios](historial-de-cambios.md).

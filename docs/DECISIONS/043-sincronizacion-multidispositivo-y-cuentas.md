@@ -145,7 +145,7 @@ Cuatro, en este orden. **CFG.4 deja de estar bloqueada** y pasa a ser una inicia
 | **CFG.4a** | D2.1: `navigator.storage.persist()` y el estado real visible en "Tus datos" | **cerrada el 2026-08-15** |
 | **CFG.4b** | D2.2: sello del último respaldo, aviso montado en el motor del ADR 066, estado en Ajustes | **cerrada el 2026-08-15** |
 | **CFG.4c** | D2.3: respaldo cifrado opcional con contraseña, importación transparente | **cerrada el 2026-08-15** (AES-GCM 256 + PBKDF2 600k; no sumó call site al guard de CFG.5b) |
-| **CFG.4d** | Cierra la cláusula "cambio de modelo (CFG.4)" en los 11 documentos de `docs/legal/` (solo docs, avisa a LEG) | pendiente |
+| **CFG.4d** | Cierra la cláusula "cambio de modelo (CFG.4)" en los 11 documentos de `docs/legal/` (solo docs, avisa a LEG) | **cerrada el 2026-08-15** (5 documentos con cláusula propia, cambio menor, sin re-aceptación) |
 
 ---
 

@@ -67,7 +67,7 @@ En la máxima medida permitida por la ley colombiana, el responsable de Finko no
 
 9.2. Cuando un cambio sea importante, la app te pedirá aceptar la versión nueva antes de continuar usándola.
 
-9.3. **Cambio de modelo:** estos términos describen el modelo local-only. Si Finko llegara a incorporar cuentas de usuario, respaldo en la nube o sincronización, se publicará una versión nueva de todo el paquete legal y se solicitará tu aceptación expresa antes de activar cualquiera de esas funciones.
+9.3. **Cambio de modelo:** estos términos describen el modelo local-only. Esa decisión ya se tomó de forma explícita (2026-08-15): Finko no incorpora cuentas de usuario ni sincronización entre dispositivos. Si esa decisión se reabriera en el futuro, se publicará una versión nueva de todo el paquete legal y se solicitará tu aceptación expresa antes de activar cualquiera de esas funciones.
 
 ## 10. Ley aplicable y contacto
 

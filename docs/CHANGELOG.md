@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### docs(legal): CFG.4d, cláusula de cambio de modelo cerrada, iniciativa CFG.4 completa · 2026-08-15
+
+Cuarta y última rebanada de **CFG.4** ([ADR 043](DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md) D1). Los cinco documentos de `docs/legal/` con la cláusula "cambio de modelo (CFG.4)" describían una decisión pendiente ("si Finko llegara a incorporar cuentas..."); con el ADR Aceptado, esa reserva deja de ser reserva. Ficha: [`contexto/configuracion.md`](contexto/configuracion.md).
+
+- **`terminos-y-condiciones.md` 9.3, `politica-de-privacidad.md` 8.2, `tratamiento-de-datos-personales.md` sección 6, `aviso-de-cookies.md` sección 5, `README.md` regla 3**: cada cláusula pasa de "si esto llegara a pasar" a "esto se decidió el 2026-08-15 que no pasa", conservando qué cambiaría si la decisión se reabriera con un ADR nuevo.
+- **`historial-de-cambios.md`**: entrada nueva, clasificada **cambio menor** (no pide re-aceptación en la app): el fondo no cambia, el modelo local-only sigue siendo el mismo que describían los borradores desde 2026-07-09. Se ajusta también el criterio de "cambio importante" para que siga describiendo qué pasaría si CFG.4 se reabriera, no una decisión ya tomada.
+- **`README.md`**: la lista de "hechos verificados" suma que el respaldo JSON admite cifrado opcional por contraseña que Finko no guarda ni puede recuperar (CFG.4c).
+- **No resuelve el checklist de contenido de LEG.2** (responsable, correo de contacto, licencia del código): eso sigue esperando a Esteban, sin relación con esta decisión.
+- **Cierra la iniciativa CFG.4 completa**: CFG.4a, CFG.4b, CFG.4c y CFG.4d, las cuatro el mismo día. Sin runtime: sin SW, sin tests que correr. Compuertas: guion largo verde; E2E no aplica (`docs/legal/` no es lo que la app ejecuta).
+
 ### feat(config): CFG.4c, respaldo cifrado opcional con contraseña · 2026-08-15
 
 Tercera rebanada de **CFG.4** ([ADR 043](DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md) D2.3, la opción B del ADR). Hasta hoy el respaldo salía en texto plano: quien lo subiera a Drive o lo dejara en Descargas dejaba el historial financiero completo legible para cualquiera con acceso a esa carpeta. Ficha: [`contexto/configuracion.md`](contexto/configuracion.md).

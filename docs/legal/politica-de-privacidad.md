@@ -65,7 +65,7 @@ Finko no recolecta datos de nadie, incluidos menores de edad. Si un menor usa la
 
 8.1. Cualquier cambio se registra en el [Historial de cambios](historial-de-cambios.md) y, si es importante, la app pedirá tu aceptación de la versión nueva.
 
-8.2. **Cambio de modelo:** esta política describe el modelo local-only vigente. Si Finko llegara a ofrecer cuentas, respaldo en la nube o sincronización, esta política se reescribirá por completo antes de activar esas funciones, identificando responsable del tratamiento, finalidades, encargados y canales para ejercer tus derechos, y se pedirá tu consentimiento expreso.
+8.2. **Cambio de modelo:** esta política describe el modelo local-only vigente. Esa decisión ya se tomó de forma explícita (2026-08-15): Finko no ofrece cuentas ni sincronización. Si se reabriera en el futuro, esta política se reescribirá por completo antes de activar esas funciones, identificando responsable del tratamiento, finalidades, encargados y canales para ejercer tus derechos, y se pedirá tu consentimiento expreso.
 
 ## 9. Contacto
 
