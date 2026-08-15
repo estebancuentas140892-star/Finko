@@ -12,6 +12,31 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(transversal): IV.4, metafora de movimiento en Avalancha y Bola de nieve · 2026-08-15
+
+Cierra **IV.4**. Los dos iconos que el triaje del 2026-07-08 senalo como ilegibles ganan metafora de movimiento sin salir del lenguaje v2 (ADR 023). Ficha: [`board/transversal.md`](board/transversal.md). Sin ficha propia en `contexto/`: la biblioteca de iconos vive en [`assets/svg/README.md`](../assets/svg/README.md).
+
+- **Avalancha (`i-mountain`):** el punto estatico del pico se reemplaza por un trazo desnudo de dos golpes cortos siguiendo la ladera + la chispa unica al final del recorrido (la masa cae, no se queda arriba). El pico agudo de ID.7 no se toca.
+- **Bola de nieve (`i-snowball`):** un arco de rastro (trazo desnudo, mismo patron que la puerta de `i-home`) detras del circulo chico sugiere el rodado; el par de circulos chico/grande no cambia.
+- **Se descarta el boceto de 3 chispas en cascada del 2026-08-14** por violar la regla 3 del ADR 023 (un solo punto de valor). La solucion final conserva un unico `circle` de chispa por icono, sin vocabulario nuevo.
+- **Esteban delego la decision final** ("toma tu las decisiones") en vez de esperar el dibujo en Illustrator: excepcion explicita al flujo normal de `assets/svg/README.md` seccion 9 (Esteban disena, Code integra), no una lectura automatica de esa regla.
+- **Verificacion:** geometria confirmada por `getBBox()` (separacion entre trazos y chispa, contencion en el viewBox 24x24) contra las clases reales del proyecto (`.estrategia-card-pick__icono`, 28px sin `--sm`). Sin composicion visual real en esta sesion (mismo limite que el 2026-08-14).
+- **E2E corrido aislado en worktree separado** (arbol compartido con otra sesion en progreso, no se podia correr en el arbol principal): 269/270 verdes. La unica falla (`MC.13d`, `_version` 41 vs 42) se reprodujo identica contra HEAD puro sin estos 4 archivos (equivalente a `git stash`), asi que es preexistente y ajena.
+- Sin tests unitarios nuevos: cero cambio de `modules/`. SW `finko-v537` → `finko-v538`.
+
+### feat(config): CFG.4b, sello del último respaldo y aviso de respaldo atrasado · 2026-08-15
+
+Segunda rebanada de **CFG.4** ([ADR 043](DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md) D2.2). Ejecuta la palanca que ataca el problema original que abrió el ADR: un respaldo que depende de acordarse no protege. Ficha: [`contexto/configuracion.md`](contexto/configuracion.md) y [`contexto/inicio.md`](contexto/inicio.md) (el panel de avisos).
+
+- **`config.ultimoRespaldoISO` (schema v42)**: se sella en `_exportarDatos()` justo después de que el navegador dispara la descarga. Solo el respaldo JSON completo lo actualiza; exportar gastos a CSV en el mismo panel no cuenta, porque no es un respaldo completo.
+- **`textoUltimoRespaldo()` en `config/view.js`**: "Nunca has guardado un respaldo" / "hoy" / "ayer" / "hace N días", en la sección "Tus datos". Se actualiza tras exportar sin re-renderizar el panel entero (mismo criterio que el chip de guardado y el bloque de CFG.4a).
+- **`infra/avisos.js` suma el tipo `respaldo-atrasado`** y la sección `'respaldo'` (`SECCIONES_AVISO` pasa de cinco a seis, recogido automáticamente por el interruptor "Qué te avisa" de CFG.3c sin tocar `view.js`). Severidad `media` a los 30 días sin respaldo, escala a `alta` a los 90 (interrumpe con notificación del sistema, ADR 066 D5).
+- **`_deRespaldo()` mide una ausencia, no un evento**: si nunca hubo un respaldo, usa `config.primerUsoISO` (nuevo, sellado al terminar el onboarding) como referencia en vez de `ultimoRespaldoISO`. El reloj arranca cuando empezó a haber algo que perder, no antes: un usuario que instaló ayer no ve el aviso el día 1.
+- **`hayDatosParaRespaldar()` (nuevo, exportado)**: corta el aviso si no hay nada que perder. Cubre nueve colecciones (más de las que recibe el resto del motor), porque perder solo el saldo de una cuenta o una meta también justifica el aviso.
+- **Migración v41 → v42**: un usuario existente arranca sin sello de respaldo (`null`) y con `primerUsoISO` anclado al día de la migración (mismo precedente que `legalAceptado` en v32 → v33: el reloj arranca hacia delante, no retroactivo).
+- **Aparece en el panel "Avisos" de Inicio** (`resumen/view.js`, badge "Respaldo") **y en la notificación del sistema** (emoji 💾, "Hace N días que no respaldas tus datos").
+- 26 tests unitarios nuevos (`avisos.test.js`, `notificaciones.test.js`, `resumen.test.js`, `config.test.js`, `storage.test.js`). Compuertas: unitarios verdes salvo BUG-028 (ajeno, verificado con `git stash`), lint, guion largo y E2E verdes. SW v536 → v537.
+
 ### feat(config): CFG.4a, el navegador deja de poder borrar los datos por su cuenta · 2026-08-15
 
 Primera rebanada de **CFG.4**, que deja de estar bloqueada: el [ADR 043](DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md) se **cierra Aceptado** el mismo día (Esteban delegó la decisión). Finko **no** incorpora cuentas ni sincronización (opciones D y E descartadas con fecha, la custodia es del usuario siempre) y **sí** resuelve durabilidad, en tres palancas que no tocan el ADN. Esta es la primera: D2.1. Ficha: [`contexto/configuracion.md`](contexto/configuracion.md).

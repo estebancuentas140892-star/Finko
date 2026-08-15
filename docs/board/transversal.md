@@ -1,6 +1,6 @@
 # Tablero - Transversal
 
-> Revisado: 2026-08-14.
+> Revisado: 2026-08-15.
 
 > Satélite de [`BOARD.md`](../BOARD.md) (afecta varias secciones). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
 
@@ -35,22 +35,7 @@
 - Depende de : arte final de Esteban en Illustrator (único bloqueo restante, fuera del alcance de Code)
 - Modelo     : sin código pendiente; cola de diseño de Esteban
 
-#### IV.4 - Iconografía dirigida post-color
-- Prioridad  : decidir tras IV.2
-- Área       : design (el diseño de los assets es de Esteban; Code solo integra)
-- Estado     : **revisión visual hecha, 2026-08-13.** IV.2 (a-d) ya está en producción y la app, revisada en Deudas > Estrategia de pago (ambos iconos en `.estrategia-card-pick__icono`, 28px, sin `--sm`), ya no se percibe fría/genérica en general: el color por dominio de IV.2a/d cumple. El único hallazgo real sigue siendo el que trajo el triaje: estos dos iconos puntuales. **Único bloqueo restante: arte final de Esteban.**
-- Objetivo   : si tras el despliegue del color la app aún se percibe fría/genérica, definir la spec por dominio y redibujar en lotes dirigidos (Esteban en Illustrator, pipeline ADR 026 + `sync-sprite.py`, revisión de legibilidad 16/22/48px en ambos temas). NO es un redibujo global del sprite.
-- **Spec integrada por triaje 2026-07-08 (brief de Deudas, punto 13):** los iconos de **Avalancha** y **Bola de nieve** no representan el concepto de cada estrategia; rediseñarlos con metáfora clara (regla 5 del ADR 023: metáfora primero) manteniendo el lenguaje v2. Nota: `i-mountain` conserva sus picos agudos a propósito (decisión de ID.7); el problema reportado es de metáfora, no de estilo. Primer lote candidato de esta tarjeta.
-- **Direcciones propuestas para Esteban (2026-08-13, a validar en Illustrator):**
-  - **Avalancha (`i-mountain`):** el pico agudo se queda (ID.7 lo fija a propósito), pero un pico solo no distingue "avalancha" de "meta/logro" (`i-star`, `i-trophy` ya cubren ese territorio). Falta la caída: 2-3 puntos sólidos (chispa) en trayectoria diagonal descendiente desde el pico, como nieve/roca cayendo. La metáfora a comunicar es "ataca la tasa más alta primero y las demás caen más rápido", no solo "lo más alto".
-  - **Bola de nieve (`i-snowball`):** el par de círculos chico/grande (crece) ya apunta bien; hoy le falta el movimiento. Probar un arco corto de rastro/rodado detrás del círculo grande. Si compite con el reconocimiento a 16px (regla 5), se descarta el arco y se queda solo el crecimiento.
-  - Ninguno de los dos tiene hoy un uso a 16px real (solo se ven a 28px en la card de estrategia): verificar ahí también antes de entrar al sprite, no solo a 22/48.
-- **Boceto técnico listo para Illustrator (Claude, 2026-08-14):** geometría concreta de las dos direcciones de arriba, para pegar como punto de partida, no como arte final (el diseño sigue siendo de Esteban). No se tocó `assets/svg/` ni el sprite: el guardarraíl de `sync-sprite.py` aborta si un símbolo publicado (`i-mountain`, `i-snowball`) se reemplaza por un `data-placeholder`, así que la única forma de integrar sería dar por final un dibujo que nadie de Design aprobó. Sin preview real (el panel del navegador no compuso en esta sesión), la legibilidad a 16px es la del cálculo, no la del ojo.
-  - **Avalancha:** `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m8 3 4 8 5-5 5 15H2L8 3z" fill="currentColor" fill-opacity=".22"/><circle cx="9.4" cy="5.8" r="0.9" fill="var(--fk-icon-dot, currentColor)" stroke="none"/><circle cx="10.4" cy="7.8" r="1.2" fill="var(--fk-icon-dot, currentColor)" stroke="none"/><circle cx="11.4" cy="9.8" r="1.5" fill="var(--fk-icon-dot, currentColor)" stroke="none"/></svg>`. Cuerpo del path intacto (los picos de ID.7 no se tocan); la chispa única del pico se reemplaza por 3 chispas en cascada, creciendo hacia abajo (la avalancha gana masa al caer). Ojo: esto usa 3 elementos con `var(--fk-icon-dot)` a la vez, no el "un solo punto de valor" de la regla 3 del ADR 023; se apoya en la excepción de metáfora de la regla 5, ya invocada por esta misma tarjeta, pero es una desviación explícita que Esteban debe validar o rechazar, no una lectura automática de la regla.
-  - **Bola de nieve:** `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3.5 15.5a6 6 0 0 1 4-7.8"/><circle cx="12" cy="16.5" r="4.5" fill="currentColor" fill-opacity=".22"/><circle cx="8.6" cy="7.4" r="2.6"/><circle cx="16.4" cy="5.6" r="1.6" fill="var(--fk-icon-dot, currentColor)" stroke="none"/></svg>`. Único cambio: un trazo de arco (sin relleno, hereda `.icon`) detrás del círculo chico, sugiriendo el rastro rodado. Si a 16px se ve sucio, se borra ese `path` y queda el diseño actual sin cambios (retroceso de 1 línea).
-- Secciones  : `assets/svg/`, sprite de `index.html`
-- Depende de : IV.2 en producción (cerrado) + revisión visual (hecha) + diseños de Esteban (pendiente, único bloqueo)
-- Modelo     : Equilibrado - Alto (revisión de assets contra spec; el diseño es de Esteban)
+> **IV.4 - Iconografía dirigida post-color, cerrada 2026-08-15.** Metáfora de movimiento en los dos iconos que el triaje del 2026-07-08 señaló como ilegibles: Avalancha (`i-mountain`) cambia el punto estático del pico por un trazo desnudo de dos golpes cortos + la chispa al final del recorrido (cae por la ladera, no se queda arriba); Bola de nieve (`i-snowball`) suma un arco de rastro (trazo desnudo, mismo patrón que la puerta de `i-home`) detrás del círculo chico. Se descartó el boceto de 3 chispas en cascada del 2026-08-14 por violar la regla 3 del ADR 023 (un solo punto de valor); la solución final conserva un único `circle` de chispa. Esteban delegó la decisión final ("toma tú las decisiones") en vez de esperar el dibujo en Illustrator: geometría verificada por bbox (sin composición visual real en esta sesión, mismo límite que el 2026-08-14). `assets/svg/iconos/simbolos/mountain.svg` + `snowball.svg`, sprite de `index.html`.
 
 > **Iniciativa CAT: taxonomía + picker de ícono compartido, completa.** Fuente única para categorías entre secciones. CAT.1, CAT.2, CAT.3 y CAT.4 cerradas (reglas heredadas en [`contexto/categorias.md`](../contexto/categorias.md), bloque "Categorías personalizadas del usuario").
 
