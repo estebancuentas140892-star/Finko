@@ -12,6 +12,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(config): CFG.4a, el navegador deja de poder borrar los datos por su cuenta · 2026-08-15
+
+Primera rebanada de **CFG.4**, que deja de estar bloqueada: el [ADR 043](DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md) se **cierra Aceptado** el mismo día (Esteban delegó la decisión). Finko **no** incorpora cuentas ni sincronización (opciones D y E descartadas con fecha, la custodia es del usuario siempre) y **sí** resuelve durabilidad, en tres palancas que no tocan el ADN. Esta es la primera: D2.1. Ficha: [`contexto/configuracion.md`](contexto/configuracion.md).
+
+- **`modules/infra/persistencia.js` (nuevo)**: `soportaPersistencia()`, `estadoPersistencia()` y `solicitarPersistencia()` sobre `navigator.storage`. Toma la mejora que el **hecho 7 del [ADR 068](DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md)** había medido y dejado sin tomar: cero ocurrencias de `navigator.storage` en el repo, siendo la única palanca de durabilidad que no le pide nada al usuario después de concederla.
+- **Exige `persist` y `persisted`, no una de las dos**: hay navegadores con `storage.estimate()` y sin `persist()`. Con soporte parcial se reporta `no-soportado` en vez de pintar un botón que no puede hacer nada.
+- **`solicitarPersistencia()` consulta antes de pedir**: con la protección ya concedida no vuelve a llamar a `persist()`, que en Firefox abriría un permiso ya resuelto.
+- **Quién decide es el navegador**: Chromium concede por heurística (instalada, uso frecuente), Firefox abre permiso, y un `false` es respuesta legítima. Por eso el handler nunca anuncia éxito por haber llamado: anuncia lo que devolvió. Verificado en la app: en `127.0.0.1` Chromium responde `false` y el bloque queda en su estado honesto con el botón visible para reintentar.
+- **`config/view.js` + `config/index.js`**: bloque nuevo en "Tus datos", `hidden` al nacer y con el cuerpo vacío, porque el estado real es asíncrono y `view.js` es síncrono; lo llena `_pintarPersistencia()`. No re-renderiza el panel (tocaría solo un párrafo y cerraría el `<details>` de Impuestos): toca texto y dos `hidden`, mismo criterio que el chip de guardado.
+- **Copy sin promesas que la API no cumple**: `persist()` no protege del extravío del dispositivo ni de "Borrar datos de navegación". Los tres textos lo dicen, y el de la protección concedida sigue mandando a guardar respaldo.
+- **`styles/components/config.css`**: `.config-bloque > .btn` recibe `align-self: flex-start; min-width: 160px`. Tercera y última superficie con el defecto que CFG.6 arregló el 2026-08-02 para `.config-section > .btn`: el botón nuevo se estiraba a 932px en escritorio (medido antes y después: 932 → 161).
+- 14 tests unitarios nuevos en `persistencia.test.js` (los tres estados, soporte parcial, `persisted()`/`persist()` que lanzan) + 4 en `config.test.js`. `navigator` entra por parámetro para no pisar el global de happy-dom.
+- Compuertas: unitarios verdes salvo **BUG-028**, ajeno y verificado con `git stash` (subió de 1 a 6 tests rojos por el avance del calendario, no por este cambio); lint, guion largo y E2E verdes. SW v535 → v536.
+
 ### perf(transversal): PERF.9, peso serializado real del estado en el harness · 2026-08-14
 
 El argumento de cuota de todo el proyecto ([ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md)) descansaba en un estimado nunca medido ("~1.5-3 MB"); el [ADR 068](DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md) midió a mano que la semilla del harness subestimaba el peso real de un gasto por un factor ~3x. Esta tarea convierte esa medición manual en columna del harness, dándole instrumento a **T1** (cuota medida, D3 del ADR 068). Ficha: [`contexto/transversal.md`](contexto/transversal.md). Detalle completo: [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md).

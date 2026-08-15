@@ -1,6 +1,6 @@
 # Tablero - Configuración
 
-> Revisado: 2026-08-13.
+> Revisado: 2026-08-15.
 
 > Satélite de [`BOARD.md`](../BOARD.md) (dominio `config`). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
 
@@ -12,13 +12,36 @@
 
 > **Iniciativa CFG.3** ("Avisos anticipatorios"), **completa** (2026-08-13, sus tres rebanadas). Alcance, el límite técnico y las alternativas rechazadas: **[ADR 066](../DECISIONS/066-motor-unico-de-avisos.md)**, su dueño. Ficha: [`contexto/inicio.md`](../contexto/inicio.md) (el panel de Inicio), [`contexto/configuracion.md`](../contexto/configuracion.md) (el interruptor de Ajustes) y [`contexto/transversal.md`](../contexto/transversal.md) (el motor).
 
-#### CFG.4 - Respaldo, cuentas de usuario y sincronización multi-dispositivo [DECISIÓN DE ADN]
-- Prioridad  : sin definir (la decisión es la de mayor alcance del proyecto)
-- Estado     : decisión sin tomar. Ver **[ADR 043](../DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md)** (Abierta, ninguna dirección elegida). No implementar nada de este alcance sin ese ADR resuelto.
-- Objetivo   : hoy solo existe exportar a JSON/CSV manual; el usuario teme perder todo el historial si pierde el teléfono, cambia de equipo, desinstala o formatea.
-- Motivo     : toca el ADN del proyecto de frente (reglas 2 y 3: offline-first, sin servidor, sin cuenta, sin sync). Por instrucción directa de CLAUDE.md sección 4, requiere ADR y discusión explícita antes de cualquier código.
-- Secciones  : Configuración (Ajustes), transversal (afecta el modelo entero de datos y la identidad del producto)
-- Depende de : el ADR 043 resuelto. Ese ADR trae, si avanza, sus propios avisos: activar el disparador D4 del [ADR 030](../DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) y avisar a la iniciativa LEG antes de que redacte
-- Modelo     : ver el ADR 043 antes de iniciar cualquier cosa
+> **Iniciativa CFG.4** ("Durabilidad de los datos"), **desbloqueada el 2026-08-15**. Alcance, las cuatro razones para descartar cuentas y sincronización, y las tres palancas elegidas: **[ADR 043](../DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md)**, su dueño (Aceptado). Lo que ese ADR decidió no se re-discute acá: **CFG.4a cerró el 2026-08-15** (`navigator.storage.persist()`, D2.1). Quedan tres rebanadas.
+
+#### CFG.4b - Sello del último respaldo y aviso cuando pasó demasiado tiempo
+- Prioridad  : alta (es la palanca que ataca el problema original: un respaldo que depende de acordarse no protege)
+- Estado     : pendiente. Ejecuta **D2.2** del [ADR 043](../DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md)
+- Área       : ambos
+- Objetivo   : que Finko sepa cuándo fue el último respaldo, lo diga en Ajustes en lenguaje humano y avise cuando pasó demasiado tiempo con datos nuevos sin respaldar
+- Secciones  : Configuración (Ajustes), Inicio (el panel de avisos de CFG.3b)
+- Archivos   : `modules/core/state.js` (`config.ultimoRespaldoISO`), `modules/core/storage.js` (migración v41 → v42), `modules/dominio/config/index.js` (`_exportarDatos()` sella), `modules/dominio/config/view.js`, `modules/infra/avisos.js` (tipo y sección de aviso nuevos)
+- Depende de : nada
+- Modelo     : capacidad alta, esfuerzo medio (toca schema, motor de avisos y UI)
+
+#### CFG.4c - Respaldo cifrado opcional con contraseña
+- Prioridad  : media
+- Estado     : pendiente. Ejecuta **D2.3** del [ADR 043](../DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md)
+- Área       : ambos
+- Objetivo   : que el archivo exportado pueda ir cifrado (hoy el JSON va en claro y trae el historial financiero completo), con importación que detecta y descifra sin que el usuario elija formato
+- Secciones  : Configuración (Ajustes)
+- Archivos   : `modules/dominio/config/index.js` (`_exportarDatos()`, `_importarDatos()`), módulo nuevo de cifrado en `modules/infra/`, `modules/dominio/config/view.js`
+- Depende de : nada. Suma un cuarto call site al guard de CFG.5b: decide su patrón por la regla de esa tarjeta, no copiando el de al lado
+- Modelo     : capacidad alta, esfuerzo medio. **Restricción del ADR:** la clave no se recupera, y la pantalla lo dice con esas palabras
+
+#### CFG.4d - Cerrar la cláusula de cambio de modelo en el paquete legal
+- Prioridad  : baja
+- Estado     : pendiente. Ejecuta el efecto de **D1** del [ADR 043](../DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md) sobre la iniciativa LEG
+- Área       : code (solo documentos, sin runtime)
+- Objetivo   : los 11 documentos de `docs/legal/` se redactaron con una reserva "si el modelo cambia (CFG.4)". Con el ADR cerrado esa reserva deja de ser reserva: no habrá cuentas ni custodia de terceros
+- Secciones  : Centro Legal (Ajustes)
+- Archivos   : `docs/legal/*.md`
+- Depende de : nada. **No** resuelve el checklist de contenido de LEG.2 (responsable, correo, licencia): eso sigue esperando a Esteban
+- Modelo     : capacidad media, esfuerzo bajo
 
 > **Iniciativa CFG.5** ("Seguridad de acceso"), **completa** (sus tres rebanadas). Alcance, framing honesto y alternativas rechazadas (cifrado real, patrón, biometría, contraseña de cuenta): **[ADR 063](../DECISIONS/063-candado-de-acceso-local.md)**, su dueño. CFG.5a (candado con PIN local) cerró el 2026-08-12. CFG.5c cerró el 2026-08-13 sin código (biometría descartada, [ADR 067](../DECISIONS/067-biometria-descartada-como-desbloqueo.md)). **CFG.5b cerró el 2026-08-13:** re-autenticación con PIN en borrar todo, exportar respaldo e importar respaldo. Si CFG.4 avanza, sumará cerrar cuenta / cambiar contraseña.

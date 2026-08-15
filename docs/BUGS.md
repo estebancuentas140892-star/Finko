@@ -1,6 +1,6 @@
 # Registro de errores - Finko Claude
 
-> Revisado: 2026-08-14.
+> Revisado: 2026-08-15.
 
 > Errores detectados durante el desarrollo, con toda la información necesaria para resolverlos sin tener que volver a buscar dónde están.
 > Al solucionarse, el error se **elimina** de este archivo y el fix queda documentado en [`CHANGELOG.md`](CHANGELOG.md) con referencia al ID.
@@ -41,6 +41,7 @@ Numerar `BUG-001`, `BUG-002`... de forma consecutiva y sin reutilizar números a
 - Líneas    : `avisos.js:153` y `:318`; `modelo.js:233`
 - Secciones : Inicio (panel "Avisos", CFG.3b), Calendario, notificación del sistema (`infra/notificaciones.js`)
 - Encontrado el 2026-08-14 cerrando PERF.10a, con `pnpm test`. **Verificado ajeno** con `git stash`: la suite falla igual sin ese cambio. Llega con CFG.3a ([ADR 066](DECISIONS/066-motor-unico-de-avisos.md)), no con PERF.10.
+- **Crece solo con el calendario (medido el 2026-08-15, cerrando CFG.4a):** de **1** test rojo a **6** en `avisos.test.js`, sin que nadie tocara el módulo. Confirmado ajeno otra vez con `git stash`. La prioridad no sube (en producción `hoyISO` sigue siendo el día real y el usuario no ve nada mal), pero el costo de convivir con él sí: la suite unitaria ya no puede leerse como "verde salvo un caso conocido".
 
 ### BUG-027 - ADR 059 no existe en el repositorio pese a estar citado como "aceptado" en 5 documentos vivos
 - Estado    : pendiente
