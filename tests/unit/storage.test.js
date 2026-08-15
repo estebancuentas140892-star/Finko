@@ -1254,14 +1254,17 @@ describe('Migración v21 → v22 (ingresos puntuales, NAV.A1)', () => {
 });
 
 describe('Migración v22 → v23 (accesos rápidos de Inicio, IN.4a)', () => {
-  it('un estado sin config.accesosInicio recibe el default (Mis cuentas, Ahorros, Límites)', () => {
+  // El default cambió con la ficha 02 (ADR 069): un atajo solo se gana Inicio
+  // si ahorra al menos un toque, y con la barra nueva Ahorro y Límites ya no
+  // lo ahorran.
+  it('un estado sin config.accesosInicio recibe el default (Mis cuentas, Por pagar, Me deben)', () => {
     const v22 = { ...createInitialState(), _version: 22 };
     delete v22.config.accesosInicio;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(v22));
 
     loadData();
 
-    expect(S.config.accesosInicio).toEqual(['tesoreria', 'ahorro', 'presupuesto']);
+    expect(S.config.accesosInicio).toEqual(['tesoreria', 'compromisos', 'personales']);
     expect(S._version).toBe(SCHEMA_VERSION);
   });
 
@@ -1272,7 +1275,7 @@ describe('Migración v22 → v23 (accesos rápidos de Inicio, IN.4a)', () => {
 
     loadData();
 
-    expect(S.config.accesosInicio).toEqual(['tesoreria', 'ahorro', 'presupuesto']);
+    expect(S.config.accesosInicio).toEqual(['tesoreria', 'compromisos', 'personales']);
   });
 
   it('es idempotente: no pisa una personalización ya guardada', () => {

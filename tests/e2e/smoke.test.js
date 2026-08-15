@@ -240,6 +240,13 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
   });
 
   test('la posición del ojo no cambia al alternar la máscara (IN.8b, ADR 034 D3)', async ({ page }) => {
+    // Mismo motivo que el test de la fila final 6+6: esta prueba mide
+    // geometría y la cascada de entrada (`cardIn`, layout.css) desliza cada
+    // celda desde translateY(8px). El `waitForTimeout(250)` de `enReposo()`
+    // es una espera a ciegas y la primera medición puede caer con la celda
+    // aún a 8px de su sitio. `reduce` apaga la cascada por CSS (vive dentro
+    // de un `@media no-preference`) y la medición deja de depender del reloj.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await sembrarSiVacio(page, {
       version: 1,
       perfil: { nombre: 'TestUser', smmlv: 1750905 },
@@ -433,12 +440,14 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await expect(item2.locator('.vencidos-card__estado')).toHaveText('Vence hoy');
     await expect(item2.locator('.vencidos-card__estado')).toHaveClass(/--warning/);
 
-    // Un solo verbo por destino: "Ver calendario" en los dos paneles de Inicio.
-    const verCalendario = panel.locator('.vencidos-card__link');
-    await expect(verCalendario).toHaveText('Ver calendario');
-    await expect(verCalendario).toHaveAttribute('href', '#agenda');
-    await verCalendario.click();
-    await expect(page.locator('#sec-agenda.active')).toBeVisible();
+    // Ficha 02 (ADR 069): la salida del panel apunta a la lente "Por pagar",
+    // que es la duena del contenido. Antes iba al calendario, que ademas bajo
+    // al menu "Mas".
+    const verTodos = panel.locator('.vencidos-card__link');
+    await expect(verTodos).toHaveText('Ver todos');
+    await expect(verTodos).toHaveAttribute('href', '#compromisos');
+    await verTodos.click();
+    await expect(page.locator('#sec-compromisos.active')).toBeVisible();
   });
 
   test('Avisos: apartado listo, día de pago y préstamo vencido, sin repetir lo de otros paneles (CFG.3b, ADR 066)', async ({ page }) => {
@@ -513,7 +522,10 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
 
     const panel = page.locator('#panel-resumen');
     await expect(panel).toBeVisible();
-    await expect(panel.locator('.resumen-semana__label')).toHaveText('Gastaste esta semana');
+    // Ficha 02 (ADR 069): la etiqueta declara su alcance, porque esta cifra
+    // suma todo S.gastos y el hero de Gastos excluye fijos y cuotas.
+    await expect(panel.locator('.resumen-semana__label')).toHaveText('Todo lo que salió esta semana');
+    await expect(panel.locator('.resumen-semana__alcance')).toHaveText('incluye fijos y cuotas de deuda');
     await expect(panel.locator('.resumen-semana__monto')).toHaveText('$200.000');
     // Sin semana previa con datos: el chip no alarma con rojo (ADR 019).
     await expect(panel.locator('.resumen-semana__chip')).toContainText('Sin semana previa para comparar');
@@ -544,8 +556,19 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
       onboarded: true,
       cuentas: [],
       ingresos: [],
+      // Seis gastos y no uno: desde la ficha 02 (ADR 069) el enlace "Ver todo"
+      // solo se dibuja cuando hay mas historial que las filas que caben, y
+      // estos tests afirman sobre ese enlace.
       gastos: [
         { id: 'g1', descripcion: 'Mercado semanal', categoria: 'Mercado', monto: 50000, fecha: iso(hoy), cuentaId: null, nota: '' },
+        { id: 'g2', descripcion: 'Bus', categoria: 'Transporte', monto: 5000, fecha: iso(hoy), cuentaId: null, nota: '' },
+        { id: 'g3', descripcion: 'Cafe', categoria: 'Restaurantes', monto: 8000, fecha: iso(hoy), cuentaId: null, nota: '' },
+        { id: 'g4', descripcion: 'Panaderia', categoria: 'Mercado', monto: 12000, fecha: iso(hoy), cuentaId: null, nota: '' },
+        { id: 'g5', descripcion: 'Recarga', categoria: 'Otros', monto: 20000, fecha: iso(hoy), cuentaId: null, nota: '' },
+        { id: 'g6', descripcion: 'Farmacia', categoria: 'Otros', monto: 30000, fecha: iso(hoy), cuentaId: null, nota: '' },
+        { id: 'g7', descripcion: 'Gasolina', categoria: 'Transporte', monto: 60000, fecha: iso(hoy), cuentaId: null, nota: '' },
+        { id: 'g8', descripcion: 'Cine', categoria: 'Otros', monto: 25000, fecha: iso(hoy), cuentaId: null, nota: '' },
+        { id: 'g9', descripcion: 'Libro', categoria: 'Otros', monto: 40000, fecha: iso(hoy), cuentaId: null, nota: '' },
       ],
       compromisos: [],
       metas: [],
@@ -595,8 +618,19 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
       onboarded: true,
       cuentas: [],
       ingresos: [],
+      // Seis gastos y no uno: desde la ficha 02 (ADR 069) el enlace "Ver todo"
+      // solo se dibuja cuando hay mas historial que las filas que caben, y
+      // estos tests afirman sobre ese enlace.
       gastos: [
         { id: 'g1', descripcion: 'Mercado semanal', categoria: 'Mercado', monto: 50000, fecha: iso(hoy), cuentaId: null, nota: '' },
+        { id: 'g2', descripcion: 'Bus', categoria: 'Transporte', monto: 5000, fecha: iso(hoy), cuentaId: null, nota: '' },
+        { id: 'g3', descripcion: 'Cafe', categoria: 'Restaurantes', monto: 8000, fecha: iso(hoy), cuentaId: null, nota: '' },
+        { id: 'g4', descripcion: 'Panaderia', categoria: 'Mercado', monto: 12000, fecha: iso(hoy), cuentaId: null, nota: '' },
+        { id: 'g5', descripcion: 'Recarga', categoria: 'Otros', monto: 20000, fecha: iso(hoy), cuentaId: null, nota: '' },
+        { id: 'g6', descripcion: 'Farmacia', categoria: 'Otros', monto: 30000, fecha: iso(hoy), cuentaId: null, nota: '' },
+        { id: 'g7', descripcion: 'Gasolina', categoria: 'Transporte', monto: 60000, fecha: iso(hoy), cuentaId: null, nota: '' },
+        { id: 'g8', descripcion: 'Cine', categoria: 'Otros', monto: 25000, fecha: iso(hoy), cuentaId: null, nota: '' },
+        { id: 'g9', descripcion: 'Libro', categoria: 'Otros', monto: 40000, fecha: iso(hoy), cuentaId: null, nota: '' },
       ],
       compromisos: [],
       metas: [],

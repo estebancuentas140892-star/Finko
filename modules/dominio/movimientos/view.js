@@ -145,13 +145,19 @@ export function renderActividadReciente() {
     .filter(Boolean);
   if (targets.length === 0) return;
 
-  const movs = _movimientosRecientesMemo({
+  // Se pide una fila de más que las que caben: es la forma barata de saber si
+  // el historial completo tiene algo que este panel no esté mostrando ya.
+  const limite = _limiteRecientes();
+  const conSobrante = _movimientosRecientesMemo({
     gastos:                   S.gastos,
     ingresosPuntuales:        S.ingresosPuntuales,
     aportes:                  S.ahorro?.aportes,
     transferencias:           S.transferencias,
     categoriasPersonalizadas: S.categoriasPersonalizadas,
-  }, _limiteRecientes());
+  }, limite + 1);
+
+  const hayMas = conSobrante.length > limite;
+  const movs   = conSobrante.slice(0, limite);
 
   if (movs.length === 0) {
     targets.forEach(el => { el.innerHTML = ''; el.hidden = true; });
@@ -175,10 +181,19 @@ export function renderActividadReciente() {
 
   // IN.8g (ADR 034 D7): header propio (label + "Ver todo" en la misma fila)
   // en vez de depender de un encabezado externo.
+  //
+  // Ficha 02 (ADR 069): el enlace solo se dibuja cuando hay más historial que
+  // el que cabe acá. Con 5 movimientos o menos, la sección completa mostraría
+  // exactamente estas mismas filas y el enlace prometía una pantalla nueva
+  // que no existía. Es el mismo criterio de "Ver los N" en Pendientes.
+  const verTodo = hayMas
+    ? '<a class="actividad-reciente__ver-todo" href="#movimientos">Ver todo</a>'
+    : '';
+
   const html = `
     <div class="accesos-actividad__header">
       <span class="accesos-actividad__label">Actividad reciente</span>
-      <a class="actividad-reciente__ver-todo" href="#movimientos">Ver todo</a>
+      ${verTodo}
     </div>
     <ul class="actividad-reciente__list" role="list">${items}</ul>`;
 

@@ -949,24 +949,33 @@ export function clasificarSeccionEnGrupo(seccion) {
  * @property {string} icono  Id completo del símbolo del sprite (`i-*`).
  */
 export const ACCESOS_INICIO = [
-  { id: 'tesoreria',   hash: 'tesoreria',   nombre: 'Mis cuentas',      icono: 'i-cuentas' },
-  { id: 'compromisos', hash: 'compromisos', nombre: 'Deudas',           icono: 'i-deudas' },
-  { id: 'ahorro',      hash: 'ahorro',      nombre: 'Ahorro',           icono: 'i-ahorro' },
-  { id: 'presupuesto', hash: 'presupuesto', nombre: 'Límites de gasto', icono: 'i-presupuesto' },
-  { id: 'personales',  hash: 'personales',  nombre: 'Me deben',         icono: 'i-personales' },
-  { id: 'analisis',    hash: 'analisis',    nombre: 'Análisis',         icono: 'i-analisis' },
-  { id: 'movimientos', hash: 'movimientos', nombre: 'Movimientos',      icono: 'i-recurring' },
-  { id: 'config',      hash: 'config',      nombre: 'Ajustes',          icono: 'i-ajustes' },
+  { id: 'tesoreria',   hash: 'tesoreria',   nombre: 'Mis cuentas',  icono: 'i-cuentas' },
+  { id: 'compromisos', hash: 'compromisos', nombre: 'Por pagar',    icono: 'i-deudas' },
+  { id: 'presupuesto', hash: 'presupuesto', nombre: 'Límites',      icono: 'i-presupuesto' },
+  { id: 'personales',  hash: 'personales',  nombre: 'Me deben',     icono: 'i-personales' },
+  { id: 'analisis',    hash: 'analisis',    nombre: 'Análisis',     icono: 'i-analisis' },
+  { id: 'movimientos', hash: 'movimientos', nombre: 'Movimientos',  icono: 'i-recurring' },
+  { id: 'config',      hash: 'config',      nombre: 'Ajustes',      icono: 'i-ajustes' },
 ];
 
 /**
- * Accesos rápidos por defecto para un usuario nuevo (bump v23): Mis cuentas,
- * Ahorros y Límites de gasto. Elegidos por frecuencia real de autoconsulta y
- * porque complementan lo que Inicio no muestra hoy (el hero ya cubre el total
- * disponible; el panel de límites solo avisa cuando algo se pasó, nunca en
- * positivo). Ver análisis completo en `docs/contexto/inicio.md` (IN.4a).
+ * Accesos rápidos por defecto para un usuario nuevo: Mis cuentas, Por pagar y
+ * Me deben.
+ *
+ * Criterio (ficha 02 de la auditoría móvil, [ADR 069]): **un atajo solo se
+ * gana Inicio si ahorra al menos un toque**. Con la barra nueva, Ahorro está
+ * a un toque y Límites se ve al entrar a Gastos, así que el defecto anterior
+ * (`tesoreria`, `ahorro`, `presupuesto`) tenía dos tejas que no acortaban
+ * nada. Ahorro sale también del catálogo por el mismo motivo: un atajo que no
+ * ahorra pasos enseña que la sección de atajos no vale la pena mirarla.
+ *
+ * Los ids guardados que ya no existen en el catálogo se descartan solos
+ * (`accesosVisibles`), así que quien tenía "Ahorro" configurado no necesita
+ * migración: la teja desaparece y el resto de su selección se conserva.
+ *
+ * Ver análisis completo en `docs/contexto/inicio.md` (IN.4a).
  */
-export const ACCESOS_INICIO_DEFAULT = ['tesoreria', 'ahorro', 'presupuesto'];
+export const ACCESOS_INICIO_DEFAULT = ['tesoreria', 'compromisos', 'personales'];
 
 /**
  * Catálogo de novedades por versión (UPD.1). Clave = mismo número que

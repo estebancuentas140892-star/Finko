@@ -136,10 +136,11 @@ export function renderPanelVencidos() {
 
   const total = f(sumarMontos(vencidos));
 
-  // Los que no caben no desaparecen en silencio: fila tactil hacia el
-  // calendario, que es donde estan todos.
+  // Los que no caben no desaparecen en silencio: fila tactil hacia la lente
+  // "Por pagar", que es donde estan todos desde el ADR 069. Antes iba al
+  // calendario, que ya no es la duena del contenido y ademas bajo al menu.
   const verMas = n > MAX_VISIBLES
-    ? `<a href="#agenda" class="vencidos-card__ver-mas">Ver los ${n} en el calendario</a>`
+    ? `<a href="#compromisos" class="vencidos-card__ver-mas">Ver los ${n}</a>`
     : '';
 
   // CAL.5b: registrarlos juntos sin ir al calendario. Mismo umbral que la
@@ -159,8 +160,8 @@ export function renderPanelVencidos() {
           Pendientes del mes
           <span class="vencidos-card__counter" aria-label="${contadorLabel}">${n}</span>
         </h2>
-        <a href="#agenda" class="vencidos-card__link"
-           aria-label="Ir al calendario">Ver calendario</a>
+        <a href="#compromisos" class="vencidos-card__link"
+           aria-label="Ver todo lo que tienes por pagar">Ver todos</a>
       </header>
       <ul class="vencidos-card__list" role="list">
         ${items}

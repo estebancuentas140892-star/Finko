@@ -446,12 +446,31 @@ describe('renderActividadReciente()', () => {
     expect(elPanel().innerHTML).toBe('');
   });
 
-  it('incluye el link "Ver todo" hacia #movimientos cuando hay actividad', () => {
-    S.gastos = [gasto()];
+  // Ficha 02 (ADR 069): el enlace solo aparece cuando hay más historial que
+  // el que cabe en el panel. Con menos, la sección completa mostraría estas
+  // mismas filas y el enlace prometía una pantalla que no existía.
+  it('incluye el link "Ver todo" hacia #movimientos cuando hay más de los que caben', () => {
+    anchoDe(true);
+    S.gastos = Array.from({ length: 8 }, (_, i) => gasto({ id: `g${i}`, fecha: `2026-07-0${i + 1}` }));
     renderActividadReciente();
     const link = elPanel().querySelector('.actividad-reciente__ver-todo');
     expect(link).not.toBeNull();
     expect(link.getAttribute('href')).toBe('#movimientos');
+  });
+
+  it('sin más de los que caben, no dibuja "Ver todo"', () => {
+    anchoDe(true);
+    S.gastos = Array.from({ length: 3 }, (_, i) => gasto({ id: `g${i}`, fecha: `2026-07-0${i + 1}` }));
+    renderActividadReciente();
+    expect(elPanel().querySelector('.actividad-reciente__ver-todo')).toBeNull();
+    expect(elPanel().querySelectorAll('.actividad-reciente__item')).toHaveLength(3);
+  });
+
+  it('con exactamente los que caben tampoco lo dibuja: no hay nada más que ver', () => {
+    anchoDe(true);
+    S.gastos = Array.from({ length: 5 }, (_, i) => gasto({ id: `g${i}`, fecha: `2026-07-0${i + 1}` }));
+    renderActividadReciente();
+    expect(elPanel().querySelector('.actividad-reciente__ver-todo')).toBeNull();
   });
 
   // ── IN.9d (ADR 057 D4): copia propia para la fila final de escritorio ──

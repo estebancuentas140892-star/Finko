@@ -2776,13 +2776,16 @@ describe('renderPanelVencidos() - jerarquía real sin línea roja (IN.8e, ADR 03
     expect(html).not.toContain('vencidos-card__item--urgente');
   });
 
-  it('"Ver calendario" lleva a #agenda (Calendario), no a #compromisos', () => {
+  // Ficha 02 (ADR 069): el panel más urgente de Inicio mandaba a Calendario,
+  // que ya no es dueño del contenido y además bajó al menú "Más".
+  it('"Ver todos" lleva a la lente "Por pagar" (#compromisos), no al calendario', () => {
     S.compromisos = [compromisoBase({ diaPago: PASADO_FIJO })];
     renderPanelVencidos();
     const html = document.getElementById('panel-vencidos').innerHTML;
-    expect(html).toContain('href="#agenda"');
-    expect(html).not.toContain('href="#compromisos"');
-    expect(html).toContain('aria-label="Ir al calendario"');
+    expect(html).toContain('href="#compromisos"');
+    expect(html).not.toContain('href="#agenda"');
+    expect(html).toContain('Ver todos');
+    expect(html).not.toContain('calendario');
   });
 
   // ── CAL.5b: pagar el lote desde Inicio ──────────────────────────
@@ -2845,14 +2848,14 @@ describe('renderPanelVencidos() - los que no caben se declaran, no se esconden',
     expect(panel.querySelector('.vencidos-card__ver-mas')).toBeNull();
   });
 
-  it('con 6: 4 filas y la salida explícita al calendario con el conteo real', () => {
+  it('con 6: 4 filas y la salida explícita a "Por pagar" con el conteo real', () => {
     S.compromisos = vencidosN(6);
     renderPanelVencidos();
     const panel = document.getElementById('panel-vencidos');
     expect(panel.querySelectorAll('.vencidos-card__item')).toHaveLength(4);
     const verMas = panel.querySelector('.vencidos-card__ver-mas');
-    expect(verMas.textContent).toBe('Ver los 6 en el calendario');
-    expect(verMas.getAttribute('href')).toBe('#agenda');
+    expect(verMas.textContent).toBe('Ver los 6');
+    expect(verMas.getAttribute('href')).toBe('#compromisos');
     // El contador del header sigue nombrando el total, no lo visible.
     expect(panel.querySelector('.vencidos-card__counter').textContent).toBe('6');
   });

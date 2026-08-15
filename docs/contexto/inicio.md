@@ -89,10 +89,12 @@
 | Memoización de `movimientosRecientes()`/`movimientosCompletos()` (PERF.2) | `modules/dominio/movimientos/view.js` | `_movimientosRecientesMemo`, `_movimientosCompletosMemo`, `_extraerFuentes` | |
 | Helper genérico de memoización (PERF.2, nuevo, compartido con `resumen/` y `analisis/`) | `modules/infra/memo.js` | `memoizar()` | |
 | Sección y ruta `#movimientos` (sin ícono fijo en la barra) | `index.html` / `modules/infra/router.js` | `#sec-movimientos` / `SECTIONS.get('movimientos')` | |
-| Link "Ver todo" del panel compacto hacia la vista completa | `modules/dominio/movimientos/view.js` | `.actividad-reciente__ver-todo`, `href="#movimientos"` | |
+| Link "Ver todo" del panel compacto, solo con más historial del que cabe (ficha 02, ADR 069) | `modules/dominio/movimientos/view.js` | `.actividad-reciente__ver-todo`, `hayMas` (se pide `limite + 1`) | |
+| Salidas de "Pendientes del mes" hacia la lente "Por pagar" (ficha 02, ADR 069) | `modules/dominio/compromisos/views/dashboard.js` | `.vencidos-card__link` ("Ver todos"), `.vencidos-card__ver-mas` ("Ver los N"), ambas a `#compromisos` | ~140, ~160 |
+| Alcance declarado del resumen semanal (ficha 02, ADR 069) | `modules/dominio/resumen/view.js` / `styles/components/domain.css` | `.resumen-semana__label` ("Todo lo que salió esta semana"), `.resumen-semana__alcance` | |
 | Gastos deja de listar categorías internas (TX.8b) | `modules/dominio/gastos/view.js` | `_CATEGORIAS_INTERNAS`, `_sinInternas()` (usado en `renderListaGastos()` y `renderFiltrosGastos()`) | |
 | Dominio nuevo: accesos rápidos personalizables (IN.4a) | `modules/dominio/accesos/logic.js` | `accesosVisibles(ids, catalogo)`, `alternarAcceso(ids, id)` | |
-| Catálogo de secciones elegibles (8: Mis cuentas, Deudas, Ahorros, Límites, Me deben, Análisis, Movimientos, Ajustes) | `modules/core/constants.js` | `ACCESOS_INICIO`, `ACCESOS_INICIO_DEFAULT` | ~706 |
+| Catálogo de secciones elegibles (7: Mis cuentas, Por pagar, Límites, Me deben, Análisis, Movimientos, Ajustes) | `modules/core/constants.js` | `ACCESOS_INICIO`, `ACCESOS_INICIO_DEFAULT` | ~951 |
 | Preferencia del usuario (bump v23) | `modules/core/state.js` / `modules/core/storage.js` | `S.config.accesosInicio` / migración v22→v23 | |
 | Fila de tiles bajo el hero (reusa `.menu-mas__item`, ya coloreado por dominio) | `modules/dominio/accesos/view.js` | `renderAccesosInicio()` | |
 | Modal "Personalizar" (lista completa, toggle instantáneo, sin drag & drop) | `modules/dominio/accesos/view.js` / `index.js` | `renderModalPersonalizarAccesos()` / acciones `accesos-personalizar`, `accesos-toggle` | |
@@ -116,6 +118,7 @@
 
 **Cambios realizados** (una línea por hito; el detalle vive en el [CHANGELOG](../CHANGELOG.md)):
 
+- 2026-08-15 (**ficha 02 de la auditoría móvil**, [ADR 069](../DECISIONS/069-bloque-gastos-en-la-barra-movil.md)): Inicio conserva estructura, orden, hero y estado vacío; cambia a dónde apunta. (1) Las dos salidas de "Pendientes del mes" pasan de `#agenda` a `#compromisos`, la lente "Por pagar": el panel más urgente mandaba a una sección que ya no es dueña del contenido. El lote sigue atendido por Agenda, y su mudanza es de la ficha 05. (2) Accesos rápidos con criterio nuevo, **un atajo solo se gana Inicio si ahorra al menos un toque**: defecto `tesoreria, compromisos, personales`, y Ahorro sale del catálogo por estar ya a un toque en la barra (sin migración: `accesosVisibles` descarta el id guardado). (3) El resumen semanal declara su alcance ("Todo lo que salió esta semana" + "incluye fijos y cuotas de deuda"): esa cifra suma todo `S.gastos` y el hero de Gastos no. (4) "Ver todo" de Actividad reciente solo aparece con más historial del que cabe.
 - 2026-08-15 (CFG.4b, [ADR 043](../DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md) D2.2): el panel "Avisos" suma un cuarto tipo, `respaldo-atrasado`, al filtro de `_TIPOS_SIN_PANEL_PROPIO`. Sin cambios de layout: mismo tope de 4 filas. Detalle en [`configuracion.md`](configuracion.md), dueño del recolector.
 - 2026-08-13 (LG.2d, [ADR 032](../DECISIONS/032-logros-v2-niveles-y-habitos.md) D6, cierra "Logros v2"): tarjeta compacta "Tu progreso", celda universal tras "Resumen de la semana"/"Actividad reciente". Detalle en [`logros.md`](logros.md).
 - 2026-08-13 (CFG.3b, [ADR 066](../DECISIONS/066-motor-unico-de-avisos.md)): panel "Avisos", quinta celda `--half` de "Atención hoy". `renderPanelAvisos()` filtra el motor a los tres tipos sin superficie propia; copy propio por tipo (D2), tope de 4 filas con "y N más" sin recortar el conteo del título.

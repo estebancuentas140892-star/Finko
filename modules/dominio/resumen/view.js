@@ -130,14 +130,20 @@ export function renderPanelResumen() {
   // label del grupo externo, pero ese grupo ahora también podría contener
   // Actividad reciente (fila final 6+6 en escritorio) y un label compartido
   // la describiría mal.
+  //
+  // Ficha 02 (ADR 069): la etiqueta declara su alcance. Esta cifra suma TODO
+  // S.gastos, cuotas de deuda y fijos incluidos, mientras el hero de Gastos
+  // los excluye con _sinInternas(). Dos "gastaste" que no cuadran nunca es
+  // peor que una etiqueta larga.
   el.innerHTML = `
     <section class="resumen-card" aria-label="Resumen de la semana">
       <div class="resumen-semana">
         <span class="accesos-actividad__label">Resumen de la semana</span>
         <div class="resumen-semana__header">
           <div>
-            <p class="resumen-semana__label">Gastaste esta semana</p>
+            <p class="resumen-semana__label">Todo lo que salió esta semana</p>
             <p class="resumen-semana__monto">${f(r.actual)}</p>
+            <p class="resumen-semana__alcance">incluye fijos y cuotas de deuda</p>
           </div>
           <span class="resumen-semana__chip ${_chipClase(r.comparacion.direccion)}">
             ${_chipIcono(r.comparacion.direccion)}${_chipTexto(r.comparacion)}

@@ -12,6 +12,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(inicio): ficha 02 de la auditoría móvil, Inicio apunta al mapa nuevo · 2026-08-15
+
+Segunda de las 25 entregas del handoff de Claude Design. Consecuencia directa del [ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md): Inicio no necesita otra forma, necesita que sus salidas y sus atajos hablen del mapa nuevo. Ficha: [`contexto/inicio.md`](contexto/inicio.md).
+
+- **El panel más urgente de Inicio mandaba a Calendario.** "Pendientes del mes" tenía sus salidas a `#agenda`: el encabezado ("Ver calendario") y la fila "Ver los N en el calendario". Con la arquitectura nueva los vencidos viven en Gastos → Por pagar y Calendario bajó al menú. Las dos pasan a `#compromisos` y a "Ver todos" / "Ver los N": la tarjeta no cambia de forma, y la palabra "calendario" desaparece de un panel que no habla de fechas sino de deudas.
+- **El lote "Pagar los N" no se movió**: lo sigue atendiendo Agenda. Su mudanza a Por pagar es de la ficha 05, que es la que hereda el pago en lote.
+- **Criterio nuevo para los accesos rápidos: un atajo solo se gana Inicio si ahorra al menos un toque.** El defecto era `tesoreria, ahorro, presupuesto`, elegido cuando Ahorro estaba a dos toques y Límites a dos; hoy Ahorro está en la barra y Límites se ve al entrar a Gastos, así que dos de las tres tejas duplicaban algo más cercano. Pasa a **Mis cuentas · Por pagar · Me deben**.
+- **Ahorro sale del catálogo y no hace falta migración**: `accesosVisibles()` ya descartaba en silencio los ids que no están en el catálogo, así que quien lo tenía configurado pierde esa teja y conserva el resto de su selección. "Deudas" y "Límites de gasto" se renombran a **Por pagar** y **Límites**: si el atajo sobreviviera con el nombre viejo, la app enseñaría dos taxonomías a la vez.
+- **El resumen semanal declara su alcance**: "Gastaste esta semana" pasa a **"Todo lo que salió esta semana"**, con la línea de apoyo "incluye fijos y cuotas de deuda". Esa cifra suma todo `S.gastos`; el hero de Gastos los excluye con `_sinInternas()`. Eran dos "gastaste" que no cuadraban nunca y ninguna etiqueta lo advertía. Se descartó igualar los cálculos: le quitaría a Inicio la única cifra que cuenta el mes completo, que es justo la que sirve para el resumen.
+- **"Ver todo" de Actividad reciente solo aparece cuando hay más de lo que cabe.** Se pide una fila de más que el límite (5 en móvil, 8 en escritorio) para saberlo. Con menos, la sección completa mostraría exactamente las mismas filas y el enlace prometía una pantalla que no existía. Mismo criterio que "Ver los N" en Pendientes, aplicado donde faltaba.
+- **Verificado que "Actividad reciente" no duplica a Movimientos**: 5 filas sin filtros contra un historial buscable con cuatro filtros son dos preguntas distintas. El panel se mantiene; el único ajuste es el enlace.
+- **Lo que no se tocó, a propósito**: el orden del bento (medido en el ADR 034 D2), el estado vacío, y el alto total de la pantalla (1.492 px con todos los paneles activos, dos viewports). Recortar paneles es rediseñar contenido de otras fichas: queda anotado para el cierre de la auditoría.
+- **Un test E2E ajeno se estabilizó de paso**: "la posición del ojo no cambia al alternar la máscara" mide geometría con una espera a ciegas de 250 ms y la cascada de entrada (`cardIn`) la dejaba medir a 8 px de su sitio. Pasa a apagar la animación con `emulateMedia({ reducedMotion: 'reduce' })`, el mismo recurso que ya usa el test de la fila 6+6 en ese archivo.
+- 4 tests unitarios nuevos, 5 actualizados, 3 E2E ajustados. Compuertas: unitarios 4323/4329 (los 6 rojos son BUG-028, ajeno), lint, guion largo y E2E 272/272 verdes (sello `dda9314b1070`). SW v540 → v541.
+
 ### feat(nav): ficha 01 de la auditoría móvil, el bloque Gastos en la barra · 2026-08-15
 
 Primera de las 25 entregas del handoff "Mobile app design handoff" (Claude Design). Decisión completa en el [ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md). Ficha: [`contexto/sistema-visual.md`](contexto/sistema-visual.md).

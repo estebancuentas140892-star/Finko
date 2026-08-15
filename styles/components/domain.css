@@ -2929,6 +2929,16 @@ button.chip:focus-visible {
   line-height: 1.1;
 }
 
+/* Alcance de la cifra (ficha 02, ADR 069): dice qué suma, para que no se
+   confunda con "Gastaste en agosto" del hero de Gastos, que excluye fijos y
+   cuotas. Va debajo del monto y en el peso más tenue de la card: aclara, no
+   compite con la cifra. */
+.resumen-semana__alcance {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  margin: 0.15rem 0 0;
+}
+
 .resumen-semana__chip {
   display: inline-flex;
   align-items: center;

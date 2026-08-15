@@ -21,13 +21,21 @@ import { S } from '../../modules/core/state.js';
 
 describe('accesosVisibles()', () => {
   it('resuelve los ids contra el catálogo en el orden guardado', () => {
-    const r = accesosVisibles(['ahorro', 'tesoreria'], ACCESOS_INICIO);
-    expect(r.map(a => a.id)).toEqual(['ahorro', 'tesoreria']);
+    const r = accesosVisibles(['analisis', 'tesoreria'], ACCESOS_INICIO);
+    expect(r.map(a => a.id)).toEqual(['analisis', 'tesoreria']);
   });
 
   it('descarta ids que ya no existen en el catálogo (sección eliminada)', () => {
     const r = accesosVisibles(['tesoreria', 'seccion-fantasma'], ACCESOS_INICIO);
     expect(r.map(a => a.id)).toEqual(['tesoreria']);
+  });
+
+  // Ficha 02 (ADR 069): Ahorro salió del catálogo por dejar de ahorrar un
+  // toque. Quien lo tenía configurado no necesita migración: la teja se cae
+  // sola por esta misma regla y el resto de su selección se conserva.
+  it('quien tenía "ahorro" guardado conserva el resto de su selección', () => {
+    const r = accesosVisibles(['tesoreria', 'ahorro', 'personales'], ACCESOS_INICIO);
+    expect(r.map(a => a.id)).toEqual(['tesoreria', 'personales']);
   });
 
   it('sin ids devuelve []', () => {
@@ -44,22 +52,22 @@ describe('accesosVisibles()', () => {
 
 describe('alternarAcceso()', () => {
   it('agrega un id ausente al final', () => {
-    expect(alternarAcceso(['tesoreria'], 'ahorro')).toEqual(['tesoreria', 'ahorro']);
+    expect(alternarAcceso(['tesoreria'], 'analisis')).toEqual(['tesoreria', 'analisis']);
   });
 
   it('quita un id ya presente', () => {
-    expect(alternarAcceso(['tesoreria', 'ahorro'], 'tesoreria')).toEqual(['ahorro']);
+    expect(alternarAcceso(['tesoreria', 'analisis'], 'tesoreria')).toEqual(['analisis']);
   });
 
   it('no muta el array original', () => {
     const original = ['tesoreria'];
-    alternarAcceso(original, 'ahorro');
+    alternarAcceso(original, 'analisis');
     expect(original).toEqual(['tesoreria']);
   });
 
   it('desde vacío o undefined, agrega igual', () => {
-    expect(alternarAcceso([], 'ahorro')).toEqual(['ahorro']);
-    expect(alternarAcceso(undefined, 'ahorro')).toEqual(['ahorro']);
+    expect(alternarAcceso([], 'analisis')).toEqual(['analisis']);
+    expect(alternarAcceso(undefined, 'analisis')).toEqual(['analisis']);
   });
 });
 
@@ -69,7 +77,7 @@ describe('renderAccesosInicio()', () => {
   beforeEach(() => {
     document.body.innerHTML = `
       <div id="accesos-inicio-grid"></div>`;
-    S.config = { accesosInicio: ['tesoreria', 'ahorro', 'presupuesto'] };
+    S.config = { accesosInicio: ['tesoreria', 'analisis', 'presupuesto'] };
   });
 
   it('no-op si el contenedor no existe', () => {
@@ -127,7 +135,7 @@ describe('renderModalPersonalizarAccesos()', () => {
     expect(() => renderModalPersonalizarAccesos()).not.toThrow();
   });
 
-  it('lista las 8 secciones del catálogo completo, no solo las guardadas', () => {
+  it('lista el catálogo completo, no solo las guardadas', () => {
     renderModalPersonalizarAccesos();
     const filas = document.getElementById('modal-personalizar-accesos-body').querySelectorAll('.accesos-row');
     expect(filas).toHaveLength(ACCESOS_INICIO.length);
@@ -137,7 +145,7 @@ describe('renderModalPersonalizarAccesos()', () => {
     renderModalPersonalizarAccesos();
     const el = document.getElementById('modal-personalizar-accesos-body');
     const activa = el.querySelector('[data-id="tesoreria"]');
-    const inactiva = el.querySelector('[data-id="ahorro"]');
+    const inactiva = el.querySelector('[data-id="analisis"]');
     expect(activa.getAttribute('aria-pressed')).toBe('true');
     expect(inactiva.getAttribute('aria-pressed')).toBe('false');
   });
@@ -156,12 +164,12 @@ describe('accesos-toggle (dispatch end-to-end)', () => {
 
   it('tocar una fila inactiva la agrega a S.config.accesosInicio y re-renderiza ambas vistas', () => {
     renderModalPersonalizarAccesos();
-    const fila = document.getElementById('modal-personalizar-accesos-body').querySelector('[data-id="ahorro"]');
+    const fila = document.getElementById('modal-personalizar-accesos-body').querySelector('[data-id="analisis"]');
 
     dispatch(fila, new Event('click'));
 
-    expect(S.config.accesosInicio).toEqual(['tesoreria', 'ahorro']);
-    expect(document.getElementById('modal-personalizar-accesos-body').querySelector('[data-id="ahorro"]').getAttribute('aria-pressed')).toBe('true');
+    expect(S.config.accesosInicio).toEqual(['tesoreria', 'analisis']);
+    expect(document.getElementById('modal-personalizar-accesos-body').querySelector('[data-id="analisis"]').getAttribute('aria-pressed')).toBe('true');
   });
 
   it('tocar una fila activa la quita', () => {
