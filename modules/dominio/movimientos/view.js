@@ -131,16 +131,15 @@ function _diasDesde(fechaISO) {
  * y aportes al fondo (ADR 028 D5). Vacío si no hay ninguno, y limpia el
  * panel para no ocupar espacio.
  *
- * IN.9d (ADR 057 D4): dos contenedores conviven en el DOM
- * (`#panel-actividad-reciente` en la fusión móvil, junto a Accesos rápidos;
- * `#panel-actividad-reciente-escritorio`, celda propia junto al resumen
- * semanal). render.js decide cuál se ve según el ancho, esta función llena
- * los dos con el mismo contenido (mismo límite de `_limiteRecientes()`: el
- * que no se ve queda con marcado inerte, no repintado aparte). No-op si
- * ninguno existe.
+ * DSK.1a (ADR 070 D2) revierte IN.9d: la celda de escritorio
+ * (`#panel-actividad-reciente-escritorio`) desaparece del DOM. Cuenta el
+ * pasado, y en monitor comparte anatomía con la lista de obligaciones (teja,
+ * nombre, monto), así que a primera vista se confundían y solo una de las dos
+ * exige algo. Movimientos sigue a un clic en la barra lateral. Queda el panel
+ * de la fusión móvil. No-op si no existe.
  */
 export function renderActividadReciente() {
-  const targets = ['panel-actividad-reciente', 'panel-actividad-reciente-escritorio']
+  const targets = ['panel-actividad-reciente']
     .map(id => document.getElementById(id))
     .filter(Boolean);
   if (targets.length === 0) return;

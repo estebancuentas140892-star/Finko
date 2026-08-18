@@ -396,44 +396,50 @@ describe('updSaldo() - detalle por cuenta en columna propia (escritorio)', () =>
   });
 });
 
-// ── REPARTO ACCESOS/ACTIVIDAD/RESUMEN EN ESCRITORIO (IN.9d, ADR 057 D4) ──────
+// ── CIERRE DE INICIO SEGÚN EL ANCHO (DSK.1a, ADR 070 D2) ────────────────────
+// En escritorio Inicio avisa, no resume: Accesos rápidos y Actividad reciente
+// salieron del DOM (escritorio era su único hogar) y el Resumen semanal se
+// fuerza oculto por ancho, porque bajo 1024px sigue vivo.
 
-describe('renderAll() - reparto de Accesos rápidos y Actividad reciente', () => {
-  const elMovil             = () => document.getElementById('accesos-actividad-movil');
-  const elAccesosEscritorio = () => document.getElementById('panel-accesos-escritorio');
-  const elActividadEscritorio = () => document.getElementById('panel-actividad-reciente-escritorio');
+describe('renderAll() - cierre de Inicio según el ancho', () => {
+  const elMovil   = () => document.getElementById('accesos-actividad-movil');
+  const elResumen = () => document.getElementById('panel-resumen');
 
   afterEach(restaurarAncho);
 
   beforeEach(() => {
     document.body.innerHTML = `
       <div id="accesos-actividad-movil" hidden></div>
-      <div id="panel-accesos-escritorio" hidden></div>
-      <div id="panel-actividad-reciente-escritorio" hidden></div>`;
+      <div id="panel-resumen" hidden></div>`;
     S.cuentas = [];
     S.config  = {};
   });
 
-  it('en móvil muestra la fusión y oculta las dos celdas de escritorio', () => {
+  it('en móvil muestra la fusión de Accesos + Actividad', () => {
     anchoDe(true);
     renderAll();
     expect(elMovil().hidden).toBe(false);
-    expect(elAccesosEscritorio().hidden).toBe(true);
-    expect(elActividadEscritorio().hidden).toBe(true);
   });
 
-  it('en escritorio oculta la fusión y muestra Accesos rápidos', () => {
+  it('en móvil no toca el Resumen semanal: lo decide resumen/view.js', () => {
+    anchoDe(true);
+    elResumen().hidden = false; // simula lo que ya decidió resumen/view.js con datos
+    renderAll();
+    expect(elResumen().hidden).toBe(false);
+  });
+
+  it('en escritorio oculta la fusión y retira el Resumen semanal', () => {
     anchoDe(false);
+    elResumen().hidden = false; // resumen/view.js lo había revelado por tener datos
     renderAll();
     expect(elMovil().hidden).toBe(true);
-    expect(elAccesosEscritorio().hidden).toBe(false);
+    expect(elResumen().hidden).toBe(true);
   });
 
-  it('en escritorio no fuerza visible Actividad reciente si ya quedó oculta por falta de movimientos', () => {
+  it('en escritorio no fuerza visible el Resumen semanal si ya quedó oculto por falta de datos', () => {
     anchoDe(false);
-    elActividadEscritorio().hidden = true; // simula lo que ya decidió movimientos/view.js
     renderAll();
-    expect(elActividadEscritorio().hidden).toBe(true);
+    expect(elResumen().hidden).toBe(true);
   });
 });
 

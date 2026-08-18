@@ -29,11 +29,27 @@
    restaura bajo 1024px, donde no hay barra superior. */
 .section__header > .btn-primary { display: none; }
 
+/* Marca "F" y engranaje del saludo de Inicio (DSK.1a, ADR 070 D10, que
+   ejecuta la D8 del ADR 034): ocultos en desktop por defecto. La marca existe
+   porque en móvil la barra lateral pierde su logo; en monitor el logo está a
+   240px, y junto al avatar son dos círculos verdes seguidos. El engranaje es
+   la tercera entrada a Ajustes de la misma pantalla. Se restauran bajo
+   1024px. El selector de hijo directo es deliberado: `.perfil-inicio__ajustes`
+   se reusa en la barra superior, que no debe perder su engranaje. */
+.perfil-inicio > .perfil-inicio__marca,
+.perfil-inicio > .perfil-inicio__ajustes { display: none; }
+
 /* ── TABLET + MÓVIL: SIDEBAR INFERIOR + TOUCH TARGETS (< 1024px) ─ */
 @media (max-width: 1023px) {
 
   /* Volver de las 4 hijas de Ahorro: vuelve a ser la única salida vertical. */
   .section__volver--ahorro-hija { display: inline-flex; }
+
+  /* Saludo de Inicio (DSK.1a, ADR 070 D10): acá la barra lateral no tiene
+     logo visible y no hay barra superior, así que la marca vuelve a nombrar
+     la app y el engranaje vuelve a ser una salida real a Ajustes. */
+  .perfil-inicio > .perfil-inicio__marca { display: inline-flex; }
+  .perfil-inicio > .perfil-inicio__ajustes { display: flex; }
 
   /* Franja de lentes del bloque Gastos (ADR 069): acá la barra inferior es
      la única puerta a las tres, así que la franja es la que las enseña. */

@@ -106,19 +106,23 @@ describe('renderAccesosInicio()', () => {
     expect(document.getElementById('accesos-inicio-grid').innerHTML).toBe('');
   });
 
-  // IN.9d (ADR 057 D4): copia propia para la columna de escritorio.
-  it('llena también la copia de escritorio, si existe, con el mismo contenido', () => {
+  // ── DSK.1a (ADR 070 D2): la copia de escritorio de IN.9d ya no existe ──
+  // En monitor la barra lateral muestra 15 destinos con su nombre, siempre
+  // visibles, así que cuatro atajos en el cuerpo solo la duplicaban. Estos
+  // tests son la compuerta: si alguien reintroduce la grilla, esta función no
+  // debe volver a llenarla sola.
+
+  it('no llena ninguna grilla de escritorio: esa columna ya no es suya', () => {
     document.body.innerHTML += '<div id="accesos-inicio-grid-escritorio"></div>';
     renderAccesosInicio();
-    const escritorio = document.getElementById('accesos-inicio-grid-escritorio');
-    expect(escritorio.innerHTML).toBe(document.getElementById('accesos-inicio-grid').innerHTML);
-    expect(escritorio.querySelectorAll('.menu-mas__item')).toHaveLength(3);
+    expect(document.getElementById('accesos-inicio-grid').querySelectorAll('.menu-mas__item')).toHaveLength(3);
+    expect(document.getElementById('accesos-inicio-grid-escritorio').innerHTML).toBe('');
   });
 
-  it('no-op si solo existe la copia de escritorio (móvil ausente del DOM)', () => {
+  it('no-op si solo existe la grilla retirada de escritorio', () => {
     document.body.innerHTML = '<div id="accesos-inicio-grid-escritorio"></div>';
     expect(() => renderAccesosInicio()).not.toThrow();
-    expect(document.getElementById('accesos-inicio-grid-escritorio').querySelectorAll('.menu-mas__item')).toHaveLength(3);
+    expect(document.getElementById('accesos-inicio-grid-escritorio').innerHTML).toBe('');
   });
 });
 

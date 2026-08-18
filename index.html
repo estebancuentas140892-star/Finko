@@ -502,13 +502,21 @@
           <!-- Marca "F" (DIS.6/C4, hallazgo H5, regla R31): en móvil el
                sidebar pierde su logo, así que sin esto la app no se nombra
                en ninguna pantalla. Aquí no cuesta alto: el avatar de 46px
-               ya define la fila. -->
+               ya define la fila. DSK.1a (ADR 070 D10, que ejecuta la D8 del
+               ADR 034): desde 1024px el logo está a 240px en la barra
+               lateral, así que la marca sobra y se oculta por CSS. Junto al
+               avatar son dos círculos verdes seguidos que se leen como un
+               error. -->
           <span class="perfil-inicio__marca" aria-hidden="true">F</span>
           <span class="perfil-inicio__avatar" id="perfil-avatar" aria-hidden="true" hidden></span>
           <div class="perfil-inicio__saludo">
             <p class="perfil-inicio__franja" id="saludo-franja"></p>
             <p class="perfil-inicio__nombre" id="saludo-inicio" hidden></p>
           </div>
+          <!-- Engranaje del saludo: DSK.1a (ADR 070 D10) lo oculta desde
+               1024px, donde es la tercera entrada a Ajustes de la misma
+               pantalla (barra lateral + barra superior ya la tienen). Bajo
+               1024px sigue siendo una salida legítima. -->
           <a class="perfil-inicio__ajustes" href="#config" aria-label="Ir a Ajustes">
             <svg class="icon" aria-hidden="true"><use href="#i-ajustes"/></svg>
           </a>
@@ -681,43 +689,25 @@
             </div>
           </div>
 
-          <!-- ACCESOS RÁPIDOS EN ESCRITORIO (IN.9d, ADR 057 D4): columna
-               propia span 4, fila propia. Acota el 034 D7: en escritorio
-               sobra ancho, separar ahorra alto en vez de gastarlo. Mismo
-               patrón que IN.9c: dos contenedores conviven en el DOM, uno por
-               ancho, y render.js decide cuál se ve. La versión móvil sigue
-               fusionada con Actividad reciente, sin cambios, más abajo.
-               Arranca [hidden]. Siempre visible cuando aplica (sin dato que
-               lo oculte): "Personalizar" necesita quedar a mano. -->
-          <div class="bento__group">
-            <div class="bento__group-cells">
-              <div class="bento__cell" id="panel-accesos-escritorio"
-                   role="region" aria-label="Accesos rápidos" hidden>
-                <div class="accesos-actividad__header">
-                  <span class="accesos-actividad__label">Accesos rápidos</span>
-                  <button class="accesos-inicio__personalizar btn btn-ghost btn-sm" type="button"
-                          data-action="accesos-personalizar">
-                    <svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg>
-                    Personalizar
-                  </button>
-                </div>
-                <div class="accesos-inicio__grid" id="accesos-inicio-grid-escritorio"></div>
-              </div>
-            </div>
-          </div>
+          <!-- RESUMEN DE LA SEMANA (IN.8f). Solo móvil desde DSK.1a
+               (ADR 070 D2): en escritorio Inicio avisa, no resume, y la
+               tendencia no tiene fecha límite, así que vive en Análisis.
+               La celda sigue en el DOM porque bajo 1024px
+               no cambió nada; render.js la fuerza oculta desde 1024px.
+               Arranca [hidden]; resumen/view.js la revela cuando hay datos.
 
-          <!-- RESUMEN DE LA SEMANA + ACTIVIDAD RECIENTE EN ESCRITORIO (IN.9d,
-               ADR 057 D4): fila final, span 6 + span 6. El gráfico semanal
-               recupera la proporción con la que se diseñó (R79, 49px por
-               barra contra 44px en móvil o 177px que daba el span 12
-               anterior). Dos celdas sueltas, sin grupo que las una: ya no
-               comparten tema, solo el ancho sobrante, así que cada una lleva
-               su propio título (resumen/view.js ya no depende del label
-               externo que traía desde IN.8a). Arrancan [hidden]. -->
+               Acá vivían también Accesos rápidos de escritorio
+               (`#panel-accesos-escritorio`) y Actividad reciente de
+               escritorio (`#panel-actividad-reciente-escritorio`), las dos de
+               IN.9d. DSK.1a las retira del DOM, no las oculta: escritorio era
+               su único hogar (móvil las tiene fusionadas más abajo), así que
+               dejarlas sería marcado muerto. Accesos duplicaba la barra
+               lateral, que ya muestra 15 destinos con su nombre; Actividad
+               cuenta el pasado y comparte anatomía con la lista de
+               obligaciones. Pendiente que deja: "Personalizar" accesos se
+               queda sin entrada en escritorio hasta que Ajustes le dé sitio. -->
           <div id="panel-resumen" class="bento__cell bento__cell--half bento__cell--flat"
                role="region" aria-label="Resumen de la semana" hidden></div>
-          <div id="panel-actividad-reciente-escritorio" class="bento__cell bento__cell--half"
-               role="region" aria-label="Actividad reciente" hidden></div>
 
           <!-- TU PROGRESO (LG.2d, ADR 032 D6): tarjeta compacta de logros
                (nivel actual + último logro + próximo objetivo), universal en

@@ -349,14 +349,12 @@ describe('movimientosRecientes()', () => {
 
 describe('renderActividadReciente()', () => {
   const elPanel = () => document.getElementById('panel-actividad-reciente');
-  const elPanelEscritorio = () => document.getElementById('panel-actividad-reciente-escritorio');
   const matchMediaReal = window.matchMedia;
 
   afterEach(() => { window.matchMedia = matchMediaReal; });
 
   beforeEach(() => {
-    document.body.innerHTML = '<div id="panel-actividad-reciente" hidden></div>'
-      + '<div id="panel-actividad-reciente-escritorio" hidden></div>';
+    document.body.innerHTML = '<div id="panel-actividad-reciente" hidden></div>';
     S.gastos = [];
     S.ingresosPuntuales = [];
     S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
@@ -473,26 +471,28 @@ describe('renderActividadReciente()', () => {
     expect(elPanel().querySelector('.actividad-reciente__ver-todo')).toBeNull();
   });
 
-  // ── IN.9d (ADR 057 D4): copia propia para la fila final de escritorio ──
+  // ── DSK.1a (ADR 070 D2): la copia de escritorio de IN.9d ya no existe ──
+  // Actividad reciente cuenta el pasado, y en monitor compartía anatomía con
+  // la lista de obligaciones. Sale de Inicio en escritorio; Movimientos sigue
+  // a un clic en la barra lateral. Estos tests son la compuerta: si alguien
+  // reintroduce el contenedor, esta función no debe volver a llenarlo sola.
 
-  it('llena la copia de escritorio con el mismo contenido que la de móvil', () => {
+  it('no llena ninguna copia de escritorio: ese contenedor ya no es suyo', () => {
+    document.body.innerHTML = '<div id="panel-actividad-reciente" hidden></div>'
+      + '<div id="panel-actividad-reciente-escritorio" hidden></div>';
     S.gastos = [gasto()];
     renderActividadReciente();
-    expect(elPanelEscritorio().hidden).toBe(false);
-    expect(elPanelEscritorio().innerHTML).toBe(elPanel().innerHTML);
+    const escritorio = document.getElementById('panel-actividad-reciente-escritorio');
+    expect(elPanel().hidden).toBe(false);
+    expect(escritorio.hidden).toBe(true);
+    expect(escritorio.innerHTML).toBe('');
   });
 
-  it('oculta también la copia de escritorio sin movimientos', () => {
-    renderActividadReciente();
-    expect(elPanelEscritorio().hidden).toBe(true);
-    expect(elPanelEscritorio().innerHTML).toBe('');
-  });
-
-  it('no-op si solo existe la copia de escritorio (móvil ausente del DOM)', () => {
+  it('no-op si solo existe el contenedor retirado de escritorio', () => {
     document.body.innerHTML = '<div id="panel-actividad-reciente-escritorio" hidden></div>';
     S.gastos = [gasto()];
     expect(() => renderActividadReciente()).not.toThrow();
-    expect(elPanelEscritorio().hidden).toBe(false);
+    expect(document.getElementById('panel-actividad-reciente-escritorio').innerHTML).toBe('');
   });
 
   // ── IN.8g (ADR 034 D7): fusión con Accesos rápidos, header simplificado ──

@@ -282,32 +282,34 @@ function _enEscritorio() {
 }
 
 /**
- * Reparte Accesos rápidos, Actividad reciente y Resumen de la semana según
- * el ancho (IN.9d, ADR 057 D4): fusionados en una sola card en móvil (034
- * D7 sin cambios ahí), separados en escritorio (Accesos span 4 en fila
- * propia; Actividad junto al resumen semanal, span 6 + span 6, R79).
+ * Decide qué cierre de Inicio se ve según el ancho (DSK.1a, ADR 070 D2, que
+ * acota IN.9d / ADR 057 D4).
  *
- * Mismo patrón que IN.9c: los contenedores de cada ancho conviven en el DOM
- * desde `index.html`; accesos/view.js y movimientos/view.js llenan los dos
- * sin condicional (`.accesos-inicio__grid`, `#panel-actividad-reciente*`),
- * esta función solo decide cuál se ve. Resumen semanal (`#panel-resumen`) no
- * necesita reparto propio: es la misma celda en los dos anchos, solo cambia
- * de span vía CSS responsive.
+ * En escritorio Inicio avisa, no resume: se retiran Accesos rápidos (duplica
+ * la barra lateral, que ya muestra 15 destinos con su nombre), Actividad
+ * reciente (cuenta el pasado y comparte anatomía con la lista de
+ * obligaciones) y Resumen de la semana (es tendencia, y la tendencia no
+ * tiene fecha límite). Los dos primeros ya no existen en el DOM: escritorio
+ * era su único hogar, así que IN.9d se revirtió en `index.html` en vez de
+ * ocultarse. Acá solo queda el Resumen semanal, que sí sigue vivo bajo
+ * 1024px y por eso se fuerza oculto por ancho.
+ *
+ * En móvil no cambia nada: la fusión Accesos + Actividad del ADR 034 D7
+ * sigue igual, y el Resumen semanal lo sigue decidiendo resumen/view.js.
+ *
+ * El oculto se fuerza en una sola dirección, nunca al revés: revelar acá
+ * dejaría un panel vacío cuando resumen/view.js ya lo escondió por falta de
+ * datos. Mismo criterio que traía IN.9d con Actividad reciente.
  *
  * Se lee en cada `renderAll()`, misma limitación aceptada en IN.9b/IN.9c: un
  * cambio de ancho sin cambio de estado no repinta.
  */
-function _repartoAccesosActividad() {
+function _repartoCierreInicio() {
   const enEscritorio = _enEscritorio();
-  const movil             = document.getElementById('accesos-actividad-movil');
-  const accesosEscritorio = document.getElementById('panel-accesos-escritorio');
-  const actividadEscritorio = document.getElementById('panel-actividad-reciente-escritorio');
-  if (movil)             movil.hidden = enEscritorio;
-  if (accesosEscritorio) accesosEscritorio.hidden = !enEscritorio;
-  // actividadEscritorio también lo oculta movimientos/view.js cuando no hay
-  // movimientos; acá solo se fuerza oculto por ancho, nunca se fuerza visible
-  // (dejaría un panel vacío si movimientos/view.js ya lo escondió por datos).
-  if (actividadEscritorio && !enEscritorio) actividadEscritorio.hidden = true;
+  const movil   = document.getElementById('accesos-actividad-movil');
+  const resumen = document.getElementById('panel-resumen');
+  if (movil) movil.hidden = enEscritorio;
+  if (resumen && enEscritorio) resumen.hidden = true;
 }
 
 /**
@@ -424,9 +426,9 @@ export function renderAll() {
       console.error('[render] renderAll: un render de dominio falló:', err);
     }
   }
-  // Después de los renders de dominio: _repartoAccesosActividad() solo fuerza
-  // el oculto de Actividad reciente en escritorio hacia móvil, nunca al
-  // revés, para no pisar el oculto por falta de movimientos que ya aplicó
-  // movimientos/view.js (registrado arriba, en _renders).
-  _repartoAccesosActividad();
+  // Después de los renders de dominio: _repartoCierreInicio() solo fuerza el
+  // oculto del Resumen semanal en escritorio, nunca al revés, para no pisar
+  // el oculto por falta de datos que ya aplicó resumen/view.js (registrado
+  // arriba, en _renders).
+  _repartoCierreInicio();
 }

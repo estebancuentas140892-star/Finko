@@ -1,12 +1,12 @@
 # Tablero - Finko Claude
 
-> Revisado: 2026-08-17.
+> Revisado: 2026-08-18.
 
 > Tablero Kanban de trabajo pendiente. Reemplaza a `TASKS.md` y `ROADMAP.md` (retirados 2026-07-02, ver [CHANGELOG](CHANGELOG.md)).
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-08-17. Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
+> Última actualización: 2026-08-18. Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
 
 ---
 
@@ -22,6 +22,17 @@
 - Depende de : nada
 - Avance     : **05/25 cerradas** (01 navegación móvil global, [ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md); 02 Inicio; 03 Más; 04 Ahorro; 05 Por pagar, que recuperó el alta de gasto fijo y el pago en lote). Sigue la 06.
 - Restricción: el orden no se altera. Cada ficha se implementa, se valida en la app y se cierra antes de abrir la siguiente. Lo que una ficha deja anotado para otra (ej. HR-1, o el destino de Logros) no se decide antes de llegar a ella.
+
+### DSK.1 - Inicio como centro de atención en escritorio, 4 rebanadas
+- Prioridad  : alta
+- Estado     : en proceso (iniciada 2026-08-18)
+- Área       : ambos
+- Objetivo   : implementar la auditoría "Inicio 1920 v2" de Claude Design ([ADR 070](DECISIONS/070-inicio-centro-de-atencion-en-escritorio.md)): Inicio en escritorio avisa, no resume
+- Secciones  : Inicio
+- Archivos   : `index.html`, `modules/infra/render.js`, `modules/dominio/compromisos/views/dashboard.js`, `styles/layout.css`, `styles/responsive.css`, `styles/components/domain.css`
+- Depende de : nada
+- Avance     : **00/04**. a) purga y cabecera (D2, D10). b) banda de contexto (D4, D5, D6). c) columnas 4 + 8 (D7). d) fusión de obligaciones y pie (D8, D9).
+- Restricción: **alcance escritorio, desde 1024px.** Móvil no se toca: es territorio de MOV.1, que sigue abierta. Las dos iniciativas comparten `index.html` y corren en sesiones distintas: `git status` antes de cada rebanada, y stagear solo los archivos propios.
 
 ---
 
@@ -75,6 +86,8 @@ Cada sección con tarjetas vivas tiene su satélite en `docs/board/`, mismo nomb
 ### Inicio (dominio `resumen`)
 
 > **Iniciativa "IN.9 - Inicio en escritorio", cerrada** (sus cinco rebanadas, 2026-08-02). Detalle e historia: [`contexto/inicio.md`](contexto/inicio.md) y CHANGELOG. **PI8 sigue abierto** (contraste de los tokens `--fk-dom-*`, bajo el mínimo WCAG 1.4.11) y no viaja con INT.1: merece tarjeta de accesibilidad propia. Móvil no cambia salvo lo que IN.9a decidió.
+>
+> **DSK.1 acota IN.9 y está en proceso** (arriba, "En proceso"). El [ADR 070](DECISIONS/070-inicio-centro-de-atencion-en-escritorio.md) reemplaza el reparto de escritorio que fijaron D3 y D4 del [ADR 057](DECISIONS/057-inicio-en-escritorio.md). Dependencia abierta que deja: **"Personalizar accesos" se queda sin entrada en escritorio** y necesita sitio en Ajustes. Candidato anotado, sin tarjeta: auditar si **"Tu progreso"** pertenece a Inicio.
 
 ### Calendario (dominio `agenda`)
 

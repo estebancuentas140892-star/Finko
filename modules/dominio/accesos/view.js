@@ -15,13 +15,14 @@ import { accesosVisibles } from './logic.js';
  * deja visible el botón "Personalizar" (incluso con 0 tiles, para que el
  * usuario pueda agregar alguno).
  *
- * IN.9d (ADR 057 D4): dos copias del mismo contenido conviven en el DOM
- * (`#accesos-inicio-grid` en la fusión móvil, `#accesos-inicio-grid-escritorio`
- * en la columna propia de escritorio); render.js decide cuál se ve según el
- * ancho, esta función simplemente llena las dos. No-op si ninguna existe.
+ * DSK.1a (ADR 070 D2) revierte IN.9d: la columna propia de escritorio
+ * (`#accesos-inicio-grid-escritorio`) desaparece del DOM, porque en monitor
+ * la barra lateral ya muestra 15 destinos con su nombre y estos cuatro
+ * atajos solo la duplicaban. Queda la grilla de la fusión móvil, único sitio
+ * donde los accesos siguen ganándose la pantalla. No-op si no existe.
  */
 export function renderAccesosInicio() {
-  const grids = ['accesos-inicio-grid', 'accesos-inicio-grid-escritorio']
+  const grids = ['accesos-inicio-grid']
     .map(id => document.getElementById(id))
     .filter(Boolean);
   if (grids.length === 0) return;
