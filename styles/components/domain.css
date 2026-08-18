@@ -1679,6 +1679,17 @@ button.chip:focus-visible {
   white-space: nowrap;
 }
 
+/* ── BANDA DE CONTEXTO (DSK.1b, ADR 070 D6) ─────────────────────
+   Envoltorio del hero de saldo + el detalle por cuenta. Su única regla fuera
+   de escritorio es esta: `display: contents` lo saca de la caja y devuelve a
+   sus dos hijos al bento como celdas sueltas, que es exactamente el reparto
+   de siempre bajo 1024px. Todo lo que lo convierte en una superficie única
+   vive en el bloque de 1024px de responsive.css.
+
+   Va aquí y no en layout.css porque su razón de ser es de Inicio, no del
+   vocabulario del bento: no hay una segunda banda en la app. */
+.banda-inicio { display: contents; }
+
 /* ════════════════════════════════════════════════════════════
    HERO-TESORERIA (MC.18a, ADR 035 D1/D3/D5) - total en cuentas.
    Segundo consumidor del piloto ADR 033 (degradado de identidad +

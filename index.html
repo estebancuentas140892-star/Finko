@@ -538,18 +538,42 @@
              completo (label incluido) vía :has() en layout.css. -->
         <div class="bento bento--dash">
 
+          <!-- BANDA DE CONTEXTO (DSK.1b, ADR 070 D6): el saldo y las cuentas
+               son la misma pregunta ("cuánto tengo, y dónde está"), así que
+               desde 1024px dejan de ser dos celdas `--half` con dos bordes y
+               pasan a ser una sola superficie de ancho completo: saldo a la
+               izquierda, fichas de cuenta a la derecha.
+
+               Bajo 1024px este envoltorio es `display: contents` (responsive
+               .css), así que desaparece de la caja y sus dos hijos vuelven a
+               ser celdas sueltas del bento, exactamente como antes: móvil no
+               cambia ni un píxel. Mismo criterio que IN.9c y IN.9e, los dos
+               anchos conviven en el DOM y el CSS decide. -->
+          <div class="bento__cell bento__cell--full banda-inicio">
+
           <!-- HERO: saldo disponible, centrado y protagonista (IN.8b, ADR 034
                D2/D3; piloto visual ADR 033 D1/D2 acotado a Inicio).
                render.js (updSaldo) controla el estado vacío vs. con cuentas. -->
           <article class="bento__cell bento__cell--half bento__cell--hero hero-inicio">
             <!-- Forma decorativa (DV.2b, ADR 033 D3): piloto acotado, 1 sola
-                 por pantalla, teñida por --fk-section-color del propio hero. -->
+                 por pantalla, teñida por --fk-section-color del propio hero.
+                 DSK.1b (ADR 070 D4) la apaga desde 1024px: era la segunda
+                 capa verde sobre el gradiente, y el piloto nunca se extendió
+                 al resto de la app. En móvil sigue igual. -->
             <svg class="decor decor--top-right" aria-hidden="true"><use href="#d-blob"/></svg>
             <!-- Ojo de privacidad (IN.2 + D3): posición absoluta estable en la
                  esquina; al alternar solo cambian el icono y el contenido del
                  monto, nunca la posición del control. render.js (updSaldo)
                  sincroniza máscara, icono y aria-pressed leyendo
-                 S.config.ocultarSaldo; la preferencia persiste entre sesiones. -->
+                 S.config.ocultarSaldo; la preferencia persiste entre sesiones.
+                 DSK.1b (ADR 070 D5) lo pega al final de la etiqueta desde
+                 1024px, pero SIN moverlo del DOM: dentro de la banda el hero
+                 pasa a rejilla y el ojo se coloca en la celda de al lado del
+                 rótulo (responsive.css). Se intentó anidarlo en el `<p>` y se
+                 descartó: bajo 1024px este botón no es absoluto sino
+                 `position: relative` con desplazamiento (regla de área táctil
+                 de responsive.css), así que anidarlo le sumaba 40px de alto a
+                 la fila del rótulo en móvil, que es territorio de MOV.1. -->
             <button class="hero-inicio__ojo" type="button" id="saldo-ojo"
                     data-action="saldo-visibilidad" aria-pressed="false"
                     aria-label="Ocultar tu dinero disponible">
@@ -640,7 +664,14 @@
                y la misma máscara: updSaldo() llena las dos listas desde el
                mismo `oculto`, así que el ojo del hero sigue cubriendo total y
                detalle juntos. Arranca [hidden]; updSaldo() lo revela cuando el
-               ancho da y hay al menos una cuenta activa. -->
+               ancho da y hay al menos una cuenta activa.
+               DSK.1b (ADR 070 D6): sigue siendo el mismo marcado y el mismo
+               dato, pero deja de ser una superficie aparte. Dentro de la
+               banda pierde borde, fondo y título visible, y sus filas pasan
+               de renglones de 32px pegados a fichas con relleno propio: la
+               lista medía 490px de caja de nombre para un texto de 142, o
+               sea 360px muertos entre el nombre y su cifra. El h2 se queda
+               en el DOM porque `aria-labelledby` lo sigue nombrando. -->
           <div class="bento__cell bento__cell--half" id="panel-cuentas-detalle"
                role="region" aria-labelledby="cuentas-detalle-titulo" hidden>
             <div class="card__header">
@@ -648,6 +679,8 @@
             </div>
             <ul class="cuentas-inicio__lista" id="cuentas-detalle-lista" role="list"></ul>
           </div>
+
+          </div><!-- /.banda-inicio -->
 
           <!-- ATENCIÓN HOY (IN.8a, ADR 034 D1): lo accionable del día, justo
                debajo del hero. Cada panel se aplana (bento__cell--flat): el

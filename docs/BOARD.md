@@ -31,7 +31,7 @@
 - Secciones  : Inicio
 - Archivos   : `index.html`, `modules/infra/render.js`, `modules/dominio/compromisos/views/dashboard.js`, `styles/layout.css`, `styles/responsive.css`, `styles/components/domain.css`
 - Depende de : nada
-- Avance     : **00/04**. a) purga y cabecera (D2, D10). b) banda de contexto (D4, D5, D6). c) columnas 4 + 8 (D7). d) fusión de obligaciones y pie (D8, D9).
+- Avance     : **02/04**. a) purga y cabecera (D2, D10), cerrada. b) banda de contexto (D4, D5, D6), cerrada. c) columnas 4 + 8 (D7). d) fusión de obligaciones y pie (D8, D9).
 - Restricción: **alcance escritorio, desde 1024px.** Móvil no se toca: es territorio de MOV.1, que sigue abierta. Las dos iniciativas comparten `index.html` y corren en sesiones distintas: `git status` antes de cada rebanada, y stagear solo los archivos propios.
 
 ---

@@ -388,11 +388,64 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await expect(page.locator('#saldo-detalle')).toBeHidden();
     await expect(page.locator('#saldo-desc')).toHaveText('efectivo + 1 cuenta bancaria');
 
-    // Hero y columna comparten fila: el hero dejó de ser una banda.
+    // DSK.1b (ADR 070 D6): hero y columna dejan de ser dos celdas y pasan a
+    // ser una sola banda. Siguen lado a lado (el saldo a la izquierda), pero
+    // ahora centrados entre sí dentro de la misma superficie, así que lo que
+    // coincide es el centro vertical, no el borde de arriba.
+    const cajaBanda = await page.locator('.banda-inicio').boundingBox();
     const cajaHero  = await page.locator('.hero-inicio').boundingBox();
     const cajaPanel = await panel.boundingBox();
-    expect(Math.round(cajaHero.y)).toBe(Math.round(cajaPanel.y));
     expect(cajaPanel.x).toBeGreaterThan(cajaHero.x);
+    const centro = (c) => Math.round(c.y + c.height / 2);
+    expect(Math.abs(centro(cajaHero) - centro(cajaPanel))).toBeLessThanOrEqual(1);
+    // Los dos caben dentro de la banda: es su celda, no su vecina.
+    expect(cajaHero.x).toBeGreaterThanOrEqual(cajaBanda.x);
+    expect(cajaPanel.x + cajaPanel.width).toBeLessThanOrEqual(cajaBanda.x + cajaBanda.width + 1);
+
+    // Una superficie, un borde: los dos hijos pierden el suyo (D9 empieza acá,
+    // "sin caja dentro de caja").
+    const bordeHero = await page.locator('.hero-inicio')
+      .evaluate(el => getComputedStyle(el).borderTopWidth);
+    expect(bordeHero).toBe('0px');
+
+    // D4: fuera las dos capas verdes. El gradiente de identidad y el blob
+    // decorativo eran la única superficie teñida de la pantalla, y en esta app
+    // el verde significa estado.
+    const heroFondo = await page.locator('.hero-inicio')
+      .evaluate(el => getComputedStyle(el).backgroundImage);
+    expect(heroFondo).toBe('none');
+    await expect(page.locator('.hero-inicio > .decor')).toBeHidden();
+
+    // D5: el ojo deja la esquina absoluta y se pega al final de su etiqueta,
+    // sin caja. Sin moverlo del DOM: en móvil sigue donde estaba.
+    const ojo = page.locator('#saldo-ojo');
+    const estiloOjo = await ojo.evaluate(el => {
+      const c = getComputedStyle(el);
+      return { position: c.position, borde: c.borderTopWidth };
+    });
+    expect(estiloOjo.position).toBe('static');
+    expect(estiloOjo.borde).toBe('0px');
+    const cajaLabel = await page.locator('#hero-saldo-label').boundingBox();
+    const cajaOjo   = await ojo.boundingBox();
+    // A la derecha del texto, no en la otra punta de la banda.
+    expect(cajaOjo.x).toBeGreaterThan(cajaLabel.x + cajaLabel.width - 1);
+    expect(cajaOjo.x - (cajaLabel.x + cajaLabel.width)).toBeLessThan(24);
+
+    // D6: cada cuenta es una ficha con su nombre y su cifra juntos, no un
+    // renglón con el nombre a un extremo y el saldo a 360px de distancia.
+    const fichas = panel.locator('.hero-inicio__cuenta');
+    const cajaF0 = await fichas.nth(0).boundingBox();
+    const cajaF1 = await fichas.nth(1).boundingBox();
+    expect(Math.round(cajaF0.y)).toBe(Math.round(cajaF1.y)); // en fila
+    const cajaNombre = await fichas.nth(0).locator('.hero-inicio__cuenta-nombre').boundingBox();
+    const cajaSaldo  = await fichas.nth(0).locator('.hero-inicio__cuenta-saldo').boundingBox();
+    // La cifra va debajo del nombre, dentro de la misma ficha.
+    expect(cajaSaldo.y).toBeGreaterThan(cajaNombre.y);
+    expect(cajaSaldo.x + cajaSaldo.width).toBeLessThanOrEqual(cajaF0.x + cajaF0.width + 1);
+    // El título de la columna sale de la vista: la banda ya está nombrada por
+    // la etiqueta del saldo. Sigue en el DOM porque aria-labelledby lo usa.
+    await expect(page.locator('#cuentas-detalle-titulo')).toBeHidden();
+    await expect(panel).toHaveAttribute('aria-labelledby', 'cuentas-detalle-titulo');
 
     // PI4: un solo ojo cubre el total y la columna.
     await page.click('#saldo-ojo');
@@ -401,6 +454,55 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await expect(panel).not.toContainText('350.000');
     await page.click('#saldo-ojo');
     await expect(panel).toContainText('$1.450.000');
+  });
+
+  test('móvil: la banda de escritorio no existe y el hero conserva gradiente, blob y ojo en la esquina (DSK.1b, ADR 070 D4/D5/D6)', async ({ page }) => {
+    // Contracara del test anterior, y la compuerta que protege a MOV.1: el
+    // envoltorio `.banda-inicio` es `display: contents` bajo 1024px, así que
+    // sus dos hijos vuelven a ser celdas sueltas del bento y nada del hero
+    // cambia. Si alguien quita ese `contents`, este test cae.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await sembrarSiVacio(page, {
+      version: 1,
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [
+        { id: 'c1', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 1450000, activa: true },
+      ],
+      ingresos: [],
+      gastos: [],
+      compromisos: [],
+      metas: [],
+    });
+    await page.goto('/');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+
+    const banda = await page.locator('.banda-inicio')
+      .evaluate(el => getComputedStyle(el).display);
+    expect(banda).toBe('contents');
+
+    // El hero sigue siendo su propia superficie, con su decoración.
+    const hero = await page.locator('.hero-inicio').evaluate(el => {
+      const c = getComputedStyle(el);
+      return { borde: c.borderTopWidth, fondo: c.backgroundImage };
+    });
+    expect(hero.borde).toBe('1px');
+    expect(hero.fondo.startsWith('linear-gradient')).toBe(true);
+
+    // El ojo no se movió del DOM ni de su sitio: sigue siendo hermano de la
+    // etiqueta, no un hijo suyo, así que no le suma alto a la fila del rótulo.
+    const ojoEsHijoDelLabel = await page.locator('#saldo-ojo')
+      .evaluate(el => el.parentElement.id === 'hero-saldo-label');
+    expect(ojoEsHijoDelLabel).toBe(false);
+    const altoLabel = await page.locator('#hero-saldo-label')
+      .evaluate(el => Math.round(el.getBoundingClientRect().height));
+    expect(altoLabel).toBeLessThan(32);
+
+    // Y la columna de escritorio sigue sin existir acá: el detalle es el
+    // acordeón de siempre.
+    await expect(page.locator('#panel-cuentas-detalle')).toBeHidden();
+    await expect(page.locator('#saldo-detalle-toggle')).toBeVisible();
   });
 
   test('Pendientes del mes sin línea roja, badge corto y "Ver calendario" al calendario (IN.8e, ADR 034 D5)', async ({ page }) => {

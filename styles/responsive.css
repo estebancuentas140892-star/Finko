@@ -665,3 +665,163 @@
     display: none;
   }
 }
+
+/* ── BANDA DE CONTEXTO DE INICIO (>= 1024px, DSK.1b, ADR 070 D4/D5/D6) ──
+   El saldo y las cuentas contestan la misma pregunta, así que dejan de ser
+   dos celdas `--half` con dos bordes y pasan a una sola superficie de ancho
+   completo. El envoltorio `.banda-inicio` es `display: contents` por defecto
+   (domain.css): bajo este ancho no existe como caja y sus hijos vuelven a
+   ser celdas sueltas del bento, sin un solo cambio en móvil.
+
+   Los tres defectos que corrige, medidos en el código vivo:
+     D4  dos capas verdes sobre el saldo (gradiente de identidad al 14% más
+         el blob decorativo al 6%). El verde significa estado en esta app, y
+         el saldo no es un estado.
+     D5  el ojo flotando en una esquina absoluta, sin relación visual con la
+         cifra que enmascara. Acá se pega al final de su etiqueta.
+     D6  filas de 32px con avatar de 32px y `gap` ninguno (los avatares se
+         tocaban y formaban una tira continua) más 360px muertos entre el
+         nombre de la cuenta y su cifra. Acá cada cuenta es una ficha con
+         relleno propio y su cifra debajo del nombre, no al otro extremo. */
+@media (min-width: 1024px) {
+
+  /* La banda pasa a ser la celda: una superficie, un borde. */
+  .banda-inicio {
+    display: grid;
+    grid-template-columns: minmax(16rem, 22rem) 1fr;
+    align-items: center;
+    gap: var(--fk-space-8);
+  }
+
+  /* Sin cuentas todavía, el detalle está [hidden] y la columna derecha
+     sobra: el hero recupera el ancho entero para que la guía de primeros
+     pasos de escritorio (620px centrados, IN.9e) no quede estrujada. */
+  .banda-inicio:has(> #panel-cuentas-detalle[hidden]) { grid-template-columns: 1fr; }
+
+  /* Los dos hijos dejan de ser superficies: sin caja dentro de caja, que es
+     lo que hacía que sus bordes no cayeran a plomo.
+
+     `grid-column: auto` es obligatorio, no cosmético: los dos siguen siendo
+     `.bento__cell--half`, o sea `span 6`, porque bajo 1024px la banda es
+     `display: contents` y ahí ese span es el que vale. Sin reponerlo, cada
+     hijo pide 6 columnas a una rejilla de 2 y el navegador inventa cuatro
+     columnas implícitas de 0px: los dos terminan apilados a ancho completo,
+     que es exactamente lo contrario de la banda. */
+  .banda-inicio > .hero-inicio,
+  .banda-inicio > #panel-cuentas-detalle {
+    grid-column: auto;
+    background: none;
+    border: 0;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+    overflow: visible;
+  }
+
+  /* D4: fuera las dos capas verdes. */
+  .banda-inicio > .hero-inicio > .decor { display: none; }
+
+  /* El saldo se lee de izquierda a derecha como el resto de la banda; el
+     centrado era del hero de ancho completo de móvil.
+
+     D5: el hero pasa de columna flex a rejilla de dos columnas para que el
+     ojo entre en la misma fila que el rótulo. Se hace por colocación y no
+     moviendo el botón dentro del `<p>`: bajo 1024px ese botón no es absoluto
+     sino `position: relative` con desplazamiento (área táctil, más arriba en
+     este archivo), así que anidarlo le sumaría 40px de alto a la fila del
+     rótulo en móvil.
+
+     La segunda pista es `1fr` y no `auto`: con dos pistas `auto` el monto,
+     que ocupa las dos, las hace crecer a las dos, así que la columna del
+     rótulo cambiaba de ancho entre "$2.485.000" y "$••••••" y el ojo se
+     movía al alternar la máscara. Eso rompe la garantía del ADR 034 D3 (la
+     posición del control nunca cambia) y su test E2E lo cazó. Con `1fr` el
+     sobrante se lo lleva la pista flexible y la del rótulo se queda en su
+     ancho de contenido. */
+  .banda-inicio > .hero-inicio {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    text-align: left;
+    row-gap: var(--fk-space-2);
+    column-gap: var(--fk-space-2);
+  }
+  .banda-inicio > .hero-inicio > .hero-inicio__label { grid-area: 1 / 1; }
+  .banda-inicio > .hero-inicio > .hero-inicio__ojo   { grid-area: 1 / 2; }
+  .banda-inicio > .hero-inicio > .hero-inicio__valor { grid-area: 2 / 1 / auto / -1; }
+  .banda-inicio > .hero-inicio > .hero-inicio__desc  { grid-area: 3 / 1 / auto / -1; }
+  /* Sin cuentas el resto está [hidden] y solo queda la guía. Ocupa las dos
+     pistas y se centra en ellas: IN.9e la definió como una pieza de 620px
+     centrada, y como ítem de rejilla se quedaría pegada a la izquierda. */
+  .banda-inicio > .hero-inicio > .hero-guia {
+    grid-area: 4 / 1 / auto / -1;
+    justify-self: center;
+  }
+
+  /* Sin caja: el borde y el fondo lo convertían en un objeto propio que
+     competía con el rótulo del saldo. Deja de ser una tecla y pasa a ser un
+     gesto. El área táctil no se toca acá: la regla que la expande vive en el
+     bloque de móvil, donde el dedo es el que apunta. */
+  .banda-inicio .hero-inicio__ojo {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: var(--fk-space-1);
+    border: 0;
+    background: none;
+  }
+  .banda-inicio .hero-inicio__ojo:hover { background: none; color: var(--fk-text-primary); }
+
+  /* El título de "Dónde está tu dinero" sale de la vista: la banda ya está
+     nombrada por la etiqueta del saldo, y dos títulos para una superficie
+     eran justamente la costura que D6 borra. Sigue en el DOM porque
+     `aria-labelledby` lo nombra para lectores de pantalla. */
+  .banda-inicio > #panel-cuentas-detalle > .card__header { display: none; }
+
+  /* D6: las cuatro cuentas, en fila. `auto-fit` y no `repeat(4, 1fr)` porque
+     el número de cuentas lo pone el usuario: con cinco o más, envuelve, y con
+     dos no deja dos huecos.
+     El mínimo de 9,5rem está medido, no elegido: a 1440px la columna derecha
+     de la banda mide 702px, y cuatro fichas de 11rem con sus tres huecos
+     pedían 740. La cuarta caía sola a una segunda fila. Con 9,5rem caben las
+     cuatro (644) y sobra aire. Bajo 1024px esta regla no existe. */
+  .banda-inicio .cuentas-inicio__lista {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+    gap: var(--fk-space-3);
+  }
+
+  /* Cada cuenta pasa de renglón a ficha: avatar a la izquierda ocupando las
+     dos filas, nombre arriba y cifra debajo. Nombre y cifra quedan juntos,
+     que es lo que la lista estirada rompía. */
+  .banda-inicio .cuentas-inicio__lista .hero-inicio__cuenta {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: var(--fk-space-3);
+    align-items: center;
+    padding: var(--fk-space-3);
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-lg);
+    background: var(--fk-bg-hover);
+  }
+  .banda-inicio .cuentas-inicio__lista .bank-avatar { grid-row: 1 / span 2; }
+  /* El nombre se parte en dos líneas antes que truncarse. En la lista vieja
+     tenía 490px de caja y nunca se cortaba; acá la ficha mide ~167px y los
+     nombres reales de cuenta ("Bancolombia Ahorros", "Davivienda Ahorros")
+     no caben en uno. Truncar dejaría "Bancolombia Ah...", que es peor que
+     dos renglones. El tope de 2 evita que un nombre largo estire la banda. */
+  .banda-inicio .cuentas-inicio__lista .hero-inicio__cuenta-nombre {
+    grid-column: 2;
+    font-size: var(--fk-text-xs);
+    color: var(--fk-text-secondary);
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 1.3;
+  }
+  .banda-inicio .cuentas-inicio__lista .hero-inicio__cuenta-saldo {
+    grid-column: 2;
+    font-size: var(--fk-text-base);
+  }
+}
