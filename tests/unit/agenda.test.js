@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { eventosDelMes, eventosIngresosDelMes, eventosMetasDelMes, totalEventosDelMes, totalDia, eventosDeHoy, eventosEnProximos, tiposPresentesEnMes, totalesDelMes, pendientesDePagoDelMes, debitosAutomaticosVencidos, pendientesDeCreditoDelMes, creditosAutomaticosVencidos } from '../../modules/dominio/agenda/logic.js';
-import { renderFormGastoFijo, renderFormPagoLote, renderFormAutomaticos, textoBannerGastoFijo, renderAgenda, mostrarDia, navegarMes, resetearVistaAlMesActual, marcarEntradaSeccion, resumenMesVisible, diaSeleccionado } from '../../modules/dominio/agenda/view.js';
+import { renderFormAutomaticos, renderAgenda, mostrarDia, navegarMes, resetearVistaAlMesActual, marcarEntradaSeccion, resumenMesVisible, diaSeleccionado } from '../../modules/dominio/agenda/view.js';
 import { S } from '../../modules/core/state.js';
-import { CATEGORIAS_AGENDA, CATEGORIA_AGENDA_ICONO } from '../../modules/core/constants.js';
+import { CATEGORIA_AGENDA_ICONO } from '../../modules/core/constants.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
 
@@ -494,145 +494,6 @@ describe('eventosEnProximos', () => {
     expect(r.diasRestantes).toBe(6); // 28 + 6 = 3 junio
     expect(r.fecha.getMonth()).toBe(5); // junio
     expect(r.fecha.getDate()).toBe(3);
-  });
-});
-
-// ── renderFormGastoFijo() - selector de categoría (Agenda) ────────
-// FORM.1c (ADR 042 D5): la categoría son chips de ícono (radios reales
-// name="categoria"), no un <select>; mismo lenguaje que Registrar gasto
-// (FORM.1a) y Nueva deuda (FORM.1b).
-
-describe('renderFormGastoFijo() - selector de categoría', () => {
-  it('incluye un chip de radio para cada categoría de CATEGORIAS_AGENDA (ID.3)', () => {
-    const html = renderFormGastoFijo();
-    expect(html).toContain('chips-cat');
-    expect(html).not.toContain('<select id="gfijo-categoria"');
-    // CAT.3c: +1 por el chip sentinela "Categoría nueva" (S.categoriasPersonalizadas
-    // sin entradas de sección 'fijo' en este describe, así que no suma más chips).
-    const radios = html.match(/name="categoria"/g) ?? [];
-    expect(radios).toHaveLength(CATEGORIAS_AGENDA.length + 1);
-    for (const c of CATEGORIAS_AGENDA) {
-      expect(html).toContain(`value="${c}"`);
-      expect(html).toContain(`<use href="#${CATEGORIA_AGENDA_ICONO[c]}"/>`);
-    }
-  });
-
-  it('CAT.3c: incluye el chip sentinela "Categoría nueva" al final del catálogo', () => {
-    const html = renderFormGastoFijo();
-    expect(html).toContain('value="__nueva__"');
-    expect(html).toContain('Categoría nueva');
-    expect(html).toContain('#i-plus');
-  });
-
-  it('CAT.3c: suma un chip por cada personalizada de sección fijo, filtrando las de gasto', () => {
-    S.categoriasPersonalizadas = [
-      { id: 'p1', nombre: 'Netflix', icono: 'c-streaming', seccion: 'fijo', fechaCreacion: '2026-01-01' },
-      { id: 'p2', nombre: 'Almuerzo', icono: 'c-mercado', seccion: 'gasto', fechaCreacion: '2026-01-01' },
-    ];
-    try {
-      const html = renderFormGastoFijo();
-      expect(html).toContain('value="Netflix"');
-      expect(html).not.toContain('value="Almuerzo"');
-    } finally {
-      S.categoriasPersonalizadas = [];
-    }
-  });
-
-  it('la categoría es opcional: ningún chip nace marcado', () => {
-    const html = renderFormGastoFijo();
-    const div = document.createElement('div');
-    div.innerHTML = html;
-    expect(div.querySelector('input[name="categoria"]:checked')).toBeNull();
-  });
-
-  it('AG.4: la categoría va antes que el campo de nombre en el DOM', () => {
-    const html = renderFormGastoFijo();
-    expect(html.indexOf('id="gfijo-categoria-label"')).toBeLessThan(html.indexOf('id="gfijo-descripcion"'));
-  });
-
-  it('AG.4: en el estado por defecto (sin categoría), el campo nace requerido con label "Descripción"', () => {
-    const html = renderFormGastoFijo();
-    expect(html).toContain('id="gfijo-descripcion-label">Descripción<');
-    const inputMatch = html.match(/<input id="gfijo-descripcion"[^>]*>/);
-    expect(inputMatch).not.toBeNull();
-    expect(inputMatch[0]).toContain('required');
-  });
-});
-
-// ── renderFormGastoFijo() - lenguaje v2 (FORM.1c, ADR 042 D5) ─────
-
-describe('renderFormGastoFijo() - lenguaje de formularios v2', () => {
-  it('el monto vive en el hero con el input grande centrado', () => {
-    const html = renderFormGastoFijo();
-    expect(html).toContain('monto-hero__box');
-    expect(html).toContain('input--big-amount');
-  });
-
-  it('frecuencia y día de pago comparten una fila', () => {
-    const html = renderFormGastoFijo();
-    const div = document.createElement('div');
-    div.innerHTML = html;
-    const fila = div.querySelector('.form-row');
-    expect(fila).not.toBeNull();
-    expect(fila.querySelector('[name="frecuencia"]')).not.toBeNull();
-    expect(fila.querySelector('[name="diaPago"]')).not.toBeNull();
-  });
-
-  it('el pie usa el botón primario a lo ancho con el glifo de confirmación', () => {
-    const html = renderFormGastoFijo();
-    expect(html).toContain('modal__footer--principal');
-    expect(html).toContain('#i-check-circle');
-  });
-
-  it('el banner informativo nace con el texto de Mensual sin día (valor por defecto del form)', () => {
-    const html = renderFormGastoFijo();
-    expect(html).toContain('id="gfijo-banner"');
-    expect(html).toContain(textoBannerGastoFijo('Mensual', ''));
-  });
-});
-
-// ── textoBannerGastoFijo() (FORM.1c, ADR 042 D5) ──────────────────
-
-describe('textoBannerGastoFijo()', () => {
-  it('arma la frase con la frecuencia y el día elegidos', () => {
-    expect(textoBannerGastoFijo('Mensual', 5)).toBe('Aparecerá cada mes en tu calendario el día 5.');
-    expect(textoBannerGastoFijo('Quincenal', '20')).toBe('Aparecerá cada quincena en tu calendario el día 20.');
-    expect(textoBannerGastoFijo('Anual', 15)).toBe('Aparecerá cada año en tu calendario el día 15.');
-  });
-
-  it('"Única vez" no repite "cada"', () => {
-    expect(textoBannerGastoFijo('Única vez', 3)).toBe('Aparecerá una vez en tu calendario el día 3.');
-  });
-
-  it('sin día válido, cierra con un texto neutro en vez de inventar una fecha', () => {
-    expect(textoBannerGastoFijo('Mensual', '')).toBe('Aparecerá cada mes en tu calendario el día que elijas.');
-    expect(textoBannerGastoFijo('Mensual', 0)).toBe('Aparecerá cada mes en tu calendario el día que elijas.');
-    expect(textoBannerGastoFijo('Mensual', 32)).toBe('Aparecerá cada mes en tu calendario el día que elijas.');
-  });
-
-  it('frecuencia desconocida cae al mismo criterio de "Mensual"', () => {
-    expect(textoBannerGastoFijo('', 10)).toBe('Aparecerá cada mes en tu calendario el día 10.');
-  });
-});
-
-// ── renderFormGastoFijo() - picker de ícono para "Otro" (CAT.2f) ──
-
-describe('renderFormGastoFijo() - picker de ícono para "Otro" (CAT.2f)', () => {
-  it('incluye el grupo del picker, oculto por defecto', () => {
-    const html = renderFormGastoFijo();
-    expect(html).toMatch(/id="form-group-gfijo-icono"[^>]*hidden/);
-    expect(html).toContain('data-icono-picker="gfijo-icono"');
-  });
-});
-
-// ── renderFormGastoFijo() - nombre + ícono de categoría nueva (CAT.3c) ──
-
-describe('renderFormGastoFijo() - campos de categoría nueva (CAT.3c)', () => {
-  it('incluye el grupo de nombre + ícono, oculto por defecto', () => {
-    const html = renderFormGastoFijo();
-    expect(html).toMatch(/id="gfijo-categoria-nueva-fields"[^>]*hidden/);
-    expect(html).toContain('name="categoriaNuevaNombre"');
-    expect(html).toContain('data-icono-picker="gfijo-categoria-nueva-icono"');
   });
 });
 
@@ -1695,12 +1556,17 @@ describe('renderAgenda() - subtítulo y empty state del mes (CAL.4b)', () => {
       .toBe('1 compromiso este mes');
   });
 
-  it('mes sin ningún evento muestra la card de empty state con el CTA de gasto fijo', () => {
+  // Ficha 05 (ADR 069): el alta ya no vive acá, así que el empty state enlaza
+  // a "Por pagar" en vez de abrir el modal de gasto fijo.
+  it('mes sin ningún evento muestra la card de empty state con la salida a Por pagar', () => {
     renderAgenda();
     const empty = document.querySelector('.cal-empty');
     expect(empty).not.toBeNull();
     expect(empty.querySelector('.cal-empty__title').textContent).toBe('Junio está despejado');
-    expect(empty.querySelector('[data-action="nuevo-gasto-fijo"]')).not.toBeNull();
+    const cta = empty.querySelector('a[href="#compromisos"]');
+    expect(cta).not.toBeNull();
+    expect(cta.textContent.trim()).toBe('Ir a Por pagar');
+    expect(empty.querySelector('[data-action="nuevo-gasto-fijo"]')).toBeNull();
     // La grilla sigue visible: el mes se puede navegar (CAL.3 intacta).
     expect(document.querySelector('.cal-grid')).not.toBeNull();
   });
@@ -1784,7 +1650,7 @@ describe('renderAgenda() - grilla del mes (DIS.11 C2/V-5, V-6)', () => {
     expect(dia25.classList.contains('cal-day--vencido')).toBe(false);
   });
 
-  it('C2: el conteo de vencidos del día es el mismo de la tarjeta de lote', () => {
+  it('C2: el día suma todos sus vencidos en el aria-label', () => {
     S.compromisos = [
       compromisoBase({ id: 'a', descripcion: 'Arriendo', diaPago: 5, monto: 900_000 }),
       compromisoBase({ id: 'b', descripcion: 'Agua',     diaPago: 5, monto: 60_000 }),
@@ -1792,7 +1658,19 @@ describe('renderAgenda() - grilla del mes (DIS.11 C2/V-5, V-6)', () => {
     renderAgenda();
     const dia5 = document.querySelector('[data-action="agenda-mostrar-dia"][data-day="5"]');
     expect(dia5.getAttribute('aria-label')).toBe('Día 5, 2 compromisos, 2 vencidos');
-    expect(document.querySelector('.cal-lote__title').textContent).toBe('2 pagos ya vencieron');
+  });
+
+  // Ficha 05 (ADR 069): la tarjeta del lote se mudó a "Por pagar". El conteo
+  // por día se conserva (es la pista visual de la grilla), pero el Calendario
+  // ya no ofrece pagarlos juntos.
+  it('ficha 05: el Calendario ya no pinta la tarjeta de pago en lote', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'a', descripcion: 'Arriendo', diaPago: 5, monto: 900_000 }),
+      compromisoBase({ id: 'b', descripcion: 'Agua',     diaPago: 6, monto: 60_000 }),
+    ];
+    renderAgenda();
+    expect(document.querySelector('.cal-lote')).toBeNull();
+    expect(document.querySelector('[data-action="agenda-pagar-lote"]')).toBeNull();
   });
 });
 
@@ -2240,145 +2118,6 @@ describe('pendientesDePagoDelMes con deudas (CAL.5b)', () => {
     );
     expect(r).toHaveLength(1);
     expect(r[0]).toMatchObject({ monto: 300_000, dia: 5 });
-  });
-});
-
-// ── CAL.5a: TARJETA DEL LOTE EN EL CALENDARIO ────────────────────
-
-describe('renderAgenda() - tarjeta de pago en lote (CAL.5a)', () => {
-  beforeEach(() => {
-    document.body.innerHTML = '<div id="panel-agenda"></div>';
-    S.compromisos = [];
-    S.gastos      = [];
-    S.ingresos    = [];
-    S.config      = { ...S.config, ocultarSaldo: false };
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 5, 15)); // 15 jun 2026
-    resetearVistaAlMesActual();
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  it('con 2 o más vencidos muestra la tarjeta con el conteo y el CTA', () => {
-    S.compromisos = [
-      compromisoBase({ id: 'a', descripcion: 'Arriendo', diaPago: 5 }),
-      compromisoBase({ id: 'b', descripcion: 'Netflix',  diaPago: 12, monto: 40_000 }),
-    ];
-    renderAgenda();
-    const lote = document.querySelector('.cal-lote');
-    expect(lote).not.toBeNull();
-    expect(lote.querySelector('.cal-lote__title').textContent).toBe('2 pagos ya vencieron');
-    expect(lote.querySelector('.cal-lote__desc').textContent).toContain('Arriendo y Netflix');
-    const cta = lote.querySelector('[data-action="agenda-pagar-lote"]');
-    expect(cta.dataset.mes).toBe('2026-06');
-  });
-
-  // DIS.11 C5/V-7: la tarjeta propone mover dinero, así que dice cuánto
-  // antes de abrir el flujo (el modal ya no es el primer lugar donde aparece).
-  it('DIS.11 C5: la tarjeta muestra el total de lo que propone pagar', () => {
-    S.compromisos = [
-      compromisoBase({ id: 'a', descripcion: 'Arriendo', diaPago: 5, monto: 900_000 }),
-      compromisoBase({ id: 'b', descripcion: 'Netflix',  diaPago: 12, monto: 40_000 }),
-    ];
-    renderAgenda();
-    expect(document.querySelector('.cal-lote__monto').textContent).toContain('940.000');
-  });
-
-  it('DIS.11 C5: el total no se enmascara con el ojo (es el precio de la acción)', () => {
-    S.compromisos = [
-      compromisoBase({ id: 'a', descripcion: 'Arriendo', diaPago: 5, monto: 900_000 }),
-      compromisoBase({ id: 'b', descripcion: 'Netflix',  diaPago: 12, monto: 40_000 }),
-    ];
-    S.config.ocultarSaldo = true;
-    renderAgenda();
-    expect(document.querySelector('.cal-lote__monto').textContent).toContain('940.000');
-  });
-
-  it('con más de dos vencidos resume la lista con "y N más"', () => {
-    S.compromisos = [
-      compromisoBase({ id: 'a', descripcion: 'Arriendo', diaPago: 5 }),
-      compromisoBase({ id: 'b', descripcion: 'Netflix',  diaPago: 6, monto: 40_000 }),
-      compromisoBase({ id: 'c', descripcion: 'Agua',     diaPago: 7, monto: 60_000 }),
-    ];
-    renderAgenda();
-    expect(document.querySelector('.cal-lote__desc').textContent)
-      .toContain('Arriendo, Netflix y 1 más');
-  });
-
-  it('con un solo vencido NO muestra la tarjeta (el CTA del día ya lo cubre)', () => {
-    S.compromisos = [compromisoBase({ id: 'a', diaPago: 5 })];
-    renderAgenda();
-    expect(document.querySelector('.cal-lote')).toBeNull();
-  });
-
-  it('no muestra la tarjeta en un mes futuro', () => {
-    S.compromisos = [
-      compromisoBase({ id: 'a', diaPago: 5 }),
-      compromisoBase({ id: 'b', diaPago: 6, monto: 40_000 }),
-    ];
-    navegarMes(+1);
-    renderAgenda();
-    expect(document.querySelector('.cal-lote')).toBeNull();
-  });
-
-  it('deja de mostrarse cuando ya solo queda uno sin pagar', () => {
-    S.compromisos = [
-      compromisoBase({ id: 'a', diaPago: 5 }),
-      compromisoBase({ id: 'b', diaPago: 6, monto: 40_000 }),
-    ];
-    S.gastos = [{ id: 'g1', compromisoId: 'a', fecha: '2026-06-05', monto: 1_500_000 }];
-    renderAgenda();
-    expect(document.querySelector('.cal-lote')).toBeNull();
-  });
-});
-
-// ── CAL.5a: CUERPO DEL MODAL DEL LOTE ────────────────────────────
-
-describe('renderFormPagoLote (CAL.5a)', () => {
-  it('pinta una fila por pendiente, todas marcadas, con su monto y día', () => {
-    document.body.innerHTML = renderFormPagoLote([
-      { id: 'a', descripcion: 'Arriendo', monto: 900_000, dia: 5 },
-      { id: 'b', descripcion: 'Netflix',  monto:  40_000, dia: 12 },
-    ]);
-    const filas = document.querySelectorAll('.lote-row');
-    expect(filas).toHaveLength(2);
-    expect([...document.querySelectorAll('.lote-row__check')].every(c => c.checked)).toBe(true);
-    expect(filas[0].querySelector('.lote-row__check').dataset.loteId).toBe('a');
-    expect(filas[0].querySelector('.lote-row__check').dataset.loteMonto).toBe('900000');
-    expect(filas[0].querySelector('.lote-row__amount').textContent).toContain('900.000');
-    expect(filas[1].querySelector('.lote-row__sub').textContent).toBe('Vencía el 12');
-  });
-
-  it('el botón de confirmar lleva la acción del lote y los slots vivos', () => {
-    document.body.innerHTML = renderFormPagoLote([{ id: 'a', descripcion: 'X', monto: 1, dia: 1 }]);
-    expect(document.querySelector('[data-action="agenda-confirmar-lote"]')).not.toBeNull();
-    expect(document.querySelector('[data-role="lote-cta-texto"]')).not.toBeNull();
-    expect(document.querySelector('[data-role="lote-total"]')).not.toBeNull();
-  });
-
-  // CAL.5b: el modal ya no habla solo de gastos fijos.
-  it('una fila de deuda dice que es la cuota, y el intro avisa que baja el saldo', () => {
-    document.body.innerHTML = renderFormPagoLote([
-      { id: 'd1', descripcion: 'Visa', monto: 300_000, dia: 5, tipo: 'deuda-entidad', parcial: false },
-    ]);
-    expect(document.querySelector('.lote-row__sub').textContent).toBe('Cuota de la deuda, vencía el 5');
-    expect(document.querySelector('.lote-intro').textContent).toContain('baja su saldo');
-  });
-
-  it('una deuda con abono previo dice que es el resto de la cuota', () => {
-    document.body.innerHTML = renderFormPagoLote([
-      { id: 'd1', descripcion: 'Visa', monto: 200_000, dia: 5, tipo: 'deuda-personal', parcial: true },
-    ]);
-    expect(document.querySelector('.lote-row__sub').textContent).toBe('Resto de la cuota, vencía el 5');
-  });
-
-  it('sin deudas el intro no menciona saldos', () => {
-    document.body.innerHTML = renderFormPagoLote([
-      { id: 'a', descripcion: 'Arriendo', monto: 900_000, dia: 5, tipo: 'fijo', parcial: false },
-    ]);
-    expect(document.querySelector('.lote-intro').textContent).not.toContain('saldo');
   });
 });
 

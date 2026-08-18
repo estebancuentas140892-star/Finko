@@ -19,24 +19,47 @@ import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { f, hoy } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
 import { mostrarToast } from '../../ui/toast.js';
-import { resolverPagoConPreferida, wireToggleDebitoAutomatico } from '../../infra/cuenta-helper.js';
-import { gastoDePagoCompromiso, bajarSaldoDeuda } from '../../infra/pago-compromiso.js';
-import { wireIconoPicker } from '../../infra/icon-picker.js';
+import { resolverPagoConPreferida, resolverPagoConSelector, wireToggleDebitoAutomatico } from '../../infra/cuenta-helper.js';
+import { asignarSplitsPorItem } from '../../infra/distribuir-pago.js';
+import { gastoDePagoCompromiso, bajarSaldoDeuda, fechaPagoDelMes, aplicarPagosCompromisos } from '../../infra/pago-compromiso.js';
+import { wireIconoPicker, setIconoPickerValor } from '../../infra/icon-picker.js';
+import { iconoCategoria } from '../../infra/icons.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
-import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono, consecuenciaDeAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, repartirExtraEnCuotas, tasaMensualToEA, tasaMensualDecimal, esDeuda } from './logic.js';
+import { CATEGORIAS_AGENDA } from '../../core/constants.js';
+import { validarCategoriaPersonalizada } from '../gastos/logic.js';
+import { eventosDelMes, pendientesDePagoDelMes } from '../agenda/logic.js';
+import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono, consecuenciaDeAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, repartirExtraEnCuotas, tasaMensualToEA, tasaMensualDecimal, vencidosSinPagar } from './logic.js';
 import {
   renderHeroCompromisos,
   renderListaCompromisos,
   renderFormDeuda,
   renderFormAbono,
+  renderFormGastoFijo,
+  textoBannerGastoFijo,
+  CATEGORIA_NUEVA_VALUE_FIJO,
   renderEstrategiaPago,
   setEstrategiaUI,
   getEstrategiaUI,
   renderAlertaDeudasDurmiendo,
   renderPanelVencidos,
   renderPanelPrioridades,
+  renderLoteCard,
+  renderFormPagoLote,
 } from './view.js';
 import { renderResumenExtra, renderComparativaRenegociacion, renderComparativaConsolidacion } from './views/estrategia-impacto.js';
+
+/** Personalizadas de sección 'fijo' (CAT.3c): mismo criterio de oferta por sección del ADR 058 D2. */
+function _personalizadasFijo() {
+  return (S.categoriasPersonalizadas ?? []).filter(c => c.seccion === 'fijo');
+}
+
+/** Devuelve el prefijo YYYY-MM del mes actual para comparar fechas. */
+function _prefijoMesActual() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return `${yyyy}-${mm}`;
+}
 
 /**
  * Re-renderiza los paneles del dashboard que dependen de compromisos.
@@ -49,12 +72,25 @@ function _renderDashboardPanels() {
 }
 
 /**
+ * Ficha 05 (ADR 069): la tarjeta de "paga de una vez lo vencido" vive en
+ * "Por pagar", no en el Calendario. Siempre el mes en curso: esta sección no
+ * navega meses.
+ */
+function _renderLoteEnPorPagar() {
+  const el = document.getElementById('lote-compromisos');
+  if (!el) return;
+  const prefijo = _prefijoMesActual();
+  el.innerHTML = renderLoteCard(_pendientesDelMes(prefijo), prefijo);
+}
+
+/**
  * Re-renderiza ambas vistas del dominio. Se usa cuando cambian datos o
  * el estado UI de la estrategia (extra mensual, toggle).
  */
 function _renderTodo() {
   // D.16a: el hero con el total de deuda encabeza la sección (ADR 036 D1).
   renderHeroCompromisos();
+  _renderLoteEnPorPagar();
   // En v6 la card de estrategia va ARRIBA de la lista (define el orden de pago).
   renderEstrategiaPago();
   renderAlertaDeudasDurmiendo();
@@ -67,7 +103,7 @@ function _renderTodo() {
  * de una vez emite `compromisos` y `gastos` varias veces en el mismo tick.
  */
 function _renderSeccionReactivo() {
-  renderBannerProposito('compromisos', S.compromisos.some(c => esDeuda(c.tipo)));
+  renderBannerProposito('compromisos', S.compromisos.length > 0);
   renderSmart(_renderTodo, 'compromisos');
 }
 
@@ -369,6 +405,264 @@ function _elegirTipoDeuda(el) {
   if (!overlay) return;
 
   _mostrarFormDeuda(overlay, tipo);
+}
+
+// ── CHOOSER "+ AGREGAR" (ficha 05, ADR 069) ──────────────────────
+
+/**
+ * "Por pagar" cubre tres tipos (fijo, deuda-entidad, deuda-personal) que no
+ * caben en un solo formulario (un fijo no tiene tasa ni saldo total): en vez
+ * de forzarlos dentro de `renderFormDeuda`, un solo botón de encabezado abre
+ * esta hoja de tres chips y cada uno lleva a su propio modal ya existente
+ * (FD6: un solo verbo, un solo botón de entrada).
+ */
+function _elegirTipoNuevo() {
+  const overlay = document.getElementById('modal-compromiso-tipo');
+  if (overlay) abrirModal(overlay);
+}
+
+/** @param {HTMLElement} el - chip con data-tipo dentro de la hoja de elección. */
+function _elegirTipoNuevoIr(el) {
+  const overlay = document.getElementById('modal-compromiso-tipo');
+  if (overlay) cerrarModal(overlay);
+
+  const tipo = el.dataset.tipo;
+  if (tipo === 'fijo') _nuevoGastoFijo();
+  else if (tipo === 'deuda-entidad' || tipo === 'deuda-personal') {
+    const destino = document.getElementById('modal-compromiso');
+    if (!destino) return;
+    const titulo = destino.querySelector('.modal__title');
+    if (titulo) titulo.textContent = 'Nueva deuda';
+    _mostrarFormDeuda(destino, tipo);
+    abrirModal(destino);
+  }
+}
+
+// ── HANDLERS DEL MODAL "GASTO FIJO" (ficha 05: mudado desde Agenda) ──
+
+function _nuevoGastoFijo() {
+  const overlay = document.getElementById('modal-gasto-fijo');
+  if (!overlay) return;
+
+  // Resetear modo edición y título.
+  const titulo = overlay.querySelector('.modal__title');
+  if (titulo) titulo.textContent = 'Nuevo gasto fijo';
+
+  // Re-inyectamos el form en cada apertura para restablecer defaults.
+  _inyectarFormGastoFijo();
+  abrirModal(overlay);
+}
+
+/**
+ * Abre el modal de gasto fijo en modo edición con los datos del compromiso pre-rellenados.
+ * @param {HTMLElement} el - botón con data-id del compromiso.
+ */
+function _editarGastoFijo(el) {
+  const id = el.dataset.id;
+  if (!id) return;
+
+  const comp = S.compromisos.find(c => c.id === id);
+  if (!comp) return;
+
+  const overlay = document.getElementById('modal-gasto-fijo');
+  if (!overlay) return;
+
+  const titulo = overlay.querySelector('.modal__title');
+  if (titulo) titulo.textContent = 'Editar gasto fijo';
+
+  _inyectarFormGastoFijo(comp);
+  abrirModal(overlay);
+}
+
+/**
+ * (Re)Inyecta el form de gasto fijo en el modal.
+ * Si se pasa `compromiso`, pre-rellena los campos y activa el modo edición
+ * guardando el id en `form.dataset.id`.
+ * @param {object|null} [compromiso]
+ */
+function _inyectarFormGastoFijo(compromiso = null) {
+  const body = document.getElementById('modal-gasto-fijo-body');
+  if (!body) return;
+
+  body.innerHTML = renderFormGastoFijo();
+
+  const form = body.querySelector('#form-gasto-fijo');
+  if (!form) return;
+
+  // Modo edición: pre-rellenar campos y guardar id.
+  if (compromiso) {
+    form.dataset.id = compromiso.id;
+    const f_desc = form.querySelector('[name="descripcion"]');
+    const f_monto = form.querySelector('[name="monto"]');
+    const f_frec = form.querySelector('[name="frecuencia"]');
+    const f_dia = form.querySelector('[name="diaPago"]');
+    const f_btn = form.querySelector('[type="submit"]');
+    const categoria = compromiso.categoria ?? '';
+    const nombreAuto = categoria && categoria !== 'Otro'
+      && (CATEGORIAS_AGENDA.includes(categoria) || _personalizadasFijo().some(c => c.nombre === categoria));
+    // FORM.1c: la categoría es un chip de radio, no un select; se marca el
+    // que corresponda (si `categoria` no está en el catálogo, ninguno queda
+    // marcado, igual que antes con un <select> sin esa opción).
+    const f_cat = form.querySelector(`[name="categoria"][value="${CSS.escape(categoria)}"]`);
+    if (f_cat) f_cat.checked = true;
+    // AG.4: con categoría de nombre automático, el campo de texto muestra la
+    // nota (no la descripción, que ya es la categoría); si no, la descripción.
+    if (f_desc) f_desc.value = nombreAuto ? (compromiso.nota ?? '') : (compromiso.descripcion ?? '');
+    if (f_monto) f_monto.value = compromiso.monto ?? '';
+    if (f_frec) f_frec.value = compromiso.frecuencia ?? 'Mensual';
+    if (f_dia) f_dia.value = compromiso.diaPago ?? '';
+    if (f_btn) f_btn.textContent = 'Actualizar gasto fijo';
+
+    // CAT.2f: prellenar el ícono elegido si la categoría es "Otro" y ya
+    // tiene uno guardado (el form nace limpio en cada render, no hace falta
+    // resetear antes).
+    if (categoria === 'Otro' && compromiso.icono) {
+      setIconoPickerValor(
+        form.querySelector('[data-icono-picker="gfijo-icono"]'),
+        compromiso.icono,
+        iconoCategoria(compromiso.icono),
+      );
+    }
+
+    // PA.1a: el débito automático y su cuenta, si el compromiso ya los tenía.
+    // El bloque no existe cuando no hay cuentas activas (ver
+    // `renderBloqueDebitoAutomatico`), por eso todo es opcional-safe.
+    if (compromiso.debitoAutomatico === true) {
+      const check = form.querySelector('#gfijo-debito-check');
+      if (check) check.checked = true;
+      const cuenta = compromiso.cuentaDebitoId
+        ? form.querySelector(`[name="cuentaDebitoId"][value="${CSS.escape(compromiso.cuentaDebitoId)}"]`)
+        : null;
+      if (cuenta) cuenta.checked = true;
+    }
+  }
+
+  wireToggleDebitoAutomatico(form, 'gfijo-debito');
+
+  _syncCategoriaGastoFijo(form);
+  _actualizarBannerGastoFijo(form);
+  // FORM.1c: la categoría son chips-radio; un listener delegado de `change`
+  // en el form cubre cualquiera de ellos (mismo patrón de Gastos/Deuda,
+  // ADR 042). El banner se recalcula con cualquier `input` del form (tipeo
+  // del día, cambio de frecuencia): más barato que filtrar por campo.
+  form.addEventListener('change', (e) => {
+    if (e.target.name === 'categoria') _syncCategoriaGastoFijo(form);
+  });
+  form.addEventListener('input', () => _actualizarBannerGastoFijo(form));
+  wireIconoPicker(form.querySelector('[data-icono-picker="gfijo-icono"]'));
+  wireIconoPicker(form.querySelector('[data-icono-picker="gfijo-categoria-nueva-icono"]'));
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    _guardarGastoFijo();
+  });
+}
+
+/**
+ * FORM.1c (ADR 042 D5): recalcula el banner "Aparecerá cada X en tu
+ * calendario el día N" leyendo la frecuencia y el día actuales del form.
+ * @param {HTMLFormElement} form
+ */
+function _actualizarBannerGastoFijo(form) {
+  const banner = form.querySelector('#gfijo-banner');
+  if (!banner) return;
+  const frecuencia = form.querySelector('[name="frecuencia"]')?.value ?? 'Mensual';
+  const diaPago = form.querySelector('[name="diaPago"]')?.value ?? '';
+  banner.textContent = textoBannerGastoFijo(frecuencia, diaPago);
+}
+
+/**
+ * AG.4: alterna el rol del campo de texto según la categoría elegida.
+ * Con una categoría predefinida (no "Otro"), el nombre lo da la categoría:
+ * el campo pasa a ser una nota opcional. Sin categoría, o con "Otro", el
+ * campo vuelve a ser el nombre obligatorio del registro.
+ * @param {HTMLFormElement} form
+ */
+function _syncCategoriaGastoFijo(form) {
+  const nombre   = form.querySelector('[name="descripcion"]');
+  const etiqueta = form.querySelector('#gfijo-descripcion-label');
+  if (!nombre || !etiqueta) return;
+
+  // FORM.1c: la categoría son chips-radio; ninguno marcado equivale al
+  // `<select>` vacío de antes.
+  const categoria   = form.querySelector('[name="categoria"]:checked')?.value ?? '';
+  const nombreAuto  = categoria && categoria !== 'Otro'
+    && (CATEGORIAS_AGENDA.includes(categoria) || _personalizadasFijo().some(c => c.nombre === categoria));
+
+  if (nombreAuto) {
+    etiqueta.textContent = 'Nota (opcional)';
+    nombre.placeholder   = 'Ej. Éxito, unidad 302, Netflix premium…';
+    nombre.required      = false;
+    nombre.removeAttribute('aria-required');
+  } else {
+    etiqueta.textContent = 'Descripción';
+    nombre.placeholder   = 'Ej. Arriendo, Netflix, agua';
+    nombre.required      = true;
+    nombre.setAttribute('aria-required', 'true');
+  }
+
+  // CAT.2f: el picker de ícono solo tiene sentido con la categoría "Otro".
+  const grupoIcono = form.querySelector('#form-group-gfijo-icono');
+  if (grupoIcono) grupoIcono.hidden = categoria !== 'Otro';
+
+  // CAT.3c: nombre + ícono de la categoría nueva solo con el chip sentinela.
+  const camposNueva = form.querySelector('#gfijo-categoria-nueva-fields');
+  if (camposNueva) camposNueva.hidden = categoria !== CATEGORIA_NUEVA_VALUE_FIJO;
+}
+
+function _guardarGastoFijo() {
+  const form = document.getElementById('form-gasto-fijo');
+  if (!form) return;
+
+  const datos = Object.fromEntries(new FormData(form));
+  const esCategoriaNueva = datos.categoria === CATEGORIA_NUEVA_VALUE_FIJO;
+  const personalizadasFijo = _personalizadasFijo();
+
+  // CAT.3c: mismo patrón que "Otra categoría" en Gastos (gastos/index.js). El
+  // sentinela no es una categoría real todavía, así que se valida como si no
+  // hubiera categoría elegida (categoria: '' no dispara el rechazo del catálogo).
+  const errores = validarCompromiso(
+    esCategoriaNueva ? { ...datos, categoria: '' } : datos,
+    personalizadasFijo,
+  );
+  if (esCategoriaNueva) {
+    errores.push(...validarCategoriaPersonalizada(
+      { nombre: datos.categoriaNuevaNombre, icono: datos.categoriaNuevaIcono },
+      S.categoriasPersonalizadas,
+    ));
+  }
+
+  if (errores.length > 0) {
+    mostrarErroresForm(form, errores);
+    return;
+  }
+
+  // Crear y persistir la categoría antes de normalizar el compromiso, igual
+  // que en Gastos: `datos.categoria` pasa a ser su nombre.
+  if (esCategoriaNueva) {
+    const nueva = guardar('categoriasPersonalizadas', {
+      nombre:  datos.categoriaNuevaNombre.trim(),
+      icono:   datos.categoriaNuevaIcono,
+      seccion: 'fijo',
+    });
+    datos.categoria = nueva.nombre;
+    personalizadasFijo.push(nueva);
+  }
+
+  const idEdit = form.dataset.id || null;
+  const normalizado = normalizarCompromiso(datos, personalizadasFijo);
+
+  if (idEdit) {
+    editar('compromisos', idEdit, normalizado);
+  } else {
+    guardar('compromisos', normalizado);
+  }
+
+  const overlay = document.getElementById('modal-gasto-fijo');
+  if (overlay) cerrarModal(overlay);
+
+  _renderTodo();
+  announce(idEdit ? 'Gasto fijo actualizado.' : 'Gasto fijo guardado correctamente.');
 }
 
 // ── HANDLERS ABONO A DEUDAS (ADR 002) ───────────────────────────
@@ -823,6 +1117,191 @@ async function _aplicarConsolidacion() {
   announce(`${n} deudas consolidadas en un crédito nuevo de ${f(saldoTotal)}.`);
 }
 
+// ── HANDLERS: PAGO EN LOTE (ficha 05, ADR 069: mudado desde Agenda) ──
+
+/**
+ * Compromisos vencidos y sin cubrir del mes en curso, leídos de S. "Por
+ * pagar" no navega meses (a diferencia del viejo Calendario): siempre es el
+ * mes actual. Se recalcula en cada paso del flujo (abrir el modal, confirmar)
+ * en vez de confiar en lo que el DOM traía: entre una cosa y otra el usuario
+ * pudo pagar uno desde el detalle del día del Calendario, o eliminarlo.
+ *
+ * **Quién decide QUÉ está vencido y quién decide CUÁNTO se debe son dos
+ * motores distintos, y acá se combinan a propósito.** `vencidosSinPagar` es la
+ * fuente única del conjunto (la misma que cuentan la pastilla de la pestaña y
+ * "Pendientes del mes" en Inicio, criterio de la ficha 01): entre otras cosas
+ * descarta un compromiso registrado este mes DESPUÉS de su día de pago, que no
+ * se puede deber. `pendientesDePagoDelMes` aporta el monto de cada fila, que es
+ * lo que sabe resolver (resta el abono parcial del mes y topa la cuota al saldo
+ * de la deuda). Sin el filtro, esta tarjeta contaba uno más que la pastilla que
+ * tiene tres centímetros arriba.
+ *
+ * @param {string} prefijoMes 'YYYY-MM'
+ * @returns {ReturnType<typeof pendientesDePagoDelMes>}
+ */
+function _pendientesDelMes(prefijoMes) {
+  const m = /^(\d{4})-(\d{2})$/.exec(prefijoMes ?? '');
+  if (!m) return [];
+  const eventos = eventosDelMes(S.compromisos ?? [], +m[1], +m[2] - 1);
+  const conMonto = pendientesDePagoDelMes(eventos, S.gastos ?? [], prefijoMes, hoy());
+  const vencidos = new Set(
+    vencidosSinPagar(S.compromisos ?? [], S.gastos ?? [], hoy()).map(v => v.id),
+  );
+  return conMonto.filter(p => vencidos.has(p.id));
+}
+
+/**
+ * Abre el modal del lote con todos los pendientes marcados. Es la puerta que
+ * usa tanto el CTA propio de "Por pagar" como "Pagar los N" de "Pendientes
+ * del mes" en Inicio (mismo dominio ahora: llamada directa, sin EventBus).
+ *
+ * @param {string} prefijoMes 'YYYY-MM' del mes a liquidar.
+ */
+function _abrirLote(prefijoMes) {
+  const prefijo    = prefijoMes || _prefijoMesActual();
+  const pendientes = _pendientesDelMes(prefijo);
+
+  if (pendientes.length === 0) {
+    // El estado cambió desde otra pestaña/sección: repintar y no abrir nada.
+    announce('No quedan pagos vencidos sin registrar.');
+    _renderTodo();
+    return;
+  }
+
+  const overlay = document.getElementById('modal-pago-lote');
+  const body    = document.getElementById('modal-pago-lote-body');
+  if (!overlay || !body) return;
+
+  body.innerHTML   = renderFormPagoLote(pendientes);
+  body.dataset.mes = prefijo;
+  _actualizarTotalLote();
+  abrirModal(overlay);
+}
+
+/**
+ * CTA de la tarjeta del lote en "Por pagar".
+ * @param {HTMLElement} el - botón con data-mes del mes a liquidar.
+ */
+function _pagarLote(el) {
+  _abrirLote(el?.dataset?.mes || _prefijoMesActual());
+}
+
+/**
+ * Recalcula el total y el texto del botón según lo que quede marcado.
+ * Solo toca los nodos del resumen: repintar el cuerpo entero desmarcaría las
+ * casillas del usuario.
+ */
+function _actualizarTotalLote() {
+  const body = document.getElementById('modal-pago-lote-body');
+  if (!body) return;
+
+  const marcados = [...body.querySelectorAll('.lote-row__check:checked')];
+  const total    = marcados.reduce((acc, ch) => acc + (Number(ch.dataset.loteMonto) || 0), 0);
+
+  const totalEl = body.querySelector('[data-role="lote-total"]');
+  if (totalEl) {
+    totalEl.textContent = marcados.length === 0
+      ? 'Selecciona al menos un pago.'
+      : `Total a registrar: ${f(total)}`;
+    totalEl.classList.toggle('lote-total--vacio', marcados.length === 0);
+  }
+
+  const textoEl = body.querySelector('[data-role="lote-cta-texto"]');
+  if (textoEl) {
+    textoEl.textContent = marcados.length === 1
+      ? 'Registrar 1 pago'
+      : `Registrar ${marcados.length} pagos`;
+  }
+
+  const btn = body.querySelector('[data-action="compromisos-confirmar-lote"]');
+  if (btn) btn.disabled = marcados.length === 0;
+}
+
+/**
+ * Registra en un solo movimiento los pagos marcados en el modal.
+ *
+ * Resuelve la cuenta **una sola vez para el grupo** (ese es el punto de la
+ * tarjeta: hoy son ~5 toques por gasto) usando el mismo
+ * `resolverPagoConSelector` del pago individual de Agenda, y después reparte
+ * esos splits entre los items con `asignarSplitsPorItem`: cada compromiso
+ * conserva su propio gasto vinculado, que es lo que hace funcionar el badge
+ * "Ya pagaste este mes" del Calendario y el progreso del hero. Un item puede
+ * quedar a caballo entre dos cuentas; entonces genera dos gastos, igual que
+ * un pago individual repartido.
+ *
+ * La fecha de cada pago sigue la regla de BUG-015 (`fechaPagoDelMes`, en
+ * `infra/pago-compromiso.js`): mes en curso → hoy; mes pasado → la ocurrencia
+ * de ese mes. El descuento de las cuentas ocurre ahora en ambos casos.
+ *
+ * El modal se cierra ANTES de pedir la cuenta: el selector es otro overlay con
+ * su propio `trapFocus`, y apilarlos dejaría el foco atrapado en el de abajo al
+ * cerrarse el de arriba. Si el usuario cancela ahí, vuelve a "Por pagar" con la
+ * tarjeta del lote intacta (un toque para reintentar).
+ */
+async function _confirmarLote() {
+  const body = document.getElementById('modal-pago-lote-body');
+  if (!body) return;
+
+  const prefijo = body.dataset.mes || _prefijoMesActual();
+  const ids = [...body.querySelectorAll('.lote-row__check:checked')]
+    .map(ch => ch.dataset.loteId)
+    .filter(Boolean);
+  if (ids.length === 0) return;
+
+  const overlay = document.getElementById('modal-pago-lote');
+  if (overlay) cerrarModal(overlay);
+
+  // La fuente de verdad es S, no el DOM que se pintó al abrir el modal.
+  const pendientes = _pendientesDelMes(prefijo).filter(p => ids.includes(p.id));
+  if (pendientes.length === 0) {
+    announce('No quedan pagos vencidos sin registrar.');
+    _renderTodo();
+    return;
+  }
+
+  const total = pendientes.reduce((acc, p) => acc + p.monto, 0);
+  const splits = await resolverPagoConSelector(
+    S.cuentas,
+    total,
+    `registrar ${pendientes.length} pagos vencidos`,
+  );
+  if (splits === null) return; // canceló o fue redirigido a Mis Cuentas
+
+  // Una sola cuenta: puede quedar en negativo (no hay con qué repartir).
+  if (splits.length === 1) {
+    const c = S.cuentas.find(x => x.id === splits[0].cuentaId);
+    const saldoCuenta = c?.saldo ?? 0;
+    if (saldoCuenta < splits[0].monto) {
+      const ok = await confirmar({
+        titulo:         'Registrar pagos',
+        mensaje:        `¿Registrar ${pendientes.length} pagos por ${f(total)} desde ${c?.nombre ?? 'la cuenta'}? El saldo disponible es ${f(saldoCuenta)}: quedará en negativo.`,
+        confirmarTexto: 'Registrar pagos',
+        peligroso:      true,
+      });
+      if (!ok) return;
+    }
+  }
+
+  const pagos = [];
+  for (const asignado of asignarSplitsPorItem(pendientes, splits)) {
+    if (asignado.partes.length === 0) continue;
+    const comp = S.compromisos.find(c => c.id === asignado.id);
+    if (!comp) continue;
+    const fecha = fechaPagoDelMes(comp, prefijo);
+    if (!fecha) continue; // mes futuro: defensa en profundidad (BUG-015)
+    pagos.push({ comp, fecha, partes: asignado.partes });
+  }
+  if (pagos.length === 0) return;
+
+  aplicarPagosCompromisos(pagos);
+
+  _renderTodo();
+  _renderDashboardPanels();
+  updSaldo();
+  announce(pagos.length === 1
+    ? `1 pago registrado por ${f(total)}.`
+    : `${pagos.length} pagos registrados por ${f(total)}.`);
+}
 
 // ── INICIALIZACIÓN ───────────────────────────────────────────────
 
@@ -840,13 +1319,35 @@ export function initCompromisos() {
   registrarAccion('aplicar-consolidacion',   _aplicarConsolidacion);
   registrarAccion('comp-elegir-tipo',        _elegirTipoDeuda);
 
-  // CAL.5b: "Pagar los N" de "Pendientes del mes". El lote es de Agenda (su
-  // set, su modal, su escritura); acá solo se avisa, sin importar ese dominio
-  // (ADN #10) y sin navegar. El mes es el actual: el panel de Inicio no
-  // navega meses, siempre habla del mes en curso.
-  registrarAccion('inicio-pagar-lote', () => {
-    EventBus.emit('lote:abrir', { mes: hoy().slice(0, 7) });
-  });
+  // Ficha 05 (ADR 069): "Por pagar" es la única entrada para crear un
+  // compromiso, de cualquiera de los tres tipos. Un botón abre la hoja de
+  // elección; cada chip lleva a su modal (deuda reusa el ya existente; fijo
+  // el suyo, mudado de Agenda).
+  registrarAccion('comp-elegir-tipo-nuevo',    _elegirTipoNuevo);
+  registrarAccion('comp-elegir-tipo-nuevo-ir', _elegirTipoNuevoIr);
+
+  // Gasto fijo (ficha 05, ADR 069): crear/editar son de "Por pagar"; el botón
+  // "Editar" del detalle del día del Calendario sigue abriendo el mismo
+  // modal (mismo patrón que "Abonar" con una deuda). Eliminar reusa el
+  // handler genérico `_eliminarCompromiso` (ya soporta cualquier tipo).
+  registrarAccion('nuevo-gasto-fijo',    _nuevoGastoFijo);
+  registrarAccion('agenda-editar-fijo',  _editarGastoFijo);
+  registrarAccion('agenda-eliminar-fijo', _eliminarCompromiso);
+
+  // Pago en lote (ficha 05, ADR 069: mudado desde Agenda). "Pagar los N" de
+  // "Pendientes del mes" en Inicio y el CTA propio de "Por pagar" llaman al
+  // mismo handler directo: mismo dominio, ya no hace falta EventBus.
+  registrarAccion('inicio-pagar-lote',        () => _abrirLote(hoy().slice(0, 7)));
+  registrarAccion('compromisos-pagar-lote',   _pagarLote);
+  registrarAccion('compromisos-confirmar-lote', _confirmarLote);
+
+  // El cuerpo del modal del lote se re-inyecta en cada apertura, pero el
+  // contenedor persiste; por eso el listener del total cuelga de él una sola
+  // vez aquí (colgarlo dentro de `_abrirLote` acumularía uno por apertura).
+  document.getElementById('modal-pago-lote-body')
+    ?.addEventListener('change', (e) => {
+      if (e.target.classList?.contains('lote-row__check')) _actualizarTotalLote();
+    });
 
   // D.16a (ADR 036 D7): el ojo del hero de Deudas comparte el flag
   // S.config.ocultarSaldo con el ojo de Inicio (IN.2) y el de Mis cuentas
@@ -926,13 +1427,13 @@ export function initCompromisos() {
   window.addEventListener('hashchange', () => {
     const hash = location.hash.slice(1) || 'dash';
     if (hash === 'compromisos') {
-      renderBannerProposito('compromisos', S.compromisos.some(c => esDeuda(c.tipo)));
+      renderBannerProposito('compromisos', S.compromisos.length > 0);
       renderSmart(_renderTodo, 'compromisos');
     }
     if (hash === 'dash') renderSmart(_renderDashboardPanels, 'dash');
   });
 
-  renderBannerProposito('compromisos', S.compromisos.some(c => esDeuda(c.tipo)));
+  renderBannerProposito('compromisos', S.compromisos.length > 0);
   renderSmart(_renderTodo, 'compromisos');
   renderSmart(_renderDashboardPanels, 'dash');
 }

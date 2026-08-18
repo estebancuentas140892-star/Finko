@@ -84,15 +84,18 @@ test.describe('Render tras navegación (regresión hashchange)', () => {
     ).toHaveText('Sin gastos este mes', { timeout: 3_000 });
   });
 
-  test('Compromisos muestra empty state al navegar desde Dashboard', async ({ page }) => {
+  test('Por pagar muestra empty state al navegar desde Dashboard', async ({ page }) => {
     await saltearOnboardingYIrADash(page);
 
+    // Ficha 05 (ADR 069): la franja del bloque repite este href, así que el
+    // selector declara su contexto (consecuencia declarada en el ADR).
     await page.click('.nav-item[href="#compromisos"]');
     await expect(page.locator('#sec-compromisos.active')).toBeVisible();
 
+    // El estado vacío cubre los tres tipos, no solo las deudas.
     await expect(
       page.locator('#lista-compromisos .empty-state__title')
-    ).toHaveText('Sin deudas registradas', { timeout: 3_000 });
+    ).toHaveText('Nada por pagar todavía', { timeout: 3_000 });
   });
 
   test('Movimientos muestra estado vacío al navegar directo por hash (TX.8b, sin ícono de nav)', async ({ page }) => {

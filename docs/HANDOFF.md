@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-17. Última tarea cerrada: INT.1g, auditoría documental que cierra la iniciativa INT.1 completa.
+> Revisado: 2026-08-18. Última tarea cerrada: ficha 05 de la auditoría móvil, "Por pagar" recupera el dominio completo de compromisos.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,7 +13,7 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 4334/4340 (2026-08-15). Los 6 rojos son **BUG-028**, ajeno y verificado con `git stash` |
+| Tests unitarios + integración | 4344/4351 (2026-08-18). Los 6 rojos son **BUG-028**, ajeno y verificado con `git stash` |
 | Tests E2E | 275/275 verdes, sello `36703dee0019` (2026-08-15, ficha 04). **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v43 (`config.respaldoCifrado`, CFG.4c; migración no-op) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
@@ -25,20 +25,20 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**Ficha 05 de la auditoría móvil - "Por pagar" recupera su dominio (Por pagar + Calendario), 2026-08-18**
+`compromisos` tiene tres tipos y solo administraba dos: el alta de gasto fijo y el pago en lote vivían en Calendario. Los dos se mudan (`views/lote.js` nuevo), muere el evento `lote:abrir` y un "+ Agregar" con chooser de tres chips cubre los tres tipos. **Dos hallazgos de verificar en la app**: el lote contaba un vencido más que la pastilla y que Inicio (dos motores, unificados contra `vencidosSinPagar`), y el chip afirmaba "Vence en 21 días" sobre una cuota ya vencida. El Calendario vuelve a tablero de consulta. 20 tests nuevos, 24 movidos. SW v544 → v545.
+
 **INT.1g - carril derecho de escritorio, iniciativa INT.1 completa (Transversal), 2026-08-17**
 El código ya tenía la rebanada desde el 2026-08-12 (commit `57b3cdb`, sesión de MT.6a que nunca la nombró); el tablero seguía diciendo "diferida". Cero cambios de código: verificado en navegador (carril con el compromiso real desde 1.680px, copia original vuelve debajo). Sin test propio, hueco de cobertura anotado. Cierra las ocho rebanadas de INT.1.
 
 **Ficha 04 de la auditoría móvil - circulación dentro del bloque Ahorro (Ahorro), 2026-08-15**
-La portada-resumen **se confirma**: es la única pantalla donde los cuatro términos conviven y desde donde se aporta a una meta concreta sin entrar. Lo roto era otra cosa. `ui/bloque-ahorro.js` baja a las cuatro hijas la fila de chips de la casa (de Metas a Reservas: de 2 toques y un scroll a 1); tres textos que citaban "la pestaña Fondo (arriba)" pasan a enlaces reales (**R85**); y la cabecera gana media línea mientras el fondo no esté activo. 14 tests nuevos. SW v542 → v543.
+La portada-resumen **se confirma**: es la única pantalla donde los cuatro términos conviven. Lo roto era la circulación: `ui/bloque-ahorro.js` baja a las cuatro hijas la fila de chips de la casa (de Metas a Reservas: de 2 toques y un scroll a 1), y tres textos que citaban "la pestaña Fondo (arriba)" pasan a enlaces reales (**R85**). 14 tests nuevos. SW v542 → v543.
 
 **Ficha 03 de la auditoría móvil - techo y puerta para "Más" (Navegación), 2026-08-15**
 La hoja ya estaba ordenada; le faltaba resistencia a volver a llenarse. **R83**: no scrollea, techo de 444 px (mide 361), con compuerta E2E. **R84**: cuatro condiciones de admisión. Las seis entradas heredadas pasan; **Logros las falla y se queda en Ajustes**. H8 cerrado sin cambio. SW v541 → v542.
 
 **Ficha 02 de la auditoría móvil - Inicio apunta al mapa nuevo (Inicio), 2026-08-15**
-Inicio conserva forma, orden, hero y estado vacío; cambia a dónde apunta ([ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md)). Las salidas de "Pendientes del mes" van a la lente "Por pagar" en vez de a Calendario; los accesos rápidos se recalculan con un criterio nuevo (**un atajo solo se gana Inicio si ahorra un toque**) y quedan en Mis cuentas · Por pagar · Me deben; el resumen semanal declara que incluye fijos y cuotas; "Ver todo" solo aparece con más historial del que cabe. El lote sigue en Agenda: lo hereda la ficha 05. SW v540 → v541.
-
-**Ficha 01 de la auditoría móvil - el bloque Gastos en la barra (Navegación), 2026-08-15**
-"Gastos" pasa de sección a bloque con tres lentes (Lo que gastaste, Por pagar, Límites), servidas por la franja que inyecta `ui/bloque-gastos.js`: **capa de navegación, no contenedor de estado** (cero hashes nuevos). Cada pestaña lleva su estado encima. El botón "Más" deja de cambiar de nombre (H5) y la hoja pasa a dos rótulos que sí excluyen: Consultar / Tu dinero. 13 tests nuevos. SW v539 → v540.
+Inicio conserva forma, orden, hero y estado vacío; cambia a dónde apunta ([ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md)). Las salidas de "Pendientes del mes" van a "Por pagar"; los accesos rápidos se recalculan con un criterio nuevo (**un atajo solo se gana Inicio si ahorra un toque**) y quedan en Mis cuentas · Por pagar · Me deben; el resumen semanal declara que incluye fijos y cuotas. SW v540 → v541.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 
@@ -46,7 +46,7 @@ Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelo
 
 ## 3. Qué sigue
 
-- **En proceso:** **auditoría UX/UI móvil de Claude Design, 25 entregas**. Cerradas 01 a 04 ([ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md)); sigue la 05 (Por pagar). El orden lo fijó Esteban y no se altera. **CFG.4 completa** (sus cuatro rebanadas, 2026-08-15, [ADR 043](DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md) Aceptado). **CFG.3 completa** (sus tres rebanadas, [ADR 066](DECISIONS/066-motor-unico-de-avisos.md)). **CFG.5 completa** (CFG.5a, CFG.5b, CFG.5c). **CFG.6 completa** (inventario sin hallazgos nuevos). **LIM.1 completa** (ADR 044 Aceptado). **PA.1 completa** (PA.1a y PA.1b; queda PA.1c opcional, sin tarjeta). **MT.6**, **PE.6**, **ANL.1**, **AH.7**, **CFG.1+CFG.2**, **CAT** y **GAS.2** completas. **LG.2 completa**. La migración a IndexedDB **ya no es tarjeta** ([ADR 068](DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md), fuente única); lo que salió a la luz con ese ADR ya cerró completo: **PERF.9** (2026-08-14) y **PERF.10** (PERF.10a+PERF.10b, 2026-08-14). La siguiente tarjeta se elige del índice de pendientes de [`BOARD.md`](BOARD.md) (primeras ~50 líneas, no hace falta cargar el archivo completo).
+- **En proceso:** **auditoría UX/UI móvil de Claude Design, 25 entregas**. Cerradas 01 a 05 ([ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md)); sigue la 06. El orden lo fijó Esteban y no se altera. **CFG.4 completa** (sus cuatro rebanadas, 2026-08-15, [ADR 043](DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md) Aceptado). **CFG.3 completa** (sus tres rebanadas, [ADR 066](DECISIONS/066-motor-unico-de-avisos.md)). **CFG.5 completa** (CFG.5a, CFG.5b, CFG.5c). **CFG.6 completa** (inventario sin hallazgos nuevos). **LIM.1 completa** (ADR 044 Aceptado). **PA.1 completa** (PA.1a y PA.1b; queda PA.1c opcional, sin tarjeta). **MT.6**, **PE.6**, **ANL.1**, **AH.7**, **CFG.1+CFG.2**, **CAT** y **GAS.2** completas. **LG.2 completa**. La migración a IndexedDB **ya no es tarjeta** ([ADR 068](DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md), fuente única); lo que salió a la luz con ese ADR ya cerró completo: **PERF.9** (2026-08-14) y **PERF.10** (PERF.10a+PERF.10b, 2026-08-14). La siguiente tarjeta se elige del índice de pendientes de [`BOARD.md`](BOARD.md) (primeras ~50 líneas, no hace falta cargar el archivo completo).
 - **Fase actual:** post-v1.0, mantenimiento y mejoras por sección.
 - **Decisiones de fondo abiertas** que bloquean sus tarjetas: ninguna de ADN. La última era sincronización multidispositivo, cerrada el 2026-08-15 ([ADR 043](DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md), con su condición de reapertura escrita). Para el resto, ver la columna Estado de cada tarjeta del tablero.
 - **Antes de tocar una sección:** su ficha en [`contexto/`](contexto/README.md). Antes de explorar el código: [`ARCHITECTURE.md`](ARCHITECTURE.md) sección 13.

@@ -9,7 +9,7 @@
  */
 
 import { S } from '../../../core/state.js';
-import { f, esc as _esc, formateadorFecha } from '../../../infra/utils.js';
+import { f, esc as _esc, formateadorFecha, hoy } from '../../../infra/utils.js';
 import { icon, emptyArt, tejaCategoria } from '../../../infra/icons.js';
 import { SALDO_MASCARA_CUENTA } from '../../../infra/render.js';
 import { resolverMarca, tejaMarca } from '../../../infra/marcas.js';
@@ -21,26 +21,94 @@ import {
   fechaUltimoAbono,
   esDeuda,
   tasaEADe,
+  estadoPagoMes,
+  vencidosSinPagar,
   LABEL_TIPO,
   ICONO_TIPO,
 } from '../logic.js';
 import { getEstrategiaUI } from './estrategia.js';
-import { CATEGORIA_DEUDA_ICONO, CATEGORIA_DEUDA_PERSONAL_ICONO } from '../../../core/constants.js';
+import { CATEGORIA_DEUDA_ICONO, CATEGORIA_DEUDA_PERSONAL_ICONO, iconoDeCategoriaGasto } from '../../../core/constants.js';
 
 // Lookup unificado: producto (entidad) + relación (personal). Sin colisiones:
 // el único label compartido ('Otro'/'Otra') difiere y ambos usan c-otros.
 const _ICONO_DEUDA = { ...CATEGORIA_DEUDA_ICONO, ...CATEGORIA_DEUDA_PERSONAL_ICONO };
 
 /**
- * Renderiza la lista de deudas en `#lista-compromisos`.
+ * Los vencidos del mes en curso, indexados por id, con su atraso en días.
  *
- * v6: la sección Compromisos solo muestra deudas (entidad + personal).
- * Los gastos fijos se gestionan desde Agenda.
+ * **Fuente única del conjunto** (`vencidosSinPagar`): la misma que cuentan la
+ * pastilla de la pestaña "Por pagar" y "Pendientes del mes" en Inicio (criterio
+ * de la ficha 01), y la misma que filtra la tarjeta de pago en lote. Se calcula
+ * una vez por render y se pasa a cada tarjeta.
  *
- * Orden:
+ * @returns {Map<string, number>} id → días de atraso.
+ */
+function _atrasoPorId() {
+  const vencidos = vencidosSinPagar(S.compromisos ?? [], S.gastos ?? [], hoy());
+  return new Map(vencidos.map(v => [v.id, v.diasAtraso]));
+}
+
+/**
+ * Chip de vencimiento de una tarjeta de "Por pagar" (ficha 05, ADR 069).
+ *
+ * **Mira primero lo vencido de ESTE mes, y solo después el próximo pago.**
+ * `proximoVencimiento()` siempre cuenta hacia adelante, así que una cuota que
+ * venció el 8 y sigue sin pagar decía "Vence en 21 días": la tarjeta afirmaba
+ * futuro sobre algo ya incumplido, justo debajo de la tarjeta de lote que
+ * anunciaba esos mismos pagos como vencidos. Dos cifras del mismo dato en una
+ * pantalla, y la de la tarjeta era la falsa.
+ *
+ * Qué cuenta como vencido no se decide acá: sale de `_atrasoPorId()`, para que
+ * el chip, la tarjeta de lote y la pastilla de la pestaña nunca discrepen (un
+ * compromiso registrado este mes después de su día de pago, por ejemplo, no
+ * está vencido: no se puede deber lo que no existía).
+ *
+ * Cubierto el mes (fijo pagado, o cuota de deuda completa) el chip pasa a
+ * neutro y afirma el pago: es el estado terminal del mes (regla R7).
+ *
+ * @param {import('../../../core/state.js').Compromiso} compromiso
+ * @param {string} prefijoMes 'YYYY-MM' del mes en curso.
+ * @param {Map<string, number>} atrasos Salida de `_atrasoPorId()`.
+ * @returns {{clase:string, label:string}}
+ */
+function _chipVencimiento(compromiso, prefijoMes, atrasos) {
+  if (estadoPagoMes(S.gastos ?? [], compromiso, prefijoMes) === 'completo') {
+    return { clase: 'chip', label: 'Pagado este mes' };
+  }
+
+  const atraso = atrasos?.get(compromiso.id);
+  if (Number.isInteger(atraso)) {
+    return {
+      clase: 'chip chip-danger',
+      label: atraso === 0 ? 'Vence hoy'
+        : atraso === 1 ? 'Venció ayer'
+        : `Venció hace ${atraso} días`,
+    };
+  }
+
+  const dias  = proximoVencimiento(compromiso);
+  const nivel = urgencia(compromiso);
+  const clase = nivel === 'urgente' ? 'chip chip-danger'
+    : nivel === 'proximo' ? 'chip chip-warning'
+    : 'chip';
+  const label = dias === 0 ? 'Vence hoy'
+    : dias === 1 ? 'Vence mañana'
+    : `Vence en ${dias} días`;
+  return { clase, label };
+}
+
+/**
+ * Renderiza la lista de "Por pagar" en `#lista-compromisos`: fijos y deudas
+ * (entidad + personal), los tres tipos que hoy cubre la sección (ficha 05,
+ * ADR 069). Antes (v6) esta lista solo mostraba deudas: los fijos se creaban
+ * y administraban desde Agenda.
+ *
+ * Orden de las deudas:
  *  - Si hay ≥ 2 deudas pagables con la estrategia activa, se respeta el orden
  *    de pago de la estrategia (avalancha = tasa↓, bola = saldo↑).
  *  - Si no, se ordena por urgencia de vencimiento (días al próximo pago).
+ * Los fijos van en su propio grupo, ordenados por urgencia: no participan de
+ * la estrategia de pago (no tienen tasa que optimizar).
  *
  * No-op si el contenedor no existe.
  */
@@ -48,18 +116,55 @@ export function renderListaCompromisos() {
   const el = document.getElementById('lista-compromisos');
   if (!el) return;
 
-  const activos = compromisosActivos(S.compromisos).filter(c => esDeuda(c.tipo));
+  const activos = compromisosActivos(S.compromisos);
+  const fijos   = activos.filter(c => c.tipo === 'fijo');
+  const deudas  = activos.filter(c => esDeuda(c.tipo));
 
-  // FD6: un solo verbo y un solo botón para crear una deuda. Con la lista vacía
-  // el CTA del estado vacío es el que conduce, así que el del encabezado se
-  // oculta: dos primarios verdes con dos etiquetas distintas para el mismo
-  // modal era la primera pantalla del usuario nuevo.
-  _toggleBotonNuevaDeuda(activos.length > 0);
-
-  if (activos.length === 0) {
+  if (fijos.length === 0 && deudas.length === 0) {
     el.innerHTML = _renderEmptyState();
     return;
   }
+
+  const oculto = S.config?.ocultarSaldo === true;
+  // Un solo cálculo del conjunto de vencidos para todas las tarjetas del render.
+  const atrasos = _atrasoPorId();
+
+  el.innerHTML = _renderGrupoFijos(fijos, oculto, atrasos)
+    + _renderGrupoDeudas(deudas, oculto, atrasos);
+}
+
+/**
+ * Grupo "Tus gastos fijos": tarjetas simples, con lo vencido primero y el resto
+ * por urgencia de vencimiento. Vacío si no hay ninguno (no repite el empty
+ * state general).
+ */
+function _renderGrupoFijos(fijos, oculto, atrasos) {
+  if (fijos.length === 0) return '';
+
+  // Lo vencido va arriba, y entre vencidos manda el atraso más grande: es el
+  // mismo orden con el que "Pendientes del mes" lista en Inicio.
+  const ordenados = [...fijos].sort((a, b) => {
+    const atA = atrasos.get(a.id);
+    const atB = atrasos.get(b.id);
+    if (Number.isInteger(atA) !== Number.isInteger(atB)) return Number.isInteger(atA) ? -1 : 1;
+    if (Number.isInteger(atA) && atA !== atB) return atB - atA;
+    return proximoVencimiento(a) - proximoVencimiento(b);
+  });
+  const prefijoMes = hoy().slice(0, 7);
+
+  return `
+    <div class="grupo-eyebrow-fila">
+      <p class="grupo-eyebrow">Tus gastos fijos</p>
+    </div>
+    ${ordenados.map(c => _renderFijoItem(c, oculto, prefijoMes, atrasos)).join('')}`;
+}
+
+/**
+ * Grupo "Tus deudas": mismo render y mismo orden estratégico de siempre.
+ * Vacío si no hay ninguna (no repite el empty state general).
+ */
+function _renderGrupoDeudas(deudas, oculto, atrasos) {
+  if (deudas.length === 0) return '';
 
   // Orden estratégico: si la estrategia tiene un orden definido para las deudas
   // pagables, las priorizamos según ese orden (1°, 2°, 3°…). El resto va al final
@@ -75,7 +180,7 @@ export function renderListaCompromisos() {
     ordenEstrategia = new Map(ordenadas.map((d, i) => [d.id, i + 1]));
   }
 
-  const ordenados = [...activos].sort((a, b) => {
+  const ordenados = [...deudas].sort((a, b) => {
     const posA = ordenEstrategia?.get(a.id) ?? Infinity;
     const posB = ordenEstrategia?.get(b.id) ?? Infinity;
     if (posA !== posB) return posA - posB;
@@ -97,13 +202,78 @@ export function renderListaCompromisos() {
       ${extraHtml}
     </div>`;
 
-  // D.16d (ADR 036 D7): el ojo del hero enmascara también el saldo por deuda.
-  const oculto = S.config?.ocultarSaldo === true;
+  const prefijoMes = hoy().slice(0, 7);
 
-  el.innerHTML = headerHtml + ordenados.map((c) => {
+  return headerHtml + ordenados.map((c) => {
     const orden = ordenEstrategia?.get(c.id) ?? null;
-    return _renderCompromisoItem(c, orden, oculto);
+    return _renderCompromisoItem(c, orden, oculto, prefijoMes, atrasos);
   }).join('');
+}
+
+/**
+ * Tarjeta de gasto fijo (ficha 05, ADR 069): más simple que la de deuda, sin
+ * saldo ni tasa ni orden de estrategia. "Marcar pagado" reusa el mismo
+ * `data-action` del detalle del día del Calendario (`agenda-marcar-pagado-fijo`,
+ * manejado por `agenda/index.js`); acá siempre es el mes en curso, porque
+ * esta lista no navega meses.
+ *
+ * @param {import('../../../core/state.js').Compromiso} compromiso
+ * @param {boolean} oculto `S.config.ocultarSaldo`
+ * @param {string} prefijoMes 'YYYY-MM' del mes en curso.
+ */
+function _renderFijoItem(compromiso, oculto, prefijoMes, atrasos) {
+  const desc  = _esc(compromiso.descripcion);
+  const marca = resolverMarca(compromiso.descripcion);
+  const iconoCat = compromiso.icono
+    || (compromiso.categoria ? iconoDeCategoriaGasto(compromiso.categoria, S.categoriasPersonalizadas) : null);
+  const icono = marca
+    ? tejaMarca(marca)
+    : tejaCategoria(iconoCat ?? 'i-recurring', 'agenda');
+
+  const monto = Number(compromiso.monto) || 0;
+  const montoTxt = oculto ? SALDO_MASCARA_CUENTA : f(monto);
+
+  const pagado = estadoPagoMes(S.gastos ?? [], compromiso, prefijoMes) === 'completo';
+  const { clase: chipClase, label: diasLabel } = _chipVencimiento(compromiso, prefijoMes, atrasos);
+
+  const catChipLabel = compromiso.categoria ? _esc(compromiso.categoria) : 'Gasto fijo';
+  const catChipIcono = iconoCat
+    ? `<svg class="icon" aria-hidden="true"><use href="#${_esc(iconoCat)}"/></svg>`
+    : icon('recurring');
+
+  const btnPagar = pagado ? '' : `
+       <button type="button" class="deuda-card__abonar"
+               data-action="agenda-marcar-pagado-fijo" data-id="${_esc(compromiso.id)}"
+               data-mes="${_esc(prefijoMes)}"
+               aria-label="Marcar como pagado este mes: ${desc}">
+         Marcar pagado</button>`;
+
+  return `
+    <article class="deuda-card" data-id="${_esc(compromiso.id)}">
+      <div class="deuda-card__top">
+        <div class="deuda-card__icon" aria-hidden="true">${icono}</div>
+        <div class="deuda-card__info">
+          <p class="deuda-card__nombre">${desc}</p>
+          <p class="deuda-card__cuota">${_esc(compromiso.frecuencia)} · día ${compromiso.diaPago}</p>
+        </div>
+        <p class="deuda-card__saldo">${montoTxt}</p>
+      </div>
+      <div class="deuda-card__chips">
+        <span class="${chipClase}" aria-label="${diasLabel}">${diasLabel}</span>
+        <span class="chip">${catChipIcono} ${catChipLabel}</span>
+      </div>
+      <div class="deuda-card__acciones">
+        ${btnPagar}
+        <button class="btn btn-ghost btn-icon"
+                data-action="agenda-editar-fijo"
+                data-id="${_esc(compromiso.id)}"
+                aria-label="Editar ${desc}"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></button>
+        <button class="btn btn-ghost btn-icon"
+                data-action="agenda-eliminar-fijo"
+                data-id="${_esc(compromiso.id)}"
+                aria-label="Eliminar ${desc}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
+      </div>
+    </article>`;
 }
 
 /**
@@ -116,8 +286,13 @@ export function renderListaCompromisos() {
  * @param {import('../../../core/state.js').Compromiso} compromiso
  * @param {number | null} ordenEstrategia 1-based: posición en la estrategia activa.
  * @param {boolean} oculto `S.config.ocultarSaldo`: enmascara el saldo (ADR 036 D7).
+ * @param {string} prefijoMes 'YYYY-MM' del mes en curso (ficha 05: el chip de
+ *   vencimiento mira lo vencido de este mes antes que el próximo pago).
+ * @param {Map<string, number>} [atrasos] Salida de `_atrasoPorId()`. Se calcula
+ *   una vez por render y baja a cada tarjeta; el default cubre a un caller
+ *   suelto (ningún test la llama así hoy, pero la firma no debe romperse).
  */
-function _renderCompromisoItem(compromiso, ordenEstrategia = null, oculto = false) {
+function _renderCompromisoItem(compromiso, ordenEstrategia = null, oculto = false, prefijoMes = hoy().slice(0, 7), atrasos = _atrasoPorId()) {
   const desc     = _esc(compromiso.descripcion);
   const tipo     = compromiso.tipo;
   // MK.2/ID.3 (ADR 025): si el nombre de la deuda menciona una marca o
@@ -136,8 +311,6 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null, oculto = fals
     : tejaCategoria(iconoCat ?? `i-${ICONO_TIPO[tipo] ?? 'recurring'}`, dominio);
   const label    = _esc(LABEL_TIPO[tipo] ?? tipo);
   const frec     = _esc(compromiso.frecuencia);
-  const dias     = proximoVencimiento(compromiso);
-  const nivel    = urgencia(compromiso);
   const cuota    = Number(compromiso.cuotaMensual) || 0;
   const saldo    = Number(compromiso.saldoTotal) || 0;
   const tasaEA   = tasaEADe(compromiso) * 100;
@@ -145,22 +318,11 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null, oculto = fals
   const esTipoDeuda = esDeuda(tipo);
   const saldada     = esTipoDeuda && saldo <= 0;
 
-  // Modificadores de color de atoms.css (un solo guion). Antes se usaban
-  // `chip--danger/warning/neutral` (doble guion), que no existen: el chip de
-  // urgencia se veía siempre gris. El nivel normal usa la base `.chip` (gris).
-  const chipClase = nivel === 'urgente'
-    ? 'chip chip-danger'
-    : nivel === 'proximo'
-    ? 'chip chip-warning'
-    : 'chip';
-
-  // El label lleva el verbo "Vence" para que el chip se entienda solo: "17 días"
-  // a secas es ambiguo (¿antigüedad? ¿atraso? ¿faltan?). Aquí siempre es futuro.
-  const diasLabel = dias === 0
-    ? 'Vence hoy'
-    : dias === 1
-    ? 'Vence mañana'
-    : `Vence en ${dias} días`;
+  // Ficha 05: el mismo chip que el gasto fijo, que mira lo vencido de este mes
+  // antes que el próximo pago (ver `_chipVencimiento`). El label lleva siempre
+  // su verbo para que se entienda solo: "17 días" a secas es ambiguo
+  // (¿antigüedad? ¿atraso? ¿faltan?).
+  const { clase: chipClase, label: diasLabel } = _chipVencimiento(compromiso, prefijoMes, atrasos);
 
   // R7 (estado terminal): una deuda saldada apaga todos sus indicadores de
   // futuro. Antes el chip de urgencia se emitía siempre, así que la última
@@ -287,17 +449,6 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null, oculto = fals
 }
 
 /**
- * Muestra u oculta el botón "+ Nueva deuda" del encabezado de la sección
- * (FD6). No-op si el botón no existe (sección no montada).
- *
- * @param {boolean} visible
- */
-function _toggleBotonNuevaDeuda(visible) {
-  const btn = document.getElementById('compromisos-nueva-deuda');
-  if (btn) btn.hidden = !visible;
-}
-
-/**
  * Subtítulo de una deuda saldada: "Saldada el 22 de julio". El año solo aparece
  * cuando no es el actual, porque una deuda saldada se archiva pronto y el año
  * repetido no aporta. Sin fecha (deuda que llegó a cero sin abonos) se afirma
@@ -321,9 +472,8 @@ function _renderEmptyState() {
   return `
     <div class="empty-state pattern-dots">
       <div class="empty-state__icon" aria-hidden="true">${emptyArt('deudas')}</div>
-      <p class="empty-state__title">Sin deudas registradas</p>
-      <p class="empty-state__desc">Agrega tu primer crédito con entidad (banco, tarjeta) o personal (familiar, gota a gota) y Finko arma tu estrategia de salida.</p>
-      <button class="btn btn-primary" data-action="nuevo-compromiso">+ Nueva deuda</button>
-      <p class="empty-state__tip">${icon('lightbulb')} Los gastos fijos (arriendo, servicios) se agregan desde Calendario.</p>
+      <p class="empty-state__title">Nada por pagar todavía</p>
+      <p class="empty-state__desc">Agrega tu arriendo, un servicio, una tarjeta o un préstamo y Finko te avisa cuándo vence cada uno.</p>
+      <button class="btn btn-primary" data-action="comp-elegir-tipo-nuevo">+ Agregar</button>
     </div>`;
 }

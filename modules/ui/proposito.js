@@ -25,8 +25,8 @@ export const PROPOSITOS_SECCION = {
     texto: '¿Sabes en qué se te va el dinero cada mes? Muchas veces se escapa en compras pequeñas que ni recordamos. Gastos te muestra en qué gastas de verdad, para que descubras hábitos que puedes mejorar y decidas con información.',
   },
   compromisos: {
-    titulo: '¿Para qué sirve Deudas?',
-    texto: '¿Sientes que pagas y pagas pero la deuda no baja? Sin un plan, los intereses te cobran de más y la salida se alarga. Deudas arma la mejor estrategia para que pagues menos intereses y salgas más rápido, una cuota a la vez.',
+    titulo: '¿Para qué sirve Por pagar?',
+    texto: '¿Se te ha pasado un pago, o pagas y pagas y la deuda no baja? Acá está todo lo que debes: el arriendo y los servicios de cada mes, y las deudas con su plan de salida para que pagues menos intereses. Un solo lugar para saber qué falta pagar y en qué orden conviene.',
   },
   agenda: {
     titulo: '¿Para qué sirve Calendario?',

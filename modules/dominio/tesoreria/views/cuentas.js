@@ -442,7 +442,7 @@ export function renderFormCuenta() {
                  placeholder="Ej. 15" />
         </div>
         <p class="form-hint form-hint--muted">
-          Finko crea un gasto fijo mensual con este monto y día. Lo verás en Calendario.
+          Finko crea un gasto fijo mensual con este monto y día. Lo verás en Por pagar y en tu Calendario.
         </p>
       </fieldset>
 

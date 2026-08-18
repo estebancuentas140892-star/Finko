@@ -148,11 +148,11 @@ Los barrels mantienen la API estable: tests y consumidores siguen importando de 
 | Dominio | Área funcional | Notas |
 |---|---|---|
 | `accesos/` | Accesos rápidos personalizables de Inicio (IN.4a, [ADR 028](DECISIONS/028-inicio-centro-de-control.md) D2) | sin colección propia en `S`: lee y escribe `S.config.accesosInicio` (array de ids) |
-| `agenda/` | Gastos fijos y calendario de pagos (sección visible "Calendario") | |
+| `agenda/` | Calendario de pagos: la vista de fechas sobre `compromisos` (sección visible "Calendario") | desde la ficha 05 (ADR 069) ya no crea ni edita gastos fijos; conserva "Marcar pagado" (depende del mes visible, BUG-015) y los pagos automáticos de PA.1 |
 | `ahorro/` | Fondo de emergencia + hábito de aportar, **más la casa de Ahorro** (la pantalla `#ahorro` que reúne las cuatro modalidades, DIS.18) | el fondo vive en `#fondo` desde DIS.18: `#ahorro` es la casa ([ADR 056](DECISIONS/056-la-casa-de-ahorro.md)) |
 | `analisis/` | Salud financiera, patrimonio neto, gráficos, comparaciones | |
 | `apartados/` | Sobres para gastos previsibles (SOAT, impuestos, etc.) | |
-| `compromisos/` | Gastos fijos + deudas (Avalancha/Bola de nieve) + agenda de pagos | `view.js` partido en `views/` (alertas, dashboard, estrategia, estrategia-impacto, formularios, lista); `logic.js` partido en `logic/` (modelo, alertas, estrategia, abonos), ambos con barrel |
+| `compromisos/` | Gastos fijos + deudas (Avalancha/Bola de nieve) + pago en lote (sección visible "Por pagar") | `view.js` partido en `views/` (alertas, dashboard, estrategia, estrategia-impacto, formularios, lista, lote); `logic.js` partido en `logic/` (modelo, alertas, estrategia, abonos), ambos con barrel |
 | `config/` | Ajustes, perfil, exportar/importar backup completo | sin `logic.js` propio; suma `bloqueo.js` (candado con PIN) y `legal.js` (aceptación versionada) |
 | `export/` | Serialización de gastos a CSV (`gastosACSV`) | solo `logic.js`, sin UI propia (se invoca desde `config`) |
 | `gastos/` | Gastos variables, categorías, detector de hormigas | |
@@ -266,7 +266,6 @@ Los 12 eventos reales del sistema (verificados contra el código el 2026-08-13; 
 | `onboarding:completado` | `ui/onboarding.js` al cerrar el wizard | `bootstrap.js` |
 | `distribucion:aplicar` | `tesoreria/index.js` al confirmar "Distribuir mi ingreso" | `ahorro/`, `metas/`, `apartados/`, `inversiones/`, `compromisos/` (cada uno aplica su porción de `items` y descuenta la cuenta de origen) |
 | `distribuir:abrir` | `agenda/index.js` y `tesoreria/acciones/distribucion.js` | `tesoreria/index.js` (abre el asistente de distribución desde otra sección sin importarla) |
-| `lote:abrir` | `compromisos/index.js` desde el bloque "Pendientes del mes" de Inicio (CAL.5b), con `{ mes: 'YYYY-MM' }` | `agenda/index.js` (abre el modal de pago en lote sin navegar; el set de pagos lo decide Agenda, su dueña) |
 | `cuenta:crear` | `infra/cuenta-helper.js` y `ui/actions.js` cuando una acción necesita una cuenta y no hay ninguna | `tesoreria/acciones/cuentas.js` (abre el formulario de cuenta nueva) |
 | `storage:cuota` | `core/storage.js` cuando el uso de `localStorage` deja de estar en nivel `ok` | `config/index.js` (aviso de cuota en Ajustes) |
 | `storage:error` | `core/storage.js` cuando un guardado falla | `config/index.js` (aviso de error de persistencia) |
@@ -410,7 +409,7 @@ En la app, el nombre visible de una sección casi nunca coincide con el nombre d
 | Inicio | `dash` (no tiene dominio propio, ver 13.2) |
 | Gastos | `gastos` |
 | Calendario | `agenda` |
-| Deudas | `compromisos` (incluye también gastos fijos, no solo deudas) |
+| Por pagar | `compromisos` (los tres tipos: gastos fijos y las dos clases de deuda) |
 | Mis cuentas | `tesoreria` |
 | Me deben | `personales` |
 
@@ -425,9 +424,9 @@ El dashboard (`#dash`) no tiene carpeta propia en `modules/dominio/`: es una com
 | Sección visible | Carpeta (`modules/dominio/`) | Archivos clave | Estilos (`styles/components/`) | Test unitario |
 |---|---|---|---|---|
 | Inicio | *(sin carpeta propia, ver 13.2)* | `ui/bootstrap.js`, `infra/render.js` | `domain.css` (hero-saldo, vencidos-card, prioridades-card, resumen-card, balance-tira, limites-card) | `resumen.test.js`, `render.test.js` |
-| Gastos (portada del bloque; sus otras dos lentes son Deudas y Presupuesto) | `gastos/` | los 3 estándar; la franja de pestañas es `ui/bloque-gastos.js` (ADR 069) | `domain.css` (mes-nav, filtros-bar/chip, gastos-resumen), `layout.css` (`.bloque-tabs`) | `gastos.test.js`, `bloque-gastos.test.js` |
+| Gastos (portada del bloque; sus otras dos lentes son Por pagar y Presupuesto) | `gastos/` | los 3 estándar; la franja de pestañas es `ui/bloque-gastos.js` (ADR 069) | `domain.css` (mes-nav, filtros-bar/chip, gastos-resumen), `layout.css` (`.bloque-tabs`) | `gastos.test.js`, `bloque-gastos.test.js` |
 | Calendario | `agenda/` | los 3 estándar | `config.css` (bloque AGENDA, línea 449) | `agenda.test.js` |
-| Deudas | `compromisos/` | entrar por `logic/` o `views/` según el corte de la 2.4; `index.js` es el wiring | `charts.css` (chooser entidad/personal, estrategia de pago), `domain.css` (abono-btn, cal-detail) | `compromisos.test.js`, `estrategia-pago.test.js` (e2e) |
+| Por pagar (lente del bloque Gastos) | `compromisos/` | entrar por `logic/` o `views/` según el corte de la 2.4; `index.js` es el wiring. Desde la ficha 05 (ADR 069) también viven acá el alta de gasto fijo y el pago en lote (`views/lote.js`) | `charts.css` (estrategia de pago), `domain.css` (deuda-card, cal-lote, lote-row) | `compromisos.test.js`, `estrategia-pago.test.js` (e2e) |
 | Mis cuentas | `tesoreria/` | entrar por `logic/`, `views/` o `acciones/` según el subsistema (ver 2.4); `index.js` es el coordinador | `domain.css` (ingresos-card, distribuir-card, distribuir-edu, distribucion-clasicos), `forms.css` (bloque `.distribuir__*` del asistente) | `tesoreria.test.js`, `cuenta-helper.test.js`, `distribuir-pago.test.js` |
 | Apartados | `apartados/` | los 3 estándar | `domain.css` (bloques APARTADOS y form de apartados) | `apartados.test.js` |
 | Ahorro (la casa, `#ahorro`) y Fondo de emergencia (`#fondo`) | `ahorro/` | los 3 estándar | `domain.css` (`.casa-ahorro__*`), `analysis.css` (bloque J.1/J.1b) | `ahorro.test.js`, `hub-ahorros.test.js` (e2e), `ahorro-inversion.test.js` (e2e) |

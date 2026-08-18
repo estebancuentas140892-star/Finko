@@ -732,7 +732,7 @@ export function sugerirDistribucionIngreso(ingresoMensual, {
       necesidadesPct = 100;
       estiloVidaPct  = 0;
       ahorroInvPct   = 0;
-      razon = `Tus obligaciones fijas (gastos en Calendario y cuotas de deudas) consumen la totalidad de tu ingreso registrado. Reducir compromisos es urgente.`;
+      razon = `Tus obligaciones fijas (gastos fijos y cuotas de deudas, en Por pagar) consumen la totalidad de tu ingreso registrado. Reducir compromisos es urgente.`;
       alertas.push(`Tus obligaciones (${pctObligaciones}%) consumen todo tu ingreso: no queda margen para ahorro ni estilo de vida. Revisa gastos fijos y deudas.`);
     } else {
       // Paso 2: ahorro ideal (prioridades en orden).
@@ -795,7 +795,7 @@ export function sugerirDistribucionIngreso(ingresoMensual, {
       if (deficitReal) {
         const pctGastado = Math.round(gastosDelMes / ingresoMensual * 100);
         razon = `Este mes tus gastos registrados ya van en el ${pctGastado}% de tu ingreso: estás gastando más de lo que entra, así que no sugerimos ahorro hasta cerrar ese hueco.`;
-        alertas.push('Gastos del mes por encima del ingreso: revisa tus gastos en Análisis y recorta primero Estilo de vida. Si un gasto fijo no está en Calendario, regístralo para que el plan lo tenga en cuenta.');
+        alertas.push('Gastos del mes por encima del ingreso: revisa tus gastos en Análisis y recorta primero Estilo de vida. Si un gasto fijo no está en Por pagar, regístralo para que el plan lo tenga en cuenta.');
       } else {
         // Razón: refleja qué componentes influyeron.
         const partesRazon = [];
@@ -819,7 +819,7 @@ export function sugerirDistribucionIngreso(ingresoMensual, {
         }
         razon = partesRazon.length > 0
           ? `Calculamos tu distribución según tus datos: ${partesRazon.join(', ')}.`
-          : 'Registra tus gastos fijos en Calendario y tus deudas en la sección Deudas para una recomendación a tu medida. Por ahora aplicamos una base saludable del 20% de ahorro.';
+          : 'Registra tus gastos fijos y tus deudas en Por pagar para una recomendación a tu medida. Por ahora aplicamos una base saludable del 20% de ahorro.';
       }
 
       // MC.6c: si el estilo de vida real apretó el ahorro por debajo de su

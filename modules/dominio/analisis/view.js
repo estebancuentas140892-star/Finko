@@ -753,13 +753,13 @@ function _renderPatrimonio({ activos, pasivos, patrimonioNeto }, lectura = '') {
     : 'Sin activos registrados';
 
   // CTA si hay deudas sin saldo registrado. ANL.3 (Z3): la etiqueta visible
-  // pasa de "Compromisos" (nombre interno) a "Deudas" (nombre de producto,
-  // el que ya usa el nav); el destino sigue siendo #compromisos.
+  // usa el nombre de producto, no el interno ("Compromisos"); desde la ficha 05
+  // ese nombre es "Por pagar", el mismo del nav y de la pestaña del bloque.
   const ctaDeudas = pasivos.deudasSinSaldo > 0
     ? `<p class="analisis__hint">
         Tienes <strong>${pasivos.deudasSinSaldo} deuda${pasivos.deudasSinSaldo > 1 ? 's' : ''}</strong>
         sin saldo registrado. Complétalas en
-        <a href="#compromisos" class="link">Deudas</a>
+        <a href="#compromisos" class="link">Por pagar</a>
         para calcular tu patrimonio real.
       </p>`
     : '';

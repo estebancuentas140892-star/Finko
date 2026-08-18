@@ -1,9 +1,9 @@
 /**
  * compromisos/views/formularios.js - formularios modales del dominio.
  *
- * Tres formularios:
- *   - Chooser de tipo de deuda (paso 1 del modal de nueva deuda)
- *   - Form tailored entidad / personal (paso 2)
+ * Cuatro formularios:
+ *   - Form de gasto fijo (ficha 05, ADR 069: mudado desde Agenda)
+ *   - Segmented Entidad/Personal inline + form tailored de deuda
  *   - Form de abono a deuda existente (ADR 002)
  *
  * Puede leer S. No puede mutarlo. Sin lógica de negocio.
@@ -13,14 +13,162 @@ import { S } from '../../../core/state.js';
 import { f, esc as _esc, hoy } from '../../../infra/utils.js';
 import {
   FRECUENCIAS,
+  CATEGORIAS_AGENDA,
   CATEGORIAS_DEUDA,
   CATEGORIAS_DEUDA_PERSONAL,
   CATEGORIA_DEUDA_ICONO,
   CATEGORIA_DEUDA_PERSONAL_ICONO,
   ICONOS_CATEGORIA_PERSONALIZADA,
+  iconoDeCategoriaGasto,
 } from '../../../core/constants.js';
 import { renderSelectorCuenta, renderBloqueDebitoAutomatico } from '../../../infra/cuenta-helper.js';
 import { renderIconoPicker } from '../../../infra/icon-picker.js';
+
+// ── FORMULARIO MODAL: NUEVO GASTO FIJO (ficha 05, mudado desde Agenda) ──
+
+/**
+ * Frase "cada X" (o "una vez") de cada frecuencia, para el banner dinámico
+ * del gasto fijo (ver `textoBannerGastoFijo`). Cubre las 9 FRECUENCIAS;
+ * "Única vez" es la única sin ritmo de repetición.
+ */
+const _FRASE_FRECUENCIA = {
+  'Diario':     'cada día',
+  'Semanal':    'cada semana',
+  'Quincenal':  'cada quincena',
+  'Mensual':    'cada mes',
+  'Bimestral':  'cada dos meses',
+  'Trimestral': 'cada tres meses',
+  'Semestral':  'cada seis meses',
+  'Anual':      'cada año',
+  'Única vez':  'una vez',
+};
+
+/**
+ * Texto del banner informativo del form de gasto fijo (FORM.1c, ADR 042 D5):
+ * lee la frecuencia y el día de pago elegidos y arma "Aparecerá cada mes en
+ * tu calendario el día 5." Sin día válido (campo vacío o fuera de 1-31),
+ * usa un cierre neutro en vez de inventar una fecha.
+ * @param {string} frecuencia
+ * @param {string|number} diaPago
+ * @returns {string}
+ */
+export function textoBannerGastoFijo(frecuencia, diaPago) {
+  const frase = _FRASE_FRECUENCIA[frecuencia] ?? 'cada mes';
+  const dia = Number(diaPago);
+  const diaTexto = Number.isInteger(dia) && dia >= 1 && dia <= 31
+    ? `el día ${dia}`
+    : 'el día que elijas';
+  return `Aparecerá ${frase} en tu calendario ${diaTexto}.`;
+}
+
+/** Sentinela del chip "Categoría nueva" del formulario de gasto fijo (CAT.3c). */
+export const CATEGORIA_NUEVA_VALUE_FIJO = '__nueva__';
+
+/**
+ * Devuelve el HTML del formulario simplificado de gasto fijo.
+ *
+ * Campos visibles: categoria (opcional), descripcion/nota, monto, frecuencia, diaPago.
+ * `tipo` va como input hidden con valor 'fijo' para que `normalizarCompromiso`
+ * lo guarde como un compromiso de tipo fijo en S.compromisos.
+ *
+ * AG.4: con una categoría predefinida (cualquiera salvo "Otro"), el nombre
+ * del registro es la propia categoría, así que pedirlo aparte es redundante;
+ * el campo de texto pasa a ser una nota opcional. `_syncCategoriaGastoFijo`
+ * (en index.js) alterna el label/placeholder/`required` de este campo según
+ * la categoría elegida; el HTML nace en el estado por defecto (sin categoría,
+ * nombre obligatorio) y ese handler ajusta el resto en cada apertura.
+ *
+ * @returns {string}
+ */
+export function renderFormGastoFijo() {
+  const frecOpts = FRECUENCIAS
+    .map(fr => `<option value="${_esc(fr)}"${fr === 'Mensual' ? ' selected' : ''}>${_esc(fr)}</option>`)
+    .join('');
+
+  // FORM.1c (ADR 042 D5): la categoría son chips de ícono en grilla de 3
+  // columnas (mismo lenguaje que Registrar gasto y Nueva deuda), no un
+  // desplegable. Radios reales name="categoria" dentro del label: el
+  // contrato FormData y validarCompromiso() no cambian.
+  // CAT.3c: se suman las personalizadas de sección 'fijo' y, al final, el
+  // chip "Categoría nueva" (mismo lenguaje que "Otra categoría" de Gastos,
+  // con nombre distinto porque 'Otro' ya es miembro literal de este catálogo).
+  const chipCat = (valor, etiqueta, simbolo) => `
+        <label class="chip-cat">
+          <input type="radio" name="categoria" class="chip-cat__radio" value="${_esc(valor)}" />
+          <svg class="icon" aria-hidden="true"><use href="#${_esc(simbolo)}"/></svg>
+          <span class="chip-cat__label">${_esc(etiqueta)}</span>
+        </label>`;
+  const personalizadasFijo = (S.categoriasPersonalizadas ?? []).filter(c => c.seccion === 'fijo');
+  const chipsCategoria = [
+    ...CATEGORIAS_AGENDA.map(c => chipCat(c, c, iconoDeCategoriaGasto(c, S.categoriasPersonalizadas))),
+    ...personalizadasFijo.map(c => chipCat(c.nombre, c.nombre, iconoDeCategoriaGasto(c.nombre, S.categoriasPersonalizadas))),
+    chipCat(CATEGORIA_NUEVA_VALUE_FIJO, 'Categoría nueva', 'i-plus'),
+  ].join('');
+
+  return `
+    <form id="form-gasto-fijo" novalidate>
+      <input type="hidden" name="tipo" value="fijo" />
+
+      <div class="form-group">
+        <span class="label" id="gfijo-categoria-label">Categoría</span>
+        <div class="chips-cat" role="radiogroup" aria-labelledby="gfijo-categoria-label">
+          ${chipsCategoria}
+        </div>
+      </div>
+
+      <div class="form-group" id="form-group-gfijo-icono" hidden>
+        ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'gfijo-icono', label: 'Ícono' })}
+      </div>
+
+      <div class="form-group" id="gfijo-categoria-nueva-fields" hidden>
+        <label for="gfijo-categoria-nueva-nombre" class="label">Nombre de tu categoría</label>
+        <input id="gfijo-categoria-nueva-nombre" name="categoriaNuevaNombre" class="input" type="text"
+               placeholder="Ej. Gimnasio, Netflix" autocomplete="off" />
+        ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'gfijo-categoria-nueva-icono', nombreCampo: 'categoriaNuevaIcono' })}
+      </div>
+
+      <div class="form-group">
+        <label for="gfijo-descripcion" class="label" id="gfijo-descripcion-label">Descripción</label>
+        <input id="gfijo-descripcion" name="descripcion" class="input" type="text"
+               placeholder="Ej. Arriendo, Netflix, agua" required aria-required="true"
+               autocomplete="off" />
+      </div>
+
+      <div class="monto-hero">
+        <label class="monto-hero__label" for="gfijo-monto">Monto (COP)</label>
+        <div class="monto-hero__box">
+          <span class="monto-hero__prefijo" aria-hidden="true">$</span>
+          <input id="gfijo-monto" name="monto" class="input input--big-amount" type="number"
+                 min="1" step="1000" placeholder="0" required aria-required="true"
+                 autocomplete="off" inputmode="numeric" />
+        </div>
+        <span class="monto-hero__hint">COP</span>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="gfijo-frecuencia" class="label">Frecuencia</label>
+          <select id="gfijo-frecuencia" name="frecuencia" class="input" required aria-required="true">
+            ${frecOpts}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="gfijo-dia" class="label">Día de pago (1-31)</label>
+          <input id="gfijo-dia" name="diaPago" class="input" type="number"
+                 min="1" max="31" step="1" placeholder="1" required aria-required="true" />
+        </div>
+      </div>
+
+      <p class="form-hint form-hint--info" id="gfijo-banner" aria-live="polite">${textoBannerGastoFijo('Mensual', '')}</p>
+
+      ${renderBloqueDebitoAutomatico(S.cuentas ?? [], { id: 'gfijo-debito' })}
+
+      <div class="modal__footer modal__footer--principal">
+        <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
+        <button type="submit" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-check-circle"/></svg>Guardar gasto fijo</button>
+      </div>
+    </form>`;
+}
 
 // ── FORMULARIO MODAL: ABONAR A DEUDA (ADR 002) ───────────────────
 

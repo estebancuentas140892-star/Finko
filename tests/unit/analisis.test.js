@@ -2187,12 +2187,15 @@ describe('renderAnalisis() - ANL.2b patrimonio con composición y ojo', () => {
     expect(document.querySelector('.patri-card__hint').textContent).toContain('hoy');
   });
 
-  it('el link de deudas sin saldo dice "Deudas", no "Compromisos" (ANL.3, Z3)', () => {
+  // ANL.3 (Z3) pedía el nombre de producto en vez del interno ("Compromisos").
+  // Desde la ficha 05 (ADR 069) ese nombre es "Por pagar", el del nav y el de
+  // la pestaña del bloque: la sección ya no es solo deudas.
+  it('el link de deudas sin saldo usa el nombre visible de la sección (ANL.3, Z3)', () => {
     S.compromisos = [deuda({ saldoTotal: undefined })];
     renderAnalisis();
 
     const link = document.querySelector('.analisis__hint a[href="#compromisos"]');
-    expect(link.textContent).toBe('Deudas');
+    expect(link.textContent).toBe('Por pagar');
   });
 
   it('avisa cuando hay préstamos sin cuenta vinculada: no suman al patrimonio (ANL.3, Z2)', () => {

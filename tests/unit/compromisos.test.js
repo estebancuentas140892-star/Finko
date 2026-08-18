@@ -40,7 +40,8 @@ import {
   LABEL_TIPO,
   ICONO_TIPO,
 } from '../../modules/dominio/compromisos/logic.js';
-import { renderFormAbono, renderFormDeuda } from '../../modules/dominio/compromisos/views/formularios.js';
+import { renderFormAbono, renderFormDeuda, renderFormGastoFijo, textoBannerGastoFijo } from '../../modules/dominio/compromisos/views/formularios.js';
+import { renderLoteCard, renderFormPagoLote } from '../../modules/dominio/compromisos/views/lote.js';
 import { renderListaCompromisos } from '../../modules/dominio/compromisos/views/lista.js';
 import { renderAlertaDeudasDurmiendo } from '../../modules/dominio/compromisos/views/alertas.js';
 import { renderPanelPrioridades, renderPanelVencidos } from '../../modules/dominio/compromisos/views/dashboard.js';
@@ -4558,7 +4559,32 @@ describe('renderListaCompromisos() - tarjeta de deuda D.16d', () => {
     expect(card.querySelector('.deuda-card__nombre .chip')).toBeNull();
     expect(card.querySelector('.deuda-card__nombre').textContent.trim()).toBe('Tarjeta Visa');
     const chips = [...card.querySelectorAll('.deuda-card__chips .chip')];
-    expect(chips[0].textContent).toContain('Vence');
+    // El fixture usa DIA_PASADO, así que desde la ficha 05 el chip afirma el
+    // atraso real ("Venció hace N días") en vez de proyectar el próximo pago.
+    expect(chips[0].textContent).toMatch(/^Venci(ó|ó hace)/);
+  });
+
+  // Ficha 05 (ADR 069): el chip mira lo vencido de ESTE mes antes que el
+  // próximo pago. Antes decía "Vence en 21 días" sobre una cuota que venció el
+  // 8 y seguía sin pagar, justo debajo de la tarjeta de lote que la anunciaba
+  // como vencida: dos cifras del mismo dato, y la de la tarjeta era la falsa.
+  it('ficha 05: una cuota vencida y sin pagar afirma el atraso, no el próximo pago', () => {
+    S.compromisos = [deudaCard({ diaPago: DIA_PASADO })];
+    S.gastos = [];
+    renderListaCompromisos();
+    const chip = document.querySelector('.deuda-card__chips .chip');
+    expect(chip.textContent).toContain('Venció');
+    expect(chip.className).toContain('chip-danger');
+  });
+
+  it('ficha 05: con la cuota del mes cubierta el chip pasa a neutro y afirma el pago', () => {
+    const mes = new Date().toISOString().slice(0, 7);
+    S.compromisos = [deudaCard({ id: 'dc1', diaPago: DIA_PASADO, cuotaMensual: 200_000 })];
+    S.gastos = [{ id: 'g1', compromisoId: 'dc1', monto: 200_000, fecha: `${mes}-0${Math.min(DIA_PASADO, 9)}` }];
+    renderListaCompromisos();
+    const chip = document.querySelector('.deuda-card__chips .chip');
+    expect(chip.textContent).toContain('Pagado este mes');
+    expect(chip.className).not.toContain('chip-danger');
   });
 
   it('FD1: la deuda saldada no anuncia ningún vencimiento', () => {
@@ -4617,24 +4643,12 @@ describe('renderListaCompromisos() - tarjeta de deuda D.16d', () => {
     expect(archivar.textContent).not.toContain('✓');
   });
 
-  // ── FD6: un solo CTA para crear una deuda ─────────────────────────
+  // ── Ficha 05 (ADR 069): un solo CTA para crear cualquiera de los tres tipos ──
 
-  it('FD6: el estado vacío usa el mismo verbo del encabezado ("+ Nueva deuda")', () => {
+  it('ficha 05: el estado vacío abre el mismo chooser que el encabezado ("+ Agregar")', () => {
     renderListaCompromisos();
-    const cta = document.querySelector('.empty-state [data-action="nuevo-compromiso"]');
-    expect(cta.textContent.trim()).toBe('+ Nueva deuda');
-  });
-
-  it('FD6: sin deudas el botón del encabezado se oculta; con deudas vuelve', () => {
-    document.body.innerHTML = `
-      <button id="compromisos-nueva-deuda" data-action="nuevo-compromiso">+ Nueva deuda</button>
-      <div id="lista-compromisos"></div>`;
-    renderListaCompromisos();
-    expect(document.getElementById('compromisos-nueva-deuda').hidden).toBe(true);
-
-    S.compromisos = [deudaCard()];
-    renderListaCompromisos();
-    expect(document.getElementById('compromisos-nueva-deuda').hidden).toBe(false);
+    const cta = document.querySelector('.empty-state [data-action="comp-elegir-tipo-nuevo"]');
+    expect(cta.textContent.trim()).toBe('+ Agregar');
   });
 });
 
@@ -4700,5 +4714,387 @@ describe('normalizarCompromiso() - débito automático (PA.1a)', () => {
     });
     expect(r.debitoAutomatico).toBe(true);
     expect(r.cuentaDebitoId).toBe('cta2');
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════
+// FICHA 05 (ADR 069): lo que "Por pagar" heredó del Calendario
+// ══════════════════════════════════════════════════════════════════
+
+// ── renderFormGastoFijo() - selector de categoría ─────────────────
+// FORM.1c (ADR 042 D5): la categoría son chips de ícono (radios reales
+// name="categoria"), no un <select>; mismo lenguaje que Registrar gasto
+// (FORM.1a) y Nueva deuda (FORM.1b).
+
+describe('renderFormGastoFijo() - selector de categoría', () => {
+  it('incluye un chip de radio para cada categoría de CATEGORIAS_AGENDA (ID.3)', () => {
+    const html = renderFormGastoFijo();
+    expect(html).toContain('chips-cat');
+    expect(html).not.toContain('<select id="gfijo-categoria"');
+    // CAT.3c: +1 por el chip sentinela "Categoría nueva" (S.categoriasPersonalizadas
+    // sin entradas de sección 'fijo' en este describe, así que no suma más chips).
+    const radios = html.match(/name="categoria"/g) ?? [];
+    expect(radios).toHaveLength(CATEGORIAS_AGENDA.length + 1);
+    for (const c of CATEGORIAS_AGENDA) {
+      expect(html).toContain(`value="${c}"`);
+      expect(html).toContain(`<use href="#${CATEGORIA_AGENDA_ICONO[c]}"/>`);
+    }
+  });
+
+  it('CAT.3c: incluye el chip sentinela "Categoría nueva" al final del catálogo', () => {
+    const html = renderFormGastoFijo();
+    expect(html).toContain('value="__nueva__"');
+    expect(html).toContain('Categoría nueva');
+    expect(html).toContain('#i-plus');
+  });
+
+  it('CAT.3c: suma un chip por cada personalizada de sección fijo, filtrando las de gasto', () => {
+    S.categoriasPersonalizadas = [
+      { id: 'p1', nombre: 'Netflix', icono: 'c-streaming', seccion: 'fijo', fechaCreacion: '2026-01-01' },
+      { id: 'p2', nombre: 'Almuerzo', icono: 'c-mercado', seccion: 'gasto', fechaCreacion: '2026-01-01' },
+    ];
+    try {
+      const html = renderFormGastoFijo();
+      expect(html).toContain('value="Netflix"');
+      expect(html).not.toContain('value="Almuerzo"');
+    } finally {
+      S.categoriasPersonalizadas = [];
+    }
+  });
+
+  it('la categoría es opcional: ningún chip nace marcado', () => {
+    const html = renderFormGastoFijo();
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    expect(div.querySelector('input[name="categoria"]:checked')).toBeNull();
+  });
+
+  it('AG.4: la categoría va antes que el campo de nombre en el DOM', () => {
+    const html = renderFormGastoFijo();
+    expect(html.indexOf('id="gfijo-categoria-label"')).toBeLessThan(html.indexOf('id="gfijo-descripcion"'));
+  });
+
+  it('AG.4: en el estado por defecto (sin categoría), el campo nace requerido con label "Descripción"', () => {
+    const html = renderFormGastoFijo();
+    expect(html).toContain('id="gfijo-descripcion-label">Descripción<');
+    const inputMatch = html.match(/<input id="gfijo-descripcion"[^>]*>/);
+    expect(inputMatch).not.toBeNull();
+    expect(inputMatch[0]).toContain('required');
+  });
+});
+
+// ── renderFormGastoFijo() - lenguaje v2 (FORM.1c, ADR 042 D5) ─────
+
+describe('renderFormGastoFijo() - lenguaje de formularios v2', () => {
+  it('el monto vive en el hero con el input grande centrado', () => {
+    const html = renderFormGastoFijo();
+    expect(html).toContain('monto-hero__box');
+    expect(html).toContain('input--big-amount');
+  });
+
+  it('frecuencia y día de pago comparten una fila', () => {
+    const html = renderFormGastoFijo();
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    const fila = div.querySelector('.form-row');
+    expect(fila).not.toBeNull();
+    expect(fila.querySelector('[name="frecuencia"]')).not.toBeNull();
+    expect(fila.querySelector('[name="diaPago"]')).not.toBeNull();
+  });
+
+  it('el pie usa el botón primario a lo ancho con el glifo de confirmación', () => {
+    const html = renderFormGastoFijo();
+    expect(html).toContain('modal__footer--principal');
+    expect(html).toContain('#i-check-circle');
+  });
+
+  it('el banner informativo nace con el texto de Mensual sin día (valor por defecto del form)', () => {
+    const html = renderFormGastoFijo();
+    expect(html).toContain('id="gfijo-banner"');
+    expect(html).toContain(textoBannerGastoFijo('Mensual', ''));
+  });
+});
+
+// ── textoBannerGastoFijo() (FORM.1c, ADR 042 D5) ──────────────────
+
+describe('textoBannerGastoFijo()', () => {
+  it('arma la frase con la frecuencia y el día elegidos', () => {
+    expect(textoBannerGastoFijo('Mensual', 5)).toBe('Aparecerá cada mes en tu calendario el día 5.');
+    expect(textoBannerGastoFijo('Quincenal', '20')).toBe('Aparecerá cada quincena en tu calendario el día 20.');
+    expect(textoBannerGastoFijo('Anual', 15)).toBe('Aparecerá cada año en tu calendario el día 15.');
+  });
+
+  it('"Única vez" no repite "cada"', () => {
+    expect(textoBannerGastoFijo('Única vez', 3)).toBe('Aparecerá una vez en tu calendario el día 3.');
+  });
+
+  it('sin día válido, cierra con un texto neutro en vez de inventar una fecha', () => {
+    expect(textoBannerGastoFijo('Mensual', '')).toBe('Aparecerá cada mes en tu calendario el día que elijas.');
+    expect(textoBannerGastoFijo('Mensual', 0)).toBe('Aparecerá cada mes en tu calendario el día que elijas.');
+    expect(textoBannerGastoFijo('Mensual', 32)).toBe('Aparecerá cada mes en tu calendario el día que elijas.');
+  });
+
+  it('frecuencia desconocida cae al mismo criterio de "Mensual"', () => {
+    expect(textoBannerGastoFijo('', 10)).toBe('Aparecerá cada mes en tu calendario el día 10.');
+  });
+});
+
+// ── renderFormGastoFijo() - picker de ícono para "Otro" (CAT.2f) ──
+
+describe('renderFormGastoFijo() - picker de ícono para "Otro" (CAT.2f)', () => {
+  it('incluye el grupo del picker, oculto por defecto', () => {
+    const html = renderFormGastoFijo();
+    expect(html).toMatch(/id="form-group-gfijo-icono"[^>]*hidden/);
+    expect(html).toContain('data-icono-picker="gfijo-icono"');
+  });
+});
+
+// ── renderFormGastoFijo() - nombre + ícono de categoría nueva (CAT.3c) ──
+
+describe('renderFormGastoFijo() - campos de categoría nueva (CAT.3c)', () => {
+  it('incluye el grupo de nombre + ícono, oculto por defecto', () => {
+    const html = renderFormGastoFijo();
+    expect(html).toMatch(/id="gfijo-categoria-nueva-fields"[^>]*hidden/);
+    expect(html).toContain('name="categoriaNuevaNombre"');
+    expect(html).toContain('data-icono-picker="gfijo-categoria-nueva-icono"');
+  });
+});
+
+// ── TARJETA DEL LOTE EN "POR PAGAR" (CAL.5a, mudada en la ficha 05) ──
+
+describe('renderLoteCard() - tarjeta de pago en lote', () => {
+  const pend = (overrides = {}) => ({
+    id: 'a', descripcion: 'Arriendo', monto: 900_000, dia: 5, tipo: 'fijo', parcial: false, ...overrides,
+  });
+
+  it('con 2 o más vencidos muestra el conteo, el total y el CTA con su mes', () => {
+    document.body.innerHTML = renderLoteCard(
+      [pend(), pend({ id: 'b', descripcion: 'Netflix', monto: 40_000, dia: 12 })],
+      '2026-06',
+    );
+    const lote = document.querySelector('.cal-lote');
+    expect(lote).not.toBeNull();
+    expect(lote.querySelector('.cal-lote__title').textContent).toBe('2 pagos ya vencieron');
+    expect(lote.querySelector('.cal-lote__desc').textContent).toContain('Arriendo y Netflix');
+    expect(lote.querySelector('.cal-lote__monto').textContent).toContain('940.000');
+    const cta = lote.querySelector('[data-action="compromisos-pagar-lote"]');
+    expect(cta.dataset.mes).toBe('2026-06');
+  });
+
+  it('con más de dos vencidos resume la lista con "y N más"', () => {
+    document.body.innerHTML = renderLoteCard([
+      pend(),
+      pend({ id: 'b', descripcion: 'Netflix', monto: 40_000, dia: 6 }),
+      pend({ id: 'c', descripcion: 'Agua', monto: 60_000, dia: 7 }),
+    ], '2026-06');
+    expect(document.querySelector('.cal-lote__desc').textContent)
+      .toContain('Arriendo, Netflix y 1 más');
+  });
+
+  it('con un solo vencido no pinta nada (el CTA de la tarjeta ya lo cubre)', () => {
+    expect(renderLoteCard([pend()], '2026-06')).toBe('');
+  });
+
+  it('sin vencidos no pinta nada', () => {
+    expect(renderLoteCard([], '2026-06')).toBe('');
+    expect(renderLoteCard(null, '2026-06')).toBe('');
+  });
+});
+
+// ── CUERPO DEL MODAL DEL LOTE (CAL.5a/CAL.5b, mudado en la ficha 05) ──
+
+describe('renderFormPagoLote', () => {
+  it('pinta una fila por pendiente, todas marcadas, con su monto y día', () => {
+    document.body.innerHTML = renderFormPagoLote([
+      { id: 'a', descripcion: 'Arriendo', monto: 900_000, dia: 5 },
+      { id: 'b', descripcion: 'Netflix',  monto:  40_000, dia: 12 },
+    ]);
+    const filas = document.querySelectorAll('.lote-row');
+    expect(filas).toHaveLength(2);
+    expect([...document.querySelectorAll('.lote-row__check')].every(c => c.checked)).toBe(true);
+    expect(filas[0].querySelector('.lote-row__check').dataset.loteId).toBe('a');
+    expect(filas[0].querySelector('.lote-row__check').dataset.loteMonto).toBe('900000');
+    expect(filas[0].querySelector('.lote-row__amount').textContent).toContain('900.000');
+    expect(filas[1].querySelector('.lote-row__sub').textContent).toBe('Vencía el 12');
+  });
+
+  it('el botón de confirmar lleva la acción del lote y los slots vivos', () => {
+    document.body.innerHTML = renderFormPagoLote([{ id: 'a', descripcion: 'X', monto: 1, dia: 1 }]);
+    expect(document.querySelector('[data-action="compromisos-confirmar-lote"]')).not.toBeNull();
+    expect(document.querySelector('[data-role="lote-cta-texto"]')).not.toBeNull();
+    expect(document.querySelector('[data-role="lote-total"]')).not.toBeNull();
+  });
+
+  // CAL.5b: el modal ya no habla solo de gastos fijos.
+  it('una fila de deuda dice que es la cuota, y el intro avisa que baja el saldo', () => {
+    document.body.innerHTML = renderFormPagoLote([
+      { id: 'd1', descripcion: 'Visa', monto: 300_000, dia: 5, tipo: 'deuda-entidad', parcial: false },
+    ]);
+    expect(document.querySelector('.lote-row__sub').textContent).toBe('Cuota de la deuda, vencía el 5');
+    expect(document.querySelector('.lote-intro').textContent).toContain('baja su saldo');
+  });
+
+  it('una deuda con abono previo dice que es el resto de la cuota', () => {
+    document.body.innerHTML = renderFormPagoLote([
+      { id: 'd1', descripcion: 'Visa', monto: 200_000, dia: 5, tipo: 'deuda-personal', parcial: true },
+    ]);
+    expect(document.querySelector('.lote-row__sub').textContent).toBe('Resto de la cuota, vencía el 5');
+  });
+
+  it('sin deudas el intro no menciona saldos', () => {
+    document.body.innerHTML = renderFormPagoLote([
+      { id: 'a', descripcion: 'Arriendo', monto: 900_000, dia: 5, tipo: 'fijo', parcial: false },
+    ]);
+    expect(document.querySelector('.lote-intro').textContent).not.toContain('saldo');
+  });
+});
+
+// ── LISTA MIXTA: FIJOS + DEUDAS (ficha 05, ADR 069) ───────────────
+
+describe('renderListaCompromisos() - fijos y deudas juntos (ficha 05)', () => {
+  const fijoCard = (overrides = {}) => ({
+    id: 'f1', descripcion: 'Arriendo', tipo: 'fijo', categoria: 'Vivienda',
+    monto: 1_200_000, frecuencia: 'Mensual', diaPago: DIA_FUTURO, activo: true,
+    ...overrides,
+  });
+  const deudaCard = (overrides = {}) => ({
+    id: 'd1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad',
+    saldoTotal: 2_400_000, cuotaMensual: 220_000, frecuencia: 'Mensual',
+    diaPago: DIA_FUTURO, categoria: 'Tarjeta de crédito', tasa: 0.28, tasaUnidad: 'EA', activo: true,
+    ...overrides,
+  });
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-compromisos"></div>';
+    S.compromisos = [];
+    S.gastos = [];
+    S.config = { ...(S.config ?? {}), ocultarSaldo: false };
+  });
+
+  it('lista los dos tipos, cada uno bajo su propio rótulo de grupo', () => {
+    S.compromisos = [fijoCard(), deudaCard()];
+    renderListaCompromisos();
+    const grupos = [...document.querySelectorAll('.grupo-eyebrow')].map(e => e.textContent.trim());
+    expect(grupos).toEqual(['Tus gastos fijos', 'Tus deudas']);
+    expect(document.querySelectorAll('.deuda-card')).toHaveLength(2);
+  });
+
+  it('los fijos van primero: es lo que vence sí o sí antes de optimizar deuda', () => {
+    S.compromisos = [deudaCard(), fijoCard()];
+    renderListaCompromisos();
+    const nombres = [...document.querySelectorAll('.deuda-card__nombre')].map(e => e.textContent);
+    expect(nombres).toEqual(['Arriendo', 'Tarjeta Visa']);
+  });
+
+  it('sin fijos no pinta el rótulo de fijos (ni al revés)', () => {
+    S.compromisos = [deudaCard()];
+    renderListaCompromisos();
+    expect(document.body.textContent).not.toContain('Tus gastos fijos');
+
+    S.compromisos = [fijoCard()];
+    renderListaCompromisos();
+    expect(document.body.textContent).not.toContain('Tus deudas');
+  });
+
+  it('la tarjeta de fijo trae sus tres acciones y su monto, sin saldo ni tasa', () => {
+    S.compromisos = [fijoCard()];
+    renderListaCompromisos();
+    const card = document.querySelector('.deuda-card');
+    expect(card.querySelector('.deuda-card__saldo').textContent).toContain('1.200.000');
+    expect([...card.querySelectorAll('[data-action]')].map(b => b.dataset.action)).toEqual([
+      'agenda-marcar-pagado-fijo', 'agenda-editar-fijo', 'agenda-eliminar-fijo',
+    ]);
+    expect(card.textContent).not.toContain('EA');
+  });
+
+  it('el "Marcar pagado" del fijo viaja con el mes en curso en data-mes', () => {
+    S.compromisos = [fijoCard()];
+    renderListaCompromisos();
+    const btn = document.querySelector('[data-action="agenda-marcar-pagado-fijo"]');
+    expect(btn.dataset.mes).toBe(new Date().toISOString().slice(0, 7));
+    expect(btn.dataset.id).toBe('f1');
+  });
+
+  it('un fijo ya pagado este mes pierde su botón de pagar (R7, estado terminal)', () => {
+    const mes = new Date().toISOString().slice(0, 7);
+    S.compromisos = [fijoCard({ diaPago: 3 })];
+    S.gastos = [{ id: 'g1', compromisoId: 'f1', monto: 1_200_000, fecha: `${mes}-03` }];
+    renderListaCompromisos();
+    expect(document.querySelector('[data-action="agenda-marcar-pagado-fijo"]')).toBeNull();
+    expect(document.querySelector('.deuda-card__chips .chip').textContent).toContain('Pagado este mes');
+  });
+
+  it('el ojo de privacidad enmascara también el monto del fijo', () => {
+    S.compromisos = [fijoCard()];
+    S.config.ocultarSaldo = true;
+    renderListaCompromisos();
+    expect(document.querySelector('.deuda-card__saldo').textContent).not.toContain('1.200.000');
+  });
+
+  it('el empty state cubre los tres tipos, no solo las deudas', () => {
+    renderListaCompromisos();
+    const empty = document.querySelector('.empty-state');
+    expect(empty.querySelector('.empty-state__title').textContent).toBe('Nada por pagar todavía');
+    // Ya no manda a Calendario a crear el fijo: el alta vive acá (ficha 05).
+    expect(empty.textContent).not.toContain('Calendario');
+  });
+});
+
+// ── FUENTE ÚNICA DEL CONTEO DE VENCIDOS (ficha 05, criterio de la ficha 01) ──
+// El chip de cada tarjeta, la tarjeta de lote y la pastilla de la pestaña
+// cuentan el mismo conjunto: `vencidosSinPagar`. Antes de este cierre el chip
+// comparaba `diaPago` contra hoy por su cuenta, y contaba uno más.
+
+describe('renderListaCompromisos() - el chip no inventa vencidos (ficha 05)', () => {
+  const fijo = (overrides = {}) => ({
+    id: 'f1', descripcion: 'Internet', tipo: 'fijo', categoria: 'Internet',
+    monto: 89_900, frecuencia: 'Mensual', diaPago: 5, activo: true,
+    fechaCreacion: '2025-01-01T00:00:00.000Z', ...overrides,
+  });
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-compromisos"></div>';
+    S.compromisos = [];
+    S.gastos = [];
+    S.config = { ...(S.config ?? {}), ocultarSaldo: false };
+  });
+
+  it('un compromiso registrado este mes DESPUÉS de su día de pago no está vencido', () => {
+    const ahora = new Date();
+    const mes   = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}`;
+    // Día de pago ayer, pero registrado hoy: ese ciclo no le aplica. Es el caso
+    // que `vencidosSinPagar` descarta y que el chip por su cuenta marcaba rojo.
+    const ayer = Math.max(1, ahora.getDate() - 1);
+    S.compromisos = [fijo({
+      diaPago: ayer,
+      fechaCreacion: `${mes}-${String(ahora.getDate()).padStart(2, '0')}T10:00:00.000Z`,
+    })];
+    renderListaCompromisos();
+    const chip = document.querySelector('.deuda-card__chips .chip');
+    expect(chip.textContent).not.toContain('Venció');
+    expect(chip.className).not.toContain('chip-danger');
+  });
+
+  it('el mismo compromiso, registrado el año pasado, sí afirma su atraso', () => {
+    const ahora = new Date();
+    const ayer = Math.max(1, ahora.getDate() - 1);
+    S.compromisos = [fijo({ diaPago: ayer })];
+    renderListaCompromisos();
+    const chip = document.querySelector('.deuda-card__chips .chip');
+    expect(chip.textContent).toMatch(/^Venci(ó|ó hace)|^Vence hoy/);
+    expect(chip.className).toContain('chip-danger');
+  });
+
+  it('los fijos vencidos suben sobre los que aún no vencen', () => {
+    const ahora = new Date();
+    const ayer  = Math.max(1, ahora.getDate() - 1);
+    const luego = Math.min(28, ahora.getDate() + 5);
+    S.compromisos = [
+      fijo({ id: 'f-futuro', descripcion: 'Gimnasio', diaPago: luego }),
+      fijo({ id: 'f-vencido', descripcion: 'Arriendo', diaPago: ayer }),
+    ];
+    renderListaCompromisos();
+    const nombres = [...document.querySelectorAll('.deuda-card__nombre')].map(e => e.textContent);
+    expect(nombres).toEqual(['Arriendo', 'Gimnasio']);
   });
 });

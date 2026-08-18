@@ -275,11 +275,13 @@
               <span class="nav-item__label">Ahorro</span>
             </a>
 
-            <!-- Deudas: solo desktop (demasiados slots para mobile) -->
+            <!-- Por pagar: solo desktop (en móvil es una lente del bloque
+                 Gastos, ADR 069). El nombre lo fijó la ficha 01 y la ficha 05
+                 lo trajo al chrome: la sección ya no es solo deudas. -->
             <a class="nav-item nav-item--no-mobile" href="#compromisos" data-section="compromisos"
-               aria-label="Mis deudas y compromisos">
+               aria-label="Por pagar: gastos fijos y deudas">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-deudas"/></svg>
-              <span class="nav-item__label">Deudas</span>
+              <span class="nav-item__label">Por pagar</span>
             </a>
 
             <!-- Boton "Mas" solo visible en mobile (< 1024px). Abre el modal #modal-mas. -->
@@ -815,19 +817,18 @@
         </div>
       </section>
 
-      <!-- COMPROMISOS (v6: solo deudas - los gastos fijos van en Agenda) -->
+      <!-- POR PAGAR (ficha 05, ADR 069: fijos + deudas de entidad + deudas personales) -->
       <section class="section" id="sec-compromisos" tabindex="-1" aria-labelledby="title-compromisos">
         <header class="section__header">
           <div class="section__title-group">
             <span class="cat-teja section__icon" data-dom="compromisos" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-deudas"/></svg></span>
-            <h1 class="section__title" id="title-compromisos">Deudas</h1>
+            <h1 class="section__title" id="title-compromisos">Por pagar</h1>
           </div>
-          <!-- FD6: sin deudas este botón se oculta (renderListaCompromisos):
-               el estado vacío ya es la llamada a la acción, con el mismo verbo. -->
-          <button class="btn btn-primary" id="compromisos-nueva-deuda"
-                  data-action="nuevo-compromiso"
-                  aria-label="Registrar nueva deuda">
-            + Nueva deuda
+          <!-- Ficha 05: un solo botón para los tres tipos; abre el chooser. -->
+          <button class="btn btn-primary"
+                  data-action="comp-elegir-tipo-nuevo"
+                  aria-label="Agregar un gasto fijo o una deuda">
+            + Agregar
           </button>
         </header>
         <!-- Lente "Por pagar" del bloque Gastos (ADR 069). -->
@@ -838,6 +839,9 @@
         <div id="compromisos-hero">
           <!-- D.16a (ADR 036): renderHeroCompromisos() pinta el total de deuda aquí -->
         </div>
+        <div id="lote-compromisos">
+          <!-- Ficha 05: tarjeta de pago en lote, mudada del Calendario. -->
+        </div>
         <!-- Estrategia arriba: define el orden de pago aplicado en la lista. -->
         <div id="estrategia-pago">
           <!-- F.4 / v6: card Avalancha vs Bola de Nieve. -->
@@ -846,21 +850,17 @@
           <!-- G.1: deudas activas sin actividad reciente. -->
         </div>
         <div id="lista-compromisos">
-          <!-- v6: solo deudas, ordenadas según la estrategia activa. -->
+          <!-- Ficha 05: fijos y deudas, cada grupo con su propio orden. -->
         </div>
       </section>
 
-      <!-- CALENDARIO (dominio interno: agenda; vista calendario sobre compromisos + alta de gastos fijos) -->
+      <!-- CALENDARIO (dominio interno: agenda; vista de fechas sobre compromisos) -->
       <section class="section" id="sec-agenda" tabindex="-1" aria-labelledby="title-agenda">
         <header class="section__header">
           <div class="section__title-group">
             <span class="cat-teja section__icon" data-dom="agenda" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-agenda"/></svg></span>
             <h1 class="section__title" id="title-agenda">Calendario</h1>
           </div>
-          <button class="btn btn-primary" data-action="nuevo-gasto-fijo"
-                  aria-label="Registrar nuevo gasto fijo">
-            + Agregar gasto fijo
-          </button>
         </header>
         <div id="proposito-agenda">
           <!-- proposito.js inyecta el banner de propósito de sección (ADR 016) -->
@@ -1216,7 +1216,36 @@
     </div>
   </div>
 
-  <!-- Modal: Nuevo compromiso (v6: solo deudas) -->
+  <!-- Modal: elegir tipo de "Por pagar" (ficha 05, ADR 069): un solo "+ Agregar", tres destinos -->
+  <div class="modal-overlay" id="modal-compromiso-tipo" data-dom="compromisos"
+       role="dialog" aria-modal="true"
+       aria-labelledby="modal-compromiso-tipo-title" aria-hidden="true">
+    <div class="modal">
+      <header class="modal__header">
+        <h2 class="modal__title" id="modal-compromiso-tipo-title">¿Qué quieres agregar?</h2>
+        <button class="modal__close btn btn-icon btn-ghost"
+                data-action="modal-close" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </header>
+      <div class="modal__body">
+        <div class="chips-cat" role="group" aria-label="Tipo de compromiso">
+          <button type="button" class="chip-cat" data-action="comp-elegir-tipo-nuevo-ir" data-tipo="fijo">
+            <svg class="icon" aria-hidden="true"><use href="#i-recurring"/></svg>
+            <span class="chip-cat__label">Gasto fijo</span>
+          </button>
+          <button type="button" class="chip-cat" data-action="comp-elegir-tipo-nuevo-ir" data-tipo="deuda-entidad">
+            <svg class="icon" aria-hidden="true"><use href="#i-deudas"/></svg>
+            <span class="chip-cat__label">Deuda con entidad</span>
+          </button>
+          <button type="button" class="chip-cat" data-action="comp-elegir-tipo-nuevo-ir" data-tipo="deuda-personal">
+            <svg class="icon" aria-hidden="true"><use href="#i-personales"/></svg>
+            <span class="chip-cat__label">Deuda personal</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Nueva deuda -->
   <div class="modal-overlay" id="modal-compromiso" data-dom="compromisos"
        role="dialog" aria-modal="true"
        aria-labelledby="modal-compromiso-title" aria-hidden="true">
@@ -1249,36 +1278,36 @@
     </div>
   </div>
 
-  <!-- Modal: Nuevo gasto fijo (sec Agenda) -->
-  <div class="modal-overlay" id="modal-gasto-fijo" data-dom="agenda"
+  <!-- Modal: Nuevo gasto fijo (ficha 05, ADR 069: mudado de Agenda a "Por pagar") -->
+  <div class="modal-overlay" id="modal-gasto-fijo" data-dom="compromisos"
        role="dialog" aria-modal="true"
        aria-labelledby="modal-gasto-fijo-title" aria-hidden="true">
     <div class="modal">
       <header class="modal__header">
-        <span class="modal__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-agenda"/></svg></span>
+        <span class="modal__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-recurring"/></svg></span>
         <h2 class="modal__title" id="modal-gasto-fijo-title">Nuevo gasto fijo</h2>
         <button class="modal__close btn btn-icon btn-ghost"
                 data-action="modal-close" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
       </header>
       <div class="modal__body" id="modal-gasto-fijo-body">
-        <!-- agenda/index.js inyecta el form aquí -->
+        <!-- compromisos/index.js inyecta el form aquí -->
       </div>
     </div>
   </div>
 
-  <!-- Modal: Pagar en lote lo vencido del mes (CAL.5a) -->
-  <div class="modal-overlay" id="modal-pago-lote" data-dom="agenda"
+  <!-- Modal: Pagar en lote lo vencido del mes (CAL.5a/b, ficha 05: mudado de Agenda a "Por pagar") -->
+  <div class="modal-overlay" id="modal-pago-lote" data-dom="compromisos"
        role="dialog" aria-modal="true"
        aria-labelledby="modal-pago-lote-title" aria-hidden="true">
     <div class="modal">
       <header class="modal__header">
-        <span class="modal__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-agenda"/></svg></span>
+        <span class="modal__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-deudas"/></svg></span>
         <h2 class="modal__title" id="modal-pago-lote-title">Pagar lo vencido</h2>
         <button class="modal__close btn btn-icon btn-ghost"
                 data-action="modal-close" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
       </header>
       <div class="modal__body" id="modal-pago-lote-body">
-        <!-- CAL.5a: agenda/index.js inyecta la lista aquí -->
+        <!-- compromisos/index.js inyecta la lista aquí -->
       </div>
     </div>
   </div>

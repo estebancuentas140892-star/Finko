@@ -15,9 +15,7 @@ import { S } from '../../core/state.js';
 import { f, esc as _esc, hoy } from '../../infra/utils.js';
 import { icon, tejaCategoria } from '../../infra/icons.js';
 import { resolverMarca, tejaMarca } from '../../infra/marcas.js';
-import { FRECUENCIAS, CATEGORIAS_AGENDA, CATEGORIA_INGRESO_ICONO, ICONOS_CATEGORIA_PERSONALIZADA, iconoDeCategoriaGasto } from '../../core/constants.js';
-import { renderIconoPicker } from '../../infra/icon-picker.js';
-import { renderBloqueDebitoAutomatico } from '../../infra/cuenta-helper.js';
+import { CATEGORIA_INGRESO_ICONO, iconoDeCategoriaGasto } from '../../core/constants.js';
 import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { LABEL_TIPO, ICONO_TIPO, calcularAbonosDelMes, estadoPagoMes } from '../compromisos/logic.js';
 import { eventosDelMes, eventosIngresosDelMes, eventosMetasDelMes, totalEventosDelMes, totalDia, tiposPresentesEnMes, totalesDelMes, pendientesDePagoDelMes } from './logic.js';
@@ -175,14 +173,13 @@ export function renderAgenda() {
     ? _renderEmptyMes(_viewMonth)
     : '';
 
-  // CAL.5a: gastos fijos ya vencidos y sin pagar del mes visible. Con dos o
-  // más, se ofrece pagarlos en un solo movimiento (ver `_renderLoteCard`).
+  // Gastos fijos y deudas ya vencidos y sin pagar del mes visible (para
+  // marcar cada día de la grilla con el punto de "vencido", DIS.11 C2/V-5).
+  // El pago en lote es de "Por pagar" desde la ficha 05 (ADR 069): Agenda ya
+  // no ofrece la tarjeta, solo cuenta para la grilla.
   const gastosS   = Array.isArray(S.gastos) ? S.gastos : [];
   const pendientes = pendientesDePagoDelMes(eventos, gastosS, prefijoMes, hoy());
 
-  // DIS.11 C2/V-5: cuántos pagos vencidos y sin registrar tiene cada día. Se
-  // reusa `pendientes` (ya calculado para la tarjeta de lote), no se
-  // recalcula nada: la grilla y la tarjeta cuentan lo mismo.
   /** @type {Record<number, number>} */
   const vencidosPorDia = {};
   for (const p of pendientes) {
@@ -191,7 +188,6 @@ export function renderAgenda() {
 
   el.innerHTML = `
     ${_renderHeroMes(eventos, _viewYear, _viewMonth, prefijoMes)}
-    ${_renderLoteCard(pendientes, prefijoMes)}
     <article class="cal-card">
       ${_renderCabecera(_viewYear, _viewMonth, eventosComp, eventosIng, eventosMeta)}
       ${_renderDiasSemana()}
@@ -278,7 +274,7 @@ function _renderHeroMes(eventos, year, month, prefijoMes) {
       <div class="hero-agenda">
         <p class="hero-agenda__label">${MONTHS[month]} ${year}</p>
         <p class="hero-agenda__titulo">Sin pagos programados</p>
-        <p class="hero-agenda__guia">Cuando agregues un gasto fijo o una deuda con fecha, aparecerán aquí y en el mes.</p>
+        <p class="hero-agenda__guia">Agrega un gasto fijo o una deuda desde <a class="link" href="#compromisos">Por pagar</a> y aparecerán aquí en su fecha.</p>
       </div>`;
   }
 
@@ -306,120 +302,6 @@ function _renderHeroMes(eventos, year, month, prefijoMes) {
         <span class="hero-agenda__pagado">Pagado ${pagadoTxt}</span>
         <span class="hero-agenda__falta">Falta ${faltaTxt}</span>
       </div>
-    </div>`;
-}
-
-// ── PAGO EN LOTE (CAL.5a) ────────────────────────────────────────
-
-/**
- * Tarjeta "paga de una vez lo que ya venció" bajo el hero del mes.
- *
- * Solo aparece con **dos o más** pendientes: con uno solo el lote no ahorra
- * nada (el CTA "Marcar pagado" del detalle del día ya resuelve ese caso) y la
- * tarjeta sería ruido que compite con el hero.
- *
- * DIS.11 C5/V-7: la tarjeta dice **cuánto** suma antes de abrir el flujo (una
- * tarjeta que propone mover dinero muestra el monto antes, no dentro). El
- * total no se enmascara con el ojo de privacidad: no es un saldo, es el precio
- * de la acción que se está ofreciendo, mismo criterio que los montos del modal.
- * La descripción se queda con la lista de nombres; el "eligiendo la cuenta una
- * sola vez" ya lo explica el modal.
- *
- * @param {Array<{id:string, descripcion:string, monto:number, dia:number,
- *   tipo:string, parcial:boolean}>} pendientes
- * @param {string} prefijoMes 'YYYY-MM' del mes visible (viaja al handler, que
- *   no conoce `_viewYear`/`_viewMonth`, mismo patrón que BUG-015).
- * @returns {string}
- */
-function _renderLoteCard(pendientes, prefijoMes) {
-  if (!Array.isArray(pendientes) || pendientes.length < 2) return '';
-
-  const n       = pendientes.length;
-  const nombres = pendientes.slice(0, 2).map(p => _esc(p.descripcion || 'Sin nombre'));
-  const resto   = n - nombres.length;
-  const lista   = resto > 0
-    ? `${nombres.join(', ')} y ${resto} más`
-    : nombres.join(' y ');
-  const total   = pendientes.reduce((acc, p) => acc + (Number(p.monto) || 0), 0);
-
-  return `
-    <section class="cal-lote" aria-label="Pagos pendientes del mes">
-      <div class="cal-lote__body">
-        <p class="cal-lote__title">${n} pagos ya vencieron</p>
-        <p class="cal-lote__monto">${f(total)}</p>
-        <p class="cal-lote__desc">${lista}.</p>
-      </div>
-      <button type="button" class="cal-lote__cta"
-              data-action="agenda-pagar-lote" data-mes="${_esc(prefijoMes)}"
-              aria-label="Pagar juntos los ${n} pagos vencidos">
-        Pagar los ${n}
-      </button>
-    </section>`;
-}
-
-/**
- * Subtítulo de una fila del lote: qué es lo que se va a registrar, no solo
- * cuándo vencía. Un fijo se paga entero; una deuda puede traer el resto de la
- * cuota (ya tenía un abono este mes) o el resto del saldo (última cuota).
- *
- * @param {{dia:number, tipo:string, parcial:boolean}} p
- * @returns {string}
- */
-function _subFilaLote(p) {
-  const cuando = `vencía el ${p.dia}`;
-  if (p.tipo !== 'deuda-entidad' && p.tipo !== 'deuda-personal') {
-    return `Vencía el ${p.dia}`;
-  }
-  return p.parcial ? `Resto de la cuota, ${cuando}` : `Cuota de la deuda, ${cuando}`;
-}
-
-/**
- * Cuerpo del modal de pago en lote: una fila por pendiente, todas marcadas
- * (la tarjeta prometió "los N"; desmarcar es la excepción, no la regla) y el
- * total en vivo que el handler recalcula al desmarcar.
- *
- * Los montos SÍ se muestran aunque el ojo esté activo: el usuario está por
- * mover ese dinero y ocultarle cuánto sería peligroso, no privado. El mismo
- * criterio con que los formularios de gasto nunca enmascaran lo que se escribe.
- *
- * CAL.5b: el lote también trae deudas, y una deuda no siempre pide la cuota
- * completa (puede quedar el resto de un abono previo, o el resto del saldo).
- * La fila lo dice en su subtítulo en vez de mostrar una cifra sin explicar, y
- * el intro avisa que un abono baja el saldo de la deuda: es un movimiento con
- * más consecuencias que pagar un fijo.
- *
- * @param {Array<{id:string, descripcion:string, monto:number, dia:number,
- *   tipo:string, parcial:boolean}>} pendientes
- * @returns {string}
- */
-export function renderFormPagoLote(pendientes) {
-  const lista = pendientes ?? [];
-
-  const items = lista.map(p => `
-    <label class="lote-row">
-      <input type="checkbox" class="lote-row__check" checked
-             data-lote-id="${_esc(p.id)}" data-lote-monto="${Number(p.monto) || 0}" />
-      <span class="lote-row__body">
-        <span class="lote-row__name">${_esc(p.descripcion || 'Sin nombre')}</span>
-        <span class="lote-row__sub">${_subFilaLote(p)}</span>
-      </span>
-      <span class="lote-row__amount">${f(Number(p.monto) || 0)}</span>
-    </label>`).join('');
-
-  const hayDeudas = lista.some(p => p.tipo === 'deuda-entidad' || p.tipo === 'deuda-personal');
-  const intro = hayDeudas
-    ? 'Estos pagos ya vencieron y no están registrados. Lo que abones a una deuda baja su saldo. Desmarca los que aún no hayas pagado.'
-    : 'Estos pagos ya vencieron y no están registrados. Desmarca los que aún no hayas pagado.';
-
-  return `
-    <p class="lote-intro">${intro}</p>
-    <div class="lote-lista">${items}</div>
-    <p class="lote-total" data-role="lote-total" aria-live="polite"></p>
-    <div class="modal__footer modal__footer--principal">
-      <button type="button" class="btn btn-primary" data-action="agenda-confirmar-lote">
-        <svg class="icon" aria-hidden="true"><use href="#i-check-circle"/></svg>
-        <span data-role="lote-cta-texto">Registrar pagos</span>
-      </button>
     </div>`;
 }
 
@@ -699,7 +581,8 @@ function _renderLeyenda(eventos) {
 /**
  * Empty state del mes (CAL.4b, ADR 037 D6): mes visible sin ningún evento.
  * Guía a la acción en vez de dejar la pantalla vacía: teja índigo de la
- * sección + CTA que abre el modal de gasto fijo (acción existente).
+ * sección + enlace a "Por pagar" (ficha 05, ADR 069), dueña de crear un
+ * gasto fijo o una deuda desde que esa ficha centralizó ahí la alta.
  *
  * @param {number} month 0-indexed.
  * @returns {string}
@@ -710,9 +593,9 @@ function _renderEmptyMes(month) {
       <span class="cal-empty__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-agenda"/></svg></span>
       <p class="cal-empty__title">${MONTHS[month]} está despejado</p>
       <p class="cal-empty__desc">Programa tus gastos fijos y deudas para no perder ningún pago.</p>
-      <button type="button" class="btn btn-primary" data-action="nuevo-gasto-fijo">
-        + Agregar gasto fijo
-      </button>
+      <a class="btn btn-primary" href="#compromisos">
+        Ir a Por pagar
+      </a>
     </div>`;
 }
 
@@ -1005,149 +888,4 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
     </li>`;
 }
 
-// ── FORMULARIO: NUEVO GASTO FIJO ─────────────────────────────────
-
-/**
- * Devuelve el HTML del formulario simplificado de gasto fijo.
- *
- * Campos visibles: categoria (opcional), descripcion/nota, monto, frecuencia, diaPago.
- * `tipo` va como input hidden con valor 'fijo' para que `normalizarCompromiso`
- * lo guarde como un compromiso de tipo fijo en S.compromisos.
- *
- * AG.4: con una categoría predefinida (cualquiera salvo "Otro"), el nombre
- * del registro es la propia categoría, así que pedirlo aparte es redundante;
- * el campo de texto pasa a ser una nota opcional. `_syncCategoriaGastoFijo`
- * (en index.js) alterna el label/placeholder/`required` de este campo según
- * la categoría elegida; el HTML nace en el estado por defecto (sin categoría,
- * nombre obligatorio) y ese handler ajusta el resto en cada apertura.
- *
- * @returns {string}
- */
-/**
- * Frase "cada X" (o "una vez") de cada frecuencia, para el banner dinámico
- * del gasto fijo (ver `textoBannerGastoFijo`). Cubre las 9 FRECUENCIAS;
- * "Única vez" es la única sin ritmo de repetición.
- */
-const _FRASE_FRECUENCIA = {
-  'Diario':     'cada día',
-  'Semanal':    'cada semana',
-  'Quincenal':  'cada quincena',
-  'Mensual':    'cada mes',
-  'Bimestral':  'cada dos meses',
-  'Trimestral': 'cada tres meses',
-  'Semestral':  'cada seis meses',
-  'Anual':      'cada año',
-  'Única vez':  'una vez',
-};
-
-/**
- * Texto del banner informativo del form de gasto fijo (FORM.1c, ADR 042 D5):
- * lee la frecuencia y el día de pago elegidos y arma "Aparecerá cada mes en
- * tu calendario el día 5." Sin día válido (campo vacío o fuera de 1-31),
- * usa un cierre neutro en vez de inventar una fecha.
- * @param {string} frecuencia
- * @param {string|number} diaPago
- * @returns {string}
- */
-export function textoBannerGastoFijo(frecuencia, diaPago) {
-  const frase = _FRASE_FRECUENCIA[frecuencia] ?? 'cada mes';
-  const dia = Number(diaPago);
-  const diaTexto = Number.isInteger(dia) && dia >= 1 && dia <= 31
-    ? `el día ${dia}`
-    : 'el día que elijas';
-  return `Aparecerá ${frase} en tu calendario ${diaTexto}.`;
-}
-
-/** Sentinela del chip "Categoría nueva" del formulario de gasto fijo (CAT.3c). */
-export const CATEGORIA_NUEVA_VALUE_FIJO = '__nueva__';
-
-export function renderFormGastoFijo() {
-  const frecOpts = FRECUENCIAS
-    .map(fr => `<option value="${_esc(fr)}"${fr === 'Mensual' ? ' selected' : ''}>${_esc(fr)}</option>`)
-    .join('');
-
-  // FORM.1c (ADR 042 D5): la categoría son chips de ícono en grilla de 3
-  // columnas (mismo lenguaje que Registrar gasto y Nueva deuda), no un
-  // desplegable. Radios reales name="categoria" dentro del label: el
-  // contrato FormData y validarCompromiso() no cambian.
-  // CAT.3c: se suman las personalizadas de sección 'fijo' y, al final, el
-  // chip "Categoría nueva" (mismo lenguaje que "Otra categoría" de Gastos,
-  // con nombre distinto porque 'Otro' ya es miembro literal de este catálogo).
-  const chipCat = (valor, etiqueta, simbolo) => `
-        <label class="chip-cat">
-          <input type="radio" name="categoria" class="chip-cat__radio" value="${_esc(valor)}" />
-          <svg class="icon" aria-hidden="true"><use href="#${_esc(simbolo)}"/></svg>
-          <span class="chip-cat__label">${_esc(etiqueta)}</span>
-        </label>`;
-  const personalizadasFijo = (S.categoriasPersonalizadas ?? []).filter(c => c.seccion === 'fijo');
-  const chipsCategoria = [
-    ...CATEGORIAS_AGENDA.map(c => chipCat(c, c, iconoDeCategoriaGasto(c, S.categoriasPersonalizadas))),
-    ...personalizadasFijo.map(c => chipCat(c.nombre, c.nombre, iconoDeCategoriaGasto(c.nombre, S.categoriasPersonalizadas))),
-    chipCat(CATEGORIA_NUEVA_VALUE_FIJO, 'Categoría nueva', 'i-plus'),
-  ].join('');
-
-  return `
-    <form id="form-gasto-fijo" novalidate>
-      <input type="hidden" name="tipo" value="fijo" />
-
-      <div class="form-group">
-        <span class="label" id="gfijo-categoria-label">Categoría</span>
-        <div class="chips-cat" role="radiogroup" aria-labelledby="gfijo-categoria-label">
-          ${chipsCategoria}
-        </div>
-      </div>
-
-      <div class="form-group" id="form-group-gfijo-icono" hidden>
-        ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'gfijo-icono', label: 'Ícono' })}
-      </div>
-
-      <div class="form-group" id="gfijo-categoria-nueva-fields" hidden>
-        <label for="gfijo-categoria-nueva-nombre" class="label">Nombre de tu categoría</label>
-        <input id="gfijo-categoria-nueva-nombre" name="categoriaNuevaNombre" class="input" type="text"
-               placeholder="Ej. Gimnasio, Netflix" autocomplete="off" />
-        ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'gfijo-categoria-nueva-icono', nombreCampo: 'categoriaNuevaIcono' })}
-      </div>
-
-      <div class="form-group">
-        <label for="gfijo-descripcion" class="label" id="gfijo-descripcion-label">Descripción</label>
-        <input id="gfijo-descripcion" name="descripcion" class="input" type="text"
-               placeholder="Ej. Arriendo, Netflix, agua" required aria-required="true"
-               autocomplete="off" />
-      </div>
-
-      <div class="monto-hero">
-        <label class="monto-hero__label" for="gfijo-monto">Monto (COP)</label>
-        <div class="monto-hero__box">
-          <span class="monto-hero__prefijo" aria-hidden="true">$</span>
-          <input id="gfijo-monto" name="monto" class="input input--big-amount" type="number"
-                 min="1" step="1000" placeholder="0" required aria-required="true"
-                 autocomplete="off" inputmode="numeric" />
-        </div>
-        <span class="monto-hero__hint">COP</span>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label for="gfijo-frecuencia" class="label">Frecuencia</label>
-          <select id="gfijo-frecuencia" name="frecuencia" class="input" required aria-required="true">
-            ${frecOpts}
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="gfijo-dia" class="label">Día de pago (1-31)</label>
-          <input id="gfijo-dia" name="diaPago" class="input" type="number"
-                 min="1" max="31" step="1" placeholder="1" required aria-required="true" />
-        </div>
-      </div>
-
-      <p class="form-hint form-hint--info" id="gfijo-banner" aria-live="polite">${textoBannerGastoFijo('Mensual', '')}</p>
-
-      ${renderBloqueDebitoAutomatico(S.cuentas ?? [], { id: 'gfijo-debito' })}
-
-      <div class="modal__footer modal__footer--principal">
-        <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
-        <button type="submit" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-check-circle"/></svg>Guardar gasto fijo</button>
-      </div>
-    </form>`;
-}
 

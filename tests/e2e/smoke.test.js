@@ -92,6 +92,22 @@ async function elegirCategoriaGasto(form, value) {
 }
 
 /**
+ * Abre el formulario de gasto fijo desde "Por pagar" (ficha 05, ADR 069): un
+ * solo "+ Agregar" en el encabezado abre el chooser de tipo, y el chip "Gasto
+ * fijo" lleva a su modal. Antes de esa ficha el alta vivía en el Calendario y
+ * el modal se abría con un solo click.
+ *
+ * La página debe estar ya en `#compromisos`.
+ * @param {import('@playwright/test').Page} page
+ */
+async function abrirFormGastoFijo(page) {
+  await page.click('[data-action="comp-elegir-tipo-nuevo"]');
+  await page.waitForSelector('#modal-compromiso-tipo[data-open]', { timeout: 3_000 });
+  await page.click('[data-action="comp-elegir-tipo-nuevo-ir"][data-tipo="fijo"]');
+  await expect(page.locator('#form-gasto-fijo')).toBeVisible({ timeout: 3_000 });
+}
+
+/**
  * Avanza el asistente "Distribuir mi ingreso" (MC.7d, shell paginado) hasta
  * que `selector` sea visible, o hasta el último paso si no se pasa selector
  * (donde vive el botón "Distribuir"). El panel debe estar ya abierto.
@@ -491,7 +507,12 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await expect(panel).toContainText('Acordaron esta fecha hace 5 días');
   });
 
-  test('Resumen de la semana visual: monto, chip, barras y categoría top (IN.8f, ADR 034 D6)', async ({ page }) => {
+  test('móvil: Resumen de la semana visual: monto, chip, barras y categoría top (IN.8f, ADR 034 D6; acotado a móvil desde DSK.1a, ADR 070 D2)', async ({ page }) => {
+    // DSK.1a: en escritorio este panel ya no existe (es tendencia, y la
+    // tendencia no tiene fecha límite: pertenece a Análisis). Lo que mide
+    // este test sigue vigente bajo 1024px, así que el viewport pasa a ser
+    // explícito en vez de heredar el "Desktop Chrome" de la config.
+    await page.setViewportSize({ width: 390, height: 844 });
     const hoy = new Date();
     const iso = (d) => {
       const yyyy = d.getFullYear();
@@ -594,16 +615,11 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await expect(actividad).toHaveClass(/accesos-actividad__seccion--actividad/);
   });
 
-  test('escritorio: Accesos rápidos en fila propia, Resumen semanal y Actividad reciente en la fila final 6+6 (IN.9d, ADR 057 D4)', async ({ page }) => {
+  test('escritorio: Inicio avisa y no resume: sin Accesos rápidos, sin Actividad reciente y sin Resumen semanal (DSK.1a, ADR 070 D2 y D10)', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
-    // Misma razón que en IN.9c: este test mide geometría, `boundingBox()`
-    // incluye el transform y la cascada de entrada (`cardIn`, layout.css)
-    // desliza cada celda desde translateY(8px) con delays escalonados. Antes
-    // se esperaba a que asentara con un `waitForTimeout(600)`, que es una
-    // espera a ciegas: si la máquina va lenta, 600ms no alcanzan y el test
-    // falla sin que nada esté roto. `reduce` apaga la cascada por CSS (vive
-    // dentro de un `@media no-preference`) y la medición deja de depender del
-    // reloj.
+    // La cascada de entrada (`cardIn`, layout.css) no afecta a un test de
+    // presencia, pero sí al saludo, que se mide por visibilidad: `reduce`
+    // apaga la animación por CSS y quita la espera a ciegas.
     await page.emulateMedia({ reducedMotion: 'reduce' });
     const hoy = new Date();
     const iso = (d) => {
@@ -638,38 +654,62 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await page.goto('/');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
 
-    // La fusión móvil desaparece del todo: nada de saldos de acceso rápido
-    // ni de actividad duplicados en un contenedor que no se ve.
+    // La fusión móvil sigue oculta en escritorio, como desde IN.9d.
     await expect(page.locator('#accesos-actividad-movil')).toBeHidden();
 
-    // Accesos rápidos: columna propia, angosta (span 4), con su propio botón
-    // "Personalizar" a mano.
-    const accesos = page.locator('#panel-accesos-escritorio');
-    await expect(accesos).toBeVisible();
-    await expect(accesos.locator('.accesos-actividad__label')).toHaveText('Accesos rápidos');
-    await expect(accesos.locator('[data-action="accesos-personalizar"]')).toBeVisible();
-    await expect(page.locator('#accesos-inicio-grid-escritorio .menu-mas__item').first()).toBeVisible();
+    // Los dos contenedores que IN.9d creó salen del DOM, no se ocultan:
+    // escritorio era su único hogar, así que dejarlos sería marcado muerto.
+    await expect(page.locator('#panel-accesos-escritorio')).toHaveCount(0);
+    await expect(page.locator('#panel-actividad-reciente-escritorio')).toHaveCount(0);
+    await expect(page.locator('#accesos-inicio-grid-escritorio')).toHaveCount(0);
 
-    // Resumen semanal y Actividad reciente: misma fila (mismo y), a la
-    // derecha de Accesos rápidos (mismo criterio que IN.9c con el hero).
-    const resumen    = page.locator('#panel-resumen');
-    const actividad  = page.locator('#panel-actividad-reciente-escritorio');
-    await expect(resumen).toBeVisible();
-    await expect(actividad).toBeVisible();
-    await expect(actividad.locator('.accesos-actividad__label')).toHaveText('Actividad reciente');
-    await expect(actividad).toContainText('Mercado semanal');
+    // El Resumen semanal sí sigue en el DOM (bajo 1024px no cambió nada),
+    // pero render.js lo fuerza oculto por ancho aunque haya datos de sobra:
+    // estos nueve gastos son de hoy y llenarían sus barras.
+    await expect(page.locator('#panel-resumen')).toBeHidden();
 
-    const cajaAccesos   = await accesos.boundingBox();
-    const cajaResumen   = await resumen.boundingBox();
-    const cajaActividad = await actividad.boundingBox();
+    // Y ninguno de los tres deja rastro visible. "Personalizar" sigue en el
+    // DOM porque vive dentro de la fusión móvil, que es la que se oculta:
+    // esa es justamente la dependencia abierta que deja D2 (necesita sitio
+    // en Ajustes para volver a existir en escritorio).
+    await expect(page.locator('[data-action="accesos-personalizar"]')).toBeHidden();
+    await expect(page.locator('.resumen-semana__monto')).toBeHidden();
 
-    // Accesos queda en una fila propia, arriba de Resumen + Actividad.
-    expect(cajaAccesos.y).toBeLessThan(cajaResumen.y);
-    // Resumen y Actividad comparten fila, y Actividad va a la derecha.
-    expect(Math.round(cajaResumen.y)).toBe(Math.round(cajaActividad.y));
-    expect(cajaActividad.x).toBeGreaterThan(cajaResumen.x);
-    // Span 4 contra span 6: Accesos es más angosto que Resumen.
-    expect(cajaAccesos.width).toBeLessThan(cajaResumen.width);
+    // D10: el saludo pierde la marca "F" (el logo está a 240px, en la barra
+    // lateral) y el engranaje (tercera entrada a Ajustes de la pantalla).
+    // El avatar y el saludo se quedan.
+    const saludo = page.locator('.perfil-inicio');
+    await expect(saludo.locator('.perfil-inicio__marca')).toBeHidden();
+    await expect(saludo.locator('.perfil-inicio__ajustes')).toBeHidden();
+    await expect(saludo.locator('.perfil-inicio__franja')).toBeVisible();
+
+    // La barra superior conserva SU engranaje: el selector de D10 es de hijo
+    // directo justamente para no llevarse este por delante.
+    await expect(page.locator('.topbar__actions .perfil-inicio__ajustes').last()).toBeVisible();
+  });
+
+  test('móvil: el saludo conserva marca "F" y engranaje (DSK.1a, ADR 070 D10)', async ({ page }) => {
+    // La contracara del test anterior: acá la barra lateral no tiene logo
+    // visible y no hay barra superior, así que las dos piezas se ganan su
+    // sitio. Es la compuerta contra retirarlas de las dos plataformas.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await sembrarSiVacio(page, {
+      version: 1,
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [],
+      ingresos: [],
+      gastos: [],
+      compromisos: [],
+      metas: [],
+    });
+    await page.goto('/');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+
+    const saludo = page.locator('.perfil-inicio');
+    await expect(saludo.locator('.perfil-inicio__marca')).toBeVisible();
+    await expect(saludo.locator('.perfil-inicio__ajustes')).toBeVisible();
   });
 });
 
@@ -2529,11 +2569,12 @@ test.describe('Movimientos - búsqueda y filtros (MOV.2)', () => {
 });
 
 // ── SUITE 12d: Agenda - empty state del mes (CAL.4b, ADR 037 D6) ─────────────
-// Un mes sin ningún evento muestra la card de guía bajo el calendario y su
-// CTA abre el modal de gasto fijo (misma acción del header, nuevo-gasto-fijo).
+// Un mes sin ningún evento muestra la card de guía bajo el calendario. Desde la
+// ficha 05 (ADR 069) su salida es un enlace a "Por pagar", que es la sección
+// dueña del alta: el Calendario ya no crea nada.
 
 test.describe('Agenda - empty state del mes (CAL.4b)', () => {
-  test('mes vacío muestra "está despejado" y el CTA abre el modal de gasto fijo', async ({ page }) => {
+  test('mes vacío muestra "está despejado" y su salida lleva a Por pagar', async ({ page }) => {
     await sembrar(page, {
       version:   1,
       perfil:    { nombre: 'TestUser', smmlv: 1750905 },
@@ -2551,11 +2592,11 @@ test.describe('Agenda - empty state del mes (CAL.4b)', () => {
     const empty = page.locator('.cal-empty');
     await expect(empty).toBeVisible();
     await expect(empty.locator('.cal-empty__title')).toContainText('está despejado');
+    await expect(empty.locator('[data-action="nuevo-gasto-fijo"]')).toHaveCount(0);
 
-    await empty.locator('[data-action="nuevo-gasto-fijo"]').click();
-    const modal = page.locator('#modal-gasto-fijo');
-    await expect(modal).toBeVisible({ timeout: 3_000 });
-    await expect(modal.locator('.modal__title')).toHaveText('Nuevo gasto fijo');
+    await empty.locator('a[href="#compromisos"]').click();
+    await expect(page.locator('#sec-compromisos')).toBeVisible({ timeout: 3_000 });
+    await expect(page.locator('#title-compromisos')).toHaveText('Por pagar');
   });
 });
 
@@ -2867,18 +2908,18 @@ test.describe('Agenda - teja de categoría como ícono principal', () => {
   });
 });
 
-// ── Agenda - nombre automático según la categoría (AG.4) ─────────────────────
+// ── Por pagar - nombre automático según la categoría (AG.4) ──────────────────
 // Con una categoría predefinida, el nombre del gasto fijo pasa a ser la
 // categoría y el campo de texto se convierte en una nota opcional; con
 // "Otro" o sin categoría, el campo sigue siendo el nombre obligatorio.
+// El formulario se abre desde "Por pagar" desde la ficha 05 (ADR 069).
 
-test.describe('Agenda - nombre automático según la categoría', () => {
+test.describe('Por pagar - nombre automático según la categoría del fijo', () => {
   test.beforeEach(async ({ page }) => {
     await saltearOnboarding(page);
-    await page.goto('/#agenda');
-    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
-    await page.click('[data-action="nuevo-gasto-fijo"]');
-    await expect(page.locator('#form-gasto-fijo')).toBeVisible({ timeout: 3_000 });
+    await page.goto('/#compromisos');
+    await page.waitForSelector('#lista-compromisos', { timeout: 10_000 });
+    await abrirFormGastoFijo(page);
   });
 
   test('al elegir una categoría predefinida, el campo pasa a "Nota (opcional)" y deja de ser obligatorio', async ({ page }) => {
@@ -2914,6 +2955,10 @@ test.describe('Agenda - nombre automático según la categoría', () => {
     await page.click('#form-gasto-fijo button[type="submit"]');
 
     await expect(page.locator('#modal-gasto-fijo')).not.toHaveAttribute('data-open');
+    // Ficha 05: se crea en "Por pagar" y aparece en el Calendario, que sigue
+    // siendo la vista de fechas del mismo dato.
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
     await page.click(`[data-action="agenda-mostrar-dia"][data-day="10"]`);
 
     const item = page.locator('.cal-detail__item').first();
@@ -2929,6 +2974,8 @@ test.describe('Agenda - nombre automático según la categoría', () => {
     await page.click('#form-gasto-fijo button[type="submit"]');
 
     await expect(page.locator('#modal-gasto-fijo')).not.toHaveAttribute('data-open');
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
     await page.click(`[data-action="agenda-mostrar-dia"][data-day="11"]`);
 
     const item = page.locator('.cal-detail__item').first();
@@ -2949,15 +2996,14 @@ test.describe('Agenda - nombre automático según la categoría', () => {
   });
 });
 
-// ── Agenda - picker de ícono para "Otro" (CAT.2f) ────────────────────────────
+// ── Por pagar - picker de ícono del fijo para "Otro" (CAT.2f) ───────────────
 
-test.describe('Agenda - picker de ícono para "Otro" (CAT.2f)', () => {
+test.describe('Por pagar - picker de ícono del fijo para "Otro" (CAT.2f)', () => {
   test.beforeEach(async ({ page }) => {
     await saltearOnboarding(page);
-    await page.goto('/#agenda');
-    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
-    await page.click('[data-action="nuevo-gasto-fijo"]');
-    await expect(page.locator('#form-gasto-fijo')).toBeVisible({ timeout: 3_000 });
+    await page.goto('/#compromisos');
+    await page.waitForSelector('#lista-compromisos', { timeout: 10_000 });
+    await abrirFormGastoFijo(page);
   });
 
   test('elegir "Otro" revela el picker de ícono; una categoría predefinida lo oculta de nuevo', async ({ page }) => {
@@ -2983,6 +3029,8 @@ test.describe('Agenda - picker de ícono para "Otro" (CAT.2f)', () => {
     await form.locator('button[type="submit"]').click();
 
     await expect(page.locator('#modal-gasto-fijo')).not.toHaveAttribute('data-open');
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
     await page.click('[data-action="agenda-mostrar-dia"][data-day="12"]');
 
     const item = page.locator('.cal-detail__item').first();
@@ -4284,9 +4332,11 @@ test.describe('Deudas - picker de ícono en categoría "Otra"/"Otro" (CAT.2d)', 
     await saltearOnboarding(page);
     await page.goto('/#compromisos');
     await page.waitForSelector('#sec-compromisos.active', { timeout: 10_000 });
-    // FD6: sin deudas el botón del encabezado se oculta y el CTA que conduce
-    // es el del estado vacío (mismo verbo, misma acción).
-    await page.click('.empty-state [data-action="nuevo-compromiso"]');
+    // Ficha 05 (ADR 069): el estado vacío abre el chooser de tipo, igual que el
+    // "+ Agregar" del encabezado; el chip lleva al form de deuda.
+    await page.click('.empty-state [data-action="comp-elegir-tipo-nuevo"]');
+    await page.waitForSelector('#modal-compromiso-tipo[data-open]');
+    await page.click('[data-action="comp-elegir-tipo-nuevo-ir"][data-tipo="deuda-entidad"]');
     await page.waitForSelector('#modal-compromiso[data-open]');
 
     // FORM.1b (ADR 042): el form arranca directo en Entidad (segmented
@@ -4314,8 +4364,10 @@ test.describe('Deudas - picker de ícono en categoría "Otra"/"Otro" (CAT.2d)', 
     await saltearOnboarding(page);
     await page.goto('/#compromisos');
     await page.waitForSelector('#sec-compromisos.active', { timeout: 10_000 });
-    // FD6: sin deudas, el CTA visible es el del estado vacío.
-    await page.click('.empty-state [data-action="nuevo-compromiso"]');
+    // Ficha 05: chooser de tipo desde el estado vacío.
+    await page.click('.empty-state [data-action="comp-elegir-tipo-nuevo"]');
+    await page.waitForSelector('#modal-compromiso-tipo[data-open]');
+    await page.click('[data-action="comp-elegir-tipo-nuevo-ir"][data-tipo="deuda-entidad"]');
     await page.waitForSelector('#modal-compromiso[data-open]');
 
     // El segmented arranca en Entidad; se toca "Personal" para este flujo.
@@ -4535,13 +4587,13 @@ test.describe('Análisis v2 - score hero + chip de mes (ANL.2a)', () => {
 
 });
 
-// ── SUITE 12f: Agenda - pagar en lote lo vencido (CAL.5a) ────────────────────
+// ── SUITE 12f: Por pagar - pagar en lote lo vencido (CAL.5a, ficha 05) ───────
 // La tarjeta bajo el hero aparece con dos o más gastos fijos vencidos sin
 // registrar; el modal los lista todos marcados y, al confirmar, se registran
 // juntos resolviendo la cuenta una sola vez (con una sola cuenta ni se
 // pregunta: regla de cuenta única del helper).
 
-test.describe('Agenda - pago en lote (CAL.5a)', () => {
+test.describe('Por pagar - pago en lote (CAL.5a, mudado en la ficha 05)', () => {
   /** Siembra dos fijos vencidos (día 1, siempre <= hoy) y una cuenta con saldo. */
   async function sembrarLote(page) {
     await sembrar(page, {
@@ -4570,30 +4622,28 @@ test.describe('Agenda - pago en lote (CAL.5a)', () => {
 
   test('registra los dos pagos juntos y la tarjeta desaparece', async ({ page }) => {
     await sembrarLote(page);
-    await page.goto('/#agenda');
-    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+    await page.goto('/#compromisos');
+    await page.waitForSelector('#lista-compromisos', { timeout: 10_000 });
 
     const lote = page.locator('.cal-lote');
     await expect(lote).toBeVisible({ timeout: 3_000 });
     await expect(lote.locator('.cal-lote__title')).toHaveText('2 pagos ya vencieron');
     // DIS.11 C5: cuánto suma, antes de abrir el flujo.
     await expect(lote.locator('.cal-lote__monto')).toHaveText('$150.000');
-    // DIS.11 C2: el día de esos pagos deja de ser el más tenue del mes.
-    await expect(page.locator('[data-action="agenda-mostrar-dia"][data-day="1"]').first())
-      .toHaveClass(/cal-day--vencido/);
 
-    await lote.locator('[data-action="agenda-pagar-lote"]').click();
+    await lote.locator('[data-action="compromisos-pagar-lote"]').click();
 
     const modal = page.locator('#modal-pago-lote');
     await expect(modal).toBeVisible({ timeout: 3_000 });
     await expect(modal.locator('.lote-row')).toHaveCount(2);
     await expect(modal.locator('[data-role="lote-total"]')).toContainText('$150.000');
 
-    await modal.locator('[data-action="agenda-confirmar-lote"]').click();
+    await modal.locator('[data-action="compromisos-confirmar-lote"]').click();
 
     // Una sola cuenta con saldo suficiente: sin picker ni confirmación.
     await expect(page.locator('.cal-lote')).toHaveCount(0, { timeout: 5_000 });
-    await expect(page.locator('.hero-agenda__pagado')).toContainText('$150.000');
+    // Los dos fijos viran a "Pagado este mes" (ficha 05: el chip mira el mes).
+    await expect(page.locator('.deuda-card__chips .chip').first()).toContainText('Pagado este mes');
 
     // El saldo de la cuenta bajó por el total del lote (500.000 - 150.000).
     await page.locator('.nav-item[href="#tesoreria"]').first().click();
@@ -4603,10 +4653,10 @@ test.describe('Agenda - pago en lote (CAL.5a)', () => {
 
   test('desmarcar un pendiente recalcula el total y el texto del botón', async ({ page }) => {
     await sembrarLote(page);
-    await page.goto('/#agenda');
-    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+    await page.goto('/#compromisos');
+    await page.waitForSelector('#lista-compromisos', { timeout: 10_000 });
 
-    await page.locator('[data-action="agenda-pagar-lote"]').click();
+    await page.locator('[data-action="compromisos-pagar-lote"]').click();
     const modal = page.locator('#modal-pago-lote');
     await expect(modal).toBeVisible({ timeout: 3_000 });
 
@@ -4614,18 +4664,21 @@ test.describe('Agenda - pago en lote (CAL.5a)', () => {
     await expect(modal.locator('[data-role="lote-total"]')).toContainText('$50.000');
     await expect(modal.locator('[data-role="lote-cta-texto"]')).toHaveText('Registrar 1 pago');
 
-    await modal.locator('[data-action="agenda-confirmar-lote"]').click();
+    await modal.locator('[data-action="compromisos-confirmar-lote"]').click();
 
     // Queda uno solo pendiente: la tarjeta del lote ya no tiene sentido.
     await expect(page.locator('.cal-lote')).toHaveCount(0, { timeout: 5_000 });
-    await expect(page.locator('.hero-agenda__pagado')).toContainText('$50.000');
+    // Y el pago quedó registrado: el hero del Calendario lo cuenta igual.
+    await page.goto('/#agenda');
+    await expect(page.locator('.hero-agenda__pagado')).toContainText('$50.000', { timeout: 5_000 });
   });
 });
 
 // ── SUITE 12f-bis: el lote también cubre deudas y se ofrece desde Inicio (CAL.5b) ──
 // Dos ampliaciones del mismo flujo: una deuda entra al lote por su cuota (y el
 // abono baja su saldoTotal, no solo el de la cuenta), y el bloque "Pendientes
-// del mes" de Inicio abre el mismo modal sin navegar al Calendario.
+// del mes" de Inicio abre el mismo modal sin navegar. Desde la ficha 05 (ADR
+// 069) el lote es de "Por pagar", así que Inicio ya no lo pide por EventBus.
 
 test.describe('Lote con deudas y entrada desde Inicio (CAL.5b)', () => {
   /** Un fijo y una deuda, ambos vencidos el día 1, con una cuenta que alcanza. */
@@ -4656,22 +4709,22 @@ test.describe('Lote con deudas y entrada desde Inicio (CAL.5b)', () => {
 
   test('la deuda entra al lote por su cuota y el abono baja su saldoTotal', async ({ page }) => {
     await sembrarMixto(page);
-    await page.goto('/#agenda');
-    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+    await page.goto('/#compromisos');
+    await page.waitForSelector('#lista-compromisos', { timeout: 10_000 });
 
     const lote = page.locator('.cal-lote');
     await expect(lote).toBeVisible({ timeout: 3_000 });
     // 100.000 del fijo + 80.000 de la cuota de la deuda (no su saldo de 400.000).
     await expect(lote.locator('.cal-lote__monto')).toHaveText('$180.000');
 
-    await lote.locator('[data-action="agenda-pagar-lote"]').click();
+    await lote.locator('[data-action="compromisos-pagar-lote"]').click();
     const modal = page.locator('#modal-pago-lote');
     await expect(modal).toBeVisible({ timeout: 3_000 });
     await expect(modal.locator('.lote-row')).toHaveCount(2);
     await expect(modal.locator('.lote-row__sub')).toContainText(['Vencía el 1', 'Cuota de la deuda, vencía el 1']);
     await expect(modal.locator('.lote-intro')).toContainText('baja su saldo');
 
-    await modal.locator('[data-action="agenda-confirmar-lote"]').click();
+    await modal.locator('[data-action="compromisos-confirmar-lote"]').click();
     await expect(page.locator('.cal-lote')).toHaveCount(0, { timeout: 5_000 });
 
     // save() está debounced 200ms: se consulta el estado persistido con poll.
@@ -4697,7 +4750,7 @@ test.describe('Lote con deudas y entrada desde Inicio (CAL.5b)', () => {
     // Sin navegar: el hash sigue siendo el del dashboard.
     expect(new URL(page.url()).hash).toBe('#dash');
 
-    await modal.locator('[data-action="agenda-confirmar-lote"]').click();
+    await modal.locator('[data-action="compromisos-confirmar-lote"]').click();
 
     // Registrado el lote, el bloque de vencidos se vacía solo (ya no hay nada
     // pendiente este mes) sin recargar ni cambiar de sección.

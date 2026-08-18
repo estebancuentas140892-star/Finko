@@ -960,7 +960,7 @@ export function calcularAporteSugerido({
       monto: 0, base: 'deficit', meses: null,
       razones: [
         `Tus gastos fijos (${f(fijos)}) y cuotas de deuda (${f(cuotas)}) igualan o superan tu ingreso mensual (${f(ingreso)}).`,
-        'Antes de comprometer un aporte, revisa tus gastos en Análisis o ajusta tus fijos en Calendario. El fondo puede esperar; las obligaciones no.',
+        'Antes de comprometer un aporte, revisa tus gastos en Análisis o ajusta tus fijos en Por pagar. El fondo puede esperar; las obligaciones no.',
       ],
     };
   }

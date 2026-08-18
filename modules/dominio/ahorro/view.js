@@ -288,7 +288,7 @@ function _graficoFondo(fondo, fondoTotal, gastosFijosMensuales, hoyISO) {
   const colchon = mesesDeColchon(fondoTotal, gastosFijosMensuales);
   if (colchon === null) {
     return {
-      html: `<p class="lane__nota">Registra tus gastos fijos desde Calendario y Finko calcula cuánto tiempo te cubre el fondo.</p>`,
+      html: `<p class="lane__nota">Registra tus gastos fijos desde Por pagar y Finko calcula cuánto tiempo te cubre el fondo.</p>`,
       accion: `<button class="lane__cta" type="button" data-action="ahorro-nuevo-aporte">+ Aportar al fondo</button>`,
     };
   }
@@ -479,7 +479,7 @@ function _renderEmptyState(gastosFijosMensuales) {
 
   const pistaHtml = primerNivel > 0
     ? `<p class="fondo-card__veredicto">Con lo que pagas cada mes, tu primer nivel serían <strong>${f(primerNivel)}</strong>.</p>`
-    : `<p class="fondo-card__veredicto">Registra tus gastos fijos desde Calendario (arriendo, servicios, suscripciones) y Finko calcula cuánto necesitas.</p>`;
+    : `<p class="fondo-card__veredicto">Registra tus gastos fijos desde Por pagar (arriendo, servicios, suscripciones) y Finko calcula cuánto necesitas.</p>`;
 
   return `
     <article class="fondo-card fondo-card--vacio" data-dom="ahorro" aria-label="Fondo de emergencia">
@@ -616,7 +616,7 @@ function _renderNivelActual({ enCero, completado, ultimoLogrado, actual }) {
 function _renderCobertura({ colchon, metaMeses, montoTotal, enCero, m }) {
   if (colchon === null) {
     return `
-      <p class="fondo-card__frase">Registra tus gastos fijos desde Calendario y Finko calcula cuánto tiempo te cubre el fondo.</p>`;
+      <p class="fondo-card__frase">Registra tus gastos fijos desde Por pagar y Finko calcula cuánto tiempo te cubre el fondo.</p>`;
   }
 
   const { bloques, eje, conRotulos } = franjaCobertura(colchon, metaMeses, hoy());
@@ -940,8 +940,8 @@ function _renderNudgeTasa(tasaAhorro) {
 export function renderFormFondo({ editando, metaMeses, montoActual, gastosFijosMensuales }) {
   const objetivoPreview = calcularObjetivoFondo(gastosFijosMensuales, metaMeses);
   const previewHtml = objetivoPreview > 0
-    ? `<p class="form-hint">Con esa meta tu objetivo sería <strong>${f(objetivoPreview)}</strong>: ${metaMeses} ${metaMeses === 1 ? 'mes' : 'meses'} × ${f(gastosFijosMensuales)}, que es lo que suman al mes tus gastos fijos de Calendario (arriendo, servicios, cuotas...).</p>`
-    : `<p class="form-hint">Aún no hay gastos fijos registrados. Cuando los agregues desde Calendario, Finko calcula automáticamente el objetivo.</p>`;
+    ? `<p class="form-hint">Con esa meta tu objetivo sería <strong>${f(objetivoPreview)}</strong>: ${metaMeses} ${metaMeses === 1 ? 'mes' : 'meses'} × ${f(gastosFijosMensuales)}, que es lo que suman al mes tus gastos fijos de Por pagar (arriendo, servicios, cuotas...).</p>`
+    : `<p class="form-hint">Aún no hay gastos fijos registrados. Cuando los agregues desde Por pagar, Finko calcula automáticamente el objetivo.</p>`;
 
   // DIS.12 (hallazgo A3, regla R53): al editar, "Desactivar fondo" ocupaba el
   // sitio de Cancelar con el mismo `btn-ghost` y el mismo aspecto, y Cancelar

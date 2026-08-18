@@ -109,19 +109,23 @@ test.describe('A11Y.5 - axe sobre formularios dinámicos', () => {
   test('el modal "Nueva deuda" no tiene violaciones graves', async ({ page }) => {
     await seedEstadoBase(page);
     await page.goto('/#compromisos');
-    // FD6: sin deudas el botón del encabezado se oculta y el CTA que conduce
-    // es el del estado vacío (mismo verbo, misma acción).
-    await page.click('.empty-state [data-action="nuevo-compromiso"]');
+    // Ficha 05 (ADR 069): un solo "+ Agregar" abre el chooser de tipo; cada
+    // chip lleva a su modal.
+    await page.click('.empty-state [data-action="comp-elegir-tipo-nuevo"]');
+    await page.waitForSelector('#modal-compromiso-tipo[data-open]');
+    await page.click('[data-action="comp-elegir-tipo-nuevo-ir"][data-tipo="deuda-entidad"]');
     await page.waitForSelector('#modal-compromiso[data-open]');
 
     const violaciones = await violacionesGraves(page, '#modal-compromiso');
     expect(violaciones, detalle(violaciones)).toHaveLength(0);
   });
 
-  test('el modal "Nuevo gasto fijo" (Calendario) no tiene violaciones graves', async ({ page }) => {
+  test('el modal "Nuevo gasto fijo" (Por pagar) no tiene violaciones graves', async ({ page }) => {
     await seedEstadoBase(page);
-    await page.goto('/#agenda');
-    await page.click('[data-action="nuevo-gasto-fijo"]');
+    await page.goto('/#compromisos');
+    await page.click('.empty-state [data-action="comp-elegir-tipo-nuevo"]');
+    await page.waitForSelector('#modal-compromiso-tipo[data-open]');
+    await page.click('[data-action="comp-elegir-tipo-nuevo-ir"][data-tipo="fijo"]');
     await page.waitForSelector('#modal-gasto-fijo[data-open]');
 
     const violaciones = await violacionesGraves(page, '#modal-gasto-fijo');

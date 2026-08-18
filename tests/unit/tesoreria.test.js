@@ -3211,7 +3211,9 @@ describe('sugerirDistribucionIngreso()', () => {
     expect(r.split.ahorro.pct).toBe(0);
     expect(r.razon).toContain('113%');
     expect(r.razon).toContain('más de lo que entra');
-    expect(r.alertas.some(a => a.includes('Análisis') && a.includes('Calendario'))).toBe(true);
+    // Ficha 05 (ADR 069): la alerta manda a registrar el fijo donde ahora se
+    // registra, "Por pagar", no al Calendario.
+    expect(r.alertas.some(a => a.includes('Análisis') && a.includes('Por pagar'))).toBe(true);
   });
 
   it('MC.11: con gastos del mes por debajo del ingreso no cambia nada', () => {

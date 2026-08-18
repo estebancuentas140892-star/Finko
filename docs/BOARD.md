@@ -20,7 +20,7 @@
 - Secciones  : todas
 - Archivos   : según ficha
 - Depende de : nada
-- Avance     : **04/25 cerradas** (01 navegación móvil global, [ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md); 02 Inicio; 03 Más; 04 Ahorro). Sigue la 05 (Por pagar), que acumula tres herencias: el pago en lote de Inicio, el alta de gastos fijos que pierde Calendario y el texto del carril del Fondo.
+- Avance     : **05/25 cerradas** (01 navegación móvil global, [ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md); 02 Inicio; 03 Más; 04 Ahorro; 05 Por pagar, que recuperó el alta de gasto fijo y el pago en lote). Sigue la 06.
 - Restricción: el orden no se altera. Cada ficha se implementa, se valida en la app y se cierra antes de abrir la siguiente. Lo que una ficha deja anotado para otra (ej. HR-1, o el destino de Logros) no se decide antes de llegar a ella.
 
 ---
