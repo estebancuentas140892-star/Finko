@@ -1,12 +1,12 @@
 # Tablero - Finko Claude
 
-> Revisado: 2026-08-15.
+> Revisado: 2026-08-17.
 
 > Tablero Kanban de trabajo pendiente. Reemplaza a `TASKS.md` y `ROADMAP.md` (retirados 2026-07-02, ver [CHANGELOG](CHANGELOG.md)).
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-08-15. Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
+> Última actualización: 2026-08-17. Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
 
 ---
 
@@ -53,11 +53,10 @@ Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (si
 
 ## Índice de pendientes
 
-Las 5 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+Las 4 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
-| INT.1g | Carril derecho de 320px desde 1.680px (diferida) | Transversal | baja (diferida) | sin sección candidata con contenido |
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | cola de diseño de Esteban |
 | A.5 | Dominio custom en Vercel | Mantenimiento | baja | que el usuario tenga el dominio registrado |
 | E.2-2027 | Actualizar SMMLV + UVT a valores 2027 | Mantenimiento | alta (enero 2027) | publicación oficial de los decretos 2027 |
@@ -89,7 +88,7 @@ _(Sin tarjetas pendientes: la iniciativa CFG.4 cerró completa el 2026-08-15. Ve
 
 ## Transversal (afecta varias secciones)
 
-INT.1g, DV.2d → [`board/transversal.md`](board/transversal.md)
+DV.2d → [`board/transversal.md`](board/transversal.md)
 
 ---
 

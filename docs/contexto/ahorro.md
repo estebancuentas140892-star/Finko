@@ -1,6 +1,6 @@
 # Ficha de contexto: Ahorro
 
-> Revisado: 2026-08-14.
+> Revisado: 2026-08-17.
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -10,7 +10,7 @@
 
 - **Objetivo**          : activar/editar un fondo de emergencia con meta en meses de gastos fijos, registrar aportes, definir un compromiso ("págate primero") por la frecuencia real de cobro del usuario con sugerencia calculada (AH.2), y mostrar la tasa de ahorro del mes con un nudge según el rango. El dominio dibuja además **la casa de Ahorro** (bloque aparte en esta ficha), que reemplazó al consolidado repetido del hub.
 - **Estado actual**     : estable. **AH.5 cerrada** (2026-08-04, D2 y D3 del [ADR 049](../DECISIONS/049-fondo-de-emergencia-v2.md), las cuatro decisiones del ADR ya en producción): la tarjeta activa abre con una línea de propósito ("Tu protección para cuando algo se dañe o dejes de recibir ingresos") antes del nivel y de cualquier cifra (D3; el estado vacío ya lo cumplía), y el aporte directo baja de botón primario ancho al mismo peso ghost/secundario que "Editar" (D2): el flujo principal es el asistente "Distribuir mi ingreso" (D1) desde AH.5b/MC.7e, el registro directo queda para aportes fuera de ciclo. **AH.5b cerrada** (2026-08-02, D4): el formulario y el medidor del compromiso dejan de asumir "mensual" y preguntan/miden en la frecuencia real de cobro (`frecuenciaPrincipalIngresos()`, infra compartida con Metas/Apartados). Mensual sigue igual que siempre; Quincenal/Semanal/Diario tienen su propio rango calendario, nunca ventana móvil. **DIS.19 cerrada** (2026-07-29): la tarjeta deja de medirse con dos componentes y pasa a uno. Los bloques de mes se ponen verticales, el eje de la franja rotula los tres niveles y la lista de niveles que vivía aparte se retira (unos 90px recuperados); el compromiso deja la fila de texto y pasa a un medidor de gota que se llena con lo aportado en el período. **Su ruta es `#fondo` desde DIS.18** (2026-07-28): `#ahorro` es la casa. **DIS.16 cerrada** (2026-07-28): el hero pasó a `.fondo-card` y la sección dejó de medirse en porcentaje para medirse en **tiempo**. El anillo de progreso se retiró; lo sustituyen los bloques de mes (la prueba) y la escalera de tres niveles (el camino). Cuatro de los seis estados del mockup están construidos; los otros dos dependen de datos que Finko no guarda (ver Riesgos). **DIS.12 cerrada** (2026-07-27): las 9 correcciones de la auditoría de diseño de la sección; su capa de hero la reemplazó DIS.16, el resto (consolidado, lista de aportes, compromiso, formulario) sigue vigente. **BUG-012 corregido** (2026-07-11): el mensaje de confirmación al desactivar el fondo ya no usa el literal técnico "empty state" (ADN 11: lenguaje humano). **AH.5a cerrada** (2026-07-22): "Registrar aporte" prellena el monto con la sugerencia de AH.2.
-- **Verificado contra** : AH.5, commit `dfff037` (2026-08-04).
+- **Verificado contra** : AH.5, commit `dfff037` (2026-08-04); carril derecho de escritorio (INT.1g), commit `57b3cdb` (2026-08-12), verificación manual en navegador 2026-08-17.
 
 **Dónde vive**
 
@@ -30,6 +30,7 @@
 | Sección de hábito (aportes + compromiso + nudge de tasa) | `modules/dominio/ahorro/view.js` | `_renderHabitoSection()`, `_renderNudgeTasa()` | ~232, ~294 |
 | Formularios modales (fondo, aporte, compromiso) | `modules/dominio/ahorro/view.js` | `renderFormFondo()`, `renderFormAporte()`, `renderFormCompromisoMensual()` | ~341, ~386, ~428 |
 | Schema del fondo/aportes | `modules/core/state.js` | `S.ahorro.fondoEmergencia`, `S.ahorro.aportes`, `S.ahorro.compromisoMensual` | |
+| Copia del medidor de compromiso en el carril derecho de escritorio (INT.1g, desde 1.680px; detalle en [`escritorio.md`](escritorio.md)) | `modules/dominio/ahorro/view.js` | `_renderCompromisoCarril()` | ~88 |
 
 **Recursos**: estilos en `styles/components/*.css` (clases `.fondo-card__*` desde DIS.16, `.cov__*` y `.liq*` desde DIS.19 en `analysis.css`, `.ahorro-habito__*`, `.nudge`), más `.modal__footer-secundario` en `styles/modals.css` (DIS.12, fila de la acción destructiva del formulario) y dos bloques en `styles/responsive.css`: la fila de la casa dentro de `@media (max-width: 767px)` y los 44px de `.fondo-card__secundaria`, que van ahí porque compiten con `.btn-sm` del mismo archivo (regla R4, mismo motivo de capa que Apartados e Inversión); iconos vía sprite (`icon()`, `tejaCategoria('i-ahorro', 'ahorro')`, `emptyArt('ahorro')`); token de dominio `--fk-dom-ahorro`. **`progressRing()` ya no se usa acá**: DIS.16 retiró el anillo. La gota del medidor la dibuja `siluetaMeta()` de `infra/svg.js` con la forma `gota`: el relleno por altura tiene una sola implementación en la app.
 
@@ -52,6 +53,7 @@
 - **Lenguaje humano (ADN 11) en mensajes de `confirmar()`**: a diferencia del HTML de las vistas (revisado en cada PR), los textos de `confirmar({ mensaje: ... })` no pasan por ningún linter de copy; un grep periódico de literales técnicos (`empty state`, `placeholder`, `null`, `undefined`, `TODO`) en `index.js`/`acciones/*.js` de todos los dominios es la única red de seguridad hoy (ver Nota de BUGS.md).
 - **El consolidado repetido y su barra ya no existen** (DIS.18): eran un componente compartido por las cuatro secciones y la regla R54 medía sus pistas. Su reemplazo, la casa, vive en un solo sitio y no dibuja proporciones. Los riesgos propios de la casa están en su bloque.
 - **El anillo del hero NO puede volver a envolverse en `aria-hidden`** (regla R52): `progressRing()` emite su propio `role="img"` con la etiqueta que construye el llamador, y ocultar el contenedor borra el subárbol entero. Metas ya lo corrigió en DIS.13; Apartados sigue con el defecto a la espera de su auditoría.
+- **La copia del carril derecho (INT.1g) no tiene test propio.** `_renderCompromisoCarril()` repite el cálculo de `_renderMedidorCompromiso()` a propósito (CSS decide cuál copia se ve según el ancho), pero ningún test de `tests/unit/` ni `tests/e2e/` cubre `#fondo-carril` ni el breakpoint de 1.680px: si alguien cambia una de las dos copias sin la otra, nada lo detecta hoy. Verificado manualmente en navegador el 2026-08-17.
 - **El medidor del compromiso corta por mes calendario, no por 30 días.** `aportadoEnMes()` filtra por el prefijo `YYYY-MM` de la fecha del aporte: el 1 el medidor vuelve a cero porque la promesa se renueva. Una ventana móvil de 30 días dejaría el vaso a media agua el día que arranca el mes nuevo, que es justo cuando el usuario espera verlo vacío.
 
 - **AH.5a solo alcanza a "Registrar aporte"**: el compromiso mensual sigue con su propio botón "Usar este monto" (`ahorro-usar-sugerido`) en vez de prellenado directo; son dos formularios con propósito distinto (uno es un recordatorio, el otro un movimiento real) y no se fusionaron a propósito.
@@ -60,6 +62,7 @@
 
 **Cambios realizados**:
 
+- 2026-08-17 (auditoría documental, **INT.1g**): el compromiso mensual se detectó como el primer caso real del carril derecho de escritorio (ADR 059 D7); el código ya existía desde el commit `57b3cdb` (2026-08-12), sin documentar. `_renderCompromisoCarril()` repite `_renderMedidorCompromiso()` en `#fondo-carril`, visible solo desde 1.680px. Verificado en navegador. Detalle en [`escritorio.md`](escritorio.md), dueño de la iniciativa. Ver CHANGELOG.
 - 2026-08-04 (**AH.5**, commit `dfff037`): la tarjeta activa del fondo abre con una línea de propósito antes de la primera cifra (D3) y el aporte directo baja de botón primario ancho a ghost/secundario, mismo peso que "Editar" (D2). Cierra el ADR 049. Ver CHANGELOG.
 - 2026-08-02 (**AH.5b**, colateral del commit `e7703f0`): el formulario y el medidor del compromiso preguntan y miden en la frecuencia real de cobro (`frecuenciaPrincipalIngresos()` de `infra/vencimientos.js`) en vez de mensual asumido. `aportadoEnPeriodo()`, `montoPorPeriodo()` y `etiquetaCadaPeriodo()` nuevas en `logic.js`; Mensual delega en el código original sin cambio de comportamiento. Ejecuta D4 del ADR 049. Ver CHANGELOG.
 

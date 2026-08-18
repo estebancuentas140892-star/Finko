@@ -1,6 +1,6 @@
 # Ficha de contexto: Escritorio (shell de escritorio)
 
-> Revisado: 2026-08-14.
+> Revisado: 2026-08-17.
 
 > El chrome que solo existe desde 1024px: sidebar, ancho de contenido, barra superior, modal a dos columnas y atajos de teclado. Partida de [`transversal.md`](transversal.md) el 2026-08-14 (DOC.3). Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -11,8 +11,8 @@
 ## Shell de escritorio: sidebar, ancho de contenido y barra superior (iniciativa INT.1)
 
 - **Objetivo**          : el escritorio nunca se decidió. El sidebar existía desde antes de que la app tuviera dos topologías y las quince auditorías por sección midieron móvil a 390px, así que escritorio heredó el reparto móvil estirado. El ADR 059 lo decide en ocho rebanadas (INT.1a a INT.1h).
-- **Estado actual**     : **INT.1a, INT.1b, INT.1c, INT.1d, INT.1e, INT.1f e INT.1h cerradas**. INT.1a: contenido centrado + Movimientos en el sidebar. INT.1b: las 4 hijas de Ahorro se anidan bajo la casa (`.nav-subnav`, desplegado solo dentro del grupo) y `BUG-026` se cierra por eliminación de su causa. INT.1c: barra superior fija de 56px con teja+título de la sección activa, "Registrar", tema y Ajustes; fondo opaco sin `backdrop-filter` (Lighthouse 99/100/100/100). INT.1d: `#topbar-saldo` es la cinta de saldo con su ojo, oculta en Inicio (el hero ya lo dice) y sin cuentas; `updSaldo()` recorre todos los `[data-action="saldo-visibilidad"]` porque ahora hay dos ojos a la vez. INT.1e: el primario del encabezado de 8 de las 13 secciones sube a `#topbar-primario`, en secundario. INT.1f: el modal sube a 840px en escritorio y su `<form>` pasa a grid de 2 columnas. INT.1h: cuatro atajos de teclado (`N`, `G` + letra, `?`, `Esc`), apagables en Ajustes. Queda INT.1g.
-- **Verificado contra** : INT.1h, commit `f5fcda7` (2026-08-06); INT.1e, commit `63f95f5` (2026-08-06); INT.1f, commit `bf37761` (2026-08-05); INT.1c/INT.1d, commit `a6eb349` (2026-08-05).
+- **Estado actual**     : **las ocho rebanadas cerradas (INT.1a a INT.1h).** INT.1a: contenido centrado + Movimientos en el sidebar. INT.1b: las 4 hijas de Ahorro se anidan bajo la casa (`.nav-subnav`, desplegado solo dentro del grupo) y `BUG-026` se cierra por eliminación de su causa. INT.1c: barra superior fija de 56px con teja+título de la sección activa, "Registrar", tema y Ajustes; fondo opaco sin `backdrop-filter` (Lighthouse 99/100/100/100). INT.1d: `#topbar-saldo` es la cinta de saldo con su ojo, oculta en Inicio (el hero ya lo dice) y sin cuentas; `updSaldo()` recorre todos los `[data-action="saldo-visibilidad"]` porque ahora hay dos ojos a la vez. INT.1e: el primario del encabezado de 8 de las 13 secciones sube a `#topbar-primario`, en secundario. INT.1f: el modal sube a 840px en escritorio y su `<form>` pasa a grid de 2 columnas. INT.1h: cuatro atajos de teclado (`N`, `G` + letra, `?`, `Esc`), apagables en Ajustes. **INT.1g: carril derecho de 320px desde 1.680px** (regla R77), con su único caso real hoy: el compromiso mensual de Fondo de emergencia (detalle en [`ahorro.md`](ahorro.md)). El mecanismo cerró el 2026-08-05 (INT.1a) y su primer contenido el 2026-08-12; los documentos del tablero quedaron sin actualizar hasta esta auditoría del 2026-08-17.
+- **Verificado contra** : INT.1g, commit `57b3cdb` (2026-08-12), verificación manual en navegador 2026-08-17; INT.1h, commit `f5fcda7` (2026-08-06); INT.1e, commit `63f95f5` (2026-08-06); INT.1f, commit `bf37761` (2026-08-05); INT.1c/INT.1d, commit `a6eb349` (2026-08-05).
 
 **Mediciones vigentes contra el código** (no contra la recreación del handoff):
 
@@ -55,6 +55,7 @@
 | Los cuatro atajos de teclado (INT.1h): `N`, `G` + letra, `?`, `Esc` | `modules/ui/actions.js` | `_handleKeydown()`, `_MAPA_SECCION_ATAJO`, `_atajoBloqueado()` |
 | Interruptor de los atajos en Ajustes (INT.1h, WCAG 2.1.4) | `modules/dominio/config/view.js`, `modules/dominio/config/index.js` | `_renderAtajos()`, `_toggleAtajos()`, `S.config.atajosTeclado` |
 | Modal "Atajos de teclado" (INT.1h) | `index.html` | `#modal-atajos` |
+| Carril derecho de 320px desde 1.680px (INT.1g, D7, R77); único caso real: compromiso mensual de Fondo | `styles/layout.css`, `styles/responsive.css`, `modules/dominio/ahorro/view.js` | `.section--con-carril`, `#fondo-carril`, `_renderCompromisoCarril()` |
 
 **Riesgos**:
 
@@ -65,10 +66,11 @@
 - **Las reglas R75 a R77 están reservadas y sin escribir**: entran a `DESIGN_SYSTEM.md` cuando cierre la última rebanada, así que hoy la lista de principios tiene un hueco declarado entre R74 y R78.
 - **Una hija de Ahorro ya no es un clic directo desde cualquier sección** (INT.1b, tradeoff aceptado por el ADR): hace falta abrir "Ahorro" primero para desplegar el sub-nivel. Tests que clickeaban `#metas`/`#inversion` directo desde Dashboard se movieron a `page.goto()` o al camino de dos clics.
 
-**Cambios pendientes**: queda una rebanada (INT.1g, carril derecho sin sección que lo use todavía) en [`BOARD.md`](../BOARD.md).
+**Cambios pendientes**: ninguno. Las ocho rebanadas de INT.1 cerraron completas. Si otra sección declara un bloque igual de urgente y enterrado, se suma a `.section--con-carril` con el mismo criterio que resolvió el caso de Fondo.
 
 **Cambios realizados**:
 
+- 2026-08-17 (auditoría documental, INT.1g): el código de la octava rebanada ya existía desde el commit `57b3cdb` (2026-08-12), sin mensaje de commit propio y sin actualizar el tablero. Verificado en el navegador esta sesión: a 1.680px+ el carril muestra el compromiso real y la copia del panel principal se oculta; debajo, el carril se oculta y la copia vuelve. Sin test automatizado propio (hueco de cobertura anotado, no bloqueo). Ver CHANGELOG.
 - 2026-08-06 (INT.1h): cuatro atajos en `_handleKeydown()` (`N` abre Registrar, `G` + letra navega con un mapa fijo de 11 secciones, `?` abre `#modal-atajos`, `Esc` sin cambios). Tres guardas cancelan el atajo antes de actuar (campo de texto o `contenteditable` con foco, modal abierto, tecla modificadora): es la mitigación de P8. Interruptor en Ajustes por WCAG 2.1.4 (`S.config.atajosTeclado`, default `true`, schema v35). Commit `f5fcda7`.
 - 2026-08-06 (INT.1e): `#topbar-primario` copia texto, `aria-label` y `data-action`/`data-modal` del único `.btn-primary` del encabezado activo (`_syncPrimarioTopbar()`), sin mapa nuevo por sección; se resincroniza al navegar y ante `state:change`. Cubre 8 de las 13 secciones. Commit `63f95f5`.
 - 2026-08-05 (INT.1c e INT.1d): barra superior fija de 56px (teja+título, Registrar, tema, Ajustes, fondo opaco sin `backdrop-filter`) y cinta de saldo con su ojo, oculta en Inicio y sin cuentas, sobre el mismo flag `ocultarSaldo`. Commit `a6eb349`.

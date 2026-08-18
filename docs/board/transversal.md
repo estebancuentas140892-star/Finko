@@ -1,6 +1,6 @@
 # Tablero - Transversal
 
-> Revisado: 2026-08-15.
+> Revisado: 2026-08-17.
 
 > Satélite de [`BOARD.md`](../BOARD.md) (afecta varias secciones). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
 
@@ -10,17 +10,7 @@
 
 > **Auditoría de rendimiento 2026-07 completa** (PERF.0 a PERF.4 cerradas, ver [`scripts/perf/BASELINE.md`](../../scripts/perf/BASELINE.md)). Los dos hallazgos que siguen mandando: `renderSmart()` ya evita el recálculo cruzado, y guardar cuesta ~5 ms debounced, así que la persistencia NO se reescribió ([ADR 030](../DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md); sus disparadores del D4 quedaron acotados a dos, T1 y T2, por el [ADR 068](../DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md)). **Disciplina obligatoria de toda tarjeta PERF: correr `pnpm perf` antes y después y comparar contra BASELINE.md.**
 
-> **Iniciativa "INT.1 - Interfaz de escritorio"** (ADR 059, aceptado 2026-08-02). Fuente única del chrome de escritorio, 8 decisiones en 8 rebanadas. Móvil no cambia. **Siete de las ocho rebanadas cerradas** (INT.1a, INT.1b, INT.1c, INT.1d, INT.1e, INT.1f, INT.1h); solo queda INT.1g, diferida; detalle e historia en el CHANGELOG y [`contexto/escritorio.md`](../contexto/escritorio.md). **Coordinar con AH.7a** (mismo marcado de nav, otra plataforma).
-
-> **La rebanada restante**, en una línea: su alcance completo, con medición y contra declarado, vive en el ADR 059 y no se repite acá. Se re-expande a tarjeta completa al iniciarla.
-
-#### INT.1g - Carril derecho de 320px desde 1.680px (diferida)
-- Prioridad  : baja (diferida)
-- Estado     : mecanismo cerrado (commit `4f87f77`, dentro de INT.1b). `.section--con-carril` en `styles/layout.css:296-312`: grid `1fr 320px` desde 1.680px; entre 1.024 y 1.680px una columna centrada (INT.1a). **P1 ya resuelto por INT.1e** (recorrido de las 13, ver `contexto/transversal.md`): ninguna sección tiene todavía qué poner en el carril, así que ninguna usa la clase; sigue sin uso real hasta que una sección declare su contenido. Área: ambos.
-- Objetivo   : lo urgente deja de obligar a bajar un pliegue.
-- Archivos   : `styles/layout.css` (mecanismo listo); falta aplicar `.section--con-carril` por sección
-- Depende de : INT.1e cerrada · Modelo: Equilibrado - Alto
-- Diferida 2026-08-11: sin sección candidata con contenido para carril. Se reactiva cuando una seccion declare que necesita.
+> **Iniciativa "INT.1 - Interfaz de escritorio", completa** (ADR 059, aceptado 2026-08-02). Fuente única del chrome de escritorio, 8 decisiones en 8 rebanadas. Móvil no cambia. **Las ocho rebanadas cerradas** (INT.1a a INT.1h); detalle e historia en el CHANGELOG y [`contexto/escritorio.md`](../contexto/escritorio.md). **INT.1g cerró el 2026-08-12 sin tarjeta propia** (dentro de una sesión sobre MT.6a) y quedó sin documentar hasta la auditoría del 2026-08-17: su único caso real es el compromiso mensual de Fondo, en [`ahorro.md`](../contexto/ahorro.md). **Coordinar con AH.7a** (mismo marcado de nav, otra plataforma).
 
 > **Diferida del [ADR 068](../DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md): la migración a IndexedDB (antes PERF.5) ya no es tarjeta.** Su decisión, su alcance fijado (blob-en-IDB, no store por colección) y sus **dos** disparadores verificables viven en ese ADR, que reemplaza los tres del ADR 030 D4. **No re-auditar el código ante un pedido de ejecución:** la verificación está hecha y fechada allí; basta mirar si T1 o T2 cambiaron de estado. Al reabrirse nace como tarjeta nueva. Lo que salió a la luz con ese ADR ya cerró completo: **PERF.9** (2026-08-14, columna de caracteres en el harness) y **PERF.10** (2026-08-14, dos rebanadas). T1 ya tiene instrumento: detalle en [`scripts/perf/BASELINE.md`](../../scripts/perf/BASELINE.md).
 

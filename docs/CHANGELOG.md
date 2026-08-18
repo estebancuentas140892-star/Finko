@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### docs(transversal): INT.1g cerrada, el mecanismo ya tenía su primer caso real · 2026-08-17
+
+Auditoría documental antes de ejecutar: el tablero declaraba INT.1g "diferida, sin sección candidata" (`board/transversal.md`, sello 2026-08-11), pero el código ya tenía la rebanada completa desde el commit `57b3cdb` (2026-08-12), dentro de una sesión sobre otra tarjeta (MT.6a) que nunca la nombró en su mensaje. **Cero cambios de código**: el hallazgo es que la octava rebanada de INT.1 (ADR 059 D7) ya cerró y los documentos no se habían actualizado. Ficha: [`contexto/escritorio.md`](contexto/escritorio.md) y [`contexto/ahorro.md`](contexto/ahorro.md).
+
+- **Verificado en el navegador esta sesión, no solo leído.** A 1920px, `#sec-fondo` pasa a grid `1fr 320px`, `#fondo-carril` muestra el medidor real de compromiso (probado con $80.000 de $200.000, 40%) y la copia dentro de `#panel-ahorro` se oculta (`display: none`). Bajo 1.680px el carril se oculta y la copia original vuelve a verse. Las dos reglas de `responsive.css`/`layout.css` funcionan como las describe el comentario del código.
+- **El primer y único caso real es el compromiso mensual de Fondo de emergencia** (P1 del ADR 059 D7, recorrido de las 13 secciones en INT.1e): es el único bloque que hoy exige bajar un pliegue para saber si el mes va cumplido. Las otras 12 secciones no tenían, al recorrerlas, un bloque igual de urgente y enterrado.
+- **Sin test automatizado propio.** Ni `tests/unit/` ni `tests/e2e/` tienen un caso para `#fondo-carril`, `_renderCompromisoCarril()` ni el breakpoint de 1.680px: la única verificación es la manual de esta sesión. Queda anotado como hueco de cobertura, no como bloqueo del cierre.
+- **BOARD.md, `board/transversal.md`, `contexto/escritorio.md` y `contexto/ahorro.md` actualizados**: la tarjeta se borra, la iniciativa INT.1 pasa a "ocho de ocho rebanadas cerradas" y las dos fichas de contexto ganan su fila en "Dónde vive" y su línea en "Cambios realizados".
+- Sin tests nuevos, sin bump de SW: no se tocó `modules/`, `styles/` ni `index.html`. Compuerta de guion largo corrida sobre los archivos editados.
+
 ### feat(ahorro): ficha 04 de la auditoría móvil, circulación dentro del bloque · 2026-08-15
 
 Cuarta de las 25 entregas ([ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md) D7). La ficha intentó tumbar la portada-resumen de Ahorro y el código demostró lo contrario: **es la única pantalla donde los cuatro términos conviven, donde cada uno dice su estado en su propia unidad y desde donde se puede aportar a una meta concreta sin entrar** (los gráficos de Reservas y Metas son botones, no ilustraciones). Se confirma, y con eso se confirma R81: los dos bloques de la barra tienen portadas distintas porque los bloques lo son. Lo que estaba roto era otra cosa. Ficha: [`contexto/ahorro.md`](contexto/ahorro.md).

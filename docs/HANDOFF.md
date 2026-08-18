@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-15. Última tarea cerrada: ficha 04 de la auditoría móvil, circulación dentro del bloque Ahorro.
+> Revisado: 2026-08-17. Última tarea cerrada: INT.1g, auditoría documental que cierra la iniciativa INT.1 completa.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -25,6 +25,9 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**INT.1g - carril derecho de escritorio, iniciativa INT.1 completa (Transversal), 2026-08-17**
+El código ya tenía la rebanada desde el 2026-08-12 (commit `57b3cdb`, sesión de MT.6a que nunca la nombró); el tablero seguía diciendo "diferida". Cero cambios de código: verificado en navegador (carril con el compromiso real desde 1.680px, copia original vuelve debajo). Sin test propio, hueco de cobertura anotado. Cierra las ocho rebanadas de INT.1.
+
 **Ficha 04 de la auditoría móvil - circulación dentro del bloque Ahorro (Ahorro), 2026-08-15**
 La portada-resumen **se confirma**: es la única pantalla donde los cuatro términos conviven y desde donde se aporta a una meta concreta sin entrar. Lo roto era otra cosa. `ui/bloque-ahorro.js` baja a las cuatro hijas la fila de chips de la casa (de Metas a Reservas: de 2 toques y un scroll a 1); tres textos que citaban "la pestaña Fondo (arriba)" pasan a enlaces reales (**R85**); y la cabecera gana media línea mientras el fondo no esté activo. 14 tests nuevos. SW v542 → v543.
 
@@ -36,9 +39,6 @@ Inicio conserva forma, orden, hero y estado vacío; cambia a dónde apunta ([ADR
 
 **Ficha 01 de la auditoría móvil - el bloque Gastos en la barra (Navegación), 2026-08-15**
 "Gastos" pasa de sección a bloque con tres lentes (Lo que gastaste, Por pagar, Límites), servidas por la franja que inyecta `ui/bloque-gastos.js`: **capa de navegación, no contenedor de estado** (cero hashes nuevos). Cada pestaña lleva su estado encima. El botón "Más" deja de cambiar de nombre (H5) y la hoja pasa a dos rótulos que sí excluyen: Consultar / Tu dinero. 13 tests nuevos. SW v539 → v540.
-
-**CFG.4d - cláusula de cambio de modelo cerrada, iniciativa CFG.4 completa (Configuración), 2026-08-15**
-Cuarta y última rebanada ([ADR 043](DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md) D1). Los cinco documentos de `docs/legal/` con la cláusula "cambio de modelo (CFG.4)" pasan de "si esto llegara a pasar" a "se decidió que no pasa", conservando qué cambiaría si se reabriera. Cambio menor en `historial-de-cambios.md`: no pide re-aceptación, el fondo no cambia. Sin runtime, sin tests. **Cierra CFG.4 completa**: CFG.4a-d, las cuatro el mismo día.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 
