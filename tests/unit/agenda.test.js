@@ -859,7 +859,10 @@ describe('renderAgenda() - leyenda bajo el calendario', () => {
     renderAgenda();
     mostrarDia(15);
     renderAgenda();
-    const hijos    = [...document.getElementById('panel-agenda').children];
+    // DSK.2a (ADR 071 D1): los dos viven ahora dentro de `.cal-fila`, el
+    // envoltorio que en escritorio los reparte 8 y 4. El invariante de DIS.11
+    // no cambia, solo baja un nivel: el detalle sigue pegado a la tarjeta.
+    const hijos    = [...document.querySelector('.cal-fila').children];
     const iCard    = hijos.findIndex(el => el.classList.contains('cal-card'));
     const iDetalle = hijos.findIndex(el => el.classList.contains('cal-detail'));
     expect(iCard).toBeGreaterThan(-1);
@@ -2335,5 +2338,110 @@ describe('renderFormAutomaticos - créditos (PA.1b)', () => {
     document.body.innerHTML = renderFormAutomaticos([debito, credito()]);
     const montos = [...document.querySelectorAll('.lote-row__amount')].map(el => el.textContent);
     expect(montos).toEqual(['$900.000', '+$3.000.000']);
+  });
+});
+
+// ── renderAgenda() - banda del mes y fila de escritorio (DSK.2a, ADR 071) ──
+
+describe('renderAgenda() - banda del mes y fila de escritorio', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-agenda"></div>';
+    S.compromisos = [];
+    S.ingresos = [];
+    S.gastos = [];
+    S.config = { ocultarSaldo: false };
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15)); // 15 jun 2026
+    resetearVistaAlMesActual();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    S.config = {};
+  });
+
+  // ADR 071 D1: los dos envoltorios existen en todos los anchos (los emite la
+  // vista) y es CSS quien decide si son cajas. Lo que se prueba acá es la
+  // estructura, no el ancho: happy-dom no tiene viewport real.
+  it('el hero vive dentro de la banda del mes', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', tipo: 'fijo', monto: 300_000, diaPago: 25 })];
+    renderAgenda();
+    const banda = document.querySelector('.banda-agenda');
+    expect(banda).not.toBeNull();
+    expect(banda.querySelector('.hero-agenda')).not.toBeNull();
+  });
+
+  it('la tarjeta del mes y el detalle del día son hermanos dentro de la fila', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', tipo: 'fijo', monto: 300_000, diaPago: 20 })];
+    renderAgenda();
+    mostrarDia(20);
+    renderAgenda();
+    const hijos = [...document.querySelector('.cal-fila').children].map(el => el.className);
+    expect(hijos).toEqual(['cal-card', 'cal-detail']);
+  });
+
+  // ADR 071 D4: lo vencido cierra la frase del mes.
+  it('con pagos vencidos, la banda suma el bloque de lo vencido', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'f1', tipo: 'fijo', monto: 300_000, diaPago: 5 }),
+      compromisoBase({ id: 'f2', tipo: 'fijo', monto: 100_000, diaPago: 7 }),
+    ];
+    renderAgenda();
+    const venc = document.querySelector('.banda-agenda .cal-venc');
+    expect(venc).not.toBeNull();
+    expect(venc.querySelector('.cal-venc__valor').textContent).toBe('$400.000');
+    expect(venc.querySelector('.cal-venc__sub').textContent).toBe('2 pagos · días 5 y 7');
+  });
+
+  it('sin nada vencido, la banda conserva el hero y no pinta el bloque', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', tipo: 'fijo', monto: 300_000, diaPago: 25 })];
+    renderAgenda();
+    expect(document.querySelector('.banda-agenda .hero-agenda')).not.toBeNull();
+    expect(document.querySelector('.cal-venc')).toBeNull();
+  });
+
+  it('un solo vencido dice "Pagar" en singular y nombra su día', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', tipo: 'fijo', monto: 300_000, diaPago: 5 })];
+    renderAgenda();
+    expect(document.querySelector('.cal-venc__sub').textContent).toBe('1 pago · día 5');
+    expect(document.querySelector('.cal-venc__cta').textContent.trim()).toBe('Pagar');
+  });
+
+  it('con más de tres días vencidos deja de enumerarlos', () => {
+    S.compromisos = [1, 3, 5, 7].map((d, i) => compromisoBase({
+      id: `f${i}`, tipo: 'fijo', monto: 100_000, diaPago: d,
+    }));
+    renderAgenda();
+    expect(document.querySelector('.cal-venc__sub').textContent).toBe('4 pagos');
+  });
+
+  // El flujo sigue siendo de "Por pagar" (ficha 05, ADR 069): acá solo vive la
+  // entrada, con la misma acción que usan esa sección y el bloque de Inicio.
+  it('el CTA reusa la acción del lote con el mes visible, sin lógica propia', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'f1', tipo: 'fijo', monto: 300_000, diaPago: 5 }),
+      compromisoBase({ id: 'f2', tipo: 'fijo', monto: 100_000, diaPago: 7 }),
+    ];
+    renderAgenda();
+    const cta = document.querySelector('.cal-venc__cta');
+    expect(cta.getAttribute('data-action')).toBe('compromisos-pagar-lote');
+    expect(cta.getAttribute('data-mes')).toBe('2026-06');
+    expect(cta.textContent.trim()).toBe('Pagar los 2');
+  });
+
+  // ADR 071 D6, excepción: el total de lo vencido no es un saldo, es el precio
+  // de la acción que la banda ofrece. Mismo criterio que renderLoteCard.
+  it('el ojo enmascara el hero pero nunca el total de lo vencido', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', tipo: 'fijo', monto: 300_000, diaPago: 5 })];
+    S.config.ocultarSaldo = true;
+    renderAgenda();
+    expect(document.querySelector('.hero-agenda__valor').textContent).toBe('$••••••');
+    expect(document.querySelector('.cal-venc__valor').textContent).toBe('$300.000');
+  });
+
+  it('un mes sin ningún evento no deja la banda vacía', () => {
+    renderAgenda();
+    expect(document.querySelector('.banda-agenda')).toBeNull();
+    expect(document.querySelector('.cal-empty')).not.toBeNull();
   });
 });

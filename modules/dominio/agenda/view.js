@@ -176,7 +176,8 @@ export function renderAgenda() {
   // Gastos fijos y deudas ya vencidos y sin pagar del mes visible (para
   // marcar cada día de la grilla con el punto de "vencido", DIS.11 C2/V-5).
   // El pago en lote es de "Por pagar" desde la ficha 05 (ADR 069): Agenda ya
-  // no ofrece la tarjeta, solo cuenta para la grilla.
+  // no ofrece la tarjeta. DSK.2a (ADR 071 D4) le devuelve la ENTRADA en la
+  // banda de escritorio, no el flujo: la misma lista alimenta las dos cosas.
   const gastosS   = Array.isArray(S.gastos) ? S.gastos : [];
   const pendientes = pendientesDePagoDelMes(eventos, gastosS, prefijoMes, hoy());
 
@@ -186,15 +187,21 @@ export function renderAgenda() {
     vencidosPorDia[p.dia] = (vencidosPorDia[p.dia] ?? 0) + 1;
   }
 
+  // DSK.2a (ADR 071 D1/D4): dos envoltorios nuevos, `display: contents` bajo
+  // 1024px, así que móvil no cambia ni un nodo. Desde 1024px la banda funde
+  // el hero con lo vencido en una superficie, y la fila reparte el mes (8) y
+  // el día (4).
   el.innerHTML = `
-    ${_renderHeroMes(eventos, _viewYear, _viewMonth, prefijoMes)}
-    <article class="cal-card">
-      ${_renderCabecera(_viewYear, _viewMonth, eventosComp, eventosIng, eventosMeta)}
-      ${_renderDiasSemana()}
-      ${_renderGrid(_viewYear, _viewMonth, eventos, vencidosPorDia)}
-      ${_renderLeyenda(eventos)}
-    </article>
-    ${detalleHtml}
+    ${_renderBandaMes(eventos, _viewYear, _viewMonth, prefijoMes, pendientes)}
+    <div class="cal-fila">
+      <article class="cal-card">
+        ${_renderCabecera(_viewYear, _viewMonth, eventosComp, eventosIng, eventosMeta)}
+        ${_renderDiasSemana()}
+        ${_renderGrid(_viewYear, _viewMonth, eventos, vencidosPorDia)}
+        ${_renderLeyenda(eventos)}
+      </article>
+      ${detalleHtml}
+    </div>
     ${emptyMesHtml}`;
 }
 
@@ -302,6 +309,87 @@ function _renderHeroMes(eventos, year, month, prefijoMes) {
         <span class="hero-agenda__pagado">Pagado ${pagadoTxt}</span>
         <span class="hero-agenda__falta">Falta ${faltaTxt}</span>
       </div>
+    </div>`;
+}
+
+/**
+ * Banda del mes (DSK.2a, ADR 071 D4): el hero y lo vencido en una sola
+ * superficie desde 1024px.
+ *
+ * El envoltorio es `display: contents` bajo ese ancho (responsive.css), así
+ * que en móvil el hero sigue siendo el hijo directo de `#panel-agenda` que
+ * era y el bloque de vencidos no se pinta. La banda no existe si no hay nada
+ * que decir: un mes sin pagos programados y sin vencidos no deja envoltorio
+ * vacío.
+ *
+ * @param {Record<number, any[]>} eventos Mapa día → eventos ya mergeado.
+ * @param {number} year
+ * @param {number} month 0-indexed.
+ * @param {string} prefijoMes 'YYYY-MM' del mes visible.
+ * @param {Array<{dia:number, monto:number}>} pendientes Vencidos y sin cubrir.
+ * @returns {string}
+ */
+function _renderBandaMes(eventos, year, month, prefijoMes, pendientes) {
+  const heroHtml = _renderHeroMes(eventos, year, month, prefijoMes);
+  const vencHtml = _renderVencidosMes(pendientes, prefijoMes);
+  if (!heroHtml && !vencHtml) return '';
+  return `<div class="banda-agenda">${heroHtml}${vencHtml}</div>`;
+}
+
+/**
+ * Bloque derecho de la banda: cuánto de lo que falta ya venció, y la entrada
+ * al pago en lote (DSK.2a, ADR 071 D4).
+ *
+ * Es entrada, no flujo: emite `compromisos-pagar-lote` con el mes visible,
+ * la misma acción que ya usan la tarjeta de "Por pagar" y "Pendientes del
+ * mes" en Inicio. El formulario, el motor y el modal siguen siendo de
+ * `compromisos` (ficha 05, ADR 069) y acá no se duplica ni una línea de eso.
+ *
+ * El total **no** se enmascara con el ojo: no es un saldo, es el precio de la
+ * acción que se está ofreciendo, mismo criterio que `renderLoteCard` y que
+ * los montos del modal de pago.
+ *
+ * Precisión del conteo: esta lista es la de la sección (la misma que marca
+ * los días vencidos de la grilla). "Por pagar" cruza además con
+ * `vencidosSinPagar`, que descarta un compromiso registrado este mes después
+ * de su día de pago, así que en ese caso de borde el modal puede abrir con
+ * una fila menos de las que anuncia la banda. Cruzarlo acá exigiría importar
+ * `compromisos/logic.js`, y ningún dominio importa a otro (ADN 10).
+ *
+ * @param {Array<{dia:number, monto:number}>} pendientes
+ * @param {string} prefijoMes 'YYYY-MM' del mes visible.
+ * @returns {string}
+ */
+function _renderVencidosMes(pendientes, prefijoMes) {
+  const items = Array.isArray(pendientes) ? pendientes : [];
+  if (items.length === 0) return '';
+
+  const n     = items.length;
+  const total = items.reduce((acc, p) => acc + (Number(p.monto) || 0), 0);
+  const dias  = [...new Set(items.map(p => Number(p.dia)).filter(Number.isInteger))]
+    .sort((a, b) => a - b);
+
+  // Hasta tres días se nombran ("días 6 y 7"): es la información que deja
+  // buscar el pago en la grilla sin abrir el modal. Con más, la enumeración
+  // es más larga que la fila y deja de ayudar.
+  const cuando = dias.length === 0 ? ''
+    : dias.length === 1 ? ` &middot; día ${dias[0]}`
+    : dias.length <= 3 ? ` &middot; días ${dias.slice(0, -1).join(', ')} y ${dias[dias.length - 1]}`
+    : '';
+  const sub = `${n} ${n === 1 ? 'pago' : 'pagos'}${cuando}`;
+
+  return `
+    <div class="cal-venc">
+      <div class="cal-venc__body">
+        <p class="cal-venc__label">De eso, ya se venció</p>
+        <p class="cal-venc__valor">${f(total)}</p>
+        <p class="cal-venc__sub">${sub}</p>
+      </div>
+      <button type="button" class="cal-venc__cta"
+              data-action="compromisos-pagar-lote" data-mes="${_esc(prefijoMes)}"
+              aria-label="${n === 1 ? 'Pagar el pago vencido' : `Pagar juntos los ${n} pagos vencidos`}">
+        ${n === 1 ? 'Pagar' : `Pagar los ${n}`}
+      </button>
     </div>`;
 }
 

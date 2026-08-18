@@ -825,3 +825,199 @@
     font-size: var(--fk-text-base);
   }
 }
+
+/* ── CALENDARIO EN ESCRITORIO (>= 1024px, DSK.2a, ADR 071) ─────────────
+   Calendario era la única sección de Finko sin una sola regla de escritorio:
+   en un monitor se pintaba la hoja de móvil ocupando 1376px, y sus dos piezas
+   centrales dependen de un ancho estrecho para funcionar.
+
+   Los tres defectos que corrige, medidos en el código vivo:
+     D1  el detalle del día se emitía debajo de la tarjeta del mes, o sea
+         entero bajo el pliegue: 0px visibles al abrir un día, con 1376px de
+         ancho sin usar al lado.
+     D2  `.cal-day` pide `aspect-ratio: 1` con `max-height: 72px`. Cuando la
+         columna supera los 72, el tope de altura manda y la proporción
+         cuadrada arrastra el ancho con él: la celda se queda en 72 x 72
+         dentro de una columna de 188 (el 39%), y el rótulo del día de semana,
+         que sí llena su columna, queda 58px fuera de los días que nombra.
+     D4  hero (172px) y tarjeta de lote (173px) decían dos mitades de la misma
+         frase en dos superficies de ancho completo, con dos cifras mono
+         extrabold compitiendo antes de que apareciera el mes. */
+@media (min-width: 1024px) {
+
+  /* D4: la banda pasa a ser la superficie; el hero y lo vencido, su contenido.
+     Mismo patrón que `.banda-inicio` (DSK.1b, ADR 070 D6). */
+  .banda-agenda {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--fk-space-8);
+    margin-block-end: var(--fk-space-6);
+    padding: var(--fk-space-5) var(--fk-space-6);
+    border-radius: var(--fk-radius-lg);
+    border: 1px solid var(--fk-border-subtle);
+    background: var(--fk-bg-surface);
+  }
+
+  /* El hero deja de ser superficie: sin caja dentro de caja. Pierde también el
+     degradado de identidad, por el mismo motivo que el de Inicio en DSK.1b: el
+     índigo de sección detrás de una cifra la tiñe de estado, y el total del
+     mes no es un estado.
+
+     El ojo se pega al final de su rótulo en vez de flotar en una esquina
+     absoluta (solución de móvil, donde el hero es todo el ancho). Se hace por
+     colocación y no moviendo el botón dentro del `<p>`: bajo 1024px ese botón
+     lleva su propia área táctil y anidarlo le sumaría alto a la fila. */
+  .banda-agenda > .hero-agenda {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    column-gap: var(--fk-space-2);
+    margin-block-end: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .banda-agenda > .hero-agenda > .hero-agenda__label  { grid-area: 1 / 1; margin-block-end: 0; }
+  .banda-agenda > .hero-agenda > .hero-agenda__ojo    { grid-area: 1 / 2; justify-self: start; }
+  .banda-agenda > .hero-agenda > .hero-agenda__valor  { grid-area: 2 / 1 / auto / -1; }
+  .banda-agenda > .hero-agenda > .hero-agenda__barra  { grid-area: 3 / 1 / auto / -1; max-width: 35rem; }
+  .banda-agenda > .hero-agenda > .hero-agenda__meta   { grid-area: 4 / 1 / auto / -1; max-width: 35rem; justify-content: flex-start; gap: var(--fk-space-4); }
+  .banda-agenda > .hero-agenda > .hero-agenda__titulo { grid-area: 2 / 1 / auto / -1; }
+  .banda-agenda > .hero-agenda > .hero-agenda__guia   { grid-area: 3 / 1 / auto / -1; }
+
+  /* Sin caja, igual que el ojo de la banda de Inicio: deja de ser una tecla y
+     pasa a ser un gesto. */
+  .banda-agenda .hero-agenda__ojo {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: var(--fk-space-1);
+    border: 0;
+    background: none;
+  }
+  .banda-agenda .hero-agenda__ojo:hover { background: none; color: var(--fk-text-primary); }
+
+  /* D4: lo vencido cierra la frase del mes, así que es la segunda mitad de la
+     banda y no una tarjeta aparte. El botón se dimensiona a su texto: el
+     `flex: 1 1 100%` de la tarjeta de móvil producía acá 1334 x 44 para tres
+     palabras. */
+  .cal-venc {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-5);
+    padding-inline-start: var(--fk-space-8);
+    border-inline-start: 1px solid var(--fk-border-subtle);
+  }
+  .cal-venc__label {
+    margin: 0;
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-warning-text);
+  }
+  .cal-venc__valor {
+    margin: var(--fk-space-1) 0 0;
+    font-family: var(--fk-font-mono);
+    font-size: var(--fk-text-2xl);
+    font-weight: var(--fk-font-extrabold);
+    line-height: 1;
+    color: var(--fk-text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+  .cal-venc__sub {
+    margin: var(--fk-space-1) 0 0;
+    font-size: var(--fk-text-xs);
+    color: var(--fk-text-secondary);
+  }
+  .cal-venc__cta {
+    flex: none;
+    min-height: 44px;
+    padding: 0 var(--fk-space-5);
+    border-radius: var(--fk-radius-md);
+    border: 1.5px solid color-mix(in srgb, var(--fk-dom-agenda) 40%, transparent);
+    background: var(--fk-dom-agenda-bg);
+    color: var(--fk-dom-agenda-text);
+    font-family: var(--fk-font-sans);
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-bold);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background var(--fk-transition-fast);
+  }
+  .cal-venc__cta:hover { background: color-mix(in srgb, var(--fk-dom-agenda) 20%, transparent); }
+  .cal-venc__cta:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
+
+  /* D1: el mes es la espina de la sección y va a la izquierda; el panel del
+     día es consecuencia de un clic y va a la derecha. Es la regla "primario a
+     8, dependiente a 4" del ADR 070, con los pesos invertidos porque acá lo
+     primario es el mes. */
+  .cal-fila {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: var(--fk-space-6);
+    align-items: start;
+  }
+  .cal-fila > .cal-card   { grid-column: span 8; }
+  .cal-fila > .cal-detail { grid-column: span 4; }
+
+  /* Sin día abierto no hay columna derecha que llenar, y una rejilla de ocho
+     columnas dejaría un tercio de la pantalla en blanco. */
+  .cal-fila:not(:has(> .cal-detail)) > .cal-card { grid-column: span 12; }
+
+  /* D2: la celda ocupa su columna. Sin `aspect-ratio`, que es lo que
+     arrastraba el ancho detrás del tope de altura, y con el contenido alineado
+     al inicio: a este ancho la celda deja de ser un cuadrito con un número
+     centrado y pasa a ser la ficha de un día.
+
+     80px y no 86: un día con un evento ocupa ~63px de contenido, así que 80 ya
+     es holgura, y la fila crece con el día más cargado. A 86 la pantalla cabía
+     en el pliegue con 0px de sobra y un segundo día de doble evento la
+     desbordaba. */
+  .cal-fila .cal-day {
+    align-items: stretch;
+    justify-content: flex-start;
+    aspect-ratio: auto;
+    min-block-size: 80px;
+    max-height: none;
+    padding: var(--fk-space-2);
+    text-align: start;
+    gap: 3px;
+  }
+
+  /* Derivado de D2: cabecera y días caen a plomo cuando la celda llena su
+     columna. Antes el rótulo se centraba en 188px y el día ocupaba 72 desde el
+     principio de la columna, así que "Lun" quedaba 58px a la derecha de los
+     días que nombra, idéntico en las siete columnas. */
+  .cal-fila .cal-grid__dow {
+    text-align: start;
+    padding-inline-start: var(--fk-space-2);
+  }
+
+  /* D5: el panel del día no se mueve nunca. Iguala la altura del mes y lo que
+     se desplaza es su lista; el título y el total del día se quedan quietos.
+
+     `contain: size` es lo que sostiene la regla, no un adorno: sin él la
+     altura de la fila la fija el hijo más alto, así que un día con nueve pagos
+     estiraba la fila con su carril (medido en la maqueta: 1470px de alto) y el
+     mes volvía a salirse de la pantalla. Con contención de tamaño el carril
+     aporta cero al cálculo de la fila y `align-self: stretch` le devuelve la
+     altura del mes. */
+  .cal-fila > .cal-detail {
+    align-self: stretch;
+    contain: size;
+    min-block-size: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--fk-space-3);
+    margin: 0;
+  }
+  .cal-fila > .cal-detail > .cal-detail__header { flex: none; }
+  .cal-fila > .cal-detail > .cal-detail__list {
+    min-block-size: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-inline-end: var(--fk-space-1);
+  }
+}

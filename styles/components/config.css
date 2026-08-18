@@ -1763,3 +1763,21 @@
     font-variant-numeric: tabular-nums;
   }
 }
+
+/* ── DSK.2a (ADR 071 D1/D4): envoltorios de la composición de escritorio ──
+   Los dos existen en todos los anchos porque los emite `renderAgenda()`, pero
+   bajo 1024px son `display: contents`: no son cajas, y sus hijos siguen siendo
+   los hijos directos de `#panel-agenda` que eran antes de la iniciativa. Móvil
+   no cambia ni un píxel; la composición vive entera en responsive.css.
+
+   Mismo patrón que `.banda-inicio` (DSK.1b, ADR 070 D6). */
+.banda-agenda,
+.cal-fila {
+  display: contents;
+}
+
+/* El bloque de lo vencido es de escritorio y solo de escritorio: en móvil la
+   ficha 05 (ADR 069) mudó esa tarjeta a "Por pagar" y ahí se queda. */
+.cal-venc {
+  display: none;
+}
