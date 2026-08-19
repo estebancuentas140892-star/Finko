@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(presupuesto): DSK.8b, un solo "Nuevo límite" en pantalla · 2026-08-18
+
+Segunda y última rebanada del [ADR 077](DECISIONS/077-limites-de-gasto-tres-grupos-a-la-vista.md), que cierra la iniciativa **DSK.8**. Cierra su D4. Ficha: [`contexto/limites.md`](contexto/limites.md).
+
+- **Había dos botones con el mismo texto y el mismo destino a 1333px de distancia**: el primario de la barra superior y el del pie de la tarjeta de Estilo de vida. No era un descuido: en móvil el primario vive en el encabezado de la sección, cerca del contenido, y al subir a la barra superior los dos quedaron en extremos opuestos.
+- **La regla nueva es la inversa de una que la sección ya tenía.** `_sincronizarBotonEncabezado()` oculta el primario del encabezado en el estado vacío, con el argumento de que "tres botones a la vez no dicen por dónde empezar". Faltaba la mitad simétrica: con plan del mes el pie deja de repetirlo. Verificado en la app: con plan, un solo botón visible (el de la barra superior); sin plan, el primario se retira y el del pie se queda, como hoy.
+- **El texto pasa a "Nuevo límite" en las dos apariciones del literal**: el botón y la afordancia de cada fila de "Gastas acá y no tiene tope". Fuera el "+" (lo aporta el ícono) y "Nuevo" porque un tope es una entidad que persiste, no un hecho que se registra. Cambiar una y dejar la otra habría sido peor que no cambiar ninguna.
+- **La tercera puerta no se toca**, y es la mejor de las tres: cada fila de categoría sin tope **es** el botón que abre el formulario con su categoría precargada.
+- Vale en todos los anchos: el duplicado solo se ve en escritorio, pero la copia no depende del ancho.
+- Tests: el de DIS.7 que fijaba el texto del botón del pie cambia de premisa (con plan ya no hay botón en el pie) y se le suma uno para el literal de la afordancia. 153 verdes en `tests/unit/presupuesto.test.js`.
+
 ### feat(presupuesto): DSK.8a, los tres grupos vuelven a ser comparables · 2026-08-18
 
 Primera de las dos rebanadas del [ADR 077](DECISIONS/077-limites-de-gasto-tres-grupos-a-la-vista.md). Cierra sus D1, D2, D3 y D5. Desde 1440px Necesidades y Ahorro van en una columna de `span 5` y Estilo de vida en una de `span 7`, con sus sobres a dos columnas. Medido en el navegador a 1920 x 1080: columnas de 564 y 796, sobres de 375 (antes 1342), y el primer sobre arranca en y=603, **dentro del pliegue**; antes ninguno entraba. Ficha: [`contexto/limites.md`](contexto/limites.md).

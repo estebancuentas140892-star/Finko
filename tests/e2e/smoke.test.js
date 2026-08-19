@@ -3333,12 +3333,15 @@ test.describe('Límites de gasto - resumen por grupo', () => {
     await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
 
     const card = page.locator('.grupo-card[data-grupo="estilo-de-vida"]');
-    // El envelope y el botón "Agregar límite" viven DENTRO de la tarjeta.
+    // Los topes viven DENTRO de la tarjeta: eso es lo que este test protege.
     await expect(card.locator('.estilo-limites')).toBeVisible();
     await expect(card.locator('.envelope[data-id="p1"]')).toBeVisible();
-    // DIS.7 (hallazgo L6, regla R8): un verbo por acción. Antes el encabezado
-    // decía "+ Límite" y la tarjeta "+ Agregar límite" para abrir el mismo modal.
-    await expect(card.locator('.estilo-limites [data-action="nuevo-presupuesto"]')).toHaveText('+ Límite');
+    // DSK.8b (ADR 077 D4): con plan del mes el pie ya no repite el botón del
+    // encabezado. Antes había dos con el mismo texto y el mismo destino a
+    // 1333px de distancia. La regla es la inversa de la que ya ocultaba el de
+    // arriba en el estado vacío: un botón siempre, nunca dos.
+    await expect(card.locator('.estilo-limites [data-action="nuevo-presupuesto"]')).toHaveCount(0);
+    await expect(page.locator('#btn-nuevo-presupuesto')).toHaveText('Nuevo límite');
     // El bloque suelto y el hero antiguos ya no existen en ningún lado.
     await expect(page.locator('.estilo-detalle')).toHaveCount(0);
     await expect(page.locator('.presupuesto-hero')).toHaveCount(0);

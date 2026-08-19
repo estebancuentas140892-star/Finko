@@ -419,7 +419,7 @@ function _renderResumenGruposVacio(anio, mes) {
     </section>
     <section class="estilo-limites-standalone" aria-labelledby="estilo-limites-standalone-title">
       <h2 class="estilo-limites-standalone__title" id="estilo-limites-standalone-title">Límites por categoría</h2>
-      ${_renderDetalleEstiloVida(anio, mes, 0)}
+      ${_renderDetalleEstiloVida(anio, mes, 0, new Map(), true)}
     </section>`;
 }
 
@@ -437,7 +437,12 @@ function _renderResumenGruposVacio(anio, mes) {
  *   4. la categoría que más pide un tope, con su monto (LIM.1c);
  *   5. las categorías con gasto pero sin tope (sugerencia de dónde poner uno);
  *   6. la suscripción que lleva más tiempo cobrándose (LIM.1c);
- *   7. el botón "Agregar límite" (topes bajo demanda).
+ *   7. el botón "Nuevo límite", **solo en el estado vacío** (DSK.8b, ADR 077
+ *      D4): con plan del mes el primario de la sección ya está visible, y dos
+ *      botones con el mismo texto y el mismo destino, a 1333px de distancia,
+ *      se leen como dos acciones distintas. Es la regla inversa de
+ *      `_sincronizarBotonEncabezado()`, que oculta el de arriba cuando no hay
+ *      plan: un botón siempre, nunca dos.
  *
  * Regla de frecuencia (ADR 044 D6): **una** sugerencia de tope y **una** de
  * suscripción por render, las de mayor monto. El brief pidió avisos "nunca
@@ -450,7 +455,7 @@ function _renderResumenGruposVacio(anio, mes) {
  *   que se dibuja dentro de su propio sobre en vez de apilarse arriba.
  * @returns {string} HTML.
  */
-function _renderDetalleEstiloVida(anio, mes, presupuestoEV, notasCategoria = new Map()) {
+function _renderDetalleEstiloVida(anio, mes, presupuestoEV, notasCategoria = new Map(), mostrarCta = false) {
   const activos   = presupuestosActivos(S.presupuestos);
   const gastos    = S.gastos ?? [];
   const cobertura = coberturaLimitesEstiloVida(activos, presupuestoEV);
@@ -481,9 +486,10 @@ function _renderDetalleEstiloVida(anio, mes, presupuestoEV, notasCategoria = new
       ${_renderSugerenciaTope(sugerencia)}
       ${_renderSinPresupuesto(activos)}
       ${_renderSuscripcionLarga(suscripcion)}
+      ${mostrarCta ? `
       <div class="estilo-limites__actions">
-        <button class="btn btn-secondary btn-sm" data-action="nuevo-presupuesto">+ Límite</button>
-      </div>
+        <button class="btn btn-secondary btn-sm" data-action="nuevo-presupuesto">Nuevo límite</button>
+      </div>` : ''}
     </div>`;
 }
 
@@ -710,7 +716,7 @@ function _renderSinPresupuesto(presupuestos) {
                 data-categoria="${cat}"
                 aria-label="Ponerle un límite a ${cat}">
           ${cuerpo}
-          <span class="envelope-huerfanas__accion">+ Límite</span>
+          <span class="envelope-huerfanas__accion">Nuevo límite</span>
         </button>
       </li>`;
   }).join('');

@@ -1021,9 +1021,14 @@
           </div>
           <!-- Sin plan del mes, view.js lo oculta: ahí el primario es "Ir a
                Mis cuentas" y tres botones a la vez no dicen por dónde empezar. -->
+          <!-- DSK.8b (ADR 077 D4): fuera el "+" del texto, lo aporta el ícono, y
+               el sustantivo es "Nuevo" porque un tope es una entidad que
+               persiste. Mismo literal que la afordancia de cada categoría sin
+               tope: la misma acción se llama igual en toda la pantalla. -->
           <button class="btn btn-primary" id="btn-nuevo-presupuesto" data-action="nuevo-presupuesto"
-                  aria-label="Crear nuevo límite de gasto por categoría">
-            + Límite
+                  aria-label="Nuevo límite de gasto por categoría">
+            <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>
+            Nuevo límite
           </button>
         </header>
         <!-- Lente "Límites" del bloque Gastos (ADR 069). -->

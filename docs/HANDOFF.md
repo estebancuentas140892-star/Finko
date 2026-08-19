@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-18. Última tarea cerrada: DSK.7, Movimientos: un libro mayor con sus filtros al lado.
+> Revisado: 2026-08-18. Última tarea cerrada: DSK.8, Límites de gasto: los tres grupos a la vista.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -14,7 +14,7 @@
 | Métrica | Valor |
 |---|---|
 | Tests unitarios + integración | 4386/4392 (2026-08-18). Los 6 rojos son **BUG-028**, ajeno |
-| Tests E2E | 278/278 verdes, sello de DSK.7 (2026-08-18). **Compuerta** desde el 2026-07-30 |
+| Tests E2E | 278/278 verdes, sello de DSK.8 (2026-08-18). **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v43 (`config.respaldoCifrado`, CFG.4c; migración no-op) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**DSK.8 - Límites de gasto: los tres grupos a la vista (Límites), 2026-08-18**
+Una tarjeta medía 5,7 veces sus hermanas y sus sobres no entraban en la primera pantalla ([ADR 077](DECISIONS/077-limites-de-gasto-tres-grupos-a-la-vista.md)). Desde 1440px: Necesidades y Ahorro a `span 5`, Estilo de vida a `span 7` con sus topes dentro (el ADR 019 no se toca) y sobres a dos columnas (375, antes 1342). En todos los anchos: el sobre excedido recupera AA (de 4,24 y 4,09 a 5,83:1) y queda un solo "Nuevo límite". SW v563.
 
 **DSK.7 - Movimientos: un libro mayor con sus filtros al lado (Movimientos), 2026-08-18**
 Los filtros solo servían al principio: el ledger carga en lotes de 50 que se disparan solos ([ADR 076](DECISIONS/076-movimientos-libro-mayor-con-sus-filtros-al-lado.md)). Desde 1440px el ledger va a `span 8` y los filtros a `span 4` pegajosos (con 900px de desplazamiento: filtros en y=24, mes en y=0); las fechas pasan de 634 a 201px y el "Volver" se oculta, como INT.1b ya hacía en Ahorro. En todos los anchos: la columna de montos deja de estar dentada. SW v561.
@@ -36,9 +39,6 @@ Era la única de la familia sin componente propio de tarjeta: usaba `.list-item`
 
 **DSK.4 - Deudas en escritorio: la estrategia se queda a la vista (Por pagar), 2026-08-18**
 Elegir Avalancha reordenaba la lista 1057px más abajo, fuera de la pantalla ([ADR 073](DECISIONS/073-deudas-inventario-con-su-herramienta-al-lado.md)). Desde 1440px la lista va a `span 8` y la estrategia a `span 4` pegajosa, con tope de alto contra el viewport en `dvh`: primera regla del proyecto que depende del alto de la ventana. La tarjeta baja a dos renglones y "Abonar" pasa de 1246 a 128px. SW v554.
-
-**DSK.2 - Calendario como mapa del mes en escritorio (Calendario), 2026-08-18**
-Única sección sin reglas desde 1024px: celda de 72 x 72 en columna de 188 y panel del día bajo el pliegue ([ADR 071](DECISIONS/071-calendario-como-mapa-del-mes-en-escritorio.md)). Mes a `span 8`, día a `span 4` que desplaza su lista; la celda dice qué y cuánto, y entrar sin eventos hoy abre el próximo día. SW v550.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

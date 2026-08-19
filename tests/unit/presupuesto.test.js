@@ -1134,19 +1134,31 @@ describe('renderPanelPresupuesto() - correcciones de la auditoría (DIS.7)', () 
     expect(uso.getAttribute('href')).toBe('#c-tienda');
   });
 
-  it('una categoría que vive en Calendario explica dónde se controla y no ofrece tope', () => {
+  // Ficha 05 (ADR 069): la sección que administra un gasto fijo pasó de
+  // Calendario a "Por pagar", así que la fila nombra esa.
+  it('una categoría que vive en Por pagar explica dónde se controla y no ofrece tope', () => {
     S.gastos = [gasto({ categoria: 'Servicios públicos', monto: 210_000, fecha: dia(10) })];
     renderPanelPresupuesto();
     const fila = panel().querySelector('.envelope-huerfanas__fija');
     expect(fila.querySelector('button')).toBeNull();
-    expect(fila.textContent).toContain('Se controla en Calendario');
+    expect(fila.textContent).toContain('Se controla en Por pagar');
+    expect(fila.textContent).not.toContain('Calendario');
   });
 
   // L6: dos verbos para la misma acción, y tres botones en el estado vacío.
-  it('el botón de la tarjeta usa el mismo verbo que el del encabezado', () => {
+  // DSK.8b (ADR 077 D4) lo lleva un paso más: con plan del mes el pie ya no
+  // repite el botón, porque el primario de la sección está visible y los dos
+  // decían lo mismo a 1333px de distancia. El literal pasa a "Nuevo límite".
+  it('con plan del mes, el pie de la tarjeta no repite el botón del encabezado', () => {
     renderPanelPresupuesto();
-    const btn = panel().querySelector('[data-action="nuevo-presupuesto"]');
-    expect(btn.textContent.trim()).toBe('+ Límite');
+    expect(panel().querySelector('.estilo-limites__actions')).toBeNull();
+    expect(document.getElementById('btn-nuevo-presupuesto').hidden).toBe(false);
+  });
+
+  it('la afordancia de una categoría sin tope usa el mismo literal', () => {
+    renderPanelPresupuesto();
+    const accion = panel().querySelector('.envelope-huerfanas__accion');
+    if (accion) expect(accion.textContent.trim()).toBe('Nuevo límite');
   });
 
   it('sin plan del mes, el primario del encabezado se retira', () => {
