@@ -42,7 +42,7 @@
 - Secciones  : todas (armazón: barra lateral, barra superior, encabezado de sección, bento)
 - Archivos   : `index.html`, `modules/ui/shell.js`, `styles/layout.css`, `styles/responsive.css`
 - Depende de : nada
-- Avance     : **00/03**. a) identidad una sola vez y un solo primario, con los verbos que faltan (D1, D2, D3). b) navegación de escritorio: sin colapso, cuatro grupos con nombre y las hijas de Ahorro siempre visibles (D4, D5 anotada, D6, D7). c) una entrada a Ajustes y movimiento de puntero fino (D8, D9, D10).
+- Avance     : **02/03**. a) identidad una sola vez y un solo primario, con los verbos que faltan (D1, D2, D3), cerrada. b) navegación de escritorio: sin colapso, cuatro grupos con nombre y las hijas de Ahorro siempre visibles (D4, D6, D7; D5 anotada), cerrada. c) una entrada a Ajustes y movimiento de puntero fino (D8, D9, D10).
 - Restricción: **umbral 1680px** para todo lo que depende del ancho. D6 lleva visto bueno explícito de Esteban (2026-08-18). N6 (iconos repetidos) queda fuera: es dependencia de la familia de iconos. `index.html` lo comparten MOV.1 y DSK.1: stagear solo los hunks propios.
 
 ---

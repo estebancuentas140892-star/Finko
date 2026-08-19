@@ -345,33 +345,50 @@ test.describe('DIS.18 - la casa de Ahorro (móvil)', () => {
 test.describe('DIS.18 - sidebar desktop', () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
-  test('grupos: diario sin rótulo (NAV2.1b), Seguimiento (con Análisis) y Ahorro con una entrada', async ({ page }) => {
+  // Los cuatro grupos con nombre los fijó DSK.10b (ADR 079 D6). Antes eran
+  // tres: uno mudo, "Seguimiento" (cinco cosas sin naturaleza común) y
+  // "Ahorro", que era rótulo de grupo y destino a la vez. Cambia el mapa,
+  // no las rutas: los href son los mismos.
+  test('cuatro grupos con nombre: Día a día, Compromisos, Mi dinero y Cómo voy', async ({ page }) => {
     await seedVacio(page);
     await page.goto('/#dash');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
 
-    // El grupo de uso diario ya no lleva rótulo visible (ADR 040 D4); su
-    // nombre queda para lectores de pantalla vía aria-label.
     const grupos = await page.$$eval('#sidebar .nav-group__label', els =>
       els.map(e => e.textContent.trim()));
-    expect(grupos).toEqual(['Seguimiento', 'Ahorro']);
-    await expect(page.locator('#sidebar [role="group"][aria-label="Uso diario"] a[href="#dash"]'))
-      .toHaveCount(1);
+    expect(grupos).toEqual(['Día a día', 'Compromisos', 'Mi dinero', 'Cómo voy']);
+
+    // Día a día: Inicio, Gastos, Calendario y Movimientos, que llegó desde
+    // "Seguimiento" (un grupo que no explicaba por qué lo contenía).
+    const diario = page.locator('.nav-group', { has: page.locator('#nav-label-diario') });
+    await expect(diario.locator('a.nav-item--no-mobile, a:not(.nav-item--mobile-only)'))
+      .toHaveCount(4);
+    await expect(diario.locator('a[href="#dash"]')).toHaveCount(1);
+    await expect(diario.locator('a[href="#movimientos"]')).toHaveCount(1);
 
     // La marca "F" reemplaza al emoji del logo (ADR 040 D4).
     await expect(page.locator('#sidebar .sidebar__logo-mark')).toHaveText('F');
 
-    // Análisis vive dentro del grupo Seguimiento (Herramientas se disolvió).
-    const gestion = page.locator('.nav-group', { has: page.locator('#nav-label-gestion') });
-    await expect(gestion.locator('a[href="#analisis"]')).toHaveCount(1);
+    // Compromisos reúne los dos espejos de deuda, que vivían separados.
+    const compromisos = page.locator('.nav-group', { has: page.locator('#nav-label-compromisos') });
+    await expect(compromisos.locator('a')).toHaveCount(2);
+    await expect(compromisos.locator('a[href="#compromisos"] .nav-item__label')).toHaveText('Por pagar');
+    await expect(compromisos.locator('a[href="#personales"] .nav-item__label')).toHaveText('Me deben');
 
-    // El grupo lo encabeza la casa; las 4 modalidades quedan como atajos de
-    // desktop, y el fondo apunta a su ruta nueva.
-    const ahorros = page.locator('.nav-group', { has: page.locator('#nav-label-ahorros') });
-    await expect(ahorros.locator('a')).toHaveCount(5);
-    await expect(ahorros.locator('a').first()).toHaveAttribute('href', '#ahorro');
-    await expect(ahorros.locator('a[href="#fondo"] .nav-item__label')).toHaveText('Fondo de emergencia');
-    await expect(ahorros.locator('a[href="#ahorro"] .nav-item__label')).toHaveText('Ahorro');
+    // Mi dinero: las cuentas y la casa del ahorro con sus 4 modalidades
+    // anidadas. "Ahorro" deja de ser rótulo de grupo y se queda de destino.
+    const miDinero = page.locator('.nav-group', { has: page.locator('#nav-label-mi-dinero') });
+    await expect(miDinero.locator('a')).toHaveCount(6);
+    await expect(miDinero.locator('a').first()).toHaveAttribute('href', '#tesoreria');
+    await expect(miDinero.locator('a[href="#fondo"] .nav-item__label')).toHaveText('Fondo de emergencia');
+    await expect(miDinero.locator('a[href="#ahorro"] .nav-item__label')).toHaveText('Ahorro');
+
+    // Cómo voy: las dos que miden. Análisis sigue acá desde que se disolvió
+    // "Herramientas" (NAV.B, ADR 024 D6); Límites llega en este movimiento.
+    const comoVoy = page.locator('.nav-group', { has: page.locator('#nav-label-como-voy') });
+    await expect(comoVoy.locator('a')).toHaveCount(2);
+    await expect(comoVoy.locator('a[href="#analisis"]')).toHaveCount(1);
+    await expect(comoVoy.locator('a[href="#presupuesto"]')).toHaveCount(1);
   });
 
   test('las 4 hijas se anidan: ocultas fuera del grupo, desplegadas dentro (INT.1b)', async ({ page }) => {
@@ -411,5 +428,63 @@ test.describe('DIS.18 - sidebar desktop', () => {
     await page.goto('/#fondo');
     await page.waitForSelector('#sec-fondo.active', { timeout: 10_000 });
     await expect(page.locator('#sec-fondo .section__volver')).toBeHidden();
+  });
+});
+
+// ── MONITOR: la barra no se pliega y el mapa se lee entero ───────────────────
+
+test.describe('DSK.10b - la barra en monitor (ADR 079 D4/D7)', () => {
+  test.use({ viewport: { width: 1920, height: 1080 } });
+
+  // D7: hasta acá las 4 hijas solo existían mientras el hash pertenecía al
+  // grupo, así que el mapa de la app no se podía leer sin navegar a Ahorro.
+  test('las 4 hijas de Ahorro se ven sin estar en el grupo', async ({ page }) => {
+    await seedVacio(page);
+    await page.goto('/#dash');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+
+    await expect(page.locator('#nav-subnav-ahorro')).toBeVisible();
+    await expect(page.locator('[aria-controls="nav-subnav-ahorro"]'))
+      .toHaveAttribute('aria-expanded', 'true');
+
+    // Y sigue cabiendo sin desplazamiento interno, que es lo que hacía falta
+    // para poder dejarlas abiertas (BUG-026).
+    const nav = page.locator('.sidebar__nav');
+    const [scrollH, clientH] = await nav.evaluate(el => [el.scrollHeight, el.clientHeight]);
+    expect(scrollH).toBeLessThanOrEqual(clientH);
+  });
+
+  // D4: con la sección topada en 1440 el ancho de contenido es 1376 con la
+  // barra expandida y con la barra plegada. El control cambiaba once nombres
+  // por cero píxeles, y la barra plegada no tiene ningún sustituto del nombre.
+  test('el botón de plegar se retira y el estado guardado se ignora sin borrarse', async ({ page }) => {
+    await seedVacio(page);
+    await page.addInitScript(() => localStorage.setItem('fk_sidebar_collapsed', 'true'));
+    await page.goto('/#dash');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+
+    await expect(page.locator('.sidebar__collapse-btn')).toBeHidden();
+    expect(await page.evaluate(() => document.body.classList.contains('sidebar-collapsed'))).toBe(false);
+    expect(await page.evaluate(() => localStorage.getItem('fk_sidebar_collapsed'))).toBe('true');
+  });
+
+  // Al angostar la ventana el usuario recupera la barra como la dejó: el
+  // estado se ignoraba, no se había borrado.
+  test('al bajar de 1680 vuelve el botón y con él el estado guardado', async ({ page }) => {
+    await seedVacio(page);
+    await page.addInitScript(() => localStorage.setItem('fk_sidebar_collapsed', 'true'));
+    await page.goto('/#dash');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await expect(page.locator('.sidebar__collapse-btn')).toBeVisible();
+    await expect.poll(() =>
+      page.evaluate(() => document.body.classList.contains('sidebar-collapsed'))).toBe(true);
+    await expect(page.locator('#nav-subnav-ahorro')).toBeHidden();
+
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await expect.poll(() =>
+      page.evaluate(() => document.body.classList.contains('sidebar-collapsed'))).toBe(false);
+    await expect(page.locator('#nav-subnav-ahorro')).toBeVisible();
   });
 });

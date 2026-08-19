@@ -1,6 +1,6 @@
 # Ficha de contexto: Escritorio (shell de escritorio)
 
-> Revisado: 2026-08-17.
+> Revisado: 2026-08-19.
 
 > El chrome que solo existe desde 1024px: sidebar, ancho de contenido, barra superior, modal a dos columnas y atajos de teclado. Partida de [`transversal.md`](transversal.md) el 2026-08-14 (DOC.3). Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -37,7 +37,7 @@
 |---|---|---|
 | Ancho de contenido y su centrado (INT.1a, D7, regla R77) | `styles/layout.css` | `.section { max-width: var(--fk-content-max); margin-inline: auto }` |
 | Tope de ancho (único consumidor: `.section`) | `styles/tokens.css` | `--fk-content-max: 1440px` |
-| Entrada de Movimientos en el sidebar (INT.1a, D6) | `index.html` | `.nav-item--no-mobile` con `href="#movimientos"`, grupo `nav-label-gestion` |
+| Entrada de Movimientos en el sidebar (INT.1a, D6; movida de grupo por DSK.10b) | `index.html` | `.nav-item--no-mobile` con `href="#movimientos"`, grupo `nav-label-diario` |
 | Entrada de Movimientos en móvil (sin cambios desde DIS.6/C6) | `index.html` | `.mas-tile` con `href="#movimientos"` |
 | Sub-nivel de las 4 hijas de Ahorro (INT.1b, D6) | `index.html` | `.nav-subnav#nav-subnav-ahorro`, `[hidden]` por defecto |
 | Despliegue del sub-nivel según el hash activo (INT.1b) | ver [`sistema-visual.md`](sistema-visual.md), dueño único de las anclas de navegación de `ui/shell.js` | `markActiveNav()`, `GRUPO_AHORRO` |
@@ -77,3 +77,46 @@
 - 2026-08-05 (INT.1f): el modal base sube de 520 a 840px desde 1024px; su `<form>` pasa a grid de 2 columnas emparejando los `.form-group` simples vía `:has()`. Móvil no cambia.
 - 2026-08-03 (INT.1b): las 4 hijas de Ahorro se anidan bajo la casa en el sidebar de desktop; `.section__volver` de las 4 se oculta ahí; BUG-026 se cierra por eliminación de causa.
 - 2026-08-02 (INT.1a): `.section` gana `margin-inline: auto` y Movimientos entra al grupo "Seguimiento" del sidebar.
+
+---
+
+## Armazón de escritorio: una identidad, un primario, una navegación fija (iniciativa DSK.10, ADR 079)
+
+- **Objetivo**          : la auditoría transversal a 1920 x 1080 encontró quince hallazgos y ninguno es de composición de contenido: son del armazón. La pantalla se nombra una sola vez y donde el nombre sobrevive al desplazamiento, hay exactamente un botón lleno por pantalla y es el de la pantalla, y en monitor la navegación no se pliega porque plegarla no da espacio.
+- **Estado actual**     : **dos de tres rebanadas cerradas.** DSK.10a: el `.section__title-group` se oculta visualmente desde 1680px (el `h1` sigue siendo el nombre accesible), `#topbar-primario` y "Registrar" se intercambian el lleno según la sección tenga primario propio, y los tres verbos que faltaban pasan a "Nueva cuenta", "Nueva meta" y "Nueva reserva". DSK.10b: el botón de plegar se retira desde 1680 y el estado persistido se ignora en ese rango sin borrarse, la barra pasa a cuatro grupos con nombre y las 4 hijas de Ahorro dejan de depender del hash en monitor. **Falta DSK.10c** (D8, D9, D10). **Corrige una premisa falsa de toda la serie**: los ADR 070 a 078 citaban D1, D2 y D3 como aprobadas y ninguna estaba implementada.
+- **Verificado contra** : DSK.10a, commit `5c1a0e6` (2026-08-19); DSK.10b, esta sesión. Medición en navegador contra el runtime del index, no contra el árbol de trabajo (que comparte otra sesión).
+
+**Mediciones a 1920 x 1080** (medidas en el navegador, no estimadas):
+
+| Qué | Antes | Después |
+|---|---|---|
+| Alto del encabezado de sección (13 secciones) | 36px de título + 32 de separación | 1px, oculto visualmente |
+| Botones llenos simultáneos en la barra superior | 2 ("Registrar" lleno y el de la sección en secundario) | 1, y es el de la sección |
+| Ancho de contenido con la barra plegada | 1376 (igual que expandida) | el control ya no existe en ese rango |
+| Espacio libre del nav con todo desplegado | no aplica (las hijas se ocultaban) | 184px, sin desplazamiento interno |
+| Grupos de navegación con rótulo legible | 2 de 3 | 4 de 4 |
+
+**Dónde vive**
+
+| Pieza | Archivo | Ancla |
+|---|---|---|
+| Identidad de sección oculta visualmente desde 1680 (D1) | `styles/responsive.css` | bloque "IDENTIDAD DE SECCIÓN, UNA SOLA VEZ" |
+| Jerarquía de primarios de la barra superior (D2) | `modules/ui/shell.js` | `_syncJerarquiaPrimarios()` |
+| Los cuatro grupos con nombre (D6) | `index.html` | `nav-label-diario`, `nav-label-compromisos`, `nav-label-mi-dinero`, `nav-label-como-voy` |
+| Umbral de monitor y su lectura (D4, D7) | `modules/ui/shell.js` | `MQ_MONITOR`, `_enMonitor()` |
+| Barra sin plegar y estado persistido ignorado (D4) | `modules/ui/shell.js`, `styles/responsive.css` | `_syncBarraPorAncho()`, bloque "LA BARRA NO SE PLIEGA EN MONITOR" |
+| Sub-nivel de Ahorro atado al hash **o** al ancho (D7) | `modules/ui/shell.js` | `_syncSubnavAhorro()` |
+
+**Riesgos**:
+
+- **El estado de plegado se ignora, no se borra.** Quien lo tenga guardado en `true` y baje de 1680 recupera la barra plegada, que sigue sin nombres bajo cada icono: es la deuda que D5 deja escrita y **no** se debe dar por definitiva.
+- **Bajo 1680 y con menos de 800px de alto, el nav vuelve a desplazarse por dentro** cuando el grupo Ahorro está abierto: 183px de exceso a 1280x799, contra ~123 antes de los dos rótulos nuevos. Ya se desplazaba; los cuatro grupos lo empeoran ~60px. Con el grupo cerrado cabe con 23px de sobra.
+- **La barra reacciona al ancho por `matchMedia`**, así que cruzar el umbral sin recargar sí resincroniza (verificado en Playwright). El panel de vista previa de esta herramienta **no** emite `resize` ni `change` al cambiar el viewport: ahí solo se puede verificar recargando en cada ancho.
+- **"Deudas" en el mockup es "Por pagar" en el código**: el nombre lo fijó la ficha 01 y lo trajo al chrome la ficha 05 ([ADR 069](../DECISIONS/069-bloque-gastos-en-la-barra-movil.md)). D6 decide agrupación, no nombres, así que el rótulo no se tocó.
+
+**Cambios pendientes**: DSK.10c (D8, una sola entrada a Ajustes; D9, hover solo en lo pulsable; D10, movimiento fino para puntero fino). **N6 (iconos repetidos entre destinos) queda fuera**: es dependencia de la familia de iconos, no de una auditoría de composición.
+
+**Cambios realizados**:
+
+- 2026-08-19 (DSK.10b): barra sin plegar desde 1680 con el estado persistido ignorado, cuatro grupos con nombre (Movimientos sale de "Seguimiento" a "Día a día", los dos espejos de deuda se reúnen en "Compromisos", "Ahorro" deja de ser rótulo de grupo) y las 4 hijas siempre visibles en monitor.
+- 2026-08-19 (DSK.10a): identidad de sección una sola vez, un solo primario por pantalla y los tres verbos que faltaban. Commit `5c1a0e6`.

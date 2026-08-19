@@ -1804,3 +1804,17 @@
   }
   .section > .section__header:empty { display: none; }
 }
+
+/* ── LA BARRA NO SE PLIEGA EN MONITOR (>= 1680px, DSK.10b, ADR 079 D4) ───
+   Con la sección topada en 1440, el ancho de contenido es 1376 tanto con la
+   barra expandida como plegada: el control cambiaba once nombres por cero
+   píxeles. Y la barra plegada no tiene ningún sustituto del nombre: ni
+   `title`, ni panel emergente, ni rótulo bajo el icono (D5, deuda escrita).
+
+   Por debajo de 1680 el botón se queda: ahí sí ensancha el contenido.
+   shell.js (`_syncBarraPorAncho`) ignora el estado persistido en este rango
+   sin borrarlo, así que al angostar la ventana la barra vuelve como el
+   usuario la dejó. */
+@media (min-width: 1680px) {
+  .sidebar__collapse-btn { display: none; }
+}

@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-08-18.
+> Revisado: 2026-08-19.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-08)
+
+### feat(ui): DSK.10b, la navegacion de escritorio deja de plegarse y se lee entera · 2026-08-19
+
+Segunda de las tres rebanadas del [ADR 079](DECISIONS/079-armazon-de-escritorio-una-identidad-un-primario-una-navegacion.md). Cierra sus D4, D6 y D7, y deja D5 anotada como deuda. Ficha: [`contexto/escritorio.md`](contexto/escritorio.md).
+
+- **D4, colapsar la barra no compraba nada en monitor.** Con la sección topada en 1440, el ancho de contenido es **1376 con la barra expandida y 1376 con la barra plegada**: el control cambiaba once nombres por cero píxeles, y la barra plegada no tiene ningún sustituto del nombre (ni `title`, ni panel emergente, ni rótulo bajo el icono). Desde 1680px el botón se retira y el estado persistido **se ignora sin borrarse**: al angostar la ventana el usuario recupera la barra como la dejó. Verificado en las dos direcciones.
+- **D6, cuatro grupos con nombre, ninguno mudo.** Antes eran tres: uno sin rótulo visible, "Seguimiento" (cinco secciones que no comparten naturaleza) y "Ahorro", que era rótulo de grupo **y** destino. Quedan **Día a día** (Inicio, Gastos, Calendario, Movimientos), **Compromisos** (Por pagar, Me deben), **Mi dinero** (Mis cuentas, Ahorro y sus cuatro) y **Cómo voy** (Límites de gasto, Análisis). Reúne los dos espejos de deuda, que vivían en grupos distintos, y saca a Movimientos de uno que no lo explicaba. **No cambia rutas, ni hashes, ni dominios**: son rótulos y orden en el marcado, y por eso los `href` de los tests siguen siendo los mismos.
+- **El mockup llama "Deudas" a lo que el código llama "Por pagar"**, y se conservó "Por pagar": ese nombre lo fijó la ficha 01 y lo trajo al chrome la ficha 05 ([ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md)) porque la sección ya no es solo deudas. D6 decide agrupación, no nombres; revertirlo habría tumbado un ADR en silencio.
+- **D7, las cuatro hijas de Ahorro siempre visibles en monitor.** El sub-nivel deja de depender del hash desde 1680: basta uno de los dos motivos para estar abierto. Medido a 1920 x 1080 con todo desplegado: **184px libres y sin desplazamiento interno**. Bajo 1680 sigue igual que desde INT.1b, pagando 1 fila en vez de 5, que es lo que cerró BUG-026.
+- **Móvil no se toca y se comprobó que no se tocó**: la barra inferior sigue siendo Inicio, Gastos, Registrar, Ahorro y Más, en ese orden y a 5 slots iguales, porque todo lo que se movió lleva `nav-item--no-mobile` y los tres grupos nuevos caen bajo `.nav-group:not(:first-child)`. Los cuatro rótulos no se pintan bajo 1024.
+- **Lo que empeora, dicho entero**: bajo 1680 y con menos de 800px de alto, con el grupo Ahorro abierto el nav vuelve a desplazarse por dentro (183px de exceso a 1280x799, contra ~123 antes de los dos rótulos nuevos). Ya se desplazaba; los cuatro grupos lo empeoran ~60px. Con el grupo cerrado cabe con 23px de sobra, que es lo que mide el test de BUG-026.
+- Tests: 5 nuevos en `tests/unit/shell-nav.test.js` (32 en el archivo) y 3 en `tests/e2e/hub-ahorros.test.js`, uno de ellos cruzando el umbral en las dos direcciones. El test de grupos del sidebar se reescribió: su premisa (tres grupos, uno mudo) la cambió esta decisión.
 
 ### feat(ui): DSK.10a, la sección se nombra una vez y su acción manda · 2026-08-18
 

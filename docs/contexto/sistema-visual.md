@@ -80,7 +80,7 @@
 | Presentación de hoja inferior (reutilizable) | `styles/modals.css` | `.modal-overlay--sheet`, `.modal--sheet` | ~207 |
 | Tiles con teja por dominio + estado activo | `styles/modals.css` | `.mas-tile`, `.mas-tile__teja`, `.mas-tile.active` | ~270 |
 | Botón de tema de la hoja | `styles/modals.css` + `index.html` | `.mas-sheet__theme` (acción `theme-toggle`) | ~330 |
-| Marcado del tile activo, y despliegue del sub-nivel de Ahorro en escritorio (INT.1b/AH.7a) | `modules/ui/shell.js` | `markActiveNav()` (selector `.nav-item, .mas-tile`), `GRUPO_AHORRO` | ~85 |
+| Marcado del tile activo, y despliegue del sub-nivel de Ahorro en escritorio (INT.1b/AH.7a; desde DSK.10b también por ancho) | `modules/ui/shell.js` | `markActiveNav()` (selector `.nav-item, .mas-tile`), `GRUPO_AHORRO`, `_syncSubnavAhorro()` | ~85 |
 | Sincronización de TODOS los toggles de tema | `modules/ui/shell.js` | `_syncThemeButton()` (`querySelectorAll`, swap `#i-moon`/`#i-sun`) | ~58 |
 | Cierre al navegar (el botón de tema NO cierra) | `modules/ui/menu-mas.js` | `initMenuMas()` (click en `a[href]`) | ~20 |
 | Resaltado del botón "Más" por sección | `modules/ui/shell.js` | `MAS_SECTIONS` (6 secciones; AH.7a sacó el grupo Ahorro y sumó Agenda, la ficha 01 sacó Deudas y Límites) | ~13 |

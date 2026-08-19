@@ -221,16 +221,23 @@
       </div>
 
       <!-- Nav items -->
+      <!-- Cuatro grupos con nombre (DSK.10b, ADR 079 D6). El mapa anterior
+           tenía un grupo mudo, uno llamado "Seguimiento" que juntaba cinco
+           cosas sin naturaleza común y separaba los dos espejos de deuda
+           ("Deudas" en el grupo diario, "Me deben" en el otro). No cambia
+           rutas, ni hashes, ni dominios: son rótulos y orden en el marcado. -->
       <div class="sidebar__nav" role="list">
 
-        <!-- GRUPO 1: Uso diario. En mobile estos items forman el bottom nav visible.
-             Solo los que NO tienen nav-item--no-mobile aparecen en mobile.
+        <!-- GRUPO 1: Día a día. En mobile estos items forman el bottom nav
+             visible: solo los que NO tienen nav-item--no-mobile aparecen.
              Bottom nav mobile: Inicio · Gastos · [+] · Ahorro · [Más] -->
-        <!-- Sin rótulo visible desde NAV2.1b (ADR 040 D4): el grupo de uso
-             diario abre directo bajo la marca; el nombre queda para
-             lectores de pantalla vía aria-label. -->
+        <!-- Recupera rótulo visible en DSK.10b (ADR 079 D6): NAV2.1b se lo
+             había quitado y lo dejaba solo en aria-label, así que el primer
+             grupo era el único que no se podía leer. Bajo 1024 el rótulo no
+             se pinta (responsive.css), donde el grupo es la barra inferior. -->
         <div class="nav-group" role="listitem">
-          <div role="group" aria-label="Uso diario">
+          <span class="nav-group__label" id="nav-label-diario">Día a día</span>
+          <div role="group" aria-labelledby="nav-label-diario">
 
             <a class="nav-item active" href="#dash" data-section="dash"
                aria-current="page" aria-label="Inicio: resumen financiero">
@@ -263,25 +270,28 @@
               <span class="nav-item__label">Calendario</span>
             </a>
 
+            <!-- Movimientos llega acá en DSK.10b (ADR 079 D6): venía de
+                 "Seguimiento", que no explicaba por qué el historial completo
+                 vivía al lado de los límites. Su entrada nació en INT.1a
+                 (ADR 059 D6), cuando en escritorio solo se llegaba por
+                 "Ver todo" de Actividad reciente. Reusa i-saldo, igual que su
+                 teja de la hoja "Más": el sprite no tiene icono propio (N6). -->
+            <a class="nav-item nav-item--no-mobile" href="#movimientos" data-section="movimientos"
+               aria-label="Movimientos: historial completo">
+              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-saldo"/></svg>
+              <span class="nav-item__label">Movimientos</span>
+            </a>
+
             <!-- Ahorro en el bottom nav (AH.7a, ADR 065 D1): cuarto slot en
                  móvil. Es una entrada duplicada a propósito: la casa vive en
-                 el grupo 3 con sus 4 hijas anidadas (INT.1b), y ese grupo no
-                 se pinta en móvil (.nav-group:not(:first-child) en
+                 el grupo "Mi dinero" con sus 4 hijas anidadas (INT.1b), y ese
+                 grupo no se pinta en móvil (.nav-group:not(:first-child) en
                  responsive.css). Sin aria-controls: el sub-nivel del sidebar
                  lo gobierna solo la entrada de desktop. -->
             <a class="nav-item nav-item--mobile-only" href="#ahorro" data-section="ahorro"
                aria-label="Ahorro: fondo, metas, reservas e inversión">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-ahorro"/></svg>
               <span class="nav-item__label">Ahorro</span>
-            </a>
-
-            <!-- Por pagar: solo desktop (en móvil es una lente del bloque
-                 Gastos, ADR 069). El nombre lo fijó la ficha 01 y la ficha 05
-                 lo trajo al chrome: la sección ya no es solo deudas. -->
-            <a class="nav-item nav-item--no-mobile" href="#compromisos" data-section="compromisos"
-               aria-label="Por pagar: gastos fijos y deudas">
-              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-deudas"/></svg>
-              <span class="nav-item__label">Por pagar</span>
             </a>
 
             <!-- Boton "Mas" solo visible en mobile (< 1024px). Abre el modal #modal-mas. -->
@@ -295,31 +305,23 @@
           </div>
         </div>
 
-        <!-- GRUPO 2: seguimiento del dinero (saldos, deudas a favor, límites,
-             análisis). Solo desktop. Análisis se integró aquí al disolverse
-             "Herramientas" (NAV.B, ADR 024 D6). Renombrado en NAV.C: "Gestión"
-             no predecía su contenido (mismo motivo por el que el modal "Más"
-             ya lo había retirado, ADR 024 D5). -->
+        <!-- GRUPO 2: Compromisos (DSK.10b, ADR 079 D6). Los dos espejos de la
+             misma idea: lo que debes y lo que te deben. Vivían en grupos
+             distintos, lo que obligaba a buscar en dos sitios para responder
+             una sola pregunta. Solo desktop: en móvil "Por pagar" es una
+             lente del bloque Gastos (ADR 069) y "Me deben" vive en "Más". -->
         <div class="nav-group" role="listitem">
-          <span class="nav-group__label" id="nav-label-gestion">Seguimiento</span>
-          <div role="group" aria-labelledby="nav-label-gestion">
+          <span class="nav-group__label" id="nav-label-compromisos">Compromisos</span>
+          <div role="group" aria-labelledby="nav-label-compromisos">
 
-            <!-- Mis cuentas: setup inicial, luego automático. Solo desktop. -->
-            <a class="nav-item nav-item--no-mobile" href="#tesoreria" data-section="tesoreria"
-               aria-label="Mis cuentas y saldos">
-              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-cuentas"/></svg>
-              <span class="nav-item__label">Mis cuentas</span>
-            </a>
-
-            <!-- INT.1a (ADR 059 D6): Movimientos tenia entrada en la hoja "Mas"
-                 desde DIS.6/C6 y ninguna aca, asi que en escritorio se llegaba
-                 solo por "Ver todo" de Actividad reciente, que arranca [hidden].
-                 R32 pedia entrada propia y solo la cumplia movil. Reusa i-saldo,
-                 igual que su teja de la hoja: el sprite no tiene icono propio. -->
-            <a class="nav-item nav-item--no-mobile" href="#movimientos" data-section="movimientos"
-               aria-label="Movimientos: historial completo">
-              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-saldo"/></svg>
-              <span class="nav-item__label">Movimientos</span>
+            <!-- El nombre lo fijó la ficha 01 y la ficha 05 lo trajo al
+                 chrome: la sección ya no es solo deudas. El mockup de la
+                 auditoría global la llama "Deudas", su nombre anterior; se
+                 conserva "Por pagar" para no revertir el ADR 069 en silencio. -->
+            <a class="nav-item nav-item--no-mobile" href="#compromisos" data-section="compromisos"
+               aria-label="Por pagar: gastos fijos y deudas">
+              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-deudas"/></svg>
+              <span class="nav-item__label">Por pagar</span>
             </a>
 
             <a class="nav-item nav-item--no-mobile" href="#personales" data-section="personales"
@@ -328,34 +330,27 @@
               <span class="nav-item__label">Me deben</span>
             </a>
 
-            <a class="nav-item nav-item--no-mobile" href="#presupuesto" data-section="presupuesto"
-               aria-label="Límites de gasto por categoría">
-              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-presupuesto"/></svg>
-              <span class="nav-item__label">Límites de gasto</span>
-            </a>
-
-            <a class="nav-item nav-item--no-mobile" href="#analisis" data-section="analisis"
-               aria-label="Análisis financiero">
-              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-analisis"/></svg>
-              <span class="nav-item__label">Análisis</span>
-            </a>
-
           </div>
         </div>
 
-        <!-- GRUPO 3: Ahorro (DIS.18, anidado por INT.1b/ADR 059 D6). El rótulo
-             paraguas ya no es solo un nombre: la casa encabeza el grupo y es
-             la que responde "cuánto tengo guardado en total y dónde". Las 4
-             modalidades son atajos SOLO de desktop (nav-item--no-mobile) y
-             viven anidadas dentro de .nav-subnav: shell.js (markActiveNav)
-             la despliega solo mientras el hash activo pertenece al grupo
-             (Ahorro o una de sus 4 hijas), así que el resto de la navegación
-             paga 1 fila en vez de 5 (recupera BUG-026, ver layout.css). En
-             móvil, donde el hueco era el problema, la única entrada es la
-             casa. -->
+        <!-- GRUPO 3: Mi dinero (DSK.10b, ADR 079 D6/D7). Dónde está y cómo
+             crece: las cuentas y el ahorro con sus 4 modalidades anidadas
+             (DIS.18, INT.1b). "Ahorro" deja de ser rótulo de grupo y se queda
+             solo como destino, así que la palabra aparece una vez en vez de
+             dos. Las hijas son atajos SOLO de desktop (nav-item--no-mobile);
+             desde 1680 se ven siempre y por debajo shell.js las despliega
+             mientras el hash pertenece al grupo, que es lo que recupera
+             BUG-026 (ver layout.css). En móvil la única entrada es la casa. -->
         <div class="nav-group" role="listitem">
-          <span class="nav-group__label" id="nav-label-ahorros">Ahorro</span>
-          <div role="group" aria-labelledby="nav-label-ahorros">
+          <span class="nav-group__label" id="nav-label-mi-dinero">Mi dinero</span>
+          <div role="group" aria-labelledby="nav-label-mi-dinero">
+
+            <!-- Mis cuentas: setup inicial, luego automático. Solo desktop. -->
+            <a class="nav-item nav-item--no-mobile" href="#tesoreria" data-section="tesoreria"
+               aria-label="Mis cuentas y saldos">
+              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-cuentas"/></svg>
+              <span class="nav-item__label">Mis cuentas</span>
+            </a>
 
             <a class="nav-item nav-item--no-mobile" href="#ahorro" data-section="ahorro"
                aria-label="Ahorro: fondo, metas, apartados e inversión"
@@ -391,6 +386,30 @@
               </a>
 
             </div>
+
+          </div>
+        </div>
+
+        <!-- GRUPO 4: Cómo voy (DSK.10b, ADR 079 D6). Las dos pantallas que
+             miden, no las que operan. Análisis se integró al disolverse
+             "Herramientas" (NAV.B, ADR 024 D6) y Límites llega acá desde
+             "Seguimiento". Solo desktop: en móvil ambas viven en "Más" o
+             como lente del bloque Gastos (ADR 069). -->
+        <div class="nav-group" role="listitem">
+          <span class="nav-group__label" id="nav-label-como-voy">Cómo voy</span>
+          <div role="group" aria-labelledby="nav-label-como-voy">
+
+            <a class="nav-item nav-item--no-mobile" href="#presupuesto" data-section="presupuesto"
+               aria-label="Límites de gasto por categoría">
+              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-presupuesto"/></svg>
+              <span class="nav-item__label">Límites de gasto</span>
+            </a>
+
+            <a class="nav-item nav-item--no-mobile" href="#analisis" data-section="analisis"
+               aria-label="Análisis financiero">
+              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-analisis"/></svg>
+              <span class="nav-item__label">Análisis</span>
+            </a>
 
           </div>
         </div>

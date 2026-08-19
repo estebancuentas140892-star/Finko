@@ -47,6 +47,44 @@ const GRUPO_GASTOS = new Set(['gast', 'compromisos', 'presupuesto']);
  */
 const GRUPO_AHORRO = new Set(['ahorro', 'fondo', 'metas', 'apartados', 'inversion']);
 
+/**
+ * Umbral de monitor (DSK.10b, ADR 079 D4/D7). Desde acá la barra no se
+ * pliega y el sub-nivel de Ahorro deja de depender del hash. Es el ancho en
+ * el que el colapso deja de comprar píxeles: con la sección topada en 1440,
+ * el contenido mide 1376 esté la barra expandida o colapsada, así que el
+ * control cambiaba once nombres por cero espacio.
+ */
+const MQ_MONITOR = '(min-width: 1680px)';
+
+function _enMonitor() {
+  return window.matchMedia?.(MQ_MONITOR).matches === true;
+}
+
+/**
+ * Despliega o repliega el sub-nivel del grupo Ahorro.
+ *
+ * Dos motivos para estar abierto, y basta uno: el hash pertenece al grupo
+ * (INT.1b, ADR 059 D6) o la ventana llegó a monitor (ADR 079 D7), donde la
+ * barra tiene sitio de sobra y el mapa completo se lee sin entrar a ningún
+ * sitio. Bajo 1680 sigue pagando 1 fila en vez de 5, que es lo que resolvió
+ * BUG-026.
+ *
+ * aria-controls, no data-section: la barra inferior también lleva una
+ * entrada con data-section="ahorro" desde AH.7a, así que data-section no
+ * identifica a la casa del sidebar.
+ *
+ * @param {string} hash
+ */
+function _syncSubnavAhorro(hash) {
+  const subnav  = document.getElementById('nav-subnav-ahorro');
+  const trigger = document.querySelector('[aria-controls="nav-subnav-ahorro"]');
+  if (!subnav || !trigger) return;
+
+  const abierto = GRUPO_AHORRO.has(hash) || _enMonitor();
+  subnav.hidden = !abierto;
+  trigger.setAttribute('aria-expanded', String(abierto));
+}
+
 // ── THEME ───────────────────────────────────────────────────────
 
 // Timer para quitar .theme-transitioning. Se guarda para resetear si el
@@ -163,17 +201,7 @@ export function markActiveNav(hash) {
     ahorroBtn.setAttribute('aria-current', enGrupo ? 'page' : 'false');
   }
 
-  // Sub-nivel del grupo Ahorro (INT.1b): se despliega solo dentro del grupo.
-  // aria-controls, no data-section: la barra inferior también lleva una
-  // entrada con data-section="ahorro" desde AH.7a, así que data-section no
-  // identifica a la casa del sidebar.
-  const subnav = document.getElementById('nav-subnav-ahorro');
-  const triggerAhorro = document.querySelector('[aria-controls="nav-subnav-ahorro"]');
-  if (subnav && triggerAhorro) {
-    const abierto = GRUPO_AHORRO.has(hash);
-    subnav.hidden = !abierto;
-    triggerAhorro.setAttribute('aria-expanded', String(abierto));
-  }
+  _syncSubnavAhorro(hash);
 
   _syncTopbar(hash);
 
@@ -321,6 +349,10 @@ let _sidebarTimer = null;
  * no en la carga inicial ni al redimensionar la ventana.
  */
 export function toggleSidebarCollapse() {
+  // En monitor no hay nada que plegar (ADR 079 D4): el botón está oculto,
+  // así que esto solo cubre una llamada programática.
+  if (_enMonitor()) return;
+
   // Activar transicion antes del toggle de clase
   if (_sidebarTimer) clearTimeout(_sidebarTimer);
   document.body.classList.add('sidebar-animating');
@@ -338,16 +370,29 @@ export function toggleSidebarCollapse() {
 }
 
 /**
- * Restaura el estado del sidebar desde localStorage al iniciar la app.
+ * Aplica al ancho actual las dos reglas de barra que dependen de él
+ * (DSK.10b, ADR 079 D4 y D7).
+ *
+ * El estado persistido se **ignora** en monitor, no se borra: al volver por
+ * debajo de 1680 el usuario recupera la barra como la dejó. Sin este
+ * recálculo al cruzar el umbral, ensanchar la ventana con la barra plegada
+ * la dejaba plegada y sin botón para desplegarla.
+ */
+function _syncBarraPorAncho() {
+  const colapsada = !_enMonitor() && localStorage.getItem(SIDEBAR_KEY) === 'true';
+  document.body.classList.toggle('sidebar-collapsed', colapsada);
+  _syncCollapseButton(colapsada);
+  _syncNavTitles(colapsada);
+  _syncSubnavAhorro(location.hash.replace('#', ''));
+}
+
+/**
+ * Restaura el estado del sidebar al iniciar la app y lo deja atado al ancho.
  * Se llama sincronamente antes del primer render para evitar parpadeo.
  */
 export function initSidebarCollapse() {
-  const collapsed = localStorage.getItem(SIDEBAR_KEY) === 'true';
-  if (collapsed) {
-    document.body.classList.add('sidebar-collapsed');
-    _syncCollapseButton(true);
-    _syncNavTitles(true);
-  }
+  _syncBarraPorAncho();
+  window.matchMedia?.(MQ_MONITOR).addEventListener?.('change', _syncBarraPorAncho);
 }
 
 // ── INIT ────────────────────────────────────────────────────────

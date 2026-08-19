@@ -13,8 +13,10 @@
  *   alterna el glifo luna/sol y aria-pressed).
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { markActiveNav, toggleTheme } from '../../modules/ui/shell.js';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import {
+  markActiveNav, toggleTheme, toggleSidebarCollapse, initSidebarCollapse,
+} from '../../modules/ui/shell.js';
 
 describe('markActiveNav()', () => {
   beforeEach(() => {
@@ -405,5 +407,82 @@ describe('jerarquía de primarios en la barra superior (DSK.10a)', () => {
     markActiveNav('gast');
     expect(top().hidden).toBe(true);
     expect(registrar().classList.contains('btn-primary')).toBe(true);
+  });
+});
+
+// ── DSK.10b (ADR 079 D4/D7) - la barra en monitor ────────────────
+
+// happy-dom no tiene viewport real: se falsea `matchMedia`, mismo apaño que
+// usan agenda.test.js y analisis.test.js.
+describe('la barra sigue al ancho: sin plegado y con el mapa entero (DSK.10b)', () => {
+  const matchMediaReal = window.matchMedia;
+  const anchoDe = enMonitor => { window.matchMedia = () => ({ matches: enMonitor }); };
+
+  beforeEach(() => {
+    document.body.className = '';
+    localStorage.clear();
+    document.body.innerHTML = `
+      <a class="nav-item" data-section="gast"></a>
+      <button class="nav-item" data-modal="modal-mas"></button>
+      <a class="nav-item" href="#ahorro" data-section="ahorro"
+         aria-expanded="false" aria-controls="nav-subnav-ahorro"></a>
+      <div class="nav-subnav" id="nav-subnav-ahorro" hidden>
+        <a class="nav-item" data-section="fondo"></a>
+        <a class="nav-item" data-section="metas"></a>
+      </div>
+      <button class="nav-item sidebar__collapse-btn" data-action="sidebar-toggle"
+              aria-expanded="true" aria-label="Colapsar navegación">
+        <span class="nav-item__label">Colapsar</span>
+      </button>
+    `;
+  });
+
+  afterEach(() => {
+    window.matchMedia = matchMediaReal;
+    localStorage.clear();
+  });
+
+  const subnav = () => document.getElementById('nav-subnav-ahorro');
+  const trigger = () => document.querySelector('[aria-controls="nav-subnav-ahorro"]');
+
+  // D7: hasta acá las 4 hijas solo existían mientras el hash pertenecía al
+  // grupo, así que el mapa de la app no se podía leer entero sin navegar.
+  it('desde 1680 el sub-nivel de Ahorro no se pliega, esté donde esté el hash', () => {
+    anchoDe(true);
+    markActiveNav('gast');
+    expect(subnav().hidden).toBe(false);
+    expect(trigger().getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('por debajo de 1680 sigue dependiendo del hash: 1 fila en vez de 5', () => {
+    anchoDe(false);
+    markActiveNav('gast');
+    expect(subnav().hidden).toBe(true);
+    markActiveNav('metas');
+    expect(subnav().hidden).toBe(false);
+  });
+
+  // D4: con la sección topada en 1440 el contenido mide 1376 plegada o no,
+  // así que el control cambiaba once nombres por cero píxeles.
+  it('en monitor el estado persistido se ignora, pero no se borra', () => {
+    localStorage.setItem('fk_sidebar_collapsed', 'true');
+    anchoDe(true);
+    initSidebarCollapse();
+    expect(document.body.classList.contains('sidebar-collapsed')).toBe(false);
+    expect(localStorage.getItem('fk_sidebar_collapsed')).toBe('true');
+  });
+
+  it('por debajo de 1680 el estado persistido se respeta', () => {
+    localStorage.setItem('fk_sidebar_collapsed', 'true');
+    anchoDe(false);
+    initSidebarCollapse();
+    expect(document.body.classList.contains('sidebar-collapsed')).toBe(true);
+  });
+
+  it('en monitor no hay nada que plegar: el toggle no hace efecto', () => {
+    anchoDe(true);
+    toggleSidebarCollapse();
+    expect(document.body.classList.contains('sidebar-collapsed')).toBe(false);
+    expect(localStorage.getItem('fk_sidebar_collapsed')).toBe(null);
   });
 });
