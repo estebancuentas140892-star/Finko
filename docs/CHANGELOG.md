@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(compromisos): DSK.4b, la tarjeta de deuda baja de tres renglones a dos · 2026-08-18
+
+Segunda y última rebanada del [ADR 073](DECISIONS/073-deudas-inventario-con-su-herramienta-al-lado.md), que cierra la iniciativa **DSK.4**. Cierra sus D3 y D5. Desde 1440px los chips y las acciones de la tarjeta comparten renglón y el botón "Abonar" se dimensiona a su texto. Medido en el navegador a 1920 x 1080: **Abonar pasa de 1246 a 128px** y la tarjeta de 173 a 134 de alto. Ficha: [`contexto/deudas.md`](contexto/deudas.md).
+
+- **Seis barras con la misma etiqueta dominaban la lista.** `.deuda-card__abonar` resuelve `flex: 1 1 0%`, que es lo correcto a 390px de ancho; en monitor producía un botón de ancho casi completo por deuda, y eso le quitaba peso a los saldos, que son el dato que decide a cuál abonar.
+- **La tarjeta pasa a rejilla para que dos hermanos del DOM compartan renglón sin envolverlos en un div nuevo.** Las filas se declaran a mano y no por colocación automática: el aviso de tasa por confirmar se emite **entre** los chips y las acciones, así que con auto-colocación las acciones caían a un tercer renglón cuando ese aviso aparecía.
+- **El saldo sigue en columna a la derecha, y es deliberado.** Es lo que permite recorrer los saldos en vertical y ver cuál pesa más, que es la pregunta real de la sección. Lo que se corrige es la distancia entre nombre y saldo, y eso ya lo hizo DSK.4a al acotar la lista a 8 columnas: no necesita regla propia.
+- **D5, fuera el "+" del texto.** El botón de la cabecera y el CTA del estado vacío decían "+ Agregar"; ahora dicen "Agregar" con el ícono `#i-plus` delante, que es la regla D3 del lenguaje de acciones y lo que Calendario ya aplicó. **El sustantivo no se toca:** la ficha 05 ([ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md)) lo dejó genérico a propósito porque ese botón abre el chooser de los tres tipos. Vale en todos los anchos: es copia e ícono, no reparto.
+- **La auditoría se escribió cuando la sección se llamaba "Deudas" y solo listaba deudas.** Hoy es "Por pagar" y su lista tiene también los gastos fijos: el reparto vale igual, porque el argumento (la lista es la sección) no depende de cuántos grupos tenga, pero el hallazgo E8 cambió de objeto y por eso lo que se corrige es solo el "+", no el sustantivo.
+- Tests: el de la ficha 05 que fijaba el texto del CTA vacío cambia de expectativa (mismo destino, sin "+", con ícono); 529 verdes en `tests/unit/compromisos.test.js`.
+
 ### feat(compromisos): DSK.4a, la estrategia se queda a la vista mientras la lista baja · 2026-08-18
 
 Primera de las dos rebanadas del [ADR 073](DECISIONS/073-deudas-inventario-con-su-herramienta-al-lado.md). Cierra sus D1, D2 y D4. Desde 1440px la sección deja de apilar herramienta e inventario en el mismo eje: la lista toma `span 8` y la estrategia `span 4` **pegajosa**. Medido en el navegador a 1920 x 1080: banda de 1376 x 108 (antes 162), lista de 909, columna de 443, y la primera deuda arranca en y=504, dentro del pliegue (antes la primera tarjeta empezaba a 1364px del inicio del contenido, o sea ninguna deuda visible al abrir). Ficha: [`contexto/deudas.md`](contexto/deudas.md).

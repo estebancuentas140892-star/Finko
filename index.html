@@ -847,11 +847,14 @@
             <span class="cat-teja section__icon" data-dom="compromisos" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-deudas"/></svg></span>
             <h1 class="section__title" id="title-compromisos">Por pagar</h1>
           </div>
-          <!-- Ficha 05: un solo botón para los tres tipos; abre el chooser. -->
+          <!-- Ficha 05: un solo botón para los tres tipos; abre el chooser.
+               DSK.4b (ADR 073 D5): el "+" sale del texto y lo aporta el ícono,
+               como en el resto de los primarios de la app. -->
           <button class="btn btn-primary"
                   data-action="comp-elegir-tipo-nuevo"
                   aria-label="Agregar un gasto fijo o una deuda">
-            + Agregar
+            <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>
+            Agregar
           </button>
         </header>
         <!-- Lente "Por pagar" del bloque Gastos (ADR 069). -->

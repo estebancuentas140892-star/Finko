@@ -474,6 +474,6 @@ function _renderEmptyState() {
       <div class="empty-state__icon" aria-hidden="true">${emptyArt('deudas')}</div>
       <p class="empty-state__title">Nada por pagar todavía</p>
       <p class="empty-state__desc">Agrega tu arriendo, un servicio, una tarjeta o un préstamo y Finko te avisa cuándo vence cada uno.</p>
-      <button class="btn btn-primary" data-action="comp-elegir-tipo-nuevo">+ Agregar</button>
+      <button class="btn btn-primary" data-action="comp-elegir-tipo-nuevo">${icon('plus')} Agregar</button>
     </div>`;
 }

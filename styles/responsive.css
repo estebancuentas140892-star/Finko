@@ -1347,3 +1347,40 @@
   }
   #compromisos-hero .hero-compromisos__ojo:hover { background: none; color: var(--fk-text-primary); }
 }
+
+/* ── TARJETA DE DEUDA EN ESCRITORIO (>= 1440px, DSK.4b, ADR 073 D3) ────
+   La tarjeta baja de tres renglones a dos: los chips y las acciones dejan de
+   ocupar un renglón cada uno y comparten el segundo.
+
+   Los dos defectos que corrige, medidos en el código vivo a 1376 de ancho:
+     · el botón "Abonar" mide 1246 x 44 y se repite una vez por deuda, porque
+       `.deuda-card__abonar` resuelve `flex: 1 1 0%` (correcto a 390px). Seis
+       barras enormes con la misma etiqueta le quitan peso a los saldos, que
+       son el dato que decide a cuál abonar.
+     · entre el final del nombre de la deuda y su saldo hay 1013px vacíos.
+
+   El saldo SIGUE en columna a la derecha, a propósito: es lo que permite
+   recorrer los saldos en vertical y ver cuál pesa más, que es la pregunta
+   real de la sección. Lo que se corrige es la distancia, que al acotar la
+   lista a 8 columnas baja de 1013 a ~503 sin tocar la alineación. */
+@media (min-width: 1440px) {
+
+  /* Rejilla en vez de columna flex: es lo que deja que dos hermanos del DOM
+     (chips y acciones) compartan renglón sin envolverlos en un div nuevo, o
+     sea sin tocar el marcado ni el orden de lectura. Las filas se declaran a
+     mano porque el aviso de tasa se emite ENTRE los dos y con colocación
+     automática empujaría las acciones a un tercer renglón. */
+  #lista-compromisos .deuda-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: var(--fk-space-4);
+  }
+  #lista-compromisos .deuda-card__top      { grid-column: 1 / -1; grid-row: 1; }
+  #lista-compromisos .deuda-card__chips    { grid-column: 1;      grid-row: 2; }
+  #lista-compromisos .deuda-card__acciones { grid-column: 2;      grid-row: 2; justify-self: end; }
+  #lista-compromisos .deuda-card__aviso    { grid-column: 1 / -1; grid-row: 3; }
+
+  /* El botón se dimensiona a su texto. `flex: 1` es la regla de móvil, donde
+     ocupar el ancho disponible es lo correcto. */
+  #lista-compromisos .deuda-card__abonar { flex: none; }
+}

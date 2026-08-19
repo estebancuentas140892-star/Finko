@@ -4645,10 +4645,13 @@ describe('renderListaCompromisos() - tarjeta de deuda D.16d', () => {
 
   // ── Ficha 05 (ADR 069): un solo CTA para crear cualquiera de los tres tipos ──
 
-  it('ficha 05: el estado vacío abre el mismo chooser que el encabezado ("+ Agregar")', () => {
+  it('ficha 05: el estado vacío abre el mismo chooser que el encabezado', () => {
     renderListaCompromisos();
     const cta = document.querySelector('.empty-state [data-action="comp-elegir-tipo-nuevo"]');
-    expect(cta.textContent.trim()).toBe('+ Agregar');
+    // DSK.4b (ADR 073 D5): el "+" sale del texto y lo aporta el ícono, que es
+    // la regla D3 del lenguaje de acciones. El destino no cambia.
+    expect(cta.textContent.trim()).toBe('Agregar');
+    expect(cta.innerHTML).toContain('#i-plus');
   });
 });
 

@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-18. Última tarea cerrada: DSK.3, Gastos en escritorio (cabecera de banda y fila con cuenta).
+> Revisado: 2026-08-18. Última tarea cerrada: DSK.4, Deudas en escritorio (la estrategia se queda a la vista).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -14,7 +14,7 @@
 | Métrica | Valor |
 |---|---|
 | Tests unitarios + integración | 4386/4392 (2026-08-18). Los 6 rojos son **BUG-028**, ajeno |
-| Tests E2E | 277/277 verdes, sello de DSK.3 (2026-08-18). **Compuerta** desde el 2026-07-30 |
+| Tests E2E | 277/277 verdes, sello de DSK.4 (2026-08-18). **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v43 (`config.respaldoCifrado`, CFG.4c; migración no-op) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**DSK.4 - Deudas en escritorio: la estrategia se queda a la vista (Por pagar), 2026-08-18**
+Elegir Avalancha reordenaba la lista 1057px más abajo, fuera de la pantalla, y ninguna deuda entraba en el pliegue ([ADR 073](DECISIONS/073-deudas-inventario-con-su-herramienta-al-lado.md)). Desde 1440px la lista va a `span 8` y la estrategia a `span 4` **pegajosa**: desplazada 700px, selector en y=55 y primer badge en y=207. Su tope de alto va contra el viewport en `dvh`: primera regla del proyecto que depende del alto de la ventana. La tarjeta baja a dos renglones y "Abonar" pasa de 1246 a 128px. SW v554.
 
 **DSK.3 - Gastos en escritorio (Gastos), 2026-08-18**
 Desde 1680px el hero deja de centrar el total en 1296px de vacío y pasa a banda, con enlace a Análisis ([ADR 072](DECISIONS/072-gastos-cabecera-de-banda-y-fila-con-cuenta.md)); el total del día cae sobre la columna que suma, y la fila ya no se levanta ni entra en cascada. En **todos** los anchos: la fila abre su subtítulo con la cuenta, el dato que ya tenía y no mostraba. Sin lógica nueva. SW v552.
@@ -35,10 +38,7 @@ Desde 1680px el hero deja de centrar el total en 1296px de vacío y pasa a banda
 `compromisos` tiene tres tipos y solo administraba dos: el alta de gasto fijo y el pago en lote vivían en Calendario. Los dos se mudan (`views/lote.js` nuevo), muere el evento `lote:abrir` y un "+ Agregar" con chooser de tres chips cubre los tres tipos. **Dos hallazgos de verificar en la app**: el lote contaba un vencido más que la pastilla y que Inicio (dos motores, unificados contra `vencidosSinPagar`), y el chip afirmaba "Vence en 21 días" sobre una cuota ya vencida. El Calendario vuelve a tablero de consulta. 20 tests nuevos, 24 movidos. SW v544 → v545.
 
 **INT.1g - carril derecho de escritorio, iniciativa INT.1 completa (Transversal), 2026-08-17**
-El código ya tenía la rebanada desde el 2026-08-12 (commit `57b3cdb`, sesión de MT.6a que nunca la nombró); el tablero seguía diciendo "diferida". Cero cambios de código: verificado en navegador (carril con el compromiso real desde 1.680px, copia original vuelve debajo). Sin test propio, hueco de cobertura anotado. Cierra las ocho rebanadas de INT.1.
-
-**Ficha 04 de la auditoría móvil - circulación dentro del bloque Ahorro (Ahorro), 2026-08-15**
-La portada-resumen **se confirma**: es la única pantalla donde los cuatro términos conviven. Lo roto era la circulación: `ui/bloque-ahorro.js` baja a las cuatro hijas la fila de chips de la casa (de Metas a Reservas: de 2 toques y un scroll a 1), y tres textos que citaban "la pestaña Fondo (arriba)" pasan a enlaces reales (**R85**). 14 tests nuevos. SW v542 → v543.
+El código ya tenía la rebanada desde el 2026-08-12 y el tablero seguía diciendo "diferida". Cero cambios de código: verificado en navegador. Sin test propio, hueco de cobertura anotado. Cierra las ocho rebanadas de INT.1.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

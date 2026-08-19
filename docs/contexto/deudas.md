@@ -9,8 +9,8 @@
 ## La sección "Por pagar": los tres tipos juntos (ficha 05, [ADR 069](../DECISIONS/069-bloque-gastos-en-la-barra-movil.md))
 
 - **Objetivo**          : `compromisos` tiene tres tipos desde v6 (`fijo`, `deuda-entidad`, `deuda-personal`) pero solo administraba dos: los gastos fijos se creaban y editaban desde Calendario, y la propia lista lo decía ("Los gastos fijos se gestionan desde Agenda"). Responder "¿qué tengo que pagar este mes?" costaba dos secciones que la barra no relacionaba. La ficha 05 le devuelve el dominio completo a su dueña.
-- **Estado actual**     : **cerrada el 2026-08-18**. La sección se llama "Por pagar" (título, nav de escritorio, banner de propósito), lista fijos y deudas en dos grupos, y es la única entrada para crear cualquiera de los tres tipos. Hereda del Calendario el **alta/edición de gasto fijo** y el **pago en lote** (CAL.5a/CAL.5b).
-- **Verificado contra** : ficha 05 de la auditoría móvil (2026-08-18).
+- **Estado actual**     : **cerrada el 2026-08-18**. **DSK.4 (2026-08-18, [ADR 073](../DECISIONS/073-deudas-inventario-con-su-herramienta-al-lado.md)) le da composición de escritorio desde 1440px**: la lista toma `span 8` y la estrategia `span 4` pegajosa, con tope de alto contra el viewport (única regla de composición del proyecto que depende del alto de la ventana); el hero pasa a banda, la tarjeta de deuda baja de tres renglones a dos, y sin deudas la lista ocupa las doce columnas. El "+" sale del texto del botón de cabecera y del estado vacío (vale en todos los anchos: lo aporta el ícono). La sección se llama "Por pagar" (título, nav de escritorio, banner de propósito), lista fijos y deudas en dos grupos, y es la única entrada para crear cualquiera de los tres tipos. Hereda del Calendario el **alta/edición de gasto fijo** y el **pago en lote** (CAL.5a/CAL.5b).
+- **Verificado contra** : DSK.4 (2026-08-18, sus dos rebanadas). Antes: ficha 05 de la auditoría móvil (2026-08-18).
 
 **Dónde vive**
 
@@ -76,6 +76,8 @@
 | Fijos mensuales para la capacidad (suma compromisos tipo 'fijo') | `modules/dominio/compromisos/logic/modelo.js` | `calcularFijosMensuales()` | |
 | Form de deuda v2, segmented inline + chips + monto hero + disclosure (FORM.1b) | `modules/dominio/compromisos/views/formularios.js` | `renderFormDeuda(tipo, deuda)` | el chooser de dos pasos se retiró: el segmented vive dentro de este mismo render, solo al crear |
 | Form de abono | `modules/dominio/compromisos/views/formularios.js` | `renderFormAbono()` | |
+| Composición de escritorio: rejilla de la sección, estrategia pegajosa, banda del total y estado sin deudas (DSK.4a, ADR 073 D1/D2/D4) | `styles/responsive.css` | bloque "POR PAGAR EN ESCRITORIO" | desde 1440px; coloca por id los bloques que la sección ya tiene, sin envoltorios ni cambios de DOM |
+| Tarjeta de deuda a dos renglones y botón dimensionado (DSK.4b, ADR 073 D3) | `styles/responsive.css` | bloque "TARJETA DE DEUDA EN ESCRITORIO" | desde 1440px; rejilla con filas declaradas a mano porque el aviso de tasa se emite entre chips y acciones |
 | Hero con el total de deuda (D.16a, ADR 036) | `modules/dominio/compromisos/views/hero.js` | `renderHeroCompromisos()`, agregado puro `resumenDeudas()` en `logic/modelo.js` | |
 | Lista de deudas activas + trigger de editar (D.15b) | `modules/dominio/compromisos/views/lista.js` | `renderListaCompromisos()`, `_renderCompromisoItem()` | |
 | Panel de estrategia de pago (arriba, define orden de pago) | `modules/dominio/compromisos/views/estrategia.js` | `renderEstrategiaPago()` | |
