@@ -1764,3 +1764,43 @@
     margin-bottom: 0;
   }
 }
+
+/* ── IDENTIDAD DE SECCIÓN, UNA SOLA VEZ (>= 1680px, DSK.10a, ADR 079 D1) ─
+   La barra superior pinta teja + nombre de la sección, y el encabezado de la
+   sección pintaba la misma teja y el mismo nombre 32px más abajo y **más
+   grande** (24px contra 18px): el eco más fuerte que el original, en las trece
+   secciones, a 76px de alto cada una. Y enseña que el título de arriba no es
+   de fiar.
+
+   La identidad visible pasa a ser la de la barra superior, que además es la
+   que sobrevive al desplazamiento. El grupo se oculta VISUALMENTE: el `h1`
+   sigue en el marcado y sigue siendo el nombre accesible de la sección
+   (`aria-labelledby` de cada `<section>` apunta a él), así que para un lector
+   de pantalla no cambia nada.
+
+   El umbral es 1680 porque es el mismo en el que el colapso de la barra deja
+   de comprar píxeles (D4): por debajo, la barra superior puede quedar
+   apretada y el encabezado sigue haciendo falta. */
+@media (min-width: 1680px) {
+
+  .section > .section__header > .section__title-group {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Sin el título, el encabezado es solo la fila de su acción: pierde el alto
+     que le daba el grupo y se pega al contenido. Cuando tampoco hay acción
+     (el primario sube a la barra superior desde 1024), no ocupa nada. */
+  .section > .section__header {
+    min-height: 0;
+    margin-bottom: 0;
+  }
+  .section > .section__header:empty { display: none; }
+}

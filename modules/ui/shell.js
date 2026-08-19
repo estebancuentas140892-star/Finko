@@ -237,6 +237,7 @@ function _syncPrimarioTopbar(activo) {
   const origen = activo?.querySelector('.section__header > .btn-primary');
   if (!origen || origen.hidden) {
     btnTop.hidden = true;
+    _syncJerarquiaPrimarios(false);
     return;
   }
 
@@ -248,6 +249,36 @@ function _syncPrimarioTopbar(activo) {
   if (origen.dataset.modal) btnTop.dataset.modal = origen.dataset.modal;
   else delete btnTop.dataset.modal;
   btnTop.hidden = false;
+  _syncJerarquiaPrimarios(true);
+}
+
+/**
+ * D2 del ADR 079 (DSK.10a): un solo botón lleno por pantalla, y es el de la
+ * pantalla.
+ *
+ * Hasta acá el primario de la sección viajaba a la barra superior en
+ * `.btn-secondary`, a la izquierda del `.btn-primary` de "Registrar": la
+ * acción propia de la pantalla quedaba más callada que una que no le
+ * pertenece (en Gastos las dos empezaban por la misma palabra).
+ *
+ * Es una regla, no un mapa por sección: la decide la misma condición que
+ * `_syncPrimarioTopbar` ya evalúa. Cuando la sección no tiene primario propio
+ * (Análisis, Ahorro, Movimientos, Fondo, Inversión, Ajustes), "Registrar"
+ * recupera el lleno, porque entonces sí es la acción principal disponible.
+ *
+ * @param {boolean} seccionTienePrimario
+ */
+function _syncJerarquiaPrimarios(seccionTienePrimario) {
+  const btnTop     = document.getElementById('topbar-primario');
+  const registrar  = document.querySelector('.topbar__registrar');
+  if (btnTop) {
+    btnTop.classList.toggle('btn-primary',   seccionTienePrimario);
+    btnTop.classList.toggle('btn-secondary', !seccionTienePrimario);
+  }
+  if (registrar) {
+    registrar.classList.toggle('btn-primary',   !seccionTienePrimario);
+    registrar.classList.toggle('btn-secondary', seccionTienePrimario);
+  }
 }
 
 // ── SIDEBAR COLLAPSE ────────────────────────────────────────────

@@ -34,6 +34,17 @@
 - Avance     : **02/04**. a) purga y cabecera (D2, D10), cerrada. b) banda de contexto (D4, D5, D6), cerrada. c) columnas 4 + 8 (D7). d) fusión de obligaciones y pie (D8, D9).
 - Restricción: **alcance escritorio, desde 1024px.** Móvil no se toca: es territorio de MOV.1, que sigue abierta. Las dos iniciativas comparten `index.html` y corren en sesiones distintas: `git status` antes de cada rebanada, y stagear solo los archivos propios.
 
+### DSK.10 - El armazón de escritorio: una identidad, un primario, una navegación fija, 3 rebanadas
+- Prioridad  : alta
+- Estado     : en proceso (iniciada 2026-08-18)
+- Área       : ambos
+- Objetivo   : implementar la auditoría transversal "Auditoría global 1920" de Claude Design ([ADR 079](DECISIONS/079-armazon-de-escritorio-una-identidad-un-primario-una-navegacion.md)): las once decisiones que las nueve auditorías de sección daban por hechas
+- Secciones  : todas (armazón: barra lateral, barra superior, encabezado de sección, bento)
+- Archivos   : `index.html`, `modules/ui/shell.js`, `styles/layout.css`, `styles/responsive.css`
+- Depende de : nada
+- Avance     : **00/03**. a) identidad una sola vez y un solo primario, con los verbos que faltan (D1, D2, D3). b) navegación de escritorio: sin colapso, cuatro grupos con nombre y las hijas de Ahorro siempre visibles (D4, D5 anotada, D6, D7). c) una entrada a Ajustes y movimiento de puntero fino (D8, D9, D10).
+- Restricción: **umbral 1680px** para todo lo que depende del ancho. D6 lleva visto bueno explícito de Esteban (2026-08-18). N6 (iconos repetidos) queda fuera: es dependencia de la familia de iconos. `index.html` lo comparten MOV.1 y DSK.1: stagear solo los hunks propios.
+
 ---
 
 ## Cómo usar este tablero

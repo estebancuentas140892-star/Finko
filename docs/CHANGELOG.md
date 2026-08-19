@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(ui): DSK.10a, la sección se nombra una vez y su acción manda · 2026-08-18
+
+Primera de las tres rebanadas del [ADR 079](DECISIONS/079-armazon-de-escritorio-una-identidad-un-primario-una-navegacion.md), la auditoría transversal del armazón. Cierra sus D1, D2 y D3. Ficha: [`contexto/transversal.md`](contexto/transversal.md).
+
+- **Corrige una premisa falsa de toda la serie de escritorio.** Los [ADR 070](DECISIONS/070-inicio-centro-de-atencion-en-escritorio.md) a [078](DECISIONS/078-analisis-en-dos-filas-de-dos.md) citaban D1, D2 y D3 como "ya aprobadas": estaban decididas en el documento transversal y **ninguna estaba implementada**. Se comprobó en el código antes de escribir una línea.
+- **D1, la identidad de la sección deja de estar duplicada.** La barra superior pintaba teja + nombre y el encabezado repetía los dos 32px más abajo y **más grande** (24px contra 18px): el eco más fuerte que el original, 76px de alto en cada una de las trece secciones. Desde 1680px el grupo del título se oculta **visualmente**: el `h1` sigue en el marcado y sigue siendo el nombre accesible (`aria-labelledby` de cada sección apunta a él). Medido: el grupo pasa de 36 a 1px de alto a 1920, y a 1440 vuelve entero.
+- **D2, un solo botón lleno por pantalla, y es el de la pantalla.** El primario de la sección viajaba a la barra superior en `btn-secondary`, al lado del `btn-primary` de "Registrar": la acción propia quedaba más callada que una que no le pertenece (en Gastos las dos empiezan por la misma palabra). Ahora se invierten, **y es una regla, no un mapa**: la decide la misma condición que `_syncPrimarioTopbar` ya evaluaba. Verificado en cinco rutas: Mis cuentas y Metas llevan su acción llena y "Registrar" apagado; Análisis, Movimientos e Inicio no tienen primario propio y "Registrar" recupera el lleno.
+- **D3, los verbos que faltaban.** Las auditorías de sección ya habían aplicado la regla en Calendario, Deudas, Me deben, Mis cuentas y Límites; acá se cierran los tres que quedaban: **"+ Cuenta" pasa a "Nueva cuenta", "+ Meta" a "Nueva meta" y "+ Reserva" a "Nueva reserva"**, con su `aria-label` diciendo lo mismo que la pantalla.
+- **El umbral de D1 es 1680** y no 1024: por debajo la barra superior puede quedar apretada y el encabezado sigue haciendo falta. Es el mismo ancho en el que colapsar la barra deja de comprar píxeles, que es lo que cierra la rebanada siguiente.
+- Tests: 4 nuevos en `tests/unit/shell-nav.test.js` (con primario propio manda el de la sección, sin él manda Registrar, la jerarquía se recalcula en los dos sentidos, y un primario oculto por su dominio cuenta como sección sin primario). 27 en el archivo.
+
 ### feat(analisis): DSK.9b, la sparkline deja de deformarse · 2026-08-18
 
 Segunda y última rebanada del [ADR 078](DECISIONS/078-analisis-en-dos-filas-de-dos.md), que cierra la iniciativa **DSK.9** y con ella la serie de escritorio de las nueve secciones auditadas. Cierra su D3. Medido en el navegador a 1920 x 1080: SVG de **640 x 80 con viewBox de 640 x 80, anisotropía 1:1**; antes se pintaba a 1342 con un viewBox de 360, o sea **3,73:1**. Ficha: [`contexto/analisis.md`](contexto/analisis.md).

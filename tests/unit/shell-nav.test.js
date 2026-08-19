@@ -331,3 +331,79 @@ describe('toggleTheme() sincroniza todos los toggles presentes', () => {
     expect(document.querySelector('input[type="checkbox"]').checked).toBe(false);
   });
 });
+
+// ── DSK.10a (ADR 079 D2) - un solo botón lleno por pantalla ──────
+
+describe('jerarquía de primarios en la barra superior (DSK.10a)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <section class="section active" id="sec-gast">
+        <header class="section__header">
+          <div class="section__title-group"><h1 class="section__title" id="title-gast">Gastos</h1></div>
+          <button class="btn btn-primary" data-action="nuevo-gasto">Registrar gasto</button>
+        </header>
+      </section>
+      <section class="section" id="sec-analisis">
+        <header class="section__header">
+          <div class="section__title-group"><h1 class="section__title" id="title-analisis">Análisis</h1></div>
+        </header>
+      </section>
+      <header id="topbar">
+        <span id="topbar-icon"><svg><use id="topbar-icon-use" href="#i-home"></use></svg></span>
+        <h2 id="topbar-title">Inicio</h2>
+        <button class="btn btn-secondary topbar__primario" id="topbar-primario" hidden></button>
+        <button class="btn btn-primary topbar__registrar" data-action="registrar-abrir-hoja">Registrar</button>
+      </header>
+    `;
+  });
+
+  const activar = (id) => {
+    document.querySelectorAll('.section').forEach((s) => s.classList.toggle('active', s.id === id));
+  };
+  const top = () => document.getElementById('topbar-primario');
+  const registrar = () => document.querySelector('.topbar__registrar');
+
+  // Hasta acá el primario de la sección viajaba a la barra en `.btn-secondary`,
+  // al lado del `.btn-primary` de "Registrar": la acción propia de la pantalla
+  // quedaba más callada que una que no le pertenece.
+  it('con primario propio, el de la sección va lleno y Registrar se apaga', () => {
+    activar('sec-gast');
+    markActiveNav('gast');
+    expect(top().classList.contains('btn-primary')).toBe(true);
+    expect(top().classList.contains('btn-secondary')).toBe(false);
+    expect(registrar().classList.contains('btn-secondary')).toBe(true);
+    expect(registrar().classList.contains('btn-primary')).toBe(false);
+  });
+
+  // Es una regla, no un mapa por sección: la decide la misma condición que
+  // ya evaluaba `_syncPrimarioTopbar` para mostrar u ocultar el botón.
+  it('sin primario propio, Registrar recupera el lleno', () => {
+    activar('sec-analisis');
+    markActiveNav('analisis');
+    expect(top().hidden).toBe(true);
+    expect(registrar().classList.contains('btn-primary')).toBe(true);
+    expect(top().classList.contains('btn-secondary')).toBe(true);
+  });
+
+  it('la jerarquía se recalcula al cambiar de sección, en los dos sentidos', () => {
+    activar('sec-gast');
+    markActiveNav('gast');
+    activar('sec-analisis');
+    markActiveNav('analisis');
+    expect(registrar().classList.contains('btn-primary')).toBe(true);
+
+    activar('sec-gast');
+    markActiveNav('gast');
+    expect(registrar().classList.contains('btn-secondary')).toBe(true);
+    expect(top().classList.contains('btn-primary')).toBe(true);
+  });
+
+  it('un primario oculto por su dominio cuenta como sección sin primario', () => {
+    const btn = document.querySelector('#sec-gast .btn-primary');
+    btn.hidden = true;
+    activar('sec-gast');
+    markActiveNav('gast');
+    expect(top().hidden).toBe(true);
+    expect(registrar().classList.contains('btn-primary')).toBe(true);
+  });
+});
