@@ -12,6 +12,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(agenda): DSK.2b, el dia del mes dice que pasa y por cuanto · 2026-08-18
+
+Segunda de las tres rebanadas del [ADR 071](DECISIONS/071-calendario-como-mapa-del-mes-en-escritorio.md). Cierra sus D3 y D6. Desde 1024px la celda deja de decir solo "pasa algo": nombra el evento y su monto, y con tres pagos o más pasa a agregado. Medido a 1920 x 1080 con el mes de quincena (9 pagos el 15): celda "9 pagos $1.096.000", mes 909 x 686, día 443 x 686, la lista del día desplaza 558 de sus 1348px por dentro y la página no se mueve. Ficha: [`contexto/calendario.md`](contexto/calendario.md).
+
+- **La vista emite las dos cosas y CSS decide cuál manda.** La fila de puntos de móvil y las filas de nombre y monto conviven en el marcado; bajo 1024px se apagan las segundas, desde 1024px los primeros. Se descartó repartirlo en JavaScript: la vista no repinta al cambiar el ancho de la ventana (limitación aceptada en IN.9b y DSK.1a), así que la celda quedaría equivocada hasta la siguiente acción del usuario. Verificado a 375px: celda de 44 x 44, puntos visibles, filas en `display: none`, hero de 344 x 172 y cero desplazamiento horizontal.
+- **D3, la regla de contenido.** Ingresos y aportes a meta nunca se agregan (el ingreso entra o no entra, ADR 021; el aporte es recordatorio y no suma al total del día, ADR 048 D3). Hasta dos pagos se nombran; desde tres, la celda dice cuántos y cuánto suman. En Colombia el 15 y el 30 concentran casi todo, así que listar 2 de 9 sería arbitrario y no contesta "cuánto sale el 15", que es la pregunta de la sección.
+- **El agregado usa un punto por tipo presente, no uno por pago:** con nueve, la tira de puntos sería más ancha que la cifra que importa. El tope de filas por celda es 3, con "+N" para el resto.
+- **Un pago ya completo se tacha y se apaga en vez de desaparecer:** el día conserva lo que pasa en él. Mismo criterio de estado que el detalle (`estadoPagoMes` contra el mes visible).
+- **D6, el ojo alcanza la rejilla**, con la máscara corta por celda (`••••`, la misma `SALDO_MASCARA_CUENTA` de las filas de cuenta y del detalle). La celda conserva su estructura: se sigue viendo **qué** hay y **cuándo**, y solo se oculta **cuánto**. Sin esto, activar el ojo con la celda mostrando cifras dejaba de ocultar nada útil. El total de lo vencido sigue sin enmascararse (excepción de D6, ya vigente en el código).
+- **Las siete columnas vuelven a medir lo mismo.** `repeat(7, 1fr)` es `minmax(auto, 1fr)`, así que el nombre más largo del mes ensanchaba su columna: medido en el navegador, 126, 180 y 221px en la misma fila. Con `minmax(0, 1fr)` manda el reparto y el nombre se corta con puntos suspensivos, que es lo que la fila ya preveía.
+- **Las filas son `aria-hidden`:** el nombre accesible del día lo da el `aria-label` del botón, que ya cuenta ingresos, aportes, compromisos y vencidos. Leerlo dos veces sería peor que no leerlo.
+- Tests: 12 nuevos en `tests/unit/agenda.test.js` (nombre y monto, dos pagos, agregado desde tres, ingreso que no se agrega con nueve pagos al lado, signo y color del ingreso, pago completo tachado, máscara de celda y de agregado, `aria-hidden`, puntos de móvil intactos, día sin eventos sin filas).
+
 ### feat(agenda): DSK.2a, el mes y el día se reparten la pantalla · 2026-08-18
 
 Primera de las tres rebanadas del [ADR 071](DECISIONS/071-calendario-como-mapa-del-mes-en-escritorio.md). Cierra sus D1, D2, D4 y D5. Calendario era **la única sección de Finko sin una sola regla de escritorio**: en un monitor se pintaba la hoja de móvil ocupando 1376px. Desde 1024px el mes toma `span 8` y el día `span 4`, y la banda funde el hero con lo vencido. Medido en el navegador a 1920 x 1080: mes 909 x 668, día 443 x 668, los dos dentro del pliegue y sin desplazar la página. Ficha: [`contexto/calendario.md`](contexto/calendario.md).

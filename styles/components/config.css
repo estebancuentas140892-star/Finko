@@ -1781,3 +1781,10 @@
 .cal-venc {
   display: none;
 }
+
+/* DSK.2b (ADR 071 D3): las filas de nombre y monto de la celda son de
+   escritorio. La vista las emite en todos los anchos y acá se apagan: en
+   móvil manda la fila de puntos, que es lo que cabe en una celda de 46px. */
+.cal-day__evs {
+  display: none;
+}

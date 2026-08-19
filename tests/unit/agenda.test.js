@@ -2445,3 +2445,178 @@ describe('renderAgenda() - banda del mes y fila de escritorio', () => {
     expect(document.querySelector('.cal-empty')).not.toBeNull();
   });
 });
+
+// ── renderAgenda() - contenido de la celda del día (DSK.2b, ADR 071 D3) ──
+
+describe('renderAgenda() - contenido de la celda del día', () => {
+  const celda = dia => [...document.querySelectorAll('.cal-day[data-day]')]
+    .find(b => b.dataset.day === String(dia));
+  const filas = dia => [...celda(dia).querySelectorAll('.cal-day__ev')].map(el => ({
+    nombre: el.querySelector('.cal-day__ev-name').textContent.trim(),
+    monto:  el.querySelector('.cal-day__ev-monto').textContent.trim(),
+  }));
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-agenda"></div>';
+    S.compromisos = [];
+    S.ingresos = [];
+    S.gastos = [];
+    S.metas = [];
+    S.config = { ocultarSaldo: false };
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15)); // 15 jun 2026
+    resetearVistaAlMesActual();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    S.config = {};
+  });
+
+  it('un día con un pago dice su nombre y su monto', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', descripcion: 'Netflix', monto: 44_900, diaPago: 12 })];
+    renderAgenda();
+    expect(filas(12)).toEqual([{ nombre: 'Netflix', monto: '$44.900' }]);
+  });
+
+  it('con dos pagos los nombra a los dos', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'f1', descripcion: 'Netflix', monto: 44_900, diaPago: 12 }),
+      compromisoBase({ id: 'f2', descripcion: 'Gimnasio', monto: 89_000, diaPago: 12 }),
+    ];
+    renderAgenda();
+    expect(filas(12).map(x => x.nombre)).toEqual(['Netflix', 'Gimnasio']);
+  });
+
+  // El mes de quincena colombiano es el caso normal, no el extremo: listar 2
+  // de 9 sería arbitrario y no contesta cuánto sale ese día.
+  it('con tres pagos o más pasa a agregado: cuántos y cuánto suman', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'f1', descripcion: 'Colegio', monto: 780_000, diaPago: 15 }),
+      compromisoBase({ id: 'f2', descripcion: 'Seguro', monto: 412_800, diaPago: 15 }),
+      compromisoBase({ id: 'f3', descripcion: 'Agua', monto: 96_400, diaPago: 15 }),
+    ];
+    renderAgenda();
+    expect(filas(15)).toEqual([{ nombre: '3 pagos', monto: '$1.289.200' }]);
+    expect(celda(15).querySelector('.cal-day__ev--agg')).not.toBeNull();
+  });
+
+  it('el día de ingreso nunca se agrega, ni cuando lo acompañan nueve pagos', () => {
+    S.ingresos = [ingresoAutoBase({ id: 'i1', descripcion: 'Nomina', monto: 3_905_240, diaPago: 15 })];
+    S.compromisos = Array.from({ length: 9 }, (_, i) => compromisoBase({
+      id: `f${i}`, descripcion: `Pago ${i}`, monto: 100_000, diaPago: 15,
+    }));
+    renderAgenda();
+    expect(filas(15)).toEqual([
+      { nombre: 'Nomina', monto: '+$3.905.240' },
+      { nombre: '9 pagos', monto: '$900.000' },
+    ]);
+  });
+
+  it('el monto del ingreso lleva su signo y su color de acento', () => {
+    S.ingresos = [ingresoAutoBase({ id: 'i1', descripcion: 'Nomina', monto: 3_905_240, diaPago: 20 })];
+    renderAgenda();
+    const monto = celda(20).querySelector('.cal-day__ev-monto');
+    expect(monto.textContent).toBe('+$3.905.240');
+    expect(monto.classList.contains('cal-day__ev-monto--in')).toBe(true);
+  });
+
+  it('un pago ya completo se tacha en vez de desaparecer', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', descripcion: 'Arriendo', monto: 1_500_000, diaPago: 5 })];
+    S.gastos = [{ id: 'g1', compromisoId: 'f1', monto: 1_500_000, fecha: '2026-06-05', categoria: 'Vivienda' }];
+    renderAgenda();
+    const monto = celda(5).querySelector('.cal-day__ev-monto');
+    expect(monto.classList.contains('cal-day__ev-monto--pagado')).toBe(true);
+    expect(monto.textContent).toBe('$1.500.000');
+  });
+
+  // ADR 071 D6: el ojo alcanza la rejilla. Sin esto, activarlo con la celda
+  // mostrando cifras dejaba de ocultar nada útil.
+  it('con ocultarSaldo la celda conserva qué y cuándo, y enmascara cuánto', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', descripcion: 'Netflix', monto: 44_900, diaPago: 12 })];
+    S.config.ocultarSaldo = true;
+    renderAgenda();
+    expect(filas(12)).toEqual([{ nombre: 'Netflix', monto: '••••' }]);
+    expect(celda(12).textContent).not.toContain('44.900');
+  });
+
+  it('el agregado también se enmascara', () => {
+    S.compromisos = [1, 2, 3].map(i => compromisoBase({
+      id: `f${i}`, descripcion: `Pago ${i}`, monto: 100_000, diaPago: 15,
+    }));
+    S.config.ocultarSaldo = true;
+    renderAgenda();
+    expect(filas(15)).toEqual([{ nombre: '3 pagos', monto: '••••' }]);
+  });
+
+  // El nombre accesible del día lo da el aria-label del botón, que ya cuenta
+  // ingresos, aportes y compromisos: leerlo dos veces sería peor.
+  it('las filas no entran al árbol de accesibilidad', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', descripcion: 'Netflix', monto: 44_900, diaPago: 12 })];
+    renderAgenda();
+    expect(celda(12).querySelector('.cal-day__evs').getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('la fila de puntos de móvil sigue emitiéndose intacta', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', descripcion: 'Netflix', monto: 44_900, diaPago: 12 })];
+    renderAgenda();
+    expect(celda(12).querySelectorAll('.cal-day__dots .cal-dot').length).toBe(1);
+  });
+
+  it('un día sin eventos no emite filas', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', descripcion: 'Netflix', monto: 44_900, diaPago: 12 })];
+    renderAgenda();
+    expect(celda(13).querySelector('.cal-day__evs')).toBeNull();
+  });
+});
+
+// ── Conteo de la banda: la regla de "todo conteo se filtra" (DSK.2b) ──
+
+describe('renderAgenda() - conteo de lo vencido en la banda', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-agenda"></div>';
+    S.compromisos = [];
+    S.ingresos = [];
+    S.gastos = [];
+    S.config = { ocultarSaldo: false };
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15)); // 15 jun 2026
+    resetearVistaAlMesActual();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    S.config = {};
+  });
+
+  // La grilla marca el día del vencimiento y le basta la lista de la sección;
+  // la banda muestra un número al usuario, así que cruza `vencidosSinPagar`,
+  // la misma fuente de la pastilla de la pestaña y de Inicio.
+  it('un compromiso creado este mes despues de su dia de pago no entra al conteo', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'f1', descripcion: 'Arriendo', monto: 300_000, diaPago: 5 }),
+      compromisoBase({
+        id: 'f2', descripcion: 'Recien creado', monto: 100_000, diaPago: 5,
+        fechaCreacion: '2026-06-10',
+      }),
+    ];
+    renderAgenda();
+    // La grilla sí lo marca: ese día venció, exista o no la deuda.
+    expect(document.querySelectorAll('.cal-day--vencido').length).toBe(1);
+    // La banda cuenta uno solo, el mismo que ofrecerá el modal del lote.
+    expect(document.querySelector('.cal-venc__sub').textContent).toBe('1 pago · día 5');
+    expect(document.querySelector('.cal-venc__valor').textContent).toBe('$300.000');
+  });
+
+  it('un mes navegado no ofrece el lote: el modal razona contra hoy', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', descripcion: 'Arriendo', monto: 300_000, diaPago: 5 })];
+    renderAgenda();
+    expect(document.querySelector('.cal-venc')).not.toBeNull();
+    navegarMes(-1);
+    renderAgenda();
+    expect(document.querySelector('.cal-venc')).toBeNull();
+    // El hero del mes anterior sigue en su banda: lo que se retira es la
+    // entrada al pago, no el contexto.
+    expect(document.querySelector('.banda-agenda .hero-agenda')).not.toBeNull();
+  });
+});

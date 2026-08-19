@@ -17,7 +17,7 @@ import { icon, tejaCategoria } from '../../infra/icons.js';
 import { resolverMarca, tejaMarca } from '../../infra/marcas.js';
 import { CATEGORIA_INGRESO_ICONO, iconoDeCategoriaGasto } from '../../core/constants.js';
 import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../infra/render.js';
-import { LABEL_TIPO, ICONO_TIPO, calcularAbonosDelMes, estadoPagoMes } from '../compromisos/logic.js';
+import { LABEL_TIPO, ICONO_TIPO, calcularAbonosDelMes, estadoPagoMes, vencidosSinPagar } from '../compromisos/logic.js';
 import { eventosDelMes, eventosIngresosDelMes, eventosMetasDelMes, totalEventosDelMes, totalDia, tiposPresentesEnMes, totalesDelMes, pendientesDePagoDelMes } from './logic.js';
 
 // ── ESTADO LOCAL ─────────────────────────────────────────────────
@@ -177,7 +177,7 @@ export function renderAgenda() {
   // marcar cada día de la grilla con el punto de "vencido", DIS.11 C2/V-5).
   // El pago en lote es de "Por pagar" desde la ficha 05 (ADR 069): Agenda ya
   // no ofrece la tarjeta. DSK.2a (ADR 071 D4) le devuelve la ENTRADA en la
-  // banda de escritorio, no el flujo: la misma lista alimenta las dos cosas.
+  // banda de escritorio, no el flujo.
   const gastosS   = Array.isArray(S.gastos) ? S.gastos : [];
   const pendientes = pendientesDePagoDelMes(eventos, gastosS, prefijoMes, hoy());
 
@@ -187,12 +187,29 @@ export function renderAgenda() {
     vencidosPorDia[p.dia] = (vencidosPorDia[p.dia] ?? 0) + 1;
   }
 
+  // La grilla marca el día del vencimiento y le basta la lista de arriba; la
+  // banda muestra un CONTEO al usuario y ahí manda la regla de la ficha de
+  // contexto: todo conteo se filtra por `vencidosSinPagar`, que es la fuente
+  // única de la pastilla de la pestaña, de "Pendientes del mes" en Inicio y
+  // de la tarjeta de lote. Sin filtrar, la banda anunciaría un pago más de
+  // los que el modal termina ofreciendo.
+  //
+  // Solo el mes en curso: `vencidosSinPagar` razona contra hoy, y el modal de
+  // "Por pagar" hace lo mismo, así que ofrecer el botón sobre un mes navegado
+  // abriría un lote vacío.
+  const hoyD = new Date();
+  const esMesEnCurso = _viewYear === hoyD.getFullYear() && _viewMonth === hoyD.getMonth();
+  const idsVencidos  = esMesEnCurso
+    ? new Set(vencidosSinPagar(compromisos, gastosS, hoy()).map(v => v.id))
+    : new Set();
+  const vencidosBanda = pendientes.filter(p => idsVencidos.has(p.id));
+
   // DSK.2a (ADR 071 D1/D4): dos envoltorios nuevos, `display: contents` bajo
   // 1024px, así que móvil no cambia ni un nodo. Desde 1024px la banda funde
   // el hero con lo vencido en una superficie, y la fila reparte el mes (8) y
   // el día (4).
   el.innerHTML = `
-    ${_renderBandaMes(eventos, _viewYear, _viewMonth, prefijoMes, pendientes)}
+    ${_renderBandaMes(eventos, _viewYear, _viewMonth, prefijoMes, vencidosBanda)}
     <div class="cal-fila">
       <article class="cal-card">
         ${_renderCabecera(_viewYear, _viewMonth, eventosComp, eventosIng, eventosMeta)}
@@ -343,18 +360,18 @@ function _renderBandaMes(eventos, year, month, prefijoMes, pendientes) {
  * Es entrada, no flujo: emite `compromisos-pagar-lote` con el mes visible,
  * la misma acción que ya usan la tarjeta de "Por pagar" y "Pendientes del
  * mes" en Inicio. El formulario, el motor y el modal siguen siendo de
- * `compromisos` (ficha 05, ADR 069) y acá no se duplica ni una línea de eso.
+ * `compromisos` (ficha 05, ADR 069) y acá no se duplica ni una línea de eso,
+ * ni se agrega un import: la entrada es marcado con `data-action`.
  *
  * El total **no** se enmascara con el ojo: no es un saldo, es el precio de la
  * acción que se está ofreciendo, mismo criterio que `renderLoteCard` y que
  * los montos del modal de pago.
  *
- * Precisión del conteo: esta lista es la de la sección (la misma que marca
- * los días vencidos de la grilla). "Por pagar" cruza además con
- * `vencidosSinPagar`, que descarta un compromiso registrado este mes después
- * de su día de pago, así que en ese caso de borde el modal puede abrir con
- * una fila menos de las que anuncia la banda. Cruzarlo acá exigiría importar
- * `compromisos/logic.js`, y ningún dominio importa a otro (ADN 10).
+ * Precisión del conteo: la lista llega ya filtrada por `vencidosSinPagar`
+ * desde `renderAgenda()`, que es la regla que la ficha de contexto exige a
+ * toda superficie que muestre un conteo. Así la banda dice el mismo número
+ * que la pastilla de la pestaña, "Pendientes del mes" en Inicio y el modal
+ * que abre este botón.
  *
  * @param {Array<{dia:number, monto:number}>} pendientes
  * @param {string} prefijoMes 'YYYY-MM' del mes visible.
@@ -553,6 +570,9 @@ function _renderGrid(year, month, eventos, vencidosPorDia = {}) {
   const hoy           = new Date();
   const esMesActual   = hoy.getFullYear() === year && hoy.getMonth() === month;
   const diaHoy        = hoy.getDate();
+  // DSK.2b (ADR 071 D3): el estado de pago de cada fila de la celda se lee
+  // contra el mes visible, igual que en el detalle del día.
+  const prefijo       = `${year}-${String(month + 1).padStart(2, '0')}`;
 
   let html = '<div class="cal-grid" role="group" aria-label="Días del mes">';
 
@@ -607,6 +627,7 @@ function _renderGrid(year, month, eventos, vencidosPorDia = {}) {
               data-action="agenda-mostrar-dia" data-day="${d}">
         <span class="cal-day__num">${d}</span>
         ${hayEvs ? _renderDots(evs) : '<div class="cal-day__dots" aria-hidden="true"></div>'}
+        ${hayEvs ? _renderEventosCelda(evs, prefijo) : ''}
       </button>`;
   }
 
@@ -630,6 +651,107 @@ function _renderDots(evs) {
   }
 
   return `<div class="cal-day__dots">${dots}</div>`;
+}
+
+/** Máximo de filas que caben en una celda de 80px sin desbordarla. */
+const _MAX_FILAS_CELDA = 3;
+
+/**
+ * Contenido de la celda en escritorio (DSK.2b, ADR 071 D3): qué pasa ese día y
+ * por cuánto.
+ *
+ * Se emite en **todos los anchos** y es CSS quien decide qué se ve: bajo
+ * 1024px estas filas están ocultas y manda la fila de puntos de móvil; desde
+ * 1024px es al revés. Decidirlo en CSS y no en JavaScript es deliberado: la
+ * vista no repinta al cambiar el ancho de la ventana (limitación aceptada en
+ * IN.9b y DSK.1a), así que un reparto hecho en JS dejaría la celda equivocada
+ * hasta la siguiente acción del usuario.
+ *
+ * La regla de contenido, medida contra el mes de quincena colombiano (el 15 y
+ * el 30 concentran casi todo):
+ * - **Ingresos y aportes a meta nunca se agregan.** El ingreso entra o no
+ *   entra, y es el dato que más decide (ADR 021); el aporte a meta es
+ *   recordatorio y no suma al total del día (ADR 048 D3).
+ * - **Hasta dos pagos se nombran** con su monto.
+ * - **Desde tres, la celda pasa a agregado**: cuántos y cuánto suman. Listar 2
+ *   de 9 es arbitrario y no contesta "¿cuánto sale el 15?", que es la pregunta
+ *   de la sección.
+ *
+ * Las filas son `aria-hidden`: el nombre accesible del día lo da el
+ * `aria-label` del botón, que ya cuenta ingresos, aportes, compromisos y
+ * vencidos, y duplicarlo acá haría que el lector lo leyera dos veces.
+ *
+ * @param {any[]} evs Eventos del día, ya mergeados.
+ * @param {string} prefijo 'YYYY-MM' del mes visible.
+ * @returns {string}
+ */
+function _renderEventosCelda(evs, prefijo) {
+  const gastos = Array.isArray(S.gastos) ? S.gastos : [];
+  const oculto = S.config?.ocultarSaldo === true;
+
+  const recordatorios = evs.filter(e => e?.tipo === 'ingreso' || e?.tipo === 'meta');
+  const pagos         = evs.filter(e => e?.tipo !== 'ingreso' && e?.tipo !== 'meta');
+
+  const filas = recordatorios.map(e => {
+    const esIngreso = e.tipo === 'ingreso';
+    const monto     = Number(e.monto) || 0;
+    const montoTxt  = oculto ? SALDO_MASCARA_CUENTA : f(monto);
+    return _filaCelda({
+      tipo:  e.tipo ?? 'ingreso',
+      nombre: e.descripcion ?? (esIngreso ? 'Ingreso' : 'Aporte a meta'),
+      monto: esIngreso ? `+${montoTxt}` : montoTxt,
+      clase: esIngreso ? ' cal-day__ev-monto--in' : '',
+    });
+  });
+
+  if (pagos.length > 0 && pagos.length <= 2) {
+    for (const c of pagos) {
+      const tipo  = c.tipo ?? 'fijo';
+      const deuda = tipo === 'deuda-entidad' || tipo === 'deuda-personal';
+      const monto = Number(deuda ? c.cuotaMensual : c.monto) || 0;
+      // CAL.4c: un pago ya completo del mes visible se tacha y se apaga, en vez
+      // de desaparecer: el día conserva lo que pasa en él.
+      const pagado = estadoPagoMes(gastos, c, prefijo) === 'completo';
+      filas.push(_filaCelda({
+        tipo,
+        nombre: c.descripcion ?? 'Sin nombre',
+        monto:  oculto ? SALDO_MASCARA_CUENTA : f(monto),
+        clase:  pagado ? ' cal-day__ev-monto--pagado' : '',
+      }));
+    }
+  } else if (pagos.length >= 3) {
+    // Un punto por tipo presente, no uno por pago: con nueve pagos la tira de
+    // puntos sería más ancha que la cifra que importa.
+    const tipos = [...new Set(pagos.map(c => c.tipo ?? 'fijo'))].slice(0, 3);
+    const mix   = tipos.map(t => `<span class="cal-dot cal-dot--${t}"></span>`).join('');
+    const suma  = oculto ? SALDO_MASCARA_CUENTA : f(totalDia(pagos));
+    filas.push(`
+      <span class="cal-day__ev cal-day__ev--agg">
+        <span class="cal-day__ev-name"><span class="cal-day__mix">${mix}</span><span>${pagos.length} pagos</span></span>
+        <span class="cal-day__ev-monto">${suma}</span>
+      </span>`);
+  }
+
+  const visibles = filas.slice(0, _MAX_FILAS_CELDA);
+  const resto    = filas.length - visibles.length;
+  const mas      = resto > 0
+    ? `<span class="cal-day__ev-mas">+${resto}</span>`
+    : '';
+
+  return `<span class="cal-day__evs" aria-hidden="true">${visibles.join('')}${mas}</span>`;
+}
+
+/**
+ * Una fila de la celda: punto de tipo, nombre y monto.
+ * @param {{tipo:string, nombre:string, monto:string, clase:string}} fila
+ * @returns {string}
+ */
+function _filaCelda({ tipo, nombre, monto, clase }) {
+  return `
+    <span class="cal-day__ev">
+      <span class="cal-day__ev-name"><span class="cal-dot cal-dot--${_esc(tipo)}"></span><span>${_esc(nombre)}</span></span>
+      <span class="cal-day__ev-monto${clase}">${monto}</span>
+    </span>`;
 }
 
 /** Etiqueta de leyenda por tipo de evento (color e ícono ya los da `cal-dot--*`, CSS). */

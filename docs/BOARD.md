@@ -42,7 +42,7 @@
 - Secciones  : Calendario
 - Archivos   : `modules/dominio/agenda/view.js`, `styles/responsive.css`, `styles/components/config.css`
 - Depende de : nada
-- Avance     : **01/03**. a) banda del mes, fila 8 + 4 y celda que ocupa su columna (D1, D2, D4, D5), cerrada. b) contenido de la celda: nombre y monto, agregado desde tres pagos, máscara de privacidad (D3, D6). c) entrada sin eventos hoy (D7).
+- Avance     : **02/03**. a) banda del mes, fila 8 + 4 y celda que ocupa su columna (D1, D2, D4, D5), cerrada. b) contenido de la celda: nombre y monto, agregado desde tres pagos, máscara de privacidad (D3, D6), cerrada. c) entrada sin eventos hoy (D7).
 - Restricción: **alcance escritorio, desde 1024px.** Móvil no se toca: es territorio de MOV.1, que sigue abierta. `git status` antes de cada rebanada y stagear solo los archivos propios. DSK.1 queda pausada en 02/04 por decisión de Esteban (2026-08-18).
 
 ---
