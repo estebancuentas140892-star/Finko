@@ -1548,3 +1548,84 @@
     max-width: 62ch;
   }
 }
+
+/* ── MOVIMIENTOS EN ESCRITORIO (>= 1440px, DSK.7a, ADR 076) ────────────
+   Movimientos es la única sección cuyo trabajo es recorrer una lista larga, y
+   su herramienta principal solo está disponible al principio: la barra de
+   filtros ocupa 1376 x 143 arriba del todo, y el ledger carga en lotes de 50
+   que se disparan solos al llegar al final. A las pocas pantallas, cambiar de
+   dominio obliga a volver al comienzo.
+
+   La lista NO se parte en dos columnas: un libro mayor es cronológico y dos
+   columnas romperían el orden de lectura (del 7 de agosto al 3, de vuelta al
+   6...). La secuencia es el contenido. Lo que va al lado son los filtros. */
+@media (min-width: 1440px) {
+
+  /* `.section.active` y no `.section`: la clase base es `display: none` y es
+     lo que mantiene ocultas las secciones inactivas (defecto que DSK.4a dejó
+     pasar en Por pagar y que se corrigió después). */
+  #sec-movimientos.section.active {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    column-gap: var(--fk-space-6);
+    align-items: start;
+  }
+
+  /* D1: el ledger manda y ocupa las 8 de la izquierda; los filtros operan
+     sobre él desde las 4 de la derecha. Filas declaradas a mano porque el
+     marcado emite los filtros ANTES de la lista: el orden de lectura para un
+     lector de pantalla se conserva (primero la herramienta, luego el
+     resultado) y lo que cambia es solo dónde se pintan. */
+  #sec-movimientos > .section__header { grid-column: 1 / -1; grid-row: 1; }
+  #sec-movimientos > #lista-movimientos    { grid-column: 1 / span 8; grid-row: 2; }
+  #sec-movimientos > #movimientos-filtros  { grid-column: 9 / -1;     grid-row: 2; }
+
+  /* D5: el "Volver a Inicio" se retira. Su motivo, escrito en layout.css, es
+     que las secciones sin ícono en la barra quedarían sin salida en la PWA
+     instalada; acá Movimientos SÍ tiene entrada propia en la barra lateral,
+     con su estado activo. Es la misma regla que INT.1b ya aplica a las cuatro
+     hijas de Ahorro, extendida a la sección que se había quedado fuera. Bajo
+     1024px el control sigue intacto, que es donde sí es la única salida. */
+  #sec-movimientos > .section__volver { display: none; }
+
+  /* D2: la columna de filtros se fija al desplazar, con el mismo mecanismo del
+     carril de estrategia de Deudas (ADR 073 D2). No es adorno: es lo que hace
+     que la herramienta esté donde está el trabajo. Con desplazamiento interno
+     por si los chips de dominio crecen. */
+  #sec-movimientos > #movimientos-filtros {
+    position: sticky;
+    inset-block-start: var(--fk-space-6);
+    align-self: start;
+    max-block-size: calc(100dvh - var(--fk-topbar-height) - 10rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    margin-bottom: 0;
+    padding: var(--fk-space-4);
+    border-radius: var(--fk-radius-lg);
+    border: 1px solid var(--fk-border-subtle);
+    background: var(--fk-bg-surface);
+  }
+
+  /* D4: los campos de fecha dejan de crecer. `flex: 1 1 8rem` reparte el
+     renglón en móvil; a 1376 los estiraba a 634px cada uno para escribir diez
+     caracteres. Mitad y mitad de la columna, sin `flex-grow`. */
+  #movimientos-filtros .movimientos-filtros__fechas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  #movimientos-filtros .movimientos-filtros__fechas .input {
+    width: 100%;
+    flex: none;
+  }
+
+  /* D6: el divisor de mes acompaña al desplazamiento. Con filas de 80px el
+     rótulo sale de pantalla a las doce, y "cuándo" es la mitad de la pregunta
+     de la sección. Sigue siendo `role="presentation"`: para un lector de
+     pantalla no cambia nada. */
+  #lista-movimientos .movimientos-mes {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 1;
+    background: var(--fk-bg-base);
+  }
+}

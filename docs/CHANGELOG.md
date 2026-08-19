@@ -12,6 +12,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(movimientos): DSK.7a, los filtros dejan de servir solo al principio · 2026-08-18
+
+Primera de las dos rebanadas del [ADR 076](DECISIONS/076-movimientos-libro-mayor-con-sus-filtros-al-lado.md). Cierra sus D1, D2, D4, D5 y D6. Desde 1440px el ledger toma `span 8` y los filtros `span 4` **pegajosos**. Medido en el navegador a 1920 x 1080: lista de 909, columna de 443, y con la página desplazada 900px los filtros quedan en y=24 y el rótulo del mes pegado en y=0. Ficha: [`contexto/movimientos.md`](contexto/movimientos.md).
+
+- **La lista NO se parte en dos columnas**, aunque en Me deben eso fue la solución: un libro mayor es cronológico y dos columnas romperían el orden de lectura (del 7 de agosto al 3, de vuelta al 6). La secuencia **es** el contenido. Lo que va al lado son los filtros.
+- **D2 resuelve un coste medido, no una impresión.** El ledger carga en lotes de 50 que se disparan solos al llegar al final, así que con la barra de filtros arriba cambiar de dominio a mitad de historial obligaba a volver al comienzo. Fijos, la herramienta está donde está el trabajo. Mismo mecanismo que el carril de estrategia de Deudas.
+- **La lista va a la izquierda** aunque un buscador convencional pondría los filtros primero: acá se llega a *mirar*, y solo se filtra cuando mirar no basta. Las tres secciones anteriores ya ponen el contenido primario en `span 8` a la izquierda.
+- **D5, el "Volver a Inicio" se retira en escritorio, y no es una decisión nueva.** Su motivo, escrito en `layout.css`, es que una sección sin ícono en la barra quedaría sin salida en la PWA instalada. Movimientos **sí** tiene entrada propia en la barra lateral, con su estado activo, así que cumple la misma condición que las cuatro hijas de Ahorro, a las que INT.1b ya se lo oculta con ese argumento. Es la segunda vez en esta auditoría que una corrección existía y no había cruzado a la sección que le tocaba. Bajo 1024px el control sigue intacto.
+- **D4**, los campos de fecha dejan de crecer: de 634px cada uno a 201, mitad y mitad de la columna. `flex: 1 1 8rem` reparte el renglón en móvil y a 1376 lo estiraba a media pantalla para escribir diez caracteres.
+- **D6**, el divisor de mes acompaña al desplazamiento. Con filas de 80px el rótulo salía de pantalla a las doce filas, y "cuándo" es la mitad de la pregunta de la sección. Sigue siendo `role="presentation"`: para un lector de pantalla no cambia nada.
+- **La rejilla se declara sobre `.section.active`**, no sobre `.section` a secas: esa es la clase que mantiene ocultas las secciones inactivas, y confundirlas fue el defecto que DSK.4a dejó pasar en Por pagar.
+- A 375 la sección no cambia: `display: block`, el "Volver" en sus 44px, filtros estáticos y el divisor de mes quieto.
+
 ### feat(tesoreria): DSK.6b, el cupo de una tarjeta deja de parecer un saldo · 2026-08-18
 
 Segunda y última rebanada del [ADR 075](DECISIONS/075-mis-cuentas-dos-trabajos-a-la-vista.md), que cierra la iniciativa **DSK.6**. Cierra sus D4 y D5. Los rótulos de bloque se hacen visibles desde 1440px y los dos botones de ingreso dejan de ser primarios. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md).
