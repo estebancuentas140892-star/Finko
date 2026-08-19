@@ -12,6 +12,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### fix(compromisos): "Por pagar" se pintaba en todas las secciones a la vez · 2026-08-18
+
+Defecto introducido por DSK.4a ([ADR 073](DECISIONS/073-deudas-inventario-con-su-herramienta-al-lado.md)) y encontrado por Esteban al usar la app. La rejilla de escritorio se declaró sobre `#sec-compromisos.section`, y **`.section` es justo la clase que mantiene ocultas a las secciones inactivas** (`display: none` en `layout.css`, con `.section.active` como único interruptor). El `display: grid` la encendía siempre: desde 1440px, "Por pagar" aparecía debajo de Inicio, de Gastos, de Calendario y del resto.
+
+- **El arreglo es acotar la regla a `.section.active`.** Una línea. La composición de DSK.4 no cambia: verificado a 1920 x 1080 con datos, lista de 909, columna de 443 y la primera deuda en y=504.
+- **Por qué no lo cazó nada.** Las tres iniciativas de escritorio anteriores tocaron elementos *dentro* de la sección (`#panel-agenda`, `.hero-gastos`, `.banda-inicio`), no la sección misma, así que ninguna se cruzó con el interruptor de visibilidad. Y la suite E2E navegaba sección por sección comprobando que **la de destino** se viera, nunca que las otras **no** se vieran.
+- **Test nuevo que cierra el hueco** (`tests/e2e/navegacion-render.test.js`): a 1920, recorre seis rutas y exige que la lista de secciones visibles sea exactamente una, la activa. Comprobado que falla con la regla vieja y pasa con la nueva.
+
 ### feat(compromisos): DSK.4b, la tarjeta de deuda baja de tres renglones a dos · 2026-08-18
 
 Segunda y última rebanada del [ADR 073](DECISIONS/073-deudas-inventario-con-su-herramienta-al-lado.md), que cierra la iniciativa **DSK.4**. Cierra sus D3 y D5. Desde 1440px los chips y las acciones de la tarjeta comparten renglón y el botón "Abonar" se dimensiona a su texto. Medido en el navegador a 1920 x 1080: **Abonar pasa de 1246 a 128px** y la tarjeta de 173 a 134 de alto. Ficha: [`contexto/deudas.md`](contexto/deudas.md).

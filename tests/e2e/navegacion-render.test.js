@@ -133,3 +133,31 @@ test.describe('Render tras navegación (regresión hashchange)', () => {
   });
 
 });
+
+test.describe('Una sección a la vez (regresión DSK.4a)', () => {
+
+  // DSK.4a puso `display: grid` sobre `#sec-compromisos.section` para armar el
+  // reparto de escritorio, y esa clase es la que `layout.css` mantiene en
+  // `display: none`: la sección "Por pagar" quedó encendida en todas las
+  // pantallas a la vez. El arreglo acota la regla a `.section.active`; este
+  // test cierra el hueco que la dejó pasar, para las 12 secciones y no solo
+  // para esa.
+  test('a 1920 solo la sección activa se pinta, sección por sección', async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await saltearOnboardingYIrADash(page);
+
+    const rutas = ['#dash', '#gast', '#compromisos', '#agenda', '#tesoreria', '#analisis'];
+
+    for (const ruta of rutas) {
+      await page.goto(`/${ruta}`);
+      await expect(page.locator(`#sec-${ruta.slice(1)}.active`)).toBeVisible();
+
+      const visibles = await page.evaluate(() => [...document.querySelectorAll('.section')]
+        .filter(s => getComputedStyle(s).display !== 'none')
+        .map(s => s.id));
+
+      expect(visibles).toEqual([`sec-${ruta.slice(1)}`]);
+    }
+  });
+
+});

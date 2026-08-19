@@ -1253,7 +1253,11 @@
      envoltorios nuevos. El orden del DOM no cambia ni un nodo, así que móvil
      y los lectores de pantalla siguen leyendo hero, lote, estrategia, nudge y
      lista en ese orden; lo único que cambia es dónde se colocan. */
-  #sec-compromisos.section {
+  /* `.section.active` y no `.section` a secas: `.section` es `display: none`
+     por defecto y solo `.active` la enciende (layout.css). Poner `display:
+     grid` sobre la clase base encendía la sección en todas las pantallas
+     (defecto encontrado al verificar DSK.4 en la app). */
+  #sec-compromisos.section.active {
     display: grid;
     grid-template-columns: repeat(12, 1fr);
     column-gap: var(--fk-space-6);
