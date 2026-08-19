@@ -9,8 +9,8 @@
 ## Pantalla Gastos v2 (GAS.1, ADR 039)
 
 - **Objetivo**          : rediseño visual de `#sec-gast` a la familia v2 ([ADR 039](../DECISIONS/039-gastos-v2-visual.md)): hero del mes con total protagonista + comparativo + ojo (GAS.1a), lista agrupada por día + chips con identidad + máscara (GAS.1b), insight de gastos hormiga + empty states v2 (GAS.1c).
-- **Estado actual**     : **INICIATIVA COMPLETA** (GAS.1a, GAS.1b y GAS.1c cerradas el 2026-07-14). Sexta pantalla de la familia visual v2. **DIS.4 cerrada** (2026-07-26): las 10 correcciones aplicables de la auditoría de diseño de la sección.
-- **Verificado contra** : DIS.4 (2026-07-26, auditoría de diseño). Antes: GAS.1c (2026-07-14).
+- **Estado actual**     : **INICIATIVA COMPLETA** (GAS.1a, GAS.1b y GAS.1c cerradas el 2026-07-14). Sexta pantalla de la familia visual v2. **DSK.3 (2026-08-18, [ADR 072](../DECISIONS/072-gastos-cabecera-de-banda-y-fila-con-cuenta.md)) le da composición de escritorio desde 1680px**: el hero pasa a banda (total a la izquierda; nav de mes, enlace "En qué gastaste" a Análisis y ojo a la derecha, tras un filete), el total del día cae sobre la columna de montos que suma, la fila deja de levantarse al apuntar y la lista deja de entrar en cascada. Dos de sus decisiones son de contenido y **valen en todos los anchos**: la fila abre su subtítulo con la cuenta de origen, y los chevrons de mes pasan al glifo del sistema. **DIS.4 cerrada** (2026-07-26): las 10 correcciones aplicables de la auditoría de diseño de la sección.
+- **Verificado contra** : DSK.3 (2026-08-18, sus dos rebanadas). Antes: DIS.4 (2026-07-26).
 
 **Dónde vive**
 
@@ -25,6 +25,9 @@
 | Agrupación por día (pura) | `modules/dominio/gastos/logic.js` | `agruparPorDia(gastos)` | conserva el orden recibido; total por grupo |
 | Grupo del día + label humano | `modules/dominio/gastos/view.js` | `_renderGrupoDia()`, `_labelDia()` | "Hoy"/"Ayer"/"Vie 11 jul" (+ año si no es el corriente); `formateadorFecha` cacheado |
 | Ítem de la lista (máscara D9, subtítulo sin fecha) | `modules/dominio/gastos/view.js` | `_renderGastoItem(gasto, oculto)` | firma con `oculto` explícito: NO pasarla directa a `.map()` (el índice caería en `oculto`) |
+| Banda de escritorio: enlace a Análisis y bloque derecho (DSK.3a, ADR 072 D1) | `styles/responsive.css` | bloque "GASTOS EN ESCRITORIO" + `.hero-gastos__link` | desde 1680px; el enlace lo emite `_renderHeroGastos()` y `domain.css` lo apaga bajo ese ancho |
+| Cuenta de origen en el subtítulo de la fila (DSK.3b, ADR 072 D2) | `modules/dominio/gastos/view.js` | `_renderGastoItem()`, `nombreCuenta` | lee `S.cuentas` por `cuentaId` con el mismo `find` de otras cinco vistas; sin cuenta el subtítulo se comporta como antes |
+| Alineación del total del día, fila sin levantar y lista sin cascada (DSK.3b, ADR 072 D4/D5/D7) | `styles/responsive.css` | bloque "LISTA DE GASTOS EN ESCRITORIO" | desde 1680px; la reserva del encabezado se calcula con los tokens de la columna de acciones, no con un número fijo |
 | Chips con identidad de sección | `styles/components/domain.css` | `button.chip--gastos.chip--active` | patrón D.16b: tinte 12% + borde 50% + anillo, texto primario (medición en ADR 039 D5) |
 | Estilos de grupos por día | `styles/components/domain.css` | `.gastos-dia*` | `.list-item` gana radio lg + sombra por contenedor (criterio MC.18d) |
 | Insight de gastos hormiga | `modules/dominio/gastos/view.js` | `_renderInsightHormigas(delMes, oculto)` | consume `detectarHormigas()` (logic.js); solo vista "Todos", monto respeta el ojo |

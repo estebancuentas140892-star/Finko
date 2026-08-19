@@ -2131,3 +2131,71 @@ describe('renderFiltrosGastos() - cabecera de escritorio (DSK.3a)', () => {
     expect(document.querySelector('.hero-gastos__link')).toBeNull();
   });
 });
+
+// ── DSK.3b (ADR 072 D2) - la fila dice de qué cuenta salió el dinero ──
+
+describe('renderListaGastos() - la cuenta en el subtítulo de la fila (DSK.3b)', () => {
+  const hoyIso = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+  const sub = () => document.querySelector('.list-item__subtitle');
+
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <div id="panel-filtros-gastos"></div>
+      <div id="lista-gastos"></div>`;
+    S.gastos = [];
+    S.cuentas = [
+      { id: 'c1', nombre: 'Bancolombia Ahorros', saldo: 1_000_000 },
+      { id: 'c2', nombre: 'Nequi', saldo: 100_000 },
+    ];
+    S.config.ocultarSaldo = false;
+    setFiltroCategoria(null);
+  });
+
+  it('un gasto con cuenta la nombra en el subtítulo', () => {
+    S.gastos = [gastoBase({ id: 'g1', categoria: 'Mercado', descripcion: '', fecha: hoyIso(), cuentaId: 'c1' })];
+    renderListaGastos();
+    expect(sub().textContent.trim()).toBe('Bancolombia Ahorros');
+  });
+
+  // Es el dato que diferencia dos gastos iguales del mismo día: el título es la
+  // categoría y la teja ya la dice con su color y su glifo.
+  it('dos gastos de la misma categoría el mismo día dejan de ser idénticos', () => {
+    S.gastos = [
+      gastoBase({ id: 'g1', categoria: 'Restaurantes', descripcion: '', monto: 62_000, fecha: hoyIso(), cuentaId: 'c1' }),
+      gastoBase({ id: 'g2', categoria: 'Restaurantes', descripcion: '', monto: 45_000, fecha: hoyIso(), cuentaId: 'c2' }),
+    ];
+    renderListaGastos();
+    const subs = [...document.querySelectorAll('.list-item__subtitle')].map(el => el.textContent.trim());
+    expect(subs.sort()).toEqual(['Bancolombia Ahorros', 'Nequi']);
+  });
+
+  it('la cuenta abre el subtítulo y la nota la sigue, con el separador de siempre', () => {
+    S.gastos = [gastoBase({
+      id: 'g1', categoria: 'Mercado', descripcion: '', fecha: hoyIso(), cuentaId: 'c1', nota: 'Mercado quincenal',
+    })];
+    renderListaGastos();
+    expect(sub().textContent.trim()).toBe('Bancolombia Ahorros · Mercado quincenal');
+  });
+
+  it('sin cuenta asignada el subtítulo se comporta como antes', () => {
+    S.gastos = [gastoBase({ id: 'g1', categoria: 'Mercado', descripcion: '', fecha: hoyIso(), nota: 'Solo la nota' })];
+    renderListaGastos();
+    expect(sub().textContent.trim()).toBe('Solo la nota');
+  });
+
+  it('sin cuenta y sin nota, la fila sigue sin subtítulo', () => {
+    S.gastos = [gastoBase({ id: 'g1', categoria: 'Mercado', descripcion: '', fecha: hoyIso() })];
+    renderListaGastos();
+    expect(sub()).toBeNull();
+  });
+
+  it('una cuenta eliminada no deja el subtítulo con un id suelto', () => {
+    S.gastos = [gastoBase({ id: 'g1', categoria: 'Mercado', descripcion: '', fecha: hoyIso(), cuentaId: 'borrada' })];
+    renderListaGastos();
+    expect(sub()).toBeNull();
+    S.cuentas = [];
+  });
+});

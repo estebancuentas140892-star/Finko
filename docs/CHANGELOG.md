@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(gastos): DSK.3b, la fila dice de que cuenta salio el dinero · 2026-08-18
+
+Segunda y última rebanada del [ADR 072](DECISIONS/072-gastos-cabecera-de-banda-y-fila-con-cuenta.md), que cierra la iniciativa **DSK.3**. Cierra sus D2, D4, D5 y D7. La fila abre su subtítulo con la cuenta de origen, y desde 1680px el total del día cae sobre la columna de montos que suma, la fila deja de levantarse al apuntar y la lista deja de entrar en cascada. Medido en el navegador a 1920 x 1080: total del día y montos a plomo con **1px** de desfase (antes ~164). Ficha: [`contexto/gastos.md`](contexto/gastos.md).
+
+- **D2, la cuenta es el dato que la fila tenía y no mostraba nunca.** El gasto guarda `cuentaId` (el formulario lo pide y `gastosFrecuentes` lo lee) y la lista no lo usaba. A 1376 el cuerpo de la fila tiene ~1054px para escribir una palabra de categoría que ocupa 89, y desde TX.9a el subtítulo suele estar vacío porque el formulario ya no pide descripción: en un día con tres comidas se apilaban tres "Restaurantes" idénticos. Ahora se distinguen por su cuenta.
+- **El nombre sale de `S.cuentas` con el mismo `find` que ya usan otras cinco vistas**, así que no hay función nueva ni lectura cross-domain: la vista puede leer `S`. Sin cuenta asignada (o con una cuenta borrada) el subtítulo se comporta exactamente como antes, incluida la fila que se queda sin él.
+- **Vale en todos los anchos, y se dice en voz alta:** es contenido, no reparto. En móvil ocupa la línea que hoy suele estar vacía. La ficha de MOV.1 que toque Gastos lo hereda y decide si quiere otra cosa.
+- **D4, la reserva del encabezado de día se calcula con tokens, no con un número.** Son los 3 botones de la columna de acciones (`--fk-space-10`), sus 2 huecos (`--fk-space-2`), el hueco de la fila (`--fk-space-3`) y su relleno derecho (`--fk-space-4`): 164px hoy, y si la fila cambia de botones la cuenta cambia sola.
+- **D5 y D7 se verifican por regla, no por observación.** El navegador de la vista previa declara `prefers-reduced-motion: reduce`, y tanto el `translateY(-1px)` del hover como la cascada de entrada viven dentro de `@media (prefers-reduced-motion: no-preference)`: en ese entorno no llegan a aplicarse. Lo que se comprobó es que los dos selectores nuevos (`#lista-gastos .list-item:hover` y `#lista-gastos .list-item`) ganan por especificidad sin `!important`, y que el bloque de 1680 aplica (el relleno del encabezado mide los 164px calculados).
+- Tests: 6 nuevos en `tests/unit/gastos.test.js` (la cuenta abre el subtítulo, dos gastos iguales del mismo día dejan de ser idénticos, la nota la sigue con el separador de siempre, sin cuenta se comporta como antes, sin cuenta ni nota no hay subtítulo, y una cuenta borrada no deja un id suelto). 255 en el archivo.
+
 ### feat(gastos): DSK.3a, la cabecera de Gastos deja de decorar el total · 2026-08-18
 
 Primera de las dos rebanadas del [ADR 072](DECISIONS/072-gastos-cabecera-de-banda-y-fila-con-cuenta.md). Cierra sus D1 y D6. Desde 1680px el hero pasa a **banda**: el total con su rótulo y su comparativo a la izquierda; la navegación de mes, el enlace "En qué gastaste" y el ojo a la derecha, tras un filete. Medido en el navegador a 1920 x 1080: banda de 1376 x 120 (antes 150 de alto con el total centrado en 1296px de vacío), enlace de 106px al lado de la nav. A 1440 la sección no cambia. Ficha: [`contexto/gastos.md`](contexto/gastos.md).

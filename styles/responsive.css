@@ -1192,3 +1192,39 @@
   #sec-gast .hero-gastos__link:hover,
   #sec-gast .hero-gastos__link:focus-visible { text-decoration: underline; }
 }
+
+/* ── LISTA DE GASTOS EN ESCRITORIO (>= 1680px, DSK.3b, ADR 072 D4/D5/D7) ──
+   Tres reglas de la lista que solo se justifican a este ancho. La cuarta
+   decisión de la rebanada (la cuenta en el subtítulo) es contenido y vive en
+   la vista, no acá: vale en todos los anchos. */
+@media (min-width: 1680px) {
+
+  /* D4: el total del día cae sobre la columna que suma. El encabezado llega
+     hasta el borde del contenedor y los montos de sus filas paran antes,
+     porque después viene la columna de acciones: a este ancho el ojo deja de
+     relacionar la cifra con lo que suma.
+
+     La reserva no es un número redondo elegido a mano, es lo que ocupa esa
+     columna: 3 botones de `--fk-space-10` + los 2 huecos de `--fk-space-2`
+     entre ellos + el hueco de la fila (`--fk-space-3`) + su relleno derecho
+     (`--fk-space-4`). Si el día cambia de botones, la cuenta cambia con él. */
+  #lista-gastos .gastos-dia__header {
+    padding-inline-end: calc(
+      3 * var(--fk-space-10) + 2 * var(--fk-space-2) + var(--fk-space-3) + var(--fk-space-4)
+    );
+  }
+
+  /* D5: solo se levanta lo que se puede pulsar. La fila no tiene acción
+     propia (la tienen sus tres botones), así que una barra de 1376px que se
+     levanta al pasar promete un clic que no existe. Se conservan el cambio de
+     fondo y de borde, que señalan posición sin prometer nada. Misma regla que
+     el ADR 070 aplicó al bento. */
+  #lista-gastos .list-item:hover { transform: none; }
+
+  /* D7: sin cascada de entrada. En un monitor la lista se ve completa de un
+     golpe, así que el escalonado de 35ms solo retrasa lo que ya está
+     calculado, y se repite entero en cada cambio de mes. El selector gana por
+     especificidad (id + clase) a `.list-item:nth-child(-n+6 of .list-item)`,
+     sin `!important`. */
+  #lista-gastos .list-item { animation: none; }
+}

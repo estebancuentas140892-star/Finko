@@ -428,7 +428,14 @@ function _renderGastoItem(gasto, oculto) {
   const cat    = _esc(catKey);
   // Descripción legacy (gastos de antes de TX.9a que ya la tenían) + nota:
   // ambas son detalle opcional del subtítulo.
-  const detalle = [gasto.descripcion?.trim(), gasto.nota]
+  // D2 del ADR 072 (DSK.3b): la cuenta abre el subtítulo. Es el único dato que
+  // distingue dos gastos de la misma categoría el mismo día, y el gasto ya lo
+  // guarda (`cuentaId`, que el formulario pide): la fila lo tenía y no lo
+  // mostraba nunca. Sin cuenta asignada, el subtítulo se comporta como antes.
+  const nombreCuenta = gasto.cuentaId
+    ? (Array.isArray(S.cuentas) ? S.cuentas : []).find(c => c.id === gasto.cuentaId)?.nombre
+    : null;
+  const detalle = [nombreCuenta, gasto.descripcion?.trim(), gasto.nota]
     .filter(Boolean)
     .map(_esc)
     .join(' · ');

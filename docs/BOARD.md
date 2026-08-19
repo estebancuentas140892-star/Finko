@@ -34,17 +34,6 @@
 - Avance     : **02/04**. a) purga y cabecera (D2, D10), cerrada. b) banda de contexto (D4, D5, D6), cerrada. c) columnas 4 + 8 (D7). d) fusión de obligaciones y pie (D8, D9).
 - Restricción: **alcance escritorio, desde 1024px.** Móvil no se toca: es territorio de MOV.1, que sigue abierta. Las dos iniciativas comparten `index.html` y corren en sesiones distintas: `git status` antes de cada rebanada, y stagear solo los archivos propios.
 
-### DSK.3 - Gastos en escritorio: cabecera de banda y fila con cuenta, 2 rebanadas
-- Prioridad  : alta
-- Estado     : en proceso (iniciada 2026-08-18)
-- Área       : ambos
-- Objetivo   : implementar la auditoría "Gastos 1920" de Claude Design ([ADR 072](DECISIONS/072-gastos-cabecera-de-banda-y-fila-con-cuenta.md)): dejar de decorar el total y devolverle a la fila el dato que esconde
-- Secciones  : Gastos
-- Archivos   : `modules/dominio/gastos/view.js`, `styles/responsive.css`
-- Depende de : nada
-- Avance     : **00/02**. a) cabecera de banda con enlace a Análisis, chevrons del sistema y chips que envuelven (D1, D3, D6). b) fila con cuenta, total del día alineado, sin levantar la fila y sin cascada (D2, D4, D5, D7).
-- Restricción: **umbral 1680px** para todo lo que es composición; D2 y D6 son contenido y valen en todos los anchos. `modules/dominio/gastos/view.js` lo está editando la ficha 07 de MOV.1 en otra sesión: `git status` antes de cada rebanada y stagear solo los hunks propios.
-
 ---
 
 ## Cómo usar este tablero

@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-18. Última tarea cerrada: DSK.2, Calendario como mapa del mes en escritorio (sus tres rebanadas).
+> Revisado: 2026-08-18. Última tarea cerrada: DSK.3, Gastos en escritorio (cabecera de banda y fila con cuenta).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 4375/4381 (2026-08-18). Los 6 rojos son **BUG-028**, ajeno y verificado contra HEAD |
-| Tests E2E | 277/277 verdes, sello de DSK.2 (2026-08-18). **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 4386/4392 (2026-08-18). Los 6 rojos son **BUG-028**, ajeno |
+| Tests E2E | 277/277 verdes, sello de DSK.3 (2026-08-18). **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v43 (`config.respaldoCifrado`, CFG.4c; migración no-op) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -25,8 +25,11 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**DSK.3 - Gastos en escritorio (Gastos), 2026-08-18**
+Desde 1680px el hero deja de centrar el total en 1296px de vacío y pasa a banda, con enlace a Análisis ([ADR 072](DECISIONS/072-gastos-cabecera-de-banda-y-fila-con-cuenta.md)); el total del día cae sobre la columna que suma, y la fila ya no se levanta ni entra en cascada. En **todos** los anchos: la fila abre su subtítulo con la cuenta, el dato que ya tenía y no mostraba. Sin lógica nueva. SW v552.
+
 **DSK.2 - Calendario como mapa del mes en escritorio (Calendario), 2026-08-18**
-Única sección sin reglas desde 1024px: móvil estirado a 1376, celda de 72 x 72 en columna de 188 y panel del día bajo el pliegue ([ADR 071](DECISIONS/071-calendario-como-mapa-del-mes-en-escritorio.md)). Ahora mes a `span 8` y día a `span 4` en columna fija que desplaza su lista; la celda dice qué y cuánto (agregado desde 3 pagos) y entrar sin eventos hoy abre el próximo día con fecha. **Móvil no cambia.** Acota el [ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md): vuelve la entrada al lote, no el flujo. 31 tests, SW v550.
+Única sección sin reglas desde 1024px: móvil estirado a 1376, celda de 72 x 72 en columna de 188 y panel del día bajo el pliegue ([ADR 071](DECISIONS/071-calendario-como-mapa-del-mes-en-escritorio.md)). Ahora mes a `span 8` y día a `span 4` que desplaza su lista; la celda dice qué y cuánto (agregado desde 3 pagos) y entrar sin eventos hoy abre el próximo día. **Móvil no cambia.** Acota el [ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md): vuelve la entrada al lote, no el flujo. 31 tests, SW v550.
 
 **Ficha 05 de la auditoría móvil - "Por pagar" recupera su dominio (Por pagar + Calendario), 2026-08-18**
 `compromisos` tiene tres tipos y solo administraba dos: el alta de gasto fijo y el pago en lote vivían en Calendario. Los dos se mudan (`views/lote.js` nuevo), muere el evento `lote:abrir` y un "+ Agregar" con chooser de tres chips cubre los tres tipos. **Dos hallazgos de verificar en la app**: el lote contaba un vencido más que la pastilla y que Inicio (dos motores, unificados contra `vencidosSinPagar`), y el chip afirmaba "Vence en 21 días" sobre una cuota ya vencida. El Calendario vuelve a tablero de consulta. 20 tests nuevos, 24 movidos. SW v544 → v545.
@@ -36,9 +39,6 @@ El código ya tenía la rebanada desde el 2026-08-12 (commit `57b3cdb`, sesión 
 
 **Ficha 04 de la auditoría móvil - circulación dentro del bloque Ahorro (Ahorro), 2026-08-15**
 La portada-resumen **se confirma**: es la única pantalla donde los cuatro términos conviven. Lo roto era la circulación: `ui/bloque-ahorro.js` baja a las cuatro hijas la fila de chips de la casa (de Metas a Reservas: de 2 toques y un scroll a 1), y tres textos que citaban "la pestaña Fondo (arriba)" pasan a enlaces reales (**R85**). 14 tests nuevos. SW v542 → v543.
-
-**Ficha 03 de la auditoría móvil - techo y puerta para "Más" (Navegación), 2026-08-15**
-La hoja ya estaba ordenada; le faltaba resistencia a volver a llenarse. **R83**: no scrollea, techo de 444 px (mide 361), con compuerta E2E. **R84**: cuatro condiciones de admisión. Las seis entradas heredadas pasan; **Logros las falla y se queda en Ajustes**. H8 cerrado sin cambio. SW v541 → v542.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 
