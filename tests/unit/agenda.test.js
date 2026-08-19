@@ -1258,11 +1258,17 @@ describe('CAL.3 - marcarEntradaSeccion() + renderAgenda() auto-selección', () =
     expect(document.querySelector('.cal-detail')).toBeNull();
   });
 
-  it('si hoy no tiene compromisos ni ingresos, no auto-abre nada', () => {
+  // DSK.2c (ADR 071 D7) cambia esta regla en escritorio: ahí el panel abre el
+  // próximo día con eventos. En móvil sigue igual, y por eso se falsea el
+  // ancho: happy-dom no tiene viewport real (mismo apaño que render.test.js).
+  it('si hoy no tiene compromisos ni ingresos, en móvil no auto-abre nada', () => {
+    const matchMediaReal = window.matchMedia;
+    window.matchMedia = () => ({ matches: true }); // bajo 1024px
     S.compromisos = [compromisoBase({ diaPago: 20, frecuencia: 'Mensual' })];
     marcarEntradaSeccion();
     renderAgenda();
     expect(document.querySelector('.cal-detail')).toBeNull();
+    window.matchMedia = matchMediaReal;
   });
 
   it('no pisa un día ya seleccionado manualmente antes de entrar', () => {
@@ -2618,5 +2624,110 @@ describe('renderAgenda() - conteo de lo vencido en la banda', () => {
     // El hero del mes anterior sigue en su banda: lo que se retira es la
     // entrada al pago, no el contexto.
     expect(document.querySelector('.banda-agenda .hero-agenda')).not.toBeNull();
+  });
+});
+
+// ── DSK.2c (ADR 071 D7) - entrada sin eventos hoy ────────────────
+
+describe('DSK.2c - al entrar sin eventos hoy, el panel abre el próximo día', () => {
+  // happy-dom no tiene viewport real: se falsea `matchMedia`, mismo apaño que
+  // render.test.js. `matches: false` = escritorio (no cumple max-width 1023.98).
+  const matchMediaReal = window.matchMedia;
+  const anchoDe = esMovil => { window.matchMedia = () => ({ matches: esMovil }); };
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-agenda"></div>';
+    S.compromisos = [];
+    S.gastos = [];
+    S.ingresos = [];
+    S.metas = [];
+    S.config = { ocultarSaldo: false };
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15)); // 15 jun 2026 = "hoy"
+    resetearVistaAlMesActual();
+    anchoDe(false);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    window.matchMedia = matchMediaReal;
+    S.config = {};
+  });
+
+  it('abre el próximo día con eventos del mes visible', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'c1', descripcion: 'Netflix', diaPago: 22, frecuencia: 'Mensual' }),
+      compromisoBase({ id: 'c2', descripcion: 'Gimnasio', diaPago: 28, frecuencia: 'Mensual' }),
+    ];
+    marcarEntradaSeccion();
+    renderAgenda();
+    expect(document.querySelector('.cal-detail__title').textContent).toContain('22');
+    expect(diaSeleccionado()).toBe(22);
+  });
+
+  it('el subtítulo dice que ese día lo eligió la app, no el usuario', () => {
+    S.compromisos = [compromisoBase({ id: 'c1', diaPago: 22, frecuencia: 'Mensual' })];
+    marcarEntradaSeccion();
+    renderAgenda();
+    expect(document.querySelector('.cal-detail__subtitle').textContent)
+      .toBe('Lo próximo con fecha · 1 compromiso');
+  });
+
+  it('hoy con eventos gana: no se salta al próximo (CAL.3 intacta)', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'c1', diaPago: 15, frecuencia: 'Mensual' }),
+      compromisoBase({ id: 'c2', diaPago: 22, frecuencia: 'Mensual' }),
+    ];
+    marcarEntradaSeccion();
+    renderAgenda();
+    expect(diaSeleccionado()).toBe(15);
+    expect(document.querySelector('.cal-detail__subtitle').textContent)
+      .not.toContain('Lo próximo con fecha');
+  });
+
+  it('sin nada por delante en el mes, se queda sin panel', () => {
+    S.compromisos = [compromisoBase({ id: 'c1', diaPago: 5, frecuencia: 'Mensual' })];
+    marcarEntradaSeccion();
+    renderAgenda();
+    expect(document.querySelector('.cal-detail')).toBeNull();
+  });
+
+  it('se consume una sola vez: cerrar el panel no lo vuelve a abrir', () => {
+    S.compromisos = [compromisoBase({ id: 'c1', diaPago: 22, frecuencia: 'Mensual' })];
+    marcarEntradaSeccion();
+    renderAgenda();
+    mostrarDia(22); // el usuario cierra el panel auto-abierto (toggle)
+    renderAgenda();
+    expect(document.querySelector('.cal-detail')).toBeNull();
+  });
+
+  it('elegir otro día borra el rótulo de "lo próximo"', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'c1', diaPago: 22, frecuencia: 'Mensual' }),
+      compromisoBase({ id: 'c2', diaPago: 28, frecuencia: 'Mensual' }),
+    ];
+    marcarEntradaSeccion();
+    renderAgenda();
+    mostrarDia(28);
+    renderAgenda();
+    expect(document.querySelector('.cal-detail__subtitle').textContent)
+      .not.toContain('Lo próximo con fecha');
+  });
+
+  it('navegar de mes no arrastra el auto-abierto', () => {
+    S.compromisos = [compromisoBase({ id: 'c1', diaPago: 22, frecuencia: 'Mensual' })];
+    marcarEntradaSeccion();
+    renderAgenda();
+    navegarMes(1);
+    renderAgenda();
+    expect(document.querySelector('.cal-detail')).toBeNull();
+  });
+
+  it('en móvil no se dispara: el panel nace bajo la grilla', () => {
+    anchoDe(true);
+    S.compromisos = [compromisoBase({ id: 'c1', diaPago: 22, frecuencia: 'Mensual' })];
+    marcarEntradaSeccion();
+    renderAgenda();
+    expect(document.querySelector('.cal-detail')).toBeNull();
   });
 });

@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(agenda): DSK.2c, entrar a Calendario sin nada hoy abre lo proximo · 2026-08-18
+
+Tercera y última rebanada del [ADR 071](DECISIONS/071-calendario-como-mapa-del-mes-en-escritorio.md), que cierra la iniciativa **DSK.2**. Cierra su D7. Al entrar a la sección en escritorio, si hoy no tiene eventos el panel del día abre el **próximo día con eventos del mes visible** en vez de quedarse vacío. Verificado en la app con datos reales: el 18 de agosto sin eventos abre el 20 con "Lo próximo con fecha · día de ingreso · 1 compromiso" y la página no se desplaza. Ficha: [`contexto/calendario.md`](contexto/calendario.md).
+
+- **Es una extensión de CAL.3, no un mecanismo nuevo:** usa el mismo `_entradaInicialPendiente` que arma `marcarEntradaSeccion()` al navegar hacia `#agenda`, y como aquel **se consume una sola vez**. Navegar entre meses o días, o un re-render por `state:change`, no vuelve a forzarla.
+- **Hoy con eventos sigue ganando.** El salto al próximo solo ocurre cuando hoy está vacío, que es cuando la columna del día no tendría nada que decir.
+- **El subtítulo del panel lo dice: "Lo próximo con fecha".** Sin eso, un panel abierto sobre el 20 mientras la grilla marca "hoy" en el 18 se lee como si ese fuera el día actual. Cuando el usuario elige otro día, el rótulo desaparece: a partir de ahí el día lo eligió él.
+- **Acotado a escritorio, y por eso es la única regla de la iniciativa que se decide en JavaScript.** En móvil el panel nace bajo la grilla y abrirlo sin que el usuario lo pida lo obligaría a desplazarse; esa pantalla es territorio de MOV.1. El corte es el mismo 1024px de `render.js`, `movimientos/view.js` y `logros/index.js`. La composición sigue repartiéndose en CSS: acá se decide **qué se abre**, no cómo se ve, así que un cambio de ancho sin cambio de estado no deja la pantalla a medias.
+- **El test de CAL.3 "si hoy no tiene compromisos ni ingresos, no auto-abre nada" cambia de premisa, no de resultado:** pasa a falsear el ancho de móvil, que es donde esa regla sigue vigente. happy-dom no tiene viewport real y resuelve como escritorio, mismo apaño que `render.test.js`.
+- Tests: 8 nuevos en `tests/unit/agenda.test.js` (abre el próximo, subtítulo, hoy gana, sin nada por delante, una sola vez, elegir otro día borra el rótulo, navegar de mes no lo arrastra, móvil no se dispara). 244 en el archivo.
+
 ### feat(agenda): DSK.2b, el dia del mes dice que pasa y por cuanto · 2026-08-18
 
 Segunda de las tres rebanadas del [ADR 071](DECISIONS/071-calendario-como-mapa-del-mes-en-escritorio.md). Cierra sus D3 y D6. Desde 1024px la celda deja de decir solo "pasa algo": nombra el evento y su monto, y con tres pagos o más pasa a agregado. Medido a 1920 x 1080 con el mes de quincena (9 pagos el 15): celda "9 pagos $1.096.000", mes 909 x 686, día 443 x 686, la lista del día desplaza 558 de sus 1348px por dentro y la página no se mueve. Ficha: [`contexto/calendario.md`](contexto/calendario.md).

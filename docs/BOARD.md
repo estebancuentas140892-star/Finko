@@ -34,17 +34,6 @@
 - Avance     : **02/04**. a) purga y cabecera (D2, D10), cerrada. b) banda de contexto (D4, D5, D6), cerrada. c) columnas 4 + 8 (D7). d) fusión de obligaciones y pie (D8, D9).
 - Restricción: **alcance escritorio, desde 1024px.** Móvil no se toca: es territorio de MOV.1, que sigue abierta. Las dos iniciativas comparten `index.html` y corren en sesiones distintas: `git status` antes de cada rebanada, y stagear solo los archivos propios.
 
-### DSK.2 - Calendario como mapa del mes en escritorio, 3 rebanadas
-- Prioridad  : alta
-- Estado     : en proceso (iniciada 2026-08-18)
-- Área       : ambos
-- Objetivo   : implementar la auditoría "Calendario 1920" de Claude Design ([ADR 071](DECISIONS/071-calendario-como-mapa-del-mes-en-escritorio.md)): el mes a la izquierda, el día a la derecha, y la celda que dice qué y cuánto
-- Secciones  : Calendario
-- Archivos   : `modules/dominio/agenda/view.js`, `styles/responsive.css`, `styles/components/config.css`
-- Depende de : nada
-- Avance     : **02/03**. a) banda del mes, fila 8 + 4 y celda que ocupa su columna (D1, D2, D4, D5), cerrada. b) contenido de la celda: nombre y monto, agregado desde tres pagos, máscara de privacidad (D3, D6), cerrada. c) entrada sin eventos hoy (D7).
-- Restricción: **alcance escritorio, desde 1024px.** Móvil no se toca: es territorio de MOV.1, que sigue abierta. `git status` antes de cada rebanada y stagear solo los archivos propios. DSK.1 queda pausada en 02/04 por decisión de Esteban (2026-08-18).
-
 ---
 
 ## Cómo usar este tablero

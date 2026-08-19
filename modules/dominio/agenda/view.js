@@ -26,6 +26,12 @@ let _viewYear         = null;
 let _viewMonth        = null;
 let _diaSeleccionado  = null;
 let _entradaInicialPendiente = false;
+/**
+ * DSK.2c (ADR 071 D7): el día abierto no es el de hoy sino el próximo con
+ * eventos, elegido por la app y no por el usuario. Solo cambia el subtítulo
+ * del panel, que lo dice en vez de dejar creer que ese día es hoy.
+ */
+let _autoProximo      = false;
 
 const MONTHS = [
   'Enero',     'Febrero', 'Marzo',   'Abril',
@@ -60,6 +66,7 @@ export function navegarMes(delta) {
   _viewYear         = y;
   _viewMonth        = m;
   _diaSeleccionado  = null;
+  _autoProximo      = false;
 }
 
 /** Lleva la vista al mes actual real (botón "hoy" futuro o test setup). */
@@ -68,6 +75,7 @@ export function resetearVistaAlMesActual() {
   _viewYear         = hoy.getFullYear();
   _viewMonth        = hoy.getMonth();
   _diaSeleccionado  = null;
+  _autoProximo      = false;
 }
 
 /**
@@ -79,6 +87,38 @@ export function resetearVistaAlMesActual() {
 export function mostrarDia(dia) {
   if (!Number.isInteger(dia)) return;
   _diaSeleccionado = (_diaSeleccionado === dia) ? null : dia;
+  // A partir de acá el día abierto lo eligió el usuario (DSK.2c).
+  _autoProximo = false;
+}
+
+/**
+ * Corte de escritorio de la app, el mismo de `render.js`, `movimientos/view.js`
+ * y `logros/index.js`: 1024px.
+ *
+ * Se lee una sola vez por render y solo decide el auto-abierto de entrada
+ * (ADR 071 D7), no la composición: esa la reparte CSS, así que un cambio de
+ * ancho sin cambio de estado no deja la pantalla a medias.
+ *
+ * @returns {boolean}
+ */
+function _enEscritorio() {
+  return !window.matchMedia?.('(max-width: 1023.98px)').matches;
+}
+
+/**
+ * Primer día posterior a `desde` que tiene algún evento en el mes visible, o
+ * `null` si no queda ninguno por delante (DSK.2c, ADR 071 D7).
+ *
+ * @param {Record<number, any[]>} eventos Mapa día → eventos ya mergeado.
+ * @param {number} desde Día actual, excluido.
+ * @returns {number|null}
+ */
+function _proximoDiaConEventos(eventos, desde) {
+  const dias = Object.keys(eventos)
+    .map(Number)
+    .filter(d => Number.isInteger(d) && d > desde && eventos[d]?.length > 0)
+    .sort((a, b) => a - b);
+  return dias.length > 0 ? dias[0] : null;
 }
 
 /**
@@ -141,12 +181,27 @@ export function renderAgenda() {
   // se dispara si `marcarEntradaSeccion()` armó el flag (ver su doc); un
   // renderAgenda() disparado por navegar meses/días o por state:change no
   // lo activa, así que no pisa lo que el usuario ya tenía abierto.
+  // DSK.2c (ADR 071 D7): si hoy no tiene nada, en escritorio el panel abre el
+  // próximo día con eventos del mes visible en vez de quedarse vacío. La
+  // columna del día ya está en pantalla y vacía no dice nada; con el próximo
+  // vencimiento contesta la pregunta antes de que el usuario haga clic.
+  // Acotado a escritorio: en móvil el panel nace bajo la grilla y abrirlo sin
+  // que el usuario lo pida lo obligaría a desplazarse.
   if (_entradaInicialPendiente) {
     _entradaInicialPendiente = false;
+    _autoProximo = false;
     const hoy = new Date();
     const esMesVisibleHoy = _viewYear === hoy.getFullYear() && _viewMonth === hoy.getMonth();
-    if (esMesVisibleHoy && _diaSeleccionado === null && eventos[hoy.getDate()]?.length > 0) {
-      _diaSeleccionado = hoy.getDate();
+    if (esMesVisibleHoy && _diaSeleccionado === null) {
+      if (eventos[hoy.getDate()]?.length > 0) {
+        _diaSeleccionado = hoy.getDate();
+      } else if (_enEscritorio()) {
+        const proximo = _proximoDiaConEventos(eventos, hoy.getDate());
+        if (proximo !== null) {
+          _diaSeleccionado = proximo;
+          _autoProximo     = true;
+        }
+      }
     }
   }
 
@@ -850,7 +905,12 @@ function _renderDetalleDia(evs, year, month, dia) {
   if (nIng > 0)  partes.push('día de ingreso');
   if (nMeta > 0) partes.push(nMeta === 1 ? '1 aporte a meta' : `${nMeta} aportes a metas`);
   if (nComp > 0) partes.push(nComp === 1 ? '1 compromiso' : `${nComp} compromisos`);
-  const resumen = partes.join(' · ');
+  // DSK.2c (ADR 071 D7): cuando el panel lo abrió la app (hoy no tenía nada),
+  // el subtítulo lo dice. Sin eso, el usuario podría leer ese día como si
+  // fuera hoy.
+  const resumen = _autoProximo
+    ? ['Lo próximo con fecha', ...partes].join(' · ')
+    : partes.join(' · ');
   // AG.5: total a pagar ese día, visible de inmediato junto al título (no
   // hay que desplazarse por la lista de items para verlo).
   // CAL.4c (ADR 037 D5): cuando todos los compromisos del día están

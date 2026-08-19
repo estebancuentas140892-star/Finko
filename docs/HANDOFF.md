@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-18. Última tarea cerrada: ficha 05 de la auditoría móvil, "Por pagar" recupera el dominio completo de compromisos.
+> Revisado: 2026-08-18. Última tarea cerrada: DSK.2, Calendario como mapa del mes en escritorio (sus tres rebanadas).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 4344/4351 (2026-08-18). Los 6 rojos son **BUG-028**, ajeno y verificado con `git stash` |
-| Tests E2E | 275/275 verdes, sello `36703dee0019` (2026-08-15, ficha 04). **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 4375/4381 (2026-08-18). Los 6 rojos son **BUG-028**, ajeno y verificado contra HEAD |
+| Tests E2E | 277/277 verdes, sello de DSK.2 (2026-08-18). **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v43 (`config.respaldoCifrado`, CFG.4c; migración no-op) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**DSK.2 - Calendario como mapa del mes en escritorio (Calendario), 2026-08-18**
+Única sección sin reglas desde 1024px: móvil estirado a 1376, celda de 72 x 72 en columna de 188 y panel del día bajo el pliegue ([ADR 071](DECISIONS/071-calendario-como-mapa-del-mes-en-escritorio.md)). Ahora mes a `span 8` y día a `span 4` en columna fija que desplaza su lista; la celda dice qué y cuánto (agregado desde 3 pagos) y entrar sin eventos hoy abre el próximo día con fecha. **Móvil no cambia.** Acota el [ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md): vuelve la entrada al lote, no el flujo. 31 tests, SW v550.
 
 **Ficha 05 de la auditoría móvil - "Por pagar" recupera su dominio (Por pagar + Calendario), 2026-08-18**
 `compromisos` tiene tres tipos y solo administraba dos: el alta de gasto fijo y el pago en lote vivían en Calendario. Los dos se mudan (`views/lote.js` nuevo), muere el evento `lote:abrir` y un "+ Agregar" con chooser de tres chips cubre los tres tipos. **Dos hallazgos de verificar en la app**: el lote contaba un vencido más que la pastilla y que Inicio (dos motores, unificados contra `vencidosSinPagar`), y el chip afirmaba "Vence en 21 días" sobre una cuota ya vencida. El Calendario vuelve a tablero de consulta. 20 tests nuevos, 24 movidos. SW v544 → v545.
@@ -36,9 +39,6 @@ La portada-resumen **se confirma**: es la única pantalla donde los cuatro térm
 
 **Ficha 03 de la auditoría móvil - techo y puerta para "Más" (Navegación), 2026-08-15**
 La hoja ya estaba ordenada; le faltaba resistencia a volver a llenarse. **R83**: no scrollea, techo de 444 px (mide 361), con compuerta E2E. **R84**: cuatro condiciones de admisión. Las seis entradas heredadas pasan; **Logros las falla y se queda en Ajustes**. H8 cerrado sin cambio. SW v541 → v542.
-
-**Ficha 02 de la auditoría móvil - Inicio apunta al mapa nuevo (Inicio), 2026-08-15**
-Inicio conserva forma, orden, hero y estado vacío; cambia a dónde apunta ([ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md)). Las salidas de "Pendientes del mes" van a "Por pagar"; los accesos rápidos se recalculan con un criterio nuevo (**un atajo solo se gana Inicio si ahorra un toque**) y quedan en Mis cuentas · Por pagar · Me deben; el resumen semanal declara que incluye fijos y cuotas. SW v540 → v541.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 
