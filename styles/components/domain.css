@@ -2835,6 +2835,32 @@ button.chip:focus-visible {
    financiero es de Análisis, ADR 028 D5).
    ════════════════════════════════════════════════════════════ */
 
+/* DSK.7b (ADR 076 D3): la columna de montos del ledger deja de estar dentada.
+   `_ACCIONES_POR_TIPO` da a cada tipo un número distinto de botones (gasto 2,
+   ingreso y aporte 1, transferencia 0) y la botonera es el último elemento del
+   flex, así que el monto se corría con ella: medidos tres bordes derechos
+   distintos en la misma columna, hasta 100px entre filas contiguas, en la
+   única sección de la app cuyo trabajo es recorrer una columna de cifras.
+
+   Se reserva el hueco en vez de pintar botones muertos: una fila que no ofrece
+   una acción no debe fingir que la ofrece. El ancho es el de dos botones de
+   icono (2 x --fk-space-10 + el hueco de --fk-space-2), que es el máximo que
+   emite el enrutador.
+
+   Acotado al contenedor, sin tocar `.list-item`, que comparten Gastos y Me
+   deben: mismo criterio por contenedor que `#lista-ingresos`. Y no es una
+   regla de escritorio: el dentado pasa en cualquier ancho. */
+#lista-movimientos .list-item__action {
+  flex: none;
+  min-inline-size: calc(2 * var(--fk-space-10) + var(--fk-space-2));
+  justify-content: flex-end;
+}
+#lista-movimientos .list-item:not(:has(.list-item__action))::after {
+  content: '';
+  flex: none;
+  inline-size: calc(2 * var(--fk-space-10) + var(--fk-space-2));
+}
+
 .movimientos-mes {
   font-size: var(--fk-text-xs);
   font-weight: 600;

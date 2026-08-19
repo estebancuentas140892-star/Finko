@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(movimientos): DSK.7b, la columna de montos deja de estar dentada · 2026-08-18
+
+Segunda y última rebanada del [ADR 076](DECISIONS/076-movimientos-libro-mayor-con-sus-filtros-al-lado.md), que cierra la iniciativa **DSK.7**. Cierra su D3. Medido en el navegador a 1920 x 1080 con 29 filas de cuatro tipos distintos: **un solo borde derecho (1180) donde antes había dos** (1180 y 1228), desviación 0. Ficha: [`contexto/movimientos.md`](contexto/movimientos.md).
+
+- **El defecto venía de una decisión correcta.** `_ACCIONES_POR_TIPO` da a cada tipo un número distinto de botones (gasto 2, ingreso y aporte 1, transferencia 0) y una fila sin acciones ni siquiera emite el contenedor, para no dejar un hueco muerto. Como la botonera es el último elemento del flex, el monto se corría con ella. En Gastos o en Deudas no pasa porque todas las tarjetas ofrecen lo mismo; acá conviven cuatro tipos en la misma lista, y esta es **la única sección cuyo trabajo es recorrer una columna de cifras**.
+- **Se reserva el hueco, no se pintan botones muertos.** Una fila que no ofrece una acción no debe fingir que la ofrece: el ancho reservado es el de dos botones de icono, el máximo que emite el enrutador, y para las filas que no emiten contenedor lo aporta un `::after` vacío. Verificado quitando la botonera de una fila en vivo: su monto se queda exactamente donde el de las demás.
+- **No es una regla de escritorio**: el dentado pasa en cualquier ancho, a 1376 solo se nota más porque la columna es más larga. A 375 las filas quedan todas con el mismo reparto y ningún título se corta.
+- **Acotado al contenedor**, sin tocar `.list-item`, que comparten Gastos y Me deben. Mismo criterio por contenedor que ya usa `#lista-ingresos`.
+- Sin tests nuevos: la corrección es de alineación y no cambia marcado ni cadenas. 125 verdes en `tests/unit/movimientos.test.js`, que cubren el enrutado de acciones por tipo, que es lo que sí decide la vista.
+
 ### feat(movimientos): DSK.7a, los filtros dejan de servir solo al principio · 2026-08-18
 
 Primera de las dos rebanadas del [ADR 076](DECISIONS/076-movimientos-libro-mayor-con-sus-filtros-al-lado.md). Cierra sus D1, D2, D4, D5 y D6. Desde 1440px el ledger toma `span 8` y los filtros `span 4` **pegajosos**. Medido en el navegador a 1920 x 1080: lista de 909, columna de 443, y con la página desplazada 900px los filtros quedan en y=24 y el rótulo del mes pegado en y=0. Ficha: [`contexto/movimientos.md`](contexto/movimientos.md).

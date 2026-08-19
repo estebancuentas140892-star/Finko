@@ -34,17 +34,6 @@
 - Avance     : **02/04**. a) purga y cabecera (D2, D10), cerrada. b) banda de contexto (D4, D5, D6), cerrada. c) columnas 4 + 8 (D7). d) fusión de obligaciones y pie (D8, D9).
 - Restricción: **alcance escritorio, desde 1024px.** Móvil no se toca: es territorio de MOV.1, que sigue abierta. Las dos iniciativas comparten `index.html` y corren en sesiones distintas: `git status` antes de cada rebanada, y stagear solo los archivos propios.
 
-### DSK.7 - Movimientos: un libro mayor con sus filtros al lado, 2 rebanadas
-- Prioridad  : alta
-- Estado     : en proceso (iniciada 2026-08-18)
-- Área       : ambos
-- Objetivo   : implementar la auditoría "Movimientos 1920" de Claude Design ([ADR 076](DECISIONS/076-movimientos-libro-mayor-con-sus-filtros-al-lado.md)): los filtros solo sirven al principio y la columna de montos está dentada
-- Secciones  : Movimientos
-- Archivos   : `styles/responsive.css`, `styles/components/domain.css`
-- Depende de : nada
-- Avance     : **00/02**. a) lista a 8 y filtros a 4 pegajosos, campos de fecha acotados, "Volver" oculto en escritorio y divisor de mes que acompaña (D1, D2, D4, D5, D6). b) la columna de montos deja de estar dentada (D3).
-- Restricción: **umbral 1440px** para la composición. D3 vale en todos los anchos: el dentado no es de escritorio. `.list-item` no se toca, la corrección va acotada al contenedor del ledger.
-
 ---
 
 ## Cómo usar este tablero
