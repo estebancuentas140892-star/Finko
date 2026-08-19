@@ -130,9 +130,21 @@ function _renderResumenGrupos(anio, mes) {
   // El DOM sigue ese orden visual, que es también el del asistente de
   // distribución (Necesidades → Ahorro → Estilo de vida).
   const ordenCards = ['necesidades', 'ahorro', 'estilo-de-vida'];
-  const cards = ordenCards
-    .map(g => _renderGrupoCard(g, resumen[g], desglosePorGrupo[g], _renderNudgesGrupo(mensajes, g)))
-    .join('');
+  const card = g => _renderGrupoCard(g, resumen[g], desglosePorGrupo[g], _renderNudgesGrupo(mensajes, g));
+
+  // DSK.8a (ADR 077 D1): los dos grupos que se LEEN viajan juntos en un
+  // envoltorio, y el que se OPERA queda suelto al lado. El envoltorio es
+  // `display: contents` bajo 1440px (analysis.css), así que ahí no es una caja
+  // y el orden del DOM queda igual que antes. Existe porque sin él las dos
+  // tarjetas de la izquierda son filas de la misma rejilla que la tarjeta alta
+  // de la derecha, y esa altura se reparte entre ellas: medido, 264px de hueco
+  // entre Necesidades y Ahorro.
+  const cards = `
+    <div class="grupos-resumen__col">
+      ${card(ordenCards[0])}
+      ${card(ordenCards[1])}
+    </div>
+    ${card(ordenCards[2])}`;
 
   return `
     <section class="grupos-resumen" aria-label="Seguimiento de tus tres grupos financieros este mes">

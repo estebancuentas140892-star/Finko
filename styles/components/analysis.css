@@ -511,6 +511,14 @@
   grid-column: 1 / -1;
 }
 
+/* DSK.8a (ADR 077 D1): envoltorio de los dos grupos que se leen. Por defecto
+   `display: contents`, así que bajo 1440px no es una caja y las tres tarjetas
+   siguen siendo hijas directas de la rejilla, exactamente como antes. La
+   composición de escritorio vive en responsive.css. */
+.grupos-resumen__col {
+  display: contents;
+}
+
 .grupos-resumen__nota {
   font-size: var(--fk-fs-xs);
   color: var(--fk-text-muted);
@@ -792,6 +800,25 @@
 
 .envelope[data-estado="alerta"]   .envelope__nota { color: var(--fk-warning-text); }
 .envelope[data-estado="excedido"] .envelope__nota { color: var(--fk-danger-text); }
+
+/* DSK.8a (ADR 077 D5): el texto del sobre excedido vuelve a pasar AA. Sobre el
+   fondo teñido del estado (`--fk-danger-bg`, que compone a rgb(59,40,52)) el
+   subtítulo medía 4,24:1 y la nota 4,09:1, contra un umbral de 4,5. El mismo
+   subtítulo en un sobre normal mide 5,82:1: no es el componente, es el tinte
+   del estado, y justo en el estado que más exige que se lea.
+
+   La nota no se queda en rojo porque no hay rojo que la salve: en tema oscuro
+   `--fk-danger-text` resuelve al mismo #ff4757 que `--fk-danger`, así que subir
+   el tono exigiría inventar un color. Tampoco hace falta: el estado ya lo dicen
+   el borde, la barra roja y la palabra "Excedido" de la línea de meta, que está
+   justo encima en ese tono y a 5,82:1. La nota es la prosa que lo explica, no
+   la señal.
+
+   Acotado al estado excedido: normal y alerta no cambian, y el tinte del sobre
+   se conserva. Vale en todos los anchos: un umbral de contraste no depende del
+   tamaño de la ventana. */
+.envelope[data-estado="excedido"] .envelope__subtitle,
+.envelope[data-estado="excedido"] .envelope__nota { color: var(--fk-text-secondary); }
 
 .envelope__actions {
   display: flex;

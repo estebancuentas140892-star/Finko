@@ -1629,3 +1629,69 @@
     background: var(--fk-bg-base);
   }
 }
+
+/* ── LÍMITES DE GASTO EN ESCRITORIO (>= 1440px, DSK.8a, ADR 077 D1/D2/D3) ─
+   Las tres tarjetas de grupo dejaron de ser comparables: Necesidades 680 x 263,
+   Ahorro 680 x 263 y Estilo de vida 1376 x 1494, o sea **5,7 veces** sus
+   hermanas. Empieza a 510px del inicio del contenido, así que ninguno de sus
+   sobres entra en la primera pantalla, y ahí vive la segunda pregunta de la
+   sección: dónde le pongo freno.
+
+   La causa no es la contención, que está bien decidida (ADR 019: los topes son
+   una subdivisión del presupuesto de Estilo de vida y viven dentro de su
+   tarjeta). La causa es que a 1376 los sobres se apilan a ancho completo, y son
+   ellos los que la hacen crecer.
+
+   Por eso el reparto cambia el ancho y NO saca los topes de su tarjeta. */
+@media (min-width: 1440px) {
+
+  /* D1: cinco y siete. Es el único reparto de la serie que no usa 8 y 4: allá
+     la columna estrecha lleva un panel o unos controles, y acá lleva dos
+     tarjetas de grupo completas con sus tres cifras y su desglose. A span 4
+     (~442px) `.grupo-card__figs` se aprieta; a span 5 (~559) respira. Y la
+     ancha necesita 7 y no 8 porque con ~793 sus sobres a dos columnas dan
+     ~372, que es el ancho natural de un sobre. */
+  #panel-presupuesto .grupos-resumen__grid {
+    grid-template-columns: repeat(12, 1fr);
+    align-items: start;
+  }
+  #panel-presupuesto .grupos-resumen__col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fk-space-md);
+    grid-column: 1 / span 5;
+    min-width: 0;
+  }
+  #panel-presupuesto .grupo-card[data-grupo="estilo-de-vida"] { grid-column: 6 / -1; }
+
+  /* El envoltorio es una caja y no dos filas de la rejilla a propósito: con
+     las dos tarjetas como filas, la altura de la tarjeta alta de la derecha se
+     reparte entre ellas y deja un hueco entre Necesidades y Ahorro (medido:
+     264px). Con la columna propia, cada lado crece con su contenido. */
+
+  /* D2: los sobres a dos columnas dentro de su tarjeta. `.envelope` no se
+     toca: a 1342 de ancho un sobre deja más de 1050px entre el nombre de la
+     categoría y sus cifras, y su barra mide 1309 para expresar un porcentaje
+     (cada píxel vale 0,08 %, precisión que el dato no tiene). */
+  #panel-presupuesto .envelope-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--fk-space-3);
+  }
+
+  /* Las filas de "Gastas acá y no tiene tope" son cortas (categoría, monto y
+     una acción) y a ancho completo dejan el mismo vacío. */
+  #panel-presupuesto .envelope-huerfanas__list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--fk-space-2);
+  }
+
+  /* D3: los dos textos que enseñan el concepto se acotan a longitud de
+     lectura. Caían en un renglón de 1342px, y son justamente los que explican
+     qué es un tope a alguien que puede no saberlo. */
+  #panel-presupuesto .estilo-limites__intro,
+  #panel-presupuesto .estilo-olla {
+    max-width: 62ch;
+  }
+}

@@ -1435,3 +1435,43 @@ describe('renderPanelPresupuesto() - avisos del motor (LIM.1c, ADR 044)', () => 
     expect(panel().innerHTML).not.toContain('meses pagando');
   });
 });
+
+// ── DSK.8a (ADR 077 D1) - el envoltorio de los dos grupos que se leen ──
+
+describe('renderPanelPresupuesto() - columna de grupos (DSK.8a)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-presupuesto"></div>';
+    S.gastos = [];
+    S.presupuestos = [];
+    S.compromisos = [];
+    S.ingresos = [{
+      id: 'i1', descripcion: 'Nomina', montoMensual: 4_000_000, monto: 4_000_000,
+      frecuencia: 'Mensual', diaPago: 5, activo: true,
+    }];
+  });
+
+  // El envoltorio existe porque sin él las dos tarjetas de la izquierda son
+  // filas de la misma rejilla que la tarjeta alta de la derecha, y esa altura
+  // se reparte entre ellas: medido, 264px de hueco entre Necesidades y Ahorro.
+  it('Necesidades y Ahorro viajan juntos; Estilo de vida queda suelto', () => {
+    renderPanelPresupuesto();
+    const grid = document.querySelector('.grupos-resumen__grid');
+    if (!grid) return; // sin plan del mes la sección pinta su estado vacío
+    const col = grid.querySelector('.grupos-resumen__col');
+    expect(col).not.toBeNull();
+    const dentro = [...col.querySelectorAll('.grupo-card')].map(c => c.dataset.grupo);
+    expect(dentro).toEqual(['necesidades', 'ahorro']);
+    const sueltas = [...grid.children]
+      .filter(n => n.classList.contains('grupo-card'))
+      .map(c => c.dataset.grupo);
+    expect(sueltas).toEqual(['estilo-de-vida']);
+  });
+
+  it('el orden de lectura no cambia: Necesidades, Ahorro y Estilo de vida', () => {
+    renderPanelPresupuesto();
+    const grid = document.querySelector('.grupos-resumen__grid');
+    if (!grid) return;
+    const orden = [...grid.querySelectorAll('.grupo-card')].map(c => c.dataset.grupo);
+    expect(orden).toEqual(['necesidades', 'ahorro', 'estilo-de-vida']);
+  });
+});

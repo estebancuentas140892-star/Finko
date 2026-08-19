@@ -34,6 +34,17 @@
 - Avance     : **02/04**. a) purga y cabecera (D2, D10), cerrada. b) banda de contexto (D4, D5, D6), cerrada. c) columnas 4 + 8 (D7). d) fusión de obligaciones y pie (D8, D9).
 - Restricción: **alcance escritorio, desde 1024px.** Móvil no se toca: es territorio de MOV.1, que sigue abierta. Las dos iniciativas comparten `index.html` y corren en sesiones distintas: `git status` antes de cada rebanada, y stagear solo los archivos propios.
 
+### DSK.8 - Límites de gasto: los tres grupos a la vista, 2 rebanadas
+- Prioridad  : alta
+- Estado     : en proceso (iniciada 2026-08-18)
+- Área       : ambos
+- Objetivo   : implementar la auditoría "Límites de gasto 1920" de Claude Design ([ADR 077](DECISIONS/077-limites-de-gasto-tres-grupos-a-la-vista.md)): una tarjeta mide 5,7 veces sus hermanas y sus sobres no entran en la primera pantalla
+- Secciones  : Límites de gasto (dominio `presupuesto`)
+- Archivos   : `styles/responsive.css`, `styles/components/analysis.css`, `modules/dominio/presupuesto/view.js`, `index.html`
+- Depende de : nada
+- Avance     : **00/02**. a) reparto 5 + 7 sin romper la contención, sobres y huérfanas a dos columnas, párrafos a 62ch y el sobre excedido de vuelta en AA (D1, D2, D3, D5). b) un solo "Nuevo límite" en pantalla, con el nombre correcto en sus dos apariciones (D4).
+- Restricción: **umbral 1440px** para la composición; el contraste y la copia valen en todos los anchos. El [ADR 019](DECISIONS/019-limites-por-rol.md) no se toca: los topes siguen dentro de Estilo de vida. `modules/dominio/presupuesto/view.js` lo está editando MOV.1 en otra sesión: stagear solo los hunks propios.
+
 ---
 
 ## Cómo usar este tablero

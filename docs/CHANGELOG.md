@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(presupuesto): DSK.8a, los tres grupos vuelven a ser comparables · 2026-08-18
+
+Primera de las dos rebanadas del [ADR 077](DECISIONS/077-limites-de-gasto-tres-grupos-a-la-vista.md). Cierra sus D1, D2, D3 y D5. Desde 1440px Necesidades y Ahorro van en una columna de `span 5` y Estilo de vida en una de `span 7`, con sus sobres a dos columnas. Medido en el navegador a 1920 x 1080: columnas de 564 y 796, sobres de 375 (antes 1342), y el primer sobre arranca en y=603, **dentro del pliegue**; antes ninguno entraba. Ficha: [`contexto/limites.md`](contexto/limites.md).
+
+- **Una tarjeta medía 5,7 veces sus hermanas** (Necesidades y Ahorro 680 x 263, Estilo de vida 1376 x 1494). La causa no era la contención sino el ancho: a 1376 los sobres se apilan a ancho completo y son ellos los que hacen crecer la tarjeta.
+- **Los topes NO salen de su tarjeta**, y esa es la decisión que sostiene todo lo demás: el [ADR 019](DECISIONS/019-limites-por-rol.md) retiró en su día el bloque suelto de límites, porque la línea de olla finita ("tus límites cubren $X de los $Y de tu Estilo de vida") solo se sostiene si la relación es visible. Se cambia el ancho de la caja, no dónde viven.
+- **Cinco y siete, y no ocho y cuatro** como el resto de la serie: acá la columna estrecha lleva dos tarjetas de grupo completas, y a `span 4` (~442px) sus tres cifras se aprietan. La ancha necesita 7 porque con ~793 sus sobres a dos columnas dan ~372, el ancho natural de un sobre.
+- **Un envoltorio nuevo para los dos grupos que se leen**, en `display: contents` bajo 1440px. Existe por una medición: con las dos tarjetas como filas de la misma rejilla que la tarjeta alta de la derecha, esa altura se reparte entre ellas y dejaba **264px de hueco** entre Necesidades y Ahorro. Con su propia columna, cada lado crece con su contenido (hueco medido después: 16px, el del `gap`).
+- **D5, el sobre excedido vuelve a pasar AA.** Sobre el fondo teñido del estado, que compone a `rgb(59,40,52)`, el subtítulo medía 4,24:1 y la nota 4,09:1. Ahora los dos van a `--fk-text-secondary`: **5,83:1 medido en el navegador**. La nota no se queda en rojo porque en tema oscuro `--fk-danger-text` resuelve al mismo color que `--fk-danger`: subir el tono exigiría inventar uno. El estado ya lo dicen el borde, la barra roja y la palabra "Excedido" de la línea de meta. **Vale en todos los anchos**: un umbral de contraste no depende del tamaño de la ventana.
+- **Tercer umbral de contraste que aparece en la serie**, tras el color de Calendario y la opacidad de grupo de Me deben. Las tres veces por lo mismo: mirar un color aislado en vez de sobre la superficie compuesta que le toca.
+- Tests: 2 nuevos en `tests/unit/presupuesto.test.js` (el envoltorio agrupa Necesidades y Ahorro y deja Estilo de vida suelto; el orden de lectura no cambia). 152 en el archivo.
+
 ### feat(movimientos): DSK.7b, la columna de montos deja de estar dentada · 2026-08-18
 
 Segunda y última rebanada del [ADR 076](DECISIONS/076-movimientos-libro-mayor-con-sus-filtros-al-lado.md), que cierra la iniciativa **DSK.7**. Cierra su D3. Medido en el navegador a 1920 x 1080 con 29 filas de cuatro tipos distintos: **un solo borde derecho (1180) donde antes había dos** (1180 y 1228), desviación 0. Ficha: [`contexto/movimientos.md`](contexto/movimientos.md).
