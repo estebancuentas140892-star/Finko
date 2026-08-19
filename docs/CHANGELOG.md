@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(compromisos): DSK.4a, la estrategia se queda a la vista mientras la lista baja · 2026-08-18
+
+Primera de las dos rebanadas del [ADR 073](DECISIONS/073-deudas-inventario-con-su-herramienta-al-lado.md). Cierra sus D1, D2 y D4. Desde 1440px la sección deja de apilar herramienta e inventario en el mismo eje: la lista toma `span 8` y la estrategia `span 4` **pegajosa**. Medido en el navegador a 1920 x 1080: banda de 1376 x 108 (antes 162), lista de 909, columna de 443, y la primera deuda arranca en y=504, dentro del pliegue (antes la primera tarjeta empezaba a 1364px del inicio del contenido, o sea ninguna deuda visible al abrir). Ficha: [`contexto/deudas.md`](contexto/deudas.md).
+
+- **D2 es el hallazgo que decide la composición.** Del selector Avalancha/Bola de nieve al primer badge de orden había 1057px: elegir estrategia reordena la lista y le pone a cada deuda su 1°, 2°, 3°, y ese efecto ocurría entero fuera de la pantalla. Medido tras el cambio: con la página desplazada 700px, el selector queda en y=55 y el primer badge en y=207. **Las dos cosas a la vista al mismo tiempo**, que es el bucle central de la sección.
+- **Pegajosa y no de alto igualado.** En Calendario la columna del día iguala la altura del mes, que mide siempre lo mismo; acá la lista crece con el número de deudas y no hay altura contra la que igualar. La columna se fija al pliegue y desplaza por dentro, que además es lo que necesita el plan inviable, cuyo diagnóstico la alarga.
+- **El tope de alto va contra el viewport, y es la primera regla de composición del proyecto que depende del alto de la ventana.** `calc(100dvh - barra superior - 14rem)`. Las 14rem no son redondeo: la columna arranca 224px por debajo de la barra, así que topar al pliegue entero la desbordaba justo esa cantidad antes de quedar fijada. Medido a 900px de alto: la columna mide 620 y su pie cae exactamente en 900.
+- **La rejilla se monta sobre los bloques que la sección ya tiene**, colocándolos por id, sin envoltorios nuevos ni un nodo de más. El orden del DOM (y con él móvil y los lectores de pantalla) no cambia. Las filas se declaran a mano porque la estrategia tiene que arrancar arriba de su columna: con colocación automática caía debajo del bloque anterior.
+- **D4, sin deudas la lista ocupa las doce columnas.** Con la lista vacía `renderEstrategiaPago()` sale temprano y no pinta nada, así que el reparto habría dejado un tercio de pantalla en blanco al lado del estado vacío. Verificado: lista de 1137 y estado vacío visible.
+- **La banda del total** repite el patrón de Inicio, Calendario y Gastos: el hero pierde su degradado de identidad y pasa a horizontal, con el ojo pegado al final del rótulo en vez de flotando en la esquina absoluta. Baja de 162 a 108 de alto.
+- **El umbral es 1440 y no 1024**: a 1024 la columna dependiente mediría ~250px y habría que rediseñar la herramienta en vez de recolocarla. Medido a 1441: columna de 360. A 1280 la sección no cambia nada (`display: block`, hero de 162, estrategia estática, ojo absoluto).
+
 ### feat(gastos): DSK.3b, la fila dice de que cuenta salio el dinero · 2026-08-18
 
 Segunda y última rebanada del [ADR 072](DECISIONS/072-gastos-cabecera-de-banda-y-fila-con-cuenta.md), que cierra la iniciativa **DSK.3**. Cierra sus D2, D4, D5 y D7. La fila abre su subtítulo con la cuenta de origen, y desde 1680px el total del día cae sobre la columna de montos que suma, la fila deja de levantarse al apuntar y la lista deja de entrar en cascada. Medido en el navegador a 1920 x 1080: total del día y montos a plomo con **1px** de desfase (antes ~164). Ficha: [`contexto/gastos.md`](contexto/gastos.md).

@@ -34,6 +34,17 @@
 - Avance     : **02/04**. a) purga y cabecera (D2, D10), cerrada. b) banda de contexto (D4, D5, D6), cerrada. c) columnas 4 + 8 (D7). d) fusión de obligaciones y pie (D8, D9).
 - Restricción: **alcance escritorio, desde 1024px.** Móvil no se toca: es territorio de MOV.1, que sigue abierta. Las dos iniciativas comparten `index.html` y corren en sesiones distintas: `git status` antes de cada rebanada, y stagear solo los archivos propios.
 
+### DSK.4 - Deudas en escritorio: inventario con su herramienta al lado, 2 rebanadas
+- Prioridad  : alta
+- Estado     : en proceso (iniciada 2026-08-18)
+- Área       : ambos
+- Objetivo   : implementar la auditoría "Deudas 1920" de Claude Design ([ADR 073](DECISIONS/073-deudas-inventario-con-su-herramienta-al-lado.md)): que elegir estrategia y ver su efecto quepan en la misma pantalla
+- Secciones  : Por pagar (dominio `compromisos`)
+- Archivos   : `styles/responsive.css`, `index.html`, `modules/dominio/compromisos/views/lista.js`
+- Depende de : nada
+- Avance     : **00/02**. a) banda del total, lista a 8 y estrategia pegajosa a 4, lista a 12 sin deudas (D1, D2, D4). b) tarjeta de deuda a dos renglones, botón dimensionado y el "+" fuera del botón de cabecera (D3, D5).
+- Restricción: **umbral 1440px**: bajo ese ancho la columna dependiente no llega a 350px y habría que rediseñar la herramienta, no recolocarla. Móvil y tablet no se tocan.
+
 ---
 
 ## Cómo usar este tablero

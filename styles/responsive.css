@@ -1228,3 +1228,122 @@
      sin `!important`. */
   #lista-gastos .list-item { animation: none; }
 }
+
+/* ── POR PAGAR EN ESCRITORIO (>= 1440px, DSK.4a, ADR 073 D1/D2/D4) ─────
+   La sección no está estirada: está apilada. La herramienta de decisión (la
+   estrategia) y el inventario (la lista) compiten por el mismo eje vertical,
+   y a este ancho hay otro eje disponible.
+
+   Los dos defectos que corrige, medidos en el código vivo:
+     D1  la primera tarjeta de deuda empieza a 1364px del inicio del
+         contenido: por delante van el hero (162) y la tarjeta de estrategia
+         (1083). La sección abre mostrando una herramienta de simulación, no
+         lo que la herramienta ordena.
+     D2  del selector Avalancha/Bola de nieve al primer badge de orden hay
+         1057px. Reordenar la lista es el único efecto visible de elegir
+         estrategia, y ocurre entero fuera de la pantalla.
+
+   El umbral es 1440 y no 1024 porque a 1024 la columna dependiente mediría
+   ~250px: sus dos tarjetas de estrategia, sus tres tiles de palanca y los
+   campos del simulador habría que rediseñarlos, no recolocarlos. A 1440 la
+   columna pasa de 350. */
+@media (min-width: 1440px) {
+
+  /* D1: la rejilla se monta sobre los bloques que la sección ya tiene, sin
+     envoltorios nuevos. El orden del DOM no cambia ni un nodo, así que móvil
+     y los lectores de pantalla siguen leyendo hero, lote, estrategia, nudge y
+     lista en ese orden; lo único que cambia es dónde se colocan. */
+  #sec-compromisos.section {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    column-gap: var(--fk-space-6);
+    align-items: start;
+  }
+
+  #sec-compromisos > .section__header      { grid-column: 1 / -1; grid-row: 1; }
+  #sec-compromisos > #tabs-compromisos     { grid-column: 1 / -1; grid-row: 2; }
+  #sec-compromisos > #proposito-compromisos{ grid-column: 1 / -1; grid-row: 3; }
+  #sec-compromisos > #compromisos-hero     { grid-column: 1 / -1; grid-row: 4; }
+
+  /* Las filas se declaran a mano y no por auto-colocación: la estrategia
+     tiene que arrancar en la fila del lote (arriba del todo de su columna) y
+     abarcar hacia abajo, y con colocación automática caería debajo del
+     bloque anterior de su misma columna. Los tres bloques de la izquierda son
+     un número fijo, así que la cuenta no se desincroniza sola: si mañana
+     entra un cuarto, entra acá. */
+  #sec-compromisos > #lote-compromisos        { grid-column: 1 / span 8; grid-row: 5; }
+  #sec-compromisos > #estrategia-pago         { grid-column: 9 / -1;     grid-row: 5 / span 3; }
+  #sec-compromisos > #nudge-deudas-durmiendo  { grid-column: 1 / span 8; grid-row: 6; }
+  #sec-compromisos > #lista-compromisos       { grid-column: 1 / span 8; grid-row: 7; }
+
+  /* D4: sin deudas la estrategia no se pinta (`renderEstrategiaPago` sale
+     temprano), así que el reparto dejaría el estado vacío con un tercio de
+     pantalla en blanco al lado. Misma solución que el mes sin día abierto de
+     Calendario. */
+  #sec-compromisos:not(:has(> #estrategia-pago .estrategia-card)) > #lote-compromisos,
+  #sec-compromisos:not(:has(> #estrategia-pago .estrategia-card)) > #nudge-deudas-durmiendo,
+  #sec-compromisos:not(:has(> #estrategia-pago .estrategia-card)) > #lista-compromisos {
+    grid-column: 1 / -1;
+  }
+
+  /* D2: la columna se fija al pliegue y se queda a la vista mientras la lista
+     se desplaza. No se iguala a la altura de la lista, como sí se hizo en
+     Calendario: allá el mes mide siempre lo mismo, acá la lista crece con el
+     número de deudas y no hay altura contra la que igualar.
+
+     El tope va contra el VIEWPORT, y es la única regla de composición del
+     proyecto que depende del alto de la ventana. Los descuentos son los
+     bloques que quedan por encima: la barra superior y las 14rem que suman el
+     aire de la sección, la cabecera y la banda del total con su hueco. Es el
+     alto disponible BAJO el borde superior de la columna en reposo, no el
+     pliegue entero: medido en el navegador, la columna arranca a 224px por
+     debajo de la barra, así que topar al pliegue entero la desbordaba justo
+     esa cantidad antes de quedar fijada. Con este tope llega al pliegue en
+     reposo y le sobra holgura ya fijada. Con desplazamiento interno porque el
+     plan inviable alarga la columna con su diagnóstico. */
+  #sec-compromisos > #estrategia-pago {
+    position: sticky;
+    inset-block-start: var(--fk-space-6);
+    align-self: start;
+    max-block-size: calc(100dvh - var(--fk-topbar-height) - 14rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  #sec-compromisos > #estrategia-pago .estrategia-card { margin-top: 0; }
+
+  /* D1: la banda del total. El hero gasta 162px de alto y 1376 de ancho para
+     tres líneas apiladas; en horizontal dice lo mismo en la mitad del alto.
+     Mismo patrón de banda que Inicio (ADR 070 D6), Calendario (ADR 071 D4) y
+     Gastos (ADR 072 D1), y pierde el degradado de identidad por el mismo
+     motivo: el color de sección detrás de una cifra la tiñe de estado, y lo
+     que se debe no es un estado. */
+  #compromisos-hero .hero-compromisos {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: var(--fk-space-3);
+    padding: var(--fk-space-5) var(--fk-space-6);
+    border-color: var(--fk-border-subtle);
+    border-radius: var(--fk-radius-lg);
+    background: var(--fk-bg-surface);
+    box-shadow: none;
+    text-align: start;
+  }
+  #compromisos-hero .hero-compromisos__label { grid-area: 1 / 1; margin-block-end: 0; }
+  #compromisos-hero .hero-compromisos__valor { grid-area: 2 / 1 / auto / span 2; }
+  #compromisos-hero .hero-compromisos__meta  { grid-area: 1 / 3 / span 2 / -1; margin-block-start: 0; justify-content: flex-end; }
+
+  /* El ojo deja la esquina absoluta y se pega al final de su rótulo, igual
+     que en la banda de Inicio: deja de flotar y dice a qué se refiere. */
+  #compromisos-hero .hero-compromisos__ojo {
+    position: static;
+    grid-area: 1 / 2;
+    justify-self: start;
+    width: auto;
+    height: auto;
+    padding: var(--fk-space-1);
+    border: 0;
+    background: none;
+  }
+  #compromisos-hero .hero-compromisos__ojo:hover { background: none; color: var(--fk-text-primary); }
+}
