@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   generarResumen,
   calcularActivos,
@@ -2816,5 +2816,54 @@ describe('lecturaComparacion()', () => {
 
   it('por debajo del margen dice cuánto menos gastó', () => {
     expect(lecturaComparacion(comp(600_000, 1_000_000))).toBe('Gastaste 40% menos que el mes anterior.');
+  });
+});
+
+// ── DSK.9b (ADR 078 D3) - el viewBox sigue al ancho al que se pinta ──
+
+describe('renderAnalisis() - viewBox de la sparkline (DSK.9b)', () => {
+  // happy-dom no tiene viewport real: se falsea `matchMedia`, mismo apaño que
+  // render.test.js. La consulta del helper es `(min-width: 1440px)`.
+  const matchMediaReal = window.matchMedia;
+  const anchoDe = esEscritorio => { window.matchMedia = () => ({ matches: esEscritorio }); };
+
+  const gastosDeDosMeses = () => {
+    const hoy = new Date();
+    const mes = (k) => {
+      const d = new Date(hoy.getFullYear(), hoy.getMonth() - k, 10);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-10`;
+    };
+    return [
+      { id: 'g1', categoria: 'Mercado', monto: 300_000, fecha: mes(0) },
+      { id: 'g2', categoria: 'Mercado', monto: 500_000, fecha: mes(1) },
+      { id: 'g3', categoria: 'Transporte', monto: 120_000, fecha: mes(2) },
+    ];
+  };
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-analisis"></div>';
+    S.gastos = gastosDeDosMeses();
+    S.ingresos = [];
+    S.cuentas = [];
+    S.compromisos = [];
+    S.config = { ...(S.config ?? {}), ocultarSaldo: false };
+  });
+
+  afterEach(() => { window.matchMedia = matchMediaReal; });
+
+  const viewBox = () => document.querySelector('#panel-analisis .chart-sparkline__svg svg')?.getAttribute('viewBox');
+
+  // El literal de DIS.10 servía para un ancho y falló al cambiar de ancho:
+  // medido a 1376, la deformación había vuelto a 3,73:1.
+  it('en escritorio el viewBox mide lo que la tarjeta a media fila', () => {
+    anchoDe(true);
+    renderAnalisis();
+    expect(viewBox()).toBe('0 0 640 80');
+  });
+
+  it('bajo el umbral conserva el 360 que DIS.10 midió para móvil', () => {
+    anchoDe(false);
+    renderAnalisis();
+    expect(viewBox()).toBe('0 0 360 80');
   });
 });

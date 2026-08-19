@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(analisis): DSK.9b, la sparkline deja de deformarse · 2026-08-18
+
+Segunda y última rebanada del [ADR 078](DECISIONS/078-analisis-en-dos-filas-de-dos.md), que cierra la iniciativa **DSK.9** y con ella la serie de escritorio de las nueve secciones auditadas. Cierra su D3. Medido en el navegador a 1920 x 1080: SVG de **640 x 80 con viewBox de 640 x 80, anisotropía 1:1**; antes se pintaba a 1342 con un viewBox de 360, o sea **3,73:1**. Ficha: [`contexto/analisis.md`](contexto/analisis.md).
+
+- **Lo que se deformaba era la pendiente, no el grosor.** `sparkline()` emite el SVG sin `width` ni `height` y con `preserveAspectRatio="none"`, así que toma el ancho del contenedor y estira el dibujo; del grosor ya se encarga su `non-scaling-stroke`. Con la caja cuatro veces más ancha que el viewBox, cada mes ocupaba casi 120px horizontales para 68 verticales: **una subida real del 30 % se dibujaba casi plana**, en el único gráfico de la app que muestra evolución.
+- **Esta corrección ya se había hecho una vez, y caducó.** DIS.10 bajó el viewBox de 600 a 360 porque a ~323px de ancho la anisotropía era 1,86:1. El arreglo era correcto y el literal no: sirve para un ancho y falla en el siguiente. Ahora el ancho lo decide `_anchoSparkline()` y la regla queda escrita en el código y en el ADR: **el viewBox tiene que seguir al ancho al que el gráfico se pinta**.
+- **Acotar solo la caja por CSS no habría bastado**: con la caja a 640 y el viewBox en 360 quedaban 1,78:1. Hacen falta las dos mitades, y por eso la regla de CSS y el valor de JS son el mismo número.
+- **Móvil no cambia**: bajo 1440px sigue el 360 que DIS.10 midió para la tarjeta de móvil. Verificado a 375: viewBox 360 y el panel en una columna.
+- Como en el resto de la serie, **un cambio de ancho de ventana sin cambio de estado no repinta**: limitación ya aceptada en IN.9b y DSK.2c, y acá cuesta como mucho una sparkline con la pendiente de la otra medida hasta la siguiente acción.
+- Tests: 2 nuevos en `tests/unit/analisis.test.js` (el viewBox mide 640 en escritorio y 360 bajo el umbral, con `matchMedia` falseado como en `render.test.js`). 284 en el archivo.
+
 ### feat(analisis): DSK.9a, Análisis pasa a dos filas de dos · 2026-08-18
 
 Primera de las dos rebanadas del [ADR 078](DECISIONS/078-analisis-en-dos-filas-de-dos.md). Cierra sus D1, D2 y D4. Desde 1440px las cuatro tarjetas se emparejan por la pregunta que contestan: score y patrimonio arriba ("¿cómo estoy?"), tendencia y categorías abajo ("¿a dónde va?"). Medido en el navegador a 1920 x 1080: las cuatro a 676 de ancho, las dos primeras en y=148 y las dos segundas en y=580; el panel baja de 1,7 pliegues a 1676px. Ficha: [`contexto/analisis.md`](contexto/analisis.md).

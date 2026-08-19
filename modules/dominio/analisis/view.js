@@ -870,6 +870,31 @@ function _renderPorCategoria(gastoMes, segmentos = [], lectura = '') {
     </section>`;
 }
 
+/**
+ * Ancho del viewBox de la sparkline, en píxeles del sistema de coordenadas del
+ * SVG (DSK.9b, ADR 078 D3).
+ *
+ * `sparkline()` emite el SVG sin `width` ni `height` y con
+ * `preserveAspectRatio="none"`: toma el ancho de su contenedor y estira el
+ * dibujo hasta llenarlo. Lo que se deforma es la PENDIENTE, no el grosor (de
+ * eso se encarga su `non-scaling-stroke`), así que con el viewBox desalineado
+ * una subida real del 30 % se dibuja casi plana.
+ *
+ * Los dos valores son medidas, no gustos: 360 es lo que DIS.10 midió para la
+ * tarjeta de móvil, y 640 es el ancho al que la tarjeta se pinta cuando pasa a
+ * media fila desde 1440px.
+ *
+ * Como en el resto de la serie de escritorio, un cambio de ancho de ventana sin
+ * cambio de estado no repinta: la limitación ya está aceptada en IN.9b y en
+ * DSK.2c, y acá cuesta como mucho una sparkline con la pendiente de la otra
+ * medida hasta la siguiente acción.
+ *
+ * @returns {number}
+ */
+function _anchoSparkline() {
+  return window.matchMedia?.('(min-width: 1440px)').matches ? 640 : 360;
+}
+
 function _renderTendencia(serie, lectura = '') {
   if (!serie || serie.length === 0) return '';
 
@@ -906,13 +931,20 @@ function _renderTendencia(serie, lectura = '') {
 
   // La serie es contexto, no dato semántico: pizarra de sección (ADR 038 D3),
   // variante -text para pasar el umbral no textual en tema claro.
-  // DIS.10 (C4, regla R27): 360 y no 600. El SVG rinde ~323px de ancho, así
-  // que un viewBox de 600 lo comprimía a la mitad (anisotropía 1,86:1) y el
-  // trazo salía más delgado en los tramos planos que en las subidas. Con 360
-  // el residuo queda en 1,12:1 y el `non-scaling-stroke` de `sparkline()`
-  // cubre el resto.
+  // DIS.10 (C4, regla R27): 360 y no 600. El SVG rinde ~323px de ancho en
+  // móvil, así que un viewBox de 600 lo comprimía a la mitad (anisotropía
+  // 1,86:1) y el trazo salía más delgado en los tramos planos que en las
+  // subidas. Con 360 el residuo queda en 1,12:1 y el `non-scaling-stroke` de
+  // `sparkline()` cubre el resto.
+  //
+  // DSK.9b (ADR 078 D3): ese 360 era un literal, y un literal sirve para un
+  // ancho y falla en el siguiente. En escritorio la tarjeta pasa a media fila
+  // y el SVG rinde ~640, así que el viewBox lo sigue: el ancho del viewBox
+  // tiene que seguir al ancho al que el gráfico se pinta, o la deformación
+  // vuelve (medido antes de esto: 3,73:1 a 1376 de ancho, y 1,78:1 aun
+  // acotando solo la caja por CSS).
   const svg = sparkline(valores, {
-    width: 360, height: 80, color: 'var(--fk-dom-analisis-text, #8f9bb3)',
+    width: _anchoSparkline(), height: 80, color: 'var(--fk-dom-analisis-text, #8f9bb3)',
     padding: 6, area: true,
     ariaLabel: `Gastos mensuales últimos ${serie.length} meses, máximo ${f(max)}, actual ${f(actual)}`,
   });

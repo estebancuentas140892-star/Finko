@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-18. Última tarea cerrada: DSK.8, Límites de gasto: los tres grupos a la vista.
+> Revisado: 2026-08-18. Última tarea cerrada: DSK.9, Análisis en dos filas de dos.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -14,7 +14,7 @@
 | Métrica | Valor |
 |---|---|
 | Tests unitarios + integración | 4386/4392 (2026-08-18). Los 6 rojos son **BUG-028**, ajeno |
-| Tests E2E | 278/278 verdes, sello de DSK.8 (2026-08-18). **Compuerta** desde el 2026-07-30 |
+| Tests E2E | 278/278 verdes, sello de DSK.9 (2026-08-18). **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v43 (`config.respaldoCifrado`, CFG.4c; migración no-op) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**DSK.9 - Análisis en dos filas de dos (Análisis), 2026-08-18**
+Cuatro tarjetas apiladas: 1,7 pliegues y 2 de 6 bloques visibles ([ADR 078](DECISIONS/078-analisis-en-dos-filas-de-dos.md)). Desde 1440px van emparejadas por pregunta (score y patrimonio; tendencia y categorías), a 676 cada una, y el panel baja a 1676. Los colapsables siguen plegados a propósito: PERF.3 difiere el cuerpo del detalle. Y el viewBox de la sparkline pasa a seguir al ancho al que se pinta: de **3,73:1 de deformación a 1:1**. SW v565.
 
 **DSK.8 - Límites de gasto: los tres grupos a la vista (Límites), 2026-08-18**
 Una tarjeta medía 5,7 veces sus hermanas y sus sobres no entraban en la primera pantalla ([ADR 077](DECISIONS/077-limites-de-gasto-tres-grupos-a-la-vista.md)). Desde 1440px: Necesidades y Ahorro a `span 5`, Estilo de vida a `span 7` con sus topes dentro (el ADR 019 no se toca) y sobres a dos columnas (375, antes 1342). En todos los anchos: el sobre excedido recupera AA (de 4,24 y 4,09 a 5,83:1) y queda un solo "Nuevo límite". SW v563.
@@ -36,9 +39,6 @@ La tarjeta de distribución, destino del aviso "Tienes $X sin distribuir" de Ini
 
 **DSK.5 - Me deben adopta la anatomía de Deudas (Me deben), 2026-08-18**
 Era la única de la familia sin componente propio de tarjeta: usaba `.list-item`, cuyo reemplazo ya estaba escrito para la sección hermana ([ADR 074](DECISIONS/074-me-deben-adopta-la-anatomia-de-deudas.md)). Desde 1280px la lista va 2-up con alturas igualadas por fila; en todos los anchos, notas en chips, barra topada a 120px, corte "Ya te pagaron" y "Nuevo préstamo" en los dos botones. SW v557.
-
-**DSK.4 - Deudas en escritorio: la estrategia se queda a la vista (Por pagar), 2026-08-18**
-Elegir Avalancha reordenaba la lista 1057px más abajo, fuera de la pantalla ([ADR 073](DECISIONS/073-deudas-inventario-con-su-herramienta-al-lado.md)). Desde 1440px la lista va a `span 8` y la estrategia a `span 4` pegajosa, con tope de alto contra el viewport en `dvh`: primera regla del proyecto que depende del alto de la ventana. La tarjeta baja a dos renglones y "Abonar" pasa de 1246 a 128px. SW v554.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

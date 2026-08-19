@@ -1747,6 +1747,16 @@
     grid-column: 1 / -1;
   }
 
+  /* D3: la caja de la sparkline se acota al mismo ancho que su viewBox, que
+     `_anchoSparkline()` fija en 640 desde este umbral. Los dos valores tienen
+     que coincidir: acotar solo la caja dejaría la deformación en 1,78:1, y
+     dejar solo el viewBox la dejaría en lo que mida la columna. El eje X va
+     acotado con ella para que sus etiquetas sigan cayendo bajo su punto. */
+  #panel-analisis .chart-sparkline__svg,
+  #panel-analisis .chart-axis {
+    max-inline-size: 640px;
+  }
+
   /* Las tarjetas de la sección ya no necesitan su margen inferior: la rejilla
      pone la separación, y sin esto la fila de abajo hereda un hueco doble. */
   #panel-analisis > .analisis__section,
