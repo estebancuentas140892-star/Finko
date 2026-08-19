@@ -3942,6 +3942,20 @@ button.chip:focus-visible {
   margin-bottom: var(--fk-space-4);
 }
 
+/* D6 del ADR 072 (DSK.3a): los chevrons de mes dejan de ser caracteres de la
+   fuente de texto y pasan al glifo del sistema. El de "mes anterior" es el
+   mismo símbolo girado, igual que `.section__volver`: la app tiene un solo
+   chevron y así los dos comparten grosor de trazo y remate. */
+.hero-gastos__chev-prev { rotate: 180deg; }
+
+/* D1 del ADR 072: el enlace de salida a Análisis es de la banda de escritorio
+   y solo aparece desde 1680px (responsive.css). Acá se declara apagado para
+   que móvil y tablet no cambien: la pregunta "en qué gastaste más" se contesta
+   en Análisis, y bajo ese ancho la cabecera no tiene sitio para ofrecerla. */
+.hero-gastos__link {
+  display: none;
+}
+
 .hero-gastos__ojo {
   position: static;
   grid-column: 3;

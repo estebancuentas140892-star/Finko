@@ -12,6 +12,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(gastos): DSK.3a, la cabecera de Gastos deja de decorar el total · 2026-08-18
+
+Primera de las dos rebanadas del [ADR 072](DECISIONS/072-gastos-cabecera-de-banda-y-fila-con-cuenta.md). Cierra sus D1 y D6. Desde 1680px el hero pasa a **banda**: el total con su rótulo y su comparativo a la izquierda; la navegación de mes, el enlace "En qué gastaste" y el ojo a la derecha, tras un filete. Medido en el navegador a 1920 x 1080: banda de 1376 x 120 (antes 150 de alto con el total centrado en 1296px de vacío), enlace de 106px al lado de la nav. A 1440 la sección no cambia. Ficha: [`contexto/gastos.md`](contexto/gastos.md).
+
+- **El umbral es 1680px, no 1024**, y es decisión de la auditoría, no comodidad: bajo ese ancho el hero centrado y la tira de chips son la forma correcta, y esa franja es territorio de MOV.1.
+- **D1, el enlace contesta "en qué gasté más" donde ya está contestado.** Análisis tiene la dona, la lista ordenada por monto y la comparación contra el mes anterior. La primera pasada de la auditoría proponía una tarjeta con esa clasificación dentro de Gastos y **se retiró**: duplicarla contradice la decisión de Inicio de sacar el resumen semanal por el mismo motivo. Al retirarse, Gastos queda **sin una sola función nueva de lógica** que escribir o probar.
+- **Por eso el orden alfabético de los chips no se toca.** Son un índice de búsqueda: su valor es que cada categoría esté siempre en el mismo sitio. Índice y clasificación son dos cosas distintas y viven en dos sitios distintos a propósito.
+- **La banda pierde el degradado de identidad**, igual que las de Inicio (DSK.1b) y Calendario (DSK.2a): el color de sección detrás de una cifra la tiñe de estado, y el total del mes no es un estado.
+- **El bloque de la derecha se selecciona por exclusión**, no enumerando clases: `#sec-gast .hero-gastos > :not(.hero-gastos__top)` cae en la columna izquierda. La ficha 07 de MOV.1 está sumando líneas al hero en otra sesión, y una lista enumerada las habría dejado centradas fuera de la banda sin que el diff lo pareciera.
+- **D6, los chevrons de mes pasan al glifo del sistema** (`#i-chevron-right`, el de la izquierda girado 180 grados, igual que `.section__volver`). Eran caracteres tipográficos a 1.25rem, así que no compartían grosor de trazo ni remate con el resto de la iconografía. Vale en todos los anchos: es el glifo, no el reparto.
+- **Un hallazgo de la auditoría ya estaba cerrado y no se tocó nada:** E4 pedía que los chips envolvieran, y `#panel-filtros-gastos .filtros-bar` ya suelta `nowrap` y `overflow-x` en todos los anchos desde la corrección de móvil. La auditoría se escribió contra una foto anterior a esa regla. Queda anotado en el ADR y en el CSS en vez de repetir la regla.
+- Tests: 5 nuevos en `tests/unit/gastos.test.js` (los dos chevrons son el glifo del sistema, el de la izquierda lleva su clase de giro, el enlace apunta a `#analisis` con su texto, vive dentro del bloque de la nav, y sin historial no hay hero ni enlace).
+
 ### feat(agenda): DSK.2c, entrar a Calendario sin nada hoy abre lo proximo · 2026-08-18
 
 Tercera y última rebanada del [ADR 071](DECISIONS/071-calendario-como-mapa-del-mes-en-escritorio.md), que cierra la iniciativa **DSK.2**. Cierra su D7. Al entrar a la sección en escritorio, si hoy no tiene eventos el panel del día abre el **próximo día con eventos del mes visible** en vez de quedarse vacío. Verificado en la app con datos reales: el 18 de agosto sin eventos abre el 20 con "Lo próximo con fecha · día de ingreso · 1 compromiso" y la página no se desplaza. Ficha: [`contexto/calendario.md`](contexto/calendario.md).

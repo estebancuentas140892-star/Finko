@@ -225,13 +225,15 @@ function _renderHeroGastos(delMes) {
         <div class="hero-gastos__mes" role="group" aria-label="Seleccionar mes">
           <button type="button" class="hero-gastos__mes-btn"
                   data-action="gastos-prev-mes"
-                  aria-label="Mes anterior">‹</button>
+                  aria-label="Mes anterior">${icon('chevron-right', 'icon hero-gastos__chev-prev')}</button>
           <span class="hero-gastos__mes-label">${MONTHS[_viewMonth]} ${_viewYear}</span>
           <button type="button" class="hero-gastos__mes-btn"
                   data-action="gastos-next-mes"
                   ${enTope ? 'disabled aria-disabled="true"' : ''}
-                  aria-label="Mes siguiente">›</button>
+                  aria-label="Mes siguiente">${icon('chevron-right', 'icon')}</button>
         </div>
+        <a href="#analisis" class="hero-gastos__link"
+           aria-label="Ver el desglose por categoría en Análisis">En qué gastaste</a>
         <button class="hero-gastos__ojo" type="button" id="gastos-saldo-ojo"
                 data-action="gastos-saldo-visibilidad"
                 aria-pressed="${oculto}"

@@ -2067,3 +2067,67 @@ describe('renderListaGastos() - botón Repetir en cada fila (TX.12)', () => {
     expect(btn.getAttribute('aria-label')).toBe('Repetir este gasto');
   });
 });
+
+// ── DSK.3a (ADR 072 D1/D6) - cabecera de banda y chevrons del sistema ──
+
+describe('renderFiltrosGastos() - cabecera de escritorio (DSK.3a)', () => {
+  const fechaEnMes = (offsetMeses) => {
+    const d = new Date();
+    d.setDate(15);
+    d.setMonth(d.getMonth() + offsetMeses);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-15`;
+  };
+
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <div id="panel-filtros-gastos"></div>
+      <div id="lista-gastos"></div>`;
+    S.gastos = [];
+    S.config.ocultarSaldo = false;
+    setFiltroCategoria(null);
+  });
+
+  // D6: la app tiene un solo chevron y lo usa en `.section__volver`, en la
+  // ficha de aviso y en los enlaces de salida. Estos dos se dibujaban con la
+  // fuente de texto, así que no compartían grosor de trazo ni remate.
+  it('los chevrons de mes son el glifo del sistema, no caracteres', () => {
+    S.gastos = [gastoBase({ id: 'g1', fecha: fechaEnMes(0) })];
+    renderFiltrosGastos();
+    const prev = document.querySelector('[data-action="gastos-prev-mes"]');
+    const next = document.querySelector('[data-action="gastos-next-mes"]');
+    expect(prev.innerHTML).toContain('#i-chevron-right');
+    expect(next.innerHTML).toContain('#i-chevron-right');
+    expect(prev.textContent).not.toContain('‹');
+    expect(next.textContent).not.toContain('›');
+  });
+
+  it('el de "mes anterior" es el mismo glifo girado, como .section__volver', () => {
+    S.gastos = [gastoBase({ id: 'g1', fecha: fechaEnMes(0) })];
+    renderFiltrosGastos();
+    const prev = document.querySelector('[data-action="gastos-prev-mes"] .icon');
+    expect(prev.classList.contains('hero-gastos__chev-prev')).toBe(true);
+  });
+
+  // D1: la pregunta "en qué gasté más" se contesta donde ya está contestada.
+  // El enlace existe en todos los anchos y CSS lo enciende desde 1680px.
+  it('la cabecera enlaza a Análisis en vez de reimplementar la clasificación', () => {
+    S.gastos = [gastoBase({ id: 'g1', fecha: fechaEnMes(0) })];
+    renderFiltrosGastos();
+    const link = document.querySelector('.hero-gastos__link');
+    expect(link).not.toBeNull();
+    expect(link.getAttribute('href')).toBe('#analisis');
+    expect(link.textContent.trim()).toBe('En qué gastaste');
+  });
+
+  it('el enlace vive en el bloque de la nav de mes, no suelto en el hero', () => {
+    S.gastos = [gastoBase({ id: 'g1', fecha: fechaEnMes(0) })];
+    renderFiltrosGastos();
+    const top = document.querySelector('.hero-gastos__top');
+    expect(top.querySelector('.hero-gastos__link')).not.toBeNull();
+  });
+
+  it('sin historial no hay hero, así que tampoco enlace', () => {
+    renderFiltrosGastos();
+    expect(document.querySelector('.hero-gastos__link')).toBeNull();
+  });
+});

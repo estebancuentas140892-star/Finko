@@ -1110,3 +1110,85 @@
     color: var(--fk-text-secondary);
   }
 }
+
+/* ── GASTOS EN ESCRITORIO (>= 1680px, DSK.3a, ADR 072 D1) ──────────────
+   El umbral es 1680 y no 1024 a propósito: bajo ese ancho el hero centrado y
+   la tira de chips desplazable son la forma correcta, y esa franja es
+   territorio de la auditoría móvil. La auditoría de escritorio lo fija así en
+   su propia regla ("ninguna regla por debajo de 1680px de ventana").
+
+   El defecto que corrige, medido en el código vivo: el hero centra un total
+   de 38px en 1296px de vacío, o sea una tarjeta de 150px de alto con cuatro
+   datos y nada más.
+
+   D3 del ADR (los chips envuelven) no aparece acá porque **ya estaba
+   cerrado**: `#panel-filtros-gastos .filtros-bar` (domain.css) suelta el
+   `nowrap` y el `overflow-x` en todos los anchos desde la corrección de
+   móvil. La auditoría se escribió contra una foto anterior a esa regla. */
+@media (min-width: 1680px) {
+
+  /* D1: el hero pasa a banda. El total con su rótulo y su comparativo a la
+     izquierda; la navegación de mes y el enlace de salida a la derecha, tras
+     un filete. Mismo patrón de `.banda-inicio` (ADR 070 D6) y de la banda de
+     Calendario (ADR 071 D4).
+
+     Pierde el degradado de identidad por el mismo motivo que los otros dos:
+     el color de sección detrás de una cifra la tiñe de estado, y el total del
+     mes no es un estado. */
+  #sec-gast .hero-gastos {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: var(--fk-space-8);
+    padding: var(--fk-space-5) var(--fk-space-6);
+    border-color: var(--fk-border-subtle);
+    border-radius: var(--fk-radius-lg);
+    background: var(--fk-bg-surface);
+    box-shadow: none;
+    text-align: start;
+  }
+
+  /* Todo lo que no es el bloque de la derecha se apila en la primera columna.
+     El selector es por exclusión y no por lista de clases a propósito: la
+     ficha 07 de MOV.1 está sumando líneas al hero (el alcance de lo que el
+     total no cuenta), y una lista enumerada dejaría esa línea centrada y
+     fuera de la banda sin que el diff lo parezca. */
+  #sec-gast .hero-gastos > :not(.hero-gastos__top) {
+    grid-column: 1;
+    justify-self: start;
+  }
+
+  /* El bloque de la derecha ocupa la altura entera de la banda. `__top` deja
+     de ser la rejilla de tres columnas de móvil (que centraba el mes entre dos
+     huecos de 40px) y pasa a fila. */
+  #sec-gast .hero-gastos__top {
+    grid-column: 2;
+    grid-row: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-6);
+    margin: 0;
+    padding-inline-start: var(--fk-space-8);
+    border-inline-start: 1px solid var(--fk-border-subtle);
+  }
+
+  /* El ojo deja de flotar en la esquina absoluta y entra en la fila, al final
+     del bloque. No se mueve al enmascarar, que es la garantía que pide el
+     ADR 034 D3; lo que cambia es de qué esquina cuelga. */
+  #sec-gast .hero-gastos__ojo {
+    position: static;
+    order: 3;
+    flex: none;
+  }
+
+  #sec-gast .hero-gastos__link {
+    display: inline;
+    order: 2;
+    font-size: var(--fk-text-sm);
+    color: var(--fk-text-accent);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  #sec-gast .hero-gastos__link:hover,
+  #sec-gast .hero-gastos__link:focus-visible { text-decoration: underline; }
+}
