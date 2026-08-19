@@ -1726,3 +1726,74 @@ describe('renderListaPersonales() - rendimiento e historial por persona', () => 
     expect(txt).not.toContain('500.000');
   });
 });
+
+// ── DSK.5a (ADR 074 D4) - el corte entre activos y liquidados se ve ──
+
+describe('renderListaPersonales() - corte entre lo abierto y lo cobrado (DSK.5a)', () => {
+  const prestamo = (over = {}) => ({
+    id: 'p1', persona: 'Camilo Restrepo', monto: 500_000, pagado: 0,
+    fecha: '2026-03-10', ...over,
+  });
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-personales"></div>';
+    S.personales = [];
+    S.config = { ...(S.config ?? {}), ocultarSaldo: false };
+  });
+
+  const render = (lista) => {
+    S.personales = lista;
+    renderListaPersonales();
+    return document.getElementById('lista-personales');
+  };
+
+  // El orden ya lo decidía DIS.3 (activos primero, liquidados después) y su
+  // comentario lo declaraba decisión de presentación. Lo que faltaba era que
+  // esa decisión se viera: cinco tarjetas seguidas con el mismo peso visual.
+  it('con liquidados, la lista rotula dónde empieza lo ya cobrado', () => {
+    const el = render([
+      prestamo({ id: 'p1', persona: 'Andrés', monto: 900_000, pagado: 300_000 }),
+      prestamo({ id: 'p2', persona: 'Sofía', monto: 150_000, pagado: 150_000 }),
+    ]);
+    const corte = el.querySelector('.personales-corte');
+    expect(corte).not.toBeNull();
+    expect(corte.textContent.trim()).toBe('Ya te pagaron');
+  });
+
+  it('el rótulo va justo antes de la primera liquidada, no al final', () => {
+    const el = render([
+      prestamo({ id: 'p1', persona: 'Andrés', monto: 900_000, pagado: 300_000 }),
+      prestamo({ id: 'p2', persona: 'Sofía', monto: 150_000, pagado: 150_000 }),
+    ]);
+    const hijos = [...el.querySelector('.personales-lista').children];
+    const iCorte = hijos.findIndex(n => n.classList.contains('personales-corte'));
+    expect(iCorte).toBe(1);
+    expect(hijos[iCorte + 1].classList.contains('personal-item--liquidado')).toBe(true);
+  });
+
+  it('sin liquidados no hay rótulo: no se anuncia un grupo vacío', () => {
+    const el = render([prestamo({ monto: 900_000, pagado: 300_000 })]);
+    expect(el.querySelector('.personales-corte')).toBeNull();
+  });
+
+  it('todos liquidados: el rótulo abre la lista', () => {
+    const el = render([
+      prestamo({ id: 'p1', persona: 'Sofía', monto: 150_000, pagado: 150_000 }),
+      prestamo({ id: 'p2', persona: 'Camilo', monto: 300_000, pagado: 300_000 }),
+    ]);
+    const hijos = [...el.querySelector('.personales-lista').children];
+    expect(hijos[0].classList.contains('personales-corte')).toBe(true);
+  });
+
+  // La cerrada se marca con el borde (CSS), no atenuando la tarjeta: la
+  // opacidad de grupo hundía el chip "Liquidado" y el motivo bajo AA.
+  it('la tarjeta cerrada lleva su modificador y la abierta no', () => {
+    const el = render([
+      prestamo({ id: 'p1', persona: 'Andrés', monto: 900_000, pagado: 300_000 }),
+      prestamo({ id: 'p2', persona: 'Sofía', monto: 150_000, pagado: 150_000 }),
+    ]);
+    const tarjetas = [...el.querySelectorAll('.list-item')];
+    expect(tarjetas[0].classList.contains('personal-item--liquidado')).toBe(false);
+    expect(tarjetas[1].classList.contains('personal-item--liquidado')).toBe(true);
+  });
+});

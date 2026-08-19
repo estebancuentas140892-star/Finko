@@ -3146,6 +3146,38 @@ button.chip:focus-visible {
   gap: var(--fk-space-3);
 }
 
+/* DSK.5a (ADR 074 D4): el corte entre lo que sigue abierto y lo que ya se
+   cobró. `view.js` los concatena en ese orden desde DIS.3 y su comentario
+   declara que es una decisión de presentación; lo que faltaba era verla. Solo
+   se emite si hay liquidadas. */
+.personales-corte {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  margin: var(--fk-space-2) 0 0;
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fk-text-muted);
+}
+.personales-corte::after {
+  content: '';
+  flex: 1;
+  block-size: 1px;
+  background: var(--fk-border-subtle);
+}
+
+/* La cerrada se marca con el borde, NO atenuando la tarjeta: la opacidad de
+   grupo compone todo el subárbol y hundía el chip "Liquidado" a 4,11:1 y el
+   motivo a 4,41, los dos bajo AA. Finko ya resuelve esto sin atenuar texto dos
+   veces: la atenuación de "pasado" del calendario se acota a los días sin
+   contenido, y una deuda saldada cambia su meta por un chip verde a plena
+   opacidad. */
+.personales-lista .personal-item--liquidado {
+  border-style: dashed;
+}
+
 /* C3 (DIS.3, hallazgo M3, regla R22): el chip de estado vivía DENTRO del `<p>`
    del título con `white-space: nowrap`. En la columna de 111,8px de móvil, "La
    fecha de pago pasó hace 3 semanas" medía 252,5px y cruzaba por debajo del

@@ -1388,3 +1388,81 @@
      ocupar el ancho disponible es lo correcto. */
   #lista-compromisos .deuda-card__abonar { flex: none; }
 }
+
+/* ── ME DEBEN EN ESCRITORIO (>= 1280px, DSK.5a, ADR 074 D1) ────────────
+   Me deben no necesita columna lateral: tiene un solo objeto, la lista de a
+   quién le prestaste, y el resumen no es un segundo objeto sino su total. Lo
+   que hay que corregir es el estiramiento, y para eso la misma lista se pone
+   2-up: dos tarjetas por fila en vez de una fila de 1376.
+
+   Se descartó la otra salida, una sola columna acotada con aire a la derecha:
+   la pregunta de la sección es a quién le toca, y eso se contesta viendo a
+   todos a la vez. 2-up muestra los cinco préstamos en la primera pantalla;
+   una columna acotada mostraría tres.
+
+   Los dos defectos que corrige, medidos en el código vivo a 1376:
+     · 889px entre el final del nombre y su monto, tercera aparición del mismo
+       defecto en esta auditoría (Inicio 360, Deudas 1013).
+     · alturas de fila de 131, 236, 155, 165 y 131, decididas por cuántas notas
+       tenga cada préstamo. La rejilla iguala las de cada fila sin regla extra:
+       `align-items: stretch` es su valor de fábrica.
+
+   El umbral es 1280 y no 1024: a 1024 la tarjeta 2-up cae a 402px, apenas
+   44 más que la de móvil, y esa franja además ya arrastra un desbordamiento
+   horizontal propio del armazón (medido: la sección llega a 1085 con el
+   viewport en 1024, y pasa igual en Gastos y en Por pagar sin tocar nada).
+   No es de esta tarjeta y no se arregla acá, pero no conviene sumarle. */
+@media (min-width: 1280px) {
+
+  #lista-personales .personales-lista {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--fk-space-4);
+  }
+
+  /* El rótulo de corte cruza las dos columnas: separa dos grupos de la lista,
+     no dos tarjetas. */
+  #lista-personales .personales-corte {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ── BANDA DE RESUMEN DE ME DEBEN (>= 1280px, DSK.5a, ADR 074 D1) ─────
+   Mismo umbral que la rejilla: los cuatro stats más la barra piden 860px, que
+   a 1024 no caben en los 821 de la sección. */
+@media (min-width: 1280px) {
+
+  /* D1: las cuatro cifras del resumen en horizontal. La rejilla actual es
+     `repeat(2, minmax(0, 1fr))`, una decisión de móvil acotada a esta sección
+     (C4 de DIS.3): a 1376 produce cuatro celdas de 687 y 224px de alto para
+     cuatro números, un quinto del pliegue antes del primer préstamo.
+
+     "Pendiente" conserva su énfasis: es el dato por el que se abre la sección
+     y esa decisión ya se tomó en su día. */
+  #lista-personales .personales-resumen {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--fk-space-8);
+    padding: var(--fk-space-5) var(--fk-space-6);
+  }
+  #lista-personales .personales-resumen .resumen-card__grid {
+    grid-template-columns: repeat(4, auto);
+    align-items: center;
+    gap: var(--fk-space-6);
+    padding: 0;
+  }
+
+  /* El pie deja de ser un renglón de ancho completo y pasa a ser la segunda
+     mitad de la banda, tras un filete, como en Inicio, Calendario, Gastos y
+     Deudas. */
+  #lista-personales .personales-resumen__footer {
+    padding: 0 0 0 var(--fk-space-8);
+    border-top: 0;
+    border-inline-start: 1px solid var(--fk-border-subtle);
+    inline-size: 180px;
+  }
+  #lista-personales .personales-resumen__hint {
+    text-align: start;
+  }
+}

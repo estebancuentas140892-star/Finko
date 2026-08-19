@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(personales): DSK.5a, Me deben deja de estirar sus tarjetas a 1376 · 2026-08-18
+
+Primera de las dos rebanadas del [ADR 074](DECISIONS/074-me-deben-adopta-la-anatomia-de-deudas.md). Cierra sus D1 y D4. Desde 1280px la lista se pone **2-up** y el resumen pasa a banda horizontal. Medido en el navegador a 1920 x 1080: tarjetas de 680 (antes 1376), resumen de 124 de alto (antes 224), los cinco préstamos dentro del pliegue con el pie de la última en y=780. Ficha: [`contexto/me-deben.md`](contexto/me-deben.md).
+
+- **Ni bento ni columna lateral.** Me deben tiene un solo objeto, la lista; el resumen es su total, no un segundo objeto. Poner columna lateral habría sido repetir la forma de Deudas y Calendario sin el motivo que allá la justificaba.
+- **2-up y no una columna acotada con aire al lado:** la pregunta de la sección es a quién le toca, y eso se contesta viendo a todos a la vez. 2-up muestra los cinco préstamos en la primera pantalla; una columna acotada mostraría tres.
+- **Las alturas irregulares se corrigen solas.** Iban 131, 236, 155, 165 y 131 según cuántas notas tuviera cada préstamo. La rejilla iguala las de cada fila con su `align-items: stretch` de fábrica: medido, 202 y 202 en la primera fila, 108 en las siguientes.
+- **D4, el corte entre lo abierto y lo cobrado se hace visible.** Ya estaba decidido en el código desde DIS.3 (activos primero, liquidados después, con el comentario declarándolo decisión de presentación), pero en pantalla eran cinco tarjetas seguidas y el único indicio era el chip verde. Ahora hay un rótulo **"Ya te pagaron"** y borde discontinuo en las cerradas. El rótulo solo se emite si hay liquidadas, y es marcado nuevo: **también se ve en móvil**, donde el corte tampoco se veía.
+- **Sin atenuar la tarjeta cerrada**, y es una decisión con medición detrás: la opacidad de grupo compone todo el subárbol y hunde el chip "Liquidado" a 4,11:1 y el motivo a 4,41, los dos bajo AA. Finko ya resuelve esto sin atenuar texto dos veces (la atenuación de "pasado" del calendario se acota a los días sin contenido; una deuda saldada cambia su meta por un chip verde a plena opacidad).
+- **El umbral es 1280 y no 1024**: a 1024 la tarjeta 2-up cae a 402px, apenas 44 más que la de móvil. **Hallazgo anotado, no arreglado:** a 1024 exactos el armazón ya desborda en horizontal por su cuenta (medido: la sección llega a 1085 con el viewport en 1024, y pasa igual en Gastos y en Por pagar sin tocar nada). No es de esta tarjeta.
+- Tests: 5 nuevos en `tests/unit/personales.test.js` (el rótulo aparece con liquidados, va justo antes de la primera, no aparece sin liquidados, abre la lista cuando todos están cerrados, y el modificador solo lo lleva la cerrada). 196 en el archivo.
+
 ### fix(compromisos): "Por pagar" se pintaba en todas las secciones a la vez · 2026-08-18
 
 Defecto introducido por DSK.4a ([ADR 073](DECISIONS/073-deudas-inventario-con-su-herramienta-al-lado.md)) y encontrado por Esteban al usar la app. La rejilla de escritorio se declaró sobre `#sec-compromisos.section`, y **`.section` es justo la clase que mantiene ocultas a las secciones inactivas** (`display: none` en `layout.css`, con `.section.active` como único interruptor). El `display: grid` la encendía siempre: desde 1440px, "Por pagar" aparecía debajo de Inicio, de Gastos, de Calendario y del resto.

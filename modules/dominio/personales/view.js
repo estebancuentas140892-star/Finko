@@ -43,6 +43,12 @@ function _pct(n) {
  * el mismo criterio "más viejos primero" dentro de cada grupo. `logic.js` no
  * cambia: el corte es de la vista, porque es una decisión de presentación.
  *
+ * DSK.5a (ADR 074 D4): ese corte ahora **se ve**. Estaba tomado en el código y
+ * en el comentario de arriba desde DIS.3, pero en pantalla eran cinco tarjetas
+ * seguidas y el único indicio era el chip verde de cada liquidada: con dos de
+ * cinco cerradas, el 40 % de la lista era historia con el mismo peso visual que
+ * lo que sigue abierto. El rótulo solo aparece si hay liquidadas.
+ *
  * DIS.3 (V-4, regla R20): toda cifra de dinero respeta `S.config.ocultarSaldo`,
  * el mismo flag del ojo de Inicio (IN.2) que ya leen Gastos, Deudas, Calendario,
  * Mis cuentas y Análisis. Las barras de progreso se conservan: muestran
@@ -71,7 +77,9 @@ export function renderListaPersonales() {
     ${lista.length >= 2 ? _renderResumen(resumen, oculto) : ''}
     ${_renderPorPersona(lista, hoy, oculto)}
     <div class="personales-lista">
-      ${[...activos, ...liquidados].map(p => _renderPersonalItem(p, hoy, oculto)).join('')}
+      ${activos.map(p => _renderPersonalItem(p, hoy, oculto)).join('')}
+      ${liquidados.length > 0 ? '<p class="personales-corte">Ya te pagaron</p>' : ''}
+      ${liquidados.map(p => _renderPersonalItem(p, hoy, oculto)).join('')}
     </div>`;
 }
 
@@ -252,7 +260,7 @@ function _renderPersonalItem(prestamo, hoy, oculto = false) {
     : '';
 
   return `
-    <article class="list-item" data-id="${_esc(prestamo.id)}" tabindex="-1">
+    <article class="list-item${liquidado ? ' personal-item--liquidado' : ''}" data-id="${_esc(prestamo.id)}" tabindex="-1">
       <div class="list-item__icon" aria-hidden="true">${liquidado ? icon('check-circle', 'icon icon--pop') : icon('personales')}</div>
       <div class="list-item__body">
         <p class="list-item__title">${persona}</p>
