@@ -1695,3 +1695,62 @@
     max-width: 62ch;
   }
 }
+
+/* ── ANÁLISIS EN ESCRITORIO (>= 1440px, DSK.9a, ADR 078 D1/D2) ─────────
+   Es la sección con más contenido de Finko y la única que se lee entera de
+   arriba abajo: cuatro tarjetas y dos colapsables, apilados a 1376 de ancho.
+   La página mide 1,7 veces el alto disponible y solo 2 de sus 6 bloques caben
+   enteros en la primera pantalla.
+
+   Ninguna de las cuatro tarjetas necesita 1376: sus rejillas internas (los
+   cuatro factores del score, las dos columnas del patrimonio, los tres stats
+   de la tendencia) ya reparten el ancho en mitades. Y la propia sección ya
+   sabía que no cabía: entrega dos bloques colapsados "para no enterrar lo
+   importante".
+
+   El emparejamiento importa más que el ahorro de altura: score y patrimonio
+   contestan "¿cómo estoy?" desde dos lados (un juicio y una cifra) y hoy hay
+   597px entre ellos; tendencia y categorías contestan "¿a dónde va?" (cuánto y
+   en qué), y la pregunta útil (¿subió por algo puntual o por todo?) solo se
+   contesta con las dos a la vista. */
+@media (min-width: 1440px) {
+
+  #panel-analisis {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--fk-space-6);
+    align-items: start;
+  }
+
+  /* El grupo "A dónde va tu dinero" es un hijo del panel, así que cruza las
+     dos columnas y monta dentro su propia rejilla: su rótulo abarca la fila y
+     sus dos tarjetas se reparten el ancho. Es el primer sitio del proyecto
+     donde un rótulo de grupo encabeza una fila de tarjetas. */
+  #panel-analisis > .analisis__group {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--fk-space-6);
+    align-items: start;
+  }
+  #panel-analisis > .analisis__group > .analisis__group-label,
+  #panel-analisis > .analisis__group > .analisis__empty {
+    grid-column: 1 / -1;
+  }
+
+  /* D2: los dos colapsables se quedan a ancho completo al final. No se
+     despliegan aunque a este ancho haya sitio: el cuerpo del de detalle no
+     existe hasta que se abre, porque PERF.3 difiere su cálculo al primer
+     `toggle` (hace su propio barrido de todos los gastos). Desplegarlo por
+     defecto convertiría una decisión de coste en un coste fijo por render. */
+  #panel-analisis > .analisis-grupo {
+    grid-column: 1 / -1;
+  }
+
+  /* Las tarjetas de la sección ya no necesitan su margen inferior: la rejilla
+     pone la separación, y sin esto la fila de abajo hereda un hueco doble. */
+  #panel-analisis > .analisis__section,
+  #panel-analisis > .analisis__group > .analisis__section {
+    margin-bottom: 0;
+  }
+}

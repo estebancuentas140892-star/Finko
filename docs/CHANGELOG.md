@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(analisis): DSK.9a, Análisis pasa a dos filas de dos · 2026-08-18
+
+Primera de las dos rebanadas del [ADR 078](DECISIONS/078-analisis-en-dos-filas-de-dos.md). Cierra sus D1, D2 y D4. Desde 1440px las cuatro tarjetas se emparejan por la pregunta que contestan: score y patrimonio arriba ("¿cómo estoy?"), tendencia y categorías abajo ("¿a dónde va?"). Medido en el navegador a 1920 x 1080: las cuatro a 676 de ancho, las dos primeras en y=148 y las dos segundas en y=580; el panel baja de 1,7 pliegues a 1676px. Ficha: [`contexto/analisis.md`](contexto/analisis.md).
+
+- **El emparejamiento importa más que el ahorro de altura.** Score y patrimonio contestan la misma pregunta desde dos lados (un juicio y una cifra) y hoy había **597px** entre uno y otro: un score de 72 con patrimonio positivo dice algo distinto que el mismo 72 con patrimonio negativo. Abajo igual: la tendencia dice cuánto y las categorías en qué, y "¿subió por algo puntual o por todo?" solo se contesta con las dos a la vista.
+- **No es un bento, aunque sea la sección donde la pregunta tiene más sentido:** un mosaico resuelve piezas de pesos distintos, y acá las cuatro pesan igual.
+- **Los dos colapsables se quedan plegados**, y esa es la decisión que menos parece una decisión: a 1920 "hay sitio, ábranlos" es la conclusión obvia y equivocada. El cuerpo del grupo de detalle **no existe hasta que se abre** porque PERF.3 difiere su cálculo al primer `toggle`, que hace su propio barrido de todos los gastos. Desplegarlo por defecto volvería fijo un coste que hoy es bajo demanda. Van al final y a ancho completo, donde su cuerpo largo sí lo aprovecha.
+- **El grupo "A dónde va tu dinero" monta su propia rejilla** con el rótulo cruzando las dos columnas: es el primer sitio del proyecto donde un rótulo de grupo encabeza una fila de tarjetas.
+- **D4, dos hallazgos se corrigen solos:** la frase que interpreta el score baja de 1334px a unos 640, entre los dos extremos que el código ya había probado (en la columna del anillo daba 162,7px de medida y cuatro renglones de veinte caracteres); y la lista de categorías baja a la mitad, con lo que la dona de 108 recupera su peso frente a una lista que medía 1218.
+- **Un hallazgo de la auditoría ya no aplica y no se tocó nada:** A7 pedía subir el chip del mes a la barra superior porque la regla transversal oculta el encabezado de sección. ANL.3 ya había sacado ese chip del encabezado y lo puso en el rótulo del grupo. Queda anotado en el ADR.
+
 ### feat(presupuesto): DSK.8b, un solo "Nuevo límite" en pantalla · 2026-08-18
 
 Segunda y última rebanada del [ADR 077](DECISIONS/077-limites-de-gasto-tres-grupos-a-la-vista.md), que cierra la iniciativa **DSK.8**. Cierra su D4. Ficha: [`contexto/limites.md`](contexto/limites.md).

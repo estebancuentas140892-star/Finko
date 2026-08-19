@@ -34,6 +34,17 @@
 - Avance     : **02/04**. a) purga y cabecera (D2, D10), cerrada. b) banda de contexto (D4, D5, D6), cerrada. c) columnas 4 + 8 (D7). d) fusión de obligaciones y pie (D8, D9).
 - Restricción: **alcance escritorio, desde 1024px.** Móvil no se toca: es territorio de MOV.1, que sigue abierta. Las dos iniciativas comparten `index.html` y corren en sesiones distintas: `git status` antes de cada rebanada, y stagear solo los archivos propios.
 
+### DSK.9 - Análisis en dos filas de dos, 2 rebanadas
+- Prioridad  : alta
+- Estado     : en proceso (iniciada 2026-08-18)
+- Área       : ambos
+- Objetivo   : implementar la auditoría "Análisis 1920" de Claude Design ([ADR 078](DECISIONS/078-analisis-en-dos-filas-de-dos.md)): 1,7 pliegues de alto y una sparkline deformada 3,7 veces
+- Secciones  : Análisis
+- Archivos   : `styles/responsive.css`, `modules/dominio/analisis/view.js`
+- Depende de : nada
+- Avance     : **00/02**. a) dos filas de dos emparejadas por pregunta, colapsables al final a ancho completo (D1, D2, D4). b) el viewBox de la sparkline sigue al ancho al que se pinta (D3).
+- Restricción: **umbral 1440px**. Los colapsables NO se despliegan: el cuerpo del detalle se difiere a propósito (PERF.3). El chip del mes de A7 ya no aplica: ANL.3 lo movió al rótulo del grupo.
+
 ---
 
 ## Cómo usar este tablero
