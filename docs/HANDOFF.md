@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-19. Última tarea cerrada: DSK.10b, la navegación de escritorio deja de plegarse y se lee entera.
+> Revisado: 2026-08-19. Última tarea cerrada: DSK.10, el armazón de escritorio.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 4411/4417 (2026-08-19). Los 6 rojos son **BUG-028**, ajeno |
-| Tests E2E | 281/281 verdes, sello de DSK.10b (2026-08-19). **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 4412/4418 (2026-08-19). Los 6 rojos son **BUG-028**, ajeno |
+| Tests E2E | 285/285 verdes, sello de DSK.10c (2026-08-19). **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v43 (`config.respaldoCifrado`, CFG.4c; migración no-op) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -25,8 +25,8 @@
 
 ## 2. Últimas 5 tareas cerradas
 
-**DSK.10 (a y b de 3) - El armazón de escritorio (todas las secciones), 2026-08-19**
-Las nueve auditorías de sección citaban D1, D2 y D3 como aprobadas y ninguna estaba implementada ([ADR 079](DECISIONS/079-armazon-de-escritorio-una-identidad-un-primario-una-navegacion.md)). Desde 1680px la sección se nombra una vez (el `h1` sigue siendo el nombre accesible), el botón lleno es el de la pantalla y no "Registrar", y el plegado de la barra se retira: daba 0px de contenido. La navegación pasa a cuatro grupos con nombre y las 4 hijas de Ahorro se ven siempre (184px libres a 1920). Falta **DSK.10c**: una entrada a Ajustes y movimiento de puntero fino. SW v567.
+**DSK.10 - El armazón de escritorio (todas las secciones), 2026-08-19**
+Las nueve auditorías de sección citaban D1, D2 y D3 como aprobadas y ninguna estaba implementada ([ADR 079](DECISIONS/079-armazon-de-escritorio-una-identidad-un-primario-una-navegacion.md)). Desde 1680px la sección se nombra una vez, el botón lleno es el de la pantalla y no "Registrar", y el plegado de la barra se retira: daba 0px de contenido. La navegación pasa a cuatro grupos con nombre, las 4 hijas de Ahorro se ven siempre (184px libres a 1920), Ajustes baja de tres entradas a una y el movimiento de dedo (levante del bento, encogido al pulsar, cascada de entrada) queda donde tiene sentido. Cierra la serie de escritorio. SW v568.
 
 **DSK.9 - Análisis en dos filas de dos (Análisis), 2026-08-18**
 Cuatro tarjetas apiladas: 1,7 pliegues y 2 de 6 bloques visibles ([ADR 078](DECISIONS/078-analisis-en-dos-filas-de-dos.md)). Desde 1440px van emparejadas por pregunta (score y patrimonio; tendencia y categorías), a 676 cada una, y el panel baja a 1676. El viewBox de la sparkline pasa a seguir al ancho al que se pinta: de **3,73:1 de deformación a 1:1**. SW v565.

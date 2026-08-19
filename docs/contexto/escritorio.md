@@ -83,8 +83,8 @@
 ## Armazón de escritorio: una identidad, un primario, una navegación fija (iniciativa DSK.10, ADR 079)
 
 - **Objetivo**          : la auditoría transversal a 1920 x 1080 encontró quince hallazgos y ninguno es de composición de contenido: son del armazón. La pantalla se nombra una sola vez y donde el nombre sobrevive al desplazamiento, hay exactamente un botón lleno por pantalla y es el de la pantalla, y en monitor la navegación no se pliega porque plegarla no da espacio.
-- **Estado actual**     : **dos de tres rebanadas cerradas.** DSK.10a: el `.section__title-group` se oculta visualmente desde 1680px (el `h1` sigue siendo el nombre accesible), `#topbar-primario` y "Registrar" se intercambian el lleno según la sección tenga primario propio, y los tres verbos que faltaban pasan a "Nueva cuenta", "Nueva meta" y "Nueva reserva". DSK.10b: el botón de plegar se retira desde 1680 y el estado persistido se ignora en ese rango sin borrarse, la barra pasa a cuatro grupos con nombre y las 4 hijas de Ahorro dejan de depender del hash en monitor. **Falta DSK.10c** (D8, D9, D10). **Corrige una premisa falsa de toda la serie**: los ADR 070 a 078 citaban D1, D2 y D3 como aprobadas y ninguna estaba implementada.
-- **Verificado contra** : DSK.10a, commit `5c1a0e6` (2026-08-19); DSK.10b, esta sesión. Medición en navegador contra el runtime del index, no contra el árbol de trabajo (que comparte otra sesión).
+- **Estado actual**     : **iniciativa completa, las tres rebanadas.** DSK.10a: el `.section__title-group` se oculta visualmente desde 1680px (el `h1` sigue siendo el nombre accesible), `#topbar-primario` y "Registrar" se intercambian el lleno según la sección tenga primario propio, y los tres verbos que faltaban pasan a "Nueva cuenta", "Nueva meta" y "Nueva reserva". DSK.10b: el botón de plegar se retira desde 1680 y el estado persistido se ignora en ese rango sin borrarse, la barra pasa a cuatro grupos con nombre y las 4 hijas de Ahorro dejan de depender del hash en monitor. DSK.10c: Ajustes queda con una sola entrada en el chrome de escritorio, el bento solo levanta lo que se puede pulsar y el movimiento de dedo (encogido al pulsar, cascada de entrada) se acota a donde tiene sentido. **Corrige una premisa falsa de toda la serie**: los ADR 070 a 078 citaban D1, D2 y D3 como aprobadas y ninguna estaba implementada.
+- **Verificado contra** : DSK.10a, commit `5c1a0e6` (2026-08-19); DSK.10b, commit `07d97b6` (2026-08-19); DSK.10c, esta sesión. Medición en navegador contra el runtime del index, no contra el árbol de trabajo (que comparte otra sesión).
 
 **Mediciones a 1920 x 1080** (medidas en el navegador, no estimadas):
 
@@ -95,6 +95,8 @@
 | Ancho de contenido con la barra plegada | 1376 (igual que expandida) | el control ya no existe en ese rango |
 | Espacio libre del nav con todo desplegado | no aplica (las hijas se ocultaban) | 184px, sin desplazamiento interno |
 | Grupos de navegación con rótulo legible | 2 de 3 | 4 de 4 |
+| Entradas a Ajustes en la misma pantalla | 3, dos sin etiqueta | 1, con etiqueta |
+| Celdas del bento que se levantan al pasar el puntero | todas, con `cursor: default` | solo las que llevan enlace, botón o acción |
 
 **Dónde vive**
 
@@ -106,17 +108,24 @@
 | Umbral de monitor y su lectura (D4, D7) | `modules/ui/shell.js` | `MQ_MONITOR`, `_enMonitor()` |
 | Barra sin plegar y estado persistido ignorado (D4) | `modules/ui/shell.js`, `styles/responsive.css` | `_syncBarraPorAncho()`, bloque "LA BARRA NO SE PLIEGA EN MONITOR" |
 | Sub-nivel de Ahorro atado al hash **o** al ancho (D7) | `modules/ui/shell.js` | `_syncSubnavAhorro()` |
+| Entrada única a Ajustes (D8) | `index.html` | `.sidebar__footer a[href="#config"]`; `.topbar__actions` ya solo lleva el tema |
+| Levante del bento solo en lo pulsable (D9) | `styles/layout.css` | `.bento__cell:has(a, button, [data-action]):hover` |
+| Encogido al pulsar solo con puntero grueso (D10) | `styles/layout.css` | `@media (pointer: coarse) .nav-item:active` |
+| Cascada de entrada retirada en monitor (D10) | `styles/responsive.css` | bloque "SIN CASCADA DE ENTRADA EN MONITOR" |
 
 **Riesgos**:
 
 - **El estado de plegado se ignora, no se borra.** Quien lo tenga guardado en `true` y baje de 1680 recupera la barra plegada, que sigue sin nombres bajo cada icono: es la deuda que D5 deja escrita y **no** se debe dar por definitiva.
 - **Bajo 1680 y con menos de 800px de alto, el nav vuelve a desplazarse por dentro** cuando el grupo Ahorro está abierto: 183px de exceso a 1280x799, contra ~123 antes de los dos rótulos nuevos. Ya se desplazaba; los cuatro grupos lo empeoran ~60px. Con el grupo cerrado cabe con 23px de sobra.
 - **La barra reacciona al ancho por `matchMedia`**, así que cruzar el umbral sin recargar sí resincroniza (verificado en Playwright). El panel de vista previa de esta herramienta **no** emite `resize` ni `change` al cambiar el viewport: ahí solo se puede verificar recargando en cada ancho.
+- **La marca "F" de Inicio no se borró del marcado**, aunque D8 la nombre: DSK.1a (ADR 070 D10) ya la oculta desde 1024 y en móvil sigue siendo la única vez que la app se nombra, porque allá la barra lateral no tiene logo. Borrarla habría revertido ese ADR en silencio. Lo mismo con el engranaje del saludo.
+- **El levante del bento depende de los datos**: una celda gana o pierde su acción según lo que haya que mostrar (sin cuentas no hay enlace "Ver mis cuentas"). Es a propósito, pero significa que una celda puede levantarse hoy y no mañana con la misma pantalla.
 - **"Deudas" en el mockup es "Por pagar" en el código**: el nombre lo fijó la ficha 01 y lo trajo al chrome la ficha 05 ([ADR 069](../DECISIONS/069-bloque-gastos-en-la-barra-movil.md)). D6 decide agrupación, no nombres, así que el rótulo no se tocó.
 
-**Cambios pendientes**: DSK.10c (D8, una sola entrada a Ajustes; D9, hover solo en lo pulsable; D10, movimiento fino para puntero fino). **N6 (iconos repetidos entre destinos) queda fuera**: es dependencia de la familia de iconos, no de una auditoría de composición.
+**Cambios pendientes**: ninguno de la iniciativa. **N6 (iconos repetidos entre destinos) queda fuera**: es dependencia de la familia de iconos, no de una auditoría de composición, y necesita tarjeta propia. **D5 queda como deuda escrita**: bajo 1680 la barra plegada sigue sin nombres.
 
 **Cambios realizados**:
 
+- 2026-08-19 (DSK.10c, cierra la iniciativa): engranaje de la barra superior retirado (el del saludo ya salía por CSS desde DSK.1a, y en móvil los dos se quedan), levante del bento acotado a las celdas con acción vía `:has()`, `scale(0.97)` de la navegación acotado a `pointer: coarse` y cascada de entrada retirada desde 1680.
 - 2026-08-19 (DSK.10b): barra sin plegar desde 1680 con el estado persistido ignorado, cuatro grupos con nombre (Movimientos sale de "Seguimiento" a "Día a día", los dos espejos de deuda se reúnen en "Compromisos", "Ahorro" deja de ser rótulo de grupo) y las 4 hijas siempre visibles en monitor.
 - 2026-08-19 (DSK.10a): identidad de sección una sola vez, un solo primario por pantalla y los tres verbos que faltaban. Commit `5c1a0e6`.

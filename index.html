@@ -496,9 +496,11 @@
                 aria-label="Cambiar entre tema oscuro y claro" aria-pressed="false">
           <svg class="icon" aria-hidden="true"><use href="#i-moon"/></svg>
         </button>
-        <a class="perfil-inicio__ajustes" href="#config" aria-label="Ir a Ajustes">
-          <svg class="icon" aria-hidden="true"><use href="#i-ajustes"/></svg>
-        </a>
+        <!-- Ajustes salió de acá en DSK.10c (ADR 079 D8): era la segunda de
+             tres entradas a la misma sección y la única sin etiqueta junto
+             con la de Inicio. Queda la del pie de la barra lateral, que
+             dice "Ajustes" con todas sus letras. El conmutador de tema se
+             queda: no es navegación, es un control de la vista. -->
       </div>
     </header>
 

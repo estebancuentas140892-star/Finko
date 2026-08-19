@@ -106,8 +106,13 @@
   background: var(--fk-bg-hover);
   color: var(--fk-text-primary);
 }
-.nav-item:active {
-  transform: scale(0.97);
+/* El encogido al pulsar es respuesta táctil: sin dedo que tape el objetivo
+   no confirma nada, y con puntero fino solo mueve un blanco de 40px de alto
+   mientras se hace clic (DSK.10c, ADR 079 D10). */
+@media (pointer: coarse) {
+  .nav-item:active {
+    transform: scale(0.97);
+  }
 }
 /* IV.2a (ADR 031): la sección activa se tiñe con el color de SU dominio,
    no con el acento genérico de marca. `--fk-nav-bg`/`--fk-nav-text` los
@@ -1008,12 +1013,22 @@
   .section.active .bento--dash .bento__cell:nth-child(5) { animation-delay: 160ms; }
 }
 
-/* Hover en desktop: lift sutil */
+/* Hover en desktop: solo se levanta lo que se puede pulsar (DSK.10c,
+   ADR 079 D9). Antes se levantaban las trece celdas con `cursor: default`:
+   el gesto prometía un clic que la mayoría no tenía. Las demás siguen
+   cambiando `border-color` (regla de arriba, en todos los anchos) y nada
+   más, igual que la ficha de aviso de la cartelera.
+
+   `:has()` y no una clase: una celda gana o pierde su acción según los
+   datos (el enlace "Ver mis cuentas" no existe sin cuentas), así que una
+   clase escrita a mano quedaría mintiendo la mitad del tiempo. Mismo
+   selector que ya usa el grid de 2 columnas del modal (INT.1f). */
 @media (hover: hover) {
   .bento__cell {
     cursor: default;
   }
-  .bento__cell:hover {
+  a.bento__cell:hover,
+  .bento__cell:has(a, button, [data-action]):hover {
     transform: translateY(-2px);
     transition:
       border-color var(--fk-transition-base),

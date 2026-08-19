@@ -785,9 +785,11 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await expect(saludo.locator('.perfil-inicio__ajustes')).toBeHidden();
     await expect(saludo.locator('.perfil-inicio__franja')).toBeVisible();
 
-    // La barra superior conserva SU engranaje: el selector de D10 es de hijo
-    // directo justamente para no llevarse este por delante.
-    await expect(page.locator('.topbar__actions .perfil-inicio__ajustes').last()).toBeVisible();
+    // La barra superior ya no tiene engranaje: DSK.10c (ADR 079 D8) lo retiró
+    // por ser la segunda de tres entradas a la misma sección, y sin etiqueta.
+    // Queda el conmutador de tema, que no es navegación.
+    await expect(page.locator('.topbar__actions a[href="#config"]')).toHaveCount(0);
+    await expect(page.locator('.topbar__actions [data-action="theme-toggle"]')).toBeVisible();
   });
 
   test('móvil: el saludo conserva marca "F" y engranaje (DSK.1a, ADR 070 D10)', async ({ page }) => {
@@ -5311,5 +5313,150 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
     await page.waitForSelector('#modal-meta[data-open]');
     const formReabierto = page.locator('#modal-meta-body form');
     await expect(formReabierto.locator('.chip-cat:has(input[value="vehiculo-moto"]) input')).not.toBeChecked();
+  });
+});
+
+// ── DSK.10c: una entrada a Ajustes y movimiento de puntero fino ─────────────
+
+test.describe('DSK.10c - el armazón deja de moverse como una app de dedo (ADR 079)', () => {
+  test.use({ viewport: { width: 1920, height: 1080 } });
+
+  /** Estado mínimo con datos en las dos mitades del bento. */
+  const SEMILLA = {
+    version: 1,
+    perfil: { nombre: 'TestUser', smmlv: 1750905 },
+    onboarded: true,
+    cuentas: [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi', saldo: 500000, activa: true }],
+    ingresos: [],
+    gastos: [{ id: 'g1', descripcion: 'Mercado', categoria: 'Mercado', monto: 50000, fecha: '2026-08-10', cuentaId: 'c1', nota: '' }],
+    compromisos: [],
+    metas: [],
+  };
+
+  /** Lee del CSSOM las reglas que levantan una celda del bento al pasar. */
+  async function reglasDeLevante(page) {
+    return page.evaluate(() => {
+      const res = [];
+      const walk = (rules, cond) => {
+        for (const r of rules) {
+          // El orden importa: con anidamiento de CSS, una regla normal
+          // también expone `cssRules` (vacío), así que preguntar por él
+          // primero se traga todas las reglas y no llega ninguna al filtro.
+          if (r.styleSheet) { walk(r.styleSheet.cssRules, cond); continue; }
+          if (r.selectorText) {
+            if (r.selectorText.includes('bento__cell') && r.selectorText.includes('hover') && r.style.transform) {
+              res.push({ cond, sel: r.selectorText, transform: r.style.transform });
+            }
+            continue;
+          }
+          if (r.cssRules) { walk(r.cssRules, r.conditionText || cond); }
+        }
+      };
+      walk(document.styleSheets[0].cssRules, '');
+      return res;
+    });
+  }
+
+  // D8: Ajustes tenía tres entradas en la misma pantalla y dos eran un
+  // engranaje sin etiqueta. La del saludo ya salía por CSS desde DSK.1a.
+  test('Ajustes queda con una sola entrada visible, y es la que lleva etiqueta', async ({ page }) => {
+    await sembrarSiVacio(page, SEMILLA);
+    await page.goto('/#dash');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+
+    // El chrome de escritorio son tres sitios: la barra lateral, la barra
+    // superior y el saludo de Inicio. Queda uno, y dice su nombre. (La hoja
+    // "Más" lleva su propia entrada, pero es cromo de móvil: acá está a
+    // `opacity: 0` y `pointer-events: none`.)
+    await expect(page.locator('#topbar a[href="#config"]')).toHaveCount(0);
+    await expect(page.locator('.perfil-inicio > .perfil-inicio__ajustes')).toBeHidden();
+
+    const entrada = page.locator('#sidebar a[href="#config"]');
+    await expect(entrada).toHaveCount(1);
+    await expect(entrada).toBeVisible();
+    await expect(entrada).toHaveText('Ajustes');
+
+    // El conmutador de tema se queda arriba: no es navegación.
+    await expect(page.locator('.topbar__actions [data-action="theme-toggle"]')).toBeVisible();
+  });
+
+  // D9: las celdas se levantaban 2px al pasar el puntero, con `cursor:
+  // default`. El gesto prometía un clic que la mayoría no tiene.
+  test('solo se levanta la celda del bento que se puede pulsar', async ({ page }) => {
+    await sembrarSiVacio(page, SEMILLA);
+    await page.goto('/#dash');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+
+    const reglas = await reglasDeLevante(page);
+    expect(reglas).toHaveLength(1);
+    expect(reglas[0].cond).toBe('(hover: hover)');
+    expect(reglas[0].sel).toContain(':has(a, button, [data-action])');
+
+    // El selector reparte de verdad. Se prueba sobre celdas construidas y no
+    // sobre las de la pantalla: cuáles tienen acción depende de los datos.
+    const reparto = await page.evaluate(() => {
+      const sel = 'a.bento__cell, .bento__cell:has(a, button, [data-action])';
+      const hacer = (html) => {
+        const d = document.createElement('div');
+        d.className = 'bento__cell';
+        d.innerHTML = html;
+        return d.matches(sel);
+      };
+      return {
+        conEnlace: hacer('<a href="#movimientos">Ver todos</a>'),
+        conBoton: hacer('<button type="button">Revisar</button>'),
+        conAccion: hacer('<li data-action="aviso-abrir">Aviso</li>'),
+        sinNada: hacer('<p>Solo texto</p>'),
+      };
+    });
+    expect(reparto).toEqual({ conEnlace: true, conBoton: true, conAccion: true, sinNada: false });
+  });
+
+  // D10: la cascada retrasa hasta 160ms cinco bloques que en monitor ya caben
+  // en el primer pliegue. Bajo el umbral el descubrimiento por desplazamiento
+  // sigue siendo real, así que ahí se queda.
+  test('la cascada de entrada se retira en monitor y sigue bajo el umbral', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await sembrarSiVacio(page, SEMILLA);
+    await page.goto('/#dash');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+
+    const animEn = () => page.evaluate(() => {
+      const celdas = [...document.querySelectorAll('#sec-dash .bento--dash .bento__cell')]
+        .filter(c => !c.hidden);
+      return [...new Set(celdas.map(c => getComputedStyle(c).animationName))];
+    });
+
+    expect(await animEn()).toEqual(['none']);
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.reload();
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+    expect(await animEn()).toEqual(['cardIn']);
+  });
+
+  // D10: el encogido al pulsar es respuesta táctil. Con puntero fino solo
+  // mueve un blanco de 40px de alto mientras se hace clic.
+  test('el encogido de la navegación al pulsar queda para puntero grueso', async ({ page }) => {
+    await sembrarSiVacio(page, SEMILLA);
+    await page.goto('/#dash');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+
+    const cond = await page.evaluate(() => {
+      let encontrado = null;
+      const walk = (rules, c) => {
+        for (const r of rules) {
+          if (r.styleSheet) { walk(r.styleSheet.cssRules, c); continue; }
+          if (r.selectorText) {
+            if (r.selectorText === '.nav-item:active') encontrado = c;
+            continue;
+          }
+          if (r.cssRules) { walk(r.cssRules, r.conditionText || c); }
+        }
+      };
+      walk(document.styleSheets[0].cssRules, '');
+      return encontrado;
+    });
+    expect(cond).toBe('(pointer: coarse)');
   });
 });

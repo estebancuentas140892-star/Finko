@@ -1818,3 +1818,17 @@
 @media (min-width: 1680px) {
   .sidebar__collapse-btn { display: none; }
 }
+
+/* ── SIN CASCADA DE ENTRADA EN MONITOR (>= 1680px, DSK.10c, ADR 079 D10) ─
+   El escalonado de 40ms por celda (0 a 160ms) se pensó para una pantalla
+   que se descubre desplazándose: cada bloque llega cuando el ojo llega. En
+   monitor los cinco bloques ya están dentro del primer pliegue, así que lo
+   único que hace el retraso es que el usuario mire 160ms una pantalla a
+   medio pintar que ya estaba lista.
+
+   Bajo 1680 la cascada se queda: ahí el descubrimiento por desplazamiento
+   sigue siendo real. `prefers-reduced-motion` la sigue apagando en todos
+   los anchos, que es la regla de accesibilidad y no se toca. */
+@media (min-width: 1680px) {
+  .section.active .bento--dash .bento__cell { animation: none; }
+}

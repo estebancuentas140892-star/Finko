@@ -180,4 +180,23 @@ describe('Accesibilidad - index.html (axe-core WCAG 2.1 AA)', () => {
     expect(previo.classList.contains('tesoreria-lb')).toBe(true);
     expect(previo.textContent.trim()).toBe('Tus cuentas');
   });
+
+  // DSK.10c (ADR 079 D8): Ajustes tenía tres entradas en la misma pantalla de
+  // escritorio (pie de la barra lateral, barra superior y saludo de Inicio) y
+  // dos eran un engranaje sin etiqueta. Queda la única que dice su nombre. La
+  // del saludo ya salía por CSS desde DSK.1a (ADR 070 D10), y en móvil las dos
+  // se quedan: allá la barra lateral no tiene logo y no hay barra superior.
+  it('Ajustes se alcanza desde una sola entrada del chrome de escritorio (ADR 079 D8)', () => {
+    const acciones = document.querySelector('.topbar__actions');
+    expect(acciones, 'Falta .topbar__actions en el HTML').not.toBeNull();
+    expect(acciones.querySelector('a[href="#config"]')).toBeNull();
+
+    // El conmutador de tema se queda arriba: no es navegación, es un control
+    // de la vista, y su sitio es el cromo.
+    expect(acciones.querySelector('[data-action="theme-toggle"]')).not.toBeNull();
+
+    const pie = document.querySelector('.sidebar__footer a[href="#config"]');
+    expect(pie, 'La entrada con etiqueta del pie de la barra es la que se conserva').not.toBeNull();
+    expect(pie.textContent.trim()).toBe('Ajustes');
+  });
 });

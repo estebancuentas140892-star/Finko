@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(ui): DSK.10c, el armazon deja de moverse como una app de dedo · 2026-08-19
+
+Tercera y última rebanada del [ADR 079](DECISIONS/079-armazon-de-escritorio-una-identidad-un-primario-una-navegacion.md), que **cierra la iniciativa DSK.10** y con ella la serie de escritorio completa: nueve auditorías de sección más la transversal. Cierra sus D8, D9 y D10. Ficha: [`contexto/escritorio.md`](contexto/escritorio.md).
+
+- **D8, Ajustes pasa de tres entradas a una.** En la misma pantalla de escritorio vivían el pie de la barra lateral, la barra superior y el encabezado de perfil de Inicio, **dos de ellas un engranaje sin etiqueta**. Se conserva la del pie, que dice su nombre con todas sus letras. El conmutador de tema se queda arriba: no es navegación, es un control de la vista.
+- **Media D8 ya estaba hecha, y por eso la marca "F" sigue en el marcado.** DSK.1a ([ADR 070](DECISIONS/070-inicio-centro-de-atencion-en-escritorio.md) D10) ya ocultaba desde 1024px el engranaje y la marca del saludo de Inicio. En móvil los dos se quedan, porque allá la barra lateral no tiene logo visible y no hay barra superior: **borrarlos del HTML habría revertido ese ADR en silencio**. Lo único que faltaba era el de la barra superior, que es cromo de escritorio y sí se retira del marcado.
+- **D9, solo se levanta lo que se puede pulsar.** El `translateY(-2px)` del hover se aplicaba a todas las celdas del bento **con `cursor: default`**: el gesto prometía un clic que la mayoría no tiene. Ahora se acota a las que son enlace o contienen enlace, botón o `data-action`; las demás siguen cambiando `border-color` y nada más, igual que la ficha de aviso de la cartelera. Es la misma regla que ya aplicaron Gastos ([ADR 072](DECISIONS/072-gastos-cabecera-de-banda-y-fila-con-cuenta.md) D5) y Deudas.
+- **El selector es `:has()` y no una clase escrita a mano**: una celda gana o pierde su acción según los datos (sin cuentas no existe el enlace "Ver mis cuentas"), así que una clase estática mentiría la mitad del tiempo. Mismo mecanismo que ya usa el grid de dos columnas del modal (INT.1f).
+- **D10, movimiento fino para puntero fino.** El `scale(0.97)` de `.nav-item:active` pasa a `@media (pointer: coarse)`: es respuesta táctil, y con puntero fino solo mueve un blanco de 40px de alto mientras se hace clic. Y la cascada de entrada del bento (40ms por celda, hasta 160ms) **se retira desde 1680px**, donde los cinco bloques ya caben en el primer pliegue: lo único que hacía el escalonado era retrasar una pantalla que ya estaba lista. Bajo el umbral se queda, y `prefers-reduced-motion` la sigue apagando en todos los anchos.
+- Tests: 1 nuevo en `tests/unit/a11y.test.js` (Ajustes se alcanza desde una sola entrada del chrome de escritorio) y 4 en `tests/e2e/smoke.test.js`, que leen el CSSOM para afirmar sobre la condición de cada regla, no sobre un estilo calculado. El de la cascada corre con `reducedMotion: 'no-preference'` y compara 1920 contra 1440. El test de DSK.1a que exigía el engranaje de la barra superior se actualizó: su premisa la cambió esta decisión.
+
 ### feat(ui): DSK.10b, la navegacion de escritorio deja de plegarse y se lee entera · 2026-08-19
 
 Segunda de las tres rebanadas del [ADR 079](DECISIONS/079-armazon-de-escritorio-una-identidad-un-primario-una-navegacion.md). Cierra sus D4, D6 y D7, y deja D5 anotada como deuda. Ficha: [`contexto/escritorio.md`](contexto/escritorio.md).
