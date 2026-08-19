@@ -948,7 +948,7 @@
              pantalla (cuentas, transferir y el 4x1000) no colgaba de ningún h2 y
              no se podía llegar navegando por encabezados. Invisible porque el h1
              ya nombra la sección y un "Tus cuentas" visible sonaría redundante. -->
-        <h2 class="sr-only">Tus cuentas</h2>
+        <h2 class="tesoreria-lb">Tus cuentas</h2>
         <div id="lista-tesoreria">
           <!-- Fase 8: tesoreria/view.js renderiza aquí -->
         </div>
@@ -972,13 +972,18 @@
         <div class="section__sub-header">
           <h2 class="section__subtitle">Fuentes de ingreso</h2>
           <div class="section__sub-actions">
-            <button class="btn btn-sm btn-primary" data-action="nuevo-ingreso"
-                    aria-label="Agregar fuente de ingreso fijo">
-              + Fijo
+            <!-- DSK.6b (ADR 075 D5): secundarios, no primarios. El primario de
+                 la sección es el de la barra superior, y con estos dos eran
+                 tres en la misma pantalla. Y dicen la acción, no la categoría:
+                 el fijo es una entidad que persiste, el puntual es un hecho que
+                 ocurrió (regla D3 del lenguaje de acciones). -->
+            <button class="btn btn-sm btn-secondary" data-action="nuevo-ingreso"
+                    aria-label="Nuevo ingreso fijo">
+              Nuevo ingreso fijo
             </button>
-            <button class="btn btn-sm btn-primary" data-action="nuevo-ingreso-puntual"
-                    aria-label="Registrar un ingreso puntual">
-              + Puntual
+            <button class="btn btn-sm btn-secondary" data-action="nuevo-ingreso-puntual"
+                    aria-label="Registrar ingreso puntual">
+              Registrar ingreso puntual
             </button>
           </div>
         </div>

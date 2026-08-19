@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(tesoreria): DSK.6b, el cupo de una tarjeta deja de parecer un saldo · 2026-08-18
+
+Segunda y última rebanada del [ADR 075](DECISIONS/075-mis-cuentas-dos-trabajos-a-la-vista.md), que cierra la iniciativa **DSK.6**. Cierra sus D4 y D5. Los rótulos de bloque se hacen visibles desde 1440px y los dos botones de ingreso dejan de ser primarios. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md).
+
+- **D4 no es orden, es significado.** "Tus cuentas" y "Tus tarjetas de crédito" eran `h2` con `sr-only`, y **estaba bien** mientras todo iba en una columna: el `h1` ya nombra la sección. Al partir en dos, el único elemento que decía "esto ya no son tus cuentas" quedaba invisible al lado de un bloque visualmente idéntico, y **el cupo de una tarjeta no es dinero tuyo**: el código ya deja la tarjeta fuera del total ("no es un activo") y la composición borraba esa decisión. Bajo 1440px los dos rótulos siguen siendo solo para lectores de pantalla, así que móvil no cambia: medido, 1px de alto y `position: absolute`.
+- **D5, tres primarios en pantalla pasan a uno.** "+ Fijo" y "+ Puntual" eran `btn-primary` y competían con el "+ Cuenta" de la barra superior, que es el que declara la acción de la sección. Ahora son secundarios y **dicen la acción, no la categoría**: "Nuevo ingreso fijo" y "Registrar ingreso puntual", que además aplica bien la regla D3 del lenguaje de acciones (el fijo es una entidad que persiste, el puntual es un hecho que ocurrió). Vale en todos los anchos: es copia y jerarquía, no reparto. Medido a 375: los dos botones caben en la fila sin desplazamiento horizontal.
+- **El degradado del hero se mantiene, y el ADR dice por qué.** En Inicio se retiró uno idéntico en estructura, pero allá el tinte era `--fk-accent`, el verde que en esta app significa "bien": un lavado verde detrás del saldo insinuaba un juicio. Acá el tinte es el color de dominio de la sección. No dice "tu saldo es bueno", dice "estás en Mis cuentas". Retirarlo habría sido aplicar la forma de una decisión sin su motivo.
+- Tests: 1 nuevo en `tests/unit/tesoreria.test.js` (el bloque de tarjetas emite su `h2` real con la clase que lo oculta por ancho, no un `sr-only` permanente). 540 en el archivo.
+
 ### feat(tesoreria): DSK.6a, los dos trabajos de Mis cuentas caben en la misma pantalla · 2026-08-18
 
 Primera de las dos rebanadas del [ADR 075](DECISIONS/075-mis-cuentas-dos-trabajos-a-la-vista.md). Cierra sus D1, D2, D3 y D6. Desde 1440px la sección se parte en dos columnas: las cuentas a la izquierda (`span 7`) y las fuentes de ingreso con su reparto a la derecha (`span 5`). Medido en el navegador a 1920 x 1080: columnas de 793 y 559, y la tarjeta de distribución arranca en y=985, **dentro del pliegue**; antes empezaba más de un pliegue completo por debajo del inicio del contenido, o sea con 0px visibles. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md).

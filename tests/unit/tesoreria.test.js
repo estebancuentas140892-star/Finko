@@ -1220,6 +1220,18 @@ describe('renderTarjetasTC()', () => {
     document.body.innerHTML = '<div id="tesoreria-tarjetas"></div>';
   });
 
+  // DSK.6b (ADR 075 D4): el rótulo es lo único que separa un cupo de un saldo,
+  // y el cupo de una tarjeta no es dinero del usuario (el código ya la deja
+  // fuera del total). La clase lo oculta bajo 1440px, no lo borra.
+  it('DSK.6b: el bloque rotula que lo suyo no son cuentas, con un h2 real', () => {
+    S.compromisos = [tarjeta()];
+    renderTarjetasTC();
+    const h2 = document.querySelector('#tesoreria-tarjetas h2');
+    expect(h2).not.toBeNull();
+    expect(h2.textContent.trim()).toBe('Tus tarjetas de crédito');
+    expect(h2.className).toBe('tesoreria-lb');
+  });
+
   it('sin tarjetas operables, no pinta nada', () => {
     S.compromisos = [];
     renderTarjetasTC();

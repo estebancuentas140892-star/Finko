@@ -283,7 +283,7 @@ export function renderTarjetasTC() {
   const oculto = S.config?.ocultarSaldo === true;
 
   el.innerHTML = `
-    <h2 class="sr-only">Tus tarjetas de crédito</h2>
+    <h2 class="tesoreria-lb">Tus tarjetas de crédito</h2>
     ${tarjetas.map(t => _renderTarjetaTC(t, oculto)).join('')}`;
 }
 

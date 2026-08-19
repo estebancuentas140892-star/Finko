@@ -173,7 +173,11 @@ describe('Accesibilidad - index.html (axe-core WCAG 2.1 AA)', () => {
 
     const previo = lista.previousElementSibling;
     expect(previo.tagName).toBe('H2');
-    expect(previo.classList.contains('sr-only')).toBe(true);
+    // DSK.6b (ADR 075 D4): el rótulo deja de ser `sr-only` permanente y pasa a
+    // `.tesoreria-lb`, que lo oculta igual bajo 1440px y lo muestra en las dos
+    // columnas de escritorio. Para lectores de pantalla no cambia nada: el h2
+    // existe siempre y sigue siendo el que da encabezado a este bloque.
+    expect(previo.classList.contains('tesoreria-lb')).toBe(true);
     expect(previo.textContent.trim()).toBe('Tus cuentas');
   });
 });

@@ -2031,6 +2031,23 @@ button.chip:focus-visible {
   display: contents;
 }
 
+/* DSK.6b (ADR 075 D4): los rótulos de bloque de Mis cuentas. Bajo 1440px se
+   comportan igual que el `sr-only` que tenían: el `h1` ya nombra la sección y
+   un título visible sonaría redundante mientras todo va apilado. Desde 1440
+   la sección se parte en dos columnas y cada una necesita decir de qué es
+   (responsive.css). Nunca dejan de existir para lectores de pantalla. */
+.tesoreria-lb {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* DSK.6a (ADR 075 D2): las tarjetas de cuenta se tocaban. `#lista-tesoreria`
    no declaraba `gap` y `.cuenta-card` no trae margen, así que las cuatro se
    leían como una sola caja subdividida, con dos bordes de 1px pegados en cada

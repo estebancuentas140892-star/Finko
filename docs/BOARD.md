@@ -34,17 +34,6 @@
 - Avance     : **02/04**. a) purga y cabecera (D2, D10), cerrada. b) banda de contexto (D4, D5, D6), cerrada. c) columnas 4 + 8 (D7). d) fusión de obligaciones y pie (D8, D9).
 - Restricción: **alcance escritorio, desde 1024px.** Móvil no se toca: es territorio de MOV.1, que sigue abierta. Las dos iniciativas comparten `index.html` y corren en sesiones distintas: `git status` antes de cada rebanada, y stagear solo los archivos propios.
 
-### DSK.6 - Mis cuentas: sus dos trabajos a la vista, 2 rebanadas
-- Prioridad  : alta
-- Estado     : en proceso (iniciada 2026-08-18)
-- Área       : ambos
-- Objetivo   : implementar la auditoría "Mis cuentas 1920" de Claude Design ([ADR 075](DECISIONS/075-mis-cuentas-dos-trabajos-a-la-vista.md)): la distribución que Inicio anuncia nace fuera de la pantalla
-- Secciones  : Mis cuentas (dominio `tesoreria`)
-- Archivos   : `index.html`, `styles/responsive.css`, `styles/components/domain.css`
-- Depende de : nada
-- Avance     : **00/02**. a) separación entre tarjetas de cuenta, dos columnas 7 + 5, botón de transferir dimensionado y párrafo del 4x1000 acotado (D1, D2, D3, D6). b) rótulos de bloque visibles en escritorio y los dos botones de ingreso a secundarios con su nombre de acción (D4, D5).
-- Restricción: **umbral 1440px** para la composición. La separación entre tarjetas y el nombre de los botones valen en todos los anchos y están declarados así en el ADR.
-
 ---
 
 ## Cómo usar este tablero

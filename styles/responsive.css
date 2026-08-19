@@ -1521,6 +1521,25 @@
     margin-top: 0;
   }
 
+  /* D4: los rótulos de bloque se hacen visibles. Estaban ocultos porque, con
+     todo en una columna, el `h1` de la sección ya los cubría; al partir en dos
+     el motivo desaparece. En el de tarjetas de crédito el rótulo hace más que
+     ordenar: es lo único que separa un cupo de un saldo, y el cupo de una
+     tarjeta no es dinero tuyo, decisión que el código ya tenía tomada (la
+     tarjeta va fuera del total). */
+  .tesoreria-lb {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+    font-size: var(--fk-text-base);
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-primary);
+  }
+
   /* D6: el párrafo del 4x1000 se acota a longitud de lectura. Eran 149
      caracteres en un solo renglón de 882px. Se corrige casi solo al pasar a
      columna, pero queda escrito porque el bloque podría volver a ancho
