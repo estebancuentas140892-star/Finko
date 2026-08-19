@@ -204,18 +204,26 @@ function _renderPersonalItem(prestamo, hoy, oculto = false) {
 
   const chipLabel = labelEstado(estado);
 
+  // DSK.5b (ADR 074 D2): las notas dejan de ser párrafos apilados y pasan a
+  // chips, que es lo que son: datos cortos de contexto. Es la anatomía que
+  // `.deuda-card` ya estrenó en la sección espejo, cuyo propio comentario dice
+  // que "reemplaza al .list-item con hints apilados". A 1376 cada uno de estos
+  // párrafos medía 970px para un texto de 30 a 60 caracteres, y eran hasta
+  // tres seguidos bajo el nombre.
   const fechaLim = prestamo.fechaLimite
-    ? `<p class="list-item__hint">Pactó devolver: ${fechaLegible(prestamo.fechaLimite)}</p>`
+    ? `<span class="chip">Pactó devolver: ${fechaLegible(prestamo.fechaLimite)}</span>`
     : '';
 
-  // Cuando hay un abono, la antigüedad cuenta desde ahí: el hint explica
-  // por qué el chip de días puede ser bajo aunque el préstamo sea viejo.
+  // Cuando hay un abono, la antigüedad cuenta desde ahí: el chip explica
+  // por qué el de días puede ser bajo aunque el préstamo sea viejo.
   const ultimoPagoHtml = (prestamo.ultimoPago && !liquidado)
-    ? `<p class="list-item__hint">Último abono: ${fechaLegible(prestamo.ultimoPago)}</p>`
+    ? `<span class="chip">Último abono: ${fechaLegible(prestamo.ultimoPago)}</span>`
     : '';
 
+  // El motivo NO es un chip: es una cita del usuario, no un dato. Se queda
+  // como texto, en una sola línea.
   const motivoHtml = motivo
-    ? `<p class="list-item__hint">«${motivo}»</p>`
+    ? `<p class="personal-item__motivo">«${motivo}»</p>`
     : '';
 
   // Con tasa (PE.1): desglose de interés en la card. El interés cobrado solo
@@ -227,10 +235,10 @@ function _renderPersonalItem(prestamo, hoy, oculto = false) {
   const rend = conInteres ? calcularRendimiento(prestamo, hoy) : null;
   const interesHtml = conInteres
     ? (liquidado
-        ? `<p class="list-item__hint">Te dejó ${m(rend.interesGanado)} en intereses, el ${_pct(rend.rentabilidad)}% de lo que prestaste.</p>`
-        : `<p class="list-item__hint">Interés: ${prestamo.tasa}% mensual${
+        ? `<span class="chip">Te dejó ${m(rend.interesGanado)} en intereses, el ${_pct(rend.rentabilidad)}% de lo que prestaste.</span>`
+        : `<span class="chip">Interés: ${prestamo.tasa}% mensual${
             rend.interesGanado > 0 ? ` · Ya ganaste ${m(rend.interesGanado)}, el ${_pct(rend.rentabilidad)}% de lo prestado` : ''
-          }</p>`)
+          }</span>`)
     : '';
 
   // V-10 (regla R8): "Me pagaron" pierde `btn-sm` y queda en el piso táctil de
@@ -266,15 +274,20 @@ function _renderPersonalItem(prestamo, hoy, oculto = false) {
         <p class="list-item__title">${persona}</p>
         <p class="personal-item__estado"><span class="${chipClase}">${chipLabel}</span></p>
         ${subtituloHtml}
-        <div class="progress" role="progressbar" data-dom="personales"
-             aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"
-             aria-label="${pct}% cobrado">
-          <div class="progress-bar${liquidado ? ' progress-bar--complete' : ''}" style="width:${pct}%"></div>
-        </div>
-        ${interesHtml}
         ${motivoHtml}
-        ${ultimoPagoHtml}
-        ${fechaLim}
+        <div class="personal-item__notas">
+          ${interesHtml}
+          ${ultimoPagoHtml}
+          ${fechaLim}
+        </div>
+        <div class="personal-item__avance">
+          <div class="progress" role="progressbar" data-dom="personales"
+               aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"
+               aria-label="${pct}% cobrado">
+            <div class="progress-bar${liquidado ? ' progress-bar--complete' : ''}" style="width:${pct}%"></div>
+          </div>
+          <span class="personal-item__avance-t">${pct}% cobrado</span>
+        </div>
         ${_renderHistorialAbonos(prestamo, conInteres, m)}
       </div>
       <div class="list-item__meta">
@@ -353,7 +366,7 @@ function _renderEmptyState() {
       <div class="empty-state__icon">${emptyArt('personales')}</div>
       <p class="empty-state__title">Nadie te debe nada (o no lo registraste)</p>
       <p class="empty-state__desc">Registra tu primer préstamo a familia o amigos.</p>
-      <button class="btn btn-secondary" data-action="nuevo-personal">+ Agregar préstamo</button>
+      <button class="btn btn-secondary" data-action="nuevo-personal">${icon('plus')} Nuevo préstamo</button>
     </div>`;
 }
 

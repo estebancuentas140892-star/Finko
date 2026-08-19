@@ -1151,7 +1151,11 @@ describe('vacío y formulario de Me deben (DIS.3)', () => {
     const btn = document.querySelector('.empty-state [data-action="nuevo-personal"]');
     expect(btn.className).toContain('btn-secondary');
     expect(btn.className).not.toContain('btn-primary');
-    expect(btn.textContent.trim()).toBe('+ Agregar préstamo');
+    // DSK.5b (ADR 074 D5): fuera el "+" del texto y el verbo pasa a "Nuevo",
+    // porque un préstamo es una entidad persistente. La regla de V-7 (misma
+    // acción, mismo nombre) se conserva: el encabezado dice lo mismo.
+    expect(btn.textContent.trim()).toBe('Nuevo préstamo');
+    expect(btn.innerHTML).toContain('#i-plus');
   });
 
   // ── V-11 / V-12: lo esencial primero ──────────────────────────
@@ -1795,5 +1799,70 @@ describe('renderListaPersonales() - corte entre lo abierto y lo cobrado (DSK.5a)
     const tarjetas = [...el.querySelectorAll('.list-item')];
     expect(tarjetas[0].classList.contains('personal-item--liquidado')).toBe(false);
     expect(tarjetas[1].classList.contains('personal-item--liquidado')).toBe(true);
+  });
+});
+
+// ── DSK.5b (ADR 074 D2/D3) - la tarjeta adopta la anatomía de Deudas ──
+
+describe('renderListaPersonales() - anatomía de la tarjeta (DSK.5b)', () => {
+  const prestamo = (over = {}) => ({
+    id: 'p1', persona: 'Camilo Restrepo', monto: 500_000, pagado: 0,
+    fecha: '2026-03-10', ...over,
+  });
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-personales"></div>';
+    S.personales = [];
+    S.config = { ...(S.config ?? {}), ocultarSaldo: false };
+  });
+
+  const render = (lista) => {
+    S.personales = lista;
+    renderListaPersonales();
+    return document.getElementById('lista-personales');
+  };
+
+  // El propio código de Deudas dice que `.deuda-card` "reemplaza al .list-item
+  // con hints apilados". Acá se aplica esa corrección a la sección espejo.
+  it('las notas son chips en su propia fila, no párrafos apilados', () => {
+    const el = render([prestamo({
+      fechaLimite: '2026-09-30', ultimoPago: '2026-08-01', pagado: 100_000,
+    })]);
+    const notas = el.querySelector('.personal-item__notas');
+    expect(notas).not.toBeNull();
+    const textos = [...notas.querySelectorAll('.chip')].map(c => c.textContent.trim());
+    expect(textos.some(t => t.startsWith('Pactó devolver'))).toBe(true);
+    expect(textos.some(t => t.startsWith('Último abono'))).toBe(true);
+    expect(el.querySelector('.list-item__hint')).toBeNull();
+  });
+
+  // El motivo es una cita del usuario, no un dato: se queda como texto.
+  it('el motivo no se convierte en chip', () => {
+    const el = render([prestamo({ motivo: 'Cuota inicial de la moto' })]);
+    const motivo = el.querySelector('.personal-item__motivo');
+    expect(motivo.textContent.trim()).toBe('«Cuota inicial de la moto»');
+    expect(motivo.tagName).toBe('P');
+  });
+
+  it('un préstamo sin notas no deja la fila de chips ocupando espacio', () => {
+    const el = render([prestamo()]);
+    const notas = el.querySelector('.personal-item__notas');
+    expect(notas.querySelectorAll('.chip').length).toBe(0);
+  });
+
+  // D3: la barra se topa y el porcentaje va en texto al lado. A 970px de ancho
+  // cada píxel valía 0,1 %, precisión que el dato no tiene.
+  it('la barra de avance viaja con su porcentaje en texto', () => {
+    const el = render([prestamo({ monto: 1_000_000, pagado: 400_000 })]);
+    const avance = el.querySelector('.personal-item__avance');
+    expect(avance.querySelector('.progress')).not.toBeNull();
+    expect(avance.querySelector('.personal-item__avance-t').textContent.trim()).toBe('40% cobrado');
+  });
+
+  it('la barra conserva su rol y sus valores accesibles', () => {
+    const el = render([prestamo({ monto: 1_000_000, pagado: 400_000 })]);
+    const barra = el.querySelector('.personal-item__avance .progress');
+    expect(barra.getAttribute('role')).toBe('progressbar');
+    expect(barra.getAttribute('aria-valuenow')).toBe('40');
   });
 });

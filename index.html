@@ -903,9 +903,12 @@
             <span class="cat-teja section__icon" data-dom="personales" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-personales"/></svg></span>
             <h1 class="section__title" id="title-personales">Me deben</h1>
           </div>
+          <!-- DSK.5b (ADR 074 D5): fuera el "+" del texto, lo aporta el ícono, y
+               el aria-label dice lo mismo que la pantalla. -->
           <button class="btn btn-primary" data-action="nuevo-personal"
-                  aria-label="Registrar nuevo préstamo personal">
-            + Agregar préstamo
+                  aria-label="Nuevo préstamo">
+            <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>
+            Nuevo préstamo
           </button>
         </header>
         <div id="proposito-personales">

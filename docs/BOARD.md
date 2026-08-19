@@ -34,17 +34,6 @@
 - Avance     : **02/04**. a) purga y cabecera (D2, D10), cerrada. b) banda de contexto (D4, D5, D6), cerrada. c) columnas 4 + 8 (D7). d) fusión de obligaciones y pie (D8, D9).
 - Restricción: **alcance escritorio, desde 1024px.** Móvil no se toca: es territorio de MOV.1, que sigue abierta. Las dos iniciativas comparten `index.html` y corren en sesiones distintas: `git status` antes de cada rebanada, y stagear solo los archivos propios.
 
-### DSK.5 - Me deben adopta la anatomía de Deudas, 2 rebanadas
-- Prioridad  : alta
-- Estado     : en proceso (iniciada 2026-08-18)
-- Área       : ambos
-- Objetivo   : implementar la auditoría "Me deben 1920" de Claude Design ([ADR 074](DECISIONS/074-me-deben-adopta-la-anatomia-de-deudas.md)): la sección espejo de Deudas se queda con el componente genérico y hereda sus defectos
-- Secciones  : Me deben (dominio `personales`)
-- Archivos   : `modules/dominio/personales/view.js`, `styles/responsive.css`, `styles/components/domain.css`, `index.html`
-- Depende de : nada
-- Avance     : **00/02**. a) banda de resumen, rejilla 2-up y corte visible entre activos y liquidados (D1, D4). b) tarjeta con la anatomía de `.deuda-card`, notas en chips, barra topada y "Nuevo préstamo" en los dos sitios (D2, D3, D5).
-- Restricción: la composición es de escritorio; la anatomía de la tarjeta, el tope de la barra y la copia valen en todos los anchos y están declarados así en el ADR. El lenguaje del [ADR 047](DECISIONS/047-me-deben-v2-intereses-e-historial.md) no se toca.
-
 ---
 
 ## Cómo usar este tablero

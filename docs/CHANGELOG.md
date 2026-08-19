@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(personales): DSK.5b, la tarjeta de Me deben deja de apilar parrafos · 2026-08-18
+
+Segunda y última rebanada del [ADR 074](DECISIONS/074-me-deben-adopta-la-anatomia-de-deudas.md), que cierra la iniciativa **DSK.5**. Cierra sus D2, D3 y D5. La tarjeta adopta la anatomía que Finko ya había escrito para Deudas: las notas pasan a chips, el motivo se queda como cita en una línea y la barra de avance se topa con su porcentaje al lado. Medido a 1920 x 1080: barra de 120px (antes 970), cero `.list-item__hint` en la sección. Ficha: [`contexto/me-deben.md`](contexto/me-deben.md).
+
+- **No es un patrón nuevo, es una corrección que ya estaba escrita.** El comentario que introduce `.deuda-card` dice que "reemplaza al `.list-item` con hints apilados": ese diagnóstico se hizo para la sección hermana y nunca cruzó a esta. Las dos son la misma forma de contenido con los papeles cambiados (alguien, un monto, un estado con fecha y una acción para registrar un pago).
+- **Las notas eran hasta tres párrafos de 970px** para textos de 30 a 60 caracteres: el motivo, la fecha pactada, el último abono y la tasa. Ahora son chips, que es lo que son. **El motivo no se convierte en chip**: es una cita del usuario, no un dato, y se queda como texto.
+- **D3, la barra se topa en 120px con el porcentaje en texto.** A 970 cada píxel valía 0,1 %, precisión que el dato no tiene, y además era el elemento más ancho de la fila: la mirada lo tomaba como el dato principal cuando es el más secundario. Las barras siguen visibles con el ojo de privacidad activo, porque muestran proporción y no magnitud.
+- **D5, "Nuevo préstamo" en los dos sitios y en el `aria-label`.** El encabezado decía "+ Agregar préstamo" en pantalla y "Registrar nuevo préstamo personal" para lectores de pantalla; el estado vacío, "+ Agregar préstamo". Fuera el "+" (lo aporta el ícono) y el verbo pasa a "Nuevo", porque un préstamo es una entidad persistente. La regla que la propia sección se había fijado (misma acción, mismo nombre) por fin se cumple en los tres textos.
+- **Todo esto vale en todos los anchos** y está declarado así: es anatomía, tope y copia, no reparto. En móvil la tarjeta gana los chips y pierde las líneas de párrafo gris; medido a 375, el chip más ancho mide 262 dentro de 344 y no hay desplazamiento horizontal.
+- **El lenguaje no se tocó**, y en esta sección eso es la mitad del trabajo: el tono de seguimiento sin presión de cobro, el historial que describe y no califica, los préstamos sin fecha fuera del conteo de puntualidad, el abono heredado rotulado "Antes de este historial".
+- Tests: 5 nuevos en `tests/unit/personales.test.js` (notas como chips y cero hints, motivo que no se convierte, tarjeta sin notas sin chips, barra con su porcentaje, y la barra conserva rol y valores accesibles). El test V-7 del CTA vacío cambia de expectativa, no de regla. 201 en el archivo.
+
 ### feat(personales): DSK.5a, Me deben deja de estirar sus tarjetas a 1376 · 2026-08-18
 
 Primera de las dos rebanadas del [ADR 074](DECISIONS/074-me-deben-adopta-la-anatomia-de-deudas.md). Cierra sus D1 y D4. Desde 1280px la lista se pone **2-up** y el resumen pasa a banda horizontal. Medido en el navegador a 1920 x 1080: tarjetas de 680 (antes 1376), resumen de 124 de alto (antes 224), los cinco préstamos dentro del pliegue con el pie de la última en y=780. Ficha: [`contexto/me-deben.md`](contexto/me-deben.md).

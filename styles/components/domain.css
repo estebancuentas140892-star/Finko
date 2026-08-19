@@ -3168,6 +3168,45 @@ button.chip:focus-visible {
   background: var(--fk-border-subtle);
 }
 
+/* DSK.5b (ADR 074 D2/D3): la anatomía de `.deuda-card` aplicada a la sección
+   espejo. Las notas dejan de ser párrafos apilados de 970px y pasan a chips;
+   el motivo se queda como texto porque es una cita del usuario; y la barra de
+   avance se topa, porque una proporción no necesita 970px: a ese ancho cada
+   píxel vale 0,1 %, precisión que el dato no tiene, y además convertía a la
+   barra en el elemento más ancho de la fila, o sea en el que la mirada toma
+   como principal cuando es el más secundario. */
+.personal-item__notas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fk-space-2);
+  margin-top: var(--fk-space-2);
+}
+.personal-item__notas:empty { display: none; }
+.personal-item__notas .chip .icon { --fk-icon-size: 0.75rem; }
+
+.personal-item__motivo {
+  margin: var(--fk-space-2) 0 0;
+  font-size: var(--fk-text-sm);
+  font-style: italic;
+  color: var(--fk-text-secondary);
+}
+
+.personal-item__avance {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  margin-top: var(--fk-space-3);
+}
+.personal-item__avance .progress {
+  inline-size: 120px;
+  flex: none;
+}
+.personal-item__avance-t {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  white-space: nowrap;
+}
+
 /* La cerrada se marca con el borde, NO atenuando la tarjeta: la opacidad de
    grupo compone todo el subárbol y hundía el chip "Liquidado" a 4,11:1 y el
    motivo a 4,41, los dos bajo AA. Finko ya resuelve esto sin atenuar texto dos
