@@ -12,6 +12,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(tesoreria): DSK.6a, los dos trabajos de Mis cuentas caben en la misma pantalla · 2026-08-18
+
+Primera de las dos rebanadas del [ADR 075](DECISIONS/075-mis-cuentas-dos-trabajos-a-la-vista.md). Cierra sus D1, D2, D3 y D6. Desde 1440px la sección se parte en dos columnas: las cuentas a la izquierda (`span 7`) y las fuentes de ingreso con su reparto a la derecha (`span 5`). Medido en el navegador a 1920 x 1080: columnas de 793 y 559, y la tarjeta de distribución arranca en y=985, **dentro del pliegue**; antes empezaba más de un pliegue completo por debajo del inicio del contenido, o sea con 0px visibles. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md).
+
+- **Lo que se arreglaba era un recorrido roto, no una pantalla fea.** La tarjeta de distribución es el destino del aviso "Tienes $X sin distribuir · Distribuir" que Inicio muestra en su primera pantalla: el usuario pulsaba ahí, llegaba a Mis cuentas y no veía nada de lo que venía a hacer.
+- **El reparto es 7 y 5, no 8 y 4.** En Calendario y en Deudas las dos columnas separan un objeto y su consecuencia; acá son **dos trabajos independientes** que el propio banner de propósito enuncia con una "y" en medio. No es primario y dependiente, es izquierda y derecha: el inventario de cuentas crece con cada cuenta nueva y se lleva las 7; la lista de fuentes y la tarjeta de reparto caben en 5.
+- **No se parte la sección en dos entradas de navegación**, que era la otra salida: el reparto se hace **hacia** cuentas y las necesita a la vista.
+- **Dos envoltorios nuevos, `display: contents` bajo 1440px.** Es el primer caso del proyecto en que una sección agrupa sus bloques para el reparto: en Deudas alcanzó con colocar por id, y acá no, porque las dos columnas tienen varios bloques cada una y las filas de la rejilla acoplarían sus alturas. Bajo el umbral no son cajas y el orden del DOM queda intacto.
+- **D2, las tarjetas de cuenta se separan, y esto vale en todos los anchos.** `#lista-tesoreria` no declaraba `gap` y `.cuenta-card` no trae margen: las cuatro se tocaban borde con borde (0px medidos), con dos líneas de 1px pegadas en cada junta, y se leían como una sola caja subdividida. Era el único sitio de la app donde tarjetas con borde se apilan sin separación. Ahora 12px, también en móvil.
+- **D3, el botón de transferir se dimensiona a su texto:** de 1376 x 44 a 191 x 44. `width: 100%` es la regla de móvil, donde el ancho completo es lo que lo hace zona de toque. El patrón 0/1/2 no se toca: sigue apareciendo solo con dos cuentas activas.
+- **D6**, el párrafo del 4x1000 se acota a 62ch: eran 149 caracteres en un renglón de 882px.
+- Sin tests nuevos: la rebanada es composición y no cambia una sola cadena ni una rama de la vista. 539 verdes en `tests/unit/tesoreria.test.js`, que cubren lo que sí decide la vista.
+
 ### feat(personales): DSK.5b, la tarjeta de Me deben deja de apilar parrafos · 2026-08-18
 
 Segunda y última rebanada del [ADR 074](DECISIONS/074-me-deben-adopta-la-anatomia-de-deudas.md), que cierra la iniciativa **DSK.5**. Cierra sus D2, D3 y D5. La tarjeta adopta la anatomía que Finko ya había escrito para Deudas: las notas pasan a chips, el motivo se queda como cita en una línea y la barra de avance se topa con su porcentaje al lado. Medido a 1920 x 1080: barra de 120px (antes 970), cero `.list-item__hint` en la sección. Ficha: [`contexto/me-deben.md`](contexto/me-deben.md).

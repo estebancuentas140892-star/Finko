@@ -937,6 +937,12 @@
         <div id="tesoreria-hero">
           <!-- MC.18a (ADR 035): renderHeroTesoreria() pinta el total en cuentas aquí -->
         </div>
+        <!-- DSK.6a (ADR 075 D1): los dos trabajos de la sección, uno por
+             columna desde 1440px. Los dos envoltorios son `display: contents`
+             bajo ese ancho (domain.css), así que ahí no son cajas y el orden
+             del DOM queda exactamente como estaba. -->
+        <div class="tesoreria-fila">
+          <div class="tesoreria-col tesoreria-col--cuentas">
         <!-- MC-DIS.9 C9: la sección abre con el h1 y no volvía a tener
              encabezado hasta "Fuentes de ingreso", a 1.050px: la mitad de la
              pantalla (cuentas, transferir y el 4x1000) no colgaba de ningún h2 y
@@ -956,6 +962,9 @@
           <!-- K.1 (MC.18c, ADR 035 D4): renderGMFIndicador() pinta la tarjeta insight del 4x1000 -->
         </div>
 
+          </div>
+
+          <div class="tesoreria-col tesoreria-col--ingresos">
         <!-- M.3 + NAV.A1, agrupados (MC.18d, ADR 035 D7): fijos (recurrentes)
              y puntuales (una sola vez) bajo un solo encabezado. Los puntuales
              suben el saldo de la cuenta destino al registrarse; no cambian
@@ -989,6 +998,8 @@
              el botón de esta tarjeta como modal (#modal-distribuir). -->
         <div id="ingresos-distribucion">
           <!-- Fase 3 / MC.18e: renderDistribucionIngreso() - tarjeta "¿Cómo distribuir $X?" -->
+        </div>
+          </div>
         </div>
 
       </section>

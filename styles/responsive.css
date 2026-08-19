@@ -1466,3 +1466,66 @@
     text-align: start;
   }
 }
+
+/* ── MIS CUENTAS EN ESCRITORIO (>= 1440px, DSK.6a, ADR 075 D1/D3/D6) ───
+   La sección hace dos trabajos independientes, y su propio banner de
+   propósito los enuncia con una "y" en medio: dónde está tu dinero, y qué
+   haces con lo que entra. Apilados en una sola columna, el segundo se pierde.
+
+   El defecto que corrige, medido en el código vivo: la tarjeta de distribución
+   empieza más de un pliegue completo por debajo del inicio del contenido, o
+   sea 0px visibles al abrir. Y es el destino del aviso "Tienes $X sin
+   distribuir · Distribuir" que Inicio muestra en su primera pantalla: el
+   usuario pulsa ahí, llega acá y no ve nada de lo que venía a hacer.
+
+   El reparto es 7 y 5, y no 8 y 4 como Calendario o Deudas: allá las dos
+   columnas separan un objeto y su consecuencia, acá son dos trabajos, así que
+   no es primario y dependiente sino izquierda y derecha. El inventario de
+   cuentas crece con cada cuenta nueva y se lleva las 7; la lista de fuentes y
+   la tarjeta de reparto caben en 5.
+
+   El umbral es 1440 por lo mismo que en Deudas: es donde la columna derecha
+   pasa de 400px. */
+@media (min-width: 1440px) {
+
+  .tesoreria-fila {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: var(--fk-space-6);
+    align-items: start;
+  }
+
+  /* Cada columna vuelve a ser una caja y apila sus bloques con su propio
+     ritmo: sin esto, las filas de la rejilla acoplarían las alturas de los dos
+     lados y un bloque alto a la izquierda dejaría un hueco a la derecha. */
+  .tesoreria-col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fk-space-4);
+    min-width: 0;
+  }
+  .tesoreria-col--cuentas  { grid-column: span 7; }
+  .tesoreria-col--ingresos { grid-column: span 5; }
+
+  /* Los bloques que la sección emite vacíos (el nudge de próximo ingreso, la
+     lista de puntuales cuando no hay) no deben cobrar su hueco de la columna. */
+  .tesoreria-col > div:empty { display: none; }
+
+  /* D3: el botón de transferir se dimensiona a su texto. `width: 100%` es la
+     regla de móvil, donde el ancho completo es lo que lo convierte en zona de
+     toque; a 1376 producía una franja de 1376 x 44 para tres palabras, que
+     pesaba más que las tarjetas de cuenta sobre las que actúa. */
+  #tesoreria-transferir .transferir-entrada {
+    width: auto;
+    align-self: flex-start;
+    margin-top: 0;
+  }
+
+  /* D6: el párrafo del 4x1000 se acota a longitud de lectura. Eran 149
+     caracteres en un solo renglón de 882px. Se corrige casi solo al pasar a
+     columna, pero queda escrito porque el bloque podría volver a ancho
+     completo. */
+  #tesoreria-gmf .gmf-insight__desc {
+    max-width: 62ch;
+  }
+}

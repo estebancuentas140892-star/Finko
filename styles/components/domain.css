@@ -2021,6 +2021,28 @@ button.chip:focus-visible {
    tocar los SVG oficiales (ADR 026/027).
    ════════════════════════════════════════════════════════════ */
 
+/* DSK.6a (ADR 075 D1): los envoltorios de las dos columnas de escritorio.
+   `display: contents` por defecto: bajo 1440px no son cajas y sus hijos
+   siguen siendo los hijos directos de la sección que eran. La composición
+   vive entera en responsive.css. Mismo patrón que `.banda-inicio` y
+   `.cal-fila`. */
+.tesoreria-fila,
+.tesoreria-col {
+  display: contents;
+}
+
+/* DSK.6a (ADR 075 D2): las tarjetas de cuenta se tocaban. `#lista-tesoreria`
+   no declaraba `gap` y `.cuenta-card` no trae margen, así que las cuatro se
+   leían como una sola caja subdividida, con dos bordes de 1px pegados en cada
+   junta y sin dejar claro a qué cuenta pertenecía cada par de botones. No es
+   un defecto de escritorio: pasa en cualquier ancho, y era el único sitio de
+   la app donde tarjetas con borde se apilan sin separación. */
+#lista-tesoreria {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+}
+
 .cuenta-card {
   border-radius: var(--fk-radius-lg);
   padding: var(--fk-space-4);
