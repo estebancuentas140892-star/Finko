@@ -313,7 +313,7 @@ export const LOGROS = [
     nombre: 'Planificador',
     emoji:  '📊',
     desc:   'Configuraste tu primer límite de gasto por categoría.',
-    hint:   'Configura tu primer límite de gasto en Límites de gasto.',
+    hint:   'Configura tu primer límite de gasto en Límites.',
     eval:   s => Array.isArray(s.presupuestos) && s.presupuestos.length > 0,
   },
   {
@@ -564,6 +564,33 @@ export function agruparVitrina(estados) {
     });
   }
   return items;
+}
+
+/**
+ * Conteo de la vitrina agrupada: cuántos de sus elementos están conseguidos y
+ * cuántos hay en total. El denominador de "X de Y" tiene que salir de acá y no
+ * del catálogo: `agruparVitrina()` colapsa cada familia en una sola tarjeta,
+ * así que la pantalla dibuja 12 elementos mientras `LOGROS` tiene 18. El
+ * encabezado describe lo que hay debajo (R88, bloque de Logros del handoff
+ * móvil).
+ *
+ * El numerador sale del mismo conjunto que el denominador: una familia con al
+ * menos un nivel desbloqueado cuenta como UN elemento conseguido, no como
+ * tantos como niveles tenga. Así la cifra coincide con las tarjetas activas.
+ *
+ * No sustituye al conteo crudo de logros desbloqueados: `nivelUsuario()` se
+ * calibró contra el catálogo completo (ADR 032 D5) y sigue leyéndolos uno a
+ * uno.
+ *
+ * @param {ReturnType<typeof agruparVitrina>} vitrina
+ * @returns {{ conseguidos: number, total: number }}
+ */
+export function conteoVitrina(vitrina) {
+  const items = Array.isArray(vitrina) ? vitrina : [];
+  const conseguidos = items.filter(it => it.tipo === 'familia'
+    ? it.desbloqueados > 0
+    : it.logro?.desbloqueado === true).length;
+  return { conseguidos, total: items.length };
 }
 
 // ── NIVEL DE USUARIO (LG.2b, ADR 032 D5) ─────────────────────────

@@ -10,7 +10,7 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   evaluarLogros, estadoLogros, LOGROS,
-  FAMILIAS, agruparVitrina, nivelUsuario, NIVELES_USUARIO,
+  FAMILIAS, agruparVitrina, conteoVitrina, nivelUsuario, NIVELES_USUARIO,
   mesCompleto, rachaMesesCompletos, deudasSaldadas,
   gastoHormigaMes, hormigaALaRaya,
   UMBRAL_GASTO_HORMIGA, UMBRAL_HORMIGA_RELEVANTE,
@@ -369,6 +369,39 @@ describe('agruparVitrina()', () => {
   });
 });
 
+// ── conteoVitrina() (R88, bloque de Logros del handoff móvil) ─────
+
+describe('conteoVitrina()', () => {
+  test('el total es el de la vitrina agrupada, no el del catálogo', () => {
+    const { total } = conteoVitrina(agruparVitrina(estadoLogros(estado(), [])));
+    expect(total).toBe(N_ITEMS_VITRINA);
+    expect(total).toBeLessThan(LOGROS.length);
+  });
+
+  test('una familia con varios niveles ganados cuenta como un solo conseguido', () => {
+    const unNivel  = conteoVitrina(agruparVitrina(estadoLogros(estado(), ['primer-gasto'])));
+    const dosNiveles = conteoVitrina(agruparVitrina(estadoLogros(estado(), ['primer-gasto', 'diez-gastos'])));
+    expect(dosNiveles.conseguidos).toBe(unNivel.conseguidos);
+    expect(dosNiveles.total).toBe(unNivel.total);
+  });
+
+  test('un logro suelto desbloqueado suma uno', () => {
+    const sin = conteoVitrina(agruparVitrina(estadoLogros(estado(), [])));
+    const con = conteoVitrina(agruparVitrina(estadoLogros(estado(), ['soñador'])));
+    expect(con.conseguidos).toBe(sin.conseguidos + 1);
+  });
+
+  test('el conseguido nunca pasa del total', () => {
+    const todo = conteoVitrina(agruparVitrina(estadoLogros(estado(), LOGROS.map(l => l.id))));
+    expect(todo.conseguidos).toBe(todo.total);
+  });
+
+  test('tolera entradas invalidas', () => {
+    expect(conteoVitrina(null)).toEqual({ conseguidos: 0, total: 0 });
+    expect(conteoVitrina(undefined)).toEqual({ conseguidos: 0, total: 0 });
+  });
+});
+
 // ── nivelUsuario() (LG.2b, ADR 032 D5) ────────────────────────────
 
 describe('nivelUsuario()', () => {
@@ -467,7 +500,7 @@ describe('renderProgresoAnalisis()', () => {
     renderProgresoAnalisis();
     const panel = document.getElementById('panel-analisis-progreso');
     expect(panel.textContent).toContain('Tu progreso');
-    expect(panel.textContent).toContain(`${2} de ${LOGROS.length} logros`);
+    expect(panel.textContent).toContain(`${2} de ${N_ITEMS_VITRINA} logros`);
     // LG.2b: cada familia colapsa a una tarjeta; singles pasan tal cual.
     expect(panel.querySelectorAll('.logro-item')).toHaveLength(N_ITEMS_VITRINA);
     // primer-paso (single) + familia registro (tiene un nivel ganado) = 2 activas.
@@ -509,6 +542,18 @@ describe('renderProgresoAnalisis()', () => {
     expect(panel.querySelector('.analisis-grupo--progreso').open).toBe(true);
   });
 
+  test('la cifra del encabezado cuadra con las tarjetas dibujadas (R88)', () => {
+    S.logros = ['primer-gasto', 'diez-gastos', 'soñador'];
+    renderProgresoAnalisis();
+    const panel   = document.getElementById('panel-analisis-progreso');
+    const activas = panel.querySelectorAll('.logro-item--on').length;
+    const items   = panel.querySelectorAll('.logro-item').length;
+    expect(panel.textContent).toContain(`${activas} de ${items} logros`);
+    // Dos niveles de la misma familia son una sola tarjeta, y una sola unidad
+    // del numerador: el encabezado no puede decir "de 18" con 12 en pantalla.
+    expect(items).toBe(N_ITEMS_VITRINA);
+  });
+
   test('no-op si el contenedor no existe', () => {
     document.body.innerHTML = '';
     expect(() => renderProgresoAnalisis()).not.toThrow();
@@ -536,7 +581,7 @@ describe('renderTarjetaProgresoInicio()', () => {
     const panel = document.getElementById('panel-progreso-inicio');
     expect(panel.hidden).toBe(false);
     expect(panel.textContent).toContain('Tu progreso');
-    expect(panel.textContent).toContain(`${2} de ${LOGROS.length} logros`);
+    expect(panel.textContent).toContain(`${2} de ${N_ITEMS_VITRINA} logros`);
     // Último logro persistido: el último id de S.logros.
     expect(panel.textContent).toContain('Registraste tu primer gasto.');
     // Próximo objetivo: primer pendiente en orden de vitrina.

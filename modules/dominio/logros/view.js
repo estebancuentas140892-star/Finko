@@ -14,7 +14,7 @@
 import { S } from '../../core/state.js';
 import { esc as _esc } from '../../infra/utils.js';
 import { icon } from '../../infra/icons.js';
-import { estadoLogros, agruparVitrina, nivelUsuario } from './logic.js';
+import { estadoLogros, agruparVitrina, conteoVitrina, nivelUsuario } from './logic.js';
 
 /**
  * Renderiza el apartado "Tu progreso" en `#panel-analisis-progreso`, fila
@@ -30,11 +30,14 @@ export function renderProgresoAnalisis() {
   if (!el) return;
 
   const estados = estadoLogros(S, S.logros);
-  const n       = estados.filter(e => e.desbloqueado).length;
-  const total   = estados.length;
-  const nivel   = nivelUsuario(n);
+  // El nivel se calcula sobre el catálogo crudo (ADR 032 D5); la cifra del
+  // encabezado, sobre la vitrina agrupada, que es lo que se dibuja (R88).
+  const nivel   = nivelUsuario(estados.filter(e => e.desbloqueado).length);
 
-  const items = agruparVitrina(estados)
+  const vitrina = agruparVitrina(estados);
+  const { conseguidos, total } = conteoVitrina(vitrina);
+
+  const items = vitrina
     .map(item => item.tipo === 'familia' ? _renderFamiliaItem(item) : _renderLogroItem(item.logro))
     .join('');
 
@@ -47,7 +50,7 @@ export function renderProgresoAnalisis() {
         <span class="analisis-grupo__teja" aria-hidden="true">${icon('trophy')}</span>
         <span class="analisis-grupo__texto">
           <h2 class="analisis-grupo__title">Tu progreso</h2>
-          <span class="analisis-grupo__sub">Nivel ${_esc(nivel.nombre)} · ${n} de ${total} logros</span>
+          <span class="analisis-grupo__sub">Nivel ${_esc(nivel.nombre)} · ${conseguidos} de ${total} logros</span>
         </span>
         <svg class="icon analisis-grupo__chevron" aria-hidden="true"><use href="#i-chevron-right"/></svg>
       </summary>
@@ -74,14 +77,17 @@ export function renderTarjetaProgresoInicio() {
   const n = estados.filter(e => e.desbloqueado).length;
   if (n === 0) { el.hidden = true; return; }
 
-  const total = estados.length;
+  // Mismo denominador que el apartado de Análisis, al que esta tarjeta enlaza:
+  // dos superficies del mismo progreso no pueden dar cifras distintas (R88).
+  const vitrina = agruparVitrina(estados);
+  const { conseguidos, total } = conteoVitrina(vitrina);
   const nivel = nivelUsuario(n);
 
   // Sin fecha de desbloqueo (ADR 032 D1): el orden de inserción de S.logros
   // es el mejor proxy de "último logro" disponible.
   const ultimoId = S.logros[S.logros.length - 1];
   const ultimo   = ultimoId ? estados.find(e => e.id === ultimoId) : null;
-  const objetivo = _proximoObjetivo(agruparVitrina(estados));
+  const objetivo = _proximoObjetivo(vitrina);
 
   el.hidden = false;
   el.innerHTML = `
@@ -89,7 +95,7 @@ export function renderTarjetaProgresoInicio() {
       <h2 class="card__title">Tu progreso</h2>
       <span class="chip chip-success">Nivel ${_esc(nivel.nombre)}</span>
     </div>
-    <p class="config-section__desc">${n} de ${total} logros desbloqueados.</p>
+    <p class="config-section__desc">${conseguidos} de ${total} logros desbloqueados.</p>
     <ul class="logros-lista" role="list">
       ${ultimo ? _renderLogroItem(ultimo) : ''}
       ${objetivo ? _renderLogroItem(objetivo) : ''}

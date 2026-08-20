@@ -1,12 +1,12 @@
 # Tablero - Finko Claude
 
-> Revisado: 2026-08-18.
+> Revisado: 2026-08-20.
 
 > Tablero Kanban de trabajo pendiente. Reemplaza a `TASKS.md` y `ROADMAP.md` (retirados 2026-07-02, ver [CHANGELOG](CHANGELOG.md)).
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-08-18. Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
+> Última actualización: 2026-08-20. Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
 
 ---
 
@@ -22,6 +22,8 @@
 - Depende de : nada
 - Avance     : **05/25 cerradas** (01 navegación móvil global, [ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md); 02 Inicio; 03 Más; 04 Ahorro; 05 Por pagar, que recuperó el alta de gasto fijo y el pago en lote). Sigue la 06.
 - Restricción: el orden no se altera. Cada ficha se implementa, se valida en la app y se cierra antes de abrir la siguiente. Lo que una ficha deja anotado para otra (ej. HR-1, o el destino de Logros) no se decide antes de llegar a ella.
+- Aparte     : el **bloque de Logros del handoff (ficha 20)** se aplicó fuera del orden como MOV.20a el 2026-08-20, porque no toca ningún archivo abierto por las fichas 06 ni 07. De ese bloque, R91 quedó **anulada** (premisa previa a LG.2e). El resto de la ficha 20 son los anclajes R86 de otros dominios, que se aplican con la ficha que los nombra.
+- Bloqueos   : la ficha **06** llega con tres, a decidir antes de abrirla: (1) `presupuesto/view.js` está abierto por la ficha 07 y su cambio 3 lo necesita; (2) su cambio 4 da por hecho el prefiltro por deuda concreta de la ficha 07, que aún no existe en `compromisos/`; (3) sus cambios 1 y 2 chocan con el [ADR 075](DECISIONS/075-mis-cuentas-sus-dos-trabajos-una-columna-cada-uno.md) D1 (orden de bloques en dos columnas) y D5 (etiquetas de los dos botones de ingreso), que no se revierte en silencio. La ficha **19** es un rediseño de la vitrina de Logros con premisa previa a LG.2d (la ubicaba en Ajustes): hay que releerla contra las dos superficies de hoy.
 
 
 ## Cómo usar este tablero

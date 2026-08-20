@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-20. Última tarea cerrada: DSK.1c, cierra la iniciativa DSK.1 (Inicio en escritorio).
+> Revisado: 2026-08-20. Última tarea cerrada: MOV.20a, el conteo de "Tu progreso" (Logros).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,7 +13,7 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 4421/4427 (2026-08-20). Los 6 rojos son **BUG-028**, ajeno |
+| Tests unitarios + integración | 4427/4433 (2026-08-20). Los 6 rojos son **BUG-028**, ajeno |
 | Tests E2E | 290/290 verdes, sello de DSK.1c (2026-08-20). **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v43 (`config.respaldoCifrado`, CFG.4c; migración no-op) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**MOV.20a - "Tu progreso" cuenta lo que se ve (Logros), 2026-08-20**
+Bloque de Logros del handoff móvil (ficha 20). El encabezado decía "de 18" con 12 tarjetas debajo: `agruparVitrina()` colapsa cada familia en una. `conteoVitrina()` nueva, numerador y denominador del mismo conjunto; las dos superficies comparten cifra y `nivelUsuario()` sigue sobre el conteo crudo. R86: el `hint` de "Planificador" nombra "Límites". R91 **anulada**: LG.2e ya bajó ese tramo a 16 sobre 18. SW v571.
 
 **DSK.1 completa - Inicio como centro de atención en escritorio (Inicio), 2026-08-20**
 Cuatro rebanadas del [ADR 070](DECISIONS/070-inicio-centro-de-atencion-en-escritorio.md), todas cerradas. Escritorio deja el reparto de móvil estirado: salen tres módulos que no avisan (D2), saldo y cuentas se funden en una banda (D4-D6), las obligaciones se leen en una línea de tiempo con su total en el botón (D8/D9), y "Atención hoy" pasa de un mosaico 2x2 a avisos estrechos + obligaciones anchas (D7). Con un mes cargado, cabe en el pliegue sin desplazar. SW v570.
@@ -36,9 +39,6 @@ Cuatro tarjetas apiladas: 1,7 pliegues y 2 de 6 bloques visibles ([ADR 078](DECI
 
 **DSK.8 - Límites de gasto: los tres grupos a la vista (Límites), 2026-08-18**
 Una tarjeta medía 5,7 veces sus hermanas y sus sobres no entraban en la primera pantalla ([ADR 077](DECISIONS/077-limites-de-gasto-tres-grupos-a-la-vista.md)). Desde 1440px: Necesidades y Ahorro a `span 5`, Estilo de vida a `span 7` con sus topes dentro (el ADR 019 no se toca) y sobres a dos columnas. El sobre excedido recupera AA (4,24 y 4,09 a 5,83:1) y queda un solo "Nuevo límite". SW v563.
-
-**DSK.7 - Movimientos: un libro mayor con sus filtros al lado (Movimientos), 2026-08-18**
-Los filtros solo servían al principio: el ledger carga en lotes de 50 que se disparan solos ([ADR 076](DECISIONS/076-movimientos-libro-mayor-con-sus-filtros-al-lado.md)). Desde 1440px el ledger va a `span 8` y los filtros a `span 4` pegajosos; las fechas pasan de 634 a 201px. SW v561.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

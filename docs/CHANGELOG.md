@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### fix(logros): MOV.20a, el conteo de "Tu progreso" cuenta lo que se ve · 2026-08-20
+
+Bloque de Logros del handoff a implementación de la auditoría móvil (ficha 20, "arreglos puntuales"), aplicado aparte del orden de MOV.1 porque no toca ninguno de los archivos que tienen abiertas las fichas 06 y 07. Ficha: [`contexto/logros.md`](contexto/logros.md).
+
+- **El encabezado decía "de 18" con 12 tarjetas debajo.** `agruparVitrina()` colapsa cada familia en una sola tarjeta (4 familias sobre 10 logros, más 8 sueltos = 12 elementos), y el denominador salía de `LOGROS.length`. El numerador tenía el defecto simétrico: dos niveles de la misma familia sumaban 2 en una tarjeta que se pinta una vez. Con 5 ids persistidos la pantalla decía "5 de 18" y dibujaba 4 tarjetas activas de 12.
+- **`conteoVitrina()` nueva en `logros/logic.js`**, pura y con numerador y denominador del mismo conjunto: una familia con al menos un nivel desbloqueado cuenta como **un** elemento conseguido. Ahora la cifra coincide con las tarjetas `.logro-item--on` en pantalla, que es la definición operativa de R88.
+- **`nivelUsuario()` sigue leyendo el conteo crudo.** Sus tramos (0, 3, 6, 10, 14, 16) se calibraron contra el catálogo completo ([ADR 032](DECISIONS/032-logros-v2-niveles-y-habitos.md) D5); alimentarlo con el conteo agrupado, que tope en 12, dejaría el tramo superior inalcanzable. Son dos números distintos a propósito.
+- **Las dos superficies comparten denominador.** La tarjeta de Inicio enlaza al apartado de Análisis: que cada una diera su propia cifra era el mismo defecto contado dos veces. De paso la tarjeta deja de llamar `agruparVitrina()` dos veces por render.
+- **R86 en el catálogo**: el `hint` de "Planificador" pasa de "en Límites de gasto" a "en Límites", el rótulo vigente de la lente ([ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md) D1). Es un encargo, no una descripción: se cumple menos si nombra mal su destino.
+- **R91 del handoff queda anulada, no aplicada.** Pedía bajar el tramo superior de `min: 18` a `min: 17` contra un catálogo de 17 logros. El catálogo tiene 18 y LG.2e ya había bajado el tramo a **16** el 2026-08-13, que es más alcanzable que lo que pedía la ficha: aplicarlo habría sido una regresión del ADR 032 D5. Anotado en la ficha de contexto para que no se reaplique.
+- Tests: 6 nuevos en `tests/unit/logros.test.js` (5 de `conteoVitrina()` y uno que compara la cifra del encabezado contra las tarjetas dibujadas). Dos con premisa cambiada, actualizados: los que afirmaban el total sobre `LOGROS.length` en las dos superficies.
+
 ### feat(inicio): DSK.1c, "Atención hoy" deja de ser un mosaico dependiente del estado · 2026-08-20
 
 Cuarta y ultima rebanada del [ADR 070](DECISIONS/070-inicio-centro-de-atencion-en-escritorio.md), **cierra la iniciativa DSK.1** completa (sus cuatro rebanadas). Cierra D7. Desde 1024px "Atención hoy" pasa de un mosaico 2x2 que se recolocaba según cuántos paneles hubiera visibles a un reparto fijo: avisos en columna estrecha (`span 4`), obligaciones en columna ancha (`span 8`); sin ningún aviso, las obligaciones ocupan la fila entera (`span 12`). Ficha: [`contexto/inicio.md`](contexto/inicio.md).
