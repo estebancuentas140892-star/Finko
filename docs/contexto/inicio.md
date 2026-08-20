@@ -1,6 +1,6 @@
 # Ficha de contexto: Inicio (dashboard)
 
-> Revisado: 2026-08-18 (DSK.1a).
+> Revisado: 2026-08-20 (DSK.1d).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -38,10 +38,19 @@
 - **El mínimo de las fichas (9,5rem) está medido:** a 1440px la columna derecha mide 702px y cuatro fichas de 11rem con sus huecos pedían 740, así que la cuarta caía sola a una segunda fila. El nombre se parte en dos líneas antes que truncarse (tope de 2 con `line-clamp`): los nombres reales no caben en una línea de 167px y el diseño no se topó con esto porque usó nombres cortos inventados.
 - **El título `#cuentas-detalle-titulo` se oculta pero no se borra:** `aria-labelledby` del panel lo sigue nombrando.
 
+**DSK.1d cerrada (2026-08-20, ADR 070 D8 y D9).** "Pendientes del mes" y "Próximas prioridades" se fusionan en **"Lo que tienes que pagar"** desde 1024px: una sola línea de tiempo, un total y un pie. Medido a 1920 x 1080 con el reparto de la auditoría: botón "Pagar lo vencido · $1.474.400", resumen "4 pagos · en total debes $5.964.300", borde izquierdo a plomo con la banda (desfase 0) y **33px de aire bajo el botón**, que antes era 1.
+- **El grupo "Ya se venció" lista exactamente lo que paga el botón.** Es la restricción que ordena todo lo demás: si el grupo y el lote no cubrieran el mismo conjunto, la cifra dentro del botón dejaría de ser cierta, y esa cifra es el punto de D8. Por eso un compromiso que vence **hoy** se queda en ese grupo (`vencidosSinPagar` lo incluye, y el lote lo paga) y lo dice en su propia fila, en warning: "vence hoy".
+- **Una sola anatomía de fila.** Las filas, los grupos y los chips los presta `.prioridades-card__*`, que ya era la anatomía de las dos listas (el propio código decía que eran "idénticas"). El badge sigue la regla de cada mitad: corto en lo vencido ("Deuda", "Gasto fijo"), largo en lo que viene ("Reserva", "Préstamo").
+- **La tarjeta es la celda (D9).** `#panel-vencidos` pierde `bento__cell--flat` en escritorio y vuelve a pintar la superficie de `.bento__cell`; el contenido va directo, sin `.vencidos-card` dentro. Sin eso el borde caía 24px por dentro del de la columna vecina. Al angostar la ventana, `_restaurarCeldaVencidos()` devuelve la celda a su forma plana: si no, quedaría superficie dentro de superficie.
+- **`#panel-prioridades` se vacía, no se retira del marcado**: bajo 1024px sigue siendo su propia tarjeta y ese ancho es territorio de MOV.1.
+- **Lo que este alcance no puede dar todavía:** el borde derecho cae a plomo solo cuando exista el reparto 4 + 8 de **DSK.1c**; hoy la celda sigue siendo `span 6`. Y "cabe en el pliegue sin desplazar", que la auditoría mide como propiedad de la pantalla, tampoco: a 1920 el documento mide 1339 contra 1080 de ventana. Las dos son consecuencia de D7, no de D8.
+
 **Dónde vive**
 
 | Pieza | Archivo | Ancla | Línea |
 |---|---|---|---|
+| Tarjeta fusionada de obligaciones en escritorio (DSK.1d, ADR 070 D8/D9) | `modules/dominio/compromisos/views/dashboard.js` | `_renderObligaciones()`, `_filaObligacion()`, `_enEscritorio()`, `_restaurarCeldaVencidos()` | |
+| Estilos de la tarjeta fusionada: la celda es la tarjeta, y su pie (DSK.1d) | `styles/components/domain.css` | `.obligaciones-card`, `.obligaciones-card__pie`, `.obligaciones-card__resto` | |
 | Orquestador del dominio (suscripción a EventBus, re-render) | `modules/dominio/resumen/index.js` | `initResumen()` | ~16 |
 | Resumen semanal (datos + serie diaria, IN.8f) | `modules/dominio/resumen/logic.js` | `resumenSemanal(gastos, hoyISO)`, `serieDiaria()` | ~202 |
 | Resumen semanal (render visual: chip + barras + categoría top, IN.8f) | `modules/dominio/resumen/view.js` | `renderPanelResumen()` | ~51 |

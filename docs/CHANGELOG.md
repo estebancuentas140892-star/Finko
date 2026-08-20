@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-08-19.
+> Revisado: 2026-08-20.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-08)
+
+### feat(inicio): DSK.1d, las obligaciones se leen en una sola linea de tiempo · 2026-08-20
+
+Cuarta rebanada del [ADR 070](DECISIONS/070-inicio-centro-de-atencion-en-escritorio.md). Cierra sus D8 y D9. Desde 1024px "Pendientes del mes" y "Próximas prioridades" pasan a ser **"Lo que tienes que pagar"**: una tarjeta, una línea de tiempo, un total. Medido a 1920 x 1080 con el reparto de la auditoría: botón "Pagar lo vencido · $1.474.400", resumen "4 pagos · en total debes $5.964.300", borde izquierdo a plomo con la banda (desfase 0) y **33px de aire bajo el botón**, contra 1 antes. Ficha: [`contexto/inicio.md`](contexto/inicio.md).
+
+- **D8, la misma pregunta estaba partida en dos.** Mismo archivo de origen, mismo eje (el tiempo), mismo enlace, y el propio código decía que la fila de una tenía "anatomía idéntica" a la de la otra. Para saber cuánto debía en total, el usuario tenía que **sumar dos cifras de dos tarjetas**; en una pantalla de diez segundos eso es un fallo. Ahora la suma va hecha en el pie y la cifra de lo vencido va **dentro del botón**, que antes decía "Pagar los 2" sin decir cuánto.
+- **El grupo "Ya se venció" lista exactamente lo que paga el botón**, y esa restricción ordena el resto. Si el grupo y el lote no cubrieran el mismo conjunto, la cifra del botón dejaría de ser cierta, que es justo el defecto que D8 corrige. Por eso lo que vence **hoy** se queda en ese grupo (`vencidosSinPagar` lo incluye y el lote lo cobra) y lo dice en su fila, en warning.
+- **Una sola anatomía de fila, no dos dentro de una tarjeta.** Las filas, los grupos y los chips los presta `.prioridades-card__*`. Cada mitad conserva su badge: corto en lo vencido ("Deuda", "Gasto fijo"), largo en lo que viene ("Reserva", "Préstamo"). Y la fila "Ver los N" viaja con el grupo de vencidos: los que no caben no desaparecen en silencio.
+- **D9, la tarjeta es la celda.** `#panel-vencidos` pierde `bento__cell--flat` y vuelve a pintar la superficie de `.bento__cell`, con el contenido directo y sin `.vencidos-card` dentro: sin eso su borde caía 24px por dentro del de la columna vecina, y dos superficies de la misma fila quedaban desalineadas. El pie gana aire **arriba y abajo**; llevaba solo relleno superior y el botón más importante de la pantalla parecía a punto de salirse.
+- **Móvil no se toca y se comprobó**: bajo 1024px vuelven las dos tarjetas con su copy de siempre, la celda recupera `--flat` y `#panel-prioridades` vuelve a llenarse. Ese ancho es territorio de MOV.1, que sigue abierta.
+- **Lo que esta rebanada no puede dar**: el borde **derecho** cae a plomo solo cuando exista el reparto 4 + 8 de DSK.1c (hoy la celda sigue en `span 6`), y "cabe en el pliegue sin desplazar" tampoco (a 1920 el documento mide 1339 contra 1080). Las dos son consecuencia de D7, no de D8.
+- Tests: 9 nuevos en `tests/unit/compromisos.test.js` (538 en el archivo) y 2 en `tests/e2e/smoke.test.js`. Los cinco bloques que cubren la forma de móvil pasan a falsear `matchMedia`: happy-dom responde contra 1024x768, o sea el lado de escritorio, así que sin el apaño 23 tests medían la tarjeta equivocada. Dos tests con premisa cambiada, actualizados: el de "Pendientes del mes" declara ancho de móvil y el del lote desde Inicio afirma sobre la tarjeta fusionada.
 
 ### feat(ui): DSK.10c, el armazon deja de moverse como una app de dedo · 2026-08-19
 

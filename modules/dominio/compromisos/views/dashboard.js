@@ -67,6 +67,168 @@ function _iconoApartado(valor) {
   return /^[a-z]-/.test(valor) ? iconoCategoria(valor) : _esc(valor);
 }
 
+// ── DASHBOARD: OBLIGACIONES FUSIONADAS (escritorio) ──────────────
+
+/**
+ * Umbral de escritorio (DSK.1d, ADR 070 D1). Mismo valor que usa
+ * `infra/render.js` para repartir el cierre de Inicio: la auditoría decide
+ * desde 1024px y móvil conserva su reparto, que es territorio de MOV.1.
+ */
+function _enEscritorio() {
+  return window.matchMedia?.('(min-width: 1024px)').matches === true;
+}
+
+/**
+ * Fila de la línea de tiempo. Misma anatomía para lo vencido y lo que viene:
+ * el código ya decía que la fila de un panel era "idéntica" a la del otro, y
+ * fusionarlos sin unificar la fila habría dejado dos anatomías dentro de una
+ * sola tarjeta.
+ *
+ * @param {object} it        item de vencidos o de próximos
+ * @param {string} estadoHtml texto de estado a la derecha del badge ('' si no aplica)
+ * @param {string} badgeHtml  badge de dominio ya renderizado
+ */
+function _filaObligacion(it, estadoHtml, badgeHtml) {
+  const tipo     = it.tipo ?? 'fijo';
+  const chipTipo = tipo === 'personal' ? 'deuda-personal' : tipo;
+  const icono    = tipo === 'personal' ? icon('personales')
+    : tipo === 'apartado' ? _iconoApartado(it.icono)
+    : icon(ICONO_TIPO[tipo] ?? 'recurring');
+  const desc  = _esc(it.descripcion ?? '(sin descripción)');
+  const valor = Number(it.monto ?? it.cuotaMensual);
+  const monto = Number.isFinite(valor) ? f(valor) : '';
+  return `
+    <li class="prioridades-card__item">
+      <span class="prioridades-card__icon prioridades-card__icon--${chipTipo}" aria-hidden="true">${icono}</span>
+      <div class="prioridades-card__body">
+        <p class="prioridades-card__name">${desc}</p>
+        <div class="prioridades-card__meta">${badgeHtml}${estadoHtml}</div>
+      </div>
+      ${monto ? `<p class="prioridades-card__amount">${monto}</p>` : ''}
+    </li>`;
+}
+
+/**
+ * Renderiza en `#panel-vencidos` la tarjeta única "Lo que tienes que pagar"
+ * (DSK.1d, ADR 070 D8 y D9). Solo escritorio.
+ *
+ * Fusiona "Pendientes del mes" y "Próximas prioridades": misma pregunta
+ * partida en dos, mismo origen, mismo eje (el tiempo) y mismo enlace. Para
+ * saber cuánto debía en total el usuario tenía que sumar dos cifras de dos
+ * tarjetas; acá la suma ya está hecha y va en el pie.
+ *
+ * La tarjeta **es** la celda (D9): `#panel-vencidos` pierde `--flat` y pinta
+ * él la superficie, así que su borde cae a plomo con el de la banda de
+ * contexto en vez de 24px por dentro.
+ *
+ * "Ya se venció" agrupa exactamente lo que `vencidosSinPagar` devuelve, que
+ * es lo mismo que paga el botón de lote: si el grupo y el botón no listaran
+ * el mismo conjunto, la cifra del botón dejaría de ser cierta, que es
+ * justamente el defecto que D8 corrige. Por eso un compromiso que vence hoy
+ * se queda en ese grupo y lo dice en su propia fila, en warning.
+ */
+function _renderObligaciones(el) {
+  const vencidos = vencidosSinPagar(S.compromisos, S.gastos, _hoyISOLocal());
+
+  // Los que vencen hoy ya están en `vencidos`: sin este filtro un mismo
+  // compromiso sale dos veces el día que vence (IN.7), ahora dentro de la
+  // misma tarjeta en vez de en dos.
+  const proxComp = compromisosProximos(S.compromisos, 7).filter(c => c.diasRestantes > 0);
+  const proximos = [...proxComp, ..._personalesProximos(7), ..._apartadosProximos(7)]
+    .sort((a, b) => a.diasRestantes - b.diasRestantes);
+
+  const compActivos = compromisosActivos(S.compromisos).length > 0;
+  if (vencidos.length === 0 && proximos.length === 0 && !compActivos) {
+    el.innerHTML = '';
+    el.hidden = true;
+    return;
+  }
+  el.hidden = false;
+
+  // D9: la celda deja de ser un marco vacío alrededor de una tarjeta.
+  el.classList.remove('bento__cell--flat');
+  el.classList.add('obligaciones-card');
+  el.setAttribute('aria-label', 'Lo que tienes que pagar');
+
+  const nVencidos = vencidos.length;
+  const grupoVencidos = nVencidos === 0 ? '' : (() => {
+    const filas = vencidos.slice(0, MAX_VISIBLES).map(v => {
+      const dias  = v.diasAtraso;
+      const esHoy = dias === 0;
+      // El grupo ya dice que esto se venció, así que la fila solo lleva la
+      // antigüedad: "hace 2 días" en vez de "Venció hace 2 días".
+      const texto = esHoy ? 'vence hoy' : dias === 1 ? 'ayer' : `hace ${dias} días`;
+      const clase = esHoy ? 'vencidos-card__estado--warning' : 'vencidos-card__estado--danger';
+      const estado = `<span class="vencidos-card__estado ${clase}">${texto}</span>`;
+      return _filaObligacion(v, estado, _tipoBadgeCorto(v.tipo ?? 'fijo'));
+    }).join('');
+
+    // Los que no caben no desaparecen en silencio (misma fila que tenía
+    // "Pendientes del mes", hacia la lente "Por pagar" del ADR 069).
+    const verMas = nVencidos > MAX_VISIBLES
+      ? `<a href="#compromisos" class="vencidos-card__ver-mas">Ver los ${nVencidos}</a>`
+      : '';
+
+    return `
+      <div class="prioridades-card__group">
+        <p class="prioridades-card__group-label obligaciones-card__lb--vencido">Ya se venció</p>
+        <ul class="prioridades-card__list" role="list">${filas}</ul>
+        ${verMas}
+      </div>`;
+  })();
+
+  const gruposProximos = agruparPorDiasRestantes(proximos).map(g => {
+    const filas = g.items.map(c => _filaObligacion(c, '', _tipoBadge(c.tipo ?? 'fijo'))).join('');
+    return `
+      <div class="prioridades-card__group${g.dias === 0 ? ' prioridades-card__group--hoy' : ''}">
+        <p class="prioridades-card__group-label">${_esc(g.label)}</p>
+        <ul class="prioridades-card__list" role="list">${filas}</ul>
+      </div>`;
+  }).join('');
+
+  const cuerpo = (grupoVencidos || gruposProximos)
+    ? grupoVencidos + gruposProximos
+    : `<p class="prioridades-card__empty">Todo al día. Sin vencimientos en los próximos 7 días.</p>`;
+
+  // El botón conserva el umbral de CAL.5b (con uno solo el lote no ahorra
+  // nada) y ahora lleva la cifra dentro: es la acción más importante de la
+  // pantalla y decía "Pagar los 2" sin decir cuánto.
+  const pagar = nVencidos >= 2
+    ? `<button type="button" class="vencidos-card__pagar" data-action="inicio-pagar-lote"
+               aria-label="Pagar juntos los ${nVencidos} pagos vencidos">Pagar lo vencido · ${f(sumarMontos(vencidos))}</button>`
+    : '';
+
+  const nTodos = nVencidos + proximos.length;
+  const resto = nTodos === 0 ? '' : `
+    <span class="obligaciones-card__resto">${nTodos === 1 ? '1 pago' : `${nTodos} pagos`} · en total debes ${f(sumarMontos([...vencidos, ...proximos]))}</span>`;
+
+  const pie = (pagar || resto)
+    ? `<div class="obligaciones-card__pie">${pagar}${resto}</div>`
+    : '';
+
+  el.innerHTML = `
+    <div class="card__header">
+      <h2 class="card__title" id="obligaciones-titulo">Lo que tienes que pagar</h2>
+      <a href="#agenda" class="vencidos-card__link" aria-label="Ir al calendario">Ver calendario</a>
+    </div>
+    <div class="obligaciones-card__body">
+      ${cuerpo}
+    </div>
+    ${pie}`;
+}
+
+/**
+ * Devuelve `#panel-vencidos` a su forma de móvil: celda plana que solo
+ * reserva sitio, con `.vencidos-card` pintando su propia superficie dentro.
+ * Sin esto, angostar la ventana tras haber pintado la fusión dejaría la
+ * celda con superficie propia y la tarjeta dentro: caja dentro de caja.
+ */
+function _restaurarCeldaVencidos(el) {
+  el.classList.add('bento__cell--flat');
+  el.classList.remove('obligaciones-card');
+  el.setAttribute('aria-label', 'Deudas y pagos vencidos');
+}
+
 // ── DASHBOARD: PANEL VENCIDOS ────────────────────────────────────
 
 /** Filas visibles en "Pendientes del mes" antes de la fila "Ver los N". */
@@ -91,6 +253,12 @@ const MAX_VISIBLES = 4;
 export function renderPanelVencidos() {
   const el = document.getElementById('panel-vencidos');
   if (!el) return;
+
+  // Desde 1024px esta celda deja de ser "Pendientes del mes" y pasa a ser la
+  // tarjeta fusionada (DSK.1d, ADR 070 D8): las dos listas viven en una sola
+  // línea de tiempo, con un total y un pie.
+  if (_enEscritorio()) return _renderObligaciones(el);
+  _restaurarCeldaVencidos(el);
 
   const vencidos = vencidosSinPagar(S.compromisos, S.gastos, _hoyISOLocal());
 
@@ -192,6 +360,16 @@ export function renderPanelVencidos() {
 export function renderPanelPrioridades() {
   const el = document.getElementById('panel-prioridades');
   if (!el) return;
+
+  // En escritorio esta celda no tiene contenido propio: lo que mostraba está
+  // dentro de "Lo que tienes que pagar" (DSK.1d, ADR 070 D8). Se vacía en vez
+  // de retirarse del marcado porque bajo 1024px sigue siendo su propia
+  // tarjeta, y ese ancho es territorio de MOV.1.
+  if (_enEscritorio()) {
+    el.innerHTML = '';
+    el.hidden = true;
+    return;
+  }
 
   // Los que vencen hoy (diasRestantes === 0) ya se muestran en "Pendientes
   // del mes" (panel-vencidos, vía detectarVencidosCompletos): sin este

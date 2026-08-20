@@ -2599,7 +2599,20 @@ describe('renderAlertaDeudasDurmiendo() - saldo pendiente (regresión $NaN)', ()
 
 // ── renderPanelPrioridades() ─────────────────────────────────────
 
+// DSK.1d (ADR 070 D8): desde 1024px estas dos tarjetas se fusionan en "Lo que
+// tienes que pagar". Los cinco bloques que siguen cubren la forma de móvil,
+// que no cambió, así que falsean el ancho: happy-dom no tiene viewport real y
+// su `matchMedia` responde contra 1024x768, o sea el lado de escritorio.
+// Mismo apaño que usan agenda.test.js y analisis.test.js.
+const _matchMediaReal = window.matchMedia;
+const anchoMovil       = () => { window.matchMedia = () => ({ matches: false }); };
+const anchoEscritorio  = () => { window.matchMedia = () => ({ matches: true  }); };
+const restaurarAncho   = () => { window.matchMedia = _matchMediaReal; };
+
 describe('renderPanelPrioridades() - monto por tipo (regresión: deudas sin cifra)', () => {
+  beforeEach(anchoMovil);
+  afterEach(restaurarAncho);
+
   beforeEach(() => {
     document.body.innerHTML = '<div id="panel-prioridades"></div>';
     S.compromisos = [];
@@ -2668,6 +2681,9 @@ describe('renderPanelPrioridades() - monto por tipo (regresión: deudas sin cifr
 // ── renderPanelVencidos() - total al pie (IN.1) ──────────────────
 
 describe('renderPanelVencidos() - total al pie (IN.1)', () => {
+  beforeEach(anchoMovil);
+  afterEach(restaurarAncho);
+
   beforeEach(() => {
     document.body.innerHTML = '<div id="panel-vencidos"></div>';
     S.compromisos = [];
@@ -2698,6 +2714,9 @@ describe('renderPanelVencidos() - total al pie (IN.1)', () => {
 // ── renderPanelVencidos() - jerarquía sin línea roja (IN.8e, ADR 034 D5) ──
 
 describe('renderPanelVencidos() - jerarquía real sin línea roja (IN.8e, ADR 034 D5)', () => {
+  beforeEach(anchoMovil);
+  afterEach(restaurarAncho);
+
   // Todo este bloque necesita un día YA PASADO dentro del mes en curso, y el
   // mes en curso no siempre tiene uno: el día 1 no hay ningún día anterior, y
   // `DIA_PASADO` (que envuelve a módulo 28) devuelve 27, o sea el futuro. El
@@ -2825,6 +2844,9 @@ describe('renderPanelVencidos() - jerarquía real sin línea roja (IN.8e, ADR 03
 });
 
 describe('renderPanelVencidos() - los que no caben se declaran, no se esconden', () => {
+  beforeEach(anchoMovil);
+  afterEach(restaurarAncho);
+
   // Mismo motivo que el describe de arriba: el día 1 del mes no tiene ningún
   // día anterior, así que el reloj se fija a mitad de mes para que "vencido"
   // exista siempre.
@@ -2870,6 +2892,9 @@ describe('renderPanelVencidos() - los que no caben se declaran, no se esconden',
 });
 
 describe('renderPanelPrioridades() - anatomía de fila igual a Pendientes del mes', () => {
+  beforeEach(anchoMovil);
+  afterEach(restaurarAncho);
+
   // Fecha local (no UTC) a N días de hoy: el panel compara contra el día
   // visible al usuario, igual que la vista.
   const _fechaEnDias = n => {
@@ -2950,6 +2975,164 @@ describe('renderPanelPrioridades() - anatomía de fila igual a Pendientes del me
 });
 
 // ── deltasSaldoCompromisoPorEdicionGasto() ───────────────────────
+
+// ── DSK.1d: la tarjeta fusionada de escritorio (ADR 070 D8 y D9) ──
+
+describe('renderPanelVencidos() - "Lo que tienes que pagar" en escritorio (DSK.1d)', () => {
+  beforeEach(anchoEscritorio);
+  afterEach(restaurarAncho);
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 6, 15)); // 15 julio 2026
+    document.body.innerHTML = `
+      <div id="panel-vencidos" class="bento__cell bento__cell--flat bento__cell--half"
+           aria-label="Deudas y pagos vencidos"></div>
+      <div id="panel-prioridades"></div>`;
+    S.compromisos = [];
+    S.personales  = [];
+    S.apartados   = [];
+    S.gastos      = [];
+  });
+
+  afterEach(() => { vi.useRealTimers(); });
+
+  const panel = () => document.getElementById('panel-vencidos');
+
+  /** Dos vencidos (días 13 y 14) y uno que vence en dos días (día 17). */
+  const sembrarMixto = () => {
+    S.compromisos = [
+      compromisoBase({ id: 'v1', descripcion: 'Crédito Bancolombia', tipo: 'deuda-entidad',
+        cuotaMensual: 1_284_500, monto: undefined, diaPago: 13 }),
+      compromisoBase({ id: 'v2', descripcion: 'Plan Claro', monto: 189_900, diaPago: 14 }),
+      compromisoBase({ id: 'p1', descripcion: 'Internet Movistar', monto: 139_900, diaPago: 17 }),
+    ];
+  };
+
+  // El defecto que corrige: para saber cuánto debía en total, el usuario tenía
+  // que sumar dos cifras de dos tarjetas.
+  it('una sola tarjeta con lo vencido al frente y lo que viene detrás', () => {
+    sembrarMixto();
+    renderPanelVencidos();
+    renderPanelPrioridades();
+
+    expect(panel().querySelector('.card__title').textContent).toBe('Lo que tienes que pagar');
+    const grupos = [...panel().querySelectorAll('.prioridades-card__group-label')]
+      .map(l => l.textContent.trim());
+    expect(grupos[0]).toBe('Ya se venció');
+    expect(grupos).toHaveLength(2);
+    expect(panel().querySelectorAll('.prioridades-card__item')).toHaveLength(3);
+
+    // Y la celda de al lado se queda sin contenido propio: lo que mostraba
+    // vive dentro de esta tarjeta.
+    const prioridades = document.getElementById('panel-prioridades');
+    expect(prioridades.hidden).toBe(true);
+    expect(prioridades.innerHTML).toBe('');
+  });
+
+  // D9: la tarjeta ES la celda. Antes iba dentro de una celda `--flat`, con su
+  // borde 24px por dentro del de la columna de al lado.
+  it('la celda deja de ser un marco: pierde --flat y no lleva tarjeta dentro', () => {
+    sembrarMixto();
+    renderPanelVencidos();
+
+    expect(panel().classList.contains('bento__cell--flat')).toBe(false);
+    expect(panel().classList.contains('obligaciones-card')).toBe(true);
+    expect(panel().querySelector('.vencidos-card')).toBeNull();
+    expect(panel().getAttribute('aria-label')).toBe('Lo que tienes que pagar');
+  });
+
+  // El pie es la corrección de M10: la suma ya está hecha y va en el botón.
+  it('el pie lleva la cifra dentro del botón y el resto al lado', () => {
+    sembrarMixto();
+    renderPanelVencidos();
+
+    const boton = panel().querySelector('.vencidos-card__pagar');
+    expect(boton.textContent.trim()).toBe('Pagar lo vencido · $1.474.400');
+    expect(boton.getAttribute('data-action')).toBe('inicio-pagar-lote');
+    expect(panel().querySelector('.obligaciones-card__resto').textContent.trim())
+      .toBe('3 pagos · en total debes $1.614.300');
+  });
+
+  // El grupo "Ya se venció" lista exactamente lo que paga el botón: si no, la
+  // cifra del botón dejaría de ser cierta, que es el defecto que D8 corrige.
+  it('lo que vence hoy sigue en el grupo vencido y lo dice en su fila', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'v1', descripcion: 'Crédito', tipo: 'deuda-entidad',
+        cuotaMensual: 100_000, monto: undefined, diaPago: 13 }),
+      compromisoBase({ id: 'v2', descripcion: 'Netflix', monto: 44_900, diaPago: 15 }),
+    ];
+    renderPanelVencidos();
+
+    const estados = [...panel().querySelectorAll('.vencidos-card__estado')]
+      .map(e => ({ t: e.textContent, danger: e.classList.contains('vencidos-card__estado--danger') }));
+    expect(estados).toEqual([
+      { t: 'hace 2 días', danger: true },
+      { t: 'vence hoy',   danger: false },
+    ]);
+    expect(panel().querySelector('.vencidos-card__pagar').textContent.trim())
+      .toBe('Pagar lo vencido · $144.900');
+  });
+
+  // Con un solo vencido el lote no ahorra nada (umbral de CAL.5b), pero el
+  // resumen del pie sigue diciendo cuánto se debe.
+  it('con un solo vencido no hay botón de lote, y el pie se queda', () => {
+    S.compromisos = [compromisoBase({ id: 'v1', descripcion: 'Arriendo', monto: 900_000, diaPago: 13 })];
+    renderPanelVencidos();
+
+    expect(panel().querySelector('.vencidos-card__pagar')).toBeNull();
+    expect(panel().querySelector('.obligaciones-card__resto').textContent.trim())
+      .toBe('1 pago · en total debes $900.000');
+  });
+
+  it('sin nada con fecha, la tarjeta se queda y cambia lo que dice dentro', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', descripcion: 'Arriendo', monto: 900_000, diaPago: 28 })];
+    renderPanelVencidos();
+
+    expect(panel().hidden).toBe(false);
+    expect(panel().querySelector('.prioridades-card__empty').textContent.trim())
+      .toBe('Todo al día. Sin vencimientos en los próximos 7 días.');
+    expect(panel().querySelector('.obligaciones-card__pie')).toBeNull();
+  });
+
+  it('sin compromisos activos la celda desaparece de la rejilla', () => {
+    renderPanelVencidos();
+    expect(panel().hidden).toBe(true);
+    expect(panel().innerHTML).toBe('');
+  });
+
+  // Los que no caben no desaparecen en silencio: la fila explícita que tenía
+  // "Pendientes del mes" viaja con el grupo.
+  it('con más de 4 vencidos, 4 filas y la salida a "Por pagar" con el conteo real', () => {
+    S.compromisos = Array.from({ length: 6 }, (_, i) => compromisoBase({
+      id: `c${i}`, descripcion: `Fijo ${i}`, monto: 10_000, diaPago: 13,
+    }));
+    renderPanelVencidos();
+
+    const grupoVencido = panel().querySelector('.prioridades-card__group');
+    expect(grupoVencido.querySelectorAll('.prioridades-card__item')).toHaveLength(4);
+    const verMas = grupoVencido.querySelector('.vencidos-card__ver-mas');
+    expect(verMas.textContent).toBe('Ver los 6');
+    expect(verMas.getAttribute('href')).toBe('#compromisos');
+    // El total del botón cuenta los 6, no los 4 visibles.
+    expect(panel().querySelector('.vencidos-card__pagar').textContent.trim())
+      .toBe('Pagar lo vencido · $60.000');
+  });
+
+  // Bajo 1024px nada de esto pasa: es territorio de la auditoría móvil.
+  it('bajo el umbral vuelven las dos tarjetas de siempre', () => {
+    sembrarMixto();
+    anchoMovil();
+    renderPanelVencidos();
+    renderPanelPrioridades();
+
+    expect(panel().querySelector('.vencidos-card__title').textContent).toContain('Pendientes del mes');
+    expect(panel().classList.contains('bento__cell--flat')).toBe(true);
+    expect(panel().classList.contains('obligaciones-card')).toBe(false);
+    expect(document.getElementById('panel-prioridades').hidden).toBe(false);
+    expect(document.querySelector('.prioridades-card__title').textContent).toBe('Próximas prioridades');
+  });
+});
 
 describe('deltasSaldoCompromisoPorEdicionGasto()', () => {
   it('crear gasto con compromisoId: delta negativo (saldo deuda baja)', () => {

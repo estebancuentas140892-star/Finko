@@ -506,6 +506,11 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
   });
 
   test('Pendientes del mes sin línea roja, badge corto y "Ver calendario" al calendario (IN.8e, ADR 034 D5)', async ({ page }) => {
+    // Móvil explícito desde DSK.1d (ADR 070 D8): en escritorio estas dos
+    // tarjetas ya no existen por separado, viven fusionadas en "Lo que tienes
+    // que pagar". Lo que este test cubre es la forma de móvil, que no cambió,
+    // así que declara el ancho en vez de heredar el 1280 del proyecto.
+    await page.setViewportSize({ width: 390, height: 844 });
     // BUG-021: el caso que esta prueba describe ("venció hace 2 días" junto a
     // "vence hoy") solo existe en un día del mes con margen a ambos lados, así
     // que el reloj se fija en vez de derivar los días de la fecha real. La
@@ -4845,10 +4850,14 @@ test.describe('Lote con deudas y entrada desde Inicio (CAL.5b)', () => {
   test('Inicio ofrece el mismo lote sin salir del dashboard', async ({ page }) => {
     await sembrarMixto(page);
     await page.goto('/#dash');
-    await page.waitForSelector('#panel-vencidos .vencidos-card', { timeout: 10_000 });
+    // El proyecto corre a 1280, así que acá manda la tarjeta fusionada de
+    // DSK.1d (ADR 070 D8): mismo botón y mismo flujo, dentro de "Lo que
+    // tienes que pagar" en vez de dentro de "Pendientes del mes". La cifra
+    // en el texto es lo que el lote va a pagar.
+    await page.waitForSelector('#panel-vencidos.obligaciones-card', { timeout: 10_000 });
 
     const cta = page.locator('.vencidos-card__pagar');
-    await expect(cta).toHaveText('Pagar los 2');
+    await expect(cta).toHaveText('Pagar lo vencido · $180.000');
     await cta.click();
 
     const modal = page.locator('#modal-pago-lote');
@@ -4859,9 +4868,10 @@ test.describe('Lote con deudas y entrada desde Inicio (CAL.5b)', () => {
 
     await modal.locator('[data-action="compromisos-confirmar-lote"]').click();
 
-    // Registrado el lote, el bloque de vencidos se vacía solo (ya no hay nada
+    // Registrado el lote, el grupo de vencidos se vacía solo (ya no hay nada
     // pendiente este mes) sin recargar ni cambiar de sección.
-    await expect(page.locator('#panel-vencidos .vencidos-card')).toHaveCount(0, { timeout: 5_000 });
+    await expect(page.locator('.obligaciones-card__lb--vencido')).toHaveCount(0, { timeout: 5_000 });
+    await expect(page.locator('.vencidos-card__pagar')).toHaveCount(0);
   });
 });
 
@@ -5458,5 +5468,75 @@ test.describe('DSK.10c - el armazón deja de moverse como una app de dedo (ADR 0
       return encontrado;
     });
     expect(cond).toBe('(pointer: coarse)');
+  });
+});
+
+// ── DSK.1d: obligaciones en una sola línea de tiempo ────────────────────────
+
+test.describe('DSK.1d - "Lo que tienes que pagar" (ADR 070 D8/D9)', () => {
+  test.use({ viewport: { width: 1920, height: 1080 } });
+
+  /** Dos vencidos y dos por vencer, el reparto del que salió la auditoría. */
+  async function sembrarObligaciones(page) {
+    await page.clock.setFixedTime(new Date('2026-03-15T10:00:00'));
+    await sembrar(page, {
+      version: 1,
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi', saldo: 500000, activa: true }],
+      ingresos: [],
+      gastos: [],
+      compromisos: [
+        { id: 'v1', descripcion: 'Crédito de libre inversión', tipo: 'deuda-entidad', cuotaMensual: 1284500, saldoTotal: 9000000, frecuencia: 'Mensual', diaPago: 13, activo: true },
+        { id: 'v2', descripcion: 'Plan familiar Claro', tipo: 'fijo', monto: 189900, frecuencia: 'Mensual', diaPago: 14, activo: true },
+        { id: 'p1', descripcion: 'Internet hogar Movistar', tipo: 'fijo', monto: 139900, frecuencia: 'Mensual', diaPago: 16, activo: true },
+      ],
+      metas: [],
+    });
+    await page.goto('/#dash');
+    await page.waitForSelector('#panel-vencidos.obligaciones-card', { timeout: 10_000 });
+  }
+
+  // El defecto que corrige: la misma pregunta partida en dos tarjetas, y para
+  // saber cuánto debía en total el usuario tenía que sumar dos cifras.
+  test('las dos listas se leen como una sola, con lo vencido al frente', async ({ page }) => {
+    await sembrarObligaciones(page);
+
+    const panel = page.locator('#panel-vencidos');
+    await expect(panel.locator('.card__title')).toHaveText('Lo que tienes que pagar');
+    await expect(page.locator('#panel-prioridades')).toBeHidden();
+
+    const grupos = panel.locator('.prioridades-card__group-label');
+    await expect(grupos.first()).toHaveText('Ya se venció');
+    await expect(panel.locator('.prioridades-card__item')).toHaveCount(3);
+
+    // Un solo total, y va en el pie con la acción al lado.
+    await expect(panel.locator('.vencidos-card__pagar')).toHaveText('Pagar lo vencido · $1.474.400');
+    await expect(panel.locator('.obligaciones-card__resto')).toHaveText('3 pagos · en total debes $1.614.300');
+  });
+
+  // D9: la tarjeta ES la celda. El defecto medido era su borde 24px por dentro
+  // del de la columna de al lado, y el botón a 1px del canto inferior.
+  test('el borde cae a plomo con la banda y el botón deja de rozar el canto', async ({ page }) => {
+    await sembrarObligaciones(page);
+
+    const medidas = await page.evaluate(() => {
+      const celda = document.getElementById('panel-vencidos');
+      const banda = document.querySelector('.banda-inicio');
+      const boton = celda.querySelector('.vencidos-card__pagar');
+      return {
+        desfaseIzquierdo: Math.round(celda.getBoundingClientRect().left - banda.getBoundingClientRect().left),
+        aireBajoBoton: Math.round(celda.getBoundingClientRect().bottom - boton.getBoundingClientRect().bottom),
+        tieneTarjetaDentro: !!celda.querySelector('.vencidos-card'),
+        esPlana: celda.classList.contains('bento__cell--flat'),
+      };
+    });
+
+    expect(medidas).toEqual({
+      desfaseIzquierdo: 0,
+      aireBajoBoton: 33,
+      tieneTarjetaDentro: false,
+      esPlana: false,
+    });
   });
 });

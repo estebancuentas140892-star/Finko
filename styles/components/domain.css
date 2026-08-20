@@ -4414,3 +4414,69 @@ button.chip--gastos.chip--active {
   color: var(--fk-text-secondary);
   font-variant-numeric: tabular-nums;
 }
+
+/* ════════════════════════════════════════════════════════════
+   OBLIGACIONES-CARD - "Lo que tienes que pagar" (DSK.1d, ADR 070 D8/D9).
+   Solo escritorio: fusiona "Pendientes del mes" y "Próximas prioridades"
+   en una línea de tiempo con un total y un pie. Las filas, los grupos y
+   los chips los presta `.prioridades-card__*`, que ya era la anatomía de
+   las dos listas: fusionarlas sin unificar la fila habría dejado dos
+   anatomías dentro de una tarjeta.
+
+   **La tarjeta es la celda.** El bloque no tiene elemento propio: sus
+   clases cuelgan de `#panel-vencidos`, que en escritorio pierde
+   `--flat` y vuelve a pintar la superficie de `.bento__cell`. Así su
+   borde cae a plomo con el de la banda de contexto, en vez de 24px por
+   dentro, que era el defecto M10 de la auditoría.
+   ════════════════════════════════════════════════════════════ */
+.obligaciones-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.obligaciones-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-4);
+}
+
+/* Las listas prestadas traen el relleno lateral de su tarjeta de origen,
+   que acá lo pone la celda: sin esto el contenido queda a 40px del borde
+   en vez de a 24. */
+.obligaciones-card .prioridades-card__group { padding: 0; }
+.obligaciones-card .prioridades-card__group-label,
+.obligaciones-card .prioridades-card__item,
+.obligaciones-card .prioridades-card__empty { padding-inline: 0; }
+
+.obligaciones-card__lb--vencido { color: var(--fk-danger-text); }
+
+/* Pie con aire arriba y abajo (M10): el botón más importante de la
+   pantalla terminaba a 1px del canto porque el pie solo llevaba relleno
+   superior. `margin-block-start: auto` lo pega abajo cuando la columna
+   vecina estira la celda. */
+.obligaciones-card__pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-5);
+  margin-block-start: auto;
+  padding-block: var(--fk-space-5) var(--fk-space-2);
+  border-block-start: 1px solid var(--fk-border-subtle);
+}
+
+/* El botón deja de ser una barra a lo ancho: acá comparte fila con el
+   resumen. `nowrap` porque partido en dos líneas son 42px de contenido
+   dentro de un alto mínimo de 44, que es la colisión que este rediseño
+   existe para evitar; antes que se parta el botón, cede el texto. */
+.obligaciones-card__pie .vencidos-card__pagar {
+  margin: 0;
+  width: auto;
+  flex: none;
+  white-space: nowrap;
+}
+
+.obligaciones-card__resto {
+  min-width: 0;
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-muted);
+}
