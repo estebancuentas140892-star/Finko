@@ -172,6 +172,12 @@ export function initPresupuesto() {
   registrarAccion('editar-presupuesto',   _editarPresupuesto);
   registrarAccion('eliminar-presupuesto', _eliminarPresupuesto);
 
+  // ADR 080 D4: las dos salidas de esta lente hacia el reparto del ingreso
+  // abren el asistente en vez de navegar a la sección que lo contiene. El
+  // evento es el que ya usan Calendario e Inicio (ADR 028 D4) y lo atiende
+  // tesorería, que es su dueña: acá no hay import cruzado (ADN 10).
+  registrarAccion('presupuesto-abrir-distribucion', () => EventBus.emit('distribuir:abrir'));
+
   // Los gastos afectan el progreso visual; re-render ante cualquier cambio
   // de gastos o de presupuestos. `ingresosPuntuales` entra en LIM.1a: la línea
   // de dinero extraordinario del mes se calcula sobre esa colección.

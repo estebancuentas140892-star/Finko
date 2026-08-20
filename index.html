@@ -973,7 +973,16 @@
         <header class="section__header">
           <div class="section__title-group">
             <span class="cat-teja section__icon" data-dom="tesoreria" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-cuentas"/></svg></span>
-            <h1 class="section__title" id="title-tesoreria">Mis cuentas</h1>
+            <!-- MOV.1 ficha 06 (ADR 080 D3): la seccion tambien es duena de
+                 "de donde viene" el dinero y de "como se reparte", y el nombre
+                 solo dice la primera mitad. La linea va DENTRO del grupo de
+                 titulo a proposito: desde 1680px ese grupo pasa a sr-only
+                 (ADR 079 D1) y la linea se va con el, en vez de quedar
+                 describiendo un titulo que ya no esta. -->
+            <div class="tesoreria-titulo">
+              <h1 class="section__title" id="title-tesoreria">Mis cuentas</h1>
+              <p class="tesoreria-linea">Dónde está tu dinero y de dónde viene</p>
+            </div>
           </div>
           <button class="btn btn-primary" data-action="nueva-cuenta"
                   aria-label="Nueva cuenta">
@@ -987,9 +996,14 @@
           <!-- MC.18a (ADR 035): renderHeroTesoreria() pinta el total en cuentas aquí -->
         </div>
         <!-- DSK.6a (ADR 075 D1): los dos trabajos de la sección, uno por
-             columna desde 1440px. Los dos envoltorios son `display: contents`
+             columna desde 1440px. Los envoltorios son `display: contents`
              bajo ese ancho (domain.css), así que ahí no son cajas y el orden
-             del DOM queda exactamente como estaba. -->
+             del DOM queda exactamente como se lee.
+             MOV.1 ficha 06 (ADR 080 D1): pasan de dos a tres. Los dos bloques
+             de solo lectura (tarjetas de crédito y 4x1000) salen de la columna
+             de cuentas y bajan a una banda propia al pie: manda la frecuencia,
+             lo que se consulta cada quincena sube y lo que se lee de paso baja.
+             El reparto 7 y 5 del ADR 075 no cambia. -->
         <div class="tesoreria-fila">
           <div class="tesoreria-col tesoreria-col--cuentas">
         <!-- MC-DIS.9 C9: la sección abre con el h1 y no volvía a tener
@@ -1001,14 +1015,8 @@
         <div id="lista-tesoreria">
           <!-- Fase 8: tesoreria/view.js renderiza aquí -->
         </div>
-        <div id="tesoreria-tarjetas">
-          <!-- MC.16c (ADR 051 D6): renderTarjetasTC() pinta el bloque de tarjetas, solo lectura -->
-        </div>
         <div id="tesoreria-transferir">
           <!-- MC.17b: renderBotonTransferir() - "Transferir entre cuentas", solo con 2+ cuentas activas -->
-        </div>
-        <div id="tesoreria-gmf">
-          <!-- K.1 (MC.18c, ADR 035 D4): renderGMFIndicador() pinta la tarjeta insight del 4x1000 -->
         </div>
 
           </div>
@@ -1018,23 +1026,15 @@
              y puntuales (una sola vez) bajo un solo encabezado. Los puntuales
              suben el saldo de la cuenta destino al registrarse; no cambian
              Análisis ni el resumen semanal (v8.8: sin flujo de ingreso). -->
+        <!-- MOV.1 ficha 06 (ADR 080 D2): el sub-encabezado se queda sin
+             botones. Acota el ADR 075 D5, que ya los había bajado a
+             secundarios: el problema no era el peso del botón sino de quién es
+             el verbo (R87). El alta de la fuente fija baja al pie de su lista
+             porque crea una regla; el ingreso puntual es un movimiento y su
+             casa es Registrar, así que acá queda como atajo declarado. Los dos
+             viven ahora en #ingresos-altas. -->
         <div class="section__sub-header">
           <h2 class="section__subtitle">Fuentes de ingreso</h2>
-          <div class="section__sub-actions">
-            <!-- DSK.6b (ADR 075 D5): secundarios, no primarios. El primario de
-                 la sección es el de la barra superior, y con estos dos eran
-                 tres en la misma pantalla. Y dicen la acción, no la categoría:
-                 el fijo es una entidad que persiste, el puntual es un hecho que
-                 ocurrió (regla D3 del lenguaje de acciones). -->
-            <button class="btn btn-sm btn-secondary" data-action="nuevo-ingreso"
-                    aria-label="Nuevo ingreso fijo">
-              Nuevo ingreso fijo
-            </button>
-            <button class="btn btn-sm btn-secondary" data-action="nuevo-ingreso-puntual"
-                    aria-label="Registrar ingreso puntual">
-              Registrar ingreso puntual
-            </button>
-          </div>
         </div>
         <p class="section__sub-hint">Fijos que se repiten cada período y dinero que entra una sola vez, todo junto.</p>
         <div id="ingresos-nudge-proximo">
@@ -1046,6 +1046,11 @@
         <div id="lista-ingresos-puntuales">
           <!-- NAV.A1: tesoreria/view.js renderiza aquí -->
         </div>
+        <div id="ingresos-altas">
+          <!-- MOV.1 ficha 06 (ADR 080 D2): renderAltasIngreso() pinta la fila
+               de altas: "Fuente fija" (regla, vive acá) y el atajo declarado a
+               la teja "Ingreso" de Registrar (movimiento, vive allá). -->
+        </div>
 
         <!-- MC.18e (ADR 035 D6): tarjeta de entrada compacta, al final de la
              pantalla. El asistente por pasos ya no vive aquí inline, lo lanza
@@ -1053,6 +1058,21 @@
         <div id="ingresos-distribucion">
           <!-- Fase 3 / MC.18e: renderDistribucionIngreso() - tarjeta "¿Cómo distribuir $X?" -->
         </div>
+          </div>
+        </div>
+
+        <!-- MOV.1 ficha 06 (ADR 080 D1): "Solo informativo". El rótulo no es
+             decoración: es lo que le dice al usuario que estos dos bloques no
+             esperan nada de él, y por eso es el único de la sección visible en
+             todos los anchos (los otros dos siguen la regla del ADR 075 D4).
+             La banda se esconde entera si sus dos bloques salen vacíos. -->
+        <div class="tesoreria-informativo">
+          <h2 class="tesoreria-lb tesoreria-lb--informativo">Solo informativo</h2>
+          <div id="tesoreria-tarjetas">
+            <!-- MC.16c (ADR 051 D6): renderTarjetasTC() pinta el bloque de tarjetas, solo lectura -->
+          </div>
+          <div id="tesoreria-gmf">
+            <!-- K.1 (MC.18c, ADR 035 D4): renderGMFIndicador() pinta la tarjeta insight del 4x1000 -->
           </div>
         </div>
 

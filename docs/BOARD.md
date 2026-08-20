@@ -20,10 +20,11 @@
 - Secciones  : todas
 - Archivos   : según ficha
 - Depende de : nada
-- Avance     : **05/25 cerradas** (01 navegación móvil global, [ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md); 02 Inicio; 03 Más; 04 Ahorro; 05 Por pagar, que recuperó el alta de gasto fijo y el pago en lote). Sigue la 06.
+- Avance     : **06/25 cerradas** (01 navegación móvil global, [ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md); 02 Inicio; 03 Más; 04 Ahorro; 05 Por pagar, que recuperó el alta de gasto fijo y el pago en lote; 06 Mis cuentas, [ADR 080](DECISIONS/080-mis-cuentas-un-primario-y-lo-informativo-al-pie.md), que acota el 075 en D1 y D5). Sigue la 07.
 - Restricción: el orden no se altera. Cada ficha se implementa, se valida en la app y se cierra antes de abrir la siguiente. Lo que una ficha deja anotado para otra (ej. HR-1, o el destino de Logros) no se decide antes de llegar a ella.
 - Aparte     : el **bloque de Logros del handoff (ficha 20)** se aplicó fuera del orden como MOV.20a el 2026-08-20, porque no toca ningún archivo abierto por las fichas 06 ni 07. De ese bloque, R91 quedó **anulada** (premisa previa a LG.2e). El resto de la ficha 20 son los anclajes R86 de otros dominios, que se aplican con la ficha que los nombra.
-- Bloqueos   : la ficha **06** llega con tres, a decidir antes de abrirla: (1) `presupuesto/view.js` está abierto por la ficha 07 y su cambio 3 lo necesita; (2) su cambio 4 da por hecho el prefiltro por deuda concreta de la ficha 07, que aún no existe en `compromisos/`; (3) sus cambios 1 y 2 chocan con el [ADR 075](DECISIONS/075-mis-cuentas-sus-dos-trabajos-una-columna-cada-uno.md) D1 (orden de bloques en dos columnas) y D5 (etiquetas de los dos botones de ingreso), que no se revierte en silencio. La ficha **19** es un rediseño de la vitrina de Logros con premisa previa a LG.2d (la ubicaba en Ajustes): hay que releerla contra las dos superficies de hoy.
+- Deuda de 05: la ficha 06 destapó que la 05 especificó los cuatro chips de la lente Por pagar y no los implementó. Los chips ya están (ADR 080 D6); **siguen faltando** la fila de altas que aparece solo para el grupo visible y el pie de saldo con "Ver plan de salida". Se cierran cuando toque revisar la 05, no antes.
+- Avisos     : la ficha **19** es un rediseño de la vitrina de Logros con premisa previa a LG.2d (la ubicaba en Ajustes): hay que releerla contra las dos superficies de hoy. Y las fichas escritas antes del 2026-08-17 pueden chocar con los ADR de escritorio (070 a 079): el choque se resuelve con un ADR que acote, como hizo el 080, nunca en silencio.
 
 
 ## Cómo usar este tablero

@@ -33,6 +33,74 @@ import { CATEGORIA_DEUDA_ICONO, CATEGORIA_DEUDA_PERSONAL_ICONO, iconoDeCategoria
 // el único label compartido ('Otro'/'Otra') difiere y ambos usan c-otros.
 const _ICONO_DEUDA = { ...CATEGORIA_DEUDA_ICONO, ...CATEGORIA_DEUDA_PERSONAL_ICONO };
 
+// ── FILTRO DE LA LENTE (ficha 05, construido por el ADR 080 D6) ──
+
+/**
+ * Los cuatro chips de "Por pagar". "Fijos" y "Deudas" filtran la misma lista
+ * sin cambiar la anatomía de la fila; "Pagado" revela la mitad del mes que
+ * antes solo existía en el Calendario.
+ */
+const _FILTROS = [
+  { id: 'todo',   label: 'Todo' },
+  { id: 'fijo',   label: 'Fijos' },
+  { id: 'deuda',  label: 'Deudas' },
+  { id: 'pagado', label: 'Pagado' },
+];
+
+/**
+ * Chip activo. Estado de UI del módulo, no del usuario: no se persiste y no
+ * toca el schema, igual que los filtros de Movimientos (`_filtroTexto`,
+ * `_filtroDominio`). Un recargado vuelve a "Todo", que es lo correcto: el
+ * filtro es de esta visita, no una preferencia.
+ * @type {'todo'|'fijo'|'deuda'|'pagado'}
+ */
+let _filtro = 'todo';
+
+/**
+ * Fija el chip activo. La llaman la acción del chip y quien llega prefiltrado
+ * desde otro dominio (ADR 080 D5). Un id desconocido cae a "todo" en vez de
+ * dejar la lista vacía sin explicación.
+ *
+ * @param {string} id
+ */
+export function setFiltroPorPagar(id) {
+  _filtro = _FILTROS.some(x => x.id === id) ? id : 'todo';
+}
+
+/** Chip activo. Para los tests y para quien necesite leerlo. */
+export function getFiltroPorPagar() {
+  return _filtro;
+}
+
+/** La fila de chips, con el mismo vocabulario que los filtros de Movimientos. */
+function _renderChips() {
+  const chips = _FILTROS.map(({ id, label }) => {
+    const activo = _filtro === id;
+    return `
+        <button type="button" class="chip${activo ? ' chip--active' : ''}"
+                data-action="comp-filtrar" data-filtro="${id}"
+                aria-pressed="${activo}" aria-label="Ver ${_esc(label.toLowerCase())}">
+          ${_esc(label)}
+        </button>`;
+  }).join('');
+
+  return `
+    <div class="filtros-bar" role="group" aria-label="Filtrar lo que tienes por pagar">${chips}</div>`;
+}
+
+/**
+ * El filtro no dejó nada. No es el estado vacío de la sección (ahí no hay nada
+ * registrado): acá hay datos y el filtro los esconde, así que lo que se dice es
+ * distinto y la salida es cambiar de chip, no crear algo.
+ */
+function _renderFiltroSinResultados() {
+  const label = _FILTROS.find(x => x.id === _filtro)?.label ?? '';
+  return `
+    <div class="empty-state empty-state--small">
+      <p class="empty-state__desc">Nada en "${_esc(label)}" este mes. Toca "Todo" para ver lo demás.</p>
+    </div>`;
+}
+
 /**
  * Los vencidos del mes en curso, indexados por id, con su atraso en días.
  *
@@ -116,21 +184,41 @@ export function renderListaCompromisos() {
   const el = document.getElementById('lista-compromisos');
   if (!el) return;
 
-  const activos = compromisosActivos(S.compromisos);
-  const fijos   = activos.filter(c => c.tipo === 'fijo');
-  const deudas  = activos.filter(c => esDeuda(c.tipo));
+  const activos    = compromisosActivos(S.compromisos);
+  const fijosTodos = activos.filter(c => c.tipo === 'fijo');
+  const deudasTodas = activos.filter(c => esDeuda(c.tipo));
 
-  if (fijos.length === 0 && deudas.length === 0) {
+  // Sin nada registrado no hay filtro que ofrecer: los chips filtrarían un
+  // conjunto vacío y el estado vacío ya dice qué hacer.
+  if (fijosTodos.length === 0 && deudasTodas.length === 0) {
     el.innerHTML = _renderEmptyState();
     return;
+  }
+
+  // ADR 080 D6: el chip decide qué grupos entran. "Pagado" cruza los dos, y su
+  // criterio es el mismo con el que el chip de la fila afirma el pago del mes
+  // (`estadoPagoMes`), para que la lista y las tarjetas nunca discrepen.
+  const prefijoMes = hoy().slice(0, 7);
+  const pagado = c => estadoPagoMes(S.gastos ?? [], c, prefijoMes) === 'completo';
+
+  let fijos  = fijosTodos;
+  let deudas = deudasTodas;
+  if (_filtro === 'fijo')       deudas = [];
+  else if (_filtro === 'deuda') fijos  = [];
+  else if (_filtro === 'pagado') {
+    fijos  = fijosTodos.filter(pagado);
+    deudas = deudasTodas.filter(pagado);
   }
 
   const oculto = S.config?.ocultarSaldo === true;
   // Un solo cálculo del conjunto de vencidos para todas las tarjetas del render.
   const atrasos = _atrasoPorId();
 
-  el.innerHTML = _renderGrupoFijos(fijos, oculto, atrasos)
-    + _renderGrupoDeudas(deudas, oculto, atrasos);
+  const cuerpo = (fijos.length === 0 && deudas.length === 0)
+    ? _renderFiltroSinResultados()
+    : _renderGrupoFijos(fijos, oculto, atrasos) + _renderGrupoDeudas(deudas, oculto, atrasos);
+
+  el.innerHTML = _renderChips() + cuerpo;
 }
 
 /**

@@ -1472,14 +1472,20 @@ test.describe('Tesorería - cuenta y saldo', () => {
   test('MC.18d: fuentes de ingreso fijas y puntuales agrupadas bajo un solo encabezado', async ({ page }) => {
     await crearCuentaEfectivo(page, 500000);
 
-    // Un solo encabezado con las dos acciones.
+    // Un solo encabezado, y sus dos altas al pie de las listas. ADR 080 D2:
+    // los botones salieron del sub-encabezado, que ahora solo nombra el grupo.
     const subHeader = page.locator('.section__sub-header', { hasText: 'Fuentes de ingreso' });
     await expect(subHeader).toBeVisible();
-    await expect(subHeader.locator('[data-action="nuevo-ingreso"]')).toBeVisible();
-    await expect(subHeader.locator('[data-action="nuevo-ingreso-puntual"]')).toBeVisible();
+    await expect(subHeader.locator('button')).toHaveCount(0);
+
+    const altas = page.locator('#ingresos-altas');
+    await expect(altas.locator('[data-action="nuevo-ingreso"]')).toBeVisible();
+    await expect(altas.locator('[data-action="nuevo-ingreso-puntual"]')).toBeVisible();
+    // El puntual es un atajo declarado a la teja "Ingreso" de Registrar (R72).
+    await expect(altas.locator('[data-action="nuevo-ingreso-puntual"]')).toContainText('Atajo');
 
     // Crear un ingreso fijo.
-    await subHeader.locator('[data-action="nuevo-ingreso"]').click();
+    await altas.locator('[data-action="nuevo-ingreso"]').click();
     await page.waitForSelector('#modal-ingreso[data-open]');
     const formFijo = page.locator('#modal-ingreso-body form');
     await formFijo.locator('#ingreso-cat').selectOption({ index: 1 });
@@ -1491,7 +1497,7 @@ test.describe('Tesorería - cuenta y saldo', () => {
     await expect(page.locator('#lista-ingresos')).toContainText('Salario empresa');
 
     // Crear un ingreso puntual.
-    await subHeader.locator('[data-action="nuevo-ingreso-puntual"]').click();
+    await altas.locator('[data-action="nuevo-ingreso-puntual"]').click();
     await page.waitForSelector('#modal-ingreso-puntual[data-open]');
     const formPuntual = page.locator('#modal-ingreso-puntual-body form');
     await formPuntual.locator('#ingreso-p-monto').fill('450000');
@@ -3144,6 +3150,41 @@ test.describe('Por pagar - picker de ícono del fijo para "Otro" (CAT.2f)', () =
 
     const item = page.locator('.cal-detail__item').first();
     await expect(item.locator('.cal-detail__icon .cat-teja use[href="#c-cohete"]')).toHaveCount(1);
+  });
+});
+
+// ── Por pagar: los cuatro chips de la lente (ADR 080 D6) ───────────────────
+
+test.describe('Por pagar - chips de la lente', () => {
+  test('los cuatro chips filtran la lista y el vacío del filtro no es el de la sección', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.goto('/#compromisos');
+    await page.waitForSelector('#lista-compromisos', { timeout: 10_000 });
+
+    // Sin nada registrado no hay chips que ofrecer: filtrarían un conjunto vacío.
+    await expect(page.locator('#lista-compromisos .filtros-bar')).toHaveCount(0);
+
+    await abrirFormGastoFijo(page);
+    const form = page.locator('#form-gasto-fijo');
+    await elegirChip(form, 'Mercado');
+    await form.locator('#gfijo-monto').fill('400000');
+    await form.locator('#gfijo-dia').fill('8');
+    await form.locator('button[type="submit"]').click();
+    await expect(page.locator('#modal-gasto-fijo')).not.toHaveAttribute('data-open');
+
+    const chips = page.locator('#lista-compromisos .filtros-bar .chip');
+    await expect(chips).toHaveText(['Todo', 'Fijos', 'Deudas', 'Pagado']);
+    await expect(page.locator('#lista-compromisos .deuda-card')).toHaveCount(1);
+
+    // "Deudas" no deja nada: hay datos, pero el filtro los esconde, así que el
+    // mensaje es otro y la salida es cambiar de chip, no crear algo.
+    await chips.filter({ hasText: 'Deudas' }).click();
+    await expect(page.locator('#lista-compromisos .deuda-card')).toHaveCount(0);
+    await expect(page.locator('#lista-compromisos .empty-state__desc')).toContainText('Nada en "Deudas"');
+    await expect(chips).toHaveCount(4);
+
+    await chips.filter({ hasText: 'Todo' }).click();
+    await expect(page.locator('#lista-compromisos .deuda-card')).toHaveCount(1);
   });
 });
 

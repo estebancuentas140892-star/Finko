@@ -42,7 +42,7 @@ import {
 } from '../../modules/dominio/compromisos/logic.js';
 import { renderFormAbono, renderFormDeuda, renderFormGastoFijo, textoBannerGastoFijo } from '../../modules/dominio/compromisos/views/formularios.js';
 import { renderLoteCard, renderFormPagoLote } from '../../modules/dominio/compromisos/views/lote.js';
-import { renderListaCompromisos } from '../../modules/dominio/compromisos/views/lista.js';
+import { renderListaCompromisos, setFiltroPorPagar, getFiltroPorPagar } from '../../modules/dominio/compromisos/views/lista.js';
 import { renderAlertaDeudasDurmiendo } from '../../modules/dominio/compromisos/views/alertas.js';
 import { renderPanelPrioridades, renderPanelVencidos } from '../../modules/dominio/compromisos/views/dashboard.js';
 import { renderResumenExtra, renderImpactoAvalancha, renderComparativaRenegociacion, renderComparativaConsolidacion } from '../../modules/dominio/compromisos/views/estrategia-impacto.js';
@@ -2467,6 +2467,91 @@ describe('CATEGORIAS_DEUDA_PERSONAL', () => {
     for (const key of Object.keys(CATEGORIA_DEUDA_PERSONAL_ICONO)) {
       expect(CATEGORIAS_DEUDA_PERSONAL).toContain(key);
     }
+  });
+});
+
+// ── Chips de la lente "Por pagar" - ficha 05, construidos por ADR 080 D6 ──
+
+describe('renderListaCompromisos() - los cuatro chips de la lente', () => {
+  const fijo = (overrides = {}) => ({
+    id: 'f1', descripcion: 'Arriendo', tipo: 'fijo', monto: 1_200_000,
+    frecuencia: 'Mensual', diaPago: 5, categoria: 'Vivienda', activo: true,
+    ...overrides,
+  });
+  const deuda = (overrides = {}) => ({
+    id: 'd1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad',
+    saldoTotal: 2_000_000, cuotaMensual: 200_000, frecuencia: 'Mensual',
+    diaPago: 5, categoria: 'Tarjeta de crédito', tasa: 0.28, tasaUnidad: 'EA',
+    activo: true, ...overrides,
+  });
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-compromisos"></div>';
+    S.compromisos = [];
+    S.gastos = [];
+    setFiltroPorPagar('todo');
+  });
+
+  // El chip es estado del módulo, no del estado del usuario: si una prueba lo
+  // deja puesto, las suites que corren después ven una lista filtrada. Mismo
+  // apaño que la suite de filtros de Movimientos.
+  afterEach(() => setFiltroPorPagar('todo'));
+
+  it('los cuatro chips salen en orden y "Todo" arranca activo', () => {
+    S.compromisos = [fijo(), deuda()];
+    renderListaCompromisos();
+    const chips = [...document.querySelectorAll('.filtros-bar .chip')];
+    expect(chips.map(c => c.textContent.trim())).toEqual(['Todo', 'Fijos', 'Deudas', 'Pagado']);
+    expect(chips[0].getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('sin nada registrado no hay chips: el estado vacío filtraría un conjunto vacío', () => {
+    renderListaCompromisos();
+    expect(document.querySelector('.filtros-bar')).toBeNull();
+    expect(document.querySelector('.empty-state')).not.toBeNull();
+  });
+
+  it('"Fijos" deja solo los fijos y "Deudas" solo las deudas', () => {
+    S.compromisos = [fijo(), deuda()];
+
+    setFiltroPorPagar('fijo');
+    renderListaCompromisos();
+    let ids = [...document.querySelectorAll('.deuda-card')].map(c => c.dataset.id);
+    expect(ids).toEqual(['f1']);
+
+    setFiltroPorPagar('deuda');
+    renderListaCompromisos();
+    ids = [...document.querySelectorAll('.deuda-card')].map(c => c.dataset.id);
+    expect(ids).toEqual(['d1']);
+  });
+
+  it('un id desconocido cae a "Todo" en vez de dejar la lista vacía sin explicación', () => {
+    S.compromisos = [fijo(), deuda()];
+    setFiltroPorPagar('inventado');
+    expect(getFiltroPorPagar()).toBe('todo');
+    renderListaCompromisos();
+    expect(document.querySelectorAll('.deuda-card')).toHaveLength(2);
+  });
+
+  it('el chip activo se marca con aria-pressed, no solo con la clase', () => {
+    S.compromisos = [deuda()];
+    setFiltroPorPagar('deuda');
+    renderListaCompromisos();
+    const activo = document.querySelector('.filtros-bar .chip--active');
+    expect(activo.textContent.trim()).toBe('Deudas');
+    expect(activo.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('cuando el filtro no deja nada, lo dice y ofrece volver a "Todo"', () => {
+    S.compromisos = [fijo()];
+    setFiltroPorPagar('deuda');
+    renderListaCompromisos();
+    expect(document.querySelectorAll('.deuda-card')).toHaveLength(0);
+    const aviso = document.querySelector('.empty-state__desc');
+    expect(aviso.textContent).toContain('Nada en "Deudas"');
+    expect(aviso.textContent).toContain('Todo');
+    // Y sigue habiendo chips: la salida es cambiar de filtro, no crear algo.
+    expect(document.querySelectorAll('.filtros-bar .chip')).toHaveLength(4);
   });
 });
 

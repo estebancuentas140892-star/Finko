@@ -38,6 +38,35 @@ export function renderListaIngresos() {
     : ingresos.map(i => _renderIngresoItem(i, oculto)).join('');
 }
 
+/**
+ * Renderiza la fila de altas de "Fuentes de ingreso" en `#ingresos-altas`
+ * (ADR 080 D2). Dos botones al pie de las dos listas, no en el sub-encabezado:
+ *
+ * - **Fuente fija** crea una regla (algo que se repetirá cada período), y una
+ *   regla vive en la sección que administra su lista.
+ * - **Ingreso** es un movimiento de hoy, y su casa canónica es la hoja
+ *   Registrar. Acá es un atajo declarado: mismo ícono (`#i-saldo`) y misma
+ *   etiqueta que la teja de allá (R72), con la marca "Atajo" para que se lea
+ *   como lo que es y no como un segundo camino distinto.
+ *
+ * Ninguno es primario: el único de la sección es "Nueva cuenta", que es el
+ * verbo que no existe en Registrar.
+ */
+export function renderAltasIngreso() {
+  const el = document.getElementById('ingresos-altas');
+  if (!el) return;
+
+  el.innerHTML = `
+    <button class="btn btn-sm btn-secondary" data-action="nuevo-ingreso"
+            aria-label="Nueva fuente fija de ingreso">
+      ${icon('plus')} Fuente fija
+    </button>
+    <button class="btn btn-sm btn-secondary" data-action="nuevo-ingreso-puntual"
+            aria-label="Registrar un ingreso: atajo a la hoja Registrar">
+      ${icon('saldo')} Ingreso <span class="chip">Atajo</span>
+    </button>`;
+}
+
 /** Ingresos fijos que la lista muestra (los dados de baja no cuentan). */
 function _ingresosFijosActivos() {
   return Array.isArray(S.ingresos)

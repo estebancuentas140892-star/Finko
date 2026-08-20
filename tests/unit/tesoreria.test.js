@@ -51,7 +51,7 @@ import {
 } from '../../modules/dominio/tesoreria/logic.js';
 import { aportePorPeriodo } from '../../modules/infra/vencimientos.js';
 import { CATEGORIAS_INGRESO, CATEGORIA_INGRESO_ICONO, SMMLV, AUXILIO_TRANSPORTE, TIPOS_LLAVE } from '../../modules/core/constants.js';
-import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderListaIngresosPuntuales, renderNudgeDistribucionInicio, renderDistribucionIngreso, renderAsistenteDistribucion, renderFormCuenta, renderListaCuentas, renderTarjetasTC, renderHeroTesoreria, renderGMFIndicador, renderBotonTransferir, renderFormTransferencia, renderParTransferencia, renderSeccionGMF } from '../../modules/dominio/tesoreria/view.js';
+import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderListaIngresosPuntuales, renderAltasIngreso, renderNudgeDistribucionInicio, renderDistribucionIngreso, renderAsistenteDistribucion, renderFormCuenta, renderListaCuentas, renderTarjetasTC, renderHeroTesoreria, renderGMFIndicador, renderBotonTransferir, renderFormTransferencia, renderParTransferencia, renderSeccionGMF } from '../../modules/dominio/tesoreria/view.js';
 import { initAccionesDistribucion } from '../../modules/dominio/tesoreria/acciones/distribucion.js';
 import { initAccionesCuentas, inyectarFormCuenta } from '../../modules/dominio/tesoreria/acciones/cuentas.js';
 import { initAccionesTransferencias } from '../../modules/dominio/tesoreria/acciones/transferencias.js';
@@ -1248,11 +1248,22 @@ describe('renderTarjetasTC()', () => {
     expect(el.querySelector('.chip__label').textContent).toBe('Usado $320.000');
   });
 
-  it('el enlace lleva a Deudas: la sección es solo lectura', () => {
+  // ADR 080 D5: era <a href="#compromisos">Ver en Deudas</a>. El hash ya era
+  // el correcto (la lente "Por pagar" es #compromisos desde el ADR 069 D1); lo
+  // que mentía era el rótulo, y además la salida tiene que llegar a ESTA deuda.
+  it('la salida nombra "Por pagar" y lleva el id de su deuda', () => {
     S.compromisos = [tarjeta()];
     renderTarjetasTC();
-    const link = document.querySelector('#tesoreria-tarjetas a[href="#compromisos"]');
-    expect(link).not.toBeNull();
+    const boton = document.querySelector('#tesoreria-tarjetas [data-action="tc-ver-en-por-pagar"]');
+    expect(boton).not.toBeNull();
+    expect(boton.dataset.id).toBe('tc1');
+    expect(boton.textContent.trim()).toBe('Ver en Por pagar');
+  });
+
+  it('ninguna superficie de la sección sigue nombrando "Deudas" como destino', () => {
+    S.compromisos = [tarjeta()];
+    renderTarjetasTC();
+    expect(document.getElementById('tesoreria-tarjetas').innerHTML).not.toContain('Ver en Deudas');
   });
 
   it('no cuenta las deudas de tarjeta sin cupo (deuda vieja capturada a posteriori)', () => {
@@ -2262,6 +2273,45 @@ describe('renderListaIngresos() / renderListaIngresosPuntuales() - máscara del 
 });
 
 // ── MC-DIS.9 C5 y C6: un solo vacío bajo el encabezado único, e ícono ─
+
+// ── renderAltasIngreso() - ADR 080 D2 (ficha 06, regla R87) ───────
+
+describe('renderAltasIngreso()', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="ingresos-altas"></div>';
+  });
+
+  it('emite dos altas y ninguna es primaria: el único primario es "Nueva cuenta"', () => {
+    renderAltasIngreso();
+    const botones = document.querySelectorAll('#ingresos-altas button');
+    expect(botones).toHaveLength(2);
+    expect(document.querySelectorAll('#ingresos-altas .btn-primary')).toHaveLength(0);
+  });
+
+  it('la fuente fija es un alta de regla y vive en esta sección', () => {
+    renderAltasIngreso();
+    const boton = document.querySelector('[data-action="nuevo-ingreso"]');
+    expect(boton).not.toBeNull();
+    expect(boton.textContent).toContain('Fuente fija');
+    // No es un atajo: la regla pertenece a la lista que la administra.
+    expect(boton.querySelector('.chip')).toBeNull();
+  });
+
+  it('el ingreso puntual se declara atajo con la etiqueta de la teja de Registrar (R72)', () => {
+    renderAltasIngreso();
+    const boton = document.querySelector('[data-action="nuevo-ingreso-puntual"]');
+    expect(boton).not.toBeNull();
+    expect(boton.textContent).toContain('Ingreso');
+    expect(boton.querySelector('.chip')?.textContent.trim()).toBe('Atajo');
+    // Mismo ícono que la teja "Ingreso" de la hoja Registrar.
+    expect(boton.innerHTML).toContain('#i-saldo');
+  });
+
+  it('no-op si el contenedor no existe', () => {
+    document.body.innerHTML = '';
+    expect(() => renderAltasIngreso()).not.toThrow();
+  });
+});
 
 describe('renderListaIngresos() / renderListaIngresosPuntuales() - un solo estado vacío (MC-DIS.9 C5)', () => {
   beforeEach(() => {
@@ -4367,7 +4417,10 @@ describe('renderBotonTransferir()', () => {
     renderBotonTransferir();
     const boton = document.querySelector('[data-action="abrir-transferencia"]');
     expect(boton).not.toBeNull();
-    expect(boton.textContent.trim()).toBe('Transferir entre cuentas');
+    // ADR 080 D2: conserva su etiqueta y gana la marca de atajo, porque el
+    // verbo es un movimiento y su casa canónica es la teja de Registrar.
+    expect(boton.textContent).toContain('Transferir entre cuentas');
+    expect(boton.querySelector('.chip')?.textContent.trim()).toBe('Atajo');
   });
 
   // MC-DIS.9 C3 (regla R21): era btn-ghost btn-sm sin ícono, el control más

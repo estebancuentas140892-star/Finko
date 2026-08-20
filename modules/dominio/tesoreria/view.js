@@ -29,6 +29,7 @@ import {
   renderListaIngresosPuntuales,
   renderFormIngresoPuntual,
   renderNudgeProximoIngreso,
+  renderAltasIngreso,
 } from './views/ingresos.js';
 import {
   renderDistribucionIngreso,
@@ -53,6 +54,7 @@ export {
   renderListaIngresosPuntuales,
   renderFormIngresoPuntual,
   renderNudgeProximoIngreso,
+  renderAltasIngreso,
   renderDistribucionIngreso,
   renderNudgeDistribucionInicio,
   renderAsistenteDistribucion,
@@ -64,15 +66,20 @@ export {
 
 /** Re-renderiza la vista completa del dominio (el `_renderTodo` historico). */
 export function renderTesoreria() {
+  // El orden de esta función es el de la pantalla (ADR 080 D1): cuentas y su
+  // transferir, después las fuentes de ingreso con su fila de altas y su
+  // tarjeta de reparto, y al final los dos bloques de solo lectura, que
+  // bajaron a la banda "Solo informativo".
   renderHeroTesoreria();
   renderListaCuentas();
-  renderTarjetasTC();
   renderBotonTransferir();
-  renderGMFIndicador();
   renderNudgeProximoIngreso();
   renderListaIngresos();
   renderListaIngresosPuntuales();
-  // Al final (ADR 035): la tarjeta de "Distribuir mi ingreso" cierra la
-  // pantalla, después de las fuentes de ingreso que resume.
+  renderAltasIngreso();
+  // Al final de la columna (ADR 035): la tarjeta de "Distribuir mi ingreso"
+  // cierra el trabajo de los ingresos, después de las fuentes que resume.
   renderDistribucionIngreso();
+  renderTarjetasTC();
+  renderGMFIndicador();
 }

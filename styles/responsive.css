@@ -1522,6 +1522,22 @@
   .tesoreria-col--cuentas  { grid-column: span 7; }
   .tesoreria-col--ingresos { grid-column: span 5; }
 
+  /* MOV.1 ficha 06 (ADR 080 D1): la banda de solo lectura vuelve a ser caja y
+     ocupa la fila entera bajo las dos columnas de trabajo. Es el mismo patron
+     de `.banda-inicio` (ADR 070 D4). El guardia de banda vacia se repite aca
+     porque este `display` la encenderia de nuevo. */
+  .tesoreria-informativo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fk-space-4);
+    grid-column: span 12;
+    min-width: 0;
+  }
+  .tesoreria-informativo:not(:has(#tesoreria-tarjetas > *, #tesoreria-gmf > *)) {
+    display: none;
+  }
+  .tesoreria-informativo > div:empty { display: none; }
+
   /* Los bloques que la sección emite vacíos (el nudge de próximo ingreso, la
      lista de puntuales cuando no hay) no deben cobrar su hueco de la columna. */
   .tesoreria-col > div:empty { display: none; }

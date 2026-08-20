@@ -45,6 +45,8 @@ import {
   renderPanelPrioridades,
   renderLoteCard,
   renderFormPagoLote,
+  setFiltroPorPagar,
+  getFiltroPorPagar,
 } from './view.js';
 import { renderResumenExtra, renderComparativaRenegociacion, renderComparativaConsolidacion } from './views/estrategia-impacto.js';
 
@@ -95,6 +97,48 @@ function _renderTodo() {
   renderEstrategiaPago();
   renderAlertaDeudasDurmiendo();
   renderListaCompromisos();
+}
+
+/**
+ * Cambia el chip activo de la lente (ADR 080 D6). Repinta solo la lista: el
+ * hero, la estrategia y el lote hablan del mes completo y no del filtro, así
+ * que un `_renderTodo()` los haría parpadear sin cambiar nada.
+ *
+ * @param {HTMLElement} el Elemento con `data-filtro`.
+ */
+function _filtrarPorPagar(el) {
+  const id = el?.dataset?.filtro;
+  if (!id || id === getFiltroPorPagar()) return;
+  setFiltroPorPagar(id);
+  renderListaCompromisos();
+}
+
+/**
+ * Llegada prefiltrada desde otro dominio (ADR 080 D5): hoy la usa la tarjeta de
+ * crédito de Mis cuentas, que pregunta por UNA deuda.
+ *
+ * Pone el chip "Deudas", navega si hace falta y trae la tarjeta a pantalla. El
+ * `setTimeout` es el mismo apaño que usa `distribuir:abrir` en tesoreria: si
+ * venimos de otra sección, el nodo al que hay que desplazarse no existe hasta
+ * después del re-render del `hashchange`.
+ *
+ * `scrollIntoView` y no un cálculo de offset, igual que los chips de la casa
+ * de Ahorro: el contenedor que hace scroll cambia entre móvil y escritorio y el
+ * navegador ya sabe cuál es.
+ *
+ * @param {{ id?: string }} payload
+ */
+function _verDeudaEnPorPagar({ id } = {}) {
+  setFiltroPorPagar('deuda');
+  if ((location.hash.slice(1) || 'dash') !== 'compromisos') {
+    location.hash = '#compromisos';
+  }
+  setTimeout(() => {
+    renderSmart(_renderTodo, 'compromisos');
+    if (!id) return;
+    const destino = document.querySelector(`#lista-compromisos .deuda-card[data-id="${CSS.escape(id)}"]`);
+    destino?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 0);
 }
 
 /**
@@ -1319,6 +1363,10 @@ export function initCompromisos() {
   registrarAccion('aplicar-consolidacion',   _aplicarConsolidacion);
   registrarAccion('comp-elegir-tipo',        _elegirTipoDeuda);
 
+  // ADR 080 D6: los cuatro chips de la lente, que la ficha 05 especificó y
+  // dejó sin construir.
+  registrarAccion('comp-filtrar',            _filtrarPorPagar);
+
   // Ficha 05 (ADR 069): "Por pagar" es la única entrada para crear un
   // compromiso, de cualquiera de los tres tipos. Un botón abre la hoja de
   // elección; cada chip lleva a su modal (deuda reusa el ya existente; fijo
@@ -1405,6 +1453,11 @@ export function initCompromisos() {
       programarRender(_renderDashboardReactivo);
     }
   });
+
+  // ADR 080 D5: la tarjeta de crédito de Mis cuentas pregunta por UNA deuda. El
+  // emisor no puede filtrar acá (ningún dominio importa a otro, ADN 10), así que
+  // manda el id y esta lente pone su chip y trae la tarjeta a pantalla.
+  EventBus.on('porPagar:ver-deuda', _verDeudaEnPorPagar);
 
   // "Distribuir mi ingreso" (ADR 012, MC.4b): aplica los abonos extra a deudas
   // del plan. Registra el gasto-abono (mismo shape que el abono individual y que

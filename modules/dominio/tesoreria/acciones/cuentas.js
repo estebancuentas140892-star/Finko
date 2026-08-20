@@ -544,11 +544,28 @@ function _initBankPicker(picker) {
   }, { capture: true });
 }
 
+/**
+ * Salida de la tarjeta de crédito hacia la lente "Por pagar" (ADR 080 D5).
+ *
+ * Emite en vez de navegar y filtrar acá: el filtro de la lente es estado de
+ * `compromisos`, y ningún dominio importa a otro (ADN 10). Mismo mecanismo con
+ * el que Calendario e Inicio abren el asistente de distribución de esta
+ * sección, en el sentido contrario (`distribuir:abrir`).
+ *
+ * @param {HTMLElement} el Elemento con `data-id` = id del compromiso.
+ */
+function _verEnPorPagar(el) {
+  const id = el?.dataset?.id;
+  if (!id) return;
+  EventBus.emit('porPagar:ver-deuda', { id });
+}
+
 // ── REGISTRO ─────────────────────────────────────────────────────
 
 /** Registra los data-action del subsistema de cuentas. */
 export function initAccionesCuentas() {
   registrarAccion('nueva-cuenta', _nuevaCuenta);
+  registrarAccion('tc-ver-en-por-pagar', _verEnPorPagar);
   registrarAccion('editar-cuenta', _editarCuenta);
   registrarAccion('eliminar-cuenta', _eliminarCuenta);
 

@@ -150,7 +150,14 @@ function _renderResumenGrupos(anio, mes) {
     <section class="grupos-resumen" aria-label="Seguimiento de tus tres grupos financieros este mes">
       <header class="grupos-resumen__header">
         <h2 class="grupos-resumen__title">Tu plan del mes por grupo</h2>
-        <a href="#tesoreria" class="grupos-resumen__link" aria-label="Ajustar tu distribución en Mis cuentas">Ajustar en Mis cuentas</a>
+        <!-- ADR 080 D4: antes navegaba a #tesoreria y dejaba al usuario en la
+             entrada de la sección, con el asistente que le prometió ocho
+             bloques más abajo. Ahora abre el asistente, con el mismo evento que
+             Calendario e Inicio. El atributo href se queda como respaldo sin
+             JS: dispatch() hace preventDefault para toda data-action. Y la
+             etiqueta nombra la acción y no la sección (R85), así que sobrevive
+             a cualquier mudanza futura. -->
+        <a href="#tesoreria" class="grupos-resumen__link" data-action="presupuesto-abrir-distribucion" aria-label="Ajustar tu distribución del ingreso">Ajustar mi distribución</a>
       </header>
       ${_renderRefuerzoCombinado(mensajes)}
       <div class="grupos-resumen__grid">${cards}</div>
@@ -415,7 +422,10 @@ function _renderResumenGruposVacio(anio, mes) {
     <section class="grupos-resumen grupos-resumen--vacio" aria-label="Seguimiento por grupo financiero">
       <p class="grupos-resumen__vacio-title">Aún no tienes un plan del mes por grupo</p>
       <p class="grupos-resumen__vacio-desc">Registra tus ingresos y usa "Distribuir mi ingreso" en Mis cuentas para repartirlos entre Necesidades, Estilo de vida y Ahorro. Aquí verás cuánto llevas ejecutado en cada grupo.</p>
-      <a href="#tesoreria" class="btn btn-secondary">Ir a Mis cuentas</a>
+      <!-- ADR 080 D4: mismo cambio que el enlace del encabezado. Acá el texto
+           de arriba ya nombra "Distribuir mi ingreso", así que el botón dice
+           exactamente lo que hace al tocarlo. -->
+      <a href="#tesoreria" class="btn btn-secondary" data-action="presupuesto-abrir-distribucion">Distribuir mi ingreso</a>
     </section>
     <section class="estilo-limites-standalone" aria-labelledby="estilo-limites-standalone-title">
       <h2 class="estilo-limites-standalone__title" id="estilo-limites-standalone-title">Límites por categoría</h2>

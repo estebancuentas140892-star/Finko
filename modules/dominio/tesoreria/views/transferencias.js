@@ -34,10 +34,15 @@ export function renderBotonTransferir() {
   const activas = cuentasActivas(S.cuentas ?? []);
   if (activas.length < 2) { el.innerHTML = ''; return; }
 
+  // ADR 080 D2: conserva su anatomía de R38 (ancho completo, 44px, borde) y
+  // gana la marca de atajo. El verbo es un movimiento, así que su casa
+  // canónica es la teja "Transferir" de Registrar; acá se declara la copia en
+  // vez de fingir que son dos caminos distintos (R72).
   el.innerHTML = `
     <button type="button" class="transferir-entrada" data-action="abrir-transferencia">
       ${icon('transferencia')}
       Transferir entre cuentas
+      <span class="chip">Atajo</span>
     </button>`;
 }
 

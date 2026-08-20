@@ -1,6 +1,6 @@
 # ADR 075 - Mis cuentas: sus dos trabajos, uno en cada columna
 
-**Estado:** Aceptada. En implementación (iniciativa DSK.6, dos rebanadas).
+**Estado:** Aceptada. Implementada (iniciativa DSK.6, dos rebanadas). **D1 y D5 quedan acotadas por el [ADR 080](080-mis-cuentas-un-primario-y-lo-informativo-al-pie.md)** (2026-08-20, ficha 06 de la auditoría móvil): D1 conserva las dos columnas de trabajo y su reparto 7 y 5, pero los dos bloques de solo lectura salen de la columna izquierda a una banda propia al pie; D5 conserva que los dos botones de ingreso no son primarios, y cambia su reparto (uno pasa a fila de alta de su lista, el otro a atajo declarado de la teja de Registrar). El resto de este ADR sigue vigente entero.
 **Fecha:** 2026-08-18
 **Autores:** Esteban (producto), Claude Design (auditoría "Mis cuentas 1920"), Claude Opus 5 (implementación)
 **Relación:** hereda de los [ADR 070](070-inicio-centro-de-atencion-en-escritorio.md) a [ADR 074](074-me-deben-adopta-la-anatomia-de-deudas.md) el reparto en columnas de escritorio. Conserva entero el [ADR 035](035-mis-cuentas-v2.md) (Mis cuentas v2: hero, barra de composición, tarjeta de distribución) y el [ADR 051](051-tarjeta-de-credito-producto-integrado.md) D6 (la tarjeta de crédito es solo lectura y no suma al total). No toca lógica: `tesoreria/logic.js` no cambia.

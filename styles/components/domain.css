@@ -2033,8 +2033,63 @@ button.chip:focus-visible {
    vive entera en responsive.css. Mismo patrón que `.banda-inicio` y
    `.cal-fila`. */
 .tesoreria-fila,
-.tesoreria-col {
+.tesoreria-col,
+.tesoreria-informativo {
   display: contents;
+}
+
+/* MOV.1 ficha 06 (ADR 080 D1): la banda de solo lectura se esconde entera si
+   sus dos bloques salen vacios. Sin esto, un usuario sin tarjeta de credito y
+   sin 4x1000 del mes veria el rotulo "Solo informativo" solo, anunciando nada.
+   La regla se repite dentro del media query de escritorio, donde la banda pasa
+   a ser caja: alli `display: block` la volveria a encender. */
+.tesoreria-informativo:not(:has(#tesoreria-tarjetas > *, #tesoreria-gmf > *)) {
+  display: none;
+}
+
+/* MOV.1 ficha 06 (ADR 080 D1): este rotulo si es visible en todos los anchos,
+   a diferencia de los otros dos de la seccion (ADR 075 D4, sr-only bajo
+   1440px). El motivo es distinto: los otros ordenan contenido que el h1 ya
+   cubre, y este declara que sus dos bloques no esperan nada del usuario. Si no
+   se ve, el bloque solo parece contenido que se quedo al final. */
+.tesoreria-lb--informativo {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+}
+
+/* MOV.1 ficha 06 (ADR 080 D3): el titulo y su linea, apilados dentro del grupo
+   de titulo, que es flex en fila. */
+.tesoreria-titulo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.tesoreria-linea {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+}
+
+/* MOV.1 ficha 06 (ADR 080 D2): la fila de altas de "Fuentes de ingreso". Dos
+   botones al pie de las listas, no en el sub-encabezado: uno crea una regla y
+   vive aca, el otro es el atajo declarado a la teja de Registrar (R87). Se
+   envuelven en vez de truncar, que es lo que pasaba a 360px. */
+#ingresos-altas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fk-space-2);
+}
+#ingresos-altas .btn {
+  flex: 1 1 auto;
+  justify-content: center;
 }
 
 /* DSK.6b (ADR 075 D4): los rótulos de bloque de Mis cuentas. Bajo 1440px se

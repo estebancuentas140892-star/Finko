@@ -267,8 +267,8 @@ function _renderEmptyState() {
  * No-op si el contenedor no existe o no hay tarjetas operables.
  *
  * Solo lectura: fuera del total de dinero disponible (D6, la tarjeta no es
- * un activo), con cupo usado/disponible y enlace a Deudas para operar. La
- * dueña de crear, editar y registrar abonos sigue siendo Deudas.
+ * un activo), con cupo usado/disponible y salida a "Por pagar" para operar. La
+ * dueña de crear, editar y registrar abonos sigue siendo esa lente.
  */
 export function renderTarjetasTC() {
   const el = document.getElementById('tesoreria-tarjetas');
@@ -291,7 +291,7 @@ export function renderTarjetasTC() {
  * Reusa la anatomía de `.cuenta-card` (MC.18b): mismo componente visual que
  * el resto de la sección, sin vocabulario CSS nuevo. La diferencia es de
  * contenido, no de tarjeta: cupo como subtítulo, disponible como cifra
- * prominente, usado como chip, y el enlace a Deudas donde iban editar/eliminar.
+ * prominente, usado como chip, y la salida a "Por pagar" donde iban editar/eliminar.
  *
  * @param {import('../../../core/state.js').Compromiso} tarjeta
  * @param {boolean} oculto - S.config.ocultarSaldo (mismo flag que el resto de la sección).
@@ -321,7 +321,16 @@ function _renderTarjetaTC(tarjeta, oculto) {
           <span class="chip"><span class="chip__label">Usado ${usadoTxt}</span></span>
         </div>
         <div class="cuenta-card__actions">
-          <a class="btn btn-ghost btn-sm" href="#compromisos">Ver en Deudas</a>
+          <!-- ADR 080 D5: el hash ya era el correcto (la lente "Por pagar" es
+               #compromisos desde el ADR 069 D1), lo que mentía era el rótulo.
+               Y no basta con renombrarlo: la tarjeta habla de UNA deuda, así
+               que la salida llega con el chip "Deudas" puesto y esa deuda a la
+               vista. Botón y no enlace, porque además de navegar fija un
+               filtro: mismo criterio que los chips de la casa de Ahorro. -->
+          <button type="button" class="btn btn-ghost btn-sm"
+                  data-action="tc-ver-en-por-pagar" data-id="${_esc(tarjeta.id)}">
+            Ver en Por pagar
+          </button>
         </div>
       </div>
     </article>`;
