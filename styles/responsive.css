@@ -51,9 +51,24 @@
   .perfil-inicio > .perfil-inicio__marca { display: inline-flex; }
   .perfil-inicio > .perfil-inicio__ajustes { display: flex; }
 
-  /* Franja de lentes del bloque Gastos (ADR 069): acá la barra inferior es
-     la única puerta a las tres, así que la franja es la que las enseña. */
+  /* Encabezado del bloque Gastos (ADR 069 D8): acá la barra inferior es la
+     única puerta a las tres lentes, así que el bloque es el que las nombra,
+     las enseña y les pone el reloj común. */
+  .bloque-gastos { display: flex; }
   .bloque-tabs { display: flex; }
+
+  /* Con el bloque puesto, el hero de la portada pierde su fila de arriba: el
+     selector de mes y el ojo viven ahora en el encabezado del bloque y
+     gobiernan las tres lentes (G4). En escritorio no hay bloque, así que la
+     fila se queda donde estaba y la sección conserva su navegación. */
+  #sec-gast .hero-gastos__top { display: none; }
+
+  /* Y las tres lentes dejan de repetir su título: el bloque ya dice dónde
+     estás, y la pestaña activa, en cuál de las tres. El primario de cada
+     encabezado se queda (R51: un primario por pantalla, el de la lente). */
+  #sec-gast .section__title-group,
+  #sec-compromisos .section__title-group,
+  #sec-presupuesto .section__title-group { display: none; }
 
   /* Fila de chips del bloque Ahorro (ADR 069 D7): acá no hay subnav, así que
      es la única forma de ir de una modalidad a otra sin volver a la casa. */
@@ -1831,4 +1846,44 @@
    los anchos, que es la regla de accesibilidad y no se toca. */
 @media (min-width: 1680px) {
   .section.active .bento--dash .bento__cell { animation: none; }
+}
+
+/* ── ATENCIÓN HOY: AVISOS ESTRECHOS + OBLIGACIONES ANCHAS (DSK.1c, ADR 070
+   D7, >= 1024px) ──────────────────────────────────────────────────────────
+   El grupo se emparejaba por tipo SOLO si estaban los cuatro paneles
+   visibles, y cada uno se oculta por su cuenta: con un número impar, media
+   fila quedaba vacía y un aviso heredaba la altura de una lista. La zona
+   más importante de Inicio era la que peor se comportaba con pocos datos,
+   que es el caso normal.
+
+   El reparto pasa a fijo, y deja de depender de cuántos paneles haya: los
+   tres avisos (distribuir, límites, motor único) en columna estrecha, las
+   obligaciones (la tarjeta fusionada de DSK.1d) en columna ancha. Los dos
+   envoltorios son `display: contents` bajo este ancho (domain.css). */
+@media (min-width: 1024px) {
+
+  .atencion-hoy__avisos {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fk-space-3);
+    grid-column: span 4;
+    align-self: start;
+    min-width: 0;
+  }
+
+  .atencion-hoy__obligaciones {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fk-space-3);
+    grid-column: span 8;
+    min-width: 0;
+  }
+
+  /* Sin ningún aviso visible, las obligaciones ocupan la fila entera: una
+     tarjeta de 909px sola en 1376 dejaría 467px muertos a su derecha, la
+     misma silueta que el hallazgo M7 rechazó en Accesos rápidos. */
+  .bento__group-cells:not(:has(.atencion-hoy__avisos > .bento__cell:not([hidden])))
+    .atencion-hoy__obligaciones {
+    grid-column: span 12;
+  }
 }

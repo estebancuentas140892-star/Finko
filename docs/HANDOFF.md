@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-20. Última tarea cerrada: DSK.1d, las obligaciones en una sola línea de tiempo.
+> Revisado: 2026-08-20. Última tarea cerrada: DSK.1c, cierra la iniciativa DSK.1 (Inicio en escritorio).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -14,7 +14,7 @@
 | Métrica | Valor |
 |---|---|
 | Tests unitarios + integración | 4421/4427 (2026-08-20). Los 6 rojos son **BUG-028**, ajeno |
-| Tests E2E | 287/287 verdes, sello de DSK.1d (2026-08-20). **Compuerta** desde el 2026-07-30 |
+| Tests E2E | 290/290 verdes, sello de DSK.1c (2026-08-20). **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v43 (`config.respaldoCifrado`, CFG.4c; migración no-op) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -25,8 +25,8 @@
 
 ## 2. Últimas 5 tareas cerradas
 
-**DSK.1d - Las obligaciones en una sola línea de tiempo (Inicio), 2026-08-20**
-Para saber cuánto debía en total, el usuario tenía que sumar dos cifras de dos tarjetas ([ADR 070](DECISIONS/070-inicio-centro-de-atencion-en-escritorio.md) D8/D9). Desde 1024px "Pendientes del mes" y "Próximas prioridades" son **"Lo que tienes que pagar"**: un eje, un total, y la cifra de lo vencido dentro del botón. La tarjeta pasa a ser la celda, así que su borde cae a plomo con la banda y el botón gana 33px de aire donde tenía 1. Falta **DSK.1c** (columnas 4 + 8), de la que dependen el plomo derecho y el pliegue. SW v569.
+**DSK.1 completa - Inicio como centro de atención en escritorio (Inicio), 2026-08-20**
+Cuatro rebanadas del [ADR 070](DECISIONS/070-inicio-centro-de-atencion-en-escritorio.md), todas cerradas. Escritorio deja el reparto de móvil estirado: salen tres módulos que no avisan (D2), saldo y cuentas se funden en una banda (D4-D6), las obligaciones se leen en una línea de tiempo con su total en el botón (D8/D9), y "Atención hoy" pasa de un mosaico 2x2 a avisos estrechos + obligaciones anchas (D7). Con un mes cargado, cabe en el pliegue sin desplazar. SW v570.
 
 **DSK.10 - El armazón de escritorio (todas las secciones), 2026-08-19**
 Las nueve auditorías de sección citaban D1, D2 y D3 como aprobadas y ninguna estaba implementada ([ADR 079](DECISIONS/079-armazon-de-escritorio-una-identidad-un-primario-una-navegacion.md)). Desde 1680px la sección se nombra una vez, el botón lleno es el de la pantalla y no "Registrar", y el plegado de la barra se retira: daba 0px de contenido. La navegación pasa a cuatro grupos con nombre, las 4 hijas de Ahorro se ven siempre (184px libres a 1920), Ajustes baja de tres entradas a una y el movimiento de dedo (levante del bento, encogido al pulsar, cascada de entrada) queda donde tiene sentido. Cierra la serie de escritorio. SW v568.

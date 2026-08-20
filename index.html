@@ -705,40 +705,68 @@
 
           <!-- ATENCIÓN HOY (IN.8a, ADR 034 D1): lo accionable del día, justo
                debajo del hero. Cada panel se aplana (bento__cell--flat): el
-               componente interno pone su propia superficie, sin doble card. -->
+               componente interno pone su propia superficie, sin doble card.
+
+               DSK.1c (ADR 070 D7): en escritorio el grupo deja de ser un 2x2
+               que se recolocaba según cuántos paneles hubiera visibles (con
+               un número impar, media fila quedaba vacía y un aviso heredaba
+               la altura de una lista). El reparto pasa a fijo: avisos en
+               columna estrecha (`.atencion-hoy__avisos`, span 4) y
+               obligaciones en columna ancha (`.atencion-hoy__obligaciones`,
+               span 8), sin depender del estado de los datos. Los dos
+               envoltorios son `display: contents` bajo 1024px (domain.css):
+               desaparecen de la caja y sus hijos vuelven a ser celdas
+               sueltas del grupo, en el mismo orden de siempre. -->
           <div class="bento__group">
             <h2 class="bento__group-label" id="label-atencion-hoy">Atención hoy</h2>
             <div class="bento__group-cells">
 
-              <!-- DISTRIBUIR INGRESO: nudge (CAL.1, ADR 028 D4). Visible solo
-                   cuando llegó el cobro del periodo y aún no se distribuyó.
-                   tesoreria/views/distribucion.js lo llena; [hidden] si no aplica. -->
-              <div id="panel-distribuir-inicio" class="bento__cell bento__cell--flat bento__cell--half"
-                   role="region" aria-label="Distribuir tu ingreso" hidden></div>
+              <div class="atencion-hoy__avisos">
 
-              <!-- ALERTAS DE LÍMITES: envelopes en estado alerta (>=75%) o excedido
-                   (>100%). Sin rediseño propio en Inicio v2 (su copy vive en LIM.1).
-                   presupuesto/view.js lo llena; [hidden] si todos están en 'ok'.
-                   IN.9a: sube al lado del otro aviso; ver el comentario del grupo. -->
-              <div id="panel-limites" class="bento__cell bento__cell--flat bento__cell--half"
-                   role="region" aria-label="Alertas de límites de gasto" hidden></div>
+                <!-- DISTRIBUIR INGRESO: nudge (CAL.1, ADR 028 D4). Visible solo
+                     cuando llegó el cobro del periodo y aún no se distribuyó.
+                     tesoreria/views/distribucion.js lo llena; [hidden] si no aplica. -->
+                <div id="panel-distribuir-inicio" class="bento__cell bento__cell--flat bento__cell--half"
+                     role="region" aria-label="Distribuir tu ingreso" hidden></div>
 
-              <!-- PENDIENTES / VENCIDOS: compromisos cuyo día de pago ya pasó.
-                   dashboard.js lo llena; [hidden] hasta que haya datos. -->
-              <div id="panel-vencidos" class="bento__cell bento__cell--flat bento__cell--half"
-                   role="region" aria-label="Deudas y pagos vencidos" hidden></div>
+                <!-- ALERTAS DE LÍMITES: envelopes en estado alerta (>=75%) o excedido
+                     (>100%). Sin rediseño propio en Inicio v2 (su copy vive en LIM.1).
+                     presupuesto/view.js lo llena; [hidden] si todos están en 'ok'.
+                     IN.9a: sube al lado del otro aviso. -->
+                <div id="panel-limites" class="bento__cell bento__cell--flat bento__cell--half"
+                     role="region" aria-label="Alertas de límites de gasto" hidden></div>
 
-              <!-- PRÓXIMAS PRIORIDADES: próximos 7 días, agrupado por día.
-                   dashboard.js lo llena; [hidden] hasta que haya datos. -->
-              <div id="panel-prioridades" class="bento__cell bento__cell--flat bento__cell--half"
-                   role="region" aria-label="Próximas prioridades" hidden></div>
+                <!-- AVISOS (CFG.3b, ADR 066): lo que el motor único calcula y
+                     ningún otro panel de esta pantalla muestra todavía
+                     (apartado listo, día de pago, préstamo con fecha vencida).
+                     resumen/view.js lo llena; [hidden] hasta que haya datos.
+                     DSK.1c lo trae a esta columna: por naturaleza es un aviso
+                     igual que los otros dos, y hasta ahora quedaba suelto al
+                     final del grupo, después de las dos listas. En móvil
+                     también sube (era territorio de IN.9a: "los dos avisos
+                     primero, las listas después", y este quedaba fuera). -->
+                <div id="panel-avisos" class="bento__cell bento__cell--flat bento__cell--half"
+                     role="region" aria-label="Avisos" hidden></div>
 
-              <!-- AVISOS (CFG.3b, ADR 066): lo que el motor único calcula y
-                   ningún otro panel de esta pantalla muestra todavía
-                   (apartado listo, día de pago, préstamo con fecha vencida).
-                   resumen/view.js lo llena; [hidden] hasta que haya datos. -->
-              <div id="panel-avisos" class="bento__cell bento__cell--flat bento__cell--half"
-                   role="region" aria-label="Avisos" hidden></div>
+              </div>
+
+              <div class="atencion-hoy__obligaciones">
+
+                <!-- PENDIENTES / VENCIDOS: compromisos cuyo día de pago ya pasó.
+                     Desde 1024px es la tarjeta fusionada "Lo que tienes que
+                     pagar" (DSK.1d, ADR 070 D8/D9): dashboard.js lo llena;
+                     [hidden] hasta que haya datos. -->
+                <div id="panel-vencidos" class="bento__cell bento__cell--flat bento__cell--half"
+                     role="region" aria-label="Deudas y pagos vencidos" hidden></div>
+
+                <!-- PRÓXIMAS PRIORIDADES: próximos 7 días, agrupado por día.
+                     Desde 1024px vive fusionada dentro de #panel-vencidos
+                     (DSK.1d) y esta celda queda vacía; dashboard.js sigue
+                     llenándola bajo ese ancho. -->
+                <div id="panel-prioridades" class="bento__cell bento__cell--flat bento__cell--half"
+                     role="region" aria-label="Próximas prioridades" hidden></div>
+
+              </div>
 
             </div>
           </div>

@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### feat(inicio): DSK.1c, "Atención hoy" deja de ser un mosaico dependiente del estado · 2026-08-20
+
+Cuarta y ultima rebanada del [ADR 070](DECISIONS/070-inicio-centro-de-atencion-en-escritorio.md), **cierra la iniciativa DSK.1** completa (sus cuatro rebanadas). Cierra D7. Desde 1024px "Atención hoy" pasa de un mosaico 2x2 que se recolocaba según cuántos paneles hubiera visibles a un reparto fijo: avisos en columna estrecha (`span 4`), obligaciones en columna ancha (`span 8`); sin ningún aviso, las obligaciones ocupan la fila entera (`span 12`). Ficha: [`contexto/inicio.md`](contexto/inicio.md).
+
+- **El defecto era de estado, no de composición.** Con los cuatro paneles activos se emparejaban por tipo (avisos 114+114, listas 370+370); con un número impar visible, media fila quedaba vacía y un aviso heredaba la altura de una lista. La zona más importante de Inicio era la que peor se comportaba con pocos datos, que es justo el caso normal.
+- **Dos envoltorios, mismo patrón que `.banda-inicio` (DSK.1b) y `.tesoreria-col`**: `.atencion-hoy__avisos` (distribuir, límites, motor único) y `.atencion-hoy__obligaciones` (vencidos, prioridades), `display: contents` por defecto y flex-columna desde 1024px. El `span 12` de respaldo usa `:has()` mirando **dentro** del envoltorio de avisos, no contando paneles sueltos: `.bento__group-cells:not(:has(.atencion-hoy__avisos > .bento__cell:not([hidden])))`.
+- **`#panel-avisos` (motor único, CFG.3b) se mueve en el DOM**, de última posición a tercera, junto a distribuir y límites. No es solo maquetación de escritorio: por naturaleza es un aviso igual que los otros dos, y quedaba fuera de la regla que IN.9a ya había aplicado ("los dos avisos primero, las listas después") solo porque llegó después en el tiempo. El movimiento alcanza también a móvil (el panel de avisos pasa a apilarse antes de vencidos/prioridades): es la corrección de esa inconsistencia, no una regresión, y ninguna prueba dependía del orden anterior.
+- **Cierra la deuda que dejó escrita DSK.1d el mismo día**: el borde derecho de la tarjeta fusionada ya cae a plomo (antes la celda medía `span 6` sin reparto propio) y la pantalla de Inicio con datos reales de un mes cargado cabe en el pliegue sin desplazamiento, verificado a 1920 x 1080.
+- Tests: 3 nuevos en `tests/e2e/smoke.test.js` (proporción de columnas ~4:8, el `span 12` de respaldo sin avisos, y el orden de DOM bajo 1024px). Sin tests unitarios propios: es maquetación pura, sin lógica nueva que happy-dom pueda medir.
+
 ### feat(inicio): DSK.1d, las obligaciones se leen en una sola linea de tiempo · 2026-08-20
 
 Cuarta rebanada del [ADR 070](DECISIONS/070-inicio-centro-de-atencion-en-escritorio.md). Cierra sus D8 y D9. Desde 1024px "Pendientes del mes" y "Próximas prioridades" pasan a ser **"Lo que tienes que pagar"**: una tarjeta, una línea de tiempo, un total. Medido a 1920 x 1080 con el reparto de la auditoría: botón "Pagar lo vencido · $1.474.400", resumen "4 pagos · en total debes $5.964.300", borde izquierdo a plomo con la banda (desfase 0) y **33px de aire bajo el botón**, contra 1 antes. Ficha: [`contexto/inicio.md`](contexto/inicio.md).

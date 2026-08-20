@@ -23,18 +23,6 @@
 - Avance     : **05/25 cerradas** (01 navegación móvil global, [ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md); 02 Inicio; 03 Más; 04 Ahorro; 05 Por pagar, que recuperó el alta de gasto fijo y el pago en lote). Sigue la 06.
 - Restricción: el orden no se altera. Cada ficha se implementa, se valida en la app y se cierra antes de abrir la siguiente. Lo que una ficha deja anotado para otra (ej. HR-1, o el destino de Logros) no se decide antes de llegar a ella.
 
-### DSK.1 - Inicio como centro de atención en escritorio, 4 rebanadas
-- Prioridad  : alta
-- Estado     : en proceso (iniciada 2026-08-18)
-- Área       : ambos
-- Objetivo   : implementar la auditoría "Inicio 1920 v2" de Claude Design ([ADR 070](DECISIONS/070-inicio-centro-de-atencion-en-escritorio.md)): Inicio en escritorio avisa, no resume
-- Secciones  : Inicio
-- Archivos   : `index.html`, `modules/infra/render.js`, `modules/dominio/compromisos/views/dashboard.js`, `styles/layout.css`, `styles/responsive.css`, `styles/components/domain.css`
-- Depende de : nada
-- Avance     : **03/04**. a) purga y cabecera (D2, D10), cerrada. b) banda de contexto (D4, D5, D6), cerrada. d) fusión de obligaciones y pie (D8, D9), cerrada. Falta c) columnas 4 + 8 (D7), de la que dependen dos medidas que d) dejó anotadas: el borde derecho a plomo y que la pantalla quepa en el pliegue.
-- Restricción: **alcance escritorio, desde 1024px.** Móvil no se toca: es territorio de MOV.1, que sigue abierta. Las dos iniciativas comparten `index.html` y corren en sesiones distintas: `git status` antes de cada rebanada, y stagear solo los archivos propios.
-
----
 
 ## Cómo usar este tablero
 

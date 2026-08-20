@@ -1690,6 +1690,12 @@ button.chip:focus-visible {
    vocabulario del bento: no hay una segunda banda en la app. */
 .banda-inicio { display: contents; }
 
+/* Envoltorios de "Atención hoy" (DSK.1c, ADR 070 D7): igual patrón que
+   `.banda-inicio`. `display: contents` por defecto: bajo 1024px no son
+   cajas y sus hijos siguen siendo las celdas sueltas del grupo que eran. */
+.atencion-hoy__avisos,
+.atencion-hoy__obligaciones { display: contents; }
+
 /* ════════════════════════════════════════════════════════════
    HERO-TESORERIA (MC.18a, ADR 035 D1/D3/D5) - total en cuentas.
    Segundo consumidor del piloto ADR 033 (degradado de identidad +

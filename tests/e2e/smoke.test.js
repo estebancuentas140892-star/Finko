@@ -5540,3 +5540,124 @@ test.describe('DSK.1d - "Lo que tienes que pagar" (ADR 070 D8/D9)', () => {
     });
   });
 });
+
+// ── DSK.1c: avisos estrechos + obligaciones anchas (ADR 070 D7) ─────────────
+
+test.describe('DSK.1c - "Atención hoy" deja de ser un 2x2 dependiente del estado', () => {
+  test.use({ viewport: { width: 1920, height: 1080 } });
+
+  const hoyISO = (offsetDias = 0) => {
+    const d = new Date();
+    d.setDate(d.getDate() + offsetDias);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  /** Un nudge de distribuir, una alerta de límite y dos obligaciones vencidas. */
+  async function sembrarAtencionHoy(page) {
+    await sembrar(page, {
+      version: 1,
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi', saldo: 500000, activa: true }],
+      ingresos: [{ id: 'i1', descripcion: 'Nómina', monto: 2000000, frecuencia: 'Mensual', categoria: 'Salario', diaPago: new Date().getDate(), activo: true, cuentaId: 'c1', fechaCreacion: '2025-01-01T00:00:00Z' }],
+      gastos: [
+        { id: 'g1', descripcion: 'Bus', categoria: 'Transporte', monto: 450000, fecha: hoyISO(-1), cuentaId: 'c1', nota: '' },
+      ],
+      presupuestos: [{ id: 'p1', categoria: 'Transporte', montoMensual: 420000, grupo: 'necesidades' }],
+      compromisos: [
+        { id: 'v1', descripcion: 'Crédito Bancolombia', tipo: 'deuda-entidad', cuotaMensual: 1284500, frecuencia: 'Mensual', diaPago: new Date(new Date().setDate(new Date().getDate() - 2)).getDate(), activo: true },
+        { id: 'v2', descripcion: 'Plan Claro', tipo: 'fijo', monto: 189900, frecuencia: 'Mensual', diaPago: new Date(new Date().setDate(new Date().getDate() - 1)).getDate(), activo: true },
+      ],
+      metas: [],
+    });
+    await page.goto('/#dash');
+    await page.waitForSelector('#panel-limites:not([hidden])', { timeout: 10_000 });
+  }
+
+  // El defecto que corrige: el emparejamiento por tipo (avisos con avisos,
+  // listas con listas) solo se daba con los cuatro paneles visibles; con un
+  // número impar, media fila quedaba vacía.
+  test('avisos en columna estrecha, obligaciones en columna ancha, sin importar cuántos avisos haya', async ({ page }) => {
+    await sembrarAtencionHoy(page);
+
+    const medidas = await page.evaluate(() => {
+      const avisos = document.querySelector('.atencion-hoy__avisos');
+      const obligaciones = document.querySelector('.atencion-hoy__obligaciones');
+      const banda = document.querySelector('.banda-inicio');
+      return {
+        avisosAncho: Math.round(avisos.getBoundingClientRect().width),
+        obligacionesAncho: Math.round(obligaciones.getBoundingClientRect().width),
+        avisosIzq: Math.round(avisos.getBoundingClientRect().left),
+        bandaIzq: Math.round(banda.getBoundingClientRect().left),
+        proporcion: obligaciones.getBoundingClientRect().width / avisos.getBoundingClientRect().width,
+      };
+    });
+
+    // ~4/12 y ~8/12 de los 1376 de contenido: la proporción es lo estable,
+    // no el píxel exacto (depende del hueco entre columnas).
+    expect(medidas.proporcion).toBeGreaterThan(1.9);
+    expect(medidas.proporcion).toBeLessThan(2.15);
+    expect(medidas.avisosIzq).toBe(medidas.bandaIzq);
+
+    // Los dos avisos (nudge + límites) están en la columna estrecha; la
+    // obligación fusionada (DSK.1d), en la ancha.
+    await expect(page.locator('.atencion-hoy__avisos #panel-distribuir-inicio')).toBeVisible();
+    await expect(page.locator('.atencion-hoy__avisos #panel-limites')).toBeVisible();
+    await expect(page.locator('.atencion-hoy__obligaciones #panel-vencidos')).toBeVisible();
+  });
+
+  // Sin ningún aviso visible, la obligación no deja un hueco muerto a su
+  // derecha: ocupa la fila entera, la misma silueta que M7 rechazó en
+  // Accesos rápidos.
+  test('sin avisos visibles, las obligaciones ocupan la fila entera', async ({ page }) => {
+    await sembrar(page, {
+      version: 1,
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi', saldo: 500000, activa: true }],
+      ingresos: [],
+      gastos: [],
+      presupuestos: [],
+      compromisos: [
+        { id: 'v1', descripcion: 'Arriendo', tipo: 'fijo', monto: 900000, frecuencia: 'Mensual', diaPago: new Date(new Date().setDate(new Date().getDate() - 1)).getDate(), activo: true },
+      ],
+      metas: [],
+    });
+    await page.goto('/#dash');
+    await page.waitForSelector('#panel-vencidos.obligaciones-card', { timeout: 10_000 });
+
+    await expect(page.locator('#panel-distribuir-inicio')).toBeHidden();
+    await expect(page.locator('#panel-limites')).toBeHidden();
+    await expect(page.locator('#panel-avisos')).toBeHidden();
+
+    const anchos = await page.evaluate(() => ({
+      obligaciones: Math.round(document.querySelector('.atencion-hoy__obligaciones').getBoundingClientRect().width),
+      banda: Math.round(document.querySelector('.banda-inicio').getBoundingClientRect().width),
+    }));
+    expect(anchos.obligaciones).toBe(anchos.banda);
+  });
+
+  // Móvil no se toca por CSS (ADR 070, alcance desde 1024px): los
+  // envoltorios desaparecen de la caja y las celdas siguen apilándose por
+  // orden de DOM. Ese orden sí se movió (panel-avisos sube junto a los
+  // otros dos avisos, antes quedaba suelto al final): es la misma regla
+  // "los avisos primero, las listas después" que ya aplicó IN.9a, que
+  // panel-avisos no había seguido porque llegó después.
+  test('bajo 1024px los envoltorios desaparecen y el orden del DOM no cambia', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await sembrarAtencionHoy(page);
+
+    const orden = await page.evaluate(() => {
+      const wrap = document.querySelector('.atencion-hoy__avisos');
+      const sel = '#panel-distribuir-inicio, #panel-limites, #panel-vencidos, #panel-prioridades, #panel-avisos';
+      return {
+        avisosEsContents: getComputedStyle(wrap).display === 'contents',
+        secuencia: [...document.querySelectorAll(sel)].map(c => c.id),
+      };
+    });
+    expect(orden.avisosEsContents).toBe(true);
+    expect(orden.secuencia).toEqual([
+      'panel-distribuir-inicio', 'panel-limites', 'panel-avisos', 'panel-vencidos', 'panel-prioridades',
+    ]);
+  });
+});
