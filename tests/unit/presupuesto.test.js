@@ -1176,10 +1176,27 @@ describe('renderPanelPresupuesto() - correcciones de la auditoría (DIS.7)', () 
   it('editar y eliminar un tope son dos botones de ícono con la misma anatomía', () => {
     S.presupuestos = [presupuesto({ categoria: 'Restaurantes', montoMensual: 250_000 })];
     renderPanelPresupuesto();
-    const acciones = [...panel().querySelectorAll('.envelope__actions .btn')];
-    expect(acciones).toHaveLength(2);
-    expect(acciones.every(b => b.classList.contains('btn-icon'))).toBe(true);
-    expect(acciones.every(b => b.querySelector('use'))).toBe(true);
+    // G5 (ficha 07) agregó una tercera acción al sobre, "Ver movimientos", que
+    // es una LECTURA y por eso no lleva la anatomía de ícono de las otras dos.
+    const operaciones = [...panel().querySelectorAll('.envelope__actions .btn-icon')];
+    expect(operaciones).toHaveLength(2);
+    expect(operaciones.every(b => b.querySelector('use'))).toBe(true);
+    expect(operaciones.map(b => b.dataset.action))
+      .toEqual(['editar-presupuesto', 'eliminar-presupuesto']);
+  });
+
+  // ── G5 (ficha 07, ADR 069 D8): de un tope a sus movimientos ──
+
+  it('cada tope ofrece la salida a los movimientos que lo forman, con su categoría', () => {
+    S.presupuestos = [presupuesto({ categoria: 'Restaurantes', montoMensual: 250_000 })];
+    renderPanelPresupuesto();
+    const ver = panel().querySelector('[data-action="presupuesto-ver-movimientos"]');
+    expect(ver).not.toBeNull();
+    expect(ver.dataset.categoria).toBe('Restaurantes');
+    expect(ver.textContent.trim()).toBe('Ver movimientos');
+    // Es la primera del grupo: una lectura antes que las dos operaciones.
+    const primera = panel().querySelector('.envelope__actions .btn');
+    expect(primera.dataset.action).toBe('presupuesto-ver-movimientos');
   });
 
   // L9: el chevron era el carácter '▾' inyectado por CSS.
@@ -1430,7 +1447,9 @@ describe('renderPanelPresupuesto() - avisos del motor (LIM.1c, ADR 044)', () => 
     }));
     renderPanelPresupuesto();
     expect(panel().innerHTML).toContain('Llevas 7 meses pagando Netflix: $538.800 al año.');
-    expect(panel().innerHTML).toContain('href="#agenda"');
+    // Ficha 05 (ADR 069): darlo de baja se hace en "Por pagar", no en el
+    // Calendario, que ya no edita compromisos.
+    expect(panel().innerHTML).toContain('href="#compromisos"');
   });
 
   it('un fijo esencial no genera aviso de suscripción', () => {

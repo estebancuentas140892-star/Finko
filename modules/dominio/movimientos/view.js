@@ -85,6 +85,7 @@ const _DOMINIO_LABEL = {
 /** Estado de los filtros de la vista completa. Vive acá (UI), no en `S`. */
 let _filtroTexto      = '';
 let _filtroDominio     = null;
+let _filtroCategoria   = null;
 let _filtroFechaDesde  = '';
 let _filtroFechaHasta  = '';
 
@@ -94,16 +95,29 @@ export function setFiltroTexto(texto) { _filtroTexto = texto || ''; }
 /** @param {string|null} dominio Un valor de `Movimiento.dominio`, o null/'' = todos. */
 export function setFiltroDominio(dominio) { _filtroDominio = dominio || null; }
 
+/**
+ * Categoría de gasto exacta, o null para quitarla (G5, ficha 07).
+ *
+ * No tiene chip propio en la barra: no es una de las opciones que la pantalla
+ * ofrece, es un filtro con el que se **llega** desde un tope de Límites. Por
+ * eso se pinta como una pastilla que se puede quitar y no como un chip más de
+ * la fila, que insinuaría que hay una lista de categorías donde elegir.
+ *
+ * @param {string|null} categoria
+ */
+export function setFiltroCategoria(categoria) { _filtroCategoria = categoria || null; }
+
 /** @param {string} fecha 'YYYY-MM-DD', o '' para quitar el piso. */
 export function setFiltroFechaDesde(fecha) { _filtroFechaDesde = fecha || ''; }
 
 /** @param {string} fecha 'YYYY-MM-DD', o '' para quitar el techo. */
 export function setFiltroFechaHasta(fecha) { _filtroFechaHasta = fecha || ''; }
 
-/** Vuelve los 4 filtros a "sin filtro". Llamado por "Limpiar filtros". */
+/** Vuelve los 5 filtros a "sin filtro". Llamado por "Limpiar filtros". */
 export function limpiarFiltrosMovimientos() {
   _filtroTexto = '';
   _filtroDominio = null;
+  _filtroCategoria = null;
   _filtroFechaDesde = '';
   _filtroFechaHasta = '';
 }
@@ -264,6 +278,7 @@ export function renderFiltrosMovimientos() {
     <input type="search" id="movimientos-buscar" class="input movimientos-filtros__busqueda"
            placeholder="Buscar por descripción..." value="${_esc(_filtroTexto)}"
            aria-label="Buscar movimientos por descripción" />
+    ${_categoriaHtml()}
     <div class="filtros-bar" role="group" aria-label="Filtrar movimientos por tipo">
       <button type="button" class="chip${todosActivo ? ' chip--active' : ''}"
               data-action="movimientos-filtrar-dominio" data-dominio=""
@@ -287,10 +302,29 @@ export function renderFiltrosMovimientos() {
  * sin recrear el resto de la barra.
  */
 function _limpiarFiltrosHtml() {
-  const hayFiltroActivo = Boolean(_filtroTexto || _filtroDominio || _filtroFechaDesde || _filtroFechaHasta);
+  const hayFiltroActivo = Boolean(_filtroTexto || _filtroDominio || _filtroCategoria || _filtroFechaDesde || _filtroFechaHasta);
   return hayFiltroActivo
     ? `<button type="button" class="btn btn-ghost btn-sm" data-action="movimientos-limpiar-filtros">Limpiar filtros</button>`
     : '';
+}
+
+/**
+ * La pastilla de la categoría con la que se llegó (G5). Se puede quitar, que es
+ * lo que la distingue de los chips de dominio: no es una opción que la pantalla
+ * ofrezca, es el filtro que trajo puesto quien entró desde un tope.
+ *
+ * @returns {string} HTML. `''` si no hay categoría puesta.
+ */
+function _categoriaHtml() {
+  if (!_filtroCategoria) return '';
+  return `
+    <div class="movimientos-filtros__contexto">
+      <button type="button" class="chip chip--active"
+              data-action="movimientos-quitar-categoria"
+              aria-label="Quitar el filtro de ${_esc(_filtroCategoria)}">
+        ${_esc(_filtroCategoria)} <span aria-hidden="true">&times;</span>
+      </button>
+    </div>`;
 }
 
 /**
@@ -596,11 +630,12 @@ export function renderMovimientosCompletos() {
   // Nunca sobre el DOM ya pintado: con años de historial PERF.1 ni siquiera
   // llegó a pintar todos los nodos.
   const movs = filtrarMovimientos(todos, {
-    texto:   _filtroTexto,
-    dominio: _filtroDominio,
-    desde:   _filtroFechaDesde,
-    hasta:   _filtroFechaHasta,
-    cuentas: S.cuentas,
+    texto:     _filtroTexto,
+    dominio:   _filtroDominio,
+    categoria: _filtroCategoria,
+    desde:     _filtroFechaDesde,
+    hasta:     _filtroFechaHasta,
+    cuentas:   S.cuentas,
   });
 
   if (movs.length === 0) {

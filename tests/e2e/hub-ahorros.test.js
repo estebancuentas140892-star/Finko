@@ -321,16 +321,23 @@ test.describe('DIS.18 - la casa de Ahorro (móvil)', () => {
     await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
 
     const franja = page.locator('#sec-gast .bloque-tabs');
+    // Ficha 07 (ADR 069 D8): dentro del bloque el ancho no aprieta como en la
+    // barra, así que la portada pasa de "Lo que gastaste" a "Día a día", que es
+    // el nombre que el propio filtro de categorías internas ya usaba.
     await expect(franja.locator('.bloque-tabs__label')).toHaveText([
-      'Lo que gastaste', 'Por pagar', 'Límites',
+      'Día a día', 'Por pagar', 'Límites',
     ]);
     await expect(franja.locator('.bloque-tabs__tab[data-section="gast"]')).toHaveClass(/active/);
 
     // Cada pestaña lleva su estado encima: es lo que reemplaza al menú.
     await expect(franja.locator('.bloque-tabs__tab[data-section="compromisos"] .bloque-tabs__badge'))
       .toHaveText('1');
-    await expect(franja.locator('.bloque-tabs__tab[data-section="presupuesto"] .bloque-tabs__badge'))
-      .toHaveText('1');
+    // "Límites" avisa con un punto y no con un número (ficha 07): ahí el dato
+    // importante es que pasó algo, no cuántas veces.
+    const badgeLimites = franja.locator('.bloque-tabs__tab[data-section="presupuesto"] .bloque-tabs__badge');
+    await expect(badgeLimites).toBeVisible();
+    await expect(badgeLimites).toHaveText('');
+    await expect(badgeLimites).toHaveClass(/bloque-tabs__badge--punto/);
 
     // La lente se abre desde la franja y la barra sigue diciendo "Gastos".
     await franja.locator('.bloque-tabs__tab[data-section="compromisos"]').click();

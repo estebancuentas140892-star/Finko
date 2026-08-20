@@ -12,7 +12,7 @@ import { registrarAccion } from '../../ui/actions.js';
 import { renderSmart, registrarRender, programarRender } from '../../infra/render.js';
 import {
   renderActividadReciente, renderMovimientosCompletos, cargarMasMovimientos,
-  renderFiltrosMovimientos, setFiltroTexto, setFiltroDominio,
+  renderFiltrosMovimientos, setFiltroTexto, setFiltroDominio, setFiltroCategoria,
   setFiltroFechaDesde, setFiltroFechaHasta, limpiarFiltrosMovimientos,
   actualizarBotonLimpiarFiltros,
 } from './view.js';
@@ -81,10 +81,49 @@ function _limpiarFiltrosMovimientos() {
   _wireFiltrosMovimientos();
 }
 
+/**
+ * Quita la pastilla de categoría con la que se llegó (G5), dejando el resto de
+ * los filtros como estén: quien entró desde un tope y luego amplía a todo el
+ * mes no quiere perder también el rango de fechas.
+ */
+function _quitarCategoria() {
+  setFiltroCategoria(null);
+  _renderVistaCompleta();
+}
+
+/**
+ * Llegada prefiltrada desde un número del bloque Gastos (G5, ficha 07,
+ * ADR 069 D8). Hoy la usa cada tope de la lente "Límites".
+ *
+ * El emisor no puede filtrar acá porque los filtros son estado de este módulo y
+ * ningún dominio importa a otro (ADN 10), así que manda categoría y rango y
+ * esta pantalla los pone. Se limpia primero para que dos llegadas seguidas no
+ * se acumulen, y el `setTimeout` es el mismo apaño que usan las otras llegadas
+ * del proyecto: si venimos de otra sección, el contenedor no existe hasta
+ * después del re-render del `hashchange`.
+ *
+ * @param {{ categoria?: string|null, desde?: string, hasta?: string }} payload
+ */
+function _verPrefiltrado({ categoria = null, desde = '', hasta = '' } = {}) {
+  limpiarFiltrosMovimientos();
+  setFiltroCategoria(categoria);
+  setFiltroFechaDesde(desde);
+  setFiltroFechaHasta(hasta);
+
+  if ((location.hash.slice(1) || 'dash') !== 'movimientos') {
+    location.hash = '#movimientos';
+  }
+  setTimeout(() => _renderVistaCompleta(), 0);
+}
+
 export function initMovimientos() {
   registrarAccion('movimientos-cargar-mas', cargarMasMovimientos);
   registrarAccion('movimientos-filtrar-dominio', _filtrarDominio);
   registrarAccion('movimientos-limpiar-filtros', _limpiarFiltrosMovimientos);
+  registrarAccion('movimientos-quitar-categoria', _quitarCategoria);
+
+  // G5: de un número a los movimientos que lo forman, con el filtro puesto.
+  EventBus.on('movimientos:ver', _verPrefiltrado);
 
   EventBus.on('state:change', ({ section }) => {
     // Agendado, no directo (PERF.6): las 4 secciones fuente se emiten varias

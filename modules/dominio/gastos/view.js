@@ -10,6 +10,7 @@ import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA, iconoDeCategoriaGasto } from '../../core/constants.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
+import { mesBloque, navegarMesBloque, irAMesActualBloque } from '../../infra/mes-bloque.js';
 import { gastosMes, filtrarGastos, ordenarRecientesPrimero, agruparPorDia, totalGastos, variacionMensualGasto, detectarHormigas, iconoPorOrigen, gastosFrecuentes, tarjetasDeCredito } from './logic.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
@@ -38,37 +39,30 @@ function _sinInternas(gastos) {
 
 // ── ESTADO LOCAL DE VISTA ────────────────────────────────────────
 
-/** Mes visualizado (0-indexed, igual que Date.getMonth()). `null` = mes actual. */
-let _viewYear  = null;
-let _viewMonth = null;
+/**
+ * Mes visualizado. Desde la ficha 07 (ADR 069 D8, hallazgo G4) el estado ya no
+ * vive acá: sube a `infra/mes-bloque.js` y lo comparten las tres lentes del
+ * bloque Gastos, para que navegar el mes en una no deje a las otras en otro.
+ * Estos dos getters conservan los nombres que el resto del archivo usaba.
+ */
+function _mesVisible() { return mesBloque(); }
 
 /** Categoría activa en el filtro de chips. `null` = "Todos". */
 let _filtroCategoria = null;
-
-/** Inicializa el mes al mes actual si aún no se ha establecido. */
-function _ensureMes() {
-  if (_viewYear === null || _viewMonth === null) {
-    const hoyDate  = new Date();
-    _viewYear  = hoyDate.getFullYear();
-    _viewMonth = hoyDate.getMonth();
-  }
-}
 
 /**
  * Mueve el mes visualizado en `delta` pasos (positivo = adelante, negativo = atrás).
  * Resetea el filtro de categoría al cambiar de mes (las categorías del nuevo mes
  * pueden ser distintas). El caller debe llamar renderFiltrosGastos + renderListaGastos.
+ *
+ * El mes lo mueve `infra/mes-bloque.js`; lo propio de esta lente es el reset
+ * del filtro.
+ *
  * @param {number} delta
  */
 export function navegarMesGastos(delta) {
-  _ensureMes();
-  let m = _viewMonth + delta;
-  let y = _viewYear;
-  while (m < 0)  { m += 12; y -= 1; }
-  while (m > 11) { m -= 12; y += 1; }
-  _viewMonth        = m;
-  _viewYear         = y;
-  _filtroCategoria  = null; // reset al cambiar mes
+  navegarMesBloque(delta);
+  _filtroCategoria = null; // reset al cambiar mes
 }
 
 /** Actualiza el filtro activo. Llamado desde index.js al hacer clic en un chip. */
@@ -82,9 +76,7 @@ export function setFiltroCategoria(cat) {
  * se está mirando. Resetea el filtro, igual que `navegarMesGastos`.
  */
 export function irAMesActual() {
-  const hoyDate = new Date();
-  _viewYear        = hoyDate.getFullYear();
-  _viewMonth       = hoyDate.getMonth();
+  irAMesActualBloque();
   _filtroCategoria = null;
 }
 
@@ -96,8 +88,16 @@ export function irAMesActual() {
  * que lo pidió. Se mide sobre los mismos gastos que la sección muestra (sin
  * las categorías internas de TX.8b).
  *
+ * Exportada desde la ficha 07 (ADR 069 D8): el selector de mes sube al
+ * encabezado del bloque y necesita el mismo tope que usaba el hero, para que
+ * los dos controles no discrepen sobre hasta dónde se puede navegar.
+ *
  * @returns {{ anio: number, mes: number }} mes 0-indexed, como Date.getMonth().
  */
+export function mesTopeGastos() {
+  return _mesTope();
+}
+
 function _mesTope() {
   const hoyDate = new Date();
   let anio = hoyDate.getFullYear();
@@ -130,7 +130,7 @@ export function renderFiltrosGastos() {
   const el = document.getElementById('panel-filtros-gastos');
   if (!el) return;
 
-  _ensureMes();
+  const { anio: _viewYear, mes: _viewMonth } = _mesVisible();
 
   const delMes = _sinInternas(gastosMes(S.gastos, _viewYear, _viewMonth + 1)); // gastosMes usa mes 1-indexed
 
@@ -207,6 +207,7 @@ export function renderFiltrosGastos() {
  * @returns {string}
  */
 function _renderHeroGastos(delMes) {
+  const { anio: _viewYear, mes: _viewMonth } = _mesVisible();
   const visibles   = filtrarGastos(delMes, _filtroCategoria);
   const total      = totalGastos(visibles);
   const oculto     = S.config?.ocultarSaldo === true;
@@ -244,7 +245,46 @@ function _renderHeroGastos(delMes) {
       <p class="hero-gastos__label">${label}</p>
       <p class="hero-gastos__valor">${totalTxt}</p>
       ${_renderComparativo(delMes)}
+      ${_renderAlcanceInternas()}
     </div>`;
+}
+
+/**
+ * La línea que declara lo que el total NO cuenta (G1, ficha 07, ADR 069 D8;
+ * regla candidata R82).
+ *
+ * `_sinInternas()` filtra los pagos de deuda y de fijos para que el desglose
+ * por categoría siga siendo el gasto que el usuario decide día a día. El
+ * filtro está bien pensado y no se toca: lo que faltaba es que la pantalla
+ * dijera en voz alta qué deja fuera. Dentro de un bloque llamado Gastos, un
+ * número principal que excluye a dos de sus tres lentes es la clase de
+ * incoherencia que hace que la gente deje de confiar en las cifras.
+ *
+ * Se calcula sobre `S.gastos` (el complemento exacto de `_sinInternas`), así
+ * que no importa el dominio Compromisos (ADN 10).
+ *
+ * No se pinta si no hay nada que declarar (sin fijos ni deudas en el mes,
+ * declararlo confunde) ni con un filtro de categoría activo, porque entonces
+ * el hero describe una categoría y no el mes.
+ *
+ * @returns {string}
+ */
+function _renderAlcanceInternas() {
+  if (_filtroCategoria) return '';
+
+  const { anio, mes } = _mesVisible();
+  const internas = gastosMes(S.gastos, anio, mes + 1)
+    .filter(g => _CATEGORIAS_INTERNAS.has(g.categoria));
+  const total = totalGastos(internas);
+  if (total <= 0) return '';
+
+  const oculto = S.config?.ocultarSaldo === true;
+
+  return `
+      <p class="hero-gastos__alcance">
+        <span>+ <strong>${oculto ? SALDO_MASCARA : f(total)}</strong> en fijos y deudas</span>
+        <a class="hero-gastos__alcance-link" href="#compromisos">Ver</a>
+      </p>`;
 }
 
 /**
@@ -260,6 +300,7 @@ function _renderHeroGastos(delMes) {
 function _renderComparativo(delMes) {
   if (_filtroCategoria || delMes.length === 0) return '';
 
+  const { anio: _viewYear, mes: _viewMonth } = _mesVisible();
   const prevMonth = _viewMonth === 0 ? 11 : _viewMonth - 1;
   const prevYear  = _viewMonth === 0 ? _viewYear - 1 : _viewYear;
   const totalPrev = totalGastos(_sinInternas(gastosMes(S.gastos, prevYear, prevMonth + 1)));
@@ -295,7 +336,7 @@ export function renderListaGastos() {
   const el = document.getElementById('lista-gastos');
   if (!el) return;
 
-  _ensureMes();
+  const { anio: _viewYear, mes: _viewMonth } = _mesVisible();
 
   const delMes = _sinInternas(gastosMes(S.gastos, _viewYear, _viewMonth + 1)); // 1-indexed
 
@@ -490,6 +531,7 @@ function _renderGastoItem(gasto, oculto) {
  *   habla y ofrece volver al mes donde el gasto sí va a caer (hallazgo H8).
  */
 function _renderEmptyState() {
+  const { anio: _viewYear, mes: _viewMonth } = _mesVisible();
   const hoyDate      = new Date();
   const mesCorriente = MONTHS[hoyDate.getMonth()].toLowerCase();
 

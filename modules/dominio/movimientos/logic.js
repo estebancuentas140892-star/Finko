@@ -70,6 +70,11 @@ export function movimientosDesdeGastos(gastos, categoriasPersonalizadas = []) {
     icono:       iconoDeCategoriaGasto(g.categoria, categoriasPersonalizadas),
     cuentaId:    g.cuentaId ?? null,
     dominio:     _CATEGORIAS_COMPROMISOS.has(g.categoria) ? 'compromisos' : 'gastos',
+    // G5 (ficha 07, ADR 069 D8): el único filtro que faltaba para llegar
+    // prefiltrado desde un tope de Límites. Solo los gastos la llevan: un
+    // aporte, un ingreso puntual o una transferencia no tienen categoría de
+    // gasto, y el filtro los descarta a propósito cuando está puesto.
+    categoria:   g.categoria ?? null,
   }));
 }
 
@@ -180,18 +185,22 @@ export function descripcionMovimiento(m, cuentas = []) {
  *   texto?: string|null,     Substring, sin distinguir mayúsculas, contra la
  *                            descripción visible (incluida la de una transferencia).
  *   dominio?: string|null,   Un valor de `Movimiento.dominio` exacto, o null/'' = todos.
+ *   categoria?: string|null, Categoría de gasto exacta, o null/'' = todas. Solo
+ *                            los gastos la llevan, así que con este filtro
+ *                            puesto el resto de las fuentes queda fuera (G5).
  *   desde?: string,          'YYYY-MM-DD' inclusive. '' = sin piso.
  *   hasta?: string,          'YYYY-MM-DD' inclusive. '' = sin techo.
  *   cuentas?: import('../../core/state.js').Cuenta[],  Para resolver el texto de una transferencia.
  * }} [filtros]
  * @returns {Movimiento[]}
  */
-export function filtrarMovimientos(movimientos, { texto, dominio, desde, hasta, cuentas } = {}) {
+export function filtrarMovimientos(movimientos, { texto, dominio, categoria, desde, hasta, cuentas } = {}) {
   const lista = Array.isArray(movimientos) ? movimientos : [];
   const q = texto?.trim().toLowerCase() || null;
 
   return lista.filter(m => {
     if (dominio && m.dominio !== dominio) return false;
+    if (categoria && m.categoria !== categoria) return false;
     if (desde && m.fecha < desde) return false;
     if (hasta && m.fecha > hasta) return false;
     if (q && !descripcionMovimiento(m, cuentas).toLowerCase().includes(q)) return false;

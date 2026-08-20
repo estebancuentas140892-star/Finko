@@ -3153,6 +3153,80 @@ test.describe('Por pagar - picker de ícono del fijo para "Otro" (CAT.2f)', () =
   });
 });
 
+// ── Bloque Gastos: un reloj y un número honesto (ficha 07, ADR 069 D8) ─────
+
+test.describe('Bloque Gastos - el encabezado del contenedor', () => {
+  test('un solo reloj gobierna las tres lentes y el hero no repite el suyo', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/#gast');
+    await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
+
+    const bloque = page.locator('#sec-gast .bloque-gastos');
+    await expect(bloque).toBeVisible();
+    await expect(bloque.locator('.bloque-gastos__titulo')).toHaveText('Gastos');
+
+    // G4: el selector del hero de la portada desaparece, porque el del bloque
+    // manda sobre las tres. Dos relojes en la misma pantalla es el defecto.
+    await expect(page.locator('#sec-gast .hero-gastos__top')).toBeHidden();
+
+    const etiqueta = bloque.locator('.bloque-gastos__mes-label');
+    const mesInicial = await etiqueta.textContent();
+    await bloque.locator('[data-action="bloque-mes-prev"]').click();
+    await expect(etiqueta).not.toHaveText(mesInicial);
+
+    // Y el mes viaja con el usuario a la otra lente: es lo único que un
+    // contenedor tiene que garantizar.
+    const mesAtras = await etiqueta.textContent();
+    await bloque.locator('.bloque-tabs__tab[data-section="presupuesto"]').click();
+    await page.waitForSelector('#sec-presupuesto.active', { timeout: 5_000 });
+    await expect(page.locator('#sec-presupuesto .bloque-gastos__mes-label')).toHaveText(mesAtras);
+
+    // El mes siguiente se corta en el tope: no se navega al futuro.
+    await page.locator('#sec-presupuesto [data-action="bloque-mes-next"]').click();
+    await expect(page.locator('#sec-presupuesto .bloque-gastos__mes-label')).toHaveText(mesInicial);
+    await expect(page.locator('#sec-presupuesto [data-action="bloque-mes-next"]')).toBeDisabled();
+  });
+
+  test('G5: de un tope a los movimientos que lo forman, con el filtro puesto', async ({ page }) => {
+    // El mes visible del bloque es el corriente, y el rango que viaja con el
+    // filtro es el de ese mes: los consumos tienen que caer dentro.
+    const hoy = new Date();
+    const mes = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
+
+    await saltearOnboarding(page);
+    await parchar(page, {
+      presupuestos: [{ id: 'p1', categoria: 'Restaurantes', montoMensual: 200_000, activo: true }],
+      gastos: [
+        { id: 'g1', descripcion: 'Almuerzo', monto: 32_000, categoria: 'Restaurantes', fecha: `${mes}-05` },
+        { id: 'g2', descripcion: 'Mercado del mes', monto: 210_000, categoria: 'Mercado', fecha: `${mes}-03` },
+      ],
+    });
+    await page.goto('/#presupuesto');
+    await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
+
+    const ver = page.locator('[data-action="presupuesto-ver-movimientos"]').first();
+    await expect(ver).toBeVisible();
+    await ver.click();
+
+    await page.waitForSelector('#sec-movimientos.active', { timeout: 5_000 });
+    const pastilla = page.locator('[data-action="movimientos-quitar-categoria"]');
+    await expect(pastilla).toContainText('Restaurantes');
+
+    // Llega filtrado de verdad: el gasto de Mercado queda fuera.
+    const filas = page.locator('#lista-movimientos .list-item');
+    await expect(filas).toHaveCount(1);
+    await expect(filas.first()).toContainText('Almuerzo');
+
+    // La pastilla se puede quitar sin perder el rango de fechas con el que se
+    // llegó: quien amplía a todo el mes no quiere volver a escribirlo.
+    await pastilla.click();
+    await expect(page.locator('[data-action="movimientos-quitar-categoria"]')).toHaveCount(0);
+    await expect(filas).toHaveCount(2);
+    await expect(page.locator('#movimientos-desde')).toHaveValue(`${mes}-01`);
+  });
+});
+
 // ── Por pagar: los cuatro chips de la lente (ADR 080 D6) ───────────────────
 
 test.describe('Por pagar - chips de la lente', () => {

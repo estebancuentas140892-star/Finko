@@ -89,6 +89,43 @@ La hoja baja de ocho destinos a seis: Deudas y Límites se fueron al bloque.
 
 ---
 
+### D7. Dentro del bloque Ahorro se va de lado, y el fondo es la precondición
+
+*Escrita el 2026-08-20, con la ficha 07. La decisión es de la ficha 04 y llevaba implementada desde entonces; lo que faltaba era el texto: trece comentarios del código y de los tests ya la citaban como "ADR 069 D7" y no existía.*
+
+El bloque Ahorro aterriza en su portada, que resume y enruta ([ADR 056](056-la-casa-de-ahorro.md)), pero **dentro de sus cuatro modalidades no se podía ir de lado**: de Metas a Reservas había que volver a la portada. Cada hija gana una **fila de chips** con las cuatro (`ui/bloque-ahorro.js`), así que cualquiera se alcanza desde cualquiera con un toque. Solo bajo 1024px: en escritorio la barra lateral ya las lista.
+
+No es lo mismo que las pestañas del bloque Gastos y por eso no comparten componente: allá hay una lente dominante y el bloque aterriza en ella; acá las cuatro son pares y la portada sigue existiendo.
+
+Y **el fondo de emergencia es una precondición, no una modalidad más** (AH4): mientras no esté completo, las otras tres lo dicen en media línea. Es jerarquía de contenido, no de navegación: los cuatro chips siguen ahí y ninguno se bloquea.
+
+### D8. La anatomía del bloque Gastos: un nombre, un reloj y un número honesto
+
+*Ficha 07 de la auditoría móvil. La ficha 01 decidió que el bloque existiera (D1); esta decide cómo es por dentro.*
+
+El bloque gana un encabezado propio (`ui/bloque-gastos.js`, inyectado en las tres lentes) con cuatro piezas:
+
+| Pieza | Qué resuelve |
+|---|---|
+| Nombre y una línea: "Gastos" / "Todo el dinero que se te va" | el contenedor se nombra una vez, y las tres lentes dejan de repetir su título bajo 1024px |
+| **Un solo selector de mes** | el hallazgo G4 |
+| El ojo de privacidad | silencia las tres lentes a la vez en vez de una sola pantalla |
+| Las tres pestañas, con su estado encima | "Día a día", "Por pagar" (contador de vencidos) y "Límites" (un punto, no un número) |
+
+**G4, un reloj y no tres.** "Día a día" navegaba mes a mes con estado propio, "Límites" leía `new Date()` en cada render y "Por pagar" miraba a vencimientos: retroceder a junio en la primera y saltar a la tercera devolvía al mes actual sin avisar. Un contenedor promete continuidad. El estado sube a `infra/mes-bloque.js`, que vive en infra y no en un dominio porque las tres lentes son dominios distintos y ninguno puede importar a otro (ADN 10). Bajo 1024px el hero de la portada pierde su fila de arriba: su selector y su ojo son ahora los del bloque. En escritorio no hay encabezado de bloque y cada sección conserva el suyo.
+
+**Consecuencia declarada:** "Límites" pasa de estar clavado al mes en curso a poder mirar meses anteriores. Es una mejora y es un cambio de comportamiento; queda anotado para la ficha 12.
+
+**G1, el número honesto (regla candidata R82).** `_sinInternas()` filtra los pagos de deuda y de fijos para que el desglose por categoría sea el gasto que el usuario decide día a día. El filtro **no se toca**: es correcto. Lo que faltaba es que la pantalla dijera qué deja fuera, porque dentro de un bloque llamado Gastos un número principal que excluye a dos de sus tres lentes es la clase de incoherencia que hace que la gente deje de confiar en las cifras. El hero gana una línea: **"+ $X en fijos y deudas"** con salida a la lente donde viven. Sin inflar el total, sin inventar una cifra nueva. No se pinta si no hay nada que declarar ni con un filtro de categoría activo, porque entonces el hero describe una categoría y no el mes.
+
+**El nombre se confirma, no se hereda.** Se probaron seis alternativas (Deudas, Compromisos, Lo que debo, Dinero, Salidas/Egresos, Mi mes) y todas fallan por cobertura, por ancho a 360px o por idioma. En el habla común colombiana "mis gastos del mes" ya incluye el arriendo, y el modelo de datos le da la razón al usuario: pagar una cuota crea un registro de gasto. Lo estrecho era la pantalla, y eso es lo que corrige G1.
+
+**G5, de un número a los movimientos que lo forman.** Desde un tope no había forma de ver los consumos que lo componen sin ir a Movimientos y armar el filtro a mano. Cada tope gana una salida que **llega con el filtro puesto**: su categoría y el mes visible del bloque. Movimientos gana su quinto filtro (categoría, con chip que se puede quitar) porque los cuatro que tenía no podían expresarlo. El emisor no importa el dominio: emite `movimientos:ver` (mismo mecanismo que `distribuir:abrir`).
+
+**G2 se acota, no se resuelve.** "Límites de gasto" no es lo que su nombre promete: lo que abre es el plan de tres grupos (Necesidades, Estilo de vida, Ahorro) y los topes son un bloque dentro de una de sus tarjetas. Al bloque entra la parte que sí es de gastos, los topes, y la pestaña se llama "Límites". El plan de tres grupos **queda como pregunta explícita para la ficha 12**: uno de sus grupos es Ahorro, que es el otro bloque de la barra, y su dependencia es Mis cuentas, que vive en "Más".
+
+**G3, Movimientos se queda en "Más".** No es destino principal y no entra a la barra en ninguna arquitectura evaluada, pero quitarlo de "Más" reabriría un defecto ya cerrado (R32): su único camino era "Ver todo" de Actividad reciente, un enlace en una celda que arranca `[hidden]` y solo se activa cuando ya hay movimientos, o sea que desaparecía justo cuando el usuario es nuevo.
+
 ## Alternativas consideradas
 
 - **Arquitectura A: "Por pagar" como quinto destino suelto.** Descartada por el marcador (2 contra 8) y por su forma: añade un destino con anatomía distinta a la de Ahorro (uno es sección plana, el otro un hub) y deja las cuatro modalidades de ahorro a tres toques, la profundidad máxima de la app.

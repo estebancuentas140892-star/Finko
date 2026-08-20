@@ -20,10 +20,11 @@
 - Secciones  : todas
 - Archivos   : según ficha
 - Depende de : nada
-- Avance     : **06/25 cerradas** (01 navegación móvil global, [ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md); 02 Inicio; 03 Más; 04 Ahorro; 05 Por pagar, que recuperó el alta de gasto fijo y el pago en lote; 06 Mis cuentas, [ADR 080](DECISIONS/080-mis-cuentas-un-primario-y-lo-informativo-al-pie.md), que acota el 075 en D1 y D5). Sigue la 07.
+- Avance     : **07/25 cerradas** (01 navegación móvil global, [ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md); 02 Inicio; 03 Más; 04 Ahorro; 05 Por pagar, que recuperó el alta de gasto fijo y el pago en lote; 06 Mis cuentas, [ADR 080](DECISIONS/080-mis-cuentas-un-primario-y-lo-informativo-al-pie.md), que acota el 075 en D1 y D5; 07 el bloque Gastos, [ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md) D8). Sigue la 08.
 - Restricción: el orden no se altera. Cada ficha se implementa, se valida en la app y se cierra antes de abrir la siguiente. Lo que una ficha deja anotado para otra (ej. HR-1, o el destino de Logros) no se decide antes de llegar a ella.
 - Aparte     : el **bloque de Logros del handoff (ficha 20)** se aplicó fuera del orden como MOV.20a el 2026-08-20, porque no toca ningún archivo abierto por las fichas 06 ni 07. De ese bloque, R91 quedó **anulada** (premisa previa a LG.2e). El resto de la ficha 20 son los anclajes R86 de otros dominios, que se aplican con la ficha que los nombra.
 - Deuda de 05: la ficha 06 destapó que la 05 especificó los cuatro chips de la lente Por pagar y no los implementó. Los chips ya están (ADR 080 D6); **siguen faltando** la fila de altas que aparece solo para el grupo visible y el pie de saldo con "Ver plan de salida". Se cierran cuando toque revisar la 05, no antes.
+- Abierto por 07: la **ficha 12** hereda dos cosas de G2 y G4, y las dos son de fondo. Una, qué pasa con el plan de tres grupos, que no cabe en el bloque porque uno de sus grupos es Ahorro. Dos, que la lente ya puede mirar meses anteriores: es una mejora y es un cambio de comportamiento que nadie ha validado todavía.
 - Avisos     : la ficha **19** es un rediseño de la vitrina de Logros con premisa previa a LG.2d (la ubicaba en Ajustes): hay que releerla contra las dos superficies de hoy. Y las fichas escritas antes del 2026-08-17 pueden chocar con los ADR de escritorio (070 a 079): el choque se resuelve con un ADR que acote, como hizo el 080, nunca en silencio.
 
 

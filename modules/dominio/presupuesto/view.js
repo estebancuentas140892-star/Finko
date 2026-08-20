@@ -27,6 +27,7 @@ import {
   extraordinarioDelMes,
 } from './logic.js';
 import { estimarSalarioMensual } from '../../infra/financiero.js';
+import { mesBloque } from '../../infra/mes-bloque.js';
 import {
   sugerirMontoTope,
   sugerirCategoriasParaTope,
@@ -50,9 +51,12 @@ export function renderPanelPresupuesto() {
   const el = document.getElementById('panel-presupuesto');
   if (!el) return;
 
-  const ahora = new Date();
-  const anio  = ahora.getFullYear();
-  const mes   = ahora.getMonth() + 1;
+  // G4 (ficha 07, ADR 069 D8): la lente deja de estar clavada al mes en curso
+  // y obedece al reloj del bloque, que es el mismo de "Día a día" y de "Por
+  // pagar". Antes, retroceder a junio en la portada y saltar acá devolvía al
+  // mes actual sin avisar.
+  const { anio, mes: mes0 } = mesBloque();
+  const mes = mes0 + 1;
 
   el.innerHTML = _renderResumenGrupos(anio, mes);
   _sincronizarBotonEncabezado();
@@ -331,8 +335,8 @@ function _renderRefuerzoCombinado(mensajes) {
 // ── DESGLOSE POR ITEM (MC.5c, ADR 017) ───────────────────────────
 
 // Ícono por tipo de fila del desglose (ID.3): el símbolo estructural de la
-// sección donde vive cada cosa (fijos en Calendario, deudas en Deudas,
-// fondo en Ahorro...). Inline con el texto, por eso icon--sm y no teja.
+// sección donde vive cada cosa (fijos y deudas en Por pagar, fondo en
+// Ahorro...). Inline con el texto, por eso icon--sm y no teja.
 // Chevron real del sprite en vez del carácter '▾' que el CSS inyectaba: hereda
 // trazo y tamaño del sistema de iconografía. La regla que apaga el `::after`
 // está acotada a `.grupo-card__desglose`, así que el desglose de Análisis, que
@@ -351,7 +355,7 @@ const _ICONO_ITEM_AHORRO    = { fondo: 'i-ahorro', meta: 'i-metas', apartado: 'i
  */
 function _renderDesgloseNecesidades(items) {
   if (items.length === 0) {
-    return `<p class="grupo-card__desglose-empty">Aún no registras gastos fijos ni deudas en Calendario.</p>`;
+    return `<p class="grupo-card__desglose-empty">Aún no registras gastos fijos ni deudas en Por pagar.</p>`;
   }
 
   const filas = items.map(it => {
@@ -566,7 +570,7 @@ function _renderSuscripcionLarga(s) {
       <span class="nudge__icon" aria-hidden="true">${iconoCategoria('i-info')}</span>
       <div class="nudge__body">
         <p class="nudge__title">Llevas ${s.mesesPagados} meses pagando ${_esc(s.descripcion)}: ${f(s.costoAnual)} al año.</p>
-        <p class="nudge__desc">Si ya no lo usas, darlo de baja libera ese dinero. <a href="#agenda" class="estilo-olla__link">Revisar en Calendario</a></p>
+        <p class="nudge__desc">Si ya no lo usas, darlo de baja libera ese dinero. <a href="#compromisos" class="estilo-olla__link">Revisar en Por pagar</a></p>
       </div>
     </div>`;
 }
@@ -658,6 +662,14 @@ function _renderEnvelope(presupuesto, gastos, anio, mes, nota = '') {
       </p>
       ${nota ? `<p class="envelope__nota">${_esc(nota)}</p>` : ''}
       <div class="envelope__actions">
+        <!-- G5 (ficha 07, ADR 069 D8): "ver los ocho consumos que forman este
+             número" era la pregunta natural después de mirar un tope, y costaba
+             cuatro toques mas armar el filtro a mano. Lleva la categoría; el
+             mes lo pone el reloj del bloque. -->
+        <button class="btn btn-ghost btn-sm envelope__ver"
+                data-action="presupuesto-ver-movimientos"
+                data-categoria="${categoria}"
+                aria-label="Ver los movimientos de ${categoria}">Ver movimientos</button>
         <button class="btn btn-ghost btn-icon"
                 data-action="editar-presupuesto"
                 data-id="${_esc(presupuesto.id)}"
@@ -674,17 +686,22 @@ function _renderEnvelope(presupuesto, gastos, anio, mes, nota = '') {
 
 // Motivo por el que una categoría con gasto del mes no puede recibir un tope
 // desde acá: son las que el formulario no ofrece. "Vivienda" y "Servicios
-// públicos" salieron del selector con CAT.1 (siempre recurrentes con fecha,
-// viven en Calendario); "Deudas" y "Ahorro" son categorías internas que la app
-// escribe sola al registrar un abono o un aporte. "Gastos fijos" es la que la
-// app le pone al pago de un compromiso de Calendario: desde LIM.1b, la parte no
-// esencial de esos pagos cuenta acá dentro, así que la fila dice dónde se
-// controla en vez de caer al genérico "No lleva tope".
+// públicos" salieron del selector con CAT.1 (siempre recurrentes con fecha);
+// "Deudas" y "Ahorro" son categorías internas que la app escribe sola al
+// registrar un abono o un aporte. "Gastos fijos" es la que la app le pone al
+// pago de un compromiso: desde LIM.1b, la parte no esencial de esos pagos
+// cuenta acá dentro, así que la fila dice dónde se controla en vez de caer al
+// genérico "No lleva tope".
+//
+// Ficha 05 (ADR 069): las cuatro que vivían "en Calendario" o "en Deudas"
+// ahora se administran en la misma sección, "Por pagar". Nombrar la sección
+// donde el usuario sí puede hacer algo es el punto de estas filas: mandarlo al
+// Calendario, que ya no crea ni edita nada, era una puerta cerrada.
 const _MOTIVO_SIN_TOPE = {
-  'Vivienda':           'Se controla en Calendario',
-  'Servicios públicos': 'Se controla en Calendario',
-  'Gastos fijos':       'Se controla en Calendario',
-  'Deudas':             'Se controla en Deudas',
+  'Vivienda':           'Se controla en Por pagar',
+  'Servicios públicos': 'Se controla en Por pagar',
+  'Gastos fijos':       'Se controla en Por pagar',
+  'Deudas':             'Se controla en Por pagar',
   'Ahorro':             'Se controla en Ahorro',
 };
 
@@ -699,8 +716,10 @@ const _MOTIVO_SIN_TOPE = {
  * @returns {string} HTML.
  */
 function _renderSinPresupuesto(presupuestos) {
-  const ahora = new Date();
-  const huerfanas = categoriasSinPresupuesto(presupuestos, S.gastos, ahora.getFullYear(), ahora.getMonth() + 1);
+  // Mismo reloj que el resumen de la lente (G4): si el bloque está en junio,
+  // "gastas acá y no tiene tope" tiene que hablar de junio.
+  const { anio, mes } = mesBloque();
+  const huerfanas = categoriasSinPresupuesto(presupuestos, S.gastos, anio, mes + 1);
   if (huerfanas.length === 0) return '';
 
   const personalizadas = S.categoriasPersonalizadas ?? [];

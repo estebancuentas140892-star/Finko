@@ -822,9 +822,18 @@
 
 .envelope__actions {
   display: flex;
+  align-items: center;
   gap: var(--fk-space-sm);
   justify-content: flex-end;
   margin-top: var(--fk-space-xs);
+}
+
+/* G5 (ficha 07, ADR 069 D8): la salida a los movimientos que forman el numero.
+   Va a la izquierda y empuja a editar/eliminar a su esquina: es una lectura, no
+   una operacion sobre el tope, y en la misma esquina invitaba a tocar el
+   boton equivocado. */
+.envelope__ver {
+  margin-right: auto;
 }
 
 .envelope-huerfanas {

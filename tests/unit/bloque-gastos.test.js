@@ -2,22 +2,28 @@
  * bloque-gastos.test.js - la franja de lentes del bloque Gastos (ADR 069).
  *
  * Cubre:
- * - htmlTabsBloqueGastos(): las tres lentes, en orden, con hash y etiqueta.
+ * - htmlBloqueGastos(): las tres lentes, en orden, con hash y etiqueta.
  * - estadoLentesGastos(): el conteo de vencidos y de límites excedidos, puro
  *   respecto al DOM (recibe estado y fecha).
- * - sincronizarTabsBloqueGastos(): la pastilla aparece con dato y desaparece
+ * - sincronizarBloqueGastos(): la pastilla aparece con dato y desaparece
  *   sin él, y el nombre accesible de la pestaña lleva el conteo en palabras.
  * - initBloqueGastos(): inyecta la misma franja en las tres lentes.
+ * - el reloj del bloque (infra/mes-bloque.js): el rango del mes visible, que
+ *   es lo que consume el acceso prefiltrado a Movimientos (G5).
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   LENTES_BLOQUE_GASTOS,
-  htmlTabsBloqueGastos,
+  htmlBloqueGastos,
   estadoLentesGastos,
-  sincronizarTabsBloqueGastos,
+  sincronizarBloqueGastos,
   initBloqueGastos,
 } from '../../modules/ui/bloque-gastos.js';
+import {
+  mesBloque, navegarMesBloque, irAMesActualBloque,
+  prefijoMesBloque, rangoMesBloque, etiquetaMesBloque, esMesActualBloque,
+} from '../../modules/infra/mes-bloque.js';
 
 const HOY = '2026-08-15';
 
@@ -39,15 +45,66 @@ function estadoConVencido() {
   };
 }
 
-describe('htmlTabsBloqueGastos()', () => {
+// ── El reloj del bloque (G4, ADR 069 D8) ─────────────────────────
+
+describe('mes-bloque', () => {
+  beforeEach(() => irAMesActualBloque());
+
+  it('arranca en el mes corriente', () => {
+    expect(esMesActualBloque()).toBe(true);
+    const hoyDate = new Date();
+    expect(mesBloque()).toEqual({ anio: hoyDate.getFullYear(), mes: hoyDate.getMonth() });
+  });
+
+  it('navegar cruza el año en los dos sentidos', () => {
+    irAMesActualBloque();
+    const { anio } = mesBloque();
+    navegarMesBloque(-13);
+    expect(mesBloque().anio).toBe(anio - 1);
+    irAMesActualBloque();
+    navegarMesBloque(13);
+    expect(mesBloque().anio).toBe(anio + 1);
+  });
+
+  it('el prefijo y el rango describen el mismo mes, con el último día correcto', () => {
+    irAMesActualBloque();
+    // Un mes conocido: febrero de 2026 tiene 28 días, y es el caso que rompe
+    // cualquier cálculo que sume 30 o 31 a ciegas.
+    const { anio, mes } = mesBloque();
+    navegarMesBloque((2026 - anio) * 12 + (1 - mes));
+    expect(prefijoMesBloque()).toBe('2026-02');
+    expect(rangoMesBloque()).toEqual({ desde: '2026-02-01', hasta: '2026-02-28' });
+    expect(etiquetaMesBloque()).toBe('Febrero 2026');
+  });
+
+  it('el rango de un mes de 31 días llega al 31', () => {
+    irAMesActualBloque();
+    const { anio, mes } = mesBloque();
+    navegarMesBloque((2026 - anio) * 12 + (0 - mes));
+    expect(rangoMesBloque()).toEqual({ desde: '2026-01-01', hasta: '2026-01-31' });
+  });
+
+  it('un año bisiesto da 29 de febrero', () => {
+    irAMesActualBloque();
+    const { anio, mes } = mesBloque();
+    navegarMesBloque((2028 - anio) * 12 + (1 - mes));
+    expect(rangoMesBloque().hasta).toBe('2028-02-29');
+  });
+});
+
+describe('htmlBloqueGastos()', () => {
   it('pinta las tres lentes en orden, con su hash y su etiqueta', () => {
-    document.body.innerHTML = htmlTabsBloqueGastos();
+    document.body.innerHTML = htmlBloqueGastos();
     const tabs = [...document.querySelectorAll('.bloque-tabs__tab')];
 
     expect(tabs.map(t => t.dataset.section)).toEqual(['gast', 'compromisos', 'presupuesto']);
     expect(tabs.map(t => t.getAttribute('href'))).toEqual(['#gast', '#compromisos', '#presupuesto']);
+    // "Día a día" sale del propio código (ficha 07): el filtro de categorías
+    // internas existe para enfocarse en lo que el usuario decide gastar día a
+    // día, así que la etiqueta nombra lo que la lente muestra y, por
+    // contraste, explica qué no muestra.
     expect(tabs.map(t => t.querySelector('.bloque-tabs__label').textContent)).toEqual([
-      'Lo que gastaste', 'Por pagar', 'Límites',
+      'Día a día', 'Por pagar', 'Límites',
     ]);
   });
 
@@ -56,7 +113,7 @@ describe('htmlTabsBloqueGastos()', () => {
   });
 
   it('las pastillas nacen ocultas y decorativas', () => {
-    document.body.innerHTML = htmlTabsBloqueGastos();
+    document.body.innerHTML = htmlBloqueGastos();
     const badges = [...document.querySelectorAll('.bloque-tabs__badge')];
     expect(badges).toHaveLength(3);
     expect(badges.every(b => b.hidden)).toBe(true);
@@ -99,34 +156,41 @@ describe('estadoLentesGastos()', () => {
   });
 });
 
-describe('sincronizarTabsBloqueGastos()', () => {
+describe('sincronizarBloqueGastos()', () => {
   beforeEach(() => {
-    document.body.innerHTML = htmlTabsBloqueGastos();
+    document.body.innerHTML = htmlBloqueGastos();
   });
 
   const tab   = (s) => document.querySelector(`.bloque-tabs__tab[data-section="${s}"]`);
   const badge = (s) => tab(s).querySelector('.bloque-tabs__badge');
 
-  it('muestra el conteo y lo dice en el nombre accesible de la pestaña', () => {
-    sincronizarTabsBloqueGastos({ vencidos: 2, excedidos: 1 });
+  it('muestra el conteo de vencidos y lo dice en el nombre accesible', () => {
+    sincronizarBloqueGastos({ vencidos: 2, excedidos: 1 });
 
     expect(badge('compromisos').hidden).toBe(false);
     expect(badge('compromisos').textContent).toBe('2');
     expect(tab('compromisos').getAttribute('aria-label')).toBe('Por pagar, 2 vencidos');
+  });
 
-    expect(badge('presupuesto').textContent).toBe('1');
-    expect(tab('presupuesto').getAttribute('aria-label')).toBe('Límites, 1 límite excedido');
+  // Ficha 07: en "Límites" el dato importante es que pasó algo, no cuántos.
+  it('"Límites" avisa con un punto, no con un número', () => {
+    sincronizarBloqueGastos({ vencidos: 0, excedidos: 3 });
+
+    expect(badge('presupuesto').hidden).toBe(false);
+    expect(badge('presupuesto').textContent).toBe('');
+    expect(badge('presupuesto').classList.contains('bloque-tabs__badge--punto')).toBe(true);
+    expect(tab('presupuesto').getAttribute('aria-label')).toBe('Límites, topes excedidos');
   });
 
   it('singular y plural en la frase del nombre accesible', () => {
-    sincronizarTabsBloqueGastos({ vencidos: 1, excedidos: 3 });
+    sincronizarBloqueGastos({ vencidos: 1, excedidos: 1 });
     expect(tab('compromisos').getAttribute('aria-label')).toBe('Por pagar, 1 vencido');
-    expect(tab('presupuesto').getAttribute('aria-label')).toBe('Límites, 3 límites excedidos');
+    expect(tab('presupuesto').getAttribute('aria-label')).toBe('Límites, un tope excedido');
   });
 
   it('sin dato oculta la pastilla y devuelve la etiqueta limpia', () => {
-    sincronizarTabsBloqueGastos({ vencidos: 2, excedidos: 1 });
-    sincronizarTabsBloqueGastos({ vencidos: 0, excedidos: 0 });
+    sincronizarBloqueGastos({ vencidos: 2, excedidos: 1 });
+    sincronizarBloqueGastos({ vencidos: 0, excedidos: 0 });
 
     expect(badge('compromisos').hidden).toBe(true);
     expect(badge('compromisos').textContent).toBe('');
@@ -135,9 +199,9 @@ describe('sincronizarTabsBloqueGastos()', () => {
   });
 
   it('la portada nunca lleva pastilla: su dato es la pantalla entera', () => {
-    sincronizarTabsBloqueGastos({ vencidos: 2, excedidos: 1 });
+    sincronizarBloqueGastos({ vencidos: 2, excedidos: 1 });
     expect(badge('gast').hidden).toBe(true);
-    expect(tab('gast').getAttribute('aria-label')).toBe('Lo que gastaste');
+    expect(tab('gast').getAttribute('aria-label')).toBe('Día a día');
   });
 });
 

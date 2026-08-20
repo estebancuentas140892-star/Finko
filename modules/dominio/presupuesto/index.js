@@ -20,6 +20,7 @@ import { confirmar }                 from '../../ui/confirm.js';
 import { validarPresupuesto, normalizarPresupuesto } from './logic.js';
 import { renderPanelPresupuesto, renderFormPresupuesto, renderPanelLimites } from './view.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
+import { rangoMesBloque } from '../../infra/mes-bloque.js';
 
 // ── HELPERS DE MODAL ─────────────────────────────────────────────
 
@@ -177,6 +178,15 @@ export function initPresupuesto() {
   // evento es el que ya usan Calendario e Inicio (ADR 028 D4) y lo atiende
   // tesorería, que es su dueña: acá no hay import cruzado (ADN 10).
   registrarAccion('presupuesto-abrir-distribucion', () => EventBus.emit('distribuir:abrir'));
+
+  // G5 (ficha 07, ADR 069 D8): de un tope a los movimientos que lo forman. La
+  // categoría la trae el botón; el mes sale del reloj del bloque, así que se
+  // abre el mismo mes que la lente estaba mostrando.
+  registrarAccion('presupuesto-ver-movimientos', (el) => {
+    const categoria = el?.dataset?.categoria;
+    if (!categoria) return;
+    EventBus.emit('movimientos:ver', { categoria, ...rangoMesBloque() });
+  });
 
   // Los gastos afectan el progreso visual; re-render ante cualquier cambio
   // de gastos o de presupuestos. `ingresosPuntuales` entra en LIM.1a: la línea

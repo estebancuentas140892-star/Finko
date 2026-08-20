@@ -373,6 +373,15 @@ button.chip:hover:not(.chip--active) {
   width: 100%;
 }
 
+/* G5 (ficha 07, ADR 069 D8): la pastilla de la categoria con la que se llego
+   desde un tope. Fila propia, encima de los chips de dominio: no es una de las
+   opciones que la pantalla ofrece, es el filtro que trajo puesto quien entro. */
+.movimientos-filtros__contexto {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fk-space-2);
+}
+
 .movimientos-filtros__fechas {
   display: flex;
   flex-wrap: wrap;

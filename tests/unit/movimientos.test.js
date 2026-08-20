@@ -22,7 +22,7 @@ import {
 } from '../../modules/dominio/movimientos/logic.js';
 import {
   renderActividadReciente, renderMovimientosCompletos, cargarMasMovimientos,
-  renderFiltrosMovimientos, setFiltroTexto, setFiltroDominio,
+  renderFiltrosMovimientos, setFiltroTexto, setFiltroDominio, setFiltroCategoria,
   setFiltroFechaDesde, setFiltroFechaHasta, limpiarFiltrosMovimientos,
   actualizarBotonLimpiarFiltros, precalentarMovimientos,
 } from '../../modules/dominio/movimientos/view.js';
@@ -60,6 +60,13 @@ describe('movimientosDesdeGastos()', () => {
       id: 'g1', tipo: 'gasto', descripcion: 'Mercado', monto: 50_000,
       direccion: 'egreso', icono: 'c-mercado', cuentaId: 'c1', fecha: '2026-07-04',
     });
+  });
+
+  // G5 (ficha 07, ADR 069 D8): sin esto no se puede llegar prefiltrado desde
+  // un tope, que es lo único que el filtro de categoría sirve.
+  it('el movimiento lleva la categoría del gasto', () => {
+    const [m] = movimientosDesdeGastos([gasto({ categoria: 'Restaurantes' })]);
+    expect(m.categoria).toBe('Restaurantes');
   });
 
   it('categoría interna "Deudas" usa el ícono i-deudas (revela el origen)', () => {
@@ -251,6 +258,25 @@ describe('filtrarMovimientos()', () => {
   it('sin filtros devuelve todo intacto', () => {
     expect(filtrarMovimientos(set())).toHaveLength(5);
     expect(filtrarMovimientos(set(), {})).toHaveLength(5);
+  });
+
+  // ── G5: el quinto filtro (ficha 07, ADR 069 D8) ──
+
+  it('filtra por categoría exacta', () => {
+    const r = filtrarMovimientos(set(), { categoria: 'Mercado' });
+    expect(r.map(m => m.id)).toEqual(['g1']);
+  });
+
+  it('con categoría puesta, las fuentes que no la tienen quedan fuera', () => {
+    // Un aporte, un ingreso puntual y una transferencia no tienen categoría de
+    // gasto: el filtro los descarta a propósito, no por descuido.
+    const r = filtrarMovimientos(set(), { categoria: 'Deudas' });
+    expect(r.map(m => m.id)).toEqual(['g2']);
+  });
+
+  it('la categoría se cruza con el rango de fechas', () => {
+    expect(filtrarMovimientos(set(), { categoria: 'Mercado', desde: '2026-07-05' })).toHaveLength(0);
+    expect(filtrarMovimientos(set(), { categoria: 'Mercado', desde: '2026-07-01' })).toHaveLength(1);
   });
 
   it('filtra por texto en la descripcion, sin distinguir mayúsculas', () => {
@@ -723,6 +749,46 @@ describe('renderFiltrosMovimientos()', () => {
   it('sin ningún movimiento, no pinta ningún filtro (nada que filtrar)', () => {
     renderFiltrosMovimientos();
     expect(elFiltros().innerHTML.trim()).toBe('');
+  });
+
+  // ── G5: la pastilla del filtro con el que se llega (ficha 07, ADR 069 D8) ──
+
+  it('sin categoría puesta no hay pastilla de contexto', () => {
+    S.gastos = [gasto()];
+    renderFiltrosMovimientos();
+    expect(elFiltros().querySelector('.movimientos-filtros__contexto')).toBeNull();
+  });
+
+  it('con categoría puesta la pastilla la nombra y se puede quitar', () => {
+    S.gastos = [gasto({ categoria: 'Restaurantes' })];
+    setFiltroCategoria('Restaurantes');
+    renderFiltrosMovimientos();
+    const pastilla = elFiltros().querySelector('[data-action="movimientos-quitar-categoria"]');
+    expect(pastilla).not.toBeNull();
+    expect(pastilla.textContent).toContain('Restaurantes');
+    // No es un chip de dominio: va en su propia fila, encima de la barra. Los
+    // chips son opciones que la pantalla ofrece; esto es el filtro con el que
+    // entró quien venía de un tope.
+    expect(pastilla.closest('.movimientos-filtros__contexto')).not.toBeNull();
+    expect(pastilla.closest('.filtros-bar')).toBeNull();
+  });
+
+  it('la categoría cuenta como filtro activo, así que ofrece "Limpiar filtros"', () => {
+    S.gastos = [gasto({ categoria: 'Restaurantes' })];
+    renderFiltrosMovimientos();
+    expect(elFiltros().querySelector('[data-action="movimientos-limpiar-filtros"]')).toBeNull();
+
+    setFiltroCategoria('Restaurantes');
+    renderFiltrosMovimientos();
+    expect(elFiltros().querySelector('[data-action="movimientos-limpiar-filtros"]')).not.toBeNull();
+  });
+
+  it('limpiar los filtros también quita la categoría', () => {
+    S.gastos = [gasto({ categoria: 'Restaurantes' })];
+    setFiltroCategoria('Restaurantes');
+    limpiarFiltrosMovimientos();
+    renderFiltrosMovimientos();
+    expect(elFiltros().querySelector('.movimientos-filtros__contexto')).toBeNull();
   });
 
   it('con movimientos, pinta el buscador y el chip "Todos" activo por defecto', () => {

@@ -540,6 +540,96 @@
 }
 
 /* ════════════════════════════════════════════════════════════
+   BLOQUE GASTOS - encabezado del contenedor (ADR 069 D8)
+   ════════════════════════════════════════════════════════════
+   El bloque nombra, pone el reloj y enseña sus tres lentes. Lo que le da
+   sentido de contenedor no son las pestañas: es que las tres compartan un
+   mes (G4). Antes cada lente tenía el suyo y saltar de pestaña cambiaba el
+   mes sin avisar.
+
+   Nace oculto: solo existe bajo 1024px (responsive.css), donde la barra
+   inferior es la única puerta a las tres. En escritorio cada sección
+   conserva su propio hero con su propio selector. */
+.bloque-gastos {
+  display: none;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+  margin-bottom: var(--fk-space-4);
+}
+
+.bloque-gastos__cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+}
+
+.bloque-gastos__titulo {
+  margin: 0;
+  font-size: var(--fk-text-xl);
+  font-weight: var(--fk-font-extrabold);
+  color: var(--fk-text-primary);
+  letter-spacing: -0.02em;
+}
+
+/* La frase que explica el bloque entero en una línea: es lo que hace que
+   "Por pagar" y "Límites" se lean como partes de lo mismo y no como
+   secciones sueltas que comparten techo por casualidad. */
+.bloque-gastos__sub {
+  margin: 0;
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+}
+
+/* El ojo sube del hero de una lente al encabezado del bloque: silencia las
+   tres a la vez. El flag es el mismo de siempre (S.config.ocultarSaldo). */
+.bloque-gastos__ojo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  border-radius: var(--fk-radius-md);
+  color: var(--fk-text-muted);
+  cursor: pointer;
+}
+.bloque-gastos__ojo:hover { color: var(--fk-text-primary); }
+
+.bloque-gastos__mes {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+}
+.bloque-gastos__mes-label {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  min-width: 0;
+}
+.bloque-gastos__mes-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-md);
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-secondary);
+  font-size: var(--fk-text-md);
+  line-height: 1;
+  cursor: pointer;
+}
+.bloque-gastos__mes-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* ════════════════════════════════════════════════════════════
    BLOQUE GASTOS - franja de lentes (ADR 069)
    ════════════════════════════════════════════════════════════
    Las tres lentes del bloque ("Lo que gastaste", "Por pagar", "Límites")
@@ -601,6 +691,15 @@
   height: auto;
   padding: 2px var(--fk-space-1);
   line-height: 1.2;
+}
+
+/* "Límites" avisa con un punto y no con un número (ficha 07): el dato
+   importante es que algún tope se pasó, no cuántos. */
+.bloque-tabs__badge--punto {
+  width: 8px;
+  min-width: 8px;
+  height: 8px;
+  padding: 0;
 }
 
 /* ── Bloque Ahorro: fila de chips de las cuatro hijas (ADR 069 D7) ──
