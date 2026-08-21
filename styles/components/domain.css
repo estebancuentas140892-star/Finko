@@ -3238,11 +3238,31 @@ button.chip:focus-visible {
   margin-bottom: var(--fk-space-3);
 }
 
+/* El chip lleva `white-space: nowrap` y `flex-shrink: 0` a proposito (su texto
+   comparativo no se parte), pero sin `flex-wrap` eso convertia el ancho del
+   header en un piso infranqueable: el texto (142px de min-content) mas el gap
+   mas el chip mas largo ("Sin semana previa para comparar", 220px) suman 374, y
+   con el relleno de la tarjeta el panel pedia 415px de min-content.
+
+   Ese panel es un item del bento, y el bento en movil es `grid-template-columns:
+   1fr`: un track `1fr` nunca baja del min-content de su item mas ancho, asi que
+   el track entero se iba a 415 en un viewport de 391 y **todas** las tarjetas de
+   Inicio quedaban cortadas por la derecha, no solo esta.
+
+   Con `flex-wrap: wrap` el chip baja a su propia linea cuando no cabe y el
+   min-content del header pasa de 374 a 220. El `min-width: 0` del primer hijo
+   es lo que le permite encogerse: sin el, un bloque de texto en un flex no baja
+   de su palabra mas larga. */
 .resumen-semana__header {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--fk-space-3);
+}
+
+.resumen-semana__header > :first-child {
+  min-width: 0;
 }
 
 .resumen-semana__label {

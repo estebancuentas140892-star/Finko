@@ -5509,6 +5509,79 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
   });
 });
 
+// ── Inicio en movil: nada se sale del viewport (IN.8f-fix) ──────────────────
+//
+// El bento de movil es `grid-template-columns: 1fr`, y un track `1fr` nunca baja
+// del min-content de su item mas ancho. El header del resumen semanal era un
+// flex sin `flex-wrap` con un chip `nowrap` y `flex-shrink: 0`: con el texto mas
+// largo ("Sin semana previa para comparar") su min-content llegaba a 415px, asi
+// que el track entero se iba a 415 en un viewport de 391 y TODAS las tarjetas de
+// Inicio quedaban cortadas por la derecha, no solo esa.
+//
+// Este test no vigila el header: vigila la consecuencia. Cualquier pieza futura
+// que vuelva a poner un piso de ancho en un item del bento lo rompe.
+
+test.describe('Inicio en movil - nada se sale del ancho de la pantalla', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('ningun bloque de Inicio desborda el viewport, con datos y sin semana previa', async ({ page }) => {
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'Esteban', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [
+        { id: 'c1', nombre: 'Bancolombia', tipo: 'ahorros',   saldo: 2412345, activa: true },
+        { id: 'c2', nombre: 'Nequi',       tipo: 'billetera', saldo:  187600, activa: true },
+      ],
+      ingresos: [{ id: 'i1', descripcion: 'Sueldo', monto: 2600000, frecuencia: 'Mensual', diaPago: 1, activo: true }],
+      // Un gasto de esta semana y ninguno de la anterior: es el caso que dispara
+      // el chip mas largo del resumen semanal.
+      gastos: [{ id: 'g1', descripcion: 'Mercado', monto: 184300, categoria: 'Alimentación', fecha: hoyLocal(), cuentaId: 'c1' }],
+      compromisos: [
+        { id: 'f1', tipo: 'fijo', descripcion: 'Arriendo', monto: 1150000, frecuencia: 'Mensual', diaPago: 5, activo: true, categoria: 'Vivienda' },
+      ],
+      metas: [{ id: 'm1', nombre: 'Viaje', montoObjetivo: 3500000, montoActual: 1234567, completada: false }],
+      apartados: [], presupuestos: [],
+    });
+
+    await page.goto('/#dash');
+    await expect(page.locator('#sec-dash.active')).toBeVisible({ timeout: 10_000 });
+
+    // El chip largo tiene que estar en pantalla: sin el, el test no prueba nada.
+    await expect(page.locator('.resumen-semana__chip')).toContainText('Sin semana previa');
+
+    const desbordes = await page.evaluate(() => {
+      const vw = window.innerWidth;
+      return [...document.querySelectorAll('#sec-dash *')]
+        // El blob decorativo va `position: absolute` dentro de una celda con
+        // `overflow: hidden`: sale del recorte a proposito y no del viewport.
+        .filter((e) => getComputedStyle(e).position !== 'absolute')
+        .filter((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.right > vw + 1; })
+        .map((e) => `${e.tagName}.${String(e.className).split(' ')[0]} right=${Math.round(e.getBoundingClientRect().right)}`);
+    });
+    expect(desbordes, `bloques de Inicio fuera del viewport:\n  ${desbordes.join('\n  ')}`).toEqual([]);
+
+    // Y la pagina no gana scroll horizontal.
+    const scroll = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, vw: window.innerWidth }));
+    expect(scroll.sw).toBeLessThanOrEqual(scroll.vw);
+  });
+
+  test('el track del bento no puede ser mas ancho que el bento', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.goto('/#dash');
+    await expect(page.locator('#sec-dash.active')).toBeVisible({ timeout: 10_000 });
+
+    const medidas = await page.evaluate(() => {
+      const g = document.querySelector('#sec-dash .bento');
+      const track = parseFloat(getComputedStyle(g).gridTemplateColumns);
+      return { track: Math.round(track), ancho: Math.round(g.getBoundingClientRect().width) };
+    });
+    // Una sola columna en movil: si el track supera el ancho del contenedor, es
+    // que un item le puso un piso de min-content y todo se sale.
+    expect(medidas.track).toBeLessThanOrEqual(medidas.ancho);
+  });
+});
+
 // ── SUITE 1g: Metas - cabeza, orden y un final que pesa poco (ficha 09) ──────
 // La tarjeta no se toca. Lo que cambia es la lista: antes las metas salían en
 // orden de creación y, como solo cabe una tarjeta y media a 390px, ese orden
