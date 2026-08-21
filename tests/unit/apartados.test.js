@@ -13,6 +13,7 @@ import {
   alternarRecurrencia,
   frecuenciaPrincipalIngresos,
   apartadosProximos,
+  agruparApartadosPorUrgencia,
   validarApartado,
   validarAbonoApartado,
   normalizarApartado,
@@ -641,6 +642,94 @@ describe('apartadosProximos()', () => {
   });
 });
 
+
+// ── agruparApartadosPorUrgencia() (ficha 10, hallazgos V1 y V3) ───
+//
+// La lista salia en orden de creacion mientras la doc del aviso de proximidad
+// declaraba lo contrario: "con la lista ordenada por urgencia, el primero es
+// el que apura". El ordenador ya existia en este mismo archivo.
+
+describe('agruparApartadosPorUrgencia()', () => {
+  const hoy = '2026-06-10';
+  const apt = (overrides) => apartadoBase({ montoObjetivo: 100_000, ...overrides });
+
+  it('reparte en los cuatro grupos que la lista pinta', () => {
+    const lista = [
+      apt({ id: 'sin',      fechaObjetivo: null }),
+      apt({ id: 'adelante', fechaObjetivo: '2026-09-22' }),
+      apt({ id: 'lista',    fechaObjetivo: '2026-08-15', montoActual: 100_000, completado: true, recurrente: true }),
+      apt({ id: 'proxima',  fechaObjetivo: '2026-06-30' }),
+    ];
+    const g = agruparApartadosPorUrgencia(lista, hoy);
+    expect(g.listas.map(a => a.id)).toEqual(['lista']);
+    expect(g.proximas.map(a => a.id)).toEqual(['proxima']);
+    expect(g.adelante.map(a => a.id)).toEqual(['adelante']);
+    expect(g.sinFecha.map(a => a.id)).toEqual(['sin']);
+  });
+
+  it('las que vencen pronto salen de mas urgente a menos', () => {
+    const lista = [
+      apt({ id: 'b', fechaObjetivo: '2026-06-30' }),
+      apt({ id: 'a', fechaObjetivo: '2026-06-12' }),
+      apt({ id: 'c', fechaObjetivo: '2026-08-05' }),
+    ];
+    const g = agruparApartadosPorUrgencia(lista, hoy);
+    expect(g.proximas.map(a => a.id)).toEqual(['a', 'b']);
+    expect(g.adelante.map(a => a.id)).toEqual(['c']);
+  });
+
+  // Lo que ya se cobro es al menos tan urgente como lo que se cobra manana:
+  // no se le da un grupo propio y el orden ascendente lo deja arriba.
+  it('una reserva ya vencida entra en las proximas, y de primera', () => {
+    const lista = [
+      apt({ id: 'pronto',  fechaObjetivo: '2026-06-20' }),
+      apt({ id: 'vencida', fechaObjetivo: '2026-05-30' }),
+    ];
+    expect(agruparApartadosPorUrgencia(lista, hoy).proximas.map(a => a.id))
+      .toEqual(['vencida', 'pronto']);
+  });
+
+  it('el umbral es DIAS_PROXIMO, el mismo que cuenta el aviso', () => {
+    const lista = [
+      apt({ id: 'dentro', fechaObjetivo: '2026-07-10' }),  // 30 dias
+      apt({ id: 'fuera',  fechaObjetivo: '2026-07-11' }),  // 31 dias
+    ];
+    const g = agruparApartadosPorUrgencia(lista, hoy);
+    expect(g.proximas.map(a => a.id)).toEqual(['dentro']);
+    expect(g.adelante.map(a => a.id)).toEqual(['fuera']);
+  });
+
+  it('respeta un umbral personalizado', () => {
+    const lista = [apt({ id: 'a', fechaObjetivo: '2026-06-20' })];
+    expect(agruparApartadosPorUrgencia(lista, hoy, 5).proximas).toEqual([]);
+    expect(agruparApartadosPorUrgencia(lista, hoy, 15).proximas.map(a => a.id)).toEqual(['a']);
+  });
+
+  // Una reserva no recurrente completada no se lista (el gasto fue unico), asi
+  // que no puede aparecer en ningun grupo.
+  it('deja fuera lo que apartadosActivos() no lista', () => {
+    const lista = [
+      apt({ id: 'no-recurrente', fechaObjetivo: '2026-06-20', montoActual: 100_000, completado: true }),
+      apt({ id: 'viva',          fechaObjetivo: '2026-06-25' }),
+    ];
+    const g = agruparApartadosPorUrgencia(lista, hoy);
+    const todos = [...g.listas, ...g.proximas, ...g.adelante, ...g.sinFecha].map(a => a.id);
+    expect(todos).toEqual(['viva']);
+  });
+
+  it('una fecha ilegible cuenta como sin fecha', () => {
+    const lista = [apt({ id: 'a', fechaObjetivo: '20/06/2026' })];
+    const g = agruparApartadosPorUrgencia(lista, hoy);
+    expect(g.sinFecha.map(a => a.id)).toEqual(['a']);
+    expect(g.proximas).toEqual([]);
+  });
+
+  it('sin lista devuelve los cuatro grupos vacios', () => {
+    expect(agruparApartadosPorUrgencia(undefined, hoy))
+      .toEqual({ listas: [], proximas: [], adelante: [], sinFecha: [] });
+  });
+});
+
 // ── catálogos exportados ─────────────────────────────────────────
 
 describe('catálogos', () => {
@@ -1196,7 +1285,9 @@ describe('renderListaApartados() - anatomía de la tarjeta', () => {
     ];
     renderListaApartados();
     expect(document.querySelectorAll('[role="status"]')).toHaveLength(0);
-    expect(document.querySelector('.apartado-card--listo')).not.toBeNull();
+    // Ficha 10 (V2): la reserva reunida baja de tarjeta a fila, y la fila
+    // tampoco declara region viva.
+    expect(document.querySelector('.apartado-fila')).not.toBeNull();
   });
 });
 
@@ -1281,7 +1372,19 @@ describe('renderListaApartados() - estado vacío (T11, T12)', () => {
   it('de cinco bloques de texto a tres, con la desambiguación conservada', () => {
     renderListaApartados();
     expect(document.querySelectorAll('.empty-state__tip')).toHaveLength(1);
-    expect(document.body.textContent).toContain('Límites de gasto');
+    expect(document.body.textContent).toContain('ponerle un tope a lo que gastas');
+  });
+
+  // Ficha 10 (V4, cuarta aparición de R86): la ficha 07 convirtió "Límites de
+  // gasto" en una lente del bloque Gastos, y este texto seguía nombrándola sin
+  // enlace. El usuario nuevo es el único que ve este vacío y el que menos sabe
+  // dónde buscarla.
+  it('la desambiguación señala Límites con un enlace, no con un nombre suelto', () => {
+    renderListaApartados();
+    const enlace = document.querySelector('.empty-state__tip a');
+    expect(enlace).not.toBeNull();
+    expect(enlace.getAttribute('href')).toBe('#presupuesto');
+    expect(enlace.textContent).toBe('Límites');
   });
 });
 
@@ -1516,24 +1619,75 @@ describe('renderListaApartados() - tarjeta E (DIS.15)', () => {
     expect(document.querySelector('.apartado-card__principal').textContent).toMatch(/\+ Aportar \$/);
   });
 
-  it('listo para usar: cambia el dato protagonista y la acción, no solo el botón', () => {
+  // Ficha 10 (V2): la reserva reunida deja de gastar una tarjeta de 307px en
+  // dos carreras que con el dinero reunido se igualan por definición
+  // (`aportesEsperados = listo ? totalAportes : ...`). Baja a una fila que
+  // conserva su acción, porque no es historia: espera un toque.
+  it('listo para usar: baja a fila compacta y conserva su acción', () => {
     S.apartados = [conFecha({ montoActual: 480_000, recurrente: true, periodoMeses: 12 })];
     renderListaApartados();
-    const card = document.querySelector('.apartado-card--listo');
-    expect(card).not.toBeNull();
-    expect(card.querySelector('.apartado-card__foco-dato').textContent).toBe('Ya lo reuniste');
-    expect(card.querySelector('.apartado-card__foco-nota').textContent).toContain('de sobra');
-    expect(card.querySelector('[data-action="reiniciar-apartado"]')).not.toBeNull();
-    expect(card.querySelector('[data-action="aportar-apartado"]')).toBeNull();
+    const fila = document.querySelector('.apartado-fila');
+    expect(fila).not.toBeNull();
+    expect(document.querySelector('.apartado-card')).toBeNull();
+    expect(fila.querySelector('[data-action="reiniciar-apartado"]').textContent).toBe('Ya lo usé');
+    expect(fila.querySelector('[data-action="aportar-apartado"]')).toBeNull();
   });
 
-  it('listo para usar: las dos carreras se igualan aunque el calendario no haya corrido', () => {
+  it('la fila de la reserva reunida dice lo reunido y cuándo se cobra', () => {
     S.apartados = [conFecha({ montoActual: 480_000, recurrente: true, periodoMeses: 12 })];
     renderListaApartados();
-    const heads = [...document.querySelectorAll('.apartado-card__carrera-head')];
-    expect(heads[1].textContent).toContain('Deberían estar hechos');
-    expect(heads[1].textContent).toContain('8 de 8 aportes');
-    expect(document.querySelectorAll('.apartado-card__casilla--on')).toHaveLength(8);
+    const dato = document.querySelector('.apartado-fila__dato').textContent;
+    expect(dato).toContain('480.000 listos');
+    expect(dato).toContain('vence el');
+    // Las dos carreras y el veredicto se van con la tarjeta.
+    expect(document.querySelector('.apartado-card__carrera-head')).toBeNull();
+  });
+
+  it('la fila de la reserva reunida va antes de las que aún piden dinero', () => {
+    S.apartados = [
+      conFecha({ id: 'pide', montoActual: 100_000 }),
+      conFecha({ id: 'lista', montoActual: 480_000, recurrente: true, periodoMeses: 12 }),
+    ];
+    renderListaApartados();
+    const nodos = [...document.querySelectorAll('#lista-apartados [data-id]')].map(e => e.dataset.id);
+    expect(nodos.indexOf('lista')).toBeLessThan(nodos.indexOf('pide'));
+  });
+
+  it('el ojo de privacidad enmascara el monto de la fila', () => {
+    S.config = { ocultarSaldo: true };
+    S.apartados = [conFecha({ montoActual: 480_000, recurrente: true, periodoMeses: 12 })];
+    renderListaApartados();
+    expect(document.querySelector('.apartado-fila__dato').textContent).not.toContain('480.000');
+  });
+
+  // Ficha 10 (V1): los divisores dicen el criterio del orden, y su rótulo de
+  // proximidad usa el mismo umbral que cuenta el aviso.
+  it('la lista sale en cuatro grupos con su divisor', () => {
+    S.apartados = [
+      conFecha({ id: 'sin',      fechaObjetivo: null }),
+      conFecha({ id: 'adelante', fechaObjetivo: '2099-12-10' }),
+      conFecha({ id: 'lista',    montoActual: 480_000, recurrente: true, periodoMeses: 12 }),
+    ];
+    renderListaApartados();
+    const rotulos = [...document.querySelectorAll('.grupo-eyebrow')].map(p => p.textContent);
+    expect(rotulos).toEqual(['Listas para usar', 'Más adelante', 'Sin fecha']);
+  });
+
+  it('el rótulo de proximidad nombra el umbral del dominio, no un 30 escrito a mano', () => {
+    // `conFecha` vence a 120 días, o sea "Más adelante": para caer en el grupo
+    // de proximidad hay que entrar al umbral.
+    S.apartados = [
+      conFecha({ id: 'proxima', fechaObjetivo: enDias(10) }),
+      conFecha({ id: 'sin', fechaObjetivo: null }),
+    ];
+    renderListaApartados();
+    expect(document.body.textContent).toContain(`Vencen en ${DIAS_PROXIMO} días`);
+  });
+
+  it('con un solo grupo no se pinta un divisor que no separa nada', () => {
+    S.apartados = [conFecha({ id: 'a' }), conFecha({ id: 'b' })];
+    renderListaApartados();
+    expect(document.querySelector('.grupo-eyebrow')).toBeNull();
   });
 
   it('la recurrencia deja de ser cola del subtítulo y se marca en la cabecera', () => {

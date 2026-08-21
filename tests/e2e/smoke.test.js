@@ -4502,6 +4502,73 @@ test.describe('Agenda - día de ingreso (ADR 021)', () => {
   });
 });
 
+// ── SUITE: Reservas - el orden que el dominio ya tenía escrito (ficha 10) ────
+// La doc del aviso de proximidad declaraba "con la lista ordenada por urgencia,
+// el primero es el que apura", y la lista era un `filter` sin `sort`. El aviso
+// contaba reservas que no nombraba y no tenía dónde aterrizar.
+
+test.describe('Reservas - la lista se ordena por urgencia (ADR 083)', () => {
+  /** YYYY-MM-DD a N días de hoy, en hora local (mismo criterio que hoyLocal). */
+  function enDiasLocal(n) {
+    const d = new Date();
+    d.setDate(d.getDate() + n);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  test.beforeEach(async ({ page }) => {
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas:   [{ id: 'c-10', nombre: 'Bancolombia', tipo: 'ahorros', saldo: 5000000, activa: true }],
+      ingresos: [], gastos: [], compromisos: [], metas: [],
+      apartados: [
+        // Creada primero y la que menos apura: con el orden viejo encabezaba.
+        { id: 'soat',      nombre: 'SOAT',              icono: '🚗', montoObjetivo: 850000,  montoActual: 530000,  fechaObjetivo: enDiasLocal(47), frecuenciaAporte: 'Mensual', completado: false, recurrente: true,  periodoMeses: 12, fechaCreacion: enDiasLocal(-120) },
+        { id: 'matricula', nombre: 'Matricula',         icono: '🎓', montoObjetivo: 2400000, montoActual: 2400000, fechaObjetivo: enDiasLocal(9),  frecuenciaAporte: 'Mensual', completado: true,  recurrente: true,  periodoMeses: 12, fechaCreacion: enDiasLocal(-180) },
+        { id: 'predial',   nombre: 'Impuesto predial',  icono: '🏠', montoObjetivo: 1200000, montoActual: 180000,  fechaObjetivo: enDiasLocal(24), frecuenciaAporte: 'Mensual', completado: false, recurrente: false, fechaCreacion: enDiasLocal(-150) },
+        { id: 'llantas',   nombre: 'Cambio de llantas', icono: '🛞', montoObjetivo: 600000,  montoActual: 150000,  fechaObjetivo: null,            frecuenciaAporte: 'Mensual', completado: false, recurrente: false, fechaCreacion: enDiasLocal(-30) },
+      ],
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/#apartados');
+    await expect(page.locator('#sec-apartados.active')).toBeVisible();
+  });
+
+  test('cuatro grupos por lo que pide cada reserva, y el comparador se reordena con la lista', async ({ page }) => {
+    await expect(page.locator('#lista-apartados .grupo-eyebrow'))
+      .toHaveText(['Listas para usar', 'Vencen en 30 días', 'Más adelante', 'Sin fecha']);
+
+    // El Predial (24 días) sube por encima del SOAT (47), que era el primero
+    // solo por haberse creado antes.
+    const tarjetas = page.locator('#lista-apartados .apartado-card');
+    await expect(tarjetas.nth(0)).toHaveAttribute('data-id', 'predial');
+    await expect(tarjetas.nth(1)).toHaveAttribute('data-id', 'soat');
+
+    // V3: el comparador no se toca y sigue al orden nuevo, porque comparte el
+    // mismo array que la lista.
+    const columnas = page.locator('#lista-apartados .apartados-comparador [class*="__lb"]');
+    await expect(columnas.nth(0)).toContainText('Matricula');
+    await expect(columnas.nth(1)).toContainText('Impuesto predial');
+  });
+
+  test('la reserva ya reunida es una fila con su botón, y va arriba', async ({ page }) => {
+    const fila = page.locator('#lista-apartados .apartado-fila');
+    await expect(fila).toHaveCount(1);
+    await expect(fila).toContainText('$2.400.000 listos');
+    await expect(fila.locator('[data-action="reiniciar-apartado"]')).toHaveText('Ya lo usé');
+
+    // 62px contra los 307 de la tarjeta, y sin perder la acción.
+    const alto = await fila.evaluate(el => Math.round(el.getBoundingClientRect().height));
+    expect(alto).toBeLessThan(90);
+
+    // Arriba, no al final: es lo único que se puede cerrar hoy.
+    const orden = await page.locator('#lista-apartados [data-id]').evaluateAll(
+      els => els.map(e => e.dataset.id));
+    expect(orden.indexOf('matricula')).toBe(0);
+  });
+});
+
 // ── SUITE: Apartados - selector de ícono compacto (CAT.2c) ───────────────────
 
 test.describe('Apartados - selector de ícono compacto (CAT.2c)', () => {

@@ -25,7 +25,7 @@ import {
   etiquetaPeriodo,
   frecuenciaPrincipalIngresos,
 } from '../../infra/vencimientos.js';
-import { diasHastaFecha, planDeReferencia, progresoDeBolsa } from '../../infra/bolsas.js';
+import { diasHastaFecha, planDeReferencia, progresoDeBolsa, ordenarBolsasPorFecha } from '../../infra/bolsas.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
 
@@ -163,6 +163,64 @@ export function apartadosProximos(apartados, hoyISO, diasUmbral = DIAS_PROXIMO) 
       const db = diasHastaFecha(b.fechaObjetivo, hoyISO) ?? Infinity;
       return da - db;
     });
+}
+
+/**
+ * Reparte las reservas activas en los cuatro grupos que la lista pinta, cada
+ * uno por lo que pide (ficha 10 de la auditoría móvil, hallazgo V1):
+ *
+ * 1. **`listas`**: ya reunieron el dinero y esperan un toque. Van **primero**,
+ *    al revés que las metas cumplidas de la ficha 09: aquella era historia y
+ *    esta es lo único que se puede cerrar hoy. `apartadosActivos()` las
+ *    mantiene vivas justamente para eso, y enterrarlas es como se acaba
+ *    pagando el SOAT dos veces.
+ * 2. **`proximas`**: vencen dentro de `diasUmbral`. Es **el mismo conjunto que
+ *    cuenta el aviso** de proximidad, con el mismo umbral, así que el divisor
+ *    y el aviso no pueden discrepar.
+ * 3. **`adelante`**: tienen fecha y están fuera del umbral.
+ * 4. **`sinFecha`**: no piden dinero, piden una fecha (regla R57).
+ *
+ * El defecto que corrige: `renderListaApartados()` pintaba `activos.map(...)`
+ * y `apartadosActivos()` es un `filter` sin `sort`, así que la lista salía en
+ * orden de creación. Peor que en Metas, porque **el ordenador ya existía en
+ * este archivo** (`apartadosProximos()` ordena por urgencia) y la doc del
+ * aviso da por hecho que la lista lo aplica: "con la lista ordenada por
+ * urgencia, el primero es el que apura". No lo estaba, así que el aviso
+ * contaba reservas que no nombraba y no tenía dónde aterrizar.
+ *
+ * Una reserva **ya vencida** (días negativos) entra en `proximas`, no en un
+ * grupo propio: lo que ya se cobró es al menos tan urgente como lo que se
+ * cobra mañana, y el orden ascendente la deja arriba.
+ *
+ * El comparador de la sección no se toca: comparte el mismo array que la
+ * lista, así que sus columnas siguen a este orden sin cambiarle una línea
+ * (hallazgo V3).
+ *
+ * @param {import('../../core/state.js').Apartado[]} apartados
+ * @param {string} hoyISO YYYY-MM-DD.
+ * @param {number} [diasUmbral=DIAS_PROXIMO]
+ * @returns {{ listas: object[], proximas: object[], adelante: object[], sinFecha: object[] }}
+ */
+export function agruparApartadosPorUrgencia(apartados, hoyISO, diasUmbral = DIAS_PROXIMO) {
+  const activos = apartadosActivos(apartados);
+
+  const listas = activos.filter(a => estaListoParaReiniciar(a));
+  const resto  = activos.filter(a => !estaListoParaReiniciar(a));
+
+  // Misma pieza de infra que ordena la lista de Metas (ficha 09): el orden por
+  // fecha de una bolsa es uno solo, y cada dominio le pasa el nombre de su
+  // campo.
+  const { conFecha, sinFecha } = ordenarBolsasPorFecha(resto, 'fechaObjetivo');
+
+  const proximas = [];
+  const adelante = [];
+  for (const a of conFecha) {
+    const dias = diasHastaFecha(a.fechaObjetivo, hoyISO);
+    if (dias !== null && dias <= diasUmbral) proximas.push(a);
+    else adelante.push(a);
+  }
+
+  return { listas, proximas, adelante, sinFecha };
 }
 
 /**

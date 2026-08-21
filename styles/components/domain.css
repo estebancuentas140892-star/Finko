@@ -1284,6 +1284,77 @@ button.chip:focus-visible {
   border-color: color-mix(in srgb, var(--fk-dom-ahorro) 60%, transparent);
 }
 
+/* ── LA RESERVA YA REUNIDA, EN FILA (ficha 10 de MOV.1) ─────────
+   307px de tarjeta para decir "usala y reinicia", con dos carreras que con el
+   dinero reunido se igualan por definicion. La fila mide 62px y conserva la
+   accion: a diferencia de la meta cumplida, esto no es historia, es lo unico
+   que se puede cerrar hoy. Por eso tambien va arriba de la lista y no al
+   final. */
+.apartado-fila {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  min-height: 62px;
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border: 1px solid color-mix(in srgb, var(--fk-success) 28%, transparent);
+  border-radius: var(--fk-radius-md);
+  background: transparent;
+}
+
+.apartado-fila__glifo {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.apartado-fila__cuerpo {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.apartado-fila__nombre {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.apartado-fila__dato {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Mismo boton que la tarjeta, sin el ancho completo: aca compite con el nombre
+   por el renglon, no con nada. Los 44px de R4 se conservan. */
+.apartado-fila__accion {
+  flex: 0 0 auto;
+  min-height: 2.75rem;
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  border: 1.5px solid color-mix(in srgb, var(--fk-dom-ahorro) 40%, transparent);
+  background: var(--fk-dom-ahorro-bg);
+  color: var(--fk-dom-ahorro-text);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.apartado-fila__accion:hover {
+  background: color-mix(in srgb, var(--fk-dom-ahorro) 20%, transparent);
+  border-color: color-mix(in srgb, var(--fk-dom-ahorro) 60%, transparent);
+}
+
 /* Eliminar cae al extremo derecho del renglon de menor peso: deja de competir
    con la accion que la tarjeta quiere que hagas. Los 44px de la regla R4 no se
    declaran aca (ver `.meta-card__secundaria`): `.btn-sm` los fija en 36px desde

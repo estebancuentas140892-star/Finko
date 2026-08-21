@@ -13,7 +13,7 @@ import { htmlComparador, pieComparador } from '../../ui/comparador.js';
 import { estadoDeBolsa } from '../../infra/bolsas.js';
 import { ICONOS_CATEGORIA_PERSONALIZADA } from '../../core/constants.js';
 import {
-  apartadosActivos,
+  agruparApartadosPorUrgencia,
   estaListoParaReiniciar,
   calcularProgreso,
   calcularAporteSugerido,
@@ -81,7 +81,8 @@ export function renderListaApartados() {
   const el = document.getElementById('lista-apartados');
   if (!el) return;
 
-  const activos = apartadosActivos(S.apartados);
+  const { listas, proximas, adelante, sinFecha } = agruparApartadosPorUrgencia(S.apartados, hoy());
+  const activos = [...listas, ...proximas, ...adelante, ...sinFecha];
   const oculto  = S.config?.ocultarSaldo === true;
 
   if (activos.length === 0) {
@@ -89,7 +90,80 @@ export function renderListaApartados() {
     return;
   }
 
-  el.innerHTML = _renderComparador(activos) + activos.map(a => _renderApartadoCard(a, oculto)).join('');
+  // Los divisores solo se pintan cuando hay más de un grupo que separar: con
+  // todas las reservas en el mismo cajón el rótulo nombraría lo único que hay.
+  // Mismo criterio que la lista de Metas (ficha 09).
+  const grupos = [
+    ['Listas para usar',                  listas,   a => _renderFilaLista(a, oculto)],
+    [`Vencen en ${DIAS_PROXIMO} días`,    proximas, a => _renderApartadoCard(a, oculto)],
+    ['Más adelante',                      adelante, a => _renderApartadoCard(a, oculto)],
+    ['Sin fecha',                         sinFecha, a => _renderApartadoCard(a, oculto)],
+  ].filter(([, items]) => items.length > 0);
+
+  const conDivisor = grupos.length > 1;
+
+  el.innerHTML = _renderComparador(activos) + grupos
+    .map(([rotulo, items, render]) =>
+      (conDivisor ? _divisorGrupo(rotulo) : '') + items.map(render).join(''))
+    .join('');
+}
+
+/**
+ * Divisor de grupo de la lista (ficha 10). Es el mismo componente con el que
+ * Por pagar separa fijos de deudas y con el que la lista de Metas separa lo que
+ * tiene plazo de lo que no.
+ *
+ * @param {string} rotulo
+ * @returns {string}
+ */
+function _divisorGrupo(rotulo) {
+  return `
+    <div class="grupo-eyebrow-fila">
+      <p class="grupo-eyebrow">${_esc(rotulo)}</p>
+    </div>`;
+}
+
+/**
+ * Fila compacta de una reserva ya reunida (ficha 10, hallazgo V2).
+ *
+ * La tarjeta completa medía 307px para decir una sola cosa: úsala y reinicia.
+ * Y no es una impresión, está en el cálculo: `_renderCarreras()` hace
+ * `aportesEsperados = listo ? totalAportes : plan.aportesEsperados`, así que
+ * con el dinero reunido **la segunda carrera se iguala a la primera por
+ * definición**. Dos barras llenas comparándose entre sí no informan de nada.
+ *
+ * Dos diferencias deliberadas con la fila de una meta cumplida (ADR 082 D3),
+ * y las dos salen del comportamiento, no del estilo:
+ *
+ * - **Conserva su acción.** Una meta cumplida es historia; una reserva reunida
+ *   está esperando un toque, y ese toque es lo único que se puede resolver hoy
+ *   en la sección.
+ * - **Va arriba, no al final.** Enterrar lo que hay que usar es como se acaba
+ *   pagando el SOAT dos veces.
+ *
+ * @param {import('../../core/state.js').Apartado} apartado
+ * @param {boolean} oculto `S.config.ocultarSaldo` (regla R20).
+ * @returns {string}
+ */
+function _renderFilaLista(apartado, oculto) {
+  const id     = _esc(apartado.id);
+  const nombre = _esc(apartado.nombre ?? 'Reserva');
+  const m      = valor => (oculto ? SALDO_MASCARA_CUENTA : f(valor));
+
+  const acumulado = Number(apartado.montoActual) || 0;
+  const vence = apartado.fechaObjetivo ? ` · vence el ${fechaLegible(apartado.fechaObjetivo)}` : '';
+
+  return `
+    <div class="apartado-fila" data-id="${id}" data-dom="apartados">
+      <span class="apartado-fila__glifo" aria-hidden="true">${_iconoApartado(apartado)}</span>
+      <span class="apartado-fila__cuerpo">
+        <span class="apartado-fila__nombre">${nombre}</span>
+        <span class="apartado-fila__dato">${m(acumulado)} listos${vence}</span>
+      </span>
+      <button class="apartado-fila__accion" type="button"
+              data-action="reiniciar-apartado" data-id="${id}"
+              aria-label="Marcar ${nombre} como usado y reiniciar el ciclo">Ya lo usé</button>
+    </div>`;
 }
 
 /**
@@ -449,7 +523,7 @@ function _renderEmptyState() {
       <p class="empty-state__title">Sin reservas todavía</p>
       <p class="empty-state__desc">Ponle nombre, monto y fecha a un gasto que viene, y Finko te dice cuánto separar en cada pago. El dinero se aparta cuando registras el primer aporte.</p>
       <button class="btn btn-secondary" data-action="nuevo-apartado">+ Crear reserva</button>
-      <p class="empty-state__tip empty-state__tip--muted">¿Buscabas ponerle un tope a lo que gastas al mes? Eso va en Límites de gasto.</p>
+      <p class="empty-state__tip empty-state__tip--muted">¿Buscabas ponerle un tope a lo que gastas al mes? Eso va en <a class="link" href="#presupuesto">Límites</a>.</p>
     </div>`;
 }
 
