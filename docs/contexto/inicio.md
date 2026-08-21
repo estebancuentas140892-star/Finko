@@ -1,6 +1,6 @@
 # Ficha de contexto: Inicio (dashboard)
 
-> Revisado: 2026-08-20 (DSK.1c, cierra la iniciativa).
+> Revisado: 2026-08-21 (ADR 087).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -142,6 +142,8 @@
 **Riesgos**:
 
 
+
+- **Inicio en movil tiene tres bloques, no cinco** (2026-08-21, [ADR 087](../DECISIONS/087-inicio-en-movil-tambien-avisa-y-no-resume.md)). El ADR 070 D2 retiro el resumen semanal, la actividad reciente y los accesos rapidos de escritorio y escribio que "los tres siguen enteros en movil"; el 087 extiende **dos de los tres**, porque sus argumentos no eran de ancho. Accesos rapidos se queda: el suyo si lo era (en movil no hay barra lateral). **`#panel-resumen` y `#panel-actividad-reciente` ya no existen en el DOM en ningun ancho**, asi que `_repartoCierreInicio()` decide solo sobre Accesos. Quedan sin consumidor, a proposito, `resumen/logic.js` entero y `movimientosRecientes()`: su destino escrito es la ficha 16 (Analisis), que no esta auditada.
 - **Un item del bento con min-content grande rompe TODA la seccion en movil** (arreglado el 2026-08-21). El bento movil es `grid-template-columns: 1fr`, y un track `1fr` nunca baja del min-content de su item mas ancho: el header del resumen semanal, un flex sin `flex-wrap` con un chip `nowrap` y `flex-shrink: 0`, pedia 415px y se llevaba las cinco celdas fuera de un viewport de 391. La leccion no es del chip: **cualquier pieza que entre a una celda del bento necesita poder encogerse**, y los dos guardias E2E de `smoke.test.js` ('Inicio en movil') vigilan la consecuencia, no la causa.
 - ~~**Discrepancia con el brief del usuario**~~: **resuelto (IN.4a)**. El código real solo tenía **1** acceso rápido fijo (Gasto rápido); el catálogo `ACCESOS_INICIO` y los 3 tiles personalizables (default: Mis cuentas, Ahorros, Límites de gasto, elegidos por análisis de frecuencia de autoconsulta, no por preferencia personal) parten de ese hecho verificado. **Gasto rápido se eliminó después (IN.5, 2026-07-06)** junto con su panel "Gastos por organizar"; el hero pasó a ancho completo. Los accesos personalizables de IN.4a son ahora el único bloque de atajos del dashboard.
 - ~~**Overlap confirmado entre paneles** (base de **IN.7**)~~: **resuelto**. Un compromiso con `diaPago = hoy` aparecía a la vez en "Pendientes del mes" (`renderPanelVencidos`, vía `detectarVencidosCompletos`) y en "Próximas prioridades" (`renderPanelPrioridades`, vía `compromisosProximos` con `diasRestantes = 0`). `renderPanelPrioridades()` ahora filtra `diasRestantes > 0` sobre los compromisos antes de combinarlos con personales/apartados: lo que vence hoy vive solo en Pendientes del mes. `compromisosProximos()` (logic) no se tocó: otros consumidores (nudge de mora, `nivelAlertaMora`) siguen necesitando el día 0.

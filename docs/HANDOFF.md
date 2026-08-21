@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-21. Última tarea cerrada: ficha 13 de MOV.1, la etapa de Inversión se nombra (ADR 086).
+> Revisado: 2026-08-21. Última tarea cerrada: ADR 087, Inicio en móvil también avisa y no resume.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 4537/4543 (2026-08-21). Los 6 rojos son **BUG-028**, ajeno |
-| Tests E2E | 302/302 verdes, sello de la ficha 13 (2026-08-21). **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 4505/4512 (2026-08-21). 6 rojos son **BUG-028** y 1 es un intermitente ajeno en `bloqueo-acceso.test.js`. Bajan 31: el ADR 087 retiró dos paneles y sus tests |
+| Tests E2E | 301/301 verdes (2026-08-21). **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v43 (`config.respaldoCifrado`, CFG.4c; migración no-op) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -25,20 +25,17 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**ADR 087 - Inicio en movil tambien avisa y no resume, 2026-08-21**
+El ADR 070 D2 retiro tres modulos de Inicio en escritorio y escribio "los tres siguen enteros en movil". De sus tres argumentos **solo uno era de ancho**: el resumen semanal es tendencia y la actividad reciente cuenta el pasado, y eso vale igual en un telefono. Salen del DOM los dos; Accesos rapidos se queda porque en movil no hay barra lateral. Nada pierde funcion: Movimientos esta en "Mas" y la tendencia tiene casa en Analisis. Inicio movil pasa de cinco bloques a tres. SW v582.
+
 **MOV.1 ficha 13 - La etapa de Inversion se nombra, 2026-08-21**
 Decimotercera de las 25 entregas, con [ADR 086](DECISIONS/086-inversion-la-etapa-se-nombra-y-el-consejo-es-el-boton.md). La cabecera decia "Momento N de 3" y ese 3 era inalcanzable: el numero sale de `etapaDePortafolio()`, que devuelve 1 o 2 y nunca mas. Ahora nombra la etapa y el chip dice de que esta hecha. Y el vacio hereda la jerarquia del momento 1: sin fondo, el primario lleva al Fondo, porque la app era mas prudente despues de invertir que antes. Con esto cierran la casa Ahorro y sus cuatro hijas. SW v581.
 
 **MOV.1 ficha 12 - La lente de Limites contiene limites, 2026-08-21**
 Duodecima de las 25 entregas, con [ADR 085](DECISIONS/085-limites-la-lente-contiene-limites.md), que **acota el ADR 077 D1 y D4**. Dos de las tres tarjetas eran vistas de solo lectura de "Por pagar" y del bloque Ahorro: el filtro de Necesidades es la definicion literal de la lente hermana. El argumento que cierra G2 es el trato asimetrico del ADR 019: de las tres tarjetas, exactamente una se comportaba como un limite. Los topes pasan a ser la lente y el plan a una franja de tres lineas con salida (192px contra ~360). Y dejan de caerse cuando no hay ingreso registrado. SW v579.
 
-**MOV.1 ficha 11 - El compromiso del Fondo, en la primera pantalla, 2026-08-21**
-Undecima de las 25 entregas, con [ADR 084](DECISIONS/084-fondo-el-compromiso-del-periodo-en-la-primera-pantalla.md). El defecto estaba escrito en el codigo: el comentario del carril declara el compromiso del mes "lo unico de esta pagina que hoy exige bajar un pliegue" y lo resuelve solo desde 1680px, o sea que en un telefono seguia entero. El medidor sube al pie de la tarjeta (cierra en 596px con la barra en 721), el pie de la franja suelta el monto repetido y el estado sin gastos fijos pasa a bloqueo con enlace. **E2 se descarto**: revertia el ADR 049 D2, que sigue vigente. SW v577.
-
 **Inicio en movil: el resumen semanal empujaba todas las tarjetas fuera del viewport, 2026-08-21**
 Reportado dos veces como "volvimos a una version antigua". No era la cache: `.resumen-semana__header` es un flex sin `flex-wrap` con un chip `nowrap` que no encoge, asi que con "Sin semana previa para comparar" pedia 415px de min-content. El bento movil es `1fr`, y un track `1fr` no baja del min-content de su item mas ancho: **las cinco celdas** se iban a 415 en un viewport de 391. De 75 elementos desbordados a 0. Dos guardias E2E nuevos. SW v580.
-
-**MOV.1 ficha 10 - Reservas usa el orden que ya tenia escrito, 2026-08-21**
-Con [ADR 083](DECISIONS/083-reservas-el-orden-que-el-dominio-ya-tenia-escrito.md). La doc del aviso de proximidad declaraba "con la lista ordenada por urgencia, el primero es el que apura", y la lista era un `filter` sin `sort`. Cuatro grupos con divisor, con el mismo umbral que cuenta el aviso. La reserva ya reunida baja de 307px a 62 conservando su boton. SW v576.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 
