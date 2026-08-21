@@ -23,7 +23,7 @@ import {
   esProyectable, proyectarInversion, proyectarPortafolio,
   tasaPromedioPonderada, calcularRentabilidadRealPortafolio,
   detectarNudgesInversion, UMBRAL_CONCENTRACION_PCT, UMBRAL_VARIABLE_PCT,
-  TOTAL_MOMENTOS, rasgoTipo, explicacionTipo, fechaVencimientoInversion,
+  rasgoTipo, explicacionTipo, fechaVencimientoInversion,
   columnasPortafolio, momentoInversion,
   ORIGENES_INVERSION, DIAS_ORIGEN_RECIENTE, origenSugerido, validarOrigenInversion,
 } from '../../modules/dominio/inversiones/logic.js';
@@ -658,8 +658,21 @@ describe('momentoInversion()', () => {
   const fic = { tipo: 'Fondo', monto: 5_000_000, tasaEA: 8, plazoMeses: 24 };
   const listo = { fondoActivo: true, fondoCompletado: true };
 
-  it('el recorrido tiene tres momentos', () => {
-    expect(TOTAL_MOMENTOS).toBe(3);
+  // Ficha 13 (N1): TOTAL_MOMENTOS valia 3 y `etapaDePortafolio()` devuelve 1 o
+  // 2 y nunca mas, asi que la cabecera prometia una etapa inalcanzable. La
+  // constante se retira y la etapa pasa a nombrarse.
+  it('la etapa se nombra, y su nombre no es un contador', () => {
+    expect(momentoInversion([cdt], listo).etapa).toBe('Aprendiendo');
+    expect(momentoInversion([cdt, fic], listo).etapa).toBe('Construyendo');
+    expect(momentoInversion([cdt, fic], listo).etapa).not.toMatch(/\d/);
+  });
+
+  it('el chip cuenta las inversiones y sus tipos, en singular y en plural', () => {
+    expect(momentoInversion([cdt], listo).chip).toBe('1 inversión');
+    expect(momentoInversion([cdt, fic], listo).chip).toBe('2 inversiones · 2 tipos');
+    // Dos del mismo tipo: dos inversiones, un tipo.
+    const otroCdt = { tipo: 'CDT', monto: 1_000_000, tasaEA: 10, plazoMeses: 6 };
+    expect(momentoInversion([cdt, otroCdt], listo).chip).toBe('2 inversiones · 1 tipo');
   });
 
   it('devuelve null sin inversiones con monto', () => {
@@ -671,7 +684,8 @@ describe('momentoInversion()', () => {
   it('con una inversión es el momento 1 y explica el instrumento', () => {
     const m = momentoInversion([cdt], listo);
     expect(m.numero).toBe(1);
-    expect(m.chip).toBe('aprendiendo');
+    // Ficha 13: el chip deja de repetir la etapa y dice su composicion.
+    expect(m.chip).toBe('1 inversión');
     expect(m.frase).toBe(explicacionTipo('CDT'));
     expect(m.accion).toBe('Registrar otra inversión');
   });
@@ -685,7 +699,7 @@ describe('momentoInversion()', () => {
   it('con dos o más inversiones es el momento 2', () => {
     const m = momentoInversion([cdt, fic], listo);
     expect(m.numero).toBe(2);
-    expect(m.chip).toBe('construyendo');
+    expect(m.chip).toBe('2 inversiones · 2 tipos');
     expect(m.frase).toContain('2 inversiones');
     expect(m.frase).toContain('2 tipos distintos');
   });
@@ -961,6 +975,60 @@ describe('renderFormInversion() - modo edición (EDIT.1)', () => {
     const html = renderFormInversion({ fechaInicio: inv.fechaInicio, inversion: inv });
     expect(html).toMatch(/id="inv-tasa"[^>]*value=""/);
     expect(html).toMatch(/id="inv-plazo"[^>]*value=""/);
+  });
+});
+
+// ── renderInversion() - el estado vacio y su jerarquia (ficha 13, N2) ────────
+//
+// El defecto: la app era mas prudente DESPUES de que el usuario invirtio que
+// antes. Sin fondo y sin inversiones el primario decia "+ Registrar inversion"
+// con un tip debajo pidiendo el fondo, y con una inversion hecha ese mismo
+// consejo pasaba a ser el primario. En la misma tarjeta el boton y el tip
+// decian cosas opuestas.
+
+describe('renderInversion() - estado vacio', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-inversion"></div>';
+    S.cuentas = [];
+    S.inversiones = [];
+    S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [] };
+  });
+
+  it('sin fondo de emergencia, el primario lleva al Fondo y registrar baja a secundario', () => {
+    renderInversion();
+    const primario = document.querySelector('.empty-state .btn-primary');
+    expect(primario.getAttribute('href')).toBe('#fondo');
+    expect(primario.textContent).toBe('Ir al Fondo de emergencia');
+    const secundario = document.querySelector('.empty-state [data-action="inversion-nueva"]');
+    expect(secundario.className).toContain('btn-ghost');
+  });
+
+  it('con el fondo activo, el primario vuelve a ser registrar', () => {
+    S.ahorro.fondoEmergencia.activo = true;
+    renderInversion();
+    const primario = document.querySelector('.empty-state .btn-primary');
+    expect(primario.dataset.action).toBe('inversion-nueva');
+    expect(document.querySelector('.empty-state [href="#fondo"]')).toBeNull();
+  });
+
+  // El consejo se convirtio en el boton, y con el tip se va la frase que
+  // nombraba una posicion de pantalla (regla R85).
+  it('el tip desaparece en los dos casos', () => {
+    renderInversion();
+    expect(document.querySelector('.empty-state__tip')).toBeNull();
+    S.ahorro.fondoEmergencia.activo = true;
+    renderInversion();
+    expect(document.querySelector('.empty-state__tip')).toBeNull();
+  });
+
+  it('la descripcion se adapta: el consejo del fondo o el catalogo de instrumentos', () => {
+    renderInversion();
+    expect(document.querySelector('.empty-state__desc').textContent)
+      .toContain('Primero asegura tu fondo de emergencia');
+    S.ahorro.fondoEmergencia.activo = true;
+    renderInversion();
+    expect(document.querySelector('.empty-state__desc').textContent)
+      .toContain('CDT, fondo, acciones o cripto');
   });
 });
 

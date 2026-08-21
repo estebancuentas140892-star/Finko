@@ -486,15 +486,6 @@ export function detectarNudgesInversion(inversiones, contexto = {}) {
 
 // ── LOS TRES MOMENTOS (DIS.17) ───────────────────────────────────
 
-/**
- * El recorrido del inversionista tiene tres momentos y la sección solo puede
- * construir dos. El tercero ("tu dinero ya trabaja para ti") necesita el valor
- * real de cada inversión en el tiempo, y Finko solo guarda el monto que se puso
- * y la tasa que el usuario escribió: sin ese dato la frase no tiene con qué
- * probarse. Queda diseñado y fuera del código. El conteo sí lo nombra ("momento
- * 1 de 3"), porque el usuario merece saber que hay camino por delante.
- */
-export const TOTAL_MOMENTOS = 3;
 
 /**
  * Qué es cada tipo de inversión, en una frase. Solo se muestra en el momento 1,
@@ -587,7 +578,12 @@ export function momentoInversion(inversiones, contexto = {}) {
   if (etapa.numero === 1) {
     return {
       numero:         etapa.numero,
-      chip:           'aprendiendo',
+      // Ficha 13 (N1): la cabecera nombra la etapa en vez de contarla. El
+      // contador decia "Momento N de 3" y ese 3 era inalcanzable: el numero
+      // sale de `etapaDePortafolio()`, que devuelve 1 o 2 y nunca mas. El chip
+      // pasa a decir de que esta hecha la etapa, que es un dato verdadero.
+      etapa:          'Aprendiendo',
+      chip:           '1 inversión',
       titulo:         'Diste tu primer paso',
       frase:          explicacionTipo(lista[0].tipo),
       anticipoKicker: 'Siguiente momento',
@@ -609,9 +605,11 @@ export function momentoInversion(inversiones, contexto = {}) {
     if (baseSana) frase += ' Con tu fondo de emergencia completo, esa es una base sólida.';
   }
 
+  const plural = n => (n === 1 ? '' : 'es');
   return {
     numero:         etapa.numero,
-    chip:           'construyendo',
+    etapa:          'Construyendo',
+    chip:           `${lista.length} inversion${plural(lista.length)} · ${porTipo.length} tipo${porTipo.length === 1 ? '' : 's'}`,
     titulo:         'Estás construyendo patrimonio',
     frase,
     // El momento 3 no se puede prometer: necesita un dato que Finko no guarda.

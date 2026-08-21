@@ -230,20 +230,25 @@ describe('etapaDePortafolio - el corte que Ahorro e Inversión comparten (ARQ.1c
     }
   });
 
-  it('el carril de Ahorro y el chip de Inversión nombran igual la misma etapa', () => {
+  it('el carril de Ahorro y la seccion nombran igual la misma etapa', () => {
     // Las dos pantallas escriben la palabra por su cuenta (infra no guarda copy),
     // pero tienen que coincidir: el carril lleva a esa sección y el usuario debe
     // reconocer ahí lo que leyó en el hub. Si una de las dos se renombra sola,
     // este test falla.
+    //
+    // Ficha 13 (ADR 086 D1): la palabra de la etapa se mudó de sitio dentro de
+    // la sección. Era el `chip` y ahora es el kicker (`etapa`), porque el chip
+    // pasó a decir de qué está hecha la etapa ("2 inversiones · 2 tipos"). Lo
+    // que se compara sigue siendo la palabra, no el slot que la lleva.
     for (const lista of [[cdt], [cdt, fic]]) {
       const etapa = portafolio.etapaDePortafolio(lista);
-      const chip  = inversiones.momentoInversion(lista, { fondoActivo: true, fondoCompletado: true }).chip;
+      const momento = inversiones.momentoInversion(lista, { fondoActivo: true, fondoCompletado: true });
       const carril = ahorro.casaAhorro({
         inversionesAbiertas: etapa.abiertas,
         etapaInversion:      etapa.numero,
       }).filas[3].estado;
 
-      expect(carril).toContain(chip);
+      expect(carril.toLowerCase()).toContain(momento.etapa.toLowerCase());
     }
   });
 

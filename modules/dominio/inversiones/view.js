@@ -5,7 +5,7 @@
 
 import { S } from '../../core/state.js';
 import { f, fechaLegible, formateadorFecha, hoy, esc as _esc } from '../../infra/utils.js';
-import { icon, emptyArt } from '../../infra/icons.js';
+import { emptyArt } from '../../infra/icons.js';
 import { ipcObservadoVigente } from '../../core/constants.js';
 import { calcularRegla72 } from '../../infra/financiero.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
@@ -20,7 +20,6 @@ import {
   fechaVencimientoInversion,
   rasgoTipo,
   TIPOS_INVERSION,
-  TOTAL_MOMENTOS,
 } from './logic.js';
 
 /** IPC observado más reciente (E.5): el descuento real de poder adquisitivo. */
@@ -59,14 +58,46 @@ export function renderInversion() {
 
 // ── EMPTY STATE ──────────────────────────────────────────────────
 
+/**
+ * Estado vacío, con la jerarquía del momento 1 (ficha 13, hallazgo N2).
+ *
+ * El defecto: sin fondo de emergencia y sin inversiones, el primario era
+ * "+ Registrar inversión" y el consejo de abajo decía que primero asegures el
+ * fondo. O sea que **la app era más prudente después de que el usuario invirtió
+ * que antes**, que es justo cuando el consejo sirve, y en la misma tarjeta el
+ * botón y el tip decían cosas opuestas: quien leía solo el botón hacía lo que
+ * el tip desaconsejaba.
+ *
+ * La solución ya estaba escrita doce líneas más abajo, en `_renderAcciones()`:
+ * cuando hay una inversión y falta el fondo, el primario lleva al Fondo y
+ * registrar baja a secundario. Acá se aplica el mismo reparto, sin patrón
+ * nuevo y sin quitarle al usuario la opción de invertir igual.
+ *
+ * Y el tip desaparece en los dos casos: cuando falta el fondo, el consejo **es**
+ * el botón; cuando el fondo ya está, el consejo no aplica. Con él se va la
+ * frase que nombraba una posición de pantalla (regla R85).
+ *
+ * Lee `S` sin importar el dominio Ahorro (ADN #10), igual que `_renderMomento()`.
+ */
 function _renderEmptyState() {
+  const fondo = S.ahorro?.fondoEmergencia;
+  const faltaFondo = fondo?.activo !== true;
+
+  const acciones = faltaFondo
+    ? `<a class="btn btn-primary" href="#fondo">Ir al Fondo de emergencia</a>
+      <button class="btn btn-ghost btn-sm" type="button" data-action="inversion-nueva">Registrar inversión</button>`
+    : '<button class="btn btn-primary" data-action="inversion-nueva">+ Registrar inversión</button>';
+
+  const desc = faltaFondo
+    ? 'Primero asegura tu fondo de emergencia: invierte el dinero que no vas a necesitar a corto plazo.'
+    : 'Registra tu primera inversión: CDT, fondo, acciones o cripto.';
+
   return `
     <div class="empty-state">
       <div class="empty-state__icon">${emptyArt('inversion')}</div>
       <p class="empty-state__title">Registra tus inversiones</p>
-      <p class="empty-state__desc">Registra tu primera inversión: CDT, fondo, acciones o cripto.</p>
-      <button class="btn btn-primary" data-action="inversion-nueva">+ Registrar inversión</button>
-      <p class="empty-state__tip">${icon('lightbulb')} Tip: primero asegura tu fondo de emergencia, en <a class="link" href="#fondo">Fondo de emergencia</a>. Invierte el dinero que no vas a necesitar a corto plazo.</p>
+      <p class="empty-state__desc">${desc}</p>
+      ${acciones}
     </div>`;
 }
 
@@ -128,7 +159,7 @@ function _renderMomento(inversiones) {
   return `
     <article class="inversion-momento" data-dom="inversion" aria-label="Tu momento como inversionista">
       <div class="inversion-momento__cabecera">
-        <span class="inversion-momento__kicker">Momento ${momento.numero} de ${TOTAL_MOMENTOS}</span>
+        <span class="inversion-momento__kicker">${_esc(momento.etapa)}</span>
         <span class="inversion-momento__chip">${_esc(momento.chip)}</span>
       </div>
 

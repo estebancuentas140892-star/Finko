@@ -324,7 +324,10 @@ test.describe('Inversión - portafolio real (J.2)', () => {
 
     // La tarjeta del momento muestra lo que el usuario ha construido (DIS.17)
     await expect(page.locator('.inversion-momento__monto')).toHaveText('$5.000.000', { timeout: 3_000 });
-    await expect(page.locator('.inversion-momento__kicker').first()).toHaveText('Momento 1 de 3');
+    // Ficha 13 (ADR 086 D1): el kicker nombra la etapa. Contaba "Momento N de 3"
+    // sobre un total que `etapaDePortafolio()` no puede alcanzar (devuelve 1 o 2).
+    await expect(page.locator('.inversion-momento__kicker').first()).toHaveText('Aprendiendo');
+    await expect(page.locator('.inversion-momento__chip').first()).toHaveText('1 inversión');
   });
 
   // B.3 - CDT con tasa y plazo: proyección visible en el item ----------------
@@ -492,6 +495,60 @@ async function abrirFormInversion(page) {
 async function elegirOrigen(form, valor) {
   await form.locator(`.chip-fecha:has(input[name="origen"][value="${valor}"])`).click();
 }
+
+// ── Ficha 13: el vacio aconseja en el orden correcto ────────────────────────
+// La app era mas prudente DESPUES de invertir que antes: sin fondo y sin
+// inversiones el primario decia "registrar" con un tip pidiendo el fondo, y con
+// una inversion hecha ese consejo pasaba a ser el primario.
+
+test.describe('Inversión - el vacio hereda la jerarquia del momento 1 (ADR 086)', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('sin fondo de emergencia el primario lleva al Fondo, y registrar baja a secundario', async ({ page }) => {
+    await sembrar(page, {
+      version: 1,
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [{ id: 'c-13', nombre: 'Bancolombia', tipo: 'ahorros', saldo: 5000000, activa: true }],
+      ingresos: [], gastos: [], compromisos: [], metas: [], apartados: [], inversiones: [],
+      ahorro: { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 },
+    });
+    await page.goto('/#inversion');
+    await expect(page.locator('#sec-inversion.active')).toBeVisible({ timeout: 10_000 });
+
+    const primario = page.locator('#panel-inversion .empty-state .btn-primary');
+    await expect(primario).toHaveText('Ir al Fondo de emergencia');
+    await expect(primario).toHaveAttribute('href', '#fondo');
+    await expect(page.locator('#panel-inversion .empty-state [data-action="inversion-nueva"]'))
+      .toHaveClass(/btn-ghost/);
+
+    // El tip se fue: el consejo es el boton, y con el se va la frase que
+    // nombraba una posicion de pantalla (R85).
+    await expect(page.locator('#panel-inversion .empty-state__tip')).toHaveCount(0);
+    await expect(page.locator('#panel-inversion')).not.toContainText('arriba');
+
+    await primario.click();
+    await expect(page.locator('#sec-fondo.active')).toBeVisible({ timeout: 5_000 });
+  });
+
+  test('con el fondo activo el primario vuelve a ser registrar', async ({ page }) => {
+    await sembrar(page, {
+      version: 1,
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [{ id: 'c-13b', nombre: 'Bancolombia', tipo: 'ahorros', saldo: 5000000, activa: true }],
+      ingresos: [], gastos: [], compromisos: [], metas: [], apartados: [], inversiones: [],
+      ahorro: { fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 1800000 }, aportes: [], compromisoMensual: 0 },
+    });
+    await page.goto('/#inversion');
+    await expect(page.locator('#sec-inversion.active')).toBeVisible({ timeout: 10_000 });
+
+    const primario = page.locator('#panel-inversion .empty-state .btn-primary');
+    await expect(primario).toHaveAttribute('data-action', 'inversion-nueva');
+    await expect(page.locator('#panel-inversion .empty-state [href="#fondo"]')).toHaveCount(0);
+    await expect(page.locator('#panel-inversion .empty-state__tip')).toHaveCount(0);
+  });
+});
 
 test.describe('Inversión - origen del dinero (INV.1)', () => {
   test.beforeEach(async ({ page }) => {
