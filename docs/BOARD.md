@@ -79,7 +79,7 @@ Cada sección con tarjetas vivas tiene su satélite en `docs/board/`, mismo nomb
 
 > **Iniciativa "IN.9 - Inicio en escritorio", cerrada** (sus cinco rebanadas, 2026-08-02). Detalle e historia: [`contexto/inicio.md`](contexto/inicio.md) y CHANGELOG. **PI8 sigue abierto** (contraste de los tokens `--fk-dom-*`, bajo el mínimo WCAG 1.4.11) y no viaja con INT.1: merece tarjeta de accesibilidad propia. Móvil no cambia salvo lo que IN.9a decidió.
 >
-> **DSK.1 acota IN.9 y está en proceso** (arriba, "En proceso"). El [ADR 070](DECISIONS/070-inicio-centro-de-atencion-en-escritorio.md) reemplaza el reparto de escritorio que fijaron D3 y D4 del [ADR 057](DECISIONS/057-inicio-en-escritorio.md). Dependencia abierta que deja: **"Personalizar accesos" se queda sin entrada en escritorio** y necesita sitio en Ajustes. Candidato anotado, sin tarjeta: auditar si **"Tu progreso"** pertenece a Inicio.
+> **DSK.1 acota IN.9 y está en proceso** (arriba, "En proceso"). El [ADR 070](DECISIONS/070-inicio-centro-de-atencion-en-escritorio.md) reemplaza el reparto de escritorio que fijaron D3 y D4 del [ADR 057](DECISIONS/057-inicio-en-escritorio.md). Dependencia abierta que deja: **"Personalizar accesos" se queda sin entrada en escritorio** y necesita sitio en Ajustes, que ya tiene dueño en **CFG.6** (`board/configuracion.md`). Candidato anotado, sin tarjeta: auditar si **"Tu progreso"** pertenece a Inicio.
 
 ### Calendario (dominio `agenda`)
 
@@ -87,7 +87,9 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 
 ### Configuración (dominio `config`)
 
-_(Sin tarjetas pendientes: la iniciativa CFG.4 cerró completa el 2026-08-15. Ver la tabla "Secciones sin tarjetas pendientes".)_
+CFG.6 → [`board/configuracion.md`](board/configuracion.md)
+
+_(CFG.1 a CFG.5 cerraron completas. **CFG.6** es la auditoría UX/UI móvil de la pantalla: Ajustes es la única de las 15 secciones sin ficha en el handoff, y no se inicia hasta que cierren las fichas 17, 18 y 19 de MOV.1, que deciden el Logros que vive dentro.)_
 
 ---
 
@@ -107,7 +109,6 @@ Se listan solo para que una idea nueva de estas secciones no vuelva a generar un
 | Me deben | Iniciativa **PE.6** completa (**PE.6a-e**; PE.6d cerró el 2026-08-12, [ADR 047](DECISIONS/047-me-deben-v2-intereses-e-historial.md)), ver `contexto/me-deben.md` |
 | Mis cuentas | Iniciativa "Mis Cuentas v2" completa: **MC.13**, **MC.16**, **MC.17** (incluye MC.17f) y **MC.18** en producción (ver `contexto/mis-cuentas.md`) |
 | Gastos | Iniciativa del toast de confirmación completa: **GAS.2a**, **GAS.2b** y **GAS.2c** cerradas ([ADR 062](DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md)), ver `board/gastos.md` |
-| Configuración | Iniciativa "Durabilidad de los datos" completa: **CFG.4a-d** cerradas ([ADR 043](DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md)), ver `board/configuracion.md` |
 | Ahorro | **AH.7 completa**: AH.7b renombró "Apartados" a "Reservas" (2026-07-31) y AH.7a subió la casa a la barra inferior de móvil ([ADR 065](DECISIONS/065-ahorro-en-la-barra-inferior.md), 2026-08-13), ver `contexto/ahorro.md` |
 | Metas | Iniciativa "Metas v2" completa: **MT.6a-d** cerradas ([ADR 048](DECISIONS/048-metas-v2-subcategorias-y-plan-de-aportes.md), [ADR 064](DECISIONS/064-estructura-de-dos-niveles.md)), ver `contexto/metas.md` |
 | Deudas | Iniciativa "Deudas v2" completa ([ADR 036](DECISIONS/036-deudas-v2-visual.md)). Que un pago de deuda descuente de la cuenta ya existe desde el [ADR 002](DECISIONS/002-abono-deudas.md): si aparece un caso donde NO ocurra, es un bug para [`BUGS.md`](BUGS.md), no una feature |
