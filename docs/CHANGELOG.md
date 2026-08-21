@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-08)
 
+### fix(inicio): el resumen semanal empujaba todas las tarjetas de Inicio fuera del viewport · 2026-08-21
+
+Reportado dos veces como "el Inicio movil se ve mal / volvimos a una version antigua". No era ni una version vieja ni la cache: era un desbordamiento de layout, y se veia la pantalla entera mal porque el defecto no estaba en el bloque que lo causaba. Ficha: [`contexto/inicio.md`](contexto/inicio.md).
+
+- **La cadena, medida en el navegador a 391px de viewport.** `.resumen-semana__header` es un flex **sin `flex-wrap`**, y su chip lleva `white-space: nowrap` y `flex-shrink: 0` a proposito, porque el texto comparativo no se parte. Con la variante mas larga del catalogo, "Sin semana previa para comparar", el header tiene un min-content de **374px** (142 del bloque de texto + 12 de gap + 220 del chip), y con el relleno de la tarjeta `#panel-resumen` pide **415px**.
+- **Y ahi esta el salto que lo convierte en un problema de toda la seccion.** Ese panel es un item del bento, y el bento en movil es `grid-template-columns: 1fr`. Un track `1fr` **nunca baja del min-content de su item mas ancho**, asi que el track se resolvia en 414.909px dentro de un contenedor de 359: **todas** las celdas de Inicio pasaban a medir 415 y quedaban cortadas por la derecha. Medidos, **75 elementos** con su borde derecho fuera del viewport.
+- **Arreglo de dos lineas:** `flex-wrap: wrap` en el header, para que el chip baje a su propia linea cuando no cabe, y `min-width: 0` en su primer hijo, sin el cual un bloque de texto dentro de un flex no baja de su palabra mas larga. El min-content del header cae de 374 a 220, el del panel a 260, y el track del bento a 358.854.
+- **Medido despues:** track 359 contra 415, celdas 359 contra 415, y de 75 elementos desbordados a **0**. El unico que sigue saliendo del recorte es el blob decorativo, que va `position: absolute` dentro de una celda con `overflow: hidden`, o sea a proposito. La pagina no gana scroll horizontal.
+- **De donde venia:** de `926c3e6` (IN.8f), no de las fichas de la auditoria movil. El chip existe desde entonces y **solo desborda con su variante mas larga**, que es la que aparece cuando no hay semana previa que comparar: una instalacion nueva y la primera semana de uso. Por eso se veia intermitente.
+- **Dos guardias E2E nuevos a 390px, que vigilan la consecuencia y no el header:** ningun bloque de Inicio con el borde derecho fuera del viewport (con el chip largo en pantalla, o el test no probaria nada) y el track del bento nunca mas ancho que el bento. Cualquier pieza futura que vuelva a poner un piso de ancho en un item del bento los rompe. SW v579 a v580.
+
 ### feat(presupuesto): ficha 12 de la auditoría móvil, la lente contiene límites · 2026-08-21
 
 Duodécima de las 25 entregas de MOV.1, con [ADR 085](DECISIONS/085-limites-la-lente-contiene-limites.md), que **acota el [ADR 077](DECISIONS/077-limites-de-gasto-tres-grupos-a-la-vista.md) en su D1 y su D4**. Cierra **G2**, que la ficha 07 dejó abierta, con más alcance del que aquella pudo enunciar. Fichas: [`contexto/limites.md`](contexto/limites.md).

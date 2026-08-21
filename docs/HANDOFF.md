@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-21. Última tarea cerrada: ficha 12 de MOV.1, la lente de Límites contiene límites (ADR 085).
+> Revisado: 2026-08-21. Última tarea cerrada: el resumen semanal ya no empuja las tarjetas de Inicio fuera del viewport en móvil.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -14,7 +14,7 @@
 | Métrica | Valor |
 |---|---|
 | Tests unitarios + integración | 4532/4538 (2026-08-21). Los 6 rojos son **BUG-028**, ajeno |
-| Tests E2E | 298/298 verdes, sello de la ficha 12 (2026-08-21). Bajan de 300: dos tests de desglose se retiran con su sujeto. **Compuerta** desde el 2026-07-30 |
+| Tests E2E | 300/300 verdes (2026-08-21). **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v43 (`config.respaldoCifrado`, CFG.4c; migración no-op) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -34,11 +34,8 @@ Undecima de las 25 entregas, con [ADR 084](DECISIONS/084-fondo-el-compromiso-del
 **MOV.1 ficha 10 - Reservas usa el orden que ya tenia escrito, 2026-08-21**
 Decima de las 25 entregas, con [ADR 083](DECISIONS/083-reservas-el-orden-que-el-dominio-ya-tenia-escrito.md). La evidencia mas fuerte de la serie: la doc del aviso de proximidad declaraba "con la lista ordenada por urgencia, el primero es el que apura", y la lista era un `filter` sin `sort`. Cuatro grupos con divisor, con el mismo umbral que cuenta el aviso, y el orden lo aporta la pieza de infra de la ficha 09. La reserva ya reunida baja de 307px a 62 conservando su boton y subiendo al principio, al contrario que la meta cumplida. El comparador no se toca y se reordena solo. R89 se parte en R89a y R89b. SW v576.
 
-**MOV.1 ficha 09 - La lista de Metas gana cabeza y orden, 2026-08-21**
-Novena de las 25 entregas, con [ADR 082](DECISIONS/082-metas-cabeza-orden-y-un-final-que-pesa-poco.md). Primera ficha donde la pieza principal se audita y no se toca: DIS.14 y DIS.19 quedan enteras. La lista salia en orden de creacion y, como a 390px cabe tarjeta y media, ese orden era la respuesta al azar a "a cual le aporto": ahora manda la fecha limite, con las metas sin plazo al final. Gana una franja con lo reunido y su alcance declarado, y la meta cumplida baja de 290px a 54. El picker de Registrar adopta el orden de la lista, con el comparador en `infra/bolsas.js`. SW v575.
-
-**MOV.1 ficha 08 - Calendario mide el mes entero, 2026-08-21**
-Con [ADR 081](DECISIONS/081-calendario-la-forma-del-mes-entradas-incluidas.md). El hero sumaba solo salidas y la grilla pintaba tambien los ingresos: `flujoDelMes()` mide las dos direcciones. El detalle del dia deja de administrar y "Por pagar" toma su mes del reloj del bloque. SW v574.
+**Inicio en movil: el resumen semanal empujaba todas las tarjetas fuera del viewport, 2026-08-21**
+Reportado dos veces como "volvimos a una version antigua". No era la cache: `.resumen-semana__header` es un flex sin `flex-wrap` con un chip `nowrap` que no encoge, asi que con "Sin semana previa para comparar" pedia 415px de min-content. El bento movil es `1fr`, y un track `1fr` no baja del min-content de su item mas ancho: **las cinco celdas** se iban a 415 en un viewport de 391. De 75 elementos desbordados a 0. Dos guardias E2E nuevos. SW v580.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 
