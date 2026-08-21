@@ -2830,6 +2830,87 @@ describe('renderPanelPrioridades() - monto por tipo (regresión: deudas sin cifr
   });
 });
 
+// -- MOV.1 ficha 14 (C3): la direccion del dinero se lee sin color ---
+
+describe('renderPanelPrioridades() - direccion con flecha y signo (ficha 14)', () => {
+  beforeEach(anchoMovil);
+  afterEach(restaurarAncho);
+
+  const _fechaEnDias = n => {
+    const d = new Date();
+    d.setDate(d.getDate() + n);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-prioridades"></div>';
+    S.compromisos = [];
+    S.personales  = [];
+    S.apartados   = [];
+  });
+
+  const filas = () => [...document.querySelectorAll('.prioridades-card__item')];
+
+  it('lo que te deben entra: flecha hacia dentro y monto con signo mas', () => {
+    S.personales = [{ id: 'p1', persona: 'Juan', monto: 150_000, pagado: 0,
+      liquidado: false, fechaLimite: _fechaEnDias(2) }];
+    renderPanelPrioridades();
+    const fila = filas()[0];
+    expect(fila.querySelector('.obligacion-dir').textContent).toBe('\u2199');
+    expect(fila.querySelector('.prioridades-card__amount').textContent.trim()).toBe('+$150.000');
+  });
+
+  it('lo que debes sale: flecha hacia fuera y monto con signo menos', () => {
+    S.compromisos = [compromisoBase({ descripcion: 'Arriendo', monto: 300_000, diaPago: DIA_MANANA })];
+    renderPanelPrioridades();
+    const fila = filas()[0];
+    expect(fila.querySelector('.obligacion-dir').textContent).toBe('\u2197');
+    expect(fila.querySelector('.prioridades-card__amount').textContent.trim()).toBe('-$300.000');
+  });
+
+  it('un apartado no lleva flecha ni signo: no le mueve dinero a nadie', () => {
+    S.apartados = [{ id: 'a1', nombre: 'SOAT moto', montoObjetivo: 120_000,
+      montoActual: 0, fechaObjetivo: _fechaEnDias(3), completado: false }];
+    renderPanelPrioridades();
+    const fila = filas()[0];
+    expect(fila.querySelector('.obligacion-dir')).toBeNull();
+    expect(fila.querySelector('.prioridades-card__amount').textContent.trim()).toBe('$120.000');
+  });
+
+  it('la flecha vive en la teja y es decorativa: el badge ya dice el dominio', () => {
+    S.personales = [{ id: 'p1', persona: 'Juan', monto: 150_000, pagado: 0,
+      liquidado: false, fechaLimite: _fechaEnDias(2) }];
+    renderPanelPrioridades();
+    const teja = document.querySelector('.prioridades-card__icon');
+    expect(teja.querySelector('.obligacion-dir')).not.toBeNull();
+    expect(teja.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('la señal no depende del color: la flecha no declara ninguno', () => {
+    S.personales = [{ id: 'p1', persona: 'Juan', monto: 150_000, pagado: 0,
+      liquidado: false, fechaLimite: _fechaEnDias(2) }];
+    S.compromisos = [compromisoBase({ descripcion: 'Arriendo', diaPago: DIA_MANANA })];
+    renderPanelPrioridades();
+    for (const dir of document.querySelectorAll('.obligacion-dir')) {
+      expect(dir.getAttribute('style')).toBeNull();
+      expect(dir.className).toBe('obligacion-dir');
+    }
+  });
+
+  it('en escritorio la tarjeta fusionada usa la misma señal', () => {
+    anchoEscritorio();
+    document.body.innerHTML = '<div id="panel-vencidos"></div>';
+    S.personales = [{ id: 'p1', persona: 'Juan', monto: 150_000, pagado: 0,
+      liquidado: false, fechaLimite: _fechaEnDias(2) }];
+    S.compromisos = [compromisoBase({ descripcion: 'Arriendo', monto: 300_000, diaPago: DIA_MANANA })];
+    renderPanelVencidos();
+    const montos = [...document.querySelectorAll('.prioridades-card__amount')]
+      .map(n => n.textContent.trim());
+    expect(montos).toContain('+$150.000');
+    expect(montos).toContain('-$300.000');
+  });
+});
+
 // ── renderPanelVencidos() - total al pie (IN.1) ──────────────────
 
 describe('renderPanelVencidos() - total al pie (IN.1)', () => {

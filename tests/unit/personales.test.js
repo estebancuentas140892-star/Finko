@@ -13,6 +13,7 @@ import {
   porcentajePagado,
   calcularResumen,
   ordenarPersonales,
+  agruparPersonalesPorUrgencia,
   validarPersonal,
   normalizarPersonal,
   aplicarPago,
@@ -369,6 +370,71 @@ describe('calcularResumen()', () => {
 });
 
 // ── ordenarPersonales() ───────────────────────────────────────────
+
+// -- agruparPersonalesPorUrgencia() - orden por urgencia (ficha 14) -
+
+describe('agruparPersonalesPorUrgencia()', () => {
+  // Un `Date` local, igual que la vista: `new Date('2026-08-21')` se parsea en
+  // UTC y en Colombia cae el dia anterior.
+  const HOY = new Date('2026-08-21T12:00:00');
+  const base = (over = {}) => ({
+    id: 'x', persona: 'X', monto: 500_000, pagado: 0, fecha: '2026-01-01', ...over,
+  });
+
+  it('reparte los seis tipos del clasificador en cuatro grupos activos y los liquidados', () => {
+    const g = agruparPersonalesPorUrgencia([
+      base({ id: 'vencido',   fechaLimite: '2026-08-01' }),
+      base({ id: 'hoy',       fechaLimite: '2026-08-21' }),
+      base({ id: 'proximo',   fechaLimite: '2026-09-30' }),
+      base({ id: 'abonado',   ultimoPago: '2026-08-10', pagado: 100_000 }),
+      base({ id: 'pendiente' }),
+      base({ id: 'liquidado', pagado: 500_000 }),
+    ], HOY);
+
+    expect(g.vencidos.map(p => p.id)).toEqual(['vencido']);
+    expect(g.vencenHoy.map(p => p.id)).toEqual(['hoy']);
+    expect(g.adelante.map(p => p.id)).toEqual(['proximo']);
+    expect(g.liquidados.map(p => p.id)).toEqual(['liquidado']);
+    // Sin fecha pactada cae todo lo que el clasificador mide por antiguedad,
+    // con abonos o sin ellos: la pregunta del grupo es la fecha, no el abono.
+    expect(g.sinFecha.map(p => p.id).sort()).toEqual(['abonado', 'pendiente']);
+  });
+
+  it('dentro de cada grupo conserva "mas viejos primero"', () => {
+    const g = agruparPersonalesPorUrgencia([
+      base({ id: 'nuevo', fecha: '2026-07-01', fechaLimite: '2026-08-05' }),
+      base({ id: 'viejo', fecha: '2026-02-01', fechaLimite: '2026-08-19' }),
+    ], HOY);
+    expect(g.vencidos.map(p => p.id)).toEqual(['viejo', 'nuevo']);
+  });
+
+  it('el orden entre grupos es el de urgencia de cobro, no el de la lista', () => {
+    // El prestamo sin fecha es el mas antiguo y aun asi no encabeza: lo que
+    // decide el cobro es la fecha pactada, que es el defecto D2 de la ficha.
+    const g = agruparPersonalesPorUrgencia([
+      base({ id: 'sinFecha', fecha: '2020-01-01' }),
+      base({ id: 'vencido',  fecha: '2026-08-01', fechaLimite: '2026-08-10' }),
+    ], HOY);
+    const orden = [...g.vencidos, ...g.vencenHoy, ...g.sinFecha, ...g.adelante].map(p => p.id);
+    expect(orden).toEqual(['vencido', 'sinFecha']);
+  });
+
+  it('no muta el arreglo de entrada', () => {
+    const lista = [base({ id: 'b', fecha: '2026-05-01' }), base({ id: 'a', fecha: '2026-01-01' })];
+    agruparPersonalesPorUrgencia(lista, HOY);
+    expect(lista.map(p => p.id)).toEqual(['b', 'a']);
+  });
+
+  it('tolera entradas vacias o invalidas y devuelve los cinco grupos', () => {
+    for (const entrada of [[], null, undefined]) {
+      const g = agruparPersonalesPorUrgencia(entrada, HOY);
+      expect(Object.keys(g).sort())
+        .toEqual(['adelante', 'liquidados', 'sinFecha', 'vencenHoy', 'vencidos']);
+      expect([...g.vencidos, ...g.vencenHoy, ...g.sinFecha, ...g.adelante, ...g.liquidados])
+        .toEqual([]);
+    }
+  });
+});
 
 describe('ordenarPersonales()', () => {
   const lista = [
@@ -931,9 +997,12 @@ describe('normalizarPersonal() con cuenta de origen (PE.7)', () => {
 // ════════════════════════════════════════════════════════════════
 
 describe('renderListaPersonales() - fila de préstamo (DIS.3)', () => {
+  // `cuentaId` va en la fixture desde MOV.1 ficha 14: el préstamo sin cuenta
+  // vinculada estrena su propio chip ("solo seguimiento"), y sin esto cada
+  // fila de esta suite arrastraría un chip que no está probando.
   const prestamo = (over = {}) => ({
     id: 'p1', persona: 'Camilo Restrepo', monto: 500_000, pagado: 0,
-    fecha: '2026-03-10', liquidado: false, ...over,
+    fecha: '2026-03-10', liquidado: false, cuentaId: 'c1', ...over,
   });
 
   beforeEach(() => {
@@ -947,6 +1016,71 @@ describe('renderListaPersonales() - fila de préstamo (DIS.3)', () => {
     renderListaPersonales();
     return document.getElementById('lista-personales');
   };
+
+  // -- MOV.1 ficha 14: divisores de urgencia y solo seguimiento ---
+
+  it('C1: los divisores nombran los grupos, con el vencido arriba', () => {
+    const d = new Date();
+    const hoyISO = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const el = render([
+      prestamo({ id: 'p1', persona: 'Sin fecha', fecha: '2020-01-01' }),
+      prestamo({ id: 'p2', persona: 'Vencida', fecha: '2026-06-01', fechaLimite: '2026-01-15' }),
+      prestamo({ id: 'p3', persona: 'Hoy', fecha: '2026-06-02', fechaLimite: hoyISO }),
+      prestamo({ id: 'p4', persona: 'Adelante', fecha: '2026-06-03', fechaLimite: '2099-12-31' }),
+    ]);
+    const rotulos = [...el.querySelectorAll('.personales-corte')].map(n => n.textContent.trim());
+    expect(rotulos).toEqual([
+      'La fecha ya pasó', 'La fecha es hoy', 'Sin fecha pactada', 'Con fecha por delante',
+    ]);
+  });
+
+  it('C1: el prestamo que ya vencio encabeza la lista aunque sea el mas nuevo', () => {
+    const el = render([
+      prestamo({ id: 'p1', persona: 'Sin fecha', fecha: '2020-01-01' }),
+      prestamo({ id: 'p2', persona: 'Vencida', fecha: '2026-06-01', fechaLimite: '2026-01-15' }),
+    ]);
+    const primera = el.querySelector('.list-item .list-item__title');
+    expect(primera.textContent.trim()).toBe('Vencida');
+  });
+
+  it('C1: con un solo prestamo no hay divisor, igual que no hay resumen', () => {
+    const el = render([prestamo({ fechaLimite: '2026-01-15' })]);
+    expect(el.querySelector('.personales-corte')).toBeNull();
+    expect(el.querySelector('.personales-resumen')).toBeNull();
+  });
+
+  it('C1: los liquidados siguen al final, despues de los grupos activos (R21)', () => {
+    const el = render([
+      prestamo({ id: 'p1', persona: 'Liquidada', monto: 150_000, pagado: 150_000 }),
+      prestamo({ id: 'p2', persona: 'Vencida', fechaLimite: '2026-01-15' }),
+    ]);
+    const rotulos = [...el.querySelectorAll('.personales-corte')].map(n => n.textContent.trim());
+    expect(rotulos).toEqual(['La fecha ya pasó', 'Ya te pagaron']);
+  });
+
+  it('C2: el prestamo sin cuenta vinculada declara que es solo seguimiento', () => {
+    const el = render([prestamo({ cuentaId: null })]);
+    const chip = [...el.querySelectorAll('.personal-item__notas .chip')]
+      .find(c => c.textContent.includes('Solo seguimiento'));
+    expect(chip).not.toBeUndefined();
+    expect(chip.textContent.trim()).toBe('Solo seguimiento: no salió de ninguna cuenta');
+  });
+
+  it('C2: es aviso en ambar y no error: sin chip-danger ni text-danger', () => {
+    const el = render([prestamo({ cuentaId: null })]);
+    const chip = [...el.querySelectorAll('.chip')]
+      .find(c => c.textContent.includes('Solo seguimiento'));
+    expect(chip.className).toBe('chip chip-warning');
+    expect(el.innerHTML).not.toContain('chip-danger');
+  });
+
+  it('C2: con cuenta vinculada no dice nada, y el liquidado tampoco', () => {
+    const conCuenta = render([prestamo({ cuentaId: 'c1' })]);
+    expect(conCuenta.innerHTML).not.toContain('Solo seguimiento');
+    // Un prestamo cerrado ya no afecta al patrimonio: el aviso sobraria.
+    const cerrado = render([prestamo({ cuentaId: null, monto: 150_000, pagado: 150_000 })]);
+    expect(cerrado.innerHTML).not.toContain('Solo seguimiento');
+  });
 
   // ── V-2 / regla R19: el monto ancla es lo vigente ──────────────
 
@@ -1759,9 +1893,10 @@ describe('renderListaPersonales() - corte entre lo abierto y lo cobrado (DSK.5a)
       prestamo({ id: 'p1', persona: 'Andrés', monto: 900_000, pagado: 300_000 }),
       prestamo({ id: 'p2', persona: 'Sofía', monto: 150_000, pagado: 150_000 }),
     ]);
-    const corte = el.querySelector('.personales-corte');
-    expect(corte).not.toBeNull();
-    expect(corte.textContent.trim()).toBe('Ya te pagaron');
+    // Desde la ficha 14 los activos también llevan rótulos de urgencia, así que
+    // el de los liquidados es el último, no el único.
+    const cortes = [...el.querySelectorAll('.personales-corte')];
+    expect(cortes.at(-1).textContent.trim()).toBe('Ya te pagaron');
   });
 
   it('el rótulo va justo antes de la primera liquidada, no al final', () => {
@@ -1770,9 +1905,11 @@ describe('renderListaPersonales() - corte entre lo abierto y lo cobrado (DSK.5a)
       prestamo({ id: 'p2', persona: 'Sofía', monto: 150_000, pagado: 150_000 }),
     ]);
     const hijos = [...el.querySelector('.personales-lista').children];
-    const iCorte = hijos.findIndex(n => n.classList.contains('personales-corte'));
-    expect(iCorte).toBe(1);
+    const iCorte = hijos.findIndex(n => n.textContent.trim() === 'Ya te pagaron');
+    expect(iCorte).toBeGreaterThan(-1);
     expect(hijos[iCorte + 1].classList.contains('personal-item--liquidado')).toBe(true);
+    // Y nada abierto queda debajo: el corte es el último rótulo de la lista.
+    expect(hijos.slice(0, iCorte).some(n => n.classList.contains('personal-item--liquidado'))).toBe(false);
   });
 
   it('sin liquidados no hay rótulo: no se anuncia un grupo vacío', () => {
@@ -1807,7 +1944,7 @@ describe('renderListaPersonales() - corte entre lo abierto y lo cobrado (DSK.5a)
 describe('renderListaPersonales() - anatomía de la tarjeta (DSK.5b)', () => {
   const prestamo = (over = {}) => ({
     id: 'p1', persona: 'Camilo Restrepo', monto: 500_000, pagado: 0,
-    fecha: '2026-03-10', ...over,
+    fecha: '2026-03-10', cuentaId: 'c1', ...over,
   });
 
   beforeEach(() => {

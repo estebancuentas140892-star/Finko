@@ -16,7 +16,7 @@ import {
   labelEstado,
   porcentajePagado,
   calcularResumen,
-  ordenarPersonales,
+  agruparPersonalesPorUrgencia,
   tieneInteres,
   historialAbonos,
   calcularRendimiento,
@@ -40,8 +40,12 @@ function _pct(n) {
  * No-op si el contenedor no existe.
  *
  * DIS.3 (V-8, regla R21): los liquidados se listan después de los activos, con
- * el mismo criterio "más viejos primero" dentro de cada grupo. `logic.js` no
- * cambia: el corte es de la vista, porque es una decisión de presentación.
+ * el mismo criterio "más viejos primero" dentro de cada grupo. El corte es de
+ * la vista, porque es una decisión de presentación.
+ *
+ * MOV.1 ficha 14 (C1): los activos ya no son una sola tirada por antigüedad.
+ * `agruparPersonalesPorUrgencia()` los reparte por urgencia de cobro y acá se
+ * nombran los grupos; "más viejos primero" sigue mandando dentro de cada uno.
  *
  * DSK.5a (ADR 074 D4): ese corte ahora **se ve**. Estaba tomado en el código y
  * en el comentario de arriba desde DIS.3, pero en pantalla eran cinco tarjetas
@@ -69,15 +73,36 @@ export function renderListaPersonales() {
   const hoy    = new Date();
   const oculto = S.config?.ocultarSaldo === true;
 
-  const ordenadas  = ordenarPersonales(lista, 'antiguo');
-  const activos    = ordenadas.filter(p => calcularPendiente(p, hoy) > 0);
-  const liquidados = ordenadas.filter(p => calcularPendiente(p, hoy) <= 0);
+  const { vencidos, vencenHoy, sinFecha, adelante, liquidados } =
+    agruparPersonalesPorUrgencia(lista, hoy);
+
+  // Los rótulos son de la vista, igual que el corte de los liquidados: `logic.js`
+  // devuelve los grupos y acá se nombran. Los divisores aparecen desde dos
+  // préstamos, el mismo umbral del resumen: con uno solo el rótulo describiría
+  // la lista entera y añadiría un renglón sin dividir nada.
+  //
+  // "La fecha es hoy" no está en la ficha, que nombra tres grupos. Va aparte de
+  // "La fecha ya pasó" porque el chip de esas filas dice "Vence hoy": meterlas
+  // bajo un rótulo que diga que la fecha pasó sería contradecirlas en la misma
+  // pantalla, y juntarlas con "Con fecha por delante" las hundiría por debajo
+  // de préstamos menos urgentes.
+  const grupos = [
+    ['La fecha ya pasó',      vencidos],
+    ['La fecha es hoy',       vencenHoy],
+    ['Sin fecha pactada',     sinFecha],
+    ['Con fecha por delante', adelante],
+  ].filter(([, g]) => g.length > 0);
+
+  const conDivisor = lista.length >= 2;
+  const activosHtml = grupos.map(([rotulo, g]) => `
+      ${conDivisor ? `<p class="personales-corte">${rotulo}</p>` : ''}
+      ${g.map(p => _renderPersonalItem(p, hoy, oculto)).join('')}`).join('');
 
   el.innerHTML = `
     ${lista.length >= 2 ? _renderResumen(resumen, oculto) : ''}
     ${_renderPorPersona(lista, hoy, oculto)}
     <div class="personales-lista">
-      ${activos.map(p => _renderPersonalItem(p, hoy, oculto)).join('')}
+      ${activosHtml}
       ${liquidados.length > 0 ? '<p class="personales-corte">Ya te pagaron</p>' : ''}
       ${liquidados.map(p => _renderPersonalItem(p, hoy, oculto)).join('')}
     </div>`;
@@ -214,6 +239,17 @@ function _renderPersonalItem(prestamo, hoy, oculto = false) {
     ? `<span class="chip">Pactó devolver: ${fechaLegible(prestamo.fechaLimite)}</span>`
     : '';
 
+  // MOV.1 ficha 14 (C2): `calcularTotalPorCobrar()` filtra por `cuentaId` antes
+  // de sumar, así que un préstamo sin cuenta vinculada no entra al "Por cobrar"
+  // del patrimonio en Análisis. La regla del código es correcta (no salió de
+  // ninguna cuenta registrada); lo que faltaba era decirlo donde se ve. Ámbar
+  // de aviso y no rojo de error: no es un fallo del usuario, es una elección
+  // válida que tiene una consecuencia fuera de esta lista. La redacción final
+  // depende de cómo Análisis presente "Por cobrar" y se verifica en la ficha 16.
+  const soloSeguimiento = (!prestamo.cuentaId && !liquidado)
+    ? '<span class="chip chip-warning">Solo seguimiento: no salió de ninguna cuenta</span>'
+    : '';
+
   // Cuando hay un abono, la antigüedad cuenta desde ahí: el chip explica
   // por qué el de días puede ser bajo aunque el préstamo sea viejo.
   const ultimoPagoHtml = (prestamo.ultimoPago && !liquidado)
@@ -279,6 +315,7 @@ function _renderPersonalItem(prestamo, hoy, oculto = false) {
           ${interesHtml}
           ${ultimoPagoHtml}
           ${fechaLim}
+          ${soloSeguimiento}
         </div>
         <div class="personal-item__avance">
           <div class="progress" role="progressbar" data-dom="personales"

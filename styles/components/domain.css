@@ -2695,6 +2695,21 @@ button.chip:focus-visible {
   justify-content: center;
   border-radius: var(--fk-radius-md);
   flex-shrink: 0;
+  position: relative;
+}
+/* MOV.1 ficha 14 (C3, candidata R90): la dirección del dinero se señala con
+   forma. La flecha se ancla a la esquina de la teja en vez de ocupar una
+   columna propia: la fila ya reparte icono, cuerpo y monto, y a 390px no hay
+   ancho para un cuarto elemento. Hereda el color de la teja (no lo declara),
+   así que en gris o en alto contraste sigue leyéndose por su trazo. */
+.vencidos-card__icon .obligacion-dir,
+.prioridades-card__icon .obligacion-dir {
+  position: absolute;
+  right: -0.125rem;
+  bottom: -0.25rem;
+  font-size: var(--fk-text-xs);
+  line-height: 1;
+  font-weight: 700;
 }
 /* 20px en chip de 32px: mismo ratio ~62% que las tejas de categoría. */
 .vencidos-card__icon .icon,

@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-21. Última tarea cerrada: ADR 087, Inicio en móvil también avisa y no resume.
+> Revisado: 2026-08-21. Última tarea cerrada: MOV.1 ficha 14, Me deben ordena por urgencia y la dirección se lee sin color.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,7 +13,7 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 4505/4512 (2026-08-21). 6 rojos son **BUG-028** y 1 es un intermitente ajeno en `bloqueo-acceso.test.js`. Bajan 31: el ADR 087 retiró dos paneles y sus tests |
+| Tests unitarios + integración | 4524/4530 (2026-08-21). Los 6 rojos son **BUG-028**, ajeno |
 | Tests E2E | 301/301 verdes (2026-08-21). **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v43 (`config.respaldoCifrado`, CFG.4c; migración no-op) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**MOV.1 ficha 14 - Me deben ordena por urgencia y la direccion se lee sin color, 2026-08-21**
+Tres cambios, cero tokens nuevos ([ADR 088](DECISIONS/088-me-deben-urgencia-de-cobro-y-direccion-con-forma.md)). La lista deja de ordenarse por antiguedad del desembolso y pasa a cuatro grupos de urgencia de cobro, con el clasificador que ya existia y alimentaba solo al chip. El prestamo sin cuenta vinculada declara en ambar que es solo seguimiento: no suma al patrimonio. Y en las dos tarjetas de obligaciones la direccion del dinero se lee con **forma**, flecha y signo, que sobreviven al gris. Candidata R90 con cautela: las fichas 15 y 16 deciden su alcance. Avance MOV.1: **14 de 25**. SW v583.
 
 **ADR 087 - Inicio en movil tambien avisa y no resume, 2026-08-21**
 El ADR 070 D2 retiro tres modulos de Inicio en escritorio y escribio "los tres siguen enteros en movil". De sus tres argumentos **solo uno era de ancho**: el resumen semanal es tendencia y la actividad reciente cuenta el pasado, y eso vale igual en un telefono. Salen del DOM los dos; Accesos rapidos se queda porque en movil no hay barra lateral. Nada pierde funcion: Movimientos esta en "Mas" y la tendencia tiene casa en Analisis. Inicio movil pasa de cinco bloques a tres. SW v582.

@@ -67,6 +67,36 @@ function _iconoApartado(valor) {
   return /^[a-z]-/.test(valor) ? iconoCategoria(valor) : _esc(valor);
 }
 
+/**
+ * Dirección del dinero de una fila, señalada con forma y no con color.
+ *
+ * MOV.1 ficha 14 (C3, candidata R90): en las dos tarjetas de obligaciones
+ * conviven lo que sale (compromisos) y lo que entra (préstamos de Me deben),
+ * y hasta acá la única diferencia entre ambos era el badge de 11px y el color
+ * de la teja. El color no podía hacer ese trabajo: ya está comprometido en
+ * decir de qué dominio es la fila, y el rosa de personales significa
+ * "préstamo entre personas", no "entra".
+ *
+ * Dos señales redundantes, las dos de forma: una flecha en la esquina de la
+ * teja y un signo en el monto. Sobreviven al gris, al daltonismo y al modo de
+ * alto contraste. Ningún token nuevo.
+ *
+ * Un apartado no lleva ninguna de las dos: su fecha objetivo no mueve dinero
+ * a nadie, solo lo pasa de un bolsillo tuyo a otro. Es el mismo `neutro` que
+ * la lista de Movimientos deja sin signo.
+ *
+ * @param {string} tipo `it.tipo`: 'fijo' | 'deuda' | 'personal' | 'apartado'.
+ * @returns {{ flecha: string, signo: string }} HTML del glifo y prefijo del monto.
+ */
+function _direccionFila(tipo) {
+  if (tipo === 'apartado') return { flecha: '', signo: '' };
+  const entra = tipo === 'personal';
+  return {
+    flecha: `<span class="obligacion-dir" aria-hidden="true">${entra ? '↙' : '↗'}</span>`,
+    signo:  entra ? '+' : '-',
+  };
+}
+
 // ── DASHBOARD: OBLIGACIONES FUSIONADAS (escritorio) ──────────────
 
 /**
@@ -97,14 +127,15 @@ function _filaObligacion(it, estadoHtml, badgeHtml) {
   const desc  = _esc(it.descripcion ?? '(sin descripción)');
   const valor = Number(it.monto ?? it.cuotaMensual);
   const monto = Number.isFinite(valor) ? f(valor) : '';
+  const { flecha, signo } = _direccionFila(tipo);
   return `
     <li class="prioridades-card__item">
-      <span class="prioridades-card__icon prioridades-card__icon--${chipTipo}" aria-hidden="true">${icono}</span>
+      <span class="prioridades-card__icon prioridades-card__icon--${chipTipo}" aria-hidden="true">${icono}${flecha}</span>
       <div class="prioridades-card__body">
         <p class="prioridades-card__name">${desc}</p>
         <div class="prioridades-card__meta">${badgeHtml}${estadoHtml}</div>
       </div>
-      ${monto ? `<p class="prioridades-card__amount">${monto}</p>` : ''}
+      ${monto ? `<p class="prioridades-card__amount">${signo}${monto}</p>` : ''}
     </li>`;
 }
 
@@ -419,17 +450,21 @@ export function renderPanelPrioridades() {
         // personales y apartados llegan con `monto`.
         const valor = Number(c.monto ?? c.cuotaMensual);
         const monto = Number.isFinite(valor) ? f(valor) : '';
+        // C3 (ficha 14): la flecha y el signo dicen la dirección del dinero.
+        // Este panel es el único sitio de la app donde lo que te deben y lo que
+        // debes se ven en la misma lista.
+        const { flecha, signo } = _direccionFila(tipo);
         // Anatomía de dos líneas idéntica a .vencidos-card__item: el badge deja
         // de robarle ancho al nombre en la misma línea (a 390px truncaba a la
         // mitad) y el glifo deja de pintarse del color de su propio fondo.
         return `
           <li class="prioridades-card__item">
-            <span class="prioridades-card__icon prioridades-card__icon--${chipTipo}" aria-hidden="true">${icono}</span>
+            <span class="prioridades-card__icon prioridades-card__icon--${chipTipo}" aria-hidden="true">${icono}${flecha}</span>
             <div class="prioridades-card__body">
               <p class="prioridades-card__name">${desc}</p>
               <div class="prioridades-card__meta">${_tipoBadge(tipo)}</div>
             </div>
-            ${monto ? `<p class="prioridades-card__amount">${monto}</p>` : ''}
+            ${monto ? `<p class="prioridades-card__amount">${signo}${monto}</p>` : ''}
           </li>`;
       }).join('');
 

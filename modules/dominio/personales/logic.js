@@ -512,6 +512,47 @@ export function ordenarPersonales(personales, modo = 'antiguo') {
   return copia;
 }
 
+/**
+ * Agrupa los préstamos por urgencia de cobro. No muta el input.
+ *
+ * MOV.1 ficha 14 (C1, R89a): `estadoPrestamo()` ya clasificaba la relación
+ * completa, pero su salida alimentaba solo al chip de cada fila: la lista se
+ * ordenaba por antigüedad y un vencido de ayer podía quedar bajo cuatro
+ * préstamos viejos sin fecha pactada. Mismo perfil que Reservas (ficha 10):
+ * el clasificador existía y no ordenaba nada.
+ *
+ * Los cuatro grupos activos salen de los seis tipos del clasificador, y el
+ * orden entre ellos es el de urgencia de cobro. `hoy` va aparte de `vencido`
+ * porque su fila dice "Vence hoy": meterla bajo un rótulo que diga que la
+ * fecha ya pasó sería contradecirla en la misma pantalla.
+ *
+ * Dentro de cada grupo se conserva "más viejos primero", que es el criterio
+ * de `ordenarPersonales('antiguo')` y sigue siendo el correcto a igualdad de
+ * urgencia. Los liquidados van al final (DIS.3, regla R21).
+ *
+ * @param {Personal[]} personales
+ * @param {Date|string} [fechaRef] default: ahora.
+ * @returns {{ vencidos: Personal[], vencenHoy: Personal[], sinFecha: Personal[],
+ *             adelante: Personal[], liquidados: Personal[] }}
+ */
+export function agruparPersonalesPorUrgencia(personales, fechaRef = new Date()) {
+  const grupos = { vencidos: [], vencenHoy: [], sinFecha: [], adelante: [], liquidados: [] };
+  const _DESTINO = {
+    vencido:   'vencidos',
+    hoy:       'vencenHoy',
+    abonado:   'sinFecha',
+    pendiente: 'sinFecha',
+    proximo:   'adelante',
+    liquidado: 'liquidados',
+  };
+
+  for (const prestamo of ordenarPersonales(personales, 'antiguo')) {
+    const { tipo } = estadoPrestamo(prestamo, fechaRef);
+    grupos[_DESTINO[tipo] ?? 'sinFecha'].push(prestamo);
+  }
+  return grupos;
+}
+
 // ── VALIDACIÓN / NORMALIZACIÓN ────────────────────────────────────
 
 /**
