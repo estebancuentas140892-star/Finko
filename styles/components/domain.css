@@ -903,14 +903,144 @@ button.chip:focus-visible {
   color: var(--fk-text-secondary);
 }
 
-.metas-cumplidas__label {
-  font-size: var(--fk-text-xs);
-  font-weight: var(--fk-font-bold);
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--fk-text-muted);
+/* ── LA LISTA DE METAS (ficha 08 de MOV.1, ADR 082) ─────────────
+   La tarjeta no se toca. Lo que cambia es lo que la contiene: una franja que
+   la encabeza, divisores que dicen el orden y un final que pesa poco.
+   `.metas-cumplidas__label` se retira: su parrafo suelto lo sustituye el
+   divisor con contador, que es el mismo componente de Por pagar. */
+
+/* Franja de la seccion (ADR 082 D1). Anatomia del hero de Por pagar: rotulo,
+   cifra grande, barra y linea de contexto. Identidad de Metas por token, sin
+   parada nueva: se reusa la del hero de Agenda, ya medida. */
+.hero-metas {
+  position: relative;
+  margin-block-end: var(--fk-space-5);
+  border-radius: var(--fk-radius-xl);
+  border: 1px solid color-mix(in srgb, var(--fk-dom-metas) 30%, transparent);
+  --fk-section-color: var(--fk-dom-metas);
+  --fk-grad-identity-stop: 16%;
+  --fk-grad-identity: linear-gradient(160deg, color-mix(in srgb, var(--fk-section-color) var(--fk-grad-identity-stop), transparent), transparent 55%);
+  background: var(--fk-grad-identity), var(--fk-bg-surface);
+  box-shadow: var(--fk-shadow-md);
+  padding: var(--fk-space-6) var(--fk-space-5) var(--fk-space-5);
+}
+
+/* El rotulo declara su alcance ("en tus 3 metas", R82): la cifra no cuenta el
+   Fondo, ni las Reservas, ni las metas ya cumplidas. */
+.hero-metas__label {
+  margin: 0 0 var(--fk-space-3);
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  letter-spacing: 0.01em;
+}
+
+.hero-metas__valor {
+  margin: 0;
+  font-family: var(--fk-font-mono);
+  font-size: clamp(2rem, 1.45rem + 4.2vw, 2.375rem);
+  font-weight: var(--fk-font-extrabold);
+  color: var(--fk-text-primary);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Decorativa: el porcentaje ya viaja en el `aria-label` del contenedor y los
+   montos en texto portan la informacion (SC 1.4.11). El ancho lo fija la
+   vista como propiedad JS, mismo criterio que `.apartado-card__barra-fill`. */
+.hero-metas__barra {
+  height: 8px;
+  margin-top: var(--fk-space-4);
+  border-radius: var(--fk-radius-sm);
+  background: color-mix(in srgb, var(--fk-text-primary) 10%, transparent);
+  overflow: hidden;
+}
+
+.hero-metas__barra-fill {
+  height: 100%;
+  border-radius: var(--fk-radius-sm);
+  background: linear-gradient(90deg, var(--fk-accent), var(--fk-accent-hover));
+}
+
+.hero-metas__meta {
   margin: var(--fk-space-3) 0 0;
-  padding-left: 2px;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+}
+
+/* Fila compacta de una meta cumplida (ADR 082 D3): 52px en vez de los 290 de
+   la tarjeta. Dos botones hermanos, no uno dentro de otro: la fila abre el
+   editar y el eliminar tiene el suyo. */
+.metas-cumplidas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+}
+
+.meta-fila {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-1);
+  border: 1px solid color-mix(in srgb, var(--fk-success) 22%, transparent);
+  border-radius: var(--fk-radius-md);
+  background: transparent;
+}
+
+.meta-fila__btn {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border: 0;
+  border-radius: var(--fk-radius-md);
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: var(--fk-dom-metas);
+}
+
+.meta-fila__btn:hover { background: var(--fk-dom-metas-bg); }
+
+/* La figura llena al 100% es la misma pieza del carril de Ahorro, a la mitad
+   de su caja: en una fila de 52px los 44px del carril no dejan aire. */
+.meta-fila__fig {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+}
+
+.meta-fila__lb {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta-fila__monto {
+  flex: 0 0 auto;
+  font-size: var(--fk-text-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--fk-text-secondary);
+}
+
+/* 44px, no los 40 que da `.btn-icon`: las tres acciones de Metas declaran el
+   minimo de la regla R4 desde DIS.14, y esta es la cuarta. `responsive.css`
+   fija `.btn-sm` en 36px y gana por capa, asi que el minimo se declara aca
+   sobre un boton que no es `btn-sm` (mismo caso ya documentado en la ficha de
+   contexto para `.meta-card__secundaria`). */
+.meta-fila__eliminar {
+  flex: 0 0 auto;
+  margin-inline-end: var(--fk-space-2);
+  min-width: 44px;
+  min-height: 44px;
+  color: var(--fk-danger-text);
 }
 
 /* ════════════════════════════════════════════════════════════

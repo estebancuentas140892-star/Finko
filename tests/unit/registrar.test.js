@@ -8,6 +8,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { destinosAbono, destinosAporte, cuentasActivasParaTransferir } from '../../modules/ui/registrar.js';
+import { ordenarMetasPorPlazo } from '../../modules/dominio/metas/logic.js';
 
 describe('destinosAbono', () => {
   it('incluye solo deudas activas con saldo pendiente', () => {
@@ -65,6 +66,23 @@ describe('destinosAporte', () => {
   it('tolera slices ausentes', () => {
     expect(destinosAporte(undefined, undefined, undefined)).toEqual([]);
     expect(destinosAporte(null, null, null)).toEqual([]);
+  });
+
+  // Ficha 09, hallazgo G4: tres puertas abren el mismo aporte y el picker era
+  // la única que salía en orden de creación. Una meta que se ve primera en la
+  // sección no puede verse tercera acá.
+  it('las metas salen en el mismo orden que la lista de Metas', () => {
+    const metas = [
+      { id: 'viaje',  nombre: 'Viaje',  montoActual: 1_200_000, fechaLimite: '2026-12-15' },
+      { id: 'curso',  nombre: 'Curso',  montoActual:         0, fechaLimite: null },
+      { id: 'laptop', nombre: 'Laptop', montoActual: 3_780_000, fechaLimite: '2026-09-30' },
+    ];
+
+    const enPicker = destinosAporte(null, metas, []).map(d => d.id);
+    const { conPlazo, sinPlazo } = ordenarMetasPorPlazo(metas);
+
+    expect(enPicker).toEqual(['laptop', 'viaje', 'curso']);
+    expect(enPicker).toEqual([...conPlazo, ...sinPlazo].map(m => m.id));
   });
 });
 

@@ -16,8 +16,9 @@ import {
 } from '../../core/constants.js';
 import { categoriasConHijos, hijosDeCategoria } from '../../infra/taxonomia.js';
 import {
-  metasActivas, metasCumplidas, calcularProgreso, calcularAhorroPorPeriodo,
+  metasCumplidas, calcularProgreso, calcularAhorroPorPeriodo,
   etiquetaPeriodoAhorro, frecuenciaPrincipalIngresos,
+  ordenarMetasPorPlazo, resumenMetas,
 } from './logic.js';
 
 // ── LISTA DE METAS ───────────────────────────────────────────────
@@ -25,6 +26,19 @@ import {
 /**
  * Renderiza la lista de metas en `#lista-metas`.
  * No-op si el contenedor no existe.
+ *
+ * **Ficha 09 de la auditoría móvil: la tarjeta no se toca, cambia la lista que
+ * la contiene.** La sección cabía en tarjeta y media a 390px, así que sus tres
+ * problemas eran de lista y no de pieza:
+ *
+ * - **Cabeza** (G2): la franja con lo reunido, lo que falta y cuántas metas
+ *   son. La portada de Ahorro lo decía y la sección lo perdía al entrar.
+ * - **Orden** (G1): urgencia primero, con divisores visibles, el mismo patrón
+ *   que Por pagar. Antes salían en orden de creación, y con una sola tarjeta
+ *   visible ese orden era la respuesta al azar a "¿a cuál le aporto?".
+ * - **Final** (G3): la meta cumplida baja de tarjeta (290px) a fila compacta
+ *   (52px). Comprimir no es desaparecer, que era el problema que DIS.13
+ *   arregló.
  *
  * DIS.13 (MT.d, FM4): las metas cumplidas dejan de desaparecer. Van en un
  * bloque propio al final, apagadas pero presentes: el logro queda a la vista
@@ -41,10 +55,11 @@ export function renderListaMetas() {
   const el = document.getElementById('lista-metas');
   if (!el) return;
 
-  const activas   = metasActivas(S.metas);
+  const { conPlazo, sinPlazo } = ordenarMetasPorPlazo(S.metas);
   const cumplidas = metasCumplidas(S.metas);
+  const hayActivas = conPlazo.length + sinPlazo.length > 0;
 
-  if (activas.length === 0 && cumplidas.length === 0) {
+  if (!hayActivas && cumplidas.length === 0) {
     el.innerHTML = _renderEmptyState();
     return;
   }
@@ -55,14 +70,142 @@ export function renderListaMetas() {
   const frecuenciaIngresos = frecuenciaPrincipalIngresos(S.ingresos);
   const oculto = S.config?.ocultarSaldo === true;
 
+  const tarjeta = meta => _renderMetaCard(meta, frecuenciaIngresos, oculto);
+
+  // El divisor del grupo con plazo solo sale cuando hay un segundo grupo con
+  // el que contrastar: si todas las metas tienen fecha, el rótulo nombraría
+  // lo único que hay. R89 pide decir el criterio del orden, no rotular por
+  // rotular.
+  const conPlazoHtml = conPlazo.length > 0
+    ? (sinPlazo.length > 0 ? _divisorGrupo('Con plazo') : '') + conPlazo.map(tarjeta).join('')
+    : '';
+
+  const sinPlazoHtml = sinPlazo.length > 0
+    ? _divisorGrupo('Sin plazo') + sinPlazo.map(tarjeta).join('')
+    : '';
+
   const cumplidasHtml = cumplidas.length > 0
-    ? `<p class="metas-cumplidas__label">Metas cumplidas</p>
-       ${cumplidas.map(m => _renderMetaCard(m, frecuenciaIngresos, oculto)).join('')}`
+    ? _divisorGrupo('Cumplidas', String(cumplidas.length))
+      + `<div class="metas-cumplidas">${cumplidas.map(meta => _renderFilaCumplida(meta, oculto)).join('')}</div>`
     : '';
 
   el.innerHTML = `
-    ${activas.map(m => _renderMetaCard(m, frecuenciaIngresos, oculto)).join('')}
+    ${hayActivas ? _renderFranjaMetas(oculto) : ''}
+    ${conPlazoHtml}
+    ${sinPlazoHtml}
     ${cumplidasHtml}`;
+}
+
+/**
+ * Franja que encabeza la lista (ficha 09, hallazgo G2): las tres cifras que la
+ * portada de Ahorro ya anunciaba y que se perdían al entrar a la sección.
+ *
+ * Anatomía de `renderHeroCompromisos()`: rótulo, cifra grande, barra y línea
+ * de contexto. No se duplica la fila de siluetas del carril: la ficha 04 dejó
+ * a la portada comparando y a la sección administrando, así que lo que le
+ * faltaba a la sección era cabeza, no un segundo carril.
+ *
+ * El rótulo **declara su alcance** ("en tus 3 metas", regla R82): la cifra no
+ * cuenta el Fondo, ni las Reservas, ni las metas ya cumplidas. El conteo y el
+ * porcentaje van sin máscara: no son magnitudes de dinero (regla R20).
+ *
+ * @param {boolean} oculto `S.config.ocultarSaldo`.
+ * @returns {string}
+ */
+function _renderFranjaMetas(oculto) {
+  const { reunido, faltante, porcentaje, enCurso } = resumenMetas(S.metas);
+  const m = valor => (oculto ? SALDO_MASCARA_CUENTA : f(valor));
+
+  const alcance = enCurso === 1 ? 'en tu meta' : `en tus ${enCurso} metas`;
+
+  return `
+    <div class="hero-metas">
+      <p class="hero-metas__label">Reunido ${alcance}</p>
+      <p class="hero-metas__valor">${m(reunido)}</p>
+      <div class="hero-metas__barra" role="img" aria-label="${porcentaje}% de lo que suman tus objetivos">
+        <div class="hero-metas__barra-fill" style="width:${porcentaje}%"></div>
+      </div>
+      <p class="hero-metas__meta">Faltan ${m(faltante)}</p>
+    </div>`;
+}
+
+/**
+ * Divisor de grupo de la lista. Es el mismo componente con el que Por pagar
+ * separa fijos de deudas (`.grupo-eyebrow-fila`), con su hueco de la derecha
+ * para el dato del grupo: allá el indicador de estrategia, acá el contador de
+ * metas cumplidas.
+ *
+ * @param {string} rotulo
+ * @param {string} [extra] dato a la derecha; sin él, el hueco no se pinta.
+ * @returns {string}
+ */
+function _divisorGrupo(rotulo, extra = '') {
+  return `
+    <div class="grupo-eyebrow-fila">
+      <p class="grupo-eyebrow">${_esc(rotulo)}</p>
+      ${extra ? `<span class="grupo-eyebrow-fila__extra">${_esc(extra)}</span>` : ''}
+    </div>`;
+}
+
+/**
+ * Fila compacta de una meta cumplida (ficha 09, hallazgo G3).
+ *
+ * DIS.14 decidió que "un estado terminal conserva su forma", y era la
+ * respuesta correcta al problema de DIS.13: antes la meta cumplida
+ * desaparecía. Pero conservar la tarjeta entera cobra 290px por cada meta
+ * lograda, así que quien cumple metas es quien peor lo pasa. Comprimir no es
+ * desaparecer: la fila mide 52px, aplica la regla R7 (un estado terminal apaga
+ * sus indicadores de futuro) y conserva las dos acciones.
+ *
+ * Toma la anatomía del `.silbtn` del carril de Ahorro (figura, nombre y un
+ * dato a la derecha) y le cambia ese dato: el porcentaje sería 100 en todas
+ * las filas y no informaría de nada, así que su sitio lo ocupa el monto
+ * logrado.
+ *
+ * **La fila entera abre el editar** y el eliminar queda en su propio botón de
+ * ícono a la derecha: son dos botones hermanos, no uno dentro de otro. El
+ * `renderFormMeta()` no tiene eliminar, así que sin ese botón borrar una meta
+ * cumplida se quedaría sin puerta.
+ *
+ * **La fecha de cumplimiento no se pinta**: no existe en el modelo. `Meta` no
+ * tiene `fechaCumplida` y `montoActual` es un campo cacheado sin ledger de
+ * aportes, así que "Cumplida el 12 de mayo" exigiría dato nuevo y bump de
+ * schema. Es el mismo hueco que `contexto/metas.md` ya declara como insumo de
+ * ARQ.1, y esta ficha no lo abre.
+ *
+ * La clave del `clipPath` de la silueta es propia (`cumplida-<id>`): la
+ * sección usa `<id>` y el carril `carril-<id>`, y dos siluetas con la misma
+ * clave se recortan con la figura equivocada.
+ *
+ * @param {import('../../core/state.js').Meta} meta
+ * @param {boolean} oculto `S.config.ocultarSaldo` (regla R20).
+ * @returns {string}
+ */
+function _renderFilaCumplida(meta, oculto) {
+  const id     = _esc(meta.id);
+  const nombre = _esc(meta.nombre ?? 'Meta');
+  const forma  = _formaSilueta(meta);
+  const monto  = oculto ? SALDO_MASCARA_CUENTA : f(Number(meta.montoActual) || 0);
+
+  const figura = forma
+    ? siluetaMeta(100, { forma, clave: `cumplida-${meta.id}`, decorativa: true })
+    : _iconoMeta(meta, 'icon meta-fila__glifo');
+
+  return `
+    <div class="meta-fila" data-id="${id}" data-dom="metas">
+      <button class="meta-fila__btn" type="button"
+              data-action="editar-meta" data-id="${id}"
+              aria-label="Editar la meta cumplida ${nombre}, ${monto} logrados">
+        <span class="meta-fila__fig" aria-hidden="true">${figura}</span>
+        <span class="meta-fila__lb">${nombre}</span>
+        <span class="meta-fila__monto">${monto}</span>
+      </button>
+      <button class="btn-icon meta-fila__eliminar" type="button"
+              data-action="eliminar-meta" data-id="${id}"
+              aria-label="Eliminar meta ${nombre}">
+        <svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg>
+      </button>
+    </div>`;
 }
 
 /**

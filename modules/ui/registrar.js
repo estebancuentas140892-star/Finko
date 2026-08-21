@@ -21,6 +21,7 @@ import { S } from '../core/state.js';
 import { abrirModal } from './modales.js';
 import { registrarAccion } from './actions.js';
 import { f, esc } from '../infra/utils.js';
+import { ordenarBolsasPorFecha } from '../infra/bolsas.js';
 
 const TITULO_DEFECTO = '¿Qué quieres registrar?';
 
@@ -70,8 +71,15 @@ export function destinosAporte(ahorro, metas, apartados) {
     destinos.push({ targetAction: 'ahorro-nuevo-aporte', id: null, label: 'Fondo de emergencia', monto: total });
   }
 
-  for (const m of (Array.isArray(metas) ? metas : [])) {
-    if (!m || m.completada === true) continue;
+  // Ficha 09 (hallazgo G4): el picker sale en el mismo orden que la lista de
+  // Metas, urgencia primero y las metas sin plazo al final. Una meta que se ve
+  // primera en la sección no puede verse tercera acá. El orden lo define
+  // `infra/bolsas.js`, que es la única copia: importar el dominio no está
+  // permitido (ver la cabecera de este archivo).
+  const activas = (Array.isArray(metas) ? metas : []).filter(m => m && m.completada !== true);
+  const { conFecha, sinFecha } = ordenarBolsasPorFecha(activas, 'fechaLimite');
+
+  for (const m of [...conFecha, ...sinFecha]) {
     destinos.push({ targetAction: 'abonar-meta', id: m.id, label: m.nombre || 'Meta', monto: Number(m.montoActual) || 0 });
   }
 

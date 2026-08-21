@@ -66,6 +66,40 @@ export function progresoDeBolsa(objetivo, actual) {
   return { porcentaje, faltante, completado: porcentaje >= 100 };
 }
 
+/**
+ * Reparte una lista de bolsas en dos grupos: las que tienen fecha, ordenadas
+ * por la que vence primero, y las que no la tienen.
+ *
+ * Tercera pieza con más de un lector (ficha 09 de la auditoría móvil): la
+ * lista de Metas y el picker "Elige a cuál" de la hoja Registrar tienen que
+ * salir en el mismo orden, y `ui/registrar.js` no puede importar el dominio
+ * (su propia cabecera lo declara: lee `S` y duplica lo que necesita). Con la
+ * copia única acá, ninguno de los dos define el orden por su cuenta.
+ *
+ * El nombre del campo se recibe porque cada bolsa llama a su fecha distinto
+ * (`fechaLimite` en Metas, `fechaObjetivo` en Apartados): es el mismo criterio
+ * de `progresoDeBolsa`, que recibe montos sueltos en vez de un registro.
+ *
+ * Una fecha ilegible cuenta como ausente: no se ordena por lo que no se puede
+ * leer. El empate conserva el orden de llegada, que `sort` ya garantiza.
+ *
+ * @param {Array<object>} bolsas
+ * @param {string} campoFecha - campo con la fecha ISO `YYYY-MM-DD`.
+ * @returns {{ conFecha: object[], sinFecha: object[] }}
+ */
+export function ordenarBolsasPorFecha(bolsas, campoFecha) {
+  const lista   = Array.isArray(bolsas) ? bolsas : [];
+  const legible = bolsa => /^\d{4}-\d{2}-\d{2}$/.test(bolsa?.[campoFecha] ?? '');
+
+  const conFecha = lista
+    .filter(legible)
+    // Dos ISO YYYY-MM-DD se comparan como texto en el mismo orden que como
+    // fechas, sin construir un Date por comparación.
+    .sort((a, b) => a[campoFecha].localeCompare(b[campoFecha]));
+
+  return { conFecha, sinFecha: lista.filter(bolsa => !legible(bolsa)) };
+}
+
 // ── FECHAS ───────────────────────────────────────────────────────
 
 /**

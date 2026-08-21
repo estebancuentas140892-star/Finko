@@ -17,7 +17,7 @@ import {
   normalizarFrecuenciaAporte,
   fechasAportePlan,
 } from '../../infra/vencimientos.js';
-import { progresoDeBolsa } from '../../infra/bolsas.js';
+import { progresoDeBolsa, ordenarBolsasPorFecha } from '../../infra/bolsas.js';
 import { hijosDeCategoria } from '../../infra/taxonomia.js';
 import { SUBCATEGORIAS_META } from '../../core/constants.js';
 import { hoy, f } from '../../infra/utils.js';
@@ -77,6 +77,76 @@ export function metasCumplidas(metas) {
 export function calcularProgreso(meta) {
   const { porcentaje, faltante, completado } = progresoDeBolsa(meta?.montoObjetivo, meta?.montoActual);
   return { porcentaje, faltante, completada: completado };
+}
+
+// ── ORDEN Y CABEZA DE LA LISTA (ficha 09 de la auditoría móvil) ───
+
+/**
+ * Reparte las metas activas en los dos grupos que la lista pinta: las que
+ * tienen plazo, ordenadas por la fecha que vence primero, y las que no lo
+ * tienen, que van después.
+ *
+ * Hallazgo G1: `metasActivas()` filtra y no ordena, así que la lista salía en
+ * orden de creación. Con una tarjeta y media visible a 390px, ese orden **es**
+ * la respuesta que la sección da a "¿a cuál le aporto?", y era una respuesta
+ * al azar: una meta al 90% que vence en septiembre quedaba debajo de una al
+ * 34% que vence en diciembre. El criterio es el que Por pagar ya usa (urgencia
+ * primero, con divisores visibles); acá la urgencia es la fecha límite.
+ *
+ * Las metas sin plazo no bajan como castigo: es el sitio donde su invitación a
+ * ponerle fecha tiene sentido, porque son las únicas que piden algo distinto
+ * de un aporte.
+ *
+ * Una `fechaLimite` ilegible cuenta como "sin plazo": no se ordena por una
+ * fecha que no se puede leer, y el nudge de fecha es justo lo que le falta.
+ *
+ * **Fuente única del orden.** La lista de Metas y el picker "Elige a cuál" de
+ * Registrar consumen esta misma función (hallazgo G4): una meta que sale
+ * primera en la sección no puede salir tercera en el picker.
+ *
+ * @param {import('../../core/state.js').Meta[]} metas - lista completa; el corte de activas lo hace esta función.
+ * @returns {{ conPlazo: import('../../core/state.js').Meta[], sinPlazo: import('../../core/state.js').Meta[] }}
+ */
+export function ordenarMetasPorPlazo(metas) {
+  const activas = metasActivas(Array.isArray(metas) ? metas : []);
+  const { conFecha, sinFecha } = ordenarBolsasPorFecha(activas, 'fechaLimite');
+  return { conPlazo: conFecha, sinPlazo: sinFecha };
+}
+
+/**
+ * Las tres cifras de la franja que encabeza la lista (hallazgo G2): cuánto hay
+ * reunido en las metas activas, cuánto falta para cerrarlas todas y cuántas
+ * son.
+ *
+ * La casa lo decía y la habitación no: el carril de Ahorro anuncia
+ * "$1.950.000 · 3 en curso" y al entrar a Metas la primera tarjeta empezaba
+ * sin cabeza, así que con dos metas bajo el pliegue nada decía que existían.
+ * Ninguna cifra es nueva y **no se importan de `ahorro/logic.js`** (ADN #10):
+ * se agregan acá sobre `calcularProgreso()`, que ya es el envoltorio del
+ * cálculo único de las cuatro bolsas.
+ *
+ * El conteo y el porcentaje no son magnitudes de dinero, así que la vista los
+ * pinta sin máscara (regla R20, el mismo corte que el anillo de la tarjeta).
+ *
+ * @param {import('../../core/state.js').Meta[]} metas - lista completa; solo cuentan las activas.
+ * @returns {{ reunido: number, faltante: number, objetivo: number, porcentaje: number, enCurso: number }}
+ */
+export function resumenMetas(metas) {
+  const activas = metasActivas(Array.isArray(metas) ? metas : []);
+
+  let reunido  = 0;
+  let objetivo = 0;
+  let faltante = 0;
+
+  for (const meta of activas) {
+    reunido  += Math.max(0, Number(meta?.montoActual) || 0);
+    objetivo += Math.max(0, Number(meta?.montoObjetivo) || 0);
+    faltante += calcularProgreso(meta).faltante;
+  }
+
+  const porcentaje = objetivo > 0 ? Math.min(100, Math.round((reunido / objetivo) * 100)) : 0;
+
+  return { reunido, faltante, objetivo, porcentaje, enCurso: activas.length };
 }
 
 /**

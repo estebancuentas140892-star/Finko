@@ -3,6 +3,8 @@ import {
   metasActivas,
   metasCumplidas,
   calcularProgreso,
+  ordenarMetasPorPlazo,
+  resumenMetas,
   consecuenciaDeAporte,
   calcularAhorroPorPeriodo,
   frecuenciaPrincipalIngresos,
@@ -143,6 +145,140 @@ describe('calcularProgreso()', () => {
   it('redondea al entero más cercano', () => {
     const meta = metaBase({ montoActual: 1_000_000, montoObjetivo: 3_000_000 });
     expect(calcularProgreso(meta).porcentaje).toBe(33);
+  });
+});
+
+// ── ordenarMetasPorPlazo() (ficha 09, hallazgo G1) ───────────────
+
+describe('ordenarMetasPorPlazo()', () => {
+  it('ordena las metas con plazo por la fecha que vence primero', () => {
+    const metas = [
+      metaBase({ id: 'viaje',  fechaLimite: '2026-12-15' }),
+      metaBase({ id: 'laptop', fechaLimite: '2026-09-30' }),
+      metaBase({ id: 'moto',   fechaLimite: '2026-10-05' }),
+    ];
+    expect(ordenarMetasPorPlazo(metas).conPlazo.map(m => m.id))
+      .toEqual(['laptop', 'moto', 'viaje']);
+  });
+
+  it('manda las metas sin fecha a su propio grupo, no al de plazo', () => {
+    const metas = [
+      metaBase({ id: 'curso',  fechaLimite: null }),
+      metaBase({ id: 'laptop', fechaLimite: '2026-09-30' }),
+    ];
+    const { conPlazo, sinPlazo } = ordenarMetasPorPlazo(metas);
+    expect(conPlazo.map(m => m.id)).toEqual(['laptop']);
+    expect(sinPlazo.map(m => m.id)).toEqual(['curso']);
+  });
+
+  it('una fechaLimite ilegible cuenta como sin plazo', () => {
+    const metas = [
+      metaBase({ id: 'vacia',  fechaLimite: '' }),
+      metaBase({ id: 'basura', fechaLimite: '30/09/2026' }),
+      metaBase({ id: 'buena',  fechaLimite: '2026-09-30' }),
+    ];
+    const { conPlazo, sinPlazo } = ordenarMetasPorPlazo(metas);
+    expect(conPlazo.map(m => m.id)).toEqual(['buena']);
+    expect(sinPlazo.map(m => m.id)).toEqual(['vacia', 'basura']);
+  });
+
+  it('deja fuera las metas cumplidas: los dos grupos son de activas', () => {
+    const metas = [
+      metaBase({ id: 'cumplida', fechaLimite: '2026-01-01', completada: true }),
+      metaBase({ id: 'activa',   fechaLimite: '2026-09-30' }),
+      metaBase({ id: 'sinfecha', fechaLimite: null, completada: true }),
+    ];
+    const { conPlazo, sinPlazo } = ordenarMetasPorPlazo(metas);
+    expect(conPlazo.map(m => m.id)).toEqual(['activa']);
+    expect(sinPlazo).toEqual([]);
+  });
+
+  it('el empate de fecha conserva el orden de llegada', () => {
+    const metas = [
+      metaBase({ id: 'primera', fechaLimite: '2026-09-30' }),
+      metaBase({ id: 'segunda', fechaLimite: '2026-09-30' }),
+    ];
+    expect(ordenarMetasPorPlazo(metas).conPlazo.map(m => m.id))
+      .toEqual(['primera', 'segunda']);
+  });
+
+  it('no muta la lista que recibe', () => {
+    const metas = [
+      metaBase({ id: 'viaje',  fechaLimite: '2026-12-15' }),
+      metaBase({ id: 'laptop', fechaLimite: '2026-09-30' }),
+    ];
+    ordenarMetasPorPlazo(metas);
+    expect(metas.map(m => m.id)).toEqual(['viaje', 'laptop']);
+  });
+
+  it('devuelve los dos grupos vacíos sin lista', () => {
+    expect(ordenarMetasPorPlazo(undefined)).toEqual({ conPlazo: [], sinPlazo: [] });
+    expect(ordenarMetasPorPlazo([])).toEqual({ conPlazo: [], sinPlazo: [] });
+  });
+});
+
+// ── resumenMetas() (ficha 09, hallazgo G2) ───────────────────────
+
+describe('resumenMetas()', () => {
+  it('suma lo reunido y lo que falta de las metas activas', () => {
+    const metas = [
+      metaBase({ id: 'a', montoActual: 1_200_000, montoObjetivo: 3_500_000 }),
+      metaBase({ id: 'b', montoActual: 3_780_000, montoObjetivo: 4_200_000 }),
+    ];
+    const { reunido, faltante, objetivo } = resumenMetas(metas);
+    expect(reunido).toBe(4_980_000);
+    expect(faltante).toBe(2_720_000);
+    expect(objetivo).toBe(7_700_000);
+  });
+
+  it('cuenta cuántas metas están en curso', () => {
+    const metas = [
+      metaBase({ id: 'a' }),
+      metaBase({ id: 'b' }),
+      metaBase({ id: 'c', completada: true }),
+    ];
+    expect(resumenMetas(metas).enCurso).toBe(2);
+  });
+
+  it('ignora las cumplidas en las tres cifras', () => {
+    const metas = [
+      metaBase({ id: 'activa',   montoActual: 1_000_000, montoObjetivo: 4_000_000 }),
+      metaBase({ id: 'cumplida', montoActual: 9_000_000, montoObjetivo: 9_000_000, completada: true }),
+    ];
+    const { reunido, faltante, objetivo } = resumenMetas(metas);
+    expect(reunido).toBe(1_000_000);
+    expect(faltante).toBe(3_000_000);
+    expect(objetivo).toBe(4_000_000);
+  });
+
+  it('calcula el porcentaje sobre el objetivo agregado', () => {
+    const metas = [
+      metaBase({ id: 'a', montoActual: 1_000_000, montoObjetivo: 2_000_000 }),
+      metaBase({ id: 'b', montoActual:   500_000, montoObjetivo: 2_000_000 }),
+    ];
+    expect(resumenMetas(metas).porcentaje).toBe(38);
+  });
+
+  it('una meta sobrefinanciada no empuja el porcentaje sobre 100', () => {
+    const metas = [metaBase({ montoActual: 6_000_000, montoObjetivo: 5_000_000 })];
+    const { porcentaje, faltante } = resumenMetas(metas);
+    expect(porcentaje).toBe(100);
+    expect(faltante).toBe(0);
+  });
+
+  it('con objetivo 0 el porcentaje es 0, no NaN', () => {
+    const metas = [metaBase({ montoActual: 0, montoObjetivo: 0 })];
+    expect(resumenMetas(metas).porcentaje).toBe(0);
+  });
+
+  it('trata montoActual ausente como 0', () => {
+    const { montoActual: _, ...sinActual } = metaBase({ montoObjetivo: 1_000_000 });
+    expect(resumenMetas([sinActual]).reunido).toBe(0);
+  });
+
+  it('devuelve ceros sin lista', () => {
+    expect(resumenMetas(undefined))
+      .toEqual({ reunido: 0, faltante: 0, objetivo: 0, porcentaje: 0, enCurso: 0 });
   });
 });
 
@@ -908,10 +1044,12 @@ describe('renderListaMetas() - tarjeta de meta (DIS.14)', () => {
   });
 });
 
-// ── renderListaMetas() - bloque de metas cumplidas (DIS.13, FM4) ──
+// ── renderListaMetas() - metas cumplidas en fila compacta ─────────
 //
-// DIS.14: un estado terminal conserva su forma. La meta cumplida mantiene la
-// tarjeta y cambia su contenido (arco cerrado, sin acción de aportar).
+// Ficha 09, hallazgo G3. DIS.13 (FM4) hizo que la meta cumplida dejara de
+// desaparecer y DIS.14 le conservó la tarjeta entera, que cobra 290px por cada
+// meta lograda. La fila compacta la baja a 52px sin hacerla desaparecer:
+// conserva el editar (la fila entera) y el eliminar (su propio botón).
 
 describe('renderListaMetas() - metas cumplidas', () => {
   beforeEach(() => {
@@ -921,15 +1059,26 @@ describe('renderListaMetas() - metas cumplidas', () => {
     S.metas    = [];
   });
 
-  it('una meta cumplida deja de desaparecer: se lista bajo su propio rótulo', () => {
+  it('la cumplida sale bajo un divisor con su contador', () => {
+    S.metas = [
+      metaBase({ id: 'm1', nombre: 'Viaje' }),
+      metaBase({ id: 'm2', nombre: 'Regalo', montoActual: 180_000, montoObjetivo: 180_000, completada: true }),
+      metaBase({ id: 'm3', nombre: 'Moto',   montoActual: 400_000, montoObjetivo: 400_000, completada: true }),
+    ];
+    renderListaMetas();
+    const divisores = [...document.querySelectorAll('.grupo-eyebrow')].map(p => p.textContent);
+    expect(divisores).toContain('Cumplidas');
+    expect(document.querySelector('.grupo-eyebrow-fila__extra').textContent).toBe('2');
+  });
+
+  it('no gasta una tarjeta: la cumplida es fila y solo la activa es tarjeta', () => {
     S.metas = [
       metaBase({ id: 'm1', nombre: 'Viaje' }),
       metaBase({ id: 'm2', nombre: 'Regalo', montoActual: 180_000, montoObjetivo: 180_000, completada: true }),
     ];
     renderListaMetas();
-    expect(document.querySelector('.metas-cumplidas__label').textContent).toContain('Metas cumplidas');
-    expect(document.querySelectorAll('.meta-card')).toHaveLength(2);
-    expect(document.querySelector('.meta-card--cumplida').dataset.id).toBe('m2');
+    expect([...document.querySelectorAll('.meta-card')].map(a => a.dataset.id)).toEqual(['m1']);
+    expect([...document.querySelectorAll('.meta-fila')].map(a => a.dataset.id)).toEqual(['m2']);
   });
 
   it('las cumplidas van después de las activas', () => {
@@ -938,40 +1087,146 @@ describe('renderListaMetas() - metas cumplidas', () => {
       metaBase({ id: 'm1', nombre: 'Viaje' }),
     ];
     renderListaMetas();
-    const ids = [...document.querySelectorAll('.meta-card')].map(a => a.dataset.id);
-    expect(ids).toEqual(['m1', 'm2']);
+    const ids = [...document.querySelectorAll('#lista-metas [data-id]')].map(el => el.dataset.id);
+    expect(ids.indexOf('m1')).toBeLessThan(ids.indexOf('m2'));
   });
 
-  it('la meta cumplida sigue siendo editable y eliminable, y ya no ofrece aportar', () => {
+  it('la fila entera abre el editar y el eliminar tiene su propio botón', () => {
     S.metas = [metaBase({ id: 'm2', nombre: 'Regalo', montoActual: 180_000, montoObjetivo: 180_000, completada: true })];
     renderListaMetas();
-    const tarjeta = document.querySelector('.meta-card--cumplida');
-    expect(tarjeta.querySelector('[data-action="editar-meta"]')).not.toBeNull();
-    expect(tarjeta.querySelector('[data-action="eliminar-meta"]')).not.toBeNull();
-    expect(tarjeta.querySelector('[data-action="abonar-meta"]')).toBeNull();
-    expect(tarjeta.querySelector('.meta-card__dato').textContent).toContain('Meta cumplida');
+    const fila = document.querySelector('.meta-fila');
+    expect(fila.querySelector('.meta-fila__btn').dataset.action).toBe('editar-meta');
+    expect(fila.querySelector('[data-action="eliminar-meta"]')).not.toBeNull();
+    expect(fila.querySelector('[data-action="abonar-meta"]')).toBeNull();
+    // Dos botones hermanos: un botón dentro de otro no es HTML válido.
+    expect(fila.querySelector('button button')).toBeNull();
   });
 
-  it('la meta cumplida conserva su forma: arco cerrado y cifra lograda', () => {
+  it('la fila muestra el monto logrado', () => {
     S.metas = [metaBase({ id: 'm2', nombre: 'Regalo', montoActual: 180_000, montoObjetivo: 180_000, completada: true })];
     renderListaMetas();
-    expect(document.querySelector('.meta-card__monto').textContent).toContain('180.000');
-    expect(document.querySelector('.progress-ring-wrap--complete')).not.toBeNull();
-    expect(document.querySelector('.progress-arc').getAttribute('aria-label')).toBe('Regalo: meta cumplida');
+    expect(document.querySelector('.meta-fila__monto').textContent).toContain('180.000');
+    expect(document.querySelector('.meta-fila__lb').textContent).toBe('Regalo');
   });
 
-  it('sin metas activas pero con cumplidas no aparece el estado vacío', () => {
+  it('el ojo de privacidad enmascara el monto de la fila', () => {
+    S.config = { ocultarSaldo: true };
+    S.metas  = [metaBase({ id: 'm2', nombre: 'Regalo', montoActual: 180_000, montoObjetivo: 180_000, completada: true })];
+    renderListaMetas();
+    expect(document.querySelector('.meta-fila__monto').textContent).not.toContain('180.000');
+  });
+
+  it('sin metas activas pero con cumplidas no aparece el estado vacío, ni la franja', () => {
     S.metas = [metaBase({ id: 'm2', montoActual: 180_000, montoObjetivo: 180_000, completada: true })];
     renderListaMetas();
     expect(document.querySelector('.empty-state')).toBeNull();
-    expect(document.querySelector('.meta-card--cumplida')).not.toBeNull();
+    expect(document.querySelector('.meta-fila')).not.toBeNull();
+    // "Reunido en tus 0 metas $0" sería una cabeza que no encabeza nada.
+    expect(document.querySelector('.hero-metas')).toBeNull();
   });
 
   it('sin ninguna meta sigue apareciendo el estado vacío', () => {
     S.metas = [];
     renderListaMetas();
     expect(document.querySelector('.empty-state')).not.toBeNull();
-    expect(document.querySelector('.metas-cumplidas__label')).toBeNull();
+    expect(document.querySelector('.meta-fila')).toBeNull();
+    expect(document.querySelector('.hero-metas')).toBeNull();
+  });
+});
+
+// ── renderListaMetas() - franja y orden (ficha 09, G1 y G2) ───────
+
+describe('renderListaMetas() - franja de la sección', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-metas" class="lista-metas"></div>';
+    S.config   = {};
+    S.ingresos = [];
+    S.metas    = [];
+  });
+
+  it('encabeza la lista con lo reunido, lo que falta y el alcance declarado', () => {
+    S.metas = [
+      metaBase({ id: 'm1', montoActual: 1_200_000, montoObjetivo: 3_500_000 }),
+      metaBase({ id: 'm2', montoActual: 3_780_000, montoObjetivo: 4_200_000 }),
+    ];
+    renderListaMetas();
+    expect(document.querySelector('.hero-metas__label').textContent).toContain('en tus 2 metas');
+    expect(document.querySelector('.hero-metas__valor').textContent).toContain('4.980.000');
+    expect(document.querySelector('.hero-metas__meta').textContent).toContain('2.720.000');
+  });
+
+  it('con una sola meta el alcance va en singular', () => {
+    S.metas = [metaBase({ id: 'm1' })];
+    renderListaMetas();
+    expect(document.querySelector('.hero-metas__label').textContent).toContain('en tu meta');
+  });
+
+  it('la franja va antes de la primera tarjeta', () => {
+    S.metas = [metaBase({ id: 'm1' })];
+    renderListaMetas();
+    const hijos = [...document.getElementById('lista-metas').children];
+    expect(hijos[0].classList.contains('hero-metas')).toBe(true);
+  });
+
+  it('el ojo enmascara las cifras de la franja pero no el conteo', () => {
+    S.config = { ocultarSaldo: true };
+    S.metas  = [metaBase({ id: 'm1', montoActual: 1_200_000, montoObjetivo: 3_500_000 })];
+    renderListaMetas();
+    expect(document.querySelector('.hero-metas__valor').textContent).not.toContain('1.200.000');
+    expect(document.querySelector('.hero-metas__label').textContent).toContain('en tu meta');
+  });
+
+  it('la barra lleva el porcentaje del objetivo agregado', () => {
+    S.metas = [metaBase({ id: 'm1', montoActual: 1_000_000, montoObjetivo: 4_000_000 })];
+    renderListaMetas();
+    expect(document.querySelector('.hero-metas__barra-fill').getAttribute('style')).toContain('25%');
+  });
+});
+
+describe('renderListaMetas() - orden de la lista', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-metas" class="lista-metas"></div>';
+    S.config   = {};
+    S.ingresos = [];
+    S.metas    = [];
+  });
+
+  it('la primera tarjeta es la meta que vence primero, no la primera creada', () => {
+    S.metas = [
+      metaBase({ id: 'viaje',  nombre: 'Viaje',  fechaLimite: '2026-12-15' }),
+      metaBase({ id: 'laptop', nombre: 'Laptop', fechaLimite: '2026-09-30' }),
+    ];
+    renderListaMetas();
+    expect([...document.querySelectorAll('.meta-card')].map(a => a.dataset.id))
+      .toEqual(['laptop', 'viaje']);
+  });
+
+  it('las metas sin plazo van al final, bajo su divisor', () => {
+    S.metas = [
+      metaBase({ id: 'curso',  nombre: 'Curso',  fechaLimite: null }),
+      metaBase({ id: 'laptop', nombre: 'Laptop', fechaLimite: '2026-09-30' }),
+    ];
+    renderListaMetas();
+    expect([...document.querySelectorAll('.meta-card')].map(a => a.dataset.id))
+      .toEqual(['laptop', 'curso']);
+    expect([...document.querySelectorAll('.grupo-eyebrow')].map(p => p.textContent))
+      .toEqual(['Con plazo', 'Sin plazo']);
+  });
+
+  it('con todas las metas fechadas no se pinta un divisor que no separa nada', () => {
+    S.metas = [
+      metaBase({ id: 'a', fechaLimite: '2026-09-30' }),
+      metaBase({ id: 'b', fechaLimite: '2026-12-15' }),
+    ];
+    renderListaMetas();
+    expect(document.querySelector('.grupo-eyebrow')).toBeNull();
+  });
+
+  it('con todas las metas sin plazo el divisor sí sale: dice por qué no hay orden', () => {
+    S.metas = [metaBase({ id: 'a', fechaLimite: null }), metaBase({ id: 'b', fechaLimite: null })];
+    renderListaMetas();
+    expect([...document.querySelectorAll('.grupo-eyebrow')].map(p => p.textContent))
+      .toEqual(['Sin plazo']);
   });
 });
 

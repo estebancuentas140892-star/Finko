@@ -120,6 +120,54 @@ describe('las cuatro bolsas comparten los bordes del cálculo (ARQ.1a)', () => {
   });
 });
 
+// ── ordenarBolsasPorFecha (ficha 09) ─────────────────────────────
+//
+// Cuarta pieza con más de un lector: la lista de Metas la consume envuelta en
+// `ordenarMetasPorPlazo()` y la hoja Registrar la importa directo, porque su
+// cabecera le prohíbe importar el dominio. El orden del picker y el de la
+// sección tienen que ser el mismo (eso se prueba en registrar.test.js); acá se
+// prueba la pieza.
+
+describe('ordenarBolsasPorFecha - el orden que Metas y Registrar comparten', () => {
+  it('ordena por la fecha que llega primero', () => {
+    const lista   = [{ id: 'c', fechaLimite: '2026-12-15' }, { id: 'a', fechaLimite: '2026-09-30' }, { id: 'b', fechaLimite: '2026-10-05' }];
+    expect(bolsas.ordenarBolsasPorFecha(lista, 'fechaLimite').conFecha.map(b => b.id))
+      .toEqual(['a', 'b', 'c']);
+  });
+
+  it('lee el campo que se le pide, no uno fijo', () => {
+    const lista   = [{ id: 'b', fechaObjetivo: '2026-11-01' }, { id: 'a', fechaObjetivo: '2026-03-01' }];
+    expect(bolsas.ordenarBolsasPorFecha(lista, 'fechaObjetivo').conFecha.map(b => b.id))
+      .toEqual(['a', 'b']);
+    // Con el campo equivocado nada tiene fecha: no adivina.
+    expect(bolsas.ordenarBolsasPorFecha(lista, 'fechaLimite').conFecha).toEqual([]);
+  });
+
+  it('una fecha ilegible cuenta como ausente', () => {
+    const lista   = [
+      { id: 'buena',  fechaLimite: '2026-09-30' },
+      { id: 'vacia',  fechaLimite: '' },
+      { id: 'basura', fechaLimite: '30/09/2026' },
+      { id: 'nula',   fechaLimite: null },
+    ];
+    const { conFecha, sinFecha } = bolsas.ordenarBolsasPorFecha(lista, 'fechaLimite');
+    expect(conFecha.map(b => b.id)).toEqual(['buena']);
+    expect(sinFecha.map(b => b.id)).toEqual(['vacia', 'basura', 'nula']);
+  });
+
+  it('el empate conserva el orden de llegada y no muta la lista', () => {
+    const lista   = [{ id: 'primera', fechaLimite: '2026-09-30' }, { id: 'segunda', fechaLimite: '2026-09-30' }];
+    expect(bolsas.ordenarBolsasPorFecha(lista, 'fechaLimite').conFecha.map(b => b.id))
+      .toEqual(['primera', 'segunda']);
+    expect(lista.map(b => b.id)).toEqual(['primera', 'segunda']);
+  });
+
+  it('sin lista devuelve los dos grupos vacíos', () => {
+    expect(bolsas.ordenarBolsasPorFecha(undefined, 'fechaLimite')).toEqual({ conFecha: [], sinFecha: [] });
+    expect(bolsas.ordenarBolsasPorFecha([], 'fechaLimite')).toEqual({ conFecha: [], sinFecha: [] });
+  });
+});
+
 describe('infra/portafolio.js - frontera con el dominio Inversión', () => {
   it('el dominio re-exporta las mismas funciones, no copias', () => {
     expect(inversiones.calcularTotalInvertido).toBe(portafolio.calcularTotalInvertido);

@@ -5390,15 +5390,18 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
     await formEdit.locator('button[type="submit"]').click();
     await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
 
-    // Meta completada. DIS.13 (FM4): ya no desaparece de la app. Baja al bloque
-    // "Metas cumplidas" y sigue siendo editable. DIS.14: conserva su forma de
-    // tarjeta (arco cerrado) y deja de ofrecer la acción de aportar.
-    await expect(page.locator('#lista-metas .metas-cumplidas__label')).toBeVisible();
-    const cumplida = page.locator('#lista-metas .meta-card--cumplida');
+    // Meta completada. DIS.13 (FM4): ya no desaparece de la app. Ficha 09
+    // (ADR 082 D3): tampoco conserva la tarjeta, que cobraba 290px por meta
+    // lograda. Baja a la fila compacta, bajo el divisor con contador, y
+    // conserva sus dos acciones: la fila entera abre el editar y el eliminar
+    // tiene su propio boton.
+    await expect(page.locator('#lista-metas .grupo-eyebrow', { hasText: 'Cumplidas' })).toBeVisible();
+    const cumplida = page.locator('#lista-metas .meta-fila');
     await expect(cumplida).toContainText('Fondo cámara');
     await expect(cumplida.locator('[data-action="abonar-meta"]')).toHaveCount(0);
-    await expect(cumplida.locator('[data-action="editar-meta"]')).toHaveCount(1);
-    await expect(page.locator('#lista-metas .meta-card:not(.meta-card--cumplida)')).toHaveCount(0);
+    await expect(cumplida.locator('.meta-fila__btn[data-action="editar-meta"]')).toHaveCount(1);
+    await expect(cumplida.locator('[data-action="eliminar-meta"]')).toHaveCount(1);
+    await expect(page.locator('#lista-metas .meta-card')).toHaveCount(0);
   });
 
   test('editar preserva la categoría e ícono elegidos', async ({ page }) => {
@@ -5464,6 +5467,70 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
     await page.waitForSelector('#modal-meta[data-open]');
     const formReabierto = page.locator('#modal-meta-body form');
     await expect(formReabierto.locator('.chip-cat:has(input[value="vehiculo-moto"]) input')).not.toBeChecked();
+  });
+});
+
+// ── SUITE 1g: Metas - cabeza, orden y un final que pesa poco (ficha 09) ──────
+// La tarjeta no se toca. Lo que cambia es la lista: antes las metas salían en
+// orden de creación y, como solo cabe una tarjeta y media a 390px, ese orden
+// era la respuesta al azar a "¿a cuál le aporto?".
+
+test.describe('Metas - la lista gana cabeza y orden (ADR 082)', () => {
+  const ESTADO_METAS_09 = {
+    version:   1,
+    perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+    onboarded: true,
+    cuentas:   [{ id: 'c-09', nombre: 'Bancolombia', tipo: 'ahorros', saldo: 5000000, activa: true }],
+    ingresos:  [],
+    gastos:    [],
+    compromisos: [],
+    metas: [
+      // Creada primero y vence de última: con el orden viejo encabezaba la lista.
+      { id: 'm-viaje',  nombre: 'Viaje a Cartagena', montoObjetivo: 3500000, montoActual: 1200000, fechaLimite: '2026-12-15', completada: false },
+      { id: 'm-laptop', nombre: 'Laptop nueva',      montoObjetivo: 4200000, montoActual: 3780000, fechaLimite: '2026-09-30', completada: false },
+      { id: 'm-curso',  nombre: 'Curso de inglés',   montoObjetivo: 1800000, montoActual: 0,       fechaLimite: null,         completada: false },
+      { id: 'm-moto',   nombre: 'Moto',              montoObjetivo: 1400000, montoActual: 1400000, fechaLimite: '2026-05-12', completada: true },
+    ],
+  };
+
+  test.beforeEach(async ({ page }) => {
+    await sembrar(page, ESTADO_METAS_09);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/#metas');
+    await expect(page.locator('#sec-metas.active')).toBeVisible();
+  });
+
+  test('la primera tarjeta es la meta que vence primero, y la franja dice cuánto suman', async ({ page }) => {
+    // D1: las tres cifras que la portada de Ahorro ya anunciaba y que la
+    // sección perdía al entrar. El alcance va declarado (R82).
+    const franja = page.locator('#lista-metas .hero-metas');
+    await expect(franja.locator('.hero-metas__label')).toContainText('en tus 3 metas');
+    await expect(franja.locator('.hero-metas__valor')).toHaveText('$4.980.000');
+    await expect(franja.locator('.hero-metas__meta')).toContainText('$4.520.000');
+
+    // D2: urgencia primero. "Laptop" vence en septiembre y "Viaje" en
+    // diciembre, aunque "Viaje" se creó antes.
+    const nombres = page.locator('#lista-metas .meta-card__nombre');
+    await expect(nombres).toHaveText(['Laptop nueva', 'Viaje a Cartagena', 'Curso de inglés']);
+
+    // La meta sin plazo va al final, bajo su divisor.
+    await expect(page.locator('#lista-metas .grupo-eyebrow')).toHaveText(['Con plazo', 'Sin plazo', 'Cumplidas']);
+  });
+
+  test('la meta cumplida pesa una fila, no una tarjeta, y su fila abre el editar', async ({ page }) => {
+    // D3: 52px en vez de 290. La tarjeta desaparece; la meta, no.
+    const fila = page.locator('#lista-metas .meta-fila');
+    await expect(fila).toHaveCount(1);
+    await expect(fila).toContainText('Moto');
+    await expect(fila.locator('.meta-fila__monto')).toHaveText('$1.400.000');
+    await expect(page.locator('#lista-metas .meta-card--cumplida')).toHaveCount(0);
+
+    const alto = await fila.evaluate(el => Math.round(el.getBoundingClientRect().height));
+    expect(alto).toBeLessThan(90);
+
+    await fila.locator('.meta-fila__btn').click();
+    await page.waitForSelector('#modal-meta[data-open]');
+    await expect(page.locator('#modal-meta-body form #meta-nombre')).toHaveValue('Moto');
   });
 });
 
