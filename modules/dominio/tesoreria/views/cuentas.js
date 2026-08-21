@@ -214,6 +214,15 @@ function _renderCuentaItem(cuenta, oculto) {
       <div class="cuenta-card__bottom">
         <div class="cuenta-card__chips">${chipsHtml}</div>
         <div class="cuenta-card__actions">
+          <!-- Ficha 15 (M3): de un saldo a los movimientos que lo explican. Es
+               la pregunta natural despues de mirar una cuenta, y hasta ahora
+               costaba dos toques mas escribir el nombre en el buscador. Mismo
+               patron de salida prefiltrada que la tarjeta de credito usa hacia
+               "Por pagar" (ADR 080 D5). -->
+          <button class="btn btn-ghost btn-sm"
+                  data-action="cuenta-ver-movimientos"
+                  data-id="${_esc(cuenta.id)}"
+                  aria-label="Ver los movimientos de ${nombre}">Ver sus movimientos</button>
           <button class="btn btn-ghost btn-icon btn-sm"
                   data-action="editar-cuenta"
                   data-id="${_esc(cuenta.id)}"

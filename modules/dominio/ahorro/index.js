@@ -394,7 +394,11 @@ async function _eliminarAporte(el) {
 
   const ok = await confirmar({
     titulo:         'Eliminar aporte',
-    mensaje:        `¿Quieres eliminar el aporte de ${aporte.monto.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })} del ${aporte.fecha}? Esta acción no se puede deshacer.`,
+    // Ficha 15 (M4): decir qué se lleva el borrado. El aporte no movió ninguna
+    // cuenta (su dinero ya estaba dentro de `cuentas`, es la razón de que el
+    // fondo no cuente como activo aparte), así que el único efecto es el total
+    // del fondo, y quien borra desde el ledger de Movimientos no lo está viendo.
+    mensaje:        `¿Quieres eliminar el aporte de ${aporte.monto.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })} del ${aporte.fecha}? Borrarlo baja ese monto del total del fondo, sin tocar el saldo de ninguna cuenta, y esta acción no se puede deshacer.`,
     confirmarTexto: 'Eliminar',
     peligroso:      true,
   });

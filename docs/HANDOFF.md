@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-21. Última tarea cerrada: MOV.1 ficha 14, Me deben ordena por urgencia y la dirección se lee sin color.
+> Revisado: 2026-08-21. Última tarea cerrada: MOV.1 ficha 15, Movimientos gana su quinta fuente y dos puertas.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -25,6 +25,9 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**MOV.1 ficha 15 - Movimientos: la quinta fuente y cuatro puertas, 2026-08-21**
+Cuatro cambios ([ADR 089](DECISIONS/089-movimientos-la-quinta-fuente-y-cuatro-puertas.md)). La seccion se confirma en "Consultar" con evidencia: es el unico buscador de la app y responde cuatro preguntas que ninguna otra vista responde. El ledger pasa de **4 a 5 de las 7 fuentes** que mueven dinero: los abonos recibidos tenian fecha y cuenta desde el v34 y no salian en ninguna vista cronologica. El rango de fechas se pliega (256px a 160px), Gastos y Mis cuentas ganan salida prefiltrada, y el confirm del borrado nombra la reversa. R90 confirmada y acotada a tres estados. Avance MOV.1: **15 de 25**. SW v584.
+
 **MOV.1 ficha 14 - Me deben ordena por urgencia y la direccion se lee sin color, 2026-08-21**
 Tres cambios, cero tokens nuevos ([ADR 088](DECISIONS/088-me-deben-urgencia-de-cobro-y-direccion-con-forma.md)). La lista deja de ordenarse por antiguedad del desembolso y pasa a cuatro grupos de urgencia de cobro, con el clasificador que ya existia y alimentaba solo al chip. El prestamo sin cuenta vinculada declara en ambar que es solo seguimiento: no suma al patrimonio. Y en las dos tarjetas de obligaciones la direccion del dinero se lee con **forma**, flecha y signo, que sobreviven al gris. Candidata R90 con cautela: las fichas 15 y 16 deciden su alcance. Avance MOV.1: **14 de 25**. SW v583.
 
@@ -33,9 +36,6 @@ El ADR 070 D2 retiro tres modulos de Inicio en escritorio y escribio "los tres s
 
 **MOV.1 ficha 13 - La etapa de Inversion se nombra, 2026-08-21**
 Decimotercera de las 25 entregas, con [ADR 086](DECISIONS/086-inversion-la-etapa-se-nombra-y-el-consejo-es-el-boton.md). La cabecera decia "Momento N de 3" y ese 3 era inalcanzable: el numero sale de `etapaDePortafolio()`, que devuelve 1 o 2 y nunca mas. Ahora nombra la etapa y el chip dice de que esta hecha. Y el vacio hereda la jerarquia del momento 1: sin fondo, el primario lleva al Fondo, porque la app era mas prudente despues de invertir que antes. Con esto cierran la casa Ahorro y sus cuatro hijas. SW v581.
-
-**MOV.1 ficha 12 - La lente de Limites contiene limites, 2026-08-21**
-Duodecima de las 25 entregas, con [ADR 085](DECISIONS/085-limites-la-lente-contiene-limites.md), que **acota el ADR 077 D1 y D4**. Dos de las tres tarjetas eran vistas de solo lectura de "Por pagar" y del bloque Ahorro: el filtro de Necesidades es la definicion literal de la lente hermana. El argumento que cierra G2 es el trato asimetrico del ADR 019: de las tres tarjetas, exactamente una se comportaba como un limite. Los topes pasan a ser la lente y el plan a una franja de tres lineas con salida (192px contra ~360). Y dejan de caerse cuando no hay ingreso registrado. SW v579.
 
 **Inicio en movil: el resumen semanal empujaba todas las tarjetas fuera del viewport, 2026-08-21**
 Reportado dos veces como "volvimos a una version antigua". No era la cache: `.resumen-semana__header` es un flex sin `flex-wrap` con un chip `nowrap` que no encoge, asi que con "Sin semana previa para comparar" pedia 415px de min-content. El bento movil es `1fr`, y un track `1fr` no baja del min-content de su item mas ancho: **las cinco celdas** se iban a 415 en un viewport de 391. De 75 elementos desbordados a 0. Dos guardias E2E nuevos. SW v580.

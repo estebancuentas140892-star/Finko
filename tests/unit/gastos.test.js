@@ -1668,6 +1668,37 @@ describe('renderListaGastos() - lista agrupada por día (GAS.1b)', () => {
 
 // ── Insight de gastos hormiga + empty states v2 (GAS.1c, ADR 039 D4/D7) ──
 
+describe('renderListaGastos() - salida al historial completo (ficha 15, M3)', () => {
+  const hoyIso = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <div id="panel-filtros-gastos"></div>
+      <div id="lista-gastos"></div>`;
+    S.gastos = [];
+    S.config.ocultarSaldo = false;
+    setFiltroCategoria(null);
+  });
+
+  it('cierra la lista con el boton, no lo pone en el encabezado', () => {
+    S.gastos = [gastoBase({ id: 'g1', fecha: hoyIso() })];
+    renderListaGastos();
+    const el = document.getElementById('lista-gastos');
+    const salida = el.querySelector('[data-action="gastos-ver-historial"]');
+    expect(salida).not.toBeNull();
+    expect(salida.textContent.trim()).toBe('Ver historial completo');
+    expect(el.lastElementChild.contains(salida)).toBe(true);
+  });
+
+  it('no aparece en el estado vacio: no hay mes que se haya quedado corto', () => {
+    renderListaGastos();
+    expect(document.querySelector('[data-action="gastos-ver-historial"]')).toBeNull();
+  });
+});
+
 describe('renderListaGastos() - insight de gastos hormiga (GAS.1c)', () => {
   const hoyIso = () => {
     const d = new Date();

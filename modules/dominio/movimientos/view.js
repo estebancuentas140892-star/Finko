@@ -25,9 +25,9 @@ import { movimientosCompletos, descripcionMovimiento, filtrarMovimientos } from 
  */
 const _extraerFuentes = (fuentes, limite) => [
   fuentes?.gastos, fuentes?.ingresosPuntuales, fuentes?.aportes, fuentes?.transferencias,
-  fuentes?.categoriasPersonalizadas, limite,
+  fuentes?.personales, fuentes?.categoriasPersonalizadas, limite,
 ];
-const _SECCIONES_MOVIMIENTOS = ['gastos', 'ingresosPuntuales', 'ahorro', 'transferencias', 'categoriasPersonalizadas'];
+const _SECCIONES_MOVIMIENTOS = ['gastos', 'ingresosPuntuales', 'ahorro', 'transferencias', 'personales', 'categoriasPersonalizadas'];
 
 const _movimientosCompletosMemo = memoizar(movimientosCompletos, _SECCIONES_MOVIMIENTOS, _extraerFuentes);
 
@@ -41,7 +41,7 @@ const _movimientosCompletosMemo = memoizar(movimientosCompletos, _SECCIONES_MOVI
 const TAMANO_LOTE = 50;
 
 /** Etiqueta legible por tipo de movimiento, usada en el subtítulo de la vista completa. */
-const _TIPO_LABEL = { gasto: 'Gasto', ingreso: 'Ingreso', aporte: 'Aporte', transferencia: 'Transferencia' };
+const _TIPO_LABEL = { gasto: 'Gasto', ingreso: 'Ingreso', aporte: 'Aporte', transferencia: 'Transferencia', abono: 'Abono' };
 
 // ── FILTROS DE LA VISTA COMPLETA (MOV.2) ─────────────────────────
 
@@ -58,12 +58,14 @@ const _DOMINIO_LABEL = {
   ingresos:    'Ingresos',
   ahorro:      'Ahorro',
   tesoreria:   'Transferencias',
+  personales:  'Me deben',
 };
 
 /** Estado de los filtros de la vista completa. Vive acá (UI), no en `S`. */
 let _filtroTexto      = '';
 let _filtroDominio     = null;
 let _filtroCategoria   = null;
+let _filtroCuenta      = null;
 let _filtroFechaDesde  = '';
 let _filtroFechaHasta  = '';
 
@@ -85,17 +87,28 @@ export function setFiltroDominio(dominio) { _filtroDominio = dominio || null; }
  */
 export function setFiltroCategoria(categoria) { _filtroCategoria = categoria || null; }
 
+/**
+ * Cuenta con la que se llegó desde Mis cuentas (ficha 15, M3). Como el filtro
+ * de categoría, no es una opción que la pantalla ofrezca: es el filtro que
+ * trajo puesto quien entró. Se guarda el id y el nombre se resuelve en vivo,
+ * para que renombrar la cuenta no desactualice la pastilla.
+ *
+ * @param {string|null} cuentaId
+ */
+export function setFiltroCuenta(cuentaId) { _filtroCuenta = cuentaId || null; }
+
 /** @param {string} fecha 'YYYY-MM-DD', o '' para quitar el piso. */
 export function setFiltroFechaDesde(fecha) { _filtroFechaDesde = fecha || ''; }
 
 /** @param {string} fecha 'YYYY-MM-DD', o '' para quitar el techo. */
 export function setFiltroFechaHasta(fecha) { _filtroFechaHasta = fecha || ''; }
 
-/** Vuelve los 5 filtros a "sin filtro". Llamado por "Limpiar filtros". */
+/** Vuelve los 6 filtros a "sin filtro". Llamado por "Limpiar filtros". */
 export function limpiarFiltrosMovimientos() {
   _filtroTexto = '';
   _filtroDominio = null;
   _filtroCategoria = null;
+  _filtroCuenta = null;
   _filtroFechaDesde = '';
   _filtroFechaHasta = '';
 }
@@ -127,6 +140,7 @@ function _todosLosMovimientos() {
     ingresosPuntuales:        S.ingresosPuntuales,
     aportes:                  S.ahorro?.aportes,
     transferencias:           S.transferencias,
+    personales:               S.personales,
     categoriasPersonalizadas: S.categoriasPersonalizadas,
   });
 }
@@ -144,7 +158,7 @@ export function precalentarMovimientos() {
  * Renderiza la barra de filtros de la vista completa (MOV.2) en
  * `#movimientos-filtros`: búsqueda por texto, chips por dominio (reusa el
  * lenguaje `.chip`/`.filtros-bar` de Gastos, ningún componente nuevo) y rango
- * de fechas. No-op si el contenedor no existe. Vacío (sin filtros) si no hay
+ * de fechas, este último plegado tras un `<details>` (ficha 15, M2). No-op si el contenedor no existe. Vacío (sin filtros) si no hay
  * ningún movimiento: no tiene sentido filtrar una lista que no existe.
  *
  * Auto-resetea el filtro de dominio si su valor ya no aparece en los datos
@@ -169,6 +183,12 @@ export function renderFiltrosMovimientos() {
   }
 
   const todosActivo = _filtroDominio === null;
+  // Ficha 15 (M2): el rango de fechas es el control más caro en altura (62px de
+  // los 224 que la barra le comía a la lista) y el menos frecuente de los tres:
+  // se usa para una consulta puntual, no en cada visita. Plegado por defecto, y
+  // abierto solo si ya trae fechas puestas, que es cuando esconderlo ocultaría
+  // por qué la lista está recortada.
+  const hayRango = Boolean(_filtroFechaDesde || _filtroFechaHasta);
   const chipsDominio = dominios.map(dom => {
     const activo = _filtroDominio === dom;
     return `
@@ -192,13 +212,19 @@ export function renderFiltrosMovimientos() {
       </button>
       ${chipsDominio}
     </div>
-    <div class="movimientos-filtros__fechas">
-      <label class="label" for="movimientos-desde">Desde</label>
-      <input type="date" id="movimientos-desde" class="input" value="${_esc(_filtroFechaDesde)}" />
-      <label class="label" for="movimientos-hasta">Hasta</label>
-      <input type="date" id="movimientos-hasta" class="input" value="${_esc(_filtroFechaHasta)}" />
-      <span id="movimientos-limpiar-slot">${_limpiarFiltrosHtml()}</span>
-    </div>`;
+    <span id="movimientos-limpiar-slot">${_limpiarFiltrosHtml()}</span>
+    <details class="movimientos-filtros__rango"${hayRango ? ' open' : ''}>
+      <summary>
+        Filtrar por fechas
+        <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+      </summary>
+      <div class="movimientos-filtros__fechas">
+        <label class="label" for="movimientos-desde">Desde</label>
+        <input type="date" id="movimientos-desde" class="input" value="${_esc(_filtroFechaDesde)}" />
+        <label class="label" for="movimientos-hasta">Hasta</label>
+        <input type="date" id="movimientos-hasta" class="input" value="${_esc(_filtroFechaHasta)}" />
+      </div>
+    </details>`;
 }
 
 /**
@@ -207,28 +233,44 @@ export function renderFiltrosMovimientos() {
  * sin recrear el resto de la barra.
  */
 function _limpiarFiltrosHtml() {
-  const hayFiltroActivo = Boolean(_filtroTexto || _filtroDominio || _filtroCategoria || _filtroFechaDesde || _filtroFechaHasta);
+  const hayFiltroActivo = Boolean(_filtroTexto || _filtroDominio || _filtroCategoria || _filtroCuenta || _filtroFechaDesde || _filtroFechaHasta);
   return hayFiltroActivo
     ? `<button type="button" class="btn btn-ghost btn-sm" data-action="movimientos-limpiar-filtros">Limpiar filtros</button>`
     : '';
 }
 
 /**
- * La pastilla de la categoría con la que se llegó (G5). Se puede quitar, que es
- * lo que la distingue de los chips de dominio: no es una opción que la pantalla
- * ofrezca, es el filtro que trajo puesto quien entró desde un tope.
+ * Las pastillas del contexto con el que se llegó: la categoría desde un tope de
+ * Límites (G5) y la cuenta desde Mis cuentas (ficha 15, M3). Se pueden quitar,
+ * que es lo que las distingue de los chips de dominio: no son opciones que la
+ * pantalla ofrezca, son los filtros que trajo puestos quien entró.
  *
- * @returns {string} HTML. `''` si no hay categoría puesta.
+ * @returns {string} HTML. `''` si no hay ningún contexto puesto.
  */
 function _categoriaHtml() {
-  if (!_filtroCategoria) return '';
-  return `
-    <div class="movimientos-filtros__contexto">
+  const pastillas = [];
+  if (_filtroCategoria) {
+    pastillas.push(`
       <button type="button" class="chip chip--active"
               data-action="movimientos-quitar-categoria"
               aria-label="Quitar el filtro de ${_esc(_filtroCategoria)}">
         ${_esc(_filtroCategoria)} <span aria-hidden="true">&times;</span>
-      </button>
+      </button>`);
+  }
+  // La cuenta se nombra con su nombre VIGENTE, no con el que tenía al llegar:
+  // mismo criterio que la descripción de una transferencia (MC.17c).
+  if (_filtroCuenta) {
+    const nombre = _nombreCuenta(_filtroCuenta) ?? 'Cuenta eliminada';
+    pastillas.push(`
+      <button type="button" class="chip chip--active"
+              data-action="movimientos-quitar-cuenta"
+              aria-label="Quitar el filtro de ${_esc(nombre)}">
+        ${_esc(nombre)} <span aria-hidden="true">&times;</span>
+      </button>`);
+  }
+  if (pastillas.length === 0) return '';
+  return `
+    <div class="movimientos-filtros__contexto">${pastillas.join('')}
     </div>`;
 }
 
@@ -361,7 +403,12 @@ function _renderMovimientoItem(m) {
   const gmfNota       = m.tipo === 'transferencia' && m.costoGMF > 0
     ? `incluye ${f(m.costoGMF)} de 4x1000`
     : null;
-  const subtitulo     = [_TIPO_LABEL[m.tipo] ?? m.tipo, fechaLegible(m.fecha), cuenta, gmfNota]
+  // El abono `agrupado` de la migración v34 no tiene fecha exacta: resume lo
+  // cobrado antes de que existiera el historial. Dice eso en vez de imprimir la
+  // fecha aproximada como si fuera la del abono, misma copia que usa el
+  // historial por préstamo en Me deben.
+  const cuando        = m.agrupado ? 'Antes de este historial' : fechaLegible(m.fecha);
+  const subtitulo     = [_TIPO_LABEL[m.tipo] ?? m.tipo, cuando, cuenta, gmfNota]
     .filter(Boolean).map(_esc).join(' · ');
 
   return `
@@ -538,6 +585,7 @@ export function renderMovimientosCompletos() {
     texto:     _filtroTexto,
     dominio:   _filtroDominio,
     categoria: _filtroCategoria,
+    cuentaId:  _filtroCuenta,
     desde:     _filtroFechaDesde,
     hasta:     _filtroFechaHasta,
     cuentas:   S.cuentas,

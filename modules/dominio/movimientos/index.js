@@ -12,13 +12,13 @@ import { registrarAccion } from '../../ui/actions.js';
 import { renderSmart, registrarRender, programarRender } from '../../infra/render.js';
 import {
   renderMovimientosCompletos, cargarMasMovimientos,
-  renderFiltrosMovimientos, setFiltroTexto, setFiltroDominio, setFiltroCategoria,
+  renderFiltrosMovimientos, setFiltroTexto, setFiltroDominio, setFiltroCategoria, setFiltroCuenta,
   setFiltroFechaDesde, setFiltroFechaHasta, limpiarFiltrosMovimientos,
   actualizarBotonLimpiarFiltros,
 } from './view.js';
 
 /** Secciones cuyos cambios pueden alterar el historial de movimientos. */
-const _SECCIONES_FUENTE = ['gastos', 'ingresosPuntuales', 'ahorro', 'transferencias'];
+const _SECCIONES_FUENTE = ['gastos', 'ingresosPuntuales', 'ahorro', 'transferencias', 'personales'];
 
 /**
  * Cablea los inputs de texto y fecha de la barra de filtros (MOV.2) recién
@@ -72,7 +72,7 @@ function _filtrarDominio(el) {
   _wireFiltrosMovimientos();
 }
 
-/** "Limpiar filtros" (MOV.2): vuelve los 4 filtros a su estado inicial. */
+/** "Limpiar filtros" (MOV.2): vuelve los 6 filtros a su estado inicial. */
 function _limpiarFiltrosMovimientos() {
   limpiarFiltrosMovimientos();
   renderFiltrosMovimientos();
@@ -91,21 +91,38 @@ function _quitarCategoria() {
 }
 
 /**
+ * Quita la pastilla de la cuenta con la que se llegó (ficha 15, M3), con el
+ * mismo criterio que la de categoría: el resto de los filtros se queda.
+ */
+function _quitarCuenta() {
+  setFiltroCuenta(null);
+  _renderVistaCompleta();
+}
+
+/**
  * Llegada prefiltrada desde un número del bloque Gastos (G5, ficha 07,
  * ADR 069 D8). Hoy la usa cada tope de la lente "Límites".
  *
  * El emisor no puede filtrar acá porque los filtros son estado de este módulo y
- * ningún dominio importa a otro (ADN 10), así que manda categoría y rango y
- * esta pantalla los pone. Se limpia primero para que dos llegadas seguidas no
- * se acumulen, y el `setTimeout` es el mismo apaño que usan las otras llegadas
+ * ningún dominio importa a otro (ADN 10), así que manda qué quiere ver y esta
+ * pantalla lo pone. Se limpia primero para que dos llegadas seguidas no se
+ * acumulen, y el `setTimeout` es el mismo apaño que usan las otras llegadas
  * del proyecto: si venimos de otra sección, el contenedor no existe hasta
  * después del re-render del `hashchange`.
  *
- * @param {{ categoria?: string|null, desde?: string, hasta?: string }} payload
+ * La ficha 15 (M3) le suma dos entradas: la lente "Día a día" del bloque Gastos
+ * manda `dominio`, y una cuenta de Mis cuentas manda `cuentaId`. El emisor
+ * nombra lo que conoce (su dominio, su cuenta) y no la taxonomía de esta
+ * pantalla, mismo reparto que el ADR 081 fijó para las llegadas a "Por pagar".
+ *
+ * @param {{ categoria?: string|null, dominio?: string|null, cuentaId?: string|null,
+ *           desde?: string, hasta?: string }} payload
  */
-function _verPrefiltrado({ categoria = null, desde = '', hasta = '' } = {}) {
+function _verPrefiltrado({ categoria = null, dominio = null, cuentaId = null, desde = '', hasta = '' } = {}) {
   limpiarFiltrosMovimientos();
   setFiltroCategoria(categoria);
+  setFiltroDominio(dominio);
+  setFiltroCuenta(cuentaId);
   setFiltroFechaDesde(desde);
   setFiltroFechaHasta(hasta);
 
@@ -120,12 +137,14 @@ export function initMovimientos() {
   registrarAccion('movimientos-filtrar-dominio', _filtrarDominio);
   registrarAccion('movimientos-limpiar-filtros', _limpiarFiltrosMovimientos);
   registrarAccion('movimientos-quitar-categoria', _quitarCategoria);
+  registrarAccion('movimientos-quitar-cuenta', _quitarCuenta);
 
-  // G5: de un número a los movimientos que lo forman, con el filtro puesto.
+  // G5 y ficha 15 (M3): de un número, de una lente o de una cuenta a los
+  // movimientos que la explican, con el filtro puesto.
   EventBus.on('movimientos:ver', _verPrefiltrado);
 
   EventBus.on('state:change', ({ section }) => {
-    // Agendado, no directo (PERF.6): las 4 secciones fuente se emiten varias
+    // Agendado, no directo (PERF.6): las 5 secciones fuente se emiten varias
     // veces dentro de una misma acción (distribuir el ingreso registra un gasto
     // por necesidad más el aporte a ahorro), y cada pasada deriva y ordena todo
     // el historial. `_renderTodo` tiene identidad estable: la cola lo colapsa

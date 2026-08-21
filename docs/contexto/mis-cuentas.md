@@ -61,6 +61,8 @@
 
 **Riesgos**:
 
+
+- **Cada tarjeta de cuenta sale a su historial** (2026-08-21, ficha 15, [ADR 089](../DECISIONS/089-movimientos-la-quinta-fuente-y-cuatro-puertas.md) D3). `cuenta-ver-movimientos` emite `movimientos:ver` con el `cuentaId`, mismo reparto que `tc-ver-en-por-pagar`: el emisor nombra su cuenta y la pantalla destino pone el filtro. En Movimientos, **una transferencia cuenta para sus dos cuentas** y el aporte al fondo para ninguna.
 - **MC.14, ningún campo nuevo requiere bump de `SCHEMA_VERSION`**: `datosTransferencia` es opcional y `undefined`-safe en registros existentes (mismo precedente que `cuotaManejo`/`aplica4x1000`, que tampoco tienen entrada en `_migrate()`). Si en el futuro alguno de estos campos necesitara un valor por defecto distinto de "ausente", ahí sí hace falta migración con backfill.
 - **`datosTransferencia` se oculta completo para cuentas tipo Efectivo** (`_toggleCamposPorClase()`, MC.14): el efectivo no tiene número de cuenta ni llave a la que consignar. Si el usuario cambia el banco/billetera de una cuenta que YA tenía datos de transferencia guardados hacia una entidad de clase `efectivo`, el toggle se desmarca y el fieldset se oculta en el form, pero los datos anteriores no se borran del objeto guardado hasta que el usuario guarde el formulario (mismo comportamiento que `cuotaManejo` ya tenía, no es una regresión nueva).
 - **`parseDatosTransferencia()` devuelve `null` si el toggle está activo pero todos los campos quedan vacíos tras el `trim()`**: evita guardar un objeto de referencia inútil (`{}` o con solo espacios). El toggle en sí no se persiste, solo su efecto (el objeto o `null`).

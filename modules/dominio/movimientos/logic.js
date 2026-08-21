@@ -153,6 +153,52 @@ export function movimientosDesdeTransferencias(transferencias) {
 }
 
 /**
+ * Normaliza los abonos recibidos de `S.personales` a Movimiento (ficha 15, M1).
+ *
+ * Quinta fuente del ledger, y la única que no necesitó cambiar el modelo: cada
+ * abono guarda fecha, monto, desglose y cuenta desde el schema v34 (PE.6b), que
+ * es exactamente la forma que este historial pide. Antes de esto, un abono
+ * recibido no aparecía en ninguna vista cronológica de la app.
+ *
+ * Recibe los préstamos y no los abonos porque el nombre de la persona vive en
+ * el padre, y es lo que hace legible la fila ("Abono de Camila").
+ *
+ * El id es sintético (`prestamo.id` + índice): un abono no tiene id propio, y
+ * la fila no ofrece acciones. Cobrar y corregir un abono se hace en Me deben,
+ * donde está el préstamo entero con su desglose; el ledger lo enumera.
+ *
+ * El abono `agrupado` (el que dejó la migración v33 a v34) entra igual, con su
+ * marca: resume lo cobrado antes de que existiera el historial y su fecha es
+ * aproximada. La vista lo rotula distinto en vez de hacer pasar esa fecha por
+ * exacta, mismo criterio que el historial de Me deben.
+ *
+ * @param {import('../../core/state.js').Personal[]} personales
+ * @returns {Movimiento[]}
+ */
+export function movimientosDesdeAbonos(personales) {
+  if (!Array.isArray(personales)) return [];
+  const lista = [];
+  for (const p of personales) {
+    if (!p || !Array.isArray(p.abonos)) continue;
+    p.abonos.forEach((a, i) => {
+      lista.push({
+        id:          `${p.id}:abono-${i}`,
+        fecha:       a?.fecha,
+        tipo:        'abono',
+        descripcion: `Abono de ${p.persona || 'un préstamo'}`,
+        monto:       a?.monto,
+        direccion:   'ingreso',
+        icono:       'i-personales',
+        cuentaId:    a?.cuentaId ?? null,
+        dominio:     'personales',
+        agrupado:    a?.agrupado === true,
+      });
+    });
+  }
+  return lista;
+}
+
+/**
  * Descripción visible de un movimiento. Una transferencia (MC.17c) no trae
  * descripción propia: se arma con los nombres VIGENTES de sus cuentas
  * ("Origen → Destino"), resueltos en vivo (si el usuario renombra una cuenta
@@ -194,13 +240,22 @@ export function descripcionMovimiento(m, cuentas = []) {
  * }} [filtros]
  * @returns {Movimiento[]}
  */
-export function filtrarMovimientos(movimientos, { texto, dominio, categoria, desde, hasta, cuentas } = {}) {
+export function filtrarMovimientos(movimientos, { texto, dominio, categoria, cuentaId, desde, hasta, cuentas } = {}) {
   const lista = Array.isArray(movimientos) ? movimientos : [];
   const q = texto?.trim().toLowerCase() || null;
+
+  // Una transferencia toca DOS cuentas y las dos cuentan como suyas: filtrar
+  // por la cuenta origen y perder el traslado que entró ahí dejaría el saldo
+  // sin explicación. El aporte al fondo no tiene cuenta (su dinero ya está
+  // dentro de `cuentas`), así que queda fuera de cualquier filtro por cuenta.
+  const esDeLaCuenta = m => m.cuentaId === cuentaId
+    || m.cuentaOrigenId === cuentaId
+    || m.cuentaDestinoId === cuentaId;
 
   return lista.filter(m => {
     if (dominio && m.dominio !== dominio) return false;
     if (categoria && m.categoria !== categoria) return false;
+    if (cuentaId && !esDeLaCuenta(m)) return false;
     if (desde && m.fecha < desde) return false;
     if (hasta && m.fecha > hasta) return false;
     if (q && !descripcionMovimiento(m, cuentas).toLowerCase().includes(q)) return false;
@@ -209,21 +264,22 @@ export function filtrarMovimientos(movimientos, { texto, dominio, categoria, des
 }
 
 /**
- * Combina y ordena (más reciente primero) los movimientos de las 4 fuentes.
+ * Combina y ordena (más reciente primero) los movimientos de las 5 fuentes.
  * A igualdad de fecha, el orden entre movimientos de tipos distintos no está
  * garantizado (no hay hora de creación en el dato de origen); dentro de un
  * mismo tipo se conserva el orden de inserción de su colección.
  *
- * @param {{ gastos?: unknown, ingresosPuntuales?: unknown, aportes?: unknown, transferencias?: unknown, categoriasPersonalizadas?: unknown }} fuentes
+ * @param {{ gastos?: unknown, ingresosPuntuales?: unknown, aportes?: unknown, transferencias?: unknown, personales?: unknown, categoriasPersonalizadas?: unknown }} fuentes
  * @param {number} [limite=5]
  * @returns {Movimiento[]}
  */
-export function movimientosRecientes({ gastos, ingresosPuntuales, aportes, transferencias, categoriasPersonalizadas } = {}, limite = 5) {
+export function movimientosRecientes({ gastos, ingresosPuntuales, aportes, transferencias, personales, categoriasPersonalizadas } = {}, limite = 5) {
   const todos = [
     ...movimientosDesdeGastos(gastos, categoriasPersonalizadas),
     ...movimientosDesdeIngresosPuntuales(ingresosPuntuales),
     ...movimientosDesdeAportes(aportes),
     ...movimientosDesdeTransferencias(transferencias),
+    ...movimientosDesdeAbonos(personales),
   ];
   return todos
     .filter(m => typeof m.fecha === 'string' && m.fecha)
@@ -232,10 +288,10 @@ export function movimientosRecientes({ gastos, ingresosPuntuales, aportes, trans
 }
 
 /**
- * Historial completo (TX.8b): las 4 fuentes combinadas y ordenadas por fecha
+ * Historial completo (TX.8b): las 5 fuentes combinadas y ordenadas por fecha
  * descendente, sin límite. Vista completa de Movimientos en ruta propia.
  *
- * @param {{ gastos?: unknown, ingresosPuntuales?: unknown, aportes?: unknown, transferencias?: unknown }} fuentes
+ * @param {{ gastos?: unknown, ingresosPuntuales?: unknown, aportes?: unknown, transferencias?: unknown, personales?: unknown }} fuentes
  * @returns {Movimiento[]}
  */
 export function movimientosCompletos(fuentes = {}) {

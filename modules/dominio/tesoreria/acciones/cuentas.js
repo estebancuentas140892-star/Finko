@@ -560,12 +560,28 @@ function _verEnPorPagar(el) {
   EventBus.emit('porPagar:ver-compromiso', { id });
 }
 
+/**
+ * Salida de una cuenta hacia el historial completo (ficha 15, M3).
+ *
+ * Mismo reparto que `_verEnPorPagar`: el emisor nombra lo que conoce (esta
+ * cuenta) y la pantalla destino pone su filtro, porque los filtros de
+ * Movimientos son estado de ese modulo y ningun dominio importa a otro (ADN 10).
+ *
+ * @param {HTMLElement} el Elemento con `data-id` = id de la cuenta.
+ */
+function _verMovimientosDeCuenta(el) {
+  const id = el?.dataset?.id;
+  if (!id) return;
+  EventBus.emit('movimientos:ver', { cuentaId: id });
+}
+
 // ── REGISTRO ─────────────────────────────────────────────────────
 
 /** Registra los data-action del subsistema de cuentas. */
 export function initAccionesCuentas() {
   registrarAccion('nueva-cuenta', _nuevaCuenta);
   registrarAccion('tc-ver-en-por-pagar', _verEnPorPagar);
+  registrarAccion('cuenta-ver-movimientos', _verMovimientosDeCuenta);
   registrarAccion('editar-cuenta', _editarCuenta);
   registrarAccion('eliminar-cuenta', _eliminarCuenta);
 

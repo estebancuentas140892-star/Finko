@@ -440,6 +440,36 @@ function _filtrarCategoria(el) {
 }
 
 /** @param {HTMLElement} el */
+/**
+ * Frase que dice qué se revierte al borrar un gasto (ficha 15, M4). Se arma con
+ * los efectos REALES que la función va a aplicar, no con una plantilla: un gasto
+ * sin cuenta y sin deuda no promete devolver nada.
+ *
+ * @param {import('../../core/state.js').Gasto} gasto
+ * @param {Record<string, number>} deltasDeuda salida de `deltasPorEdicionEnDeuda`.
+ * @returns {string} Frase terminada, lista para el mensaje del confirm.
+ */
+function _efectosDeBorrar(gasto, deltasDeuda) {
+  const efectos = [];
+
+  const cuenta = gasto.cuentaId ? S.cuentas?.find(c => c.id === gasto.cuentaId) : null;
+  if (cuenta) efectos.push(`devuelve ${f(gasto.monto)} a "${cuenta.nombre}"`);
+
+  for (const [id, delta] of Object.entries(deltasDeuda)) {
+    const nombre = S.compromisos?.find(c => c.id === id)?.descripcion ?? 'esa deuda';
+    efectos.push(delta > 0
+      ? `sube de nuevo el saldo de "${nombre}"`
+      : `baja de nuevo el saldo de "${nombre}"`);
+  }
+
+  if (efectos.length === 0) return 'Esta acción no se puede deshacer.';
+
+  const lista = efectos.length === 1
+    ? efectos[0]
+    : `${efectos.slice(0, -1).join(', ')} y ${efectos.at(-1)}`;
+  return `Borrarlo ${lista}. Esta acción no se puede deshacer.`;
+}
+
 async function _eliminarGasto(el) {
   const id = el.dataset.id;
   if (!id) return;
@@ -451,9 +481,15 @@ async function _eliminarGasto(el) {
   // del gasto es su categoría (mismo criterio que el título de la lista).
   const nombre = gasto.descripcion?.trim() || gasto.categoria || 'este gasto';
 
+  // Ficha 15 (M4): la reversa ya funcionaba y no se anunciaba. Un gasto de
+  // categoría "Deudas" vuelve a subir el saldo de su deuda al borrarlo, y quien
+  // borra desde el ledger de Movimientos ni siquiera está viendo esa sección.
+  // Se nombra el efecto en el dominio dueño, mismo criterio que el aviso de
+  // Me deben al borrar un préstamo y que el de deshacer una transferencia.
+  const deltasDeuda = deltasPorEdicionEnDeuda(gasto, null);
   const ok = await confirmar({
     titulo:         'Eliminar gasto',
-    mensaje:        `¿Quieres eliminar "${nombre}"? Esta acción no se puede deshacer.`,
+    mensaje:        `¿Quieres eliminar "${nombre}"? ${_efectosDeBorrar(gasto, deltasDeuda)}`,
     confirmarTexto: 'Eliminar',
     peligroso:      true,
   });
@@ -464,7 +500,7 @@ async function _eliminarGasto(el) {
 
   // Revertir el efecto en la deuda: un abono la vuelve a subir, un consumo con
   // tarjeta la baja (MC.16b, ADR 051 D3).
-  _aplicarDeltasADeudas(deltasPorEdicionEnDeuda(gasto, null));
+  _aplicarDeltasADeudas(deltasDeuda);
   // MC.16d: revertir lo que ese consumo sumaba a cuotaMensual.
   _aplicarDeltasACuotaMensual(deltasPorEdicionEnCuotaMensual(gasto, null));
 
@@ -677,6 +713,15 @@ export function initGastos() {
   registrarAccion('nuevo-gasto', _nuevoGasto);
   registrarAccion('editar-gasto', _editarGasto);
   registrarAccion('eliminar-gasto', _eliminarGasto);
+
+  // Ficha 15 (M3): salida al historial completo. Manda el dominio y nada mas:
+  // el chip lo pone la pantalla destino, y el rango se deja libre a proposito
+  // porque la gracia del historial es cruzar meses, justo lo que el reloj de
+  // este bloque no puede hacer. Sin import cruzado (ADN 10): va por EventBus,
+  // igual que la salida de un tope de Limites.
+  registrarAccion('gastos-ver-historial', () => {
+    EventBus.emit('movimientos:ver', { dominio: 'gastos' });
+  });
   registrarAccion('repetir-gasto', _repetirGasto);
   registrarAccion('gastos-repetir-frecuente', _repetirFrecuente);
   registrarAccion('gastos-prev-mes',    _prevMes);

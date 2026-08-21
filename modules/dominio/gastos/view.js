@@ -361,7 +361,28 @@ export function renderListaGastos() {
   const ordenados = ordenarRecientesPrimero(filtrados);
   el.innerHTML = insight + agruparPorDia(ordenados)
     .map(grupo => _renderGrupoDia(grupo, oculto))
-    .join('');
+    .join('') + _renderSalidaHistorial();
+}
+
+/**
+ * Salida al historial completo (ficha 15, M3). Esta lista solo ve el mes que
+ * marca el reloj del bloque y solo ve gastos; la pregunta "y el mes pasado" o
+ * "buscar por texto" no tiene respuesta acá. Es el mismo patrón de acceso
+ * contextual prefiltrado que la ficha 07 definió y que ya usan Límites,
+ * Mis cuentas y Calendario: el botón manda a Movimientos con su chip puesto.
+ *
+ * Va al pie y no al encabezado a propósito: es la salida de quien ya recorrió
+ * el mes y no encontró lo que buscaba, no una opción que compita con la lista.
+ *
+ * @returns {string}
+ */
+function _renderSalidaHistorial() {
+  return `
+    <p class="lista-gastos__salida">
+      <button class="btn btn-ghost btn-sm"
+              data-action="gastos-ver-historial"
+              aria-label="Ver el historial completo de movimientos">Ver historial completo</button>
+    </p>`;
 }
 
 /**

@@ -15,13 +15,14 @@ import {
   movimientosDesdeIngresosPuntuales,
   movimientosDesdeAportes,
   movimientosDesdeTransferencias,
+  movimientosDesdeAbonos,
   movimientosRecientes,
   movimientosCompletos,
   descripcionMovimiento,
   filtrarMovimientos,
 } from '../../modules/dominio/movimientos/logic.js';
 import { renderMovimientosCompletos, cargarMasMovimientos,
-  renderFiltrosMovimientos, setFiltroTexto, setFiltroDominio, setFiltroCategoria,
+  renderFiltrosMovimientos, setFiltroTexto, setFiltroDominio, setFiltroCategoria, setFiltroCuenta,
   setFiltroFechaDesde, setFiltroFechaHasta, limpiarFiltrosMovimientos,
   actualizarBotonLimpiarFiltros, precalentarMovimientos,
 } from '../../modules/dominio/movimientos/view.js';
@@ -48,6 +49,11 @@ const aporte = (overrides = {}) => ({
 const transferencia = (overrides = {}) => ({
   id: 't1', cuentaOrigenId: 'c1', cuentaDestinoId: 'c2', monto: 200_000,
   fecha: '2026-07-06', ...overrides,
+});
+
+const prestamo = (overrides = {}) => ({
+  id: 'p1', persona: 'Camila', monto: 500_000, pagado: 0, fecha: '2026-06-01',
+  abonos: [], ...overrides,
 });
 
 // ── movimientosDesdeGastos() ──────────────────────────────────────
@@ -215,6 +221,79 @@ describe('movimientosDesdeTransferencias()', () => {
   });
 });
 
+// -- movimientosDesdeAbonos() - quinta fuente (ficha 15, M1) --------
+
+describe('movimientosDesdeAbonos()', () => {
+  it('normaliza cada abono al shape comun, con la persona en la descripcion', () => {
+    const [m] = movimientosDesdeAbonos([prestamo({
+      abonos: [{ fecha: '2026-08-04', monto: 120_000, aCapital: 120_000, aInteres: 0, cuentaId: 'c2' }],
+    })]);
+    expect(m).toMatchObject({
+      fecha:       '2026-08-04',
+      tipo:        'abono',
+      descripcion: 'Abono de Camila',
+      monto:       120_000,
+      direccion:   'ingreso',
+      dominio:     'personales',
+      cuentaId:    'c2',
+    });
+  });
+
+  it('el id es sintetico y unico por abono: no hay id propio en el dato', () => {
+    const movs = movimientosDesdeAbonos([prestamo({
+      abonos: [
+        { fecha: '2026-07-01', monto: 50_000, aCapital: 50_000, aInteres: 0 },
+        { fecha: '2026-08-01', monto: 70_000, aCapital: 70_000, aInteres: 0 },
+      ],
+    })]);
+    expect(movs.map(m => m.id)).toEqual(['p1:abono-0', 'p1:abono-1']);
+  });
+
+  it('un abono sin cuenta deja cuentaId en null, no undefined', () => {
+    const [m] = movimientosDesdeAbonos([prestamo({
+      abonos: [{ fecha: '2026-08-04', monto: 10_000, aCapital: 10_000, aInteres: 0 }],
+    })]);
+    expect(m.cuentaId).toBeNull();
+  });
+
+  it('marca el abono agrupado de la migracion v34', () => {
+    const movs = movimientosDesdeAbonos([prestamo({
+      abonos: [
+        { fecha: '2026-05-01', monto: 80_000, aCapital: 80_000, aInteres: 0, agrupado: true },
+        { fecha: '2026-08-01', monto: 20_000, aCapital: 20_000, aInteres: 0 },
+      ],
+    })]);
+    expect(movs.map(m => m.agrupado)).toEqual([true, false]);
+  });
+
+  it('recorre varios prestamos y nombra a cada persona', () => {
+    const movs = movimientosDesdeAbonos([
+      prestamo({ id: 'p1', persona: 'Camila', abonos: [{ fecha: '2026-08-01', monto: 10_000, aCapital: 10_000, aInteres: 0 }] }),
+      prestamo({ id: 'p2', persona: 'Andres', abonos: [{ fecha: '2026-08-02', monto: 20_000, aCapital: 20_000, aInteres: 0 }] }),
+    ]);
+    expect(movs.map(m => m.descripcion)).toEqual(['Abono de Camila', 'Abono de Andres']);
+  });
+
+  it('tolera prestamos sin historial, entradas invalidas y sin persona', () => {
+    expect(movimientosDesdeAbonos(null)).toEqual([]);
+    expect(movimientosDesdeAbonos([])).toEqual([]);
+    expect(movimientosDesdeAbonos([prestamo(), null, { id: 'x' }])).toEqual([]);
+    const [m] = movimientosDesdeAbonos([prestamo({
+      persona: '', abonos: [{ fecha: '2026-08-01', monto: 1_000, aCapital: 1_000, aInteres: 0 }],
+    })]);
+    expect(m.descripcion).toBe('Abono de un préstamo');
+  });
+
+  it('entra al historial completo y se ordena con las otras cuatro fuentes', () => {
+    const movs = movimientosCompletos({
+      gastos:         [gasto({ fecha: '2026-08-05' })],
+      transferencias: [transferencia({ fecha: '2026-08-03' })],
+      personales:     [prestamo({ abonos: [{ fecha: '2026-08-04', monto: 120_000, aCapital: 120_000, aInteres: 0 }] })],
+    });
+    expect(movs.map(m => m.tipo)).toEqual(['gasto', 'abono', 'transferencia']);
+  });
+});
+
 // ── descripcionMovimiento() (MOV.2) ───────────────────────────────
 
 describe('descripcionMovimiento()', () => {
@@ -335,6 +414,42 @@ describe('filtrarMovimientos()', () => {
 
 // ── movimientosRecientes() ────────────────────────────────────────
 
+describe('filtrarMovimientos() - por cuenta (ficha 15, M3)', () => {
+  const todos = () => movimientosCompletos({
+    gastos:            [gasto({ id: 'g1', cuentaId: 'c1', fecha: '2026-08-01' })],
+    ingresosPuntuales: [ingresoPuntual({ id: 'ip1', cuentaId: 'c2', fecha: '2026-08-02' })],
+    aportes:           [aporte({ id: 'ap1', fecha: '2026-08-03' })],
+    transferencias:    [transferencia({ id: 't1', cuentaOrigenId: 'c1', cuentaDestinoId: 'c2', fecha: '2026-08-04' })],
+    personales:        [prestamo({ abonos: [{ fecha: '2026-08-05', monto: 10_000, aCapital: 10_000, aInteres: 0, cuentaId: 'c2' }] })],
+  });
+
+  it('deja lo que salio o entro por esa cuenta', () => {
+    const ids = filtrarMovimientos(todos(), { cuentaId: 'c1' }).map(m => m.id);
+    expect(ids).toEqual(['t1', 'g1']);
+  });
+
+  it('una transferencia cuenta para sus DOS cuentas', () => {
+    for (const id of ['c1', 'c2']) {
+      expect(filtrarMovimientos(todos(), { cuentaId: id }).map(m => m.id)).toContain('t1');
+    }
+  });
+
+  it('el aporte al fondo queda fuera: no movio ninguna cuenta', () => {
+    const ids = filtrarMovimientos(todos(), { cuentaId: 'c2' }).map(m => m.id);
+    expect(ids).not.toContain('ap1');
+    expect(ids).toEqual(['p1:abono-0', 't1', 'ip1']);
+  });
+
+  it('sin cuentaId no filtra nada', () => {
+    expect(filtrarMovimientos(todos(), {})).toHaveLength(5);
+  });
+
+  it('se combina con los otros filtros', () => {
+    const ids = filtrarMovimientos(todos(), { cuentaId: 'c2', dominio: 'personales' }).map(m => m.id);
+    expect(ids).toEqual(['p1:abono-0']);
+  });
+});
+
 describe('movimientosRecientes()', () => {
   it('combina las 4 fuentes ordenadas por fecha descendente', () => {
     const r = movimientosRecientes({
@@ -410,6 +525,7 @@ describe('renderMovimientosCompletos()', () => {
     S.ingresosPuntuales = [];
     S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
     S.transferencias = [];
+    S.personales = [];
     S.cuentas = [];
   });
 
@@ -522,6 +638,7 @@ describe('precalentarMovimientos()', () => {
     S.ingresosPuntuales = [];
     S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
     S.transferencias = [];
+    S.personales = [];
     S.cuentas = [];
   });
 
@@ -553,6 +670,7 @@ describe('renderFiltrosMovimientos()', () => {
     S.ingresosPuntuales = [];
     S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
     S.transferencias = [];
+    S.personales = [];
     S.cuentas = [];
     limpiarFiltrosMovimientos();
   });
@@ -693,6 +811,158 @@ describe('renderFiltrosMovimientos()', () => {
 // se quedaría sin aparecer hasta el próximo repintado completo de la barra
 // (ej. al cambiar de dominio): un bug real, detectado al verificar en la app.
 
+describe('renderFiltrosMovimientos() - el rango se pliega (ficha 15, M2)', () => {
+  const elFiltros = () => document.getElementById('movimientos-filtros');
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="movimientos-filtros"></div><div id="lista-movimientos"></div>';
+    S.gastos = [gasto()];
+    S.ingresosPuntuales = [];
+    S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
+    S.transferencias = [];
+    S.personales = [];
+    S.cuentas = [];
+    limpiarFiltrosMovimientos();
+  });
+
+  afterEach(limpiarFiltrosMovimientos);
+
+  it('el rango vive dentro de un details cerrado por defecto', () => {
+    renderFiltrosMovimientos();
+    const det = elFiltros().querySelector('details.movimientos-filtros__rango');
+    expect(det).not.toBeNull();
+    expect(det.open).toBe(false);
+    expect(det.querySelector('summary').textContent.trim()).toContain('Filtrar por fechas');
+    // Los dos inputs siguen existiendo, solo que plegados.
+    expect(det.querySelector('#movimientos-desde')).not.toBeNull();
+    expect(det.querySelector('#movimientos-hasta')).not.toBeNull();
+  });
+
+  it('se abre solo si ya hay una fecha puesta: esconder un filtro activo dejaria la lista sin explicacion', () => {
+    setFiltroFechaDesde('2026-07-01');
+    renderFiltrosMovimientos();
+    expect(elFiltros().querySelector('details.movimientos-filtros__rango').open).toBe(true);
+  });
+
+  it('"Limpiar filtros" queda fuera del plegable: se ve aunque este cerrado', () => {
+    setFiltroTexto('mercado');
+    renderFiltrosMovimientos();
+    const slot = elFiltros().querySelector('#movimientos-limpiar-slot');
+    expect(slot.querySelector('[data-action="movimientos-limpiar-filtros"]')).not.toBeNull();
+    expect(slot.closest('details')).toBeNull();
+  });
+
+  it('el buscador y los chips siguen arriba, sin plegar', () => {
+    renderFiltrosMovimientos();
+    const el = elFiltros();
+    expect(el.querySelector('#movimientos-buscar').closest('details')).toBeNull();
+    expect(el.querySelector('.filtros-bar').closest('details')).toBeNull();
+  });
+});
+
+describe('renderFiltrosMovimientos() - chip y pastilla nuevos (ficha 15)', () => {
+  const elFiltros = () => document.getElementById('movimientos-filtros');
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="movimientos-filtros"></div><div id="lista-movimientos"></div>';
+    S.gastos = [];
+    S.ingresosPuntuales = [];
+    S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
+    S.transferencias = [];
+    S.personales = [];
+    S.cuentas = [];
+    limpiarFiltrosMovimientos();
+  });
+
+  afterEach(limpiarFiltrosMovimientos);
+
+  it('un abono suma el chip "Me deben" a la fila de dominios', () => {
+    S.personales = [prestamo({ abonos: [{ fecha: '2026-08-04', monto: 120_000, aCapital: 120_000, aInteres: 0 }] })];
+    renderFiltrosMovimientos();
+    const labels = [...elFiltros().querySelectorAll('.filtros-bar .chip')].map(c => c.textContent.trim());
+    expect(labels).toContain('Me deben');
+  });
+
+  it('la pastilla de cuenta nombra la cuenta y se puede quitar', () => {
+    S.cuentas = [cuenta('c1', 'Bancolombia')];
+    S.gastos = [gasto({ cuentaId: 'c1' })];
+    setFiltroCuenta('c1');
+    renderFiltrosMovimientos();
+    const pastilla = elFiltros().querySelector('[data-action="movimientos-quitar-cuenta"]');
+    expect(pastilla).not.toBeNull();
+    expect(pastilla.textContent).toContain('Bancolombia');
+  });
+
+  it('la pastilla usa el nombre vigente: renombrar la cuenta no la desactualiza', () => {
+    S.cuentas = [cuenta('c1', 'Bancolombia')];
+    S.gastos = [gasto({ cuentaId: 'c1' })];
+    setFiltroCuenta('c1');
+    S.cuentas = [cuenta('c1', 'Bancolombia ahorros')];
+    renderFiltrosMovimientos();
+    expect(elFiltros().querySelector('[data-action="movimientos-quitar-cuenta"]').textContent)
+      .toContain('Bancolombia ahorros');
+  });
+
+  it('una cuenta borrada lo dice en vez de dejar la pastilla en blanco', () => {
+    S.gastos = [gasto({ cuentaId: 'c9' })];
+    setFiltroCuenta('c9');
+    renderFiltrosMovimientos();
+    expect(elFiltros().querySelector('[data-action="movimientos-quitar-cuenta"]').textContent)
+      .toContain('Cuenta eliminada');
+  });
+
+  it('sin cuenta puesta no hay pastilla, y "Limpiar filtros" la cuenta como filtro activo', () => {
+    S.gastos = [gasto()];
+    renderFiltrosMovimientos();
+    expect(elFiltros().querySelector('[data-action="movimientos-quitar-cuenta"]')).toBeNull();
+    setFiltroCuenta('c1');
+    renderFiltrosMovimientos();
+    expect(elFiltros().querySelector('[data-action="movimientos-limpiar-filtros"]')).not.toBeNull();
+  });
+});
+
+describe('renderMovimientosCompletos() - la fila del abono (ficha 15, M1)', () => {
+  const elLista = () => document.getElementById('lista-movimientos');
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-movimientos"></div>';
+    S.gastos = [];
+    S.ingresosPuntuales = [];
+    S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
+    S.transferencias = [];
+    S.personales = [];
+    S.cuentas = [];
+    limpiarFiltrosMovimientos();
+  });
+
+  afterEach(limpiarFiltrosMovimientos);
+
+  it('lista el abono con signo mas y su tipo en el subtitulo', () => {
+    S.cuentas = [cuenta('c2', 'Nequi')];
+    S.personales = [prestamo({ abonos: [{ fecha: '2026-08-04', monto: 120_000, aCapital: 120_000, aInteres: 0, cuentaId: 'c2' }] })];
+    renderMovimientosCompletos();
+    const fila = elLista().querySelector('.list-item');
+    expect(fila.querySelector('.list-item__title').textContent.trim()).toBe('Abono de Camila');
+    expect(fila.querySelector('.list-item__amount').textContent.trim()).toBe('+$120.000');
+    expect(fila.querySelector('.list-item__subtitle').textContent).toContain('Abono');
+    expect(fila.querySelector('.list-item__subtitle').textContent).toContain('Nequi');
+  });
+
+  it('no ofrece acciones: corregir un abono se hace en Me deben', () => {
+    S.personales = [prestamo({ abonos: [{ fecha: '2026-08-04', monto: 120_000, aCapital: 120_000, aInteres: 0 }] })];
+    renderMovimientosCompletos();
+    expect(elLista().querySelector('.list-item__action')).toBeNull();
+  });
+
+  it('el abono agrupado dice que resume lo anterior en vez de fingir la fecha', () => {
+    S.personales = [prestamo({ abonos: [{ fecha: '2026-05-01', monto: 80_000, aCapital: 80_000, aInteres: 0, agrupado: true }] })];
+    renderMovimientosCompletos();
+    const sub = elLista().querySelector('.list-item__subtitle').textContent;
+    expect(sub).toContain('Antes de este historial');
+    expect(sub).not.toContain('mayo');
+  });
+});
+
 describe('actualizarBotonLimpiarFiltros()', () => {
   const elFiltros = () => document.getElementById('movimientos-filtros');
 
@@ -702,6 +972,7 @@ describe('actualizarBotonLimpiarFiltros()', () => {
     S.ingresosPuntuales = [];
     S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
     S.transferencias = [];
+    S.personales = [];
     S.cuentas = [];
     limpiarFiltrosMovimientos();
     renderFiltrosMovimientos(); // deja el slot #movimientos-limpiar-slot en el DOM
@@ -760,6 +1031,7 @@ describe('renderMovimientosCompletos() - filtros aplicados (MOV.2)', () => {
     S.ingresosPuntuales = [];
     S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
     S.transferencias = [];
+    S.personales = [];
     S.cuentas = [];
     limpiarFiltrosMovimientos();
   });
@@ -844,6 +1116,7 @@ describe('renderMovimientosCompletos() - paginación por lotes', () => {
     S.ingresosPuntuales = [];
     S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
     S.transferencias = [];
+    S.personales = [];
     S.cuentas = [];
   });
 
@@ -928,6 +1201,7 @@ describe('renderMovimientosCompletos() - acciones por fila (MOV.1)', () => {
     S.ingresosPuntuales = [];
     S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
     S.transferencias = [];
+    S.personales = [];
     S.cuentas = [];
   });
 

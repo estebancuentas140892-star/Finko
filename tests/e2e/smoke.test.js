@@ -2513,6 +2513,101 @@ test.describe('Me deben conectado a cuentas y patrimonio (PE.7)', () => {
   });
 });
 
+// ── SUITE 12i: Movimientos - ficha 15 (ADR 089) ──────────────────────────────
+// La quinta fuente del ledger (los abonos recibidos), el rango de fechas
+// plegado y las dos entradas prefiltradas desde otros dominios.
+
+const _hoyISOf15 = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+test.describe('Movimientos - ficha 15: quinta fuente, plegable y entradas', () => {
+  test.beforeEach(async ({ page }) => {
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas:   [
+        { id: 'c-f15a', nombre: 'Bancolombia', tipo: 'ahorros', saldo: 500000, activa: true },
+        { id: 'c-f15b', nombre: 'Nequi', tipo: 'ahorros', saldo: 200000, activa: true },
+      ],
+      // La lista de Gastos solo ve el mes del reloj del bloque, asi que este
+      // gasto es de hoy: con uno de otro mes la lente sale vacia y su salida al
+      // historial no se pinta (que es lo correcto, y lo cubre el unitario).
+      gastos: [{
+        id: 'g-f15', descripcion: 'Mercado F15', monto: 80000,
+        categoria: 'Mercado', fecha: _hoyISOf15(), cuentaId: 'c-f15a',
+      }],
+      personales: [{
+        id: 'p-f15', persona: 'Camila', monto: 500000, pagado: 120000,
+        fecha: '2026-06-01', cuentaId: 'c-f15a',
+        abonos: [{ fecha: '2026-07-05', monto: 120000, aCapital: 120000, aInteres: 0, cuentaId: 'c-f15b' }],
+      }],
+      ingresosPuntuales: [], ingresos: [], compromisos: [], metas: [],
+      apartados: [], inversiones: [], transferencias: [],
+    });
+    await page.goto('/#movimientos');
+    await page.waitForSelector('#lista-movimientos .list-item', { timeout: 10_000 });
+  });
+
+  test('el abono recibido entra al ledger con su cuenta y su signo', async ({ page }) => {
+    const fila = page.locator('#lista-movimientos .list-item', { hasText: 'Abono de Camila' });
+    await expect(fila).toHaveCount(1);
+    await expect(fila.locator('.list-item__amount')).toHaveText('+$120.000');
+    await expect(fila.locator('.list-item__subtitle')).toContainText('Nequi');
+    // El ledger enumera: corregir el abono es de Me deben.
+    await expect(fila.locator('.list-item__action')).toHaveCount(0);
+  });
+
+  test('el chip "Me deben" filtra el ledger a los abonos', async ({ page }) => {
+    await page.locator('#movimientos-filtros .chip', { hasText: 'Me deben' }).click();
+    await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(1);
+    await expect(page.locator('#lista-movimientos .list-item')).toContainText('Abono de Camila');
+  });
+
+  test('el rango de fechas llega plegado y se abre con un toque', async ({ page }) => {
+    const det = page.locator('details.movimientos-filtros__rango');
+    await expect(det).toHaveCount(1);
+    await expect(page.locator('#movimientos-desde')).toBeHidden();
+    await det.locator('summary').click();
+    await expect(page.locator('#movimientos-desde')).toBeVisible();
+  });
+
+  test('con un rango puesto el plegable llega abierto: un filtro activo no se esconde', async ({ page }) => {
+    await page.locator('details.movimientos-filtros__rango summary').click();
+    await page.fill('#movimientos-desde', '2026-07-05');
+    await page.goto('/#gast');
+    await page.goto('/#movimientos');
+    await expect(page.locator('#movimientos-desde')).toBeVisible();
+  });
+
+  test('desde Gastos, "Ver historial completo" llega con el chip de Gastos puesto', async ({ page }) => {
+    await page.goto('/#gast');
+    await page.locator('[data-action="gastos-ver-historial"]').click();
+    await expect(page).toHaveURL(/#movimientos$/);
+    // Scope: la seccion Gastos tiene su propia `.filtros-bar` de categorias.
+    await expect(page.locator('#movimientos-filtros .chip--active')).toHaveText('Gastos');
+    await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(1);
+    await expect(page.locator('#lista-movimientos .list-item')).toContainText('Mercado F15');
+  });
+
+  test('desde una cuenta, "Ver sus movimientos" llega con su pastilla y solo lo suyo', async ({ page }) => {
+    await page.goto('/#tesoreria');
+    await page.locator('.cuenta-card[data-id="c-f15b"] [data-action="cuenta-ver-movimientos"]').click();
+    await expect(page).toHaveURL(/#movimientos$/);
+    const pastilla = page.locator('[data-action="movimientos-quitar-cuenta"]');
+    await expect(pastilla).toContainText('Nequi');
+    // Nequi solo recibio el abono: el gasto salio de Bancolombia.
+    await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(1);
+    await expect(page.locator('#lista-movimientos .list-item')).toContainText('Abono de Camila');
+
+    // Y la pastilla se puede quitar sin perder el resto de la vista.
+    await pastilla.click();
+    await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(2);
+  });
+});
+
 // ── SUITE 12h: Movimientos - ledger accionable (MOV.1) ───────────────────────
 // La fila del ledger delega en el dominio dueño: borrar desde acá aplica las
 // MISMAS reversas que borrar desde la sección de origen (devolver el monto a
@@ -2558,6 +2653,14 @@ test.describe('Movimientos - ledger accionable (MOV.1)', () => {
 
     // Y el ledger se repinta solo (state:change de 'gastos').
     await expect(page.locator('#lista-movimientos .list-item[data-id="g-mov1"]')).toHaveCount(0);
+  });
+
+  test('la confirmacion nombra la reversa antes de borrar (ficha 15, M4)', async ({ page }) => {
+    await page.locator('#lista-movimientos [data-action="eliminar-gasto"]').click();
+    const dialogo = page.locator('.modal--confirm');
+    await expect(dialogo).toContainText('$80.000');
+    await expect(dialogo).toContainText('Bancolombia');
+    await expect(dialogo).toContainText('no se puede deshacer');
   });
 
   test('editar desde el ledger abre el formulario de Gastos con el dato cargado', async ({ page }) => {
@@ -2640,6 +2743,8 @@ test.describe('Movimientos - búsqueda y filtros (MOV.2)', () => {
   });
 
   test('el rango de fechas filtra la lista', async ({ page }) => {
+    // Desde la ficha 15 (ADR 089 D2) el rango llega plegado: hay que abrirlo.
+    await page.locator('details.movimientos-filtros__rango summary').click();
     await page.fill('#movimientos-desde', '2026-07-10');
     await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(1);
     await expect(page.locator('#lista-movimientos .list-item[data-id="g-mov2b"]')).toHaveCount(1);

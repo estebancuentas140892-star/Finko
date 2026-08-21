@@ -1160,6 +1160,31 @@ describe('renderListaCuentas() - chip de datos de transferencia (MC.14, chip des
   });
 });
 
+// -- renderListaCuentas() - salida a Movimientos (ficha 15, M3) ---
+
+describe('renderListaCuentas() - salida al historial de la cuenta (ficha 15, M3)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-tesoreria"></div>';
+  });
+
+  it('cada tarjeta ofrece ver sus movimientos, con su propio id', () => {
+    S.cuentas = [cuentaBase({ id: 'c1', nombre: 'Bancolombia' })];
+    renderListaCuentas();
+    const btn = document.querySelector('[data-action="cuenta-ver-movimientos"]');
+    expect(btn).not.toBeNull();
+    expect(btn.dataset.id).toBe('c1');
+    expect(btn.textContent.trim()).toBe('Ver sus movimientos');
+  });
+
+  it('va con las acciones de la tarjeta y con texto, no como icono suelto', () => {
+    S.cuentas = [cuentaBase({ id: 'c1' })];
+    renderListaCuentas();
+    const btn = document.querySelector('[data-action="cuenta-ver-movimientos"]');
+    expect(btn.closest('.cuenta-card__actions')).not.toBeNull();
+    expect(btn.classList.contains('btn-icon')).toBe(false);
+  });
+});
+
 // ── renderListaCuentas() - MC.18b: tarjeta con chips (ADR 035 D2) ─
 
 describe('renderListaCuentas() - MC.18b: tarjeta de cuenta con nombre + tipo + chips', () => {

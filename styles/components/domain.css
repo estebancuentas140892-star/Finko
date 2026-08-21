@@ -382,6 +382,45 @@ button.chip:hover:not(.chip--active) {
   gap: var(--fk-space-2);
 }
 
+/* Ficha 15 (M3): la salida al historial completo, al pie de la lista del mes.
+   Centrada y con aire arriba: cierra la lista, no compite con ella. */
+.lista-gastos__salida {
+  display: flex;
+  justify-content: center;
+  margin: var(--fk-space-4) 0 0;
+}
+
+/* Ficha 15 (M2): el rango de fechas se pliega. `<details>`/`<summary>` nativo,
+   cero JS, con el estado abierto/cerrado accesible por teclado y anunciado por
+   el lector, igual que los desplegables de Ajustes y Analisis. La clase es de
+   este dominio: la de Ajustes vive en config.css y es de esa seccion. */
+.movimientos-filtros__rango > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+  min-height: 44px; /* piso tactil del proyecto */
+  cursor: pointer;
+  list-style: none;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+}
+
+.movimientos-filtros__rango > summary::-webkit-details-marker {
+  display: none;
+}
+
+.movimientos-filtros__rango > summary .icon {
+  color: var(--fk-text-muted);
+  flex-shrink: 0;
+  transition: rotate var(--fk-transition-fast);
+}
+
+.movimientos-filtros__rango[open] > summary .icon {
+  rotate: 90deg;
+}
+
 .movimientos-filtros__fechas {
   display: flex;
   flex-wrap: wrap;
