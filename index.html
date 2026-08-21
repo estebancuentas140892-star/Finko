@@ -771,25 +771,16 @@
             </div>
           </div>
 
-          <!-- RESUMEN DE LA SEMANA (IN.8f). Solo móvil desde DSK.1a
-               (ADR 070 D2): en escritorio Inicio avisa, no resume, y la
-               tendencia no tiene fecha límite, así que vive en Análisis.
-               La celda sigue en el DOM porque bajo 1024px
-               no cambió nada; render.js la fuerza oculta desde 1024px.
-               Arranca [hidden]; resumen/view.js la revela cuando hay datos.
-
-               Acá vivían también Accesos rápidos de escritorio
-               (`#panel-accesos-escritorio`) y Actividad reciente de
-               escritorio (`#panel-actividad-reciente-escritorio`), las dos de
-               IN.9d. DSK.1a las retira del DOM, no las oculta: escritorio era
-               su único hogar (móvil las tiene fusionadas más abajo), así que
-               dejarlas sería marcado muerto. Accesos duplicaba la barra
-               lateral, que ya muestra 15 destinos con su nombre; Actividad
-               cuenta el pasado y comparte anatomía con la lista de
-               obligaciones. Pendiente que deja: "Personalizar" accesos se
-               queda sin entrada en escritorio hasta que Ajustes le dé sitio. -->
-          <div id="panel-resumen" class="bento__cell bento__cell--half bento__cell--flat"
-               role="region" aria-label="Resumen de la semana" hidden></div>
+          <!-- RESUMEN DE LA SEMANA y ACTIVIDAD RECIENTE ya no viven en Inicio.
+               DSK.1a (ADR 070 D2) los retiro de escritorio y dejo escrito que
+               "los tres siguen enteros en movil"; el ADR 087 extiende dos de
+               esos tres a movil, porque sus dos argumentos no dependen del
+               ancho de pantalla: el resumen semanal es tendencia y la
+               tendencia no tiene fecha limite (vive en Analisis), y la
+               actividad reciente cuenta el pasado y comparte anatomia con la
+               lista de obligaciones (vive en Movimientos, que esta en "Mas").
+               El tercero, Accesos rapidos, se queda abajo: su motivo SI era de
+               ancho (en movil no hay barra lateral). -->
 
           <!-- TU PROGRESO (LG.2d, ADR 032 D6): tarjeta compacta de logros
                (nivel actual + último logro + próximo objetivo), universal en
@@ -798,14 +789,16 @@
           <div id="panel-progreso-inicio" class="bento__cell bento__cell--half"
                role="region" aria-label="Tu progreso" hidden></div>
 
-          <!-- ACCESOS RÁPIDOS + ACTIVIDAD RECIENTE EN MÓVIL (IN.8g, ADR 034
-               D7; acotada a móvil desde IN.9d, ADR 057 D4). Un solo
-               bento__cell, cierre de la pantalla bajo 1024px. Accesos arriba
-               (IN.4a, ADR 028 D2; accesos/view.js llena la grilla contra
-               S.config.accesosInicio); actividad abajo (TX.8a, ADR 028 D5;
-               movimientos/view.js lo llena, [hidden] si no hay movimientos).
-               Ninguno de los dos logic.js cambió. Arranca [hidden]; render.js
-               lo revela bajo 1024px. -->
+          <!-- ACCESOS RÁPIDOS EN MÓVIL (IN.8g, ADR 034 D7; acotada a móvil desde
+               IN.9d, ADR 057 D4). Cierre de la pantalla bajo 1024px. El ADR 087
+               retira de acá Actividad reciente, con la que estaba fusionada:
+               contaba el pasado y su casa es Movimientos, a un toque en "Más".
+               Accesos se queda porque su motivo sí es de ancho: en móvil no hay
+               barra lateral (IN.4a, ADR 028 D2; accesos/view.js llena la grilla
+               contra S.config.accesosInicio). El id conserva su nombre
+               histórico: renombrarlo tocaría cinco archivos sin cambiar nada
+               para el usuario. Arranca [hidden]; render.js lo revela bajo
+               1024px. -->
           <div class="bento__cell bento__cell--full bento__cell--flat accesos-actividad"
                id="accesos-actividad-movil" hidden>
             <div class="accesos-actividad__seccion" role="region" aria-label="Accesos rápidos">
@@ -819,8 +812,6 @@
               </div>
               <div class="accesos-inicio__grid" id="accesos-inicio-grid"></div>
             </div>
-            <div id="panel-actividad-reciente" class="accesos-actividad__seccion accesos-actividad__seccion--actividad"
-                 role="region" aria-label="Actividad reciente" hidden></div>
           </div>
 
         </div><!-- /.bento -->

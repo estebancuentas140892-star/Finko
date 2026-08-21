@@ -614,60 +614,12 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await expect(panel).toContainText('Acordaron esta fecha hace 5 días');
   });
 
-  test('móvil: Resumen de la semana visual: monto, chip, barras y categoría top (IN.8f, ADR 034 D6; acotado a móvil desde DSK.1a, ADR 070 D2)', async ({ page }) => {
-    // DSK.1a: en escritorio este panel ya no existe (es tendencia, y la
-    // tendencia no tiene fecha límite: pertenece a Análisis). Lo que mide
-    // este test sigue vigente bajo 1024px, así que el viewport pasa a ser
-    // explícito en vez de heredar el "Desktop Chrome" de la config.
-    await page.setViewportSize({ width: 390, height: 844 });
-    const hoy = new Date();
-    const iso = (d) => {
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const dd = String(d.getDate()).padStart(2, '0');
-      return `${yyyy}-${mm}-${dd}`;
-    };
-    const haceNDias = (n) => {
-      const d = new Date(hoy);
-      d.setDate(d.getDate() - n);
-      return iso(d);
-    };
-    await sembrarSiVacio(page, {
-      version: 1,
-      perfil: { nombre: 'TestUser', smmlv: 1750905 },
-      onboarded: true,
-      cuentas: [],
-      ingresos: [],
-      gastos: [
-        { id: 'g1', descripcion: 'Mercado semanal', categoria: 'Mercado', monto: 180000, fecha: iso(hoy), cuentaId: null, nota: '' },
-        { id: 'g2', descripcion: 'Bus', categoria: 'Transporte', monto: 20000, fecha: haceNDias(3), cuentaId: null, nota: '' },
-      ],
-      compromisos: [],
-      metas: [],
-    });
-    await page.goto('/');
-    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+  // El panel del resumen semanal salio de Inicio con el ADR 087, que extiende a
+  // movil el retiro del ADR 070 D2: es tendencia, y la tendencia no tiene fecha
+  // limite. Su casa es Analisis (ficha 16), que todavia no lo adopta, asi que su
+  // calculo queda en resumen/logic.js sin consumidor y con sus tests unitarios.
 
-    const panel = page.locator('#panel-resumen');
-    await expect(panel).toBeVisible();
-    // Ficha 02 (ADR 069): la etiqueta declara su alcance, porque esta cifra
-    // suma todo S.gastos y el hero de Gastos excluye fijos y cuotas.
-    await expect(panel.locator('.resumen-semana__label')).toHaveText('Todo lo que salió esta semana');
-    await expect(panel.locator('.resumen-semana__alcance')).toHaveText('incluye fijos y cuotas de deuda');
-    await expect(panel.locator('.resumen-semana__monto')).toHaveText('$200.000');
-    // Sin semana previa con datos: el chip no alarma con rojo (ADR 019).
-    await expect(panel.locator('.resumen-semana__chip')).toContainText('Sin semana previa para comparar');
-    await expect(panel.locator('.resumen-semana__chip')).toHaveClass(/--neutro/);
-
-    await expect(panel.locator('.resumen-semana__barra')).toHaveCount(7);
-    await expect(panel.locator('.resumen-semana__barra-fill--pico')).toHaveCount(1);
-
-    await expect(panel.locator('.resumen-semana__top-titulo')).toHaveText('Mercado fue tu categoría top');
-    await expect(panel.locator('.resumen-semana__top-sub')).toContainText('2 de 7 días activos');
-    await expect(panel.locator('.resumen-semana__top-monto')).toHaveText('$180.000');
-  });
-
-  test('móvil: Accesos rápidos + Actividad reciente fusionados en un solo bloque (IN.8g, ADR 034 D7; acotado a móvil desde IN.9d, ADR 057 D4)', async ({ page }) => {
+  test('móvil: Accesos rápidos cierran la pantalla, y Actividad reciente ya no está (IN.8g, ADR 034 D7; acotado a móvil desde IN.9d, ADR 057 D4)', async ({ page }) => {
     // Desde 1024px cada uno vive por separado (ver el test de escritorio,
     // más abajo); acá se verifica que la fusión móvil sigue intacta.
     await page.setViewportSize({ width: 390, height: 844 });
@@ -712,14 +664,11 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await expect(contenedor.locator('[data-action="accesos-personalizar"]')).toBeVisible();
     await expect(page.locator('#accesos-inicio-grid .menu-mas__item').first()).toBeVisible();
 
-    const actividad = page.locator('#panel-actividad-reciente');
-    await expect(actividad).toBeVisible();
-    await expect(actividad.locator('.accesos-actividad__label')).toHaveText('Actividad reciente');
-    await expect(actividad.locator('.actividad-reciente__ver-todo')).toHaveAttribute('href', '#movimientos');
-    await expect(actividad).toContainText('Mercado semanal');
-
-    // El separador vive en la sección de actividad, no en toda la tarjeta.
-    await expect(actividad).toHaveClass(/accesos-actividad__seccion--actividad/);
+    // ADR 087: Actividad reciente sale de Inicio. Contaba el pasado y compartia
+    // anatomia con la lista de obligaciones. Su casa es Movimientos, que sigue a
+    // un toque desde "Mas".
+    await expect(page.locator('#panel-actividad-reciente')).toHaveCount(0);
+    await expect(page.locator('.mas-tile[href="#movimientos"]')).toHaveCount(1);
   });
 
   test('escritorio: Inicio avisa y no resume: sin Accesos rápidos, sin Actividad reciente y sin Resumen semanal (DSK.1a, ADR 070 D2 y D10)', async ({ page }) => {
@@ -770,10 +719,10 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await expect(page.locator('#panel-actividad-reciente-escritorio')).toHaveCount(0);
     await expect(page.locator('#accesos-inicio-grid-escritorio')).toHaveCount(0);
 
-    // El Resumen semanal sí sigue en el DOM (bajo 1024px no cambió nada),
-    // pero render.js lo fuerza oculto por ancho aunque haya datos de sobra:
-    // estos nueve gastos son de hoy y llenarían sus barras.
-    await expect(page.locator('#panel-resumen')).toBeHidden();
+    // El Resumen semanal ya no esta en el DOM en ningun ancho: el ADR 087
+    // extendio a movil este mismo retiro, asi que dejo de ser un oculto por
+    // ancho y paso a no existir.
+    await expect(page.locator('#panel-resumen')).toHaveCount(0);
 
     // Y ninguno de los tres deja rastro visible. "Personalizar" sigue en el
     // DOM porque vive dentro de la fusión móvil, que es la que se oculta:
@@ -5547,8 +5496,12 @@ test.describe('Inicio en movil - nada se sale del ancho de la pantalla', () => {
     await page.goto('/#dash');
     await expect(page.locator('#sec-dash.active')).toBeVisible({ timeout: 10_000 });
 
-    // El chip largo tiene que estar en pantalla: sin el, el test no prueba nada.
-    await expect(page.locator('.resumen-semana__chip')).toContainText('Sin semana previa');
+    // El disparador original de este guardia era el chip mas largo del resumen
+    // semanal ("Sin semana previa para comparar"), cuyo min-content de 415px
+    // levantaba el track del bento entero. Ese panel salio de Inicio con el ADR
+    // 087, asi que el caso concreto ya no se puede montar; lo que el guardia
+    // vigila sigue siendo lo que importa: que ningun item del bento le ponga un
+    // piso de ancho a la columna, venga de donde venga.
 
     const desbordes = await page.evaluate(() => {
       const vw = window.innerWidth;

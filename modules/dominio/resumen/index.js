@@ -13,7 +13,7 @@
 
 import { EventBus } from '../../core/state.js';
 import { registrarRender, renderSmart, programarRender } from '../../infra/render.js';
-import { renderPanelResumen, renderPanelAvisos } from './view.js';
+import { renderPanelAvisos } from './view.js';
 
 /**
  * Render reactivo del panel, con identidad estable para que el coalescer de
@@ -22,7 +22,6 @@ import { renderPanelResumen, renderPanelAvisos } from './view.js';
  * barre todo el historial en cada uno.
  */
 function _renderReactivo() {
-  renderSmart(renderPanelResumen, 'dash');
 }
 
 /** Mismo patrón que `_renderReactivo`, para el panel de avisos (CFG.3b). */
@@ -39,7 +38,6 @@ export function initResumen() {
   // El resumen vive en el dashboard: se actualiza en cada renderAll() para
   // reflejar gastos creados/editados desde otra sección. renderSmart corta si
   // el dashboard no está activo, así que llamarlo siempre es barato.
-  registrarRender(() => renderSmart(renderPanelResumen, 'dash'));
   registrarRender(() => renderSmart(renderPanelAvisos, 'dash'));
 
   EventBus.on('state:change', ({ section }) => {
@@ -51,11 +49,9 @@ export function initResumen() {
   window.addEventListener('hashchange', () => {
     const hash = location.hash.slice(1) || 'dash';
     if (hash === 'dash') {
-      renderSmart(renderPanelResumen, 'dash');
       renderSmart(renderPanelAvisos, 'dash');
     }
   });
 
-  renderSmart(renderPanelResumen, 'dash');
   renderSmart(renderPanelAvisos, 'dash');
 }

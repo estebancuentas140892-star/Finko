@@ -1,41 +1,20 @@
 /**
- * movimientos/view.js - panel "Actividad reciente" en Inicio (TX.8a).
+ * movimientos/view.js - la vista completa del historial (TX.8b).
+ *
+ * Aquí vivía también el panel "Actividad reciente" de Inicio (TX.8a). El ADR 087
+ * lo retiró de móvil extendiendo el ADR 070 D2, que ya lo había retirado de
+ * escritorio: cuenta el pasado y comparte anatomía con la lista de
+ * obligaciones, así que a primera vista se confundían y solo una de las dos
+ * exige algo. La sección completa sigue a un toque desde "Más".
  *
  * Puede leer S. No puede mutarlo. Sin lógica de negocio (toda en logic.js).
  */
 
 import { S } from '../../core/state.js';
-import { f, esc as _esc, tiempoRelativo, fechaLegible, formateadorFecha } from '../../infra/utils.js';
+import { f, esc as _esc, fechaLegible, formateadorFecha } from '../../infra/utils.js';
 import { emptyArt, tejaCategoria } from '../../infra/icons.js';
 import { memoizar } from '../../infra/memo.js';
-import { movimientosRecientes, movimientosCompletos, descripcionMovimiento, filtrarMovimientos } from './logic.js';
-
-/**
- * Cuántos movimientos recientes muestra el panel de Inicio.
- *
- * El 5 se eligió para 390px (ADR 034 D7), donde el alto es el recurso escaso.
- * En escritorio la columna del panel deja sitio para 8 sin scroll y sin pedir
- * un dato nuevo: `movimientosRecientes()` ya recibe el límite por parámetro,
- * así que lo que cambia es el argumento, no la derivación (ADR 057 D4, IN.9b).
- */
-const LIMITE_RECIENTES_MOVIL       = 5;
-const LIMITE_RECIENTES_ESCRITORIO  = 8;
-
-/**
- * Mismo umbral y misma forma que `_lanzarConfetti()` de `logros/index.js`: el
- * corte de escritorio de la app es 1024px.
- *
- * Se lee en cada render en vez de cachearse, porque el panel se repinta con
- * cada `state:change` y el ancho pudo cambiar en el medio. Un cambio de ancho
- * sin cambio de estado NO repinta: el panel se queda con el límite del último
- * render hasta la siguiente acción. Se acepta a propósito, para no montar un
- * observador de `resize` que ningún otro panel de Inicio tiene.
- */
-function _limiteRecientes() {
-  return window.matchMedia?.('(max-width: 1023.98px)').matches
-    ? LIMITE_RECIENTES_MOVIL
-    : LIMITE_RECIENTES_ESCRITORIO;
-}
+import { movimientosCompletos, descripcionMovimiento, filtrarMovimientos } from './logic.js';
 
 /**
  * PERF.2: ambas derivaciones concatenan y ordenan las 3 fuentes completas
@@ -50,7 +29,6 @@ const _extraerFuentes = (fuentes, limite) => [
 ];
 const _SECCIONES_MOVIMIENTOS = ['gastos', 'ingresosPuntuales', 'ahorro', 'transferencias', 'categoriasPersonalizadas'];
 
-const _movimientosRecientesMemo = memoizar(movimientosRecientes, _SECCIONES_MOVIMIENTOS, _extraerFuentes);
 const _movimientosCompletosMemo = memoizar(movimientosCompletos, _SECCIONES_MOVIMIENTOS, _extraerFuentes);
 
 /**
@@ -138,79 +116,6 @@ function _diasDesde(fechaISO) {
   const hoyMs = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()).getTime();
   const fchMs = new Date(yyyy, mm - 1, dd).getTime();
   return Math.round((hoyMs - fchMs) / 86_400_000);
-}
-
-/**
- * Renderiza los últimos movimientos derivados de gastos, ingresos puntuales
- * y aportes al fondo (ADR 028 D5). Vacío si no hay ninguno, y limpia el
- * panel para no ocupar espacio.
- *
- * DSK.1a (ADR 070 D2) revierte IN.9d: la celda de escritorio
- * (`#panel-actividad-reciente-escritorio`) desaparece del DOM. Cuenta el
- * pasado, y en monitor comparte anatomía con la lista de obligaciones (teja,
- * nombre, monto), así que a primera vista se confundían y solo una de las dos
- * exige algo. Movimientos sigue a un clic en la barra lateral. Queda el panel
- * de la fusión móvil. No-op si no existe.
- */
-export function renderActividadReciente() {
-  const targets = ['panel-actividad-reciente']
-    .map(id => document.getElementById(id))
-    .filter(Boolean);
-  if (targets.length === 0) return;
-
-  // Se pide una fila de más que las que caben: es la forma barata de saber si
-  // el historial completo tiene algo que este panel no esté mostrando ya.
-  const limite = _limiteRecientes();
-  const conSobrante = _movimientosRecientesMemo({
-    gastos:                   S.gastos,
-    ingresosPuntuales:        S.ingresosPuntuales,
-    aportes:                  S.ahorro?.aportes,
-    transferencias:           S.transferencias,
-    categoriasPersonalizadas: S.categoriasPersonalizadas,
-  }, limite + 1);
-
-  const hayMas = conSobrante.length > limite;
-  const movs   = conSobrante.slice(0, limite);
-
-  if (movs.length === 0) {
-    targets.forEach(el => { el.innerHTML = ''; el.hidden = true; });
-    return;
-  }
-
-  const items = movs.map(m => {
-    const esIngreso  = m.direccion === 'ingreso';
-    const signo      = esIngreso ? '+' : (m.direccion === 'neutro' ? '' : '-');
-    const claseMonto = esIngreso ? 'actividad-reciente__monto--ingreso' : 'actividad-reciente__monto--egreso';
-    return `
-      <li class="actividad-reciente__item">
-        ${tejaCategoria(m.icono, m.dominio)}
-        <div class="actividad-reciente__body">
-          <p class="actividad-reciente__desc">${_esc(_descripcionMovimiento(m))}</p>
-          <p class="actividad-reciente__cuando">${tiempoRelativo(_diasDesde(m.fecha))}</p>
-        </div>
-        <p class="actividad-reciente__monto ${claseMonto}">${signo}${f(m.monto)}</p>
-      </li>`;
-  }).join('');
-
-  // IN.8g (ADR 034 D7): header propio (label + "Ver todo" en la misma fila)
-  // en vez de depender de un encabezado externo.
-  //
-  // Ficha 02 (ADR 069): el enlace solo se dibuja cuando hay más historial que
-  // el que cabe acá. Con 5 movimientos o menos, la sección completa mostraría
-  // exactamente estas mismas filas y el enlace prometía una pantalla nueva
-  // que no existía. Es el mismo criterio de "Ver los N" en Pendientes.
-  const verTodo = hayMas
-    ? '<a class="actividad-reciente__ver-todo" href="#movimientos">Ver todo</a>'
-    : '';
-
-  const html = `
-    <div class="accesos-actividad__header">
-      <span class="accesos-actividad__label">Actividad reciente</span>
-      ${verTodo}
-    </div>
-    <ul class="actividad-reciente__list" role="list">${items}</ul>`;
-
-  targets.forEach(el => { el.hidden = false; el.innerHTML = html; });
 }
 
 // ── VISTA COMPLETA (TX.8b, ruta propia #movimientos) ────────────

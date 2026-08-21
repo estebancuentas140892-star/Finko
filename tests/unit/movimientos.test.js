@@ -20,8 +20,7 @@ import {
   descripcionMovimiento,
   filtrarMovimientos,
 } from '../../modules/dominio/movimientos/logic.js';
-import {
-  renderActividadReciente, renderMovimientosCompletos, cargarMasMovimientos,
+import { renderMovimientosCompletos, cargarMasMovimientos,
   renderFiltrosMovimientos, setFiltroTexto, setFiltroDominio, setFiltroCategoria,
   setFiltroFechaDesde, setFiltroFechaHasta, limpiarFiltrosMovimientos,
   actualizarBotonLimpiarFiltros, precalentarMovimientos,
@@ -373,190 +372,9 @@ describe('movimientosRecientes()', () => {
 
 // ── renderActividadReciente() ──────────────────────────────────────
 
-describe('renderActividadReciente()', () => {
-  const elPanel = () => document.getElementById('panel-actividad-reciente');
-  const matchMediaReal = window.matchMedia;
-
-  afterEach(() => { window.matchMedia = matchMediaReal; });
-
-  beforeEach(() => {
-    document.body.innerHTML = '<div id="panel-actividad-reciente" hidden></div>';
-    S.gastos = [];
-    S.ingresosPuntuales = [];
-    S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
-    S.transferencias = [];
-    S.cuentas = [cuenta('c1', 'Nequi'), cuenta('c2', 'Bancolombia')];
-  });
-
-  it('no-op si el contenedor no existe', () => {
-    document.body.innerHTML = '';
-    expect(() => renderActividadReciente()).not.toThrow();
-  });
-
-  it('oculto y vacío sin ningún movimiento', () => {
-    renderActividadReciente();
-    expect(elPanel().hidden).toBe(true);
-    expect(elPanel().innerHTML).toBe('');
-  });
-
-  it('visible con un gasto: muestra descripción y monto con signo -', () => {
-    S.gastos = [gasto()];
-    renderActividadReciente();
-    expect(elPanel().hidden).toBe(false);
-    expect(elPanel().innerHTML).toContain('Mercado');
-    expect(elPanel().innerHTML).toContain('-$50.000');
-  });
-
-  it('visible con un ingreso puntual: monto con signo +', () => {
-    S.ingresosPuntuales = [ingresoPuntual()];
-    renderActividadReciente();
-    expect(elPanel().innerHTML).toContain('Venta bici');
-    expect(elPanel().innerHTML).toContain('+$300.000');
-  });
-
-  it('visible con un aporte al fondo', () => {
-    S.ahorro.aportes = [aporte()];
-    renderActividadReciente();
-    expect(elPanel().innerHTML).toContain('Aporte al fondo de emergencia');
-    expect(elPanel().innerHTML).toContain('-$100.000');
-  });
-
-  it('visible con una transferencia (MC.17c): "Origen → Destino" sin signo', () => {
-    S.transferencias = [transferencia()];
-    renderActividadReciente();
-    const html = elPanel().innerHTML;
-    expect(html).toContain('Nequi → Bancolombia');
-    expect(html).toContain('$200.000');
-    expect(html).not.toContain('+$200.000');
-    expect(html).not.toContain('-$200.000');
-  });
-
-  // IN.9b (ADR 057 D4): el límite lo decide el ancho, no el dispositivo. El 5
-  // se eligió para 390px; en escritorio caben 8 sin pedir un dato nuevo.
-  // `matchMedia` se falsea porque happy-dom no tiene viewport real.
-  const anchoDe = (esMovil) => {
-    window.matchMedia = () => ({ matches: esMovil });
-  };
-
-  it('muestra como máximo 5 movimientos en móvil aunque haya más', () => {
-    anchoDe(true);
-    S.gastos = Array.from({ length: 12 }, (_, i) => gasto({ id: `g${i}`, fecha: `2026-07-${String(i + 1).padStart(2, '0')}` }));
-    renderActividadReciente();
-    expect(elPanel().querySelectorAll('.actividad-reciente__item')).toHaveLength(5);
-  });
-
-  it('muestra hasta 8 movimientos en escritorio', () => {
-    anchoDe(false);
-    S.gastos = Array.from({ length: 12 }, (_, i) => gasto({ id: `g${i}`, fecha: `2026-07-${String(i + 1).padStart(2, '0')}` }));
-    renderActividadReciente();
-    expect(elPanel().querySelectorAll('.actividad-reciente__item')).toHaveLength(8);
-  });
-
-  it('con menos movimientos que el límite, escritorio muestra los que hay', () => {
-    anchoDe(false);
-    S.gastos = Array.from({ length: 3 }, (_, i) => gasto({ id: `g${i}`, fecha: `2026-07-0${i + 1}` }));
-    renderActividadReciente();
-    expect(elPanel().querySelectorAll('.actividad-reciente__item')).toHaveLength(3);
-  });
-
-  it('vuelve a ocultarse si se vacían las fuentes tras un render previo', () => {
-    S.gastos = [gasto()];
-    renderActividadReciente();
-    expect(elPanel().hidden).toBe(false);
-
-    S.gastos = [];
-    renderActividadReciente();
-    expect(elPanel().hidden).toBe(true);
-    expect(elPanel().innerHTML).toBe('');
-  });
-
-  // Ficha 02 (ADR 069): el enlace solo aparece cuando hay más historial que
-  // el que cabe en el panel. Con menos, la sección completa mostraría estas
-  // mismas filas y el enlace prometía una pantalla que no existía.
-  it('incluye el link "Ver todo" hacia #movimientos cuando hay más de los que caben', () => {
-    anchoDe(true);
-    S.gastos = Array.from({ length: 8 }, (_, i) => gasto({ id: `g${i}`, fecha: `2026-07-0${i + 1}` }));
-    renderActividadReciente();
-    const link = elPanel().querySelector('.actividad-reciente__ver-todo');
-    expect(link).not.toBeNull();
-    expect(link.getAttribute('href')).toBe('#movimientos');
-  });
-
-  it('sin más de los que caben, no dibuja "Ver todo"', () => {
-    anchoDe(true);
-    S.gastos = Array.from({ length: 3 }, (_, i) => gasto({ id: `g${i}`, fecha: `2026-07-0${i + 1}` }));
-    renderActividadReciente();
-    expect(elPanel().querySelector('.actividad-reciente__ver-todo')).toBeNull();
-    expect(elPanel().querySelectorAll('.actividad-reciente__item')).toHaveLength(3);
-  });
-
-  it('con exactamente los que caben tampoco lo dibuja: no hay nada más que ver', () => {
-    anchoDe(true);
-    S.gastos = Array.from({ length: 5 }, (_, i) => gasto({ id: `g${i}`, fecha: `2026-07-0${i + 1}` }));
-    renderActividadReciente();
-    expect(elPanel().querySelector('.actividad-reciente__ver-todo')).toBeNull();
-  });
-
-  // ── DSK.1a (ADR 070 D2): la copia de escritorio de IN.9d ya no existe ──
-  // Actividad reciente cuenta el pasado, y en monitor compartía anatomía con
-  // la lista de obligaciones. Sale de Inicio en escritorio; Movimientos sigue
-  // a un clic en la barra lateral. Estos tests son la compuerta: si alguien
-  // reintroduce el contenedor, esta función no debe volver a llenarlo sola.
-
-  it('no llena ninguna copia de escritorio: ese contenedor ya no es suyo', () => {
-    document.body.innerHTML = '<div id="panel-actividad-reciente" hidden></div>'
-      + '<div id="panel-actividad-reciente-escritorio" hidden></div>';
-    S.gastos = [gasto()];
-    renderActividadReciente();
-    const escritorio = document.getElementById('panel-actividad-reciente-escritorio');
-    expect(elPanel().hidden).toBe(false);
-    expect(escritorio.hidden).toBe(true);
-    expect(escritorio.innerHTML).toBe('');
-  });
-
-  it('no-op si solo existe el contenedor retirado de escritorio', () => {
-    document.body.innerHTML = '<div id="panel-actividad-reciente-escritorio" hidden></div>';
-    S.gastos = [gasto()];
-    expect(() => renderActividadReciente()).not.toThrow();
-    expect(document.getElementById('panel-actividad-reciente-escritorio').innerHTML).toBe('');
-  });
-
-  // ── IN.8g (ADR 034 D7): fusión con Accesos rápidos, header simplificado ──
-
-  it('el label "Actividad reciente" vive en el header compartido, sin su propia card/ícono', () => {
-    S.gastos = [gasto()];
-    renderActividadReciente();
-    const html = elPanel().innerHTML;
-    expect(html).toContain('accesos-actividad__label');
-    expect(html).toContain('Actividad reciente');
-    expect(html).not.toContain('class="actividad-reciente"');
-    expect(html).not.toContain('actividad-reciente__title');
-  });
-
-  // El panel usaba icon(m.icono), que antepone "#i-" a un id que ya venía
-  // completo ('c-mercado'): href="#i-c-mercado" no existe en el sprite y las
-  // 5 filas quedaban con el chip vacío. La vista completa siempre usó
-  // tejaCategoria(); ahora el panel comparte ese componente.
-  it('pinta la teja de categoría del dominio, no un chip con href inexistente', () => {
-    S.gastos = [gasto()];
-    renderActividadReciente();
-    const teja = elPanel().querySelector('.actividad-reciente__item .cat-teja');
-    expect(teja).not.toBeNull();
-    expect(teja.dataset.dom).toBe('gastos');
-    expect(elPanel().innerHTML).not.toContain('#i-c-');
-  });
-
-  it('un ingreso trae la teja de su propio dominio', () => {
-    S.gastos = [];
-    S.ingresosPuntuales = [{
-      id: 'i1', descripcion: 'Salario', monto: 1_900_000,
-      fecha: '2026-07-15', categoria: 'Salario',
-    }];
-    renderActividadReciente();
-    const teja = elPanel().querySelector('.actividad-reciente__item .cat-teja');
-    expect(teja.dataset.dom).toBe('ingresos');
-  });
-});
+// El panel de Inicio se retiro con el ADR 087 (extiende el ADR 070 D2 a
+// movil): contaba el pasado y compartia anatomia con la lista de obligaciones.
+// `movimientosRecientes()` sigue probado arriba; la vista completa, mas abajo.
 
 // ── movimientosCompletos() ────────────────────────────────────────
 
@@ -1160,12 +978,7 @@ describe('renderMovimientosCompletos() - acciones por fila (MOV.1)', () => {
     expect(editar.getAttribute('aria-label')).toContain('Mercado');
   });
 
-  it('las acciones NO aparecen en el panel compacto de Inicio', () => {
-    // Son dos renderizadores distintos a propósito: Inicio es un resumen.
-    document.body.innerHTML = '<div id="panel-actividad-reciente"></div>';
-    S.gastos = [gasto({ id: 'g1' })];
-    renderActividadReciente();
-    const panel = document.getElementById('panel-actividad-reciente');
-    expect(panel.querySelectorAll('[data-action]')).toHaveLength(0);
-  });
+  // El panel compacto de Inicio se retiro con el ADR 087, asi que ya no hay dos
+  // renderizadores que distinguir: queda uno, y este es el que tiene acciones.
+
 });

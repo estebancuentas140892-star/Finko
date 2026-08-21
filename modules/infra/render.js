@@ -282,34 +282,26 @@ function _enEscritorio() {
 }
 
 /**
- * Decide qué cierre de Inicio se ve según el ancho (DSK.1a, ADR 070 D2, que
- * acota IN.9d / ADR 057 D4).
+ * Decide si el cierre de Inicio se ve, según el ancho (DSK.1a, ADR 070 D2, que
+ * acota IN.9d / ADR 057 D4; extendido a móvil por el ADR 087).
  *
- * En escritorio Inicio avisa, no resume: se retiran Accesos rápidos (duplica
- * la barra lateral, que ya muestra 15 destinos con su nombre), Actividad
- * reciente (cuenta el pasado y comparte anatomía con la lista de
- * obligaciones) y Resumen de la semana (es tendencia, y la tendencia no
- * tiene fecha límite). Los dos primeros ya no existen en el DOM: escritorio
- * era su único hogar, así que IN.9d se revirtió en `index.html` en vez de
- * ocultarse. Acá solo queda el Resumen semanal, que sí sigue vivo bajo
- * 1024px y por eso se fuerza oculto por ancho.
+ * De los tres módulos que el ADR 070 D2 retiró de Inicio en escritorio, dos
+ * salieron también de móvil con el ADR 087, porque sus argumentos no eran de
+ * ancho: el resumen semanal es tendencia (vive en Análisis) y la actividad
+ * reciente cuenta el pasado (vive en Movimientos). Los dos se retiraron del
+ * DOM, no se ocultan, así que acá ya no queda nada que decidir sobre ellos.
  *
- * En móvil no cambia nada: la fusión Accesos + Actividad del ADR 034 D7
- * sigue igual, y el Resumen semanal lo sigue decidiendo resumen/view.js.
- *
- * El oculto se fuerza en una sola dirección, nunca al revés: revelar acá
- * dejaría un panel vacío cuando resumen/view.js ya lo escondió por falta de
- * datos. Mismo criterio que traía IN.9d con Actividad reciente.
+ * Queda **Accesos rápidos**, cuyo motivo sí es de ancho: existe porque en móvil
+ * no hay barra lateral, y en monitor la barra ya muestra 15 destinos con su
+ * nombre. Se fuerza oculto desde 1024px y nunca al revés: revelar acá dejaría
+ * la celda visible en un ancho donde no le toca.
  *
  * Se lee en cada `renderAll()`, misma limitación aceptada en IN.9b/IN.9c: un
  * cambio de ancho sin cambio de estado no repinta.
  */
 function _repartoCierreInicio() {
-  const enEscritorio = _enEscritorio();
-  const movil   = document.getElementById('accesos-actividad-movil');
-  const resumen = document.getElementById('panel-resumen');
-  if (movil) movil.hidden = enEscritorio;
-  if (resumen && enEscritorio) resumen.hidden = true;
+  const movil = document.getElementById('accesos-actividad-movil');
+  if (movil) movil.hidden = _enEscritorio();
 }
 
 /**

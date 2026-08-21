@@ -11,7 +11,7 @@ import { EventBus } from '../../core/state.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { renderSmart, registrarRender, programarRender } from '../../infra/render.js';
 import {
-  renderActividadReciente, renderMovimientosCompletos, cargarMasMovimientos,
+  renderMovimientosCompletos, cargarMasMovimientos,
   renderFiltrosMovimientos, setFiltroTexto, setFiltroDominio, setFiltroCategoria,
   setFiltroFechaDesde, setFiltroFechaHasta, limpiarFiltrosMovimientos,
   actualizarBotonLimpiarFiltros,
@@ -61,7 +61,6 @@ function _renderVistaCompleta() {
 }
 
 function _renderTodo() {
-  renderSmart(renderActividadReciente, 'dash');
   renderSmart(_renderVistaCompleta, 'movimientos');
 }
 

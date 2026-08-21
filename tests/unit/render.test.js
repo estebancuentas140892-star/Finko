@@ -402,44 +402,37 @@ describe('updSaldo() - detalle por cuenta en columna propia (escritorio)', () =>
 // fuerza oculto por ancho, porque bajo 1024px sigue vivo.
 
 describe('renderAll() - cierre de Inicio según el ancho', () => {
-  const elMovil   = () => document.getElementById('accesos-actividad-movil');
-  const elResumen = () => document.getElementById('panel-resumen');
-
-  afterEach(restaurarAncho);
-
+  // De los tres modulos que el ADR 070 D2 retiro de Inicio en escritorio, dos
+  // salieron tambien de movil con el ADR 087 y ya no estan en el DOM. Lo que
+  // queda por decidir aca es solo Accesos rapidos, cuyo motivo si era de ancho:
+  // en movil no hay barra lateral.
   beforeEach(() => {
     document.body.innerHTML = `
       <div id="accesos-actividad-movil" hidden></div>
-      <div id="panel-resumen" hidden></div>`;
+      <div id="panel-cuentas-detalle"></div>`;
     S.cuentas = [];
     S.config  = {};
   });
 
-  it('en móvil muestra la fusión de Accesos + Actividad', () => {
-    anchoDe(true);
-    renderAll();
-    expect(elMovil().hidden).toBe(false);
-  });
+  afterEach(restaurarAncho);
 
-  it('en móvil no toca el Resumen semanal: lo decide resumen/view.js', () => {
-    anchoDe(true);
-    elResumen().hidden = false; // simula lo que ya decidió resumen/view.js con datos
-    renderAll();
-    expect(elResumen().hidden).toBe(false);
-  });
-
-  it('en escritorio oculta la fusión y retira el Resumen semanal', () => {
-    anchoDe(false);
-    elResumen().hidden = false; // resumen/view.js lo había revelado por tener datos
-    renderAll();
-    expect(elMovil().hidden).toBe(true);
-    expect(elResumen().hidden).toBe(true);
-  });
-
-  it('en escritorio no fuerza visible el Resumen semanal si ya quedó oculto por falta de datos', () => {
+  it('en escritorio oculta Accesos rapidos: la barra lateral ya los tiene', () => {
     anchoDe(false);
     renderAll();
-    expect(elResumen().hidden).toBe(true);
+    expect(document.getElementById('accesos-actividad-movil').hidden).toBe(true);
+  });
+
+  it('en movil los revela: no hay barra lateral que los duplique', () => {
+    anchoDe(true);
+    renderAll();
+    expect(document.getElementById('accesos-actividad-movil').hidden).toBe(false);
+  });
+
+  it('no deja rastro de los dos paneles retirados', () => {
+    anchoDe(true);
+    renderAll();
+    expect(document.getElementById('panel-resumen')).toBeNull();
+    expect(document.getElementById('panel-actividad-reciente')).toBeNull();
   });
 });
 

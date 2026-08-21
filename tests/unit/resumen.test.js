@@ -10,7 +10,7 @@ import {
   resumenSemanal,
   hayResumen,
 } from '../../modules/dominio/resumen/logic.js';
-import { renderPanelResumen, renderPanelAvisos } from '../../modules/dominio/resumen/view.js';
+import { renderPanelAvisos } from '../../modules/dominio/resumen/view.js';
 import { S } from '../../modules/core/state.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -266,119 +266,10 @@ describe('hayResumen()', () => {
 
 // ── renderPanelResumen() (PERF.7b) ──────────────────────────────────
 
-describe('renderPanelResumen()', () => {
-  const elPanel = () => document.getElementById('panel-resumen');
-
-  beforeEach(() => {
-    document.body.innerHTML = '<section id="panel-resumen"></section>';
-    S.categoriasPersonalizadas = [];
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 5, 13)); // 2026-06-13, mismo HOY que el resto del archivo
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  it('no revienta si el contenedor no existe', () => {
-    document.body.innerHTML = '';
-    S.gastos = [gasto({ fecha: '2026-06-13' })];
-    expect(() => renderPanelResumen()).not.toThrow();
-  });
-
-  it('oculta el panel y lo vacía sin gastos en los últimos 7 días (PERF.7b: r.registros === 0 reemplaza a hayResumen)', () => {
-    S.gastos = [gasto({ fecha: '2026-06-01' })]; // fuera de la ventana de 7 días
-    renderPanelResumen();
-    expect(elPanel().hidden).toBe(true);
-    expect(elPanel().innerHTML).toBe('');
-  });
-
-  it('oculta el panel sin ningún gasto registrado', () => {
-    S.gastos = [];
-    renderPanelResumen();
-    expect(elPanel().hidden).toBe(true);
-  });
-
-  it('muestra el panel con al menos un gasto en los últimos 7 días', () => {
-    S.gastos = [gasto({ fecha: '2026-06-13', monto: 20_000 })];
-    renderPanelResumen();
-    expect(elPanel().hidden).toBe(false);
-    expect(elPanel().innerHTML).toContain('Resumen de la semana');
-    expect(elPanel().innerHTML).toContain('$20.000');
-  });
-
-  // IN.9d (ADR 057 D4): título propio; ya no depende del label de un grupo
-  // externo, que en escritorio ahora también podría contener Actividad
-  // reciente (fila final 6+6).
-  it('trae su propio título, no depende de un label externo', () => {
-    S.gastos = [gasto({ fecha: '2026-06-13', monto: 20_000 })];
-    renderPanelResumen();
-    const titulo = elPanel().querySelector('.accesos-actividad__label');
-    expect(titulo).not.toBeNull();
-    expect(titulo.textContent).toBe('Resumen de la semana');
-  });
-
-  // ── IN.8f (ADR 034 D6): bloque visual con barras + chip + categoría top ──
-
-  it('dibuja 7 barras, una por día de la ventana', () => {
-    S.gastos = [gasto({ fecha: '2026-06-13', monto: 20_000 })];
-    renderPanelResumen();
-    const barras = elPanel().querySelectorAll('.resumen-semana__barra');
-    expect(barras).toHaveLength(7);
-  });
-
-  it('el chip dice "N% menos" en verde cuando el gasto bajó', () => {
-    S.gastos = [
-      gasto({ fecha: '2026-06-13', monto: 50_000 }),
-      gasto({ fecha: '2026-06-02', monto: 100_000 }), // semana previa
-    ];
-    renderPanelResumen();
-    const chip = elPanel().querySelector('.resumen-semana__chip');
-    expect(chip.textContent.trim()).toContain('50% menos');
-    expect(chip.className).toContain('resumen-semana__chip--positivo');
-  });
-
-  it('el chip dice "N% más" en tono neutro cuando el gasto subió (sin rojo, ADR 019)', () => {
-    S.gastos = [
-      gasto({ fecha: '2026-06-13', monto: 100_000 }),
-      gasto({ fecha: '2026-06-02', monto: 50_000 }), // semana previa
-    ];
-    renderPanelResumen();
-    const chip = elPanel().querySelector('.resumen-semana__chip');
-    expect(chip.textContent.trim()).toContain('100% más');
-    expect(chip.className).toContain('resumen-semana__chip--neutro');
-  });
-
-  it('muestra la categoría top con "N de 7 días activos" y el día pico', () => {
-    S.gastos = [
-      gasto({ fecha: '2026-06-13', categoria: 'Mercado', monto: 180_000 }), // hoy = sábado
-      gasto({ fecha: '2026-06-10', categoria: 'Transporte', monto: 20_000 }),
-    ];
-    renderPanelResumen();
-    const html = elPanel().innerHTML;
-    expect(html).toContain('Mercado fue tu categoría top');
-    expect(html).toContain('2 de 7 días activos');
-    expect(html).toContain('mayor gasto el sábado');
-    expect(html).toContain('$180.000');
-  });
-
-  // CAT.3b (ADR 058 D3): la categoría top leía el mapa nativo crudo y una
-  // personalizada caía siempre a 'c-otros'.
-  it('la categoría top personalizada usa su ícono, no el genérico', () => {
-    S.categoriasPersonalizadas = [{ id: 'c1', nombre: 'Domicilios', icono: 'c-tienda' }];
-    S.gastos = [gasto({ fecha: '2026-06-13', categoria: 'Domicilios', monto: 180_000 })];
-    renderPanelResumen();
-    const uso = elPanel().querySelector('.resumen-semana__top use');
-    expect(uso.getAttribute('href')).toBe('#c-tienda');
-  });
-
-  it('sin categoría top (imposible con registros > 0, pero defensivo) no rompe el render', () => {
-    S.gastos = [gasto({ fecha: '2026-06-13', categoria: 'Deudas', monto: 500_000, compromisoId: 'c1' })];
-    expect(() => renderPanelResumen()).not.toThrow();
-    // Sin top (categoriaTopSemana excluye compromisoId), no se dibuja la fila.
-    expect(elPanel().innerHTML).not.toContain('resumen-semana__top-titulo');
-  });
-});
+// El panel semanal de Inicio se retiro con el ADR 087 (extiende el ADR 070 D2
+// a movil): es tendencia, y la tendencia no tiene fecha limite. Su calculo
+// sigue entero y probado arriba, esperando a la ficha 16 (Analisis), que es su
+// casa segun ese mismo ADR. Los tests del render se van con el render.
 
 // ── renderPanelAvisos() (CFG.3b, ADR 066) ────────────────────────────
 
