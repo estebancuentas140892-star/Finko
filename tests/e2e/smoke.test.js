@@ -4816,6 +4816,30 @@ test.describe('Análisis v2 - score hero + chip de mes (ANL.2a)', () => {
     await expect(hero.locator(':scope > .score-hero__explicacion')).toBeVisible();
   });
 
+  // Ficha 16 (ADR 090 D1): cuarto consumidor del acceso contextual prefiltrado.
+  test('el aviso de deudas sin saldo llega a Por pagar con el chip Deudas puesto', async ({ page }) => {
+    await saltearOnboarding(page);
+    await parchar(page, {
+      cuentas: [{ id: 'cu1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 800_000, activa: true }],
+      compromisos: [
+        { id: 'd-con', descripcion: 'Credito vehiculo', tipo: 'deuda-entidad', activo: true,
+          saldoTotal: 7_440_000, cuotaMensual: 800_000, diaPago: 15, frecuencia: 'Mensual' },
+        { id: 'd-sin', descripcion: 'Tarjeta Nu', tipo: 'deuda-entidad', activo: true,
+          cuotaMensual: 184_000, diaPago: 20, frecuencia: 'Mensual' },
+      ],
+    });
+    await page.goto('/#analisis');
+    await page.waitForSelector('#sec-analisis.active', { timeout: 10_000 });
+
+    const salida = page.locator('[data-action="analisis-completar-deuda"]');
+    await expect(salida).toHaveText('Por pagar');
+    await salida.click();
+
+    await expect(page).toHaveURL(/#compromisos$/);
+    await expect(page.locator('#sec-compromisos [aria-pressed="true"]').first()).toHaveText(/Deudas/);
+    await expect(page.locator('#lista-compromisos .deuda-card[data-id="d-sin"]')).toHaveCount(1);
+  });
+
   test('el ojo del patrimonio enmascara neto, activos y pasivos (ANL.2b)', async ({ page }) => {
     await saltearOnboarding(page);
     await parchar(page, {

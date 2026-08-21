@@ -43,6 +43,15 @@ export function initAnalisis() {
   // S.config.ocultarSaldo con Inicio (IN.2), Mis cuentas (MC.18a), Deudas
   // (D.16a) y Calendario (CAL.4a): un solo control de privacidad en toda la
   // app. updSaldo() mantiene el hero de Inicio en sincronía.
+  // Ficha 16 (Z3, ADR 090 D1): el aviso de deudas sin saldo sale a la lente
+  // "Por pagar" con su chip puesto. Emite en vez de filtrar acá: el chip es
+  // estado de `compromisos` y ningún dominio importa a otro (ADN 10). El
+  // destino decide el chip a partir del compromiso, que es lo que este aviso
+  // conoce (ADR 081).
+  registrarAccion('analisis-completar-deuda', (el) => {
+    EventBus.emit('porPagar:ver-compromiso', { id: el?.dataset?.id });
+  });
+
   registrarAccion('analisis-saldo-visibilidad', () => {
     S.config.ocultarSaldo = S.config.ocultarSaldo !== true;
     save();

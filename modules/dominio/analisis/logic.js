@@ -129,18 +129,26 @@ export function calcularPasivos(compromisos) {
   const deudasActivas = compromisosActivos(compromisos).filter(c => esDeuda(c.tipo));
   let total = 0;
   let deudasSinSaldo = 0;
+  // Ficha 16 (Z3): el aviso de deudas sin saldo sale prefiltrado a "Por pagar",
+  // y esa llegada nombra un compromiso concreto porque el chip lo decide la
+  // lente destino, no el emisor (ADR 081). Con varias sin saldo se manda la
+  // primera: el chip abre el grupo entero y la tarjeta a la que se desplaza es
+  // una de las que hay que completar.
+  let deudaSinSaldoId = null;
   for (const d of deudasActivas) {
     const saldo = Number(d.saldoTotal);
     if (Number.isFinite(saldo) && saldo > 0) {
       total += saldo;
     } else {
       deudasSinSaldo += 1;
+      if (deudaSinSaldoId === null) deudaSinSaldoId = d.id ?? null;
     }
   }
   return {
     total,
     cantidadDeudas: deudasActivas.length,
     deudasSinSaldo,
+    deudaSinSaldoId,
   };
 }
 

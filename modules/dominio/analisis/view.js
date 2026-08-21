@@ -755,11 +755,23 @@ function _renderPatrimonio({ activos, pasivos, patrimonioNeto }, lectura = '') {
   // CTA si hay deudas sin saldo registrado. ANL.3 (Z3): la etiqueta visible
   // usa el nombre de producto, no el interno ("Compromisos"); desde la ficha 05
   // ese nombre es "Por pagar", el mismo del nav y de la pestaña del bloque.
+  //
+  // Ficha 16 (ADR 090 D1): además llega **prefiltrada**, cuarto consumidor del
+  // acceso contextual de la ficha 07. Sigue siendo un enlace y no un botón
+  // porque lo que hace es navegar; el `data-action` solo le añade el chip y el
+  // desplazamiento a la tarjeta (`dispatch()` hace `preventDefault()`, así que
+  // la navegación la hace el handler destino). Sin id conocido cae al enlace
+  // pelado, que es lo que había: mejor la lente entera que ninguna salida.
+  const idDeuda = pasivos.deudaSinSaldoId;
+  const salidaDeudas = idDeuda
+    ? `<a href="#compromisos" class="link" data-action="analisis-completar-deuda"
+          data-id="${_esc(idDeuda)}">Por pagar</a>`
+    : '<a href="#compromisos" class="link">Por pagar</a>';
   const ctaDeudas = pasivos.deudasSinSaldo > 0
     ? `<p class="analisis__hint">
         Tienes <strong>${pasivos.deudasSinSaldo} deuda${pasivos.deudasSinSaldo > 1 ? 's' : ''}</strong>
-        sin saldo registrado. Complétalas en
-        <a href="#compromisos" class="link">Por pagar</a>
+        sin saldo registrado. Compl${pasivos.deudasSinSaldo > 1 ? 'étalas' : 'étala'} en
+        ${salidaDeudas}
         para calcular tu patrimonio real.
       </p>`
     : '';

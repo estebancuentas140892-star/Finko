@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-08-21. Última tarea cerrada: MOV.1 ficha 15, Movimientos gana su quinta fuente y dos puertas.
+> Revisado: 2026-08-21. Última tarea cerrada: MOV.1 ficha 16, Análisis sale prefiltrado y R88 encuentra su segundo caso.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -25,6 +25,9 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**MOV.1 ficha 16 - Analisis: la salida prefiltrada y cinco veredictos, 2026-08-21**
+Llego con **dos de sus tres hallazgos ya cerrados** por ANL.3 el 2026-08-11, verificado antes de tocar nada (segundo caso tras INT.1g). Faltaba medio Z3: el aviso de deudas sin saldo decia "Por pagar" pero enlazaba pelado, y ahora sale **prefiltrado** con el chip Deudas ([ADR 090](DECISIONS/090-analisis-cada-bloque-declara-su-alcance.md)). Los otros cuatro veredictos son documentacion: **R88 gana su segundo caso** y va a la 18 lista para confirmar; **R90 se acota** y no llega aca (activos y pasivos son stocks, no flujos); los tres grupos **no** se mudan, porque Analisis esta clavado a `hoy()`; el monitor de renta queda sin auditar. Avance MOV.1: **16 de 25**. SW v585.
+
 **MOV.1 ficha 15 - Movimientos: la quinta fuente y cuatro puertas, 2026-08-21**
 Cuatro cambios ([ADR 089](DECISIONS/089-movimientos-la-quinta-fuente-y-cuatro-puertas.md)). La seccion se confirma en "Consultar" con evidencia: es el unico buscador de la app y responde cuatro preguntas que ninguna otra vista responde. El ledger pasa de **4 a 5 de las 7 fuentes** que mueven dinero: los abonos recibidos tenian fecha y cuenta desde el v34 y no salian en ninguna vista cronologica. El rango de fechas se pliega (256px a 160px), Gastos y Mis cuentas ganan salida prefiltrada, y el confirm del borrado nombra la reversa. R90 confirmada y acotada a tres estados. Avance MOV.1: **15 de 25**. SW v584.
 
@@ -33,12 +36,6 @@ Tres cambios, cero tokens nuevos ([ADR 088](DECISIONS/088-me-deben-urgencia-de-c
 
 **ADR 087 - Inicio en movil tambien avisa y no resume, 2026-08-21**
 El ADR 070 D2 retiro tres modulos de Inicio en escritorio y escribio "los tres siguen enteros en movil". De sus tres argumentos **solo uno era de ancho**: el resumen semanal es tendencia y la actividad reciente cuenta el pasado, y eso vale igual en un telefono. Salen del DOM los dos; Accesos rapidos se queda porque en movil no hay barra lateral. Nada pierde funcion: Movimientos esta en "Mas" y la tendencia tiene casa en Analisis. Inicio movil pasa de cinco bloques a tres. SW v582.
-
-**MOV.1 ficha 13 - La etapa de Inversion se nombra, 2026-08-21**
-Decimotercera de las 25 entregas, con [ADR 086](DECISIONS/086-inversion-la-etapa-se-nombra-y-el-consejo-es-el-boton.md). La cabecera decia "Momento N de 3" y ese 3 era inalcanzable: el numero sale de `etapaDePortafolio()`, que devuelve 1 o 2 y nunca mas. Ahora nombra la etapa y el chip dice de que esta hecha. Y el vacio hereda la jerarquia del momento 1: sin fondo, el primario lleva al Fondo, porque la app era mas prudente despues de invertir que antes. Con esto cierran la casa Ahorro y sus cuatro hijas. SW v581.
-
-**Inicio en movil: el resumen semanal empujaba todas las tarjetas fuera del viewport, 2026-08-21**
-Reportado dos veces como "volvimos a una version antigua". No era la cache: `.resumen-semana__header` es un flex sin `flex-wrap` con un chip `nowrap` que no encoge, asi que con "Sin semana previa para comparar" pedia 415px de min-content. El bento movil es `1fr`, y un track `1fr` no baja del min-content de su item mas ancho: **las cinco celdas** se iban a 415 en un viewport de 391. De 75 elementos desbordados a 0. Dos guardias E2E nuevos. SW v580.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

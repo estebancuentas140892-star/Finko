@@ -438,7 +438,24 @@ describe('calcularPasivos()', () => {
 
   it('devuelve ceros con array vacío', () => {
     const r = calcularPasivos([]);
-    expect(r).toEqual({ total: 0, cantidadDeudas: 0, deudasSinSaldo: 0 });
+    expect(r).toEqual({ total: 0, cantidadDeudas: 0, deudasSinSaldo: 0, deudaSinSaldoId: null });
+  });
+
+  // Ficha 16 (Z3): el aviso sale prefiltrado a "Por pagar" y esa llegada nombra
+  // un compromiso, porque el chip lo decide la lente destino (ADR 081).
+  it('nombra la primera deuda sin saldo, para la salida prefiltrada', () => {
+    const r = calcularPasivos([
+      deuda({ id: 'd1', saldoTotal: 900_000 }),
+      deuda({ id: 'd2', saldoTotal: 0 }),
+      deuda({ id: 'd3', saldoTotal: undefined }),
+    ]);
+    expect(r.deudasSinSaldo).toBe(2);
+    expect(r.deudaSinSaldoId).toBe('d2');
+  });
+
+  it('sin deudas sin saldo no nombra ninguna', () => {
+    const r = calcularPasivos([deuda({ id: 'd1', saldoTotal: 500_000 })]);
+    expect(r.deudaSinSaldoId).toBeNull();
   });
 });
 
@@ -2196,6 +2213,48 @@ describe('renderAnalisis() - ANL.2b patrimonio con composición y ojo', () => {
 
     const link = document.querySelector('.analisis__hint a[href="#compromisos"]');
     expect(link.textContent).toBe('Por pagar');
+  });
+
+  // Ficha 16 (ADR 090 D1): la salida llega prefiltrada, cuarto consumidor del
+  // acceso contextual. Nombra el compromiso y no el chip: la taxonomia de la
+  // lente destino es de ella (ADR 081).
+  it('la salida de deudas sin saldo nombra la deuda, para llegar con el chip puesto', () => {
+    S.compromisos = [deuda({ id: 'd-sin', saldoTotal: undefined })];
+    renderAnalisis();
+
+    const link = document.querySelector('.analisis__hint [data-action="analisis-completar-deuda"]');
+    expect(link).not.toBeNull();
+    expect(link.dataset.id).toBe('d-sin');
+    // Sigue siendo un enlace: lo que hace es navegar.
+    expect(link.tagName).toBe('A');
+    expect(link.getAttribute('href')).toBe('#compromisos');
+  });
+
+  it('con varias deudas sin saldo manda la primera y el aviso las cuenta todas', () => {
+    S.compromisos = [
+      deuda({ id: 'd1', saldoTotal: 900_000 }),
+      deuda({ id: 'd2', saldoTotal: undefined }),
+      deuda({ id: 'd3', saldoTotal: 0 }),
+    ];
+    renderAnalisis();
+
+    expect(document.querySelector('[data-action="analisis-completar-deuda"]').dataset.id).toBe('d2');
+    const hint = [...document.querySelectorAll('.analisis__hint')]
+      .find(p => p.textContent.includes('sin saldo registrado'));
+    expect(hint.textContent).toContain('2 deudas');
+    expect(hint.textContent).toContain('Complétalas');
+  });
+
+  // Ficha 16: la frase concordaba mal con una sola ("1 deuda ... Complétalas").
+  it('el aviso concuerda en singular con una sola deuda', () => {
+    S.compromisos = [deuda({ id: 'd-uno', saldoTotal: undefined })];
+    renderAnalisis();
+    const hint = [...document.querySelectorAll('.analisis__hint')]
+      .find(p => p.textContent.includes('sin saldo registrado'));
+    const texto = hint.textContent.replace(/\s+/g, ' ');
+    expect(texto).toContain('1 deuda sin saldo');
+    expect(texto).toContain('Complétala en');
+    expect(texto).not.toContain('Complétalas');
   });
 
   it('avisa cuando hay préstamos sin cuenta vinculada: no suman al patrimonio (ANL.3, Z2)', () => {
