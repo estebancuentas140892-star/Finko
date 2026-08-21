@@ -557,7 +557,7 @@ function _initBankPicker(picker) {
 function _verEnPorPagar(el) {
   const id = el?.dataset?.id;
   if (!id) return;
-  EventBus.emit('porPagar:ver-deuda', { id });
+  EventBus.emit('porPagar:ver-compromiso', { id });
 }
 
 // ── REGISTRO ─────────────────────────────────────────────────────

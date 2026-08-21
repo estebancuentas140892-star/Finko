@@ -758,24 +758,48 @@ describe('renderAgenda() - total a pagar por día', () => {
     document.body.innerHTML = '<div id="panel-agenda"></div>';
     S.compromisos = [];
     S.gastos = [];
+    S.ingresos = [];
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 5, 15)); // 15 jun 2026
     resetearVistaAlMesActual();
   });
 
   afterEach(() => {
+    // Este describe siembra ingresos desde la ficha 08 (el resumen del día
+    // tiene dos lados): sin limpiarlos, los describes de abajo ven un evento
+    // que no sembraron.
+    S.ingresos = [];
     vi.useRealTimers();
   });
 
-  it('con un compromiso, muestra "Total a pagar" con el monto', () => {
+  // Ficha 08 (K1): el día se mide con sus dos lados, igual que el mes. Antes
+  // decía "Total a pagar" incluso en un día que solo traía un ingreso.
+  it('con un compromiso, dice lo que sale y que no entra nada', () => {
     S.compromisos = [compromisoBase({ diaPago: 15, frecuencia: 'Mensual', monto: 300_000 })];
     renderAgenda();
     mostrarDia(15);
     renderAgenda();
-    const html = document.getElementById('panel-agenda').innerHTML;
-    expect(html).toContain('cal-detail__total');
-    expect(html).toContain('Total a pagar');
-    expect(html).toContain('$300.000');
+    const total = document.querySelector('.cal-detail__total');
+    expect(total.textContent).toBe('Sale $300.000 · no entra nada');
+  });
+
+  it('un día que solo trae un ingreso dice lo que entra y que no sale nada', () => {
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 2_000_000, frecuencia: 'Mensual', diaPago: 15, activo: true }];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    expect(document.querySelector('.cal-detail__total').textContent)
+      .toBe('Entra $2.000.000 · no sale nada');
+  });
+
+  it('un día con las dos cosas las nombra sin inventar un neto', () => {
+    S.compromisos = [compromisoBase({ diaPago: 15, frecuencia: 'Mensual', monto: 300_000 })];
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 2_000_000, frecuencia: 'Mensual', diaPago: 15, activo: true }];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    expect(document.querySelector('.cal-detail__total').textContent)
+      .toBe('Entra $2.000.000 · sale $300.000');
   });
 
   it('con varios compromisos, el total es la suma de todos', () => {
@@ -1442,37 +1466,88 @@ describe('renderAgenda() - hero del mes (CAL.4a)', () => {
     vi.useRealTimers();
   });
 
-  it('con compromisos muestra el total del mes y el progreso pagado/falta', () => {
+  // Ficha 08 (K1): el hero sumaba solo salidas mientras la grilla pintaba
+  // también los ingresos, así que la cifra que encabezaba la pantalla no
+  // incluía nada de lo verde. Ahora mide el mes entero y su protagonista es
+  // lo que queda; el progreso pagado/falta sale (ADR 037 D1 superado en esa
+  // parte): quien quiere saber qué falta pagar lo tiene en "Por pagar".
+  it('mide el mes entero: entra, sale y lo que queda', () => {
     S.compromisos = [
       compromisoBase({ id: 'f1', tipo: 'fijo', monto: 300_000, diaPago: 5 }),
       compromisoBase({ id: 'd1', tipo: 'deuda-entidad', cuotaMensual: 200_000, monto: undefined, diaPago: 10 }),
     ];
-    S.gastos = [{ id: 'g1', compromisoId: 'f1', fecha: '2026-06-05', monto: 300_000 }];
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 2_000_000, frecuencia: 'Mensual', diaPago: 15, activo: true }];
     renderAgenda();
 
     const hero = document.querySelector('.hero-agenda');
     expect(hero).not.toBeNull();
-    expect(hero.querySelector('.hero-agenda__label').textContent).toBe('Compromisos de junio');
-    expect(hero.querySelector('.hero-agenda__valor').textContent).toContain('500.000');
-    expect(hero.querySelector('.hero-agenda__pagado').textContent).toContain('300.000');
-    expect(hero.querySelector('.hero-agenda__falta').textContent).toContain('200.000');
-    expect(hero.querySelector('.hero-agenda__barra-fill').style.width).toBe('60%');
+    expect(hero.querySelector('.hero-agenda__label').textContent).toBe('Te queda en junio');
+    expect(hero.querySelector('.hero-agenda__valor').textContent).toBe('$1.500.000');
+    const flujo = [...hero.querySelectorAll('.hero-agenda__flujo-item')].map(e => e.textContent);
+    expect(flujo).toEqual(['Entra $2.000.000', 'Sale $500.000']);
+    // El progreso pagado/falta ya no vive acá.
+    expect(hero.querySelector('.hero-agenda__barra')).toBeNull();
   });
 
-  // DIS.11 C8/V-8: la variante de guía tiene sentido cuando el mes SÍ tiene
-  // algo (ej. solo ingresos) pero nada que pagar. Con el mes completamente
-  // vacío el hero desaparece: la card .cal-empty ya guía, y con el banner de
-  // propósito arriba eran tres bloques diciendo lo mismo.
-  it('un mes solo con ingresos muestra la variante de guía, sin cifra ni ojo', () => {
+  it('cuando sale más de lo que entra lo dice, sin color de alarma', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', tipo: 'fijo', monto: 900_000, diaPago: 5 })];
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 400_000, frecuencia: 'Mensual', diaPago: 15, activo: true }];
+    renderAgenda();
+    const hero = document.querySelector('.hero-agenda');
+    expect(hero.querySelector('.hero-agenda__label').textContent).toBe('Te falta en junio');
+    expect(hero.querySelector('.hero-agenda__valor').textContent).toBe('$500.000');
+  });
+
+  // K4: la frase que ninguna otra sección puede escribir.
+  it('la línea dice cuándo cae lo primero que sale y lo primero que entra', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', tipo: 'fijo', monto: 300_000, diaPago: 5 })];
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 2_000_000, frecuencia: 'Mensual', diaPago: 15, activo: true }];
+    renderAgenda();
+    expect(document.querySelector('.hero-agenda__linea').textContent)
+      .toBe('Lo primero vence el 5; tu primer ingreso llega el 15.');
+  });
+
+  it('con un solo lado, la línea nombra solo ese', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', tipo: 'fijo', monto: 300_000, diaPago: 5 })];
+    renderAgenda();
+    expect(document.querySelector('.hero-agenda__linea').textContent)
+      .toBe('Lo primero vence el 5.');
+  });
+
+  // Ficha 08: un mes solo con ingresos YA no cae en la variante de guía. Ese
+  // era el defecto: el mes tenía dinero entrando y el encabezado decía "sin
+  // pagos programados", porque solo sabía mirar un lado.
+  it('un mes solo con ingresos tiene cifra: lo que queda es lo que entra', () => {
     S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 2_000_000, frecuencia: 'Mensual', diaPago: 15, activo: true }];
     renderAgenda();
     const hero = document.querySelector('.hero-agenda');
-    expect(hero).not.toBeNull();
-    expect(hero.querySelector('.hero-agenda__titulo').textContent).toBe('Sin pagos programados');
-    expect(hero.querySelector('.hero-agenda__label').textContent).toBe('Junio 2026');
-    expect(hero.querySelector('.hero-agenda__valor')).toBeNull();
-    expect(hero.querySelector('.hero-agenda__ojo')).toBeNull();
-    expect(hero.querySelector('.hero-agenda__barra')).toBeNull();
+    expect(hero.querySelector('.hero-agenda__label').textContent).toBe('Te queda en junio');
+    expect(hero.querySelector('.hero-agenda__valor').textContent).toBe('$2.000.000');
+    expect(hero.querySelector('.hero-agenda__titulo')).toBeNull();
+  });
+
+  // DIS.11 C8/V-8: la variante de guía sobrevive para el mes que tiene algo
+  // pero no tiene ninguna cifra. Con el aporte de meta pasa: es recordatorio,
+  // no dinero movido, así que no suma ni de un lado ni del otro.
+  it('un mes solo con aportes de meta cae en la variante de guía, sin cifra ni ojo', () => {
+    const metasAntes = S.metas;
+    S.metas = [{
+      id: 'm1', nombre: 'Viaje', montoObjetivo: 1_000_000, montoActual: 0, activa: true,
+      planAportes: [{ fecha: '2026-06-10', monto: 100_000 }],
+    }];
+    try {
+      renderAgenda();
+      const hero = document.querySelector('.hero-agenda');
+      expect(hero).not.toBeNull();
+      expect(hero.querySelector('.hero-agenda__titulo').textContent).toBe('Sin pagos programados');
+      expect(hero.querySelector('.hero-agenda__label').textContent).toBe('Junio 2026');
+      expect(hero.querySelector('.hero-agenda__valor')).toBeNull();
+      expect(hero.querySelector('.hero-agenda__ojo')).toBeNull();
+    } finally {
+      // Ningún beforeEach de este archivo resetea S.metas: dejarlo puesto le
+      // mete un evento a todos los describes de abajo.
+      S.metas = metasAntes;
+    }
   });
 
   it('DIS.11 C8: un mes sin ningún evento no renderiza el hero', () => {
@@ -1482,15 +1557,17 @@ describe('renderAgenda() - hero del mes (CAL.4a)', () => {
     expect(document.querySelector('.cal-empty')).not.toBeNull();
   });
 
-  it('con ocultarSaldo enmascara total, pagado y falta (IN.2/ADR 037 D7)', () => {
+  it('con ocultarSaldo enmascara las tres cifras, no las fechas (IN.2/ADR 037 D7)', () => {
     S.compromisos = [compromisoBase({ id: 'f1', tipo: 'fijo', monto: 300_000, diaPago: 5 })];
     S.config.ocultarSaldo = true;
     renderAgenda();
     const hero = document.querySelector('.hero-agenda');
     expect(hero.querySelector('.hero-agenda__valor').textContent).toBe('$••••••');
-    expect(hero.querySelector('.hero-agenda__pagado').textContent).toBe('Pagado ••••');
-    expect(hero.querySelector('.hero-agenda__falta').textContent).toBe('Falta ••••');
+    const flujo = [...hero.querySelectorAll('.hero-agenda__flujo-item')].map(e => e.textContent);
+    expect(flujo).toEqual(['Entra ••••', 'Sale ••••']);
     expect(hero.textContent).not.toContain('300.000');
+    // La línea de fechas no es un monto: el ojo no la toca.
+    expect(hero.querySelector('.hero-agenda__linea').textContent).toBe('Lo primero vence el 5.');
     const ojo = hero.querySelector('.hero-agenda__ojo');
     expect(ojo.getAttribute('aria-pressed')).toBe('true');
     expect(ojo.innerHTML).toContain('#i-eye-off');
@@ -1505,12 +1582,16 @@ describe('renderAgenda() - hero del mes (CAL.4a)', () => {
     expect(ojo.innerHTML).toContain('#i-eye');
   });
 
-  it('la barra queda al 100% cuando todo el mes está pagado y el caption no queda en negativo', () => {
+  // El encabezado mide lo que el mes MUEVE, no lo que se lleva pagado: un mes
+  // ya pagado sigue diciendo que salieron $300.000, porque salieron.
+  it('un mes ya pagado no cambia la cifra: el hero mide el flujo, no el progreso', () => {
     S.compromisos = [compromisoBase({ id: 'f1', tipo: 'fijo', monto: 300_000, diaPago: 5 })];
     S.gastos = [{ id: 'g1', compromisoId: 'f1', fecha: '2026-06-05', monto: 300_000 }];
     renderAgenda();
-    expect(document.querySelector('.hero-agenda__barra-fill').style.width).toBe('100%');
-    expect(document.querySelector('.hero-agenda__falta').textContent).toContain('$');
+    const hero = document.querySelector('.hero-agenda');
+    expect(hero.querySelector('.hero-agenda__label').textContent).toBe('Te falta en junio');
+    expect(hero.querySelector('.hero-agenda__valor').textContent).toBe('$300.000');
+    expect(hero.querySelector('.hero-agenda__barra')).toBeNull();
   });
 
   it('el hero sigue al mes visible: navegar de mes recalcula el label y el total', () => {
@@ -1519,7 +1600,7 @@ describe('renderAgenda() - hero del mes (CAL.4a)', () => {
       frecuencia: 'Única vez', fechaCreacion: '2026-06-01',
     })];
     renderAgenda();
-    expect(document.querySelector('.hero-agenda__label').textContent).toBe('Compromisos de junio');
+    expect(document.querySelector('.hero-agenda__label').textContent).toBe('Te falta en junio');
     navegarMes(+1);
     renderAgenda();
     // Julio no tiene ese pago único ni ningún otro evento: sin hero (C8) y
@@ -1574,7 +1655,7 @@ describe('renderAgenda() - subtítulo y empty state del mes (CAL.4b)', () => {
     expect(empty.querySelector('.cal-empty__title').textContent).toBe('Junio está despejado');
     const cta = empty.querySelector('a[href="#compromisos"]');
     expect(cta).not.toBeNull();
-    expect(cta.textContent.trim()).toBe('Ir a Por pagar');
+    expect(cta.textContent.trim()).toBe('Programar en Por pagar');
     expect(empty.querySelector('[data-action="nuevo-gasto-fijo"]')).toBeNull();
     // La grilla sigue visible: el mes se puede navegar (CAL.3 intacta).
     expect(document.querySelector('.cal-grid')).not.toBeNull();
@@ -1779,11 +1860,11 @@ describe('renderAgenda() - detalle del día accionable (CAL.4c)', () => {
     renderAgenda();
   };
 
-  it('con pagos pendientes el total dice "Total a pagar" en neutro', () => {
+  it('con pagos pendientes el resumen del día dice lo que sale, en neutro', () => {
     S.compromisos = [compromisoBase({ id: 'f1', diaPago: 15, monto: 300_000 })];
     abrirDia15();
     const total = document.querySelector('.cal-detail__total');
-    expect(total.textContent).toContain('Total a pagar');
+    expect(total.textContent).toBe('Sale $300.000 · no entra nada');
     expect(total.classList.contains('cal-detail__total--pagado')).toBe(false);
   });
 
@@ -1796,14 +1877,16 @@ describe('renderAgenda() - detalle del día accionable (CAL.4c)', () => {
     expect(total.classList.contains('cal-detail__total--pagado')).toBe(true);
   });
 
-  it('un día mixto (pagado + pendiente) sigue diciendo "Total a pagar"', () => {
+  it('un día mixto (pagado + pendiente) no afirma el pago', () => {
     S.compromisos = [
       compromisoBase({ id: 'f1', diaPago: 15, monto: 300_000 }),
       compromisoBase({ id: 'f2', diaPago: 15, monto: 100_000, descripcion: 'Internet' }),
     ];
     S.gastos = [{ id: 'g1', compromisoId: 'f1', fecha: '2026-06-15', monto: 300_000 }];
     abrirDia15();
-    expect(document.querySelector('.cal-detail__total').textContent).toContain('Total a pagar');
+    const total = document.querySelector('.cal-detail__total');
+    expect(total.textContent).toBe('Sale $400.000 · no entra nada');
+    expect(total.textContent).not.toContain('agado');
   });
 
   it('el badge de pagado es una pill con ícono y oculta el CTA (D5)', () => {
@@ -1828,84 +1911,52 @@ describe('renderAgenda() - detalle del día accionable (CAL.4c)', () => {
     expect(badge.textContent).toContain('Abonado');
     expect(badge.textContent).toContain('100.000');
     expect(badge.textContent).toContain('300.000');
-    // Parcial no es completo: el CTA Abonar sigue disponible.
-    expect(document.querySelector('[data-action="abrir-abono"]')).not.toBeNull();
+    // Ficha 08 (K3): el badge se queda porque es lectura; el CTA de abonar se
+    // fue con las otras tres acciones. La fila ofrece una sola salida.
+    expect(document.querySelector('[data-action="abrir-abono"]')).toBeNull();
+    expect(document.querySelector('[data-action="agenda-ver-en-por-pagar"]')).not.toBeNull();
   });
 
-  // ── BUG-015: el pago pertenece al mes visible, no al actual ──────
+  // ── K3: la fila del día se lee; se actúa en Por pagar ───────────
+  //
+  // La cobertura de BUG-015 (pagar el mes visible y no el actual) se mudó a
+  // `compromisos.test.js`: el botón vive ahora en la lista de "Por pagar",
+  // que desde la ficha 07 navega meses con el reloj del bloque.
 
-  it('el CTA "Marcar pagado" viaja con el mes visible en data-mes (BUG-015)', () => {
+  it('la fila de salida deja una sola acción: la salida a Por pagar', () => {
     S.compromisos = [compromisoBase({ id: 'f1', diaPago: 15, monto: 300_000 })];
     abrirDia15();
-    const pagar = document.querySelector('[data-action="agenda-marcar-pagado-fijo"]');
-    expect(pagar.dataset.mes).toBe('2026-06');
+    const acciones = [...document.querySelectorAll('.cal-detail__actions .btn')];
+    expect(acciones).toHaveLength(1);
+    expect(acciones[0].dataset.action).toBe('agenda-ver-en-por-pagar');
+    expect(acciones[0].dataset.id).toBe('f1');
+    expect(acciones[0].textContent.trim()).toBe('Ver en Por pagar');
   });
 
-  it('en un mes futuro no se ofrece marcar pagado: aún no vence (BUG-015)', () => {
-    S.compromisos = [compromisoBase({ id: 'f1', diaPago: 15, monto: 300_000 })];
-    renderAgenda();
-    navegarMes(1); // julio 2026, con hoy = 15 jun
-    mostrarDia(15);
-    renderAgenda();
-
-    expect(document.querySelector('[data-action="agenda-marcar-pagado-fijo"]')).toBeNull();
-    // Solo se bloquea el pago: editar y eliminar siguen disponibles.
-    expect(document.querySelector('[data-action="agenda-editar-fijo"]')).not.toBeNull();
-    expect(document.querySelector('[data-action="agenda-eliminar-fijo"]')).not.toBeNull();
-  });
-
-  it('en un mes pasado sí se puede marcar pagado, con SU mes en data-mes (BUG-015)', () => {
-    S.compromisos = [compromisoBase({ id: 'f1', diaPago: 15, monto: 300_000 })];
-    renderAgenda();
-    navegarMes(-1); // mayo 2026: venció y quedó sin registrar (ponerse al día)
-    mostrarDia(15);
-    renderAgenda();
-
-    const pagar = document.querySelector('[data-action="agenda-marcar-pagado-fijo"]');
-    expect(pagar).not.toBeNull();
-    expect(pagar.dataset.mes).toBe('2026-05');
-  });
-
-  it('un gasto de un mes pasado marca pagado ESE mes, no el actual (BUG-015)', () => {
-    S.compromisos = [compromisoBase({ id: 'f1', diaPago: 15, monto: 300_000 })];
-    // El pago de mayo ya está registrado con fecha de mayo.
-    S.gastos = [{ id: 'g1', compromisoId: 'f1', fecha: '2026-05-15', monto: 300_000 }];
-
-    renderAgenda();
-    navegarMes(-1); // mayo: pagado → badge, sin CTA
-    mostrarDia(15);
-    renderAgenda();
-    expect(document.querySelector('.cal-detail__badge-abono').textContent).toContain('Ya pagaste este mes');
-    expect(document.querySelector('[data-action="agenda-marcar-pagado-fijo"]')).toBeNull();
-
-    // Junio (mes actual) sigue pendiente: el pago de mayo no lo cubre.
-    navegarMes(1);
-    mostrarDia(15);
-    renderAgenda();
-    const pagarJunio = document.querySelector('[data-action="agenda-marcar-pagado-fijo"]');
-    expect(pagarJunio).not.toBeNull();
-    expect(pagarJunio.dataset.mes).toBe('2026-06');
-  });
-
-  it('el CTA lleva la identidad del tipo: Marcar pagado índigo, Abonar frambuesa/rosa (D4)', () => {
+  it('ninguna acción de administración sobrevive en el detalle', () => {
     S.compromisos = [
       compromisoBase({ id: 'f1', diaPago: 15, monto: 300_000 }),
       compromisoBase({ id: 'd1', tipo: 'deuda-entidad', diaPago: 15, cuotaMensual: 200_000, saldoTotal: 1_000_000, monto: undefined, descripcion: 'Visa' }),
       compromisoBase({ id: 'd2', tipo: 'deuda-personal', diaPago: 15, cuotaMensual: 100_000, saldoTotal: 500_000, monto: undefined, descripcion: 'Préstamo' }),
     ];
     abrirDia15();
-    const pagar = document.querySelector('[data-action="agenda-marcar-pagado-fijo"]');
-    expect(pagar.className).toContain('cal-detail__cta--fijo');
-    const abonos = [...document.querySelectorAll('[data-action="abrir-abono"]')];
-    expect(abonos[0].className).toContain('cal-detail__cta--deuda-entidad');
-    expect(abonos[1].className).toContain('cal-detail__cta--deuda-personal');
-    // Editar y Eliminar siguen presentes como acciones ghost (intactas).
-    expect(document.querySelector('[data-action="agenda-editar-fijo"]')).not.toBeNull();
-    expect(document.querySelector('[data-action="agenda-eliminar-fijo"]')).not.toBeNull();
-    expect(document.querySelector('[data-action="editar-compromiso"]')).not.toBeNull();
-    expect(document.querySelector('[data-action="eliminar-compromiso"]')).not.toBeNull();
+    for (const accion of [
+      'agenda-marcar-pagado-fijo', 'agenda-editar-fijo', 'agenda-eliminar-fijo',
+      'abrir-abono', 'editar-compromiso', 'eliminar-compromiso',
+    ]) {
+      expect(document.querySelector(`[data-action="${accion}"]`)).toBeNull();
+    }
+    // Los tres tipos reciben el mismo trato: una salida cada uno.
+    expect(document.querySelectorAll('[data-action="agenda-ver-en-por-pagar"]')).toHaveLength(3);
   });
 
+  it('el día de ingreso conserva su acción: repartir no tiene otra casa en el mes', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', diaPago: 15, monto: 300_000 })];
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 2_000_000, frecuencia: 'Mensual', diaPago: 15, activo: true }];
+    abrirDia15();
+    expect(document.querySelector('[data-action="agenda-distribuir-ingreso"]')).not.toBeNull();
+    expect(document.querySelectorAll('[data-action="agenda-ver-en-por-pagar"]')).toHaveLength(1);
+  });
   it('el recordatorio del día de ingreso es un callout con ícono y conserva Distribuir (D4)', () => {
     S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 2_000_000, frecuencia: 'Mensual', diaPago: 15, activo: true }];
     abrirDia15();
@@ -1926,7 +1977,8 @@ describe('renderAgenda() - detalle del día accionable (CAL.4c)', () => {
     S.gastos = [{ id: 'g1', compromisoId: 'd1', fecha: '2026-06-10', monto: 100_000 }];
     abrirDia15();
     const detalle = document.querySelector('.cal-detail');
-    expect(detalle.querySelector('.cal-detail__total').textContent).toContain('$••••••');
+    // Las dos cifras del día son pares, así que llevan la máscara corta.
+    expect(detalle.querySelector('.cal-detail__total').textContent).toBe('Entra •••• · sale ••••');
     const montos = [...detalle.querySelectorAll('.cal-detail__amount')].map(e => e.textContent);
     expect(montos).toContain('••••');
     expect(montos).toContain('+••••');

@@ -43,6 +43,7 @@ import {
 import { renderFormAbono, renderFormDeuda, renderFormGastoFijo, textoBannerGastoFijo } from '../../modules/dominio/compromisos/views/formularios.js';
 import { renderLoteCard, renderFormPagoLote } from '../../modules/dominio/compromisos/views/lote.js';
 import { renderListaCompromisos, setFiltroPorPagar, getFiltroPorPagar } from '../../modules/dominio/compromisos/views/lista.js';
+import { navegarMesBloque, irAMesActualBloque, prefijoMesBloque } from '../../modules/infra/mes-bloque.js';
 import { renderAlertaDeudasDurmiendo } from '../../modules/dominio/compromisos/views/alertas.js';
 import { renderPanelPrioridades, renderPanelVencidos } from '../../modules/dominio/compromisos/views/dashboard.js';
 import { renderResumenExtra, renderImpactoAvalancha, renderComparativaRenegociacion, renderComparativaConsolidacion } from '../../modules/dominio/compromisos/views/estrategia-impacto.js';
@@ -2552,6 +2553,72 @@ describe('renderListaCompromisos() - los cuatro chips de la lente', () => {
     expect(aviso.textContent).toContain('Todo');
     // Y sigue habiendo chips: la salida es cambiar de filtro, no crear algo.
     expect(document.querySelectorAll('.filtros-bar .chip')).toHaveLength(4);
+  });
+});
+
+// ── BUG-015 en su casa nueva: el mes visible manda (ficha 08) ──────
+//
+// La cobertura venía de `agenda.test.js`: el "Marcar pagado" vivía en el
+// detalle del día del Calendario, que era la única superficie capaz de pagar un
+// mes que no fuera el actual. La ficha 08 dejó ese detalle en solo lectura, así
+// que el botón se queda solo acá y esta lista obedece al reloj del bloque.
+
+describe('renderListaCompromisos() - el mes visible manda (BUG-015)', () => {
+  const fijo = (overrides = {}) => ({
+    id: 'f1', descripcion: 'Arriendo', tipo: 'fijo', monto: 1_200_000,
+    frecuencia: 'Mensual', diaPago: 5, categoria: 'Vivienda', activo: true,
+    ...overrides,
+  });
+
+  /** 'YYYY-MM' de `delta` meses respecto de hoy. */
+  const mes = (delta = 0) => {
+    const d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth() + delta);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  };
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-compromisos"></div>';
+    S.compromisos = [];
+    S.gastos = [];
+    setFiltroPorPagar('todo');
+    irAMesActualBloque();
+  });
+
+  afterEach(() => {
+    setFiltroPorPagar('todo');
+    irAMesActualBloque();
+  });
+
+  it('el botón de pagar viaja con el mes del bloque, no con el del sistema', () => {
+    S.compromisos = [fijo()];
+    renderListaCompromisos();
+    expect(document.querySelector('[data-action="agenda-marcar-pagado-fijo"]').dataset.mes)
+      .toBe(mes(0));
+
+    navegarMesBloque(-1);
+    renderListaCompromisos();
+    expect(document.querySelector('[data-action="agenda-marcar-pagado-fijo"]').dataset.mes)
+      .toBe(mes(-1));
+    expect(prefijoMesBloque()).toBe(mes(-1));
+  });
+
+  it('un fijo pagado en el mes visible pierde su botón, y lo conserva en el otro', () => {
+    S.compromisos = [fijo()];
+    // El pago del mes pasado ya está registrado con SU fecha.
+    S.gastos = [{ id: 'g1', compromisoId: 'f1', fecha: `${mes(-1)}-05`, monto: 1_200_000 }];
+
+    navegarMesBloque(-1);
+    renderListaCompromisos();
+    expect(document.querySelector('[data-action="agenda-marcar-pagado-fijo"]')).toBeNull();
+
+    // El mes en curso sigue pendiente: el pago del mes pasado no lo cubre.
+    irAMesActualBloque();
+    renderListaCompromisos();
+    const pagar = document.querySelector('[data-action="agenda-marcar-pagado-fijo"]');
+    expect(pagar).not.toBeNull();
+    expect(pagar.dataset.mes).toBe(mes(0));
   });
 });
 

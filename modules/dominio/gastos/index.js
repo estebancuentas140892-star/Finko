@@ -14,7 +14,7 @@ import { TARJETA_PREFIJO } from '../../core/constants.js';
 import { guardar, editar, eliminar } from '../../infra/crud.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
-import { renderSmart, updSaldo } from '../../infra/render.js';
+import { renderSmart, updSaldo, registrarRender } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { hoy, f } from '../../infra/utils.js';
@@ -718,4 +718,13 @@ export function initGastos() {
   renderBannerProposito('gast', S.gastos.length > 0);
   renderSmart(renderFiltrosGastos, 'gast');
   renderSmart(renderListaGastos, 'gast');
+
+  // La portada del bloque también obedece al reloj (ficha 07, ADR 069 D8): sus
+  // dos renders entran en renderAll(), que es lo que llaman los botones de mes
+  // del encabezado. Sin esto el encabezado cambiaba de mes y la lista se
+  // quedaba en el anterior hasta que el usuario navegara a otra sección.
+  registrarRender(() => {
+    renderSmart(renderFiltrosGastos, 'gast');
+    renderSmart(renderListaGastos, 'gast');
+  });
 }

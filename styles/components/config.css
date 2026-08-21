@@ -961,9 +961,43 @@
    que --today y --selected a propósito: con la misma especificidad, el orden
    deja que "hoy" (orientación) y la selección índigo (respuesta a un toque)
    ganen sobre el estado del pago, que la celda igual comunica con sus dots. */
+/* Ficha 08 (K4): el dia en que entra dinero se marca como se marca el
+   vencido. Era la unica razon por la que esta seccion existe y era lo que
+   menos se veia: un punto de 8px entre otros puntos. Usa el color de
+   ingresos que la leyenda y el dot ya usan, asi que no entra ningun token
+   nuevo.
+
+   Va ANTES de --vencido a proposito: un dia que trae un ingreso y ademas un
+   pago vencido se pinta como vencido, que es lo que hay que atender. */
+.cal-day--ingreso {
+  border-color: color-mix(in srgb, var(--fk-dom-ingresos-text) 45%, transparent);
+  background: color-mix(in srgb, var(--fk-dom-ingresos-text) 10%, transparent);
+}
+
 .cal-day--vencido {
   border-color: color-mix(in srgb, var(--fk-warning) 55%, transparent);
   background: var(--fk-warning-bg);
+}
+
+.hero-agenda__flujo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fk-space-1) var(--fk-space-4);
+  margin-top: var(--fk-space-1);
+}
+
+.hero-agenda__flujo-item {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+}
+
+/* La frase que ninguna otra seccion puede escribir: cuando cae lo primero que
+   sale y cuando lo primero que entra. No la enmascara el ojo: son fechas. */
+.hero-agenda__linea {
+  margin-top: var(--fk-space-2);
+  font-size: var(--fk-text-sm);
+  line-height: 1.45;
+  color: var(--fk-text-secondary);
 }
 
 .cal-day--vencido .cal-day__num {

@@ -25,6 +25,7 @@ import { gastoDePagoCompromiso, bajarSaldoDeuda, fechaPagoDelMes, aplicarPagosCo
 import { wireIconoPicker, setIconoPickerValor } from '../../infra/icon-picker.js';
 import { iconoCategoria } from '../../infra/icons.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
+import { prefijoMesBloque } from '../../infra/mes-bloque.js';
 import { CATEGORIAS_AGENDA } from '../../core/constants.js';
 import { validarCategoriaPersonalizada } from '../gastos/logic.js';
 import { eventosDelMes, pendientesDePagoDelMes } from '../agenda/logic.js';
@@ -81,7 +82,9 @@ function _renderDashboardPanels() {
 function _renderLoteEnPorPagar() {
   const el = document.getElementById('lote-compromisos');
   if (!el) return;
-  const prefijo = _prefijoMesActual();
+  // Ficha 08: el lote liquida el mes que la lente está mostrando. Es la puerta
+  // que sustituye al "Marcar pagado" del Calendario para un mes pasado.
+  const prefijo = prefijoMesBloque();
   el.innerHTML = renderLoteCard(_pendientesDelMes(prefijo), prefijo);
 }
 
@@ -114,10 +117,16 @@ function _filtrarPorPagar(el) {
 }
 
 /**
- * Llegada prefiltrada desde otro dominio (ADR 080 D5): hoy la usa la tarjeta de
- * crédito de Mis cuentas, que pregunta por UNA deuda.
+ * Llegada prefiltrada desde otro dominio (ADR 080 D5, ampliada por la ficha 08).
+ * La usan la tarjeta de crédito de Mis cuentas y cada fila del detalle del día
+ * del Calendario, que dejó de tener acciones propias.
  *
- * Pone el chip "Deudas", navega si hace falta y trae la tarjeta a pantalla. El
+ * El chip lo decide **este** dominio, no el emisor: el que llama sabe de qué
+ * compromiso habla pero no de la taxonomía de esta lente, y hacerlo al revés
+ * obligaría a cada emisor a saber que un fijo y una deuda se filtran distinto.
+ * Un id que no existe cae en "todo": mejor la lista entera que una vacía.
+ *
+ * Pone el chip, navega si hace falta y trae la tarjeta a pantalla. El
  * `setTimeout` es el mismo apaño que usa `distribuir:abrir` en tesoreria: si
  * venimos de otra sección, el nodo al que hay que desplazarse no existe hasta
  * después del re-render del `hashchange`.
@@ -128,8 +137,11 @@ function _filtrarPorPagar(el) {
  *
  * @param {{ id?: string }} payload
  */
-function _verDeudaEnPorPagar({ id } = {}) {
-  setFiltroPorPagar('deuda');
+function _verCompromisoEnPorPagar({ id } = {}) {
+  const compromiso = (S.compromisos ?? []).find(c => c.id === id);
+  setFiltroPorPagar(compromiso?.tipo === 'fijo' ? 'fijo'
+    : compromiso ? 'deuda'
+    : 'todo');
   if ((location.hash.slice(1) || 'dash') !== 'compromisos') {
     location.hash = '#compromisos';
   }
@@ -1439,25 +1451,33 @@ export function initCompromisos() {
   // desde otra sección). renderSmart corta si el dashboard no está activo.
   registrarRender(() => renderSmart(_renderDashboardPanels, 'dash'));
 
+  // El reloj del bloque Gastos (ficha 07, ADR 069 D8) mueve el mes y repinta
+  // con renderAll(): sin esto la lente se queda en el mes anterior.
+  registrarRender(() => renderSmart(_renderTodo, 'compromisos'));
+
+  // `gastos` entra por dos motivos distintos, y los dos vienen de que pagar un
+  // fijo o abonar una deuda escribe en `gastos` y no en `compromisos`:
+  //
+  // - **La lista** (ficha 08): el "Marcar pagado" del fijo vive acá desde que
+  //   el detalle del día del Calendario dejó de tener acciones. Sin esto la
+  //   fila conserva su botón después del pago y su chip no vira, así que la
+  //   pantalla invita a re-pagar un mes ya pagado.
+  // - **El dashboard** (CAL.5b): "Pendientes del mes" esconde lo ya pagado
+  //   (`vencidosSinPagar`), así que un pago desde el lote, desde el calendario
+  //   o desde esta lista tiene que repintarlo.
+  //
+  // Los dos renders cortan solos con `renderSmart` si su sección no es la
+  // activa, así que llamarlos siempre es barato.
   EventBus.on('state:change', ({ section }) => {
-    if (section === 'compromisos') {
-      programarRender(_renderSeccionReactivo);
-    }
-    // El dashboard también depende de compromisos: si el usuario crea/edita/
-    // elimina uno y luego vuelve a #dash, el panel debe reflejarlo. renderSmart
-    // corta si la sección activa no es 'dash', así que es barato llamarlo siempre.
-    // CAL.5b suma 'gastos': "Pendientes del mes" ahora esconde lo ya pagado
-    // (`vencidosSinPagar`), así que registrar un pago desde el lote o desde el
-    // calendario tiene que repintarlo. Pagar un fijo no toca `compromisos`.
-    if (section === 'compromisos' || section === 'gastos') {
-      programarRender(_renderDashboardReactivo);
-    }
+    if (section !== 'compromisos' && section !== 'gastos') return;
+    programarRender(_renderSeccionReactivo);
+    programarRender(_renderDashboardReactivo);
   });
 
-  // ADR 080 D5: la tarjeta de crédito de Mis cuentas pregunta por UNA deuda. El
-  // emisor no puede filtrar acá (ningún dominio importa a otro, ADN 10), así que
-  // manda el id y esta lente pone su chip y trae la tarjeta a pantalla.
-  EventBus.on('porPagar:ver-deuda', _verDeudaEnPorPagar);
+  // ADR 080 D5 y ficha 08: quien tiene un compromiso a la vista y no puede
+  // operarlo manda su id, y esta lente pone el chip y lo trae a pantalla. El
+  // emisor no puede filtrar acá porque ningún dominio importa a otro (ADN 10).
+  EventBus.on('porPagar:ver-compromiso', _verCompromisoEnPorPagar);
 
   // "Distribuir mi ingreso" (ADR 012, MC.4b): aplica los abonos extra a deudas
   // del plan. Registra el gasto-abono (mismo shape que el abono individual y que

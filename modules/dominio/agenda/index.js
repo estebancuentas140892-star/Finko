@@ -414,6 +414,16 @@ export function initAgenda() {
   registrarAccion('agenda-mostrar-dia',       _mostrarDia);
   registrarAccion('agenda-marcar-pagado-fijo', _marcarPagadoGastoFijo);
   registrarAccion('agenda-distribuir-ingreso', _distribuirDesdeAgenda);
+
+  // Ficha 08 (K3): el detalle del día pasa a ser lectura. Su única salida
+  // manda el id a "Por pagar", que es la lente dueña de los tres tipos, y allá
+  // se pone el chip y se trae la tarjeta a pantalla. Emitir y no importar:
+  // ningún dominio importa a otro (ADN 10).
+  registrarAccion('agenda-ver-en-por-pagar', (el) => {
+    const id = el?.dataset?.id;
+    if (!id) return;
+    EventBus.emit('porPagar:ver-compromiso', { id });
+  });
   registrarAccion('agenda-confirmar-automaticos', _confirmarAutomaticos);
 
   // PA.1a: contenedor persistente, cuerpo re-inyectado en cada apertura.

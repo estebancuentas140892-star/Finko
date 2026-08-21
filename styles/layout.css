@@ -473,6 +473,24 @@
   gap: var(--fk-space-3);
   min-width: 0;
 }
+/* La linea bajo el nombre de la seccion (MOV.1 ficha 06, ADR 080 D3; segunda
+   consumidora en la ficha 08). Vive DENTRO de `.section__title-group`, que es
+   flex en fila, asi que el titulo y su linea se apilan en su propio envoltorio.
+   Estar dentro del grupo es la decision: desde 1680px el grupo pasa a sr-only
+   (ADR 079 D1) y la linea se va con el, en vez de quedar describiendo un
+   titulo que ya no esta. */
+.section__titulo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.section__linea {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+}
+
 .section__title {
   font-size: var(--fk-text-2xl);
   font-weight: var(--fk-font-extrabold);

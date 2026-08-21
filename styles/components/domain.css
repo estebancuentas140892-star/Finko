@@ -2074,19 +2074,6 @@ button.chip:focus-visible {
   color: var(--fk-text-secondary);
 }
 
-/* MOV.1 ficha 06 (ADR 080 D3): el titulo y su linea, apilados dentro del grupo
-   de titulo, que es flex en fila. */
-.tesoreria-titulo {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-.tesoreria-linea {
-  font-size: var(--fk-text-sm);
-  color: var(--fk-text-secondary);
-}
-
 /* MOV.1 ficha 06 (ADR 080 D2): la fila de altas de "Fuentes de ingreso". Dos
    botones al pie de las listas, no en el sub-encabezado: uno crea una regla y
    vive aca, el otro es el atajo declarado a la teja de Registrar (R87). Se

@@ -934,7 +934,14 @@
         <header class="section__header">
           <div class="section__title-group">
             <span class="cat-teja section__icon" data-dom="agenda" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-agenda"/></svg></span>
-            <h1 class="section__title" id="title-agenda">Calendario</h1>
+            <!-- MOV.1 ficha 08: el nombre se conserva (cuatro alternativas
+                 probadas) y la linea es la que lo hace cierto del todo. La
+                 seccion pasa a medir el mes entero, entradas incluidas, y eso
+                 el nombre solo no lo puede decir. -->
+            <div class="section__titulo">
+              <h1 class="section__title" id="title-agenda">Calendario</h1>
+              <p class="section__linea">Cuándo entra y cuándo sale</p>
+            </div>
           </div>
         </header>
         <div id="proposito-agenda">
@@ -979,9 +986,9 @@
                  titulo a proposito: desde 1680px ese grupo pasa a sr-only
                  (ADR 079 D1) y la linea se va con el, en vez de quedar
                  describiendo un titulo que ya no esta. -->
-            <div class="tesoreria-titulo">
+            <div class="section__titulo">
               <h1 class="section__title" id="title-tesoreria">Mis cuentas</h1>
-              <p class="tesoreria-linea">Dónde está tu dinero y de dónde viene</p>
+              <p class="section__linea">Dónde está tu dinero y de dónde viene</p>
             </div>
           </div>
           <button class="btn btn-primary" data-action="nueva-cuenta"

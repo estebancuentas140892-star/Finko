@@ -18,7 +18,7 @@ import { resolverMarca, tejaMarca } from '../../infra/marcas.js';
 import { CATEGORIA_INGRESO_ICONO, iconoDeCategoriaGasto } from '../../core/constants.js';
 import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { LABEL_TIPO, ICONO_TIPO, calcularAbonosDelMes, estadoPagoMes, vencidosSinPagar } from '../compromisos/logic.js';
-import { eventosDelMes, eventosIngresosDelMes, eventosMetasDelMes, totalEventosDelMes, totalDia, tiposPresentesEnMes, totalesDelMes, pendientesDePagoDelMes } from './logic.js';
+import { eventosDelMes, eventosIngresosDelMes, eventosMetasDelMes, totalEventosDelMes, totalDia, tiposPresentesEnMes, flujoDelMes, pendientesDePagoDelMes } from './logic.js';
 
 // ── ESTADO LOCAL ─────────────────────────────────────────────────
 
@@ -341,12 +341,13 @@ export function diaSeleccionado() {
  * @param {string} prefijoMes 'YYYY-MM' del mes visible.
  * @returns {string}
  */
-function _renderHeroMes(eventos, year, month, prefijoMes) {
-  const gastos = Array.isArray(S.gastos) ? S.gastos : [];
-  const { total, pagado } = totalesDelMes(eventos, gastos, prefijoMes);
+function _renderHeroMes(eventos, year, month) {
   const oculto = S.config?.ocultarSaldo === true;
+  const { entra, sale, queda, diaPrimeraSalida, diaPrimerIngreso } = flujoDelMes(eventos);
 
-  if (total <= 0) {
+  // El mes sin ninguna cifra: o no tiene nada (lo dice `_renderEmptyMes`) o
+  // solo tiene aportes de meta, que son recordatorios y no dinero movido.
+  if (entra <= 0 && sale <= 0) {
     // DIS.11 C8/V-8: mes completamente vacío → guía una sola vez, en la card.
     if (totalEventosDelMes(eventos) === 0) return '';
     return `
@@ -357,12 +358,27 @@ function _renderHeroMes(eventos, year, month, prefijoMes) {
       </div>`;
   }
 
-  const falta = Math.max(0, total - pagado);
-  const pct   = Math.max(0, Math.min(100, Math.round((pagado / total) * 100)));
+  const mes = MONTHS[month].toLowerCase();
 
-  const totalTxt  = oculto ? SALDO_MASCARA : f(total);
-  const pagadoTxt = oculto ? SALDO_MASCARA_CUENTA : f(pagado);
-  const faltaTxt  = oculto ? SALDO_MASCARA_CUENTA : f(falta);
+  // `queda` negativo no es un error: en el mes sale más de lo que entra, y
+  // decirlo es el trabajo de esta pantalla. Se nombra sin color de alarma
+  // (ADR 019: deber un pago no es un error del usuario).
+  const enRojo = queda < 0;
+  const label  = enRojo ? `Te falta en ${mes}` : `Te queda en ${mes}`;
+  const cifra  = oculto ? SALDO_MASCARA : f(Math.abs(queda));
+
+  const entraTxt = oculto ? SALDO_MASCARA_CUENTA : f(entra);
+  const saleTxt  = oculto ? SALDO_MASCARA_CUENTA : f(sale);
+
+  // La frase que ninguna otra sección puede escribir: cuándo cae lo primero
+  // que sale y cuándo lo primero que entra (K4). El ojo no la enmascara: son
+  // fechas, no montos.
+  const partes = [];
+  if (diaPrimeraSalida !== null) partes.push(`lo primero vence el ${diaPrimeraSalida}`);
+  if (diaPrimerIngreso !== null) partes.push(`tu primer ingreso llega el ${diaPrimerIngreso}`);
+  const lineaHtml = partes.length
+    ? `<p class="hero-agenda__linea">${partes.join('; ').replace(/^./, c => c.toUpperCase())}.</p>`
+    : '';
 
   return `
     <div class="hero-agenda">
@@ -372,15 +388,13 @@ function _renderHeroMes(eventos, year, month, prefijoMes) {
               aria-label="${oculto ? 'Mostrar tus saldos' : 'Ocultar tus saldos'}">
         <svg class="icon" aria-hidden="true"><use href="#i-eye${oculto ? '-off' : ''}"/></svg>
       </button>
-      <p class="hero-agenda__label">Compromisos de ${MONTHS[month].toLowerCase()}</p>
-      <p class="hero-agenda__valor">${totalTxt}</p>
-      <div class="hero-agenda__barra" aria-hidden="true">
-        <div class="hero-agenda__barra-fill" style="width:${pct}%"></div>
+      <p class="hero-agenda__label">${label}</p>
+      <p class="hero-agenda__valor">${cifra}</p>
+      <div class="hero-agenda__flujo">
+        <span class="hero-agenda__flujo-item">Entra <strong>${entraTxt}</strong></span>
+        <span class="hero-agenda__flujo-item">Sale <strong>${saleTxt}</strong></span>
       </div>
-      <div class="hero-agenda__meta">
-        <span class="hero-agenda__pagado">Pagado ${pagadoTxt}</span>
-        <span class="hero-agenda__falta">Falta ${faltaTxt}</span>
-      </div>
+      ${lineaHtml}
     </div>`;
 }
 
@@ -402,7 +416,7 @@ function _renderHeroMes(eventos, year, month, prefijoMes) {
  * @returns {string}
  */
 function _renderBandaMes(eventos, year, month, prefijoMes, pendientes) {
-  const heroHtml = _renderHeroMes(eventos, year, month, prefijoMes);
+  const heroHtml = _renderHeroMes(eventos, year, month);
   const vencHtml = _renderVencidosMes(pendientes, prefijoMes);
   if (!heroHtml && !vencHtml) return '';
   return `<div class="banda-agenda">${heroHtml}${vencHtml}</div>`;
@@ -646,6 +660,11 @@ function _renderGrid(year, month, eventos, vencidosPorDia = {}) {
     // un error del usuario, ADR 019) y queda fuera de la atenuación de
     // "pasado", que pintaba lo que hay que atender como lo más tenue del mes.
     const nVencidos = vencidosPorDia?.[d] ?? 0;
+    // Ficha 08 (K4): el día en que entra dinero se marca, no solo se puntea.
+    // Era la única razón por la que esta sección existe y era lo que menos se
+    // veía: un punto verde de 4px entre otros puntos. Mismo mecanismo que el
+    // vencido, con el color de "entra" que la leyenda ya usa.
+    const hayIngreso = evs.some(e => e?.tipo === 'ingreso');
 
     const cls = [
       'cal-day',
@@ -653,6 +672,7 @@ function _renderGrid(year, month, eventos, vencidosPorDia = {}) {
       hayEvs   && 'cal-day--has-events',
       esSelecc && 'cal-day--selected',
       esPasado && !esHoy && 'cal-day--past',
+      hayIngreso && 'cal-day--ingreso',
       nVencidos > 0 && 'cal-day--vencido',
     ].filter(Boolean).join(' ');
 
@@ -857,9 +877,9 @@ function _renderEmptyMes(month) {
     <div class="cal-empty">
       <span class="cal-empty__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-agenda"/></svg></span>
       <p class="cal-empty__title">${MONTHS[month]} está despejado</p>
-      <p class="cal-empty__desc">Programa tus gastos fijos y deudas para no perder ningún pago.</p>
+      <p class="cal-empty__desc">No hay nada con fecha este mes: ni pagos programados ni ingresos previstos. Cuando programes alguno, aparecerá aquí.</p>
       <a class="btn btn-primary" href="#compromisos">
-        Ir a Por pagar
+        Programar en Por pagar
       </a>
     </div>`;
 }
@@ -924,10 +944,32 @@ function _renderDetalleDia(evs, year, month, dia) {
   const todoPagado = comps.length > 0 &&
     comps.every(c => estadoPagoMes(gastos, c, prefijo) === 'completo');
 
-  const sumaDia  = totalDia(evs);
-  const totalTxt = oculto ? SALDO_MASCARA : f(sumaDia);
-  const totalPagarHtml = sumaDia > 0
-    ? `<p class="cal-detail__total${todoPagado ? ' cal-detail__total--pagado' : ''}">${todoPagado ? 'Pagado este día' : 'Total a pagar'}: <strong>${totalTxt}</strong></p>`
+  // Ficha 08 (K1): el día se mide igual que el mes, con sus dos lados. Antes
+  // decía solo "Total a pagar" incluso en un día que solo traía un ingreso,
+  // así que el resumen del día repetía el defecto del hero en pequeño.
+  // `flujoDelMes` acepta un mapa día → eventos, así que un solo día es un mapa
+  // de una entrada: cero cálculo nuevo.
+  const { entra: entraDia, sale: saleDia } = flujoDelMes({ [dia]: evs });
+  const entraTxt = oculto ? SALDO_MASCARA_CUENTA : f(entraDia);
+  const saleTxt  = oculto ? SALDO_MASCARA_CUENTA : f(saleDia);
+
+  // CAL.4c (ADR 037 D5) se conserva: con todo cubierto el label afirma el
+  // pago en vez de pedirlo (refuerzo en positivo, ADR 019).
+  const lados = [];
+  if (entraDia > 0) lados.push(`entra <strong>${entraTxt}</strong>`);
+  if (saleDia > 0) {
+    lados.push(todoPagado ? `pagado este día <strong>${saleTxt}</strong>` : `sale <strong>${saleTxt}</strong>`);
+  }
+  // Con un solo lado se dice el otro en voz alta: "sale X" a secas deja al
+  // usuario sin saber si ese día además entraba algo.
+  if (lados.length === 1) lados.push(entraDia > 0 ? 'no sale nada' : 'no entra nada');
+
+  const resumenDia = lados.length
+    ? lados.join(' · ').replace(/^./, c => c.toUpperCase())
+    : '';
+
+  const totalPagarHtml = resumenDia
+    ? `<p class="cal-detail__total${todoPagado ? ' cal-detail__total--pagado' : ''}">${resumenDia}</p>`
     : '';
 
   const items = evs.map(c => {
@@ -1092,58 +1134,21 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
     badgeHtml = `<p class="cal-detail__badge-abono cal-detail__badge-abono--parcial" role="status">Abonado ${abonadoTxt} de ${cuotaTxt} este mes</p>`;
   }
 
-  // CAL.4c (ADR 037 D4): el CTA principal lleva la identidad del tipo
-  // (mismo criterio que .deuda-card__abonar, ADR 036 D5: un abono no es un
-  // ingreso, no va en verde; "Marcar pagado" usa el índigo de la sección).
-  let accionesHtml = '';
-  if (tipo === 'fijo') {
-    // BUG-015: el pago pertenece al mes VISIBLE, no al actual, así que el botón
-    // viaja con `data-mes` (el handler no conoce _viewYear/_viewMonth). Un mes
-    // futuro no se puede pagar: aún no ha vencido y Finko registra lo que pasó
-    // (mismo criterio que MC.13c-2, que rechazó gastos con fecha futura).
-    const hoyD = new Date();
-    const esMesFuturo = viewYear > hoyD.getFullYear()
-      || (viewYear === hoyD.getFullYear() && viewMonth > hoyD.getMonth());
-
-    const btnPagar = (estadoPago !== 'completo' && !esMesFuturo) ? `
-      <button type="button" class="cal-detail__cta cal-detail__cta--fijo"
-              data-action="agenda-marcar-pagado-fijo" data-id="${idEsc}"
-              data-mes="${prefijo}"
-              aria-label="Marcar como pagado este mes: ${desc}">
-        Marcar pagado
-      </button>` : '';
-
-    accionesHtml = `
+  // Ficha 08 (K3): la fila tenía cuatro acciones -editar, eliminar, y marcar
+  // pagado o abonar- y con eso mantenía dos verdades en pie a la vez: que "Por
+  // pagar" es donde se pagan las cosas y que también se pagan acá. Cuatro
+  // atajos no son un atajo: son la interfaz de administración que la ficha 05
+  // dio por mudada. Queda una salida, prefiltrada a este compromiso, que es el
+  // patrón que la ficha 06 estrenó con la tarjeta de crédito.
+  //
+  // La fila de ingreso NO pierde su acción (`_renderDetalleItemIngreso`): un
+  // reparto no tiene otra casa dentro del mes, y esa asimetría es la decisión.
+  const accionesHtml = `
       <div class="cal-detail__actions">
         <button type="button" class="btn btn-sm btn-ghost"
-                data-action="agenda-editar-fijo" data-id="${idEsc}"
-                aria-label="Editar ${desc}">Editar</button>
-        <button type="button" class="btn btn-sm btn-ghost"
-                data-action="agenda-eliminar-fijo" data-id="${idEsc}"
-                aria-label="Eliminar ${desc}"
-                style="color: var(--fk-danger-text);">Eliminar</button>
-        ${btnPagar}
+                data-action="agenda-ver-en-por-pagar" data-id="${idEsc}"
+                aria-label="Ver ${desc} en Por pagar">Ver en Por pagar</button>
       </div>`;
-  } else if (tipo === 'deuda-entidad' || tipo === 'deuda-personal') {
-    const btnAbonar = estadoPago !== 'completo' ? `
-      <button type="button" class="cal-detail__cta cal-detail__cta--${tipo}"
-              data-action="abrir-abono" data-id="${idEsc}"
-              aria-label="Registrar abono a ${desc}">
-        Abonar
-      </button>` : '';
-
-    accionesHtml = `
-      <div class="cal-detail__actions">
-        <button type="button" class="btn btn-sm btn-ghost"
-                data-action="editar-compromiso" data-id="${idEsc}"
-                aria-label="Editar ${desc}">Editar</button>
-        <button type="button" class="btn btn-sm btn-ghost"
-                data-action="eliminar-compromiso" data-id="${idEsc}"
-                aria-label="Eliminar ${desc}"
-                style="color: var(--fk-danger-text);">Eliminar</button>
-        ${btnAbonar}
-      </div>`;
-  }
 
   return `
     <li class="cal-detail__item cal-detail__item--${tipo}">

@@ -27,6 +27,7 @@ import {
   ICONO_TIPO,
 } from '../logic.js';
 import { getEstrategiaUI } from './estrategia.js';
+import { prefijoMesBloque } from '../../../infra/mes-bloque.js';
 import { CATEGORIA_DEUDA_ICONO, CATEGORIA_DEUDA_PERSONAL_ICONO, iconoDeCategoriaGasto } from '../../../core/constants.js';
 
 // Lookup unificado: producto (entidad) + relación (personal). Sin colisiones:
@@ -198,7 +199,10 @@ export function renderListaCompromisos() {
   // ADR 080 D6: el chip decide qué grupos entran. "Pagado" cruza los dos, y su
   // criterio es el mismo con el que el chip de la fila afirma el pago del mes
   // (`estadoPagoMes`), para que la lista y las tarjetas nunca discrepen.
-  const prefijoMes = hoy().slice(0, 7);
+  // Ficha 08: el mes lo manda el reloj del bloque, no el calendario del
+  // sistema. Sin esto la lente navegaba de mes en su lista pero seguia
+  // diciendo "pagado" y ofreciendo "Marcar pagado" contra el mes en curso.
+  const prefijoMes = prefijoMesBloque();
   const pagado = c => estadoPagoMes(S.gastos ?? [], c, prefijoMes) === 'completo';
 
   let fijos  = fijosTodos;
@@ -238,7 +242,7 @@ function _renderGrupoFijos(fijos, oculto, atrasos) {
     if (Number.isInteger(atA) && atA !== atB) return atB - atA;
     return proximoVencimiento(a) - proximoVencimiento(b);
   });
-  const prefijoMes = hoy().slice(0, 7);
+  const prefijoMes = prefijoMesBloque();
 
   return `
     <div class="grupo-eyebrow-fila">
@@ -290,7 +294,7 @@ function _renderGrupoDeudas(deudas, oculto, atrasos) {
       ${extraHtml}
     </div>`;
 
-  const prefijoMes = hoy().slice(0, 7);
+  const prefijoMes = prefijoMesBloque();
 
   return headerHtml + ordenados.map((c) => {
     const orden = ordenEstrategia?.get(c.id) ?? null;
@@ -301,9 +305,10 @@ function _renderGrupoDeudas(deudas, oculto, atrasos) {
 /**
  * Tarjeta de gasto fijo (ficha 05, ADR 069): más simple que la de deuda, sin
  * saldo ni tasa ni orden de estrategia. "Marcar pagado" reusa el mismo
- * `data-action` del detalle del día del Calendario (`agenda-marcar-pagado-fijo`,
- * manejado por `agenda/index.js`); acá siempre es el mes en curso, porque
- * esta lista no navega meses.
+ * `data-action` que registra `agenda/index.js` (`agenda-marcar-pagado-fijo`),
+ * y desde la ficha 08 esta lista es su único emisor: el detalle del día del
+ * Calendario dejó de tener acciones. El mes viaja en `data-mes` y es el del
+ * reloj del bloque, que puede no ser el actual (BUG-015).
  *
  * @param {import('../../../core/state.js').Compromiso} compromiso
  * @param {boolean} oculto `S.config.ocultarSaldo`
@@ -380,7 +385,7 @@ function _renderFijoItem(compromiso, oculto, prefijoMes, atrasos) {
  *   una vez por render y baja a cada tarjeta; el default cubre a un caller
  *   suelto (ningún test la llama así hoy, pero la firma no debe romperse).
  */
-function _renderCompromisoItem(compromiso, ordenEstrategia = null, oculto = false, prefijoMes = hoy().slice(0, 7), atrasos = _atrasoPorId()) {
+function _renderCompromisoItem(compromiso, ordenEstrategia = null, oculto = false, prefijoMes = prefijoMesBloque(), atrasos = _atrasoPorId()) {
   const desc     = _esc(compromiso.descripcion);
   const tipo     = compromiso.tipo;
   // MK.2/ID.3 (ADR 025): si el nombre de la deuda menciona una marca o

@@ -2190,8 +2190,10 @@ test.describe('Agenda - total a pagar por día', () => {
 
     const total = page.locator('.cal-detail__total');
     await expect(total).toBeVisible({ timeout: 3_000 });
-    await expect(total).toContainText('Total a pagar');
+    // Ficha 08 (K1): el día se mide con sus dos lados.
+    await expect(total).toContainText('Sale');
     await expect(total).toContainText('$1.050.000'); // 900.000 + 150.000
+    await expect(total).toContainText('no entra nada');
   });
 });
 
@@ -2236,9 +2238,13 @@ test.describe('Agenda - hero del mes (CAL.4a)', () => {
 
     const hero = page.locator('.hero-agenda');
     await expect(hero).toBeVisible();
+    // Ficha 08 (K1): el hero pasa de medir el total a pagar y su progreso a
+    // medir el mes entero. Sin ingresos sembrados, lo que "queda" es negativo
+    // y se dice como lo que falta.
+    await expect(hero.locator('.hero-agenda__label')).toContainText('Te falta en');
     await expect(hero.locator('.hero-agenda__valor')).toHaveText('$1.050.000');
-    await expect(hero.locator('.hero-agenda__pagado')).toContainText('$900.000');
-    await expect(hero.locator('.hero-agenda__falta')).toContainText('$150.000');
+    await expect(hero.locator('.hero-agenda__flujo-item').nth(1)).toHaveText('Sale $1.050.000');
+    await expect(hero.locator('.hero-agenda__barra')).toHaveCount(0);
   });
 
   test('el ojo enmascara los montos del hero y persiste el flag compartido', async ({ page }) => {
@@ -2263,7 +2269,7 @@ test.describe('Agenda - hero del mes (CAL.4a)', () => {
 
     const hero = page.locator('.hero-agenda');
     await expect(hero.locator('.hero-agenda__valor')).toHaveText('$••••••');
-    await expect(hero.locator('.hero-agenda__pagado')).toHaveText('Pagado ••••');
+    await expect(hero.locator('.hero-agenda__flujo-item').nth(1)).toHaveText('Sale ••••');
     await expect(hero.locator('[data-action="agenda-saldo-visibilidad"]'))
       .toHaveAttribute('aria-pressed', 'true');
 
@@ -2299,9 +2305,12 @@ test.describe('Agenda - hero del mes (CAL.4a)', () => {
 
     const hero = page.locator('.hero-agenda');
     await expect(hero).toBeVisible();
-    await expect(hero.locator('.hero-agenda__titulo')).toHaveText('Sin pagos programados');
-    await expect(hero.locator('.hero-agenda__ojo')).toHaveCount(0);
-    await expect(hero.locator('.hero-agenda__valor')).toHaveCount(0);
+    // Ficha 08: el mes tiene dinero entrando, así que tiene cifra. Antes decía
+    // "Sin pagos programados" porque el hero solo sabía mirar un lado.
+    await expect(hero.locator('.hero-agenda__label')).toContainText('Te queda en');
+    await expect(hero.locator('.hero-agenda__valor')).toHaveText('$2.000.000');
+    await expect(hero.locator('.hero-agenda__flujo-item').first()).toHaveText('Entra $2.000.000');
+    await expect(hero.locator('.hero-agenda__titulo')).toHaveCount(0);
   });
 
   test('DIS.11 C8: con el mes vacío el único mensaje es la card, con un solo primario', async ({ page }) => {
@@ -2377,12 +2386,14 @@ test.describe('Agenda - detalle del día accionable (CAL.4c)', () => {
     await expect(page.locator('.cal-detail__badge-abono')).toContainText('Ya pagaste este mes');
     await expect(page.locator('[data-action="agenda-marcar-pagado-fijo"]')).toHaveCount(0);
 
-    // Día 20: la deuda está pendiente → CTA Abonar con la identidad del tipo.
+    // Día 20: la deuda está pendiente y su fila ya no ofrece abonar (ficha 08,
+    // K3): el detalle es lectura y su única salida es la lente que sí opera.
     await page.locator('[data-action="agenda-mostrar-dia"][data-day="20"]').click();
-    const abonar = page.locator('[data-action="abrir-abono"]');
-    await expect(abonar).toBeVisible();
-    await expect(abonar).toHaveClass(/cal-detail__cta--deuda-entidad/);
-    await expect(page.locator('.cal-detail__total')).toContainText('Total a pagar');
+    await expect(page.locator('[data-action="abrir-abono"]')).toHaveCount(0);
+    const salida = page.locator('[data-action="agenda-ver-en-por-pagar"]');
+    await expect(salida).toBeVisible();
+    await expect(salida).toHaveText('Ver en Por pagar');
+    await expect(page.locator('.cal-detail__total')).toContainText('Sale');
   });
 });
 
@@ -2406,17 +2417,21 @@ test.describe('Agenda - marcar pagado usa el mes visible (BUG-015)', () => {
     metas: [],
   };
 
+  // Ficha 08: el botón se mudó a la lista de "Por pagar", y el mes lo pone el
+  // reloj del bloque. La garantía es la misma; cambia la superficie que la da.
   test('marcar pagado en el mes anterior fecha el gasto en ESE mes, no hoy', async ({ page }) => {
     await sembrar(page, ESTADO_BUG015);
-    await page.goto('/#agenda');
-    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+    // El encabezado del bloque, con su selector de mes, solo existe bajo
+    // 1024px: en escritorio cada lente conserva su propio hero.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/#compromisos');
+    await page.waitForSelector('#lista-compromisos', { timeout: 10_000 });
 
     const hoy       = new Date();
     const anterior  = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
     const prefijoAnt = `${anterior.getFullYear()}-${String(anterior.getMonth() + 1).padStart(2, '0')}`;
 
-    await page.locator('[data-action="agenda-prev-mes"]').click();
-    await page.locator('[data-action="agenda-mostrar-dia"][data-day="15"]').click();
+    await page.locator('#sec-compromisos [data-action="bloque-mes-prev"]').click();
 
     const pagar = page.locator('[data-action="agenda-marcar-pagado-fijo"]');
     await expect(pagar).toBeVisible();
@@ -2431,22 +2446,31 @@ test.describe('Agenda - marcar pagado usa el mes visible (BUG-015)', () => {
       return g ? g.fecha.slice(0, 7) : null;
     }, { timeout: 5_000 }).toBe(prefijoAnt);
 
-    // El badge del mes visible vira y el CTA desaparece: no invita a re-pagar.
-    await expect(page.locator('.cal-detail__badge-abono')).toContainText('Ya pagaste este mes');
+    // El botón desaparece: no invita a re-pagar el mes que ya se pagó.
     await expect(page.locator('[data-action="agenda-marcar-pagado-fijo"]')).toHaveCount(0);
   });
 
-  test('el mes siguiente no ofrece marcar pagado: aún no vence', async ({ page }) => {
+  test('el mes siguiente no se puede ni visitar: el reloj se corta en el actual', async ({ page }) => {
+    await sembrar(page, ESTADO_BUG015);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/#compromisos');
+    await page.waitForSelector('#lista-compromisos', { timeout: 10_000 });
+
+    // Antes el guardia vivía en el botón de pagar; ahora vive antes, en la
+    // navegación: no se llega a un mes que aún no ha vencido.
+    await expect(page.locator('#sec-compromisos [data-action="bloque-mes-next"]')).toBeDisabled();
+    await expect(page.locator('[data-action="agenda-marcar-pagado-fijo"]')).toBeVisible();
+  });
+
+  test('el detalle del día del Calendario ya no ofrece pagar: solo su salida', async ({ page }) => {
     await sembrar(page, ESTADO_BUG015);
     await page.goto('/#agenda');
     await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
 
-    await page.locator('[data-action="agenda-next-mes"]').click();
     await page.locator('[data-action="agenda-mostrar-dia"][data-day="15"]').click();
-
     await expect(page.locator('[data-action="agenda-marcar-pagado-fijo"]')).toHaveCount(0);
-    // Solo se bloquea el pago: editar sigue disponible en el mes futuro.
-    await expect(page.locator('[data-action="agenda-editar-fijo"]')).toBeVisible();
+    await expect(page.locator('[data-action="agenda-editar-fijo"]')).toHaveCount(0);
+    await expect(page.locator('[data-action="agenda-ver-en-por-pagar"]')).toBeVisible();
   });
 });
 
@@ -4895,9 +4919,11 @@ test.describe('Por pagar - pago en lote (CAL.5a, mudado en la ficha 05)', () => 
 
     // Queda uno solo pendiente: la tarjeta del lote ya no tiene sentido.
     await expect(page.locator('.cal-lote')).toHaveCount(0, { timeout: 5_000 });
-    // Y el pago quedó registrado: el hero del Calendario lo cuenta igual.
-    await page.goto('/#agenda');
-    await expect(page.locator('.hero-agenda__pagado')).toContainText('$50.000', { timeout: 5_000 });
+    // Y el pago quedó registrado: el fijo que sí se pagó vira su chip. El hero
+    // del Calendario ya no cuenta lo pagado (ficha 08: mide el flujo del mes,
+    // no el progreso), así que la prueba mira donde el dato vive ahora.
+    await expect(page.locator('.deuda-card').filter({ hasText: 'Internet Lote E2E' }).locator('.chip').first())
+      .toContainText('Pagado este mes', { timeout: 5_000 });
   });
 });
 

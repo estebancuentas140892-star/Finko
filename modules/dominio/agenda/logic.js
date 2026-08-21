@@ -272,6 +272,60 @@ export function totalesDelMes(eventos, gastos, prefijoMes) {
 }
 
 /**
+ * El mes entero sobre la misma línea de tiempo: lo que entra, lo que sale, lo
+ * que queda, y en qué día cae lo primero de cada lado (K1 y K4, ficha 08).
+ *
+ * El defecto que corrige: el hero sumaba solo salidas con `totalesDelMes()`
+ * mientras la grilla pintaba también los ingresos con `eventosIngresosDelMes()`.
+ * La cifra que encabezaba la pantalla no incluía nada de lo verde, así que el
+ * resumen respondía a la misma pregunta que "Por pagar" y la respondía peor,
+ * porque no traía la lista. Las dos cifras ya se calculaban: acá se dejan de
+ * ignorar.
+ *
+ * Las metas quedan fuera de las dos sumas, igual que en `totalesDelMes()`: un
+ * aporte planeado es un recordatorio, no dinero que se movió.
+ *
+ * `queda` puede ser negativo, y eso es información, no un error: significa que
+ * en el mes sale más de lo que entra.
+ *
+ * @param {Record<number, any[]>} eventos Mapa día → eventos ya mergeado.
+ * @returns {{ entra: number, sale: number, queda: number,
+ *             diaPrimeraSalida: number|null, diaPrimerIngreso: number|null }}
+ */
+export function flujoDelMes(eventos) {
+  const out = { entra: 0, sale: 0, queda: 0, diaPrimeraSalida: null, diaPrimerIngreso: null };
+  if (!eventos || typeof eventos !== 'object') return out;
+
+  for (const [diaRaw, evs] of Object.entries(eventos)) {
+    if (!Array.isArray(evs)) continue;
+    const dia = Number(diaRaw);
+    if (!Number.isInteger(dia)) continue;
+
+    for (const e of evs) {
+      if (!e || typeof e !== 'object') continue;
+      if (e.tipo === 'meta') continue;
+
+      const raw = e.tipo === 'ingreso' ? e.monto
+        : e.tipo === 'fijo' ? e.monto
+        : e.cuotaMensual;
+      const n = Number(raw);
+      if (!Number.isFinite(n) || n <= 0) continue;
+
+      if (e.tipo === 'ingreso') {
+        out.entra += n;
+        if (out.diaPrimerIngreso === null || dia < out.diaPrimerIngreso) out.diaPrimerIngreso = dia;
+      } else {
+        out.sale += n;
+        if (out.diaPrimeraSalida === null || dia < out.diaPrimeraSalida) out.diaPrimeraSalida = dia;
+      }
+    }
+  }
+
+  out.queda = out.entra - out.sale;
+  return out;
+}
+
+/**
  * Compromisos del mes visible que ya vencieron y siguen sin cubrir (CAL.5a,
  * ampliada a deudas por CAL.5b): la lista que alimenta el pago en lote.
  *

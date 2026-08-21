@@ -201,6 +201,9 @@ export function initPresupuesto() {
   // El panel de alertas vive en el dashboard: se actualiza en cada renderAll().
   registrarRender(() => renderSmart(renderPanelLimites, 'dash'));
 
+  // Igual que en "Por pagar": el reloj del bloque repinta con renderAll().
+  registrarRender(() => renderSmart(_renderReactivo, 'presupuesto'));
+
   renderBannerProposito('presupuesto', _tienePlanOTope());
   renderSmart(renderPanelPresupuesto, 'presupuesto');
   renderPanelLimites();
