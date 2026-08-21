@@ -106,6 +106,165 @@ describe('round-trip save() + loadData()', () => {
 
 // ── MONITOR DE CUOTA (ADR 030) ────────────────────────────────────
 
+// ── ACTUALIZACIÓN DESDE UNA INSTALACIÓN EXISTENTE (UPD.2) ────────────────────
+//
+// Los tests de arriba prueban cada migración por separado. Estos prueban lo que
+// le pasa a una instalación REAL: alguien que viene usando Finko desde una
+// versión vieja, con datos en todas sus colecciones, y que actualiza. La
+// pregunta no es "corre la migración", es "sobrevive todo lo que el usuario
+// escribió".
+
+describe('Actualización desde una instalación existente (UPD.2)', () => {
+  /**
+   * Instalación con datos en todas las colecciones que existían en v20, la
+   * mitad de la historia del schema. Los montos son distintos entre sí a
+   * propósito: si una migración mueve un valor de campo, se nota.
+   */
+  const instalacionVieja = () => ({
+    _version: 20,
+    perfil:   { nombre: 'Esteban', smmlv: 1_300_000 },
+    onboarded: true,
+    cuentas: [
+      { id: 'c1', nombre: 'Bancolombia', tipo: 'ahorros',  saldo: 2_412_345, activa: true },
+      { id: 'c2', nombre: 'Nequi',       tipo: 'billetera', saldo:   187_600, activa: true },
+    ],
+    ingresos: [
+      { id: 'i1', descripcion: 'Sueldo', monto: 2_600_000, frecuencia: 'Mensual', diaPago: 30, activo: true },
+    ],
+    gastos: [
+      { id: 'g1', descripcion: 'Mercado', monto: 184_300, categoria: 'Alimentación', fecha: '2026-03-11', cuentaId: 'c1' },
+      { id: 'g2', descripcion: 'Uber',    monto:  32_100, categoria: 'Transporte',   fecha: '2026-03-12', cuentaId: 'c2' },
+    ],
+    compromisos: [
+      { id: 'f1', tipo: 'fijo', descripcion: 'Arriendo', monto: 1_150_000, frecuencia: 'Mensual', diaPago: 5, activo: true },
+    ],
+    metas: [
+      { id: 'm1', nombre: 'Viaje', montoObjetivo: 3_500_000, montoActual: 1_234_567, completada: false },
+    ],
+    apartados: [
+      { id: 'a1', nombre: 'SOAT', montoObjetivo: 850_000, montoActual: 530_400, completado: false },
+    ],
+    presupuestos: [
+      { id: 'p1', categoria: 'Transporte', montoMensual: 180_000, activo: true },
+    ],
+    inversiones: [
+      { id: 'v1', nombre: 'CDT', monto: 2_000_000 },
+    ],
+    personales: [
+      { id: 'pe1', persona: 'Andrés', monto: 400_000 },
+    ],
+    ahorro: {
+      fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 1_800_000 },
+      aportes: [{ id: 'ap1', monto: 150_000, fecha: '2026-03-02' }],
+    },
+    config: { ocultarSaldo: true },
+  });
+
+  it('no pierde ni un dato de ninguna colección', () => {
+    const vieja = instalacionVieja();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(vieja));
+
+    loadData();
+
+    expect(S.perfil.nombre).toBe('Esteban');
+    expect(S.onboarded).toBe(true);
+    expect(S.cuentas).toHaveLength(2);
+    expect(S.cuentas[0].saldo).toBe(2_412_345);
+    expect(S.cuentas[1].saldo).toBe(187_600);
+    expect(S.ingresos[0].monto).toBe(2_600_000);
+    expect(S.gastos.map(g => g.monto)).toEqual([184_300, 32_100]);
+    expect(S.compromisos[0].descripcion).toBe('Arriendo');
+    expect(S.metas[0].montoActual).toBe(1_234_567);
+    expect(S.apartados[0].montoActual).toBe(530_400);
+    expect(S.presupuestos[0].montoMensual).toBe(180_000);
+    expect(S.inversiones[0].monto).toBe(2_000_000);
+    expect(S.personales[0].monto).toBe(400_000);
+    expect(S.ahorro.fondoEmergencia.montoActual).toBe(1_800_000);
+    expect(S.ahorro.aportes[0].monto).toBe(150_000);
+  });
+
+  it('respeta las preferencias que el usuario ya tenía puestas', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(instalacionVieja()));
+
+    loadData();
+
+    // El ojo de privacidad estaba activo antes de actualizar y sigue activo.
+    expect(S.config.ocultarSaldo).toBe(true);
+  });
+
+  it('deja el schema al día y persiste el resultado sin volver a migrar', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(instalacionVieja()));
+
+    loadData();
+    expect(S._version).toBe(SCHEMA_VERSION);
+
+    save();
+    _flushNow();
+    const guardado = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(guardado._version).toBe(SCHEMA_VERSION);
+
+    // Segunda carga: mismo estado, sin efectos nuevos.
+    const antes = JSON.stringify(S);
+    loadData();
+    expect(JSON.stringify(S)).toBe(antes);
+  });
+
+  it('las colecciones que no existían en la versión vieja llegan como default, no como undefined', () => {
+    const vieja = instalacionVieja();
+    // Una instalación de v20 no conocía estas dos.
+    delete vieja.transferencias;
+    delete vieja.categoriasPersonalizadas;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(vieja));
+
+    loadData();
+
+    const base = createInitialState();
+    for (const clave of Object.keys(base)) {
+      expect(S[clave], `S.${clave} quedó sin valor tras actualizar`).not.toBeUndefined();
+    }
+    expect(Array.isArray(S.transferencias)).toBe(true);
+    expect(Array.isArray(S.categoriasPersonalizadas)).toBe(true);
+  });
+
+  // El caso más viejo posible: el primer schema, sin `_version` siquiera.
+  it('una instalación de la primera versión conserva sus datos y llega al schema actual', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      perfil:  { nombre: 'Primera', smmlv: 1_000_000 },
+      cuentas: [{ id: 'c1', nombre: 'Efectivo', tipo: 'efectivo', saldo: 90_000, activa: true }],
+      gastos:  [{ id: 'g1', descripcion: 'Café', monto: 4_500, categoria: 'Otros', fecha: '2025-11-02' }],
+    }));
+
+    loadData();
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(S.perfil.nombre).toBe('Primera');
+    expect(S.cuentas[0].saldo).toBe(90_000);
+    expect(S.gastos[0].monto).toBe(4_500);
+    // Y lo que no traía queda en su default, nunca en undefined.
+    expect(Array.isArray(S.metas)).toBe(true);
+    expect(Array.isArray(S.presupuestos)).toBe(true);
+  });
+
+  // Un estado que viene de una versión FUTURA (respaldo de otro dispositivo ya
+  // actualizado, o un rollback de la app) no se degrada: las migraciones son
+  // "si tu versión es menor que N", así que ninguna se aplica hacia atrás.
+  it('un estado de una versión más nueva no se toca ni se degrada', () => {
+    const futuro = {
+      ...createInitialState(),
+      _version: SCHEMA_VERSION + 5,
+      perfil: { nombre: 'Del futuro', smmlv: 2_000_000 },
+      gastos: [{ id: 'g1', descripcion: 'X', monto: 1_000, categoria: 'Otros', fecha: '2026-08-01' }],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(futuro));
+
+    loadData();
+
+    expect(S.perfil.nombre).toBe('Del futuro');
+    expect(S.gastos[0].monto).toBe(1_000);
+    expect(S._version).toBe(SCHEMA_VERSION + 5);
+  });
+});
+
 describe('evaluarCuota()', () => {
   const LIM = 1000;
 

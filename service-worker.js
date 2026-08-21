@@ -10,12 +10,18 @@
  *     o los usuarios seguirán viendo la versión vieja.
  */
 
-const CACHE_NAME = 'finko-v577';
+const CACHE_NAME = 'finko-v578';
 
 // ── Assets críticos - si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [
   // Raíz
   './',
+  // `'./'` e `'./index.html'` son DOS claves de cache distintas aunque el
+  // servidor devuelva el mismo cuerpo: una navegación a `/index.html` (enlace
+  // directo, marcador viejo, `start_url` con nombre de archivo) no acierta con
+  // la primera. Las dos van al precache, que es un cuerpo de 170 KB duplicado
+  // y a cambio ninguna navegación se queda sin shell.
+  './index.html',
   './manifest.json',
 
   // CSS
@@ -47,6 +53,10 @@ const CORE_ASSETS = [
   // Infra
   './modules/infra/utils.js',
   './modules/infra/crud.js',
+  './modules/infra/taxonomia.js',
+  './modules/infra/cuenta-helper.js',
+  './modules/infra/pago-compromiso.js',
+  './modules/infra/credito-ingreso.js',
   './modules/infra/render.js',
   './modules/infra/memo.js',
   './modules/infra/mes-bloque.js',
@@ -75,6 +85,7 @@ const CORE_ASSETS = [
   // UI
   './modules/ui/actions.js',
   './modules/ui/bootstrap.js',
+  './modules/ui/toast.js',
   './modules/ui/modales.js',
   './modules/ui/confirm.js',
   './modules/ui/onboarding.js',
@@ -108,6 +119,8 @@ const CORE_ASSETS = [
   './modules/dominio/compromisos/views/estrategia.js',
   './modules/dominio/compromisos/views/estrategia-impacto.js',
   './modules/dominio/compromisos/views/dashboard.js',
+  './modules/dominio/compromisos/views/hero.js',
+  './modules/dominio/compromisos/views/lote.js',
   './modules/dominio/compromisos/index.js',
   './modules/dominio/resumen/logic.js',
   './modules/dominio/resumen/view.js',
@@ -254,17 +267,11 @@ self.addEventListener('install', (event) => {
 
 // ── ACTIVATE ───────────────────────────────────────────────────────────────
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches
-      .keys()
-      .then((keys) =>
-        Promise.all(
-          keys
-            .filter((key) => key !== CACHE_NAME)
-            .map((key) => caches.delete(key))
-        )
-      )
-  );
+  // El claim va DESPUÉS del traspaso, no en paralelo (UPD.2): reclamar la
+  // página con el cache a medio poblar es justamente el hueco por el que se
+  // colaba el 503. Cuesta los pocos cientos de milisegundos del traspaso y
+  // garantiza que cuando esta versión toma el control, su cache está completo.
+  event.waitUntil(_traspasarYPurgar().then(() => self.clients.claim()));
 
   // clients.claim() hace que este SW controle la página apenas se activa.
   // En la PRIMERA instalación (no había SW antes) eso habilita el modo offline
@@ -272,8 +279,68 @@ self.addEventListener('activate', (event) => {
   // es lo que hace que la página en curso pase a este SW y que se dispare
   // 'controllerchange': la señal que sw-register.js usa para recargar una sola
   // vez y con guardas.
-  self.clients.claim();
 });
+
+/**
+ * Traspasa al cache nuevo lo que el viejo tenía y este no, y solo después
+ * borra los caches de versiones anteriores (UPD.2).
+ *
+ * ## El defecto que corrige
+ *
+ * La estrategia es Cache First con relleno en `fetch`: un asset que NO está en
+ * `CORE_ASSETS` igual termina cacheado la primera vez que el navegador lo pide.
+ * Durante meses eso tapó una omisión: siete módulos que la app importa de forma
+ * estática nunca estuvieron en la lista de precache, entre ellos
+ * `infra/cuenta-helper.js`, que importan 18 módulos.
+ *
+ * Mientras la instalación no se actualizaba, funcionaba: esos siete vivían en
+ * el cache por relleno. Al actualizar, el `activate` borraba el cache anterior
+ * **con ellos dentro** y el cache nuevo no los traía, así que una instalación
+ * existente quedaba con menos assets que antes de actualizar. Con red no se
+ * notaba (el relleno los volvía a pedir); sin red, cada uno devolvía el 503 de
+ * más abajo, y como el grafo de imports es estático y no hay ningún
+ * `import()` dinámico en el proyecto, un solo 503 impide que `bootstrap.js`
+ * llegue a correr: la app queda en el HTML estático, sin nada de lo que
+ * pintan los módulos. Se lee como "volví a una versión vieja".
+ *
+ * ## Por qué el traspaso y no solo completar la lista
+ *
+ * La lista ya está completa y un test la guarda (`tests/unit/sw-precache.test.js`).
+ * Pero la lista se mantiene a mano, y este mismo error tardó meses en verse.
+ * El traspaso es la red de abajo: **una actualización nunca puede dejar a una
+ * instalación con menos de lo que ya tenía**, aunque la lista vuelva a quedar
+ * corta. No borra nada del usuario, no depende de la red y no cambia el
+ * comportamiento de una instalación nueva (no hay cache anterior que traspasar).
+ *
+ * Solo traspasa respuestas del mismo origen: lo de terceros no se sirve desde
+ * acá (la CSP lo prohíbe) y no tiene por qué sobrevivir a una versión.
+ */
+async function _traspasarYPurgar() {
+  const nombres = await caches.keys();
+  const viejos  = nombres.filter((n) => n !== CACHE_NAME && n.startsWith('finko-'));
+  if (viejos.length === 0) return;
+
+  const nuevo = await caches.open(CACHE_NAME);
+
+  for (const nombre of viejos) {
+    const viejo = await caches.open(nombre);
+    const claves = await viejo.keys();
+
+    for (const req of claves) {
+      try {
+        if (new URL(req.url).origin !== self.location.origin) continue;
+        if (await nuevo.match(req)) continue;      // la versión nueva ya lo trae
+        const res = await viejo.match(req);
+        if (res && res.ok) await nuevo.put(req, res.clone());
+      } catch {
+        // Una entrada ilegible no puede bloquear la activación: el relleno de
+        // `fetch` la recupera en la primera carga con red.
+      }
+    }
+  }
+
+  await Promise.all(viejos.map((n) => caches.delete(n)));
+}
 
 // ── FETCH ──────────────────────────────────────────────────────────────────
 self.addEventListener('fetch', (event) => {
