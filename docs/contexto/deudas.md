@@ -1,6 +1,6 @@
 # Ficha de contexto: Por pagar (antes Deudas)
 
-> Revisado: 2026-08-20.
+> Revisado: 2026-08-21.
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -9,8 +9,8 @@
 ## La sección "Por pagar": los tres tipos juntos (ficha 05, [ADR 069](../DECISIONS/069-bloque-gastos-en-la-barra-movil.md))
 
 - **Objetivo**          : `compromisos` tiene tres tipos desde v6 (`fijo`, `deuda-entidad`, `deuda-personal`) pero solo administraba dos: los gastos fijos se creaban y editaban desde Calendario, y la propia lista lo decía ("Los gastos fijos se gestionan desde Agenda"). Responder "¿qué tengo que pagar este mes?" costaba dos secciones que la barra no relacionaba. La ficha 05 le devuelve el dominio completo a su dueña.
-- **Estado actual**     : **cerrada el 2026-08-18**. **DSK.4 (2026-08-18, [ADR 073](../DECISIONS/073-deudas-inventario-con-su-herramienta-al-lado.md)) le da composición de escritorio desde 1440px**: la lista toma `span 8` y la estrategia `span 4` pegajosa, con tope de alto contra el viewport (única regla de composición del proyecto que depende del alto de la ventana); el hero pasa a banda, la tarjeta de deuda baja de tres renglones a dos, y sin deudas la lista ocupa las doce columnas. El "+" sale del texto del botón de cabecera y del estado vacío (vale en todos los anchos: lo aporta el ícono). La sección se llama "Por pagar" (título, nav de escritorio, banner de propósito), lista fijos y deudas en dos grupos, y es la única entrada para crear cualquiera de los tres tipos. Hereda del Calendario el **alta/edición de gasto fijo** y el **pago en lote** (CAL.5a/CAL.5b). **Desde el 2026-08-20 la lista abre con los cuatro chips de la ficha 05** (`Todo · Fijos · Deudas · Pagado`), que esa ficha especificó y dejó sin construir y que levantó el [ADR 080](../DECISIONS/080-mis-cuentas-un-primario-y-lo-informativo-al-pie.md) D6 porque su D5 los necesitaba: el chip es un `let` de `views/lista.js` con `setFiltroPorPagar()`/`getFiltroPorPagar()` exportados (mismo patrón que los filtros de Movimientos), no se persiste y un recargado vuelve a "Todo". Sin nada registrado no hay chips. La lente atiende `porPagar:ver-deuda`, con el que la tarjeta de crédito de Mis cuentas llega prefiltrada a su deuda.
-- **Verificado contra** : ficha 06 de la auditoría móvil (2026-08-20, ADR 080 D6, los chips). Antes: DSK.4 (2026-08-18, sus dos rebanadas). Antes: ficha 05 de la auditoría móvil (2026-08-18).
+- **Estado actual**     : **cerrada el 2026-08-18**. **DSK.4 (2026-08-18, [ADR 073](../DECISIONS/073-deudas-inventario-con-su-herramienta-al-lado.md)) le da composición de escritorio desde 1440px**: la lista toma `span 8` y la estrategia `span 4` pegajosa, con tope de alto contra el viewport (única regla de composición del proyecto que depende del alto de la ventana); el hero pasa a banda, la tarjeta de deuda baja de tres renglones a dos, y sin deudas la lista ocupa las doce columnas. El "+" sale del texto del botón de cabecera y del estado vacío (vale en todos los anchos: lo aporta el ícono). La sección se llama "Por pagar" (título, nav de escritorio, banner de propósito), lista fijos y deudas en dos grupos, y es la única entrada para crear cualquiera de los tres tipos. Hereda del Calendario el **alta/edición de gasto fijo** y el **pago en lote** (CAL.5a/CAL.5b). **Desde el 2026-08-20 la lista abre con los cuatro chips de la ficha 05** (`Todo · Fijos · Deudas · Pagado`), que esa ficha especificó y dejó sin construir y que levantó el [ADR 080](../DECISIONS/080-mis-cuentas-un-primario-y-lo-informativo-al-pie.md) D6 porque su D5 los necesitaba: el chip es un `let` de `views/lista.js` con `setFiltroPorPagar()`/`getFiltroPorPagar()` exportados (mismo patrón que los filtros de Movimientos), no se persiste y un recargado vuelve a "Todo". Sin nada registrado no hay chips. La lente atiende `porPagar:ver-compromiso` (ficha 08; antes `porPagar:ver-deuda`): llegan prefiltrados la tarjeta de crédito de Mis cuentas y cada fila del detalle del día del Calendario, y **el chip lo elige esta lente, no el emisor**. **Desde el 2026-08-21 la lista obedece el reloj del bloque** (`prefijoMesBloque()`): el chip "Pagado", el estado de cada fila y el `data-mes` del botón hablan del mes que se muestra, y eso es lo que dejó al Calendario salir de la administración sin perder el pago de un mes pasado (BUG-015).
+- **Verificado contra** : ficha 08 de la auditoría móvil, commit `ace1a45` (2026-08-21). Antes: ficha 06 (2026-08-20, ADR 080 D6, los chips). Antes: DSK.4 (2026-08-18, sus dos rebanadas). Antes: ficha 05 de la auditoría móvil (2026-08-18).
 
 **Dónde vive**
 
@@ -44,6 +44,7 @@
 
 **Cambios realizados**:
 
+- 2026-08-21 (**MOV.1 ficha 08**, [ADR 081](../DECISIONS/081-calendario-la-forma-del-mes-entradas-incluidas.md) D3): la lista, sus dos grupos y la tarjeta del lote toman su mes de `prefijoMesBloque()`. La sección registra su render en `renderAll()` y en `state:change` de `gastos`: el "Marcar pagado" del fijo vive acá desde ahora y pagarlo no toca `compromisos`. Commit `ace1a45`.
 - 2026-08-20 (ADR 080 D6, dentro de la ficha 06): los cuatro chips de la lente, que eran deuda de la ficha 05. Siguen pendientes de la 05 la fila de altas por grupo visible y el pie de saldo con "Ver plan de salida".
 - 2026-08-18 (**ficha 05 de la auditoría móvil**): ver arriba. Ver [CHANGELOG](../CHANGELOG.md).
 

@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-08-20.
+> Revisado: 2026-08-21.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-08)
+
+### feat(agenda): ficha 08 de la auditoría móvil, Calendario mide el mes entero · 2026-08-21
+
+Octava de las 25 entregas de MOV.1, con [ADR 081](DECISIONS/081-calendario-la-forma-del-mes-entradas-incluidas.md), que **supera el [ADR 037](DECISIONS/037-calendario-v2-visual.md) en la mitad del hero** (el total a pagar y su progreso), **acota su D5** (el label del total del día) y **completa el [ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md) D8** en su hallazgo G4. Fichas: [`contexto/calendario.md`](contexto/calendario.md) y [`contexto/deudas.md`](contexto/deudas.md).
+
+- **K1: la sección medía la mitad de lo que dibuja.** El hero decía "Compromisos de agosto" con `totalesDelMes()` mientras la grilla pintaba también los ingresos con `eventosIngresosDelMes()`, así que la cifra que encabezaba la pantalla no incluía nada de lo verde: el resumen respondía la misma pregunta que "Por pagar" y la respondía peor, sin la lista. `flujoDelMes()` nueva en `agenda/logic.js` suma las dos direcciones y devuelve el primer día de cada lado. El hero pasa a **"Te queda en agosto"** con "Entra $X / Sale $Y" debajo, y a **"Te falta"** con la cifra en positivo cuando sale más de lo que entra (sin color de alarma, ADR 019). Las dos cifras ya se calculaban: acá se dejan de ignorar.
+- **K3: el detalle del día deja de administrar.** La fila de salida tenía cuatro acciones (editar, eliminar, y marcar pagado o abonar) y con eso sostenía dos verdades a la vez: que en "Por pagar" se paga y que también se paga acá. Queda **una salida**, "Ver en Por pagar", prefiltrada a ese compromiso: `porPagar:ver-deuda` se generaliza a `porPagar:ver-compromiso` y **el chip lo decide la lente destino**, porque el emisor sabe de qué compromiso habla pero no de la taxonomía de la otra pantalla. La fila de ingreso conserva su acción: repartir un ingreso no tiene otra casa dentro del mes, y esa asimetría es la decisión.
+- **Prerrequisito de K3: "Por pagar" obedece el reloj del bloque.** El "Marcar pagado" del calendario era la única superficie capaz de registrar el pago de un mes que no fuera el actual (BUG-015). `renderListaCompromisos()` y la tarjeta del lote toman su mes de `prefijoMesBloque()`, así que el chip "Pagado", el estado de cada fila y el `data-mes` del botón hablan del mes que la lente muestra. El guardia del mes futuro deja de vivir en el botón: el reloj se corta en el mes en curso.
+- **Hueco que eso destapó:** los botones de mes del bloque repintan con `renderAll()` y **ninguna de las tres lentes tenía su render de sección registrado ahí**. El encabezado cambiaba de mes y el contenido se quedaba en el anterior hasta navegar a otra sección. Las tres lo registran ahora.
+- **Defecto encontrado al cerrar, y arreglado acá:** con el botón mudado a la lista, pagar un fijo dejaba la fila con su botón puesto. `compromisos/index.js` solo repintaba el dashboard con `state:change` de `gastos`, no su propia sección, porque hasta la ficha 08 el botón vivía en el Calendario y era el Calendario el que se repintaba. Lo encontró la suite E2E, no la lectura del diff.
+- **K4: el día en que entra dinero se marca.** `cal-day--ingreso` con el mecanismo de `cal-day--vencido` y el color de ingresos que la leyenda ya usa, declarado **antes** que `--vencido` a propósito: un día con ingreso y con un pago vencido se pinta como vencido, que es lo que hay que atender. Cero tokens nuevos.
+- **K2: el vacío no promete lo que ya no tiene.** El mes despejado dice "no hay nada con fecha este mes: ni pagos programados ni ingresos previstos" y su primario es "Programar en Por pagar".
+- **El nombre se conserva y una línea lo hace cierto.** "Calendario" se queda (se probaron "Mi mes", "Agenda" y "Flujo de caja"), con **"Cuándo entra y cuándo sale"** bajo el `h1`. El par `.tesoreria-titulo` / `.tesoreria-linea` que estrenó la ficha 06 pasa a `.section__titulo` / `.section__linea` en `layout.css`: de una sección a vocabulario compartido.
+- **K5 no se toca:** el día vencido se pinta ámbar en Calendario y rojo en Inicio y en "Por pagar". Las dos decisiones tienen razón escrita; elegir un lado es una decisión de tono y va a la ficha 18.
+- Tests: 16 unitarios nuevos en `agenda.test.js` (el hero con sus dos lados, el mes solo con ingresos, el mes solo con aportes de meta, la máscara que no toca las fechas, el resumen del día en sus tres formas, y que ninguna acción de administración sobreviva en el detalle), 2 en `compromisos.test.js` (el `data-mes` del botón y el fijo pagado que pierde su botón solo en el mes visible) y 2 E2E (el mes siguiente que no se puede visitar y el detalle del día sin oferta de pago). SW v573 a v574.
 
 ### feat(gastos): ficha 07 de la auditoría móvil, el bloque Gastos gana su anatomía · 2026-08-20
 
