@@ -13,6 +13,7 @@ import {
 } from '../../core/constants.js';
 import {
   presupuestosActivos,
+  ordenarPresupuestosPorUrgencia,
   calcularProgreso,
   calcularGastadoCategoria,
   categoriasSinPresupuesto,
@@ -21,7 +22,6 @@ import {
   resumenGrupos,
   ejecutadoPorGrupoDelMes,
   desgloseNecesidadesDelMes,
-  desgloseAhorroDelMes,
   generarMensajesLimites,
   coberturaLimitesEstiloVida,
   extraordinarioDelMes,
@@ -63,26 +63,55 @@ export function renderPanelPresupuesto() {
 }
 
 /**
- * Estado vacío: el primario del encabezado se retira (regla R8, un solo
- * primario visible). Sin plan del mes la salida que corresponde es "Ir a Mis
- * cuentas", y el tope por categoría sigue disponible desde su propia tarjeta:
- * tres botones a la vez no dicen por dónde empezar.
+ * El primario del encabezado ("+ Límite") queda siempre visible (ficha 12).
+ *
+ * Antes se ocultaba cuando la lente caía a su estado vacío por falta de plan,
+ * y el CTA de "Nuevo límite" aparecía dentro del detalle: la regla del
+ * [ADR 077](../DECISIONS/077-limites-de-gasto-tres-grupos-a-la-vista.md) D4 es
+ * "un botón siempre, nunca dos". Con los topes como lente entera ya no hay
+ * estado vacío por falta de plan, así que la regla se cumple con el de arriba
+ * y el de dentro se retira.
  */
 function _sincronizarBotonEncabezado() {
   const btn = document.getElementById('btn-nuevo-presupuesto');
   if (!btn) return;
-  btn.hidden = !!document.querySelector('.grupos-resumen--vacio');
+  btn.hidden = false;
 }
 
 // ── RESUMEN POR GRUPO FINANCIERO (MC.5b/MC.5c, ADR 017) ──────────
 
 /**
- * Resumen read-only de los 3 grupos financieros del mes en curso.
- * El presupuesto asignado sale de la distribución de ingreso de Mis cuentas
- * (misma función que "Distribuir mi ingreso"); el ejecutado, de los flujos ya
- * registrados. Si no hay ingreso registrado, guía al usuario a Mis cuentas.
- * Necesidades y Ahorro incluyen, además, un desglose colapsable por item
- * (MC.5c); Estilo de vida tiene el suyo más abajo (topes por categoría).
+ * La lente "Límites": los topes por categoría, con el plan del mes como
+ * referencia arriba (ficha 12, ADR 085).
+ *
+ * ## Lo que cambió y por qué
+ *
+ * Hasta la ficha 12 esta lente eran tres tarjetas de grupo, y dos de ellas
+ * **eran espejos de solo lectura de otras secciones**: la de Necesidades
+ * desplegaba la lista de fijos y deudas (`desgloseNecesidadesDelMes()` filtra
+ * exactamente `fijo` + `deuda-entidad` + `deuda-personal`, la definición
+ * literal de "Por pagar") y la de Ahorro desplegaba fondo, metas, reservas e
+ * inversiones, las cuatro hijas de la casa de Ahorro. Ninguna de las dos
+ * permitía hacer nada, y la de Necesidades vivía a un toque de la lente
+ * hermana que sí deja pagar.
+ *
+ * El argumento que lo cierra es el trato asimétrico del [ADR 019]: Necesidades
+ * se monitorea y nunca se alarma, Ahorro celebra superar la meta, y solo
+ * Estilo de vida tiene alerta al 75% y excedido al 100%. O sea que **de las
+ * tres tarjetas de "Límites de gasto", exactamente una se comportaba como un
+ * límite de gasto.**
+ *
+ * Los tres ratios se conservan, porque son lo único que dice si el plan del mes
+ * se está cumpliendo, pero como tres líneas con salida a la superficie que
+ * administra cada grupo. Los desgloses no se pliegan: se van. Un plegable
+ * seguiría siendo un espejo, solo escondido.
+ *
+ * ## Y los topes dejan de depender de un ingreso
+ *
+ * Antes, sin ingreso registrado no había plan, y sin plan la lente entera caía
+ * a su estado vacío **aunque el usuario tuviera topes puestos**: la función que
+ * no necesita ingresos quedaba supeditada a la que sí. Ahora el plan es
+ * opcional y su ausencia solo quita la franja.
  *
  * @param {number} anio
  * @param {number} mes - 1-12
@@ -94,13 +123,14 @@ function _renderResumenGrupos(anio, mes) {
     ? sugerirDistribucionIngreso(ingresoMensual, construirContextoDistribucion(S))
     : null;
 
-  if (!dist) return _renderResumenGruposVacio(anio, mes);
+  const asignadoPorGrupo = dist
+    ? {
+      'necesidades':    dist.split.necesidades.monto,
+      'estilo-de-vida': dist.split.estiloVida.monto,
+      'ahorro':         dist.split.ahorro.monto,
+    }
+    : {};
 
-  const asignadoPorGrupo = {
-    'necesidades':    dist.split.necesidades.monto,
-    'estilo-de-vida': dist.split.estiloVida.monto,
-    'ahorro':         dist.split.ahorro.monto,
-  };
   // LIM.1b: los compromisos entran porque el pago de un fijo se guarda con
   // categoría 'Gastos fijos'; sin ellos no se sabe cuál era Streaming.
   const ejecutadoPorGrupo = ejecutadoPorGrupoDelMes(
@@ -108,12 +138,11 @@ function _renderResumenGrupos(anio, mes) {
   );
   const resumen = resumenGrupos(asignadoPorGrupo, ejecutadoPorGrupo);
 
+  // Sigue alimentando los mensajes (el de un fijo vencido es de Necesidades),
+  // que es lo único que esta lente necesita del desglose desde la ficha 12.
   const itemsNecesidades = desgloseNecesidadesDelMes(S.compromisos ?? [], S.gastos ?? [], anio, mes);
-  const itemsAhorro       = desgloseAhorroDelMes(
-    S.ahorro, S.metas ?? [], S.apartados ?? [], S.inversiones ?? [], anio, mes,
-  );
 
-  // Los mensajes se calculan antes del desglose porque el de cada categoría
+  // Los mensajes se calculan antes del detalle porque el de cada categoría
   // ya no se apila arriba: baja al sobre que describe (ADR 019 D3, el copy no
   // cambia, cambia de sitio).
   const alertasCategoria = alertasLimites(S.presupuestos ?? [], S.gastos ?? [], anio, mes);
@@ -123,141 +152,76 @@ function _renderResumenGrupos(anio, mes) {
       .map(m => [m.id.slice(_PREFIJO_MENSAJE_CATEGORIA.length), m.mensaje]),
   );
 
-  const desglosePorGrupo = {
-    'necesidades':    _renderDesgloseNecesidades(itemsNecesidades),
-    'estilo-de-vida': _renderDetalleEstiloVida(anio, mes, asignadoPorGrupo['estilo-de-vida'], notasCategoria),
-    'ahorro':         _renderDesgloseAhorro(itemsAhorro),
-  };
-
-  // MC.8c: Necesidades y Ahorro comparten la fila compacta de arriba; Estilo
-  // de vida (la card alta, con los topes por categoría) va en fila completa.
-  // El DOM sigue ese orden visual, que es también el del asistente de
-  // distribución (Necesidades → Ahorro → Estilo de vida).
-  const ordenCards = ['necesidades', 'ahorro', 'estilo-de-vida'];
-  const card = g => _renderGrupoCard(g, resumen[g], desglosePorGrupo[g], _renderNudgesGrupo(mensajes, g));
-
-  // DSK.8a (ADR 077 D1): los dos grupos que se LEEN viajan juntos en un
-  // envoltorio, y el que se OPERA queda suelto al lado. El envoltorio es
-  // `display: contents` bajo 1440px (analysis.css), así que ahí no es una caja
-  // y el orden del DOM queda igual que antes. Existe porque sin él las dos
-  // tarjetas de la izquierda son filas de la misma rejilla que la tarjeta alta
-  // de la derecha, y esa altura se reparte entre ellas: medido, 264px de hueco
-  // entre Necesidades y Ahorro.
-  const cards = `
-    <div class="grupos-resumen__col">
-      ${card(ordenCards[0])}
-      ${card(ordenCards[1])}
-    </div>
-    ${card(ordenCards[2])}`;
-
   return `
-    <section class="grupos-resumen" aria-label="Seguimiento de tus tres grupos financieros este mes">
-      <header class="grupos-resumen__header">
-        <h2 class="grupos-resumen__title">Tu plan del mes por grupo</h2>
-        <!-- ADR 080 D4: antes navegaba a #tesoreria y dejaba al usuario en la
-             entrada de la sección, con el asistente que le prometió ocho
-             bloques más abajo. Ahora abre el asistente, con el mismo evento que
-             Calendario e Inicio. El atributo href se queda como respaldo sin
-             JS: dispatch() hace preventDefault para toda data-action. Y la
-             etiqueta nombra la acción y no la sección (R85), así que sobrevive
-             a cualquier mudanza futura. -->
-        <a href="#tesoreria" class="grupos-resumen__link" data-action="presupuesto-abrir-distribucion" aria-label="Ajustar tu distribución del ingreso">Ajustar mi distribución</a>
-      </header>
-      ${_renderRefuerzoCombinado(mensajes)}
-      <div class="grupos-resumen__grid">${cards}</div>
+    ${_renderRefuerzoCombinado(mensajes)}
+    ${_renderNudgesPlan(mensajes)}
+    ${dist ? _renderFranjaPlan(resumen, mes) : ''}
+    <section class="estilo-limites-standalone" aria-labelledby="estilo-limites-standalone-title">
+      <h2 class="estilo-limites-standalone__title" id="estilo-limites-standalone-title">Límites por categoría</h2>
+      ${_renderDetalleEstiloVida(anio, mes, asignadoPorGrupo['estilo-de-vida'] ?? 0, notasCategoria)}
     </section>`;
 }
 
 /**
- * Una tarjeta de grupo dentro del resumen, con **tratamiento asimétrico por
- * rol** (ADR 019): la paleta y la tercera cifra reflejan la naturaleza del
- * grupo, no una plantilla común.
+ * La franja del plan del mes: tres líneas, una por grupo, con su porcentaje y
+ * la salida a la superficie que administra ese grupo (ficha 12, ADR 085 D2).
  *
- * - **Necesidades = monitorear.** Son gastos esenciales que se pagan sí o sí,
- *   así que la tarjeta es siempre neutra (estado `monitor`, sin ámbar ni rojo):
- *   el porcentaje es informativo (cuánto del ingreso consumen), no un umbral de
- *   peligro. La tercera cifra nunca marca "Excedido" en rojo.
- * - **Ahorro = celebrar.** Cumplir o superar la meta es un logro: paleta
- *   positiva (verde), barra `progress-bar--complete` al 100%, estado `logro` y
- *   la tercera cifra en positivo ("Ahorrado de más").
- * - **Estilo de vida = controlar.** Único grupo que conserva el estado de gasto
- *   (alerta/excedido) con su barra ámbar/roja: es donde "acercarse al límite"
- *   tiene sentido.
+ * Sustituye a las tres tarjetas y sus desgloses. Necesidades sale a "Por
+ * pagar", que es la lente hermana y la dueña de los tres tipos de compromiso;
+ * Ahorro sale a su casa, que es un slot de la barra; **Estilo de vida no sale
+ * a ninguna parte porque es la lente en la que ya estás**, y decirlo es más
+ * honesto que un enlace que no lleva a nada.
  *
- * @param {string} grupo - clave de GRUPOS_FINANCIEROS.
- * @param {{asignado:number, ejecutado:number, restante:number, pct:number, estado:string}} r
- * @param {string} [desgloseHtml=''] - HTML del detalle del grupo (desglose MC.5c o topes MC.8b).
- * @param {string} [nudgesHtml=''] - HTML de alertas/refuerzos del grupo (MC.5d).
+ * Conserva el trato asimétrico del [ADR 019](../DECISIONS/019-limites-por-rol.md)
+ * en lo que aplica a una línea: Necesidades es siempre neutra (su porcentaje
+ * informa cuánto del ingreso consume, no un umbral de peligro) y Ahorro celebra
+ * el excedente. Solo Estilo de vida pinta alerta y excedido.
+ *
+ * @param {Record<string, {pct:number, estado:string}>} resumen
+ * @param {number} mes - 1-12, para nombrar el mes del plan.
  * @returns {string} HTML.
  */
-function _renderGrupoCard(grupo, r, desgloseHtml = '', nudgesHtml = '') {
-  const label         = LABEL_GRUPO_FINANCIERO[grupo] ?? grupo;
-  const pctVisual     = Math.min(r.pct, 100);
-  const restanteNeg   = r.restante < 0;
-  const esNecesidades = grupo === 'necesidades';
-  const esAhorro      = grupo === 'ahorro';
-  const ahorroLogrado = esAhorro && r.asignado > 0 && r.pct >= 100;
+function _renderFranjaPlan(resumen, mes) {
+  const SALIDAS = {
+    'necesidades':    { href: '#compromisos', texto: 'Por pagar' },
+    'ahorro':         { href: '#ahorro',      texto: 'Ahorro' },
+    'estilo-de-vida': null,
+  };
 
-  // Estado visual y color de barra por rol.
-  let estadoVisual, claseBarra;
-  if (esNecesidades) {
-    estadoVisual = 'monitor';   // neutro: se monitorea, no se alarma.
-    // Neutro explícito (regla R34): sin modificador la barra cae al acento,
-    // que significa dinero disponible y logro, así que "90% de tus
-    // necesidades consumidas" se pintaba con el color con el que Ahorro
-    // celebra haber superado su meta, y las dos barras quedan contiguas.
-    claseBarra   = 'progress-bar--neutro';
-  } else if (esAhorro) {
-    estadoVisual = ahorroLogrado ? 'logro' : 'ok';
-    claseBarra   = ahorroLogrado ? 'progress-bar--complete' : '';
-  } else {
-    estadoVisual = r.estado;
-    claseBarra   = _claseProgreso(r.pct);
-  }
+  const lineas = ['necesidades', 'ahorro', 'estilo-de-vida'].map((grupo) => {
+    const r = resumen[grupo] ?? { pct: 0, estado: 'ok' };
+    // Necesidades nunca se pinta en rojo (ADR 019: se monitorea, no se alarma)
+    // y Ahorro por encima de su meta es un logro, no un exceso.
+    const tono = grupo === 'necesidades' ? 'monitor'
+      : grupo === 'ahorro' ? (r.pct >= 100 ? 'logro' : 'ok')
+        : r.estado;
+    const salida = SALIDAS[grupo];
 
-  // Tercera cifra por rol: Necesidades neutra siempre; Ahorro celebra el
-  // excedente en positivo; Estilo de vida marca el exceso en rojo.
-  let figLabel, figClase;
-  if (esNecesidades) {
-    figLabel = restanteNeg ? 'Sobre lo previsto' : 'Disponible';
-    figClase = '';
-  } else if (esAhorro) {
-    figLabel = restanteNeg ? 'Ahorrado de más' : 'Te falta';
-    figClase = restanteNeg ? 'is-positive' : '';
-  } else {
-    figLabel = restanteNeg ? 'Excedido' : 'Disponible';
-    figClase = restanteNeg ? 'is-negative' : '';
-  }
+    return `
+        <li class="plan-franja__fila">
+          <span class="plan-franja__grupo">${_esc(LABEL_GRUPO_FINANCIERO[grupo] ?? grupo)}</span>
+          <span class="plan-franja__pct plan-franja__pct--${tono}">${r.pct}%</span>
+          ${salida
+    ? `<a class="plan-franja__salida" href="${salida.href}">${salida.texto}</a>`
+    : '<span class="plan-franja__aqui">aquí</span>'}
+        </li>`;
+  }).join('');
 
   return `
-    <article class="grupo-card" data-grupo="${grupo}" data-estado="${estadoVisual}">
-      <div class="grupo-card__header">
-        <h3 class="grupo-card__name">${label}</h3>
-        <span class="grupo-card__pct">${r.pct}%</span>
-      </div>
-      <div class="progress" role="progressbar"
-           aria-valuenow="${r.pct}" aria-valuemin="0" aria-valuemax="100"
-           aria-label="Uso de ${label}: ${r.pct}%">
-        <div class="progress-bar ${claseBarra}" style="width:${pctVisual}%"></div>
-      </div>
-      <dl class="grupo-card__figs">
-        <div class="grupo-card__fig">
-          <dt>Ejecutado</dt>
-          <dd>${f(r.ejecutado)}</dd>
-        </div>
-        <div class="grupo-card__fig">
-          <dt>Presupuesto</dt>
-          <dd>${f(r.asignado)}</dd>
-        </div>
-        <div class="grupo-card__fig">
-          <dt>${figLabel}</dt>
-          <dd class="${figClase}">${f(Math.abs(r.restante))}</dd>
-        </div>
-      </dl>
-      ${nudgesHtml}
-      ${desgloseHtml}
-    </article>`;
+    <section class="plan-franja" aria-label="Tu plan del mes por grupo">
+      <header class="plan-franja__header">
+        <h2 class="plan-franja__title">Tu plan de ${_esc(_MESES_CORTOS[mes - 1] ?? '')}</h2>
+        <!-- ADR 080 D4: abre el asistente, no navega a la entrada de la
+             sección, y la etiqueta nombra la acción y no la sección (R85). -->
+        <a href="#tesoreria" class="plan-franja__link" data-action="presupuesto-abrir-distribucion" aria-label="Ajustar tu distribución del ingreso">Ajustar</a>
+      </header>
+      <ul class="plan-franja__lista" role="list">${lineas}</ul>
+    </section>`;
 }
+
+/** Nombre corto del mes para el título de la franja. */
+const _MESES_CORTOS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
 // ── ALERTAS Y REFUERZOS POR ROL (MC.5d + MC.8a, ADR 017 y ADR 019) ──
 
@@ -313,15 +277,19 @@ function _renderNudge(m) {
 }
 
 /**
- * Mensajes de un grupo específico (excluye el refuerzo combinado, que no
- * pertenece a ningún grupo, y los de categoría, que viven en su sobre).
+ * Los mensajes de los tres grupos, ahora encima de la franja (ficha 12).
+ *
+ * Antes cada uno vivía dentro de la tarjeta de su grupo. Con las tarjetas de
+ * Necesidades y Ahorro retiradas, sus mensajes se quedaban sin sitio, y el de
+ * un fijo vencido es información que la lente no debe perder solo porque su
+ * tarjeta se fue. Los de categoría siguen bajando a su sobre (ADR 019 D3).
+ *
  * @param {ReturnType<typeof generarMensajesLimites>} mensajes
- * @param {string} grupo
  * @returns {string} HTML.
  */
-function _renderNudgesGrupo(mensajes, grupo) {
+function _renderNudgesPlan(mensajes) {
   return mensajes
-    .filter(m => m.grupo === grupo && !_esMensajeDeCategoria(m))
+    .filter(m => m.grupo && !_esMensajeDeCategoria(m))
     .map(_renderNudge)
     .join('');
 }
@@ -346,96 +314,6 @@ const _CHEVRON_DESGLOSE = '<svg class="icon analisis-grupo__chevron" aria-hidden
 const _ICONO_ITEM_NECESIDAD = { fijo: 'i-agenda', deuda: 'i-deudas' };
 const _ETIQUETA_ESTADO_PAGO = { ninguno: 'Pendiente', parcial: 'Abono parcial', completo: 'Pagado' };
 const _ICONO_ITEM_AHORRO    = { fondo: 'i-ahorro', meta: 'i-metas', apartado: 'i-apartados', inversion: 'i-inversion' };
-
-/**
- * Detalle colapsable de Necesidades: un item por gasto fijo o deuda activa,
- * con su monto de referencia y si ya se pagó este mes.
- * @param {ReturnType<typeof desgloseNecesidadesDelMes>} items
- * @returns {string} HTML. `''` si no hay items (el caller no debería mostrar el `<details>`).
- */
-function _renderDesgloseNecesidades(items) {
-  if (items.length === 0) {
-    return `<p class="grupo-card__desglose-empty">Aún no registras gastos fijos ni deudas en Por pagar.</p>`;
-  }
-
-  const filas = items.map(it => {
-    const icono = iconoCategoria(_ICONO_ITEM_NECESIDAD[it.tipo] ?? 'c-otros', 'icon icon--sm');
-    const sub   = it.estadoPago === 'ninguno'
-      ? `Pendiente · ${f(it.montoReferencia)}`
-      : `${_ETIQUETA_ESTADO_PAGO[it.estadoPago]} · ${f(it.ejecutado)}`;
-
-    return `
-      <li class="grupo-card__item" data-estado-pago="${it.estadoPago}">
-        <span class="grupo-card__item-nombre">${icono} ${_esc(it.descripcion)}</span>
-        <span class="grupo-card__item-sub">${sub}</span>
-      </li>`;
-  }).join('');
-
-  return `
-    <details class="analisis-grupo grupo-card__desglose">
-      <summary class="analisis-grupo__summary">Ver detalle (${items.length})${_CHEVRON_DESGLOSE}</summary>
-      <ul class="grupo-card__item-list" role="list">${filas}</ul>
-    </details>`;
-}
-
-/**
- * Detalle colapsable de Ahorro: un item por destino (fondo, meta, apartado,
- * inversión). Solo el fondo tiene corte mensual; el resto muestra su
- * acumulado a la fecha (el copy lo aclara para no confundir con "este mes").
- * @param {ReturnType<typeof desgloseAhorroDelMes>} items
- * @returns {string} HTML.
- */
-function _renderDesgloseAhorro(items) {
-  if (items.length === 0) {
-    return `<p class="grupo-card__desglose-empty">Aún no tienes un fondo, meta, apartado o inversión activos.</p>`;
-  }
-
-  const filas = items.map(it => {
-    const icono = iconoCategoria(_ICONO_ITEM_AHORRO[it.tipo] ?? 'c-otros', 'icon icon--sm');
-    const sub   = it.tipo === 'fondo'
-      ? `${f(it.aportadoEsteMes)} este mes · ${f(it.acumulado)} acumulado`
-      : it.objetivo
-        ? `${f(it.acumulado)} de ${f(it.objetivo)}`
-        : `${f(it.acumulado)} acumulado`;
-
-    return `
-      <li class="grupo-card__item">
-        <span class="grupo-card__item-nombre">${icono} ${_esc(it.nombre)}</span>
-        <span class="grupo-card__item-sub">${sub}</span>
-      </li>`;
-  }).join('');
-
-  return `
-    <details class="analisis-grupo grupo-card__desglose">
-      <summary class="analisis-grupo__summary">Ver detalle (${items.length})${_CHEVRON_DESGLOSE}</summary>
-      <ul class="grupo-card__item-list" role="list">${filas}</ul>
-      <p class="grupo-card__desglose-hint">Salvo el fondo de emergencia, estos montos son el acumulado a la fecha, no solo de este mes.</p>
-    </details>`;
-}
-
-/**
- * Estado vacío del resumen: sin ingreso registrado, guía a Mis cuentas. Aún
- * sin un plan del mes, conserva la gestión de topes por categoría (sin la
- * "olla finita", que necesita el presupuesto de Estilo de vida): un usuario
- * puede ponerle un tope a lo que gasta antes de registrar sus ingresos.
- * @param {number} anio
- * @param {number} mes - 1-12
- */
-function _renderResumenGruposVacio(anio, mes) {
-  return `
-    <section class="grupos-resumen grupos-resumen--vacio" aria-label="Seguimiento por grupo financiero">
-      <p class="grupos-resumen__vacio-title">Aún no tienes un plan del mes por grupo</p>
-      <p class="grupos-resumen__vacio-desc">Registra tus ingresos y usa "Distribuir mi ingreso" en Mis cuentas para repartirlos entre Necesidades, Estilo de vida y Ahorro. Aquí verás cuánto llevas ejecutado en cada grupo.</p>
-      <!-- ADR 080 D4: mismo cambio que el enlace del encabezado. Acá el texto
-           de arriba ya nombra "Distribuir mi ingreso", así que el botón dice
-           exactamente lo que hace al tocarlo. -->
-      <a href="#tesoreria" class="btn btn-secondary" data-action="presupuesto-abrir-distribucion">Distribuir mi ingreso</a>
-    </section>
-    <section class="estilo-limites-standalone" aria-labelledby="estilo-limites-standalone-title">
-      <h2 class="estilo-limites-standalone__title" id="estilo-limites-standalone-title">Límites por categoría</h2>
-      ${_renderDetalleEstiloVida(anio, mes, 0, new Map(), true)}
-    </section>`;
-}
 
 // ── DETALLE DE ESTILO DE VIDA: TOPES POR CATEGORÍA (MC.8b, ADR 019) ──
 
@@ -469,9 +347,10 @@ function _renderResumenGruposVacio(anio, mes) {
  *   que se dibuja dentro de su propio sobre en vez de apilarse arriba.
  * @returns {string} HTML.
  */
-function _renderDetalleEstiloVida(anio, mes, presupuestoEV, notasCategoria = new Map(), mostrarCta = false) {
-  const activos   = presupuestosActivos(S.presupuestos);
+function _renderDetalleEstiloVida(anio, mes, presupuestoEV, notasCategoria = new Map()) {
   const gastos    = S.gastos ?? [];
+  // Ficha 12 (L5): por urgencia, no por fecha de creación.
+  const activos   = ordenarPresupuestosPorUrgencia(S.presupuestos, gastos, anio, mes);
   const cobertura = coberturaLimitesEstiloVida(activos, presupuestoEV);
 
   const hoyISO      = hoy();
@@ -500,10 +379,6 @@ function _renderDetalleEstiloVida(anio, mes, presupuestoEV, notasCategoria = new
       ${_renderSugerenciaTope(sugerencia)}
       ${_renderSinPresupuesto(activos)}
       ${_renderSuscripcionLarga(suscripcion)}
-      ${mostrarCta ? `
-      <div class="estilo-limites__actions">
-        <button class="btn btn-secondary btn-sm" data-action="nuevo-presupuesto">Nuevo límite</button>
-      </div>` : ''}
     </div>`;
 }
 
@@ -706,6 +581,18 @@ const _MOTIVO_SIN_TOPE = {
 };
 
 /**
+ * A dónde lleva cada motivo (ficha 12, L4). Las cuatro primeras a la lente
+ * hermana del mismo bloque, la quinta al hub de Ahorro.
+ */
+const _DESTINO_SIN_TOPE = {
+  'Vivienda':           '#compromisos',
+  'Servicios públicos': '#compromisos',
+  'Gastos fijos':       '#compromisos',
+  'Deudas':             '#compromisos',
+  'Ahorro':             '#ahorro',
+};
+
+/**
  * Categorías con gasto del mes y sin tope. Regla R35 ("todo consejo tiene
  * puerta"): cada fila **es** el botón que abre el formulario con su categoría
  * precargada, en vez de un consejo suelto al pie; y la fila de una categoría
@@ -731,10 +618,20 @@ function _renderSinPresupuesto(presupuestos) {
         <span class="envelope-huerfanas__monto">${f(h.gastado)}</span>`;
 
     if (!_puedeTenerTope(h.categoria, personalizadas)) {
+      // Ficha 12 (L4): el motivo nombraba la sección correcta desde la ficha
+      // 05 y seguía siendo texto muerto. Aparece en la fila de una categoría
+      // en la que el usuario ESTÁ gastando y donde busca control, así que la
+      // salida se enlaza. Sin destino conocido se queda como texto.
+      const motivo  = _MOTIVO_SIN_TOPE[h.categoria] ?? 'No lleva tope';
+      const destino = _DESTINO_SIN_TOPE[h.categoria] ?? '';
+      const motivoHtml = destino
+        ? `<a class="envelope-huerfanas__motivo envelope-huerfanas__motivo--link" href="${destino}">${_esc(motivo)}</a>`
+        : `<span class="envelope-huerfanas__motivo">${_esc(motivo)}</span>`;
+
       return `
       <li class="envelope-huerfanas__fija">
         ${cuerpo}
-        <span class="envelope-huerfanas__motivo">${_esc(_MOTIVO_SIN_TOPE[h.categoria] ?? 'No lleva tope')}</span>
+        ${motivoHtml}
       </li>`;
     }
 

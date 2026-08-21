@@ -32,6 +32,40 @@ export function presupuestosActivos(presupuestos) {
 }
 
 /**
+ * Los topes activos ordenados por urgencia: excedido primero, después en
+ * alerta, después el resto, y dentro de cada estado el porcentaje más alto
+ * arriba (ficha 12, hallazgo L5).
+ *
+ * El defecto: `presupuestosActivos()` es un `filter` sin `sort`, así que los
+ * sobres salían en orden de creación y el excedido pesaba lo mismo que el que
+ * va al 40%. Y el contraejemplo estaba **en este mismo archivo**:
+ * `desgloseNecesidadesDelMes()` sí ordena, por estado de pago y luego por
+ * monto. Un archivo, dos listas, un solo criterio aplicado.
+ *
+ * No lleva divisores, a diferencia de Metas y Reservas: la lista es corta y el
+ * borde del sobre ya dice su estado.
+ *
+ * @param {import('../../core/state.js').Presupuesto[]} presupuestos
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {number} anio
+ * @param {number} mes - 1-12
+ * @returns {import('../../core/state.js').Presupuesto[]}
+ */
+export function ordenarPresupuestosPorUrgencia(presupuestos, gastos, anio, mes) {
+  const PESO = { excedido: 0, alerta: 1, ok: 2 };
+
+  return presupuestosActivos(presupuestos)
+    .map(p => ({ p, r: calcularProgreso(p, gastos ?? [], anio, mes) }))
+    .sort((a, b) => {
+      const pa = PESO[a.r.estado] ?? 2;
+      const pb = PESO[b.r.estado] ?? 2;
+      if (pa !== pb) return pa - pb;
+      return b.r.porcentaje - a.r.porcentaje;
+    })
+    .map(x => x.p);
+}
+
+/**
  * Suma gastos de una categoría específica en el mes dado.
  *
  * @param {import('../../core/state.js').Gasto[]} gastos

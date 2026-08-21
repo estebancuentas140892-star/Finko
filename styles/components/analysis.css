@@ -101,18 +101,6 @@
 .analisis-grupo__body .analisis__section:last-child {
   margin-bottom: 0;
 }
-
-/* ── ANL.2d: filas colapsables limpias (ADR 038 D5) ──────────
-   Modificador --fila: solo los dos grupos del panel de Análisis (detalle de
-   gastos + renta) toman la superficie v2; la base .analisis-grupo queda
-   intacta porque el desglose de Límites (.grupo-card__desglose) la reutiliza.
-   El summary es teja pizarra + título + subtítulo + chevron (el ::after
-   existente); toque garantizado >= 44px por la teja de 40px + padding. */
-.analisis-grupo--fila {
-  background: var(--fk-bg-surface);
-  border-radius: var(--fk-radius-xl);
-  box-shadow: var(--fk-shadow-sm);
-}
 .analisis-grupo--fila > .analisis-grupo__summary {
   gap: var(--fk-space-3);
 }
@@ -466,197 +454,6 @@
   height: 6px;
 }
 
-/* ── MC.5b: Resumen de los 3 grupos financieros (centro de control) ── */
-.grupos-resumen {
-  margin-bottom: var(--fk-space-xl);
-}
-
-.grupos-resumen__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: var(--fk-space-sm);
-  margin-bottom: var(--fk-space-md);
-}
-
-.grupos-resumen__title {
-  font-size: var(--fk-fs-lg);
-  font-weight: var(--fk-fw-bold);
-  color: var(--fk-text-primary);
-  margin: 0;
-}
-
-/* Regla R4: el enlace medía 21px de alto (la altura de su texto). El margen
-   negativo devuelve la posición visual, así que el dibujo no se mueve. */
-.grupos-resumen__link {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  margin-block: -12px;
-  font-size: var(--fk-fs-sm);
-  color: var(--fk-accent);
-  white-space: nowrap;
-}
-
-/* MC.8c: Necesidades y Ahorro en 2 columnas compactas; Estilo de vida (la
-   card alta, con los topes por categoría) en fila completa. En móvil,
-   responsive.css apila todo a 1 columna. */
-.grupos-resumen__grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--fk-space-md);
-}
-
-.grupos-resumen__grid .grupo-card[data-grupo="estilo-de-vida"] {
-  grid-column: 1 / -1;
-}
-
-/* DSK.8a (ADR 077 D1): envoltorio de los dos grupos que se leen. Por defecto
-   `display: contents`, así que bajo 1440px no es una caja y las tres tarjetas
-   siguen siendo hijas directas de la rejilla, exactamente como antes. La
-   composición de escritorio vive en responsive.css. */
-.grupos-resumen__col {
-  display: contents;
-}
-
-.grupos-resumen__nota {
-  font-size: var(--fk-fs-xs);
-  color: var(--fk-text-muted);
-  margin: var(--fk-space-md) 0 0;
-}
-
-.grupo-card {
-  background: var(--fk-bg-elevated);
-  border: 1px solid var(--fk-border-subtle);
-  border-radius: var(--fk-radius-md);
-  padding: var(--fk-space-md);
-  display: flex;
-  flex-direction: column;
-  gap: var(--fk-space-sm);
-}
-
-.grupo-card[data-estado="alerta"]   { border-color: color-mix(in srgb, var(--fk-warning) 40%, transparent); }
-.grupo-card[data-estado="excedido"] { border-color: color-mix(in srgb, var(--fk-danger)  50%, transparent); background: var(--fk-danger-bg); }
-/* Ahorro cumplido o superado: logro, no exceso (ADR 019, MC.8). Verde. */
-.grupo-card[data-estado="logro"]    { border-color: color-mix(in srgb, var(--fk-success) 50%, transparent); background: var(--fk-success-bg); }
-
-.grupo-card__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: var(--fk-space-xs);
-}
-
-/* Es un <h3> (regla R1): los tres grupos tienen que existir en el esquema de
-   encabezados de la página, no solo verse como títulos. El tamaño se
-   re-declara para que el aspecto no cambie al salir del <p>. */
-.grupo-card__name {
-  font-size: var(--fk-fs-base);
-  font-weight: var(--fk-fw-semibold);
-  color: var(--fk-text-primary);
-  margin: 0;
-}
-
-.grupo-card__pct {
-  font-weight: var(--fk-fw-bold);
-  color: var(--fk-text-secondary);
-  font-size: var(--fk-fs-sm);
-}
-
-.grupo-card__figs {
-  display: flex;
-  flex-direction: column;
-  gap: var(--fk-space-xs);
-  margin: 0;
-}
-
-.grupo-card__fig {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--fk-space-sm);
-  font-size: var(--fk-fs-sm);
-}
-
-.grupo-card__fig dt { color: var(--fk-text-muted); margin: 0; }
-.grupo-card__fig dd { color: var(--fk-text-primary); margin: 0; font-weight: var(--fk-fw-semibold); }
-.grupo-card__fig dd.is-negative { color: var(--fk-danger); }
-.grupo-card__fig dd.is-positive { color: var(--fk-success); }
-
-/* ── MC.5d: alertas/refuerzos anidados dentro de la tarjeta de grupo ── */
-.grupo-card .nudge {
-  margin: var(--fk-space-xs) 0 0;
-  padding: var(--fk-space-sm);
-}
-.grupo-card .nudge .nudge__title { font-size: var(--fk-fs-xs); }
-
-/* ── MC.5c: desglose por item dentro de cada tarjeta de grupo ── */
-.grupo-card__desglose {
-  margin-top: var(--fk-space-xs);
-  border-color: var(--fk-border-subtle);
-}
-
-.grupo-card__desglose .analisis-grupo__summary {
-  padding: var(--fk-space-sm);
-  font-size: var(--fk-fs-sm);
-  font-weight: var(--fk-fw-semibold);
-  color: var(--fk-text-secondary);
-}
-
-.grupo-card__item-list {
-  list-style: none;
-  margin: 0;
-  padding: 0 var(--fk-space-sm) var(--fk-space-sm);
-  display: flex;
-  flex-direction: column;
-  gap: var(--fk-space-xs);
-}
-
-.grupo-card__item {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: var(--fk-space-sm);
-  font-size: var(--fk-fs-xs);
-}
-
-.grupo-card__item-nombre { color: var(--fk-text-primary); }
-.grupo-card__item-sub    { color: var(--fk-text-muted); white-space: nowrap; }
-.grupo-card__item[data-estado-pago="ninguno"] .grupo-card__item-sub { color: var(--fk-warning); }
-
-.grupo-card__desglose-empty {
-  font-size: var(--fk-fs-xs);
-  color: var(--fk-text-muted);
-  margin: var(--fk-space-xs) 0 0;
-}
-
-.grupo-card__desglose-hint {
-  font-size: var(--fk-fs-xs);
-  color: var(--fk-text-muted);
-  margin: 0 0 var(--fk-space-sm);
-  padding: 0 var(--fk-space-sm);
-}
-
-/* Estado vacío: sin ingreso registrado, invita a planificar en Mis cuentas. */
-.grupos-resumen--vacio {
-  background: var(--fk-bg-elevated);
-  border: 1px dashed var(--fk-border-subtle);
-  border-radius: var(--fk-radius-lg);
-  padding: var(--fk-space-lg);
-  text-align: center;
-}
-
-.grupos-resumen__vacio-title {
-  font-weight: var(--fk-fw-bold);
-  color: var(--fk-text-primary);
-  margin: 0 0 var(--fk-space-sm);
-}
-
-.grupos-resumen__vacio-desc {
-  font-size: var(--fk-fs-sm);
-  color: var(--fk-text-secondary);
-  margin: 0 0 var(--fk-space-md);
-}
-
 /* ── MC.8b: topes por categoría fusionados en la tarjeta de Estilo de vida ── */
 .estilo-limites {
   display: flex;
@@ -704,31 +501,105 @@
   justify-content: flex-start;
 }
 
-/* El 44px táctil del "+ Límite" de esta tarjeta vive en `responsive.css`
-   (regla R4 + corolario de capa de R23): ahí se declara `.btn-sm` a 36px y
-   esa capa gana por orden sin importar la especificidad. */
-
-/* Chevron real del sprite en el desglose de esta sección (el carácter '▾' del
-   `::after` no hereda trazo ni tamaño del sistema). Acotado a
-   `.grupo-card__desglose`: Análisis reutiliza `.analisis-grupo` y no cambia. */
-.grupo-card__desglose .analisis-grupo__summary::after { content: none; }
-
-.grupo-card__desglose .analisis-grupo__chevron {
-  margin-left: auto;
-  --fk-icon-size: var(--fk-icon-sm);
-  color: var(--fk-text-muted);
-  rotate: 90deg;
-  transition: rotate var(--fk-transition-fast);
-}
-
-.grupo-card__desglose[open] > .analisis-grupo__summary .analisis-grupo__chevron { rotate: -90deg; }
-
 /* Dentro de la tarjeta, los envelopes contrastan sobre el fondo elevado y las
    huérfanas no arrastran su margen superior grande (el gap del flex ya separa). */
 .estilo-limites .envelope { background: var(--fk-bg-base); }
 .estilo-limites .envelope-huerfanas { margin-top: 0; }
 
-/* Bloque de topes cuando aún no hay plan del mes (estado sin ingreso). */
+/* ── LA FRANJA DEL PLAN (ficha 12, ADR 085 D2) ──────────────────
+   Sustituye a las tres tarjetas de grupo. Tres lineas con su porcentaje y la
+   salida a la superficie que administra cada grupo: Necesidades a "Por pagar",
+   Ahorro a su casa, y Estilo de vida a ninguna parte porque es la lente en la
+   que ya estas. Es referencia, no contenido: por eso pesa una franja y no tres
+   tarjetas con desglose. */
+.plan-franja {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+  padding: var(--fk-space-3) var(--fk-space-4);
+  border-radius: var(--fk-radius-md);
+  border: 1px solid var(--fk-border-subtle);
+  background: var(--fk-bg-surface);
+}
+
+.plan-franja__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--fk-space-2);
+}
+
+.plan-franja__title {
+  margin: 0;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+}
+
+.plan-franja__link { font-size: var(--fk-text-xs); }
+
+.plan-franja__lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Tres columnas fijas para que los porcentajes queden alineados entre si: la
+   comparacion entre los tres grupos es la unica razon por la que la franja
+   existe. */
+.plan-franja__fila {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: var(--fk-space-3);
+  min-height: 2.75rem;
+}
+
+.plan-franja__grupo {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plan-franja__pct {
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--fk-font-semibold);
+  font-size: var(--fk-text-sm);
+}
+
+/* Trato asimetrico por rol (ADR 019), reducido a una linea: Necesidades se
+   monitorea y nunca se alarma, Ahorro celebra el excedente, y solo Estilo de
+   vida pinta ambar y rojo. */
+.plan-franja__pct--monitor  { color: var(--fk-text-secondary); }
+.plan-franja__pct--ok       { color: var(--fk-text-secondary); }
+.plan-franja__pct--logro    { color: var(--fk-success); }
+.plan-franja__pct--alerta   { color: var(--fk-warning-text); }
+.plan-franja__pct--excedido { color: var(--fk-danger-text); }
+
+.plan-franja__salida {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-accent);
+  text-decoration: none;
+}
+
+.plan-franja__salida:hover { color: var(--fk-accent-hover); text-decoration: underline; }
+
+/* "aqui" no es un enlace: ocupa su sitio para que las tres filas midan igual y
+   dice por que esa no lleva salida. */
+.plan-franja__aqui {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+}
+
+/* Bloque de topes: desde la ficha 12 es la lente entera, no el modo sin plan. */
 .estilo-limites-standalone {
   margin-top: var(--fk-space-lg);
 }
@@ -913,6 +784,23 @@
   flex-basis: 100%;
   font-size: var(--fk-fs-xs);
   color: var(--fk-text-muted);
+}
+
+/* Ficha 12 (L4): el motivo con destino conocido es un enlace, porque aparece
+   en la fila de una categoria en la que el usuario esta gastando y donde busca
+   control. Los 44px de la regla R4 se declaran aca: es la unica accion de esa
+   fila (la fila entera no es boton, a diferencia de las que si admiten tope). */
+.envelope-huerfanas__motivo--link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  color: var(--fk-accent);
+  text-decoration: none;
+}
+
+.envelope-huerfanas__motivo--link:hover {
+  color: var(--fk-accent-hover);
+  text-decoration: underline;
 }
 
 /* Categoría fija al editar un tope: se muestra, no se elige. */

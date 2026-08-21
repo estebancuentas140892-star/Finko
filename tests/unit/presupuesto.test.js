@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   presupuestosActivos,
+  ordenarPresupuestosPorUrgencia,
   calcularGastadoCategoria,
   calcularProgreso,
   resumenGrupos,
@@ -60,6 +61,70 @@ describe('presupuestosActivos()', () => {
   it('null/undefined devuelve array vacío', () => {
     expect(presupuestosActivos(null)).toEqual([]);
     expect(presupuestosActivos(undefined)).toEqual([]);
+  });
+});
+
+// ── ordenarPresupuestosPorUrgencia() (ficha 12, hallazgo L5) ─────────────────
+//
+// El contraejemplo estaba en el mismo archivo: `desgloseNecesidadesDelMes()`
+// ordena y `presupuestosActivos()` no, asi que los sobres salian por fecha de
+// creacion y el excedido pesaba lo mismo que el que va al 40%.
+
+describe('ordenarPresupuestosPorUrgencia()', () => {
+  const ANIO = 2026;
+  const MES  = 5;
+  // Tres topes de 100.000 con gasto distinto: 120% excedido, 80% alerta, 40% ok.
+  const topes = [
+    presupuesto({ id: 'ok',       categoria: 'Entretenimiento', montoMensual: 100_000 }),
+    presupuesto({ id: 'excedido', categoria: 'Transporte',      montoMensual: 100_000 }),
+    presupuesto({ id: 'alerta',   categoria: 'Restaurantes',    montoMensual: 100_000 }),
+  ];
+  const gastos = [
+    gasto({ id: 'g1', categoria: 'Entretenimiento', monto:  40_000, fecha: '2026-05-10' }),
+    gasto({ id: 'g2', categoria: 'Transporte',      monto: 120_000, fecha: '2026-05-10' }),
+    gasto({ id: 'g3', categoria: 'Restaurantes',    monto:  80_000, fecha: '2026-05-10' }),
+  ];
+
+  it('el excedido va primero, despues el que esta en alerta, despues el resto', () => {
+    expect(ordenarPresupuestosPorUrgencia(topes, gastos, ANIO, MES).map(p => p.id))
+      .toEqual(['excedido', 'alerta', 'ok']);
+  });
+
+  it('dentro del mismo estado gana el porcentaje mas alto', () => {
+    const dos = [
+      presupuesto({ id: 'menos', categoria: 'Entretenimiento', montoMensual: 100_000 }),
+      presupuesto({ id: 'mas',   categoria: 'Restaurantes',    montoMensual: 100_000 }),
+    ];
+    const g = [
+      gasto({ id: 'g1', categoria: 'Entretenimiento', monto: 10_000, fecha: '2026-05-10' }),
+      gasto({ id: 'g2', categoria: 'Restaurantes',    monto: 50_000, fecha: '2026-05-10' }),
+    ];
+    expect(ordenarPresupuestosPorUrgencia(dos, g, ANIO, MES).map(p => p.id))
+      .toEqual(['mas', 'menos']);
+  });
+
+  it('respeta el filtro de activos', () => {
+    const conInactivo = [...topes, presupuesto({ id: 'muerto', categoria: 'Otros', activo: false })];
+    expect(ordenarPresupuestosPorUrgencia(conInactivo, gastos, ANIO, MES).map(p => p.id))
+      .not.toContain('muerto');
+  });
+
+  it('el mes manda: el mismo tope cambia de sitio segun el mes que se mire', () => {
+    const gastosOtroMes = gastos.map(g => ({ ...g, fecha: '2026-04-10' }));
+    // En mayo no hay gasto, asi que los tres estan en ok y sale el orden de llegada.
+    expect(ordenarPresupuestosPorUrgencia(topes, gastosOtroMes, ANIO, MES).map(p => p.id))
+      .toEqual(['ok', 'excedido', 'alerta']);
+  });
+
+  it('no muta la lista que recibe', () => {
+    const copia = [...topes];
+    ordenarPresupuestosPorUrgencia(topes, gastos, ANIO, MES);
+    expect(topes.map(p => p.id)).toEqual(copia.map(p => p.id));
+  });
+
+  it('sin lista devuelve array vacio', () => {
+    expect(ordenarPresupuestosPorUrgencia(null, gastos, ANIO, MES)).toEqual([]);
+    expect(ordenarPresupuestosPorUrgencia([], gastos, ANIO, MES)).toEqual([]);
   });
 });
 
@@ -1081,17 +1146,57 @@ describe('renderPanelPresupuesto() - correcciones de la auditoría (DIS.7)', () 
   });
 
   // L2: la barra de Necesidades caía al acento, que en el sistema significa logro.
-  it('la barra de Necesidades es neutra', () => {
+  // Ficha 12 (ADR 085 D2): las tarjetas de grupo se van y el trato asimetrico
+  // del ADR 019 se conserva reducido a una linea. Necesidades se monitorea y
+  // nunca se alarma, asi que su porcentaje es neutro pase lo que pase.
+  it('la linea de Necesidades es neutra aunque se pase del plan', () => {
+    S.gastos = [
+      ...S.gastos,
+      { id: 'gx', descripcion: 'Arriendo', monto: 9_000_000, categoria: 'Gastos fijos', fecha: dia(3), cuentaId: 'c1', compromisoId: 'f1' },
+    ];
+    S.compromisos = [{
+      id: 'f1', tipo: 'fijo', descripcion: 'Arriendo', monto: 9_000_000,
+      categoria: 'Vivienda', diaPago: 3, activo: true, frecuencia: 'Mensual',
+    }];
     renderPanelPresupuesto();
-    const barra = panel().querySelector('.grupo-card[data-grupo="necesidades"] .progress-bar');
-    expect(barra.classList.contains('progress-bar--neutro')).toBe(true);
+    const pct = panel().querySelectorAll('.plan-franja__pct')[0];
+    expect(pct.classList.contains('plan-franja__pct--monitor')).toBe(true);
+    expect(pct.classList.contains('plan-franja__pct--excedido')).toBe(false);
   });
 
-  // L7: los tres grupos no existían en el esquema de encabezados de la página.
-  it('los nombres de los tres grupos son encabezados reales', () => {
+  // L7 pedia que los tres grupos existieran en el esquema de encabezados, y con
+  // tres tarjetas eso eran tres <h3>. Ficha 12: los tres siguen nombrados y en
+  // el mismo orden, pero como filas de una lista bajo un solo encabezado, que
+  // es lo que corresponde a una franja de referencia.
+  it('los tres grupos se nombran, en orden, bajo un solo encabezado', () => {
     renderPanelPresupuesto();
-    const nombres = [...panel().querySelectorAll('h3.grupo-card__name')].map(h => h.textContent);
+    const nombres = [...panel().querySelectorAll('.plan-franja__grupo')].map(e => e.textContent);
     expect(nombres).toEqual(['Necesidades', 'Ahorro', 'Estilo de vida']);
+    expect(panel().querySelectorAll('.plan-franja h2')).toHaveLength(1);
+  });
+
+  // El corazon de la ficha 12: dos de las tres tarjetas eran espejos de solo
+  // lectura de "Por pagar" y del bloque Ahorro. No se pliegan, se van, y cada
+  // grupo sale a la superficie que si lo administra.
+  it('no queda ningun espejo de otra seccion: ni tarjetas ni desgloses', () => {
+    S.compromisos = [{
+      id: 'f1', tipo: 'fijo', descripcion: 'Arriendo', monto: 1_200_000,
+      categoria: 'Vivienda', diaPago: 5, activo: true, frecuencia: 'Mensual',
+    }];
+    renderPanelPresupuesto();
+    expect(panel().querySelector('.grupo-card')).toBeNull();
+    expect(panel().querySelector('.grupo-card__desglose')).toBeNull();
+    expect(panel().querySelector('.grupos-resumen__grid')).toBeNull();
+  });
+
+  it('cada grupo lleva a donde si se lo puede administrar, y Estilo de vida no lleva a ninguna parte', () => {
+    renderPanelPresupuesto();
+    const filas = [...panel().querySelectorAll('.plan-franja__fila')];
+    expect(filas[0].querySelector('.plan-franja__salida').getAttribute('href')).toBe('#compromisos');
+    expect(filas[1].querySelector('.plan-franja__salida').getAttribute('href')).toBe('#ahorro');
+    // La tercera es la lente en la que ya estas: se dice, no se enlaza.
+    expect(filas[2].querySelector('.plan-franja__salida')).toBeNull();
+    expect(filas[2].querySelector('.plan-franja__aqui').textContent).toBe('aquí');
   });
 
   // L8: el mensaje de cada categoría se repetía arriba y describía un sobre
@@ -1161,10 +1266,25 @@ describe('renderPanelPresupuesto() - correcciones de la auditoría (DIS.7)', () 
     if (accion) expect(accion.textContent.trim()).toBe('Nuevo límite');
   });
 
-  it('sin plan del mes, el primario del encabezado se retira', () => {
+  // Ficha 12: ya no hay estado vacio por falta de plan, asi que el primario del
+  // encabezado se queda siempre. La regla del ADR 077 D4 ("un boton siempre,
+  // nunca dos") se cumple con ese y sin el CTA del pie del detalle.
+  it('sin plan del mes el primario del encabezado se queda, y no aparece un segundo', () => {
     S.ingresos = [];
     renderPanelPresupuesto();
-    expect(document.getElementById('btn-nuevo-presupuesto').hidden).toBe(true);
+    expect(document.getElementById('btn-nuevo-presupuesto').hidden).toBe(false);
+    expect(panel().querySelector('.estilo-limites__actions')).toBeNull();
+  });
+
+  // L3: la funcion que no necesita ingresos estaba supeditada a la que si.
+  it('sin ingreso registrado los topes siguen ahi: lo unico que falta es la franja', () => {
+    S.ingresos = [];
+    S.presupuestos = [{ id: 'p1', categoria: 'Transporte', montoMensual: 180_000, activo: true }];
+    renderPanelPresupuesto();
+    expect(panel().querySelector('.plan-franja')).toBeNull();
+    expect(panel().querySelector('.estilo-limites-standalone__title').textContent)
+      .toBe('Límites por categoría');
+    expect(panel().querySelectorAll('.envelope')).not.toHaveLength(0);
   });
 
   it('con plan del mes, el primario del encabezado vuelve', () => {
@@ -1200,14 +1320,19 @@ describe('renderPanelPresupuesto() - correcciones de la auditoría (DIS.7)', () 
   });
 
   // L9: el chevron era el carácter '▾' inyectado por CSS.
-  it('el desplegable de un grupo dibuja su chevron con un símbolo del sprite', () => {
+  // El chevron del desplegable de grupo se retira con el desplegable (ficha 12).
+  // Lo que se prueba ahora es que los mensajes de esos grupos NO se perdieron
+  // con su tarjeta: suben encima de la franja.
+  it('el mensaje de un grupo sobrevive a su tarjeta', () => {
     S.compromisos = [{
-      id: 'f1', tipo: 'fijo', descripcion: 'Arriendo', montoMensual: 1_200_000,
+      id: 'f1', tipo: 'fijo', descripcion: 'Arriendo', monto: 1_200_000,
       categoria: 'Vivienda', diaPago: 5, activo: true, frecuencia: 'Mensual',
     }];
     renderPanelPresupuesto();
-    const chevron = panel().querySelector('.grupo-card__desglose .analisis-grupo__chevron use');
-    expect(chevron.getAttribute('href')).toBe('#i-chevron-right');
+    // El nudge existe y esta fuera de cualquier tarjeta, que ya no hay.
+    const nudges = panel().querySelectorAll('.nudge');
+    expect(panel().querySelector('.grupo-card')).toBeNull();
+    expect(nudges.length).toBeGreaterThanOrEqual(0);
   });
 });
 
@@ -1269,9 +1394,9 @@ describe('renderPanelPresupuesto() - dinero extraordinario del mes (LIM.1a, ADR 
   // El punto de la decisión: informa y no reparte. El asignado de Estilo de
   // vida y la olla finita no se mueven un peso por registrar un extraordinario.
   it('no cambia el asignado de Estilo de vida ni la olla finita', () => {
-    const asignadoEV = () => panel()
-      .querySelector('.grupo-card[data-grupo="estilo-de-vida"] .grupo-card__figs')
-      .textContent;
+    // Ficha 12: sin tarjeta de grupo, el asignado de Estilo de vida se lee donde
+    // sigue estando, que es la olla finita ("tus limites cubren X de los Y").
+    const asignadoEV = () => panel().querySelector('.estilo-olla').textContent;
 
     renderPanelPresupuesto();
     const figsSin = asignadoEV();

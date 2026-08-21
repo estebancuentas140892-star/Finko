@@ -3289,17 +3289,24 @@ test.describe('Por pagar - chips de la lente', () => {
 // ── Límites de gasto: resumen por grupo (MC.5b, ADR 017) ─────────────────────
 
 test.describe('Límites de gasto - resumen por grupo', () => {
-  test('sin ingreso registrado guía a Mis cuentas', async ({ page }) => {
+  // Ficha 12 (ADR 085 D3): sin ingreso registrado la lente NO cae a un estado
+  // vacio. Antes, la funcion que no necesita ingresos quedaba supeditada a la
+  // que si: con topes puestos, la seccion entera se apagaba.
+  test('sin ingreso registrado los topes siguen siendo la lente', async ({ page }) => {
     await saltearOnboarding(page); // ingresos: []
+    await parchar(page, {
+      presupuestos: [{ id: 'p1', categoria: 'Restaurantes', montoMensual: 200_000, activo: true, fechaCreacion: '2026-01-01T00:00:00.000Z' }],
+    });
     await page.goto('/#presupuesto');
     await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
 
-    const vacio = page.locator('.grupos-resumen--vacio');
-    await expect(vacio).toBeVisible({ timeout: 3_000 });
-    await expect(vacio.locator('a[href="#tesoreria"]')).toBeVisible();
+    // Lo que falta es la franja del plan, no la seccion.
+    await expect(page.locator('.plan-franja')).toHaveCount(0);
+    await expect(page.locator('.estilo-limites-standalone__title')).toHaveText('Límites por categoría');
+    await expect(page.locator('.envelope[data-id="p1"]')).toBeVisible();
   });
 
-  test('con ingreso registrado muestra las 3 tarjetas de grupo', async ({ page }) => {
+  test('con ingreso registrado el plan es una franja de tres lineas con salida', async ({ page }) => {
     await saltearOnboarding(page);
     // Segundo addInitScript: agrega un ingreso mensual al estado ya sembrado.
     await parchar(page, {
@@ -3308,59 +3315,25 @@ test.describe('Límites de gasto - resumen por grupo', () => {
     await page.goto('/#presupuesto');
     await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
 
-    await expect(page.locator('.grupos-resumen__grid .grupo-card')).toHaveCount(3);
-    await expect(page.locator('.grupo-card[data-grupo="necesidades"]')).toBeVisible();
-    await expect(page.locator('.grupo-card[data-grupo="estilo-de-vida"]')).toBeVisible();
-    await expect(page.locator('.grupo-card[data-grupo="ahorro"]')).toBeVisible();
+    await expect(page.locator('.plan-franja__grupo'))
+      .toHaveText(['Necesidades', 'Ahorro', 'Estilo de vida']);
+
+    // Cada grupo lleva a donde si se lo administra, y Estilo de vida no lleva a
+    // ninguna parte porque es la lente en la que ya estas.
+    const filas = page.locator('.plan-franja__fila');
+    await expect(filas.nth(0).locator('a')).toHaveAttribute('href', '#compromisos');
+    await expect(filas.nth(1).locator('a')).toHaveAttribute('href', '#ahorro');
+    await expect(filas.nth(2).locator('a')).toHaveCount(0);
+
+    // Y ya no hay espejos de otras secciones dentro del bloque Gastos.
+    await expect(page.locator('.grupo-card')).toHaveCount(0);
+    await expect(page.locator('.grupo-card__desglose')).toHaveCount(0);
   });
 
-  test('desglose de Necesidades (MC.5c): un fijo pagado este mes aparece en el detalle', async ({ page }) => {
-    await saltearOnboarding(page);
-    const hoy = hoyLocal();
-    await parchar(page, {
-      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
-      compromisos: [{
-        id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', frecuencia: 'Mensual',
-        diaPago: 5, monto: 800_000, activo: true, categoria: null,
-        fechaCreacion: '2026-01-01T00:00:00.000Z',
-      }],
-      gastos: [{
-        id: 'g1', descripcion: 'Pago arriendo', monto: 800_000, categoria: 'Vivienda',
-        fecha: hoy, cuentaId: null, nota: '', compromisoId: 'cf1',
-      }],
-    });
-
-    await page.goto('/#presupuesto');
-    await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
-
-    const card = page.locator('.grupo-card[data-grupo="necesidades"]');
-    await card.locator('.grupo-card__desglose summary').click();
-    await expect(card.locator('.grupo-card__item')).toHaveCount(1);
-    await expect(card.locator('.grupo-card__item-nombre')).toContainText('Arriendo');
-    await expect(card.locator('.grupo-card__item-sub')).toContainText('Pagado');
-  });
-
-  test('desglose de Ahorro (MC.5c): fondo activo muestra aportado este mes', async ({ page }) => {
-    await saltearOnboarding(page);
-    const hoy = hoyLocal();
-    await parchar(page, {
-      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }],
-      ahorro: {
-        fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 100_000 },
-        aportes: [{ id: 'a1', monto: 50_000, fecha: hoy }],
-        compromisoMensual: 0,
-      },
-    });
-
-    await page.goto('/#presupuesto');
-    await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
-
-    const card = page.locator('.grupo-card[data-grupo="ahorro"]');
-    await card.locator('.grupo-card__desglose summary').click();
-    await expect(card.locator('.grupo-card__item')).toHaveCount(1);
-    await expect(card.locator('.grupo-card__item-nombre')).toContainText('Fondo de emergencia');
-    await expect(card.locator('.grupo-card__item-sub')).toContainText('este mes');
-  });
+  // Los desgloses de Necesidades y Ahorro se retiran con la ficha 12: eran
+  // vistas de solo lectura de "Por pagar" y de las cuatro hijas de Ahorro, sin
+  // ninguna accion, dentro del bloque Gastos y a un toque de la lista real. Lo
+  // que queda es la salida a la seccion que si deja operar, probada arriba.
 
   // DIS.7 (hallazgo L8): el copy del ADR 019 D3 no cambia, cambia de sitio. El
   // mensaje de una categoría baja a su propio sobre, donde el usuario puede
@@ -3381,8 +3354,9 @@ test.describe('Límites de gasto - resumen por grupo', () => {
     const nota = page.locator('.envelope[data-id="p1"] .envelope__nota');
     await expect(nota).toBeVisible({ timeout: 3_000 });
     await expect(nota).toHaveText('Ya usaste el 80% de tu presupuesto para Restaurantes. Intenta moderar este tipo de gastos los próximos días.');
-    // Y ya no se repite arriba: la tarjeta solo lleva mensajes de nivel de grupo.
-    await expect(page.locator('.grupo-card[data-grupo="estilo-de-vida"] > .nudge')).toHaveCount(0);
+    // Y ya no se repite arriba: desde la ficha 12 no hay tarjeta de grupo donde
+    // pudiera repetirse, y el mensaje de categoria vive en su sobre.
+    await expect(page.locator('.grupo-card')).toHaveCount(0);
   });
 
   test('refuerzo de Ahorro (MC.8a): cumplir justo el ahorro planeado muestra el refuerzo "Cumpliste"', async ({ page }) => {
@@ -3402,7 +3376,8 @@ test.describe('Límites de gasto - resumen por grupo', () => {
     await page.goto('/#presupuesto');
     await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
 
-    const nudge = page.locator('.grupo-card[data-grupo="ahorro"] .nudge-success .nudge__title');
+    // Ficha 12: el mensaje del grupo sobrevive a su tarjeta, encima de la franja.
+    const nudge = page.locator('#panel-presupuesto .nudge-success .nudge__title');
     await expect(nudge).toBeVisible({ timeout: 3_000 });
     await expect(nudge).toHaveText('Vas por buen camino. Cumpliste con el ahorro que planeaste este mes.');
   });
@@ -3424,7 +3399,8 @@ test.describe('Límites de gasto - resumen por grupo', () => {
     await page.goto('/#presupuesto');
     await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
 
-    const nudge = page.locator('.grupo-card[data-grupo="ahorro"] .nudge-success .nudge__title');
+    // Ficha 12: el mensaje del grupo sobrevive a su tarjeta, encima de la franja.
+    const nudge = page.locator('#panel-presupuesto .nudge-success .nudge__title');
     await expect(nudge).toBeVisible({ timeout: 3_000 });
     await expect(nudge).toHaveText('¡Excelente! Este mes estás ahorrando más de lo planeado. Cada peso que ahorras hoy es tranquilidad mañana.');
   });
@@ -3445,17 +3421,14 @@ test.describe('Límites de gasto - resumen por grupo', () => {
     await page.goto('/#presupuesto');
     await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
 
-    const card = page.locator('.grupo-card[data-grupo="ahorro"]');
-    // Estado visual "logro" (verde), no "excedido" (rojo).
-    await expect(card).toHaveAttribute('data-estado', 'logro');
-    // Barra de progreso verde (progress-bar--complete), no roja (--danger).
-    await expect(card.locator('.progress-bar.progress-bar--complete')).toBeVisible();
-    await expect(card.locator('.progress-bar--danger')).toHaveCount(0);
-    // La tercera cifra celebra el excedente en positivo, no lo marca como "Excedido" rojo.
-    const fig = card.locator('.grupo-card__fig').last();
-    await expect(fig.locator('dt')).toHaveText('Ahorrado de más');
-    await expect(fig.locator('dd')).toHaveClass(/is-positive/);
-    await expect(fig.locator('dd.is-negative')).toHaveCount(0);
+    // Ficha 12 (ADR 085 D2): el trato asimetrico del ADR 019 se conserva
+    // reducido a una linea. Superar la meta de Ahorro es un logro, y se dice en
+    // el tono de su porcentaje, no en el borde de una tarjeta que ya no existe.
+    const pctAhorro = page.locator('.plan-franja__fila').nth(1).locator('.plan-franja__pct');
+    await expect(pctAhorro).toHaveClass(/plan-franja__pct--logro/);
+    await expect(pctAhorro).not.toHaveClass(/plan-franja__pct--excedido/);
+    // Y en toda la franja no hay un solo rojo.
+    await expect(page.locator('.plan-franja .plan-franja__pct--excedido')).toHaveCount(0);
   });
 
   test('EP.7b: la nota de complementariedad con Mis cuentas ya no vive en el resumen (la cubre el banner de propósito)', async ({ page }) => {
@@ -3478,8 +3451,10 @@ test.describe('Límites de gasto - resumen por grupo', () => {
     await page.goto('/#presupuesto');
     await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
 
-    const card = page.locator('.grupo-card[data-grupo="estilo-de-vida"]');
-    // Los topes viven DENTRO de la tarjeta: eso es lo que este test protege.
+    // Ficha 12: los topes dejan de vivir dentro de la tarjeta de Estilo de vida
+    // y son la lente entera, bajo su propio titulo. Lo que este test protege
+    // sigue siendo lo mismo: que los topes y su olla finita esten juntos.
+    const card = page.locator('.estilo-limites-standalone');
     await expect(card.locator('.estilo-limites')).toBeVisible();
     await expect(card.locator('.envelope[data-id="p1"]')).toBeVisible();
     // DSK.8b (ADR 077 D4): con plan del mes el pie ya no repite el botón del
@@ -3504,7 +3479,7 @@ test.describe('Límites de gasto - resumen por grupo', () => {
     await page.goto('/#presupuesto');
     await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
 
-    const olla = page.locator('.grupo-card[data-grupo="estilo-de-vida"] .estilo-olla');
+    const olla = page.locator('.estilo-limites-standalone .estilo-olla');
     await expect(olla).toBeVisible({ timeout: 3_000 });
     await expect(olla).toHaveText(
       'Tus límites cubren $300.000 de los $900.000 de tu Estilo de vida. Te quedan $600.000 sin tope.',
@@ -3532,15 +3507,12 @@ test.describe('Límites de gasto - resumen por grupo', () => {
     await page.goto('/#presupuesto');
     await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
 
-    const card = page.locator('.grupo-card[data-grupo="necesidades"]');
-    // Estado neutro "monitor": nunca "excedido" (rojo) ni "alerta" (ámbar).
-    await expect(card).toHaveAttribute('data-estado', 'monitor');
-    await expect(card.locator('.progress-bar--danger')).toHaveCount(0);
-    await expect(card.locator('.progress-bar--warn')).toHaveCount(0);
-    // La tercera cifra informa el exceso sin pintarlo de rojo.
-    const fig = card.locator('.grupo-card__fig').last();
-    await expect(fig.locator('dt')).toHaveText('Sobre lo previsto');
-    await expect(fig.locator('dd.is-negative')).toHaveCount(0);
+    // Necesidades se monitorea y nunca se alarma (ADR 019), y desde la ficha 12
+    // eso vive en el tono de su linea: neutro incluso por encima del plan.
+    const pctNec = page.locator('.plan-franja__fila').nth(0).locator('.plan-franja__pct');
+    await expect(pctNec).toHaveClass(/plan-franja__pct--monitor/);
+    await expect(pctNec).not.toHaveClass(/plan-franja__pct--excedido/);
+    await expect(pctNec).not.toHaveClass(/plan-franja__pct--alerta/);
   });
 });
 

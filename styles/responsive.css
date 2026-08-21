@@ -591,9 +591,6 @@
   .proyeccion-grid {
     grid-template-columns: 1fr;
   }
-  .grupos-resumen__grid {
-    grid-template-columns: 1fr;
-  }
   .import-resumen {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -1686,29 +1683,12 @@
    Por eso el reparto cambia el ancho y NO saca los topes de su tarjeta. */
 @media (min-width: 1440px) {
 
-  /* D1: cinco y siete. Es el único reparto de la serie que no usa 8 y 4: allá
-     la columna estrecha lleva un panel o unos controles, y acá lleva dos
-     tarjetas de grupo completas con sus tres cifras y su desglose. A span 4
-     (~442px) `.grupo-card__figs` se aprieta; a span 5 (~559) respira. Y la
-     ancha necesita 7 y no 8 porque con ~793 sus sobres a dos columnas dan
-     ~372, que es el ancho natural de un sobre. */
-  #panel-presupuesto .grupos-resumen__grid {
-    grid-template-columns: repeat(12, 1fr);
-    align-items: start;
-  }
-  #panel-presupuesto .grupos-resumen__col {
-    display: flex;
-    flex-direction: column;
-    gap: var(--fk-space-md);
-    grid-column: 1 / span 5;
-    min-width: 0;
-  }
-  #panel-presupuesto .grupo-card[data-grupo="estilo-de-vida"] { grid-column: 6 / -1; }
-
-  /* El envoltorio es una caja y no dos filas de la rejilla a propósito: con
-     las dos tarjetas como filas, la altura de la tarjeta alta de la derecha se
-     reparte entre ellas y deja un hueco entre Necesidades y Ahorro (medido:
-     264px). Con la columna propia, cada lado crece con su contenido. */
+  /* El reparto 5/7 del ADR 077 D1 se retira con su sujeto (ficha 12, ADR 085):
+     la columna estrecha llevaba las dos tarjetas de grupo, que eran espejos de
+     solo lectura de "Por pagar" y del bloque Ahorro. Sin ellas no hay dos
+     lados que repartir: la lente es una sola columna de sobres, y lo que queda
+     de este bloque es lo que ya valia por si mismo (los sobres a dos columnas
+     y las filas sin tope, abajo). */
 
   /* D2: los sobres a dos columnas dentro de su tarjeta. `.envelope` no se
      toca: a 1342 de ancho un sobre deja más de 1050px entre el nombre de la
