@@ -670,13 +670,23 @@
 }
 
 /* ── CARRIL DEL FONDO (≥ 1680px, INT.1g, ADR 059 D7) ──────────
-   El compromiso del mes vive en dos copias del mismo marcado: la de
-   siempre dentro de `_renderHabitoSection` (sigue siendo la unica visible
-   bajo 1.680px) y la del carril (`#fondo-carril`, layout.css). Desde
-   1.680px la copia inline se apaga para no repetir el mismo dato dos veces
-   en la misma pantalla. */
+   El compromiso del mes vive en dos copias del mismo marcado: la del flujo y
+   la del carril (`#fondo-carril`, layout.css). Desde 1.680px la copia del
+   flujo se apaga para no repetir el mismo dato dos veces en la misma
+   pantalla.
+
+   La ficha 11 de la auditoria movil mudo la copia del flujo: dejo
+   `_renderHabitoSection` y subio al pie de `.fondo-card`, que es donde cabe
+   en un telefono (el carril no existe bajo 1.680px, asi que el defecto que
+   INT.1g nombra seguia entero en movil). El selector cubre los dos sitios: el
+   nuevo, y el viejo por si alguna vista todavia emite el medidor ahi.
+
+   Lo que NO se apaga es `.ahorro-habito__sin-compromiso`: el carril devuelve
+   cadena vacia cuando no hay compromiso definido, asi que ocultar la pregunta
+   dejaria a escritorio sin ninguna puerta para definirlo. */
 @media (min-width: 1680px) {
-  .section--con-carril .ahorro-habito:not(.ahorro-habito--carril) .ahorro-habito__compromiso {
+  .section--con-carril .ahorro-habito:not(.ahorro-habito--carril) .ahorro-habito__compromiso,
+  .section--con-carril .fondo-card .ahorro-habito__compromiso {
     display: none;
   }
 }

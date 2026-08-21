@@ -1228,6 +1228,46 @@
   gap: var(--fk-space-3);
 }
 
+/* El medidor del compromiso, ya dentro de la tarjeta (ficha 11, E1): separado
+   de los datos de arriba y pegado a la accion que lo mueve. */
+.fondo-card .ahorro-habito__compromiso,
+.fondo-card .ahorro-habito__sin-compromiso {
+  margin-block: var(--fk-space-4) var(--fk-space-3);
+}
+
+/* El bloqueo sin gastos fijos (ficha 11, E4). Sin ellos no hay meses que
+   contar, ni meta, ni fecha: no es una nota al pie, es el interruptor de la
+   seccion. Ocupa el sitio de la franja y lo dice con su propio titulo. */
+.fondo-card__bloqueo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+  padding: var(--fk-space-4);
+  border-radius: var(--fk-radius-md);
+  border: 1px dashed color-mix(in srgb, var(--fk-dom-ahorro) 35%, transparent);
+  background: color-mix(in srgb, var(--fk-dom-ahorro) 6%, transparent);
+}
+
+.fondo-card__bloqueo-titulo {
+  margin: 0;
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
+
+.fondo-card__bloqueo-salida {
+  align-self: flex-start;
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+.fondo-card__bloqueo-nota {
+  margin: 0;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+}
+
 .fondo-card__secundaria { color: var(--fk-text-muted); }
 .fondo-card__secundaria:hover { color: var(--fk-text-secondary); }
 

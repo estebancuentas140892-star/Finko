@@ -943,10 +943,9 @@ describe('DIS.16 - la tarjeta del fondo ya no usa anillo', () => {
   // DIS.19 (item 6): el pie deja el porcentaje y pasa a decir el tiempo cubierto
   // y lo guardado. El porcentaje era el ultimo resto de la medida vieja, y la
   // seccion se mide en tiempo desde DIS.16.
-  it('el pie de la franja dice el tiempo cubierto y lo guardado, sin aria-hidden encima', () => {
+  it('el pie de la franja dice el tiempo cubierto, sin aria-hidden encima', () => {
     const pie = document.querySelector('.cov__pie');
     expect(pie.textContent).toContain('1 mes y 3 semanas de 3 meses');
-    expect(pie.textContent).toContain('$1.800.000');
     expect(pie.textContent).not.toContain('60%');
     expect(pie.closest('[aria-hidden="true"]')).toBeNull();
   });
@@ -1226,7 +1225,6 @@ describe('renderAhorro() - tarjeta del fondo (DIS.16)', () => {
     const pie = document.querySelector('.cov__pie').textContent;
     expect(pie).toContain('3 meses completos');
     expect(pie).not.toContain('3 meses de 3 meses');
-    expect(pie).toContain('$3.000.000');
   });
 
   it('con la meta cumplida el siguiente nivel sigue a la vista: la tarjeta no se apaga', () => {
@@ -1297,10 +1295,62 @@ describe('renderAhorro() - tarjeta del fondo (DIS.16)', () => {
     expect(datos).not.toContain('Tienes $0');
   });
 
-  it('sin gastos fijos registrados no inventa cobertura', () => {
+  // Ficha 11 (E3): sin gastos fijos no hay meses que contar, ni meta, ni fecha,
+  // ni franja. O sea que no es una nota al pie: es el interruptor de la
+  // seccion, y se dice como bloqueo con su salida enlazada.
+  it('sin gastos fijos registrados dice el bloqueo y enlaza la salida', () => {
     renderAhorro(0, null, null);
     expect(document.querySelector('.fondo-card__bloque')).toBeNull();
-    expect(document.querySelector('.fondo-card__frase').textContent).toContain('Registra tus gastos fijos');
+    const bloqueo = document.querySelector('.fondo-card__bloqueo');
+    expect(bloqueo).not.toBeNull();
+    expect(bloqueo.querySelector('.fondo-card__bloqueo-titulo').textContent)
+      .toBe('Falta un dato para calcular tu colchón');
+    expect(bloqueo.querySelector('.fondo-card__frase').textContent)
+      .toContain('Sin tus gastos fijos registrados');
+    const salida = bloqueo.querySelector('.fondo-card__bloqueo-salida');
+    expect(salida.getAttribute('href')).toBe('#compromisos');
+    // El bloqueo no apaga la seccion: el aporte sigue ofreciendose.
+    expect(document.querySelector('[data-action="ahorro-nuevo-aporte"]')).not.toBeNull();
+  });
+
+  // Ficha 11 (E1): la tarjeta contesta "cuanto aguanto", que se pregunta cada
+  // varios meses, y el medidor contesta "voy al dia con lo que me propuse", que
+  // se pregunta cada periodo. La frecuente vivia debajo de la ocasional, a una
+  // pantalla de distancia, y el propio codigo lo nombraba: el comentario del
+  // carril lo declara "lo unico de esta pagina que hoy exige bajar un pliegue"
+  // y lo resuelve solo desde 1680px.
+  it('el medidor del compromiso vive en la tarjeta, no bajo el pliegue', () => {
+    S.ahorro.compromisoMensual = 250_000;
+    renderAhorro(1_000_000, null, null);
+    expect(document.querySelector('.fondo-card .ahorro-habito__compromiso')).not.toBeNull();
+    expect(document.querySelector('.ahorro-habito:not(.ahorro-habito--carril) .ahorro-habito__compromiso')).toBeNull();
+  });
+
+  it('el medidor va encima de las acciones de la tarjeta', () => {
+    S.ahorro.compromisoMensual = 250_000;
+    renderAhorro(1_000_000, null, null);
+    const hijos = [...document.querySelector('.fondo-card').children];
+    const iMedidor = hijos.findIndex(h => h.classList.contains('ahorro-habito__compromiso'));
+    const iAcciones = hijos.findIndex(h => h.classList.contains('fondo-card__secundarias'));
+    expect(iMedidor).toBeGreaterThan(-1);
+    expect(iMedidor).toBeLessThan(iAcciones);
+  });
+
+  // Sin compromiso definido lo que sube es la pregunta, que ocupa el mismo
+  // hueco: es la ausencia del medidor, no otra cosa.
+  it('sin compromiso definido, la pregunta sube con el medidor', () => {
+    S.ahorro.compromisoMensual = 0;
+    renderAhorro(1_000_000, null, null);
+    expect(document.querySelector('.fondo-card .ahorro-habito__sin-compromiso')).not.toBeNull();
+    expect(document.querySelector('.ahorro-habito .ahorro-habito__sin-compromiso')).toBeNull();
+  });
+
+  it('la seccion de habito queda como consulta: titulo, historial y aviso', () => {
+    S.ahorro.compromisoMensual = 250_000;
+    renderAhorro(1_000_000, null, null);
+    const habito = document.querySelector('.ahorro-habito:not(.ahorro-habito--carril)');
+    expect(habito.querySelector('.ahorro-habito__title').textContent).toBe('Aportes al fondo');
+    expect(habito.querySelector('[data-action="ahorro-editar-compromiso"]')).toBeNull();
   });
 
   it('el hábito se dice sin porcentajes que obliguen a una cuenta mental', () => {

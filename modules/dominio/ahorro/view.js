@@ -552,9 +552,10 @@ function _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia = 
     <article class="fondo-card" data-dom="ahorro" aria-label="Fondo de emergencia">
       <p class="fondo-card__explica">Tu protección para cuando algo se dañe o dejes de recibir ingresos.</p>
       ${_renderNivelActual({ enCero, completado, ultimoLogrado, actual })}
-      ${_renderCobertura({ colchon, metaMeses, montoTotal, enCero, m })}
+      ${_renderCobertura({ colchon, metaMeses, enCero })}
       ${_renderVeredictoFondo({ completado, faltante, objetivo, montoTotal, metaMeses, actual, sugerencia, enCero, m })}
       ${_renderDatosFondo({ montoTotal, objetivo, gastosFijosMensuales, compromisoMensual, tasaAhorro, metaMeses, enCero, m, frecuencia })}
+      ${_renderCompromisoDelPeriodo(compromisoMensual, aportes, sugerencia, frecuencia)}
       <p class="fondo-card__nota">Este dinero sigue en tus cuentas. Solo queda apartado para emergencias: a diferencia de Metas y Reservas, no descuenta saldo.</p>
       <div class="fondo-card__secundarias">
         <button class="btn btn-ghost btn-sm fondo-card__secundaria" type="button" data-action="ahorro-nuevo-aporte">
@@ -566,7 +567,7 @@ function _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia = 
       </div>
     </article>
 
-    ${_renderHabitoSection(aportes, compromisoMensual, tasaAhorro, sugerencia, frecuencia)}`;
+    ${_renderHabitoSection(aportes, tasaAhorro)}`;
 }
 
 /**
@@ -613,10 +614,21 @@ function _renderNivelActual({ enCero, completado, ultimoLogrado, actual }) {
  * La frase dice **"si hoy dejaras"** a propósito: la fecha es hipotética y sin
  * esa apertura parecería un pronóstico.
  */
-function _renderCobertura({ colchon, metaMeses, montoTotal, enCero, m }) {
+function _renderCobertura({ colchon, metaMeses, enCero }) {
+  // Ficha 11 (E3): sin gastos fijos no hay meses que contar, ni meta, ni fecha
+  // de cobertura, ni franja. O sea que esto no es una nota al pie: es el
+  // interruptor de la sección entera, y hasta ahora se decía como una frase
+  // suelta donde iba el gráfico. Se dice como bloqueo, con la salida enlazada
+  // (cuarta vez que esta auditoría convierte un nombre suelto en enlace) y sin
+  // apagar la oferta de aportar: el dinero cuenta desde el primer día.
   if (colchon === null) {
     return `
-      <p class="fondo-card__frase">Registra tus gastos fijos desde Por pagar y Finko calcula cuánto tiempo te cubre el fondo.</p>`;
+      <div class="fondo-card__bloqueo">
+        <p class="fondo-card__bloqueo-titulo">Falta un dato para calcular tu colchón</p>
+        <p class="fondo-card__frase">El fondo se mide en meses de lo que pagas sí o sí. Sin tus gastos fijos registrados no hay meses que contar, ni meta, ni fecha de cobertura.</p>
+        <a class="link fondo-card__bloqueo-salida" href="#compromisos">Registrar mis gastos fijos</a>
+        <p class="fondo-card__bloqueo-nota">Mientras tanto puedes ir aportando: el dinero cuenta desde el primer día, aunque todavía no sepamos cuántos meses cubre.</p>
+      </div>`;
   }
 
   const { bloques, eje, conRotulos } = franjaCobertura(colchon, metaMeses, hoy());
@@ -646,7 +658,6 @@ function _renderCobertura({ colchon, metaMeses, montoTotal, enCero, m }) {
           <div class="cov__eje" aria-hidden="true">${ejeHtml}</div>
           <p class="cov__pie">
             <span>${_pieCobertura(colchon, metaMeses)}</span>
-            <span>${m(montoTotal)}</span>
           </p>
         </div>
       </div>`;
@@ -735,8 +746,29 @@ function _renderDatosFondo({ montoTotal, objetivo, gastosFijosMensuales, comprom
 
 // ── SECCIÓN DE HÁBITO (aportes + compromiso + tasa) ──────────────
 
-function _renderHabitoSection(aportes, compromisoMensual, tasaAhorro, sugerencia = null, frecuencia = 'Mensual') {
-  const ordenados = ordenarAportesPorFecha(aportes);
+/**
+ * El compromiso del período, al pie de la tarjeta (ficha 11, hallazgo E1).
+ *
+ * La tarjeta contesta "¿cuánto aguanto?", que se pregunta cada varios meses.
+ * Esto contesta "¿voy al día con lo que me propuse?", que se pregunta cada
+ * período. La frecuente vivía debajo de la ocasional, a una pantalla completa
+ * de distancia, y **el propio código ya nombraba el defecto**: el comentario
+ * del `<aside id="fondo-carril">` lo declara "lo único de esta página que hoy
+ * exige bajar un pliegue" y lo promueve a un carril lateral **desde 1680px**.
+ * El diagnóstico estaba hecho y validado; lo que faltaba era la respuesta
+ * móvil, que no puede ser un carril.
+ *
+ * Sube el medidor y no la lista: el medidor es la pregunta del período, y el
+ * historial es consulta.
+ *
+ * @param {number} compromisoMensual
+ * @param {Array<{monto:number, fecha:string}>} aportes
+ * @param {{monto:number}|null} sugerencia
+ * @param {string} frecuencia una de FRECUENCIAS_APORTE.
+ * @returns {string}
+ */
+function _renderCompromisoDelPeriodo(compromisoMensual, aportes, sugerencia, frecuencia) {
+  if (compromisoMensual > 0) return _renderMedidorCompromiso(compromisoMensual, aportes, frecuencia);
 
   // AH.2: si no hay compromiso definido y hay una sugerencia con datos
   // reales, la pregunta viene acompañada del punto de partida. AH.5 (ADR 049
@@ -746,17 +778,14 @@ function _renderHabitoSection(aportes, compromisoMensual, tasaAhorro, sugerencia
     ? ` Según tus números, ${f(montoPorPeriodo(sugerencia.monto, frecuencia))} es un buen punto de partida.`
     : '';
 
-  // DIS.12 (hallazgo A6): el compromiso usaba `i-deudas`, el símbolo que
-  // identifica la sección Deudas en la navegación y en cada tarjeta de crédito.
-  // La metáfora era la contraria: lo que debes marcando lo que apartas.
-  // `i-recurring` es el mismo símbolo de recurrencia que ya marca los gastos
-  // fijos en Calendario e Inicio, que es exactamente lo que esto es.
-  const compromisoHtml = compromisoMensual > 0
-    ? _renderMedidorCompromiso(compromisoMensual, aportes, frecuencia)
-    : `<p class="ahorro-habito__sin-compromiso">
+  return `<p class="ahorro-habito__sin-compromiso">
         ¿Cuánto quieres apartar ${etiquetaCadaPeriodo(frecuencia)}?${hintSugerido}
         <button class="btn btn-ghost btn-sm" data-action="ahorro-editar-compromiso">Definir →</button>
       </p>`;
+}
+
+function _renderHabitoSection(aportes, tasaAhorro) {
+  const ordenados = ordenarAportesPorFecha(aportes);
 
   const listaHtml = ordenados.length === 0
     ? `<p class="ahorro-habito__empty">Aún no has registrado aportes. Cada vez que apartes dinero para el fondo, regístralo aquí.</p>`
@@ -770,13 +799,15 @@ function _renderHabitoSection(aportes, compromisoMensual, tasaAhorro, sugerencia
 
   // DIS.16: el botón de registrar se fue de este encabezado. La acción principal
   // de la sección vive ahora en la tarjeta, a ancho completo, y tenerla dos
-  // veces en la misma pantalla la volvía ruido (regla R1: un primario).
+  // veces en la misma pantalla la volvía ruido (regla R1: un primario). La
+  // ficha 11 ejecutó por fin esa decisión y de paso subió el medidor del
+  // compromiso a la tarjeta (E1), así que acá queda consulta pura: el título,
+  // el historial y el aviso de tasa.
   return `
     <section class="ahorro-habito" aria-label="Historial de aportes">
       <div class="ahorro-habito__header">
         <h2 class="ahorro-habito__title">Aportes al fondo</h2>
       </div>
-      ${compromisoHtml}
       ${listaHtml}
       ${tasaHtml}
     </section>`;

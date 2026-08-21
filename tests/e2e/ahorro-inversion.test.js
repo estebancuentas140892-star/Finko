@@ -22,7 +22,7 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { sembrarSiVacio, leerEstado } from './helpers/estado.js';
+import { sembrar, sembrarSiVacio, leerEstado } from './helpers/estado.js';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -85,6 +85,71 @@ function hoyLocal() {
 }
 
 // ── SUITE A: Ahorro ─────────────────────────────────────────────────────────
+
+// ── Ficha 11: el compromiso del periodo, sin bajar un pliegue ────────────────
+// El propio codigo nombraba el defecto ("lo unico de esta pagina que hoy exige
+// bajar un pliegue") y lo resolvia con un carril que empieza en 1680px. En un
+// telefono el carril no existe, asi que el problema seguia entero.
+
+test.describe('Fondo - el compromiso del periodo vive en la tarjeta (ADR 084)', () => {
+  test('el medidor esta en la tarjeta y se ve sin desplazar', async ({ page }) => {
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas:   [{ id: 'c-11', nombre: 'Bancolombia', tipo: 'ahorros', saldo: 5000000, activa: true }],
+      ingresos:  [{ id: 'i-11', descripcion: 'Sueldo', monto: 1600000, frecuencia: 'Mensual', diaPago: 1, activo: true }],
+      gastos:    [],
+      compromisos: [{ id: 'f-11', tipo: 'fijo', descripcion: 'Arriendo', monto: 1363800, frecuencia: 'Mensual', diaPago: 5, activo: true }],
+      metas: [], apartados: [],
+      ahorro: {
+        fondoEmergencia:  { activo: true, metaMeses: 3, montoActual: 2030000 },
+        compromisoMensual: 350000,
+        aportes: [{ id: 'ap-11', monto: 150000, fecha: hoyLocal(), nota: 'Aporte al fondo' }],
+      },
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/#fondo');
+    await expect(page.locator('#sec-fondo.active')).toBeVisible({ timeout: 10_000 });
+
+    const medidor = page.locator('.fondo-card .ahorro-habito__compromiso');
+    await expect(medidor).toBeVisible();
+    await expect(medidor).toContainText('de $350.000');
+
+    // Ya no hay copia bajo el pliegue: la seccion de habito queda como consulta.
+    await expect(page.locator('.ahorro-habito:not(.ahorro-habito--carril) .ahorro-habito__compromiso')).toHaveCount(0);
+
+    // El pie de la franja suelta el monto repetido (E4): el dinero vive una vez.
+    await expect(page.locator('.fondo-card .cov__pie')).not.toContainText('$2.180.000');
+  });
+
+  test('sin gastos fijos el bloqueo se dice como bloqueo y enlaza la salida', async ({ page }) => {
+    await sembrar(page, {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas:   [{ id: 'c-11b', nombre: 'Bancolombia', tipo: 'ahorros', saldo: 5000000, activa: true }],
+      ingresos: [], gastos: [], compromisos: [], metas: [], apartados: [],
+      ahorro: { fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 500000 }, compromisoMensual: 0, aportes: [] },
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/#fondo');
+    await expect(page.locator('#sec-fondo.active')).toBeVisible({ timeout: 10_000 });
+
+    const bloqueo = page.locator('.fondo-card__bloqueo');
+    await expect(bloqueo.locator('.fondo-card__bloqueo-titulo'))
+      .toHaveText('Falta un dato para calcular tu colchón');
+    await expect(page.locator('.fondo-card .cov')).toHaveCount(0);
+
+    // El bloqueo no apaga la seccion: sigue ofreciendo el aporte. El selector
+    // va acotado a la tarjeta: el carril del hub tiene su propio CTA con el
+    // mismo `data-action`.
+    await expect(page.locator('.fondo-card [data-action="ahorro-nuevo-aporte"]')).toBeVisible();
+
+    await bloqueo.locator('.fondo-card__bloqueo-salida').click();
+    await expect(page.locator('#sec-compromisos.active')).toBeVisible({ timeout: 5_000 });
+  });
+});
 
 test.describe('Ahorro - fondo de emergencia (J.1)', () => {
   test.beforeEach(async ({ page }) => {
