@@ -1,12 +1,12 @@
 # Tablero - Finko Claude
 
-> Revisado: 2026-08-21.
+> Revisado: 2026-10-16.
 
 > Tablero Kanban de trabajo pendiente. Reemplaza a `TASKS.md` y `ROADMAP.md` (retirados 2026-07-02, ver [CHANGELOG](CHANGELOG.md)).
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-08-21. Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
+> Última actualización: 2026-10-16. Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
 
 ---
 
@@ -33,6 +33,7 @@
 - Abierto por 11: **primer choque de una ficha con un ADR vigente**. Su E2 proponia subir el aporte del Fondo a primario y eso revierte el [ADR 049](DECISIONS/049-fondo-de-emergencia-v2.md) D2; Esteban decidio conservar el 049 y la ficha cerro con tres cambios de cuatro. Queda un **cabo suelto de estilo muerto**: `.fondo-card__principal` existe en `analysis.css` y ningun markup lo usa. Y a la **ficha 18** le llegan el tercer tipo de R87 (el aporte al fondo no crea regla ni mueve dinero, y comparte la teja "Aporte" con los que si descuentan), **E5** (el historial sin techo, tercer pendiente del mismo tipo tras las fichas 05 y 10), la ubicacion del aviso de tasa de ahorro y el patron "arreglado solo en escritorio", que conviene barrer porque esta auditoria solo cubre movil.
 - Abierto por 12: la **ficha 18** decide si el seguimiento de los tres grupos pertenece a **Analisis** y no a Gastos (la franja lo conserva por frecuencia de consulta, pero un plan cuyo tercer grupo es Ahorro no es una pregunta de Gastos), y si el trafico nuevo hacia Mis cuentas obliga a releer su conclusion de "destino de servicio" (ficha 06). **R88 sigue con una sola aparicion**: la 12 examino su candidato (el panel de Inicio subcuenta) y lo descarto porque ese panel no encabeza la vista que resume; la **ficha 16** es su ultima candidata, y si no le da la segunda, la 18 la descarta en vez de arrastrarla.
 - Abierto por 13: a la **ficha 18** le llega la pregunta de si **Finko debe guardar el valor de mercado de una inversion**. Es el dato que falta para que exista un tercer momento y el que haria honesto el patrimonio de Analisis, que hoy suma capital invertido y no valor actual: toca el modelo de datos y la ficha 16. Tambien le llegan el **caso del contador con denominador inalcanzable** (una sola aparicion en trece fichas, se anota como caso y no como regla), el **matiz de R87** (registrar una inversion mueve dinero Y crea un objeto duradero, asi que no encaja en ninguno de los tres tipos) y la verificacion de que no queda ningun R85 en otros dominios.
+- Abierto por HF (2026-10-16, [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)): la iniciativa HF **no toca archivos ni decisiones de MOV.1** y solo su Fase 0 corre en paralelo. A la **ficha 18** le llega que HF.1a, HF.1c y HF.1e esperan sus veredictos sobre R90, el historial fechado, V5 y el valor de mercado, y que el monitor de renta suma el salario dos veces (riesgo 5 del ADR 091). Nada de eso se decide antes de llegar a ella.
 - Avisos     : la ficha **19** es un rediseño de la vitrina de Logros con premisa previa a LG.2d (la ubicaba en Ajustes): hay que releerla contra las dos superficies de hoy. Y las fichas escritas antes del 2026-08-17 pueden chocar con los ADR de escritorio (070 a 079): el choque se resuelve con un ADR que acote, como hizo el 080, nunca en silencio.
 
 
@@ -64,11 +65,19 @@ Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (si
 
 ## Índice de pendientes
 
-Las 4 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+Las tarjetas del tablero (la iniciativa HF se lista por fase), para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | cola de diseño de Esteban |
+| HF.0a | Suite verde: fecha inyectable en "compromiso próximo" (BUG-028) | Transversal | alta | nada |
+| HF.0b | Distribuir no reacredita un salario ya acreditado (BUG-030) | Mis cuentas | alta | HF.0a |
+| HF.0c | El importador CSV de gastos no crea dinero (BUG-029) | Ajustes, Gastos | alta | HF.0a, P4 del ADR 091 |
+| HF.0d | Una sola regla de vencimiento (BUG-031) | Inicio, Por pagar | media | HF.0a |
+| HF.0e | `fechaCreacion` se lee como fecha local (BUG-025) | Transversal | media | P3 del ADR 091 |
+| HF.0f | Perfiles de regresión: constructores e invariantes | Transversal (tests) | alta | HF.0b, HF.0c, HF.0d |
+| HF.0g | Perfiles de regresión en E2E | Transversal (tests) | media | HF.0f |
+| HF.1a a HF.5a | Fases 1 a 5 de la iniciativa HF (25 rebanadas) | Transversal | media | ficha 18 de MOV.1, cierre de MOV.1, P1 a P7 |
 | A.5 | Dominio custom en Vercel | Mantenimiento | baja | que el usuario tenga el dominio registrado |
 | E.2-2027 | Actualizar SMMLV + UVT a valores 2027 | Mantenimiento | alta (enero 2027) | publicación oficial de los decretos 2027 |
 | E.3 | Verificar GMF y otras tasas si hay reforma tributaria | Mantenimiento | baja | que ocurra una reforma |
@@ -103,7 +112,7 @@ _(CFG.1 a CFG.5 cerraron completas. **CFG.6** es la auditoría UX/UI móvil de l
 
 ## Transversal (afecta varias secciones)
 
-DV.2d → [`board/transversal.md`](board/transversal.md)
+DV.2d, HF.0a a HF.5a → [`board/transversal.md`](board/transversal.md) (HF: iniciativa "un hecho financiero se informa una sola vez", [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), Propuesta)
 
 ---
 
