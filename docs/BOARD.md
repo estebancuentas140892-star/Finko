@@ -70,11 +70,11 @@ Las tarjetas del tablero (la iniciativa HF se lista por fase), para elegir la pr
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | cola de diseño de Esteban |
-| HF.0b | Distribuir no reacredita un salario ya acreditado (BUG-030) | Mis cuentas | alta | nada |
 | HF.0c | El importador CSV de gastos no crea dinero (BUG-029) | Ajustes, Gastos | alta | nada |
 | HF.0d | Una sola regla de vencimiento (BUG-031) | Inicio, Por pagar | media | nada |
 | HF.0e | `fechaCreacion` se lee como fecha local (BUG-025) | Transversal | media | nada |
-| HF.0f | Perfiles de regresión: constructores e invariantes | Transversal (tests) | alta | HF.0b, HF.0c, HF.0d |
+| HF.0h | La hoja de automáticos no acredita un cobro que Distribuir ya acreditó (BUG-032) | Calendario, Mis cuentas | alta | nada |
+| HF.0f | Perfiles de regresión: constructores e invariantes | Transversal (tests) | alta | HF.0c, HF.0d, HF.0h |
 | HF.0g | Perfiles de regresión en E2E | Transversal (tests) | media | HF.0f |
 | HF.1a a HF.5a | Fases 1 a 5 de la iniciativa HF (24 rebanadas) | Transversal | media | ficha 18 de MOV.1, cierre de MOV.1 |
 | A.5 | Dominio custom en Vercel | Mantenimiento | baja | que el usuario tenga el dominio registrado |
@@ -111,7 +111,7 @@ _(CFG.1 a CFG.5 cerraron completas. **CFG.6** es la auditoría UX/UI móvil de l
 
 ## Transversal (afecta varias secciones)
 
-DV.2d, HF.0b a HF.5a → [`board/transversal.md`](board/transversal.md) (HF: iniciativa "un hecho financiero se informa una sola vez", [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), P1 a P7 resueltas)
+DV.2d, HF.0c a HF.5a → [`board/transversal.md`](board/transversal.md) (HF: iniciativa "un hecho financiero se informa una sola vez", [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), P1 a P7 resueltas)
 
 ---
 

@@ -12,6 +12,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### fix(tesoreria): HF.0b, Distribuir no reacredita un cobro que el crédito automático ya acreditó · 2026-10-16
+
+Segunda rebanada de la iniciativa HF ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)). Cierra **BUG-030** y abre **BUG-032**. Fichas: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md) (Distribución v2) y [`contexto/calendario.md`](contexto/calendario.md) (Pagos automáticos).
+
+- **Causa raíz:** PA.1b dio a un mismo cobro dos caminos de crédito y ninguno miraba al otro. La hoja de automáticos acredita y escribe `IngresoPuntual` con `ingresoId`; `_confirmarDistribucion()` sumaba `monto` siempre, porque desde MC.13e-1 el asistente tiene un solo flujo ("siempre acredita") y PA.1b llegó un mes después sin tocarlo.
+- **El arreglo es una resta, no un modo:** `montoYaAcreditadoDelCobro()` (pura, en `logic/distribucion.js`) suma lo que la hoja ya acreditó de este cobro y la acción acredita `max(0, monto - eso)`. El reparto, el déficit, las transferencias y el undo no cambian.
+- **Identidad explícita:** cuenta un `IngresoPuntual` solo si su `ingresoId` es un ingreso del cobro (frecuencia principal, el mismo conjunto de `montoCobroPrincipal`) y su `fecha` es exactamente la del último cobro de ese ingreso (`ultimoPagoHasta`). La hoja escribe esa misma fecha porque las dos salen de `ocurrenciasEnMes`. Monto, descripción o cuenta iguales no bastan, y un ingreso puntual sin `ingresoId` es un evento aparte (decisión (a) del ADR 041, que no se toca).
+- **El periodo sale de la fecha exacta, no del mes:** el crédito de septiembre no vuelve acreditado octubre, y en un quincenal la primera quincena no cubre la segunda (la hoja acredita una vez por mes).
+- **"Ingreso puntual equivalente"**, que la tarjeta mencionaba, no existe como concepto en el código: no se inventó. Un ingreso registrado a mano sin `ingresoId` sigue sin reconocerse.
+- **Hallazgo nuevo, reproducido en la app:** el sentido inverso. Si el usuario pospone la hoja y distribuye, la hoja vuelve a ofrecer el cobro y confirmarlo lo duplica. Es BUG-032 (tarjeta HF.0h); arreglarlo toca la hoja del Calendario, fuera de esta tarea.
+- **Fuera de alcance, dicho:** frecuencias sin día datable (Semanal, Diario, Variable) no se reconocen; con dos ingresos del cobro en cuentas distintas, lo acreditado se queda donde entró y el asistente descuenta todo de la cuenta de origen, como ya hacía.
+- Verificado en la app (localhost, perfil inventado): hoja confirmada, Cuenta Nómina en $4.500.000; Distribuir con el arriendo de $1.200.000 y $500.000 a Cuenta Ahorros deja $2.800.000 y $800.000, total $3.600.000. Antes del arreglo, la E2E daba $6.800.000 en Nómina.
+- Tests: 11 unitarios nuevos (`tesoreria.test.js`: escenarios A a D, quincenal, otra frecuencia, sin fecha datable, guardar y cargar) y 3 E2E nuevos (`distribucion-credito-automatico.test.js`, rojos antes del arreglo). Ninguna expectativa existente cambió. Unitarios 4580/4580, lint verde. E2E 312/312 verdes con `--workers=2`, sin flaky. SW v586 a v587.
+
 ### docs(transversal): HF, P1 a P7 del ADR 091 resueltas · 2026-10-16
 
 Las siete recomendaciones del [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md) se aceptaron en chat tal como estaban escritas. Sin runtime.

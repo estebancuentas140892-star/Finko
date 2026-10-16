@@ -25,6 +25,7 @@ import {
   topeAbonoExtraDeuda,
   cuentaIngresoPrincipal,
   planComplementoDeficit,
+  montoYaAcreditadoDelCobro,
 } from '../logic/distribucion.js';
 import { renderDistribucionIngreso, renderAsistenteDistribucion } from '../view.js';
 
@@ -719,7 +720,9 @@ function _aplicarComplementoDeficit(splits) {
 }
 
 /**
- * Aplica la distribución: acredita el ingreso a la cuenta de origen, descuenta lo
+ * Aplica la distribución: acredita a la cuenta de origen la parte del ingreso
+ * que todavía no entró (lo que el crédito automático ya acreditó de este cobro
+ * no se suma dos veces, BUG-030), descuenta lo
  * que físicamente sale (Necesidades marcadas + metas/apartados/deudas/inversiones
  * seleccionadas; el aporte al fondo no descuenta, ADR 009), registra los pagos
  * de Necesidades (R1), reparte Estilo de vida entre cuentas si corresponde
@@ -812,14 +815,18 @@ async function _confirmarDistribucion() {
   const totalComplemento = _aplicarComplementoDeficit(complemento.splits);
 
   // Descontar lo que sale de la cuenta (no el fondo, ADR 009) y lo transferido
-  // a otras cuentas: ambos dejan la cuenta de origen. El ingreso se acredita.
+  // a otras cuentas: ambos dejan la cuenta de origen. El ingreso se acredita,
+  // salvo lo que el crédito automático ya acreditó de este mismo cobro: ese
+  // dinero ya está en el saldo y sumarlo otra vez era un doble abono (BUG-030).
   const descontable = todos
     .filter(i => i.tipo !== 'fondo')
     .reduce((s, i) => s + i.monto, 0);
+  const yaAcreditado = montoYaAcreditadoDelCobro(S.ingresos ?? [], S.ingresosPuntuales ?? [], new Date());
+  const acreditar    = Math.max(0, monto - yaAcreditado);
   const cuenta = (S.cuentas ?? []).find(c => c.id === cuentaId);
   if (cuenta) {
     editar('cuentas', cuentaId, {
-      saldo: (cuenta.saldo ?? 0) + monto + totalComplemento - descontable - totalTransferido,
+      saldo: (cuenta.saldo ?? 0) + acreditar + totalComplemento - descontable - totalTransferido,
     });
   }
 

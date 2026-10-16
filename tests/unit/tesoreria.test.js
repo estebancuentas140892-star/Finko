@@ -38,6 +38,7 @@ import {
   construirPlanInversiones,
   construirFilasTransferenciaCuentas,
   cuentaIngresoPrincipal,
+  montoYaAcreditadoDelCobro,
   ultimoPagoHasta,
   estadoDistribucion,
   calcularSalarioMinimo,
@@ -50,6 +51,7 @@ import {
   calcularTransferencia,
 } from '../../modules/dominio/tesoreria/logic.js';
 import { aportePorPeriodo } from '../../modules/infra/vencimientos.js';
+import { save, loadData, _flushNow } from '../../modules/core/storage.js';
 import { CATEGORIAS_INGRESO, CATEGORIA_INGRESO_ICONO, SMMLV, AUXILIO_TRANSPORTE, TIPOS_LLAVE } from '../../modules/core/constants.js';
 import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderListaIngresosPuntuales, renderAltasIngreso, renderNudgeDistribucionInicio, renderDistribucionIngreso, renderAsistenteDistribucion, renderFormCuenta, renderListaCuentas, renderTarjetasTC, renderHeroTesoreria, renderGMFIndicador, renderBotonTransferir, renderFormTransferencia, renderParTransferencia, renderSeccionGMF } from '../../modules/dominio/tesoreria/view.js';
 import { initAccionesDistribucion } from '../../modules/dominio/tesoreria/acciones/distribucion.js';
@@ -3937,6 +3939,101 @@ describe('cuentaIngresoPrincipal()', () => {
   it('sin ningún ingreso de la frecuencia principal con cuentaId, devuelve null', () => {
     const ingresos = [{ activo: true, frecuencia: 'Mensual' }];
     expect(cuentaIngresoPrincipal(ingresos)).toBeNull();
+  });
+});
+
+// ── montoYaAcreditadoDelCobro() (BUG-030, HF.0b) ─────────────────
+// Un cobro de ingreso aumenta el saldo una sola vez: lo que el crédito
+// automático (PA.1b) ya acreditó de este cobro, Distribuir no lo vuelve a
+// sumar. La identidad es explícita (`ingresoId` + fecha exacta del cobro),
+// nunca por parecido de monto, descripción o cuenta. Datos inventados.
+describe('montoYaAcreditadoDelCobro() - un cobro se acredita una sola vez (BUG-030)', () => {
+  const HOY = new Date(2026, 9, 16, 12); // 16 oct 2026: el cobro mensual del 15 ya pasó
+
+  const salario = (extra = {}) => ({
+    id: 'ing-salario', descripcion: 'Salario de prueba', monto: 4_000_000,
+    frecuencia: 'Mensual', diaPago: 15, activo: true, cuentaId: 'cta-nomina',
+    creditoAutomatico: true, fechaCreacion: '2026-01-10T15:00:00.000Z', ...extra,
+  });
+  const credito = (extra = {}) => ({
+    id: 'ip-oct', descripcion: 'Salario de prueba', monto: 4_000_000, categoria: null,
+    cuentaId: 'cta-nomina', fecha: '2026-10-15', ingresoId: 'ing-salario', ...extra,
+  });
+
+  it('sin crédito registrado del cobro no hay nada acreditado: Distribuir acredita como siempre', () => {
+    expect(montoYaAcreditadoDelCobro([salario()], [], HOY)).toBe(0);
+    expect(montoYaAcreditadoDelCobro([salario({ creditoAutomatico: false })], [], HOY)).toBe(0);
+  });
+
+  it('el crédito automático del cobro en curso cuenta completo', () => {
+    expect(montoYaAcreditadoDelCobro([salario()], [credito()], HOY)).toBe(4_000_000);
+  });
+
+  it('cuenta el crédito aunque después se haya apagado el crédito automático: el dinero ya entró', () => {
+    expect(montoYaAcreditadoDelCobro([salario({ creditoAutomatico: false })], [credito()], HOY)).toBe(4_000_000);
+  });
+
+  it('dos ingresos del mismo monto no se confunden: solo cuenta el que tiene su crédito', () => {
+    const ingresos = [
+      salario({ id: 'ing-a', descripcion: 'Salario A de prueba', monto: 2_000_000 }),
+      salario({ id: 'ing-b', descripcion: 'Salario B de prueba', monto: 2_000_000 }),
+    ];
+    const puntuales = [credito({ ingresoId: 'ing-a', monto: 2_000_000 })];
+    expect(montoYaAcreditadoDelCobro(ingresos, puntuales, HOY)).toBe(2_000_000);
+  });
+
+  it('un ingreso puntual sin ingresoId no cuenta aunque coincida en monto, fecha y cuenta', () => {
+    const esporadico = credito({ ingresoId: undefined, descripcion: 'Salario de prueba' });
+    expect(montoYaAcreditadoDelCobro([salario()], [esporadico], HOY)).toBe(0);
+  });
+
+  it('el cobro de septiembre no hace acreditado el de octubre', () => {
+    const septiembre = credito({ id: 'ip-sep', fecha: '2026-09-15' });
+    expect(montoYaAcreditadoDelCobro([salario()], [septiembre], HOY)).toBe(0);
+    // Y en septiembre, ese mismo crédito sí es el del cobro en curso.
+    expect(montoYaAcreditadoDelCobro([salario()], [septiembre], new Date(2026, 8, 20, 12))).toBe(4_000_000);
+  });
+
+  it('un quincenal: el crédito de la primera quincena no cubre la segunda', () => {
+    const quincena = salario({ frecuencia: 'Quincenal', monto: 2_000_000 });
+    const primera  = credito({ monto: 2_000_000 }); // 15 oct
+    expect(montoYaAcreditadoDelCobro([quincena], [primera], HOY)).toBe(2_000_000);
+    expect(montoYaAcreditadoDelCobro([quincena], [primera], new Date(2026, 9, 30, 12))).toBe(0);
+  });
+
+  it('un ingreso que no forma parte del cobro (otra frecuencia) no descuenta nada', () => {
+    const ingresos = [
+      salario({ id: 'ing-m1' }),
+      salario({ id: 'ing-m2', descripcion: 'Arriendo recibido de prueba', monto: 1_000_000, diaPago: 1 }),
+      salario({ id: 'ing-q', descripcion: 'Pensión de prueba', frecuencia: 'Quincenal', monto: 900_000 }),
+    ];
+    const puntuales = [credito({ ingresoId: 'ing-q', monto: 900_000 })];
+    expect(montoYaAcreditadoDelCobro(ingresos, puntuales, HOY)).toBe(0);
+  });
+
+  it('una frecuencia sin fecha datable no tiene periodo que comparar', () => {
+    const semanal = salario({ frecuencia: 'Semanal', diaPago: undefined, monto: 800_000 });
+    expect(montoYaAcreditadoDelCobro([semanal], [credito({ monto: 800_000 })], HOY)).toBe(0);
+  });
+
+  it('sin ingresos activos, o con datos ausentes, devuelve 0 sin lanzar', () => {
+    expect(montoYaAcreditadoDelCobro([], [credito()], HOY)).toBe(0);
+    expect(montoYaAcreditadoDelCobro([salario({ activo: false })], [credito()], HOY)).toBe(0);
+    expect(montoYaAcreditadoDelCobro(undefined, undefined, HOY)).toBe(0);
+  });
+
+  it('guardar y cargar conserva lo necesario para decidir (ingresoId y fecha del crédito)', () => {
+    S.ingresos          = [salario()];
+    S.ingresosPuntuales = [credito()];
+    save();
+    _flushNow();
+
+    S.ingresos          = [];
+    S.ingresosPuntuales = [];
+    loadData();
+
+    expect(S.ingresosPuntuales[0]).toMatchObject({ ingresoId: 'ing-salario', fecha: '2026-10-15' });
+    expect(montoYaAcreditadoDelCobro(S.ingresos, S.ingresosPuntuales, HOY)).toBe(4_000_000);
   });
 });
 

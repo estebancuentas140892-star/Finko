@@ -252,6 +252,50 @@ export function cuentaIngresoPrincipal(ingresos = []) {
   return conCuenta?.cuentaId ?? null;
 }
 
+/**
+ * Cuánto del cobro que se va a distribuir ya entró a una cuenta antes de
+ * abrir el asistente (BUG-030, HF.0b): lo que acreditó la hoja de créditos
+ * automáticos (PA.1b, ADR 052). Ese dinero ya está en el saldo, así que
+ * Distribuir lo reparte sin volver a sumarlo: un cobro aumenta el saldo de las
+ * cuentas una sola vez.
+ *
+ * La identidad del cobro es explícita, nunca por parecido. Un `IngresoPuntual`
+ * cuenta solo si su `ingresoId` es uno de los ingresos que forman el cobro (los
+ * de la frecuencia principal, el mismo conjunto que suma `montoCobroPrincipal`)
+ * y su `fecha` es exactamente la del último cobro de ese ingreso
+ * (`ultimoPagoHasta`). La hoja escribe esa misma fecha porque las dos salen de
+ * `ocurrenciasEnMes`. Mismo monto, descripción o cuenta no bastan: dos cobros
+ * reales pueden compartirlos, y un ingreso puntual sin `ingresoId` es un
+ * evento aparte (decisión (a) del ADR 041).
+ *
+ * Una frecuencia sin día datable (Semanal, Diario, Variable) no tiene periodo
+ * que comparar y devuelve 0: el asistente acredita como siempre.
+ *
+ * Pura: no lee `S` ni el DOM.
+ *
+ * @param {import('../../../core/state.js').Ingreso[]} ingresos
+ * @param {Array<{ingresoId?:string, fecha?:string, monto?:number}>} ingresosPuntuales
+ * @param {Date} [hoy=new Date()] Fecha de referencia (inyectable).
+ * @returns {number} COP del cobro que ya están en una cuenta (0 si nada).
+ */
+export function montoYaAcreditadoDelCobro(ingresos = [], ingresosPuntuales = [], hoy = new Date()) {
+  const activos = (ingresos ?? []).filter(i => i.activo !== false);
+  if (activos.length === 0) return 0;
+
+  const principal = frecuenciaPrincipalIngresos(activos);
+  const puntuales = Array.isArray(ingresosPuntuales) ? ingresosPuntuales : [];
+
+  let total = 0;
+  for (const ing of activos) {
+    if (normalizarFrecuenciaAporte(ing.frecuencia) !== principal) continue;
+    const fechaCobro = ultimoPagoHasta(ing, hoy);
+    if (!fechaCobro) continue;
+    const credito = puntuales.find(ip => ip?.ingresoId === ing.id && ip.fecha === fechaCobro);
+    if (credito) total += Number(credito.monto) || 0;
+  }
+  return total;
+}
+
 // ── DISTRIBUCIÓN ADAPTATIVA DEL INGRESO (Fase 3) ─────────────────
 
 export const PRESETS_DISTRIBUCION = [

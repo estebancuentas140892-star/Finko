@@ -1,6 +1,6 @@
 # Ficha de contexto: Calendario
 
-> Revisado: 2026-08-21.
+> Revisado: 2026-10-16.
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -100,7 +100,7 @@ Lo que **DIS.11 dejó abierto**, con su medición: (1) **el alto del formulario 
 
 - **Objetivo**          : el compromiso que el banco debita solo (suscripción, cuota) o el ingreso fijo que abona solo (nómina) se marcan como tales, y al abrir la app Finko muestra lo que ya venció listo para confirmar de un toque, con su fecha real y su cuenta. Nunca registra sin confirmación.
 - **Estado actual**     : **PA.1a y PA.1b cerradas** (2026-08-13 y 2026-08-14, [ADR 052](../DECISIONS/052-pagos-automaticos.md) D1-D4 completos): débito de compromisos y crédito del ingreso fijo, misma hoja. Queda **PA.1c** (opcional, llevar el aviso de "sin saldo" al motor único de CFG.3 cuando exista): CFG.3 ya cerró, así que su dependencia está resuelta, pero no es tarjeta hasta que se triage.
-- **Verificado contra** : commit `d1740e1` (2026-08-13, PA.1a) y esta tarea (2026-08-14, PA.1b).
+- **Verificado contra** : HF.0b (2026-10-16), solo la relación del crédito con Distribuir. Antes: commit `d1740e1` (2026-08-13, PA.1a) y PA.1b (2026-08-14).
 
 **Dónde vive**
 
@@ -129,6 +129,7 @@ Lo que **DIS.11 dejó abierto**, con su medición: (1) **el alto del formulario 
 - **La hoja no se apila sobre otro overlay**: si el gate legal o las novedades quedaron abiertos, no se abre y espera a la siguiente apertura. Es deliberado (ADR 052 D1), no un fallo de arranque.
 - **La ventana es de dos meses** (`MESES_CATCHUP_AUTOMATICOS = 1` más el mes en curso), igual para las dos direcciones. Lo más viejo no reaparece nunca en la hoja: se registra a mano desde el Calendario o Mis cuentas.
 - **La cuenta no se pre-selecciona en ningún formulario** (débito: `preseleccionar: false`; crédito: reusa `Ingreso.cuentaId`, que ya nace sin preseleccionar desde MC.13d): es un hecho del arreglo con el banco, no una comodidad de pago.
+- **El crédito y "Distribuir mi ingreso" acreditan el mismo cobro por dos caminos.** Desde HF.0b el asistente reconoce lo que esta hoja ya acreditó (`ingresoId` + fecha exacta del cobro) y no lo suma otra vez. El sentido inverso sigue abierto: Distribuir no escribe `IngresoPuntual`, así que la hoja vuelve a ofrecer un cobro ya distribuido (**BUG-032**, tarjeta HF.0h).
 - **El crédito no trae selector de cuenta propio**: usa el mismo `Ingreso.cuentaId` que el asistente de distribución. Si un ingreso cambia de cuenta destino, el crédito automático cambia con él sin aviso aparte; es la misma cuenta, no dos datos que puedan divergir.
 
 **Cambios pendientes**: PA.1c (opcional, sin tarjeta): llevar el aviso de "sin cuenta"/"sin saldo" al motor único de notificaciones. El motor ya existe desde CFG.3a ([ADR 066](../DECISIONS/066-motor-unico-de-avisos.md), `infra/avisos.js`), así que llevarlas allá es sumar una fuente más, y su superficie en la app la trae CFG.3b (ya cerrada).

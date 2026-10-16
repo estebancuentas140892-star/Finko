@@ -47,18 +47,6 @@
 
 ### Fase 0 - Base confiable (sin ADR, puede empezar ya)
 
-#### HF.0b - Distribuir no reacredita un salario ya acreditado (BUG-030)
-- Prioridad  : alta
-- Estado     : pendiente
-- Área       : code
-- Objetivo   : si el cobro del periodo ya entró como `IngresoPuntual` con `ingresoId` (crédito automático) o como ingreso puntual equivalente, Distribuir reparte desde el saldo sin volver a sumar el ingreso
-- Riesgo     : saldo inflado en producción hoy; un arreglo que no acredite nunca dejaría cuentas cortas
-- Secciones  : Mis cuentas (Distribuir), Calendario (hoja de automáticos), Inicio
-- Archivos   : `modules/dominio/tesoreria/logic/distribucion.js`, `tesoreria/acciones/distribucion.js`, `tesoreria/views/distribucion.js`, tests de tesorería
-- Depende de : nada
-- Aceptación : test "crédito automático confirmado + Distribuir = un solo crédito"; verificación en la app con un perfil inventado
-- Modelo     : Alta capacidad, Alto
-
 #### HF.0c - El importador CSV de gastos no crea dinero (BUG-029)
 - Prioridad  : alta
 - Estado     : pendiente (P4 resuelta)
@@ -95,16 +83,28 @@
 - Aceptación : tests con reloj fijo a las 20:00 hora Colombia
 - Modelo     : Equilibrado, Alto
 
+#### HF.0h - La hoja de automáticos no acredita un cobro que Distribuir ya acreditó (BUG-032)
+- Prioridad  : alta
+- Estado     : pendiente
+- Área       : code
+- Objetivo   : espejo de HF.0b desde el otro lado: un cobro que Distribuir ya acreditó no vuelve a la hoja. La salida estructural (que Distribuir deje el `IngresoPuntual` con `ingresoId`) es HF.1d y espera a la ficha 18; esta tarjeta decide si antes hace falta una guarda
+- Riesgo     : `ultimaDistribucionPeriodo` identifica un periodo, no un ingreso: con varios ingresos en el cobro una guarda mal acotada puede esconder uno que nunca se acreditó
+- Secciones  : Calendario (hoja de automáticos), Mis cuentas
+- Archivos   : `modules/dominio/agenda/logic.js`, `agenda/index.js`, tests de agenda y `tests/e2e/distribucion-credito-automatico.test.js`
+- Depende de : nada (o se absorbe en HF.1d si Esteban prefiere esperar)
+- Aceptación : test "Distribuir y luego abrir: la hoja no ofrece ese cobro"; reproducción en la app con datos inventados
+- Modelo     : Alta capacidad, Alto
+
 #### HF.0f - Perfiles de regresión: constructores e invariantes
 - Prioridad  : alta
 - Estado     : pendiente
 - Área       : code (solo tests)
 - Objetivo   : `tests/fixtures/perfiles.js` con tres perfiles deterministas (ligero: 1 cuenta; común: 2-3 cuentas, tarjeta, ahorro, transferencias; intensivo: 4-5 cuentas, metas, reservas, fondo, inversiones, préstamos, categorías, un año) construidos por las rutas reales de escritura, y una suite de invariantes: I1 a I5, R-HF1, R-HF2, reversas exactas, guardar y cargar, Movimientos sin duplicados, peso serializado
-- Riesgo     : congelar como esperado un doble conteo vigente; por eso va después de HF.0b a HF.0d
+- Riesgo     : congelar como esperado un doble conteo vigente; por eso va después de HF.0c, HF.0d y HF.0h
 - Secciones  : todas (sin runtime)
 - Archivos   : `tests/fixtures/perfiles.js`, `tests/integration/perfiles.test.js`
-- Depende de : HF.0b, HF.0c, HF.0d
-- Aceptación : la suite corre en `pnpm test` y falla si se reintroduce cualquiera de los tres bugs
+- Depende de : HF.0c, HF.0d, HF.0h
+- Aceptación : la suite corre en `pnpm test` y falla si se reintroduce cualquiera de los bugs de doble conteo de la Fase 0
 - Modelo     : Alta capacidad, Extra
 
 #### HF.0g - Perfiles de regresión en E2E: navegación y destinos

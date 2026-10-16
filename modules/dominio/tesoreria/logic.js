@@ -71,6 +71,7 @@ export {
   construirPlanInversiones,
   construirFilasTransferenciaCuentas,
   cuentaIngresoPrincipal,
+  montoYaAcreditadoDelCobro,
 } from './logic/distribucion.js';
 
 export {

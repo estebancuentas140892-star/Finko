@@ -5,7 +5,7 @@
 > Errores detectados durante el desarrollo, con toda la información necesaria para resolverlos sin tener que volver a buscar dónde están.
 > Al solucionarse, el error se **elimina** de este archivo y el fix queda documentado en [`CHANGELOG.md`](CHANGELOG.md) con referencia al ID.
 > Solo entra lo **verificado** contra el código (archivo, función, línea). Una sospecha no es un error: es una tarjeta de investigación en [`BOARD.md`](BOARD.md).
-> Última actualización: 2026-10-16 (triaje de HF, [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)): entran BUG-029 a BUG-031; HF.0a cierra BUG-028. **5 abiertos.**
+> Última actualización: 2026-10-16 (triaje de HF, [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)): entran BUG-029 a BUG-031; HF.0a cierra BUG-028, HF.0b cierra BUG-030 y abre BUG-032. **5 abiertos.**
 >
 > **Patrón recurrente que conviene vigilar (cerrado 3 veces el 2026-08-01 y 2 el 2026-10-16, BUG-028 y un test de Inversión):** tests con **fechas fijas** o con un día derivado a módulo 28 se ponen rojos según el día en que se corran, casi siempre los primeros días del mes. La regla es derivar las fechas del reloj, y **fijar el reloj** (`vi.setSystemTime`) cuando el test afirma una distancia exacta o necesita un día ya pasado dentro del mes.
 
@@ -31,19 +31,19 @@ Numerar `BUG-001`, `BUG-002`... de forma consecutiva y sin reutilizar números a
 
 ## Pendientes
 
+### BUG-032 - la hoja de automáticos acredita un cobro que Distribuir ya acreditó
+- Estado    : pendiente (HF.0h). Prioridad alta: infla el saldo
+- Problema  : con crédito automático, si el usuario pospone la hoja ("Ahora no") y distribuye el cobro, la siguiente apertura vuelve a ofrecer ese cobro (+monto) y confirmarlo lo suma otra vez. Reproducido en la app el 2026-10-16 con datos inventados.
+- Causa     : Distribuir acredita sin escribir `IngresoPuntual`; `creditosAutomaticosVencidos()` solo mira `ingresosPuntuales` con `ingresoId`. Es el sentido inverso de BUG-030 (cerrado por HF.0b).
+- Archivo   : `agenda/logic.js` (`creditosAutomaticosVencidos`), `tesoreria/acciones/distribucion.js`
+- Secciones : Calendario (hoja), Mis cuentas
+
 ### BUG-031 - "compromiso próximo" avisa lo ya pagado y fecha sin la frecuencia
 - Estado    : pendiente (HF.0d). Prioridad media
 - Problema  : un fijo con `diaPago` 18 pagado el 15 sigue en "Próximas prioridades" y en el aviso hasta el 18 (el 17 puede notificar). Un bimestral sale todos los meses, con otra fecha que en el Calendario.
 - Causa     : `compromisosProximos()` no recibe gastos y `proximoVencimiento()` solo mira `diaPago`; el Calendario usa `ocurrenciasEnMes()` (ADR 041).
 - Archivo   : `compromisos/logic/modelo.js` (`proximoVencimiento`, `compromisosProximos`); consumidores `compromisos/views/dashboard.js`, `infra/avisos.js`
 - Secciones : Inicio, Por pagar, notificación
-
-### BUG-030 - Distribuir vuelve a acreditar un salario que el crédito automático ya registró
-- Estado    : pendiente (HF.0b). Prioridad alta: infla el saldo
-- Problema  : la hoja de PA.1b acredita el cobro como `IngresoPuntual` con `ingresoId`; "Distribuir mi ingreso" sigue "listo" y suma el mismo monto otra vez.
-- Causa     : `estadoDistribucion()` mira plantillas y `config.ultimaDistribucionPeriodo`, nunca `ingresosPuntuales`; confirmar suma `monto` sin condición. Sin reproducir en la app.
-- Archivo   : `tesoreria/logic/distribucion.js` (`estadoDistribucion`), `tesoreria/acciones/distribucion.js` (bloque "El ingreso se acredita")
-- Secciones : Mis cuentas, Calendario, Inicio
 
 ### BUG-029 - el importador CSV de gastos crea dinero al borrar y no reimporta lo que exporta
 - Estado    : pendiente (HF.0c). Prioridad alta: rompe la I3 del ADR 053. Decidido (P4 del ADR 091): el importado no toca el saldo
