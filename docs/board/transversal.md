@@ -43,7 +43,7 @@
 
 ## Iniciativa HF - Un hecho financiero se informa una sola vez
 
-> Brief, triaje, choques con ADR vigentes, riesgos y preguntas P1 a P7: **[ADR 091](../DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)** (Propuesta, 2026-10-16). Fuente única de la iniciativa. Orden por dependencia técnica. **Convive con MOV.1 solo la Fase 0**: la Fase 1 espera a la ficha 18 y HF.3a a HF.3c al cierre de MOV.1. Todos los datos de prueba son inventados.
+> Brief, triaje, choques con ADR vigentes, riesgos y preguntas P1 a P7 (**resueltas el 2026-10-16**): **[ADR 091](../DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)**. Fuente única de la iniciativa. Orden por dependencia técnica. **Convive con MOV.1 solo la Fase 0**: la Fase 1 espera a la ficha 18 y HF.3a a HF.3c al cierre de MOV.1. Todos los datos de prueba son inventados.
 
 ### Fase 0 - Base confiable (sin ADR, puede empezar ya)
 
@@ -61,13 +61,13 @@
 
 #### HF.0c - El importador CSV de gastos no crea dinero (BUG-029)
 - Prioridad  : alta
-- Estado     : requiere decisión (P4 del ADR 091)
+- Estado     : pendiente (P4 resuelta)
 - Área       : code
-- Objetivo   : importar y borrar deja el saldo igual (recomendado: el gasto importado se marca sin efecto en saldo) y el CSV exportado se puede reimportar
-- Riesgo     : restaurar historia restando dos veces si se elige descontar
+- Objetivo   : el gasto importado se marca sin efecto en el saldo (P4): importarlo, editarlo o borrarlo no toca la cuenta. Y el CSV exportado se puede reimportar
+- Riesgo     : que la marca no llegue a la edición o al borrado y el reembolso siga ocurriendo
 - Secciones  : Ajustes (importar), Gastos, Mis cuentas
 - Archivos   : `modules/dominio/import/logic.js`, `import/index.js`, `modules/dominio/gastos/index.js`, `modules/dominio/export/logic.js`, tests
-- Depende de : P4
+- Depende de : nada
 - Aceptación : test importar + borrar = saldo intacto; test exportar e importar ida y vuelta
 - Modelo     : Equilibrado, Medio
 
@@ -85,13 +85,13 @@
 
 #### HF.0e - `fechaCreacion` se lee como fecha local (BUG-025)
 - Prioridad  : media
-- Estado     : requiere decisión (P3 del ADR 091)
+- Estado     : pendiente (P3 resuelta: opción b, sin schema)
 - Área       : code
 - Objetivo   : un helper único en `infra/utils.js` convierte el instante ISO a fecha local; lo usan todos los lectores (incluido `infra/bolsas.js`, que el bug no listaba)
 - Riesgo     : cambia lo que el Calendario pinta para registros nocturnos
 - Secciones  : Por pagar, Calendario, Mis cuentas (asistente), Reservas
 - Archivos   : `modules/infra/utils.js`, `infra/vencimientos.js`, `infra/bolsas.js`, `tesoreria/logic/distribucion.js`, `compromisos/logic/alertas.js`
-- Depende de : P3
+- Depende de : nada
 - Aceptación : tests con reloj fijo a las 20:00 hora Colombia
 - Modelo     : Equilibrado, Alto
 
@@ -122,7 +122,7 @@
 ### Fase 1 - Modelo (no iniciar antes de cerrar la ficha 18 de MOV.1)
 
 #### HF.1a - ADR: naturaleza del movimiento
-- Estado : requiere ADR (P2). **Objetivo**: separar flujo de caja de significado (consumo, pago de obligación, transferencia propia, aporte a bolsa, inversión, préstamo y su cobro, ingreso, devolución, retiro de efectivo, ajuste, apunte de seguimiento), derivado de los registros actuales sin schema. Acota ADR 002 y 051 D3. **Dominios**: movimientos, analisis, presupuesto, ahorro. **Depende de**: ficha 18 (redacción final de R90). **Aceptación**: tabla de clasificación con un test por tipo.
+- Estado : requiere ADR (dirección fijada por P2: el pago de obligación conserva su registro y deja de sumar como consumo). **Objetivo**: separar flujo de caja de significado (consumo, pago de obligación, transferencia propia, aporte a bolsa, inversión, préstamo y su cobro, ingreso, devolución, retiro de efectivo, ajuste, apunte de seguimiento), derivado de los registros actuales sin schema. Acota ADR 002 y 051 D3. **Dominios**: movimientos, analisis, presupuesto, ahorro. **Depende de**: ficha 18 (redacción final de R90). **Aceptación**: tabla de clasificación con un test por tipo.
 
 #### HF.1b - Aplicar la naturaleza: nada se cuenta dos veces
 - Estado : pendiente. **Objetivo**: tarjeta y abonos dejan de sumar como consumo en Análisis, Límites, tasa de ahorro y renta; el Fondo deja de salir como egreso en Movimientos. **Archivos**: `analisis/logic.js`, `presupuesto/logic.js`, `ahorro/index.js`, `movimientos/logic.js`. **Depende de**: HF.1a. **Aceptación**: perfil común, comprar 100 y pagar la tarjeta 100 da gasto del mes 100.
@@ -135,9 +135,6 @@
 
 #### HF.1e - Inversión: valor actual y cierre de posición
 - Estado : requiere ADR, dueño ficha 18 (ADR 086). **Objetivo**: valor actual con fecha, liquidar devuelve a una cuenta elegida con su rendimiento, patrimonio usa el valor actual si existe (I4 para lo previo). **Archivos**: `inversiones/`, `infra/portafolio.js`, `analisis/logic.js`. **Depende de**: ficha 18. **Aceptación**: liquidar no cambia el patrimonio salvo el rendimiento.
-
-#### HF.1f - Fondo y origen del dinero
-- Estado : requiere decisión (P1). Recomendación: conservar el ADR 020; sin código salvo HF.1b. ADR nuevo solo si Esteban elige descontar, y entonces con su flujo de retiro.
 
 #### HF.1g - Me deben: abono con id, borrar un abono, cobro de lo que era solo seguimiento
 - Estado : pendiente. **Archivos**: `personales/`. **Depende de**: HF.1a. **Aceptación**: borrar un abono revierte la cuenta exacta.
@@ -159,7 +156,7 @@
 ### Fase 3 - Calendario planificador y avisos (Finko Local)
 
 #### HF.3a - ADR: Calendario planificador (Hoy, Próximos, Mes)
-- Estado : requiere ADR (P5, acota ADR 081 D2). **Objetivo**: tres vistas, prioridad derivada (urgente, importante, próximo, informativo) mapeada a las severidades del ADR 066, acciones directas solo por `pago-compromiso`. **Depende de**: cierre de MOV.1 (K5 en ficha 18), HF.0d.
+- Estado : requiere ADR (acota ADR 081 D2; P5 fijó que vuelven solo "Marcar pagado" y "Registrar abono"). **Objetivo**: tres vistas, prioridad derivada (urgente, importante, próximo, informativo) mapeada a las severidades del ADR 066, acciones directas solo por `pago-compromiso`. **Depende de**: cierre de MOV.1 (K5 en ficha 18), HF.0d.
 
 #### HF.3b - "Antes de tu próximo ingreso" (lógica pura)
 - Estado : pendiente (dentro de HF.3a). **Objetivo**: disponible (sin cupo de tarjeta, I5) menos pagos en ventana menos aportes planeados; reusa `obligacionesYAportesDelCobro().enVentana`. **Archivos**: `infra/vencimientos.js`, `agenda/logic.js`. **Depende de**: HF.3a.
@@ -196,10 +193,10 @@
 #### HF.4e - Aprender categoría por descripción
 - Estado : requiere ADR (R-HF6). **Objetivo**: reglas confirmadas, sugerencia, y tras confirmaciones repetidas la oferta de automatizar, revocable en Ajustes. **Depende de**: HF.4b.
 
-#### HF.4f - Fuentes locales: compartir texto y PDF
-- Estado : requiere ADR (P7). **Objetivo**: Web Share Target hacia movimiento externo pendiente; PDF con contraseña solo en memoria. **Depende de**: HF.4d.
+#### HF.4f - Fuente local: compartir texto
+- Estado : requiere ADR. **Objetivo**: Web Share Target hacia movimiento externo pendiente. El PDF quedó diferido por P7 y vuelve con su propio ADR si se retoma. **Depende de**: HF.4d.
 
 ### Fase 5 - Finko Conectado
 
 #### HF.5a - ADR: Finko Conectado
-- Estado : no iniciar (P6). **Objetivo**: decidir Open Finance, correo y push. Exige derogar ADN 3, ADR 043 D1 y D4 y ADR 066 D1. **Depende de**: Fase 4 cerrada con uso real.
+- Estado : no iniciar (P6: hasta cerrar la Fase 4 con uso real). **Objetivo**: decidir Open Finance, correo y push. Exige derogar ADN 3, ADR 043 D1 y D4 y ADR 066 D1. **Depende de**: Fase 4 cerrada con uso real.

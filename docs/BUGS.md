@@ -46,7 +46,7 @@ Numerar `BUG-001`, `BUG-002`... de forma consecutiva y sin reutilizar números a
 - Secciones : Mis cuentas, Calendario, Inicio
 
 ### BUG-029 - el importador CSV de gastos crea dinero al borrar y no reimporta lo que exporta
-- Estado    : pendiente (HF.0c, decisión P4 del ADR 091). Prioridad alta: rompe la I3 del ADR 053
+- Estado    : pendiente (HF.0c). Prioridad alta: rompe la I3 del ADR 053. Decidido (P4 del ADR 091): el importado no toca el saldo
 - Problema  : importar con columna `cuenta` guarda `cuentaId` sin descontar; borrar o editar ese gasto devuelve el monto. Y el export deja `descripcion` vacía, que el import exige.
 - Causa     : `_confirmarImport()` solo llama `guardar()`; borrar siempre reembolsa.
 - Archivo   : `import/index.js`, `import/logic.js`, `gastos/index.js`, `export/logic.js` (`gastosACSV`)
@@ -71,4 +71,4 @@ Numerar `BUG-001`, `BUG-002`... de forma consecutiva y sin reutilizar números a
 - Función   : `guardar()` en `crud.js:36` (el ADR y las notas viejas la llaman `crear()`; ese nombre ya no existe); lectores `_caeEnCiclo` (`infra/vencimientos.js`), `estadoDistribucion` (`tesoreria/logic/distribucion.js`), `detectarDeudasDurmiendo` y los tres `_RX_FECHA_COMP.exec` de `compromisos/logic/alertas.js`
 - Líneas    : `crud.js:38` (dentro de `guardar()`); `alertas.js:62`, `:132`, `:230`
 - Secciones : Deudas, Calendario, Mis cuentas (asistente), transversal (todo consumidor del motor)
-- **Requiere decisión antes de tocarlo**: los registros ya guardados tienen el sello UTC, así que cambiar `guardar()` no arregla el pasado y mezcla dos convenciones en la misma colección. Las dos salidas son (a) guardar además `fechaCreacionLocal` (campo nuevo, migración con backfill imposible: el huso del momento de creación no se puede recuperar) o (b) dejar el sello como está y convertir a fecha local en la lectura, con un helper único. La (b) no necesita schema y arregla el pasado, pero cambia lo que hoy muestra el Calendario para los registros nocturnos.
+- **Decidido el 2026-10-16 (P3 del [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)): opción (b)**, convertir a fecha local en la lectura con un helper único. Sin schema y arregla el pasado; cambia lo que el Calendario pinta para registros nocturnos. Tarjeta HF.0e. La opción (a) se descarta: su backfill es imposible porque el huso del momento de creación no se recupera.

@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### docs(transversal): HF, P1 a P7 del ADR 091 resueltas · 2026-10-16
+
+Las siete recomendaciones del [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md) se aceptaron en chat tal como estaban escritas. Sin runtime.
+
+- **Ninguna rebanada de la Fase 0 espera ya una decisión:** HF.0c (P4, el gasto importado no toca el saldo) y HF.0e (P3, BUG-025 por la opción b) quedan desbloqueadas.
+- **Ningún ADR cambia hoy.** El 020 se conserva (P1) y HF.1f sale del tablero sin código. Los que se acotan (051 D3 y 002 por P2, 081 D2 por P5) se acotan con su ADR propio en HF.1a y HF.3a, que siguen atadas a la ficha 18 y al cierre de MOV.1.
+- **P7 parte una tarjeta:** HF.4f queda solo con compartir texto; el PDF se difiere y no conserva tarjeta. P6 deja HF.5a en "no iniciar".
+- Las reglas R-HF1 a R-HF6 y el plan siguen como propuesta: las preguntas eran sobre choques, no sobre las reglas.
+
 ### fix(avisos): HF.0a, la suite vuelve a verde y "compromiso próximo" respeta la fecha inyectada · 2026-10-16
 
 Primera rebanada de la iniciativa HF ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)). Cierra **BUG-028**. Ficha: [`contexto/transversal.md`](contexto/transversal.md), bloque "Motor único de avisos".

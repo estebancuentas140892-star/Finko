@@ -1,6 +1,6 @@
 # ADR 091 - Un hecho financiero se informa una sola vez: triaje de la iniciativa HF
 
-**Estado:** Propuesta (2026-10-16). Triaje completo contra el código; **ninguna decisión de producto tomada**. Las preguntas P1 a P7 esperan a Esteban y bloquean solo sus rebanadas, no la Fase 0.
+**Estado:** Propuesta en sus reglas (R-HF1 a R-HF6) y su plan. **Preguntas P1 a P7 resueltas el 2026-10-16**: aceptadas en chat tal como estaban escritas ("Acepto las recomendaciones P1 a P7 del ADR 091 tal como están escritas"). Ver "Resolución de P1 a P7" al final.
 **Fecha:** 2026-10-16
 **Autores:** Esteban (brief "nueva etapa: integración total, mínima entrada manual, Calendario planificador", 2026-10-16), Claude Opus 5.5 (triaje y redacción)
 **Relación:** no revierte ningún ADR. Señala choques con el [020](020-fondo-marcador-de-liquidez.md), [043](043-sincronizacion-multidispositivo-y-cuentas.md) D1 y D4, [051](051-tarjeta-de-credito-producto-integrado.md) D3, [066](066-motor-unico-de-avisos.md) D1 y [081](081-calendario-la-forma-del-mes-entradas-incluidas.md) D2, y los deja como preguntas. Aplica la invariante del [053](053-invariante-de-patrimonio.md). Convive con **MOV.1**: la ficha 18 es dueña de cuatro piezas de esta iniciativa y nada de aquí se le adelanta. Tarjetas: [`board/transversal.md`](../board/transversal.md), bloque HF.
@@ -134,3 +134,19 @@ Cada tarjeta (objetivo, dominios, archivos, dependencia, ADR, pruebas y cierre) 
 - Las Fases 1 y 3 quedan atadas a la ficha 18 y al cierre de MOV.1: esta iniciativa no le adelanta decisiones a la auditoría.
 - La Fase 4 llega con su costo de cupo escrito: si se abre, probablemente activa T1 del ADR 068.
 - Ninguna rebanada introduce framework, TypeScript, backend ni dependencias. La única excepción posible (P7) queda como pregunta.
+
+## Resolución de P1 a P7 (2026-10-16)
+
+Las siete recomendaciones se aceptaron sin cambios. Lo que cada una fija y qué rebanada lo ejecuta:
+
+| | Decisión | Efecto en el tablero |
+|---|---|---|
+| P1 | Se conserva el [ADR 020](020-fondo-marcador-de-liquidez.md): el aporte al Fondo no descuenta cuenta | HF.1f sale sin código. Solo cambia la dirección del aporte en Movimientos (HF.1b) |
+| P2 | El pago de tarjeta y el abono a deuda conservan su registro, pero su naturaleza es "pago de obligación" y dejan de sumar como consumo | Lo escribe HF.1a como ADR nuevo que acota el 051 D3 y el 002, después de la ficha 18 (R90) |
+| P3 | BUG-025 por la opción (b): conversión a fecha local en la lectura, con un helper único y sin schema | HF.0e desbloqueada |
+| P4 | El gasto importado se marca sin efecto en el saldo: importarlo, editarlo o borrarlo no toca la cuenta | HF.0c desbloqueada. El campo es opcional y sin backfill (precedente: ADR 051 D8) |
+| P5 | El Calendario recupera solo "Marcar pagado" y "Registrar abono", por `pago-compromiso`; lo demás son enlaces prefiltrados | Lo escribe HF.3a como ADR que acota el 081 D2, al cerrar MOV.1 |
+| P6 | Finko Conectado no se inicia hasta cerrar la Fase 4 con uso real | HF.5a sigue en "no iniciar"; la condición de reapertura del 043 no cambia |
+| P7 | El PDF se difiere; la Fase 4 empieza por el extracto CSV (HF.4d) | HF.4f queda solo con compartir texto. El PDF vuelve con su propio ADR si se retoma |
+
+**Consecuencia:** ninguna rebanada de la Fase 0 espera ya una decisión. Las Fases 1 y 3 siguen atadas a la ficha 18 y al cierre de MOV.1, que no dependían de estas preguntas.
