@@ -167,8 +167,8 @@ function _deCompromisosVencidos(compromisos, gastos, hoyISO) {
 }
 
 /** Compromisos que vencen dentro de los próximos tres días (hoy incluido). */
-function _deCompromisosProximos(compromisos) {
-  return compromisosProximos(compromisos, DIAS_COMPROMISO_PROXIMO)
+function _deCompromisosProximos(compromisos, hoyISO) {
+  return compromisosProximos(compromisos, DIAS_COMPROMISO_PROXIMO, _fechaRef(hoyISO))
     .filter(c => c.diasRestantes >= 0)
     .map(c => _aviso({
       // Hoy y mañana interrumpen; dos o tres días esperan en la app.
@@ -399,7 +399,7 @@ export function recolectarAvisos({
 
   const avisos = [
     ..._deCompromisosVencidos(compromisos, gastos, hoyISO),
-    ..._deCompromisosProximos(compromisos),
+    ..._deCompromisosProximos(compromisos, hoyISO),
     ..._deLimites(presupuestos, gastos, anio, mes),
     ..._deApartados(apartados, hoyISO),
     ..._dePrestamos(personales, hoyISO),

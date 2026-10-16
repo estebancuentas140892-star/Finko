@@ -265,6 +265,54 @@ describe('proximoVencimiento()', () => {
   });
 });
 
+// ── Fecha de referencia inyectada (BUG-028, HF.0a) ───────────────
+// Los tres cálculos aceptan la fecha y la respetan en vez de leer el reloj.
+// El reloj se fija lejos de la fecha inyectada: si alguna función volviera a
+// leer `new Date()`, estos tests fallan cualquier día, no solo algunos.
+
+describe('proximoVencimiento(), urgencia() y compromisosProximos() con fecha inyectada', () => {
+  const REF = new Date(2026, 7, 13, 12); // jueves 13 de agosto de 2026, mediodía local
+
+  beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date(2027, 0, 28, 9)); });
+  afterEach(()  => { vi.useRealTimers(); });
+
+  it('cuenta los días contra la fecha inyectada, no contra el reloj', () => {
+    expect(proximoVencimiento(compromisoBase({ diaPago: 13 }), REF)).toBe(0);
+    expect(proximoVencimiento(compromisoBase({ diaPago: 16 }), REF)).toBe(3);
+  });
+
+  it('un día ya pasado salta al mes siguiente con el largo real del mes inyectado', () => {
+    // Agosto tiene 31 días: del 13 al 5 de septiembre son 23.
+    expect(proximoVencimiento(compromisoBase({ diaPago: 5 }), REF)).toBe(23);
+    // Febrero de 2026 tiene 28: del 27 al 1 de marzo son 2.
+    expect(proximoVencimiento(compromisoBase({ diaPago: 1 }), new Date(2026, 1, 27, 12))).toBe(2);
+  });
+
+  it('urgencia() clasifica con la misma fecha', () => {
+    expect(urgencia(compromisoBase({ diaPago: 16 }), REF)).toBe('urgente');
+    expect(urgencia(compromisoBase({ diaPago: 19 }), REF)).toBe('proximo');
+    expect(urgencia(compromisoBase({ diaPago: 25 }), REF)).toBe('normal');
+  });
+
+  it('compromisosProximos() filtra y ordena con la fecha inyectada', () => {
+    const lista = [
+      compromisoBase({ id: 'c3', diaPago: 17 }),
+      compromisoBase({ id: 'c2', diaPago: 16 }),
+      compromisoBase({ id: 'c1', diaPago: 13 }),
+    ];
+    const proximos = compromisosProximos(lista, 3, REF);
+    expect(proximos.map(c => c.id)).toEqual(['c1', 'c2']);
+    expect(proximos.map(c => c.diasRestantes)).toEqual([0, 3]);
+  });
+
+  it('sin fecha, las tres siguen usando hoy: los consumidores existentes no cambian', () => {
+    const c = compromisoBase({ diaPago: 5 });
+    expect(proximoVencimiento(c)).toBe(proximoVencimiento(c, new Date()));
+    expect(urgencia(c)).toBe(urgencia(c, new Date()));
+    expect(compromisosProximos([c], 30)).toEqual(compromisosProximos([c], 30, new Date()));
+  });
+});
+
 // ── urgencia() ────────────────────────────────────────────────────
 
 describe('urgencia()', () => {

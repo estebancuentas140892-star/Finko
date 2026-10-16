@@ -195,10 +195,10 @@ export function resumenDeudas(compromisos) {
  * Si ya pasó → días hasta el mismo día del mes siguiente.
  *
  * @param {import('../../../core/state.js').Compromiso} compromiso
+ * @param {Date} [hoy=new Date()] Fecha de referencia (inyectable, BUG-028).
  * @returns {number} Días hasta el próximo vencimiento (0 = hoy).
  */
-export function proximoVencimiento(compromiso) {
-  const hoy      = new Date();
+export function proximoVencimiento(compromiso, hoy = new Date()) {
   const diaHoy   = hoy.getDate();
   const diaPago  = compromiso.diaPago ?? 1;
 
@@ -213,10 +213,11 @@ export function proximoVencimiento(compromiso) {
 /**
  * Nivel de urgencia según días al próximo vencimiento.
  * @param {import('../../../core/state.js').Compromiso} compromiso
+ * @param {Date} [hoy=new Date()] Fecha de referencia (inyectable).
  * @returns {'urgente' | 'proximo' | 'normal'}
  */
-export function urgencia(compromiso) {
-  const dias = proximoVencimiento(compromiso);
+export function urgencia(compromiso, hoy = new Date()) {
+  const dias = proximoVencimiento(compromiso, hoy);
   if (dias <= 3) return 'urgente';
   if (dias <= 7) return 'proximo';
   return 'normal';
@@ -228,11 +229,13 @@ export function urgencia(compromiso) {
  *
  * @param {import('../../../core/state.js').Compromiso[]} compromisos
  * @param {number} [diasLimite=3]
+ * @param {Date} [hoy=new Date()] Fecha de referencia (inyectable, BUG-028): el
+ *   motor de avisos le pasa su `hoyISO` en vez de dejar que lea el reloj.
  * @returns {Array<import('../../../core/state.js').Compromiso & { diasRestantes: number }>}
  */
-export function compromisosProximos(compromisos, diasLimite = 3) {
+export function compromisosProximos(compromisos, diasLimite = 3, hoy = new Date()) {
   return compromisosActivos(compromisos)
-    .map(c => ({ ...c, diasRestantes: proximoVencimiento(c) }))
+    .map(c => ({ ...c, diasRestantes: proximoVencimiento(c, hoy) }))
     .filter(c => c.diasRestantes <= diasLimite)
     .sort((a, b) => a.diasRestantes - b.diasRestantes);
 }

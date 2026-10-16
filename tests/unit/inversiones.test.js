@@ -10,7 +10,7 @@
  * y el diálogo de confirmación de verdad.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { S } from '../../modules/core/state.js';
 import { renderFormInversion, renderInversion } from '../../modules/dominio/inversiones/view.js';
 import {
@@ -859,7 +859,14 @@ describe('validarInversion() - incluye el origen', () => {
 // ── renderFormInversion() - la pregunta del origen (INV.1) ─────────
 
 describe('renderFormInversion() - origen del dinero', () => {
+  // La rama sugerida depende de cuántos días hay entre `fechaInicio` y hoy
+  // (`DIAS_ORIGEN_RECIENTE`): sin reloj fijo, '2026-07-29' dejó de ser reciente
+  // el 2026-08-28 y el test se puso rojo solo (patrón de BUGS.md, HF.0a).
+  afterEach(() => { vi.useRealTimers(); });
+
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 10, 12)); // 10 de agosto: 12 días después de '2026-07-29'
     S.cuentas = [
       { id: 'cta1', nombre: 'Ahorros Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 3_000_000, activa: true },
       { id: 'cta2', nombre: 'Nequi',               banco: 'Nequi',       tipo: 'Ahorros', saldo:   500_000, activa: true },

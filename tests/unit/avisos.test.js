@@ -7,7 +7,7 @@
  * sus propios tests donde viven.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   recolectarAvisos,
   avisosQueInterrumpen,
@@ -204,6 +204,23 @@ describe('recolectarAvisos() - compromisos', () => {
   it('un compromiso inactivo no genera ningún aviso', () => {
     const avisos = recolectarAvisos({ compromisos: [fijo({ activo: false })], hoyISO: HOY });
     expect(avisos).toEqual([]);
+  });
+
+  it('"compromiso próximo" cuenta contra el hoyISO inyectado, no contra el reloj (BUG-028)', () => {
+    // El reloj queda cinco meses después de HOY: si la fuente volviera a leer
+    // `new Date()`, el aviso desaparecería o cambiaría de días.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2027, 0, 28, 9));
+    try {
+      const avisos = recolectarAvisos({
+        compromisos: [fijo({ id: 'hoy', diaPago: 13 }), fijo({ id: 'tres', diaPago: 16 })],
+        hoyISO:      HOY,
+      });
+      const proximos = avisos.filter(a => a.tipo === 'compromiso-proximo');
+      expect(proximos.map(a => [a.id, a.dias])).toEqual([['compromiso-proximo:hoy', 0], ['compromiso-proximo:tres', 3]]);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

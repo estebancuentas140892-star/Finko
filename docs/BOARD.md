@@ -70,10 +70,9 @@ Las tarjetas del tablero (la iniciativa HF se lista por fase), para elegir la pr
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | cola de diseño de Esteban |
-| HF.0a | Suite verde: fecha inyectable en "compromiso próximo" (BUG-028) | Transversal | alta | nada |
-| HF.0b | Distribuir no reacredita un salario ya acreditado (BUG-030) | Mis cuentas | alta | HF.0a |
-| HF.0c | El importador CSV de gastos no crea dinero (BUG-029) | Ajustes, Gastos | alta | HF.0a, P4 del ADR 091 |
-| HF.0d | Una sola regla de vencimiento (BUG-031) | Inicio, Por pagar | media | HF.0a |
+| HF.0b | Distribuir no reacredita un salario ya acreditado (BUG-030) | Mis cuentas | alta | nada |
+| HF.0c | El importador CSV de gastos no crea dinero (BUG-029) | Ajustes, Gastos | alta | P4 del ADR 091 |
+| HF.0d | Una sola regla de vencimiento (BUG-031) | Inicio, Por pagar | media | nada |
 | HF.0e | `fechaCreacion` se lee como fecha local (BUG-025) | Transversal | media | P3 del ADR 091 |
 | HF.0f | Perfiles de regresión: constructores e invariantes | Transversal (tests) | alta | HF.0b, HF.0c, HF.0d |
 | HF.0g | Perfiles de regresión en E2E | Transversal (tests) | media | HF.0f |
@@ -112,7 +111,7 @@ _(CFG.1 a CFG.5 cerraron completas. **CFG.6** es la auditoría UX/UI móvil de l
 
 ## Transversal (afecta varias secciones)
 
-DV.2d, HF.0a a HF.5a → [`board/transversal.md`](board/transversal.md) (HF: iniciativa "un hecho financiero se informa una sola vez", [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), Propuesta)
+DV.2d, HF.0b a HF.5a → [`board/transversal.md`](board/transversal.md) (HF: iniciativa "un hecho financiero se informa una sola vez", [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), Propuesta)
 
 ---
 

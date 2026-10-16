@@ -5,9 +5,9 @@
 > Errores detectados durante el desarrollo, con toda la información necesaria para resolverlos sin tener que volver a buscar dónde están.
 > Al solucionarse, el error se **elimina** de este archivo y el fix queda documentado en [`CHANGELOG.md`](CHANGELOG.md) con referencia al ID.
 > Solo entra lo **verificado** contra el código (archivo, función, línea). Una sospecha no es un error: es una tarjeta de investigación en [`BOARD.md`](BOARD.md).
-> Última actualización: 2026-10-16 (triaje de HF, [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)): entran BUG-029 a BUG-031. **6 abiertos.**
+> Última actualización: 2026-10-16 (triaje de HF, [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)): entran BUG-029 a BUG-031; HF.0a cierra BUG-028. **5 abiertos.**
 >
-> **Patrón recurrente que conviene vigilar (cerrado 3 veces el 2026-08-01):** tests con **fechas fijas** o con un día derivado a módulo 28 se ponen rojos según el día en que se corran, casi siempre los primeros días del mes. La regla es derivar las fechas del reloj, y **fijar el reloj** (`vi.setSystemTime`) cuando el test afirma una distancia exacta o necesita un día ya pasado dentro del mes.
+> **Patrón recurrente que conviene vigilar (cerrado 3 veces el 2026-08-01 y 2 el 2026-10-16, BUG-028 y un test de Inversión):** tests con **fechas fijas** o con un día derivado a módulo 28 se ponen rojos según el día en que se corran, casi siempre los primeros días del mes. La regla es derivar las fechas del reloj, y **fijar el reloj** (`vi.setSystemTime`) cuando el test afirma una distancia exacta o necesita un día ya pasado dentro del mes.
 
 ---
 
@@ -51,17 +51,6 @@ Numerar `BUG-001`, `BUG-002`... de forma consecutiva y sin reutilizar números a
 - Causa     : `_confirmarImport()` solo llama `guardar()`; borrar siempre reembolsa.
 - Archivo   : `import/index.js`, `import/logic.js`, `gastos/index.js`, `export/logic.js` (`gastosACSV`)
 - Secciones : Ajustes, Gastos
-
-### BUG-028 - el aviso "compromiso próximo" ignora el `hoyISO` inyectado y lee el reloj real
-- Estado    : pendiente
-- Prioridad : media (en producción `hoyISO` es el día real: rompe el contrato de inyectabilidad y el test, no lo que ve el usuario)
-- Problema  : `tests/unit/avisos.test.js:183` ("lo que vence hoy es próximo con 0 días, nunca vencido") falla desde el 2026-08-14. El test fija `HOY = '2026-08-13'` y pasa `hoyISO`, pero el aviso se calcula contra la fecha del sistema, así que pasó el día que se escribió y falla desde el siguiente. Tercera repetición del patrón que este archivo ya vigila (ver la nota de arriba).
-- Causa     : `recolectarAvisos()` reparte `hoyISO` a **todas** sus fuentes menos una: `_deCompromisosProximos(compromisos)` se llama sin la fecha y delega en `compromisosProximos()`, que calcula con `proximoVencimiento(c)`, y esa función lee el reloj real. Arreglarlo no es una línea: hay que propagar la fecha por `compromisosProximos()` y `proximoVencimiento()`, que tienen otros consumidores en el dominio Compromisos.
-- Archivo   : `modules/infra/avisos.js` (origen) y `modules/dominio/compromisos/logic/modelo.js` (las dos funciones que hay que abrir a la fecha inyectada)
-- Función   : `_deCompromisosProximos()`; `compromisosProximos()` y `proximoVencimiento()` en `modelo.js`
-- Líneas    : `avisos.js:170` y `:402`; `modelo.js:233`
-- Secciones : Inicio (panel "Avisos", CFG.3b), Calendario, notificación del sistema (`infra/notificaciones.js`)
-- Encontrado el 2026-08-14 cerrando PERF.10a; llega con CFG.3a ([ADR 066](DECISIONS/066-motor-unico-de-avisos.md)). Crece con el calendario: 1 rojo ese día, 6 desde el 2026-08-15, confirmados ajenos con `git stash`.
 
 ### BUG-027 - ADR 059 no existe en el repositorio pese a estar citado como "aceptado" en 5 documentos vivos
 - Estado    : pendiente

@@ -47,18 +47,6 @@
 
 ### Fase 0 - Base confiable (sin ADR, puede empezar ya)
 
-#### HF.0a - Suite verde: fecha inyectable en "compromiso próximo" (BUG-028)
-- Prioridad  : alta
-- Estado     : pendiente
-- Área       : code
-- Objetivo   : `proximoVencimiento()`, `urgencia()` y `compromisosProximos()` aceptan la fecha de referencia (default hoy) y el motor de avisos les pasa su `hoyISO`. Más el test de Inversión con fecha caducada (reloj fijo). Sin cambio visible: en producción la fecha ya es la real
-- Riesgo     : romper un consumidor de `proximoVencimiento` (lista y dashboard de Por pagar); el default de parámetro lo evita
-- Secciones  : Inicio (avisos), notificación del sistema, Por pagar
-- Archivos   : `modules/infra/avisos.js`, `modules/dominio/compromisos/logic/modelo.js`, `tests/unit/avisos.test.js`, `tests/unit/compromisos.test.js`, `tests/unit/inversiones.test.js`, `service-worker.js`
-- Depende de : nada
-- Aceptación : `pnpm test` con 0 rojos (hoy 7), tests nuevos de fecha inyectada, lint, E2E verde, SW bump
-- Modelo     : Equilibrado, Bajo
-
 #### HF.0b - Distribuir no reacredita un salario ya acreditado (BUG-030)
 - Prioridad  : alta
 - Estado     : pendiente
@@ -67,7 +55,7 @@
 - Riesgo     : saldo inflado en producción hoy; un arreglo que no acredite nunca dejaría cuentas cortas
 - Secciones  : Mis cuentas (Distribuir), Calendario (hoja de automáticos), Inicio
 - Archivos   : `modules/dominio/tesoreria/logic/distribucion.js`, `tesoreria/acciones/distribucion.js`, `tesoreria/views/distribucion.js`, tests de tesorería
-- Depende de : HF.0a
+- Depende de : nada
 - Aceptación : test "crédito automático confirmado + Distribuir = un solo crédito"; verificación en la app con un perfil inventado
 - Modelo     : Alta capacidad, Alto
 
@@ -79,7 +67,7 @@
 - Riesgo     : restaurar historia restando dos veces si se elige descontar
 - Secciones  : Ajustes (importar), Gastos, Mis cuentas
 - Archivos   : `modules/dominio/import/logic.js`, `import/index.js`, `modules/dominio/gastos/index.js`, `modules/dominio/export/logic.js`, tests
-- Depende de : HF.0a, P4
+- Depende de : P4
 - Aceptación : test importar + borrar = saldo intacto; test exportar e importar ida y vuelta
 - Modelo     : Equilibrado, Medio
 
@@ -91,7 +79,7 @@
 - Riesgo     : cambia qué ve Inicio para quincenales y bimestrales (hoy está mal, pero es lo que el usuario ve)
 - Secciones  : Inicio, Por pagar, avisos, notificación
 - Archivos   : `compromisos/logic/modelo.js`, `compromisos/logic/alertas.js`, `compromisos/views/dashboard.js`, `compromisos/views/lista.js`, `infra/avisos.js`
-- Depende de : HF.0a
+- Depende de : nada
 - Aceptación : tests de quincenal y bimestral con la misma fecha en Calendario, Inicio y avisos; pago adelantado no avisa
 - Modelo     : Alta capacidad, Alto
 
@@ -180,10 +168,10 @@
 - Estado : pendiente. **Archivos**: `agenda/view.js`, `styles/components/config.css`. **Depende de**: HF.3a, HF.3b. **Aceptación**: evidencia visual a 375px y escritorio.
 
 #### HF.3d - Posponer un aviso sin mover la fecha real
-- Estado : pendiente (nota al ADR 066). **Objetivo**: `config.avisosPospuestos` (schema), filtro en el motor. **Depende de**: HF.0a.
+- Estado : pendiente (nota al ADR 066). **Objetivo**: `config.avisosPospuestos` (schema), filtro en el motor. **Depende de**: nada.
 
 #### HF.3e - Badge de la PWA y del nav
-- Estado : pendiente (nota al ADR 066; absorbe el diferido del ADR 040). **Objetivo**: `navigator.setAppBadge(n)` con los avisos `urgente` y `alta` tras preferencias, al abrir, en `state:change` y `visibilitychange`; se limpia en cero. **Depende de**: HF.0a, HF.0d.
+- Estado : pendiente (nota al ADR 066; absorbe el diferido del ADR 040). **Objetivo**: `navigator.setAppBadge(n)` con los avisos `urgente` y `alta` tras preferencias, al abrir, en `state:change` y `visibilitychange`; se limpia en cero. **Depende de**: HF.0d.
 
 #### HF.3f - Rutas profundas, shortcuts y notificación que abre el elemento
 - Estado : requiere ADR corto (convención de ruta). **Objetivo**: el router acepta un destino de elemento; `manifest.json` gana shortcuts (Hoy, Por pagar, Registrar gasto, Registrar ingreso); el SW gana `notificationclick`. **Archivos**: `infra/router.js`, `manifest.json`, `service-worker.js`, `infra/notificaciones.js`.

@@ -12,6 +12,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### fix(avisos): HF.0a, la suite vuelve a verde y "compromiso próximo" respeta la fecha inyectada · 2026-10-16
+
+Primera rebanada de la iniciativa HF ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)). Cierra **BUG-028**. Ficha: [`contexto/transversal.md`](contexto/transversal.md), bloque "Motor único de avisos".
+
+- **La compuerta 1 estaba rota para cualquier commit**, incluido el de la ficha 17 de MOV.1: 7 rojos de 4.563. Ahora 4.569 de 4.569.
+- **El arreglo es un parámetro, no una regla nueva.** `proximoVencimiento()`, `urgencia()` y `compromisosProximos()` aceptan la fecha de referencia con default hoy (la convención de `diasParaProximoPago()` en tesorería), y `_deCompromisosProximos()` recibe el `hoyISO` del motor y lo pasa por `_fechaRef()`, como ya hacían las otras seis fuentes. Los siete consumidores que no pasan fecha no cambian.
+- **Sin cambio visible.** En producción `hoyISO` ya es el día real: lo que estaba roto era el contrato de inyectabilidad, y con él la suite.
+- **El séptimo rojo era otro caso del mismo patrón, sin registrar**: `inversiones.test.js` usaba `fechaInicio: '2026-07-29'` contra `DIAS_ORIGEN_RECIENTE = 30` con el reloj real, así que caducó el 2026-08-28. Ahora fija el reloj.
+- **Los tests nuevos fijan el reloj meses después de la fecha inyectada.** Si una fuente vuelve a leer `new Date()`, fallan cualquier día, no solo los que no coinciden con el fixture: la razón por la que BUG-028 pasó desapercibido el día que se escribió.
+- **Fuera de alcance, a propósito:** que esa fecha ignore la frecuencia y lo ya pagado es BUG-031 (HF.0d). Cambia lo que ve el usuario y merece su propia tarjeta.
+- Verificado en la app (localhost, datos inventados): Inicio pinta "Arriendo de prueba" que vence hoy e "Internet de prueba" en 2 días, y el motor, llamado en el navegador con `hoyISO` 2026-09-17, devuelve solo "Internet de prueba, 1 día", lo que antes del arreglo era imposible. El SW no se registra en localhost por diseño.
+- Tests: 6 unitarios nuevos (5 de fecha inyectada en `compromisos.test.js`, 1 en `avisos.test.js`) y 1 reparado. Lint verde. E2E 309/309 verdes con `--workers=2` (con los workers por defecto, esta máquina daba 14 flaky y 1 rojo por carga del servidor Python, también en `main` sin cambios). SW v585 a v586.
+
 ### docs(transversal): HF, triaje de la iniciativa "un hecho financiero se informa una sola vez" · 2026-10-16
 
 Triaje del brief de Esteban del 2026-10-16 contra el código. Decisión: [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md) (Propuesta). Tarjetas: [`board/transversal.md`](board/transversal.md), bloque HF. Sin runtime.
