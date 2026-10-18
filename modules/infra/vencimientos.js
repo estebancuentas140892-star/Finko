@@ -586,12 +586,15 @@ function _esDeuda(c) {
 /**
  * Total pagado de un compromiso dentro de un rango de fechas. Las fechas ISO
  * se comparan como texto: 'YYYY-MM-DD' ordena igual lexicográfica que
- * cronológicamente, así que no hace falta parsear cada gasto.
+ * cronológicamente, así que no hace falta parsear cada gasto. Una compra con
+ * la tarjeta (`consumoTC`) lleva su `compromisoId` pero sube la deuda: no es
+ * un pago (BUG-037).
  */
 function _pagadoEnRango(gastos, compromisoId, inicioISO, finISO) {
   if (!Array.isArray(gastos) || !compromisoId) return 0;
   return gastos
     .filter(g => g?.compromisoId === compromisoId
+      && !g.consumoTC
       && typeof g.fecha === 'string'
       && g.fecha >= inicioISO && g.fecha <= finISO)
     .reduce((acc, g) => acc + (Number(g.monto) || 0), 0);

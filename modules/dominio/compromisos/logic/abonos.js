@@ -16,6 +16,10 @@ import { f } from '../../../infra/utils.js';
 // la deuda se reduce por el monto. Al editar/eliminar el gasto, se sincroniza
 // de vuelta. Estas funciones puras encapsulan toda la aritmética; los handlers
 // las invocan desde compromisos/index.js y gastos/index.js.
+//
+// Una compra con la tarjeta (ADR 051 D3) también lleva el `compromisoId` de la
+// tarjeta, pero con `consumoTC: true`: sube la deuda y no es un abono. Lo que
+// se lee como "lo pagado" de un compromiso la excluye siempre (BUG-037).
 
 /**
  * Resta `monto` del saldo de una deuda sin permitir resultado negativo.
@@ -134,8 +138,9 @@ export function validarAbono(datos, deuda) {
 
 /**
  * Suma los abonos de un compromiso en un mes dado.
- * Un abono es un gasto en S.gastos con `compromisoId` apuntando al compromiso
- * y fecha dentro del mes indicado por `prefijoMes` ('YYYY-MM').
+ * Un abono es un gasto en S.gastos con `compromisoId` apuntando al compromiso,
+ * fecha dentro del mes indicado por `prefijoMes` ('YYYY-MM') y que no sea una
+ * compra con la tarjeta (`consumoTC`, BUG-037): esa sube la deuda, no la paga.
  *
  * @param {import('../../../core/state.js').Gasto[]} gastos
  * @param {string} compromisoId
@@ -145,7 +150,7 @@ export function validarAbono(datos, deuda) {
 export function calcularAbonosDelMes(gastos, compromisoId, prefijoMes) {
   if (!Array.isArray(gastos) || !compromisoId || !prefijoMes) return 0;
   return gastos
-    .filter(g => g.compromisoId === compromisoId && g.fecha?.startsWith(prefijoMes))
+    .filter(g => g.compromisoId === compromisoId && !g.consumoTC && g.fecha?.startsWith(prefijoMes))
     .reduce((acc, g) => acc + (Number(g.monto) || 0), 0);
 }
 
@@ -156,7 +161,8 @@ export function calcularAbonosDelMes(gastos, compromisoId, prefijoMes) {
  * subtítulo ("Saldada el 22 de julio") en vez de anunciar un vencimiento que ya
  * no existe (regla R7, estado terminal). Devuelve `null` cuando la deuda llegó
  * a cero sin abonos registrados (se editó el saldo a mano, o nació en cero):
- * ahí no hay una fecha honesta que mostrar.
+ * ahí no hay una fecha honesta que mostrar. Una compra con la tarjeta no es un
+ * abono y no aporta fecha (BUG-037).
  *
  * @param {import('../../../core/state.js').Gasto[]} gastos
  * @param {string} compromisoId
@@ -166,7 +172,7 @@ export function fechaUltimoAbono(gastos, compromisoId) {
   if (!Array.isArray(gastos) || !compromisoId) return null;
   let ultima = null;
   for (const g of gastos) {
-    if (g.compromisoId !== compromisoId || !g.fecha) continue;
+    if (g.compromisoId !== compromisoId || g.consumoTC || !g.fecha) continue;
     if (ultima === null || g.fecha > ultima) ultima = g.fecha;
   }
   return ultima;
@@ -175,7 +181,7 @@ export function fechaUltimoAbono(gastos, compromisoId) {
 /**
  * Estado de pago de un compromiso en el mes indicado por `prefijoMes` ('YYYY-MM').
  *
- * - 'ninguno':  no hay gastos vinculados ese mes.
+ * - 'ninguno':  no hay abonos ese mes (una compra con la tarjeta no lo es).
  * - 'parcial':  hay abonos pero no cubren la cuotaMensual (solo aplica a deudas).
  * - 'completo': los abonos cubren o superan la cuotaMensual; o es un gasto fijo
  *               con cualquier gasto vinculado (los fijos se pagan de una vez).

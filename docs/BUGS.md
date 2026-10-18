@@ -5,7 +5,7 @@
 > Errores detectados durante el desarrollo, con toda la información necesaria para resolverlos sin tener que volver a buscar dónde están.
 > Al solucionarse, el error se **elimina** de este archivo y el fix queda documentado en [`CHANGELOG.md`](CHANGELOG.md) con referencia al ID.
 > Solo entra lo **verificado** contra el código (archivo, función, línea). Una sospecha no es un error: es una tarjeta de investigación en [`BOARD.md`](BOARD.md).
-> Última actualización: 2026-10-17 (iniciativa HF, [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)): entran BUG-029 a BUG-031; HF.0a cierra BUG-028, HF.0b cierra BUG-030 y abre BUG-032, HF.0h cierra BUG-032; entran BUG-033 y BUG-034 (Distribuir no identifica qué ocurrencias acredita); HF.0c cierra BUG-029; HF.0i cierra BUG-033 y BUG-034; HF.0d cierra BUG-031; HF.0e cierra BUG-025. 2026-10-18: el banco de perfiles de HF.0f encuentra BUG-035 a BUG-038, cada uno con su caso mínimo en `tests/integration/perfiles-reversas.test.js`. **5 abiertos.**
+> Última actualización: 2026-10-17 (iniciativa HF, [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)): entran BUG-029 a BUG-031; HF.0a cierra BUG-028, HF.0b cierra BUG-030 y abre BUG-032, HF.0h cierra BUG-032; entran BUG-033 y BUG-034 (Distribuir no identifica qué ocurrencias acredita); HF.0c cierra BUG-029; HF.0i cierra BUG-033 y BUG-034; HF.0d cierra BUG-031; HF.0e cierra BUG-025. 2026-10-18: el banco de perfiles de HF.0f encuentra BUG-035 a BUG-038, cada uno con su caso mínimo en `tests/integration/perfiles-reversas.test.js`; se cierra BUG-037. **4 abiertos.**
 >
 > **Patrón recurrente que conviene vigilar (cerrado 3 veces el 2026-08-01 y 2 el 2026-10-16, BUG-028 y un test de Inversión):** tests con **fechas fijas** o con un día derivado a módulo 28 se ponen rojos según el día en que se corran, casi siempre los primeros días del mes. La regla es derivar las fechas del reloj, y **fijar el reloj** (`vi.setSystemTime`) cuando el test afirma una distancia exacta o necesita un día ya pasado dentro del mes.
 
@@ -58,15 +58,6 @@ Numerar `BUG-001`, `BUG-002`... de forma consecutiva y sin reutilizar números a
 - Archivo   : `modules/dominio/tesoreria/acciones/distribucion.js`
 - Función   : `_aplicarNecesidad` (~783); ventana en `construirDesgloseNecesidades` (`logic/distribucion.js` ~100)
 - Secciones : Mis cuentas (Distribuir), Calendario, Por pagar, avisos
-
-### BUG-037 - Una compra con la tarjeta cuenta como pago de la tarjeta
-- Estado    : pendiente
-- Prioridad : alta (silencia el vencimiento de la tarjeta)
-- Problema  : sin ningún pago, una compra de $600.000 a 6 cuotas deja la tarjeta "completo" en el mes y el aviso de vencida desaparece; una compra a 1 cuota la deja "parcial".
-- Causa     : `calcularAbonosDelMes()` suma todo gasto con `compromisoId`, y los consumos (MC.16b) también lo llevan; no excluye `consumoTC`.
-- Archivo   : `modules/dominio/compromisos/logic/abonos.js`
-- Función   : `calcularAbonosDelMes` (~145), `estadoPagoMes` (~188)
-- Secciones : Calendario, Por pagar, avisos, hoja de automáticos
 
 ### BUG-038 - Un abono o un pago de fijo no se puede corregir desde Movimientos
 - Estado    : pendiente

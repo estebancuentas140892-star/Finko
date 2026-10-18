@@ -70,7 +70,7 @@ Las tarjetas del tablero (la iniciativa HF se lista por fase), para elegir la pr
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | cola de diseño de Esteban |
-| HF.0f | Perfiles de regresión: constructores e invariantes (en curso, bloqueada por BUG-035 a BUG-038) | Transversal (tests) | alta | nada |
+| HF.0f | Perfiles de regresión: constructores e invariantes (en curso, bloqueada por BUG-035, BUG-036 y BUG-038) | Transversal (tests) | alta | nada |
 | HF.0g | Perfiles de regresión en E2E | Transversal (tests) | media | HF.0f |
 | HF.1a a HF.5a | Fases 1 a 5 de la iniciativa HF (24 rebanadas) | Transversal | media | ficha 18 de MOV.1, cierre de MOV.1 |
 | A.5 | Dominio custom en Vercel | Mantenimiento | baja | que el usuario tenga el dominio registrado |

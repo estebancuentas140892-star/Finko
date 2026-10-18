@@ -1,6 +1,6 @@
 # Tablero - Transversal
 
-> Revisado: 2026-10-17.
+> Revisado: 2026-10-18.
 
 > Satélite de [`BOARD.md`](../BOARD.md) (afecta varias secciones). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
 
@@ -49,7 +49,7 @@
 
 #### HF.0f - Perfiles de regresión: constructores e invariantes
 - Prioridad  : alta
-- Estado     : en curso (2026-10-18). Banco construido y verificado en el árbol de trabajo, **sin commitear**: `tests/fixtures/{rutas,perfiles,invariantes}.js` y `tests/integration/perfiles{,-anual,-reversas}.test.js`, 164 de 173 verdes. Las nueve rojas reproducen BUG-035 a BUG-038 ([`BUGS.md`](../BUGS.md)); no se cierra ni se commitea con la suite en rojo, y la corrección de esos errores no entra en HF.0f
+- Estado     : en curso (2026-10-18). Banco construido y verificado en el árbol de trabajo, **sin commitear**: `tests/fixtures/{rutas,perfiles,invariantes}.js` y `tests/integration/perfiles{,-anual,-reversas}.test.js`, 165 de 173 verdes desde BUG-037. Las ocho rojas reproducen BUG-035, BUG-036 y BUG-038 ([`BUGS.md`](../BUGS.md)); no se cierra ni se commitea con la suite en rojo, y la corrección de esos errores no entra en HF.0f
 - Área       : code (solo tests)
 - Objetivo   : `tests/fixtures/perfiles.js` con tres perfiles deterministas (ligero: 1 cuenta; común: 2-3 cuentas, tarjeta, ahorro, transferencias; intensivo: 4-5 cuentas, metas, reservas, fondo, inversiones, préstamos, categorías, un año) construidos por las rutas reales de escritura, y una suite de invariantes: I1 a I5, R-HF1, R-HF2, reversas exactas, guardar y cargar, Movimientos sin duplicados, peso serializado
 - Riesgo     : congelar como esperado un doble conteo vigente; por eso va después de HF.0d

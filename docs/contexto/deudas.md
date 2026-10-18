@@ -1,6 +1,6 @@
 # Ficha de contexto: Por pagar (antes Deudas)
 
-> Revisado: 2026-10-17.
+> Revisado: 2026-10-18.
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -47,7 +47,7 @@
 - 2026-10-17 (**HF.0d**, BUG-031): el chip fecha por frecuencia.
 - 2026-08-21 (**MOV.1 ficha 08**, [ADR 081](../DECISIONS/081-calendario-la-forma-del-mes-entradas-incluidas.md) D3): la lista, sus dos grupos y la tarjeta del lote toman su mes de `prefijoMesBloque()`. La sección registra su render en `renderAll()` y en `state:change` de `gastos`: el "Marcar pagado" del fijo vive acá desde ahora y pagarlo no toca `compromisos`. Commit `ace1a45`.
 - 2026-08-20 (ADR 080 D6, dentro de la ficha 06): los cuatro chips de la lente, que eran deuda de la ficha 05. Siguen pendientes de la 05 la fila de altas por grupo visible y el pie de saldo con "Ver plan de salida".
-- 2026-08-18 (**ficha 05 de la auditoría móvil**): ver arriba. Ver [CHANGELOG](../CHANGELOG.md).
+- 2026-08-18 (**ficha 05 de la auditoría móvil**): ver arriba.
 
 ---
 
@@ -137,19 +137,19 @@ Fuera de esas dos, la iniciativa "Deudas v2: de registro a asesor" (brief 2026-0
 - 2026-10-17 (**HF.0e**, BUG-025): "deudas durmiendo" y el descarte de vencimientos anteriores al alta leen `fechaCreacion` en hora local.
 - 2026-08-11 (GAS.2c): `_guardarAbono()` (`compromisos/index.js`) sustituye su `announce()` final por `mostrarToast()`, con segunda linea via `consecuenciaDeAbono()` nueva en `compromisos/logic/abonos.js` (prioridad deuda saldada > saldo restante). Mismo patron de Gastos (GAS.2a/2b), formalizado en [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md). Detalle completo: `contexto/gastos.md`.
 - 2026-08-02 (**BUG-018**): la fecha por defecto del abono sale de `hoy()` (`infra/utils.js`, getters locales) y no de `toISOString()`. Desde las 7 p.m. hora Colombia el abono quedaba fechado al dia siguiente. Mismo cambio en `views/alertas.js` (umbral de deudas durmiendo). Queda abierto **BUG-025**: `fechaCreacion` arrastra el mismo defecto de huso del lado de la lectura.
-- 2026-07-15 (FORM.1b): form v2 completo (segmented, chips, monto hero, disclosure de tasa, toggle D.14, teja del header) + retiro completo del chooser de dos pasos (JS y CSS muertos). Ver [CHANGELOG](../CHANGELOG.md).
+- 2026-07-15 (FORM.1b): form v2 completo (segmented, chips, monto hero, disclosure de tasa, toggle D.14, teja del header) + retiro completo del chooser de dos pasos (JS y CSS muertos).
 
 ---
 
 ## Tarjeta de crédito ([ADR 051](../DECISIONS/051-tarjeta-de-credito-producto-integrado.md), iniciativa MC.16)
 
 - **Objetivo**          : la tarjeta es un producto de Deudas, no una `Cuenta`: cupo más deuda, nunca dinero disponible. `cupoTotal` es el único campo nuevo del modelo (D1) y el `disponible` se deriva, nunca se almacena.
-- **Estado actual**     : **MC.16 CERRADA (2026-07-31)**, las cinco rebanadas. La tarjeta es operable de punta a punta: se registra con cupo, se paga con ella (el consumo sube el saldo), difiere a cuotas (sube `cuotaMensual` automáticamente), se ve en su propio bloque de Mis cuentas y avisa su costo en cuatro situaciones (MC.16e). El [ADR 051](../DECISIONS/051-tarjeta-de-credito-producto-integrado.md) queda ejecutado completo. Con MC.16b en producción, `consumosTC` del monitor de renta deja de ser captura manual (CFG.2a).
-- **Verificado contra** : MC.16e (2026-07-31).
+- **Estado actual**     : **MC.16 CERRADA (2026-07-31)**. La tarjeta es operable de punta a punta: se registra con cupo, se paga con ella (el consumo sube el saldo), difiere a cuotas (sube `cuotaMensual`), se ve en su bloque de Mis cuentas y avisa su costo en cuatro situaciones (MC.16e). Con MC.16b, `consumosTC` del monitor de renta deja de ser captura manual (CFG.2a).
+- **Verificado contra** : BUG-037 (2026-10-18). Antes: MC.16e (2026-07-31).
 
 **`cupoTotal` es dato y discriminador a la vez** (misma economía que `esCuotaManejo`): una deuda con `categoria: 'Tarjeta de crédito'` **con** `cupoTotal` es una tarjeta operable (recibe consumos, muestra disponible); **sin** `cupoTotal` es una deuda vieja capturada a posteriori y se comporta como cualquier otra. No hay campo `esTarjeta` ni bandera paralela.
 
-**El consumo vive en el dominio de Gastos, no acá.** Un consumo es un `Gasto` con `compromisoId` y `consumoTC: true`, sin `cuentaId`. `compromisos` no se enteró: no cambió ni una línea suya en MC.16b. El campo `consumoTC` existe porque el abono a la tarjeta lleva **el mismo** `compromisoId` con el signo contrario, y deducirlo de la ausencia de `cuentaId` sería frágil (un gasto sin cuenta ya es legal: efectivo no registrado).
+**El consumo vive en el dominio de Gastos, no acá.** Un consumo es un `Gasto` con `compromisoId` y `consumoTC: true`, sin `cuentaId`. `compromisos` no se enteró: no cambió ni una línea suya en MC.16b. El campo `consumoTC` existe porque el abono a la tarjeta lleva **el mismo** `compromisoId` con el signo contrario, y deducirlo de la ausencia de `cuentaId` sería frágil (un gasto sin cuenta ya es legal: efectivo no registrado). **Por eso todo lector de lo pagado excluye `consumoTC`** (BUG-037): `compromisos/logic/abonos.js`, `agenda/logic.js` (hero y hoja) y `_pagadoEnRango` (`infra/vencimientos.js`). Sin el campo, es abono.
 
 **Anclas del código**:
 
@@ -182,13 +182,15 @@ Fuera de esas dos, la iniciativa "Deudas v2: de registro a asesor" (brief 2026-0
 - **El aviso de intereses del abono depende de una `tasa` que el usuario pudo no registrar**: sin ella el mensaje explica el mecanismo sin cifra. La `tasa` tampoco capitaliza el saldo sola (fuera de alcance del ADR 051): el número del aviso es una estimación del próximo mes, no un movimiento que la app vaya a aplicar.
 - **`cupoTotal` se limpia a `null` al cambiar de categoría al editar** (lo exige `editar()`, que hace `Object.assign` shallow): reclasificar una tarjeta como "Vivienda" y volver a "Tarjeta de crédito" pierde el cupo tecleado. Es el mismo comportamiento que `icono` y es intencional, pero el usuario no recibe aviso. **Ojo con el efecto nuevo:** una tarjeta que pierde su cupo deja de ofrecerse en Gastos, aunque sus consumos ya registrados siguen intactos.
 - **Sin cuentas activas no hay formulario de gasto**, así que quien solo tenga tarjeta no puede registrar un consumo: el empty state de `renderFormGasto` sigue exigiendo una cuenta. Es preexistente y quedó fuera de MC.16b a propósito (tocar ese empty state es una decisión de producto, no del signo del saldo).
-- **Un gasto repartido entre varias cuentas se parte en varios registros; un consumo con tarjeta nunca se parte**: no hay reparto que hacer sobre un cupo. Si MC.16d agrega cuotas, se apoya en ese mismo registro único.
+- **Un gasto repartido entre varias cuentas se parte en varios registros; un consumo con tarjeta nunca se parte**: no hay reparto que hacer sobre un cupo.
+- **Límites aún lee el consumo por su `compromisoId`** (`presupuesto/logic.js`): lo suma a Necesidades y su desglose da la tarjeta por pagada. Es contabilidad (P2, HF.1a), fuera de BUG-037.
 
-**Cambios realizados**:
+**Cambios realizados** (detalle en el [CHANGELOG](../CHANGELOG.md)):
 
-- 2026-07-30 (MC.16a): `cupoTotal` en el form condicionado a la categoría, validación, normalización, chip de disponible en la card y bump de schema v27 a v28 (migración no-op). Ver [CHANGELOG](../CHANGELOG.md).
-- 2026-07-30 (MC.16b): el consumo con tarjeta como `Gasto` con `consumoTC`, tarjetas en el selector de origen (solo Gastos) y el signo del saldo en `deltasPorEdicionEnDeuda`, con alta, edición y eliminación juntas. Ver [CHANGELOG](../CHANGELOG.md).
-- 2026-07-31 (MC.16e): cuatro avisos de costo (avance en efectivo con el retiro en otra red en su texto, sobrecupo, y lo que cuesta no pagar el total del abono), campo `avanceTC` con bump v29 a v30 y `tasaMensualDecimal` extraída de `detectarDeudaCreciente`. Ver [CHANGELOG](../CHANGELOG.md).
+- 2026-07-30 (MC.16a): `cupoTotal` en el form condicionado a la categoría, validación, normalización, chip de disponible en la card y bump de schema v27 a v28 (migración no-op).
+- 2026-07-30 (MC.16b): el consumo con tarjeta como `Gasto` con `consumoTC`, tarjetas en el selector de origen (solo Gastos) y el signo del saldo en `deltasPorEdicionEnDeuda`, con alta, edición y eliminación juntas.
+- 2026-07-31 (MC.16e): cuatro avisos de costo, campo `avanceTC` con bump v29 a v30 y `tasaMensualDecimal` extraída de `detectarDeudaCreciente`.
+- 2026-10-18 (BUG-037): una compra con la tarjeta deja de contar como pago de la tarjeta.
 
 ---
 
@@ -212,7 +214,7 @@ Fuera de esas dos, la iniciativa "Deudas v2: de registro a asesor" (brief 2026-0
 
 **Cambios realizados**:
 
-- 2026-07-25 (DIS.2, auditoría de diseño de la sección, 8 correcciones): la tarjeta de deuda saldada deja de anunciar vencimientos y se fecha con el último abono (`fechaUltimoAbono` nueva en `logic/abonos.js`); archivar usa `#i-check-circle`; el chip de urgencia baja del nombre a `.deuda-card__chips`; `.deuda-card__abonar` sube a 44px; los tres "Aplicar" del simulador pasan a `.estrategia-card__aplicar` (identidad de compromisos, no `.btn-primary`); un solo verbo y un solo botón para crear deuda; `resumenDeudas()` cuenta aparte las saldadas y el hero las explicita; la card de estrategia conserva su encabezado con una sola deuda. Reglas **R7** (estado terminal) y **R8** (una acción principal) escritas en [`DESIGN_SYSTEM.md`](../DESIGN_SYSTEM.md). Ver [CHANGELOG](../CHANGELOG.md).
+- 2026-07-25 (DIS.2, auditoría de diseño de la sección, 8 correcciones): la tarjeta de deuda saldada deja de anunciar vencimientos y se fecha con el último abono (`fechaUltimoAbono` nueva en `logic/abonos.js`); archivar usa `#i-check-circle`; el chip de urgencia baja del nombre a `.deuda-card__chips`; `.deuda-card__abonar` sube a 44px; los tres "Aplicar" del simulador pasan a `.estrategia-card__aplicar` (identidad de compromisos, no `.btn-primary`); un solo verbo y un solo botón para crear deuda; `resumenDeudas()` cuenta aparte las saldadas y el hero las explicita; la card de estrategia conserva su encabezado con una sola deuda. Reglas **R7** (estado terminal) y **R8** (una acción principal) escritas en [`DESIGN_SYSTEM.md`](../DESIGN_SYSTEM.md).
 
 - 2026-07-13 (D.15a, **cierra Deudas v2 completa**): copy motivador en las simulaciones de orden y en las 3 palancas, y refuerzo psicologico en Abonar (linea estatica + tip en vivo que nunca queda vacio). Sin logica nueva.
 

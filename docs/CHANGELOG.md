@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### fix(compromisos): BUG-037, una compra con la tarjeta no es un pago de la tarjeta · 2026-10-18
+
+Primera corrección de los defectos que encontró el banco de HF.0f ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)). Respeta el [ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md) D2 y D3 y el [ADR 002](DECISIONS/002-abono-deudas.md) sin acotarlos. Ficha: [`contexto/deudas.md`](contexto/deudas.md), bloque Tarjeta de crédito.
+
+- **Causa:** el consumo con tarjeta lleva el `compromisoId` de la tarjeta (MC.16b) y cinco lectores de "lo pagado" sumaban todo gasto con ese campo. Una compra de $600.000 a 6 cuotas sin pagos dejaba la tarjeta `completo`, sacaba su vencimiento de Inicio, Por pagar y avisos, y Distribuir la daba por cubierta.
+- **El arreglo:** los cinco excluyen `consumoTC`: `calcularAbonosDelMes` y `fechaUltimoAbono` (`compromisos/logic/abonos.js`), `totalesDelMes` y `pendientesDePagoDelMes` (`agenda/logic.js`, duplicado intencional por la ADN 10) y `_pagadoEnRango` (`infra/vencimientos.js`). Un abono escrito por `pago-compromiso.js` no trae el campo y sigue contando.
+- **Sin tocar:** el saldo y la cuota de la tarjeta (`efectoEnDeuda`, `efectoEnCuotaMensual`), el schema y las pantallas. Límites sigue sumando el consumo en Necesidades por su `compromisoId`: es contabilidad (P2, HF.1a) y queda anotado como riesgo en la ficha.
+- **Tests:** 26 en `tests/unit/consumo-no-es-pago.test.js` (20 rojos antes): estado, abonado y último abono con compras de 1 y 6 cuotas, varias compras, compra y pago en meses distintos, Calendario, hoja, Inicio, avisos y Distribuir; y por las rutas reales de Gastos y Abonar, editar y borrar la compra. Suite verde en Bogotá, UTC, Tokyo, Kiritimati y Pago Pago. Unitarios 4762/4762, lint verde, E2E 328/328 (`--workers=2`). Banco de HF.0f: de 9 a 8 rojas. SW v593 a v594.
+
 ### docs(bugs): HF.0f, cuatro defectos que encontró el banco de perfiles · 2026-10-18
 
 Triaje del banco de perfiles de regresión de HF.0f ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)), sin runtime. El banco (tres personas inventadas, un mes y doce, por las rutas reales de escritura) queda construido y **sin commitear**: nueve pruebas suyas fallan y reproducen cuatro defectos nuevos, y HF.0f no se cierra con la suite en rojo. Decisión de Esteban: registrarlos antes de seguir.

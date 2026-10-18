@@ -219,7 +219,8 @@ export function totalDia(evs) {
  *   quincenal cuenta dos veces. Los días de ingreso no son dinero a pagar
  *   (ADR 021) y las apariciones sin monto positivo (ej. fiado sin cuota
  *   fija, D.13) no suman.
- * - `pagado`: cruza `gastos` por `compromisoId` + prefijo de mes (mismo
+ * - `pagado`: cruza `gastos` por `compromisoId` + prefijo de mes, sin las
+ *   compras con la tarjeta (`consumoTC`, BUG-037) (mismo
  *   criterio que `calcularAbonosDelMes` de compromisos/logic.js; duplicado
  *   intencional y no una importación cruzada, ADN #10, misma nota que
  *   `totalDia`), con tope en lo adeudado por compromiso: pagar de más no
@@ -261,6 +262,7 @@ export function totalesDelMes(eventos, gastos, prefijoMes) {
     if (!g || typeof g !== 'object') continue;
     const id = g.compromisoId;
     if (!id || !(id in adeudado)) continue;
+    if (g.consumoTC) continue; // una compra con la tarjeta no la paga (BUG-037)
     if (typeof g.fecha !== 'string' || !g.fecha.startsWith(prefijoMes)) continue;
     const n = Number(g.monto);
     if (Number.isFinite(n) && n > 0) abonos[id] = (abonos[id] ?? 0) + n;
@@ -359,7 +361,8 @@ export function flujoDelMes(eventos) {
  * Compromisos: `agenda/logic.js` no importa de otro dominio (ADN #10), mismo
  * duplicado intencional y por la misma razón que `totalesDelMes` y `totalDia`.
  * El criterio es el mismo que el de `estadoPagoMes`: para un fijo, cualquier
- * gasto vinculado; para una deuda, abonos que alcancen la cuota del mes.
+ * gasto vinculado; para una deuda, abonos que alcancen la cuota del mes. Una
+ * compra con la tarjeta (`consumoTC`) no es un abono (BUG-037).
  *
  * @param {ReturnType<typeof eventosDelMes>} eventos Mapa día → eventos del mes
  *   visible (sirve el ya mergeado con ingresos: se filtran por tipo).
@@ -438,6 +441,7 @@ export function pendientesDePagoDelMes(eventos, gastos, prefijoMes, hoyISO) {
   for (const g of (Array.isArray(gastos) ? gastos : [])) {
     if (!g || typeof g !== 'object') continue;
     if (!g.compromisoId || !porId.has(g.compromisoId)) continue;
+    if (g.consumoTC) continue; // una compra con la tarjeta no la paga (BUG-037)
     if (typeof g.fecha !== 'string' || !g.fecha.startsWith(prefijoMes)) continue;
     const n = Number(g.monto);
     if (Number.isFinite(n) && n > 0) abonos[g.compromisoId] = (abonos[g.compromisoId] ?? 0) + n;
