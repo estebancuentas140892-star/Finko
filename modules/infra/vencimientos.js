@@ -23,6 +23,8 @@
  * pagos automáticos (PA.1, catch-up de vencidas).
  */
 
+import { fechaLocalISO } from './utils.js';
+
 const _RX_FECHA = /^(\d{4})-(\d{2})-(\d{2})/;
 
 /** Número de días del mes (1-31). month es 0-indexed (0-11). */
@@ -60,12 +62,23 @@ function _addMeses(d, n) {
 }
 
 /**
+ * Día local de creación de un item, ya parseado (HF.0e, BUG-025). El sello de
+ * `crud.guardar()` es un instante UTC: sus diez primeros caracteres no son el
+ * día del usuario (el 31 de julio a las 8:00 p. m. en Colombia es 1 de agosto
+ * en UTC). Una fecha de calendario se respeta tal cual; ausente o inválida, null.
+ */
+function _creacionLocal(item) {
+  return _parseFechaISO(fechaLocalISO(item.fechaCreacion));
+}
+
+/**
  * Para frecuencias periódicas largas (Bimestral, Trimestral, Semestral, Anual)
  * el item aparece sólo en los meses que caen dentro del ciclo desde
- * `fechaCreacion`. Sin fechaCreacion, cae siempre (no perdemos al usuario).
+ * `fechaCreacion`, leída en hora local. Sin una fecha legible, cae siempre (no
+ * perdemos al usuario).
  */
 function _caeEnCiclo(item, year, month, periodoMeses) {
-  const fc = _parseFechaISO(item.fechaCreacion);
+  const fc = _creacionLocal(item);
   if (!fc) return true;
   const mesesDesde = (year - fc.year) * 12 + (month - fc.month);
   if (mesesDesde < 0) return false;
@@ -138,7 +151,7 @@ export function ocurrenciasEnMes(item, year, month) {
       return _caeEnCiclo(item, year, month, 12) ? [diaPago] : [];
 
     case 'Única vez': {
-      const fc = _parseFechaISO(item.fechaCreacion);
+      const fc = _creacionLocal(item);
       if (!fc) return [];
       return (fc.year === year && fc.month === month) ? [diaPago] : [];
     }

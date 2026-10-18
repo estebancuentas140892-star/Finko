@@ -2698,10 +2698,12 @@ describe('estadoDistribucion()', () => {
 
   it('MC.13f: con varios candidatos descartados se ofrece el más reciente', () => {
     const ingresos = [
-      { id: 'i1', descripcion: 'Arriendo', frecuencia: 'Mensual', activo: true, diaPago: 1, fechaCreacion: '2026-07-04T00:00:00.000Z' },
-      { id: 'i2', descripcion: 'Salario',  frecuencia: 'Mensual', activo: true, diaPago: 3, fechaCreacion: '2026-07-04T00:00:00.000Z' },
+      { id: 'i1', descripcion: 'Arriendo', frecuencia: 'Mensual', activo: true, diaPago: 1, fechaCreacion: '2026-07-04T15:00:00.000Z' },
+      { id: 'i2', descripcion: 'Salario',  frecuencia: 'Mensual', activo: true, diaPago: 3, fechaCreacion: '2026-07-04T15:00:00.000Z' },
     ];
     // hoy=5 jul: candidatos 1 jul y 3 jul, ambos anteriores a la creación (4 jul).
+    // La creación se lee en hora local (HF.0e): a las 15:00 UTC del 4 de julio
+    // nunca es 3 de julio en ninguna zona, así que la prueba no depende de la máquina.
     const r = estadoDistribucion(ingresos, null, hoy);
     expect(r.estado).toBe('por-confirmar');
     expect(r.periodoISO).toBe('2026-07-03');
@@ -2710,7 +2712,7 @@ describe('estadoDistribucion()', () => {
   it('MC.13f: un cobro datable convive con un candidato descartado sin preguntar', () => {
     const ingresos = [
       { id: 'i1', descripcion: 'Salario', frecuencia: 'Mensual', activo: true, diaPago: 30, fechaCreacion: '2026-01-01T00:00:00.000Z' },
-      { id: 'i2', descripcion: 'Extra',   frecuencia: 'Mensual', activo: true, diaPago: 3,  fechaCreacion: '2026-07-04T00:00:00.000Z' },
+      { id: 'i2', descripcion: 'Extra',   frecuencia: 'Mensual', activo: true, diaPago: 3,  fechaCreacion: '2026-07-04T15:00:00.000Z' },
     ];
     const r = estadoDistribucion(ingresos, null, hoy);
     expect(r.estado).toBe('listo');

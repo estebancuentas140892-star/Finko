@@ -47,27 +47,15 @@
 
 ### Fase 0 - Base confiable (sin ADR, puede empezar ya)
 
-#### HF.0e - `fechaCreacion` se lee como fecha local (BUG-025)
-- Prioridad  : media
-- Estado     : pendiente (P3 resuelta: opción b, sin schema)
-- Área       : code
-- Objetivo   : un helper único en `infra/utils.js` convierte el instante ISO a fecha local; lo usan todos los lectores (incluido `infra/bolsas.js`, que el bug no listaba)
-- Riesgo     : cambia lo que el Calendario pinta para registros nocturnos
-- Secciones  : Por pagar, Calendario, Mis cuentas (asistente), Reservas
-- Archivos   : `modules/infra/utils.js`, `infra/vencimientos.js`, `infra/bolsas.js`, `tesoreria/logic/distribucion.js`, `compromisos/logic/alertas.js`
-- Depende de : nada
-- Aceptación : tests con reloj fijo a las 20:00 hora Colombia
-- Modelo     : Equilibrado, Alto
-
 #### HF.0j - El catch-up no ofrece cobros ni pagos anteriores al alta del registro
 - Prioridad  : media
-- Estado     : pendiente, decidido por Esteban el 2026-10-17 para ingresos y extendido a débitos el mismo día ([ADR 091](../DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)); acota el ADR 052 D1. No iniciar antes de HF.0e
+- Estado     : pendiente, decidido por Esteban el 2026-10-17 para ingresos y extendido a débitos el mismo día ([ADR 091](../DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)); acota el ADR 052 D1
 - Área       : code
-- Objetivo   : un ingreso o un compromiso automático recién registrado no ofrece en la hoja cobros ni pagos anteriores a su `fechaCreacion` leída en hora local; los que ya existían conservan su catch-up, y un registro previo al alta es una acción explícita. Puede partirse en ingresos y débitos al implementarse
+- Objetivo   : un ingreso o un compromiso automático recién registrado no ofrece en la hoja cobros ni pagos anteriores a su `fechaCreacion` leída en hora local (`fechaLocalISO()`, `infra/utils.js`); los que ya existían conservan su catch-up, y un registro previo al alta es una acción explícita. Puede partirse en ingresos y débitos al implementarse
 - Riesgo     : `ocurrenciasEnMes` y `ultimoVencimientoHasta` tienen más consumidores (Calendario, Distribuir, avisos): el filtro va en la hoja salvo revisión de todos ellos. Ningún registro histórico se borra
 - Secciones  : Calendario (hoja), Mis cuentas
 - Archivos   : `modules/dominio/agenda/logic.js` (`creditosAutomaticosVencidos`, `debitosAutomaticosVencidos`), tests de agenda
-- Depende de : HF.0e (BUG-025)
+- Depende de : nada
 - Aceptación : ingreso o compromiso creado el 17 con día 16 no ofrece ni el 16 ni el mes anterior y sí el mes siguiente; uno creado meses antes conserva su catch-up
 - Modelo     : Equilibrado, Alto
 
@@ -124,7 +112,7 @@
 - Estado : pendiente (PA.1c ampliada, nota al ADR 052). **Objetivo**: aviso `debito-sin-saldo` para débitos próximos, no solo vencidos; estados derivados de solo lectura (esperado, sin saldo, registrado). **Archivos**: `infra/avisos.js`, `agenda/logic.js`. **Depende de**: nada.
 
 #### HF.2c - Gasto recurrente sugiere un pago fijo
-- Estado : requiere ADR corto. **Objetivo**: misma marca o categoría, monto parecido y cadencia mensual en tres meses o más, sin `compromisoId`: Por pagar ofrece convertirlo. **Archivos**: `gastos/logic.js`, `infra/marcas.js`, `compromisos/views/`. **Depende de**: HF.0e, HF.1a.
+- Estado : requiere ADR corto. **Objetivo**: misma marca o categoría, monto parecido y cadencia mensual en tres meses o más, sin `compromisoId`: Por pagar ofrece convertirlo. **Archivos**: `gastos/logic.js`, `infra/marcas.js`, `compromisos/views/`. **Depende de**: HF.1a.
 
 #### HF.2d - Completitud de datos sin juicio
 - Estado : requiere ADR. **Objetivo**: distinguir "no gastaste" de "no tenemos datos" (vigencia por cuenta y por periodo), sin puntaje. **Depende de**: HF.1d, ficha 18 (R88).

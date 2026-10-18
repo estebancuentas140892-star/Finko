@@ -53,6 +53,43 @@ export function hoy() {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+const _RX_FECHA_CALENDARIO = /^(\d{4})-(\d{2})-(\d{2})$/;
+const _RX_INSTANTE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
+
+/**
+ * Día de calendario local (`YYYY-MM-DD`) de una fecha guardada (HF.0e,
+ * BUG-025, P3 del ADR 091). Distingue tres casos:
+ *
+ * - **Fecha de calendario** (`'2026-07-31'`): ya es un día. Se devuelve tal
+ *   cual, sin pasar por ninguna zona horaria, si la fecha existe.
+ * - **Instante ISO con hora** (`'2026-08-01T01:00:00.000Z'`, el sello de
+ *   `crud.guardar()`): se convierte al día local del entorno. Quien crea algo en
+ *   Colombia el 31 de julio a las 8:00 p. m. guarda ese instante, y su día es el
+ *   31, no el 1 que dicen sus diez primeros caracteres. Sin zona escrita, el
+ *   instante ya es hora local.
+ * - **Ausente o inválido**: `null`. No se inventa una fecha.
+ *
+ * La zona es la del entorno, no una fija: el día de alguien es el de su reloj.
+ *
+ * @param {unknown} valor
+ * @returns {string|null}
+ */
+export function fechaLocalISO(valor) {
+  if (typeof valor !== 'string') return null;
+
+  const cal = _RX_FECHA_CALENDARIO.exec(valor);
+  if (cal) {
+    const d = new Date(+cal[1], +cal[2] - 1, +cal[3]);
+    const existe = d.getFullYear() === +cal[1] && d.getMonth() === +cal[2] - 1 && d.getDate() === +cal[3];
+    return existe ? valor : null;
+  }
+
+  if (!_RX_INSTANTE.test(valor)) return null;
+  const d = new Date(valor);
+  if (Number.isNaN(d.getTime())) return null;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 /**
  * Convierte una cantidad de días en tiempo relativo natural en español.
  * Pensado para antigüedades ("hace 5 años" en vez de "1.825 días").

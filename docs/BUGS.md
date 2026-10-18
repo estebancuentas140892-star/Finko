@@ -5,7 +5,7 @@
 > Errores detectados durante el desarrollo, con toda la información necesaria para resolverlos sin tener que volver a buscar dónde están.
 > Al solucionarse, el error se **elimina** de este archivo y el fix queda documentado en [`CHANGELOG.md`](CHANGELOG.md) con referencia al ID.
 > Solo entra lo **verificado** contra el código (archivo, función, línea). Una sospecha no es un error: es una tarjeta de investigación en [`BOARD.md`](BOARD.md).
-> Última actualización: 2026-10-17 (iniciativa HF, [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)): entran BUG-029 a BUG-031; HF.0a cierra BUG-028, HF.0b cierra BUG-030 y abre BUG-032, HF.0h cierra BUG-032; entran BUG-033 y BUG-034 (Distribuir no identifica qué ocurrencias acredita); HF.0c cierra BUG-029; HF.0i cierra BUG-033 y BUG-034; HF.0d cierra BUG-031. **2 abiertos.**
+> Última actualización: 2026-10-17 (iniciativa HF, [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)): entran BUG-029 a BUG-031; HF.0a cierra BUG-028, HF.0b cierra BUG-030 y abre BUG-032, HF.0h cierra BUG-032; entran BUG-033 y BUG-034 (Distribuir no identifica qué ocurrencias acredita); HF.0c cierra BUG-029; HF.0i cierra BUG-033 y BUG-034; HF.0d cierra BUG-031; HF.0e cierra BUG-025. **1 abierto.**
 >
 > **Patrón recurrente que conviene vigilar (cerrado 3 veces el 2026-08-01 y 2 el 2026-10-16, BUG-028 y un test de Inversión):** tests con **fechas fijas** o con un día derivado a módulo 28 se ponen rojos según el día en que se corran, casi siempre los primeros días del mes. La regla es derivar las fechas del reloj, y **fijar el reloj** (`vi.setSystemTime`) cuando el test afirma una distancia exacta o necesita un día ya pasado dentro del mes.
 
@@ -40,14 +40,3 @@ Numerar `BUG-001`, `BUG-002`... de forma consecutiva y sin reutilizar números a
 - Función   : ninguna (documentación)
 - Secciones : ninguna de la app (solo trazabilidad de INT.1, Transversal/escritorio)
 - **Requiere decisión antes de tocarlo**: quien cerró INT.1a-h sabe si el ADR se perdió o nunca se escribió. Reconstruirlo desde los commits de INT.1 es trabajo de esa sesión, no un fix de una línea.
-
-### BUG-025 - `fechaCreacion` se guarda en UTC y se lee como fecha local
-- Estado    : pendiente
-- Prioridad : media (no corrompe montos ni saldos; corre fechas un día, y en el borde de mes corre un ciclo entero)
-- Problema  : todo registro creado desde las 7 p.m. hora Colombia queda con una `fechaCreacion` cuya parte de fecha es la de mañana. Los consumidores le cortan los primeros 10 caracteres y la tratan como fecha local, así que: una deuda creada el 31 de julio a las 8 p.m. cuenta como de agosto; un compromiso Bimestral creado esa noche ancla su ciclo un mes tarde y el Calendario lo pinta en los meses equivocados; el umbral de "deudas durmiendo" y el guard de "no marcar vencido lo creado después" se corren un día.
-- Causa     : `guardar()` sella `fechaCreacion: new Date().toISOString()`, que es un instante UTC correcto. El defecto está en leerlo como si fuera una fecha de calendario local, no en guardarlo. Es el mismo patrón de BUG-018 (solucionado el 2026-08-02), que solo cubría los tres sitios que llamaban a `toISOString()` para pintar "hoy".
-- Archivo   : `modules/infra/crud.js` (origen del sello) y sus lectores
-- Función   : `guardar()` en `crud.js:36` (el ADR y las notas viejas la llaman `crear()`; ese nombre ya no existe); lectores `_caeEnCiclo` (`infra/vencimientos.js`), `estadoDistribucion` (`tesoreria/logic/distribucion.js`), `detectarDeudasDurmiendo` y los tres `_RX_FECHA_COMP.exec` de `compromisos/logic/alertas.js`
-- Líneas    : `crud.js:38` (dentro de `guardar()`); `alertas.js:62`, `:132`, `:230`
-- Secciones : Deudas, Calendario, Mis cuentas (asistente), transversal (todo consumidor del motor)
-- **Decidido el 2026-10-16 (P3 del [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)): opción (b)**, convertir a fecha local en la lectura con un helper único. Sin schema y arregla el pasado; cambia lo que el Calendario pinta para registros nocturnos. Tarjeta HF.0e. La opción (a) se descarta: su backfill es imposible porque el huso del momento de creación no se recupera.

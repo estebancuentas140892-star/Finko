@@ -28,6 +28,7 @@
  */
 
 import { diasPorPeriodo, normalizarFrecuenciaAporte } from './vencimientos.js';
+import { fechaLocalISO } from './utils.js';
 
 // ── PROGRESO ─────────────────────────────────────────────────────
 
@@ -294,14 +295,13 @@ function _acotar(n, max) {
 
 /**
  * Día en que arrancó el plan vigente: el cierre del último ciclo si lo hubo,
- * y si no la creación de la bolsa. `fechaCreacion` es ISO 8601 completo
- * (`crud.guardar`), así que se recorta a YYYY-MM-DD.
+ * y si no la creación de la bolsa. `fechaInicioPlan` es una fecha de
+ * calendario y se conserva tal cual; `fechaCreacion` es un instante UTC
+ * (`crud.guardar`) y se lee como día local (HF.0e, BUG-025): recortarlo
+ * arrancaba el plan un día tarde para lo creado de noche en Colombia.
  * @param {import('../core/state.js').Apartado} bolsa
  * @returns {string|null}
  */
 function _inicioDelPlan(bolsa) {
-  const candidato = bolsa?.fechaInicioPlan ?? bolsa?.fechaCreacion ?? null;
-  if (typeof candidato !== 'string') return null;
-  const fecha = candidato.slice(0, 10);
-  return /^\d{4}-\d{2}-\d{2}$/.test(fecha) ? fecha : null;
+  return fechaLocalISO(bolsa?.fechaInicioPlan ?? bolsa?.fechaCreacion ?? null);
 }

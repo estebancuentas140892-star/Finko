@@ -11,6 +11,7 @@ import { obligacionesYAportesDelCobro, frecuenciaPrincipalIngresos, normalizarFr
 import { distribuirPago } from '../../../infra/distribuir-pago.js';
 import { CATEGORIAS_AGENDA_NO_ESENCIALES } from '../../../core/constants.js';
 import { FACTOR_MENSUAL, isoFecha, ultimoPagoHasta } from './ingresos.js';
+import { fechaLocalISO } from '../../../infra/utils.js';
 
 /**
  * Suma los gastos fijos activos de S.compromisos proyectados a unidad mensual.
@@ -202,7 +203,9 @@ export function estadoDistribucion(
     // No datar cobros anteriores a la creación del ingreso: evita el falso
     // "ya recibiste" al registrar hoy un ingreso cuyo día de pago ya pasó.
     // El descartado no se tira: queda como candidato a confirmar (MC.13f).
-    const creadoISO = typeof i.fechaCreacion === 'string' ? i.fechaCreacion.slice(0, 10) : null;
+    // La creación se lee como día local (HF.0e): el corte UTC la corría al día
+    // siguiente para lo creado de noche en Colombia.
+    const creadoISO = fechaLocalISO(i.fechaCreacion);
     if (creadoISO && ultISO < creadoISO) {
       if (!candidato || ultISO > candidato) candidato = ultISO;
       continue;

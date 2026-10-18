@@ -174,6 +174,7 @@ Además: rediseño visual ADR 035 completo. Ver "Transferencias" y "Distribució
 
 **Cambios realizados**:
 
+- 2026-10-17 (**HF.0e**, BUG-025): `estadoDistribucion()` lee la creación del ingreso en hora local.
 - 2026-10-17 (**HF.0i**, BUG-033 y BUG-034): Distribuir propone, acredita y sella solo ocurrencias identificadas; pregunta qué llegó cuando el monto no cuadra. Ver CHANGELOG.
 - 2026-10-17 (**HF.0h**, BUG-032): Distribuir sella las ocurrencias que acredita (`cobrosDistribuidos`) y la hoja de automáticos no las vuelve a ofrecer. Ver CHANGELOG.
 - 2026-10-16 (**HF.0b**, BUG-030): Distribuir deja de acreditar otra vez el cobro que la hoja de créditos automáticos ya acreditó (`montoYaAcreditadoDelCobro`). Ver CHANGELOG.

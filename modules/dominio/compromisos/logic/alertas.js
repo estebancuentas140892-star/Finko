@@ -9,10 +9,22 @@
 import { TIPOS_COMPROMISO, esDeuda, compromisosActivos, vencimientosDesde } from './modelo.js';
 import { estadoPagoMes } from './abonos.js';
 import { ocurrenciasEnMes } from '../../../infra/vencimientos.js';
+import { fechaLocalISO } from '../../../infra/utils.js';
 
 // ── DETECTORES DE ALERTA (G.1) ───────────────────────────────────
 
 const _RX_FECHA_COMP = /^(\d{4})-(\d{2})-(\d{2})/;
+
+/**
+ * Día local de creación de un compromiso (HF.0e, BUG-025), como match de
+ * `_RX_FECHA_COMP`, o null si no hay una fecha legible. `fechaCreacion` es un
+ * instante UTC: cortarlo a diez caracteres corría al día siguiente lo creado de
+ * noche en Colombia, y en el mes siguiente lo creado la noche del último día.
+ */
+function _creacionLocal(c) {
+  const iso = fechaLocalISO(c?.fechaCreacion);
+  return iso ? _RX_FECHA_COMP.exec(iso) : null;
+}
 
 /**
  * Días del mes en curso en que el compromiso ya venció (hoy incluido), según
@@ -29,10 +41,8 @@ const _RX_FECHA_COMP = /^(\d{4})-(\d{2})-(\d{2})/;
  */
 function _vencimientosCumplidosDelMes(c, anio, mes, dia) {
   let desde = 1;
-  if (typeof c.fechaCreacion === 'string') {
-    const mc = _RX_FECHA_COMP.exec(c.fechaCreacion);
-    if (mc && +mc[1] === anio && +mc[2] === mes) desde = +mc[3];
-  }
+  const mc = _creacionLocal(c);
+  if (mc && +mc[1] === anio && +mc[2] === mes) desde = +mc[3];
   return ocurrenciasEnMes(c, anio, mes - 1).filter(d => d <= dia && d >= desde);
 }
 
@@ -94,14 +104,12 @@ export function detectarFijosSinPagarEsteMes(compromisos, hoyISO, config = {}) {
 
     // Si el fijo se creó este mes después de su día de pago, el ciclo de
     // este mes no le aplica: el próximo vencimiento real es el mes siguiente.
-    if (typeof c.fechaCreacion === 'string') {
-      const mc = _RX_FECHA_COMP.exec(c.fechaCreacion);
-      if (mc) {
-        const anioC = +mc[1];
-        const mesC  = +mc[2];
-        const diaC  = +mc[3];
-        if (anioC === anioHoy && mesC === mesHoy && diaC > diaPago) continue;
-      }
+    const mc = _creacionLocal(c);
+    if (mc) {
+      const anioC = +mc[1];
+      const mesC  = +mc[2];
+      const diaC  = +mc[3];
+      if (anioC === anioHoy && mesC === mesHoy && diaC > diaPago) continue;
     }
 
     const severidad = diasAtraso <= 3 ? 'leve'
@@ -164,8 +172,7 @@ export function detectarDeudasDurmiendo(compromisos, hoyISO, config = {}) {
     const saldo = Number(c.saldoTotal);
     if (!Number.isFinite(saldo) || saldo <= 0) continue;
 
-    if (typeof c.fechaCreacion !== 'string') continue;
-    const mC = _RX_FECHA_COMP.exec(c.fechaCreacion);
+    const mC = _creacionLocal(c);
     if (!mC) continue;
 
     const tCreacion = Date.UTC(+mC[1], +mC[2] - 1, +mC[3]);

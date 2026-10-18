@@ -164,7 +164,7 @@
 
 - **Objetivo**          : dónde vive el cálculo compartido entre dominios, y **cuáles duplicaciones son decisión, no descuido**. Nace del patrón P7 de la auditoría de UX/producto (2026-07-21).
 - **Estado actual**     : **ARQ.1 y ARQ.2 cerradas (2026-08-02).** Ninguna tarjeta viva. El relato de cada rebanada vive en el CHANGELOG; acá queda solo lo que hay que saber para no rehacer el análisis.
-- **Verificado contra** : `87b6b04`, `bc25fe9` (ARQ.1a/b) y el cierre de ARQ.2, 2026-08-02.
+- **Verificado contra** : HF.0e (2026-10-17, `fechaLocalISO`). Antes: `87b6b04`, `bc25fe9` (ARQ.1a/b) y el cierre de ARQ.2, 2026-08-02.
 
 **Fuentes únicas que dejó ARQ.1/ARQ.2**
 
@@ -174,6 +174,7 @@
 | Si una bolsa descuenta saldo | `infra/bolsas.js`: `descuentaSaldo()`, tabla del [ADR 053](../DECISIONS/053-invariante-de-patrimonio.md) I2 | Análisis. `calcularActivos()` **no** la llama a propósito (I4: la regla de suma no se toca de forma retroactiva), y un test documenta esa brecha aceptada |
 | Etapa del portafolio | `infra/portafolio.js`: `etapaDePortafolio()` (número de etapa, cero copy) | `momentoInversion()` y el carril de la casa de Ahorro |
 | "Hoy" en ISO | `infra/utils.js`: `hoy()`, con getters locales de `Date` (correcta en UTC-5) | los 5 sitios que antes usaban `new Date().toISOString().slice(0,10)` y devolvían mañana desde las 7 p.m. (BUG-018) |
+| Día local de una fecha guardada | `infra/utils.js`: `fechaLocalISO()` (HF.0e, BUG-025): instante ISO al día local del entorno, fecha `YYYY-MM-DD` tal cual, lo demás `null` | ciclo y "Única vez" de `infra/vencimientos.js`, inicio del plan de `infra/bolsas.js`, `estadoDistribucion()`, alta y antigüedad en `compromisos/logic/alertas.js` |
 | Factor de periodicidad de un ingreso | `infra/financiero.js`: `FACTOR_MENSUAL_INGRESO`; `tesoreria/logic/ingresos.js` lo reexporta como `FACTOR_MENSUAL` | Distribución. Sin cambio de valores ni de callers |
 | Registrar el pago o abono de un compromiso | `infra/pago-compromiso.js`: `gastoDePagoCompromiso()`, `bajarSaldoDeuda()` | Compromisos (×2), Agenda y la Distribución v2: cuatro copias, no las tres del hallazgo original |
 
@@ -183,7 +184,8 @@
 - **Las tablas de periodicidad de 9 entradas** (`compromisos/logic/modelo.js`, `ahorro/index.js`) no se fusionan con `FACTOR_MENSUAL_INGRESO`: son otra tabla (suman Bimestral, Trimestral, Semestral, Anual y Única vez).
 - **`totalesDelMes`/`totalDia`** (`agenda/logic.js`) vs. **`_obligacionesEnRango`** (privada, `infra/vencimientos.js`): ya divergieron antes del refactor, porque la segunda topa el monto de una deuda a `saldoTotal` (BUG-004) y Agenda no. Consolidarlas cambiaría lo que el hero de Agenda muestra en una deuda casi saldada: es cambio de comportamiento, no refactor mecánico. Sin tarjeta.
 - **El descuento de la cuenta de origen** se queda en cada caller de `pago-compromiso.js`: inmediato por split en Compromisos, acumulado por cuenta en Agenda, fusionado con el crédito del ingreso en la Distribución v2. El helper compartido no toca `cuentas`.
-- **`isoFecha(d)`** (`tesoreria/logic/ingresos.js`) y **`_iso(d)`** (privada, `infra/vencimientos.js`) no subieron a `infra/utils.js`: formatean una fecha cualquiera, no "hoy", y ya son locales. `fechaCobertura` (`ahorro/logic.js`) usa `toISOString()` a propósito, sobre un `Date` construido en UTC a mediodía. El defecto que queda es de lectura y es **BUG-025**.
+- **`isoFecha(d)`** (`tesoreria/logic/ingresos.js`) y **`_iso(d)`** (privada, `infra/vencimientos.js`) no subieron a `infra/utils.js`: formatean una fecha cualquiera, no "hoy", y ya son locales. `fechaCobertura` (`ahorro/logic.js`) usa `toISOString()` a propósito, sobre un `Date` construido en UTC a mediodía.
+- **`fechaCreacion` se lee con `fechaLocalISO()`, nunca cortando diez caracteres** (HF.0e): el sello de `crud.guardar()` es un instante UTC y no se toca ni se migra (P3 del ADR 091). Fuera a propósito: la migración v34 de `core/storage.js`, que recorta `fechaCreacion` para fechar un abono agrupado de un respaldo anterior a v34; es escritura de una sola vez y `core/` no importa `infra/`. Un fixture de test con `T00:00:00.000Z` cambia de día según la zona: usar mediodía UTC o fijar `process.env.TZ`, como `tests/unit/fecha-creacion-local.test.js`.
 
 ---
 
