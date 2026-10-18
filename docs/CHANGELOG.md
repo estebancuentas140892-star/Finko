@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### docs(transversal): HF, triaje de los hallazgos de HF.0h · 2026-10-17
+
+Tres decisiones de Esteban sobre lo que dejó abierto HF.0h ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)). Sin runtime.
+
+- **BUG-033, reproducido antes de registrarlo:** con dos ingresos en el cobro y el monto editado a lo que llegó, Distribuir sella los dos y la hoja deja de ofrecer el que nunca llegó. Con un solo ingreso la identidad es segura y no hay bug.
+- **BUG-034, encontrado al investigar el anterior:** con ingresos en días distintos, el monto por defecto vuelve a sumar una ocurrencia que la distribución anterior ya acreditó. E2E temporal con reloj fijo: +10.000.000 con 9.000.000 recibidos. Viene de MC.13, no de HF.0h.
+- **HF.0i** absorbe los dos y espera la decisión **P8** (¿el asistente pregunta qué llegó?). Sin ella no se diseña arquitectura nueva de cobros. HF.0f pasa a depender de HF.0i: congelaría el doble conteo como esperado.
+- **HF.0j:** la hoja no ofrecerá cobros anteriores al alta de un ingreso automático; acota el ADR 052 D1 y espera HF.0e por la hora local. Queda abierta la misma pregunta para el débito automático, que hoy se comporta igual.
+- **DOC.5:** limpieza de `contexto/mis-cuentas.md` (43,4 KB) al techo de 40 KB, solo trasladando historia, sin mezclarla con correcciones financieras.
+
 ### fix(agenda): HF.0h, la hoja de automáticos no reofrece un cobro que Distribuir ya acreditó · 2026-10-17
 
 Tercera rebanada de la iniciativa HF ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)), espejo de HF.0b. Cierra **BUG-032**. Fichas: [`contexto/calendario.md`](contexto/calendario.md) (Pagos automáticos) y [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md) (Distribución v2).

@@ -19,7 +19,7 @@
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
 | `onclick` / `window.X` en módulos | 0 / 0. `style=""` es 0 en HTML estático, no en el HTML que generan los módulos (29 usos) |
-| Errores abiertos | **4**: BUG-025, BUG-027 (documental), **BUG-029** (crea dinero) y BUG-031. Detalle: [`BUGS.md`](BUGS.md) |
+| Errores abiertos | **6**: BUG-025, BUG-027 (documental), **BUG-029 y BUG-034** (crean dinero), BUG-031 y **BUG-033** (oculta un ingreso). Detalle: [`BUGS.md`](BUGS.md) |
 
 ---
 
@@ -47,7 +47,7 @@ Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelo
 ## 3. Qué sigue
 
 - **En proceso:** **MOV.1, auditoría UX/UI móvil de Claude Design**: 16 de 25 cerradas, sigue la 17 (Logros). El orden lo fijó Esteban y no se altera; el detalle vive en la tarjeta de [`BOARD.md`](BOARD.md).
-- **Iniciativa HF** ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), Propuesta): su Fase 0 corre en paralelo a MOV.1 porque no comparte archivos ni decisiones; HF.0a, HF.0b y HF.0h cerradas; P1 a P7 resueltas, ninguna rebanada de la Fase 0 espera decisiones.
+- **Iniciativa HF** ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), Propuesta): su Fase 0 corre en paralelo a MOV.1 porque no comparte archivos ni decisiones; HF.0a, HF.0b y HF.0h cerradas; P1 a P7 resueltas. Del cierre de HF.0h salen HF.0i (espera la decisión P8), HF.0j (espera HF.0e) y DOC.5.
 - **Fase actual:** post-v1.0, mantenimiento y mejoras por sección.
 - **Decisiones de fondo abiertas** que bloquean sus tarjetas: ninguna de ADN. La última era sincronización multidispositivo, cerrada el 2026-08-15 ([ADR 043](DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md), con su condición de reapertura escrita). Para el resto, ver la columna Estado de cada tarjeta del tablero.
 - **Antes de tocar una sección:** su ficha en [`contexto/`](contexto/README.md). Antes de explorar el código: [`ARCHITECTURE.md`](ARCHITECTURE.md) sección 13.

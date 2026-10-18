@@ -83,15 +83,39 @@
 - Aceptación : tests con reloj fijo a las 20:00 hora Colombia
 - Modelo     : Equilibrado, Alto
 
+#### HF.0i - Distribuir solo acredita y sella ocurrencias que puede identificar (BUG-033, BUG-034)
+- Prioridad  : alta
+- Estado     : requiere decisión de Esteban (P8): con dos o más ingresos en el cobro y el monto editado, ¿el asistente pregunta cuáles llegaron (recomendado) o no sella ninguno? No sellar deja que la hoja reofrezca lo ya distribuido (BUG-032 parcial). Sin decisión no se inicia ni se diseña arquitectura nueva de cobros
+- Área       : ambos (el asistente tendría que preguntar qué llegó)
+- Objetivo   : el monto que propone Distribuir y lo que sella como recibido salen de ocurrencias identificadas (`ingresoId` + fecha), sin las que ya acreditó la hoja o una distribución anterior
+- Riesgo     : cambia el monto propuesto a quien cobra en días distintos; decidir por monto ("qué ingreso cabe") es coincidencia débil y queda descartado
+- Secciones  : Mis cuentas (asistente), Calendario (hoja)
+- Archivos   : `tesoreria/logic/distribucion.js`, `tesoreria/acciones/distribucion.js`, `tesoreria/views/distribucion.js`, `infra/vencimientos.js` (`montoCobroPrincipal`)
+- Depende de : P8; coordinar con HF.1d, que retira la guarda de HF.0h
+- Aceptación : E2E de los dos casos de BUG-033 y BUG-034 con el dinero total; con un solo ingreso, el monto editado sigue sellando ese ingreso
+- Modelo     : Alta capacidad, Alto
+
+#### HF.0j - El catch-up no ofrece cobros anteriores al alta del ingreso
+- Prioridad  : media
+- Estado     : pendiente, decidido por Esteban el 2026-10-17; acota el ADR 052 D1 (se documenta al implementar). No iniciar antes de HF.0e
+- Área       : code
+- Objetivo   : un ingreso automático recién registrado no ofrece en la hoja cobros anteriores a su `fechaCreacion` leída en hora local; los que ya existían conservan su catch-up, y un cobro previo al alta se registra a mano (acción explícita)
+- Riesgo     : `ocurrenciasEnMes` y `ultimoVencimientoHasta` tienen más consumidores (Calendario, Distribuir, avisos): el filtro va en la hoja salvo revisión de todos ellos. Ningún registro histórico se borra
+- Secciones  : Calendario (hoja), Mis cuentas
+- Archivos   : `modules/dominio/agenda/logic.js` (`creditosAutomaticosVencidos`), tests de agenda
+- Depende de : HF.0e (BUG-025). Pregunta abierta: ¿aplica igual al débito automático de un compromiso recién creado? Hoy se comporta igual (`debitosAutomaticosVencidos` no mira `fechaCreacion`)
+- Aceptación : ingreso creado el 17 con día de pago 16 no ofrece ni el 16 ni el mes anterior y sí el mes siguiente; uno creado meses antes conserva su catch-up
+- Modelo     : Equilibrado, Alto
+
 #### HF.0f - Perfiles de regresión: constructores e invariantes
 - Prioridad  : alta
 - Estado     : pendiente
 - Área       : code (solo tests)
 - Objetivo   : `tests/fixtures/perfiles.js` con tres perfiles deterministas (ligero: 1 cuenta; común: 2-3 cuentas, tarjeta, ahorro, transferencias; intensivo: 4-5 cuentas, metas, reservas, fondo, inversiones, préstamos, categorías, un año) construidos por las rutas reales de escritura, y una suite de invariantes: I1 a I5, R-HF1, R-HF2, reversas exactas, guardar y cargar, Movimientos sin duplicados, peso serializado
-- Riesgo     : congelar como esperado un doble conteo vigente; por eso va después de HF.0c y HF.0d
+- Riesgo     : congelar como esperado un doble conteo vigente; por eso va después de HF.0c, HF.0d y HF.0i
 - Secciones  : todas (sin runtime)
 - Archivos   : `tests/fixtures/perfiles.js`, `tests/integration/perfiles.test.js`
-- Depende de : HF.0c, HF.0d
+- Depende de : HF.0c, HF.0d, HF.0i
 - Aceptación : la suite corre en `pnpm test` y falla si se reintroduce cualquiera de los bugs de doble conteo de la Fase 0
 - Modelo     : Alta capacidad, Extra
 

@@ -73,12 +73,15 @@ Las tarjetas del tablero (la iniciativa HF se lista por fase), para elegir la pr
 | HF.0c | El importador CSV de gastos no crea dinero (BUG-029) | Ajustes, Gastos | alta | nada |
 | HF.0d | Una sola regla de vencimiento (BUG-031) | Inicio, Por pagar | media | nada |
 | HF.0e | `fechaCreacion` se lee como fecha local (BUG-025) | Transversal | media | nada |
-| HF.0f | Perfiles de regresión: constructores e invariantes | Transversal (tests) | alta | HF.0c, HF.0d |
+| HF.0i | Distribuir solo acredita y sella lo que identifica (BUG-033, BUG-034) | Mis cuentas, Calendario | alta | decisión P8 |
+| HF.0j | El catch-up no ofrece cobros anteriores al alta del ingreso | Calendario | media | HF.0e |
+| HF.0f | Perfiles de regresión: constructores e invariantes | Transversal (tests) | alta | HF.0c, HF.0d, HF.0i |
 | HF.0g | Perfiles de regresión en E2E | Transversal (tests) | media | HF.0f |
 | HF.1a a HF.5a | Fases 1 a 5 de la iniciativa HF (24 rebanadas) | Transversal | media | ficha 18 de MOV.1, cierre de MOV.1 |
 | A.5 | Dominio custom en Vercel | Mantenimiento | baja | que el usuario tenga el dominio registrado |
 | E.2-2027 | Actualizar SMMLV + UVT a valores 2027 | Mantenimiento | alta (enero 2027) | publicación oficial de los decretos 2027 |
 | E.3 | Verificar GMF y otras tasas si hay reforma tributaria | Mantenimiento | baja | que ocurra una reforma |
+| DOC.5 | `contexto/mis-cuentas.md` vuelve al techo de 40 KB | Mantenimiento | baja | nada |
 
 ---
 
@@ -134,6 +137,18 @@ Se listan solo para que una idea nueva de estas secciones no vuelva a generar un
 
 ---
 ## Mantenimiento
+
+#### DOC.5 - `contexto/mis-cuentas.md` vuelve al techo de 40 KB
+- Prioridad  : baja
+- Estado     : pendiente, autorizada por Esteban el 2026-10-17. No se mezcla con correcciones financieras
+- Área       : code (solo documentación)
+- Objetivo   : bajar de 43,4 KB a menos de 40 KB moviendo historial antiguo (cambios realizados y trampas de rebanadas cerradas) a `docs/archive/`, con enlace desde la ficha
+- Riesgo     : borrar una decisión vigente, un contrato técnico o un dato sin otra fuente: nada de eso se elimina, solo se traslada historia
+- Secciones  : ninguna (documentación de Mis cuentas)
+- Archivos   : `docs/contexto/mis-cuentas.md`, `docs/archive/`
+- Depende de : nada
+- Aceptación : `wc -c` bajo 40.960 bytes y cada bloque trasladado enlazado desde la ficha
+- Modelo     : Equilibrado, Medio
 
 #### A.5 - Dominio custom en Vercel
 - Prioridad  : baja

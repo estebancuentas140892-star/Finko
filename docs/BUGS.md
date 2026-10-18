@@ -5,7 +5,7 @@
 > Errores detectados durante el desarrollo, con toda la información necesaria para resolverlos sin tener que volver a buscar dónde están.
 > Al solucionarse, el error se **elimina** de este archivo y el fix queda documentado en [`CHANGELOG.md`](CHANGELOG.md) con referencia al ID.
 > Solo entra lo **verificado** contra el código (archivo, función, línea). Una sospecha no es un error: es una tarjeta de investigación en [`BOARD.md`](BOARD.md).
-> Última actualización: 2026-10-17 (iniciativa HF, [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)): entran BUG-029 a BUG-031; HF.0a cierra BUG-028, HF.0b cierra BUG-030 y abre BUG-032, HF.0h cierra BUG-032. **4 abiertos.**
+> Última actualización: 2026-10-17 (iniciativa HF, [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)): entran BUG-029 a BUG-031; HF.0a cierra BUG-028, HF.0b cierra BUG-030 y abre BUG-032, HF.0h cierra BUG-032; entran BUG-033 y BUG-034 (Distribuir no identifica qué ocurrencias acredita). **6 abiertos.**
 >
 > **Patrón recurrente que conviene vigilar (cerrado 3 veces el 2026-08-01 y 2 el 2026-10-16, BUG-028 y un test de Inversión):** tests con **fechas fijas** o con un día derivado a módulo 28 se ponen rojos según el día en que se corran, casi siempre los primeros días del mes. La regla es derivar las fechas del reloj, y **fijar el reloj** (`vi.setSystemTime`) cuando el test afirma una distancia exacta o necesita un día ya pasado dentro del mes.
 
@@ -30,6 +30,20 @@ Numerar `BUG-001`, `BUG-002`... de forma consecutiva y sin reutilizar números a
 ---
 
 ## Pendientes
+
+### BUG-034 - Distribuir propone y acredita un cobro que una distribución anterior ya acreditó
+- Estado    : pendiente (HF.0i). Prioridad alta: crea dinero
+- Problema  : Salario de prueba (4.000.000, día 15) y Honorarios de prueba (1.000.000, día 25), mensuales. Distribuir el 26 de septiembre acredita 5.000.000 (llegaron los dos). Distribuir el 16 de octubre propone otra vez 5.000.000 aunque solo llegó el salario, y confirmarlo deja el total en +10.000.000 con 9.000.000 recibidos. Reproducido con E2E temporal y reloj fijo el 2026-10-17.
+- Causa     : el monto por defecto es `montoCobroPrincipal()`, la suma de las plantillas de la frecuencia principal, y `montoYaAcreditadoDelCobro()` solo descuenta los `IngresoPuntual` de la hoja. Los honorarios del 25 de septiembre siguen siendo "su último cobro" el 16 de octubre y nada recuerda que ya se distribuyeron (desde HF.0h están en `cobrosDistribuidos`, pero nadie lo lee al acreditar). Existe desde MC.13; HF.0h no lo introdujo.
+- Archivo   : `modules/infra/vencimientos.js` (`montoCobroPrincipal`), `tesoreria/views/distribucion.js` (`montoCobro`), `tesoreria/logic/distribucion.js` (`montoYaAcreditadoDelCobro`), `tesoreria/acciones/distribucion.js` (`_confirmarDistribucion`)
+- Secciones : Mis cuentas (asistente)
+
+### BUG-033 - Distribuir con el monto editado da por recibidos ingresos que no puede identificar
+- Estado    : pendiente (HF.0i). Prioridad alta: oculta un ingreso que no llegó
+- Problema  : Salario de prueba (4.000.000) y Honorarios de prueba (1.000.000), mensuales, día 15, crédito automático. Se pospone la hoja, Distribuir propone 5.000.000 y se edita a 4.000.000 porque solo llegó el salario. Se acreditan 4.000.000, pero quedan sellados los dos ingresos y al recargar la hoja ya no ofrece los honorarios. Reproducido con E2E temporal y reloj fijo el 2026-10-17.
+- Causa     : `_confirmarDistribucion()` sella todo `cobrosQueAcreditaLaDistribucion()` siempre que `acreditar > 0`. Con dos o más ingresos en el cobro y el monto editado, ningún dato dice cuál llegó. Con un solo ingreso la identidad sí es segura.
+- Archivo   : `modules/dominio/tesoreria/acciones/distribucion.js` (bloque "El otro sentido" de `_confirmarDistribucion`), `tesoreria/logic/distribucion.js`
+- Secciones : Mis cuentas (asistente), Calendario (hoja)
 
 ### BUG-031 - "compromiso próximo" avisa lo ya pagado y fecha sin la frecuencia
 - Estado    : pendiente (HF.0d). Prioridad media
