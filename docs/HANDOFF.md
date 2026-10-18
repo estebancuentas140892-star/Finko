@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-10-17. Última tarea cerrada: HF.0h, la hoja de automáticos no reofrece un cobro ya distribuido (BUG-032).
+> Revisado: 2026-10-17. Última tarea cerrada: HF.0c, el importador CSV de gastos no crea dinero (BUG-029).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,17 +13,20 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 4603/4603 (2026-10-17, HF.0h) |
-| Tests E2E | 317/317 verdes (2026-10-17, HF.0h, `--workers=2`). **Compuerta** desde el 2026-07-30 |
-| Schema version (`localStorage`) | v43 (`config.respaldoCifrado`, CFG.4c; migración no-op) |
+| Tests unitarios + integración | 4613/4613 (2026-10-17, HF.0c) |
+| Tests E2E | 320/320 verdes (2026-10-17, HF.0c, `--workers=2`). **Compuerta** desde el 2026-07-30 |
+| Schema version (`localStorage`) | v44 (`Gasto.sinEfectoSaldo`, HF.0c; migración no-op) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
 | `onclick` / `window.X` en módulos | 0 / 0. `style=""` es 0 en HTML estático, no en el HTML que generan los módulos (29 usos) |
-| Errores abiertos | **6**: BUG-025, BUG-027 (documental), **BUG-029 y BUG-034** (crean dinero), BUG-031 y **BUG-033** (oculta un ingreso). Detalle: [`BUGS.md`](BUGS.md) |
+| Errores abiertos | **5**: BUG-025, BUG-027 (documental), BUG-031, **BUG-033** (oculta un ingreso) y **BUG-034** (crea dinero). Detalle: [`BUGS.md`](BUGS.md) |
 
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**HF.0c - el importador CSV no crea dinero, 2026-10-17**
+Cierra BUG-029 (P4 del ADR 091): el gasto importado conserva su cuenta y sale con `sinEfectoSaldo` (schema v44), así que importarlo, editarlo o borrarlo no toca el saldo. El CSV que exporta Finko se vuelve a importar. Antes, el triaje de los hallazgos de HF.0h: BUG-033, BUG-034, HF.0i, HF.0j y DOC.5. SW v589.
 
 **HF.0h - el cobro distribuido no vuelve a la hoja, 2026-10-17**
 Cierra BUG-032, el espejo de HF.0b: Distribuir sella en `config.cobrosDistribuidos` las ocurrencias que acredita (`ingresoId` + fecha exacta) y la hoja las descarta una por una. Deshacer la revierte; HF.1d la retira. SW v588.
@@ -37,9 +40,6 @@ Cierra BUG-028: "compromiso próximo" respeta el `hoyISO` del motor (`proximoVen
 **HF - triaje de "un hecho financiero se informa una sola vez", 2026-10-16**
 Brief de Esteban triado contra el código ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), Propuesta; 32 rebanadas en [`board/transversal.md`](board/transversal.md)). Solo la **Fase 0** convive con MOV.1; la 1 espera a la ficha 18. Seis choques con ADR vigentes quedan como preguntas P1 a P7. Tres errores nuevos: BUG-029 a BUG-031.
 
-**MOV.1 ficha 16 - Analisis: la salida prefiltrada y cinco veredictos, 2026-08-21**
-Llego con **dos de sus tres hallazgos ya cerrados** por ANL.3 el 2026-08-11, verificado antes de tocar nada (segundo caso tras INT.1g). Faltaba medio Z3: el aviso de deudas sin saldo decia "Por pagar" pero enlazaba pelado, y ahora sale **prefiltrado** con el chip Deudas ([ADR 090](DECISIONS/090-analisis-cada-bloque-declara-su-alcance.md)). Los otros cuatro veredictos son documentacion: **R88 gana su segundo caso** y va a la 18 lista para confirmar; **R90 se acota** y no llega aca (activos y pasivos son stocks, no flujos); los tres grupos **no** se mudan, porque Analisis esta clavado a `hoy()`; el monitor de renta queda sin auditar. Avance MOV.1: **16 de 25**. SW v585.
-
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 
 ---
@@ -47,7 +47,7 @@ Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelo
 ## 3. Qué sigue
 
 - **En proceso:** **MOV.1, auditoría UX/UI móvil de Claude Design**: 16 de 25 cerradas, sigue la 17 (Logros). El orden lo fijó Esteban y no se altera; el detalle vive en la tarjeta de [`BOARD.md`](BOARD.md).
-- **Iniciativa HF** ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), Propuesta): su Fase 0 corre en paralelo a MOV.1 porque no comparte archivos ni decisiones; HF.0a, HF.0b y HF.0h cerradas; P1 a P7 resueltas. Del cierre de HF.0h salen HF.0i (espera la decisión P8), HF.0j (espera HF.0e) y DOC.5.
+- **Iniciativa HF** ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), Propuesta): su Fase 0 corre en paralelo a MOV.1 porque no comparte archivos ni decisiones; HF.0a, HF.0b, HF.0h y HF.0c cerradas; P1 a P7 resueltas. Del cierre de HF.0h salen HF.0i (espera la decisión P8), HF.0j (espera HF.0e) y DOC.5.
 - **Fase actual:** post-v1.0, mantenimiento y mejoras por sección.
 - **Decisiones de fondo abiertas** que bloquean sus tarjetas: ninguna de ADN. La última era sincronización multidispositivo, cerrada el 2026-08-15 ([ADR 043](DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md), con su condición de reapertura escrita). Para el resto, ver la columna Estado de cada tarjeta del tablero.
 - **Antes de tocar una sección:** su ficha en [`contexto/`](contexto/README.md). Antes de explorar el código: [`ARCHITECTURE.md`](ARCHITECTURE.md) sección 13.

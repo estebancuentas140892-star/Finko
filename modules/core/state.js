@@ -176,6 +176,13 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  *                                    no cambia el saldo, la cuota ni ningún cálculo.
  *                                    Es dato del usuario porque no hay forma de
  *                                    deducirlo (la categoría del gasto no lo dice).
+ * @property {boolean} [sinEfectoSaldo] HF.0c (ADR 091 P4, BUG-029). true: el gasto entró
+ *                                    por el importador CSV y registra historia que el
+ *                                    saldo tecleado de la cuenta ya refleja. Conserva
+ *                                    `cuentaId` como dato, pero crearlo, editarlo o
+ *                                    borrarlo no toca el saldo. Ausente en los gastos
+ *                                    manuales y en los importados antes de la v44 (sin
+ *                                    backfill: no hay forma de saber cuáles fueron).
  */
 
 /**

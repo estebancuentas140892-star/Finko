@@ -47,18 +47,6 @@
 
 ### Fase 0 - Base confiable (sin ADR, puede empezar ya)
 
-#### HF.0c - El importador CSV de gastos no crea dinero (BUG-029)
-- Prioridad  : alta
-- Estado     : pendiente (P4 resuelta)
-- Área       : code
-- Objetivo   : el gasto importado se marca sin efecto en el saldo (P4): importarlo, editarlo o borrarlo no toca la cuenta. Y el CSV exportado se puede reimportar
-- Riesgo     : que la marca no llegue a la edición o al borrado y el reembolso siga ocurriendo
-- Secciones  : Ajustes (importar), Gastos, Mis cuentas
-- Archivos   : `modules/dominio/import/logic.js`, `import/index.js`, `modules/dominio/gastos/index.js`, `modules/dominio/export/logic.js`, tests
-- Depende de : nada
-- Aceptación : test importar + borrar = saldo intacto; test exportar e importar ida y vuelta
-- Modelo     : Equilibrado, Medio
-
 #### HF.0d - Una sola regla de vencimiento para avisos, Inicio y Por pagar (BUG-031)
 - Prioridad  : media
 - Estado     : pendiente
@@ -112,10 +100,10 @@
 - Estado     : pendiente
 - Área       : code (solo tests)
 - Objetivo   : `tests/fixtures/perfiles.js` con tres perfiles deterministas (ligero: 1 cuenta; común: 2-3 cuentas, tarjeta, ahorro, transferencias; intensivo: 4-5 cuentas, metas, reservas, fondo, inversiones, préstamos, categorías, un año) construidos por las rutas reales de escritura, y una suite de invariantes: I1 a I5, R-HF1, R-HF2, reversas exactas, guardar y cargar, Movimientos sin duplicados, peso serializado
-- Riesgo     : congelar como esperado un doble conteo vigente; por eso va después de HF.0c, HF.0d y HF.0i
+- Riesgo     : congelar como esperado un doble conteo vigente; por eso va después de HF.0d y HF.0i
 - Secciones  : todas (sin runtime)
 - Archivos   : `tests/fixtures/perfiles.js`, `tests/integration/perfiles.test.js`
-- Depende de : HF.0c, HF.0d, HF.0i
+- Depende de : HF.0d, HF.0i
 - Aceptación : la suite corre en `pnpm test` y falla si se reintroduce cualquiera de los bugs de doble conteo de la Fase 0
 - Modelo     : Alta capacidad, Extra
 
@@ -140,7 +128,7 @@
 - Estado : pendiente. **Objetivo**: tarjeta y abonos dejan de sumar como consumo en Análisis, Límites, tasa de ahorro y renta; el Fondo deja de salir como egreso en Movimientos. **Archivos**: `analisis/logic.js`, `presupuesto/logic.js`, `ahorro/index.js`, `movimientos/logic.js`. **Depende de**: HF.1a. **Aceptación**: perfil común, comprar 100 y pagar la tarjeta 100 da gasto del mes 100.
 
 #### HF.1c - Historial fechado de aportes en Metas y Reservas
-- Estado : requiere ADR, dueño ficha 18. **Objetivo**: `aportes[]` con id, fecha, monto y cuenta (schema v44, sin backfill: lo previo queda como saldo de apertura, I4); Movimientos gana sus fuentes 6 y 7; "Ya lo usé" registra el gasto (V5). **Archivos**: `core/state.js`, `core/storage.js`, `metas/`, `apartados/`, `movimientos/logic.js`. **Depende de**: ficha 18, HF.1a. **Aceptación**: migración idempotente con test y perfil intensivo.
+- Estado : requiere ADR, dueño ficha 18. **Objetivo**: `aportes[]` con id, fecha, monto y cuenta (schema v45: la v44 la tomó HF.0c; sin backfill: lo previo queda como saldo de apertura, I4); Movimientos gana sus fuentes 6 y 7; "Ya lo usé" registra el gasto (V5). **Archivos**: `core/state.js`, `core/storage.js`, `metas/`, `apartados/`, `movimientos/logic.js`. **Depende de**: ficha 18, HF.1a. **Aceptación**: migración idempotente con test y perfil intensivo.
 
 #### HF.1d - Todo cambio de saldo deja registro
 - Estado : requiere ADR (acota ADR 012). **Objetivo**: Distribuir crea el ingreso y las transferencias que hoy aplica sin registro; desembolso de préstamo, crédito D.14 y ajuste manual dejan su fila. Retira la guarda de HF.0h (`config.cobrosDistribuidos`): el `IngresoPuntual` de Distribuir la reemplaza si la hoja lo descarta por ocurrencia, no por mes, o la segunda quincena distribuida deja de salir. **Archivos**: `tesoreria/acciones/distribucion.js`, `personales/index.js`, `compromisos/index.js`, `tesoreria/logic/cuentas.js`. **Depende de**: HF.1a. **Aceptación**: invariante R-HF2 verde en los tres perfiles.

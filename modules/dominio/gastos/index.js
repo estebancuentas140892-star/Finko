@@ -112,8 +112,10 @@ async function _guardarGasto() {
     const gasto = normalizarGasto(datos);
     const anterior = S.gastos.find(g => g.id === idEdit);
     if (anterior) {
+      // Un gasto importado (`sinEfectoSaldo`, HF.0c) no genera deltas: editarlo
+      // no toca la cuenta. La marca sobrevive porque `editar` mezcla campos.
       const deltas = deltasPorEdicionDeGasto(
-        { cuentaId: anterior.cuentaId, monto: anterior.monto },
+        { cuentaId: anterior.cuentaId, monto: anterior.monto, sinEfectoSaldo: anterior.sinEfectoSaldo },
         { cuentaId: gasto.cuentaId,    monto: gasto.monto    },
       );
       _aplicarDeltasASaldos(deltas);
@@ -443,17 +445,20 @@ function _filtrarCategoria(el) {
 /**
  * Frase que dice qué se revierte al borrar un gasto (ficha 15, M4). Se arma con
  * los efectos REALES que la función va a aplicar, no con una plantilla: un gasto
- * sin cuenta y sin deuda no promete devolver nada.
+ * sin cuenta y sin deuda no promete devolver nada, y uno importado (HF.0c)
+ * tampoco, porque nunca descontó.
  *
- * @param {import('../../core/state.js').Gasto} gasto
+ * @param {Record<string, number>} deltasCuenta salida de `deltasPorEdicionDeGasto(gasto, null)`.
  * @param {Record<string, number>} deltasDeuda salida de `deltasPorEdicionEnDeuda`.
  * @returns {string} Frase terminada, lista para el mensaje del confirm.
  */
-function _efectosDeBorrar(gasto, deltasDeuda) {
+function _efectosDeBorrar(deltasCuenta, deltasDeuda) {
   const efectos = [];
 
-  const cuenta = gasto.cuentaId ? S.cuentas?.find(c => c.id === gasto.cuentaId) : null;
-  if (cuenta) efectos.push(`devuelve ${f(gasto.monto)} a "${cuenta.nombre}"`);
+  for (const [id, delta] of Object.entries(deltasCuenta)) {
+    const cuenta = S.cuentas?.find(c => c.id === id);
+    if (cuenta) efectos.push(`devuelve ${f(delta)} a "${cuenta.nombre}"`);
+  }
 
   for (const [id, delta] of Object.entries(deltasDeuda)) {
     const nombre = S.compromisos?.find(c => c.id === id)?.descripcion ?? 'esa deuda';
@@ -486,17 +491,21 @@ async function _eliminarGasto(el) {
   // borra desde el ledger de Movimientos ni siquiera está viendo esa sección.
   // Se nombra el efecto en el dominio dueño, mismo criterio que el aviso de
   // Me deben al borrar un préstamo y que el de deshacer una transferencia.
-  const deltasDeuda = deltasPorEdicionEnDeuda(gasto, null);
+  const deltasDeuda  = deltasPorEdicionEnDeuda(gasto, null);
+  // Borrar es editar hacia nada: un gasto manual devuelve su monto, uno
+  // importado (`sinEfectoSaldo`, HF.0c) no devuelve nada (BUG-029).
+  const deltasCuenta = deltasPorEdicionDeGasto(gasto, null);
   const ok = await confirmar({
     titulo:         'Eliminar gasto',
-    mensaje:        `¿Quieres eliminar "${nombre}"? ${_efectosDeBorrar(gasto, deltasDeuda)}`,
+    mensaje:        `¿Quieres eliminar "${nombre}"? ${_efectosDeBorrar(deltasCuenta, deltasDeuda)}`,
     confirmarTexto: 'Eliminar',
     peligroso:      true,
   });
   if (!ok) return;
 
-  // Devolver el monto al saldo de la cuenta (si el gasto tenía cuenta).
-  _ajustarSaldoCuenta(gasto.cuentaId, +gasto.monto);
+  // Devolver el monto al saldo de la cuenta (si el gasto tenía cuenta y no
+  // era importado).
+  _aplicarDeltasASaldos(deltasCuenta);
 
   // Revertir el efecto en la deuda: un abono la vuelve a subir, un consumo con
   // tarjeta la baja (MC.16b, ADR 051 D3).

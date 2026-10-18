@@ -373,17 +373,23 @@ export function revertirGastoDeSaldo(saldoActual, monto) {
  *   1. Cambia solo el monto: delta sobre la misma cuenta.
  *   2. Cambia solo la cuenta: revierte en la vieja, descuenta en la nueva.
  *   3. Cambian ambos.
+ * Borrar es editar hacia nada (`despues` null): devuelve el monto a la cuenta,
+ * mismo criterio que `deltasPorEdicionEnDeuda(gasto, null)`. Un gasto importado
+ * (`sinEfectoSaldo`, HF.0c) no genera deltas en ningún caso.
  *
  * Devuelve un mapa { cuentaId → deltaASumar }.
  * Un delta positivo significa "el saldo debe subir" (revertir un descuento);
  * un delta negativo significa "el saldo debe bajar" (aplicar un descuento).
  *
- * @param {{ cuentaId: string|null, monto: number }} antes
- * @param {{ cuentaId: string|null, monto: number }} despues
+ * @param {{ cuentaId: string|null, monto: number, sinEfectoSaldo?: boolean }} antes
+ * @param {{ cuentaId: string|null, monto: number }|null} despues
  * @returns {Record<string, number>}
  */
 export function deltasPorEdicionDeGasto(antes, despues) {
   const deltas = {};
+  // HF.0c (ADR 091 P4): el gasto importado registra historia que el saldo ya
+  // refleja. Ni editarlo ni borrarlo (`despues` null) mueve una cuenta.
+  if (antes?.sinEfectoSaldo === true) return deltas;
   const cuentaAntes  = antes?.cuentaId  ?? null;
   const cuentaDesp   = despues?.cuentaId ?? null;
   const montoAntes   = Number(antes?.monto  ?? 0);

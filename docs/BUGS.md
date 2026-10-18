@@ -5,7 +5,7 @@
 > Errores detectados durante el desarrollo, con toda la información necesaria para resolverlos sin tener que volver a buscar dónde están.
 > Al solucionarse, el error se **elimina** de este archivo y el fix queda documentado en [`CHANGELOG.md`](CHANGELOG.md) con referencia al ID.
 > Solo entra lo **verificado** contra el código (archivo, función, línea). Una sospecha no es un error: es una tarjeta de investigación en [`BOARD.md`](BOARD.md).
-> Última actualización: 2026-10-17 (iniciativa HF, [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)): entran BUG-029 a BUG-031; HF.0a cierra BUG-028, HF.0b cierra BUG-030 y abre BUG-032, HF.0h cierra BUG-032; entran BUG-033 y BUG-034 (Distribuir no identifica qué ocurrencias acredita). **6 abiertos.**
+> Última actualización: 2026-10-17 (iniciativa HF, [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)): entran BUG-029 a BUG-031; HF.0a cierra BUG-028, HF.0b cierra BUG-030 y abre BUG-032, HF.0h cierra BUG-032; entran BUG-033 y BUG-034 (Distribuir no identifica qué ocurrencias acredita); HF.0c cierra BUG-029. **5 abiertos.**
 >
 > **Patrón recurrente que conviene vigilar (cerrado 3 veces el 2026-08-01 y 2 el 2026-10-16, BUG-028 y un test de Inversión):** tests con **fechas fijas** o con un día derivado a módulo 28 se ponen rojos según el día en que se corran, casi siempre los primeros días del mes. La regla es derivar las fechas del reloj, y **fijar el reloj** (`vi.setSystemTime`) cuando el test afirma una distancia exacta o necesita un día ya pasado dentro del mes.
 
@@ -51,13 +51,6 @@ Numerar `BUG-001`, `BUG-002`... de forma consecutiva y sin reutilizar números a
 - Causa     : `compromisosProximos()` no recibe gastos y `proximoVencimiento()` solo mira `diaPago`; el Calendario usa `ocurrenciasEnMes()` (ADR 041).
 - Archivo   : `compromisos/logic/modelo.js` (`proximoVencimiento`, `compromisosProximos`); consumidores `compromisos/views/dashboard.js`, `infra/avisos.js`
 - Secciones : Inicio, Por pagar, notificación
-
-### BUG-029 - el importador CSV de gastos crea dinero al borrar y no reimporta lo que exporta
-- Estado    : pendiente (HF.0c). Prioridad alta: rompe la I3 del ADR 053. Decidido (P4 del ADR 091): el importado no toca el saldo
-- Problema  : importar con columna `cuenta` guarda `cuentaId` sin descontar; borrar o editar ese gasto devuelve el monto. Y el export deja `descripcion` vacía, que el import exige.
-- Causa     : `_confirmarImport()` solo llama `guardar()`; borrar siempre reembolsa.
-- Archivo   : `import/index.js`, `import/logic.js`, `gastos/index.js`, `export/logic.js` (`gastosACSV`)
-- Secciones : Ajustes, Gastos
 
 ### BUG-027 - ADR 059 no existe en el repositorio pese a estar citado como "aceptado" en 5 documentos vivos
 - Estado    : pendiente

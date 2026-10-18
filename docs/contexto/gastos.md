@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-08-20.
+> Revisado: 2026-10-17.
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -65,7 +65,7 @@
 
 - **Objetivo**          : rediseñar el formulario de registrar gasto para que la categoría sea el dato principal (no la descripción), soporte categorías creadas por el usuario, y no pida una descripción redundante cuando la categoría ya representa el concepto. Desde FORM.1a ([ADR 042](../DECISIONS/042-formularios-v2-visual.md)) es además el flagship del lenguaje de formularios v2: monto hero al frente, categoría con chips de ícono (sin select), fecha con atajos Hoy/Ayer/Otra fecha.
 - **Estado actual**     : **TX.9 completa** (TX.9a: categoría primero, descripción ya no obligatoria; TX.9b: categorías personalizadas). **IN.5 cerrada** (2026-07-06). **FORM.1a cerrada** (2026-07-15): form v2 completo; **el orden de TX.9a quedó revisado por el ADR 042 D2** (monto primero; la categoría sigue antes de cuenta/fecha/nota). **GAS.2 cerrada** (GAS.2a y GAS.2b, 2026-08-10): el formulario no cambió; ver bloque "Confirmación tras guardar" más abajo. **GAS.2c diferida** (Abono, Aporte).
-- **Verificado contra** : GAS.2b (2026-08-10).
+- **Verificado contra** : HF.0c (2026-10-17), solo el efecto de editar y borrar sobre el saldo. Antes: GAS.2b (2026-08-10).
 
 **Dónde vive (FORM.1a)**
 
@@ -100,6 +100,7 @@
 | Título del ítem en la lista = categoría (TX.9a); descripción legacy y nota pasan al subtítulo | `modules/dominio/gastos/view.js` | `_renderGastoItem()` | ~195 |
 | Nombre del gasto en confirmación de borrado / anuncio a11y (fallback a categoría, TX.9a) | `modules/dominio/gastos/index.js` | `_eliminarGasto()` | ~334 |
 | Descripción del Movimiento cuando el gasto no tiene descripción (fallback a categoría, TX.9a) | `modules/dominio/movimientos/logic.js` | `movimientosDesdeGastos()` | ~48 |
+| Gasto importado sin efecto en el saldo (HF.0c, ADR 091 P4): editar y borrar ("editar hacia nada") no mueven cuentas | `modules/dominio/gastos/logic.js`, `gastos/index.js`, `import/logic.js` | `deltasPorEdicionDeGasto()`, `_guardarGasto()`, `_eliminarGasto()`, `normalizarFila()` | |
 
 **Recursos**: `ICONOS_CATEGORIA_PERSONALIZADA` (29 símbolos `c-*` del sprite ya existentes en `index.html`, ID.3/ADR 023, que no estaban asignados en `CATEGORIA_ICONO`); primer selector de ícono de la app (`.icono-picker`/`.icono-picker__btn` en `forms.css`, patrón tap-to-select consistente con `.accesos-row`/chips de categoría).
 
@@ -114,6 +115,8 @@
 - ~~**Relaciona con IN.5** (eliminar/transformar "Gasto rápido")~~: **cerrada (2026-07-06)**. Se eliminó "Gasto rápido" por completo (botón, modal, form, toast) junto con su subsistema de "pendientes por organizar" (`esGastoPendiente`/`gastosPendientes`/`renderPendientesOrganizar`, el badge "📝 Pendiente" y el flag `pendienteCompletar` en los 4 dominios que lo escribían). Dato de usuario legacy (`pendienteCompletar` en gastos guardados) queda ignorado, sin migración: no lo lee nadie. Ver registro de cambios.
 - **Sin gestión de categorías personalizadas** (editar nombre/ícono, eliminar, ver cuántos gastos las usan): fuera de alcance de TX.9b, que solo cubre crear + usar. Si Esteban lo pide, es una tarjeta nueva (ej. TX.9c), probablemente en Ajustes.
 
+- **Un gasto importado no mueve saldos (HF.0c, BUG-029)**: `normalizarFila()` lo marca `sinEfectoSaldo` y `deltasPorEdicionDeGasto()` devuelve `{}` para él, al editar y al borrar; el confirm de borrado ya no promete devolver nada. Los importados antes de la v44 no tienen marca y siguen reembolsando (P4: sin backfill). "Repetir" uno crea un gasto manual normal. La marca solo cubre la cuenta: editar un importado hacia un consumo con tarjeta sigue moviendo la deuda.
+
 **Riesgos nuevos (FORM.1a)**:
 
 - **La regla móvil anti-zoom de iOS pisa los inputs por capas:** `responsive.css` declara `.input { font-size: 16px }` en móvil y su capa le gana por ORDEN a `components`, aunque la especificidad diga lo contrario. La excepción de `.input--big-amount` (2.25rem) vive en `responsive.css`, dentro de la misma media query: cualquier componente futuro que necesite un input distinto en móvil debe poner su excepción AHÍ, no en `forms.css`.
@@ -125,6 +128,7 @@
 
 **Cambios realizados**:
 
+- 2026-10-17 (**HF.0c**, BUG-029): el gasto importado no toca el saldo al importarlo, editarlo o borrarlo (`sinEfectoSaldo`, schema v44). Ver CHANGELOG.
 - 2026-08-10 (GAS.2a): ver bloque "Confirmación tras guardar" más abajo.
 - 2026-07-15 (FORM.1a): form v2 completo (monto hero, chips de categoría, atajos de fecha, teja del header, footer principal) + fix del hueco preexistente de `responsive.css` que achicaba `.input--big-amount` en móvil. Ver [CHANGELOG](../CHANGELOG.md) y [ADR 042](../DECISIONS/042-formularios-v2-visual.md).
 

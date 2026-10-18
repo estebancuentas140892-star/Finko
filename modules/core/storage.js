@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 43;
+const SCHEMA_VERSION = 44;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -650,6 +650,11 @@ function _migrate(raw) {
   // queremos (respaldo en claro, como hasta hoy). Escribir `false` en cada
   // estado guardado no cambiaría ningún comportamiento. La contraseña nunca
   // entra al estado: no hay nada más que migrar.
+
+  // v43 → v44: `Gasto.sinEfectoSaldo` (HF.0c, ADR 091 P4). Migración no-op,
+  // precedente del ADR 051 D8: el campo es opcional y su ausencia es el
+  // comportamiento de siempre (el gasto mueve su cuenta). Sin backfill: un
+  // gasto importado antes de esta versión no se distingue de uno manual.
 
   if (typeof data._version !== 'number' || data._version < SCHEMA_VERSION) {
     data._version = SCHEMA_VERSION;

@@ -21,7 +21,8 @@ export function renderImportPicker() {
     <div class="import-picker">
       <p class="import-intro">
         Importa tus gastos desde un archivo CSV. Se omiten los duplicados
-        (misma fecha, monto y descripción) automáticamente.
+        (misma fecha, monto y descripción, o categoría si no hay descripción)
+        automáticamente.
       </p>
 
       <details class="import-format">
@@ -36,6 +37,8 @@ export function renderImportPicker() {
             <li>Fecha en formato <strong>YYYY-MM-DD</strong> o <strong>DD/MM/YYYY</strong>.</li>
             <li>Separador <strong>coma</strong> o <strong>punto y coma</strong> (autodetectado).</li>
             <li>Codificación recomendada: <strong>UTF-8</strong>.</li>
+            <li>La descripción puede ir vacía si la fila trae categoría.</li>
+            <li>Los gastos importados quedan como historial: <strong>no cambian el saldo</strong> de tus cuentas, ni al importarlos ni al editarlos o borrarlos.</li>
           </ul>
         </div>
       </details>

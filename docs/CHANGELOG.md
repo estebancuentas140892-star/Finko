@@ -12,6 +12,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### fix(gastos): HF.0c, el importador CSV de gastos no crea dinero · 2026-10-17
+
+Cuarta rebanada de la iniciativa HF ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), P4). Cierra **BUG-029**. Fichas: [`contexto/gastos.md`](contexto/gastos.md) y [`contexto/configuracion.md`](contexto/configuracion.md).
+
+- **Causa raíz:** el importador guardaba `cuentaId` sin descontar (correcto: el CSV es historia que el saldo tecleado ya refleja), pero el gasto importado era indistinguible de uno manual. Editarlo aplicaba la diferencia de monto a la cuenta y borrarlo devolvía el monto: cada importado borrado creaba dinero. Y desde TX.9a el formulario no pide descripción, así que el CSV que exporta Finko la trae vacía y el importador, que la exigía, lo rechazaba.
+- **La marca es un dato, no un modo:** `Gasto.sinEfectoSaldo` (schema v44, migración no-op, precedente del ADR 051 D8) la pone `normalizarFila()`. La cuenta se conserva como dato. `deltasPorEdicionDeGasto()` devuelve `{}` para un gasto marcado, y borrar pasa a ser "editar hacia nada" con esa misma función (antes era un `+monto` aparte), así que editar y borrar no pueden divergir. El confirm de borrado nombra solo lo que de verdad se revierte.
+- **Sin backfill:** un gasto importado antes de la v44 no se distingue de uno manual y sigue reembolsando al borrarlo. Es la decisión P4, no un olvido.
+- **Ida y vuelta:** una fila sin descripción es válida si trae categoría, y los duplicados se detectan por el nombre visible del gasto (descripción, o categoría si no hay), el mismo criterio del título de la lista. Sin eso, dos gastos sin descripción del mismo día y monto chocaban y el segundo se perdía. La columna `descripcion` sigue siendo obligatoria como encabezado.
+- **Una expectativa vieja cambió, y es el bug:** `flujos.test.js` usaba "sin descripción, categoría Otros" como fila mala. Es exactamente lo que exporta Finko desde TX.9a; la fila mala pasa a ser la que no trae ni descripción ni categoría. Las demás aserciones del test no cambiaron.
+- **Los gastos manuales no cambian:** crear, editar y borrar siguen moviendo su cuenta (controles en smoke.test.js y verificación en la app).
+- **Fuera de alcance, dicho:** la marca cubre la cuenta y no la deuda (editar un importado hacia un consumo con tarjeta sigue moviendo la deuda); filas idénticas dentro del mismo CSV siguen tratándose como duplicado.
+- **El importador lo dice:** "Formato esperado" suma dos notas: la descripción puede ir vacía si hay categoría, y lo importado no cambia el saldo de las cuentas.
+- Verificado en la app (localhost, datos inventados; el archivo se inyectó en el `<input type="file">` porque el selector del sistema no se maneja desde el navegador integrado): importar dos gastos con cuenta deja $800.000; editar Mercado de 120.000 a 150.000 y borrar Transporte (el confirm ya no dice "devuelve") lo dejan en $800.000; borrar el gasto manual de Café devuelve $30.000 a Nómina; al recargar, el importado conserva cuenta y marca.
+- Tests: 10 unitarios nuevos (6 en `import.test.js`, 2 en `gastos.test.js`, 2 en `storage.test.js`) y 3 E2E nuevos (`importar-gastos.test.js`: importar, editar, borrar y recargar; importar dos veces; exportar e importar ida y vuelta). Rojos antes del arreglo: 9 unitarios y los 3 E2E (el primero, con 770.000 tras editar). Unitarios 4613/4613, lint verde, E2E 320/320 con `--workers=2`, sin flaky. SW v588 a v589.
+
 ### docs(transversal): HF, triaje de los hallazgos de HF.0h · 2026-10-17
 
 Tres decisiones de Esteban sobre lo que dejó abierto HF.0h ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)). Sin runtime.

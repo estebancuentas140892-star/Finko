@@ -7,6 +7,7 @@ import {
   parsearFecha,
   parsearMonto,
 } from '../../modules/dominio/import/logic.js';
+import { gastosACSV } from '../../modules/dominio/export/logic.js';
 
 // ── parsearFecha() ────────────────────────────────────────────────
 
@@ -380,5 +381,63 @@ fecha-mala,100,X
 2026-05-15,100,X`;
     const out = procesarCSV(csv, [], []);
     expect(out.validos[0].fila).toBe(2);
+  });
+});
+
+// ── BUG-029 (HF.0c, ADR 091 P4) ───────────────────────────────────
+// El gasto importado queda sin efecto en el saldo, y el CSV que exporta Finko
+// vuelve a entrar igual. Datos inventados.
+
+describe('BUG-029 - el importador no crea dinero y lee lo que Finko exporta', () => {
+  const cuentas = [
+    { id: 'cta-nomina',  nombre: 'Cuenta Nómina',  activa: true },
+    { id: 'cta-ahorros', nombre: 'Cuenta Ahorros', activa: true },
+  ];
+  // Como los deja el formulario desde TX.9a: sin descripción, la categoría nombra el gasto.
+  const gastos = [
+    { id: 'g-1', descripcion: '', monto: 30_000, categoria: 'Café',       fecha: '2026-10-03', cuentaId: 'cta-nomina',  nota: '' },
+    { id: 'g-2', descripcion: '', monto: 30_000, categoria: 'Transporte', fecha: '2026-10-03', cuentaId: 'cta-ahorros', nota: 'taxi de prueba' },
+    { id: 'g-3', descripcion: 'Farmacia de prueba', monto: 52_500, categoria: 'Salud', fecha: '2026-10-10', nota: '' },
+  ];
+  const nombres = new Map(cuentas.map(c => [c.nombre.toLowerCase(), c.id]));
+
+  it('el gasto importado conserva su cuenta y queda marcado sin efecto en el saldo', () => {
+    const out = normalizarFila({ fecha: '2026-10-05', monto: '120000', descripcion: 'Mercado de prueba', cuenta: 'Cuenta Nómina' }, nombres);
+    expect(out).toMatchObject({ cuentaId: 'cta-nomina', sinEfectoSaldo: true });
+  });
+
+  it('sin cuenta reconocida también queda sin efecto: la marca es del origen, no de la cuenta', () => {
+    expect(normalizarFila({ fecha: '2026-10-05', monto: '100', descripcion: 'X' }).sinEfectoSaldo).toBe(true);
+  });
+
+  it('una fila sin descripción es válida si trae categoría (TX.9a)', () => {
+    expect(validarFila({ fecha: '2026-10-03', monto: '30000', descripcion: '', categoria: 'Café' })).toEqual([]);
+    expect(validarFila({ fecha: '2026-10-03', monto: '30000', descripcion: '  ', categoria: '' }).some(e => /descripci/i.test(e))).toBe(true);
+  });
+
+  it('sin descripción, la categoría nombra el gasto para detectar duplicados', () => {
+    const cafe = { fecha: '2026-10-03', monto: 30_000, descripcion: '', categoria: 'Café' };
+    expect(hashGasto(cafe)).not.toBe(hashGasto({ ...cafe, categoria: 'Transporte' }));
+    expect(hashGasto(cafe)).toBe(hashGasto({ ...cafe, categoria: 'café' }));
+    // Con descripción manda la descripción, como siempre.
+    expect(hashGasto({ ...cafe, descripcion: 'Tinto' })).toBe(hashGasto({ ...cafe, descripcion: 'Tinto', categoria: 'Otros' }));
+  });
+
+  it('ida y vuelta: lo exportado entra completo en una app sin gastos', () => {
+    const out = procesarCSV(gastosACSV(gastos, cuentas), [], cuentas);
+    expect(out.errores).toEqual([]);
+    expect(out.duplicados).toEqual([]);
+    const datos = out.validos.map(v => v.datos).sort((a, b) => a.categoria.localeCompare(b.categoria));
+    expect(datos).toEqual([
+      { fecha: '2026-10-03', monto: 30_000, descripcion: '', categoria: 'Café',       cuentaId: 'cta-nomina',  nota: '',               sinEfectoSaldo: true },
+      { fecha: '2026-10-10', monto: 52_500, descripcion: 'Farmacia de prueba', categoria: 'Salud', cuentaId: null, nota: '', sinEfectoSaldo: true },
+      { fecha: '2026-10-03', monto: 30_000, descripcion: '', categoria: 'Transporte', cuentaId: 'cta-ahorros', nota: 'taxi de prueba', sinEfectoSaldo: true },
+    ]);
+  });
+
+  it('ida y vuelta en la misma app: todo es duplicado, nada entra dos veces', () => {
+    const out = procesarCSV(gastosACSV(gastos, cuentas), gastos, cuentas);
+    expect(out.validos).toEqual([]);
+    expect(out.duplicados).toHaveLength(3);
   });
 });

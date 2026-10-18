@@ -1902,6 +1902,30 @@ describe('Migración v41 → v42 (ultimoRespaldoISO y primerUsoISO en config, CF
   });
 });
 
+describe('Migración v43 → v44 (Gasto.sinEfectoSaldo, HF.0c)', () => {
+  it('es no-op: un gasto existente queda sin la marca y conserva su efecto en el saldo', () => {
+    const v43 = { ...createInitialState(), _version: 43 };
+    v43.gastos = [{ id: 'g1', descripcion: 'Mercado de prueba', monto: 120_000, categoria: 'Mercado', fecha: '2026-10-05', cuentaId: 'c1' }];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v43));
+
+    loadData();
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(44);
+    expect(S.gastos[0]).not.toHaveProperty('sinEfectoSaldo');
+  });
+
+  it('la marca de un gasto importado sobrevive a guardar y cargar', () => {
+    const v44 = { ...createInitialState(), _version: 44 };
+    v44.gastos = [{ id: 'g1', descripcion: '', monto: 45_000, categoria: 'Transporte', fecha: '2026-10-08', cuentaId: 'c2', sinEfectoSaldo: true }];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v44));
+
+    loadData();
+
+    expect(S.gastos[0]).toMatchObject({ cuentaId: 'c2', sinEfectoSaldo: true });
+  });
+});
+
 describe('Migración v42 → v43 (respaldoCifrado en config, CFG.4c)', () => {
   it('un usuario existente sigue con el respaldo en claro: ausente = false', () => {
     const v42 = { ...createInitialState(), _version: 42 };

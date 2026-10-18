@@ -775,6 +775,19 @@ describe('revertirGastoDeSaldo()', () => {
 // ── deltasPorEdicionDeGasto() ────────────────────────────────────
 
 describe('deltasPorEdicionDeGasto()', () => {
+  // BUG-029 (HF.0c, ADR 091 P4): el gasto importado registra historia que el
+  // saldo ya refleja. Editarlo o borrarlo (editar hacia nada) no mueve cuentas.
+  it('gasto importado (sinEfectoSaldo): editar monto o cuenta no mueve ninguna cuenta', () => {
+    const antes = { cuentaId: 'c1', monto: 120_000, sinEfectoSaldo: true };
+    expect(deltasPorEdicionDeGasto(antes, { ...antes, monto: 150_000 })).toEqual({});
+    expect(deltasPorEdicionDeGasto(antes, { ...antes, cuentaId: 'c2' })).toEqual({});
+  });
+
+  it('borrar es editar hacia nada: el manual devuelve su monto, el importado no', () => {
+    expect(deltasPorEdicionDeGasto({ cuentaId: 'c1', monto: 45_000 }, null)).toEqual({ c1: 45_000 });
+    expect(deltasPorEdicionDeGasto({ cuentaId: 'c1', monto: 45_000, sinEfectoSaldo: true }, null)).toEqual({});
+  });
+
   it('misma cuenta, mismo monto: no genera deltas', () => {
     const antes   = { cuentaId: 'c1', monto: 50_000 };
     const despues = { cuentaId: 'c1', monto: 50_000 };

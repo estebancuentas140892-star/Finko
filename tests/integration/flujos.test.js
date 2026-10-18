@@ -454,7 +454,10 @@ describe('C.2 - Flujo backup/restore (export → reset → import)', () => {
 2026-05-01,5000,Café,Alimentación,,,
 2026-13-01,5000,Arriendo,Vivienda,,
 2026-05-03,,Gasto sin monto,Otros,,
-2026-05-04,5000,,Otros,,`;
+2026-05-04,5000,,,,`;
+    // BUG-029 (HF.0c): la última fila era "sin descripción, categoría Otros" y
+    // se rechazaba. Desde TX.9a eso es lo que Finko mismo exporta, así que ahora
+    // es válida; la fila mala es la que no trae ni descripción ni categoría.
 
     const resultado = procesarCSV(csv, S.gastos, S.cuentas);
 

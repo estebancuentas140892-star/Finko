@@ -9,10 +9,16 @@
  * Formato CSV soportado (case-insensitive en headers):
  *   - fecha       (requerido) - YYYY-MM-DD o DD/MM/YYYY
  *   - monto       (requerido) - número positivo en COP (acepta separadores miles)
- *   - descripcion (requerido) - texto no vacío
+ *   - descripcion (columna requerida) - puede ir vacía si la fila trae categoría:
+ *                 desde TX.9a el formulario no la pide y la categoría nombra el
+ *                 gasto, así que el CSV que exporta Finko la trae vacía (BUG-029)
  *   - categoria   (opcional)  - default 'Otros'
  *   - cuenta      (opcional)  - nombre de cuenta existente; null si no matchea
  *   - nota        (opcional)  - texto libre
+ *
+ * El gasto importado sale marcado `sinEfectoSaldo` (HF.0c, ADR 091 P4): el CSV
+ * restaura historia que el saldo tecleado ya refleja, así que ni importarlo ni
+ * editarlo ni borrarlo toca la cuenta, aunque la conserve como dato.
  *
  * Sin DOM. Sin S directo. Pure functions testeables en Node.
  */
@@ -112,8 +118,12 @@ export function procesarCSV(csvText, gastosExistentes = [], cuentas = []) {
 
 /**
  * Hash determinista de un gasto para detectar duplicados.
- * Considera: fecha (ISO) + monto entero + descripcion lowercase trimmed.
- * Tolerante a variaciones de mayúsculas/espacios en la descripción.
+ * Considera: fecha (ISO) + monto entero + el nombre visible del gasto en
+ * minúsculas: la descripción, o la categoría si no hay descripción (TX.9a, el
+ * mismo criterio del título de la lista). Sin ese respaldo, dos gastos sin
+ * descripción del mismo día y monto chocaban aunque fueran de categorías
+ * distintas, y el segundo se perdía al reimportar (BUG-029).
+ * Tolerante a variaciones de mayúsculas/espacios.
  *
  * @param {{ fecha: string, monto: number, descripcion: string }} g
  * @returns {string}
@@ -121,8 +131,8 @@ export function procesarCSV(csvText, gastosExistentes = [], cuentas = []) {
 export function hashGasto(g) {
   const fecha = String(g.fecha ?? '').trim();
   const monto = Math.round(Number(g.monto) || 0);
-  const desc  = String(g.descripcion ?? '').trim().toLowerCase();
-  return `${fecha}|${monto}|${desc}`;
+  const nombre = (String(g.descripcion ?? '').trim() || String(g.categoria ?? '').trim()).toLowerCase();
+  return `${fecha}|${monto}|${nombre}`;
 }
 
 /**
@@ -149,9 +159,9 @@ export function validarFila(fila) {
     errores.push(`El monto debe ser mayor a 0.`);
   }
 
-  // Descripción.
-  if (!fila.descripcion || !fila.descripcion.trim()) {
-    errores.push('La descripción es obligatoria.');
+  // Nombre visible: la descripción, o la categoría si no hay (TX.9a).
+  if (!fila.descripcion?.trim() && !fila.categoria?.trim()) {
+    errores.push('La fila necesita descripción o categoría.');
   }
 
   return errores;
@@ -159,7 +169,8 @@ export function validarFila(fila) {
 
 /**
  * Convierte una fila validada al shape final del Gasto. No incluye `id` (lo
- * asigna crud.guardar al hacer push).
+ * asigna crud.guardar al hacer push). Sale con `sinEfectoSaldo: true` (P4): la
+ * cuenta queda como dato y el saldo no se toca ni ahora ni al editar o borrar.
  *
  * @param {Record<string,string>} fila
  * @param {Map<string,string>} nombresCuentas - Map<nombreLower, cuentaId>.
@@ -172,10 +183,11 @@ export function normalizarFila(fila, nombresCuentas = new Map()) {
   return {
     fecha:       parsearFecha(fila.fecha),
     monto:       parsearMonto(fila.monto),
-    descripcion: fila.descripcion.trim(),
+    descripcion: (fila.descripcion ?? '').trim(),
     categoria:   (fila.categoria ?? '').trim() || 'Otros',
     cuentaId,
     nota:        (fila.nota ?? '').trim(),
+    sinEfectoSaldo: true,
   };
 }
 
