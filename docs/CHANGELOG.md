@@ -12,6 +12,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### fix(tesoreria): HF.0i, Distribuir solo acredita y marca como recibidos cobros identificados · 2026-10-17
+
+Quinta rebanada de la iniciativa HF ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), P8). Cierra **BUG-033** y **BUG-034**. Fichas: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md) (Distribución v2) y [`contexto/calendario.md`](contexto/calendario.md) (Pagos automáticos).
+
+- **Causa raíz:** el asistente trabajaba con "el cobro" como una suma de plantillas (`montoCobroPrincipal`) y una resta agregada de lo que acreditó la hoja; nunca supo qué ocurrencias formaban lo que repartía. Con ingresos en días distintos volvía a proponer una ocurrencia ya repartida y creaba dinero (BUG-034), y con el monto editado daba por recibidos todos los ingresos del cobro (BUG-033).
+- **La identidad es la ocurrencia:** `ocurrenciasPorDistribuir()` devuelve cada ingreso del cobro en la fecha exacta de su último cobro (`ingresoId` + fecha), sin lo que ya selló una distribución. Si la lista no existe (distribución anterior a HF.0h), el sello de periodo es la evidencia de lo que cayó hasta él. Lo que acreditó la hoja sigue por repartir con el monto acreditado y no se suma otra vez (HF.0b).
+- **Qué se acredita lo decide una función pura:** `resolverCobroDistribuido()` cruza el monto, los ingresos marcados y la aclaración de la diferencia: `'valor'` (un solo ingreso llegó por otro monto) o `'parte'` (llegó todo y se reparte una parte; se acredita completo). Con dos ingresos y un monto mayor no hay respuesta posible y no se confirma.
+- **Lo mínimo de pantalla:** con un ingreso claro no aparece nada nuevo. Con dos o más, bajo el monto, una lista "Este cobro incluye estos ingresos", todos marcados; desmarcar uno ajusta el monto solo. La pregunta de la diferencia aparece solo si el monto no cuadra, y nombra los valores.
+- **Pagos por partes, no:** representarlos exige un modelo nuevo. Ninguna opción marca un ingreso como cobrado a medias, y el aviso lo dice ("Finko no registra pagos por partes").
+- **`cobrosDistribuidos` guarda lo repartido**, también lo que había acreditado la hoja (`yaAcreditado`, que la hoja ignora porque lo maneja su `IngresoPuntual`). Su ventana pasa de dos a doce meses: el cobro de una frecuencia Anual mira doce meses atrás. El test de retención de HF.0h cambió con esa ventana, por diseño y explicado en el propio test.
+- **La tarjeta** propone lo que falta repartir; ya distribuido, sigue mostrando de cuánto es el cobro.
+- **Fuera de alcance, dicho:** sin fecha datable (Semanal, Diario, sin día) no hay identidad y el asistente sigue como antes; un ingreso de la frecuencia principal sin día no entra en la propuesta; un ingreso que el usuario marcó como no llegado y no es automático no vuelve al asistente ese mismo periodo (la hoja sí lo ofrece si es automático); editar el `diaPago` de un ingreso ya repartido rompe el par.
+- Verificado en la app (localhost, datos inventados): Caso B, lista con los dos ingresos, monto a 4.000.000, solo "llegó todo" disponible y "Distribuir" bloqueado hasta desmarcar Honorarios; total 3.600.000 con el arriendo, la hoja ofrece solo los honorarios y al confirmarlos queda en 4.600.000. Caso A: la tarjeta propone 4.000.000 con y sin pares guardados. Caso C: monto a 3.800.000, las dos opciones y el aviso de pagos por partes; "llegó por 3.800.000" deja 3.400.000 y la hoja no vuelve. A 375 px sin desbordes.
+- Tests: 21 unitarios nuevos (20 en `tesoreria.test.js`, 1 en `agenda.test.js`) y 8 E2E nuevos en `distribucion-credito-automatico.test.js` (Caso A, quincenal, Caso B, sin aclarar, deshacer y tres del Caso C). Rojos antes del arreglo: los 21 unitarios y 6 E2E; el quincenal y "sin tocar el monto" son guardas que ya pasaban. HF.0b y HF.0h siguen verdes. Unitarios 4634/4634, lint verde, E2E 328/328 con `--workers=2`, sin flaky. SW v589 a v590.
+
 ### docs(transversal): HF, P8 resuelta y catch-up desde el alta para débitos · 2026-10-17
 
 Dos decisiones de Esteban, escritas en el [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md) antes de tocar runtime. Sin runtime.

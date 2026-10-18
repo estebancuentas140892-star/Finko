@@ -41,6 +41,9 @@ import {
   montoYaAcreditadoDelCobro,
   cobrosQueAcreditaLaDistribucion,
   acumularCobrosDistribuidos,
+  ocurrenciasPorDistribuir,
+  resolverCobroDistribuido,
+  claveOcurrencia,
   ultimoPagoHasta,
   estadoDistribucion,
   calcularSalarioMinimo,
@@ -4149,15 +4152,18 @@ describe('acumularCobrosDistribuidos() - la guarda de HF.0h no crece sin fin (BU
       .toEqual([{ ingresoId: 'ing-q', fecha: '2026-10-15' }, { ingresoId: 'ing-q', fecha: '2026-10-30' }]);
   });
 
-  it('suelta lo anterior a los dos meses previos, que la hoja ya no revisa', () => {
+  // HF.0i: la ventana pasó de dos meses a doce. La lista también dice qué ya
+  // repartió Distribuir, cuyo cobro mira hasta un periodo atrás (una Anual,
+  // doce meses); soltar antes un par haría que ese cobro volviera a proponerse.
+  it('suelta lo anterior a los doce meses previos, que ningún cobro vuelve a mirar', () => {
     const previos = [
-      { ingresoId: 'ing-salario', fecha: '2026-07-15' },
+      { ingresoId: 'ing-prima', fecha: '2025-09-30' },
+      { ingresoId: 'ing-prima', fecha: '2025-10-01' },
       { ingresoId: 'ing-salario', fecha: '2026-08-15' },
-      { ingresoId: 'ing-salario', fecha: '2026-09-15' },
     ];
     expect(acumularCobrosDistribuidos(previos, [{ ingresoId: 'ing-salario', fecha: '2026-10-15' }], HOY)).toEqual([
+      { ingresoId: 'ing-prima', fecha: '2025-10-01' },
       { ingresoId: 'ing-salario', fecha: '2026-08-15' },
-      { ingresoId: 'ing-salario', fecha: '2026-09-15' },
       { ingresoId: 'ing-salario', fecha: '2026-10-15' },
     ]);
   });
@@ -4178,6 +4184,163 @@ describe('acumularCobrosDistribuidos() - la guarda de HF.0h no crece sin fin (BU
     loadData();
 
     expect(S.config.cobrosDistribuidos).toEqual([{ ingresoId: 'ing-salario', fecha: '2026-10-15' }]);
+  });
+});
+
+// ── ocurrenciasPorDistribuir() y resolverCobroDistribuido() (HF.0i) ─
+// BUG-033 y BUG-034: Distribuir propone, acredita y sella solo ocurrencias
+// identificadas (`ingresoId` + fecha exacta). Datos inventados.
+
+describe('ocurrenciasPorDistribuir() - lo que falta repartir, por ocurrencia (HF.0i)', () => {
+  const ing = (id, monto, diaPago, extra = {}) => ({
+    id, descripcion: `Ingreso ${id}`, monto, frecuencia: 'Mensual', diaPago, activo: true,
+    cuentaId: 'cta-nomina', fechaCreacion: '2026-01-10T15:00:00.000Z', ...extra,
+  });
+  const salario    = ing('ing-salario', 4_000_000, 15);
+  const honorarios = ing('ing-hon', 1_000_000, 25);
+  const ip = (ingresoId, fecha, monto) => ({ id: `ip-${ingresoId}-${fecha}`, monto, cuentaId: 'cta-nomina', fecha, ingresoId });
+  const pares = (r) => r.ocurrencias.map(o => `${o.ingresoId} ${o.fecha} ${o.monto}${o.yaAcreditado ? ' hoja' : ''}`);
+
+  it('BUG-034: los honorarios de septiembre ya distribuidos no vuelven al cobro del 16 de octubre', () => {
+    const r = ocurrenciasPorDistribuir([salario, honorarios], [], {
+      cobrosDistribuidos: [{ ingresoId: 'ing-salario', fecha: '2026-09-15' }, { ingresoId: 'ing-hon', fecha: '2026-09-25' }],
+      ultimaDistribucionPeriodo: '2026-09-25',
+    }, new Date(2026, 9, 16, 12));
+    expect(r.identificable).toBe(true);
+    expect(pares(r)).toEqual(['ing-salario 2026-10-15 4000000']);
+  });
+
+  it('el 26 de octubre los honorarios del 25 son una ocurrencia nueva', () => {
+    const r = ocurrenciasPorDistribuir([salario, honorarios], [], {
+      cobrosDistribuidos: [{ ingresoId: 'ing-hon', fecha: '2026-09-25' }, { ingresoId: 'ing-salario', fecha: '2026-10-15' }],
+      ultimaDistribucionPeriodo: '2026-10-15',
+    }, new Date(2026, 9, 26, 12));
+    expect(pares(r)).toEqual(['ing-hon 2026-10-25 1000000']);
+  });
+
+  it('sin pares guardados (distribución anterior a HF.0h), el sello de periodo cubre lo que ya cayó', () => {
+    const r = ocurrenciasPorDistribuir([salario, honorarios], [], { ultimaDistribucionPeriodo: '2026-09-25' }, new Date(2026, 9, 16, 12));
+    expect(pares(r)).toEqual(['ing-salario 2026-10-15 4000000']);
+  });
+
+  it('con pares guardados manda la lista, no el sello: un ingreso que no llegó sigue pendiente', () => {
+    const otro = ing('ing-otro', 500_000, 15);
+    const r = ocurrenciasPorDistribuir([salario, otro], [], {
+      cobrosDistribuidos: [{ ingresoId: 'ing-salario', fecha: '2026-10-15' }],
+      ultimaDistribucionPeriodo: '2026-10-15',
+    }, new Date(2026, 9, 16, 12));
+    expect(pares(r)).toEqual(['ing-otro 2026-10-15 500000']);
+  });
+
+  it('lo que acreditó la hoja sigue por repartir, con el monto que acreditó (HF.0b)', () => {
+    const r = ocurrenciasPorDistribuir([salario], [ip('ing-salario', '2026-10-15', 4_000_000)], {}, new Date(2026, 9, 16, 12));
+    expect(pares(r)).toEqual(['ing-salario 2026-10-15 4000000 hoja']);
+  });
+
+  it('una vez repartido, lo de la hoja tampoco vuelve (sello con yaAcreditado)', () => {
+    const r = ocurrenciasPorDistribuir([salario], [ip('ing-salario', '2026-10-15', 4_000_000)], {
+      cobrosDistribuidos: [{ ingresoId: 'ing-salario', fecha: '2026-10-15', yaAcreditado: true }],
+    }, new Date(2026, 9, 16, 12));
+    expect(r.ocurrencias).toEqual([]);
+  });
+
+  it('dos ingresos del mismo monto: repartir uno no esconde el otro', () => {
+    const a = ing('ing-a', 2_000_000, 15);
+    const b = ing('ing-b', 2_000_000, 15);
+    const r = ocurrenciasPorDistribuir([a, b], [], { cobrosDistribuidos: [{ ingresoId: 'ing-a', fecha: '2026-10-15' }] }, new Date(2026, 9, 16, 12));
+    expect(pares(r)).toEqual(['ing-b 2026-10-15 2000000']);
+  });
+
+  it('quincenal: repartir la primera quincena no esconde la segunda', () => {
+    const q = ing('ing-q', 2_000_000, 15, { frecuencia: 'Quincenal' });
+    const sellado = { cobrosDistribuidos: [{ ingresoId: 'ing-q', fecha: '2026-10-15' }], ultimaDistribucionPeriodo: '2026-10-15' };
+    expect(ocurrenciasPorDistribuir([q], [], sellado, new Date(2026, 9, 20, 12)).ocurrencias).toEqual([]);
+    expect(pares(ocurrenciasPorDistribuir([q], [], sellado, new Date(2026, 9, 31, 12)))).toEqual(['ing-q 2026-10-30 2000000']);
+  });
+
+  it('sin frecuencia datable no hay identidad posible: el asistente sigue como antes', () => {
+    const semanal = ing('ing-s', 800_000, undefined, { frecuencia: 'Semanal' });
+    expect(ocurrenciasPorDistribuir([semanal], [], {}, new Date(2026, 9, 16, 12))).toEqual({ identificable: false, ocurrencias: [] });
+    expect(ocurrenciasPorDistribuir(undefined, undefined, undefined, new Date(2026, 9, 16, 12))).toEqual({ identificable: false, ocurrencias: [] });
+  });
+});
+
+describe('resolverCobroDistribuido() - qué se acredita y qué queda recibido (HF.0i)', () => {
+  const o = (ingresoId, monto, extra = {}) => ({ ingresoId, fecha: '2026-10-15', descripcion: ingresoId, monto, yaAcreditado: false, ...extra });
+  const cobro = (...ocurrencias) => ({ identificable: true, ocurrencias });
+  const sal = o('ing-salario', 4_000_000);
+  const hon = o('ing-hon', 1_000_000);
+
+  it('el monto propuesto sin tocar: todo identificado, sin preguntas', () => {
+    const r = resolverCobroDistribuido(cobro(sal, hon), { monto: 5_000_000 });
+    expect(r).toMatchObject({ esperado: 5_000_000, opciones: [], resuelto: true, acreditar: 5_000_000 });
+    expect(r.sellar).toEqual([{ ingresoId: 'ing-salario', fecha: '2026-10-15' }, { ingresoId: 'ing-hon', fecha: '2026-10-15' }]);
+  });
+
+  it('BUG-033: el usuario marca que solo llegó el salario; los honorarios no quedan recibidos', () => {
+    const r = resolverCobroDistribuido(cobro(sal, hon), { monto: 4_000_000, seleccion: [claveOcurrencia(sal)] });
+    expect(r).toMatchObject({ esperado: 4_000_000, resuelto: true, acreditar: 4_000_000 });
+    expect(r.sellar).toEqual([{ ingresoId: 'ing-salario', fecha: '2026-10-15' }]);
+  });
+
+  it('BUG-033: con los dos marcados y el monto editado no se adivina cuál llegó', () => {
+    const sinAclarar = resolverCobroDistribuido(cobro(sal, hon), { monto: 4_000_000 });
+    expect(sinAclarar).toMatchObject({ esperado: 5_000_000, opciones: ['parte'], resuelto: false });
+    // "Llegó todo; reparto solo una parte": los dos recibidos y acreditados completos.
+    const parte = resolverCobroDistribuido(cobro(sal, hon), { monto: 4_000_000, diferencia: 'parte' });
+    expect(parte).toMatchObject({ resuelto: true, acreditar: 5_000_000 });
+    expect(parte.sellar).toHaveLength(2);
+    // "Me pagaron otro valor" no existe con dos ingresos: no se sabe cuál fue.
+    expect(resolverCobroDistribuido(cobro(sal, hon), { monto: 4_000_000, diferencia: 'valor' }).resuelto).toBe(false);
+  });
+
+  it('un solo ingreso con el monto más bajo: se pregunta si llegó menos o si se reparte una parte', () => {
+    const base = resolverCobroDistribuido(cobro(sal), { monto: 3_800_000 });
+    expect(base).toMatchObject({ opciones: ['parte', 'valor'], resuelto: false });
+    expect(resolverCobroDistribuido(cobro(sal), { monto: 3_800_000, diferencia: 'valor' })).toMatchObject({ resuelto: true, acreditar: 3_800_000 });
+    expect(resolverCobroDistribuido(cobro(sal), { monto: 3_800_000, diferencia: 'parte' })).toMatchObject({ resuelto: true, acreditar: 4_000_000 });
+  });
+
+  it('un solo ingreso con el monto más alto: solo vale "me pagaron ese valor"', () => {
+    expect(resolverCobroDistribuido(cobro(sal), { monto: 4_200_000 })).toMatchObject({ opciones: ['valor'], resuelto: false });
+    expect(resolverCobroDistribuido(cobro(sal), { monto: 4_200_000, diferencia: 'valor' })).toMatchObject({ resuelto: true, acreditar: 4_200_000 });
+    expect(resolverCobroDistribuido(cobro(sal), { monto: 4_200_000, diferencia: 'parte' }).resuelto).toBe(false);
+  });
+
+  it('dos ingresos y un monto mayor que lo marcado: diferencia sin explicar, no se confirma', () => {
+    const r = resolverCobroDistribuido(cobro(sal, hon), { monto: 5_500_000, diferencia: 'valor' });
+    expect(r).toMatchObject({ opciones: [], resuelto: false });
+  });
+
+  it('lo que acreditó la hoja se reparte sin acreditarse otra vez y se sella como ya acreditado', () => {
+    const honHoja = o('ing-hon', 1_000_000, { fecha: '2026-09-25', yaAcreditado: true });
+    const r = resolverCobroDistribuido(cobro(sal, honHoja), { monto: 5_000_000 });
+    expect(r).toMatchObject({ yaAcreditado: 1_000_000, resuelto: true, acreditar: 4_000_000 });
+    expect(r.abiertas.map(x => x.ingresoId)).toEqual(['ing-salario']);
+    expect(r.sellar).toEqual([
+      { ingresoId: 'ing-salario', fecha: '2026-10-15' },
+      { ingresoId: 'ing-hon', fecha: '2026-09-25', yaAcreditado: true },
+    ]);
+  });
+
+  it('todo acreditado por la hoja: repartirlo no suma nada (HF.0b)', () => {
+    const r = resolverCobroDistribuido(cobro(o('ing-salario', 4_000_000, { yaAcreditado: true })), { monto: 4_000_000 });
+    expect(r).toMatchObject({ resuelto: true, acreditar: 0 });
+  });
+
+  it('nada pendiente por repartir: ningún monto se puede confirmar', () => {
+    expect(resolverCobroDistribuido(cobro(), { monto: 4_000_000 })).toMatchObject({ esperado: 0, resuelto: false });
+    expect(resolverCobroDistribuido(cobro(sal), { monto: 0 }).resuelto).toBe(false);
+  });
+
+  it('sin identidad posible (frecuencia sin día) acredita el monto y no sella nada, como antes', () => {
+    const r = resolverCobroDistribuido({ identificable: false, ocurrencias: [] }, { monto: 800_000 });
+    expect(r).toMatchObject({ resuelto: true, acreditar: 800_000, sellar: [] });
+  });
+
+  it('el sello de lo repartido conserva la marca yaAcreditado al acumular', () => {
+    expect(acumularCobrosDistribuidos([], [{ ingresoId: 'ing-hon', fecha: '2026-10-15', yaAcreditado: true }], new Date(2026, 9, 16, 12)))
+      .toEqual([{ ingresoId: 'ing-hon', fecha: '2026-10-15', yaAcreditado: true }]);
   });
 });
 

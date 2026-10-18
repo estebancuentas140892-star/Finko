@@ -25,9 +25,9 @@ import {
   topeAbonoExtraDeuda,
   cuentaIngresoPrincipal,
   planComplementoDeficit,
-  montoYaAcreditadoDelCobro,
-  cobrosQueAcreditaLaDistribucion,
   acumularCobrosDistribuidos,
+  ocurrenciasPorDistribuir,
+  resolverCobroDistribuido,
 } from '../logic/distribucion.js';
 import { renderDistribucionIngreso, renderAsistenteDistribucion } from '../view.js';
 
@@ -579,6 +579,113 @@ function _validarTransferenciasCuentas(evBudget, transferencias) {
   return { transferido: asignado, disponible: sinAsignar, excede };
 }
 
+// ── ¿QUÉ RECIBISTE? (HF.0i, P8 del ADR 091) ───────────────────────
+
+/**
+ * Las ocurrencias del cobro que faltan por repartir, leídas de S en el momento:
+ * la fuente de verdad es el estado, no el DOM con el que se pintó el panel.
+ */
+function _cobroPendiente() {
+  return ocurrenciasPorDistribuir(S.ingresos ?? [], S.ingresosPuntuales ?? [], {
+    cobrosDistribuidos:        S.config?.cobrosDistribuidos,
+    ultimaDistribucionPeriodo: S.config?.ultimaDistribucionPeriodo ?? null,
+  }, new Date());
+}
+
+/**
+ * Qué acredita y qué deja recibido el monto actual, con lo que el usuario marcó
+ * y respondió en el bloque. Sin lista (un solo ingreso) la selección es `null`:
+ * todas las ocurrencias abiertas.
+ *
+ * @param {Element} panel
+ * @param {number} monto
+ */
+function _resolverRecibido(panel, monto) {
+  const checks = [...panel.querySelectorAll('[data-dist-recibido]')];
+  return resolverCobroDistribuido(_cobroPendiente(), {
+    monto,
+    seleccion:  checks.length === 0 ? null : checks.filter(c => c.checked).map(c => c.value),
+    diferencia: panel.querySelector('[data-dist-diferencia]:checked')?.value ?? null,
+  });
+}
+
+/**
+ * Pinta el bloque "¿Qué recibiste?" para el monto actual y devuelve la
+ * resolución, que decide si "Distribuir" se habilita. Nunca adivina: si el
+ * monto no coincide con lo marcado, pregunta qué pasó con la diferencia, y si
+ * ninguna respuesta la explica (dos ingresos y un monto mayor), lo dice y no
+ * deja confirmar.
+ *
+ * @param {Element} panel
+ * @param {number} monto
+ * @returns {ReturnType<typeof resolverCobroDistribuido>}
+ */
+function _actualizarBloqueRecibido(panel, monto) {
+  const r = _resolverRecibido(panel, monto);
+  const bloque = panel.querySelector('#distribuir-recibido');
+  if (!bloque || !r.identificable) return r;
+
+  const msg   = bloque.querySelector('#distribuir-recibido-msg');
+  const grupo = bloque.querySelector('[data-dist-diferencia-opciones]');
+  const hayLista   = bloque.querySelector('[data-dist-recibido]') !== null;
+  const diferencia = monto - r.esperado;
+  bloque.hidden = !hayLista && diferencia === 0 && r.esperado > 0;
+
+  if (grupo) {
+    grupo.hidden = r.opciones.length === 0;
+    const unica = r.recibidas.length === 1 ? r.recibidas[0] : null;
+    const textos = {
+      valor: unica ? `${unica.descripcion || 'Ese ingreso'} llegó por ${f(monto - r.yaAcreditado)}, no por ${f(unica.monto)}.` : '',
+      parte: `Llegó todo (${f(r.esperado)}); solo reparto ${f(monto)} y el resto queda en mi cuenta.`,
+    };
+    for (const op of ['valor', 'parte']) {
+      const fila = grupo.querySelector(`[data-dist-diferencia-opcion="${op}"]`);
+      if (!fila) continue;
+      const disponible = r.opciones.includes(op);
+      fila.hidden = !disponible;
+      const radio = fila.querySelector('[data-dist-diferencia]');
+      if (!disponible && radio) radio.checked = false;
+      const texto = fila.querySelector('[data-dist-diferencia-texto]');
+      if (texto) texto.textContent = textos[op];
+    }
+  }
+
+  if (msg) {
+    let texto = '';
+    let peligro = false;
+    if (r.esperado === 0) {
+      texto = r.abiertas.length === 0
+        ? 'No queda ningún cobro por repartir en este periodo.'
+        : 'Marca al menos un ingreso que te haya llegado.';
+      peligro = true;
+    } else if (diferencia !== 0 && r.opciones.length === 0) {
+      texto = `Lo que marcaste suma ${f(r.esperado)} y el monto es ${f(monto)}. Ajusta el monto o registra la diferencia como un ingreso aparte.`;
+      peligro = true;
+    } else if (diferencia !== 0) {
+      texto = `Lo que marcaste suma ${f(r.esperado)}. ¿Qué pasó con la diferencia de ${f(Math.abs(diferencia))}?`;
+      if (diferencia < 0 && r.recibidas.length > 1) texto += ' Si alguno no llegó o llegó por otro valor, desmárcalo.';
+      if (diferencia < 0 && r.opciones.includes('valor')) texto += ' Si todavía falta una parte, espera a que llegue completo: Finko no registra pagos por partes.';
+    }
+    msg.textContent = texto;
+    msg.classList.toggle('form-hint--danger', peligro);
+  }
+  return r;
+}
+
+/**
+ * Marcar o desmarcar un ingreso recibido ajusta el monto a lo que suman los
+ * marcados: decir "no llegó" ya es la aclaración, no hace falta otra. Una
+ * respuesta vieja sobre la diferencia se borra con el monto nuevo.
+ */
+function _onCambioRecibidos() {
+  const panel = document.getElementById('distribuir-ingreso-panel');
+  const input = document.getElementById('distribuir-monto');
+  if (!panel || !input) return;
+  panel.querySelectorAll('[data-dist-diferencia]').forEach(r => { r.checked = false; });
+  input.value = String(_resolverRecibido(panel, 0).esperado);
+  _recalcularDistribucion();
+}
+
 /** Recalcula el resumen en vivo y habilita/deshabilita "Distribuir". Sin tocar S. */
 function _recalcularDistribucion() {
   const panel = document.getElementById('distribuir-ingreso-panel');
@@ -599,6 +706,9 @@ function _recalcularDistribucion() {
   // confirmar (punto 18). No es un error que corregir: es una pregunta pendiente.
   const faltaDecidirRemanente = _actualizarBloqueRemanente(panel, sinAsignar);
 
+  // HF.0i: el monto tiene que corresponder a ingresos identificados.
+  const recibido = _actualizarBloqueRecibido(panel, monto);
+
   // Paso 3 (MC.7e): transferencias hacia otras cuentas, validadas aparte
   // contra el presupuesto de Estilo de vida (no contra el ingreso total).
   const transferencias = _leerTransferenciasCuentas(panel);
@@ -617,7 +727,8 @@ function _recalcularDistribucion() {
   // Deudas/Inversiones (asignado) o, con MC.7e, una transferencia entre cuentas
   // (transferido), aunque no haya nada más marcado en los otros pasos.
   const valido    = monto > 0 && (asignado > 0 || transferido > 0)
-    && (!excede || deficitCubierto) && !excedeTransferencia && !faltaDecidirRemanente;
+    && (!excede || deficitCubierto) && !excedeTransferencia && !faltaDecidirRemanente
+    && recibido.resuelto;
 
   if (resumenEl) {
     // Con déficit, el "qué hacer" vive en el bloque de abajo (completar con
@@ -770,6 +881,13 @@ async function _confirmarDistribucion() {
   const pideDecision = panel.querySelector('#distribuir-remanente') !== null;
   if (pideDecision && sinAsignar > 0 && _decisionRemanente(panel) === null) return;
 
+  // HF.0i: qué ocurrencias quedan recibidas y cuánto se acredita. Se resuelve
+  // antes de tocar nada y antes de mover el sello de periodo, que es evidencia
+  // para las distribuciones anteriores a HF.0h. Sin resolver no se confirma:
+  // es el mismo cinturón que el del déficit y el remanente.
+  const recibido = _resolverRecibido(panel, monto);
+  if (!recibido.resuelto) return;
+
   // MC.13e-2f-1: parte de la cuenta que el ingreso principal ya tiene guardada
   // (MC.13d) en vez de preguntar siempre; solo si esa cuenta sigue activa (o es
   // la única). Sin ella, cae al flujo de siempre (`resolverCuenta`).
@@ -824,24 +942,20 @@ async function _confirmarDistribucion() {
   const descontable = todos
     .filter(i => i.tipo !== 'fondo')
     .reduce((s, i) => s + i.monto, 0);
-  const yaAcreditado = montoYaAcreditadoDelCobro(S.ingresos ?? [], S.ingresosPuntuales ?? [], new Date());
-  const acreditar    = Math.max(0, monto - yaAcreditado);
+  // HF.0i: se acredita solo lo que corresponde a ocurrencias recibidas que la
+  // hoja no había acreditado (HF.0b), o el valor que el usuario confirmó para
+  // un ingreso único que llegó por otro monto.
+  const acreditar = recibido.acreditar;
   const cuenta = (S.cuentas ?? []).find(c => c.id === cuentaId);
 
-  // El otro sentido (BUG-032): lo que esta distribución acredita queda sellado
-  // por ocurrencia (`ingresoId` + fecha exacta del cobro) para que la hoja de
-  // créditos automáticos no lo vuelva a ofrecer. Solo si entra dinero nuevo:
-  // con todo el cobro ya acreditado por la hoja no hay nada que sellar. Vive en
-  // `config`, así que "Deshacer" lo revierte junto con el saldo. HF.1d lo
-  // reemplaza cuando Distribuir escriba su `IngresoPuntual`.
-  if (cuenta && acreditar > 0) {
-    const ahora = new Date();
+  // Sello por ocurrencia (BUG-032 HF.0h, HF.0i): lo que esta distribución
+  // reparte queda en `cobrosDistribuidos` para que ni la hoja ni la próxima
+  // distribución lo vuelvan a ofrecer. Lo que había acreditado la hoja va con
+  // `yaAcreditado`. Vive en `config`, así que "Deshacer" lo revierte junto con
+  // el saldo. HF.1d lo reemplaza cuando Distribuir escriba su `IngresoPuntual`.
+  if (cuenta && recibido.identificable) {
     if (!S.config) S.config = {};
-    S.config.cobrosDistribuidos = acumularCobrosDistribuidos(
-      S.config.cobrosDistribuidos,
-      cobrosQueAcreditaLaDistribucion(S.ingresos ?? [], S.ingresosPuntuales ?? [], ahora),
-      ahora,
-    );
+    S.config.cobrosDistribuidos = acumularCobrosDistribuidos(S.config.cobrosDistribuidos, recibido.sellar, new Date());
   }
 
   if (cuenta) {
@@ -953,6 +1067,11 @@ export function initAccionesDistribucion() {
       // MC.13e-2f-2: elegir destino para lo que sobra desbloquea "Distribuir" y,
       // si no es "dejarlo en la cuenta", prellena la fila del Paso 2.
       _elegirDestinoRemanente(t);
+    } else if (t.hasAttribute('data-dist-recibido')) {
+      // HF.0i: marcar qué ingreso llegó ajusta el monto a lo marcado.
+      _onCambioRecibidos();
+    } else if (t.hasAttribute('data-dist-diferencia')) {
+      _recalcularDistribucion();
     } else if (t.hasAttribute('data-nec-toggle')) {
       // Necesidades (Paso 1, R1): sin monto editable que habilitar/deshabilitar,
       // solo recalcular el resumen en vivo.

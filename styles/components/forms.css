@@ -378,13 +378,17 @@ form:not(.config-form) .form-group:not(:first-child) {
    asignar deja de ser informativo y pide destino antes de confirmar. Vive
    dentro del último paso; el radio hereda el tamaño del checkbox de
    `.checkbox-row` para que las dos filas del asistente se lean igual. */
-.distribuir__remanente {
+.distribuir__remanente,
+.distribuir__recibido {
   display: flex;
   flex-direction: column;
   gap: var(--fk-space-1);
   margin-top: var(--fk-space-2);
 }
-.distribuir__remanente input[type="radio"] {
+/* "¿Qué recibiste?" (HF.0i): mismo lenguaje que el remanente, bajo el monto. */
+.distribuir__remanente input[type="radio"],
+.distribuir__recibido input[type="radio"],
+.distribuir__recibido input[type="checkbox"] {
   width: 18px;
   height: 18px;
   flex-shrink: 0;

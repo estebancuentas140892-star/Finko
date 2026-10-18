@@ -2370,6 +2370,13 @@ describe('BUG-032 (HF.0h) - lo que Distribuir acreditó no vuelve a la hoja', ()
     expect(creditosAutomaticosVencidos([auto()], [], '2026-08-20', 0, otras)).toHaveLength(1);
   });
 
+  it('una entrada yaAcreditado (HF.0i) no esconde nada: ese cobro lo maneja su IngresoPuntual', () => {
+    const repartido = [{ ingresoId: 'i1', fecha: '2026-08-05', yaAcreditado: true }];
+    expect(creditosAutomaticosVencidos([auto()], [], '2026-08-20', 0, repartido)).toHaveLength(1);
+    const conPuntual = [{ ingresoId: 'i1', fecha: '2026-08-05', monto: 3_000_000 }];
+    expect(creditosAutomaticosVencidos([auto()], conPuntual, '2026-08-20', 0, repartido)).toEqual([]);
+  });
+
   it('entradas mal formadas o una guarda ausente no rompen ni esconden', () => {
     const eventos = eventosIngresosDelMes([auto()], 2026, 7);
     expect(pendientesDeCreditoDelMes(eventos, [], '2026-08', '2026-08-20', [null, { ingresoId: 'i1' }, 'texto'])).toHaveLength(1);

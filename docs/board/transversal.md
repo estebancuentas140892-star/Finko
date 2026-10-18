@@ -71,18 +71,6 @@
 - Aceptación : tests con reloj fijo a las 20:00 hora Colombia
 - Modelo     : Equilibrado, Alto
 
-#### HF.0i - Distribuir solo acredita y sella ocurrencias que puede identificar (BUG-033, BUG-034)
-- Prioridad  : alta
-- Estado     : pendiente, P8 resuelta el 2026-10-17 ([ADR 091](../DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)): con varios ingresos el usuario marca cuáles recibió; con uno solo no se pregunta; una diferencia de monto se aclara, nunca se adivina; sin modelo de pagos por partes
-- Área       : ambos (el asistente tendría que preguntar qué llegó)
-- Objetivo   : el monto que propone Distribuir y lo que sella como recibido salen de ocurrencias identificadas (`ingresoId` + fecha), sin las que ya acreditó la hoja o una distribución anterior
-- Riesgo     : cambia el monto propuesto a quien cobra en días distintos; decidir por monto ("qué ingreso cabe") es coincidencia débil y queda descartado
-- Secciones  : Mis cuentas (asistente), Calendario (hoja)
-- Archivos   : `tesoreria/logic/distribucion.js`, `tesoreria/acciones/distribucion.js`, `tesoreria/views/distribucion.js`, `infra/vencimientos.js` (`montoCobroPrincipal`)
-- Depende de : nada; coordinar con HF.1d, que retira la guarda de HF.0h
-- Aceptación : E2E de los dos casos de BUG-033 y BUG-034 con el dinero total; con un solo ingreso, el monto editado sigue sellando ese ingreso
-- Modelo     : Alta capacidad, Alto
-
 #### HF.0j - El catch-up no ofrece cobros ni pagos anteriores al alta del registro
 - Prioridad  : media
 - Estado     : pendiente, decidido por Esteban el 2026-10-17 para ingresos y extendido a débitos el mismo día ([ADR 091](../DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)); acota el ADR 052 D1. No iniciar antes de HF.0e
@@ -100,10 +88,10 @@
 - Estado     : pendiente
 - Área       : code (solo tests)
 - Objetivo   : `tests/fixtures/perfiles.js` con tres perfiles deterministas (ligero: 1 cuenta; común: 2-3 cuentas, tarjeta, ahorro, transferencias; intensivo: 4-5 cuentas, metas, reservas, fondo, inversiones, préstamos, categorías, un año) construidos por las rutas reales de escritura, y una suite de invariantes: I1 a I5, R-HF1, R-HF2, reversas exactas, guardar y cargar, Movimientos sin duplicados, peso serializado
-- Riesgo     : congelar como esperado un doble conteo vigente; por eso va después de HF.0d y HF.0i
+- Riesgo     : congelar como esperado un doble conteo vigente; por eso va después de HF.0d
 - Secciones  : todas (sin runtime)
 - Archivos   : `tests/fixtures/perfiles.js`, `tests/integration/perfiles.test.js`
-- Depende de : HF.0d, HF.0i
+- Depende de : HF.0d
 - Aceptación : la suite corre en `pnpm test` y falla si se reintroduce cualquiera de los bugs de doble conteo de la Fase 0
 - Modelo     : Alta capacidad, Extra
 
@@ -131,7 +119,7 @@
 - Estado : requiere ADR, dueño ficha 18. **Objetivo**: `aportes[]` con id, fecha, monto y cuenta (schema v45: la v44 la tomó HF.0c; sin backfill: lo previo queda como saldo de apertura, I4); Movimientos gana sus fuentes 6 y 7; "Ya lo usé" registra el gasto (V5). **Archivos**: `core/state.js`, `core/storage.js`, `metas/`, `apartados/`, `movimientos/logic.js`. **Depende de**: ficha 18, HF.1a. **Aceptación**: migración idempotente con test y perfil intensivo.
 
 #### HF.1d - Todo cambio de saldo deja registro
-- Estado : requiere ADR (acota ADR 012). **Objetivo**: Distribuir crea el ingreso y las transferencias que hoy aplica sin registro; desembolso de préstamo, crédito D.14 y ajuste manual dejan su fila. Retira la guarda de HF.0h (`config.cobrosDistribuidos`): el `IngresoPuntual` de Distribuir la reemplaza si la hoja lo descarta por ocurrencia, no por mes, o la segunda quincena distribuida deja de salir. **Archivos**: `tesoreria/acciones/distribucion.js`, `personales/index.js`, `compromisos/index.js`, `tesoreria/logic/cuentas.js`. **Depende de**: HF.1a. **Aceptación**: invariante R-HF2 verde en los tres perfiles.
+- Estado : requiere ADR (acota ADR 012). **Objetivo**: Distribuir crea el ingreso y las transferencias que hoy aplica sin registro; desembolso de préstamo, crédito D.14 y ajuste manual dejan su fila. Retira la guarda de HF.0h y HF.0i (`config.cobrosDistribuidos`): el `IngresoPuntual` de Distribuir la reemplaza solo para lo que el usuario confirmó como recibido, y la hoja tiene que descartarlo por ocurrencia, no por mes, o la segunda quincena distribuida deja de salir. **Archivos**: `tesoreria/acciones/distribucion.js`, `personales/index.js`, `compromisos/index.js`, `tesoreria/logic/cuentas.js`. **Depende de**: HF.1a. **Aceptación**: invariante R-HF2 verde en los tres perfiles.
 
 #### HF.1e - Inversión: valor actual y cierre de posición
 - Estado : requiere ADR, dueño ficha 18 (ADR 086). **Objetivo**: valor actual con fecha, liquidar devuelve a una cuenta elegida con su rendimiento, patrimonio usa el valor actual si existe (I4 para lo previo). **Archivos**: `inversiones/`, `infra/portafolio.js`, `analisis/logic.js`. **Depende de**: ficha 18. **Aceptación**: liquidar no cambia el patrimonio salvo el rendimiento.

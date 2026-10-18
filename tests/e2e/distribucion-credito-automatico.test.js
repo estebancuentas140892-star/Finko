@@ -7,10 +7,12 @@
  * el cobro y lo registra como `IngresoPuntual` con `ingresoId`. "Distribuir mi
  * ingreso" acreditaba ese mismo cobro otra vez al confirmar (BUG-030). Y al
  * revés: si se posponía la hoja y se distribuía, la hoja volvía a ofrecer el
- * cobro en la siguiente apertura (BUG-032). Lo que cubre aquí y no en unit
- * (`montoYaAcreditadoDelCobro`, `cobrosQueAcreditaLaDistribucion` y
- * `pendientesDeCreditoDelMes` tienen sus casos puros): los dos recorridos
- * reales, con recarga de la app y el dinero total exacto.
+ * cobro en la siguiente apertura (BUG-032). Y desde HF.0i: Distribuir no
+ * propone ni acredita lo que otra distribución ya repartió (BUG-034), y con el
+ * monto editado el usuario dice qué ingreso llegó en vez de darlos todos por
+ * recibidos (BUG-033). Lo que cubre aquí y no en unit (`ocurrenciasPorDistribuir`,
+ * `resolverCobroDistribuido` y `pendientesDeCreditoDelMes` tienen sus casos
+ * puros): los recorridos reales, con recarga de la app y el dinero total exacto.
  *
  * Reloj fijo (`page.clock.setFixedTime`): el cobro y la ventana del arriendo
  * dependen del día, y un test que pasa solo algunos días es el patrón que
@@ -45,7 +47,7 @@ const ARRIENDO = {
 
 function estado({
   cuentas = [NOMINA], ingreso = salario({ creditoAutomatico: true }), ingresos = [ingreso],
-  puntuales = [COBRO_SEPTIEMBRE], config = {},
+  puntuales = [COBRO_SEPTIEMBRE], compromisos = [ARRIENDO], config = {},
 } = {}) {
   return {
     perfil: { nombre: 'Prueba', smmlv: 1750905 },
@@ -53,7 +55,7 @@ function estado({
     cuentas,
     ingresos,
     ingresosPuntuales: puntuales,
-    compromisos: [ARRIENDO],
+    compromisos,
     gastos: [],
     metas: [],
     // Sin fondo ni metas no hay destino para el remanente, así que el asistente
@@ -297,5 +299,196 @@ test.describe('BUG-032 - Distribuir primero y la hoja después: un solo crédito
 
     await reabrir(page, new Date('2026-11-16T10:00:00'));
     expect(await filasHoja(page)).toEqual(['Salario de prueba +$4.000.000']);
+  });
+});
+
+// ── HF.0i: Distribuir solo acredita y sella ocurrencias identificadas ──
+// BUG-034 (Caso A) y BUG-033 (Caso B), más el ingreso único (Caso C), la
+// reversa y el quincenal. Sin compromisos: lo que se confirma es una
+// transferencia de 100.000 a Cuenta Ahorros, que no cambia el dinero total,
+// así que el total sube exactamente lo que Distribuir acredita.
+
+const SIN_GASTOS = { cuentas: [NOMINA, AHORROS], compromisos: [], config: { presetDistribucion: '50-30-20' } };
+const montoPropuesto = (page) => page.locator('#distribuir-monto').inputValue();
+
+/** Reparte con una transferencia de 100.000 a Cuenta Ahorros y confirma. */
+async function repartirConTransferencia(page) {
+  const destino = page.locator('.distribuir__monto[data-dist-tipo="cuenta"][data-dist-id="cta-ahorros"]');
+  const siguiente = page.locator('[data-action="distribuir-paso-siguiente"]');
+  for (let i = 0; i < 5 && !(await destino.isVisible()); i++) await siguiente.click();
+  await page.locator('.distribuir__fila').filter({ has: destino }).locator('[data-dist-destino-toggle]').check();
+  await destino.fill('100000');
+  await confirmarDistribucion(page);
+}
+
+const sellados = async (page) =>
+  ((await leerEstado(page)).config?.cobrosDistribuidos ?? []).map(c => `${c.ingresoId} ${c.fecha}`).sort();
+
+test.describe('BUG-034 - Distribuir no propone ni acredita lo que otra distribución ya repartió', () => {
+
+  test('Caso A: salario el 15 y honorarios el 25; cada cobro se acredita una vez', async ({ page }) => {
+    const ingresos = [salario(), honorarios({ creditoAutomatico: false })];
+    await abrirPersistente(page, estado({ ...SIN_GASTOS, ingresos, puntuales: [] }), new Date('2026-09-26T10:00:00'));
+
+    // Septiembre: llegaron los dos.
+    await abrirAsistente(page);
+    expect(await montoPropuesto(page)).toBe('5000000');
+    await repartirConTransferencia(page);
+    await expect.poll(() => dineroTotal(page), { timeout: 5_000 }).toBe(5_800_000);
+
+    // 16 de octubre: solo llegó el salario. Con el bug proponía 5.000.000 y el
+    // total terminaba en 10.800.000 con 9.800.000 reales.
+    await reabrir(page, new Date('2026-10-16T10:00:00'));
+    await abrirAsistente(page);
+    expect(await montoPropuesto(page)).toBe('4000000');
+    await repartirConTransferencia(page);
+    await expect.poll(() => dineroTotal(page), { timeout: 5_000 }).toBe(9_800_000);
+
+    // Recargar no reabre ese cobro.
+    await reabrir(page, new Date('2026-10-16T10:00:00'));
+    await expect(page.locator('.distribuir__hecho')).toBeVisible();
+
+    // 26 de octubre: los honorarios del 25 son una ocurrencia nueva.
+    await reabrir(page, new Date('2026-10-26T10:00:00'));
+    await abrirAsistente(page);
+    expect(await montoPropuesto(page)).toBe('1000000');
+    await repartirConTransferencia(page);
+    await expect.poll(() => dineroTotal(page), { timeout: 5_000 }).toBe(10_800_000);
+    expect(await sellados(page)).toEqual([
+      'ing-honorarios 2026-09-25', 'ing-honorarios 2026-10-25', 'ing-salario 2026-09-15', 'ing-salario 2026-10-15',
+    ]);
+  });
+
+  test('quincenal: cada quincena se propone y se acredita una vez', async ({ page }) => {
+    const quincena = salario({ frecuencia: 'Quincenal', monto: 2_000_000 });
+    await abrirPersistente(page, estado({ ...SIN_GASTOS, ingresos: [quincena], puntuales: [] }), new Date('2026-10-16T10:00:00'));
+    await abrirAsistente(page);
+    expect(await montoPropuesto(page)).toBe('2000000');
+    await repartirConTransferencia(page);
+
+    await reabrir(page, new Date('2026-10-31T10:00:00'));
+    await abrirAsistente(page);
+    expect(await montoPropuesto(page)).toBe('2000000');
+    await repartirConTransferencia(page);
+    await expect.poll(() => dineroTotal(page), { timeout: 5_000 }).toBe(4_800_000);
+    expect(await sellados(page)).toEqual(['ing-salario 2026-10-15', 'ing-salario 2026-10-30']);
+  });
+});
+
+test.describe('BUG-033 - con el monto editado, el usuario dice qué ingreso llegó', () => {
+  const dosIngresosMismoDia = () => estado({
+    ...SIN_GASTOS,
+    ingresos:  [salario({ creditoAutomatico: true }), honorarios({ diaPago: 15 })],
+    puntuales: [COBRO_SEPTIEMBRE, { ...HONORARIOS_SEPTIEMBRE, fecha: '2026-09-15' }],
+  });
+
+  test('Caso B: llegó solo el salario; los honorarios siguen pendientes en la hoja', async ({ page }) => {
+    await abrirPersistente(page, dosIngresosMismoDia());
+    expect((await filasHoja(page)).sort()).toEqual(['Honorarios de prueba +$1.000.000', 'Salario de prueba +$4.000.000']);
+    await posponerHojaAutomaticos(page);
+
+    await abrirAsistente(page);
+    expect(await montoPropuesto(page)).toBe('5000000');
+    await page.fill('#distribuir-monto', '4000000');
+    // Con el bug no había a quién preguntar: se sellaban los dos.
+    const recibidos = page.locator('#distribuir-recibido [data-dist-recibido]');
+    await expect(recibidos).toHaveCount(2);
+    await page.locator('#distribuir-recibido label').filter({ hasText: 'Honorarios de prueba' }).locator('[data-dist-recibido]').uncheck();
+    expect(await montoPropuesto(page)).toBe('4000000');
+    await repartirConTransferencia(page);
+
+    await expect.poll(() => dineroTotal(page), { timeout: 5_000 }).toBe(4_800_000);
+    expect(await sellados(page)).toEqual(['ing-salario 2026-10-15']);
+
+    // La hoja ya no ofrece el salario y sí los honorarios.
+    await reabrir(page);
+    expect(await filasHoja(page)).toEqual(['Honorarios de prueba +$1.000.000']);
+    await page.locator('#modal-automaticos [data-action="agenda-confirmar-automaticos"]').click();
+    await page.waitForSelector('#modal-automaticos:not([data-open])', { timeout: 5_000 });
+    await expect.poll(() => dineroTotal(page), { timeout: 5_000 }).toBe(5_800_000);
+
+    await reabrir(page);
+    await expect(page.locator('#modal-automaticos[data-open]')).toHaveCount(0);
+    expect(await dineroTotal(page)).toBe(5_800_000);
+  });
+
+  test('con los dos marcados y el monto editado no se confirma hasta aclarar la diferencia', async ({ page }) => {
+    await abrirPersistente(page, dosIngresosMismoDia());
+    await posponerHojaAutomaticos(page);
+    await abrirAsistente(page);
+    await page.fill('#distribuir-monto', '4000000');
+
+    const destino = page.locator('.distribuir__monto[data-dist-tipo="cuenta"][data-dist-id="cta-ahorros"]');
+    const siguiente = page.locator('[data-action="distribuir-paso-siguiente"]');
+    for (let i = 0; i < 5 && !(await destino.isVisible()); i++) await siguiente.click();
+    await page.locator('.distribuir__fila').filter({ has: destino }).locator('[data-dist-destino-toggle]').check();
+    await destino.fill('100000');
+    for (let i = 0; i < 5 && await siguiente.isVisible(); i++) await siguiente.click();
+
+    const confirmar = page.locator('[data-action="confirmar-distribucion"]');
+    await expect(confirmar).toBeDisabled();
+    // Con dos ingresos marcados no existe "me pagaron otro valor": no se sabe cuál.
+    await expect(page.locator('input[name="distribuir-diferencia"][value="valor"]')).toBeHidden();
+    await page.locator('input[name="distribuir-diferencia"][value="parte"]').check();
+    await expect(confirmar).toBeEnabled();
+    await confirmar.click();
+    await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
+
+    // "Llegó todo; reparto una parte": se acreditan los dos completos.
+    await expect.poll(() => dineroTotal(page), { timeout: 5_000 }).toBe(5_800_000);
+    expect(await sellados(page)).toEqual(['ing-honorarios 2026-10-15', 'ing-salario 2026-10-15']);
+  });
+
+  test('deshacer devuelve el dinero y deja los dos cobros pendientes otra vez', async ({ page }) => {
+    await abrirPersistente(page, dosIngresosMismoDia());
+    await posponerHojaAutomaticos(page);
+    await abrirAsistente(page);
+    await page.fill('#distribuir-monto', '4000000');
+    await page.locator('#distribuir-recibido label').filter({ hasText: 'Honorarios de prueba' }).locator('[data-dist-recibido]').uncheck();
+    await repartirConTransferencia(page);
+    await expect.poll(() => dineroTotal(page), { timeout: 5_000 }).toBe(4_800_000);
+
+    await page.click('[data-action="deshacer-distribucion"]');
+    await expect.poll(() => dineroTotal(page), { timeout: 5_000 }).toBe(800_000);
+
+    await reabrir(page);
+    expect((await filasHoja(page)).sort()).toEqual(['Honorarios de prueba +$1.000.000', 'Salario de prueba +$4.000.000']);
+  });
+});
+
+test.describe('Caso C - un solo ingreso: no se pregunta de dónde vino, sí qué pasó con la diferencia', () => {
+  const unIngreso = () => estado({ ...SIN_GASTOS, ingresos: [salario({ creditoAutomatico: true })] });
+
+  test('sin tocar el monto no aparece ninguna pregunta', async ({ page }) => {
+    await abrirPersistente(page, unIngreso());
+    await posponerHojaAutomaticos(page);
+    await abrirAsistente(page);
+    await expect(page.locator('#distribuir-recibido')).toBeHidden();
+    await repartirConTransferencia(page);
+    await expect.poll(() => dineroTotal(page), { timeout: 5_000 }).toBe(4_800_000);
+  });
+
+  test('"me pagaron menos": se acredita lo recibido y el salario queda cobrado', async ({ page }) => {
+    await abrirPersistente(page, unIngreso());
+    await posponerHojaAutomaticos(page);
+    await abrirAsistente(page);
+    await page.fill('#distribuir-monto', '3800000');
+    await expect(page.locator('#distribuir-recibido [data-dist-recibido]')).toBeHidden();
+    await page.locator('input[name="distribuir-diferencia"][value="valor"]').check();
+    await repartirConTransferencia(page);
+
+    await expect.poll(() => dineroTotal(page), { timeout: 5_000 }).toBe(4_600_000);
+    await reabrir(page);
+    await expect(page.locator('#modal-automaticos[data-open]')).toHaveCount(0);
+  });
+
+  test('"llegó todo; reparto una parte": se acredita el salario completo', async ({ page }) => {
+    await abrirPersistente(page, unIngreso());
+    await posponerHojaAutomaticos(page);
+    await abrirAsistente(page);
+    await page.fill('#distribuir-monto', '3000000');
+    await page.locator('input[name="distribuir-diferencia"][value="parte"]').check();
+    await repartirConTransferencia(page);
+    await expect.poll(() => dineroTotal(page), { timeout: 5_000 }).toBe(4_800_000);
   });
 });

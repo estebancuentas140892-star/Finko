@@ -29,6 +29,8 @@ import {
   construirPlanInversiones,
   construirFilasTransferenciaCuentas,
   estadoDistribucion,
+  ocurrenciasPorDistribuir,
+  claveOcurrencia,
 } from '../logic/distribucion.js';
 import { frecuenciaPrincipalIngresos, montoCobroPrincipal } from '../../../infra/vencimientos.js';
 import { fechaCorta } from './ingresos.js';
@@ -109,7 +111,18 @@ function _construirDatosDistribucion() {
   // El monto que se reparte HOY y se acredita a la cuenta es lo recibido en
   // ESTE cobro: un quincenal reparte una quincena, no dos. `|| ingresoMensual`
   // es una red defensiva (datos válidos siempre dan > 0).
-  const montoCobro = montoCobroPrincipal(S.ingresos ?? []) || ingresoMensual;
+  // HF.0i (BUG-034): con fechas datables el cobro es lo que falta repartir,
+  // ocurrencia por ocurrencia (`ingresoId` + fecha), no la suma de plantillas:
+  // así no vuelve un ingreso que otra distribución ya repartió. Sin fechas no
+  // hay identidad posible y queda la suma de siempre.
+  const cobroPendiente = ocurrenciasPorDistribuir(S.ingresos ?? [], S.ingresosPuntuales ?? [], {
+    cobrosDistribuidos:        S.config?.cobrosDistribuidos,
+    ultimaDistribucionPeriodo: S.config?.ultimaDistribucionPeriodo ?? null,
+  }, new Date());
+  const montoPlantillas = montoCobroPrincipal(S.ingresos ?? []) || ingresoMensual;
+  const montoCobro = cobroPendiente.identificable
+    ? cobroPendiente.ocurrencias.reduce((s, o) => s + o.monto, 0)
+    : montoPlantillas;
 
   const contexto = construirContextoDistribucion(S);
   const { presetId, distribucionPersonalizada } = contexto;
@@ -193,6 +206,10 @@ function _construirDatosDistribucion() {
     dist, presetId, distribucionPersonalizada, estado: estadoDist, hayDestinos,
     distribuir: {
       montoIngreso:    montoCobro,
+      // Ya distribuido, la tarjeta sigue mostrando de cuánto es el cobro (no
+      // lo que falta, que es cero).
+      montoTarjeta:    estadoDist.estado === 'distribuido' ? montoPlantillas : montoCobro,
+      cobroPendiente,
       ahorroPct:       dist.split.ahorro.pct,
       estiloVidaPct:   dist.split.estiloVida.pct,
       ahorroBudget:    presupuestos.ahorro,
@@ -763,6 +780,7 @@ function _renderPanelDistribuir(d) {
                    min="0" step="10000" inputmode="numeric" value="${montoIngreso}"
                    data-action="recalcular-distribucion" />
           </div>
+          ${_seccionRecibido(d.cobroPendiente)}
           ${indicadorPaso}
           ${pasosHtml}
           <p id="distribuir-resumen" class="form-hint" role="status"></p>
@@ -825,7 +843,7 @@ function _renderTarjetaDistribuir({ dist, estado, hayDestinos, distribuir }) {
   // Los % del split no cambian con la frecuencia; solo la base sobre la que se
   // leen (un quincenal reparte una quincena, no el mes). Cae al mensual si por
   // algún motivo no llega `distribuir` (mismo valor para un asalariado mensual).
-  const montoCobro = distribuir?.montoIngreso ?? dist.ingresoMensual;
+  const montoCobro = distribuir?.montoTarjeta ?? distribuir?.montoIngreso ?? dist.ingresoMensual;
   const est = estado?.estado ?? 'sin-fecha';
 
   // MC-DIS.9 C10 (regla R24): sin `role="status"`. El aviso es informativo y
@@ -887,6 +905,52 @@ function _renderTarjetaDistribuir({ dist, estado, hayDestinos, distribuir }) {
       ${alertasHtml}
       ${pie}
     </div>`;
+}
+
+/**
+ * "¿Qué recibiste?" (HF.0i, P8 del ADR 091): vive bajo el monto, fuera de la
+ * paginación, y no estorba a quien tiene un ingreso claro.
+ *
+ * - Con dos o más ingresos por acreditar, lista cuáles forman el cobro, todos
+ *   marcados: desmarcar uno dice que no llegó y el monto se ajusta solo.
+ * - Con uno, no hay lista: la fuente ya es inequívoca.
+ * - Si el monto no coincide con lo marcado, `acciones/distribucion.js` muestra
+ *   la pregunta de la diferencia (llegó por otro valor, o se reparte una parte)
+ *   y no deja confirmar sin respuesta.
+ *
+ * Lo que ya acreditó la hoja no se lista: llegó con certeza. Sin fechas
+ * datables (`identificable: false`) no hay bloque.
+ *
+ * @param {ReturnType<typeof ocurrenciasPorDistribuir>|undefined} cobro
+ * @returns {string}
+ */
+function _seccionRecibido(cobro) {
+  if (!cobro?.identificable) return '';
+  const abiertas = cobro.ocurrencias.filter(o => !o.yaAcreditado);
+  const lista = abiertas.length > 1 ? `
+            <p id="distribuir-recibido-titulo" class="form-hint distribuir__subtitulo">Este cobro incluye estos ingresos. Desmarca el que todavía no te llegó:</p>
+            <div role="group" aria-labelledby="distribuir-recibido-titulo">
+              ${abiertas.map(o => `
+              <label class="checkbox-row">
+                <input type="checkbox" checked data-dist-recibido value="${_esc(claveOcurrencia(o))}" />
+                <span>${_esc(o.descripcion || 'Ingreso')} · ${fechaCorta(o.fecha)} · ${f(o.monto)}</span>
+              </label>`).join('')}
+            </div>` : '';
+  return `
+          <div id="distribuir-recibido" class="distribuir__recibido"${lista ? '' : ' hidden'}>
+            ${lista}
+            <p id="distribuir-recibido-msg" class="form-hint" role="status"></p>
+            <div role="radiogroup" aria-label="Qué pasó con la diferencia" data-dist-diferencia-opciones hidden>
+              <label class="checkbox-row" data-dist-diferencia-opcion="valor">
+                <input type="radio" name="distribuir-diferencia" value="valor" data-dist-diferencia />
+                <span data-dist-diferencia-texto></span>
+              </label>
+              <label class="checkbox-row" data-dist-diferencia-opcion="parte">
+                <input type="radio" name="distribuir-diferencia" value="parte" data-dist-diferencia />
+                <span data-dist-diferencia-texto></span>
+              </label>
+            </div>
+          </div>`;
 }
 
 /**

@@ -539,6 +539,8 @@ export function debitosAutomaticosVencidos(compromisos, gastos, hoyISO, mesesAtr
  *
  * `acreditados` (BUG-032, HF.0h) son las ocurrencias que "Distribuir mi
  * ingreso" ya acreditó sin dejar `IngresoPuntual` (`S.config.cobrosDistribuidos`).
+ * Las marcadas `yaAcreditado` (HF.0i) se repartieron, pero el dinero lo había
+ * acreditado esta misma hoja: las maneja su `IngresoPuntual`, no esta lista.
  * A diferencia del `IngresoPuntual`, descartan **una ocurrencia exacta**
  * (`ingresoId` + fecha), no el mes: distribuir la primera quincena no esconde la
  * segunda, ni el salario de septiembre el de octubre. Mismo monto, descripción
@@ -568,7 +570,7 @@ export function pendientesDeCreditoDelMes(eventos, ingresosPuntuales, prefijoMes
 
   const yaDistribuidos = new Set(
     (Array.isArray(acreditados) ? acreditados : [])
-      .filter(a => a && typeof a.ingresoId === 'string' && typeof a.fecha === 'string')
+      .filter(a => a && typeof a.ingresoId === 'string' && typeof a.fecha === 'string' && a.yaAcreditado !== true)
       .map(a => `${a.ingresoId}|${a.fecha}`),
   );
 

@@ -74,6 +74,9 @@ export {
   montoYaAcreditadoDelCobro,
   cobrosQueAcreditaLaDistribucion,
   acumularCobrosDistribuidos,
+  claveOcurrencia,
+  ocurrenciasPorDistribuir,
+  resolverCobroDistribuido,
 } from './logic/distribucion.js';
 
 export {

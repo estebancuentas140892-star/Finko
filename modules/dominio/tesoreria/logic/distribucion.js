@@ -271,6 +271,10 @@ export function cuentaIngresoPrincipal(ingresos = []) {
  * Una frecuencia sin día datable (Semanal, Diario, Variable) no tiene periodo
  * que comparar y devuelve 0: el asistente acredita como siempre.
  *
+ * Desde HF.0i el asistente no la llama: `ocurrenciasPorDistribuir` marca cada
+ * ocurrencia acreditada por la hoja (`yaAcreditado`) y `resolverCobroDistribuido`
+ * la reparte sin sumarla. Queda como la vista agregada de esa misma regla.
+ *
  * Pura: no lee `S` ni el DOM.
  *
  * @param {import('../../../core/state.js').Ingreso[]} ingresos
@@ -302,6 +306,10 @@ export function montoYaAcreditadoDelCobro(ingresos = [], ingresosPuntuales = [],
  * `ultimaDistribucionPeriodo` es una sola fecha y no dice qué ingresos formaban
  * el cobro, ni separa la primera quincena de la segunda.
  *
+ * Desde HF.0i el asistente sella lo que el usuario confirmó como recibido
+ * (`resolverCobroDistribuido().sellar`), no siempre el cobro entero: esta
+ * función es ese conjunto cuando todo llegó.
+ *
  * Pura: no lee `S` ni el DOM.
  *
  * @param {import('../../../core/state.js').Ingreso[]} ingresos
@@ -318,25 +326,27 @@ export function cobrosQueAcreditaLaDistribucion(ingresos = [], ingresosPuntuales
 }
 
 /**
- * Meses hacia atrás que conserva `cobrosDistribuidos`: el mes en curso y los
- * dos anteriores. La hoja solo revisa el mes en curso y uno más
- * (`MESES_CATCHUP_AUTOMATICOS` de agenda, que este dominio no importa, ADN 10);
- * el mes de más es margen, no una regla nueva.
+ * Meses hacia atrás que conserva `cobrosDistribuidos`. Desde HF.0i la lista
+ * también dice qué ya repartió Distribuir, y el cobro que arma el asistente
+ * mira hasta un periodo atrás de la frecuencia principal (`ultimoPagoHasta`,
+ * doce meses en una Anual): soltar antes un par haría que ese cobro volviera
+ * a proponerse. La hoja, que solo revisa dos meses, queda cubierta de sobra.
  */
-const _MESES_COBROS_DISTRIBUIDOS = 2;
+const _MESES_COBROS_DISTRIBUIDOS = 12;
 
 /**
- * Suma a `S.config.cobrosDistribuidos` lo que acaba de acreditar Distribuir
- * (BUG-032, HF.0h), sin repetir pares y sin guardar para siempre: lo anterior a
- * la ventana que la hoja revisa ya no protege nada. Descarta entradas mal
- * formadas en vez de fallar.
+ * Suma a `S.config.cobrosDistribuidos` lo que acaba de repartir Distribuir
+ * (BUG-032 HF.0h, HF.0i), sin repetir pares y sin guardar para siempre: lo
+ * anterior a la ventana del cobro ya no protege nada. Conserva la marca
+ * `yaAcreditado` (lo repartido que había acreditado la hoja). Descarta entradas
+ * mal formadas en vez de fallar.
  *
  * Pura: no lee `S` ni el DOM.
  *
- * @param {Array<{ingresoId?:string, fecha?:string}>|undefined} previos
- * @param {Array<{ingresoId:string, fecha:string}>} nuevos
+ * @param {Array<{ingresoId?:string, fecha?:string, yaAcreditado?:boolean}>|undefined} previos
+ * @param {Array<{ingresoId:string, fecha:string, yaAcreditado?:boolean}>} nuevos
  * @param {Date} [hoy=new Date()]
- * @returns {Array<{ingresoId:string, fecha:string}>}
+ * @returns {Array<{ingresoId:string, fecha:string, yaAcreditado?:true}>}
  */
 export function acumularCobrosDistribuidos(previos = [], nuevos = [], hoy = new Date()) {
   const desde = isoFecha(new Date(hoy.getFullYear(), hoy.getMonth() - _MESES_COBROS_DISTRIBUIDOS, 1));
@@ -348,9 +358,141 @@ export function acumularCobrosDistribuidos(previos = [], nuevos = [], hoy = new 
     const clave = `${c.ingresoId}|${c.fecha}`;
     if (vistos.has(clave)) continue;
     vistos.add(clave);
-    out.push({ ingresoId: c.ingresoId, fecha: c.fecha });
+    out.push(c.yaAcreditado === true
+      ? { ingresoId: c.ingresoId, fecha: c.fecha, yaAcreditado: true }
+      : { ingresoId: c.ingresoId, fecha: c.fecha });
   }
   return out;
+}
+
+/**
+ * Clave de una ocurrencia de cobro: `ingresoId` + fecha exacta (HF.0i). Es la
+ * identidad que comparten la hoja, Distribuir y la lista de "¿qué recibiste?"
+ * del asistente; monto, descripción o cuenta nunca entran.
+ *
+ * @param {{ingresoId:string, fecha:string}} o
+ * @returns {string}
+ */
+export function claveOcurrencia(o) {
+  return `${o.ingresoId}|${o.fecha}`;
+}
+
+/**
+ * Las ocurrencias del cobro que todavía no se repartieron (HF.0i, BUG-034): el
+ * cobro de `_ocurrenciasDelCobro` (los ingresos de la frecuencia principal, cada
+ * uno en la fecha exacta de su último cobro) sin las que ya repartió una
+ * distribución anterior. Cada una dice si ya entró a la cuenta por la hoja de
+ * créditos automáticos (`yaAcreditado`, su `IngresoPuntual` con `ingresoId`),
+ * con el monto que se acreditó: esa se reparte sin volver a sumarse (HF.0b).
+ *
+ * Qué cuenta como "ya repartido": los pares de `cobrosDistribuidos`, que desde
+ * HF.0h escribe cada distribución. Si la lista no existe, la última distribución
+ * es anterior a HF.0h y lo único que dejó fue su sello de periodo: entonces todo
+ * lo que cayó hasta `ultimaDistribucionPeriodo` formó parte de ella (antes de
+ * HF.0i el asistente repartía el cobro entero). Con la lista, el sello no manda:
+ * un ingreso que el usuario dijo que no llegó sigue pendiente aunque su fecha
+ * sea anterior al sello.
+ *
+ * `identificable: false` cuando ningún ingreso del cobro tiene fecha datable
+ * (Semanal, Diario, Variable, o sin día): no hay identidad que comparar y el
+ * asistente sigue como antes de HF.0i.
+ *
+ * Pura: no lee `S` ni el DOM.
+ *
+ * @param {import('../../../core/state.js').Ingreso[]} ingresos
+ * @param {Array<{ingresoId?:string, fecha?:string, monto?:number}>} ingresosPuntuales
+ * @param {{cobrosDistribuidos?:Array<{ingresoId?:string, fecha?:string}>, ultimaDistribucionPeriodo?:string|null}} [distribuidos]
+ * @param {Date} [hoy=new Date()]
+ * @returns {{identificable:boolean, ocurrencias:Array<{ingresoId:string, fecha:string,
+ *   descripcion:string, monto:number, yaAcreditado:boolean}>}}
+ */
+export function ocurrenciasPorDistribuir(ingresos = [], ingresosPuntuales = [], distribuidos = {}, hoy = new Date()) {
+  const cobro = _ocurrenciasDelCobro(ingresos, hoy);
+  if (cobro.length === 0) return { identificable: false, ocurrencias: [] };
+
+  const puntuales  = Array.isArray(ingresosPuntuales) ? ingresosPuntuales : [];
+  const lista      = distribuidos?.cobrosDistribuidos;
+  const conLista   = Array.isArray(lista);
+  const repartidos = new Set((conLista ? lista : [])
+    .filter(c => c && typeof c.ingresoId === 'string' && typeof c.fecha === 'string')
+    .map(claveOcurrencia));
+  const sello = typeof distribuidos?.ultimaDistribucionPeriodo === 'string'
+    ? distribuidos.ultimaDistribucionPeriodo : null;
+
+  const ocurrencias = [];
+  for (const { ing, fecha } of cobro) {
+    if (repartidos.has(claveOcurrencia({ ingresoId: ing.id, fecha }))) continue;
+    if (!conLista && sello && fecha <= sello) continue;
+    const credito = puntuales.find(ip => ip?.ingresoId === ing.id && ip.fecha === fecha);
+    ocurrencias.push({
+      ingresoId:    ing.id,
+      fecha,
+      descripcion:  ing.descripcion ?? '',
+      monto:        Number(credito ? credito.monto : ing.monto) || 0,
+      yaAcreditado: Boolean(credito),
+    });
+  }
+  return { identificable: true, ocurrencias };
+}
+
+/**
+ * Qué acredita y qué deja como recibido una distribución (HF.0i, P8 del ADR
+ * 091), a partir de las ocurrencias pendientes, el monto que escribió el
+ * usuario, cuáles marcó como recibidas y cómo explicó una diferencia.
+ *
+ * - `esperado` es lo que suman las ocurrencias recibidas: las que acreditó la
+ *   hoja (siempre recibidas) más las abiertas que el usuario marcó (todas, si
+ *   `seleccion` es `null`).
+ * - Monto igual a `esperado`: no hay nada que preguntar.
+ * - Monto menor: `'parte'` (llegó todo; se reparte solo una parte, y se acredita
+ *   completo) o, con una sola abierta marcada, `'valor'` (ese ingreso llegó por
+ *   menos: se acredita lo recibido y queda cobrado).
+ * - Monto mayor: solo `'valor'` con una sola abierta marcada. Con dos o más no se
+ *   sabe a cuál corresponde y no se confirma.
+ * - Un pago que llegó por partes no se representa: ninguna opción lo marca
+ *   como cobrado a medias.
+ *
+ * Sin identidad posible (`identificable: false`) acredita el monto y no sella
+ * nada, como antes de HF.0i.
+ *
+ * Pura: no lee `S` ni el DOM.
+ *
+ * @param {ReturnType<typeof ocurrenciasPorDistribuir>} cobro
+ * @param {{monto:number, seleccion?:string[]|null, diferencia?:'parte'|'valor'|null}} entrada
+ * @returns {{identificable:boolean, abiertas:Array, recibidas:Array, yaAcreditado:number, esperado:number,
+ *   opciones:Array<'parte'|'valor'>, resuelto:boolean, acreditar:number,
+ *   sellar:Array<{ingresoId:string, fecha:string, yaAcreditado?:true}>}}
+ */
+export function resolverCobroDistribuido(cobro, { monto, seleccion = null, diferencia = null } = {}) {
+  const m = Number(monto) || 0;
+  if (!cobro?.identificable) {
+    return { identificable: false, abiertas: [], recibidas: [], yaAcreditado: 0, esperado: m, opciones: [], resuelto: m > 0, acreditar: m, sellar: [] };
+  }
+
+  const ocurrencias  = cobro.ocurrencias ?? [];
+  const acreditadas  = ocurrencias.filter(o => o.yaAcreditado);
+  const abiertas     = ocurrencias.filter(o => !o.yaAcreditado);
+  const marcadas     = Array.isArray(seleccion) ? new Set(seleccion) : null;
+  const recibidas    = abiertas.filter(o => marcadas === null || marcadas.has(claveOcurrencia(o)));
+  const yaAcreditado = acreditadas.reduce((s, o) => s + o.monto, 0);
+  const sumaAbiertas = recibidas.reduce((s, o) => s + o.monto, 0);
+  const esperado     = yaAcreditado + sumaAbiertas;
+
+  let opciones = [];
+  if (m < esperado) {
+    opciones = recibidas.length === 1 && m > yaAcreditado ? ['parte', 'valor'] : ['parte'];
+  } else if (m > esperado) {
+    opciones = recibidas.length === 1 ? ['valor'] : [];
+  }
+
+  const resuelto  = m > 0 && esperado > 0 && (m === esperado || opciones.includes(diferencia));
+  const acreditar = m !== esperado && diferencia === 'valor' ? m - yaAcreditado : sumaAbiertas;
+  const sellar = [
+    ...recibidas.map(o => ({ ingresoId: o.ingresoId, fecha: o.fecha })),
+    ...acreditadas.map(o => ({ ingresoId: o.ingresoId, fecha: o.fecha, yaAcreditado: true })),
+  ];
+
+  return { identificable: true, abiertas, recibidas, yaAcreditado, esperado, opciones, resuelto, acreditar, sellar };
 }
 
 /**
