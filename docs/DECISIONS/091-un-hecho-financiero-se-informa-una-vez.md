@@ -1,6 +1,6 @@
 # ADR 091 - Un hecho financiero se informa una sola vez: triaje de la iniciativa HF
 
-**Estado:** Propuesta en sus reglas (R-HF1 a R-HF6) y su plan. **Preguntas P1 a P7 resueltas el 2026-10-16**: aceptadas en chat tal como estaban escritas ("Acepto las recomendaciones P1 a P7 del ADR 091 tal como están escritas"). Ver "Resolución de P1 a P7" al final.
+**Estado:** Propuesta en sus reglas (R-HF1 a R-HF6) y su plan. **Preguntas P1 a P7 resueltas el 2026-10-16**: aceptadas en chat tal como estaban escritas ("Acepto las recomendaciones P1 a P7 del ADR 091 tal como están escritas"). Ver "Resolución de P1 a P7" al final. **P8 y el catch-up desde el alta, resueltos el 2026-10-17**: ver la última sección.
 **Fecha:** 2026-10-16
 **Autores:** Esteban (brief "nueva etapa: integración total, mínima entrada manual, Calendario planificador", 2026-10-16), Claude Opus 5.5 (triaje y redacción)
 **Relación:** no revierte ningún ADR. Señala choques con el [020](020-fondo-marcador-de-liquidez.md), [043](043-sincronizacion-multidispositivo-y-cuentas.md) D1 y D4, [051](051-tarjeta-de-credito-producto-integrado.md) D3, [066](066-motor-unico-de-avisos.md) D1 y [081](081-calendario-la-forma-del-mes-entradas-incluidas.md) D2, y los deja como preguntas. Aplica la invariante del [053](053-invariante-de-patrimonio.md). Convive con **MOV.1**: la ficha 18 es dueña de cuatro piezas de esta iniciativa y nada de aquí se le adelanta. Tarjetas: [`board/transversal.md`](../board/transversal.md), bloque HF.
@@ -150,3 +150,12 @@ Las siete recomendaciones se aceptaron sin cambios. Lo que cada una fija y qué 
 | P7 | El PDF se difiere; la Fase 4 empieza por el extracto CSV (HF.4d) | HF.4f queda solo con compartir texto. El PDF vuelve con su propio ADR si se retoma |
 
 **Consecuencia:** ninguna rebanada de la Fase 0 espera ya una decisión. Las Fases 1 y 3 siguen atadas a la ficha 18 y al cierre de MOV.1, que no dependían de estas preguntas.
+
+## Resolución de P8 y del catch-up desde el alta (2026-10-17)
+
+Dos decisiones de Esteban sobre lo que dejaron HF.0h y su triaje. Ninguna revierte un ADR: la segunda acota el [052](052-pagos-automaticos.md) D1.
+
+| | Decisión | Efecto en el tablero |
+|---|---|---|
+| P8 | Distribuir trabaja con ocurrencias identificadas (`ingresoId` + fecha exacta). Con varios ingresos en el cobro, el usuario marca cuáles recibió; nunca se eligen por monto, descripción o cuenta. Lo inequívoco no se vuelve a preguntar: con un solo ingreso no hay lista. Si el monto no coincide con lo marcado, Finko pide aclararlo (llegó por otro valor, o se reparte solo una parte de lo recibido) y no inventa a qué ingreso corresponde. Un pago recibido por partes no se representa: no se marca como cobrado completo sin confirmación | HF.0i desbloqueada |
+| Catch-up desde el alta | La regla de HF.0j para ingresos se aplica igual a los débitos automáticos: un compromiso recién creado no ofrece pagos automáticos anteriores a su `fechaCreacion` (hora local, HF.0e). Los que ya existían conservan su revisión de atrasos, y un registro histórico anterior al alta es siempre una acción explícita del usuario | HF.0j absorbe los débitos; se implementa después de HF.0e, no ahora |

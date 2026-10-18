@@ -12,6 +12,13 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### docs(transversal): HF, P8 resuelta y catch-up desde el alta para débitos · 2026-10-17
+
+Dos decisiones de Esteban, escritas en el [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md) antes de tocar runtime. Sin runtime.
+
+- **P8:** Distribuir trabaja con ocurrencias identificadas. Con varios ingresos en el cobro el usuario marca cuáles recibió; con uno solo no se pregunta nada; una diferencia de monto se aclara y nunca se adivina; un pago por partes no se marca como completo. HF.0i queda desbloqueada.
+- **Débitos:** la regla de HF.0j para ingresos se extiende a los débitos automáticos de un compromiso recién creado. HF.0j los absorbe (fuente única), acota el ADR 052 D1 y sigue esperando HF.0e; no se implementa ahora.
+
 ### fix(gastos): HF.0c, el importador CSV de gastos no crea dinero · 2026-10-17
 
 Cuarta rebanada de la iniciativa HF ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), P4). Cierra **BUG-029**. Fichas: [`contexto/gastos.md`](contexto/gastos.md) y [`contexto/configuracion.md`](contexto/configuracion.md).

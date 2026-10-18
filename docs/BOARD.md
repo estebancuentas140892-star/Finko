@@ -72,8 +72,8 @@ Las tarjetas del tablero (la iniciativa HF se lista por fase), para elegir la pr
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | cola de diseño de Esteban |
 | HF.0d | Una sola regla de vencimiento (BUG-031) | Inicio, Por pagar | media | nada |
 | HF.0e | `fechaCreacion` se lee como fecha local (BUG-025) | Transversal | media | nada |
-| HF.0i | Distribuir solo acredita y sella lo que identifica (BUG-033, BUG-034) | Mis cuentas, Calendario | alta | decisión P8 |
-| HF.0j | El catch-up no ofrece cobros anteriores al alta del ingreso | Calendario | media | HF.0e |
+| HF.0i | Distribuir solo acredita y sella lo que identifica (BUG-033, BUG-034) | Mis cuentas, Calendario | alta | nada (P8 resuelta) |
+| HF.0j | El catch-up no ofrece cobros ni pagos anteriores al alta del registro | Calendario | media | HF.0e |
 | HF.0f | Perfiles de regresión: constructores e invariantes | Transversal (tests) | alta | HF.0d, HF.0i |
 | HF.0g | Perfiles de regresión en E2E | Transversal (tests) | media | HF.0f |
 | HF.1a a HF.5a | Fases 1 a 5 de la iniciativa HF (24 rebanadas) | Transversal | media | ficha 18 de MOV.1, cierre de MOV.1 |
