@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-10-17.
+> Revisado: 2026-10-18.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-10)
+
+### docs(bugs): HF.0f, cuatro defectos que encontró el banco de perfiles · 2026-10-18
+
+Triaje del banco de perfiles de regresión de HF.0f ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)), sin runtime. El banco (tres personas inventadas, un mes y doce, por las rutas reales de escritura) queda construido y **sin commitear**: nueve pruebas suyas fallan y reproducen cuatro defectos nuevos, y HF.0f no se cierra con la suite en rojo. Decisión de Esteban: registrarlos antes de seguir.
+
+- **BUG-035 (baja):** borrar el pago de un fijo le escribe `saldoTotal` al fijo y el diálogo anuncia una deuda que no existe. El dinero revierte bien.
+- **BUG-036 (alta):** Distribuir paga lo que vence el mes siguiente con fecha de hoy. Ese mes queda pendiente en el Calendario, avisa vencido y la hoja vuelve a ofrecer el débito: doble pago si se confirma. Es la causa de seis de las nueve rojas.
+- **BUG-037 (alta):** una compra con la tarjeta cuenta como abono del mes. Una compra a cuotas sin ningún pago deja la tarjeta pagada y silencia su vencimiento.
+- **BUG-038 (media):** Movimientos ofrece editar abonos y pagos de fijos, pero el formulario no guarda sin cambiarles la categoría.
+- **Lo que ya cumple la app**, según el mismo banco: saldos contra un libro independiente, I1, I2 e I5 del ADR 053, Fondo fuera de activos, un cobro y un pago por hecho salvo BUG-036, HF.0b, HF.0h y HF.0j por sus recorridos reales, Movimientos sin duplicados, persistencia de v14 a v44 sin mover una cifra y reversas exactas de once operaciones. Peso de un año del perfil intensivo: 529.469 caracteres, 11,8 % del cupo.
 
 ### fix(agenda): HF.0j, la hoja de automáticos no ofrece lo anterior al alta · 2026-10-18
 
