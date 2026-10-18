@@ -14,6 +14,7 @@
  */
 
 import { ocurrenciasEnMes } from '../../infra/vencimientos.js';
+import { fechaLocalISO } from '../../infra/utils.js';
 
 /**
  * Los dos tipos de compromiso que se abonan contra `saldoTotal`. Copia local
@@ -471,6 +472,43 @@ export function pendientesDePagoDelMes(eventos, gastos, prefijoMes, hoyISO) {
 export const MESES_CATCHUP_AUTOMATICOS = 1;
 
 /**
+ * Las ocurrencias de un mes que no son anteriores al alta de su registro
+ * (HF.0j, [ADR 091](../../../docs/DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md),
+ * acota el ADR 052 D1). Finko no asume que un movimiento anterior a la creación
+ * de su registro ocurrió: quien registra hoy un salario automático de día 15 no
+ * recibe en la hoja el 15 de este mes ni el del mes pasado.
+ *
+ * - **Por ocurrencia, antes de agrupar**: un quincenal creado el 17 pierde el
+ *   15, no el 30; la agrupación mensual de `pendientes*DelMes` corre después,
+ *   sobre lo que queda.
+ * - **El día del alta cuenta**: creado el mismo día del vencimiento, esa
+ *   ocurrencia es elegible (sigue pidiendo confirmación, ADR 052 D2).
+ * - **Hora local** (`fechaLocalISO`, HF.0e): lo creado la noche del 17 en
+ *   Colombia es del 17, aunque el instante UTC sea del 18.
+ * - **Sin fecha legible no se inventa una**: el registro conserva su ventana
+ *   completa de catch-up, como antes.
+ *
+ * Solo la usa la hoja: el Calendario sigue pintando las ocurrencias del ciclo
+ * y el lote de "Por pagar" no cambia.
+ *
+ * @param {Record<number, any[]>} eventos Mapa día → eventos de un mes.
+ * @param {string} prefijoMes 'YYYY-MM' de ese mes.
+ * @returns {Record<number, any[]>} Mapa nuevo, sin los días que quedaron vacíos.
+ */
+function _desdeElAlta(eventos, prefijoMes) {
+  const out = {};
+  for (const [diaStr, evs] of Object.entries(eventos)) {
+    const fecha = `${prefijoMes}-${String(diaStr).padStart(2, '0')}`;
+    const vigentes = evs.filter(e => {
+      const alta = fechaLocalISO(e?.fechaCreacion);
+      return !alta || fecha >= alta;
+    });
+    if (vigentes.length > 0) out[diaStr] = vigentes;
+  }
+  return out;
+}
+
+/**
  * Débitos automáticos que ya vencieron y siguen sin registrarse (PA.1a,
  * ADR 052 D1): la lista que alimenta la hoja "Pagos automáticos" al abrir la app.
  *
@@ -485,6 +523,10 @@ export const MESES_CATCHUP_AUTOMATICOS = 1;
  * varias veces en él (un quincenal): el estado de pago es por mes, no por
  * ocurrencia. `fecha` es la del vencimiento más antiguo sin cubrir de ese mes,
  * que es con la que se registra el gasto (ADR 052 D2).
+ *
+ * A diferencia del lote, no ofrece lo anterior al alta del compromiso
+ * (`_desdeElAlta`, HF.0j): el lote liquida lo que el usuario elige pagar; la
+ * hoja propone sola, y no debe proponer un pago que el registro no conoció.
  *
  * @param {import('../../core/state.js').Compromiso[]} compromisos
  * @param {Array<{compromisoId?:string, fecha?:string, monto?:number}>} gastos
@@ -513,7 +555,7 @@ export function debitosAutomaticosVencidos(compromisos, gastos, hoyISO, mesesAtr
     const mes     = inicio.getMonth();
     const prefijo = `${anio}-${String(mes + 1).padStart(2, '0')}`;
 
-    const eventos = eventosDelMes(automaticos, anio, mes);
+    const eventos = _desdeElAlta(eventosDelMes(automaticos, anio, mes), prefijo);
     for (const p of pendientesDePagoDelMes(eventos, gastos, prefijo, hoyISO)) {
       const comp = automaticos.find(c => c.id === p.id);
       out.push({
@@ -625,7 +667,8 @@ export function pendientesDeCreditoDelMes(eventos, ingresosPuntuales, prefijoMes
  * que `debitosAutomaticosVencidos` visto desde el otro lado. Recorre el mes en
  * curso y los `mesesAtras` anteriores con `pendientesDeCreditoDelMes`, así
  * hereda gratis la regla temporal de BUG-015 (en el mes en curso, solo lo que
- * ya venció) y la ventana de catch-up de D1.
+ * ya venció) y la ventana de catch-up de D1. Como los débitos, no ofrece lo
+ * anterior al alta del ingreso (`_desdeElAlta`, HF.0j).
  *
  * @param {import('../../core/state.js').Ingreso[]} ingresos
  * @param {Array<{ingresoId?:string, fecha?:string}>} ingresosPuntuales
@@ -655,7 +698,7 @@ export function creditosAutomaticosVencidos(ingresos, ingresosPuntuales, hoyISO,
     const mes     = inicio.getMonth();
     const prefijo = `${anio}-${String(mes + 1).padStart(2, '0')}`;
 
-    const eventos = eventosIngresosDelMes(automaticos, anio, mes);
+    const eventos = _desdeElAlta(eventosIngresosDelMes(automaticos, anio, mes), prefijo);
     for (const p of pendientesDeCreditoDelMes(eventos, ingresosPuntuales, prefijo, hoyISO, acreditados)) {
       const ing = automaticos.find(i => i.id === p.id);
       out.push({

@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### fix(agenda): HF.0j, la hoja de automáticos no ofrece lo anterior al alta · 2026-10-18
+
+Octava rebanada de la iniciativa HF ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), decisión del 2026-10-17). Acota el [ADR 052](DECISIONS/052-pagos-automaticos.md) D1 (nota al pie de D1). Ingresos y débitos en una sola rebanada: la regla y el punto de corte son los mismos. Ficha: [`contexto/calendario.md`](contexto/calendario.md) (Pagos automáticos).
+
+- **Causa:** `creditosAutomaticosVencidos()` y `debitosAutomaticosVencidos()` recorrían el mes en curso y el anterior sin mirar cuándo nació el registro. Un salario automático de día 15 creado el 17 ofrecía el 15 de ese mes y el de septiembre; un Internet de día 12, lo mismo. Confirmarlos registraba dinero que el usuario nunca dijo que se movió.
+- **El filtro:** `_desdeElAlta()` (`agenda/logic.js`) quita del mapa de eventos de cada mes las ocurrencias anteriores a `fechaCreacion`, leída con `fechaLocalISO()` (HF.0e). Corre **antes** de `pendientes*DelMes`, así que la agrupación mensual trabaja sobre lo que queda: un quincenal de días 15 y 30 creado el 17 pierde el 15 y conserva el 30, con su fecha. El día del alta cuenta (sigue pidiendo confirmación).
+- **Atrasos legítimos:** lo creado antes de una ocurrencia la conserva; un registro de hace meses mantiene sus dos meses de catch-up, y siguen intactos los descartes por lo ya pagado o cobrado y por lo que Distribuir acreditó (HF.0b, HF.0h, HF.0i).
+- **Sin fecha de alta:** un registro sin `fechaCreacion` legible conserva su ventana completa, como antes. No se inventa un alta ni hay migración. Es la limitación que queda: esos registros todavía pueden ofrecer un cobro anterior a su alta real.
+- **Solo la hoja:** `ocurrenciasEnMes()`, el Calendario y el lote de "Por pagar" no cambian. Sin pantallas nuevas, sin schema, sin cambio de saldos.
+- Verificado en la app (localhost, datos inventados, 18 de octubre): con un plan celular automático de día 12 sembrado con alta del 5 de octubre, se crearon por los formularios un salario automático de día 15 ($4.000.000) y un Internet automático de día 12 ($95.000). Al recargar, la hoja trae solo el plan celular del 12 de octubre (ni septiembre, ni el salario, ni Internet); el saldo sigue en $1.000.000. Confirmado el plan: un gasto del 12 de octubre por $50.000, saldo $950.000, y al recargar la hoja no vuelve ni se duplica.
+- Tests: 24 unitarios nuevos en `tests/unit/catchup-desde-alta.test.js` (escenarios A a G, mismo día, noche colombiana, cruce de mes y de año, quincenal, bimestral, trimestral, anual, lo ya registrado, lo acreditado por Distribuir, sin fecha, y una prueba de no mutación con guardar y recargar). Rojos antes del arreglo: 16; los 8 restantes son guardas del catch-up legítimo y del alcance. Suite completa verde en Bogotá, UTC, Tokyo, Kiritimati y Pago Pago. Unitarios 4736/4736, lint verde, E2E 328/328 (`--workers=2`). SW v592 a v593.
+
 ### fix(fechas): HF.0e, interpretar la creación en calendario local · 2026-10-17
 
 Séptima rebanada de la iniciativa HF ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), P3 opción b). Cierra **BUG-025**. Sin schema, sin migración, sin tocar el sello de `crud.guardar()`. Fichas: [`contexto/transversal.md`](contexto/transversal.md) (infra compartida), [`contexto/calendario.md`](contexto/calendario.md), [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md), [`contexto/apartados.md`](contexto/apartados.md) y [`contexto/deudas.md`](contexto/deudas.md).

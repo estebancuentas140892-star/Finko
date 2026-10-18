@@ -47,18 +47,6 @@
 
 ### Fase 0 - Base confiable (sin ADR, puede empezar ya)
 
-#### HF.0j - El catch-up no ofrece cobros ni pagos anteriores al alta del registro
-- Prioridad  : media
-- Estado     : pendiente, decidido por Esteban el 2026-10-17 para ingresos y extendido a débitos el mismo día ([ADR 091](../DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)); acota el ADR 052 D1
-- Área       : code
-- Objetivo   : un ingreso o un compromiso automático recién registrado no ofrece en la hoja cobros ni pagos anteriores a su `fechaCreacion` leída en hora local (`fechaLocalISO()`, `infra/utils.js`); los que ya existían conservan su catch-up, y un registro previo al alta es una acción explícita. Puede partirse en ingresos y débitos al implementarse
-- Riesgo     : `ocurrenciasEnMes` y `ultimoVencimientoHasta` tienen más consumidores (Calendario, Distribuir, avisos): el filtro va en la hoja salvo revisión de todos ellos. Ningún registro histórico se borra
-- Secciones  : Calendario (hoja), Mis cuentas
-- Archivos   : `modules/dominio/agenda/logic.js` (`creditosAutomaticosVencidos`, `debitosAutomaticosVencidos`), tests de agenda
-- Depende de : nada
-- Aceptación : ingreso o compromiso creado el 17 con día 16 no ofrece ni el 16 ni el mes anterior y sí el mes siguiente; uno creado meses antes conserva su catch-up
-- Modelo     : Equilibrado, Alto
-
 #### HF.0f - Perfiles de regresión: constructores e invariantes
 - Prioridad  : alta
 - Estado     : pendiente

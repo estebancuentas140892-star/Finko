@@ -1,6 +1,6 @@
 # ADR 052 - Pagos y créditos automáticos (débito automático simulado)
 
-**Estado:** **Aceptada** (2026-08-13). D1 y D2 resueltas; D4 fijó el alcance por rebanada. **PA.1a y PA.1b cerradas** (2026-08-13 y 2026-08-14): débito y crédito automático en producción, misma hoja. Queda **PA.1c**, opcional y sin tarjeta.
+**Estado:** **Aceptada** (2026-08-13). D1 y D2 resueltas; D4 fijó el alcance por rebanada. **PA.1a y PA.1b cerradas** (2026-08-13 y 2026-08-14): débito y crédito automático en producción, misma hoja. Queda **PA.1c**, opcional y sin tarjeta. **D1 acotado por HF.0j (2026-10-18)**: el catch-up empieza en el alta del registro (nota al pie de D1).
 **Fecha:** 2026-07-24. **Resuelta:** 2026-08-13.
 **Autores:** Esteban (producto, brief "Integración Deudas/Cuentas/Pagos automáticos" y brief de Mis Cuentas, ambos del 2026-07-08; delega la decisión de D1 y D2 el 2026-08-13), Claude Opus 5 (triaje, redacción y decisión delegada)
 **Relación:** consume el motor de vencimientos del [ADR 041](041-motor-vencimientos-y-distribucion-v2.md); no se construye un segundo motor. Sus alertas se conectarían al motor único de notificaciones de CFG.3 cuando exista. La restricción de fondo es la ADN 2 y 3 (offline-first, sin servidor).
@@ -40,6 +40,8 @@ Esta tarjeta **sigue viva y no fue absorbida** por CAL.5a.
 **Por qué así:** el problema que planteaba la decisión ("movimientos fechados el 5, el 12 y el 18 aparecen de golpe") desaparece si nunca aparecen solos. La hoja es la explicación, no un aviso posterior a un hecho consumado.
 
 **Si otro overlay está abierto** (gate legal, novedades, candado), la hoja no se apila: espera a la siguiente apertura. No se pierde nada, porque no había nada escrito.
+
+> **Acotado por HF.0j (2026-10-18, [ADR 091](091-un-hecho-financiero-se-informa-una-vez.md), decisión del 2026-10-17).** La ventana de dos meses empieza en el alta del registro: la hoja no ofrece cobros ni pagos anteriores a la `fechaCreacion` del ingreso o del compromiso, leída en hora local. Finko no asume que un movimiento anterior a su registro ocurrió. El filtro va por ocurrencia (un quincenal creado el 17 pierde el 15, no el 30), el día del alta cuenta, y lo que ya existía conserva sus dos meses. Sin `fechaCreacion` legible la ventana queda completa: no se inventa un alta. Un registro anterior al alta es siempre una acción explícita del usuario, fuera de la hoja. El Calendario y el lote de pago manual no cambian.
 
 ---
 
