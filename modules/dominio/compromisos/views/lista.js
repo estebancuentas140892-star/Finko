@@ -118,6 +118,14 @@ function _atrasoPorId() {
 }
 
 /**
+ * Días al próximo vencimiento para ordenar: lo que no vuelve a vencer
+ * (`proximoVencimiento` en `null`) va al final, no al frente como si fuera hoy.
+ */
+function _diasAlProximo(compromiso) {
+  return proximoVencimiento(compromiso) ?? Number.MAX_SAFE_INTEGER;
+}
+
+/**
  * Chip de vencimiento de una tarjeta de "Por pagar" (ficha 05, ADR 069).
  *
  * **Mira primero lo vencido de ESTE mes, y solo después el próximo pago.**
@@ -156,6 +164,9 @@ function _chipVencimiento(compromiso, prefijoMes, atrasos) {
   }
 
   const dias  = proximoVencimiento(compromiso);
+  // Una "Única vez" de un mes ya pasado no vuelve a vencer (HF.0d): el
+  // Calendario ya no la pinta, así que tampoco se le inventa una fecha.
+  if (dias === null) return { clase: 'chip', label: 'Sin próximo pago' };
   const nivel = urgencia(compromiso);
   const clase = nivel === 'urgente' ? 'chip chip-danger'
     : nivel === 'proximo' ? 'chip chip-warning'
@@ -240,7 +251,7 @@ function _renderGrupoFijos(fijos, oculto, atrasos) {
     const atB = atrasos.get(b.id);
     if (Number.isInteger(atA) !== Number.isInteger(atB)) return Number.isInteger(atA) ? -1 : 1;
     if (Number.isInteger(atA) && atA !== atB) return atB - atA;
-    return proximoVencimiento(a) - proximoVencimiento(b);
+    return _diasAlProximo(a) - _diasAlProximo(b);
   });
   const prefijoMes = prefijoMesBloque();
 
@@ -276,7 +287,7 @@ function _renderGrupoDeudas(deudas, oculto, atrasos) {
     const posA = ordenEstrategia?.get(a.id) ?? Infinity;
     const posB = ordenEstrategia?.get(b.id) ?? Infinity;
     if (posA !== posB) return posA - posB;
-    return proximoVencimiento(a) - proximoVencimiento(b);
+    return _diasAlProximo(a) - _diasAlProximo(b);
   });
 
   // D.16d (ADR 036 D5): encabezado de grupo con el indicador de la estrategia

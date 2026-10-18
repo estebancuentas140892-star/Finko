@@ -1,6 +1,6 @@
 # Ficha de contexto: Inicio (dashboard)
 
-> Revisado: 2026-08-21 (ADR 088).
+> Revisado: 2026-10-17 (HF.0d).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -10,7 +10,7 @@
 
 - **Objetivo**          : pantalla principal e inamovible de la app; hoy muestra saldo (hero a ancho completo), accesos rápidos personalizables, paneles de vencidos/próximos y un resumen semanal.
 - **Estado actual**     : estable, en evolución. **IN.7**, **IN.6a**, **CAL.1**, **TX.8a**, **TX.8b** e **IN.4a** cerradas; **IN.5** (2026-07-06) eliminó "Gasto rápido" y el panel "Gastos por organizar", dejando el hero a ancho completo. **PERF.1** (2026-07-06) paginó por lotes la vista completa de Movimientos (`#movimientos`). **PERF.2** (2026-07-06) memoizó `resumenSemanal()` y `movimientosRecientes()`/`movimientosCompletos()`; sin cambios de comportamiento visible en ninguno de los dos. **IV.2c** (2026-07-10, ADR 031): "Pendientes del mes" y "Próximas prioridades" ganan una etiqueta de texto con el tipo (`.dom-badge`, "el color nunca viaja solo") junto al icono+color de sección ya existentes; corrige un bug real donde un apartado en "Próximas prioridades" heredaba el color de "fijo" en vez del suyo propio. Rediseño mayor decidido en [ADR 028](../DECISIONS/028-inicio-centro-de-control.md) (**aprobado el 2026-07-05**): un rol por bloque, orden vertical definido. **Nota (2026-07-12):** la revisión formal de ese ADR ya existe y está aceptada: [ADR 034](../DECISIONS/034-inicio-v2.md) "Inicio v2" (diseño hifi de Esteban en `Iteración de specimen/design_handoff_inicio_v2/`), que reordena la pantalla (alertas primero, accesos+actividad fusionados al final), rediseña hero/pendientes/resumen y resuelve IN.6b con teja de iniciales (sin foto). **Actualización (2026-07-12):** las 7 rebanadas IN.8a a IN.8g ya cerraron; esta ficha describe el estado vigente en código con el diseño completo de "Inicio v2" implementado.
-- **Verificado contra** : CFG.4b (commit `3a7a33c`, 2026-08-15, panel "Avisos" suma respaldo-atrasado).
+- **Verificado contra** : HF.0d (2026-10-17, fuentes de vencidos y próximos). Antes: CFG.4b (commit `3a7a33c`, 2026-08-15, panel "Avisos" suma respaldo-atrasado).
 
 **Tarjeta "Tu progreso" nueva (LG.2d, 2026-08-13, [ADR 032](../DECISIONS/032-logros-v2-niveles-y-habitos.md) D6):** `#panel-progreso-inicio`, celda `bento__cell--half` universal (no partida por plataforma) tras la fila de "Resumen de la semana" + "Actividad reciente". La llena `renderTarjetaProgresoInicio()` de `logros/view.js` (ningún dominio importa a otro, ADN 10: mismo mecanismo sibling que el ADR 022 estableció para Ajustes, ahora también junto a este bento); oculta hasta el primer logro desbloqueado. Muestra nivel actual, último logro y próximo objetivo, con link a Análisis (apartado "Tu progreso", donde vive la vitrina completa). Detalle en [`logros.md`](logros.md).
 
@@ -81,7 +81,7 @@
 | Badge corto propio de "Pendientes del mes" (IN.8e: "Deuda"/"Gasto fijo", no la etiqueta larga de `_tipoBadge`) | `modules/dominio/compromisos/views/dashboard.js` | `_tipoBadgeCorto()` | ~48 |
 | Estilos de "Pendientes del mes" (contador circular, meta, estado semántico) | `styles/components/domain.css` | `.vencidos-card__counter`, `.vencidos-card__meta`, `.vencidos-card__estado--danger/--warning` | ~1035 |
 | Panel "Próximas prioridades" | `modules/dominio/compromisos/views/dashboard.js` | `renderPanelPrioridades()` | ~106 |
-| Fuente 1 de prioridades (compromisos) | `modules/dominio/compromisos/logic.js` | `compromisosProximos(comps, 7)` | ~32 |
+| Fuente 1 de prioridades (compromisos, sin lo ya pagado) | `modules/dominio/compromisos/logic/alertas.js` | `compromisosProximos(comps, 7, hoy, S.gastos)` | |
 | Fuente 2 de prioridades (préstamos personales) | `modules/dominio/compromisos/views/dashboard.js` | `_personalesProximos(7)` | ~218 |
 | Fuente 3 de prioridades (apartados) | `modules/dominio/compromisos/views/dashboard.js` | `_apartadosProximos(7)` | ~239 |
 | Combinación manual de las 3 fuentes | `modules/dominio/compromisos/views/dashboard.js` | `[...proxComp, ...proxPers, ...proxApar].sort(...)` | ~122 |
@@ -159,6 +159,7 @@
 
 **Cambios realizados** (una línea por hito; el detalle vive en el [CHANGELOG](../CHANGELOG.md)):
 
+- 2026-10-17 (**HF.0d**, BUG-031): lo pagado antes de vencer ya no sale y las fechas siguen la frecuencia. Ver CHANGELOG.
 - 2026-08-20 (**DSK.1c**, [ADR 070](../DECISIONS/070-inicio-centro-de-atencion-en-escritorio.md) D7, cuarta y última rebanada, cierra DSK.1): "Atención hoy" pasa de un mosaico 2x2 dependiente del estado a un reparto fijo (avisos `span 4`, obligaciones `span 8`, `span 12` sin avisos), vía dos envoltorios `display: contents` (`.atencion-hoy__avisos`/`.atencion-hoy__obligaciones`). `#panel-avisos` se mueve en el DOM junto a los otros dos avisos, corrigiendo una inconsistencia que también alcanzaba a móvil.
 - 2026-08-20 (**DSK.1d**, [ADR 070](../DECISIONS/070-inicio-centro-de-atencion-en-escritorio.md) D8 y D9, tercera rebanada): "Pendientes del mes" y "Próximas prioridades" se fusionan en "Lo que tienes que pagar"; la celda deja de ser `--flat` y pasa a ser la tarjeta (`_renderObligaciones()`, `dashboard.js`).
 - 2026-08-18 (**DSK.1b**, [ADR 070](../DECISIONS/070-inicio-centro-de-atencion-en-escritorio.md) D4, D5 y D6, segunda de cuatro rebanadas): el hero de saldo y la columna de cuentas se funden en una banda de ancho completo desde 1024px, vía el envoltorio `.banda-inicio` (`display: contents` bajo ese ancho). Fuera el gradiente y el blob; el ojo se pega al rótulo por colocación en rejilla, sin moverlo del DOM; las cuentas pasan de renglones pegados a fichas con la cifra debajo del nombre. Móvil y tablet sin cambios, medidos contra `HEAD`.

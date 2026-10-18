@@ -1,6 +1,6 @@
 # Ficha de contexto: Transversal
 
-> Revisado: 2026-10-16.
+> Revisado: 2026-10-17.
 
 > Infraestructura que atraviesa varias secciones y no es visual: persistencia y cuota, el pipeline de render, el CTA de cuenta, el motor único de avisos, la infra compartida, el aviso de versión nueva, la guía por navegación y la aceptación legal. Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -100,8 +100,8 @@
 ## Motor único de avisos (CFG.3, iniciativa transversal)
 
 - **Objetivo**          : responder "de todo lo que le pasa al usuario hoy, qué merece avisarle", mirando todas las secciones a la vez. Los `nudge` de cada sección son la señal en contexto dentro de su pantalla y no se comparan entre sí; este motor es el único que puede decir si va primero un arriendo vencido o un tope excedido.
-- **Estado actual**     : **iniciativa CFG.3 completa (2026-08-13)**, las tres rebanadas del **[ADR 066](../DECISIONS/066-motor-unico-de-avisos.md)**. Existe el motor (`infra/avisos.js`, ocho tipos de aviso de siete fuentes), la notificación del sistema al abrir (CFG.3a), el panel "Avisos" en Inicio con lo que ningún otro panel del dashboard ya cubre (CFG.3b, detalle en [`contexto/inicio.md`](inicio.md)) y el interruptor por sección en Ajustes + el sello persistido de "ya avisó hoy" (CFG.3c, schema v40, detalle en [`contexto/configuracion.md`](configuracion.md)). **Desde HF.0a (2026-10-16) las siete fuentes reciben `hoyISO`**: era falso para `compromiso-proximo`, que leía el reloj (BUG-028).
-- **Verificado contra** : HF.0a (2026-10-16, BUG-028). Antes: CFG.3c (2026-08-13).
+- **Estado actual**     : **iniciativa CFG.3 completa (2026-08-13)**, las tres rebanadas del **[ADR 066](../DECISIONS/066-motor-unico-de-avisos.md)**. Existe el motor (`infra/avisos.js`, ocho tipos de aviso de siete fuentes), la notificación del sistema al abrir (CFG.3a), el panel "Avisos" en Inicio con lo que ningún otro panel del dashboard ya cubre (CFG.3b, detalle en [`contexto/inicio.md`](inicio.md)) y el interruptor por sección en Ajustes + el sello persistido de "ya avisó hoy" (CFG.3c, schema v40, detalle en [`contexto/configuracion.md`](configuracion.md)). **Desde HF.0a (2026-10-16) las siete fuentes reciben `hoyISO`**: era falso para `compromiso-proximo`, que leía el reloj (BUG-028). **Desde HF.0d (2026-10-17) los dos avisos de compromisos fechan y leen pagos con la regla del Calendario** (BUG-031): frecuencia real y estado de pago por mes; ver "Una sola regla de vencimiento" en Riesgos.
+- **Verificado contra** : HF.0d (2026-10-17, BUG-031). Antes: HF.0a (2026-10-16, BUG-028) y CFG.3c (2026-08-13).
 
 **Dónde vive**
 
@@ -123,8 +123,8 @@
 
 | Tipo | Función | Dónde vive |
 |---|---|---|
-| `compromiso-vencido` | `vencidosSinPagar` (atraso >= 1 día) | `dominio/compromisos/logic.js` |
-| `compromiso-proximo` | `compromisosProximos` (0 a 3 días) | `dominio/compromisos/logic.js` |
+| `compromiso-vencido` | `vencidosSinPagar` (atraso >= 1 día, ocurrencias del mes según la frecuencia) | `dominio/compromisos/logic.js` |
+| `compromiso-proximo` | `compromisosProximos` (0 a 3 días, sin pagar, recibe `gastos`) | `dominio/compromisos/logic.js` |
 | `limite-excedido`, `limite-alerta` | `alertasLimites` | `dominio/presupuesto/logic.js` |
 | `apartado-proximo`, `apartado-listo` | `apartadosProximos`, `estaListoParaReiniciar` | `dominio/apartados/logic.js` |
 | `prestamo-vencido`, `prestamo-proximo` | `estadoPrestamo` | `dominio/personales/logic.js` |
@@ -136,7 +136,9 @@
 
 - **Con la app cerrada no hay aviso, y no es una limitación temporal**: un service worker no puede leer `localStorage`, donde vive todo `fk_v1`, así que no tiene con qué calcular un vencimiento (ADR 066 D1). El copy de Ajustes no debe prometer lo contrario. Único disparador de revisión: mudar la persistencia a IndexedDB ([ADR 068](../DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md), ya no es tarjeta). Resolvería el **acceso al dato**, no la **ejecución**: sin push server (ADN 3) y con `periodicsync` solo en Chromium con PWA instalada, el worker igual no corre con la app cerrada.
 - **`DIAS_APARTADO_PROXIMO` es 7, no el `DIAS_PROXIMO` (30) del dominio**: son dos preguntas distintas (listar en la sección contra avisar hoy) y a propósito no comparten constante. Bajarlas a una sola volvería a llenar el aviso todos los días.
-- **La fecha de referencia entra a las siete fuentes** (HF.0a): `proximoVencimiento()`, `urgencia()` y `compromisosProximos()` aceptan un `Date` con default hoy, y el motor les pasa `_fechaRef(hoyISO)`. Una fuente nueva que lea `new Date()` rompe el contrato; el test de BUG-028 fija el reloj meses después de `hoyISO` para atraparlo cualquier día, no solo algunos. **Sigue abierto BUG-031**: esa fecha sale solo de `diaPago`, sin frecuencia ni pagos (HF.0d).
+- **La fecha de referencia entra a las siete fuentes** (HF.0a): `proximoVencimiento()`, `urgencia()` y `compromisosProximos()` aceptan un `Date` con default hoy, y el motor les pasa `_fechaRef(hoyISO)`. Una fuente nueva que lea `new Date()` rompe el contrato; el test de BUG-028 fija el reloj meses después de `hoyISO` para atraparlo cualquier día, no solo algunos.
+- **Una sola regla de vencimiento (HF.0d)**: Calendario, Inicio, "Por pagar" y este motor fechan con `ocurrenciasEnMes`/`ocurrenciasEnRango` (ADR 041) y leen el pago con `estadoPagoMes`. `proximoVencimiento()` y `vencimientosDesde()` (`compromisos/logic/modelo.js`) dan la fecha; `compromisosProximos()` y `vencidosSinPagar()` (`logic/alertas.js`) cruzan los pagos. Un mes 'completo' no avisa y su siguiente fecha sale de la frecuencia; una deuda saldada no vence aunque su último abono fuera menor que la cuota. `tests/unit/vencimiento-unico.test.js` compara las cuatro superficies contra las piezas del Calendario.
+- **El estado de pago es por mes, no por ocurrencia**: un gasto cubre las dos quincenas, y un pago del mes anterior no cubre el vencimiento de este. Por eso, con un vencimiento del mes ya pasado y sin cubrir, lo que cae después en el mismo mes no es un `compromiso-proximo` (sería el mismo pago dos veces). Dos meses distintos sí son dos avisos (octubre vencido, noviembre a tres días). Distinguir quincenas exige saber a qué ocurrencia pertenece un gasto: es dato nuevo, no esta regla.
 - **Lo que vence hoy nunca es `compromiso-vencido`**: el motor le pide a `vencidosSinPagar` un `umbralDiasAtraso: 1` para que el día del vencimiento lo cubra solo `compromiso-proximo` con `dias: 0`. Si alguien baja ese umbral a 0, el mismo compromiso genera dos avisos el mismo día.
 - **Los préstamos personales nunca pasan de severidad `media`**, ni con un año de atraso: el [ADR 047](../DECISIONS/047-me-deben-v2-intereses-e-historial.md) fija que esa sección recuerda y no presiona, y una notificación del sistema por dinero que le deben al usuario es justo esa presión. Interrumpir queda para lo que él debe.
 - **El motor no recorta la lista** (ADR 066 D4): si una superficie nueva muestra solo tres avisos, el `slice` va en la superficie. Recortar en el motor se lo esconde a todas a la vez.
@@ -145,10 +147,11 @@
 - **La preferencia por sección (CFG.3c) es por `SECCIONES_AVISO` (cinco), no por los nueve `TIPOS_AVISO`**: decisión y alternativa rechazada en la nota del 2026-08-13 del ADR 066. Un tipo nuevo que se agregue al motor hereda automáticamente la preferencia de su sección; no hace falta tocar el interruptor de Ajustes.
 - **Apagar una sección en Ajustes no repinta el panel de Inicio al instante**: `_toggleAvisoSeccion()` solo re-renderiza `#panel-config` (mismo patrón que el resto de toggles de esa pantalla, ninguno emite `state:change`). El panel de Inicio respeta la preferencia en su próximo render, no en vivo.
 
-**Cambios pendientes**: BUG-031, "compromiso próximo" ignora la frecuencia y lo ya pagado (tarjeta HF.0d, [ADR 091](../DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)).
+**Cambios pendientes**: ninguno propio. Lo consumen después HF.2b (débito automático en riesgo), HF.3d (posponer) y HF.3e (badge), en [`board/transversal.md`](../board/transversal.md).
 
 **Cambios realizados**:
 
+- 2026-10-17 (HF.0d, BUG-031): `compromiso-proximo` recibe `gastos` y fecha por frecuencia; `compromiso-vencido` respeta el ciclo. Detalle: CHANGELOG.
 - 2026-10-16 (HF.0a, BUG-028): `_deCompromisosProximos()` recibe `hoyISO` y lo pasa como fecha a `compromisosProximos()`. Detalle: CHANGELOG.
 - 2026-08-13 (CFG.3c, cierra la iniciativa, [ADR 066](../DECISIONS/066-motor-unico-de-avisos.md) nota de la misma fecha): interruptor por sección en Ajustes (`filtrarPorPreferencia()` en el motor, consumido por `notificaciones.js` y por el panel de Inicio) + sello persistido `config.ultimoAvisoISO` que reemplaza el flag de sesión. Schema v39 → v40. Detalle completo: [`contexto/configuracion.md`](configuracion.md).
 

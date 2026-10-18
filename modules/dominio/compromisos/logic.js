@@ -32,7 +32,6 @@ export {
   resumenDeudas,
   proximoVencimiento,
   urgencia,
-  compromisosProximos,
   nivelAlertaMora,
   validarCompromiso,
   detectarDeudaCreciente,
@@ -45,6 +44,7 @@ export {
   detectarDeudasDurmiendo,
   detectarVencidosCompletos,
   vencidosSinPagar,
+  compromisosProximos,
   agruparPorDiasRestantes,
   sumarMontos,
 } from './logic/alertas.js';

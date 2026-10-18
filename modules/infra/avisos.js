@@ -166,9 +166,14 @@ function _deCompromisosVencidos(compromisos, gastos, hoyISO) {
   }));
 }
 
-/** Compromisos que vencen dentro de los próximos tres días (hoy incluido). */
-function _deCompromisosProximos(compromisos, hoyISO) {
-  return compromisosProximos(compromisos, DIAS_COMPROMISO_PROXIMO, _fechaRef(hoyISO))
+/**
+ * Compromisos que vencen dentro de los próximos tres días (hoy incluido) y
+ * siguen sin pagar. La fecha y el estado de pago son los del Calendario
+ * (HF.0d, BUG-031): lo pagado antes de vencer no avisa, y un bimestral solo
+ * avisa en su mes.
+ */
+function _deCompromisosProximos(compromisos, gastos, hoyISO) {
+  return compromisosProximos(compromisos, DIAS_COMPROMISO_PROXIMO, _fechaRef(hoyISO), gastos)
     .filter(c => c.diasRestantes >= 0)
     .map(c => _aviso({
       // Hoy y mañana interrumpen; dos o tres días esperan en la app.
@@ -399,7 +404,7 @@ export function recolectarAvisos({
 
   const avisos = [
     ..._deCompromisosVencidos(compromisos, gastos, hoyISO),
-    ..._deCompromisosProximos(compromisos, hoyISO),
+    ..._deCompromisosProximos(compromisos, gastos, hoyISO),
     ..._deLimites(presupuestos, gastos, anio, mes),
     ..._deApartados(apartados, hoyISO),
     ..._dePrestamos(personales, hoyISO),

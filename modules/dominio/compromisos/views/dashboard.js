@@ -163,8 +163,9 @@ function _renderObligaciones(el) {
 
   // Los que vencen hoy ya están en `vencidos`: sin este filtro un mismo
   // compromiso sale dos veces el día que vence (IN.7), ahora dentro de la
-  // misma tarjeta en vez de en dos.
-  const proxComp = compromisosProximos(S.compromisos, 7).filter(c => c.diasRestantes > 0);
+  // misma tarjeta en vez de en dos. Con los gastos, lo pagado antes de vencer
+  // no sale (HF.0d).
+  const proxComp = compromisosProximos(S.compromisos, 7, new Date(), S.gastos).filter(c => c.diasRestantes > 0);
   const proximos = [...proxComp, ..._personalesProximos(7), ..._apartadosProximos(7)]
     .sort((a, b) => a.diasRestantes - b.diasRestantes);
 
@@ -405,7 +406,8 @@ export function renderPanelPrioridades() {
   // Los que vencen hoy (diasRestantes === 0) ya se muestran en "Pendientes
   // del mes" (panel-vencidos, vía detectarVencidosCompletos): sin este
   // filtro, un mismo compromiso aparece duplicado el día que vence (IN.7).
-  const proxComp = compromisosProximos(S.compromisos, 7).filter(c => c.diasRestantes > 0);
+  // Con los gastos, lo pagado antes de vencer no sale (HF.0d).
+  const proxComp = compromisosProximos(S.compromisos, 7, new Date(), S.gastos).filter(c => c.diasRestantes > 0);
   const proxPers = _personalesProximos(7);
   const proxApar = _apartadosProximos(7);
 

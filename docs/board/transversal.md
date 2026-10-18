@@ -47,18 +47,6 @@
 
 ### Fase 0 - Base confiable (sin ADR, puede empezar ya)
 
-#### HF.0d - Una sola regla de vencimiento para avisos, Inicio y Por pagar (BUG-031)
-- Prioridad  : media
-- Estado     : pendiente
-- Área       : code
-- Objetivo   : "compromiso próximo" fecha con `infra/vencimientos.js` (frecuencia real, como el Calendario) y descarta lo ya pagado en el ciclo. Aplica el ADR 041, no lo cambia
-- Riesgo     : cambia qué ve Inicio para quincenales y bimestrales (hoy está mal, pero es lo que el usuario ve)
-- Secciones  : Inicio, Por pagar, avisos, notificación
-- Archivos   : `compromisos/logic/modelo.js`, `compromisos/logic/alertas.js`, `compromisos/views/dashboard.js`, `compromisos/views/lista.js`, `infra/avisos.js`
-- Depende de : nada
-- Aceptación : tests de quincenal y bimestral con la misma fecha en Calendario, Inicio y avisos; pago adelantado no avisa
-- Modelo     : Alta capacidad, Alto
-
 #### HF.0e - `fechaCreacion` se lee como fecha local (BUG-025)
 - Prioridad  : media
 - Estado     : pendiente (P3 resuelta: opción b, sin schema)
@@ -91,7 +79,7 @@
 - Riesgo     : congelar como esperado un doble conteo vigente; por eso va después de HF.0d
 - Secciones  : todas (sin runtime)
 - Archivos   : `tests/fixtures/perfiles.js`, `tests/integration/perfiles.test.js`
-- Depende de : HF.0d
+- Depende de : nada
 - Aceptación : la suite corre en `pnpm test` y falla si se reintroduce cualquiera de los bugs de doble conteo de la Fase 0
 - Modelo     : Alta capacidad, Extra
 
@@ -130,10 +118,10 @@
 ### Fase 2 - Captura sin repetir (Finko Local)
 
 #### HF.2a - Cuenta habitual derivada
-- Estado : pendiente, sin ADR. **Objetivo**: "Marcar pagado" y el abono preseleccionan la última cuenta usada para ese compromiso, derivada de sus gastos (R-HF5, sin campo nuevo). **Archivos**: `infra/cuenta-helper.js`, `compromisos/index.js`, `agenda/index.js`. **Depende de**: HF.0d.
+- Estado : pendiente, sin ADR. **Objetivo**: "Marcar pagado" y el abono preseleccionan la última cuenta usada para ese compromiso, derivada de sus gastos (R-HF5, sin campo nuevo). **Archivos**: `infra/cuenta-helper.js`, `compromisos/index.js`, `agenda/index.js`. **Depende de**: nada.
 
 #### HF.2b - Débito automático en riesgo
-- Estado : pendiente (PA.1c ampliada, nota al ADR 052). **Objetivo**: aviso `debito-sin-saldo` para débitos próximos, no solo vencidos; estados derivados de solo lectura (esperado, sin saldo, registrado). **Archivos**: `infra/avisos.js`, `agenda/logic.js`. **Depende de**: HF.0d.
+- Estado : pendiente (PA.1c ampliada, nota al ADR 052). **Objetivo**: aviso `debito-sin-saldo` para débitos próximos, no solo vencidos; estados derivados de solo lectura (esperado, sin saldo, registrado). **Archivos**: `infra/avisos.js`, `agenda/logic.js`. **Depende de**: nada.
 
 #### HF.2c - Gasto recurrente sugiere un pago fijo
 - Estado : requiere ADR corto. **Objetivo**: misma marca o categoría, monto parecido y cadencia mensual en tres meses o más, sin `compromisoId`: Por pagar ofrece convertirlo. **Archivos**: `gastos/logic.js`, `infra/marcas.js`, `compromisos/views/`. **Depende de**: HF.0e, HF.1a.
@@ -144,7 +132,7 @@
 ### Fase 3 - Calendario planificador y avisos (Finko Local)
 
 #### HF.3a - ADR: Calendario planificador (Hoy, Próximos, Mes)
-- Estado : requiere ADR (acota ADR 081 D2; P5 fijó que vuelven solo "Marcar pagado" y "Registrar abono"). **Objetivo**: tres vistas, prioridad derivada (urgente, importante, próximo, informativo) mapeada a las severidades del ADR 066, acciones directas solo por `pago-compromiso`. **Depende de**: cierre de MOV.1 (K5 en ficha 18), HF.0d.
+- Estado : requiere ADR (acota ADR 081 D2; P5 fijó que vuelven solo "Marcar pagado" y "Registrar abono"). **Objetivo**: tres vistas, prioridad derivada (urgente, importante, próximo, informativo) mapeada a las severidades del ADR 066, acciones directas solo por `pago-compromiso`. **Depende de**: cierre de MOV.1 (K5 en ficha 18).
 
 #### HF.3b - "Antes de tu próximo ingreso" (lógica pura)
 - Estado : pendiente (dentro de HF.3a). **Objetivo**: disponible (sin cupo de tarjeta, I5) menos pagos en ventana menos aportes planeados; reusa `obligacionesYAportesDelCobro().enVentana`. **Archivos**: `infra/vencimientos.js`, `agenda/logic.js`. **Depende de**: HF.3a.
@@ -156,7 +144,7 @@
 - Estado : pendiente (nota al ADR 066). **Objetivo**: `config.avisosPospuestos` (schema), filtro en el motor. **Depende de**: nada.
 
 #### HF.3e - Badge de la PWA y del nav
-- Estado : pendiente (nota al ADR 066; absorbe el diferido del ADR 040). **Objetivo**: `navigator.setAppBadge(n)` con los avisos `urgente` y `alta` tras preferencias, al abrir, en `state:change` y `visibilitychange`; se limpia en cero. **Depende de**: HF.0d.
+- Estado : pendiente (nota al ADR 066; absorbe el diferido del ADR 040). **Objetivo**: `navigator.setAppBadge(n)` con los avisos `urgente` y `alta` tras preferencias, al abrir, en `state:change` y `visibilitychange`; se limpia en cero. **Depende de**: nada.
 
 #### HF.3f - Rutas profundas, shortcuts y notificación que abre el elemento
 - Estado : requiere ADR corto (convención de ruta). **Objetivo**: el router acepta un destino de elemento; `manifest.json` gana shortcuts (Hoy, Por pagar, Registrar gasto, Registrar ingreso); el SW gana `notificationclick`. **Archivos**: `infra/router.js`, `manifest.json`, `service-worker.js`, `infra/notificaciones.js`.

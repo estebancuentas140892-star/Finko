@@ -6,12 +6,47 @@
  * - Sin DOM. Sin S directo. Testeable en Node/Vitest sin mocks de navegador.
  */
 
-import { TIPOS_COMPROMISO, esDeuda } from './modelo.js';
+import { TIPOS_COMPROMISO, esDeuda, compromisosActivos, vencimientosDesde } from './modelo.js';
 import { estadoPagoMes } from './abonos.js';
+import { ocurrenciasEnMes } from '../../../infra/vencimientos.js';
 
 // ── DETECTORES DE ALERTA (G.1) ───────────────────────────────────
 
 const _RX_FECHA_COMP = /^(\d{4})-(\d{2})-(\d{2})/;
+
+/**
+ * Días del mes en curso en que el compromiso ya venció (hoy incluido), según
+ * su frecuencia: los mismos días que pinta el Calendario (`ocurrenciasEnMes`,
+ * HF.0d). Descarta los anteriores a su creación si se creó este mismo mes:
+ * no se puede deber lo que no existía. Ascendentes: el primero es el más
+ * atrasado, y es el que ofrece el lote de "Por pagar".
+ *
+ * @param {import('../../../core/state.js').Compromiso} c
+ * @param {number} anio
+ * @param {number} mes 1-12
+ * @param {number} dia 1-31
+ * @returns {number[]}
+ */
+function _vencimientosCumplidosDelMes(c, anio, mes, dia) {
+  let desde = 1;
+  if (typeof c.fechaCreacion === 'string') {
+    const mc = _RX_FECHA_COMP.exec(c.fechaCreacion);
+    if (mc && +mc[1] === anio && +mc[2] === mes) desde = +mc[3];
+  }
+  return ocurrenciasEnMes(c, anio, mes - 1).filter(d => d <= dia && d >= desde);
+}
+
+/**
+ * Una deuda en cero no tiene nada que vencer, aunque su último abono haya sido
+ * menor que la cuota (`estadoPagoMes` diría 'parcial'). Mismo criterio que el
+ * lote de "Por pagar" (`pendientesDePagoDelMes`) y la distribución. Un saldo
+ * que no se conoce no es un saldo en cero: esa deuda sigue avisando.
+ */
+function _deudaSaldada(c) {
+  if (!esDeuda(c?.tipo) || c.saldoTotal === null || c.saldoTotal === undefined) return false;
+  const saldo = Number(c.saldoTotal);
+  return Number.isFinite(saldo) && saldo <= 0;
+}
 
 /**
  * Detecta compromisos fijos activos cuyo día de pago ya pasó en el mes actual.
@@ -182,11 +217,12 @@ export function detectarDeudasDurmiendo(compromisos, hoyISO, config = {}) {
  * Recién agregar un fijo cuyo día ya pasó no implica mora (ese ciclo no
  * existía). El próximo vencimiento real es el mes siguiente.
  *
- * Limitación conocida: para tipo='agenda' con frecuencia='Única vez' creada
- * en meses anteriores, `diasAtraso` se calcula contra el mes en curso, no
- * contra la fecha original. Si el usuario olvidó desactivar el item, el
- * atraso reportado será menor al real. Aceptable para v1: se resuelve con
- * disciplina del usuario (toggle "activo=false" al pagar).
+ * **Frecuencia real (HF.0d, BUG-031):** el día de pago sale de las
+ * ocurrencias del mes que pinta el Calendario, no de `diaPago` a secas. Un
+ * bimestral fuera de su mes no vence, un día 31 vence el 30 en septiembre y el
+ * 28 en febrero, y un quincenal con las dos fechas pasadas reporta la más
+ * vieja (la que ofrece el lote de "Por pagar"). Una "Única vez" solo vence en
+ * el mes en que se creó, que es el único en que el Calendario la pinta.
  *
  * @param {import('../../../core/state.js').Compromiso[]} compromisos
  * @param {string} hoyISO   YYYY-MM-DD
@@ -219,23 +255,12 @@ export function detectarVencidosCompletos(compromisos, hoyISO, config = {}) {
     if (c.activo === false) continue;
     if (!TIPOS_COMPROMISO.includes(c.tipo)) continue;
 
-    const diaPago = Number(c.diaPago) || 1;
-    if (diaPago < 1 || diaPago > 31) continue;
+    // El más atrasado de lo que ya venció este mes, contado desde su creación.
+    const [diaPago] = _vencimientosCumplidosDelMes(c, anioHoy, mesHoy, diaHoy);
+    if (diaPago === undefined) continue;
 
     const diasAtraso = diaHoy - diaPago;
     if (diasAtraso < umbral) continue;
-
-    // Si el compromiso se creó este mes después de su día de pago, el ciclo
-    // de este mes no le aplica: el próximo vencimiento real es el mes siguiente.
-    if (typeof c.fechaCreacion === 'string') {
-      const mc = _RX_FECHA_COMP.exec(c.fechaCreacion);
-      if (mc) {
-        const anioC = +mc[1];
-        const mesC  = +mc[2];
-        const diaC  = +mc[3];
-        if (anioC === anioHoy && mesC === mesHoy && diaC > diaPago) continue;
-      }
-    }
 
     const severidad = diasAtraso <= 3 ? 'leve'
       : diasAtraso <= 10             ? 'moderada'
@@ -268,6 +293,10 @@ export function detectarVencidosCompletos(compromisos, hoyISO, config = {}) {
  * que ya calcula `estadoPagoMes` de este mismo dominio (una deuda con abono
  * parcial sigue pendiente: solo sale de la lista cuando queda en 'completo').
  *
+ * Una deuda ya saldada tampoco cuenta (HF.0d): si el último abono fue menor
+ * que la cuota porque era lo que faltaba, el mes queda 'parcial' pero no hay
+ * nada que pagar, y el lote de "Por pagar" ya la dejaba fuera.
+ *
  * No sustituye a `detectarVencidosCompletos`: el nudge de mora y las alertas
  * siguen razonando sobre el calendario puro.
  *
@@ -285,7 +314,70 @@ export function vencidosSinPagar(compromisos, gastos, hoyISO, config = {}) {
   if (prefijoMes.length !== 7) return vencidos;
 
   const porId = new Map(compromisos.map(c => [c?.id, c]));
-  return vencidos.filter(v => estadoPagoMes(gastos, porId.get(v.id), prefijoMes) !== 'completo');
+  return vencidos.filter(v => {
+    const c = porId.get(v.id);
+    return !_deudaSaldada(c) && estadoPagoMes(gastos, c, prefijoMes) !== 'completo';
+  });
+}
+
+/**
+ * Los compromisos activos cuyo próximo vencimiento **sin pagar** cae dentro de
+ * `diasLimite` días (hoy incluido). Alimenta "Próximas prioridades" de Inicio y
+ * el aviso `compromiso-proximo` del motor (HF.0d, BUG-031).
+ *
+ * Una sola regla, la del Calendario y "Por pagar":
+ *
+ * - **Fecha**: la ocurrencia según la frecuencia (`vencimientosDesde`, sobre el
+ *   motor compartido del ADR 041), no `diaPago` a secas.
+ * - **Pago**: una ocurrencia de un mes con `estadoPagoMes` 'completo' ya está
+ *   pagada y se salta; la siguiente legítima sale por su frecuencia. Una deuda
+ *   con abono parcial sigue pendiente; una saldada, no.
+ * - **Sin duplicar al vencido**: si el mes en curso ya tiene un vencimiento
+ *   pasado sin cubrir, ese mes es un pendiente de `vencidosSinPagar`, y lo que
+ *   cae después dentro del mismo mes no es otro pago, porque el estado es por
+ *   mes y un solo gasto lo cubre (el quincenal del día 20 con el del 5 vencido).
+ *
+ * **Límite del modelo, no de esta regla:** el estado de pago es por mes. Un
+ * gasto cubre las dos quincenas del mes, y un pago registrado en el mes
+ * anterior no cubre el vencimiento de este. El Calendario lee igual.
+ *
+ * @param {import('../../../core/state.js').Compromiso[]} compromisos
+ * @param {number} [diasLimite=3]
+ * @param {Date} [hoy=new Date()] Fecha de referencia (inyectable, BUG-028): el
+ *   motor de avisos le pasa su `hoyISO` en vez de dejar que lea el reloj.
+ * @param {import('../../../core/state.js').Gasto[]} [gastos=[]] Para saber qué
+ *   ya se pagó. Sin gastos, todo vencimiento cuenta como pendiente.
+ * @returns {Array<import('../../../core/state.js').Compromiso & { diasRestantes: number, fechaVencimiento: string }>}
+ *   Del más cercano al más lejano.
+ */
+export function compromisosProximos(compromisos, diasLimite = 3, hoy = new Date(), gastos = []) {
+  const anio = hoy.getFullYear();
+  const mes  = hoy.getMonth() + 1;
+  const dia  = hoy.getDate();
+  const prefijoHoy = `${anio}-${String(mes).padStart(2, '0')}`;
+
+  const out = [];
+  for (const c of compromisosActivos(compromisos)) {
+    if (_deudaSaldada(c)) continue;
+
+    /** @type {Map<string, boolean>} Un estado por mes, no uno por ocurrencia. */
+    const pagado = new Map();
+    const mesPagado = prefijo => {
+      if (!pagado.has(prefijo)) pagado.set(prefijo, estadoPagoMes(gastos, c, prefijo) === 'completo');
+      return pagado.get(prefijo);
+    };
+    const atrasadoEsteMes = !mesPagado(prefijoHoy)
+      && _vencimientosCumplidosDelMes(c, anio, mes, dia).some(d => d < dia);
+
+    const proximo = vencimientosDesde(c, hoy, diasLimite).find(({ fecha }) => {
+      const prefijo = fecha.slice(0, 7);
+      if (prefijo === prefijoHoy && atrasadoEsteMes) return false;
+      return !mesPagado(prefijo);
+    });
+    if (proximo) out.push({ ...c, diasRestantes: proximo.dias, fechaVencimiento: proximo.fecha });
+  }
+
+  return out.sort((a, b) => a.diasRestantes - b.diasRestantes);
 }
 
 /**

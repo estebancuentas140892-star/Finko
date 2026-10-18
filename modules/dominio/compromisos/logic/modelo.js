@@ -7,6 +7,7 @@
  */
 
 import { FRECUENCIAS, CATEGORIAS_AGENDA, CATEGORIAS_DEUDA, CATEGORIAS_DEUDA_PERSONAL, ICONOS_CATEGORIA_PERSONALIZADA } from '../../../core/constants.js';
+import { ocurrenciasEnRango } from '../../../infra/vencimientos.js';
 
 // ── CATÁLOGOS LOCALES ────────────────────────────────────────────
 
@@ -190,24 +191,58 @@ export function resumenDeudas(compromisos) {
 }
 
 /**
- * Cuántos días faltan para el próximo vencimiento de un compromiso.
- * Si `diaPago` es hoy o en el futuro dentro del mes → días restantes en el mes actual.
- * Si ya pasó → días hasta el mismo día del mes siguiente.
+ * Días hacia adelante en los que se busca un vencimiento (HF.0d): un año
+ * entero, así un Anual siempre cae dentro.
+ */
+const DIAS_BUSQUEDA_VENCIMIENTO = 366;
+
+/** 'YYYY-MM-DD' de un Date, leído en hora local. */
+function _isoLocal(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/**
+ * Vencimientos de un compromiso desde hoy (incluido), con los días que faltan
+ * para cada uno (HF.0d, BUG-031).
+ *
+ * La regla de frecuencias es la del motor compartido (`ocurrenciasEnRango`,
+ * ADR 041): los mismos días que pinta el Calendario, con el día 29, 30 o 31
+ * clampeado al último del mes, el quincenal en sus dos fechas y el bimestral,
+ * trimestral, semestral y anual solo en los meses de su ciclo. No mira pagos:
+ * eso lo decide `compromisosProximos`, que sabe de gastos.
+ *
+ * @param {import('../../../core/state.js').Compromiso} compromiso
+ * @param {Date} [hoy=new Date()] Fecha de referencia (inyectable).
+ * @param {number} [dias=366] Hasta cuántos días hacia adelante buscar.
+ * @returns {Array<{ fecha: string, dias: number }>} En orden cronológico.
+ */
+export function vencimientosDesde(compromiso, hoy = new Date(), dias = DIAS_BUSQUEDA_VENCIMIENTO) {
+  const base = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+  const tope = Number.isFinite(dias) && dias >= 0 ? Math.floor(dias) : DIAS_BUSQUEDA_VENCIMIENTO;
+  const fin  = new Date(base.getFullYear(), base.getMonth(), base.getDate() + tope);
+
+  return ocurrenciasEnRango(compromiso, _isoLocal(base), _isoLocal(fin)).map(fecha => {
+    const [y, m, d] = fecha.split('-').map(Number);
+    return { fecha, dias: Math.round((new Date(y, m - 1, d) - base) / 86_400_000) };
+  });
+}
+
+/**
+ * Cuántos días faltan para el próximo vencimiento de un compromiso, según su
+ * frecuencia (HF.0d): la fecha es la misma que pinta el Calendario. No mira
+ * pagos; para "lo próximo que falta pagar" está `compromisosProximos`.
+ *
+ * Antes contaba solo con `diaPago`: un bimestral vencía todos los meses y un
+ * día 31 caía en un 31 de septiembre que no existe (BUG-031).
  *
  * @param {import('../../../core/state.js').Compromiso} compromiso
  * @param {Date} [hoy=new Date()] Fecha de referencia (inyectable, BUG-028).
- * @returns {number} Días hasta el próximo vencimiento (0 = hoy).
+ * @returns {number|null} Días hasta el próximo vencimiento (0 = hoy), o `null`
+ *   si no vuelve a vencer en un año (una "Única vez" de un mes ya pasado).
  */
 export function proximoVencimiento(compromiso, hoy = new Date()) {
-  const diaHoy   = hoy.getDate();
-  const diaPago  = compromiso.diaPago ?? 1;
-
-  if (diaPago >= diaHoy) {
-    return diaPago - diaHoy;
-  }
-  // Ya pasó en este mes → contar hasta el mismo día del mes siguiente.
-  const ultimoDiaMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate();
-  return (ultimoDiaMes - diaHoy) + diaPago;
+  const [proximo] = vencimientosDesde(compromiso, hoy);
+  return proximo ? proximo.dias : null;
 }
 
 /**
@@ -218,26 +253,10 @@ export function proximoVencimiento(compromiso, hoy = new Date()) {
  */
 export function urgencia(compromiso, hoy = new Date()) {
   const dias = proximoVencimiento(compromiso, hoy);
+  if (dias === null) return 'normal';
   if (dias <= 3) return 'urgente';
   if (dias <= 7) return 'proximo';
   return 'normal';
-}
-
-/**
- * Filtra los compromisos activos cuyo próximo vencimiento es en ≤ `diasLimite` días.
- * Pensado para alimentar el sistema de notificaciones push.
- *
- * @param {import('../../../core/state.js').Compromiso[]} compromisos
- * @param {number} [diasLimite=3]
- * @param {Date} [hoy=new Date()] Fecha de referencia (inyectable, BUG-028): el
- *   motor de avisos le pasa su `hoyISO` en vez de dejar que lea el reloj.
- * @returns {Array<import('../../../core/state.js').Compromiso & { diasRestantes: number }>}
- */
-export function compromisosProximos(compromisos, diasLimite = 3, hoy = new Date()) {
-  return compromisosActivos(compromisos)
-    .map(c => ({ ...c, diasRestantes: proximoVencimiento(c, hoy) }))
-    .filter(c => c.diasRestantes <= diasLimite)
-    .sort((a, b) => a.diasRestantes - b.diasRestantes);
 }
 
 /**
