@@ -35,7 +35,7 @@ import { hoy, f } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
 import { resolverPagoConSelector } from '../../infra/cuenta-helper.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
-import { debitosAutomaticosVencidos, creditosAutomaticosVencidos } from './logic.js';
+import { debitosAutomaticosVencidos, creditosAutomaticosVencidos, MESES_CATCHUP_AUTOMATICOS } from './logic.js';
 import { renderAgenda, renderFormAutomaticos, navegarMes, mostrarDia, marcarEntradaSeccion, resumenMesVisible, diaSeleccionado } from './view.js';
 
 // ── HANDLERS DE NAVEGACIÓN ───────────────────────────────────────
@@ -210,12 +210,20 @@ function _debitosPendientes() {
  * Único motivo de bloqueo: `'cuenta'`, el ingreso no dice a qué cuenta llega,
  * o esa cuenta ya no existe o está inactiva.
  *
+ * Lo que "Distribuir mi ingreso" ya acreditó (`S.config.cobrosDistribuidos`,
+ * BUG-032) no se ofrece: es el mismo cobro y sumarlo otra vez es un doble
+ * abono. Campo opcional de `config` que escribe tesorería, igual que
+ * `ultimaDistribucionPeriodo`; acá solo se lee.
+ *
  * @returns {Array<{id:string, descripcion:string, monto:number, fecha:string,
  *   tipo:'ingreso', cuentaId:string|null, cuentaNombre:string|null,
  *   bloqueo:'cuenta'|null, falta:number}>}
  */
 function _creditosPendientes() {
-  const vencidos = creditosAutomaticosVencidos(S.ingresos ?? [], S.ingresosPuntuales ?? [], hoy());
+  const vencidos = creditosAutomaticosVencidos(
+    S.ingresos ?? [], S.ingresosPuntuales ?? [], hoy(),
+    MESES_CATCHUP_AUTOMATICOS, S.config?.cobrosDistribuidos ?? [],
+  );
 
   return vencidos.map((v) => {
     const cuenta = (S.cuentas ?? []).find(c => c.id === v.cuentaId && c.activa !== false);

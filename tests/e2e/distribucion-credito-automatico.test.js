@@ -1,12 +1,16 @@
 /**
- * distribucion-credito-automatico.test.js - BUG-030 (HF.0b, ADR 091): un cobro
- * de ingreso aumenta el saldo de las cuentas una sola vez.
+ * distribucion-credito-automatico.test.js - BUG-030 (HF.0b) y BUG-032 (HF.0h),
+ * ADR 091: un cobro de ingreso aumenta el saldo de las cuentas una sola vez,
+ * sin importar cuál de los dos caminos llega primero.
  *
  * Con crédito automático (PA.1b, ADR 052), la hoja "Pagos automáticos" acredita
  * el cobro y lo registra como `IngresoPuntual` con `ingresoId`. "Distribuir mi
- * ingreso" acreditaba ese mismo cobro otra vez al confirmar. Lo que cubre aquí
- * y no en unit (`montoYaAcreditadoDelCobro` tiene sus casos puros): el
- * recorrido real, hoja primero y asistente después, con los saldos exactos.
+ * ingreso" acreditaba ese mismo cobro otra vez al confirmar (BUG-030). Y al
+ * revés: si se posponía la hoja y se distribuía, la hoja volvía a ofrecer el
+ * cobro en la siguiente apertura (BUG-032). Lo que cubre aquí y no en unit
+ * (`montoYaAcreditadoDelCobro`, `cobrosQueAcreditaLaDistribucion` y
+ * `pendientesDeCreditoDelMes` tienen sus casos puros): los dos recorridos
+ * reales, con recarga de la app y el dinero total exacto.
  *
  * Reloj fijo (`page.clock.setFixedTime`): el cobro y la ventana del arriendo
  * dependen del día, y un test que pasa solo algunos días es el patrón que
@@ -14,7 +18,7 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { sembrar, leerEstado } from './helpers/estado.js';
+import { sembrar, sembrarSiVacio, leerEstado } from './helpers/estado.js';
 
 const HOY = new Date('2026-10-15T10:00:00');
 
@@ -39,13 +43,16 @@ const ARRIENDO = {
   frecuencia: 'Mensual', diaPago: 20, monto: 1_200_000, activo: true, categoria: null,
 };
 
-function estado({ cuentas = [NOMINA], ingreso = salario({ creditoAutomatico: true }), config = {} } = {}) {
+function estado({
+  cuentas = [NOMINA], ingreso = salario({ creditoAutomatico: true }), ingresos = [ingreso],
+  puntuales = [COBRO_SEPTIEMBRE], config = {},
+} = {}) {
   return {
     perfil: { nombre: 'Prueba', smmlv: 1750905 },
     onboarded: true,
     cuentas,
-    ingresos: [ingreso],
-    ingresosPuntuales: [COBRO_SEPTIEMBRE],
+    ingresos,
+    ingresosPuntuales: puntuales,
     compromisos: [ARRIENDO],
     gastos: [],
     metas: [],
@@ -61,6 +68,49 @@ async function abrir(page, st) {
   await sembrar(page, st);
   await page.goto('/#tesoreria');
 }
+
+/**
+ * Como `abrir`, pero la siembra no pisa lo que la app guardó: los tests que
+ * recargan afirman justo sobre lo persistido.
+ */
+async function abrirPersistente(page, st, hoy = HOY) {
+  await page.clock.setFixedTime(hoy);
+  await sembrarSiVacio(page, st);
+  await page.goto('/#tesoreria');
+}
+
+/** Cierra y vuelve a abrir la app, como quien la reabre otro día. */
+async function reabrir(page, hoy = HOY) {
+  await page.clock.setFixedTime(hoy);
+  await page.reload();
+  await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+  // La hoja se evalúa en el arranque, detrás de los gates (ADR 052 D1).
+  await page.waitForTimeout(300);
+}
+
+/** Pulsa "Ahora no" en la hoja: posponer no escribe nada. */
+async function posponerHojaAutomaticos(page) {
+  await page.waitForSelector('#modal-automaticos[data-open]', { timeout: 10_000 });
+  await page.locator('#modal-automaticos').getByRole('button', { name: 'Ahora no' }).click();
+  await page.waitForSelector('#modal-automaticos:not([data-open])', { timeout: 5_000 });
+}
+
+/** Lo que ofrece la hoja abierta, una entrada por fila: "nombre +$monto". */
+async function filasHoja(page) {
+  await page.waitForSelector('#modal-automaticos[data-open]', { timeout: 10_000 });
+  const filas = page.locator('#modal-automaticos .lote-row');
+  const out = [];
+  for (let i = 0; i < await filas.count(); i++) {
+    const nombre = await filas.nth(i).locator('.lote-row__name').textContent();
+    const monto  = await filas.nth(i).locator('.lote-row__amount').textContent();
+    out.push(`${nombre.trim()} ${monto.trim()}`);
+  }
+  return out;
+}
+
+/** El dinero que existe: la suma de los saldos de todas las cuentas. */
+const dineroTotal = async (page) =>
+  ((await leerEstado(page)).cuentas ?? []).reduce((s, c) => s + (c.saldo ?? 0), 0);
 
 /** Confirma la hoja de automáticos, que al abrir trae el cobro de octubre. */
 async function confirmarHojaAutomaticos(page) {
@@ -144,5 +194,108 @@ test.describe('BUG-030 - un cobro de ingreso se acredita una sola vez', () => {
     expect(ahorros).toBe(800_000);    // 300.000 + 500.000
     // Dinero que existe: 800.000 de partida + 4.000.000 de un solo cobro - 1.200.000 pagados.
     expect(nomina + ahorros).toBe(3_600_000);
+  });
+});
+
+// Honorarios: el mismo cobro mensual del salario (misma frecuencia principal),
+// pero con otro día. Su cobro de septiembre ya entró por la hoja.
+const honorarios = (extra = {}) => ({
+  id: 'ing-honorarios', descripcion: 'Honorarios de prueba', monto: 1_000_000,
+  frecuencia: 'Mensual', diaPago: 25, activo: true, cuentaId: 'cta-nomina',
+  creditoAutomatico: true, fechaCreacion: '2026-01-10T15:00:00.000Z', ...extra,
+});
+const HONORARIOS_SEPTIEMBRE = {
+  id: 'ip-hon-sep', descripcion: 'Honorarios de prueba', monto: 1_000_000, categoria: null,
+  cuentaId: 'cta-nomina', fecha: '2026-09-25', ingresoId: 'ing-honorarios',
+};
+
+test.describe('BUG-032 - Distribuir primero y la hoja después: un solo crédito', () => {
+
+  test('pospuesta la hoja y distribuido el cobro, al reabrir la hoja no lo ofrece', async ({ page }) => {
+    await abrirPersistente(page, estado({ cuentas: [NOMINA, AHORROS] }));
+    expect(await dineroTotal(page)).toBe(800_000);
+
+    expect(await filasHoja(page)).toEqual(['Salario de prueba +$4.000.000']);
+    await posponerHojaAutomaticos(page);
+    expect(await dineroTotal(page)).toBe(800_000);
+
+    await abrirAsistente(page);
+    await confirmarDistribucion(page);
+    // 800.000 de partida + 4.000.000 de un solo cobro - 1.200.000 del arriendo.
+    await expect.poll(() => dineroTotal(page), { timeout: 5_000 }).toBe(3_600_000);
+    expect(await saldoDe(page, 'cta-nomina')).toBe(3_300_000);
+
+    await reabrir(page);
+    // Con el bug, la hoja vuelve a ofrecer "+$4.000.000" y confirmarla deja
+    // 7.600.000: el mismo cobro contado dos veces.
+    await expect(page.locator('#modal-automaticos[data-open]')).toHaveCount(0);
+    expect(await dineroTotal(page)).toBe(3_600_000);
+    // HF.0h no adelanta HF.1d: Distribuir sigue sin escribir `IngresoPuntual`.
+    const st = await leerEstado(page);
+    expect(st.ingresosPuntuales.filter(ip => ip.fecha.startsWith('2026-10'))).toHaveLength(0);
+  });
+
+  test('"Ahora no" no marca nada: al reabrir, la hoja vuelve a ofrecer el cobro', async ({ page }) => {
+    await abrirPersistente(page, estado());
+    await posponerHojaAutomaticos(page);
+    await reabrir(page);
+
+    expect(await filasHoja(page)).toEqual(['Salario de prueba +$4.000.000']);
+    expect(await dineroTotal(page)).toBe(500_000);
+  });
+
+  test('deshacer la distribución devuelve el cobro a la hoja', async ({ page }) => {
+    await abrirPersistente(page, estado({ cuentas: [NOMINA, AHORROS] }));
+    await posponerHojaAutomaticos(page);
+    await abrirAsistente(page);
+    await confirmarDistribucion(page);
+    await expect.poll(() => dineroTotal(page), { timeout: 5_000 }).toBe(3_600_000);
+
+    await page.click('[data-action="deshacer-distribucion"]');
+    await expect.poll(() => dineroTotal(page), { timeout: 5_000 }).toBe(800_000);
+
+    // El dinero del cobro salió de la cuenta, así que el cobro vuelve a estar
+    // pendiente: si la guarda sobreviviera al deshacer, se perdería.
+    await reabrir(page);
+    expect(await filasHoja(page)).toEqual(['Salario de prueba +$4.000.000']);
+  });
+
+  test('otro ingreso y otro periodo siguen en la hoja: solo se oculta lo que Distribuir acreditó', async ({ page }) => {
+    await abrirPersistente(page, estado({
+      cuentas:   [NOMINA, AHORROS],
+      ingresos:  [salario({ creditoAutomatico: true }), honorarios()],
+      puntuales: [COBRO_SEPTIEMBRE, HONORARIOS_SEPTIEMBRE],
+    }));
+    expect(await filasHoja(page)).toEqual(['Salario de prueba +$4.000.000']);
+    await posponerHojaAutomaticos(page);
+
+    await abrirAsistente(page);
+    await confirmarDistribucion(page);
+    // Los honorarios de septiembre ya estaban en la cuenta (HF.0b): entra solo
+    // el salario. 800.000 + 4.000.000 - 1.200.000.
+    await expect.poll(() => dineroTotal(page), { timeout: 5_000 }).toBe(3_600_000);
+
+    // Día 26: ya cayeron los honorarios de octubre, que nadie acreditó.
+    await reabrir(page, new Date('2026-10-26T10:00:00'));
+    expect(await filasHoja(page)).toEqual(['Honorarios de prueba +$1.000.000']);
+    await page.locator('#modal-automaticos [data-action="agenda-confirmar-automaticos"]').click();
+    await page.waitForSelector('#modal-automaticos:not([data-open])', { timeout: 5_000 });
+    await expect.poll(() => dineroTotal(page), { timeout: 5_000 }).toBe(4_600_000);
+
+    // Nada más pendiente: cada cobro aumentó el dinero una vez.
+    await reabrir(page, new Date('2026-10-26T10:00:00'));
+    await expect(page.locator('#modal-automaticos[data-open]')).toHaveCount(0);
+    expect(await dineroTotal(page)).toBe(4_600_000);
+  });
+
+  test('salario de noviembre: distribuir octubre no oculta el cobro siguiente', async ({ page }) => {
+    await abrirPersistente(page, estado({ cuentas: [NOMINA, AHORROS] }));
+    await posponerHojaAutomaticos(page);
+    await abrirAsistente(page);
+    await confirmarDistribucion(page);
+    await expect.poll(() => dineroTotal(page), { timeout: 5_000 }).toBe(3_600_000);
+
+    await reabrir(page, new Date('2026-11-16T10:00:00'));
+    expect(await filasHoja(page)).toEqual(['Salario de prueba +$4.000.000']);
   });
 });

@@ -1,12 +1,12 @@
 # Tablero - Finko Claude
 
-> Revisado: 2026-10-16.
+> Revisado: 2026-10-17.
 
 > Tablero Kanban de trabajo pendiente. Reemplaza a `TASKS.md` y `ROADMAP.md` (retirados 2026-07-02, ver [CHANGELOG](CHANGELOG.md)).
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-10-16. Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
+> Última actualización: 2026-10-17. Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
 
 ---
 
@@ -73,8 +73,7 @@ Las tarjetas del tablero (la iniciativa HF se lista por fase), para elegir la pr
 | HF.0c | El importador CSV de gastos no crea dinero (BUG-029) | Ajustes, Gastos | alta | nada |
 | HF.0d | Una sola regla de vencimiento (BUG-031) | Inicio, Por pagar | media | nada |
 | HF.0e | `fechaCreacion` se lee como fecha local (BUG-025) | Transversal | media | nada |
-| HF.0h | La hoja de automáticos no acredita un cobro que Distribuir ya acreditó (BUG-032) | Calendario, Mis cuentas | alta | nada |
-| HF.0f | Perfiles de regresión: constructores e invariantes | Transversal (tests) | alta | HF.0c, HF.0d, HF.0h |
+| HF.0f | Perfiles de regresión: constructores e invariantes | Transversal (tests) | alta | HF.0c, HF.0d |
 | HF.0g | Perfiles de regresión en E2E | Transversal (tests) | media | HF.0f |
 | HF.1a a HF.5a | Fases 1 a 5 de la iniciativa HF (24 rebanadas) | Transversal | media | ficha 18 de MOV.1, cierre de MOV.1 |
 | A.5 | Dominio custom en Vercel | Mantenimiento | baja | que el usuario tenga el dominio registrado |

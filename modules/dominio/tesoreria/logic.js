@@ -72,6 +72,8 @@ export {
   construirFilasTransferenciaCuentas,
   cuentaIngresoPrincipal,
   montoYaAcreditadoDelCobro,
+  cobrosQueAcreditaLaDistribucion,
+  acumularCobrosDistribuidos,
 } from './logic/distribucion.js';
 
 export {

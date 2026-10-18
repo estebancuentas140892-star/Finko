@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-10-16.
+> Revisado: 2026-10-17.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-10)
+
+### fix(agenda): HF.0h, la hoja de automáticos no reofrece un cobro que Distribuir ya acreditó · 2026-10-17
+
+Tercera rebanada de la iniciativa HF ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)), espejo de HF.0b. Cierra **BUG-032**. Fichas: [`contexto/calendario.md`](contexto/calendario.md) (Pagos automáticos) y [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md) (Distribución v2).
+
+- **Causa raíz:** la hoja decide qué cobro falta mirando solo `IngresoPuntual` con `ingresoId` en el mes (`pendientesDeCreditoDelMes`), y Distribuir acredita el saldo sin dejar ningún registro de qué ocurrencia acreditó. Posponer la hoja y distribuir dejaba el cobro "pendiente" para siempre.
+- **Lo que ya existía no alcanzaba, y no se forzó:** `ultimaDistribucionPeriodo` es una sola fecha (la más reciente de cualquier frecuencia, no solo la del cobro), no dice qué ingresos formaban el cobro, no separa la primera quincena de la segunda y reconstruirlo depende de ingresos que el usuario puede editar después. Usarlo como guarda habría escondido ingresos que nadie acreditó.
+- **Dato mínimo, por la convención existente:** al confirmar, Distribuir sella en `S.config.cobrosDistribuidos` los pares `{ingresoId, fecha}` que acredita: el mismo conjunto de HF.0b (`_ocurrenciasDelCobro`, ahora fuente única de los dos sentidos) menos lo que la hoja ya registró. Campo opcional de `config` sin schema, igual que `ultimaDistribucionPeriodo` y `cobroConfirmadoPeriodo`. No crea `IngresoPuntual` ni movimientos: eso sigue siendo HF.1d.
+- **La hoja descarta por ocurrencia exacta, no por mes:** distribuir la primera quincena no esconde la segunda, ni septiembre esconde octubre, ni un ingreso esconde a otro del mismo monto, descripción o cuenta.
+- **Solo se sella si entra dinero nuevo** (`acreditar > 0`). Con el monto editado a mano se sella el cobro entero: el asistente lo trata como un solo cobro, igual que su propio sello de periodo.
+- **Deshacer la revierte sola:** `config` ya estaba en el snapshot de "Deshacer", así que el cobro vuelve a la hoja junto con el saldo. Se conservan el mes en curso y los dos anteriores (la hoja revisa dos).
+- **Compatibilidad con HF.1d:** cuando Distribuir escriba su `IngresoPuntual`, la guarda se retira. Queda escrito en la tarjeta que la hoja debe descartar ese registro por ocurrencia, o la segunda quincena distribuida dejaría de salir.
+- **Fuera de alcance, dicho:** la hoja sigue confirmando un quincenal una vez por mes cuando el crédito lo hace ella misma (riesgo 8 del ADR 091); editar el `diaPago` de un ingreso ya acreditado rompe el par en los dos sentidos; Semanal y Diario siguen sin reconocerse. Hallazgo sin triar: la hoja ofrece el mes anterior de un ingreso automático recién creado, porque no mira `fechaCreacion`.
+- Verificado en la app (localhost, datos inventados): hoja con Salario prueba +$4.000.000, "Ahora no" sin cambios (total $800.000); Distribuir con el arriendo de $1.200.000 deja Nómina en $3.300.000 y el total en $3.600.000; al recargar la hoja no se abre. Con Honorarios prueba creado después (automático, día 16), la hoja ofrece solo los honorarios y el total sigue en $3.600.000.
+- Tests: 23 unitarios nuevos (15 en `tesoreria.test.js`, 8 en `agenda.test.js`, uno de ellos espejo entre los dos dominios) y 5 E2E nuevos (`distribucion-credito-automatico.test.js`: Distribuir y recargar, "Ahora no", deshacer, otro ingreso y otro periodo, mes siguiente), con el dinero total afirmado en cada paso. Rojos antes del arreglo: 20 de los 23 unitarios (los otros tres afirman que nada se esconde o que la guarda persiste) y 3 de los 5 E2E, donde la hoja volvía a ofrecer +$4.000.000 ("Ahora no" y deshacer son controles). Ninguna expectativa existente cambió. Unitarios 4603/4603, lint verde. E2E 317/317 verdes con `--workers=2` en dos corridas: la primera sin flaky; la segunda, con la máquina más cargada (13 min), 5 flaky por el timeout de 30 s que pasaron al reintento, uno de ellos nuevo (el recorrido con recarga) y cuatro previos. SW v587 a v588.
 
 ### fix(tesoreria): HF.0b, Distribuir no reacredita un cobro que el crédito automático ya acreditó · 2026-10-16
 

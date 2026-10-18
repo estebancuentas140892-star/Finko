@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { eventosDelMes, eventosIngresosDelMes, eventosMetasDelMes, totalEventosDelMes, totalDia, eventosDeHoy, eventosEnProximos, tiposPresentesEnMes, totalesDelMes, pendientesDePagoDelMes, debitosAutomaticosVencidos, pendientesDeCreditoDelMes, creditosAutomaticosVencidos } from '../../modules/dominio/agenda/logic.js';
 import { renderFormAutomaticos, renderAgenda, mostrarDia, navegarMes, resetearVistaAlMesActual, marcarEntradaSeccion, resumenMesVisible, diaSeleccionado } from '../../modules/dominio/agenda/view.js';
 import { S } from '../../modules/core/state.js';
+// Solo para el espejo de BUG-032: los tests sí cruzan dominios, el código no (ADN 10).
+import { cobrosQueAcreditaLaDistribucion } from '../../modules/dominio/tesoreria/logic.js';
 import { CATEGORIA_AGENDA_ICONO } from '../../modules/core/constants.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -2322,6 +2324,80 @@ describe('pendientesDeCreditoDelMes (PA.1b)', () => {
     const eventos = eventosIngresosDelMes([ingresoAutoBase()], 2026, 7);
     const ingresosPuntuales = [{ ingresoId: 'i1', fecha: '2026-08-05', monto: 3_000_000 }];
     expect(pendientesDeCreditoDelMes(eventos, ingresosPuntuales, '2026-08', '2026-08-20')).toEqual([]);
+  });
+});
+
+describe('BUG-032 (HF.0h) - lo que Distribuir acreditó no vuelve a la hoja', () => {
+  // Datos inventados. `acreditados` es `S.config.cobrosDistribuidos`: pares
+  // (ingresoId, fecha exacta) que escribe Distribuir al confirmar.
+  const auto = (overrides = {}) => ingresoAutoBase({ creditoAutomatico: true, cuentaId: 'cta1', ...overrides });
+
+  it('la ocurrencia distribuida no aparece; sin guarda, la hoja la ofrece como siempre', () => {
+    const acreditados = [{ ingresoId: 'i1', fecha: '2026-08-05' }];
+    expect(creditosAutomaticosVencidos([auto()], [], '2026-08-20', 0)).toHaveLength(1);
+    expect(creditosAutomaticosVencidos([auto()], [], '2026-08-20', 0, acreditados)).toEqual([]);
+  });
+
+  it('dos ingresos del mismo monto, descripción y cuenta: distribuir uno no esconde el otro', () => {
+    const lista = [auto(), auto({ id: 'i2' })];
+    const r = creditosAutomaticosVencidos(lista, [], '2026-08-20', 0, [{ ingresoId: 'i1', fecha: '2026-08-05' }]);
+    expect(r.map(x => x.id)).toEqual(['i2']);
+  });
+
+  it('dos ingresos del mismo periodo: el que Distribuir no acreditó sigue pendiente', () => {
+    const lista = [auto(), auto({ id: 'i2', descripcion: 'Honorarios', monto: 1_000_000, diaPago: 10 })];
+    const r = creditosAutomaticosVencidos(lista, [], '2026-08-20', 0, [{ ingresoId: 'i1', fecha: '2026-08-05' }]);
+    expect(r).toEqual([expect.objectContaining({ id: 'i2', fecha: '2026-08-10', monto: 1_000_000 })]);
+  });
+
+  it('dos periodos del mismo ingreso: distribuir julio no esconde agosto', () => {
+    const r = creditosAutomaticosVencidos([auto()], [], '2026-08-20', 1, [{ ingresoId: 'i1', fecha: '2026-07-05' }]);
+    expect(r.map(x => x.fecha)).toEqual(['2026-08-05']);
+  });
+
+  it('un quincenal: distribuir la primera quincena no esconde la segunda', () => {
+    const q = auto({ frecuencia: 'Quincenal', diaPago: 15, monto: 1_500_000 });
+    const primera = [{ ingresoId: 'i1', fecha: '2026-10-15' }];
+    // Día 16: la primera ya está acreditada y la segunda aún no vence.
+    expect(creditosAutomaticosVencidos([q], [], '2026-10-16', 0, primera)).toEqual([]);
+    // Día 31: la segunda (30) llega con su propia fecha.
+    expect(creditosAutomaticosVencidos([q], [], '2026-10-31', 0, primera))
+      .toEqual([expect.objectContaining({ id: 'i1', fecha: '2026-10-30', monto: 1_500_000 })]);
+  });
+
+  it('una guarda con otra fecha u otro ingreso no esconde nada', () => {
+    const otras = [{ ingresoId: 'i1', fecha: '2026-08-06' }, { ingresoId: 'otro', fecha: '2026-08-05' }];
+    expect(creditosAutomaticosVencidos([auto()], [], '2026-08-20', 0, otras)).toHaveLength(1);
+  });
+
+  it('entradas mal formadas o una guarda ausente no rompen ni esconden', () => {
+    const eventos = eventosIngresosDelMes([auto()], 2026, 7);
+    expect(pendientesDeCreditoDelMes(eventos, [], '2026-08', '2026-08-20', [null, { ingresoId: 'i1' }, 'texto'])).toHaveLength(1);
+    expect(pendientesDeCreditoDelMes(eventos, [], '2026-08', '2026-08-20', undefined)).toHaveLength(1);
+  });
+
+  it('espejo con Distribuir: los pares que sella el asistente son las fechas que ofrece la hoja', () => {
+    // El cobro es la frecuencia principal, así que cada lista va con una sola:
+    // mensual con dos días, y quincenal con y sin clamp de fin de mes (20 + 15 vale 31).
+    const mensuales   = [auto({ id: 'sal', diaPago: 15 }), auto({ id: 'hon', diaPago: 25, monto: 1_000_000 })];
+    const quincenales = [auto({ id: 'q15', frecuencia: 'Quincenal', diaPago: 15 }), auto({ id: 'q20', frecuencia: 'Quincenal', diaPago: 20 })];
+    for (const lista of [mensuales, quincenales]) {
+      for (const hoyISO of ['2026-10-16', '2026-10-21', '2026-10-26', '2026-10-31']) {
+        const [a, m, d] = hoyISO.split('-').map(Number);
+        const sellados = cobrosQueAcreditaLaDistribucion(lista, [], new Date(a, m - 1, d, 12));
+        expect(sellados.length).toBeGreaterThan(0);
+        // Lo que queda en la hoja nunca es una ocurrencia que el asistente acreditó.
+        for (const p of creditosAutomaticosVencidos(lista, [], hoyISO, 1, sellados)) {
+          expect(sellados).not.toContainEqual({ ingresoId: p.id, fecha: p.fecha });
+        }
+      }
+    }
+    // Día 16: el salario del 15 queda sellado y la hoja no lo ofrece; los
+    // honorarios de octubre (25) no caen todavía y los de septiembre van sellados.
+    const sellados16 = cobrosQueAcreditaLaDistribucion(mensuales, [], new Date(2026, 9, 16, 12));
+    expect(sellados16).toEqual([{ ingresoId: 'sal', fecha: '2026-10-15' }, { ingresoId: 'hon', fecha: '2026-09-25' }]);
+    expect(creditosAutomaticosVencidos(mensuales, [], '2026-10-16', 1, sellados16).map(x => `${x.id} ${x.fecha}`))
+      .toEqual(['sal 2026-09-15']);
   });
 });
 

@@ -279,21 +279,103 @@ export function cuentaIngresoPrincipal(ingresos = []) {
  * @returns {number} COP del cobro que ya están en una cuenta (0 si nada).
  */
 export function montoYaAcreditadoDelCobro(ingresos = [], ingresosPuntuales = [], hoy = new Date()) {
-  const activos = (ingresos ?? []).filter(i => i.activo !== false);
-  if (activos.length === 0) return 0;
-
-  const principal = frecuenciaPrincipalIngresos(activos);
   const puntuales = Array.isArray(ingresosPuntuales) ? ingresosPuntuales : [];
 
   let total = 0;
-  for (const ing of activos) {
-    if (normalizarFrecuenciaAporte(ing.frecuencia) !== principal) continue;
-    const fechaCobro = ultimoPagoHasta(ing, hoy);
-    if (!fechaCobro) continue;
-    const credito = puntuales.find(ip => ip?.ingresoId === ing.id && ip.fecha === fechaCobro);
+  for (const { ing, fecha } of _ocurrenciasDelCobro(ingresos, hoy)) {
+    const credito = puntuales.find(ip => ip?.ingresoId === ing.id && ip.fecha === fecha);
     if (credito) total += Number(credito.monto) || 0;
   }
   return total;
+}
+
+/**
+ * Las ocurrencias del cobro que esta distribución acredita (BUG-032, HF.0h):
+ * el sentido inverso de `montoYaAcreditadoDelCobro`. Son las del mismo cobro
+ * (`ingresoId` + fecha exacta, `_ocurrenciasDelCobro`) que la hoja de créditos
+ * automáticos todavía no acreditó; lo que la hoja ya registró no se cuenta acá
+ * porque su `IngresoPuntual` ya lo protege.
+ *
+ * Distribuir no deja `IngresoPuntual` (eso es HF.1d), así que el asistente
+ * guarda estos pares en `S.config.cobrosDistribuidos` y la hoja los descarta
+ * uno por uno (`pendientesDeCreditoDelMes`). Por ocurrencia y no por periodo:
+ * `ultimaDistribucionPeriodo` es una sola fecha y no dice qué ingresos formaban
+ * el cobro, ni separa la primera quincena de la segunda.
+ *
+ * Pura: no lee `S` ni el DOM.
+ *
+ * @param {import('../../../core/state.js').Ingreso[]} ingresos
+ * @param {Array<{ingresoId?:string, fecha?:string}>} ingresosPuntuales
+ * @param {Date} [hoy=new Date()] Fecha de referencia (inyectable).
+ * @returns {Array<{ingresoId:string, fecha:string}>}
+ */
+export function cobrosQueAcreditaLaDistribucion(ingresos = [], ingresosPuntuales = [], hoy = new Date()) {
+  const puntuales = Array.isArray(ingresosPuntuales) ? ingresosPuntuales : [];
+
+  return _ocurrenciasDelCobro(ingresos, hoy)
+    .filter(({ ing, fecha }) => !puntuales.some(ip => ip?.ingresoId === ing.id && ip.fecha === fecha))
+    .map(({ ing, fecha }) => ({ ingresoId: ing.id, fecha }));
+}
+
+/**
+ * Meses hacia atrás que conserva `cobrosDistribuidos`: el mes en curso y los
+ * dos anteriores. La hoja solo revisa el mes en curso y uno más
+ * (`MESES_CATCHUP_AUTOMATICOS` de agenda, que este dominio no importa, ADN 10);
+ * el mes de más es margen, no una regla nueva.
+ */
+const _MESES_COBROS_DISTRIBUIDOS = 2;
+
+/**
+ * Suma a `S.config.cobrosDistribuidos` lo que acaba de acreditar Distribuir
+ * (BUG-032, HF.0h), sin repetir pares y sin guardar para siempre: lo anterior a
+ * la ventana que la hoja revisa ya no protege nada. Descarta entradas mal
+ * formadas en vez de fallar.
+ *
+ * Pura: no lee `S` ni el DOM.
+ *
+ * @param {Array<{ingresoId?:string, fecha?:string}>|undefined} previos
+ * @param {Array<{ingresoId:string, fecha:string}>} nuevos
+ * @param {Date} [hoy=new Date()]
+ * @returns {Array<{ingresoId:string, fecha:string}>}
+ */
+export function acumularCobrosDistribuidos(previos = [], nuevos = [], hoy = new Date()) {
+  const desde = isoFecha(new Date(hoy.getFullYear(), hoy.getMonth() - _MESES_COBROS_DISTRIBUIDOS, 1));
+  const vistos = new Set();
+  const out = [];
+  for (const c of [...(Array.isArray(previos) ? previos : []), ...(Array.isArray(nuevos) ? nuevos : [])]) {
+    if (!c || typeof c.ingresoId !== 'string' || typeof c.fecha !== 'string') continue;
+    if (c.fecha < desde) continue;
+    const clave = `${c.ingresoId}|${c.fecha}`;
+    if (vistos.has(clave)) continue;
+    vistos.add(clave);
+    out.push({ ingresoId: c.ingresoId, fecha: c.fecha });
+  }
+  return out;
+}
+
+/**
+ * Las ocurrencias que forman el cobro que reparte el asistente: cada ingreso
+ * activo de la frecuencia principal (el conjunto de `montoCobroPrincipal`) con
+ * la fecha exacta de su último cobro (`ultimoPagoHasta`). Fuente única de la
+ * identidad del cobro para los dos sentidos (HF.0b y HF.0h). Una frecuencia sin
+ * día datable no aporta ocurrencia.
+ *
+ * @param {import('../../../core/state.js').Ingreso[]} ingresos
+ * @param {Date} hoy
+ * @returns {Array<{ing:import('../../../core/state.js').Ingreso, fecha:string}>}
+ */
+function _ocurrenciasDelCobro(ingresos, hoy) {
+  const activos = (ingresos ?? []).filter(i => i && i.activo !== false);
+  if (activos.length === 0) return [];
+
+  const principal = frecuenciaPrincipalIngresos(activos);
+  const out = [];
+  for (const ing of activos) {
+    if (!ing.id || normalizarFrecuenciaAporte(ing.frecuencia) !== principal) continue;
+    const fecha = ultimoPagoHasta(ing, hoy);
+    if (fecha) out.push({ ing, fecha });
+  }
+  return out;
 }
 
 // ── DISTRIBUCIÓN ADAPTATIVA DEL INGRESO (Fase 3) ─────────────────

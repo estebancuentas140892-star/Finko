@@ -39,6 +39,8 @@ import {
   construirFilasTransferenciaCuentas,
   cuentaIngresoPrincipal,
   montoYaAcreditadoDelCobro,
+  cobrosQueAcreditaLaDistribucion,
+  acumularCobrosDistribuidos,
   ultimoPagoHasta,
   estadoDistribucion,
   calcularSalarioMinimo,
@@ -4034,6 +4036,148 @@ describe('montoYaAcreditadoDelCobro() - un cobro se acredita una sola vez (BUG-0
 
     expect(S.ingresosPuntuales[0]).toMatchObject({ ingresoId: 'ing-salario', fecha: '2026-10-15' });
     expect(montoYaAcreditadoDelCobro(S.ingresos, S.ingresosPuntuales, HOY)).toBe(4_000_000);
+  });
+});
+
+// ── cobrosQueAcreditaLaDistribucion() (BUG-032, HF.0h) ───────────
+// El sentido inverso de montoYaAcreditadoDelCobro: qué ocurrencias del cobro
+// acredita Distribuir, para que la hoja de automáticos no las ofrezca otra vez.
+// Mismos datos inventados que el bloque de BUG-030.
+
+describe('cobrosQueAcreditaLaDistribucion() - lo que Distribuir acredita, por ocurrencia (BUG-032)', () => {
+  const HOY = new Date(2026, 9, 16, 12); // 16 oct 2026: el cobro mensual del 15 ya pasó
+
+  const salario = (extra = {}) => ({
+    id: 'ing-salario', descripcion: 'Salario de prueba', monto: 4_000_000,
+    frecuencia: 'Mensual', diaPago: 15, activo: true, cuentaId: 'cta-nomina',
+    creditoAutomatico: true, fechaCreacion: '2026-01-10T15:00:00.000Z', ...extra,
+  });
+  const credito = (extra = {}) => ({
+    id: 'ip-oct', descripcion: 'Salario de prueba', monto: 4_000_000, categoria: null,
+    cuentaId: 'cta-nomina', fecha: '2026-10-15', ingresoId: 'ing-salario', ...extra,
+  });
+
+  it('sin crédito de la hoja, Distribuir acredita el cobro: su ingresoId y su fecha exacta', () => {
+    expect(cobrosQueAcreditaLaDistribucion([salario()], [], HOY))
+      .toEqual([{ ingresoId: 'ing-salario', fecha: '2026-10-15' }]);
+  });
+
+  it('lo que la hoja ya acreditó no se sella otra vez: su IngresoPuntual ya lo protege', () => {
+    expect(cobrosQueAcreditaLaDistribucion([salario()], [credito()], HOY)).toEqual([]);
+  });
+
+  it('el crédito automático apagado no cambia la identidad del cobro', () => {
+    expect(cobrosQueAcreditaLaDistribucion([salario({ creditoAutomatico: false })], [], HOY))
+      .toEqual([{ ingresoId: 'ing-salario', fecha: '2026-10-15' }]);
+  });
+
+  it('dos ingresos del mismo monto no se confunden: se sella el que no tiene crédito', () => {
+    const ingresos = [
+      salario({ id: 'ing-a', descripcion: 'Salario A de prueba', monto: 2_000_000 }),
+      salario({ id: 'ing-b', descripcion: 'Salario B de prueba', monto: 2_000_000 }),
+    ];
+    const puntuales = [credito({ ingresoId: 'ing-a', monto: 2_000_000 })];
+    expect(cobrosQueAcreditaLaDistribucion(ingresos, puntuales, HOY))
+      .toEqual([{ ingresoId: 'ing-b', fecha: '2026-10-15' }]);
+  });
+
+  it('dos ingresos del cobro con días distintos: cada uno con la fecha de su propio último cobro', () => {
+    const ingresos = [salario(), salario({ id: 'ing-hon', descripcion: 'Honorarios de prueba', monto: 1_000_000, diaPago: 25 })];
+    expect(cobrosQueAcreditaLaDistribucion(ingresos, [], HOY)).toEqual([
+      { ingresoId: 'ing-salario', fecha: '2026-10-15' },
+      // Los honorarios de octubre todavía no caen: el cobro trae los de septiembre.
+      { ingresoId: 'ing-hon', fecha: '2026-09-25' },
+    ]);
+  });
+
+  it('dos periodos del mismo ingreso son dos ocurrencias distintas', () => {
+    expect(cobrosQueAcreditaLaDistribucion([salario()], [], new Date(2026, 8, 20, 12)))
+      .toEqual([{ ingresoId: 'ing-salario', fecha: '2026-09-15' }]);
+    expect(cobrosQueAcreditaLaDistribucion([salario()], [], HOY))
+      .toEqual([{ ingresoId: 'ing-salario', fecha: '2026-10-15' }]);
+  });
+
+  it('un quincenal: la primera y la segunda quincena tienen fechas propias', () => {
+    const quincena = salario({ frecuencia: 'Quincenal', monto: 2_000_000 });
+    expect(cobrosQueAcreditaLaDistribucion([quincena], [], HOY))
+      .toEqual([{ ingresoId: 'ing-salario', fecha: '2026-10-15' }]);
+    expect(cobrosQueAcreditaLaDistribucion([quincena], [], new Date(2026, 9, 30, 12)))
+      .toEqual([{ ingresoId: 'ing-salario', fecha: '2026-10-30' }]);
+  });
+
+  it('un ingreso de otra frecuencia no forma parte del cobro y no se sella', () => {
+    const ingresos = [
+      salario({ id: 'ing-m1' }),
+      salario({ id: 'ing-m2', descripcion: 'Arriendo recibido de prueba', monto: 1_000_000, diaPago: 1 }),
+      salario({ id: 'ing-q', descripcion: 'Pensión de prueba', frecuencia: 'Quincenal', monto: 900_000 }),
+    ];
+    expect(cobrosQueAcreditaLaDistribucion(ingresos, [], HOY).map(c => c.ingresoId)).toEqual(['ing-m1', 'ing-m2']);
+  });
+
+  it('sin fecha datable, sin ingresos activos o con datos ausentes no sella nada', () => {
+    expect(cobrosQueAcreditaLaDistribucion([salario({ frecuencia: 'Semanal', diaPago: undefined })], [], HOY)).toEqual([]);
+    expect(cobrosQueAcreditaLaDistribucion([salario({ activo: false })], [], HOY)).toEqual([]);
+    expect(cobrosQueAcreditaLaDistribucion(undefined, undefined, HOY)).toEqual([]);
+  });
+
+  it('es el espejo de montoYaAcreditadoDelCobro: cada ocurrencia del cobro cae en uno de los dos lados', () => {
+    const ingresos = [
+      salario({ id: 'ing-a', monto: 2_000_000 }),
+      salario({ id: 'ing-b', monto: 3_000_000 }),
+    ];
+    const puntuales = [credito({ ingresoId: 'ing-a', monto: 2_000_000 })];
+    expect(montoYaAcreditadoDelCobro(ingresos, puntuales, HOY)).toBe(2_000_000);
+    expect(cobrosQueAcreditaLaDistribucion(ingresos, puntuales, HOY)).toEqual([{ ingresoId: 'ing-b', fecha: '2026-10-15' }]);
+  });
+});
+
+describe('acumularCobrosDistribuidos() - la guarda de HF.0h no crece sin fin (BUG-032)', () => {
+  const HOY = new Date(2026, 9, 16, 12);
+
+  it('suma lo nuevo a lo anterior sin repetir pares', () => {
+    const previos = [{ ingresoId: 'ing-salario', fecha: '2026-10-15' }];
+    const nuevos  = [{ ingresoId: 'ing-salario', fecha: '2026-10-15' }, { ingresoId: 'ing-hon', fecha: '2026-10-15' }];
+    expect(acumularCobrosDistribuidos(previos, nuevos, HOY)).toEqual([
+      { ingresoId: 'ing-salario', fecha: '2026-10-15' },
+      { ingresoId: 'ing-hon', fecha: '2026-10-15' },
+    ]);
+  });
+
+  it('distribuir la segunda quincena conserva la primera', () => {
+    const previos = [{ ingresoId: 'ing-q', fecha: '2026-10-15' }];
+    expect(acumularCobrosDistribuidos(previos, [{ ingresoId: 'ing-q', fecha: '2026-10-30' }], new Date(2026, 9, 31, 12)))
+      .toEqual([{ ingresoId: 'ing-q', fecha: '2026-10-15' }, { ingresoId: 'ing-q', fecha: '2026-10-30' }]);
+  });
+
+  it('suelta lo anterior a los dos meses previos, que la hoja ya no revisa', () => {
+    const previos = [
+      { ingresoId: 'ing-salario', fecha: '2026-07-15' },
+      { ingresoId: 'ing-salario', fecha: '2026-08-15' },
+      { ingresoId: 'ing-salario', fecha: '2026-09-15' },
+    ];
+    expect(acumularCobrosDistribuidos(previos, [{ ingresoId: 'ing-salario', fecha: '2026-10-15' }], HOY)).toEqual([
+      { ingresoId: 'ing-salario', fecha: '2026-08-15' },
+      { ingresoId: 'ing-salario', fecha: '2026-09-15' },
+      { ingresoId: 'ing-salario', fecha: '2026-10-15' },
+    ]);
+  });
+
+  it('descarta entradas mal formadas y tolera un campo ausente', () => {
+    const previos = [null, { ingresoId: 'ing-x' }, { fecha: '2026-10-15' }, 'texto'];
+    expect(acumularCobrosDistribuidos(previos, [], HOY)).toEqual([]);
+    expect(acumularCobrosDistribuidos(undefined, [{ ingresoId: 'ing-salario', fecha: '2026-10-15' }], HOY))
+      .toEqual([{ ingresoId: 'ing-salario', fecha: '2026-10-15' }]);
+  });
+
+  it('guardar y cargar conserva la guarda en config', () => {
+    S.config = { ...(S.config ?? {}), cobrosDistribuidos: [{ ingresoId: 'ing-salario', fecha: '2026-10-15' }] };
+    save();
+    _flushNow();
+
+    S.config = {};
+    loadData();
+
+    expect(S.config.cobrosDistribuidos).toEqual([{ ingresoId: 'ing-salario', fecha: '2026-10-15' }]);
   });
 });
 

@@ -537,13 +537,22 @@ export function debitosAutomaticosVencidos(compromisos, gastos, hoyISO, mesesAtr
  * quincenal), mismo motivo que un compromiso: el estado de cobro es por mes,
  * no por ocurrencia.
  *
+ * `acreditados` (BUG-032, HF.0h) son las ocurrencias que "Distribuir mi
+ * ingreso" ya acreditó sin dejar `IngresoPuntual` (`S.config.cobrosDistribuidos`).
+ * A diferencia del `IngresoPuntual`, descartan **una ocurrencia exacta**
+ * (`ingresoId` + fecha), no el mes: distribuir la primera quincena no esconde la
+ * segunda, ni el salario de septiembre el de octubre. Mismo monto, descripción
+ * o cuenta no cuentan: solo el par.
+ *
  * @param {ReturnType<typeof eventosIngresosDelMes>} eventos
  * @param {Array<{ingresoId?:string, fecha?:string}>} ingresosPuntuales
  * @param {string} prefijoMes 'YYYY-MM' del mes visible.
  * @param {string} hoyISO 'YYYY-MM-DD'.
+ * @param {Array<{ingresoId?:string, fecha?:string}>} [acreditados=[]] Ocurrencias
+ *   ya acreditadas por Distribuir.
  * @returns {Array<{id:string, descripcion:string, monto:number, dia:number, tipo:'ingreso'}>}
  */
-export function pendientesDeCreditoDelMes(eventos, ingresosPuntuales, prefijoMes, hoyISO) {
+export function pendientesDeCreditoDelMes(eventos, ingresosPuntuales, prefijoMes, hoyISO, acreditados = []) {
   if (!eventos || typeof eventos !== 'object') return [];
 
   const mp = /^(\d{4})-(\d{2})$/.exec(prefijoMes ?? '');
@@ -557,6 +566,12 @@ export function pendientesDeCreditoDelMes(eventos, ingresosPuntuales, prefijoMes
   if (anio > anioHoy || (anio === anioHoy && mes > mesHoy)) return [];
   const esMesEnCurso = anio === anioHoy && mes === mesHoy;
 
+  const yaDistribuidos = new Set(
+    (Array.isArray(acreditados) ? acreditados : [])
+      .filter(a => a && typeof a.ingresoId === 'string' && typeof a.fecha === 'string')
+      .map(a => `${a.ingresoId}|${a.fecha}`),
+  );
+
   /** @type {Map<string, {id:string, descripcion:string, monto:number, dia:number}>} */
   const porId = new Map();
 
@@ -565,10 +580,12 @@ export function pendientesDeCreditoDelMes(eventos, ingresosPuntuales, prefijoMes
     if (!Number.isInteger(dia)) continue;
     if (esMesEnCurso && dia > diaHoy) continue;
     if (!Array.isArray(evs)) continue;
+    const fecha = `${prefijoMes}-${String(dia).padStart(2, '0')}`;
 
     for (const ing of evs) {
       if (!ing || typeof ing !== 'object' || ing.tipo !== 'ingreso') continue;
       if (!ing.id) continue;
+      if (yaDistribuidos.has(`${ing.id}|${fecha}`)) continue;
       const monto = Number(ing.monto);
       if (!Number.isFinite(monto) || monto <= 0) continue;
 
@@ -612,11 +629,13 @@ export function pendientesDeCreditoDelMes(eventos, ingresosPuntuales, prefijoMes
  * @param {Array<{ingresoId?:string, fecha?:string}>} ingresosPuntuales
  * @param {string} hoyISO 'YYYY-MM-DD'.
  * @param {number} [mesesAtras=MESES_CATCHUP_AUTOMATICOS] Meses previos a revisar.
+ * @param {Array<{ingresoId?:string, fecha?:string}>} [acreditados=[]] Ocurrencias
+ *   que Distribuir ya acreditó (BUG-032), ver `pendientesDeCreditoDelMes`.
  * @returns {Array<{id:string, descripcion:string, monto:number, dia:number,
  *   tipo:'ingreso', fecha:string, cuentaId:string|null}>} Del vencimiento más
  *   antiguo al más reciente.
  */
-export function creditosAutomaticosVencidos(ingresos, ingresosPuntuales, hoyISO, mesesAtras = MESES_CATCHUP_AUTOMATICOS) {
+export function creditosAutomaticosVencidos(ingresos, ingresosPuntuales, hoyISO, mesesAtras = MESES_CATCHUP_AUTOMATICOS, acreditados = []) {
   const mh = /^(\d{4})-(\d{2})-(\d{2})/.exec(hoyISO ?? '');
   if (!mh || !Array.isArray(ingresos)) return [];
 
@@ -635,7 +654,7 @@ export function creditosAutomaticosVencidos(ingresos, ingresosPuntuales, hoyISO,
     const prefijo = `${anio}-${String(mes + 1).padStart(2, '0')}`;
 
     const eventos = eventosIngresosDelMes(automaticos, anio, mes);
-    for (const p of pendientesDeCreditoDelMes(eventos, ingresosPuntuales, prefijo, hoyISO)) {
+    for (const p of pendientesDeCreditoDelMes(eventos, ingresosPuntuales, prefijo, hoyISO, acreditados)) {
       const ing = automaticos.find(i => i.id === p.id);
       out.push({
         ...p,

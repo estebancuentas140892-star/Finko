@@ -26,6 +26,8 @@ import {
   cuentaIngresoPrincipal,
   planComplementoDeficit,
   montoYaAcreditadoDelCobro,
+  cobrosQueAcreditaLaDistribucion,
+  acumularCobrosDistribuidos,
 } from '../logic/distribucion.js';
 import { renderDistribucionIngreso, renderAsistenteDistribucion } from '../view.js';
 
@@ -722,7 +724,8 @@ function _aplicarComplementoDeficit(splits) {
 /**
  * Aplica la distribución: acredita a la cuenta de origen la parte del ingreso
  * que todavía no entró (lo que el crédito automático ya acreditó de este cobro
- * no se suma dos veces, BUG-030), descuenta lo
+ * no se suma dos veces, BUG-030, y lo que acredita acá queda sellado para que
+ * la hoja no lo ofrezca otra vez, BUG-032), descuenta lo
  * que físicamente sale (Necesidades marcadas + metas/apartados/deudas/inversiones
  * seleccionadas; el aporte al fondo no descuenta, ADR 009), registra los pagos
  * de Necesidades (R1), reparte Estilo de vida entre cuentas si corresponde
@@ -824,6 +827,23 @@ async function _confirmarDistribucion() {
   const yaAcreditado = montoYaAcreditadoDelCobro(S.ingresos ?? [], S.ingresosPuntuales ?? [], new Date());
   const acreditar    = Math.max(0, monto - yaAcreditado);
   const cuenta = (S.cuentas ?? []).find(c => c.id === cuentaId);
+
+  // El otro sentido (BUG-032): lo que esta distribución acredita queda sellado
+  // por ocurrencia (`ingresoId` + fecha exacta del cobro) para que la hoja de
+  // créditos automáticos no lo vuelva a ofrecer. Solo si entra dinero nuevo:
+  // con todo el cobro ya acreditado por la hoja no hay nada que sellar. Vive en
+  // `config`, así que "Deshacer" lo revierte junto con el saldo. HF.1d lo
+  // reemplaza cuando Distribuir escriba su `IngresoPuntual`.
+  if (cuenta && acreditar > 0) {
+    const ahora = new Date();
+    if (!S.config) S.config = {};
+    S.config.cobrosDistribuidos = acumularCobrosDistribuidos(
+      S.config.cobrosDistribuidos,
+      cobrosQueAcreditaLaDistribucion(S.ingresos ?? [], S.ingresosPuntuales ?? [], ahora),
+      ahora,
+    );
+  }
+
   if (cuenta) {
     editar('cuentas', cuentaId, {
       saldo: (cuenta.saldo ?? 0) + acreditar + totalComplemento - descontable - totalTransferido,
