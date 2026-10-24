@@ -1,9 +1,9 @@
 # ADR 093 - Perfiles en el mismo dispositivo y el modo niño
 
-**Estado:** Propuesta (2026-10-24). Segunda mitad del handoff "Finko · Aprende y aplícalo"; la primera, la capa de aprendizaje del adulto, es el [ADR 092](092-aprende-y-aplicalo-la-capa-de-aprendizaje.md). **No se implementa antes de que cierre la Fase 1 del 092**: el niño usa el mismo motor de lección con otra piel. Las dudas del handoff se resolvieron por defecto con la propuesta del diseño (decisión en chat del 2026-10-24) y quedan revisables. **Queda una pregunta nueva, P1**, que el handoff no vio.
+**Estado:** Propuesta (2026-10-24). Segunda mitad del handoff "Finko · Aprende y aplícalo"; la primera, la capa de aprendizaje del adulto, es el [ADR 092](092-aprende-y-aplicalo-la-capa-de-aprendizaje.md). **No se implementa antes de que cierre la Fase 1 del 092**: el niño usa el mismo motor de lección con otra piel. Las dudas del handoff se resolvieron por defecto con la propuesta del diseño (decisión en chat del 2026-10-24) y quedan revisables. **P1, la pregunta nueva que el handoff no vio, se resolvió el 2026-10-24**: ver "Resolución de P1" al final.
 **Fecha:** 2026-10-24
 **Autores:** Claude Design (handoff, tableros de Frai, tokens del modo niño, ilustraciones, onboarding, niño y tutor), Claude Opus 5.5 (triaje y redacción)
-**Relación:** **extiende el [ADR 063](063-candado-de-acceso-local.md)**: el candado pasa a ser obligatorio en cuanto existe un perfil de niño y su PIN es lo que separa los perfiles; el resto del 063 no cambia, y su D7 abre la pregunta P1. **Acota el [ADR 003](003-tono-neutral-profesional.md) dentro del perfil niño** (D6), que ya nombraba a los niños como público. Conserva el [ADR 067](067-biometria-descartada-como-desbloqueo.md) (sin biometría), el [ADR 025](025-logotipos-de-marca-y-tejas.md) D6 (los emojis de los logros adultos siguen) y el [ADR 091](091-un-hecho-financiero-se-informa-una-vez.md) R-HF1 (la mesada entregada es un hecho y se anota una vez). Integra en su pipeline la clase de asset que abrió DV.2d ([ADR 033](033-direccion-visual-premium.md) D3), sin duplicarla. Tarjetas: [`board/transversal.md`](../board/transversal.md), bloque APR.
+**Relación:** **extiende el [ADR 063](063-candado-de-acceso-local.md)**: el candado pasa a ser obligatorio en cuanto existe un perfil de niño y su PIN es lo que separa los perfiles; el resto del 063 no cambia, y su D7 se acota con niños en el dispositivo (P1). **Acota el [ADR 003](003-tono-neutral-profesional.md) dentro del perfil niño** (D6), que ya nombraba a los niños como público. Conserva el [ADR 067](067-biometria-descartada-como-desbloqueo.md) (sin biometría), el [ADR 025](025-logotipos-de-marca-y-tejas.md) D6 (los emojis de los logros adultos siguen) y el [ADR 091](091-un-hecho-financiero-se-informa-una-vez.md) R-HF1 (la mesada entregada es un hecho y se anota una vez). Integra en su pipeline la clase de asset que abrió DV.2d ([ADR 033](033-direccion-visual-premium.md) D3), sin duplicarla. Tarjetas: [`board/transversal.md`](../board/transversal.md), bloque APR.
 
 ---
 
@@ -116,9 +116,9 @@ Barra propia de cuatro destinos: **Inicio · Aprender · Alcancía · Yo**.
 | Tema del perfil niño | oscuro por defecto, como el adulto (D5) |
 | Edades: ¿un contenido o dos tramos? | un solo contenido de 7 a 12, con prueba de ubicación desde los 10 (D9) |
 
-## Pregunta abierta
+## Pregunta P1
 
-**P1. "Olvidé mi PIN" con niños en el dispositivo.** El 063 D7 resuelve el olvido borrando todo, tras la misma confirmación de "Borrar todos mis datos". Con perfiles, esa salida queda en la pantalla del PIN, que un niño de 7 a 12 años abre al tocar el perfil adulto, y la confirmación se puede leer y aceptar. **Recomendación:** desde "¿Quién usa Finko?" y desde el cambio de perfil, la salida pide escribir una palabra de confirmación y dice que también se borran los perfiles de los niños; el resto del 063 D7 no cambia. Se decide antes de APR.3a.
+**P1. "Olvidé mi PIN" con niños en el dispositivo.** El 063 D7 resuelve el olvido borrando todo, tras la misma confirmación de "Borrar todos mis datos". Con perfiles, esa salida queda en la pantalla del PIN, que un niño de 7 a 12 años abre al tocar el perfil adulto, y la confirmación se puede leer y aceptar. **Recomendación:** desde "¿Quién usa Finko?" y desde el cambio de perfil, la salida pide escribir una palabra de confirmación y dice que también se borran los perfiles de los niños; el resto del 063 D7 no cambia. Resuelta el 2026-10-24, ver abajo.
 
 ---
 
@@ -154,10 +154,20 @@ Barra propia de cuatro destinos: **Inicio · Aprender · Alcancía · Yo**.
 
 | Rebanada | Qué entrega | Depende de |
 |---|---|---|
-| APR.3a | Perfiles en `S`, "¿Quién usa Finko?", cambio con PIN, candado obligatorio al primer niño | Fase 1 del 092, P1 |
+| APR.3a | Perfiles en `S`, "¿Quién usa Finko?", cambio con PIN, candado obligatorio al primer niño | Fase 1 del 092 |
 | APR.3b | Tokens `.kid`, Frai en sus cuatro poses y el catálogo de ilustraciones por el pipeline `il-` | APR.3a |
 | APR.3c | Shell del niño: barra de cuatro destinos, Inicio, ruta en camino, lección con Frai y celebración | APR.3b |
 | APR.3d | Alcancía: tres frascos, metas y "Yo" | APR.3c |
 | APR.3e | Tutor en Ajustes, Familia: alta del niño, mesada como gasto Familia, premio, progreso del niño | APR.3d |
 | APR.3f | Contenido del niño, una rebanada por unidad, con revisión pedagógica | APR.3c |
 | APR.4b | Perfil niño en escritorio y tableta | APR.3d |
+
+---
+
+## Resolución de P1 (2026-10-24)
+
+La recomendación se aceptó en chat tal como estaba escrita ("Acepto la recomendación de P1 del ADR 093 tal como está escrita").
+
+| | Decisión | Efecto en el tablero |
+|---|---|---|
+| P1 | Con perfiles de niño, "Olvidé mi PIN" desde "¿Quién usa Finko?" y desde el cambio de perfil pide escribir una palabra de confirmación y dice que también se borran los perfiles de los niños. Sin niños, el 063 D7 queda exactamente como está. El 063 no se reescribe: este ADR lo acota | APR.3a deja de esperar una decisión y lo implementa; solo sigue atada al cierre de la Fase 1 del 092 |

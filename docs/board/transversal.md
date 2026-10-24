@@ -157,7 +157,7 @@
 
 ## Iniciativa APR - Aprende y aplícalo
 
-> Handoff de Claude Design "Finko · Aprende y aplícalo" (35 tableros, octubre 2026), triado el 2026-10-24. Fuente única: **[ADR 092](../DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md)** (capa de aprendizaje del adulto) y **[ADR 093](../DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md)** (perfiles, modo niño y tutor), los dos en Propuesta. **No iniciar nada antes de cerrar las fichas 17 y 19 de MOV.1**, que auditan Logros (decisión en chat del 2026-10-24). Las catorce dudas del handoff quedaron resueltas por defecto con la propuesta del diseño; queda abierta **P1 del ADR 093** ("Olvidé mi PIN" con niños), que bloquea APR.3a. La GU.1 (guía por navegación) sigue dueña de banners y hints: esta iniciativa no los toca. DV.2d conserva su lote; el catálogo de ilustraciones del niño entra por su mismo pipeline.
+> Handoff de Claude Design "Finko · Aprende y aplícalo" (35 tableros, octubre 2026), triado el 2026-10-24. Fuente única: **[ADR 092](../DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md)** (capa de aprendizaje del adulto) y **[ADR 093](../DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md)** (perfiles, modo niño y tutor), los dos en Propuesta. **No iniciar nada antes de cerrar las fichas 17 y 19 de MOV.1**, que auditan Logros (decisión en chat del 2026-10-24). Las catorce dudas del handoff quedaron resueltas por defecto con la propuesta del diseño; **P1 del ADR 093** ("Olvidé mi PIN" con niños) se resolvió el 2026-10-24 con su recomendación. La GU.1 (guía por navegación) sigue dueña de banners y hints: esta iniciativa no los toca. DV.2d conserva su lote; el catálogo de ilustraciones del niño entra por su mismo pipeline.
 
 ### Fase 1 - Adulto (primer alcance de implementación)
 
@@ -187,7 +187,7 @@
 ### Fase 3 - Perfiles, niño y tutor (ADR 093)
 
 #### APR.3a - Perfiles en el dispositivo
-- Estado : no iniciar (Fase 1 cerrada y P1 del ADR 093 decidida). **Objetivo**: `perfiles[]` con migración, "¿Quién usa Finko?", niño a adulto con PIN y adulto a niño libre, candado obligatorio al crear el primer niño, fundido de CFG.7 (ADR 093 D1). **Modelo**: Alta capacidad, Extra.
+- Estado : no iniciar (Fase 1 cerrada). **Objetivo**: `perfiles[]` con migración, "¿Quién usa Finko?", niño a adulto con PIN y adulto a niño libre, candado obligatorio al crear el primer niño, fundido de CFG.7 (ADR 093 D1). Con niños, "Olvidé mi PIN" pide escribir una palabra de confirmación y avisa que también borra sus perfiles; sin niños no cambia (P1). **Aceptación**: test de que sin perfiles de niño la salida del 063 D7 queda igual. **Modelo**: Alta capacidad, Extra.
 
 #### APR.3b - Sistema visual del niño
 - Estado : pendiente de APR.3a. **Área**: design. **Objetivo**: clase `.kid` con los tokens `--fk-kid-*` en los dos temas y AA medido, Frai en cuatro poses, catálogo de ilustraciones por el pipeline `il-`, `kidPress` y destellos (ADR 093 D5, D7, D8). **Modelo**: Equilibrado, Alto.

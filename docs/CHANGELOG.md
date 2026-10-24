@@ -12,6 +12,13 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### docs(transversal): APR, P1 del ADR 093 resuelta · 2026-10-24
+
+La recomendación de P1 del [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md) se aceptó en chat tal como estaba escrita. Sin runtime.
+
+- **Con perfiles de niño**, "Olvidé mi PIN" desde "¿Quién usa Finko?" y desde el cambio de perfil pide escribir una palabra de confirmación y dice que también borra los perfiles de los niños. Sin niños, el ADR 063 D7 no cambia; el 063 no se reescribe, el 093 lo acota.
+- **APR.3a** deja de esperar una decisión: solo sigue atada al cierre de la Fase 1 del 092.
+
 ### docs(transversal): APR, triaje del handoff "Aprende y aplícalo" · 2026-10-24
 
 El handoff de Claude Design (35 tableros) pasa a dos ADR en Propuesta, [092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) (capa de aprendizaje del adulto) y [093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md) (perfiles, modo niño y tutor), más la iniciativa APR en [`board/transversal.md`](board/transversal.md). Sin runtime.

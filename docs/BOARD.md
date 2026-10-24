@@ -73,7 +73,7 @@ Las tarjetas del tablero (la iniciativa HF se lista por fase), para elegir la pr
 | HF.0f | Perfiles de regresión: constructores e invariantes (en curso, bloqueada por BUG-035, BUG-036 y BUG-038) | Transversal (tests) | alta | nada |
 | HF.0g | Perfiles de regresión en E2E | Transversal (tests) | media | HF.0f |
 | HF.1a a HF.5a | Fases 1 a 5 de la iniciativa HF (24 rebanadas) | Transversal | media | ficha 18 de MOV.1, cierre de MOV.1 |
-| APR.1a a APR.4b | Iniciativa "Aprende y aplícalo": capa de aprendizaje, perfiles y modo niño (14 rebanadas) | Transversal | media | fichas 17 y 19 de MOV.1; APR.3a además P1 del ADR 093 |
+| APR.1a a APR.4b | Iniciativa "Aprende y aplícalo": capa de aprendizaje, perfiles y modo niño (14 rebanadas) | Transversal | media | fichas 17 y 19 de MOV.1 |
 | A.5 | Dominio custom en Vercel | Mantenimiento | baja | que el usuario tenga el dominio registrado |
 | E.2-2027 | Actualizar SMMLV + UVT a valores 2027 | Mantenimiento | alta (enero 2027) | publicación oficial de los decretos 2027 |
 | E.3 | Verificar GMF y otras tasas si hay reforma tributaria | Mantenimiento | baja | que ocurra una reforma |
