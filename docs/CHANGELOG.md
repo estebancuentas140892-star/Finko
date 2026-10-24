@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-10-18.
+> Revisado: 2026-10-24.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-10)
+
+### docs(transversal): APR, triaje del handoff "Aprende y aplícalo" · 2026-10-24
+
+El handoff de Claude Design (35 tableros) pasa a dos ADR en Propuesta, [092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) (capa de aprendizaje del adulto) y [093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md) (perfiles, modo niño y tutor), más la iniciativa APR en [`board/transversal.md`](board/transversal.md). Sin runtime.
+
+- **Nada se implementa antes de cerrar las fichas 17 y 19 de MOV.1:** "Tu progreso" se muda y esas fichas auditan Logros. Primer alcance de código: la Fase 1 del adulto (APR.1a a APR.1d).
+- **Premisa del handoff corregida:** daba "Tu progreso" en Ajustes y la mudanza de LG.2d por pendiente. LG.2d cerró el 2026-08-13 (Análisis más tarjeta en Inicio), así que el 092 **acota** el ADR 032 D6 en vez de ejecutarlo.
+- **Las catorce dudas del handoff** se resolvieron por defecto con la propuesta del diseño, por decisión en chat, y quedan revisables en cada ADR. Una referencia vieja del handoff ("emojis hasta ID.3") se descartó: ID.3 cerró en julio.
+- **Pregunta nueva, P1 del 093:** con niños en el dispositivo, "Olvidé mi PIN" (063 D7, borra todo) queda al alcance de un niño desde la pantalla del PIN. Bloquea APR.3a.
 
 ### fix(compromisos): BUG-037, una compra con la tarjeta no es un pago de la tarjeta · 2026-10-18
 

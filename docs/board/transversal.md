@@ -1,6 +1,6 @@
 # Tablero - Transversal
 
-> Revisado: 2026-10-18.
+> Revisado: 2026-10-24.
 
 > Satélite de [`BOARD.md`](../BOARD.md) (afecta varias secciones). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
 
@@ -152,3 +152,62 @@
 
 #### HF.5a - ADR: Finko Conectado
 - Estado : no iniciar (P6: hasta cerrar la Fase 4 con uso real). **Objetivo**: decidir Open Finance, correo y push. Exige derogar ADN 3, ADR 043 D1 y D4 y ADR 066 D1. **Depende de**: Fase 4 cerrada con uso real.
+
+---
+
+## Iniciativa APR - Aprende y aplícalo
+
+> Handoff de Claude Design "Finko · Aprende y aplícalo" (35 tableros, octubre 2026), triado el 2026-10-24. Fuente única: **[ADR 092](../DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md)** (capa de aprendizaje del adulto) y **[ADR 093](../DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md)** (perfiles, modo niño y tutor), los dos en Propuesta. **No iniciar nada antes de cerrar las fichas 17 y 19 de MOV.1**, que auditan Logros (decisión en chat del 2026-10-24). Las catorce dudas del handoff quedaron resueltas por defecto con la propuesta del diseño; queda abierta **P1 del ADR 093** ("Olvidé mi PIN" con niños), que bloquea APR.3a. La GU.1 (guía por navegación) sigue dueña de banners y hints: esta iniciativa no los toca. DV.2d conserva su lote; el catálogo de ilustraciones del niño entra por su mismo pipeline.
+
+### Fase 1 - Adulto (primer alcance de implementación)
+
+#### APR.1a - Motor de lección y estado de Aprende
+- Estado : no iniciar (fichas 17 y 19 de MOV.1). **Área**: ambos. **Objetivo**: dominio `aprende` con motor de lección a pantalla completa (concepto, elegir, clasificar con botones, mover un control, ordenar con flechas, "¿qué harías?"), la pregunta fallada vuelve al final, "casi" en `--fk-info` y nunca rojo, `role="status"` una vez (R24); lecciones como módulos de datos cargados con `import()` y precacheados; estado en `S` (hechas por id y fecha, sabidas, semanas activas) con bump de schema y migración idempotente; filas `stepIn`, `feedbackIn`, `cardOut` y `checkIn` (ADR 092 D7, D10, D11). **Riesgo**: arranque y presupuesto de Lighthouse. **Aceptación**: tests de la lógica del motor y de la migración; una lección de prueba recorrida en la app con teclado. **Modelo**: Alta capacidad, Extra.
+
+#### APR.1b - Unidad 3: gastos hormiga y límites
+- Estado : pendiente de APR.1a. **Área**: ambos. **Objetivo**: las cuatro lecciones de la unidad 3 con su Aplícalo en Límites ("Poner un límite de $X", R50, R57); `gastoHormigaMes()` se muda a `infra/` para que `aprende` y `logros` lo lean sin importarse (ADN 10); tope hormiga configurable en Límites con $20.000 por defecto, sin regalar `hormiga-a-raya` (ADR 092, dudas). **Aceptación**: test de que cambiar el tope no desbloquea el logro; textos con revisión pedagógica registrada. **Modelo**: Equilibrado, Alto.
+
+#### APR.1c - Inicio como bloque de tres lentes
+- Estado : pendiente de APR.1a. **Área**: ambos. **Objetivo**: franja de pestañas Hoy, Aprende y Tu progreso con su estado encima (R81), lente Aprende como lista de nueve unidades abiertas, "Tu siguiente paso" en la celda de la tarjeta compacta, y en escritorio "Aprende" en "Día a día" y "Tu progreso" en "Cómo voy" (ADR 092 D1, D2, D5, D8). La barra móvil no cambia. **Riesgo**: selectores sobre `[href="#dash"]` (declarar contexto). **Aceptación**: Inicio en móvil no crece; E2E de navegación entre lentes. **Modelo**: Equilibrado, Alto.
+
+#### APR.1d - Tu progreso como lente propia
+- Estado : pendiente de APR.1c. **Área**: ambos. **Objetivo**: familia de logros "Lo que sabes" (una unidad suma una vez, repasar no suma), semanas activas que nunca vuelven a cero, y la mudanza: sale el apartado de Análisis y la tarjeta compacta de Inicio (acota ADR 032 D6, ADR 092 D3 y D4). **Riesgo**: ids persistidos de `S.logros`, umbrales de `NIVELES_USUARIO`. **Aceptación**: test anti-trampa del repaso; el test "alcanzable sin el 100 % del catálogo" sigue verde. **Modelo**: Equilibrado, Alto.
+
+### Fase 2 - Adulto completo
+
+#### APR.2a - La sección ofrece su lección
+- Estado : pendiente de APR.1b. **Objetivo**: fila bajo el bloque protagonista con un dato real, máximo una por sección, que baja al pie como "Repasar" al terminar la lección (R65). Primer caso: Fondo, sin tocar el 049 D2 ni el 084 (ADR 092 D6). **Modelo**: Equilibrado, Medio.
+
+#### APR.2b - Prueba de ubicación
+- Estado : pendiente de APR.1d. **Objetivo**: preguntas con "Todavía no lo sé", unidades acertadas como "Ya lo sabes" que cuentan en Tu progreso, resultado con "Prefiero empezar desde la unidad 1" (ADR 092 D9). **Modelo**: Equilibrado, Alto.
+
+#### APR.2c - Contenido de las unidades 1, 2 y 4 a 9
+- Estado : pendiente de APR.1b. Se parte en una rebanada por unidad al empezarla. **Objetivo**: lecciones con Aplícalo en su sección; la unidad 9 lee las constantes de `core/constants.js` y se revisa con E.2; gota a gota solo enlaza líneas verificadas con fecha. **Aceptación**: ninguna unidad sin revisión pedagógica registrada. **Modelo**: Equilibrado, Alto.
+
+### Fase 3 - Perfiles, niño y tutor (ADR 093)
+
+#### APR.3a - Perfiles en el dispositivo
+- Estado : no iniciar (Fase 1 cerrada y P1 del ADR 093 decidida). **Objetivo**: `perfiles[]` con migración, "¿Quién usa Finko?", niño a adulto con PIN y adulto a niño libre, candado obligatorio al crear el primer niño, fundido de CFG.7 (ADR 093 D1). **Modelo**: Alta capacidad, Extra.
+
+#### APR.3b - Sistema visual del niño
+- Estado : pendiente de APR.3a. **Área**: design. **Objetivo**: clase `.kid` con los tokens `--fk-kid-*` en los dos temas y AA medido, Frai en cuatro poses, catálogo de ilustraciones por el pipeline `il-`, `kidPress` y destellos (ADR 093 D5, D7, D8). **Modelo**: Equilibrado, Alto.
+
+#### APR.3c - Shell del niño y su ruta
+- Estado : pendiente de APR.3b. **Objetivo**: barra Inicio, Aprender, Alcancía y Yo; ruta en camino y en orden; lección con Frai; celebración con "Úsalo de verdad" (ADR 093 D9). **Modelo**: Equilibrado, Alto.
+
+#### APR.3d - Alcancía y metas del niño
+- Estado : pendiente de APR.3c. **Objetivo**: tres frascos con "Guardé", "Gasté" y "Compartí", relleno contra la meta de cada frasco (R60), crear una meta con respuesta en semanas y fecha (ADR 093 D9). **Modelo**: Equilibrado, Alto.
+
+#### APR.3e - Tutor en Ajustes, Familia
+- Estado : pendiente de APR.3d. **Objetivo**: alta del niño en dos pasos, mesada que al marcarse "Entregada" crea un gasto Familia del adulto y acredita los frascos (R-HF1), premio mensual sobre lo guardado todo el mes, progreso del niño (ADR 093 D2 a D4). **Riesgo**: el gasto del adulto debe nacer una sola vez. **Modelo**: Alta capacidad, Alto.
+
+#### APR.3f - Contenido del niño
+- Estado : pendiente de APR.3c. Una rebanada por unidad, con revisión pedagógica y la voz del ADR 093 D6. **Modelo**: Equilibrado, Alto.
+
+### Fase 4 - Escritorio
+
+#### APR.4a - Aprende y la lección en escritorio
+- Estado : pendiente de APR.1d. **Objetivo**: ruta, detalle de la lección elegida ("Vas a aprender", tipos de ejercicio, "Termina en") y lección a pantalla completa con "Salir · tu avance se guarda" (ADR 092 D2). **Modelo**: Equilibrado, Alto.
+
+#### APR.4b - Perfil niño en escritorio y tableta
+- Estado : pendiente de APR.3d. **Modelo**: Equilibrado, Medio.
