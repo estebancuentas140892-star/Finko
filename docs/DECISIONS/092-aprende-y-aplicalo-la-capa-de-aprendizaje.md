@@ -1,6 +1,6 @@
 # ADR 092 - Aprende y aplícalo: la capa de aprendizaje del adulto
 
-**Estado:** Propuesta (2026-10-24). **La implementación no arranca hasta que cierren las fichas 17 y 19 de MOV.1**, que auditan Logros: este ADR mueve "Tu progreso" y no le adelanta decisiones a la auditoría (decisión en chat del 2026-10-24). Las dudas del handoff se resolvieron por defecto con la propuesta del diseño, en la misma conversación, y quedan revisables: ver "Dudas resueltas por defecto". El perfil niño, el tutor y los perfiles en el mismo dispositivo viven en el [ADR 093](093-perfiles-en-el-dispositivo-y-modo-nino.md).
+**Estado:** Propuesta (2026-10-24). La implementación iba a esperar a las fichas 17 y 19 de MOV.1; **ese mismo día se decidió en chat arrancar la Fase 1 ya**, siguiendo el handoff tal cual: ver "Resolución del 2026-10-24" al final. APR.1a cerrada. Las dudas del handoff se resolvieron por defecto con la propuesta del diseño, en la misma conversación, y quedan revisables: ver "Dudas resueltas por defecto". El perfil niño, el tutor y los perfiles en el mismo dispositivo viven en el [ADR 093](093-perfiles-en-el-dispositivo-y-modo-nino.md).
 **Fecha:** 2026-10-24
 **Autores:** Claude Design (handoff "Finko · Aprende y aplícalo", 35 tableros, octubre 2026), Claude Opus 5.5 (triaje y redacción)
 **Relación:** **acota el [ADR 032](032-logros-v2-niveles-y-habitos.md) D6**: "Tu progreso" deja el apartado de Análisis y la tarjeta compacta de Inicio que le dio LG.2d. Aplica a Inicio el patrón del [ADR 069](069-bloque-gastos-en-la-barra-movil.md) D2 (regla candidata R81). Conserva enteros el [024](024-reorganizacion-navegacion-movil.md), el [065](065-ahorro-en-la-barra-inferior.md) y el [069](069-bloque-gastos-en-la-barra-movil.md) (la barra móvil no cambia), el 032 D2 y D5 (anti-trampa, niveles derivados, sin puntos de experiencia), el [049](049-fondo-de-emergencia-v2.md) D2 y el [084](084-fondo-el-compromiso-del-periodo-en-la-primera-pantalla.md) (Fondo), y el [087](087-inicio-en-movil-tambien-avisa-y-no-resume.md) (Inicio no crece). Tarjetas: [`board/transversal.md`](../board/transversal.md), bloque APR.
@@ -183,3 +183,16 @@ Fase 1 (adulto) es el primer alcance de implementación. Ninguna arranca antes d
 | APR.2b | Prueba de ubicación | APR.1d |
 | APR.2c | Contenido de las unidades 1, 2 y 4 a 9, una rebanada por unidad al empezarla, cada una con revisión pedagógica | APR.1b |
 | APR.4a | Aprende y la lección en escritorio (ruta, detalle de la lección elegida y "Termina en") | APR.1d |
+
+---
+
+## Resolución del 2026-10-24: la Fase 1 arranca sin esperar a MOV.1
+
+Pedido en chat: "vamos con la siguiente fase", y ante la pregunta de qué fase, "tal cual como recomienda el HTML". El handoff no condiciona Aprende a la auditoría móvil, así que la espera por las fichas 17 y 19 se levanta para toda la Fase 1 (APR.1a a APR.1d).
+
+| Efecto | Detalle |
+|---|---|
+| Fichas 17 y 19 de MOV.1 | dejan de bloquear. Cuando lleguen, se releen contra lo que APR.1d haya movido de "Tu progreso"; un choque se resuelve con un ADR que acote, como dice D4 |
+| Despliegue | cada rebanada se sube a `main` al cerrar sus compuertas, para verla en producción |
+| APR.1a, cómo quedó | la lección 2 de la unidad 3 se entregó primero porque el handoff la trae completa; las lecciones 1, 3 y 4 pasan a APR.1b. En escritorio la ruta ya tiene su fila en "Día a día"; en móvil se llega por `#aprende` hasta APR.1c |
+| Desvío consciente del texto del diseño | el cierre de la lección describe el logro "Hormiga a raya" con su regla real (bajar del promedio de los tres meses anteriores, ADR 032), no con la del mockup ("mantenerte bajo el límite"), que no existe |

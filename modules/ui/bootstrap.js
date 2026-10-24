@@ -51,6 +51,7 @@ import { initAnalisis } from '../dominio/analisis/index.js';
 import { initConfig } from '../dominio/config/index.js';
 import { initImport } from '../dominio/import/index.js';
 import { initLogros } from '../dominio/logros/index.js';
+import { initAprende } from '../dominio/aprende/index.js';
 import { initMenuMas } from './menu-mas.js';
 import { initBloqueGastos } from './bloque-gastos.js';
 import { initBloqueAhorro } from './bloque-ahorro.js';
@@ -80,6 +81,7 @@ initPresupuesto();
 initAnalisis();
 initConfig();
 initImport();
+initAprende();
 
 initShell();
 initSidebarCollapse();

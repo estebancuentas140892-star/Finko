@@ -10,7 +10,7 @@
  *     o los usuarios seguirán viendo la versión vieja.
  */
 
-const CACHE_NAME = 'finko-v594';
+const CACHE_NAME = 'finko-v595';
 
 // ── Assets críticos - si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [
@@ -39,6 +39,7 @@ const CORE_ASSETS = [
   './styles/components/nudges.css',
   './styles/components/domain.css',
   './styles/components/config.css',
+  './styles/components/aprende.css',
   './styles/modals.css',
   './styles/themes.css',
   './styles/a11y.css',
@@ -59,6 +60,7 @@ const CORE_ASSETS = [
   './modules/infra/credito-ingreso.js',
   './modules/infra/render.js',
   './modules/infra/memo.js',
+  './modules/infra/hormiga.js',
   './modules/infra/mes-bloque.js',
   './modules/infra/vencimientos.js',
   './modules/infra/bolsas.js',
@@ -188,6 +190,10 @@ const CORE_ASSETS = [
   './modules/dominio/logros/logic.js',
   './modules/dominio/logros/view.js',
   './modules/dominio/logros/index.js',
+  './modules/dominio/aprende/logic.js',
+  './modules/dominio/aprende/view.js',
+  './modules/dominio/aprende/index.js',
+  './modules/dominio/aprende/lecciones/u3.js',
   './modules/dominio/ahorro/logic.js',
   './modules/dominio/ahorro/view.js',
   './modules/dominio/ahorro/index.js',

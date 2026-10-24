@@ -13,6 +13,7 @@
 
 import { hoy } from '../../infra/utils.js';
 import { memoizar } from '../../infra/memo.js';
+import { UMBRAL_GASTO_HORMIGA } from '../../infra/hormiga.js';
 
 // ── TABLA DE LOGROS ──────────────────────────────────────────────
 
@@ -150,14 +151,11 @@ export function deudasSaldadas(compromisos) {
 // ── DERIVACIONES DE COMPORTAMIENTO (LG.2e, ADR 032 D4) ───────────
 
 /**
- * Monto máximo de una transacción para contar como "gasto hormiga". El
- * criterio de Finko para hormiga es el tamaño de la transacción, no la
- * categoría que el usuario haya elegido: así el logro funciona para todos y
- * no se puede desactivar recategorizando. Mismo umbral que
- * `detectarHormigas()` (gastos/logic.js): duplicado intencional y no una
- * importación cruzada (ADN 10), igual que los abonos en agenda/logic.js.
+ * Monto máximo de una transacción para contar como "gasto hormiga". Vive en
+ * `infra/hormiga.js` desde APR.1a (ADR 092 D11), donde lo leen también
+ * `gastos` y `aprende`; se re-exporta para no romper a quien lo importa de acá.
  */
-export const UMBRAL_GASTO_HORMIGA = 20_000;
+export { UMBRAL_GASTO_HORMIGA };
 
 /**
  * Piso de relevancia del promedio hormiga mensual: por debajo de esto la

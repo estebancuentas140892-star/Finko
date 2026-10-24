@@ -1893,3 +1893,21 @@
     grid-column: span 12;
   }
 }
+
+/* ── SIDEBAR EN ESCRITORIO BAJO (APR.1a, ADR 092 D2) ─────────────────────
+   "Aprende" suma una fila a "Día a día" y "Tu progreso" sumará otra a
+   "Cómo voy": a 1280x799 el sidebar dejaba de caber (BUG-026, que el anidado
+   de INT.1b había resuelto). Con puntero fino y poca altura, cada fila baja
+   de 40 a 34px y los grupos se acercan: ~90px recuperados, el mismo mapa.
+   Va en esta capa a propósito: la compactación de emergencia que BUG-026
+   borró nunca se aplicaba porque perdía la cascada contra layout.css con la
+   misma especificidad; @layer responsive le gana sin depender del orden. */
+@media (min-width: 1024px) and (max-height: 860px) and (pointer: fine) {
+  .sidebar__nav .nav-item {
+    min-height: 34px;
+    padding-block: var(--fk-space-1);
+  }
+  .sidebar__nav .nav-group {
+    margin-top: var(--fk-space-3);
+  }
+}

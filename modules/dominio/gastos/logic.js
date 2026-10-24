@@ -5,6 +5,7 @@
 
 import { CATEGORIAS_AGENDA, CATEGORIAS_GASTO, ICONOS_CATEGORIA_PERSONALIZADA, TARJETA_PREFIJO, iconoDeCategoriaGasto } from '../../core/constants.js';
 import { f } from '../../infra/utils.js';
+import { UMBRAL_GASTO_HORMIGA } from '../../infra/hormiga.js';
 
 // ── FILTROS Y AGRUPACIÓN ─────────────────────────────────────────
 
@@ -142,11 +143,11 @@ export function variacionMensualGasto(totalActual, totalAnterior) {
  * superan umbralTotal en el período dado.
  *
  * @param {import('../../core/state.js').Gasto[]} gastos - ya filtrados por período.
- * @param {number} [umbralMonto=20_000]  - monto máximo por transacción para ser "hormiga".
+ * @param {number} [umbralMonto=UMBRAL_GASTO_HORMIGA] - monto máximo por transacción para ser "hormiga" (infra/hormiga.js).
  * @param {number} [umbralTotal=100_000] - suma mínima para que la categoría sea alerta.
  * @returns {Array<{categoria:string, total:number, cantidad:number, promedio:number}>}
  */
-export function detectarHormigas(gastos, umbralMonto = 20_000, umbralTotal = 100_000) {
+export function detectarHormigas(gastos, umbralMonto = UMBRAL_GASTO_HORMIGA, umbralTotal = 100_000) {
   const hormiguitas = gastos.filter(g => (g.monto ?? 0) <= umbralMonto);
 
   const porCategoria = gastosPorCategoria(hormiguitas);

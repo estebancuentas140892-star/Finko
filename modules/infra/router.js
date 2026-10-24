@@ -10,6 +10,7 @@
 // un nivel. Por eso no hay REDIRECTS para este cambio.
 const SECTIONS = new Map([
   ['dash',        'sec-dash'],
+  ['aprende',     'sec-aprende'],
   ['movimientos', 'sec-movimientos'],
   ['gast',        'sec-gast'],
   ['compromisos', 'sec-compromisos'],

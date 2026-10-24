@@ -1,6 +1,6 @@
 # Ficha de contexto: Logros
 
-> Revisado: 2026-08-20.
+> Revisado: 2026-10-24.
 
 > Gamificación ligera de hábitos: catálogo, evaluación automática, toast con confetti y las dos superficies de "Tu progreso". Partida de [`transversal.md`](transversal.md) el 2026-08-14 (DOC.3). Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -23,7 +23,7 @@
 | Derivación "mes completo de registro" (D3, ≥3 semanas del mes) | `modules/dominio/logros/logic.js` | `mesCompleto()`, helper interno `_semanasPorMes()` | ~92 |
 | Racha de meses completos consecutivos (memoizada por gastos) | `modules/dominio/logros/logic.js` | `rachaMesesCompletos()`, `_rachaMesesCompletosMemo` | ~106, ~129 |
 | Conteo de deudas saldadas (excluye consolidadas) | `modules/dominio/logros/logic.js` | `deudasSaldadas()` | ~142 |
-| Umbrales de gasto hormiga (≤20.000 por transacción; piso de relevancia 100.000) | `modules/dominio/logros/logic.js` | `UMBRAL_GASTO_HORMIGA`, `UMBRAL_HORMIGA_RELEVANTE` | ~160, ~168 |
+| Umbrales de gasto hormiga (≤20.000 por transacción, vive en `infra/hormiga.js` desde APR.1a y se re-exporta acá; piso de relevancia 100.000) | `modules/dominio/logros/logic.js` | `UMBRAL_GASTO_HORMIGA`, `UMBRAL_HORMIGA_RELEVANTE` | ~158, ~165 |
 | Gasto hormiga por mes (LG.2e) | `modules/dominio/logros/logic.js` | `gastoHormigaMes()`, helper interno `_hormigaPorMes()` | ~195 |
 | Bajada de hormiga vs promedio de 3 meses (memoizada por gastos) | `modules/dominio/logros/logic.js` | `hormigaALaRaya()`, `_hormigaALaRayaMemo` | ~237, ~255 |
 | Evaluación (ids cumplidos ahora, try/catch por logro) | `modules/dominio/logros/logic.js` | `evaluarLogros()` | ~447 |
@@ -53,6 +53,7 @@
 
 **Cambios realizados**:
 
+- 2026-10-24 (APR.1a): `UMBRAL_GASTO_HORMIGA` sube a `infra/hormiga.js`, criterio único con Gastos y Aprende; acá queda re-exportado.
 - 2026-08-20 (MOV.20a, handoff móvil ficha 20): `conteoVitrina()` nueva; las dos superficies cuentan la vitrina agrupada (12) y no el catálogo (18), con el numerador del mismo conjunto. El `hint` de "Planificador" nombra "Límites" (R86). R91 del handoff anulada.
 - 2026-08-13 (LG.2d, ADR 032 D6, **cierra la iniciativa "Logros v2"**): `renderPanelLogros()` se reparte en `renderProgresoAnalisis()` (apartado colapsable de Análisis) y `renderTarjetaProgresoInicio()` (tarjeta nueva en el bento de Inicio, con `_proximoObjetivo()`); `#panel-logros` sale de Ajustes y el ADR 022 pasa a Superada. Cero cambios en `logic.js`.
 - 2026-08-13 (LG.2e, ADR 032 D4): familia `comportamiento` con `hormiga-a-raya`; `gastoHormigaMes()` y `hormigaALaRaya()` nuevas, tramo superior de `NIVELES_USUARIO` recalibrado a min 16.

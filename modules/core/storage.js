@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 44;
+const SCHEMA_VERSION = 45;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -655,6 +655,22 @@ function _migrate(raw) {
   // precedente del ADR 051 D8: el campo es opcional y su ausencia es el
   // comportamiento de siempre (el gasto mueve su cuenta). Sin backfill: un
   // gasto importado antes de esta versión no se distingue de uno manual.
+
+  // v44 → v45: `aprende` (APR.1a, ADR 092 D11). Colección nueva con forma
+  // fija: un estado viejo la recibe vacía. Se valida campo por campo porque un
+  // respaldo editado a mano podría traer un `aprende` a medias, y la vista lee
+  // los cuatro campos sin guardas.
+  if ((typeof data._version === 'number' ? data._version : 1) < 45) {
+    const a = data.aprende && typeof data.aprende === 'object' && !Array.isArray(data.aprende)
+      ? data.aprende
+      : {};
+    data.aprende = {
+      hechas:  a.hechas && typeof a.hechas === 'object' && !Array.isArray(a.hechas) ? a.hechas : {},
+      sabidas: Array.isArray(a.sabidas) ? a.sabidas : [],
+      semanas: Array.isArray(a.semanas) ? a.semanas : [],
+      enCurso: a.enCurso && typeof a.enCurso.id === 'string' ? a.enCurso : null,
+    };
+  }
 
   if (typeof data._version !== 'number' || data._version < SCHEMA_VERSION) {
     data._version = SCHEMA_VERSION;

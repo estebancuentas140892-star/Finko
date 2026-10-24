@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(aprende): APR.1a, la ruta y la primera lección completa · 2026-10-24
+
+[ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D7, D8, D10 y D11; ficha [`contexto/aprende.md`](contexto/aprende.md). La Fase 1 arrancó sin esperar a las fichas 17 y 19 de MOV.1 por decisión en chat (resolución al final del ADR). SW v595, schema v45.
+
+- **Dominio nuevo `aprende`**: la ruta de nueve unidades en `#aprende` (unidad actual abierta, el resto en "Después" con "En preparación" donde aún no hay texto) y la lección a pantalla completa en `#modal-leccion`. En escritorio entra al grupo "Día a día"; en móvil se llega por el enlace hasta APR.1c.
+- **Motor de lección como valor inmutable**: concepto, elegir, clasificar (gesto y botones), mover un control (el deslizador no repinta el paso, así no pierde el foco) y ordenar. Una pregunta fallada vuelve antes del Aplícalo, nunca después, y el contador no se infla.
+- **La lección 2 de la unidad 3 de punta a punta**, con el Aplícalo sobre los gastos pequeños del mes, un límite sugerido (80 % a la decena de mil) y "Registrar un gasto" cuando aún no hay dato (R57). El cierre describe "Hormiga a raya" con su regla real del ADR 032, no la del mockup.
+- **`S.aprende` (v45)**: la primera fecha de cada lección (repasar no suma) y las semanas activas, persistidas porque deben ser monótonas.
+- **`infra/hormiga.js`**: el umbral de gasto hormiga deja de estar duplicado en Gastos y Logros; los tres lo leen de ahí.
+- **Primer `import()` dinámico del proyecto**: el contenido de cada unidad se carga al abrir la lección y está en el precache.
+- **El sidebar vuelve a caber a 1280x799**: la fila nueva lo desbordaba 29px (BUG-026). Con puntero fino y alto ≤ 860px las filas bajan a 34px, en la capa `responsive` para que la cascada no la anule; quedan ~53px para "Tu progreso".
+
 ### docs(transversal): APR, P1 del ADR 093 resuelta · 2026-10-24
 
 La recomendación de P1 del [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md) se aceptó en chat tal como estaba escrita. Sin runtime.

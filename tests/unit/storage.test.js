@@ -1926,6 +1926,40 @@ describe('Migración v43 → v44 (Gasto.sinEfectoSaldo, HF.0c)', () => {
   });
 });
 
+describe('Migración v44 → v45 (aprende, APR.1a)', () => {
+  it('un usuario existente arranca con Aprende vacío', () => {
+    const v44 = { ...createInitialState(), _version: 44 };
+    delete v44.aprende;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v44));
+
+    loadData();
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(45);
+    expect(S.aprende).toEqual({ hechas: {}, sabidas: [], semanas: [], enCurso: null });
+  });
+
+  it('normaliza un aprende a medias campo por campo', () => {
+    const v44 = { ...createInitialState(), _version: 44 };
+    v44.aprende = { hechas: { 'u3-l2': '2026-10-01' }, sabidas: 'u1', enCurso: { paso: 2 } };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v44));
+
+    loadData();
+
+    expect(S.aprende).toEqual({ hechas: { 'u3-l2': '2026-10-01' }, sabidas: [], semanas: [], enCurso: null });
+  });
+
+  it('es idempotente: un aprende v45 válido sobrevive a guardar y cargar', () => {
+    const v45 = { ...createInitialState(), _version: 45 };
+    v45.aprende = { hechas: { 'u3-l2': '2026-10-01' }, sabidas: ['u1'], semanas: ['2026-W40'], enCurso: { id: 'u3-l2', paso: 3 } };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v45));
+
+    loadData();
+
+    expect(S.aprende).toEqual(v45.aprende);
+  });
+});
+
 describe('Migración v42 → v43 (respaldoCifrado en config, CFG.4c)', () => {
   it('un usuario existente sigue con el respaldo en claro: ausente = false', () => {
     const v42 = { ...createInitialState(), _version: 42 };

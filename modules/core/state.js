@@ -563,6 +563,19 @@ export function createInitialState() {
     /** IDs de logros ya desbloqueados por el usuario (G.3, v4). */
     logros: [],
 
+    /**
+     * Capa Aprende (APR.1a, schema v45, ADR 092 D3 y D11).
+     * - `hechas`: id de lección → fecha local (`YYYY-MM-DD`) de la PRIMERA vez
+     *   que se terminó. Repasar no la cambia: una lección suma una sola vez.
+     * - `sabidas`: ids de unidad marcadas "Ya lo sabes" por la prueba de
+     *   ubicación (APR.2b).
+     * - `semanas`: semanas ISO (`YYYY-Www`) con actividad. Se persisten y no se
+     *   derivan porque deben ser monótonas: nunca vuelven a cero.
+     * - `enCurso`: lección abierta a medias, para retomarla en su paso (D7).
+     * @type {{ hechas: Record<string, string>, sabidas: string[], semanas: string[], enCurso: { id: string, paso: number } | null }}
+     */
+    aprende: { hechas: {}, sabidas: [], semanas: [], enCurso: null },
+
     /** Ahorro: fondo de emergencia + hábito (J.1, v7). */
     ahorro: {
       fondoEmergencia: {

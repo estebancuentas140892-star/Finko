@@ -1,6 +1,6 @@
 # Arquitectura - Finko Claude
 
-> Revisado: 2026-08-13.
+> Revisado: 2026-10-24.
 
 > Documento vivo: se actualiza cuando cambia una capa, entra un dominio o se introduce un patrón nuevo. Historial: `git log -- docs/ARCHITECTURE.md` (la cadena de "última revisión" se podó el 2026-08-13 al tocar el techo de 32 KB).
 >
@@ -91,6 +91,7 @@ Utilidades transversales sin dependencias de dominio.
 | `marcas.js` | Resolución de identidad de marca desde texto libre ([ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md) D4) |
 | `icon-picker.js` | Selector compacto de ícono para categorías y entidades personalizadas (CAT.2) |
 | `markdown.js` | Conversor mínimo de Markdown a HTML, solo el subconjunto que usan los documentos legales |
+| `hormiga.js` | Criterio único de gasto hormiga (umbral y resumen del mes): lo leen Gastos, Logros y Aprende |
 
 ### 2.3 `modules/ui/`
 
@@ -143,13 +144,14 @@ dominio/nombre/
 
 Los barrels mantienen la API estable: tests y consumidores siguen importando de `logic.js`/`view.js` sin enterarse del corte. Los archivos nuevos deben agregarse al precache de `service-worker.js`.
 
-18 carpetas bajo `dominio/` (algunas sin `logic.js` porque son de solo lectura o coordinación):
+19 carpetas bajo `dominio/` (algunas sin `logic.js` porque son de solo lectura o coordinación):
 
 | Dominio | Área funcional | Notas |
 |---|---|---|
 | `accesos/` | Accesos rápidos personalizables de Inicio (IN.4a, [ADR 028](DECISIONS/028-inicio-centro-de-control.md) D2) | sin colección propia en `S`: lee y escribe `S.config.accesosInicio` (array de ids) |
 | `agenda/` | Calendario de pagos: la vista de fechas sobre `compromisos` (sección visible "Calendario") | desde la ficha 05 (ADR 069) ya no crea ni edita gastos fijos; conserva "Marcar pagado" (depende del mes visible, BUG-015) y los pagos automáticos de PA.1 |
 | `ahorro/` | Fondo de emergencia + hábito de aportar, **más la casa de Ahorro** (la pantalla `#ahorro` que reúne las cuatro modalidades, DIS.18) | el fondo vive en `#fondo` desde DIS.18: `#ahorro` es la casa ([ADR 056](DECISIONS/056-la-casa-de-ahorro.md)) |
+| `aprende/` | Ruta de nueve unidades y lección a pantalla completa ([ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md)) | contenido en `lecciones/*.js`, cargado con `import()` |
 | `analisis/` | Salud financiera, patrimonio neto, gráficos, comparaciones | |
 | `apartados/` | Sobres para gastos previsibles (SOAT, impuestos, etc.) | |
 | `compromisos/` | Gastos fijos + deudas (Avalancha/Bola de nieve) + pago en lote (sección visible "Por pagar") | `view.js` partido en `views/` (alertas, dashboard, estrategia, estrategia-impacto, formularios, lista, lote); `logic.js` partido en `logic/` (modelo, alertas, estrategia, abonos), ambos con barrel |
@@ -438,6 +440,7 @@ El dashboard (`#dash`) no tiene carpeta propia en `modules/dominio/`: es una com
 | Configuración | `config/` | `index.js`, `view.js`, `bloqueo.js`, `legal.js` (sin `logic.js` propio) | `config.css` (bloques CONFIGURACION y AGENDA) | `config.test.js`, `bloqueo.test.js` |
 | *(sin sección propia)* | `export/` | `logic.js` (invocado desde `config`) | | `export.test.js` |
 | *(sin sección propia)* | `import/` | los 3 estándar | `charts.css` (bloque IMPORT CSV) | `import.test.js` |
+| Aprende (`#aprende` y `#modal-leccion`) | `aprende/` | los 3 estándar + `lecciones/` | `aprende.css`; overlay en `modals.css` | `aprende.test.js` |
 | Toast + "Tu progreso" en Análisis + tarjeta en Inicio | `logros/` | los 3 estándar | `nudges.css` (bloque LOGRO TOAST) | `logros.test.js` |
 | *(card en Inicio)* | `resumen/` | los 3 estándar | `domain.css` (bloque RESUMEN-CARD) | `resumen.test.js` |
 | Movimientos (card "Actividad reciente" en Inicio + ruta `#movimientos` sin ícono de nav) | `movimientos/` | los 3 estándar (TX.8a panel, TX.8b vista completa, [ADR 028](DECISIONS/028-inicio-centro-de-control.md)) | `domain.css` (ACTIVIDAD-RECIENTE, MOVIMIENTOS), `atoms.css` (`.list-item__amount--ingreso`) | `movimientos.test.js` |
@@ -457,6 +460,7 @@ Estos archivos **no están organizados por dominio**, sino por tipo de widget o 
 | `forms.css` | Sistema de íconos SVG de línea, inputs/formularios |
 | `nudges.css` | Sistema de nudges (5 niveles), logro toast, bank avatar/picker, badges de dominio |
 | `analysis.css` | Todo el panel de Análisis: bento, métricas, salud financiera, presupuesto, ahorro, inversión, gastos, patrimonio |
+| `aprende.css` | Ruta de Aprende y lección a pantalla completa |
 
 Capas base (sin agrupar por widget, aplican a toda la app): `reset.css`, `base.css`, `tokens.css`, `layout.css`, `modals.css`, `themes.css`, `a11y.css`, `responsive.css`, `utils.css`. Ver el orden de cascada en [`styles/main.css`](../styles/main.css) y la tabla de `@layer` en la sección 8.
 

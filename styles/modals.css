@@ -642,3 +642,28 @@
     transform: translateY(0);
   }
 }
+
+/* ── LECCIÓN A PANTALLA COMPLETA (APR.1a, ADR 092 D7) ──────────
+   La lección no es un diálogo sobre la app: la reemplaza mientras dura, sin
+   barra ni fondo a la vista, una idea por pantalla. Va al final de la capa
+   para ganarle a la hoja inferior de móvil y al ancho de escritorio. La
+   columna de contenido se centra con un ancho de lectura en pantallas
+   grandes; el marco ocupa todo el alto en cualquier ancho. */
+.modal-overlay.leccion-overlay {
+  padding: 0;
+  align-items: stretch;
+  background: var(--fk-bg-base);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.modal-overlay.leccion-overlay .modal.leccion {
+  max-width: none;
+  max-height: none;
+  height: 100dvh;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--fk-bg-base);
+  transform: none;
+  overflow-y: auto;
+}

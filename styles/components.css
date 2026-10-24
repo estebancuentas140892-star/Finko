@@ -1,6 +1,6 @@
 /* ============================================================
    FINKO - COMPONENTES (barrel)
-   Divide el sistema de componentes en 8 sub-modulos.
+   Divide el sistema de componentes en 9 sub-modulos.
 
    Cada @import contribuye a la layer 'components' (asignada
    desde main.css). El orden determina la cascada dentro de la
@@ -19,6 +19,7 @@
      nudges.css   - Sistema de nudges + logros + bank-avatar/picker
      domain.css   - Calculadoras + herramienta-inline + tesoreria + gastos UI
      config.css   - Configuracion + install PWA + agenda/calendario
+     aprende.css  - Ruta de Aprende + leccion a pantalla completa (APR.1a)
 
    Regla de la spec CSS: los @import deben ir ANTES que cualquier
    otra regla. Este archivo solo contiene @import, cumple la regla.
@@ -32,3 +33,4 @@
 @import './components/nudges.css';
 @import './components/domain.css';
 @import './components/config.css';
+@import './components/aprende.css';

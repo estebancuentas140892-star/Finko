@@ -365,12 +365,14 @@ test.describe('DIS.18 - sidebar desktop', () => {
       els.map(e => e.textContent.trim()));
     expect(grupos).toEqual(['Día a día', 'Compromisos', 'Mi dinero', 'Cómo voy']);
 
-    // Día a día: Inicio, Gastos, Calendario y Movimientos, que llegó desde
+    // Día a día: Inicio, Aprende (APR.1a, ADR 092 D2: justo después de
+    // Inicio), Gastos, Calendario y Movimientos, que llegó desde
     // "Seguimiento" (un grupo que no explicaba por qué lo contenía).
     const diario = page.locator('.nav-group', { has: page.locator('#nav-label-diario') });
     await expect(diario.locator('a.nav-item--no-mobile, a:not(.nav-item--mobile-only)'))
-      .toHaveCount(4);
+      .toHaveCount(5);
     await expect(diario.locator('a[href="#dash"]')).toHaveCount(1);
+    await expect(diario.locator('a[href="#aprende"]')).toHaveCount(1);
     await expect(diario.locator('a[href="#movimientos"]')).toHaveCount(1);
 
     // La marca "F" reemplaza al emoji del logo (ADR 040 D4).

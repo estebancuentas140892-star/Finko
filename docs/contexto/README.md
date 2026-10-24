@@ -1,6 +1,6 @@
 # Contexto técnico por funcionalidad - Finko Claude
 
-> Revisado: 2026-08-14.
+> Revisado: 2026-10-24.
 
 > Registro técnico permanente. Una ficha por sección de la app; dentro de cada ficha, un bloque por funcionalidad.
 > Objetivo: cada funcionalidad se analiza a fondo **una sola vez**, el resultado queda escrito aquí y las sesiones futuras lo reutilizan en vez de volver a recorrer el proyecto.
@@ -116,6 +116,7 @@ Una ficha por sección de la app (mismo agrupamiento que [`BOARD.md`](../BOARD.m
 | Captura (lenguaje de formularios v2, selector compacto de ícono) | [`captura.md`](captura.md) | activa (partida de `transversal.md` el 2026-07-24) |
 | Categorías (taxonomía global CAT.1, categorías personalizadas del usuario) | [`categorias.md`](categorias.md) | activa (partida de `transversal.md` el 2026-08-14) |
 | Logros (catálogo, evaluación, toast, "Tu progreso") | [`logros.md`](logros.md) | activa (partida de `transversal.md` el 2026-08-14) |
+| Aprende (ruta de unidades y lección a pantalla completa, iniciativa APR) | [`aprende.md`](aprende.md) | activa (APR.1a, 2026-10-24) |
 | Escritorio (shell de escritorio: sidebar, barra superior, atajos, iniciativa INT.1) | [`escritorio.md`](escritorio.md) | activa (partida de `transversal.md` el 2026-08-14) |
 
 Al crear una ficha: actualizar su fila a "activa" y ordenar los bloques dentro del archivo por importancia de la funcionalidad.

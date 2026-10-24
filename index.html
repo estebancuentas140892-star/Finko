@@ -201,6 +201,11 @@
     <symbol id="d-arco" viewBox="0 0 200 200"><path d="M100,15 A85,85 0 1 0 100,185 A60,60 0 1 1 100,15 Z" fill="currentColor"/></symbol>
     <symbol id="d-blob" viewBox="0 0 200 200"><path d="M100,10 C140,10 178,38 186,80 C194,122 172,162 132,182 C92,202 42,192 20,152 C-2,112 8,60 42,32 C62,15 80,10 100,10 Z" fill="currentColor"/></symbol>
     <symbol id="d-onda" viewBox="0 0 200 200"><path d="M0,130 C40,95 60,165 100,130 C140,95 160,165 200,130 L200,200 L0,200 Z" fill="currentColor"/></symbol>
+    <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
+    <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-chevron-up" viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></symbol>
     <!-- FIN bloque generado por scripts/sync-sprite.py -->
   </svg>
 
@@ -243,6 +248,15 @@
                aria-current="page" aria-label="Inicio: resumen financiero">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-home"/></svg>
               <span class="nav-item__label">Inicio</span>
+            </a>
+
+            <!-- Aprende (APR.1a, ADR 092 D2): en escritorio entra al grupo
+                 "Día a día" justo después de Inicio. En móvil no ocupa lugar
+                 en la barra: es una lente del bloque Inicio (APR.1c). -->
+            <a class="nav-item nav-item--no-mobile" href="#aprende" data-section="aprende"
+               aria-label="Aprende: tu ruta de lecciones">
+              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#c-birrete"/></svg>
+              <span class="nav-item__label">Aprende</span>
             </a>
 
             <a class="nav-item" href="#gast" data-section="gast"
@@ -817,6 +831,24 @@
         </div><!-- /.bento -->
       </section>
 
+      <!-- APRENDE (APR.1a, ADR 092 D8): la ruta de nueve unidades. Cada
+           lección se abre a pantalla completa en #modal-leccion y termina en
+           la sección donde se aplica, con los datos del usuario. -->
+      <section class="section" id="sec-aprende" tabindex="-1" aria-labelledby="title-aprende">
+        <header class="section__header">
+          <div class="section__title-group">
+            <span class="cat-teja section__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#c-birrete"/></svg></span>
+            <div class="section__titulo">
+              <h1 class="section__title" id="title-aprende">Aprende</h1>
+              <p class="section__linea">Nueve unidades. Cada lección termina en Finko, con tus datos.</p>
+            </div>
+          </div>
+        </header>
+        <div id="panel-aprende">
+          <!-- aprende/view.js: renderRuta() -->
+        </div>
+      </section>
+
       <!-- MOVIMIENTOS (TX.8b: vista completa del historial de Actividad reciente,
            ruta propia sin ícono de navegación fijo; se llega vía "Ver todo"
            desde Inicio). Derivado sin log paralelo (ADR 028 D5), igual que el
@@ -1311,6 +1343,17 @@
       <div class="modal__body" id="modal-gasto-body">
         <!-- Fase 6 -->
       </div>
+    </div>
+  </div>
+
+  <!-- Lección a pantalla completa (APR.1a, ADR 092 D7): sin barra, una idea
+       por pantalla. aprende/view.js pinta el panel en cada paso; el título de
+       cada paso lleva el id leccion-titulo. -->
+  <div class="modal-overlay leccion-overlay" id="modal-leccion"
+       role="dialog" aria-modal="true"
+       aria-labelledby="leccion-titulo" aria-hidden="true">
+    <div class="modal leccion" id="leccion-panel">
+      <!-- aprende/view.js: htmlLeccion() -->
     </div>
   </div>
 
