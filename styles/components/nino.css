@@ -1,0 +1,113 @@
+/* ============================================================
+   FINKO - PERFIL NIÑO: BASE VISUAL (APR.3b, ADR 093 D5, D7 y D8)
+   Las piezas que comparten todas las pantallas del niño: tipografía
+   más grande y pesada, tarjeta, botón con canto, Frai, el anfitrión de
+   los dibujos del catálogo `il-`, el frasco y los destellos de la
+   celebración. Los colores salen de `body.kid` (themes.css); la escala
+   de forma y tamaño, de tokens.css. Nada de esto se ve en el adulto,
+   salvo los dibujos `.il`, que el tutor usa al dar de alta a un niño.
+   ============================================================ */
+
+/* ── TIPOGRAFÍA: Inter, más grande y más pesada ──────────────── */
+body.kid { font-size: var(--fk-kid-text-base); line-height: var(--fk-kid-leading); }
+.k-h1 { margin: 0; font-size: var(--fk-kid-text-2xl); font-weight: 800; line-height: 1.15; letter-spacing: -0.01em; color: var(--fk-text-primary); text-wrap: balance; }
+.k-h2 { margin: 0; font-size: var(--fk-kid-text-xl); font-weight: 800; line-height: 1.2; color: var(--fk-text-primary); text-wrap: balance; }
+.k-h3 { margin: 0; font-size: var(--fk-kid-text-lg); font-weight: 700; line-height: 1.25; color: var(--fk-text-primary); }
+.k-body { margin: 0; font-size: var(--fk-kid-text-base); font-weight: 500; line-height: var(--fk-kid-leading); color: var(--fk-text-secondary); text-wrap: pretty; }
+.k-sm { margin: 0; font-size: var(--fk-kid-text-sm); font-weight: 600; line-height: 1.3; color: var(--fk-text-secondary); }
+
+/* ── TARJETA ─────────────────────────────────────────────────── */
+.kcard {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border-radius: var(--fk-kid-radius-lg);
+  border: 2px solid var(--fk-border-subtle);
+  background: var(--fk-bg-surface);
+}
+
+/* ── BOTÓN CON CANTO (kidPress) ──────────────────────────────────
+   El canto sólido de `--fk-kid-depth` dice "esto se toca" sin sombra
+   difusa. Al presionar, el botón baja 2 px sobre su canto: la cara se
+   mueve con transform y el canto se acorta lo mismo, así el piso no se
+   mueve (ADR 092 D10). */
+.kbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: var(--fk-kid-target);
+  margin-bottom: var(--fk-kid-depth);
+  padding: 0 22px;
+  border: 0;
+  border-radius: var(--fk-kid-radius-md);
+  background: var(--fk-kid-primary);
+  color: var(--fk-kid-on-primary);
+  box-shadow: 0 var(--fk-kid-depth) 0 var(--fk-kid-primary-depth);
+  font: inherit;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 120ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.kbtn:active {
+  transform: translateY(2px);
+  box-shadow: 0 calc(var(--fk-kid-depth) - 2px) 0 var(--fk-kid-primary-depth);
+}
+.kbtn--soft { background: var(--fk-bg-elevated); color: var(--fk-text-primary); box-shadow: 0 var(--fk-kid-depth) 0 var(--fk-border-default); }
+.kbtn--soft:active { box-shadow: 0 calc(var(--fk-kid-depth) - 2px) 0 var(--fk-border-default); }
+.kbtn--block { width: 100%; }
+.kbtn .icon { width: var(--fk-kid-icon); height: var(--fk-kid-icon); stroke-width: 2.4; }
+
+/* ── FRAI (D7) ───────────────────────────────────────────────────
+   Un solo color, el que pone el contexto con currentColor. Celebra con
+   el sol y anima con el azul de "casi"; nunca se ve triste. Bajo 40 px
+   el trazo sube para no perder nitidez, igual que la escala de íconos. */
+.frai { display: block; flex-shrink: 0; color: var(--fk-kid-frai, var(--fk-accent)); }
+.frai svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.frai--celebra { color: var(--fk-kid-sun, var(--fk-accent)); }
+.frai--anima { color: var(--fk-kid-hint, var(--fk-info)); }
+.frai--sm svg { stroke-width: 3.2; }
+
+/* ── DIBUJOS DEL CATÁLOGO (D8) ───────────────────────────────────
+   El dibujo trae contorno, papel y sombra por rol (`--fk-il-*`); su
+   color propio sale del anfitrión: `--il-a` como currentColor y un
+   segundo color opcional en `--fk-il-b`. */
+.il { display: block; flex-shrink: 0; overflow: visible; color: var(--il-a, var(--fk-accent)); }
+
+/* El frasco se llena contra la meta de ESE frasco, nunca contra los
+   otros dos (R60). El relleno lo dibuja infra/ilustraciones.js. */
+.frasco { display: block; overflow: visible; color: var(--il-a, var(--fk-kid-ahorrar, var(--fk-accent))); }
+
+/* ── DESTELLOS DE LA CELEBRACIÓN (D9) ────────────────────────────
+   Ocho destellos estáticos alrededor de la insignia: aparecen una vez,
+   escalonados de a 35 ms, y se quedan. Solo opacidad; con reduce-motion
+   quedan visibles de una (a11y.css). */
+.destellos { position: relative; display: grid; place-items: center; }
+.destellos__punto {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: var(--fk-kid-sun, var(--fk-accent));
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  transform: rotate(calc(var(--i) * 45deg)) translateY(-64px);
+  animation: destelloIn 200ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  animation-delay: calc(var(--i) * 35ms);
+}
+@keyframes destelloIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}

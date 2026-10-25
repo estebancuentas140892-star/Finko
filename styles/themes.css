@@ -86,6 +86,76 @@ body.light-theme {
   --fk-shadow-md:   0 2px 4px rgba(26, 32, 60, 0.06), 0 10px 24px rgba(26, 32, 60, 0.08);
   --fk-shadow-lg:   0 8px 32px rgba(26, 32, 60, 0.11);
   --fk-shadow-glow: 0 0 0 1.5px var(--fk-accent-border), 0 4px 20px rgba(26, 32, 60, 0.12);
+
+  /* ── ILUSTRACIONES DEL CATÁLOGO (APR.3b, ADR 093 D8) ────────── */
+  --fk-il-line:  #1a1d27;
+  --fk-il-paper: #ffffff;
+  --fk-il-shade: rgba(26, 32, 60, 0.08);
+}
+
+/* ── MODO NIÑO (APR.3b, ADR 093 D5) ──────────────────────────────
+   Una clase sobre el tema activo, no un tema: `body.kid` (oscuro, el
+   default) y `body.light-theme.kid` (claro, de primera clase). Cambian
+   el lienzo y suma los `--fk-kid-*`; ningún token adulto cambia fuera del
+   perfil niño. Los tres frascos reutilizan hues de dominio (ahorro,
+   gastos, me deben) y nunca van solos: ícono y nombre (R49). El AA de
+   cada par lo mide tests/unit/nino-visual.test.js. */
+body.kid {
+  --fk-bg-base:        #121729;   /* noche azul: más color que el lienzo adulto */
+  --fk-bg-surface:     #1b2239;
+  --fk-bg-elevated:    #252d48;
+  --fk-border-subtle:  rgba(255, 255, 255, 0.08);
+  --fk-border-default: rgba(255, 255, 255, 0.14);
+  --fk-text-primary:   #f1f3fb;
+  --fk-text-secondary: #b9c0d6;
+  --fk-text-muted:     #9aa3bd;
+
+  --fk-kid-primary:       #1fd194;
+  --fk-kid-on-primary:    #08120d;
+  --fk-kid-primary-depth: #11865e;
+  --fk-kid-frai:          #7fdcb0;   /* el personaje */
+  --fk-kid-sun:           #ffc94a;   /* solo celebración */
+  --fk-kid-sun-text:      #ffc94a;
+  --fk-kid-hint:          #6ea6ff;   /* "casi": explica, no castiga */
+  --fk-kid-ahorrar:       #38c98c;
+  --fk-kid-ahorrar-text:  #4bd99b;
+  --fk-kid-gastar:        #ff9a5c;
+  --fk-kid-gastar-text:   #ff9a5c;
+  --fk-kid-compartir:     #f06fc2;
+  --fk-kid-compartir-text: #f27ccb;
+
+  --fk-il-line:  #f1f3fb;
+  --fk-il-paper: #f1f3fb;
+  --fk-il-shade: rgba(255, 255, 255, 0.10);
+}
+
+body.light-theme.kid {
+  --fk-bg-base:        #f2f5fc;   /* cielo */
+  --fk-bg-surface:     #ffffff;
+  --fk-bg-elevated:    #e6ecf8;
+  --fk-border-subtle:  rgba(20, 30, 60, 0.08);
+  --fk-border-default: rgba(20, 30, 60, 0.14);
+  --fk-text-primary:   #172038;
+  --fk-text-secondary: #43506e;
+  --fk-text-muted:     #56607c;
+
+  --fk-kid-primary:       #087a4b;
+  --fk-kid-on-primary:    #ffffff;
+  --fk-kid-primary-depth: #05522f;
+  --fk-kid-frai:          #1f7a55;
+  --fk-kid-sun:           #f2b01e;
+  --fk-kid-sun-text:      #8a5a00;
+  --fk-kid-hint:          #1a5fd4;   /* igual a --fk-info */
+  --fk-kid-ahorrar:       #38c98c;
+  --fk-kid-ahorrar-text:  #1f7a52;
+  --fk-kid-gastar:        #ff8a5c;
+  --fk-kid-gastar-text:   #c23d00;
+  --fk-kid-compartir:     #f06fc2;
+  --fk-kid-compartir-text: #c2187f;
+
+  --fk-il-line:  #172038;
+  --fk-il-paper: #ffffff;
+  --fk-il-shade: rgba(20, 30, 60, 0.10);
 }
 
 /* ── TRANSICIÓN SUAVE ENTRE TEMAS ──────────────────────────────

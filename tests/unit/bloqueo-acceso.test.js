@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { S, createInitialState } from '../../modules/core/state.js';
 import { crearBloqueo, limpiarFallos, FALLOS_ANTES_DE_FRENO } from '../../modules/dominio/config/bloqueo.js';
 import { confirmarPin } from '../../modules/ui/bloqueo-acceso.js';
@@ -11,8 +11,14 @@ import { confirmarPin } from '../../modules/ui/bloqueo-acceso.js';
 // y con candado exige el mismo `verificarPin()` + freno que ya usa el gate
 // de arranque (`initBloqueoAcceso`).
 
-/** Espera un tick para que la verificación async del PIN (crypto.subtle) resuelva. */
-const _tick = () => new Promise(r => setTimeout(r, 0));
+/**
+ * Espera a que la verificación async del PIN (crypto.subtle) deje su mensaje.
+ * Un solo `setTimeout(0)` no alcanzaba con la suite completa en paralelo: el
+ * hash corre fuera del hilo y a veces tarda más de un tick (test intermitente).
+ */
+const _esperarError = () => vi.waitFor(() => {
+  if (!document.getElementById('confirm-pin-error')?.textContent) throw new Error('verificando el PIN');
+});
 
 describe('confirmarPin() (CFG.5b, ADR 063)', () => {
   beforeEach(() => {
@@ -57,7 +63,7 @@ describe('confirmarPin() (CFG.5b, ADR 063)', () => {
     const promesa = confirmarPin();
     document.getElementById('confirm-pin-input').value = '0000';
     document.querySelector('[data-role="confirmar"]').click();
-    await _tick();
+    await _esperarError();
 
     expect(document.getElementById('confirm-pin-error').textContent).toContain('PIN incorrecto');
     expect(document.querySelector('.modal-overlay')).not.toBeNull();
@@ -73,7 +79,7 @@ describe('confirmarPin() (CFG.5b, ADR 063)', () => {
       const intento = confirmarPin();
       document.getElementById('confirm-pin-input').value = '0000';
       document.querySelector('[data-role="confirmar"]').click();
-      await _tick();
+      await _esperarError();
       document.querySelector('[data-role="cancelar"]').click();
       await intento;
     }
@@ -81,7 +87,7 @@ describe('confirmarPin() (CFG.5b, ADR 063)', () => {
     const promesa = confirmarPin();
     document.getElementById('confirm-pin-input').value = '1234';
     document.querySelector('[data-role="confirmar"]').click();
-    await _tick();
+    await _esperarError();
 
     expect(document.getElementById('confirm-pin-error').textContent).toContain('Demasiados intentos');
     document.querySelector('[data-role="cancelar"]').click();

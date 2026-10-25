@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-10-24.
+> Revisado: 2026-10-25.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-10)
+
+### feat(nino): APR.3b, el sistema visual del niño · 2026-10-25
+
+[ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md) D5, D7 y D8. Primera rebanada de la Fase 3; va antes que APR.3a porque el alta del niño y "¿Quién usa Finko?" usan sus dibujos. Todavía no se ve en la app: lo usan las rebanadas que siguen. SW v604.
+
+- **Modo niño como clase**: `body.kid` y `body.light-theme.kid` cambian el lienzo y suman `--fk-kid-*` (primario con canto, Frai, sol, "casi" y los tres frascos) sin tocar ningún token adulto. Escala de forma, tamaño y tipografía en `tokens.css`. Un test mide el AA de cada par en los dos temas.
+- **Frai en cuatro poses y el catálogo de dibujos** entran al sprite por el pipeline `il-`: saluda, explica, celebra y anima; balón, libro, bicicleta, tenis, cometa, colores, audífonos, patineta y el frasco. Se hornearon a coordenadas absolutas y roles de color para cumplir el estándar.
+- **Piezas base** en `styles/components/nino.css` (títulos, tarjeta, botón con canto y `kidPress`, Frai, dibujos, frasco y destellos) y `infra/ilustraciones.js` (dibujo, Frai, frasco que se llena contra su propia meta y destellos).
+- **Test intermitente de `confirmarPin` resuelto**: esperaba un solo tick a que `crypto.subtle` terminara; ahora espera el mensaje.
 
 ### feat(aprende): APR.2b, la prueba de ubicación · 2026-10-24
 

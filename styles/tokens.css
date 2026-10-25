@@ -320,4 +320,31 @@
      El glifo interno ocupa ~62% del lado (ratio de avatar M3 40/24). */
   --fk-teja-md: 2rem;       /* 32px - superficies compactas (agenda, picker) */
   --fk-teja-lg: 2.25rem;    /* 36px - filas de lista: reconocimiento primario */
+
+  /* ── ILUSTRACIONES DEL CATÁLOGO (APR.3b, ADR 093 D8) ──────────── */
+  /* Contorno, zonas blancas y sombra de los dibujos `il-` (metas y
+     avatares del niño). El color propio de cada dibujo lo pone su
+     anfitrión `.il` con `--il-a`, así el mismo dibujo sirve en los dos
+     temas. Claro y modo niño los redefinen en themes.css. */
+  --fk-il-line:  #e9ebf3;
+  --fk-il-paper: #e9ebf3;
+  --fk-il-shade: rgba(255, 255, 255, 0.10);
+
+  /* ── MODO NIÑO: FORMA, TAMAÑO Y TIPOGRAFÍA (APR.3b, ADR 093 D5) ── */
+  /* Se suman a la escala adulta, no la reemplazan: solo los usan los
+     componentes del perfil niño (`.kid`, styles/components/nino.css). */
+  --fk-kid-radius-sm:  12px;
+  --fk-kid-radius-md:  18px;
+  --fk-kid-radius-lg:  24px;
+  --fk-kid-radius-xl:  32px;
+  --fk-kid-target-min: 48px;   /* piso duro: ningún control del niño mide menos */
+  --fk-kid-target:     56px;   /* tamaño de diseño de botones y teclas */
+  --fk-kid-text-sm:    16px;   /* el texto más chico que ve un niño */
+  --fk-kid-text-base:  18px;
+  --fk-kid-text-lg:    22px;
+  --fk-kid-text-xl:    26px;
+  --fk-kid-text-2xl:   32px;
+  --fk-kid-leading:    1.35;
+  --fk-kid-depth:      4px;    /* canto sólido bajo el botón: se ve "tocable" */
+  --fk-kid-icon:       28px;   /* ícono junto a cada texto, trazo 2,4 */
 }
