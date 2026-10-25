@@ -167,7 +167,7 @@
 ### Fase 3 - Perfiles, niño y tutor (ADR 093)
 
 #### APR.3f - Contenido del niño
-- Estado : pendiente de APR.3c. Una rebanada por unidad, con revisión pedagógica y la voz del ADR 093 D6. **Modelo**: Equilibrado, Alto.
+- Estado : escritas las ocho unidades y la ubicación desde los 10 años (2026-10-25), con un test que mide la voz del ADR 093 D6. **Falta la revisión pedagógica registrada**, que es la aceptación. **Modelo**: Equilibrado, Alto.
 
 ### Fase 4 - Escritorio
 

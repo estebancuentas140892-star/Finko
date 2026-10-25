@@ -31,10 +31,13 @@ function _hechas(aprende) {
  */
 export function estadoRutaNino(aprende) {
   const hechas = _hechas(aprende);
+  const sabidas = Array.isArray(/** @type {any} */ (aprende)?.sabidas) ? /** @type {any} */ (aprende).sabidas : [];
   let detenida = false;
   return UNIDADES_NINO.map(unidad => {
     let estado = 'despues';
-    if (!detenida && unidadTerminada(unidad, hechas)) estado = 'hecha';
+    // Lo que la prueba marcó como sabido cuenta como hecho (D3, D9).
+    if (!detenida && sabidas.includes(unidad.id)) estado = 'sabida';
+    else if (!detenida && unidadTerminada(unidad, hechas)) estado = 'hecha';
     else if (!detenida) {
       estado = unidad.lecciones.length ? 'actual' : 'preparacion';
       detenida = true;
@@ -66,9 +69,22 @@ export function siguienteLeccionNino(aprende) {
   return l ? { unidad: actual.unidad, leccion: l.leccion, numero: l.numero } : null;
 }
 
-/** Cuántas unidades terminó el niño: cada una es una insignia en "Yo". */
+/** Cuántas unidades sabe el niño, hechas o sabidas: cada una es una insignia en "Yo". */
 export function unidadesHechasNino(aprende) {
-  return estadoRutaNino(aprende).filter(e => e.estado === 'hecha').length;
+  return estadoRutaNino(aprende).filter(e => e.estado === 'hecha' || e.estado === 'sabida').length;
+}
+
+/** Desde esta edad la ruta empieza con tres preguntas de ubicación (D9). */
+export const EDAD_UBICACION_NINO = 10;
+
+/**
+ * ¿Se le ofrece la prueba de ubicación? Solo desde los 10 años, una vez y
+ * antes de empezar: sin nada hecho, sabido ni en curso (D9).
+ */
+export function ofreceUbicacionNino(perfil) {
+  const a = perfil?.aprende ?? {};
+  return Number(perfil?.edad) >= EDAD_UBICACION_NINO && !a.ubicacion && !a.enCurso
+    && !(Array.isArray(a.sabidas) && a.sabidas.length) && !Object.keys(_hechas(a)).length;
 }
 
 /** Las cuatro pantallas del niño, en el orden de su barra (D9). */

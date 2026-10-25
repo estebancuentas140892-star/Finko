@@ -11,8 +11,8 @@
 ## Perfiles, "¿Quién usa Finko?" y la piel del niño
 
 - **Objetivo**          : que un tutor y niños de 7 a 12 años compartan el teléfono sin que el niño vea las finanzas del adulto (D1).
-- **Estado actual**     : en evolución (Fase 3 de APR). Cerradas **APR.3b** (sistema visual), **APR.3a** (perfiles, selector, alta paso 1, PIN de niño a adulto, candado obligatorio, P1), **APR.3c** (barra, ruta en orden como camino, lección con Frai, celebración, unidad 1) **APR.3d** (Guardé, Gasté, Compartí, mover, una meta con semanas y fecha) y **APR.3e** (alta en dos pasos con mesada, "Entregada" como un solo hecho, premio por ahorrar, progreso del niño). Faltan las unidades 2 a 8 y la ubicación desde los 10 años (APR.3f).
-- **Verificado contra** : commit de APR.3e (2026-10-25).
+- **Estado actual**     : en evolución (Fase 3 de APR). Cerradas **APR.3b** (sistema visual), **APR.3a** (perfiles, selector, alta paso 1, PIN de niño a adulto, candado obligatorio, P1), **APR.3c** (barra, ruta en orden como camino, lección con Frai, celebración, unidad 1) **APR.3d** (Guardé, Gasté, Compartí, mover, una meta con semanas y fecha) y **APR.3e** (alta en dos pasos con mesada, "Entregada" como un solo hecho, premio por ahorrar, progreso del niño). **APR.3f**: las ocho unidades escritas y la ubicación desde los 10 años; falta su revisión pedagógica.
+- **Verificado contra** : commit de APR.3f (2026-10-25).
 
 **Dónde vive**
 
@@ -35,7 +35,7 @@
 | Alcancía y meta (sin DOM): validar y crear movimientos, plan de la meta, llenado de cada frasco | `modules/dominio/nino/logic.js` | `validarMovimiento()`, `crearMovimientos()`, `metaActiva()`, `planMeta()`, `validarMeta()`, `llenadoFrasco()`, `puedeMover()` |
 | Hoja para anotar y pantalla de la meta | `modules/dominio/nino/view.js` / `index.js` | `htmlMovimientoNino()`, `htmlMetaNino()`, `htmlTarjetaMeta()`, `data-action="nino-mov"`, `nino-monto`, `nino-meta-*`, `#modal-nino` |
 | La lección del niño: mismo motor, su avance y su cierre | `modules/dominio/aprende/index.js` / `view.js` | `_progreso()`, `_guardarProgreso()`, `ctx.nino`, `_cierreNino()`, `data-action="leccion-salir-a"` |
-| Contenido del niño (solo datos) | `modules/dominio/aprende/lecciones/nino/kN.js` | `'k1-l1'` |
+| Contenido del niño (solo datos) y su ubicación desde los 10 | `modules/dominio/aprende/lecciones/nino/kN.js`, `nino/ubicacion.js` | `'k1-l1'`, `ofreceUbicacionNino()`, `EDAD_UBICACION_NINO` |
 | Dibujos, Frai, frasco y destellos | `modules/infra/ilustraciones.js` | `DIBUJOS`, `htmlDibujo()`, `htmlFrai()`, `htmlFrasco()`, `htmlDestellos()` |
 | Markup | `index.html` | `#quien-usa`, `#modal-familia`, `#nino-app`, `#nino-main`, `#nino-nav` |
 
@@ -59,6 +59,7 @@
 
 **Cambios realizados**:
 
+- 2026-10-25 (APR.3f): unidades 2 a 8 y ubicación desde los 10 años; lo sabido cuenta en la ruta en orden.
 - 2026-10-25 (APR.3e): alta con mesada, "Entregada" con gasto Familia, premio por ahorrar, progreso del niño.
 - 2026-10-25 (APR.3d): alcancía con Guardé, Gasté, Compartí y mover; una meta con semanas y fecha.
 - 2026-10-25 (APR.3c): app del niño con barra, ruta en orden, lección con Frai, celebración y unidad 1.

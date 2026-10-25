@@ -28,6 +28,8 @@
  * @property {LeccionMeta[]} lecciones - vacía si la unidad está en preparación.
  * @property {string} [aprendiste] - lo que la celebración de la unidad dice
  *                                   que ya sabes (D7, insignia).
+ * @property {string} [corto] - nombre corto para listas ("el interés"); sin
+ *                              él se usa la primera palabra del nombre.
  */
 
 /** @type {Unidad[]} */
@@ -131,7 +133,7 @@ export const UNIDADES = [
  */
 export const UNIDADES_NINO = [
   {
-    id: 'k1', numero: 1, nombre: '¿Qué es el dinero?', dominio: 'tesoreria', icono: 'c-billete', seccion: 'aprender', termina: 'Tu alcancía',
+    id: 'k1', numero: 1, nombre: '¿Qué es el dinero?', corto: 'el dinero', dominio: 'tesoreria', icono: 'c-billete', seccion: 'aprender', termina: 'Tu alcancía',
     aprendiste: 'Ahora sabes para qué sirve el dinero.',
     lecciones: [
       { id: 'k1-l1', titulo: 'Para qué sirve el dinero', minutos: 3 },
@@ -139,13 +141,69 @@ export const UNIDADES_NINO = [
       { id: 'k1-l3', titulo: 'Guardar es no gastar todo hoy', minutos: 3 },
     ],
   },
-  { id: 'k2', numero: 2, nombre: 'Lo que necesito y lo que quiero', dominio: 'gastos', icono: 'c-tienda', seccion: 'aprender', termina: 'Tu alcancía', lecciones: [] },
-  { id: 'k3', numero: 3, nombre: 'Mi alcancía y mi meta', dominio: 'ahorro', icono: 'i-ahorro', seccion: 'aprender', termina: 'Tu alcancía', lecciones: [] },
-  { id: 'k4', numero: 4, nombre: 'Ahorrar poco a poco', dominio: 'metas', icono: 'i-metas', seccion: 'aprender', termina: 'Tu alcancía', lecciones: [] },
-  { id: 'k5', numero: 5, nombre: 'Gastar con un plan', dominio: 'presupuesto', icono: 'c-compras', seccion: 'aprender', termina: 'Tu alcancía', lecciones: [] },
-  { id: 'k6', numero: 6, nombre: 'Compartir y ayudar', dominio: 'personales', icono: 'c-regalo', seccion: 'aprender', termina: 'Tu alcancía', lecciones: [] },
-  { id: 'k7', numero: 7, nombre: 'Guardar para lo que no esperas', dominio: 'compromisos', icono: 'c-paraguas', seccion: 'aprender', termina: 'Tu alcancía', lecciones: [] },
-  { id: 'k8', numero: 8, nombre: '¿Por qué crece mi dinero?', dominio: 'inversion', icono: 'i-trending-up', seccion: 'aprender', termina: 'Tu alcancía', lecciones: [] },
+  {
+    id: 'k2', numero: 2, nombre: 'Lo que necesito y lo que quiero', corto: 'necesitar y querer', dominio: 'gastos', icono: 'c-tienda', seccion: 'aprender', termina: 'Tu alcancía',
+    aprendiste: 'Ahora sabes elegir antes de comprar.',
+    lecciones: [
+      { id: 'k2-l1', titulo: 'Necesitar y querer', minutos: 3 },
+      { id: 'k2-l2', titulo: '¿Lo necesito o lo quiero?', minutos: 3 },
+      { id: 'k2-l3', titulo: 'Primero lo que necesitas', minutos: 3 },
+    ],
+  },
+  {
+    id: 'k3', numero: 3, nombre: 'Mi alcancía y mi meta', corto: 'tu alcancía', dominio: 'ahorro', icono: 'i-ahorro', seccion: 'aprender', termina: 'Tu alcancía',
+    aprendiste: 'Ahora sabes usar tus tres frascos y tener una meta.',
+    lecciones: [
+      { id: 'k3-l1', titulo: 'Tres frascos', minutos: 3 },
+      { id: 'k3-l2', titulo: 'Una meta con su precio', minutos: 3 },
+      { id: 'k3-l3', titulo: 'Un poco cada semana', minutos: 3 },
+    ],
+  },
+  {
+    id: 'k4', numero: 4, nombre: 'Ahorrar poco a poco', corto: 'esperar', dominio: 'metas', icono: 'i-metas', seccion: 'aprender', termina: 'Tu alcancía',
+    aprendiste: 'Ahora sabes esperar para tener algo mejor.',
+    lecciones: [
+      { id: 'k4-l1', titulo: 'Esperar también es ganar', minutos: 3 },
+      { id: 'k4-l2', titulo: 'Las ganas pasan si esperas', minutos: 3 },
+      { id: 'k4-l3', titulo: 'Lo pequeño suma mucho', minutos: 3 },
+    ],
+  },
+  {
+    id: 'k5', numero: 5, nombre: 'Gastar con un plan', corto: 'gastar con un plan', dominio: 'presupuesto', icono: 'c-compras', seccion: 'aprender', termina: 'Tu alcancía',
+    aprendiste: 'Ahora sabes mirar el precio y comparar.',
+    lecciones: [
+      { id: 'k5-l1', titulo: 'Mira el precio', minutos: 3 },
+      { id: 'k5-l2', titulo: 'Compara precios', minutos: 3 },
+      { id: 'k5-l3', titulo: 'Gasta lo que hay en Gastar', minutos: 3 },
+    ],
+  },
+  {
+    id: 'k6', numero: 6, nombre: 'Compartir y ayudar', corto: 'compartir', dominio: 'personales', icono: 'c-regalo', seccion: 'aprender', termina: 'Tu alcancía',
+    aprendiste: 'Ahora sabes compartir y ayudar con tu dinero.',
+    lecciones: [
+      { id: 'k6-l1', titulo: 'Compartir es usar bien el dinero', minutos: 3 },
+      { id: 'k6-l2', titulo: 'Un regalo no tiene que ser caro', minutos: 3 },
+      { id: 'k6-l3', titulo: 'Ayudar también es compartir', minutos: 3 },
+    ],
+  },
+  {
+    id: 'k7', numero: 7, nombre: 'Guardar para lo que no esperas', corto: 'la reserva', dominio: 'compromisos', icono: 'c-paraguas', seccion: 'aprender', termina: 'Tu alcancía',
+    aprendiste: 'Ahora sabes guardar para lo que no esperas.',
+    lecciones: [
+      { id: 'k7-l1', titulo: 'Lo que no esperas', minutos: 3 },
+      { id: 'k7-l2', titulo: 'Una reserva te cuida', minutos: 3 },
+      { id: 'k7-l3', titulo: 'No gastes todo lo guardado', minutos: 3 },
+    ],
+  },
+  {
+    id: 'k8', numero: 8, nombre: '¿Por qué crece mi dinero?', corto: 'el interés', dominio: 'inversion', icono: 'i-trending-up', seccion: 'aprender', termina: 'Tu alcancía',
+    aprendiste: 'Ahora sabes por qué crece el dinero guardado.',
+    lecciones: [
+      { id: 'k8-l1', titulo: 'Qué es el interés', minutos: 3 },
+      { id: 'k8-l2', titulo: 'Más guardado, más premio', minutos: 3 },
+      { id: 'k8-l3', titulo: 'El tiempo hace crecer', minutos: 3 },
+    ],
+  },
 ];
 
 /**

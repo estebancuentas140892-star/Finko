@@ -10,6 +10,7 @@ import { normalizarPerfil, saldosFrascos } from '../../modules/infra/perfiles.js
 import {
   estadoRutaNino, siguienteLeccionNino, unidadesHechasNino, VISTAS_NINO,
   leerMonto, validarMovimiento, crearMovimientos, metaActiva, planMeta, validarMeta, llenadoFrasco, puedeMover,
+  ofreceUbicacionNino,
 } from '../../modules/dominio/nino/logic.js';
 import {
   htmlBarraNino, htmlInicioNino, htmlRutaNino, htmlAlcanciaNino, htmlYoNino,
@@ -18,6 +19,18 @@ import {
 import { crearSesion, avanzar, responderElegir, unidadDeLeccion } from '../../modules/dominio/aprende/logic.js';
 import { htmlLeccion } from '../../modules/dominio/aprende/view.js';
 import k1 from '../../modules/dominio/aprende/lecciones/nino/k1.js';
+import k2 from '../../modules/dominio/aprende/lecciones/nino/k2.js';
+import k3 from '../../modules/dominio/aprende/lecciones/nino/k3.js';
+import k4 from '../../modules/dominio/aprende/lecciones/nino/k4.js';
+import k5 from '../../modules/dominio/aprende/lecciones/nino/k5.js';
+import k6 from '../../modules/dominio/aprende/lecciones/nino/k6.js';
+import k7 from '../../modules/dominio/aprende/lecciones/nino/k7.js';
+import k8 from '../../modules/dominio/aprende/lecciones/nino/k8.js';
+import ubicacionNino from '../../modules/dominio/aprende/lecciones/nino/ubicacion.js';
+import { resultadoUbicacion } from '../../modules/dominio/aprende/logic.js';
+
+/** El contenido del niño, por unidad. */
+const CONTENIDO_NINO = { k1, k2, k3, k4, k5, k6, k7, k8 };
 
 const hechas = (...ids) => Object.fromEntries(ids.map(id => [id, '2026-10-25']));
 const perfil = (aprende = {}, extra = {}) => normalizarPerfil({ id: 'n-1', nombre: 'Sofía', edad: 8, dibujo: 'cometa', aprende, ...extra });
@@ -32,12 +45,26 @@ describe('la ruta del niño va en orden (D9)', () => {
     expect(siguienteLeccionNino({ hechas: hechas('k1-l1') })).toMatchObject({ numero: 2, leccion: { id: 'k1-l2' } });
   });
 
-  it('terminada una unidad, la siguiente sin contenido detiene la ruta: no la salta', () => {
+  it('terminada una unidad, la ruta sigue con la siguiente, en orden', () => {
     const ruta = estadoRutaNino({ hechas: hechas('k1-l1', 'k1-l2', 'k1-l3') });
     expect(ruta[0].estado).toBe('hecha');
-    expect(ruta[1].estado).toBe('preparacion');
-    expect(siguienteLeccionNino({ hechas: hechas('k1-l1', 'k1-l2', 'k1-l3') })).toBeNull();
+    expect(ruta[1].estado).toBe('actual');
+    expect(siguienteLeccionNino({ hechas: hechas('k1-l1', 'k1-l2', 'k1-l3') })).toMatchObject({ leccion: { id: 'k2-l1' } });
     expect(unidadesHechasNino({ hechas: hechas('k1-l1', 'k1-l2', 'k1-l3') })).toBe(1);
+  });
+
+  it('lo que la prueba marcó como sabido cuenta como hecho y es insignia', () => {
+    const aprende = { hechas: {}, sabidas: ['k1', 'k2'] };
+    const ruta = estadoRutaNino(aprende);
+    expect(ruta.map(e => e.estado).slice(0, 3)).toEqual(['sabida', 'sabida', 'actual']);
+    expect(unidadesHechasNino(aprende)).toBe(2);
+    const yo = htmlYoNino(perfil(aprende));
+    expect(yo.match(/href="#il-insignia"/g)).toHaveLength(2);
+    expect(htmlRutaNino(perfil(aprende))).toContain('Ya lo sabes');
+  });
+
+  it('las ocho unidades tienen contenido escrito', () => {
+    for (const u of UNIDADES_NINO) expect(u.lecciones.length, u.id).toBeGreaterThan(0);
   });
 
   it('el motor encuentra las lecciones del niño en su propio catálogo', () => {
@@ -144,32 +171,81 @@ describe('la lección con la piel del niño (D7, D9)', () => {
   });
 });
 
-describe('contenido de la unidad 1 del niño (D6)', () => {
-  const pasos = Object.values(k1).flatMap(l => l.pasos.map(p => [l.id, p]));
+describe('contenido del niño, las ocho unidades (D6, APR.3f)', () => {
+  const lecciones = Object.values(CONTENIDO_NINO).flatMap(u => Object.values(u));
+  const pasos = [...lecciones, ubicacionNino].flatMap(l => l.pasos.map(p => [l.id, p]));
 
   it('cada lección del catálogo tiene su contenido y cierra con "Úsalo de verdad"', () => {
-    expect(Object.keys(k1).sort()).toEqual(UNIDADES_NINO[0].lecciones.map(l => l.id).sort());
-    for (const l of Object.values(k1)) {
+    for (const u of UNIDADES_NINO) {
+      expect(Object.keys(CONTENIDO_NINO[u.id]).sort(), u.id).toEqual(u.lecciones.map(l => l.id).sort());
+    }
+    for (const l of lecciones) {
       expect(l.pasos.at(-1).tipo, l.id).toBe('aplica');
       expect(['ahorrar', 'gastar', 'compartir'], l.id).toContain(l.pasos.at(-1).usalo.frasco);
     }
   });
 
   it('frases de máximo 10 palabras y sin guiones largos ni medios', () => {
-    const textos = pasos.flatMap(([, p]) => [p.titulo, p.texto, p.pregunta, p.bien, ...(p.opciones ?? []), ...(p.casi ?? []), p.usalo?.pregunta])
-      .filter(Boolean);
+    const textos = pasos.flatMap(([, p]) => [
+      p.titulo, p.texto, p.pregunta, p.bien, p.ayuda, ...(p.opciones ?? []), ...(p.casi ?? []), p.usalo?.pregunta,
+      ...(p.tarjetas ?? []).flatMap(t => [t.titulo, t.detalle, t.casi]),
+    ]).filter(Boolean);
     for (const t of textos) {
       for (const frase of t.split(/(?<=[.?!])\s+/)) {
         expect(frase.split(/\s+/).filter(Boolean).length, frase).toBeLessThanOrEqual(10);
       }
     }
-    expect(JSON.stringify(k1)).not.toMatch(new RegExp(`[${String.fromCharCode(0x2013, 0x2014)}]`));
+    expect(JSON.stringify([CONTENIDO_NINO, ubicacionNino])).not.toMatch(new RegExp(`[${String.fromCharCode(0x2013, 0x2014)}]`));
   });
 
   it('cada opción equivocada trae su explicación', () => {
     for (const [id, p] of pasos.filter(([, x]) => x.tipo === 'elegir')) {
       p.opciones.forEach((_, i) => { if (i !== p.correcta) expect(p.casi[i], `${id} ${i}`).toBeTruthy(); });
     }
+  });
+
+  it('clasificar va de los dos lados y cada tarjeta explica su "casi"', () => {
+    for (const [id, p] of pasos.filter(([, x]) => x.tipo === 'clasificar')) {
+      expect(p.tarjetas.some(t => t.es) && p.tarjetas.some(t => !t.es), id).toBe(true);
+      for (const t of p.tarjetas) expect(t.casi, `${id} ${t.titulo}`).toBeTruthy();
+      expect(p.bien, id).toBeTruthy();
+    }
+  });
+});
+
+describe('la prueba de ubicación del niño, desde los 10 (D9)', () => {
+  it('tres preguntas, una por unidad de la 1 a la 3, con "Todavía no lo sé"', () => {
+    expect(ubicacionNino.pasos.map(p => p.unidad)).toEqual(['k1', 'k2', 'k3']);
+    expect(ubicacionNino.pasos.every(p => p.noSe && p.tipo === 'elegir')).toBe(true);
+    expect(ubicacionNino.sinRepetir).toBe(true);
+  });
+
+  it('el resultado usa la ruta del niño: lo sabido y dónde empieza', () => {
+    const sesion = { respuestas: { 0: true, 1: true, 2: false } };
+    const r = resultadoUbicacion(ubicacionNino, sesion, UNIDADES_NINO);
+    expect(r.sabidas).toEqual(['k1', 'k2']);
+    expect(r.empieza.id).toBe('k3');
+  });
+
+  it('el resultado del niño nombra sus unidades y ofrece ver su ruta', () => {
+    const sesion = { ...crearSesion(ubicacionNino), respuestas: { 0: true, 1: true, 2: false } };
+    const html = htmlLeccion(sesion, ubicacionNino, {
+      tope: 20_000, terminada: true, entrada: false, nino: true, catalogo: UNIDADES_NINO,
+      ubicacion: resultadoUbicacion(ubicacionNino, sesion, UNIDADES_NINO),
+    });
+    expect(html).toContain('Empiezas en la unidad 3');
+    expect(html).toContain('Y 3 unidades más: compartir, la reserva y el interés.');
+    expect(html).toContain('Las dos que ya sabes ya son insignias en Yo.');
+    expect(html).toContain('Ver mi ruta');
+  });
+
+  it('se ofrece solo desde los 10 años y antes de empezar', () => {
+    expect(ofreceUbicacionNino(perfil({}, { edad: 8 }))).toBe(false);
+    expect(ofreceUbicacionNino(perfil({}, { edad: 10 }))).toBe(true);
+    expect(ofreceUbicacionNino(perfil({ hechas: { 'k1-l1': 'x' } }, { edad: 11 }))).toBe(false);
+    expect(ofreceUbicacionNino(perfil({ ubicacion: '2026-10-25' }, { edad: 11 }))).toBe(false);
+    expect(htmlInicioNino(perfil({}, { edad: 11 }), '2026-10-25')).toContain('Antes de empezar, tres preguntas');
+    expect(htmlInicioNino(perfil({}, { edad: 8 }), '2026-10-25')).not.toContain('Antes de empezar');
   });
 });
 

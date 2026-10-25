@@ -10,7 +10,7 @@
  *     o los usuarios seguirán viendo la versión vieja.
  */
 
-const CACHE_NAME = 'finko-v608';
+const CACHE_NAME = 'finko-v609';
 
 // ── Assets críticos - si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [
@@ -215,6 +215,14 @@ const CORE_ASSETS = [
   './modules/dominio/aprende/lecciones/u9.js',
   './modules/dominio/aprende/lecciones/ubicacion.js',
   './modules/dominio/aprende/lecciones/nino/k1.js',
+  './modules/dominio/aprende/lecciones/nino/k2.js',
+  './modules/dominio/aprende/lecciones/nino/k3.js',
+  './modules/dominio/aprende/lecciones/nino/k4.js',
+  './modules/dominio/aprende/lecciones/nino/k5.js',
+  './modules/dominio/aprende/lecciones/nino/k6.js',
+  './modules/dominio/aprende/lecciones/nino/k7.js',
+  './modules/dominio/aprende/lecciones/nino/k8.js',
+  './modules/dominio/aprende/lecciones/nino/ubicacion.js',
   './modules/dominio/aprende/lecciones/u3.js',
   './modules/dominio/aprende/lecciones/u4.js',
   './modules/dominio/ahorro/logic.js',

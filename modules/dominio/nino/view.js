@@ -14,9 +14,19 @@ import { saldosFrascos, FRASCOS } from '../../infra/perfiles.js';
 import { UNIDADES_NINO } from '../../infra/ruta-aprende.js';
 import { proximaMesada, textoFrecuencia, TASAS_PREMIO, proximoPremio } from '../../infra/mesada.js';
 import {
-  estadoRutaNino, siguienteLeccionNino, unidadesHechasNino,
+  estadoRutaNino, siguienteLeccionNino, unidadesHechasNino, ofreceUbicacionNino,
   metaActiva, planMeta, llenadoFrasco, puedeMover,
 } from './logic.js';
+
+/** Desde los 10 años, antes de empezar: tres preguntas para saber dónde empieza. */
+function _ofertaUbicacion() {
+  return `
+    <section class="kcard kcard--dom" data-dom="ahorro" aria-labelledby="nino-ubicacion">
+      <h2 class="k-h3" id="nino-ubicacion">Antes de empezar, tres preguntas</h2>
+      <p class="k-body">Así sabemos en qué unidad empiezas.</p>
+      <button class="kbtn kbtn--block" type="button" data-action="ubicacion-abrir">${icon('lightbulb')}Responder</button>
+    </section>`;
+}
 
 /** Barra de cuatro destinos (D9). */
 const _BARRA = [
@@ -141,7 +151,10 @@ export function htmlInicioNino(perfil, hoyISO) {
       <h2 class="k-h3" id="nino-siguiente">Hiciste todo lo que hay por ahora.</h2>
       <p class="k-body">Pronto llegan más lecciones.</p>
     </section>`;
-  const saludo = sig ? `¿Aprendemos algo hoy? Son ${sig.leccion.minutos} minutos.` : '¡Qué bien vas! Repasa cuando quieras.';
+  const ubicar = ofreceUbicacionNino(perfil);
+  const saludo = ubicar ? 'Primero, tres preguntas cortas.'
+    : sig ? `¿Aprendemos algo hoy? Son ${sig.leccion.minutos} minutos.` : '¡Qué bien vas! Repasa cuando quieras.';
+  const primero = ubicar ? _ofertaUbicacion() : leccion;
   const s = saldosFrascos(perfil);
   return `
     <header class="knino-cabeza">
@@ -153,7 +166,7 @@ export function htmlInicioNino(perfil, hoyISO) {
       ${htmlFrai('saluda', { tamano: 96 })}
       <p class="bubble">${saludo}</p>
     </div>
-    ${leccion}
+    ${primero}
     <section class="kcard" aria-labelledby="nino-alcancia-inicio">
       <div class="knino-cabeza">
         <h2 class="k-h3 knino-titulo-sm" id="nino-alcancia-inicio">${iconoCategoria('i-ahorro')}Mi alcancía</h2>
@@ -199,6 +212,9 @@ export function htmlRutaNino(perfil) {
     if (e.estado === 'hecha') {
       return `<li>${cabeza(`Unidad ${u.numero}`, `<span class="kchip kchip--hecha">${icon('check')}Lista</span>`)}</li>`;
     }
+    if (e.estado === 'sabida') {
+      return `<li>${cabeza(`Unidad ${u.numero}`, `<span class="kchip kchip--hecha">${icon('check')}Ya lo sabes</span>`)}</li>`;
+    }
     if (e.estado === 'actual') {
       return `<li>${cabeza(`Unidad ${u.numero} · vas aquí`)}
         <ol class="kcamino" data-dom="${u.dominio}" aria-label="Lecciones de la unidad ${u.numero}">
@@ -219,6 +235,7 @@ export function htmlRutaNino(perfil) {
       <h1 class="k-h1 knino-titulo" tabindex="-1">${iconoCategoria('c-birrete')}Aprender</h1>
       <span class="kchip">${hechas} de ${UNIDADES_NINO.length} unidades</span>
     </header>
+    ${ofreceUbicacionNino(perfil) ? _ofertaUbicacion() : ''}
     <ol class="kruta">${filas}</ol>`;
 }
 
@@ -405,7 +422,7 @@ export function htmlPlanMeta(perfil, precio, semanal, hoyISO) {
  */
 export function htmlYoNino(perfil) {
   const ruta = estadoRutaNino(perfil.aprende);
-  const insignias = ruta.map(e => e.estado === 'hecha' ? `
+  const insignias = ruta.map(e => e.estado === 'hecha' || e.estado === 'sabida' ? `
       <li class="kinsignia" data-dom="${e.unidad.dominio}">
         <svg class="kinsignia__dibujo" viewBox="0 0 120 120" aria-hidden="true"><use href="#il-insignia"/></svg>
         <span class="k-sm">${esc(e.unidad.nombre)}</span>

@@ -572,15 +572,15 @@ function _enumerar(palabras) {
  *
  * @param {{ sabidas: string[], empieza: any }} resultado
  */
-function _resultadoUbicacion({ sabidas, empieza }) {
-  const numeros = UNIDADES.filter(u => sabidas.includes(u.id)).map(u => u.numero);
+function _resultadoUbicacion({ sabidas, empieza }, catalogo = UNIDADES) {
+  const numeros = catalogo.filter(u => sabidas.includes(u.id)).map(u => u.numero);
   const n = numeros.length;
   const titulo = empieza ? `Empiezas en la unidad ${empieza.numero}` : 'Ya sabes lo de toda la ruta';
   const linea = n === 0
     ? 'Empiezas por lo básico, a tu ritmo. Nada está cerrado: puedes abrir cualquier unidad cuando quieras.'
     : `Respondiste bien lo de ${n === 1 ? 'la unidad' : 'las unidades'} ${_enumerar(numeros.map(String))}. ${n === 1 ? 'La marcamos como sabida y sigue abierta' : 'Las marcamos como sabidas y siguen abiertas'} para repasar.`;
   const visibles = Math.max(_FILAS_RESULTADO, (empieza?.numero ?? 0) + 1);
-  const filas = UNIDADES.slice(0, visibles).map(u => {
+  const filas = catalogo.slice(0, visibles).map(u => {
     const [chip, texto] = sabidas.includes(u.id)
       ? ['chip-success', 'Ya lo sabes']
       : u.id === empieza?.id ? ['chip-accent', 'Empiezas aquí'] : ['', 'Después'];
@@ -591,14 +591,16 @@ function _resultadoUbicacion({ sabidas, empieza }) {
           <span class="chip ${chip}">${texto}</span>
         </li>`;
   }).join('');
-  const resto = UNIDADES.slice(visibles);
+  const resto = catalogo.slice(visibles);
   // El primer nombre de cada unidad, en minúscula: "deudas, crédito, invertir e impuestos".
   const restoTxt = resto.length
-    ? `Y ${resto.length} ${resto.length === 1 ? 'unidad' : 'unidades'} más: ${esc(_enumerar(resto.map(u => u.nombre.split(/[\s:]/)[0].toLowerCase())))}.`
+    ? `Y ${resto.length} ${resto.length === 1 ? 'unidad' : 'unidades'} más: ${esc(_enumerar(resto.map(u => u.corto ?? u.nombre.split(/[\s:]/)[0].toLowerCase())))}.`
     : '';
+  // El niño no tiene "Tu progreso": lo sabido es una insignia en "Yo".
+  const donde = _nino ? 'ya es una insignia en Yo' : 'cuenta en Tu progreso';
   const cuentan = n === 0 ? '' : n === 1
-    ? 'La que ya sabes cuenta en Tu progreso.'
-    : `Las ${_CUANTAS[n] ?? n} que ya sabes cuentan en Tu progreso.`;
+    ? `La que ya sabes ${donde}.`
+    : `Las ${_CUANTAS[n] ?? n} que ya sabes ${_nino ? 'ya son insignias en Yo' : 'cuentan en Tu progreso'}.`;
   const nota = [restoTxt, cuentan].filter(Boolean).join(' ');
   return {
     cuerpo: `
@@ -607,7 +609,9 @@ function _resultadoUbicacion({ sabidas, empieza }) {
       <p class="leccion__texto">${linea}</p>
       <ul class="ubicacion-unidades">${filas}</ul>
       ${nota ? `<p class="ubicacion-resto">${nota}</p>` : ''}`,
-    pie: `
+    pie: _nino ? `
+      <button class="kbtn kbtn--block" type="button" data-action="leccion-salir-a" data-vista="aprender">Ver mi ruta</button>
+      ${n ? '<button class="kbtn kbtn--soft kbtn--block" type="button" data-action="ubicacion-desde-1">Prefiero empezar desde la unidad 1</button>' : ''}` : `
       <button class="btn btn-primary leccion__boton" type="button" data-action="ubicacion-inicio">Ir a mi Inicio</button>
       ${n ? '<button class="btn btn-ghost leccion__boton" type="button" data-action="ubicacion-desde-1">Prefiero empezar desde la unidad 1</button>' : ''}`,
   };
@@ -675,7 +679,7 @@ export function htmlLeccion(sesion, leccion, ctx) {
   const paso = pasoActual(sesion, leccion);
   let partes = { cuerpo: '', pie: '', fb: '' };
   if (ctx.terminada) {
-    partes = ctx.ubicacion ? _resultadoUbicacion(ctx.ubicacion) : _nino ? _cierreNino(ctx) : _pasoAplica(ctx);
+    partes = ctx.ubicacion ? _resultadoUbicacion(ctx.ubicacion, ctx.catalogo) : _nino ? _cierreNino(ctx) : _pasoAplica(ctx);
   }
   else if (paso?.tipo === 'concepto') partes = _pasoConcepto(paso, ctx);
   else if (paso?.tipo === 'elegir') partes = _pasoElegir(paso, sesion, ctx);

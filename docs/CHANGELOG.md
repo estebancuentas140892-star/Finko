@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(nino): APR.3f, las unidades 2 a 8 del niño y su ubicación · 2026-10-25
+
+[ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md) D6 y D9; ficha [`contexto/nino.md`](contexto/nino.md). SW v609.
+
+- **La ruta del niño completa**: lo que necesito y lo que quiero (con el clasificar de dos botones del diseño), mi alcancía y mi meta, ahorrar poco a poco, gastar con un plan, compartir y ayudar, guardar para lo que no esperas y por qué crece mi dinero (el premio por ahorrar como interés que se ve). Tres lecciones por unidad, cada una cierra con "Úsalo de verdad".
+- **Voz del niño medida**: un test exige frases de hasta 10 palabras en todo el contenido del niño, tarjetas incluidas.
+- **Desde los 10 años, tres preguntas antes de empezar** (D9): Inicio y Aprender las ofrecen una vez; lo que responde bien queda como "Ya lo sabes", cuenta como hecho en la ruta en orden y es insignia en "Yo". De 7 a 9 años la ruta empieza en la unidad 1. "Prefiero empezar desde la unidad 1" también vale para el niño.
+- **Falta la revisión pedagógica** de las ocho unidades del niño, como las del adulto: es la aceptación de APR.3f.
+
 ### feat(nino): APR.3e, el tutor en Ajustes, Familia · 2026-10-25
 
 [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md) D2 a D4; fichas [`contexto/nino.md`](contexto/nino.md) y [`contexto/gastos.md`](contexto/gastos.md). SW v608.

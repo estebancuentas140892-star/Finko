@@ -244,3 +244,24 @@ test.describe('APR.3e - el tutor en Ajustes, Familia', () => {
   });
 });
 
+test.describe('APR.3f - la ruta completa del niño', () => {
+  test('desde los 10 años, tres preguntas ubican al niño y lo sabido cuenta como hecho', async ({ page }) => {
+    const mateo = { id: 'n-mateo', nombre: 'Mateo', edad: 11, dibujo: 'balon', teNombra: 'Mamá', creado: '2026-10-25' };
+    await sembrarSiVacio(page, estadoBase({ perfil: { nombre: 'Esteban', smmlv: 1750905 }, config: conCandado(), perfiles: [mateo] }));
+    await page.goto('/#dash');
+    await page.locator('#quien-usa[data-open] [data-role="nino"]').click();
+    await expect(page.locator('#nino-main')).toContainText('Antes de empezar, tres preguntas');
+    await page.click('#nino-main [data-action="ubicacion-abrir"]');
+    await expect(page.locator('.leccion__cuenta')).toHaveText('1 de 3');
+    for (const idx of ['0', '1', '-1']) {
+      await page.click(`[data-action="leccion-elegir"][data-idx="${idx}"]`);
+      await page.click('.leccion-fb [data-action="leccion-continuar"]');
+    }
+    await expect(page.locator('#leccion-titulo')).toHaveText('Empiezas en la unidad 3');
+    await page.click('[data-action="leccion-salir-a"][data-vista="aprender"]');
+    await expect(page.locator('#nino-main')).toContainText('2 de 8 unidades');
+    await expect(page.locator('#nino-main')).toContainText('Unidad 3 · vas aquí');
+    await expect.poll(async () => (await leerEstado(page)).perfiles?.[0]?.aprende?.sabidas).toEqual(['k1', 'k2']);
+  });
+});
+

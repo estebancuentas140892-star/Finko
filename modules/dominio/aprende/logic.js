@@ -128,14 +128,15 @@ export function siguienteLeccion(aprende) {
  *
  * @param {{ pasos: any[] }} prueba
  * @param {Sesion} sesion
+ * @param {Unidad[]} [catalogo] - la ruta del adulto o la del niño.
  * @returns {{ sabidas: string[], empieza: Unidad | null }}
  */
-export function resultadoUbicacion(prueba, sesion) {
+export function resultadoUbicacion(prueba, sesion, catalogo = UNIDADES) {
   const respuestas = sesion?.respuestas ?? {};
   const sabidas = prueba.pasos
     .map((p, i) => (respuestas[i] === true ? p.unidad : null))
-    .filter(id => UNIDADES.some(u => u.id === id));
-  const empieza = UNIDADES.find(u => !sabidas.includes(u.id)) ?? null;
+    .filter(id => catalogo.some(u => u.id === id));
+  const empieza = catalogo.find(u => !sabidas.includes(u.id)) ?? null;
   return { sabidas, empieza };
 }
 

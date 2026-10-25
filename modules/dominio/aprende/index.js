@@ -25,7 +25,7 @@ import { topeHormiga, limiteHormiga } from '../../infra/hormiga.js';
 import { navigate } from '../../infra/router.js';
 import { perfilActivo, guardarAprendeNino, saldosFrascos } from '../../infra/perfiles.js';
 import {
-  unidadDeLeccion, metaLeccion, leccionDisponible, normalizarAprende,
+  unidadDeLeccion, metaLeccion, leccionDisponible, normalizarAprende, UNIDADES, UNIDADES_NINO,
   crearSesion, pasoActual, responderElegir, clasificarTarjeta, seguirClasificando,
   cambiarControl, moverItem, comprobarOrden, avanzar, pasoParaRetomar,
   registrarLeccionHecha, unidadTerminada, siguientePaso, registrarSemana,
@@ -50,6 +50,13 @@ const _CONTENIDO = {
   u9: () => import('./lecciones/u9.js'),
   // Ruta del niño (APR.3c): el contenido llega por unidad (APR.3f).
   k1: () => import('./lecciones/nino/k1.js'),
+  k2: () => import('./lecciones/nino/k2.js'),
+  k3: () => import('./lecciones/nino/k3.js'),
+  k4: () => import('./lecciones/nino/k4.js'),
+  k5: () => import('./lecciones/nino/k5.js'),
+  k6: () => import('./lecciones/nino/k6.js'),
+  k7: () => import('./lecciones/nino/k7.js'),
+  k8: () => import('./lecciones/nino/k8.js'),
 };
 
 /** El progreso de quien usa Finko: el del niño activo o el del adulto. */
@@ -66,6 +73,11 @@ function _guardarProgreso(aprende) {
 
 /** La prueba de ubicación (D9): contenido aparte, se carga al abrirla. */
 const _cargarUbicacion = () => import('./lecciones/ubicacion.js');
+/** La del niño, solo desde los 10 años (ADR 093 D9). */
+const _cargarUbicacionNino = () => import('./lecciones/nino/ubicacion.js');
+
+/** El catálogo de quien usa Finko: la ruta del niño o la del adulto. */
+const _catalogo = () => (perfilActivo() ? UNIDADES_NINO : UNIDADES);
 
 /** Distancia horizontal (px) que convierte un arrastre de tarjeta en respuesta. */
 const _UMBRAL_DESLIZAR = 80;
@@ -172,8 +184,8 @@ function _contexto(entrada) {
   if (_esUbicacion) {
     return {
       eyebrow: 'Prueba de ubicación', tope: _tope(), terminada: _terminada, entrada,
-      valores: _VALORES_LEGALES, sinRepetir: true,
-      ubicacion: _terminada ? resultadoUbicacion(_leccion, _sesion) : null,
+      valores: _VALORES_LEGALES, sinRepetir: true, nino: Boolean(perfilActivo()), catalogo: _catalogo(),
+      ubicacion: _terminada ? resultadoUbicacion(_leccion, _sesion, _catalogo()) : null,
     };
   }
   const unidad = unidadDeLeccion(_leccion.id);
@@ -263,8 +275,8 @@ function _terminar() {
 
 /** La prueba terminó: marca lo que ya sabes y dice dónde empiezas (D9). */
 function _terminarUbicacion() {
-  const { sabidas, empieza } = resultadoUbicacion(_leccion, _sesion);
-  S.aprende = aplicarUbicacion(S.aprende, sabidas, hoy());
+  const { sabidas, empieza } = resultadoUbicacion(_leccion, _sesion, _catalogo());
+  _guardarProgreso(aplicarUbicacion(_progreso(), sabidas, hoy()));
   save();
   EventBus.emit('state:change', { section: 'aprende' });
   _terminada = true;
@@ -288,17 +300,19 @@ function _mostrar(leccion, desde, esUbicacion) {
 }
 
 async function _abrirUbicacion() {
-  const prueba = (await _cargarUbicacion())?.default;
+  const prueba = (await (perfilActivo() ? _cargarUbicacionNino() : _cargarUbicacion()))?.default;
   if (prueba) _mostrar(prueba, 0, true);
 }
 
 /** "Prefiero empezar desde la unidad 1" (D9): deshace lo que marcó la prueba. */
 function _empezarDesdeUno() {
-  S.aprende = { ...normalizarAprende(S.aprende), sabidas: [] };
+  const nino = Boolean(perfilActivo());
+  _guardarProgreso({ ...normalizarAprende(_progreso()), sabidas: [] });
   save();
   EventBus.emit('state:change', { section: 'aprende' });
   _salir();
-  navigate('aprende');
+  if (nino) EventBus.emit('nino:vista', { vista: 'aprender' });
+  else navigate('aprende');
 }
 
 async function _abrir(el) {
