@@ -30,14 +30,16 @@ test.describe('APR.1a - Aprende', () => {
     await page.waitForSelector('#sec-aprende.active', { timeout: 10_000 });
   });
 
-  test('la ruta recomienda la unidad 3 y su lección 1', async ({ page }) => {
-    await expect(page.locator('.aprende-unidad--actual')).toContainText('Unidad 3 · vas aquí');
+  test('la ruta recomienda la unidad 1 y su lección 1', async ({ page }) => {
+    await expect(page.locator('.aprende-unidad--actual')).toContainText('Unidad 1 · vas aquí');
     await expect(page.locator('.aprende-unidad__cta')).toHaveText('Empezar la lección 1');
     await expect(page.locator('.aprende-grupo')).toContainText('Fondo de emergencia');
   });
 
   test('una lección completa: casi, clasificar, control y Aplícalo con tus datos', async ({ page }) => {
-    // Nada se bloquea (D8): la lección 2 se abre desde su fila sin hacer la 1.
+    // Nada se bloquea (D8): la unidad 3 se despliega sin hacer la 1 ni la 2,
+    // y su lección 2 se abre desde su fila sin hacer la 1.
+    await page.click('.aprende-fila__boton[data-id="u3"]');
     await page.click('.aprende-paso__boton[data-id="u3-l2"]');
     const leccion = page.locator('#modal-leccion[data-open]');
     await expect(leccion).toHaveCount(1);
@@ -94,23 +96,24 @@ test.describe('APR.1a - Aprende', () => {
   test('salir guarda el avance y la ruta ofrece seguir donde quedó', async ({ page }) => {
     await page.click('.aprende-unidad__cta');
     await page.click('.leccion__pie [data-action="leccion-continuar"]');
-    await page.click('[data-action="leccion-elegir"][data-idx="2"]');
+    // Una respuesta fallada no cuenta como vista: se retoma en esa pregunta.
+    await page.click('[data-action="leccion-elegir"][data-idx="0"]');
     await page.click('.leccion-fb [data-action="leccion-continuar"]');
     await page.click('[data-action="leccion-salir"]');
     await expect(page.locator('#modal-leccion[data-open]')).toHaveCount(0);
     await expect(page.locator('.aprende-unidad__cta')).toHaveText('Seguir la lección 1');
-    await expect.poll(async () => (await leerEstado(page)).aprende?.enCurso?.paso).toBe(2);
+    await expect.poll(async () => (await leerEstado(page)).aprende?.enCurso).toEqual({ id: 'u1-l1', paso: 1 });
 
     await page.reload();
     await page.waitForSelector('#sec-aprende.active', { timeout: 10_000 });
     await page.click('.aprende-unidad__cta');
-    await expect(page.locator('.leccion__cuenta')).toHaveText('3 de 4');
+    await expect(page.locator('.leccion__cuenta')).toHaveText('2 de 3');
   });
 
   test('terminar la unidad celebra con la insignia y la ruta lo dice', async ({ page }) => {
     // parchar corre antes de cada carga: el flush al salir de la página no lo pisa.
     await parchar(page, {
-      aprende: { hechas: { 'u3-l1': '2026-10-01', 'u3-l2': '2026-10-01', 'u3-l3': '2026-10-01' }, sabidas: [], semanas: [], enCurso: null },
+      aprende: { hechas: { 'u3-l1': '2026-10-01', 'u3-l2': '2026-10-01', 'u3-l3': '2026-10-01' }, sabidas: ['u1', 'u2'], semanas: [], enCurso: null },
     });
     await page.reload();
     await page.waitForSelector('#sec-aprende.active', { timeout: 10_000 });
@@ -176,8 +179,8 @@ test.describe('APR.1c - el bloque Inicio en móvil', () => {
   test('Tu siguiente paso ocupa la celda de la tarjeta de logros y abre la lección', async ({ page }) => {
     const paso = page.locator('#panel-siguiente-paso');
     await expect(paso).toBeVisible();
-    await expect(paso).toContainText('Lo pequeño también suma');
-    await expect(paso).toContainText('Este mes hiciste 1 compra');
+    await expect(paso).toContainText('Cuánto tienes de verdad');
+    await expect(paso).toContainText('Termina en Mis cuentas, con tus saldos.');
     await paso.locator('[data-action="leccion-abrir"]').click();
     await expect(page.locator('#modal-leccion[data-open]')).toHaveCount(1);
   });

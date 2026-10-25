@@ -32,6 +32,8 @@ import { renderRuta, htmlLeccion, htmlResultadoControl, htmlSiguientePaso } from
 
 /** Cargadores del contenido por unidad: un módulo por unidad, bajo demanda. */
 const _CONTENIDO = {
+  u1: () => import('./lecciones/u1.js'),
+  u2: () => import('./lecciones/u2.js'),
   u3: () => import('./lecciones/u3.js'),
   u4: () => import('./lecciones/u4.js'),
 };

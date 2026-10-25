@@ -520,6 +520,11 @@ export function htmlLeccion(sesion, leccion, ctx) {
  * @param {number} tope
  * @returns {string} HTML; `''` si no hay paso.
  */
+/** "Termina en X, con tus datos.", sin repetir el "con tus" que ya traiga X. */
+function _gancho(termina) {
+  return /, con tus /.test(termina) ? `Termina en ${esc(termina)}.` : `Termina en ${esc(termina)}, con tus datos.`;
+}
+
 export function htmlSiguientePaso(paso, tope) {
   if (!paso) return '';
   const cabeza = (etiqueta) => `
@@ -531,7 +536,7 @@ export function htmlSiguientePaso(paso, tope) {
     const { leccion, unidad, hormiga } = paso;
     const gancho = unidad.id === 'u3' && hormiga.cuantos > 0
       ? `Este mes hiciste ${hormiga.cuantos} ${hormiga.cuantos === 1 ? 'compra' : 'compras'} de ${f(tope)} o menos. ¿Sabes cuánto suman juntas?`
-      : `Termina en ${esc(leccion.termina ?? unidad.termina)}, con tus datos.`;
+      : _gancho(leccion.termina ?? unidad.termina);
     return `
       <div class="siguiente-paso" data-dom="${unidad.dominio}">
         ${cabeza('Tu siguiente paso')}

@@ -12,6 +12,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(aprende): APR.2c, las unidades 1 y 2 · 2026-10-24
+
+[ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D8; ficha [`contexto/aprende.md`](contexto/aprende.md). SW v599.
+
+- **Unidad 1, Tu dinero hoy**: cuánto tienes de verdad, dónde está tu dinero y lo que entra y lo que sale (control de dinero libre por día). Su Aplícalo suma tus cuentas y descuenta lo comprometido del mes, en Mis cuentas.
+- **Unidad 2, Repartir tu ingreso**: la regla 50/30/20 (control con tu ingreso), necesidad o gusto (clasificar) y págate primero (ordenar). Su Aplícalo reparte tu ingreso del mes, en Repartir ingreso.
+- **La ruta empieza en la unidad 1**: es la primera con contenido, así que "vas aquí" y "Tu siguiente paso" arrancan ahí. "Tu siguiente paso" ya no dice "con tus saldos, con tus datos" cuando la lección nombra sus datos.
+
 ### feat(aprende): APR.2c, la unidad 4 y un Aplícalo para cada unidad · 2026-10-24
 
 [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D7 y D8; ficha [`contexto/aprende.md`](contexto/aprende.md). Primera rebanada de la Fase 2.

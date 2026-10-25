@@ -23,13 +23,15 @@ import {
   seguirClasificando, cambiarControl, moverItem, comprobarOrden, avanzar,
   pasoParaRetomar, mezclarSinAcertar, CALCULOS, RESULTADOS, limiteSugerido, aplicaHormiga,
 } from '../../modules/dominio/aprende/logic.js';
-import { htmlRuta, htmlLeccion } from '../../modules/dominio/aprende/view.js';
+import { htmlRuta, htmlLeccion, htmlSiguientePaso } from '../../modules/dominio/aprende/view.js';
+import u1 from '../../modules/dominio/aprende/lecciones/u1.js';
+import u2 from '../../modules/dominio/aprende/lecciones/u2.js';
 import u3 from '../../modules/dominio/aprende/lecciones/u3.js';
 import u4 from '../../modules/dominio/aprende/lecciones/u4.js';
 import { APLICA, modeloAplica, mesesEnPalabras, gastosFijosMensuales, tasaMensualDeuda } from '../../modules/dominio/aprende/aplica.js';
 
 /** Contenido escrito, por unidad. Cada unidad nueva se suma acá. */
-const CONTENIDO = { u3, u4 };
+const CONTENIDO = { u1, u2, u3, u4 };
 /** Todas las lecciones escritas, en un solo mapa id → lección. */
 const LECCIONES = Object.assign({}, ...Object.values(CONTENIDO));
 
@@ -549,15 +551,23 @@ describe('contenido de las lecciones', () => {
 describe('vista', () => {
   it('la ruta pinta la unidad actual con su botón y las demás en "Después"', () => {
     const html = htmlRuta(undefined);
-    expect(html).toContain('Unidad 3 · vas aquí');
-    expect(html).toMatch(/data-action="leccion-abrir"\s+data-id="u3-l1"/);
+    expect(html).toContain('Unidad 1 · vas aquí');
+    expect(html).toMatch(/data-action="leccion-abrir"\s+data-id="u1-l1"/);
     expect(html).toContain('Empezar la lección 1');
     expect(html).toContain('Fondo de emergencia');
     expect(html).toContain('En preparación');
   });
 
+  it('Tu siguiente paso no repite "con tus" cuando la lección ya dice con qué datos termina', () => {
+    const u1Meta = UNIDADES[0];
+    const conDatos = htmlSiguientePaso({ tipo: 'leccion', leccion: u1Meta.lecciones[0], unidad: u1Meta, hormiga: { cuantos: 0 } }, 20_000);
+    expect(conDatos).toContain('Termina en Mis cuentas, con tus saldos.');
+    const sinDatos = htmlSiguientePaso({ tipo: 'leccion', leccion: u1Meta.lecciones[1], unidad: u1Meta, hormiga: { cuantos: 0 } }, 20_000);
+    expect(sinDatos).toContain('Termina en Mis cuentas, con tus datos.');
+  });
+
   it('con la lección guardada a medias, el botón dice "Seguir"', () => {
-    expect(htmlRuta({ enCurso: { id: 'u3-l1', paso: 2 } })).toContain('Seguir la lección 1');
+    expect(htmlRuta({ enCurso: { id: 'u1-l1', paso: 1 } })).toContain('Seguir la lección 1');
   });
 
   it('un error se explica con "Casi" en el tono informativo, nunca en rojo', () => {

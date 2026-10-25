@@ -26,7 +26,7 @@
 | Aritmética de los pasos "control" y su lectura | `modules/dominio/aprende/logic.js` | `CALCULOS`, `RESULTADOS` | |
 | El Aplícalo de cada unidad: un modelo que la vista pinta tal cual | `modules/dominio/aprende/aplica.js` | `APLICA`, `modeloAplica()` | |
 | Aplícalo de la unidad 3 y límite sugerido | `modules/dominio/aprende/logic.js` | `aplicaHormiga()`, `limiteSugerido()` | ~499 |
-| Contenido de la unidad 3 (solo datos, `{tope}` como marcador) | `modules/dominio/aprende/lecciones/u3.js` | `'u3-l2'` | ~13 |
+| Contenido de cada unidad (solo datos; `{tope}` y los valores legales como marcadores) | `modules/dominio/aprende/lecciones/uN.js` | `'uN-lM'` | |
 | HTML de la ruta | `modules/dominio/aprende/view.js` | `htmlRuta()`, `renderRuta()` | ~102 |
 | HTML de cada paso y del cierre | `modules/dominio/aprende/view.js` | `htmlLeccion()`, `_pasoAplica()`, `htmlResultadoControl()` | ~421 |
 | Carga del contenido con `import()` | `modules/dominio/aprende/index.js` | `_CONTENIDO` | ~30 |
@@ -60,6 +60,7 @@
 
 **Cambios realizados**:
 
+- 2026-10-24 (APR.2c, unidades 1 y 2): Tu dinero hoy y Repartir tu ingreso; la ruta empieza en la unidad 1.
 - 2026-10-24 (APR.2c, unidad 4): Fondo de emergencia, cuatro lecciones; el Aplícalo pasa a `aplica.js` (un cálculo por unidad) y los controles a `RESULTADOS`; marcadores legales en los textos.
 - 2026-10-24 (APR.1c y APR.1d): bloque Inicio de tres lentes, "Tu siguiente paso", catálogo a `infra/ruta-aprende.js`, semanas activas al registrar.
 - 2026-10-24 (APR.1b): lecciones 1, 3 y 4 de la unidad 3, insignia de unidad, unidades desplegables en la ruta, Aplícalo que pone el límite de gastos pequeños.

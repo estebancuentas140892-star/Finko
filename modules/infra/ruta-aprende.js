@@ -32,8 +32,24 @@
 
 /** @type {Unidad[]} */
 export const UNIDADES = [
-  { id: 'u1', numero: 1, nombre: 'Tu dinero hoy', dominio: 'tesoreria', seccion: 'tesoreria', termina: 'Mis cuentas', lecciones: [] },
-  { id: 'u2', numero: 2, nombre: 'Repartir tu ingreso', dominio: 'tesoreria', seccion: 'tesoreria', termina: 'Repartir ingreso', lecciones: [] },
+  {
+    id: 'u1', numero: 1, nombre: 'Tu dinero hoy', dominio: 'tesoreria', seccion: 'tesoreria', termina: 'Mis cuentas',
+    aprendiste: 'Ahora sabes cuánto tienes de verdad y dónde está.',
+    lecciones: [
+      { id: 'u1-l1', titulo: 'Cuánto tienes de verdad', minutos: 3, termina: 'Mis cuentas, con tus saldos' },
+      { id: 'u1-l2', titulo: 'Dónde está tu dinero', minutos: 3, termina: 'Mis cuentas' },
+      { id: 'u1-l3', titulo: 'Lo que entra y lo que sale', minutos: 4, termina: 'Mis cuentas' },
+    ],
+  },
+  {
+    id: 'u2', numero: 2, nombre: 'Repartir tu ingreso', dominio: 'tesoreria', seccion: 'tesoreria', termina: 'Repartir ingreso',
+    aprendiste: 'Ahora sabes repartir tu ingreso antes de gastarlo.',
+    lecciones: [
+      { id: 'u2-l1', titulo: 'La regla 50/30/20', minutos: 3, termina: 'Repartir ingreso, con tu ingreso' },
+      { id: 'u2-l2', titulo: 'Necesidad o gusto', minutos: 3, termina: 'Repartir ingreso' },
+      { id: 'u2-l3', titulo: 'Págate primero', minutos: 3, termina: 'Repartir ingreso' },
+    ],
+  },
   {
     id: 'u3', numero: 3, nombre: 'Gastos hormiga y límites', dominio: 'presupuesto', seccion: 'presupuesto', termina: 'Límites',
     aprendiste: 'Ahora sabes ver lo pequeño y ponerle un límite que sí puedas cumplir.',
