@@ -150,3 +150,45 @@ test.describe('APR.3c - la app del niño', () => {
   });
 });
 
+test.describe('APR.3d - la alcancía y la meta del niño', () => {
+  test('guarda, no deja gastar de más y crea una meta que responde en semanas', async ({ page }) => {
+    await sembrarSiVacio(page, estadoBase({ perfil: { nombre: 'Esteban', smmlv: 1750905 }, config: conCandado(), perfiles: [SOFIA] }));
+    await page.goto('/#dash');
+    await page.locator('#quien-usa[data-open] [data-role="nino"]').click();
+    await page.click('#nino-nav [data-vista="alcancia"]');
+
+    // Guardé: entra al frasco elegido, Ahorrar por defecto.
+    await page.click('[data-action="nino-mov"][data-tipo="guarde"]');
+    const hoja = page.locator('#modal-nino[data-open]');
+    await expect(hoja).toContainText('¿Cuánto guardaste?');
+    await page.click('[data-action="nino-monto"][data-monto="10000"]');
+    await page.fill('#nino-nota', 'Regalo de la abuela');
+    await page.click('#form-nino-mov [type="submit"]');
+    await expect(hoja).toHaveCount(0);
+    await expect(page.locator('.jar[data-frasco="ahorrar"] .jar__monto')).toHaveText('$10.000');
+
+    // Gasté: no deja sacar más de lo que hay en Gastar.
+    await page.click('[data-action="nino-mov"][data-tipo="gaste"]');
+    await page.fill('#nino-monto', '2.000');
+    await page.click('#form-nino-mov [type="submit"]');
+    await expect(page.locator('#nino-mov-error')).toHaveText('En Gastar solo tienes $0.');
+    await page.click('#modal-nino [data-action="modal-close"]');
+
+    // La meta responde en semanas mientras el niño elige.
+    await page.click('[data-action="nino-vista"][data-vista="meta"]');
+    await page.locator('.kdibujo:has(input[value="balon"])').click();
+    await page.fill('#nino-meta-nombre', 'balón');
+    await page.fill('#nino-meta-precio', '30.000');
+    await expect(page.locator('#nino-meta-plan')).toContainText('Lo tendrás en 10 semanas.');
+    await page.click('[data-action="nino-meta-semana"][data-paso="1000"]');
+    await expect(page.locator('#nino-meta-plan')).toContainText('Lo tendrás en 7 semanas.');
+    await page.click('#form-nino-meta [type="submit"]');
+    await expect(page.locator('#nino-main')).toContainText('Mi balón · $30.000');
+    await expect(page.locator('#nino-main')).toContainText('Te faltan $20.000.');
+
+    await expect.poll(async () => (await leerEstado(page)).perfiles?.[0]?.metas?.length).toBe(1);
+    const nino = (await leerEstado(page)).perfiles[0];
+    expect(nino.movimientos).toMatchObject([{ frasco: 'ahorrar', monto: 10_000, tipo: 'guarde', nota: 'Regalo de la abuela' }]);
+  });
+});
+

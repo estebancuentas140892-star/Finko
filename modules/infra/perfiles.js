@@ -167,6 +167,23 @@ export function guardarAprendeNino(id, aprende) {
   S.perfiles = S.perfiles.map(p => (p?.id === id ? { ...p, aprende } : p));
 }
 
+/**
+ * Cambia el perfil de un niño en `S.perfiles` con `cambio(perfil)`, que
+ * recibe el perfil normalizado y devuelve el nuevo (no lo muta). Quien llama
+ * hace `save()` y emite `state:change`.
+ *
+ * @param {string} id
+ * @param {(p: PerfilNino) => PerfilNino} cambio
+ */
+export function actualizarNino(id, cambio) {
+  if (!Array.isArray(S.perfiles)) return;
+  S.perfiles = S.perfiles.map(p => {
+    if (p?.id !== id) return p;
+    const actual = normalizarPerfil(p);
+    return actual ? cambio(actual) : p;
+  });
+}
+
 // ── SESIÓN: QUIÉN USA FINKO AHORA ────────────────────────────────
 
 /** Id del niño activo; `null` es el adulto. Solo en memoria (ver arriba). */

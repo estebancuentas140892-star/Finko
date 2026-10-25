@@ -7,8 +7,14 @@
 import { describe, it, expect } from 'vitest';
 import { UNIDADES_NINO } from '../../modules/infra/ruta-aprende.js';
 import { normalizarPerfil, saldosFrascos } from '../../modules/infra/perfiles.js';
-import { estadoRutaNino, siguienteLeccionNino, unidadesHechasNino, VISTAS_NINO } from '../../modules/dominio/nino/logic.js';
-import { htmlBarraNino, htmlInicioNino, htmlRutaNino, htmlAlcanciaNino, htmlYoNino } from '../../modules/dominio/nino/view.js';
+import {
+  estadoRutaNino, siguienteLeccionNino, unidadesHechasNino, VISTAS_NINO,
+  leerMonto, validarMovimiento, crearMovimientos, metaActiva, planMeta, validarMeta, llenadoFrasco, puedeMover,
+} from '../../modules/dominio/nino/logic.js';
+import {
+  htmlBarraNino, htmlInicioNino, htmlRutaNino, htmlAlcanciaNino, htmlYoNino,
+  htmlMovimientoNino, htmlMetaNino, htmlPlanMeta, htmlTarjetaMeta,
+} from '../../modules/dominio/nino/view.js';
 import { crearSesion, avanzar, responderElegir, unidadDeLeccion } from '../../modules/dominio/aprende/logic.js';
 import { htmlLeccion } from '../../modules/dominio/aprende/view.js';
 import k1 from '../../modules/dominio/aprende/lecciones/nino/k1.js';
@@ -74,11 +80,11 @@ describe('las cuatro pantallas del niño (D9)', () => {
       { frasco: 'compartir', monto: -1_000 }, { frasco: 'otro', monto: 99 },
     ] });
     expect(saldosFrascos(p)).toEqual({ ahorrar: 10_000, gastar: 5_000, compartir: 0, total: 15_000 });
-    const html = htmlAlcanciaNino(p);
+    const html = htmlAlcanciaNino(p, '2026-10-25');
     expect(html).toContain('$15.000');
     expect(html).toContain('Ahorrar');
     expect(html).toContain('href="#il-frasco"');
-    expect(htmlAlcanciaNino(perfil())).toContain('Cuando recibas dinero, aquí lo verás.');
+    expect(htmlAlcanciaNino(perfil(), '2026-10-25')).toContain('Cuando recibas dinero, toca Guardé.');
   });
 
   it('Yo muestra una insignia por unidad terminada y "Cambiar de perfil"', () => {
@@ -166,3 +172,109 @@ describe('contenido de la unidad 1 del niño (D6)', () => {
     }
   });
 });
+
+describe('la alcancía anota, no mueve dinero (APR.3d, D3 y D9)', () => {
+  const conDinero = () => perfil({}, { movimientos: [{ frasco: 'ahorrar', monto: 27_000 }, { frasco: 'gastar', monto: 6_000 }, { frasco: 'compartir', monto: 3_000 }] });
+  let n = 0;
+  const id = () => `x${++n}`;
+
+  it('lee montos como los escribe un niño', () => {
+    expect(leerMonto('5.000')).toBe(5_000);
+    expect(leerMonto('12 000')).toBe(12_000);
+    expect(leerMonto('')).toBe(0);
+  });
+
+  it('"Guardé" entra al frasco que elija; "Gasté" y "Compartí" salen del suyo', () => {
+    expect(crearMovimientos({ tipo: 'guarde', monto: 5_000, frasco: 'ahorrar', nota: ' Regalo ' }, '2026-10-25', id))
+      .toMatchObject([{ frasco: 'ahorrar', monto: 5_000, tipo: 'guarde', nota: 'Regalo', fecha: '2026-10-25' }]);
+    expect(crearMovimientos({ tipo: 'gaste', monto: 3_000 }, '2026-10-25', id)).toMatchObject([{ frasco: 'gastar', monto: -3_000 }]);
+    expect(crearMovimientos({ tipo: 'comparti', monto: 1_000 }, '2026-10-25', id)).toMatchObject([{ frasco: 'compartir', monto: -1_000 }]);
+  });
+
+  it('mover deja dos movimientos con el mismo par: sale de uno y entra al otro', () => {
+    const [sale, entra] = crearMovimientos({ tipo: 'mover', monto: 2_000, desde: 'gastar', hacia: 'ahorrar' }, '2026-10-25', id);
+    expect(sale).toMatchObject({ frasco: 'gastar', monto: -2_000 });
+    expect(entra).toMatchObject({ frasco: 'ahorrar', monto: 2_000 });
+    expect(sale.par).toBe(entra.par);
+  });
+
+  it('no deja gastar más de lo que hay, y lo dice en la voz del niño', () => {
+    expect(validarMovimiento({ tipo: 'gaste', monto: 7_000 }, conDinero())).toEqual(['En Gastar solo tienes $6.000.']);
+    expect(validarMovimiento({ tipo: 'gaste', monto: 0 }, conDinero())).toContain('Escribe cuánto dinero.');
+    expect(validarMovimiento({ tipo: 'guarde', monto: 5_000, frasco: 'ahorrar' }, perfil())).toEqual([]);
+    expect(validarMovimiento({ tipo: 'mover', monto: 1_000, desde: 'gastar', hacia: 'gastar' }, conDinero())).toEqual(['Elige dos frascos distintos.']);
+  });
+
+  it('mover entre frascos lo decide el tutor; por defecto, sí', () => {
+    expect(puedeMover(perfil())).toBe(true);
+    const sinMover = perfil({}, { mesada: { puedeMover: false } });
+    expect(puedeMover(sinMover)).toBe(false);
+    expect(validarMovimiento({ tipo: 'mover', monto: 1_000, desde: 'gastar', hacia: 'ahorrar' }, sinMover)).toEqual(['Mover entre frascos no está activo.']);
+  });
+
+  it('la hoja pregunta en la voz del niño y dice cuánto hay en el frasco', () => {
+    const gaste = htmlMovimientoNino('gaste', conDinero());
+    expect(gaste).toContain('¿Cuánto gastaste?');
+    expect(gaste).toContain('En Gastar tienes $6.000.');
+    expect(gaste).toContain('data-monto="5000"');
+    expect(htmlMovimientoNino('guarde', perfil())).toContain('¿En qué frasco?');
+    expect(htmlMovimientoNino('mover', conDinero())).toContain('¿De qué frasco sale?');
+  });
+
+  it('la alcancía ofrece Guardé, Gasté y Compartí, y mover solo si hay dinero y está permitido', () => {
+    const html = htmlAlcanciaNino(conDinero(), '2026-10-25');
+    expect(html).toContain('data-tipo="guarde"');
+    expect(html).toContain('data-tipo="gaste"');
+    expect(html).toContain('data-tipo="comparti"');
+    expect(html).toContain('Mover dinero entre frascos');
+    expect(htmlAlcanciaNino(perfil(), '2026-10-25')).not.toContain('Mover dinero entre frascos');
+  });
+});
+
+describe('la meta del niño responde en semanas y en fecha (APR.3d, D9)', () => {
+  it('con lo que ya tiene en Ahorrar, dice cuántas semanas faltan y para qué día', () => {
+    expect(planMeta({ precio: 32_000, semanal: 4_000, ahorrado: 0, hoyISO: '2026-10-24' }))
+      .toMatchObject({ falta: 32_000, semanas: 8, fechaISO: '2026-12-19' });
+    expect(planMeta({ precio: 45_000, semanal: 4_000, ahorrado: 27_000, hoyISO: '2026-10-24' }))
+      .toMatchObject({ falta: 18_000, semanas: 5, proporcion: 0.6 });
+    expect(planMeta({ precio: 10_000, semanal: 1_000, ahorrado: 12_000, hoyISO: '2026-10-24' }))
+      .toMatchObject({ falta: 0, semanas: 0 });
+    const html = htmlPlanMeta(perfil(), 32_000, 4_000, '2026-10-24');
+    expect(html).toContain('Lo tendrás en 8 semanas.');
+    expect(html).toContain('Para el 19 de diciembre.');
+  });
+
+  it('una meta pide dibujo, nombre, precio y cuánto guarda cada semana', () => {
+    expect(validarMeta({})).toHaveLength(4);
+    expect(validarMeta({ dibujo: 'libro', nombre: 'Libro de dinosaurios', precio: 32_000, semanal: 4_000 })).toEqual([]);
+  });
+
+  it('una meta a la vez; la tarjeta muestra lo que falta y, lograda, "Lo compré"', () => {
+    const meta = { id: 'm1', dibujo: 'balon', nombre: 'balón', precio: 45_000, semanal: 4_000 };
+    const p = perfil({}, { metas: [meta], movimientos: [{ frasco: 'ahorrar', monto: 27_000 }] });
+    expect(metaActiva(p).id).toBe('m1');
+    const html = htmlTarjetaMeta(p, '2026-10-24');
+    expect(html).toContain('Mi balón · $45.000');
+    expect(html).toContain('Te faltan $18.000. Unas 5 semanas.');
+    expect(html).toContain('aria-valuenow="60"');
+    const lista = perfil({}, { metas: [meta], movimientos: [{ frasco: 'ahorrar', monto: 45_000 }] });
+    expect(htmlTarjetaMeta(lista, '2026-10-24')).toContain('Lo compré');
+    expect(htmlTarjetaMeta(perfil(), '2026-10-24')).toContain('Crear una meta');
+    expect(htmlMetaNino(perfil(), {}, '2026-10-24')).toContain('¿Para qué quieres ahorrar?');
+  });
+
+  it('cada frasco se llena contra lo suyo, nunca contra los otros dos (R60)', () => {
+    const meta = { id: 'm1', dibujo: 'balon', nombre: 'balón', precio: 40_000, semanal: 4_000 };
+    const p = perfil({}, {
+      metas: [meta], mesada: { reparto: { gastar: 8_000, compartir: 2_000 } },
+      movimientos: [{ frasco: 'ahorrar', monto: 20_000 }, { frasco: 'gastar', monto: 4_000 }, { frasco: 'compartir', monto: 2_000 }],
+    });
+    expect(llenadoFrasco('ahorrar', p)).toBe(0.5);
+    expect(llenadoFrasco('gastar', p)).toBe(0.5);
+    expect(llenadoFrasco('compartir', p)).toBe(1);
+    // Sin con qué medir: un fondo visible si hay dinero, nada si no.
+    expect(llenadoFrasco('gastar', perfil({}, { movimientos: [{ frasco: 'gastar', monto: 1_000 }] }))).toBe(0.15);
+    expect(llenadoFrasco('gastar', perfil())).toBe(0);
+  });
+});
+

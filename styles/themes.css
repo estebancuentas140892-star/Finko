@@ -125,7 +125,7 @@ body.kid {
   --fk-kid-compartir-text: #f27ccb;
 
   --fk-il-line:  #f1f3fb;
-  --fk-il-paper: #f1f3fb;
+  --fk-il-paper: #3a4466;   /* un paso más oscuro que el contorno, ver tokens.css */
   --fk-il-shade: rgba(255, 255, 255, 0.10);
 }
 

@@ -115,6 +115,8 @@ describe('contraste AA del modo niño en los dos temas (D5)', () => {
       }
       expect(contraste(t['--fk-kid-on-primary'], t['--fk-kid-primary']), 'texto del botón').toBeGreaterThanOrEqual(4.5);
       expect(contraste(t['--fk-kid-frai'], t['--fk-bg-base']), 'Frai sobre el lienzo').toBeGreaterThanOrEqual(3);
+      // Lo que se dibuja con tinta sobre papel (el balón) tiene que verse.
+      expect(contraste(t['--fk-il-line'], t['--fk-il-paper']), 'contorno sobre papel').toBeGreaterThanOrEqual(3);
     });
   }
 

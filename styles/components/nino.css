@@ -560,3 +560,147 @@ body.kid .leccion-clasificar__boton { min-height: var(--fk-kid-target); font-siz
 .leccion-nino__usalo-titulo { display: flex; align-items: center; gap: var(--fk-space-2); }
 .leccion-nino__usalo-titulo .icon { width: var(--fk-kid-icon); height: var(--fk-kid-icon); color: var(--dt); }
 .leccion-nino__usalo-linea { color: var(--fk-text-primary); }
+
+/* ── ALCANCÍA Y METAS DEL NIÑO (APR.3d, ADR 093 D9) ──────────────
+   "Guardé", "Gasté" y "Compartí" en el color de su frasco, la meta con su
+   barra y la hoja para anotar. Todo control mide al menos 48 px. */
+.knino-titulo-sm { display: flex; align-items: center; gap: var(--fk-space-2); }
+.knino-titulo-sm .icon { width: var(--fk-kid-icon); height: var(--fk-kid-icon); color: var(--fk-kid-ahorrar-text); }
+.knino-mini { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.knino-mini li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  border-radius: var(--fk-kid-radius-md);
+  background: color-mix(in srgb, var(--d) 12%, var(--fk-bg-surface));
+}
+.knino-mini span { display: flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 800; color: var(--dt); }
+.knino-mini .icon { width: 18px; height: 18px; }
+.knino-mini strong { font-size: 18px; color: var(--fk-text-primary); font-variant-numeric: tabular-nums; }
+
+.knino-acciones { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.kbtn--dom {
+  padding: 0 10px;
+  border: 2px solid color-mix(in srgb, var(--d) 55%, transparent);
+  background: color-mix(in srgb, var(--d) 16%, var(--fk-bg-surface));
+  color: var(--fk-text-primary);
+  box-shadow: 0 var(--fk-kid-depth) 0 color-mix(in srgb, var(--d) 55%, transparent);
+}
+.kbtn--dom:active { box-shadow: 0 calc(var(--fk-kid-depth) - 2px) 0 color-mix(in srgb, var(--d) 55%, transparent); }
+.kbtn--dom .icon { color: var(--dt); width: 24px; height: 24px; }
+/* Tres botones en fila: el ícono va arriba del nombre para que quepa
+   "Compartí" a 320 px sin cortarse. */
+.knino-acciones .kbtn { flex-direction: column; gap: 4px; min-height: 68px; padding: 8px 4px; font-size: 16px; }
+
+.knino-quitar {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  min-height: var(--fk-kid-target-min);
+  padding: 0 var(--fk-space-3);
+  border: 0;
+  background: transparent;
+  color: var(--fk-text-secondary);
+  font: inherit;
+  font-size: var(--fk-kid-text-sm);
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.knino-mover { text-decoration: none; }
+.knino-mover .icon { width: 22px; height: 22px; }
+
+.knino-meta { text-align: left; color: inherit; font: inherit; }
+.knino-meta--nueva { flex-direction: row; align-items: center; gap: 14px; cursor: pointer; }
+.knino-meta--nueva > .icon { width: 24px; height: 24px; color: var(--fk-text-muted); }
+.knino-meta__lista { color: var(--fk-kid-ahorrar-text); font-weight: 800; }
+.knino-meta__acciones { margin-top: var(--fk-space-2); }
+.kprog { height: 14px; border-radius: var(--fk-radius-full); background: var(--fk-bg-elevated); overflow: hidden; }
+.kprog > span { display: block; height: 100%; border-radius: inherit; background: var(--d, var(--fk-kid-primary)); }
+
+/* La hoja y los formularios del niño. */
+.kmodal { color: var(--fk-text-primary); }
+.kform { display: flex; flex-direction: column; gap: var(--fk-space-4); }
+.kform h2:focus { outline: none; }
+.kfield { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; border: 0; }
+.kfield__etiqueta { display: flex; align-items: center; gap: 8px; margin: 0; padding: 0; font-size: var(--fk-kid-text-base); font-weight: 700; color: var(--fk-text-primary); }
+.kfield__etiqueta .icon { width: 24px; height: 24px; color: var(--fk-text-secondary); }
+.kin {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--fk-kid-target);
+  padding: 0 16px;
+  border-radius: var(--fk-kid-radius-md);
+  border: 2px solid var(--fk-border-default);
+  background: var(--fk-bg-elevated);
+  font-size: 20px;
+  font-weight: 700;
+}
+.kin:focus-within { border-color: var(--fk-kid-primary); }
+.kin input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--fk-text-primary); font: inherit; outline: none; }
+.kchips { display: flex; flex-wrap: wrap; gap: 8px; }
+.kchip--boton { min-height: var(--fk-kid-target-min); padding: 0 14px; border: 0; font: inherit; font-size: 16px; font-weight: 800; color: var(--fk-text-primary); cursor: pointer; }
+.kfrascos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.kfrasco {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: var(--fk-kid-target);
+  padding: 10px 6px;
+  border-radius: var(--fk-kid-radius-md);
+  border: 2px solid var(--fk-border-default);
+  background: var(--fk-bg-surface);
+  color: var(--dt);
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.kfrasco[data-frasco="ahorrar"]   { --d: var(--fk-kid-ahorrar);   --dt: var(--fk-kid-ahorrar-text); }
+.kfrasco[data-frasco="gastar"]    { --d: var(--fk-kid-gastar);    --dt: var(--fk-kid-gastar-text); }
+.kfrasco[data-frasco="compartir"] { --d: var(--fk-kid-compartir); --dt: var(--fk-kid-compartir-text); }
+.kfrasco .icon { width: 24px; height: 24px; }
+.kfrasco:has(input:checked) { border-color: var(--d); background: color-mix(in srgb, var(--d) 16%, var(--fk-bg-surface)); }
+.kfrasco:has(input:focus-visible) { outline: 3px solid var(--fk-border-focus); outline-offset: 2px; }
+.kdibujos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.kdibujo {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 72px;
+  border-radius: var(--fk-kid-radius-md);
+  border: 2px solid var(--fk-border-default);
+  background: var(--fk-bg-surface);
+  cursor: pointer;
+}
+.kdibujo:has(input:checked) { border: 3px solid var(--fk-kid-primary); background: color-mix(in srgb, var(--fk-kid-primary) 12%, var(--fk-bg-surface)); }
+.kdibujo:has(input:focus-visible) { outline: 3px solid var(--fk-border-focus); outline-offset: 2px; }
+.kstep { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.kstep button {
+  display: grid;
+  place-items: center;
+  width: var(--fk-kid-target);
+  height: var(--fk-kid-target);
+  border: 0;
+  border-radius: var(--fk-kid-radius-md);
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-primary);
+  cursor: pointer;
+}
+.kstep button .icon { width: 28px; height: 28px; }
+.kstep output { font-size: var(--fk-kid-text-xl); font-weight: 800; font-variant-numeric: tabular-nums; }
+.knino-plan {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--fk-kid-radius-lg);
+  border: 2px solid color-mix(in srgb, var(--fk-kid-sun) 45%, transparent);
+  background: color-mix(in srgb, var(--fk-kid-sun) 16%, var(--fk-bg-surface));
+}
+.knino-plan > .icon { flex-shrink: 0; width: 28px; height: 28px; color: var(--fk-kid-sun-text); }
+.kform__error { margin: 0; color: var(--fk-kid-hint); font-weight: 700; }
+.kform__error:empty { display: none; }

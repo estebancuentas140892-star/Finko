@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(nino): APR.3d, la alcancía y la meta del niño · 2026-10-25
+
+[ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md) D3 y D9; ficha [`contexto/nino.md`](contexto/nino.md). SW v607.
+
+- **Tres frascos que se anotan**: "Guardé" entra al frasco que elija (Ahorrar por defecto), "Gasté" sale de Gastar y "Compartí" de Compartir, con montos rápidos y una nota. No deja sacar más de lo que hay y lo dice en la voz del niño. Mover entre frascos está activo por defecto; el tutor podrá apagarlo (APR.3e). Finko no mueve dinero: solo lo anota (D3).
+- **Cada frasco se llena contra lo suyo** (R60): Ahorrar contra la meta, Gastar y Compartir contra lo que les toca de la mesada.
+- **Una meta a la vez**: dibujo, nombre, precio y cuánto guarda cada semana; la pantalla responde mientras elige ("Lo tendrás en 8 semanas. Para el 19 de diciembre."). En Inicio y en Alcancía, la meta con su barra y lo que falta; lograda, "Lo compré".
+- **En oscuro, el papel de los dibujos va un paso más oscuro que el contorno**: con los dos iguales, como venían del diseño, el balón era un círculo blanco. Un test exige que se distingan en los dos temas.
+
 ### feat(nino): APR.3c, la app del niño y su ruta · 2026-10-25
 
 [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md) D7 y D9; ficha [`contexto/nino.md`](contexto/nino.md). SW v606.

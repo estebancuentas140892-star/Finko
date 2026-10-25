@@ -327,7 +327,10 @@
      anfitrión `.il` con `--il-a`, así el mismo dibujo sirve en los dos
      temas. Claro y modo niño los redefinen en themes.css. */
   --fk-il-line:  #e9ebf3;
-  --fk-il-paper: #e9ebf3;
+  /* En oscuro el papel va un paso más oscuro que el contorno: con los dos
+     iguales (como venían del diseño) el balón era un círculo blanco y lo
+     que se dibuja con tinta sobre papel no se veía. */
+  --fk-il-paper: #343a4a;
   --fk-il-shade: rgba(255, 255, 255, 0.10);
 
   /* ── MODO NIÑO: FORMA, TAMAÑO Y TIPOGRAFÍA (APR.3b, ADR 093 D5) ── */

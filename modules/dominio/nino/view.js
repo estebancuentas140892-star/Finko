@@ -1,17 +1,21 @@
 /**
- * nino/view.js - lo que ve el niño (APR.3c, ADR 093 D9). Solo HTML.
+ * nino/view.js - lo que ve el niño (APR.3c y APR.3d, ADR 093 D9). Solo HTML.
  *
- * Cuatro pantallas con su barra: Inicio, Aprender, Alcancía y Yo. Voz del
- * niño (D6): frases de máximo 10 palabras y cifras redondas. Cada texto
- * lleva su ícono al lado y ningún color va solo (R49).
+ * Cuatro pantallas con su barra: Inicio, Aprender, Alcancía y Yo, más la de
+ * crear una meta y la hoja para anotar lo que guardó, gastó o compartió.
+ * Voz del niño (D6): frases de máximo 10 palabras y cifras redondas. Cada
+ * texto lleva su ícono al lado y ningún color va solo (R49).
  */
 
-import { f, esc } from '../../infra/utils.js';
+import { f, esc, formateadorFecha } from '../../infra/utils.js';
 import { icon, iconoCategoria } from '../../infra/icons.js';
-import { htmlFrai, htmlDibujo, dibujoPorId, htmlFrasco } from '../../infra/ilustraciones.js';
+import { htmlFrai, htmlDibujo, dibujoPorId, htmlFrasco, DIBUJOS } from '../../infra/ilustraciones.js';
 import { saldosFrascos, FRASCOS } from '../../infra/perfiles.js';
 import { UNIDADES_NINO } from '../../infra/ruta-aprende.js';
-import { estadoRutaNino, siguienteLeccionNino, unidadesHechasNino } from './logic.js';
+import {
+  estadoRutaNino, siguienteLeccionNino, unidadesHechasNino,
+  metaActiva, planMeta, llenadoFrasco, puedeMover,
+} from './logic.js';
 
 /** Barra de cuatro destinos (D9). */
 const _BARRA = [
@@ -28,10 +32,15 @@ export const FRASCO_INFO = {
   compartir: { nombre: 'Compartir', icono: 'c-regalo' },
 };
 
+/** "19 de diciembre": la fecha de una meta, en palabras. */
+const _DIA_MES = (iso) => formateadorFecha('es-CO', { day: 'numeric', month: 'long', timeZone: 'UTC' })
+  .format(new Date(`${iso}T12:00:00Z`));
+
 /** @param {string} vista */
 export function htmlBarraNino(vista) {
+  const activa = vista === 'meta' ? 'alcancia' : vista;
   return _BARRA.map(b => `
-    <button class="knav__it" type="button" data-action="nino-vista" data-vista="${b.vista}"${b.vista === vista ? ' aria-current="page"' : ''}>
+    <button class="knav__it" type="button" data-action="nino-vista" data-vista="${b.vista}"${b.vista === activa ? ' aria-current="page"' : ''}>
       ${iconoCategoria(b.icono)}<span>${b.texto}</span>
     </button>`).join('');
 }
@@ -45,16 +54,76 @@ function _avatar(perfil, tamano = 38) {
 const _botonCambiar = `
   <button class="knino-cambiar" type="button" data-action="perfil-cambiar" aria-label="Cambiar de perfil">${icon('transferencia')}</button>`;
 
+/** "Unas 4 semanas", "Una semana" o "Ya lo tienes". */
+function _semanas(n) {
+  if (n === 0) return 'Ya lo tienes.';
+  if (!Number.isFinite(n)) return 'Elige cuánto guardas cada semana.';
+  return n === 1 ? 'Una semana más.' : `Unas ${n} semanas.`;
+}
+
+/**
+ * La meta con su barra: lo que tiene en Ahorrar contra el precio (R60).
+ * Lograda, ofrece "Lo compré".
+ */
+export function htmlTarjetaMeta(perfil, hoyISO) {
+  const meta = metaActiva(perfil);
+  if (!meta) {
+    return `
+      <button class="kcard knino-meta knino-meta--nueva" type="button" data-action="nino-vista" data-vista="meta">
+        <span class="knino-teja" data-frasco="ahorrar">${iconoCategoria('i-metas')}</span>
+        <span class="knino-pila"><span class="k-h3">Crear una meta</span><span class="k-sm">¿Para qué quieres ahorrar?</span></span>
+        ${icon('chevron-right')}
+      </button>`;
+  }
+  const ahorrado = saldosFrascos(perfil).ahorrar;
+  const plan = planMeta({ precio: meta.precio, semanal: meta.semanal, ahorrado, hoyISO });
+  const pct = Math.round(plan.proporcion * 100);
+  const d = dibujoPorId(meta.dibujo);
+  const pie = plan.falta === 0
+    ? `<p class="k-sm knino-meta__lista">¡Ya tienes para tu ${esc(meta.nombre)}!</p>
+       <div class="knino-meta__acciones">
+         <button class="kbtn kbtn--block" type="button" data-action="nino-meta-compre">${icon('check')}Lo compré</button>
+       </div>`
+    : `<p class="k-sm">Te faltan ${f(plan.falta)}. ${_semanas(plan.semanas)}</p>`;
+  return `
+    <section class="kcard knino-meta" aria-labelledby="nino-meta-titulo">
+      <div class="knino-fila">
+        <span class="kidav kidav--nino" style="--d: var(--fk-dom-${d?.dominio ?? 'ahorro'})">${htmlDibujo(meta.dibujo, { tamano: 44 })}</span>
+        <div class="knino-pila">
+          <h2 class="k-h3" id="nino-meta-titulo">Mi ${esc(meta.nombre)} · ${f(meta.precio)}</h2>
+          <div class="kprog" data-frasco="ahorrar" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"
+               aria-label="${esc(meta.nombre)}: ${f(meta.precio - plan.falta)} de ${f(meta.precio)}"><span style="width:${pct}%"></span></div>
+          ${pie}
+        </div>
+      </div>
+      <button class="knino-quitar" type="button" data-action="nino-meta-quitar">Quitar esta meta</button>
+    </section>`;
+}
+
+/** Los tres frascos, cada uno lleno contra lo suyo (R60). */
+function _frascos(perfil) {
+  const s = saldosFrascos(perfil);
+  return `
+    <ul class="jars">${FRASCOS.map(fr => `
+      <li class="jar" data-frasco="${fr}">
+        ${htmlFrasco(fr, llenadoFrasco(fr, perfil), { etiqueta: `Frasco ${FRASCO_INFO[fr].nombre}: ${f(s[fr])}` })}
+        <p class="jar__nombre">${iconoCategoria(FRASCO_INFO[fr].icono)}${FRASCO_INFO[fr].nombre}</p>
+        <p class="jar__monto">${f(s[fr])}</p>
+      </li>`).join('')}
+    </ul>`;
+}
+
 /** El título de la unidad con su número, para la ruta y el Inicio. */
 function _chipUnidad(unidad, numeroLeccion) {
   return `<span class="kchip kchip--dom">Unidad ${unidad.numero} · lección ${numeroLeccion}</span>`;
 }
 
 /**
- * Inicio: el saludo de Frai y la lección que sigue (D9).
+ * Inicio: el saludo de Frai, la lección que sigue, la alcancía y la meta (D9).
  * @param {import('../../infra/perfiles.js').PerfilNino} perfil
+ * @param {string} hoyISO
  */
-export function htmlInicioNino(perfil) {
+export function htmlInicioNino(perfil, hoyISO) {
   const sig = siguienteLeccionNino(perfil.aprende);
   const leccion = sig ? `
     <section class="kcard kcard--dom" data-dom="${sig.unidad.dominio}" aria-labelledby="nino-siguiente">
@@ -72,6 +141,7 @@ export function htmlInicioNino(perfil) {
       <p class="k-body">Pronto llegan más lecciones.</p>
     </section>`;
   const saludo = sig ? `¿Aprendemos algo hoy? Son ${sig.leccion.minutos} minutos.` : '¡Qué bien vas! Repasa cuando quieras.';
+  const s = saldosFrascos(perfil);
   return `
     <header class="knino-cabeza">
       ${_avatar(perfil)}
@@ -80,9 +150,20 @@ export function htmlInicioNino(perfil) {
     </header>
     <div class="knino-fila">
       ${htmlFrai('saluda', { tamano: 96 })}
-      <p class="bubble bubble--izq">${saludo}</p>
+      <p class="bubble">${saludo}</p>
     </div>
-    ${leccion}`;
+    ${leccion}
+    <section class="kcard" aria-labelledby="nino-alcancia-inicio">
+      <div class="knino-cabeza">
+        <h2 class="k-h3 knino-titulo-sm" id="nino-alcancia-inicio">${iconoCategoria('i-ahorro')}Mi alcancía</h2>
+        <span class="knino-total">${f(s.total)}</span>
+      </div>
+      <ul class="knino-mini">${FRASCOS.map(fr => `
+        <li data-frasco="${fr}"><span>${iconoCategoria(FRASCO_INFO[fr].icono)}${FRASCO_INFO[fr].nombre}</span><strong>${f(s[fr])}</strong></li>`).join('')}
+      </ul>
+      <button class="kbtn kbtn--soft kbtn--block" type="button" data-action="nino-vista" data-vista="alcancia">Ver mi alcancía</button>
+    </section>
+    ${metaActiva(perfil) ? htmlTarjetaMeta(perfil, hoyISO) : ''}`;
 }
 
 /** Un nodo del camino: hecha (se repasa), la que sigue (Empezar) o después. */
@@ -141,29 +222,144 @@ export function htmlRutaNino(perfil) {
 }
 
 /**
- * Alcancía: el total y los tres frascos (D9). Guardar, gastar, compartir,
- * la meta, la mesada y el premio llegan con APR.3d y APR.3e.
+ * Alcancía: el total, los tres frascos con "Guardé", "Gasté" y "Compartí",
+ * y la meta (D9). La mesada y el premio llegan con APR.3e.
  * @param {import('../../infra/perfiles.js').PerfilNino} perfil
+ * @param {string} hoyISO
  */
-export function htmlAlcanciaNino(perfil) {
+export function htmlAlcanciaNino(perfil, hoyISO) {
   const s = saldosFrascos(perfil);
-  const frascos = FRASCOS.map(fr => `
-    <li class="jar" data-frasco="${fr}">
-      ${htmlFrasco(fr, s.total > 0 ? s[fr] / s.total : 0)}
-      <p class="jar__nombre">${iconoCategoria(FRASCO_INFO[fr].icono)}${FRASCO_INFO[fr].nombre}</p>
-      <p class="jar__monto">${f(s[fr])}</p>
-    </li>`).join('');
   return `
     <header class="knino-cabeza">
       <h1 class="k-h1 knino-titulo" tabindex="-1">${iconoCategoria('i-ahorro')}Mi alcancía</h1>
-      <span class="k-h2 knino-total">${f(s.total)}</span>
+      <span class="kchip knino-total">${f(s.total)}</span>
     </header>
-    <ul class="jars">${frascos}</ul>
+    ${_frascos(perfil)}
+    <div class="knino-acciones" role="group" aria-label="Anotar dinero">
+      <button class="kbtn kbtn--dom" type="button" data-frasco="ahorrar" data-action="nino-mov" data-tipo="guarde">${icon('plus')}Guardé</button>
+      <button class="kbtn kbtn--dom" type="button" data-frasco="gastar" data-action="nino-mov" data-tipo="gaste">${iconoCategoria('c-tienda')}Gasté</button>
+      <button class="kbtn kbtn--dom" type="button" data-frasco="compartir" data-action="nino-mov" data-tipo="comparti">${iconoCategoria('c-regalo')}Compartí</button>
+    </div>
+    ${puedeMover(perfil) && s.total > 0 ? `
+    <button class="knino-quitar knino-mover" type="button" data-action="nino-mov" data-tipo="mover">${icon('transferencia')}Mover dinero entre frascos</button>` : ''}
+    ${htmlTarjetaMeta(perfil, hoyISO)}
     ${s.total === 0 ? `
     <div class="knino-fila">
       ${htmlFrai('explica', { tamano: 80 })}
-      <p class="bubble bubble--izq">Cuando recibas dinero, aquí lo verás.</p>
+      <p class="bubble">Cuando recibas dinero, toca Guardé.</p>
     </div>` : ''}`;
+}
+
+/** Qué pregunta cada acción de la alcancía (D6: frases cortas). */
+const _HOJA = {
+  guarde:   { titulo: '¿Cuánto guardaste?', nota: '¿De dónde salió?', ejemplo: 'Un regalo', boton: 'Guardar' },
+  gaste:    { titulo: '¿Cuánto gastaste?', nota: '¿En qué?', ejemplo: 'Un helado', boton: 'Anotar' },
+  comparti: { titulo: '¿Cuánto compartiste?', nota: '¿Con quién o para qué?', ejemplo: 'Un regalo para mi abuela', boton: 'Anotar' },
+  mover:    { titulo: 'Mover dinero entre frascos', nota: '¿Para qué?', ejemplo: 'Para mi meta', boton: 'Mover' },
+};
+
+/** Radios de frasco con su nombre e ícono. */
+function _elegirFrasco(nombre, leyenda, marcado) {
+  return `
+    <fieldset class="kfield">
+      <legend class="kfield__etiqueta">${leyenda}</legend>
+      <div class="kfrascos">${FRASCOS.map(fr => `
+        <label class="kfrasco" data-frasco="${fr}"><input class="sr-only" type="radio" name="${nombre}" value="${fr}"${fr === marcado ? ' checked' : ''} />
+          ${iconoCategoria(FRASCO_INFO[fr].icono)}<span>${FRASCO_INFO[fr].nombre}</span></label>`).join('')}
+      </div>
+    </fieldset>`;
+}
+
+/**
+ * La hoja para anotar dinero que entra, sale o se mueve entre frascos.
+ *
+ * @param {'guarde'|'gaste'|'comparti'|'mover'} tipo
+ * @param {import('../../infra/perfiles.js').PerfilNino} perfil
+ */
+export function htmlMovimientoNino(tipo, perfil) {
+  const h = _HOJA[tipo] ?? _HOJA.guarde;
+  const s = saldosFrascos(perfil);
+  const saldo = tipo === 'gaste' ? `En Gastar tienes ${f(s.gastar)}.`
+    : tipo === 'comparti' ? `En Compartir tienes ${f(s.compartir)}.` : '';
+  const frascos = tipo === 'guarde' ? _elegirFrasco('frasco', '¿En qué frasco?', 'ahorrar')
+    : tipo === 'mover' ? `${_elegirFrasco('desde', '¿De qué frasco sale?', 'gastar')}${_elegirFrasco('hacia', '¿A cuál entra?', 'ahorrar')}`
+    : '';
+  return `
+    <form class="kform" id="form-nino-mov" data-tipo="${tipo}" novalidate>
+      <h2 class="k-h2" id="modal-nino-titulo" tabindex="-1">${h.titulo}</h2>
+      ${saldo ? `<p class="k-sm">${saldo}</p>` : ''}
+      <div class="kfield">
+        <label class="kfield__etiqueta" for="nino-monto">¿Cuánto dinero?</label>
+        <div class="kin"><span aria-hidden="true">$</span><input id="nino-monto" name="monto" type="text" inputmode="numeric" autocomplete="off" /></div>
+        <div class="kchips">${[1_000, 2_000, 5_000, 10_000].map(m => `
+          <button class="kchip kchip--boton" type="button" data-action="nino-monto" data-monto="${m}">${f(m)}</button>`).join('')}
+        </div>
+      </div>
+      ${frascos}
+      <div class="kfield">
+        <label class="kfield__etiqueta" for="nino-nota">${h.nota}</label>
+        <div class="kin"><input id="nino-nota" name="nota" type="text" maxlength="40" autocomplete="off" placeholder="${esc(h.ejemplo)}" /></div>
+      </div>
+      <p class="kform__error" id="nino-mov-error" role="alert"></p>
+      <button class="kbtn kbtn--block" type="submit">${icon('check')}${h.boton}</button>
+    </form>`;
+}
+
+/**
+ * Crear una meta (D9): dibujo, nombre, precio y cuánto guarda cada semana.
+ * La pantalla responde en semanas y en fecha mientras el niño elige.
+ *
+ * @param {import('../../infra/perfiles.js').PerfilNino} perfil
+ * @param {{ dibujo?: string, nombre?: string, precio?: number, semanal?: number }} borrador
+ * @param {string} hoyISO
+ */
+export function htmlMetaNino(perfil, borrador, hoyISO) {
+  const semanal = borrador.semanal ?? 2_000;
+  return `
+    <header class="knino-cabeza">
+      <button class="knino-cambiar" type="button" data-action="nino-vista" data-vista="alcancia" aria-label="Volver a mi alcancía">${icon('arrow-left')}</button>
+      <h1 class="k-h2 knino-titulo" tabindex="-1">${iconoCategoria('i-metas')}Nueva meta</h1>
+    </header>
+    <form class="kform" id="form-nino-meta" novalidate>
+      <fieldset class="kfield">
+        <legend class="kfield__etiqueta">¿Para qué quieres ahorrar?</legend>
+        <div class="kdibujos">${DIBUJOS.map(d => `
+          <label class="kdibujo"><input class="sr-only" type="radio" name="dibujo" value="${d.id}"${borrador.dibujo === d.id ? ' checked' : ''} />
+            ${htmlDibujo(d.id, { tamano: 52 })}<span class="sr-only">${esc(d.nombre)}</span></label>`).join('')}
+        </div>
+      </fieldset>
+      <div class="kfield">
+        <label class="kfield__etiqueta" for="nino-meta-nombre">${icon('edit')}Ponle nombre</label>
+        <div class="kin"><input id="nino-meta-nombre" name="nombre" type="text" maxlength="40" autocomplete="off" value="${esc(borrador.nombre ?? '')}" /></div>
+      </div>
+      <div class="kfield">
+        <label class="kfield__etiqueta" for="nino-meta-precio">${iconoCategoria('c-etiqueta')}¿Cuánto cuesta?</label>
+        <div class="kin"><span aria-hidden="true">$</span><input id="nino-meta-precio" name="precio" type="text" inputmode="numeric" autocomplete="off" value="${borrador.precio ? f(borrador.precio).replace('$', '') : ''}" /></div>
+      </div>
+      <div class="kfield">
+        <p class="kfield__etiqueta" id="nino-meta-semana">${iconoCategoria('i-ahorro')}¿Cuánto guardas cada semana?</p>
+        <div class="kstep" role="group" aria-labelledby="nino-meta-semana">
+          <button type="button" data-action="nino-meta-semana" data-paso="-1000" aria-label="Guardar $1.000 menos">${icon('chevron-down')}</button>
+          <output id="nino-meta-semanal" data-valor="${semanal}">${f(semanal)}</output>
+          <button type="button" data-action="nino-meta-semana" data-paso="1000" aria-label="Guardar $1.000 más">${icon('chevron-up')}</button>
+        </div>
+      </div>
+      <div class="knino-plan" id="nino-meta-plan" role="status">${htmlPlanMeta(perfil, borrador.precio, semanal, hoyISO)}</div>
+      <p class="kform__error" id="nino-meta-error" role="alert"></p>
+      <button class="kbtn kbtn--block" type="submit">${icon('check')}Crear mi meta</button>
+    </form>`;
+}
+
+/** "Lo tendrás en 8 semanas. Para el 19 de diciembre." */
+export function htmlPlanMeta(perfil, precio, semanal, hoyISO) {
+  if (!(Number(precio) > 0)) return `${iconoCategoria('i-agenda')}<p class="k-sm">Escribe el precio y te digo cuándo.</p>`;
+  const plan = planMeta({ precio, semanal, ahorrado: saldosFrascos(perfil).ahorrar, hoyISO });
+  if (plan.falta === 0) return `${iconoCategoria('i-agenda')}<p class="k-h3">¡Ya tienes para eso!</p>`;
+  return `${iconoCategoria('i-agenda')}
+    <div class="knino-pila">
+      <p class="k-h3">Lo tendrás en ${plan.semanas === 1 ? '1 semana' : `${plan.semanas} semanas`}.</p>
+      <p class="k-sm">Para el ${_DIA_MES(plan.fechaISO)}.</p>
+    </div>`;
 }
 
 /**

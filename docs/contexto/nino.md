@@ -11,8 +11,8 @@
 ## Perfiles, "¿Quién usa Finko?" y la piel del niño
 
 - **Objetivo**          : que un tutor y niños de 7 a 12 años compartan el teléfono sin que el niño vea las finanzas del adulto (D1).
-- **Estado actual**     : en evolución (Fase 3 de APR). Cerradas **APR.3b** (sistema visual), **APR.3a** (perfiles, selector, alta paso 1, PIN de niño a adulto, candado obligatorio, P1) y **APR.3c** (barra de cuatro destinos, ruta en orden como camino, lección con Frai, celebración con "Úsalo de verdad", unidad 1). La alcancía es de lectura hasta APR.3d; mesada, premio y progreso del niño con APR.3e; las unidades 2 a 8 con APR.3f.
-- **Verificado contra** : commit de APR.3c (2026-10-25).
+- **Estado actual**     : en evolución (Fase 3 de APR). Cerradas **APR.3b** (sistema visual), **APR.3a** (perfiles, selector, alta paso 1, PIN de niño a adulto, candado obligatorio, P1), **APR.3c** (barra, ruta en orden como camino, lección con Frai, celebración, unidad 1) y **APR.3d** (Guardé, Gasté, Compartí, mover, una meta con semanas y fecha). Mesada, premio y progreso del niño con APR.3e; las unidades 2 a 8 con APR.3f.
+- **Verificado contra** : commit de APR.3d (2026-10-25).
 
 **Dónde vive**
 
@@ -29,7 +29,9 @@
 | La app del niño: cuatro pantallas y su barra | `modules/dominio/nino/index.js` / `view.js` | `initNino()`, `_irA()`, `htmlBarraNino()`, `htmlInicioNino()`, `htmlRutaNino()`, `htmlAlcanciaNino()`, `htmlYoNino()`, `data-action="nino-vista"`, evento `nino:vista` |
 | La ruta en orden (sin DOM) | `modules/dominio/nino/logic.js` | `estadoRutaNino()`, `siguienteLeccionNino()`, `unidadesHechasNino()` |
 | Catálogo de la ruta del niño | `modules/infra/ruta-aprende.js` | `UNIDADES_NINO` |
-| Saldos de los frascos y avance del niño | `modules/infra/perfiles.js` | `saldosFrascos()`, `guardarAprendeNino()`, `FRASCOS` |
+| Saldos de los frascos, avance y cambios del niño | `modules/infra/perfiles.js` | `saldosFrascos()`, `guardarAprendeNino()`, `actualizarNino()`, `FRASCOS` |
+| Alcancía y meta (sin DOM): validar y crear movimientos, plan de la meta, llenado de cada frasco | `modules/dominio/nino/logic.js` | `validarMovimiento()`, `crearMovimientos()`, `metaActiva()`, `planMeta()`, `validarMeta()`, `llenadoFrasco()`, `puedeMover()` |
+| Hoja para anotar y pantalla de la meta | `modules/dominio/nino/view.js` / `index.js` | `htmlMovimientoNino()`, `htmlMetaNino()`, `htmlTarjetaMeta()`, `data-action="nino-mov"`, `nino-monto`, `nino-meta-*`, `#modal-nino` |
 | La lección del niño: mismo motor, su avance y su cierre | `modules/dominio/aprende/index.js` / `view.js` | `_progreso()`, `_guardarProgreso()`, `ctx.nino`, `_cierreNino()`, `data-action="leccion-salir-a"` |
 | Contenido del niño (solo datos) | `modules/dominio/aprende/lecciones/nino/kN.js` | `'k1-l1'` |
 | Dibujos, Frai, frasco y destellos | `modules/infra/ilustraciones.js` | `DIBUJOS`, `htmlDibujo()`, `htmlFrai()`, `htmlFrasco()`, `htmlDestellos()` |
@@ -45,12 +47,15 @@
 - **El candado no cifra.** Quien abra `fk_v1` lee todos los perfiles; el selector y Ajustes lo dicen.
 - **La piel se decide al aplicarse**, no al pedirse: con View Transitions el cambio corre un cuadro después y dos cambios seguidos pueden llegar en desorden.
 - **El aviso de logro del adulto** se oculta mientras el candado o el selector están abiertos y en el perfil niño (`modals.css`, `nino.css`): es un dato del adulto.
+- **La alcancía solo anota** (D3): cada acción es un movimiento del perfil; el saldo de un frasco es la suma de los suyos y nunca baja de cero. "Lo compré" es una salida de Ahorrar con `tipo: 'meta'`.
+- **La pantalla de la meta no se repinta** con `state:change` mientras está abierta: borraría lo que el niño escribe.
 - **Quitar el candado con niños** no se ofrece y el handler lo rechaza: primero hay que eliminar sus perfiles.
 
 **Cambios pendientes**: el selector usa el campo de PIN de siempre, no el teclado numérico del diseño; el avatar de Inicio como atajo a Familia (D2) llega con APR.3e.
 
 **Cambios realizados**:
 
+- 2026-10-25 (APR.3d): alcancía con Guardé, Gasté, Compartí y mover; una meta con semanas y fecha.
 - 2026-10-25 (APR.3c): app del niño con barra, ruta en orden, lección con Frai, celebración y unidad 1.
 - 2026-10-25 (APR.3a): perfiles (v48), "¿Quién usa Finko?", alta paso 1 con PIN obligatorio, Familia en Ajustes, P1.
 - 2026-10-25 (APR.3b): `.kid` y sus tokens con AA medido, Frai, catálogo de dibujos y frasco en el sprite.
