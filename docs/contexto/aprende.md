@@ -60,6 +60,7 @@
 
 **Cambios realizados**:
 
+- 2026-10-24 (APR.2c, unidades 5 y 6): Metas y reservas; Deudas y gota a gota.
 - 2026-10-24 (APR.2c, unidades 1 y 2): Tu dinero hoy y Repartir tu ingreso; la ruta empieza en la unidad 1.
 - 2026-10-24 (APR.2c, unidad 4): Fondo de emergencia, cuatro lecciones; el Aplícalo pasa a `aplica.js` (un cálculo por unidad) y los controles a `RESULTADOS`; marcadores legales en los textos.
 - 2026-10-24 (APR.1c y APR.1d): bloque Inicio de tres lentes, "Tu siguiente paso", catálogo a `infra/ruta-aprende.js`, semanas activas al registrar.

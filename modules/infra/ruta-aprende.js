@@ -70,8 +70,24 @@ export const UNIDADES = [
       { id: 'u4-l4', titulo: 'Cuándo usarlo y cómo reponerlo', minutos: 3, termina: 'Fondo' },
     ],
   },
-  { id: 'u5', numero: 5, nombre: 'Metas y reservas', dominio: 'metas', seccion: 'metas', termina: 'Metas', lecciones: [] },
-  { id: 'u6', numero: 6, nombre: 'Deudas y gota a gota', dominio: 'compromisos', seccion: 'compromisos', termina: 'Por pagar', lecciones: [] },
+  {
+    id: 'u5', numero: 5, nombre: 'Metas y reservas', dominio: 'metas', seccion: 'metas', termina: 'Metas',
+    aprendiste: 'Ahora sabes plantear una meta y reservar para lo que sabes que viene.',
+    lecciones: [
+      { id: 'u5-l1', titulo: 'Una meta con nombre, precio y fecha', minutos: 3, termina: 'Metas, con tus metas' },
+      { id: 'u5-l2', titulo: 'Cuánto guardar cada mes', minutos: 3, termina: 'Metas' },
+      { id: 'u5-l3', titulo: 'Reservas para lo que sabes que viene', minutos: 3, termina: 'Metas' },
+    ],
+  },
+  {
+    id: 'u6', numero: 6, nombre: 'Deudas y gota a gota', dominio: 'compromisos', seccion: 'compromisos', termina: 'Por pagar',
+    aprendiste: 'Ahora sabes cuánto cuesta una deuda, en qué orden pagarla y por qué evitar el gota a gota.',
+    lecciones: [
+      { id: 'u6-l1', titulo: 'Lo que de verdad cuesta una deuda', minutos: 3, termina: 'Por pagar, con tus deudas' },
+      { id: 'u6-l2', titulo: 'Avalancha o bola de nieve', minutos: 4, termina: 'Por pagar' },
+      { id: 'u6-l3', titulo: 'Gota a gota: por qué es tan peligroso', minutos: 3, termina: 'Por pagar' },
+    ],
+  },
   { id: 'u7', numero: 7, nombre: 'Crédito e intereses', dominio: 'compromisos', seccion: 'compromisos', termina: 'Por pagar', lecciones: [] },
   { id: 'u8', numero: 8, nombre: 'Invertir: CDT y regla del 72', dominio: 'inversion', seccion: 'inversion', termina: 'Inversión', lecciones: [] },
   { id: 'u9', numero: 9, nombre: 'Impuestos: 4x1000 y renta', dominio: 'analisis', seccion: 'analisis', termina: 'Análisis', lecciones: [] },

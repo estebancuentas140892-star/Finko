@@ -26,12 +26,14 @@ import {
 import { htmlRuta, htmlLeccion, htmlSiguientePaso } from '../../modules/dominio/aprende/view.js';
 import u1 from '../../modules/dominio/aprende/lecciones/u1.js';
 import u2 from '../../modules/dominio/aprende/lecciones/u2.js';
+import u5 from '../../modules/dominio/aprende/lecciones/u5.js';
+import u6 from '../../modules/dominio/aprende/lecciones/u6.js';
 import u3 from '../../modules/dominio/aprende/lecciones/u3.js';
 import u4 from '../../modules/dominio/aprende/lecciones/u4.js';
 import { APLICA, modeloAplica, mesesEnPalabras, gastosFijosMensuales, tasaMensualDeuda } from '../../modules/dominio/aprende/aplica.js';
 
 /** Contenido escrito, por unidad. Cada unidad nueva se suma acá. */
-const CONTENIDO = { u1, u2, u3, u4 };
+const CONTENIDO = { u1, u2, u3, u4, u5, u6 };
 /** Todas las lecciones escritas, en un solo mapa id → lección. */
 const LECCIONES = Object.assign({}, ...Object.values(CONTENIDO));
 

@@ -510,6 +510,11 @@ export function htmlLeccion(sesion, leccion, ctx) {
 
 // ── TU SIGUIENTE PASO (D5) ───────────────────────────────────────
 
+/** "Termina en X, con tus datos.", sin repetir el "con tus" que ya traiga X. */
+function _gancho(termina) {
+  return /, con tus /.test(termina) ? `Termina en ${esc(termina)}.` : `Termina en ${esc(termina)}, con tus datos.`;
+}
+
 /**
  * La celda "Tu siguiente paso" de Inicio. Ocupa el lugar de la tarjeta
  * compacta de logros (APR.1c): Inicio no crece (ADR 087). Con una lección, el
@@ -520,11 +525,6 @@ export function htmlLeccion(sesion, leccion, ctx) {
  * @param {number} tope
  * @returns {string} HTML; `''` si no hay paso.
  */
-/** "Termina en X, con tus datos.", sin repetir el "con tus" que ya traiga X. */
-function _gancho(termina) {
-  return /, con tus /.test(termina) ? `Termina en ${esc(termina)}.` : `Termina en ${esc(termina)}, con tus datos.`;
-}
-
 export function htmlSiguientePaso(paso, tope) {
   if (!paso) return '';
   const cabeza = (etiqueta) => `

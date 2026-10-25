@@ -12,6 +12,13 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(aprende): APR.2c, las unidades 5 y 6 · 2026-10-24
+
+[ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D8; ficha [`contexto/aprende.md`](contexto/aprende.md). SW v600.
+
+- **Unidad 5, Metas y reservas**: una meta con nombre, precio y fecha, cuánto guardar cada mes (control con el precio y los meses) y reservas para lo que sabes que viene. Su Aplícalo lee tus metas y dice cuánto te falta y cuánto guardar al mes, en Metas.
+- **Unidad 6, Deudas y gota a gota**: lo que de verdad cuesta una deuda, avalancha o bola de nieve y por qué el gota a gota es tan peligroso (control con lo que te prestan). Su Aplícalo suma tus deudas, tus cuotas y lo que te cobran de intereses, en Por pagar. Tono informativo y sin enlazar líneas de ayuda mientras no estén verificadas con fecha (ADR 092, dudas).
+
 ### feat(aprende): APR.2c, las unidades 1 y 2 · 2026-10-24
 
 [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D8; ficha [`contexto/aprende.md`](contexto/aprende.md). SW v599.

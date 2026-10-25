@@ -36,6 +36,8 @@ const _CONTENIDO = {
   u2: () => import('./lecciones/u2.js'),
   u3: () => import('./lecciones/u3.js'),
   u4: () => import('./lecciones/u4.js'),
+  u5: () => import('./lecciones/u5.js'),
+  u6: () => import('./lecciones/u6.js'),
 };
 
 /** Distancia horizontal (px) que convierte un arrastre de tarjeta en respuesta. */
