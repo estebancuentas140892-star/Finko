@@ -22,7 +22,7 @@ import {
   crearSesion, pasoActual, numeroDePaso, responderElegir, clasificarTarjeta,
   seguirClasificando, cambiarControl, moverItem, comprobarOrden, avanzar,
   pasoParaRetomar, mezclarSinAcertar, CALCULOS, RESULTADOS, limiteSugerido, aplicaHormiga,
-  ofertaDeSeccion,
+  ofertaDeSeccion, resultadoUbicacion, aplicarUbicacion, ofrecerUbicacion,
 } from '../../modules/dominio/aprende/logic.js';
 import { htmlRuta, htmlLeccion, htmlSiguientePaso, htmlOfertaLeccion } from '../../modules/dominio/aprende/view.js';
 import u1 from '../../modules/dominio/aprende/lecciones/u1.js';
@@ -34,6 +34,7 @@ import u8 from '../../modules/dominio/aprende/lecciones/u8.js';
 import u9 from '../../modules/dominio/aprende/lecciones/u9.js';
 import u3 from '../../modules/dominio/aprende/lecciones/u3.js';
 import u4 from '../../modules/dominio/aprende/lecciones/u4.js';
+import ubicacion from '../../modules/dominio/aprende/lecciones/ubicacion.js';
 import { APLICA, modeloAplica, mesesEnPalabras, gastosFijosMensuales, tasaMensualDeuda } from '../../modules/dominio/aprende/aplica.js';
 
 /** Contenido escrito, por unidad. Cada unidad nueva se suma acá. */
@@ -181,7 +182,7 @@ describe('estadoRuta() y siguienteLeccion()', () => {
 
   it('normalizarAprende tolera un estado roto', () => {
     expect(normalizarAprende({ hechas: [], sabidas: 'x', semanas: null, enCurso: { paso: 2 } }))
-      .toEqual({ hechas: {}, sabidas: [], semanas: [], enCurso: null });
+      .toEqual({ hechas: {}, sabidas: [], semanas: [], enCurso: null, ubicacion: null });
   });
 });
 
@@ -722,3 +723,108 @@ describe('la sección ofrece su lección (APR.2a, D6)', () => {
     expect(html).not.toContain('3 meses son');
   });
 });
+
+describe('prueba de ubicación (APR.2b, D9)', () => {
+  /** Responde la prueba en orden ('bien', 'mal' o 'nose') y avanza tras cada una. */
+  function responder(...respuestas) {
+    let s = crearSesion(ubicacion);
+    respuestas.forEach((r, i) => {
+      const paso = ubicacion.pasos[i];
+      const idx = r === 'bien' ? paso.correcta : r === 'nose' ? -1 : (paso.correcta + 1) % paso.opciones.length;
+      s = responderElegir(s, ubicacion, idx);
+      s = avanzar(s, ubicacion).sesion;
+    });
+    return s;
+  }
+
+  it('una pregunta por unidad, de la 1 a la 4, todas con "Todavía no lo sé"', () => {
+    expect(ubicacion.pasos.map(p => p.unidad)).toEqual(['u1', 'u2', 'u3', 'u4']);
+    for (const p of ubicacion.pasos) {
+      expect(p.tipo).toBe('elegir');
+      expect(p.noSe).toBe(true);
+      expect(p.bien, p.unidad).toBeTruthy();
+      p.opciones.forEach((_, i) => {
+        if (i !== p.correcta) expect(p.casi[i], `${p.unidad} opción ${i}`).toBeTruthy();
+      });
+    }
+    expect(JSON.stringify(ubicacion)).not.toMatch(new RegExp(`[${String.fromCharCode(0x2013, 0x2014)}]`));
+  });
+
+  it('lo respondido bien queda sabido y empiezas en la primera unidad que no', () => {
+    const r = resultadoUbicacion(ubicacion, responder('bien', 'bien', 'nose', 'mal'));
+    expect(r.sabidas).toEqual(['u1', 'u2']);
+    expect(r.empieza.id).toBe('u3');
+    expect(resultadoUbicacion(ubicacion, responder('mal', 'bien', 'mal', 'mal'))).toMatchObject({ sabidas: ['u2'] });
+  });
+
+  it('una respuesta fallada no vuelve al final: la prueba ubica, no enseña', () => {
+    const s = responderElegir(crearSesion(ubicacion), ubicacion, 0);
+    expect(s.revision.correcto).toBe(false);
+    expect(s.cola).toEqual([0, 1, 2, 3]);
+  });
+
+  it('"Todavía no lo sé" solo vale donde el paso la ofrece, y nada fuera de las opciones', () => {
+    expect(responderElegir(crearSesion(ubicacion), ubicacion, -1).revision).toEqual({ correcto: false, elegida: -1 });
+    const leccion = u1['u1-l1'];
+    const s = avanzar(crearSesion(leccion), leccion).sesion;
+    expect(responderElegir(s, leccion, -1)).toBe(s);
+    expect(responderElegir(s, leccion, 9)).toBe(s);
+  });
+
+  it('terminarla guarda lo sabido y la fecha, y la ruta deja de ofrecerla', () => {
+    expect(ofrecerUbicacion(undefined)).toBe(true);
+    const a = aplicarUbicacion(undefined, ['u1', 'u2'], '2026-10-24');
+    expect(a).toMatchObject({ sabidas: ['u1', 'u2'], ubicacion: '2026-10-24' });
+    expect(ofrecerUbicacion(a)).toBe(false);
+    expect(ofrecerUbicacion({ ...a, sabidas: [] })).toBe(false);
+    expect(ofrecerUbicacion({ hechas: { 'u1-l1': '2026-10-01' } })).toBe(false);
+    expect(estadoRuta(a).find(e => e.estado === 'actual').unidad.id).toBe('u3');
+  });
+
+  it('la ruta ofrece la prueba al empezar, debajo de la lección recomendada', () => {
+    const html = htmlRuta(undefined);
+    expect(html).toContain('Hacer la prueba · 2 min');
+    expect(html.indexOf('ubicacion-abrir')).toBeGreaterThan(html.indexOf('Empezar la lección 1'));
+    expect(htmlRuta({ ubicacion: '2026-10-24' })).not.toContain('ubicacion-abrir');
+  });
+
+  it('cada pregunta ofrece "Todavía no lo sé" y al responder sigue, sin "vuelve al final"', () => {
+    const ctx = { tope: 20_000, terminada: false, entrada: false, sinRepetir: true };
+    let s = crearSesion(ubicacion);
+    expect(htmlLeccion(s, ubicacion, ctx)).toContain('Todavía no lo sé');
+    expect(htmlLeccion(s, ubicacion, ctx)).toContain('1 de 4');
+    s = responderElegir(s, ubicacion, -1);
+    const html = htmlLeccion(s, ubicacion, ctx);
+    expect(html).toContain('Sin problema');
+    expect(html).toContain('Lo ves en la unidad 1, Tu dinero hoy.');
+    expect(html).toContain('Siguiente pregunta');
+    expect(html).not.toContain('vuelve al final');
+  });
+
+  it('en la última pregunta el botón lleva al resultado', () => {
+    const ctx = { tope: 20_000, terminada: false, entrada: false, sinRepetir: true };
+    const s = responderElegir(responder('bien', 'bien', 'bien'), ubicacion, ubicacion.pasos[3].correcta);
+    expect(htmlLeccion(s, ubicacion, ctx)).toContain('Ver mi resultado');
+  });
+
+  it('el resultado dice dónde empiezas y qué sabes, y ofrece empezar desde la unidad 1', () => {
+    const s = responder('bien', 'bien', 'nose', 'mal');
+    const html = htmlLeccion(s, ubicacion, { tope: 20_000, terminada: true, entrada: false, ubicacion: resultadoUbicacion(ubicacion, s) });
+    expect(html).toContain('Empiezas en la unidad 3');
+    expect(html).toContain('Respondiste bien lo de las unidades 1 y 2.');
+    expect(html.match(/Ya lo sabes/g)).toHaveLength(2);
+    expect(html).toContain('Empiezas aquí');
+    expect(html).toContain('Y 4 unidades más: deudas, crédito, invertir e impuestos.');
+    expect(html).toContain('Las dos que ya sabes cuentan en Tu progreso.');
+    expect(html).toContain('data-action="ubicacion-inicio"');
+    expect(html).toContain('Prefiero empezar desde la unidad 1');
+  });
+
+  it('sin nada sabido empieza en la 1 y no ofrece "Prefiero empezar desde la unidad 1"', () => {
+    const s = responder('nose', 'nose', 'nose', 'nose');
+    const html = htmlLeccion(s, ubicacion, { tope: 20_000, terminada: true, entrada: false, ubicacion: resultadoUbicacion(ubicacion, s) });
+    expect(html).toContain('Empiezas en la unidad 1');
+    expect(html).not.toContain('ubicacion-desde-1');
+  });
+});
+

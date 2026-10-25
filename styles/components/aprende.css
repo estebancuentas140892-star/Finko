@@ -11,17 +11,17 @@
    ============================================================ */
 
 /* ── COLOR DE LA UNIDAD ──────────────────────────────────────── */
-:is(.aprende-unidad, .aprende-fila, .leccion-overlay) {
+:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta, .ubicacion-unidad) {
   --apr-dom:      var(--fk-accent);
   --apr-dom-text: var(--fk-text-accent);
 }
-:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta)[data-dom="tesoreria"]   { --apr-dom: var(--fk-dom-tesoreria);   --apr-dom-text: var(--fk-dom-tesoreria-text); }
-:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta)[data-dom="presupuesto"] { --apr-dom: var(--fk-dom-presupuesto); --apr-dom-text: var(--fk-dom-presupuesto-text); }
-:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta)[data-dom="ahorro"]      { --apr-dom: var(--fk-dom-ahorro);      --apr-dom-text: var(--fk-dom-ahorro-text); }
-:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta)[data-dom="metas"]       { --apr-dom: var(--fk-dom-metas);       --apr-dom-text: var(--fk-dom-metas-text); }
-:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta)[data-dom="compromisos"] { --apr-dom: var(--fk-dom-compromisos); --apr-dom-text: var(--fk-dom-compromisos-text); }
-:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta)[data-dom="inversion"]   { --apr-dom: var(--fk-dom-inversion);   --apr-dom-text: var(--fk-dom-inversion-text); }
-:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta)[data-dom="analisis"]    { --apr-dom: var(--fk-dom-analisis);    --apr-dom-text: var(--fk-dom-analisis-text); }
+:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta, .ubicacion-unidad)[data-dom="tesoreria"]   { --apr-dom: var(--fk-dom-tesoreria);   --apr-dom-text: var(--fk-dom-tesoreria-text); }
+:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta, .ubicacion-unidad)[data-dom="presupuesto"] { --apr-dom: var(--fk-dom-presupuesto); --apr-dom-text: var(--fk-dom-presupuesto-text); }
+:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta, .ubicacion-unidad)[data-dom="ahorro"]      { --apr-dom: var(--fk-dom-ahorro);      --apr-dom-text: var(--fk-dom-ahorro-text); }
+:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta, .ubicacion-unidad)[data-dom="metas"]       { --apr-dom: var(--fk-dom-metas);       --apr-dom-text: var(--fk-dom-metas-text); }
+:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta, .ubicacion-unidad)[data-dom="compromisos"] { --apr-dom: var(--fk-dom-compromisos); --apr-dom-text: var(--fk-dom-compromisos-text); }
+:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta, .ubicacion-unidad)[data-dom="inversion"]   { --apr-dom: var(--fk-dom-inversion);   --apr-dom-text: var(--fk-dom-inversion-text); }
+:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta, .ubicacion-unidad)[data-dom="analisis"]    { --apr-dom: var(--fk-dom-analisis);    --apr-dom-text: var(--fk-dom-analisis-text); }
 
 /* ── RUTA ────────────────────────────────────────────────────── */
 .aprende-ruta {
@@ -674,6 +674,53 @@
 .siguiente-paso__acciones { display: flex; flex-wrap: wrap; gap: var(--fk-space-2); margin-top: auto; }
 .siguiente-paso__cta { margin-top: auto; align-self: flex-start; min-height: 2.75rem; }
 .siguiente-paso__acciones .siguiente-paso__cta { margin-top: 0; }
+
+/* ── PRUEBA DE UBICACIÓN (APR.2b, ADR 092 D9) ────────────────────
+   La oferta en la ruta y el resultado: cada unidad en su color, lo que ya
+   sabes en el verde de lo correcto y dónde empiezas en el acento. */
+.aprende-ubicacion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+  padding: var(--fk-space-4);
+  border-radius: var(--fk-radius-lg);
+  border: 1px solid var(--fk-border-subtle);
+  background: var(--fk-bg-surface);
+}
+.aprende-ubicacion__titulo { margin: 0; font-size: var(--fk-text-base); font-weight: var(--fk-font-bold); }
+.aprende-ubicacion__texto { margin: 0; font-size: var(--fk-text-sm); color: var(--fk-text-secondary); line-height: 1.45; }
+.aprende-ubicacion__cta { align-self: flex-start; }
+.ubicacion-unidades {
+  list-style: none;
+  margin: var(--fk-space-2) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+}
+.ubicacion-unidad {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  border: 1px solid var(--fk-border-subtle);
+}
+.ubicacion-unidad--actual { border-color: color-mix(in srgb, var(--fk-accent) 55%, transparent); }
+.ubicacion-unidad__numero {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--fk-radius-sm);
+  background: color-mix(in srgb, var(--apr-dom) 14%, transparent);
+  color: var(--apr-dom-text);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-bold);
+}
+.ubicacion-unidad__nombre { flex: 1; min-width: 0; font-weight: var(--fk-font-semibold); }
+.ubicacion-resto { margin: var(--fk-space-2) 0 0; font-size: var(--fk-text-sm); color: var(--fk-text-secondary); }
 
 /* ── LA SECCIÓN OFRECE SU LECCIÓN (APR.2a, ADR 092 D6) ───────────
    Una fila bajo el bloque protagonista, en el color de la sección. Hecha la

@@ -25,6 +25,7 @@ import {
   cambiarControl, moverItem, comprobarOrden, avanzar, pasoParaRetomar,
   registrarLeccionHecha, unidadTerminada, siguientePaso, registrarSemana,
   ofertaDeSeccion, OFERTAS_DE_SECCION,
+  resultadoUbicacion, aplicarUbicacion,
 } from './logic.js';
 import { modeloAplica } from './aplica.js';
 import { UVT, TOPES_RENTA_UVT, ANIO_VIGENTE } from '../../core/constants.js';
@@ -44,6 +45,9 @@ const _CONTENIDO = {
   u9: () => import('./lecciones/u9.js'),
 };
 
+/** La prueba de ubicación (D9): contenido aparte, se carga al abrirla. */
+const _cargarUbicacion = () => import('./lecciones/ubicacion.js');
+
 /** Distancia horizontal (px) que convierte un arrastre de tarjeta en respuesta. */
 const _UMBRAL_DESLIZAR = 80;
 
@@ -54,6 +58,8 @@ const _MS_CARD_OUT = 220;
 let _leccion = null;
 let _sesion = null;
 let _terminada = false;
+/** Lo abierto es la prueba de ubicación y no una lección (D9). */
+let _esUbicacion = false;
 /** La lección que acaba de terminar completó su unidad por primera vez (insignia, D7). */
 let _celebrarUnidad = false;
 /** Se bloquea mientras una tarjeta sale animada, para no contar dos toques. */
@@ -144,6 +150,13 @@ function _alRegistrar({ section } = {}) {
 
 /** Contexto que la vista necesita además de la sesión. */
 function _contexto(entrada) {
+  if (_esUbicacion) {
+    return {
+      eyebrow: 'Prueba de ubicación', tope: _tope(), terminada: _terminada, entrada,
+      valores: _VALORES_LEGALES, sinRepetir: true,
+      ubicacion: _terminada ? resultadoUbicacion(_leccion, _sesion) : null,
+    };
+  }
   const unidad = unidadDeLeccion(_leccion.id);
   const meta = metaLeccion(_leccion.id);
   const ctx = {
@@ -193,7 +206,8 @@ function _pintar({ entrada = false, foco = 'titulo' } = {}) {
 
 /** Guarda en qué paso va la lección abierta, para retomarla (D7). */
 function _guardarAvance() {
-  if (!_sesion || _terminada) return;
+  // La prueba de ubicación es corta y no se retoma: salir la deja sin hacer.
+  if (!_sesion || _terminada || _esUbicacion) return;
   const a = normalizarAprende(S.aprende);
   S.aprende = { ...a, enCurso: { id: _sesion.leccionId, paso: pasoParaRetomar(_sesion) } };
   save();
@@ -202,6 +216,10 @@ function _guardarAvance() {
 
 /** La lección llegó a su cierre: se registra una vez y se pinta el Aplícalo. */
 function _terminar() {
+  if (_esUbicacion) {
+    _terminarUbicacion();
+    return;
+  }
   const { aprende, primeraVez } = registrarLeccionHecha(S.aprende, _sesion.leccionId, hoy());
   const unidad = unidadDeLeccion(_sesion.leccionId);
   _celebrarUnidad = primeraVez && unidadTerminada(unidad, aprende.hechas);
@@ -215,6 +233,46 @@ function _terminar() {
     : primeraVez ? 'Lección lista.' : 'Lección repasada.');
 }
 
+/** La prueba terminó: marca lo que ya sabes y dice dónde empiezas (D9). */
+function _terminarUbicacion() {
+  const { sabidas, empieza } = resultadoUbicacion(_leccion, _sesion);
+  S.aprende = aplicarUbicacion(S.aprende, sabidas, hoy());
+  save();
+  EventBus.emit('state:change', { section: 'aprende' });
+  _terminada = true;
+  _pintar({ entrada: true });
+  announce(empieza ? `Empiezas en la unidad ${empieza.numero}.` : 'Prueba lista.');
+}
+
+/** Pone una lección, o la prueba de ubicación, en el overlay y lo abre. */
+function _mostrar(leccion, desde, esUbicacion) {
+  _leccion = leccion;
+  _esUbicacion = esUbicacion;
+  _terminada = false;
+  _celebrarUnidad = false;
+  _animando = false;
+  _sesion = crearSesion(leccion, desde);
+  _pintar({ entrada: true, foco: null });
+  const overlay = _overlay();
+  if (!overlay) return;
+  abrirModal(overlay);
+  _panel()?.querySelector('#leccion-titulo')?.focus({ preventScroll: true });
+}
+
+async function _abrirUbicacion() {
+  const prueba = (await _cargarUbicacion())?.default;
+  if (prueba) _mostrar(prueba, 0, true);
+}
+
+/** "Prefiero empezar desde la unidad 1" (D9): deshace lo que marcó la prueba. */
+function _empezarDesdeUno() {
+  S.aprende = { ...normalizarAprende(S.aprende), sabidas: [] };
+  save();
+  EventBus.emit('state:change', { section: 'aprende' });
+  _salir();
+  navigate('aprende');
+}
+
 async function _abrir(el) {
   const id = el?.dataset?.id;
   const meta = metaLeccion(id);
@@ -224,16 +282,7 @@ async function _abrir(el) {
   const leccion = modulo?.default?.[id];
   if (!leccion) return;
   const { enCurso } = normalizarAprende(S.aprende);
-  _leccion = leccion;
-  _terminada = false;
-  _celebrarUnidad = false;
-  _animando = false;
-  _sesion = crearSesion(leccion, enCurso?.id === id ? enCurso.paso : 0);
-  _pintar({ entrada: true, foco: null });
-  const overlay = _overlay();
-  if (!overlay) return;
-  abrirModal(overlay);
-  _panel()?.querySelector('#leccion-titulo')?.focus({ preventScroll: true });
+  _mostrar(leccion, enCurso?.id === id ? enCurso.paso : 0, false);
 }
 
 function _salir() {
@@ -243,6 +292,7 @@ function _salir() {
   _leccion = null;
   _sesion = null;
   _terminada = false;
+  _esUbicacion = false;
   _renderTodo();
 }
 
@@ -406,6 +456,9 @@ export function initAprende() {
   registrarAccion('leccion-comprobar', _comprobar);
   registrarAccion('leccion-limite-hormiga', _ponerLimiteHormiga);
   registrarAccion('aprende-unidad', _alternarUnidad);
+  registrarAccion('ubicacion-abrir', _abrirUbicacion);
+  registrarAccion('ubicacion-inicio', () => { _salir(); navigate('dash'); });
+  registrarAccion('ubicacion-desde-1', _empezarDesdeUno);
   // Los botones del Aplícalo usan acciones globales que ya existen:
   // `ir-a-seccion` (cierra el modal y navega) y `registrar-abrir` (cierra el
   // modal y dispara la acción que consigue el dato que falta, R57). Así la

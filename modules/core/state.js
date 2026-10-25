@@ -580,7 +580,7 @@ export function createInitialState() {
      * - `enCurso`: lección abierta a medias, para retomarla en su paso (D7).
      * @type {{ hechas: Record<string, string>, sabidas: string[], semanas: string[], enCurso: { id: string, paso: number } | null }}
      */
-    aprende: { hechas: {}, sabidas: [], semanas: [], enCurso: null },
+    aprende: { hechas: {}, sabidas: [], semanas: [], enCurso: null, ubicacion: null },
 
     /** Ahorro: fondo de emergencia + hábito (J.1, v7). */
     ahorro: {

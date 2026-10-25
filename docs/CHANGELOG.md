@@ -12,6 +12,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(aprende): APR.2b, la prueba de ubicación · 2026-10-24
+
+[ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D9; ficha [`contexto/aprende.md`](contexto/aprende.md). Cierra la Fase 2 del adulto. Schema v47, SW v603.
+
+- **Cuatro preguntas, una por unidad de la 1 a la 4**, con "Todavía no lo sé" como respuesta válida. Nada vuelve al final: la prueba ubica, no enseña. Equivocarte o no saber dice en qué unidad se aprende.
+- **El resultado dice dónde empiezas** ("Empiezas en la unidad 3"): lo que respondiste bien queda como "Ya lo sabes", sigue abierto para repasar y cuenta en Tu progreso. "Prefiero empezar desde la unidad 1" deshace lo marcado.
+- **Solo al empezar**: la ruta la ofrece debajo de la lección recomendada mientras no hayas hecho, sabido ni empezado nada, y una sola vez (`S.aprende.ubicacion`, la fecha en que la hiciste).
+
 ### feat(aprende): APR.2a, la sección ofrece su lección · 2026-10-24
 
 [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D6; fichas [`contexto/aprende.md`](contexto/aprende.md) y [`contexto/ahorro.md`](contexto/ahorro.md). SW v602.

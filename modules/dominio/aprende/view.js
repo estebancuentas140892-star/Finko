@@ -11,7 +11,7 @@ import { f, esc } from '../../infra/utils.js';
 import { icon, tejaCategoria } from '../../infra/icons.js';
 import {
   estadoRuta, normalizarAprende, leccionDisponible, numeroDePaso, pasoActual,
-  pasoListo, RESULTADOS,
+  pasoListo, RESULTADOS, UNIDADES, ofrecerUbicacion,
 } from './logic.js';
 
 // ── RUTA ─────────────────────────────────────────────────────────
@@ -136,9 +136,18 @@ export function htmlRuta(aprendeCrudo, abierta = null) {
     : enPreparacion
       ? `<p class="aprende-ruta__aviso">Ya hiciste todas las lecciones disponibles. Las próximas unidades están en preparación; mientras tanto, puedes repasar las que ya hiciste.</p>`
       : `<p class="aprende-ruta__aviso">Terminaste las ${ruta.length} unidades de la ruta. Puedes repasar cualquier lección cuando quieras.</p>`;
+  // La prueba de ubicación es opcional al empezar (D9): va debajo de la
+  // lección recomendada, que sigue siendo lo primero.
+  const prueba = ofrecerUbicacion(aprende) ? `
+    <section class="aprende-ubicacion" aria-labelledby="aprende-ubicacion-titulo">
+      <h2 class="aprende-ubicacion__titulo" id="aprende-ubicacion-titulo">¿Ya sabes algo de esto?</h2>
+      <p class="aprende-ubicacion__texto">Responde 4 preguntas y empieza en la unidad que te toca. "Todavía no lo sé" también es una respuesta.</p>
+      <button class="btn btn-secondary btn-sm aprende-ubicacion__cta" type="button" data-action="ubicacion-abrir">Hacer la prueba · 2 min</button>
+    </section>` : '';
   return `
     <div class="aprende-ruta">
       ${cabeza}
+      ${prueba}
       ${grupo('Ya lo sabes', 'aprende-grupo-sabes', yaEsta)}
       ${grupo('Después', 'aprende-grupo-despues', despues)}
     </div>`;
@@ -192,9 +201,9 @@ function _barra(sesion, terminada) {
 }
 
 /** Panel de retroalimentación: "Así es" o "Casi", nunca rojo (D7). */
-function _feedback(correcto, texto, boton, nota = '') {
+function _feedback(correcto, texto, boton, nota = '', tituloPropio = '') {
   const clase = correcto ? 'leccion-fb--bien' : 'leccion-fb--casi';
-  const titulo = correcto ? 'Así es' : 'Casi';
+  const titulo = tituloPropio || (correcto ? 'Así es' : 'Casi');
   const ico = correcto ? icon('check') : icon('lightbulb');
   const accion = boton.accion ?? 'leccion-continuar';
   return `
@@ -238,18 +247,46 @@ function _pasoElegir(paso, sesion, ctx) {
         <span class="leccion-opcion__texto">${_texto(texto, ctx)}</span>${etiqueta}
       </button>`;
   }).join('');
-  const fb = rev
-    ? rev.correcto
-      ? _feedback(true, _texto(paso.bien, ctx), { texto: 'Continuar' })
-      : _feedback(false, _texto(paso.casi?.[rev.elegida], ctx), { texto: 'Entendido' }, _NOTA_VUELVE)
-    : '';
+  const noSe = paso.noSe ? _opcionNoSe(rev) : '';
+  const fb = rev ? _feedbackElegir(paso, sesion, rev, ctx) : '';
   return {
     cuerpo: `
       <p class="leccion__eyebrow">${esc(sesion.repaso ? 'Otra vez' : paso.etiqueta ?? 'Elige una')}</p>
       <h2 class="leccion__titulo" id="leccion-titulo" tabindex="-1">${_texto(paso.pregunta, ctx)}</h2>
-      <div class="leccion-opciones" role="radiogroup" aria-labelledby="leccion-titulo">${opciones}</div>`,
+      <div class="leccion-opciones" role="radiogroup" aria-labelledby="leccion-titulo">${opciones}${noSe}</div>`,
     fb,
   };
+}
+
+/** "Todavía no lo sé" (D9): una respuesta válida, con su letra "?". */
+function _opcionNoSe(rev) {
+  const elegida = rev?.elegida === -1;
+  return `
+      <button class="leccion-opcion${elegida ? ' leccion-opcion--elegida' : ''}" type="button" role="radio"
+              aria-checked="${elegida ? 'true' : 'false'}" data-action="leccion-elegir" data-idx="-1"${rev ? ' aria-disabled="true"' : ''}>
+        <span class="leccion-opcion__letra" aria-hidden="true">?</span>
+        <span class="leccion-opcion__texto">Todavía no lo sé</span>${elegida ? '<span class="chip chip-info leccion-opcion__tag">Tu respuesta</span>' : ''}
+      </button>`;
+}
+
+/**
+ * Retroalimentación de "elegir". En una lección, el error vuelve al final.
+ * En la prueba de ubicación (`ctx.sinRepetir`) nada vuelve: se dice en qué
+ * unidad se aprende y se sigue con la siguiente pregunta.
+ */
+function _feedbackElegir(paso, sesion, rev, ctx) {
+  if (!ctx.sinRepetir) {
+    return rev.correcto
+      ? _feedback(true, _texto(paso.bien, ctx), { texto: 'Continuar' })
+      : _feedback(false, _texto(paso.casi?.[rev.elegida], ctx), { texto: 'Entendido' }, _NOTA_VUELVE);
+  }
+  const boton = { texto: sesion.pos >= sesion.cola.length - 1 ? 'Ver mi resultado' : 'Siguiente pregunta' };
+  if (rev.correcto) return _feedback(true, _texto(paso.bien, ctx), boton);
+  const unidad = UNIDADES.find(u => u.id === paso.unidad);
+  const nota = unidad ? `Lo ves en la unidad ${unidad.numero}, ${esc(unidad.nombre)}.` : '';
+  return rev.elegida === -1
+    ? _feedback(false, _texto(paso.bien, ctx), boton, nota, 'Sin problema')
+    : _feedback(false, _texto(paso.casi?.[rev.elegida], ctx), boton, nota);
 }
 
 function _pasoClasificar(paso, sesion, ctx) {
@@ -477,6 +514,67 @@ function _pasoAplica(ctx) {
   };
 }
 
+// ── RESULTADO DE LA PRUEBA DE UBICACIÓN (D9) ─────────────────────
+
+/** Unidades que el resultado lista antes de resumir el resto (diseño: cinco). */
+const _FILAS_RESULTADO = 5;
+const _CUANTAS = ['', 'una', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve'];
+
+/** "a, b y c", con "e" delante de una palabra que suena a "i". */
+function _enumerar(palabras) {
+  if (palabras.length < 2) return palabras.join('');
+  const ultima = palabras.at(-1);
+  const y = /^h?i(?![aeiouáéó])/i.test(ultima) ? 'e' : 'y';
+  return `${palabras.slice(0, -1).join(', ')} ${y} ${ultima}`;
+}
+
+/**
+ * Dónde empiezas, qué quedó como sabido y la salida para empezar desde la
+ * unidad 1 (D9). Las sabidas siguen abiertas para repasar.
+ *
+ * @param {{ sabidas: string[], empieza: any }} resultado
+ */
+function _resultadoUbicacion({ sabidas, empieza }) {
+  const numeros = UNIDADES.filter(u => sabidas.includes(u.id)).map(u => u.numero);
+  const n = numeros.length;
+  const titulo = empieza ? `Empiezas en la unidad ${empieza.numero}` : 'Ya sabes lo de toda la ruta';
+  const linea = n === 0
+    ? 'Empiezas por lo básico, a tu ritmo. Nada está cerrado: puedes abrir cualquier unidad cuando quieras.'
+    : `Respondiste bien lo de ${n === 1 ? 'la unidad' : 'las unidades'} ${_enumerar(numeros.map(String))}. ${n === 1 ? 'La marcamos como sabida y sigue abierta' : 'Las marcamos como sabidas y siguen abiertas'} para repasar.`;
+  const visibles = Math.max(_FILAS_RESULTADO, (empieza?.numero ?? 0) + 1);
+  const filas = UNIDADES.slice(0, visibles).map(u => {
+    const [chip, texto] = sabidas.includes(u.id)
+      ? ['chip-success', 'Ya lo sabes']
+      : u.id === empieza?.id ? ['chip-accent', 'Empiezas aquí'] : ['', 'Después'];
+    return `
+        <li class="ubicacion-unidad${u.id === empieza?.id ? ' ubicacion-unidad--actual' : ''}" data-dom="${u.dominio}">
+          <span class="ubicacion-unidad__numero" aria-hidden="true">${u.numero}</span>
+          <span class="ubicacion-unidad__nombre">${esc(u.nombre)}</span>
+          <span class="chip ${chip}">${texto}</span>
+        </li>`;
+  }).join('');
+  const resto = UNIDADES.slice(visibles);
+  // El primer nombre de cada unidad, en minúscula: "deudas, crédito, invertir e impuestos".
+  const restoTxt = resto.length
+    ? `Y ${resto.length} ${resto.length === 1 ? 'unidad' : 'unidades'} más: ${esc(_enumerar(resto.map(u => u.nombre.split(/[\s:]/)[0].toLowerCase())))}.`
+    : '';
+  const cuentan = n === 0 ? '' : n === 1
+    ? 'La que ya sabes cuenta en Tu progreso.'
+    : `Las ${_CUANTAS[n] ?? n} que ya sabes cuentan en Tu progreso.`;
+  const nota = [restoTxt, cuentan].filter(Boolean).join(' ');
+  return {
+    cuerpo: `
+      <p class="leccion__eyebrow">Prueba de ubicación</p>
+      <h2 class="leccion__titulo leccion__titulo--grande" id="leccion-titulo" tabindex="-1">${titulo}</h2>
+      <p class="leccion__texto">${linea}</p>
+      <ul class="ubicacion-unidades">${filas}</ul>
+      ${nota ? `<p class="ubicacion-resto">${nota}</p>` : ''}`,
+    pie: `
+      <button class="btn btn-primary leccion__boton" type="button" data-action="ubicacion-inicio">Ir a mi Inicio</button>
+      ${n ? '<button class="btn btn-ghost leccion__boton" type="button" data-action="ubicacion-desde-1">Prefiero empezar desde la unidad 1</button>' : ''}`,
+  };
+}
+
 /**
  * HTML completo del panel de la lección para el paso activo.
  *
@@ -491,7 +589,7 @@ function _pasoAplica(ctx) {
 export function htmlLeccion(sesion, leccion, ctx) {
   const paso = pasoActual(sesion, leccion);
   let partes = { cuerpo: '', pie: '', fb: '' };
-  if (ctx.terminada) partes = _pasoAplica(ctx);
+  if (ctx.terminada) partes = ctx.ubicacion ? _resultadoUbicacion(ctx.ubicacion) : _pasoAplica(ctx);
   else if (paso?.tipo === 'concepto') partes = _pasoConcepto(paso, ctx);
   else if (paso?.tipo === 'elegir') partes = _pasoElegir(paso, sesion, ctx);
   else if (paso?.tipo === 'clasificar') partes = _pasoClasificar(paso, sesion, ctx);
@@ -503,7 +601,7 @@ export function htmlLeccion(sesion, leccion, ctx) {
   // trae su propio botón y no puede haber dos primarios a la vez.
   const pie = partes.fb || !partes.pie ? '' : `<div class="leccion__pie">${partes.pie}</div>`;
   return `
-    <div class="leccion__marco${listo}" data-paso="${esc(ctx.terminada ? 'aplica' : paso?.tipo ?? '')}"
+    <div class="leccion__marco${listo}" data-paso="${esc(ctx.terminada ? (ctx.ubicacion ? 'resultado' : 'aplica') : paso?.tipo ?? '')}"
          data-listo="${pasoListo(sesion, leccion) ? 'true' : 'false'}">
       ${_barra(sesion, ctx.terminada)}
       <div class="leccion__cuerpo${animar}">${partes.cuerpo}</div>

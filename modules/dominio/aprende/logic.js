@@ -69,6 +69,7 @@ export function normalizarAprende(aprende) {
     sabidas: Array.isArray(a.sabidas) ? a.sabidas : [],
     semanas: Array.isArray(a.semanas) ? a.semanas : [],
     enCurso: a.enCurso && typeof a.enCurso.id === 'string' ? a.enCurso : null,
+    ubicacion: typeof a.ubicacion === 'string' ? a.ubicacion : null,
   };
 }
 
@@ -115,6 +116,52 @@ export function siguienteLeccion(aprende) {
   const actual = estadoRuta(aprende).find(e => e.estado === 'actual');
   if (!actual) return null;
   return actual.unidad.lecciones.find(l => leccionDisponible(l) && !hechas[l.id]) ?? null;
+}
+
+// ── PRUEBA DE UBICACIÓN (D9) ─────────────────────────────────────
+
+/**
+ * Resultado de la prueba: cada unidad respondida bien queda como sabida
+ * (D9) y empiezas en la primera que no sabes. "Todavía no lo sé" cuenta
+ * como no sabida, nunca como error.
+ *
+ * @param {{ pasos: any[] }} prueba
+ * @param {Sesion} sesion
+ * @returns {{ sabidas: string[], empieza: Unidad | null }}
+ */
+export function resultadoUbicacion(prueba, sesion) {
+  const respuestas = sesion?.respuestas ?? {};
+  const sabidas = prueba.pasos
+    .map((p, i) => (respuestas[i] === true ? p.unidad : null))
+    .filter(id => UNIDADES.some(u => u.id === id));
+  const empieza = UNIDADES.find(u => !sabidas.includes(u.id)) ?? null;
+  return { sabidas, empieza };
+}
+
+/**
+ * Guarda el resultado de la prueba. Devuelve un `aprende` NUEVO: suma las
+ * sabidas a las que ya hubiera y anota la fecha, que es lo que impide
+ * volver a ofrecerla.
+ *
+ * @param {unknown} aprende
+ * @param {string[]} sabidas
+ * @param {string} hoyISO
+ */
+export function aplicarUbicacion(aprende, sabidas, hoyISO) {
+  const a = normalizarAprende(aprende);
+  return { ...a, sabidas: [...new Set([...a.sabidas, ...sabidas])], ubicacion: hoyISO };
+}
+
+/**
+ * La ruta ofrece la prueba solo al empezar (D9: "opcional al empezar
+ * Aprende"): una vez, y mientras no hayas hecho, sabido ni empezado nada.
+ *
+ * @param {unknown} aprende
+ * @returns {boolean}
+ */
+export function ofrecerUbicacion(aprende) {
+  const a = normalizarAprende(aprende);
+  return !a.ubicacion && !a.enCurso && !a.sabidas.length && !Object.keys(a.hechas).length;
 }
 
 // ── LA SECCIÓN OFRECE SU LECCIÓN (D6) ────────────────────────────
@@ -242,7 +289,7 @@ export function crearSesion(leccion, desde = 0) {
   const vistos = cola.slice(0, inicio);
   return _entrarAlPaso({
     leccionId: leccion.id, cola, pos: inicio, total, vistos,
-    repaso: false, revision: null, tarjetas: null, orden: null, valores: {},
+    repaso: false, revision: null, tarjetas: null, orden: null, valores: {}, respuestas: {},
   }, leccion);
 }
 
@@ -291,9 +338,16 @@ export function numeroDePaso(s) {
 export function responderElegir(s, leccion, elegida) {
   const paso = pasoActual(s, leccion);
   if (paso?.tipo !== 'elegir' || s.revision) return s;
+  // -1 es "Todavía no lo sé", válida solo donde el paso la ofrece (D9).
+  const valida = elegida === -1
+    ? paso.noSe === true
+    : Number.isInteger(elegida) && elegida >= 0 && elegida < paso.opciones.length;
+  if (!valida) return s;
   const correcto = elegida === paso.correcta;
-  const cola = correcto ? s.cola : _reencolar(s, leccion);
-  return { ...s, cola, revision: { correcto, elegida } };
+  // En la prueba de ubicación nada vuelve al final: ubica, no enseña.
+  const cola = correcto || leccion.sinRepetir ? s.cola : _reencolar(s, leccion);
+  const respuestas = { ...s.respuestas, [s.cola[s.pos]]: correcto };
+  return { ...s, cola, respuestas, revision: { correcto, elegida } };
 }
 
 /**

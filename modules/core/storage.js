@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 46;
+const SCHEMA_VERSION = 47;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -683,6 +683,15 @@ function _migrate(raw) {
       tope:   Number.isFinite(Number(h.tope)) && Number(h.tope) > 0 ? Number(h.tope) : 20_000,
       limite: Number.isFinite(Number(h.limite)) && Number(h.limite) > 0 ? Number(h.limite) : null,
     };
+  }
+
+  // v46 → v47: `aprende.ubicacion` (APR.2b, ADR 092 D9). La fecha en que
+  // hiciste la prueba de ubicación, o null. Un estado viejo arranca en null:
+  // la ruta solo la ofrece a quien no ha hecho nada todavía.
+  if ((typeof data._version === 'number' ? data._version : 1) < 47) {
+    if (data.aprende && typeof data.aprende === 'object' && !Array.isArray(data.aprende)) {
+      data.aprende.ubicacion = typeof data.aprende.ubicacion === 'string' ? data.aprende.ubicacion : null;
+    }
   }
 
   if (typeof data._version !== 'number' || data._version < SCHEMA_VERSION) {

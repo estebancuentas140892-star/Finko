@@ -1960,7 +1960,7 @@ describe('Migración v44 → v45 (aprende, APR.1a)', () => {
 
     expect(S._version).toBe(SCHEMA_VERSION);
     expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(45);
-    expect(S.aprende).toEqual({ hechas: {}, sabidas: [], semanas: [], enCurso: null });
+    expect(S.aprende).toEqual({ hechas: {}, sabidas: [], semanas: [], enCurso: null, ubicacion: null });
   });
 
   it('normaliza un aprende a medias campo por campo', () => {
@@ -1970,7 +1970,7 @@ describe('Migración v44 → v45 (aprende, APR.1a)', () => {
 
     loadData();
 
-    expect(S.aprende).toEqual({ hechas: { 'u3-l2': '2026-10-01' }, sabidas: [], semanas: [], enCurso: null });
+    expect(S.aprende).toEqual({ hechas: { 'u3-l2': '2026-10-01' }, sabidas: [], semanas: [], enCurso: null, ubicacion: null });
   });
 
   it('es idempotente: un aprende v45 válido sobrevive a guardar y cargar', () => {
@@ -1980,7 +1980,31 @@ describe('Migración v44 → v45 (aprende, APR.1a)', () => {
 
     loadData();
 
-    expect(S.aprende).toEqual(v45.aprende);
+    expect(S.aprende).toEqual({ ...v45.aprende, ubicacion: null });
+  });
+});
+
+describe('Migración v46 → v47 (aprende.ubicacion, APR.2b)', () => {
+  it('un usuario existente queda sin prueba hecha y conserva lo demás', () => {
+    const v46 = { ...createInitialState(), _version: 46 };
+    v46.aprende = { hechas: { 'u3-l2': '2026-10-01' }, sabidas: [], semanas: ['2026-W40'], enCurso: null };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v46));
+
+    loadData();
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(47);
+    expect(S.aprende).toEqual({ ...v46.aprende, ubicacion: null });
+  });
+
+  it('es idempotente: conserva la fecha de una prueba hecha', () => {
+    const v47 = { ...createInitialState(), _version: 47 };
+    v47.aprende = { hechas: {}, sabidas: ['u1'], semanas: [], enCurso: null, ubicacion: '2026-10-24' };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v47));
+
+    loadData();
+
+    expect(S.aprende).toEqual(v47.aprende);
   });
 });
 

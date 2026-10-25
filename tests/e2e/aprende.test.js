@@ -219,3 +219,55 @@ test.describe('APR.2a - la sección ofrece su lección', () => {
   });
 });
 
+test.describe('APR.2b - prueba de ubicación', () => {
+  test.beforeEach(async ({ page }) => {
+    await sembrarSiVacio(page, estadoBase());
+    await page.goto('/#aprende');
+    await page.waitForSelector('#sec-aprende.active', { timeout: 10_000 });
+  });
+
+  /** Responde las cuatro preguntas por índice ('-1' es "Todavía no lo sé"). */
+  async function responder(page, indices) {
+    for (const idx of indices) {
+      await page.click(`[data-action="leccion-elegir"][data-idx="${idx}"]`);
+      await page.click('.leccion-fb [data-action="leccion-continuar"]');
+    }
+  }
+
+  test('lo que sabes queda sabido y la ruta empieza donde te toca', async ({ page }) => {
+    await page.click('[data-action="ubicacion-abrir"]');
+    await expect(page.locator('#modal-leccion[data-open]')).toHaveCount(1);
+    await expect(page.locator('.leccion__cuenta')).toHaveText('1 de 4');
+    // Bien la 1 y la 2, "Todavía no lo sé" en la 3 y mal la 4.
+    await responder(page, ['1', '1', '-1', '0']);
+
+    await expect(page.locator('#leccion-titulo')).toHaveText('Empiezas en la unidad 3');
+    await expect.poll(async () => (await leerEstado(page)).aprende?.sabidas).toEqual(['u1', 'u2']);
+    await page.click('[data-action="ubicacion-inicio"]');
+    await page.waitForSelector('#sec-dash.active', { timeout: 5_000 });
+
+    await page.goto('/#aprende');
+    await page.waitForSelector('#sec-aprende.active', { timeout: 10_000 });
+    await expect(page.locator('.aprende-unidad--actual')).toContainText('Unidad 3 · vas aquí');
+    await expect(page.locator('#aprende-grupo-sabes')).toBeVisible();
+    await expect(page.locator('[data-action="ubicacion-abrir"]')).toHaveCount(0);
+  });
+
+  test('"Prefiero empezar desde la unidad 1" deshace lo marcado y no vuelve a ofrecerla', async ({ page }) => {
+    await page.click('[data-action="ubicacion-abrir"]');
+    await responder(page, ['1', '1', '2', '2']);
+    await expect(page.locator('#leccion-titulo')).toHaveText('Empiezas en la unidad 5');
+    await page.click('[data-action="ubicacion-desde-1"]');
+
+    await expect(page.locator('#modal-leccion[data-open]')).toHaveCount(0);
+    await expect(page.locator('.aprende-unidad--actual')).toContainText('Unidad 1 · vas aquí');
+    await expect(page.locator('[data-action="ubicacion-abrir"]')).toHaveCount(0);
+    // save() va con debounce (ADN 5) y `sabidas` ya era [] al sembrar: se
+    // espera a que quede escrita también la fecha de la prueba.
+    await expect.poll(async () => {
+      const a = (await leerEstado(page)).aprende;
+      return [a?.sabidas, typeof a?.ubicacion];
+    }).toEqual([[], 'string']);
+  });
+});
+
