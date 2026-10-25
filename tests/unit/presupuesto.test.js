@@ -18,8 +18,10 @@ import {
   normalizarPresupuesto,
   UMBRAL_ALERTA,
   UMBRAL_EXCEDIDO,
+  progresoHormiga,
+  validarHormiga,
 } from '../../modules/dominio/presupuesto/logic.js';
-import { renderPanelPresupuesto, renderFormPresupuesto, renderPanelLimites } from '../../modules/dominio/presupuesto/view.js';
+import { renderPanelPresupuesto, renderFormPresupuesto, renderPanelLimites, renderFormHormiga } from '../../modules/dominio/presupuesto/view.js';
 import { S } from '../../modules/core/state.js';
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -1629,5 +1631,86 @@ describe('renderPanelPresupuesto() - columna de grupos (DSK.8a)', () => {
     if (!grid) return;
     const orden = [...grid.querySelectorAll('.grupo-card')].map(c => c.dataset.grupo);
     expect(orden).toEqual(['necesidades', 'ahorro', 'estilo-de-vida']);
+  });
+});
+
+// ── Gastos pequeños (APR.1b, ADR 092) ─────────────────────────────────────────
+
+describe('progresoHormiga()', () => {
+  const gastos = [
+    { fecha: '2026-10-02', monto: 15_000, categoria: 'Café' },
+    { fecha: '2026-10-03', monto: 18_000, categoria: 'Domicilios' },
+    { fecha: '2026-10-04', monto: 300_000, categoria: 'Mercado' },
+    { fecha: '2026-09-30', monto: 9_000, categoria: 'Café' },
+  ];
+
+  it('sin límite devuelve el total del mes para poder ofrecerlo', () => {
+    const p = progresoHormiga(gastos, { hormiga: { tope: 20_000, limite: null } }, 2026, 10);
+    expect(p).toMatchObject({ limite: null, gastado: 33_000, cuantos: 2, tope: 20_000, estado: 'ok' });
+  });
+
+  it('con límite usa el mismo criterio de estado que un tope por categoría', () => {
+    const conLimite = (limite) => progresoHormiga(gastos, { hormiga: { tope: 20_000, limite } }, 2026, 10);
+    expect(conLimite(100_000)).toMatchObject({ estado: 'ok', porcentaje: 33, restante: 67_000 });
+    expect(conLimite(40_000)).toMatchObject({ estado: 'alerta' });
+    expect(conLimite(30_000)).toMatchObject({ estado: 'excedido', restante: -3_000 });
+  });
+
+  it('cuenta con el tope configurado, no con el de por defecto', () => {
+    const p = progresoHormiga(gastos, { hormiga: { tope: 15_000, limite: 50_000 } }, 2026, 10);
+    expect(p).toMatchObject({ gastado: 15_000, cuantos: 1 });
+  });
+
+  it('un config sin hormiga cae al tope de siempre y sin límite', () => {
+    expect(progresoHormiga(gastos, {}, 2026, 10)).toMatchObject({ tope: 20_000, limite: null });
+  });
+});
+
+describe('validarHormiga()', () => {
+  it('acepta un tope en rango y un límite vacío o positivo', () => {
+    expect(validarHormiga({ tope: '20000', limite: '' })).toEqual([]);
+    expect(validarHormiga({ tope: '1000', limite: '150000' })).toEqual([]);
+  });
+
+  it('rechaza un tope fuera de rango y un límite que no es positivo', () => {
+    expect(validarHormiga({ tope: '500', limite: '' })).toHaveLength(1);
+    expect(validarHormiga({ tope: '200000', limite: '' })).toHaveLength(1);
+    expect(validarHormiga({ tope: '20000', limite: '0' })).toHaveLength(1);
+    expect(validarHormiga({ tope: '20000', limite: 'abc' })).toHaveLength(1);
+  });
+});
+
+describe('Límites: la tarjeta de gastos pequeños', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-presupuesto"></div>';
+    S.presupuestos = [];
+    S.ingresos = [];
+    const hoy = new Date();
+    const dia = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-02`;
+    S.gastos = [{ id: 'g1', fecha: dia, monto: 12_000, categoria: 'Café' }];
+  });
+
+  it('sin límite ofrece ponerlo, con el total del mes a la vista', () => {
+    S.config = { ...S.config, hormiga: { tope: 20_000, limite: null } };
+    renderPanelPresupuesto();
+    const html = document.getElementById('panel-presupuesto').innerHTML;
+    expect(html).toContain('hormiga-oferta');
+    expect(html).toContain('data-action="hormiga-editar"');
+  });
+
+  it('con límite se dibuja como un sobre más, con editar y quitar', () => {
+    S.config = { ...S.config, hormiga: { tope: 20_000, limite: 50_000 } };
+    renderPanelPresupuesto();
+    const html = document.getElementById('panel-presupuesto').innerHTML;
+    expect(html).toContain('envelope--hormiga');
+    expect(html).toContain('Gastos pequeños');
+    expect(html).toContain('data-action="hormiga-quitar"');
+  });
+
+  it('el formulario trae el límite propuesto y el tope vigente', () => {
+    S.config = { ...S.config, hormiga: { tope: 15_000, limite: null } };
+    const html = renderFormHormiga(150_000);
+    expect(html).toContain('value="150000"');
+    expect(html).toContain('value="15000"');
   });
 });

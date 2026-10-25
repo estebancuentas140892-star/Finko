@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 45;
+const SCHEMA_VERSION = 46;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -669,6 +669,19 @@ function _migrate(raw) {
       sabidas: Array.isArray(a.sabidas) ? a.sabidas : [],
       semanas: Array.isArray(a.semanas) ? a.semanas : [],
       enCurso: a.enCurso && typeof a.enCurso.id === 'string' ? a.enCurso : null,
+    };
+  }
+
+  // v45 → v46: `config.hormiga` (APR.1b, ADR 092). El tope de gasto pequeño
+  // pasa a ser del usuario y gana un límite mensual opcional. Un estado viejo
+  // arranca con el tope de siempre (20.000) y sin límite: nada cambia hasta
+  // que el usuario lo toque.
+  if ((typeof data._version === 'number' ? data._version : 1) < 46) {
+    if (!data.config || typeof data.config !== 'object') data.config = {};
+    const h = data.config.hormiga && typeof data.config.hormiga === 'object' ? data.config.hormiga : {};
+    data.config.hormiga = {
+      tope:   Number.isFinite(Number(h.tope)) && Number(h.tope) > 0 ? Number(h.tope) : 20_000,
+      limite: Number.isFinite(Number(h.limite)) && Number(h.limite) > 0 ? Number(h.limite) : null,
     };
   }
 

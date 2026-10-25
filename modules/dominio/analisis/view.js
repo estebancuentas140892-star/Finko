@@ -10,6 +10,7 @@ import { estadoVigenciaLegal } from '../../core/constants.js';
 import { sparkline, donut, colorearSegmentos, progressRing } from '../../infra/svg.js';
 import { icon } from '../../infra/icons.js';
 import { memoizar } from '../../infra/memo.js';
+import { topeHormiga } from '../../infra/hormiga.js';
 import { gastosMes } from '../gastos/logic.js';
 import {
   generarResumen, serieGastosMensual, seriePorCategoria,
@@ -60,9 +61,11 @@ const _MESES = [
  * @param {import('../../core/state.js').Inversion[]} inversiones
  * @param {number} anio
  * @param {number} mes
+ * @param {number} tope - tope de gasto pequeño vigente (APR.1b): entra a la
+ *   clave de la memoización, así que cambiarlo en Límites recalcula.
  */
-function _calcularDatosAnalisis(gastos, compromisos, cuentas, metas, apartados, inversiones, personales, anio, mes) {
-  const resumen = generarResumen(gastos, compromisos, cuentas, anio, mes, metas, apartados, inversiones, personales);
+function _calcularDatosAnalisis(gastos, compromisos, cuentas, metas, apartados, inversiones, personales, anio, mes, tope) {
+  const resumen = generarResumen(gastos, compromisos, cuentas, anio, mes, metas, apartados, inversiones, personales, tope);
 
   // Series para gráficos (D.3). Se calculan aquí para no inflar generarResumen.
   const serieGastos  = serieGastosMensual(gastos, anio, mes, 12);
@@ -153,6 +156,7 @@ export function precalentarAnalisis() {
   const mes  = Number(fechaHoy.slice(5, 7));
   _calcularDatosAnalisisMemo(
     S.gastos, S.compromisos, S.cuentas, S.metas, S.apartados, S.inversiones, S.personales, anio, mes,
+    topeHormiga(S.config),
   );
 }
 
@@ -186,6 +190,7 @@ export function renderAnalisis() {
 
   const { resumen, serieGastos, segmentosCat, lecturas } = _calcularDatosAnalisisMemo(
     S.gastos, S.compromisos, S.cuentas, S.metas, S.apartados, S.inversiones, S.personales, anio, mes,
+    topeHormiga(S.config),
   );
 
   // ANL.2d (ADR 038 D7): sin gastos registrados, sin activos y sin deudas no

@@ -1,6 +1,6 @@
 # Ficha de contexto: Límites de gasto
 
-> Revisado: 2026-08-21 (ficha 12, ADR 085).
+> Revisado: 2026-10-24 (APR.1b; antes, ficha 12, ADR 085).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 > El dominio se llama `presupuesto` en el código; "Límites de gasto" es el nombre de cara al usuario (para no confundirlo con Apartados: guardar dinero vs. vigilar cuánto sale).
@@ -75,6 +75,7 @@
 
 **Cambios realizados**:
 
+- 2026-10-24 (**APR.1b**, [ADR 092](../DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md)): sobre de **gastos pequeños** (`_renderHormiga()` en `view.js`, `progresoHormiga()` y `validarHormiga()` en `logic.js`): cruza categorías y mide las compras de hasta el tope contra `S.config.hormiga.limite` (schema v46). Sin límite, una línea con el total del mes ofrece ponerlo. El formulario `renderFormHormiga()` comparte `#modal-presupuesto` y fija también el tope, que leen Aprende, Gastos, Análisis y el logro `hormiga-a-raya`. Escucha `hormiga:limite` (lo emite el Aplícalo de Aprende) y repinta con `state:change` de `config`.
 - 2026-08-21 (**MOV.1 ficha 12**, [ADR 085](../DECISIONS/085-limites-la-lente-contiene-limites.md)): `ordenarPresupuestosPorUrgencia()` nueva en `logic.js`; `_renderResumenGrupos()` deja de emitir tarjetas y emite `_renderFranjaPlan()` mas el bloque de topes; `_renderGrupoCard()`, los dos desgloses y `_renderResumenGruposVacio()` se retiran; `_renderNudgesPlan()` recoge los mensajes de grupo que vivian en las tarjetas; `_MOTIVO_SIN_TOPE` gana `_DESTINO_SIN_TOPE` y su enlace; `.plan-franja` nueva en `analysis.css` y 39 reglas muertas fuera. Commit `47a2271`.
 
 - `2026-08-20 ficha 07 (ADR 069 D8)`: la lente obedece al reloj del bloque en vez de a `new Date()`, y cada tope ofrece "Ver movimientos" (G5). Las cuatro filas de "Se controla en..." pasan a nombrar "Por pagar".

@@ -161,9 +161,6 @@
 
 ### Fase 1 - Adulto (primer alcance de implementación)
 
-#### APR.1b - Unidad 3: gastos hormiga y límites
-- Estado : pendiente. **Área**: ambos. **Objetivo**: las lecciones 1, 3 (ordenar y "¿qué harías?") y 4 de la unidad 3; el botón del Aplícalo crea el límite de gastos pequeños en Límites ("Poner un límite de $X", R50) en vez de solo llevar ahí; insignia al terminar la unidad (`badgeIn`); tope hormiga configurable en Límites con $20.000 por defecto, leído por `infra/hormiga.js`, sin regalar `hormiga-a-raya` (ADR 092, dudas). **Aceptación**: test de que cambiar el tope no desbloquea el logro; textos con revisión pedagógica registrada. **Modelo**: Equilibrado, Alto.
-
 #### APR.1c - Inicio como bloque de tres lentes
 - Estado : pendiente. **Área**: ambos. **Objetivo**: franja de pestañas Hoy, Aprende y Tu progreso con su estado encima (R81), lente Aprende como lista de nueve unidades abiertas, "Tu siguiente paso" en la celda de la tarjeta compacta, y en escritorio "Aprende" en "Día a día" y "Tu progreso" en "Cómo voy" (ADR 092 D1, D5). La barra móvil no cambia; la ruta y la fila de escritorio ya existen (APR.1a). **Riesgo**: selectores sobre `[href="#dash"]` (declarar contexto). **Aceptación**: Inicio en móvil no crece; E2E de navegación entre lentes. **Modelo**: Equilibrado, Alto.
 

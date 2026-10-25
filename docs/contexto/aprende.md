@@ -11,7 +11,7 @@
 ## Ruta y lección (dominio `aprende`)
 
 - **Objetivo**          : enseñar con práctica y cerrar cada lección en la sección donde se aplica, con los datos del usuario (Aplícalo, D7).
-- **Estado actual**     : en evolución (iniciativa APR). APR.1a cerrada: motor de lección, estado en `S`, ruta y la lección 2 de la unidad 3. Entrada visible solo en escritorio (sidebar, "Día a día"); en móvil se llega por `#aprende` hasta que APR.1c ponga las lentes de Inicio.
+- **Estado actual**     : en evolución (iniciativa APR). APR.1a y APR.1b cerradas: motor de lección, estado en `S`, ruta y la unidad 3 completa (cuatro lecciones, insignia al terminarla, Aplícalo que pone el límite de gastos pequeños en Límites). Entrada visible solo en escritorio (sidebar, "Día a día"); en móvil se llega por `#aprende` hasta que APR.1c ponga las lentes de Inicio.
 - **Verificado contra** : commit de APR.1a (2026-10-24).
 
 **Dónde vive**
@@ -30,13 +30,16 @@
 | HTML de cada paso y del cierre | `modules/dominio/aprende/view.js` | `htmlLeccion()`, `_pasoAplica()`, `htmlResultadoControl()` | ~421 |
 | Carga del contenido con `import()` | `modules/dominio/aprende/index.js` | `_CONTENIDO` | ~30 |
 | Acciones de la lección | `modules/dominio/aprende/index.js` | `data-action="leccion-*"` en `initAprende()` | ~276 |
+| "Poner un límite de $X": evento `hormiga:limite` y navegación a Límites | `modules/dominio/aprende/index.js` | `_ponerLimiteHormiga()` | ~275 |
+| Desplegar en la ruta una unidad que no es la actual | `modules/dominio/aprende/index.js` | `_alternarUnidad()`, `data-action="aprende-unidad"` | ~285 |
+| Celebración de unidad (insignia `il-insignia`, `badgeIn`) | `modules/dominio/aprende/view.js` | `_cabezaCierre()` | ~400 |
 | Gesto de deslizar (pointer events) | `modules/dominio/aprende/index.js` | `_alPresionar()`, `_alArrastrar()`, `_alSoltar()` | ~249 |
 | Criterio de gasto hormiga (compartido con `gastos` y `logros`) | `modules/infra/hormiga.js` | `UMBRAL_GASTO_HORMIGA`, `resumenHormigaMes()` | ~15, ~40 |
 | Sección y overlay | `index.html` | `#sec-aprende`, `#panel-aprende`, `#modal-leccion`, `#leccion-panel` | |
 
 **Recursos**: `c-birrete` (ícono de la sección), `i-check`, `i-arrow-left`, `i-arrow-right`, `i-chevron-up`, `i-chevron-down` (nuevos en `assets/svg/iconos/utilitarios/`). CSS: `styles/components/aprende.css` (`.aprende-*`, `.leccion*`, filas de animación `stepIn`, `feedbackIn`, `cardOutDer`/`cardOutIzq`, `checkIn`); geometría del overlay en `styles/modals.css` (bloque "LECCIÓN A PANTALLA COMPLETA"). Color de unidad por `data-dom` → `--apr-dom`/`--apr-dom-text`. Estado: `S.aprende` (schema v45).
 
-**Dependencias y relaciones**: escucha `state:change` (repinta la ruta con `programarRender`) y `hashchange`. No emite eventos propios. Los botones del Aplícalo usan acciones globales de `ui/actions.js`: `ir-a-seccion` (cierra y navega) y `registrar-abrir` (cierra y abre `nuevo-gasto`), así no importa dominios destino. Lee `S.gastos` y `S.categoriasPersonalizadas`; `iconoDeCategoriaGasto()` de `core/constants.js`.
+**Dependencias y relaciones**: escucha `state:change` (repinta la ruta con `programarRender`) y `hashchange`. Emite `hormiga:limite` (`{ monto }`), que atiende `presupuesto` (dueño del límite, ficha [`limites.md`](limites.md)). El tope de gasto pequeño lo lee de `S.config.hormiga` con `topeHormiga()`. Los botones del Aplícalo usan acciones globales de `ui/actions.js`: `ir-a-seccion` (cierra y navega) y `registrar-abrir` (cierra y abre `nuevo-gasto`), así no importa dominios destino. Lee `S.gastos` y `S.categoriasPersonalizadas`; `iconoDeCategoriaGasto()` de `core/constants.js`.
 
 **Riesgos**:
 
@@ -45,12 +48,14 @@
 - **Primer `import()` dinámico del proyecto.** Todo módulo de `lecciones/` debe estar en el precache del SW (lo exige `sw-precache.test.js`); si falta, la lección no abre sin red.
 - **El panel se repinta entero en cada paso.** El foco se mueve a mano (`_pintar({ foco })`): al agregar un tipo de paso, decidir a dónde va el foco o se pierde.
 - **El deslizador no repinta el paso** (perdería el foco mientras se arrastra): `_alMoverRango()` parcha el número y `#leccion-resultado`.
-- **Las tarjetas de clasificar deben respetar el tope**: un test exige que las marcadas `es: true` sean hormiga según `esGastoHormiga()`.
+- **Las tarjetas de clasificar deben respetar el tope**: un test exige, en toda la unidad, que las marcadas `es: true` sean hormiga según `esGastoHormiga()` con el tope por defecto.
+- **La insignia sale solo la primera vez** que una lección completa su unidad (`primeraVez` de `registrarLeccionHecha()`): repasar la última lección no vuelve a celebrar.
 
 **Cambios pendientes**: la ilustración `il-hormiga` del concepto no entró al sprite (usa clases y `ellipse`, fuera del estándar de `sync-sprite.py`); va con APR.3b o se redibuja con el estándar. Ordenar pasos solo con flechas: el arrastre llega con APR.4a.
 
 **Cambios realizados**:
 
+- 2026-10-24 (APR.1b): lecciones 1, 3 y 4 de la unidad 3, insignia de unidad, unidades desplegables en la ruta, Aplícalo que pone el límite de gastos pequeños.
 - 2026-10-24 (APR.1a): dominio nuevo, `S.aprende` (v45), ruta, lección 2 de la unidad 3 de punta a punta, `infra/hormiga.js` como criterio único del umbral.
 
-**Observaciones**: el Aplícalo de la unidad 3 lleva a Límites con el monto sugerido escrito; crear el límite de gastos pequeños desde el botón es APR.1b. El texto del logro "Hormiga a raya" en el cierre describe la regla real del ADR 032 (bajar del promedio de los tres meses anteriores), no la del diseño ("mantenerte bajo el límite"), que no existe.
+**Observaciones**: el Aplícalo de las lecciones 2 a 4 pone el límite de gastos pequeños con el monto sugerido (80 % de lo del mes, a la decena de mil); si ya hay uno, lleva a verlo. La lección 1 lleva a Gastos. El texto del logro "Hormiga a raya" en el cierre describe la regla real del ADR 032 (bajar del promedio de los tres meses anteriores), no la del diseño ("mantenerte bajo el límite"), que no existe.

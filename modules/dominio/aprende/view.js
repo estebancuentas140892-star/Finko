@@ -47,8 +47,11 @@ function _filaLeccion(leccion, n, hechas, siguienteId) {
     </li>`;
 }
 
-/** Tarjeta de la unidad donde vas, con sus lecciones a la vista. */
-function _unidadActual(entrada, aprende) {
+/**
+ * Tarjeta de una unidad con sus lecciones a la vista: la actual ("vas aquí")
+ * o una que el usuario abrió desde la lista para repasar o adelantarse.
+ */
+function _tarjetaUnidad(entrada, aprende, eyebrow) {
   const { unidad, hechas: cuantas, total } = entrada;
   const { hechas, enCurso } = aprende;
   const siguiente = unidad.lecciones.find(l => leccionDisponible(l) && !hechas[l.id]);
@@ -61,7 +64,7 @@ function _unidadActual(entrada, aprende) {
   return `
     <section class="aprende-unidad aprende-unidad--actual" data-dom="${unidad.dominio}"
              aria-labelledby="aprende-unidad-${unidad.id}">
-      <p class="aprende-unidad__eyebrow">Unidad ${unidad.numero} · vas aquí</p>
+      <p class="aprende-unidad__eyebrow">${eyebrow}</p>
       <div class="aprende-unidad__cabeza">
         <h2 class="aprende-unidad__nombre" id="aprende-unidad-${unidad.id}">${esc(unidad.nombre)}</h2>
         <span class="aprende-unidad__cuenta">${cuantas} de ${total}</span>
@@ -73,22 +76,36 @@ function _unidadActual(entrada, aprende) {
     </section>`;
 }
 
-/** Fila compacta de una unidad que no es la actual. */
-function _filaUnidad(entrada) {
+/**
+ * Fila compacta de una unidad que no es la actual. Si tiene lecciones
+ * escritas es un botón que la despliega en su lugar (nada se bloquea, D8);
+ * si está en preparación, solo dice a dónde llevará.
+ */
+function _filaUnidad(entrada, aprende, abierta) {
   const { unidad, estado } = entrada;
   const disponibles = unidad.lecciones.filter(leccionDisponible).length;
+  if (disponibles && abierta === unidad.id) {
+    const etiqueta = estado === 'hecha' ? 'hecha' : estado === 'sabida' ? 'ya la sabes' : 'después';
+    return `<li class="aprende-fila-abierta">${_tarjetaUnidad(entrada, aprende, `Unidad ${unidad.numero} · ${etiqueta}`)}
+      <button class="btn btn-ghost btn-sm aprende-fila-abierta__cerrar" type="button" data-action="aprende-unidad"
+              data-id="${unidad.id}" aria-expanded="true">Cerrar la unidad ${unidad.numero}</button></li>`;
+  }
   let meta;
-  if (estado === 'hecha') meta = 'Hecha';
-  else if (estado === 'sabida') meta = 'Ya lo sabes';
+  if (estado === 'hecha') meta = 'Hecha · Repasar';
+  else if (estado === 'sabida') meta = 'Ya lo sabes · Repasar';
   else if (!disponibles) meta = `Termina en ${esc(unidad.termina)} · En preparación`;
   else meta = `${unidad.lecciones.length} lecciones · termina en ${esc(unidad.termina)}`;
-  return `
-    <li class="aprende-fila" data-dom="${unidad.dominio}">
+  const cuerpo = `
       <span class="aprende-fila__numero" aria-hidden="true">${unidad.numero}</span>
       <span class="aprende-fila__cuerpo">
         <span class="aprende-fila__nombre">${esc(unidad.nombre)}</span>
         <span class="aprende-fila__meta">${meta}</span>
-      </span>
+      </span>`;
+  if (!disponibles) return `<li class="aprende-fila" data-dom="${unidad.dominio}">${cuerpo}</li>`;
+  return `
+    <li class="aprende-fila aprende-fila--boton" data-dom="${unidad.dominio}">
+      <button class="aprende-fila__boton" type="button" data-action="aprende-unidad" data-id="${unidad.id}"
+              aria-expanded="false">${cuerpo}</button>
     </li>`;
 }
 
@@ -97,9 +114,10 @@ function _filaUnidad(entrada) {
  * grupos, lo que ya está y lo que viene. Nada se bloquea (D8).
  *
  * @param {unknown} aprendeCrudo - `S.aprende`.
+ * @param {string | null} [abierta] - unidad que el usuario desplegó en la lista.
  * @returns {string}
  */
-export function htmlRuta(aprendeCrudo) {
+export function htmlRuta(aprendeCrudo, abierta = null) {
   const aprende = normalizarAprende(aprendeCrudo);
   const ruta = estadoRuta(aprende);
   const actual = ruta.find(e => e.estado === 'actual');
@@ -108,21 +126,29 @@ export function htmlRuta(aprendeCrudo) {
   const grupo = (titulo, id, filas) => filas.length ? `
     <section class="aprende-grupo" aria-labelledby="${id}">
       <h2 class="aprende-grupo__titulo" id="${id}">${titulo}</h2>
-      <ul class="aprende-filas">${filas.map(_filaUnidad).join('')}</ul>
+      <ul class="aprende-filas">${filas.map(e => _filaUnidad(e, aprende, abierta)).join('')}</ul>
     </section>` : '';
+  // Sin unidad actual es que no queda ninguna lección escrita por hacer:
+  // se dice, en vez de dejar la ruta sin su tarjeta principal y sin motivo.
+  const cabeza = actual
+    ? _tarjetaUnidad(actual, aprende, `Unidad ${actual.unidad.numero} · vas aquí`)
+    : `<p class="aprende-ruta__aviso">Ya hiciste todas las lecciones disponibles. Las próximas unidades están en preparación; mientras tanto, puedes repasar las que ya hiciste.</p>`;
   return `
     <div class="aprende-ruta">
-      ${actual ? _unidadActual(actual, aprende) : ''}
+      ${cabeza}
       ${grupo('Ya lo sabes', 'aprende-grupo-sabes', yaEsta)}
       ${grupo('Después', 'aprende-grupo-despues', despues)}
     </div>`;
 }
 
-/** Pinta la ruta en `#panel-aprende`. */
-export function renderRuta() {
+/**
+ * Pinta la ruta en `#panel-aprende`.
+ * @param {string | null} [abierta] - unidad desplegada en la lista.
+ */
+export function renderRuta(abierta = null) {
   const panel = document.getElementById('panel-aprende');
   if (!panel) return;
-  panel.innerHTML = htmlRuta(S.aprende);
+  panel.innerHTML = htmlRuta(S.aprende, abierta);
 }
 
 // ── LECCIÓN ──────────────────────────────────────────────────────
@@ -365,13 +391,26 @@ function _grupos(grupos) {
     </li>`).join('');
 }
 
-/** Cierre de la lección: chulo, "Lección lista" y el Aplícalo con tus datos. */
-function _pasoAplica(ctx) {
-  const a = ctx.aplica;
-  const avance = ctx.unidad
+/**
+ * Cabeza del cierre. Celebración proporcional (D7): una lección, el chulo;
+ * la lección que completa la unidad por primera vez, la insignia en el color
+ * de la unidad (`badgeIn`). Sin confeti ni personaje en el adulto.
+ */
+function _cabezaCierre(ctx) {
+  if (ctx.celebrarUnidad && ctx.unidad) {
+    return `
+    <div class="leccion-lista leccion-lista--unidad">
+      <svg class="leccion-insignia" aria-hidden="true"><use href="#il-insignia"/></svg>
+      <div>
+        <h2 class="leccion__titulo" id="leccion-titulo" tabindex="-1">Terminaste la unidad ${ctx.unidad.numero}</h2>
+        <p class="leccion-lista__linea">${esc(ctx.unidad.aprendiste ?? ctx.unidad.nombre)}</p>
+      </div>
+    </div>`;
+  }
+  const avance = ctx.unidad && ctx.avance
     ? `<p class="leccion-lista__linea">Llevas ${ctx.avance.hechas} de ${ctx.avance.total} en ${esc(ctx.unidad.nombre)}.</p>`
     : '';
-  const cabeza = `
+  return `
     <div class="leccion-lista">
       <span class="leccion-lista__check" aria-hidden="true">${icon('check')}</span>
       <div>
@@ -379,6 +418,38 @@ function _pasoAplica(ctx) {
         ${avance}
       </div>
     </div>`;
+}
+
+/**
+ * Botones del Aplícalo con datos. `cta: 'gastos'` lleva a mirar las compras;
+ * `cta: 'limite'` (por defecto) propone el límite con su monto en el botón
+ * (R50) o, si ya hay uno, lleva a verlo.
+ */
+function _pieAplica(ctx, a) {
+  const ahoraNo = '<button class="btn btn-ghost leccion__boton" type="button" data-action="leccion-salir">Ahora no</button>';
+  if (ctx.paso?.cta === 'gastos') {
+    return `
+      <button class="btn btn-primary leccion__boton" type="button" data-action="ir-a-seccion" data-target="gast">Ver tus gastos</button>
+      <p class="leccion__nota">Ahí ves cada compra con su categoría y cuáles se repiten.</p>
+      ${ahoraNo}`;
+  }
+  if (ctx.limiteActual) {
+    return `
+      <button class="btn btn-primary leccion__boton" type="button" data-action="ir-a-seccion" data-target="presupuesto">Ver tu límite en Límites</button>
+      <p class="leccion__nota">Tu límite para lo pequeño es ${f(ctx.limiteActual)} al mes y vas en ${f(a.total)}.</p>
+      ${ahoraNo}`;
+  }
+  return `
+    <button class="btn btn-primary leccion__boton" type="button" data-action="leccion-limite-hormiga"
+            data-monto="${a.limite}">Poner un límite de ${f(a.limite)}</button>
+    <p class="leccion__nota">Unos ${f(a.diferencia)} menos que este mes: es la meta para el que viene. Lo ajustas en Límites.</p>
+    ${ahoraNo}`;
+}
+
+/** Cierre de la lección: celebración y el Aplícalo con tus datos (D7). */
+function _pasoAplica(ctx) {
+  const a = ctx.aplica;
+  const cabeza = _cabezaCierre(ctx);
   if (!a || a.sinDato) {
     return {
       cuerpo: `${cabeza}
@@ -402,10 +473,7 @@ function _pasoAplica(ctx) {
         <ul class="leccion-aplica__grupos">${_grupos(a.grupos)}</ul>
       </section>
       <p class="leccion-aplica__logro">${icon('trophy')}<span>Si un mes gastas en lo pequeño menos que tu promedio de los tres anteriores, ganas el logro <strong>Hormiga a raya</strong>.</span></p>`,
-    pie: `
-      <button class="btn btn-primary leccion__boton" type="button" data-action="ir-a-seccion" data-target="presupuesto">Ir a Límites</button>
-      <p class="leccion__nota">Un límite cercano sería ${f(a.limite)}: unos ${f(a.diferencia)} menos que este mes.</p>
-      <button class="btn btn-ghost leccion__boton" type="button" data-action="leccion-salir">Ahora no</button>`,
+    pie: _pieAplica(ctx, a),
   };
 }
 
@@ -415,7 +483,8 @@ function _pasoAplica(ctx) {
  * @param {import('./logic.js').Sesion} sesion
  * @param {{ pasos: any[] }} leccion
  * @param {{ eyebrow: string, tope: number, terminada: boolean, entrada: boolean,
- *           aplica?: any, unidad?: any, avance?: { hechas: number, total: number } }} ctx
+ *           aplica?: any, unidad?: any, avance?: { hechas: number, total: number },
+ *           paso?: any, limiteActual?: number | null, celebrarUnidad?: boolean }} ctx
  * @returns {string}
  */
 export function htmlLeccion(sesion, leccion, ctx) {

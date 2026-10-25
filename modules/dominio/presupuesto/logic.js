@@ -11,6 +11,8 @@
 
 import { CATEGORIAS_GASTO, GRUPOS_FINANCIEROS, CATEGORIAS_AGENDA_NO_ESENCIALES } from '../../core/constants.js';
 import { gastosMes }        from '../gastos/logic.js';
+import { f } from '../../infra/utils.js';
+import { resumenHormigaMes, topeHormiga, limiteHormiga, TOPE_HORMIGA_MIN, TOPE_HORMIGA_MAX } from '../../infra/hormiga.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
 
@@ -117,6 +119,59 @@ export function calcularProgreso(presupuesto, gastos, anio, mes) {
   else                                           estado = 'ok';
 
   return { gastado, asignado, restante, porcentaje, estado };
+}
+
+// ── GASTOS PEQUEÑOS (APR.1b, ADR 092) ────────────────────────────
+
+/**
+ * El límite de gastos pequeños del mes: la suma de las compras de hasta el
+ * tope contra el máximo que el usuario se puso (`S.config.hormiga`). No es un
+ * tope por categoría: cruza todas, porque lo pequeño se mide por el valor de
+ * cada compra (ADR 032 D4). Mismo criterio de estado que `calcularProgreso()`.
+ *
+ * Sin límite puesto devuelve igual el total del mes: la lente lo muestra para
+ * ofrecer ponerle uno.
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {{ hormiga?: { tope?: number, limite?: number | null } }} config - `S.config`.
+ * @param {number} anio
+ * @param {number} mes - 1-12
+ * @returns {{ tope: number, limite: number | null, gastado: number, cuantos: number,
+ *   restante: number, porcentaje: number, estado: 'ok' | 'alerta' | 'excedido' }}
+ */
+export function progresoHormiga(gastos, config, anio, mes) {
+  const tope   = topeHormiga(config);
+  const limite = limiteHormiga(config);
+  const mesISO = `${anio}-${String(mes).padStart(2, '0')}`;
+  const { total: gastado, cuantos } = resumenHormigaMes(gastos, mesISO, tope);
+  if (!limite) return { tope, limite: null, gastado, cuantos, restante: 0, porcentaje: 0, estado: 'ok' };
+
+  const porcentaje = Math.round((gastado / limite) * 100);
+  let estado = 'ok';
+  if (gastado > limite * UMBRAL_EXCEDIDO)      estado = 'excedido';
+  else if (gastado >= limite * UMBRAL_ALERTA)  estado = 'alerta';
+  return { tope, limite, gastado, cuantos, restante: limite - gastado, porcentaje, estado };
+}
+
+/**
+ * Valida el formulario de gastos pequeños: el tope de una compra dentro del
+ * rango de `infra/hormiga.js` y, si viene, un límite del mes mayor que cero.
+ *
+ * @param {Record<string, string>} datos - `{ tope, limite }` del formulario.
+ * @returns {string[]} mensajes de error; vacío = válido.
+ */
+export function validarHormiga(datos) {
+  const errores = [];
+  const tope = Number(datos?.tope);
+  if (!Number.isFinite(tope) || tope < TOPE_HORMIGA_MIN || tope > TOPE_HORMIGA_MAX) {
+    errores.push(`Una compra pequeña puede ir de ${f(TOPE_HORMIGA_MIN)} a ${f(TOPE_HORMIGA_MAX)}.`);
+  }
+  const crudo = String(datos?.limite ?? '').trim();
+  if (crudo !== '') {
+    const limite = Number(crudo);
+    if (!Number.isFinite(limite) || limite <= 0) errores.push('El límite del mes debe ser un número mayor a 0.');
+  }
+  return errores;
 }
 
 // ── RESUMEN POR GRUPO FINANCIERO (MC.5a, ADR 017) ─────────────────

@@ -8,7 +8,7 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { sembrarSiVacio, estadoBase, leerEstado } from './helpers/estado.js';
+import { sembrarSiVacio, estadoBase, leerEstado, parchar } from './helpers/estado.js';
 
 /** Fecha de este mes, para que los gastos caigan en el Aplícalo. */
 function diaDelMes(dia) {
@@ -30,14 +30,15 @@ test.describe('APR.1a - Aprende', () => {
     await page.waitForSelector('#sec-aprende.active', { timeout: 10_000 });
   });
 
-  test('la ruta recomienda la unidad 3 y la lección 2', async ({ page }) => {
+  test('la ruta recomienda la unidad 3 y su lección 1', async ({ page }) => {
     await expect(page.locator('.aprende-unidad--actual')).toContainText('Unidad 3 · vas aquí');
-    await expect(page.locator('.aprende-unidad__cta')).toHaveText('Empezar la lección 2');
+    await expect(page.locator('.aprende-unidad__cta')).toHaveText('Empezar la lección 1');
     await expect(page.locator('.aprende-grupo')).toContainText('Fondo de emergencia');
   });
 
   test('una lección completa: casi, clasificar, control y Aplícalo con tus datos', async ({ page }) => {
-    await page.click('.aprende-unidad__cta');
+    // Nada se bloquea (D8): la lección 2 se abre desde su fila sin hacer la 1.
+    await page.click('.aprende-paso__boton[data-id="u3-l2"]');
     const leccion = page.locator('#modal-leccion[data-open]');
     await expect(leccion).toHaveCount(1);
     await expect(page.locator('.leccion__cuenta')).toHaveText('1 de 5');
@@ -81,24 +82,56 @@ test.describe('APR.1a - Aprende', () => {
       .toEqual(['u3-l2']);
     expect((await leerEstado(page)).aprende.enCurso).toBeNull();
 
-    await page.click('[data-action="ir-a-seccion"][data-target="presupuesto"]');
+    // El botón dice el monto (R50) y pone el límite en Límites, su dueño.
+    await expect(page.locator('[data-action="leccion-limite-hormiga"]')).toHaveText('Poner un límite de $20.000');
+    await page.click('[data-action="leccion-limite-hormiga"]');
     await expect(leccion).toHaveCount(0);
     await expect(page.locator('#sec-presupuesto.active')).toHaveCount(1);
+    await expect(page.locator('.envelope--hormiga')).toContainText('Gastos pequeños');
+    await expect.poll(async () => (await leerEstado(page)).config?.hormiga?.limite).toBe(20_000);
   });
 
   test('salir guarda el avance y la ruta ofrece seguir donde quedó', async ({ page }) => {
     await page.click('.aprende-unidad__cta');
     await page.click('.leccion__pie [data-action="leccion-continuar"]');
-    await page.click('[data-action="leccion-elegir"][data-idx="1"]');
+    await page.click('[data-action="leccion-elegir"][data-idx="2"]');
     await page.click('.leccion-fb [data-action="leccion-continuar"]');
     await page.click('[data-action="leccion-salir"]');
     await expect(page.locator('#modal-leccion[data-open]')).toHaveCount(0);
-    await expect(page.locator('.aprende-unidad__cta')).toHaveText('Seguir la lección 2');
+    await expect(page.locator('.aprende-unidad__cta')).toHaveText('Seguir la lección 1');
     await expect.poll(async () => (await leerEstado(page)).aprende?.enCurso?.paso).toBe(2);
 
     await page.reload();
     await page.waitForSelector('#sec-aprende.active', { timeout: 10_000 });
     await page.click('.aprende-unidad__cta');
-    await expect(page.locator('.leccion__cuenta')).toHaveText('3 de 5');
+    await expect(page.locator('.leccion__cuenta')).toHaveText('3 de 4');
+  });
+
+  test('terminar la unidad celebra con la insignia y la ruta lo dice', async ({ page }) => {
+    // parchar corre antes de cada carga: el flush al salir de la página no lo pisa.
+    await parchar(page, {
+      aprende: { hechas: { 'u3-l1': '2026-10-01', 'u3-l2': '2026-10-01', 'u3-l3': '2026-10-01' }, sabidas: [], semanas: [], enCurso: null },
+    });
+    await page.reload();
+    await page.waitForSelector('#sec-aprende.active', { timeout: 10_000 });
+    await expect(page.locator('.aprende-unidad__cta')).toHaveText('Empezar la lección 4');
+    await page.click('.aprende-unidad__cta');
+
+    // Lección 4: clasificar cuatro tarjetas y una pregunta.
+    const esHormiga = ['Gaseosa en la tienda', 'Propina del parqueadero'];
+    for (let i = 0; i < 4; i++) {
+      const titulo = (await page.locator('.leccion-tarjeta--arriba .leccion-tarjeta__titulo').textContent()).trim();
+      await page.click(`[data-lado="${esHormiga.includes(titulo) ? 'si' : 'no'}"]`);
+      // La tarjeta sale animada: se espera a la siguiente antes de leerla.
+      if (i < 3) await expect(page.locator('.leccion__conteo-faltan')).toHaveText(`Faltan ${3 - i}`);
+    }
+    await page.click('.leccion-fb [data-action="leccion-continuar"]');
+    await page.click('[data-action="leccion-elegir"][data-idx="1"]');
+    await page.click('.leccion-fb [data-action="leccion-continuar"]');
+
+    await expect(page.locator('#leccion-titulo')).toHaveText('Terminaste la unidad 3');
+    await expect(page.locator('.leccion-insignia')).toBeVisible();
+    await page.click('.leccion__pie [data-action="leccion-salir"]');
+    await expect(page.locator('.aprende-ruta__aviso')).toContainText('Ya hiciste todas las lecciones disponibles');
   });
 });

@@ -10,6 +10,7 @@ import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA, iconoDeCategoriaGasto } from '../../core/constants.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
+import { topeHormiga } from '../../infra/hormiga.js';
 import { mesBloque, navegarMesBloque, irAMesActualBloque } from '../../infra/mes-bloque.js';
 import { gastosMes, filtrarGastos, ordenarRecientesPrimero, agruparPorDia, totalGastos, variacionMensualGasto, detectarHormigas, iconoPorOrigen, gastosFrecuentes, tarjetasDeCredito } from './logic.js';
 
@@ -399,7 +400,7 @@ function _renderSalidaHistorial() {
  * @returns {string}
  */
 function _renderInsightHormigas(delMes, oculto) {
-  const hormigas = detectarHormigas(delMes);
+  const hormigas = detectarHormigas(delMes, topeHormiga(S.config));
   if (hormigas.length === 0) return '';
 
   const top      = hormigas[0];

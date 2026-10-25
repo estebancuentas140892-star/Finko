@@ -11,8 +11,37 @@
  * para todos y no se desactiva recategorizando (ADR 032 D4).
  */
 
-/** Monto máximo (inclusive) de una transacción para contar como hormiga. */
+/** Monto máximo (inclusive) de una transacción para contar como hormiga, por defecto. */
 export const UMBRAL_GASTO_HORMIGA = 20_000;
+
+/** Rango que acepta el tope configurable (APR.1b): ni tan bajo que nada cuente, ni tan alto que todo. */
+export const TOPE_HORMIGA_MIN = 1_000;
+export const TOPE_HORMIGA_MAX = 100_000;
+
+/**
+ * Tope vigente: el que el usuario configuró en Límites (`S.config.hormiga.tope`,
+ * APR.1b) o el de por defecto si no hay uno válido.
+ *
+ * @param {{ hormiga?: { tope?: unknown } } | undefined} config - `S.config`.
+ * @returns {number}
+ */
+export function topeHormiga(config) {
+  const tope = Number(config?.hormiga?.tope);
+  return Number.isFinite(tope) && tope >= TOPE_HORMIGA_MIN && tope <= TOPE_HORMIGA_MAX
+    ? tope
+    : UMBRAL_GASTO_HORMIGA;
+}
+
+/**
+ * Límite mensual para lo pequeño, o `null` si el usuario no se puso uno.
+ *
+ * @param {{ hormiga?: { limite?: unknown } } | undefined} config - `S.config`.
+ * @returns {number | null}
+ */
+export function limiteHormiga(config) {
+  const limite = Number(config?.hormiga?.limite);
+  return config?.hormiga?.limite != null && Number.isFinite(limite) && limite > 0 ? limite : null;
+}
 
 /**
  * ¿Este gasto es hormiga? Monto positivo y menor o igual al tope.

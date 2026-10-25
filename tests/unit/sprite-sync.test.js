@@ -42,8 +42,11 @@ function prefijoDe(rutaRelativa) {
   const partes = rutaRelativa.split('/');
   if (partes[0] === 'logos') return 'b-';
   if (partes[0] === 'decoracion') return 'd-';
+  // DV.2d conectó ilustraciones/ al sync; il-insignia (APR.1b) es la primera
+  // que deja de ser plantilla y entra al sprite.
+  if (partes[0] === 'ilustraciones') return 'il-';
   if (partes[0] === 'iconos' && PREFIJO_ICONOS[partes[1]]) return PREFIJO_ICONOS[partes[1]];
-  return null; // identidad/, ilustraciones/: fuera del alcance del sync (README seccion 2)
+  return null; // identidad/: fuera del alcance del sync (README seccion 2)
 }
 
 function esPlantilla(contenido) {

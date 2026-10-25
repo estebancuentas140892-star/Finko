@@ -1926,6 +1926,30 @@ describe('Migración v43 → v44 (Gasto.sinEfectoSaldo, HF.0c)', () => {
   });
 });
 
+describe('Migración v45 → v46 (config.hormiga, APR.1b)', () => {
+  it('un usuario existente arranca con el tope de siempre y sin límite', () => {
+    const v45 = { ...createInitialState(), _version: 45 };
+    delete v45.config.hormiga;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v45));
+
+    loadData();
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(46);
+    expect(S.config.hormiga).toEqual({ tope: 20_000, limite: null });
+  });
+
+  it('es idempotente: conserva un tope y un límite ya puestos', () => {
+    const v46 = { ...createInitialState(), _version: 46 };
+    v46.config = { ...v46.config, hormiga: { tope: 15_000, limite: 150_000 } };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v46));
+
+    loadData();
+
+    expect(S.config.hormiga).toEqual({ tope: 15_000, limite: 150_000 });
+  });
+});
+
 describe('Migración v44 → v45 (aprende, APR.1a)', () => {
   it('un usuario existente arranca con Aprende vacío', () => {
     const v44 = { ...createInitialState(), _version: 44 };

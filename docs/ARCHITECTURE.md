@@ -258,7 +258,7 @@ EventBus.emit('state:change', { section: 'gastos' });
 EventBus.on('state:change', ({ section }) => renderSmart(renderGastos, section));
 ```
 
-Los 12 eventos reales del sistema (verificados contra el código el 2026-08-13; no hay otros):
+Los eventos del sistema (verificados el 2026-08-13; `hormiga:limite` se sumó el 2026-10-24):
 
 | Evento | Quién lo emite | Quién lo escucha |
 |---|---|---|
@@ -273,6 +273,7 @@ Los 12 eventos reales del sistema (verificados contra el código el 2026-08-13; 
 | `storage:error` | `core/storage.js` cuando un guardado falla | `config/index.js` (aviso de error de persistencia) |
 | `bloqueo:abierto` | `ui/bloqueo-acceso.js` cuando el gate de PIN se resuelve y libera la app | `bootstrap.js` (encadena el gate legal detrás del candado) |
 | `legal:aceptado` | `ui/aceptacion-legal.js` al aceptar la versión vigente de los documentos | `bootstrap.js` (cierra el gate y sigue el arranque) |
+| `hormiga:limite` | `aprende/index.js` (Aplícalo, APR.1b) | `presupuesto/index.js` (pone el límite de gastos pequeños) |
 
 `distribucion:aplicar` es el ejemplo canónico de orquestación cross-dominio sin acoplar dominios entre sí: `tesoreria` no importa `metas` ni `apartados`, solo emite un evento con la lista de `items`; cada dominio destino decide si le corresponde algo y lo aplica.
 
@@ -464,7 +465,7 @@ Estos archivos **no están organizados por dominio**, sino por tipo de widget o 
 
 Capas base (sin agrupar por widget, aplican a toda la app): `reset.css`, `base.css`, `tokens.css`, `layout.css`, `modals.css`, `themes.css`, `a11y.css`, `responsive.css`, `utils.css`. Ver el orden de cascada en [`styles/main.css`](../styles/main.css) y la tabla de `@layer` en la sección 8.
 
-**Nota:** `.calc-*` (calculadoras) en `domain.css` líneas 7-190 puede ser código muerto: la sección "Calculadoras" se retiró de la app en 2026-06-07 y sus fórmulas migraron a `infra/financiero.js`. Verificar uso real antes de tocar o borrar.
+**Nota:** `.calc-*` en `domain.css` (líneas 7-190) puede ser código muerto desde que se retiraron las Calculadoras (2026-06-07). Verificar antes de borrar.
 
 ### 13.5 Síntoma → dónde mirar
 

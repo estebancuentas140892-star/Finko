@@ -996,3 +996,35 @@ describe('evaluarLogros() - familia comportamiento (LG.2e)', () => {
     expect(fam.siguiente.id).toBe('hormiga-a-raya');
   });
 });
+
+// ── APR.1b: el tope de gasto pequeño es configurable (ADR 092, dudas) ─────────
+
+describe('hormigaALaRaya() con el tope configurable (APR.1b)', () => {
+  const HOY_ISO = '2026-06-15';
+  const cuatroMeses = (cerrado, previos) => ([
+    ...mesConHormiga('2026-05', cerrado),
+    ...mesConHormiga('2026-04', previos),
+    ...mesConHormiga('2026-03', previos),
+    ...mesConHormiga('2026-02', previos),
+  ]);
+
+  test('cambiar el tope no regala el logro: se aplica igual a los cuatro meses', () => {
+    const sinBajar = cuatroMeses(200_000, 200_000);
+    for (const tope of [2_000, 5_000, 10_000, 20_000, 50_000, 100_000]) {
+      expect(hormigaALaRaya(sinBajar, HOY_ISO, tope), String(tope)).toBe(false);
+    }
+  });
+
+  test('una bajada real se sigue reconociendo con el tope por defecto explícito', () => {
+    expect(hormigaALaRaya(cuatroMeses(120_000, 200_000), HOY_ISO, UMBRAL_GASTO_HORMIGA)).toBe(true);
+  });
+
+  test('gastoHormigaMes() cuenta con el tope que se le pasa', () => {
+    const gastos = [
+      { fecha: '2026-05-03', monto: 25_000 },
+      { fecha: '2026-05-05', monto: 5_000 },
+    ];
+    expect(gastoHormigaMes(gastos, '2026-05')).toBe(5_000);
+    expect(gastoHormigaMes(gastos, '2026-05', 30_000)).toBe(30_000);
+  });
+});

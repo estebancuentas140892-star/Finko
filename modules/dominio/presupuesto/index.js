@@ -10,6 +10,7 @@
  */
 
 import { S, EventBus }                from '../../core/state.js';
+import { save }                       from '../../core/storage.js';
 import { guardar, editar, eliminar } from '../../infra/crud.js';
 import { registrarAccion }           from '../../ui/actions.js';
 import { abrirModal, cerrarModal }   from '../../ui/modales.js';
@@ -17,8 +18,10 @@ import { renderSmart, registrarRender, programarRender } from '../../infra/rende
 import { announce }                  from '../../infra/a11y.js';
 import { mostrarErroresForm }        from '../../infra/form-errors.js';
 import { confirmar }                 from '../../ui/confirm.js';
-import { validarPresupuesto, normalizarPresupuesto } from './logic.js';
-import { renderPanelPresupuesto, renderFormPresupuesto, renderPanelLimites } from './view.js';
+import { validarPresupuesto, normalizarPresupuesto, validarHormiga } from './logic.js';
+import { renderPanelPresupuesto, renderFormPresupuesto, renderPanelLimites, renderFormHormiga } from './view.js';
+import { topeHormiga } from '../../infra/hormiga.js';
+import { f } from '../../infra/utils.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { rangoMesBloque } from '../../infra/mes-bloque.js';
 
@@ -154,6 +157,56 @@ async function _eliminarPresupuesto(el) {
   announce(`Límite de gasto de "${p.categoria}" eliminado.`);
 }
 
+// ── GASTOS PEQUEÑOS (APR.1b, ADR 092) ────────────────────────────
+
+/** Escribe `S.config.hormiga` completo y avisa: lo leen Límites, Aprende y Logros. */
+function _guardarConfigHormiga(tope, limite) {
+  S.config.hormiga = { tope, limite: limite > 0 ? limite : null };
+  save();
+  EventBus.emit('state:change', { section: 'config' });
+}
+
+/**
+ * Abre el formulario de gastos pequeños en el modal del dominio. Con
+ * `limitePropuesto` llega lleno desde otra superficie.
+ * @param {number} [limitePropuesto]
+ */
+function _editarHormiga(limitePropuesto) {
+  const overlay = _getOverlay();
+  if (!overlay) return;
+  _setBody(renderFormHormiga(limitePropuesto));
+  _setTitulo(overlay, 'Gastos pequeños');
+  const form = document.getElementById('form-hormiga');
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const datos = Object.fromEntries(new FormData(form));
+    const errores = validarHormiga(datos);
+    if (errores.length > 0) {
+      mostrarErroresForm(form, errores);
+      return;
+    }
+    const limite = String(datos.limite ?? '').trim() === '' ? null : Number(datos.limite);
+    _guardarConfigHormiga(Number(datos.tope), limite);
+    cerrarModal(overlay);
+    renderPanelPresupuesto();
+    announce(limite ? `Límite de gastos pequeños: ${f(limite)} al mes.` : 'Gastos pequeños sin límite.');
+  });
+  abrirModal(overlay);
+}
+
+async function _quitarLimiteHormiga() {
+  const ok = await confirmar({
+    titulo:         'Quitar el límite de gastos pequeños',
+    mensaje:        '¿Quitar el límite? Tus gastos no se ven afectados y puedes volver a ponerlo cuando quieras.',
+    confirmarTexto: 'Quitar',
+    peligroso:      true,
+  });
+  if (!ok) return;
+  _guardarConfigHormiga(topeHormiga(S.config), null);
+  renderPanelPresupuesto();
+  announce('Límite de gastos pequeños quitado.');
+}
+
 /**
  * Render reactivo de los dos paneles del dominio (sección + dashboard), con
  * identidad estable para el coalescer de PERF.6: `gastos` se emite una vez por
@@ -172,6 +225,17 @@ export function initPresupuesto() {
   registrarAccion('nuevo-presupuesto',    _nuevoPresupuesto);
   registrarAccion('editar-presupuesto',   _editarPresupuesto);
   registrarAccion('eliminar-presupuesto', _eliminarPresupuesto);
+  registrarAccion('hormiga-editar',       () => _editarHormiga());
+  registrarAccion('hormiga-quitar',       _quitarLimiteHormiga);
+
+  // El Aplícalo de la unidad 3 (APR.1b, ADR 092 D7) propone un límite con su
+  // monto ya escrito en el botón (R50): lo pone acá, que es su dueño, sin que
+  // Aprende importe este dominio (ADN 10). El usuario lo ajusta en la lente.
+  EventBus.on('hormiga:limite', ({ monto } = {}) => {
+    if (!(Number(monto) > 0)) return;
+    _guardarConfigHormiga(topeHormiga(S.config), Number(monto));
+    announce(`Límite de gastos pequeños: ${f(Number(monto))} al mes.`);
+  });
 
   // ADR 080 D4: las dos salidas de esta lente hacia el reparto del ingreso
   // abren el asistente en vez de navegar a la sección que lo contiene. El
@@ -193,7 +257,7 @@ export function initPresupuesto() {
   // de dinero extraordinario del mes se calcula sobre esa colección.
   EventBus.on('state:change', ({ section }) => {
     if (section === 'presupuestos' || section === 'gastos' || section === 'ingresos'
-      || section === 'ingresosPuntuales') {
+      || section === 'ingresosPuntuales' || section === 'config') {
       programarRender(_renderReactivo);
     }
   });

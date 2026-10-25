@@ -17,12 +17,13 @@ import { abrirModal, cerrarModal } from '../../ui/modales.js';
 import { renderSmart, registrarRender, programarRender } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { hoy } from '../../infra/utils.js';
-import { UMBRAL_GASTO_HORMIGA } from '../../infra/hormiga.js';
+import { topeHormiga, limiteHormiga } from '../../infra/hormiga.js';
+import { navigate } from '../../infra/router.js';
 import {
   unidadDeLeccion, metaLeccion, leccionDisponible, normalizarAprende,
   crearSesion, pasoActual, responderElegir, clasificarTarjeta, seguirClasificando,
   cambiarControl, moverItem, comprobarOrden, avanzar, pasoParaRetomar,
-  registrarLeccionHecha, aplicaHormiga,
+  registrarLeccionHecha, aplicaHormiga, unidadTerminada,
 } from './logic.js';
 import { renderRuta, htmlLeccion, htmlResultadoControl } from './view.js';
 
@@ -41,6 +42,8 @@ const _MS_CARD_OUT = 220;
 let _leccion = null;
 let _sesion = null;
 let _terminada = false;
+/** La lección que acaba de terminar completó su unidad por primera vez (insignia, D7). */
+let _celebrarUnidad = false;
 /** Se bloquea mientras una tarjeta sale animada, para no contar dos toques. */
 let _animando = false;
 
@@ -48,13 +51,17 @@ const _overlay = () => document.getElementById('modal-leccion');
 const _panel = () => document.getElementById('leccion-panel');
 const _sinMovimiento = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
-/** Tope hormiga vigente. Configurable desde APR.1b; hoy, el de infra. */
+/** Tope hormiga vigente: el que el usuario configuró en Límites (APR.1b). */
 function _tope() {
-  return UMBRAL_GASTO_HORMIGA;
+  return topeHormiga(S.config);
+}
+
+function _renderRuta() {
+  renderRuta(_unidadAbierta);
 }
 
 function _renderTodo() {
-  renderSmart(renderRuta, 'aprende');
+  renderSmart(_renderRuta, 'aprende');
 }
 
 /** Contexto que la vista necesita además de la sesión. */
@@ -75,6 +82,9 @@ function _contexto(entrada) {
       total: unidad.lecciones.length,
     };
     ctx.aplica = aplicaHormiga(S.gastos, hoy(), _tope());
+    ctx.paso = pasoActual(_sesion, _leccion);
+    ctx.limiteActual = limiteHormiga(S.config);
+    ctx.celebrarUnidad = _celebrarUnidad;
   }
   return ctx;
 }
@@ -110,12 +120,16 @@ function _guardarAvance() {
 /** La lección llegó a su cierre: se registra una vez y se pinta el Aplícalo. */
 function _terminar() {
   const { aprende, primeraVez } = registrarLeccionHecha(S.aprende, _sesion.leccionId, hoy());
+  const unidad = unidadDeLeccion(_sesion.leccionId);
+  _celebrarUnidad = primeraVez && unidadTerminada(unidad, aprende.hechas);
   S.aprende = aprende;
   save();
   EventBus.emit('state:change', { section: 'aprende' });
   _terminada = true;
   _pintar({ entrada: true });
-  announce(primeraVez ? 'Lección lista.' : 'Lección repasada.');
+  announce(_celebrarUnidad
+    ? `Terminaste la unidad ${unidad.numero}.`
+    : primeraVez ? 'Lección lista.' : 'Lección repasada.');
 }
 
 async function _abrir(el) {
@@ -129,6 +143,7 @@ async function _abrir(el) {
   const { enCurso } = normalizarAprende(S.aprende);
   _leccion = leccion;
   _terminada = false;
+  _celebrarUnidad = false;
   _animando = false;
   _sesion = crearSesion(leccion, enCurso?.id === id ? enCurso.paso : 0);
   _pintar({ entrada: true, foco: null });
@@ -242,6 +257,28 @@ function _comprobar() {
   if (_sesion !== antes) _pintar({ foco: 'feedback' });
 }
 
+/**
+ * "Poner un límite de $X" (Aplícalo de la unidad 3, R50): el dueño del límite
+ * es Límites, así que se le pide por evento y se lleva al usuario allá, donde
+ * lo ve puesto y lo ajusta.
+ */
+function _ponerLimiteHormiga(el) {
+  const monto = Number(el?.dataset?.monto);
+  if (!(monto > 0)) return;
+  EventBus.emit('hormiga:limite', { monto });
+  _salir();
+  navigate('presupuesto');
+}
+
+/** Abre o cierra, en la ruta, las lecciones de una unidad que no es la actual. */
+let _unidadAbierta = null;
+function _alternarUnidad(el) {
+  const id = el?.dataset?.id;
+  _unidadAbierta = _unidadAbierta === id ? null : id;
+  renderRuta(_unidadAbierta);
+  document.querySelector(`[data-action="aprende-unidad"][data-id="${id}"]`)?.focus({ preventScroll: true });
+}
+
 // ── GESTO DE DESLIZAR (clasificar) ───────────────────────────────
 
 let _arrastre = null;
@@ -283,6 +320,8 @@ export function initAprende() {
   registrarAccion('leccion-control', _control);
   registrarAccion('leccion-mover', _mover);
   registrarAccion('leccion-comprobar', _comprobar);
+  registrarAccion('leccion-limite-hormiga', _ponerLimiteHormiga);
+  registrarAccion('aprende-unidad', _alternarUnidad);
   // Los botones del Aplícalo usan acciones globales que ya existen:
   // `ir-a-seccion` (cierra el modal y navega) y `registrar-abrir` (cierra el
   // modal y dispara la acción que consigue el dato que falta, R57). Así la

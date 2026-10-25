@@ -25,6 +25,7 @@ import {
   generarMensajesLimites,
   coberturaLimitesEstiloVida,
   extraordinarioDelMes,
+  progresoHormiga,
 } from './logic.js';
 import { estimarSalarioMensual } from '../../infra/financiero.js';
 import { mesBloque } from '../../infra/mes-bloque.js';
@@ -376,6 +377,7 @@ function _renderDetalleEstiloVida(anio, mes, presupuestoEV, notasCategoria = new
       ${_renderOllaFinita(cobertura)}
       ${_renderExtraordinario(extraordinarioDelMes(S.ingresosPuntuales, anio, mes), presupuestoEV)}
       ${lista}
+      ${_renderHormiga(anio, mes)}
       ${_renderSugerenciaTope(sugerencia)}
       ${_renderSinPresupuesto(activos)}
       ${_renderSuscripcionLarga(suscripcion)}
@@ -555,6 +557,101 @@ function _renderEnvelope(presupuesto, gastos, anio, mes, nota = '') {
                 aria-label="Eliminar límite de gasto de ${categoria}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
       </div>
     </article>`;
+}
+
+// ── GASTOS PEQUEÑOS (APR.1b, ADR 092) ────────────────────────────
+
+/**
+ * El límite de gastos pequeños: un sobre que no es de una categoría sino de
+ * las compras de hasta el tope, de cualquier categoría. Con límite se dibuja
+ * como los demás sobres (barra, restante, editar y quitar); sin límite, y solo
+ * si el mes ya tiene compras pequeñas, una línea con el total que ofrece
+ * ponerle uno (R35: el consejo y el control son lo mismo). Sin compras ni
+ * límite no se dibuja nada.
+ *
+ * @param {number} anio
+ * @param {number} mes - 1-12
+ * @returns {string} HTML.
+ */
+function _renderHormiga(anio, mes) {
+  const p = progresoHormiga(S.gastos ?? [], S.config, anio, mes);
+  const icono = iconoCategoria('c-hormiga', 'icon icon--sm');
+  const compras = `${p.cuantos} ${p.cuantos === 1 ? 'compra' : 'compras'} de ${f(p.tope)} o menos`;
+  if (!p.limite) {
+    if (p.gastado <= 0) return '';
+    return `
+      <div class="hormiga-oferta">
+        <p class="hormiga-oferta__texto">${icono} Tus gastos pequeños de este mes suman <strong>${f(p.gastado)}</strong>: ${compras}.</p>
+        <button class="btn btn-secondary btn-sm" type="button" data-action="hormiga-editar">Ponerles un límite</button>
+      </div>`;
+  }
+  const widthVisual = Math.min(p.porcentaje, 100);
+  return `
+    <article class="envelope envelope--hormiga" data-estado="${p.estado}">
+      <div class="envelope__header">
+        <p class="envelope__title">${icono} Gastos pequeños</p>
+        <p class="envelope__subtitle">${f(p.gastado)} / ${f(p.limite)}</p>
+      </div>
+      <div class="progress" role="progressbar"
+           aria-valuenow="${p.porcentaje}" aria-valuemin="0" aria-valuemax="100"
+           aria-label="Progreso de gastos pequeños: ${p.porcentaje}%">
+        <div class="progress-bar ${_claseProgreso(p.porcentaje)}" style="width:${widthVisual}%"></div>
+      </div>
+      <p class="envelope__meta">
+        <span class="envelope__porcentaje">${p.porcentaje}%</span>
+        ${p.restante >= 0
+          ? `· Restante: ${f(p.restante)}`
+          : `· Excedido: <strong>${f(-p.restante)}</strong>`}
+      </p>
+      <p class="envelope__nota">${compras}, de cualquier categoría.</p>
+      <div class="envelope__actions">
+        <button class="btn btn-ghost btn-icon" type="button" data-action="hormiga-editar"
+                aria-label="Editar el límite de gastos pequeños"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></button>
+        <button class="btn btn-ghost btn-icon" type="button" data-action="hormiga-quitar"
+                aria-label="Quitar el límite de gastos pequeños"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
+      </div>
+    </article>`;
+}
+
+/**
+ * Formulario de gastos pequeños: el límite del mes (opcional) y desde cuánto
+ * una compra cuenta como pequeña. El tope es uno solo para toda la app: lo
+ * leen Límites, las lecciones de Aprende y el logro "Hormiga a raya".
+ *
+ * @param {number} [limitePropuesto] - el monto con el que llega desde una
+ *   lección (Aplícalo); si no viene, el límite vigente.
+ * @returns {string} HTML.
+ */
+export function renderFormHormiga(limitePropuesto) {
+  const ahora = new Date();
+  const p = progresoHormiga(S.gastos ?? [], S.config, ahora.getFullYear(), ahora.getMonth() + 1);
+  const limite = limitePropuesto ?? p.limite ?? '';
+  const hint = p.gastado > 0
+    ? `Este mes llevas ${f(p.gastado)} en gastos pequeños`
+    : 'Aún no tienes gastos pequeños este mes';
+  return `
+    <form id="form-hormiga" novalidate>
+      <div class="monto-hero">
+        <label class="monto-hero__label" for="hormiga-limite">Máximo al mes para lo pequeño</label>
+        <div class="monto-hero__box">
+          <span class="monto-hero__prefijo" aria-hidden="true">$</span>
+          <input id="hormiga-limite" name="limite" class="input input--big-amount" type="number"
+                 min="1" step="10000" value="${limite}" placeholder="Sin límite"
+                 autocomplete="off" inputmode="numeric" aria-describedby="hormiga-limite-hint" />
+        </div>
+        <span class="monto-hero__hint" id="hormiga-limite-hint">${hint}</span>
+      </div>
+      <div class="form-group">
+        <label for="hormiga-tope" class="label">Una compra es pequeña si cuesta hasta</label>
+        <input id="hormiga-tope" name="tope" class="input" type="number" min="1000" max="100000" step="1000"
+               value="${p.tope}" required aria-required="true" inputmode="numeric" aria-describedby="hormiga-tope-hint" />
+        <p class="form-hint" id="hormiga-tope-hint">Con este valor se cuentan tus gastos pequeños en Límites, en tus lecciones y en el logro Hormiga a raya.</p>
+      </div>
+      <div class="modal__footer modal__footer--principal">
+        <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
+        <button type="submit" class="btn btn-primary">${icon('check-circle')} Guardar</button>
+      </div>
+    </form>`;
 }
 
 // ── CATEGORÍAS HUÉRFANAS ─────────────────────────────────────────

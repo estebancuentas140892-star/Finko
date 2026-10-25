@@ -14,7 +14,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { UMBRAL_GASTO_HORMIGA, esGastoHormiga, resumenHormigaMes } from '../../modules/infra/hormiga.js';
+import { UMBRAL_GASTO_HORMIGA, esGastoHormiga, resumenHormigaMes, topeHormiga, limiteHormiga } from '../../modules/infra/hormiga.js';
 import { UMBRAL_GASTO_HORMIGA as UMBRAL_LOGROS } from '../../modules/dominio/logros/logic.js';
 import {
   UNIDADES, unidadDeLeccion, metaLeccion, leccionDisponible, normalizarAprende,
@@ -75,6 +75,20 @@ describe('infra/hormiga.js', () => {
     expect(r.porCategoria[1]).toMatchObject({ total: 10_000, cuantos: 2 });
   });
 
+  it('topeHormiga() lee el configurado y cae al de siempre si no es válido', () => {
+    expect(topeHormiga({ hormiga: { tope: 15_000 } })).toBe(15_000);
+    expect(topeHormiga({ hormiga: { tope: 500 } })).toBe(UMBRAL_GASTO_HORMIGA);
+    expect(topeHormiga({ hormiga: { tope: 'x' } })).toBe(UMBRAL_GASTO_HORMIGA);
+    expect(topeHormiga(undefined)).toBe(UMBRAL_GASTO_HORMIGA);
+  });
+
+  it('limiteHormiga() devuelve null sin límite o con uno inválido', () => {
+    expect(limiteHormiga({ hormiga: { limite: 150_000 } })).toBe(150_000);
+    expect(limiteHormiga({ hormiga: { limite: null } })).toBeNull();
+    expect(limiteHormiga({ hormiga: { limite: 0 } })).toBeNull();
+    expect(limiteHormiga({})).toBeNull();
+  });
+
   it('un mes inválido o sin gastos devuelve el resumen vacío', () => {
     expect(resumenHormigaMes([], '2026-10')).toEqual({ total: 0, cuantos: 0, porCategoria: [] });
     expect(resumenHormigaMes(undefined, '')).toEqual({ total: 0, cuantos: 0, porCategoria: [] });
@@ -113,7 +127,7 @@ describe('estadoRuta() y siguienteLeccion()', () => {
     const ruta = estadoRuta(undefined);
     expect(ruta.find(e => e.estado === 'actual')?.unidad.id).toBe('u3');
     expect(ruta.filter(e => e.estado === 'actual')).toHaveLength(1);
-    expect(siguienteLeccion(undefined)?.id).toBe('u3-l2');
+    expect(siguienteLeccion(undefined)?.id).toBe('u3-l1');
   });
 
   it('una unidad marcada por la prueba de ubicación queda como sabida', () => {
@@ -122,11 +136,20 @@ describe('estadoRuta() y siguienteLeccion()', () => {
     expect(ruta[1].estado).toBe('sabida');
   });
 
-  it('cuenta las lecciones hechas de cada unidad', () => {
-    const ruta = estadoRuta({ hechas: { 'u3-l2': '2026-10-01' } });
+  it('cuenta las lecciones hechas y recomienda la primera que falta', () => {
+    const ruta = estadoRuta({ hechas: { 'u3-l1': '2026-10-01' } });
     const u3e = ruta.find(e => e.unidad.id === 'u3');
     expect(u3e).toMatchObject({ hechas: 1, total: 4, estado: 'actual' });
-    expect(siguienteLeccion({ hechas: { 'u3-l2': '2026-10-01' } })).toBeNull();
+    expect(siguienteLeccion({ hechas: { 'u3-l1': '2026-10-01' } })?.id).toBe('u3-l2');
+  });
+
+  it('con la unidad 3 completa no queda unidad actual: las demás están en preparación', () => {
+    const hechas = { 'u3-l1': 'x', 'u3-l2': 'x', 'u3-l3': 'x', 'u3-l4': 'x' };
+    const ruta = estadoRuta({ hechas });
+    expect(ruta.find(e => e.unidad.id === 'u3').estado).toBe('hecha');
+    expect(ruta.some(e => e.estado === 'actual')).toBe(false);
+    expect(siguienteLeccion({ hechas })).toBeNull();
+    expect(htmlRuta({ hechas })).toContain('Ya hiciste todas las lecciones disponibles');
   });
 
   it('normalizarAprende tolera un estado roto', () => {
@@ -346,15 +369,45 @@ describe('contenido de la unidad 3', () => {
     });
   });
 
-  it('clasificar trae seis tarjetas, de los dos lados, cada una con su explicación', () => {
-    const { tarjetas } = pasos[2];
-    expect(tarjetas).toHaveLength(6);
-    expect(tarjetas.some(t => t.es)).toBe(true);
-    expect(tarjetas.some(t => !t.es)).toBe(true);
-    for (const t of tarjetas) {
-      expect(t.casi).toBeTruthy();
-      // Coherencia con el criterio de la app: lo que dice "es hormiga" cabe en el tope.
-      expect(esGastoHormiga(t)).toBe(Boolean(t.es));
+  it('clasificar trae seis tarjetas en la lección 2', () => {
+    expect(pasos[2].tarjetas).toHaveLength(6);
+  });
+
+  const todosLosPasos = Object.values(u3).flatMap(l => l.pasos.map(p => [l.id, p]));
+
+  it('toda lección de la unidad termina en un Aplícalo, una sola vez y al final', () => {
+    for (const leccion of Object.values(u3)) {
+      const tipos = leccion.pasos.map(p => p.tipo);
+      expect(tipos.at(-1), leccion.id).toBe('aplica');
+      expect(tipos.filter(t => t === 'aplica'), leccion.id).toHaveLength(1);
+    }
+  });
+
+  it('en toda la unidad, cada opción equivocada trae su explicación', () => {
+    for (const [id, paso] of todosLosPasos.filter(([, p]) => p.tipo === 'elegir')) {
+      paso.opciones.forEach((_, i) => {
+        if (i !== paso.correcta) expect(paso.casi[i], `${id} opción ${i}`).toBeTruthy();
+      });
+      expect(paso.bien, id).toBeTruthy();
+    }
+  });
+
+  it('las tarjetas para clasificar van de los dos lados y respetan el tope de la app', () => {
+    for (const [id, paso] of todosLosPasos.filter(([, p]) => p.tipo === 'clasificar')) {
+      expect(paso.tarjetas.some(t => t.es), id).toBe(true);
+      expect(paso.tarjetas.some(t => !t.es), id).toBe(true);
+      for (const t of paso.tarjetas) {
+        expect(t.casi, `${id} ${t.titulo}`).toBeTruthy();
+        // Lo que dice "es hormiga" cabe en el tope por defecto, y viceversa.
+        expect(esGastoHormiga(t), `${id} ${t.titulo}`).toBe(Boolean(t.es));
+      }
+    }
+  });
+
+  it('los pasos "ordenar" traen la explicación de los dos casos', () => {
+    for (const [id, paso] of todosLosPasos.filter(([, p]) => p.tipo === 'ordenar')) {
+      expect(paso.items.length, id).toBeGreaterThan(2);
+      expect(paso.bien && paso.casi, id).toBeTruthy();
     }
   });
 
@@ -369,14 +422,14 @@ describe('vista', () => {
   it('la ruta pinta la unidad actual con su botón y las demás en "Después"', () => {
     const html = htmlRuta(undefined);
     expect(html).toContain('Unidad 3 · vas aquí');
-    expect(html).toMatch(/data-action="leccion-abrir"\s+data-id="u3-l2"/);
-    expect(html).toContain('Empezar la lección 2');
+    expect(html).toMatch(/data-action="leccion-abrir"\s+data-id="u3-l1"/);
+    expect(html).toContain('Empezar la lección 1');
     expect(html).toContain('Fondo de emergencia');
     expect(html).toContain('En preparación');
   });
 
   it('con la lección guardada a medias, el botón dice "Seguir"', () => {
-    expect(htmlRuta({ enCurso: { id: 'u3-l2', paso: 2 } })).toContain('Seguir la lección 2');
+    expect(htmlRuta({ enCurso: { id: 'u3-l1', paso: 2 } })).toContain('Seguir la lección 1');
   });
 
   it('un error se explica con "Casi" en el tono informativo, nunca en rojo', () => {
@@ -421,16 +474,42 @@ describe('vista', () => {
     expect(html).toContain('data-action="registrar-abrir" data-target-action="nuevo-gasto"');
   });
 
-  it('el cierre con datos lleva a Límites y dice el límite cercano', () => {
+  /** Cierre de la lección 2 con un gasto pequeño de $15.000 en octubre. */
+  function cierre(extra = {}) {
     const leccion = u3['u3-l2'];
     const gastos = [{ fecha: '2026-10-02', monto: 15_000, categoria: 'Café' }];
-    const html = htmlLeccion(crearSesion(leccion), leccion, {
+    return htmlLeccion(crearSesion(leccion), leccion, {
       eyebrow: 'Unidad 3', tope: 20_000, terminada: true, entrada: true,
       unidad: unidadDeLeccion('u3-l2'), avance: { hechas: 1, total: 4 },
-      aplica: aplicaHormiga(gastos, HOY),
+      aplica: aplicaHormiga(gastos, HOY), paso: leccion.pasos.at(-1), ...extra,
     });
-    expect(html).toContain('data-action="ir-a-seccion" data-target="presupuesto"');
+  }
+
+  it('el cierre con datos propone el límite con su monto en el botón (R50)', () => {
+    const html = cierre();
     expect(html).toContain('Tus gastos pequeños de octubre suman');
-    expect(html).toContain('Un límite cercano sería');
+    expect(html).toContain('data-action="leccion-limite-hormiga"');
+    expect(html).toContain('data-monto="10000"');
+    expect(html).toContain('Poner un límite de $10.000');
+    expect(html).toContain('Lo ajustas en Límites');
+  });
+
+  it('con un límite ya puesto, el cierre lleva a verlo en vez de proponer otro', () => {
+    const html = cierre({ limiteActual: 150_000 });
+    expect(html).not.toContain('leccion-limite-hormiga');
+    expect(html).toContain('data-action="ir-a-seccion" data-target="presupuesto"');
+    expect(html).toContain('Tu límite para lo pequeño es $150.000');
+  });
+
+  it('el cierre de la lección 1 lleva a Gastos', () => {
+    const html = cierre({ paso: u3['u3-l1'].pasos.at(-1) });
+    expect(html).toContain('data-action="ir-a-seccion" data-target="gast"');
+  });
+
+  it('la lección que completa la unidad celebra con la insignia, no con el chulo', () => {
+    const html = cierre({ celebrarUnidad: true });
+    expect(html).toContain('href="#il-insignia"');
+    expect(html).toContain('Terminaste la unidad 3');
+    expect(html).not.toContain('leccion-lista__check');
   });
 });

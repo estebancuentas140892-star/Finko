@@ -218,6 +218,9 @@ export function proyeccionMultiHorizonte(patrimonioActual, ahorroMensual) {
  * @param {import('../../core/state.js').Meta[]} [metas=[]]  - opcional.
  * @param {import('../../core/state.js').Apartado[]} [apartados=[]]  - opcional.
  * @param {import('../../core/state.js').Inversion[]} [inversiones=[]]  - opcional.
+ * @param {import('../../core/state.js').Personal[]} [personales=[]]  - opcional.
+ * @param {number} [topeHormiga] - tope de gasto pequeño configurado (APR.1b);
+ *   sin él, `detectarHormigas()` usa el de `infra/hormiga.js`.
  * @returns {{
  *   gastoMes: number,
  *   compromisoMensual: number,
@@ -231,14 +234,14 @@ export function proyeccionMultiHorizonte(patrimonioActual, ahorroMensual) {
  *   volatilidad: number,
  * }}
  */
-export function generarResumen(gastos, compromisos, cuentas, anio, mes, metas = [], apartados = [], inversiones = [], personales = []) {
+export function generarResumen(gastos, compromisos, cuentas, anio, mes, metas = [], apartados = [], inversiones = [], personales = [], topeHormiga = undefined) {
   const gastoMes          = totalGastosMes(gastos, anio, mes);
   const compromisoMensual = calcularTotalCompromisos(compromisos);
   const saldoCuentas      = calcularTotalCuentas(cuentas);
   const egresos           = gastoMes + compromisoMensual;
   const gastosMesActual   = gastosMes(gastos, anio, mes);
   const porCategoria      = gastosPorCategoria(gastosMesActual);
-  const hormigas          = detectarHormigas(gastosMesActual);
+  const hormigas          = detectarHormigas(gastosMesActual, topeHormiga);
 
   const activos        = calcularActivos(cuentas, metas, apartados, inversiones, personales);
   const pasivos        = calcularPasivos(compromisos);

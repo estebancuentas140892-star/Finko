@@ -327,6 +327,7 @@ Doctrina, no lista de sugerencias: **agregar una animación nueva es agregarla a
 | Respuesta revisada en una lección | `feedbackIn`: el panel sube 16px y aparece; el foco pasa a su título | 200ms |
 | Tarjeta clasificada | `cardOutDer` / `cardOutIzq`: sale hacia el lado elegido con `rotate(±8deg)` y se desvanece | 220ms |
 | Lección terminada | `checkIn`: el chulo pasa de `scale(.6)` a 1 | 250ms |
+| Unidad terminada | `badgeIn`: la insignia gira de -8° a 0 y crece de .8 a 1 (APR.1b) | 250ms |
 
 **Retiros (DV.2c):** `empty-orbit` y `empty-float` (bucles ambientales infinitos en los empty states) se retiraron: contradecían el veto de animaciones permanentes. El empty state gana personalidad por su ilustración estática, no por movimiento perpetuo.
 

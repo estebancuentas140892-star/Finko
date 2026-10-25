@@ -202,6 +202,33 @@
   color: var(--apr-dom-text);
   font-weight: var(--fk-font-bold);
 }
+.aprende-fila--boton { padding: 0; }
+.aprende-fila__boton {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  width: 100%;
+  min-height: 3.5rem;
+  padding: var(--fk-space-3) var(--fk-space-4);
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.aprende-fila__boton:hover { background: color-mix(in srgb, var(--fk-text-primary) 4%, transparent); }
+.aprende-fila-abierta { display: flex; flex-direction: column; gap: var(--fk-space-2); }
+.aprende-fila-abierta__cerrar { align-self: flex-end; }
+.aprende-ruta__aviso {
+  margin: 0;
+  padding: var(--fk-space-4);
+  border-radius: var(--fk-radius-lg);
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  color: var(--fk-text-secondary);
+}
 .aprende-fila__cuerpo { display: flex; flex-direction: column; min-width: 0; }
 .aprende-fila__nombre { font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
 .aprende-fila__meta { font-size: var(--fk-text-sm); color: var(--fk-text-muted); }
@@ -559,6 +586,15 @@
 }
 .leccion-lista__check .icon { width: 1.75rem; height: 1.75rem; stroke-width: 3; }
 .leccion-lista__linea { margin: 0; font-size: var(--fk-text-sm); color: var(--fk-text-secondary); }
+/* Unidad terminada: la insignia en el color de la unidad, 56px junto al
+   texto (D7). La celebración crece con el logro, sin confeti. */
+.leccion-insignia {
+  flex-shrink: 0;
+  width: 3.5rem;
+  height: 3.5rem;
+  color: var(--apr-dom);
+  animation: badgeIn 250ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
 .leccion-aplica {
   display: flex;
   flex-direction: column;
@@ -613,6 +649,10 @@
 }
 @keyframes cardOutIzq {
   to { opacity: 0; transform: translateX(-110%) rotate(-8deg); }
+}
+@keyframes badgeIn {
+  from { opacity: 0; transform: rotate(-8deg) scale(0.8); }
+  to   { opacity: 1; transform: none; }
 }
 @keyframes checkIn {
   from { opacity: 0; transform: scale(0.6); }

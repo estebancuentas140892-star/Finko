@@ -13,7 +13,7 @@
 
 import { hoy } from '../../infra/utils.js';
 import { memoizar } from '../../infra/memo.js';
-import { UMBRAL_GASTO_HORMIGA } from '../../infra/hormiga.js';
+import { UMBRAL_GASTO_HORMIGA, topeHormiga } from '../../infra/hormiga.js';
 
 // ── TABLA DE LOGROS ──────────────────────────────────────────────
 
@@ -169,14 +169,15 @@ export const UMBRAL_HORMIGA_RELEVANTE = 100_000;
  * Un solo pase O(gastos), igual que `_semanasPorMes`.
  *
  * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {number} [tope=UMBRAL_GASTO_HORMIGA] - el configurado en Límites (APR.1b).
  * @returns {Map<string, number>} mesISO ('YYYY-MM') → COP en gasto hormiga.
  */
-function _hormigaPorMes(gastos) {
+function _hormigaPorMes(gastos, tope = UMBRAL_GASTO_HORMIGA) {
   const totales = new Map();
   for (const g of gastos ?? []) {
     if (typeof g?.fecha !== 'string' || g.fecha.length < 7) continue;
     const monto = Number(g.monto);
-    if (!Number.isFinite(monto) || monto <= 0 || monto > UMBRAL_GASTO_HORMIGA) continue;
+    if (!Number.isFinite(monto) || monto <= 0 || monto > tope) continue;
     const mesISO = g.fecha.slice(0, 7);
     totales.set(mesISO, (totales.get(mesISO) ?? 0) + monto);
   }
@@ -188,11 +189,12 @@ function _hormigaPorMes(gastos) {
  *
  * @param {import('../../core/state.js').Gasto[]} gastos
  * @param {string} mesISO - `YYYY-MM` (o un ISO completo, se usa el prefijo).
+ * @param {number} [tope=UMBRAL_GASTO_HORMIGA]
  * @returns {number} COP.
  */
-export function gastoHormigaMes(gastos, mesISO) {
+export function gastoHormigaMes(gastos, mesISO, tope = UMBRAL_GASTO_HORMIGA) {
   if (typeof mesISO !== 'string' || mesISO.length < 7) return 0;
-  return _hormigaPorMes(gastos).get(mesISO.slice(0, 7)) ?? 0;
+  return _hormigaPorMes(gastos, tope).get(mesISO.slice(0, 7)) ?? 0;
 }
 
 /**
@@ -229,10 +231,15 @@ function _mesesCerradosAtras(hoyISO, cuantos) {
  * que sí redujo (menos hormigas = menos transacciones).
  *
  * @param {import('../../core/state.js').Gasto[]} gastos
+ * El tope configurable (APR.1b) no abre una trampa: se aplica igual a los
+ * cuatro meses que se comparan, así que cambiarlo mueve el promedio y el mes
+ * cerrado juntos.
+ *
  * @param {string} hoyISO - `YYYY-MM-DD`.
+ * @param {number} [tope=UMBRAL_GASTO_HORMIGA]
  * @returns {boolean}
  */
-export function hormigaALaRaya(gastos, hoyISO) {
+export function hormigaALaRaya(gastos, hoyISO, tope = UMBRAL_GASTO_HORMIGA) {
   if (typeof hoyISO !== 'string' || hoyISO.length < 10) return false;
   const meses = _mesesCerradosAtras(hoyISO, 4);
   if (meses.length < 4) return false;
@@ -240,7 +247,7 @@ export function hormigaALaRaya(gastos, hoyISO) {
   const semanas = _semanasPorMes(gastos);
   if (meses.some(m => (semanas.get(m) ?? 0) < 3)) return false;
 
-  const hormiga = _hormigaPorMes(gastos);
+  const hormiga = _hormigaPorMes(gastos, tope);
   const [cerrado, ...previos] = meses;
   const promedio = previos.reduce((suma, m) => suma + (hormiga.get(m) ?? 0), 0) / previos.length;
   if (promedio < UMBRAL_HORMIGA_RELEVANTE) return false;
@@ -421,7 +428,7 @@ export const LOGROS = [
     emoji:   '🐜',
     desc:    'Bajaste tus gastos hormiga por debajo del promedio de los 3 meses anteriores.',
     hint:    'Registra 4 meses seguidos y baja tus gastos pequeños frente al promedio de los 3 anteriores.',
-    eval:    s => _hormigaALaRayaMemo(s.gastos, hoy()),
+    eval:    s => _hormigaALaRayaMemo(s.gastos, hoy(), topeHormiga(s.config)),
   },
   {
     id:     'fondo-emergencia',

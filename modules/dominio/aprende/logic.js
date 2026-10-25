@@ -34,6 +34,8 @@ import { resumenHormigaMes, UMBRAL_GASTO_HORMIGA } from '../../infra/hormiga.js'
  * @property {string} seccion  - hash de la sección donde termina.
  * @property {string} termina  - nombre visible de esa sección.
  * @property {LeccionMeta[]} lecciones - vacía si la unidad está en preparación.
+ * @property {string} [aprendiste] - lo que la celebración de la unidad dice
+ *                                   que ya sabes (D7, insignia).
  */
 
 /** @type {Unidad[]} */
@@ -42,11 +44,12 @@ export const UNIDADES = [
   { id: 'u2', numero: 2, nombre: 'Repartir tu ingreso', dominio: 'tesoreria', seccion: 'tesoreria', termina: 'Repartir ingreso', lecciones: [] },
   {
     id: 'u3', numero: 3, nombre: 'Gastos hormiga y límites', dominio: 'presupuesto', seccion: 'presupuesto', termina: 'Límites',
+    aprendiste: 'Ahora sabes ver lo pequeño y ponerle un límite que sí puedas cumplir.',
     lecciones: [
-      { id: 'u3-l1', titulo: 'Lo pequeño también suma', minutos: 3, contenido: false },
+      { id: 'u3-l1', titulo: 'Lo pequeño también suma', minutos: 3, termina: 'Gastos' },
       { id: 'u3-l2', titulo: 'Encuentra tus gastos hormiga', minutos: 3, termina: 'Límites, con tus compras' },
-      { id: 'u3-l3', titulo: 'Un límite que sí puedas cumplir', minutos: 4, termina: 'Límites', contenido: false },
-      { id: 'u3-l4', titulo: 'Repaso: tu mes en hormigas', minutos: 2, contenido: false },
+      { id: 'u3-l3', titulo: 'Un límite que sí puedas cumplir', minutos: 4, termina: 'Límites' },
+      { id: 'u3-l4', titulo: 'Repaso: tu mes en hormigas', minutos: 2, termina: 'Límites' },
     ],
   },
   { id: 'u4', numero: 4, nombre: 'Fondo de emergencia', dominio: 'ahorro', seccion: 'fondo', termina: 'Fondo', lecciones: [] },

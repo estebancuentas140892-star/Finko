@@ -516,6 +516,12 @@ export function createInitialState() {
       primerUsoISO: null,
       /** Cifrar el respaldo con contraseña (CFG.4c, schema v43). La clave no se guarda. */
       respaldoCifrado: false,
+      /**
+       * Gastos pequeños (APR.1b, schema v46, ADR 092). `tope`: monto máximo de
+       * una compra para contar como hormiga (default 20.000, `infra/hormiga.js`).
+       * `limite`: máximo al mes para la suma de esas compras, o null sin límite.
+       */
+      hormiga: { tope: 20_000, limite: null },
     },
 
     /** Cuentas / tesorería. */

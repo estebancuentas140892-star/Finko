@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(aprende): APR.1b, la unidad 3 completa y el límite de gastos pequeños · 2026-10-24
+
+[ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D7 y dudas; fichas [`contexto/aprende.md`](contexto/aprende.md) y [`contexto/limites.md`](contexto/limites.md). SW v596, schema v46.
+
+- **Las cuatro lecciones de la unidad 3**: "Lo pequeño también suma" (termina en Gastos), la de APR.1a, "Un límite que sí puedas cumplir" (ordenar pasos y "¿qué harías?") y el repaso. Los textos quedan con la revisión pedagógica pendiente (APR.2c).
+- **El Aplícalo pone el límite**: "Poner un límite de $X" emite `hormiga:limite` y Límites, su dueño, lo guarda y lo muestra. Si ya hay uno, el botón lleva a verlo.
+- **Límites gana el sobre de gastos pequeños**: cruza categorías, mismo criterio de alerta y excedido que un tope; sin límite, una línea con el total del mes ofrece ponerlo.
+- **El tope de gasto pequeño es del usuario** (`S.config.hormiga.tope`, por defecto $20.000): lo leen Aprende, Gastos, Análisis y "Hormiga a raya". Un test defiende que cambiarlo no regala el logro, porque se aplica igual a los cuatro meses que se comparan.
+- **Insignia al terminar la unidad** (`il-insignia`, `badgeIn`), solo la primera vez. Es la primera ilustración final del pipeline de DV.2d; el test de sincronía del sprite ya conoce `ilustraciones/`.
+- **La ruta sin unidad actual lo dice**, y las unidades hechas se despliegan para repasar.
+
 ### feat(aprende): APR.1a, la ruta y la primera lección completa · 2026-10-24
 
 [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D7, D8, D10 y D11; ficha [`contexto/aprende.md`](contexto/aprende.md). La Fase 1 arrancó sin esperar a las fichas 17 y 19 de MOV.1 por decisión en chat (resolución al final del ADR). SW v595, schema v45.
