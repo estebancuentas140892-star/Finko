@@ -28,12 +28,15 @@ import u1 from '../../modules/dominio/aprende/lecciones/u1.js';
 import u2 from '../../modules/dominio/aprende/lecciones/u2.js';
 import u5 from '../../modules/dominio/aprende/lecciones/u5.js';
 import u6 from '../../modules/dominio/aprende/lecciones/u6.js';
+import u7 from '../../modules/dominio/aprende/lecciones/u7.js';
+import u8 from '../../modules/dominio/aprende/lecciones/u8.js';
+import u9 from '../../modules/dominio/aprende/lecciones/u9.js';
 import u3 from '../../modules/dominio/aprende/lecciones/u3.js';
 import u4 from '../../modules/dominio/aprende/lecciones/u4.js';
 import { APLICA, modeloAplica, mesesEnPalabras, gastosFijosMensuales, tasaMensualDeuda } from '../../modules/dominio/aprende/aplica.js';
 
 /** Contenido escrito, por unidad. Cada unidad nueva se suma acá. */
-const CONTENIDO = { u1, u2, u3, u4, u5, u6 };
+const CONTENIDO = { u1, u2, u3, u4, u5, u6, u7, u8, u9 };
 /** Todas las lecciones escritas, en un solo mapa id → lección. */
 const LECCIONES = Object.assign({}, ...Object.values(CONTENIDO));
 
@@ -171,7 +174,8 @@ describe('estadoRuta() y siguienteLeccion()', () => {
     const hechas = hechasDe(...UNIDADES.map(u => u.id));
     expect(estadoRuta({ hechas }).some(e => e.estado === 'actual')).toBe(false);
     expect(siguienteLeccion({ hechas })).toBeNull();
-    expect(htmlRuta({ hechas })).toContain('Ya hiciste todas las lecciones disponibles');
+    expect(htmlRuta({ hechas })).toContain('Terminaste las 9 unidades de la ruta');
+    expect(htmlRuta({ hechas })).not.toContain('en preparación');
   });
 
   it('normalizarAprende tolera un estado roto', () => {
@@ -543,6 +547,22 @@ describe('contenido de las lecciones', () => {
     }
   });
 
+  it('todo marcador de los textos es uno que la vista sabe llenar', () => {
+    // `{tope}` y los valores legales que `index.js` pasa en `ctx.valores`
+    // (ADN 12): un marcador mal escrito saldría tal cual en pantalla.
+    const conocidos = new Set(['tope', 'uvt', 'exento4x1000', 'topeRenta', 'anio']);
+    const usados = [...JSON.stringify(CONTENIDO).matchAll(/\{([A-Za-z0-9]+)\}/g)].map(m => m[1]);
+    expect(usados.length).toBeGreaterThan(0);
+    for (const m of usados) expect(conocidos.has(m), m).toBe(true);
+  });
+
+  it('la unidad 9 no escribe a mano las cifras legales del año', () => {
+    const textos = JSON.stringify(CONTENIDO.u9);
+    expect(textos).toContain('{exento4x1000}');
+    expect(textos).toContain('{topeRenta}');
+    expect(textos).toContain('{anio}');
+  });
+
   it('ningún texto usa guion largo ni guion medio (CLAUDE.md sección 6)', () => {
     expect(JSON.stringify(CONTENIDO)).not.toMatch(new RegExp(`[${String.fromCharCode(0x2013, 0x2014)}]`));
   });
@@ -557,7 +577,8 @@ describe('vista', () => {
     expect(html).toMatch(/data-action="leccion-abrir"\s+data-id="u1-l1"/);
     expect(html).toContain('Empezar la lección 1');
     expect(html).toContain('Fondo de emergencia');
-    expect(html).toContain('En preparación');
+    // Las nueve unidades tienen contenido (APR.2c): ninguna queda en preparación.
+    expect(html).not.toContain('En preparación');
   });
 
   it('Tu siguiente paso no repite "con tus" cuando la lección ya dice con qué datos termina', () => {

@@ -129,9 +129,13 @@ export function htmlRuta(aprendeCrudo, abierta = null) {
     </section>` : '';
   // Sin unidad actual es que no queda ninguna lección escrita por hacer:
   // se dice, en vez de dejar la ruta sin su tarjeta principal y sin motivo.
+  // Solo se habla de unidades en preparación si de verdad queda alguna.
+  const enPreparacion = ruta.some(e => !e.unidad.lecciones.some(leccionDisponible));
   const cabeza = actual
     ? _tarjetaUnidad(actual, aprende, `Unidad ${actual.unidad.numero} · vas aquí`)
-    : `<p class="aprende-ruta__aviso">Ya hiciste todas las lecciones disponibles. Las próximas unidades están en preparación; mientras tanto, puedes repasar las que ya hiciste.</p>`;
+    : enPreparacion
+      ? `<p class="aprende-ruta__aviso">Ya hiciste todas las lecciones disponibles. Las próximas unidades están en preparación; mientras tanto, puedes repasar las que ya hiciste.</p>`
+      : `<p class="aprende-ruta__aviso">Terminaste las ${ruta.length} unidades de la ruta. Puedes repasar cualquier lección cuando quieras.</p>`;
   return `
     <div class="aprende-ruta">
       ${cabeza}

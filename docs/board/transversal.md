@@ -168,7 +168,7 @@
 - Estado : pendiente de APR.1d. **Objetivo**: preguntas con "Todavía no lo sé", unidades acertadas como "Ya lo sabes" que cuentan en Tu progreso, resultado con "Prefiero empezar desde la unidad 1" (ADR 092 D9). **Modelo**: Equilibrado, Alto.
 
 #### APR.2c - Contenido de las unidades 1, 2 y 4 a 9
-- Estado : en curso. Una rebanada por unidad. **Escritas: 1 a 6** (todas menos la 3 con el Aplícalo genérico de `aplica.js`). Faltan 7, 8 y 9. **Objetivo**: lecciones con Aplícalo en su sección; la unidad 9 lee las constantes de `core/constants.js` y se revisa con E.2; gota a gota solo enlaza líneas verificadas con fecha. **Aceptación**: ninguna unidad sin revisión pedagógica registrada. **Modelo**: Equilibrado, Alto.
+- Estado : en curso. Una rebanada por unidad. **Escritas las nueve** (todas menos la 3 con el Aplícalo genérico de `aplica.js`; la 9 con marcadores de `core/constants.js`). Falta la revisión pedagógica registrada de cada unidad, que es la aceptación, y revisar la 9 con E.2. **Objetivo**: lecciones con Aplícalo en su sección; la unidad 9 lee las constantes de `core/constants.js` y se revisa con E.2; gota a gota solo enlaza líneas verificadas con fecha. **Aceptación**: ninguna unidad sin revisión pedagógica registrada. **Modelo**: Equilibrado, Alto.
 
 ### Fase 3 - Perfiles, niño y tutor (ADR 093)
 

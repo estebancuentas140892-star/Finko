@@ -88,9 +88,35 @@ export const UNIDADES = [
       { id: 'u6-l3', titulo: 'Gota a gota: por qué es tan peligroso', minutos: 3, termina: 'Por pagar' },
     ],
   },
-  { id: 'u7', numero: 7, nombre: 'Crédito e intereses', dominio: 'compromisos', seccion: 'compromisos', termina: 'Por pagar', lecciones: [] },
-  { id: 'u8', numero: 8, nombre: 'Invertir: CDT y regla del 72', dominio: 'inversion', seccion: 'inversion', termina: 'Inversión', lecciones: [] },
-  { id: 'u9', numero: 9, nombre: 'Impuestos: 4x1000 y renta', dominio: 'analisis', seccion: 'analisis', termina: 'Análisis', lecciones: [] },
+  {
+    id: 'u7', numero: 7, nombre: 'Crédito e intereses', dominio: 'compromisos', seccion: 'compromisos', termina: 'Por pagar',
+    aprendiste: 'Ahora sabes leer una tasa, usar la tarjeta sin intereses y comparar créditos.',
+    lecciones: [
+      { id: 'u7-l1', titulo: 'Tasa al mes y tasa al año', minutos: 3, termina: 'Por pagar, con tus deudas' },
+      { id: 'u7-l2', titulo: 'La tarjeta de crédito', minutos: 4, termina: 'Por pagar' },
+      { id: 'u7-l3', titulo: 'Menos cuotas, menos intereses', minutos: 3, termina: 'Por pagar' },
+      { id: 'u7-l4', titulo: 'Repaso: el crédito a tu favor', minutos: 2, termina: 'Por pagar' },
+    ],
+  },
+  {
+    id: 'u8', numero: 8, nombre: 'Invertir: CDT y regla del 72', dominio: 'inversion', seccion: 'inversion', termina: 'Inversión',
+    aprendiste: 'Ahora sabes cuándo invertir, qué es un CDT y cuánto tarda tu dinero en duplicarse.',
+    lecciones: [
+      { id: 'u8-l1', titulo: 'Ahorrar e invertir no son lo mismo', minutos: 3, termina: 'Inversión, con tus inversiones' },
+      { id: 'u8-l2', titulo: 'El CDT', minutos: 3, termina: 'Inversión' },
+      { id: 'u8-l3', titulo: 'Interés compuesto', minutos: 3, termina: 'Inversión' },
+      { id: 'u8-l4', titulo: 'La regla del 72', minutos: 2, termina: 'Inversión' },
+    ],
+  },
+  {
+    id: 'u9', numero: 9, nombre: 'Impuestos: 4x1000 y renta', dominio: 'analisis', seccion: 'analisis', termina: 'Análisis',
+    aprendiste: 'Ahora sabes qué es el 4x1000, cómo no pagarlo de más y cuándo te toca declarar renta.',
+    lecciones: [
+      { id: 'u9-l1', titulo: 'El 4x1000', minutos: 3, termina: 'Análisis, con tus ingresos' },
+      { id: 'u9-l2', titulo: 'La cuenta exenta', minutos: 3, termina: 'Análisis' },
+      { id: 'u9-l3', titulo: '¿Tienes que declarar renta?', minutos: 3, termina: 'Análisis' },
+    ],
+  },
 ];
 
 /**

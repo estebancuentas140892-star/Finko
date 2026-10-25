@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(aprende): APR.2c, las unidades 7, 8 y 9 · 2026-10-24
+
+[ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D8; ficha [`contexto/aprende.md`](contexto/aprende.md). Cierra el contenido de la ruta del adulto. SW v601.
+
+- **Unidad 7, Crédito e intereses**: tasa al mes y tasa al año, la tarjeta de crédito (elegir y clasificar), menos cuotas, menos intereses (control con lo que pides y las cuotas) y un repaso. Su Aplícalo dice lo que te cobran tus deudas este mes, en Por pagar.
+- **Unidad 8, Invertir: CDT y regla del 72**: ahorrar e invertir no son lo mismo, el CDT, interés compuesto y la regla del 72 (dos controles). Su Aplícalo suma lo que tienes invertido y en cuánto se duplicaría cada inversión, en Inversión.
+- **Unidad 9, Impuestos: 4x1000 y renta**: el 4x1000, la cuenta exenta y si tienes que declarar renta. Las cifras del año (exento del 4x1000, tope de ingresos) salen de `core/constants.js` por marcadores, nunca escritas a mano (ADN 12); un test exige que todo marcador sea uno que la vista sabe llenar.
+- **Ruta completa**: las nueve unidades tienen contenido. Con todas hechas, la ruta lo dice ("Terminaste las 9 unidades") en vez de prometer unidades en preparación.
+
 ### feat(aprende): APR.2c, las unidades 5 y 6 · 2026-10-24
 
 [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D8; ficha [`contexto/aprende.md`](contexto/aprende.md). SW v600.
