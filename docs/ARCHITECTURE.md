@@ -273,10 +273,12 @@ Los eventos del sistema (verificados el 2026-10-24):
 | `cuenta:crear` | `infra/cuenta-helper.js` y `ui/actions.js` cuando una acción necesita una cuenta y no hay ninguna | `tesoreria/acciones/cuentas.js` (abre el formulario de cuenta nueva) |
 | `storage:cuota` | `core/storage.js` cuando el uso de `localStorage` deja de estar en nivel `ok` | `config/index.js` (aviso de cuota en Ajustes) |
 | `storage:error` | `core/storage.js` cuando un guardado falla | `config/index.js` (aviso de error de persistencia) |
-| `bloqueo:abierto` | `ui/bloqueo-acceso.js` cuando el gate de PIN se resuelve y libera la app | `bootstrap.js` (encadena el gate legal detrás del candado) |
+| `bloqueo:abierto` | `ui/bloqueo-acceso.js` o `ui/quien-usa.js` cuando el PIN libera la app | `bootstrap.js` (encadena el gate legal detrás del candado) |
 | `legal:aceptado` | `ui/aceptacion-legal.js` al aceptar la versión vigente de los documentos | `bootstrap.js` (cierra el gate y sigue el arranque) |
 | `hormiga:limite` | `aprende/index.js` (Aplícalo, APR.1b) | `presupuesto/index.js` (pone el límite de gastos pequeños) |
 | `seccion:pintada` | `ahorro/index.js` (Fondo, APR.2a) | `aprende/index.js` (llena la oferta de lección) |
+| `perfil:cambio` | `infra/perfiles.js` (`entrarComo()`, APR.3a) | `ui/quien-usa.js` (piel) y `nino/index.js` (pinta) |
+| `familia:agregar` | `ui/quien-usa.js` ("Agregar un niño") | `config/familia.js` (abre el alta) |
 
 `distribucion:aplicar` es el ejemplo canónico de orquestación cross-dominio sin acoplar dominios: `tesoreria` no importa `metas` ni `apartados`, solo emite un evento con la lista de `items`; cada dominio destino decide si le corresponde algo y lo aplica.
 
@@ -325,7 +327,7 @@ document.addEventListener('click', e => {
 
 ### 8.1 Sistema de íconos SVG
 
-Lenguaje de iconografía **propio**, "Finko Icons v2: trazo cálido con chispa" ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md)): geometría de línea sobre retícula de 24, redondez sistemática, duotono al 22 % y un punto de valor ("chispa") que el contexto enciende vía `--fk-icon-dot`. Las marcas (bancos, suscripciones) usan su logotipo monocromo sobre teja de color corporativo ([ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md)); las categorías, su glifo sobre teja teñida por dominio. Los emojis quedan solo en momentos expresivos (logros, celebración): el tono cálido es ADN (regla 11), no se elimina.
+Lenguaje de iconografía **propio**, "Finko Icons v2: trazo cálido con chispa" ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md); geometría y chispa en DESIGN_SYSTEM). Las marcas usan su logotipo monocromo sobre teja de color corporativo ([ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md)); las categorías, su glifo sobre teja teñida por dominio. Los emojis quedan solo en momentos expresivos (logros, celebración): el tono cálido es ADN (regla 11), no se elimina.
 
 - **Fuente de verdad de diseño:** `assets/svg/` (biblioteca oficial, [ADR 026](DECISIONS/026-biblioteca-de-recursos-graficos.md)): un archivo SVG por recurso, estándar completo en [`assets/svg/README.md`](../assets/svg/README.md). La carpeta define el prefijo del symbol (`iconos/*` → `i-`/`c-`, `logos/**` → `b-`).
 - **Entrega:** sprite inline, un `<svg>` oculto al inicio de `<body>` en `index.html` con cada recurso como `<symbol id="..." viewBox="0 0 24 24">`. Cero peticiones, offline atómico. (BR.2 automatizará biblioteca → sprite; hasta entonces el sprite se mantiene a mano y la biblioteca es su espejo.)
@@ -350,7 +352,7 @@ Una sola fuente: **Inter Variable**, self-hosted (`assets/fonts/inter-variable.w
 
 ## 10. Reglas innegociables (ADN del proyecto)
 
-Ver [`/CLAUDE.md`](../CLAUDE.md) sección 4 - es la fuente única de verdad de las reglas ADN (evita mantener dos copias que se desincronizan). Resumen:
+Ver [`/CLAUDE.md`](../CLAUDE.md) sección 4, fuente única de las reglas ADN. Resumen:
 
 1. Vanilla JS sin build step. 2. Offline-first. 3. Sin servidor (`localStorage`, clave `fk_v1`). 4. Singleton `S` mutable. 5. `save()` debounced. 6. Migraciones idempotentes. 7. Cero `onclick=""`. 8. Cero `window.X`. 9. `logic.js` sin DOM. 10. Ningún dominio importa a otro. 11. Lenguaje humano, neutral y profesional. 12. Constantes legales con fecha de revisión.
 

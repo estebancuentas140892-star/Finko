@@ -28,7 +28,12 @@ import { esc as _esc } from '../infra/utils.js';
  *   confirmarTexto?:  string,
  *   cancelarTexto?:   string,
  *   peligroso?:       boolean,
+ *   palabra?:         string,
  * }} OpcionesConfirmar
+ *
+ * `palabra` (APR.3a, ADR 093 P1): el botón de confirmar queda apagado hasta
+ * que se escriba esa palabra. Es para lo que un niño podría aceptar sin leer,
+ * como borrar todo desde la pantalla del PIN.
  */
 
 /**
@@ -43,7 +48,9 @@ export function confirmar(opciones) {
     confirmarTexto = 'Aceptar',
     cancelarTexto  = 'Cancelar',
     peligroso      = false,
+    palabra        = '',
   } = opciones;
+  const _coincide = (texto) => String(texto ?? '').trim().toLocaleUpperCase('es') === palabra.toLocaleUpperCase('es');
 
   return new Promise(resolve => {
     const overlay = document.createElement('div');
@@ -59,10 +66,15 @@ export function confirmar(opciones) {
         </header>
         <div class="modal__body">
           <p class="confirm__mensaje">${_esc(mensaje)}</p>
+          ${palabra ? `
+          <div class="form-group">
+            <label for="confirm-palabra" class="label">Escribe ${_esc(palabra)} para confirmar</label>
+            <input id="confirm-palabra" class="input" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" />
+          </div>` : ''}
         </div>
         <div class="modal__footer">
           <button type="button" class="btn btn-ghost" data-role="cancelar">${_esc(cancelarTexto)}</button>
-          <button type="button" class="btn ${peligroso ? 'btn-danger' : 'btn-primary'}" data-role="confirmar">${_esc(confirmarTexto)}</button>
+          <button type="button" class="btn ${peligroso ? 'btn-danger' : 'btn-primary'}" data-role="confirmar"${palabra ? ' disabled' : ''}>${_esc(confirmarTexto)}</button>
         </div>
       </div>`;
 
@@ -71,10 +83,19 @@ export function confirmar(opciones) {
     const panel = overlay.querySelector('.modal');
     trapFocus(panel);
 
-    // Focus en el boton primario (confirmar) por defecto.
+    // Focus en el boton primario (confirmar) por defecto; con palabra, en el
+    // campo donde se escribe.
     setTimeout(() => {
-      overlay.querySelector('[data-role="confirmar"]')?.focus();
+      overlay.querySelector(palabra ? '#confirm-palabra' : '[data-role="confirmar"]')?.focus();
     }, 0);
+    if (palabra) {
+      overlay.querySelector('#confirm-palabra')?.addEventListener('input', (e) => {
+        const boton = overlay.querySelector('[data-role="confirmar"]');
+        if (boton) boton.disabled = !_coincide(e.target.value);
+      });
+    }
+    /** Con palabra, confirmar solo vale si está escrita. */
+    const _puedeConfirmar = () => !palabra || _coincide(overlay.querySelector('#confirm-palabra')?.value);
 
     function _cerrar(valor) {
       releaseFocus();
@@ -89,13 +110,13 @@ export function confirmar(opciones) {
         _cerrar(false);
       } else if (e.key === 'Enter' && !e.target.matches('[data-role="cancelar"]')) {
         e.preventDefault();
-        _cerrar(true);
+        if (_puedeConfirmar()) _cerrar(true);
       }
     }
 
     overlay.addEventListener('click', e => {
       const target = e.target.closest('[data-role]');
-      if (target?.dataset.role === 'confirmar') _cerrar(true);
+      if (target?.dataset.role === 'confirmar') { if (_puedeConfirmar()) _cerrar(true); }
       else if (target?.dataset.role === 'cancelar') _cerrar(false);
       // Click en backdrop (fuera del panel) cancela.
       else if (e.target === overlay) _cerrar(false);

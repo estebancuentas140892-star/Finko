@@ -166,9 +166,6 @@
 
 ### Fase 3 - Perfiles, niño y tutor (ADR 093)
 
-#### APR.3a - Perfiles en el dispositivo
-- Estado : siguiente. APR.3b se adelantó (2026-10-25): el alta y "¿Quién usa Finko?" usan sus dibujos. **Objetivo**: `perfiles[]` con migración, "¿Quién usa Finko?", niño a adulto con PIN y adulto a niño libre, candado obligatorio al crear el primer niño, fundido de CFG.7 (ADR 093 D1). Con niños, "Olvidé mi PIN" pide escribir una palabra de confirmación y avisa que también borra sus perfiles; sin niños no cambia (P1). **Aceptación**: test de que sin perfiles de niño la salida del 063 D7 queda igual. **Modelo**: Alta capacidad, Extra.
-
 #### APR.3c - Shell del niño y su ruta
 - Estado : pendiente de APR.3b. **Objetivo**: barra Inicio, Aprender, Alcancía y Yo; ruta en camino y en orden; lección con Frai; celebración con "Úsalo de verdad" (ADR 093 D9). **Modelo**: Equilibrado, Alto.
 

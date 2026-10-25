@@ -32,6 +32,8 @@ import { validarPin, crearBloqueo, verificarPin, limpiarFallos } from './bloqueo
 import { confirmarPin } from '../../ui/bloqueo-acceso.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { mostrarToast } from '../../ui/toast.js';
+import { hayNinos } from '../../infra/perfiles.js';
+import { initFamilia } from './familia.js';
 
 // ── CONFIRMACIÓN VISIBLE DE GUARDADO (R14/R15) ───────────────────
 //
@@ -609,6 +611,13 @@ async function _quitarCandado(e) {
   const form  = /** @type {HTMLFormElement} */ (e.target);
   const datos = Object.fromEntries(new FormData(form));
 
+  // Con niños el candado es obligatorio (ADR 093 D1). La vista ya no ofrece
+  // quitarlo; esto cubre un formulario que quedó pintado de antes.
+  if (hayNinos()) {
+    mostrarErroresForm(form, ['Con niños en este teléfono el candado es obligatorio. Primero elimina sus perfiles en Familia.'], _TITULO_ERROR_PIN);
+    return;
+  }
+
   const ok = await verificarPin(String(datos.pinActual ?? ''), S.config?.bloqueo);
   if (!ok) {
     mostrarErroresForm(form, ['El PIN actual no coincide.'], _TITULO_ERROR_PIN);
@@ -626,6 +635,7 @@ async function _quitarCandado(e) {
 }
 
 export function initConfig() {
+  initFamilia({ repintar: () => renderSmart(_inyectarPanel, 'config') });
   registrarAccion('exportar-datos',         _exportarDatos);
   registrarAccion('importar-datos',         _abrirImportadorDatos);
   registrarAccion('exportar-gastos-csv',    _exportarGastosCSV);

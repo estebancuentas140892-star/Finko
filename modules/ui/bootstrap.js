@@ -12,9 +12,11 @@
  *                          la primera pasada del router.
  * 4. initRouter()    - activa la sección del hash actual y escucha hashchange.
  * 5. initOnboarding()      - wizard si es primera vez, no-op si ya completó.
- * 5b. initBloqueoAcceso()  - candado de acceso (CFG.5a) si el usuario activó
- *                            PIN. Va antes del gate legal: mientras el candado
- *                            esté cerrado, ese gate y las novedades esperan.
+ * 5b. initPerfiles() o initBloqueoAcceso() - con niños, "¿Quién usa Finko?"
+ *                            (APR.3a); si no, el candado de acceso (CFG.5a) si
+ *                            el usuario activó PIN. Va antes del gate legal:
+ *                            mientras esté cerrado, ese gate y las novedades
+ *                            esperan.
  * 6. renderAll()     - pinta el estado inicial en el DOM.
  * 6b. initAceptacionLegal()- gate de re-aceptación si el usuario existente
  *                            quedó con una versión legal vieja (LEG.2).
@@ -30,6 +32,7 @@ import { initAcciones } from './actions.js';
 import { initOnboarding } from './onboarding.js';
 import { initAceptacionLegal, faltaAceptarLegal } from './aceptacion-legal.js';
 import { initBloqueoAcceso, faltaDesbloquear } from './bloqueo-acceso.js';
+import { initPerfiles } from './quien-usa.js';
 import { renderAll } from '../infra/render.js';
 import { verificarYNotificar } from '../infra/notificaciones.js';
 import { precalentarAnalisis } from '../dominio/analisis/view.js';
@@ -52,6 +55,7 @@ import { initConfig } from '../dominio/config/index.js';
 import { initImport } from '../dominio/import/index.js';
 import { initLogros } from '../dominio/logros/index.js';
 import { initAprende } from '../dominio/aprende/index.js';
+import { initNino } from '../dominio/nino/index.js';
 import { initMenuMas } from './menu-mas.js';
 import { initBloqueGastos } from './bloque-gastos.js';
 import { initBloqueAhorro } from './bloque-ahorro.js';
@@ -83,6 +87,7 @@ initAnalisis();
 initConfig();
 initImport();
 initAprende();
+initNino();
 
 initShell();
 initSidebarCollapse();
@@ -94,7 +99,9 @@ initBloqueAhorro();
 initBloqueInicio();
 initRouter(markActiveNav);
 initOnboarding();
-initBloqueoAcceso();
+// APR.3a (ADR 093 D1): con niños en el dispositivo, Finko abre en "¿Quién usa
+// Finko?" y el adulto da su PIN ahí; sin niños, el candado de siempre.
+if (!initPerfiles()) initBloqueoAcceso();
 initMenuMas();
 initRegistrar();
 initInstallPrompt();

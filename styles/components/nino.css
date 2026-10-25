@@ -111,3 +111,181 @@ body.kid { font-size: var(--fk-kid-text-base); line-height: var(--fk-kid-leading
   from { opacity: 0; }
   to   { opacity: 1; }
 }
+
+/* ── PERFILES (APR.3a, ADR 093 D1 y D2) ──────────────────────────
+   "¿Quién usa Finko?", la teja del dibujo de cada niño, el bloque
+   Familia de Ajustes y la app del niño. El selector y Familia los ve el
+   adulto: usan su tema, no `.kid`. */
+
+/* En el perfil niño la app del adulto no existe para la vista ni para el
+   lector de pantalla; tampoco sus avisos de logros. */
+body.kid .app-shell,
+body.kid .logro-toast,
+body.kid .confetti-piece,
+body.kid .install-banner { display: none; }
+.nino-app[hidden] { display: none; }
+
+.nino-app {
+  min-height: 100dvh;
+  background: var(--fk-bg-base);
+  color: var(--fk-text-primary);
+}
+.nino-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-5);
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: var(--fk-space-8) var(--fk-space-5) var(--fk-space-6);
+}
+.nino-main:focus { outline: none; }
+.nino-inicio { display: flex; flex-direction: column; gap: var(--fk-space-6); }
+.nino-inicio__saludo { display: flex; align-items: center; gap: var(--fk-space-4); }
+.nino-inicio__texto { display: flex; flex-direction: column; gap: var(--fk-space-2); }
+.nino-inicio h1:focus { outline: none; }
+
+/* La teja del dibujo del niño, en el color de su dibujo (--d). */
+.kidav {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: var(--fk-radius-xl);
+  background: color-mix(in srgb, var(--d, var(--fk-accent)) 16%, var(--fk-bg-surface));
+  border: 2px solid color-mix(in srgb, var(--d, var(--fk-accent)) 45%, transparent);
+}
+.kidav--sm { width: 3.25rem; height: 3.25rem; border-radius: var(--fk-radius-lg); }
+.kidav--agregar {
+  background: transparent;
+  border-style: dashed;
+  border-color: var(--fk-border-strong);
+  color: var(--fk-text-secondary);
+}
+.kidav--agregar .icon { width: var(--fk-icon-xl); height: var(--fk-icon-xl); }
+
+/* ¿Quién usa Finko? */
+.quien-usa { display: flex; flex-direction: column; gap: var(--fk-space-4); }
+.quien-usa h2:focus { outline: none; }
+.quien-usa__perfiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--fk-space-3);
+}
+.quien-usa__perfil {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fk-space-2);
+  min-height: 11rem;
+  padding: var(--fk-space-5) var(--fk-space-3);
+  border-radius: var(--fk-radius-xl);
+  border: 1px solid var(--fk-border-subtle);
+  background: var(--fk-bg-surface);
+  box-shadow: var(--fk-shadow-sm);
+  color: inherit;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+}
+.quien-usa__perfil:hover { border-color: var(--fk-border-strong); }
+.quien-usa__perfil--agregar { background: transparent; border: 1.5px dashed var(--fk-border-strong); box-shadow: none; }
+.quien-usa__iniciales {
+  display: grid;
+  place-items: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: var(--fk-radius-xl);
+  background: var(--fk-accent-subtle);
+  color: var(--fk-text-accent);
+  font-size: var(--fk-text-xl);
+  font-weight: var(--fk-font-bold);
+}
+.quien-usa--pin .quien-usa__iniciales { align-self: center; }
+.quien-usa__nombre { font-size: var(--fk-text-base); font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
+.quien-usa__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fk-space-1);
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-muted);
+}
+.quien-usa__meta .icon { width: var(--fk-icon-xs); height: var(--fk-icon-xs); }
+.quien-usa__volver { align-self: flex-start; }
+.quien-usa__nota {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fk-space-3);
+  margin: 0;
+  padding: var(--fk-space-3) var(--fk-space-4);
+  border-radius: var(--fk-radius-lg);
+  background: var(--fk-bg-elevated);
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+}
+.quien-usa__nota .icon { flex-shrink: 0; color: var(--fk-text-accent); }
+
+/* Familia en Ajustes */
+.familia-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--fk-space-3); }
+.familia-nino { display: flex; align-items: center; gap: var(--fk-space-3); flex-wrap: wrap; }
+.familia-nino__datos { flex: 1; min-width: 8rem; }
+.familia-nino__nombre { margin: 0; font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
+.familia-nino__meta { margin: 0; font-size: var(--fk-text-sm); color: var(--fk-text-muted); }
+.familia-nino__acciones { display: flex; align-items: center; gap: var(--fk-space-2); }
+
+/* Alta del niño */
+.familia-alta { display: flex; flex-direction: column; gap: var(--fk-space-4); }
+.familia-alta__paso {
+  margin: 0;
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fk-text-accent);
+}
+.familia-alta__grupo { border: 0; margin: 0; padding: 0; }
+.familia-opciones { display: flex; flex-wrap: wrap; gap: var(--fk-space-2); }
+.familia-opcion span {
+  display: inline-grid;
+  place-items: center;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0 var(--fk-space-4);
+  border-radius: var(--fk-radius-full);
+  border: 1.5px solid var(--fk-border-default);
+  background: var(--fk-bg-surface);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+  cursor: pointer;
+}
+.familia-opcion input:checked + span { border-color: var(--fk-accent); background: var(--fk-accent-subtle); color: var(--fk-text-accent); }
+.familia-opcion input:focus-visible + span { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
+.familia-dibujos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--fk-space-2); }
+.familia-dibujo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--fk-space-1);
+  padding: var(--fk-space-2);
+  border-radius: var(--fk-radius-lg);
+  border: 1.5px solid var(--fk-border-subtle);
+  background: var(--fk-bg-surface);
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+  cursor: pointer;
+}
+.familia-dibujo:has(input:checked) { border-color: var(--fk-accent); background: var(--fk-accent-subtle); color: var(--fk-text-accent); }
+.familia-dibujo:has(input:focus-visible) { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
+.familia-alta__otro { margin-top: var(--fk-space-2); }
+.familia-alta__ve {
+  padding: var(--fk-space-3) var(--fk-space-4);
+  border-radius: var(--fk-radius-lg);
+  background: var(--fk-bg-elevated);
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+}
+.familia-alta__ve p { margin: 0 0 var(--fk-space-1); }
+.familia-alta__ve-titulo { display: flex; align-items: center; gap: var(--fk-space-2); font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
+.familia-alta__candado { display: flex; align-items: flex-start; gap: var(--fk-space-2); }

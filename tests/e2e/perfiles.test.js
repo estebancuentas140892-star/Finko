@@ -1,0 +1,114 @@
+/**
+ * perfiles.test.js - APR.3a: perfiles de niño en el dispositivo, de punta a
+ * punta (ADR 093 D1, D2 y P1).
+ *
+ * Cubre lo que los unitarios no pueden: el arranque en "¿Quién usa Finko?",
+ * el cambio de piel con el fundido, el PIN de niño a adulto, el alta desde
+ * Ajustes creando el candado y "Olvidé mi PIN" con la palabra.
+ */
+
+import { test, expect } from '@playwright/test';
+import { sembrar, sembrarSiVacio, estadoBase, leerEstado } from './helpers/estado.js';
+import { createInitialState } from '../../modules/core/state.js';
+
+/**
+ * Candado con PIN 1234: `SHA-256(salt + ':' + pin)` de `dominio/config/bloqueo.js`,
+ * calculado una vez con `crearBloqueo('1234')`.
+ */
+const CANDADO_1234 = {
+  hash: 'e3174484ebeec68f0933b4a5518a7ce757ff61899a332e68004eef36a36e788b',
+  salt: '5de4f0acfa29e71ebc0497c3d5bf15b2',
+  creado: '2026-10-25',
+};
+
+const SOFIA = { id: 'n-sofi', nombre: 'Sofía', edad: 8, dibujo: 'cometa', teNombra: 'Papá', creado: '2026-10-25' };
+
+/** Config completa (con la aceptación legal vigente) más el candado. */
+const conCandado = () => ({ ...createInitialState().config, bloqueo: CANDADO_1234 });
+
+test.describe('APR.3a - perfiles en el dispositivo', () => {
+  test('sin niños, el arranque no cambia: el candado de siempre', async ({ page }) => {
+    await sembrar(page, estadoBase({ perfil: { nombre: 'Esteban', smmlv: 1750905 }, config: conCandado() }));
+    await page.goto('/#dash');
+    await expect(page.locator('#bloqueo-acceso[data-open]')).toHaveCount(1);
+    await expect(page.locator('#quien-usa[data-open]')).toHaveCount(0);
+  });
+
+  test('con un niño abre en "¿Quién usa Finko?"; el niño entra libre y vuelve al adulto con PIN', async ({ page }) => {
+    await sembrarSiVacio(page, estadoBase({ perfil: { nombre: 'Esteban Cardona', smmlv: 1750905 }, config: conCandado(), perfiles: [SOFIA] }));
+    await page.goto('/#dash');
+    const quien = page.locator('#quien-usa[data-open]');
+    await expect(quien).toHaveCount(1);
+    await expect(page.locator('#bloqueo-acceso[data-open]')).toHaveCount(0);
+    await expect(quien).toContainText('Esteban Cardona');
+    await expect(quien).toContainText('8 años');
+
+    // De adulto a niño es libre: cambia la piel y el adulto desaparece.
+    await quien.locator('[data-role="nino"]').click();
+    await expect(page.locator('body.kid')).toHaveCount(1);
+    await expect(page.locator('#nino-main h1')).toHaveText('¡Hola, Sofía!');
+    await expect(page.locator('#app')).toBeHidden();
+    await expect(page.locator('#nino-main h1')).toBeFocused();
+
+    // De niño a adulto se pide el PIN.
+    await page.click('#nino-main [data-action="perfil-cambiar"]');
+    await page.locator('#quien-usa[data-open] [data-role="adulto"]').click();
+    await page.fill('#quien-usa-pin', '0000');
+    await page.click('#form-quien-usa-pin [type="submit"]');
+    await expect(page.locator('#quien-usa-error')).toContainText('PIN incorrecto');
+    await expect(page.locator('body.kid')).toHaveCount(1);
+
+    await page.fill('#quien-usa-pin', '1234');
+    await page.click('#form-quien-usa-pin [type="submit"]');
+    await expect(page.locator('#quien-usa[data-open]')).toHaveCount(0);
+    await expect(page.locator('body.kid')).toHaveCount(0);
+    await expect(page.locator('#app')).toBeVisible();
+    await expect(page.locator('#nino-main')).toBeEmpty();
+  });
+
+  test('el alta desde Ajustes crea el PIN antes del primer niño y el candado ya no se puede quitar', async ({ page }) => {
+    await sembrarSiVacio(page, estadoBase({ perfil: { nombre: 'Esteban', smmlv: 1750905 } }));
+    await page.goto('/#config');
+    await page.waitForSelector('#sec-config.active', { timeout: 10_000 });
+    await page.click('#config-familia [data-action="familia-agregar"]');
+    const modal = page.locator('#modal-familia[data-open]');
+    await expect(modal).toContainText('Aún no tienes candado.');
+
+    await page.fill('#familia-nombre', 'Sofía');
+    await modal.locator('.familia-opcion:has(input[name="edad"][value="8"])').click();
+    await modal.locator('.familia-dibujo:has(input[value="cometa"])').click();
+    await page.click('#form-familia-nino [type="submit"]');
+
+    // Paso del candado: sin PIN no se agrega al niño (D1).
+    await page.fill('#familia-pin', '1234');
+    await page.fill('#familia-pin2', '1234');
+    await page.click('#form-familia-pin [type="submit"]');
+    await expect(modal).toHaveCount(0);
+    await expect(page.locator('#config-familia')).toContainText('Entrar como Sofía');
+    await expect.poll(async () => (await leerEstado(page)).perfiles?.map(p => p.nombre)).toEqual(['Sofía']);
+    expect((await leerEstado(page)).config.bloqueo?.hash).toBeTruthy();
+
+    await page.click('#config-bloqueo-title ~ details summary');
+    await expect(page.locator('#form-bloqueo-quitar')).toHaveCount(0);
+    await expect(page.locator('#config-bloqueo-obligatorio')).toContainText('el candado es obligatorio');
+
+    // Entrar como Sofía desde Ajustes, sin PIN.
+    await page.click('[data-action="familia-entrar"]');
+    await expect(page.locator('#nino-main h1')).toHaveText('¡Hola, Sofía!');
+  });
+
+  test('"Olvidé mi PIN" con niños pide escribir la palabra y avisa que borra sus perfiles', async ({ page }) => {
+    await sembrar(page, estadoBase({ perfil: { nombre: 'Esteban', smmlv: 1750905 }, config: conCandado(), perfiles: [SOFIA] }));
+    await page.goto('/#dash');
+    await page.locator('#quien-usa[data-open] [data-role="adulto"]').click();
+    await page.click('#quien-usa [data-role="olvide-pin"]');
+    const dialogo = page.locator('.modal--confirm');
+    await expect(dialogo).toContainText('también los perfiles de los niños');
+    const confirmarBoton = dialogo.locator('[data-role="confirmar"]');
+    await expect(confirmarBoton).toBeDisabled();
+    await page.fill('#confirm-palabra', 'BORRAR');
+    await expect(confirmarBoton).toBeEnabled();
+    await dialogo.locator('[data-role="cancelar"]').click();
+    await expect(page.locator('#quien-usa[data-open]')).toHaveCount(1);
+  });
+});

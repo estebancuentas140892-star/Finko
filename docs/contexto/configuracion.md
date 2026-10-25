@@ -110,6 +110,7 @@
 
 **Cambios realizados**:
 
+- 2026-10-25 (**APR.3a**): grupo Familia y candado obligatorio con niños; detalle en [`nino.md`](nino.md).
 - 2026-08-15 (**CFG.4d**, cuarta y última rebanada de CFG.4, [ADR 043](../DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md) D1, **cierra la iniciativa completa**): la cláusula "cambio de modelo (CFG.4)" de cinco documentos de `docs/legal/` (`terminos-y-condiciones.md`, `politica-de-privacidad.md`, `tratamiento-de-datos-personales.md`, `aviso-de-cookies.md`, `README.md`) pasa de describir una decisión pendiente a confirmar la que se tomó, conservando qué cambiaría si se reabriera. `historial-de-cambios.md` registra la entrada como **cambio menor**: el fondo no cambia, no pide re-aceptación. Sin runtime: sin SW, sin tests que correr.
 
 - 2026-10-17 (**HF.0c**, BUG-029): el CSV de gastos que exporta Finko se vuelve a importar; el importado no toca el saldo. Detalle en `contexto/gastos.md`.

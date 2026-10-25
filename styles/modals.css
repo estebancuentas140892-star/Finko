@@ -224,9 +224,16 @@
    fondo es opaco (el mismo del tema activo, así funciona en claro y oscuro) y
    el blur queda sin efecto. Sin esto la tarjeta de Ajustes prometería algo que
    la pantalla no cumple. */
-#bloqueo-acceso {
+#bloqueo-acceso,
+#quien-usa {
   background: var(--fk-bg-base);
 }
+
+/* Mientras el candado o "¿Quién usa Finko?" (APR.3a) siguen cerrados, el
+   aviso de un logro nuevo del adulto tampoco se ve: es un dato suyo, y quien
+   tiene el teléfono puede ser un niño. */
+body:has(#bloqueo-acceso[data-open]) .logro-toast,
+body:has(#quien-usa[data-open]) .logro-toast { display: none; }
 
 /* ── MENÚ "MÁS" v2 (NAV2.1a, ADR 040 D1-D3): hoja inferior agrupada ── */
 

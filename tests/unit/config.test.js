@@ -73,9 +73,11 @@ describe('renderPanelConfig() - grupos, jerarquía de botón y sprite (B1, B2, B
     renderPanelConfig();
   });
 
-  it('agrupa el panel en cinco bloques rotulados, con "La app" primero', () => {
+  it('agrupa el panel en seis bloques rotulados, con "La app" primero', () => {
+    // Familia (APR.3a, ADR 093 D2) va después de Tu cuenta: el tutor
+    // administra ahí los perfiles de los niños.
     const rotulos = [...document.querySelectorAll('.config-grupo__label')].map(e => e.textContent.trim());
-    expect(rotulos).toEqual(['La app', 'Tu cuenta', 'Tus datos', 'Impuestos', 'Información']);
+    expect(rotulos).toEqual(['La app', 'Tu cuenta', 'Familia', 'Tus datos', 'Impuestos', 'Información']);
   });
 
   it('el interruptor de tema vive en el primer grupo, no a dos pantallas de scroll', () => {

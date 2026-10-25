@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(nino): APR.3a, perfiles en el dispositivo · 2026-10-25
+
+[ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md) D1, D2 y P1; ficha nueva [`contexto/nino.md`](contexto/nino.md). Schema v48, SW v605.
+
+- **"¿Quién usa Finko?"**: con niños en el teléfono, Finko abre ahí en vez del candado. El adulto entra con su PIN; cada niño, con su dibujo y su edad. De adulto a niño es libre; de niño a adulto se pide el PIN. La app cambia de piel con el fundido del tema (`body.kid`) y el adulto desaparece.
+- **Familia en Ajustes**: agregar un niño (nombre, edad de 7 a 12, su dibujo y cómo te nombra), "Entrar como" y eliminar su perfil con PIN. Sin candado, el alta lo crea antes de guardar al primer niño; con niños, el candado ya no se puede quitar.
+- **"Olvidé mi PIN" con niños (P1)** pide escribir BORRAR y avisa que también borra sus perfiles; sin niños queda igual que antes (lo exige un test).
+- **Lo que ve el niño**, por ahora: el saludo de Frai y "Cambiar de perfil". Su barra, ruta y alcancía llegan en las rebanadas que siguen.
+- **El aviso de un logro nuevo del adulto** ya no se ve detrás del candado ni del selector.
+
 ### feat(nino): APR.3b, el sistema visual del niño · 2026-10-25
 
 [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md) D5, D7 y D8. Primera rebanada de la Fase 3; va antes que APR.3a porque el alta del niño y "¿Quién usa Finko?" usan sus dibujos. Todavía no se ve en la app: lo usan las rebanadas que siguen. SW v604.

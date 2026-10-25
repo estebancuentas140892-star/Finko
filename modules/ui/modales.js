@@ -13,9 +13,12 @@ import { trapFocus, releaseFocus } from '../infra/a11y.js';
  * Fondo de la app (todo menos los modales, que viven como hermanos de este nodo).
  * Se marca `inert` mientras hay un modal abierto para que el lector de pantalla
  * no pueda navegar el contenido de atrás (WCAG 2.4.3, refuerza `aria-modal`).
+ * En el perfil niño (APR.3a) el fondo es su propia app, `#nino-app`.
  * @returns {HTMLElement | null}
  */
-const _fondo = () => document.querySelector('.app-shell');
+const _fondo = () => (document.body.classList.contains('kid')
+  ? document.getElementById('nino-app')
+  : document.querySelector('.app-shell'));
 
 /**
  * Abre un modal overlay.

@@ -20,6 +20,7 @@ import { abrirModal, cerrarModal } from './modales.js';
 import { announce, trapFocus, releaseFocus } from '../infra/a11y.js';
 import { esc as _esc } from '../infra/utils.js';
 import { confirmar } from './confirm.js';
+import { hayNinos } from '../infra/perfiles.js';
 import {
   candadoActivo, verificarPin, registrarFallo, msDeFreno, limpiarFallos,
   FALLOS_ANTES_DE_FRENO, PIN_LARGO_MAX,
@@ -78,7 +79,7 @@ function _error(texto) {
  * @param {string} pin
  * @returns {Promise<{ok: boolean, mensaje: string|null}>}
  */
-async function _intentoPin(pin) {
+export async function intentarPin(pin) {
   const espera = msDeFreno();
   if (espera > 0) {
     return { ok: false, mensaje: `Demasiados intentos. Espera ${Math.ceil(espera / 1000)} segundos.` };
@@ -104,7 +105,7 @@ async function _onSubmit(e) {
 
   const campo = /** @type {HTMLInputElement|null} */ (form.querySelector('[name="pin"]'));
   const pin   = campo?.value ?? '';
-  const { ok, mensaje } = await _intentoPin(pin);
+  const { ok, mensaje } = await intentarPin(pin);
 
   if (ok) {
     if (campo) campo.value = '';
@@ -128,20 +129,45 @@ async function _onSubmit(e) {
 async function _onClick(e) {
   const boton = /** @type {HTMLElement} */ (e.target).closest('[data-role="olvide-pin"]');
   if (!boton) return;
+  await olvideMiPin();
+}
 
-  // Única salida honesta (ADR 063 punto 7): los datos no están cifrados, así que
-  // no hay nada que "recuperar" con el PIN correcto ni servidor que lo reponga.
-  const ok = await confirmar({
-    titulo:         'Olvidé mi PIN',
-    mensaje:        'Tu PIN no se puede recuperar: Finko no lo guarda en ninguna parte. La única forma de volver a entrar es borrar todo lo que tienes en este dispositivo (gastos, cuentas, metas y compromisos) y empezar de cero. No se puede deshacer.',
-    confirmarTexto: 'Borrar todo y empezar de cero',
-    peligroso:      true,
-  });
-  if (!ok) return;
+/** Palabra que hay que escribir para borrar todo con niños en el dispositivo (P1). */
+export const PALABRA_BORRAR = 'BORRAR';
+
+/**
+ * "Olvidé mi PIN" (ADR 063 punto 7): única salida honesta. Los datos no están
+ * cifrados, así que no hay nada que "recuperar" con el PIN correcto ni
+ * servidor que lo reponga.
+ *
+ * Con niños en el dispositivo (ADR 093 P1), esta salida queda en una pantalla
+ * que un niño abre al tocar el perfil adulto: pide escribir una palabra y
+ * dice que también se borran sus perfiles. Sin niños, todo queda igual.
+ *
+ * @returns {Promise<boolean>} true si se borró todo.
+ */
+export async function olvideMiPin() {
+  const conNinos = hayNinos();
+  const ok = await confirmar(conNinos
+    ? {
+        titulo:         'Olvidé mi PIN',
+        mensaje:        'Tu PIN no se puede recuperar: Finko no lo guarda en ninguna parte. La única forma de volver a entrar es borrar todo lo que hay en este dispositivo: tus datos y también los perfiles de los niños, con sus lecciones y su alcancía. No se puede deshacer.',
+        confirmarTexto: 'Borrar todo y empezar de cero',
+        peligroso:      true,
+        palabra:        PALABRA_BORRAR,
+      }
+    : {
+        titulo:         'Olvidé mi PIN',
+        mensaje:        'Tu PIN no se puede recuperar: Finko no lo guarda en ninguna parte. La única forma de volver a entrar es borrar todo lo que tienes en este dispositivo (gastos, cuentas, metas y compromisos) y empezar de cero. No se puede deshacer.',
+        confirmarTexto: 'Borrar todo y empezar de cero',
+        peligroso:      true,
+      });
+  if (!ok) return false;
 
   borrarTodo();
   announce('Datos borrados. Recargando…');
   setTimeout(() => location.reload(), 800);
+  return true;
 }
 
 // ── RE-AUTENTICACIÓN EN ACCIONES CRÍTICAS (CFG.5b, ADR 063) ──────
@@ -218,7 +244,7 @@ export function confirmarPin(opciones = {}) {
     async function _intentar() {
       const campo = /** @type {HTMLInputElement|null} */ (overlay.querySelector('#confirm-pin-input'));
       const pin   = campo?.value ?? '';
-      const { ok, mensaje: error } = await _intentoPin(pin);
+      const { ok, mensaje: error } = await intentarPin(pin);
 
       if (ok) {
         _cerrar(true);

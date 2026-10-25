@@ -582,6 +582,17 @@ export function createInitialState() {
      */
     aprende: { hechas: {}, sabidas: [], semanas: [], enCurso: null, ubicacion: null },
 
+    /**
+     * Perfiles de niño en el dispositivo (APR.3a, schema v48, ADR 093 D1).
+     * El adulto sigue siendo el resto de `S`; cada niño trae su nombre, edad,
+     * dibujo, cómo nombra al tutor, su propio `aprende`, su alcancía
+     * (`movimientos`), `metas`, `mesada` y `premio`. Forma completa y
+     * normalización: `infra/perfiles.js`. Quién está usando Finko ahora NO se
+     * guarda: es de la sesión.
+     * @type {import('../infra/perfiles.js').PerfilNino[]}
+     */
+    perfiles: [],
+
     /** Ahorro: fondo de emergencia + hábito (J.1, v7). */
     ahorro: {
       fondoEmergencia: {

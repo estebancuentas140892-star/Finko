@@ -1366,6 +1366,15 @@
 
   </div><!-- /.app-shell -->
 
+  <!-- PERFIL NIÑO (APR.3a, ADR 093 D9): la app del niño. Oculta salvo dentro
+       de su perfil; ui/quien-usa.js la muestra y esconde la del adulto con el
+       fundido del tema, y dominio/nino la pinta. El niño nunca ve el adulto. -->
+  <div class="nino-app" id="nino-app" hidden>
+    <main class="nino-main" id="nino-main" tabindex="-1">
+      <!-- dominio/nino/view.js renderiza aquí -->
+    </main>
+  </div>
+
   <!-- ══════════════════════════════════════════════════════════
        MODALES - scaffolding (Fases 6-12 completan el contenido)
        Contrato: [data-open] activa; Escape cierra; data-action="modal-close" cierra
@@ -1829,6 +1838,36 @@
     <div class="modal modal--onboarding">
       <div class="modal__body" id="bloqueo-acceso-body">
         <!-- bloqueo-acceso.js inyecta el formulario del candado aquí -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: ¿Quién usa Finko? (APR.3a, ADR 093 D1). Con niños en el
+       dispositivo, Finko abre aquí en vez del candado: el adulto entra con su
+       PIN y cada niño con su dibujo. Bloqueante y con fondo opaco, como el
+       candado (ver modals.css): es la misma pantalla de privacidad. -->
+  <div class="modal-overlay" id="quien-usa" data-bloqueante
+       role="dialog" aria-modal="true"
+       aria-label="¿Quién usa Finko?" aria-hidden="true">
+    <div class="modal modal--onboarding">
+      <div class="modal__body" id="quien-usa-body">
+        <!-- ui/quien-usa.js inyecta la elección de perfil o el PIN aquí -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Agregar un niño (APR.3a, ADR 093 D2), desde Ajustes, Familia -->
+  <div class="modal-overlay" id="modal-familia"
+       role="dialog" aria-modal="true"
+       aria-labelledby="modal-familia-title" aria-hidden="true">
+    <div class="modal">
+      <header class="modal__header">
+        <h2 class="modal__title" id="modal-familia-title">Agregar un niño</h2>
+        <button class="modal__close btn btn-icon btn-ghost"
+                data-action="modal-close" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </header>
+      <div class="modal__body" id="modal-familia-body">
+        <!-- config/familia.js inyecta el alta aquí -->
       </div>
     </div>
   </div>

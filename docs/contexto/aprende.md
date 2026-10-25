@@ -4,7 +4,7 @@
 
 > La capa de aprendizaje del adulto: la ruta de nueve unidades (`#aprende`) y la lección a pantalla completa (`#modal-leccion`). Decisiones: [ADR 092](../DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md). Tarjetas: iniciativa APR en [`board/transversal.md`](../board/transversal.md). Reglas de uso y plantilla en [`README.md`](README.md).
 >
-> **Qué NO buscar acá:** el perfil niño y el tutor (ADR 093, sin código todavía); "Tu progreso" (hoy en [`logros.md`](logros.md), se muda con APR.1d).
+> **Qué NO buscar acá:** el perfil niño y el tutor ([`nino.md`](nino.md)); "Tu progreso" (hoy en [`logros.md`](logros.md), se muda con APR.1d).
 
 ---
 

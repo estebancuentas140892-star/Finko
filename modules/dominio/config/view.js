@@ -15,6 +15,8 @@ import { legalVigente, estadoVigenciaLegal, APP_VERSION, SITUACIONES_LABORALES }
 import { estaInstalada } from '../../ui/install-prompt.js';
 import { DOCUMENTOS_LEGALES } from './legal.js';
 import { candadoActivo, cryptoDisponible, PIN_LARGO_MIN, PIN_LARGO_MAX } from './bloqueo.js';
+import { ninos, hayNinos } from '../../infra/perfiles.js';
+import { htmlFamilia } from './familia-view.js';
 
 // ── FORMATO DE MONTOS EN CAPTURA (B4/R16) ────────────────────────
 //
@@ -65,6 +67,7 @@ export function renderPanelConfig() {
     ${_renderAvisoVigencia()}
     ${_grupo('La app',      [_renderTema(), _renderAtajos(), _renderNotificaciones(), _renderInstalarApp()])}
     ${_grupo('Tu cuenta',   [_renderPerfil(), _renderBloqueo()])}
+    ${_grupo('Familia',     [htmlFamilia(ninos())])}
     ${_grupo('Tus datos',   [_renderDatos()])}
     ${_grupo('Impuestos',   [_renderImpuestos()])}
     ${_grupo('Información', [_renderLegal(), _renderAcercaDe()])}
@@ -328,6 +331,11 @@ function _renderBloqueo() {
             <button type="submit" class="btn btn-secondary">Cambiar PIN</button>
           </div>
         </form>
+        ${hayNinos() ? `
+        <p class="form-hint" id="config-bloqueo-obligatorio">
+          Con niños en este teléfono el candado es obligatorio: protege tu perfil. Para quitarlo,
+          primero elimina sus perfiles en Familia.
+        </p>` : `
         <form id="form-bloqueo-quitar" class="config-form" novalidate>
           <div class="form-group">
             <label for="bloqueo-quitar-pin" class="label">Quitar el candado</label>
@@ -339,7 +347,7 @@ function _renderBloqueo() {
           <div class="config-form__guardar">
             <button type="submit" class="btn btn-secondary">Quitar candado</button>
           </div>
-        </form>
+        </form>`}
       </details>
     </section>`;
 }

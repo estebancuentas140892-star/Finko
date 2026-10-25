@@ -10,7 +10,7 @@
  *     o los usuarios seguirán viendo la versión vieja.
  */
 
-const CACHE_NAME = 'finko-v604';
+const CACHE_NAME = 'finko-v605';
 
 // ── Assets críticos - si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [
@@ -64,6 +64,7 @@ const CORE_ASSETS = [
   './modules/infra/hormiga.js',
   './modules/infra/ruta-aprende.js',
   './modules/infra/ilustraciones.js',
+  './modules/infra/perfiles.js',
   './modules/infra/mes-bloque.js',
   './modules/infra/vencimientos.js',
   './modules/infra/bolsas.js',
@@ -96,6 +97,7 @@ const CORE_ASSETS = [
   './modules/ui/onboarding.js',
   './modules/ui/aceptacion-legal.js',
   './modules/ui/bloqueo-acceso.js',
+  './modules/ui/quien-usa.js',
   './modules/ui/contrasena-respaldo.js',
   './modules/ui/shell.js',
   './modules/ui/menu-mas.js',
@@ -172,6 +174,8 @@ const CORE_ASSETS = [
   './modules/dominio/config/index.js',
   './modules/dominio/config/legal.js',
   './modules/dominio/config/bloqueo.js',
+  './modules/dominio/config/familia.js',
+  './modules/dominio/config/familia-view.js',
 
   // Centro Legal (LEG.1) - textos fuente, docs/legal/ es la fuente de verdad.
   './docs/legal/terminos-y-condiciones.md',
@@ -197,6 +201,8 @@ const CORE_ASSETS = [
   './modules/dominio/aprende/logic.js',
   './modules/dominio/aprende/view.js',
   './modules/dominio/aprende/index.js',
+  './modules/dominio/nino/index.js',
+  './modules/dominio/nino/view.js',
   './modules/dominio/aprende/aplica.js',
   './modules/dominio/aprende/lecciones/u1.js',
   './modules/dominio/aprende/lecciones/u2.js',

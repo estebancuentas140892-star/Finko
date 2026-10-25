@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 47;
+const SCHEMA_VERSION = 48;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -692,6 +692,17 @@ function _migrate(raw) {
     if (data.aprende && typeof data.aprende === 'object' && !Array.isArray(data.aprende)) {
       data.aprende.ubicacion = typeof data.aprende.ubicacion === 'string' ? data.aprende.ubicacion : null;
     }
+  }
+
+  // v47 → v48: `perfiles` (APR.3a, ADR 093 D1). Los niños del dispositivo.
+  // Un estado viejo arranca sin niños y Finko abre como siempre. Se descarta
+  // lo que no tenga id ni nombre; el resto lo completa `normalizarPerfil()`
+  // (infra/perfiles.js) cada vez que se lee.
+  if ((typeof data._version === 'number' ? data._version : 1) < 48) {
+    data.perfiles = Array.isArray(data.perfiles)
+      ? data.perfiles.filter(p => p && typeof p === 'object' && typeof p.id === 'string' && p.id
+          && typeof p.nombre === 'string' && p.nombre.trim())
+      : [];
   }
 
   if (typeof data._version !== 'number' || data._version < SCHEMA_VERSION) {

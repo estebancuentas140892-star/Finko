@@ -111,18 +111,29 @@ let _transitionTimer = null;
  * @param {boolean} light - true = tema claro, false = tema oscuro.
  */
 function applyTheme(light) {
-  const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-
-  const swap = () => {
+  conFundido(() => {
     document.body.classList.toggle(LIGHT_CLASS, light);
     localStorage.setItem(THEME_KEY, light ? 'light' : 'dark');
     _syncThemeButton(light);
     EventBus.emit('theme:change', { light });
-  };
+  });
+}
+
+/**
+ * Aplica un cambio de piel con el fundido del cambio de tema (CFG.7): lo usan
+ * el tema y el cambio de perfil (APR.3a, ADR 093 D1: "la app cambia de piel,
+ * no de lugar"). View Transitions donde hay soporte; si no, la técnica
+ * "class transitioning" de themes.css. Con reduce-motion, inmediato.
+ *
+ * @param {() => void} swap - el cambio de clases, síncrono.
+ * @returns {Promise<void>} resuelve cuando el cambio ya está aplicado (con View
+ *   Transitions ocurre un cuadro después): ahí se puede mover el foco.
+ */
+export function conFundido(swap) {
+  const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
   if (!reducedMotion && document.startViewTransition) {
-    document.startViewTransition(swap);
-    return;
+    return document.startViewTransition(swap).updateCallbackDone.catch(() => {});
   }
 
   // Fallback: tecnica previa (class transitioning con CSS).
@@ -133,6 +144,7 @@ function applyTheme(light) {
     document.body.classList.remove('theme-transitioning');
     _transitionTimer = null;
   }, 350);
+  return Promise.resolve();
 }
 
 function _syncThemeButton(light) {

@@ -1984,6 +1984,40 @@ describe('Migración v44 → v45 (aprende, APR.1a)', () => {
   });
 });
 
+describe('Migración v47 → v48 (perfiles, APR.3a)', () => {
+  it('un usuario existente arranca sin niños: Finko abre como siempre', () => {
+    const v47 = { ...createInitialState(), _version: 47 };
+    delete v47.perfiles;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v47));
+
+    loadData();
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(48);
+    expect(S.perfiles).toEqual([]);
+  });
+
+  it('descarta los perfiles sin id o sin nombre y conserva los válidos', () => {
+    const v47 = { ...createInitialState(), _version: 47 };
+    v47.perfiles = [{ id: 'n-1', nombre: 'Sofía', edad: 8 }, { id: '', nombre: 'X' }, { id: 'n-2', nombre: '  ' }, 'basura'];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v47));
+
+    loadData();
+
+    expect(S.perfiles.map(p => p.id)).toEqual(['n-1']);
+  });
+
+  it('es idempotente: un perfil v48 sobrevive a guardar y cargar', () => {
+    const v48 = { ...createInitialState(), _version: 48 };
+    v48.perfiles = [{ id: 'n-1', nombre: 'Sofía', edad: 8, dibujo: 'cometa', teNombra: 'Papá', creado: '2026-10-25' }];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v48));
+
+    loadData();
+
+    expect(S.perfiles).toEqual(v48.perfiles);
+  });
+});
+
 describe('Migración v46 → v47 (aprende.ubicacion, APR.2b)', () => {
   it('un usuario existente queda sin prueba hecha y conserva lo demás', () => {
     const v46 = { ...createInitialState(), _version: 46 };
