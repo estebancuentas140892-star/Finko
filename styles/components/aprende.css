@@ -643,6 +643,12 @@
   height: 100%;
 }
 .siguiente-paso[data-dom="presupuesto"] { --apr-dom: var(--fk-dom-presupuesto); --apr-dom-text: var(--fk-dom-presupuesto-text); }
+.siguiente-paso[data-dom="ahorro"]      { --apr-dom: var(--fk-dom-ahorro);      --apr-dom-text: var(--fk-dom-ahorro-text); }
+.siguiente-paso[data-dom="tesoreria"]   { --apr-dom: var(--fk-dom-tesoreria);   --apr-dom-text: var(--fk-dom-tesoreria-text); }
+.siguiente-paso[data-dom="metas"]       { --apr-dom: var(--fk-dom-metas);       --apr-dom-text: var(--fk-dom-metas-text); }
+.siguiente-paso[data-dom="compromisos"] { --apr-dom: var(--fk-dom-compromisos); --apr-dom-text: var(--fk-dom-compromisos-text); }
+.siguiente-paso[data-dom="inversion"]   { --apr-dom: var(--fk-dom-inversion);   --apr-dom-text: var(--fk-dom-inversion-text); }
+.siguiente-paso[data-dom="analisis"]    { --apr-dom: var(--fk-dom-analisis);    --apr-dom-text: var(--fk-dom-analisis-text); }
 .siguiente-paso__cabeza {
   display: flex;
   align-items: baseline;

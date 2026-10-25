@@ -132,7 +132,8 @@ test.describe('APR.1a - Aprende', () => {
     await expect(page.locator('#leccion-titulo')).toHaveText('Terminaste la unidad 3');
     await expect(page.locator('.leccion-insignia')).toBeVisible();
     await page.click('.leccion__pie [data-action="leccion-salir"]');
-    await expect(page.locator('.aprende-ruta__aviso')).toContainText('Ya hiciste todas las lecciones disponibles');
+    // La unidad 3 queda hecha y la ruta sigue con la 4 (APR.2c).
+    await expect(page.locator('.aprende-unidad--actual')).toContainText('Unidad 4 · vas aquí');
   });
 });
 

@@ -21,10 +21,17 @@ import {
   estadoRuta, siguienteLeccion, semanaISO, registrarLeccionHecha,
   crearSesion, pasoActual, numeroDePaso, responderElegir, clasificarTarjeta,
   seguirClasificando, cambiarControl, moverItem, comprobarOrden, avanzar,
-  pasoParaRetomar, mezclarSinAcertar, CALCULOS, limiteSugerido, aplicaHormiga,
+  pasoParaRetomar, mezclarSinAcertar, CALCULOS, RESULTADOS, limiteSugerido, aplicaHormiga,
 } from '../../modules/dominio/aprende/logic.js';
 import { htmlRuta, htmlLeccion } from '../../modules/dominio/aprende/view.js';
 import u3 from '../../modules/dominio/aprende/lecciones/u3.js';
+import u4 from '../../modules/dominio/aprende/lecciones/u4.js';
+import { APLICA, modeloAplica, mesesEnPalabras, gastosFijosMensuales, tasaMensualDeuda } from '../../modules/dominio/aprende/aplica.js';
+
+/** Contenido escrito, por unidad. Cada unidad nueva se suma acá. */
+const CONTENIDO = { u3, u4 };
+/** Todas las lecciones escritas, en un solo mapa id → lección. */
+const LECCIONES = Object.assign({}, ...Object.values(CONTENIDO));
 
 /** Lección mínima con los cuatro tipos de paso respondibles y un cierre. */
 const LECCION = {
@@ -112,22 +119,29 @@ describe('catálogo de la ruta (D8)', () => {
     expect(unidadDeLeccion('zz-l1')).toBeUndefined();
   });
 
-  it('toda lección marcada como disponible tiene contenido cargable', () => {
-    for (const u of UNIDADES) {
-      for (const l of u.lecciones.filter(leccionDisponible)) {
-        expect(u.id).toBe('u3');
-        expect(u3[l.id]?.pasos?.length, l.id).toBeGreaterThan(0);
-      }
-    }
+  it('toda lección del catálogo tiene su contenido, y todo contenido está en el catálogo', () => {
+    const delCatalogo = UNIDADES.flatMap(u => u.lecciones.filter(leccionDisponible).map(l => l.id)).sort();
+    expect(Object.keys(LECCIONES).sort()).toEqual(delCatalogo);
+    for (const id of delCatalogo) expect(LECCIONES[id].id).toBe(id);
+  });
+
+  it('toda unidad con lecciones dice qué aprendiste, para su celebración', () => {
+    for (const u of UNIDADES.filter(x => x.lecciones.length)) expect(u.aprendiste, u.id).toBeTruthy();
   });
 });
 
+/** `hechas` con todas las lecciones escritas de las unidades pedidas. */
+const hechasDe = (...ids) => Object.fromEntries(UNIDADES.filter(u => ids.includes(u.id))
+  .flatMap(u => u.lecciones.map(l => [l.id, '2026-10-01'])));
+
 describe('estadoRuta() y siguienteLeccion()', () => {
-  it('sin avance, la unidad 3 es la actual: la primera con lecciones disponibles', () => {
+  const primera = UNIDADES.find(u => u.lecciones.some(leccionDisponible));
+
+  it('sin avance, la actual es la primera unidad con lecciones escritas', () => {
     const ruta = estadoRuta(undefined);
-    expect(ruta.find(e => e.estado === 'actual')?.unidad.id).toBe('u3');
+    expect(ruta.find(e => e.estado === 'actual')?.unidad.id).toBe(primera.id);
     expect(ruta.filter(e => e.estado === 'actual')).toHaveLength(1);
-    expect(siguienteLeccion(undefined)?.id).toBe('u3-l1');
+    expect(siguienteLeccion(undefined)?.id).toBe(primera.lecciones[0].id);
   });
 
   it('una unidad marcada por la prueba de ubicación queda como sabida', () => {
@@ -138,16 +152,20 @@ describe('estadoRuta() y siguienteLeccion()', () => {
 
   it('cuenta las lecciones hechas y recomienda la primera que falta', () => {
     const ruta = estadoRuta({ hechas: { 'u3-l1': '2026-10-01' } });
-    const u3e = ruta.find(e => e.unidad.id === 'u3');
-    expect(u3e).toMatchObject({ hechas: 1, total: 4, estado: 'actual' });
-    expect(siguienteLeccion({ hechas: { 'u3-l1': '2026-10-01' } })?.id).toBe('u3-l2');
+    expect(ruta.find(e => e.unidad.id === 'u3')).toMatchObject({ hechas: 1, total: 4 });
   });
 
-  it('con la unidad 3 completa no queda unidad actual: las demás están en preparación', () => {
-    const hechas = { 'u3-l1': 'x', 'u3-l2': 'x', 'u3-l3': 'x', 'u3-l4': 'x' };
-    const ruta = estadoRuta({ hechas });
+  it('terminar la unidad 3 la deja hecha y la ruta sigue con la 4', () => {
+    const hechas = hechasDe('u3');
+    const ruta = estadoRuta({ hechas, sabidas: ['u1', 'u2'] });
     expect(ruta.find(e => e.unidad.id === 'u3').estado).toBe('hecha');
-    expect(ruta.some(e => e.estado === 'actual')).toBe(false);
+    expect(ruta.find(e => e.estado === 'actual')?.unidad.id).toBe('u4');
+    expect(siguienteLeccion({ hechas, sabidas: ['u1', 'u2'] })?.id).toBe('u4-l1');
+  });
+
+  it('con todas las lecciones escritas hechas no queda unidad actual', () => {
+    const hechas = hechasDe(...UNIDADES.map(u => u.id));
+    expect(estadoRuta({ hechas }).some(e => e.estado === 'actual')).toBe(false);
     expect(siguienteLeccion({ hechas })).toBeNull();
     expect(htmlRuta({ hechas })).toContain('Ya hiciste todas las lecciones disponibles');
   });
@@ -353,38 +371,144 @@ describe('aplicaHormiga() y limiteSugerido()', () => {
   });
 });
 
-// ── Contenido de la unidad 3 ─────────────────────────────────────
+// ── Aplícalo de cada unidad (aplica.js) ──────────────────────────
 
-describe('contenido de la unidad 3', () => {
-  const pasos = u3['u3-l2'].pasos;
+/** Datos vacíos de partida; cada prueba sobreescribe lo que le interesa. */
+const datos = (extra = {}) => ({
+  gastos: [], cuentas: [], ingresos: [], compromisos: [], metas: [], inversiones: [],
+  ahorro: { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [] },
+  categoriasPersonalizadas: [], hoyISO: HOY, tope: 20_000, limite: null, paso: null, ...extra,
+});
 
-  it('la lección 2 sigue el diseño: concepto, elegir, clasificar, control y cierre', () => {
-    expect(pasos.map(p => p.tipo)).toEqual(['concepto', 'elegir', 'clasificar', 'control', 'aplica']);
-  });
+describe('APLICA: el Aplícalo de cada unidad', () => {
+  const ACCIONES_GLOBALES = new Set(['ir-a-seccion', 'registrar-abrir', 'leccion-limite-hormiga']);
 
-  it('cada opción equivocada de "elegir" trae su explicación', () => {
-    const elegir = pasos[1];
-    elegir.opciones.forEach((_, i) => {
-      if (i !== elegir.correcta) expect(elegir.casi[i], `opción ${i}`).toBeTruthy();
-    });
-  });
-
-  it('clasificar trae seis tarjetas en la lección 2', () => {
-    expect(pasos[2].tarjetas).toHaveLength(6);
-  });
-
-  const todosLosPasos = Object.values(u3).flatMap(l => l.pasos.map(p => [l.id, p]));
-
-  it('toda lección de la unidad termina en un Aplícalo, una sola vez y al final', () => {
-    for (const leccion of Object.values(u3)) {
-      const tipos = leccion.pasos.map(p => p.tipo);
-      expect(tipos.at(-1), leccion.id).toBe('aplica');
-      expect(tipos.filter(t => t === 'aplica'), leccion.id).toHaveLength(1);
+  it('todo cálculo pide el dato que falta o muestra el real, y siempre tiene salida', () => {
+    for (const [nombre, fn] of Object.entries(APLICA)) {
+      const m = fn(datos());
+      expect(m.lead, nombre).toBeTruthy();
+      expect(m.acciones.length, nombre).toBeGreaterThan(0);
+      for (const a of m.acciones) expect(ACCIONES_GLOBALES.has(a.action), `${nombre} ${a.action}`).toBe(true);
     }
   });
 
-  it('en toda la unidad, cada opción equivocada trae su explicación', () => {
+  it('todo paso "aplica" del contenido usa un cálculo que existe', () => {
+    for (const leccion of Object.values(LECCIONES)) {
+      for (const paso of leccion.pasos.filter(p => p.tipo === 'aplica')) {
+        expect(APLICA[paso.calculo], `${leccion.id} ${paso.calculo}`).toBeTypeOf('function');
+      }
+    }
+  });
+
+  it('un cálculo desconocido no deja la lección sin salida', () => {
+    expect(modeloAplica('no-existe', datos()).acciones[0].datos.target).toBe('aprende');
+  });
+
+  it('meses en palabras y gastos fijos del mes, como en el Fondo', () => {
+    expect(mesesEnPalabras(1.5)).toBe('1 mes y 2 semanas');
+    expect(mesesEnPalabras(0)).toBe('0 meses');
+    expect(gastosFijosMensuales([
+      { tipo: 'fijo', monto: 1_000_000, frecuencia: 'Mensual' },
+      { tipo: 'fijo', monto: 1_200_000, frecuencia: 'Anual' },
+      { tipo: 'fijo', monto: 500_000, frecuencia: 'Mensual', activo: false },
+      { tipo: 'deuda-entidad', cuotaMensual: 300_000 },
+    ])).toBe(1_100_000);
+  });
+
+  it('fondo-meses: con fondo dice cuánto te cubre; sin gastos fijos los pide', () => {
+    expect(APLICA['fondo-meses'](datos()).sinDato).toBe(true);
+    const m = APLICA['fondo-meses'](datos({
+      compromisos: [{ tipo: 'fijo', monto: 1_750_000, frecuencia: 'Mensual' }],
+      ahorro: { fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 2_000_000 }, aportes: [{ monto: 625_000 }] },
+    }));
+    expect(m.cifra).toBe('1 mes y 2 semanas');
+    expect(m.linea).toContain('3 meses son $5.250.000');
+    expect(m.nota).toContain('Te faltan $2.625.000');
+  });
+
+  it('dinero-hoy: suma tus cuentas y descuenta lo comprometido del mes', () => {
+    const m = APLICA['dinero-hoy'](datos({
+      cuentas: [{ nombre: 'Nequi', saldo: 500_000 }, { nombre: 'Ahorros', saldo: 2_000_000 }],
+      compromisos: [{ tipo: 'fijo', monto: 1_000_000, frecuencia: 'Mensual' }],
+    }));
+    expect(m.cifra).toBe('$2.500.000');
+    expect(m.linea).toContain('te quedan $1.500.000 libres');
+    expect(m.filas[0].nombre).toBe('Ahorros');
+  });
+
+  it('reparto-503020: reparte tu ingreso del mes', () => {
+    const m = APLICA['reparto-503020'](datos({ ingresos: [{ monto: 2_000_000, frecuencia: 'Mensual' }] }));
+    expect(m.filas.map(f => f.monto)).toEqual(['$1.000.000', '$600.000', '$400.000']);
+    expect(m.acciones[0]).toMatchObject({ action: 'registrar-abrir', datos: { targetAction: 'presupuesto-abrir-distribucion' } });
+  });
+
+  it('deudas: suma saldos y cuotas, y estima los intereses del mes con la tasa anotada', () => {
+    const m = APLICA['deudas'](datos({ compromisos: [
+      { tipo: 'deuda-entidad', descripcion: 'Tarjeta', saldoTotal: 1_000_000, cuotaMensual: 100_000, tasa: 0.02, tasaUnidad: 'mensual' },
+      { tipo: 'deuda-personal', descripcion: 'Primo', saldoTotal: 300_000, cuotaMensual: 50_000 },
+    ] }));
+    expect(m.cifra).toBe('$1.300.000');
+    expect(m.linea).toContain('unos $20.000 se van en intereses');
+    expect(tasaMensualDeuda({ tasa: 0.2682, tasaUnidad: 'EA' })).toBeCloseTo(0.02, 3);
+  });
+
+  it('metas, inversion-72 e impuestos muestran el dato real o lo piden', () => {
+    expect(APLICA['metas'](datos({ metas: [{ nombre: 'Viaje', montoObjetivo: 1_000_000, montoActual: 250_000 }] })).nota)
+      .toContain('"Viaje" no tiene fecha');
+    expect(APLICA['inversion-72'](datos({ inversiones: [{ nombre: 'CDT', monto: 1_000_000, tasaEA: 12 }] })).filas[0].detalle)
+      .toContain('se duplica en unos 6 años');
+    expect(APLICA['impuestos'](datos()).sinDato).toBe(true);
+    expect(APLICA['impuestos'](datos({ ingresos: [{ monto: 3_000_000, frecuencia: 'Mensual' }] })).cifra).toBe('$36.000.000');
+  });
+});
+
+describe('RESULTADOS: la lectura de cada control', () => {
+  it('todo paso "control" del contenido usa un cálculo con su lectura', () => {
+    for (const leccion of Object.values(LECCIONES)) {
+      for (const paso of leccion.pasos.filter(p => p.tipo === 'control')) {
+        expect(RESULTADOS[paso.calculo], `${leccion.id} ${paso.calculo}`).toBeTypeOf('function');
+        const valores = Object.fromEntries(paso.controles.map(c => [c.id, c.inicial]));
+        const r = RESULTADOS[paso.calculo](valores);
+        expect(r.lead && r.cifra && r.linea, leccion.id).toBeTruthy();
+      }
+    }
+  });
+
+  it('las cifras de cada cálculo', () => {
+    expect(RESULTADOS['fondo-objetivo']({ gastos: 1_750_000, meses: 3 }).cifra).toBe('$5.250.000');
+    expect(RESULTADOS['aporte-meses']({ meta: 5_250_000, aporte: 250_000 }).cifra).toBe('1 año y 9 meses');
+    expect(RESULTADOS['meta-mensual']({ precio: 1_800_000, meses: 6 }).cifra).toBe('$300.000');
+    expect(RESULTADOS['libre-por-dia']({ ingreso: 2_000_000, fijos: 1_400_000 }).linea).toContain('$20.000 por día');
+    expect(RESULTADOS['regla-503020']({ ingreso: 2_000_000 }).cifra).toBe('$400.000');
+    expect(CALCULOS['credito-cuotas']({ monto: 1_000_000, cuotas: 12 }).cuota).toBe(94_560);
+    expect(RESULTADOS['gota-a-gota']({ prestamo: 500_000 }).cifra).toBe('$600.000');
+    expect(RESULTADOS['interes-compuesto']({ inicial: 1_000_000, anios: 10 }).cifra).toBe('$2.593.742');
+    expect(RESULTADOS['regla-72']({ tasa: 8 }).cifra).toBe('9 años');
+  });
+});
+
+// ── Contenido de todas las unidades ──────────────────────────────
+
+describe('contenido de las lecciones', () => {
+  const todosLosPasos = Object.values(LECCIONES).flatMap(l => l.pasos.map(p => [l.id, p]));
+
+  it('la lección 2 de la unidad 3 sigue el diseño: concepto, elegir, clasificar, control y cierre', () => {
+    expect(u3['u3-l2'].pasos.map(p => p.tipo)).toEqual(['concepto', 'elegir', 'clasificar', 'control', 'aplica']);
+    expect(u3['u3-l2'].pasos[2].tarjetas).toHaveLength(6);
+  });
+
+  it('toda lección termina en un Aplícalo, una sola vez y al final', () => {
+    for (const leccion of Object.values(LECCIONES)) {
+      const tipos = leccion.pasos.map(p => p.tipo);
+      expect(tipos.at(-1), leccion.id).toBe('aplica');
+      expect(tipos.filter(t => t === 'aplica'), leccion.id).toHaveLength(1);
+      expect(tipos.length, leccion.id).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it('cada opción equivocada trae su explicación, y la correcta su "así es"', () => {
     for (const [id, paso] of todosLosPasos.filter(([, p]) => p.tipo === 'elegir')) {
+      expect(paso.correcta, id).toBeLessThan(paso.opciones.length);
       paso.opciones.forEach((_, i) => {
         if (i !== paso.correcta) expect(paso.casi[i], `${id} opción ${i}`).toBeTruthy();
       });
@@ -392,15 +516,19 @@ describe('contenido de la unidad 3', () => {
     }
   });
 
-  it('las tarjetas para clasificar van de los dos lados y respetan el tope de la app', () => {
+  it('las tarjetas para clasificar van de los dos lados y cada una explica su "casi"', () => {
     for (const [id, paso] of todosLosPasos.filter(([, p]) => p.tipo === 'clasificar')) {
       expect(paso.tarjetas.some(t => t.es), id).toBe(true);
       expect(paso.tarjetas.some(t => !t.es), id).toBe(true);
-      for (const t of paso.tarjetas) {
-        expect(t.casi, `${id} ${t.titulo}`).toBeTruthy();
-        // Lo que dice "es hormiga" cabe en el tope por defecto, y viceversa.
-        expect(esGastoHormiga(t), `${id} ${t.titulo}`).toBe(Boolean(t.es));
-      }
+      for (const t of paso.tarjetas) expect(t.casi, `${id} ${t.titulo}`).toBeTruthy();
+    }
+  });
+
+  it('si el criterio es el gasto pequeño, las tarjetas respetan el tope de la app', () => {
+    const hormiga = todosLosPasos.filter(([, p]) => p.tipo === 'clasificar' && p.criterio === 'hormiga');
+    expect(hormiga.length).toBeGreaterThan(0);
+    for (const [id, paso] of hormiga) {
+      for (const t of paso.tarjetas) expect(esGastoHormiga(t), `${id} ${t.titulo}`).toBe(Boolean(t.es));
     }
   });
 
@@ -412,7 +540,7 @@ describe('contenido de la unidad 3', () => {
   });
 
   it('ningún texto usa guion largo ni guion medio (CLAUDE.md sección 6)', () => {
-    expect(JSON.stringify(u3)).not.toMatch(new RegExp(`[${String.fromCharCode(0x2013, 0x2014)}]`));
+    expect(JSON.stringify(CONTENIDO)).not.toMatch(new RegExp(`[${String.fromCharCode(0x2013, 0x2014)}]`));
   });
 });
 
@@ -454,60 +582,67 @@ describe('vista', () => {
     expect(html).toContain(leccion.pasos[2].tarjetas[0].casi);
   });
 
-  it('el concepto reemplaza {tope} por el tope vigente formateado', () => {
+  it('una tarjeta sin monto no pinta la cifra', () => {
+    const leccion = u4['u4-l1'];
+    const html = htmlLeccion(crearSesion(leccion, 1), leccion, { eyebrow: 'Unidad 4', tope: 20_000, terminada: false, entrada: false });
+    expect(html).not.toContain('leccion-tarjeta__monto');
+  });
+
+  it('el concepto reemplaza {tope} y los valores legales por sus cifras', () => {
     const leccion = u3['u3-l2'];
     const html = htmlLeccion(crearSesion(leccion), leccion, { eyebrow: 'Unidad 3', tope: 20_000, terminada: false, entrada: true });
     expect(html).not.toContain('{tope}');
     expect(html).toContain('20.000');
     expect(html).toContain('leccion__cuerpo--entra');
+    const otra = { id: 'x', pasos: [{ tipo: 'concepto', titulo: 'Hasta {exento4x1000} al mes', texto: 'UVT de {anio}' }, { tipo: 'aplica', calculo: 'x' }] };
+    const conValores = htmlLeccion(crearSesion(otra), otra, {
+      eyebrow: '', tope: 20_000, terminada: false, entrada: false, valores: { exento4x1000: '$18.000.000', anio: '2026' },
+    });
+    expect(conValores).toContain('Hasta $18.000.000 al mes');
+    expect(conValores).toContain('UVT de 2026');
   });
 
-  it('el cierre sin datos pide registrar un gasto con la acción global', () => {
+  /** Cierre de una lección con su modelo del Aplícalo. */
+  function cierre(calculo, d, extra = {}) {
     const leccion = u3['u3-l2'];
-    const html = htmlLeccion(crearSesion(leccion), leccion, {
+    return htmlLeccion(crearSesion(leccion), leccion, {
       eyebrow: 'Unidad 3', tope: 20_000, terminada: true, entrada: true,
       unidad: unidadDeLeccion('u3-l2'), avance: { hechas: 1, total: 4 },
-      aplica: aplicaHormiga([], HOY),
+      aplica: modeloAplica(calculo, d), ...extra,
     });
+  }
+  const conGasto = (extra = {}) => datos({ gastos: [{ fecha: '2026-10-02', monto: 15_000, categoria: 'Café' }], ...extra });
+
+  it('el cierre sin datos pide registrar un gasto con la acción global (R57)', () => {
+    const html = cierre('hormiga-mes', datos());
     expect(html).toContain('Lección lista');
     expect(html).toContain('Llevas 1 de 4 en Gastos hormiga y límites.');
     expect(html).toContain('data-action="registrar-abrir" data-target-action="nuevo-gasto"');
   });
 
-  /** Cierre de la lección 2 con un gasto pequeño de $15.000 en octubre. */
-  function cierre(extra = {}) {
-    const leccion = u3['u3-l2'];
-    const gastos = [{ fecha: '2026-10-02', monto: 15_000, categoria: 'Café' }];
-    return htmlLeccion(crearSesion(leccion), leccion, {
-      eyebrow: 'Unidad 3', tope: 20_000, terminada: true, entrada: true,
-      unidad: unidadDeLeccion('u3-l2'), avance: { hechas: 1, total: 4 },
-      aplica: aplicaHormiga(gastos, HOY), paso: leccion.pasos.at(-1), ...extra,
-    });
-  }
-
   it('el cierre con datos propone el límite con su monto en el botón (R50)', () => {
-    const html = cierre();
+    const html = cierre('hormiga-mes', conGasto());
     expect(html).toContain('Tus gastos pequeños de octubre suman');
-    expect(html).toContain('data-action="leccion-limite-hormiga"');
-    expect(html).toContain('data-monto="10000"');
+    expect(html).toContain('data-action="leccion-limite-hormiga" data-monto="10000"');
     expect(html).toContain('Poner un límite de $10.000');
     expect(html).toContain('Lo ajustas en Límites');
+    expect(html).toContain('<strong>Hormiga a raya</strong>');
   });
 
   it('con un límite ya puesto, el cierre lleva a verlo en vez de proponer otro', () => {
-    const html = cierre({ limiteActual: 150_000 });
+    const html = cierre('hormiga-mes', conGasto({ limite: 150_000 }));
     expect(html).not.toContain('leccion-limite-hormiga');
     expect(html).toContain('data-action="ir-a-seccion" data-target="presupuesto"');
     expect(html).toContain('Tu límite para lo pequeño es $150.000');
   });
 
   it('el cierre de la lección 1 lleva a Gastos', () => {
-    const html = cierre({ paso: u3['u3-l1'].pasos.at(-1) });
+    const html = cierre('hormiga-mes', conGasto({ paso: u3['u3-l1'].pasos.at(-1) }));
     expect(html).toContain('data-action="ir-a-seccion" data-target="gast"');
   });
 
   it('la lección que completa la unidad celebra con la insignia, no con el chulo', () => {
-    const html = cierre({ celebrarUnidad: true });
+    const html = cierre('hormiga-mes', conGasto(), { celebrarUnidad: true });
     expect(html).toContain('href="#il-insignia"');
     expect(html).toContain('Terminaste la unidad 3');
     expect(html).not.toContain('leccion-lista__check');

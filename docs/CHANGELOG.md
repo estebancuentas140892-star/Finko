@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(aprende): APR.2c, la unidad 4 y un Aplícalo para cada unidad · 2026-10-24
+
+[ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D7 y D8; ficha [`contexto/aprende.md`](contexto/aprende.md). Primera rebanada de la Fase 2.
+
+- **Unidad 4, Fondo de emergencia**: para qué sirve, cuánto es suficiente (control de gastos fijos por meses), cómo llenarlo sin ahogarte (control de aporte y ordenar pasos) y cuándo usarlo y reponerlo. Su Aplícalo lee tus gastos fijos y tu fondo y dice cuánto te cubre ("1 mes y 2 semanas", R69); sin gastos fijos los pide.
+- **El Aplícalo deja de ser solo de la unidad 3**: `aplica.js` arma un modelo por unidad (cifra, línea, filas y botones hacia la sección) y la vista lo pinta igual para todas. Quedan escritos y probados los cálculos de las nueve unidades; el contenido de las demás llega en sus rebanadas.
+- **Los controles también**: cada cálculo trae su lectura (`RESULTADOS`), y los textos pueden usar los valores legales del año (UVT, tope de renta, exento del 4x1000) sin escribirlos a mano (ADN 12).
+- **La ruta sigue**: al terminar la unidad 3, la 4 queda como "vas aquí". Las tarjetas de clasificar pueden no llevar monto; la regla del tope aplica solo a las que clasifican gastos pequeños.
+
 ### feat(aprende): APR.1c y APR.1d, Inicio de tres lentes y Tu progreso propio · 2026-10-24
 
 [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D1 a D5; acota el ADR 032 D6. Cierra la Fase 1 de APR. SW v597.

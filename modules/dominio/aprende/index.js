@@ -23,13 +23,17 @@ import {
   unidadDeLeccion, metaLeccion, leccionDisponible, normalizarAprende,
   crearSesion, pasoActual, responderElegir, clasificarTarjeta, seguirClasificando,
   cambiarControl, moverItem, comprobarOrden, avanzar, pasoParaRetomar,
-  registrarLeccionHecha, aplicaHormiga, unidadTerminada, siguientePaso, registrarSemana,
+  registrarLeccionHecha, unidadTerminada, siguientePaso, registrarSemana,
 } from './logic.js';
+import { modeloAplica } from './aplica.js';
+import { UVT, TOPES_RENTA_UVT, ANIO_VIGENTE } from '../../core/constants.js';
+import { f } from '../../infra/utils.js';
 import { renderRuta, htmlLeccion, htmlResultadoControl, htmlSiguientePaso } from './view.js';
 
 /** Cargadores del contenido por unidad: un módulo por unidad, bajo demanda. */
 const _CONTENIDO = {
   u3: () => import('./lecciones/u3.js'),
+  u4: () => import('./lecciones/u4.js'),
 };
 
 /** Distancia horizontal (px) que convierte un arrastre de tarjeta en respuesta. */
@@ -50,6 +54,17 @@ let _animando = false;
 const _overlay = () => document.getElementById('modal-leccion');
 const _panel = () => document.getElementById('leccion-panel');
 const _sinMovimiento = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+/**
+ * Valores legales del año para los marcadores de texto (ADN 12): la lección
+ * los lee de `core/constants.js`, nunca los escribe a mano.
+ */
+const _VALORES_LEGALES = {
+  uvt: f(UVT),
+  exento4x1000: f(350 * UVT),
+  topeRenta: f(TOPES_RENTA_UVT.ingresosBrutos * UVT),
+  anio: String(ANIO_VIGENTE),
+};
 
 /** Tope hormiga vigente: el que el usuario configuró en Límites (APR.1b). */
 function _tope() {
@@ -103,6 +118,7 @@ function _contexto(entrada) {
     terminada: _terminada,
     entrada,
     unidad,
+    valores: _VALORES_LEGALES,
   };
   if (_terminada) {
     const { hechas } = normalizarAprende(S.aprende);
@@ -110,9 +126,13 @@ function _contexto(entrada) {
       hechas: unidad.lecciones.filter(l => hechas[l.id]).length,
       total: unidad.lecciones.length,
     };
-    ctx.aplica = aplicaHormiga(S.gastos, hoy(), _tope());
-    ctx.paso = pasoActual(_sesion, _leccion);
-    ctx.limiteActual = limiteHormiga(S.config);
+    const paso = pasoActual(_sesion, _leccion);
+    ctx.aplica = modeloAplica(paso?.calculo, {
+      gastos: S.gastos, cuentas: S.cuentas, ingresos: S.ingresos, compromisos: S.compromisos,
+      metas: S.metas, inversiones: S.inversiones, ahorro: S.ahorro,
+      categoriasPersonalizadas: S.categoriasPersonalizadas,
+      hoyISO: hoy(), tope: _tope(), limite: limiteHormiga(S.config), paso,
+    });
     ctx.celebrarUnidad = _celebrarUnidad;
   }
   return ctx;
@@ -264,7 +284,8 @@ function _alMoverRango(e) {
   _sesion = cambiarControl(_sesion, _leccion, id, Number(input.value));
   const panel = _panel();
   const valor = panel?.querySelector(`[data-control-valor="${id}"]`);
-  if (valor) valor.textContent = String(_sesion.valores[id]);
+  const control = pasoActual(_sesion, _leccion)?.controles?.find(c => c.id === id);
+  if (valor) valor.textContent = `${_sesion.valores[id]}${control?.sufijo ?? ''}`;
   const resultado = panel?.querySelector('#leccion-resultado');
   const paso = pasoActual(_sesion, _leccion);
   if (resultado && paso) resultado.innerHTML = htmlResultadoControl(paso, _sesion.valores);

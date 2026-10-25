@@ -44,7 +44,16 @@ export const UNIDADES = [
       { id: 'u3-l4', titulo: 'Repaso: tu mes en hormigas', minutos: 2, termina: 'Límites' },
     ],
   },
-  { id: 'u4', numero: 4, nombre: 'Fondo de emergencia', dominio: 'ahorro', seccion: 'fondo', termina: 'Fondo', lecciones: [] },
+  {
+    id: 'u4', numero: 4, nombre: 'Fondo de emergencia', dominio: 'ahorro', seccion: 'fondo', termina: 'Fondo',
+    aprendiste: 'Ahora sabes cuánto necesita tu fondo, cómo llenarlo y cuándo usarlo.',
+    lecciones: [
+      { id: 'u4-l1', titulo: 'Para qué sirve un fondo', minutos: 3, termina: 'Fondo' },
+      { id: 'u4-l2', titulo: '¿Cuánto es suficiente para ti?', minutos: 3, termina: 'Fondo, con tus gastos fijos' },
+      { id: 'u4-l3', titulo: 'Cómo llenarlo sin ahogarte', minutos: 4, termina: 'Fondo' },
+      { id: 'u4-l4', titulo: 'Cuándo usarlo y cómo reponerlo', minutos: 3, termina: 'Fondo' },
+    ],
+  },
   { id: 'u5', numero: 5, nombre: 'Metas y reservas', dominio: 'metas', seccion: 'metas', termina: 'Metas', lecciones: [] },
   { id: 'u6', numero: 6, nombre: 'Deudas y gota a gota', dominio: 'compromisos', seccion: 'compromisos', termina: 'Por pagar', lecciones: [] },
   { id: 'u7', numero: 7, nombre: 'Crédito e intereses', dominio: 'compromisos', seccion: 'compromisos', termina: 'Por pagar', lecciones: [] },

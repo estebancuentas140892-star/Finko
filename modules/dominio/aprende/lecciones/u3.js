@@ -86,6 +86,7 @@ export default {
       },
       {
         tipo: 'clasificar',
+        criterio: 'hormiga',
         etiqueta: 'Clasifica',
         pregunta: '¿Es un gasto hormiga?',
         ayuda: 'Desliza a la derecha si lo es y a la izquierda si no. También puedes usar los botones.',
@@ -203,6 +204,7 @@ export default {
     pasos: [
       {
         tipo: 'clasificar',
+        criterio: 'hormiga',
         etiqueta: 'Repaso',
         pregunta: '¿Es un gasto hormiga?',
         ayuda: 'Desliza a la derecha si lo es y a la izquierda si no. También puedes usar los botones.',

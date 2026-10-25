@@ -23,7 +23,8 @@
 | Lección terminada (suma una vez) y semanas activas | `modules/dominio/aprende/logic.js` | `registrarLeccionHecha()`, `semanaISO()` | ~193, ~169 |
 | Motor de la sesión (valor inmutable) | `modules/dominio/aprende/logic.js` | `crearSesion()`, `avanzar()`, `responderElegir()`, `clasificarTarjeta()`, `cambiarControl()`, `moverItem()`, `comprobarOrden()` | ~268 en adelante |
 | Pregunta fallada vuelve antes del Aplícalo | `modules/dominio/aprende/logic.js` | `_reencolar()` | ~287 |
-| Aritmética de los pasos "control" | `modules/dominio/aprende/logic.js` | `CALCULOS` | ~461 |
+| Aritmética de los pasos "control" y su lectura | `modules/dominio/aprende/logic.js` | `CALCULOS`, `RESULTADOS` | |
+| El Aplícalo de cada unidad: un modelo que la vista pinta tal cual | `modules/dominio/aprende/aplica.js` | `APLICA`, `modeloAplica()` | |
 | Aplícalo de la unidad 3 y límite sugerido | `modules/dominio/aprende/logic.js` | `aplicaHormiga()`, `limiteSugerido()` | ~499 |
 | Contenido de la unidad 3 (solo datos, `{tope}` como marcador) | `modules/dominio/aprende/lecciones/u3.js` | `'u3-l2'` | ~13 |
 | HTML de la ruta | `modules/dominio/aprende/view.js` | `htmlRuta()`, `renderRuta()` | ~102 |
@@ -59,6 +60,7 @@
 
 **Cambios realizados**:
 
+- 2026-10-24 (APR.2c, unidad 4): Fondo de emergencia, cuatro lecciones; el Aplícalo pasa a `aplica.js` (un cálculo por unidad) y los controles a `RESULTADOS`; marcadores legales en los textos.
 - 2026-10-24 (APR.1c y APR.1d): bloque Inicio de tres lentes, "Tu siguiente paso", catálogo a `infra/ruta-aprende.js`, semanas activas al registrar.
 - 2026-10-24 (APR.1b): lecciones 1, 3 y 4 de la unidad 3, insignia de unidad, unidades desplegables en la ruta, Aplícalo que pone el límite de gastos pequeños.
 - 2026-10-24 (APR.1a): dominio nuevo, `S.aprende` (v45), ruta, lección 2 de la unidad 3 de punta a punta, `infra/hormiga.js` como criterio único del umbral.

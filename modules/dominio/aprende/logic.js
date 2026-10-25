@@ -11,7 +11,9 @@
  * necesita para pintarse sin cargar nada.
  */
 
-import { resumenHormigaMes, UMBRAL_GASTO_HORMIGA } from '../../infra/hormiga.js';
+import { f } from '../../infra/utils.js';
+import { resumenHormigaMes } from '../../infra/hormiga.js';
+import { aplicaHormiga } from './aplica.js';
 import { UNIDADES, unidadTerminada, semanaISO } from '../../infra/ruta-aprende.js';
 
 // ── CATÁLOGO DE LA RUTA (D8) ─────────────────────────────────────
@@ -409,50 +411,169 @@ export const CALCULOS = {
     const conTres = v.dias > 3 ? v.precio * (v.dias - 3) * 52 : 0;
     return { anual, mensual, ahorroConTres: conTres };
   },
+
+  /** Cuánto debe tener el fondo: gastos fijos del mes por meses de respaldo (unidad 4). */
+  'fondo-objetivo'(v) {
+    return { objetivo: v.gastos * v.meses };
+  },
+
+  /** Cuántos meses tarda en llenarse una meta con un aporte fijo (unidades 4 y 5). */
+  'aporte-meses'(v) {
+    const meses = v.aporte > 0 ? Math.ceil(v.meta / v.aporte) : 0;
+    const conDoble = v.aporte > 0 ? Math.ceil(v.meta / (v.aporte * 2)) : 0;
+    return { meses, conDoble };
+  },
+
+  /** Cuánto guardar al mes para tener un monto en N meses (unidad 5). */
+  'meta-mensual'(v) {
+    return { porMes: v.meses > 0 ? Math.ceil(v.precio / v.meses / 1_000) * 1_000 : 0 };
+  },
+
+  /** Lo que queda libre por día después de los pagos fijos (unidad 1). */
+  'libre-por-dia'(v) {
+    const libre = Math.max(0, v.ingreso - v.fijos);
+    return { libre, porDia: Math.floor(libre / 30 / 100) * 100 };
+  },
+
+  /** La regla 50/30/20 sobre un ingreso (unidad 2). */
+  'regla-503020'(v) {
+    return { necesidades: v.ingreso * 0.5, gustos: v.ingreso * 0.3, ahorro: v.ingreso * 0.2 };
+  },
+
+  /**
+   * Cuota y costo de un crédito a cuotas fijas, al 2 % mensual (unidad 7).
+   * Sistema francés, el mismo de `infra/financiero.js`.
+   */
+  'credito-cuotas'(v) {
+    const i = 0.02;
+    const n = v.cuotas;
+    const factor = Math.pow(1 + i, n);
+    const cuota = Math.round(v.monto * (i * factor) / (factor - 1));
+    return { cuota, intereses: Math.max(0, cuota * n - v.monto) };
+  },
+
+  /** Lo que cobra un préstamo gota a gota del 20 % al mes (unidad 6). */
+  'gota-a-gota'(v) {
+    const pagas = Math.round(v.prestamo * 1.2);
+    return { pagas, cuotaDiaria: Math.round(pagas / 30), intereses: pagas - v.prestamo };
+  },
+
+  /** Interés compuesto al 10 % efectivo anual (unidad 8). */
+  'interes-compuesto'(v) {
+    const final = Math.round(v.inicial * Math.pow(1.10, v.anios));
+    return { final, ganancia: final - v.inicial };
+  },
+
+  /** La regla del 72: años para duplicar el dinero a una tasa anual (unidad 8). */
+  'regla-72'(v) {
+    return { anios: v.tasa > 0 ? 72 / v.tasa : 0 };
+  },
 };
+
+/**
+ * La lectura de cada cálculo, lista para pintar: qué es la cifra, la cifra y
+ * una línea que dice qué significa (R75), con números de persona (R69).
+ *
+ * @type {Record<string, (v: Record<string, number>) => { lead: string, cifra: string, linea: string }>}
+ */
+export const RESULTADOS = {
+  'gasto-repetido-anual'(v) {
+    const r = CALCULOS['gasto-repetido-anual'](v);
+    const extra = r.ahorroConTres > 0
+      ? ` Si lo bajas a 3 días, te quedan ${f(r.ahorroConTres)} al año para otra cosa.`
+      : '';
+    return { lead: 'En un año suman', cifra: f(r.anual), linea: `Son ${f(r.mensual)} al mes.${extra}` };
+  },
+  'fondo-objetivo'(v) {
+    const { objetivo } = CALCULOS['fondo-objetivo'](v);
+    const linea = v.meses < 3
+      ? 'Menos de 3 meses te da poco tiempo si pierdes tu ingreso.'
+      : v.meses <= 6
+        ? 'Entre 3 y 6 meses es lo que se suele recomendar.'
+        : 'Más de 6 meses tiene sentido si tu ingreso cambia mucho de un mes a otro.';
+    return { lead: 'Tu fondo debería tener', cifra: f(objetivo), linea };
+  },
+  'aporte-meses'(v) {
+    const { meses, conDoble } = CALCULOS['aporte-meses'](v);
+    return {
+      lead: 'Lo llenas en',
+      cifra: _mesesTexto(meses),
+      linea: `Con ${f(v.aporte * 2)} al mes, en ${_mesesTexto(conDoble)}.`,
+    };
+  },
+  'meta-mensual'(v) {
+    const { porMes } = CALCULOS['meta-mensual'](v);
+    return { lead: 'Guarda cada mes', cifra: f(porMes), linea: `En ${_mesesTexto(v.meses)} tienes ${f(v.precio)}.` };
+  },
+  'libre-por-dia'(v) {
+    const { libre, porDia } = CALCULOS['libre-por-dia'](v);
+    return {
+      lead: 'Te quedan libres al mes',
+      cifra: f(libre),
+      linea: libre > 0 ? `Son unos ${f(porDia)} por día para todo lo demás.` : 'Tus pagos fijos se llevan todo: no queda nada libre.',
+    };
+  },
+  'regla-503020'(v) {
+    const r = CALCULOS['regla-503020'](v);
+    return {
+      lead: 'Para ahorrar o pagar deudas',
+      cifra: f(r.ahorro),
+      linea: `${f(r.necesidades)} para lo que necesitas y ${f(r.gustos)} para tus gustos.`,
+    };
+  },
+  'credito-cuotas'(v) {
+    const { cuota, intereses } = CALCULOS['credito-cuotas'](v);
+    return {
+      lead: `Pagas cada mes, en ${v.cuotas} ${v.cuotas === 1 ? 'cuota' : 'cuotas'}`,
+      cifra: f(cuota),
+      linea: `En total le pagas ${f(intereses)} de intereses al banco.`,
+    };
+  },
+  'gota-a-gota'(v) {
+    const r = CALCULOS['gota-a-gota'](v);
+    return {
+      lead: 'En un mes terminas pagando',
+      cifra: f(r.pagas),
+      linea: `Son ${f(r.cuotaDiaria)} cada día, y ${f(r.intereses)} solo de intereses en 30 días.`,
+    };
+  },
+  'interes-compuesto'(v) {
+    const { final, ganancia } = CALCULOS['interes-compuesto'](v);
+    return {
+      lead: `En ${v.anios} ${v.anios === 1 ? 'año' : 'años'} tendrías`,
+      cifra: f(final),
+      linea: `${f(ganancia)} son intereses: cada año ganas también sobre lo que ya ganaste.`,
+    };
+  },
+  'regla-72'(v) {
+    const { anios } = CALCULOS['regla-72'](v);
+    const redondo = Math.round(anios * 10) / 10;
+    return {
+      lead: 'Tu dinero se duplica en unos',
+      cifra: `${redondo.toLocaleString('es-CO')} años`,
+      linea: `72 dividido entre ${v.tasa} da ${redondo.toLocaleString('es-CO')}.`,
+    };
+  },
+};
+
+/** "1 año y 2 meses", "8 meses" (R69). */
+function _mesesTexto(meses) {
+  const n = Math.max(0, Math.round(meses));
+  const anios = Math.floor(n / 12);
+  const resto = n % 12;
+  const partes = [];
+  if (anios) partes.push(`${anios} ${anios === 1 ? 'año' : 'años'}`);
+  if (resto || !anios) partes.push(`${resto} ${resto === 1 ? 'mes' : 'meses'}`);
+  return partes.join(' y ');
+}
 
 // ── APLÍCALO (D7) ────────────────────────────────────────────────
 
-const _MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
-  'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-
 /**
- * Límite sugerido para lo pequeño: un poco menor que lo que ya gastas, no la
- * mitad (unidad 3, lección 3). El 80 % redondeado a la decena de mil.
- *
- * @param {number} total
+ * Los cálculos del Aplícalo viven en `aplica.js` desde APR.2c, uno por unidad.
+ * Se re-exportan los de la unidad 3 para no romper a quien los importa de acá.
  */
-export function limiteSugerido(total) {
-  if (!(total > 0)) return 0;
-  return Math.max(10_000, Math.round((total * 0.8) / 10_000) * 10_000);
-}
-
-/**
- * Aplícalo de la unidad 3: los gastos pequeños del mes en curso, con su
- * desglose y un límite sugerido. Si el mes no tiene ninguno todavía,
- * devuelve `{ sinDato: true }` para que la vista pida el dato (R57).
- *
- * @param {import('../../core/state.js').Gasto[]} gastos
- * @param {string} hoyISO - `YYYY-MM-DD` local.
- * @param {number} [tope=UMBRAL_GASTO_HORMIGA]
- */
-export function aplicaHormiga(gastos, hoyISO, tope = UMBRAL_GASTO_HORMIGA) {
-  const mes = String(hoyISO ?? '').slice(0, 7);
-  const resumen = resumenHormigaMes(gastos, mes, tope);
-  const mesNombre = _MESES[Number(mes.slice(5, 7)) - 1] ?? '';
-  if (resumen.cuantos === 0) return { sinDato: true, mesNombre, tope };
-  const limite = limiteSugerido(resumen.total);
-  return {
-    sinDato: false,
-    mesNombre,
-    tope,
-    total: resumen.total,
-    cuantos: resumen.cuantos,
-    grupos: resumen.porCategoria.slice(0, 3),
-    limite,
-    diferencia: Math.max(0, resumen.total - limite),
-  };
-}
+export { aplicaHormiga, limiteSugerido } from './aplica.js';
 
 // ── TU SIGUIENTE PASO (D5) ───────────────────────────────────────
 

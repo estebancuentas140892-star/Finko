@@ -7,12 +7,11 @@
  */
 
 import { S } from '../../core/state.js';
-import { iconoDeCategoriaGasto } from '../../core/constants.js';
 import { f, esc } from '../../infra/utils.js';
 import { icon, tejaCategoria } from '../../infra/icons.js';
 import {
   estadoRuta, normalizarAprende, leccionDisponible, numeroDePaso, pasoActual,
-  pasoListo, CALCULOS,
+  pasoListo, RESULTADOS,
 } from './logic.js';
 
 // ── RUTA ─────────────────────────────────────────────────────────
@@ -153,9 +152,18 @@ export function renderRuta(abierta = null) {
 
 // ── LECCIÓN ──────────────────────────────────────────────────────
 
-/** Reemplaza `{tope}` en un texto de lección por el tope vigente. */
+/**
+ * Marcadores que una lección puede usar en sus textos, para no escribir a
+ * mano cifras que cambian: `{tope}` (gasto pequeño vigente) y, desde la unidad
+ * 9, los valores legales del año (`{uvt}`, `{exento4x1000}`, `{topeRenta}`,
+ * `{anio}`), que salen de `core/constants.js` (ADN 12).
+ */
 function _texto(t, ctx) {
-  return esc(String(t ?? '').replaceAll('{tope}', f(ctx.tope)));
+  let texto = String(t ?? '').replaceAll('{tope}', f(ctx.tope));
+  for (const [clave, valor] of Object.entries(ctx.valores ?? {})) {
+    texto = texto.replaceAll(`{${clave}}`, valor);
+  }
+  return esc(texto);
 }
 
 /** Barra superior: salir, avance y contador "n de N" (o "Lista"). */
@@ -276,7 +284,7 @@ function _pasoClasificar(paso, sesion, ctx) {
         <div class="leccion-tarjeta leccion-tarjeta--arriba" data-tarjeta>
           ${tejaCategoria(visible.icono || 'c-otros', 'gastos')}
           <p class="leccion-tarjeta__titulo">${esc(visible.titulo)}</p>
-          <p class="leccion-tarjeta__monto">${f(visible.monto)}</p>
+          ${visible.monto != null ? `<p class="leccion-tarjeta__monto">${f(visible.monto)}</p>` : ''}
           <p class="leccion-tarjeta__detalle">${esc(visible.detalle)}</p>
         </div>
       </div>
@@ -304,16 +312,13 @@ function _pasoClasificar(paso, sesion, ctx) {
  * @returns {string}
  */
 export function htmlResultadoControl(paso, valores) {
-  const calculo = CALCULOS[paso.calculo];
-  if (!calculo) return '';
-  const r = calculo(valores);
-  const extra = r.ahorroConTres > 0
-    ? ` Si lo bajas a 3 días, te quedan <strong>${f(r.ahorroConTres)} al año</strong> para otra cosa.`
-    : '';
+  const resultado = RESULTADOS[paso.calculo];
+  if (!resultado) return '';
+  const r = resultado(valores);
   return `
-    <p class="leccion-resultado__lead">En un año suman</p>
-    <p class="leccion-resultado__cifra">${f(r.anual)}</p>
-    <p class="leccion-resultado__linea">Son ${f(r.mensual)} al mes.${extra}</p>`;
+    <p class="leccion-resultado__lead">${esc(r.lead)}</p>
+    <p class="leccion-resultado__cifra">${esc(r.cifra)}</p>
+    <p class="leccion-resultado__linea">${esc(r.linea)}</p>`;
 }
 
 function _pasoControl(paso, sesion, ctx) {
@@ -330,12 +335,15 @@ function _pasoControl(paso, sesion, ctx) {
           <div class="leccion-chips" role="radiogroup" aria-labelledby="${etiquetaId}">${chips}</div>
         </div>`;
     }
-    const marcas = Array.from({ length: c.max - c.min + 1 }, (_, i) => `<span>${c.min + i}</span>`).join('');
+    // Con pocos valores se rotula cada uno; con muchos, solo los extremos.
+    const marcas = c.max - c.min <= 10
+      ? Array.from({ length: c.max - c.min + 1 }, (_, i) => `<span>${c.min + i}</span>`).join('')
+      : `<span>${c.min}</span><span>${c.max}</span>`;
     return `
       <div class="leccion-control">
         <div class="leccion-control__fila">
           <label class="leccion-control__etiqueta" for="${etiquetaId}">${esc(c.etiqueta)}</label>
-          <span class="leccion-control__valor" data-control-valor="${esc(c.id)}">${valor}</span>
+          <span class="leccion-control__valor" data-control-valor="${esc(c.id)}">${valor}${c.sufijo ? esc(c.sufijo) : ''}</span>
         </div>
         <input class="leccion-rango" id="${etiquetaId}" type="range" min="${c.min}" max="${c.max}" step="1"
                value="${valor}" data-control="${esc(c.id)}">
@@ -381,14 +389,29 @@ function _pasoOrdenar(paso, sesion, ctx) {
   };
 }
 
-/** Desglose del Aplícalo: hasta tres categorías, con su número de compras. */
-function _grupos(grupos) {
-  return grupos.map(g => `
+/** Filas del Aplícalo: hasta tres, con su ícono, detalle y monto. */
+function _filas(filas) {
+  if (!filas?.length) return '';
+  const fila = (r) => `
     <li class="leccion-aplica__grupo">
-      ${tejaCategoria(iconoDeCategoriaGasto(g.categoria, S.categoriasPersonalizadas) || 'c-otros', 'gastos')}
-      <span class="leccion-aplica__grupo-nombre">${esc(g.categoria)} <span class="leccion-aplica__grupo-cuantos">· ${g.cuantos}</span></span>
-      <span class="leccion-aplica__grupo-monto">${f(g.total)}</span>
-    </li>`).join('');
+      ${r.icono ? tejaCategoria(r.icono, 'gastos') : ''}
+      <span class="leccion-aplica__grupo-nombre">${esc(r.nombre)}${r.detalle ? ` <span class="leccion-aplica__grupo-cuantos">${esc(r.detalle)}</span>` : ''}</span>
+      ${r.monto ? `<span class="leccion-aplica__grupo-monto">${esc(r.monto)}</span>` : ''}
+    </li>`;
+  return `<ul class="leccion-aplica__grupos">${filas.map(fila).join('')}</ul>`;
+}
+
+/** Un botón del Aplícalo con sus `data-*`, sin HTML en el modelo. */
+function _botonAplica(a) {
+  const datos = a.datos ?? {};
+  const attrs = [
+    datos.target ? ` data-target="${esc(datos.target)}"` : '',
+    datos.targetAction ? ` data-target-action="${esc(datos.targetAction)}"` : '',
+    datos.monto != null ? ` data-monto="${esc(String(datos.monto))}"` : '',
+    datos.id ? ` data-id="${esc(datos.id)}"` : '',
+  ].join('');
+  const clase = a.estilo === 'ghost' ? 'btn-ghost' : 'btn-primary';
+  return `<button class="btn ${clase} leccion__boton" type="button" data-action="${esc(a.action)}"${attrs}>${esc(a.texto)}</button>`;
 }
 
 /**
@@ -421,59 +444,32 @@ function _cabezaCierre(ctx) {
 }
 
 /**
- * Botones del Aplícalo con datos. `cta: 'gastos'` lleva a mirar las compras;
- * `cta: 'limite'` (por defecto) propone el límite con su monto en el botón
- * (R50) o, si ya hay uno, lleva a verlo.
+ * Cierre de la lección: la celebración y el Aplícalo con tus datos (D7). El
+ * modelo lo arma `aplica.js` según la unidad; acá solo se pinta.
  */
-function _pieAplica(ctx, a) {
-  const ahoraNo = '<button class="btn btn-ghost leccion__boton" type="button" data-action="leccion-salir">Ahora no</button>';
-  if (ctx.paso?.cta === 'gastos') {
-    return `
-      <button class="btn btn-primary leccion__boton" type="button" data-action="ir-a-seccion" data-target="gast">Ver tus gastos</button>
-      <p class="leccion__nota">Ahí ves cada compra con su categoría y cuáles se repiten.</p>
-      ${ahoraNo}`;
-  }
-  if (ctx.limiteActual) {
-    return `
-      <button class="btn btn-primary leccion__boton" type="button" data-action="ir-a-seccion" data-target="presupuesto">Ver tu límite en Límites</button>
-      <p class="leccion__nota">Tu límite para lo pequeño es ${f(ctx.limiteActual)} al mes y vas en ${f(a.total)}.</p>
-      ${ahoraNo}`;
-  }
-  return `
-    <button class="btn btn-primary leccion__boton" type="button" data-action="leccion-limite-hormiga"
-            data-monto="${a.limite}">Poner un límite de ${f(a.limite)}</button>
-    <p class="leccion__nota">Unos ${f(a.diferencia)} menos que este mes: es la meta para el que viene. Lo ajustas en Límites.</p>
-    ${ahoraNo}`;
-}
-
-/** Cierre de la lección: celebración y el Aplícalo con tus datos (D7). */
 function _pasoAplica(ctx) {
-  const a = ctx.aplica;
+  const m = ctx.aplica;
   const cabeza = _cabezaCierre(ctx);
-  if (!a || a.sinDato) {
-    return {
-      cuerpo: `${cabeza}
-        <section class="leccion-aplica" aria-labelledby="leccion-aplica-titulo">
-          <p class="leccion__eyebrow leccion__eyebrow--dom">Aplícalo con tus datos</p>
-          <h3 class="leccion-aplica__lead" id="leccion-aplica-titulo">Todavía no tienes gastos pequeños en ${esc(a?.mesNombre ?? 'este mes')}.</h3>
-          <p class="leccion-aplica__linea">Registra los de esta semana y vuelve: aquí verás cuánto suman tus gastos de ${f(ctx.tope)} o menos.</p>
-        </section>`,
-      pie: `
-        <button class="btn btn-primary leccion__boton" type="button" data-action="registrar-abrir" data-target-action="nuevo-gasto">Registrar un gasto</button>
-        <button class="btn btn-ghost leccion__boton" type="button" data-action="leccion-salir">Ahora no</button>`,
-    };
-  }
+  if (!m) return { cuerpo: cabeza, pie: '<button class="btn btn-ghost leccion__boton" type="button" data-action="leccion-salir">Volver a la ruta</button>' };
+  const extra = m.extra
+    ? `<p class="leccion-aplica__logro">${icon('trophy')}<span>${esc(m.extra.texto)}${m.extra.fuerte ? `<strong>${esc(m.extra.fuerte)}</strong>` : ''}${esc(m.extra.despues ?? '')}</span></p>`
+    : '';
+  const [primera, ...resto] = m.acciones ?? [];
   return {
     cuerpo: `${cabeza}
       <section class="leccion-aplica" aria-labelledby="leccion-aplica-titulo">
         <p class="leccion__eyebrow leccion__eyebrow--dom">Aplícalo con tus datos</p>
-        <h3 class="leccion-aplica__lead" id="leccion-aplica-titulo">Tus gastos pequeños de ${esc(a.mesNombre)} suman</h3>
-        <p class="leccion-aplica__cifra">${f(a.total)}</p>
-        <p class="leccion-aplica__linea">Son ${a.cuantos} ${a.cuantos === 1 ? 'compra' : 'compras'} de ${f(a.tope)} o menos.</p>
-        <ul class="leccion-aplica__grupos">${_grupos(a.grupos)}</ul>
+        <h3 class="leccion-aplica__lead" id="leccion-aplica-titulo">${esc(m.lead)}</h3>
+        ${m.cifra ? `<p class="leccion-aplica__cifra">${esc(m.cifra)}</p>` : ''}
+        ${m.linea ? `<p class="leccion-aplica__linea">${esc(m.linea)}</p>` : ''}
+        ${_filas(m.filas)}
       </section>
-      <p class="leccion-aplica__logro">${icon('trophy')}<span>Si un mes gastas en lo pequeño menos que tu promedio de los tres anteriores, ganas el logro <strong>Hormiga a raya</strong>.</span></p>`,
-    pie: _pieAplica(ctx, a),
+      ${extra}`,
+    pie: `
+      ${primera ? _botonAplica(primera) : ''}
+      ${m.nota ? `<p class="leccion__nota">${esc(m.nota)}</p>` : ''}
+      ${resto.map(_botonAplica).join('')}
+      <button class="btn btn-ghost leccion__boton" type="button" data-action="leccion-salir">Ahora no</button>`,
   };
 }
 
@@ -483,8 +479,9 @@ function _pasoAplica(ctx) {
  * @param {import('./logic.js').Sesion} sesion
  * @param {{ pasos: any[] }} leccion
  * @param {{ eyebrow: string, tope: number, terminada: boolean, entrada: boolean,
- *           aplica?: any, unidad?: any, avance?: { hechas: number, total: number },
- *           paso?: any, limiteActual?: number | null, celebrarUnidad?: boolean }} ctx
+ *           aplica?: import('./aplica.js').ModeloAplica, unidad?: any,
+ *           avance?: { hechas: number, total: number }, celebrarUnidad?: boolean,
+ *           valores?: Record<string, string> }} ctx
  * @returns {string}
  */
 export function htmlLeccion(sesion, leccion, ctx) {
