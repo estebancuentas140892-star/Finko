@@ -11,7 +11,7 @@
 import { S } from '../../core/state.js';
 import { esc as _esc } from '../../infra/utils.js';
 
-import { estadoLogros, agruparVitrina, conteoVitrina, resumenProgreso, NIVELES_USUARIO } from './logic.js';
+import { estadoLogros, agruparVitrina, conteoVitrina, partirVitrina, resumenProgreso, NIVELES_USUARIO } from './logic.js';
 import { UNIDADES, posicionEnRuta } from '../../infra/ruta-aprende.js';
 
 /**
@@ -30,9 +30,13 @@ export function renderProgresoSeccion() {
   // dibuja debajo (R88), no del catálogo crudo.
   const vitrina = agruparVitrina(estados);
   const { conseguidos, total } = conteoVitrina(vitrina);
-  const items = vitrina
-    .map(item => item.tipo === 'familia' ? _renderFamiliaItem(item) : _renderLogroItem(item.logro))
-    .join('');
+  // Lo que falta arriba y lo conseguido abajo (ficha 17 de MOV.1, G4); un
+  // grupo vacío no se pinta.
+  const { faltan, tienes } = partirVitrina(vitrina);
+  const item = it => it.tipo === 'familia' ? _renderFamiliaItem(it) : _renderLogroItem(it.logro);
+  const grupo = (titulo, id, lista) => lista.length ? `
+        <h3 class="logros-grupo" id="${id}">${titulo}</h3>
+        <ul class="logros-lista" role="list" aria-labelledby="${id}">${lista.map(item).join('')}</ul>` : '';
 
   const primero = NIVELES_USUARIO[0];
   const ultimo = NIVELES_USUARIO[NIVELES_USUARIO.length - 1];
@@ -75,7 +79,8 @@ export function renderProgresoSeccion() {
           <h2 class="progreso-bloque__titulo" id="progreso-haces">Lo que haces</h2>
           <span class="progreso-bloque__cuenta">${conseguidos} de ${total} logros</span>
         </div>
-        <ul class="logros-lista" role="list">${items}</ul>
+        ${grupo('Te falta', 'logros-faltan', faltan)}
+        ${grupo('Ya los tienes', 'logros-tienes', tienes)}
       </section>
 
       <section class="progreso-bloque progreso-semanas" aria-labelledby="progreso-semanas">
@@ -83,6 +88,20 @@ export function renderProgresoSeccion() {
         <p class="progreso__linea">Semanas en que registraste algo o hiciste una lección. Solo informa: nunca vuelve a cero.</p>
       </section>
     </div>`;
+}
+
+/**
+ * El `hint` de un pendiente con el nombre de su sección como enlace (ficha 17
+ * de MOV.1, G3): es un encargo y lleva a donde se cumple, con un toque.
+ *
+ * @param {{ hint?: string, ir?: { hash: string, texto: string } | null }} logro
+ * @returns {string} HTML ya escapado.
+ */
+function _hint(logro) {
+  const texto = _esc(logro?.hint ?? '');
+  if (!logro?.ir) return texto;
+  const rotulo = _esc(logro.ir.texto);
+  return texto.replace(rotulo, `<a class="link" href="#${_esc(logro.ir.hash)}">${rotulo}</a>`);
 }
 
 /**
@@ -102,12 +121,12 @@ function _renderFamiliaItem(fam) {
     : '<span class="chip">Pendiente</span>';
 
   // Estado: qué se consiguió (nivel actual) o cómo arrancar (hint del nivel 1).
-  const texto = fam.actual ? fam.actual.desc : fam.siguiente?.hint ?? '';
+  const texto = fam.actual ? _esc(fam.actual.desc) : _hint(fam.siguiente);
 
   // Objetivo: el siguiente nivel, con barra si expone progreso.
   const sig = fam.siguiente;
   const siguienteHtml = (activa && sig)
-    ? `<p class="logro-item__progreso">Siguiente: ${_esc(sig.hint)}</p>`
+    ? `<p class="logro-item__progreso">Siguiente: ${_hint(sig)}</p>`
     : '';
   const progresoHtml = (sig && sig.progreso)
     ? `
@@ -124,7 +143,7 @@ function _renderFamiliaItem(fam) {
         <span class="logro-item__emoji" aria-hidden="true">${emoji}</span>
         <div class="logro-item__body">
           <p class="logro-item__nombre">${_esc(fam.nombre)} ${chip}</p>
-          <p class="logro-item__desc">${_esc(texto)}</p>
+          <p class="logro-item__desc">${texto}</p>
           ${siguienteHtml}
           ${progresoHtml}
         </div>
@@ -138,7 +157,7 @@ function _renderFamiliaItem(fam) {
 function _renderLogroItem(l) {
   const clase = l.desbloqueado ? 'logro-item logro-item--on' : 'logro-item logro-item--off';
   // Desbloqueado: qué se consiguió. Pendiente: cómo desbloquearlo (hint).
-  const texto = l.desbloqueado ? l.desc : l.hint;
+  const texto = l.desbloqueado ? _esc(l.desc) : _hint(l);
   const chip  = l.desbloqueado
     ? '<span class="chip chip-success">Desbloqueado</span>'
     : '<span class="chip">Pendiente</span>';
@@ -158,7 +177,7 @@ function _renderLogroItem(l) {
         <span class="logro-item__emoji" aria-hidden="true">${l.emoji}</span>
         <div class="logro-item__body">
           <p class="logro-item__nombre">${_esc(l.nombre)} ${chip}</p>
-          <p class="logro-item__desc">${_esc(texto)}</p>
+          <p class="logro-item__desc">${texto}</p>
           ${progresoHtml}
         </div>
       </li>`;

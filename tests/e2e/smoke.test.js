@@ -1904,6 +1904,53 @@ test.describe('Tu progreso - familia deudas (LG.2c)', () => {
   });
 });
 
+// ── SUITE 8f: "Tu progreso" cuenta, agrupa y lleva (ficha 17 de MOV.1) ─────
+// Lo que falta va arriba con su encargo enlazado al rótulo vigente; el "X de
+// Y" es el tamaño de "Ya los tienes"; el aviso de desbloqueo lleva al panel
+// (H9, encargo de la ficha 03). En el teléfono, que es donde se auditó.
+
+test.describe('Tu progreso - ficha 17 de MOV.1', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('lo que falta va arriba con su encargo enlazado y el conteo es lo que hay debajo', async ({ page }) => {
+    await sembrar(page, {
+      version: 1,
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi', saldo: 500000, activa: true, fechaCreacion: '2026-07-01T00:00:00.000Z' }],
+      ingresos: [],
+      gastos: [],
+      compromisos: [],
+      metas: [],
+      logros: ['primer-paso', 'tesorero'],
+    });
+    await page.goto('/#progreso');
+    await page.waitForSelector('#sec-progreso.active', { timeout: 10_000 });
+
+    await expect(page.locator('#logros-faltan')).toHaveText('Te falta');
+    await expect(page.locator('#logros-tienes')).toHaveText('Ya los tienes');
+    await expect(page.locator('[aria-labelledby="logros-tienes"] > li')).toHaveCount(2);
+    await expect(page.locator('#panel-progreso')).toContainText('2 de 12 logros');
+
+    const faltan = page.locator('[aria-labelledby="logros-faltan"]');
+    await expect(faltan.locator('a[href="#compromisos"]')).toHaveText('Por pagar');
+    await expect(faltan.locator('a[href="#fondo"]')).toHaveText('Fondo de emergencia');
+    await faltan.locator('a[href="#presupuesto"]').click();
+    await expect(page.locator('#sec-presupuesto.active')).toHaveCount(1);
+  });
+
+  test('el aviso de desbloqueo lleva a "Tu progreso" (H9)', async ({ page }) => {
+    // Sin logros persistidos, "Primer paso" se desbloquea al arrancar.
+    await saltearOnboarding(page);
+    await page.goto('/#dash');
+    const aviso = page.locator('.logro-toast');
+    await expect(aviso).toContainText('Primer paso');
+    await aviso.locator('.logro-toast__ver').click();
+    await expect(page.locator('#sec-progreso.active')).toHaveCount(1);
+    await expect(aviso).toHaveCount(0);
+  });
+});
+
 // ── SUITE 8: Sidebar colapsable ──────────────────────────────────────────────
 // Solo aplica en desktop (viewport >= 1024px). El viewport por defecto de
 // Playwright Chromium es 1280x720, suficiente para activar el sidebar lateral.

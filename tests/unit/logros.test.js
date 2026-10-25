@@ -10,13 +10,14 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   evaluarLogros, estadoLogros, LOGROS,
-  FAMILIAS, agruparVitrina, conteoVitrina, nivelUsuario, NIVELES_USUARIO,
+  FAMILIAS, agruparVitrina, conteoVitrina, partirVitrina, nivelUsuario, NIVELES_USUARIO,
   mesCompleto, rachaMesesCompletos, deudasSaldadas,
   gastoHormigaMes, hormigaALaRaya,
   UMBRAL_GASTO_HORMIGA, UMBRAL_HORMIGA_RELEVANTE, resumenProgreso,
 } from '../../modules/dominio/logros/logic.js';
 import { renderProgresoSeccion } from '../../modules/dominio/logros/view.js';
 import { S, createInitialState } from '../../modules/core/state.js';
+import { SECTIONS } from '../../modules/infra/router.js';
 
 // Items visibles de la vitrina: los singles pasan tal cual y cada familia
 // colapsa a una tarjeta (LG.2b, ADR 032).
@@ -486,6 +487,43 @@ describe('estadoLogros()', () => {
   });
 });
 
+// ── Ficha 17 de MOV.1: los encargos llevan y la vitrina se parte ──────
+
+describe('ficha 17 de MOV.1 (G3 y G4)', () => {
+  test('cada destino de un hint es una sección que existe y su rótulo está en el hint', () => {
+    const conDestino = LOGROS.filter(l => l.ir);
+    expect(conDestino.length).toBeGreaterThanOrEqual(8);
+    for (const l of conDestino) {
+      expect(SECTIONS.has(l.ir.hash), l.id).toBe(true);
+      expect(l.hint, l.id).toContain(l.ir.texto);
+    }
+  });
+
+  test('ningún hint nombra un rótulo retirado (R86)', () => {
+    for (const l of LOGROS) {
+      expect(l.hint, l.id).not.toMatch(/Ahorros|Límites de gasto/);
+    }
+  });
+
+  test('"Te falta" y "Ya los tienes" usan el criterio del conteo y el orden del catálogo', () => {
+    const vitrina = agruparVitrina(estadoLogros(estado(), ['primer-paso', 'primer-gasto', 'tesorero']));
+    const { faltan, tienes } = partirVitrina(vitrina);
+    expect(faltan.length + tienes.length).toBe(vitrina.length);
+    expect(tienes).toHaveLength(conteoVitrina(vitrina).conseguidos);
+    // La familia con un nivel ya está en "Ya los tienes", como en el conteo.
+    expect(tienes.some(it => it.tipo === 'familia' && it.familia === 'registro')).toBe(true);
+    const orden = (lista) => lista.map(it => vitrina.indexOf(it));
+    expect(orden(tienes)).toEqual([...orden(tienes)].sort((a, b) => a - b));
+    expect(orden(faltan)).toEqual([...orden(faltan)].sort((a, b) => a - b));
+  });
+
+  test('con todo conseguido no queda nada que falte', () => {
+    const { faltan } = partirVitrina(agruparVitrina(estadoLogros(estado(), LOGROS.map(l => l.id))));
+    expect(faltan).toEqual([]);
+    expect(partirVitrina(null)).toEqual({ faltan: [], tienes: [] });
+  });
+});
+
 // ── renderProgresoSeccion() (lente "Tu progreso", APR.1d, happy-dom) ────
 // Reemplaza al apartado de Análisis y a la tarjeta compacta de Inicio que se
 // retiraron (ADR 092 D4): sus pruebas se trasladan a la superficie nueva con
@@ -509,6 +547,25 @@ describe('renderProgresoSeccion()', () => {
     // LG.2b: cada familia colapsa a una tarjeta; singles pasan tal cual.
     expect(panel().querySelectorAll('.logro-item')).toHaveLength(N_ITEMS_VITRINA);
     expect(panel().querySelectorAll('.logro-item--on')).toHaveLength(2);
+  });
+
+  test('lo pendiente va bajo "Te falta" con su encargo enlazado; lo conseguido, bajo "Ya los tienes"', () => {
+    S.logros = ['primer-paso', 'tesorero'];
+    renderProgresoSeccion();
+    expect(panel().querySelector('#logros-faltan').textContent).toBe('Te falta');
+    expect(panel().querySelector('#logros-tienes').textContent).toBe('Ya los tienes');
+    expect(panel().querySelectorAll('[aria-labelledby="logros-tienes"] > .logro-item')).toHaveLength(2);
+    const enlace = panel().querySelector('[aria-labelledby="logros-faltan"] a[href="#presupuesto"]');
+    expect(enlace.textContent).toBe('Límites');
+    expect(panel().querySelector('a[href="#compromisos"]').closest('.logro-item').textContent).toContain('Deuda bajo control');
+  });
+
+  test('sin nada conseguido no se pinta "Ya los tienes"', () => {
+    S.logros = [];
+    S.onboarded = false;
+    renderProgresoSeccion();
+    expect(panel().querySelector('#logros-tienes')).toBeNull();
+    expect(panel().querySelector('#logros-faltan')).not.toBeNull();
   });
 
   test('los desbloqueados muestran desc y los pendientes muestran hint', () => {

@@ -477,6 +477,16 @@
    los de conteo muestran barra de progreso.
    ════════════════════════════════════════════════════════════ */
 
+/* "Te falta" y "Ya los tienes" (ficha 17 de MOV.1, G4): rótulo de grupo,
+   como los de la ruta de Aprende. */
+.logros-grupo {
+  margin: var(--fk-space-3) 0 0;
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fk-text-muted);
+}
 .logros-lista {
   list-style: none;
   margin: 0;

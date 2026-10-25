@@ -29,6 +29,7 @@ import { contarUnidadesSabidas, contarSemanasActivas } from '../../infra/ruta-ap
  *   progreso?: (s: object) => { actual: number, meta: number },
  *   familia?: string,
  *   nivel?: number,
+ *   ir?: { hash: string, texto: string },
  * }} Logro
  *
  * `desc` cuenta lo conseguido (se muestra al desbloquear); `hint` dice cómo
@@ -39,6 +40,9 @@ import { contarUnidadesSabidas, contarSemanasActivas } from '../../infra/ruta-ap
  * logros independientes que comparten `familia`; cada nivel tiene id propio
  * en S.logros (sin bump de schema, la no-revocación aplica por nivel). La
  * vitrina agrupa por familia y muestra una sola tarjeta (ver agruparVitrina).
+ * `ir` (ficha 17 de MOV.1, G3): la sección donde se cumple el `hint`. Su
+ * `texto` es el rótulo vigente de esa sección y aparece tal cual dentro del
+ * `hint`; la vista lo convierte en enlace, porque el pendiente es un encargo.
  */
 
 /**
@@ -278,6 +282,7 @@ export const LOGROS = [
     emoji:   '💸',
     desc:    'Registraste tu primer gasto.',
     hint:    'Registra tu primer gasto en la sección Gastos.',
+    ir:      { hash: 'gast', texto: 'Gastos' },
     eval:    s => Array.isArray(s.gastos) && s.gastos.length > 0,
   },
   {
@@ -285,7 +290,8 @@ export const LOGROS = [
     nombre: 'Deuda bajo control',
     emoji:  '📅',
     desc:   'Registraste tu primer compromiso.',
-    hint:   'Registra tu primera deuda o gasto fijo.',
+    hint:   'Registra tu primera deuda o gasto fijo en Por pagar.',
+    ir:     { hash: 'compromisos', texto: 'Por pagar' },
     eval:   s => Array.isArray(s.compromisos) && s.compromisos.length > 0,
   },
   {
@@ -294,6 +300,7 @@ export const LOGROS = [
     emoji:  '🏦',
     desc:   'Registraste tu primera cuenta o billetera.',
     hint:   'Registra tu primera cuenta o billetera en Mis cuentas.',
+    ir:     { hash: 'tesoreria', texto: 'Mis cuentas' },
     eval:   s => Array.isArray(s.cuentas) && s.cuentas.length > 0,
   },
   {
@@ -302,6 +309,7 @@ export const LOGROS = [
     emoji:  '🎯',
     desc:   'Creaste tu primera meta de ahorro.',
     hint:   'Crea tu primera meta de ahorro en la sección Metas.',
+    ir:     { hash: 'metas', texto: 'Metas' },
     eval:   s => Array.isArray(s.metas) && s.metas.length > 0,
   },
   {
@@ -320,6 +328,7 @@ export const LOGROS = [
     emoji:  '📊',
     desc:   'Configuraste tu primer límite de gasto por categoría.',
     hint:   'Configura tu primer límite de gasto en Límites.',
+    ir:     { hash: 'presupuesto', texto: 'Límites' },
     eval:   s => Array.isArray(s.presupuestos) && s.presupuestos.length > 0,
   },
   {
@@ -328,6 +337,7 @@ export const LOGROS = [
     emoji:  '🏛️',
     desc:   'Tienes 3 o más cuentas o billeteras registradas.',
     hint:   'Ten 3 o más cuentas o billeteras activas en Mis cuentas.',
+    ir:     { hash: 'tesoreria', texto: 'Mis cuentas' },
     eval:   s => Array.isArray(s.cuentas) &&
                  s.cuentas.filter(c => c.activa !== false).length >= 3,
     progreso: s => ({
@@ -341,6 +351,7 @@ export const LOGROS = [
     emoji:  '🤝',
     desc:   'Registraste un préstamo que le diste a alguien.',
     hint:   'Registra en Me deben un préstamo que le diste a alguien.',
+    ir:     { hash: 'personales', texto: 'Me deben' },
     eval:   s => Array.isArray(s.personales) && s.personales.length > 0,
   },
   {
@@ -436,7 +447,8 @@ export const LOGROS = [
     nombre: 'Red de seguridad',
     emoji:  '🛡️',
     desc:   'Completaste tu fondo de emergencia. Tu base financiera está lista.',
-    hint:   'Completa tu fondo de emergencia en la sección Ahorros.',
+    hint:   'Completa tu Fondo de emergencia en Ahorro.',
+    ir:     { hash: 'fondo', texto: 'Fondo de emergencia' },
     eval:   s => s.ahorro?.fondoEmergencia?.completado === true,
   },
 ];
@@ -478,6 +490,7 @@ export function evaluarLogros(s) {
  * @param {string[]} idsPersistidos  `S.logros`.
  * @returns {Array<{
  *   id: string, nombre: string, emoji: string, desc: string, hint: string,
+ *   ir: { hash: string, texto: string } | null,
  *   familia: string | null, nivel: number | null,
  *   desbloqueado: boolean,
  *   progreso: { actual: number, meta: number } | null,
@@ -509,6 +522,7 @@ export function estadoLogros(s, idsPersistidos = []) {
       emoji:   l.emoji,
       desc:    l.desc,
       hint:    l.hint,
+      ir:      l.ir ?? null,
       familia: l.familia ?? null,
       nivel:   l.nivel ?? null,
       desbloqueado,
@@ -593,10 +607,27 @@ export function agruparVitrina(estados) {
  */
 export function conteoVitrina(vitrina) {
   const items = Array.isArray(vitrina) ? vitrina : [];
-  const conseguidos = items.filter(it => it.tipo === 'familia'
-    ? it.desbloqueados > 0
-    : it.logro?.desbloqueado === true).length;
-  return { conseguidos, total: items.length };
+  return { conseguidos: items.filter(_conseguido).length, total: items.length };
+}
+
+/** Un elemento de la vitrina está conseguido: el logro, o la familia con al menos un nivel. */
+function _conseguido(it) {
+  return it.tipo === 'familia' ? it.desbloqueados > 0 : it.logro?.desbloqueado === true;
+}
+
+/**
+ * Parte la vitrina en lo que te falta y lo que ya tienes (ficha 17 de MOV.1,
+ * G4), cada grupo en el orden del catálogo. Usa el mismo criterio que
+ * `conteoVitrina()`: una familia con un nivel ya está en "Ya los tienes",
+ * con su chip "Nivel N de M" y su siguiente nivel, así que el "X de Y" de
+ * arriba es el tamaño de ese grupo y se puede contar con el dedo (R88).
+ *
+ * @param {ReturnType<typeof agruparVitrina>} vitrina
+ * @returns {{ faltan: ReturnType<typeof agruparVitrina>, tienes: ReturnType<typeof agruparVitrina> }}
+ */
+export function partirVitrina(vitrina) {
+  const items = Array.isArray(vitrina) ? vitrina : [];
+  return { faltan: items.filter(it => !_conseguido(it)), tienes: items.filter(_conseguido) };
 }
 
 // ── NIVEL DE USUARIO (LG.2b, ADR 032 D5) ─────────────────────────

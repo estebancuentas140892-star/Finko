@@ -229,6 +229,16 @@
   overflow-wrap: anywhere;
 }
 
+/* H9: el aviso lleva a "Tu progreso". */
+.logro-toast__ver {
+  display: inline-block;
+  margin-top: var(--fk-space-1);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
 .logro-toast__cerrar {
   flex-shrink: 0;
   align-self: flex-start;

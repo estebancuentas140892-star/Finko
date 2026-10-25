@@ -80,6 +80,14 @@ function _checkYMostrar() {
 
 // ── TOAST ────────────────────────────────────────────────────────
 
+/**
+ * El aviso de desbloqueo lleva a "Tu progreso" (H9, ficha 03 de MOV.1,
+ * resuelto en la 17), salvo que ya estés ahí.
+ */
+function _enProgreso() {
+  return location.hash.slice(1) === 'progreso';
+}
+
 const DURACION_MS = 5000;
 
 /** Retraso del primer toast tras completar el onboarding (NAV.C, ADR 024 D6). */
@@ -121,6 +129,7 @@ function _mostrarToast(logro, label = 'Logro desbloqueado') {
     <div class="logro-toast__body">
       <p class="logro-toast__label">${_esc(label)}</p>
       <p class="logro-toast__nombre">${_esc(logro.nombre)}</p>
+      ${_enProgreso() ? '' : '<a class="logro-toast__ver" href="#progreso">Ver tu progreso</a>'}
     </div>
     <button type="button" class="logro-toast__cerrar" aria-label="Cerrar aviso">&times;</button>`;
 
@@ -153,16 +162,26 @@ function _mostrarToast(logro, label = 'Logro desbloqueado') {
   let inicio   = Date.now();
   let timer    = setTimeout(cerrar, restante);
 
-  toast.addEventListener('mouseenter', () => {
+  const pausar = () => {
     if (cerrado || timer === null) return;
     clearTimeout(timer);
     timer = null;
     restante -= Date.now() - inicio;
-  });
-  toast.addEventListener('mouseleave', () => {
+  };
+  const seguir = () => {
     if (cerrado || timer !== null) return;
     inicio = Date.now();
     timer = setTimeout(cerrar, Math.max(restante, 1000));
+  };
+  toast.addEventListener('mouseenter', pausar);
+  toast.addEventListener('mouseleave', seguir);
+  // Con teclado, el foco en el enlace o en la X pausa igual que el cursor.
+  toast.addEventListener('focusin', pausar);
+  toast.addEventListener('focusout', seguir);
+  // Ir al panel cierra el aviso: ya cumplió (H9).
+  toast.querySelector('.logro-toast__ver')?.addEventListener('click', () => {
+    if (timer !== null) clearTimeout(timer);
+    cerrar();
   });
   toast.querySelector('.logro-toast__cerrar').addEventListener('click', () => {
     if (timer !== null) clearTimeout(timer);
