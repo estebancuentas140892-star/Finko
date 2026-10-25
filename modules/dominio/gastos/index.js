@@ -718,7 +718,25 @@ function _actualizarNudgeSobrecupo() {
   el.hidden = false;
 }
 
+/**
+ * Un gasto que otro dominio ya decidió (APR.3e, ADR 093 D3): la mesada que
+ * el tutor marcó "Entregada" o el premio por ahorrar. Es un solo hecho (091
+ * R-HF1): se guarda y descuenta su cuenta como cualquier gasto, sin preguntar
+ * por sobregiro, porque el dinero ya se entregó. `origen` dice de dónde vino.
+ *
+ * @param {{ gasto?: { monto: number, categoria: string, fecha: string, cuentaId: string, descripcion?: string, origen?: object } }} datos
+ */
+function _registrarGastoExterno({ gasto } = {}) {
+  if (!gasto || !(Number(gasto.monto) > 0) || !gasto.cuentaId) return;
+  if (!S.cuentas.some(c => c.id === gasto.cuentaId)) return;
+  const base = normalizarGasto(gasto);
+  if (gasto.origen) base.origen = gasto.origen;
+  guardar('gastos', base);
+  _aplicarDeltasASaldos(deltasPorEdicionDeGasto(null, { cuentaId: base.cuentaId, monto: base.monto }));
+}
+
 export function initGastos() {
+  EventBus.on('gasto:registrar', _registrarGastoExterno);
   registrarAccion('nuevo-gasto', _nuevoGasto);
   registrarAccion('editar-gasto', _editarGasto);
   registrarAccion('eliminar-gasto', _eliminarGasto);

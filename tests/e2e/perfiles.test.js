@@ -23,8 +23,15 @@ const CANDADO_1234 = {
 
 const SOFIA = { id: 'n-sofi', nombre: 'Sofía', edad: 8, dibujo: 'cometa', teNombra: 'Papá', creado: '2026-10-25' };
 
-/** Config completa (con la aceptación legal vigente) más el candado. */
-const conCandado = () => ({ ...createInitialState().config, bloqueo: CANDADO_1234 });
+/**
+ * Config completa más el candado. Sin `legalAceptado`: así la migración lo
+ * da por aceptado, como a cualquier usuario existente, y el gate legal no
+ * tapa la app después del PIN.
+ */
+const conCandado = () => {
+  const { legalAceptado: _sinAceptacion, ...config } = createInitialState().config;
+  return { ...config, bloqueo: CANDADO_1234 };
+};
 
 test.describe('APR.3a - perfiles en el dispositivo', () => {
   test('sin niños, el arranque no cambia: el candado de siempre', async ({ page }) => {
@@ -83,6 +90,9 @@ test.describe('APR.3a - perfiles en el dispositivo', () => {
     await page.fill('#familia-pin', '1234');
     await page.fill('#familia-pin2', '1234');
     await page.click('#form-familia-pin [type="submit"]');
+    // Paso 2: la mesada (APR.3e). Se puede dejar para después.
+    await expect(modal).toContainText('Familia · paso 2 de 2');
+    await page.click('[data-action="familia-sin-mesada"]');
     await expect(modal).toHaveCount(0);
     await expect(page.locator('#config-familia')).toContainText('Entrar como Sofía');
     await expect.poll(async () => (await leerEstado(page)).perfiles?.map(p => p.nombre)).toEqual(['Sofía']);
@@ -189,6 +199,48 @@ test.describe('APR.3d - la alcancía y la meta del niño', () => {
     await expect.poll(async () => (await leerEstado(page)).perfiles?.[0]?.metas?.length).toBe(1);
     const nino = (await leerEstado(page)).perfiles[0];
     expect(nino.movimientos).toMatchObject([{ frasco: 'ahorrar', monto: 10_000, tipo: 'guarde', nota: 'Regalo de la abuela' }]);
+  });
+});
+
+test.describe('APR.3e - el tutor en Ajustes, Familia', () => {
+  test('la mesada entregada es un gasto Familia del tutor y entra a los frascos del niño', async ({ page }) => {
+    // Hoy toca la mesada: día de la semana de hoy, desde hace una semana.
+    const hoy = new Date();
+    const hoyISO = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+    const cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi', saldo: 500_000, activa: true, fechaCreacion: '2026-07-01T00:00:00.000Z' }];
+    await sembrarSiVacio(page, estadoBase({ perfil: { nombre: 'Esteban', smmlv: 1750905 }, config: conCandado(), perfiles: [SOFIA], cuentas }));
+    await page.goto('/#dash');
+    await page.locator('#quien-usa[data-open] [data-role="adulto"]').click();
+    await page.fill('#quien-usa-pin', '1234');
+    await page.click('#form-quien-usa-pin [type="submit"]');
+    await page.goto('/#config');
+    await page.waitForSelector('#sec-config.active', { timeout: 10_000 });
+
+    await page.click('#config-familia [data-action="familia-progreso"]');
+    const modal = page.locator('#modal-familia[data-open]');
+    await expect(modal).toContainText('Aún no tiene mesada.');
+    await page.click('#modal-familia [data-action="familia-mesada"]');
+    await page.selectOption('#familia-dia', String(hoy.getDay()));
+    await page.click('#form-familia-mesada [type="submit"]');
+    await expect(modal).toContainText('Toca entregar la mesada');
+
+    await page.click('#modal-familia [data-action="familia-entregada"]');
+    await expect(modal).toContainText('Al día.');
+    await expect.poll(async () => (await leerEstado(page)).gastos?.filter(g => g.categoria === 'Familia').length).toBe(1);
+    const estado = await leerEstado(page);
+    const gasto = estado.gastos.find(g => g.categoria === 'Familia');
+    expect(gasto).toMatchObject({ monto: 20_000, cuentaId: 'c1', descripcion: 'Mesada de Sofía', fecha: hoyISO });
+    expect(estado.cuentas[0].saldo).toBe(480_000);
+    expect(estado.perfiles[0].movimientos.map(m => `${m.frasco}:${m.monto}`)).toEqual(['ahorrar:10000', 'gastar:8000', 'compartir:2000']);
+
+    // El premio se activa con su tasa y el niño lo ve en su alcancía.
+    await page.click('#modal-familia [data-action="familia-premio"]');
+    await page.click('#form-familia-premio [type="submit"]');
+    await expect(modal).toContainText('Activo: le sumas $1 por cada $10');
+    await page.click('#modal-familia [data-action="familia-entrar"]');
+    await page.click('#nino-nav [data-vista="alcancia"]');
+    await expect(page.locator('#nino-main')).toContainText('Mi mesada');
+    await expect(page.locator('#nino-main')).toContainText('Papá te suma $1 por cada $10.');
   });
 });
 

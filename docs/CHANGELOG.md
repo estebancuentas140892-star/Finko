@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(nino): APR.3e, el tutor en Ajustes, Familia · 2026-10-25
+
+[ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md) D2 a D4; fichas [`contexto/nino.md`](contexto/nino.md) y [`contexto/gastos.md`](contexto/gastos.md). SW v608.
+
+- **Alta en dos pasos**: después de quién es el niño, su mesada: cuánto, cada semana, cada 15 días o cada mes, qué día, el reparto en los tres frascos (por defecto la mitad a Ahorrar), si puede mover entre frascos y si se anota como gasto tuyo y de qué cuenta. Se puede dejar para después.
+- **"Entregada" es un solo hecho** (091 R-HF1): entran los frascos del niño según su reparto y Gastos anota un gasto tuyo en la categoría nueva **Familia**, que descuenta la cuenta elegida. El gasto lleva `origen` (mesada o premio y de qué niño). Solo se entrega la mesada que toca, una vez.
+- **Premio por ahorrar**: $1 por cada $20, $1 por cada $10 (por defecto) o $2 por cada $10, con el resultado de hoy y la fecha de pago antes de activarlo (R50). Se calcula sobre lo que el niño guardó todo el mes; si sacó, sobre lo que quedó. El tutor lo suma el mes siguiente y también queda como gasto Familia.
+- **Progreso del niño** para el tutor: mesada (con "Entregada" cuando toca), unidades, alcancía, meta, premio y lo que hizo esta semana ("Gastó $3.000 en un helado"), con "Entrar como".
+- **El niño ve su mesada y su premio** en la alcancía ("Papá te suma $1 por cada $10. El 1 de noviembre recibes $2.700 más.").
+- **Los avisos del perfil niño** van sobre su barra, no encima.
+
 ### feat(nino): APR.3d, la alcancía y la meta del niño · 2026-10-25
 
 [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md) D3 y D9; ficha [`contexto/nino.md`](contexto/nino.md). SW v607.

@@ -166,9 +166,6 @@
 
 ### Fase 3 - Perfiles, niño y tutor (ADR 093)
 
-#### APR.3e - Tutor en Ajustes, Familia
-- Estado : pendiente de APR.3d. **Objetivo**: alta del niño en dos pasos, mesada que al marcarse "Entregada" crea un gasto Familia del adulto y acredita los frascos (R-HF1), premio mensual sobre lo guardado todo el mes, progreso del niño (ADR 093 D2 a D4). **Riesgo**: el gasto del adulto debe nacer una sola vez. **Modelo**: Alta capacidad, Alto.
-
 #### APR.3f - Contenido del niño
 - Estado : pendiente de APR.3c. Una rebanada por unidad, con revisión pedagógica y la voz del ADR 093 D6. **Modelo**: Equilibrado, Alto.
 

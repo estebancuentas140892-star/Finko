@@ -12,6 +12,7 @@ import { icon, iconoCategoria } from '../../infra/icons.js';
 import { htmlFrai, htmlDibujo, dibujoPorId, htmlFrasco, DIBUJOS } from '../../infra/ilustraciones.js';
 import { saldosFrascos, FRASCOS } from '../../infra/perfiles.js';
 import { UNIDADES_NINO } from '../../infra/ruta-aprende.js';
+import { proximaMesada, textoFrecuencia, TASAS_PREMIO, proximoPremio } from '../../infra/mesada.js';
 import {
   estadoRutaNino, siguienteLeccionNino, unidadesHechasNino,
   metaActiva, planMeta, llenadoFrasco, puedeMover,
@@ -243,11 +244,47 @@ export function htmlAlcanciaNino(perfil, hoyISO) {
     ${puedeMover(perfil) && s.total > 0 ? `
     <button class="knino-quitar knino-mover" type="button" data-action="nino-mov" data-tipo="mover">${icon('transferencia')}Mover dinero entre frascos</button>` : ''}
     ${htmlTarjetaMeta(perfil, hoyISO)}
+    ${_tarjetaMesada(perfil, hoyISO)}
+    ${_tarjetaPremio(perfil, hoyISO)}
     ${s.total === 0 ? `
     <div class="knino-fila">
       ${htmlFrai('explica', { tamano: 80 })}
       <p class="bubble">Cuando recibas dinero, toca Guardé.</p>
     </div>` : ''}`;
+}
+
+/** La mesada que fijó el tutor: cuánto, cada cuánto, la próxima y su reparto. */
+function _tarjetaMesada(perfil, hoyISO) {
+  const m = perfil.mesada;
+  if (!m) return '';
+  const prox = proximaMesada(m, hoyISO);
+  const cuando = textoFrecuencia(m);
+  const linea = `${cuando[0].toUpperCase()}${cuando.slice(1)}.${prox ? ` La próxima llega el ${_DIA_MES(prox)}.` : ''}`;
+  return `
+    <section class="kcard" aria-labelledby="nino-mesada">
+      <div class="knino-cabeza">
+        <h2 class="k-h3 knino-titulo-sm" id="nino-mesada">${iconoCategoria('c-billete')}Mi mesada</h2>
+        <span class="knino-total">${f(m.monto)}</span>
+      </div>
+      <p class="k-sm">${linea}</p>
+      <ul class="knino-mini">${FRASCOS.map(fr => `
+        <li data-frasco="${fr}"><span>${FRASCO_INFO[fr].nombre}</span><strong>${f(Number(m.reparto?.[fr]) || 0)}</strong></li>`).join('')}
+      </ul>
+    </section>`;
+}
+
+/** El premio por ahorrar: quién lo da, cuánto y cuándo llega (D4). */
+function _tarjetaPremio(perfil, hoyISO) {
+  if (!perfil.premio) return '';
+  const tasa = TASAS_PREMIO[perfil.premio.tasa];
+  const prox = proximoPremio(perfil, hoyISO);
+  return `
+    <section class="kcard kcard--dom" data-dom="inversion" aria-labelledby="nino-premio">
+      <h2 class="k-h3 knino-titulo-sm" id="nino-premio">${icon('trending-up')}Premio por ahorrar</h2>
+      <p class="k-body knino-fuerte">${esc(perfil.teNombra)} te suma ${tasa?.texto ?? ''}.</p>
+      <p class="k-sm">${prox.monto > 0 ? `El ${_DIA_MES(prox.fechaISO)} recibes ${f(prox.monto)} más.` : 'Guarda en Ahorrar y crecerá cada mes.'}</p>
+      <button class="knino-quitar" type="button" data-action="nino-vista" data-vista="aprender">¿Por qué crece? Míralo en la unidad 8</button>
+    </section>`;
 }
 
 /** Qué pregunta cada acción de la alcancía (D6: frases cortas). */

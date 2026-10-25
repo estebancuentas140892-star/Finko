@@ -11,8 +11,8 @@
 ## Perfiles, "¿Quién usa Finko?" y la piel del niño
 
 - **Objetivo**          : que un tutor y niños de 7 a 12 años compartan el teléfono sin que el niño vea las finanzas del adulto (D1).
-- **Estado actual**     : en evolución (Fase 3 de APR). Cerradas **APR.3b** (sistema visual), **APR.3a** (perfiles, selector, alta paso 1, PIN de niño a adulto, candado obligatorio, P1), **APR.3c** (barra, ruta en orden como camino, lección con Frai, celebración, unidad 1) y **APR.3d** (Guardé, Gasté, Compartí, mover, una meta con semanas y fecha). Mesada, premio y progreso del niño con APR.3e; las unidades 2 a 8 con APR.3f.
-- **Verificado contra** : commit de APR.3d (2026-10-25).
+- **Estado actual**     : en evolución (Fase 3 de APR). Cerradas **APR.3b** (sistema visual), **APR.3a** (perfiles, selector, alta paso 1, PIN de niño a adulto, candado obligatorio, P1), **APR.3c** (barra, ruta en orden como camino, lección con Frai, celebración, unidad 1) **APR.3d** (Guardé, Gasté, Compartí, mover, una meta con semanas y fecha) y **APR.3e** (alta en dos pasos con mesada, "Entregada" como un solo hecho, premio por ahorrar, progreso del niño). Faltan las unidades 2 a 8 y la ubicación desde los 10 años (APR.3f).
+- **Verificado contra** : commit de APR.3e (2026-10-25).
 
 **Dónde vive**
 
@@ -24,7 +24,9 @@
 | Fundido compartido con el cambio de tema (CFG.7) | `modules/ui/shell.js` | `conFundido()` |
 | "Olvidé mi PIN" con y sin niños (P1) | `modules/ui/bloqueo-acceso.js` | `olvideMiPin()`, `PALABRA_BORRAR`, `intentarPin()` |
 | Confirmación con palabra escrita | `modules/ui/confirm.js` | opción `palabra` |
-| Bloque Familia y alta del niño (paso 1, PIN si falta) | `modules/dominio/config/familia.js`, `familia-view.js` | `initFamilia()`, `abrirAlta()`, `htmlFamilia()`, `htmlAltaNino()`, `htmlAltaPin()`, `data-action="familia-*"` |
+| Bloque Familia, alta en dos pasos, mesada, premio y progreso | `modules/dominio/config/familia.js`, `familia-view.js` | `initFamilia()`, `abrirAlta()`, `_entregada()`, `_pagarPremio()`, `htmlFamilia()`, `htmlMesada()`, `htmlPremio()`, `htmlProgresoNino()`, `data-action="familia-*"` |
+| Calendario de la mesada y premio (sin DOM, lo leen tutor y niño) | `modules/infra/mesada.js` | `repartoPorDefecto()`, `validarMesada()`, `mesadaPendiente()`, `proximaMesada()`, `guardadoTodoElMes()`, `premioPendiente()`, `proximoPremio()` |
+| El gasto Familia del tutor | `modules/dominio/gastos/index.js` | `_registrarGastoExterno()`, evento `gasto:registrar` |
 | Candado obligatorio con niños | `modules/dominio/config/view.js` / `index.js` | `_renderBloqueo()`, `_quitarCandado()` |
 | La app del niño: cuatro pantallas y su barra | `modules/dominio/nino/index.js` / `view.js` | `initNino()`, `_irA()`, `htmlBarraNino()`, `htmlInicioNino()`, `htmlRutaNino()`, `htmlAlcanciaNino()`, `htmlYoNino()`, `data-action="nino-vista"`, evento `nino:vista` |
 | La ruta en orden (sin DOM) | `modules/dominio/nino/logic.js` | `estadoRutaNino()`, `siguienteLeccionNino()`, `unidadesHechasNino()` |
@@ -49,12 +51,15 @@
 - **El aviso de logro del adulto** se oculta mientras el candado o el selector están abiertos y en el perfil niño (`modals.css`, `nino.css`): es un dato del adulto.
 - **La alcancía solo anota** (D3): cada acción es un movimiento del perfil; el saldo de un frasco es la suma de los suyos y nunca baja de cero. "Lo compré" es una salida de Ahorrar con `tipo: 'meta'`.
 - **La pantalla de la meta no se repinta** con `state:change` mientras está abierta: borraría lo que el niño escribe.
+- **"Entregada" nace una vez**: `mesadaPendiente()` solo devuelve la última fecha que tocaba si no está en `entregas`. Si el tutor borra el gasto Familia, los frascos del niño no se tocan (cada lado se corrige en su lugar).
+- **El gasto Familia no pregunta por sobregiro**: el dinero ya se entregó. Necesita una cuenta elegida en la mesada; sin ella, el premio se suma al niño sin gasto.
 - **Quitar el candado con niños** no se ofrece y el handler lo rechaza: primero hay que eliminar sus perfiles.
 
 **Cambios pendientes**: el selector usa el campo de PIN de siempre, no el teclado numérico del diseño; el avatar de Inicio como atajo a Familia (D2) llega con APR.3e.
 
 **Cambios realizados**:
 
+- 2026-10-25 (APR.3e): alta con mesada, "Entregada" con gasto Familia, premio por ahorrar, progreso del niño.
 - 2026-10-25 (APR.3d): alcancía con Guardé, Gasté, Compartí y mover; una meta con semanas y fecha.
 - 2026-10-25 (APR.3c): app del niño con barra, ruta en orden, lección con Frai, celebración y unidad 1.
 - 2026-10-25 (APR.3a): perfiles (v48), "¿Quién usa Finko?", alta paso 1 con PIN obligatorio, Familia en Ajustes, P1.

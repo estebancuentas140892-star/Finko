@@ -67,7 +67,7 @@ export function renderPanelConfig() {
     ${_renderAvisoVigencia()}
     ${_grupo('La app',      [_renderTema(), _renderAtajos(), _renderNotificaciones(), _renderInstalarApp()])}
     ${_grupo('Tu cuenta',   [_renderPerfil(), _renderBloqueo()])}
-    ${_grupo('Familia',     [htmlFamilia(ninos())])}
+    ${_grupo('Familia',     [htmlFamilia(ninos(), hoy())])}
     ${_grupo('Tus datos',   [_renderDatos()])}
     ${_grupo('Impuestos',   [_renderImpuestos()])}
     ${_grupo('Información', [_renderLegal(), _renderAcercaDe()])}

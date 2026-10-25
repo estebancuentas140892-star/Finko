@@ -76,18 +76,18 @@ Utilidades transversales sin dependencias de dominio.
 | `bolsas.js` | El plan de aportes de una bolsa con fecha: `diasHastaFecha`, `planDeReferencia`, `estadoDeBolsa`. Lo comparten Apartados y la casa de Ahorro (DIS.19), primer paso de ARQ.1 |
 | `portafolio.js` | Lo invertido, su proyección al vencimiento y la geometría del gráfico de dos columnas: de `esProyectable` a `columnasPortafolio`. Lo comparten Inversión y la casa de Ahorro (DIS.19) |
 | `taxonomia.js` | La estructura de dos niveles, una sola vez ([ADR 064](DECISIONS/064-estructura-de-dos-niveles.md)): `hijosDeCategoria`, `hijoPorId`, `categoriasConHijos`. Recibe el catálogo por parámetro, así que sirve a subcategoría de meta, marca por categoría y entidad a producto sin conocer a ninguno |
-| `csv.js` | Parser/serializador CSV (RFC 4180 simplificado) para importar/exportar gastos |
-| `notificaciones.js` | Web Notifications API para recordatorios de compromisos próximos |
-| `form-errors.js` | Helpers de validación y mensajes de error en formularios |
+| `csv.js` | Parser/serializador CSV para importar/exportar gastos |
+| `notificaciones.js` | Web Notifications API para recordatorios |
+| `form-errors.js` | Mensajes de error en formularios |
 | `bancos.js` | Catálogo de bancos colombianos + resolución de ícono por banco |
-| `animate.js` | Helpers de animación (count-up, llenado de progreso) respetando `prefers-reduced-motion` |
+| `animate.js` | Animación (count-up, llenado) con `prefers-reduced-motion` |
 | `sw-register.js` | Registro del Service Worker |
 | `avisos.js` | Motor único de avisos: arma la lista y la filtra por preferencia de sección ([ADR 066](DECISIONS/066-motor-unico-de-avisos.md)) |
 | `vencimientos.js` | Motor compartido de vencimientos: ocurrencias de una obligación o ingreso según su periodicidad ([ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md)) |
 | `pago-compromiso.js` | Registrar el pago o abono de un compromiso, un solo camino para todas las superficies (ARQ.2) |
 | `credito-ingreso.js` | Registrar el cobro de un crédito automático de ingreso fijo, espejo de `pago-compromiso.js` desde el otro lado (PA.1b, ADR 052) |
 | `sugerencias-categoria.js` | Motor único de sugerencia por categoría ([ADR 044](DECISIONS/044-motor-unico-de-sugerencia-por-categoria.md)) |
-| `memo.js` | Memoización de derivaciones puras costosas, invalidada por `state:change` (PERF.2) |
+| `memo.js` | Memoización de derivaciones puras, invalidada por `state:change` |
 | `marcas.js` | Resolución de identidad de marca desde texto libre ([ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md) D4) |
 | `icon-picker.js` | Selector compacto de ícono para categorías y entidades personalizadas (CAT.2) |
 | `markdown.js` | Conversor mínimo de Markdown a HTML, solo el subconjunto que usan los documentos legales |
@@ -280,6 +280,7 @@ Los eventos del sistema (verificados el 2026-10-24):
 | `perfil:cambio` | `infra/perfiles.js` (`entrarComo()`, APR.3a) | `ui/quien-usa.js` (piel) y `nino/index.js` (pinta) |
 | `familia:agregar` | `ui/quien-usa.js` ("Agregar un niño") | `config/familia.js` (abre el alta) |
 | `nino:vista` | `aprende/index.js` (cierre del niño) | `nino/index.js` (cambia de pantalla) |
+| `gasto:registrar` | `config/familia.js` (mesada, premio) | `gastos/index.js` (guarda y descuenta) |
 
 `distribucion:aplicar` es el ejemplo canónico de orquestación cross-dominio sin acoplar dominios: `tesoreria` no importa `metas` ni `apartados`, solo emite un evento con la lista de `items`; cada dominio destino decide si le corresponde algo y lo aplica.
 

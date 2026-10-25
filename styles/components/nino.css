@@ -124,6 +124,8 @@ body.kid .logro-toast,
 body.kid .confetti-piece,
 body.kid .install-banner { display: none; }
 .nino-app[hidden] { display: none; }
+/* Los avisos van sobre la barra del niño, nunca encima de ella. */
+body.kid .fk-toast { bottom: calc(var(--fk-kid-target) + var(--fk-space-8) + env(safe-area-inset-bottom, 0px)); }
 
 .nino-app {
   min-height: 100dvh;
@@ -704,3 +706,64 @@ body.kid .leccion-clasificar__boton { min-height: var(--fk-kid-target); font-siz
 .knino-plan > .icon { flex-shrink: 0; width: 28px; height: 28px; color: var(--fk-kid-sun-text); }
 .kform__error { margin: 0; color: var(--fk-kid-hint); font-weight: 700; }
 .kform__error:empty { display: none; }
+.knino-fuerte { color: var(--fk-text-primary); font-weight: 700; }
+
+/* ── FAMILIA: MESADA, PREMIO Y PROGRESO (APR.3e, ADR 093 D2 a D4) ──
+   Pantallas del tutor, en su tema adulto. */
+.familia-alta__titulo { margin: 0; font-size: var(--fk-text-lg); font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
+.familia-alta__titulo:focus { outline: none; }
+.familia-nino__aviso { color: var(--fk-warning-text); font-weight: var(--fk-font-semibold); }
+.familia-reparto { display: flex; flex-direction: column; gap: var(--fk-space-2); }
+.familia-reparto__fila {
+  display: grid;
+  grid-template-columns: 1fr 8rem;
+  align-items: center;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border-radius: var(--fk-radius-lg);
+  border-left: 4px solid var(--d);
+  background: var(--fk-bg-elevated);
+}
+.familia-reparto__fila[data-frasco="ahorrar"]   { --d: var(--fk-dom-ahorro); }
+.familia-reparto__fila[data-frasco="gastar"]    { --d: var(--fk-dom-gastos); }
+.familia-reparto__fila[data-frasco="compartir"] { --d: var(--fk-dom-personales); }
+.familia-reparto__fila label { display: flex; flex-direction: column; gap: 2px; }
+.familia-reparto__fila label span { font-size: var(--fk-text-sm); color: var(--fk-text-muted); }
+.familia-interruptor { display: flex; align-items: flex-start; gap: var(--fk-space-3); cursor: pointer; }
+.familia-interruptor input { width: 1.25rem; height: 1.25rem; margin-top: 2px; accent-color: var(--fk-accent); flex-shrink: 0; }
+.familia-interruptor > span { display: flex; flex-direction: column; gap: 2px; }
+.familia-interruptor > span > span { font-size: var(--fk-text-sm); color: var(--fk-text-muted); }
+.familia-tasas { display: flex; flex-direction: column; gap: var(--fk-space-2); }
+.familia-tasa span {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+  min-height: 2.75rem;
+  align-items: center;
+  padding: 0 var(--fk-space-4);
+  border-radius: var(--fk-radius-lg);
+  border: 1.5px solid var(--fk-border-default);
+  background: var(--fk-bg-surface);
+  color: var(--fk-text-secondary);
+  cursor: pointer;
+}
+.familia-tasa input:checked + span { border-color: var(--fk-accent); background: var(--fk-accent-subtle); color: var(--fk-text-accent); }
+.familia-tasa input:focus-visible + span { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
+.familia-premio__resumen { margin: 0; padding: var(--fk-space-3) var(--fk-space-4); border-radius: var(--fk-radius-lg); background: var(--fk-bg-elevated); color: var(--fk-text-primary); }
+.familia-progreso { display: flex; flex-direction: column; gap: var(--fk-space-3); }
+.familia-progreso__bloque {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--fk-space-2);
+  padding: var(--fk-space-3) var(--fk-space-4);
+  border-radius: var(--fk-radius-lg);
+  border: 1px solid var(--fk-border-subtle);
+  background: var(--fk-bg-surface);
+}
+.familia-progreso__bloque h4 { margin: 0; font-size: var(--fk-text-base); color: var(--fk-text-primary); }
+.familia-progreso__bloque p { margin: 0; color: var(--fk-text-secondary); }
+.familia-progreso__bloque .familia-progreso__aviso { color: var(--fk-text-primary); font-weight: var(--fk-font-semibold); }
+.familia-progreso__lista { list-style: none; margin: 0; padding: 0; width: 100%; display: flex; flex-direction: column; gap: var(--fk-space-2); }
+.familia-progreso__lista li { display: flex; justify-content: space-between; gap: var(--fk-space-3); color: var(--fk-text-secondary); }
+.familia-progreso__fecha { flex-shrink: 0; font-size: var(--fk-text-sm); color: var(--fk-text-muted); }
