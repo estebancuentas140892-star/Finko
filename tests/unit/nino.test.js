@@ -81,6 +81,21 @@ describe('las cuatro pantallas del niño (D9)', () => {
     expect(html).toMatch(/data-vista="aprender" aria-current="page"/);
   });
 
+  it('con el perfil, la barra suma su dibujo y "Cambiar", que solo se ven en el riel (APR.4b)', () => {
+    const html = htmlBarraNino('inicio', perfil());
+    expect(html.match(/data-action="nino-vista"/g)).toHaveLength(4);
+    expect(html).toContain('class="knav__yo" aria-hidden="true"');
+    expect(html).toMatch(/knav__it--cambiar" type="button" data-action="perfil-cambiar"\s+aria-label="Cambiar de perfil"/);
+    expect(htmlBarraNino('inicio')).not.toContain('perfil-cambiar');
+  });
+
+  it('Inicio va en dos grupos y trae los tres frascos para el escritorio (APR.4b)', () => {
+    const html = htmlInicioNino(perfil(), '2026-10-25');
+    expect(html.match(/class="nino-inicio__grupo"/g)).toHaveLength(2);
+    expect(html).toContain('class="knino-mini"');
+    expect(html.match(/class="jar" data-frasco=/g)).toHaveLength(3);
+  });
+
   it('Inicio saluda con Frai y ofrece la lección que sigue con su duración', () => {
     const html = htmlInicioNino(perfil());
     expect(html).toContain('¡Hola, Sofía!');

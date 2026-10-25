@@ -258,6 +258,32 @@
   flex-direction: column;
   gap: var(--fk-space-3);
 }
+
+/* "Cambiar de perfil" (APR.4b): las iniciales del adulto hacen de ícono, así
+   la fila se entiende también con la barra colapsada. */
+.sidebar__perfil[hidden] { display: none; }
+.sidebar__perfil {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.sidebar__perfil-av {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--fk-radius-full);
+  background: var(--fk-accent-subtle);
+  color: var(--fk-text-accent);
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-bold);
+}
+.sidebar__perfil-texto { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.sidebar__perfil-nombre { font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
+.sidebar__perfil-accion { font-size: var(--fk-text-xs); color: var(--fk-text-muted); }
 .sidebar__saldo {
   display: flex;
   flex-direction: column;

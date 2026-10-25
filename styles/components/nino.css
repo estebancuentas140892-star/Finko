@@ -141,9 +141,10 @@ body.kid .fk-toast { bottom: calc(var(--fk-kid-target) + var(--fk-space-8) + env
   padding: var(--fk-space-8) var(--fk-space-5) var(--fk-space-6);
 }
 .nino-main:focus { outline: none; }
-.nino-inicio { display: flex; flex-direction: column; gap: var(--fk-space-6); }
-.nino-inicio__saludo { display: flex; align-items: center; gap: var(--fk-space-4); }
-.nino-inicio__texto { display: flex; flex-direction: column; gap: var(--fk-space-2); }
+/* Inicio en dos grupos: en el teléfono van uno debajo del otro, con el
+   mismo espacio que el resto de la pantalla; en escritorio, dos columnas. */
+.nino-inicio,
+.nino-inicio__grupo { display: flex; flex-direction: column; gap: var(--fk-space-5); min-width: 0; }
 .nino-inicio h1:focus { outline: none; }
 
 /* La teja del dibujo del niño, en el color de su dibujo (--d). */
@@ -767,3 +768,55 @@ body.kid .leccion-clasificar__boton { min-height: var(--fk-kid-target); font-siz
 .familia-progreso__lista { list-style: none; margin: 0; padding: 0; width: 100%; display: flex; flex-direction: column; gap: var(--fk-space-2); }
 .familia-progreso__lista li { display: flex; justify-content: space-between; gap: var(--fk-space-3); color: var(--fk-text-secondary); }
 .familia-progreso__fecha { flex-shrink: 0; font-size: var(--fk-text-sm); color: var(--fk-text-muted); }
+
+/* ── TABLETA Y ESCRITORIO (APR.4b, ADR 093, diseño 34) ───────────
+   Desde 768 px la barra pasa a riel a la izquierda, con el dibujo del niño
+   arriba y "Cambiar" al pie: el contenido gana ancho y ya no reserva el
+   alto de la barra. Desde 1024 px, Inicio va en dos columnas, 7 y 5: lo
+   que sigue a la izquierda; la alcancía, ahora con sus tres frascos, y la
+   meta a la derecha. */
+.knav__yo,
+.knav__it--cambiar,
+.nino-inicio .jars { display: none; }
+@media (min-width: 768px) {
+  .knav {
+    inset: 0 auto 0 0;
+    width: 8.25rem;
+    flex-direction: column;
+    gap: var(--fk-space-2);
+    padding: var(--fk-space-6) var(--fk-space-3);
+    border-top: 0;
+    border-right: 2px solid var(--fk-border-subtle);
+  }
+  .knav__yo { display: grid; justify-items: center; margin-bottom: var(--fk-space-2); }
+  .knav__it {
+    flex: 0 0 auto;
+    min-height: 5.5rem;
+    gap: 6px;
+    border-radius: var(--fk-kid-radius-lg);
+    font-size: 15px;
+    font-weight: 800;
+  }
+  .knav__it .icon { width: 2rem; height: 2rem; }
+  .knav__it--cambiar { display: flex; margin-top: auto; min-height: 4.5rem; font-size: 13px; }
+  .knav__it--cambiar .icon { width: 1.5rem; height: 1.5rem; }
+  .nino-app { padding-left: 8.25rem; }
+  .nino-main { max-width: 44rem; padding: var(--fk-space-10) var(--fk-space-8); }
+  /* El dibujo y "Cambiar" de Inicio ya están en el riel. */
+  .nino-inicio .knino-cabeza > .kidav,
+  .nino-inicio .knino-cambiar { display: none; }
+  body.kid .fk-toast { bottom: var(--fk-space-6); }
+}
+@media (min-width: 1024px) {
+  .nino-main:has(.nino-inicio) { max-width: 72rem; padding-inline: var(--fk-space-12); }
+  .nino-inicio {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: var(--fk-space-8);
+    align-items: start;
+  }
+  .nino-inicio .knino-cabeza__hola { font-size: 40px; }
+  .nino-inicio .bubble { font-size: var(--fk-kid-text-lg); }
+  .nino-inicio .jars { display: grid; }
+  .nino-inicio .knino-mini { display: none; }
+}

@@ -11,8 +11,8 @@
 ## Perfiles, "¿Quién usa Finko?" y la piel del niño
 
 - **Objetivo**          : que un tutor y niños de 7 a 12 años compartan el teléfono sin que el niño vea las finanzas del adulto (D1).
-- **Estado actual**     : en evolución (Fase 3 de APR). Cerradas **APR.3b** (sistema visual), **APR.3a** (perfiles, selector, alta paso 1, PIN de niño a adulto, candado obligatorio, P1), **APR.3c** (barra, ruta en orden como camino, lección con Frai, celebración, unidad 1) **APR.3d** (Guardé, Gasté, Compartí, mover, una meta con semanas y fecha) y **APR.3e** (alta en dos pasos con mesada, "Entregada" como un solo hecho, premio por ahorrar, progreso del niño). **APR.3f**: las ocho unidades escritas y la ubicación desde los 10 años; falta su revisión pedagógica.
-- **Verificado contra** : commit de APR.3f (2026-10-25).
+- **Estado actual**     : en evolución (Fase 3 de APR). Cerradas **APR.3b** (sistema visual), **APR.3a** (perfiles, selector, alta paso 1, PIN de niño a adulto, candado obligatorio, P1), **APR.3c** (barra, ruta en orden como camino, lección con Frai, celebración, unidad 1) **APR.3d** (Guardé, Gasté, Compartí, mover, una meta con semanas y fecha) y **APR.3e** (alta en dos pasos con mesada, "Entregada" como un solo hecho, premio por ahorrar, progreso del niño). **APR.3f**: las ocho unidades escritas y la ubicación desde los 10 años; falta su revisión pedagógica. **APR.4b**: riel desde 768 px, Inicio en dos columnas desde 1024 px y "Cambiar de perfil" al pie de la barra lateral del adulto.
+- **Verificado contra** : commit de APR.4b (2026-10-25).
 
 **Dónde vive**
 
@@ -21,6 +21,7 @@
 | Modelo del niño, validación del alta y quién usa Finko ahora (sesión, no se guarda) | `modules/infra/perfiles.js` | `normalizarPerfil()`, `validarNino()`, `crearNino()`, `ninos()`, `hayNinos()`, `perfilActivo()`, `entrarComo()` |
 | Estado y migración | `modules/core/state.js` / `storage.js` | `perfiles` (schema v48) |
 | "¿Quién usa Finko?", PIN del adulto y cambio de piel con fundido | `modules/ui/quien-usa.js` | `initPerfiles()`, `abrirQuienUsa()`, `htmlQuienUsa()`, `_aplicarPiel()`, `data-action="perfil-cambiar"` |
+| "Cambiar de perfil" al pie de la barra lateral del adulto, solo con niños | `modules/ui/quien-usa.js` / `index.html` | `_pintarAccesoPerfil()`, `#sidebar-perfil` |
 | Fundido compartido con el cambio de tema (CFG.7) | `modules/ui/shell.js` | `conFundido()` |
 | "Olvidé mi PIN" con y sin niños (P1) | `modules/ui/bloqueo-acceso.js` | `olvideMiPin()`, `PALABRA_BORRAR`, `intentarPin()` |
 | Confirmación con palabra escrita | `modules/ui/confirm.js` | opción `palabra` |
@@ -28,7 +29,7 @@
 | Calendario de la mesada y premio (sin DOM, lo leen tutor y niño) | `modules/infra/mesada.js` | `repartoPorDefecto()`, `validarMesada()`, `mesadaPendiente()`, `proximaMesada()`, `guardadoTodoElMes()`, `premioPendiente()`, `proximoPremio()` |
 | El gasto Familia del tutor | `modules/dominio/gastos/index.js` | `_registrarGastoExterno()`, evento `gasto:registrar` |
 | Candado obligatorio con niños | `modules/dominio/config/view.js` / `index.js` | `_renderBloqueo()`, `_quitarCandado()` |
-| La app del niño: cuatro pantallas y su barra | `modules/dominio/nino/index.js` / `view.js` | `initNino()`, `_irA()`, `htmlBarraNino()`, `htmlInicioNino()`, `htmlRutaNino()`, `htmlAlcanciaNino()`, `htmlYoNino()`, `data-action="nino-vista"`, evento `nino:vista` |
+| La app del niño: cuatro pantallas y su barra (riel desde 768 px, con su dibujo y "Cambiar") | `modules/dominio/nino/index.js` / `view.js` | `initNino()`, `_irA()`, `htmlBarraNino(vista, perfil)`, `htmlInicioNino()`, `htmlRutaNino()`, `htmlAlcanciaNino()`, `htmlYoNino()`, `data-action="nino-vista"`, evento `nino:vista` |
 | La ruta en orden (sin DOM) | `modules/dominio/nino/logic.js` | `estadoRutaNino()`, `siguienteLeccionNino()`, `unidadesHechasNino()` |
 | Catálogo de la ruta del niño | `modules/infra/ruta-aprende.js` | `UNIDADES_NINO` |
 | Saldos de los frascos, avance y cambios del niño | `modules/infra/perfiles.js` | `saldosFrascos()`, `guardarAprendeNino()`, `actualizarNino()`, `FRASCOS` |
@@ -54,11 +55,13 @@
 - **"Entregada" nace una vez**: `mesadaPendiente()` solo devuelve la última fecha que tocaba si no está en `entregas`. Si el tutor borra el gasto Familia, los frascos del niño no se tocan (cada lado se corrige en su lugar).
 - **El gasto Familia no pregunta por sobregiro**: el dinero ya se entregó. Necesita una cuenta elegida en la mesada; sin ella, el premio se suma al niño sin gasto.
 - **Quitar el candado con niños** no se ofrece y el handler lo rechaza: primero hay que eliminar sus perfiles.
+- **Inicio trae la alcancía dos veces** (la lista corta y los tres frascos) y el ancho elige cuál se ve (`nino.css`): un test que cuente frascos en Inicio ve los dos. Lo mismo con "Cambiar": en el teléfono va en Inicio y en Yo; desde 768 px, en el riel.
 
 **Cambios pendientes**: el selector usa el campo de PIN de siempre, no el teclado numérico del diseño; el avatar de Inicio como atajo a Familia (D2) llega con APR.3e.
 
 **Cambios realizados**:
 
+- 2026-10-25 (APR.4b): riel del niño en tableta y escritorio, Inicio en dos columnas, "Cambiar de perfil" en la barra lateral del adulto.
 - 2026-10-25 (APR.3f): unidades 2 a 8 y ubicación desde los 10 años; lo sabido cuenta en la ruta en orden.
 - 2026-10-25 (APR.3e): alta con mesada, "Entregada" con gasto Familia, premio por ahorrar, progreso del niño.
 - 2026-10-25 (APR.3d): alcancía con Guardé, Gasté, Compartí y mover; una meta con semanas y fecha.

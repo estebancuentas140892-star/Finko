@@ -57,8 +57,9 @@ test.describe('APR.3a - perfiles en el dispositivo', () => {
     await expect(page.locator('#app')).toBeHidden();
     await expect(page.locator('#nino-main h1')).toBeFocused();
 
-    // De niño a adulto se pide el PIN.
-    await page.click('#nino-main [data-action="perfil-cambiar"]');
+    // De niño a adulto se pide el PIN. En escritorio, "Cambiar" está en el
+    // riel (APR.4b); en el teléfono, en Inicio y en Yo.
+    await page.click('#nino-nav [data-action="perfil-cambiar"]');
     await page.locator('#quien-usa[data-open] [data-role="adulto"]').click();
     await page.fill('#quien-usa-pin', '0000');
     await page.click('#form-quien-usa-pin [type="submit"]');
@@ -262,6 +263,91 @@ test.describe('APR.3f - la ruta completa del niño', () => {
     await expect(page.locator('#nino-main')).toContainText('2 de 8 unidades');
     await expect(page.locator('#nino-main')).toContainText('Unidad 3 · vas aquí');
     await expect.poll(async () => (await leerEstado(page)).perfiles?.[0]?.aprende?.sabidas).toEqual(['k1', 'k2']);
+  });
+});
+
+test.describe('APR.4b - el niño en escritorio y el acceso del adulto', () => {
+  test('la barra es un riel a la izquierda e Inicio va en dos columnas, con los frascos', async ({ page }) => {
+    await sembrarSiVacio(page, estadoBase({ perfil: { nombre: 'Esteban', smmlv: 1750905 }, config: conCandado(), perfiles: [SOFIA] }));
+    await page.goto('/#dash');
+    await page.locator('#quien-usa[data-open] [data-role="nino"]').click();
+    await expect(page.locator('#nino-main h1')).toHaveText('¡Hola, Sofía!');
+
+    // El cambio de piel va con fundido: se mide cuando la app del niño ya se ve.
+    await expect(page.locator('#nino-nav')).toBeVisible();
+    const riel = await page.locator('#nino-nav').boundingBox();
+    expect(riel.x).toBe(0);
+    expect(riel.height).toBeGreaterThan(riel.width);
+    const [izq, der] = await Promise.all([0, 1].map(i => page.locator('.nino-inicio__grupo').nth(i).boundingBox()));
+    expect(der.x).toBeGreaterThan(izq.x + izq.width - 1);
+    expect(Math.abs(der.y - izq.y)).toBeLessThan(2);
+    await expect(page.locator('#nino-main .jars')).toBeVisible();
+    await expect(page.locator('#nino-main .knino-mini')).toBeHidden();
+
+    // El dibujo y "Cambiar" viven en el riel, no se repiten en Inicio.
+    await expect(page.locator('#nino-main [data-action="perfil-cambiar"]')).toBeHidden();
+    await page.click('#nino-nav [data-action="perfil-cambiar"]');
+    await expect(page.locator('#quien-usa[data-open]')).toHaveCount(1);
+  });
+
+  test('con niños, el adulto cambia de perfil desde el pie de la barra lateral', async ({ page }) => {
+    await sembrarSiVacio(page, estadoBase({ perfil: { nombre: 'Esteban Cardona', smmlv: 1750905 }, config: conCandado(), perfiles: [SOFIA] }));
+    await page.goto('/#dash');
+    await page.locator('#quien-usa[data-open] [data-role="adulto"]').click();
+    await page.fill('#quien-usa-pin', '1234');
+    await page.click('#form-quien-usa-pin [type="submit"]');
+    await expect(page.locator('#quien-usa[data-open]')).toHaveCount(0);
+
+    const acceso = page.locator('#sidebar-perfil');
+    await expect(acceso).toBeVisible();
+    await expect(acceso).toContainText('Esteban Cardona');
+    await expect(acceso).toContainText('Cambiar de perfil');
+    await expect(page.locator('#sidebar-perfil-av')).toHaveText('EC');
+    await acceso.click();
+    await expect(page.locator('#quien-usa[data-open]')).toHaveCount(1);
+  });
+
+  test('sin niños, la barra lateral no ofrece cambiar de perfil', async ({ page }) => {
+    await sembrarSiVacio(page, estadoBase({ perfil: { nombre: 'Esteban', smmlv: 1750905 } }));
+    await page.goto('/#dash');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+    await expect(page.locator('#sidebar-perfil')).toBeHidden();
+  });
+});
+
+test.describe('APR.4b - el niño en tableta', () => {
+  test.use({ viewport: { width: 768, height: 1024 } });
+
+  test('el riel ya está en tableta e Inicio sigue en una columna', async ({ page }) => {
+    await sembrarSiVacio(page, estadoBase({ perfil: { nombre: 'Esteban', smmlv: 1750905 }, config: conCandado(), perfiles: [SOFIA] }));
+    await page.goto('/#dash');
+    await page.locator('#quien-usa[data-open] [data-role="nino"]').click();
+    await expect(page.locator('#nino-main h1')).toHaveText('¡Hola, Sofía!');
+    // El cambio de piel va con fundido: se mide cuando la app del niño ya se ve.
+    await expect(page.locator('#nino-nav')).toBeVisible();
+    const riel = await page.locator('#nino-nav').boundingBox();
+    expect(riel.x).toBe(0);
+    expect(riel.height).toBeGreaterThan(riel.width);
+    const [arriba, abajo] = await Promise.all([0, 1].map(i => page.locator('.nino-inicio__grupo').nth(i).boundingBox()));
+    expect(abajo.y).toBeGreaterThan(arriba.y + arriba.height - 1);
+    await expect(page.locator('#nino-main .knino-mini')).toBeVisible();
+  });
+});
+
+test.describe('APR.4b - el niño en el teléfono no cambia', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('la barra sigue abajo y "Cambiar" está en Inicio', async ({ page }) => {
+    await sembrarSiVacio(page, estadoBase({ perfil: { nombre: 'Esteban', smmlv: 1750905 }, config: conCandado(), perfiles: [SOFIA] }));
+    await page.goto('/#dash');
+    await page.locator('#quien-usa[data-open] [data-role="nino"]').click();
+    await expect(page.locator('#nino-main h1')).toHaveText('¡Hola, Sofía!');
+    await expect(page.locator('#nino-nav')).toBeVisible();
+    const barra = await page.locator('#nino-nav').boundingBox();
+    expect(barra.y + barra.height).toBeGreaterThan(830);
+    expect(barra.width).toBeGreaterThan(barra.height);
+    await expect(page.locator('#nino-nav [data-action="perfil-cambiar"]')).toBeHidden();
+    await expect(page.locator('#nino-main [data-action="perfil-cambiar"]')).toBeVisible();
   });
 });
 

@@ -463,6 +463,17 @@
           <span class="nav-item__label">Ajustes</span>
         </a>
 
+        <!-- Cambiar de perfil (APR.4b, ADR 092 D2): solo cuando hay perfiles
+             de niño. ui/quien-usa.js lo muestra y le pone el nombre. -->
+        <button class="nav-item sidebar__perfil" id="sidebar-perfil" type="button"
+                data-action="perfil-cambiar" aria-label="Cambiar de perfil" hidden>
+          <span class="nav-item__icon sidebar__perfil-av" id="sidebar-perfil-av" aria-hidden="true"></span>
+          <span class="nav-item__label sidebar__perfil-texto">
+            <span class="sidebar__perfil-nombre" id="sidebar-perfil-nombre"></span>
+            <span class="sidebar__perfil-accion">Cambiar de perfil</span>
+          </span>
+        </button>
+
         <!-- Boton colapsar sidebar - solo visible en desktop (>= 1024px) -->
         <button class="nav-item sidebar__collapse-btn" type="button"
                 data-action="sidebar-toggle"

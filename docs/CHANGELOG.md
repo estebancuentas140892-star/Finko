@@ -12,6 +12,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(nino): APR.4b, el niño en tableta y escritorio · 2026-10-25
+
+[ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md) y [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D2, diseños 32 y 34; ficha [`contexto/nino.md`](contexto/nino.md). SW v611.
+
+- **Desde 768 px la barra del niño es un riel a la izquierda**, con su dibujo arriba y "Cambiar" al pie; el contenido gana ancho. En el teléfono la barra sigue abajo y "Cambiar" sigue en Inicio y en Yo.
+- **Desde 1024 px, Inicio va en dos columnas**: el saludo y la lección que sigue a la izquierda; la alcancía con sus tres frascos y la meta a la derecha. Los frascos ya venían en la pantalla Alcancía; Inicio los muestra solo en escritorio, donde reemplazan la lista corta.
+- **El adulto cambia de perfil desde el pie de la barra lateral** cuando hay perfiles de niño: sus iniciales, su nombre y "Cambiar de perfil" llevan a "¿Quién usa Finko?". Sin niños no aparece.
+
 ### feat(aprende): APR.4a, Aprende y la lección en escritorio · 2026-10-25
 
 [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D2 y D7, diseños 32 y 33; ficha [`contexto/aprende.md`](contexto/aprende.md). SW v610.

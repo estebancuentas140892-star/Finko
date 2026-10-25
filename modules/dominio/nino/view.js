@@ -47,13 +47,26 @@ export const FRASCO_INFO = {
 const _DIA_MES = (iso) => formateadorFecha('es-CO', { day: 'numeric', month: 'long', timeZone: 'UTC' })
   .format(new Date(`${iso}T12:00:00Z`));
 
-/** @param {string} vista */
-export function htmlBarraNino(vista) {
+/**
+ * La barra del niño. En tableta y escritorio es un riel a la izquierda con
+ * su dibujo arriba y "Cambiar" al pie (APR.4b, diseño 34); en el teléfono
+ * esas dos piezas no se ven, porque Inicio y Yo ya las tienen.
+ *
+ * @param {string} vista
+ * @param {import('../../infra/perfiles.js').PerfilNino | null} [perfil]
+ */
+export function htmlBarraNino(vista, perfil = null) {
   const activa = vista === 'meta' ? 'alcancia' : vista;
-  return _BARRA.map(b => `
+  const destinos = _BARRA.map(b => `
     <button class="knav__it" type="button" data-action="nino-vista" data-vista="${b.vista}"${b.vista === activa ? ' aria-current="page"' : ''}>
       ${iconoCategoria(b.icono)}<span>${b.texto}</span>
     </button>`).join('');
+  if (!perfil) return destinos;
+  return `
+    <span class="knav__yo" aria-hidden="true">${_avatar(perfil, 42)}</span>
+    ${destinos}
+    <button class="knav__it knav__it--cambiar" type="button" data-action="perfil-cambiar"
+            aria-label="Cambiar de perfil">${icon('transferencia')}<span>Cambiar</span></button>`;
 }
 
 /** El dibujo del niño en su teja, del color de su dibujo. */
@@ -131,6 +144,8 @@ function _chipUnidad(unidad, numeroLeccion) {
 
 /**
  * Inicio: el saludo de Frai, la lección que sigue, la alcancía y la meta (D9).
+ * Va en dos grupos: en escritorio son dos columnas (APR.4b), lo que sigue a
+ * la izquierda y la alcancía, con sus tres frascos, a la derecha.
  * @param {import('../../infra/perfiles.js').PerfilNino} perfil
  * @param {string} hoyISO
  */
@@ -157,27 +172,34 @@ export function htmlInicioNino(perfil, hoyISO) {
   const primero = ubicar ? _ofertaUbicacion() : leccion;
   const s = saldosFrascos(perfil);
   return `
-    <header class="knino-cabeza">
-      ${_avatar(perfil)}
-      <h1 class="k-h1 knino-cabeza__hola" tabindex="-1">¡Hola, ${esc(perfil.nombre)}!</h1>
-      ${_botonCambiar}
-    </header>
-    <div class="knino-fila">
-      ${htmlFrai('saluda', { tamano: 96 })}
-      <p class="bubble">${saludo}</p>
-    </div>
-    ${primero}
-    <section class="kcard" aria-labelledby="nino-alcancia-inicio">
-      <div class="knino-cabeza">
-        <h2 class="k-h3 knino-titulo-sm" id="nino-alcancia-inicio">${iconoCategoria('i-ahorro')}Mi alcancía</h2>
-        <span class="knino-total">${f(s.total)}</span>
+    <div class="nino-inicio">
+      <div class="nino-inicio__grupo">
+        <header class="knino-cabeza">
+          ${_avatar(perfil)}
+          <h1 class="k-h1 knino-cabeza__hola" tabindex="-1">¡Hola, ${esc(perfil.nombre)}!</h1>
+          ${_botonCambiar}
+        </header>
+        <div class="knino-fila">
+          ${htmlFrai('saluda', { tamano: 96 })}
+          <p class="bubble">${saludo}</p>
+        </div>
+        ${primero}
       </div>
-      <ul class="knino-mini">${FRASCOS.map(fr => `
-        <li data-frasco="${fr}"><span>${iconoCategoria(FRASCO_INFO[fr].icono)}${FRASCO_INFO[fr].nombre}</span><strong>${f(s[fr])}</strong></li>`).join('')}
-      </ul>
-      <button class="kbtn kbtn--soft kbtn--block" type="button" data-action="nino-vista" data-vista="alcancia">Ver mi alcancía</button>
-    </section>
-    ${metaActiva(perfil) ? htmlTarjetaMeta(perfil, hoyISO) : ''}`;
+      <div class="nino-inicio__grupo">
+        <section class="kcard" aria-labelledby="nino-alcancia-inicio">
+          <div class="knino-cabeza">
+            <h2 class="k-h3 knino-titulo-sm" id="nino-alcancia-inicio">${iconoCategoria('i-ahorro')}Mi alcancía</h2>
+            <span class="knino-total">${f(s.total)}</span>
+          </div>
+          <ul class="knino-mini">${FRASCOS.map(fr => `
+            <li data-frasco="${fr}"><span>${iconoCategoria(FRASCO_INFO[fr].icono)}${FRASCO_INFO[fr].nombre}</span><strong>${f(s[fr])}</strong></li>`).join('')}
+          </ul>
+          ${_frascos(perfil)}
+          <button class="kbtn kbtn--soft kbtn--block" type="button" data-action="nino-vista" data-vista="alcancia">Ver mi alcancía</button>
+        </section>
+        ${metaActiva(perfil) ? htmlTarjetaMeta(perfil, hoyISO) : ''}
+      </div>
+    </div>`;
 }
 
 /** Un nodo del camino: hecha (se repasa), la que sigue (Empezar) o después. */

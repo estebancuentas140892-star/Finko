@@ -44,6 +44,22 @@ function _iniciales(nombre) {
   return (partes.length > 1 ? partes[0][0] + partes[1][0] : nombre.slice(0, 2)).toUpperCase();
 }
 
+/**
+ * "Cambiar de perfil" al pie de la barra lateral del adulto (APR.4b, ADR
+ * 092 D2): solo existe cuando hay perfiles de niño, con las iniciales y el
+ * nombre de quien usa Finko ahora.
+ */
+function _pintarAccesoPerfil() {
+  const boton = document.getElementById('sidebar-perfil');
+  if (!boton) return;
+  boton.hidden = !hayNinos();
+  if (boton.hidden) return;
+  const nombre = _nombreAdulto();
+  document.getElementById('sidebar-perfil-av').textContent = _iniciales(nombre);
+  document.getElementById('sidebar-perfil-nombre').textContent = nombre;
+  boton.setAttribute('aria-label', `${nombre}. Cambiar de perfil`);
+}
+
 /** HTML de la elección de perfil. */
 export function htmlQuienUsa() {
   const adulto = _nombreAdulto();
@@ -220,7 +236,9 @@ export function initPerfiles() {
   // dentro de un perfil fantasma: perfilActivo() ya no lo encuentra.
   EventBus.on('state:change', () => {
     if (!perfilActivo() && document.body.classList.contains('kid')) entrarComo(null);
+    _pintarAccesoPerfil();
   });
+  _pintarAccesoPerfil();
 
   if (S.onboarded !== true || !hayNinos()) return false;
   abrirQuienUsa();

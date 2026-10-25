@@ -168,8 +168,3 @@
 
 #### APR.3f - Contenido del niño
 - Estado : escritas las ocho unidades y la ubicación desde los 10 años (2026-10-25), con un test que mide la voz del ADR 093 D6. **Falta la revisión pedagógica registrada**, que es la aceptación. **Modelo**: Equilibrado, Alto.
-
-### Fase 4 - Escritorio
-
-#### APR.4b - Perfil niño en escritorio y tableta
-- Estado : pendiente de APR.3d. **Modelo**: Equilibrado, Medio.

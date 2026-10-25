@@ -69,7 +69,7 @@ function _render() {
   // le borraría al niño lo que va escribiendo.
   if (perfil && _vista === 'meta' && main.querySelector('#form-nino-meta')) return;
   const html = perfil ? _VISTA_HTML[_vista](perfil) : '';
-  if (nav) nav.innerHTML = perfil ? htmlBarraNino(_vista) : '';
+  if (nav) nav.innerHTML = perfil ? htmlBarraNino(_vista, perfil) : '';
   if (html === _ultimo) return;
   _ultimo = html;
   main.innerHTML = html;
