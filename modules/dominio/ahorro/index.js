@@ -493,8 +493,12 @@ function _guardarCompromisoMensual(form) {
  * Calcula gastosFijosMensuales al vuelo desde S.compromisos.
  */
 function _renderAhorroBound() {
-  renderAhorro(_gastosFijosMensuales(), _calcularTasaAhorro(), _construirSugerenciaAporte(), _frecuenciaCompromiso());
-  renderCasaAhorro(_gastosFijosMensuales());
+  const gastosFijos = _gastosFijosMensuales();
+  renderAhorro(gastosFijos, _calcularTasaAhorro(), _construirSugerenciaAporte(), _frecuenciaCompromiso());
+  renderCasaAhorro(gastosFijos);
+  // APR.2a (ADR 092 D6): la tarjeta dejó los huecos de la lección que ofrece
+  // el Fondo; Aprende los llena con este dato al oírlo (ADN 10).
+  EventBus.emit('seccion:pintada', { seccion: 'fondo', datos: { gastosFijos } });
 }
 
 /**

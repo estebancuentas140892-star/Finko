@@ -186,3 +186,36 @@ test.describe('APR.1c - el bloque Inicio en móvil', () => {
   });
 });
 
+test.describe('APR.2a - la sección ofrece su lección', () => {
+  test.beforeEach(async ({ page }) => {
+    await sembrarSiVacio(page, estadoBase({
+      cuentas: [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi', saldo: 3_000_000, activa: true, fechaCreacion: '2026-07-01T00:00:00.000Z' }],
+      compromisos: [{ id: 'f1', tipo: 'fijo', descripcion: 'Arriendo', monto: 1_750_000, frecuencia: 'Mensual', diaPago: 5, activo: true }],
+      ahorro: { fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 2_625_000 }, compromisoMensual: 0, aportes: [] },
+    }));
+  });
+
+  test('Fondo ofrece su lección con tus gastos fijos y, hecha, la baja a "Repasar"', async ({ page }) => {
+    await page.goto('/#fondo');
+    await page.waitForSelector('#sec-fondo.active', { timeout: 10_000 });
+    const arriba = page.locator('#fondo-leccion');
+    await expect(arriba).toBeVisible();
+    await expect(arriba).toContainText('¿Cuánto es suficiente para ti?');
+    await expect(arriba).toContainText('3 meses son $5.250.000 y 6 meses, $10.500.000');
+    await expect(page.locator('#fondo-leccion-pie')).toBeHidden();
+
+    // Abre la lección a pantalla completa; no duplica la pantalla (D6).
+    await arriba.locator('[data-action="leccion-abrir"]').click();
+    await expect(page.locator('#modal-leccion[data-open]')).toHaveCount(1);
+    await page.click('[data-action="leccion-salir"]');
+
+    await parchar(page, {
+      aprende: { hechas: { 'u4-l2': '2026-10-01' }, sabidas: [], semanas: [], enCurso: null },
+    });
+    await page.reload();
+    await page.waitForSelector('#sec-fondo.active', { timeout: 10_000 });
+    await expect(page.locator('#fondo-leccion')).toBeHidden();
+    await expect(page.locator('#fondo-leccion-pie')).toContainText('Repasar');
+  });
+});
+

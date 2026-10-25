@@ -1,6 +1,6 @@
 # Ficha de contexto: Ahorro
 
-> Revisado: 2026-08-21.
+> Revisado: 2026-10-24.
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -62,6 +62,7 @@
 
 **Cambios realizados**:
 
+- 2026-10-24 (**APR.2a**, [ADR 092](../DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D6): `_renderFondoCard()` deja dos huecos ocultos, `#fondo-leccion` bajo la tarjeta y `#fondo-leccion-pie` tras el hábito, y `_renderAhorroBound()` emite `seccion:pintada` con `{ gastosFijos }`. Los llena `aprende` (la lección que ofrece el Fondo, o "Repasar" al pie si ya la hiciste); la tarjeta y sus acciones no cambian (084, 049 D2).
 - 2026-08-21 (**MOV.1 ficha 11**, [ADR 084](../DECISIONS/084-fondo-el-compromiso-del-periodo-en-la-primera-pantalla.md)): `_renderCompromisoDelPeriodo()` nueva emite el medidor (o su pregunta) dentro de `.fondo-card`; `_renderHabitoSection()` baja a dos argumentos y queda como consulta; `cov__pie` suelta `m(montoTotal)`; el `colchon === null` pasa a `.fondo-card__bloqueo` con enlace a `#compromisos`; el selector de `responsive.css` que evita la copia doble desde 1680px se extiende a la tarjeta. Commit `86c72f7`.
 
 - 2026-08-17 (auditoría documental, **INT.1g**): el compromiso mensual se detectó como el primer caso real del carril derecho de escritorio (ADR 059 D7); el código ya existía desde el commit `57b3cdb` (2026-08-12), sin documentar. `_renderCompromisoCarril()` repite `_renderMedidorCompromiso()` en `#fondo-carril`, visible solo desde 1.680px. Verificado en navegador. Detalle en [`escritorio.md`](escritorio.md), dueño de la iniciativa. Ver CHANGELOG.

@@ -1175,6 +1175,17 @@ describe('renderAhorro() - tarjeta del fondo (DIS.16)', () => {
     S.ahorro = { fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 1_800_000 }, aportes: [], compromisoMensual: 0 };
   });
 
+  // APR.2a (ADR 092 D6): la tarjeta deja dos huecos para la lección que
+  // ofrece el Fondo, vacíos y ocultos; los llena Aprende al oír el aviso.
+  it('deja el hueco de la lección bajo la tarjeta y el de "Repasar" al pie', () => {
+    renderAhorro(1_000_000, null, null);
+    const arriba = document.getElementById('fondo-leccion');
+    const pie = document.getElementById('fondo-leccion-pie');
+    expect(arriba.hidden && pie.hidden).toBe(true);
+    expect(arriba.previousElementSibling.classList.contains('fondo-card')).toBe(true);
+    expect(pie.previousElementSibling.classList.contains('ahorro-habito')).toBe(true);
+  });
+
   it('el dato protagonista es el nivel alcanzado, no el monto', () => {
     renderAhorro(1_000_000, null, null);
     expect(document.querySelector('.fondo-card__kicker').textContent).toContain('Ya tienes');

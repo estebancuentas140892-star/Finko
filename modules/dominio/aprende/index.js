@@ -24,11 +24,12 @@ import {
   crearSesion, pasoActual, responderElegir, clasificarTarjeta, seguirClasificando,
   cambiarControl, moverItem, comprobarOrden, avanzar, pasoParaRetomar,
   registrarLeccionHecha, unidadTerminada, siguientePaso, registrarSemana,
+  ofertaDeSeccion, OFERTAS_DE_SECCION,
 } from './logic.js';
 import { modeloAplica } from './aplica.js';
 import { UVT, TOPES_RENTA_UVT, ANIO_VIGENTE } from '../../core/constants.js';
 import { f } from '../../infra/utils.js';
-import { renderRuta, htmlLeccion, htmlResultadoControl, htmlSiguientePaso } from './view.js';
+import { renderRuta, htmlLeccion, htmlResultadoControl, htmlSiguientePaso, htmlOfertaLeccion } from './view.js';
 
 /** Cargadores del contenido por unidad: un módulo por unidad, bajo demanda. */
 const _CONTENIDO = {
@@ -94,9 +95,35 @@ function _renderSiguientePaso() {
   el.hidden = html === '';
 }
 
+/** Último dato que cada sección mandó al pintarse, para repintar su oferta sola. */
+const _datosDeSeccion = {};
+
+/**
+ * Pinta la lección que ofrece una sección (D6) en uno de sus dos huecos:
+ * bajo el bloque protagonista mientras no la hayas hecho, al pie como
+ * "Repasar" después (R65). Los huecos y el dato los pone la sección dueña,
+ * que avisa con `seccion:pintada`: ningún dominio importa al otro (ADN 10).
+ */
+function _pintarOferta(seccion) {
+  const arriba = document.getElementById(`${seccion}-leccion`);
+  const pie = document.getElementById(`${seccion}-leccion-pie`);
+  if (!arriba && !pie) return;
+  const oferta = ofertaDeSeccion(seccion, S.aprende);
+  // Con el saldo oculto la fila no muestra cifras (las del fondo tampoco).
+  const datos = S.config?.ocultarSaldo === true ? {} : _datosDeSeccion[seccion];
+  const html = htmlOfertaLeccion(seccion, oferta, datos);
+  const destino = oferta?.repasar ? pie : arriba;
+  for (const el of [arriba, pie]) {
+    if (!el) continue;
+    el.innerHTML = el === destino ? html : '';
+    el.hidden = el !== destino || html === '';
+  }
+}
+
 function _renderTodo() {
   renderSmart(_renderRuta, 'aprende');
   renderSmart(_renderSiguientePaso, 'dash');
+  for (const seccion of Object.keys(OFERTAS_DE_SECCION)) renderSmart(() => _pintarOferta(seccion), seccion);
 }
 
 /**
@@ -397,6 +424,13 @@ export function initAprende() {
   EventBus.on('state:change', (datos) => {
     _alRegistrar(datos);
     programarRender(_renderTodo);
+  });
+  // La sección que ofrece una lección se repinta entera y vacía sus huecos:
+  // avisa al terminar y aquí se llenan en el mismo tick (D6).
+  EventBus.on('seccion:pintada', ({ seccion, datos } = {}) => {
+    if (typeof seccion !== 'string') return;
+    _datosDeSeccion[seccion] = datos ?? {};
+    _pintarOferta(seccion);
   });
   registrarRender(_renderTodo);
   _renderTodo();

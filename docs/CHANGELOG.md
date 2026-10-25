@@ -12,6 +12,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(aprende): APR.2a, la sección ofrece su lección · 2026-10-24
+
+[ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D6; fichas [`contexto/aprende.md`](contexto/aprende.md) y [`contexto/ahorro.md`](contexto/ahorro.md). SW v602.
+
+- **Fondo ofrece "¿Cuánto es suficiente para ti?"** en una fila bajo la tarjeta y sus acciones, que no cambian (ADR 084 y 049 D2), con un dato tuyo: "Con tus gastos fijos, 3 meses son $X y 6 meses, $Y". Sin gastos fijos, o con el saldo oculto, la fila no muestra cifras.
+- **Hecha la lección, la fila baja al pie** como una fila corta de "Repasar" y deja libre la primera pantalla (R65).
+- **Sin import cruzado (ADN 10)**: Fondo deja dos huecos en su tarjeta y avisa con el evento nuevo `seccion:pintada`; Aprende los llena. Sumar otra sección es una entrada en `OFERTAS_DE_SECCION` y sus dos huecos.
+
 ### feat(aprende): APR.2c, las unidades 7, 8 y 9 · 2026-10-24
 
 [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D8; ficha [`contexto/aprende.md`](contexto/aprende.md). Cierra el contenido de la ruta del adulto. SW v601.

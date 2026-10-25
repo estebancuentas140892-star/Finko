@@ -15,13 +15,13 @@
   --apr-dom:      var(--fk-accent);
   --apr-dom-text: var(--fk-text-accent);
 }
-:is(.aprende-unidad, .aprende-fila, .leccion-overlay)[data-dom="tesoreria"]   { --apr-dom: var(--fk-dom-tesoreria);   --apr-dom-text: var(--fk-dom-tesoreria-text); }
-:is(.aprende-unidad, .aprende-fila, .leccion-overlay)[data-dom="presupuesto"] { --apr-dom: var(--fk-dom-presupuesto); --apr-dom-text: var(--fk-dom-presupuesto-text); }
-:is(.aprende-unidad, .aprende-fila, .leccion-overlay)[data-dom="ahorro"]      { --apr-dom: var(--fk-dom-ahorro);      --apr-dom-text: var(--fk-dom-ahorro-text); }
-:is(.aprende-unidad, .aprende-fila, .leccion-overlay)[data-dom="metas"]       { --apr-dom: var(--fk-dom-metas);       --apr-dom-text: var(--fk-dom-metas-text); }
-:is(.aprende-unidad, .aprende-fila, .leccion-overlay)[data-dom="compromisos"] { --apr-dom: var(--fk-dom-compromisos); --apr-dom-text: var(--fk-dom-compromisos-text); }
-:is(.aprende-unidad, .aprende-fila, .leccion-overlay)[data-dom="inversion"]   { --apr-dom: var(--fk-dom-inversion);   --apr-dom-text: var(--fk-dom-inversion-text); }
-:is(.aprende-unidad, .aprende-fila, .leccion-overlay)[data-dom="analisis"]    { --apr-dom: var(--fk-dom-analisis);    --apr-dom-text: var(--fk-dom-analisis-text); }
+:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta)[data-dom="tesoreria"]   { --apr-dom: var(--fk-dom-tesoreria);   --apr-dom-text: var(--fk-dom-tesoreria-text); }
+:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta)[data-dom="presupuesto"] { --apr-dom: var(--fk-dom-presupuesto); --apr-dom-text: var(--fk-dom-presupuesto-text); }
+:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta)[data-dom="ahorro"]      { --apr-dom: var(--fk-dom-ahorro);      --apr-dom-text: var(--fk-dom-ahorro-text); }
+:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta)[data-dom="metas"]       { --apr-dom: var(--fk-dom-metas);       --apr-dom-text: var(--fk-dom-metas-text); }
+:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta)[data-dom="compromisos"] { --apr-dom: var(--fk-dom-compromisos); --apr-dom-text: var(--fk-dom-compromisos-text); }
+:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta)[data-dom="inversion"]   { --apr-dom: var(--fk-dom-inversion);   --apr-dom-text: var(--fk-dom-inversion-text); }
+:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta)[data-dom="analisis"]    { --apr-dom: var(--fk-dom-analisis);    --apr-dom-text: var(--fk-dom-analisis-text); }
 
 /* ── RUTA ────────────────────────────────────────────────────── */
 .aprende-ruta {
@@ -674,6 +674,54 @@
 .siguiente-paso__acciones { display: flex; flex-wrap: wrap; gap: var(--fk-space-2); margin-top: auto; }
 .siguiente-paso__cta { margin-top: auto; align-self: flex-start; min-height: 2.75rem; }
 .siguiente-paso__acciones .siguiente-paso__cta { margin-top: 0; }
+
+/* ── LA SECCIÓN OFRECE SU LECCIÓN (APR.2a, ADR 092 D6) ───────────
+   Una fila bajo el bloque protagonista, en el color de la sección. Hecha la
+   lección, baja al pie como una fila corta de "Repasar" (R65). */
+.leccion-oferta-hueco { margin-top: var(--fk-space-4); }
+.leccion-oferta {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fk-space-3);
+  width: 100%;
+  padding: var(--fk-space-4);
+  border-radius: var(--fk-radius-lg);
+  border: 1px solid color-mix(in srgb, var(--apr-dom) 30%, transparent);
+  background: var(--fk-bg-surface);
+  color: var(--fk-text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.leccion-oferta:hover { border-color: color-mix(in srgb, var(--apr-dom) 55%, transparent); }
+.leccion-oferta__teja {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--fk-radius-md);
+  background: color-mix(in srgb, var(--apr-dom) 14%, transparent);
+  color: var(--apr-dom-text);
+}
+.leccion-oferta__cuerpo { display: flex; flex-direction: column; gap: var(--fk-space-1); flex: 1; min-width: 0; }
+.leccion-oferta__eyebrow {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--apr-dom-text);
+}
+.leccion-oferta__titulo { font-size: var(--fk-text-base); font-weight: var(--fk-font-bold); }
+.leccion-oferta__texto { font-size: var(--fk-text-sm); color: var(--fk-text-secondary); line-height: 1.45; }
+.leccion-oferta__chevron { flex-shrink: 0; align-self: center; color: var(--fk-text-muted); }
+.leccion-oferta--repasar {
+  align-items: center;
+  padding: var(--fk-space-3) var(--fk-space-4);
+  border-color: var(--fk-border-subtle);
+}
+.leccion-oferta--repasar .leccion-oferta__eyebrow { color: var(--fk-text-muted); }
+.leccion-oferta--repasar .leccion-oferta__titulo { font-weight: var(--fk-font-semibold); }
 
 /* ── TU PROGRESO (APR.1d, ADR 092 D4) ────────────────────────────
    Un solo sistema: el nivel arriba, después lo que sabes, lo que haces y

@@ -260,7 +260,7 @@ EventBus.emit('state:change', { section: 'gastos' });
 EventBus.on('state:change', ({ section }) => renderSmart(renderGastos, section));
 ```
 
-Los eventos del sistema (verificados el 2026-08-13; `hormiga:limite` se sumó el 2026-10-24):
+Los eventos del sistema (verificados el 2026-10-24):
 
 | Evento | Quién lo emite | Quién lo escucha |
 |---|---|---|
@@ -276,8 +276,9 @@ Los eventos del sistema (verificados el 2026-08-13; `hormiga:limite` se sumó el
 | `bloqueo:abierto` | `ui/bloqueo-acceso.js` cuando el gate de PIN se resuelve y libera la app | `bootstrap.js` (encadena el gate legal detrás del candado) |
 | `legal:aceptado` | `ui/aceptacion-legal.js` al aceptar la versión vigente de los documentos | `bootstrap.js` (cierra el gate y sigue el arranque) |
 | `hormiga:limite` | `aprende/index.js` (Aplícalo, APR.1b) | `presupuesto/index.js` (pone el límite de gastos pequeños) |
+| `seccion:pintada` | `ahorro/index.js` (Fondo, APR.2a) | `aprende/index.js` (llena la oferta de lección) |
 
-`distribucion:aplicar` es el ejemplo canónico de orquestación cross-dominio sin acoplar dominios entre sí: `tesoreria` no importa `metas` ni `apartados`, solo emite un evento con la lista de `items`; cada dominio destino decide si le corresponde algo y lo aplica.
+`distribucion:aplicar` es el ejemplo canónico de orquestación cross-dominio sin acoplar dominios: `tesoreria` no importa `metas` ni `apartados`, solo emite un evento con la lista de `items`; cada dominio destino decide si le corresponde algo y lo aplica.
 
 ---
 

@@ -161,9 +161,6 @@
 
 ### Fase 2 - Adulto completo
 
-#### APR.2a - La sección ofrece su lección
-- Estado : pendiente de APR.1b. **Objetivo**: fila bajo el bloque protagonista con un dato real, máximo una por sección, que baja al pie como "Repasar" al terminar la lección (R65). Primer caso: Fondo, sin tocar el 049 D2 ni el 084 (ADR 092 D6). **Modelo**: Equilibrado, Medio.
-
 #### APR.2b - Prueba de ubicación
 - Estado : pendiente de APR.1d. **Objetivo**: preguntas con "Todavía no lo sé", unidades acertadas como "Ya lo sabes" que cuentan en Tu progreso, resultado con "Prefiero empezar desde la unidad 1" (ADR 092 D9). **Modelo**: Equilibrado, Alto.
 

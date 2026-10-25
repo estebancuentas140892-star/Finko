@@ -117,6 +117,34 @@ export function siguienteLeccion(aprende) {
   return actual.unidad.lecciones.find(l => leccionDisponible(l) && !hechas[l.id]) ?? null;
 }
 
+// ── LA SECCIÓN OFRECE SU LECCIÓN (D6) ────────────────────────────
+
+/**
+ * La lección que ofrece cada sección, como máximo una (D6). La clave es el
+ * hash de la sección; la sección dueña deja los huecos donde va la fila.
+ */
+export const OFERTAS_DE_SECCION = {
+  fondo: { leccionId: 'u4-l2', eyebrow: 'Entiende tu fondo' },
+};
+
+/**
+ * La oferta de una sección: su lección, la unidad y si ya la hiciste, en
+ * cuyo caso la fila baja al pie como "Repasar" (D6, R65). `null` si la
+ * sección no ofrece ninguna o su lección no está escrita.
+ *
+ * @param {string} seccion
+ * @param {unknown} aprende
+ * @returns {{ leccion: LeccionMeta, unidad: Unidad, eyebrow: string, repasar: boolean } | null}
+ */
+export function ofertaDeSeccion(seccion, aprende) {
+  if (!Object.hasOwn(OFERTAS_DE_SECCION, seccion)) return null;
+  const { leccionId, eyebrow } = OFERTAS_DE_SECCION[seccion];
+  const leccion = metaLeccion(leccionId);
+  if (!leccion || !leccionDisponible(leccion)) return null;
+  const { hechas } = normalizarAprende(aprende);
+  return { leccion, unidad: unidadDeLeccion(leccionId), eyebrow, repasar: Boolean(hechas[leccionId]) };
+}
+
 // ── SEMANAS ACTIVAS (D3) ─────────────────────────────────────────
 
 

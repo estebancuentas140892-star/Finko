@@ -22,8 +22,9 @@ import {
   crearSesion, pasoActual, numeroDePaso, responderElegir, clasificarTarjeta,
   seguirClasificando, cambiarControl, moverItem, comprobarOrden, avanzar,
   pasoParaRetomar, mezclarSinAcertar, CALCULOS, RESULTADOS, limiteSugerido, aplicaHormiga,
+  ofertaDeSeccion,
 } from '../../modules/dominio/aprende/logic.js';
-import { htmlRuta, htmlLeccion, htmlSiguientePaso } from '../../modules/dominio/aprende/view.js';
+import { htmlRuta, htmlLeccion, htmlSiguientePaso, htmlOfertaLeccion } from '../../modules/dominio/aprende/view.js';
 import u1 from '../../modules/dominio/aprende/lecciones/u1.js';
 import u2 from '../../modules/dominio/aprende/lecciones/u2.js';
 import u5 from '../../modules/dominio/aprende/lecciones/u5.js';
@@ -679,5 +680,45 @@ describe('vista', () => {
     expect(html).toContain('href="#il-insignia"');
     expect(html).toContain('Terminaste la unidad 3');
     expect(html).not.toContain('leccion-lista__check');
+  });
+});
+
+describe('la sección ofrece su lección (APR.2a, D6)', () => {
+  const hecha = { hechas: { 'u4-l2': '2026-10-24' } };
+
+  it('el Fondo ofrece "¿Cuánto es suficiente para ti?" y, hecha, baja a "Repasar"', () => {
+    const oferta = ofertaDeSeccion('fondo', undefined);
+    expect(oferta.leccion.id).toBe('u4-l2');
+    expect(oferta.unidad.id).toBe('u4');
+    expect(oferta.repasar).toBe(false);
+    expect(ofertaDeSeccion('fondo', hecha).repasar).toBe(true);
+  });
+
+  it('una sección sin oferta no ofrece nada', () => {
+    expect(ofertaDeSeccion('gast', undefined)).toBeNull();
+    expect(ofertaDeSeccion('constructor', undefined)).toBeNull();
+    expect(htmlOfertaLeccion('gast', null)).toBe('');
+  });
+
+  it('la fila lleva un dato real del usuario y abre la lección', () => {
+    const html = htmlOfertaLeccion('fondo', ofertaDeSeccion('fondo', undefined), { gastosFijos: 1_750_000 });
+    expect(html).toContain('Entiende tu fondo · 3 min');
+    expect(html).toContain('¿Cuánto es suficiente para ti?');
+    expect(html).toContain('Con tus gastos fijos, 3 meses son $5.250.000 y 6 meses, $10.500.000.');
+    expect(html).toMatch(/data-action="leccion-abrir"\s+data-id="u4-l2"/);
+    expect(html).toContain('data-dom="ahorro"');
+  });
+
+  it('sin gastos fijos la fila no inventa cifras', () => {
+    const html = htmlOfertaLeccion('fondo', ofertaDeSeccion('fondo', undefined), {});
+    expect(html).toContain('Te ayudamos a elegir cuántos meses de gastos guardar.');
+    expect(html).not.toContain('$');
+  });
+
+  it('hecha, la fila es corta: dice "Repasar" y suelta el dato', () => {
+    const html = htmlOfertaLeccion('fondo', ofertaDeSeccion('fondo', hecha), { gastosFijos: 1_750_000 });
+    expect(html).toContain('leccion-oferta--repasar');
+    expect(html).toContain('Repasar · 3 min');
+    expect(html).not.toContain('3 meses son');
   });
 });

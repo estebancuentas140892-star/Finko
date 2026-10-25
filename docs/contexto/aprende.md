@@ -34,6 +34,7 @@
 | "Poner un límite de $X": evento `hormiga:limite` y navegación a Límites | `modules/dominio/aprende/index.js` | `_ponerLimiteHormiga()` | ~275 |
 | Desplegar en la ruta una unidad que no es la actual | `modules/dominio/aprende/index.js` | `_alternarUnidad()`, `data-action="aprende-unidad"` | ~285 |
 | Celebración de unidad (insignia `il-insignia`, `badgeIn`) | `modules/dominio/aprende/view.js` | `_cabezaCierre()` | ~400 |
+| La sección ofrece su lección (D6): qué lección y con qué dato; los huecos los pone la sección | `modules/dominio/aprende/logic.js` / `view.js` / `index.js` | `OFERTAS_DE_SECCION`, `ofertaDeSeccion()`, `htmlOfertaLeccion()`, `_pintarOferta()` | |
 | "Tu siguiente paso" en Inicio (D5): una lección o la acción pendiente | `modules/dominio/aprende/logic.js` / `view.js` | `siguientePaso()`, `htmlSiguientePaso()` | |
 | Semana activa al registrar (D3) | `modules/dominio/aprende/index.js` | `_alRegistrar()`, `registrarSemana()` | |
 | Catálogo, unidades sabidas, semanas activas, posición en la ruta (lo lee también `logros`) | `modules/infra/ruta-aprende.js` | `UNIDADES`, `contarUnidadesSabidas()`, `contarSemanasActivas()`, `posicionEnRuta()` | |
@@ -44,7 +45,7 @@
 
 **Recursos**: `c-birrete` (ícono de la sección), `i-check`, `i-arrow-left`, `i-arrow-right`, `i-chevron-up`, `i-chevron-down` (nuevos en `assets/svg/iconos/utilitarios/`). CSS: `styles/components/aprende.css` (`.aprende-*`, `.leccion*`, filas de animación `stepIn`, `feedbackIn`, `cardOutDer`/`cardOutIzq`, `checkIn`); geometría del overlay en `styles/modals.css` (bloque "LECCIÓN A PANTALLA COMPLETA"). Color de unidad por `data-dom` → `--apr-dom`/`--apr-dom-text`. Estado: `S.aprende` (schema v45).
 
-**Dependencias y relaciones**: escucha `state:change` (repinta la ruta con `programarRender`) y `hashchange`. Emite `hormiga:limite` (`{ monto }`), que atiende `presupuesto` (dueño del límite, ficha [`limites.md`](limites.md)). El tope de gasto pequeño lo lee de `S.config.hormiga` con `topeHormiga()`. Los botones del Aplícalo usan acciones globales de `ui/actions.js`: `ir-a-seccion` (cierra y navega) y `registrar-abrir` (cierra y abre `nuevo-gasto`), así no importa dominios destino. Lee `S.gastos` y `S.categoriasPersonalizadas`; `iconoDeCategoriaGasto()` de `core/constants.js`.
+**Dependencias y relaciones**: escucha `state:change` (repinta la ruta con `programarRender`) y `hashchange`. Escucha `seccion:pintada` (`{ seccion, datos }`, lo emite `ahorro` al pintar el Fondo) y llena `#fondo-leccion` o `#fondo-leccion-pie`. Emite `hormiga:limite` (`{ monto }`), que atiende `presupuesto` (dueño del límite, ficha [`limites.md`](limites.md)). El tope de gasto pequeño lo lee de `S.config.hormiga` con `topeHormiga()`. Los botones del Aplícalo usan acciones globales de `ui/actions.js`: `ir-a-seccion` (cierra y navega) y `registrar-abrir` (cierra y abre `nuevo-gasto`), así no importa dominios destino. Lee `S.gastos` y `S.categoriasPersonalizadas`; `iconoDeCategoriaGasto()` de `core/constants.js`.
 
 **Riesgos**:
 
@@ -60,6 +61,7 @@
 
 **Cambios realizados**:
 
+- 2026-10-24 (APR.2a): la sección ofrece su lección; primer caso Fondo, con `seccion:pintada`.
 - 2026-10-24 (APR.2c, unidades 7, 8 y 9): Crédito e intereses; Invertir; Impuestos con marcadores legales. Ruta completa.
 - 2026-10-24 (APR.2c, unidades 5 y 6): Metas y reservas; Deudas y gota a gota.
 - 2026-10-24 (APR.2c, unidades 1 y 2): Tu dinero hoy y Repartir tu ingreso; la ruta empieza en la unidad 1.

@@ -512,6 +512,56 @@ export function htmlLeccion(sesion, leccion, ctx) {
     </div>`;
 }
 
+// ── LA SECCIÓN OFRECE SU LECCIÓN (D6) ────────────────────────────
+
+/**
+ * El dato real de la fila, por sección, con lo que la sección mandó al
+ * pintarse. Sin dato (o con el saldo oculto), una línea sin cifras.
+ */
+const _DATO_OFERTA = {
+  fondo: ({ gastosFijos } = {}) => gastosFijos > 0
+    ? `Con tus gastos fijos, 3 meses son ${f(gastosFijos * 3)} y 6 meses, ${f(gastosFijos * 6)}. Te ayudamos a elegir.`
+    : 'Te ayudamos a elegir cuántos meses de gastos guardar.',
+};
+
+/**
+ * La fila con la que una sección ofrece su lección (D6). Antes de hacerla
+ * lleva un dato real del usuario; hecha, es una fila corta de "Repasar" que
+ * la sección pone al pie (R65). Abre la lección, no duplica la pantalla.
+ *
+ * @param {string} seccion
+ * @param {ReturnType<typeof import('./logic.js').ofertaDeSeccion>} oferta
+ * @param {Record<string, number>} [datos]
+ * @returns {string} HTML; `''` si no hay oferta.
+ */
+export function htmlOfertaLeccion(seccion, oferta, datos = {}) {
+  if (!oferta) return '';
+  const { leccion, unidad, eyebrow, repasar } = oferta;
+  if (repasar) {
+    return `
+      <button class="leccion-oferta leccion-oferta--repasar" type="button" data-dom="${unidad.dominio}"
+              data-action="leccion-abrir" data-id="${esc(leccion.id)}">
+        <span class="leccion-oferta__cuerpo">
+          <span class="leccion-oferta__eyebrow">Repasar · ${leccion.minutos} min</span>
+          <span class="leccion-oferta__titulo">${esc(leccion.titulo)}</span>
+        </span>
+        ${icon('chevron-right', 'icon leccion-oferta__chevron')}
+      </button>`;
+  }
+  const dato = Object.hasOwn(_DATO_OFERTA, seccion) ? _DATO_OFERTA[seccion](datos) : '';
+  return `
+    <button class="leccion-oferta" type="button" data-dom="${unidad.dominio}"
+            data-action="leccion-abrir" data-id="${esc(leccion.id)}">
+      <span class="leccion-oferta__teja" aria-hidden="true">${icon('lightbulb')}</span>
+      <span class="leccion-oferta__cuerpo">
+        <span class="leccion-oferta__eyebrow">${esc(eyebrow)} · ${leccion.minutos} min</span>
+        <span class="leccion-oferta__titulo">${esc(leccion.titulo)}</span>
+        ${dato ? `<span class="leccion-oferta__texto">${esc(dato)}</span>` : ''}
+      </span>
+      ${icon('chevron-right', 'icon leccion-oferta__chevron')}
+    </button>`;
+}
+
 // ── TU SIGUIENTE PASO (D5) ───────────────────────────────────────
 
 /** "Termina en X, con tus datos.", sin repetir el "con tus" que ya traiga X. */
