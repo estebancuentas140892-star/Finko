@@ -675,6 +675,22 @@
 }
 .bloque-tabs::-webkit-scrollbar { display: none; }
 
+/* Bloque Inicio (APR.1c, ADR 092 D1): cada pestaña lleva su estado debajo
+   del nombre ("1 aviso", "3 min", el nivel), así los tres caben a 390px sin
+   desplazarse y el dato se lee antes de entrar (R81). */
+.bloque-tabs__tab--estado {
+  flex-direction: column;
+  gap: 0;
+  padding-block: var(--fk-space-1);
+  line-height: 1.2;
+}
+.bloque-tabs__estado {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-medium);
+  color: var(--fk-text-muted);
+}
+.bloque-tabs__estado:empty { display: none; }
+
 .bloque-tabs__tab {
   flex: 1 1 auto;
   display: inline-flex;

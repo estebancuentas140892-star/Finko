@@ -35,6 +35,14 @@ const MAS_SECTIONS = new Set([
 const GRUPO_GASTOS = new Set(['gast', 'compromisos', 'presupuesto']);
 
 /**
+ * Bloque Inicio (APR.1c, ADR 092 D1): la portada Hoy (`dash`) y sus lentes
+ * Aprende y Tu progreso. Mismo trato que el bloque Gastos: la entrada de la
+ * barra inferior se resalta en las tres, con la clase de bloque y no
+ * `active`, porque en escritorio esas lentes tienen filas propias.
+ */
+const GRUPO_INICIO = new Set(['dash', 'aprende', 'progreso']);
+
+/**
  * Grupo Ahorro: la casa (`ahorro`) y sus 4 hijas. Dos usos, uno por
  * plataforma:
  *
@@ -188,6 +196,10 @@ export function markActiveNav(hash) {
   const gastosBtn = document.querySelector('.nav-item[data-section="gast"]');
   if (gastosBtn) {
     gastosBtn.classList.toggle('nav-item--bloque-activo', GRUPO_GASTOS.has(hash) && hash !== 'gast');
+  }
+  const inicioBtn = document.querySelector('.nav-item[data-section="dash"]');
+  if (inicioBtn) {
+    inicioBtn.classList.toggle('nav-item--bloque-activo', GRUPO_INICIO.has(hash) && hash !== 'dash');
   }
 
   // La entrada de Ahorro en la barra inferior (AH.7a) se resalta en la casa y

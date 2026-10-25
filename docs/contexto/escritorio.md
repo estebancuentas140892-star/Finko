@@ -70,6 +70,7 @@
 
 **Cambios realizados**:
 
+- 2026-10-24 (APR.1a y APR.1d): filas "Aprende" en "Día a día" y "Tu progreso" en "Cómo voy"; filas de 34px con alto ≤ 860px para seguir cabiendo a 1280x799.
 - 2026-08-17 (auditoría documental, INT.1g): el código de la octava rebanada ya existía desde el commit `57b3cdb` (2026-08-12), sin mensaje de commit propio y sin actualizar el tablero. Verificado en el navegador esta sesión: a 1.680px+ el carril muestra el compromiso real y la copia del panel principal se oculta; debajo, el carril se oculta y la copia vuelve. Sin test automatizado propio (hueco de cobertura anotado, no bloqueo). Ver CHANGELOG.
 - 2026-08-06 (INT.1h): cuatro atajos en `_handleKeydown()` (`N` abre Registrar, `G` + letra navega con un mapa fijo de 11 secciones, `?` abre `#modal-atajos`, `Esc` sin cambios). Tres guardas cancelan el atajo antes de actuar (campo de texto o `contenteditable` con foco, modal abierto, tecla modificadora): es la mitigación de P8. Interruptor en Ajustes por WCAG 2.1.4 (`S.config.atajosTeclado`, default `true`, schema v35). Commit `f5fcda7`.
 - 2026-08-06 (INT.1e): `#topbar-primario` copia texto, `aria-label` y `data-action`/`data-modal` del único `.btn-primary` del encabezado activo (`_syncPrimarioTopbar()`), sin mapa nuevo por sección; se resincroniza al navegar y ante `state:change`. Cubre 8 de las 13 secciones. Commit `63f95f5`.

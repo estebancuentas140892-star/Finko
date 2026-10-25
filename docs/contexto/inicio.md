@@ -1,6 +1,6 @@
 # Ficha de contexto: Inicio (dashboard)
 
-> Revisado: 2026-10-17 (HF.0d).
+> Revisado: 2026-10-24.
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -159,6 +159,7 @@
 
 **Cambios realizados** (una línea por hito; el detalle vive en el [CHANGELOG](../CHANGELOG.md)):
 
+- 2026-10-24 (APR.1c, [ADR 092](../DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D1 y D5): Inicio es bloque de tres lentes en móvil (`#tabs-dash`, `ui/bloque-inicio.js`); la celda de la tarjeta "Tu progreso" la ocupa `#panel-siguiente-paso` (la llena `aprende/`). La fila de la tabla de anclas de LG.2d queda histórica.
 - 2026-10-17 (**HF.0d**, BUG-031): lo pagado antes de vencer ya no sale y las fechas siguen la frecuencia. Ver CHANGELOG.
 - 2026-08-20 (**DSK.1c**, [ADR 070](../DECISIONS/070-inicio-centro-de-atencion-en-escritorio.md) D7, cuarta y última rebanada, cierra DSK.1): "Atención hoy" pasa de un mosaico 2x2 dependiente del estado a un reparto fijo (avisos `span 4`, obligaciones `span 8`, `span 12` sin avisos), vía dos envoltorios `display: contents` (`.atencion-hoy__avisos`/`.atencion-hoy__obligaciones`). `#panel-avisos` se mueve en el DOM junto a los otros dos avisos, corrigiendo una inconsistencia que también alcanzaba a móvil.
 - 2026-08-20 (**DSK.1d**, [ADR 070](../DECISIONS/070-inicio-centro-de-atencion-en-escritorio.md) D8 y D9, tercera rebanada): "Pendientes del mes" y "Próximas prioridades" se fusionan en "Lo que tienes que pagar"; la celda deja de ser `--flat` y pasa a ser la tarjeta (`_renderObligaciones()`, `dashboard.js`).

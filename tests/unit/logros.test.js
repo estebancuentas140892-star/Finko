@@ -13,9 +13,9 @@ import {
   FAMILIAS, agruparVitrina, conteoVitrina, nivelUsuario, NIVELES_USUARIO,
   mesCompleto, rachaMesesCompletos, deudasSaldadas,
   gastoHormigaMes, hormigaALaRaya,
-  UMBRAL_GASTO_HORMIGA, UMBRAL_HORMIGA_RELEVANTE,
+  UMBRAL_GASTO_HORMIGA, UMBRAL_HORMIGA_RELEVANTE, resumenProgreso,
 } from '../../modules/dominio/logros/logic.js';
-import { renderProgresoAnalisis, renderTarjetaProgresoInicio } from '../../modules/dominio/logros/view.js';
+import { renderProgresoSeccion } from '../../modules/dominio/logros/view.js';
 import { S, createInitialState } from '../../modules/core/state.js';
 
 // Items visibles de la vitrina: los singles pasan tal cual y cada familia
@@ -486,118 +486,112 @@ describe('estadoLogros()', () => {
   });
 });
 
-// ── renderProgresoAnalisis() (apartado de Análisis, happy-dom) ────
+// ── renderProgresoSeccion() (lente "Tu progreso", APR.1d, happy-dom) ────
+// Reemplaza al apartado de Análisis y a la tarjeta compacta de Inicio que se
+// retiraron (ADR 092 D4): sus pruebas se trasladan a la superficie nueva con
+// la misma intención. Las dos que no tienen sujeto (el <details> abierto entre
+// renders y la tarjeta oculta sin logros) se reemplazan por su equivalente.
 
-describe('renderProgresoAnalisis()', () => {
+describe('renderProgresoSeccion()', () => {
   beforeEach(() => {
-    document.body.innerHTML = '<div id="panel-analisis-progreso"></div>';
+    document.body.innerHTML = '<div id="panel-progreso"></div>';
     const base = createInitialState();
     for (const k of Object.keys(base)) S[k] = base[k];
   });
 
-  test('renderiza el apartado con el nivel de usuario y los items agrupados', () => {
+  const panel = () => document.getElementById('panel-progreso');
+
+  test('pinta el nivel y la vitrina agrupada en "Lo que haces"', () => {
     S.logros = ['primer-paso', 'primer-gasto'];
-    renderProgresoAnalisis();
-    const panel = document.getElementById('panel-analisis-progreso');
-    expect(panel.textContent).toContain('Tu progreso');
-    expect(panel.textContent).toContain(`${2} de ${N_ITEMS_VITRINA} logros`);
+    renderProgresoSeccion();
+    expect(panel().textContent).toContain('Tu nivel');
+    expect(panel().textContent).toContain(`${2} de ${N_ITEMS_VITRINA} logros`);
     // LG.2b: cada familia colapsa a una tarjeta; singles pasan tal cual.
-    expect(panel.querySelectorAll('.logro-item')).toHaveLength(N_ITEMS_VITRINA);
-    // primer-paso (single) + familia registro (tiene un nivel ganado) = 2 activas.
-    expect(panel.querySelectorAll('.logro-item--on')).toHaveLength(2);
+    expect(panel().querySelectorAll('.logro-item')).toHaveLength(N_ITEMS_VITRINA);
+    expect(panel().querySelectorAll('.logro-item--on')).toHaveLength(2);
   });
 
   test('los desbloqueados muestran desc y los pendientes muestran hint', () => {
     S.logros = ['primer-gasto'];
-    renderProgresoAnalisis();
-    const panel = document.getElementById('panel-analisis-progreso');
-    expect(panel.textContent).toContain('Registraste tu primer gasto.');
-    expect(panel.textContent).toContain('Registra 10 gastos: el hábito es lo que cuenta.');
+    renderProgresoSeccion();
+    expect(panel().textContent).toContain('Registraste tu primer gasto.');
+    expect(panel().textContent).toContain('Registra 10 gastos: el hábito es lo que cuenta.');
   });
 
   test('la familia con un nivel ganado muestra el chip de nivel y el siguiente objetivo', () => {
     S.logros = ['primer-gasto'];
-    renderProgresoAnalisis();
-    const panel = document.getElementById('panel-analisis-progreso');
-    expect(panel.textContent).toContain('Constancia de registro');
-    expect(panel.textContent).toContain('Nivel 1 de 6');
-    expect(panel.textContent).toContain('Siguiente:');
+    renderProgresoSeccion();
+    expect(panel().textContent).toContain('Constancia de registro');
+    expect(panel().textContent).toContain('Nivel 1 de 6');
+    expect(panel().textContent).toContain('Siguiente:');
   });
 
   test('los pendientes de conteo muestran barra y texto de progreso', () => {
     S.gastos = Array.from({ length: 4 }, (_, i) => ({ id: String(i) }));
-    renderProgresoAnalisis();
-    const panel = document.getElementById('panel-analisis-progreso');
-    const barras = panel.querySelectorAll('.progress[role="progressbar"]');
+    renderProgresoSeccion();
+    const barras = panel().querySelectorAll('.logro-item .progress[role="progressbar"]');
     expect(barras.length).toBeGreaterThan(0);
-    expect(panel.textContent).toContain('4 de 10');
+    expect(panel().textContent).toContain('4 de 10');
   });
 
-  test('conserva el estado abierto/cerrado entre renders (DIS.10 C11)', () => {
-    S.logros = ['primer-gasto'];
-    renderProgresoAnalisis();
-    const panel = document.getElementById('panel-analisis-progreso');
-    panel.querySelector('.analisis-grupo--progreso').open = true;
-    renderProgresoAnalisis();
-    expect(panel.querySelector('.analisis-grupo--progreso').open).toBe(true);
+  test('las unidades que ya sabes suman pasos al nivel, igual que un logro (ADR 092 D3)', () => {
+    S.logros = ['primer-paso', 'primer-gasto'];
+    S.aprende = { hechas: { 'u3-l1': 'x', 'u3-l2': 'x', 'u3-l3': 'x', 'u3-l4': 'x' }, sabidas: ['u1'], semanas: [], enCurso: null };
+    renderProgresoSeccion();
+    expect(panel().textContent).toContain('Sumas 4 pasos: 2 unidades que ya sabes y 2 logros');
+    expect(panel().textContent).toContain('2 de 9 unidades');
+    expect(resumenProgreso(S).nivel.nombre).toBe('Brote');
   });
 
-  test('la cifra del encabezado cuadra con las tarjetas dibujadas (R88)', () => {
+  test('la cifra de "Lo que haces" cuadra con las tarjetas dibujadas (R88)', () => {
     S.logros = ['primer-gasto', 'diez-gastos', 'soñador'];
-    renderProgresoAnalisis();
-    const panel   = document.getElementById('panel-analisis-progreso');
-    const activas = panel.querySelectorAll('.logro-item--on').length;
-    const items   = panel.querySelectorAll('.logro-item').length;
-    expect(panel.textContent).toContain(`${activas} de ${items} logros`);
-    // Dos niveles de la misma familia son una sola tarjeta, y una sola unidad
-    // del numerador: el encabezado no puede decir "de 18" con 12 en pantalla.
+    renderProgresoSeccion();
+    const activas = panel().querySelectorAll('.logro-item--on').length;
+    const items   = panel().querySelectorAll('.logro-item').length;
+    expect(panel().textContent).toContain(`${activas} de ${items} logros`);
     expect(items).toBe(N_ITEMS_VITRINA);
   });
 
   test('no-op si el contenedor no existe', () => {
     document.body.innerHTML = '';
-    expect(() => renderProgresoAnalisis()).not.toThrow();
+    expect(() => renderProgresoSeccion()).not.toThrow();
   });
 });
 
-// ── renderTarjetaProgresoInicio() (tarjeta compacta, happy-dom) ───
-
-describe('renderTarjetaProgresoInicio()', () => {
+describe('resumenProgreso() (APR.1d, ADR 092 D3)', () => {
   beforeEach(() => {
-    document.body.innerHTML = '<div id="panel-progreso-inicio" hidden></div>';
     const base = createInitialState();
     for (const k of Object.keys(base)) S[k] = base[k];
   });
 
-  test('oculta la tarjeta sin logros desbloqueados', () => {
-    renderTarjetaProgresoInicio();
-    const panel = document.getElementById('panel-progreso-inicio');
-    expect(panel.hidden).toBe(true);
+  test('sin nada hecho: Semilla, y faltan pasos para el siguiente nivel', () => {
+    const r = resumenProgreso(S);
+    expect(r).toMatchObject({ logros: 0, unidades: 0, pasos: 0, faltan: 3 });
+    expect(r.nivel.nombre).toBe('Semilla');
+    expect(r.siguiente.nombre).toBe('Brote');
   });
 
-  test('muestra nivel, último logro y próximo objetivo', () => {
-    S.logros = ['primer-paso', 'primer-gasto'];
-    renderTarjetaProgresoInicio();
-    const panel = document.getElementById('panel-progreso-inicio');
-    expect(panel.hidden).toBe(false);
-    expect(panel.textContent).toContain('Tu progreso');
-    expect(panel.textContent).toContain(`${2} de ${N_ITEMS_VITRINA} logros`);
-    // Último logro persistido: el último id de S.logros.
-    expect(panel.textContent).toContain('Registraste tu primer gasto.');
-    // Próximo objetivo: primer pendiente en orden de vitrina.
-    expect(panel.querySelectorAll('.logro-item')).toHaveLength(2);
-  });
-
-  test('sin objetivo pendiente (catálogo completo) no rompe', () => {
+  test('con el catálogo completo y todas las unidades no queda nivel siguiente', () => {
     S.logros = LOGROS.map(l => l.id);
-    expect(() => renderTarjetaProgresoInicio()).not.toThrow();
-    const panel = document.getElementById('panel-progreso-inicio');
-    expect(panel.querySelectorAll('.logro-item')).toHaveLength(1);
+    S.aprende = { hechas: {}, sabidas: ['u1', 'u2', 'u3', 'u4', 'u5', 'u6', 'u7', 'u8', 'u9'], semanas: [], enCurso: null };
+    const r = resumenProgreso(S);
+    expect(r.siguiente).toBeNull();
+    expect(r.faltan).toBe(0);
+    // Sigue cumpliéndose sin el 100 % del catálogo: con las unidades sobra.
+    expect(r.pasos).toBeGreaterThan(NIVELES_USUARIO[NIVELES_USUARIO.length - 1].min);
   });
 
-  test('no-op si el contenedor no existe', () => {
-    document.body.innerHTML = '';
-    expect(() => renderTarjetaProgresoInicio()).not.toThrow();
+  test('repasar no suma: una lección hecha dos veces es una sola fecha', () => {
+    S.aprende = { hechas: { 'u3-l1': 'x', 'u3-l2': 'x', 'u3-l3': 'x', 'u3-l4': 'x' }, sabidas: [], semanas: [], enCurso: null };
+    expect(resumenProgreso(S).unidades).toBe(1);
+  });
+
+  test('las semanas activas unen lo guardado con las semanas de tus gastos y nunca vuelven a cero', () => {
+    S.aprende = { hechas: {}, sabidas: [], semanas: ['2026-W38'], enCurso: null };
+    S.gastos = [{ fecha: '2026-10-24' }, { fecha: '2026-10-23' }, { fecha: '2026-09-28' }];
+    expect(resumenProgreso(S).semanas).toBe(3);
+    S.gastos = [];
+    expect(resumenProgreso(S).semanas).toBe(1);
   });
 });
 

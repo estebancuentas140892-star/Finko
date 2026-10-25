@@ -426,6 +426,15 @@
               <span class="nav-item__label">Análisis</span>
             </a>
 
+            <!-- Tu progreso (APR.1d, ADR 092 D2): en escritorio entra a "Cómo
+                 voy", junto a Análisis y no dentro: Análisis interpreta tu
+                 dinero; Tu progreso, a ti. En móvil es lente de Inicio. -->
+            <a class="nav-item nav-item--no-mobile" href="#progreso" data-section="progreso"
+               aria-label="Tu progreso: nivel, lo que sabes y lo que haces">
+              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-trophy"/></svg>
+              <span class="nav-item__label">Tu progreso</span>
+            </a>
+
           </div>
         </div>
 
@@ -557,6 +566,10 @@
             <svg class="icon" aria-hidden="true"><use href="#i-ajustes"/></svg>
           </a>
         </header>
+        <!-- Franja de lentes del bloque Inicio (APR.1c, ADR 092 D1): Hoy,
+             Aprende y Tu progreso. ui/bloque-inicio.js la inyecta en las tres
+             lentes; solo se ve bajo 1024px. -->
+        <div id="tabs-dash"></div>
 
         <!-- BENTO GRID del dashboard (orden IN.8a, ADR 034 D1): hero →
              "Atención hoy" → "Resumen de la semana" → accesos + actividad
@@ -797,12 +810,13 @@
                El tercero, Accesos rapidos, se queda abajo: su motivo SI era de
                ancho (en movil no hay barra lateral). -->
 
-          <!-- TU PROGRESO (LG.2d, ADR 032 D6): tarjeta compacta de logros
-               (nivel actual + último logro + próximo objetivo), universal en
-               las dos plataformas. logros/view.js la llena; [hidden] hasta
-               el primer logro desbloqueado. -->
-          <div id="panel-progreso-inicio" class="bento__cell bento__cell--half"
-               role="region" aria-label="Tu progreso" hidden></div>
+          <!-- TU SIGUIENTE PASO (APR.1c, ADR 092 D5): ocupa la celda de la
+               tarjeta compacta de logros, que se mudó a la lente Tu progreso,
+               así Inicio no crece (ADR 087). Una sola cosa: una lección o la
+               acción pendiente de un Aplícalo. aprende/view.js la llena;
+               [hidden] cuando no hay nada que proponer. -->
+          <div id="panel-siguiente-paso" class="bento__cell bento__cell--half"
+               role="region" aria-label="Tu siguiente paso" hidden></div>
 
           <!-- ACCESOS RÁPIDOS EN MÓVIL (IN.8g, ADR 034 D7; acotada a móvil desde
                IN.9d, ADR 057 D4). Cierre de la pantalla bajo 1024px. El ADR 087
@@ -845,8 +859,29 @@
             </div>
           </div>
         </header>
+        <div id="tabs-aprende"></div>
         <div id="panel-aprende">
           <!-- aprende/view.js: renderRuta() -->
+        </div>
+      </section>
+
+      <!-- TU PROGRESO (APR.1d, ADR 092 D4): lente propia del bloque Inicio en
+           móvil y fila de "Cómo voy" en escritorio. Sale del apartado de
+           Análisis y de la tarjeta compacta de Inicio (acota el ADR 032 D6).
+           La pinta el dominio logros (ADN 10). -->
+      <section class="section" id="sec-progreso" tabindex="-1" aria-labelledby="title-progreso">
+        <header class="section__header">
+          <div class="section__title-group">
+            <span class="cat-teja section__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-trophy"/></svg></span>
+            <div class="section__titulo">
+              <h1 class="section__title" id="title-progreso">Tu progreso</h1>
+              <p class="section__linea">Lo que sabes y lo que haces suben el mismo nivel</p>
+            </div>
+          </div>
+        </header>
+        <div id="tabs-progreso"></div>
+        <div id="panel-progreso">
+          <!-- logros/view.js: renderProgresoSeccion() -->
         </div>
       </section>
 
@@ -1296,14 +1331,6 @@
         </div>
         <div id="panel-analisis">
           <!-- Fase 10: analisis/view.js renderiza aquí -->
-        </div>
-        <!-- TU PROGRESO (LG.2d, ADR 046 D4 bloque 6, ADR 032 D6): mudanza de
-             la vitrina de logros desde Ajustes (ADR 022, Superada). Sigue
-             renderizada por el dominio logros (ningún dominio importa a
-             otro, ADN 10): logros/view.js llena este contenedor hermano,
-             que analisis/view.js nunca reescribe. -->
-        <div id="panel-analisis-progreso">
-          <!-- LG.2d: logros/view.js renderiza aquí "Tu progreso" -->
         </div>
 
       </section>

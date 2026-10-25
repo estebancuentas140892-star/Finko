@@ -10,7 +10,7 @@
 
 ## Sistema de logros (dominio `logros`)
 
-- **Objetivo**          : gamificación ligera de hábitos: catálogo de logros con evaluación automática, toast con confetti al desbloquear y "Tu progreso" (apartado de Análisis + tarjeta compacta en Inicio).
+- **Objetivo**          : gamificación ligera de hábitos: catálogo de logros con evaluación automática, toast con confetti al desbloquear y la lente "Tu progreso" (`#progreso`, APR.1d).
 - **Estado actual**     : estable. **Logros v2 completa** ([ADR 032](../DECISIONS/032-logros-v2-niveles-y-habitos.md) Aceptada el 2026-07-09): LG.2b (2026-07-09), LG.2c (2026-07-12), LG.2e (2026-08-13, familia comportamiento con un solo logro, `hormiga-a-raya`) y **LG.2d cerrada el 2026-08-13** (mudanza a Análisis + tarjeta en Inicio; el [ADR 022](../DECISIONS/022-vitrina-de-logros-en-ajustes.md) pasa a Superada). Catálogo: 18 logros (antes 11), familias `registro` 6, `metas` 1, `deudas` 2, `comportamiento` 1. La vitrina **dibuja 12 elementos** (8 logros sueltos + 4 familias), y ese es el denominador de "X de Y" en las dos superficies desde MOV.20a.
 - **Verificado contra** : commit de MOV.20a (2026-08-20).
 
@@ -33,8 +33,8 @@
 | Nivel de usuario derivado del conteo (nombres provisionales, tramo superior min 16) | `modules/dominio/logros/logic.js` | `nivelUsuario()`, `NIVELES_USUARIO` | ~625 |
 | Detección + persistencia + toast (cola de a uno) | `modules/dominio/logros/index.js` | `_checkYMostrar()`, `_encolarToast()` | ~59, ~97 |
 | Confetti (24 piezas, ajuste mobile por bottom-nav) | `modules/dominio/logros/index.js` | `_lanzarConfetti()` | ~193 |
-| Apartado "Tu progreso" en Análisis (agrupado + nivel en el encabezado, colapsable) | `modules/dominio/logros/view.js` | `renderProgresoAnalisis()`, `_renderFamiliaItem()` | ~28, ~99 |
-| Tarjeta compacta en Inicio (nivel + último logro + próximo objetivo) | `modules/dominio/logros/view.js` | `renderTarjetaProgresoInicio()`, `_proximoObjetivo()` | ~64, ~112 |
+| Lente "Tu progreso" (nivel con escala, lo que sabes, lo que haces, semanas activas; APR.1d) | `modules/dominio/logros/view.js` | `renderProgresoSeccion()`, `_renderFamiliaItem()` | ~22 |
+| Nivel con unidades + logros (un paso por cada uno, ADR 092 D3) | `modules/dominio/logros/logic.js` | `resumenProgreso()` | final del archivo |
 
 **Recursos**: emojis por logro (se conservan por ADR 025 D6). CSS: `.logro-toast*`, `.confetti-piece` (nudges.css/base.css), `.logros-lista`, `.logro-item*` (config.css, origen histórico del ADR 022; reusadas tal cual en las dos superficies vigentes). Estado: `S.logros` (`string[]` de ids, orden de inserción = orden de desbloqueo).
 
@@ -53,6 +53,7 @@
 
 **Cambios realizados**:
 
+- 2026-10-24 (APR.1d, [ADR 092](../DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D3 y D4, acota el ADR 032 D6): "Tu progreso" pasa a lente propia (`#progreso`); salen el apartado de Análisis y la tarjeta de Inicio. `resumenProgreso()` suma las unidades de Aprende al nivel sin escribirlas en `S.logros`.
 - 2026-10-24 (APR.1a): `UMBRAL_GASTO_HORMIGA` sube a `infra/hormiga.js`, criterio único con Gastos y Aprende; acá queda re-exportado.
 - 2026-08-20 (MOV.20a, handoff móvil ficha 20): `conteoVitrina()` nueva; las dos superficies cuentan la vitrina agrupada (12) y no el catálogo (18), con el numerador del mismo conjunto. El `hint` de "Planificador" nombra "Límites" (R86). R91 del handoff anulada.
 - 2026-08-13 (LG.2d, ADR 032 D6, **cierra la iniciativa "Logros v2"**): `renderPanelLogros()` se reparte en `renderProgresoAnalisis()` (apartado colapsable de Análisis) y `renderTarjetaProgresoInicio()` (tarjeta nueva en el bento de Inicio, con `_proximoObjetivo()`); `#panel-logros` sale de Ajustes y el ADR 022 pasa a Superada. Cero cambios en `logic.js`.

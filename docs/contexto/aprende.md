@@ -11,7 +11,7 @@
 ## Ruta y lección (dominio `aprende`)
 
 - **Objetivo**          : enseñar con práctica y cerrar cada lección en la sección donde se aplica, con los datos del usuario (Aplícalo, D7).
-- **Estado actual**     : en evolución (iniciativa APR). APR.1a y APR.1b cerradas: motor de lección, estado en `S`, ruta y la unidad 3 completa (cuatro lecciones, insignia al terminarla, Aplícalo que pone el límite de gastos pequeños en Límites). Entrada visible solo en escritorio (sidebar, "Día a día"); en móvil se llega por `#aprende` hasta que APR.1c ponga las lentes de Inicio.
+- **Estado actual**     : en evolución (iniciativa APR). **Fase 1 cerrada** (APR.1a a APR.1d): motor de lección, estado en `S`, ruta, la unidad 3 completa, "Tu siguiente paso" en Inicio y el bloque Inicio de tres lentes en móvil (`ui/bloque-inicio.js`). En escritorio, fila propia en "Día a día".
 - **Verificado contra** : commit de APR.1a (2026-10-24).
 
 **Dónde vive**
@@ -33,6 +33,10 @@
 | "Poner un límite de $X": evento `hormiga:limite` y navegación a Límites | `modules/dominio/aprende/index.js` | `_ponerLimiteHormiga()` | ~275 |
 | Desplegar en la ruta una unidad que no es la actual | `modules/dominio/aprende/index.js` | `_alternarUnidad()`, `data-action="aprende-unidad"` | ~285 |
 | Celebración de unidad (insignia `il-insignia`, `badgeIn`) | `modules/dominio/aprende/view.js` | `_cabezaCierre()` | ~400 |
+| "Tu siguiente paso" en Inicio (D5): una lección o la acción pendiente | `modules/dominio/aprende/logic.js` / `view.js` | `siguientePaso()`, `htmlSiguientePaso()` | |
+| Semana activa al registrar (D3) | `modules/dominio/aprende/index.js` | `_alRegistrar()`, `registrarSemana()` | |
+| Catálogo, unidades sabidas, semanas activas, posición en la ruta (lo lee también `logros`) | `modules/infra/ruta-aprende.js` | `UNIDADES`, `contarUnidadesSabidas()`, `contarSemanasActivas()`, `posicionEnRuta()` | |
+| Franja Hoy, Aprende y Tu progreso en móvil | `modules/ui/bloque-inicio.js` | `htmlBloqueInicio()`, `estadoLentesInicio()` | |
 | Gesto de deslizar (pointer events) | `modules/dominio/aprende/index.js` | `_alPresionar()`, `_alArrastrar()`, `_alSoltar()` | ~249 |
 | Criterio de gasto hormiga (compartido con `gastos` y `logros`) | `modules/infra/hormiga.js` | `UMBRAL_GASTO_HORMIGA`, `resumenHormigaMes()` | ~15, ~40 |
 | Sección y overlay | `index.html` | `#sec-aprende`, `#panel-aprende`, `#modal-leccion`, `#leccion-panel` | |
@@ -55,6 +59,7 @@
 
 **Cambios realizados**:
 
+- 2026-10-24 (APR.1c y APR.1d): bloque Inicio de tres lentes, "Tu siguiente paso", catálogo a `infra/ruta-aprende.js`, semanas activas al registrar.
 - 2026-10-24 (APR.1b): lecciones 1, 3 y 4 de la unidad 3, insignia de unidad, unidades desplegables en la ruta, Aplícalo que pone el límite de gastos pequeños.
 - 2026-10-24 (APR.1a): dominio nuevo, `S.aprende` (v45), ruta, lección 2 de la unidad 3 de punta a punta, `infra/hormiga.js` como criterio único del umbral.
 

@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(aprende): APR.1c y APR.1d, Inicio de tres lentes y Tu progreso propio · 2026-10-24
+
+[ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D1 a D5; acota el ADR 032 D6. Cierra la Fase 1 de APR. SW v597.
+
+- **Inicio es un bloque en móvil**: pestañas Hoy, Aprende y Tu progreso, con su estado debajo del nombre (avisos, minutos de la lección que sigue, nivel). La barra inferior no cambia; "Inicio" se resalta en las tres lentes.
+- **"Tu progreso" es una lente propia** (`#progreso`, y fila en "Cómo voy" en escritorio): nivel con escala, lo que sabes, lo que haces y semanas activas. Salen el apartado de Análisis y la tarjeta compacta de Inicio.
+- **Un solo sistema de progreso**: cada unidad que ya sabes suma un paso al nivel, igual que un logro, una sola vez. Las semanas activas son las guardadas al registrar o hacer una lección más las semanas con gastos; borrar un gasto no resta la semana en que lo registraste.
+- **"Tu siguiente paso"** ocupa la celda de la tarjeta de logros: la lección que sigue, con un dato real si lo hay, o el límite de gastos pequeños que la unidad 3 enseñó a poner. Inicio no crece (ADR 087).
+- **Pruebas trasladadas, no perdidas**: las 11 de las dos superficies retiradas pasan a la lente nueva con la misma intención; las dos sin sujeto (el colapsable abierto entre renders, la tarjeta oculta sin logros) se cambiaron por su equivalente. `infra/avisos.js` gana `avisosDeHoy()`, que comparten Inicio y la pestaña Hoy.
+
 ### feat(aprende): APR.1b, la unidad 3 completa y el límite de gastos pequeños · 2026-10-24
 
 [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D7 y dudas; fichas [`contexto/aprende.md`](contexto/aprende.md) y [`contexto/limites.md`](contexto/limites.md). SW v596, schema v46.

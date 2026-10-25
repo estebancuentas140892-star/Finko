@@ -17,24 +17,21 @@ import { save }        from '../../core/storage.js';
 import { esc as _esc } from '../../infra/utils.js';
 import { renderSmart, registrarRender } from '../../infra/render.js';
 import { evaluarLogros, LOGROS } from './logic.js';
-import { renderProgresoAnalisis, renderTarjetaProgresoInicio } from './view.js';
+import { renderProgresoSeccion } from './view.js';
 
 // ── PUNTO DE ENTRADA ─────────────────────────────────────────────
 
 /**
  * Inicializa el sistema de logros.
  * Llama evaluar al arrancar y se suscribe a state:change para futuras
- * evaluaciones. Además renderiza "Tu progreso" (LG.2d, ADR 032 D6): el
- * apartado colapsable en Análisis (#panel-analisis-progreso) y la tarjeta
- * compacta en Inicio (#panel-progreso-inicio), al arrancar, en cada cambio
- * de estado y al navegar a esas dos secciones.
+ * evaluaciones. Además pinta la lente "Tu progreso" (`#progreso`, APR.1d,
+ * ADR 092 D4) al arrancar, en cada cambio de estado y al navegar a ella.
  */
 export function initLogros() {
   _checkYMostrar();
   EventBus.on('state:change', () => {
     _checkYMostrar();
-    renderSmart(renderProgresoAnalisis, 'analisis');
-    renderSmart(renderTarjetaProgresoInicio, 'dash');
+    renderSmart(renderProgresoSeccion, 'progreso');
   });
   // Tambien escuchar el evento de onboarding, ya que setea s.onboarded=true
   // pero no emite state:change. Sin esto, el logro "primer-paso" no aparecia
@@ -45,14 +42,9 @@ export function initLogros() {
   // pantalla se asiente antes de celebrar.
   EventBus.on('onboarding:completado', () => setTimeout(_checkYMostrar, RETRASO_TOAST_ONBOARDING_MS));
 
-  window.addEventListener('hashchange', () => {
-    renderSmart(renderProgresoAnalisis, 'analisis');
-    renderSmart(renderTarjetaProgresoInicio, 'dash');
-  });
-  registrarRender(() => renderSmart(renderProgresoAnalisis, 'analisis'));
-  registrarRender(() => renderSmart(renderTarjetaProgresoInicio, 'dash'));
-  renderSmart(renderProgresoAnalisis, 'analisis');
-  renderSmart(renderTarjetaProgresoInicio, 'dash');
+  window.addEventListener('hashchange', () => renderSmart(renderProgresoSeccion, 'progreso'));
+  registrarRender(() => renderSmart(renderProgresoSeccion, 'progreso'));
+  renderSmart(renderProgresoSeccion, 'progreso');
 }
 
 // ── LOGICA INTERNA ───────────────────────────────────────────────

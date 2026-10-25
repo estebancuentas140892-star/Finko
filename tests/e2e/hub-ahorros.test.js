@@ -392,12 +392,14 @@ test.describe('DIS.18 - sidebar desktop', () => {
     await expect(miDinero.locator('a[href="#fondo"] .nav-item__label')).toHaveText('Fondo de emergencia');
     await expect(miDinero.locator('a[href="#ahorro"] .nav-item__label')).toHaveText('Ahorro');
 
-    // Cómo voy: las dos que miden. Análisis sigue acá desde que se disolvió
-    // "Herramientas" (NAV.B, ADR 024 D6); Límites llega en este movimiento.
+    // Cómo voy: las que miden. Análisis sigue acá desde que se disolvió
+    // "Herramientas" (NAV.B, ADR 024 D6); Límites llega en este movimiento, y
+    // Tu progreso junto a Análisis y no dentro (APR.1d, ADR 092 D2).
     const comoVoy = page.locator('.nav-group', { has: page.locator('#nav-label-como-voy') });
-    await expect(comoVoy.locator('a')).toHaveCount(2);
+    await expect(comoVoy.locator('a')).toHaveCount(3);
     await expect(comoVoy.locator('a[href="#analisis"]')).toHaveCount(1);
     await expect(comoVoy.locator('a[href="#presupuesto"]')).toHaveCount(1);
+    await expect(comoVoy.locator('a[href="#progreso"]')).toHaveCount(1);
   });
 
   test('las 4 hijas se anidan: ocultas fuera del grupo, desplegadas dentro (INT.1b)', async ({ page }) => {

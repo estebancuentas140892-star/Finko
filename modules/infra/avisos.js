@@ -461,3 +461,35 @@ export function filtrarPorPreferencia(avisos, prefs) {
  * @property {string} seccion    Hash de la sección donde se resuelve (`compromisos`, `presupuesto`, ...).
  * @property {object|null} extra Datos propios del tipo (ej. `porcentaje` del tope).
  */
+
+/**
+ * Los avisos de hoy armados desde el estado completo y filtrados por la
+ * preferencia de cada sección (CFG.3c). Es el mismo conjunto que lee "Atención
+ * hoy": lo comparten el panel de avisos de Inicio y la pestaña "Hoy" del
+ * bloque Inicio (APR.1c), para que no cuenten distinto.
+ *
+ * @param {object} state - `S`.
+ * @param {string} hoyISO - `YYYY-MM-DD`.
+ * @returns {Aviso[]}
+ */
+export function avisosDeHoy(state, hoyISO) {
+  return filtrarPorPreferencia(
+    recolectarAvisos({
+      compromisos:  state.compromisos,
+      gastos:       state.gastos,
+      presupuestos: state.presupuestos,
+      apartados:    state.apartados,
+      personales:   state.personales,
+      ingresos:     state.ingresos,
+      ultimoRespaldoISO: state.config?.ultimoRespaldoISO ?? null,
+      primerUsoISO:      state.config?.primerUsoISO ?? null,
+      hayDatosParaRespaldar: hayDatosParaRespaldar({
+        compromisos: state.compromisos, presupuestos: state.presupuestos, apartados: state.apartados,
+        personales: state.personales, ingresos: state.ingresos, gastos: state.gastos,
+        cuentas: state.cuentas, metas: state.metas, inversiones: state.inversiones,
+      }),
+      hoyISO,
+    }),
+    state.config?.avisosPorSeccion,
+  );
+}

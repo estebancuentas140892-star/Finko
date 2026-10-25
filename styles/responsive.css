@@ -1911,3 +1911,21 @@
     margin-top: var(--fk-space-3);
   }
 }
+
+/* ── BLOQUE INICIO EN MÓVIL (APR.1c, ADR 092 D1) ────────────────────────
+   Bajo 1024px Aprende y Tu progreso son lentes del bloque Inicio: la franja
+   de pestañas ya dice dónde estás, así que su encabezado de sección sobra,
+   igual que las lentes de Gastos dejan de repetir su título (ADR 069 D8).
+   El h1 sigue en el DOM y nombra la región para el lector de pantalla. */
+@media (max-width: 1023px) {
+  #sec-aprende > .section__header,
+  #sec-progreso > .section__header {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+

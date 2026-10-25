@@ -14,6 +14,7 @@
 import { hoy } from '../../infra/utils.js';
 import { memoizar } from '../../infra/memo.js';
 import { UMBRAL_GASTO_HORMIGA, topeHormiga } from '../../infra/hormiga.js';
+import { contarUnidadesSabidas, contarSemanasActivas } from '../../infra/ruta-aprende.js';
 
 // ── TABLA DE LOGROS ──────────────────────────────────────────────
 
@@ -634,3 +635,40 @@ export function nivelUsuario(nDesbloqueados) {
   }
   return nivel;
 }
+
+// ── UN SOLO SISTEMA DE PROGRESO (APR.1d, ADR 092 D3) ─────────────
+
+/**
+ * El progreso que muestra la lente "Tu progreso": lo que sabes (unidades de
+ * Aprende terminadas o marcadas por la prueba de ubicación) y lo que haces
+ * (logros por acción) suben el mismo nivel, paso por paso. Sin puntos de
+ * experiencia (ADR 032 D5): un paso es una unidad o un logro, una sola vez.
+ *
+ * Las unidades no entran a `S.logros`: su permanencia ya la da
+ * `S.aprende.hechas`, que guarda la primera fecha y no se revoca, igual que
+ * un logro persistido.
+ *
+ * @param {object} s - estado (típicamente S).
+ * @param {ReturnType<typeof estadoLogros>} [estados] - si ya se calcularon.
+ * @returns {{ logros: number, unidades: number, pasos: number,
+ *   nivel: { min: number, nombre: string },
+ *   siguiente: { min: number, nombre: string } | null, faltan: number,
+ *   semanas: number }}
+ */
+export function resumenProgreso(s, estados = estadoLogros(s, s?.logros)) {
+  const logros = estados.filter(e => e.desbloqueado).length;
+  const unidades = contarUnidadesSabidas(s?.aprende);
+  const pasos = logros + unidades;
+  const nivel = nivelUsuario(pasos);
+  const siguiente = NIVELES_USUARIO.find(n => n.min > pasos) ?? null;
+  return {
+    logros,
+    unidades,
+    pasos,
+    nivel,
+    siguiente,
+    faltan: siguiente ? siguiente.min - pasos : 0,
+    semanas: contarSemanasActivas(s?.aprende, s?.gastos),
+  };
+}
+

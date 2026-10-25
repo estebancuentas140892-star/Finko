@@ -1852,21 +1852,22 @@ test.describe('Centro Legal', () => {
   });
 });
 
-// ── SUITE 8d: "Tu progreso" en Análisis con niveles (LG.2d, ADR 032) ─────────
-// El apartado "Tu progreso" (mudado desde Ajustes, ADR 022 Superada) agrupa
-// por familia y muestra el nivel de usuario derivado del conteo. El seed
-// trae onboarded=true (logro primer-paso vivo).
+// ── SUITE 8d: "Tu progreso" con niveles (LG.2d, ADR 032; lente propia desde APR.1d) ─
+// "Tu progreso" dejó el apartado de Análisis y la tarjeta de Inicio (ADR 092
+// D4): es una lente propia. Agrupa por familia y muestra el nivel de usuario,
+// que ahora suma también las unidades de Aprende. El seed trae onboarded=true
+// (logro primer-paso vivo).
 
 test.describe('Tu progreso (niveles)', () => {
   test.beforeEach(async ({ page }) => {
     await saltearOnboarding(page);
-    await page.goto('/#analisis');
-    await page.waitForSelector('#sec-analisis.active', { timeout: 10_000 });
+    await page.goto('/#progreso');
+    await page.waitForSelector('#sec-progreso.active', { timeout: 10_000 });
   });
 
   test('muestra el nivel de usuario y la familia agrupada sin listar sus niveles sueltos', async ({ page }) => {
-    const panel = page.locator('#panel-analisis-progreso');
-    await expect(panel).toContainText('Tu progreso');
+    const panel = page.locator('#panel-progreso');
+    await expect(panel).toContainText('Tu nivel');
     await expect(panel).toContainText('Constancia de registro');
     // La familia colapsa a una tarjeta: el nivel 2 no aparece como item propio.
     await expect(panel).not.toContainText('Hábito registrado');
@@ -1889,10 +1890,10 @@ test.describe('Tu progreso - familia deudas (LG.2c)', () => {
       ],
       metas: [],
     });
-    await page.goto('/#analisis');
-    await page.waitForSelector('#sec-analisis.active', { timeout: 10_000 });
+    await page.goto('/#progreso');
+    await page.waitForSelector('#sec-progreso.active', { timeout: 10_000 });
 
-    const panel = page.locator('#panel-analisis-progreso');
+    const panel = page.locator('#panel-progreso');
     await expect(panel).toContainText('Deudas saldadas');
     await expect(panel).toContainText('Nivel 1 de 2');
     await expect(panel).toContainText('Saldaste una deuda por completo.');

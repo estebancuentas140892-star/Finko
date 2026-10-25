@@ -91,7 +91,8 @@ Utilidades transversales sin dependencias de dominio.
 | `marcas.js` | Resolución de identidad de marca desde texto libre ([ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md) D4) |
 | `icon-picker.js` | Selector compacto de ícono para categorías y entidades personalizadas (CAT.2) |
 | `markdown.js` | Conversor mínimo de Markdown a HTML, solo el subconjunto que usan los documentos legales |
-| `hormiga.js` | Criterio único de gasto hormiga (umbral y resumen del mes): lo leen Gastos, Logros y Aprende |
+| `hormiga.js` | Criterio único de gasto hormiga (tope y resumen del mes) |
+| `ruta-aprende.js` | Catálogo de la ruta de Aprende y su conteo (lo leen Aprende y Logros) |
 
 ### 2.3 `modules/ui/`
 
@@ -109,6 +110,7 @@ Bootstrap y orquestación de la interfaz.
 | `comparador.js` | Columnas comparables de varias bolsas contra la marca de su plan: `htmlComparador()` + `pieComparador()`. Puro, sin DOM. Lo comparten la lista de Apartados y la casa de Ahorro (DIS.19) |
 | `menu-mas.js` | Menú "Más" (secciones que no caben en la bottom nav móvil) |
 | `bloque-gastos.js` | Franja de lentes del bloque Gastos en móvil ([ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md)): inyecta las pestañas "Lo que gastaste" / "Por pagar" / "Límites" en las tres secciones y pinta su estado. Navegación por hash, sin contenedor de estado nuevo |
+| `bloque-inicio.js` | Franja Hoy / Aprende / Tu progreso del bloque Inicio en móvil (APR.1c) |
 | `bloque-ahorro.js` | Fila de chips del bloque Ahorro en móvil (ADR 069 D7): inyecta en las cuatro hijas la misma fila que la casa, con la casa como primer chip. El orden lo deriva de `MODALIDADES_AHORRO`, así que ninguna hija puede reordenarlo |
 | `install-prompt.js` | Prompt de instalación de la PWA (`beforeinstallprompt`) |
 | `bloqueo-acceso.js` | Candado de acceso local: gate de PIN al abrir y `confirmarPin()` para acciones críticas ([ADR 063](DECISIONS/063-candado-de-acceso-local.md)) |
@@ -160,7 +162,7 @@ Los barrels mantienen la API estable: tests y consumidores siguen importando de 
 | `gastos/` | Gastos variables, categorías, detector de hormigas | |
 | `import/` | Importación de gastos desde CSV con preview y detección de duplicados | |
 | `inversiones/` | Portafolio real (CDT, fondo, cripto, acciones) | |
-| `logros/` | Sistema de logros y rachas (gamificación) | `view.js` propio desde LG.2d: llena "Tu progreso" en Análisis y la tarjeta de Inicio, sin que esos dominios lo importen |
+| `logros/` | Sistema de logros y rachas (gamificación) | `view.js` llena la lente `#progreso` (APR.1d) |
 | `metas/` | Objetivos de ahorro con fecha límite | |
 | `movimientos/` | Ledger unificado: deriva la actividad de gastos, ingresos puntuales, aportes y transferencias | sin colección propia, es una vista derivada; las acciones de cada fila las delega al dominio dueño según `m.tipo` |
 | `personales/` | Préstamos que el usuario otorga a terceros ("Me deben") | |
@@ -442,7 +444,7 @@ El dashboard (`#dash`) no tiene carpeta propia en `modules/dominio/`: es una com
 | *(sin sección propia)* | `export/` | `logic.js` (invocado desde `config`) | | `export.test.js` |
 | *(sin sección propia)* | `import/` | los 3 estándar | `charts.css` (bloque IMPORT CSV) | `import.test.js` |
 | Aprende (`#aprende` y `#modal-leccion`) | `aprende/` | los 3 estándar + `lecciones/` | `aprende.css`; overlay en `modals.css` | `aprende.test.js` |
-| Toast + "Tu progreso" en Análisis + tarjeta en Inicio | `logros/` | los 3 estándar | `nudges.css` (bloque LOGRO TOAST) | `logros.test.js` |
+| Toast + lente "Tu progreso" | `logros/` | los 3 estándar | `nudges.css` (bloque LOGRO TOAST) | `logros.test.js` |
 | *(card en Inicio)* | `resumen/` | los 3 estándar | `domain.css` (bloque RESUMEN-CARD) | `resumen.test.js` |
 | Movimientos (card "Actividad reciente" en Inicio + ruta `#movimientos` sin ícono de nav) | `movimientos/` | los 3 estándar (TX.8a panel, TX.8b vista completa, [ADR 028](DECISIONS/028-inicio-centro-de-control.md)) | `domain.css` (ACTIVIDAD-RECIENTE, MOVIMIENTOS), `atoms.css` (`.list-item__amount--ingreso`) | `movimientos.test.js` |
 | Accesos rápidos (tiles bajo el hero de Inicio + modal "Personalizar") | `accesos/` | los 3 estándar (IN.4a, [ADR 028](DECISIONS/028-inicio-centro-de-control.md)) | `domain.css` (ACCESOS-INICIO), `atoms.css` (`.accesos-row*`) | `accesos.test.js` |

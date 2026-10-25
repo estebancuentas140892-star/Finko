@@ -157,15 +157,7 @@
 
 ## Iniciativa APR - Aprende y aplícalo
 
-> Handoff de Claude Design "Finko · Aprende y aplícalo" (35 tableros, octubre 2026), triado el 2026-10-24. Fuente única: **[ADR 092](../DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md)** (capa de aprendizaje del adulto) y **[ADR 093](../DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md)** (perfiles, modo niño y tutor), los dos en Propuesta. **La Fase 1 arrancó el 2026-10-24 sin esperar a las fichas 17 y 19 de MOV.1** (decisión en chat, resolución al final del ADR 092); cada rebanada se sube a `main` al cerrar. Las catorce dudas del handoff quedaron resueltas por defecto con la propuesta del diseño; **P1 del ADR 093** ("Olvidé mi PIN" con niños) se resolvió el 2026-10-24 con su recomendación. La GU.1 (guía por navegación) sigue dueña de banners y hints: esta iniciativa no los toca. DV.2d conserva su lote; el catálogo de ilustraciones del niño entra por su mismo pipeline.
-
-### Fase 1 - Adulto (primer alcance de implementación)
-
-#### APR.1c - Inicio como bloque de tres lentes
-- Estado : pendiente. **Área**: ambos. **Objetivo**: franja de pestañas Hoy, Aprende y Tu progreso con su estado encima (R81), lente Aprende como lista de nueve unidades abiertas, "Tu siguiente paso" en la celda de la tarjeta compacta, y en escritorio "Aprende" en "Día a día" y "Tu progreso" en "Cómo voy" (ADR 092 D1, D5). La barra móvil no cambia; la ruta y la fila de escritorio ya existen (APR.1a). **Riesgo**: selectores sobre `[href="#dash"]` (declarar contexto). **Aceptación**: Inicio en móvil no crece; E2E de navegación entre lentes. **Modelo**: Equilibrado, Alto.
-
-#### APR.1d - Tu progreso como lente propia
-- Estado : pendiente de APR.1c. **Área**: ambos. **Objetivo**: familia de logros "Lo que sabes" (una unidad suma una vez, repasar no suma), semanas activas que nunca vuelven a cero, y la mudanza: sale el apartado de Análisis y la tarjeta compacta de Inicio (acota ADR 032 D6, ADR 092 D3 y D4). **Riesgo**: ids persistidos de `S.logros`, umbrales de `NIVELES_USUARIO`. **Aceptación**: test anti-trampa del repaso; el test "alcanzable sin el 100 % del catálogo" sigue verde. **Modelo**: Equilibrado, Alto.
+> Handoff de Claude Design "Finko · Aprende y aplícalo" (35 tableros, octubre 2026), triado el 2026-10-24. Fuente única: **[ADR 092](../DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md)** (capa de aprendizaje del adulto) y **[ADR 093](../DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md)** (perfiles, modo niño y tutor), los dos en Propuesta. **La Fase 1 (APR.1a a APR.1d) cerró el 2026-10-24** sin esperar a las fichas 17 y 19 de MOV.1 (decisión en chat, resolución al final del ADR 092); cada rebanada se sube a `main` al cerrar. Las catorce dudas del handoff quedaron resueltas por defecto con la propuesta del diseño; **P1 del ADR 093** ("Olvidé mi PIN" con niños) se resolvió el 2026-10-24 con su recomendación. La GU.1 (guía por navegación) sigue dueña de banners y hints: esta iniciativa no los toca. DV.2d conserva su lote; el catálogo de ilustraciones del niño entra por su mismo pipeline.
 
 ### Fase 2 - Adulto completo
 

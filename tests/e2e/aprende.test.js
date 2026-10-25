@@ -135,3 +135,50 @@ test.describe('APR.1a - Aprende', () => {
     await expect(page.locator('.aprende-ruta__aviso')).toContainText('Ya hiciste todas las lecciones disponibles');
   });
 });
+
+test.describe('APR.1c - el bloque Inicio en móvil', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test.beforeEach(async ({ page }) => {
+    await sembrarSiVacio(page, estadoBase({
+      cuentas: [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi', saldo: 500_000, activa: true, fechaCreacion: '2026-07-01T00:00:00.000Z' }],
+      gastos: [{ id: 'g1', descripcion: '', monto: 6_500, categoria: 'Restaurantes', fecha: diaDelMes(1), cuentaId: 'c1' }],
+    }));
+    await page.goto('/#dash');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+  });
+
+  test('Hoy, Aprende y Tu progreso son pestañas con su estado, y la barra no cambia', async ({ page }) => {
+    const tabs = page.locator('#tabs-dash .bloque-tabs__tab');
+    await expect(tabs).toHaveCount(3);
+    await expect(tabs.nth(0)).toContainText('Hoy');
+    await expect(tabs.nth(1)).toContainText('Aprende');
+    await expect(tabs.nth(1)).toContainText('3 min');
+    await expect(tabs.nth(2)).toContainText('Tu progreso');
+
+    const labels = await page.$$eval('#sidebar .nav-item', els =>
+      els.filter(e => e.offsetParent !== null)
+         .map(e => e.querySelector('.nav-item__label')?.textContent?.trim()));
+    expect(labels).toEqual(['Inicio', 'Gastos', 'Registrar', 'Ahorro', 'Más']);
+
+    await tabs.nth(1).click();
+    await page.waitForSelector('#sec-aprende.active', { timeout: 5_000 });
+    await expect(page.locator('#tabs-aprende .bloque-tabs__tab.active')).toContainText('Aprende');
+    // La barra sigue diciendo "estás en Inicio" desde una lente.
+    await expect(page.locator('.nav-item[data-section="dash"]')).toHaveClass(/nav-item--bloque-activo/);
+
+    await page.locator('#tabs-aprende .bloque-tabs__tab[data-section="progreso"]').click();
+    await page.waitForSelector('#sec-progreso.active', { timeout: 5_000 });
+    await expect(page.locator('#panel-progreso')).toContainText('Lo que sabes');
+  });
+
+  test('Tu siguiente paso ocupa la celda de la tarjeta de logros y abre la lección', async ({ page }) => {
+    const paso = page.locator('#panel-siguiente-paso');
+    await expect(paso).toBeVisible();
+    await expect(paso).toContainText('Lo pequeño también suma');
+    await expect(paso).toContainText('Este mes hiciste 1 compra');
+    await paso.locator('[data-action="leccion-abrir"]').click();
+    await expect(page.locator('#modal-leccion[data-open]')).toHaveCount(1);
+  });
+});
+

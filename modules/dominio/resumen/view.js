@@ -13,7 +13,7 @@
 import { S } from '../../core/state.js';
 import { f, esc as _esc, hoy } from '../../infra/utils.js';
 import { icon } from '../../infra/icons.js';
-import { recolectarAvisos, filtrarPorPreferencia, hayDatosParaRespaldar } from '../../infra/avisos.js';
+import { avisosDeHoy } from '../../infra/avisos.js';
 
 // ── PANEL DE AVISOS (CFG.3b, ADR 066) ────────────────────────────
 
@@ -80,25 +80,7 @@ export function renderPanelAvisos() {
   const el = document.getElementById('panel-avisos');
   if (!el) return;
 
-  const avisos = filtrarPorPreferencia(
-    recolectarAvisos({
-      compromisos:  S.compromisos,
-      gastos:       S.gastos,
-      presupuestos: S.presupuestos,
-      apartados:    S.apartados,
-      personales:   S.personales,
-      ingresos:     S.ingresos,
-      ultimoRespaldoISO: S.config?.ultimoRespaldoISO ?? null,
-      primerUsoISO:      S.config?.primerUsoISO ?? null,
-      hayDatosParaRespaldar: hayDatosParaRespaldar({
-        compromisos: S.compromisos, presupuestos: S.presupuestos, apartados: S.apartados,
-        personales: S.personales, ingresos: S.ingresos, gastos: S.gastos,
-        cuentas: S.cuentas, metas: S.metas, inversiones: S.inversiones,
-      }),
-      hoyISO:       hoy(),
-    }),
-    S.config?.avisosPorSeccion,
-  ).filter(a => _TIPOS_SIN_PANEL_PROPIO.includes(a.tipo));
+  const avisos = avisosDeHoy(S, hoy()).filter(a => _TIPOS_SIN_PANEL_PROPIO.includes(a.tipo));
 
   if (avisos.length === 0) {
     el.innerHTML = '';

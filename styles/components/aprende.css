@@ -631,6 +631,104 @@
 }
 .leccion-aplica__logro .icon { flex-shrink: 0; width: 1.5rem; height: 1.5rem; color: var(--fk-warning-text); }
 
+/* ── TU SIGUIENTE PASO (APR.1c, ADR 092 D5) ──────────────────────
+   Celda del bento de Inicio: una sola cosa por hacer, en el color de la
+   unidad de donde sale. */
+.siguiente-paso {
+  --apr-dom: var(--fk-accent);
+  --apr-dom-text: var(--fk-text-accent);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+  height: 100%;
+}
+.siguiente-paso[data-dom="presupuesto"] { --apr-dom: var(--fk-dom-presupuesto); --apr-dom-text: var(--fk-dom-presupuesto-text); }
+.siguiente-paso__cabeza {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+}
+.siguiente-paso__titulo-celda {
+  margin: 0;
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--apr-dom-text);
+}
+.siguiente-paso__titulo {
+  margin: 0;
+  font-size: var(--fk-text-lg);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+}
+.siguiente-paso__texto { margin: 0; color: var(--fk-text-secondary); line-height: 1.45; }
+.siguiente-paso__meta { margin: 0; font-size: var(--fk-text-xs); color: var(--fk-text-muted); }
+.siguiente-paso__acciones { display: flex; flex-wrap: wrap; gap: var(--fk-space-2); margin-top: auto; }
+.siguiente-paso__cta { margin-top: auto; align-self: flex-start; min-height: 2.75rem; }
+.siguiente-paso__acciones .siguiente-paso__cta { margin-top: 0; }
+
+/* ── TU PROGRESO (APR.1d, ADR 092 D4) ────────────────────────────
+   Un solo sistema: el nivel arriba, después lo que sabes, lo que haces y
+   las semanas activas. Sin rachas que se pierden ni confeti. */
+.progreso {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-5);
+  max-width: 44rem;
+}
+.progreso-nivel,
+.progreso-bloque {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+  padding: var(--fk-space-5);
+  border-radius: var(--fk-radius-xl);
+  border: 1px solid var(--fk-border-subtle);
+  background: var(--fk-bg-surface);
+}
+.progreso-nivel {
+  border-color: var(--fk-accent-border);
+  background:
+    linear-gradient(160deg, var(--fk-accent-subtle), transparent 60%),
+    var(--fk-bg-surface);
+}
+.progreso__eyebrow {
+  margin: 0;
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fk-text-accent);
+}
+.progreso-nivel__nombre {
+  margin: 0;
+  font-size: var(--fk-text-3xl);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+}
+.progreso__linea { margin: 0; font-size: var(--fk-text-sm); color: var(--fk-text-secondary); line-height: 1.5; }
+.progreso-nivel__barra { margin-top: var(--fk-space-2); }
+.progreso-nivel__escala {
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--fk-space-2);
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+}
+.progreso-nivel__escala span:nth-child(2) { color: var(--fk-text-secondary); text-align: center; }
+.progreso-bloque__cabeza {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+}
+.progreso-bloque__titulo { margin: 0; font-size: var(--fk-text-lg); font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
+.progreso-bloque__cuenta { flex-shrink: 0; font-size: var(--fk-text-sm); font-weight: var(--fk-font-semibold); color: var(--fk-text-muted); }
+.progreso-semanas__cifra { margin: 0; font-size: var(--fk-text-xl); font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
+
 /* ── MOVIMIENTO (catálogo cerrado, ADR 092 D10) ──────────────────
    Solo transform y opacity, una vez, sin bucles. Con reduce-motion el
    cambio es inmediato (a11y.css lleva toda animación a 0,01 ms). */

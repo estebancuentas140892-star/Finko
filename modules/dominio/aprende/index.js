@@ -23,9 +23,9 @@ import {
   unidadDeLeccion, metaLeccion, leccionDisponible, normalizarAprende,
   crearSesion, pasoActual, responderElegir, clasificarTarjeta, seguirClasificando,
   cambiarControl, moverItem, comprobarOrden, avanzar, pasoParaRetomar,
-  registrarLeccionHecha, aplicaHormiga, unidadTerminada,
+  registrarLeccionHecha, aplicaHormiga, unidadTerminada, siguientePaso, registrarSemana,
 } from './logic.js';
-import { renderRuta, htmlLeccion, htmlResultadoControl } from './view.js';
+import { renderRuta, htmlLeccion, htmlResultadoControl, htmlSiguientePaso } from './view.js';
 
 /** Cargadores del contenido por unidad: un módulo por unidad, bajo demanda. */
 const _CONTENIDO = {
@@ -60,8 +60,37 @@ function _renderRuta() {
   renderRuta(_unidadAbierta);
 }
 
+/** "Tu siguiente paso" en Inicio (D5): una sola cosa, o nada. */
+function _renderSiguientePaso() {
+  const el = document.getElementById('panel-siguiente-paso');
+  if (!el) return;
+  const tope = _tope();
+  const html = htmlSiguientePaso(siguientePaso({
+    aprende: S.aprende, gastos: S.gastos, hoyISO: hoy(), tope, limite: limiteHormiga(S.config),
+  }), tope);
+  el.innerHTML = html;
+  el.hidden = html === '';
+}
+
 function _renderTodo() {
   renderSmart(_renderRuta, 'aprende');
+  renderSmart(_renderSiguientePaso, 'dash');
+}
+
+/**
+ * Registrar algo cuenta como semana activa (D3). Se guarda en el momento,
+ * porque derivarla después de los registros la haría bajar al borrar uno.
+ * Solo las secciones donde el usuario anota dinero; la propia `aprende` no,
+ * para no reaccionar a sus propios guardados.
+ */
+const _SECCIONES_REGISTRO = new Set(['gastos', 'ingresosPuntuales', 'transferencias', 'compromisos', 'metas', 'apartados', 'ahorro']);
+function _alRegistrar({ section } = {}) {
+  if (!_SECCIONES_REGISTRO.has(section)) return;
+  const antes = S.aprende;
+  const despues = registrarSemana(antes, hoy());
+  if (despues.semanas.length === normalizarAprende(antes).semanas.length) return;
+  S.aprende = despues;
+  save();
 }
 
 /** Contexto que la vista necesita además de la sesión. */
@@ -337,7 +366,10 @@ export function initAprende() {
   }
 
   window.addEventListener('hashchange', _renderTodo);
-  EventBus.on('state:change', () => programarRender(_renderTodo));
+  EventBus.on('state:change', (datos) => {
+    _alRegistrar(datos);
+    programarRender(_renderTodo);
+  });
   registrarRender(_renderTodo);
   _renderTodo();
 }

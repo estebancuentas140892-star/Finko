@@ -510,3 +510,53 @@ export function htmlLeccion(sesion, leccion, ctx) {
       ${partes.fb ?? ''}
     </div>`;
 }
+
+// ── TU SIGUIENTE PASO (D5) ───────────────────────────────────────
+
+/**
+ * La celda "Tu siguiente paso" de Inicio. Ocupa el lugar de la tarjeta
+ * compacta de logros (APR.1c): Inicio no crece (ADR 087). Con una lección, el
+ * gancho es un dato real del usuario cuando lo hay; con una acción, el botón
+ * dice el monto (R50) y la lección queda como salida para repasar.
+ *
+ * @param {ReturnType<typeof import('./logic.js').siguientePaso>} paso
+ * @param {number} tope
+ * @returns {string} HTML; `''` si no hay paso.
+ */
+export function htmlSiguientePaso(paso, tope) {
+  if (!paso) return '';
+  const cabeza = (etiqueta) => `
+    <div class="siguiente-paso__cabeza">
+      <h2 class="siguiente-paso__titulo-celda">${etiqueta}</h2>
+      <a class="link" href="#aprende">Ver tu ruta</a>
+    </div>`;
+  if (paso.tipo === 'leccion') {
+    const { leccion, unidad, hormiga } = paso;
+    const gancho = unidad.id === 'u3' && hormiga.cuantos > 0
+      ? `Este mes hiciste ${hormiga.cuantos} ${hormiga.cuantos === 1 ? 'compra' : 'compras'} de ${f(tope)} o menos. ¿Sabes cuánto suman juntas?`
+      : `Termina en ${esc(leccion.termina ?? unidad.termina)}, con tus datos.`;
+    return `
+      <div class="siguiente-paso" data-dom="${unidad.dominio}">
+        ${cabeza('Tu siguiente paso')}
+        <p class="siguiente-paso__titulo">${esc(leccion.titulo)}</p>
+        <p class="siguiente-paso__texto">${gancho}</p>
+        <p class="siguiente-paso__meta">Lección de ${leccion.minutos} minutos · unidad ${unidad.numero}</p>
+        <button class="btn btn-primary siguiente-paso__cta" type="button" data-action="leccion-abrir"
+                data-id="${esc(leccion.id)}">Empezar lección</button>
+      </div>`;
+  }
+  const { aplica, unidad, leccionId } = paso;
+  return `
+    <div class="siguiente-paso" data-dom="${unidad.dominio}">
+      ${cabeza('Tu siguiente paso')}
+      <p class="siguiente-paso__meta">De la lección de gastos hormiga</p>
+      <p class="siguiente-paso__titulo">Ponle un límite a tus gastos pequeños</p>
+      <p class="siguiente-paso__texto">Este mes suman ${f(aplica.total)}. Un límite de ${f(aplica.limite)} te deja unos ${f(aplica.diferencia)} libres el mes que viene.</p>
+      <div class="siguiente-paso__acciones">
+        <button class="btn btn-primary siguiente-paso__cta" type="button" data-action="leccion-limite-hormiga"
+                data-monto="${aplica.limite}">Poner un límite de ${f(aplica.limite)}</button>
+        <button class="btn btn-ghost" type="button" data-action="leccion-abrir" data-id="${esc(leccionId)}">Repasar la lección</button>
+      </div>
+    </div>`;
+}
+

@@ -195,4 +195,5 @@ Pedido en chat: "vamos con la siguiente fase", y ante la pregunta de qué fase, 
 | Fichas 17 y 19 de MOV.1 | dejan de bloquear. Cuando lleguen, se releen contra lo que APR.1d haya movido de "Tu progreso"; un choque se resuelve con un ADR que acote, como dice D4 |
 | Despliegue | cada rebanada se sube a `main` al cerrar sus compuertas, para verla en producción |
 | APR.1a, cómo quedó | la lección 2 de la unidad 3 se entregó primero porque el handoff la trae completa; las lecciones 1, 3 y 4 pasan a APR.1b. En escritorio la ruta ya tiene su fila en "Día a día"; en móvil se llega por `#aprende` hasta APR.1c |
+| APR.1c y APR.1d, juntas | la pestaña "Tu progreso" necesita su lente, así que salieron en un solo paso. Las unidades suman al nivel desde `S.aprende.hechas` (primera fecha, no se revoca) y no entran a `S.logros`; las semanas activas son las guardadas más las semanas con gastos |
 | Desvío consciente del texto del diseño | el cierre de la lección describe el logro "Hormiga a raya" con su regla real (bajar del promedio de los tres meses anteriores, ADR 032), no con la del mockup ("mantenerte bajo el límite"), que no existe |

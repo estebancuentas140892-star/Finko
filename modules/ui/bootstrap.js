@@ -55,6 +55,7 @@ import { initAprende } from '../dominio/aprende/index.js';
 import { initMenuMas } from './menu-mas.js';
 import { initBloqueGastos } from './bloque-gastos.js';
 import { initBloqueAhorro } from './bloque-ahorro.js';
+import { initBloqueInicio } from './bloque-inicio.js';
 import { initRegistrar } from './registrar.js';
 import { initInstallPrompt } from './install-prompt.js';
 import { initSwAviso } from './sw-aviso.js';
@@ -90,6 +91,7 @@ initSidebarCollapse();
 // las pestañas ya en el DOM para marcar la activa.
 initBloqueGastos();
 initBloqueAhorro();
+initBloqueInicio();
 initRouter(markActiveNav);
 initOnboarding();
 initBloqueoAcceso();

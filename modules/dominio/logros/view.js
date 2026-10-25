@@ -1,125 +1,88 @@
 /**
  * logros/view.js - "Tu progreso" (LG.2d, ADR 032 D6) y la vitrina de logros.
  *
- * Dos superficies, un solo dominio (ningún dominio importa a otro, ADN #10):
- * - `renderProgresoAnalisis()`: apartado colapsable en Análisis (bloque 6 del
- *   ADR 046 D4), la vitrina completa agrupada por familia.
- * - `renderTarjetaProgresoInicio()`: tarjeta compacta en Inicio (nivel actual
- *   + último logro + próximo objetivo).
- * Mudanza desde Ajustes: el ADR 022 (vitrina en `#panel-logros`) queda
- * Superada. Puede leer S. No puede mutarlo. Sin lógica de negocio (delega a
+ * Desde APR.1d (ADR 092 D4) es una sola superficie: la lente "Tu progreso"
+ * (`renderProgresoSeccion()`). El apartado de Análisis y la tarjeta compacta
+ * de Inicio que dejó LG.2d se retiraron; en Inicio, su celda la ocupa "Tu
+ * siguiente paso" (dominio `aprende`). Puede leer S. No puede mutarlo. Sin lógica de negocio (delega a
  * logic.js).
  */
 
 import { S } from '../../core/state.js';
 import { esc as _esc } from '../../infra/utils.js';
-import { icon } from '../../infra/icons.js';
-import { estadoLogros, agruparVitrina, conteoVitrina, nivelUsuario } from './logic.js';
+
+import { estadoLogros, agruparVitrina, conteoVitrina, resumenProgreso, NIVELES_USUARIO } from './logic.js';
+import { UNIDADES, posicionEnRuta } from '../../infra/ruta-aprende.js';
 
 /**
- * Renderiza el apartado "Tu progreso" en `#panel-analisis-progreso`, fila
- * colapsable (mismo lenguaje que los otros grupos de Análisis: teja + título
- * + subtítulo + chevron, DIS.10). No-op si el contenedor no existe.
- *
- * Preserva el estado abierto/cerrado entre renders (mismo criterio DIS.10 C11
- * que `analisis/view.js` aplica a sus dos colapsables): este contenedor se
- * repinta en cada `state:change` global, no solo al navegar a Análisis.
+ * Pinta la lente "Tu progreso" (`#panel-progreso`, APR.1d, ADR 092 D4): el
+ * nivel con su escala, lo que sabes, lo que haces y las semanas activas.
+ * Reemplaza al apartado colapsable de Análisis y a la tarjeta compacta de
+ * Inicio que dejó LG.2d. No-op si el contenedor no existe.
  */
-export function renderProgresoAnalisis() {
-  const el = document.getElementById('panel-analisis-progreso');
+export function renderProgresoSeccion() {
+  const el = document.getElementById('panel-progreso');
   if (!el) return;
 
   const estados = estadoLogros(S, S.logros);
-  // El nivel se calcula sobre el catálogo crudo (ADR 032 D5); la cifra del
-  // encabezado, sobre la vitrina agrupada, que es lo que se dibuja (R88).
-  const nivel   = nivelUsuario(estados.filter(e => e.desbloqueado).length);
-
+  const p = resumenProgreso(S, estados);
+  // El "X de Y" de lo que haces sale de la vitrina agrupada, que es lo que se
+  // dibuja debajo (R88), no del catálogo crudo.
   const vitrina = agruparVitrina(estados);
   const { conseguidos, total } = conteoVitrina(vitrina);
-
   const items = vitrina
     .map(item => item.tipo === 'familia' ? _renderFamiliaItem(item) : _renderLogroItem(item.logro))
     .join('');
 
-  const previo  = el.querySelector('.analisis-grupo--progreso');
-  const abierto = previo ? previo.open : null;
+  const primero = NIVELES_USUARIO[0];
+  const ultimo = NIVELES_USUARIO[NIVELES_USUARIO.length - 1];
+  const avance = Math.min(100, Math.round((p.pasos / ultimo.min) * 100));
+  const unidadesTxt = p.unidades === 1 ? '1 unidad que ya sabes' : `${p.unidades} unidades que ya sabes`;
+  const logrosTxt = p.logros === 1 ? '1 logro' : `${p.logros} logros`;
+  const siguienteTxt = p.siguiente
+    ? `Faltan ${p.faltan} ${p.faltan === 1 ? 'paso' : 'pasos'} para ${_esc(p.siguiente.nombre)}`
+    : 'Llegaste al nivel más alto';
+
+  const pos = posicionEnRuta(S.aprende);
+  const dondeVas = pos
+    ? `Vas en la unidad ${pos.unidad.numero}, lección ${pos.leccion} de ${pos.total}.`
+    : 'Ya hiciste todas las lecciones disponibles.';
 
   el.innerHTML = `
-    <details class="analisis-grupo analisis-grupo--fila analisis-grupo--progreso">
-      <summary class="analisis-grupo__summary">
-        <span class="analisis-grupo__teja" aria-hidden="true">${icon('trophy')}</span>
-        <span class="analisis-grupo__texto">
-          <h2 class="analisis-grupo__title">Tu progreso</h2>
-          <span class="analisis-grupo__sub">Nivel ${_esc(nivel.nombre)} · ${conseguidos} de ${total} logros</span>
-        </span>
-        <svg class="icon analisis-grupo__chevron" aria-hidden="true"><use href="#i-chevron-right"/></svg>
-      </summary>
-      <div class="analisis-grupo__body">
+    <div class="progreso">
+      <section class="progreso-nivel" aria-labelledby="progreso-nivel-nombre">
+        <p class="progreso__eyebrow">Tu nivel</p>
+        <h2 class="progreso-nivel__nombre" id="progreso-nivel-nombre">${_esc(p.nivel.nombre)}</h2>
+        <p class="progreso__linea">Sumas ${p.pasos} ${p.pasos === 1 ? 'paso' : 'pasos'}: ${unidadesTxt} y ${logrosTxt} por lo que haces con tu dinero.</p>
+        <div class="progress progreso-nivel__barra" role="progressbar" aria-valuenow="${p.pasos}" aria-valuemin="0"
+             aria-valuemax="${ultimo.min}" aria-label="${p.pasos} de ${ultimo.min} pasos hasta ${_esc(ultimo.nombre)}">
+          <div class="progress-bar" style="width:${avance}%"></div>
+        </div>
+        <p class="progreso-nivel__escala"><span>${_esc(primero.nombre)}</span><span>${siguienteTxt}</span><span>${_esc(ultimo.nombre)}</span></p>
+      </section>
+
+      <section class="progreso-bloque" aria-labelledby="progreso-sabes">
+        <div class="progreso-bloque__cabeza">
+          <h2 class="progreso-bloque__titulo" id="progreso-sabes">Lo que sabes</h2>
+          <span class="progreso-bloque__cuenta">${p.unidades} de ${UNIDADES.length} unidades</span>
+        </div>
+        <p class="progreso__linea">${dondeVas} Cada unidad terminada suma un paso, una sola vez: repasar no suma.</p>
+        <a class="link" href="#aprende">Ver tu ruta</a>
+      </section>
+
+      <section class="progreso-bloque" aria-labelledby="progreso-haces">
+        <div class="progreso-bloque__cabeza">
+          <h2 class="progreso-bloque__titulo" id="progreso-haces">Lo que haces</h2>
+          <span class="progreso-bloque__cuenta">${conseguidos} de ${total} logros</span>
+        </div>
         <ul class="logros-lista" role="list">${items}</ul>
-      </div>
-    </details>`;
+      </section>
 
-  const nodo = el.querySelector('.analisis-grupo--progreso');
-  if (nodo && abierto !== null) nodo.open = abierto;
-}
-
-/**
- * Renderiza la tarjeta compacta en `#panel-progreso-inicio` (ADR 032 D6):
- * nivel actual, último logro desbloqueado y próximo objetivo. Oculta hasta
- * el primer logro (una tarjeta vacía no orienta a nadie). No-op si el
- * contenedor no existe.
- */
-export function renderTarjetaProgresoInicio() {
-  const el = document.getElementById('panel-progreso-inicio');
-  if (!el) return;
-
-  const estados = estadoLogros(S, S.logros);
-  const n = estados.filter(e => e.desbloqueado).length;
-  if (n === 0) { el.hidden = true; return; }
-
-  // Mismo denominador que el apartado de Análisis, al que esta tarjeta enlaza:
-  // dos superficies del mismo progreso no pueden dar cifras distintas (R88).
-  const vitrina = agruparVitrina(estados);
-  const { conseguidos, total } = conteoVitrina(vitrina);
-  const nivel = nivelUsuario(n);
-
-  // Sin fecha de desbloqueo (ADR 032 D1): el orden de inserción de S.logros
-  // es el mejor proxy de "último logro" disponible.
-  const ultimoId = S.logros[S.logros.length - 1];
-  const ultimo   = ultimoId ? estados.find(e => e.id === ultimoId) : null;
-  const objetivo = _proximoObjetivo(vitrina);
-
-  el.hidden = false;
-  el.innerHTML = `
-    <div class="card__header">
-      <h2 class="card__title">Tu progreso</h2>
-      <span class="chip chip-success">Nivel ${_esc(nivel.nombre)}</span>
-    </div>
-    <p class="config-section__desc">${conseguidos} de ${total} logros desbloqueados.</p>
-    <ul class="logros-lista" role="list">
-      ${ultimo ? _renderLogroItem(ultimo) : ''}
-      ${objetivo ? _renderLogroItem(objetivo) : ''}
-    </ul>
-    <a href="#analisis" class="link">Ver todo tu progreso</a>`;
-}
-
-/**
- * Primer objetivo pendiente en orden de vitrina: el siguiente nivel de la
- * primera familia que aún tenga uno, o el primer logro suelto sin desbloquear.
- * `null` si ya no queda nada pendiente (catálogo completo).
- *
- * @param {ReturnType<typeof agruparVitrina>} vitrina
- * @returns {ReturnType<typeof estadoLogros>[number] | null}
- */
-function _proximoObjetivo(vitrina) {
-  for (const item of vitrina) {
-    if (item.tipo === 'familia') {
-      if (item.siguiente) return item.siguiente;
-    } else if (!item.logro.desbloqueado) {
-      return item.logro;
-    }
-  }
-  return null;
+      <section class="progreso-bloque progreso-semanas" aria-labelledby="progreso-semanas">
+        <p class="progreso-semanas__cifra" id="progreso-semanas">${p.semanas} ${p.semanas === 1 ? 'semana activa' : 'semanas activas'}</p>
+        <p class="progreso__linea">Semanas en que registraste algo o hiciste una lección. Solo informa: nunca vuelve a cero.</p>
+      </section>
+    </div>`;
 }
 
 /**
