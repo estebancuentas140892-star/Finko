@@ -10,6 +10,11 @@
 export default {
   'u7-l1': {
     id: 'u7-l1',
+    aprendes: [
+      'Por qué una tasa al mes se ve más pequeña.',
+      'Qué es la tasa efectiva anual.',
+      'Cómo comparar dos créditos por su costo real.',
+    ],
     pasos: [
       {
         tipo: 'concepto',
@@ -36,6 +41,11 @@ export default {
 
   'u7-l2': {
     id: 'u7-l2',
+    aprendes: [
+      'Por qué la tarjeta de crédito es un préstamo.',
+      'Qué te cobra menos: el total o el mínimo.',
+      'Cuándo la tarjeta te cobra intereses.',
+    ],
     pasos: [
       {
         tipo: 'concepto',
@@ -81,6 +91,11 @@ export default {
 
   'u7-l3': {
     id: 'u7-l3',
+    aprendes: [
+      'Cuánto pagas según el número de cuotas.',
+      'Por qué una cuota más baja puede salir más cara.',
+      'Cómo mirar el total antes de elegir el plazo.',
+    ],
     pasos: [
       {
         tipo: 'control',
@@ -117,6 +132,11 @@ export default {
 
   'u7-l4': {
     id: 'u7-l4',
+    aprendes: [
+      'Cómo reconocer un crédito rápido que te puede salir caro.',
+      'Qué revisar antes de firmar.',
+      'Qué comparar entre dos créditos.',
+    ],
     pasos: [
       {
         tipo: 'elegir',

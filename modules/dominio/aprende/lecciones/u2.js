@@ -11,6 +11,11 @@
 export default {
   'u2-l1': {
     id: 'u2-l1',
+    aprendes: [
+      'Cómo reparte la regla 50/30/20 cada $100 que recibes.',
+      'Cuánto separar para ahorrar con tu ingreso.',
+      'Cómo cambia el reparto si cambia tu ingreso.',
+    ],
     pasos: [
       {
         tipo: 'concepto',
@@ -47,6 +52,11 @@ export default {
 
   'u2-l2': {
     id: 'u2-l2',
+    aprendes: [
+      'Cómo distinguir una necesidad de un gusto.',
+      'Qué hacer si tus necesidades pasan de $50 de cada $100.',
+      'Cómo recuperar margen con el tiempo.',
+    ],
     pasos: [
       {
         tipo: 'clasificar',
@@ -95,6 +105,11 @@ export default {
 
   'u2-l3': {
     id: 'u2-l3',
+    aprendes: [
+      'Por qué ahorrar lo que sobra casi nunca funciona.',
+      'En qué orden repartir el ingreso el día que llega.',
+      'Cómo hacer que el ahorro no dependa de lo que sobre.',
+    ],
     pasos: [
       {
         tipo: 'concepto',

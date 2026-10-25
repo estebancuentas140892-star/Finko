@@ -1,6 +1,6 @@
 # Ficha de contexto: Aprende
 
-> Revisado: 2026-10-24.
+> Revisado: 2026-10-25.
 
 > La capa de aprendizaje del adulto: la ruta de nueve unidades (`#aprende`) y la lección a pantalla completa (`#modal-leccion`). Decisiones: [ADR 092](../DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md). Tarjetas: iniciativa APR en [`board/transversal.md`](../board/transversal.md). Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -11,8 +11,8 @@
 ## Ruta y lección (dominio `aprende`)
 
 - **Objetivo**          : enseñar con práctica y cerrar cada lección en la sección donde se aplica, con los datos del usuario (Aplícalo, D7).
-- **Estado actual**     : en evolución (iniciativa APR). **Fase 1 cerrada** (APR.1a a APR.1d): motor de lección, estado en `S`, ruta, la unidad 3 completa, "Tu siguiente paso" en Inicio y el bloque Inicio de tres lentes en móvil (`ui/bloque-inicio.js`). En escritorio, fila propia en "Día a día".
-- **Verificado contra** : commit de APR.1a (2026-10-24).
+- **Estado actual**     : en evolución (iniciativa APR). **Fase 1 cerrada** (APR.1a a APR.1d): motor de lección, estado en `S`, ruta, la unidad 3 completa, "Tu siguiente paso" en Inicio y el bloque Inicio de tres lentes en móvil (`ui/bloque-inicio.js`). En escritorio, fila propia en "Día a día". **APR.4a**: en escritorio la ruta va en dos columnas con el detalle de la lección elegida, y la lección pone la respuesta al lado de la pregunta.
+- **Verificado contra** : commit de APR.4a (2026-10-25).
 
 **Dónde vive**
 
@@ -41,11 +41,13 @@
 | Semana activa al registrar (D3) | `modules/dominio/aprende/index.js` | `_alRegistrar()`, `registrarSemana()` | |
 | Catálogo, unidades sabidas, semanas activas, posición en la ruta (lo lee también `logros`) | `modules/infra/ruta-aprende.js` | `UNIDADES`, `contarUnidadesSabidas()`, `contarSemanasActivas()`, `posicionEnRuta()` | |
 | Franja Hoy, Aprende y Tu progreso en móvil | `modules/ui/bloque-inicio.js` | `htmlBloqueInicio()`, `estadoLentesInicio()` | |
-| Gesto de deslizar (pointer events) | `modules/dominio/aprende/index.js` | `_alPresionar()`, `_alArrastrar()`, `_alSoltar()` | ~249 |
+| Gesto de deslizar y arrastre de "ordenar" por su asa (pointer events) | `modules/dominio/aprende/index.js` | `_alPresionar()`, `_alArrastrar()`, `_alSoltar()`; `_presionarOrden()`, `_arrastrarOrden()`, `_soltarOrden()` | |
+| Ruta de escritorio (APR.4a): lección elegida, su detalle y el contenido que llega con `import()` | `modules/dominio/aprende/index.js` / `view.js` | `_seleccion`, `_verLeccion()` (`data-action="leccion-ver"`), `_contenidoParaRuta()`, `_detalleLeccion()` | |
+| "Vas a aprender" y los tipos de ejercicio | `lecciones/uN.js` / `logic.js` | `aprendes`, `tiposDeEjercicio()` | |
 | Criterio de gasto hormiga (compartido con `gastos` y `logros`) | `modules/infra/hormiga.js` | `UMBRAL_GASTO_HORMIGA`, `resumenHormigaMes()` | ~15, ~40 |
 | Sección y overlay | `index.html` | `#sec-aprende`, `#panel-aprende`, `#modal-leccion`, `#leccion-panel` | |
 
-**Recursos**: `c-birrete` (ícono de la sección), `i-check`, `i-arrow-left`, `i-arrow-right`, `i-chevron-up`, `i-chevron-down` (nuevos en `assets/svg/iconos/utilitarios/`). CSS: `styles/components/aprende.css` (`.aprende-*`, `.leccion*`, filas de animación `stepIn`, `feedbackIn`, `cardOutDer`/`cardOutIzq`, `checkIn`); geometría del overlay en `styles/modals.css` (bloque "LECCIÓN A PANTALLA COMPLETA"). Color de unidad por `data-dom` → `--apr-dom`/`--apr-dom-text`. Estado: `S.aprende` (schema v45; `ubicacion` desde v47).
+**Recursos**: `c-birrete` (ícono de la sección), `i-check`, `i-arrow-left`, `i-arrow-right`, `i-chevron-up`, `i-chevron-down`, `i-grip` (en `assets/svg/iconos/utilitarios/`). CSS: `styles/components/aprende.css` (`.aprende-*`, `.leccion*`, filas de animación `stepIn`, `feedbackIn`, `cardOutDer`/`cardOutIzq`, `checkIn`); geometría del overlay en `styles/modals.css` (bloque "LECCIÓN A PANTALLA COMPLETA"). Color de unidad por `data-dom` → `--apr-dom`/`--apr-dom-text`. Estado: `S.aprende` (schema v45; `ubicacion` desde v47).
 
 **Dependencias y relaciones**: escucha `state:change` (repinta la ruta con `programarRender`) y `hashchange`. Escucha `seccion:pintada` (`{ seccion, datos }`, lo emite `ahorro` al pintar el Fondo) y llena `#fondo-leccion` o `#fondo-leccion-pie`. Emite `hormiga:limite` (`{ monto }`), que atiende `presupuesto` (dueño del límite, ficha [`limites.md`](limites.md)). El tope de gasto pequeño lo lee de `S.config.hormiga` con `topeHormiga()`. Los botones del Aplícalo usan acciones globales de `ui/actions.js`: `ir-a-seccion` (cierra y navega) y `registrar-abrir` (cierra y abre `nuevo-gasto`), así no importa dominios destino. Lee `S.gastos` y `S.categoriasPersonalizadas`; `iconoDeCategoriaGasto()` de `core/constants.js`.
 
@@ -58,11 +60,14 @@
 - **El deslizador no repinta el paso** (perdería el foco mientras se arrastra): `_alMoverRango()` parcha el número y `#leccion-resultado`.
 - **Las tarjetas de clasificar deben respetar el tope**: un test exige, en toda la unidad, que las marcadas `es: true` sean hormiga según `esGastoHormiga()` con el tope por defecto.
 - **La insignia sale solo la primera vez** que una lección completa su unidad (`primeraVez` de `registrarLeccionHecha()`): repasar la última lección no vuelve a celebrar.
+- **El detalle de escritorio se pinta dos veces**: sin `aprendes` ni ejercicios y de nuevo cuando llega el contenido. `_renderRuta()` devuelve el foco al botón que lo tenía; un repintado de la ruta que no pase por ahí lo pierde.
+- **`aprendes` vive en el contenido, no en el catálogo**: una lección nueva sin sus dos o tres frases rompe el test de escritorio.
 
-**Cambios pendientes**: la ilustración `il-hormiga` del concepto no entró al sprite (usa clases y `ellipse`, fuera del estándar de `sync-sprite.py`); va con APR.3b o se redibuja con el estándar. Ordenar pasos solo con flechas: el arrastre llega con APR.4a.
+**Cambios pendientes**: la ilustración `il-hormiga` del concepto no entró al sprite (usa clases y `ellipse`, fuera del estándar de `sync-sprite.py`); va con APR.3b o se redibuja con el estándar. Del diseño 32 quedaron fuera de APR.4a el chip de nivel del encabezado, la tarjeta punteada "Ya lo sabes: unidades 1 y 2" y la pista "Te sirve ya: tienes N deudas" en "Después"; del 33, la línea "Con tus datos" en la respuesta.
 
 **Cambios realizados**:
 
+- 2026-10-25 (APR.4a): escritorio: detalle de la lección elegida, `aprendes` en el contenido, lección en dos columnas, arrastre en ordenar.
 - 2026-10-25 (APR.3c): el motor también sirve la ruta del niño; su avance va a su perfil (ficha [`nino.md`](nino.md)).
 - 2026-10-24 (APR.2b): prueba de ubicación, `S.aprende.ubicacion` (v47).
 - 2026-10-24 (APR.2a): la sección ofrece su lección; primer caso Fondo, con `seccion:pintada`.

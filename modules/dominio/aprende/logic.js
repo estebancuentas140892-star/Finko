@@ -53,6 +53,29 @@ export function leccionDisponible(meta) {
   return Boolean(meta) && meta.contenido !== false;
 }
 
+/** Nombre visible de cada tipo de ejercicio (D7). */
+const _NOMBRE_TIPO = {
+  elegir: 'Elegir una opción',
+  clasificar: 'Clasificar deslizando',
+  control: 'Mover un control',
+  ordenar: 'Ordenar pasos',
+};
+
+/**
+ * Los tipos de ejercicio de una lección, sin repetir y en el orden en que
+ * aparecen: el detalle de la ruta en escritorio los muestra antes de empezar
+ * (APR.4a). El concepto y el cierre no son ejercicios; "¿Qué harías?" es un
+ * elegir con nombre propio (D7).
+ *
+ * @param {{ pasos?: any[] } | null | undefined} leccion - contenido de la lección.
+ * @returns {string[]}
+ */
+export function tiposDeEjercicio(leccion) {
+  const nombres = (leccion?.pasos ?? []).map(p =>
+    p.tipo === 'elegir' && p.etiqueta === '¿Qué harías?' ? '¿Qué harías?' : _NOMBRE_TIPO[p.tipo]);
+  return [...new Set(nombres.filter(Boolean))];
+}
+
 // ── ESTADO DE LA RUTA ────────────────────────────────────────────
 
 /**

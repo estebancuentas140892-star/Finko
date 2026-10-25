@@ -171,8 +171,5 @@
 
 ### Fase 4 - Escritorio
 
-#### APR.4a - Aprende y la lección en escritorio
-- Estado : pendiente de APR.1d. **Objetivo**: ruta, detalle de la lección elegida ("Vas a aprender", tipos de ejercicio, "Termina en") y lección a pantalla completa con "Salir · tu avance se guarda" (ADR 092 D2). **Modelo**: Equilibrado, Alto.
-
 #### APR.4b - Perfil niño en escritorio y tableta
 - Estado : pendiente de APR.3d. **Modelo**: Equilibrado, Medio.

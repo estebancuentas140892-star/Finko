@@ -11,6 +11,11 @@
 export default {
   'u4-l1': {
     id: 'u4-l1',
+    aprendes: [
+      'Para qué sirve un fondo de emergencia.',
+      'Qué cuenta como emergencia y qué no.',
+      'Qué pasa cuando llega una emergencia sin fondo.',
+    ],
     pasos: [
       {
         tipo: 'concepto',
@@ -65,6 +70,11 @@ export default {
 
   'u4-l2': {
     id: 'u4-l2',
+    aprendes: [
+      'Por qué el fondo se cuenta en meses de gastos.',
+      'Cuánto necesita el tuyo, entre 3 y 6 meses.',
+      'Cuántos meses te convienen si tu ingreso cambia.',
+    ],
     pasos: [
       {
         tipo: 'concepto',
@@ -101,6 +111,11 @@ export default {
 
   'u4-l3': {
     id: 'u4-l3',
+    aprendes: [
+      'Por qué un aporte pequeño y fijo rinde más.',
+      'En cuánto tiempo llenas tu fondo.',
+      'En qué orden llenarlo sin ahogarte.',
+    ],
     pasos: [
       {
         tipo: 'concepto',
@@ -137,6 +152,11 @@ export default {
 
   'u4-l4': {
     id: 'u4-l4',
+    aprendes: [
+      'Cuándo sí usar el fondo.',
+      'Por qué usarlo no es fallar.',
+      'Cómo reponerlo y en cuánto tiempo.',
+    ],
     pasos: [
       {
         tipo: 'elegir',

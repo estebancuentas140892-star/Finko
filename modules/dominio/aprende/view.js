@@ -12,13 +12,22 @@ import { icon, tejaCategoria, iconoCategoria } from '../../infra/icons.js';
 import { htmlFrai, htmlDestellos } from '../../infra/ilustraciones.js';
 import {
   estadoRuta, normalizarAprende, leccionDisponible, numeroDePaso, pasoActual,
-  pasoListo, RESULTADOS, UNIDADES, ofrecerUbicacion,
+  pasoListo, RESULTADOS, UNIDADES, ofrecerUbicacion, metaLeccion, unidadDeLeccion, tiposDeEjercicio,
 } from './logic.js';
 
 // ── RUTA ─────────────────────────────────────────────────────────
 
+/**
+ * Cómo se pinta la ruta: en móvil, tocar una lección la abre; en escritorio
+ * la elige y su detalle se ve al lado (APR.4a, diseño 32).
+ *
+ * @typedef {{ escritorio: boolean, seleccion: string | null }} VistaRuta
+ */
+/** @type {VistaRuta} */
+const _VISTA_MOVIL = { escritorio: false, seleccion: null };
+
 /** Fila de una lección dentro de la unidad abierta. */
-function _filaLeccion(leccion, n, hechas, siguienteId) {
+function _filaLeccion(leccion, n, hechas, siguienteId, vista) {
   const hecha = Boolean(hechas[leccion.id]);
   const disponible = leccionDisponible(leccion);
   const esSiguiente = leccion.id === siguienteId;
@@ -38,6 +47,16 @@ function _filaLeccion(leccion, n, hechas, siguienteId) {
   if (!disponible) {
     return `<li class="aprende-paso aprende-paso--${estado} aprende-paso--pronto">${cuerpo}</li>`;
   }
+  if (vista.escritorio) {
+    const elegida = leccion.id === vista.seleccion;
+    return `
+    <li class="aprende-paso aprende-paso--${estado}${elegida ? ' aprende-paso--elegida' : ''}">
+      <button class="aprende-paso__boton" type="button" data-action="leccion-ver" data-id="${esc(leccion.id)}"
+              aria-label="Ver el detalle de ${esc(leccion.titulo)}"${elegida ? ' aria-current="true"' : ''}>${cuerpo}
+        ${elegida ? icon('chevron-right', 'icon aprende-paso__flecha') : ''}
+      </button>
+    </li>`;
+  }
   const accion = hecha ? `Repasar ${esc(leccion.titulo)}` : `Abrir ${esc(leccion.titulo)}`;
   return `
     <li class="aprende-paso aprende-paso--${estado}">
@@ -51,13 +70,14 @@ function _filaLeccion(leccion, n, hechas, siguienteId) {
  * Tarjeta de una unidad con sus lecciones a la vista: la actual ("vas aquí")
  * o una que el usuario abrió desde la lista para repasar o adelantarse.
  */
-function _tarjetaUnidad(entrada, aprende, eyebrow) {
+function _tarjetaUnidad(entrada, aprende, eyebrow, vista) {
   const { unidad, hechas: cuantas, total } = entrada;
   const { hechas, enCurso } = aprende;
   const siguiente = unidad.lecciones.find(l => leccionDisponible(l) && !hechas[l.id]);
   const numero = siguiente ? unidad.lecciones.indexOf(siguiente) + 1 : 0;
   const retomar = siguiente && enCurso?.id === siguiente.id;
-  const boton = siguiente
+  // En escritorio el único primario es "Empezar lección" del detalle.
+  const boton = siguiente && !vista.escritorio
     ? `<button class="btn btn-primary aprende-unidad__cta" type="button" data-action="leccion-abrir"
                data-id="${esc(siguiente.id)}">${retomar ? 'Seguir' : 'Empezar'} la lección ${numero}</button>`
     : '';
@@ -70,7 +90,7 @@ function _tarjetaUnidad(entrada, aprende, eyebrow) {
         <span class="aprende-unidad__cuenta">${cuantas} de ${total}</span>
       </div>
       <ol class="aprende-pasos">
-        ${unidad.lecciones.map((l, i) => _filaLeccion(l, i + 1, hechas, siguiente?.id)).join('')}
+        ${unidad.lecciones.map((l, i) => _filaLeccion(l, i + 1, hechas, siguiente?.id, vista)).join('')}
       </ol>
       ${boton}
     </section>`;
@@ -81,12 +101,12 @@ function _tarjetaUnidad(entrada, aprende, eyebrow) {
  * escritas es un botón que la despliega en su lugar (nada se bloquea, D8);
  * si está en preparación, solo dice a dónde llevará.
  */
-function _filaUnidad(entrada, aprende, abierta) {
+function _filaUnidad(entrada, aprende, abierta, vista) {
   const { unidad, estado } = entrada;
   const disponibles = unidad.lecciones.filter(leccionDisponible).length;
   if (disponibles && abierta === unidad.id) {
     const etiqueta = estado === 'hecha' ? 'hecha' : estado === 'sabida' ? 'ya la sabes' : 'después';
-    return `<li class="aprende-fila-abierta">${_tarjetaUnidad(entrada, aprende, `Unidad ${unidad.numero} · ${etiqueta}`)}
+    return `<li class="aprende-fila-abierta">${_tarjetaUnidad(entrada, aprende, `Unidad ${unidad.numero} · ${etiqueta}`, vista)}
       <button class="btn btn-ghost btn-sm aprende-fila-abierta__cerrar" type="button" data-action="aprende-unidad"
               data-id="${unidad.id}" aria-expanded="true">Cerrar la unidad ${unidad.numero}</button></li>`;
   }
@@ -109,31 +129,88 @@ function _filaUnidad(entrada, aprende, abierta) {
     </li>`;
 }
 
+/** Ícono de la sección donde termina cada unidad: el de la barra lateral. */
+const _ICONO_SECCION = {
+  tesoreria: 'cuentas', presupuesto: 'presupuesto', fondo: 'ahorro', metas: 'metas',
+  compromisos: 'deudas', inversion: 'inversion', analisis: 'analisis',
+};
+
+/**
+ * Detalle de la lección elegida, al lado de la ruta en escritorio (APR.4a,
+ * diseño 32): qué vas a aprender, con qué ejercicios y dónde termina. Las
+ * viñetas y los tipos salen del contenido de la unidad, que llega con
+ * `import()` (D11): mientras carga, el detalle se pinta sin ellos.
+ *
+ * @param {string} id
+ * @param {ReturnType<typeof normalizarAprende>} aprende
+ * @param {{ aprendes?: string[], pasos?: any[] } | null} contenido
+ * @returns {string}
+ */
+function _detalleLeccion(id, aprende, contenido) {
+  const meta = metaLeccion(id);
+  const unidad = unidadDeLeccion(id);
+  if (!meta || !unidad) return '';
+  const numero = unidad.lecciones.indexOf(meta) + 1;
+  const boton = aprende.hechas[id] ? 'Repasar lección'
+    : aprende.enCurso?.id === id ? 'Seguir donde quedaste' : 'Empezar lección';
+  const aprendes = contenido?.aprendes ?? [];
+  const tipos = tiposDeEjercicio(contenido);
+  const vinetas = aprendes.length ? `
+      <div class="aprende-detalle__aprendes">
+        <h3 class="aprende-detalle__subtitulo">Vas a aprender</h3>
+        <ul class="aprende-detalle__lista">${aprendes.map(t => `<li>${icon('check')}<span>${esc(t)}</span></li>`).join('')}</ul>
+      </div>` : '';
+  const chips = tipos.length
+    ? `<ul class="aprende-detalle__tipos" aria-label="Ejercicios de la lección">${tipos.map(t => `<li class="chip">${esc(t)}</li>`).join('')}</ul>`
+    : '';
+  return `
+    <aside class="aprende-detalle" data-dom="${unidad.dominio}" aria-labelledby="aprende-detalle-titulo">
+      <p class="aprende-detalle__eyebrow">Lección ${numero} · ${meta.minutos} minutos</p>
+      <h2 class="aprende-detalle__titulo" id="aprende-detalle-titulo">${esc(meta.titulo)}</h2>
+      ${vinetas}
+      ${chips}
+      <div class="aprende-detalle__termina">
+        <span class="aprende-detalle__teja" aria-hidden="true">${icon(_ICONO_SECCION[unidad.seccion] ?? 'arrow-right')}</span>
+        <p class="aprende-detalle__destino"><span>Termina en</span><strong>${esc(meta.termina ?? unidad.termina)}</strong></p>
+      </div>
+      <button class="btn btn-primary aprende-detalle__cta" type="button" data-action="leccion-abrir"
+              data-id="${esc(id)}">${boton}</button>
+    </aside>`;
+}
+
 /**
  * HTML de la ruta completa: la unidad actual abierta y el resto en dos
  * grupos, lo que ya está y lo que viene. Nada se bloquea (D8).
  *
+ * En escritorio (APR.4a) la ruta va en dos columnas: a la izquierda las
+ * unidades, a la derecha el detalle de la lección elegida con su "Empezar
+ * lección", que es el único primario de la pantalla.
+ *
  * @param {unknown} aprendeCrudo - `S.aprende`.
  * @param {string | null} [abierta] - unidad que el usuario desplegó en la lista.
+ * @param {{ seleccion: string | null, contenido: any } | null} [escritorio] - la
+ *   lección elegida y su contenido, si ya cargó; `null` en móvil.
  * @returns {string}
  */
-export function htmlRuta(aprendeCrudo, abierta = null) {
+export function htmlRuta(aprendeCrudo, abierta = null, escritorio = null) {
   const aprende = normalizarAprende(aprendeCrudo);
   const ruta = estadoRuta(aprende);
+  /** @type {VistaRuta} */
+  const vista = escritorio ? { escritorio: true, seleccion: escritorio.seleccion } : _VISTA_MOVIL;
   const actual = ruta.find(e => e.estado === 'actual');
   const yaEsta = ruta.filter(e => e.estado === 'hecha' || e.estado === 'sabida');
   const despues = ruta.filter(e => e.estado === 'despues');
   const grupo = (titulo, id, filas) => filas.length ? `
     <section class="aprende-grupo" aria-labelledby="${id}">
       <h2 class="aprende-grupo__titulo" id="${id}">${titulo}</h2>
-      <ul class="aprende-filas">${filas.map(e => _filaUnidad(e, aprende, abierta)).join('')}</ul>
+      <ul class="aprende-filas">${filas.map(e => _filaUnidad(e, aprende, abierta, vista)).join('')}</ul>
     </section>` : '';
   // Sin unidad actual es que no queda ninguna lección escrita por hacer:
   // se dice, en vez de dejar la ruta sin su tarjeta principal y sin motivo.
   // Solo se habla de unidades en preparación si de verdad queda alguna.
   const enPreparacion = ruta.some(e => !e.unidad.lecciones.some(leccionDisponible));
   const cabeza = actual
-    ? _tarjetaUnidad(actual, aprende, `Unidad ${actual.unidad.numero} · vas aquí`)
+    ? _tarjetaUnidad(actual, aprende, `Unidad ${actual.unidad.numero} · vas aquí`, vista)
     : enPreparacion
       ? `<p class="aprende-ruta__aviso">Ya hiciste todas las lecciones disponibles. Las próximas unidades están en preparación; mientras tanto, puedes repasar las que ya hiciste.</p>`
       : `<p class="aprende-ruta__aviso">Terminaste las ${ruta.length} unidades de la ruta. Puedes repasar cualquier lección cuando quieras.</p>`;
@@ -145,23 +222,29 @@ export function htmlRuta(aprendeCrudo, abierta = null) {
       <p class="aprende-ubicacion__texto">Responde 4 preguntas y empieza en la unidad que te toca. "Todavía no lo sé" también es una respuesta.</p>
       <button class="btn btn-secondary btn-sm aprende-ubicacion__cta" type="button" data-action="ubicacion-abrir">Hacer la prueba · 2 min</button>
     </section>` : '';
-  return `
-    <div class="aprende-ruta">
+  const unidades = `
       ${cabeza}
       ${prueba}
       ${grupo('Ya lo sabes', 'aprende-grupo-sabes', yaEsta)}
-      ${grupo('Después', 'aprende-grupo-despues', despues)}
+      ${grupo('Después', 'aprende-grupo-despues', despues)}`;
+  if (!escritorio) return `<div class="aprende-ruta">${unidades}</div>`;
+  const detalle = escritorio.seleccion ? _detalleLeccion(escritorio.seleccion, aprende, escritorio.contenido) : '';
+  return `
+    <div class="aprende-ruta aprende-ruta--escritorio${detalle ? ' aprende-ruta--con-detalle' : ''}">
+      <div class="aprende-ruta__unidades">${unidades}</div>
+      ${detalle}
     </div>`;
 }
 
 /**
  * Pinta la ruta en `#panel-aprende`.
  * @param {string | null} [abierta] - unidad desplegada en la lista.
+ * @param {{ seleccion: string | null, contenido: any } | null} [escritorio]
  */
-export function renderRuta(abierta = null) {
+export function renderRuta(abierta = null, escritorio = null) {
   const panel = document.getElementById('panel-aprende');
   if (!panel) return;
-  panel.innerHTML = htmlRuta(S.aprende, abierta);
+  panel.innerHTML = htmlRuta(S.aprende, abierta, escritorio);
 }
 
 // ── LECCIÓN ──────────────────────────────────────────────────────
@@ -188,6 +271,8 @@ function _barra(sesion, terminada) {
   const salir = terminada
     ? 'Cerrar y volver a la ruta'
     : 'Salir de la lección. Tu avance se guarda';
+  // En escritorio la salida se lee, no solo se adivina por la X (ADR 092 D2).
+  const texto = terminada ? 'Cerrar' : 'Salir · tu avance se guarda';
   const progreso = terminada
     ? `<div class="leccion__prog" aria-hidden="true">${segmentos}</div>`
     : `<div class="leccion__prog" role="progressbar" aria-valuemin="0" aria-valuemax="${sesion.total}"
@@ -195,7 +280,7 @@ function _barra(sesion, terminada) {
   return `
     <div class="leccion__top">
       <button class="btn btn-icon btn-ghost leccion__salir" type="button"
-              data-action="leccion-salir" aria-label="${salir}">${icon('x')}</button>
+              data-action="leccion-salir" aria-label="${salir}">${icon('x')}<span class="leccion__salir-texto">${texto}</span></button>
       ${progreso}
       <span class="leccion__cuenta">${terminada ? 'Lista' : `${n} de ${sesion.total}`}</span>
     </div>`;
@@ -441,8 +526,11 @@ function _pasoControl(paso, sesion, ctx) {
 
 function _pasoOrdenar(paso, sesion, ctx) {
   const rev = sesion.revision;
+  // El asa se arrastra (D7); las flechas son la alternativa con teclado.
+  const asa = rev ? '' : `<span class="leccion-orden__asa" data-orden-asa aria-hidden="true">${icon('grip')}</span>`;
   const filas = sesion.orden.map((item, i) => `
-    <li class="leccion-orden__item${rev ? (rev.correcto ? ' leccion-orden__item--bien' : '') : ''}">
+    <li class="leccion-orden__item${rev ? (rev.correcto ? ' leccion-orden__item--bien' : '') : ''}" data-orden="${i}">
+      ${asa}
       <span class="leccion-orden__numero" aria-hidden="true">${i + 1}</span>
       <span class="leccion-orden__texto">${_texto(paso.items[item], ctx)}</span>
       <span class="leccion-orden__flechas">
@@ -461,7 +549,7 @@ function _pasoOrdenar(paso, sesion, ctx) {
     cuerpo: `
       <p class="leccion__eyebrow">${esc(sesion.repaso ? 'Otra vez' : paso.etiqueta ?? 'Ordena los pasos')}</p>
       <h2 class="leccion__titulo" id="leccion-titulo" tabindex="-1">${_texto(paso.pregunta, ctx)}</h2>
-      <p class="leccion__ayuda">Usa las flechas para mover cada paso.</p>
+      <p class="leccion__ayuda">Arrastra cada paso o usa las flechas.</p>
       <ol class="leccion-orden">${filas}</ol>`,
     pie: rev ? '' : `<button class="btn btn-primary leccion__boton" type="button" data-action="leccion-comprobar">Comprobar</button>`,
     fb,

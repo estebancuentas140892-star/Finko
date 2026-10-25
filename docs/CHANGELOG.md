@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(aprende): APR.4a, Aprende y la lección en escritorio · 2026-10-25
+
+[ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D2 y D7, diseños 32 y 33; ficha [`contexto/aprende.md`](contexto/aprende.md). SW v610.
+
+- **La ruta en dos columnas desde 1024 px**: tocar una lección la elige, no la abre, y su detalle se ve al lado: "Lección N · M minutos", "Vas a aprender", los tipos de ejercicio, "Termina en" y "Empezar lección", el único primario (el botón de la unidad no se pinta en escritorio). "Ya lo sabes" y "Después" pasan a dos columnas. En móvil la ruta no cambia.
+- **"Vas a aprender" es contenido**: las 32 lecciones del adulto suman `aprendes`, dos o tres frases con un test de largo. Viaja con la unidad (`import()`, D11), así que el detalle se pinta primero sin viñetas. Los tipos de ejercicio se derivan de los pasos. Entran a la revisión pedagógica pendiente de APR.2c.
+- **La lección en escritorio**: barra de lado a lado con "Salir · tu avance se guarda" escrito; en las preguntas, la respuesta se ve a la derecha de la pregunta en vez de subir desde el pie.
+- **Ordenar pasos se arrastra** por su asa, como pide el ADR 092 ("arrastre y flechas"); las flechas siguen siendo la alternativa con teclado. Ícono `i-grip` nuevo en la biblioteca.
+- **Repintar la ruta devuelve el foco** al botón que lo tenía: el contenido del detalle llega después del toque y sacaba al usuario de la fila elegida (lo encontró el E2E).
+
 ### feat(nino): APR.3f, las unidades 2 a 8 del niño y su ubicación · 2026-10-25
 
 [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md) D6 y D9; ficha [`contexto/nino.md`](contexto/nino.md). SW v609.

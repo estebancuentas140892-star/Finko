@@ -10,6 +10,11 @@
 export default {
   'u5-l1': {
     id: 'u5-l1',
+    aprendes: [
+      'Qué hace clara una meta: nombre, precio y fecha.',
+      'Cómo sale lo que guardas cada mes.',
+      'Por qué "ahorrar más" no es una meta.',
+    ],
     pasos: [
       {
         tipo: 'concepto',
@@ -42,6 +47,11 @@ export default {
 
   'u5-l2': {
     id: 'u5-l2',
+    aprendes: [
+      'Cuánto guardar cada mes para llegar a tu meta.',
+      'Qué hacer si no te alcanza para el aporte.',
+      'Por qué mover la fecha mantiene la meta viva.',
+    ],
     pasos: [
       {
         tipo: 'control',
@@ -78,6 +88,11 @@ export default {
 
   'u5-l3': {
     id: 'u5-l3',
+    aprendes: [
+      'Qué es una reserva y en qué se diferencia de una meta.',
+      'Qué gastos que sabes que llegan conviene reservar.',
+      'Cómo dividirlos por meses para que no te golpeen.',
+    ],
     pasos: [
       {
         tipo: 'concepto',

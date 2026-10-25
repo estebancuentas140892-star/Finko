@@ -16,6 +16,11 @@
 export default {
   'u3-l1': {
     id: 'u3-l1',
+    aprendes: [
+      'Por qué un gasto pequeño que se repite sí pesa.',
+      'Cómo calcular lo que suma en un mes.',
+      'Cuánto te cuesta en un año.',
+    ],
     pasos: [
       {
         tipo: 'concepto',
@@ -58,6 +63,11 @@ export default {
 
   'u3-l2': {
     id: 'u3-l2',
+    aprendes: [
+      'Qué hace que un gasto sea hormiga.',
+      'Cómo reconocerlo entre tus compras.',
+      'Cuánto suman al mes y al año.',
+    ],
     pasos: [
       {
         tipo: 'concepto',
@@ -123,6 +133,11 @@ export default {
 
   'u3-l3': {
     id: 'u3-l3',
+    aprendes: [
+      'Por qué un límite muy bajo se rompe en la primera semana.',
+      'Cómo elegir el monto a partir de lo que ya gastas.',
+      'Qué hacer si te pasas: ajustar, no rendirte.',
+    ],
     pasos: [
       {
         tipo: 'concepto',
@@ -201,6 +216,11 @@ export default {
 
   'u3-l4': {
     id: 'u3-l4',
+    aprendes: [
+      'Qué cuenta como gasto hormiga y qué no.',
+      'Qué es un gasto pequeño en Finko y dónde se ajusta.',
+      'Cómo se ve tu mes en gastos pequeños.',
+    ],
     pasos: [
       {
         tipo: 'clasificar',

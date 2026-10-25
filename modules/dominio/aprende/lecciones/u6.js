@@ -13,6 +13,11 @@
 export default {
   'u6-l1': {
     id: 'u6-l1',
+    aprendes: [
+      'Cuánto cuesta de verdad una deuda.',
+      'Qué pasa si solo pagas los intereses.',
+      'Cómo bajarla de verdad: abonar a lo que debes.',
+    ],
     pasos: [
       {
         tipo: 'concepto',
@@ -40,6 +45,11 @@ export default {
 
   'u6-l2': {
     id: 'u6-l2',
+    aprendes: [
+      'Cómo repartir el pago entre varias deudas.',
+      'La avalancha: el extra va a la de tasa más alta.',
+      'La bola de nieve: el extra va a la más pequeña.',
+    ],
     pasos: [
       {
         tipo: 'concepto',
@@ -79,6 +89,11 @@ export default {
 
   'u6-l3': {
     id: 'u6-l3',
+    aprendes: [
+      'Qué es el gota a gota y por qué sale tan caro.',
+      'Cuánto terminas pagando con él.',
+      'Qué alternativas tienes en un apuro.',
+    ],
     pasos: [
       {
         tipo: 'concepto',

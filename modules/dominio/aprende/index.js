@@ -28,7 +28,7 @@ import {
   unidadDeLeccion, metaLeccion, leccionDisponible, normalizarAprende, UNIDADES, UNIDADES_NINO,
   crearSesion, pasoActual, responderElegir, clasificarTarjeta, seguirClasificando,
   cambiarControl, moverItem, comprobarOrden, avanzar, pasoParaRetomar,
-  registrarLeccionHecha, unidadTerminada, siguientePaso, registrarSemana,
+  registrarLeccionHecha, unidadTerminada, siguientePaso, siguienteLeccion, registrarSemana,
   ofertaDeSeccion, OFERTAS_DE_SECCION,
   resultadoUbicacion, aplicarUbicacion,
 } from './logic.js';
@@ -116,8 +116,75 @@ function _tope() {
   return topeHormiga(S.config);
 }
 
+/** Corte de escritorio de la app, el mismo de `infra/render.js`. */
+const _MQ_MOVIL = '(max-width: 1023.98px)';
+function _enEscritorio() {
+  return !window.matchMedia?.(_MQ_MOVIL).matches;
+}
+
+/**
+ * La lección elegida en la ruta de escritorio (APR.4a): la que el usuario
+ * tocó o, si no tocó ninguna, la que la ruta recomienda. Abrir una lección la
+ * olvida, así al volver el detalle muestra la que sigue.
+ */
+let _seleccion = null;
+
+/** Contenido por unidad para el detalle de escritorio; `null` mientras llega. */
+const _contenidoRuta = {};
+
+/** El contenido de una unidad para el detalle, o `null` y lo pide (D11). */
+function _contenidoParaRuta(unidadId) {
+  if (Object.hasOwn(_contenidoRuta, unidadId)) return _contenidoRuta[unidadId];
+  _contenidoRuta[unidadId] = null;
+  _CONTENIDO[unidadId]?.()
+    .then((modulo) => {
+      _contenidoRuta[unidadId] = modulo?.default ?? null;
+      renderSmart(_renderRuta, 'aprende');
+    })
+    .catch(() => {});
+  return null;
+}
+
+/**
+ * Pinta la ruta. Repintar reemplaza el panel entero, así que el foco vuelve
+ * al mismo botón si estaba en uno: el contenido del detalle llega después
+ * del toque (D11) y no puede sacar al usuario de la fila que eligió.
+ */
 function _renderRuta() {
-  renderRuta(_unidadAbierta);
+  const panel = document.getElementById('panel-aprende');
+  const activo = panel?.contains(document.activeElement) ? document.activeElement : null;
+  const { action, id: idActivo } = activo?.dataset ?? {};
+  if (!_enEscritorio()) {
+    renderRuta(_unidadAbierta);
+  } else {
+    const valida = UNIDADES.some(u => u.lecciones.some(l => l.id === _seleccion && leccionDisponible(l)));
+    const id = valida ? _seleccion : siguienteLeccion(S.aprende)?.id ?? null;
+    const unidad = id ? unidadDeLeccion(id) : null;
+    const contenido = unidad ? _contenidoParaRuta(unidad.id)?.[id] ?? null : null;
+    renderRuta(_unidadAbierta, { seleccion: id, contenido });
+  }
+  if (action) {
+    panel.querySelector(`[data-action="${action}"]${idActivo ? `[data-id="${idActivo}"]` : ''}`)?.focus({ preventScroll: true });
+  }
+}
+
+/**
+ * En escritorio, tocar una lección de la ruta la elige y su detalle se ve al
+ * lado (APR.4a); el foco se queda en la fila. Si el ancho ya es de móvil, la
+ * abre como siempre.
+ */
+function _verLeccion(el) {
+  const id = el?.dataset?.id;
+  const meta = metaLeccion(id);
+  if (!leccionDisponible(meta)) return;
+  if (!_enEscritorio()) {
+    _abrir(el);
+    return;
+  }
+  _seleccion = id;
+  _renderRuta();
+  document.querySelector(`[data-action="leccion-ver"][data-id="${id}"]`)?.focus({ preventScroll: true });
+  announce(`Detalle de ${meta.titulo}.`);
 }
 
 /** "Tu siguiente paso" en Inicio (D5): una sola cosa, o nada. */
@@ -323,6 +390,7 @@ async function _abrir(el) {
   const modulo = await _CONTENIDO[unidad.id]();
   const leccion = modulo?.default?.[id];
   if (!leccion) return;
+  _seleccion = null;
   const { enCurso } = normalizarAprende(_progreso());
   _mostrar(leccion, enCurso?.id === id ? enCurso.paso : 0, false);
 }
@@ -451,8 +519,65 @@ let _unidadAbierta = null;
 function _alternarUnidad(el) {
   const id = el?.dataset?.id;
   _unidadAbierta = _unidadAbierta === id ? null : id;
-  renderRuta(_unidadAbierta);
+  _renderRuta();
   document.querySelector(`[data-action="aprende-unidad"][data-id="${id}"]`)?.focus({ preventScroll: true });
+}
+
+// ── ARRASTRAR UN PASO (ordenar, D7) ──────────────────────────────
+
+/**
+ * Arrastre de un paso "ordenar" por su asa (APR.4a). La fila sigue al dedo o
+ * al mouse y las demás le abren espacio; al soltar, el paso se mueve con
+ * `moverItem`, el mismo de las flechas, que siguen siendo la alternativa.
+ */
+let _orden = null;
+
+function _presionarOrden(e) {
+  const asa = e.target.closest?.('[data-orden-asa]');
+  const item = asa?.closest('.leccion-orden__item');
+  if (!item || _sesion?.revision) return false;
+  const filas = [...item.parentElement.children];
+  const desde = filas.indexOf(item);
+  // Distancia entre dos filas seguidas: cuánto hay que mover para cambiar de lugar.
+  const salto = filas.length > 1 ? filas[1].getBoundingClientRect().top - filas[0].getBoundingClientRect().top : 0;
+  _orden = { y: e.clientY, item, filas, desde, hasta: desde, salto, id: e.pointerId };
+  item.classList.add('leccion-orden__item--arrastra');
+  asa.setPointerCapture?.(e.pointerId);
+  e.preventDefault();
+  return true;
+}
+
+function _arrastrarOrden(e) {
+  if (!_orden || e.pointerId !== _orden.id) return false;
+  const { y, item, filas, desde, salto } = _orden;
+  const dy = e.clientY - y;
+  const hasta = salto ? Math.max(0, Math.min(filas.length - 1, desde + Math.round(dy / salto))) : desde;
+  _orden.hasta = hasta;
+  item.style.transform = `translateY(${dy}px)`;
+  filas.forEach((fila, k) => {
+    if (fila === item) return;
+    const corre = hasta > desde && k > desde && k <= hasta ? -salto
+      : hasta < desde && k < desde && k >= hasta ? salto : 0;
+    fila.style.transform = corre ? `translateY(${corre}px)` : '';
+  });
+  return true;
+}
+
+function _soltarOrden(e) {
+  if (!_orden || e.pointerId !== _orden.id) return false;
+  const { filas, desde } = _orden;
+  const hasta = e.type === 'pointercancel' ? desde : _orden.hasta;
+  _orden = null;
+  for (const fila of filas) {
+    fila.style.transform = '';
+    fila.classList.remove('leccion-orden__item--arrastra');
+  }
+  if (hasta === desde || !_sesion) return true;
+  const dir = hasta > desde ? 1 : -1;
+  for (let i = desde; i !== hasta; i += dir) _sesion = moverItem(_sesion, i, dir);
+  _pintar({ foco: `[data-orden="${hasta}"] [data-action="leccion-mover"]:not([disabled])` });
+  announce(`Paso movido al lugar ${hasta + 1}.`);
+  return true;
 }
 
 // ── GESTO DE DESLIZAR (clasificar) ───────────────────────────────
@@ -460,6 +585,7 @@ function _alternarUnidad(el) {
 let _arrastre = null;
 
 function _alPresionar(e) {
+  if (_presionarOrden(e)) return;
   const tarjeta = e.target.closest?.('[data-tarjeta]');
   if (!tarjeta || _animando || _sesion?.revision) return;
   _arrastre = { x: e.clientX, tarjeta, id: e.pointerId };
@@ -467,12 +593,14 @@ function _alPresionar(e) {
 }
 
 function _alArrastrar(e) {
+  if (_arrastrarOrden(e)) return;
   if (!_arrastre || e.pointerId !== _arrastre.id) return;
   const dx = e.clientX - _arrastre.x;
   _arrastre.tarjeta.style.transform = `translateX(${dx}px) rotate(${dx / 20}deg)`;
 }
 
 function _alSoltar(e) {
+  if (_soltarOrden(e)) return;
   if (!_arrastre || e.pointerId !== _arrastre.id) return;
   const dx = e.clientX - _arrastre.x;
   const { tarjeta } = _arrastre;
@@ -498,6 +626,7 @@ export function initAprende() {
   registrarAccion('leccion-comprobar', _comprobar);
   registrarAccion('leccion-limite-hormiga', _ponerLimiteHormiga);
   registrarAccion('aprende-unidad', _alternarUnidad);
+  registrarAccion('leccion-ver', _verLeccion);
   registrarAccion('ubicacion-abrir', _abrirUbicacion);
   // Cierre del niño: "Ver mi alcancía" o "Volver a la ruta" cierran la
   // lección y le piden la pantalla a su app (ADN 10: por evento).
@@ -522,6 +651,8 @@ export function initAprende() {
   }
 
   window.addEventListener('hashchange', _renderTodo);
+  // Cruzar el corte de escritorio pasa la ruta de una columna a dos (APR.4a).
+  window.matchMedia?.(_MQ_MOVIL).addEventListener?.('change', () => renderSmart(_renderRuta, 'aprende'));
   EventBus.on('state:change', (datos) => {
     _alRegistrar(datos);
     programarRender(_renderTodo);

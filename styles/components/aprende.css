@@ -11,17 +11,17 @@
    ============================================================ */
 
 /* ── COLOR DE LA UNIDAD ──────────────────────────────────────── */
-:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta, .ubicacion-unidad) {
+:is(.aprende-unidad, .aprende-fila, .aprende-detalle, .leccion-overlay, .leccion-oferta, .ubicacion-unidad) {
   --apr-dom:      var(--fk-accent);
   --apr-dom-text: var(--fk-text-accent);
 }
-:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta, .ubicacion-unidad)[data-dom="tesoreria"]   { --apr-dom: var(--fk-dom-tesoreria);   --apr-dom-text: var(--fk-dom-tesoreria-text); }
-:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta, .ubicacion-unidad)[data-dom="presupuesto"] { --apr-dom: var(--fk-dom-presupuesto); --apr-dom-text: var(--fk-dom-presupuesto-text); }
-:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta, .ubicacion-unidad)[data-dom="ahorro"]      { --apr-dom: var(--fk-dom-ahorro);      --apr-dom-text: var(--fk-dom-ahorro-text); }
-:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta, .ubicacion-unidad)[data-dom="metas"]       { --apr-dom: var(--fk-dom-metas);       --apr-dom-text: var(--fk-dom-metas-text); }
-:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta, .ubicacion-unidad)[data-dom="compromisos"] { --apr-dom: var(--fk-dom-compromisos); --apr-dom-text: var(--fk-dom-compromisos-text); }
-:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta, .ubicacion-unidad)[data-dom="inversion"]   { --apr-dom: var(--fk-dom-inversion);   --apr-dom-text: var(--fk-dom-inversion-text); }
-:is(.aprende-unidad, .aprende-fila, .leccion-overlay, .leccion-oferta, .ubicacion-unidad)[data-dom="analisis"]    { --apr-dom: var(--fk-dom-analisis);    --apr-dom-text: var(--fk-dom-analisis-text); }
+:is(.aprende-unidad, .aprende-fila, .aprende-detalle, .leccion-overlay, .leccion-oferta, .ubicacion-unidad)[data-dom="tesoreria"]   { --apr-dom: var(--fk-dom-tesoreria);   --apr-dom-text: var(--fk-dom-tesoreria-text); }
+:is(.aprende-unidad, .aprende-fila, .aprende-detalle, .leccion-overlay, .leccion-oferta, .ubicacion-unidad)[data-dom="presupuesto"] { --apr-dom: var(--fk-dom-presupuesto); --apr-dom-text: var(--fk-dom-presupuesto-text); }
+:is(.aprende-unidad, .aprende-fila, .aprende-detalle, .leccion-overlay, .leccion-oferta, .ubicacion-unidad)[data-dom="ahorro"]      { --apr-dom: var(--fk-dom-ahorro);      --apr-dom-text: var(--fk-dom-ahorro-text); }
+:is(.aprende-unidad, .aprende-fila, .aprende-detalle, .leccion-overlay, .leccion-oferta, .ubicacion-unidad)[data-dom="metas"]       { --apr-dom: var(--fk-dom-metas);       --apr-dom-text: var(--fk-dom-metas-text); }
+:is(.aprende-unidad, .aprende-fila, .aprende-detalle, .leccion-overlay, .leccion-oferta, .ubicacion-unidad)[data-dom="compromisos"] { --apr-dom: var(--fk-dom-compromisos); --apr-dom-text: var(--fk-dom-compromisos-text); }
+:is(.aprende-unidad, .aprende-fila, .aprende-detalle, .leccion-overlay, .leccion-oferta, .ubicacion-unidad)[data-dom="inversion"]   { --apr-dom: var(--fk-dom-inversion);   --apr-dom-text: var(--fk-dom-inversion-text); }
+:is(.aprende-unidad, .aprende-fila, .aprende-detalle, .leccion-overlay, .leccion-oferta, .ubicacion-unidad)[data-dom="analisis"]    { --apr-dom: var(--fk-dom-analisis);    --apr-dom-text: var(--fk-dom-analisis-text); }
 
 /* ── RUTA ────────────────────────────────────────────────────── */
 .aprende-ruta {
@@ -233,6 +233,71 @@
 .aprende-fila__nombre { font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
 .aprende-fila__meta { font-size: var(--fk-text-sm); color: var(--fk-text-muted); }
 
+/* ── RUTA EN ESCRITORIO (APR.4a, diseño 32) ──────────────────────
+   Tocar una lección la elige: su fila se marca y su detalle se ve al lado,
+   con el único primario de la pantalla. La grilla entra en el media query
+   de escritorio, al final de la hoja. */
+.aprende-ruta__unidades { display: flex; flex-direction: column; gap: var(--fk-space-6); min-width: 0; }
+.aprende-paso--elegida .aprende-paso__boton { background: color-mix(in srgb, var(--fk-accent) 8%, transparent); }
+.aprende-paso__flecha { flex-shrink: 0; margin-left: auto; width: 1.125rem; height: 1.125rem; color: var(--fk-text-accent); }
+.aprende-detalle {
+  position: sticky;
+  top: var(--fk-space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-4);
+  padding: var(--fk-space-6);
+  border-radius: var(--fk-radius-xl);
+  border: 1px solid var(--fk-border-subtle);
+  background: var(--fk-bg-surface);
+  box-shadow: var(--fk-shadow-sm);
+}
+.aprende-detalle__eyebrow {
+  margin: 0;
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--apr-dom-text);
+}
+.aprende-detalle__titulo {
+  margin: 0;
+  font-size: var(--fk-text-2xl);
+  font-weight: var(--fk-font-bold);
+  line-height: 1.2;
+  color: var(--fk-text-primary);
+  text-wrap: balance;
+}
+.aprende-detalle__aprendes { display: flex; flex-direction: column; gap: var(--fk-space-2); }
+.aprende-detalle__subtitulo { margin: 0; font-size: var(--fk-text-base); font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
+.aprende-detalle__lista,
+.aprende-detalle__tipos { list-style: none; margin: 0; padding: 0; }
+.aprende-detalle__lista { display: flex; flex-direction: column; gap: var(--fk-space-2); }
+.aprende-detalle__lista li { display: flex; align-items: flex-start; gap: var(--fk-space-2); line-height: 1.45; color: var(--fk-text-secondary); }
+.aprende-detalle__lista .icon { flex-shrink: 0; width: 1.125rem; height: 1.125rem; margin-top: 0.125rem; color: var(--fk-text-accent); }
+.aprende-detalle__tipos { display: flex; flex-wrap: wrap; gap: var(--fk-space-2); }
+.aprende-detalle__termina {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  padding-top: var(--fk-space-4);
+  border-top: 1px solid var(--fk-border-subtle);
+}
+.aprende-detalle__teja {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--fk-radius-md);
+  background: color-mix(in srgb, var(--apr-dom) 14%, transparent);
+  color: var(--apr-dom-text);
+}
+.aprende-detalle__destino { margin: 0; display: flex; flex-direction: column; min-width: 0; }
+.aprende-detalle__destino span { font-size: var(--fk-text-xs); color: var(--fk-text-muted); }
+.aprende-detalle__destino strong { font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
+.aprende-detalle__cta { width: 100%; min-height: 3rem; }
+
 /* ── LECCIÓN ─────────────────────────────────────────────────── */
 .leccion__marco {
   position: relative;
@@ -250,6 +315,8 @@
   padding: var(--fk-space-3) var(--fk-space-3) var(--fk-space-2) var(--fk-space-2);
 }
 .leccion__salir { min-width: 2.75rem; min-height: 2.75rem; }
+/* El texto de la salida se lee en escritorio; en móvil basta la X. */
+.leccion__salir-texto { display: none; }
 .leccion__prog {
   flex: 1;
   display: flex;
@@ -554,7 +621,9 @@
   color: var(--fk-text-primary);
 }
 
-/* Ordenar pasos: flechas en cada fila (el arrastre llega con APR.4a). */
+/* Ordenar pasos: el asa se arrastra (APR.4a) y las flechas son la
+   alternativa con teclado. Las otras filas abren espacio mientras se
+   arrastra: solo transform (D10). */
 .leccion-orden { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--fk-space-2); }
 .leccion-orden__item {
   display: flex;
@@ -567,6 +636,28 @@
   background: var(--fk-bg-surface);
 }
 .leccion-orden__item--bien { border-color: var(--fk-success); background: var(--fk-success-bg); }
+.leccion-orden__item:has(.leccion-orden__asa) { padding-left: var(--fk-space-1); }
+.leccion-orden__asa {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  min-height: 2.75rem;
+  color: var(--fk-text-muted);
+  cursor: grab;
+  touch-action: none;
+}
+.leccion-orden__asa .icon { width: 1.25rem; height: 1.25rem; }
+.leccion-orden__item--arrastra {
+  position: relative;
+  z-index: 1;
+  border-color: var(--fk-accent);
+  box-shadow: var(--fk-shadow-md);
+}
+.leccion-orden__item--arrastra .leccion-orden__asa { cursor: grabbing; }
+.leccion-orden:has(.leccion-orden__item--arrastra) .leccion-orden__item:not(.leccion-orden__item--arrastra) {
+  transition: transform 150ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
 .leccion-orden__numero { font-weight: var(--fk-font-bold); color: var(--fk-text-muted); }
 .leccion-orden__texto { flex: 1; min-width: 0; color: var(--fk-text-primary); }
 .leccion-orden__flechas { display: flex; flex-shrink: 0; }
@@ -829,6 +920,75 @@
 .progreso-bloque__titulo { margin: 0; font-size: var(--fk-text-lg); font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
 .progreso-bloque__cuenta { flex-shrink: 0; font-size: var(--fk-text-sm); font-weight: var(--fk-font-semibold); color: var(--fk-text-muted); }
 .progreso-semanas__cifra { margin: 0; font-size: var(--fk-text-xl); font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
+
+/* ── ESCRITORIO (APR.4a, ADR 092 D2, diseños 32 y 33) ─────────────
+   La ruta en dos columnas, 7 y 5: las unidades y el detalle de la lección
+   elegida. "Después" y "Ya lo sabes" pasan a tarjetas en dos columnas.
+   La lección ocupa toda la pantalla con la barra de lado a lado y la
+   salida escrita; en las preguntas, la respuesta se ve a la derecha de la
+   pregunta en vez de subir desde el pie. */
+@media (min-width: 1024px) {
+  .aprende-ruta--con-detalle {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    align-items: start;
+    max-width: 72rem;
+  }
+  .aprende-ruta--escritorio .aprende-filas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .aprende-ruta--escritorio .aprende-fila-abierta { grid-column: 1 / -1; }
+
+  .leccion__marco {
+    max-width: none;
+    display: grid;
+    grid-template-columns:
+      [lleno-inicio] minmax(var(--fk-space-8), 1fr)
+      [texto-inicio] minmax(0, 40rem)
+      [texto-fin] minmax(var(--fk-space-8), 1fr) [lleno-fin];
+    grid-template-rows: auto 1fr auto;
+    align-content: start;
+  }
+  .leccion__top {
+    grid-column: lleno-inicio / lleno-fin;
+    gap: var(--fk-space-5);
+    padding: var(--fk-space-4) var(--fk-space-8);
+    border-bottom: 1px solid var(--fk-border-subtle);
+  }
+  .leccion__top .leccion__prog { max-width: 45rem; margin: 0 auto; }
+  .leccion__salir { gap: var(--fk-space-2); padding: 0 var(--fk-space-3); }
+  .leccion__salir-texto { display: inline; }
+  .leccion__cuerpo,
+  .leccion__pie,
+  .leccion-fb { grid-column: texto-inicio / texto-fin; }
+  .leccion__cuerpo { padding: var(--fk-space-12) 0 var(--fk-space-4); }
+  .leccion__pie { padding: var(--fk-space-3) 0 var(--fk-space-8); }
+
+  .leccion__marco:is([data-paso="elegir"], [data-paso="clasificar"], [data-paso="control"], [data-paso="ordenar"]) {
+    grid-template-columns:
+      [lleno-inicio] minmax(var(--fk-space-8), 1fr)
+      [texto-inicio] minmax(0, 37.5rem)
+      [texto-fin] var(--fk-space-12)
+      [lado-inicio] minmax(0, 26.25rem)
+      [lado-fin] minmax(var(--fk-space-8), 1fr) [lleno-fin];
+  }
+  .leccion__marco:is([data-paso="elegir"], [data-paso="clasificar"], [data-paso="control"], [data-paso="ordenar"]) .leccion-fb {
+    grid-column: lado-inicio / lado-fin;
+    grid-row: 2 / span 2;
+    align-self: start;
+    position: sticky;
+    top: var(--fk-space-6);
+    margin-top: var(--fk-space-12);
+    padding: var(--fk-space-6);
+    border-radius: var(--fk-radius-xl);
+    border: 1px solid;
+    box-shadow: none;
+  }
+  .leccion__marco:is([data-paso="elegir"], [data-paso="clasificar"], [data-paso="control"], [data-paso="ordenar"]) .leccion-fb--casi {
+    border-color: color-mix(in srgb, var(--fk-info) 30%, transparent);
+  }
+  .leccion__marco:is([data-paso="elegir"], [data-paso="clasificar"], [data-paso="control"], [data-paso="ordenar"]) .leccion-fb--bien {
+    border-color: color-mix(in srgb, var(--fk-success) 30%, transparent);
+  }
+}
 
 /* ── MOVIMIENTO (catálogo cerrado, ADR 092 D10) ──────────────────
    Solo transform y opacity, una vez, sin bucles. Con reduce-motion el

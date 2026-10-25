@@ -5,6 +5,10 @@
  * Cubre lo que los unitarios no pueden: la carga del contenido con
  * `import()`, el overlay a pantalla completa, el foco en cada paso, el
  * avance guardado para retomar y el Aplícalo con los gastos sembrados.
+ *
+ * Playwright corre a 1280 px: la ruta es la de escritorio (APR.4a), donde
+ * tocar una lección la elige y "Empezar lección" está en su detalle. La
+ * ruta de móvil tiene su propio bloque, a 390 px.
  */
 
 import { test, expect } from '@playwright/test';
@@ -30,21 +34,36 @@ test.describe('APR.1a - Aprende', () => {
     await page.waitForSelector('#sec-aprende.active', { timeout: 10_000 });
   });
 
-  test('la ruta recomienda la unidad 1 y su lección 1', async ({ page }) => {
+  test('la ruta recomienda la unidad 1 y su lección 1, con su detalle al lado', async ({ page }) => {
     await expect(page.locator('.aprende-unidad--actual')).toContainText('Unidad 1 · vas aquí');
-    await expect(page.locator('.aprende-unidad__cta')).toHaveText('Empezar la lección 1');
-    await expect(page.locator('.aprende-grupo')).toContainText('Fondo de emergencia');
+    await expect(page.locator('.aprende-grupo').first()).toContainText('Fondo de emergencia');
+    // Escritorio (APR.4a): el detalle de la recomendada, con lo que vas a
+    // aprender, que llega con el contenido de la unidad, y un solo primario.
+    const detalle = page.locator('.aprende-detalle');
+    await expect(detalle).toContainText('Lección 1 · 3 minutos');
+    await expect(detalle).toContainText('Vas a aprender');
+    await expect(detalle.locator('.aprende-detalle__lista li')).toHaveCount(3);
+    await expect(detalle).toContainText('Mis cuentas, con tus saldos');
+    await expect(page.locator('.aprende-detalle__cta')).toHaveText('Empezar lección');
+    await expect(page.locator('.aprende-unidad__cta')).toHaveCount(0);
   });
 
   test('una lección completa: casi, clasificar, control y Aplícalo con tus datos', async ({ page }) => {
     // Nada se bloquea (D8): la unidad 3 se despliega sin hacer la 1 ni la 2,
     // y su lección 2 se abre desde su fila sin hacer la 1.
     await page.click('.aprende-fila__boton[data-id="u3"]');
+    // En escritorio la fila elige la lección y el foco se queda en ella.
     await page.click('.aprende-paso__boton[data-id="u3-l2"]');
+    await expect(page.locator('.aprende-paso__boton[data-id="u3-l2"]')).toHaveAttribute('aria-current', 'true');
+    await expect(page.locator('.aprende-paso__boton[data-id="u3-l2"]')).toBeFocused();
+    await expect(page.locator('.aprende-detalle__titulo')).toHaveText('Encuentra tus gastos hormiga');
+    await expect(page.locator('.aprende-detalle__tipos')).toContainText('Clasificar deslizando');
+    await page.click('.aprende-detalle__cta');
     const leccion = page.locator('#modal-leccion[data-open]');
     await expect(leccion).toHaveCount(1);
     await expect(page.locator('.leccion__cuenta')).toHaveText('1 de 5');
     await expect(page.locator('#leccion-titulo')).toBeFocused();
+    await expect(page.locator('.leccion__salir')).toContainText('Salir · tu avance se guarda');
 
     await page.click('.leccion__pie [data-action="leccion-continuar"]');
     // Equivocarse muestra "Casi" (nunca rojo) y la pregunta vuelve al final.
@@ -94,19 +113,19 @@ test.describe('APR.1a - Aprende', () => {
   });
 
   test('salir guarda el avance y la ruta ofrece seguir donde quedó', async ({ page }) => {
-    await page.click('.aprende-unidad__cta');
+    await page.click('.aprende-detalle__cta');
     await page.click('.leccion__pie [data-action="leccion-continuar"]');
     // Una respuesta fallada no cuenta como vista: se retoma en esa pregunta.
     await page.click('[data-action="leccion-elegir"][data-idx="0"]');
     await page.click('.leccion-fb [data-action="leccion-continuar"]');
     await page.click('[data-action="leccion-salir"]');
     await expect(page.locator('#modal-leccion[data-open]')).toHaveCount(0);
-    await expect(page.locator('.aprende-unidad__cta')).toHaveText('Seguir la lección 1');
+    await expect(page.locator('.aprende-detalle__cta')).toHaveText('Seguir donde quedaste');
     await expect.poll(async () => (await leerEstado(page)).aprende?.enCurso).toEqual({ id: 'u1-l1', paso: 1 });
 
     await page.reload();
     await page.waitForSelector('#sec-aprende.active', { timeout: 10_000 });
-    await page.click('.aprende-unidad__cta');
+    await page.click('.aprende-detalle__cta');
     await expect(page.locator('.leccion__cuenta')).toHaveText('2 de 3');
   });
 
@@ -117,8 +136,8 @@ test.describe('APR.1a - Aprende', () => {
     });
     await page.reload();
     await page.waitForSelector('#sec-aprende.active', { timeout: 10_000 });
-    await expect(page.locator('.aprende-unidad__cta')).toHaveText('Empezar la lección 4');
-    await page.click('.aprende-unidad__cta');
+    await expect(page.locator('.aprende-detalle__titulo')).toHaveText('Repaso: tu mes en hormigas');
+    await page.click('.aprende-detalle__cta');
 
     // Lección 4: clasificar cuatro tarjetas y una pregunta.
     const esHormiga = ['Gaseosa en la tienda', 'Propina del parqueadero'];
@@ -137,6 +156,48 @@ test.describe('APR.1a - Aprende', () => {
     await page.click('.leccion__pie [data-action="leccion-salir"]');
     // La unidad 3 queda hecha y la ruta sigue con la 4 (APR.2c).
     await expect(page.locator('.aprende-unidad--actual')).toContainText('Unidad 4 · vas aquí');
+  });
+
+  test('ordenar pasos: el asa se arrastra y las flechas siguen de alternativa (APR.4a)', async ({ page }) => {
+    await page.click('.aprende-fila__boton[data-id="u2"]');
+    await page.click('.aprende-paso__boton[data-id="u2-l3"]');
+    await page.click('.aprende-detalle__cta');
+    await page.click('.leccion__pie [data-action="leccion-continuar"]');
+    const textos = page.locator('.leccion-orden__texto');
+    await expect(textos).toHaveCount(4);
+    const antes = (await textos.allTextContents()).map(t => t.trim());
+
+    // La primera fila baja dos lugares arrastrándola por su asa. hover()
+    // espera a que el paso termine de entrar (stepIn) antes de medir.
+    await page.locator('[data-orden="0"] [data-orden-asa]').hover();
+    const asa = await page.locator('[data-orden="0"] [data-orden-asa]').boundingBox();
+    const destino = await page.locator('[data-orden="2"]').boundingBox();
+    await page.mouse.move(asa.x + asa.width / 2, asa.y + asa.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(asa.x + asa.width / 2, destino.y + destino.height / 2, { steps: 8 });
+    await page.mouse.up();
+    await expect(textos.nth(2)).toHaveText(antes[0]);
+    await expect(textos.nth(0)).toHaveText(antes[1]);
+    await expect(page.locator('[data-orden="2"] [data-action="leccion-mover"][data-dir="-1"]')).toBeFocused();
+  });
+});
+
+test.describe('APR.4a - la ruta en móvil no cambia', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test.beforeEach(async ({ page }) => {
+    await sembrarSiVacio(page, estadoBase());
+    await page.goto('/#aprende');
+    await page.waitForSelector('#sec-aprende.active', { timeout: 10_000 });
+  });
+
+  test('una columna: la unidad lleva su botón y tocar una lección la abre', async ({ page }) => {
+    await expect(page.locator('.aprende-detalle')).toHaveCount(0);
+    await expect(page.locator('.aprende-unidad__cta')).toHaveText('Empezar la lección 1');
+    await page.click('.aprende-paso__boton[data-id="u1-l2"]');
+    await expect(page.locator('#modal-leccion[data-open]')).toHaveCount(1);
+    // En móvil la salida es la X: el texto no ocupa la barra.
+    await expect(page.locator('.leccion__salir-texto')).toBeHidden();
   });
 });
 

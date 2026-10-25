@@ -11,6 +11,11 @@
 export default {
   'u8-l1': {
     id: 'u8-l1',
+    aprendes: [
+      'La diferencia entre ahorrar e invertir.',
+      'Qué dinero conviene tener a la mano.',
+      'Cuándo tiene sentido invertir lo que no vas a usar.',
+    ],
     pasos: [
       {
         tipo: 'concepto',
@@ -43,6 +48,11 @@ export default {
 
   'u8-l2': {
     id: 'u8-l2',
+    aprendes: [
+      'Qué es un CDT y cómo funciona.',
+      'Para qué dinero sirve.',
+      'Por qué no sirve para lo que puedes necesitar pronto.',
+    ],
     pasos: [
       {
         tipo: 'concepto',
@@ -75,6 +85,11 @@ export default {
 
   'u8-l3': {
     id: 'u8-l3',
+    aprendes: [
+      'Qué es el interés compuesto.',
+      'Cómo crece tu dinero si dejas invertido lo que ganas.',
+      'Por qué el tiempo hace la diferencia.',
+    ],
     pasos: [
       {
         tipo: 'concepto',
@@ -98,6 +113,11 @@ export default {
 
   'u8-l4': {
     id: 'u8-l4',
+    aprendes: [
+      'La regla del 72: en cuántos años se duplica tu dinero.',
+      'Cómo cambia ese tiempo con la tasa.',
+      'Por qué tu inversión tiene que ganarle a la inflación.',
+    ],
     pasos: [
       {
         tipo: 'concepto',

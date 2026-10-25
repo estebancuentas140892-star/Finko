@@ -14,6 +14,11 @@
 export default {
   'u9-l1': {
     id: 'u9-l1',
+    aprendes: [
+      'Qué es el 4x1000.',
+      'Cuánto te cobra por cada movimiento.',
+      'Cómo calcularlo para una transferencia.',
+    ],
     pasos: [
       {
         tipo: 'concepto',
@@ -41,6 +46,11 @@ export default {
 
   'u9-l2': {
     id: 'u9-l2',
+    aprendes: [
+      'Cómo marcar una cuenta de ahorros como exenta.',
+      'Hasta cuánto retiras al mes sin pagar el 4x1000.',
+      'En cuál de tus cuentas conviene marcarla.',
+    ],
     pasos: [
       {
         tipo: 'concepto',
@@ -73,6 +83,11 @@ export default {
 
   'u9-l3': {
     id: 'u9-l3',
+    aprendes: [
+      'De qué depende tener que declarar renta.',
+      'Cuáles son los topes que se revisan.',
+      'Por qué basta con pasar uno.',
+    ],
     pasos: [
       {
         tipo: 'concepto',

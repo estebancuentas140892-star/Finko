@@ -10,6 +10,11 @@
 export default {
   'u1-l1': {
     id: 'u1-l1',
+    aprendes: [
+      'Por qué no todo el saldo de tu cuenta está libre.',
+      'Cómo restar lo que ya tiene dueño este mes.',
+      'Cuánto puedes usar de verdad hoy.',
+    ],
     pasos: [
       {
         tipo: 'concepto',
@@ -37,6 +42,11 @@ export default {
 
   'u1-l2': {
     id: 'u1-l2',
+    aprendes: [
+      'Que tu dinero vive en varios lugares.',
+      'Cuál puedes usar hoy y cuál no.',
+      'Por qué sumarlo todo para saber cuánto tienes.',
+    ],
     pasos: [
       {
         tipo: 'concepto',
@@ -70,6 +80,11 @@ export default {
 
   'u1-l3': {
     id: 'u1-l3',
+    aprendes: [
+      'Las dos columnas del mes: lo que entra y lo que sale.',
+      'Cuánto te queda para el día a día.',
+      'Qué hacer si a mitad de mes ya gastaste casi todo.',
+    ],
     pasos: [
       {
         tipo: 'concepto',

@@ -11,6 +11,8 @@
  * - Aplícalo de la unidad 3: dato real o pedido del dato (R57).
  * - Contenido de la unidad 3 bien formado para el motor.
  * - Vista: la ruta y cada tipo de paso se pintan sin rojo ni datos rotos.
+ * - Escritorio (APR.4a): el detalle de la lección elegida, "Vas a aprender"
+ *   y los tipos de ejercicio, la salida escrita y el asa para arrastrar.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -22,7 +24,7 @@ import {
   crearSesion, pasoActual, numeroDePaso, responderElegir, clasificarTarjeta,
   seguirClasificando, cambiarControl, moverItem, comprobarOrden, avanzar,
   pasoParaRetomar, mezclarSinAcertar, CALCULOS, RESULTADOS, limiteSugerido, aplicaHormiga,
-  ofertaDeSeccion, resultadoUbicacion, aplicarUbicacion, ofrecerUbicacion,
+  ofertaDeSeccion, resultadoUbicacion, aplicarUbicacion, ofrecerUbicacion, tiposDeEjercicio,
 } from '../../modules/dominio/aprende/logic.js';
 import { htmlRuta, htmlLeccion, htmlSiguientePaso, htmlOfertaLeccion } from '../../modules/dominio/aprende/view.js';
 import u1 from '../../modules/dominio/aprende/lecciones/u1.js';
@@ -828,3 +830,73 @@ describe('prueba de ubicación (APR.2b, D9)', () => {
   });
 });
 
+describe('escritorio (APR.4a, ADR 092 D2)', () => {
+  it('cada lección del adulto dice qué vas a aprender: dos o tres frases cortas', () => {
+    for (const leccion of Object.values(LECCIONES)) {
+      expect(leccion.aprendes?.length, leccion.id).toBeGreaterThanOrEqual(2);
+      expect(leccion.aprendes.length, leccion.id).toBeLessThanOrEqual(3);
+      for (const frase of leccion.aprendes) {
+        expect(frase, leccion.id).toMatch(/\.$/);
+        expect(frase.split(' ').length, `${leccion.id}: ${frase}`).toBeLessThanOrEqual(12);
+        expect(frase, leccion.id).not.toMatch(/\{/);
+      }
+    }
+  });
+
+  it('los tipos de ejercicio salen del contenido, sin repetir y sin el concepto ni el cierre', () => {
+    expect(tiposDeEjercicio(u3['u3-l3'])).toEqual(['Elegir una opción', 'Ordenar pasos', '¿Qué harías?']);
+    expect(tiposDeEjercicio(u3['u3-l2'])).toEqual(['Elegir una opción', 'Clasificar deslizando', 'Mover un control']);
+    expect(tiposDeEjercicio(null)).toEqual([]);
+  });
+
+  it('el detalle de la lección elegida: vas a aprender, ejercicios, dónde termina y un solo primario', () => {
+    const html = htmlRuta({ hechas: { 'u3-l1': 'x', 'u3-l2': 'x' }, sabidas: ['u1', 'u2'] }, null,
+      { seleccion: 'u3-l3', contenido: u3['u3-l3'] });
+    expect(html).toContain('aprende-ruta--con-detalle');
+    expect(html).toContain('Lección 3 · 4 minutos');
+    expect(html).toContain('Vas a aprender');
+    expect(html).toContain('Por qué un límite muy bajo se rompe en la primera semana.');
+    expect(html).toContain('<li class="chip">Ordenar pasos</li>');
+    expect(html).toContain('<strong>Límites</strong>');
+    expect(html).toMatch(/aprende-detalle__cta" type="button" data-action="leccion-abrir"\s+data-id="u3-l3">Empezar lección</);
+    // El botón de la unidad no compite con el del detalle.
+    expect(html).not.toContain('aprende-unidad__cta');
+  });
+
+  it('en escritorio, tocar una lección la elige: la fila lo dice y no la abre', () => {
+    const html = htmlRuta({}, null, { seleccion: 'u1-l2', contenido: null });
+    expect(html).toMatch(/data-action="leccion-ver" data-id="u1-l2"\s+aria-label="Ver el detalle de Dónde está tu dinero" aria-current="true"/);
+    expect(html).toMatch(/data-action="leccion-ver" data-id="u1-l1"\s+aria-label="Ver el detalle de Cuánto tienes de verdad">/);
+    expect(html).not.toMatch(/aprende-paso__boton" type="button" data-action="leccion-abrir"/);
+    // Sin el contenido cargado, el detalle sale igual, sin viñetas ni ejercicios.
+    expect(html).toContain('Dónde está tu dinero');
+    expect(html).not.toContain('Vas a aprender');
+  });
+
+  it('el botón del detalle dice si sigues donde quedaste o repasas', () => {
+    expect(htmlRuta({ enCurso: { id: 'u1-l1', paso: 1 } }, null, { seleccion: 'u1-l1', contenido: null }))
+      .toContain('>Seguir donde quedaste</button>');
+    expect(htmlRuta({ hechas: { 'u1-l1': 'x' } }, null, { seleccion: 'u1-l1', contenido: null }))
+      .toContain('>Repasar lección</button>');
+  });
+
+  it('en móvil la ruta no cambia: una columna, la fila abre y la unidad lleva su botón', () => {
+    const html = htmlRuta(undefined);
+    expect(html).not.toContain('aprende-detalle');
+    expect(html).not.toContain('leccion-ver');
+    expect(html).toContain('aprende-unidad__cta');
+  });
+
+  it('la lección dice "Salir · tu avance se guarda" y el paso de ordenar trae el asa', () => {
+    const leccion = u3['u3-l3'];
+    let s = crearSesion(leccion);
+    s = avanzar(s, leccion).sesion;
+    s = responderElegir(s, leccion, 2);
+    s = avanzar(s, leccion).sesion;
+    const html = htmlLeccion(s, leccion, { eyebrow: 'Unidad 3', tope: 20_000, terminada: false, entrada: false });
+    expect(html).toContain('<span class="leccion__salir-texto">Salir · tu avance se guarda</span>');
+    expect(html).toContain('data-orden-asa');
+    expect(html).toContain('Arrastra cada paso o usa las flechas.');
+    expect(html.match(/data-orden="\d"/g)).toHaveLength(4);
+  });
+});
