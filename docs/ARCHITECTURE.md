@@ -67,7 +67,7 @@ Utilidades transversales sin dependencias de dominio.
 | `render.js` | `renderSmart()`, `programarRender()`, `updSaldo()`, `updateBadge()`, `renderAll()`, `registrarRender()` |
 | `a11y.js` | `announce()` para lectores de pantalla, `trapFocus()`/`releaseFocus()` para modales |
 | `crud.js` | Helper genérico: `guardar()`/`editar()`/`eliminar()` sobre `S`, emite `state:change` |
-| `router.js` | Hash routing. Los hashes son abreviados y no coinciden con el nombre de la sección: `#dash`, `#gast`, `#metas`, … (tabla `SECTIONS`, `router.js:10`) |
+| `router.js` | Hash routing con hashes abreviados que no coinciden con la sección (`#dash`, `#gast`; tabla `SECTIONS`) |
 | `financiero.js` | Fórmulas financieras puras compartidas: `calcularCDT`, `calcularCredito` (sistema francés), `calcularInteresCompuesto`, `calcularRegla72`, `calcularRentabilidadReal`, `validarCampos` |
 | `cuenta-helper.js` | Patrón compartido "0/1/varias cuentas": `renderSelectorCuenta()` + `resolverPagoConPreferida()`, usado por Gastos, Deudas, Apartados y Metas |
 | `distribuir-pago.js` | `distribuirPago()`: reparte un monto entre varias cuentas cuando ninguna alcanza sola |
@@ -268,10 +268,10 @@ Los eventos del sistema (verificados el 2026-10-24):
 | `state:save` | `storage.js` tras cada guardado exitoso | feedback UI opcional |
 | `theme:change` | `ui/shell.js` al alternar modo oscuro/claro | listeners de tema |
 | `onboarding:completado` | `ui/onboarding.js` al cerrar el wizard | `bootstrap.js` |
-| `distribucion:aplicar` | `tesoreria/index.js` al confirmar "Distribuir mi ingreso" | `ahorro/`, `metas/`, `apartados/`, `inversiones/`, `compromisos/` (cada uno aplica su porción de `items` y descuenta la cuenta de origen) |
+| `distribucion:aplicar` | `tesoreria/index.js` al confirmar "Distribuir mi ingreso" | `ahorro/`, `metas/`, `apartados/`, `inversiones/`, `compromisos/` (cada uno aplica su porción de `items`) |
 | `distribuir:abrir` | `agenda/index.js` y `tesoreria/acciones/distribucion.js` | `tesoreria/index.js` (abre el asistente de distribución desde otra sección sin importarla) |
 | `cuenta:crear` | `infra/cuenta-helper.js` y `ui/actions.js` cuando una acción necesita una cuenta y no hay ninguna | `tesoreria/acciones/cuentas.js` (abre el formulario de cuenta nueva) |
-| `storage:cuota` | `core/storage.js` cuando el uso de `localStorage` deja de estar en nivel `ok` | `config/index.js` (aviso de cuota en Ajustes) |
+| `storage:cuota` | `core/storage.js` cuando el uso de `localStorage` deja el nivel `ok` | `config/index.js` (aviso de cuota en Ajustes) |
 | `storage:error` | `core/storage.js` cuando un guardado falla | `config/index.js` (aviso de error de persistencia) |
 | `bloqueo:abierto` | `ui/bloqueo-acceso.js` o `ui/quien-usa.js` cuando el PIN libera la app | `bootstrap.js` (encadena el gate legal detrás del candado) |
 | `legal:aceptado` | `ui/aceptacion-legal.js` al aceptar la versión vigente de los documentos | `bootstrap.js` (cierra el gate y sigue el arranque) |
@@ -279,6 +279,7 @@ Los eventos del sistema (verificados el 2026-10-24):
 | `seccion:pintada` | `ahorro/index.js` (Fondo, APR.2a) | `aprende/index.js` (llena la oferta de lección) |
 | `perfil:cambio` | `infra/perfiles.js` (`entrarComo()`, APR.3a) | `ui/quien-usa.js` (piel) y `nino/index.js` (pinta) |
 | `familia:agregar` | `ui/quien-usa.js` ("Agregar un niño") | `config/familia.js` (abre el alta) |
+| `nino:vista` | `aprende/index.js` (cierre del niño) | `nino/index.js` (cambia de pantalla) |
 
 `distribucion:aplicar` es el ejemplo canónico de orquestación cross-dominio sin acoplar dominios: `tesoreria` no importa `metas` ni `apartados`, solo emite un evento con la lista de `items`; cada dominio destino decide si le corresponde algo y lo aplica.
 

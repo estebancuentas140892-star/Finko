@@ -166,9 +166,6 @@
 
 ### Fase 3 - Perfiles, niño y tutor (ADR 093)
 
-#### APR.3c - Shell del niño y su ruta
-- Estado : pendiente de APR.3b. **Objetivo**: barra Inicio, Aprender, Alcancía y Yo; ruta en camino y en orden; lección con Frai; celebración con "Úsalo de verdad" (ADR 093 D9). **Modelo**: Equilibrado, Alto.
-
 #### APR.3d - Alcancía y metas del niño
 - Estado : pendiente de APR.3c. **Objetivo**: tres frascos con "Guardé", "Gasté" y "Compartí", relleno contra la meta de cada frasco (R60), crear una meta con respuesta en semanas y fecha (ADR 093 D9). **Modelo**: Equilibrado, Alto.
 

@@ -112,3 +112,41 @@ test.describe('APR.3a - perfiles en el dispositivo', () => {
     await expect(page.locator('#quien-usa[data-open]')).toHaveCount(1);
   });
 });
+
+test.describe('APR.3c - la app del niño', () => {
+  test('el niño sigue su ruta en orden, termina la unidad y la insignia queda en Yo', async ({ page }) => {
+    const sofia = { ...SOFIA, aprende: { hechas: { 'k1-l1': '2026-10-01', 'k1-l2': '2026-10-01' }, sabidas: [], semanas: [], enCurso: null, ubicacion: null } };
+    await sembrarSiVacio(page, estadoBase({ perfil: { nombre: 'Esteban', smmlv: 1750905 }, config: conCandado(), perfiles: [sofia] }));
+    await page.goto('/#dash');
+    await page.locator('#quien-usa[data-open] [data-role="nino"]').click();
+
+    // Inicio ofrece la lección que sigue, con su unidad y su número.
+    await expect(page.locator('#nino-main')).toContainText('Unidad 1 · lección 3');
+    await expect(page.locator('#nino-nav [aria-current="page"]')).toContainText('Inicio');
+    await page.click('#nino-main [data-action="leccion-abrir"]');
+    const leccion = page.locator('#modal-leccion[data-open]');
+    await expect(leccion).toHaveCount(1);
+    await expect(leccion.locator('.leccion-nino__globo')).toBeVisible();
+    await page.click('#leccion-panel [data-action="leccion-continuar"]');
+    await page.click('[data-action="leccion-elegir"][data-idx="1"]');
+    await expect(page.locator('.leccion-fb')).toContainText('¡Así es!');
+    await page.click('.leccion-fb [data-action="leccion-continuar"]');
+
+    // Cierre: insignia con destellos y "Úsalo de verdad".
+    await expect(page.locator('#leccion-titulo')).toHaveText('¡Terminaste la unidad 1!');
+    await expect(page.locator('#leccion-panel .destellos__punto')).toHaveCount(8);
+    await expect(page.locator('#leccion-panel')).toContainText('Úsalo de verdad');
+    await page.click('[data-action="leccion-salir-a"][data-vista="aprender"]');
+    await expect(leccion).toHaveCount(0);
+    await expect(page.locator('#nino-main')).toContainText('1 de 8 unidades');
+    await expect(page.locator('#nino-nav [aria-current="page"]')).toContainText('Aprender');
+
+    await page.click('#nino-nav [data-vista="yo"]');
+    await expect(page.locator('#nino-main .kinsignia:not(.kinsignia--pendiente)')).toHaveCount(1);
+
+    // El avance es del niño: el Aprende del adulto no se toca.
+    await expect.poll(async () => Object.keys((await leerEstado(page)).perfiles?.[0]?.aprende?.hechas ?? {}).length).toBe(3);
+    expect(Object.keys((await leerEstado(page)).aprende?.hechas ?? {})).toEqual([]);
+  });
+});
+

@@ -289,3 +289,274 @@ body.kid .install-banner { display: none; }
 .familia-alta__ve p { margin: 0 0 var(--fk-space-1); }
 .familia-alta__ve-titulo { display: flex; align-items: center; gap: var(--fk-space-2); font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
 .familia-alta__candado { display: flex; align-items: flex-start; gap: var(--fk-space-2); }
+
+/* ── APP DEL NIÑO (APR.3c, ADR 093 D9) ───────────────────────────
+   Inicio, Aprender, Alcancía y Yo con su barra de cuatro destinos. Cada
+   pieza toma el color de su unidad o frasco por `data-dom` (--d y su texto
+   --dt): la ruta anticipa a dónde lleva, como en el adulto (092 D8). */
+.nino-app [data-dom="tesoreria"]   { --d: var(--fk-dom-tesoreria);   --dt: var(--fk-dom-tesoreria-text); }
+.nino-app [data-dom="gastos"]      { --d: var(--fk-dom-gastos);      --dt: var(--fk-dom-gastos-text); }
+.nino-app [data-dom="ahorro"]      { --d: var(--fk-dom-ahorro);      --dt: var(--fk-dom-ahorro-text); }
+.nino-app [data-dom="metas"]       { --d: var(--fk-dom-metas);       --dt: var(--fk-dom-metas-text); }
+.nino-app [data-dom="presupuesto"] { --d: var(--fk-dom-presupuesto); --dt: var(--fk-dom-presupuesto-text); }
+.nino-app [data-dom="personales"]  { --d: var(--fk-dom-personales);  --dt: var(--fk-dom-personales-text); }
+.nino-app [data-dom="compromisos"] { --d: var(--fk-dom-compromisos); --dt: var(--fk-dom-compromisos-text); }
+.nino-app [data-dom="inversion"]   { --d: var(--fk-dom-inversion);   --dt: var(--fk-dom-inversion-text); }
+.nino-app [data-frasco="ahorrar"]   { --d: var(--fk-kid-ahorrar);   --dt: var(--fk-kid-ahorrar-text); }
+.nino-app [data-frasco="gastar"]    { --d: var(--fk-kid-gastar);    --dt: var(--fk-kid-gastar-text); }
+.nino-app [data-frasco="compartir"] { --d: var(--fk-kid-compartir); --dt: var(--fk-kid-compartir-text); }
+
+.nino-main { padding-bottom: calc(var(--fk-kid-target) + var(--fk-space-12) + env(safe-area-inset-bottom, 0px)); }
+.nino-main h1:focus { outline: none; }
+
+.knino-cabeza { display: flex; align-items: center; justify-content: space-between; gap: var(--fk-space-3); }
+.knino-cabeza__hola { flex: 1; min-width: 0; font-size: 28px; }
+.knino-titulo { display: flex; align-items: center; gap: var(--fk-space-2); font-size: 28px; }
+.knino-titulo .icon { width: 32px; height: 32px; color: var(--fk-kid-primary); }
+.knino-total { font-variant-numeric: tabular-nums; }
+.knino-fila { display: flex; align-items: center; gap: var(--fk-space-3); }
+.knino-pila { display: flex; flex-direction: column; gap: var(--fk-space-1); flex: 1; min-width: 0; }
+.knino-teja {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: var(--fk-kid-radius-md);
+  background: color-mix(in srgb, var(--d, var(--fk-kid-primary)) 18%, transparent);
+  color: var(--dt, var(--fk-text-primary));
+}
+.knino-teja .icon { width: var(--fk-kid-icon); height: var(--fk-kid-icon); stroke-width: 2.4; }
+.kidav--nino { width: 3.5rem; height: 3.5rem; border-radius: var(--fk-kid-radius-md); }
+.knino-cambiar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: var(--fk-kid-target-min);
+  height: var(--fk-kid-target-min);
+  border: 0;
+  border-radius: var(--fk-kid-radius-sm);
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-primary);
+  cursor: pointer;
+}
+.knino-cambiar .icon { width: 24px; height: 24px; }
+
+.kcard--dom {
+  border-color: color-mix(in srgb, var(--d) 40%, transparent);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--d) 18%, transparent), transparent 60%), var(--fk-bg-surface);
+}
+.kchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  min-height: 32px;
+  padding: 4px 12px;
+  border-radius: var(--fk-radius-full);
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-secondary);
+  font-size: 14px;
+  font-weight: 700;
+}
+.kchip .icon { width: 18px; height: 18px; }
+.kchip--dom { background: color-mix(in srgb, var(--d) 14%, transparent); color: var(--dt, var(--fk-text-primary)); }
+.kchip--hecha { background: color-mix(in srgb, var(--fk-kid-ahorrar) 16%, transparent); color: var(--fk-kid-ahorrar-text); }
+
+/* Globo de lo que dice Frai. */
+.bubble {
+  flex: 1;
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: var(--fk-kid-radius-lg);
+  border: 2px solid var(--fk-border-default);
+  background: var(--fk-bg-surface);
+  color: var(--fk-text-primary);
+  font-size: var(--fk-kid-text-base);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+/* Barra del niño: cuatro destinos con ícono y nombre, 56 px de toque. */
+.knav {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: var(--fk-z-sidebar);
+  display: flex;
+  gap: 4px;
+  padding: 8px 10px calc(10px + env(safe-area-inset-bottom, 0px));
+  background: var(--fk-bg-surface);
+  border-top: 1px solid var(--fk-border-subtle);
+}
+.knav:empty { display: none; }
+.knav__it {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--fk-kid-target);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 0;
+  border-radius: var(--fk-kid-radius-md);
+  background: transparent;
+  color: var(--fk-text-secondary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.knav__it .icon { width: var(--fk-kid-icon); height: var(--fk-kid-icon); }
+.knav__it[aria-current="page"] { background: color-mix(in srgb, var(--fk-kid-primary) 14%, transparent); color: var(--fk-text-primary); }
+.knav__it[aria-current="page"] .icon { color: var(--fk-kid-primary); }
+
+/* Ruta del niño: unidades en orden y el camino de la unidad actual. */
+.kruta { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--fk-space-4); }
+.kunit {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--fk-kid-radius-lg);
+  background: color-mix(in srgb, var(--d) 16%, var(--fk-bg-surface));
+  border: 2px solid color-mix(in srgb, var(--d) 40%, transparent);
+}
+.kunit--despues,
+.kunit--preparacion { background: var(--fk-bg-surface); border-color: var(--fk-border-subtle); }
+.kunit--despues .knino-teja,
+.kunit--preparacion .knino-teja { background: var(--fk-bg-elevated); color: var(--fk-text-muted); }
+.kcamino {
+  position: relative;
+  list-style: none;
+  margin: var(--fk-space-4) 0 var(--fk-space-8);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-8);
+}
+/* El tramo que une los nodos, punteado como el camino que falta. */
+.kcamino::before {
+  content: "";
+  position: absolute;
+  top: 36px;
+  bottom: 36px;
+  left: 50%;
+  border-left: 8px dotted var(--fk-border-default);
+  transform: translateX(-50%);
+}
+.kcamino__paso { position: relative; display: flex; align-items: center; justify-content: center; }
+.kcamino__paso:nth-child(even) { transform: translateX(-3.5rem); }
+.kcamino__paso:nth-child(odd):not(:first-child) { transform: translateX(3.5rem); }
+.kcamino__paso .frai { position: absolute; right: calc(50% + 3.5rem); }
+.knode {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 0;
+  font: inherit;
+}
+.knode .icon { width: 32px; height: 32px; stroke-width: 2.4; }
+.knode--hecha { background: var(--d); color: var(--fk-bg-base); box-shadow: 0 5px 0 color-mix(in srgb, var(--d) 60%, var(--fk-bg-base)); cursor: pointer; }
+.knode--ahora {
+  width: 84px;
+  height: 84px;
+  background: var(--fk-bg-surface);
+  color: var(--dt);
+  border: 4px solid var(--d);
+  box-shadow: 0 6px 0 color-mix(in srgb, var(--d) 60%, var(--fk-bg-base)), 0 0 0 8px color-mix(in srgb, var(--d) 18%, transparent);
+  cursor: pointer;
+}
+.knode--despues { background: var(--fk-bg-elevated); color: var(--fk-text-muted); border: 3px dashed var(--fk-border-default); }
+.knode__rotulo {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-top: 12px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  padding: 6px 12px;
+  border-radius: var(--fk-radius-full);
+  border: 2px solid var(--d);
+  background: var(--fk-bg-surface);
+  color: var(--fk-text-primary);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+/* Alcancía: tres frascos. */
+.jars { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.jar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 6px 12px;
+  border-radius: var(--fk-kid-radius-lg);
+  border: 2px solid color-mix(in srgb, var(--d) 35%, transparent);
+  background: var(--fk-bg-surface);
+  text-align: center;
+}
+.jar__nombre { margin: 0; display: flex; align-items: center; gap: 4px; font-size: 15px; font-weight: 800; color: var(--dt); }
+.jar__nombre .icon { width: 18px; height: 18px; }
+.jar__monto { margin: 0; font-size: 19px; font-weight: 800; color: var(--fk-text-primary); font-variant-numeric: tabular-nums; }
+
+/* Yo: insignias de las unidades terminadas. */
+.kinsignias { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--fk-space-3); }
+.kinsignia { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+.kinsignia__dibujo { width: 56px; height: 56px; color: var(--d); }
+.kinsignia__vacia {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 3px dashed var(--fk-border-default);
+  color: var(--fk-text-muted);
+  font-weight: 800;
+}
+
+/* La lección del niño: el mismo motor con piel `.kid`. */
+body.kid .leccion__titulo { font-size: var(--fk-kid-text-lg); }
+body.kid .leccion-opcion { min-height: var(--fk-kid-target); font-size: var(--fk-kid-text-base); border-radius: var(--fk-kid-radius-md); }
+body.kid .leccion-clasificar__boton { min-height: var(--fk-kid-target); font-size: var(--fk-kid-text-base); }
+.leccion-nino__idea { display: flex; align-items: flex-end; gap: var(--fk-space-3); }
+.leccion-nino__globo {
+  flex: 1;
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border-radius: var(--fk-kid-radius-lg);
+  border: 2px solid var(--fk-border-default);
+  background: var(--fk-bg-surface);
+  color: var(--fk-text-primary);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.leccion-nino__globo:focus { outline: none; }
+.leccion-fb--nino .leccion-fb__fila { display: flex; align-items: flex-start; gap: var(--fk-space-3); }
+.leccion-fb--nino .leccion-fb__cuerpo { display: flex; flex-direction: column; gap: var(--fk-space-1); }
+.leccion-fb--nino.leccion-fb--casi .leccion-fb__titulo { color: var(--fk-kid-hint); font-size: 24px; }
+.leccion-fb--nino.leccion-fb--bien .leccion-fb__titulo { color: var(--fk-kid-ahorrar-text); font-size: 24px; }
+.leccion-nino__celebra { display: flex; align-items: center; justify-content: center; gap: var(--fk-space-2); }
+.leccion-nino__insignia { width: 120px; height: 120px; }
+.leccion-insignia--nino {
+  width: 88px;
+  height: 88px;
+  color: var(--apr-dom);
+  animation: badgeIn 250ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+.leccion-nino__titulo { text-align: center; }
+.leccion-nino__titulo:focus { outline: none; }
+.leccion-nino__linea { text-align: center; }
+.leccion-nino__chip { align-self: center; background: color-mix(in srgb, var(--fk-kid-sun) 16%, transparent); color: var(--fk-kid-sun-text); }
+.leccion-nino__usalo[data-frasco="ahorrar"]   { --d: var(--fk-kid-ahorrar);   --dt: var(--fk-kid-ahorrar-text); }
+.leccion-nino__usalo[data-frasco="gastar"]    { --d: var(--fk-kid-gastar);    --dt: var(--fk-kid-gastar-text); }
+.leccion-nino__usalo[data-frasco="compartir"] { --d: var(--fk-kid-compartir); --dt: var(--fk-kid-compartir-text); }
+.leccion-nino__usalo { gap: 8px; border-color: color-mix(in srgb, var(--d) 40%, transparent); }
+.leccion-nino__usalo-titulo { display: flex; align-items: center; gap: var(--fk-space-2); }
+.leccion-nino__usalo-titulo .icon { width: var(--fk-kid-icon); height: var(--fk-kid-icon); color: var(--dt); }
+.leccion-nino__usalo-linea { color: var(--fk-text-primary); }

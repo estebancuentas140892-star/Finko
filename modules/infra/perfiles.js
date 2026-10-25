@@ -134,6 +134,39 @@ export function hayNinos(state = S) {
   return ninos(state).length > 0;
 }
 
+// ── ALCANCÍA Y PROGRESO DEL NIÑO ─────────────────────────────────
+
+/** Los tres frascos de la alcancía, en su orden (D9). */
+export const FRASCOS = Object.freeze(['ahorrar', 'gastar', 'compartir']);
+
+/**
+ * Lo que hay en cada frasco: la suma de sus movimientos. Un frasco nunca
+ * muestra menos de cero.
+ *
+ * @param {PerfilNino | null | undefined} perfil
+ * @returns {{ ahorrar: number, gastar: number, compartir: number, total: number }}
+ */
+export function saldosFrascos(perfil) {
+  const s = { ahorrar: 0, gastar: 0, compartir: 0 };
+  for (const m of Array.isArray(perfil?.movimientos) ? perfil.movimientos : []) {
+    if (FRASCOS.includes(m?.frasco)) s[m.frasco] += Number(m.monto) || 0;
+  }
+  for (const f of FRASCOS) s[f] = Math.max(0, s[f]);
+  return { ...s, total: s.ahorrar + s.gastar + s.compartir };
+}
+
+/**
+ * Guarda el progreso de Aprende de un niño en `S.perfiles` (reemplaza su
+ * objeto, no lo muta). Quien llama hace `save()`.
+ *
+ * @param {string} id
+ * @param {PerfilNino['aprende']} aprende
+ */
+export function guardarAprendeNino(id, aprende) {
+  if (!Array.isArray(S.perfiles)) return;
+  S.perfiles = S.perfiles.map(p => (p?.id === id ? { ...p, aprende } : p));
+}
+
 // ── SESIÓN: QUIÉN USA FINKO AHORA ────────────────────────────────
 
 /** Id del niño activo; `null` es el adulto. Solo en memoria (ver arriba). */

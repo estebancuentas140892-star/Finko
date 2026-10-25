@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(nino): APR.3c, la app del niño y su ruta · 2026-10-25
+
+[ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md) D7 y D9; ficha [`contexto/nino.md`](contexto/nino.md). SW v606.
+
+- **Barra propia**: Inicio, Aprender, Alcancía y Yo. Son pantallas de la app del niño, no rutas del hash: el router del adulto no las conoce.
+- **Inicio**: Frai saluda y ofrece la lección que sigue con su duración. **Aprender**: ocho unidades en orden; la actual muestra su camino (hechas para repasar, la de hoy con "Empezar" y Frai al lado, las que vienen). Una unidad sin contenido detiene la ruta en vez de saltarla. **Alcancía**: el total y los tres frascos, por ahora de lectura. **Yo**: una insignia por unidad terminada y "Cambiar de perfil".
+- **La lección del niño** usa el mismo motor con su piel: Frai explica en un globo, anima tras un error ("¡Casi!", "Esta era", "Sigamos") y celebra. El avance se guarda en su perfil, nunca en el del adulto.
+- **Celebración**: insignia de 88 px con Frai y ocho destellos al terminar la unidad, y "Úsalo de verdad", una pregunta sobre un frasco con lo que tiene ahí.
+- **Unidad 1, "¿Qué es el dinero?"**, con tres lecciones en la voz del niño (frases de hasta 10 palabras, lo exige un test). Las siete restantes llegan con APR.3f.
+
 ### feat(nino): APR.3a, perfiles en el dispositivo · 2026-10-25
 
 [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md) D1, D2 y P1; ficha nueva [`contexto/nino.md`](contexto/nino.md). Schema v48, SW v605.

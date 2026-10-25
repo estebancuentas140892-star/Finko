@@ -14,7 +14,7 @@
 import { f } from '../../infra/utils.js';
 import { resumenHormigaMes } from '../../infra/hormiga.js';
 import { aplicaHormiga } from './aplica.js';
-import { UNIDADES, unidadTerminada, semanaISO } from '../../infra/ruta-aprende.js';
+import { UNIDADES, UNIDADES_NINO, unidadTerminada, semanaISO } from '../../infra/ruta-aprende.js';
 
 // ── CATÁLOGO DE LA RUTA (D8) ─────────────────────────────────────
 
@@ -26,7 +26,7 @@ import { UNIDADES, unidadTerminada, semanaISO } from '../../infra/ruta-aprende.j
  * @typedef {import('../../infra/ruta-aprende.js').Unidad} Unidad
  * @typedef {import('../../infra/ruta-aprende.js').LeccionMeta} LeccionMeta
  */
-export { UNIDADES, unidadTerminada, semanaISO };
+export { UNIDADES, UNIDADES_NINO, unidadTerminada, semanaISO };
 
 /**
  * Unidad dueña de una lección, por el prefijo de su id (`u3-l2` → `u3`).
@@ -35,7 +35,8 @@ export { UNIDADES, unidadTerminada, semanaISO };
  */
 export function unidadDeLeccion(leccionId) {
   const prefijo = String(leccionId ?? '').split('-')[0];
-  return UNIDADES.find(u => u.id === prefijo);
+  // El niño usa el mismo motor con su propia ruta (APR.3c): ids `kN`.
+  return UNIDADES.find(u => u.id === prefijo) ?? UNIDADES_NINO.find(u => u.id === prefijo);
 }
 
 /**

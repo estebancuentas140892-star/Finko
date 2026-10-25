@@ -63,6 +63,7 @@
 
 **Cambios realizados**:
 
+- 2026-10-25 (APR.3c): el motor también sirve la ruta del niño; su avance va a su perfil (ficha [`nino.md`](nino.md)).
 - 2026-10-24 (APR.2b): prueba de ubicación, `S.aprende.ubicacion` (v47).
 - 2026-10-24 (APR.2a): la sección ofrece su lección; primer caso Fondo, con `seccion:pintada`.
 - 2026-10-24 (APR.2c, unidades 7, 8 y 9): Crédito e intereses; Invertir; Impuestos con marcadores legales. Ruta completa.

@@ -8,7 +8,8 @@
 
 import { S } from '../../core/state.js';
 import { f, esc } from '../../infra/utils.js';
-import { icon, tejaCategoria } from '../../infra/icons.js';
+import { icon, tejaCategoria, iconoCategoria } from '../../infra/icons.js';
+import { htmlFrai, htmlDestellos } from '../../infra/ilustraciones.js';
 import {
   estadoRuta, normalizarAprende, leccionDisponible, numeroDePaso, pasoActual,
   pasoListo, RESULTADOS, UNIDADES, ofrecerUbicacion,
@@ -200,12 +201,36 @@ function _barra(sesion, terminada) {
     </div>`;
 }
 
+/**
+ * La lección que se pinta ahora es del niño (APR.3c, ADR 093 D9). Lo fija
+ * `htmlLeccion()` al empezar, que es síncrona: así los pasos no reciben un
+ * argumento más solo para cambiar de piel.
+ */
+let _nino = false;
+
 /** Panel de retroalimentación: "Así es" o "Casi", nunca rojo (D7). */
 function _feedback(correcto, texto, boton, nota = '', tituloPropio = '') {
   const clase = correcto ? 'leccion-fb--bien' : 'leccion-fb--casi';
+  const accion = boton.accion ?? 'leccion-continuar';
+  if (_nino) {
+    // Frai celebra lo correcto y anima tras un error; nunca se ve triste (D7).
+    const titulo = tituloPropio || (correcto ? '¡Así es!' : '¡Casi!');
+    const texto2 = correcto ? 'Siguiente' : 'Sigamos';
+    return `
+    <div class="leccion-fb ${clase} leccion-fb--nino" role="status">
+      <div class="leccion-fb__fila">
+        ${htmlFrai(correcto ? 'celebra' : 'anima', { tamano: 80 })}
+        <div class="leccion-fb__cuerpo">
+          <p class="leccion-fb__titulo" id="leccion-fb-titulo" tabindex="-1">${titulo}</p>
+          ${texto ? `<p class="leccion-fb__texto">${texto}</p>` : ''}
+        </div>
+      </div>
+      <button class="kbtn kbtn--block" type="button" data-action="${accion}">${boton.texto === 'Continuar' || boton.texto === 'Entendido' ? texto2 : boton.texto}</button>
+      ${nota ? `<p class="leccion-fb__nota">${nota}</p>` : ''}
+    </div>`;
+  }
   const titulo = tituloPropio || (correcto ? 'Así es' : 'Casi');
   const ico = correcto ? icon('check') : icon('lightbulb');
-  const accion = boton.accion ?? 'leccion-continuar';
   return `
     <div class="leccion-fb ${clase}" role="status">
       <p class="leccion-fb__titulo" id="leccion-fb-titulo" tabindex="-1">${ico}${titulo}</p>
@@ -218,6 +243,19 @@ function _feedback(correcto, texto, boton, nota = '', tituloPropio = '') {
 const _NOTA_VUELVE = 'Equivocarte no te quita nada. Esta pregunta vuelve al final.';
 
 function _pasoConcepto(paso, ctx) {
+  if (_nino) {
+    // Frai explica la idea en su globo (D9): una por pantalla.
+    return {
+      cuerpo: `
+        <p class="leccion__eyebrow leccion__eyebrow--dom">${esc(ctx.eyebrow)}</p>
+        <div class="leccion-nino__idea">
+          ${htmlFrai('explica', { tamano: 112 })}
+          <h2 class="leccion-nino__globo" id="leccion-titulo" tabindex="-1">${_texto(paso.titulo, ctx)}</h2>
+        </div>
+        ${paso.texto ? `<p class="leccion__texto">${_texto(paso.texto, ctx)}</p>` : ''}`,
+      pie: `<button class="kbtn kbtn--block" type="button" data-action="leccion-continuar">Siguiente</button>`,
+    };
+  }
   return {
     cuerpo: `
       <p class="leccion__eyebrow leccion__eyebrow--dom">${esc(ctx.eyebrow)}</p>
@@ -239,7 +277,7 @@ function _pasoElegir(paso, sesion, ctx) {
     else if (elegida) clases.push('leccion-opcion--elegida');
     let etiqueta = '';
     if (elegida) etiqueta = `<span class="chip ${correcta ? 'chip-success' : 'chip-info'} leccion-opcion__tag">Tu respuesta</span>`;
-    else if (correcta) etiqueta = '<span class="chip chip-success leccion-opcion__tag">Esta es</span>';
+    else if (correcta) etiqueta = `<span class="chip chip-success leccion-opcion__tag">${_nino ? 'Esta era' : 'Esta es'}</span>`;
     return `
       <button class="${clases.join(' ')}" type="button" role="radio" aria-checked="${elegida ? 'true' : 'false'}"
               data-action="leccion-elegir" data-idx="${i}"${rev ? ' aria-disabled="true"' : ''}>
@@ -299,7 +337,7 @@ function _pasoClasificar(paso, sesion, ctx) {
         <p class="leccion__eyebrow">${esc(paso.etiqueta ?? 'Clasifica')}</p>
         <h2 class="leccion__titulo" id="leccion-titulo" tabindex="-1">${_texto(paso.pregunta, ctx)}</h2>
         <p class="leccion__conteo">${esc(paso.si)}: ${si} · ${esc(paso.no)}: ${no}</p>`,
-      fb: _feedback(true, 'Separaste lo pequeño que se repite de lo grande que planeas.', { texto: 'Continuar' }),
+      fb: _feedback(true, _texto(paso.bien ?? 'Separaste lo pequeño que se repite de lo grande que planeas.', ctx), { texto: 'Continuar' }),
     };
   }
   const arriba = paso.tarjetas[cola[0]];
@@ -575,6 +613,52 @@ function _resultadoUbicacion({ sabidas, empieza }) {
   };
 }
 
+// ── CIERRE DEL NIÑO (APR.3c, ADR 093 D9) ─────────────────────────
+
+const _NOMBRE_FRASCO = { ahorrar: 'Ahorrar', gastar: 'Gastar', compartir: 'Compartir' };
+const _ICONO_FRASCO = { ahorrar: 'i-ahorro', gastar: 'c-tienda', compartir: 'c-regalo' };
+
+/**
+ * Cierre de la lección del niño: Frai celebra (con insignia de 88 px y
+ * destellos si terminó la unidad) y "Úsalo de verdad", una pregunta sobre
+ * un frasco de su alcancía con lo que tiene ahí.
+ */
+function _cierreNino(ctx) {
+  const u = ctx.unidad;
+  const cabeza = ctx.celebrarUnidad
+    ? `
+      <div class="leccion-nino__celebra" role="img" aria-label="Frai celebra junto a tu nueva insignia de la unidad ${u.numero}">
+        ${htmlFrai('celebra', { tamano: 128 })}
+        <div class="destellos leccion-nino__insignia">${htmlDestellos()}<svg class="leccion-insignia--nino" viewBox="0 0 120 120" aria-hidden="true"><use href="#il-insignia"/></svg></div>
+      </div>
+      <h2 class="k-h1 leccion-nino__titulo" id="leccion-titulo" tabindex="-1">¡Terminaste la unidad ${u.numero}!</h2>
+      <p class="k-body leccion-nino__linea">${esc(u.aprendiste ?? u.nombre)}</p>
+      <span class="kchip leccion-nino__chip">${icon('star')}Nueva insignia en Yo</span>`
+    : `
+      <div class="leccion-nino__celebra">${htmlFrai('celebra', { tamano: 112 })}</div>
+      <h2 class="k-h1 leccion-nino__titulo" id="leccion-titulo" tabindex="-1">¡Lección lista!</h2>
+      ${ctx.avance ? `<p class="k-body leccion-nino__linea">Llevas ${ctx.avance.hechas} de ${ctx.avance.total} en esta unidad.</p>` : ''}`;
+  let usalo = '';
+  if (ctx.usalo) {
+    const nombre = _NOMBRE_FRASCO[ctx.usalo.frasco] ?? _NOMBRE_FRASCO.ahorrar;
+    const linea = ctx.usalo.saldo > 0
+      ? `En tu frasco ${nombre} tienes ${f(ctx.usalo.saldo)}.`
+      : `Tu frasco ${nombre} está vacío por ahora.`;
+    usalo = `
+      <section class="kcard leccion-nino__usalo" data-frasco="${esc(ctx.usalo.frasco)}" aria-labelledby="leccion-usalo-titulo">
+        <h3 class="k-h3 leccion-nino__usalo-titulo" id="leccion-usalo-titulo">${iconoCategoria(_ICONO_FRASCO[ctx.usalo.frasco] ?? 'i-ahorro')}Úsalo de verdad</h3>
+        <p class="k-body leccion-nino__usalo-linea">${linea}</p>
+        <p class="k-body">${esc(ctx.usalo.pregunta)}</p>
+      </section>`;
+  }
+  return {
+    cuerpo: `${cabeza}${usalo}`,
+    pie: `
+      <button class="kbtn kbtn--block" type="button" data-action="leccion-salir-a" data-vista="alcancia">${icon('ahorro')}Ver mi alcancía</button>
+      <button class="kbtn kbtn--soft kbtn--block" type="button" data-action="leccion-salir-a" data-vista="aprender">Volver a la ruta</button>`,
+  };
+}
+
 /**
  * HTML completo del panel de la lección para el paso activo.
  *
@@ -587,9 +671,12 @@ function _resultadoUbicacion({ sabidas, empieza }) {
  * @returns {string}
  */
 export function htmlLeccion(sesion, leccion, ctx) {
+  _nino = Boolean(ctx.nino);
   const paso = pasoActual(sesion, leccion);
   let partes = { cuerpo: '', pie: '', fb: '' };
-  if (ctx.terminada) partes = ctx.ubicacion ? _resultadoUbicacion(ctx.ubicacion) : _pasoAplica(ctx);
+  if (ctx.terminada) {
+    partes = ctx.ubicacion ? _resultadoUbicacion(ctx.ubicacion) : _nino ? _cierreNino(ctx) : _pasoAplica(ctx);
+  }
   else if (paso?.tipo === 'concepto') partes = _pasoConcepto(paso, ctx);
   else if (paso?.tipo === 'elegir') partes = _pasoElegir(paso, sesion, ctx);
   else if (paso?.tipo === 'clasificar') partes = _pasoClasificar(paso, sesion, ctx);

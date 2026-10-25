@@ -11,8 +11,8 @@
 ## Perfiles, "¿Quién usa Finko?" y la piel del niño
 
 - **Objetivo**          : que un tutor y niños de 7 a 12 años compartan el teléfono sin que el niño vea las finanzas del adulto (D1).
-- **Estado actual**     : en evolución (Fase 3 de APR). **APR.3b** (sistema visual: `.kid`, Frai, dibujos, frasco) y **APR.3a** (perfiles, selector, alta paso 1, PIN de niño a adulto, candado obligatorio, P1) cerradas. El niño ve por ahora un Inicio mínimo; su barra, ruta, alcancía y "Yo" llegan con APR.3c y APR.3d; mesada, premio y progreso del niño con APR.3e.
-- **Verificado contra** : commit de APR.3a (2026-10-25).
+- **Estado actual**     : en evolución (Fase 3 de APR). Cerradas **APR.3b** (sistema visual), **APR.3a** (perfiles, selector, alta paso 1, PIN de niño a adulto, candado obligatorio, P1) y **APR.3c** (barra de cuatro destinos, ruta en orden como camino, lección con Frai, celebración con "Úsalo de verdad", unidad 1). La alcancía es de lectura hasta APR.3d; mesada, premio y progreso del niño con APR.3e; las unidades 2 a 8 con APR.3f.
+- **Verificado contra** : commit de APR.3c (2026-10-25).
 
 **Dónde vive**
 
@@ -26,9 +26,14 @@
 | Confirmación con palabra escrita | `modules/ui/confirm.js` | opción `palabra` |
 | Bloque Familia y alta del niño (paso 1, PIN si falta) | `modules/dominio/config/familia.js`, `familia-view.js` | `initFamilia()`, `abrirAlta()`, `htmlFamilia()`, `htmlAltaNino()`, `htmlAltaPin()`, `data-action="familia-*"` |
 | Candado obligatorio con niños | `modules/dominio/config/view.js` / `index.js` | `_renderBloqueo()`, `_quitarCandado()` |
-| Lo que ve el niño | `modules/dominio/nino/` | `initNino()`, `htmlInicioNino()` |
+| La app del niño: cuatro pantallas y su barra | `modules/dominio/nino/index.js` / `view.js` | `initNino()`, `_irA()`, `htmlBarraNino()`, `htmlInicioNino()`, `htmlRutaNino()`, `htmlAlcanciaNino()`, `htmlYoNino()`, `data-action="nino-vista"`, evento `nino:vista` |
+| La ruta en orden (sin DOM) | `modules/dominio/nino/logic.js` | `estadoRutaNino()`, `siguienteLeccionNino()`, `unidadesHechasNino()` |
+| Catálogo de la ruta del niño | `modules/infra/ruta-aprende.js` | `UNIDADES_NINO` |
+| Saldos de los frascos y avance del niño | `modules/infra/perfiles.js` | `saldosFrascos()`, `guardarAprendeNino()`, `FRASCOS` |
+| La lección del niño: mismo motor, su avance y su cierre | `modules/dominio/aprende/index.js` / `view.js` | `_progreso()`, `_guardarProgreso()`, `ctx.nino`, `_cierreNino()`, `data-action="leccion-salir-a"` |
+| Contenido del niño (solo datos) | `modules/dominio/aprende/lecciones/nino/kN.js` | `'k1-l1'` |
 | Dibujos, Frai, frasco y destellos | `modules/infra/ilustraciones.js` | `DIBUJOS`, `htmlDibujo()`, `htmlFrai()`, `htmlFrasco()`, `htmlDestellos()` |
-| Markup | `index.html` | `#quien-usa`, `#modal-familia`, `#nino-app`, `#nino-main` |
+| Markup | `index.html` | `#quien-usa`, `#modal-familia`, `#nino-app`, `#nino-main`, `#nino-nav` |
 
 **Recursos**: símbolos `il-frai-*`, `il-balon` a `il-patineta`, `il-frasco`, `il-frasco-borde` (`assets/svg/ilustraciones/`, ver su README 2.2). CSS: `styles/components/nino.css` (base visual y sección "PERFILES"); tokens del niño en `tokens.css` y `themes.css` (`body.kid`, `body.light-theme.kid`); fondo opaco del selector en `modals.css`.
 
@@ -46,5 +51,6 @@
 
 **Cambios realizados**:
 
+- 2026-10-25 (APR.3c): app del niño con barra, ruta en orden, lección con Frai, celebración y unidad 1.
 - 2026-10-25 (APR.3a): perfiles (v48), "¿Quién usa Finko?", alta paso 1 con PIN obligatorio, Familia en Ajustes, P1.
 - 2026-10-25 (APR.3b): `.kid` y sus tokens con AA medido, Frai, catálogo de dibujos y frasco en el sprite.

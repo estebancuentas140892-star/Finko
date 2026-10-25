@@ -8,6 +8,10 @@
  *
  * El contenido de cada unidad se carga con `import()` al abrir una lección
  * (D11): la ruta se pinta solo con los metadatos de logic.js.
+ *
+ * El niño usa este mismo motor con su ruta (APR.3c, ADR 093 D9): sus
+ * lecciones `kN-lM` guardan el avance en su perfil, no en `S.aprende`, y
+ * cierran con "Úsalo de verdad" en vez del Aplícalo.
  */
 
 import { S, EventBus } from '../../core/state.js';
@@ -19,6 +23,7 @@ import { announce } from '../../infra/a11y.js';
 import { hoy } from '../../infra/utils.js';
 import { topeHormiga, limiteHormiga } from '../../infra/hormiga.js';
 import { navigate } from '../../infra/router.js';
+import { perfilActivo, guardarAprendeNino, saldosFrascos } from '../../infra/perfiles.js';
 import {
   unidadDeLeccion, metaLeccion, leccionDisponible, normalizarAprende,
   crearSesion, pasoActual, responderElegir, clasificarTarjeta, seguirClasificando,
@@ -43,7 +48,21 @@ const _CONTENIDO = {
   u7: () => import('./lecciones/u7.js'),
   u8: () => import('./lecciones/u8.js'),
   u9: () => import('./lecciones/u9.js'),
+  // Ruta del niño (APR.3c): el contenido llega por unidad (APR.3f).
+  k1: () => import('./lecciones/nino/k1.js'),
 };
+
+/** El progreso de quien usa Finko: el del niño activo o el del adulto. */
+function _progreso() {
+  return perfilActivo()?.aprende ?? S.aprende;
+}
+
+/** Guarda el progreso donde corresponde. Quien llama hace `save()`. */
+function _guardarProgreso(aprende) {
+  const nino = perfilActivo();
+  if (nino) guardarAprendeNino(nino.id, aprende);
+  else S.aprende = aprende;
+}
 
 /** La prueba de ubicación (D9): contenido aparte, se carga al abrirla. */
 const _cargarUbicacion = () => import('./lecciones/ubicacion.js');
@@ -159,6 +178,7 @@ function _contexto(entrada) {
   }
   const unidad = unidadDeLeccion(_leccion.id);
   const meta = metaLeccion(_leccion.id);
+  const nino = perfilActivo();
   const ctx = {
     eyebrow: `Unidad ${unidad.numero} · ${meta.titulo}`,
     tope: _tope(),
@@ -166,8 +186,16 @@ function _contexto(entrada) {
     entrada,
     unidad,
     valores: _VALORES_LEGALES,
+    nino: Boolean(nino),
   };
-  if (_terminada) {
+  if (_terminada && nino) {
+    // "Úsalo de verdad" (D9): una pregunta sobre un frasco de su alcancía.
+    const { hechas } = normalizarAprende(nino.aprende);
+    ctx.avance = { hechas: unidad.lecciones.filter(l => hechas[l.id]).length, total: unidad.lecciones.length };
+    const usalo = pasoActual(_sesion, _leccion)?.usalo;
+    if (usalo) ctx.usalo = { frasco: usalo.frasco, saldo: saldosFrascos(nino)[usalo.frasco] ?? 0, pregunta: usalo.pregunta };
+    ctx.celebrarUnidad = _celebrarUnidad;
+  } else if (_terminada) {
     const { hechas } = normalizarAprende(S.aprende);
     ctx.avance = {
       hechas: unidad.lecciones.filter(l => hechas[l.id]).length,
@@ -208,8 +236,8 @@ function _pintar({ entrada = false, foco = 'titulo' } = {}) {
 function _guardarAvance() {
   // La prueba de ubicación es corta y no se retoma: salir la deja sin hacer.
   if (!_sesion || _terminada || _esUbicacion) return;
-  const a = normalizarAprende(S.aprende);
-  S.aprende = { ...a, enCurso: { id: _sesion.leccionId, paso: pasoParaRetomar(_sesion) } };
+  const a = normalizarAprende(_progreso());
+  _guardarProgreso({ ...a, enCurso: { id: _sesion.leccionId, paso: pasoParaRetomar(_sesion) } });
   save();
   EventBus.emit('state:change', { section: 'aprende' });
 }
@@ -220,10 +248,10 @@ function _terminar() {
     _terminarUbicacion();
     return;
   }
-  const { aprende, primeraVez } = registrarLeccionHecha(S.aprende, _sesion.leccionId, hoy());
+  const { aprende, primeraVez } = registrarLeccionHecha(_progreso(), _sesion.leccionId, hoy());
   const unidad = unidadDeLeccion(_sesion.leccionId);
   _celebrarUnidad = primeraVez && unidadTerminada(unidad, aprende.hechas);
-  S.aprende = aprende;
+  _guardarProgreso(aprende);
   save();
   EventBus.emit('state:change', { section: 'aprende' });
   _terminada = true;
@@ -281,7 +309,7 @@ async function _abrir(el) {
   const modulo = await _CONTENIDO[unidad.id]();
   const leccion = modulo?.default?.[id];
   if (!leccion) return;
-  const { enCurso } = normalizarAprende(S.aprende);
+  const { enCurso } = normalizarAprende(_progreso());
   _mostrar(leccion, enCurso?.id === id ? enCurso.paso : 0, false);
 }
 
@@ -457,6 +485,12 @@ export function initAprende() {
   registrarAccion('leccion-limite-hormiga', _ponerLimiteHormiga);
   registrarAccion('aprende-unidad', _alternarUnidad);
   registrarAccion('ubicacion-abrir', _abrirUbicacion);
+  // Cierre del niño: "Ver mi alcancía" o "Volver a la ruta" cierran la
+  // lección y le piden la pantalla a su app (ADN 10: por evento).
+  registrarAccion('leccion-salir-a', (el) => {
+    _salir();
+    EventBus.emit('nino:vista', { vista: el?.dataset?.vista ?? 'aprender' });
+  });
   registrarAccion('ubicacion-inicio', () => { _salir(); navigate('dash'); });
   registrarAccion('ubicacion-desde-1', _empezarDesdeUno);
   // Los botones del Aplícalo usan acciones globales que ya existen:

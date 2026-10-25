@@ -120,6 +120,35 @@ export const UNIDADES = [
 ];
 
 /**
+ * La ruta del niño (APR.3c, ADR 093 D9): ocho unidades que se recorren en
+ * orden, sin saltos, para no perderse (el adulto no tiene orden, 092 D8).
+ * Mismo formato que `UNIDADES`; ids `k1` a `k8` y lecciones `kN-lM`, así el
+ * motor de la lección es el mismo. `icono` es el símbolo de la unidad en la
+ * ruta. El contenido llega por unidad (APR.3f): sin `lecciones`, la unidad
+ * está en preparación.
+ *
+ * @type {(Unidad & { icono: string })[]}
+ */
+export const UNIDADES_NINO = [
+  {
+    id: 'k1', numero: 1, nombre: '¿Qué es el dinero?', dominio: 'tesoreria', icono: 'c-billete', seccion: 'aprender', termina: 'Tu alcancía',
+    aprendiste: 'Ahora sabes para qué sirve el dinero.',
+    lecciones: [
+      { id: 'k1-l1', titulo: 'Para qué sirve el dinero', minutos: 3 },
+      { id: 'k1-l2', titulo: 'El dinero se gana', minutos: 3 },
+      { id: 'k1-l3', titulo: 'Guardar es no gastar todo hoy', minutos: 3 },
+    ],
+  },
+  { id: 'k2', numero: 2, nombre: 'Lo que necesito y lo que quiero', dominio: 'gastos', icono: 'c-tienda', seccion: 'aprender', termina: 'Tu alcancía', lecciones: [] },
+  { id: 'k3', numero: 3, nombre: 'Mi alcancía y mi meta', dominio: 'ahorro', icono: 'i-ahorro', seccion: 'aprender', termina: 'Tu alcancía', lecciones: [] },
+  { id: 'k4', numero: 4, nombre: 'Ahorrar poco a poco', dominio: 'metas', icono: 'i-metas', seccion: 'aprender', termina: 'Tu alcancía', lecciones: [] },
+  { id: 'k5', numero: 5, nombre: 'Gastar con un plan', dominio: 'presupuesto', icono: 'c-compras', seccion: 'aprender', termina: 'Tu alcancía', lecciones: [] },
+  { id: 'k6', numero: 6, nombre: 'Compartir y ayudar', dominio: 'personales', icono: 'c-regalo', seccion: 'aprender', termina: 'Tu alcancía', lecciones: [] },
+  { id: 'k7', numero: 7, nombre: 'Guardar para lo que no esperas', dominio: 'compromisos', icono: 'c-paraguas', seccion: 'aprender', termina: 'Tu alcancía', lecciones: [] },
+  { id: 'k8', numero: 8, nombre: '¿Por qué crece mi dinero?', dominio: 'inversion', icono: 'i-trending-up', seccion: 'aprender', termina: 'Tu alcancía', lecciones: [] },
+];
+
+/**
  * ¿La unidad está terminada? Todas sus lecciones hechas. Una unidad en
  * preparación (sin lecciones) nunca está terminada.
  *
