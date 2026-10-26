@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### docs(nino): ADR 094, Tino el guatín reemplaza a Frai · 2026-10-25
+
+[ADR 094](DECISIONS/094-tino-el-guatin.md), acota el [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md) D7; ficha [`contexto/nino.md`](contexto/nino.md). SW v613.
+
+- **El personaje del niño es Tino, un guatín**, decisión de Esteban: guarda semillas para la escasez y la semilla enterrada se vuelve árbol. Su metáfora cubre ahorrar, reservar, crecer y compartir; la del frailejón, solo guardar y esperar. Se cuenta como "sembrar", nunca como "olvidar".
+- **Tino es a color, con tokens por rol**: acota el "un solo color" del 093 D7. El tono de cada pose pasa al panel que lo rodea.
+- **Pedido de dibujos en dos rondas**: cinco poses para reemplazar a Frai (APR.5a) y seis para lo que faltaba, incluidos los hitos del niño que el handoff pedía (APR.5b). Fuera quedan tristeza, enojo, señal de prohibido, cerdito y escenas del adulto.
+- **Ya cambian tres lecciones**: k1-l3, k4-l1 y k7-l1 cuentan la semilla en tercera persona ("el guatín"), ciertas con el dibujo de hoy y con el de Tino. La única etiqueta que llamaba Frai al dibujo deja de nombrarlo. El código conserva los nombres de Frai hasta APR.5a.
+
 ### feat(logros): ficha 17 de la auditoría móvil, los encargos llevan y la vitrina se parte · 2026-10-25
 
 MOV.1 ficha 17 (Logros), sin ADR: no cambia ninguna decisión vigente. Ficha: [`contexto/logros.md`](contexto/logros.md). SW v612.

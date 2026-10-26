@@ -1,7 +1,7 @@
 /**
  * lecciones/nino/k7.js - unidad 7 del niño, "Guardar para lo que no esperas"
- * (ADR 093 D9). Solo datos. La idea de Frai: tener reserva, como el agua
- * que guarda para cuando no llueve.
+ * (ADR 093 D9). Solo datos. La idea del guatín (ADR 094): tener reserva,
+ * como las semillas que guarda para cuando no hay frutos.
  *
  * Revisión pedagógica: pendiente (ADR 093), registrada en APR.3f.
  */
@@ -13,7 +13,7 @@ export default {
       {
         tipo: 'concepto',
         titulo: 'A veces pasan cosas que no esperas.',
-        texto: 'Frai guarda agua para cuando no llueve.',
+        texto: 'Si no hay frutos, el guatín come lo que guardó.',
       },
       {
         tipo: 'elegir',

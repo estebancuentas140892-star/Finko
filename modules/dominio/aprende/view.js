@@ -719,7 +719,7 @@ function _cierreNino(ctx) {
   const u = ctx.unidad;
   const cabeza = ctx.celebrarUnidad
     ? `
-      <div class="leccion-nino__celebra" role="img" aria-label="Frai celebra junto a tu nueva insignia de la unidad ${u.numero}">
+      <div class="leccion-nino__celebra" role="img" aria-label="Celebramos tu nueva insignia de la unidad ${u.numero}">
         ${htmlFrai('celebra', { tamano: 128 })}
         <div class="destellos leccion-nino__insignia">${htmlDestellos()}<svg class="leccion-insignia--nino" viewBox="0 0 120 120" aria-hidden="true"><use href="#il-insignia"/></svg></div>
       </div>

@@ -57,10 +57,11 @@
 - **Quitar el candado con niños** no se ofrece y el handler lo rechaza: primero hay que eliminar sus perfiles.
 - **Inicio trae la alcancía dos veces** (la lista corta y los tres frascos) y el ancho elige cuál se ve (`nino.css`): un test que cuente frascos en Inicio ve los dos. Lo mismo con "Cambiar": en el teléfono va en Inicio y en Yo; desde 768 px, en el riel.
 
-**Cambios pendientes**: el selector usa el campo de PIN de siempre, no el teclado numérico del diseño; el avatar de Inicio como atajo a Familia (D2) llega con APR.3e.
+**Cambios pendientes**: el selector usa el campo de PIN de siempre, no el teclado numérico del diseño; falta el avatar de Inicio como atajo a Familia (D2). **El personaje pasa a Tino, un guatín** ([ADR 094](../DECISIONS/094-tino-el-guatin.md)): el dibujo, el token y el código de Frai se reemplazan con APR.5a, cuando lleguen los dibujos.
 
 **Cambios realizados**:
 
+- 2026-10-25 (ADR 094): Frai pasa a Tino, un guatín; k1-l3, k4-l1 y k7-l1 cuentan la metáfora de la semilla.
 - 2026-10-25 (APR.4b): riel del niño en tableta y escritorio, Inicio en dos columnas, "Cambiar de perfil" en la barra lateral del adulto.
 - 2026-10-25 (APR.3f): unidades 2 a 8 y ubicación desde los 10 años; lo sabido cuenta en la ruta en orden.
 - 2026-10-25 (APR.3e): alta con mesada, "Entregada" con gasto Familia, premio por ahorrar, progreso del niño.

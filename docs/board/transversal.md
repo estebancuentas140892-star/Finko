@@ -168,3 +168,11 @@
 
 #### APR.3f - Contenido del niño
 - Estado : escritas las ocho unidades y la ubicación desde los 10 años (2026-10-25), con un test que mide la voz del ADR 093 D6. **Falta la revisión pedagógica registrada**, que es la aceptación. **Modelo**: Equilibrado, Alto.
+
+### Fase 5 - Tino, el guatín ([ADR 094](../DECISIONS/094-tino-el-guatin.md))
+
+#### APR.5a - Tino reemplaza a Frai
+- Estado : espera los dibujos de la ronda 1 (saluda, explica, celebra, celebra grande y anima). **Objetivo**: `il-tino-*` en el sprite, tokens `--fk-tino-*` con 3:1 en los dos temas, renombre de `htmlFrai`/`POSES_FRAI`/`.frai`/`--fk-kid-frai`, celebra grande en la unidad terminada y Tino que se presenta. **Modelo**: Equilibrado, Medio.
+
+#### APR.5b - La ronda 2 de Tino y los hitos del niño
+- Estado : espera los dibujos de la ronda 2 y APR.5a. **Objetivo**: sembrar, compartir, reserva y pensando en sus pantallas; hitos del niño (meta cumplida y ruta terminada, con el confeti que ya existe). **Modelo**: Equilibrado, Medio.

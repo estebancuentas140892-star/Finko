@@ -3,7 +3,7 @@
  *
  * Solo datos, con el mismo motor que el adulto. Voz del niño (D6): frases de
  * máximo 10 palabras, cifras en pesos redondos, exclamaciones solo en lo que
- * dice Frai. El cierre es "Úsalo de verdad" (`usalo`): una pregunta sobre un
+ * dice el personaje (Tino, ADR 094). El cierre es "Úsalo de verdad" (`usalo`): una pregunta sobre un
  * frasco de su alcancía, con lo que tiene ahí.
  *
  * Revisión pedagógica: pendiente (ADR 093), registrada en APR.3f.
@@ -66,7 +66,7 @@ export default {
       {
         tipo: 'concepto',
         titulo: 'Guardar es no gastar todo hoy.',
-        texto: 'Frai guarda agua para cuando no llueve. Tú puedes guardar dinero.',
+        texto: 'El guatín guarda semillas para cuando no hay frutos. Tú puedes guardar dinero.',
       },
       {
         tipo: 'elegir',

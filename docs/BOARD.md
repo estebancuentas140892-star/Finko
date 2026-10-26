@@ -75,6 +75,7 @@ Las tarjetas del tablero (la iniciativa HF se lista por fase), para elegir la pr
 | HF.0g | Perfiles de regresión en E2E | Transversal (tests) | media | HF.0f |
 | HF.1a a HF.5a | Fases 1 a 5 de la iniciativa HF (24 rebanadas) | Transversal | media | ficha 18 de MOV.1, cierre de MOV.1 |
 | APR.2c y APR.3f | Iniciativa "Aprende y aplícalo": la revisión pedagógica de las lecciones del adulto y del niño | Transversal | media | nada |
+| APR.5a y APR.5b | Tino, el guatín, reemplaza a Frai ([ADR 094](DECISIONS/094-tino-el-guatin.md)) y los hitos del niño | Transversal | media | los dibujos de Esteban |
 | A.5 | Dominio custom en Vercel | Mantenimiento | baja | que el usuario tenga el dominio registrado |
 | E.2-2027 | Actualizar SMMLV + UVT a valores 2027 | Mantenimiento | alta (enero 2027) | publicación oficial de los decretos 2027 |
 | E.3 | Verificar GMF y otras tasas si hay reforma tributaria | Mantenimiento | baja | que ocurra una reforma |

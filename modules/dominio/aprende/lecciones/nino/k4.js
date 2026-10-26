@@ -1,6 +1,7 @@
 /**
  * lecciones/nino/k4.js - unidad 4 del niño, "Ahorrar poco a poco"
- * (ADR 093 D9). Solo datos. La idea de Frai: esperar a que crezca.
+ * (ADR 093 D9). Solo datos. La idea del guatín (ADR 094): la semilla que
+ * entierra tarda, pero se vuelve árbol.
  *
  * Revisión pedagógica: pendiente (ADR 093), registrada en APR.3f.
  */
@@ -12,7 +13,7 @@ export default {
       {
         tipo: 'concepto',
         titulo: 'Esperar te ayuda a tener algo mejor.',
-        texto: 'Frai crece despacio, pero crece todos los años.',
+        texto: 'El guatín entierra una semilla. Con tiempo, se vuelve árbol.',
       },
       {
         tipo: 'elegir',
