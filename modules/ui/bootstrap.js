@@ -4,6 +4,8 @@
  * Orden de inicialización (no cambiar sin revisar dependencias):
  * 1. loadData()        - hidrata S desde localStorage antes de cualquier render.
  * 1b. initFlushOnHide() - flush inmediato de save() si la pestaña se oculta/cierra.
+ * 1c. capturarEnlaceDeAcceso() - guarda la sesión que trae el enlace del correo de
+ *                          la nube (NUBE.1) y limpia el hash antes del router.
  * 2. initAcciones()    - registra delegación data-action en document.
  * 3. initShell()     - aplica tema guardado.
  * 3b. initBloqueGastos() e initBloqueAhorro() - inyectan la franja de lentes
@@ -25,6 +27,7 @@
  */
 
 import { loadData, initFlushOnHide } from '../core/storage.js';
+import { capturarEnlaceDeAcceso } from '../infra/nube.js';
 import { EventBus } from '../core/state.js';
 import { initShell, markActiveNav, initSidebarCollapse } from './shell.js';
 import { initRouter } from '../infra/router.js';
@@ -67,6 +70,9 @@ import { mostrarNovedadesSiHay } from './novedades.js';
 
 loadData();
 initFlushOnHide();
+// El enlace del correo de acceso (NUBE.1) trae la sesión en el hash: se
+// guarda y se limpia antes de que el router lo lea como una ruta.
+capturarEnlaceDeAcceso();
 initAcciones();
 
 // Dominios: registran sus acciones antes de que el usuario pueda interactuar.

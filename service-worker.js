@@ -10,7 +10,7 @@
  *     o los usuarios seguirán viendo la versión vieja.
  */
 
-const CACHE_NAME = 'finko-v614';
+const CACHE_NAME = 'finko-v615';
 
 // ── Assets críticos - si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [
@@ -66,6 +66,7 @@ const CORE_ASSETS = [
   './modules/infra/ilustraciones.js',
   './modules/infra/perfiles.js',
   './modules/infra/mesada.js',
+  './modules/infra/nube.js',
   './modules/infra/mes-bloque.js',
   './modules/infra/vencimientos.js',
   './modules/infra/bolsas.js',
@@ -177,6 +178,8 @@ const CORE_ASSETS = [
   './modules/dominio/config/bloqueo.js',
   './modules/dominio/config/familia.js',
   './modules/dominio/config/familia-view.js',
+  './modules/dominio/config/nube.js',
+  './modules/dominio/config/nube-view.js',
 
   // Centro Legal (LEG.1) - textos fuente, docs/legal/ es la fuente de verdad.
   './docs/legal/terminos-y-condiciones.md',

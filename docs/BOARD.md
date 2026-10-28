@@ -14,7 +14,7 @@
 
 ### MOV.1 - auditoría UX/UI móvil de Claude Design, 25 entregas
 - Prioridad  : alta
-- Estado     : en proceso (iniciada 2026-08-15)
+- Estado     : **en pausa desde el 2026-10-27** por la iniciativa NUBE (decisión en chat: la prueba con conocidos va primero); se retoma en la ficha 18. Iniciada 2026-08-15
 - Área       : ambos
 - Objetivo   : implementar el handoff "Mobile app design handoff" ficha por ficha, en el orden que fijó Esteban, sin reinterpretar las propuestas
 - Secciones  : todas
@@ -76,7 +76,7 @@ Las tarjetas del tablero (la iniciativa HF se lista por fase), para elegir la pr
 | HF.1a a HF.5a | Fases 1 a 5 de la iniciativa HF (24 rebanadas) | Transversal | media | ficha 18 de MOV.1, cierre de MOV.1 |
 | APR.2c y APR.3f | Iniciativa "Aprende y aplícalo": la revisión pedagógica de las lecciones del adulto y del niño | Transversal | media | nada |
 | APR.5b | La ronda 2 de Tino ([ADR 094](DECISIONS/094-tino-el-guatin.md) y [095](DECISIONS/095-tino-en-el-sprite.md)) y los hitos del niño | Transversal | media | los dibujos de la ronda 2 |
-| NUBE.0 a NUBE.4 | Finko en la nube con Supabase: cuenta, respaldo, sincronización, familia y bancos ([ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md)) | Transversal | alta | el código, cierre de MOV.1 |
+| NUBE.2 a NUBE.4 | Finko en la nube con Supabase: sincronización, familia y bancos ([ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md)) | Transversal | alta | nada (NUBE.1 cerrada); invitar probadores pide SMTP propio |
 | A.5 | Dominio custom en Vercel | Mantenimiento | baja | que el usuario tenga el dominio registrado |
 | E.2-2027 | Actualizar SMMLV + UVT a valores 2027 | Mantenimiento | alta (enero 2027) | publicación oficial de los decretos 2027 |
 | E.3 | Verificar GMF y otras tasas si hay reforma tributaria | Mantenimiento | baja | que ocurra una reforma |

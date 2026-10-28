@@ -34,6 +34,7 @@ import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { mostrarToast } from '../../ui/toast.js';
 import { hayNinos } from '../../infra/perfiles.js';
 import { initFamilia } from './familia.js';
+import { initNube } from './nube.js';
 
 // ── CONFIRMACIÓN VISIBLE DE GUARDADO (R14/R15) ───────────────────
 //
@@ -636,6 +637,7 @@ async function _quitarCandado(e) {
 
 export function initConfig() {
   initFamilia({ repintar: () => renderSmart(_inyectarPanel, 'config') });
+  initNube({ repintar: () => renderSmart(_inyectarPanel, 'config') });
   registrarAccion('exportar-datos',         _exportarDatos);
   registrarAccion('importar-datos',         _abrirImportadorDatos);
   registrarAccion('exportar-gastos-csv',    _exportarGastosCSV);

@@ -17,6 +17,8 @@ import { DOCUMENTOS_LEGALES } from './legal.js';
 import { candadoActivo, cryptoDisponible, PIN_LARGO_MIN, PIN_LARGO_MAX } from './bloqueo.js';
 import { ninos, hayNinos } from '../../infra/perfiles.js';
 import { htmlFamilia } from './familia-view.js';
+import { htmlNube } from './nube-view.js';
+import { estadoNube } from './nube.js';
 
 // ── FORMATO DE MONTOS EN CAPTURA (B4/R16) ────────────────────────
 //
@@ -68,7 +70,7 @@ export function renderPanelConfig() {
     ${_grupo('La app',      [_renderTema(), _renderAtajos(), _renderNotificaciones(), _renderInstalarApp()])}
     ${_grupo('Tu cuenta',   [_renderPerfil(), _renderBloqueo()])}
     ${_grupo('Familia',     [htmlFamilia(ninos(), hoy())])}
-    ${_grupo('Tus datos',   [_renderDatos()])}
+    ${_grupo('Tus datos',   [htmlNube(estadoNube()), _renderDatos()])}
     ${_grupo('Impuestos',   [_renderImpuestos()])}
     ${_grupo('Información', [_renderLegal(), _renderAcercaDe()])}
   `;
@@ -724,8 +726,9 @@ function _renderDatos() {
       <h2 class="config-section__title" id="config-datos-title">Tus datos</h2>
       ${_renderAvisoAlmacenamiento()}
       <p class="config-section__desc">
-        Todo vive solo en este dispositivo. Si lo pierdes o borras la app, se va
-        contigo: guarda un respaldo de vez en cuando.
+        ${estadoNube().sesion
+          ? 'Además de la nube, puedes guardar un respaldo en un archivo.'
+          : 'Sin la nube, todo vive solo en este dispositivo. Si lo pierdes o borras la app, se va contigo: guarda un respaldo de vez en cuando.'}
       </p>
       ${_renderPersistencia()}
       <p class="config-section__desc" id="config-ultimo-respaldo">${textoUltimoRespaldo(S.config?.ultimoRespaldoISO)}</p>

@@ -8,7 +8,7 @@
 
 ## 1. Modelo de amenaza
 
-Desde el [ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md) Finko tiene dos modos. **Hasta NUBE.1 solo existe el primero.**
+Desde el [ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md) Finko tiene dos modos. **El segundo existe desde NUBE.1 (2026-10-27)**, en prueba cerrada.
 
 | Componente | Sin cuenta (hoy) | Con cuenta (desde NUBE.1) |
 |---|---|---|
@@ -100,15 +100,15 @@ Si encuentras un problema de seguridad en el código del proyecto:
 
 ## 8. La nube (Supabase, ADR 096)
 
-Rige desde NUBE.1. Cada regla con test o verificación propia; una que falte bloquea la rebanada.
+Rige desde NUBE.1. Cada regla con test o verificación propia; una que falte bloquea la rebanada. Hoy: una tabla (`respaldos`), sin permisos para `anon` y con RLS por usuario, verificado con pedidos sin sesión (401).
 
 1. **RLS en toda tabla, sin excepción.** Política por dueño y por familia, con un test por regla contra el proyecto de prueba: el dueño lee y escribe; otro usuario no; el niño no lee al padre; ninguna familia lee a otra.
 2. **Claves.** La pública (anon o publishable) va en el cliente: la barrera es RLS. La secreta (service_role) vive solo como secreto de las funciones del servidor: nunca en el repo, el chat, un issue ni un log. Si se filtra, se rota de inmediato.
 3. **Sesión.** El riesgo es el XSS: `script-src 'self'` sin excepciones, todo dato del usuario pasa por `esc()` antes de ir al HTML, y Ajustes permite cerrar la sesión en todos los dispositivos.
-4. **Inicio de sesión** con correo (enlace o código) o Google, por Supabase Auth: Finko no guarda contraseñas. Límites de intentos del proveedor activos.
+4. **Inicio de sesión** por correo (enlace o código), por Supabase Auth: Finko no guarda contraseñas. Registro abierto apagado: solo correos invitados. Límites de intentos del proveedor activos.
 5. **Código de vinculación del niño**: lo genera el servidor, a pedido de la cuenta del padre; un solo uso, vence en 10 minutos y tiene límite de intentos.
 6. **Dispositivo perdido**: el PIN local ([ADR 063](DECISIONS/063-candado-de-acceso-local.md)) sigue cerrando la app; desde otro dispositivo se cierran todas las sesiones.
-7. **Librería cliente dentro del repo**: un archivo ESM con versión fija, su origen y su SHA-256 anotados junto al archivo. Actualizarla es revisar su changelog, anotar la huella nueva y pasar la checklist de la sección 4.
+7. **Sin librería cliente**: `infra/nube.js` habla REST con `fetch` (ADR 096, resolución en NUBE.1). Si algún día entra una, va dentro del repo con versión fija, origen y SHA-256 anotados, y pasa la checklist de la sección 4.
 8. **Desarrollo con datos inventados** en un proyecto de Supabase aparte; nunca datos reales en desarrollo ni en E2E.
 9. **Incidente**: rotar claves, cerrar sesiones, avisar a los titulares afectados y a la SIC cuando la ley lo exija, y dejarlo en el CHANGELOG.
 10. **Borrar la cuenta borra sus datos en la nube**; los respaldos del proveedor vencen en su ciclo ([`legal/nube/`](legal/nube/README.md)).

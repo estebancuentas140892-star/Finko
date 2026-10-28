@@ -178,16 +178,10 @@
 
 ## Iniciativa NUBE - Finko en la nube con Supabase
 
-> Decisión, las cuatro razones del ADR 043 revisadas, seguridad y Ley 1581: **[ADR 096](../DECISIONS/096-finko-en-la-nube-con-supabase.md)**, fuente única. Cuenta opcional, copia local que manda (offline-first intacto) y sincronización por registro. **El código empieza al cerrar MOV.1**; lo que es solo documento de NUBE.0 puede avanzar antes. Proyecto de Supabase en plan gratis mientras Finko es de prueba; plan pago antes de abrir cuentas a personas fuera del grupo de prueba.
-
-#### NUBE.0 - Base: Supabase de prueba, seguridad y legal
-- Estado : **documentos hechos el 2026-10-27**: modelo de amenaza y reglas de la nube en [SECURITY.md](../SECURITY.md) (secciones 1 y 8) y paquete legal en borrador en [`legal/nube/`](../legal/nube/README.md), con sus datos pendientes. **Proyecto de prueba creado el 2026-10-27**: `finko-prueba` (`https://dqfpryvnerbluxmboick.supabase.co`), São Paulo (`sa-east-1`), plan gratis, registro abierto apagado (solo invitados), tablas nuevas sin exponer por defecto y RLS automático. **Falta**, al empezar el código: la CSP con su dominio y la librería cliente ESM con versión fija dentro del repo (096 D3). **Aceptación**: SECURITY.md y legal revisados contigo; la app sigue igual sin cuenta. **Modelo**: Equilibrado, Alto.
-
-#### NUBE.1 - Cuenta del adulto y respaldo automático
-- Estado : no iniciar antes de cerrar MOV.1. **Objetivo**: crear cuenta (correo o Google), subir lo que hay en el dispositivo y recuperarlo al iniciar sesión en otro; marca de cambio por registro y borrado como marca (bump de schema). **Aceptación**: E2E con proyecto de prueba: perder el teléfono y recuperar todo en otro navegador. **Modelo**: Potente, Alto.
+> Decisión, las cuatro razones del ADR 043 revisadas, seguridad y Ley 1581: **[ADR 096](../DECISIONS/096-finko-en-la-nube-con-supabase.md)**, fuente única, con su resolución en implementación. Cuenta opcional, copia local que manda (offline-first intacto). **NUBE.0 y NUBE.1 cerradas el 2026-10-27** (MOV.1 en pausa por decisión en chat): proyecto `finko-prueba` en São Paulo, cuenta por correo solo para invitados y respaldo automático del estado completo; detalle en [`contexto/nube.md`](../contexto/nube.md). **Pendiente del dueño de la cuenta**: SMTP propio en Supabase para que el correo de acceso llegue a los probadores. Plan gratis mientras Finko es de prueba; plan pago antes de abrir cuentas a personas fuera del grupo de prueba.
 
 #### NUBE.2 - Sincronización entre dispositivos
-- Estado : depende de NUBE.1. **Objetivo**: lo anotado en el celular aparece en el PC y al revés, sin red también; gana el cambio más reciente por registro (096 D4). **Riesgo**: la cuota de `localStorage` (disparador D4 del ADR 030). **Modelo**: Potente, Alto.
+- Estado : pendiente. **Objetivo**: lo anotado en el celular aparece en el PC y al revés, sin red también; gana el cambio más reciente por registro, con la marca de cambio y el borrado como marca (bump de schema, 096 D4). Suma borrar la cuenta completa, que necesita una función de servidor. **Riesgo**: la cuota de `localStorage` (disparador D4 del ADR 030). **Modelo**: Potente, Alto.
 
 #### NUBE.3 - Familia en la nube
 - Estado : depende de NUBE.2. **Objetivo**: el padre vincula el teléfono del niño con un código, con su autorización registrada, y ve su avance desde cualquier dispositivo; reglas RLS con test (096 D5). **Modelo**: Potente, Alto.

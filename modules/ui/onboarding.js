@@ -133,7 +133,7 @@ function _renderPaso1() {
         <button type="submit" class="btn btn-primary btn-lg">Siguiente →</button>
       </div>
       <p class="onboarding__note">
-        Tus datos se guardan solo en tu dispositivo. Sin cuentas. Sin servidores.
+        Tus datos se guardan en tu dispositivo. La cuenta en la nube es opcional.
       </p>
     </form>`;
 }

@@ -115,3 +115,18 @@ El código empieza al cerrar MOV.1 (regla de continuidad): el ADR y NUBE.0 en pa
 - **El texto del onboarding cambia**: "Tus datos se guardan solo en tu dispositivo. Sin cuentas. Sin servidores." (`ui/onboarding.js`) pasa a decir que sin cuenta todo queda en el dispositivo y con cuenta, también en la nube.
 - **Los tests E2E de la nube necesitan un proyecto de prueba** o un doble del servidor; los actuales siguen corriendo sin red.
 - **Más superficie de ataque**: la CSP se abre a un dominio y aparece un inicio de sesión.
+
+---
+
+## Resolución en implementación (NUBE.1, 2026-10-27)
+
+Lo que la implementación de NUBE.1 fijó o corrigió de este ADR. El ADR no se reescribe: esto lo acota.
+
+- **D8, el orden:** MOV.1 queda en pausa y la nube empieza antes de que cierre, por decisión en chat ("Sí, empieza NUBE"). La prueba con 5 o 6 conocidos manda sobre las 8 fichas que le faltan a MOV.1.
+- **D3, sin librería:** NUBE.1 solo usa el acceso por correo, la sesión y una tabla, y eso es REST. Un cliente propio con `fetch` (`infra/nube.js`) evita meter al repo una librería de terceros con su cadena de dependencias. Se vuelve a mirar en NUBE.2 si la sincronización por registro o el tiempo real la justifican.
+- **D4, por fases:** NUBE.1 sube el estado completo como un respaldo por usuario (tabla `respaldos`, RLS por usuario). La marca de cambio por registro y el borrado como marca, con su bump de schema, pasan a NUBE.2.
+- **D1, el acceso:** por correo, con enlace o código, sin contraseñas, y solo para invitados (registro abierto apagado). Al entrar nunca se pisa un lado: sin respaldo sube, con respaldo y el dispositivo vacío trae, y con datos en los dos lados la persona elige. El PIN no sube.
+- **D7, la autorización:** una casilla al pedir el acceso, que nombra también los perfiles de niños que el adulto administra; queda en `S.config.autorizacionNube` con versión y fecha. La autorización por cada niño del D5 sigue en NUBE.3.
+- **Borrar la cuenta completa** (el usuario de autenticación) necesita una función de servidor con la clave secreta. NUBE.1 ofrece borrar el respaldo de la nube, que también cierra la sesión; la cuenta completa queda para NUBE.2.
+- **Correo:** las plantillas de Supabase no se editan sin SMTP propio, y su correo por defecto tiene un límite bajo de envíos y, según su documentación, solo entrega al equipo del proyecto. Para invitar a los probadores hace falta SMTP propio, a cargo del dueño de la cuenta.
+

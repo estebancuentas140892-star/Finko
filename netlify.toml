@@ -35,4 +35,4 @@
     Referrer-Policy           = "strict-origin-when-cross-origin"
     Permissions-Policy        = "notifications=(self), camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=()"
     Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
-    Content-Security-Policy   = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-ancestors 'none'"
+    Content-Security-Policy   = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://dqfpryvnerbluxmboick.supabase.co; manifest-src 'self'; worker-src 'self'; frame-ancestors 'none'"

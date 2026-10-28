@@ -61,6 +61,11 @@ export default [
         FileReader:   'readonly',
         // Web Notifications API - usada en infra/notificaciones.js
         Notification: 'readonly',
+        // Sesión de la nube (NUBE.1): el hash del enlace y el token del correo
+        URLSearchParams: 'readonly',
+        atob:            'readonly',
+        btoa:            'readonly',
+        TextEncoder:     'readonly',
         // CSSOM - usada en tests/e2e para medir contraste tras el fundido
         getComputedStyle: 'readonly',
       },

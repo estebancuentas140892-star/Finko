@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(nube): NUBE.1, cuenta opcional y respaldo automático en Supabase · 2026-10-27
+
+[ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md) (resolución en implementación); ficha nueva [`contexto/nube.md`](contexto/nube.md). Cierra NUBE.0 y NUBE.1; MOV.1 en pausa. SW v615.
+
+- **Sin librería de Supabase.** Para entrar por correo, renovar la sesión y leer o escribir una tabla alcanza `fetch`: `infra/nube.js` habla REST directo y no entra código de terceros al repo.
+- **Un respaldo por usuario, del estado completo.** La tabla `respaldos` tiene RLS por usuario y ningún permiso para quien no entró; se verificó contra el proyecto real (401 sin sesión, 422 para un correo no invitado). La sincronización por registro queda para NUBE.2.
+- **Al entrar nunca se pisa un lado**: sin respaldo sube, con un dispositivo vacío trae todo, y con datos en los dos lados la persona elige y mientras tanto no se sube nada. Después, cada cambio sube solo a los 5 segundos; sin red queda pendiente.
+- **El PIN no sube**, y al traer queda el del dispositivo. La autorización se acepta con una casilla que nombra los perfiles de niños y queda guardada con versión y fecha.
+- **El enlace del correo trae la sesión en el hash**, que chocaba con las rutas de la app: se captura en el arranque, antes del router, y deja la app en Ajustes.
+- **Lo que queda para el dueño de la cuenta**: SMTP propio en Supabase, porque su correo por defecto tiene un límite bajo y no deja editar la plantilla para mandar el código.
+
 ### docs(nube): NUBE.0, seguridad y paquete legal para la nube · 2026-10-27
 
 [ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md) D3, D6 y D7. Parte de documentos de NUBE.0; sin código.

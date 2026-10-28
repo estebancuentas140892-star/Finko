@@ -1,6 +1,6 @@
 # Contexto técnico por funcionalidad - Finko Claude
 
-> Revisado: 2026-10-25.
+> Revisado: 2026-10-27.
 
 > Registro técnico permanente. Una ficha por sección de la app; dentro de cada ficha, un bloque por funcionalidad.
 > Objetivo: cada funcionalidad se analiza a fondo **una sola vez**, el resultado queda escrito aquí y las sesiones futuras lo reutilizan en vez de volver a recorrer el proyecto.
@@ -118,6 +118,7 @@ Una ficha por sección de la app (mismo agrupamiento que [`BOARD.md`](../BOARD.m
 | Logros (catálogo, evaluación, toast, "Tu progreso") | [`logros.md`](logros.md) | activa (partida de `transversal.md` el 2026-08-14) |
 | Aprende (ruta de unidades y lección a pantalla completa, iniciativa APR) | [`aprende.md`](aprende.md) | activa (APR.1a, 2026-10-24) |
 | Perfil niño y Familia (perfiles en el dispositivo, "¿Quién usa Finko?", tutor) | [`nino.md`](nino.md) | activa (APR.3a, 2026-10-25) |
+| Nube (cuenta opcional y respaldo en Supabase, iniciativa NUBE) | [`nube.md`](nube.md) | activa (NUBE.1, 2026-10-27) |
 | Escritorio (shell de escritorio: sidebar, barra superior, atajos, iniciativa INT.1) | [`escritorio.md`](escritorio.md) | activa (partida de `transversal.md` el 2026-08-14) |
 
 Al crear una ficha: actualizar su fila a "activa" y ordenar los bloques dentro del archivo por importancia de la funcionalidad.
