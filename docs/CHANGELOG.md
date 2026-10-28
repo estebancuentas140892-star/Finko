@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-10-27.
+> Revisado: 2026-10-28.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-10)
+
+### feat(app): UPD.3, botón para actualizar la app sin perder datos · 2026-10-28
+
+[ADR 097](DECISIONS/097-version-nueva-con-boton.md), que reemplaza la decisión de alcance de UPD.1; ficha [`contexto/transversal.md`](contexto/transversal.md). SW v617.
+
+- **El aviso sale siempre y la app nunca recarga sola.** Antes la versión nueva entraba con una recarga silenciosa y nadie se enteraba; ahora sale "Hay una versión nueva de Finko. Tus datos se conservan." con Actualizar y Ahora no, que vuelve a ofrecerse al regresar a la app.
+- **Dos señales desde `sw-register.js`**, que no puede importar: el evento avisa en el momento y la marca en `<html>` queda para quien llega después. Sin ella, un cambio de SW anterior al listener se perdía, y Ajustes respondía "ya tienes la última" con la página aún en la vieja.
+- **La guarda de primera instalación compara contra el controlador anterior**, no contra el del arranque: una página que nació sin SW tampoco avisaba de una actualización posterior.
+- **"Reparar la app" no borra nada sin red**: sin SW, sin cache y sin conexión la próxima carga no tendría de dónde sacar la app. La prueba de red es el mismo `reg.update()`.
+- **Verificado con SW real** en `finko-sim.localhost` (la app lo trata como producción) simulando tres publicaciones: buscar en Ajustes, el aviso con Ahora no y Actualizar, y reparar; el perfil sembrado sobrevivió a las cuatro.
+- **La primera publicación con este cambio entra por la recarga silenciosa** del `sw-register.js` viejo de cada instalación; el aviso rige desde la siguiente.
 
 ### feat(nube): NUBE.2, sincronización por registro entre dispositivos · 2026-10-27
 

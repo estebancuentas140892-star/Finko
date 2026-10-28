@@ -29,56 +29,35 @@ if ('serviceWorker' in navigator) {
       }).catch(function () { /* ignorar */ });
     }
   } else {
-    // UPD.1: una versión nueva entra con una sola recarga.
+    // UPD.3: una versión nueva se anuncia con un botón, no recarga sola.
     //
     // El SW nuevo ya se activa solo (skipWaiting en service-worker.js), pero
-    // activarse no cambia lo que la página tiene en memoria: sin esta recarga
-    // el usuario ve los assets viejos hasta que vuelva a entrar. Con ella, un
-    // F5 alcanza: el SW nuevo toma el control, dispara 'controllerchange' y la
-    // página se recarga una vez contra el cache nuevo.
+    // activarse no cambia lo que la página tiene en memoria: la persona sigue
+    // viendo la versión vieja hasta recargar. UPD.1 recargaba sola cuando no
+    // había un modal abierto ni un campo con foco, y solo mostraba el aviso en
+    // el caso contrario. Desde UPD.3 el aviso con el botón "Actualizar"
+    // (modules/ui/sw-aviso.js) sale siempre: la pantalla nunca salta sola y
+    // quien usa la app sabe que llegó algo nuevo. Si lo deja pasar, la versión
+    // nueva igual entra la próxima vez que abra Finko, porque ya es la activa.
     //
-    // El bug que hay que NO repetir: antes existía un listener de
-    // 'controllerchange' que recargaba SIEMPRE. En la primera visita (sin SW
-    // previo) clients.claim() dispara el evento, así que la pantalla saltaba
-    // sola a los pocos segundos, justo cuando el usuario nuevo estaba
-    // escribiendo su nombre en el onboarding. De ahí las tres guardas:
-    // solo si YA había un controlador (o sea, es actualización y no primera
-    // instalación), solo una vez por carga, y solo si no hay nada abierto que
-    // el usuario pueda perder.
-    let _yaRecargado = false;
-    const _habiaControlador = Boolean(navigator.serviceWorker.controller);
-
-    // Declarada dentro del bloque a proposito: en un <script> clasico una
-    // funcion de nivel superior seria window.esSeguroRecargar, y la regla 8 del
-    // ADN prohibe cualquier window.X. El precio es que no se puede importar en
-    // un test; de todos modos el ciclo del SW no corre en localhost (rama de
-    // arriba), asi que este archivo nunca tuvo cobertura automatizada.
-    const esSeguroRecargar = function () {
-      // Un modal abierto (`.modal-overlay[data-open]`, contrato de
-      // ui/modales.js) o un campo con foco significan que el usuario esta en
-      // medio de algo. Ahi NO se recarga: la version nueva ya quedo activa, asi
-      // que entra sola en la proxima recarga natural. Se pierde inmediatez,
-      // nunca datos.
-      if (document.querySelector('.modal-overlay[data-open]')) return false;
-      const foco = document.activeElement;
-      return !(foco && /^(INPUT|TEXTAREA|SELECT)$/.test(foco.tagName));
-    };
+    // El bug que hay que NO repetir: en la primera visita (sin SW previo)
+    // clients.claim() también dispara 'controllerchange', y no hay ninguna
+    // versión vieja que reemplazar. Por eso se compara contra el controlador
+    // anterior: sin controlador antes, es instalación y no actualización.
+    let _controlador = navigator.serviceWorker.controller;
 
     navigator.serviceWorker.addEventListener('controllerchange', function () {
-      if (_yaRecargado || !_habiaControlador) return;
-      if (!esSeguroRecargar()) {
-        // UPD.1: antes esto no hacia nada mas (comentario de arriba: "se
-        // pierde inmediatez, nunca datos"). El usuario se quedaba sin ninguna
-        // senal hasta la proxima recarga casual. document.dispatchEvent en
-        // vez de un import: este archivo es un <script> clasico (no type
-        // module, ver comentario de esSeguroRecargar arriba), asi que no
-        // puede importar EventBus. Quien escucha (modules/ui/sw-aviso.js) es
-        // un modulo aparte.
-        document.dispatchEvent(new CustomEvent('sw:actualizacion-lista'));
-        return;
-      }
-      _yaRecargado = true;
-      location.reload();
+      const anterior = _controlador;
+      _controlador = navigator.serviceWorker.controller;
+      if (!anterior) return;
+      // Dos señales y no una. El atributo en <html> queda puesto: sw-aviso.js
+      // lo lee al arrancar (por si el cambio llegó antes que su listener) y
+      // Ajustes lo usa para saber que solo falta recargar. El evento avisa en
+      // el momento. document y no EventBus: este archivo es un <script>
+      // clasico (no type module), no puede importar, y la regla 8 del ADN
+      // prohibe window.X.
+      document.documentElement.dataset.swActualizacion = 'lista';
+      document.dispatchEvent(new CustomEvent('sw:actualizacion-lista'));
     });
 
     // updateViaCache: 'none' obliga al navegador a pedir service-worker.js a la

@@ -20,6 +20,8 @@ import { confirmar } from '../../ui/confirm.js';
 import { pedirPermiso } from '../../infra/notificaciones.js';
 import { LABEL_SECCION_AVISO } from '../../infra/avisos.js';
 import { PERSISTENCIA, estadoPersistencia, solicitarPersistencia } from '../../infra/persistencia.js';
+import { ACTUALIZACION, versionInstalada, buscarActualizacion, repararArchivos } from '../../infra/actualizacion.js';
+import { versionNuevaLista } from '../../ui/sw-aviso.js';
 import {
   cifradoDisponible, cifrarRespaldo, descifrarRespaldo, esRespaldoCifrado,
 } from '../../infra/cripto-respaldo.js';
@@ -545,6 +547,88 @@ function _inyectarPanel() {
   // El bloque de borrado automático se llena aparte: su estado es asíncrono
   // (CFG.4a). Sin `await`: el resto del panel ya está pintado y usable.
   _pintarPersistencia();
+  _pintarVersion();
+}
+
+// ── ACTUALIZAR APP (UPD.3) ───────────────────────────────────────
+
+/** Copy de cada resultado de `buscarActualizacion()` que deja al usuario en Ajustes. */
+const _COPY_ACTUALIZACION = Object.freeze({
+  [ACTUALIZACION.AL_DIA]:       'Ya tienes la versión más reciente.',
+  [ACTUALIZACION.SIN_RED]:      'No hay conexión. Intenta de nuevo cuando tengas internet.',
+  [ACTUALIZACION.FALLO]:        'No se pudo descargar la versión nueva. Intenta de nuevo en un rato o usa "Reparar la app".',
+  [ACTUALIZACION.NO_SOPORTADO]: 'Este navegador no permite buscar actualizaciones desde la app. Recarga la página para ver la versión más reciente.',
+});
+
+/**
+ * Agrega el número de versión instalada al lado de "Versión" en "Acerca de":
+ * `1.0.0 (617)`. Es el número del cache del SW, el que sube en cada publicación,
+ * así que sirve para confirmar que una actualización entró.
+ */
+async function _pintarVersion() {
+  const numero = await versionInstalada();
+  const el = document.getElementById('config-version-instalada');
+  if (el && numero) el.textContent = ` (${numero})`;
+}
+
+/** @param {string} texto */
+function _estadoActualizacion(texto) {
+  const el = document.getElementById('config-actualizar-estado');
+  if (el) el.textContent = texto;
+}
+
+/**
+ * "Buscar actualización". Si encuentra una versión nueva espera a que quede
+ * instalada y recarga: la persona ya dijo que la quiere, el aviso con botón
+ * sería pedirle lo mismo dos veces.
+ */
+async function _buscarActualizacion() {
+  // Ya hay una versión nueva activa y esta pantalla sigue en la anterior (el
+  // aviso salió y tocó "Ahora no"): no hay nada que buscar, solo recargar.
+  if (versionNuevaLista()) {
+    location.reload();
+    return;
+  }
+
+  const boton = document.getElementById('config-actualizar-btn');
+  if (boton) boton.disabled = true;
+  _estadoActualizacion('Buscando…');
+
+  const resultado = await buscarActualizacion({
+    alDescargar: () => _estadoActualizacion('Descargando la versión nueva…'),
+  });
+
+  if (resultado === ACTUALIZACION.NUEVA) {
+    _estadoActualizacion('Versión nueva lista. Actualizando…');
+    location.reload();
+    return;
+  }
+
+  if (boton) boton.disabled = false;
+  _estadoActualizacion(_COPY_ACTUALIZACION[resultado]);
+}
+
+/**
+ * "Reparar la app": la salida a una instalación trabada en una versión vieja,
+ * sin desinstalar ni borrar los datos del navegador. Pide confirmación porque
+ * recarga la app y necesita red; no la pide como acción peligrosa porque no
+ * borra nada del usuario.
+ */
+async function _repararApp() {
+  const ok = await confirmar({
+    titulo:         'Reparar la app',
+    mensaje:        'Finko va a descargar de nuevo sus archivos y se va a recargar. Tus datos no se tocan.',
+    confirmarTexto: 'Reparar',
+  });
+  if (!ok) return;
+
+  _estadoActualizacion('Reparando…');
+  const listo = await repararArchivos();
+  if (!listo) {
+    _estadoActualizacion('Necesitas conexión a internet para reparar la app. No se borró nada.');
+    return;
+  }
+  location.reload();
 }
 
 // ── CANDADO DE ACCESO (CFG.5a, ADR 063) ──────────────────────────
@@ -650,6 +734,8 @@ export function initConfig() {
   registrarAccion('toggle-respaldo-cifrado', _toggleRespaldoCifrado);
   registrarAccion('abrir-legal', (el) => _mostrarDocumentoLegal(el.dataset.doc));
   registrarAccion('abrir-perfil-fiscal', _abrirPerfilFiscal);
+  registrarAccion('buscar-actualizacion', _buscarActualizacion);
+  registrarAccion('reparar-app',          _repararApp);
   _wireLegalLinks();
 
   // El panel se inyecta la primera vez que la sección está activa.

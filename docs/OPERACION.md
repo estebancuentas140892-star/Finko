@@ -2,7 +2,7 @@
 
 > Runbooks: todo lo que se hace **fuera de escribir código**. Secuencias de pasos reproducibles, no decisiones.
 > Lo que NO va acá: decisiones (van a `DECISIONS/`), estado del proyecto (va a [`HANDOFF.md`](HANDOFF.md)) y el catálogo de comandos de desarrollo, que tiene una sola fuente: los scripts de `package.json`, listados para humanos en el [`README.md`](../README.md). Dentro de un runbook se nombra el comando que ese paso necesita y nada más.
-> Revisado: 2026-07-30.
+> Revisado: 2026-10-28.
 
 | Runbook | Cuándo se ejecuta |
 |---|---|
@@ -112,7 +112,7 @@ El Service Worker es cache-first: si no se sube la versión, el navegador sigue 
 
 **Cómo verificar:** con la app servida, en DevTools → Application → Service Workers debe aparecer la versión nueva; el archivo nuevo se sirve tras recargar. Si la app queda mostrando lo viejo, casi siempre es un bump olvidado.
 
-**Aviso al usuario** (UPD.1): recarga sola si es seguro; si no, `sw-aviso.js` muestra un banner. Si el bump amerita avisar qué hay de nuevo, agregar entrada a `NOVEDADES_POR_VERSION` (`constants.js`) con la misma clave que este `CACHE_NAME`.
+**Aviso al usuario** (ADR 097): nunca recarga sola; `sw-aviso.js` muestra el botón Actualizar y "Acerca de", el número instalado. Si el bump amerita avisar qué hay de nuevo, agregar entrada a `NOVEDADES_POR_VERSION` (`constants.js`) con la misma clave que este `CACHE_NAME`.
 
 ---
 

@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-10-27. Última tarea cerrada: NUBE.2, sincronización por registro entre dispositivos. MOV.1 en pausa. HF.0f en curso: banco listo sin commitear, BUG-035, BUG-036 y BUG-038 abiertos.
+> Revisado: 2026-10-28. Última tarea cerrada: UPD.3, botón para actualizar la app sin perder datos. MOV.1 en pausa. HF.0f en curso: banco listo sin commitear, BUG-035, BUG-036 y BUG-038 abiertos.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 4988/4988 (2026-10-27, NUBE.2) |
-| Tests E2E | 358/358 verdes (2026-10-27, NUBE.2). **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5016/5016 (2026-10-28, UPD.3) |
+| Tests E2E | 358/358 verdes (2026-10-28, UPD.3). **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v48 (`perfiles`, APR.3a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**UPD.3 - botón para actualizar la app sin perder datos, 2026-10-28**
+Una versión nueva ya no recarga sola: sale un aviso con Actualizar. Ajustes busca a pedido, repara una instalación trabada sin tocar los datos y muestra el número instalado ([ADR 097](DECISIONS/097-version-nueva-con-boton.md)). SW v617.
 
 **NUBE.2 - sincronización entre dispositivos, 2026-10-27**
 Lo que se agrega, cambia o borra en un dispositivo llega a los otros; gana el cambio más reciente por registro. Libro local de huellas, sin tocar dominios ni schema. SW v616.
@@ -36,9 +39,6 @@ SECURITY.md con el modo "con cuenta" y diez reglas de la nube; paquete legal en 
 
 **ADR 096 - Finko en la nube con Supabase, 2026-10-27**
 Cuenta opcional, copia local que manda y sincronización por registro; reemplaza el "sin cuentas" del ADR 043. Iniciativa NUBE con cinco rebanadas; el código empieza al cerrar MOV.1. Sin código.
-
-**APR.5a - Tino reemplaza a Frai, 2026-10-27**
-Cinco poses a color en el sprite, convertidas del export de Illustrator (ADR 095: unos 12 KB por pose y once roles de color); celebra en grande la unidad terminada y se presenta en Inicio. SW v614.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

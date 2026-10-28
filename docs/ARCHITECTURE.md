@@ -1,6 +1,6 @@
 # Arquitectura - Finko Claude
 
-> Revisado: 2026-10-24.
+> Revisado: 2026-10-28.
 
 > Documento vivo: se actualiza cuando cambia una capa, entra un dominio o se introduce un patrón nuevo. Historial: `git log -- docs/ARCHITECTURE.md` (la cadena de "última revisión" se podó el 2026-08-13 al tocar el techo de 32 KB).
 >
@@ -81,7 +81,7 @@ Utilidades transversales sin dependencias de dominio.
 | `form-errors.js` | Mensajes de error en formularios |
 | `bancos.js` | Catálogo de bancos colombianos + resolución de ícono por banco |
 | `animate.js` | Animación (count-up, llenado) con `prefers-reduced-motion` |
-| `sw-register.js` | Registro del Service Worker |
+| `sw-register.js` | Registro del Service Worker; avisa de versión nueva, no recarga (ADR 097) |
 | `avisos.js` | Motor único de avisos: arma la lista y la filtra por preferencia de sección ([ADR 066](DECISIONS/066-motor-unico-de-avisos.md)) |
 | `vencimientos.js` | Motor compartido de vencimientos: ocurrencias de una obligación o ingreso según su periodicidad ([ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md)) |
 | `pago-compromiso.js` | Registrar el pago o abono de un compromiso, un solo camino para todas las superficies (ARQ.2) |
@@ -117,7 +117,7 @@ Bootstrap y orquestación de la interfaz.
 | `aceptacion-legal.js` | Aceptación obligatoria versionada del paquete legal (LEG.2) |
 | `registrar.js` | Contenido dinámico de la hoja "Registrar" ([ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md)) |
 | `novedades.js` | Resumen de novedades tras actualizar, contra `S.config.ultimaVersionVista` (UPD.1) |
-| `sw-aviso.js` | Aviso discreto cuando el SW aplicó una versión nueva y no pudo recargar solo |
+| `sw-aviso.js` | Aviso de versión nueva con el botón Actualizar |
 | `toast.js` | Aviso visual efímero genérico de la app (GAS.2a); `.logro-toast` es el caso previo y propio de Logros |
 
 ### 2.4 `modules/dominio/`

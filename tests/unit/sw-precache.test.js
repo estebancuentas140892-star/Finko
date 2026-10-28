@@ -116,3 +116,23 @@ describe('service-worker.js - ciclo de actualización', () => {
     expect(SW).toContain("n.startsWith('finko-')");
   });
 });
+
+// `sw-register.js` es un <script> clásico que no se puede importar y su rama
+// de producción no corre en localhost: se guarda leyendo el texto, igual que
+// el SW arriba.
+describe('sw-register.js - aviso de versión nueva (UPD.3)', () => {
+  const REGISTRO = readFileSync(join(RAIZ, 'modules/infra/sw-register.js'), 'utf-8');
+
+  it('una versión nueva nunca recarga la página sola: la persona decide con el botón', () => {
+    expect(REGISTRO).not.toMatch(/location\.reload\(/);
+  });
+
+  it('deja las dos señales que lee sw-aviso.js: la marca en <html> y el evento', () => {
+    expect(REGISTRO).toContain("document.documentElement.dataset.swActualizacion = 'lista'");
+    expect(REGISTRO).toContain("new CustomEvent('sw:actualizacion-lista')");
+  });
+
+  it('la primera instalación no avisa: sin controlador anterior no hay versión vieja', () => {
+    expect(REGISTRO).toMatch(/if \(!anterior\) return;/);
+  });
+});

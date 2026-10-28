@@ -213,6 +213,19 @@
   display: none;
 }
 
+/* Actualizar app (UPD.3): el botón y su resultado en una fila. Suelto en
+   la columna, el estado vacío sumaba un hueco de la sección; acá no. */
+.config-actualizar {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  flex-wrap: wrap;
+}
+
+.config-actualizar .form-hint {
+  margin-top: 0;
+}
+
 /* B8: la caja declara 18x18 pero es un item flex y las etiquetas del
    perfil fiscal son largas, así que el texto la comprimía a 14x18 y
    dejaba la fila en 42px, tres por debajo del piso táctil de 44. Acotado

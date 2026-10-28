@@ -1,6 +1,6 @@
 # Ficha de contexto: Transversal
 
-> Revisado: 2026-10-17.
+> Revisado: 2026-10-28.
 
 > Infraestructura que atraviesa varias secciones y no es visual: persistencia y cuota, el pipeline de render, el CTA de cuenta, el motor único de avisos, la infra compartida, el aviso de versión nueva, la guía por navegación y la aceptación legal. Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -189,41 +189,41 @@
 
 ---
 
-## Aviso de actualización del Service Worker + novedades (UPD.1)
+## Aviso de actualización del Service Worker + novedades (UPD.1, UPD.3)
 
-- **Objetivo**          : el SW ya recargaba solo, en silencio, cuando detectaba una versión nueva y era seguro hacerlo (sin modal abierto, sin input con foco). El hueco real era el caso contrario: si no era seguro, el usuario se quedaba sin ninguna señal hasta la próxima recarga casual. UPD.1 cubre exactamente ese hueco con un aviso discreto + botón, y agrega un resumen de novedades que se muestra una sola vez tras actualizar.
-- **Estado actual**     : **cerrada (2026-08-02)**. Decisión de alcance: el caso seguro sigue recargando solo sin aviso (comportamiento ya en producción, commits `d13b45c`/`cd14689`, 2026-07-27); el aviso visible aparece solo cuando el guard bloquea la recarga automática.
-- **Verificado contra** : `fbaeba6` (2026-08-02).
+- **Objetivo**          : que una versión nueva llegue sin desinstalar la app ni borrar la caché, y sin perder datos. UPD.1 sumó el aviso con botón (solo cuando la recarga automática no era segura) y el resumen de novedades. UPD.3 ([ADR 097](../DECISIONS/097-version-nueva-con-boton.md)) quita la recarga silenciosa: el aviso sale siempre, y Ajustes busca a pedido y repara.
+- **Estado actual**     : **cerrada (2026-10-28, UPD.3)**. `sw-register.js` nunca recarga; avisa. "Acerca de" muestra el número instalado de `CACHE_NAME`.
+- **Verificado contra** : commit de UPD.3 (2026-10-28).
 
 **Dónde vive**
 
 | Pieza | Archivo | Ancla | Línea |
 |---|---|---|---|
-| Guard que bloquea la recarga automática | `modules/infra/sw-register.js` | `esSeguroRecargar()`, listener `controllerchange` | ~56, ~67 |
-| Puente hacia el aviso (el SW es `<script>` clásico, no importa `EventBus`) | `modules/infra/sw-register.js` | `document.dispatchEvent(new CustomEvent('sw:actualizacion-lista'))` | ~77 |
-| Banner + botón "Actualizar ahora" | `modules/ui/sw-aviso.js` | `initSwAviso()`, `_mostrarAviso()` | ~12, ~16 |
-| CSS del banner (mismo esqueleto que `.logro-toast`, sin autocierre) | `styles/components/nudges.css` | `.sw-aviso` | ~260 |
+| Señal de versión nueva (marca en `<html>` + `CustomEvent`; sin controlador previo no avisa) | `modules/infra/sw-register.js` | listener `controllerchange` | ~47 |
+| Aviso con Actualizar y Ahora no; vuelve a salir al regresar a la app | `modules/ui/sw-aviso.js` | `initSwAviso()`, `mostrarAvisoActualizacion()`, `versionNuevaLista()` | ~20, ~40 |
+| Buscar a pedido, número instalado, reparar sin tocar `localStorage` | `modules/infra/actualizacion.js` | `buscarActualizacion()`, `versionInstalada()`, `repararArchivos()` | ~113, ~83, ~163 |
+| Bloque "Actualizar app" (grupo La app) y número en "Acerca de" | `modules/dominio/config/view.js` | `_renderActualizar()`, `#config-version-instalada` | ~222 |
+| Handlers y copy de cada resultado | `modules/dominio/config/index.js` | `_buscarActualizacion()`, `_repararApp()`, `_pintarVersion()` | ~568 |
+| CSS del aviso y de la fila botón + estado | `styles/components/nudges.css`, `styles/components/config.css` | `.sw-aviso`, `.config-actualizar` | ~404, ~218 |
 | Catálogo de novedades por versión (clave = número de `CACHE_NAME`) | `modules/core/constants.js` | `NOVEDADES_POR_VERSION` | ~901 |
-| Última versión conocida del catálogo (usada por el default y la migración) | `modules/core/constants.js` | `ultimaVersionNovedadesConocida()` | ~909 |
 | Marca persistida de hasta dónde ya vio el usuario | `modules/core/state.js` | `config.ultimaVersionVista` | ~412 |
-| Migración v31 a v32 (backfill al catálogo vigente en ese momento) | `modules/core/storage.js` | `SCHEMA_VERSION = 32`, migración | ~21, ~472 |
-| Modal de novedades (reusa `.modal`/`.modal__header` etc., patrón de `confirm.js`) | `modules/ui/novedades.js` | `mostrarNovedadesSiHay()` | ~18 |
-| CSS del modal (lista con viñetas dentro de `.modal__body`) | `styles/modals.css` | `.novedades__lista` | ~570 |
-| Wiring en el arranque | `modules/ui/bootstrap.js` | `initSwAviso()`, `mostrarNovedadesSiHay()` | ~78 |
+| Modal de novedades | `modules/ui/novedades.js` | `mostrarNovedadesSiHay()` | ~18 |
+| Wiring en el arranque | `modules/ui/bootstrap.js` | `initSwAviso()`, `mostrarNovedadesSiHay()` | ~116 |
 
-**Dependencias y relaciones**: `sw-register.js` (clásico, sin imports) es el único puente entre el ciclo de vida real del SW y el resto de la app; el `CustomEvent` en `document` es el patrón elegido para cruzar esa frontera sin romper ADN 8 (cero `window.X`). El resumen de novedades es independiente del aviso: corre en cada arranque (`bootstrap.js`) sin importar si la versión nueva entró por la recarga silenciosa o por el botón del aviso. `NOVEDADES_POR_VERSION` y `ultimaVersionNovedadesConocida()` desacoplan a propósito el catálogo de `CACHE_NAME`: no todo bump de SW (uno por tarea que toque código, ver `OPERACION.md`) amerita una entrada de novedades, así que el catálogo queda disperso por diseño.
+**Dependencias y relaciones**: `sw-register.js` (clásico, sin imports) es el único puente entre el ciclo real del SW y la app. Cruza la frontera con dos señales sin romper ADN 8: el `CustomEvent` avisa en el momento y la marca `data-sw-actualizacion` queda puesta para quien llegue después (el aviso al arrancar, Ajustes al buscar). El resumen de novedades es independiente del aviso: corre en cada arranque. `NOVEDADES_POR_VERSION` está desacoplado de `CACHE_NAME` a propósito: no todo bump amerita una entrada.
 
 **Riesgos**:
 
-- **El ciclo de vida del SW tiene esquinas** (waiting/controllerchange/doble recarga) y sigue sin cobertura automatizada: `sw-register.js` no corre en localhost (rama `_esDesarrollo`), así que el guard, el `CustomEvent` real y la recarga solo se pueden verificar en producción o con el SW forzado a mano. Lo que sí se verificó de forma aislada: `initSwAviso()` + un `CustomEvent` simulado muestran el banner correcto y el botón recarga; `mostrarNovedadesSiHay()` con un catálogo de prueba abre el modal, lista los puntos y persiste `ultimaVersionVista` al cerrar.
-- **`NOVEDADES_POR_VERSION` depende de disciplina manual**: nadie lo llena automáticamente al bumpear `CACHE_NAME`. Si una tarea futura quiere avisar de una novedad, tiene que acordarse de agregar la entrada; no hay guardarraíl que lo fuerce.
-- **Catálogo vacío en este cierre**: no había contenido de producto decidido para anunciar (el copy de novedades es decisión de Esteban, mismo criterio que el copy de UX Writing en otras tarjetas). El mecanismo completo queda probado con datos de prueba, listo para la primera entrada real.
+- **El ciclo real del SW no tiene E2E**: `sw-register.js` no registra en localhost. Se verifica a mano sirviendo la app en un host `*.localhost` (ej. `finko-sim.localhost`), que la app trata como producción y el navegador como contexto seguro, y subiendo `CACHE_NAME` en la copia servida para simular una publicación. Lo automatizado: `actualizacion.js` y `sw-aviso.js` con dobles, y `sw-precache.test.js` lee `sw-register.js` como texto (sin `location.reload()`, las dos señales, la guarda de primera instalación).
+- **La primera versión con UPD.3 entra por la recarga silenciosa** del `sw-register.js` viejo, que vive en el cache de cada instalación; el aviso rige desde la publicación siguiente.
+- **`NOVEDADES_POR_VERSION` depende de disciplina manual** y su copy es decisión de producto.
 
-**Cambios pendientes**: ninguno de UPD.1 (tarjeta cerrada, sale del BOARD).
+**Cambios pendientes**: ninguno.
 
 **Cambios realizados**:
 
-- **2026-08-02 (UPD.1)**: aviso discreto + botón para el caso bloqueado, resumen de novedades una sola vez, `config.ultimaVersionVista` (schema v32). Detalle completo en el CHANGELOG.
+- 2026-08-02 UPD.1: aviso con botón para el caso bloqueado, resumen de novedades una sola vez, `config.ultimaVersionVista` (schema v32).
+- 2026-10-28 UPD.3: aviso siempre, sin recarga silenciosa; "Actualizar app" en Ajustes (buscar y reparar) y número de versión en "Acerca de" (ADR 097).
 
 ---
 

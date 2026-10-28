@@ -394,11 +394,11 @@
 }
 
 /* ════════════════════════════════════════════════════════════
-   SW AVISO - version nueva lista, no se pudo recargar sola
-   (modal abierto o input con foco al momento del cambio, ver
-   sw-register.js). JS lo crea, lo agrega al body; el toque en
-   el boton recarga (UPD.1). Mismo esqueleto que .logro-toast,
-   sin autocierre: es accionable, no celebratorio.
+   SW AVISO - version nueva lista (UPD.1, UPD.3). Sale siempre
+   que el SW nuevo toma el control: sw-register.js ya no recarga
+   solo. JS lo crea y lo agrega al body; "Actualizar" recarga y
+   "Ahora no" lo cierra. Mismo esqueleto que .logro-toast, sin
+   autocierre: es accionable, no celebratorio.
    ════════════════════════════════════════════════════════════ */
 
 .sw-aviso {
@@ -407,11 +407,13 @@
   left:  calc(var(--fk-space-4) + env(safe-area-inset-left,  0px));
   right: calc(var(--fk-space-4) + env(safe-area-inset-right, 0px));
   margin: 0 auto;
-  max-width: 420px;
+  max-width: 460px;
   width: fit-content;
   z-index: var(--fk-z-toast);
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--fk-space-3);
   background: var(--fk-bg-elevated);
   border: 1px solid var(--fk-nudge-info-border);
@@ -428,10 +430,31 @@
   }
 }
 
+/* El texto toma el ancho que sobra; en pantallas angostas los
+   botones bajan a su propia linea, alineados a la derecha. */
+.sw-aviso__cuerpo {
+  flex: 1 1 12rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+  margin: 0;
+}
+
 .sw-aviso__texto {
   font-size: var(--fk-text-sm);
   font-weight: var(--fk-font-medium);
   color: var(--fk-text-primary);
+}
+
+.sw-aviso__detalle {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+}
+
+.sw-aviso__acciones {
+  display: flex;
+  gap: var(--fk-space-2);
+  flex-shrink: 0;
 }
 
 @media (max-width: 1023.98px) {

@@ -67,7 +67,7 @@ export function renderPanelConfig() {
 
   el.innerHTML = `
     ${_renderAvisoVigencia()}
-    ${_grupo('La app',      [_renderTema(), _renderAtajos(), _renderNotificaciones(), _renderInstalarApp()])}
+    ${_grupo('La app',      [_renderTema(), _renderAtajos(), _renderNotificaciones(), _renderInstalarApp(), _renderActualizar()])}
     ${_grupo('Tu cuenta',   [_renderPerfil(), _renderBloqueo()])}
     ${_grupo('Familia',     [htmlFamilia(ninos(), hoy())])}
     ${_grupo('Tus datos',   [htmlNube(estadoNube()), _renderDatos()])}
@@ -209,6 +209,44 @@ function _renderInstalarApp() {
               aria-label="Instalar Finko en este dispositivo">
         Instalar Finko
       </button>
+    </section>`;
+}
+
+/**
+ * "Actualizar app" (UPD.3). La ruta normal es el aviso con botón que sale solo
+ * cuando hay versión nueva (`ui/sw-aviso.js`); acá se busca a pedido y, plegado,
+ * se repara una instalación trabada sin borrar los datos del navegador.
+ * El resultado es asíncrono: lo escribe `config/index.js` en
+ * `#config-actualizar-estado`, una live region que nace vacía.
+ */
+function _renderActualizar() {
+  return `
+    <section class="config-section" aria-labelledby="config-actualizar-title">
+      <h2 class="config-section__title" id="config-actualizar-title">Actualizar app</h2>
+      <p class="config-section__desc">
+        Cuando hay una versión nueva, Finko te avisa con un botón para aplicarla.
+        Tus datos se conservan: no necesitas desinstalar la app ni borrar nada.
+      </p>
+      <div class="config-actualizar">
+        <button class="btn btn-secondary" type="button" id="config-actualizar-btn"
+                data-action="buscar-actualizacion">
+          Buscar actualización
+        </button>
+        <p class="form-hint" id="config-actualizar-estado" role="status" aria-live="polite"></p>
+      </div>
+      <details class="config-desplegable">
+        <summary>
+          ¿Sigues viendo una versión vieja?
+          ${icon('chevron-right', 'icon icon--sm')}
+        </summary>
+        <p class="config-section__desc">
+          Reparar descarga de nuevo los archivos de la app. Tus datos no se tocan.
+          Necesitas conexión a internet.
+        </p>
+        <button class="btn btn-secondary" type="button" data-action="reparar-app">
+          Reparar la app
+        </button>
+      </details>
     </section>`;
 }
 
@@ -825,7 +863,7 @@ function _renderAcercaDe() {
         <dt>Tus datos</dt>              <dd>Solo en este dispositivo</dd>
         <dt>Cuenta</dt>                 <dd>No necesitas una</dd>
         <dt>Salario mínimo ${vigente.anio}</dt> <dd>${f(vigente.smmlv)} (${fuenteSmmlv})</dd>
-        <dt>Versión</dt>                <dd>${APP_VERSION}</dd>
+        <dt>Versión</dt>                <dd>${APP_VERSION}<span id="config-version-instalada"></span></dd>
       </dl>
       <p class="form-hint">
         Finko no tiene servidor: nada de lo que escribes sale de tu teléfono.
