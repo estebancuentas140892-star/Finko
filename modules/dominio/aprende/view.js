@@ -9,7 +9,7 @@
 import { S } from '../../core/state.js';
 import { f, esc } from '../../infra/utils.js';
 import { icon, tejaCategoria, iconoCategoria } from '../../infra/icons.js';
-import { htmlFrai, htmlDestellos } from '../../infra/ilustraciones.js';
+import { htmlTino, htmlDestellos } from '../../infra/ilustraciones.js';
 import {
   estadoRuta, normalizarAprende, leccionDisponible, numeroDePaso, pasoActual,
   pasoListo, RESULTADOS, UNIDADES, ofrecerUbicacion, metaLeccion, unidadDeLeccion, tiposDeEjercicio,
@@ -298,13 +298,13 @@ function _feedback(correcto, texto, boton, nota = '', tituloPropio = '') {
   const clase = correcto ? 'leccion-fb--bien' : 'leccion-fb--casi';
   const accion = boton.accion ?? 'leccion-continuar';
   if (_nino) {
-    // Frai celebra lo correcto y anima tras un error; nunca se ve triste (D7).
+    // Tino celebra lo correcto y anima tras un error; nunca se ve triste (D7).
     const titulo = tituloPropio || (correcto ? '¡Así es!' : '¡Casi!');
     const texto2 = correcto ? 'Siguiente' : 'Sigamos';
     return `
     <div class="leccion-fb ${clase} leccion-fb--nino" role="status">
       <div class="leccion-fb__fila">
-        ${htmlFrai(correcto ? 'celebra' : 'anima', { tamano: 80 })}
+        ${htmlTino(correcto ? 'celebra' : 'anima', { tamano: 80 })}
         <div class="leccion-fb__cuerpo">
           <p class="leccion-fb__titulo" id="leccion-fb-titulo" tabindex="-1">${titulo}</p>
           ${texto ? `<p class="leccion-fb__texto">${texto}</p>` : ''}
@@ -329,12 +329,12 @@ const _NOTA_VUELVE = 'Equivocarte no te quita nada. Esta pregunta vuelve al fina
 
 function _pasoConcepto(paso, ctx) {
   if (_nino) {
-    // Frai explica la idea en su globo (D9): una por pantalla.
+    // Tino explica la idea en su globo (D9): una por pantalla.
     return {
       cuerpo: `
         <p class="leccion__eyebrow leccion__eyebrow--dom">${esc(ctx.eyebrow)}</p>
         <div class="leccion-nino__idea">
-          ${htmlFrai('explica', { tamano: 112 })}
+          ${htmlTino('explica', { tamano: 112 })}
           <h2 class="leccion-nino__globo" id="leccion-titulo" tabindex="-1">${_texto(paso.titulo, ctx)}</h2>
         </div>
         ${paso.texto ? `<p class="leccion__texto">${_texto(paso.texto, ctx)}</p>` : ''}`,
@@ -711,23 +711,23 @@ const _NOMBRE_FRASCO = { ahorrar: 'Ahorrar', gastar: 'Gastar', compartir: 'Compa
 const _ICONO_FRASCO = { ahorrar: 'i-ahorro', gastar: 'c-tienda', compartir: 'c-regalo' };
 
 /**
- * Cierre de la lección del niño: Frai celebra (con insignia de 88 px y
- * destellos si terminó la unidad) y "Úsalo de verdad", una pregunta sobre
- * un frasco de su alcancía con lo que tiene ahí.
+ * Cierre de la lección del niño: Tino celebra (en grande, con insignia de
+ * 88 px y destellos si terminó la unidad) y "Úsalo de verdad", una
+ * pregunta sobre un frasco de su alcancía con lo que tiene ahí.
  */
 function _cierreNino(ctx) {
   const u = ctx.unidad;
   const cabeza = ctx.celebrarUnidad
     ? `
       <div class="leccion-nino__celebra" role="img" aria-label="Celebramos tu nueva insignia de la unidad ${u.numero}">
-        ${htmlFrai('celebra', { tamano: 128 })}
+        ${htmlTino('celebra-grande', { tamano: 128 })}
         <div class="destellos leccion-nino__insignia">${htmlDestellos()}<svg class="leccion-insignia--nino" viewBox="0 0 120 120" aria-hidden="true"><use href="#il-insignia"/></svg></div>
       </div>
       <h2 class="k-h1 leccion-nino__titulo" id="leccion-titulo" tabindex="-1">¡Terminaste la unidad ${u.numero}!</h2>
       <p class="k-body leccion-nino__linea">${esc(u.aprendiste ?? u.nombre)}</p>
       <span class="kchip leccion-nino__chip">${icon('star')}Nueva insignia en Yo</span>`
     : `
-      <div class="leccion-nino__celebra">${htmlFrai('celebra', { tamano: 112 })}</div>
+      <div class="leccion-nino__celebra">${htmlTino('celebra', { tamano: 112 })}</div>
       <h2 class="k-h1 leccion-nino__titulo" id="leccion-titulo" tabindex="-1">¡Lección lista!</h2>
       ${ctx.avance ? `<p class="k-body leccion-nino__linea">Llevas ${ctx.avance.hechas} de ${ctx.avance.total} en esta unidad.</p>` : ''}`;
   let usalo = '';

@@ -1,6 +1,6 @@
 /**
- * infra/ilustraciones.js - el catálogo de dibujos del niño, Frai y el frasco
- * (APR.3b, ADR 093 D7 y D8).
+ * infra/ilustraciones.js - el catálogo de dibujos del niño, Tino y el frasco
+ * (APR.3b, ADR 093 D7 y D8; Tino, ADR 094 y 095).
  *
  * Funciones puras que devuelven HTML de `<svg><use href="#il-*"/></svg>`
  * contra el sprite de index.html (pipeline `il-`, scripts/sync-sprite.py).
@@ -8,7 +8,7 @@
  * como ningún dominio importa a otro (ADN 10), viven acá.
  *
  * Nunca fotos ni emojis (D8): cada meta y cada avatar es un dibujo de este
- * catálogo. Frai nunca aparece en el perfil adulto (D7).
+ * catálogo. Tino nunca aparece en el perfil adulto (D7).
  */
 
 import { esc } from './utils.js';
@@ -34,11 +34,8 @@ export const DIBUJOS = [
   { id: 'patineta',  nombre: 'Patineta',   dominio: 'ahorro' },
 ];
 
-/** Las cuatro poses de Frai (D7). @type {readonly string[]} */
-export const POSES_FRAI = Object.freeze(['saluda', 'explica', 'celebra', 'anima']);
-
-/** Bajo este tamaño (px) el trazo de Frai sube para no perder nitidez. */
-const _FRAI_CHICO = 40;
+/** Las cinco poses de Tino (094 D5): nunca triste. @type {readonly string[]} */
+export const POSES_TINO = Object.freeze(['saluda', 'explica', 'celebra', 'celebra-grande', 'anima']);
 
 /**
  * @param {string} id
@@ -65,17 +62,17 @@ export function htmlDibujo(id, { tamano = 48, etiqueta = null } = {}) {
 }
 
 /**
- * Frai en una de sus cuatro poses. Decorativo por defecto: lo que dice va en
- * el texto de al lado.
+ * Tino en una de sus poses. Decorativo: lo que dice va en el texto de al
+ * lado. Trae sus colores por rol (`--fk-tino-*`, 095 D2); el tono de la
+ * pose lo pone el panel que lo rodea (094 D3).
  *
  * @param {string} pose
  * @param {{ tamano?: number }} [opciones]
  * @returns {string}
  */
-export function htmlFrai(pose, { tamano = 96 } = {}) {
-  const p = POSES_FRAI.includes(pose) ? pose : 'saluda';
-  const chico = tamano < _FRAI_CHICO ? ' frai--sm' : '';
-  return `<span class="frai frai--${p}${chico}" style="width:${tamano}px;height:${tamano}px" aria-hidden="true"><svg viewBox="0 0 120 120"><use href="#il-frai-${p}"/></svg></span>`;
+export function htmlTino(pose, { tamano = 96 } = {}) {
+  const p = POSES_TINO.includes(pose) ? pose : 'saluda';
+  return `<span class="tino" style="width:${tamano}px;height:${tamano}px" aria-hidden="true"><svg viewBox="0 0 120 120"><use href="#il-tino-${p}"/></svg></span>`;
 }
 
 /** Altura útil del frasco en su retícula 88x104: del fondo (y 86) a la boca (y 24). */

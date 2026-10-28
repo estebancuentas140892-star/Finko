@@ -1,15 +1,16 @@
 /**
  * nino-visual.test.js - APR.3b: el sistema visual del niño (ADR 093 D5, D7
- * y D8). El catálogo de dibujos y Frai contra el sprite, el frasco que se
- * llena contra su propia meta y el AA de cada par de color del modo niño,
- * medido sobre los valores reales de themes.css en los dos temas.
+ * y D8). El catálogo de dibujos y Tino (ADR 094 y 095) contra el sprite,
+ * el frasco que se llena contra su propia meta y el AA de cada par de color
+ * del modo niño, medido sobre los valores reales de themes.css en los dos
+ * temas.
  */
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
-  DIBUJOS, POSES_FRAI, dibujoPorId, htmlDibujo, htmlFrai, rellenoFrasco, htmlFrasco, htmlDestellos,
+  DIBUJOS, POSES_TINO, dibujoPorId, htmlDibujo, htmlTino, rellenoFrasco, htmlFrasco, htmlDestellos,
 } from '../../modules/infra/ilustraciones.js';
 
 const ROOT = resolve(import.meta.dirname, '../..');
@@ -35,16 +36,38 @@ function contraste(a, b) {
   return (x + 0.05) / (y + 0.05);
 }
 
-describe('catálogo de dibujos y Frai contra el sprite (D7, D8)', () => {
-  it('los ocho dibujos, las cuatro poses y el frasco están en el sprite', () => {
+describe('catálogo de dibujos y Tino contra el sprite (093 D8, 094, 095)', () => {
+  it('los ocho dibujos, las cinco poses de Tino y el frasco están en el sprite', () => {
     expect(DIBUJOS.map(d => d.id)).toEqual(['balon', 'libro', 'bici', 'tenis', 'cometa', 'colores', 'audifonos', 'patineta']);
-    const ids = [...DIBUJOS.map(d => `il-${d.id}`), ...POSES_FRAI.map(p => `il-frai-${p}`), 'il-frasco', 'il-frasco-borde'];
+    const ids = [...DIBUJOS.map(d => `il-${d.id}`), ...POSES_TINO.map(p => `il-tino-${p}`), 'il-frasco', 'il-frasco-borde'];
     for (const id of ids) expect(INDEX, id).toContain(`<symbol id="${id}"`);
+    // Frai se retiró con su dibujo (094 D6).
+    expect(INDEX).not.toContain('il-frai-');
   });
 
   it('cada dibujo del catálogo pesa menos de 1 KB (D8)', () => {
     for (const d of DIBUJOS) {
       expect(statSync(resolve(ROOT, `assets/svg/ilustraciones/${d.id}.svg`)).size, d.id).toBeLessThan(1024);
+    }
+  });
+
+  it('cada pose de Tino pesa menos de 16 KB (095 D1)', () => {
+    for (const p of POSES_TINO) {
+      expect(statSync(resolve(ROOT, `assets/svg/ilustraciones/tino-${p}.svg`)).size, p).toBeLessThan(16 * 1024);
+    }
+  });
+
+  it('Tino pinta solo con sus roles, y cada rol existe en el tema oscuro (095 D2)', () => {
+    const declarados = Object.keys(tokens('body.kid'));
+    for (const p of POSES_TINO) {
+      const svg = readFileSync(resolve(ROOT, `assets/svg/ilustraciones/tino-${p}.svg`), 'utf8');
+      const fills = [...svg.matchAll(/fill="([^"]*)"/g)].map(m => m[1]);
+      expect(fills.length, p).toBeGreaterThan(0);
+      for (const fill of fills) {
+        const rol = fill.match(/^var\((--fk-tino-[a-z]+)\)$/)?.[1];
+        expect(rol, `${p}: ${fill}`).toBeTruthy();
+        expect(declarados, `${p}: ${rol}`).toContain(rol);
+      }
     }
   });
 
@@ -59,19 +82,18 @@ describe('catálogo de dibujos y Frai contra el sprite (D7, D8)', () => {
     expect(dibujoPorId('patineta').nombre).toBe('Patineta');
   });
 
-  it('Frai usa su pose, toma el sol al celebrar y el azul de "casi" al animar', () => {
-    expect(htmlFrai('celebra')).toContain('frai--celebra');
-    expect(htmlFrai('anima')).toContain('href="#il-frai-anima"');
+  it('Tino usa su pose a su tamaño, decorativo', () => {
+    const html = htmlTino('celebra-grande', { tamano: 128 });
+    expect(html).toContain('href="#il-tino-celebra-grande"');
+    expect(html).toContain('width:128px;height:128px');
+    expect(html).toContain('aria-hidden="true"');
     // Una pose que no existe no rompe: saluda.
-    expect(htmlFrai('triste')).toContain('href="#il-frai-saluda"');
-    // Bajo 40 px el trazo sube (clase que lo engrosa).
-    expect(htmlFrai('saluda', { tamano: 32 })).toContain('frai--sm');
-    expect(htmlFrai('saluda', { tamano: 96 })).not.toContain('frai--sm');
+    expect(htmlTino('triste')).toContain('href="#il-tino-saluda"');
   });
 
-  it('Frai no se ve triste: ninguna pose se llama así ni hay símbolo para eso', () => {
-    expect(POSES_FRAI).toEqual(['saluda', 'explica', 'celebra', 'anima']);
-    expect(INDEX).not.toMatch(/il-frai-(triste|decepcion)/);
+  it('Tino no se ve triste: ninguna pose se llama así ni hay símbolo para eso', () => {
+    expect(POSES_TINO).toEqual(['saluda', 'explica', 'celebra', 'celebra-grande', 'anima']);
+    expect(INDEX).not.toMatch(/il-tino-(triste|decepcion|enojo)/);
   });
 });
 
@@ -102,7 +124,7 @@ describe('el frasco se llena contra su propia meta (R60)', () => {
 
 describe('contraste AA del modo niño en los dos temas (D5)', () => {
   for (const [tema, selector] of [['oscuro', 'body.kid'], ['claro', 'body.light-theme.kid']]) {
-    it(`tema ${tema}: texto, frascos y botón pasan AA; Frai pasa 3:1 como gráfico`, () => {
+    it(`tema ${tema}: texto, frascos y botón pasan AA; Tino pasa 3:1 como gráfico`, () => {
       const t = tokens(selector);
       const fondos = ['--fk-bg-base', '--fk-bg-surface', '--fk-bg-elevated'];
       for (const fondo of fondos) {
@@ -114,7 +136,10 @@ describe('contraste AA del modo niño en los dos temas (D5)', () => {
         expect(contraste(t[texto], t['--fk-bg-surface']), `${texto} sobre la tarjeta`).toBeGreaterThanOrEqual(4.5);
       }
       expect(contraste(t['--fk-kid-on-primary'], t['--fk-kid-primary']), 'texto del botón').toBeGreaterThanOrEqual(4.5);
-      expect(contraste(t['--fk-kid-frai'], t['--fk-bg-base']), 'Frai sobre el lienzo').toBeGreaterThanOrEqual(3);
+      // El pelo dibuja la silueta de Tino; el contorno es línea interior (095 D3).
+      for (const fondo of ['--fk-bg-base', '--fk-bg-surface']) {
+        expect(contraste(t['--fk-tino-pelo'], t[fondo]), `pelo de Tino sobre ${fondo}`).toBeGreaterThanOrEqual(3);
+      }
       // Lo que se dibuja con tinta sobre papel (el balón) tiene que verse.
       expect(contraste(t['--fk-il-line'], t['--fk-il-paper']), 'contorno sobre papel').toBeGreaterThanOrEqual(3);
     });

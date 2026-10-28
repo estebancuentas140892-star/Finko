@@ -74,6 +74,16 @@ export function unidadesHechasNino(aprende) {
   return estadoRutaNino(aprende).filter(e => e.estado === 'hecha' || e.estado === 'sabida').length;
 }
 
+/**
+ * ¿Todavía no empieza la ruta? Nada hecho ni sabido: mientras tanto, Tino se
+ * presenta en el Inicio (ADR 094 D1).
+ * @param {unknown} aprende
+ */
+export function sinEmpezarNino(aprende) {
+  const sabidas = /** @type {any} */ (aprende)?.sabidas;
+  return !Object.keys(_hechas(aprende)).length && !(Array.isArray(sabidas) && sabidas.length);
+}
+
 /** Desde esta edad la ruta empieza con tres preguntas de ubicación (D9). */
 export const EDAD_UBICACION_NINO = 10;
 

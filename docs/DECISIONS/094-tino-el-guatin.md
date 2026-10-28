@@ -1,6 +1,6 @@
 # ADR 094 - Tino, el guatín: el personaje del perfil niño
 
-**Estado:** Aceptada (2026-10-25). Decisión de Esteban en chat, con sus bocetos de Tino; los dibujos finales llegan después.
+**Estado:** Aceptada (2026-10-25). Decisión de Esteban en chat, con sus bocetos de Tino; los dibujos finales llegan después. **D3 y D4 acotados por el [ADR 095](095-tino-en-el-sprite.md) (2026-10-27)**: once roles de color, contraste medido sobre el pelo y unos 12 KB por pose.
 **Fecha:** 2026-10-25
 **Autores:** Esteban (decisión, nombre y bocetos), Claude Opus 5.5 (redacción y pedido de ilustraciones)
 **Relación:** **acota el [ADR 093](093-perfiles-en-el-dispositivo-y-modo-nino.md) D7** (Frai, el frailejón) y su duda resuelta por defecto "¿Frailejón como personaje? sí, con nombre provisional". El resto del 093 no cambia. Conserva el [ADR 092](092-aprende-y-aplicalo-la-capa-de-aprendizaje.md): el adulto sigue sin personaje.

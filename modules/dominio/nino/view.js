@@ -9,12 +9,12 @@
 
 import { f, esc, formateadorFecha } from '../../infra/utils.js';
 import { icon, iconoCategoria } from '../../infra/icons.js';
-import { htmlFrai, htmlDibujo, dibujoPorId, htmlFrasco, DIBUJOS } from '../../infra/ilustraciones.js';
+import { htmlTino, htmlDibujo, dibujoPorId, htmlFrasco, DIBUJOS } from '../../infra/ilustraciones.js';
 import { saldosFrascos, FRASCOS } from '../../infra/perfiles.js';
 import { UNIDADES_NINO } from '../../infra/ruta-aprende.js';
 import { proximaMesada, textoFrecuencia, TASAS_PREMIO, proximoPremio } from '../../infra/mesada.js';
 import {
-  estadoRutaNino, siguienteLeccionNino, unidadesHechasNino, ofreceUbicacionNino,
+  estadoRutaNino, siguienteLeccionNino, unidadesHechasNino, ofreceUbicacionNino, sinEmpezarNino,
   metaActiva, planMeta, llenadoFrasco, puedeMover,
 } from './logic.js';
 
@@ -143,7 +143,8 @@ function _chipUnidad(unidad, numeroLeccion) {
 }
 
 /**
- * Inicio: el saludo de Frai, la lección que sigue, la alcancía y la meta (D9).
+ * Inicio: el saludo de Tino, la lección que sigue, la alcancía y la meta (D9).
+ * Mientras el niño no empieza la ruta, Tino se presenta (ADR 094 D1).
  * Va en dos grupos: en escritorio son dos columnas (APR.4b), lo que sigue a
  * la izquierda y la alcancía, con sus tres frascos, a la derecha.
  * @param {import('../../infra/perfiles.js').PerfilNino} perfil
@@ -169,6 +170,7 @@ export function htmlInicioNino(perfil, hoyISO) {
   const ubicar = ofreceUbicacionNino(perfil);
   const saludo = ubicar ? 'Primero, tres preguntas cortas.'
     : sig ? `¿Aprendemos algo hoy? Son ${sig.leccion.minutos} minutos.` : '¡Qué bien vas! Repasa cuando quieras.';
+  const presentacion = sinEmpezarNino(perfil.aprende) ? 'Soy Tino, un guatín. ' : '';
   const primero = ubicar ? _ofertaUbicacion() : leccion;
   const s = saldosFrascos(perfil);
   return `
@@ -180,8 +182,8 @@ export function htmlInicioNino(perfil, hoyISO) {
           ${_botonCambiar}
         </header>
         <div class="knino-fila">
-          ${htmlFrai('saluda', { tamano: 96 })}
-          <p class="bubble">${saludo}</p>
+          ${htmlTino('saluda', { tamano: 96 })}
+          <p class="bubble">${presentacion}${saludo}</p>
         </div>
         ${primero}
       </div>
@@ -242,7 +244,7 @@ export function htmlRutaNino(perfil) {
         <ol class="kcamino" data-dom="${u.dominio}" aria-label="Lecciones de la unidad ${u.numero}">
           ${e.lecciones.map(l => `
             <li class="kcamino__paso kcamino__paso--${l.estado}">
-              ${l.estado === 'actual' ? htmlFrai('explica', { tamano: 72 }) : ''}
+              ${l.estado === 'actual' ? htmlTino('explica', { tamano: 72 }) : ''}
               ${_nodo(l, u)}
             </li>`).join('')}
         </ol></li>`;
@@ -287,7 +289,7 @@ export function htmlAlcanciaNino(perfil, hoyISO) {
     ${_tarjetaPremio(perfil, hoyISO)}
     ${s.total === 0 ? `
     <div class="knino-fila">
-      ${htmlFrai('explica', { tamano: 80 })}
+      ${htmlTino('explica', { tamano: 80 })}
       <p class="bubble">Cuando recibas dinero, toca Guardé.</p>
     </div>` : ''}`;
 }

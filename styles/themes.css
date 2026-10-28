@@ -113,7 +113,6 @@ body.kid {
   --fk-kid-primary:       #1fd194;
   --fk-kid-on-primary:    #08120d;
   --fk-kid-primary-depth: #11865e;
-  --fk-kid-frai:          #7fdcb0;   /* el personaje */
   --fk-kid-sun:           #ffc94a;   /* solo celebración */
   --fk-kid-sun-text:      #ffc94a;
   --fk-kid-hint:          #6ea6ff;   /* "casi": explica, no castiga */
@@ -127,6 +126,20 @@ body.kid {
   --fk-il-line:  #f1f3fb;
   --fk-il-paper: #3a4466;   /* un paso más oscuro que el contorno, ver tokens.css */
   --fk-il-shade: rgba(255, 255, 255, 0.10);
+
+  /* Tino, un rol por color (ADR 095 D2). En oscuro el pelo y su sombra
+     se aclaran: el pelo dibuja la silueta y pasa 3:1 (D3). */
+  --fk-tino-contorno: #401b10;
+  --fk-tino-cuero:    #4a3931;
+  --fk-tino-pelo:     #a65a2a;
+  --fk-tino-sombra:   #8c4a24;
+  --fk-tino-panza:    #f6b572;
+  --fk-tino-claro:    #f8d9c3;
+  --fk-tino-rosado:   #f26c59;
+  --fk-tino-amarillo: #f4ac1e;
+  --fk-tino-rojo:     #b81c1b;
+  --fk-tino-azul:     #1d3979;
+  --fk-tino-blanco:   #fefefe;
 }
 
 body.light-theme.kid {
@@ -142,7 +155,6 @@ body.light-theme.kid {
   --fk-kid-primary:       #087a4b;
   --fk-kid-on-primary:    #ffffff;
   --fk-kid-primary-depth: #05522f;
-  --fk-kid-frai:          #1f7a55;
   --fk-kid-sun:           #f2b01e;
   --fk-kid-sun-text:      #8a5a00;
   --fk-kid-hint:          #1a5fd4;   /* igual a --fk-info */
@@ -156,6 +168,10 @@ body.light-theme.kid {
   --fk-il-line:  #172038;
   --fk-il-paper: #ffffff;
   --fk-il-shade: rgba(20, 30, 60, 0.10);
+
+  /* Tino en claro: el pelo y su sombra como en el dibujo (ADR 095 D3). */
+  --fk-tino-pelo:   #924e24;
+  --fk-tino-sombra: #7a3d1e;
 }
 
 /* ── TRANSICIÓN SUAVE ENTRE TEMAS ──────────────────────────────

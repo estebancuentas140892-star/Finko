@@ -10,7 +10,7 @@ import { normalizarPerfil, saldosFrascos } from '../../modules/infra/perfiles.js
 import {
   estadoRutaNino, siguienteLeccionNino, unidadesHechasNino, VISTAS_NINO,
   leerMonto, validarMovimiento, crearMovimientos, metaActiva, planMeta, validarMeta, llenadoFrasco, puedeMover,
-  ofreceUbicacionNino,
+  ofreceUbicacionNino, sinEmpezarNino,
 } from '../../modules/dominio/nino/logic.js';
 import {
   htmlBarraNino, htmlInicioNino, htmlRutaNino, htmlAlcanciaNino, htmlYoNino,
@@ -96,14 +96,23 @@ describe('las cuatro pantallas del niño (D9)', () => {
     expect(html.match(/class="jar" data-frasco=/g)).toHaveLength(3);
   });
 
-  it('Inicio saluda con Frai y ofrece la lección que sigue con su duración', () => {
+  it('Inicio saluda con Tino y ofrece la lección que sigue con su duración', () => {
     const html = htmlInicioNino(perfil());
     expect(html).toContain('¡Hola, Sofía!');
-    expect(html).toContain('href="#il-frai-saluda"');
+    expect(html).toContain('href="#il-tino-saluda"');
     expect(html).toContain('¿Aprendemos algo hoy? Son 3 minutos.');
     expect(html).toContain('Unidad 1 · lección 1');
     expect(html).toMatch(/data-action="leccion-abrir" data-id="k1-l1"/);
     expect(html).toContain('aria-label="Cambiar de perfil"');
+  });
+
+  it('Tino se presenta mientras el niño no empieza la ruta (094 D1)', () => {
+    expect(htmlInicioNino(perfil())).toContain('Soy Tino, un guatín. ¿Aprendemos algo hoy?');
+    expect(htmlInicioNino(perfil({}, { edad: 10 }))).toContain('Soy Tino, un guatín. Primero, tres preguntas cortas.');
+    // Con la primera lección hecha, o algo sabido por la ubicación, ya no.
+    expect(htmlInicioNino(perfil({ hechas: hechas('k1-l1') }))).not.toContain('Soy Tino');
+    expect(sinEmpezarNino({ sabidas: ['k1'] })).toBe(false);
+    expect(sinEmpezarNino(undefined)).toBe(true);
   });
 
   it('Aprender muestra el camino de la unidad actual: hecha para repasar, la de hoy y las que vienen', () => {
@@ -141,29 +150,29 @@ describe('la lección con la piel del niño (D7, D9)', () => {
   const leccion = k1['k1-l1'];
   const ctx = { eyebrow: 'Unidad 1 · Para qué sirve el dinero', tope: 20_000, terminada: false, entrada: false, nino: true };
 
-  it('Frai explica la idea en su globo', () => {
+  it('Tino explica la idea en su globo', () => {
     const html = htmlLeccion(crearSesion(leccion), leccion, ctx);
-    expect(html).toContain('href="#il-frai-explica"');
+    expect(html).toContain('href="#il-tino-explica"');
     expect(html).toContain('leccion-nino__globo');
     expect(html).toContain('>Siguiente<');
   });
 
-  it('tras un error, Frai anima con "¡Casi!" y la correcta dice "Esta era"', () => {
+  it('tras un error, Tino anima con "¡Casi!" y la correcta dice "Esta era"', () => {
     let s = avanzar(crearSesion(leccion), leccion).sesion;
     s = responderElegir(s, leccion, 1);
     const html = htmlLeccion(s, leccion, ctx);
     expect(html).toContain('¡Casi!');
-    expect(html).toContain('href="#il-frai-anima"');
+    expect(html).toContain('href="#il-tino-anima"');
     expect(html).toContain('Esta era');
     expect(html).toContain('>Sigamos<');
     expect(html).not.toMatch(/danger|error/);
   });
 
-  it('el adulto no ve a Frai ni la voz del niño', () => {
+  it('el adulto no ve a Tino ni la voz del niño', () => {
     let s = avanzar(crearSesion(leccion), leccion).sesion;
     s = responderElegir(s, leccion, 1);
     const html = htmlLeccion(s, leccion, { ...ctx, nino: false });
-    expect(html).not.toContain('il-frai');
+    expect(html).not.toContain('il-tino');
     expect(html).toContain('Esta es');
   });
 
@@ -175,6 +184,8 @@ describe('la lección con la piel del niño (D7, D9)', () => {
       usalo: { frasco: 'gastar', saldo: 6_000, pregunta: '¿Es para algo que necesitas o que quieres?' },
     });
     expect(html).toContain('¡Terminaste la unidad 1!');
+    // La unidad terminada trae a Tino en grande; la lección suelta, el de siempre.
+    expect(html).toContain('href="#il-tino-celebra-grande"');
     expect(html).toContain('destellos__punto');
     expect(html).toContain('Nueva insignia en Yo');
     expect(html).toContain('En tu frasco Gastar tienes $6.000.');
@@ -182,6 +193,8 @@ describe('la lección con la piel del niño (D7, D9)', () => {
     expect(html).toContain('Volver a la ruta');
     const vacio = htmlLeccion(s, leccion, { ...ctx, terminada: true, unidad, celebrarUnidad: false, avance: { hechas: 1, total: 3 }, usalo: { frasco: 'ahorrar', saldo: 0, pregunta: '¿Cuánto?' } });
     expect(vacio).toContain('¡Lección lista!');
+    expect(vacio).toContain('href="#il-tino-celebra"');
+    expect(vacio).not.toContain('il-tino-celebra-grande');
     expect(vacio).toContain('Tu frasco Ahorrar está vacío por ahora.');
   });
 });

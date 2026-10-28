@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-10-25.
+> Revisado: 2026-10-27.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-10)
+
+### feat(nino): APR.5a, Tino reemplaza a Frai · 2026-10-27
+
+[ADR 095](DECISIONS/095-tino-en-el-sprite.md), acota el [ADR 094](DECISIONS/094-tino-el-guatin.md) D3 y D4; ficha [`contexto/nino.md`](contexto/nino.md). SW v614.
+
+- **Los dibujos entran como llegaron, convertidos fuera del repo.** El export de Image Trace pesaba 34 a 52 KB por pose, con 60 a 90 colores y un lienzo que el sync rechaza; queda en 11 a 15,5 KB, con once roles `--fk-tino-*`, y se ve casi igual de 72 a 128 px. Llegar a los 3 KB del 094 pedía redibujar las cinco poses.
+- **El contraste se mide sobre el pelo**, que dibuja la silueta: en oscuro el pelo y su sombra se aclaran (3,5:1 sobre el lienzo). El contorno no llega a 3:1 en oscuro, y aclararlo invertía la cara.
+- **Celebra grande en la unidad terminada**, junto a la insignia; la lección suelta sigue con "celebra".
+- **Tino se presenta** ("Soy Tino, un guatín.") en el globo de Inicio mientras el niño no tiene nada hecho ni sabido.
+- **Frai se retira entero**: sus cuatro SVG, `--fk-kid-frai`, `.frai` (con el trazo grueso bajo 40 px, que Tino no necesita: su tamaño mínimo es 72) y `htmlFrai`/`POSES_FRAI`. `index.html` sube de 189 KB a 241 KB (19 KB más con gzip), también para el adulto.
 
 ### docs(nino): ADR 094, Tino el guatín reemplaza a Frai · 2026-10-25
 

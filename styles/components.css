@@ -20,7 +20,7 @@
      domain.css   - Calculadoras + herramienta-inline + tesoreria + gastos UI
      config.css   - Configuracion + install PWA + agenda/calendario
      aprende.css  - Ruta de Aprende + leccion a pantalla completa (APR.1a)
-     nino.css     - Perfil niño: base visual, Frai y dibujos (APR.3b)
+     nino.css     - Perfil niño: base visual, Tino y dibujos (APR.3b)
 
    Regla de la spec CSS: los @import deben ir ANTES que cualquier
    otra regla. Este archivo solo contiene @import, cumple la regla.
