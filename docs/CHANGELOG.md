@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### docs(nube): NUBE.0, seguridad y paquete legal para la nube · 2026-10-27
+
+[ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md) D3, D6 y D7. Parte de documentos de NUBE.0; sin código.
+
+- **SECURITY.md con dos modos**: el modelo de amenaza separa "sin cuenta" (hoy) de "con cuenta" y suma la sección 8 con diez reglas de la nube (RLS con test por regla, la clave secreta nunca en el cliente, código de vinculación del niño de un uso y 10 minutos, librería con huella SHA-256). La guía histórica npm a pnpm se condensa para quedar bajo el techo de 8 KB.
+- **La CSP documentada no era la real**: SECURITY.md decía `style-src 'self'` y `vercel.json` sirve `'self' 'unsafe-inline'` por los `style=""` que generan los módulos. Ahora dice la verdad.
+- **Paquete legal en `legal/nube/`, fuera de lo que la app publica**: tratamiento de datos y privacidad reescritos para cuentas, términos de la cuenta y el texto exacto de cada autorización, con la del padre por cada niño y su derecho a ser escuchado (Decreto 1377 de 2013). Los documentos vigentes siguen describiendo el modelo sin cuenta, que es cierto hasta NUBE.1.
+- **Seis datos pendientes** antes de activarlo: responsable, canal de atención, región de Supabase, su contrato de tratamiento, si aplica el RNBD y el plazo de borrado.
+
 ### docs(nube): ADR 096, Finko en la nube con Supabase · 2026-10-27
 
 [ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md), reemplaza el D1 y deroga el D4 del [ADR 043](DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md) y cambia la regla 3 del ADN. Iniciativa NUBE en [`board/transversal.md`](board/transversal.md). Sin código.

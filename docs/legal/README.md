@@ -29,11 +29,11 @@
    con versión, fecha y resumen del cambio. La app (LEG.2) compara la versión aceptada por el usuario
    contra la vigente para pedir re-aceptación cuando el cambio sea importante.
 3. **Cláusula CFG.4:** todos los documentos describen el modelo vigente **local-only**
-   (sin servidor, sin cuentas, sin sync). **Decidido el 2026-08-15** ([ADR 043](../DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md),
-   Aceptado): Finko no incorpora cuentas de usuario ni sincronización entre dispositivos.
-   Si esa decisión se reabriera en el futuro con un ADR nuevo, el paquete se reescribiría:
-   responsable del tratamiento, encargados, canales de derechos y evidencia de consentimiento
-   cambiarían por completo. Cada documento incluye su propia cláusula de cambio de modelo.
+   (sin servidor, sin cuentas, sin sync), que sigue siendo cierto hasta NUBE.1. **El
+   [ADR 096](../DECISIONS/096-finko-en-la-nube-con-supabase.md) (2026-10-27) reabrió la decisión del
+   [ADR 043](../DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md)**: cuentas opcionales con
+   Supabase. El paquete reescrito vive en borrador en [`nube/`](nube/README.md), fuera de lo que la app
+   publica, y reemplaza a estos documentos al activarse NUBE.1.
 4. **Hechos verificados (2026-07-09), no prometer nada distinto:**
    - Los datos del usuario viven solo en `localStorage` (clave `fk_v1`) del dispositivo. Nada viaja a
      servidores de Finko (no existen servidores de Finko).
