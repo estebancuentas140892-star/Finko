@@ -1,19 +1,21 @@
 /**
- * nube.js - la cuenta en la nube desde Ajustes (NUBE.1, ADR 096).
+ * nube.js - la cuenta en la nube desde Ajustes (NUBE.1 y NUBE.2, ADR 096).
  *
  * Contrato:
  * - Entrar: correo invitado y autorización; Supabase manda un correo con
  *   enlace (y código, según la plantilla). Sin autorización no se pide nada.
- * - Al entrar se compara con la nube (`decidirAlEntrar`): sin respaldo, sube
- *   lo de este dispositivo; con respaldo y este dispositivo vacío, lo trae;
- *   con datos en los dos lados, la persona elige, y mientras tanto no se sube
- *   nada. Nunca se pisa un lado sin preguntar.
- * - Con sesión, cada guardado (`state:save`) agenda una subida a los 5 s.
- *   Sin red queda pendiente y se sube con el evento `online`.
+ * - Al entrar se mira la nube (`decidirAlEntrar`): vacía, sube todo lo de
+ *   este dispositivo; con datos y este dispositivo vacío, los trae; con
+ *   datos en los dos lados, la persona elige, y mientras tanto no se
+ *   sincroniza nada. Nunca se pisa un lado sin preguntar.
+ * - Ya decidido, cada pasada (`_sincronizar`) marca lo que cambió aquí,
+ *   baja lo que cambió en la nube, resuelve por registro (gana el cambio más
+ *   reciente) y sube lo pendiente. Corre 3 s después de cada guardado, al
+ *   volver a la app, al recuperar la red y cada minuto con la app a la vista.
  * - Traer de la nube reemplaza los datos de este dispositivo: pide
  *   confirmación y el PIN, como importar un respaldo. El PIN no viaja (D1).
- * - Borrar de la nube también cierra la sesión: si siguiera abierta, el
- *   siguiente guardado volvería a subir todo.
+ * - Borrar de la nube también cierra la sesión: si siguiera abierta, la
+ *   siguiente pasada volvería a subir todo.
  */
 
 import { S, EventBus } from '../../core/state.js';
@@ -23,15 +25,23 @@ import { confirmar } from '../../ui/confirm.js';
 import { confirmarPin } from '../../ui/bloqueo-acceso.js';
 import { mostrarToast } from '../../ui/toast.js';
 import { announce } from '../../infra/a11y.js';
+import { renderAll } from '../../infra/render.js';
 import {
   ErrorNube, leerSesion, guardarSesion, resultadoEnlace, pedirAcceso, entrarConCodigo, cerrarSesion,
-  leerRespaldo, guardarRespaldo, borrarRespaldo, decidirAlEntrar, copiaParaNube, prepararRestauracion,
-  nombreDispositivo,
+  leerLibro, guardarLibro, olvidarLibro, hayRegistros, ultimoCambioNube, bajarRegistros, subirRegistros,
+  borrarRegistros, decidirAlEntrar, nombreDispositivo,
 } from '../../infra/nube.js';
+import {
+  libroVacio, marcarCambios, aplicarRemotas, filasPendientes, confirmarSubidas, estadoDesdeNube,
+  libroParaReemplazarNube, cursorConMargen,
+} from '../../infra/nube-sync.js';
 import { MENSAJES_NUBE, haceCuanto } from './nube-view.js';
 
-/** Espera tras un guardado antes de subir: agrupa una ráfaga de cambios. */
-const _ESPERA_SUBIDA_MS = 5000;
+/** Espera tras un guardado antes de sincronizar: agrupa una ráfaga de cambios. */
+const _ESPERA_MS = 3000;
+
+/** Cada cuánto se mira la nube con la app a la vista. */
+const _CADA_MS = 60000;
 
 const _RE_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -51,6 +61,8 @@ const _estado = {
 
 let _repintar = () => {};
 let _timer = null;
+let _sincronizando = false;
+let _otraVez = false;
 
 /** Lo que pinta `htmlNube()`. */
 export function estadoNube() {
@@ -64,27 +76,36 @@ function _set(cambios) {
 }
 
 /**
- * Cambia el estado de la subida sin repintar el panel: una subida corre
- * sola cada pocos segundos y repintar borraría lo que la persona está
+ * Cambia el estado de la sincronización sin repintar el panel: corre sola
+ * cada pocos segundos y repintar borraría lo que la persona está
  * escribiendo en otro bloque de Ajustes.
  */
-function _setSubida(cambios) {
+function _setSync(cambios) {
   Object.assign(_estado, cambios);
   const linea = document.getElementById('nube-estado');
   if (!linea) return;
-  linea.textContent = _estado.ocupado ? 'Guardando en la nube…'
+  linea.textContent = _estado.ocupado ? 'Sincronizando…'
     : _estado.error ? (MENSAJES_NUBE[_estado.error] ?? MENSAJES_NUBE.servidor)
-    : _estado.pendiente ? 'Hay cambios por subir: se suben solos cuando haya conexión.'
-    : _estado.ultimaSubida ? `Último respaldo en la nube: ${haceCuanto(_estado.ultimaSubida)}.`
-    : 'Todavía no hay respaldo en la nube.';
+    : _estado.pendiente ? 'Hay cambios por sincronizar: se suben solos cuando haya conexión.'
+    : _estado.ultimaSubida ? `Sincronizado ${haceCuanto(_estado.ultimaSubida)}.`
+    : 'Todavía no se ha sincronizado.';
 }
 
 const _codigo = (err) => (err instanceof ErrorNube ? err.codigo : 'servidor');
 
-/** La sesión ya comparó con la nube: desde ahora se sube sola. */
+/** La sesión ya comparó con la nube: desde ahora sincroniza sola. */
 function _marcarDecidido() {
   const s = leerSesion();
   if (s) guardarSesion({ ...s, porDecidir: false });
+}
+
+/**
+ * Deja constancia de la autorización en los datos (versión y fecha), que
+ * viajan a la nube: es la prueba que el titular puede pedir.
+ */
+function _registrarAutorizacion() {
+  S.config.autorizacionNube = { version: VERSION_AUTORIZACION_NUBE, fecha: new Date().toISOString() };
+  save();
 }
 
 // ── ENTRAR ───────────────────────────────────────────────────────
@@ -119,80 +140,116 @@ async function _entrarConCodigo(form) {
   }
 }
 
-/**
- * Deja constancia de la autorización en los datos (versión y fecha), que
- * viajan con el respaldo: es la prueba que el titular puede pedir.
- */
-function _registrarAutorizacion() {
-  S.config.autorizacionNube = { version: VERSION_AUTORIZACION_NUBE, fecha: new Date().toISOString() };
-  save();
-}
-
-/** Recién entró: compara con la nube y decide qué hacer. */
+/** Recién entró: mira la nube y decide qué hacer. */
 async function _alEntrar() {
-  const s = leerSesion();
-  if (!s?.porDecidir) return;
+  if (!leerSesion()?.porDecidir) return;
   _set({ ocupado: true, error: '' });
   try {
-    const respaldo = await leerRespaldo();
-    const decision = decidirAlEntrar({ local: S, respaldo });
+    const decision = decidirAlEntrar({ local: S, hayEnNube: await hayRegistros() });
     if (decision === 'traer') {
       _marcarDecidido();
-      _restaurar(respaldo);
+      await _traerTodo();
       return;
     }
     if (decision === 'preguntar') {
-      _set({ ocupado: false, eleccion: { actualizado: respaldo.actualizado, dispositivo: respaldo.dispositivo } });
+      const ultimo = await ultimoCambioNube();
+      _set({ ocupado: false, eleccion: { actualizado: ultimo?.actualizado ?? '', dispositivo: ultimo?.dispositivo } });
       return;
     }
     _marcarDecidido();
+    guardarLibro(libroVacio());
     if (!S.config.autorizacionNube) _registrarAutorizacion();
-    await _subir();
     _set({ ocupado: false });
-    mostrarToast({ titulo: 'Tus datos quedaron en la nube', detalle: 'Cada cambio se guarda solo.' });
+    await _sincronizar();
+    mostrarToast({ titulo: 'Tus datos quedaron en la nube', detalle: 'Cada cambio se sincroniza solo.' });
   } catch (err) {
     _set({ ocupado: false, error: _codigo(err) });
   }
 }
 
-// ── SUBIR Y TRAER ────────────────────────────────────────────────
+// ── SINCRONIZAR ──────────────────────────────────────────────────
 
-/** Sube el estado completo (menos el PIN). Solo con la sesión ya decidida. */
-async function _subir() {
-  const s = leerSesion();
-  if (!s || s.porDecidir) return;
-  clearTimeout(_timer);
-  _timer = null;
-  _setSubida({ ocupado: true, error: '' });
-  try {
-    const fecha = await guardarRespaldo(copiaParaNube(S), SCHEMA_VERSION, nombreDispositivo());
-    const actual = leerSesion();
-    if (actual) guardarSesion({ ...actual, ultimaSubida: fecha });
-    _setSubida({ ocupado: false, pendiente: false, ultimaSubida: fecha });
-  } catch (err) {
-    const codigo = _codigo(err);
-    if (codigo === 'sesion-vencida') return _set({ ocupado: false, pendiente: false, error: codigo });
-    _setSubida({ ocupado: false, pendiente: true, error: codigo === 'sin-red' ? '' : codigo });
+/**
+ * Lleva a la pantalla lo que bajó de la nube: arreglos nuevos (la memoria
+ * de `infra/memo.js` lo nota por referencia), guardado y repintado.
+ * @param {Record<string, any>} parcial
+ */
+function _aplicarEnPantalla(parcial) {
+  Object.assign(S, parcial);
+  save();
+  for (const section of Object.keys(parcial)) EventBus.emit('state:change', { section });
+  renderAll();
+}
+
+/**
+ * Lo bajado venía de una app con un schema más viejo: se guarda con esa
+ * versión y se recarga, para que las migraciones (idempotentes, ADN 6)
+ * completen lo que le falte.
+ * @param {number} version
+ */
+function _remigrar(version) {
+  if (restaurarBlob(JSON.stringify({ ...S, _version: version })) === 'ok') {
+    announce('Llegaron datos de una versión anterior de Finko. Actualizando…');
+    setTimeout(() => location.reload(), 600);
   }
 }
 
-function _programarSubida() {
+/** Una pasada completa: marcar, bajar, resolver, subir. Una a la vez. */
+async function _sincronizar() {
+  const s = leerSesion();
+  if (!s || s.porDecidir) return;
+  if (_sincronizando) { _otraVez = true; return; }
+  _sincronizando = true;
+  clearTimeout(_timer);
+  _timer = null;
+  _setSync({ ocupado: true, error: '' });
+  try {
+    let libro = marcarCambios(S, leerLibro() ?? libroVacio(), Date.now());
+    const remotas = await bajarRegistros(cursorConMargen(libro.cursor));
+    const res = aplicarRemotas(S, libro, remotas, { version: SCHEMA_VERSION });
+    libro = res.libro;
+    guardarLibro(libro);
+    if (res.aplicadas) _aplicarEnPantalla(res.parcial);
+
+    const pendientes = filasPendientes(S, libro, { version: SCHEMA_VERSION, dispositivo: nombreDispositivo() });
+    if (pendientes.length) {
+      await subirRegistros(pendientes);
+      guardarLibro(confirmarSubidas(leerLibro() ?? libro, pendientes));
+    }
+    const ahora = new Date().toISOString();
+    const actual = leerSesion();
+    if (actual) guardarSesion({ ...actual, ultimaSubida: ahora });
+    _setSync({ ocupado: false, pendiente: false, ultimaSubida: ahora });
+    if (res.deAppNueva) {
+      mostrarToast({ titulo: 'Hay cambios de una versión más nueva de Finko', detalle: 'Recarga la app para verlos.', tono: 'alerta' });
+    }
+    if (res.versionMinima < SCHEMA_VERSION) _remigrar(res.versionMinima);
+  } catch (err) {
+    const codigo = _codigo(err);
+    if (codigo === 'sesion-vencida') _set({ ocupado: false, pendiente: false, error: codigo });
+    else _setSync({ ocupado: false, pendiente: true, error: codigo === 'sin-red' ? '' : codigo });
+  } finally {
+    _sincronizando = false;
+    if (_otraVez) { _otraVez = false; _programar(); }
+  }
+}
+
+function _programar() {
   const s = leerSesion();
   if (!s || s.porDecidir) return;
   _estado.pendiente = true;
   clearTimeout(_timer);
-  _timer = setTimeout(_subir, _ESPERA_SUBIDA_MS);
+  _timer = setTimeout(_sincronizar, _ESPERA_MS);
 }
 
-/**
- * Reemplaza lo de este dispositivo por el respaldo de la nube y recarga.
- * @param {import('../../infra/nube.js').RespaldoNube} respaldo
- */
-function _restaurar(respaldo) {
+/** Reemplaza lo de este dispositivo por todo lo de la nube y recarga. */
+async function _traerTodo() {
   clearTimeout(_timer);
   _timer = null;
-  const datos = prepararRestauracion(respaldo.datos, S.config?.bloqueo);
-  if (restaurarBlob(JSON.stringify(datos)) === 'ok') {
+  const filas = await bajarRegistros(null);
+  const { estado, libro } = estadoDesdeNube(S, filas, SCHEMA_VERSION);
+  guardarLibro(libro);
+  if (restaurarBlob(JSON.stringify(estado)) === 'ok') {
     announce('Datos traídos de la nube. Recargando…');
     setTimeout(() => location.reload(), 600);
     return;
@@ -208,13 +265,11 @@ async function _traer() {
     peligroso:      true,
   });
   if (!ok || !(await confirmarPin())) return;
-  _set({ ocupado: true, error: '' });
+  _set({ ocupado: true, error: '', eleccion: null });
   try {
-    const respaldo = await leerRespaldo();
-    if (!respaldo) return _set({ ocupado: false, error: 'sin-respaldo' });
+    if (!(await hayRegistros())) return _set({ ocupado: false, error: 'sin-respaldo' });
     _marcarDecidido();
-    _set({ eleccion: null });
-    _restaurar(respaldo);
+    await _traerTodo();
   } catch (err) {
     _set({ ocupado: false, error: _codigo(err) });
   }
@@ -223,21 +278,27 @@ async function _traer() {
 async function _subirLocal() {
   const ok = await confirmar({
     titulo:         'Subir los datos de este dispositivo',
-    mensaje:        'La copia de la nube se reemplaza por los datos de este dispositivo.',
+    mensaje:        'Lo que hay en la nube se reemplaza por los datos de este dispositivo, también en tus otros dispositivos.',
     confirmarTexto: 'Subir estos datos',
     peligroso:      true,
   });
   if (!ok) return;
-  _marcarDecidido();
-  if (!S.config.autorizacionNube) _registrarAutorizacion();
-  _set({ eleccion: null });
-  await _subir();
-  _set({});
+  _set({ ocupado: true, error: '', eleccion: null });
+  try {
+    const nube = await bajarRegistros(null);
+    guardarLibro(libroParaReemplazarNube(S, nube, Date.now()));
+    _marcarDecidido();
+    if (!S.config.autorizacionNube) _registrarAutorizacion();
+    _set({ ocupado: false });
+    await _sincronizar();
+  } catch (err) {
+    _set({ ocupado: false, error: _codigo(err) });
+  }
 }
 
-async function _respaldarAhora() {
-  await _subir();
-  if (!_estado.error && !_estado.pendiente) announce('Respaldo guardado en la nube.');
+async function _sincronizarAhora() {
+  await _sincronizar();
+  if (!_estado.error && !_estado.pendiente) announce('Sincronizado.');
 }
 
 // ── SALIR ────────────────────────────────────────────────────────
@@ -247,23 +308,24 @@ async function _cerrar(todos) {
   clearTimeout(_timer);
   _timer = null;
   await cerrarSesion({ todos });
+  olvidarLibro();
   _set({ paso: 'correo', eleccion: null, ultimaSubida: '', pendiente: false, error: '', ocupado: false });
   announce(todos ? 'Sesión cerrada en todos tus dispositivos.' : 'Sesión cerrada en este dispositivo.');
 }
 
 async function _borrar() {
   const ok = await confirmar({
-    titulo:         'Borrar tu respaldo de la nube',
-    mensaje:        'Se borra la copia en la nube y se cierra la sesión en este dispositivo. Lo que hay aquí no se toca.',
+    titulo:         'Borrar tus datos de la nube',
+    mensaje:        'Se borra todo lo que hay en la nube y se cierra la sesión en este dispositivo. Lo que hay aquí no se toca; tus otros dispositivos dejan de sincronizar.',
     confirmarTexto: 'Borrar de la nube',
     peligroso:      true,
   });
   if (!ok) return;
   _set({ ocupado: true, error: '' });
   try {
-    await borrarRespaldo();
+    await borrarRegistros();
     await _cerrar(false);
-    mostrarToast({ titulo: 'Borraste tu respaldo de la nube' });
+    mostrarToast({ titulo: 'Borraste tus datos de la nube' });
   } catch (err) {
     _set({ ocupado: false, error: _codigo(err) });
   }
@@ -276,13 +338,13 @@ async function _borrar() {
  */
 export function initNube({ repintar }) {
   _repintar = repintar;
-  registrarAccion('nube-otro-correo', () => _set({ paso: 'correo', error: '' }));
-  registrarAccion('nube-respaldar',   _respaldarAhora);
-  registrarAccion('nube-traer',       _traer);
-  registrarAccion('nube-subir-local', _subirLocal);
-  registrarAccion('nube-cerrar',      () => _cerrar(false));
-  registrarAccion('nube-cerrar-todo', () => _cerrar(true));
-  registrarAccion('nube-borrar',      _borrar);
+  registrarAccion('nube-otro-correo',  () => _set({ paso: 'correo', error: '' }));
+  registrarAccion('nube-sincronizar',  _sincronizarAhora);
+  registrarAccion('nube-traer',        _traer);
+  registrarAccion('nube-subir-local',  _subirLocal);
+  registrarAccion('nube-cerrar',       () => _cerrar(false));
+  registrarAccion('nube-cerrar-todo',  () => _cerrar(true));
+  registrarAccion('nube-borrar',       _borrar);
 
   // Los dos formularios se repintan con el panel: delegación en el documento.
   document.addEventListener('submit', (e) => {
@@ -291,11 +353,18 @@ export function initNube({ repintar }) {
     else if (form?.id === 'form-nube-codigo') { e.preventDefault(); _entrarConCodigo(form); }
   });
 
-  EventBus.on('state:save', _programarSubida);
-  window.addEventListener('online', () => { if (_estado.pendiente) _subir(); });
+  EventBus.on('state:save', _programar);
+  window.addEventListener('online', () => _sincronizar());
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') _sincronizar();
+  });
+  setInterval(() => {
+    if (document.visibilityState === 'visible') _sincronizar();
+  }, _CADA_MS);
 
   const s = leerSesion();
   _estado.ultimaSubida = s?.ultimaSubida ?? '';
   if (resultadoEnlace() === 'error') _estado.error = 'enlace';
   if (s?.porDecidir) _alEntrar();
+  else if (s) _sincronizar();
 }

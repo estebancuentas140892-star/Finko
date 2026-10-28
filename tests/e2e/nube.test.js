@@ -1,11 +1,13 @@
 /**
- * nube.test.js - NUBE.1 (ADR 096): la cuenta en la nube de punta a punta,
- * con Supabase simulado.
+ * nube.test.js - NUBE.1 y NUBE.2 (ADR 096): la cuenta en la nube y la
+ * sincronización entre dispositivos de punta a punta, con Supabase simulado.
  *
- * Cubre lo que los unitarios no pueden: el formulario de Ajustes, la subida
- * automática tras un cambio, el teléfono nuevo que trae todo al entrar y la
- * elección cuando los dos lados tienen datos. La red a Supabase nunca sale:
- * `page.route` contesta como lo haría el proyecto, con su CORS.
+ * Cubre lo que los unitarios no pueden: el formulario de Ajustes, la
+ * sincronización que corre sola tras un cambio, el teléfono nuevo que trae
+ * todo al entrar, dos dispositivos abiertos a la vez (lo que se agrega o se
+ * borra en uno llega al otro) y la elección cuando los dos lados tienen
+ * datos. La red a Supabase nunca sale: `page.route` contesta como lo haría
+ * el proyecto, con su CORS y su tabla `registros`.
  */
 
 import { Buffer } from 'node:buffer';
@@ -27,22 +29,25 @@ const BANCOLOMBIA = { id: 'c-1', nombre: 'Bancolombia', tipo: 'ahorros', saldo: 
 const NEQUI = { id: 'c-2', nombre: 'Nequi', tipo: 'ahorros', saldo: 80000, activa: true };
 
 /**
- * Un Supabase de mentira, compartido entre los "teléfonos" de una prueba.
- * Guarda la fila de `respaldos` y cuenta cuántas veces se subió.
+ * Un Supabase de mentira, compartido entre los dispositivos de una prueba:
+ * la tabla `registros` con su hora de servidor, sus filtros y su upsert.
  */
 function supabaseFalso() {
-  const nube = { fila: null, subidas: 0 };
+  const tabla = new Map();
+  const nube = { tabla, subidas: 0, fila: (col, id) => tabla.get(`${col}/${id}`) };
+  let reloj = Date.parse('2026-10-27T10:00:00Z');
+
   const instalar = (page) => page.route(`${NUBE_URL}/**`, async (route) => {
     const req = route.request();
     const url = new URL(req.url());
+    const q = url.searchParams;
     const responder = (status, cuerpo) => route.fulfill({
       status, headers: { ...CORS, 'content-type': 'application/json' },
       body: cuerpo == null ? '' : JSON.stringify(cuerpo),
     });
     if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS });
     if (url.pathname === '/auth/v1/otp') {
-      const { email } = req.postDataJSON();
-      return email === CORREO
+      return req.postDataJSON().email === CORREO
         ? responder(200, {})
         : responder(422, { code: 422, error_code: 'otp_disabled', msg: 'Signups not allowed for otp' });
     }
@@ -51,14 +56,25 @@ function supabaseFalso() {
         ? responder(200, { access_token: TOKEN, refresh_token: 'r-1', expires_in: 3600, user: { id: 'u-sofi', email: CORREO } })
         : responder(403, { error_code: 'otp_expired', msg: 'Token has expired or is invalid' });
     }
-    if (url.pathname === '/rest/v1/respaldos') {
-      if (req.method() === 'GET') return responder(200, nube.fila ? [nube.fila] : []);
+    if (url.pathname === '/rest/v1/registros') {
       if (req.method() === 'POST') {
-        nube.fila = req.postDataJSON();
+        for (const f of req.postDataJSON()) {
+          reloj += 1000;
+          tabla.set(`${f.coleccion}/${f.id}`, { ...f, actualizado: new Date(reloj).toISOString() });
+        }
         nube.subidas++;
         return responder(201, null);
       }
-      if (req.method() === 'DELETE') { nube.fila = null; return responder(204, null); }
+      if (req.method() === 'DELETE') { tabla.clear(); return responder(204, null); }
+      let filas = [...tabla.values()];
+      if (q.get('borrado') === 'eq.false') filas = filas.filter(f => !f.borrado);
+      const gt = q.get('actualizado')?.replace(/^gt\./, '');
+      if (gt) filas = filas.filter(f => Date.parse(f.actualizado) > Date.parse(gt));
+      filas.sort((a, b) => a.actualizado.localeCompare(b.actualizado));
+      if (q.get('order') === 'actualizado.desc') filas.reverse();
+      const offset = Number(q.get('offset') ?? 0);
+      const limit = Number(q.get('limit') ?? 1000);
+      return responder(200, filas.slice(offset, offset + limit));
     }
     return responder(404, { msg: 'ruta no simulada' });
   });
@@ -76,47 +92,84 @@ async function entrar(page) {
   await page.click('#form-nube-codigo [type="submit"]');
 }
 
-test.describe('NUBE.1 - cuenta y respaldo en la nube', () => {
+/** Cambia las cuentas como lo haría la app (S + save) y espera a que se guarde. */
+async function cambiarCuentas(page, fn) {
+  await page.evaluate(async (cuerpo) => {
+    const { S } = await import('/modules/core/state.js');
+    const { save } = await import('/modules/core/storage.js');
+    // eslint-disable-next-line no-new-func
+    S.cuentas = new Function('cuentas', cuerpo)(S.cuentas);
+    save();
+  }, fn);
+}
+
+const nombresDeCuentas = async (page) => (await leerEstado(page)).cuentas?.map(c => c.nombre).sort();
+
+test.describe('NUBE - cuenta y sincronización entre dispositivos', () => {
   test('perder el teléfono: lo de este dispositivo sube solo y el teléfono nuevo lo trae al entrar', async ({ browser }) => {
     const { nube, instalar } = supabaseFalso();
 
-    // Teléfono 1: tiene datos y nunca usó la nube.
     const tel1 = await browser.newContext();
     const p1 = await tel1.newPage();
     await instalar(p1);
     await sembrar(p1, estadoBase({ cuentas: [BANCOLOMBIA] }));
     await entrar(p1);
     await expect(p1.locator('#config-nube')).toContainText(`Tu cuenta: ${CORREO}`);
-    await expect.poll(() => nube.fila?.datos?.cuentas?.[0]?.nombre).toBe('Bancolombia');
+    await expect.poll(() => nube.fila('cuentas', 'c-1')?.datos?.nombre).toBe('Bancolombia');
     // El PIN no viaja (096 D1) y la autorización queda registrada.
-    expect(nube.fila.datos.config?.bloqueo).toBeUndefined();
-    expect(nube.fila.datos.config?.autorizacionNube?.version).toBe('0.2');
+    expect(nube.fila('_raiz', 'config').datos.bloqueo).toBeUndefined();
+    await expect.poll(() => nube.fila('_raiz', 'config')?.datos?.autorizacionNube?.version).toBe('0.2');
 
-    // Un cambio cualquiera se sube solo, unos segundos después.
+    // Un cambio cualquiera se sincroniza solo, unos segundos después.
     await p1.fill('#config-nombre', 'Sofía Gómez');
     await p1.click('#form-perfil [type="submit"]');
-    await expect.poll(() => nube.fila?.datos?.perfil?.nombre, { timeout: 12_000 }).toBe('Sofía Gómez');
+    await expect.poll(() => nube.fila('_raiz', 'perfil')?.datos?.nombre, { timeout: 12_000 }).toBe('Sofía Gómez');
     await tel1.close();
 
-    // Teléfono 2: recién instalado. Al entrar trae todo, sin preguntar.
     const tel2 = await browser.newContext();
     const p2 = await tel2.newPage();
     await instalar(p2);
     await sembrarSiVacio(p2, estadoBase());
     await entrar(p2);
-    await expect.poll(async () => (await leerEstado(p2)).cuentas?.map(c => c.nombre)).toEqual(['Bancolombia']);
+    await expect.poll(() => nombresDeCuentas(p2)).toEqual(['Bancolombia']);
     await expect.poll(async () => (await leerEstado(p2)).perfil?.nombre).toBe('Sofía Gómez');
     await tel2.close();
   });
 
-  test('con datos en los dos lados no sube nada hasta que la persona elige', async ({ browser }) => {
+  test('dos dispositivos abiertos: lo que se agrega o se borra en uno llega al otro', async ({ browser }) => {
     const { nube, instalar } = supabaseFalso();
-    nube.fila = {
-      datos: { ...estadoBase({ cuentas: [BANCOLOMBIA] }), config: {} },
-      version_schema: 48, actualizado: new Date().toISOString(), dispositivo: 'iPhone',
-    };
-    const ctx = await browser.newContext();
-    const page = await ctx.newPage();
+    const cel = await (await browser.newContext()).newPage();
+    await instalar(cel);
+    await sembrarSiVacio(cel, estadoBase({ cuentas: [BANCOLOMBIA] }));
+    await entrar(cel);
+    await expect.poll(() => nube.fila('cuentas', 'c-1')?.datos?.nombre).toBe('Bancolombia');
+
+    const pc = await (await browser.newContext()).newPage();
+    await instalar(pc);
+    await sembrarSiVacio(pc, estadoBase());
+    await entrar(pc);
+    await expect.poll(() => nombresDeCuentas(pc)).toEqual(['Bancolombia']);
+
+    // El celular agrega Nequi: sube solo y el computador lo trae.
+    await cambiarCuentas(cel, `return [...cuentas, ${JSON.stringify(NEQUI)}];`);
+    await expect.poll(() => nube.fila('cuentas', 'c-2')?.datos?.nombre, { timeout: 12_000 }).toBe('Nequi');
+    await pc.locator('[data-action="nube-sincronizar"]').click();
+    await expect.poll(() => nombresDeCuentas(pc)).toEqual(['Bancolombia', 'Nequi']);
+
+    // El computador borra Bancolombia: el borrado viaja como marca.
+    await cambiarCuentas(pc, `return cuentas.filter(c => c.id !== 'c-1');`);
+    await expect.poll(() => nube.fila('cuentas', 'c-1')?.borrado, { timeout: 12_000 }).toBe(true);
+    await cel.locator('[data-action="nube-sincronizar"]').click();
+    await expect.poll(() => nombresDeCuentas(cel)).toEqual(['Nequi']);
+  });
+
+  test('con datos en los dos lados no sincroniza nada hasta que la persona elige', async ({ browser }) => {
+    const { nube, instalar } = supabaseFalso();
+    nube.tabla.set('cuentas/c-1', {
+      coleccion: 'cuentas', id: 'c-1', datos: BANCOLOMBIA, borrado: false, cambiado: 1,
+      version_schema: 48, dispositivo: 'iPhone', actualizado: '2026-10-27T09:00:00.000Z',
+    });
+    const page = await (await browser.newContext()).newPage();
     await instalar(page);
     await sembrarSiVacio(page, estadoBase({ cuentas: [NEQUI] }));
     await entrar(page);
@@ -126,10 +179,9 @@ test.describe('NUBE.1 - cuenta y respaldo en la nube', () => {
     expect(nube.subidas).toBe(0);
 
     await page.click('[data-action="nube-traer"]');
-    await page.locator('.confirm [data-role="confirmar"], [data-role="confirmar"]').first().click();
-    await expect.poll(async () => (await leerEstado(page)).cuentas?.map(c => c.nombre)).toEqual(['Bancolombia']);
+    await page.locator('[data-role="confirmar"]').first().click();
+    await expect.poll(() => nombresDeCuentas(page)).toEqual(['Bancolombia']);
     expect(nube.subidas).toBe(0);
-    await ctx.close();
   });
 
   test('un correo no invitado o sin autorización no pide nada', async ({ page }) => {

@@ -1,15 +1,15 @@
 /**
- * infra/nube.js - cliente mínimo de Supabase para la nube de Finko (NUBE.1,
- * ADR 096).
+ * infra/nube.js - cliente mínimo de Supabase para la nube de Finko (NUBE.1 y
+ * NUBE.2, ADR 096).
  *
  * Sin librería: la autenticación y la API de datos de Supabase son REST, y
- * para lo que usa NUBE.1 (pedir el acceso por correo, entrar, renovar la
- * sesión y leer o escribir un respaldo) alcanza con `fetch`. Menos código de
+ * para lo que usa la nube (pedir el acceso por correo, entrar, renovar la
+ * sesión y leer o escribir registros) alcanza con `fetch`. Menos código de
  * terceros dentro del repo (ADN 1, SECURITY.md sección 4).
  *
- * La sesión vive en su propia clave (`fk_nube`), fuera de `fk_v1`: es de este
- * dispositivo, no viaja en los respaldos ni en la nube. Las funciones puras
- * de abajo (qué subir, qué hacer al entrar) no tocan red ni DOM.
+ * La sesión (`fk_nube`) y el libro de sincronización (`fk_nube_sync`) viven
+ * en sus propias claves, fuera de `fk_v1`: son de este dispositivo y no
+ * viajan. El motor de sincronización, puro, está en `infra/nube-sync.js`.
  */
 
 export const NUBE_URL = 'https://dqfpryvnerbluxmboick.supabase.co';
@@ -248,48 +248,96 @@ export async function cerrarSesion({ todos = false } = {}) {
   } catch { /* la sesión local ya se olvidó */ }
 }
 
-// ── RESPALDO ─────────────────────────────────────────────────────
+// ── REGISTROS (NUBE.2) ───────────────────────────────────────────
+
+/** Clave de localStorage del libro de sincronización de este dispositivo. */
+export const LIBRO_KEY = 'fk_nube_sync';
+
+/** Filas por pedido, al bajar y al subir. */
+const _LOTE = 500;
+
+const _COLUMNAS = 'coleccion,id,datos,borrado,cambiado,version_schema,dispositivo,actualizado';
+
+/** @returns {import('./nube-sync.js').Libro | null} */
+export function leerLibro() {
+  try {
+    const l = JSON.parse(localStorage.getItem(LIBRO_KEY) ?? 'null');
+    return l && typeof l.r === 'object' ? l : null;
+  } catch {
+    return null;
+  }
+}
+
+/** @param {import('./nube-sync.js').Libro} libro */
+export function guardarLibro(libro) {
+  localStorage.setItem(LIBRO_KEY, JSON.stringify(libro));
+}
+
+export function olvidarLibro() {
+  localStorage.removeItem(LIBRO_KEY);
+}
+
+/** ¿Hay algo del usuario en la nube? */
+export async function hayRegistros() {
+  const s = await sesionVigente();
+  const filas = await _pedir('/rest/v1/registros?select=id&borrado=eq.false&limit=1', { token: s.access_token });
+  return Array.isArray(filas) && filas.length > 0;
+}
 
 /**
- * @typedef {Object} RespaldoNube
- * @property {any} datos
- * @property {number} version_schema
- * @property {string} actualizado - ISO.
- * @property {string} [dispositivo]
+ * El último cambio en la nube: cuándo y desde qué dispositivo.
+ * @returns {Promise<{ actualizado: string, dispositivo?: string } | null>}
  */
-
-/** @returns {Promise<RespaldoNube | null>} */
-export async function leerRespaldo() {
+export async function ultimoCambioNube() {
   const s = await sesionVigente();
-  const filas = await _pedir('/rest/v1/respaldos?select=datos,version_schema,actualizado,dispositivo&limit=1', {
+  const filas = await _pedir('/rest/v1/registros?select=actualizado,dispositivo&order=actualizado.desc&limit=1', {
     token: s.access_token,
   });
   return Array.isArray(filas) && filas.length ? filas[0] : null;
 }
 
 /**
- * Reemplaza el respaldo del usuario en la nube.
- * @param {any} datos - el estado, ya preparado con `copiaParaNube()`.
- * @param {number} versionSchema
- * @param {string} dispositivo
- * @returns {Promise<string>} la fecha ISO con que quedó.
+ * Baja lo que cambió en la nube desde `desde` (todo si es null), en orden.
+ * @param {string|null} desde - ISO.
+ * @returns {Promise<import('./nube-sync.js').Fila[]>}
  */
-export async function guardarRespaldo(datos, versionSchema, dispositivo) {
+export async function bajarRegistros(desde) {
   const s = await sesionVigente();
-  const actualizado = new Date().toISOString();
-  await _pedir('/rest/v1/respaldos?on_conflict=usuario', {
-    method: 'POST',
-    token: s.access_token,
-    headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
-    body: JSON.stringify({ usuario: s.usuario, datos, version_schema: versionSchema, actualizado, dispositivo }),
-  });
-  return actualizado;
+  const filtro = desde ? `&actualizado=gt.${encodeURIComponent(desde)}` : '';
+  const todas = [];
+  for (let offset = 0; ; offset += _LOTE) {
+    const lote = await _pedir(
+      `/rest/v1/registros?select=${_COLUMNAS}${filtro}&order=actualizado.asc&limit=${_LOTE}&offset=${offset}`,
+      { token: s.access_token },
+    );
+    if (!Array.isArray(lote)) break;
+    todas.push(...lote);
+    if (lote.length < _LOTE) break;
+  }
+  return todas;
 }
 
-/** Borra el respaldo del usuario en la nube. */
-export async function borrarRespaldo() {
+/**
+ * Sube filas: crea o reemplaza cada registro del usuario.
+ * @param {import('./nube-sync.js').Fila[]} filas
+ */
+export async function subirRegistros(filas) {
   const s = await sesionVigente();
-  await _pedir(`/rest/v1/respaldos?usuario=eq.${encodeURIComponent(s.usuario)}`, {
+  for (let i = 0; i < filas.length; i += _LOTE) {
+    const lote = filas.slice(i, i + _LOTE).map(f => ({ ...f, usuario: s.usuario }));
+    await _pedir('/rest/v1/registros?on_conflict=usuario,coleccion,id', {
+      method: 'POST',
+      token: s.access_token,
+      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify(lote),
+    });
+  }
+}
+
+/** Borra todo lo del usuario en la nube. */
+export async function borrarRegistros() {
+  const s = await sesionVigente();
+  await _pedir(`/rest/v1/registros?usuario=eq.${encodeURIComponent(s.usuario)}`, {
     method: 'DELETE',
     token: s.access_token,
   });
@@ -315,38 +363,13 @@ export function hayDatosLocales(estado) {
 /**
  * Qué hacer al entrar: subir lo de acá, traer lo de la nube o preguntar.
  * Nunca se pisa nada sin preguntar cuando los dos lados tienen datos.
- * @param {{ local: any, respaldo: RespaldoNube | null }} p
+ * @param {{ local: any, hayEnNube: boolean }} p
  * @returns {'subir'|'traer'|'preguntar'}
  */
-export function decidirAlEntrar({ local, respaldo }) {
-  if (!respaldo) return 'subir';
+export function decidirAlEntrar({ local, hayEnNube }) {
+  if (!hayEnNube) return 'subir';
   if (!hayDatosLocales(local)) return 'traer';
   return 'preguntar';
-}
-
-/**
- * Lo que sube: el estado completo menos el PIN, que es de cada dispositivo
- * (ADR 096 D1, 063). No modifica el original.
- * @param {any} estado
- */
-export function copiaParaNube(estado) {
-  const copia = JSON.parse(JSON.stringify(estado));
-  if (copia.config) delete copia.config.bloqueo;
-  return copia;
-}
-
-/**
- * Lo que se restaura: el respaldo de la nube con el PIN de este
- * dispositivo, si lo tiene.
- * @param {any} datosNube
- * @param {any} bloqueoLocal
- */
-export function prepararRestauracion(datosNube, bloqueoLocal) {
-  const copia = JSON.parse(JSON.stringify(datosNube));
-  copia.config = { ...(copia.config ?? {}) };
-  if (bloqueoLocal) copia.config.bloqueo = bloqueoLocal;
-  else delete copia.config.bloqueo;
-  return copia;
 }
 
 /**

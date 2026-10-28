@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-10-27. Última tarea cerrada: NUBE.1, cuenta opcional y respaldo en Supabase. MOV.1 en pausa. HF.0f en curso: banco listo sin commitear, BUG-035, BUG-036 y BUG-038 abiertos.
+> Revisado: 2026-10-27. Última tarea cerrada: NUBE.2, sincronización por registro entre dispositivos. MOV.1 en pausa. HF.0f en curso: banco listo sin commitear, BUG-035, BUG-036 y BUG-038 abiertos.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 4975/4975 (2026-10-27, NUBE.1) |
-| Tests E2E | 357/357 verdes (2026-10-27, NUBE.1). **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 4988/4988 (2026-10-27, NUBE.2) |
+| Tests E2E | 358/358 verdes (2026-10-27, NUBE.2). **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v48 (`perfiles`, APR.3a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**NUBE.2 - sincronización entre dispositivos, 2026-10-27**
+Lo que se agrega, cambia o borra en un dispositivo llega a los otros; gana el cambio más reciente por registro. Libro local de huellas, sin tocar dominios ni schema. SW v616.
 
 **NUBE.1 - cuenta opcional y respaldo en Supabase, 2026-10-27**
 Entrar por correo (solo invitados), respaldo automático del estado completo y, en un teléfono nuevo, todo vuelve al entrar. Sin librería: REST con `fetch`. Falta SMTP propio para invitar probadores. SW v615.
@@ -37,9 +40,6 @@ Cuenta opcional, copia local que manda y sincronización por registro; reemplaza
 **APR.5a - Tino reemplaza a Frai, 2026-10-27**
 Cinco poses a color en el sprite, convertidas del export de Illustrator (ADR 095: unos 12 KB por pose y once roles de color); celebra en grande la unidad terminada y se presenta en Inicio. SW v614.
 
-**MOV.1 ficha 17 - Logros, 2026-10-25**
-Dos de sus cuatro cambios ya estaban hechos (MOV.20a y LG.2e). Los encargos de los pendientes enlazan su sección, la vitrina se parte en "Te falta" y "Ya los tienes" y el aviso de desbloqueo lleva a Tu progreso (H9). SW v612.
-
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 
 ---
@@ -48,7 +48,7 @@ Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelo
 
 - **En pausa:** **MOV.1, auditoría UX/UI móvil de Claude Design**: 17 de 25 cerradas, sigue la 18 (Cierre). Pausada el 2026-10-27 para la prueba en la nube (decisión en chat); el orden de sus fichas no cambia. Detalle en la tarjeta de [`BOARD.md`](BOARD.md).
 - **Iniciativa HF** ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), Propuesta): su Fase 0 corre en paralelo a MOV.1 porque no comparte archivos ni decisiones; HF.0a, HF.0b, HF.0h, HF.0c, HF.0i, HF.0d, HF.0e y HF.0j cerradas; P1 a P8 resueltas. Pendientes de la Fase 0: HF.0f (banco construido y sin commitear: sus ocho rojas reproducen BUG-035, BUG-036 y BUG-038, no se cierra hasta corregirlos) y HF.0g; DOC.5 en Mantenimiento.
-- **Iniciativa NUBE** ([ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md), Aceptada): Finko en la nube con Supabase, cuenta opcional. NUBE.0 y NUBE.1 cerradas: cuenta por correo para invitados y respaldo automático en `finko-prueba`. Sigue NUBE.2 (sincronización por registro); invitar probadores pide SMTP propio en Supabase.
+- **Iniciativa NUBE** ([ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md), Aceptada): Finko en la nube con Supabase, cuenta opcional. NUBE.0 a NUBE.2 cerradas: cuenta por correo para invitados y sincronización por registro en `finko-prueba`. Siguen NUBE.2b (borrar la cuenta) y NUBE.3 (familia); invitar probadores pide SMTP propio en Supabase.
 - **Iniciativa APR, "Aprende y aplícalo"** ([ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) y [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md), Propuesta): Fase 1 en curso sin esperar a MOV.1 (decisión del 2026-10-24); Fase 1 cerrada; Fase 2 cerrada salvo la revisión pedagógica de APR.2c; Fases 1 a 4 hechas; quedan la revisión pedagógica de las lecciones (APR.2c y APR.3f) y la ronda 2 de Tino ([ADR 094](DECISIONS/094-tino-el-guatin.md) y [095](DECISIONS/095-tino-en-el-sprite.md), APR.5b), que espera sus dibujos. Cada rebanada se sube a `main` al cerrar. El 093 acota el ADR 003 (ADN 11) solo dentro del perfil niño.
 - **Fase actual:** post-v1.0, mantenimiento y mejoras por sección.
 - **Decisiones de fondo abiertas** que bloquean sus tarjetas: ninguna de ADN. La última era sincronización multidispositivo, cerrada el 2026-08-15 ([ADR 043](DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md), con su condición de reapertura escrita). Para el resto, ver la columna Estado de cada tarjeta del tablero.

@@ -100,7 +100,7 @@ Si encuentras un problema de seguridad en el código del proyecto:
 
 ## 8. La nube (Supabase, ADR 096)
 
-Rige desde NUBE.1. Cada regla con test o verificación propia; una que falte bloquea la rebanada. Hoy: una tabla (`respaldos`), sin permisos para `anon` y con RLS por usuario, verificado con pedidos sin sesión (401).
+Rige desde NUBE.1. Cada regla con test o verificación propia; una que falte bloquea la rebanada. Hoy: una tabla (`registros`, NUBE.2), sin permisos para `anon` y con RLS por usuario, verificado con pedidos sin sesión (401).
 
 1. **RLS en toda tabla, sin excepción.** Política por dueño y por familia, con un test por regla contra el proyecto de prueba: el dueño lee y escribe; otro usuario no; el niño no lee al padre; ninguna familia lee a otra.
 2. **Claves.** La pública (anon o publishable) va en el cliente: la barrera es RLS. La secreta (service_role) vive solo como secreto de las funciones del servidor: nunca en el repo, el chat, un issue ni un log. Si se filtra, se rota de inmediato.
@@ -111,4 +111,4 @@ Rige desde NUBE.1. Cada regla con test o verificación propia; una que falte blo
 7. **Sin librería cliente**: `infra/nube.js` habla REST con `fetch` (ADR 096, resolución en NUBE.1). Si algún día entra una, va dentro del repo con versión fija, origen y SHA-256 anotados, y pasa la checklist de la sección 4.
 8. **Desarrollo con datos inventados** en un proyecto de Supabase aparte; nunca datos reales en desarrollo ni en E2E.
 9. **Incidente**: rotar claves, cerrar sesiones, avisar a los titulares afectados y a la SIC cuando la ley lo exija, y dejarlo en el CHANGELOG.
-10. **Borrar la cuenta borra sus datos en la nube**; los respaldos del proveedor vencen en su ciclo ([`legal/nube/`](legal/nube/README.md)).
+10. **Borrar de la nube borra todos los registros del usuario**; la cuenta completa (NUBE.2b) necesita una función de servidor. Los respaldos del proveedor vencen en su ciclo ([`legal/nube/`](legal/nube/README.md)).

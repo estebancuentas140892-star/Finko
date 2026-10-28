@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(nube): NUBE.2, sincronización por registro entre dispositivos · 2026-10-27
+
+[ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md) (resolución de NUBE.2); ficha [`contexto/nube.md`](contexto/nube.md). SW v616.
+
+- **Sin tocar los dominios ni el schema.** Cada dispositivo lleva un libro aparte con la huella de cada registro tal como quedó sincronizado: otra huella es un cambio, un registro que falta es un borrado. El ADR pedía la marca en cada registro con bump de schema; el libro da lo mismo sin migración y sin que ningún dominio anote nada.
+- **Las huellas ordenan las claves** antes de calcularse: Postgres guarda el jsonb con otro orden, y sin eso cada vuelta por la nube parecía un cambio nuevo.
+- **Gana el cambio más reciente por registro** cuando los dos lados lo tocaron; el borrado viaja como marca. Lo que baja se aplica con arreglos nuevos para que la memoria de `infra/memo.js` lo note.
+- **Corre sola**: 3 s después de cada guardado, al volver a la app, con la red de vuelta y cada minuto; "Sincronizar ahora" la pide al momento. Ese botón nunca va deshabilitado: una pasada que arrancaba antes de pintar Ajustes lo dejaba trabado.
+- **`registros` reemplaza a `respaldos`**, que se retiró vacía. Borrar la cuenta completa pasa a NUBE.2b: necesita una función de servidor.
+
 ### feat(nube): NUBE.1, cuenta opcional y respaldo automático en Supabase · 2026-10-27
 
 [ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md) (resolución en implementación); ficha nueva [`contexto/nube.md`](contexto/nube.md). Cierra NUBE.0 y NUBE.1; MOV.1 en pausa. SW v615.

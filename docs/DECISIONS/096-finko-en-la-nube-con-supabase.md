@@ -130,3 +130,12 @@ Lo que la implementación de NUBE.1 fijó o corrigió de este ADR. El ADR no se 
 - **Borrar la cuenta completa** (el usuario de autenticación) necesita una función de servidor con la clave secreta. NUBE.1 ofrece borrar el respaldo de la nube, que también cierra la sesión; la cuenta completa queda para NUBE.2.
 - **Correo:** las plantillas de Supabase no se editan sin SMTP propio, y su correo por defecto tiene un límite bajo de envíos y, según su documentación, solo entrega al equipo del proyecto. Para invitar a los probadores hace falta SMTP propio, a cargo del dueño de la cuenta.
 
+## Resolución en implementación (NUBE.2, 2026-10-27)
+
+- **D4 sin bump de schema:** la marca de cambio y el borrado no se guardan en cada registro de `fk_v1`. Cada dispositivo lleva un libro aparte (`fk_nube_sync`) con la huella de cada registro tal como quedó sincronizado; un registro con otra huella es un cambio local, uno que ya no está es un borrado. Así ningún dominio anota fechas ni marcas (ADN 10) y no hay migración. El motor es puro: `infra/nube-sync.js`.
+- **La unidad:** cada elemento con `id` de las colecciones es un registro; cada otra clave de primer nivel (perfil, config sin el PIN, aprende, ahorro, logros) viaja entera. Un perfil de niño es un solo registro con todo lo suyo adentro.
+- **La tabla:** `registros` (usuario, colección, id, datos, borrado, cambiado, versión de schema, dispositivo), con la hora del servidor como cursor de bajada y RLS por usuario. Reemplaza a `respaldos`, que se retiró vacía.
+- **Cuándo corre:** 3 segundos después de cada guardado, al volver a la app, al recuperar la red y cada minuto con la app a la vista. Sin tiempo real: con 5 o 6 probadores, un minuto alcanza y evita abrir la CSP a un websocket.
+- **Versiones distintas de la app:** lo escrito por una app más nueva no se aplica (se avisa); lo de una más vieja se aplica y la app recarga para que sus migraciones lo completen.
+- **Borrar la cuenta completa** necesita una función de servidor: pasa a NUBE.2b.
+

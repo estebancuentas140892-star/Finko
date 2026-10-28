@@ -1,6 +1,7 @@
 /**
- * nube.test.js - NUBE.1 (ADR 096): el cliente de Supabase de
- * `infra/nube.js`, sus decisiones puras y el bloque de Ajustes. Sin red:
+ * nube.test.js - NUBE.1 y NUBE.2 (ADR 096): el cliente de Supabase de
+ * `infra/nube.js`, sus decisiones puras y el bloque de Ajustes. El motor de
+ * sincronización tiene su propio archivo (nube-sync.test.js). Sin red:
  * `fetch` se simula y cada prueba revisa el pedido exacto que saldría.
  */
 
@@ -8,8 +9,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   NUBE_URL, NUBE_CLAVE_PUBLICA, SESION_KEY, ErrorNube, leerSesion, guardarSesion, leerToken,
   capturarEnlaceDeAcceso, pedirAcceso, entrarConCodigo, sesionVigente, cerrarSesion,
-  leerRespaldo, guardarRespaldo, borrarRespaldo, hayDatosLocales, decidirAlEntrar, copiaParaNube,
-  prepararRestauracion, nombreDispositivo,
+  hayRegistros, ultimoCambioNube, bajarRegistros, subirRegistros, borrarRegistros,
+  leerLibro, guardarLibro, olvidarLibro, LIBRO_KEY, hayDatosLocales, decidirAlEntrar, nombreDispositivo,
 } from '../../modules/infra/nube.js';
 import { htmlNube, haceCuanto, MENSAJES_NUBE } from '../../modules/dominio/config/nube-view.js';
 
@@ -144,33 +145,64 @@ describe('la sesión se renueva sola y se olvida si ya no sirve', () => {
   });
 });
 
-describe('el respaldo en la nube', () => {
+describe('los registros en la nube (NUBE.2)', () => {
   beforeEach(() => guardarSesion(sesion()));
 
-  it('sube con el token del usuario y reemplaza su único respaldo', async () => {
+  it('sube en lotes con el token del usuario, reemplazando por (usuario, colección, id)', async () => {
     fetchMock.mockResolvedValue(resp(201, null));
-    const fecha = await guardarRespaldo({ gastos: [1] }, 48, 'iPhone');
+    const filas = Array.from({ length: 501 }, (_, i) => ({
+      coleccion: 'gastos', id: `g${i}`, datos: { id: `g${i}` }, borrado: false, cambiado: 1, version_schema: 48,
+    }));
+    await subirRegistros(filas);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     const p = pedido(fetchMock);
-    expect(p.url).toBe(`${NUBE_URL}/rest/v1/respaldos?on_conflict=usuario`);
+    expect(p.url).toBe(`${NUBE_URL}/rest/v1/registros?on_conflict=usuario,coleccion,id`);
     expect(p.h.Authorization).toBe(`Bearer ${sesion().access_token}`);
     expect(p.h.Prefer).toContain('resolution=merge-duplicates');
-    expect(p.cuerpo).toEqual({ usuario: 'u-1', datos: { gastos: [1] }, version_schema: 48, actualizado: fecha, dispositivo: 'iPhone' });
+    expect(p.cuerpo).toHaveLength(500);
+    expect(p.cuerpo[0]).toMatchObject({ usuario: 'u-1', coleccion: 'gastos', id: 'g0' });
+    expect(pedido(fetchMock, 1).cuerpo).toHaveLength(1);
   });
 
-  it('lee el respaldo o dice que no hay, y borra solo el del usuario', async () => {
-    fetchMock.mockResolvedValueOnce(resp(200, [{ datos: { a: 1 }, version_schema: 48, actualizado: 'x' }]));
-    expect(await leerRespaldo()).toMatchObject({ datos: { a: 1 } });
+  it('baja desde el cursor, en orden y por páginas', async () => {
+    const pagina = Array.from({ length: 500 }, (_, i) => ({ coleccion: 'gastos', id: `g${i}` }));
+    fetchMock.mockResolvedValueOnce(resp(200, pagina)).mockResolvedValueOnce(resp(200, [{ coleccion: 'gastos', id: 'ultimo' }]));
+    const filas = await bajarRegistros('2026-10-27T10:00:00.000Z');
+    expect(filas).toHaveLength(501);
+    expect(pedido(fetchMock).url).toContain(`actualizado=gt.${encodeURIComponent('2026-10-27T10:00:00.000Z')}`);
+    expect(pedido(fetchMock).url).toContain('order=actualizado.asc');
+    expect(pedido(fetchMock, 1).url).toContain('offset=500');
     fetchMock.mockResolvedValueOnce(resp(200, []));
-    expect(await leerRespaldo()).toBeNull();
+    await bajarRegistros(null);
+    expect(pedido(fetchMock, 2).url).not.toContain('actualizado=gt');
+  });
+
+  it('sabe si hay algo en la nube, cuál fue el último cambio, y borra solo lo del usuario', async () => {
+    fetchMock.mockResolvedValueOnce(resp(200, [{ id: 'g1' }]));
+    expect(await hayRegistros()).toBe(true);
+    expect(pedido(fetchMock).url).toContain('borrado=eq.false');
+    fetchMock.mockResolvedValueOnce(resp(200, []));
+    expect(await hayRegistros()).toBe(false);
+    fetchMock.mockResolvedValueOnce(resp(200, [{ actualizado: 'x', dispositivo: 'iPhone' }]));
+    expect(await ultimoCambioNube()).toEqual({ actualizado: 'x', dispositivo: 'iPhone' });
     fetchMock.mockResolvedValueOnce(resp(204, null));
-    await borrarRespaldo();
-    expect(pedido(fetchMock, 2)).toMatchObject({ metodo: 'DELETE', url: `${NUBE_URL}/rest/v1/respaldos?usuario=eq.u-1` });
+    await borrarRegistros();
+    expect(pedido(fetchMock, 3)).toMatchObject({ metodo: 'DELETE', url: `${NUBE_URL}/rest/v1/registros?usuario=eq.u-1` });
   });
 
   it('sin sesión no hay pedido', async () => {
     localStorage.clear();
-    await expect(leerRespaldo()).rejects.toMatchObject({ codigo: 'sin-sesion' });
+    await expect(bajarRegistros(null)).rejects.toMatchObject({ codigo: 'sin-sesion' });
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('el libro vive en su propia clave y se puede olvidar', () => {
+    expect(leerLibro()).toBeNull();
+    guardarLibro({ cursor: 'c', r: { 'gastos/g1': { h: 'x', t: 1, p: 0 } } });
+    expect(leerLibro()).toMatchObject({ cursor: 'c' });
+    expect(localStorage.getItem(LIBRO_KEY)).toContain('gastos/g1');
+    olvidarLibro();
+    expect(leerLibro()).toBeNull();
   });
 });
 
@@ -184,22 +216,10 @@ describe('al entrar nunca se pisa un lado sin preguntar', () => {
     expect(hayDatosLocales({ perfiles: [{ id: 'n' }] })).toBe(true);
   });
 
-  it('sin respaldo sube; con respaldo y nada aquí trae; con los dos, pregunta', () => {
-    const respaldo = { datos: {}, version_schema: 48, actualizado: 'x' };
-    expect(decidirAlEntrar({ local: conDatos, respaldo: null })).toBe('subir');
-    expect(decidirAlEntrar({ local: vacio, respaldo })).toBe('traer');
-    expect(decidirAlEntrar({ local: conDatos, respaldo })).toBe('preguntar');
-  });
-
-  it('el PIN no sube y, al traer, queda el de este dispositivo (096 D1)', () => {
-    const estado = { config: { bloqueo: { hash: 'h' }, tema: 'oscuro' }, gastos: [] };
-    const copia = copiaParaNube(estado);
-    expect(copia.config).toEqual({ tema: 'oscuro' });
-    expect(estado.config.bloqueo).toEqual({ hash: 'h' });
-
-    expect(prepararRestauracion({ config: { tema: 'claro' } }, { hash: 'local' }).config)
-      .toEqual({ tema: 'claro', bloqueo: { hash: 'local' } });
-    expect(prepararRestauracion({ config: { bloqueo: { hash: 'ajeno' } } }, null).config).toEqual({});
+  it('nube vacía sube; con datos en la nube y nada aquí trae; con los dos, pregunta', () => {
+    expect(decidirAlEntrar({ local: conDatos, hayEnNube: false })).toBe('subir');
+    expect(decidirAlEntrar({ local: vacio, hayEnNube: true })).toBe('traer');
+    expect(decidirAlEntrar({ local: conDatos, hayEnNube: true })).toBe('preguntar');
   });
 
   it('nombra el dispositivo de donde viene un respaldo', () => {
@@ -239,14 +259,14 @@ describe('el bloque "Guardar en la nube" de Ajustes', () => {
     expect(html).toContain('data-action="nube-traer"');
     expect(html).toContain('data-action="nube-subir-local"');
     expect(html).toContain('desde iPhone');
-    expect(html).not.toContain('data-action="nube-respaldar"');
+    expect(html).not.toContain('data-action="nube-sincronizar"');
   });
 
-  it('conectado, muestra la cuenta, el último respaldo y cómo salir o borrar', () => {
+  it('conectado, muestra la cuenta, la última sincronización y cómo salir o borrar', () => {
     const html = htmlNube({ ...base, sesion: { email: 'sofi@correo.co' }, ultimaSubida: new Date().toISOString() });
     expect(html).toContain('sofi@correo.co');
     expect(html).toContain('hace un momento');
-    for (const a of ['nube-respaldar', 'nube-traer', 'nube-cerrar', 'nube-cerrar-todo', 'nube-borrar']) {
+    for (const a of ['nube-sincronizar', 'nube-traer', 'nube-cerrar', 'nube-cerrar-todo', 'nube-borrar']) {
       expect(html).toContain(`data-action="${a}"`);
     }
   });

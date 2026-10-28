@@ -178,14 +178,14 @@
 
 ## Iniciativa NUBE - Finko en la nube con Supabase
 
-> Decisión, las cuatro razones del ADR 043 revisadas, seguridad y Ley 1581: **[ADR 096](../DECISIONS/096-finko-en-la-nube-con-supabase.md)**, fuente única, con su resolución en implementación. Cuenta opcional, copia local que manda (offline-first intacto). **NUBE.0 y NUBE.1 cerradas el 2026-10-27** (MOV.1 en pausa por decisión en chat): proyecto `finko-prueba` en São Paulo, cuenta por correo solo para invitados y respaldo automático del estado completo; detalle en [`contexto/nube.md`](../contexto/nube.md). **Pendiente del dueño de la cuenta**: SMTP propio en Supabase para que el correo de acceso llegue a los probadores. Plan gratis mientras Finko es de prueba; plan pago antes de abrir cuentas a personas fuera del grupo de prueba.
+> Decisión, las cuatro razones del ADR 043 revisadas, seguridad y Ley 1581: **[ADR 096](../DECISIONS/096-finko-en-la-nube-con-supabase.md)**, fuente única, con su resolución en implementación. Cuenta opcional, copia local que manda (offline-first intacto). **NUBE.0, NUBE.1 y NUBE.2 cerradas el 2026-10-27** (MOV.1 en pausa por decisión en chat): proyecto `finko-prueba` en São Paulo, cuenta por correo solo para invitados y sincronización por registro entre dispositivos; detalle en [`contexto/nube.md`](../contexto/nube.md). **Pendiente del dueño de la cuenta**: SMTP propio en Supabase para que el correo de acceso llegue a los probadores. Plan gratis mientras Finko es de prueba; plan pago antes de abrir cuentas a personas fuera del grupo de prueba.
 
-#### NUBE.2 - Sincronización entre dispositivos
-- Estado : pendiente. **Objetivo**: lo anotado en el celular aparece en el PC y al revés, sin red también; gana el cambio más reciente por registro, con la marca de cambio y el borrado como marca (bump de schema, 096 D4). Suma borrar la cuenta completa, que necesita una función de servidor. **Riesgo**: la cuota de `localStorage` (disparador D4 del ADR 030). **Modelo**: Potente, Alto.
+#### NUBE.2b - Borrar la cuenta completa
+- Estado : pendiente. **Objetivo**: desde Ajustes, borrar el usuario de autenticación y, en cascada, todos sus registros; necesita una función de servidor con la clave secreta, que nunca va en el cliente (SECURITY.md sección 8). **Aceptación**: tras borrar, el correo ya no puede entrar y la tabla no tiene filas suyas. **Modelo**: Equilibrado, Medio.
 
 #### NUBE.3 - Familia en la nube
-- Estado : depende de NUBE.2. **Objetivo**: el padre vincula el teléfono del niño con un código, con su autorización registrada, y ve su avance desde cualquier dispositivo; reglas RLS con test (096 D5). **Modelo**: Potente, Alto.
+- Estado : pendiente. **Objetivo**: el padre vincula el teléfono del niño con un código, con su autorización registrada, y ve su avance desde cualquier dispositivo; reglas RLS con test (096 D5). **Modelo**: Potente, Alto.
 
 #### NUBE.4 - Bancos
-- Estado : no iniciar; pide su propio ADR (finanzas abiertas en Colombia). Depende de NUBE.2.
+- Estado : no iniciar; pide su propio ADR (finanzas abiertas en Colombia).
 

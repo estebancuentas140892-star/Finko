@@ -1,6 +1,6 @@
 /**
- * nube-view.js - el bloque "Guardar en la nube" de Ajustes (NUBE.1,
- * ADR 096). Solo HTML, sin estado propio: lo pinta `config/view.js` con el
+ * nube-view.js - el bloque "Guardar en la nube" de Ajustes (NUBE.1 y
+ * NUBE.2, ADR 096). Solo HTML, sin estado propio: lo pinta `config/view.js` con el
  * estado que lleva `config/nube.js`.
  */
 
@@ -15,8 +15,8 @@ import { icon } from '../../infra/icons.js';
  * @property {boolean} [autoriza]            - marcó la autorización (sobrevive al repintar).
  * @property {boolean} ocupado
  * @property {string} error                  - código de `ErrorNube` o de validación.
- * @property {string} [ultimaSubida]         - ISO del último respaldo subido.
- * @property {boolean} [pendiente]           - hay cambios sin subir.
+ * @property {string} [ultimaSubida]         - ISO de la última sincronización.
+ * @property {boolean} [pendiente]           - hay cambios sin sincronizar.
  * @property {{ actualizado: string, dispositivo?: string } | null} [eleccion]
  *   - los dos lados tienen datos: el usuario elige cuál queda.
  */
@@ -117,8 +117,8 @@ function _eleccion(e) {
       <div role="group" aria-labelledby="nube-eleccion-titulo">
         <p class="config-section__desc"><strong id="nube-eleccion-titulo">Tienes datos aquí y en la nube</strong></p>
         <p class="config-section__desc">
-          En la nube hay un respaldo guardado ${esc(haceCuanto(e.eleccion.actualizado))}${de}.
-          Elige cuál queda en los dos lados: el otro se reemplaza. Mientras eliges, no se sube nada.
+          La nube tiene datos, con el último cambio ${esc(haceCuanto(e.eleccion.actualizado))}${de}.
+          Elige cuáles quedan en todos tus dispositivos: los otros se reemplazan. Mientras eliges, no se sincroniza nada.
         </p>
         <div class="config-actions">
           <button type="button" class="btn btn-primary" data-action="nube-traer">Usar los de la nube</button>
@@ -128,26 +128,29 @@ function _eleccion(e) {
 }
 
 function _conectado(e) {
-  const estado = e.ocupado ? 'Guardando en la nube…'
-    : e.pendiente ? 'Hay cambios por subir: se suben solos cuando haya conexión.'
-    : e.ultimaSubida ? `Último respaldo en la nube: ${haceCuanto(e.ultimaSubida)}.`
-    : 'Todavía no hay respaldo en la nube.';
+  const estado = e.ocupado ? 'Sincronizando…'
+    : e.pendiente ? 'Hay cambios por sincronizar: se suben solos cuando haya conexión.'
+    : e.ultimaSubida ? `Sincronizado ${haceCuanto(e.ultimaSubida)}.`
+    : 'Todavía no se ha sincronizado.';
+  // "Sincronizar ahora" nunca va deshabilitado: la sincronización corre sola y
+  // no repinta el panel, así que un botón deshabilitado al pintar quedaría así.
+  // `_sincronizar()` ya ignora una pasada encima de otra.
   return `
       <p class="config-section__desc">
-        Tu cuenta: <strong>${esc(e.sesion.email)}</strong>. Cada cambio se guarda en la nube
-        unos segundos después.
+        Tu cuenta: <strong>${esc(e.sesion.email)}</strong>. Lo que anotas aquí aparece en tus
+        otros dispositivos, y lo de ellos aquí, unos segundos después de cada cambio.
       </p>
       ${e.eleccion ? _eleccion(e) : `<p class="config-section__desc" id="nube-estado" aria-live="polite">${esc(estado)}</p>`}
       ${_error(e.error)}
       <div class="config-actions">
-        ${e.eleccion ? '' : `<button type="button" class="btn btn-secondary" data-action="nube-respaldar" ${e.ocupado ? 'disabled' : ''}>Respaldar ahora</button>
+        ${e.eleccion ? '' : `<button type="button" class="btn btn-secondary" data-action="nube-sincronizar">Sincronizar ahora</button>
         <button type="button" class="btn btn-secondary" data-action="nube-traer">Traer los datos de la nube</button>`}
         <button type="button" class="btn btn-secondary" data-action="nube-cerrar">Cerrar sesión</button>
         <button type="button" class="btn btn-secondary" data-action="nube-cerrar-todo">Cerrar sesión en todos los dispositivos</button>
       </div>
       <div class="config-danger">
-        <h3 class="config-danger__title">${icon('alert')} Borrar mi respaldo de la nube</h3>
-        <p class="config-danger__desc">Borra la copia en la nube. Lo de este dispositivo no se toca.</p>
+        <h3 class="config-danger__title">${icon('alert')} Borrar mis datos de la nube</h3>
+        <p class="config-danger__desc">Borra todo lo que hay en la nube. Lo de este dispositivo no se toca.</p>
         <button type="button" class="btn btn-danger" data-action="nube-borrar">Borrar de la nube</button>
       </div>`;
 }
