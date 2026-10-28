@@ -1,6 +1,6 @@
 # ADR 043 - Sincronización multidispositivo y cuentas de usuario
 
-**Estado:** **Aceptada el 2026-08-15** (Esteban delegó la decisión: "toma tú las decisiones teniendo en cuenta lo que consideres que es la mejor decisión para el proyecto"). Resuelve **durabilidad**, descarta **ubicuidad**. El ADN no se toca: Finko sigue sin servidor y sin cuenta.
+**Estado:** **Aceptada el 2026-08-15** (Esteban delegó la decisión: "toma tú las decisiones teniendo en cuenta lo que consideres que es la mejor decisión para el proyecto"). Resuelve **durabilidad**, descarta **ubicuidad**. El ADN no se toca: Finko sigue sin servidor y sin cuenta. **D1 reemplazado y D4 derogado por el [ADR 096](096-finko-en-la-nube-con-supabase.md) (2026-10-27)**: cuentas opcionales y nube con Supabase; el D2 sigue vigente para quien no tenga cuenta.
 **Fecha:** 2026-07-24 (análisis), decidido el 2026-08-15.
 **Autores:** Esteban (producto, delegación), Claude Opus 5 (análisis y decisión)
 **Relación:** **no** activa el disparador D4 del [ADR 030](030-persistencia-diferir-rewrite-salvaguarda-cuota.md): al no elegirse D ni E, la migración a IndexedDB sigue donde la dejó el [ADR 068](068-perf5-sale-del-tablero-disparadores-verificables.md). **Desbloquea la iniciativa legal (LEG)**: la cláusula "cambio de modelo (CFG.4)" de los 11 documentos de `docs/legal/` deja de estar pendiente. Suma call sites al guard de [CFG.5b](063-candado-de-acceso-local.md) solo si D2.3 los necesita.

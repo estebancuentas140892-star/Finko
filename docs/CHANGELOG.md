@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### docs(nube): ADR 096, Finko en la nube con Supabase · 2026-10-27
+
+[ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md), reemplaza el D1 y deroga el D4 del [ADR 043](DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md) y cambia la regla 3 del ADN. Iniciativa NUBE en [`board/transversal.md`](board/transversal.md). Sin código.
+
+- **Se reabre el 043 por lo que cambió, no porque se volvió a pedir**: ahora hay dos personas por familia (el niño del 093), el adulto quiere sus finanzas en el PC y hay compromiso de costo (gratis durante la prueba, suscripción al crecer), que era su condición de reapertura.
+- **Cuenta opcional y copia local que manda.** Sin cuenta, Finko sigue como hoy; con cuenta, cada dispositivo guarda todo y Supabase sincroniza una copia. Si el servicio se apaga, nadie pierde datos.
+- **Sincronizar por registro**: cada registro ya tiene UUID; se le suma la fecha de cambio y el borrado como marca. Gana el cambio más reciente de ese registro.
+- **Descartadas**: solo la familia en la nube (no da el PC ni salva al que pierde el teléfono), cifrado de extremo a extremo (impide bancos y no recupera una clave perdida) y Firebase.
+- **Ley 1581 con niños**: autorización del padre al vincular cada niño, documentos legales reescritos y revisión de abogado antes de abrir cuentas fuera del grupo de prueba.
+
 ### feat(nino): APR.5a, Tino reemplaza a Frai · 2026-10-27
 
 [ADR 095](DECISIONS/095-tino-en-el-sprite.md), acota el [ADR 094](DECISIONS/094-tino-el-guatin.md) D3 y D4; ficha [`contexto/nino.md`](contexto/nino.md). SW v614.

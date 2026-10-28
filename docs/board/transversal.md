@@ -173,3 +173,25 @@
 
 #### APR.5b - La ronda 2 de Tino y los hitos del niño
 - Estado : espera los dibujos de la ronda 2; entran por el conversor que vive junto a los dibujos fuente (095 D4), con el tope de 16 KB por pose. **Objetivo**: sembrar, compartir, reserva y pensando en sus pantallas; hitos del niño (meta cumplida y ruta terminada, con el confeti que ya existe). **Modelo**: Equilibrado, Medio.
+
+---
+
+## Iniciativa NUBE - Finko en la nube con Supabase
+
+> Decisión, las cuatro razones del ADR 043 revisadas, seguridad y Ley 1581: **[ADR 096](../DECISIONS/096-finko-en-la-nube-con-supabase.md)**, fuente única. Cuenta opcional, copia local que manda (offline-first intacto) y sincronización por registro. **El código empieza al cerrar MOV.1**; lo que es solo documento de NUBE.0 puede avanzar antes. Proyecto de Supabase en plan gratis mientras Finko es de prueba; plan pago antes de abrir cuentas a personas fuera del grupo de prueba.
+
+#### NUBE.0 - Base: Supabase de prueba, seguridad y legal
+- Estado : pendiente; la parte de documentos puede empezar ya. **Objetivo**: proyecto de prueba (región declarada), modelo de amenaza de SECURITY.md reescrito, CSP con el dominio del proyecto, librería cliente ESM con versión fija dentro del repo y borradores de `docs/legal/` para cuentas y datos de niños (096 D3, D6 y D7). **Aceptación**: SECURITY.md y legal revisados contigo; la app sigue igual sin cuenta. **Modelo**: Equilibrado, Alto.
+
+#### NUBE.1 - Cuenta del adulto y respaldo automático
+- Estado : no iniciar antes de cerrar MOV.1. **Objetivo**: crear cuenta (correo o Google), subir lo que hay en el dispositivo y recuperarlo al iniciar sesión en otro; marca de cambio por registro y borrado como marca (bump de schema). **Aceptación**: E2E con proyecto de prueba: perder el teléfono y recuperar todo en otro navegador. **Modelo**: Potente, Alto.
+
+#### NUBE.2 - Sincronización entre dispositivos
+- Estado : depende de NUBE.1. **Objetivo**: lo anotado en el celular aparece en el PC y al revés, sin red también; gana el cambio más reciente por registro (096 D4). **Riesgo**: la cuota de `localStorage` (disparador D4 del ADR 030). **Modelo**: Potente, Alto.
+
+#### NUBE.3 - Familia en la nube
+- Estado : depende de NUBE.2. **Objetivo**: el padre vincula el teléfono del niño con un código, con su autorización registrada, y ve su avance desde cualquier dispositivo; reglas RLS con test (096 D5). **Modelo**: Potente, Alto.
+
+#### NUBE.4 - Bancos
+- Estado : no iniciar; pide su propio ADR (finanzas abiertas en Colombia). Depende de NUBE.2.
+

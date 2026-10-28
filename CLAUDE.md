@@ -2,13 +2,13 @@
 
 > Punto de entrada para Claude Code y cualquier asistente de IA al abrir esta carpeta.
 > Acá vive la **norma**. Los procedimientos viven en `.claude/skills/`; la referencia, en `docs/`.
-> Revisado: 2026-08-13.
+> Revisado: 2026-10-27.
 
 ---
 
 ## 0. Qué es Finko
 
-PWA offline-first de gestión financiera personal para Colombia. Sin servidor, sin cuenta, sin sync: todo vive en `localStorage` (clave `fk_v1`). Vanilla JS con ES6 modules, **sin framework, sin build step, sin TypeScript**. Pensada para personas con poco conocimiento financiero, con normativa colombiana (SMMLV, UVT, GMF).
+PWA offline-first de gestión financiera personal para Colombia. Sin servidor, sin cuenta, sin sync: todo vive en `localStorage` (clave `fk_v1`). La cuenta opcional con nube en Supabase llega con la iniciativa NUBE ([ADR 096](docs/DECISIONS/096-finko-en-la-nube-con-supabase.md)). Vanilla JS con ES6 modules, **sin framework, sin build step, sin TypeScript**. Pensada para personas con poco conocimiento financiero, con normativa colombiana (SMMLV, UVT, GMF).
 
 Versión `v1.0.0`, estable y en producción. La fase actual es post-v1.0: mantenimiento y mejoras por sección, con un backlog que incluye dos decisiones de fondo aún abiertas (sincronización multidispositivo y tarjeta de crédito).
 
@@ -96,7 +96,7 @@ Si no existe, el primer paso de la tarea es el análisis profundo y **escribir e
 
 1. **Vanilla JS sin build step** - no agregar bundlers, TS, frameworks.
 2. **Offline-first** - el SW garantiza operación sin red.
-3. **Sin servidor** - solo `localStorage` (clave `fk_v1`).
+3. **Sin servidor propio; nube opcional** - cada dispositivo guarda todo en `localStorage` (clave `fk_v1`) y es la copia que manda. Con cuenta, Supabase sincroniza una copia ([ADR 096](docs/DECISIONS/096-finko-en-la-nube-con-supabase.md), rige desde NUBE.1).
 4. **Singleton `S` mutable** - no reactivity, no proxies.
 5. **`save()` debounced 200ms** - nunca escribir a `localStorage` directo.
 6. **Migraciones idempotentes** - cada bump de schema sube datos sin romper.
