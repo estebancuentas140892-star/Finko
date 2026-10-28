@@ -5,8 +5,9 @@
 
 import { describe, it, expect } from 'vitest';
 import {
-  COLECCIONES, RAIZ, BORRADO, libroVacio, estable, huella, registrosDe, marcarCambios, filasPendientes,
+  COLECCIONES, RAIZ, BORRADO, NINO, libroVacio, estable, huella, registrosDe, marcarCambios, filasPendientes,
   confirmarSubidas, aplicarRemotas, estadoDesdeNube, libroParaReemplazarNube, cursorConMargen,
+  proyeccionNino, soloLecturaNino,
 } from '../../modules/infra/nube-sync.js';
 
 const V = 48;
@@ -200,3 +201,87 @@ describe('reemplazar todo y el cursor', () => {
     expect(cursorConMargen(null)).toBeNull();
   });
 });
+
+describe('el perfil del niño se parte por dueño (NUBE.3)', () => {
+  const sofi = (extra = {}) => ({
+    id: 'n-sofi', nombre: 'Sofía', edad: 8, mesada: { monto: 10000 }, premio: null,
+    aprende: { hechas: { 'k1-l1': '2026-10-27' }, sabidas: [], semanas: [], enCurso: null, ubicacion: null },
+    movimientos: [{ id: 'm1', frasco: 'ahorrar', monto: 5000 }],
+    metas: [{ id: 'meta1', nombre: 'Balón', monto: 50000 }],
+    ...extra,
+  });
+
+  it('lo que fija el padre, su progreso, cada movimiento y cada meta son registros aparte', () => {
+    const regs = registrosDe(estadoBase({ perfiles: [sofi()] }));
+    expect(regs.get('perfiles/n-sofi').datos).toEqual({ id: 'n-sofi', nombre: 'Sofía', edad: 8, mesada: { monto: 10000 }, premio: null });
+    expect(regs.get(`${NINO.aprende}/n-sofi`).datos.hechas).toHaveProperty('k1-l1');
+    expect(regs.get(`${NINO.mov}/n-sofi~m1`).datos.monto).toBe(5000);
+    expect(regs.get(`${NINO.metas}/n-sofi~meta1`).datos.nombre).toBe('Balón');
+    // Un movimiento sin id (respaldo editado a mano): el niño viaja entero.
+    const viejo = registrosDe(estadoBase({ perfiles: [sofi({ movimientos: [{ monto: 1 }] })] }));
+    expect(viejo.get('perfiles/n-sofi').datos.movimientos).toHaveLength(1);
+    expect(viejo.has(`${NINO.mov}/n-sofi~m1`)).toBe(false);
+  });
+
+  it('el niño anota en su teléfono y el padre entrega la mesada a la vez: no se pisan', () => {
+    const nube = servidor();
+    // El padre tiene a Sofía sincronizada.
+    const padre = estadoBase({ perfiles: [sofi()] });
+    let libroPadre = marcarCambios(padre, libroVacio(), 100);
+    const inicial = filasPendientes(padre, libroPadre, meta);
+    nube.subir(inicial);
+    libroPadre = confirmarSubidas(libroPadre, inicial);
+
+    // El teléfono de Sofía baja solo lo suyo.
+    const filasNino = nube.todo().filter(f => f.id.startsWith('n-sofi'));
+    const { estado: tel, libro: libroTel0 } = estadoDesdeNube(estadoBase({ config: { dispositivoNino: 'n-sofi' } }), filasNino, V);
+    expect(tel.perfiles[0].movimientos.map(m => m.id)).toEqual(['m1']);
+
+    // Ella anota "Guardé" (m2); el padre sube la mesada y entrega (m3).
+    const tel2 = { ...tel, perfiles: [{ ...tel.perfiles[0], movimientos: [...tel.perfiles[0].movimientos, { id: 'm2', frasco: 'ahorrar', monto: 2000 }] }] };
+    const libroTel = marcarCambios(proyeccionNino(tel2, 'n-sofi'), libroTel0, 200, { soloLectura: soloLecturaNino });
+    const subeNino = filasPendientes(proyeccionNino(tel2, 'n-sofi'), libroTel, meta);
+    expect(subeNino.map(f => f.coleccion)).toEqual([NINO.mov]);
+    nube.subir(subeNino);
+
+    const padre2 = estadoBase({ perfiles: [{ ...sofi({ mesada: { monto: 15000 } }), movimientos: [...sofi().movimientos, { id: 'm3', frasco: 'ahorrar', monto: 15000 }] }] });
+    const libroPadre2 = marcarCambios(padre2, libroPadre, 210);
+    nube.subir(filasPendientes(padre2, libroPadre2, meta));
+
+    // Cada uno baja lo del otro y quedan iguales.
+    const enPadre = aplicarRemotas(padre2, libroPadre2, nube.desde(libroPadre.cursor), { version: V });
+    const ninoEnPadre = enPadre.parcial.perfiles[0];
+    expect(ninoEnPadre.movimientos.map(m => m.id).sort()).toEqual(['m1', 'm2', 'm3']);
+    expect(ninoEnPadre.mesada.monto).toBe(15000);
+
+    const enTel = aplicarRemotas(proyeccionNino(tel2, 'n-sofi'), libroTel, nube.desde(libroTel0.cursor), { version: V });
+    const ninoEnTel = enTel.parcial.perfiles[0];
+    expect(ninoEnTel.movimientos.map(m => m.id).sort()).toEqual(['m1', 'm2', 'm3']);
+    expect(ninoEnTel.mesada.monto).toBe(15000);
+    expect(ninoEnTel.aprende.hechas).toHaveProperty('k1-l1');
+  });
+
+  it('el teléfono del niño nunca marca lo que fija el padre, aunque aquí difiera', () => {
+    const tel = estadoBase({ perfiles: [sofi()] });
+    const libro = confirmarSubidas(marcarCambios(tel, libroVacio(), 1), filasPendientes(tel, marcarCambios(tel, libroVacio(), 1), meta));
+    const cambiado = { ...tel, perfiles: [{ ...sofi(), nombre: 'Otra' }] };
+    const marcado = marcarCambios(proyeccionNino(cambiado, 'n-sofi'), libro, 50, { soloLectura: soloLecturaNino });
+    expect(marcado.r['perfiles/n-sofi'].p).toBe(0);
+    expect(soloLecturaNino('perfiles/n-sofi')).toBe(true);
+    expect(soloLecturaNino(`${NINO.mov}/n-sofi~m1`)).toBe(false);
+  });
+
+  it('una parte cuyo niño ya no está no tiene dónde ir y no rompe nada', () => {
+    const res = aplicarRemotas(estadoBase({ perfiles: [] }), libroVacio(), [
+      { coleccion: NINO.mov, id: 'n-borrado~m1', datos: { id: 'm1' }, borrado: false, cambiado: 1, version_schema: V, actualizado: 'a' },
+    ], { version: V });
+    expect(res.parcial.perfiles).toEqual([]);
+    expect(res.libro.r[`${NINO.mov}/n-borrado~m1`].p).toBe(0);
+  });
+
+  it('el teléfono del niño solo ve su perfil', () => {
+    const estado = estadoBase({ perfiles: [sofi(), { ...sofi(), id: 'n-tomi', nombre: 'Tomi' }], cuentas: [{ id: 'c1' }] });
+    expect(proyeccionNino(estado, 'n-sofi')).toEqual({ perfiles: [sofi()] });
+  });
+});
+

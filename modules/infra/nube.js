@@ -40,7 +40,8 @@ const _MARGEN_S = 60;
 /** Error con un código que la vista traduce a un mensaje humano. */
 export class ErrorNube extends Error {
   /**
-   * @param {'no-invitado'|'codigo-invalido'|'demasiados-intentos'|'sin-red'|'sesion-vencida'|'sin-sesion'|'servidor'} codigo
+   * @param {'no-invitado'|'codigo-invalido'|'demasiados-intentos'|'sin-red'|'sesion-vencida'|'sin-sesion'|'servidor'
+   *   |'vinculo-invalido'|'nino-sin-sincronizar'|'fuera-del-nino'} codigo
    * @param {string} [detalle]
    */
   constructor(codigo, detalle = '') {
@@ -142,6 +143,9 @@ export function resultadoEnlace() {
 
 // ── PEDIDOS ──────────────────────────────────────────────────────
 
+/** Los avisos que pueden lanzar las funciones de la familia. */
+const _ERRORES_FUNCION = new Set(['codigo-invalido', 'vinculo-invalido', 'nino-sin-sincronizar', 'fuera-del-nino', 'sin-sesion']);
+
 /**
  * @param {string} ruta
  * @param {RequestInit & { token?: string }} opciones
@@ -167,6 +171,9 @@ async function _pedir(ruta, { token, headers = {}, ...resto } = {}) {
   try { cuerpo = await res.json(); } catch { /* cuerpo vacío */ }
   const codigo = cuerpo.error_code ?? cuerpo.code ?? '';
   const detalle = cuerpo.msg ?? cuerpo.message ?? cuerpo.error_description ?? `HTTP ${res.status}`;
+  // Las funciones de la familia (supabase/002-familia.sql) avisan con un
+  // mensaje propio.
+  if (codigo === 'P0001' && _ERRORES_FUNCION.has(detalle)) throw new ErrorNube(detalle, detalle);
   if (res.status === 429 || codigo === 'over_email_send_rate_limit') throw new ErrorNube('demasiados-intentos', detalle);
   if (codigo === 'otp_disabled' || codigo === 'signup_disabled' || /signups not allowed/i.test(detalle)) {
     throw new ErrorNube('no-invitado', detalle);
@@ -355,6 +362,116 @@ export async function borrarCuenta() {
   const s = await sesionVigente();
   await _pedir('/rest/v1/rpc/borrar_mi_cuenta', { method: 'POST', token: s.access_token, body: '{}' });
   olvidarSesion();
+}
+
+// ── FAMILIA (NUBE.3) ─────────────────────────────────────────────
+
+/** Clave de localStorage del vínculo del teléfono de un niño. */
+export const VINCULO_KEY = 'fk_nube_nino';
+
+/** @returns {{ token: string, ninoId: string } | null} */
+export function leerVinculo() {
+  try {
+    const v = JSON.parse(localStorage.getItem(VINCULO_KEY) ?? 'null');
+    return v && v.token && v.ninoId ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+/** @param {{ token: string, ninoId: string }} v */
+export function guardarVinculo(v) {
+  localStorage.setItem(VINCULO_KEY, JSON.stringify(v));
+}
+
+export function olvidarVinculo() {
+  localStorage.removeItem(VINCULO_KEY);
+}
+
+/**
+ * El padre pide un código para el teléfono de un niño que ya está en su nube.
+ * @param {string} ninoId
+ * @param {object} autorizacion - lo que aceptó, con versión y fecha.
+ * @returns {Promise<string>} el código de 8 letras.
+ */
+export async function crearCodigoNino(ninoId, autorizacion) {
+  const s = await sesionVigente();
+  return _pedir('/rest/v1/rpc/crear_codigo_nino', {
+    method: 'POST',
+    token: s.access_token,
+    body: JSON.stringify({ p_nino_id: ninoId, p_autorizacion: autorizacion }),
+  });
+}
+
+/**
+ * El teléfono del niño canjea el código: sin sesión, solo con la clave pública.
+ * @param {string} codigo
+ * @param {string} dispositivo
+ * @returns {Promise<{ token: string, ninoId: string }>}
+ */
+export async function canjearCodigoNino(codigo, dispositivo) {
+  const filas = await _pedir('/rest/v1/rpc/canjear_codigo_nino', {
+    method: 'POST',
+    body: JSON.stringify({ p_codigo: String(codigo), p_dispositivo: dispositivo }),
+  });
+  const f = Array.isArray(filas) ? filas[0] : filas;
+  if (!f?.token || !f?.nino) throw new ErrorNube('codigo-invalido');
+  return { token: f.token, ninoId: f.nino };
+}
+
+/**
+ * Lo que baja el teléfono del niño: su perfil y lo suyo, desde `desde`.
+ * @param {string} token
+ * @param {string|null} desde
+ * @returns {Promise<import('./nube-sync.js').Fila[]>}
+ */
+export async function ninoBajar(token, desde) {
+  const todas = [];
+  for (let offset = 0; ; offset += _LOTE) {
+    const lote = await _pedir('/rest/v1/rpc/nino_bajar', {
+      method: 'POST',
+      body: JSON.stringify({ p_token: token, p_desde: desde, p_offset: offset }),
+    });
+    if (!Array.isArray(lote)) break;
+    todas.push(...lote);
+    if (lote.length < _LOTE) break;
+  }
+  return todas;
+}
+
+/**
+ * Lo que sube el teléfono del niño. La función rechaza lo que no es suyo.
+ * @param {string} token
+ * @param {import('./nube-sync.js').Fila[]} filas
+ */
+export async function ninoSubir(token, filas) {
+  for (let i = 0; i < filas.length; i += _LOTE) {
+    await _pedir('/rest/v1/rpc/nino_subir', {
+      method: 'POST',
+      body: JSON.stringify({ p_token: token, p_filas: filas.slice(i, i + _LOTE) }),
+    });
+  }
+}
+
+/**
+ * Los teléfonos vinculados del padre.
+ * @returns {Promise<{ nino_id: string, dispositivo?: string, creado: string, ultimo_uso?: string }[]>}
+ */
+export async function vinculosNino() {
+  const s = await sesionVigente();
+  const filas = await _pedir('/rest/v1/vinculos_nino?select=nino_id,dispositivo,creado,ultimo_uso&order=creado.desc', {
+    token: s.access_token,
+  });
+  return Array.isArray(filas) ? filas : [];
+}
+
+/** Desvincula los teléfonos de un niño: dejan de sincronizar. */
+export async function desvincularNino(ninoId) {
+  const s = await sesionVigente();
+  await _pedir(`/rest/v1/vinculos_nino?nino_id=eq.${encodeURIComponent(ninoId)}`, {
+    method: 'DELETE',
+    token: s.access_token,
+  });
 }
 
 // ── DECISIONES PURAS ─────────────────────────────────────────────

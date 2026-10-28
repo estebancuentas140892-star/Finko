@@ -140,6 +140,14 @@ Lo que la implementación de NUBE.1 fijó o corrigió de este ADR. El ADR no se 
 - **Borrar la cuenta completa** necesita una función de servidor: pasa a NUBE.2b.
 
 
+## Resolución en implementación (NUBE.3, 2026-10-27)
+
+- **El niño no tiene cuenta de autenticación.** Su teléfono canjea una vez el código que genera el padre (8 letras sin ambiguas, 10 minutos) por un token largo que se guarda en el teléfono; la base solo guarda su huella. Ese token no abre tablas: solo las funciones `nino_bajar` y `nino_subir`, que leen y escriben lo suyo. Más simple que una cuenta anónima o un JWT propio, y se revoca borrando el vínculo.
+- **El perfil del niño se parte por dueño** para que el niño y el padre no se pisen: lo que fija el padre (`perfiles`: nombre, edad, mesada, premio), su progreso (`nino-aprende`) y cada movimiento y meta como registro propio. El niño solo escribe lo suyo, también en la base; la mesada que entra a su frasco es un movimiento más.
+- **La autorización por niño** (D5, D7) se pide con dos casillas antes de generar el código y queda en el vínculo con versión y fecha. El código solo se entrega si el niño ya está en la nube del padre.
+- **El teléfono del niño no tiene adulto**: entra directo a su perfil, sin "Cambiar de perfil", y la aceptación legal la dio el padre al autorizar. Si el padre lo desvincula, deja de sincronizar y lo que anotó se queda en el teléfono.
+- **Las funciones y las reglas viven en el repo** (`supabase/`), con un script de pruebas de seguridad que corre en una transacción que se deshace: dos familias inventadas, y cada regla con su `ASSERT`.
+
 ## Resolución en implementación (NUBE.2b, 2026-10-28)
 
 - **Borrar la cuenta completa con una función de base, no con una Edge Function.** `public.borrar_mi_cuenta()` ([`supabase/003-borrar-cuenta.sql`](../../supabase/003-borrar-cuenta.sql)) corre con los permisos de su dueño (`security definer`), no recibe parámetros y borra de `auth.users` solo a quien la llama (`auth.uid()`). Lo suyo en la nube cae en cascada en la misma transacción. La app la llama con su propio token por `/rest/v1/rpc/`: la clave secreta no hace falta en ningún lado, ni como secreto del servidor.
@@ -148,3 +156,4 @@ Lo que la implementación de NUBE.1 fijó o corrigió de este ADR. El ADR no se 
 - **Toda tabla con datos de un usuario cuelga de `auth.users` con `on delete cascade`**: es lo que hace que la función no deje nada atrás. Un test unitario lo revisa en cada archivo de `supabase/`.
 - **Los otros dispositivos** se enteran cuando vence su sesión (hasta una hora): el servidor ya no la renueva y vuelven al modo sin cuenta. Lo que intenten subir mientras tanto lo rechaza la llave foránea.
 - **En el dispositivo** quedan los datos (D7); se olvidan la sesión, el libro y la autorización de la nube, que era de esa cuenta. Confirmar pide escribir BORRAR y el PIN, como el texto de [`legal/nube/autorizaciones.md`](../legal/nube/autorizaciones.md) sección 4.
+

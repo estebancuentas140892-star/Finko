@@ -13,8 +13,12 @@ import {
   capturarEnlaceDeAcceso, pedirAcceso, entrarConCodigo, sesionVigente, cerrarSesion,
   hayRegistros, ultimoCambioNube, bajarRegistros, subirRegistros, borrarRegistros, borrarCuenta,
   leerLibro, guardarLibro, olvidarLibro, LIBRO_KEY, hayDatosLocales, decidirAlEntrar, nombreDispositivo,
+  leerVinculo, guardarVinculo, olvidarVinculo, crearCodigoNino, canjearCodigoNino, ninoBajar, ninoSubir,
+  vinculosNino, desvincularNino,
 } from '../../modules/infra/nube.js';
-import { htmlNube, haceCuanto, MENSAJES_NUBE } from '../../modules/dominio/config/nube-view.js';
+import {
+  htmlNube, haceCuanto, MENSAJES_NUBE, htmlVincularNino, htmlCodigoNino, codigoLegible,
+} from '../../modules/dominio/config/nube-view.js';
 
 /** base64url de un JSON en UTF-8, como viene un JWT real. */
 const b64 = (o) => btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(o))))
@@ -331,3 +335,83 @@ describe('el bloque "Guardar en la nube" de Ajustes', () => {
     expect(haceCuanto('basura', ahoraFija)).toBe('');
   });
 });
+
+describe('el teléfono del niño (NUBE.3)', () => {
+  it('el padre pide el código con su sesión y su autorización', async () => {
+    guardarSesion(sesion());
+    fetchMock.mockResolvedValue(resp(200, 'ABCD2345'));
+    expect(await crearCodigoNino('n-sofi', { version: '0.2' })).toBe('ABCD2345');
+    const p = pedido(fetchMock);
+    expect(p.url).toBe(`${NUBE_URL}/rest/v1/rpc/crear_codigo_nino`);
+    expect(p.h.Authorization).toBe(`Bearer ${sesion().access_token}`);
+    expect(p.cuerpo).toEqual({ p_nino_id: 'n-sofi', p_autorizacion: { version: '0.2' } });
+  });
+
+  it('el teléfono del niño canjea sin sesión y entiende los avisos de la base', async () => {
+    fetchMock.mockResolvedValueOnce(resp(200, [{ token: 't'.repeat(64), nino: 'n-sofi' }]));
+    expect(await canjearCodigoNino('abcd-2345', 'iPhone')).toEqual({ token: 't'.repeat(64), ninoId: 'n-sofi' });
+    expect(pedido(fetchMock).h.Authorization).toBeUndefined();
+    expect(pedido(fetchMock).cuerpo).toEqual({ p_codigo: 'abcd-2345', p_dispositivo: 'iPhone' });
+
+    fetchMock.mockResolvedValueOnce(resp(400, { code: 'P0001', message: 'codigo-invalido' }));
+    await expect(canjearCodigoNino('X', 'iPhone')).rejects.toMatchObject({ codigo: 'codigo-invalido' });
+    fetchMock.mockResolvedValueOnce(resp(400, { code: 'P0001', message: 'vinculo-invalido' }));
+    await expect(ninoBajar('t', null)).rejects.toMatchObject({ codigo: 'vinculo-invalido' });
+  });
+
+  it('baja por páginas con el token y sube en lotes', async () => {
+    fetchMock.mockResolvedValueOnce(resp(200, Array.from({ length: 500 }, (_, i) => ({ id: `x${i}` }))))
+      .mockResolvedValueOnce(resp(200, []));
+    expect(await ninoBajar('tok', '2026-10-27T10:00:00.000Z')).toHaveLength(500);
+    expect(pedido(fetchMock).cuerpo).toEqual({ p_token: 'tok', p_desde: '2026-10-27T10:00:00.000Z', p_offset: 0 });
+    expect(pedido(fetchMock, 1).cuerpo.p_offset).toBe(500);
+
+    fetchMock.mockResolvedValue(resp(200, 1));
+    await ninoSubir('tok', [{ coleccion: 'nino-mov', id: 'n~m' }]);
+    expect(pedido(fetchMock, 2)).toMatchObject({ url: `${NUBE_URL}/rest/v1/rpc/nino_subir`, cuerpo: { p_token: 'tok' } });
+  });
+
+  it('el padre ve y desvincula los teléfonos', async () => {
+    guardarSesion(sesion());
+    fetchMock.mockResolvedValueOnce(resp(200, [{ nino_id: 'n-sofi', dispositivo: 'iPhone' }]));
+    expect(await vinculosNino()).toHaveLength(1);
+    fetchMock.mockResolvedValueOnce(resp(204, null));
+    await desvincularNino('n-sofi');
+    expect(pedido(fetchMock, 1)).toMatchObject({ metodo: 'DELETE', url: `${NUBE_URL}/rest/v1/vinculos_nino?nino_id=eq.n-sofi` });
+  });
+
+  it('el vínculo vive en su propia clave', () => {
+    expect(leerVinculo()).toBeNull();
+    guardarVinculo({ token: 't', ninoId: 'n-sofi' });
+    expect(leerVinculo()).toEqual({ token: 't', ninoId: 'n-sofi' });
+    olvidarVinculo();
+    expect(leerVinculo()).toBeNull();
+  });
+
+  it('"Su teléfono": sin cuenta explica, con cuenta pide la autorización y luego muestra el código', () => {
+    const nino = { id: 'n-sofi', nombre: 'Sofía' };
+    expect(htmlVincularNino({ nino, sesion: false, paso: 'autorizar', vinculos: [] })).toContain('Guardar en la nube');
+    const autorizar = htmlVincularNino({ nino, sesion: true, paso: 'autorizar', vinculos: [], error: 'autorizacion-nino' });
+    expect(autorizar).toContain('id="form-nube-vincular"');
+    expect(autorizar).toContain('id="nube-representante"');
+    expect(autorizar).toContain('id="nube-escuchado"');
+    expect(autorizar).toContain(MENSAJES_NUBE['autorizacion-nino']);
+    const codigo = htmlVincularNino({
+      nino, sesion: true, paso: 'codigo', codigo: 'ABCD2345',
+      vinculos: [{ dispositivo: 'Celular Android', ultimo_uso: new Date().toISOString() }],
+    });
+    expect(codigo).toContain('ABCD-2345');
+    expect(codigo).toContain('Celular Android: sincronizó hace un momento');
+    expect(codigo).toContain('data-action="nube-desvincular-nino" data-id="n-sofi"');
+    expect(codigoLegible('ABC')).toBe('ABC');
+  });
+
+  it('la pantalla del niño pide el código con su voz', () => {
+    const html = htmlCodigoNino({ error: 'codigo-invalido' });
+    expect(html).toContain('id="form-nube-codigo-nino"');
+    expect(html).toContain('Entra con tu código');
+    expect(html).toContain(MENSAJES_NUBE['codigo-invalido']);
+    expect(html).toContain('data-action="nube-codigo-nino-volver"');
+  });
+});
+

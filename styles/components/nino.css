@@ -806,3 +806,6 @@ body.kid .leccion-clasificar__boton { min-height: var(--fk-kid-target); font-siz
   .nino-inicio .jars { display: grid; }
   .nino-inicio .knino-mini { display: none; }
 }
+
+/* El teléfono propio del niño (NUBE.3) no tiene adulto: sin "Cambiar de perfil". */
+.kid-propio [data-action="perfil-cambiar"] { display: none; }

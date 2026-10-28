@@ -14,7 +14,7 @@ Desde el [ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md) Finko tiene d
 |---|---|---|
 | Servidor | No existe | Supabase (Postgres, autenticación, funciones); Finko no opera servidor propio |
 | Claves | No existen | Clave pública del proyecto en el cliente, por diseño; la secreta solo en funciones del servidor |
-| Sesión | No existe | Sesión de Supabase en el almacenamiento del navegador |
+| Sesión | No existe | Sesión de Supabase en el almacenamiento del navegador; en el teléfono de un niño, un token de vínculo |
 | Datos de terceros | No se procesan | Finanzas del adulto y datos de sus niños (Ley 1581) |
 | Datos del usuario | Solo `localStorage` | `localStorage` (la copia que manda) y una copia en la nube |
 | Recursos externos | Cero: sin CDNs, fonts remotas ni analytics | Igual, más `connect-src` al dominio del proyecto |
@@ -100,13 +100,13 @@ Si encuentras un problema de seguridad en el código del proyecto:
 
 ## 8. La nube (Supabase, ADR 096)
 
-Rige desde NUBE.1. Cada regla con test o verificación propia; una que falte bloquea la rebanada. Hoy: una tabla (`registros`, NUBE.2), sin permisos para `anon` y con RLS por usuario, verificado con pedidos sin sesión (401).
+Rige desde NUBE.1. Cada regla con test o verificación propia; una que falte bloquea la rebanada. Hoy: `registros` (NUBE.2) y los vínculos del niño (NUBE.3), sin permisos para `anon` y con RLS por usuario; las pruebas viven en [`supabase/pruebas-seguridad.sql`](../supabase/pruebas-seguridad.sql).
 
 1. **RLS en toda tabla, sin excepción.** Política por dueño y por familia, con un test por regla contra el proyecto de prueba: el dueño lee y escribe; otro usuario no; el niño no lee al padre; ninguna familia lee a otra.
 2. **Claves.** La pública (anon o publishable) va en el cliente: la barrera es RLS. La secreta (service_role) vive solo como secreto de las funciones del servidor: nunca en el repo, el chat, un issue ni un log. Si se filtra, se rota de inmediato.
 3. **Sesión.** El riesgo es el XSS: `script-src 'self'` sin excepciones, todo dato del usuario pasa por `esc()` antes de ir al HTML, y Ajustes permite cerrar la sesión en todos los dispositivos.
 4. **Inicio de sesión** por correo (enlace o código), por Supabase Auth: Finko no guarda contraseñas. Registro abierto apagado: solo correos invitados. Límites de intentos del proveedor activos.
-5. **Código de vinculación del niño**: lo genera el servidor, a pedido de la cuenta del padre; un solo uso, vence en 10 minutos y tiene límite de intentos.
+5. **Código de vinculación del niño**: lo genera el servidor, a pedido de la cuenta del padre y solo para un niño que ya está en su nube; 8 letras de 31 posibles (unos 850 mil millones), un solo uso y vence en 10 minutos. El token que entrega se guarda solo como huella SHA-256 y únicamente abre las funciones del niño, que rechazan lo que no es suyo.
 6. **Dispositivo perdido**: el PIN local ([ADR 063](DECISIONS/063-candado-de-acceso-local.md)) sigue cerrando la app; desde otro dispositivo se cierran todas las sesiones.
 7. **Sin librería cliente**: `infra/nube.js` habla REST con `fetch` (ADR 096, resolución en NUBE.1). Si algún día entra una, va dentro del repo con versión fija, origen y SHA-256 anotados, y pasa la checklist de la sección 4.
 8. **Desarrollo con datos inventados** en un proyecto de Supabase aparte; nunca datos reales en desarrollo ni en E2E.

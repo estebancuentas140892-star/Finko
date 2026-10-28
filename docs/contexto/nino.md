@@ -58,6 +58,8 @@
 - **Tino pesa unos 12 KB por pose** en el sprite de `index.html`, también para el adulto (095 D1). Un test pone el tope en 16 KB; la ronda 2 entra por el conversor que vive junto a los dibujos fuente (095 D4), no en el repo.
 - **Inicio trae la alcancía dos veces** (la lista corta y los tres frascos) y el ancho elige cuál se ve (`nino.css`): un test que cuente frascos en Inicio ve los dos. Lo mismo con "Cambiar": en el teléfono va en Inicio y en Yo; desde 768 px, en el riel.
 
+**Su propio teléfono (NUBE.3)**: con `S.config.dispositivoNino`, Finko entra directo a ese perfil, sin adulto ni "Cambiar de perfil" (`ui/quien-usa.js`, `.kid-propio`). Cómo se vincula y qué sincroniza: [`nube.md`](nube.md).
+
 **Cambios pendientes**: el selector usa el campo de PIN de siempre, no el teclado numérico del diseño; falta el avatar de Inicio como atajo a Familia (D2). La ronda 2 de Tino y los hitos del niño (APR.5b) esperan sus dibujos.
 
 **Cambios realizados**:

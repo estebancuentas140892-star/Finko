@@ -1845,3 +1845,17 @@
 .cal-day__evs {
   display: none;
 }
+
+/* ── NUBE: el código para el teléfono del niño (NUBE.3) ────────── */
+.nube-codigo {
+  margin: var(--fk-space-3) 0;
+  font-size: var(--fk-text-3xl);
+  font-weight: var(--fk-font-bold);
+  letter-spacing: 0.12em;
+  text-align: center;
+  color: var(--fk-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.nube-codigo-input { letter-spacing: 0.12em; text-transform: uppercase; }
+.nube-vinculos { margin: 0 0 var(--fk-space-3); padding-left: var(--fk-space-5); color: var(--fk-text-secondary); }
+

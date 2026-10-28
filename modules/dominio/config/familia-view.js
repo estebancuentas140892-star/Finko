@@ -47,6 +47,7 @@ export function htmlFamilia(ninos, hoyISO = '') {
             </div>
             <div class="familia-nino__acciones">
               <button class="btn btn-secondary btn-sm" type="button" data-action="familia-progreso" data-id="${esc(p.id)}">Ver progreso</button>
+              <button class="btn btn-ghost btn-sm" type="button" data-action="nube-vincular-nino" data-id="${esc(p.id)}">Su teléfono</button>
               <button class="btn btn-ghost btn-sm" type="button" data-action="familia-entrar" data-id="${esc(p.id)}">Entrar como ${esc(p.nombre)}</button>
               <button class="btn btn-ghost btn-sm" type="button" data-action="familia-eliminar" data-id="${esc(p.id)}"
                       aria-label="Eliminar el perfil de ${esc(p.nombre)}">${icon('trash')}</button>

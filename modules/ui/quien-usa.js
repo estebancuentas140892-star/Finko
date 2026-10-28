@@ -240,6 +240,15 @@ export function initPerfiles() {
   });
   _pintarAccesoPerfil();
 
+  // El teléfono del niño (NUBE.3) no tiene adulto: entra directo a su perfil
+  // y no ofrece "Cambiar de perfil" (nino.css, `.kid-propio`).
+  const propio = S.config?.dispositivoNino;
+  document.body.classList.toggle('kid-propio', Boolean(propio));
+  if (S.onboarded === true && propio && ninos().some(p => p.id === propio)) {
+    entrarComo(propio);
+    return true;
+  }
+
   if (S.onboarded !== true || !hayNinos()) return false;
   abrirQuienUsa();
   return true;

@@ -135,7 +135,21 @@ function _renderPaso1() {
       <p class="onboarding__note">
         Tus datos se guardan en tu dispositivo. La cuenta en la nube es opcional.
       </p>
+      <p class="onboarding__note">
+        <button type="button" class="btn btn-ghost btn-sm" data-action="nube-codigo-nino">Tengo un código de mi familia</button>
+      </p>
     </form>`;
+}
+
+/**
+ * Vuelve al primer paso del wizard: lo usa la pantalla del código del niño
+ * (`config/nube.js`, NUBE.3) cuando toca "Volver".
+ */
+export function volverAlInicio() {
+  const body = document.querySelector('#onboarding #onboarding-body');
+  if (!body) return;
+  body.innerHTML = _renderPaso1();
+  body.querySelector('input')?.focus();
 }
 
 /**

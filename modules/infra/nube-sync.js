@@ -12,7 +12,12 @@
  * Unidad de sincronización:
  * - cada elemento (con `id`) de las colecciones de `COLECCIONES` es un registro;
  * - cada otra clave de primer nivel (perfil, config sin el PIN, aprende,
- *   ahorro, logros...) es un registro de `RAIZ` y viaja entera.
+ *   ahorro, logros...) es un registro de `RAIZ` y viaja entera;
+ * - un perfil de niño se parte por dueño (NUBE.3): lo que fija el padre
+ *   (`perfiles`: nombre, edad, mesada, premio...), su progreso
+ *   (`nino-aprende`) y cada movimiento y meta (`nino-mov`, `nino-metas`, con
+ *   id `<niño>~<id>`). Así lo que anota el niño en su teléfono y lo que
+ *   anota el padre (la mesada que entra a un frasco) no se pisan.
  *
  * Conflicto: si los dos lados cambiaron el mismo registro desde la última
  * sincronización, gana el cambio más reciente (`cambiado`, la hora del
@@ -31,8 +36,34 @@ export const RAIZ = '_raiz';
 /** Huella de un registro borrado. */
 export const BORRADO = '-';
 
+/** Las partes del perfil de un niño que viajan como registros propios. */
+export const NINO = Object.freeze({ aprende: 'nino-aprende', mov: 'nino-mov', metas: 'nino-metas' });
+
+/** Separa el id del niño del id del movimiento o la meta. */
+export const SEP_NINO = '~';
+
 /** Lo que nunca viaja: la versión de schema es de cada instalación. */
 const _SIN_VIAJE = new Set(['_version']);
+
+const _APRENDE_VACIO = () => ({ hechas: {}, sabidas: [], semanas: [], enCurso: null, ubicacion: null });
+
+const _conIds = (arr) => Array.isArray(arr) && arr.every(x => x && typeof x.id === 'string' && x.id);
+
+/**
+ * Los registros de un perfil de niño. Si sus movimientos o metas no traen id
+ * (un respaldo editado a mano), viaja entero como antes.
+ */
+function _registrosNino(nino, poner) {
+  const { aprende, movimientos, metas, ...base } = nino;
+  if (!_conIds(movimientos ?? []) || !_conIds(metas ?? [])) {
+    poner('perfiles', nino.id, nino);
+    return;
+  }
+  poner('perfiles', nino.id, base);
+  if (aprende !== undefined) poner(NINO.aprende, nino.id, aprende);
+  for (const m of movimientos ?? []) poner(NINO.mov, `${nino.id}${SEP_NINO}${m.id}`, m);
+  for (const m of metas ?? []) poner(NINO.metas, `${nino.id}${SEP_NINO}${m.id}`, m);
+}
 
 /**
  * @typedef {{ h: string, t: number, p: 0|1 }} EntradaLibro
@@ -96,10 +127,14 @@ const _esColeccionDeRegistros = (k, v) =>
  */
 export function registrosDe(estado) {
   const mapa = new Map();
+  const poner = (coleccion, id, datos) => mapa.set(`${coleccion}/${id}`, { coleccion, id, datos });
   for (const [k, v] of Object.entries(estado ?? {})) {
     if (_SIN_VIAJE.has(k) || v === undefined) continue;
     if (_esColeccionDeRegistros(k, v)) {
-      for (const r of v) mapa.set(`${k}/${r.id}`, { coleccion: k, id: r.id, datos: r });
+      for (const r of v) {
+        if (k === 'perfiles') _registrosNino(r, poner);
+        else poner(k, r.id, r);
+      }
     } else {
       mapa.set(`${RAIZ}/${k}`, { coleccion: RAIZ, id: k, datos: k === 'config' ? _configSinPin(v) : v });
     }
@@ -109,22 +144,41 @@ export function registrosDe(estado) {
 
 /**
  * Anota en el libro lo que cambió localmente desde la última pasada.
+ * `soloLectura` dice qué registros este dispositivo no escribe nunca (el
+ * teléfono del niño no cambia lo que fija el padre): esos no se marcan, y si
+ * difieren de la nube, la próxima bajada los reemplaza.
+ *
  * @param {any} estado
  * @param {Libro} libro
  * @param {number} ahora - ms.
+ * @param {{ soloLectura?: ((clave: string) => boolean) | null }} [opciones]
  * @returns {Libro}
  */
-export function marcarCambios(estado, libro, ahora) {
+export function marcarCambios(estado, libro, ahora, { soloLectura = null } = {}) {
   const r = { ...libro.r };
   const actuales = registrosDe(estado);
   for (const [clave, reg] of actuales) {
+    if (soloLectura?.(clave)) continue;
     const h = huella(reg.datos);
     if (r[clave]?.h !== h) r[clave] = { h, t: ahora, p: 1 };
   }
   for (const clave of Object.keys(r)) {
+    if (soloLectura?.(clave)) continue;
     if (!actuales.has(clave) && r[clave].h !== BORRADO) r[clave] = { h: BORRADO, t: ahora, p: 1 };
   }
   return { ...libro, r };
+}
+
+/** En el teléfono del niño solo se escribe lo suyo. */
+export const soloLecturaNino = (clave) => !clave.startsWith('nino-');
+
+/**
+ * Lo que sincroniza el teléfono de un niño: solo su perfil.
+ * @param {any} estado
+ * @param {string} ninoId
+ */
+export function proyeccionNino(estado, ninoId) {
+  return { perfiles: (estado?.perfiles ?? []).filter(p => p?.id === ninoId) };
 }
 
 /** "coleccion/id" → [coleccion, id]; el id puede traer barras. */
@@ -194,7 +248,11 @@ export function aplicarRemotas(estado, libro, filas, { version }) {
   let cursor = libro.cursor;
   const coleccion = (k) => (parcial[k] ??= Array.isArray(estado?.[k]) ? estado[k].slice() : []);
 
-  const ordenadas = [...filas].sort((a, b) => String(a.actualizado ?? '').localeCompare(String(b.actualizado ?? '')));
+  // Primero las bases (perfiles incluidos) y después las partes de cada
+  // niño: una parte que llega en la misma bajada que su niño encuentra dónde ir.
+  const porHora = (a, b) => String(a.actualizado ?? '').localeCompare(String(b.actualizado ?? ''));
+  const esParte = (f) => String(f.coleccion).startsWith('nino-');
+  const ordenadas = [...filas.filter(f => !esParte(f)).sort(porHora), ...filas.filter(esParte).sort(porHora)];
   for (const f of ordenadas) {
     if (f.actualizado && (!cursor || f.actualizado > cursor)) cursor = f.actualizado;
     // Escrito por una app más nueva: esta no sabe leerlo sin riesgo.
@@ -211,6 +269,42 @@ export function aplicarRemotas(estado, libro, filas, { version }) {
       parcial[f.id] = f.id === 'config'
         ? { ...f.datos, ...(estado?.config?.bloqueo ? { bloqueo: estado.config.bloqueo } : {}) }
         : f.datos;
+    } else if (f.coleccion === 'perfiles') {
+      const arr = coleccion('perfiles');
+      const i = arr.findIndex(x => x?.id === f.id);
+      if (f.borrado) { if (i >= 0) arr.splice(i, 1); }
+      else {
+        // La base del padre no trae las partes del niño: se conservan las de aquí.
+        const antes = i >= 0 ? arr[i] : {};
+        const entero = f.datos && 'movimientos' in f.datos;
+        const nino = entero ? f.datos : {
+          ...f.datos,
+          aprende: antes.aprende ?? _APRENDE_VACIO(),
+          movimientos: antes.movimientos ?? [],
+          metas: antes.metas ?? [],
+        };
+        if (i >= 0) arr[i] = nino; else arr.push(nino);
+      }
+    } else if (esParte(f)) {
+      const arr = coleccion('perfiles');
+      const ninoId = f.coleccion === NINO.aprende ? f.id : f.id.slice(0, f.id.indexOf(SEP_NINO));
+      const i = arr.findIndex(x => x?.id === ninoId);
+      // Una parte sin su niño (lo borraron): no hay dónde ponerla.
+      if (i < 0) { r[clave] = { h: hRemota, t: f.cambiado, p: 0 }; continue; }
+      const nino = { ...arr[i] };
+      if (f.coleccion === NINO.aprende) {
+        if (!f.borrado) nino.aprende = f.datos;
+      } else {
+        const campo = f.coleccion === NINO.mov ? 'movimientos' : 'metas';
+        const subId = f.id.slice(ninoId.length + SEP_NINO.length);
+        const lista = Array.isArray(nino[campo]) ? nino[campo].slice() : [];
+        const j = lista.findIndex(x => x?.id === subId);
+        if (f.borrado) { if (j >= 0) lista.splice(j, 1); }
+        else if (j >= 0) lista[j] = f.datos;
+        else lista.push(f.datos);
+        nino[campo] = lista;
+      }
+      arr[i] = nino;
     } else if (COLECCIONES.includes(f.coleccion)) {
       const arr = coleccion(f.coleccion);
       const i = arr.findIndex(x => x?.id === f.id);

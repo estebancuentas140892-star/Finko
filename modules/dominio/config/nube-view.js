@@ -1,7 +1,8 @@
 /**
  * nube-view.js - el bloque "Guardar en la nube" de Ajustes (NUBE.1, NUBE.2
- * y NUBE.2b, ADR 096). Solo HTML, sin estado propio: lo pinta `config/view.js` con el
- * estado que lleva `config/nube.js`.
+ * y NUBE.2b, ADR 096), el modal "Su teléfono" de Familia y la pantalla del
+ * código del niño (NUBE.3). Solo HTML, sin estado propio: lo pinta
+ * `config/nube.js` con su estado.
  */
 
 import { esc } from '../../infra/utils.js';
@@ -33,6 +34,11 @@ export const MENSAJES_NUBE = {
   'autorizacion':        'Para guardar en la nube necesitamos tu autorización.',
   'enlace':              'El enlace del correo no sirvió o ya venció. Pide uno nuevo.',
   'sin-respaldo':        'Todavía no hay datos en la nube.',
+  'vinculo-invalido':    'Este teléfono ya no está vinculado. Pide un código nuevo.',
+  'nino-sin-sincronizar': 'Este perfil todavía no llegó a la nube. Espera unos segundos y vuelve a intentar.',
+  'fuera-del-nino':      'La nube no aceptó el cambio. Intenta de nuevo en un momento.',
+  'autorizacion-nino':   'Marca las dos casillas para generar el código.',
+  'codigo-vacio':        'Escribe el código de 8 letras.',
 };
 
 /**
@@ -175,3 +181,114 @@ export function htmlNube(e) {
       ${cuerpo}
     </section>`;
 }
+
+// ── FAMILIA (NUBE.3) ─────────────────────────────────────────────
+
+/** "ABCD2345" → "ABCD-2345", más fácil de dictar. */
+export function codigoLegible(codigo) {
+  const c = String(codigo ?? '');
+  return c.length === 8 ? `${c.slice(0, 4)}-${c.slice(4)}` : c;
+}
+
+/**
+ * El modal "Su teléfono" de un niño, en Familia.
+ * @param {{ nino: { id: string, nombre: string }, sesion: boolean, paso: 'autorizar'|'codigo',
+ *   codigo?: string, vinculos: { dispositivo?: string, ultimo_uso?: string, creado?: string }[],
+ *   error?: string, ocupado?: boolean }} e
+ * @returns {string}
+ */
+export function htmlVincularNino(e) {
+  const nombre = esc(e.nino.nombre);
+  if (!e.sesion) {
+    return `
+      <p class="config-section__desc">
+        Para que ${nombre} use Finko en su propio teléfono, primero guarda tus datos en la nube:
+        aquí mismo en Ajustes, en <strong>Tus datos, Guardar en la nube</strong>.
+      </p>
+      <div class="config-actions">
+        <button type="button" class="btn btn-secondary" data-action="nube-cerrar-modal">Entendido</button>
+      </div>`;
+  }
+  const vinculados = e.vinculos.length ? `
+      <p class="config-section__desc"><strong>Teléfonos vinculados</strong></p>
+      <ul class="nube-vinculos">${e.vinculos.map(v => `
+        <li>${esc(v.dispositivo || 'Teléfono')}: ${v.ultimo_uso ? `sincronizó ${esc(haceCuanto(v.ultimo_uso))}` : 'todavía no sincroniza'}</li>`).join('')}
+      </ul>
+      <div class="config-actions">
+        <button type="button" class="btn btn-ghost" data-action="nube-desvincular-nino" data-id="${esc(e.nino.id)}">Desvincular su teléfono</button>
+      </div>` : '';
+
+  if (e.paso === 'codigo') {
+    return `
+      <p class="config-section__desc">
+        En el teléfono de ${nombre}, abre Finko y toca <strong>Tengo un código de mi familia</strong>.
+        Escribe este código:
+      </p>
+      <p class="nube-codigo" id="nube-codigo-generado">${esc(codigoLegible(e.codigo))}</p>
+      <p class="form-hint">Vence en 10 minutos y sirve una sola vez.</p>
+      <div class="config-actions">
+        <button type="button" class="btn btn-secondary" data-action="nube-cerrar-modal">Listo</button>
+      </div>
+      ${vinculados}`;
+  }
+  return `
+      <form id="form-nube-vincular" class="config-form" novalidate data-id="${esc(e.nino.id)}">
+        <p class="config-section__desc">
+          Para que ${nombre} use Finko en su propio teléfono y tú veas su avance desde el tuyo,
+          guardamos en la nube su nombre, su edad, su dibujo, sus frascos, su meta, su mesada y sus
+          lecciones. Nunca su correo, teléfono, documento, fotos ni ubicación. Solo tú ves sus datos.
+        </p>
+        <div class="form-group form-group--checkbox">
+          <label class="checkbox-row">
+            <input type="checkbox" name="representante" id="nube-representante" />
+            <span>Soy padre, madre o representante legal de ${nombre} y autorizo que Finko trate sus
+              datos para esto, en su interés superior.</span>
+          </label>
+        </div>
+        <div class="form-group form-group--checkbox">
+          <label class="checkbox-row">
+            <input type="checkbox" name="escuchado" id="nube-escuchado" />
+            <span>Le conté a ${nombre} qué es Finko y qué se guarda, y tuve en cuenta su opinión.</span>
+          </label>
+        </div>
+        ${_error(e.error)}
+        <div class="config-actions">
+          <button type="submit" class="btn btn-primary" ${e.ocupado ? 'disabled' : ''}>
+            ${e.ocupado ? 'Generando…' : 'Generar código'}
+          </button>
+        </div>
+      </form>
+      ${vinculados}`;
+}
+
+/**
+ * La pantalla del teléfono del niño para entrar con el código (va dentro
+ * del onboarding). Voz del niño: frases cortas (ADR 093 D6).
+ * @param {{ error?: string, ocupado?: boolean }} e
+ * @returns {string}
+ */
+export function htmlCodigoNino(e) {
+  return `
+    <form id="form-nube-codigo-nino" novalidate>
+      <div class="onboarding__hero" aria-hidden="true">F</div>
+      <h2 class="onboarding__title">Entra con tu código</h2>
+      <p class="onboarding__desc">
+        Pídele a quien te cuida que abra Finko y vaya a Ajustes, Familia, Su teléfono.
+        Te va a dar un código de 8 letras.
+      </p>
+      <div class="form-group">
+        <label for="nube-codigo-nino" class="label">Tu código</label>
+        <input id="nube-codigo-nino" name="codigo" class="input nube-codigo-input" type="text"
+               autocomplete="one-time-code" autocapitalize="characters" spellcheck="false"
+               maxlength="12" placeholder="ABCD-2345" required />
+      </div>
+      ${_error(e.error)}
+      <div class="onboarding__footer">
+        <button type="submit" class="btn btn-primary btn-lg" ${e.ocupado ? 'disabled' : ''}>
+          ${e.ocupado ? 'Entrando…' : 'Entrar'}
+        </button>
+        <button type="button" class="btn btn-ghost" data-action="nube-codigo-nino-volver">Volver</button>
+      </div>
+    </form>`;
+}
+

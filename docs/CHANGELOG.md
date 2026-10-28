@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(nube): NUBE.3, el teléfono del niño vinculado con un código del padre · 2026-10-28
+
+[ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md) (resolución de NUBE.3); fichas [`contexto/nube.md`](contexto/nube.md) y [`contexto/nino.md`](contexto/nino.md); SQL en [`supabase/`](../supabase/README.md). SW v619.
+
+- **El niño no tiene correo ni contraseña.** En Familia, "Su teléfono", el padre autoriza con dos casillas y recibe un código de 8 letras (10 minutos, un solo uso). El teléfono del niño lo escribe desde la bienvenida y recibe un token que solo abre las funciones del niño; la base guarda su huella, no el token.
+- **El perfil del niño viaja partido por dueño**: lo que fija el padre, su progreso y cada movimiento y meta por separado. Así el "Guardé" del niño y la mesada que entrega el padre no se pisan; lo prueba un test con los dos a la vez.
+- **La base rechaza lo que no es del niño**: sus cuentas, a su hermano o su mesada. Las reglas se prueban con `supabase/pruebas-seguridad.sql`, que corre dentro de una transacción que se deshace; pasó completo contra el proyecto real.
+- **El teléfono del niño entra directo a su perfil**, sin adulto ni "Cambiar de perfil". Si el padre lo desvincula, deja de sincronizar y lo anotado se queda ahí.
+- **El SQL de la nube entra al repo** (`supabase/`): también el de `registros`, que faltaba.
+- **Llega encima de NUBE.2b**: borrar la cuenta del padre se lleva en cascada los códigos y vínculos de sus niños, y el teléfono del niño se entera en su próxima pasada (`vinculo-invalido`) y deja de sincronizar. El error de una pasada del teléfono del niño ya no se descarta por no tener sesión: nunca la tiene.
+
 ### feat(nube): NUBE.2b, borrar la cuenta completa desde Ajustes · 2026-10-28
 
 [ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md) (resolución de NUBE.2b); ficha [`contexto/nube.md`](contexto/nube.md); [SECURITY.md](SECURITY.md) regla 10. SW v618.

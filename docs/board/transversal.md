@@ -178,10 +178,7 @@
 
 ## Iniciativa NUBE - Finko en la nube con Supabase
 
-> Decisión, las cuatro razones del ADR 043 revisadas, seguridad y Ley 1581: **[ADR 096](../DECISIONS/096-finko-en-la-nube-con-supabase.md)**, fuente única, con su resolución en implementación. Cuenta opcional, copia local que manda (offline-first intacto). **NUBE.0 a NUBE.2 cerradas el 2026-10-27 y NUBE.2b el 2026-10-28** (MOV.1 en pausa por decisión en chat): proyecto `finko-prueba` en São Paulo, cuenta por correo solo para invitados, sincronización por registro entre dispositivos y borrar la cuenta completa; detalle en [`contexto/nube.md`](../contexto/nube.md). **Pendiente del dueño de la cuenta**: SMTP propio en Supabase para que el correo de acceso llegue a los probadores. Plan gratis mientras Finko es de prueba; plan pago antes de abrir cuentas a personas fuera del grupo de prueba.
-
-#### NUBE.3 - Familia en la nube
-- Estado : pendiente. **Objetivo**: el padre vincula el teléfono del niño con un código, con su autorización registrada, y ve su avance desde cualquier dispositivo; reglas RLS con test (096 D5). **Modelo**: Potente, Alto.
+> Decisión, las cuatro razones del ADR 043 revisadas, seguridad y Ley 1581: **[ADR 096](../DECISIONS/096-finko-en-la-nube-con-supabase.md)**, fuente única, con su resolución en implementación. Cuenta opcional, copia local que manda (offline-first intacto). **NUBE.0 a NUBE.2 cerradas el 2026-10-27; NUBE.2b y NUBE.3 el 2026-10-28** (MOV.1 en pausa por decisión en chat): proyecto `finko-prueba` en São Paulo, cuenta por correo solo para invitados, sincronización por registro entre dispositivos, borrar la cuenta completa y el teléfono del niño vinculado con un código del padre; detalle en [`contexto/nube.md`](../contexto/nube.md). **Pendiente del dueño de la cuenta**: SMTP propio en Supabase para que el correo de acceso llegue a los probadores. Plan gratis mientras Finko es de prueba; plan pago antes de abrir cuentas a personas fuera del grupo de prueba.
 
 #### NUBE.4 - Bancos
 - Estado : no iniciar; pide su propio ADR (finanzas abiertas en Colombia).

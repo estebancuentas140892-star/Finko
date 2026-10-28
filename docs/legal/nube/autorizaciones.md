@@ -18,6 +18,8 @@
 
 ## 2. Vincular a un niño (padre, madre o representante legal, NUBE.3)
 
+Implementado el 2026-10-27 en Familia, "Su teléfono" (`htmlVincularNino()`); mientras no haya responsable definido, la app dice "Finko" donde va `[PENDIENTE: responsable]`.
+
 **Título:** Autoriza los datos de `{nombre}`
 
 **Texto:** Para que `{nombre}` use Finko en su propio teléfono y tú veas su avance desde el tuyo, guardamos en la nube su nombre o apodo, su edad, su dibujo, sus frascos, su meta, su mesada y sus lecciones. Nunca su correo, teléfono, documento, fotos ni ubicación. Solo tú ves sus datos.

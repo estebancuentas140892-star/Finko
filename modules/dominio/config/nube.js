@@ -21,6 +21,10 @@
  *   usuario y todo lo suyo en el servidor y deja la app sin cuenta. Los
  *   datos de este dispositivo no se tocan; la autorización de la nube sí se
  *   olvida, porque era para esa cuenta.
+ * - Familia (NUBE.3): el padre, con su cuenta, genera en "Su teléfono" un
+ *   código de un solo uso tras autorizar; el teléfono del niño lo canjea
+ *   desde el onboarding por un token que solo abre lo suyo. Ese teléfono
+ *   sincroniza solo su perfil y nunca escribe lo que fija el padre.
  */
 
 import { S, EventBus } from '../../core/state.js';
@@ -31,16 +35,22 @@ import { confirmarPin, PALABRA_BORRAR } from '../../ui/bloqueo-acceso.js';
 import { mostrarToast } from '../../ui/toast.js';
 import { announce } from '../../infra/a11y.js';
 import { renderAll } from '../../infra/render.js';
+import { hoy } from '../../infra/utils.js';
+import { ninos } from '../../infra/perfiles.js';
+import { abrirModal, cerrarModal } from '../../ui/modales.js';
+import { volverAlInicio } from '../../ui/onboarding.js';
 import {
   ErrorNube, leerSesion, guardarSesion, resultadoEnlace, pedirAcceso, entrarConCodigo, cerrarSesion,
   leerLibro, guardarLibro, olvidarLibro, hayRegistros, ultimoCambioNube, bajarRegistros, subirRegistros,
-  borrarRegistros, borrarCuenta, decidirAlEntrar, nombreDispositivo,
+  borrarRegistros, borrarCuenta, decidirAlEntrar, nombreDispositivo, leerVinculo, guardarVinculo, olvidarVinculo,
+  crearCodigoNino, canjearCodigoNino, ninoBajar, ninoSubir, vinculosNino, desvincularNino,
 } from '../../infra/nube.js';
 import {
   libroVacio, marcarCambios, aplicarRemotas, filasPendientes, confirmarSubidas, estadoDesdeNube,
-  libroParaReemplazarNube, cursorConMargen,
+  libroParaReemplazarNube, cursorConMargen, proyeccionNino, soloLecturaNino,
 } from '../../infra/nube-sync.js';
-import { MENSAJES_NUBE, haceCuanto } from './nube-view.js';
+import { MENSAJES_NUBE, haceCuanto, htmlVincularNino, htmlCodigoNino } from './nube-view.js';
+import { VERSION_LEGAL } from './legal.js';
 
 /** Espera tras un guardado antes de sincronizar: agrupa una ráfaga de cambios. */
 const _ESPERA_MS = 3000;
@@ -199,26 +209,48 @@ function _remigrar(version) {
   }
 }
 
+/**
+ * Cómo sincroniza este dispositivo: con la cuenta del adulto (todo su
+ * estado), con el vínculo del teléfono de un niño (solo su perfil, sin
+ * escribir lo que fija el padre) o nada.
+ */
+function _modo() {
+  const v = leerVinculo();
+  if (v) {
+    return {
+      nino: v,
+      proyectar: () => proyeccionNino(S, v.ninoId),
+      soloLectura: soloLecturaNino,
+      bajar: (desde) => ninoBajar(v.token, desde),
+      subir: (filas) => ninoSubir(v.token, filas.filter(f => !soloLecturaNino(`${f.coleccion}/${f.id}`))),
+    };
+  }
+  const s = leerSesion();
+  if (!s || s.porDecidir) return null;
+  return { nino: null, proyectar: () => S, soloLectura: null, bajar: bajarRegistros, subir: subirRegistros };
+}
+
 /** Una pasada completa: marcar, bajar, resolver, subir. Una a la vez. */
 async function _sincronizar() {
-  const s = leerSesion();
-  if (!s || s.porDecidir) return;
+  const m = _modo();
+  if (!m) return;
   if (_sincronizando) { _otraVez = true; return; }
   _sincronizando = true;
   clearTimeout(_timer);
   _timer = null;
   _setSync({ ocupado: true, error: '' });
   try {
-    let libro = marcarCambios(S, leerLibro() ?? libroVacio(), Date.now());
-    const remotas = await bajarRegistros(cursorConMargen(libro.cursor));
-    const res = aplicarRemotas(S, libro, remotas, { version: SCHEMA_VERSION });
+    let libro = marcarCambios(m.proyectar(), leerLibro() ?? libroVacio(), Date.now(), { soloLectura: m.soloLectura });
+    const remotas = await m.bajar(cursorConMargen(libro.cursor));
+    const res = aplicarRemotas(m.proyectar(), libro, remotas, { version: SCHEMA_VERSION });
     libro = res.libro;
     guardarLibro(libro);
     if (res.aplicadas) _aplicarEnPantalla(res.parcial);
 
-    const pendientes = filasPendientes(S, libro, { version: SCHEMA_VERSION, dispositivo: nombreDispositivo() });
+    const pendientes = filasPendientes(m.proyectar(), libro, { version: SCHEMA_VERSION, dispositivo: nombreDispositivo() })
+      .filter(f => !m.soloLectura?.(`${f.coleccion}/${f.id}`));
     if (pendientes.length) {
-      await subirRegistros(pendientes);
+      await m.subir(pendientes);
       guardarLibro(confirmarSubidas(leerLibro() ?? libro, pendientes));
     }
     const ahora = new Date().toISOString();
@@ -231,9 +263,11 @@ async function _sincronizar() {
     if (res.versionMinima < SCHEMA_VERSION) _remigrar(res.versionMinima);
   } catch (err) {
     const codigo = _codigo(err);
-    if (codigo === 'sesion-vencida') _set({ ocupado: false, pendiente: false, error: codigo });
+    if (codigo === 'vinculo-invalido' && m.nino) _vinculoPerdido();
+    else if (codigo === 'sesion-vencida') _set({ ocupado: false, pendiente: false, error: codigo });
     // La sesión se cerró o la cuenta se borró con la pasada en camino: su error no es de nadie.
-    else if (!leerSesion()) _setSync({ ocupado: false, pendiente: false });
+    // El teléfono del niño nunca tiene sesión, así que el suyo sí cuenta.
+    else if (!m.nino && !leerSesion()) _setSync({ ocupado: false, pendiente: false });
     else _setSync({ ocupado: false, pendiente: true, error: codigo === 'sin-red' ? '' : codigo });
   } finally {
     _sincronizando = false;
@@ -242,8 +276,7 @@ async function _sincronizar() {
 }
 
 function _programar() {
-  const s = leerSesion();
-  if (!s || s.porDecidir) return;
+  if (!_modo()) return;
   _estado.pendiente = true;
   clearTimeout(_timer);
   _timer = setTimeout(_sincronizar, _ESPERA_MS);
@@ -366,6 +399,142 @@ async function _borrarCuenta() {
   mostrarToast({ titulo: 'Borraste tu cuenta', detalle: 'Tus datos siguen en este dispositivo.' });
 }
 
+// ── FAMILIA: EL TELÉFONO DEL NIÑO (NUBE.3) ───────────────────────
+
+const _vinc = {
+  ninoId: '',
+  /** @type {'autorizar'|'codigo'} */ paso: 'autorizar',
+  codigo: '',
+  /** @type {any[]} */ vinculos: [],
+  error: '',
+  ocupado: false,
+};
+
+const _modalFamilia = () => document.getElementById('modal-familia');
+
+/** Pinta el modal "Su teléfono" de Familia. */
+function _pintarVinculo() {
+  const nino = ninos().find(p => p.id === _vinc.ninoId);
+  const modal = _modalFamilia();
+  const cuerpo = document.getElementById('modal-familia-body');
+  if (!nino || !modal || !cuerpo) return;
+  const titulo = document.getElementById('modal-familia-title');
+  if (titulo) titulo.textContent = `Su teléfono: ${nino.nombre}`;
+  cuerpo.innerHTML = htmlVincularNino({
+    nino, sesion: Boolean(leerSesion()), paso: _vinc.paso, codigo: _vinc.codigo,
+    vinculos: _vinc.vinculos.filter(v => v.nino_id === nino.id), error: _vinc.error, ocupado: _vinc.ocupado,
+  });
+  if (!('open' in modal.dataset)) abrirModal(modal);
+}
+
+async function _abrirVinculo(el) {
+  Object.assign(_vinc, { ninoId: el?.dataset?.id ?? '', paso: 'autorizar', codigo: '', vinculos: [], error: '', ocupado: false });
+  _pintarVinculo();
+  if (!leerSesion()) return;
+  try {
+    _vinc.vinculos = await vinculosNino();
+    _pintarVinculo();
+  } catch { /* sin la lista se puede igual generar el código */ }
+}
+
+/** @param {HTMLFormElement} form */
+async function _generarCodigo(form) {
+  const representante = form.querySelector('#nube-representante')?.checked;
+  const escuchado = form.querySelector('#nube-escuchado')?.checked;
+  if (!representante || !escuchado) { _vinc.error = 'autorizacion-nino'; return _pintarVinculo(); }
+  Object.assign(_vinc, { ocupado: true, error: '' });
+  _pintarVinculo();
+  try {
+    // El niño tiene que estar en la nube antes de pedir su código.
+    await _sincronizar();
+    _vinc.codigo = await crearCodigoNino(_vinc.ninoId, {
+      version: VERSION_AUTORIZACION_NUBE, fecha: new Date().toISOString(), representante: true, escuchado: true,
+    });
+    Object.assign(_vinc, { paso: 'codigo', ocupado: false });
+    announce('Código generado. Vence en 10 minutos.');
+  } catch (err) {
+    Object.assign(_vinc, { ocupado: false, error: _codigo(err) });
+  }
+  _pintarVinculo();
+}
+
+async function _desvincular(el) {
+  const nino = ninos().find(p => p.id === el?.dataset?.id);
+  if (!nino) return;
+  const ok = await confirmar({
+    titulo:         `Desvincular el teléfono de ${nino.nombre}`,
+    mensaje:        'Su teléfono deja de sincronizar. Lo que anotó hasta ahora se queda en tu nube.',
+    confirmarTexto: 'Desvincular',
+    peligroso:      true,
+  });
+  if (!ok) return;
+  try {
+    await desvincularNino(nino.id);
+    _vinc.vinculos = _vinc.vinculos.filter(v => v.nino_id !== nino.id);
+    announce('Teléfono desvinculado.');
+  } catch (err) {
+    _vinc.error = _codigo(err);
+  }
+  _pintarVinculo();
+}
+
+// El teléfono del niño, desde el onboarding.
+
+const _canje = { error: '', ocupado: false };
+
+function _pintarCanje() {
+  const cuerpo = document.querySelector('#onboarding #onboarding-body');
+  if (!cuerpo) return;
+  cuerpo.innerHTML = htmlCodigoNino(_canje);
+  cuerpo.querySelector('#nube-codigo-nino')?.focus();
+}
+
+/** @param {HTMLFormElement} form */
+async function _canjear(form) {
+  const codigo = String(new FormData(form).get('codigo') ?? '').trim();
+  if (!codigo) { _canje.error = 'codigo-vacio'; return _pintarCanje(); }
+  Object.assign(_canje, { ocupado: true, error: '' });
+  _pintarCanje();
+  try {
+    const vinculo = await canjearCodigoNino(codigo, nombreDispositivo());
+    const filas = await ninoBajar(vinculo.token, null);
+    // Un teléfono sin adulto: onboarding hecho, la aceptación la dio el padre
+    // al autorizar, y el niño como dueño del dispositivo.
+    const base = JSON.parse(JSON.stringify(S));
+    base.onboarded = true;
+    base.config = {
+      ...(base.config ?? {}),
+      dispositivoNino: vinculo.ninoId,
+      legalAceptado: { version: VERSION_LEGAL, fecha: hoy() },
+    };
+    const { estado, libro } = estadoDesdeNube(base, filas, SCHEMA_VERSION);
+    if (!estado.perfiles?.some(p => p.id === vinculo.ninoId)) throw new ErrorNube('nino-sin-sincronizar');
+    guardarVinculo(vinculo);
+    guardarLibro(libro);
+    if (restaurarBlob(JSON.stringify(estado)) === 'ok') {
+      announce('¡Listo! Entrando…');
+      setTimeout(() => location.reload(), 400);
+      return;
+    }
+    throw new ErrorNube('servidor');
+  } catch (err) {
+    Object.assign(_canje, { ocupado: false, error: _codigo(err) });
+    _pintarCanje();
+  }
+}
+
+/** El padre desvinculó este teléfono: deja de sincronizar y lo dice. */
+function _vinculoPerdido() {
+  olvidarVinculo();
+  olvidarLibro();
+  _setSync({ ocupado: false, pendiente: false, error: '' });
+  mostrarToast({
+    titulo: 'Este teléfono ya no se sincroniza',
+    detalle: 'Lo que anotaste se queda aquí. Pide un código nuevo para volver a conectarte.',
+    tono: 'alerta',
+  });
+}
+
 // ── INIT ─────────────────────────────────────────────────────────
 
 /**
@@ -381,12 +550,19 @@ export function initNube({ repintar }) {
   registrarAccion('nube-cerrar-todo',  () => _cerrar(true));
   registrarAccion('nube-borrar',       _borrar);
   registrarAccion('nube-borrar-cuenta', _borrarCuenta);
+  registrarAccion('nube-vincular-nino', _abrirVinculo);
+  registrarAccion('nube-desvincular-nino', _desvincular);
+  registrarAccion('nube-cerrar-modal', () => { const m = _modalFamilia(); if (m && 'open' in m.dataset) cerrarModal(m); });
+  registrarAccion('nube-codigo-nino', () => { Object.assign(_canje, { error: '', ocupado: false }); _pintarCanje(); });
+  registrarAccion('nube-codigo-nino-volver', volverAlInicio);
 
   // Los dos formularios se repintan con el panel: delegación en el documento.
   document.addEventListener('submit', (e) => {
     const form = /** @type {HTMLFormElement} */ (e.target);
     if (form?.id === 'form-nube-correo') { e.preventDefault(); _enviarCorreo(form); }
     else if (form?.id === 'form-nube-codigo') { e.preventDefault(); _entrarConCodigo(form); }
+    else if (form?.id === 'form-nube-vincular') { e.preventDefault(); _generarCodigo(form); }
+    else if (form?.id === 'form-nube-codigo-nino') { e.preventDefault(); _canjear(form); }
   });
 
   EventBus.on('state:save', _programar);
@@ -402,5 +578,5 @@ export function initNube({ repintar }) {
   _estado.ultimaSubida = s?.ultimaSubida ?? '';
   if (resultadoEnlace() === 'error') _estado.error = 'enlace';
   if (s?.porDecidir) _alEntrar();
-  else if (s) _sincronizar();
+  else if (s || leerVinculo()) _sincronizar();
 }
