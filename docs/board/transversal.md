@@ -1,6 +1,6 @@
 # Tablero - Transversal
 
-> Revisado: 2026-10-25.
+> Revisado: 2026-10-28.
 
 > Satélite de [`BOARD.md`](../BOARD.md) (afecta varias secciones). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
 
@@ -178,10 +178,7 @@
 
 ## Iniciativa NUBE - Finko en la nube con Supabase
 
-> Decisión, las cuatro razones del ADR 043 revisadas, seguridad y Ley 1581: **[ADR 096](../DECISIONS/096-finko-en-la-nube-con-supabase.md)**, fuente única, con su resolución en implementación. Cuenta opcional, copia local que manda (offline-first intacto). **NUBE.0, NUBE.1 y NUBE.2 cerradas el 2026-10-27** (MOV.1 en pausa por decisión en chat): proyecto `finko-prueba` en São Paulo, cuenta por correo solo para invitados y sincronización por registro entre dispositivos; detalle en [`contexto/nube.md`](../contexto/nube.md). **Pendiente del dueño de la cuenta**: SMTP propio en Supabase para que el correo de acceso llegue a los probadores. Plan gratis mientras Finko es de prueba; plan pago antes de abrir cuentas a personas fuera del grupo de prueba.
-
-#### NUBE.2b - Borrar la cuenta completa
-- Estado : pendiente. **Objetivo**: desde Ajustes, borrar el usuario de autenticación y, en cascada, todos sus registros; necesita una función de servidor con la clave secreta, que nunca va en el cliente (SECURITY.md sección 8). **Aceptación**: tras borrar, el correo ya no puede entrar y la tabla no tiene filas suyas. **Modelo**: Equilibrado, Medio.
+> Decisión, las cuatro razones del ADR 043 revisadas, seguridad y Ley 1581: **[ADR 096](../DECISIONS/096-finko-en-la-nube-con-supabase.md)**, fuente única, con su resolución en implementación. Cuenta opcional, copia local que manda (offline-first intacto). **NUBE.0 a NUBE.2 cerradas el 2026-10-27 y NUBE.2b el 2026-10-28** (MOV.1 en pausa por decisión en chat): proyecto `finko-prueba` en São Paulo, cuenta por correo solo para invitados, sincronización por registro entre dispositivos y borrar la cuenta completa; detalle en [`contexto/nube.md`](../contexto/nube.md). **Pendiente del dueño de la cuenta**: SMTP propio en Supabase para que el correo de acceso llegue a los probadores. Plan gratis mientras Finko es de prueba; plan pago antes de abrir cuentas a personas fuera del grupo de prueba.
 
 #### NUBE.3 - Familia en la nube
 - Estado : pendiente. **Objetivo**: el padre vincula el teléfono del niño con un código, con su autorización registrada, y ve su avance desde cualquier dispositivo; reglas RLS con test (096 D5). **Modelo**: Potente, Alto.

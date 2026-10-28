@@ -1,6 +1,6 @@
 # SECURITY - Finko Claude
 
-> Revisado: 2026-10-27.
+> Revisado: 2026-10-28.
 
 > Política de seguridad, modelo de amenaza y prácticas recomendadas para el proyecto.
 
@@ -111,4 +111,4 @@ Rige desde NUBE.1. Cada regla con test o verificación propia; una que falte blo
 7. **Sin librería cliente**: `infra/nube.js` habla REST con `fetch` (ADR 096, resolución en NUBE.1). Si algún día entra una, va dentro del repo con versión fija, origen y SHA-256 anotados, y pasa la checklist de la sección 4.
 8. **Desarrollo con datos inventados** en un proyecto de Supabase aparte; nunca datos reales en desarrollo ni en E2E.
 9. **Incidente**: rotar claves, cerrar sesiones, avisar a los titulares afectados y a la SIC cuando la ley lo exija, y dejarlo en el CHANGELOG.
-10. **Borrar de la nube borra todos los registros del usuario**; la cuenta completa (NUBE.2b) necesita una función de servidor. Los respaldos del proveedor vencen en su ciclo ([`legal/nube/`](legal/nube/README.md)).
+10. **Borrar la cuenta borra al usuario y todo lo suyo en la nube** (NUBE.2b): `borrar_mi_cuenta()` solo borra a quien la llama y no usa la clave secreta (`supabase/003-borrar-cuenta.sql`, con su prueba). Toda tabla con datos de un usuario cuelga de `auth.users` con `on delete cascade`. Los respaldos del proveedor vencen en su ciclo ([`legal/nube/`](legal/nube/README.md)).

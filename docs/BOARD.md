@@ -1,6 +1,6 @@
 # Tablero - Finko Claude
 
-> Revisado: 2026-10-27.
+> Revisado: 2026-10-28.
 
 > Tablero Kanban de trabajo pendiente. Reemplaza a `TASKS.md` y `ROADMAP.md` (retirados 2026-07-02, ver [CHANGELOG](CHANGELOG.md)).
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
@@ -76,7 +76,7 @@ Las tarjetas del tablero (la iniciativa HF se lista por fase), para elegir la pr
 | HF.1a a HF.5a | Fases 1 a 5 de la iniciativa HF (24 rebanadas) | Transversal | media | ficha 18 de MOV.1, cierre de MOV.1 |
 | APR.2c y APR.3f | Iniciativa "Aprende y aplícalo": la revisión pedagógica de las lecciones del adulto y del niño | Transversal | media | nada |
 | APR.5b | La ronda 2 de Tino ([ADR 094](DECISIONS/094-tino-el-guatin.md) y [095](DECISIONS/095-tino-en-el-sprite.md)) y los hitos del niño | Transversal | media | los dibujos de la ronda 2 |
-| NUBE.2b a NUBE.4 | Finko en la nube con Supabase: borrar la cuenta, familia y bancos ([ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md)) | Transversal | alta | nada; invitar probadores pide SMTP propio |
+| NUBE.3 y NUBE.4 | Finko en la nube con Supabase: familia y bancos ([ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md)) | Transversal | alta | nada; invitar probadores pide SMTP propio |
 | A.5 | Dominio custom en Vercel | Mantenimiento | baja | que el usuario tenga el dominio registrado |
 | E.2-2027 | Actualizar SMMLV + UVT a valores 2027 | Mantenimiento | alta (enero 2027) | publicación oficial de los decretos 2027 |
 | E.3 | Verificar GMF y otras tasas si hay reforma tributaria | Mantenimiento | baja | que ocurra una reforma |

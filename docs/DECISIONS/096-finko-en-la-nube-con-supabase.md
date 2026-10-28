@@ -139,3 +139,12 @@ Lo que la implementación de NUBE.1 fijó o corrigió de este ADR. El ADR no se 
 - **Versiones distintas de la app:** lo escrito por una app más nueva no se aplica (se avisa); lo de una más vieja se aplica y la app recarga para que sus migraciones lo completen.
 - **Borrar la cuenta completa** necesita una función de servidor: pasa a NUBE.2b.
 
+
+## Resolución en implementación (NUBE.2b, 2026-10-28)
+
+- **Borrar la cuenta completa con una función de base, no con una Edge Function.** `public.borrar_mi_cuenta()` ([`supabase/003-borrar-cuenta.sql`](../../supabase/003-borrar-cuenta.sql)) corre con los permisos de su dueño (`security definer`), no recibe parámetros y borra de `auth.users` solo a quien la llama (`auth.uid()`). Lo suyo en la nube cae en cascada en la misma transacción. La app la llama con su propio token por `/rest/v1/rpc/`: la clave secreta no hace falta en ningún lado, ni como secreto del servidor.
+- **Descartada: Edge Function con la clave secreta** y `auth.admin.deleteUser()`. Es la vía que documenta Supabase, pero suma código Deno fuera de los tests del repo, un despliegue aparte, CORS propio y la clave secreta viva como secreto de la función. La función de base es una sentencia SQL, se prueba como las reglas de acceso y sigue el patrón de las funciones de NUBE.3.
+- **El riesgo que se acepta:** la función escribe en el esquema `auth`, que es de Supabase. Si un día le quita al dueño el permiso de borrar ahí, la función falla entera (nada queda a medias) y la app muestra el error; entonces se pasa a la Edge Function.
+- **Toda tabla con datos de un usuario cuelga de `auth.users` con `on delete cascade`**: es lo que hace que la función no deje nada atrás. Un test unitario lo revisa en cada archivo de `supabase/`.
+- **Los otros dispositivos** se enteran cuando vence su sesión (hasta una hora): el servidor ya no la renueva y vuelven al modo sin cuenta. Lo que intenten subir mientras tanto lo rechaza la llave foránea.
+- **En el dispositivo** quedan los datos (D7); se olvidan la sesión, el libro y la autorización de la nube, que era de esa cuenta. Confirmar pide escribir BORRAR y el PIN, como el texto de [`legal/nube/autorizaciones.md`](../legal/nube/autorizaciones.md) sección 4.

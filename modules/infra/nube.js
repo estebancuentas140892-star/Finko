@@ -1,11 +1,12 @@
 /**
- * infra/nube.js - cliente mínimo de Supabase para la nube de Finko (NUBE.1 y
- * NUBE.2, ADR 096).
+ * infra/nube.js - cliente mínimo de Supabase para la nube de Finko (NUBE.1,
+ * NUBE.2 y NUBE.2b, ADR 096).
  *
  * Sin librería: la autenticación y la API de datos de Supabase son REST, y
  * para lo que usa la nube (pedir el acceso por correo, entrar, renovar la
- * sesión y leer o escribir registros) alcanza con `fetch`. Menos código de
- * terceros dentro del repo (ADN 1, SECURITY.md sección 4).
+ * sesión, leer o escribir registros y borrar la cuenta) alcanza con
+ * `fetch`. Menos código de terceros dentro del repo (ADN 1, SECURITY.md
+ * sección 4).
  *
  * La sesión (`fk_nube`) y el libro de sincronización (`fk_nube_sync`) viven
  * en sus propias claves, fuera de `fk_v1`: son de este dispositivo y no
@@ -341,6 +342,19 @@ export async function borrarRegistros() {
     method: 'DELETE',
     token: s.access_token,
   });
+}
+
+/**
+ * Borra la cuenta completa (NUBE.2b): el usuario de autenticación y, en
+ * cascada, todo lo suyo en la nube. La función del servidor
+ * (`supabase/003-borrar-cuenta.sql`) solo borra a quien la llama, con su
+ * propio token: la clave secreta no hace falta. La sesión de este
+ * dispositivo se olvida, porque ya no existe.
+ */
+export async function borrarCuenta() {
+  const s = await sesionVigente();
+  await _pedir('/rest/v1/rpc/borrar_mi_cuenta', { method: 'POST', token: s.access_token, body: '{}' });
+  olvidarSesion();
 }
 
 // ── DECISIONES PURAS ─────────────────────────────────────────────

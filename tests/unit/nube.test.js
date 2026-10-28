@@ -1,15 +1,17 @@
 /**
- * nube.test.js - NUBE.1 y NUBE.2 (ADR 096): el cliente de Supabase de
+ * nube.test.js - NUBE.1, NUBE.2 y NUBE.2b (ADR 096): el cliente de Supabase de
  * `infra/nube.js`, sus decisiones puras y el bloque de Ajustes. El motor de
  * sincronización tiene su propio archivo (nube-sync.test.js). Sin red:
  * `fetch` se simula y cada prueba revisa el pedido exacto que saldría.
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { readFileSync, readdirSync } from 'node:fs';
+import { resolve } from 'node:path';
 import {
   NUBE_URL, NUBE_CLAVE_PUBLICA, SESION_KEY, ErrorNube, leerSesion, guardarSesion, leerToken,
   capturarEnlaceDeAcceso, pedirAcceso, entrarConCodigo, sesionVigente, cerrarSesion,
-  hayRegistros, ultimoCambioNube, bajarRegistros, subirRegistros, borrarRegistros,
+  hayRegistros, ultimoCambioNube, bajarRegistros, subirRegistros, borrarRegistros, borrarCuenta,
   leerLibro, guardarLibro, olvidarLibro, LIBRO_KEY, hayDatosLocales, decidirAlEntrar, nombreDispositivo,
 } from '../../modules/infra/nube.js';
 import { htmlNube, haceCuanto, MENSAJES_NUBE } from '../../modules/dominio/config/nube-view.js';
@@ -206,6 +208,54 @@ describe('los registros en la nube (NUBE.2)', () => {
   });
 });
 
+describe('borrar la cuenta completa (NUBE.2b)', () => {
+  beforeEach(() => guardarSesion(sesion()));
+
+  it('llama a la función del servidor con el token del usuario, sin la clave secreta, y olvida la sesión', async () => {
+    fetchMock.mockResolvedValue(resp(204, null));
+    await borrarCuenta();
+    const p = pedido(fetchMock);
+    expect(p).toMatchObject({ metodo: 'POST', url: `${NUBE_URL}/rest/v1/rpc/borrar_mi_cuenta`, cuerpo: {} });
+    expect(p.h.apikey).toBe(NUBE_CLAVE_PUBLICA);
+    expect(p.h.Authorization).toBe(`Bearer ${sesion().access_token}`);
+    expect(leerSesion()).toBeNull();
+  });
+
+  it('si la nube no contesta, la sesión queda para volver a intentar', async () => {
+    fetchMock.mockRejectedValueOnce(new TypeError('offline'));
+    await expect(borrarCuenta()).rejects.toMatchObject({ codigo: 'sin-red' });
+    fetchMock.mockResolvedValueOnce(resp(500, { message: 'boom' }));
+    await expect(borrarCuenta()).rejects.toMatchObject({ codigo: 'servidor' });
+    expect(leerSesion()).not.toBeNull();
+  });
+
+  it('sin sesión no hay pedido', async () => {
+    localStorage.clear();
+    await expect(borrarCuenta()).rejects.toMatchObject({ codigo: 'sin-sesion' });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('la función solo borra a quien la llama y nadie sin sesión la puede llamar', () => {
+    const sql = readFileSync(resolve(process.cwd(), 'supabase/003-borrar-cuenta.sql'), 'utf-8');
+    expect(sql).toMatch(/function public\.borrar_mi_cuenta\(\)/);
+    expect(sql).toMatch(/security definer\s+set search_path = ''/);
+    expect(sql).toMatch(/delete from auth\.users where id = yo;/);
+    expect(sql).toMatch(/yo uuid := auth\.uid\(\);/);
+    expect(sql).toMatch(/revoke all on function public\.borrar_mi_cuenta\(\) from public, anon, authenticated;/);
+    expect(sql).toMatch(/grant execute on function public\.borrar_mi_cuenta\(\) to authenticated;/);
+  });
+
+  it('toda tabla con datos de un usuario cae con él: si no, borrar la cuenta la dejaría atrás', () => {
+    const dir = resolve(process.cwd(), 'supabase');
+    const columnas = readdirSync(dir).filter(f => f.endsWith('.sql'))
+      .flatMap(f => readFileSync(resolve(dir, f), 'utf-8').split('\n').map(l => [f, l.trim()]))
+      .filter(([, l]) => /^usuario\s+uuid\b/i.test(l));
+    for (const [f, l] of columnas) {
+      expect(l, f).toMatch(/references auth\.users \(id\) on delete cascade/i);
+    }
+  });
+});
+
 describe('al entrar nunca se pisa un lado sin preguntar', () => {
   const conDatos = { gastos: [{ id: 'g1' }], config: {} };
   const vacio = { gastos: [], cuentas: [], config: {}, onboarded: true };
@@ -266,9 +316,11 @@ describe('el bloque "Guardar en la nube" de Ajustes', () => {
     const html = htmlNube({ ...base, sesion: { email: 'sofi@correo.co' }, ultimaSubida: new Date().toISOString() });
     expect(html).toContain('sofi@correo.co');
     expect(html).toContain('hace un momento');
-    for (const a of ['nube-sincronizar', 'nube-traer', 'nube-cerrar', 'nube-cerrar-todo', 'nube-borrar']) {
+    for (const a of ['nube-sincronizar', 'nube-traer', 'nube-cerrar', 'nube-cerrar-todo', 'nube-borrar', 'nube-borrar-cuenta']) {
       expect(html).toContain(`data-action="${a}"`);
     }
+    expect(html).toContain('Borrar mi cuenta');
+    expect(html).toContain('Lo de este dispositivo se queda.');
   });
 
   it('dice hace cuánto en palabras', () => {

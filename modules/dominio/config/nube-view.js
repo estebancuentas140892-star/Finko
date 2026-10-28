@@ -1,6 +1,6 @@
 /**
- * nube-view.js - el bloque "Guardar en la nube" de Ajustes (NUBE.1 y
- * NUBE.2, ADR 096). Solo HTML, sin estado propio: lo pinta `config/view.js` con el
+ * nube-view.js - el bloque "Guardar en la nube" de Ajustes (NUBE.1, NUBE.2
+ * y NUBE.2b, ADR 096). Solo HTML, sin estado propio: lo pinta `config/view.js` con el
  * estado que lleva `config/nube.js`.
  */
 
@@ -152,6 +152,12 @@ function _conectado(e) {
         <h3 class="config-danger__title">${icon('alert')} Borrar mis datos de la nube</h3>
         <p class="config-danger__desc">Borra todo lo que hay en la nube. Lo de este dispositivo no se toca.</p>
         <button type="button" class="btn btn-danger" data-action="nube-borrar">Borrar de la nube</button>
+      </div>
+      <div class="config-danger">
+        <h3 class="config-danger__title">${icon('alert')} Borrar mi cuenta</h3>
+        <p class="config-danger__desc">Borra tu cuenta y todo lo que hay en la nube, también lo de tus niños. Para volver
+          a usarla necesitas una invitación nueva. Lo de este dispositivo se queda.</p>
+        <button type="button" class="btn btn-danger" data-action="nube-borrar-cuenta">Borrar mi cuenta</button>
       </div>`;
 }
 

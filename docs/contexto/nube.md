@@ -1,6 +1,6 @@
 # Ficha de contexto: Nube (cuenta y sincronización)
 
-> Revisado: 2026-10-27.
+> Revisado: 2026-10-28.
 
 > La cuenta opcional y el respaldo en Supabase. Decisiones: [ADR 096](../DECISIONS/096-finko-en-la-nube-con-supabase.md). Tarjetas: iniciativa NUBE en [`board/transversal.md`](../board/transversal.md). Reglas de seguridad: [SECURITY.md](../SECURITY.md) sección 8. Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -8,23 +8,24 @@
 
 ---
 
-## Cuenta y sincronización en la nube (NUBE.1 y NUBE.2)
+## Cuenta y sincronización en la nube (NUBE.1, NUBE.2 y NUBE.2b)
 
 - **Objetivo**          : no perder los datos al perder el teléfono y tenerlos iguales en todos los dispositivos, sin que la cuenta sea obligatoria.
-- **Estado actual**     : prueba cerrada, solo invitados. **NUBE.1** (cuenta por correo) y **NUBE.2** (sincronización por registro: lo de un dispositivo llega a los otros, también los borrados).
-- **Verificado contra** : commit de NUBE.2 (2026-10-27).
+- **Estado actual**     : prueba cerrada, solo invitados. **NUBE.1** (cuenta por correo), **NUBE.2** (sincronización por registro: lo de un dispositivo llega a los otros, también los borrados) y **NUBE.2b** (borrar la cuenta completa desde Ajustes, con BORRAR y el PIN; los datos del dispositivo se quedan).
+- **Verificado contra** : commit de NUBE.2b (2026-10-28).
 
 **Dónde vive**
 
 | Pieza | Archivo | Ancla |
 |---|---|---|
-| Cliente REST de Supabase (sin librería), sesión y libro | `modules/infra/nube.js` | `pedirAcceso()`, `entrarConCodigo()`, `capturarEnlaceDeAcceso()`, `sesionVigente()`, `hayRegistros()`, `bajarRegistros()`, `subirRegistros()`, `borrarRegistros()`, `leerLibro()`, `decidirAlEntrar()` |
+| Cliente REST de Supabase (sin librería), sesión y libro | `modules/infra/nube.js` | `pedirAcceso()`, `entrarConCodigo()`, `capturarEnlaceDeAcceso()`, `sesionVigente()`, `hayRegistros()`, `bajarRegistros()`, `subirRegistros()`, `borrarRegistros()`, `borrarCuenta()`, `leerLibro()`, `decidirAlEntrar()` |
 | Motor de sincronización (puro) | `modules/infra/nube-sync.js` | `registrosDe()`, `marcarCambios()`, `aplicarRemotas()`, `filasPendientes()`, `confirmarSubidas()`, `estadoDesdeNube()`, `libroParaReemplazarNube()`, `huella()` |
 | Acciones de Ajustes y ciclo de sincronización | `modules/dominio/config/nube.js` | `initNube()`, `estadoNube()`, `_sincronizar()`, `data-action="nube-*"`, escucha `state:save`, `online` y `visibilitychange`, y cada minuto |
 | Bloque "Guardar en la nube" | `modules/dominio/config/nube-view.js` | `htmlNube()`, `MENSAJES_NUBE`, `haceCuanto()` |
 | La sesión que trae el enlace del correo | `modules/ui/bootstrap.js` | `capturarEnlaceDeAcceso()` antes del router |
 | Dominio permitido | `vercel.json`, `netlify.toml` | `connect-src` |
 | Proyecto | Supabase `finko-prueba` (`sa-east-1`) | tabla `public.registros`: una fila por (usuario, colección, id), hora del servidor por trigger, RLS por `auth.uid()`, sin permisos para `anon` |
+| Borrar la cuenta (servidor) | `supabase/003-borrar-cuenta.sql`, prueba en `supabase/pruebas-borrar-cuenta.sql` | `public.borrar_mi_cuenta()`: `security definer`, borra de `auth.users` solo a `auth.uid()`; lo demás cae en cascada |
 
 **Recursos**: la sesión vive en `localStorage` con la clave `fk_nube` y el libro de sincronización (huella, hora y pendiente de cada registro, más el cursor) en `fk_nube_sync`, los dos fuera de `fk_v1`; la autorización aceptada queda en `S.config.autorizacionNube` (versión y fecha) y viaja con el respaldo. Textos de autorización: [`legal/nube/autorizaciones.md`](../legal/nube/autorizaciones.md).
 
@@ -41,10 +42,13 @@
 - **La sesión en `localStorage`** la leería un XSS: por eso `script-src 'self'` sin excepciones y `esc()` en todo dato del usuario.
 - **Plan gratis**: Supabase pausa el proyecto tras una semana sin uso. Los datos siguen en cada dispositivo; se reactiva desde su panel.
 - **`borrarTodo()` limpia todo `localStorage`**: también olvida la sesión de la nube en ese dispositivo, sin cerrarla en el servidor.
+- **Tras borrar la cuenta, los otros dispositivos** siguen con su token hasta que vence (hasta una hora); lo que intenten subir lo rechaza la llave foránea y al vencer vuelven al modo sin cuenta.
+- **`borrar_mi_cuenta()` escribe en el esquema `auth` de Supabase**: si el proveedor quita ese permiso, falla entera y hay que pasar a una Edge Function (ADR 096, resolución de NUBE.2b). Una tabla nueva sin `on delete cascade` a `auth.users` quedaría atrás: lo vigila un test unitario.
 
-**Cambios pendientes**: SMTP propio para invitar a los probadores; NUBE.2b (borrar la cuenta completa, con una función de servidor); NUBE.3 (autorización por niño y su teléfono vinculado). El inicio de sesión real no se probó de punta a punta: falta el primer usuario invitado.
+**Cambios pendientes**: SMTP propio para invitar a los probadores; NUBE.3 (autorización por niño y su teléfono vinculado). El inicio de sesión real y el borrado de la cuenta con un usuario real no se probaron de punta a punta: falta el primer usuario invitado (la función se probó en el servidor dentro de una transacción deshecha).
 
 **Cambios realizados**:
 
+- 2026-10-28 (NUBE.2b): borrar la cuenta completa con `borrar_mi_cuenta()`, función de base sin clave secreta; en el dispositivo quedan los datos y se olvida la autorización.
 - 2026-10-27 (NUBE.2): sincronización por registro con libro local de huellas, borrados que viajan, tabla `registros` en lugar de `respaldos`.
 - 2026-10-27 (NUBE.1): cuenta opcional por correo para invitados, respaldo automático del estado completo, traer al entrar en un dispositivo vacío y elegir cuando hay datos en los dos lados.

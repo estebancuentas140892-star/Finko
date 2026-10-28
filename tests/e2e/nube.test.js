@@ -1,13 +1,13 @@
 /**
- * nube.test.js - NUBE.1 y NUBE.2 (ADR 096): la cuenta en la nube y la
+ * nube.test.js - NUBE.1, NUBE.2 y NUBE.2b (ADR 096): la cuenta en la nube y la
  * sincronización entre dispositivos de punta a punta, con Supabase simulado.
  *
  * Cubre lo que los unitarios no pueden: el formulario de Ajustes, la
  * sincronización que corre sola tras un cambio, el teléfono nuevo que trae
  * todo al entrar, dos dispositivos abiertos a la vez (lo que se agrega o se
- * borra en uno llega al otro) y la elección cuando los dos lados tienen
- * datos. La red a Supabase nunca sale: `page.route` contesta como lo haría
- * el proyecto, con su CORS y su tabla `registros`.
+ * borra en uno llega al otro), la elección cuando los dos lados tienen
+ * datos y borrar la cuenta. La red a Supabase nunca sale: `page.route`
+ * contesta como lo haría el proyecto, con su CORS y su tabla `registros`.
  */
 
 import { Buffer } from 'node:buffer';
@@ -34,7 +34,7 @@ const NEQUI = { id: 'c-2', nombre: 'Nequi', tipo: 'ahorros', saldo: 80000, activ
  */
 function supabaseFalso() {
   const tabla = new Map();
-  const nube = { tabla, subidas: 0, fila: (col, id) => tabla.get(`${col}/${id}`) };
+  const nube = { tabla, subidas: 0, cuentaBorrada: false, borradaCon: '', fila: (col, id) => tabla.get(`${col}/${id}`) };
   let reloj = Date.parse('2026-10-27T10:00:00Z');
 
   const instalar = (page) => page.route(`${NUBE_URL}/**`, async (route) => {
@@ -47,7 +47,7 @@ function supabaseFalso() {
     });
     if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS });
     if (url.pathname === '/auth/v1/otp') {
-      return req.postDataJSON().email === CORREO
+      return req.postDataJSON().email === CORREO && !nube.cuentaBorrada
         ? responder(200, {})
         : responder(422, { code: 422, error_code: 'otp_disabled', msg: 'Signups not allowed for otp' });
     }
@@ -55,6 +55,13 @@ function supabaseFalso() {
       return req.postDataJSON().token === CODIGO
         ? responder(200, { access_token: TOKEN, refresh_token: 'r-1', expires_in: 3600, user: { id: 'u-sofi', email: CORREO } })
         : responder(403, { error_code: 'otp_expired', msg: 'Token has expired or is invalid' });
+    }
+    if (url.pathname === '/rest/v1/rpc/borrar_mi_cuenta') {
+      // El usuario se va y, en cascada, sus registros (supabase/003-borrar-cuenta.sql).
+      nube.cuentaBorrada = true;
+      nube.borradaCon = req.headers().authorization ?? '';
+      tabla.clear();
+      return responder(204, null);
     }
     if (url.pathname === '/rest/v1/registros') {
       if (req.method() === 'POST') {
@@ -182,6 +189,37 @@ test.describe('NUBE - cuenta y sincronización entre dispositivos', () => {
     await page.locator('[data-role="confirmar"]').first().click();
     await expect.poll(() => nombresDeCuentas(page)).toEqual(['Bancolombia']);
     expect(nube.subidas).toBe(0);
+  });
+
+  test('borrar la cuenta: la nube queda vacía, el correo ya no entra y los datos de aquí se quedan', async ({ page }) => {
+    const { nube, instalar } = supabaseFalso();
+    await instalar(page);
+    await sembrar(page, estadoBase({ cuentas: [BANCOLOMBIA] }));
+    await entrar(page);
+    await expect.poll(() => nube.fila('cuentas', 'c-1')?.datos?.nombre).toBe('Bancolombia');
+
+    // Confirmación fuerte: el botón no responde hasta escribir BORRAR.
+    await page.click('[data-action="nube-borrar-cuenta"]');
+    const confirmarBorrado = page.locator('[data-role="confirmar"]');
+    await expect(confirmarBorrado).toBeDisabled();
+    await page.fill('#confirm-palabra', 'BORRAR');
+    await confirmarBorrado.click();
+
+    await expect(page.locator('#form-nube-correo')).toBeVisible();
+    expect(nube.cuentaBorrada).toBe(true);
+    expect(nube.borradaCon).toBe(`Bearer ${TOKEN}`);
+    expect(nube.tabla.size).toBe(0);
+
+    // Este dispositivo queda sin cuenta, con sus datos y sin la autorización de esa cuenta.
+    await expect.poll(async () => (await leerEstado(page)).config?.autorizacionNube).toBeUndefined();
+    expect(await nombresDeCuentas(page)).toEqual(['Bancolombia']);
+    expect(await page.evaluate(() => [localStorage.getItem('fk_nube'), localStorage.getItem('fk_nube_sync')])).toEqual([null, null]);
+
+    // El correo ya no está invitado: no vuelve a entrar.
+    await page.fill('#nube-correo', CORREO);
+    await page.check('#nube-autoriza');
+    await page.click('#form-nube-correo [type="submit"]');
+    await expect(page.locator('#config-nube [role="alert"]')).toContainText('no está invitado a la prueba');
   });
 
   test('un correo no invitado o sin autorización no pide nada', async ({ page }) => {

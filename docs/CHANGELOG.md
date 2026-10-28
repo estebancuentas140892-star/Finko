@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(nube): NUBE.2b, borrar la cuenta completa desde Ajustes · 2026-10-28
+
+[ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md) (resolución de NUBE.2b); ficha [`contexto/nube.md`](contexto/nube.md); [SECURITY.md](SECURITY.md) regla 10. SW v618.
+
+- **Función de base, no Edge Function.** `borrar_mi_cuenta()` corre como su dueño, borra de `auth.users` solo a quien la llama y lo demás cae en cascada en la misma transacción. La app la llama con su propio token: la clave secreta no existe en ningún lado, ni como secreto del servidor.
+- **Probada en `finko-prueba` sin dejar rastro**: `supabase/pruebas-borrar-cuenta.sql` crea dos personas inventadas en una transacción deshecha y comprueba que una se va con sus registros, la otra sigue, un token sin usuario no borra nada y `anon` no la puede llamar (por REST, 401). Falta probarla con un usuario invitado real.
+- **Confirmación fuerte**: escribir BORRAR (el texto de `legal/nube/autorizaciones.md`) y el PIN si hay candado. "Borrar de la nube" de NUBE.1 sigue: borra la copia y deja la cuenta.
+- **En el dispositivo quedan los datos**; se olvidan la sesión, el libro y la autorización de la nube, que era de esa cuenta: una cuenta nueva la vuelve a fechar.
+- **Una pasada de sincronización en camino ya no deja su error** cuando la sesión se cerró o la cuenta se borró mientras tanto.
+- **Un test unitario vigila que toda tabla de `supabase/` con `usuario` cuelgue de `auth.users` con `on delete cascade`**: una que no, quedaría atrás al borrar.
+
 ### feat(app): UPD.3, botón para actualizar la app sin perder datos · 2026-10-28
 
 [ADR 097](DECISIONS/097-version-nueva-con-boton.md), que reemplaza la decisión de alcance de UPD.1; ficha [`contexto/transversal.md`](contexto/transversal.md). SW v617.

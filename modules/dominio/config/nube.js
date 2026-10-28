@@ -1,5 +1,6 @@
 /**
- * nube.js - la cuenta en la nube desde Ajustes (NUBE.1 y NUBE.2, ADR 096).
+ * nube.js - la cuenta en la nube desde Ajustes (NUBE.1, NUBE.2 y NUBE.2b,
+ * ADR 096).
  *
  * Contrato:
  * - Entrar: correo invitado y autorización; Supabase manda un correo con
@@ -16,20 +17,24 @@
  *   confirmación y el PIN, como importar un respaldo. El PIN no viaja (D1).
  * - Borrar de la nube también cierra la sesión: si siguiera abierta, la
  *   siguiente pasada volvería a subir todo.
+ * - Borrar la cuenta (NUBE.2b) pide escribir BORRAR y el PIN, borra el
+ *   usuario y todo lo suyo en el servidor y deja la app sin cuenta. Los
+ *   datos de este dispositivo no se tocan; la autorización de la nube sí se
+ *   olvida, porque era para esa cuenta.
  */
 
 import { S, EventBus } from '../../core/state.js';
 import { save, restaurarBlob, SCHEMA_VERSION } from '../../core/storage.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { confirmar } from '../../ui/confirm.js';
-import { confirmarPin } from '../../ui/bloqueo-acceso.js';
+import { confirmarPin, PALABRA_BORRAR } from '../../ui/bloqueo-acceso.js';
 import { mostrarToast } from '../../ui/toast.js';
 import { announce } from '../../infra/a11y.js';
 import { renderAll } from '../../infra/render.js';
 import {
   ErrorNube, leerSesion, guardarSesion, resultadoEnlace, pedirAcceso, entrarConCodigo, cerrarSesion,
   leerLibro, guardarLibro, olvidarLibro, hayRegistros, ultimoCambioNube, bajarRegistros, subirRegistros,
-  borrarRegistros, decidirAlEntrar, nombreDispositivo,
+  borrarRegistros, borrarCuenta, decidirAlEntrar, nombreDispositivo,
 } from '../../infra/nube.js';
 import {
   libroVacio, marcarCambios, aplicarRemotas, filasPendientes, confirmarSubidas, estadoDesdeNube,
@@ -227,6 +232,8 @@ async function _sincronizar() {
   } catch (err) {
     const codigo = _codigo(err);
     if (codigo === 'sesion-vencida') _set({ ocupado: false, pendiente: false, error: codigo });
+    // La sesión se cerró o la cuenta se borró con la pasada en camino: su error no es de nadie.
+    else if (!leerSesion()) _setSync({ ocupado: false, pendiente: false });
     else _setSync({ ocupado: false, pendiente: true, error: codigo === 'sin-red' ? '' : codigo });
   } finally {
     _sincronizando = false;
@@ -331,6 +338,34 @@ async function _borrar() {
   }
 }
 
+/**
+ * Borra la cuenta completa (NUBE.2b). Los otros dispositivos se enteran
+ * cuando su sesión vence: el servidor ya no la renueva.
+ */
+async function _borrarCuenta() {
+  const ok = await confirmar({
+    titulo:         'Borrar mi cuenta',
+    mensaje:        'Se borra tu cuenta y la copia en la nube, también la de tus niños. Lo de este dispositivo se queda hasta que lo borres aquí. No se puede deshacer.',
+    confirmarTexto: 'Borrar mi cuenta',
+    peligroso:      true,
+    palabra:        PALABRA_BORRAR,
+  });
+  if (!ok || !(await confirmarPin())) return;
+  clearTimeout(_timer);
+  _timer = null;
+  _set({ ocupado: true, error: '' });
+  try {
+    await borrarCuenta();
+  } catch (err) {
+    return _set({ ocupado: false, error: _codigo(err) });
+  }
+  olvidarLibro();
+  delete S.config.autorizacionNube;
+  save();
+  _set({ paso: 'correo', correo: '', autoriza: false, eleccion: null, ultimaSubida: '', pendiente: false, error: '', ocupado: false });
+  mostrarToast({ titulo: 'Borraste tu cuenta', detalle: 'Tus datos siguen en este dispositivo.' });
+}
+
 // ── INIT ─────────────────────────────────────────────────────────
 
 /**
@@ -345,6 +380,7 @@ export function initNube({ repintar }) {
   registrarAccion('nube-cerrar',       () => _cerrar(false));
   registrarAccion('nube-cerrar-todo',  () => _cerrar(true));
   registrarAccion('nube-borrar',       _borrar);
+  registrarAccion('nube-borrar-cuenta', _borrarCuenta);
 
   // Los dos formularios se repintan con el panel: delegación en el documento.
   document.addEventListener('submit', (e) => {
