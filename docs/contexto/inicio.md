@@ -1,6 +1,6 @@
 # Ficha de contexto: Inicio (dashboard)
 
-> Revisado: 2026-10-24.
+> Revisado: 2026-10-29.
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -10,7 +10,15 @@
 
 - **Objetivo**          : pantalla principal e inamovible de la app; hoy muestra saldo (hero a ancho completo), accesos rápidos personalizables, paneles de vencidos/próximos y un resumen semanal.
 - **Estado actual**     : estable, en evolución. **IN.7**, **IN.6a**, **CAL.1**, **TX.8a**, **TX.8b** e **IN.4a** cerradas; **IN.5** (2026-07-06) eliminó "Gasto rápido" y el panel "Gastos por organizar", dejando el hero a ancho completo. **PERF.1** (2026-07-06) paginó por lotes la vista completa de Movimientos (`#movimientos`). **PERF.2** (2026-07-06) memoizó `resumenSemanal()` y `movimientosRecientes()`/`movimientosCompletos()`; sin cambios de comportamiento visible en ninguno de los dos. **IV.2c** (2026-07-10, ADR 031): "Pendientes del mes" y "Próximas prioridades" ganan una etiqueta de texto con el tipo (`.dom-badge`, "el color nunca viaja solo") junto al icono+color de sección ya existentes; corrige un bug real donde un apartado en "Próximas prioridades" heredaba el color de "fijo" en vez del suyo propio. Rediseño mayor decidido en [ADR 028](../DECISIONS/028-inicio-centro-de-control.md) (**aprobado el 2026-07-05**): un rol por bloque, orden vertical definido. **Nota (2026-07-12):** la revisión formal de ese ADR ya existe y está aceptada: [ADR 034](../DECISIONS/034-inicio-v2.md) "Inicio v2" (diseño hifi de Esteban en `Iteración de specimen/design_handoff_inicio_v2/`), que reordena la pantalla (alertas primero, accesos+actividad fusionados al final), rediseña hero/pendientes/resumen y resuelve IN.6b con teja de iniciales (sin foto). **Actualización (2026-07-12):** las 7 rebanadas IN.8a a IN.8g ya cerraron; esta ficha describe el estado vigente en código con el diseño completo de "Inicio v2" implementado.
-- **Verificado contra** : HF.0d (2026-10-17, fuentes de vencidos y próximos). Antes: CFG.4b (commit `3a7a33c`, 2026-08-15, panel "Avisos" suma respaldo-atrasado).
+- **Verificado contra** : MV2.15a (commit `1cb52db`, 2026-10-29, "Atención hoy" de móvil en una lista). Antes: HF.0d (2026-10-17, fuentes de vencidos y próximos).
+
+**"Atención hoy" en móvil es una lista (MV2.15a, [ADR 099](../DECISIONS/099-inicio-movil-hoy-en-una-lista.md) D1 a D4).** Bajo 1024px, `#panel-atencion-hoy` (`ui/atencion-hoy.js`) reemplaza a `#panel-distribuir-inicio`, `#panel-limites`, `#panel-avisos`, `#panel-vencidos` y al rótulo del grupo; los cinco siguen en el DOM y pintándose para escritorio, y `responsive.css` (bloque MV2.15a) decide cuál se ve. Lee `avisosDeHoy` y agrupa por `seccion`; el número de la lente sale de la misma función (`contarAvisosDeHoy`).
+- **Trampa de posición:** la celda va fuera de `.atencion-hoy__avisos` y `.atencion-hoy__obligaciones`. El `:has()` de DSK.1c que decide el `span 12` de escritorio cuenta solo lo de adentro del envoltorio de avisos; adentro, una celda oculta por CSS pero sin `[hidden]` lo habría roto.
+- **"Hoy es hoy":** lo que apunta a una fecha futura no entra (`esDeHoy`). Por eso `#panel-prioridades` en móvil empieza mañana también para préstamos y apartados.
+- **"Pagar" de la lista y de la hoja paga el mismo conjunto** que el lote (`inicio-pagar-lote`): el motor junta `compromiso-vencido` (umbral 1) y `compromiso-proximo` de 0 días, que es lo mismo que `vencidosSinPagar` con umbral 0. Si una de las dos reglas cambia, la cifra del botón deja de ser cierta.
+- **La tarjeta "Pendientes del mes" de móvil (IN.8e) ya no se ve en ningún ancho**, pero `renderPanelVencidos()` la sigue pintando oculta bajo 1024px. Su E2E (`smoke.test.js`, IN.8e) verifica el mismo caso en la lista y la hoja. Retirar ese código es limpieza pendiente, sin tarjeta.
+- **Visto con datos incompletos, sin verificar con datos reales:** una deuda sin `saldoTotal` cuenta como aviso pero el lote la deja fuera ("2 pagos" y el lote abre con 1). Pasaba igual con "Pagar los N" del panel viejo. Toda deuda tiene saldo desde v6.
+- **Pendiente de la iniciativa:** MV2.15b ("Esta semana" en `#panel-prioridades`) y MV2.15c (avatar con hoja de perfil, engranaje fuera). La máscara del ojo todavía no cubre la lista ni la hoja (llega con MV2.8).
 
 **Tarjeta "Tu progreso" nueva (LG.2d, 2026-08-13, [ADR 032](../DECISIONS/032-logros-v2-niveles-y-habitos.md) D6):** `#panel-progreso-inicio`, celda `bento__cell--half` universal (no partida por plataforma) tras la fila de "Resumen de la semana" + "Actividad reciente". La llena `renderTarjetaProgresoInicio()` de `logros/view.js` (ningún dominio importa a otro, ADN 10: mismo mecanismo sibling que el ADR 022 estableció para Ajustes, ahora también junto a este bento); oculta hasta el primer logro desbloqueado. Muestra nivel actual, último logro y próximo objetivo, con link a Análisis (apartado "Tu progreso", donde vive la vitrina completa). Detalle en [`logros.md`](logros.md).
 
@@ -109,6 +117,9 @@
 | Banda de contexto: todo lo que la hace superficie (rejilla 2 columnas, fichas de cuenta, ojo pegado al rótulo, sin gradiente ni blob) | `styles/responsive.css` | bloque `@media (min-width: 1024px)` del final del archivo | fin |
 | Marca "F" y engranaje del saludo, ocultos desde 1024px (DSK.1a, ADR 070 D10) | `styles/responsive.css` | `.perfil-inicio > .perfil-inicio__marca`, `.perfil-inicio > .perfil-inicio__ajustes` | ~32 |
 | Panel "Avisos" (CFG.3b): consume el motor, filtra lo que no tiene panel propio | `modules/dominio/resumen/view.js` | `renderPanelAvisos()`, `_TIPOS_SIN_PANEL_PROPIO` | ~155 |
+| "Atención hoy" de móvil: grupos, copy por clase, lista y hoja (MV2.15a, ADR 099) | `modules/ui/atencion-hoy.js` | `esDeHoy()`, `gruposAtencionHoy()`, `contarAvisosDeHoy()`, `contenidoGrupo()`, `renderAtencionHoy()`, acción `atencion-hoy-ver` | |
+| Celda de la lista y hoja "Avisos de hoy" | `index.html` | `#panel-atencion-hoy`, `#modal-avisos-hoy`, `#avisos-hoy-body` | |
+| Aviso `ingreso-por-distribuir` (compone `estadoDistribucion`, opcional) | `modules/infra/avisos.js` | `_deIngresoPorDistribuir()`, parámetro `distribucion` de `recolectarAvisos()` | |
 | Wiring del panel de avisos (registro + reactividad a 6 colecciones) | `modules/dominio/resumen/index.js` | `initResumen()`, `_SECCIONES_AVISOS` | |
 | Elemento del panel de avisos en el DOM | `index.html` | `#panel-avisos` | ~674 |
 | Tarjeta "Tu progreso" (LG.2d, ADR 032 D6): nivel + último logro + próximo objetivo, ajena a este dominio (la llena `logros/`, ADN 10) | `modules/dominio/logros/view.js` | `renderTarjetaProgresoInicio()`, `_proximoObjetivo()` | |
@@ -159,6 +170,7 @@
 
 **Cambios realizados** (una línea por hito; el detalle vive en el [CHANGELOG](../CHANGELOG.md)):
 
+- 2026-10-29 (MV2.15a, [ADR 099](../DECISIONS/099-inicio-movil-hoy-en-una-lista.md)): en móvil, "Atención hoy" pasa de cuatro paneles a una lista de una fila por clase con hoja "Ver los N"; la lente cuenta lo mismo que la lista; aviso nuevo `ingreso-por-distribuir`.
 - 2026-10-24 (APR.1c, [ADR 092](../DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D1 y D5): Inicio es bloque de tres lentes en móvil (`#tabs-dash`, `ui/bloque-inicio.js`); la celda de la tarjeta "Tu progreso" la ocupa `#panel-siguiente-paso` (la llena `aprende/`). La fila de la tabla de anclas de LG.2d queda histórica.
 - 2026-10-17 (**HF.0d**, BUG-031): lo pagado antes de vencer ya no sale y las fechas siguen la frecuencia. Ver CHANGELOG.
 - 2026-08-20 (**DSK.1c**, [ADR 070](../DECISIONS/070-inicio-centro-de-atencion-en-escritorio.md) D7, cuarta y última rebanada, cierra DSK.1): "Atención hoy" pasa de un mosaico 2x2 dependiente del estado a un reparto fijo (avisos `span 4`, obligaciones `span 8`, `span 12` sin avisos), vía dos envoltorios `display: contents` (`.atencion-hoy__avisos`/`.atencion-hoy__obligaciones`). `#panel-avisos` se mueve en el DOM junto a los otros dos avisos, corrigiendo una inconsistencia que también alcanzaba a móvil.

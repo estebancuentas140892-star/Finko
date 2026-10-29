@@ -70,7 +70,7 @@ Las tarjetas del tablero (la iniciativa HF se lista por fase), para elegir la pr
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
-| MV2.2 | Finko móvil 2, segunda entrega: Inicio, lentes, Distribuir y Más ([ADR 098](DECISIONS/098-finko-movil-2-primera-entrega.md)) | Transversal | media | nada |
+| MV2.2 | Finko móvil 2, segunda entrega: Inicio (sigue MV2.15b, [ADR 099](DECISIONS/099-inicio-movil-hoy-en-una-lista.md)), lentes, Distribuir y Más ([ADR 098](DECISIONS/098-finko-movil-2-primera-entrega.md)) | Transversal | media | nada |
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | cola de diseño de Esteban |
 | PERF.13 | Arranque: 616 ms de hilo bloqueado | Transversal | baja | nada |
 | PERF.14 | Pasar de una hoja a otra sin soltar el fondo | Transversal | baja | nada |

@@ -18,12 +18,12 @@
 
 #### MV2.2 - Finko móvil 2, segunda entrega
 - Prioridad  : media
-- Estado     : pendiente
+- Estado     : en proceso
 - Área       : ambos
-- Objetivo   : lo que la primera entrega ([ADR 098](../DECISIONS/098-finko-movil-2-primera-entrega.md)) dejó del plan MV2 por riesgo de composición: Inicio con lista de avisos y hoja de perfil (MV2.15), las tres lentes con un solo lenguaje visual (MV2.12), Distribuir dentro de Mis cuentas sin modal de pasos (MV2.19), una línea de estado por destino en "Más", los chips de dominio de Movimientos, que todavía desbordan a 390 (R9), y el resto del plan del canvas: peso de botones por dominio (R8), avisos sin borde lateral, primeros pasos en el teléfono, Ajustes como índice (insumo de CFG.6), la fila de Ingresos con hoja, el pie con el teclado de iOS y el año en las fechas de otros años
+- Objetivo   : lo que la primera entrega ([ADR 098](../DECISIONS/098-finko-movil-2-primera-entrega.md)) dejó del plan MV2 por riesgo de composición. Inicio (MV2.15, [ADR 099](../DECISIONS/099-inicio-movil-hoy-en-una-lista.md)) en tres rebanadas: **MV2.15b** "Esta semana" en vez de Próximas prioridades (D5) y **MV2.15c** avatar con hoja de perfil y el engranaje fuera del encabezado (D6, D7). Además: las tres lentes con un solo lenguaje visual (MV2.12), Distribuir dentro de Mis cuentas sin modal de pasos (MV2.19), una línea de estado por destino en "Más", los chips de dominio de Movimientos, que todavía desbordan a 390 (R9), y el resto del plan del canvas: peso de botones por dominio (R8), avisos sin borde lateral, primeros pasos en el teléfono, Ajustes como índice (insumo de CFG.6), la fila de Ingresos con hoja, el pie con el teclado de iOS y el año en las fechas de otros años
 - Riesgo     : Inicio y el asistente de distribución tienen ADR propios (087 y 080): cada pieza se acota con uno nuevo, nunca en silencio
 - Secciones  : Inicio, bloque Gastos, Mis cuentas, menú Más, Movimientos
-- Archivos   : `dominio/resumen/`, `ui/bloque-gastos.js`, `dominio/tesoreria/views/distribucion.js`, `index.html` (`#modal-mas`), `styles/responsive.css` (bloque MV2)
+- Archivos   : `ui/atencion-hoy.js`, `dominio/compromisos/views/dashboard.js`, `ui/quien-usa.js`, `ui/bloque-gastos.js`, `dominio/tesoreria/views/distribucion.js`, `index.html` (`#modal-mas`), `styles/responsive.css` (bloque MV2)
 - Depende de : nada. El canvas "Finko móvil 2" (Claude Design) tiene los prototipos; manda el ADR que se escriba para cada pieza
 - Aceptación : mismas medidas de la auditoría MV2 (primera pantalla, alto por escenario, 320 a 430 px, claro y oscuro) y escritorio sin cambios en E2E
 

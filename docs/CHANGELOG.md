@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(movil): MV2.15a, Inicio móvil: "Atención hoy" en una lista que cuadra · 2026-10-29
+
+[ADR 099](DECISIONS/099-inicio-movil-hoy-en-una-lista.md) (cambia el ADR 087 D5 y acota el orden del 057 D2 a escritorio); ficha [`contexto/inicio.md`](contexto/inicio.md). Primera de tres rebanadas de la fase 8 del canvas. Bajo 1024 px; escritorio sin cambios (E2E). SW v623.
+
+- **Una fila por clase de aviso** (`ui/atencion-hoy.js`), con su acción directa: "Pagar" es el lote de Pendientes del mes, "Distribuir" el aviso de Inicio, "Ver" navega. La clase es la `seccion` del motor, la misma del interruptor de Ajustes: cero vocabulario nuevo. Con uso normal, de cuatro paneles y 1.275 px a una lista de 307 px.
+- **Un solo número**: la lente "Hoy" contaba el préstamo de mañana y no el ingreso por distribuir. Ahora lente, "Ver los N" y título de la hoja salen de `contarAvisosDeHoy()`. Sin avisos y con cuentas, la lente dice "Al día".
+- **Aviso nuevo `ingreso-por-distribuir`** en el motor: compone `estadoDistribucion` y es opcional (solo lo pide `avisosDeHoy`), así que las notificaciones no cambian. Si el cobro es de hoy, el "te llega hoy" del mismo cobro no se cuenta dos veces.
+- **Próximas prioridades empieza mañana** también para préstamos y apartados: lo de hoy ya está arriba. Su test de regresión cambió de sentido a propósito (D2).
+- La lista va fuera de los dos envoltorios de "Atención hoy": el `:has()` de DSK.1c que decide el `span 12` de escritorio cuenta solo lo de adentro.
+- 24 tests unitarios nuevos y 5 E2E con reloj fijo.
+
 ### feat(movil): MV2.1, Finko móvil 2 primera entrega: volver con memoria y filas de una línea · 2026-10-29
 
 [ADR 098](DECISIONS/098-finko-movil-2-primera-entrega.md) (cambia ADR 069 D7, amplía su D8 y cambia DIS.4/G3 solo en móvil); fichas [`contexto/transversal.md`](contexto/transversal.md), [`contexto/gastos.md`](contexto/gastos.md) y [`contexto/nino.md`](contexto/nino.md). Todo bajo 1024 px; escritorio sin cambios (E2E). SW v622.
