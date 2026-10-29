@@ -394,6 +394,53 @@ describe('recolectarAvisos() - día de pago', () => {
   });
 });
 
+// ── INGRESO POR DISTRIBUIR (MV2.15a, ADR 099 D4) ─────────────────
+
+describe('recolectarAvisos() - ingreso por distribuir', () => {
+  const sinDistribuir = { ultimaPeriodo: null, cobroConfirmadoPeriodo: null };
+
+  it('el cobro de hoy sin distribuir avisa en media, de tesorería y marcado como de hoy', () => {
+    const a = de(recolectarAvisos({ ingresos: [ingreso()], distribucion: sinDistribuir, hoyISO: HOY }), 'ingreso-por-distribuir');
+    expect(a.severidad).toBe('media');
+    expect(a.seccion).toBe('tesoreria');
+    expect(a.dias).toBe(0);
+    expect(a.extra).toEqual({ periodoISO: HOY, esHoy: true });
+  });
+
+  it('un cobro de hace días sigue avisando, con los días transcurridos', () => {
+    const a = de(recolectarAvisos({ ingresos: [ingreso({ diaPago: 5 })], distribucion: sinDistribuir, hoyISO: HOY }), 'ingreso-por-distribuir');
+    expect(a.dias).toBe(8);
+    expect(a.sentido).toBe('atraso');
+    expect(a.extra).toEqual({ periodoISO: '2026-08-05', esHoy: false });
+  });
+
+  it('ya distribuido, no avisa', () => {
+    const avisos = recolectarAvisos({
+      ingresos: [ingreso({ diaPago: 5 })],
+      distribucion: { ultimaPeriodo: '2026-08-05', cobroConfirmadoPeriodo: null },
+      hoyISO: HOY,
+    });
+    expect(de(avisos, 'ingreso-por-distribuir')).toBeUndefined();
+  });
+
+  it('un cobro por confirmar no avisa; confirmado, sí (MC.13f)', () => {
+    const nuevo = ingreso({ diaPago: 5, fechaCreacion: '2026-08-10T12:00:00.000Z' });
+    expect(de(recolectarAvisos({ ingresos: [nuevo], distribucion: sinDistribuir, hoyISO: HOY }), 'ingreso-por-distribuir')).toBeUndefined();
+    const confirmado = { ultimaPeriodo: null, cobroConfirmadoPeriodo: '2026-08-05' };
+    expect(de(recolectarAvisos({ ingresos: [nuevo], distribucion: confirmado, hoyISO: HOY }), 'ingreso-por-distribuir')).toBeTruthy();
+  });
+
+  it('es opcional: sin el estado de distribución el motor no lo calcula', () => {
+    expect(recolectarAvisos({ ingresos: [ingreso({ diaPago: 5 })], hoyISO: HOY })).toEqual([]);
+  });
+
+  it('no interrumpe con una notificación (ADR 066 D5)', () => {
+    const avisos = recolectarAvisos({ ingresos: [ingreso({ diaPago: 5 })], distribucion: sinDistribuir, hoyISO: HOY });
+    expect(avisos).toHaveLength(1);
+    expect(avisosQueInterrumpen(avisos)).toEqual([]);
+  });
+});
+
 // ── RESPALDO ATRASADO (CFG.4b, ADR 043 D2.2) ─────────────────────
 
 describe('recolectarAvisos() - respaldo atrasado', () => {

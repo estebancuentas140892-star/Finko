@@ -68,6 +68,7 @@ import { initBloqueAhorro } from './bloque-ahorro.js';
 import { initBloqueInicio } from './bloque-inicio.js';
 import { initVolver } from './volver.js';
 import { initDetalleFila } from './detalle-fila.js';
+import { initAtencionHoy } from './atencion-hoy.js';
 import { initRegistrar } from './registrar.js';
 import { initInstallPrompt } from './install-prompt.js';
 import { initSwAviso } from './sw-aviso.js';
@@ -113,6 +114,8 @@ initRouter(markActiveNav);
 // detrás del router para que su `hashchange` corra con la sección ya visible.
 initVolver();
 initDetalleFila();
+// ADR 099 D1: "Atención hoy" de móvil en una lista, con su hoja.
+initAtencionHoy();
 initOnboarding();
 // APR.3a (ADR 093 D1): con niños en el dispositivo, Finko abre en "¿Quién usa
 // Finko?" y el adulto da su PIN ahí; sin niños, el candado de siempre.

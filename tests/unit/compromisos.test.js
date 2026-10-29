@@ -2868,13 +2868,25 @@ describe('renderPanelPrioridades() - monto por tipo (regresión: deudas sin cifr
     expect(html).toContain('Todo al día');
   });
 
-  it('sí muestra un préstamo personal o apartado que vence hoy (no tienen panel de vencidos propio)', () => {
+  // MV2.15a (ADR 099 D2, "hoy es hoy"): lo de hoy vive en "Atención hoy";
+  // esta lista empieza mañana. Antes mostraba los préstamos y apartados del
+  // día porque no tenían otro panel en móvil.
+  it('un préstamo personal que vence hoy no sale; el de mañana sí', () => {
+    const local = (n) => {
+      const d = new Date();
+      d.setDate(d.getDate() + n);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
     S.compromisos = [];
-    S.personales  = [{ id: 'p1', persona: 'Juan', monto: 100_000, pagado: 0, liquidado: false,
-      fechaLimite: new Date().toISOString().slice(0, 10) }];
+    S.apartados   = [];
+    S.personales  = [
+      { id: 'p1', persona: 'Juan', monto: 100_000, pagado: 0, liquidado: false, fechaLimite: local(0) },
+      { id: 'p2', persona: 'Ana',  monto:  50_000, pagado: 0, liquidado: false, fechaLimite: local(1) },
+    ];
     renderPanelPrioridades();
     const html = document.getElementById('panel-prioridades').innerHTML;
-    expect(html).toContain('Juan te debe');
+    expect(html).not.toContain('Juan te debe');
+    expect(html).toContain('Ana te debe');
   });
 });
 

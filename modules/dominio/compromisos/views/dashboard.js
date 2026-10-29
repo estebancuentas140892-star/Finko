@@ -407,9 +407,11 @@ export function renderPanelPrioridades() {
   // del mes" (panel-vencidos, vía detectarVencidosCompletos): sin este
   // filtro, un mismo compromiso aparece duplicado el día que vence (IN.7).
   // Con los gastos, lo pagado antes de vencer no sale (HF.0d).
+  // MV2.15a (ADR 099 D2, "hoy es hoy"): préstamos y apartados que vencen hoy
+  // también pasaron a "Atención hoy"; esta lista empieza mañana.
   const proxComp = compromisosProximos(S.compromisos, 7, new Date(), S.gastos).filter(c => c.diasRestantes > 0);
-  const proxPers = _personalesProximos(7);
-  const proxApar = _apartadosProximos(7);
+  const proxPers = _personalesProximos(7).filter(p => p.diasRestantes > 0);
+  const proxApar = _apartadosProximos(7).filter(a => a.diasRestantes > 0);
 
   const compActivos = compromisosActivos(S.compromisos).length > 0;
   if (!compActivos && proxPers.length === 0 && proxApar.length === 0) {

@@ -507,11 +507,13 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await expect(page.locator('#saldo-detalle-toggle')).toBeVisible();
   });
 
-  test('Pendientes del mes sin línea roja, badge corto y "Ver calendario" al calendario (IN.8e, ADR 034 D5)', async ({ page }) => {
-    // Móvil explícito desde DSK.1d (ADR 070 D8): en escritorio estas dos
-    // tarjetas ya no existen por separado, viven fusionadas en "Lo que tienes
-    // que pagar". Lo que este test cubre es la forma de móvil, que no cambió,
-    // así que declara el ancho en vez de heredar el 1280 del proyecto.
+  test('Pendientes del mes en móvil: lo vencido y lo de hoy viven en "Atención hoy" (IN.8e, ADR 099 D1)', async ({ page }) => {
+    // La tarjeta "Pendientes del mes" de móvil (IN.8e) ya no se ve bajo
+    // 1024px: la reemplaza la lista de "Atención hoy" (MV2.15a, ADR 099). El
+    // caso es el mismo de siempre (uno vencido hace 2 días y uno que vence
+    // hoy) y se verifica donde vive ahora: una fila de pagos y la hoja.
+    // En escritorio estas obligaciones siguen fusionadas en "Lo que tienes
+    // que pagar" (DSK.1d, ADR 070 D8), con sus propias pruebas.
     await page.setViewportSize({ width: 390, height: 844 });
     // BUG-021: el caso que esta prueba describe ("venció hace 2 días" junto a
     // "vence hoy") solo existe en un día del mes con margen a ambos lados, así
@@ -535,7 +537,8 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
       ingresos: [],
       gastos: [],
       compromisos: [
-        { id: 'v1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad', cuotaMensual: 180000, diaPago: diaPasado, activo: true, frecuencia: 'Mensual' },
+        // Con saldo, como toda deuda desde v6: sin él el lote la deja fuera.
+        { id: 'v1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad', saldoTotal: 2000000, cuotaMensual: 180000, diaPago: diaPasado, activo: true, frecuencia: 'Mensual' },
         { id: 'v2', descripcion: 'Netflix', tipo: 'fijo', monto: 44900, diaPago: dia, activo: true, frecuencia: 'Mensual' },
       ],
       metas: [],
@@ -543,36 +546,28 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await page.goto('/');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
 
-    const panel = page.locator('#panel-vencidos');
-    await expect(panel).toBeVisible();
+    await expect(page.locator('#panel-vencidos')).toBeHidden();
 
-    // Sin línea roja de alarma en toda la tarjeta (ADR 019: gastar no es incumplir).
-    await expect(panel.locator('.vencidos-card')).toHaveCSS('border-left-width', '1px');
+    // Una fila por clase: los dos pagos son una sola, con el atraso en texto.
+    const fila = page.locator('#panel-atencion-hoy .atencion-hoy__fila').first();
+    await expect(fila).toContainText('2 pagos para hoy');
+    await expect(fila).toContainText('1 ya vencido');
 
-    // Título sin conteo embebido; el número vive en el badge circular.
-    await expect(panel.locator('.vencidos-card__title')).toHaveText('Pendientes del mes 2');
-    await expect(panel.locator('.vencidos-card__counter')).toHaveText('2');
+    // La hoja dice cada uno con su estado: el vencido en danger, el de hoy
+    // en warning (sin línea roja en ninguna parte, ADR 019).
+    await page.locator('#panel-atencion-hoy [data-action="atencion-hoy-ver"]').click();
+    const hoja = page.locator('#modal-avisos-hoy');
+    const visa = hoja.locator('.avisos-hoy__item', { hasText: 'Tarjeta Visa' });
+    await expect(visa.locator('.avisos-hoy__item-s')).toHaveText('Venció hace 2 días');
+    await expect(visa.locator('.avisos-hoy__item-s')).toHaveClass(/--danger/);
+    const netflix = hoja.locator('.avisos-hoy__item', { hasText: 'Netflix' });
+    await expect(netflix.locator('.avisos-hoy__item-s')).toHaveText('Vence hoy');
+    await expect(netflix.locator('.avisos-hoy__item-s')).toHaveClass(/--warning/);
 
-    // Ítem vencido: badge corto "Deuda" + estado en color danger, sin borde propio.
-    const item1 = panel.locator('.vencidos-card__item').first();
-    await expect(item1).toContainText('Deuda');
-    await expect(item1.locator('.vencidos-card__estado')).toHaveText('Venció hace 2 días');
-    await expect(item1.locator('.vencidos-card__estado')).toHaveClass(/--danger/);
-
-    // Ítem que vence hoy: badge corto "Gasto fijo" + estado en color warning.
-    const item2 = panel.locator('.vencidos-card__item').nth(1);
-    await expect(item2).toContainText('Gasto fijo');
-    await expect(item2.locator('.vencidos-card__estado')).toHaveText('Vence hoy');
-    await expect(item2.locator('.vencidos-card__estado')).toHaveClass(/--warning/);
-
-    // Ficha 02 (ADR 069): la salida del panel apunta a la lente "Por pagar",
-    // que es la duena del contenido. Antes iba al calendario, que ademas bajo
-    // al menu "Mas".
-    const verTodos = panel.locator('.vencidos-card__link');
-    await expect(verTodos).toHaveText('Ver todos');
-    await expect(verTodos).toHaveAttribute('href', '#compromisos');
-    await verTodos.click();
-    await expect(page.locator('#sec-compromisos.active')).toBeVisible();
+    // Y se pagan juntos: el lote trae exactamente esos dos.
+    await hoja.locator('.avisos-hoy__cta[data-target-action="inicio-pagar-lote"]').click();
+    await expect(page.locator('#modal-pago-lote')).toHaveAttribute('data-open', '');
+    await expect(page.locator('#modal-pago-lote-body input[type="checkbox"]')).toHaveCount(2);
   });
 
   test('Avisos: apartado listo, día de pago y préstamo vencido, sin repetir lo de otros paneles (CFG.3b, ADR 066)', async ({ page }) => {
@@ -6023,7 +6018,8 @@ test.describe('DSK.1c - "Atención hoy" deja de ser un 2x2 dependiente del estad
       metas: [],
     });
     await page.goto('/#dash');
-    await page.waitForSelector('#panel-limites:not([hidden])', { timeout: 10_000 });
+    // `attached`: bajo 1024px el panel se pinta pero no se ve (ADR 099 D1).
+    await page.waitForSelector('#panel-limites:not([hidden])', { state: 'attached', timeout: 10_000 });
   }
 
   // El defecto que corrige: el emparejamiento por tipo (avisos con avisos,
@@ -6089,7 +6085,7 @@ test.describe('DSK.1c - "Atención hoy" deja de ser un 2x2 dependiente del estad
     expect(anchos.obligaciones).toBe(anchos.banda);
   });
 
-  // Móvil no se toca por CSS (ADR 070, alcance desde 1024px): los
+  // Móvil no se toca por CSS del ADR 070 (alcance desde 1024px): los
   // envoltorios desaparecen de la caja y las celdas siguen apilándose por
   // orden de DOM. Ese orden sí se movió (panel-avisos sube junto a los
   // otros dos avisos, antes quedaba suelto al final): es la misma regla

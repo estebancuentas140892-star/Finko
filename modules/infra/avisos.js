@@ -13,7 +13,7 @@
  *
  * **No detecta nada nuevo** (ADR 066 D3): cada tipo se apoya en la función que
  * ya vive en su dominio, ya testeada. Acá solo se filtra, se clasifica por
- * severidad y se ordena. Por eso este archivo importa cinco `logic.js` de
+ * severidad y se ordena. Por eso este archivo importa seis `logic.js` de
  * dominios: es un recolector, y un recolector está encima de sus fuentes. Lo
  * hace por la vía que autoriza el
  * [ADR 060](../../docs/DECISIONS/060-lectura-cross-domain-de-solo-lectura.md):
@@ -31,12 +31,16 @@ import { vencidosSinPagar, compromisosProximos } from '../dominio/compromisos/lo
 import { alertasLimites } from '../dominio/presupuesto/logic.js';
 import { apartadosProximos, estaListoParaReiniciar } from '../dominio/apartados/logic.js';
 import { estadoPrestamo, calcularPendiente } from '../dominio/personales/logic.js';
+import { estadoDistribucion } from '../dominio/tesoreria/logic.js';
 import { diasHastaFecha } from './bolsas.js';
 import { ocurrenciasEnMes } from './vencimientos.js';
 
 // ── VOCABULARIO DEL MOTOR ────────────────────────────────────────
 
-/** Los ocho tipos de aviso, en el orden de la tabla del ADR 066 D3. */
+/**
+ * Los tipos de aviso, en el orden de la tabla del ADR 066 D3; los dos últimos
+ * llegaron después (CFG.4b y MV2.15a, ADR 099 D4).
+ */
 export const TIPOS_AVISO = Object.freeze([
   'compromiso-vencido',
   'compromiso-proximo',
@@ -48,6 +52,7 @@ export const TIPOS_AVISO = Object.freeze([
   'prestamo-proximo',
   'dia-de-pago',
   'respaldo-atrasado',
+  'ingreso-por-distribuir',
 ]);
 
 /** Severidades de mayor a menor. El orden del array ES el ranking. */
@@ -300,6 +305,40 @@ function _deDiaDePago(ingresos, anio, mes, dia) {
 }
 
 /**
+ * El cobro del periodo llegó y todavía no se distribuye (MV2.15a, ADR 099 D4).
+ *
+ * Es el mismo guard del aviso de distribuir de Inicio (CAL.1) y del panel de
+ * Mis cuentas, `estadoDistribucion`, con sus mismas entradas: el último
+ * periodo distribuido y el cobro que el usuario confirmó (MC.13f). Solo
+ * `listo` avisa: 'por-confirmar' pregunta en Mis cuentas, no acá.
+ *
+ * Es opcional: sin `distribucion` no se calcula, así que las notificaciones y
+ * las superficies que no lo piden ven el motor de siempre. `media` no
+ * interrumpe (ADR 066 D5).
+ */
+function _deIngresoPorDistribuir(ingresos, distribucion, hoyISO) {
+  if (!distribucion) return [];
+  const estado = estadoDistribucion(
+    Array.isArray(ingresos) ? ingresos : [],
+    distribucion.ultimaPeriodo ?? null,
+    _fechaRef(hoyISO),
+    distribucion.cobroConfirmadoPeriodo ?? null,
+  );
+  if (estado.estado !== 'listo') return [];
+
+  return [_aviso({
+    tipo:      'ingreso-por-distribuir',
+    severidad: 'media',
+    id:        estado.periodoISO,
+    nombre:    '',
+    dias:      _diasTranscurridos(estado.periodoISO, hoyISO),
+    sentido:   'atraso',
+    seccion:   'tesoreria',
+    extra:     { periodoISO: estado.periodoISO, esHoy: estado.esHoy },
+  })];
+}
+
+/**
  * Días transcurridos entre `desde` (pasado) y `hoyISO`, siempre positivo o
  * cero. Reusa `diasHastaFecha`, escrita para fechas futuras: para una fecha
  * pasada devuelve negativo, así que acá se invierte el signo.
@@ -380,6 +419,9 @@ export function hayDatosParaRespaldar({
  *                                                  si nunca hubo un respaldo.
  * @param {boolean} [params.hayDatosParaRespaldar]  Si hay algo que perder (ver la función del
  *                                                  mismo nombre exportada por este módulo).
+ * @param {{ultimaPeriodo: string|null, cobroConfirmadoPeriodo: string|null}|null} [params.distribucion]
+ *        `S.config.ultimaDistribucionPeriodo` y `S.config.cobroConfirmadoPeriodo`. Sin él no
+ *        hay `ingreso-por-distribuir` (MV2.15a, ADR 099 D4).
  * @param {string} params.hoyISO         'YYYY-MM-DD' de referencia (inyectable).
  * @returns {Aviso[]} `[]` si `hoyISO` no es una fecha con forma válida.
  */
@@ -393,6 +435,7 @@ export function recolectarAvisos({
   ultimoRespaldoISO = null,
   primerUsoISO = null,
   hayDatosParaRespaldar: hayDatos = false,
+  distribucion = null,
   hoyISO,
 } = {}) {
   const m = _RX_HOY.exec(String(hoyISO ?? ''));
@@ -410,6 +453,7 @@ export function recolectarAvisos({
     ..._dePrestamos(personales, hoyISO),
     ..._deDiaDePago(ingresos, anio, mes, dia),
     ..._deRespaldo(ultimoRespaldoISO, primerUsoISO, hoyISO, hayDatos),
+    ..._deIngresoPorDistribuir(ingresos, distribucion, hoyISO),
   ];
 
   return avisos.sort((a, b) => {
@@ -488,6 +532,10 @@ export function avisosDeHoy(state, hoyISO) {
         personales: state.personales, ingresos: state.ingresos, gastos: state.gastos,
         cuentas: state.cuentas, metas: state.metas, inversiones: state.inversiones,
       }),
+      distribucion: {
+        ultimaPeriodo:          state.config?.ultimaDistribucionPeriodo ?? null,
+        cobroConfirmadoPeriodo: state.config?.cobroConfirmadoPeriodo ?? null,
+      },
       hoyISO,
     }),
     state.config?.avisosPorSeccion,

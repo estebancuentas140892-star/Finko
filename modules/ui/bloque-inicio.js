@@ -17,7 +17,7 @@
 import { S, EventBus } from '../core/state.js';
 import { hoy } from '../infra/utils.js';
 import { registrarRender, programarRender } from '../infra/render.js';
-import { avisosDeHoy } from '../infra/avisos.js';
+import { contarAvisosDeHoy } from './atencion-hoy.js';
 import { siguienteLeccion } from '../dominio/aprende/logic.js';
 import { resumenProgreso } from '../dominio/logros/logic.js';
 
@@ -49,19 +49,23 @@ export function htmlBloqueInicio() {
 /**
  * El estado que cada pestaña lleva encima. Puro respecto al DOM.
  *
- * - Hoy: cuántos avisos hay, con el mismo conjunto que "Atención hoy".
+ * - Hoy: cuántos avisos hay detrás de las filas de "Atención hoy": el mismo
+ *   número de "Ver los N" y de la hoja (MV2.15a, ADR 099 D3). Lo de mañana no
+ *   cuenta: no es de hoy. Sin avisos y con cuentas, "Al día" (la lista dice
+ *   lo mismo con su línea verde); sin cuentas no hay estado que inventar.
  * - Aprende: cuánto dura la lección que sigue.
  * - Tu progreso: el nivel actual.
  *
  * @param {typeof S} [state=S]
  * @param {string} [hoyISO=hoy()]
- * @returns {{ avisos: number, minutos: number | null, nivel: string }}
+ * @returns {{ avisos: number, alDia: boolean, minutos: number | null, nivel: string }}
  */
 export function estadoLentesInicio(state = S, hoyISO = hoy()) {
-  const avisos = avisosDeHoy(state, hoyISO).length;
+  const avisos = contarAvisosDeHoy(state, hoyISO);
+  const alDia = avisos === 0 && (state.cuentas ?? []).some(c => c.activa !== false);
   const minutos = siguienteLeccion(state.aprende)?.minutos ?? null;
   const nivel = resumenProgreso(state).nivel.nombre;
-  return { avisos, minutos, nivel };
+  return { avisos, alDia, minutos, nivel };
 }
 
 /**
@@ -69,11 +73,11 @@ export function estadoLentesInicio(state = S, hoyISO = hoy()) {
  * decorativo (`aria-hidden`); lo que oye el lector es el nombre accesible de
  * la pestaña, que se reescribe con el estado (mismo criterio que Gastos).
  *
- * @param {{ avisos: number, minutos: number | null, nivel: string }} [estado]
+ * @param {{ avisos: number, alDia?: boolean, minutos: number | null, nivel: string }} [estado]
  */
 export function sincronizarBloqueInicio(estado = estadoLentesInicio()) {
   const textos = {
-    dash:     estado.avisos > 0 ? `${estado.avisos} ${estado.avisos === 1 ? 'aviso' : 'avisos'}` : '',
+    dash:     estado.avisos > 0 ? `${estado.avisos} ${estado.avisos === 1 ? 'aviso' : 'avisos'}` : (estado.alDia ? 'Al día' : ''),
     aprende:  estado.minutos ? `${estado.minutos} min` : '',
     progreso: estado.nivel,
   };

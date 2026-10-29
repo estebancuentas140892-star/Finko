@@ -783,6 +783,18 @@
             <h2 class="bento__group-label" id="label-atencion-hoy">Atención hoy</h2>
             <div class="bento__group-cells">
 
+              <!-- ATENCIÓN HOY EN MÓVIL (MV2.15a, ADR 099 D1 a D3): una fila
+                   por clase de aviso, cada una con su acción, tope de tres, y
+                   "Ver los N" abre la hoja #modal-avisos-hoy. Reemplaza bajo
+                   1024px a los cuatro paneles de aviso de abajo, que siguen
+                   en el DOM para escritorio (responsive.css decide). Va fuera
+                   de los dos envoltorios a propósito: el :has() de DSK.1c
+                   cuenta solo lo que hay dentro de `.atencion-hoy__avisos`.
+                   ui/atencion-hoy.js lo llena; [hidden] en escritorio y sin
+                   cuentas ni avisos. -->
+              <div id="panel-atencion-hoy" class="bento__cell bento__cell--full bento__cell--flat atencion-hoy"
+                   role="region" aria-labelledby="atencion-hoy-titulo" hidden></div>
+
               <div class="atencion-hoy__avisos">
 
                 <!-- DISTRIBUIR INGRESO: nudge (CAL.1, ADR 028 D4). Visible solo
@@ -2034,6 +2046,22 @@
         <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
       </button>
       <div class="detalle-fila__body" id="detalle-fila-body"></div>
+    </div>
+  </div>
+
+  <!-- Hoja "Avisos de hoy" (MV2.15a, ADR 099 D3): todos los avisos de hoy
+       agrupados por clase, con su severidad en texto y la acción del grupo.
+       ui/atencion-hoy.js la arma al abrirla desde "Ver los N". -->
+  <div class="modal-overlay modal-overlay--sheet" id="modal-avisos-hoy"
+       role="dialog" aria-modal="true"
+       aria-labelledby="avisos-hoy-titulo" aria-hidden="true">
+    <div class="modal modal--sheet avisos-hoy">
+      <span class="mas-sheet__handle" aria-hidden="true"></span>
+      <button class="modal__close mas-sheet__close" type="button"
+              data-action="modal-close" aria-label="Cerrar">
+        <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
+      </button>
+      <div class="avisos-hoy__body" id="avisos-hoy-body"></div>
     </div>
   </div>
 

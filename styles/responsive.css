@@ -2251,3 +2251,208 @@
      instalada en iPhone el contenido nacía debajo del reloj. */
   .main-content { padding-top: env(safe-area-inset-top, 0px); }
 }
+
+/* ════════════════════════════════════════════════════════════
+   MV2.15a · INICIO: ATENCIÓN HOY EN UNA LISTA (ADR 099 D1 a D3)
+   ════════════════════════════════════════════════════════════
+   Bajo 1024px los cuatro paneles de aviso de Inicio ceden su lugar a una
+   lista con hoja (ui/atencion-hoy.js): una fila por clase, tope de tres, y
+   "Ver los N" abre todos. Desde 1024px la lista no existe y los paneles
+   siguen como siempre: escritorio no cambia. */
+
+@media (min-width: 1024px) {
+  #panel-atencion-hoy { display: none; }
+}
+
+@media (max-width: 1023px) {
+
+  /* Lo que la lista reemplaza. El rótulo del grupo también: la lista trae
+     el suyo, con "Ver los N" en la misma fila. */
+  #label-atencion-hoy,
+  #panel-distribuir-inicio,
+  #panel-limites,
+  #panel-avisos,
+  #panel-vencidos { display: none; }
+
+  .atencion-hoy__cabeza {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--fk-space-2);
+    /* La celda ya separa con su gap; "Ver los N" mide 44px de alto por el
+       piso táctil y alejaba el rótulo de su lista. */
+    margin-bottom: calc(-1 * var(--fk-space-2));
+  }
+  /* Mismo rótulo que el resto de grupos de Inicio (`.bento__group-label`). */
+  .atencion-hoy__titulo {
+    margin: 0;
+    padding-left: 2px;
+    font-size: var(--fk-text-xs);
+    font-weight: var(--fk-font-bold);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--fk-text-muted);
+  }
+  .atencion-hoy__ver {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fk-space-1);
+    min-height: 44px;
+    padding: 0 var(--fk-space-1);
+    border: 0;
+    background: none;
+    font: inherit;
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-accent);
+    cursor: pointer;
+  }
+
+  .atencion-hoy__lista,
+  .atencion-hoy__ok {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    background: var(--fk-bg-surface);
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-lg);
+    overflow: hidden;
+  }
+  .atencion-hoy__fila,
+  .atencion-hoy__ok {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--fk-space-3);
+    padding: var(--fk-space-3) var(--fk-space-4);
+  }
+  .atencion-hoy__ok { grid-template-columns: auto minmax(0, 1fr); }
+  .atencion-hoy__fila + .atencion-hoy__fila { border-top: 1px solid var(--fk-border-subtle); }
+
+  /* La teja dice la clase con su dibujo; el tono, la severidad. Nunca solo
+     el color: la severidad también va en texto (sr-only en la fila, a la
+     vista en la hoja). */
+  .atencion-hoy__icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--fk-space-10);
+    height: var(--fk-space-10);
+    border-radius: var(--fk-radius-md);
+  }
+  .atencion-hoy__icono--danger  { background: var(--fk-danger-bg);  color: var(--fk-danger-text); }
+  .atencion-hoy__icono--warning { background: var(--fk-warning-bg); color: var(--fk-warning-text); }
+  .atencion-hoy__icono--info    { background: var(--fk-info-bg);    color: var(--fk-info-text); }
+  .atencion-hoy__icono--ok      { background: var(--fk-success-bg); color: var(--fk-success-text); }
+
+  .atencion-hoy__textos { min-width: 0; }
+  .atencion-hoy__frase {
+    margin: 0;
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-primary);
+    overflow-wrap: anywhere;
+  }
+  .atencion-hoy__detalle {
+    margin: 0;
+    font-size: var(--fk-text-xs);
+    color: var(--fk-text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+  .atencion-hoy__accion {
+    min-height: 44px;
+    white-space: nowrap;
+  }
+
+  /* La hoja "Avisos de hoy": un grupo por clase, su severidad en texto y la
+     acción completa del grupo a lo ancho. */
+  .avisos-hoy__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fk-space-5);
+    padding: var(--fk-space-2) var(--fk-space-5) var(--fk-space-5);
+  }
+  .avisos-hoy__titulo {
+    margin: 0;
+    padding-right: var(--fk-space-10);
+    font-size: var(--fk-text-lg);
+    font-weight: var(--fk-font-bold);
+    color: var(--fk-text-primary);
+  }
+  .avisos-hoy__grupo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fk-space-2);
+  }
+  .avisos-hoy__grupo-cabeza {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--fk-space-2);
+  }
+  .avisos-hoy__grupo-titulo {
+    margin: 0;
+    font-size: var(--fk-text-xs);
+    font-weight: var(--fk-font-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fk-text-secondary);
+  }
+  .avisos-hoy__sev {
+    padding: var(--fk-space-1) var(--fk-space-2);
+    border-radius: var(--fk-radius-full);
+    font-size: var(--fk-text-xs);
+    font-weight: var(--fk-font-semibold);
+  }
+  .avisos-hoy__sev--danger  { background: var(--fk-danger-bg);  color: var(--fk-danger-text); }
+  .avisos-hoy__sev--warning { background: var(--fk-warning-bg); color: var(--fk-warning-text); }
+  .avisos-hoy__sev--info    { background: var(--fk-info-bg);    color: var(--fk-info-text); }
+  .avisos-hoy__lista {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    background: var(--fk-bg-surface);
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-lg);
+  }
+  .avisos-hoy__item {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    min-height: 56px;
+    padding: var(--fk-space-2) var(--fk-space-4);
+  }
+  .avisos-hoy__item + .avisos-hoy__item { border-top: 1px solid var(--fk-border-subtle); }
+  .avisos-hoy__item-textos { flex: 1; min-width: 0; }
+  .avisos-hoy__item-t {
+    margin: 0;
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-primary);
+    overflow-wrap: anywhere;
+  }
+  .avisos-hoy__item-s {
+    margin: 0;
+    font-size: var(--fk-text-xs);
+    color: var(--fk-text-secondary);
+  }
+  .avisos-hoy__item-s--danger  { color: var(--fk-danger-text); }
+  .avisos-hoy__item-s--warning { color: var(--fk-warning-text); }
+  .avisos-hoy__item-v {
+    flex-shrink: 0;
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-semibold);
+    font-variant-numeric: tabular-nums;
+    color: var(--fk-text-primary);
+  }
+  .avisos-hoy__cta {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+  }
+  .avisos-hoy__nota {
+    margin: 0;
+    font-size: var(--fk-text-xs);
+    color: var(--fk-text-secondary);
+  }
+}
