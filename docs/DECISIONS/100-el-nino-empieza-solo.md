@@ -49,6 +49,8 @@ El mismo modo de NUBE.3 (`dispositivoNino`): sin adulto, sin PIN, sin nube. Todo
 
 Un enlace discreto en la pestaña "Yo" del niño, con confirmación. Crea el adulto con su nombre, su PIN (el ADR 093 D1 exige candado con niños en el dispositivo) y la aceptación completa de los documentos. El niño queda como perfil de ese adulto, con todo lo que tenía.
 
+Nada se guarda hasta aceptar los documentos: "Volver" deja el teléfono como estaba. Al terminar entra el adulto, que acaba de crear su PIN, y al volver a abrir Finko aparece "¿Quién usa Finko?". No se ofrece en un teléfono del niño unido a la nube de su familia (NUBE.3): ahí el adulto ya existe en su propio teléfono y lo maneja desde Familia.
+
 ## Alternativas descartadas
 
 | Alternativa | Por qué no |

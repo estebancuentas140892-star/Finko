@@ -810,6 +810,24 @@ body.kid .leccion-clasificar__boton { min-height: var(--fk-kid-target); font-siz
 /* El teléfono propio del niño (NUBE.3) no tiene adulto: sin "Cambiar de perfil". */
 .kid-propio [data-action="perfil-cambiar"] { display: none; }
 
+/* "Este teléfono es de un adulto" (APR.6b, ADR 100 D5): discreto, al pie de
+   "Yo", y solo en un teléfono del niño que no está unido a la nube de su
+   familia (allí el adulto ya existe en su propio teléfono). */
+.knino-adulto { display: none; }
+.kid-propio:not(.kid-vinculado) .knino-adulto {
+  display: block;
+  margin: var(--fk-space-4) auto 0;
+  min-height: 44px;
+  padding: 0 var(--fk-space-3);
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 /* ── MV2 en el perfil niño (ADR 098 D13) ─────────────────────────────────
    Lo que la auditoría móvil encontró en la app del niño, sin tocar su
    identidad (Tino, frascos, barra propia) ni mezclarla con la del adulto:

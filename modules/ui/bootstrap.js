@@ -70,6 +70,7 @@ import { initVolver } from './volver.js';
 import { initDetalleFila } from './detalle-fila.js';
 import { initAtencionHoy } from './atencion-hoy.js';
 import { initHojaPerfil } from './hoja-perfil.js';
+import { initTelefonoAdulto } from './telefono-adulto.js';
 import { initRegistrar } from './registrar.js';
 import { initInstallPrompt } from './install-prompt.js';
 import { initSwAviso } from './sw-aviso.js';
@@ -119,6 +120,8 @@ initDetalleFila();
 initAtencionHoy();
 // ADR 099 D6: el avatar de Inicio en móvil abre la hoja de perfil.
 initHojaPerfil();
+// ADR 100 D5: "Este teléfono es de un adulto" desde la app del niño.
+initTelefonoAdulto();
 initOnboarding();
 // APR.3a (ADR 093 D1): con niños en el dispositivo, Finko abre en "¿Quién usa
 // Finko?" y el adulto da su PIN ahí; sin niños, el candado de siempre.

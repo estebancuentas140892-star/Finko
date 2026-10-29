@@ -467,5 +467,6 @@ export function htmlYoNino(perfil) {
       <h2 class="k-h3" id="nino-insignias">${icon('star')}Mis insignias</h2>
       <ul class="kinsignias">${insignias}</ul>
     </section>
-    <button class="kbtn kbtn--soft kbtn--block" type="button" data-action="perfil-cambiar">${icon('transferencia')}Cambiar de perfil</button>`;
+    <button class="kbtn kbtn--soft kbtn--block" type="button" data-action="perfil-cambiar">${icon('transferencia')}Cambiar de perfil</button>
+    <button class="knino-adulto" type="button" data-action="telefono-adulto">Este teléfono es de un adulto</button>`;
 }

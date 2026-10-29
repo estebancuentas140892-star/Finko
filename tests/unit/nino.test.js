@@ -144,6 +144,16 @@ describe('las cuatro pantallas del niño (D9)', () => {
     expect(html.match(/kinsignia--pendiente/g)).toHaveLength(7);
     expect(html).toContain('Cambiar de perfil');
   });
+
+  // APR.6b (ADR 100 D5): el enlace está siempre en el marcado; el CSS solo lo
+  // muestra en un teléfono propio del niño sin nube (`.kid-propio`).
+  it('Yo trae "Este teléfono es de un adulto", con su acción', () => {
+    const doc = document.createElement('div');
+    doc.innerHTML = htmlYoNino(perfil());
+    const enlace = doc.querySelector('.knino-adulto');
+    expect(enlace.textContent).toBe('Este teléfono es de un adulto');
+    expect(enlace.dataset.action).toBe('telefono-adulto');
+  });
 });
 
 describe('la lección con la piel del niño (D7, D9)', () => {
