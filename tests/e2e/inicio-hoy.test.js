@@ -10,6 +10,8 @@
  * - D5 (MV2.15b): "Esta semana", con lo que entra primero y el pie por lado.
  * - Escritorio no cambia: la lista no existe y los paneles siguen.
  * - A 320px nada desborda a lo ancho.
+ * - D6 y D7 (MV2.15c): el avatar abre la hoja de perfil, que lleva a cada
+ *   bloque de Ajustes y le pasa el teléfono a un niño; sin engranaje.
  *
  * Reloj fijo (`page.clock.setFixedTime`): lo vencido, lo de hoy y lo de
  * mañana dependen del día del mes (mismo criterio que BUG-021).
@@ -134,5 +136,65 @@ test.describe('MV2.15a - escritorio sin cambios (ADR 099)', () => {
     await expect(page.locator('#label-atencion-hoy')).toBeVisible();
     await expect(page.locator('#panel-limites')).toBeVisible();
     await expect(page.locator('#panel-distribuir-inicio')).toBeVisible();
+  });
+});
+
+// ── MV2.15c: el avatar abre tu perfil (ADR 099 D6 y D7) ─────────────────────
+
+const SOFIA = { id: 'n-sofi', nombre: 'Sofía', edad: 8, dibujo: 'cometa', teNombra: 'Mamá', creado: '2026-10-25' };
+
+/** Adulta con una niña en Familia, sin candado: "¿Quién usa Finko?" deja entrar. */
+async function abrirConNina(page) {
+  await sembrar(page, estadoBase({
+    perfil: { nombre: 'Laura Gómez', smmlv: 1750905 },
+    cuentas: [{ id: 'c1', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 3_000_000, activa: true, fechaCreacion: '2025-01-01T00:00:00.000Z' }],
+    perfiles: [SOFIA],
+  }));
+  await page.goto('/#dash');
+  await page.locator('#quien-usa [data-role="adulto"]').click();
+  await expect(page.locator('#quien-usa')).not.toHaveAttribute('data-open', '');
+  await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+}
+
+test.describe('MV2.15c - el avatar abre tu perfil (ADR 099)', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('el avatar es un botón; la hoja lleva a cada bloque de Ajustes (D6, D7)', async ({ page }) => {
+    await abrirConNina(page);
+    await expect(page.locator('.perfil-inicio .perfil-inicio__ajustes')).toHaveCount(0);
+    const avatar = page.locator('#perfil-boton');
+    await expect(avatar).toHaveText('LG');
+
+    await avatar.click();
+    const hoja = page.locator('#modal-perfil');
+    await expect(hoja).toHaveAttribute('data-open', '');
+    await expect(hoja.locator('#perfil-hoja-titulo')).toHaveText('Laura Gómez');
+    await expect(hoja.locator('[data-bloque="familia"]')).toContainText('Sofía, 8 años');
+
+    await hoja.locator('[data-bloque="familia"]').click();
+    await expect(page.locator('#sec-config.active')).toBeVisible();
+    await expect(hoja).not.toHaveAttribute('data-open', '');
+    await expect(page.locator('#config-familia-title')).toBeInViewport();
+    await expect(page.locator('#config-familia-title')).toBeFocused();
+  });
+
+  test('pasarle el teléfono a la niña abre su app; volver pide el PIN (D6, ADR 093 D1)', async ({ page }) => {
+    await abrirConNina(page);
+    await page.locator('#perfil-boton').click();
+    await page.locator('#modal-perfil [data-action="perfil-pasar"]').click();
+    await expect(page.locator('body')).toHaveClass(/\bkid\b/);
+    await expect(page.locator('#nino-app')).toBeVisible();
+    await expect(page.locator('#app')).toBeHidden();
+  });
+});
+
+test.describe('MV2.15c - escritorio sin cambios (ADR 099)', () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test('el avatar sigue decorativo y el botón no se ve', async ({ page }) => {
+    await abrirConNina(page);
+    await expect(page.locator('#perfil-avatar')).toBeVisible();
+    await expect(page.locator('#perfil-avatar')).toHaveAttribute('aria-hidden', 'true');
+    await expect(page.locator('#perfil-boton')).toBeHidden();
   });
 });

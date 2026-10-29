@@ -55,11 +55,13 @@ Lo que entra y lo que sale en los próximos 7 días, desde mañana: los mismos c
 
 ### D6. El avatar es un botón y abre tu perfil (MV2.15c, cambia ADR 034 D8)
 
-El avatar deja el verde (la marca es la única teja verde) y abre una hoja: tu nombre, Familia, copia en la nube (cuando exista NUBE.1) y Ajustes. Con un niño en Familia, "Pasarle el teléfono a {nombre}" va primero y reusa el cambio de perfil que ya existe; volver pide el PIN (ADR 093 D1). Nada del adulto entra a la app del niño.
+El avatar deja el verde (la marca es la única teja verde) y abre una hoja: tu nombre, Familia, copia en la nube y Ajustes. Con un niño en Familia, "Pasarle el teléfono a {nombre}" va primero, uno por niño, y reusa el cambio de perfil que ya existe (`entrarComo`); volver pide el PIN (ADR 093 D1). Nada del adulto entra a la app del niño.
+
+Los dos anchos conviven en el DOM y el CSS decide (criterio de IN.9c): el avatar decorativo de escritorio no cambia, y bajo 1024px se ve un botón propio, neutro, de 44 px, que existe aunque falte el nombre (lleva un dibujo de persona). Cada fila de la hoja lleva a su bloque de Ajustes, que ya existía: la sección se abre y baja hasta el título del bloque, que recibe el foco. La copia en la nube dice el correo si hay sesión.
 
 ### D7. El engranaje sale del encabezado (MV2.15c, retoma ADR 070 D10)
 
-Ajustes queda en la hoja del avatar y en "Más". La marca "F" se queda (R31): en móvil no hay barra lateral que nombre la app.
+Ajustes queda en la hoja del avatar y en "Más". La marca "F" se queda (R31): en móvil no hay barra lateral que nombre la app. Desde 1024px el engranaje ya estaba oculto (DSK.1a), así que sin ancho que lo muestre sale del DOM, como los paneles que retiró el DSK.1a: dejarlo sería marcado muerto.
 
 ## Alternativas descartadas
 

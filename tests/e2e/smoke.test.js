@@ -743,10 +743,12 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await expect(page.locator('.topbar__actions [data-action="theme-toggle"]')).toBeVisible();
   });
 
-  test('móvil: el saludo conserva marca "F" y engranaje (DSK.1a, ADR 070 D10)', async ({ page }) => {
+  test('móvil: el saludo conserva la marca "F"; Ajustes pasa al avatar (DSK.1a, ADR 099 D7)', async ({ page }) => {
     // La contracara del test anterior: acá la barra lateral no tiene logo
-    // visible y no hay barra superior, así que las dos piezas se ganan su
-    // sitio. Es la compuerta contra retirarlas de las dos plataformas.
+    // visible y no hay barra superior, así que la marca se gana su sitio. Es
+    // la compuerta contra retirarla de las dos plataformas. El engranaje
+    // salió del encabezado con MV2.15c (ADR 099 D7): la salida a Ajustes es
+    // el avatar, que abre la hoja de perfil.
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await sembrarSiVacio(page, {
@@ -764,7 +766,9 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
 
     const saludo = page.locator('.perfil-inicio');
     await expect(saludo.locator('.perfil-inicio__marca')).toBeVisible();
-    await expect(saludo.locator('.perfil-inicio__ajustes')).toBeVisible();
+    await expect(saludo.locator('.perfil-inicio__ajustes')).toHaveCount(0);
+    await expect(saludo.locator('#perfil-boton')).toBeVisible();
+    await expect(saludo.locator('#perfil-boton')).toHaveAttribute('aria-haspopup', 'dialog');
   });
 });
 

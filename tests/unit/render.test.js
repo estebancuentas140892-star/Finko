@@ -445,11 +445,13 @@ describe('updSaludo()', () => {
       <header class="section__header perfil-inicio">
         <h1 class="sr-only" id="title-dash">Tu resumen</h1>
         <span class="perfil-inicio__avatar" id="perfil-avatar" aria-hidden="true" hidden></span>
+        <button class="perfil-inicio__avatar-btn" id="perfil-boton" type="button"
+                data-action="perfil-abrir" aria-haspopup="dialog"
+                aria-label="Tu perfil, Familia y Ajustes"></button>
         <div class="perfil-inicio__saludo">
           <p class="perfil-inicio__franja" id="saludo-franja"></p>
           <p class="perfil-inicio__nombre" id="saludo-inicio" hidden></p>
         </div>
-        <a class="perfil-inicio__ajustes" href="#config" aria-label="Ir a Ajustes"></a>
       </header>`;
     S.perfil = { nombre: 'Esteban', smmlv: 0 };
     vi.useFakeTimers();
@@ -510,6 +512,26 @@ describe('updSaludo()', () => {
     expect(elNombre().hidden).toBe(true);
     expect(elAvatar().hidden).toBe(true);
     expect(elAvatar().textContent).toBe('');
+  });
+
+  // MV2.15c (ADR 099 D6): el avatar de móvil es un botón y dice a dónde lleva.
+  it('el botón de móvil lleva las iniciales y nombra la hoja que abre', () => {
+    S.perfil = { nombre: 'Laura Gómez', smmlv: 0 };
+    vi.setSystemTime(new Date(2026, 6, 5, 8, 0));
+    updSaludo();
+    const boton = document.getElementById('perfil-boton');
+    expect(boton.textContent).toBe('LG');
+    expect(boton.getAttribute('aria-label')).toBe('Laura Gómez: tu perfil, Familia y Ajustes');
+  });
+
+  it('sin nombre el botón no desaparece: es la puerta a Ajustes en móvil', () => {
+    S.perfil = { nombre: '', smmlv: 0 };
+    vi.setSystemTime(new Date(2026, 6, 5, 8, 0));
+    updSaludo();
+    const boton = document.getElementById('perfil-boton');
+    expect(boton.hidden).toBe(false);
+    expect(boton.querySelector('use').getAttribute('href')).toBe('#i-personales');
+    expect(boton.getAttribute('aria-label')).toBe('Tu perfil, Familia y Ajustes');
   });
 
   it('S.perfil ausente no revienta y saluda sin nombre', () => {

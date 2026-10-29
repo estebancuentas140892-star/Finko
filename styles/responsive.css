@@ -29,15 +29,12 @@
    restaura bajo 1024px, donde no hay barra superior. */
 .section__header > .btn-primary { display: none; }
 
-/* Marca "F" y engranaje del saludo de Inicio (DSK.1a, ADR 070 D10, que
-   ejecuta la D8 del ADR 034): ocultos en desktop por defecto. La marca existe
-   porque en móvil la barra lateral pierde su logo; en monitor el logo está a
-   240px, y junto al avatar son dos círculos verdes seguidos. El engranaje es
-   la tercera entrada a Ajustes de la misma pantalla. Se restauran bajo
-   1024px. El selector de hijo directo es deliberado: `.perfil-inicio__ajustes`
-   se reusa en la barra superior, que no debe perder su engranaje. */
-.perfil-inicio > .perfil-inicio__marca,
-.perfil-inicio > .perfil-inicio__ajustes { display: none; }
+/* Marca "F" del saludo de Inicio (DSK.1a, ADR 070 D10, que ejecuta la D8
+   del ADR 034): oculta en desktop por defecto. Existe porque en móvil la
+   barra lateral pierde su logo; en monitor el logo está a 240px, y junto al
+   avatar son dos círculos verdes seguidos. Se restaura bajo 1024px. El
+   engranaje que la acompañaba salió del DOM con MV2.15c (ADR 099 D7). */
+.perfil-inicio > .perfil-inicio__marca { display: none; }
 
 /* ── TABLET + MÓVIL: SIDEBAR INFERIOR + TOUCH TARGETS (< 1024px) ─ */
 @media (max-width: 1023px) {
@@ -47,9 +44,8 @@
 
   /* Saludo de Inicio (DSK.1a, ADR 070 D10): acá la barra lateral no tiene
      logo visible y no hay barra superior, así que la marca vuelve a nombrar
-     la app y el engranaje vuelve a ser una salida real a Ajustes. */
+     la app. La salida a Ajustes es el avatar (MV2.15c, ADR 099 D6). */
   .perfil-inicio > .perfil-inicio__marca { display: inline-flex; }
-  .perfil-inicio > .perfil-inicio__ajustes { display: flex; }
 
   /* Encabezado del bloque Gastos (ADR 069 D8): acá la barra inferior es la
      única puerta a las tres lentes, así que el bloque es el que las nombra,
@@ -2589,4 +2585,134 @@
     font-size: var(--fk-text-sm);
     color: var(--fk-text-secondary);
   }
+}
+
+/* ════════════════════════════════════════════════════════════
+   MV2.15c · INICIO: EL AVATAR ABRE TU PERFIL (ADR 099 D6 y D7)
+   ════════════════════════════════════════════════════════════
+   Bajo 1024px el avatar es un botón neutro (la marca es la única teja
+   verde) que abre la hoja "Tu perfil". El de escritorio sigue siendo el
+   decorativo de siempre (ADR 034 D8): los dos conviven y el CSS decide. */
+
+.perfil-inicio__avatar-btn { display: none; }
+
+@media (max-width: 1023px) {
+
+  .perfil-inicio > .perfil-inicio__avatar { display: none; }
+  .perfil-inicio__avatar-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: var(--fk-radius-full);
+    border: 1.5px solid var(--fk-border-strong);
+    background: var(--fk-bg-elevated);
+    color: var(--fk-text-primary);
+    font: inherit;
+    font-size: var(--fk-text-base);
+    font-weight: var(--fk-font-extrabold);
+    cursor: pointer;
+  }
+
+  .hoja-perfil__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fk-space-3);
+    padding: var(--fk-space-2) var(--fk-space-5) var(--fk-space-5);
+  }
+  .hoja-perfil__cabeza {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    min-height: 72px;
+    padding-right: var(--fk-space-10);
+  }
+  .hoja-perfil__avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 56px;
+    height: 56px;
+    border-radius: var(--fk-radius-full);
+    border: 1.5px solid var(--fk-border-strong);
+    background: var(--fk-bg-elevated);
+    color: var(--fk-text-primary);
+    font-size: var(--fk-text-xl);
+    font-weight: var(--fk-font-extrabold);
+  }
+  .hoja-perfil__titulo {
+    margin: 0;
+    font-size: var(--fk-text-lg);
+    font-weight: var(--fk-font-bold);
+    color: var(--fk-text-primary);
+    overflow-wrap: anywhere;
+  }
+  .hoja-perfil__textos {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .hoja-perfil__t {
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-primary);
+    overflow-wrap: anywhere;
+  }
+  .hoja-perfil__s {
+    margin: 0;
+    font-size: var(--fk-text-xs);
+    color: var(--fk-text-secondary);
+  }
+
+  /* Las filas son botones: cierran la hoja antes de ir a su bloque. */
+  .hoja-perfil__lista {
+    background: var(--fk-bg-surface);
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-lg);
+    overflow: hidden;
+  }
+  .hoja-perfil__fila,
+  .hoja-perfil__pasar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--fk-space-3);
+    width: 100%;
+    min-height: 56px;
+    padding: var(--fk-space-2) var(--fk-space-4);
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .hoja-perfil__fila + .hoja-perfil__fila { border-top: 1px solid var(--fk-border-subtle); }
+
+  /* Pasarle el teléfono a un niño va primero y con la familia del niño
+     (metas), separado de lo del adulto. */
+  .hoja-perfil__pasar {
+    border: 1px solid color-mix(in srgb, var(--fk-dom-metas) 40%, transparent);
+    border-radius: var(--fk-radius-lg);
+    background: color-mix(in srgb, var(--fk-dom-metas) 8%, var(--fk-bg-surface));
+  }
+
+  .hoja-perfil__teja {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--fk-space-10);
+    height: var(--fk-space-10);
+    border-radius: var(--fk-radius-md);
+  }
+  .hoja-perfil__teja--tesoreria  { background: var(--fk-dom-tesoreria-bg);  color: var(--fk-dom-tesoreria-text); }
+  .hoja-perfil__teja--personales { background: var(--fk-dom-personales-bg); color: var(--fk-dom-personales-text); }
+  .hoja-perfil__teja--ahorro     { background: var(--fk-dom-ahorro-bg);     color: var(--fk-dom-ahorro-text); }
+  .hoja-perfil__teja--analisis   { background: var(--fk-dom-analisis-bg);   color: var(--fk-dom-analisis-text); }
+  .hoja-perfil__teja--metas      { background: var(--fk-dom-metas-bg);      color: var(--fk-dom-metas-text); }
+  .hoja-perfil__seguir { color: var(--fk-text-muted); }
 }

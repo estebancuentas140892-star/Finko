@@ -580,25 +580,30 @@
                avatar son dos círculos verdes seguidos que se leen como un
                error. -->
           <span class="perfil-inicio__marca" aria-hidden="true">F</span>
+          <!-- Avatar: los dos anchos conviven y el CSS decide (mismo criterio
+               que IN.9c). El de escritorio sigue decorativo y verde (ADR 034
+               D8). Bajo 1024px es un botón neutro que abre la hoja de perfil
+               (MV2.15c, ADR 099 D6): la marca es la única teja verde, y el
+               avatar es la puerta a tu perfil, Familia y Ajustes. render.js
+               (updSaludo) llena los dos. -->
           <span class="perfil-inicio__avatar" id="perfil-avatar" aria-hidden="true" hidden></span>
+          <button class="perfil-inicio__avatar-btn" id="perfil-boton" type="button"
+                  data-action="perfil-abrir" aria-haspopup="dialog"
+                  aria-label="Tu perfil, Familia y Ajustes"></button>
           <div class="perfil-inicio__saludo">
             <p class="perfil-inicio__franja" id="saludo-franja"></p>
             <p class="perfil-inicio__nombre" id="saludo-inicio" hidden></p>
           </div>
-          <!-- Engranaje del saludo: DSK.1a (ADR 070 D10) lo oculta desde
-               1024px, donde es la tercera entrada a Ajustes de la misma
-               pantalla (barra lateral + barra superior ya la tienen). Bajo
-               1024px sigue siendo una salida legítima. -->
           <!-- Lupa (ADR 098 D5): buscar en todo el historial era un toque
-               escondido en Más, Movimientos. Mismo dibujo que el engranaje
-               (domain.css); solo existe bajo 1024px (responsive.css). -->
+               escondido en Más, Movimientos. Solo existe bajo 1024px
+               (responsive.css). El engranaje que la acompañaba salió del
+               DOM con MV2.15c (ADR 099 D7): desde 1024px ya estaba oculto
+               (DSK.1a) y bajo 1024px Ajustes vive en la hoja del avatar y
+               en "Más". -->
           <button class="perfil-inicio__buscar" type="button"
                   data-action="bloque-buscar" aria-label="Buscar en tus movimientos">
             <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
           </button>
-          <a class="perfil-inicio__ajustes" href="#config" aria-label="Ir a Ajustes">
-            <svg class="icon" aria-hidden="true"><use href="#i-ajustes"/></svg>
-          </a>
         </header>
         <!-- Franja de lentes del bloque Inicio (APR.1c, ADR 092 D1): Hoy,
              Aprende y Tu progreso. ui/bloque-inicio.js la inyecta en las tres
@@ -2046,6 +2051,21 @@
         <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
       </button>
       <div class="detalle-fila__body" id="detalle-fila-body"></div>
+    </div>
+  </div>
+
+  <!-- Hoja "Tu perfil" (MV2.15c, ADR 099 D6): la abre el avatar de Inicio
+       en móvil. ui/hoja-perfil.js la arma al abrirla. -->
+  <div class="modal-overlay modal-overlay--sheet" id="modal-perfil"
+       role="dialog" aria-modal="true"
+       aria-labelledby="perfil-hoja-titulo" aria-hidden="true">
+    <div class="modal modal--sheet hoja-perfil">
+      <span class="mas-sheet__handle" aria-hidden="true"></span>
+      <button class="modal__close mas-sheet__close" type="button"
+              data-action="modal-close" aria-label="Cerrar">
+        <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
+      </button>
+      <div class="hoja-perfil__body" id="perfil-hoja-body"></div>
     </div>
   </div>
 

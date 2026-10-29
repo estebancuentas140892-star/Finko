@@ -365,6 +365,7 @@ export function updSaludo() {
   const elFranja = document.getElementById('saludo-franja');
   const elNombre = document.getElementById('saludo-inicio');
   const avatar   = document.getElementById('perfil-avatar');
+  const boton    = document.getElementById('perfil-boton');
   if (!elFranja && !elNombre) return;
 
   const hora = new Date().getHours();
@@ -381,7 +382,13 @@ export function updSaludo() {
   }
   if (avatar) {
     avatar.hidden = !nombre;
-    avatar.textContent = nombre ? _iniciales(nombre) : '';
+    avatar.textContent = nombre ? inicialesDe(nombre) : '';
+  }
+  // MV2.15c (ADR 099 D6): el avatar de móvil es la puerta a tu perfil, así
+  // que existe aunque falte el nombre; entonces lleva un dibujo de persona.
+  if (boton) {
+    boton.innerHTML = nombre ? _esc(inicialesDe(nombre)) : '<svg class="icon" aria-hidden="true"><use href="#i-personales"/></svg>';
+    boton.setAttribute('aria-label', nombre ? `${nombre}: tu perfil, Familia y Ajustes` : 'Tu perfil, Familia y Ajustes');
   }
 }
 
@@ -389,11 +396,12 @@ export function updSaludo() {
  * Iniciales para la teja de perfil (IN.8d): primera letra de las dos
  * primeras palabras del nombre, en mayúsculas ("Esteban" → "E",
  * "Juan Pérez" → "JP"). Spread para no partir caracteres de dos unidades.
+ * La hoja de perfil (MV2.15c) las reusa para su avatar grande.
  *
  * @param {string} nombre - ya validado no vacío.
  * @returns {string}
  */
-function _iniciales(nombre) {
+export function inicialesDe(nombre) {
   return nombre
     .split(/\s+/)
     .filter(Boolean)
