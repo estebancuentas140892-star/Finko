@@ -174,6 +174,7 @@
 
 **Cambios realizados** (una línea por hito; el detalle vive en el [CHANGELOG](../CHANGELOG.md)):
 
+- 2026-10-29 (APR.7, [ADR 101](../DECISIONS/101-finko-del-adulto-decide-no-ensena.md)): Inicio del adulto es una sola pantalla: salen la franja de lentes (`#tabs-dash`), "Tu siguiente paso" (`#panel-siguiente-paso`) y Accesos rápidos (`#accesos-actividad-movil`, `#modal-personalizar-accesos`). Las filas de la tabla "Dónde vive" que los nombran quedan históricas; `_repartoCierreInicio()` ya no encuentra a quién repartir.
 - 2026-10-29 (MV2.15c, ADR 099 D6 y D7): en móvil el avatar es un botón que abre la hoja "Tu perfil"; el engranaje sale del encabezado. Cierra MV2.15.
 - 2026-10-29 (MV2.15b, ADR 099 D5): en móvil, "Próximas prioridades" pasa a "Esta semana": lo que entra y sale de mañana a 7 días, con los días de pago de los ingresos.
 - 2026-10-29 (MV2.15a, [ADR 099](../DECISIONS/099-inicio-movil-hoy-en-una-lista.md)): en móvil, "Atención hoy" pasa de cuatro paneles a una lista de una fila por clase con hoja "Ver los N"; la lente cuenta lo mismo que la lista; aviso nuevo `ingreso-por-distribuir`.

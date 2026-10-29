@@ -1,6 +1,6 @@
 # Ficha de contexto: Logros
 
-> Revisado: 2026-10-25.
+> Revisado: 2026-10-29.
 
 > Gamificación ligera de hábitos: catálogo, evaluación automática, toast con confetti y las dos superficies de "Tu progreso". Partida de [`transversal.md`](transversal.md) el 2026-08-14 (DOC.3). Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -9,6 +9,8 @@
 ---
 
 ## Sistema de logros (dominio `logros`)
+
+> **Desde el [ADR 101](../DECISIONS/101-finko-del-adulto-decide-no-ensena.md) (2026-10-29) los logros se calculan y se guardan en silencio**: sin "Tu progreso" (`#progreso` redirige a Inicio), sin aviso emergente ni confeti. `logros/index.js` quedó en `initLogros()` y `_evaluarYGuardar()`. La vitrina (`view.js`, `renderProgresoSeccion()`) y su lógica (`agruparVitrina`, `nivelUsuario`) quedan sin pantalla, con sus tests unitarios.
 
 - **Objetivo**          : gamificación ligera de hábitos: catálogo de logros con evaluación automática, toast con confetti al desbloquear y la lente "Tu progreso" (`#progreso`, APR.1d).
 - **Estado actual**     : estable. **Logros v2 completa** ([ADR 032](../DECISIONS/032-logros-v2-niveles-y-habitos.md) Aceptada el 2026-07-09): LG.2b (2026-07-09), LG.2c (2026-07-12), LG.2e (2026-08-13, familia comportamiento con un solo logro, `hormiga-a-raya`) y **LG.2d cerrada el 2026-08-13** (mudanza a Análisis + tarjeta en Inicio; el [ADR 022](../DECISIONS/022-vitrina-de-logros-en-ajustes.md) pasa a Superada). Catálogo: 18 logros (antes 11), familias `registro` 6, `metas` 1, `deudas` 2, `comportamiento` 1. La vitrina **dibuja 12 elementos** (8 logros sueltos + 4 familias), y ese es el denominador de "X de Y" en las dos superficies desde MOV.20a.
@@ -56,6 +58,7 @@
 
 **Cambios realizados**:
 
+- 2026-10-29 (APR.7, ADR 101): sin vitrina ni avisos; los logros se siguen guardando.
 - 2026-10-25 (MOV.1 ficha 17): los `hint` enlazan su sección (`ir`), la vitrina se parte en "Te falta" y "Ya los tienes" y el aviso de desbloqueo lleva a Tu progreso (H9). G1 y G2 ya los habían cerrado MOV.20a y LG.2e.
 - 2026-10-24 (APR.1d, [ADR 092](../DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D3 y D4, acota el ADR 032 D6): "Tu progreso" pasa a lente propia (`#progreso`); salen el apartado de Análisis y la tarjeta de Inicio. `resumenProgreso()` suma las unidades de Aprende al nivel sin escribirlas en `S.logros`.
 - 2026-10-24 (APR.1a): `UMBRAL_GASTO_HORMIGA` sube a `infra/hormiga.js`, criterio único con Gastos y Aprende; acá queda re-exportado.

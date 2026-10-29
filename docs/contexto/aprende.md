@@ -1,6 +1,6 @@
 # Ficha de contexto: Aprende
 
-> Revisado: 2026-10-25.
+> Revisado: 2026-10-29.
 
 > La capa de aprendizaje del adulto: la ruta de nueve unidades (`#aprende`) y la lección a pantalla completa (`#modal-leccion`). Decisiones: [ADR 092](../DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md). Tarjetas: iniciativa APR en [`board/transversal.md`](../board/transversal.md). Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -9,6 +9,8 @@
 ---
 
 ## Ruta y lección (dominio `aprende`)
+
+> **Desde el [ADR 101](../DECISIONS/101-finko-del-adulto-decide-no-ensena.md) (2026-10-29) el adulto no ve Aprende**: sin sección `#aprende` (redirige a Inicio), sin entrada en la barra lateral, sin "Tu siguiente paso" y sin la oferta del Fondo. El motor (`leccion-abrir`, `#modal-leccion`, ubicación) sigue para el niño. La ruta del adulto (`_renderRuta`, `renderRuta`), "Tu siguiente paso" (`_renderSiguientePaso`), las ofertas (`_pintarOferta`) y las lecciones del adulto quedan en el código sin pantalla hasta que se decida borrarlas. Lo que sigue es la ayuda dentro de cada decisión (DEC.1).
 
 - **Objetivo**          : enseñar con práctica y cerrar cada lección en la sección donde se aplica, con los datos del usuario (Aplícalo, D7).
 - **Estado actual**     : en evolución (iniciativa APR). **Fase 1 cerrada** (APR.1a a APR.1d): motor de lección, estado en `S`, ruta, la unidad 3 completa, "Tu siguiente paso" en Inicio y el bloque Inicio de tres lentes en móvil (`ui/bloque-inicio.js`). En escritorio, fila propia en "Día a día". **APR.4a**: en escritorio la ruta va en dos columnas con el detalle de la lección elegida, y la lección pone la respuesta al lado de la pregunta.
@@ -67,6 +69,7 @@
 
 **Cambios realizados**:
 
+- 2026-10-29 (APR.7, ADR 101): Aprende sale de la app del adulto; el motor sigue para el niño.
 - 2026-10-25 (APR.4a): escritorio: detalle de la lección elegida, `aprendes` en el contenido, lección en dos columnas, arrastre en ordenar.
 - 2026-10-25 (APR.3c): el motor también sirve la ruta del niño; su avance va a su perfil (ficha [`nino.md`](nino.md)).
 - 2026-10-24 (APR.2b): prueba de ubicación, `S.aprende.ubicacion` (v47).

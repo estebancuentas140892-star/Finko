@@ -70,6 +70,7 @@ Las tarjetas del tablero (la iniciativa HF se lista por fase), para elegir la pr
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
+| DEC.1 | Finko explica el porqué dentro de cada decisión ([ADR 101](DECISIONS/101-finko-del-adulto-decide-no-ensena.md) D5) | Transversal | media | nada |
 | MV2.2 | Finko móvil 2, segunda entrega: lentes, Distribuir, Más y Movimientos ([ADR 098](DECISIONS/098-finko-movil-2-primera-entrega.md)) | Transversal | media | nada |
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | cola de diseño de Esteban |
 | PERF.13 | Arranque: 616 ms de hilo bloqueado | Transversal | baja | nada |
@@ -78,7 +79,7 @@ Las tarjetas del tablero (la iniciativa HF se lista por fase), para elegir la pr
 | HF.0f | Perfiles de regresión: constructores e invariantes (en curso, bloqueada por BUG-035, BUG-036 y BUG-038) | Transversal (tests) | alta | nada |
 | HF.0g | Perfiles de regresión en E2E | Transversal (tests) | media | HF.0f |
 | HF.1a a HF.5a | Fases 1 a 5 de la iniciativa HF (24 rebanadas) | Transversal | media | ficha 18 de MOV.1, cierre de MOV.1 |
-| APR.2c y APR.3f | Iniciativa "Aprende y aplícalo": la revisión pedagógica de las lecciones del adulto y del niño | Transversal | media | nada |
+| APR.3f | Iniciativa "Aprende y aplícalo", solo del niño desde el [ADR 101](DECISIONS/101-finko-del-adulto-decide-no-ensena.md): la revisión pedagógica de sus lecciones | Transversal | media | nada |
 | APR.5b | La ronda 2 de Tino ([ADR 094](DECISIONS/094-tino-el-guatin.md) y [095](DECISIONS/095-tino-en-el-sprite.md)) y los hitos del niño | Transversal | media | los dibujos de la ronda 2 |
 | NUBE.4 | Finko en la nube con Supabase: bancos ([ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md)) | Transversal | media | su propio ADR (finanzas abiertas); invitar probadores pide SMTP propio |
 | A.5 | Dominio custom en Vercel | Mantenimiento | baja | que el usuario tenga el dominio registrado |

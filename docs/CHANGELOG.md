@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### refactor(app): APR.7, Finko del adulto ayuda a decidir; no enseña con lecciones · 2026-10-29
+
+[ADR 101](DECISIONS/101-finko-del-adulto-decide-no-ensena.md) (retira del adulto la capa del ADR 092, la vitrina y los avisos del 032, y revierte el 087 D3); fichas [`contexto/inicio.md`](contexto/inicio.md), [`aprende.md`](contexto/aprende.md) y [`logros.md`](contexto/logros.md). SW v628.
+
+- **Inicio del adulto es una sola pantalla**: sin la franja "Hoy, Aprende, Tu progreso", sin "Tu siguiente paso" y sin Accesos rápidos.
+- **Aprende y Tu progreso salen**: sus secciones, sus entradas en la barra lateral y la oferta del Fondo. `#aprende` y `#progreso` redirigen a Inicio en el router, para que un enlace viejo no quede en blanco.
+- **Los logros se guardan en silencio**: `logros/index.js` queda en evaluar y guardar; salen el aviso emergente y el confeti. `S.aprende`, `S.logros` y `S.config.accesosInicio` no se tocan (sin migración).
+- **El motor de lecciones se queda para el niño** (`leccion-abrir`, `#modal-leccion`). Queda en el código sin pantalla: la ruta del adulto y sus lecciones, la vitrina de logros, la franja de lentes (`ui/bloque-inicio.js`) y el dominio `accesos/`.
+- Pruebas: `aprende.test.js` pasa de 11 pruebas de la ruta del adulto a 5 que verifican el retiro; salen las 4 E2E de la vitrina; 3 E2E y 1 unitaria cambian de sentido. El motor sigue cubierto por la E2E del niño (`perfiles.test.js`).
+
 ### feat(nino): APR.6b, "Este teléfono es de un adulto" · 2026-10-29
 
 [ADR 100](DECISIONS/100-el-nino-empieza-solo.md) D5; ficha [`contexto/nino.md`](contexto/nino.md). Cierra la Fase 6 de APR. SW v627.

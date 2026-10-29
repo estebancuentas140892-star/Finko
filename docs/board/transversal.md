@@ -16,6 +16,17 @@
 
 > **Iniciativa Dirección Visual premium** ([ADR 033](../DECISIONS/033-direccion-visual-premium.md)). DV.2a/b/c cerradas. DV.2d: infraestructura, 8 plantillas y cableado de `emptyArt()` listos (2026-08-14), falta solo el arte final de Esteban.
 
+#### DEC.1 - Finko explica el porqué dentro de cada decisión
+- Prioridad  : media
+- Estado     : pendiente
+- Área       : ambos
+- Objetivo   : el conocimiento útil vuelve donde se decide, sin preguntas ni lecciones ([ADR 101](../DECISIONS/101-finko-del-adulto-decide-no-ensena.md) D5). Primeros lugares: repartir el ingreso, qué deuda pagar primero y un límite pasado; cada uno con su diseño y su ADR
+- Riesgo     : volver a parecer un curso; la regla es una frase con el dato del usuario, nunca un cuestionario
+- Secciones  : Mis cuentas (distribuir), Por pagar (estrategia), Límites
+- Archivos   : `dominio/tesoreria/views/distribucion.js`, `dominio/compromisos/views/estrategia.js`, `dominio/presupuesto/view.js`
+- Depende de : nada
+- Aceptación : en cada lugar, la razón se lee sin salir de la decisión y con las cifras del usuario
+
 #### MV2.2 - Finko móvil 2, segunda entrega
 - Prioridad  : media
 - Estado     : en proceso
@@ -201,12 +212,7 @@
 
 ## Iniciativa APR - Aprende y aplícalo
 
-> Handoff de Claude Design "Finko · Aprende y aplícalo" (35 tableros, octubre 2026), triado el 2026-10-24. Fuente única: **[ADR 092](../DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md)** (capa de aprendizaje del adulto) y **[ADR 093](../DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md)** (perfiles, modo niño y tutor), los dos en Propuesta. **La Fase 1 (APR.1a a APR.1d) cerró el 2026-10-24** sin esperar a las fichas 17 y 19 de MOV.1 (decisión en chat, resolución al final del ADR 092); cada rebanada se sube a `main` al cerrar. Las catorce dudas del handoff quedaron resueltas por defecto con la propuesta del diseño; **P1 del ADR 093** ("Olvidé mi PIN" con niños) se resolvió el 2026-10-24 con su recomendación. La GU.1 (guía por navegación) sigue dueña de banners y hints: esta iniciativa no los toca. DV.2d conserva su lote; el catálogo de ilustraciones del niño entra por su mismo pipeline.
-
-### Fase 2 - Adulto completo
-
-#### APR.2c - Contenido de las unidades 1, 2 y 4 a 9
-- Estado : en curso. Una rebanada por unidad. **Escritas las nueve** (todas menos la 3 con el Aplícalo genérico de `aplica.js`; la 9 con marcadores de `core/constants.js`). Falta la revisión pedagógica registrada de cada unidad, que es la aceptación, y revisar la 9 con E.2. **Objetivo**: lecciones con Aplícalo en su sección; la unidad 9 lee las constantes de `core/constants.js` y se revisa con E.2; gota a gota solo enlaza líneas verificadas con fecha. **Aceptación**: ninguna unidad sin revisión pedagógica registrada. **Modelo**: Equilibrado, Alto.
+> Handoff de Claude Design "Finko · Aprende y aplícalo" (35 tableros, octubre 2026), triado el 2026-10-24. Fuente única: **[ADR 092](../DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md)**. **Desde el [ADR 101](../DECISIONS/101-finko-del-adulto-decide-no-ensena.md) la capa es solo del niño**: el adulto no ve Aprende ni Tu progreso (capa de aprendizaje del adulto) y **[ADR 093](../DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md)** (perfiles, modo niño y tutor), los dos en Propuesta. **La Fase 1 (APR.1a a APR.1d) cerró el 2026-10-24** sin esperar a las fichas 17 y 19 de MOV.1 (decisión en chat, resolución al final del ADR 092); cada rebanada se sube a `main` al cerrar. Las catorce dudas del handoff quedaron resueltas por defecto con la propuesta del diseño; **P1 del ADR 093** ("Olvidé mi PIN" con niños) se resolvió el 2026-10-24 con su recomendación. La GU.1 (guía por navegación) sigue dueña de banners y hints: esta iniciativa no los toca. DV.2d conserva su lote; el catálogo de ilustraciones del niño entra por su mismo pipeline.
 
 ### Fase 3 - Perfiles, niño y tutor (ADR 093)
 
