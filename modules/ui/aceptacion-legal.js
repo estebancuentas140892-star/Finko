@@ -74,6 +74,17 @@ export function registrarAceptacion() {
 }
 
 /**
+ * El camino del niño (APR.6a, ADR 100 D3): no acepta un contrato, deja dicho
+ * que un adulto de su familia sabe que usa Finko. `via: 'nino'` lo distingue
+ * de una aceptación del adulto; el gate solo mira la versión, así que al niño
+ * no le salta. No hace save().
+ */
+export function registrarAvisoNino() {
+  if (!S.config || typeof S.config !== 'object') S.config = {};
+  S.config.legalAceptado = { version: VERSION_LEGAL, fecha: hoy(), via: 'nino' };
+}
+
+/**
  * Inicializa el gate independiente para usuarios ya onboarded. No-op si no
  * hace falta (usuario al día o todavía no completó el onboarding).
  */

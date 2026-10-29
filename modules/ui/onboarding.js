@@ -10,6 +10,9 @@
  * - Si cierra con Escape en cualquier paso, S.onboarded queda en false y
  *   nada se guarda → el wizard reaparece desde el paso 1 en la próxima visita.
  * - Solo aceptar el paso legal (paso 2) persiste el onboarding.
+ * - APR.6a (ADR 100 D1): antes del nombre, "¿Quién va a usar Finko?". El
+ *   adulto sigue por aquí; el niño, por onboarding-nino.js, dentro del mismo
+ *   overlay; el código de la familia (NUBE.3) sube a esa primera pantalla.
  */
 
 import { S, EventBus } from '../core/state.js';
@@ -19,7 +22,11 @@ import { renderAll } from '../infra/render.js';
 import { announce } from '../infra/a11y.js';
 import { mostrarErroresForm } from '../infra/form-errors.js';
 import { esc, hoy } from '../infra/utils.js';
+import { icon } from '../infra/icons.js';
+import { htmlDibujo } from '../infra/ilustraciones.js';
+import { registrarAccion } from './actions.js';
 import { renderBloqueAceptacion, registrarAceptacion } from './aceptacion-legal.js';
+import { empezarCaminoNino, manejarFormNino, volverEnCaminoNino } from './onboarding-nino.js';
 
 /** Nombre capturado en el paso 1, en memoria hasta que el paso 2 lo persiste. */
 let _nombreTemp = '';
@@ -30,7 +37,19 @@ let _nombreTemp = '';
  */
 export function initOnboarding() {
   if (S.onboarded) return;
+  registrarAccion('onboarding-adulto', () => _pintarPaso1());
+  registrarAccion('onboarding-nino', () => empezarCaminoNino());
+  registrarAccion('onboarding-volver', (el) => {
+    if (!volverEnCaminoNino(el)) volverAlInicio();
+  });
   _mostrarWizard();
+}
+
+function _pintarPaso1() {
+  const body = document.querySelector('#onboarding #onboarding-body');
+  if (!body) return;
+  body.innerHTML = _renderPaso1();
+  body.querySelector('input')?.focus();
 }
 
 // ── WIZARD ───────────────────────────────────────────────────────
@@ -41,9 +60,10 @@ function _mostrarWizard() {
 
   _nombreTemp = '';
 
-  // Inyectar el contenido del wizard en el body del modal.
+  // Inyectar el contenido del wizard en el body del modal: primero, quién
+  // va a usar Finko (ADR 100 D1).
   const body = overlay.querySelector('#onboarding-body');
-  if (body) body.innerHTML = _renderPaso1();
+  if (body) body.innerHTML = _renderQuien();
 
   abrirModal(overlay);
 
@@ -55,6 +75,7 @@ function _onSubmitWizard(e) {
   e.preventDefault();
   const form = e.target;
 
+  if (manejarFormNino(form)) return;
   if (form.id === 'form-onboarding') {
     _onSubmitPaso1(form);
   } else if (form.id === 'form-onboarding-legal') {
@@ -118,9 +139,44 @@ function _onSubmitPaso2(form) {
  * (DIS.6/C2, hallazgo H2). Los estilos de las clases .onboarding__* viven
  * en styles/modals.css.
  */
+/**
+ * Primera pantalla (APR.6a, ADR 100 D1): quién va a usar Finko. El niño que
+ * descarga la app solo no cae en el formulario de un adulto; el código de la
+ * familia (NUBE.3) sube acá desde el paso del nombre.
+ */
+function _renderQuien() {
+  return `
+    <div class="onboarding-quien">
+      <div class="onboarding__hero" aria-hidden="true">F</div>
+      <h2 class="onboarding__title" id="onboarding-quien-titulo" tabindex="-1">Te damos la bienvenida a Finko</h2>
+      <p class="onboarding__desc">¿Quién va a usar Finko en este teléfono?</p>
+      <div class="onboarding-quien__opciones">
+        <button type="button" class="onboarding-quien__opcion" data-action="onboarding-adulto">
+          <span class="onboarding-quien__icono" aria-hidden="true">${icon('cuentas')}</span>
+          <span class="onboarding-quien__textos">
+            <span class="onboarding-quien__t">Soy adulto</span>
+            <span class="onboarding-quien__s">Tu dinero, tus gastos, tus deudas y tus metas</span>
+          </span>
+        </button>
+        <button type="button" class="onboarding-quien__opcion" data-action="onboarding-nino">
+          <span class="onboarding-quien__icono" aria-hidden="true">${htmlDibujo('cometa', { tamano: 32 })}</span>
+          <span class="onboarding-quien__textos">
+            <span class="onboarding-quien__t">Soy niño o niña</span>
+            <span class="onboarding-quien__s">De 7 a 12 años: aprende y cuida tu alcancía</span>
+          </span>
+        </button>
+      </div>
+      <p class="onboarding__note">
+        <button type="button" class="btn btn-ghost btn-sm" data-action="nube-codigo-nino">Tengo un código de mi familia</button>
+      </p>
+      <p class="onboarding__note">Todo se guarda en este teléfono. La cuenta en la nube es opcional.</p>
+    </div>`;
+}
+
 function _renderPaso1() {
   return `
     <form id="form-onboarding" novalidate>
+      <button type="button" class="btn btn-ghost btn-sm onboarding__volver" data-action="onboarding-volver">${icon('arrow-left')}Volver</button>
       <div class="onboarding__hero" aria-hidden="true">F</div>
       <h2 class="onboarding__title">¡Bienvenido a Finko!</h2>
       <p class="onboarding__desc">
@@ -139,21 +195,19 @@ function _renderPaso1() {
       <p class="onboarding__note">
         Tus datos se guardan en tu dispositivo. La cuenta en la nube es opcional.
       </p>
-      <p class="onboarding__note">
-        <button type="button" class="btn btn-ghost btn-sm" data-action="nube-codigo-nino">Tengo un código de mi familia</button>
-      </p>
     </form>`;
 }
 
 /**
- * Vuelve al primer paso del wizard: lo usa la pantalla del código del niño
- * (`config/nube.js`, NUBE.3) cuando toca "Volver".
+ * Vuelve a la primera pantalla, "¿Quién va a usar Finko?" (ADR 100 D1): la
+ * usan el "Volver" del adulto y del niño, y la pantalla del código del niño
+ * (`config/nube.js`, NUBE.3).
  */
 export function volverAlInicio() {
   const body = document.querySelector('#onboarding #onboarding-body');
   if (!body) return;
-  body.innerHTML = _renderPaso1();
-  body.querySelector('input')?.focus();
+  body.innerHTML = _renderQuien();
+  body.querySelector('#onboarding-quien-titulo')?.focus({ preventScroll: true });
 }
 
 /**

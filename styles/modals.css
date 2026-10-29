@@ -556,6 +556,88 @@ body:has(#quien-usa[data-open]) .logro-toast { display: none; }
 /* El bloque centra el wizard, pero un formulario se lee alineado. */
 .modal--onboarding .form-group { text-align: left; }
 
+/* "¿Quién va a usar Finko?" (APR.6a, ADR 100 D1): dos opciones grandes, una
+   fila tocable cada una, con su teja y lo que trae. El niño la encuentra sin
+   leer un formulario. */
+.onboarding-quien__opciones {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+}
+.onboarding-quien__opcion {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--fk-space-3);
+  width: 100%;
+  min-height: 72px;
+  padding: var(--fk-space-3) var(--fk-space-4);
+  border: 1.5px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  background: var(--fk-bg-surface);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.onboarding-quien__opcion:hover { border-color: var(--fk-border-accent); }
+.onboarding-quien__icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--fk-space-12);
+  height: var(--fk-space-12);
+  border-radius: var(--fk-radius-md);
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-accent);
+}
+.onboarding-quien__textos { display: flex; flex-direction: column; min-width: 0; }
+.onboarding-quien__t {
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+}
+.onboarding-quien__s {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+}
+
+/* "Volver" a la pantalla anterior del wizard: arriba a la izquierda, como el
+   de "¿Quién usa Finko?". */
+.onboarding__volver {
+  display: flex;
+  gap: var(--fk-space-1);
+  margin: 0 0 var(--fk-space-2);
+}
+
+/* Edades del niño (ADR 100 D2): seis botones grandes en una fila, 44px. */
+.onboarding-edades { border: 0; margin: 0; padding: 0; }
+.onboarding-edades__fila {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--fk-space-2);
+}
+.onboarding-edad span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border: 1.5px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-md);
+  background: var(--fk-bg-surface);
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  cursor: pointer;
+}
+/* A 320 las seis columnas dejaban 38px de ancho: bajo el piso de 44 (R4). */
+@media (max-width: 359px) {
+  .onboarding-edades__fila { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+.onboarding-edad input:checked + span { border-color: var(--fk-accent); background: var(--fk-accent-subtle); color: var(--fk-text-accent); }
+.onboarding-edad input:focus-visible + span { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
+.onboarding-nino__dibujo { margin: 0 auto var(--fk-space-3); }
+
 /* ── ESTRUCTURA INTERNA ─────────────────────────────────────── */
 
 .modal__header {

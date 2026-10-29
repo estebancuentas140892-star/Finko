@@ -1019,6 +1019,9 @@ test.describe.serial('Onboarding', () => {
     // configurado en playwright.config.js lo resuelve.
     await page.goto('/');
 
+    // APR.6a (ADR 100 D1): primero, quién va a usar Finko.
+    await page.locator('#onboarding [data-action="onboarding-adulto"]').click();
+
     // Paso 1: nombre.
     await page.locator('#onboarding input[name="nombre"]').fill('María Camila');
     await page.locator('#onboarding button[type="submit"]').click();
@@ -1046,6 +1049,7 @@ test.describe.serial('Onboarding', () => {
   test('sin marcar la casilla de aceptación, el paso 2 no avanza', async ({ page }) => {
     await page.goto('/');
 
+    await page.locator('#onboarding [data-action="onboarding-adulto"]').click();
     await page.locator('#onboarding input[name="nombre"]').fill('Julián');
     await page.locator('#onboarding button[type="submit"]').click();
 

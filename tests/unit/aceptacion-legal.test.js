@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { S, createInitialState } from '../../modules/core/state.js';
 import { VERSION_LEGAL } from '../../modules/dominio/config/legal.js';
-import { faltaAceptarLegal, registrarAceptacion } from '../../modules/ui/aceptacion-legal.js';
+import { faltaAceptarLegal, registrarAceptacion, registrarAvisoNino } from '../../modules/ui/aceptacion-legal.js';
 
 beforeEach(() => {
   Object.assign(S, createInitialState());
@@ -44,5 +44,26 @@ describe('registrarAceptacion()', () => {
     S.config = undefined;
     registrarAceptacion();
     expect(S.config.legalAceptado.version).toBe(VERSION_LEGAL);
+  });
+});
+
+// APR.6a (ADR 100 D3): el niño no acepta un contrato, deja dicho que un
+// adulto de su familia sabe. El gate solo mira la versión: no le salta.
+describe('registrarAvisoNino()', () => {
+  it('escribe la versión vigente marcada como aviso del niño', () => {
+    registrarAvisoNino();
+    expect(S.config.legalAceptado.version).toBe(VERSION_LEGAL);
+    expect(S.config.legalAceptado.via).toBe('nino');
+  });
+
+  it('con el aviso del niño, el gate de la versión no vuelve a pedir nada', () => {
+    S.onboarded = true;
+    registrarAvisoNino();
+    expect(faltaAceptarLegal()).toBe(false);
+  });
+
+  it('la aceptación del adulto no lleva marca de niño', () => {
+    registrarAceptacion();
+    expect(S.config.legalAceptado.via).toBeUndefined();
   });
 });
