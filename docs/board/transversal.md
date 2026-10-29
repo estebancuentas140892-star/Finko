@@ -218,19 +218,6 @@
 #### APR.5b - La ronda 2 de Tino y los hitos del niño
 - Estado : espera los dibujos de la ronda 2; entran por el conversor que vive junto a los dibujos fuente (095 D4), con el tope de 16 KB por pose. **Objetivo**: sembrar, compartir, reserva y pensando en sus pantallas; hitos del niño (meta cumplida y ruta terminada, con el confeti que ya existe). **Modelo**: Equilibrado, Medio.
 
-### Fase 6 - El niño empieza solo ([ADR 100](../DECISIONS/100-el-nino-empieza-solo.md))
-
-#### APR.6b - "Este teléfono es de un adulto"
-- Prioridad  : media
-- Estado     : pendiente
-- Área       : ambos
-- Objetivo   : desde la pestaña "Yo" del niño, con confirmación, crear el adulto con nombre, PIN y aceptación completa; el niño queda como su perfil (D5)
-- Riesgo     : el paso del PIN y del gate legal ya existen; no se duplican
-- Secciones  : app del niño, perfiles
-- Archivos   : `dominio/nino/`, `ui/quien-usa.js`, `ui/onboarding.js`
-- Depende de : APR.6a
-- Aceptación : E2E: un teléfono del niño pasa a tener adulto con PIN, el niño conserva su alcancía y volver al adulto pide el PIN
-
 ---
 
 ## Iniciativa NUBE - Finko en la nube con Supabase

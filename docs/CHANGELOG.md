@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(nino): APR.6b, "Este teléfono es de un adulto" · 2026-10-29
+
+[ADR 100](DECISIONS/100-el-nino-empieza-solo.md) D5; ficha [`contexto/nino.md`](contexto/nino.md). Cierra la Fase 6 de APR. SW v627.
+
+- **Un teléfono que empezó como del niño ya no deja a nadie atrapado**: en "Yo", un enlace discreto con confirmación abre dos pasos en el modal de bienvenida (`ui/telefono-adulto.js`): nombre y PIN dos veces (`validarPin`, `crearBloqueo`), y la aceptación completa de los documentos.
+- **Nada se guarda hasta aceptar**. Entonces el teléfono deja de ser del niño, el adulto entra con el PIN que acaba de crear (`bloqueo:abierto`, como en "¿Quién usa Finko?") y el niño queda como su perfil con todo lo suyo. Al volver a abrir, "¿Quién usa Finko?".
+- **No se ofrece en un teléfono unido a la nube de su familia** (NUBE.3): el adulto ya existe en su teléfono. El enlace se esconde por CSS con `.kid-vinculado`.
+- 9 tests unitarios nuevos y 2 E2E.
+
 ### feat(nino): APR.6a, el niño empieza solo: Finko pregunta quién lo va a usar · 2026-10-29
 
 [ADR 100](DECISIONS/100-el-nino-empieza-solo.md) (acota el ADR 093 D1 y la aceptación legal LEG.2 solo en el camino del niño); ficha [`contexto/nino.md`](contexto/nino.md). Todos los anchos. SW v626.

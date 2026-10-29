@@ -12,7 +12,7 @@
 
 - **Objetivo**          : que un tutor y niños de 7 a 12 años compartan el teléfono sin que el niño vea las finanzas del adulto (D1).
 - **Estado actual**     : en evolución (Fase 3 de APR). Cerradas **APR.3b** (sistema visual), **APR.3a** (perfiles, selector, alta paso 1, PIN de niño a adulto, candado obligatorio, P1), **APR.3c** (barra, ruta en orden como camino, lección con Frai, celebración, unidad 1) **APR.3d** (Guardé, Gasté, Compartí, mover, una meta con semanas y fecha) y **APR.3e** (alta en dos pasos con mesada, "Entregada" como un solo hecho, premio por ahorrar, progreso del niño). **APR.3f**: las ocho unidades escritas y la ubicación desde los 10 años; falta su revisión pedagógica. **APR.4b**: riel desde 768 px, Inicio en dos columnas desde 1024 px y "Cambiar de perfil" al pie de la barra lateral del adulto. **APR.5a**: Tino, un guatín, reemplaza a Frai ([ADR 095](../DECISIONS/095-tino-en-el-sprite.md)).
-- **Verificado contra** : APR.6a (commit `a40cd6e`, 2026-10-29, el niño empieza solo). Antes: APR.5a (2026-10-27).
+- **Verificado contra** : APR.6b (commit `f09b213`, 2026-10-29, "Este teléfono es de un adulto"). Antes: APR.6a (2026-10-29).
 
 **Dónde vive**
 
@@ -26,6 +26,7 @@
 | "Olvidé mi PIN" con y sin niños (P1) | `modules/ui/bloqueo-acceso.js` | `olvideMiPin()`, `PALABRA_BORRAR`, `intentarPin()` |
 | Confirmación con palabra escrita | `modules/ui/confirm.js` | opción `palabra` |
 | El niño empieza solo: "¿Quién va a usar Finko?" y sus tres pantallas (APR.6a, ADR 100) | `modules/ui/onboarding.js`, `modules/ui/onboarding-nino.js`, `modules/ui/aceptacion-legal.js` | `_renderQuien()`, `empezarCaminoNino()`, `manejarFormNino()`, `perfilNinoSolo()`, `registrarAvisoNino()` |
+| "Este teléfono es de un adulto": confirmación, nombre y PIN, documentos (APR.6b, ADR 100 D5) | `modules/ui/telefono-adulto.js`, `modules/dominio/nino/view.js` | `ofrecerTelefonoAdulto()`, `validarDatosAdulto()`, acción `telefono-adulto`, `.knino-adulto`, `.kid-vinculado` |
 | Bloque Familia, alta en dos pasos, mesada, premio y progreso | `modules/dominio/config/familia.js`, `familia-view.js` | `initFamilia()`, `abrirAlta()`, `_entregada()`, `_pagarPremio()`, `htmlFamilia()`, `htmlMesada()`, `htmlPremio()`, `htmlProgresoNino()`, `data-action="familia-*"` |
 | Calendario de la mesada y premio (sin DOM, lo leen tutor y niño) | `modules/infra/mesada.js` | `repartoPorDefecto()`, `validarMesada()`, `mesadaPendiente()`, `proximaMesada()`, `guardadoTodoElMes()`, `premioPendiente()`, `proximoPremio()` |
 | El gasto Familia del tutor | `modules/dominio/gastos/index.js` | `_registrarGastoExterno()`, evento `gasto:registrar` |
@@ -59,14 +60,15 @@
 - **Tino pesa unos 12 KB por pose** en el sprite de `index.html`, también para el adulto (095 D1). Un test pone el tope en 16 KB; la ronda 2 entra por el conversor que vive junto a los dibujos fuente (095 D4), no en el repo.
 - **Inicio trae la alcancía dos veces** (la lista corta y los tres frascos) y el ancho elige cuál se ve (`nino.css`): un test que cuente frascos en Inicio ve los dos. Lo mismo con "Cambiar": en el teléfono va en Inicio y en Yo; desde 768 px, en el riel.
 
-**El niño empieza solo (APR.6a, [ADR 100](../DECISIONS/100-el-nino-empieza-solo.md))**: la primera pantalla del onboarding pregunta quién va a usar Finko. El camino del niño crea su perfil (`teNombra: 'Tu familia'`), marca el teléfono como suyo (`dispositivoNino`) y guarda el aviso legal con `via: 'nino'`, que no es un contrato aceptado: la aceptación de verdad la da un adulto cuando aparece (APR.6b o el código). No emite `onboarding:completado` (logros e instalar son del adulto). Sin tutor no hay mesada ni premio.
+**El niño empieza solo (APR.6a, [ADR 100](../DECISIONS/100-el-nino-empieza-solo.md))**: la primera pantalla del onboarding pregunta quién va a usar Finko. El camino del niño crea su perfil (`teNombra: 'Tu familia'`), marca el teléfono como suyo (`dispositivoNino`) y guarda el aviso legal con `via: 'nino'`, que no es un contrato aceptado: la aceptación de verdad la da un adulto cuando aparece (APR.6b o el código). No emite `onboarding:completado` (logros e instalar son del adulto). Sin tutor no hay mesada ni premio. La salida es "Este teléfono es de un adulto" (APR.6b, D5): nada se guarda hasta aceptar los documentos, y no se ofrece si el teléfono está unido a la nube (`.kid-vinculado`, que pone `ui/telefono-adulto.js` al arrancar).
 
 **Su propio teléfono (NUBE.3)**: con `S.config.dispositivoNino`, Finko entra directo a ese perfil, sin adulto ni "Cambiar de perfil" (`ui/quien-usa.js`, `.kid-propio`). Cómo se vincula y qué sincroniza: [`nube.md`](nube.md).
 
-**Cambios pendientes**: el selector usa el campo de PIN de siempre, no el teclado numérico del diseño; "Este teléfono es de un adulto" desde la pestaña "Yo" (APR.6b). La ronda 2 de Tino y los hitos del niño (APR.5b) esperan sus dibujos.
+**Cambios pendientes**: el selector usa el campo de PIN de siempre, no el teclado numérico del diseño. La ronda 2 de Tino y los hitos del niño (APR.5b) esperan sus dibujos.
 
 **Cambios realizados**:
 
+- 2026-10-29 (APR.6b, ADR 100 D5): "Este teléfono es de un adulto" desde "Yo": el adulto se crea con nombre, PIN y documentos, y el niño queda como su perfil.
 - 2026-10-29 (APR.6a, ADR 100): el niño empieza solo, en tres pantallas, desde "¿Quién va a usar Finko?"; el teléfono queda como suyo. El atajo del avatar de Inicio a Familia lo trajo MV2.15c (ADR 099 D6).
 - 2026-10-29 (MV2.1, ADR 098 D13): el camino de Aprender ya no desborda (alejaba la página a 390); frascos del inicio en filas bajo 400 px; zona segura arriba; la barra del sistema toma el fondo de la piel.
 - 2026-10-27 (APR.5a): Tino reemplaza a Frai en el sprite y en las siete pantallas, celebra en grande la unidad terminada y se presenta en Inicio.
