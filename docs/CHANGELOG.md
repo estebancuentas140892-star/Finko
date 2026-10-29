@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(movil): MV2.15c, Inicio móvil: el avatar abre tu perfil · 2026-10-29
+
+[ADR 099](DECISIONS/099-inicio-movil-hoy-en-una-lista.md) D6 y D7 (cambia el ADR 034 D8 y retoma el candidato móvil del 070 D10); ficha [`contexto/inicio.md`](contexto/inicio.md). Cierra MV2.15. Bajo 1024 px; escritorio sin cambios (E2E). SW v625.
+
+- **El avatar es un botón neutro** (`#perfil-boton`) que abre la hoja "Tu perfil" (`ui/hoja-perfil.js`): tu nombre, Familia, la copia en la nube (con el correo si hay sesión) y Ajustes. La marca queda como la única teja verde. Existe aunque falte el nombre, con un dibujo de persona.
+- **Pasarle el teléfono a un niño** va primero, uno por niño, y usa el `entrarComo` de siempre: de adulto a niño es libre y volver pide el PIN (ADR 093 D1).
+- **Cada fila baja hasta su bloque de Ajustes** y le da el foco al título: un `hashchange` de una vez, puesto al tocar, corre detrás del de `volver.js`, que deja la sección nueva arriba.
+- **El engranaje sale del DOM**: desde 1024px ya estaba oculto (DSK.1a) y bajo 1024px Ajustes vive en la hoja y en "Más". El avatar de escritorio sigue decorativo y verde: los dos anchos conviven y el CSS decide.
+- 13 tests unitarios nuevos y 3 E2E; el E2E de DSK.1a sigue protegiendo la marca y ahora verifica el avatar en vez del engranaje.
+
 ### feat(movil): MV2.15b, Inicio móvil: "Esta semana" en vez de Próximas prioridades · 2026-10-29
 
 [ADR 099](DECISIONS/099-inicio-movil-hoy-en-una-lista.md) D5 (respeta el ADR 088 D3); ficha [`contexto/inicio.md`](contexto/inicio.md). Segunda de tres rebanadas. Bajo 1024 px; escritorio sin cambios (E2E). SW v624.
