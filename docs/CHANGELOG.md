@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(nino): APR.6a, el niño empieza solo: Finko pregunta quién lo va a usar · 2026-10-29
+
+[ADR 100](DECISIONS/100-el-nino-empieza-solo.md) (acota el ADR 093 D1 y la aceptación legal LEG.2 solo en el camino del niño); ficha [`contexto/nino.md`](contexto/nino.md). Todos los anchos. SW v626.
+
+- **La primera pantalla pregunta quién va a usar Finko**: "Soy adulto", "Soy niño o niña" y "Tengo un código de mi familia", que sube desde el paso del nombre. Al adulto le cuesta un toque; los dos E2E de onboarding lo suman.
+- **El niño llega a su app en tres pantallas** (`ui/onboarding-nino.js`): nombre y edad (7 a 12, "Tengo 13 años o más" lleva al adulto), su dibujo, y "Un adulto de mi familia sabe que uso Finko". Sin PIN, sin cuenta, sin internet.
+- **El teléfono queda como teléfono propio del niño** (`dispositivoNino`, el modo de NUBE.3): al recargar entra directo a su app. El perfil dice "Tu familia" donde no hay tutor nombrado.
+- **El aviso legal del niño** se guarda con `via: 'nino'` (`registrarAvisoNino()`): no es un contrato aceptado; el gate solo mira la versión y no le salta. Los documentos no cambian.
+- Al niño no se le avisa `onboarding:completado`: lo escuchan el aviso de logros y el de instalar, que son del adulto.
+- 12 tests unitarios nuevos y 3 E2E; 2 E2E de onboarding suman el toque de "Soy adulto".
+
 ### feat(movil): MV2.15c, Inicio móvil: el avatar abre tu perfil · 2026-10-29
 
 [ADR 099](DECISIONS/099-inicio-movil-hoy-en-una-lista.md) D6 y D7 (cambia el ADR 034 D8 y retoma el candidato móvil del 070 D10); ficha [`contexto/inicio.md`](contexto/inicio.md). Cierra MV2.15. Bajo 1024 px; escritorio sin cambios (E2E). SW v625.

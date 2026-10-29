@@ -80,6 +80,7 @@ Las tarjetas del tablero (la iniciativa HF se lista por fase), para elegir la pr
 | HF.1a a HF.5a | Fases 1 a 5 de la iniciativa HF (24 rebanadas) | Transversal | media | ficha 18 de MOV.1, cierre de MOV.1 |
 | APR.2c y APR.3f | Iniciativa "Aprende y aplícalo": la revisión pedagógica de las lecciones del adulto y del niño | Transversal | media | nada |
 | APR.5b | La ronda 2 de Tino ([ADR 094](DECISIONS/094-tino-el-guatin.md) y [095](DECISIONS/095-tino-en-el-sprite.md)) y los hitos del niño | Transversal | media | los dibujos de la ronda 2 |
+| APR.6b | "Este teléfono es de un adulto": de teléfono del niño a teléfono con tutor ([ADR 100](DECISIONS/100-el-nino-empieza-solo.md)) | Transversal | media | nada |
 | NUBE.4 | Finko en la nube con Supabase: bancos ([ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md)) | Transversal | media | su propio ADR (finanzas abiertas); invitar probadores pide SMTP propio |
 | A.5 | Dominio custom en Vercel | Mantenimiento | baja | que el usuario tenga el dominio registrado |
 | E.2-2027 | Actualizar SMMLV + UVT a valores 2027 | Mantenimiento | alta (enero 2027) | publicación oficial de los decretos 2027 |
