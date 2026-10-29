@@ -1,334 +1,63 @@
 /**
- * aprende.test.js - APR.1a: la ruta de Aprende y una lección completa a
- * pantalla completa, de punta a punta en el navegador (ADR 092 D7 y D8).
+ * aprende.test.js - Finko del adulto ayuda a decidir; no enseña con lecciones
+ * (ADR 101, que retira del adulto la capa del ADR 092).
  *
- * Cubre lo que los unitarios no pueden: la carga del contenido con
- * `import()`, el overlay a pantalla completa, el foco en cada paso, el
- * avance guardado para retomar y el Aplícalo con los gastos sembrados.
- *
- * Playwright corre a 1280 px: la ruta es la de escritorio (APR.4a), donde
- * tocar una lección la elige y "Empezar lección" está en su detalle. La
- * ruta de móvil tiene su propio bloque, a 390 px.
+ * Antes cubría la ruta de Aprende del adulto, el bloque Inicio con tres lentes,
+ * "Tu siguiente paso", la oferta del Fondo y la prueba de ubicación. Todo eso
+ * salió de la app del adulto; acá se verifica que no vuelva a aparecer. El
+ * motor de lecciones lo sigue usando el niño: su recorrido está en
+ * perfiles.test.js.
  */
 
 import { test, expect } from '@playwright/test';
-import { sembrarSiVacio, estadoBase, leerEstado, parchar } from './helpers/estado.js';
+import { sembrar, estadoBase, leerEstado } from './helpers/estado.js';
 
-/** Fecha de este mes, para que los gastos caigan en el Aplícalo. */
-function diaDelMes(dia) {
-  const hoy = new Date();
-  return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
-}
+const CUENTA = { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi', saldo: 900_000, activa: true, fechaCreacion: '2025-01-01T00:00:00.000Z' };
 
-test.describe('APR.1a - Aprende', () => {
-  test.beforeEach(async ({ page }) => {
-    await sembrarSiVacio(page, estadoBase({
-      cuentas: [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi', saldo: 500_000, activa: true, fechaCreacion: '2026-07-01T00:00:00.000Z' }],
-      gastos: [
-        { id: 'g1', descripcion: '', monto: 6_500, categoria: 'Restaurantes', fecha: diaDelMes(1), cuentaId: 'c1' },
-        { id: 'g2', descripcion: '', monto: 15_000, categoria: 'Transporte', fecha: diaDelMes(1), cuentaId: 'c1' },
-        { id: 'g3', descripcion: '', monto: 300_000, categoria: 'Mercado', fecha: diaDelMes(1), cuentaId: 'c1' },
-      ],
-    }));
-    await page.goto('/#aprende');
-    await page.waitForSelector('#sec-aprende.active', { timeout: 10_000 });
-  });
-
-  test('la ruta recomienda la unidad 1 y su lección 1, con su detalle al lado', async ({ page }) => {
-    await expect(page.locator('.aprende-unidad--actual')).toContainText('Unidad 1 · vas aquí');
-    await expect(page.locator('.aprende-grupo').first()).toContainText('Fondo de emergencia');
-    // Escritorio (APR.4a): el detalle de la recomendada, con lo que vas a
-    // aprender, que llega con el contenido de la unidad, y un solo primario.
-    const detalle = page.locator('.aprende-detalle');
-    await expect(detalle).toContainText('Lección 1 · 3 minutos');
-    await expect(detalle).toContainText('Vas a aprender');
-    await expect(detalle.locator('.aprende-detalle__lista li')).toHaveCount(3);
-    await expect(detalle).toContainText('Mis cuentas, con tus saldos');
-    await expect(page.locator('.aprende-detalle__cta')).toHaveText('Empezar lección');
-    await expect(page.locator('.aprende-unidad__cta')).toHaveCount(0);
-  });
-
-  test('una lección completa: casi, clasificar, control y Aplícalo con tus datos', async ({ page }) => {
-    // Nada se bloquea (D8): la unidad 3 se despliega sin hacer la 1 ni la 2,
-    // y su lección 2 se abre desde su fila sin hacer la 1.
-    await page.click('.aprende-fila__boton[data-id="u3"]');
-    // En escritorio la fila elige la lección y el foco se queda en ella.
-    await page.click('.aprende-paso__boton[data-id="u3-l2"]');
-    await expect(page.locator('.aprende-paso__boton[data-id="u3-l2"]')).toHaveAttribute('aria-current', 'true');
-    await expect(page.locator('.aprende-paso__boton[data-id="u3-l2"]')).toBeFocused();
-    await expect(page.locator('.aprende-detalle__titulo')).toHaveText('Encuentra tus gastos hormiga');
-    await expect(page.locator('.aprende-detalle__tipos')).toContainText('Clasificar deslizando');
-    await page.click('.aprende-detalle__cta');
-    const leccion = page.locator('#modal-leccion[data-open]');
-    await expect(leccion).toHaveCount(1);
-    await expect(page.locator('.leccion__cuenta')).toHaveText('1 de 5');
-    await expect(page.locator('#leccion-titulo')).toBeFocused();
-    await expect(page.locator('.leccion__salir')).toContainText('Salir · tu avance se guarda');
-
-    await page.click('.leccion__pie [data-action="leccion-continuar"]');
-    // Equivocarse muestra "Casi" (nunca rojo) y la pregunta vuelve al final.
-    await page.click('[data-action="leccion-elegir"][data-idx="2"]');
-    await expect(page.locator('.leccion-fb--casi')).toContainText('Esta pregunta vuelve al final');
-    await expect(page.locator('#leccion-fb-titulo')).toBeFocused();
-    await page.click('.leccion-fb [data-action="leccion-continuar"]');
-
-    // Clasificar con los botones, la alternativa accesible al gesto.
-    await expect(page.locator('.leccion__cuenta')).toHaveText('3 de 5');
-    const esHormiga = ['Recarga del celular', 'Pandebono y café', 'Domicilio de almuerzo'];
-    for (let i = 0; i < 6; i++) {
-      const titulo = (await page.locator('.leccion-tarjeta--arriba .leccion-tarjeta__titulo').textContent()).trim();
-      await page.click(`[data-lado="${esHormiga.includes(titulo) ? 'si' : 'no'}"]`);
-      if (i < 5) await expect(page.locator('.leccion__conteo-faltan')).toHaveText(`Faltan ${5 - i}`);
-    }
-    await expect(page.locator('.leccion-fb--bien')).toBeVisible();
-    await page.click('.leccion-fb [data-action="leccion-continuar"]');
-
-    // Mover el control recalcula en vivo.
-    await expect(page.locator('.leccion-resultado__cifra')).toHaveText('$1.170.000');
-    await page.locator('.leccion-rango').fill('7');
-    await expect(page.locator('.leccion-resultado__cifra')).toHaveText('$1.638.000');
-    await page.click('.leccion__pie [data-action="leccion-continuar"]');
-
-    // La pregunta fallada vuelve antes del cierre.
-    await expect(page.locator('.leccion__eyebrow').first()).toHaveText('Otra vez');
-    await page.click('[data-action="leccion-elegir"][data-idx="1"]');
-    await page.click('.leccion-fb [data-action="leccion-continuar"]');
-
-    // Cierre: lección lista y el Aplícalo con los gastos pequeños sembrados.
-    await expect(page.locator('.leccion__cuenta')).toHaveText('Lista');
-    await expect(page.locator('.leccion-aplica__cifra')).toHaveText('$21.500');
-    await expect(page.locator('.leccion-aplica')).toContainText('Son 2 compras');
-    // save() va con debounce (ADN 5): se espera a que lo terminado quede escrito.
-    await expect.poll(async () => Object.keys((await leerEstado(page)).aprende?.hechas ?? {}))
-      .toEqual(['u3-l2']);
-    expect((await leerEstado(page)).aprende.enCurso).toBeNull();
-
-    // El botón dice el monto (R50) y pone el límite en Límites, su dueño.
-    await expect(page.locator('[data-action="leccion-limite-hormiga"]')).toHaveText('Poner un límite de $20.000');
-    await page.click('[data-action="leccion-limite-hormiga"]');
-    await expect(leccion).toHaveCount(0);
-    await expect(page.locator('#sec-presupuesto.active')).toHaveCount(1);
-    await expect(page.locator('.envelope--hormiga')).toContainText('Gastos pequeños');
-    await expect.poll(async () => (await leerEstado(page)).config?.hormiga?.limite).toBe(20_000);
-  });
-
-  test('salir guarda el avance y la ruta ofrece seguir donde quedó', async ({ page }) => {
-    await page.click('.aprende-detalle__cta');
-    await page.click('.leccion__pie [data-action="leccion-continuar"]');
-    // Una respuesta fallada no cuenta como vista: se retoma en esa pregunta.
-    await page.click('[data-action="leccion-elegir"][data-idx="0"]');
-    await page.click('.leccion-fb [data-action="leccion-continuar"]');
-    await page.click('[data-action="leccion-salir"]');
-    await expect(page.locator('#modal-leccion[data-open]')).toHaveCount(0);
-    await expect(page.locator('.aprende-detalle__cta')).toHaveText('Seguir donde quedaste');
-    await expect.poll(async () => (await leerEstado(page)).aprende?.enCurso).toEqual({ id: 'u1-l1', paso: 1 });
-
-    await page.reload();
-    await page.waitForSelector('#sec-aprende.active', { timeout: 10_000 });
-    await page.click('.aprende-detalle__cta');
-    await expect(page.locator('.leccion__cuenta')).toHaveText('2 de 3');
-  });
-
-  test('terminar la unidad celebra con la insignia y la ruta lo dice', async ({ page }) => {
-    // parchar corre antes de cada carga: el flush al salir de la página no lo pisa.
-    await parchar(page, {
-      aprende: { hechas: { 'u3-l1': '2026-10-01', 'u3-l2': '2026-10-01', 'u3-l3': '2026-10-01' }, sabidas: ['u1', 'u2'], semanas: [], enCurso: null },
-    });
-    await page.reload();
-    await page.waitForSelector('#sec-aprende.active', { timeout: 10_000 });
-    await expect(page.locator('.aprende-detalle__titulo')).toHaveText('Repaso: tu mes en hormigas');
-    await page.click('.aprende-detalle__cta');
-
-    // Lección 4: clasificar cuatro tarjetas y una pregunta.
-    const esHormiga = ['Gaseosa en la tienda', 'Propina del parqueadero'];
-    for (let i = 0; i < 4; i++) {
-      const titulo = (await page.locator('.leccion-tarjeta--arriba .leccion-tarjeta__titulo').textContent()).trim();
-      await page.click(`[data-lado="${esHormiga.includes(titulo) ? 'si' : 'no'}"]`);
-      // La tarjeta sale animada: se espera a la siguiente antes de leerla.
-      if (i < 3) await expect(page.locator('.leccion__conteo-faltan')).toHaveText(`Faltan ${3 - i}`);
-    }
-    await page.click('.leccion-fb [data-action="leccion-continuar"]');
-    await page.click('[data-action="leccion-elegir"][data-idx="1"]');
-    await page.click('.leccion-fb [data-action="leccion-continuar"]');
-
-    await expect(page.locator('#leccion-titulo')).toHaveText('Terminaste la unidad 3');
-    await expect(page.locator('.leccion-insignia')).toBeVisible();
-    await page.click('.leccion__pie [data-action="leccion-salir"]');
-    // La unidad 3 queda hecha y la ruta sigue con la 4 (APR.2c).
-    await expect(page.locator('.aprende-unidad--actual')).toContainText('Unidad 4 · vas aquí');
-  });
-
-  test('ordenar pasos: el asa se arrastra y las flechas siguen de alternativa (APR.4a)', async ({ page }) => {
-    await page.click('.aprende-fila__boton[data-id="u2"]');
-    await page.click('.aprende-paso__boton[data-id="u2-l3"]');
-    await page.click('.aprende-detalle__cta');
-    await page.click('.leccion__pie [data-action="leccion-continuar"]');
-    const textos = page.locator('.leccion-orden__texto');
-    await expect(textos).toHaveCount(4);
-    const antes = (await textos.allTextContents()).map(t => t.trim());
-
-    // La primera fila baja dos lugares arrastrándola por su asa. hover()
-    // espera a que el paso termine de entrar (stepIn) antes de medir.
-    await page.locator('[data-orden="0"] [data-orden-asa]').hover();
-    const asa = await page.locator('[data-orden="0"] [data-orden-asa]').boundingBox();
-    const destino = await page.locator('[data-orden="2"]').boundingBox();
-    await page.mouse.move(asa.x + asa.width / 2, asa.y + asa.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(asa.x + asa.width / 2, destino.y + destino.height / 2, { steps: 8 });
-    await page.mouse.up();
-    await expect(textos.nth(2)).toHaveText(antes[0]);
-    await expect(textos.nth(0)).toHaveText(antes[1]);
-    await expect(page.locator('[data-orden="2"] [data-action="leccion-mover"][data-dir="-1"]')).toBeFocused();
-  });
-});
-
-test.describe('APR.4a - la ruta en móvil no cambia', () => {
-  test.use({ viewport: { width: 390, height: 844 } });
-
-  test.beforeEach(async ({ page }) => {
-    await sembrarSiVacio(page, estadoBase());
-    await page.goto('/#aprende');
-    await page.waitForSelector('#sec-aprende.active', { timeout: 10_000 });
-  });
-
-  test('una columna: la unidad lleva su botón y tocar una lección la abre', async ({ page }) => {
-    await expect(page.locator('.aprende-detalle')).toHaveCount(0);
-    await expect(page.locator('.aprende-unidad__cta')).toHaveText('Empezar la lección 1');
-    await page.click('.aprende-paso__boton[data-id="u1-l2"]');
-    await expect(page.locator('#modal-leccion[data-open]')).toHaveCount(1);
-    // En móvil la salida es la X: el texto no ocupa la barra.
-    await expect(page.locator('.leccion__salir-texto')).toBeHidden();
-  });
-});
-
-test.describe('APR.1c - el bloque Inicio en móvil', () => {
-  test.use({ viewport: { width: 390, height: 844 } });
-
-  test.beforeEach(async ({ page }) => {
-    await sembrarSiVacio(page, estadoBase({
-      cuentas: [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi', saldo: 500_000, activa: true, fechaCreacion: '2026-07-01T00:00:00.000Z' }],
-      gastos: [{ id: 'g1', descripcion: '', monto: 6_500, categoria: 'Restaurantes', fecha: diaDelMes(1), cuentaId: 'c1' }],
-    }));
+test.describe('ADR 101 - el adulto no ve Aprende ni Tu progreso', () => {
+  test('móvil: Inicio es una sola pantalla, sin lentes, sin "Tu siguiente paso" y sin Accesos (D1)', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await sembrar(page, estadoBase({ cuentas: [CUENTA] }));
     await page.goto('/#dash');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+    await expect(page.locator('.bloque-tabs--inicio')).toHaveCount(0);
+    await expect(page.locator('#panel-siguiente-paso')).toHaveCount(0);
+    await expect(page.locator('#accesos-actividad-movil')).toHaveCount(0);
   });
 
-  test('Hoy, Aprende y Tu progreso son pestañas con su estado, y la barra no cambia', async ({ page }) => {
-    const tabs = page.locator('#tabs-dash .bloque-tabs__tab');
-    await expect(tabs).toHaveCount(3);
-    await expect(tabs.nth(0)).toContainText('Hoy');
-    await expect(tabs.nth(1)).toContainText('Aprende');
-    await expect(tabs.nth(1)).toContainText('3 min');
-    await expect(tabs.nth(2)).toContainText('Tu progreso');
-
-    const labels = await page.$$eval('#sidebar .nav-item', els =>
-      els.filter(e => e.offsetParent !== null)
-         .map(e => e.querySelector('.nav-item__label')?.textContent?.trim()));
-    expect(labels).toEqual(['Inicio', 'Gastos', 'Registrar', 'Ahorro', 'Más']);
-
-    await tabs.nth(1).click();
-    await page.waitForSelector('#sec-aprende.active', { timeout: 5_000 });
-    await expect(page.locator('#tabs-aprende .bloque-tabs__tab.active')).toContainText('Aprende');
-    // La barra sigue diciendo "estás en Inicio" desde una lente.
-    await expect(page.locator('.nav-item[data-section="dash"]')).toHaveClass(/nav-item--bloque-activo/);
-
-    await page.locator('#tabs-aprende .bloque-tabs__tab[data-section="progreso"]').click();
-    await page.waitForSelector('#sec-progreso.active', { timeout: 5_000 });
-    await expect(page.locator('#panel-progreso')).toContainText('Lo que sabes');
+  test('escritorio: la barra lateral no ofrece Aprende ni Tu progreso (D2)', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await sembrar(page, estadoBase({ cuentas: [CUENTA] }));
+    await page.goto('/#dash');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+    await expect(page.locator('#sidebar a[href="#aprende"]')).toHaveCount(0);
+    await expect(page.locator('#sidebar a[href="#progreso"]')).toHaveCount(0);
   });
 
-  test('Tu siguiente paso ocupa la celda de la tarjeta de logros y abre la lección', async ({ page }) => {
-    const paso = page.locator('#panel-siguiente-paso');
-    await expect(paso).toBeVisible();
-    await expect(paso).toContainText('Cuánto tienes de verdad');
-    await expect(paso).toContainText('Termina en Mis cuentas, con tus saldos.');
-    await paso.locator('[data-action="leccion-abrir"]').click();
-    await expect(page.locator('#modal-leccion[data-open]')).toHaveCount(1);
-  });
-});
-
-test.describe('APR.2a - la sección ofrece su lección', () => {
-  test.beforeEach(async ({ page }) => {
-    await sembrarSiVacio(page, estadoBase({
-      cuentas: [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi', saldo: 3_000_000, activa: true, fechaCreacion: '2026-07-01T00:00:00.000Z' }],
-      compromisos: [{ id: 'f1', tipo: 'fijo', descripcion: 'Arriendo', monto: 1_750_000, frecuencia: 'Mensual', diaPago: 5, activo: true }],
-      ahorro: { fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 2_625_000 }, compromisoMensual: 0, aportes: [] },
-    }));
+  test('un enlace viejo a #aprende o #progreso llega a Inicio (D2)', async ({ page }) => {
+    await sembrar(page, estadoBase({ cuentas: [CUENTA] }));
+    for (const hash of ['aprende', 'progreso']) {
+      await page.goto(`/#${hash}`);
+      await expect(page.locator('#sec-dash.active')).toHaveCount(1);
+      await expect(page.locator(`#sec-${hash}`)).toHaveCount(0);
+    }
   });
 
-  test('Fondo ofrece su lección con tus gastos fijos y, hecha, la baja a "Repasar"', async ({ page }) => {
+  test('el Fondo no ofrece lección (D2)', async ({ page }) => {
+    await sembrar(page, estadoBase({ cuentas: [CUENTA] }));
     await page.goto('/#fondo');
     await page.waitForSelector('#sec-fondo.active', { timeout: 10_000 });
-    const arriba = page.locator('#fondo-leccion');
-    await expect(arriba).toBeVisible();
-    await expect(arriba).toContainText('¿Cuánto es suficiente para ti?');
-    await expect(arriba).toContainText('3 meses son $5.250.000 y 6 meses, $10.500.000');
-    await expect(page.locator('#fondo-leccion-pie')).toBeHidden();
+    await expect(page.locator('#fondo-leccion, #fondo-leccion-pie, .leccion-oferta')).toHaveCount(0);
+  });
 
-    // Abre la lección a pantalla completa; no duplica la pantalla (D6).
-    await arriba.locator('[data-action="leccion-abrir"]').click();
-    await expect(page.locator('#modal-leccion[data-open]')).toHaveCount(1);
-    await page.click('[data-action="leccion-salir"]');
-
-    await parchar(page, {
-      aprende: { hechas: { 'u4-l2': '2026-10-01' }, sabidas: [], semanas: [], enCurso: null },
-    });
-    await page.reload();
-    await page.waitForSelector('#sec-fondo.active', { timeout: 10_000 });
-    await expect(page.locator('#fondo-leccion')).toBeHidden();
-    await expect(page.locator('#fondo-leccion-pie')).toContainText('Repasar');
+  test('los logros se guardan en silencio: sin avisos ni confeti (D3)', async ({ page }) => {
+    await sembrar(page, estadoBase({ cuentas: [CUENTA] }));
+    await page.goto('/#dash');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+    await page.waitForTimeout(600);
+    await expect(page.locator('.logro-toast')).toHaveCount(0);
+    await expect(page.locator('.confetti-piece')).toHaveCount(0);
+    const estado = await leerEstado(page);
+    expect(estado.logros.length).toBeGreaterThan(0);
   });
 });
-
-test.describe('APR.2b - prueba de ubicación', () => {
-  test.beforeEach(async ({ page }) => {
-    await sembrarSiVacio(page, estadoBase());
-    await page.goto('/#aprende');
-    await page.waitForSelector('#sec-aprende.active', { timeout: 10_000 });
-  });
-
-  /** Responde las cuatro preguntas por índice ('-1' es "Todavía no lo sé"). */
-  async function responder(page, indices) {
-    for (const idx of indices) {
-      await page.click(`[data-action="leccion-elegir"][data-idx="${idx}"]`);
-      await page.click('.leccion-fb [data-action="leccion-continuar"]');
-    }
-  }
-
-  test('lo que sabes queda sabido y la ruta empieza donde te toca', async ({ page }) => {
-    await page.click('[data-action="ubicacion-abrir"]');
-    await expect(page.locator('#modal-leccion[data-open]')).toHaveCount(1);
-    await expect(page.locator('.leccion__cuenta')).toHaveText('1 de 4');
-    // Bien la 1 y la 2, "Todavía no lo sé" en la 3 y mal la 4.
-    await responder(page, ['1', '1', '-1', '0']);
-
-    await expect(page.locator('#leccion-titulo')).toHaveText('Empiezas en la unidad 3');
-    await expect.poll(async () => (await leerEstado(page)).aprende?.sabidas).toEqual(['u1', 'u2']);
-    await page.click('[data-action="ubicacion-inicio"]');
-    await page.waitForSelector('#sec-dash.active', { timeout: 5_000 });
-
-    await page.goto('/#aprende');
-    await page.waitForSelector('#sec-aprende.active', { timeout: 10_000 });
-    await expect(page.locator('.aprende-unidad--actual')).toContainText('Unidad 3 · vas aquí');
-    await expect(page.locator('#aprende-grupo-sabes')).toBeVisible();
-    await expect(page.locator('[data-action="ubicacion-abrir"]')).toHaveCount(0);
-  });
-
-  test('"Prefiero empezar desde la unidad 1" deshace lo marcado y no vuelve a ofrecerla', async ({ page }) => {
-    await page.click('[data-action="ubicacion-abrir"]');
-    await responder(page, ['1', '1', '2', '2']);
-    await expect(page.locator('#leccion-titulo')).toHaveText('Empiezas en la unidad 5');
-    await page.click('[data-action="ubicacion-desde-1"]');
-
-    await expect(page.locator('#modal-leccion[data-open]')).toHaveCount(0);
-    await expect(page.locator('.aprende-unidad--actual')).toContainText('Unidad 1 · vas aquí');
-    await expect(page.locator('[data-action="ubicacion-abrir"]')).toHaveCount(0);
-    // save() va con debounce (ADN 5) y `sabidas` ya era [] al sembrar: se
-    // espera a que quede escrita también la fecha de la prueba.
-    await expect.poll(async () => {
-      const a = (await leerEstado(page)).aprende;
-      return [a?.sabidas, typeof a?.ubicacion];
-    }).toEqual([[], 'string']);
-  });
-});
-

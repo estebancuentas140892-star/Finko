@@ -572,13 +572,7 @@ function _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia = 
       </div>
     </article>
 
-    <!-- APR.2a (ADR 092 D6): la lección que ofrece el Fondo. Aprende llena
-         uno de los dos huecos al oír "seccion:pintada": el de arriba antes
-         de hacerla y el del pie, como "Repasar", después (R65). -->
-    <div class="leccion-oferta-hueco" id="fondo-leccion" hidden></div>
-
-    ${_renderHabitoSection(aportes, tasaAhorro)}
-    <div class="leccion-oferta-hueco" id="fondo-leccion-pie" hidden></div>`;
+    ${_renderHabitoSection(aportes, tasaAhorro)}`;
 }
 
 /**

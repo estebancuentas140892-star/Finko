@@ -616,9 +616,9 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
   // limite. Su casa es Analisis (ficha 16), que todavia no lo adopta, asi que su
   // calculo queda en resumen/logic.js sin consumidor y con sus tests unitarios.
 
-  test('móvil: Accesos rápidos cierran la pantalla, y Actividad reciente ya no está (IN.8g, ADR 034 D7; acotado a móvil desde IN.9d, ADR 057 D4)', async ({ page }) => {
-    // Desde 1024px cada uno vive por separado (ver el test de escritorio,
-    // más abajo); acá se verifica que la fusión móvil sigue intacta.
+  test('móvil: Inicio cierra sin Accesos rápidos ni Actividad reciente (ADR 087, ADR 101 D1)', async ({ page }) => {
+    // ADR 101 D1: Accesos rápidos salió de Inicio también en móvil; la
+    // barra inferior, "Más" y las filas de "Atención hoy" ya llevan a todo.
     await page.setViewportSize({ width: 390, height: 844 });
     const hoy = new Date();
     const iso = (d) => {
@@ -653,13 +653,8 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await page.goto('/');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
 
-    // Un solo contenedor visual: ambas secciones son hijas directas del
-    // mismo .accesos-actividad, no dos bento__cell separados.
-    const contenedor = page.locator('.accesos-actividad');
-    await expect(contenedor).toBeVisible();
-    await expect(contenedor.locator('.accesos-actividad__label').first()).toHaveText('Accesos rápidos');
-    await expect(contenedor.locator('[data-action="accesos-personalizar"]')).toBeVisible();
-    await expect(page.locator('#accesos-inicio-grid .menu-mas__item').first()).toBeVisible();
+    await expect(page.locator('.accesos-actividad')).toHaveCount(0);
+    await expect(page.locator('[data-action="accesos-personalizar"]')).toHaveCount(0);
 
     // ADR 087: Actividad reciente sale de Inicio. Contaba el pasado y compartia
     // anatomia con la lista de obligaciones. Su casa es Movimientos, que sigue a
@@ -1857,104 +1852,9 @@ test.describe('Centro Legal', () => {
   });
 });
 
-// ── SUITE 8d: "Tu progreso" con niveles (LG.2d, ADR 032; lente propia desde APR.1d) ─
-// "Tu progreso" dejó el apartado de Análisis y la tarjeta de Inicio (ADR 092
-// D4): es una lente propia. Agrupa por familia y muestra el nivel de usuario,
-// que ahora suma también las unidades de Aprende. El seed trae onboarded=true
-// (logro primer-paso vivo).
-
-test.describe('Tu progreso (niveles)', () => {
-  test.beforeEach(async ({ page }) => {
-    await saltearOnboarding(page);
-    await page.goto('/#progreso');
-    await page.waitForSelector('#sec-progreso.active', { timeout: 10_000 });
-  });
-
-  test('muestra el nivel de usuario y la familia agrupada sin listar sus niveles sueltos', async ({ page }) => {
-    const panel = page.locator('#panel-progreso');
-    await expect(panel).toContainText('Tu nivel');
-    await expect(panel).toContainText('Constancia de registro');
-    // La familia colapsa a una tarjeta: el nivel 2 no aparece como item propio.
-    await expect(panel).not.toContainText('Hábito registrado');
-  });
-});
-
-// ── SUITE 8e: Familia "deudas saldadas" en "Tu progreso" (LG.2c, ADR 032) ────
-
-test.describe('Tu progreso - familia deudas (LG.2c)', () => {
-  test('saldar una deuda desbloquea "Una deuda menos" agrupado en la familia', async ({ page }) => {
-    await sembrar(page, {
-      version: 1,
-      perfil: { nombre: 'TestUser', smmlv: 1750905 },
-      onboarded: true,
-      cuentas: [],
-      ingresos: [],
-      gastos: [],
-      compromisos: [
-        { id: 'd1', descripcion: 'Tarjeta pagada', tipo: 'deuda-entidad', saldoTotal: 0, cuotaMensual: 50000, diaPago: 5, activo: true },
-      ],
-      metas: [],
-    });
-    await page.goto('/#progreso');
-    await page.waitForSelector('#sec-progreso.active', { timeout: 10_000 });
-
-    const panel = page.locator('#panel-progreso');
-    await expect(panel).toContainText('Deudas saldadas');
-    await expect(panel).toContainText('Nivel 1 de 2');
-    await expect(panel).toContainText('Saldaste una deuda por completo.');
-    await expect(panel).toContainText('Siguiente:');
-    // La familia colapsa a una tarjeta: el nombre del nivel 2 ("Rompedeudas")
-    // no aparece suelto, solo el nombre de la familia y los textos de estado.
-    await expect(panel).not.toContainText('Rompedeudas');
-  });
-});
-
-// ── SUITE 8f: "Tu progreso" cuenta, agrupa y lleva (ficha 17 de MOV.1) ─────
-// Lo que falta va arriba con su encargo enlazado al rótulo vigente; el "X de
-// Y" es el tamaño de "Ya los tienes"; el aviso de desbloqueo lleva al panel
-// (H9, encargo de la ficha 03). En el teléfono, que es donde se auditó.
-
-test.describe('Tu progreso - ficha 17 de MOV.1', () => {
-  test.use({ viewport: { width: 390, height: 844 } });
-
-  test('lo que falta va arriba con su encargo enlazado y el conteo es lo que hay debajo', async ({ page }) => {
-    await sembrar(page, {
-      version: 1,
-      perfil: { nombre: 'TestUser', smmlv: 1750905 },
-      onboarded: true,
-      cuentas: [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi', saldo: 500000, activa: true, fechaCreacion: '2026-07-01T00:00:00.000Z' }],
-      ingresos: [],
-      gastos: [],
-      compromisos: [],
-      metas: [],
-      logros: ['primer-paso', 'tesorero'],
-    });
-    await page.goto('/#progreso');
-    await page.waitForSelector('#sec-progreso.active', { timeout: 10_000 });
-
-    await expect(page.locator('#logros-faltan')).toHaveText('Te falta');
-    await expect(page.locator('#logros-tienes')).toHaveText('Ya los tienes');
-    await expect(page.locator('[aria-labelledby="logros-tienes"] > li')).toHaveCount(2);
-    await expect(page.locator('#panel-progreso')).toContainText('2 de 12 logros');
-
-    const faltan = page.locator('[aria-labelledby="logros-faltan"]');
-    await expect(faltan.locator('a[href="#compromisos"]')).toHaveText('Por pagar');
-    await expect(faltan.locator('a[href="#fondo"]')).toHaveText('Fondo de emergencia');
-    await faltan.locator('a[href="#presupuesto"]').click();
-    await expect(page.locator('#sec-presupuesto.active')).toHaveCount(1);
-  });
-
-  test('el aviso de desbloqueo lleva a "Tu progreso" (H9)', async ({ page }) => {
-    // Sin logros persistidos, "Primer paso" se desbloquea al arrancar.
-    await saltearOnboarding(page);
-    await page.goto('/#dash');
-    const aviso = page.locator('.logro-toast');
-    await expect(aviso).toContainText('Primer paso');
-    await aviso.locator('.logro-toast__ver').click();
-    await expect(page.locator('#sec-progreso.active')).toHaveCount(1);
-    await expect(aviso).toHaveCount(0);
-  });
-});
+// ── "Tu progreso" salió de la app del adulto (ADR 101 D2) ───────────────────
+// Sus pruebas de pantalla se fueron con ella; la lógica de logros sigue
+// cubierta en tests/unit/logros.test.js y el retiro, en aprende.test.js.
 
 // ── SUITE 8: Sidebar colapsable ──────────────────────────────────────────────
 // Solo aplica en desktop (viewport >= 1024px). El viewport por defecto de

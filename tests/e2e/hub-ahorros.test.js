@@ -371,14 +371,14 @@ test.describe('DIS.18 - sidebar desktop', () => {
       els.map(e => e.textContent.trim()));
     expect(grupos).toEqual(['Día a día', 'Compromisos', 'Mi dinero', 'Cómo voy']);
 
-    // Día a día: Inicio, Aprende (APR.1a, ADR 092 D2: justo después de
-    // Inicio), Gastos, Calendario y Movimientos, que llegó desde
-    // "Seguimiento" (un grupo que no explicaba por qué lo contenía).
+    // Día a día: Inicio, Gastos, Calendario y Movimientos, que llegó desde
+    // "Seguimiento" (un grupo que no explicaba por qué lo contenía). Aprende
+    // salió de la app del adulto (ADR 101 D2).
     const diario = page.locator('.nav-group', { has: page.locator('#nav-label-diario') });
     await expect(diario.locator('a.nav-item--no-mobile, a:not(.nav-item--mobile-only)'))
-      .toHaveCount(5);
+      .toHaveCount(4);
     await expect(diario.locator('a[href="#dash"]')).toHaveCount(1);
-    await expect(diario.locator('a[href="#aprende"]')).toHaveCount(1);
+    await expect(diario.locator('a[href="#aprende"]')).toHaveCount(0);
     await expect(diario.locator('a[href="#movimientos"]')).toHaveCount(1);
 
     // La marca "F" reemplaza al emoji del logo (ADR 040 D4).
@@ -399,13 +399,13 @@ test.describe('DIS.18 - sidebar desktop', () => {
     await expect(miDinero.locator('a[href="#ahorro"] .nav-item__label')).toHaveText('Ahorro');
 
     // Cómo voy: las que miden. Análisis sigue acá desde que se disolvió
-    // "Herramientas" (NAV.B, ADR 024 D6); Límites llega en este movimiento, y
-    // Tu progreso junto a Análisis y no dentro (APR.1d, ADR 092 D2).
+    // "Herramientas" (NAV.B, ADR 024 D6) y Límites llega en este movimiento.
+    // Tu progreso estuvo acá (APR.1d) hasta que salió del adulto (ADR 101 D2).
     const comoVoy = page.locator('.nav-group', { has: page.locator('#nav-label-como-voy') });
-    await expect(comoVoy.locator('a')).toHaveCount(3);
+    await expect(comoVoy.locator('a')).toHaveCount(2);
     await expect(comoVoy.locator('a[href="#analisis"]')).toHaveCount(1);
     await expect(comoVoy.locator('a[href="#presupuesto"]')).toHaveCount(1);
-    await expect(comoVoy.locator('a[href="#progreso"]')).toHaveCount(1);
+    await expect(comoVoy.locator('a[href="#progreso"]')).toHaveCount(0);
   });
 
   test('las 4 hijas se anidan: ocultas fuera del grupo, desplegadas dentro (INT.1b)', async ({ page }) => {

@@ -66,9 +66,10 @@ test.describe('MV2.15a - Atención hoy en móvil (ADR 099)', () => {
     }
   });
 
-  test('la lente, "Ver los N" y la hoja dicen el mismo número; lo de mañana no cuenta (D2, D3)', async ({ page }) => {
+  test('"Ver los N" y la hoja dicen el mismo número; lo de mañana no cuenta (D2, D3)', async ({ page }) => {
     await abrir(page);
-    await expect(page.locator('#tabs-dash .bloque-tabs__tab[data-section="dash"]')).toHaveAttribute('aria-label', 'Hoy, 4 avisos');
+    // ADR 101 D1: Inicio ya no tiene lentes; el número lo dicen "Ver los N" y la hoja.
+    await expect(page.locator('#tabs-dash')).toHaveCount(0);
     const ver = page.locator('#panel-atencion-hoy [data-action="atencion-hoy-ver"]');
     await expect(ver).toContainText('Ver los 4');
 

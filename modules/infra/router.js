@@ -10,8 +10,6 @@
 // un nivel. Por eso no hay REDIRECTS para este cambio.
 const SECTIONS = new Map([
   ['dash',        'sec-dash'],
-  ['aprende',     'sec-aprende'],
-  ['progreso',    'sec-progreso'],
   ['movimientos', 'sec-movimientos'],
   ['gast',        'sec-gast'],
   ['compromisos', 'sec-compromisos'],
@@ -29,8 +27,12 @@ const SECTIONS = new Map([
 ]);
 
 // Hashes retirados: redirigen al destino indicado (bookmarks viejos, etc.).
+// ADR 101 D2: Aprende y Tu progreso salieron de la app del adulto. Un enlace
+// viejo a cualquiera de los dos llega a Inicio en vez de quedar en blanco.
 const REDIRECTS = new Map([
   ['calc', 'dash'],
+  ['aprende', 'dash'],
+  ['progreso', 'dash'],
 ]);
 
 const DEFAULT_HASH = 'dash';

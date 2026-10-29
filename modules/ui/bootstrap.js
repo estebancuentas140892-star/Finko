@@ -52,7 +52,6 @@ import { initInversiones } from '../dominio/inversiones/index.js';
 import { initCompromisos } from '../dominio/compromisos/index.js';
 import { initResumen } from '../dominio/resumen/index.js';
 import { initMovimientos } from '../dominio/movimientos/index.js';
-import { initAccesos } from '../dominio/accesos/index.js';
 import { initAgenda, revisarDebitosAutomaticos } from '../dominio/agenda/index.js';
 import { initPersonales } from '../dominio/personales/index.js';
 import { initPresupuesto } from '../dominio/presupuesto/index.js';
@@ -65,7 +64,6 @@ import { initNino } from '../dominio/nino/index.js';
 import { initMenuMas } from './menu-mas.js';
 import { initBloqueGastos } from './bloque-gastos.js';
 import { initBloqueAhorro } from './bloque-ahorro.js';
-import { initBloqueInicio } from './bloque-inicio.js';
 import { initVolver } from './volver.js';
 import { initDetalleFila } from './detalle-fila.js';
 import { initAtencionHoy } from './atencion-hoy.js';
@@ -93,7 +91,6 @@ initInversiones();
 initCompromisos();
 initResumen();
 initMovimientos();
-initAccesos();
 initAgenda();
 initPersonales();
 initPresupuesto();
@@ -110,7 +107,6 @@ initSidebarCollapse();
 // las pestañas ya en el DOM para marcar la activa.
 initBloqueGastos();
 initBloqueAhorro();
-initBloqueInicio();
 initRouter(markActiveNav);
 // ADR 098 D1-D2: el volver de móvil (origen real y scroll recuperado). Va
 // detrás del router para que su `hashchange` corra con la sección ya visible.

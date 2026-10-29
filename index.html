@@ -267,15 +267,6 @@
               <span class="nav-item__label">Inicio</span>
             </a>
 
-            <!-- Aprende (APR.1a, ADR 092 D2): en escritorio entra al grupo
-                 "Día a día" justo después de Inicio. En móvil no ocupa lugar
-                 en la barra: es una lente del bloque Inicio (APR.1c). -->
-            <a class="nav-item nav-item--no-mobile" href="#aprende" data-section="aprende"
-               aria-label="Aprende: tu ruta de lecciones">
-              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#c-birrete"/></svg>
-              <span class="nav-item__label">Aprende</span>
-            </a>
-
             <a class="nav-item" href="#gast" data-section="gast"
                aria-label="Gastos">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-gastos"/></svg>
@@ -442,15 +433,6 @@
               <span class="nav-item__label">Análisis</span>
             </a>
 
-            <!-- Tu progreso (APR.1d, ADR 092 D2): en escritorio entra a "Cómo
-                 voy", junto a Análisis y no dentro: Análisis interpreta tu
-                 dinero; Tu progreso, a ti. En móvil es lente de Inicio. -->
-            <a class="nav-item nav-item--no-mobile" href="#progreso" data-section="progreso"
-               aria-label="Tu progreso: nivel, lo que sabes y lo que haces">
-              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-trophy"/></svg>
-              <span class="nav-item__label">Tu progreso</span>
-            </a>
-
           </div>
         </div>
 
@@ -605,10 +587,6 @@
             <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
           </button>
         </header>
-        <!-- Franja de lentes del bloque Inicio (APR.1c, ADR 092 D1): Hoy,
-             Aprende y Tu progreso. ui/bloque-inicio.js la inyecta en las tres
-             lentes; solo se ve bajo 1024px. -->
-        <div id="tabs-dash"></div>
 
         <!-- BENTO GRID del dashboard (orden IN.8a, ADR 034 D1): hero →
              "Atención hoy" → "Resumen de la semana" → accesos + actividad
@@ -858,82 +836,15 @@
                tendencia no tiene fecha limite (vive en Analisis), y la
                actividad reciente cuenta el pasado y comparte anatomia con la
                lista de obligaciones (vive en Movimientos, que esta en "Mas").
-               El tercero, Accesos rapidos, se queda abajo: su motivo SI era de
-               ancho (en movil no hay barra lateral). -->
+               El tercero, Accesos rapidos, se quedo abajo hasta el ADR 101 D1,
+               que lo retiro tambien. -->
 
-          <!-- TU SIGUIENTE PASO (APR.1c, ADR 092 D5): ocupa la celda de la
-               tarjeta compacta de logros, que se mudó a la lente Tu progreso,
-               así Inicio no crece (ADR 087). Una sola cosa: una lección o la
-               acción pendiente de un Aplícalo. aprende/view.js la llena;
-               [hidden] cuando no hay nada que proponer. -->
-          <div id="panel-siguiente-paso" class="bento__cell bento__cell--half"
-               role="region" aria-label="Tu siguiente paso" hidden></div>
-
-          <!-- ACCESOS RÁPIDOS EN MÓVIL (IN.8g, ADR 034 D7; acotada a móvil desde
-               IN.9d, ADR 057 D4). Cierre de la pantalla bajo 1024px. El ADR 087
-               retira de acá Actividad reciente, con la que estaba fusionada:
-               contaba el pasado y su casa es Movimientos, a un toque en "Más".
-               Accesos se queda porque su motivo sí es de ancho: en móvil no hay
-               barra lateral (IN.4a, ADR 028 D2; accesos/view.js llena la grilla
-               contra S.config.accesosInicio). El id conserva su nombre
-               histórico: renombrarlo tocaría cinco archivos sin cambiar nada
-               para el usuario. Arranca [hidden]; render.js lo revela bajo
-               1024px. -->
-          <div class="bento__cell bento__cell--full bento__cell--flat accesos-actividad"
-               id="accesos-actividad-movil" hidden>
-            <div class="accesos-actividad__seccion" role="region" aria-label="Accesos rápidos">
-              <div class="accesos-actividad__header">
-                <span class="accesos-actividad__label">Accesos rápidos</span>
-                <button class="accesos-inicio__personalizar btn btn-ghost btn-sm" type="button"
-                        data-action="accesos-personalizar">
-                  <svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg>
-                  Personalizar
-                </button>
-              </div>
-              <div class="accesos-inicio__grid" id="accesos-inicio-grid"></div>
-            </div>
-          </div>
+          <!-- Inicio del adulto es una sola pantalla (ADR 101 D1): "Tu
+               siguiente paso" y Accesos rápidos salieron con la capa de
+               aprendizaje y los atajos; la barra inferior, "Más" y las filas
+               de "Atención hoy" ya llevan a todo. -->
 
         </div><!-- /.bento -->
-      </section>
-
-      <!-- APRENDE (APR.1a, ADR 092 D8): la ruta de nueve unidades. Cada
-           lección se abre a pantalla completa en #modal-leccion y termina en
-           la sección donde se aplica, con los datos del usuario. -->
-      <section class="section" id="sec-aprende" tabindex="-1" aria-labelledby="title-aprende">
-        <header class="section__header">
-          <div class="section__title-group">
-            <span class="cat-teja section__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#c-birrete"/></svg></span>
-            <div class="section__titulo">
-              <h1 class="section__title" id="title-aprende">Aprende</h1>
-              <p class="section__linea">Nueve unidades. Cada lección termina en Finko, con tus datos.</p>
-            </div>
-          </div>
-        </header>
-        <div id="tabs-aprende"></div>
-        <div id="panel-aprende">
-          <!-- aprende/view.js: renderRuta() -->
-        </div>
-      </section>
-
-      <!-- TU PROGRESO (APR.1d, ADR 092 D4): lente propia del bloque Inicio en
-           móvil y fila de "Cómo voy" en escritorio. Sale del apartado de
-           Análisis y de la tarjeta compacta de Inicio (acota el ADR 032 D6).
-           La pinta el dominio logros (ADN 10). -->
-      <section class="section" id="sec-progreso" tabindex="-1" aria-labelledby="title-progreso">
-        <header class="section__header">
-          <div class="section__title-group">
-            <span class="cat-teja section__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-trophy"/></svg></span>
-            <div class="section__titulo">
-              <h1 class="section__title" id="title-progreso">Tu progreso</h1>
-              <p class="section__linea">Lo que sabes y lo que haces suben el mismo nivel</p>
-            </div>
-          </div>
-        </header>
-        <div id="tabs-progreso"></div>
-        <div id="panel-progreso">
-          <!-- logros/view.js: renderProgresoSeccion() -->
-        </div>
       </section>
 
       <!-- MOVIMIENTOS (TX.8b: vista completa del historial de Actividad reciente,
@@ -1444,25 +1355,6 @@
        aria-labelledby="leccion-titulo" aria-hidden="true">
     <div class="modal leccion" id="leccion-panel">
       <!-- aprende/view.js: htmlLeccion() -->
-    </div>
-  </div>
-
-  <!-- Modal: Personalizar accesos rápidos de Inicio (IN.4a, ADR 028 D2) -->
-  <div class="modal-overlay" id="modal-personalizar-accesos"
-       role="dialog" aria-modal="true"
-       aria-labelledby="modal-personalizar-accesos-title" aria-hidden="true">
-    <div class="modal modal--sm">
-      <header class="modal__header">
-        <h2 class="modal__title" id="modal-personalizar-accesos-title">Personalizar accesos</h2>
-        <button class="modal__close btn btn-icon btn-ghost"
-                data-action="modal-close" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
-      </header>
-      <div class="modal__body">
-        <p class="form-hint form-hint--muted">Toca para agregar o quitar una sección de tus accesos rápidos en Inicio.</p>
-        <div id="modal-personalizar-accesos-body">
-          <!-- accesos/view.js: renderModalPersonalizarAccesos() -->
-        </div>
-      </div>
     </div>
   </div>
 
