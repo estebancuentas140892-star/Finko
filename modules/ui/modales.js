@@ -34,7 +34,17 @@ export function abrirModal(overlay) {
   // Inertizar el fondo después de trapFocus: trapFocus ya guardó el botón que
   // abrió el modal para restaurarlo al cerrar, así que marcar el fondo inerte
   // ahora no le roba ese elemento (el foco ya está dentro del modal).
-  _fondo()?.setAttribute('inert', '');
+  //
+  // Un cuadro después, no en el mismo: `inert` obliga a recalcular el estilo de
+  // todo el fondo visible, y con la lista de Gastos a la vista son ~3.400
+  // elementos, ~90 ms en un teléfono de gama media (PERF.11, medido con
+  // scripts/perf/fluidez.js). Hecho acá retrasaba el primer cuadro de la hoja;
+  // después del cuadro corre mientras la hoja entra animada en el compositor.
+  // Mientras tanto el foco ya está atrapado y `aria-modal` ya avisa.
+  requestAnimationFrame(() => setTimeout(() => {
+    // Si se cerró antes de llegar acá, el fondo ya no debe quedar inerte.
+    if ('open' in overlay.dataset) _fondo()?.setAttribute('inert', '');
+  }, 0));
 }
 
 /**

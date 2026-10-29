@@ -4595,6 +4595,15 @@ button.chip--gastos.chip--active {
   box-shadow: var(--fk-shadow-sm);
 }
 
+/* La cascada de entrada (atoms.css) cuenta los primeros 6 por lista, y acá
+   cada día es su propia lista: con un mes a la vista entraban animadas todas
+   las filas (68 en la medición de PERF.11) y la entrada a Gastos repintaba
+   seis cuadros de 30 a 65 ms. Entra en cascada solo el primer día. Misma
+   especificidad que la regla de atoms.css: gana por orden (domain va después). */
+.gastos-dia ~ .gastos-dia .list-item {
+  animation: none;
+}
+
 /* ── Insight de gastos hormiga (GAS.1c, ADR 039 D4) ─────────────
    Anatomía de .gmf-insight (MC.18c) con el tinte de gastos: pone en
    pantalla detectarHormigas() (logic.js), que existía sin vista.

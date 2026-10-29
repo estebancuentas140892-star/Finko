@@ -56,7 +56,10 @@ function showSection(hash, moveFocus = false) {
   // La sección tiene tabindex="-1" + aria-labelledby: al recibir foco, el
   // lector de pantalla anuncia el título de la sección como landmark.
   // En la carga inicial no se mueve, para no robar el foco antes del skip link.
-  if (moveFocus) {
+  // Con un modal abierto tampoco: una acción que navega y abre un modal en el
+  // mismo tick (ir-a-crear-cuenta) le sacaría el foco al modal, porque el
+  // `inert` del fondo llega un cuadro después de abrirlo (PERF.11, modales.js).
+  if (moveFocus && !document.querySelector('.modal-overlay[data-open]')) {
     document.getElementById(targetId)?.focus({ preventScroll: true });
   }
 }

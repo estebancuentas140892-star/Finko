@@ -45,6 +45,8 @@ async function saltearOnboarding(page) {
  * Selector robusto para modal cerrado:
  * - cerrarModal() hace setAttribute('aria-hidden', 'true')
  * - abrirModal() hace removeAttribute('aria-hidden') + dataset.open = ''
+ * Esperarlo con `state: 'attached'`: cerrado el overlay queda en
+ * `visibility: hidden` (PERF.11) y la espera por defecto (visible) no llega.
  */
 const modalCerrado = (id) =>
   `#${id}:not([data-open])`;
@@ -153,7 +155,7 @@ async function crearCuentaEfectivo(page, saldo) {
   await form.locator('button[type="submit"]').click();
 
   // Esperar cierre del modal antes de continuar.
-  await page.waitForSelector(modalCerrado('modal-cuenta'), { timeout: 5_000 });
+  await page.waitForSelector(modalCerrado('modal-cuenta'), { state: 'attached', timeout: 5_000 });
 }
 
 // ── SUITE 1: Dashboard ──────────────────────────────────────────────────────
@@ -800,7 +802,7 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
     await elegirChip(form, 'Boda');
     await form.locator('button[type="submit"]').click();
 
-    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-meta'), { state: 'attached', timeout: 5_000 });
 
     const glifo = page.locator('#lista-metas .meta-card__arco-icono');
     await expect(glifo).toHaveClass(/meta-card__arco-icono--silueta/);
@@ -838,7 +840,7 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
     await form.locator('[data-icono-picker="meta-icono"] [data-icon="c-torta"]').click();
     await form.locator('button[type="submit"]').click();
 
-    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-meta'), { state: 'attached', timeout: 5_000 });
 
     const glifo = page.locator('#lista-metas .meta-card__arco-icono');
     await expect(glifo.locator('use[href="#c-torta"]')).toHaveCount(1);
@@ -860,7 +862,7 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
     await elegirChip(form, 'Vivienda');
     await form.locator('button[type="submit"]').click();
 
-    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-meta'), { state: 'attached', timeout: 5_000 });
 
     // Manda Vivienda, no el ícono que el usuario alcanzó a elegir con "Otra".
     // DIS.19: una categoría predefinida se dibuja como silueta, así que la
@@ -896,7 +898,7 @@ test.describe('Metas - abono con selector de cuenta compartido (MT.5)', () => {
     await form.locator('#meta-nombre').fill(nombre);
     await form.locator('#meta-objetivo').fill(String(montoObjetivo));
     await form.locator('button[type="submit"]').click();
-    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-meta'), { state: 'attached', timeout: 5_000 });
   }
 
   test('con una cuenta, el abono preselecciona su tarjeta y descuenta el saldo', async ({ page }) => {
@@ -914,7 +916,7 @@ test.describe('Metas - abono con selector de cuenta compartido (MT.5)', () => {
 
     await page.locator('#abono-meta-monto').fill('200000');
     await page.locator('#form-abono-meta button[type="submit"]').click();
-    await page.waitForSelector(modalCerrado('modal-abono-meta'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-abono-meta'), { state: 'attached', timeout: 5_000 });
 
     // Progreso de la meta actualizado en la lista. DIS.14: el acumulado es la
     // cifra grande de la tarjeta y el objetivo, el extremo de la escala del
@@ -945,7 +947,7 @@ test.describe('Metas - abono con selector de cuenta compartido (MT.5)', () => {
     await expect(page.locator('.confirm__mensaje')).toContainText('quedará en negativo');
 
     await page.click('.modal--confirm [data-role="confirmar"]');
-    await page.waitForSelector(modalCerrado('modal-abono-meta'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-abono-meta'), { state: 'attached', timeout: 5_000 });
 
     // Saldo queda en negativo (50.000 - 200.000 = -150.000).
     await page.goto('/#tesoreria');
@@ -988,7 +990,7 @@ test.describe('Metas - ritmo de ahorro según frecuencia (MT.4)', () => {
     await form.locator('#meta-objetivo').fill('600000');
     await form.locator('#meta-fecha').fill(`${anio}-${mes}-${dia}`);
     await form.locator('button[type="submit"]').click();
-    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-meta'), { state: 'attached', timeout: 5_000 });
 
     // DIS.14: el ritmo de ahorro se cuenta en aportes y vive entre los datos
     // de la tarjeta ("N aportes de $X por quincena").
@@ -1362,7 +1364,7 @@ test.describe('Tesorería - cuenta y saldo', () => {
     await form.locator('#cuenta-cuota-monto').fill('15000');
     await form.locator('#cuenta-cuota-dia').fill('15');
     await form.locator('button[type="submit"]').click();
-    await page.waitForSelector(modalCerrado('modal-cuenta'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-cuenta'), { state: 'attached', timeout: 5_000 });
 
     const card = page.locator('.cuenta-card').first();
     await expect(card.locator('.cuenta-card__nombre')).toHaveText('Bancolombia');
@@ -1394,7 +1396,7 @@ test.describe('Tesorería - cuenta y saldo', () => {
     await form.locator('#cuenta-saldo').fill('1000000');
     await form.locator('#cuenta-4x1000').check();
     await form.locator('button[type="submit"]').click();
-    await page.waitForSelector(modalCerrado('modal-cuenta'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-cuenta'), { state: 'attached', timeout: 5_000 });
 
     // Sin gastos aún, la tarjeta insight sigue vacía.
     await expect(page.locator('#tesoreria-gmf')).toBeEmpty();
@@ -1408,7 +1410,7 @@ test.describe('Tesorería - cuenta y saldo', () => {
     await elegirCategoriaGasto(formGasto);
     await formGasto.locator('[name="monto"]').fill('500000');
     await formGasto.locator('button[type="submit"]').click();
-    await page.waitForSelector(modalCerrado('modal-gasto'), { timeout: 3_000 });
+    await page.waitForSelector(modalCerrado('modal-gasto'), { state: 'attached', timeout: 3_000 });
 
     await page.goto('/#tesoreria');
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
@@ -1442,7 +1444,7 @@ test.describe('Tesorería - cuenta y saldo', () => {
     await formFijo.locator('#ingreso-monto').fill('1850000');
     await formFijo.locator('#ingreso-frec').selectOption('Mensual');
     await formFijo.locator('button[type="submit"]').click();
-    await page.waitForSelector(modalCerrado('modal-ingreso'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-ingreso'), { state: 'attached', timeout: 5_000 });
     await expect(page.locator('#lista-ingresos')).toContainText('Salario empresa');
 
     // Crear un ingreso puntual.
@@ -1452,7 +1454,7 @@ test.describe('Tesorería - cuenta y saldo', () => {
     await formPuntual.locator('#ingreso-p-monto').fill('450000');
     await formPuntual.locator('#ingreso-p-desc').fill('Venta de la bici');
     await formPuntual.locator('button[type="submit"]').click();
-    await page.waitForSelector(modalCerrado('modal-ingreso-puntual'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-ingreso-puntual'), { state: 'attached', timeout: 5_000 });
     await expect(page.locator('#lista-ingresos-puntuales')).toContainText('Venta de la bici');
 
     // NAV.A2b s2: con un ingreso fijo ya registrado, el asistente existe y
@@ -1491,7 +1493,7 @@ test.describe('Tesorería - cuenta y saldo', () => {
     await form.locator('#ingreso-monto').fill('1850000');
     await form.locator('#ingreso-frec').selectOption('Mensual');
     await form.locator('button[type="submit"]').click();
-    await page.waitForSelector(modalCerrado('modal-ingreso'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-ingreso'), { state: 'attached', timeout: 5_000 });
 
     // El recorrido completo: el id elegido llega hasta localStorage y apunta a
     // una cuenta real (es lo que el asistente leerá en MC.13e). Se consulta con
@@ -1534,7 +1536,7 @@ test.describe('Accesibilidad - fondo inerte con modal', () => {
 
     // Cerrar el modal libera el fondo.
     await page.click('#modal-cuenta [data-action="modal-close"]');
-    await page.waitForSelector(modalCerrado('modal-cuenta'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-cuenta'), { state: 'attached', timeout: 5_000 });
     await expect(shell).not.toHaveAttribute('inert', '');
   });
 });
@@ -3653,7 +3655,7 @@ test.describe('Mis cuentas - Transferir entre cuentas propias (MC.17b)', () => {
 
     await page.fill('#transferencia-monto', '100000');
     await page.click('#form-transferencia button[type="submit"]');
-    await page.waitForSelector(modalCerrado('modal-transferencia'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-transferencia'), { state: 'attached', timeout: 5_000 });
 
     await page.waitForTimeout(400); // save() debounced (ADN #5)
     const st = await leerEstado(page);
@@ -3710,7 +3712,7 @@ test.describe('Mis cuentas - Transferir entre cuentas propias (MC.17b)', () => {
     await page.locator('input[name="cuentaDestinoId"][value="c3"]').check();
     await page.fill('#transferencia-monto', '50000');
     await page.click('#form-transferencia button[type="submit"]');
-    await page.waitForSelector(modalCerrado('modal-transferencia'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-transferencia'), { state: 'attached', timeout: 5_000 });
 
     await page.waitForTimeout(400);
     const st = await leerEstado(page);
@@ -3739,7 +3741,7 @@ test.describe('Mis cuentas - Transferir entre cuentas propias (MC.17b)', () => {
 
     await page.fill('#transferencia-monto', '200000');
     await page.click('#form-transferencia button[type="submit"]');
-    await page.waitForSelector(modalCerrado('modal-transferencia'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-transferencia'), { state: 'attached', timeout: 5_000 });
 
     await page.waitForTimeout(400); // save() debounced (ADN #5)
     const st = await leerEstado(page);
@@ -3833,9 +3835,9 @@ test.describe('Mis cuentas - Distribuir mi ingreso: educación primero, accesos 
 
     await page.waitForSelector('#sec-compromisos.active', { timeout: 10_000 });
     // Cerrado se verifica por el contrato del overlay (`:not([data-open])`), no
-    // por visibilidad: un modal cerrado queda en opacity 0, que Playwright sigue
-    // contando como visible.
-    await page.waitForSelector(modalCerrado('modal-distribuir'), { timeout: 5_000 });
+    // por visibilidad: el fundido de salida lo deja visible unos milisegundos
+    // después de cerrar (PERF.11, modals.css).
+    await page.waitForSelector(modalCerrado('modal-distribuir'), { state: 'attached', timeout: 5_000 });
   });
 });
 
@@ -4662,7 +4664,7 @@ test.describe('Apartados - selector de ícono compacto (CAT.2c)', () => {
     await form.locator('#apartado-objetivo').fill('300000');
     await form.locator('button[type="submit"]').click();
 
-    await page.waitForSelector(modalCerrado('modal-apartado'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-apartado'), { state: 'attached', timeout: 5_000 });
 
     const titulo = page.locator('#lista-apartados .apartado-card__nombre');
     await expect(titulo).toContainText('SOAT');
@@ -4687,7 +4689,7 @@ test.describe('Apartados - selector de ícono compacto (CAT.2c)', () => {
     await form.locator('#apartado-objetivo').fill('500000');
     await form.locator('button[type="submit"]').click();
 
-    await page.waitForSelector(modalCerrado('modal-apartado'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-apartado'), { state: 'attached', timeout: 5_000 });
 
     const titulo = page.locator('#lista-apartados .apartado-card__nombre');
     await expect(titulo).toContainText('Repuestos del carro');
@@ -4709,7 +4711,7 @@ test.describe('Apartados - selector de ícono compacto (CAT.2c)', () => {
     await form.locator('#apartado-objetivo').fill('200000');
     await form.locator('button[type="submit"]').click();
 
-    await page.waitForSelector(modalCerrado('modal-apartado'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-apartado'), { state: 'attached', timeout: 5_000 });
 
     await expect(page.locator('#lista-apartados .apartado-card__glifo use[href="#c-torta"]')).toHaveCount(1);
   });
@@ -4745,7 +4747,7 @@ test.describe('Deudas - picker de ícono en categoría "Otra"/"Otro" (CAT.2d)', 
     await form.locator('#comp-dia').fill('10');
     await form.locator('button[type="submit"]').click();
 
-    await page.waitForSelector(modalCerrado('modal-compromiso'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-compromiso'), { state: 'attached', timeout: 5_000 });
 
     const card = page.locator('.deuda-card', { hasText: 'Crédito de viaje' });
     await expect(card.locator('.deuda-card__icon .cat-teja use[href="#c-avion"]')).toHaveCount(1);
@@ -4799,7 +4801,7 @@ test.describe('Mis cuentas - picker de ícono para banco "Otro" (CAT.2e)', () =>
     await form.locator('[name="saldo"]').fill('100000');
     await form.locator('button[type="submit"]').click();
 
-    await page.waitForSelector(modalCerrado('modal-cuenta'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-cuenta'), { state: 'attached', timeout: 5_000 });
 
     const teja = page.locator('#lista-tesoreria .cuenta-card__icon .bank-avatar');
     await expect(teja.locator('use[href="#c-avion"]')).toHaveCount(1);
@@ -5240,7 +5242,7 @@ test.describe('Pagos automáticos al abrir (PA.1a)', () => {
     await expect(hoja.locator('.form-hint--danger')).toContainText('no se pueden registrar');
 
     await hoja.locator('[data-action="agenda-confirmar-automaticos"]').click();
-    await page.waitForSelector(modalCerrado('modal-automaticos'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-automaticos'), { state: 'attached', timeout: 5_000 });
 
     // Cada gasto queda fechado el día de SU vencimiento, no hoy, y la cuenta baja.
     const prefijoMes = hoyLocal().slice(0, 7);
@@ -5302,7 +5304,7 @@ test.describe('Créditos automáticos al abrir (PA.1b)', () => {
     await expect(hoja.locator('[data-role="auto-cta-texto"]')).toHaveText('Confirmar 2 movimientos');
 
     await hoja.locator('[data-action="agenda-confirmar-automaticos"]').click();
-    await page.waitForSelector(modalCerrado('modal-automaticos'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-automaticos'), { state: 'attached', timeout: 5_000 });
 
     const prefijoMes = hoyLocal().slice(0, 7);
     await expect.poll(async () => {
@@ -5467,7 +5469,7 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
     await form.locator('#meta-nombre').fill('Viaje a la costa');
     await form.locator('#meta-objetivo').fill('2000000');
     await form.locator('button[type="submit"]').click();
-    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-meta'), { state: 'attached', timeout: 5_000 });
 
     await page.click('.meta-card__secundaria[data-action="editar-meta"]');
     await page.waitForSelector('#modal-meta[data-open]');
@@ -5481,7 +5483,7 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
     await formEdit.locator('#meta-nombre').fill('Viaje a Cartagena');
     await formEdit.locator('#meta-objetivo').fill('2500000');
     await formEdit.locator('button[type="submit"]').click();
-    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-meta'), { state: 'attached', timeout: 5_000 });
 
     // DIS.14: la meta sigue en cero, así que la cifra grande cede su línea a la
     // frase del primer aporte; el objetivo es el extremo de la escala.
@@ -5504,14 +5506,14 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
     await form.locator('#meta-nombre').fill('Laptop nueva');
     await form.locator('#meta-objetivo').fill('3000000');
     await form.locator('button[type="submit"]').click();
-    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-meta'), { state: 'attached', timeout: 5_000 });
 
     // Un abono real antes de editar: esto es lo que NO se debe perder.
     await page.click('[data-action="abonar-meta"]');
     await page.waitForSelector('#modal-abono-meta[data-open]');
     await page.locator('#abono-meta-monto').fill('500000');
     await page.locator('#form-abono-meta button[type="submit"]').click();
-    await page.waitForSelector(modalCerrado('modal-abono-meta'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-abono-meta'), { state: 'attached', timeout: 5_000 });
     await expect(page.locator('#lista-metas .meta-card__monto')).toHaveText('$500.000');
 
     // Editar solo el nombre (corregir un typo): el progreso debe seguir intacto.
@@ -5521,7 +5523,7 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
     await expect(formEdit.locator('#meta-objetivo')).toHaveValue('3000000');
     await formEdit.locator('#meta-nombre').fill('Laptop nueva (corregido)');
     await formEdit.locator('button[type="submit"]').click();
-    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-meta'), { state: 'attached', timeout: 5_000 });
 
     await expect(page.locator('#lista-metas')).toContainText('Laptop nueva (corregido)');
     await expect(page.locator('#lista-metas .meta-card__monto')).toHaveText('$500.000');
@@ -5539,13 +5541,13 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
     await form.locator('#meta-nombre').fill('Fondo cámara');
     await form.locator('#meta-objetivo').fill('2000000');
     await form.locator('button[type="submit"]').click();
-    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-meta'), { state: 'attached', timeout: 5_000 });
 
     await page.click('[data-action="abonar-meta"]');
     await page.waitForSelector('#modal-abono-meta[data-open]');
     await page.locator('#abono-meta-monto').fill('1500000');
     await page.locator('#form-abono-meta button[type="submit"]').click();
-    await page.waitForSelector(modalCerrado('modal-abono-meta'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-abono-meta'), { state: 'attached', timeout: 5_000 });
 
     // Bajar el objetivo a 1.000.000: el aporte de 1.500.000 ya lo supera.
     await page.click('.meta-card__secundaria[data-action="editar-meta"]');
@@ -5553,7 +5555,7 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
     const formEdit = page.locator('#modal-meta-body form');
     await formEdit.locator('#meta-objetivo').fill('1000000');
     await formEdit.locator('button[type="submit"]').click();
-    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-meta'), { state: 'attached', timeout: 5_000 });
 
     // Meta completada. DIS.13 (FM4): ya no desaparece de la app. Ficha 09
     // (ADR 082 D3): tampoco conserva la tarjeta, que cobraba 290px por meta
@@ -5577,7 +5579,7 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
     await form.locator('#meta-objetivo').fill('4000000');
     await elegirChip(form, 'Boda');
     await form.locator('button[type="submit"]').click();
-    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-meta'), { state: 'attached', timeout: 5_000 });
 
     await page.click('.meta-card__secundaria[data-action="editar-meta"]');
     await page.waitForSelector('#modal-meta[data-open]');
@@ -5588,7 +5590,7 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
 
     await formEdit.locator('#meta-objetivo').fill('4500000');
     await formEdit.locator('button[type="submit"]').click();
-    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-meta'), { state: 'attached', timeout: 5_000 });
 
     // DIS.19: la categoría sobrevivió a la edición, y una predefinida se
     // dibuja como silueta (la forma exacta la fija el unit test de metas).
@@ -5614,7 +5616,7 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
     await grupoVehiculo.locator('.chip-cat:has(input[value="vehiculo-moto"])').click();
 
     await form.locator('button[type="submit"]').click();
-    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-meta'), { state: 'attached', timeout: 5_000 });
 
     await page.click('.meta-card__secundaria[data-action="editar-meta"]');
     await page.waitForSelector('#modal-meta[data-open]');
@@ -5626,7 +5628,7 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
     await elegirChip(formEdit, 'Educación');
     await expect(formEdit.locator('[data-subcategoria-grupo="Vehículo"]')).toBeHidden();
     await formEdit.locator('button[type="submit"]').click();
-    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+    await page.waitForSelector(modalCerrado('modal-meta'), { state: 'attached', timeout: 5_000 });
 
     await page.click('.meta-card__secundaria[data-action="editar-meta"]');
     await page.waitForSelector('#modal-meta[data-open]');

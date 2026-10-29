@@ -8,13 +8,57 @@
 
 ## Transversal (afecta varias secciones)
 
-> **Auditoría de rendimiento 2026-07 completa** (PERF.0 a PERF.4 cerradas, ver [`scripts/perf/BASELINE.md`](../../scripts/perf/BASELINE.md)). Los dos hallazgos que siguen mandando: `renderSmart()` ya evita el recálculo cruzado, y guardar cuesta ~5 ms debounced, así que la persistencia NO se reescribió ([ADR 030](../DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md); sus disparadores del D4 quedaron acotados a dos, T1 y T2, por el [ADR 068](../DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md)). **Disciplina obligatoria de toda tarjeta PERF: correr `pnpm perf` antes y después y comparar contra BASELINE.md.**
+> **Auditoría de rendimiento 2026-07 completa** (PERF.0 a PERF.4 cerradas, ver [`scripts/perf/BASELINE.md`](../../scripts/perf/BASELINE.md)). Los dos hallazgos que siguen mandando: `renderSmart()` ya evita el recálculo cruzado, y guardar cuesta ~5 ms debounced, así que la persistencia NO se reescribió ([ADR 030](../DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md); sus disparadores del D4 quedaron acotados a dos, T1 y T2, por el [ADR 068](../DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md)). **Disciplina obligatoria de toda tarjeta PERF: correr `pnpm perf` antes y después y comparar contra BASELINE.md**, y `pnpm perf:fluidez` si la tarjeta toca CSS, modales, navegación o animaciones (PERF.11, 2026-10-28: lo que happy-dom no ve). PERF.12 a PERF.15 son lo que PERF.11 midió y no corrigió; sus cifras son de ese instrumento (CPU 4x, 3.000 gastos).
 
 > **Iniciativa "INT.1 - Interfaz de escritorio", completa** (ADR 059, aceptado 2026-08-02). Fuente única del chrome de escritorio, 8 decisiones en 8 rebanadas. Móvil no cambia. **Las ocho rebanadas cerradas** (INT.1a a INT.1h); detalle e historia en el CHANGELOG y [`contexto/escritorio.md`](../contexto/escritorio.md). **INT.1g cerró el 2026-08-12 sin tarjeta propia** (dentro de una sesión sobre MT.6a) y quedó sin documentar hasta la auditoría del 2026-08-17: su único caso real es el compromiso mensual de Fondo, en [`ahorro.md`](../contexto/ahorro.md). **Coordinar con AH.7a** (mismo marcado de nav, otra plataforma).
 
 > **Diferida del [ADR 068](../DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md): la migración a IndexedDB (antes PERF.5) ya no es tarjeta.** Su decisión, su alcance fijado (blob-en-IDB, no store por colección) y sus **dos** disparadores verificables viven en ese ADR, que reemplaza los tres del ADR 030 D4. **No re-auditar el código ante un pedido de ejecución:** la verificación está hecha y fechada allí; basta mirar si T1 o T2 cambiaron de estado. Al reabrirse nace como tarjeta nueva. Lo que salió a la luz con ese ADR ya cerró completo: **PERF.9** (2026-08-14, columna de caracteres en el harness) y **PERF.10** (2026-08-14, dos rebanadas). T1 ya tiene instrumento: detalle en [`scripts/perf/BASELINE.md`](../../scripts/perf/BASELINE.md).
 
 > **Iniciativa Dirección Visual premium** ([ADR 033](../DECISIONS/033-direccion-visual-premium.md)). DV.2a/b/c cerradas. DV.2d: infraestructura, 8 plantillas y cableado de `emptyArt()` listos (2026-08-14), falta solo el arte final de Esteban.
+
+#### PERF.12 - Cambiar de sección sin reconstruir lo que no cambió
+- Prioridad  : media
+- Estado     : pendiente
+- Área       : code
+- Objetivo   : entrar a una sección responde en 180 a 300 ms (Gastos 229 la segunda vez, Análisis 295): cada `hashchange` reconstruye la sección por `innerHTML` y el navegador estiliza todo lo recién mostrado (3.400 elementos en Gastos: ~22 nodos y 4 `<use>` por fila). A medir: saltar el render si ni el estado ni la UI cambiaron, `content-visibility: hidden` en vez de `display: none` para las secciones inactivas, filas más livianas
+- Riesgo     : un render saltado deja datos viejos (cambio de día, filtros); `content-visibility` cambia qué ve el lector de pantalla
+- Secciones  : todas, Gastos primero
+- Archivos   : `infra/router.js`, `infra/render.js`, `styles/layout.css`, `dominio/gastos/view.js`
+- Depende de : nada
+- Aceptación : `pnpm perf:fluidez`, "tab Gastos (otra vez)" bajo 150 ms de respuesta, E2E verde
+
+#### PERF.13 - Arranque: 616 ms de hilo bloqueado
+- Prioridad  : baja
+- Estado     : pendiente
+- Área       : code
+- Objetivo   : el arranque bloquea 616 ms (cuadro más largo 547) y lo domina el layout del contenido (~410 ms), no el JS (~50 ms sin freno). PERF.11 descartó con medición los modales cerrados y la fuente Inter; falta saber qué se maqueta (ver si el `<use>` del sprite o las secciones pintadas al arrancar)
+- Riesgo     : -
+- Secciones  : arranque
+- Archivos   : `ui/bootstrap.js`, `index.html`, `styles/`
+- Depende de : nada
+- Aceptación : `pnpm perf:fluidez`, bloqueo del arranque bajo 400 ms
+
+#### PERF.14 - Pasar de una hoja a otra sin soltar el fondo
+- Prioridad  : baja
+- Estado     : pendiente
+- Área       : code
+- Objetivo   : Registrar → formulario de gasto (INP 208) cierra la hoja, quita `inert` y devuelve el foco antes de abrir el formulario: un recálculo de todo el fondo visible en el camino del toque. Pasar el trap y el `inert` de una hoja a la siguiente lo evita; hoy `a11y.js` guarda un solo trap (`_trapEl`)
+- Riesgo     : foco que vuelve a un elemento oculto al cerrar el segundo modal
+- Secciones  : hoja Registrar y sus destinos, `ir-a-crear-cuenta`
+- Archivos   : `ui/modales.js`, `infra/a11y.js`, `ui/actions.js`
+- Depende de : nada
+- Aceptación : "form Gasto" bajo 120 ms de INP; test del foco de vuelta al botón Registrar
+
+#### PERF.15 - Anotar solo lo que cambió antes de sincronizar
+- Prioridad  : baja
+- Estado     : pendiente
+- Área       : code
+- Objetivo   : la pasada que sigue a un guardado sigue huellando el estado entero: 27 ms con 3.000 gastos y 91 con 10.000 en Node (unas 4 veces más en un teléfono). `state:change` ya dice qué colección cambió
+- Riesgo     : un cambio que no emite su sección no llega a la nube
+- Secciones  : nube (solo con cuenta)
+- Archivos   : `dominio/config/nube.js`, `infra/nube-sync.js`
+- Depende de : nada
+- Aceptación : test de que un cambio en una colección solo huella esa colección; pasada tras guardar bajo 10 ms a 3.000 gastos
 
 #### DV.2d - Ilustraciones como clase nueva de asset (D3 del ADR 033)
 - Prioridad  : media

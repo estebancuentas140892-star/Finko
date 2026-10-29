@@ -12,6 +12,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### perf(ui): PERF.11, scroll, hojas y cambio de sección más fluidos, medidos en un navegador · 2026-10-28
+
+Cifras antes y después en [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md) (PERF.11); fichas [`contexto/transversal.md`](contexto/transversal.md) y [`contexto/nube.md`](contexto/nube.md); lo que quedó, PERF.12 a PERF.15 en [`board/transversal.md`](board/transversal.md). SW v620.
+
+- **Instrumento nuevo, `pnpm perf:fluidez`**: Chromium emulando un teléfono con la CPU frenada 4x. `pnpm perf` corre en happy-dom y no podía ver estilo, layout, paint ni compositor, que es donde estaban los tirones. Mide también la respuesta al cambiar de sección, que el INP del navegador no ve porque el render corre en el `hashchange`.
+- **Los 36 modales cerrados se seguían pintando** a pantalla completa con `blur`: 36 superficies en cada cuadro de scroll, en cualquier sección. Cerrados ya no se pintan y el fondo del modal abierto ya no se desenfoca, solo se oscurece: es el efecto que peor traduce a la GPU de un teléfono (auditoría de jank G1, ADR 033 D4). Render passes por cuadro: 36 a 1.
+- **Abrir una hoja ya no espera a re-estilizar el fondo**: `inert` llega un cuadro después (con Gastos a la vista recalculaba 3.384 elementos). INP de Registrar 232 a 96 ms, de Más 224 a 88. El router ya no mueve el foco a la sección si hay un modal abierto: navegar y abrir un modal en el mismo tick se lo robaba.
+- **El arranque ya no abre una View Transition para el tema**: era el origen de los `InvalidStateError` y `TimeoutError` en consola, y el tema claro llegaba un cuadro tarde.
+- **Entrar a Gastos** animaba las filas de todo el mes (la cascada contaba 6 por día) y el indicador de la barra animaba `width`: respuesta de 455 a 276 ms la primera vez, de 411 a 229 la segunda.
+- **La sincronización de cada minuto ya no huella el estado entero** si no hubo guardado local: de 27,4 a 6,5 ms con 3.000 gastos (en Node).
+- **El arranque no cambió** (616 ms bloqueado a 4x): no son los modales ni la fuente, se descartó midiendo. Queda en PERF.13.
+- **52 E2E esperaban el modal cerrado como "visible"** (`waitForSelector` por defecto): con `opacity: 0` Playwright lo contaba visible, con `visibility: hidden` ya no. Ahora esperan `state: 'attached'`, que es lo que siempre quisieron decir (cerrado = sin `data-open`).
+
 ### feat(nube): NUBE.3, el teléfono del niño vinculado con un código del padre · 2026-10-28
 
 [ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md) (resolución de NUBE.3); fichas [`contexto/nube.md`](contexto/nube.md) y [`contexto/nino.md`](contexto/nino.md); SQL en [`supabase/`](../supabase/README.md). SW v619.

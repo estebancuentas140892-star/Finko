@@ -6,6 +6,8 @@
 > móvil vs escritorio. Cada hallazgo cita archivo y línea.
 > Pregunta a responder: por qué la app presenta jank en móvil y no en escritorio.
 > Este documento no ejecuta cambios: es diagnóstico priorizado.
+>
+> **Seguimiento 2026-10-28 (PERF.11):** el punto ciego del harness ya tiene instrumento (`pnpm perf:fluidez`) y G1 quedó medido y resuelto, más grande de lo estimado: no era solo el overlay abierto, eran los 36 cerrados pintándose con blur en cada cuadro. Cifras en [BASELINE.md](BASELINE.md), sección PERF.11. Los demás grupos no se re-auditaron.
 
 ---
 

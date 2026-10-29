@@ -118,23 +118,21 @@ El Service Worker es cache-first: si no se sube la versión, el navegador sigue 
 
 ## 4. Harness de rendimiento
 
-`scripts/perf/` mide operaciones sensibles con volúmenes crecientes de datos. Su línea base y el registro de mejoras viven en [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md), junto al harness que la produce.
+`scripts/perf/` mide operaciones sensibles con volúmenes crecientes de datos. Línea base y registro de mejoras: [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md).
 
-**Disciplina obligatoria de toda tarea PERF:** correr el harness (`pnpm perf`) **antes y después** del cambio y comparar contra BASELINE.md. Una optimización sin medición antes/después no se acepta: el proyecto ya descartó dos optimizaciones que parecían obvias porque la medición mostró que no cambiaban nada ([ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md)).
+**Disciplina obligatoria de toda tarea PERF:** correr el harness (`pnpm perf`) **antes y después** del cambio y comparar contra BASELINE.md. Una optimización sin medición antes/después no se acepta: dos que parecían obvias se descartaron porque la medición mostró que no cambiaban nada ([ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md)).
 
-**Cómo leer el resultado:** cada fila es una operación con su tiempo por volumen. Lo que importa es la tendencia, no el número aislado: una operación que crece lineal con el estado total es un muro futuro; una que queda plana está memoizada y ya no es el problema.
+**Cómo leer el resultado:** importa la tendencia por volumen, no el número aislado: lo que crece lineal con el estado total es un muro futuro; lo que queda plano está memoizado y ya no es el problema.
 
-**Qué no mide todavía:** el arranque (`loadData()`, con su `JSON.parse` y sus migraciones), que es justamente lo único que crece lineal con el estado total y no se puede memoizar. Agregar esa columna es la tarjeta **PERF.8**, y es el dato que el ADR 030 exige para decidir el paso a IndexedDB con evidencia en vez de intuición.
+**Lo que `pnpm perf` no ve** (happy-dom no tiene estilo, layout, paint ni compositor) lo mide `pnpm perf:fluidez` (PERF.11): Chromium emulando un teléfono con CPU 4x, del toque al cuadro pintado, render passes por cuadro de scroll y arranque. Se corre antes y después en tareas de CSS, modales, navegación o animaciones.
 
-El harness es independiente de la suite de tests: no corre con `pnpm test` ni la bloquea.
+Ninguno de los dos corre con `pnpm test` ni la bloquea.
 
 ---
 
 ## 5. Hook de pre-commit: compuertas E2E y guion largo
 
-**Qué resuelve.** E2E tarda ~3,5 min, así que nunca fue compuerta de cada commit. El precio se pagó en **BUG-019**: DIS.19 cambió el markup de la casa de Ahorro, actualizó los unit tests y no los E2E, y la suite quedó **dos días en rojo** con 146 tests sin ejecutar. Lo encontró el cierre de otra tarea, por casualidad.
-
-**DOC.4 (2026-08-14) sumó la compuerta 3 al mismo hook.** El chequeo de guion largo/medio (U+2014, U+2013) de `cerrar-tarea/SKILL.md` era manual y se corría a mano en cada cierre: el mismo riesgo de olvido que ya tenía la compuerta E2E antes de BUG-019. `.githooks/pre-commit` ahora corre `git diff --cached` sobre el index (`*.md`, `*.js`, `*.css`, `*.html` a commitear) y bloquea si encuentra alguno, con archivo y línea. Corre sobre el index, no el disco sucio: mismo criterio que la compuerta E2E de abajo, y no depende de Playwright ni agrega dependencias.
+**Qué resuelve.** E2E tarda minutos y nunca fue compuerta de cada commit: en **BUG-019** la suite quedó dos días en rojo sin que nadie lo viera. Desde DOC.4 el mismo hook bloquea también el guion largo y medio (U+2014, U+2013, compuerta 3 de `cerrar-tarea`) en lo que se va a commitear (`git diff --cached` de `*.md`, `*.js`, `*.css`, `*.html`), con archivo y línea. Las dos revisan el index, no el disco sucio, y no agregan dependencias.
 
 **Activarlo (una vez por clon):**
 
@@ -148,6 +146,6 @@ Usa `core.hooksPath` apuntando a `.githooks/`. Sin husky ni dependencias: `.git/
 
 **El hook no corre Playwright, compara huellas: es instantáneo.** Uno que bloquee 3,5 min se acaba saltando con `--no-verify`, y una compuerta que se saltea es peor que ninguna porque da falsa confianza. Con el sello la suite se corre **una vez por lote** y el resto de los commits pasan gratis mientras el runtime no cambie.
 
-**La regla es por ruta, no por contenido del diff.** El primer diseño buscaba señales de markup en las líneas cambiadas y tenía dos falsos negativos: `display: none` rompe un `toBeVisible()` sin traer señal, y cambiar un texto rompe un `toHaveText()` sin tocar una clase. En una compuerta el falso negativo es el peor error.
+**La regla es por ruta, no por contenido del diff:** buscar señales de markup en las líneas cambiadas dejaba pasar un `display: none` o un texto cambiado, que rompen un `toBeVisible()` o un `toHaveText()`. En una compuerta el falso negativo es el peor error.
 
 `.e2e-sello.json` no se versiona: es un hecho de una máquina y un momento, así que un clon nuevo arranca sin sello. Si el hook bloquea, la salida es correr la suite.

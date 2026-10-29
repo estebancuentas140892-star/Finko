@@ -69,7 +69,7 @@ async function cargarCSV(page, texto) {
 async function importar(page, texto, esperados) {
   await cargarCSV(page, texto);
   await page.click('#modal-import [data-action="confirmar-import"]');
-  await page.waitForSelector('#modal-import:not([data-open])', { timeout: 5_000 });
+  await page.waitForSelector('#modal-import:not([data-open])', { state: 'attached', timeout: 5_000 });
   await expect.poll(async () => (await leerEstado(page)).gastos?.length ?? 0, { timeout: 5_000 }).toBe(esperados);
 }
 
@@ -101,7 +101,7 @@ test.describe('BUG-029 - el gasto importado no toca el saldo', () => {
     const form = page.locator('#modal-gasto-body form');
     await form.locator('[name="monto"]').fill('150000');
     await form.locator('button[type="submit"]').click();
-    await page.waitForSelector('#modal-gasto:not([data-open])', { timeout: 5_000 });
+    await page.waitForSelector('#modal-gasto:not([data-open])', { state: 'attached', timeout: 5_000 });
     await expect.poll(async () => (await leerEstado(page)).gastos.find(g => g.id === mercado.id)?.monto, { timeout: 5_000 }).toBe(150_000);
     expect(await dineroTotal(page)).toBe(800_000);
 

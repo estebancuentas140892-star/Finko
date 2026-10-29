@@ -213,3 +213,55 @@ Verificado: 2257/2257 unit (5 tests nuevos: `formateadorFecha` + equivalencia de
 **Lo que esto no resuelve:** `LIMITE_LOCALSTORAGE_CHARS` sigue siendo una suposición con comentario (code units vs. UTF-16 real de un navegador), tal como dejó anotado el ADR 068. Este harness mide el numerador (peso serializado), no el denominador (cupo real del navegador).
 
 Verificado: `pnpm perf` sin regresión en las demás columnas (Inicio/Análisis/Movimientos/stringify/save/arranque, dentro del ruido de medición habitual).
+
+---
+
+## PERF.11 (2026-10-28): fluidez medida en un navegador
+
+**Por qué.** "La app se siente lenta y con tirones al hacer scroll y al tocar, sobre todo en el celular." Las columnas de arriba no podían ver la causa: happy-dom no tiene estilo, layout, paint ni compositor (el "punto ciego" de [AUDITORIA-JANK-MOVIL-2026-07-29.md](AUDITORIA-JANK-MOVIL-2026-07-29.md)).
+
+**Instrumento nuevo:** [fluidez.js](fluidez.js) (`pnpm perf:fluidez`). Chromium de Playwright emulando un Pixel 5 (393x727, DPR 2,75, táctil), CPU frenada 4x por CDP, la semilla de este harness con 3.000 gastos en 3 años, 5 rondas. Por interacción: **INP** (Event Timing, del toque al cuadro pintado tras el handler), **respuesta** (del toque al cuadro siguiente a aquel en que la pantalla ya cambió: incluye el render del `hashchange`, que INP no ve) y **peor cuadro** del segundo siguiente. Scroll: gesto de rueda de 2.400 px ida y vuelta con traza; se cuentan render passes y quads por cuadro (no dependen del hardware) y el tiempo de dibujo (raster por software en headless: proporcional, no absoluto). `--trazas <carpeta>` guarda las trazas para DevTools.
+
+**Causas encontradas, con su evidencia:**
+
+1. **Los 36 overlays de modal cerrados se seguían pintando.** Tenían `opacity: 0` pero seguían en el árbol de pintura, a pantalla completa y con `backdrop-filter: blur(4px)`: **36 render passes y ~256 quads en cada cuadro**, en cualquier sección. Es el G1 de la auditoría, más grande de lo que ella estimaba (miraba el overlay abierto, no los 36 cerrados). Arreglo: `visibility: hidden` con transición retardada al cerrar, y sin blur también abierto (`styles/modals.css`).
+2. **`inert` en `.app-shell` re-estiliza todo lo visible.** Abrir una hoja con la lista de Gastos a la vista recalculaba **3.384 elementos** (948 sin `inert`, medido anulándolo). Arreglo: `abrirModal()` lo aplica un cuadro después; la hoja entra animada en el compositor mientras tanto. El router ya no mueve el foco a la sección si hay un modal abierto: `ir-a-crear-cuenta` navega y abre un modal en el mismo tick.
+3. **El arranque abría una View Transition** (`initShell()` → `applyTheme()` → `startViewTransition`): el tema claro llegaba un cuadro tarde y, con la página oculta, la transición se abortaba con `InvalidStateError`/`TimeoutError` en consola. Arreglo: tema directo al arrancar; `conFundido()` no funde con la página oculta y atrapa el rechazo de `ready`.
+4. **La cascada `cardIn` animaba todo el mes de Gastos.** Cuenta los primeros 6 por lista y cada día es su propia lista: 68 filas animadas por entrada. Arreglo: solo el primer día (`styles/components/domain.css`).
+5. **El indicador activo de la barra inferior animaba `width`**: layout y paint del documento en cada cuadro de los 200 ms que siguen a cada cambio de sección. Arreglo: `transform: scaleX()` (`styles/responsive.css`).
+6. **Nube: cada pasada huellaba el estado entero**, también la de cada minuto sin cambios locales (80 % de su costo). Arreglo: `marcarCambios()` solo si hubo `state:save` (o `storage:error`) desde la última marca, o si no hay libro (`dominio/config/nube.js`). Medido en Node, pasada sin cambios: **8,8 → 1,9 ms** a 1.000 gastos, **27,4 → 6,5** a 3.000, **91,0 → 22,3** a 10.000 (en un teléfono de gama media, unas 4 veces más).
+
+**Interacciones** (ms, medianas de 5 rondas, CPU 4x):
+
+| Interacción | INP antes | INP después | respuesta antes | respuesta después | peor cuadro antes | peor cuadro después |
+|---|---|---|---|---|---|---|
+| tab Gastos (primera vez) | 64 | 32 | 455 | 276 | 383 | 233 |
+| tab Ahorro | 80 | 48 | 227 | 178 | 150 | 117 |
+| tab Inicio | 72 | 32 | 125 | 78 | 83 | 33 |
+| tab Gastos (otra vez) | 64 | 32 | 411 | 229 | 350 | 183 |
+| abrir Registrar | 232 | 96 | 194 | 78 | 167 | 117 |
+| Registrar → form Gasto | 376 | 208 | 326 | 194 | 300 | 167 |
+| cerrar form | 240 | 160 | 194 | 145 | 167 | 117 |
+| abrir Más | 224 | 88 | 176 | 78 | 150 | 100 |
+| Más → Análisis | 216 | 144 | 428 | 295 | 217 | 133 |
+| tab Inicio (otra vez) | 72 | 32 | 160 | 95 | 100 | 50 |
+
+**Scroll** (2.400 px ida y vuelta, primera ronda):
+
+| Pantalla | cuadros antes → después | render passes / cuadro | quads / cuadro | dibujo ms / cuadro |
+|---|---|---|---|---|
+| Inicio | 36 → 66 | 36 → 1 | 259 → 14 | 31,8 → 0,9 |
+| Gastos | 101 → 184 | 36 → 1 | 256 → 11 | 29,9 → 0,7 |
+| Movimientos | 93 → 183 | 36 → 1 | 256 → 11 | 32,7 → 0,7 |
+| Análisis | 98 → 183 | 36,3 → 1,3 | 256 → 11 | 30,3 → 0,8 |
+| Fondo | 100 → 184 | 36 → 1 | 257 → 12 | 30,1 → 0,4 |
+
+**Lectura:**
+
+1. El scroll pasa de ~36 superficies de pantalla completa por cuadro a una. En la GPU de un teléfono (tile-based) cada una era una lectura del framebuffer; el mismo gesto entrega casi el doble de cuadros en el compositor por software de headless.
+2. Abrir una hoja deja de esperar el recálculo de todo el fondo: **INP 232 → 96 ms** en Registrar y **224 → 88** en Más.
+3. Cambiar de sección baja **35 a 45 %** en respuesta, pero sigue en 180 a 300 ms a 4x: lo que queda es reconstruir la sección por `innerHTML` y estilizar lo recién mostrado. Va a la tarjeta **PERF.12**.
+4. **El arranque no se movió** (bloqueo 623 → 616 ms, cuadro más largo 561 → 547): lo domina el layout del contenido (~410 ms a 4x). Se descartó con medición que fueran los modales (con `display: none` el layout no cambia) o la fuente Inter (con fuente de sistema o precargada, tampoco). Va a la tarjeta **PERF.13**.
+5. Consola: cero errores en las dos corridas.
+
+**Validación:** `pnpm test` (tests nuevos: `nube-pasada.test.js`, `router.test.js`, `inert` diferido en `modales.test.js`), lint, E2E en Chromium real. `pnpm perf` sin cambios en sus columnas: este cambio no toca ningún camino que mida.

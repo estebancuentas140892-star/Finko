@@ -94,7 +94,7 @@ async function reabrir(page, hoy = HOY) {
 async function posponerHojaAutomaticos(page) {
   await page.waitForSelector('#modal-automaticos[data-open]', { timeout: 10_000 });
   await page.locator('#modal-automaticos').getByRole('button', { name: 'Ahora no' }).click();
-  await page.waitForSelector('#modal-automaticos:not([data-open])', { timeout: 5_000 });
+  await page.waitForSelector('#modal-automaticos:not([data-open])', { state: 'attached', timeout: 5_000 });
 }
 
 /** Lo que ofrece la hoja abierta, una entrada por fila: "nombre +$monto". */
@@ -121,7 +121,7 @@ async function confirmarHojaAutomaticos(page) {
   await expect(hoja.locator('.lote-row')).toHaveCount(1);
   await expect(hoja.locator('.lote-row__amount').first()).toHaveText('+$4.000.000');
   await hoja.locator('[data-action="agenda-confirmar-automaticos"]').click();
-  await page.waitForSelector('#modal-automaticos:not([data-open])', { timeout: 5_000 });
+  await page.waitForSelector('#modal-automaticos:not([data-open])', { state: 'attached', timeout: 5_000 });
 }
 
 const saldoDe = async (page, id) => (await leerEstado(page)).cuentas.find(c => c.id === id)?.saldo;
@@ -281,7 +281,7 @@ test.describe('BUG-032 - Distribuir primero y la hoja después: un solo crédito
     await reabrir(page, new Date('2026-10-26T10:00:00'));
     expect(await filasHoja(page)).toEqual(['Honorarios de prueba +$1.000.000']);
     await page.locator('#modal-automaticos [data-action="agenda-confirmar-automaticos"]').click();
-    await page.waitForSelector('#modal-automaticos:not([data-open])', { timeout: 5_000 });
+    await page.waitForSelector('#modal-automaticos:not([data-open])', { state: 'attached', timeout: 5_000 });
     await expect.poll(() => dineroTotal(page), { timeout: 5_000 }).toBe(4_600_000);
 
     // Nada más pendiente: cada cobro aumentó el dinero una vez.
@@ -404,7 +404,7 @@ test.describe('BUG-033 - con el monto editado, el usuario dice qué ingreso lleg
     await reabrir(page);
     expect(await filasHoja(page)).toEqual(['Honorarios de prueba +$1.000.000']);
     await page.locator('#modal-automaticos [data-action="agenda-confirmar-automaticos"]').click();
-    await page.waitForSelector('#modal-automaticos:not([data-open])', { timeout: 5_000 });
+    await page.waitForSelector('#modal-automaticos:not([data-open])', { state: 'attached', timeout: 5_000 });
     await expect.poll(() => dineroTotal(page), { timeout: 5_000 }).toBe(5_800_000);
 
     await reabrir(page);

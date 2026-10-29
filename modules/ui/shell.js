@@ -111,12 +111,15 @@ let _transitionTimer = null;
  * @param {boolean} light - true = tema claro, false = tema oscuro.
  */
 function applyTheme(light) {
-  conFundido(() => {
-    document.body.classList.toggle(LIGHT_CLASS, light);
-    localStorage.setItem(THEME_KEY, light ? 'light' : 'dark');
-    _syncThemeButton(light);
-    EventBus.emit('theme:change', { light });
-  });
+  conFundido(() => _ponerTema(light));
+}
+
+/** El cambio de tema en sí, sin fundido: lo envuelve `applyTheme`. */
+function _ponerTema(light) {
+  document.body.classList.toggle(LIGHT_CLASS, light);
+  localStorage.setItem(THEME_KEY, light ? 'light' : 'dark');
+  _syncThemeButton(light);
+  EventBus.emit('theme:change', { light });
 }
 
 /**
@@ -132,8 +135,14 @@ function applyTheme(light) {
 export function conFundido(swap) {
   const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
-  if (!reducedMotion && document.startViewTransition) {
-    return document.startViewTransition(swap).updateCallbackDone.catch(() => {});
+  // Con la página oculta no hay cuadros que fundir: el navegador aborta la
+  // transición (InvalidStateError) o la deja esperando hasta su timeout.
+  if (!reducedMotion && document.startViewTransition && document.visibilityState === 'visible') {
+    const vt = document.startViewTransition(swap);
+    // Una transición abortada rechaza `ready`: sin este catch llega a la
+    // consola como "Uncaught (in promise)". El cambio igual se aplica.
+    vt.ready.catch(() => {});
+    return vt.updateCallbackDone.catch(() => {});
   }
 
   // Fallback: tecnica previa (class transitioning con CSS).
@@ -423,7 +432,11 @@ export function initSidebarCollapse() {
 
 export function initShell() {
   const saved = localStorage.getItem(THEME_KEY);
-  applyTheme(saved === 'light');
+  // Al arrancar no hay tema anterior que fundir. Con fundido, el arranque
+  // abría una View Transition: el tema claro llegaba un cuadro tarde (220 ms
+  // de oscuro a claro en cada apertura) y, con la página oculta o el hilo
+  // ocupado, la transición se abortaba con error en consola (PERF.11).
+  _ponerTema(saved === 'light');
 
   // El primario de la barra (INT.1e) puede quedar desactualizado sin
   // navegar: Deudas oculta "+ Nueva deuda" al saldar la última, Límites

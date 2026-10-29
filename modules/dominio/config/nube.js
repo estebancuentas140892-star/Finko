@@ -79,6 +79,17 @@ let _timer = null;
 let _sincronizando = false;
 let _otraVez = false;
 
+/**
+ * Hubo un guardado local desde la última vez que se anotaron los cambios.
+ * Anotar recorre y huella el estado entero: es el 80 % de una pasada (~20 ms
+ * con 3.000 gastos en un equipo de escritorio, unas cuatro veces eso en un
+ * teléfono de gama media; PERF.11). La pasada de cada minuto solo viene a
+ * bajar lo nuevo de la nube y, sin un guardado de por medio, no encontraría
+ * nada que anotar. Todo cambio local pasa por save() (ADN 5), que avisa con
+ * `state:save`; si el guardado falla, también se anota (`storage:error`).
+ */
+let _cambiosLocales = true;
+
 /** Lo que pinta `htmlNube()`. */
 export function estadoNube() {
   return { ..._estado, sesion: leerSesion() };
@@ -239,8 +250,13 @@ async function _sincronizar() {
   clearTimeout(_timer);
   _timer = null;
   _setSync({ ocupado: true, error: '' });
+  // Sin libro (recién entró, o se reemplazó) todo está por anotar.
+  const previo = leerLibro();
+  const marcar = _cambiosLocales || !previo;
+  _cambiosLocales = false;
   try {
-    let libro = marcarCambios(m.proyectar(), leerLibro() ?? libroVacio(), Date.now(), { soloLectura: m.soloLectura });
+    let libro = previo ?? libroVacio();
+    if (marcar) libro = marcarCambios(m.proyectar(), libro, Date.now(), { soloLectura: m.soloLectura });
     const remotas = await m.bajar(cursorConMargen(libro.cursor));
     const res = aplicarRemotas(m.proyectar(), libro, remotas, { version: SCHEMA_VERSION });
     libro = res.libro;
@@ -262,6 +278,8 @@ async function _sincronizar() {
     }
     if (res.versionMinima < SCHEMA_VERSION) _remigrar(res.versionMinima);
   } catch (err) {
+    // Lo anotado en esta pasada no llegó a guardarse: la próxima lo anota otra vez.
+    if (marcar) _cambiosLocales = true;
     const codigo = _codigo(err);
     if (codigo === 'vinculo-invalido' && m.nino) _vinculoPerdido();
     else if (codigo === 'sesion-vencida') _set({ ocupado: false, pendiente: false, error: codigo });
@@ -276,6 +294,7 @@ async function _sincronizar() {
 }
 
 function _programar() {
+  _cambiosLocales = true;
   if (!_modo()) return;
   _estado.pendiente = true;
   clearTimeout(_timer);
@@ -566,6 +585,7 @@ export function initNube({ repintar }) {
   });
 
   EventBus.on('state:save', _programar);
+  EventBus.on('storage:error', () => { _cambiosLocales = true; });
   window.addEventListener('online', () => _sincronizar());
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') _sincronizar();

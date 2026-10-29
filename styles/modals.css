@@ -6,12 +6,18 @@
 
 /* ── OVERLAY ────────────────────────────────────────────────── */
 
+/* PERF.11 (scripts/perf/BASELINE.md): cerrado, el overlay no se pinta.
+   Con solo `opacity: 0` los ~36 overlays de la app seguían en el árbol de
+   pintura, cada uno a pantalla completa y con `backdrop-filter`: 36 render
+   passes en cada cuadro de scroll de cualquier sección. `visibility: hidden`
+   los saca; su transición con retardo deja visible el fundido de salida y
+   pasa a oculto al terminar. Sin blur también abierto: el fondo ya se oscurece
+   con --fk-bg-overlay, y el blur a pantalla completa es el efecto que peor
+   traduce a una GPU de teléfono (auditoría de jank móvil, G1; ADR 033 D4). */
 .modal-overlay {
   position: fixed;
   inset: 0;
   background: var(--fk-bg-overlay);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
   z-index: var(--fk-z-modal-overlay);
   display: flex;
   align-items: center;
@@ -20,13 +26,20 @@
 
   /* Oculto por defecto */
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
-  transition: opacity var(--fk-transition-base);
+  transition:
+    opacity var(--fk-transition-base),
+    visibility 0s linear var(--fk-transition-base);
 }
 
 .modal-overlay[data-open] {
   opacity: 1;
+  visibility: visible;
   pointer-events: all;
+  transition:
+    opacity var(--fk-transition-base),
+    visibility 0s;
 }
 
 /* ── MODAL ──────────────────────────────────────────────────── */
@@ -660,8 +673,6 @@ body:has(#quien-usa[data-open]) .logro-toast { display: none; }
   padding: 0;
   align-items: stretch;
   background: var(--fk-bg-base);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
 }
 .modal-overlay.leccion-overlay .modal.leccion {
   max-width: none;

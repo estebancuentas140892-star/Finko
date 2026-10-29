@@ -7,6 +7,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "perf": "vitest run --config vitest.perf.config.js",
+    "perf:fluidez": "node scripts/perf/fluidez.js",
     "coverage": "vitest run --coverage",
     "lint": "eslint modules/ tests/",
     "format": "prettier --write \"**/*.{js,css,html,md,json}\"",

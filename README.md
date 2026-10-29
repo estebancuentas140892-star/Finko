@@ -69,6 +69,9 @@ pnpm run serve               # http://localhost:8080
 
 # Harness de rendimiento (comparar contra scripts/perf/BASELINE.md)
 pnpm perf
+
+# Fluidez en un navegador que emula un teléfono (CPU 4x): toques, scroll, arranque
+pnpm perf:fluidez            # --trazas <carpeta> guarda las trazas para DevTools
 ```
 
 ---

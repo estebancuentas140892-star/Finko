@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-10-28. Última tarea cerrada: NUBE.3, el teléfono del niño vinculado con un código del padre. MOV.1 en pausa. HF.0f en curso: banco listo sin commitear, BUG-035, BUG-036 y BUG-038 abiertos.
+> Revisado: 2026-10-28. Última tarea cerrada: PERF.11, scroll, hojas y cambio de sección más fluidos. MOV.1 en pausa. HF.0f en curso: banco listo sin commitear, BUG-035, BUG-036 y BUG-038 abiertos.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -25,6 +25,9 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**PERF.11 - fluidez medida en un navegador, 2026-10-28**
+`pnpm perf:fluidez` (teléfono emulado, CPU 4x). Los modales cerrados ya no se pintan (36 superficies por cuadro de scroll a 1), abrir una hoja no espera a `inert` (INP 232 a 96 ms), sin View Transition al arrancar. Quedan PERF.12 a PERF.15. SW v620.
+
 **NUBE.3 - el teléfono del niño, 2026-10-28**
 El padre genera un código en Familia; el teléfono del niño entra con él y sincroniza solo lo suyo. El perfil viaja partido por dueño: niño y padre no se pisan. SW v619.
 
@@ -36,9 +39,6 @@ Una versión nueva ya no recarga sola: sale un aviso con Actualizar. Ajustes bus
 
 **NUBE.2 - sincronización entre dispositivos, 2026-10-27**
 Lo que se agrega, cambia o borra en un dispositivo llega a los otros; gana el cambio más reciente por registro. Libro local de huellas, sin tocar dominios ni schema. SW v616.
-
-**NUBE.1 - cuenta opcional y respaldo en Supabase, 2026-10-27**
-Entrar por correo (solo invitados), respaldo automático del estado completo y, en un teléfono nuevo, todo vuelve al entrar. Sin librería: REST con `fetch`. Falta SMTP propio para invitar probadores. SW v615.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

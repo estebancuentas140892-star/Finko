@@ -59,6 +59,20 @@
 
 ---
 
+## Fluidez medida en el navegador (PERF.11)
+
+- **Objetivo**          : que el scroll, las hojas y el cambio de sección no den tirones en un teléfono de gama media, con medición de navegador y no de happy-dom.
+- **Estado actual**     : `pnpm perf:fluidez` mide del toque al cuadro pintado, el scroll por render passes y el arranque (cifras en [`BASELINE.md`](../../scripts/perf/BASELINE.md)). Cuatro reglas que sostienen las cifras: un overlay cerrado no se pinta (`visibility: hidden`, sin blur); `inert` del fondo llega un cuadro después de abrir; el arranque no abre View Transition; el indicador de la barra inferior anima `transform`, no `width`. Lo que falta: PERF.12 a PERF.15.
+- **Verificado contra** : commit de PERF.11 (2026-10-28).
+
+**Dónde vive**: `styles/modals.css` (`.modal-overlay`), `modules/ui/modales.js` (`abrirModal`), `modules/infra/router.js` (`showSection`), `modules/ui/shell.js` (`initShell`, `conFundido`), `styles/responsive.css` (`.nav-item::before`), `styles/components/domain.css` (cascada de `.gastos-dia`), `scripts/perf/fluidez.js`.
+
+**Riesgos**: entre abrir un modal y su `inert` hay un cuadro: un `focus()` al fondo en ese tick saca el foco del modal (por eso el router no mueve el foco con un modal abierto). Un descendiente con `visibility: visible` propio se vería con el modal cerrado.
+
+**Cambios realizados**: `2026-10-28 (PERF.11)`: las seis causas y sus cifras antes y después, en `BASELINE.md`.
+
+---
+
 ## CTA "necesitas una cuenta" (registro bloqueado por falta de cuenta)
 
 - **Objetivo**          : cuando el usuario intenta registrar un ingreso, un gasto o un abono sin ninguna cuenta activa, el mensaje no se limita a informar el requisito: ofrece una acción única que lo lleva directo a crear la cuenta (cierra el modal actual, navega a Mis cuentas y abre el formulario de nueva cuenta). Reduce la fricción del onboarding: si falta un requisito, se guía a resolverlo, no solo se avisa.
@@ -83,7 +97,7 @@
 **Riesgos**:
 
 - El evento `'cuenta:crear'` abre `#modal-cuenta`, que es estático en `index.html`: funciona aunque la sección tesorería aún no se haya renderizado. Si ese modal se moviera o renombrara, el CTA quedaría mudo (solo navegaría). `_nuevaCuenta` usa guardas `if (el)`, así que con el DOM incompleto no rompe, solo no abre.
-- Orden en `ir-a-crear-cuenta`: cerrar el modal actual (libera foco + quita `inert`) ANTES de abrir `#modal-cuenta` (atrapa foco + `inert`), mismo patrón que `registrar-abrir`. El `navigate('tesoreria')` dispara `hashchange` async; su intento de mover el foco a `#sec-tesoreria` es no-op porque el fondo queda `inert` con el modal abierto.
+- Orden en `ir-a-crear-cuenta`: cerrar el modal actual (libera foco + quita `inert`) ANTES de abrir `#modal-cuenta` (atrapa foco + `inert`), mismo patrón que `registrar-abrir`. El `navigate('tesoreria')` dispara `hashchange` async; el router no mueve el foco a `#sec-tesoreria` porque hay un modal abierto (PERF.11: el `inert` llega un cuadro después).
 - Los `<a href="#tesoreria">` de los empty states conservan el href como fallback semántico, pero `dispatch()` hace `preventDefault()`: la navegación real la hace la acción, no el href.
 
 **Cambios pendientes**: ninguno.

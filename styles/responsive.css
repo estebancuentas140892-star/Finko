@@ -170,20 +170,23 @@
 
   /* Indicador activo en bottom nav: barra horizontal al borde superior
      (reposiciona el ::before vertical del sidebar, layout.css) */
+  /* Crece con `transform`, no con `width` (PERF.11): animar el ancho
+     re-maquetaba y repintaba el documento en cada cuadro de los 200 ms que
+     siguen a cada cambio de sección. Mismo dibujo, en el compositor. */
   .nav-item::before {
     left: 50%;
     top: 0;
     translate: -50% 0;
-    width: 0;
-    height: 3px;
-    transition: width var(--fk-transition-base);
-  }
-  .nav-item.active::before,
-  .nav-item[aria-current="page"]::before {
     /* Ancho fijo (NAV2.1c, ADR 040 D5): el 44% anterior crecía con el
        viewport sin razón; el mockup lo dibuja constante. */
     width: 22px;
     height: 3px;
+    transform: scaleX(0);
+    transition: transform var(--fk-transition-base);
+  }
+  .nav-item.active::before,
+  .nav-item[aria-current="page"]::before {
+    transform: scaleX(1);
   }
 
   /* width:auto SOLO para el wrapper <span> del FAB Registrar: libera el

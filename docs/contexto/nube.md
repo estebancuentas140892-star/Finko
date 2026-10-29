@@ -12,7 +12,7 @@
 
 - **Objetivo**          : no perder los datos al perder el teléfono y tenerlos iguales en todos los dispositivos, sin que la cuenta sea obligatoria.
 - **Estado actual**     : prueba cerrada, solo invitados. **NUBE.1** (cuenta por correo), **NUBE.2** (sincronización por registro: lo de un dispositivo llega a los otros, también los borrados), **NUBE.2b** (borrar la cuenta completa desde Ajustes, con BORRAR y el PIN; los datos del dispositivo se quedan) y **NUBE.3** (el teléfono del niño, vinculado con un código del padre).
-- **Verificado contra** : commit de NUBE.3 (2026-10-28).
+- **Verificado contra** : commit de PERF.11 (2026-10-28).
 
 **Dónde vive**
 
@@ -40,6 +40,7 @@
 - **El teléfono del niño no puede cambiar lo que fija el padre** (nombre, mesada, premio): la base lo rechaza y la app ni lo intenta. Si algo de eso difiere en su teléfono, la siguiente bajada lo reemplaza.
 - **Desvincular deja los datos en el teléfono del niño**: deja de sincronizar, pero lo que anotó no se borra de ahí.
 - **No es tiempo real**: el otro dispositivo ve el cambio al volver a la app, al tocar "Sincronizar ahora" o en el minuto siguiente.
+- **Una pasada solo anota cambios locales si hubo un guardado** desde la última (`state:save` o `storage:error`) o si no hay libro (PERF.11): la del minuto sin guardados ya no huella el estado entero. Un cambio a `S` que no pase por `save()` (ADN 5) no llegaría a la nube hasta el próximo guardado.
 - **El libro ocupa cupo de `localStorage`** (unos 60 bytes por registro): si se acerca al tope, entra el disparador D4 del ADR 030.
 - **Datos de una app más vieja** hacen recargar la app para migrar; los de una más nueva no se aplican hasta actualizar.
 - **El enlace del correo abre el navegador**, no la app instalada: en un teléfono con Finko instalado, la sesión queda en el navegador. El código sirve dentro de la app, pero la plantilla de correo de Supabase no se puede editar sin SMTP propio, así que depende de si la plantilla por defecto lo trae.
@@ -54,6 +55,7 @@
 
 **Cambios realizados**:
 
+- 2026-10-28 (PERF.11): la pasada sin guardados de por medio ya no huella el estado entero (27,4 → 6,5 ms con 3.000 gastos, en Node).
 - 2026-10-28 (NUBE.3): el teléfono del niño se vincula con un código de un solo uso del padre, sincroniza solo su perfil, y el perfil viaja partido por dueño.
 - 2026-10-28 (NUBE.2b): borrar la cuenta completa con `borrar_mi_cuenta()`, función de base sin clave secreta; en el dispositivo quedan los datos y se olvida la autorización.
 - 2026-10-27 (NUBE.2): sincronización por registro con libro local de huellas, borrados que viajan, tabla `registros` en lugar de `respaldos`.
