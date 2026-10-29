@@ -59,17 +59,17 @@
 
 ---
 
-## Fluidez medida en el navegador (PERF.11)
+## Fluidez medida en el navegador (PERF.11, PERF.12)
 
-- **Objetivo**          : que el scroll, las hojas y el cambio de sección no den tirones en un teléfono de gama media, con medición de navegador y no de happy-dom.
-- **Estado actual**     : `pnpm perf:fluidez` mide del toque al cuadro pintado, el scroll por render passes y el arranque (cifras en [`BASELINE.md`](../../scripts/perf/BASELINE.md)). Cuatro reglas que sostienen las cifras: un overlay cerrado no se pinta (`visibility: hidden`, sin blur); `inert` del fondo llega un cuadro después de abrir; el arranque no abre View Transition; el indicador de la barra inferior anima `transform`, no `width`. Lo que falta: PERF.12 a PERF.15.
-- **Verificado contra** : commit de PERF.11 (2026-10-28).
+- **Objetivo**          : que el scroll, las hojas y el cambio de sección no den tirones en un teléfono de gama media, medido en un navegador y no en happy-dom.
+- **Estado actual**     : `pnpm perf:fluidez` mide del toque al cuadro pintado, el scroll por render passes y el arranque (cifras en [`BASELINE.md`](../../scripts/perf/BASELINE.md)). Lo sostienen: un overlay cerrado no se pinta (`visibility: hidden`, sin blur); `inert` del fondo llega un cuadro después de abrir; el arranque no abre View Transition; el indicador de la barra anima `transform`; el router enfoca la sección al final del `hashchange`; los días de Gastos desde el segundo llevan `content-visibility: auto`. Falta: PERF.13 a PERF.15.
+- **Verificado contra** : commit de PERF.12 (2026-10-28).
 
-**Dónde vive**: `styles/modals.css` (`.modal-overlay`), `modules/ui/modales.js` (`abrirModal`), `modules/infra/router.js` (`showSection`), `modules/ui/shell.js` (`initShell`, `conFundido`), `styles/responsive.css` (`.nav-item::before`), `styles/components/domain.css` (cascada de `.gastos-dia`), `scripts/perf/fluidez.js`.
+**Dónde vive**: `styles/modals.css` (`.modal-overlay`), `modules/ui/modales.js` (`abrirModal`), `modules/infra/router.js` (`initRouter`, `enfocarSeccion`), `modules/ui/shell.js` (`initShell`, `conFundido`), `styles/responsive.css` (`.nav-item::before`), `styles/components/domain.css` (`.gastos-dia`), `scripts/perf/fluidez.js`.
 
-**Riesgos**: entre abrir un modal y su `inert` hay un cuadro: un `focus()` al fondo en ese tick saca el foco del modal (por eso el router no mueve el foco con un modal abierto). Un descendiente con `visibility: visible` propio se vería con el modal cerrado.
+**Riesgos**: entre abrir un modal y su `inert` hay un cuadro: un `focus()` al fondo en ese tick saca el foco del modal (por eso el router no enfoca con un modal abierto). Un descendiente con `visibility: visible` propio se vería con el modal cerrado. Un día con `content-visibility` contiene layout y paint: sus márgenes no colapsan con los del día y lo que desborde más de 12 px se recorta (un menú en una fila debe salir del día).
 
-**Cambios realizados**: `2026-10-28 (PERF.11)`: las seis causas y sus cifras antes y después, en `BASELINE.md`.
+**Cambios realizados**: `2026-10-28 (PERF.11)`: las seis causas y sus cifras, en `BASELINE.md`. `2026-10-28 (PERF.12)`: foco al final del `hashchange` y días de Gastos con `content-visibility`.
 
 ---
 

@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### perf(ui): PERF.12, cambiar de sección sin estilizar el mes entero · 2026-10-28
+
+Cifras en [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md) (PERF.12); ficha [`contexto/transversal.md`](contexto/transversal.md). SW v621.
+
+- **El tirón al cambiar de sección era el `focus()` del router**, no el JS de los renders: estiliza y maqueta en el acto la sección nueva (84 a 149 ms a 4x; los renders de dominio, 16 a 42). Se vio cronometrando cada listener de `hashchange` por separado.
+- **El foco va al final**, después de `markActiveNav`: antes el cuadro volvía a estilizar 906 elementos.
+- **Los días de Gastos fuera de pantalla no se estilizan** (`content-visibility: auto` desde el segundo día): 3.428 elementos a 282 al entrar. Gastos otra vez 245 a 112 ms de respuesta, primera vez 325 a 190; las hojas abiertas sobre Gastos también bajan (Registrar 93 a 44).
+- La contención rompía el colapso del margen de la última fila (8 px más entre días): `:last-child` sin margen. Capturas comparadas píxel a píxel en claro y oscuro.
+- No se hizo lo demás que proponía la tarjeta (saltar renders, `content-visibility: hidden` en secciones): la aceptación quedó cumplida sin eso.
+
 ### perf(ui): PERF.11, scroll, hojas y cambio de sección más fluidos, medidos en un navegador · 2026-10-28
 
 Cifras antes y después en [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md) (PERF.11); fichas [`contexto/transversal.md`](contexto/transversal.md) y [`contexto/nube.md`](contexto/nube.md); lo que quedó, PERF.12 a PERF.15 en [`board/transversal.md`](board/transversal.md). SW v620.

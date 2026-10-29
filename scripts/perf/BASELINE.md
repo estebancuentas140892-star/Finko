@@ -265,3 +265,42 @@ Verificado: `pnpm perf` sin regresión en las demás columnas (Inicio/Análisis/
 5. Consola: cero errores en las dos corridas.
 
 **Validación:** `pnpm test` (tests nuevos: `nube-pasada.test.js`, `router.test.js`, `inert` diferido en `modales.test.js`), lint, E2E en Chromium real. `pnpm perf` sin cambios en sus columnas: este cambio no toca ningún camino que mida.
+
+---
+
+## PERF.12 (2026-10-28): cambiar de sección sin estilizar el mes entero
+
+**Por qué.** Tras PERF.11, entrar a Gastos seguía en 230 a 325 ms de respuesta a 4x. La tarjeta suponía que pesaba reconstruir la sección por `innerHTML`.
+
+**Diagnóstico.** Se cronometró cada listener de `hashchange` por separado (parche de `addEventListener` inyectado antes de cargar la app, misma semilla, CPU 4x). Los renders de dominio pesan 16 a 42 ms; el listener del router, 85 a 155, y casi todo es el `focus()` sobre la sección (84 a 149 ms): obliga a estilizar y maquetar en el acto lo recién mostrado. En Gastos son 3.428 elementos (27 días de ~22 nodos por fila, más sus `::before` y `::after`). Después, `markActiveNav` cambiaba clases y el cuadro volvía a estilizar 906 elementos. El JS de los renders era la quinta parte; el estilo y el layout, el resto. Las selector stats de Chrome descartaron selectores caros (22 ms de matching en total, ninguno dominante).
+
+**Arreglos:**
+
+1. `infra/router.js`: el foco a la sección va al final del `hashchange`, después de `onNavigate`. Una sola pasada de estilo en vez de dos.
+2. `styles/components/domain.css`: `content-visibility: auto` en los días de Gastos desde el segundo, con `contain-intrinsic-size: auto 360px` (alto medio medido). Al entrar se estilizan 282 elementos en vez de 3.428; sin freno, estilo 14,7 → 5,7 ms y layout 11,6 → 5,0. La contención rompía el colapso del margen de la última fila (8 px de más entre días): `:last-child` sin margen. `overflow-clip-margin` deja pasar la sombra y el anillo de foco.
+
+**Interacciones** (ms, medianas de 3 rondas, CPU 4x; "antes" es el commit de PERF.11 medido en la misma sesión):
+
+| Interacción | INP antes | INP después | respuesta antes | respuesta después | peor cuadro antes | peor cuadro después |
+|---|---|---|---|---|---|---|
+| tab Gastos (primera vez) | 32 | 32 | 325 | 190 | 283 | 150 |
+| tab Ahorro | 64 | 32 | 191 | 145 | 117 | 100 |
+| tab Inicio | 32 | 32 | 93 | 95 | 50 | 50 |
+| tab Gastos (otra vez) | 32 | 32 | 245 | 112 | 200 | 67 |
+| abrir Registrar | 96 | 56 | 93 | 44 | 100 | 33 |
+| Registrar → form Gasto | 216 | 136 | 210 | 126 | 183 | 100 |
+| cerrar form | 176 | 88 | 160 | 78 | 133 | 50 |
+| abrir Más | 112 | 48 | 92 | 44 | 83 | 33 |
+| Más → Análisis | 160 | 64 | 327 | 193 | 133 | 117 |
+| tab Inicio (otra vez) | 32 | 32 | 109 | 94 | 67 | 50 |
+
+**Lectura:**
+
+1. "tab Gastos (otra vez)" baja de 245 a 112 ms: cumple la aceptación de la tarjeta (bajo 150).
+2. Las hojas abiertas con Gastos a la vista también bajan (Registrar 93 → 44, form Gasto 210 → 126): el `inert` y el estilo del modal recorren menos elementos, porque los días fuera de pantalla no se estilizan.
+3. Scroll: render passes, quads y dibujo por cuadro iguales. El hilo principal durante el gesto en Gastos sube de 237 a 546 ms, porque cada día se estiliza al acercarse al viewport; con LoAF, cero cuadros largos (> 50 ms) a 1.600 y 3.200 px/s, con y sin el cambio.
+4. Capturas de Gastos comparadas píxel a píxel con y sin la regla, en claro y oscuro, tras recorrer la lista: mismo alto de documento; diferencias solo subpíxel (≤ 1 px CSS) dentro de los días contenidos; el anillo de foco de una fila no se recorta.
+5. Comprobación independiente de PERF.11 en la misma máquina: `main` previo a PERF.11 daba 469 y 408 ms en las dos entradas a Gastos y 36 render passes por cuadro de scroll; el commit de PERF.11, 325 y 245, y 1.
+6. No se hizo lo demás que proponía la tarjeta (saltar el render si nada cambió, `content-visibility: hidden` en las secciones inactivas): la aceptación quedó cumplida sin eso y los dos tienen riesgo propio (datos viejos, lector de pantalla).
+
+**Validación:** `pnpm test` (`router.test.js`: el foco llega después de `onNavigate`), lint, E2E en Chromium real.

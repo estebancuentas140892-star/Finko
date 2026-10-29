@@ -39,7 +39,8 @@ function currentHash() {
   return location.hash.slice(1) || DEFAULT_HASH;
 }
 
-function showSection(hash, moveFocus = false) {
+/** Muestra la sección del hash y oculta las demás. Devuelve su id. */
+function showSection(hash) {
   const resolved = REDIRECTS.get(hash) ?? hash;
   if (resolved !== hash) {
     history.replaceState(null, '', `#${resolved}`);
@@ -51,25 +52,36 @@ function showSection(hash, moveFocus = false) {
     const el = document.getElementById(sectionId);
     if (el) el.classList.toggle('active', sectionId === targetId);
   }
+  return targetId;
+}
 
-  // Mover el foco al contenido recién mostrado solo en navegaciones reales.
-  // La sección tiene tabindex="-1" + aria-labelledby: al recibir foco, el
-  // lector de pantalla anuncia el título de la sección como landmark.
-  // En la carga inicial no se mueve, para no robar el foco antes del skip link.
-  // Con un modal abierto tampoco: una acción que navega y abre un modal en el
-  // mismo tick (ir-a-crear-cuenta) le sacaría el foco al modal, porque el
-  // `inert` del fondo llega un cuadro después de abrirlo (PERF.11, modales.js).
-  if (moveFocus && !document.querySelector('.modal-overlay[data-open]')) {
-    document.getElementById(targetId)?.focus({ preventScroll: true });
-  }
+/**
+ * Mueve el foco a la sección recién mostrada. Tiene tabindex="-1" +
+ * aria-labelledby: al recibir foco, el lector de pantalla anuncia el título
+ * de la sección como landmark.
+ *
+ * Con un modal abierto no: una acción que navega y abre un modal en el mismo
+ * tick (ir-a-crear-cuenta) le sacaría el foco al modal, porque el `inert` del
+ * fondo llega un cuadro después de abrirlo (PERF.11, modales.js).
+ */
+function enfocarSeccion(targetId) {
+  if (document.querySelector('.modal-overlay[data-open]')) return;
+  document.getElementById(targetId)?.focus({ preventScroll: true });
 }
 
 export function initRouter(onNavigate) {
   let inicial = true;
   const handler = () => {
     const hash = currentHash();
-    showSection(hash, !inicial);
+    const targetId = showSection(hash);
     onNavigate?.(hash);
+    // El foco va al final, después de onNavigate (PERF.12): `focus()` obliga
+    // a estilizar y maquetar en el acto la sección recién mostrada (~120 ms
+    // con Gastos en un teléfono de gama media), y si onNavigate toca clases
+    // después, el cuadro vuelve a estilizar ~900 elementos. Al final, una sola
+    // pasada. En la carga inicial no se mueve, para no robar el foco antes
+    // del skip link.
+    if (!inicial) enfocarSeccion(targetId);
     inicial = false;
   };
 

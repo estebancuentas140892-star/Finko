@@ -4604,6 +4604,27 @@ button.chip--gastos.chip--active {
   animation: none;
 }
 
+/* PERF.12: los días fuera de pantalla no se estilizan, maquetan ni pintan
+   hasta acercarse al viewport. Entrar a Gastos con un mes a la vista
+   estilizaba ~3.400 elementos (27 días de ~22 nodos por fila, más sus
+   pseudo-elementos); así, solo el primer día y los que van apareciendo.
+   El primero queda fuera de la regla: está en pantalla al entrar y se
+   pinta en la primera pasada. 360px es el alto medio de un día medido con
+   3.000 gastos; `auto` recuerda el alto real una vez pintado, así el scroll
+   no salta al volver. `content-visibility` implica `contain: paint`, que
+   recortaría la sombra de las filas y el anillo de foco en el borde del día:
+   overflow-clip-margin les deja ese margen. Y `contain: layout` impide que
+   el margen de la última fila colapse con el del día: sin el `:last-child`
+   quedaban 8px de más entre días. */
+.gastos-dia ~ .gastos-dia {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 360px;
+  overflow-clip-margin: var(--fk-space-3);
+}
+.gastos-dia ~ .gastos-dia > :last-child {
+  margin-bottom: 0;
+}
+
 /* ── Insight de gastos hormiga (GAS.1c, ADR 039 D4) ─────────────
    Anatomía de .gmf-insight (MC.18c) con el tinte de gastos: pone en
    pantalla detectarHormigas() (logic.js), que existía sin vista.

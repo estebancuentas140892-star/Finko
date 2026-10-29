@@ -71,7 +71,6 @@ Las tarjetas del tablero (la iniciativa HF se lista por fase), para elegir la pr
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | cola de diseño de Esteban |
-| PERF.12 | Cambiar de sección sin reconstruir lo que no cambió | Transversal | media | nada |
 | PERF.13 | Arranque: 616 ms de hilo bloqueado | Transversal | baja | nada |
 | PERF.14 | Pasar de una hoja a otra sin soltar el fondo | Transversal | baja | nada |
 | PERF.15 | Anotar solo lo que cambió antes de sincronizar | Transversal | baja | nada |
@@ -116,7 +115,7 @@ _(CFG.1 a CFG.5 cerraron completas. **CFG.6** es la auditoría UX/UI móvil de l
 
 ## Transversal (afecta varias secciones)
 
-DV.2d, PERF.12 a PERF.15, HF.0f a HF.5a → [`board/transversal.md`](board/transversal.md) (HF: iniciativa "un hecho financiero se informa una sola vez", [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), P1 a P7 resueltas; APR: iniciativa "Aprende y aplícalo", [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) y [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md), en Propuesta)
+DV.2d, PERF.13 a PERF.15, HF.0f a HF.5a → [`board/transversal.md`](board/transversal.md) (HF: iniciativa "un hecho financiero se informa una sola vez", [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), P1 a P7 resueltas; APR: iniciativa "Aprende y aplícalo", [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) y [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md), en Propuesta)
 
 ---
 

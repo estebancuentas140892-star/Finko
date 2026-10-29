@@ -5,6 +5,8 @@
  * anuncia su título). Con un modal abierto no: desde PERF.11 el `inert` del
  * fondo llega un cuadro después de abrir el modal, y una acción que navega y
  * abre un modal en el mismo tick (ir-a-crear-cuenta) le sacaba el foco.
+ * Y llega al final, después de onNavigate (PERF.12): `focus()` estiliza en el
+ * acto, y un cambio de clases posterior obligaba a estilizar dos veces.
  */
 
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
@@ -29,10 +31,13 @@ async function ir(hash) {
   await llego;
 }
 
+/** Quién tenía el foco cuando corrió onNavigate. */
+let focoEnOnNavigate = null;
+
 beforeAll(async () => {
   montarDom();
   location.hash = '';
-  initRouter();
+  initRouter(() => { focoEnOnNavigate = document.activeElement; });
 });
 
 beforeEach(montarDom);
@@ -51,5 +56,11 @@ describe('el foco al navegar', () => {
     await ir('#tesoreria');
     expect(document.getElementById('sec-tesoreria').classList.contains('active')).toBe(true);
     expect(document.activeElement).toBe(document.getElementById('campo'));
+  });
+
+  it('llega después de onNavigate, no antes', async () => {
+    await ir('#dash');
+    expect(focoEnOnNavigate).not.toBe(document.getElementById('sec-dash'));
+    expect(document.activeElement).toBe(document.getElementById('sec-dash'));
   });
 });
