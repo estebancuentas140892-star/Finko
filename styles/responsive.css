@@ -2456,3 +2456,137 @@
     color: var(--fk-text-secondary);
   }
 }
+
+/* ════════════════════════════════════════════════════════════
+   MV2.15b · INICIO: ESTA SEMANA (ADR 099 D5)
+   ════════════════════════════════════════════════════════════
+   `#panel-prioridades` bajo 1024px: lo que entra y lo que sale de mañana a
+   7 días, una fila de una línea por cosa, con el día a la izquierda en vez
+   de un encabezado por día. Desde 1024px la celda está vacía (DSK.1d). */
+
+@media (max-width: 1023px) {
+
+  .esta-semana__cabeza {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--fk-space-2);
+    margin-bottom: var(--fk-space-1);
+  }
+  /* Mismo rótulo que "Atención hoy" y el resto de grupos de Inicio. */
+  .esta-semana__titulo {
+    margin: 0;
+    padding-left: 2px;
+    font-size: var(--fk-text-xs);
+    font-weight: var(--fk-font-bold);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--fk-text-muted);
+  }
+  .esta-semana__calendario {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fk-space-1);
+    min-height: 44px;
+    padding: 0 var(--fk-space-1);
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-accent);
+    text-decoration: none;
+  }
+
+  .esta-semana__cuerpo {
+    background: var(--fk-bg-surface);
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-lg);
+    overflow: hidden;
+  }
+  .esta-semana__lista {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .esta-semana__fila {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--fk-space-3);
+    min-height: 56px;
+    padding: var(--fk-space-2) var(--fk-space-4);
+  }
+  .esta-semana__fila + .esta-semana__fila { border-top: 1px solid var(--fk-border-subtle); }
+
+  /* El día ocupa el lugar de la teja; la flecha de dirección (ADR 088 D3)
+     se queda en su esquina, como en la teja de escritorio. */
+  .esta-semana__cuando {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: var(--fk-space-12);
+    min-height: var(--fk-space-10);
+    border-radius: var(--fk-radius-md);
+    background: var(--fk-bg-elevated);
+    font-size: var(--fk-text-xs);
+    font-weight: var(--fk-font-bold);
+    line-height: 1.15;
+    color: var(--fk-text-secondary);
+  }
+  .esta-semana__cuando b {
+    font-size: var(--fk-text-base);
+    color: var(--fk-text-primary);
+  }
+  .esta-semana__cuando .obligacion-dir {
+    position: absolute;
+    right: -0.125rem;
+    bottom: -0.25rem;
+    font-size: var(--fk-text-xs);
+    line-height: 1;
+    color: var(--fk-text-primary);
+  }
+
+  .esta-semana__textos { min-width: 0; }
+  .esta-semana__nombre {
+    margin: 0;
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-primary);
+    overflow-wrap: anywhere;
+  }
+  .esta-semana__tipo {
+    margin: 0;
+    font-size: var(--fk-text-xs);
+    color: var(--fk-text-secondary);
+  }
+  .esta-semana__monto {
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-semibold);
+    font-variant-numeric: tabular-nums;
+    color: var(--fk-text-primary);
+    white-space: nowrap;
+  }
+  /* Lo que entra lleva el color de un ingreso en toda la app; el signo ya
+     lo dijo (R90): el color no viaja solo. */
+  .esta-semana__monto--entra { color: var(--fk-success-text); }
+
+  .esta-semana__pie {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--fk-space-1) var(--fk-space-3);
+    margin: 0;
+    padding: var(--fk-space-3) var(--fk-space-4);
+    border-top: 1px solid var(--fk-border-subtle);
+    font-size: var(--fk-text-xs);
+    color: var(--fk-text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+  .esta-semana__resto { color: var(--fk-text-accent); }
+  .esta-semana__vacio {
+    margin: 0;
+    padding: var(--fk-space-4);
+    font-size: var(--fk-text-sm);
+    color: var(--fk-text-secondary);
+  }
+}

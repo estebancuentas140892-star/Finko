@@ -391,7 +391,7 @@ export function htmlHojaAvisosHoy(grupos) {
   return `
     <h2 class="avisos-hoy__titulo" id="avisos-hoy-titulo">Avisos de hoy · ${total}</h2>
     ${secciones}
-    <p class="avisos-hoy__nota">Lo que vence después de hoy está en Próximas prioridades.</p>`;
+    <p class="avisos-hoy__nota">Lo que viene después de hoy está en Esta semana.</p>`;
 }
 
 // ── DOM ──────────────────────────────────────────────────────────

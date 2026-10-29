@@ -6,7 +6,8 @@
  *   no se ven bajo 1024px.
  * - D3: la lente, "Ver los N" y la hoja dicen el mismo número; pagar desde la
  *   hoja la cierra y abre el lote con esos mismos pagos.
- * - D2: lo de mañana no cuenta arriba y sigue en "Próximas prioridades".
+ * - D2: lo de mañana no cuenta arriba y sigue en la lista de la semana.
+ * - D5 (MV2.15b): "Esta semana", con lo que entra primero y el pie por lado.
  * - Escritorio no cambia: la lista no existe y los paneles siguen.
  * - A 320px nada desborda a lo ancho.
  *
@@ -82,6 +83,21 @@ test.describe('MV2.15a - Atención hoy en móvil (ADR 099)', () => {
     await expect(prioridades).not.toContainText('Plan Claro');
   });
 
+  test('Esta semana: lo de mañana, lo que entra primero y el pie con cada lado (MV2.15b, D5)', async ({ page }) => {
+    await abrir(page);
+    const semana = page.locator('#panel-prioridades');
+    await expect(semana.locator('.esta-semana__titulo')).toHaveText('Esta semana');
+    const filas = semana.locator('.esta-semana__fila');
+    await expect(filas).toHaveCount(2);
+    await expect(filas.nth(0)).toContainText('Juan te debe');
+    await expect(filas.nth(0).locator('.esta-semana__monto')).toHaveText('+$100.000');
+    await expect(filas.nth(1)).toContainText('Colegio');
+    await expect(filas.nth(1).locator('.esta-semana__tipo')).toHaveText('Mañana · gasto fijo');
+    await expect(filas.nth(1).locator('.esta-semana__monto')).toHaveText('-$682.016');
+    await expect(semana.locator('.esta-semana__pie')).toContainText('Entra $100.000');
+    await expect(semana.locator('.esta-semana__pie')).toContainText('Sale $682.016');
+  });
+
   test('pagar desde la hoja la cierra y abre el lote con esos mismos pagos (D3)', async ({ page }) => {
     await abrir(page);
     await page.locator('#panel-atencion-hoy [data-action="atencion-hoy-ver"]').click();
@@ -98,7 +114,8 @@ test.describe('MV2.15a - Atención hoy en móvil (ADR 099)', () => {
     const medidas = await page.evaluate(() => ({
       sobra: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       altos: [...document.querySelectorAll('#panel-atencion-hoy .atencion-hoy__accion, #panel-atencion-hoy .atencion-hoy__ver')]
-        .map(b => b.getBoundingClientRect().height),
+        // Redondeado: bajo carga se midió 43,99997 a mitad de la animación de entrada.
+        .map(b => Math.round(b.getBoundingClientRect().height)),
     }));
     expect(medidas.sobra).toBe(0);
     for (const alto of medidas.altos) expect(alto).toBeGreaterThanOrEqual(44);

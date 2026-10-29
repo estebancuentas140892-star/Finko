@@ -51,7 +51,7 @@ La hoja "Avisos de hoy" agrupa por clase, con la severidad en texto ("Urgente", 
 
 ### D5. "Esta semana" en vez de "Próximas prioridades" (MV2.15b)
 
-Lo que entra y lo que sale en los próximos 7 días, desde mañana: los mismos compromisos, préstamos y apartados de hoy más el día de pago de los ingresos (`ocurrenciasEnMes`, `infra/vencimientos.js`). Filas de una línea con el día a la izquierda, sin encabezado por día; la dirección va en el signo y el color del monto (R90). Al pie, el total de cada lado. Tope de cuatro filas; el resto, "Y N más en el Calendario".
+Lo que entra y lo que sale en los próximos 7 días, desde mañana: los mismos compromisos, préstamos y apartados de hoy más el día de pago de los ingresos (`ocurrenciasEnMes`, `infra/vencimientos.js`). Filas de una línea con el día a la izquierda, sin encabezado por día. La dirección sigue dicha con forma ([ADR 088](088-me-deben-urgencia-de-cobro-y-direccion-con-forma.md) D3, sin cambio): la flecha pasa de la teja al recuadro del día y el signo va en el monto, igual que en escritorio; lo que entra lleva además el color de un ingreso (R90). El tipo se dice con palabras en la segunda línea ("Mañana · gasto fijo"); el badge de color se queda en escritorio. Al pie, lo que entra y lo que sale en toda la semana (un apartado no cuenta en ningún lado: no le mueve dinero a nadie). Tope de cuatro filas; el resto, "Y N más en el Calendario". Sin nada en la semana, el "Todo al día" de siempre.
 
 ### D6. El avatar es un botón y abre tu perfil (MV2.15c, cambia ADR 034 D8)
 
