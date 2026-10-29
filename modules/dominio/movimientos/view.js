@@ -411,8 +411,17 @@ function _renderMovimientoItem(m) {
   const subtitulo     = [_TIPO_LABEL[m.tipo] ?? m.tipo, cuando, cuenta, gmfNota]
     .filter(Boolean).map(_esc).join(' · ');
 
+  // ADR 098 D4: con acciones, en móvil la fila abre la hoja de detalle
+  // (ui/detalle-fila.js) y los botones salen de la fila. En escritorio no.
+  const conAcciones   = Boolean(_ACCIONES_POR_TIPO[m.tipo]);
+  const detalle       = conAcciones
+    ? `<button class="list-item__detalle" type="button" data-action="fila-detalle"
+              aria-label="Ver detalle: ${_esc(_descripcionMovimiento(m))}, ${signo}${f(m.monto)}"></button>`
+    : '';
+
   return `
-    <article class="list-item" data-id="${_esc(m.id)}">
+    <article class="list-item${conAcciones ? ' list-item--detalle' : ''}" data-id="${_esc(m.id)}">
+      ${detalle}
       <div class="list-item__icon" aria-hidden="true">${tejaCategoria(m.icono, m.dominio)}</div>
       <div class="list-item__body">
         <p class="list-item__title">${_esc(_descripcionMovimiento(m))}</p>

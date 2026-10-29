@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-10-17.
+> Revisado: 2026-10-29.
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -53,6 +53,7 @@
 
 **Cambios realizados**:
 
+- 2026-10-29 (MV2.1, [ADR 098](../DECISIONS/098-finko-movil-2-primera-entrega.md)): en móvil la fila es una línea con hoja de detalle (`ui/detalle-fila.js`), las categorías se pliegan con "+N" (cambia DIS.4/G3; `alternarFiltrosGastos()`), y la cabecera del bloque trae lupa y primario espejo. Escritorio igual.
 - 2026-10-25 (APR.3e): categoría nativa **Familia** (`c-familia`, sale del selector de íconos personalizados) y `gasto:registrar`, el gasto que otro dominio ya decidió (mesada, premio del niño): se guarda con `origen` y descuenta su cuenta sin preguntar. Ver [`nino.md`](nino.md).
 - 2026-08-20 (**ficha 07 de la auditoría móvil**, ADR 069 D8): el mes sube a `infra/mes-bloque.js` y `navegarMesGastos()` se queda solo con lo suyo (el reset del filtro de categoría); `mesTopeGastos()` se exporta para que el bloque no discrepe del hero sobre hasta dónde se navega; `_renderAlcanceInternas()` nueva. Ver [CHANGELOG](../CHANGELOG.md)., auditoría de diseño de la sección, 10 correcciones): el label del hero nombra el mes visible (`Gastaste en junio`, y `{categoría} en {mes}` con filtro); la fila de gasto sube el monto al primer renglón y baja las acciones al suyo (nombre de 110,7px a ~185px, "Cuidado personal" en una línea, alto estable en 107,6px sin nota); la barra de filtros y los chips de gasto frecuente dejan el scroll oculto por `flex-wrap` y los chips de filtro llegan a 44px; `#panel-filtros-gastos` pierde el `role="group"` que anunciaba el total del mes como un filtro; un solo verbo ("Registrar gasto") y un solo primario visible; el ojo y la nav de mes ganan zona táctil de 44px sin cambiar su dibujo de 40px; "›" se deshabilita en el último mes navegable y el vacío de un mes pasado ofrece volver en vez de registrar; sin ningún gasto no se pinta el hero de $0; el formulario vuelve a abrir con el monto y `_renderEmptyFiltro()` (inalcanzable) se borra. Reglas **R9** a **R11** escritas en [`DESIGN_SYSTEM.md`](../DESIGN_SYSTEM.md). Ver CHANGELOG.
 

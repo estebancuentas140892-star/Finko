@@ -119,7 +119,24 @@ function _ponerTema(light) {
   document.body.classList.toggle(LIGHT_CLASS, light);
   localStorage.setItem(THEME_KEY, light ? 'light' : 'dark');
   _syncThemeButton(light);
+  sincronizarColorBarra();
   EventBus.emit('theme:change', { light });
+}
+
+/**
+ * ADR 098 D11 (hallazgo N15): las dos `<meta name="theme-color">` siguen el
+ * tema del sistema operativo, no el de Finko. Con el teléfono en oscuro y
+ * Finko en claro, la barra de estado quedaba negra sobre una app blanca. En
+ * móvil las dos pasan a decir el fondo vigente (`--fk-bg-base`, que también
+ * cambia con la piel del perfil niño); en escritorio se dejan como estaban.
+ */
+export function sincronizarColorBarra() {
+  if (!window.matchMedia?.('(max-width: 1023px)').matches) return;
+  const color = getComputedStyle(document.body).getPropertyValue('--fk-bg-base').trim();
+  if (!color) return;
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => {
+    m.setAttribute('content', color);
+  });
 }
 
 /**

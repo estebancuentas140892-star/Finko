@@ -327,4 +327,10 @@ export function initAccionesIngresos() {
   registrarAccion('eliminar-ingreso', _eliminarIngreso);
   registrarAccion('nuevo-ingreso-puntual',    _nuevoIngresoPuntual);
   registrarAccion('eliminar-ingreso-puntual', _eliminarIngresoPuntual);
+  // ADR 098 D7: en móvil la lista muestra los 5 más recientes y el resto se
+  // consulta en el historial, con el filtro de ingresos puesto. Sin import
+  // cruzado (ADN 10): va por EventBus, igual que la salida de una cuenta.
+  registrarAccion('ingresos-ver-historial', () => {
+    EventBus.emit('movimientos:ver', { dominio: 'ingresos' });
+  });
 }

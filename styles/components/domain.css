@@ -325,6 +325,11 @@ details[open] > .herramienta-inline__titulo::after {
   overflow-x: auto;
   padding: 0.5rem 0 0.75rem;
   scrollbar-width: none;
+  /* ADR 098 D9: dentro de una columna flex (el cuerpo de un modal) la barra
+     con overflow se encogía hasta 10px y los chips quedaban como rayas
+     (asistente de distribución, hallazgo N12). La barra mide lo que su
+     contenido; el desborde horizontal sigue siendo suyo. */
+  flex-shrink: 0;
 }
 
 .filtros-bar::-webkit-scrollbar {
@@ -1708,7 +1713,8 @@ button.chip:focus-visible {
 }
 .perfil-inicio__nombre[hidden] { display: none; }
 
-.perfil-inicio__ajustes {
+.perfil-inicio__ajustes,
+.perfil-inicio__buscar {
   width: var(--fk-space-10);
   height: var(--fk-space-10);
   border-radius: var(--fk-radius-md);
@@ -1723,11 +1729,13 @@ button.chip:focus-visible {
     background var(--fk-transition-fast),
     color var(--fk-transition-fast);
 }
-.perfil-inicio__ajustes:hover {
+.perfil-inicio__ajustes:hover,
+.perfil-inicio__buscar:hover {
   background: var(--fk-bg-elevated);
   color: var(--fk-text-primary);
 }
-.perfil-inicio__ajustes .icon { --fk-icon-size: var(--fk-icon-md); }
+.perfil-inicio__ajustes .icon,
+.perfil-inicio__buscar .icon { --fk-icon-size: var(--fk-icon-md); }
 
 /* ════════════════════════════════════════════════════════════
    HERO-INICIO (IN.8b, ADR 034 D2/D3) - saldo centrado protagonista.

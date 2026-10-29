@@ -10,16 +10,22 @@
  * - initBloqueGastos(): inyecta la misma franja en las tres lentes.
  * - el reloj del bloque (infra/mes-bloque.js): el rango del mes visible, que
  *   es lo que consume el acceso prefiltrado a Movimientos (G5).
+ * - ADR 098 D5: la cabecera trae la lupa y el primario corto de cada lente,
+ *   que es un espejo del original del encabezado (lo dispara y copia su
+ *   `hidden` y su nombre).
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   LENTES_BLOQUE_GASTOS,
   htmlBloqueGastos,
   estadoLentesGastos,
   sincronizarBloqueGastos,
   initBloqueGastos,
+  irABuscar,
 } from '../../modules/ui/bloque-gastos.js';
+import { dispatch } from '../../modules/ui/actions.js';
+import { EventBus } from '../../modules/core/state.js';
 import {
   mesBloque, navegarMesBloque, irAMesActualBloque,
   prefijoMesBloque, rangoMesBloque, etiquetaMesBloque, esMesActualBloque,
@@ -221,5 +227,60 @@ describe('initBloqueGastos()', () => {
   it('no revienta si los slots no están en el DOM', () => {
     document.body.innerHTML = '';
     expect(() => initBloqueGastos()).not.toThrow();
+  });
+});
+
+describe('cabecera con lupa y primario (ADR 098 D5)', () => {
+  const montar = () => {
+    document.body.innerHTML = `
+      <section id="sec-gast">
+        <header class="section__header"><button class="btn btn-primary" data-action="nuevo-gasto">Registrar gasto</button></header>
+        <div id="tabs-gast"></div>
+      </section>
+      <section id="sec-compromisos">
+        <header class="section__header"><button class="btn btn-primary" data-action="comp-elegir-tipo-nuevo" aria-label="Agregar un gasto fijo o una deuda">Agregar</button></header>
+        <div id="tabs-compromisos"></div>
+      </section>
+      <section id="sec-presupuesto">
+        <header class="section__header"><button class="btn btn-primary" id="btn-nuevo-presupuesto" data-action="nuevo-presupuesto" aria-label="Nuevo límite de gasto por categoría" hidden>Nuevo límite</button></header>
+        <div id="tabs-presupuesto"></div>
+      </section>`;
+    initBloqueGastos();
+  };
+  const espejo = (h) => document.querySelector(`#sec-${h} .bloque-gastos__primario`);
+
+  it('cada lente lleva su primario corto, con el nombre completo del original', () => {
+    montar();
+    expect(espejo('gast').textContent.trim()).toBe('Gasto');
+    expect(espejo('gast').getAttribute('aria-label')).toBe('Registrar gasto');
+    expect(espejo('compromisos').textContent.trim()).toBe('Agregar');
+    expect(espejo('compromisos').getAttribute('aria-label')).toBe('Agregar un gasto fijo o una deuda');
+  });
+
+  it('si el dominio oculta su primario, el espejo también se oculta', () => {
+    montar();
+    expect(espejo('presupuesto').hidden).toBe(true);
+    document.getElementById('btn-nuevo-presupuesto').hidden = false;
+    sincronizarBloqueGastos({ vencidos: 0, excedidos: 0 });
+    expect(espejo('presupuesto').hidden).toBe(false);
+  });
+
+  it('tocar el espejo dispara el botón original', () => {
+    montar();
+    const original = document.querySelector('#sec-gast > .section__header > .btn-primary');
+    const clic = vi.fn();
+    original.addEventListener('click', clic);
+    dispatch(espejo('gast'), new Event('click', { cancelable: true }));
+    expect(clic).toHaveBeenCalledTimes(1);
+  });
+
+  it('la lupa va al historial sin filtros por EventBus', () => {
+    montar();
+    expect(document.querySelectorAll('[data-action="bloque-buscar"]')).toHaveLength(3);
+    const oyente = vi.fn();
+    EventBus.on('movimientos:ver', oyente);
+    irABuscar();
+    expect(oyente).toHaveBeenCalledWith({});
+    EventBus.off('movimientos:ver', oyente);
   });
 });

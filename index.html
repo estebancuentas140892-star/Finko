@@ -589,6 +589,13 @@
                1024px, donde es la tercera entrada a Ajustes de la misma
                pantalla (barra lateral + barra superior ya la tienen). Bajo
                1024px sigue siendo una salida legítima. -->
+          <!-- Lupa (ADR 098 D5): buscar en todo el historial era un toque
+               escondido en Más, Movimientos. Mismo dibujo que el engranaje
+               (domain.css); solo existe bajo 1024px (responsive.css). -->
+          <button class="perfil-inicio__buscar" type="button"
+                  data-action="bloque-buscar" aria-label="Buscar en tus movimientos">
+            <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
+          </button>
           <a class="perfil-inicio__ajustes" href="#config" aria-label="Ir a Ajustes">
             <svg class="icon" aria-hidden="true"><use href="#i-ajustes"/></svg>
           </a>
@@ -2013,6 +2020,23 @@
        (AH.7a, ADR 065). Las clases .mas-* son propias del
        sheet: .menu-mas__* siguen siendo el launcher de Registrar y de
        los accesos de Inicio. -->
+  <!-- Hoja de detalle de una fila (ADR 098 D4): en móvil, tocar un gasto o un
+       movimiento abre esta hoja con sus acciones (repetir, editar y, aparte,
+       eliminar). ui/detalle-fila.js la llena copiando los botones de la fila;
+       en escritorio la fila conserva sus botones y la hoja no se abre. -->
+  <div class="modal-overlay modal-overlay--sheet" id="modal-detalle-fila"
+       role="dialog" aria-modal="true"
+       aria-labelledby="detalle-fila-titulo" aria-hidden="true">
+    <div class="modal modal--sheet detalle-fila">
+      <span class="mas-sheet__handle" aria-hidden="true"></span>
+      <button class="modal__close mas-sheet__close" type="button"
+              data-action="modal-close" aria-label="Cerrar">
+        <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
+      </button>
+      <div class="detalle-fila__body" id="detalle-fila-body"></div>
+    </div>
+  </div>
+
   <div class="modal-overlay modal-overlay--sheet" id="modal-mas"
        role="dialog" aria-modal="true"
        aria-labelledby="modal-mas-title" aria-hidden="true">

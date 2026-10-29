@@ -1190,9 +1190,11 @@ describe('renderMovimientosCompletos() - paginación por lotes', () => {
 
 describe('renderMovimientosCompletos() - acciones por fila (MOV.1)', () => {
   const elLista = () => document.getElementById('lista-movimientos');
+  // Las acciones de la fila viven en `.list-item__action`. El botón que abre
+  // la hoja de detalle en móvil (ADR 098 D4) es aparte y no es una acción.
   const accionesDe = (id) => [...elLista()
     .querySelector(`.list-item[data-id="${id}"]`)
-    .querySelectorAll('[data-action]')]
+    .querySelectorAll('.list-item__action [data-action]')]
     .map(b => b.dataset.action);
 
   beforeEach(() => {
@@ -1214,7 +1216,7 @@ describe('renderMovimientosCompletos() - acciones por fila (MOV.1)', () => {
   it('los botones llevan el id del registro, que es lo que el handler dueño lee', () => {
     S.gastos = [gasto({ id: 'g-abc' })];
     renderMovimientosCompletos();
-    const botones = elLista().querySelectorAll('.list-item[data-id="g-abc"] [data-action]');
+    const botones = elLista().querySelectorAll('.list-item[data-id="g-abc"] .list-item__action [data-action]');
     for (const b of botones) expect(b.dataset.id).toBe('g-abc');
   });
 

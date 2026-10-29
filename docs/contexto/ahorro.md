@@ -1,6 +1,6 @@
 # Ficha de contexto: Ahorro
 
-> Revisado: 2026-10-24.
+> Revisado: 2026-10-29.
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -130,6 +130,7 @@
 
 **Cambios realizados**:
 
+- 2026-10-29 (MV2.1, [ADR 098](../DECISIONS/098-finko-movil-2-primera-entrega.md) D3, cambia el 069 D7): la casa sale de la fila; las cuatro van en cuatro columnas con la etiqueta corta (`partirEtiquetaModalidad()`), también en la fila de la casa, y el chip vigente se ve.
 - 2026-08-15 (**ficha 04 de la auditoría móvil**, [ADR 069](../DECISIONS/069-bloque-gastos-en-la-barra-movil.md) D7): la portada-resumen se **confirma** (es la única pantalla donde los cuatro términos conviven y desde donde se aporta a una meta concreta sin entrar). Cambia la circulación y la copia: `ui/bloque-ahorro.js` baja a las cuatro hijas la fila de chips de la casa, con la casa como primer chip, así que ir de Metas a Reservas pasa de 2 toques y un scroll a 1 toque; el orden sale de `MODALIDADES_AHORRO` y ninguna hija puede reordenarlo (AH3); los tres textos que citaban "la pestaña Fondo (arriba)" nombran la sección y enlazan a `#fondo` (AH1, regla candidata R85); y la cabecera de la casa gana media línea mientras el fondo no está activo (AH4). AH5 se cierra sin tocar el "volver". Ver CHANGELOG.
 - 2026-08-13 (**AH.7a**): la casa sube al cuarto slot de la barra inferior de móvil (entrada nueva `nav-item--mobile-only`, la del sidebar no se mueve) y Calendario baja al slot de ancho completo de la hoja "Más". `MAS_SECTIONS` cambia de manos: sale el grupo de ahorro, entra `agenda`. Ver CHANGELOG y [ADR 065](../DECISIONS/065-ahorro-en-la-barra-inferior.md).
 

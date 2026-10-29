@@ -123,6 +123,7 @@ export function calcularTasaAhorro(ingresos, gastos) {
 export const MODALIDADES_AHORRO = [
   {
     clave: 'fondo', seccion: 'fondo', icono: 'ahorro', label: 'Fondo de emergencia',
+    corto: 'Fondo',
     cuando: 'Ojalá nunca lo uses',
     proposito: 'Para cuando algo se dañe o te quedes sin ingresos',
   },
@@ -142,6 +143,22 @@ export const MODALIDADES_AHORRO = [
     proposito: 'Dinero que pusiste a crecer',
   },
 ];
+
+/**
+ * Parte la etiqueta de una modalidad en lo que se ve siempre y lo que se
+ * calla en móvil (ADR 098 D3). Bajo 1024px los cuatro chips van en una fila
+ * de cuatro columnas, sin desborde (R9): "Fondo de emergencia" no cabe en 66px
+ * a 320, así que el chip dice "Fondo" y la cola ` de emergencia` se oculta
+ * con CSS. La cola sigue en el DOM: en escritorio se lee completa y el nombre
+ * accesible en móvil coincide con lo visible (WCAG 2.5.3).
+ *
+ * @param {{label: string, corto?: string}} m Una fila de `MODALIDADES_AHORRO`.
+ * @returns {{corto: string, cola: string}} `corto + cola === label`.
+ */
+export function partirEtiquetaModalidad(m) {
+  const corto = m.corto && m.label.startsWith(m.corto) ? m.corto : m.label;
+  return { corto, cola: m.label.slice(corto.length) };
+}
 
 /**
  * Las cuatro filas de la casa de Ahorro: cuánto hay en cada modalidad, para qué

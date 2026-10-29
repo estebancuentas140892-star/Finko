@@ -13,6 +13,9 @@
  *                          Ahorro, que markActiveNav necesita en el DOM desde
  *                          la primera pasada del router.
  * 4. initRouter()    - activa la sección del hash actual y escucha hashchange.
+ * 4b. initVolver()   - en móvil, volver al origen real y recuperar el scroll
+ *                      (ADR 098). Detrás del router: su hashchange corre con
+ *                      la sección ya visible.
  * 5. initOnboarding()      - wizard si es primera vez, no-op si ya completó.
  * 5b. initPerfiles() o initBloqueoAcceso() - con niños, "¿Quién usa Finko?"
  *                            (APR.3a); si no, el candado de acceso (CFG.5a) si
@@ -63,6 +66,8 @@ import { initMenuMas } from './menu-mas.js';
 import { initBloqueGastos } from './bloque-gastos.js';
 import { initBloqueAhorro } from './bloque-ahorro.js';
 import { initBloqueInicio } from './bloque-inicio.js';
+import { initVolver } from './volver.js';
+import { initDetalleFila } from './detalle-fila.js';
 import { initRegistrar } from './registrar.js';
 import { initInstallPrompt } from './install-prompt.js';
 import { initSwAviso } from './sw-aviso.js';
@@ -104,6 +109,10 @@ initBloqueGastos();
 initBloqueAhorro();
 initBloqueInicio();
 initRouter(markActiveNav);
+// ADR 098 D1-D2: el volver de móvil (origen real y scroll recuperado). Va
+// detrás del router para que su `hashchange` corra con la sección ya visible.
+initVolver();
+initDetalleFila();
 initOnboarding();
 // APR.3a (ADR 093 D1): con niños en el dispositivo, Finko abre en "¿Quién usa
 // Finko?" y el adulto da su PIN ahí; sin niños, el candado de siempre.

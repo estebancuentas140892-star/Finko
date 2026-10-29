@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-10-28.
+> Revisado: 2026-10-29.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-10)
+
+### feat(movil): MV2.1, Finko móvil 2 primera entrega: volver con memoria y filas de una línea · 2026-10-29
+
+[ADR 098](DECISIONS/098-finko-movil-2-primera-entrega.md) (cambia ADR 069 D7, amplía su D8 y cambia DIS.4/G3 solo en móvil); fichas [`contexto/transversal.md`](contexto/transversal.md), [`contexto/gastos.md`](contexto/gastos.md) y [`contexto/nino.md`](contexto/nino.md). Todo bajo 1024 px; escritorio sin cambios (E2E). SW v622.
+
+- **Volver al origen real y a la misma fila** (`ui/volver.js`): la llegada desde el contenido pinta "‹ {origen}" y regresa con `history.back()`; por la barra no hay origen. La altura se recupera por la fila que se veía, no por `scrollY`: con `content-visibility` la misma altura caía 5 filas más arriba.
+- **Fila de una línea con hoja de detalle** en Gastos y Movimientos (`ui/detalle-fila.js`): 128 a 71 px, tres gastos en la primera pantalla donde había uno. La hoja copia los botones de la fila y los dispara por `registrar-abrir`: cero lógica nueva.
+- **Cabecera del bloque Gastos** con lupa y primario corto, espejo del botón original que la barra de escritorio sigue leyendo. Categorías plegadas con "+N categorías". Ahorro en cuatro columnas sin la casa; el chip vigente por fin se ve (perdía contra `.chip` por capa).
+- **Mis cuentas** muestra 5 ingresos puntuales y sale a Movimientos: 29,3 a 3 pantallas con 4000 gastos. Formularios con el pie pegado ("Guardar gasto" de 1458 px a la vista). Por pagar pone la lista antes que la estrategia.
+- **Arreglos con alcance a escritorio**: la barra de filtros ya no se encoge en la columna de un modal (chips del asistente de distribución, 10 a 28 px en escritorio y 44 en móvil) y el onboarding muestra el error en vez de solo anunciarlo.
+- **Niño**: el camino de Aprender desbordaba 36 px y alejaba la página; frascos en filas bajo 400 px; zona segura arriba. `theme-color` sigue al tema y a la piel del niño.
+- Test de `compromisos` que fallaba del 29 en adelante (fecha real): fecha fija. 31 tests unitarios nuevos y 7 E2E.
 
 ### perf(ui): PERF.12, cambiar de sección sin estilizar el mes entero · 2026-10-28
 

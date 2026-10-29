@@ -19,6 +19,7 @@ import {
   calcularMontoTotalFondo,
   ordenarAportesPorFecha,
   casaAhorro,
+  partirEtiquetaModalidad,
   diasAlProximoApartado,
   nivelesFondo,
   mesesEnPalabras,
@@ -204,10 +205,14 @@ export function renderCasaAhorro(gastosFijosMensuales = 0) {
 function _htmlHub(total, filas, graficos, fondoActivo = true) {
   const oculto = S.config?.ocultarSaldo === true;
 
-  const chipsHtml = filas.map(fila => `
-        <button class="chip" type="button" data-action="ahorro-ir-a-carril" data-id="${_esc(fila.clave)}">
-          ${_esc(fila.label)}
-        </button>`).join('');
+  // ADR 098 D3: en móvil la cola de la etiqueta se calla y los cuatro caben
+  // en una fila sin desborde; en escritorio se lee completa.
+  const chipsHtml = filas.map(fila => {
+    const { corto, cola } = partirEtiquetaModalidad(fila);
+    const colaHtml = cola ? `<span class="chip__cola">${_esc(cola)}</span>` : '';
+    return `
+        <button class="chip" type="button" data-action="ahorro-ir-a-carril" data-id="${_esc(fila.clave)}">${_esc(corto)}${colaHtml}</button>`;
+  }).join('');
 
   const carrilesHtml = filas.map(fila => _htmlCarril(fila, graficos[fila.clave])).join('');
 

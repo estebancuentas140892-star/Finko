@@ -1932,3 +1932,322 @@
   }
 }
 
+
+/* ════════════════════════════════════════════════════════════
+   MV2 · FINKO MÓVIL 2 (ADR 098)
+   ════════════════════════════════════════════════════════════
+   La primera entrega del rediseño móvil: lo que se comprobó en la auditoría
+   MV2 y se resuelve sin tocar cálculos, datos ni escritorio. Cada regla dice
+   su decisión (D1-D12 del ADR 098). Las piezas nuevas nacen ocultas fuera
+   del bloque `< 1024px`, así escritorio no cambia. */
+
+/* Piezas que solo existen en móvil. */
+.section__volver--contexto,
+.list-item__detalle,
+.filtros-bar__mas,
+.lista-ingresos__ver-todos,
+.perfil-inicio__buscar,
+.bloque-gastos__herramientas .bloque-gastos__lupa,
+.bloque-gastos__primario { display: none; }
+
+@media (max-width: 1023px) {
+
+  /* ── D1-D2: volver al origen real ──────────────────────────────────────
+     volver.js pinta "‹ {origen}" cuando se llegó desde el contenido de otra
+     sección. Mientras se ve, el volver fijo de la sección (el "‹ Inicio" de
+     Movimientos, escrito a mano) se aparta: diría un lugar que no es. */
+  .section__volver--contexto { display: inline-flex; }
+  .section.tiene-volver-contexto > .section__volver:not(.section__volver--contexto) {
+    display: none;
+  }
+
+  /* ── D3: Ahorro, cuatro modalidades en cuatro columnas ─────────────────
+     Con cinco chips la fila desbordaba a 390px y escondía "Inversión" (R9).
+     La casa salió de la fila (la sube el "‹ Ahorro" de cada hija) y las
+     cuatro reparten el ancho en partes iguales: ninguna queda cortada a 320.
+     La cola de "Fondo de emergencia" se calla; el nombre completo sigue en
+     el título de la sección. Vale igual para la fila de la casa, que salta
+     de carril dentro de la misma pantalla. */
+  .bloque-chips,
+  .hub .chips {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--fk-space-1);
+    overflow: visible;
+    padding-bottom: 0;
+  }
+  .bloque-chips__chip,
+  .hub .chips .chip {
+    justify-content: center;
+    min-width: 0;
+    min-height: 44px;
+    padding-inline: var(--fk-space-1);
+    font-size: var(--fk-text-xs);
+  }
+  .bloque-chips .chip__cola,
+  .hub .chips .chip__cola { display: none; }
+  /* El chip vigente no se distinguía de los otros: su estilo vive en la capa
+     `layout` y `.chip` (capa `components`) le ganaba siempre. Acá, en la capa
+     que sí manda, con el tinte de su dominio. */
+  .bloque-chips__chip.active {
+    background: color-mix(in srgb, var(--fk-nav-text, var(--fk-accent)) 14%, var(--fk-bg-elevated));
+    border-color: color-mix(in srgb, var(--fk-nav-text, var(--fk-accent)) 50%, transparent);
+    color: var(--fk-text-primary);
+    font-weight: var(--fk-font-semibold);
+  }
+
+  /* ── D4: filas de una línea con hoja de detalle ────────────────────────
+     Las acciones de cada gasto (y de cada movimiento) bajaban a un segundo
+     renglón: la fila medía 128px y la primera pantalla de Gastos mostraba
+     una y media. Ahora la fila entera es un botón que abre la hoja con las
+     acciones (ui/detalle-fila.js) y los días se leen como una sola lista. */
+  .list-item--detalle { position: relative; }
+  .list-item--detalle > .list-item__detalle {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    width: 100%;
+    border: 0;
+    border-radius: inherit;
+    background: transparent;
+    cursor: pointer;
+  }
+  .list-item--detalle > .list-item__detalle:focus-visible {
+    outline: 2px solid var(--fk-border-focus);
+    outline-offset: -2px;
+  }
+  .list-item--detalle > .list-item__action { display: none; }
+  .gastos-dia .list-item--detalle:has(.list-item__meta),
+  #lista-movimientos .list-item--detalle {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    padding: var(--fk-space-3);
+  }
+  .list-item--detalle .list-item__body { flex: 1; min-width: 0; }
+  .list-item--detalle .list-item__title,
+  .list-item--detalle .list-item__subtitle {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .list-item--detalle .list-item__meta { flex-shrink: 0; align-items: flex-end; }
+  #lista-movimientos .list-item:not(:has(.list-item__action)):not(.list-item--nuevo)::after {
+    content: none;
+  }
+
+  /* Un día, una lista: las filas se juntan en una sola superficie con
+     separadores, en vez de una tarjeta con sombra por gasto. */
+  .gastos-dia .list-item--detalle {
+    margin-bottom: 0;
+    border-radius: 0;
+    box-shadow: none;
+    border-bottom-width: 0;
+  }
+  .gastos-dia .list-item--detalle:nth-child(1 of .list-item) {
+    border-top-left-radius: var(--fk-radius-lg);
+    border-top-right-radius: var(--fk-radius-lg);
+  }
+  .gastos-dia .list-item--detalle:nth-last-child(1 of .list-item) {
+    border-bottom-width: 1px;
+    border-bottom-left-radius: var(--fk-radius-lg);
+    border-bottom-right-radius: var(--fk-radius-lg);
+  }
+  .gastos-dia .list-item--detalle:hover { transform: none; }
+
+  /* La hoja: cabeza con lo que la fila ya decía, el monto grande, las
+     acciones a lo ancho y eliminar aparte (R53). */
+  .detalle-fila__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fk-space-4);
+    padding: var(--fk-space-2) var(--fk-space-5) var(--fk-space-5);
+  }
+  .detalle-fila__cabeza {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    padding-right: var(--fk-space-10);
+  }
+  .detalle-fila__icono { flex-shrink: 0; }
+  .detalle-fila__textos { min-width: 0; }
+  .detalle-fila__cuando {
+    margin: 0;
+    font-size: var(--fk-text-xs);
+    font-weight: var(--fk-font-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fk-text-secondary);
+  }
+  .detalle-fila__titulo {
+    margin: 0;
+    font-size: var(--fk-text-lg);
+    font-weight: var(--fk-font-bold);
+    color: var(--fk-text-primary);
+  }
+  .detalle-fila__sub {
+    margin: 0;
+    font-size: var(--fk-text-sm);
+    color: var(--fk-text-secondary);
+  }
+  .detalle-fila__monto {
+    margin: 0;
+    font-size: var(--fk-text-3xl);
+    font-weight: var(--fk-font-extrabold);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+    color: var(--fk-text-primary);
+  }
+  .detalle-fila__monto--ingreso { color: var(--fk-success-text); }
+  .detalle-fila__acciones,
+  .detalle-fila__peligro {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fk-space-2);
+  }
+  .detalle-fila__peligro {
+    padding-top: var(--fk-space-3);
+    border-top: 1px solid var(--fk-border-subtle);
+  }
+  .detalle-fila__accion {
+    justify-content: center;
+    gap: var(--fk-space-2);
+    min-height: 48px;
+  }
+  .detalle-fila__accion--peligro { color: var(--fk-danger-text); }
+
+  /* ── D5: cabecera del bloque Gastos con lupa y primario ───────────────
+     El primario de cada lente tenía su propia fila encima del bloque (96px
+     antes del nombre "Gastos"). Baja a la fila del nombre en versión corta
+     ("+ Gasto"); el original queda en el DOM porque es el que lee la barra
+     superior de escritorio, y el espejo lo dispara. */
+  #sec-gast > .section__header,
+  #sec-compromisos > .section__header,
+  #sec-presupuesto > .section__header { display: none; }
+  .bloque-gastos__herramientas {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-1);
+    flex-shrink: 0;
+  }
+  .bloque-gastos__herramientas .bloque-gastos__lupa { display: inline-flex; }
+  .bloque-gastos__primario:not([hidden]) {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fk-space-1);
+    min-height: 44px;
+    margin-left: var(--fk-space-1);
+    padding-inline: var(--fk-space-3);
+  }
+  /* Nombre y herramientas en la primera fila; la frase del bloque baja a
+     su propia fila a todo el ancho, sin cortarse. */
+  .bloque-gastos__cabecera {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: var(--fk-space-2);
+    row-gap: 0;
+  }
+  .bloque-gastos__nombre { display: contents; }
+  .bloque-gastos__titulo { grid-column: 1; grid-row: 1; }
+  .bloque-gastos__herramientas { grid-column: 2; grid-row: 1; }
+  .bloque-gastos__sub { grid-column: 1 / -1; grid-row: 2; }
+
+  /* La lupa de Inicio, junto al engranaje y con su mismo dibujo. */
+  .perfil-inicio > .perfil-inicio__buscar { display: flex; position: relative; }
+
+  /* R4: los botones de mes medían 32x32 (hallazgo N9). El dibujo se queda;
+     la zona sensible crece a 44, como el resto de los controles chicos. */
+  .bloque-gastos__mes-btn { position: relative; }
+  .perfil-inicio__buscar::after,
+  .bloque-gastos__mes-btn::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    translate: -50% -50%;
+    width: 44px;
+    height: 44px;
+  }
+
+  /* El hero de "Por pagar" repetía el ojo del bloque, que ya silencia las
+     tres lentes (mismo criterio que G4 aplicó al hero de "Día a día"). */
+  #sec-compromisos .hero-compromisos__ojo { display: none; }
+
+  /* ── D6: categorías de Gastos plegadas ────────────────────────────────
+     Las nueve categorías de un mes normal ocupaban tres filas (168px) antes
+     del primer gasto. Plegada, la barra dice "Todos", la elegida y
+     "+N categorías"; abierta vuelve a ser el índice alfabético completo
+     (ADR 072 D1). Nada se esconde sin decir cuánto falta (R9). */
+  #panel-filtros-gastos .filtros-bar__mas {
+    display: inline-flex;
+    border-style: dashed;
+    color: var(--fk-text-primary);
+  }
+  #panel-filtros-gastos .filtros-bar:not(.filtros-bar--abierta)
+    button.chip[data-cat]:not([data-cat=""]):not(.chip--active) { display: none; }
+
+  /* ── D7: Mis cuentas no se vuelve una tira de 29 pantallas ────────────
+     Se ven los cinco ingresos puntuales más recientes; el resto vive en el
+     historial, con buscador. */
+  #lista-ingresos-puntuales .list-item--extra { display: none; }
+  #lista-ingresos-puntuales .lista-ingresos__ver-todos {
+    display: inline-flex;
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  /* ── D8: formularios, "Guardar" siempre a la vista ────────────────────
+     A 375x667 "Guardar gasto" quedaba a 1458px, debajo de 15 categorías y 4
+     cuentas. El pie se pega al borde inferior de la hoja en todos los
+     formularios que lo usan. Las categorías siguen todas a la vista (ADR 042
+     D2: un "ver más" en el paso obligatorio recrea el desplegable); lo que
+     baja es el alto de cada teja. */
+  .modal__body .modal__footer--principal {
+    position: sticky;
+    /* El borde pegajoso se mide desde dentro del padding del cuerpo: sin
+       compensarlo, el pie flotaba 24px arriba y el contenido asomaba debajo. */
+    bottom: calc(-1 * var(--fk-space-6));
+    z-index: 2;
+    margin-inline: calc(-1 * var(--fk-space-6));
+    margin-bottom: calc(-1 * var(--fk-space-6));
+    padding: var(--fk-space-3) var(--fk-space-6) calc(var(--fk-space-3) + env(safe-area-inset-bottom, 0px));
+    background: var(--fk-bg-surface);
+  }
+  #form-gasto .chip-cat {
+    min-height: 56px;
+    gap: var(--fk-space-1);
+    padding: var(--fk-space-2) var(--fk-space-1);
+  }
+
+  /* ── D9: chips de filtro con piso táctil ──────────────────────────────
+     Por pagar, Movimientos y el asistente de distribución usaban chips de
+     28px (R4). En el asistente, además, la barra se encogía (domain.css). */
+  .filtros-bar button.chip { min-height: 44px; }
+
+  /* ── Por pagar: la lista antes que la estrategia ──────────────────────
+     El comparador de estrategia ocupaba la primera pantalla y lo que hay
+     que pagar quedaba debajo. En móvil la lista sube; el orden de pago que
+     la estrategia aplica sigue rigiendo la lista igual. */
+  #sec-compromisos.active {
+    display: flex;
+    flex-direction: column;
+  }
+  #sec-compromisos > #estrategia-pago { order: 1; }
+
+  /* ── R51: un solo primario cuando la sección está vacía ───────────────
+     El estado vacío ya trae el primario de la sección ("+ Agregar cuenta",
+     "+ Crear meta"); el del encabezado lo repetía. Y un hero en $0 que dice
+     "no tienes nada" no informa más que el vacío de abajo. */
+  .section:has(.empty-state .btn-primary) > .section__header > .btn-primary,
+  .section:has(.empty-state .btn-primary) .bloque-gastos__primario { display: none; }
+  #sec-compromisos:has(#lista-compromisos > .empty-state) #compromisos-hero,
+  #sec-tesoreria:has(#lista-tesoreria > .empty-state) #tesoreria-hero { display: none; }
+
+  /* ── D12: zona segura superior ────────────────────────────────────────
+     Con `viewport-fit=cover` y la barra de estado translúcida, en la app
+     instalada en iPhone el contenido nacía debajo del reloj. */
+  .main-content { padding-top: env(safe-area-inset-top, 0px); }
+}

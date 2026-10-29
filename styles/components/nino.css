@@ -809,3 +809,33 @@ body.kid .leccion-clasificar__boton { min-height: var(--fk-kid-target); font-siz
 
 /* El teléfono propio del niño (NUBE.3) no tiene adulto: sin "Cambiar de perfil". */
 .kid-propio [data-action="perfil-cambiar"] { display: none; }
+
+/* ── MV2 en el perfil niño (ADR 098 D13) ─────────────────────────────────
+   Lo que la auditoría móvil encontró en la app del niño, sin tocar su
+   identidad (Tino, frascos, barra propia) ni mezclarla con la del adulto:
+   - El camino de Aprender desbordaba 36px a 390 (cada paso se corre ±3.5rem
+     a todo el ancho): el teléfono alejaba la página y la barra inferior se
+     salía del borde. El camino recorta su desborde horizontal y, en
+     pantallas angostas, el zigzag se cierra para que Tino no quede afuera.
+   - Los tres frascos del inicio no cabían a 320: "Ahorrar" y "Compartir"
+     se cortaban y los montos se pisaban. Bajo 400px van uno por fila,
+     nombre a la izquierda y monto a la derecha.
+   - La pantalla nace debajo de la barra de estado en el iPhone instalado. */
+.kcamino { overflow-x: clip; }
+@media (max-width: 399px) {
+  .kcamino__paso:nth-child(even) { transform: translateX(-2.5rem); }
+  .kcamino__paso:nth-child(odd):not(:first-child) { transform: translateX(2.5rem); }
+  .kcamino__paso .tino { right: calc(50% + 2.75rem); }
+
+  .knino-mini { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .knino-mini li {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--fk-space-2);
+    padding: 10px 14px;
+  }
+}
+@media (max-width: 767px) {
+  .nino-main { padding-top: calc(var(--fk-space-8) + env(safe-area-inset-top, 0px)); }
+}

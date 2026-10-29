@@ -25,7 +25,7 @@ import {
   excesoDeCupo,
   consecuenciaDeGasto,
 } from '../../modules/dominio/gastos/logic.js';
-import { renderFormGasto, renderListaGastos, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, irAMesActual, CATEGORIA_NUEVA_VALUE } from '../../modules/dominio/gastos/view.js';
+import { renderFormGasto, renderListaGastos, renderFiltrosGastos, setFiltroCategoria, alternarFiltrosGastos, navegarMesGastos, irAMesActual, CATEGORIA_NUEVA_VALUE } from '../../modules/dominio/gastos/view.js';
 import { CATEGORIAS_GASTO, CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA } from '../../modules/core/constants.js';
 import { S } from '../../modules/core/state.js';
 
@@ -1367,6 +1367,46 @@ describe('variacionMensualGasto()', () => {
   it('trata entradas no numéricas como 0 (defensivo)', () => {
     expect(variacionMensualGasto(undefined, undefined)).toBeNull();
     expect(variacionMensualGasto(undefined, 100_000)).toEqual({ direccion: 'menos', pct: 100 });
+  });
+});
+
+// ── renderFiltrosGastos() - barra plegable en móvil (ADR 098 D6) ──
+
+describe('renderFiltrosGastos() - barra plegable (ADR 098 D6)', () => {
+  const fechaHoy = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+  const barra = () => document.querySelector('#panel-filtros-gastos .filtros-bar');
+  const toggle = () => document.querySelector('#panel-filtros-gastos .filtros-bar__mas');
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-filtros-gastos"></div>';
+    S.gastos = ['Mercado', 'Café', 'Ropa'].map((c, i) => gastoBase({ id: `g${i}`, categoria: c, fecha: fechaHoy() }));
+    setFiltroCategoria(null);
+  });
+
+  it('dice cuántas categorías quedan plegadas', () => {
+    renderFiltrosGastos();
+    expect(toggle().textContent.trim()).toBe('+3 categorías');
+    expect(toggle().getAttribute('aria-expanded')).toBe('false');
+    expect(barra().classList.contains('filtros-bar--abierta')).toBe(false);
+  });
+
+  it('con una elegida, esa se ve y cuenta una menos', () => {
+    setFiltroCategoria('Café');
+    renderFiltrosGastos();
+    expect(toggle().textContent.trim()).toBe('+2 categorías');
+  });
+
+  it('abierta, la barra conserva el índice alfabético completo', () => {
+    alternarFiltrosGastos();
+    renderFiltrosGastos();
+    expect(barra().classList.contains('filtros-bar--abierta')).toBe(true);
+    expect(toggle().textContent.trim()).toBe('Menos');
+    const cats = [...barra().querySelectorAll('[data-action="gastos-filtrar-cat"]')].map(b => b.dataset.cat);
+    expect(cats).toEqual(['', 'Café', 'Mercado', 'Ropa']);
+    alternarFiltrosGastos();
   });
 });
 

@@ -17,6 +17,7 @@ import { save } from '../core/storage.js';
 import { abrirModal, cerrarModal } from './modales.js';
 import { renderAll } from '../infra/render.js';
 import { announce } from '../infra/a11y.js';
+import { mostrarErroresForm } from '../infra/form-errors.js';
 import { esc, hoy } from '../infra/utils.js';
 import { renderBloqueAceptacion, registrarAceptacion } from './aceptacion-legal.js';
 
@@ -64,8 +65,11 @@ function _onSubmitWizard(e) {
 function _onSubmitPaso1(form) {
   const nombre = form.querySelector('[name="nombre"]')?.value?.trim() ?? '';
 
+  // ADR 098 D10 (hallazgo N14): el aviso solo llegaba al lector de pantalla y
+  // "Continuar" parecía no hacer nada. Ahora se ve, con el mismo bloque de
+  // errores de todos los formularios (que también lo anuncia).
   if (!nombre) {
-    announce('Por favor escribe tu nombre para continuar.', 'assertive');
+    mostrarErroresForm(form, ['Escribe tu nombre para continuar.'], 'Falta un dato:');
     return;
   }
 
@@ -82,7 +86,7 @@ function _onSubmitPaso1(form) {
 function _onSubmitPaso2(form) {
   const acepto = form.querySelector('[name="acepto"]')?.checked === true;
   if (!acepto) {
-    announce('Marca la casilla para confirmar que aceptas los documentos.', 'assertive');
+    mostrarErroresForm(form, ['Marca la casilla para confirmar que aceptas los documentos.'], 'Falta un paso:');
     return;
   }
 

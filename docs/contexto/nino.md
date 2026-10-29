@@ -1,6 +1,6 @@
 # Ficha de contexto: Perfil niño y Familia
 
-> Revisado: 2026-10-27.
+> Revisado: 2026-10-29.
 
 > Los perfiles de niño en el mismo dispositivo, "¿Quién usa Finko?", lo que ve el niño y lo que administra el tutor desde Ajustes, Familia. Decisiones: [ADR 093](../DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md). Tarjetas: iniciativa APR, Fase 3, en [`board/transversal.md`](../board/transversal.md). Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -64,6 +64,7 @@
 
 **Cambios realizados**:
 
+- 2026-10-29 (MV2.1, ADR 098 D13): el camino de Aprender ya no desborda (alejaba la página a 390); frascos del inicio en filas bajo 400 px; zona segura arriba; la barra del sistema toma el fondo de la piel.
 - 2026-10-27 (APR.5a): Tino reemplaza a Frai en el sprite y en las siete pantallas, celebra en grande la unidad terminada y se presenta en Inicio.
 - 2026-10-25 (ADR 094): Frai pasa a Tino, un guatín; k1-l3, k4-l1 y k7-l1 cuentan la metáfora de la semilla.
 - 2026-10-25 (APR.4b): riel del niño en tableta y escritorio, Inicio en dos columnas, "Cambiar de perfil" en la barra lateral del adulto.

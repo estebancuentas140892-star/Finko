@@ -1,6 +1,6 @@
 # Tablero - Transversal
 
-> Revisado: 2026-10-28.
+> Revisado: 2026-10-29.
 
 > Satélite de [`BOARD.md`](../BOARD.md) (afecta varias secciones). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
 
@@ -15,6 +15,17 @@
 > **Diferida del [ADR 068](../DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md): la migración a IndexedDB (antes PERF.5) ya no es tarjeta.** Su decisión, su alcance fijado (blob-en-IDB, no store por colección) y sus **dos** disparadores verificables viven en ese ADR, que reemplaza los tres del ADR 030 D4. **No re-auditar el código ante un pedido de ejecución:** la verificación está hecha y fechada allí; basta mirar si T1 o T2 cambiaron de estado. Al reabrirse nace como tarjeta nueva. Lo que salió a la luz con ese ADR ya cerró completo: **PERF.9** (2026-08-14, columna de caracteres en el harness) y **PERF.10** (2026-08-14, dos rebanadas). T1 ya tiene instrumento: detalle en [`scripts/perf/BASELINE.md`](../../scripts/perf/BASELINE.md).
 
 > **Iniciativa Dirección Visual premium** ([ADR 033](../DECISIONS/033-direccion-visual-premium.md)). DV.2a/b/c cerradas. DV.2d: infraestructura, 8 plantillas y cableado de `emptyArt()` listos (2026-08-14), falta solo el arte final de Esteban.
+
+#### MV2.2 - Finko móvil 2, segunda entrega
+- Prioridad  : media
+- Estado     : pendiente
+- Área       : ambos
+- Objetivo   : lo que la primera entrega ([ADR 098](../DECISIONS/098-finko-movil-2-primera-entrega.md)) dejó del plan MV2 por riesgo de composición: Inicio con lista de avisos y hoja de perfil (MV2.15), las tres lentes con un solo lenguaje visual (MV2.12), Distribuir dentro de Mis cuentas sin modal de pasos (MV2.19), una línea de estado por destino en "Más", y los chips de dominio de Movimientos, que todavía desbordan a 390 (R9)
+- Riesgo     : Inicio y el asistente de distribución tienen ADR propios (087 y 080): cada pieza se acota con uno nuevo, nunca en silencio
+- Secciones  : Inicio, bloque Gastos, Mis cuentas, menú Más, Movimientos
+- Archivos   : `dominio/resumen/`, `ui/bloque-gastos.js`, `dominio/tesoreria/views/distribucion.js`, `index.html` (`#modal-mas`), `styles/responsive.css` (bloque MV2)
+- Depende de : nada. El canvas "Finko móvil 2" (Claude Design) tiene los prototipos; manda el ADR que se escriba para cada pieza
+- Aceptación : mismas medidas de la auditoría MV2 (primera pantalla, alto por escenario, 320 a 430 px, claro y oscuro) y escritorio sin cambios en E2E
 
 #### PERF.13 - Arranque: 616 ms de hilo bloqueado
 - Prioridad  : baja

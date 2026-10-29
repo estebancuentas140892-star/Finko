@@ -5553,15 +5553,23 @@ describe('renderListaCompromisos() - el chip no inventa vencidos (ficha 05)', ()
   });
 
   it('los fijos vencidos suben sobre los que aún no vencen', () => {
-    const ahora = new Date();
-    const ayer  = Math.max(1, ahora.getDate() - 1);
-    const luego = Math.min(28, ahora.getDate() + 5);
-    S.compromisos = [
-      fijo({ id: 'f-futuro', descripcion: 'Gimnasio', diaPago: luego }),
-      fijo({ id: 'f-vencido', descripcion: 'Arriendo', diaPago: ayer }),
-    ];
-    renderListaCompromisos();
-    const nombres = [...document.querySelectorAll('.deuda-card__nombre')].map(e => e.textContent);
-    expect(nombres).toEqual(['Arriendo', 'Gimnasio']);
+    // Fecha fija a mitad de mes: con el reloj real, del 29 en adelante "ayer"
+    // y "luego" caían los dos en el día 28 y el orden quedaba indefinido.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 9, 15, 12));
+    try {
+      const ahora = new Date();
+      const ayer  = Math.max(1, ahora.getDate() - 1);
+      const luego = Math.min(28, ahora.getDate() + 5);
+      S.compromisos = [
+        fijo({ id: 'f-futuro', descripcion: 'Gimnasio', diaPago: luego }),
+        fijo({ id: 'f-vencido', descripcion: 'Arriendo', diaPago: ayer }),
+      ];
+      renderListaCompromisos();
+      const nombres = [...document.querySelectorAll('.deuda-card__nombre')].map(e => e.textContent);
+      expect(nombres).toEqual(['Arriendo', 'Gimnasio']);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

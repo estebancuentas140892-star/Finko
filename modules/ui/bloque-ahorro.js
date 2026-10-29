@@ -7,11 +7,16 @@
  * Gastos cambiar de lente cuesta 1 toque. Los dos bloques de la barra tenían
  * la misma promesa y dos modelos internos distintos.
  *
- * La fila que la casa ya tiene baja a las cuatro hijas, con la casa incluida
- * como primer chip. Misma forma, comportamiento distinto según dónde viva:
- * en la casa los chips mueven el scroll (son botones con acción) y en las
- * hijas navegan (son enlaces con hash). Es el mismo reparto que ya tienen las
- * columnas del comparador, interactivas en la casa e inertes en Reservas.
+ * La fila que la casa ya tiene baja a las cuatro hijas. Misma forma,
+ * comportamiento distinto según dónde viva: en la casa los chips mueven el
+ * scroll (son botones con acción) y en las hijas navegan (son enlaces con
+ * hash). Es el mismo reparto que ya tienen las columnas del comparador,
+ * interactivas en la casa e inertes en Reservas.
+ *
+ * ADR 098 D3 (cambia ADR 069 D7): la casa salió de la fila. Con cinco chips
+ * desbordaba a 390px y escondía "Inversión" (R9), y la subida a la casa ya la
+ * da el "‹ Ahorro" de cada hija. Las cuatro van en cuatro columnas iguales,
+ * con la etiqueta corta en móvil.
  *
  * El orden es el de la casa (`MODALIDADES_AHORRO`), que es el único que
  * significa algo: va por certeza de uso, de lo que ojalá no uses a lo que
@@ -21,20 +26,16 @@
  * sidebar ya permite el salto lateral.
  */
 
-import { MODALIDADES_AHORRO } from '../dominio/ahorro/logic.js';
-
-/** La casa encabeza la fila: es lo que convierte al "volver" en redundante. */
-const CASA = { hash: 'ahorro', etiqueta: 'Ahorro' };
+import { MODALIDADES_AHORRO, partirEtiquetaModalidad } from '../dominio/ahorro/logic.js';
 
 /**
- * Los cinco chips, en orden: la casa y sus cuatro modalidades.
+ * Los cuatro chips, en el orden de la casa.
  * `seccion` de `MODALIDADES_AHORRO` es el hash de destino, no la clave del
  * dominio (el fondo vive en `#fondo` desde DIS.18).
  */
-export const CHIPS_BLOQUE_AHORRO = [
-  CASA,
-  ...MODALIDADES_AHORRO.map(m => ({ hash: m.seccion, etiqueta: m.label })),
-];
+export const CHIPS_BLOQUE_AHORRO = MODALIDADES_AHORRO.map(m => ({
+  hash: m.seccion, etiqueta: m.label, ...partirEtiquetaModalidad(m),
+}));
 
 /** Las cuatro hijas que reciben la fila. La casa no: ya tiene la suya. */
 const HIJAS = MODALIDADES_AHORRO.map(m => m.seccion);
@@ -51,8 +52,11 @@ const HIJAS = MODALIDADES_AHORRO.map(m => m.seccion);
  * @returns {string} HTML listo para inyectar.
  */
 export function htmlChipsBloqueAhorro() {
-  const chips = CHIPS_BLOQUE_AHORRO.map(({ hash, etiqueta }) => `
-      <a class="chip bloque-chips__chip" href="#${hash}" data-section="${hash}">${etiqueta}</a>`).join('');
+  const chips = CHIPS_BLOQUE_AHORRO.map(({ hash, corto, cola }) => {
+    const colaHtml = cola ? `<span class="chip__cola">${cola}</span>` : '';
+    return `
+      <a class="chip bloque-chips__chip" href="#${hash}" data-section="${hash}">${corto}${colaHtml}</a>`;
+  }).join('');
 
   return `<nav class="bloque-chips chips" aria-label="Modalidades de ahorro">${chips}</nav>`;
 }

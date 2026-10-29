@@ -2265,6 +2265,38 @@ describe('renderListaIngresos() - MC.15 (20): sin subtítulo redundante', () => 
   });
 });
 
+// ── renderListaIngresosPuntuales() - 5 en móvil y salida (ADR 098 D7) ──
+
+describe('renderListaIngresosPuntuales() - los 5 recientes y el resto en el historial (ADR 098 D7)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-ingresos"></div><div id="lista-ingresos-puntuales"></div>';
+    S.ingresos = [];
+    S.config = { ...(S.config ?? {}), ocultarSaldo: false };
+  });
+
+  const puntual = (n) => ({
+    id: `p${n}`, descripcion: `Venta ${n}`, monto: 10_000 * n,
+    fecha: `2026-07-${String(n).padStart(2, '0')}`, categoria: null, cuentaId: null,
+  });
+
+  it('con más de 5, marca el resto como extra y ofrece verlos en Movimientos', () => {
+    S.ingresosPuntuales = [1, 2, 3, 4, 5, 6, 7].map(puntual);
+    renderListaIngresosPuntuales();
+    const filas = [...document.querySelectorAll('#lista-ingresos-puntuales .list-item')];
+    expect(filas).toHaveLength(7);
+    expect(filas.filter(f => f.classList.contains('list-item--extra')).map(f => f.dataset.id)).toEqual(['p2', 'p1']);
+    const salida = document.querySelector('[data-action="ingresos-ver-historial"]');
+    expect(salida.textContent.trim()).toBe('Ver los 7 en Movimientos');
+  });
+
+  it('con 5 o menos no hay extra ni salida', () => {
+    S.ingresosPuntuales = [1, 2, 3].map(puntual);
+    renderListaIngresosPuntuales();
+    expect(document.querySelectorAll('.list-item--extra')).toHaveLength(0);
+    expect(document.querySelector('[data-action="ingresos-ver-historial"]')).toBeNull();
+  });
+});
+
 // ── renderListaIngresos()/renderListaIngresosPuntuales() - MC.18d: ──
 // ── máscara de privacidad compartida (ADR 035 D5) ────────────────
 

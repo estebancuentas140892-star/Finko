@@ -318,9 +318,19 @@ export function renderListaIngresosPuntuales() {
   lista.sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
   const oculto = S.config?.ocultarSaldo === true;
 
+  // ADR 098 D7 (hallazgo N8): con 200 ingresos, Mis cuentas medía 29
+  // pantallas en móvil. Ahí se ven los 5 más recientes (el resto lleva
+  // `--extra` y lo oculta responsive.css) y una salida al historial, donde
+  // está el buscador. En escritorio la lista sigue completa.
+  const visiblesMovil = 5;
+  const salida = lista.length > visiblesMovil
+    ? `<button type="button" class="btn btn-ghost lista-ingresos__ver-todos"
+               data-action="ingresos-ver-historial">Ver los ${lista.length} en Movimientos</button>`
+    : '';
+
   el.innerHTML = lista.length === 0
     ? _renderEmptyStateIngresosPuntuales()
-    : lista.map(i => _renderIngresoPuntualItem(i, oculto)).join('');
+    : lista.map((i, n) => _renderIngresoPuntualItem(i, oculto, n >= visiblesMovil)).join('') + salida;
 }
 
 /**
@@ -345,9 +355,10 @@ function _nombreCuenta(cuentaId) {
 /**
  * @param {import('../../../core/state.js').IngresoPuntual} ing
  * @param {boolean} oculto - S.config.ocultarSaldo (MC.18d, ADR 035 D5).
+ * @param {boolean} [extra=false] - fuera de los 5 que se ven en móvil (ADR 098 D7).
  * @returns {string}
  */
-function _renderIngresoPuntualItem(ing, oculto) {
+function _renderIngresoPuntualItem(ing, oculto, extra = false) {
   const desc = _esc(ing.descripcion);
   const catLabel = ing.categoria ? `${_esc(ing.categoria)} · ` : '';
   const cuentaNom = _nombreCuenta(ing.cuentaId);
@@ -358,7 +369,7 @@ function _renderIngresoPuntualItem(ing, oculto) {
   const teja = tejaCategoria(CATEGORIA_INGRESO_ICONO[ing.categoria] ?? 'i-saldo', 'ingresos');
 
   return `
-    <article class="list-item" data-id="${_esc(ing.id)}">
+    <article class="list-item${extra ? ' list-item--extra' : ''}" data-id="${_esc(ing.id)}">
       <div class="list-item__icon" aria-hidden="true">${teja}</div>
       <div class="list-item__body">
         <p class="list-item__title">${desc}</p>

@@ -242,21 +242,27 @@ test.describe('DIS.18 - la casa de Ahorro (móvil)', () => {
     await page.waitForSelector('#sec-metas.active', { timeout: 10_000 });
 
     const chips = page.locator('#sec-metas .bloque-chips__chip');
+    // ADR 098 D3: cuatro chips, sin la casa; la subida la da el volver.
     await expect(chips).toHaveText([
-      'Ahorro', 'Fondo de emergencia', 'Reservas', 'Metas', 'Inversión',
+      'Fondo de emergencia', 'Reservas', 'Metas', 'Inversión',
     ]);
     await expect(chips.filter({ hasText: 'Metas' })).toHaveClass(/active/);
 
     // De Metas a Reservas sin pasar por la casa.
-    await chips.nth(2).click();
+    await chips.nth(1).click();
     await page.waitForSelector('#sec-apartados.active', { timeout: 5_000 });
     await expect(page.locator('#sec-apartados .bloque-chips__chip[data-section="apartados"]'))
       .toHaveClass(/active/);
     // La barra sigue diciendo el bloque mientras los chips dicen el lugar.
     await expect(page.locator('.nav-item--mobile-only[data-section="ahorro"]')).toHaveClass(/active/);
 
-    // Y el primer chip devuelve a la casa, que no lleva fila inyectada.
-    await page.locator('#sec-apartados .bloque-chips__chip[data-section="ahorro"]').click();
+    // Los cuatro caben sin desplazar la fila (R9): ninguno queda cortado.
+    const desborda = await page.locator('#sec-apartados .bloque-chips').evaluate(
+      el => el.scrollWidth > el.clientWidth + 1);
+    expect(desborda).toBe(false);
+
+    // Y el volver de la hija devuelve a la casa, que no lleva fila inyectada.
+    await page.locator('#sec-apartados .section__volver--ahorro-hija').click();
     await page.waitForSelector('#sec-ahorro.active', { timeout: 5_000 });
     await expect(page.locator('#sec-ahorro .bloque-chips')).toHaveCount(0);
   });

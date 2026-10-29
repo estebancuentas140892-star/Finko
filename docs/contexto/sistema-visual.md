@@ -1,6 +1,6 @@
 # Ficha de contexto: Sistema visual
 
-> Revisado: 2026-08-14.
+> Revisado: 2026-10-29.
 
 > Identidad visual transversal: color por sección, tejas de marca y biblioteca gráfica, y navegación. Partida de `transversal.md` el 2026-07-24. Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -120,6 +120,25 @@
 **Observaciones**: ADR [040](../DECISIONS/040-navegacion-v2-visual.md); revisa el D5 del [ADR 024](../DECISIONS/024-reorganizacion-navegacion-movil.md), cuyo D4 (pestañas y consolidado repetido) lo supersede el [ADR 056](../DECISIONS/056-la-casa-de-ahorro.md): desde DIS.18 no hay pestañas y el grupo "Ahorros" de la hoja "Más" es una sola teja.
 
 ---
+
+---
+
+## Navegación móvil 2: volver con memoria y filas de una línea (MV2.1, ADR 098)
+
+- **Objetivo**          : que volver no reinicie la pantalla y que la primera pantalla de cada lista muestre contenido. Solo bajo 1024px.
+- **Estado actual**     : primera entrega cerrada (2026-10-29). Volver contextual y memoria de altura por fila (`ui/volver.js`); hoja de detalle de fila en Gastos y Movimientos (`ui/detalle-fila.js`, `#modal-detalle-fila`); cabecera del bloque Gastos con lupa y primario espejo; Ahorro en cuatro columnas sin la casa; pie pegado en formularios; zona segura y `theme-color`. Segunda entrega en **MV2.2** (`board/transversal.md`).
+- **Verificado contra** : commit de MV2.1 (2026-10-29).
+
+**Dónde vive**
+
+| Pieza | Archivo | Ancla |
+|---|---|---|
+| Origen y altura de cada entrada | `modules/ui/volver.js` | `clasificarLlegada()`, `_anotarAncla()`, `_restaurar()` |
+| Hoja de detalle | `modules/ui/detalle-fila.js`, `index.html` | `htmlDetalleFila()`, `#modal-detalle-fila` |
+| Primario espejo y lupa | `modules/ui/bloque-gastos.js` | `_sincronizarPrimarios()`, `irABuscar()` |
+| Estilos | `styles/responsive.css` | bloque "MV2 · FINKO MÓVIL 2" al final |
+
+**Riesgos**: `volver.js` escucha `click` en captura sobre `document` (anota el origen, no despacha). La navegación principal se reconoce por `RAIZ_NAVEGACION`: una barra nueva que no esté ahí dejará un "‹ origen" donde no corresponde. El espejo depende de `.section__header > .btn-primary`: si una lente cambia ese markup, el espejo queda oculto.
 
 ---
 

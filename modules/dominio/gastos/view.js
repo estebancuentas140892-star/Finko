@@ -72,6 +72,19 @@ export function setFiltroCategoria(cat) {
 }
 
 /**
+ * Barra de categorías abierta o plegada (ADR 098 D6). Solo pesa en móvil: ahí
+ * la barra plegada muestra "Todos", la activa y "+N categorías", y abierta
+ * vuelve a ser el índice alfabético completo (ADR 072 D1). Elegir una
+ * categoría la pliega: ya se encontró lo que se buscaba.
+ */
+let _filtrosAbiertos = false;
+
+/** Abre o pliega la barra de categorías. Llamado desde index.js. */
+export function alternarFiltrosGastos() {
+  _filtrosAbiertos = !_filtrosAbiertos;
+}
+
+/**
  * Vuelve al mes corriente (DIS.4/G7): CTA del estado vacío de un mes que no
  * es el actual, donde "Registrar gasto" guardaría en un mes distinto al que
  * se está mirando. Resetea el filtro, igual que `navegarMesGastos`.
@@ -163,8 +176,18 @@ export function renderFiltrosGastos() {
         </button>`;
     }).join('');
 
+    // ADR 098 D6: en móvil la barra plegada muestra solo "Todos", la activa
+    // y este botón; en escritorio el botón no se ve y la barra sigue entera.
+    const ocultas = cats.length - (todosActivo ? 0 : 1);
+    const toggle = `
+        <button type="button" class="chip filtros-bar__mas"
+                data-action="gastos-filtros-alternar"
+                aria-expanded="${_filtrosAbiertos}">
+          ${_filtrosAbiertos ? 'Menos' : `+${ocultas} ${ocultas === 1 ? 'categoría' : 'categorías'}`}
+        </button>`;
+
     chipsHtml = `
-      <div class="filtros-bar" role="group" aria-label="Filtrar gastos por categoría">
+      <div class="filtros-bar${_filtrosAbiertos ? ' filtros-bar--abierta' : ''}" role="group" aria-label="Filtrar gastos por categoría">
         <button type="button"
                 class="chip chip--gastos${todosActivo ? ' chip--active' : ''}"
                 data-action="gastos-filtrar-cat"
@@ -173,7 +196,7 @@ export function renderFiltrosGastos() {
                 aria-label="Ver todos los gastos">
           Todos
         </button>
-        ${chips}
+        ${chips}${ocultas > 0 ? toggle : ''}
       </div>`;
   } else {
     _filtroCategoria = null;
@@ -512,8 +535,12 @@ function _renderGastoItem(gasto, oculto) {
   // en la teja teñida del dominio.
   const simbolo = iconoPorOrigen(gasto, S.compromisos, S.categoriasPersonalizadas) ?? iconoDeCategoriaGasto(catKey, S.categoriasPersonalizadas);
 
+  // ADR 098 D4: en móvil la fila entera abre la hoja de detalle y las tres
+  // acciones viven ahí (ui/detalle-fila.js). En escritorio el botón no se ve.
   return `
-    <article class="list-item" data-id="${_esc(gasto.id)}">
+    <article class="list-item list-item--detalle" data-id="${_esc(gasto.id)}">
+      <button class="list-item__detalle" type="button" data-action="fila-detalle"
+              aria-label="Ver detalle: ${cat}, ${montoTxt}"></button>
       <div class="list-item__icon" aria-hidden="true">${tejaCategoria(simbolo, 'gastos')}</div>
       <div class="list-item__body">
         <p class="list-item__title">${cat}</p>

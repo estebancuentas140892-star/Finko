@@ -18,7 +18,7 @@
 import { S, EventBus } from '../core/state.js';
 import { abrirModal, cerrarModal } from './modales.js';
 import { registrarAccion } from './actions.js';
-import { conFundido } from './shell.js';
+import { conFundido, sincronizarColorBarra } from './shell.js';
 import { intentarPin, olvideMiPin } from './bloqueo-acceso.js';
 import { announce } from '../infra/a11y.js';
 import { esc } from '../infra/utils.js';
@@ -209,6 +209,8 @@ function _aplicarPiel() {
     if (app) app.hidden = nino;
     const kid = document.getElementById('nino-app');
     if (kid) kid.hidden = !nino;
+    // ADR 098 D11: la barra del sistema toma el fondo de la piel vigente.
+    sincronizarColorBarra();
   };
   conFundido(aplicar).then(() => {
     // Ya visible: el foco va a lo primero que se lee del niño, su saludo.
