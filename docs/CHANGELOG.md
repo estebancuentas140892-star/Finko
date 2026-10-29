@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(movil): MV2.15b, Inicio móvil: "Esta semana" en vez de Próximas prioridades · 2026-10-29
+
+[ADR 099](DECISIONS/099-inicio-movil-hoy-en-una-lista.md) D5 (respeta el ADR 088 D3); ficha [`contexto/inicio.md`](contexto/inicio.md). Segunda de tres rebanadas. Bajo 1024 px; escritorio sin cambios (E2E). SW v624.
+
+- **Lo que entra y lo que sale de mañana a 7 días** en `#panel-prioridades`: los compromisos, préstamos y apartados de siempre más el día de pago de los ingresos (`_ingresosProximos`, sobre `ocurrenciasEnMes`). El salario de mañana por fin aparece.
+- **Una fila de 58 px por cosa**, con el día a la izquierda en vez de un encabezado por día; el tipo va en palabras ("Mañana · gasto fijo"). Tope de cuatro; el resto, "Y N más en el Calendario".
+- **La dirección sigue dicha con forma (ADR 088 D3)**: la flecha pasa de la teja al recuadro del día y el signo se queda en el monto; lo que entra suma el color de un ingreso. El pie dice lo que entra y lo que sale en toda la semana; un apartado no cuenta en ninguno de los dos.
+- La anatomía con teja y badge sigue en la tarjeta fusionada de escritorio: sus regresiones (IV.2c, CAT.2c) se mudaron a ese test. "Todo al día" conserva su texto.
+- 8 tests unitarios nuevos y 1 E2E; 7 ajustados a la fila nueva y 5 mudados a escritorio.
+
 ### feat(movil): MV2.15a, Inicio móvil: "Atención hoy" en una lista que cuadra · 2026-10-29
 
 [ADR 099](DECISIONS/099-inicio-movil-hoy-en-una-lista.md) (cambia el ADR 087 D5 y acota el orden del 057 D2 a escritorio); ficha [`contexto/inicio.md`](contexto/inicio.md). Primera de tres rebanadas de la fase 8 del canvas. Bajo 1024 px; escritorio sin cambios (E2E). SW v623.
