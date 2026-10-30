@@ -1,6 +1,6 @@
 # Ficha de contexto: Sistema visual
 
-> Revisado: 2026-10-29.
+> Revisado: 2026-10-30.
 
 > Identidad visual transversal: color por sección, tejas de marca y biblioteca gráfica, y navegación. Partida de `transversal.md` el 2026-07-24. Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -130,7 +130,7 @@
 ## Navegación móvil 2: volver con memoria y filas de una línea (MV2.1, ADR 098)
 
 - **Objetivo**          : que volver no reinicie la pantalla y que la primera pantalla de cada lista muestre contenido. Solo bajo 1024px.
-- **Estado actual**     : primera entrega cerrada (2026-10-29). Volver contextual y memoria de altura por fila (`ui/volver.js`); hoja de detalle de fila en Gastos y Movimientos (`ui/detalle-fila.js`, `#modal-detalle-fila`); cabecera del bloque Gastos con lupa y primario espejo; Ahorro en cuatro columnas sin la casa; pie pegado en formularios; zona segura y `theme-color`. Segunda entrega en **MV2.2** (`board/transversal.md`).
+- **Estado actual**     : primera entrega cerrada (2026-10-29). Volver contextual y memoria de altura por fila (`ui/volver.js`); hoja de detalle de fila en Gastos, Movimientos y Mis cuentas (`ui/detalle-fila.js`, `#modal-detalle-fila`; Mis cuentas desde MV2.9, [ADR 109](../DECISIONS/109-mis-cuentas-en-filas-con-hoja.md)); cabecera del bloque Gastos con lupa y primario espejo; Ahorro en cuatro columnas sin la casa; pie pegado en formularios; zona segura y `theme-color`. Segunda entrega en **MV2.2** (`board/transversal.md`).
 - **Verificado contra** : commit de MV2.1 (2026-10-29).
 
 **Dónde vive**
@@ -138,7 +138,7 @@
 | Pieza | Archivo | Ancla |
 |---|---|---|
 | Origen y altura de cada entrada | `modules/ui/volver.js` | `clasificarLlegada()`, `_anotarAncla()`, `_restaurar()` |
-| Hoja de detalle | `modules/ui/detalle-fila.js`, `index.html` | `htmlDetalleFila()`, `#modal-detalle-fila` |
+| Hoja de detalle | `modules/ui/detalle-fila.js`, `index.html` | `htmlDetalleFila()`, `datosDeFila()` (`.list-item` y `.cuenta-card`, notas), `#modal-detalle-fila` |
 | Primario espejo y lupa | `modules/ui/bloque-gastos.js` | `_sincronizarPrimarios()`, `irABuscar()` |
 | Fila del título y crear tonal ([ADR 106](../DECISIONS/106-un-encabezado-tres-niveles.md) D1, D2, D4) | `styles/responsive.css` (final del bloque MV2), `index.html`, `ui/shell.js` | `.section > .section__header` en rejilla, `data-barra`, `.btn__texto`; el ojo (D3): `.section__ojo`, `.perfil-inicio__ojo`, acción `bloque-saldo-visibilidad` |
 | Botón que mueve dinero ([ADR 107](../DECISIONS/107-el-peso-de-cada-cosa.md) D1, todos los anchos) | `styles/components/buttons.css` | `.btn-dominio` + `data-dom` |

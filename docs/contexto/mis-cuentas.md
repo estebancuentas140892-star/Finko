@@ -1,6 +1,6 @@
 # Ficha de contexto: Mis cuentas
 
-> Revisado: 2026-10-17.
+> Revisado: 2026-10-30.
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -80,6 +80,7 @@ Además: rediseño visual ADR 035 completo. Ver "Transferencias" y "Distribució
 
 **Cambios realizados**:
 
+- 2026-10-30 (**MV2.9**, [ADR 109](../DECISIONS/109-mis-cuentas-en-filas-con-hoja.md)): bajo 1024px cuentas, tarjetas y fuentes son filas de 64px con la hoja de detalle; chips y día de pago van a la hoja.
 - 2026-08-20 (**ficha 06 de la auditoría móvil**, ADR 080): tres envoltorios en vez de dos y los dos bloques de solo lectura al pie bajo "Solo informativo"; un solo primario, con `renderAltasIngreso()` nueva y los dos atajos declarados; la línea bajo el título; y la salida de la tarjeta de crédito prefiltrada a su deuda. Ver [CHANGELOG](../CHANGELOG.md).
 - 2026-07-27 (DIS.9, auditoria de diseno): chip de un solo dato con truncado (`.chip__label`), entrada a transferir de ancho completo con icono, barra de composicion de 3 segmentos con resumen en porcentajes, un solo estado vacio de ingresos, cero emoji, 44px en invertir y en las acciones de la tarjeta, h2 sr-only antes de la lista, y sin `role="status"` en el 4x1000 ni en el aviso de distribucion.
 - 2026-07-12 (MC.18d): "Fuentes de ingreso" fusiona los 2 sub-headers de ingresos en uno con dos acciones; tarjetas de ingreso con radio y sombra del ADR 033; mascara de saldo por item.

@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-10-29.
+> Revisado: 2026-10-30.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-10)
+
+### feat(movil): MV2.9, Mis cuentas en filas con hoja · 2026-10-30
+
+[ADR 109](DECISIONS/109-mis-cuentas-en-filas-con-hoja.md) (extiende el ADR 098 D4 y R92; respeta el ADR 080 y R53); fichas [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md) y [`contexto/sistema-visual.md`](contexto/sistema-visual.md). Solo móvil. SW v640.
+
+- **Cuentas, tarjetas de crédito, fuentes fijas e ingresos puntuales** son filas de 64px que abren la hoja de detalle de Gastos y Movimientos; eliminar va aparte en la hoja. A 390, Mis cuentas baja de 2.207 a 1.616 px y de ocho papeleras a la vista a ninguna.
+- **`datosDeFila()` lee las dos anatomías** (`.list-item` y `.cuenta-card`) y lleva como notas lo que la fila calla: chips de la cuenta, día de pago de la fuente, lo usado de la tarjeta. El texto de cada acción sale del texto visible del botón o, si es un ícono, de su nombre accesible hasta los dos puntos; los de Mis cuentas pasan a esa forma.
+- **El ingreso puntual gana "Ver en Movimientos" en la hoja**: un botón `.list-item__solo-hoja` que la fila guarda sin mostrarlo en ningún ancho.
+- **Fijos y puntuales se leen como una lista** aunque vivan en dos contenedores; la regla que cierra la última fila no anida `:has()`, que invalida el selector entero.
+- Pruebas: 7 unitarias en `detalle-fila.test.js` (dos de `tesoreria.test.js` buscan la salida por su clase); 2 E2E en `movil-mv2.test.js` (móvil y escritorio). Unitarios 5183/5183, E2E 378/378 (`--workers=2`).
 
 ### feat(movil): MV2.21, "Más" dice cómo está cada destino · 2026-10-29
 
