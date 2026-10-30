@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(movil): MV2.8a, la fila del título y crear tonal · 2026-10-29
+
+[ADR 106](DECISIONS/106-un-encabezado-tres-niveles.md) D1, D2 y D4 (primera de tres rebanadas de MV2.8); ficha [`contexto/sistema-visual.md`](contexto/sistema-visual.md). Solo bajo 1024 px. SW v633.
+
+- **Una fila para título y acciones**: teja, título y crear a la derecha, al menos 52 px; la frase de la sección ("Dónde está tu dinero y de dónde viene", "Cuándo entra y cuándo sale") baja a su propia fila. Misma rejilla con `display: contents` que la cabecera del bloque Gastos: el marcado de escritorio no cambia.
+- **Crear es tonal y corto**: "+ Cuenta", "+ Préstamo", "+ Meta", "+ Reserva" y el espejo del bloque Gastos, con tinte de acento en vez de verde lleno (R38). Bajo 360 px, con teja, queda el "+" de 44 px y el lector oye el nombre completo. La barra superior de escritorio copia el nombre completo de `data-barra`.
+- **Un tamaño de título**: 22 px en todas, también el bloque Gastos (20 bajo 360). El hero de "Día a día" va a la izquierda, como Por pagar y Límites.
+- Medido: Mis cuentas pasa de 112 a 71 px a 390 (de 135 a 77 a 320); Me deben y Reservas, a 52.
+- Pruebas: dos unitarias de la barra superior (`data-barra`) y un E2E móvil de la fila a 390 y 320.
+
 ### feat(movil): MV2.2, Movimientos con los filtros en una fila · 2026-10-29
 
 [ADR 105](DECISIONS/105-movimientos-los-filtros-en-una-fila.md) (extiende el ADR 098 D6; respeta la ficha 15, M2); ficha [`contexto/movimientos.md`](contexto/movimientos.md). Solo bajo 1024 px. SW v632.

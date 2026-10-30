@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-10-29. Última tarea cerrada: Movimientos con los filtros en una fila (MV2.2, ADR 105). MOV.1 en pausa. HF.0f en curso: banco listo sin commitear, BUG-035, BUG-036 y BUG-038 abiertos.
+> Revisado: 2026-10-29. Última tarea cerrada: MV2.8a, la fila del título y crear tonal (ADR 106). MOV.1 en pausa. HF.0f en curso: banco listo sin commitear, BUG-035, BUG-036 y BUG-038 abiertos.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5157/5157 (2026-10-29, ADR 105) |
-| Tests E2E | 372/372 verdes (2026-10-29, ADR 105). **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5159/5159 (2026-10-29, MV2.8a) |
+| Tests E2E | 373/373 verdes (2026-10-29, MV2.8a). **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v48 (`perfiles`, APR.3a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**MV2.8a - la fila del título y crear tonal, 2026-10-29**
+Teja, título y "+ Cuenta" en una fila de 52 px, la frase debajo; crear pasa a tonal y corto ([ADR 106](DECISIONS/106-un-encabezado-tres-niveles.md)). Siguen 8b (el ojo) y 8c (volver). Solo móvil. SW v633.
 
 **MV2.2 - Movimientos con los filtros en una fila, 2026-10-29**
 Los tipos se pliegan como las categorías de Gastos y "Fechas" pasa a chip en la misma fila; el primer movimiento sube de 330 a 258 px ([ADR 105](DECISIONS/105-movimientos-los-filtros-en-una-fila.md)). Solo móvil. SW v632.
@@ -36,9 +39,6 @@ La "F" de tres piezas reemplaza a la "F" tipográfica en su teja de fondo fijo; 
 
 **MV2.6 - las fechas dicen el año solo si no es el de hoy, 2026-10-29**
 Mes en tres letras y el año solo si no es el actual, en toda la app; Movimientos no repite el del grupo. `fechaLegible` reemplaza a `fechaCorta` y tres copias ([ADR 102](DECISIONS/102-fechas-con-el-ano-solo-si-no-es-el-de-hoy.md)). SW v629.
-
-**APR.7 - Finko del adulto ayuda a decidir; no enseña, 2026-10-29**
-Inicio del adulto en una sola pantalla; Aprende, Tu progreso, los avisos de logro y los Accesos rápidos salen de la app del adulto, conservando sus datos. El niño sigue con sus lecciones ([ADR 101](DECISIONS/101-finko-del-adulto-decide-no-ensena.md)). Sigue DEC.1. SW v628.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

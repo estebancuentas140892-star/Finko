@@ -138,9 +138,10 @@
 | Origen y altura de cada entrada | `modules/ui/volver.js` | `clasificarLlegada()`, `_anotarAncla()`, `_restaurar()` |
 | Hoja de detalle | `modules/ui/detalle-fila.js`, `index.html` | `htmlDetalleFila()`, `#modal-detalle-fila` |
 | Primario espejo y lupa | `modules/ui/bloque-gastos.js` | `_sincronizarPrimarios()`, `irABuscar()` |
+| Fila del título y crear tonal ([ADR 106](../DECISIONS/106-un-encabezado-tres-niveles.md) D1, D2, D4) | `styles/responsive.css` (final del bloque MV2), `index.html`, `ui/shell.js` | `.section > .section__header` en rejilla, `data-barra`, `.btn__texto` |
 | Estilos | `styles/responsive.css` | bloque "MV2 · FINKO MÓVIL 2" al final |
 
-**Riesgos**: `volver.js` escucha `click` en captura sobre `document` (anota el origen, no despacha). La navegación principal se reconoce por `RAIZ_NAVEGACION`: una barra nueva que no esté ahí dejará un "‹ origen" donde no corresponde. El espejo depende de `.section__header > .btn-primary`: si una lente cambia ese markup, el espejo queda oculto.
+**Riesgos**: un encabezado nuevo debe seguir la fila del ADR 106 (teja, título, lupa, ojo, crear) y, si su primario lleva nombre corto, `data-barra` con el completo para la barra de escritorio. `volver.js` escucha `click` en captura sobre `document` (anota el origen, no despacha). La navegación principal se reconoce por `RAIZ_NAVEGACION`: una barra nueva que no esté ahí dejará un "‹ origen" donde no corresponde. El espejo depende de `.section__header > .btn-primary`: si una lente cambia ese markup, el espejo queda oculto.
 
 ---
 
