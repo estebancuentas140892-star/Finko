@@ -1169,7 +1169,9 @@ describe('renderListaPersonales() - fila de préstamo (DIS.3)', () => {
     const el = render([prestamo()]);
     const btn = el.querySelector('[data-action="pagar-personal"]');
     expect(btn.className).not.toContain('btn-sm');
-    expect(btn.className).toContain('btn-ghost');
+    // ADR 107 D1: cobrar mueve dinero y viste Me deben, no el gris de un fantasma.
+    expect(btn.className).toContain('btn-dominio');
+    expect(btn.dataset.dom).toBe('personales');
   });
 
   // ── V-5 / V-6: ancla de foco tras el re-render ─────────────────

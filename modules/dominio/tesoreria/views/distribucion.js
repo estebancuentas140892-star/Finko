@@ -860,7 +860,7 @@ function _renderTarjetaDistribuir({ dist, estado, hayDestinos, distribuir }) {
     : est === 'por-confirmar'
       ? _preguntaCobroRecibido(estado?.periodoISO ?? null)
       : hayDestinos
-        ? `<button type="button" class="btn btn-primary distribuir-card__cta" data-action="toggle-distribuir-ingreso">
+        ? `<button type="button" class="btn btn-dominio distribuir-card__cta" data-dom="tesoreria" data-action="toggle-distribuir-ingreso">
             Distribuir mi ingreso
             ${icon('chevron-right')}
           </button>`

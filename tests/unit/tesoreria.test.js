@@ -4909,6 +4909,9 @@ describe('renderBotonTransferir()', () => {
     expect(boton.classList.contains('btn-sm')).toBe(false);
     expect(boton.classList.contains('btn-ghost')).toBe(false);
     expect(boton.innerHTML).toContain('#i-transferencia');
+    // ADR 107 D1: transferir mueve dinero y viste Mis cuentas.
+    expect(boton.classList.contains('btn-dominio')).toBe(true);
+    expect(boton.dataset.dom).toBe('tesoreria');
   });
 
   it('una cuenta inactiva no cuenta para el umbral de 2', () => {

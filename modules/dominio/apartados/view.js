@@ -492,9 +492,10 @@ function _renderAccionPrincipal({ nombre, id, listo, completado, enCero, sugerid
   }
   if (completado) return '';
 
+  // ADR 107 D2: sin "+", que es de crear una ficha; aportar mueve dinero.
   const etiqueta = enCero
-    ? '+ Hacer el primer aporte'
-    : (sugerido && !oculto ? `+ Aportar ${f(sugerido.aportePorPeriodo)}` : '+ Aportar');
+    ? 'Hacer el primer aporte'
+    : (sugerido && !oculto ? `Aportar ${f(sugerido.aportePorPeriodo)}` : 'Aportar');
 
   return `<button class="apartado-card__principal"
                 type="button"

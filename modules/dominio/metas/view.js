@@ -299,7 +299,7 @@ function _renderMetaCard(meta, frecuenciaIngresos, oculto = false) {
                 type="button"
                 data-action="abonar-meta"
                 data-id="${id}"
-                aria-label="Aportar a ${nombre}">+ ${enCero ? 'Hacer el primer aporte' : 'Aportar'}</button>`
+                aria-label="Aportar a ${nombre}">${enCero ? 'Hacer el primer aporte' : 'Aportar'}</button>`
     : '';
 
   return `

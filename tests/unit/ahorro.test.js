@@ -1419,6 +1419,16 @@ describe('renderAhorro() - tarjeta del fondo (DIS.16)', () => {
     expect(document.querySelector('[data-action="ahorro-nuevo-aporte"]').className).toContain('fondo-card__secundaria');
   });
 
+  // ADR 107 D1-D2: sigue siendo secundario (ADR 049 D2), pero aportar mueve
+  // dinero y viste Ahorro; sin "+", que es de crear.
+  it('el aporte directo viste Ahorro y se llama "Aportar al fondo"', () => {
+    renderAhorro(1_000_000, null, null);
+    const btn = document.querySelector('.fondo-card [data-action="ahorro-nuevo-aporte"]');
+    expect(btn.classList.contains('btn-dominio')).toBe(true);
+    expect(btn.dataset.dom).toBe('ahorro');
+    expect(btn.textContent.trim()).toBe('Aportar al fondo');
+  });
+
   // AH.5 (ADR 049 D3): la sección comunica protección antes que la primera
   // cifra, no solo en el estado vacío.
   it('la tarjeta activa explica qué protege antes del primer número', () => {

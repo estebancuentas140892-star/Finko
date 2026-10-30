@@ -39,7 +39,7 @@ export function renderBotonTransferir() {
   // canónica es la teja "Transferir" de Registrar; acá se declara la copia en
   // vez de fingir que son dos caminos distintos (R72).
   el.innerHTML = `
-    <button type="button" class="transferir-entrada" data-action="abrir-transferencia">
+    <button type="button" class="transferir-entrada btn-dominio" data-dom="tesoreria" data-action="abrir-transferencia">
       ${icon('transferencia')}
       Transferir entre cuentas
       <span class="chip">Atajo</span>

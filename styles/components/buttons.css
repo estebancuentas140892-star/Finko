@@ -78,6 +78,45 @@
   color: var(--fk-text-primary);
 }
 
+/* Dominio (ADR 107 D1, MV2.16): todo lo que mueve dinero viste su sección
+   (R8) y pesa más que crear (R38). Es la receta de .deuda-card__abonar hecha
+   clase: el botón dice su sección con `data-dom` y de ahí salen el tinte, el
+   borde y el texto. Los colores van en `[data-dom]` (un punto más de
+   especificidad) para ganarle a la clase de maquetación con la que convive
+   (.lane__cta, .transferir-entrada, .btn-ghost), sin depender del orden de
+   los archivos. */
+.btn-dominio {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fk-space-1);
+  min-height: 2.75rem;
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  font-family: inherit;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  cursor: pointer;
+  transition:
+    background-color var(--fk-transition-fast),
+    border-color var(--fk-transition-fast);
+}
+.btn-dominio[data-dom] {
+  border: 1.5px solid color-mix(in srgb, var(--btn-dom) 40%, transparent);
+  background: color-mix(in srgb, var(--btn-dom) 12%, transparent);
+  color: var(--btn-dom-text);
+}
+.btn-dominio[data-dom]:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--btn-dom) 60%, transparent);
+  background: color-mix(in srgb, var(--btn-dom) 20%, transparent);
+  color: var(--btn-dom-text);
+}
+.btn-dominio--bloque { width: 100%; }
+.btn-dominio[data-dom="ahorro"]      { --btn-dom: var(--fk-dom-ahorro);      --btn-dom-text: var(--fk-dom-ahorro-text); }
+.btn-dominio[data-dom="compromisos"] { --btn-dom: var(--fk-dom-compromisos); --btn-dom-text: var(--fk-dom-compromisos-text); }
+.btn-dominio[data-dom="personales"]  { --btn-dom: var(--fk-dom-personales);  --btn-dom-text: var(--fk-dom-personales-text); }
+.btn-dominio[data-dom="tesoreria"]   { --btn-dom: var(--fk-dom-tesoreria);   --btn-dom-text: var(--fk-dom-tesoreria-text); }
+
 /* Danger */
 .btn-danger {
   background: var(--fk-danger-bg);

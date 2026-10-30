@@ -43,7 +43,7 @@ export function renderLoteCard(pendientes, prefijoMes) {
         <p class="cal-lote__monto">${f(total)}</p>
         <p class="cal-lote__desc">${lista}.</p>
       </div>
-      <button type="button" class="cal-lote__cta"
+      <button type="button" class="cal-lote__cta btn-dominio" data-dom="compromisos"
               data-action="compromisos-pagar-lote" data-mes="${_esc(prefijoMes)}"
               aria-label="Pagar juntos los ${n} pagos vencidos">
         Pagar los ${n}

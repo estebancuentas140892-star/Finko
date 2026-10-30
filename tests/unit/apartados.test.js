@@ -1616,7 +1616,7 @@ describe('renderListaApartados() - tarjeta E (DIS.15)', () => {
   it('con plan vivo, el botón trae el monto del aporte ya decidido', () => {
     S.apartados = [conFecha({ montoActual: 120_000 })];
     renderListaApartados();
-    expect(document.querySelector('.apartado-card__principal').textContent).toMatch(/\+ Aportar \$/);
+    expect(document.querySelector('.apartado-card__principal').textContent).toMatch(/^\s*Aportar \$/);
   });
 
   // Ficha 10 (V2): la reserva reunida deja de gastar una tarjeta de 307px en
@@ -1719,7 +1719,7 @@ describe('renderListaApartados() - tarjeta E (DIS.15)', () => {
     renderListaApartados();
     expect(textoDatos()).not.toContain('240.000');
     expect(textoDatos()).not.toContain('480.000');
-    expect(document.querySelector('.apartado-card__principal').textContent.trim()).toBe('+ Aportar');
+    expect(document.querySelector('.apartado-card__principal').textContent.trim()).toBe('Aportar');
     expect(document.querySelector('.apartado-card__foco-dato').textContent).toBe('120');
     expect(document.querySelectorAll('.apartado-card__casilla')).toHaveLength(8);
     expect(document.querySelector('.apartado-card__carrera-head').textContent).toContain('50%');

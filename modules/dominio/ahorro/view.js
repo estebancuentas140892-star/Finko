@@ -294,7 +294,7 @@ function _graficoFondo(fondo, fondoTotal, gastosFijosMensuales, hoyISO) {
   if (colchon === null) {
     return {
       html: `<p class="lane__nota">Registra tus gastos fijos desde Por pagar y Finko calcula cuánto tiempo te cubre el fondo.</p>`,
-      accion: `<button class="lane__cta" type="button" data-action="ahorro-nuevo-aporte">+ Aportar al fondo</button>`,
+      accion: `<button class="lane__cta btn-dominio" type="button" data-dom="ahorro" data-action="ahorro-nuevo-aporte">Aportar al fondo</button>`,
     };
   }
 
@@ -311,7 +311,7 @@ function _graficoFondo(fondo, fondoTotal, gastosFijosMensuales, hoyISO) {
           <div class="cov__meses">${bloquesHtml}</div>
           <div class="cov__eje">${ejeHtml}</div>
         </div>`,
-    accion: `<button class="lane__cta" type="button" data-action="ahorro-nuevo-aporte">${fondoTotal <= 0 ? '+ Hacer mi primer aporte' : '+ Aportar al fondo'}</button>`,
+    accion: `<button class="lane__cta btn-dominio" type="button" data-dom="ahorro" data-action="ahorro-nuevo-aporte">${fondoTotal <= 0 ? 'Hacer mi primer aporte' : 'Aportar al fondo'}</button>`,
   };
 }
 
@@ -563,8 +563,9 @@ function _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia = 
       ${_renderCompromisoDelPeriodo(compromisoMensual, aportes, sugerencia, frecuencia)}
       <p class="fondo-card__nota">Este dinero sigue en tus cuentas. Solo queda apartado para emergencias: a diferencia de Metas y Reservas, no descuenta saldo.</p>
       <div class="fondo-card__secundarias">
-        <button class="btn btn-ghost btn-sm fondo-card__secundaria" type="button" data-action="ahorro-nuevo-aporte">
-          ${enCero ? 'Hacer mi primer aporte' : 'Registrar un aporte'}
+        <button class="btn-dominio fondo-card__secundaria" type="button"
+                data-dom="ahorro" data-action="ahorro-nuevo-aporte">
+          ${enCero ? 'Hacer mi primer aporte' : 'Aportar al fondo'}
         </button>
         <button class="btn btn-ghost btn-sm fondo-card__secundaria" type="button" data-action="ahorro-editar">
           ${completado && siguienteNivel ? `Subir mi meta a ${siguienteNivel.meses} meses` : 'Editar'}

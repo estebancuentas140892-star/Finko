@@ -282,7 +282,7 @@ function _renderPersonalItem(prestamo, hoy, oculto = false) {
   // su propio renglón en móvil, así que los 8px extra no aprietan nada.
   const accionPago = liquidado
     ? ''
-    : `<button class="btn btn-ghost"
+    : `<button class="btn btn-dominio" data-dom="personales"
                 data-action="pagar-personal"
                 data-id="${_esc(prestamo.id)}"
                 aria-label="Registrar pago de ${persona}">Me pagaron</button>`;
