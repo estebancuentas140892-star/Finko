@@ -983,10 +983,11 @@
           </div>
           <!-- DSK.5b (ADR 074 D5): fuera el "+" del texto, lo aporta el ícono, y
                el aria-label dice lo mismo que la pantalla. -->
+          <!-- ADR 106 D4: este botón solo se ve en móvil y lleva el nombre
+               corto; la barra superior de escritorio copia `data-barra`. -->
           <button class="btn btn-primary" data-action="nuevo-personal"
-                  aria-label="Nuevo préstamo">
-            <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>
-            Nuevo préstamo
+                  aria-label="Nuevo préstamo" data-barra="Nuevo préstamo">
+            <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg><span class="btn__texto">Préstamo</span>
           </button>
         </header>
         <div id="proposito-personales">
@@ -1014,8 +1015,8 @@
             </div>
           </div>
           <button class="btn btn-primary" data-action="nueva-cuenta"
-                  aria-label="Nueva cuenta">
-            Nueva cuenta
+                  aria-label="Nueva cuenta" data-barra="Nueva cuenta">
+            <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg><span class="btn__texto">Cuenta</span>
           </button>
         </header>
         <div id="proposito-tesoreria">
@@ -1230,8 +1231,8 @@
             <h1 class="section__title" id="title-metas">Metas</h1>
           </div>
           <button class="btn btn-primary" data-action="nueva-meta"
-                  aria-label="Nueva meta de ahorro">
-            Nueva meta
+                  aria-label="Nueva meta de ahorro" data-barra="Nueva meta">
+            <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg><span class="btn__texto">Meta</span>
           </button>
         </header>
         <!-- Fila de chips del bloque Ahorro (ADR 069 D7). -->
@@ -1258,8 +1259,8 @@
             <h1 class="section__title" id="title-apartados">Reservas</h1>
           </div>
           <button class="btn btn-primary" data-action="nuevo-apartado"
-                  aria-label="Nueva reserva">
-            Nueva reserva
+                  aria-label="Nueva reserva" data-barra="Nueva reserva">
+            <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg><span class="btn__texto">Reserva</span>
           </button>
         </header>
         <!-- Fila de chips del bloque Ahorro (ADR 069 D7). -->

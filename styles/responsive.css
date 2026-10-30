@@ -2340,6 +2340,75 @@
      Con `viewport-fit=cover` y la barra de estado translúcida, en la app
      instalada en iPhone el contenido nacía debajo del reloj. */
   .main-content { padding-top: env(safe-area-inset-top, 0px); }
+
+  /* ── ADR 106 D1: la fila del título lleva solo título y acciones ──────
+     Teja, título y, a la derecha, las acciones; la fila mide al menos 52px.
+     La frase de la sección ("Dónde está tu dinero…") baja a su propia fila a
+     todo el ancho, como la del bloque Gastos (ADR 098 D5): misma rejilla con
+     `display: contents`, así el marcado de escritorio no cambia. */
+  .section > .section__header:not(.perfil-inicio) {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: var(--fk-space-3);
+    row-gap: var(--fk-space-1);
+    min-height: 52px;
+  }
+  .section > .section__header > .section__title-group,
+  .section > .section__header .section__titulo { display: contents; }
+  .section > .section__header .section__icon { grid-column: 1; grid-row: 1; }
+  .section > .section__header .section__title { grid-column: 2; grid-row: 1; }
+  .section > .section__header > .btn-primary { grid-column: 3; grid-row: 1; }
+  .section > .section__header .section__linea { grid-column: 1 / -1; grid-row: 2; }
+
+  /* ── ADR 106 D2: un tamaño de título y el hero a la izquierda ─────────
+     22px en todas las pantallas, también en el bloque Gastos, que medía 20.
+     Bajo 360px baja a 20 y el título envuelve antes que cortarse. El hero
+     de "Día a día" deja de centrarse: el bloque no salta de lado al cambiar
+     de lente (Por pagar y Límites ya van a la izquierda). */
+  .section .section__title,
+  .bloque-gastos__titulo { font-size: 1.375rem; }
+  #sec-gast .hero-gastos { text-align: left; }
+
+  /* ── ADR 106 D4: crear es tonal, de 44px y con el nombre corto ────────
+     Crear una ficha pesa menos que mover dinero (R38): tinte y texto de
+     acento, no verde lleno. Vale para el primario de cada encabezado y para
+     el espejo del bloque Gastos. Bajo 360px, en una fila con teja, queda
+     solo el "+" y el lector oye el nombre por el aria-label. */
+  .section > .section__header > .btn-primary,
+  .bloque-gastos__primario {
+    min-height: 44px;
+    padding-inline: var(--fk-space-3);
+    gap: var(--fk-space-1);
+    background: var(--fk-accent-subtle);
+    border: 1px solid var(--fk-accent-border);
+    color: var(--fk-text-accent);
+    box-shadow: none;
+    white-space: nowrap;
+  }
+  .section > .section__header > .btn-primary:hover,
+  .bloque-gastos__primario:hover {
+    background: color-mix(in srgb, var(--fk-accent) 20%, transparent);
+    color: var(--fk-text-accent);
+  }
+}
+
+@media (max-width: 359px) {
+  .section .section__title,
+  .bloque-gastos__titulo { font-size: var(--fk-text-xl); }
+  .section > .section__header:has(.section__icon) > .btn-primary {
+    width: 44px;
+    padding-inline: 0;
+    justify-content: center;
+  }
+  .section > .section__header:has(.section__icon) > .btn-primary .btn__texto {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }
 
 /* ════════════════════════════════════════════════════════════

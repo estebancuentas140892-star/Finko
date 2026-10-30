@@ -301,6 +301,8 @@ function _syncTopbar(_hash) {
  * (INT.1e, ADR 059 D3), en secundario. No duplica un mapa de acciones por
  * sección: lee el único `.btn-primary` que cada encabezado ya declara (R1,
  * un solo primario por pantalla) y copia texto + aria-label + data-action.
+ * El texto sale de `data-barra` cuando el botón lo trae: en móvil ese botón
+ * lleva el nombre corto ("+ Cuenta", ADR 106 D4) y acá va el completo.
  * Sin ese botón (Análisis, Ahorro, Movimientos, Fondo, Inversión, Ajustes)
  * o con `hidden` propio del dominio (ej. Deudas sin deudas activas), el
  * botón de la barra se oculta.
@@ -318,7 +320,7 @@ function _syncPrimarioTopbar(activo) {
     return;
   }
 
-  btnTop.textContent = origen.textContent.trim();
+  btnTop.textContent = origen.dataset.barra || origen.textContent.trim();
   const aria = origen.getAttribute('aria-label');
   if (aria) btnTop.setAttribute('aria-label', aria);
   else btnTop.removeAttribute('aria-label');

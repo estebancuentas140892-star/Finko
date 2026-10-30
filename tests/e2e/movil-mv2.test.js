@@ -11,6 +11,8 @@
  * - D6: las categorías plegadas dicen cuántas faltan y se abren.
  * - ADR 105: los tipos de Movimientos se pliegan igual y "Fechas" va en la
  *   misma fila; nada se desliza a 320.
+ * - ADR 106 (MV2.8a): la fila del título lleva teja, título y crear tonal y
+ *   corto; la frase va debajo; a 320 crear queda en "+" y el título no se parte.
  * - Escritorio no cambia: las piezas nuevas no se ven a 1280.
  * - D13: el camino de Aprender del niño no desborda a lo ancho.
  */
@@ -171,6 +173,38 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await page.locator('#panel-filtros-gastos button.chip[data-cat="Ropa"]').click();
     await expect(page.locator('#panel-filtros-gastos .filtros-bar--abierta')).toHaveCount(0);
     await expect(page.locator('#panel-filtros-gastos button.chip.chip--active')).toHaveText('Ropa');
+  });
+
+  test('la fila del título: crear tonal y corto, la frase debajo (ADR 106 D1, D4)', async ({ page }) => {
+    await sembrar(page, estadoBase({
+      cuentas: CUENTAS,
+      personales: [{ id: 'p1', persona: 'Camila', monto: 300_000, pagado: 0, fecha: fechaDelMes(1), liquidado: false, fechaCreacion: '2026-07-01T00:00:00.000Z' }],
+    }));
+    await page.goto('/#tesoreria');
+    const hd = page.locator('#sec-tesoreria > .section__header');
+    const crear = hd.locator(':scope > .btn-primary');
+    await expect(crear).toHaveText('Cuenta', { timeout: 10_000 });
+    await expect(crear).toHaveAttribute('aria-label', 'Nueva cuenta');
+    const caja = async (l) => l.boundingBox();
+    const [h, b, t, f] = await Promise.all([hd, crear, hd.locator('.section__title'), hd.locator('.section__linea')].map(caja));
+    // Crear va en la fila del título, la frase debajo, y el encabezado no pasa de 72px.
+    expect(Math.abs(b.y - t.y)).toBeLessThan(16);
+    expect(f.y).toBeGreaterThan(t.y + t.height - 1);
+    expect(h.height).toBeLessThanOrEqual(72);
+    // Tonal: no es el verde lleno de mover dinero (R38).
+    expect(await crear.evaluate(el => getComputedStyle(el).backgroundColor)).not.toBe(
+      await page.locator('#topbar-primario').evaluate(el => getComputedStyle(el).backgroundColor));
+
+    // A 320 queda solo el "+" y el título no se parte en dos líneas.
+    await page.setViewportSize({ width: 320, height: 640 });
+    await page.goto('/#personales');
+    const hdP = page.locator('#sec-personales > .section__header');
+    const crearP = hdP.locator(':scope > .btn-primary');
+    await expect(crearP).toBeVisible({ timeout: 10_000 });
+    const bP = await crearP.boundingBox();
+    expect(Math.round(bP.width)).toBe(44);
+    const tP = await hdP.locator('.section__title').boundingBox();
+    expect(tP.height).toBeLessThan(32);
   });
 
   test('Movimientos pliega sus tipos y lleva "Fechas" en la misma fila (ADR 105)', async ({ page }) => {

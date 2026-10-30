@@ -400,6 +400,23 @@ describe('jerarquía de primarios en la barra superior (DSK.10a)', () => {
     expect(top().classList.contains('btn-primary')).toBe(true);
   });
 
+  // ADR 106 D4: en móvil el primario lleva el nombre corto ("+ Cuenta"); la
+  // barra de escritorio copia el completo de `data-barra`, no el texto visible.
+  it('copia el nombre de data-barra cuando el primario lo trae', () => {
+    const btn = document.querySelector('#sec-gast .btn-primary');
+    btn.dataset.barra = 'Nueva cuenta';
+    btn.innerHTML = '<span class="btn__texto">Cuenta</span>';
+    activar('sec-gast');
+    markActiveNav('gast');
+    expect(top().textContent).toBe('Nueva cuenta');
+  });
+
+  it('sin data-barra, copia el texto visible como siempre', () => {
+    activar('sec-gast');
+    markActiveNav('gast');
+    expect(top().textContent).toBe('Registrar gasto');
+  });
+
   it('un primario oculto por su dominio cuenta como sección sin primario', () => {
     const btn = document.querySelector('#sec-gast .btn-primary');
     btn.hidden = true;
