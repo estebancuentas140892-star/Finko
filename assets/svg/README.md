@@ -49,7 +49,7 @@ assets/svg/
 │   └── educacion/         → duolingo, platzi
 ├── decoracion/            → formas orgánicas de fondo (DV.2b, ADR 033 D3)
 ├── ilustraciones/         → ilustraciones spot y pictogramas (DV.2d, ADR 033 D3)
-└── identidad/             → marca propia de Finko: logo, wordmark (futuro)
+└── identidad/             → marca propia de Finko: el isotipo (ADR 103)
 ```
 
 **La carpeta define el prefijo del `<symbol>`** que genera el sync:
@@ -61,19 +61,20 @@ assets/svg/
 | `logos/**` (cualquier subcarpeta) | `b-` | `bancos/nequi.svg` → `b-nequi` | Catálogo (`color` + `texto` de `MARCAS` / `BANCOS_CO`) |
 | `decoracion/` | `d-` | `blob.svg` → `d-blob` | CSS (`.decor`, `currentColor` hereda `--fk-section-color` del hero anfitrión) |
 | `ilustraciones/` | `il-` | `metas.svg` → `il-metas` | CSS (`currentColor` o `var(--fk-*)` por rol, nunca color absoluto) |
+| `identidad/` | `id-` | `isotipo.svg` → `id-isotipo` | El archivo (siempre `data-fullcolor="true"`, viewBox propio) |
 
 Las subcarpetas de `logos/` son solo organización humana: mover un logo de
 `streaming/` a `tecnologia/` **no cambia su id**. En cambio, mover un archivo entre
 `iconos/categorias` y las demás carpetas de iconos SÍ cambia el prefijo (c- ↔ i-),
 así que eso nunca se hace sin actualizar los consumidores.
 
-### 2.1 `identidad/` (marca propia de Finko, reservada)
+### 2.1 `identidad/` (marca propia de Finko)
 
 Carpeta para el isotipo, el logotipo (wordmark) y sus variantes. Se llama `identidad/` y no `marca/` para no chocar con el vocabulario del código, donde `MARCAS` significa marcas de terceros ([ADR 025](../../docs/DECISIONS/025-logotipos-de-marca-y-tejas.md)).
 
-**Estado actual:** vacía a propósito. La marca visible hoy es el emoji 💚 (sidebar, onboarding), decisión del [ADR 025](../../docs/DECISIONS/025-logotipos-de-marca-y-tejas.md) D6. El favicon vive en `assets/icons/favicon.svg` y los íconos PWA (192/512/maskable) en `assets/icons/`, generados por `scripts/gen-icons.py`; no dependen de esta carpeta.
+**Estado actual:** `isotipo.svg`, la "F" de tres piezas ([ADR 103](../../docs/DECISIONS/103-el-isotipo-de-finko.md)). Va a color (`data-fullcolor="true"`) con su viewBox propio y en la app se pinta sobre la teja de fondo fijo `--fk-marca-fondo` (helper `isotipo()` de `infra/icons.js`). Es la única fuente de la marca: `scripts/gen-icons.py` (íconos PWA, ícono de iOS y `assets/icons/favicon.svg`) y `scripts/gen-splash.py` lo leen con `scripts/isotipo.py`. Cambiar la marca es reemplazar este archivo y correr `sync-sprite.py`, `gen-icons.py` y `gen-splash.py`.
 
-Cuando se diseñe el isotipo definitivo, entra aquí primero (fuente vectorial) y de aquí se derivan favicon e íconos PWA. Nomenclatura sugerida: `isotipo.svg`, `wordmark.svg`, `isotipo-monocromo.svg`.
+Pendiente, si llega: `wordmark.svg` e `isotipo-monocromo.svg`.
 
 ### 2.2 `ilustraciones/` (ilustraciones spot y pictogramas, DV.2d)
 

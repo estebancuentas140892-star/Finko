@@ -45,8 +45,10 @@ function prefijoDe(rutaRelativa) {
   // DV.2d conectó ilustraciones/ al sync; il-insignia (APR.1b) es la primera
   // que deja de ser plantilla y entra al sprite.
   if (partes[0] === 'ilustraciones') return 'il-';
+  // ADR 103: la marca propia de Finko (isotipo) entra al sprite como id-.
+  if (partes[0] === 'identidad') return 'id-';
   if (partes[0] === 'iconos' && PREFIJO_ICONOS[partes[1]]) return PREFIJO_ICONOS[partes[1]];
-  return null; // identidad/: fuera del alcance del sync (README seccion 2)
+  return null;
 }
 
 function esPlantilla(contenido) {

@@ -1652,13 +1652,13 @@ button.chip:focus-visible {
   gap: var(--fk-space-3);
 }
 
-/* Marca "F" (DIS.6/C4, hallazgo H5, regla R31): en móvil `.sidebar__logo`
-   es `display: none`, así que la marca que NAV2.1b (ADR 040 D4) diseñó no
-   existía en el teléfono y la app no se nombraba en ninguna pantalla.
-   Misma receta que `.sidebar__logo-mark` a 28px: entra en la fila que ya
-   tiene avatar y acceso a Ajustes, y no la hace crecer (el avatar de 46px
-   sigue definiendo su alto). Solo en Inicio: sin barra superior fija, que
-   costaría 44-56px permanentes en la pantalla más apretada. */
+/* Marca (DIS.6/C4, hallazgo H5, regla R31; isotipo desde el ADR 103): en
+   móvil `.sidebar__logo` es `display: none`, así que sin esto la app no se
+   nombraba en ninguna pantalla. Misma receta que `.sidebar__logo-mark` a
+   28px: entra en la fila que ya tiene el avatar y no la hace crecer (el
+   avatar de 46px sigue definiendo su alto). Solo en Inicio: sin barra
+   superior fija, que costaría 44-56px permanentes en la pantalla más
+   apretada. */
 .perfil-inicio__marca {
   display: inline-flex;
   align-items: center;
@@ -1667,12 +1667,8 @@ button.chip:focus-visible {
   height: 28px;
   flex-shrink: 0;
   border-radius: var(--fk-radius-md);
-  background: linear-gradient(150deg, var(--fk-accent-hover), var(--fk-accent));
-  color: var(--fk-text-on-accent);
-  font-size: var(--fk-text-sm);
-  font-weight: var(--fk-font-extrabold);
-  letter-spacing: -0.03em;
-  box-shadow: 0 2px 8px var(--fk-accent-border);
+  background: var(--fk-marca-fondo);
+  box-shadow: inset 0 0 0 1px var(--fk-border-subtle);
 }
 
 /* Teja de iniciales 46px / radio 14px (medidas literales del ADR 034 D8).

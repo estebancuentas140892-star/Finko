@@ -49,6 +49,15 @@
 /* Íconos chicos: en línea con texto xs/sm (badges, subtítulos, selectores
    de opción). El .icon base (20px) domina a esa escala de texto. 16px es
    el piso de la escala: más abajo el trazo pierde nitidez (ver tokens.css). */
+/* Isotipo de Finko dentro de su teja (ADR 103). A color desde el sprite
+   (`id-isotipo`): no hereda trazo ni relleno. El ancho sale del alto por
+   el viewBox del <svg> anfitrión. */
+.marca-isotipo {
+  display: block;
+  height: 64%;
+  width: auto;
+}
+
 .icon--sm {
   --fk-icon-size: var(--fk-icon-xs);
   stroke-width: 2.5;

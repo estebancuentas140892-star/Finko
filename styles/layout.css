@@ -42,8 +42,8 @@
   border-bottom: 1px solid var(--fk-border-subtle);
   text-decoration: none;
 }
-/* Marca "F" (NAV2.1b, ADR 040 D4): teja con el degradado de acento.
-   Sombra con --fk-accent-border (alpha 0.32): halo sutil de marca. */
+/* Marca (ADR 103, antes la "F" de NAV2.1b): el isotipo en su teja de
+   fondo fijo. El filete interior la separa del lienzo claro. */
 .sidebar__logo-mark {
   width: 34px;
   height: 34px;
@@ -52,12 +52,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(150deg, var(--fk-accent-hover), var(--fk-accent));
-  color: var(--fk-text-on-accent);
-  font-size: var(--fk-text-lg);
-  font-weight: var(--fk-font-extrabold);
-  letter-spacing: -0.03em;
-  box-shadow: 0 2px 8px var(--fk-accent-border);
+  background: var(--fk-marca-fondo);
+  box-shadow: inset 0 0 0 1px var(--fk-border-subtle);
 }
 .sidebar__logo-text {
   font-size: var(--fk-text-xl);

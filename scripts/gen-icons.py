@@ -1,75 +1,46 @@
 """
-gen-icons.py - Genera los íconos PNG de producción para Finko PWA.
+gen-icons.py - Genera los íconos de producción para Finko PWA.
 
 Íconos generados:
   assets/icons/icon-192.png          (192×192) - manifest any + maskable
   assets/icons/icon-512.png          (512×512) - manifest any + maskable
   assets/icons/apple-touch-icon.png  (180×180) - iOS Safari / homescreen
+  assets/icons/favicon.svg           (vectorial) - pestaña del navegador
 
-Diseño: 3 barras crecientes (gráfico financiero) en #00dc82 sobre fondo #0f1117.
+Diseño (ADR 103): el isotipo de assets/svg/identidad/isotipo.svg sobre el
+fondo fijo de su teja (--fk-marca-fondo). El SVG es la única fuente: este
+script no dibuja un logo propio, lo lee con scripts/isotipo.py.
   - Contenido dentro del safe zone 80% (cumple spec maskable).
-  - Esquinas redondeadas en todas las barras (estética moderna).
+  - El fondo llega al borde: el sistema recorta la forma del ícono.
 
 Técnica: supersampling 4× + downscale LANCZOS para anti-aliasing de producción.
 """
 
 import os
+import re
 from PIL import Image, ImageDraw
 
-# ── Colores del design system de Finko ──────────────────────────────────────
-BG     = (15,  17,  23, 255)   # --fk-bg-base  #0f1117
-ACCENT = (0,  220, 130, 255)   # --fk-accent   #00dc82
+from isotipo import FONDO_MARCA, RUTA_SVG, dibujar_isotipo, hex_a_rgba
 
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), '..', 'assets', 'icons')
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 SCALE = 4   # Factor de supersampling. 4× → anti-aliasing premium.
 
+# Alto del isotipo respecto del lado del ícono. 0.62 de alto da 0.53 de
+# ancho: queda dentro del safe zone maskable (círculo de 0.80 de diámetro).
+ALTO_ISOTIPO_PNG = 0.62
+# En la pestaña no hay recorte del sistema: el isotipo puede crecer.
+ALTO_ISOTIPO_FAVICON = 0.80
+
 
 def make_icon(final_size: int, path: str) -> None:
-    """
-    Genera un ícono cuadrado con 3 barras crecientes centradas.
-
-    La safe zone para maskable es el 80% central (10% de margen por lado).
-    Todo el contenido visual queda dentro de esa zona.
-    """
+    """Genera un ícono cuadrado con el isotipo centrado sobre su fondo."""
     s = final_size * SCALE      # Tamaño de trabajo (supersampled)
 
-    img  = Image.new('RGBA', (s, s), BG)
+    img  = Image.new('RGBA', (s, s), hex_a_rgba(FONDO_MARCA))
     draw = ImageDraw.Draw(img)
-
-    # ── Safe zone ────────────────────────────────────────────────────────────
-    # Maskable spec: contenido importante dentro del centro 80%.
-    # Margen = 10% por lado → zona segura cuadrada centrada.
-    margin = int(s * 0.10)
-    sz     = s - 2 * margin     # ancho/alto de la safe zone
-
-    # ── Dimensiones de las barras ────────────────────────────────────────────
-    bar_w   = int(sz * 0.23)    # cada barra ocupa 23% del ancho de la safe zone
-    gap     = int(sz * 0.065)   # hueco entre barras: 6.5%
-    total_w = 3 * bar_w + 2 * gap
-
-    # Centrar el grupo de barras horizontalmente dentro de la safe zone
-    bars_x0 = margin + (sz - total_w) // 2
-
-    # Base de las barras: 94% del alto de la safe zone desde arriba (6% de margen abajo)
-    base_y = margin + sz - int(sz * 0.06)
-
-    # Alturas relativas al alto de la safe zone (barras crecientes)
-    heights = [
-        int(sz * 0.36),   # barra izquierda  - corta
-        int(sz * 0.57),   # barra central    - media
-        int(sz * 0.80),   # barra derecha    - alta
-    ]
-
-    radius = int(bar_w * 0.28)  # radio de esquinas redondeadas
-
-    for i, h in enumerate(heights):
-        x0 = bars_x0 + i * (bar_w + gap)
-        x1 = x0 + bar_w
-        y0 = base_y - h
-        y1 = base_y
-        draw.rounded_rectangle([x0, y0, x1, y1], radius=radius, fill=ACCENT)
+    dibujar_isotipo(draw, (s / 2, s / 2), s * ALTO_ISOTIPO_PNG)
 
     # ── Downscale → tamaño final ─────────────────────────────────────────────
     img = img.resize((final_size, final_size), Image.LANCZOS)
@@ -77,9 +48,30 @@ def make_icon(final_size: int, path: str) -> None:
     print(f'  OK  {os.path.basename(path)}  ({final_size}x{final_size})')
 
 
+def make_favicon(path: str) -> None:
+    """Favicon vectorial: la teja redondeada y los trazos del isotipo, tal cual."""
+    with open(RUTA_SVG, encoding='utf-8') as f:
+        svg = f.read()
+    _, _, w, h = (float(v) for v in re.search(r'viewBox="([^"]+)"', svg).group(1).split())
+    lado = round(h / ALTO_ISOTIPO_FAVICON, 1)
+    x0 = round(-(lado - w) / 2, 1)
+    y0 = round(-(lado - h) / 2, 1)
+    trazos = [t.replace(' stroke="none"', '') for t in re.findall(r'<path [^>]*/>', svg)]
+    lineas = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{x0} {y0} {lado} {lado}">',
+        f'  <rect x="{x0}" y="{y0}" width="{lado}" height="{lado}" rx="{round(lado * 0.18, 1)}" fill="{FONDO_MARCA}"/>',
+        *(f'  {t}' for t in trazos),
+        '</svg>',
+    ]
+    with open(path, 'w', encoding='utf-8', newline='\n') as f:
+        f.write('\n'.join(lineas) + '\n')
+    print(f'  OK  {os.path.basename(path)}')
+
+
 if __name__ == '__main__':
     print('Generando iconos Finko PWA...')
     make_icon(512, os.path.join(OUTPUT_DIR, 'icon-512.png'))
     make_icon(192, os.path.join(OUTPUT_DIR, 'icon-192.png'))
     make_icon(180, os.path.join(OUTPUT_DIR, 'apple-touch-icon.png'))
+    make_favicon(os.path.join(OUTPUT_DIR, 'favicon.svg'))
     print('Listo.')

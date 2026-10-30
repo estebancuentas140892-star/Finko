@@ -6,7 +6,7 @@
  */
 
 import { esc } from '../../infra/utils.js';
-import { icon } from '../../infra/icons.js';
+import { icon, isotipo } from '../../infra/icons.js';
 
 /**
  * @typedef {Object} EstadoNubeVista
@@ -270,7 +270,7 @@ export function htmlVincularNino(e) {
 export function htmlCodigoNino(e) {
   return `
     <form id="form-nube-codigo-nino" novalidate>
-      <div class="onboarding__hero" aria-hidden="true">F</div>
+      <div class="onboarding__hero" aria-hidden="true">${isotipo()}</div>
       <h2 class="onboarding__title">Entra con tu código</h2>
       <p class="onboarding__desc">
         Pídele a quien te cuida que abra Finko y vaya a Ajustes, Familia, Su teléfono.

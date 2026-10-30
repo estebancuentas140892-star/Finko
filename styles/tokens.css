@@ -149,6 +149,12 @@
   --fk-avatar-grad-b: #1fd194;
   --fk-avatar-ink:    #08120d;
 
+  /* ── MARCA DE FINKO (ADR 103) ────────────────────────────────── */
+  /* Fondo de la teja del isotipo. FIJO en ambos temas, como las tejas de
+     marca del ADR 025: el isotipo trae su verde oscuro, su amarillo y su
+     coral, y sobre el lienzo oscuro el verde se perdería. */
+  --fk-marca-fondo: #fbf6ec;
+
   /* ── NUDGES - tokens por nivel de urgencia ───────────────────── */
   /* Sistema de 5 niveles: crítico / alto / medio / info / logro   */
   --fk-nudge-critical-bg:     color-mix(in srgb, var(--fk-danger) 8%, transparent);

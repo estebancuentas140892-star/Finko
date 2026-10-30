@@ -502,8 +502,7 @@ body:has(#quien-usa[data-open]) .logro-toast { display: none; }
    No se inventa lenguaje nuevo: es la receta de `.empty-state` que la app
    ya usa en 11 secciones (teja centrada + título + descripción + CTA de
    ancho completo + nota en --fk-text-xs). El hero reusa la teja de marca
-   de `.sidebar__logo-mark` (degradado a 150°, sombra con
-   --fk-accent-border), que es donde vive la "F" desde NAV2.1b. */
+   de `.sidebar__logo-mark`: el isotipo sobre su fondo fijo (ADR 103). */
 .modal--onboarding { text-align: center; }
 .onboarding__hero {
   display: flex;
@@ -513,12 +512,8 @@ body:has(#quien-usa[data-open]) .logro-toast { display: none; }
   height: 64px;
   margin: 0 auto var(--fk-space-4);
   border-radius: var(--fk-radius-xl);
-  background: linear-gradient(150deg, var(--fk-accent-hover), var(--fk-accent));
-  color: var(--fk-text-on-accent);
-  box-shadow: 0 4px 16px var(--fk-accent-border);
-  font-size: var(--fk-text-3xl);
-  font-weight: var(--fk-font-extrabold);
-  letter-spacing: -0.04em;
+  background: var(--fk-marca-fondo);
+  box-shadow: inset 0 0 0 1px var(--fk-border-subtle);
 }
 .onboarding__title {
   margin: 0 0 var(--fk-space-2);

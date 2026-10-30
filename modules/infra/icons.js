@@ -19,6 +19,17 @@ export function icon(id, cls = 'icon') {
 }
 
 /**
+ * Isotipo de Finko (ADR 103): la marca a color del sprite (`id-isotipo`). El
+ * viewBox va también en el <svg> anfitrión para que el ancho salga del alto
+ * (`.marca-isotipo`). Decorativo: quien lo pinta ya nombra la app.
+ *
+ * @returns {string}
+ */
+export function isotipo() {
+  return '<svg class="marca-isotipo" viewBox="0 0 799.26 940.9" aria-hidden="true" focusable="false"><use href="#id-isotipo"/></svg>';
+}
+
+/**
  * Como `icon()`, pero recibe el id COMPLETO del symbol, con prefijo
  * ('c-mercado', 'i-home'...). Es la forma que guardan los catálogos
  * CATEGORIA_*_ICONO de constants.js (ID.3): un glifo de categoría puede

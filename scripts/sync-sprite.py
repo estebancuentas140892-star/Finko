@@ -22,8 +22,9 @@ un artefacto derivado. El script:
      033 D3: viewBox propio, sin roles centinela, fill="currentColor")
      e ilustraciones/ (prefijo il-, DV.2d/ADR 033 D3: viewBox propio
      120x120, color solo por rol: currentColor o var(--fk-*), nunca
-     un valor absoluto). identidad/ sigue siendo "futuro" (README
-     seccion 2) y todavia no se conecta al sprite.
+     un valor absoluto) e identidad/ (prefijo id-, ADR 103: la marca
+     propia de Finko, viewBox propio y siempre a color con
+     data-fullcolor="true").
   2. Excluye los archivos con data-placeholder="true" (recurso aun sin
      disenar): el fallback de iniciales los cubre mientras tanto.
   3. Convierte los colores centinela de Illustrator a los 3 roles finales
@@ -132,9 +133,11 @@ def prefijo_de(ruta_relativa: Path):
         return 'd-'
     if partes[0] == 'ilustraciones':
         return 'il-'
+    if partes[0] == 'identidad':
+        return 'id-'
     if partes[0] == 'iconos' and len(partes) >= 2 and partes[1] in CARPETAS_ICONOS:
         return CARPETAS_ICONOS[partes[1]]
-    return None  # identidad/: fuera del alcance del sync
+    return None
 
 
 def es_plantilla(contenido: str) -> bool:
@@ -347,10 +350,11 @@ def validar_y_convertir(id_symbol: str, contenido: str, advertencias: list) -> t
 
     es_decor = id_symbol.startswith('d-')
     es_ilustracion = id_symbol.startswith('il-')
+    es_identidad = id_symbol.startswith('id-')
     viewbox = atributos.get('viewBox')
     if not viewbox:
         raise ErrorRecurso(f'{id_symbol}: viewBox debe estar declarado')
-    if not (es_decor or es_ilustracion) and viewbox != '0 0 24 24':
+    if not (es_decor or es_ilustracion or es_identidad) and viewbox != '0 0 24 24':
         raise ErrorRecurso(f'{id_symbol}: viewBox debe ser "0 0 24 24"')
     prohibidos = ATRIBUTOS_PROHIBIDOS_RAIZ & atributos.keys()
     if prohibidos:
@@ -368,6 +372,10 @@ def validar_y_convertir(id_symbol: str, contenido: str, advertencias: list) -> t
     # y verifica que los IDs de gradiente sean unicos en todo el sprite.
     if atributos.get('data-fullcolor') == 'true':
         return _validar_fullcolor(id_symbol, cuerpo, advertencias), viewbox
+    # La marca propia (ADR 103) no cambia con el tema: sus colores son los
+    # del isotipo, nunca un rol de CSS.
+    if es_identidad:
+        raise ErrorRecurso(f'{id_symbol}: la identidad va siempre a color (data-fullcolor="true")')
 
     for etiqueta in RE_TAG.findall(cuerpo):
         nombre = etiqueta.lower()

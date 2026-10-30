@@ -381,8 +381,9 @@ test.describe('DIS.18 - sidebar desktop', () => {
     await expect(diario.locator('a[href="#aprende"]')).toHaveCount(0);
     await expect(diario.locator('a[href="#movimientos"]')).toHaveCount(1);
 
-    // La marca "F" reemplaza al emoji del logo (ADR 040 D4).
-    await expect(page.locator('#sidebar .sidebar__logo-mark')).toHaveText('F');
+    // La marca es el isotipo del sprite (ADR 103; antes la "F" del ADR 040 D4).
+    await expect(page.locator('#sidebar .sidebar__logo-mark use[href="#id-isotipo"]')).toHaveCount(1);
+    await expect(page.locator('#sidebar .sidebar__logo-mark .marca-isotipo')).toBeVisible();
 
     // Compromisos reúne los dos espejos de deuda, que vivían separados.
     const compromisos = page.locator('.nav-group', { has: page.locator('#nav-label-compromisos') });

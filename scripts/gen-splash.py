@@ -2,7 +2,8 @@
 gen-splash.py - Genera splash screens PWA para iOS (apple-touch-startup-image)
 
 Tamaños: 5 variantes para iPhones modernos (2020-2025)
-Diseño:  fondo #0f1117, logo 3 barras #00dc82 centrado, nombre + tagline
+Diseño:  fondo #0f1117, el isotipo en su teja (ADR 103) centrado, nombre + tagline.
+         El isotipo sale de assets/svg/identidad/isotipo.svg (scripts/isotipo.py).
 
 Uso:
     python scripts/gen-splash.py
@@ -13,11 +14,13 @@ Requisito: Pillow  →  pip install Pillow
 from PIL import Image, ImageDraw, ImageFont
 import os
 
+from isotipo import FONDO_MARCA, dibujar_isotipo
+
 OUT = os.path.join(os.path.dirname(__file__), '..', 'assets', 'splash')
 os.makedirs(OUT, exist_ok=True)
 
 BG     = '#0f1117'
-ACCENT = '#00dc82'
+TEXTO  = '#e9ebf3'   # --fk-text-primary del tema oscuro
 MUTED  = '#475569'
 
 # (width, height, label)
@@ -39,47 +42,39 @@ def get_font(size, bold=False):
     except Exception:
         return ImageFont.load_default()
 
-def draw_bars(draw, cx, cy, unit):
+def draw_marca(draw, cx, cy, lado):
     """
-    Dibuja el logo de 3 barras ascendentes centrado en (cx, cy).
-    unit: altura de la barra más alta en píxeles.
+    Dibuja la teja de marca (fondo fijo, esquinas al 22 %) con el isotipo
+    centrado en (cx, cy). lado: ancho y alto de la teja en píxeles.
     """
-    bar_w   = round(unit * 0.42)
-    gap     = round(unit * 0.18)
-    radius  = round(bar_w * 0.30)
-    heights = [round(unit * 0.45), round(unit * 0.70), unit]
-    total_w = bar_w * 3 + gap * 2
-    x0      = cx - total_w // 2
-
-    for i, h in enumerate(heights):
-        x1 = x0 + i * (bar_w + gap)
-        x2 = x1 + bar_w
-        y1 = cy - h // 2
-        y2 = y1 + h
-        draw.rounded_rectangle([x1, y1, x2, y2], radius=radius,
-                                fill=hex_to_rgb(ACCENT))
+    x0, y0 = cx - lado // 2, cy - lado // 2
+    draw.rounded_rectangle([x0, y0, x0 + lado, y0 + lado], radius=round(lado * 0.22),
+                           fill=hex_to_rgb(FONDO_MARCA))
+    dibujar_isotipo(draw, (cx, cy), lado * 0.64)
 
 def make_splash(w, h, label):
     img  = Image.new('RGB', (w, h), hex_to_rgb(BG))
     draw = ImageDraw.Draw(img)
 
     scale   = w / 750            # escala relativa al tamaño base
-    unit    = round(160 * scale) # altura de barra más alta
+    unit    = round(160 * scale) # lado de la teja de marca
     cy_logo = round(h * 0.44)    # centro vertical ligeramente arriba del centro
 
-    draw_bars(draw, w // 2, cy_logo, unit)
+    draw_marca(draw, w // 2, cy_logo, unit)
 
     # Nombre "Finko"
     font_name = get_font(round(72 * scale), bold=True)
     name_y    = cy_logo + unit // 2 + round(28 * scale)
     bbox      = draw.textbbox((0, 0), 'Finko', font=font_name)
     draw.text((w // 2 - (bbox[2] - bbox[0]) // 2, name_y),
-              'Finko', fill=hex_to_rgb(ACCENT), font=font_name)
+              'Finko', fill=hex_to_rgb(TEXTO), font=font_name)
 
     # Tagline
     font_tag = get_font(round(28 * scale))
-    tagline  = 'Tu plata bajo control'
-    tag_y    = name_y + (bbox[3] - bbox[1]) + round(16 * scale)
+    tagline  = 'Tu dinero bajo control'
+    # bbox[3] y no el alto: el bbox de textbbox((0, 0)) ya trae el margen de
+    # ascendente arriba, y restarlo pegaba el lema al nombre.
+    tag_y    = name_y + bbox[3] + round(16 * scale)
     bbox2    = draw.textbbox((0, 0), tagline, font=font_tag)
     draw.text((w // 2 - (bbox2[2] - bbox2[0]) // 2, tag_y),
               tagline, fill=hex_to_rgb(MUTED), font=font_tag)

@@ -22,7 +22,7 @@ import { renderAll } from '../infra/render.js';
 import { announce } from '../infra/a11y.js';
 import { mostrarErroresForm } from '../infra/form-errors.js';
 import { esc, hoy } from '../infra/utils.js';
-import { icon } from '../infra/icons.js';
+import { icon, isotipo } from '../infra/icons.js';
 import { htmlDibujo } from '../infra/ilustraciones.js';
 import { registrarAccion } from './actions.js';
 import { renderBloqueAceptacion, registrarAceptacion } from './aceptacion-legal.js';
@@ -147,7 +147,7 @@ function _onSubmitPaso2(form) {
 function _renderQuien() {
   return `
     <div class="onboarding-quien">
-      <div class="onboarding__hero" aria-hidden="true">F</div>
+      <div class="onboarding__hero" aria-hidden="true">${isotipo()}</div>
       <h2 class="onboarding__title" id="onboarding-quien-titulo" tabindex="-1">Te damos la bienvenida a Finko</h2>
       <p class="onboarding__desc">¿Quién va a usar Finko en este teléfono?</p>
       <div class="onboarding-quien__opciones">
@@ -177,7 +177,7 @@ function _renderPaso1() {
   return `
     <form id="form-onboarding" novalidate>
       <button type="button" class="btn btn-ghost btn-sm onboarding__volver" data-action="onboarding-volver">${icon('arrow-left')}Volver</button>
-      <div class="onboarding__hero" aria-hidden="true">F</div>
+      <div class="onboarding__hero" aria-hidden="true">${isotipo()}</div>
       <h2 class="onboarding__title">¡Bienvenido a Finko!</h2>
       <p class="onboarding__desc">
         Tu gestión financiera personal, en tu idioma y sin complicaciones.
