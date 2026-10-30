@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-10-29. Última tarea cerrada: MV2.16, mover dinero viste su sección (ADR 107). MOV.1 en pausa. HF.0f en curso: banco listo sin commitear, BUG-035, BUG-036 y BUG-038 abiertos.
+> Revisado: 2026-10-29. Última tarea cerrada: MV2.18, avisos sin filete (ADR 107). MOV.1 en pausa. HF.0f en curso: banco listo sin commitear, BUG-035, BUG-036 y BUG-038 abiertos.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5163/5163 (2026-10-29, MV2.16) |
-| Tests E2E | 375/375 verdes (2026-10-29, MV2.16). **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5163/5163 (2026-10-29, MV2.18) |
+| Tests E2E | 375/375 verdes (2026-10-29, MV2.18). **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v48 (`perfiles`, APR.3a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**MV2.18 - avisos sin filete y explicaciones sin caja, 2026-10-29**
+Los avisos llevan el ícono en una caja tintada y fondo solo si hay que atender algo; los veredictos y razones pasan a texto ([ADR 107](DECISIONS/107-el-peso-de-cada-cosa.md) D4). SW v637.
 
 **MV2.16 - mover dinero viste su sección, 2026-10-29**
 Aportar, pagar, me pagaron, transferir y distribuir llevan el color de su sección con `.btn-dominio`; aportar pierde el "+" ([ADR 107](DECISIONS/107-el-peso-de-cada-cosa.md)). Todos los anchos. SW v636.
@@ -36,9 +39,6 @@ Un solo ojo en la fila del título de toda pantalla con montos; los de los heroe
 
 **MV2.8a - la fila del título y crear tonal, 2026-10-29**
 Teja, título y "+ Cuenta" en una fila de 52 px, la frase debajo; crear pasa a tonal y corto ([ADR 106](DECISIONS/106-un-encabezado-tres-niveles.md)). Solo móvil. SW v633.
-
-**MV2.2 - Movimientos con los filtros en una fila, 2026-10-29**
-Los tipos se pliegan como las categorías de Gastos y "Fechas" pasa a chip en la misma fila; el primer movimiento sube de 330 a 258 px ([ADR 105](DECISIONS/105-movimientos-los-filtros-en-una-fila.md)). Solo móvil. SW v632.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

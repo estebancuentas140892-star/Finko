@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(app): MV2.18, avisos sin filete y explicaciones sin caja · 2026-10-29
+
+[ADR 107](DECISIONS/107-el-peso-de-cada-cosa.md) D4 (segunda de tres rebanadas de la fase 11; cumple R41, R49, R55 y R75). Todos los anchos. SW v637.
+
+- **Los avisos pierden el filete lateral**: el ícono del nivel va en una caja tintada de 36 px (`--nudge-tono`) y el título, en el color del texto. Solo riesgo y atención llevan fondo de color; información y logro van sobre la superficie.
+- **Explicar una cifra no es avisar**: el veredicto del Fondo y el de Reservas, la nota de Inversión y la razón de la estrategia de Por pagar pasan a texto corrido bajo su cifra. En Mis cuentas, las tres cajas ámbar de la propuesta de distribución pasan a una lista bajo "Por qué esta propuesta".
+- **Ajustes**: el aviso de notificaciones bloqueadas conserva su fondo de atención sin filete, y "Borrar todo" pasa a una tarjeta sobre la superficie con borde de peligro. El consejo de un vacío queda en una línea, sin caja.
+- **R55**: el aviso de deudas sin actividad usa `role="status"` cuando es de atención y `role="alert"` solo cuando es de riesgo.
+- Quedan con filete, a propósito: los toasts, el importador y la calculadora, que no son avisos de la app. El banner de propósito es de la rebanada de vacíos.
+- Pruebas: la unitaria de las razones de Distribuir cambia de sentido (lista con título, sin ícono de alerta).
+
 ### feat(app): MV2.16, mover dinero viste su sección · 2026-10-29
 
 [ADR 107](DECISIONS/107-el-peso-de-cada-cosa.md) D1 a D3 (primera de tres rebanadas de la fase 11; toma R8 para toda la app y respeta el ADR 049 D2); ficha [`contexto/sistema-visual.md`](contexto/sistema-visual.md). Todos los anchos: el color de un botón no depende del ancho. SW v636.
