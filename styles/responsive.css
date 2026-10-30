@@ -2401,6 +2401,14 @@
   .hero-inicio { text-align: left; }
   .hero-inicio__pill { align-self: flex-start; }
 
+  /* ── ADR 106 D6: volver solo en el nivel 3 ────────────────────────────
+     Movimientos abierto desde la barra o desde "Más" decía "‹ Inicio" (el
+     enlace fijo de TX.8b) sin venir de Inicio. En el teléfono la barra
+     inferior siempre está, así que ese enlace se calla; el volver contextual
+     (ADR 098 D1) sigue diciendo el origen real cuando se llega desde el
+     contenido ("‹ Gastos"). */
+  #sec-movimientos > .section__volver:not(.section__volver--contexto) { display: none; }
+
   /* ── ADR 106 D4: crear es tonal, de 44px y con el nombre corto ────────
      Crear una ficha pesa menos que mover dinero (R38): tinte y texto de
      acento, no verde lleno. Vale para el primario de cada encabezado y para

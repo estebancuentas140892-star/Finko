@@ -15,6 +15,7 @@
  *   corto; la frase va debajo; a 320 crear queda en "+" y el título no se parte.
  * - ADR 106 D3 (MV2.8b): el ojo va en el encabezado de toda pantalla con
  *   montos, el de los heroes se calla, y Movimientos también enmascara.
+ * - ADR 106 D6 (MV2.8c): Movimientos desde "Más" no dice "‹ Inicio".
  * - Escritorio no cambia: las piezas nuevas no se ven a 1280.
  * - D13: el camino de Aprender del niño no desborda a lo ancho.
  */
@@ -229,6 +230,15 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await page.locator('#sec-movimientos .section__ojo').click();
     await expect(monto).toHaveText(/^[-+]?••••$/);
     await expect(page.locator('#sec-movimientos .section__ojo')).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  test('Movimientos desde "Más" no tiene volver: es nivel raíz (ADR 106 D6)', async ({ page }) => {
+    await seedConTipos(page);
+    await page.goto('/#dash');
+    await page.locator('.nav-item[data-modal="modal-mas"]').click();
+    await page.locator('#modal-mas .mas-tile[data-section="movimientos"]').click();
+    await expect(page.locator('#sec-movimientos.active')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#sec-movimientos > .section__volver:visible')).toHaveCount(0);
   });
 
   test('Movimientos pliega sus tipos y lleva "Fechas" en la misma fila (ADR 105)', async ({ page }) => {
