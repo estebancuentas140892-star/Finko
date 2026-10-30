@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(app): MV2.16, mover dinero viste su sección · 2026-10-29
+
+[ADR 107](DECISIONS/107-el-peso-de-cada-cosa.md) D1 a D3 (primera de tres rebanadas de la fase 11; toma R8 para toda la app y respeta el ADR 049 D2); ficha [`contexto/sistema-visual.md`](contexto/sistema-visual.md). Todos los anchos: el color de un botón no depende del ancho. SW v636.
+
+- **`.btn-dominio` + `data-dom`**: tinte del 12 %, borde del 40 % y texto del dominio, en claro y oscuro. Los colores van en `[data-dom]` para ganarle a la clase de maquetación con la que convive sin depender del orden de los archivos.
+- **Lo que antes era gris o verde lleno**: "Aportar al fondo" en Fondo (antes "Registrar un aporte"; sigue secundario y del ancho de Editar, por el ADR 049 D2) y en la casa de Ahorro, "Me pagaron" en Me deben, "Pagar los N" en Por pagar (frambuesa, ya no el índigo de Calendario), "Transferir entre cuentas" y "Distribuir mi ingreso" en Mis cuentas.
+- **El "+" es de crear**: "+ Aportar" pasa a "Aportar" en Metas y Reservas (con el monto cuando se sabe), y "+ Aportar al fondo" a "Aportar al fondo".
+- Pruebas: 3 expectativas cambian (el "+" y la clase de "Me pagaron"); una unitaria nueva para el Fondo y una aserción para transferir.
+
 ### feat(movil): MV2.8c, volver solo en el nivel 3 · 2026-10-29
 
 [ADR 106](DECISIONS/106-un-encabezado-tres-niveles.md) D6 (cierra MV2.8; cambia el "‹ Inicio" fijo de TX.8b en el teléfono); ficha [`contexto/movimientos.md`](contexto/movimientos.md). Solo bajo 1024 px. SW v635.

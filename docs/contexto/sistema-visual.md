@@ -139,6 +139,7 @@
 | Hoja de detalle | `modules/ui/detalle-fila.js`, `index.html` | `htmlDetalleFila()`, `#modal-detalle-fila` |
 | Primario espejo y lupa | `modules/ui/bloque-gastos.js` | `_sincronizarPrimarios()`, `irABuscar()` |
 | Fila del título y crear tonal ([ADR 106](../DECISIONS/106-un-encabezado-tres-niveles.md) D1, D2, D4) | `styles/responsive.css` (final del bloque MV2), `index.html`, `ui/shell.js` | `.section > .section__header` en rejilla, `data-barra`, `.btn__texto`; el ojo (D3): `.section__ojo`, `.perfil-inicio__ojo`, acción `bloque-saldo-visibilidad` |
+| Botón que mueve dinero ([ADR 107](../DECISIONS/107-el-peso-de-cada-cosa.md) D1, todos los anchos) | `styles/components/buttons.css` | `.btn-dominio` + `data-dom` |
 | Estilos | `styles/responsive.css` | bloque "MV2 · FINKO MÓVIL 2" al final |
 
 **Riesgos**: un encabezado nuevo debe seguir la fila del ADR 106 (teja, título, lupa, ojo, crear) y, si su primario lleva nombre corto, `data-barra` con el completo para la barra de escritorio. `volver.js` escucha `click` en captura sobre `document` (anota el origen, no despacha). La navegación principal se reconoce por `RAIZ_NAVEGACION`: una barra nueva que no esté ahí dejará un "‹ origen" donde no corresponde. El espejo depende de `.section__header > .btn-primary`: si una lente cambia ese markup, el espejo queda oculto.

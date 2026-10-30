@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-10-29. Última tarea cerrada: MV2.8c, cierra MV2.8 (ADR 106). MOV.1 en pausa. HF.0f en curso: banco listo sin commitear, BUG-035, BUG-036 y BUG-038 abiertos.
+> Revisado: 2026-10-29. Última tarea cerrada: MV2.16, mover dinero viste su sección (ADR 107). MOV.1 en pausa. HF.0f en curso: banco listo sin commitear, BUG-035, BUG-036 y BUG-038 abiertos.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5162/5162 (2026-10-29, MV2.8c) |
-| Tests E2E | 375/375 verdes (2026-10-29, MV2.8c). **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5163/5163 (2026-10-29, MV2.16) |
+| Tests E2E | 375/375 verdes (2026-10-29, MV2.16). **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v48 (`perfiles`, APR.3a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**MV2.16 - mover dinero viste su sección, 2026-10-29**
+Aportar, pagar, me pagaron, transferir y distribuir llevan el color de su sección con `.btn-dominio`; aportar pierde el "+" ([ADR 107](DECISIONS/107-el-peso-de-cada-cosa.md)). Todos los anchos. SW v636.
 
 **MV2.8c - volver solo en el nivel 3, 2026-10-29**
 Movimientos desde "Más" ya no dice "‹ Inicio"; el volver contextual sigue ([ADR 106](DECISIONS/106-un-encabezado-tres-niveles.md) D6). Cierra MV2.8. SW v635.
@@ -36,9 +39,6 @@ Teja, título y "+ Cuenta" en una fila de 52 px, la frase debajo; crear pasa a t
 
 **MV2.2 - Movimientos con los filtros en una fila, 2026-10-29**
 Los tipos se pliegan como las categorías de Gastos y "Fechas" pasa a chip en la misma fila; el primer movimiento sube de 330 a 258 px ([ADR 105](DECISIONS/105-movimientos-los-filtros-en-una-fila.md)). Solo móvil. SW v632.
-
-**MV2.12 - una sola barra para ir de lado, 2026-10-29**
-Ahorro pinta la barra de lentes de Gastos (hijas y portada); ninguna barra se desliza a 320 y el estado va en la esquina, con un punto en Reservas ([ADR 104](DECISIONS/104-una-sola-barra-para-ir-de-lado.md)). Solo móvil. SW v631.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 
