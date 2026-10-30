@@ -24,7 +24,7 @@ import {
 import { renderMovimientosCompletos, cargarMasMovimientos,
   renderFiltrosMovimientos, setFiltroTexto, setFiltroDominio, setFiltroCategoria, setFiltroCuenta,
   setFiltroFechaDesde, setFiltroFechaHasta, limpiarFiltrosMovimientos,
-  actualizarBotonLimpiarFiltros, precalentarMovimientos,
+  actualizarBotonLimpiarFiltros, precalentarMovimientos, alternarTiposMovimientos,
 } from '../../modules/dominio/movimientos/view.js';
 import { S } from '../../modules/core/state.js';
 
@@ -869,6 +869,83 @@ describe('renderFiltrosMovimientos() - el rango se pliega (ficha 15, M2)', () =>
     const el = elFiltros();
     expect(el.querySelector('#movimientos-buscar').closest('details')).toBeNull();
     expect(el.querySelector('.filtros-bar').closest('details')).toBeNull();
+  });
+});
+
+describe('renderFiltrosMovimientos() - los filtros en una fila (ADR 105)', () => {
+  const elFiltros = () => document.getElementById('movimientos-filtros');
+  const mas = () => elFiltros().querySelector('.filtros-bar__mas');
+  const chipFechas = () => elFiltros().querySelector('.movimientos-filtros__fechas-chip');
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="movimientos-filtros"></div><div id="lista-movimientos"></div>';
+    S.cuentas = [cuenta('c1', 'Nequi'), cuenta('c2', 'Bancolombia')];
+    S.gastos = [gasto()];
+    S.ingresosPuntuales = [ingresoPuntual()];
+    S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [aporte()], compromisoMensual: 0 };
+    S.transferencias = [transferencia()];
+    S.personales = [];
+    limpiarFiltrosMovimientos();
+  });
+
+  afterEach(limpiarFiltrosMovimientos);
+
+  it('plegada dice cuántos tipos faltan: "+4 tipos" con Todos activo', () => {
+    renderFiltrosMovimientos();
+    expect(mas().textContent.trim()).toBe('+4 tipos');
+    expect(mas().getAttribute('aria-expanded')).toBe('false');
+    expect(elFiltros().querySelector('.filtros-bar--abierta')).toBeNull();
+  });
+
+  it('con un tipo elegido, ese tipo se ve y el conteo baja en uno', () => {
+    setFiltroDominio('gastos');
+    renderFiltrosMovimientos();
+    expect(mas().textContent.trim()).toBe('+3 tipos');
+  });
+
+  it('abierta dice "Menos" y "Limpiar filtros" la vuelve a plegar', () => {
+    alternarTiposMovimientos();
+    renderFiltrosMovimientos();
+    expect(elFiltros().querySelector('.filtros-bar--abierta')).not.toBeNull();
+    expect(mas().textContent.trim()).toBe('Menos');
+    expect(mas().getAttribute('aria-expanded')).toBe('true');
+    limpiarFiltrosMovimientos();
+    renderFiltrosMovimientos();
+    expect(elFiltros().querySelector('.filtros-bar--abierta')).toBeNull();
+  });
+
+  it('"Fechas" va en la misma fila, controla el rango y nace cerrado', () => {
+    renderFiltrosMovimientos();
+    const chip = chipFechas();
+    expect(chip.closest('.filtros-bar')).not.toBeNull();
+    expect(chip.getAttribute('aria-controls')).toBe('movimientos-rango');
+    expect(chip.getAttribute('aria-expanded')).toBe('false');
+    expect(chip.classList.contains('chip--active')).toBe(false);
+    expect(elFiltros().querySelector('#movimientos-rango').open).toBe(false);
+  });
+
+  it('con fechas puestas, "Fechas" se marca como filtro activo y el rango se abre', () => {
+    setFiltroFechaHasta('2026-07-31');
+    renderFiltrosMovimientos();
+    expect(chipFechas().classList.contains('chip--active')).toBe(true);
+    expect(chipFechas().getAttribute('aria-expanded')).toBe('true');
+    expect(elFiltros().querySelector('#movimientos-rango').open).toBe(true);
+  });
+
+  it('"Limpiar filtros" va junto a lo que se está viendo: "Solo gastos"', () => {
+    setFiltroDominio('gastos');
+    renderFiltrosMovimientos();
+    const slot = elFiltros().querySelector('#movimientos-limpiar-slot');
+    expect(slot.querySelector('.movimientos-filtros__resumen').textContent).toBe('Solo gastos');
+    expect(slot.querySelector('[data-action="movimientos-limpiar-filtros"]')).not.toBeNull();
+  });
+
+  it('con un filtro que no es de tipo, solo el botón: no inventa una frase', () => {
+    setFiltroTexto('mercado');
+    renderFiltrosMovimientos();
+    const slot = elFiltros().querySelector('#movimientos-limpiar-slot');
+    expect(slot.querySelector('.movimientos-filtros__resumen')).toBeNull();
+    expect(slot.querySelector('[data-action="movimientos-limpiar-filtros"]')).not.toBeNull();
   });
 });
 

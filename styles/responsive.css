@@ -1936,6 +1936,8 @@
 .section__volver--contexto,
 .list-item__detalle,
 .filtros-bar__mas,
+.movimientos-filtros__fechas-chip,
+.movimientos-filtros__resumen,
 .lista-ingresos__ver-todos,
 .perfil-inicio__buscar,
 .bloque-gastos__herramientas .bloque-gastos__lupa,
@@ -2223,13 +2225,58 @@
      del primer gasto. Plegada, la barra dice "Todos", la elegida y
      "+N categorías"; abierta vuelve a ser el índice alfabético completo
      (ADR 072 D1). Nada se esconde sin decir cuánto falta (R9). */
-  #panel-filtros-gastos .filtros-bar__mas {
+  #panel-filtros-gastos .filtros-bar__mas,
+  #movimientos-filtros .filtros-bar__mas {
     display: inline-flex;
     border-style: dashed;
     color: var(--fk-text-primary);
   }
   #panel-filtros-gastos .filtros-bar:not(.filtros-bar--abierta)
     button.chip[data-cat]:not([data-cat=""]):not(.chip--active) { display: none; }
+
+  /* ── ADR 105: los filtros de Movimientos en una fila ──────────────────
+     Los seis tipos se deslizaban sin decirlo (a 320 escondían 81px, R9) y
+     el rango de fechas tenía fila propia. Los tipos se pliegan con la receta
+     de D6 y "Fechas" pasa a ser un chip al final de la misma fila, que abre
+     el mismo <details> (su rótulo de escritorio se calla). La fila envuelve
+     en vez de deslizarse: nada queda escondido sin decir cuánto falta. */
+  #movimientos-filtros .filtros-bar {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    row-gap: var(--fk-space-2);
+    padding-block: 0;
+  }
+  #movimientos-filtros .filtros-bar:not(.filtros-bar--abierta)
+    button.chip[data-dominio]:not([data-dominio=""]):not(.chip--active) { display: none; }
+  #movimientos-filtros .movimientos-filtros__fechas-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fk-space-1);
+  }
+  #movimientos-filtros .movimientos-filtros__fechas-chip .icon {
+    --fk-icon-size: var(--fk-icon-sm);
+    transition: rotate var(--fk-transition-fast);
+  }
+  #movimientos-filtros .movimientos-filtros__fechas-chip[aria-expanded="true"] .icon { rotate: 180deg; }
+  #movimientos-filtros .movimientos-filtros__rango > summary { display: none; }
+  #movimientos-filtros .movimientos-filtros__rango:not([open]) { display: none; }
+
+  /* D4: "Limpiar filtros" junto a lo que se está viendo, debajo de los
+     filtros. Sin filtros el hueco no cuenta en el espaciado de la columna. */
+  #movimientos-limpiar-slot {
+    order: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--fk-space-2);
+  }
+  #movimientos-limpiar-slot:empty { display: none; }
+  #movimientos-filtros .movimientos-filtros__resumen {
+    display: inline;
+    font-size: var(--fk-text-sm);
+    color: var(--fk-text-secondary);
+  }
+  #movimientos-limpiar-slot .btn { min-height: 44px; margin-inline-start: auto; }
 
   /* ── D7: Mis cuentas no se vuelve una tira de 29 pantallas ────────────
      Se ven los cinco ingresos puntuales más recientes; el resto vive en el

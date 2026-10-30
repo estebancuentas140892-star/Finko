@@ -14,7 +14,7 @@ import {
   renderMovimientosCompletos, cargarMasMovimientos,
   renderFiltrosMovimientos, setFiltroTexto, setFiltroDominio, setFiltroCategoria, setFiltroCuenta,
   setFiltroFechaDesde, setFiltroFechaHasta, limpiarFiltrosMovimientos,
-  actualizarBotonLimpiarFiltros,
+  actualizarBotonLimpiarFiltros, alternarTiposMovimientos,
 } from './view.js';
 
 /** Secciones cuyos cambios pueden alterar el historial de movimientos. */
@@ -67,9 +67,31 @@ function _renderTodo() {
 /** Chip de dominio (MOV.2): cambia el filtro y repinta filtros + lista. */
 function _filtrarDominio(el) {
   setFiltroDominio(el?.dataset?.dominio || null);
+  // ADR 105 D1: elegir pliega la fila en móvil (ya se encontró el tipo).
+  if (el?.closest?.('.filtros-bar--abierta')) alternarTiposMovimientos();
   renderFiltrosMovimientos();
   renderMovimientosCompletos();
   _wireFiltrosMovimientos();
+}
+
+/** "+N tipos" / "Menos" de la fila plegada en móvil (ADR 105 D1). */
+function _alternarTipos() {
+  alternarTiposMovimientos();
+  renderFiltrosMovimientos();
+  _wireFiltrosMovimientos();
+  document.querySelector('#movimientos-filtros .filtros-bar__mas')?.focus({ preventScroll: true });
+}
+
+/**
+ * El chip "Fechas" abre y cierra el rango sin repintar la barra (ADR 105 D2):
+ * los campos conservan lo escrito. Es el mismo `<details>` que en escritorio
+ * se abre desde su propio rótulo.
+ */
+function _alternarFechas(el) {
+  const rango = document.getElementById('movimientos-rango');
+  if (!rango) return;
+  rango.open = !rango.open;
+  el?.setAttribute('aria-expanded', String(rango.open));
 }
 
 /** "Limpiar filtros" (MOV.2): vuelve los 6 filtros a su estado inicial. */
@@ -135,6 +157,8 @@ function _verPrefiltrado({ categoria = null, dominio = null, cuentaId = null, de
 export function initMovimientos() {
   registrarAccion('movimientos-cargar-mas', cargarMasMovimientos);
   registrarAccion('movimientos-filtrar-dominio', _filtrarDominio);
+  registrarAccion('movimientos-tipos-alternar', _alternarTipos);
+  registrarAccion('movimientos-fechas-alternar', _alternarFechas);
   registrarAccion('movimientos-limpiar-filtros', _limpiarFiltrosMovimientos);
   registrarAccion('movimientos-quitar-categoria', _quitarCategoria);
   registrarAccion('movimientos-quitar-cuenta', _quitarCuenta);

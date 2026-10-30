@@ -103,8 +103,24 @@ export function setFiltroFechaDesde(fecha) { _filtroFechaDesde = fecha || ''; }
 /** @param {string} fecha 'YYYY-MM-DD', o '' para quitar el techo. */
 export function setFiltroFechaHasta(fecha) { _filtroFechaHasta = fecha || ''; }
 
-/** Vuelve los 6 filtros a "sin filtro". Llamado por "Limpiar filtros". */
+/**
+ * Fila de tipos abierta o plegada (ADR 105 D1, la receta del ADR 098 D6 de
+ * Gastos). Solo pesa en móvil: plegada muestra "Todos", el tipo elegido y
+ * "+N tipos"; abierta, la lista completa. Elegir un tipo la pliega.
+ */
+let _tiposAbiertos = false;
+
+/** Abre o pliega la fila de tipos. Llamado desde index.js. */
+export function alternarTiposMovimientos() {
+  _tiposAbiertos = !_tiposAbiertos;
+}
+
+/**
+ * Vuelve los 6 filtros a "sin filtro" y pliega la fila de tipos (ADR 105 D1).
+ * Llamado por "Limpiar filtros".
+ */
 export function limpiarFiltrosMovimientos() {
+  _tiposAbiertos = false;
   _filtroTexto = '';
   _filtroDominio = null;
   _filtroCategoria = null;
@@ -199,21 +215,40 @@ export function renderFiltrosMovimientos() {
         </button>`;
   }).join('');
 
+  // ADR 105 D1-D2: en móvil la fila plegada muestra "Todos", el tipo elegido,
+  // "+N tipos" y "Fechas", que reemplaza a la fila propia del rango. En
+  // escritorio estos dos botones no se ven y la columna de filtros sigue
+  // igual (ADR 076).
+  const ocultos = dominios.length - (todosActivo ? 0 : 1);
+  const toggleTipos = ocultos > 0 || _tiposAbiertos ? `
+      <button type="button" class="chip filtros-bar__mas"
+              data-action="movimientos-tipos-alternar"
+              aria-expanded="${_tiposAbiertos}">
+        ${_tiposAbiertos ? 'Menos' : `+${ocultos} ${ocultos === 1 ? 'tipo' : 'tipos'}`}
+      </button>` : '';
+  const chipFechas = `
+      <button type="button" class="chip movimientos-filtros__fechas-chip${hayRango ? ' chip--active' : ''}"
+              data-action="movimientos-fechas-alternar"
+              aria-expanded="${hayRango}" aria-controls="movimientos-rango">
+        Fechas
+        <svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg>
+      </button>`;
+
   el.innerHTML = `
     <input type="search" id="movimientos-buscar" class="input movimientos-filtros__busqueda"
            placeholder="Buscar por descripción..." value="${_esc(_filtroTexto)}"
            aria-label="Buscar movimientos por descripción" />
     ${_categoriaHtml()}
-    <div class="filtros-bar" role="group" aria-label="Filtrar movimientos por tipo">
+    <div class="filtros-bar${_tiposAbiertos ? ' filtros-bar--abierta' : ''}" role="group" aria-label="Filtrar movimientos por tipo">
       <button type="button" class="chip${todosActivo ? ' chip--active' : ''}"
               data-action="movimientos-filtrar-dominio" data-dominio=""
               aria-pressed="${todosActivo}" aria-label="Ver todos los movimientos">
         Todos
       </button>
-      ${chipsDominio}
+      ${chipsDominio}${toggleTipos}${chipFechas}
     </div>
     <span id="movimientos-limpiar-slot">${_limpiarFiltrosHtml()}</span>
-    <details class="movimientos-filtros__rango"${hayRango ? ' open' : ''}>
+    <details class="movimientos-filtros__rango" id="movimientos-rango"${hayRango ? ' open' : ''}>
       <summary>
         Filtrar por fechas
         <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
@@ -234,9 +269,13 @@ export function renderFiltrosMovimientos() {
  */
 function _limpiarFiltrosHtml() {
   const hayFiltroActivo = Boolean(_filtroTexto || _filtroDominio || _filtroCategoria || _filtroCuenta || _filtroFechaDesde || _filtroFechaHasta);
-  return hayFiltroActivo
-    ? `<button type="button" class="btn btn-ghost btn-sm" data-action="movimientos-limpiar-filtros">Limpiar filtros</button>`
+  if (!hayFiltroActivo) return '';
+  // ADR 105 D4: en móvil el botón va junto a lo que se está viendo. La frase
+  // nace oculta en escritorio, donde el chip activo ya está a la vista.
+  const resumen = _filtroDominio && _DOMINIO_LABEL[_filtroDominio]
+    ? `<span class="movimientos-filtros__resumen">Solo ${_esc(_DOMINIO_LABEL[_filtroDominio].toLowerCase())}</span>`
     : '';
+  return `${resumen}<button type="button" class="btn btn-ghost btn-sm" data-action="movimientos-limpiar-filtros">Limpiar filtros</button>`;
 }
 
 /**
