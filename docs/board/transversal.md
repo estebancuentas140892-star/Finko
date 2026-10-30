@@ -31,7 +31,7 @@
 - Prioridad  : media
 - Estado     : en proceso
 - Área       : ambos
-- Objetivo   : lo que la primera entrega ([ADR 098](../DECISIONS/098-finko-movil-2-primera-entrega.md)) dejó del plan MV2 por riesgo de composición. Queda: Distribuir dentro de Mis cuentas sin modal de pasos (MV2.19), una línea de estado por destino en "Más", y el resto del plan del canvas: peso de botones por dominio (R8), avisos sin borde lateral, primeros pasos en el teléfono, Ajustes como índice (insumo de CFG.6), la fila de Ingresos con hoja y el pie con el teclado de iOS
+- Objetivo   : lo que la primera entrega ([ADR 098](../DECISIONS/098-finko-movil-2-primera-entrega.md)) dejó del plan MV2 por riesgo de composición. Queda: Distribuir dentro de Mis cuentas sin modal de pasos (MV2.19), una línea de estado por destino en "Más", y el resto del plan del canvas: primeros pasos en el teléfono, Ajustes como índice (insumo de CFG.6), la fila de Ingresos con hoja y el pie con el teclado de iOS
 - Riesgo     : el asistente de distribución tiene ADR propio (080): cada pieza se acota con uno nuevo, nunca en silencio
 - Secciones  : lentes de los bloques, bloque Gastos, Mis cuentas, menú Más, Movimientos
 - Archivos   : `ui/bloque-gastos.js`, `ui/bloque-inicio.js`, `dominio/tesoreria/views/distribucion.js`, `index.html` (`#modal-mas`), `styles/responsive.css` (bloque MV2)

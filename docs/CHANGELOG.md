@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(app): MV2.13, un vacío, un mensaje · 2026-10-29
+
+[ADR 107](DECISIONS/107-el-peso-de-cada-cosa.md) D5 (cierra la fase 11; cambia el ADR 016 D1 y D3); ficha [`contexto/sistema-visual.md`](contexto/sistema-visual.md). Todos los anchos. SW v638.
+
+- **El propósito es el título y el cuerpo del vacío**: `partirProposito()` separa la pregunta con que abre cada texto (título) del resto (cuerpo), sin cambiar una palabra del copy aprobado; un test reconstruye los 11 textos. El banner pierde su caja y su filete.
+- **El vacío calla su propio mensaje** por CSS (`:has`), sin depender del orden de pintado de cada dominio: quedan su botón y su línea hermana.
+- **Un solo botón**: en Me deben el del vacío pasa a primario, y el "+ Préstamo" del encabezado se oculta mientras se ve (R51). Medido a 390: el vacío pasa de 596 px en dos bloques a 209 en uno.
+- **Metas**: la línea hermana lleva a Reservas en vez de al Fondo, que ya está en la barra de modalidades.
+- Pruebas: V-7 cambia de sentido (el botón del vacío es el primario); el E2E de R85 sigue a Reservas; 3 unitarias del corte y un E2E móvil del vacío de Me deben.
+
 ### feat(app): MV2.18, avisos sin filete y explicaciones sin caja · 2026-10-29
 
 [ADR 107](DECISIONS/107-el-peso-de-cada-cosa.md) D4 (segunda de tres rebanadas de la fase 11; cumple R41, R49, R55 y R75). Todos los anchos. SW v637.
