@@ -67,7 +67,7 @@ describe('htmlVolverContexto()', () => {
   });
 
   it('la navegación principal incluye la barra, el menú Más y las franjas de los bloques', () => {
-    for (const sel of ['#sidebar', '#modal-mas', '.bloque-tabs', '.bloque-chips']) {
+    for (const sel of ['#sidebar', '#modal-mas', '.bloque-tabs']) {
       expect(RAIZ_NAVEGACION).toContain(sel);
     }
   });

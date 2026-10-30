@@ -161,10 +161,10 @@ export function sincronizarBloqueGastos(estado = estadoLentesGastos()) {
 
   _sincronizarPrimarios();
 
-  _pintarBadge('compromisos', estado.vencidos,
+  pintarEstadoLente('compromisos', estado.vencidos,
     'Por pagar', n => `${n} ${n === 1 ? 'vencido' : 'vencidos'}`);
   // Punto y no número (ficha 07): en Límites lo que importa es que pasó algo.
-  _pintarBadge('presupuesto', estado.excedidos,
+  pintarEstadoLente('presupuesto', estado.excedidos,
     'Límites', n => `${n === 1 ? 'un tope excedido' : 'topes excedidos'}`, true);
 }
 
@@ -194,7 +194,8 @@ function _sincronizarPrimarios() {
 /**
  * La pastilla es decorativa (`aria-hidden`): un número suelto leído en voz
  * alta no dice de qué. Lo que oye el lector es el nombre accesible de la
- * pestaña, que se reescribe con el conteo.
+ * pestaña, que se reescribe con el conteo. La barra de Ahorro la usa para el
+ * punto de Reservas (ADR 104 D3): es la misma barra.
  *
  * @param {string} hash
  * @param {number} n
@@ -202,7 +203,7 @@ function _sincronizarPrimarios() {
  * @param {(n:number) => string} frase
  * @param {boolean} [comoPunto=false] Muestra un punto en vez del número.
  */
-function _pintarBadge(hash, n, etiqueta, frase, comoPunto = false) {
+export function pintarEstadoLente(hash, n, etiqueta, frase, comoPunto = false) {
   document.querySelectorAll(`.bloque-tabs__tab[data-section="${hash}"]`).forEach((tab) => {
     const badge = tab.querySelector('.bloque-tabs__badge');
     if (badge) {

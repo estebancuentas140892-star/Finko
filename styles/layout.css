@@ -670,32 +670,18 @@
 }
 
 /* ════════════════════════════════════════════════════════════
-   BLOQUE GASTOS - franja de lentes (ADR 069)
+   BARRA DE LENTES (ADR 069, ADR 104)
    ════════════════════════════════════════════════════════════
-   Las tres lentes del bloque ("Lo que gastaste", "Por pagar", "Límites")
-   son secciones con hash propio: la franja es navegación, no un widget de
-   estado. La inyecta ui/bloque-gastos.js en las tres, y markActiveNav le
+   Las tres lentes del bloque Gastos y las cuatro modalidades de Ahorro son
+   secciones con hash propio: la barra es navegación, no un widget de estado.
+   La inyectan ui/bloque-gastos.js y ui/bloque-ahorro.js, y markActiveNav le
    pone `.active` a la vigente con el mismo mecanismo del resto del nav.
 
-   Nace oculta: solo existe bajo 1024px (responsive.css), donde el bloque es
-   la única puerta a las tres. En escritorio el sidebar ya las lista en filas
-   propias y una franja repetiría la misma navegación dos veces. */
-.bloque-tabs {
-  display: none;
-  /* Sin gap: la pastilla de fondo de la pestaña activa ya separa las tres, y
-     a 390px cada píxel de la fila cuenta para que "Límites" no quede fuera. */
-  gap: 0;
-  margin-bottom: var(--fk-space-4);
-  padding: var(--fk-space-1);
-  border-radius: var(--fk-radius-full);
-  background: var(--fk-bg-elevated);
-  border: 1px solid var(--fk-border-subtle);
-  /* Con la etiqueta más larga y las dos pastillas, a 320px la fila no cabe:
-     se desplaza en vez de truncar los nombres, que es lo que se aprende. */
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.bloque-tabs::-webkit-scrollbar { display: none; }
+   Nace oculta: solo existe bajo 1024px, donde el bloque es la única puerta a
+   sus secciones. En escritorio el sidebar ya las lista en filas propias y una
+   barra repetiría la misma navegación dos veces. Su dibujo vive en
+   responsive.css (bloque MV2), en una sola receta con la portada de Ahorro. */
+.bloque-tabs { display: none; }
 
 /* Bloque Inicio (APR.1c, ADR 092 D1): cada pestaña lleva su estado debajo
    del nombre ("1 aviso", "3 min", el nivel), así los tres caben a 390px sin
@@ -712,90 +698,6 @@
   color: var(--fk-text-muted);
 }
 .bloque-tabs__estado:empty { display: none; }
-
-.bloque-tabs__tab {
-  flex: 1 1 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--fk-space-2);
-  /* Piso táctil del proyecto, el mismo que respeta el slot de la barra. */
-  min-height: 44px;
-  padding: 0 var(--fk-space-2);
-  border-radius: var(--fk-radius-full);
-  font-size: var(--fk-text-sm);
-  font-weight: var(--fk-font-medium);
-  color: var(--fk-text-secondary);
-  text-decoration: none;
-  white-space: nowrap;
-  transition:
-    background-color var(--fk-transition-fast),
-    color var(--fk-transition-fast);
-}
-
-.bloque-tabs__tab.active {
-  background: var(--fk-bg-surface);
-  color: var(--fk-text-primary);
-  font-weight: var(--fk-font-semibold);
-  box-shadow: var(--fk-shadow-sm);
-}
-
-/* La pastilla reusa `.badge` (atoms.css): mismo rojo, mismo peso y mismo
-   alto que cualquier otro conteo de la app. Acá solo se le quita el alto
-   fijo, que dentro de una pestaña de 44px se veía como un segundo bloque. */
-.bloque-tabs__badge {
-  height: auto;
-  padding: 2px var(--fk-space-1);
-  line-height: 1.2;
-}
-
-/* "Límites" avisa con un punto y no con un número (ficha 07): el dato
-   importante es que algún tope se pasó, no cuántos. */
-.bloque-tabs__badge--punto {
-  width: 8px;
-  min-width: 8px;
-  height: 8px;
-  padding: 0;
-}
-
-/* ── Bloque Ahorro: fila de chips de las cuatro hijas (ADR 069 D7) ──
-   La misma fila que la casa ya tiene, con la casa incluida como primer chip.
-   Misma forma, comportamiento distinto: en la casa los chips mueven el scroll
-   (botones con acción) y acá navegan (enlaces con hash).
-
-   Desborda en horizontal en vez de envolverse, igual que `.hub .chips`: a
-   360px los cinco chips no caben, y el corte del último es la señal de que
-   hay más. Envuelta, empujaría el contenido de la sección fuera de la vista.
-
-   Nace oculta: en escritorio la subnav del sidebar ya permite el salto
-   lateral, y repetirlo sería la misma navegación dos veces. */
-.bloque-chips {
-  display: none;
-  gap: var(--fk-space-2);
-  margin-bottom: var(--fk-space-4);
-  overflow-x: auto;
-  padding-bottom: 3px;
-  scrollbar-width: none;
-}
-.bloque-chips::-webkit-scrollbar { display: none; }
-
-.bloque-chips__chip {
-  white-space: nowrap;
-  min-height: 36px;
-  text-decoration: none;
-  flex-shrink: 0;
-}
-
-/* Mismo lenguaje que el chip de categoría activo de Gastos (domain.css):
-   tinte del dominio, borde al 50% y texto primario. El tinte y el color
-   llegan del mapeo `[data-section]` que ya existe en este archivo, así que
-   no hay token nuevo: el chip de cada modalidad se tiñe con su dominio. */
-.bloque-chips__chip.active {
-  background: var(--fk-nav-bg, var(--fk-accent-subtle));
-  border-color: color-mix(in srgb, var(--fk-nav-text, var(--fk-accent)) 50%, transparent);
-  color: var(--fk-text-primary);
-  font-weight: var(--fk-font-semibold);
-}
 
 /* ════════════════════════════════════════════════════════════
    BENTO GRID - dashboard

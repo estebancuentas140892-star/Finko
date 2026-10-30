@@ -234,37 +234,43 @@ test.describe('DIS.18 - la casa de Ahorro (móvil)', () => {
 
   // Ficha 04 (ADR 069 D7): dentro de Ahorro no se podía ir de lado. De Metas
   // a Reservas había que subir a la casa y volver a bajar; en el bloque
-  // Gastos cambiar de lente cuesta 1 toque. La fila de chips cierra la
-  // brecha sin inventar un patrón: es la misma que la casa ya tenía.
-  test('las cuatro modalidades se alcanzan entre sí con un toque (ADR 069 D7)', async ({ page }) => {
+  // Gastos cambiar de lente cuesta 1 toque. ADR 104: ir de lado es la misma
+  // barra que la de Gastos, no una fila de chips que parece un filtro.
+  test('las cuatro modalidades se alcanzan entre sí con un toque (ADR 069 D7, ADR 104)', async ({ page }) => {
     await seedConAhorros(page);
     await page.goto('/#metas');
     await page.waitForSelector('#sec-metas.active', { timeout: 10_000 });
 
-    const chips = page.locator('#sec-metas .bloque-chips__chip');
-    // ADR 098 D3: cuatro chips, sin la casa; la subida la da el volver.
-    await expect(chips).toHaveText([
-      'Fondo de emergencia', 'Reservas', 'Metas', 'Inversión',
-    ]);
-    await expect(chips.filter({ hasText: 'Metas' })).toHaveClass(/active/);
+    const celdas = page.locator('#sec-metas .bloque-tabs--ahorro .bloque-tabs__tab');
+    // ADR 098 D3: cuatro celdas, sin la casa; la subida la da el volver.
+    await expect(celdas).toHaveText(['Fondo', 'Reservas', 'Metas', 'Inversión']);
+    await expect(celdas.first()).toHaveAttribute('aria-label', 'Fondo de emergencia');
+    await expect(celdas.filter({ hasText: 'Metas' })).toHaveClass(/active/);
 
     // De Metas a Reservas sin pasar por la casa.
-    await chips.nth(1).click();
+    await celdas.nth(1).click();
     await page.waitForSelector('#sec-apartados.active', { timeout: 5_000 });
-    await expect(page.locator('#sec-apartados .bloque-chips__chip[data-section="apartados"]'))
+    await expect(page.locator('#sec-apartados .bloque-tabs__tab[data-section="apartados"]'))
       .toHaveClass(/active/);
-    // La barra sigue diciendo el bloque mientras los chips dicen el lugar.
+    // La barra inferior sigue diciendo el bloque mientras la de lentes dice el lugar.
     await expect(page.locator('.nav-item--mobile-only[data-section="ahorro"]')).toHaveClass(/active/);
 
-    // Los cuatro caben sin desplazar la fila (R9): ninguno queda cortado.
-    const desborda = await page.locator('#sec-apartados .bloque-chips').evaluate(
-      el => el.scrollWidth > el.clientWidth + 1);
-    expect(desborda).toBe(false);
+    // Las cuatro caben sin desplazar la barra (R9), también a 320 (ADR 104 D2).
+    for (const ancho of [390, 320]) {
+      await page.setViewportSize({ width: ancho, height: 700 });
+      const desborda = await page.locator('#sec-apartados .bloque-tabs').evaluate(
+        el => el.scrollWidth > el.clientWidth + 1);
+      expect(desborda, `la barra de Ahorro se desliza a ${ancho}px`).toBe(false);
+    }
 
-    // Y el volver de la hija devuelve a la casa, que no lleva fila inyectada.
+    // Y el volver de la hija devuelve a la casa, que no lleva barra inyectada:
+    // su fila de saltos se dibuja como barra, pero sin celda vigente (D4).
     await page.locator('#sec-apartados .section__volver--ahorro-hija').click();
     await page.waitForSelector('#sec-ahorro.active', { timeout: 5_000 });
-    await expect(page.locator('#sec-ahorro .bloque-chips')).toHaveCount(0);
+    await expect(page.locator('#sec-ahorro .bloque-tabs')).toHaveCount(0);
+    const fila = page.locator('#sec-ahorro .hub .chips');
+    await expect(fila).toHaveCSS('display', 'grid');
+    expect(await fila.evaluate(el => el.scrollWidth > el.clientWidth + 1)).toBe(false);
   });
 
   // AH1: tres textos mandaban al usuario móvil a "la pestaña Fondo (arriba)",
@@ -344,6 +350,19 @@ test.describe('DIS.18 - la casa de Ahorro (móvil)', () => {
     await expect(badgeLimites).toBeVisible();
     await expect(badgeLimites).toHaveText('');
     await expect(badgeLimites).toHaveClass(/bloque-tabs__badge--punto/);
+
+    // ADR 104 D3: el punto va en la esquina, fuera del flujo de la celda.
+    await expect(badgeLimites).toHaveCSS('position', 'absolute');
+
+    // ADR 104 D2: a 320 la barra no se desliza (medía 298px en 294).
+    await page.setViewportSize({ width: 320, height: 640 });
+    const desborda = await franja.evaluate(el => el.scrollWidth > el.clientWidth + 1);
+    expect(desborda, 'la barra de Gastos se desliza a 320px').toBe(false);
+    // Y "Por pagar" con su número cabe sin puntos suspensivos.
+    const cortados = await franja.locator('.bloque-tabs__label').evaluateAll(
+      ls => ls.filter(l => l.scrollWidth > l.clientWidth).map(l => l.textContent));
+    expect(cortados).toEqual([]);
+    await page.setViewportSize({ width: 390, height: 844 });
 
     // La lente se abre desde la franja y la barra sigue diciendo "Gastos".
     await franja.locator('.bloque-tabs__tab[data-section="compromisos"]').click();

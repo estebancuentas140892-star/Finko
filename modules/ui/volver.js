@@ -58,7 +58,7 @@ export const NOMBRE_SECCION = {
  * también, para que volver no se cuente como ir.
  */
 export const RAIZ_NAVEGACION = [
-  '#sidebar', '#modal-mas', '.bloque-tabs', '.bloque-chips', '.section__volver',
+  '#sidebar', '#modal-mas', '.bloque-tabs', '.section__volver',
 ].join(', ');
 
 /** Cuánto vale un toque como causa de la navegación que le sigue. */

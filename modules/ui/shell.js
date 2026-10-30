@@ -199,11 +199,10 @@ export function markActiveNav(hash) {
   // .nav-item: sidebar + barra inferior. .mas-tile: tiles del menú "Más"
   // v2 (NAV2.1a, ADR 040 D2), que resaltan la sección activa con el
   // tinte de su dominio igual que el nav. .bloque-tabs__tab: las tres lentes
-  // del bloque Gastos (ADR 069), que son navegación y ya traen data-section.
-  // .bloque-chips__chip: la fila de modalidades del bloque Ahorro, misma idea.
+  // del bloque Gastos (ADR 069) y las cuatro modalidades de Ahorro (ADR 104),
+  // que son navegación y ya traen data-section.
   document.querySelectorAll(
-    '.nav-item[data-section], .mas-tile[data-section],'
-    + ' .bloque-tabs__tab[data-section], .bloque-chips__chip[data-section]'
+    '.nav-item[data-section], .mas-tile[data-section], .bloque-tabs__tab[data-section]'
   ).forEach(item => {
     const active = item.dataset.section === hash;
     item.classList.toggle('active', active);

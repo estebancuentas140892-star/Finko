@@ -29,10 +29,10 @@
    restaura bajo 1024px, donde no hay barra superior. */
 .section__header > .btn-primary { display: none; }
 
-/* Marca "F" del saludo de Inicio (DSK.1a, ADR 070 D10, que ejecuta la D8
-   del ADR 034): oculta en desktop por defecto. Existe porque en móvil la
-   barra lateral pierde su logo; en monitor el logo está a 240px, y junto al
-   avatar son dos círculos verdes seguidos. Se restaura bajo 1024px. El
+/* Marca del saludo de Inicio (DSK.1a, ADR 070 D10, que ejecuta la D8 del
+   ADR 034; isotipo desde el ADR 103): oculta en desktop por defecto. Existe
+   porque en móvil la barra lateral pierde su logo; en monitor el logo está a
+   240px y sobra. Se restaura bajo 1024px. El
    engranaje que la acompañaba salió del DOM con MV2.15c (ADR 099 D7). */
 .perfil-inicio > .perfil-inicio__marca { display: none; }
 
@@ -51,7 +51,6 @@
      única puerta a las tres lentes, así que el bloque es el que las nombra,
      las enseña y les pone el reloj común. */
   .bloque-gastos { display: flex; }
-  .bloque-tabs { display: flex; }
 
   /* Con el bloque puesto, el hero de la portada pierde su fila de arriba: el
      selector de mes y el ojo viven ahora en el encabezado del bloque y
@@ -65,10 +64,6 @@
   #sec-gast .section__title-group,
   #sec-compromisos .section__title-group,
   #sec-presupuesto .section__title-group { display: none; }
-
-  /* Fila de chips del bloque Ahorro (ADR 069 D7): acá no hay subnav, así que
-     es la única forma de ir de una modalidad a otra sin volver a la casa. */
-  .bloque-chips { display: flex; }
 
   /* Primario del encabezado: vuelve a mostrarse en su sitio de siempre.
      :not([hidden]) respeta el ocultamiento propio del dominio (ej. Deudas
@@ -1957,39 +1952,91 @@
     display: none;
   }
 
-  /* ── D3: Ahorro, cuatro modalidades en cuatro columnas ─────────────────
-     Con cinco chips la fila desbordaba a 390px y escondía "Inversión" (R9).
-     La casa salió de la fila (la sube el "‹ Ahorro" de cada hija) y las
-     cuatro reparten el ancho en partes iguales: ninguna queda cortada a 320.
-     La cola de "Fondo de emergencia" se calla; el nombre completo sigue en
-     el título de la sección. Vale igual para la fila de la casa, que salta
-     de carril dentro de la misma pantalla. */
-  .bloque-chips,
+  /* ── ADR 104 (MV2.12): una sola barra para ir de lado ─────────────────
+     Lo que cambia de pantalla es una barra; lo que filtra la lista, un chip.
+     Las lentes de Gastos, las cuatro hijas de Ahorro y la portada de Ahorro
+     dibujan la misma barra: celdas iguales a lo ancho, 44px, y nunca se
+     desliza (R9). La portada conserva sus botones, que saltan al carril de
+     cada modalidad, y no marca celda vigente (D4). La cola de "Fondo de
+     emergencia" se calla (ADR 098 D3); el nombre completo sigue en el título
+     de la sección y en el nombre accesible. Va en esta capa porque `.chip`
+     (capa components) le ganaría a la capa layout. */
+  .bloque-tabs,
   .hub .chips {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: var(--fk-space-1);
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 2px;
+    margin-bottom: var(--fk-space-4);
+    padding: var(--fk-space-1);
+    border-radius: var(--fk-radius-lg);
+    background: var(--fk-bg-elevated);
+    border: 1px solid var(--fk-border-subtle);
     overflow: visible;
-    padding-bottom: 0;
   }
-  .bloque-chips__chip,
+  .bloque-tabs__tab,
   .hub .chips .chip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
+    gap: var(--fk-space-1);
     min-width: 0;
     min-height: 44px;
-    padding-inline: var(--fk-space-1);
-    font-size: var(--fk-text-xs);
+    padding: 0 var(--fk-space-1);
+    border: 0;
+    border-radius: var(--fk-radius-md);
+    background: transparent;
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-medium);
+    color: var(--fk-text-secondary);
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+      background-color var(--fk-transition-fast),
+      color var(--fk-transition-fast);
   }
-  .bloque-chips .chip__cola,
+  .bloque-tabs__label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .hub .chips .chip__cola { display: none; }
-  /* El chip vigente no se distinguía de los otros: su estilo vive en la capa
-     `layout` y `.chip` (capa `components`) le ganaba siempre. Acá, en la capa
-     que sí manda, con el tinte de su dominio. */
-  .bloque-chips__chip.active {
-    background: color-mix(in srgb, var(--fk-nav-text, var(--fk-accent)) 14%, var(--fk-bg-elevated));
-    border-color: color-mix(in srgb, var(--fk-nav-text, var(--fk-accent)) 50%, transparent);
+  .bloque-tabs__tab.active {
+    background: var(--fk-bg-surface);
     color: var(--fk-text-primary);
     font-weight: var(--fk-font-semibold);
+    box-shadow: var(--fk-shadow-sm);
+  }
+  /* El estado no agranda la celda (D3). La pastilla reusa `.badge`
+     (atoms.css): mismo rojo y mismo peso que cualquier conteo, en 18px. El
+     punto dice "pide mirar" desde la esquina, fuera del flujo: "Límites"
+     con un tope excedido (ficha 07) y "Reservas", en ámbar, con una reserva
+     lista para reiniciar. Van en esta capa porque `.badge` (components) le
+     ganaba a la capa layout y el punto medía 20px. */
+  .bloque-tabs__badge {
+    min-width: 18px;
+    height: 18px;
+    margin: 0;
+    padding: 0 var(--fk-space-1);
+    font-size: 0.6875rem;
+  }
+  .bloque-tabs__badge--punto {
+    position: absolute;
+    top: var(--fk-space-2);
+    right: var(--fk-space-2);
+    width: 8px;
+    min-width: 8px;
+    height: 8px;
+    padding: 0;
+  }
+  .bloque-tabs--ahorro .bloque-tabs__badge--punto { background: var(--fk-warning); }
+  /* D2: bajo 360px el rótulo baja a 13px para que "Por pagar" y su número
+     quepan en un tercio de 320 sin cortarse. Va después de la receta: dentro
+     de la misma capa, el orden decide. */
+  @media (max-width: 359px) {
+    .bloque-tabs__tab,
+    .hub .chips .chip { font-size: 0.8125rem; }
   }
 
   /* ── D4: filas de una línea con hoja de detalle ────────────────────────
