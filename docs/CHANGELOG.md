@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(movil): MV2.19, Distribuir sin salir de donde estás · 2026-10-30
+
+[ADR 110](DECISIONS/110-distribuir-sin-salir-de-donde-estas.md) (cambia bajo 1024px el ADR 021 y CAL.1; acota el ADR 061; respeta los ADR 018, 035 D6 y 080); ficha [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). Dos commits, MV2.19a y MV2.19b-c. Ningún cálculo cambia. SW v641 y v642.
+
+- **Se abre donde estás** (a): bajo 1024px `distribuir:abrir` ya no navega a Mis cuentas; cerrar te deja en Inicio, Calendario o Límites. Escritorio sigue navegando.
+- **Pie pegado** (a): el resumen y los botones forman `.distribuir__pie`, pegado al borde de la hoja con la receta del ADR 098 D8. A 390, "Siguiente" pasaba de 976px en una hoja de 699; cambiar de paso lleva el paso nuevo a la vista.
+- **El pie dice qué falta** (a, todos los anchos): la pregunta de lo que queda abre el último paso, y ahí un "Distribuir" apagado dice por qué (`motivoSinDistribuir()`, lógica pura: monto, cuenta, ingresos, lo movido, nada marcado o lo que queda).
+- **Qué se reparte, arriba** (b): monto, ingresos y cuenta en una fila con un "Cambiar"; sin cuenta guardada y con varias, la pregunta abre desplegada y bloquea hasta responderla, en vez de la hoja "¿Desde qué cuenta?" al final. `_cuentaOrigenDistribucion()` lee primero lo elegido. El asistente se pinta según el ancho al abrirse (`_enMovil()` en la vista).
+- **Cada paso, lo suyo** (b): la comparación con los expertos va compacta dentro del paso 1; el porqué, los métodos y "Personalizar", en "Cómo lo calculamos" (un `details` que sigue abierto al elegir un método). La leyenda del panel queda solo para el lector de pantalla. El paso 1 empieza a 357px en vez de 789.
+- **La hoja dice qué quedó** (c): confirmar pinta `htmlResultadoDistribucion()` con pagos, aportes, lo movido, lo del día a día y el saldo antes y después, con "Deshacer" y "Listo". Un `MutationObserver` deja el aviso de siempre al cerrarla por donde sea; deshacer desde la hoja la cierra sin aviso.
+- Pruebas: 16 unitarias en `distribuir-movil.test.js`; 3 E2E en `movil-mv2.test.js` (dos móviles y uno de escritorio). Unitarios 5199/5199, E2E 381/381 (`--workers=2`).
+
 ### feat(movil): MV2.9, Mis cuentas en filas con hoja · 2026-10-30
 
 [ADR 109](DECISIONS/109-mis-cuentas-en-filas-con-hoja.md) (extiende el ADR 098 D4 y R92; respeta el ADR 080 y R53); fichas [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md) y [`contexto/sistema-visual.md`](contexto/sistema-visual.md). Solo móvil. SW v640.

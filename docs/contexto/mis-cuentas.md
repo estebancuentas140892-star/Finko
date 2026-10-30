@@ -175,6 +175,7 @@ Además: rediseño visual ADR 035 completo. Ver "Transferencias" y "Distribució
 
 **Cambios realizados**:
 
+- 2026-10-30 (**MV2.19**, [ADR 110](../DECISIONS/110-distribuir-sin-salir-de-donde-estas.md)): bajo 1024px el asistente se abre donde estás, con el pie pegado, la fila "qué se reparte" con la cuenta al empezar, la educación compacta en el paso 1 y la cara final con "Deshacer".
 - 2026-10-17 (**HF.0e**, BUG-025): `estadoDistribucion()` lee la creación del ingreso en hora local.
 - 2026-10-17 (**HF.0i**, BUG-033 y BUG-034): Distribuir propone, acredita y sella solo ocurrencias identificadas; pregunta qué llegó cuando el monto no cuadra. Ver CHANGELOG.
 - 2026-10-17 (**HF.0h**, BUG-032): Distribuir sella las ocurrencias que acredita (`cobrosDistribuidos`) y la hoja de automáticos no las vuelve a ofrecer. Ver CHANGELOG.

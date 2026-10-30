@@ -29,9 +29,9 @@
 
 #### MV2.2 - Finko móvil 2, segunda entrega
 - Prioridad  : media
-- Estado     : en proceso
+- Estado     : en proceso; lo que queda espera decisión de Esteban
 - Área       : ambos
-- Objetivo   : lo que la primera entrega ([ADR 098](../DECISIONS/098-finko-movil-2-primera-entrega.md)) dejó del plan MV2 por riesgo de composición. Queda: Distribuir dentro de Mis cuentas sin modal de pasos (MV2.19) y el resto del plan del canvas: primeros pasos en el teléfono, Ajustes como índice (insumo de CFG.6) y el pie con el teclado de iOS
+- Objetivo   : lo que la primera entrega ([ADR 098](../DECISIONS/098-finko-movil-2-primera-entrega.md)) dejó del plan MV2 por riesgo de composición. Queda, esperando decisión: Ajustes como índice (MV2.26, insumo de CFG.6), el encabezado que se compacta en listas largas (MV2.20, revisa R31) y el pie con el teclado de iOS (MV2.5, se mide en un iPhone real)
 - Riesgo     : el asistente de distribución tiene ADR propio (080): cada pieza se acota con uno nuevo, nunca en silencio
 - Secciones  : lentes de los bloques, bloque Gastos, Mis cuentas, menú Más, Movimientos
 - Archivos   : `ui/bloque-gastos.js`, `ui/bloque-inicio.js`, `dominio/tesoreria/views/distribucion.js`, `index.html` (`#modal-mas`), `styles/responsive.css` (bloque MV2)

@@ -130,7 +130,7 @@
 ## Navegación móvil 2: volver con memoria y filas de una línea (MV2.1, ADR 098)
 
 - **Objetivo**          : que volver no reinicie la pantalla y que la primera pantalla de cada lista muestre contenido. Solo bajo 1024px.
-- **Estado actual**     : primera entrega cerrada (2026-10-29). Volver contextual y memoria de altura por fila (`ui/volver.js`); hoja de detalle de fila en Gastos, Movimientos y Mis cuentas (`ui/detalle-fila.js`, `#modal-detalle-fila`; Mis cuentas desde MV2.9, [ADR 109](../DECISIONS/109-mis-cuentas-en-filas-con-hoja.md)); cabecera del bloque Gastos con lupa y primario espejo; Ahorro en cuatro columnas sin la casa; pie pegado en formularios; zona segura y `theme-color`. Segunda entrega en **MV2.2** (`board/transversal.md`).
+- **Estado actual**     : primera entrega cerrada (2026-10-29). Volver contextual y memoria de altura por fila (`ui/volver.js`); hoja de detalle de fila en Gastos, Movimientos y Mis cuentas (`ui/detalle-fila.js`, `#modal-detalle-fila`; Mis cuentas desde MV2.9, [ADR 109](../DECISIONS/109-mis-cuentas-en-filas-con-hoja.md)); cabecera del bloque Gastos con lupa y primario espejo; Ahorro en cuatro columnas sin la casa; pie pegado en formularios y en Distribuir ([ADR 110](../DECISIONS/110-distribuir-sin-salir-de-donde-estas.md), que además se abre donde estás); zona segura y `theme-color`. Segunda entrega en **MV2.2** (`board/transversal.md`).
 - **Verificado contra** : commit de MV2.1 (2026-10-29).
 
 **Dónde vive**
