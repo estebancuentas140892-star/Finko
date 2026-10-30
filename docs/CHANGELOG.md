@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(movil): MV2.12, una sola barra para ir de lado · 2026-10-29
+
+[ADR 104](DECISIONS/104-una-sola-barra-para-ir-de-lado.md) (acota el ADR 069 D7 y cambia el dibujo del ADR 098 D3); fichas [`contexto/sistema-visual.md`](contexto/sistema-visual.md) y [`ahorro.md`](contexto/ahorro.md). Solo bajo 1024 px. SW v631.
+
+- **Ahorro pinta la barra de Gastos**: las cuatro hijas dejan los chips, que parecían filtros, y la portada dibuja sus saltos con la misma barra, sin celda vigente. Los chips quedan para filtrar.
+- **La barra nunca se desliza**: columnas iguales de 44 px, con el rótulo en 13 px bajo 360. A 320 la de Gastos medía 298 px en 294; ahora caben "Por pagar" y su número.
+- **El estado no agranda la celda**: el número de "Por pagar" baja a 18 px y el punto va en la esquina. Reservas suma un punto ámbar cuando una reserva está lista para reiniciar (mismo criterio que el aviso `apartado-listo`), y el lector oye "Reservas, una lista para reiniciar".
+- **Defecto de paso**: el punto de "Límites" medía 20 px, no 8, porque `.badge` (capa components) le ganaba a la capa layout. Las reglas de la barra viven ahora en el bloque móvil de `responsive.css`.
+- Pruebas: `bloque-ahorro.test.js` reescrita para la barra y el punto (de 12 a 16); el E2E de Ahorro y el de Gastos miden que ninguna barra se deslice ni corte rótulos a 320.
+
 ### feat(marca): MARCA.1, el isotipo de Finko · 2026-10-29
 
 [ADR 103](DECISIONS/103-el-isotipo-de-finko.md) (cambia el ADR 040 D4); ficha [`contexto/sistema-visual.md`](contexto/sistema-visual.md). Vale en todos los anchos. SW v630.

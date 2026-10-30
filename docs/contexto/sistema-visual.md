@@ -85,9 +85,9 @@
 | Cierre al navegar (el botón de tema NO cierra) | `modules/ui/menu-mas.js` | `initMenuMas()` (click en `a[href]`) | ~20 |
 | Resaltado del botón "Más" por sección | `modules/ui/shell.js` | `MAS_SECTIONS` (6 secciones; AH.7a sacó el grupo Ahorro y sumó Agenda, la ficha 01 sacó Deudas y Límites) | ~13 |
 | Franja de lentes del bloque Gastos (ficha 01) | `modules/ui/bloque-gastos.js` + `index.html` | `LENTES_BLOQUE_GASTOS`, `initBloqueGastos()`, slots `#tabs-gast`/`#tabs-compromisos`/`#tabs-presupuesto` | ~28 |
-| Presentación de la franja (solo bajo 1024px) | `styles/layout.css` + `styles/responsive.css` | `.bloque-tabs`, `.bloque-tabs__tab`, `.bloque-tabs__badge` | ~537, ~38 |
+| Barra de lentes, una receta para Gastos y Ahorro ([ADR 104](../DECISIONS/104-una-sola-barra-para-ir-de-lado.md), solo bajo 1024px) | `styles/responsive.css` (bloque MV2) | `.bloque-tabs`, `.bloque-tabs__tab`, `.bloque-tabs__badge--punto` | |
 | Resaltado de la entrada de Gastos en las tres lentes (ficha 01) | `modules/ui/shell.js` + `styles/responsive.css` | `GRUPO_GASTOS`, `.nav-item--bloque-activo` | ~29, ~217 |
-| Fila de chips del bloque Ahorro (ficha 04) | `modules/ui/bloque-ahorro.js` + `styles/layout.css` | `CHIPS_BLOQUE_AHORRO`, `initBloqueAhorro()`, `.bloque-chips` | |
+| Barra del bloque Ahorro (ficha 04, ADR 104) | `modules/ui/bloque-ahorro.js` | `MODALIDADES_BLOQUE_AHORRO`, `htmlBarraBloqueAhorro()`, `.bloque-tabs--ahorro` | |
 | Isotipo del sidebar ([ADR 103](../DECISIONS/103-el-isotipo-de-finko.md); antes la "F" de NAV2.1b) | `styles/layout.css` + `index.html` | `.sidebar__logo-mark`, `.marca-isotipo`, `#id-isotipo` | ~41 |
 | Pastilla "Registrar" + indicador fijo del bottom nav (NAV2.1c) | `styles/responsive.css` | `.nav-item__fab`, `.nav-item.active::before` (bloque móvil) | ~104, ~136 |
 | Estilos del wizard de bienvenida (DIS.6/C1) | `styles/modals.css` | `.modal--onboarding`, `.onboarding__*` | ~444 |
@@ -110,6 +110,7 @@
 
 **Cambios realizados**:
 
+- 2026-10-29 (**MV2.12**, [ADR 104](../DECISIONS/104-una-sola-barra-para-ir-de-lado.md)): una sola barra para ir de lado en Gastos y Ahorro; columnas iguales, nunca se desliza, el estado en la esquina. El punto medía 20px porque `.badge` le ganaba a la capa layout.
 - 2026-10-29 (**MARCA.1**, [ADR 103](../DECISIONS/103-el-isotipo-de-finko.md)): el isotipo de tres piezas reemplaza a la "F" en su teja de fondo fijo (`--fk-marca-fondo`); íconos, favicon y splash salen de `assets/svg/identidad/isotipo.svg`.
 - 2026-08-15 (**ficha 03 de la auditoría móvil**, [ADR 069](../DECISIONS/069-bloque-gastos-en-la-barra-movil.md) D6): la hoja queda como la dejó la ficha 01 y gana lo que le faltaba, que no era orden sino resistencia. **R83** (techo de 444 px, un solo número para los cuatro anchos, con compuerta E2E) y **R84** (cuatro condiciones de admisión). Se verificó que las seis entradas heredadas pasan la puerta y que Logros la falla: se queda en Ajustes, y H9 se resuelve haciendo que el aviso de desbloqueo lleve al panel (ficha 17). H8 se cierra sin cambio: el engranaje de Inicio y la teja de Ajustes no son puertas equivalentes, una es atajo y la otra es el mapa.
 - 2026-08-15 (ficha 01 de la auditoría móvil, [ADR 069](../DECISIONS/069-bloque-gastos-en-la-barra-movil.md)): "Gastos" pasa de sección a bloque con tres lentes (Lo que gastaste, Por pagar, Límites), servidas por la franja `.bloque-tabs` que inyecta `ui/bloque-gastos.js`. La hoja "Más" cambia "Gestión del dinero" por dos rótulos que sí excluyen (Consultar / Tu dinero) y pierde las tejas de Deudas y Límites. El botón "Más" deja de nombrar la sección donde estás: se van `SECCION_NAV`, `_rotularMas()` y `.nav-item--mas-ubicado`.
