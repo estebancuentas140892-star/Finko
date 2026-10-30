@@ -15,6 +15,11 @@
  *
  * La fila declara que tiene hoja con un botón `.list-item__detalle` (lo pinta
  * la vista). En escritorio ese botón no se ve y la fila sigue como siempre.
+ *
+ * ADR 109 (MV2.9): Mis cuentas usa la misma hoja. La tarjeta de cuenta no es
+ * un `.list-item`, así que cada pieza se busca en las dos anatomías; lo que la
+ * fila de una línea calla (chips de la cuenta, día de pago de la fuente) viaja
+ * como notas.
  */
 
 import { registrarAccion } from './actions.js';
@@ -53,7 +58,7 @@ export function esAccionPeligrosa(accion) {
  *
  * @param {{
  *   iconoHtml: string, titulo: string, subtitulo: string, monto: string,
- *   montoClase: string, cuando: string,
+ *   montoClase: string, cuando: string, notas?: string[],
  *   acciones: Array<{accion: string, id: string, etiqueta: string, iconoHref: string}>
  * }} d
  * @returns {string}
@@ -70,6 +75,7 @@ export function htmlDetalleFila(d) {
 
   const normales = d.acciones.filter(a => !esAccionPeligrosa(a.accion));
   const peligro  = d.acciones.filter(a => esAccionPeligrosa(a.accion));
+  const notas    = (d.notas ?? []).filter(Boolean);
 
   return `
     <div class="detalle-fila__cabeza">
@@ -81,6 +87,7 @@ export function htmlDetalleFila(d) {
       </div>
     </div>
     <p class="detalle-fila__monto ${esc(d.montoClase)}">${esc(d.monto)}</p>
+    ${notas.length ? `<ul class="detalle-fila__notas">${notas.map(n => `<li>${esc(n)}</li>`).join('')}</ul>` : ''}
     ${normales.length ? `<div class="detalle-fila__acciones">${normales.map(boton).join('')}</div>` : ''}
     ${peligro.length ? `<div class="detalle-fila__peligro">${peligro.map(boton).join('')}</div>` : ''}`;
 }
@@ -91,30 +98,39 @@ export function htmlDetalleFila(d) {
  * Lee de la fila lo que la hoja necesita. El ícono se copia tal cual (es un
  * SVG del proyecto); el resto viaja como texto y se vuelve a escapar.
  *
- * @param {HTMLElement} fila `.list-item`
+ * Cada selector nombra la pieza en las dos anatomías: `.list-item` (Gastos,
+ * Movimientos, fuentes de ingreso) y `.cuenta-card` (Mis cuentas, ADR 109).
+ * Una fila trae solo una de las dos.
+ *
+ * @param {HTMLElement} fila `.list-item--detalle`
  */
 export function datosDeFila(fila) {
-  const txt = (sel) => fila.querySelector(sel)?.textContent.replace(/\s+/g, ' ').trim() ?? '';
-  const monto = fila.querySelector('.list-item__amount');
-  const acciones = [...fila.querySelectorAll('.list-item__action [data-action]')].map(b => ({
+  const limpio = (el) => el?.textContent.replace(/\s+/g, ' ').trim() ?? '';
+  const txt = (sel) => limpio(fila.querySelector(sel));
+  const monto = fila.querySelector('.list-item__amount, .list-item__value, .cuenta-card__saldo');
+  const acciones = [...fila.querySelectorAll('.list-item__action [data-action], .cuenta-card__actions [data-action]')].map(b => ({
     accion: b.dataset.action,
     id: b.dataset.id ?? '',
-    etiqueta: b.getAttribute('aria-label') || b.textContent,
+    // Un botón con texto se copia con su texto; uno de solo ícono, con su
+    // nombre accesible (ADR 109 D4).
+    etiqueta: limpio(b) || b.getAttribute('aria-label') || '',
     iconoHref: b.querySelector('use')?.getAttribute('href') ?? '',
   }));
+  const ingreso = monto?.matches('.list-item__amount--ingreso, .list-item__value--in') === true;
   return {
-    iconoHtml: fila.querySelector('.list-item__icon')?.innerHTML ?? '',
-    titulo: txt('.list-item__title'),
-    subtitulo: txt('.list-item__subtitle'),
-    monto: monto?.textContent.trim() ?? '',
-    montoClase: monto?.classList.contains('list-item__amount--ingreso') ? 'detalle-fila__monto--ingreso' : '',
+    iconoHtml: fila.querySelector('.list-item__icon, .cuenta-card__icon')?.innerHTML ?? '',
+    titulo: txt('.list-item__title, .cuenta-card__nombre'),
+    subtitulo: txt('.list-item__subtitle, .cuenta-card__tipo'),
+    monto: limpio(monto),
+    montoClase: ingreso ? 'detalle-fila__monto--ingreso' : '',
     cuando: fila.closest('.gastos-dia')?.querySelector('.gastos-dia__label')?.textContent.trim() ?? '',
+    notas: [...fila.querySelectorAll('.list-item__hint, .cuenta-card__chips .chip__label')].map(limpio),
     acciones,
   };
 }
 
 function _abrir(el) {
-  const fila = el.closest('.list-item');
+  const fila = el.closest('.list-item--detalle');
   const hoja = document.getElementById(ID_HOJA);
   const cuerpo = document.getElementById('detalle-fila-body');
   if (!fila || !hoja || !cuerpo) return;

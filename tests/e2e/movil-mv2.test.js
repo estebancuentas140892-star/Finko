@@ -17,6 +17,7 @@
  *   montos, el de los heroes se calla, y Movimientos también enmascara.
  * - ADR 106 D6 (MV2.8c): Movimientos desde "Más" no dice "‹ Inicio".
  * - ADR 107 D5 (MV2.13): un vacío, un mensaje y un botón.
+ * - ADR 109 (MV2.9): Mis cuentas en filas con hoja, sin papeleras a la vista.
  * - Escritorio no cambia: las piezas nuevas no se ven a 1280.
  * - D13: el camino de Aprender del niño no desborda a lo ancho.
  */
@@ -63,6 +64,16 @@ async function seedConTipos(page) {
     ingresosPuntuales: [{ id: 'ip1', descripcion: 'Venta bici', monto: 300_000, categoria: 'Venta', fecha: fechaDelMes(2), cuentaId: 'c1' }],
     ahorro: { fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 100_000 }, aportes: [{ id: 'a1', monto: 100_000, fecha: fechaDelMes(3) }] },
     transferencias: [{ id: 't1', cuentaOrigenId: 'c1', cuentaDestinoId: 'c2', monto: 50_000, fecha: fechaDelMes(4) }],
+  }));
+}
+
+/** Mis cuentas con dos cuentas, una fuente fija y un ingreso puntual. */
+async function seedMisCuentas(page) {
+  await sembrar(page, estadoBase({
+    cuentas: [...CUENTAS, { id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 500_000, activa: true,
+      aplica4x1000: true, fechaCreacion: '2026-07-01T00:00:00.000Z' }],
+    ingresos: [{ id: 'i1', descripcion: 'Salario', categoria: 'Salario', monto: 4_200_000, frecuencia: 'Mensual', diaPago: 30, activo: true }],
+    ingresosPuntuales: [{ id: 'ip1', descripcion: 'Venta bici', monto: 300_000, categoria: 'Venta', fecha: fechaDelMes(2), cuentaId: 'c1' }],
   }));
 }
 
@@ -289,6 +300,30 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     const desborda = await filtros.locator('.filtros-bar').evaluate(el => el.scrollWidth > el.clientWidth + 1);
     expect(desborda, 'la fila de filtros se desliza a 320px').toBe(false);
   });
+
+  test('Mis cuentas: filas de una línea, ninguna papelera y la hoja con sus acciones (ADR 109)', async ({ page }) => {
+    await seedMisCuentas(page);
+    await page.goto('/#tesoreria');
+    const sec = page.locator('#sec-tesoreria');
+    const filas = sec.locator('#lista-tesoreria .cuenta-card, #lista-ingresos .list-item, #lista-ingresos-puntuales .list-item');
+    await expect(filas).toHaveCount(4, { timeout: 10_000 });
+    for (const alto of await filas.evaluateAll(els => els.map(e => e.getBoundingClientRect().height))) {
+      expect(alto).toBeLessThan(70);
+    }
+    await expect(sec.locator('[data-action^="eliminar"]:visible')).toHaveCount(0);
+
+    // La cuenta: sus acciones en la hoja, eliminar aparte, y el 4x1000 como nota.
+    await sec.locator('.cuenta-card[data-id="c2"] .list-item__detalle').click();
+    const hoja = page.locator('#modal-detalle-fila[data-open]');
+    await expect(hoja.locator('.detalle-fila__acciones .detalle-fila__accion')).toHaveText(['Ver sus movimientos', 'Editar cuenta']);
+    await expect(hoja.locator('.detalle-fila__peligro .detalle-fila__accion')).toHaveText('Eliminar cuenta');
+    await expect(hoja.locator('.detalle-fila__notas')).toContainText('4x1000');
+
+    // Editar desde la hoja abre el formulario de esa cuenta, sin apilar modales.
+    await hoja.locator('[data-target-action="editar-cuenta"]').click();
+    await expect(page.locator('#modal-cuenta[data-open]')).toHaveCount(1);
+    await expect(page.locator('#modal-detalle-fila[data-open]')).toHaveCount(0);
+  });
 });
 
 test.describe('MV2 - escritorio sin cambios', () => {
@@ -312,6 +347,17 @@ test.describe('MV2 - escritorio sin cambios', () => {
     await expect(page.locator('#movimientos-filtros .filtros-bar__mas')).toBeHidden();
     await expect(page.locator('#movimientos-filtros .movimientos-filtros__fechas-chip')).toBeHidden();
     await expect(page.locator('#movimientos-filtros .movimientos-filtros__rango > summary')).toBeVisible();
+  });
+
+  test('Mis cuentas conserva sus tarjetas con botones (ADR 109)', async ({ page }) => {
+    await seedMisCuentas(page);
+    await page.goto('/#tesoreria');
+    const card = page.locator('#lista-tesoreria .cuenta-card[data-id="c2"]');
+    await expect(card).toBeVisible({ timeout: 10_000 });
+    await expect(card.locator('.list-item__detalle')).toBeHidden();
+    await expect(card.locator('[data-action="eliminar-cuenta"]')).toBeVisible();
+    await expect(page.locator('#lista-ingresos-puntuales [data-action="eliminar-ingreso-puntual"]')).toBeVisible();
+    await expect(page.locator('#sec-tesoreria .list-item__solo-hoja:visible')).toHaveCount(0);
   });
 });
 

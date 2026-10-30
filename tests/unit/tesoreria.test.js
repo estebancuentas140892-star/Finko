@@ -2285,7 +2285,9 @@ describe('renderListaIngresosPuntuales() - los 5 recientes y el resto en el hist
     const filas = [...document.querySelectorAll('#lista-ingresos-puntuales .list-item')];
     expect(filas).toHaveLength(7);
     expect(filas.filter(f => f.classList.contains('list-item--extra')).map(f => f.dataset.id)).toEqual(['p2', 'p1']);
-    const salida = document.querySelector('[data-action="ingresos-ver-historial"]');
+    // La salida al pie, no el "Ver en Movimientos" que cada fila guarda para su hoja (ADR 109).
+    const salida = document.querySelector('.lista-ingresos__ver-todos');
+    expect(salida.dataset.action).toBe('ingresos-ver-historial');
     expect(salida.textContent.trim()).toBe('Ver los 7 en Movimientos');
   });
 
@@ -2293,7 +2295,7 @@ describe('renderListaIngresosPuntuales() - los 5 recientes y el resto en el hist
     S.ingresosPuntuales = [1, 2, 3].map(puntual);
     renderListaIngresosPuntuales();
     expect(document.querySelectorAll('.list-item--extra')).toHaveLength(0);
-    expect(document.querySelector('[data-action="ingresos-ver-historial"]')).toBeNull();
+    expect(document.querySelector('.lista-ingresos__ver-todos')).toBeNull();
   });
 });
 

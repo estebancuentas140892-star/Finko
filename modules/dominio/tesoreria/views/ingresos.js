@@ -135,9 +135,14 @@ function _renderIngresoItem(ing, oculto) {
   // ID.3: teja de categoría de ingreso como ícono de la fila (verde del
   // dominio ingresos); sin categoría, la moneda genérica i-saldo.
   const teja = tejaCategoria(CATEGORIA_INGRESO_ICONO[ing.categoria] ?? 'i-saldo', 'ingresos');
+  const montoTxt = oculto ? SALDO_MASCARA_CUENTA : f(ing.monto);
 
+  // ADR 109 (MV2.9): en móvil la fila abre la hoja de detalle; el día de pago
+  // (el hint) viaja ahí como nota. En escritorio el botón no se ve.
   return `
-    <article class="list-item" data-id="${_esc(ing.id)}">
+    <article class="list-item list-item--detalle" data-id="${_esc(ing.id)}">
+      <button class="list-item__detalle" type="button" data-action="fila-detalle"
+              aria-label="Ver detalle: ${desc}, ${montoTxt}"></button>
       <div class="list-item__icon" aria-hidden="true">${teja}</div>
       <div class="list-item__body">
         <p class="list-item__title">${desc}</p>
@@ -145,17 +150,17 @@ function _renderIngresoItem(ing, oculto) {
         ${diaHint}
       </div>
       <div class="list-item__meta">
-        <p class="list-item__value">${oculto ? SALDO_MASCARA_CUENTA : f(ing.monto)}</p>
+        <p class="list-item__value">${montoTxt}</p>
       </div>
       <div class="list-item__action">
         <button class="btn btn-ghost btn-icon"
                 data-action="editar-ingreso"
                 data-id="${_esc(ing.id)}"
-                aria-label="Editar ${desc}"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></button>
+                aria-label="Editar fuente de ingreso: ${desc}"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></button>
         <button class="btn btn-ghost btn-icon"
                 data-action="eliminar-ingreso"
                 data-id="${_esc(ing.id)}"
-                aria-label="Eliminar ${desc}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
+                aria-label="Eliminar fuente: ${desc}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
       </div>
     </article>`;
 }
@@ -368,8 +373,13 @@ function _renderIngresoPuntualItem(ing, oculto, extra = false) {
   // ID.3: misma teja de categoría que los ingresos fijos.
   const teja = tejaCategoria(CATEGORIA_INGRESO_ICONO[ing.categoria] ?? 'i-saldo', 'ingresos');
 
+  // ADR 109 D2: la hoja gana "Ver en Movimientos", la misma salida al
+  // historial que la lista ofrece pasados cinco. Ese botón nunca se ve en la
+  // fila (`.list-item__solo-hoja`): solo lo copia la hoja.
   return `
-    <article class="list-item${extra ? ' list-item--extra' : ''}" data-id="${_esc(ing.id)}">
+    <article class="list-item list-item--detalle${extra ? ' list-item--extra' : ''}" data-id="${_esc(ing.id)}">
+      <button class="list-item__detalle" type="button" data-action="fila-detalle"
+              aria-label="Ver detalle: ${desc}, +${montoTxt}"></button>
       <div class="list-item__icon" aria-hidden="true">${teja}</div>
       <div class="list-item__body">
         <p class="list-item__title">${desc}</p>
@@ -379,10 +389,12 @@ function _renderIngresoPuntualItem(ing, oculto, extra = false) {
         <p class="list-item__value list-item__value--in">+${montoTxt}</p>
       </div>
       <div class="list-item__action">
+        <button class="btn btn-ghost list-item__solo-hoja"
+                data-action="ingresos-ver-historial">Ver en Movimientos</button>
         <button class="btn btn-ghost btn-icon"
                 data-action="eliminar-ingreso-puntual"
                 data-id="${_esc(ing.id)}"
-                aria-label="Eliminar ${desc}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
+                aria-label="Eliminar ingreso: ${desc}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
       </div>
     </article>`;
 }

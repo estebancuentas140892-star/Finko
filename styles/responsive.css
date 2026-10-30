@@ -1945,6 +1945,10 @@
 .bloque-gastos__herramientas .bloque-gastos__lupa,
 .bloque-gastos__primario { display: none; }
 
+/* ADR 109 D2: una acción que solo existe en la hoja de detalle. La fila la
+   lleva para que la hoja la copie, pero no se ve en ningún ancho. */
+.list-item__solo-hoja { display: none; }
+
 @media (max-width: 1023px) {
 
   /* ── D1-D2: volver al origen real ──────────────────────────────────────
@@ -2163,6 +2167,93 @@
     min-height: 48px;
   }
   .detalle-fila__accion--peligro { color: var(--fk-danger-text); }
+  /* ADR 109 D2: lo que la fila de una línea calla (chips de la cuenta, día
+     de pago de la fuente, lo usado de la tarjeta). */
+  .detalle-fila__notas {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fk-space-1);
+    margin: calc(-1 * var(--fk-space-2)) 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--fk-text-sm);
+    color: var(--fk-text-secondary);
+  }
+
+  /* ── ADR 109 (MV2.9): Mis cuentas en filas con hoja ────────────────────
+     Cada cuenta medía 133 a 151px y cada fuente 137: sus botones y chips
+     bajaban a otro renglón y dejaban ocho papeleras a la vista. Ahora cada
+     una es una fila de 64px que abre la hoja de detalle (receta D4 de
+     arriba), y cada bloque se lee como una lista. */
+  #lista-tesoreria { gap: 0; }
+  .cuenta-card.list-item--detalle {
+    display: flex;
+    align-items: center;
+    min-height: 64px;
+    padding: var(--fk-space-2) var(--fk-space-3);
+    margin: 0;
+    border-radius: 0;
+    border-bottom-width: 0;
+    box-shadow: none;
+  }
+  .cuenta-card.list-item--detalle > .cuenta-card__top { flex: 1; min-width: 0; }
+  .cuenta-card.list-item--detalle > .cuenta-card__bottom { display: none; }
+  .cuenta-card.list-item--detalle .cuenta-card__icon .bank-avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+  .cuenta-card.list-item--detalle .cuenta-card__nombre,
+  .cuenta-card.list-item--detalle .cuenta-card__tipo {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cuenta-card.list-item--detalle:nth-child(1 of .cuenta-card) {
+    border-top-left-radius: var(--fk-radius-lg);
+    border-top-right-radius: var(--fk-radius-lg);
+  }
+  .cuenta-card.list-item--detalle:nth-last-child(1 of .cuenta-card) {
+    border-bottom-width: 1px;
+    border-bottom-left-radius: var(--fk-radius-lg);
+    border-bottom-right-radius: var(--fk-radius-lg);
+  }
+
+  /* Fijos y puntuales comparten encabezado (ADR 035 D7): una sola lista
+     aunque vivan en dos contenedores. La primera fila redondea arriba y la
+     última que se ve (las `--extra` están ocultas, D7), abajo. */
+  #lista-ingresos .list-item--detalle,
+  #lista-ingresos-puntuales .list-item--detalle {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    min-height: 64px;
+    padding: var(--fk-space-2) var(--fk-space-3);
+    margin: 0;
+    border-radius: 0;
+    border-bottom-width: 0;
+    box-shadow: none;
+  }
+  #lista-ingresos .list-item--detalle .list-item__hint { display: none; }
+  #lista-ingresos .list-item--detalle:nth-child(1 of .list-item),
+  #lista-ingresos:not(:has(.list-item)) + #lista-ingresos-puntuales .list-item--detalle:nth-child(1 of .list-item) {
+    border-top-left-radius: var(--fk-radius-lg);
+    border-top-right-radius: var(--fk-radius-lg);
+  }
+  #lista-ingresos .list-item--detalle:nth-last-child(1 of .list-item),
+  #lista-ingresos-puntuales .list-item--detalle:nth-last-child(1 of .list-item:not(.list-item--extra)) {
+    border-bottom-width: 1px;
+    border-bottom-left-radius: var(--fk-radius-lg);
+    border-bottom-right-radius: var(--fk-radius-lg);
+  }
+  /* Si siguen puntuales, la última fija no cierra: la lista continúa. Sin
+     `:has()` anidado, que invalida la regla entera. */
+  #lista-ingresos:has(+ #lista-ingresos-puntuales > .list-item) .list-item--detalle:nth-last-child(1 of .list-item) {
+    border-bottom-width: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+  #lista-ingresos .list-item--detalle:hover,
+  #lista-ingresos-puntuales .list-item--detalle:hover { transform: none; }
 
   /* ── D5: cabecera del bloque Gastos con lupa y primario ───────────────
      El primario de cada lente tenía su propia fila encima del bloque (96px

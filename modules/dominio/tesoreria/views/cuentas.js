@@ -201,8 +201,13 @@ function _renderCuentaItem(cuenta, oculto) {
     ? `<p class="cuenta-card__tipo">${_esc(subtitulo)}</p>`
     : '';
 
+  // ADR 109 (MV2.9): en móvil la tarjeta es una fila de una línea que abre la
+  // hoja de detalle (ui/detalle-fila.js) con sus acciones y sus chips. En
+  // escritorio el botón no se ve y la tarjeta sigue como siempre.
   return `
-    <article class="cuenta-card" data-id="${_esc(cuenta.id)}">
+    <article class="cuenta-card list-item--detalle" data-id="${_esc(cuenta.id)}">
+      <button class="list-item__detalle" type="button" data-action="fila-detalle"
+              aria-label="Ver detalle: ${nombre}, ${saldoTxt}"></button>
       <div class="cuenta-card__top">
         <div class="cuenta-card__icon" aria-hidden="true">${_bankAvatarHtml(cuenta.banco, cuenta.icono)}</div>
         <div class="cuenta-card__info">
@@ -226,11 +231,11 @@ function _renderCuentaItem(cuenta, oculto) {
           <button class="btn btn-ghost btn-icon btn-sm"
                   data-action="editar-cuenta"
                   data-id="${_esc(cuenta.id)}"
-                  aria-label="Editar cuenta ${nombre}"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></button>
+                  aria-label="Editar cuenta: ${nombre}"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></button>
           <button class="btn btn-ghost btn-icon btn-sm cuenta-card__eliminar"
                   data-action="eliminar-cuenta"
                   data-id="${_esc(cuenta.id)}"
-                  aria-label="Eliminar cuenta ${nombre}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
+                  aria-label="Eliminar cuenta: ${nombre}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
         </div>
       </div>
     </article>`;
@@ -315,8 +320,11 @@ function _renderTarjetaTC(tarjeta, oculto) {
   const disponibleTxt = oculto ? SALDO_MASCARA_CUENTA : f(disponible);
   const usadoTxt       = oculto ? SALDO_MASCARA_CUENTA : f(usado);
 
+  // ADR 109: misma fila con hoja que las cuentas; lo usado viaja como nota.
   return `
-    <article class="cuenta-card">
+    <article class="cuenta-card list-item--detalle">
+      <button class="list-item__detalle" type="button" data-action="fila-detalle"
+              aria-label="Ver detalle: ${nombre}, disponible ${disponibleTxt}"></button>
       <div class="cuenta-card__top">
         <div class="cuenta-card__icon" aria-hidden="true">${_bankAvatarHtml('otro')}</div>
         <div class="cuenta-card__info">
