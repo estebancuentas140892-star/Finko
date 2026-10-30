@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-10-29. Última tarea cerrada: MV2.6, las fechas dicen el año solo si no es el de hoy (ADR 102). MOV.1 en pausa. HF.0f en curso: banco listo sin commitear, BUG-035, BUG-036 y BUG-038 abiertos.
+> Revisado: 2026-10-29. Última tarea cerrada: MARCA.1, el isotipo de Finko (ADR 103). MOV.1 en pausa. HF.0f en curso: banco listo sin commitear, BUG-035, BUG-036 y BUG-038 abiertos.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5146/5146 (2026-10-29, MV2.6) |
-| Tests E2E | 371/371 verdes (2026-10-29, MV2.6). **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5146/5146 (2026-10-29, MARCA.1) |
+| Tests E2E | 371/371 verdes (2026-10-29, MARCA.1). **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v48 (`perfiles`, APR.3a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**MARCA.1 - el isotipo de Finko, 2026-10-29**
+La "F" de tres piezas reemplaza a la "F" tipográfica en su teja de fondo fijo; íconos, favicon y splash salen de `assets/svg/identidad/isotipo.svg` ([ADR 103](DECISIONS/103-el-isotipo-de-finko.md)). SW v630.
 
 **MV2.6 - las fechas dicen el año solo si no es el de hoy, 2026-10-29**
 Mes en tres letras y el año solo si no es el actual, en toda la app; Movimientos no repite el del grupo. `fechaLegible` reemplaza a `fechaCorta` y tres copias ([ADR 102](DECISIONS/102-fechas-con-el-ano-solo-si-no-es-el-de-hoy.md)). SW v629.
@@ -36,9 +39,6 @@ Desde "Yo" del niño, con confirmación: nombre, PIN y documentos; el niño qued
 
 **APR.6a - el niño empieza solo, 2026-10-29**
 La primera pantalla pregunta quién va a usar Finko; el niño llega a su app en tres pantallas, sin PIN ni cuenta, y el teléfono queda como suyo ([ADR 100](DECISIONS/100-el-nino-empieza-solo.md)). SW v626.
-
-**MV2.15c - el avatar de Inicio móvil abre tu perfil, 2026-10-29**
-Hoja con tu nombre, Familia, la copia en la nube y Ajustes; "Pasarle el teléfono" a cada niño va primero. El engranaje sale del encabezado ([ADR 099](DECISIONS/099-inicio-movil-hoy-en-una-lista.md) D6, D7). Solo móvil. Cierra MV2.15. SW v625.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

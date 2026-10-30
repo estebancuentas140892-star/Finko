@@ -119,7 +119,7 @@
 | Cierre de Inicio según el ancho: fusión móvil visible, Resumen semanal fuera de escritorio (DSK.1a, ADR 070 D2) | `modules/infra/render.js` | `_repartoCierreInicio()`, `_enEscritorio()` | ~287 |
 | Banda de contexto: envoltorio del hero + cuentas, `display: contents` bajo 1024px (DSK.1b, ADR 070 D6) | `index.html` / `styles/components/domain.css` | `.banda-inicio` | ~540 |
 | Banda de contexto: todo lo que la hace superficie (rejilla 2 columnas, fichas de cuenta, ojo pegado al rótulo, sin gradiente ni blob) | `styles/responsive.css` | bloque `@media (min-width: 1024px)` del final del archivo | fin |
-| Marca "F" del saludo, oculta desde 1024px (DSK.1a, ADR 070 D10); el engranaje salió del DOM (MV2.15c) | `styles/responsive.css` | `.perfil-inicio > .perfil-inicio__marca` | |
+| Isotipo del saludo, oculto desde 1024px (DSK.1a, ADR 070 D10); el engranaje salió del DOM (MV2.15c) | `styles/responsive.css` | `.perfil-inicio > .perfil-inicio__marca` | |
 | Panel "Avisos" (CFG.3b): consume el motor, filtra lo que no tiene panel propio | `modules/dominio/resumen/view.js` | `renderPanelAvisos()`, `_TIPOS_SIN_PANEL_PROPIO` | ~155 |
 | "Atención hoy" de móvil: grupos, copy por clase, lista y hoja (MV2.15a, ADR 099) | `modules/ui/atencion-hoy.js` | `esDeHoy()`, `gruposAtencionHoy()`, `contarAvisosDeHoy()`, `contenidoGrupo()`, `renderAtencionHoy()`, acción `atencion-hoy-ver` | |
 | Celda de la lista y hoja "Avisos de hoy" | `index.html` | `#panel-atencion-hoy`, `#modal-avisos-hoy`, `#avisos-hoy-body` | |

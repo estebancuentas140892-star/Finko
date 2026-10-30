@@ -88,11 +88,11 @@
 | Presentación de la franja (solo bajo 1024px) | `styles/layout.css` + `styles/responsive.css` | `.bloque-tabs`, `.bloque-tabs__tab`, `.bloque-tabs__badge` | ~537, ~38 |
 | Resaltado de la entrada de Gastos en las tres lentes (ficha 01) | `modules/ui/shell.js` + `styles/responsive.css` | `GRUPO_GASTOS`, `.nav-item--bloque-activo` | ~29, ~217 |
 | Fila de chips del bloque Ahorro (ficha 04) | `modules/ui/bloque-ahorro.js` + `styles/layout.css` | `CHIPS_BLOQUE_AHORRO`, `initBloqueAhorro()`, `.bloque-chips` | |
-| Marca "F" del sidebar (NAV2.1b) | `styles/layout.css` + `index.html` | `.sidebar__logo-mark` | ~41 |
+| Isotipo del sidebar ([ADR 103](../DECISIONS/103-el-isotipo-de-finko.md); antes la "F" de NAV2.1b) | `styles/layout.css` + `index.html` | `.sidebar__logo-mark`, `.marca-isotipo`, `#id-isotipo` | ~41 |
 | Pastilla "Registrar" + indicador fijo del bottom nav (NAV2.1c) | `styles/responsive.css` | `.nav-item__fab`, `.nav-item.active::before` (bloque móvil) | ~104, ~136 |
 | Estilos del wizard de bienvenida (DIS.6/C1) | `styles/modals.css` | `.modal--onboarding`, `.onboarding__*` | ~444 |
-| Marca "F" del wizard (DIS.6/C2) | `modules/ui/onboarding.js` | `_renderPaso1()`, `.onboarding__hero` | ~80 |
-| Marca "F" en el perfil de Inicio (DIS.6/C4) | `styles/components/domain.css` + `index.html` | `.perfil-inicio__marca` | ~870 |
+| Isotipo del wizard (DIS.6/C2; ADR 103) | `modules/ui/onboarding.js`, `infra/icons.js` | `_renderPaso1()`, `.onboarding__hero`, `isotipo()` | ~80 |
+| Isotipo en el perfil de Inicio (DIS.6/C4; ADR 103) | `styles/components/domain.css` + `index.html` | `.perfil-inicio__marca` | ~870 |
 | Zonas táctiles de 44px de la capa (DIS.6/C5) | `styles/modals.css` | `.modal__close.mas-sheet__close` | ~242 (la mitad de `.hub-tabs__tab` se fue con DIS.18) |
 
 **Dependencias y relaciones**: los tiles heredan `--fk-nav-text` del mapeo global `[data-section]` de `layout.css` (IV.2a): cero mapeo nuevo. Las clases `.menu-mas__*` NO se tocaron: siguen siendo el launcher vertical de la hoja "Registrar" (NAV.A2) y de los accesos de Inicio (IN.4a). `.modal-overlay--sheet`/`.modal--sheet` nacen reutilizables para futuros sheets.
@@ -110,6 +110,7 @@
 
 **Cambios realizados**:
 
+- 2026-10-29 (**MARCA.1**, [ADR 103](../DECISIONS/103-el-isotipo-de-finko.md)): el isotipo de tres piezas reemplaza a la "F" en su teja de fondo fijo (`--fk-marca-fondo`); íconos, favicon y splash salen de `assets/svg/identidad/isotipo.svg`.
 - 2026-08-15 (**ficha 03 de la auditoría móvil**, [ADR 069](../DECISIONS/069-bloque-gastos-en-la-barra-movil.md) D6): la hoja queda como la dejó la ficha 01 y gana lo que le faltaba, que no era orden sino resistencia. **R83** (techo de 444 px, un solo número para los cuatro anchos, con compuerta E2E) y **R84** (cuatro condiciones de admisión). Se verificó que las seis entradas heredadas pasan la puerta y que Logros la falla: se queda en Ajustes, y H9 se resuelve haciendo que el aviso de desbloqueo lleve al panel (ficha 17). H8 se cierra sin cambio: el engranaje de Inicio y la teja de Ajustes no son puertas equivalentes, una es atajo y la otra es el mapa.
 - 2026-08-15 (ficha 01 de la auditoría móvil, [ADR 069](../DECISIONS/069-bloque-gastos-en-la-barra-movil.md)): "Gastos" pasa de sección a bloque con tres lentes (Lo que gastaste, Por pagar, Límites), servidas por la franja `.bloque-tabs` que inyecta `ui/bloque-gastos.js`. La hoja "Más" cambia "Gestión del dinero" por dos rótulos que sí excluyen (Consultar / Tu dinero) y pierde las tejas de Deudas y Límites. El botón "Más" deja de nombrar la sección donde estás: se van `SECCION_NAV`, `_rotularMas()` y `.nav-item--mas-ubicado`.
 - 2026-07-26 (DIS.6): auditoría de diseño de la capa global de navegación, 7 correcciones (C1 a C7). Reglas R29 a R33 en DESIGN_SYSTEM.md.

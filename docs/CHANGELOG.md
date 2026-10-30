@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(marca): MARCA.1, el isotipo de Finko · 2026-10-29
+
+[ADR 103](DECISIONS/103-el-isotipo-de-finko.md) (cambia el ADR 040 D4); ficha [`contexto/sistema-visual.md`](contexto/sistema-visual.md). Vale en todos los anchos. SW v630.
+
+- **El isotipo de tres piezas del usuario reemplaza a la "F"** en la barra lateral, Inicio móvil y las tres pantallas de bienvenida. Va en una teja de fondo fijo (`--fk-marca-fondo`), igual en los dos temas: sin ella, el verde bosque se pierde sobre el lienzo oscuro.
+- **Una sola fuente**: `assets/svg/identidad/isotipo.svg`, la carpeta que el README de la biblioteca tenía reservada. `sync-sprite.py` la conecta con el prefijo `id-` y siempre a color; queda `#id-isotipo` en el sprite y el helper `isotipo()`.
+- **Íconos, favicon y splash se derivan del SVG**: `scripts/isotipo.py` lo dibuja con Pillow (sin dependencias nuevas), y `gen-icons.py` y `gen-splash.py` ya no dibujan las tres barras.
+- **El splash dice "Tu dinero bajo control"**: decía "Tu plata bajo control", contra el ADN 11. De paso, el lema deja de quedar pegado al nombre.
+- Pruebas: el guardarraíl de sincronía del sprite conoce el prefijo `id-`; el E2E de la barra lateral busca el isotipo en vez de la letra "F".
+
 ### feat(app): MV2.6, las fechas dicen el año solo si no es el de hoy · 2026-10-29
 
 [ADR 102](DECISIONS/102-fechas-con-el-ano-solo-si-no-es-el-de-hoy.md) (pieza MV2.6 de MV2.2, fase 12 del canvas "Finko móvil: rediseño integral"); ficha [`contexto/transversal.md`](contexto/transversal.md), infra compartida. Vale en todos los anchos. SW v629.
