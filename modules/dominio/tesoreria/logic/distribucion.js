@@ -11,7 +11,7 @@ import { obligacionesYAportesDelCobro, frecuenciaPrincipalIngresos, normalizarFr
 import { distribuirPago } from '../../../infra/distribuir-pago.js';
 import { CATEGORIAS_AGENDA_NO_ESENCIALES } from '../../../core/constants.js';
 import { FACTOR_MENSUAL, isoFecha, ultimoPagoHasta } from './ingresos.js';
-import { fechaLocalISO } from '../../../infra/utils.js';
+import { f, fechaLocalISO } from '../../../infra/utils.js';
 
 /**
  * Suma los gastos fijos activos de S.compromisos proyectados a unidad mensual.
@@ -1297,4 +1297,23 @@ export function construirFilasTransferenciaCuentas(cuentas = []) {
       icono:       c.icono ?? null,
     }))
     .sort((a, b) => b.saldoActual - a.saldoActual);
+}
+
+/**
+ * Por qué "Distribuir" no se puede tocar todavía (ADR 110 D3), en el orden en
+ * que el usuario lo resuelve: el monto, qué ingresos llegaron, lo que se mueve
+ * a otras cuentas, que haya algo marcado y, al final, qué hacer con lo que
+ * queda. '' si no hay nada que decir.
+ *
+ * @param {{monto:number, asignado:number, transferido:number, sinAsignar:number,
+ *   recibido:{resuelto:boolean}, excedeTransferencia:boolean, faltaDecidirRemanente:boolean}} e
+ * @returns {string}
+ */
+export function motivoSinDistribuir(e) {
+  if (e.monto <= 0) return 'Escribe cuánto vas a distribuir.';
+  if (!e.recibido.resuelto) return 'Revisa qué ingresos te llegaron.';
+  if (e.excedeTransferencia) return 'Lo que mueves a otras cuentas pasa de lo que queda para tu estilo de vida.';
+  if (e.asignado <= 0 && e.transferido <= 0) return 'Marca al menos un pago o un aporte.';
+  if (e.faltaDecidirRemanente) return `Elige arriba qué hacer con los ${f(e.sinAsignar)} que quedan.`;
+  return '';
 }

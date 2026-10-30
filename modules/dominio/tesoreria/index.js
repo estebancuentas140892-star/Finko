@@ -78,8 +78,11 @@ export function initTesoreria() {
   // abrir el asistente. Puede llegar desde otra sección: se navega primero y el
   // panel se abre tras el re-render del hashchange (por eso el setTimeout, que
   // además fija el monto ya renderizado).
+  //
+  // ADR 110 D1 (MV2.19a): bajo 1024px no se navega. El asistente se arma solo
+  // con S, así que se abre sobre la pantalla en que estás y cerrar te deja ahí.
   EventBus.on('distribuir:abrir', () => {
-    if ((location.hash.slice(1) || 'dash') !== 'tesoreria') {
+    if (!_enMovil() && (location.hash.slice(1) || 'dash') !== 'tesoreria') {
       location.hash = '#tesoreria';
     }
     setTimeout(() => abrirAsistenteDistribucion(), 0);
@@ -89,6 +92,11 @@ export function initTesoreria() {
   renderBannerProposito('tesoreria', _tieneDatosTesoreria());
   renderSmart(renderTesoreria, 'tesoreria');
   renderSmart(renderNudgeDistribucionInicio, 'dash');
+}
+
+/** Bajo el corte de escritorio de la app (1024px), el mismo de `infra/render.js`. */
+function _enMovil() {
+  return window.matchMedia?.('(max-width: 1023.98px)').matches === true;
 }
 
 /** true si ya hay alguna cuenta o algún ingreso registrado. */

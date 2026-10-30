@@ -732,7 +732,11 @@ function _renderPanelDistribuir(d) {
           </div>`
     : '';
 
+  // ADR 110 D3 (MV2.19a): la pregunta que bloquea "Distribuir" abre el paso.
+  // Al final, debajo de las cuentas, quedaba fuera de la vista justo cuando el
+  // botón se apagaba por ella.
   const seccionInfo = `
+          ${seccionRemanente}
           <p class="form-hint distribuir__subtitulo">Esto queda en tu cuenta (no se mueve):</p>
           <div class="distribuir__info">
             <p class="distribuir__info-fila">
@@ -741,7 +745,6 @@ function _renderPanelDistribuir(d) {
             </p>
           </div>
           ${seccionCuentas}
-          ${seccionRemanente}
           ${_ctasDelPaso(d.ctas, 'estiloVida')}
           <p class="form-hint form-hint--muted">Revisa el resumen y confirma: se registrarán los pagos y aportes que marcaste.</p>`;
 
@@ -782,7 +785,6 @@ function _renderPanelDistribuir(d) {
           ${_seccionRecibido(d.cobroPendiente)}
           ${indicadorPaso}
           ${pasosHtml}
-          <p id="distribuir-resumen" class="form-hint" role="status"></p>
           <div id="distribuir-deficit" class="distribuir__deficit" hidden>
             <p id="distribuir-deficit-msg" class="form-hint" role="status"></p>
             <label id="distribuir-deficit-opcion" class="checkbox-row" hidden>
@@ -791,18 +793,23 @@ function _renderPanelDistribuir(d) {
             </label>
             <p id="distribuir-deficit-detalle" class="form-hint form-hint--muted"></p>
           </div>
-          <div class="distribuir__nav">
-            <button type="button" class="btn btn-ghost btn-sm distribuir__nav-atras"
-                    data-action="distribuir-paso-atras" hidden>
-              ${icon('chevron-right', 'icon icon--sm distribuir__nav-icon--atras')} Atrás
-            </button>
-            <button type="button" class="btn btn-primary btn-sm"
-                    data-action="distribuir-paso-siguiente"${esUnicoPaso ? ' hidden' : ''}>
-              Siguiente ${icon('chevron-right', 'icon icon--sm')}
-            </button>
-            <button type="button" class="btn btn-primary btn-sm" data-action="confirmar-distribucion"${esUnicoPaso ? '' : ' hidden'}>
-              ${icon('check-circle', 'icon icon--sm')} Distribuir
-            </button>
+          <!-- ADR 110 D2 (MV2.19a): lo asignado, lo que queda y la acción son un
+               solo pie; bajo 1024px se pega al borde de la hoja (responsive.css). -->
+          <div class="distribuir__pie">
+            <p id="distribuir-resumen" class="form-hint" role="status"></p>
+            <div class="distribuir__nav">
+              <button type="button" class="btn btn-ghost btn-sm distribuir__nav-atras"
+                      data-action="distribuir-paso-atras" hidden>
+                ${icon('chevron-right', 'icon icon--sm distribuir__nav-icon--atras')} Atrás
+              </button>
+              <button type="button" class="btn btn-primary btn-sm"
+                      data-action="distribuir-paso-siguiente"${esUnicoPaso ? ' hidden' : ''}>
+                Siguiente ${icon('chevron-right', 'icon icon--sm')}
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" data-action="confirmar-distribucion"${esUnicoPaso ? '' : ' hidden'}>
+                ${icon('check-circle', 'icon icon--sm')} Distribuir
+              </button>
+            </div>
           </div>
         </fieldset>`;
 }

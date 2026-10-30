@@ -126,6 +126,9 @@ form:not(.config-form) .form-group:not(:first-child) {
 .form-hint--muted   { color: var(--fk-text-muted); }
 .form-hint--danger  { color: var(--fk-danger-text); font-weight: var(--fk-font-medium); }
 .form-hint--info    { color: var(--fk-info-text); }
+/* ADR 110 D3: lo que falta para poder seguir. Ámbar y no rojo: no es un
+   error, es una respuesta pendiente. */
+.form-hint--aviso   { color: var(--fk-warning-text); font-weight: var(--fk-font-medium); }
 
 /* Selector compacto de ícono (CAT.2): recuadro + panel colapsable con la
    grilla de íconos. Reemplaza la grilla siempre-visible de TX.9b (invasiva:

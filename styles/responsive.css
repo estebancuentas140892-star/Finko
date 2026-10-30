@@ -2407,6 +2407,36 @@
     padding: var(--fk-space-2) var(--fk-space-1);
   }
 
+  /* ── ADR 110 D2 (MV2.19a): el pie del asistente de distribución ────────
+     "Siguiente" quedaba a 976px en una hoja de 699: en cada paso había que
+     bajar hasta el final para seguir. El resumen y los botones se pegan al
+     borde de la hoja con la misma receta que el pie de los formularios. */
+  /* El panel deja de ser una caja dentro de la hoja: la hoja ya lo enmarca,
+     y sin su borde y su relleno el pie llega de borde a borde. */
+  #modal-distribuir .distribuir-ingreso {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+  }
+  #modal-distribuir .distribuir__pie {
+    position: sticky;
+    bottom: calc(-1 * var(--fk-space-6));
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: var(--fk-space-2);
+    margin-inline: calc(-1 * var(--fk-space-6));
+    margin-bottom: calc(-1 * var(--fk-space-6));
+    padding: var(--fk-space-3) var(--fk-space-6) calc(var(--fk-space-3) + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--fk-border-subtle);
+    background: var(--fk-bg-surface);
+  }
+  #modal-distribuir .distribuir__pie #distribuir-resumen { margin: 0; }
+  #modal-distribuir .distribuir__nav { margin-top: 0; }
+  #modal-distribuir .distribuir__nav .btn { min-height: 48px; }
+  #modal-distribuir .distribuir__nav .btn-primary { flex: 1; justify-content: center; }
+
   /* ── D9: chips de filtro con piso táctil ──────────────────────────────
      Por pagar, Movimientos y el asistente de distribución usaban chips de
      28px (R4). En el asistente, además, la barra se encogía (domain.css). */

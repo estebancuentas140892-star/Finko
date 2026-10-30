@@ -28,6 +28,7 @@ import {
   acumularCobrosDistribuidos,
   ocurrenciasPorDistribuir,
   resolverCobroDistribuido,
+  motivoSinDistribuir,
 } from '../logic/distribucion.js';
 import { renderDistribucionIngreso, renderAsistenteDistribucion } from '../view.js';
 
@@ -240,7 +241,13 @@ function _irAPasoDistribucion(panel, idx, { moverFoco = true } = {}) {
     indicador.textContent = `Paso ${idx + 1} de ${pasos.length}: ${pasos[idx].dataset.distPasoTitulo ?? ''}`;
   }
 
-  if (moverFoco) pasos[idx].focus({ preventScroll: true });
+  if (moverFoco) {
+    pasos[idx].focus({ preventScroll: true });
+    // ADR 110 (MV2.19a): el paso nuevo empieza a la vista. Sin esto la hoja
+    // conservaba la altura del paso anterior y el nuevo abría por la mitad, o
+    // por debajo del pie.
+    (panel.querySelector('[data-dist-paso-indicador]') ?? pasos[idx]).scrollIntoView?.({ block: 'start' });
+  }
 
   // Al entrar a un paso, las sugerencias R3 y el resumen quedan al día.
   _recalcularDistribucion();
@@ -731,13 +738,20 @@ function _recalcularDistribucion() {
     && recibido.resuelto;
 
   if (resumenEl) {
-    // Con déficit, el "qué hacer" vive en el bloque de abajo (completar con
+    // Con déficit, el "qué hacer" vive en el bloque de arriba (completar con
     // otra cuenta o recortar): el resumen solo reporta la cifra, para no dar
     // dos instrucciones distintas a la vez (MC.13e-2e).
+    // ADR 110 D3 (MV2.19a): en el último paso, un "Distribuir" apagado dice
+    // por qué en el pie, en vez de apagarse en silencio.
+    const enUltimo = _pasoActualDistribucion(panel) === _pasosDistribucion(panel).length - 1;
+    const motivo = !excede && enUltimo && !valido
+      ? motivoSinDistribuir({ monto, asignado, transferido, sinAsignar, recibido, excedeTransferencia, faltaDecidirRemanente })
+      : '';
     resumenEl.textContent = excede
       ? `Asignaste ${f(asignado)}, ${f(deficit)} más que tu ingreso de ${f(monto)}.`
-      : `Asignado: ${f(asignado)}. Queda disponible en tu cuenta: ${f(sinAsignar)}.`;
+      : motivo || `Asignado: ${f(asignado)}. Queda disponible en tu cuenta: ${f(sinAsignar)}.`;
     resumenEl.classList.toggle('form-hint--danger', excede && !deficitCubierto);
+    resumenEl.classList.toggle('form-hint--aviso', motivo !== '');
   }
 
   if (boton) boton.disabled = !valido;

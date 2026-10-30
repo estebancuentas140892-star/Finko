@@ -18,6 +18,8 @@
  * - ADR 106 D6 (MV2.8c): Movimientos desde "Más" no dice "‹ Inicio".
  * - ADR 107 D5 (MV2.13): un vacío, un mensaje y un botón.
  * - ADR 109 (MV2.9): Mis cuentas en filas con hoja, sin papeleras a la vista.
+ * - ADR 110 (MV2.19): Distribuir se abre sobre Inicio, con el pie a la vista y
+ *   el motivo de un "Distribuir" apagado; en escritorio sigue navegando.
  * - Escritorio no cambia: las piezas nuevas no se ven a 1280.
  * - D13: el camino de Aprender del niño no desborda a lo ancho.
  */
@@ -74,6 +76,16 @@ async function seedMisCuentas(page) {
       aplica4x1000: true, fechaCreacion: '2026-07-01T00:00:00.000Z' }],
     ingresos: [{ id: 'i1', descripcion: 'Salario', categoria: 'Salario', monto: 4_200_000, frecuencia: 'Mensual', diaPago: 30, activo: true }],
     ingresosPuntuales: [{ id: 'ip1', descripcion: 'Venta bici', monto: 300_000, categoria: 'Venta', fecha: fechaDelMes(2), cuentaId: 'c1' }],
+  }));
+}
+
+/** Un ingreso que se cobra hoy: Inicio ofrece distribuirlo. */
+async function seedDistribuir(page) {
+  await sembrar(page, estadoBase({
+    cuentas: CUENTAS,
+    ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', diaPago: new Date().getDate(), activo: true, cuentaId: 'c1' }],
+    ahorro: { fondoEmergencia: { activo: true, completado: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 },
+    config: { presetDistribucion: '50-30-20' },
   }));
 }
 
@@ -324,6 +336,35 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(page.locator('#modal-cuenta[data-open]')).toHaveCount(1);
     await expect(page.locator('#modal-detalle-fila[data-open]')).toHaveCount(0);
   });
+
+  test('Distribuir se abre sobre Inicio con el pie a la vista y dice qué falta (ADR 110)', async ({ page }) => {
+    await seedDistribuir(page);
+    await page.goto('/#dash');
+    await page.locator('[data-action="distribuir-desde-inicio"]:visible').first().click({ timeout: 10_000 });
+    await expect(page.locator('#modal-distribuir[data-open]')).toHaveCount(1);
+    // D1: no cambia de pantalla.
+    await expect(page).toHaveURL(/#dash$/);
+    await expect(page.locator('#sec-dash.active')).toBeVisible();
+
+    // D2: "Siguiente" está a la vista sin desplazar la hoja.
+    const siguiente = page.locator('#modal-distribuir [data-action="distribuir-paso-siguiente"]');
+    await expect(siguiente).toBeInViewport();
+
+    // D3: en el último paso, el pie dice por qué "Distribuir" no avanza.
+    while (await siguiente.isVisible()) await siguiente.click();
+    const confirmar = page.locator('#modal-distribuir [data-action="confirmar-distribucion"]');
+    await expect(confirmar).toBeInViewport();
+    await expect(confirmar).toBeDisabled();
+    await expect(page.locator('#distribuir-resumen')).toContainText('Elige arriba qué hacer con los');
+    await expect(page.locator('#distribuir-remanente')).toBeInViewport();
+    await page.check('[data-dist-remanente][value="cuenta"]');
+    await expect(confirmar).toBeEnabled();
+    await expect(page.locator('#distribuir-resumen')).toContainText('Queda disponible en tu cuenta');
+
+    // Cerrar deja donde estabas.
+    await page.locator('#modal-distribuir [data-action="modal-close"]').click();
+    await expect(page.locator('#sec-dash.active')).toBeVisible();
+  });
 });
 
 test.describe('MV2 - escritorio sin cambios', () => {
@@ -358,6 +399,14 @@ test.describe('MV2 - escritorio sin cambios', () => {
     await expect(card.locator('[data-action="eliminar-cuenta"]')).toBeVisible();
     await expect(page.locator('#lista-ingresos-puntuales [data-action="eliminar-ingreso-puntual"]')).toBeVisible();
     await expect(page.locator('#sec-tesoreria .list-item__solo-hoja:visible')).toHaveCount(0);
+  });
+
+  test('Distribuir desde Inicio sigue llevando a Mis cuentas (ADR 110 D1)', async ({ page }) => {
+    await seedDistribuir(page);
+    await page.goto('/#dash');
+    await page.locator('[data-action="distribuir-desde-inicio"]:visible').first().click({ timeout: 10_000 });
+    await expect(page.locator('#modal-distribuir[data-open]')).toHaveCount(1);
+    await expect(page).toHaveURL(/#tesoreria$/);
   });
 });
 
