@@ -1,6 +1,6 @@
 # Ficha de contexto: Transversal
 
-> Revisado: 2026-10-28.
+> Revisado: 2026-10-29.
 
 > Infraestructura que atraviesa varias secciones y no es visual: persistencia y cuota, el pipeline de render, el CTA de cuenta, el motor único de avisos, la infra compartida, el aviso de versión nueva, la guía por navegación y la aceptación legal. Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -31,7 +31,7 @@
 
 **Riesgos**: `LIMITE_LOCALSTORAGE_CHARS` (4.5 M chars) es un piso conservador, no el cupo exacto (varía por navegador); por eso `falloUltimoGuardado` (fallo real) manda sobre la estimación. Si algún día se migra a IndexedDB (ADR 068), `loadData()` pasa a async y el bootstrap con él: sigue siendo el cambio de mayor riesgo del proyecto, pero **PERF.10 le quitó la parte más cara**, que era reescribir el sembrado a mano de 13 suites; ahora el sembrado se cambia en un archivo. Riesgo nuevo de esa concentración: **`page.addInitScript()` serializa su función y la corre en el navegador**, así que el helper no puede cerrar sobre nada de Node y la clave tiene que viajar como argumento. Cualquier función nueva del helper que teclee la clave adentro del closure vuelve a abrir la fuga. Y una función local de una suite que se llame igual que una exportación del helper la sombrea en silencio: pasó con `sembrar` en TX.12 y se manifestó como `RangeError: Maximum call stack size exceeded`, no como un error de nombre.
 
-**Cambios realizados**: `2026-07-06 (PERF.4, ADR 030)`: salvaguarda de cuota + guardado que ya no falla en silencio (detalle en CHANGELOG). `2026-07-31 (PERF.8)`: columna "arranque" en el harness, el dato que el D4 pedía. `2026-08-13 (PERF.5)`: pedido de ejecución evaluado y **rechazado**, los tres disparadores del D4 siguen cerrados; sin cambios de código. `2026-08-14 (ADR 068)`: PERF.5 sale del tablero, el alcance queda fijado en blob-en-IndexedDB y los disparadores pasan a dos verificables; nacen PERF.9 y PERF.10; sin cambios de código. `2026-08-14 (PERF.10a)`: fachada `restaurarBlob()` / `borrarTodo()`, y el `QuotaExceededError` al restaurar respaldo deja de reportarse como archivo corrupto. `2026-08-14 (PERF.10b, cierra PERF.10)`: helper único de los tests, de 13 archivos con la clave a 1. `2026-08-14 (PERF.9)`: columna "caracteres" + "% cupo" en el harness, semilla de gastos corregida a la forma real de un registro, T1 del ADR 068 ya tiene instrumento.
+**Cambios realizados**: `2026-07-06 (PERF.4, ADR 030)`: salvaguarda de cuota + guardado que ya no falla en silencio (detalle en CHANGELOG). `2026-07-31 (PERF.8)`: columna "arranque" en el harness, el dato que el D4 pedía. `2026-08-13 (PERF.5)`: rechazado, disparadores del D4 cerrados. `2026-08-14 (ADR 068)`: PERF.5 sale del tablero; nacen PERF.9 y PERF.10. `2026-08-14 (PERF.10a)`: fachada `restaurarBlob()` / `borrarTodo()`, y el `QuotaExceededError` al restaurar respaldo deja de reportarse como archivo corrupto. `2026-08-14 (PERF.10b, cierra PERF.10)`: helper único de los tests, de 13 archivos con la clave a 1. `2026-08-14 (PERF.9)`: columnas "caracteres" y "% cupo" en el harness (T1 del ADR 068).
 
 ---
 
@@ -77,7 +77,7 @@
 
 - **Objetivo**          : cuando el usuario intenta registrar un ingreso, un gasto o un abono sin ninguna cuenta activa, el mensaje no se limita a informar el requisito: ofrece una acción única que lo lleva directo a crear la cuenta (cierra el modal actual, navega a Mis cuentas y abre el formulario de nueva cuenta). Reduce la fricción del onboarding: si falta un requisito, se guía a resolverlo, no solo se avisa.
 - **Estado actual**     : unificado (2026-07-06). Un solo mecanismo: `data-action="ir-a-crear-cuenta"` → EventBus `'cuenta:crear'` → `_nuevaCuenta` abre `#modal-cuenta`. Copy común "Crear una cuenta" en las **cuatro superficies** que lo ofrecen hoy: los tres empty states de la tabla más el modal guiado de 0 cuentas (que usa `data-role="ir"`, no la acción, porque vive en `infra/`). El sello viejo decía "5 puntos de entrada": ya no coincide con el código, el conteo verificado es 4. Antes cada surface hacía algo distinto: ingreso puntual solo cerraba el modal (bug: no navegaba), gastos navegaban sin abrir el form, el abono era un callejón sin salida ("Cerrar").
-- **Verificado contra** : `7e11afe` (2026-08-14, DOC.3: anclas y comportamiento re-verificados uno por uno; el sello anterior era `9eaeb4d` del 2026-07-06 y sus líneas ya no coincidían).
+- **Verificado contra** : `7e11afe` (2026-08-14, DOC.3: anclas re-verificadas una por una).
 
 **Dónde vive**
 
@@ -178,7 +178,7 @@
 
 - **Objetivo**          : dónde vive el cálculo compartido entre dominios, y **cuáles duplicaciones son decisión, no descuido**. Nace del patrón P7 de la auditoría de UX/producto (2026-07-21).
 - **Estado actual**     : **ARQ.1 y ARQ.2 cerradas (2026-08-02).** Ninguna tarjeta viva. El relato de cada rebanada vive en el CHANGELOG; acá queda solo lo que hay que saber para no rehacer el análisis.
-- **Verificado contra** : HF.0e (2026-10-17, `fechaLocalISO`). Antes: `87b6b04`, `bc25fe9` (ARQ.1a/b) y el cierre de ARQ.2, 2026-08-02.
+- **Verificado contra** : MV2.6 (2026-10-29, `fechaLegible`). Antes: HF.0e (2026-10-17), `87b6b04`, `bc25fe9` (ARQ.1a/b) y el cierre de ARQ.2.
 
 **Fuentes únicas que dejó ARQ.1/ARQ.2**
 
@@ -189,6 +189,7 @@
 | Etapa del portafolio | `infra/portafolio.js`: `etapaDePortafolio()` (número de etapa, cero copy) | `momentoInversion()` y el carril de la casa de Ahorro |
 | "Hoy" en ISO | `infra/utils.js`: `hoy()`, con getters locales de `Date` (correcta en UTC-5) | los 5 sitios que antes usaban `new Date().toISOString().slice(0,10)` y devolvían mañana desde las 7 p.m. (BUG-018) |
 | Día local de una fecha guardada | `infra/utils.js`: `fechaLocalISO()` (HF.0e, BUG-025): instante ISO al día local del entorno, fecha `YYYY-MM-DD` tal cual, lo demás `null` | ciclo y "Única vez" de `infra/vencimientos.js`, inicio del plan de `infra/bolsas.js`, `estadoDistribucion()`, alta y antigüedad en `compromisos/logic/alertas.js` |
+| Fecha escrita ([ADR 102](../DECISIONS/102-fechas-con-el-ano-solo-si-no-es-el-de-hoy.md)) | `infra/utils.js`: `fechaLegible()` (el año solo si no es el de hoy) y `fechaDiaMes()` (sin año, listas agrupadas por mes) | toda fecha en texto, salvo las que nombran el día de la semana |
 | Factor de periodicidad de un ingreso | `infra/financiero.js`: `FACTOR_MENSUAL_INGRESO`; `tesoreria/logic/ingresos.js` lo reexporta como `FACTOR_MENSUAL` | Distribución. Sin cambio de valores ni de callers |
 | Registrar el pago o abono de un compromiso | `infra/pago-compromiso.js`: `gastoDePagoCompromiso()`, `bajarSaldoDeuda()` | Compromisos (×2), Agenda y la Distribución v2: cuatro copias, no las tres del hallazgo original |
 

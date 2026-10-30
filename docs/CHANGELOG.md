@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(app): MV2.6, las fechas dicen el año solo si no es el de hoy · 2026-10-29
+
+[ADR 102](DECISIONS/102-fechas-con-el-ano-solo-si-no-es-el-de-hoy.md) (pieza MV2.6 de MV2.2, fase 12 del canvas "Finko móvil: rediseño integral"); ficha [`contexto/transversal.md`](contexto/transversal.md), infra compartida. Vale en todos los anchos. SW v629.
+
+- **Una sola regla en `fechaLegible`**: día y mes en tres letras, de un catálogo propio, y el año solo si no es el del teléfono. Antes ponía siempre el año con el mes largo ("28 de octubre de 2026"). El catálogo evita el "sept" de `Intl` en es-CO.
+- **`fechaCorta` de Mis cuentas desaparece**: nunca ponía el año, así que una prima de 2024 decía "30 de jun" como una de este año. Sus 6 usos (ingresos puntuales, aviso de próximo ingreso y Distribuir) pasan a `fechaLegible`, igual que tres copias sueltas: Atención hoy, la hoja de pagos automáticos del Calendario y "Saldada el" de Por pagar.
+- **Movimientos usa `fechaDiaMes`**: la fila no dice el año ni en los grupos de años anteriores; lo dice el grupo.
+- Fuera a propósito: los formatos con día de la semana (encabezado de día de Gastos, app del niño, mesada de Familia), los títulos de mes y los selectores de fecha.
+- Pruebas: la equivalencia con `toLocaleDateString` de PERF.7 deja de valer y se reemplaza por la regla con el año en curso, el anterior, el siguiente y el cambio de año; 5 expectativas pasan al mes corto; una nueva en Movimientos y otra en Mis cuentas.
+
 ### refactor(app): APR.7, Finko del adulto ayuda a decidir; no enseña con lecciones · 2026-10-29
 
 [ADR 101](DECISIONS/101-finko-del-adulto-decide-no-ensena.md) (retira del adulto la capa del ADR 092, la vitrina y los avisos del 032, y revierte el 087 D3); fichas [`contexto/inicio.md`](contexto/inicio.md), [`aprende.md`](contexto/aprende.md) y [`logros.md`](contexto/logros.md). SW v628.

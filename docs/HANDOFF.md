@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-10-29. Última tarea cerrada: APR.7, Finko del adulto sin Aprende ni Tu progreso (ADR 101). MOV.1 en pausa. HF.0f en curso: banco listo sin commitear, BUG-035, BUG-036 y BUG-038 abiertos.
+> Revisado: 2026-10-29. Última tarea cerrada: MV2.6, las fechas dicen el año solo si no es el de hoy (ADR 102). MOV.1 en pausa. HF.0f en curso: banco listo sin commitear, BUG-035, BUG-036 y BUG-038 abiertos.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5139/5139 (2026-10-29, APR.7) |
-| Tests E2E | 371/371 verdes (2026-10-29, APR.7). **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5146/5146 (2026-10-29, MV2.6) |
+| Tests E2E | 371/371 verdes (2026-10-29, MV2.6). **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v48 (`perfiles`, APR.3a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**MV2.6 - las fechas dicen el año solo si no es el de hoy, 2026-10-29**
+Mes en tres letras y el año solo si no es el actual, en toda la app; Movimientos no repite el del grupo. `fechaLegible` reemplaza a `fechaCorta` y tres copias ([ADR 102](DECISIONS/102-fechas-con-el-ano-solo-si-no-es-el-de-hoy.md)). SW v629.
 
 **APR.7 - Finko del adulto ayuda a decidir; no enseña, 2026-10-29**
 Inicio del adulto en una sola pantalla; Aprende, Tu progreso, los avisos de logro y los Accesos rápidos salen de la app del adulto, conservando sus datos. El niño sigue con sus lecciones ([ADR 101](DECISIONS/101-finko-del-adulto-decide-no-ensena.md)). Sigue DEC.1. SW v628.
@@ -37,9 +40,6 @@ La primera pantalla pregunta quién va a usar Finko; el niño llega a su app en 
 **MV2.15c - el avatar de Inicio móvil abre tu perfil, 2026-10-29**
 Hoja con tu nombre, Familia, la copia en la nube y Ajustes; "Pasarle el teléfono" a cada niño va primero. El engranaje sale del encabezado ([ADR 099](DECISIONS/099-inicio-movil-hoy-en-una-lista.md) D6, D7). Solo móvil. Cierra MV2.15. SW v625.
 
-**MV2.15b - "Esta semana" en Inicio móvil, 2026-10-29**
-Lo que entra y lo que sale de mañana a 7 días, con los días de pago de los ingresos; una fila por cosa con el día a la izquierda y el pie por lado ([ADR 099](DECISIONS/099-inicio-movil-hoy-en-una-lista.md) D5). Solo móvil. SW v624.
-
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 
 ---
@@ -50,7 +50,7 @@ Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelo
 - **Iniciativa HF** ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), Propuesta): su Fase 0 corre en paralelo a MOV.1 porque no comparte archivos ni decisiones; HF.0a, HF.0b, HF.0h, HF.0c, HF.0i, HF.0d, HF.0e y HF.0j cerradas; P1 a P8 resueltas. Pendientes de la Fase 0: HF.0f (banco construido y sin commitear: sus ocho rojas reproducen BUG-035, BUG-036 y BUG-038, no se cierra hasta corregirlos) y HF.0g; DOC.5 en Mantenimiento.
 - **Iniciativa NUBE** ([ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md), Aceptada): Finko en la nube con Supabase, cuenta opcional. NUBE.0 a NUBE.3 cerradas: cuenta por correo para invitados, sincronización por registro, borrar la cuenta y el teléfono del niño en `finko-prueba`. Sigue NUBE.4 (bancos), que pide su propio ADR; invitar probadores pide SMTP propio en Supabase.
 - **Iniciativa APR, "Aprende y aplícalo"** ([ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) y [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md), Propuesta; **solo del niño desde el [ADR 101](DECISIONS/101-finko-del-adulto-decide-no-ensena.md)**, que deja para el adulto la ayuda para decidir, DEC.1): Fase 1 en curso sin esperar a MOV.1 (decisión del 2026-10-24); Fase 1 cerrada; Fase 2 cerrada salvo la revisión pedagógica de APR.2c; Fases 1 a 4 hechas; el niño ya puede empezar solo ([ADR 100](DECISIONS/100-el-nino-empieza-solo.md)); quedan la revisión pedagógica de las lecciones del niño (APR.3f) y la ronda 2 de Tino ([ADR 094](DECISIONS/094-tino-el-guatin.md) y [095](DECISIONS/095-tino-en-el-sprite.md), APR.5b), que espera sus dibujos. Cada rebanada se sube a `main` al cerrar. El 093 acota el ADR 003 (ADN 11) solo dentro del perfil niño.
-- **MV2.2, Finko móvil 2 segunda entrega**: en proceso en [`BOARD.md`](BOARD.md). Inicio (MV2.15, [ADR 099](DECISIONS/099-inicio-movil-hoy-en-una-lista.md)) cerrado y publicado; quedan las lentes, Distribuir en Mis cuentas, "Más" y los chips de Movimientos. Rama `mv2/finko-movil-2`, publicada en `main`.
+- **MV2.2, Finko móvil 2 segunda entrega**: en proceso en [`BOARD.md`](BOARD.md). Inicio (MV2.15, [ADR 099](DECISIONS/099-inicio-movil-hoy-en-una-lista.md)) y las fechas (MV2.6, [ADR 102](DECISIONS/102-fechas-con-el-ano-solo-si-no-es-el-de-hoy.md)) cerrados y publicados; quedan las lentes, Distribuir en Mis cuentas, "Más" y los chips de Movimientos. Rama `mv2/finko-movil-2`, publicada en `main`.
 - **Fase actual:** post-v1.0, mantenimiento y mejoras por sección.
 - **Decisiones de fondo abiertas** que bloquean sus tarjetas: ninguna de ADN. La última era sincronización multidispositivo, cerrada el 2026-08-15 ([ADR 043](DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md), con su condición de reapertura escrita). Para el resto, ver la columna Estado de cada tarjeta del tablero.
 - **Antes de tocar una sección:** su ficha en [`contexto/`](contexto/README.md). Antes de explorar el código: [`ARCHITECTURE.md`](ARCHITECTURE.md) sección 13.
