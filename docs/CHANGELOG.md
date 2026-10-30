@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(movil): MV2.2, Movimientos con los filtros en una fila · 2026-10-29
+
+[ADR 105](DECISIONS/105-movimientos-los-filtros-en-una-fila.md) (extiende el ADR 098 D6; respeta la ficha 15, M2); ficha [`contexto/movimientos.md`](contexto/movimientos.md). Solo bajo 1024 px. SW v632.
+
+- **Los tipos se pliegan como las categorías de Gastos**: "Todos", el elegido y "+N tipos"; abierta, la lista completa y "Menos". Elegir pliega. Antes la fila se deslizaba sin decirlo: con seis tipos medía 565 px en 358.
+- **"Fechas" es un chip al final de la misma fila** y abre el mismo `<details>` sin repintar la barra (los campos conservan lo escrito). Con fechas puestas se marca como filtro activo y llega abierto, como pedía la ficha 15.
+- **"Limpiar filtros" va junto a "Solo gastos"**, debajo de los filtros. "Limpiar filtros" también pliega los tipos.
+- Medido a 390 con seis tipos: el primer movimiento sube de 330 a 258 px. A 320, con un tipo elegido, "Fechas" baja de línea y nada se desliza.
+- Escritorio igual: el "+N tipos", el chip y la frase nacen ocultos. Los E2E de filtros de Movimientos corren en escritorio y siguen verdes sin cambios.
+- Pruebas: 7 unitarias nuevas en `movimientos.test.js` y un E2E móvil en `movil-mv2.test.js`; el de escritorio confirma que las piezas nuevas no se ven.
+
 ### feat(movil): MV2.12, una sola barra para ir de lado · 2026-10-29
 
 [ADR 104](DECISIONS/104-una-sola-barra-para-ir-de-lado.md) (acota el ADR 069 D7 y cambia el dibujo del ADR 098 D3); fichas [`contexto/sistema-visual.md`](contexto/sistema-visual.md) y [`ahorro.md`](contexto/ahorro.md). Solo bajo 1024 px. SW v631.
