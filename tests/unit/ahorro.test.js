@@ -958,7 +958,8 @@ describe('DIS.12 - lista de aportes y compromiso (A5, A6)', () => {
   const _hoy = new Date();
   const _diaUno = new Date(_hoy.getFullYear(), _hoy.getMonth(), 1);
   const _isoDiaUno = `${_diaUno.getFullYear()}-${String(_diaUno.getMonth() + 1).padStart(2, '0')}-01`;
-  const _etiquetaDiaUno = _diaUno.toLocaleDateString('es-CO', { day: 'numeric', month: 'long' });
+  // ADR 102: mes en tres letras y sin año, porque el aporte es de este año.
+  const _etiquetaDiaUno = `1 de ${['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'][_diaUno.getMonth()]}`;
 
   beforeEach(() => {
     document.body.innerHTML = '<div id="panel-ahorro"></div>';

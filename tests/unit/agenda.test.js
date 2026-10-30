@@ -2422,7 +2422,7 @@ describe('renderFormAutomaticos (PA.1a)', () => {
     expect(check.disabled).toBe(false);
     expect(check.dataset.autoId).toBe('c1');
     expect(check.dataset.autoFecha).toBe('2026-08-05');
-    expect(document.querySelector('.lote-row__sub').textContent).toBe('Venció el 5 de agosto · Ahorros');
+    expect(document.querySelector('.lote-row__sub').textContent).toBe('Venció el 5 de ago · Ahorros');
   });
 
   it('la fila sin saldo queda bloqueada, desmarcada y dice cuánto falta', () => {
@@ -2466,7 +2466,7 @@ describe('renderFormAutomaticos - créditos (PA.1b)', () => {
   it('pinta una fila de crédito con signo + y su fecha de llegada', () => {
     document.body.innerHTML = renderFormAutomaticos([credito()]);
     expect(document.querySelector('.lote-row__amount').textContent).toBe('+$3.000.000');
-    expect(document.querySelector('.lote-row__sub').textContent).toBe('Debía llegar el 5 de agosto · Ahorros');
+    expect(document.querySelector('.lote-row__sub').textContent).toBe('Debía llegar el 5 de ago · Ahorros');
   });
 
   it('la fila de crédito sin cuenta explica que hay que elegir a cuál llega', () => {

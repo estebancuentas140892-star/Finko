@@ -11,7 +11,7 @@
  */
 
 import { S } from '../../core/state.js';
-import { f, esc as _esc, fechaLegible, formateadorFecha } from '../../infra/utils.js';
+import { f, esc as _esc, fechaDiaMes, formateadorFecha } from '../../infra/utils.js';
 import { emptyArt, tejaCategoria } from '../../infra/icons.js';
 import { memoizar } from '../../infra/memo.js';
 import { movimientosCompletos, descripcionMovimiento, filtrarMovimientos } from './logic.js';
@@ -406,8 +406,8 @@ function _renderMovimientoItem(m) {
   // El abono `agrupado` de la migración v34 no tiene fecha exacta: resume lo
   // cobrado antes de que existiera el historial. Dice eso en vez de imprimir la
   // fecha aproximada como si fuera la del abono, misma copia que usa el
-  // historial por préstamo en Me deben.
-  const cuando        = m.agrupado ? 'Antes de este historial' : fechaLegible(m.fecha);
+  // historial por préstamo en Me deben. Sin año: lo dice el grupo (ADR 102 D2).
+  const cuando        = m.agrupado ? 'Antes de este historial' : fechaDiaMes(m.fecha);
   const subtitulo     = [_TIPO_LABEL[m.tipo] ?? m.tipo, cuando, cuenta, gmfNota]
     .filter(Boolean).map(_esc).join(' · ');
 

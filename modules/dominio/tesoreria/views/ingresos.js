@@ -9,7 +9,7 @@
  */
 
 import { S } from '../../../core/state.js';
-import { f, esc as _esc, formateadorFecha } from '../../../infra/utils.js';
+import { f, esc as _esc, fechaLegible } from '../../../infra/utils.js';
 import { icon, tejaCategoria } from '../../../infra/icons.js';
 import { renderSelectorCuenta } from '../../../infra/cuenta-helper.js';
 import { SALDO_MASCARA_CUENTA } from '../../../infra/render.js';
@@ -373,7 +373,7 @@ function _renderIngresoPuntualItem(ing, oculto, extra = false) {
       <div class="list-item__icon" aria-hidden="true">${teja}</div>
       <div class="list-item__body">
         <p class="list-item__title">${desc}</p>
-        <p class="list-item__subtitle">${catLabel}${_esc(fechaCorta(ing.fecha))}${cuentaStr}</p>
+        <p class="list-item__subtitle">${catLabel}${_esc(fechaLegible(ing.fecha))}${cuentaStr}</p>
       </div>
       <div class="list-item__meta">
         <p class="list-item__value list-item__value--in">+${montoTxt}</p>
@@ -457,12 +457,6 @@ export function renderNudgeProximoIngreso() {
   el.innerHTML   = nudge ? _renderNudgeProximo(nudge) : '';
 }
 
-/** Formatea una fecha ISO como texto corto en español: "30 jun", "1 jul". */
-export function fechaCorta(iso) {
-  const d = new Date(`${iso}T12:00:00Z`);
-  return formateadorFecha('es-CO', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(d);
-}
-
 /**
  * @param {{ principal: {descripcion: string, dias: number, fechaISO: string},
  *            otrosProximos: number }} nudge
@@ -471,7 +465,7 @@ export function fechaCorta(iso) {
 function _renderNudgeProximo({ principal, otrosProximos }) {
   const { descripcion, dias, fechaISO } = principal;
   const urgencia  = dias === 0 ? 'hoy' : dias === 1 ? 'mañana' : `en ${dias} días`;
-  const cuandoStr = dias <= 1 ? urgencia : `${urgencia} (${fechaCorta(fechaISO)})`;
+  const cuandoStr = dias <= 1 ? urgencia : `${urgencia} (${fechaLegible(fechaISO)})`;
   const otrosHtml = otrosProximos > 0
     ? `<p class="nudge__desc">y ${otrosProximos} ${otrosProximos === 1 ? 'ingreso más próximo' : 'ingresos más próximos'} esta semana</p>`
     : '';

@@ -9,7 +9,7 @@
  */
 
 import { S } from '../../../core/state.js';
-import { f, esc as _esc } from '../../../infra/utils.js';
+import { f, esc as _esc, fechaLegible } from '../../../infra/utils.js';
 import { icon, iconoCategoria } from '../../../infra/icons.js';
 import { resolverMarca, tejaMarca } from '../../../infra/marcas.js';
 import { bancoAvatar } from '../../../infra/bancos.js';
@@ -33,7 +33,6 @@ import {
   claveOcurrencia,
 } from '../logic/distribucion.js';
 import { frecuenciaPrincipalIngresos, montoCobroPrincipal } from '../../../infra/vencimientos.js';
-import { fechaCorta } from './ingresos.js';
 
 // ── DISTRIBUCIÓN ADAPTATIVA ──────────────────────────────────────
 
@@ -69,7 +68,7 @@ export function renderNudgeDistribucionInicio() {
 
   const titulo = estado.esHoy
     ? 'Hoy recibes tu ingreso'
-    : `Recibiste tu ingreso el ${fechaCorta(estado.periodoISO)}`;
+    : `Recibiste tu ingreso el ${fechaLegible(estado.periodoISO)}`;
 
   // Mismo componente de nudge que el resto de la app (ver styles/components/nudges.css);
   // nivel "info" porque es una invitación a actuar, no una mora ni un error.
@@ -441,7 +440,7 @@ function _preguntaCobroRecibido(periodoISO) {
   // Sin clases nuevas: el párrafo y el CTA ya traen su separación
   // (`.distribuir__pendiente` y `.distribuir-card__cta`), así que un envoltorio
   // solo agregaría una clase sin regla. El gancho estable es el `data-action`.
-  const fecha = fechaCorta(periodoISO);
+  const fecha = fechaLegible(periodoISO);
   return `
     <p class="distribuir__pendiente form-hint form-hint--muted">
       ${icon('saldo', 'icon icon--sm')} Registraste este ingreso después del ${fecha}, así que no sabemos si ese pago te llegó.
@@ -850,7 +849,7 @@ function _renderTarjetaDistribuir({ dist, estado, hayDestinos, distribuir }) {
   // estable, no la respuesta a una acción, y la tarjeta se repinta en cada
   // `state:change` de la sección.
   const avisoHtml = est === 'listo'
-    ? `<p class="distribuir-aviso">${estado.esHoy ? 'Hoy recibes tu ingreso.' : `Recibiste tu ingreso el ${fechaCorta(estado.periodoISO)}.`}</p>`
+    ? `<p class="distribuir-aviso">${estado.esHoy ? 'Hoy recibes tu ingreso.' : `Recibiste tu ingreso el ${fechaLegible(estado.periodoISO)}.`}</p>`
     : '';
 
   // MC-DIS.9 C6: ✓ y 💸 pasan a i-check-circle e i-saldo del sprite (el emoji
@@ -933,7 +932,7 @@ function _seccionRecibido(cobro) {
               ${abiertas.map(o => `
               <label class="checkbox-row">
                 <input type="checkbox" checked data-dist-recibido value="${_esc(claveOcurrencia(o))}" />
-                <span>${_esc(o.descripcion || 'Ingreso')} · ${fechaCorta(o.fecha)} · ${f(o.monto)}</span>
+                <span>${_esc(o.descripcion || 'Ingreso')} · ${fechaLegible(o.fecha)} · ${f(o.monto)}</span>
               </label>`).join('')}
             </div>` : '';
   return `

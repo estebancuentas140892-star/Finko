@@ -5179,7 +5179,7 @@ describe('renderListaCompromisos() - tarjeta de deuda D.16d', () => {
     ];
     renderListaCompromisos();
     const subtitulo = document.querySelector('.deuda-card__cuota').textContent.trim();
-    expect(subtitulo).toBe('Saldada el 22 de julio');
+    expect(subtitulo).toBe('Saldada el 22 de jul');
   });
 
   it('FD1: una saldada de otro año sí lleva el año, para no confundir', () => {
@@ -5190,7 +5190,7 @@ describe('renderListaCompromisos() - tarjeta de deuda D.16d', () => {
     ];
     renderListaCompromisos();
     const subtitulo = document.querySelector('.deuda-card__cuota').textContent.trim();
-    expect(subtitulo).toBe(`Saldada el 4 de marzo de ${anoPasado}`);
+    expect(subtitulo).toBe(`Saldada el 4 de mar de ${anoPasado}`);
   });
 
   it('FD1: sin abonos registrados la saldada no inventa una fecha', () => {

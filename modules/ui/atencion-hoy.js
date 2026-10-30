@@ -25,7 +25,7 @@
  */
 
 import { S, EventBus } from '../core/state.js';
-import { f, esc, hoy, formateadorFecha } from '../infra/utils.js';
+import { f, esc, hoy, fechaLegible } from '../infra/utils.js';
 import { icon } from '../infra/icons.js';
 import { avisosDeHoy } from '../infra/avisos.js';
 import { registrarRender, programarRender } from '../infra/render.js';
@@ -111,18 +111,12 @@ function _hace(dias) {
   return d === 1 ? 'hace 1 día' : `hace ${d} días`;
 }
 
-/** "15 oct": mismo formato del aviso de distribuir de Inicio. */
-function _fechaCorta(iso) {
-  const d = new Date(`${iso}T12:00:00Z`);
-  return formateadorFecha('es-CO', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(d);
-}
-
 function _suma(avisos) {
   return avisos.reduce((s, a) => s + (Number(a.monto) || 0), 0);
 }
 
 function _tituloReparto(a) {
-  return a.extra?.esHoy ? 'Hoy recibes tu ingreso' : `Recibiste tu ingreso el ${_fechaCorta(a.extra?.periodoISO)}`;
+  return a.extra?.esHoy ? 'Hoy recibes tu ingreso' : `Recibiste tu ingreso el ${fechaLegible(a.extra?.periodoISO)}`;
 }
 
 /** Pagos: lo vencido y lo que vence hoy forman un lote. */

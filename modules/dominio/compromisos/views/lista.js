@@ -9,7 +9,7 @@
  */
 
 import { S } from '../../../core/state.js';
-import { f, esc as _esc, formateadorFecha, hoy } from '../../../infra/utils.js';
+import { f, esc as _esc, fechaLegible, hoy } from '../../../infra/utils.js';
 import { icon, emptyArt, tejaCategoria } from '../../../infra/icons.js';
 import { SALDO_MASCARA_CUENTA } from '../../../infra/render.js';
 import { resolverMarca, tejaMarca } from '../../../infra/marcas.js';
@@ -553,23 +553,15 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null, oculto = fals
 }
 
 /**
- * Subtítulo de una deuda saldada: "Saldada el 22 de julio". El año solo aparece
- * cuando no es el actual, porque una deuda saldada se archiva pronto y el año
- * repetido no aporta. Sin fecha (deuda que llegó a cero sin abonos) se afirma
+ * Subtítulo de una deuda saldada: "Saldada el 22 de jul" (el año solo si no es
+ * el actual, ADR 102). Sin fecha (deuda que llegó a cero sin abonos) se afirma
  * el estado sin inventar un día.
  *
  * @param {string | null} iso 'YYYY-MM-DD' del último abono, o null.
  */
 function _subtituloSaldada(iso) {
-  if (!iso) return 'Sin saldo pendiente';
-  // UTC mediodía: mismo truco que `fechaLegible` para no correrse un día en GMT-N.
-  const d = new Date(`${iso}T12:00:00Z`);
-  if (Number.isNaN(d.getTime())) return 'Sin saldo pendiente';
-  const mismoAno = d.getUTCFullYear() === new Date().getFullYear();
-  const opciones = mismoAno
-    ? { day: 'numeric', month: 'long', timeZone: 'UTC' }
-    : { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' };
-  return `Saldada el ${formateadorFecha('es-CO', opciones).format(d)}`;
+  const fecha = fechaLegible(iso);
+  return fecha ? `Saldada el ${fecha}` : 'Sin saldo pendiente';
 }
 
 function _renderEmptyState() {

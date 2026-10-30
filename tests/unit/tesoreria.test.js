@@ -2334,6 +2334,19 @@ describe('renderListaIngresos() / renderListaIngresosPuntuales() - máscara del 
     expect(document.getElementById('lista-ingresos').innerHTML).not.toContain('1.850.000');
     expect(document.getElementById('lista-ingresos-puntuales').innerHTML).not.toContain('450.000');
   });
+
+  it('un ingreso puntual de otro año dice el año; uno de este año, no (ADR 102)', () => {
+    const ano = new Date().getFullYear();
+    S.ingresosPuntuales = [
+      { id: 'p1', descripcion: 'Prima', monto: 450_000, fecha: `${ano - 2}-06-30`, categoria: null, cuentaId: null },
+      { id: 'p2', descripcion: 'Prima', monto: 450_000, fecha: `${ano}-06-30`, categoria: null, cuentaId: null },
+    ];
+    renderListaIngresosPuntuales();
+    const subtitulos = [...document.querySelectorAll('#lista-ingresos-puntuales .list-item__subtitle')]
+      .map(p => p.textContent);
+    expect(subtitulos).toContain(`30 de jun de ${ano - 2}`);
+    expect(subtitulos).toContain('30 de jun');
+  });
 });
 
 // ── MC-DIS.9 C5 y C6: un solo vacío bajo el encabezado único, e ícono ─

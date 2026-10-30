@@ -12,7 +12,7 @@
  */
 
 import { S } from '../../core/state.js';
-import { f, esc as _esc, hoy } from '../../infra/utils.js';
+import { f, esc as _esc, hoy, fechaLegible } from '../../infra/utils.js';
 import { icon, tejaCategoria } from '../../infra/icons.js';
 import { resolverMarca, tejaMarca } from '../../infra/marcas.js';
 import { CATEGORIA_INGRESO_ICONO, iconoDeCategoriaGasto } from '../../core/constants.js';
@@ -480,21 +480,6 @@ function _renderVencidosMes(pendientes, prefijoMes) {
 }
 
 /**
- * "5 de agosto" a partir de un 'YYYY-MM-DD'. Sin año a propósito: la ventana
- * del catch-up es de dos meses (ADR 052 D1), así que el año no desambigua nada
- * y alarga la fila. Reusa el catálogo `MONTHS` de esta misma vista en vez de
- * pagar un `Intl.DateTimeFormat` por fila.
- * @param {string} iso
- * @returns {string}
- */
-function _fechaCorta(iso) {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso ?? '');
-  if (!m) return '';
-  const mes = MONTHS[+m[2] - 1];
-  return mes ? `${+m[3]} de ${mes.toLowerCase()}` : '';
-}
-
-/**
  * Subtítulo de una fila de la hoja de pagos automáticos: la fecha real del
  * movimiento y, cuando la fila está bloqueada, por qué no se puede confirmar.
  * PA.1b: un crédito (`tipo === 'ingreso'`) no tiene bloqueo por saldo, solo
@@ -505,7 +490,7 @@ function _fechaCorta(iso) {
  */
 function _subFilaAutomatico(it) {
   const esCredito = it.tipo === 'ingreso';
-  const cuando = `${esCredito ? 'Debía llegar el' : 'Venció el'} ${_fechaCorta(it.fecha)}`;
+  const cuando = `${esCredito ? 'Debía llegar el' : 'Venció el'} ${fechaLegible(it.fecha)}`;
   if (it.bloqueo === 'cuenta') {
     return esCredito
       ? `${cuando} &middot; sin cuenta asignada: edítalo y elige a cuál llega`

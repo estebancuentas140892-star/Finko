@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { f, hoy, fechaLegible, tiempoRelativo, formateadorFecha } from '../../modules/infra/utils.js';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { f, hoy, fechaLegible, fechaDiaMes, tiempoRelativo, formateadorFecha } from '../../modules/infra/utils.js';
 
 describe('f() - formato moneda COP', () => {
   it('formatea cero', () => {
@@ -54,24 +54,53 @@ describe('hoy() - fecha de hoy', () => {
   });
 });
 
-describe('fechaLegible() - formato largo en español', () => {
-  it('formatea una fecha ISO a texto legible', () => {
-    const result = fechaLegible('2026-05-12');
-    // Verificamos que contiene el año y que tiene formato verbal.
-    expect(result).toContain('2026');
-    expect(result.length).toBeGreaterThan(8);
+describe('fechaLegible() - el año solo si no es el de hoy (ADR 102)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 9, 29, 10, 0, 0));
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it('del año en curso: día y mes en tres letras, sin año', () => {
+    expect(fechaLegible('2026-10-28')).toBe('28 de oct');
+    expect(fechaLegible('2026-05-12')).toBe('12 de may');
   });
 
-  it('no tiene off-by-one por zona horaria', () => {
-    // Verifica que el día 12 aparezca en la salida.
-    const result = fechaLegible('2026-05-12');
-    expect(result).toContain('12');
+  it('del año anterior y del siguiente: con el año', () => {
+    expect(fechaLegible('2024-06-30')).toBe('30 de jun de 2024');
+    expect(fechaLegible('2025-12-31')).toBe('31 de dic de 2025');
+    expect(fechaLegible('2027-04-30')).toBe('30 de abr de 2027');
   });
 
-  it('produce el mismo texto que toLocaleDateString (PERF.7: sin cambio de comportamiento)', () => {
-    const opciones = { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' };
-    const esperado = new Date('2026-05-12T12:00:00Z').toLocaleDateString('es-CO', opciones);
-    expect(fechaLegible('2026-05-12')).toBe(esperado);
+  it('septiembre también en tres letras (Intl diría "sept")', () => {
+    expect(fechaLegible('2026-09-05')).toBe('5 de sep');
+  });
+
+  it('el año lo pone el reloj: el 1 de enero, lo del 31 de diciembre ya es de otro año', () => {
+    vi.setSystemTime(new Date(2027, 0, 1, 0, 30, 0));
+    expect(fechaLegible('2026-12-31')).toBe('31 de dic de 2026');
+    expect(fechaLegible('2027-01-01')).toBe('1 de ene');
+  });
+
+  it('no tiene off-by-one por zona horaria: lee el día del texto', () => {
+    expect(fechaLegible('2026-03-01')).toBe('1 de mar');
+  });
+
+  it('sin fecha válida devuelve texto vacío', () => {
+    expect(fechaLegible(null)).toBe('');
+    expect(fechaLegible('')).toBe('');
+    expect(fechaLegible('2026-13-01')).toBe('');
+  });
+});
+
+describe('fechaDiaMes() - día y mes, para listas agrupadas por mes (ADR 102 D2)', () => {
+  it('nunca pone el año', () => {
+    expect(fechaDiaMes('2026-10-28')).toBe('28 de oct');
+    expect(fechaDiaMes('2024-06-30')).toBe('30 de jun');
+  });
+
+  it('sin fecha válida devuelve texto vacío', () => {
+    expect(fechaDiaMes(undefined)).toBe('');
   });
 });
 

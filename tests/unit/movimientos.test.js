@@ -576,6 +576,18 @@ describe('renderMovimientosCompletos()', () => {
     expect(divisores[0].textContent).toContain('2026');
   });
 
+  it('la fila no repite el año: lo dice el grupo, también en años anteriores (ADR 102 D2)', () => {
+    S.cuentas = [cuenta('c1', 'Nequi')];
+    S.gastos = [
+      gasto({ id: 'g1', fecha: '2026-10-28', cuentaId: 'c1' }),
+      gasto({ id: 'g2', fecha: '2024-12-05', cuentaId: 'c1' }),
+    ];
+    renderMovimientosCompletos();
+    const subtitulos = [...elLista().querySelectorAll('.list-item__subtitle')].map(p => p.textContent);
+    expect(subtitulos).toEqual(['Gasto · 28 de oct · Nequi', 'Gasto · 5 de dic · Nequi']);
+    expect(elLista().querySelectorAll('.movimientos-mes')[1].textContent).toContain('2024');
+  });
+
   it('la teja del ícono lleva el dominio correcto (colores por sección)', () => {
     S.gastos = [gasto({ categoria: 'Deudas' })];
     renderMovimientosCompletos();

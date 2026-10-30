@@ -152,19 +152,36 @@ export function formateadorFecha(locale, opciones) {
 }
 
 /**
- * Dado un string `YYYY-MM-DD`, devuelve la representación legible en español.
- * Ej. `2026-05-12` → `12 de mayo de 2026`
+ * Meses en tres letras (ADR 102 D1). Catálogo propio y no `Intl`: en es-CO
+ * `Intl` abrevia septiembre como "sept" y su forma cambia entre motores.
+ */
+const _MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+/**
+ * Día y mes de un `YYYY-MM-DD`, sin año: `2026-10-28` → `28 de oct`.
+ * Para listas agrupadas por mes, donde el grupo ya dice el año (ADR 102 D2).
+ * Se lee del texto, sin `Date`, así que no hay off-by-one en GMT-N.
  *
  * @param {string} iso - fecha en formato `YYYY-MM-DD`.
- * @returns {string}
+ * @returns {string} '' si `iso` no es una fecha.
+ */
+export function fechaDiaMes(iso) {
+  const m = _RX_FECHA_CALENDARIO.exec(String(iso ?? '').slice(0, 10));
+  const mes = m ? _MESES_CORTOS[Number(m[2]) - 1] : undefined;
+  return mes ? `${Number(m[3])} de ${mes}` : '';
+}
+
+/**
+ * La fecha que se lee en la app (ADR 102 D1): día y mes en tres letras, y el
+ * año solo si no es el de hoy. Con hoy en 2026: `2026-10-28` → `28 de oct`,
+ * `2027-04-30` → `30 de abr de 2027`.
+ *
+ * @param {string} iso - fecha en formato `YYYY-MM-DD`.
+ * @returns {string} '' si `iso` no es una fecha.
  */
 export function fechaLegible(iso) {
-  // Forzamos UTC mediodia para evitar off-by-one en zonas GMT-N.
-  const d = new Date(`${iso}T12:00:00Z`);
-  return formateadorFecha('es-CO', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(d);
+  const diaMes = fechaDiaMes(iso);
+  if (!diaMes) return '';
+  const anio = String(iso).slice(0, 4);
+  return anio === hoy().slice(0, 4) ? diaMes : `${diaMes} de ${anio}`;
 }
