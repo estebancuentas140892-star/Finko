@@ -12,6 +12,13 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(movil): MV2.8c, volver solo en el nivel 3 · 2026-10-29
+
+[ADR 106](DECISIONS/106-un-encabezado-tres-niveles.md) D6 (cierra MV2.8; cambia el "‹ Inicio" fijo de TX.8b en el teléfono); ficha [`contexto/movimientos.md`](contexto/movimientos.md). Solo bajo 1024 px. SW v635.
+
+- **Movimientos desde "Más" ya no dice "‹ Inicio"**: era el enlace fijo de TX.8b, pensado para la PWA sin barra; en el teléfono la barra inferior siempre está. Llegando desde el contenido, el volver contextual (ADR 098 D1) sigue diciendo el origen real ("‹ Gastos"). Escritorio no cambia.
+- Pruebas: un E2E móvil abre Movimientos desde "Más" y no encuentra ningún volver.
+
 ### feat(movil): MV2.8b, el ojo en el encabezado · 2026-10-29
 
 [ADR 106](DECISIONS/106-un-encabezado-tres-niveles.md) D3 (segunda de tres rebanadas; cambia en el teléfono el ADR 034 D2 y D3). Solo bajo 1024 px. SW v634.
