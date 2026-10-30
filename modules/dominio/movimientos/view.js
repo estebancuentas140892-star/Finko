@@ -13,6 +13,7 @@
 import { S } from '../../core/state.js';
 import { f, esc as _esc, fechaDiaMes, formateadorFecha } from '../../infra/utils.js';
 import { emptyArt, tejaCategoria } from '../../infra/icons.js';
+import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { memoizar } from '../../infra/memo.js';
 import { movimientosCompletos, descripcionMovimiento, filtrarMovimientos } from './logic.js';
 
@@ -437,10 +438,13 @@ function _renderMovimientoItem(m) {
   const signo         = esIngreso ? '+' : (m.direccion === 'neutro' ? '' : '-');
   const claseMonto    = esIngreso ? 'list-item__amount--ingreso' : '';
   const cuenta        = _nombreCuenta(m.cuentaId);
+  // ADR 106 D3: el ojo del encabezado también enmascara el historial (R20).
+  const oculto        = S.config?.ocultarSaldo === true;
+  const monto         = oculto ? SALDO_MASCARA_CUENTA : f(m.monto);
   // MC.17d: una transferencia con 4x1000 traza el gravamen en el subtítulo, sin
   // sumarlo al monto de la fila (que es lo que llegó al destino).
   const gmfNota       = m.tipo === 'transferencia' && m.costoGMF > 0
-    ? `incluye ${f(m.costoGMF)} de 4x1000`
+    ? `incluye ${oculto ? SALDO_MASCARA_CUENTA : f(m.costoGMF)} de 4x1000`
     : null;
   // El abono `agrupado` de la migración v34 no tiene fecha exacta: resume lo
   // cobrado antes de que existiera el historial. Dice eso en vez de imprimir la
@@ -455,7 +459,7 @@ function _renderMovimientoItem(m) {
   const conAcciones   = Boolean(_ACCIONES_POR_TIPO[m.tipo]);
   const detalle       = conAcciones
     ? `<button class="list-item__detalle" type="button" data-action="fila-detalle"
-              aria-label="Ver detalle: ${_esc(_descripcionMovimiento(m))}, ${signo}${f(m.monto)}"></button>`
+              aria-label="Ver detalle: ${_esc(_descripcionMovimiento(m))}, ${signo}${monto}"></button>`
     : '';
 
   return `
@@ -467,7 +471,7 @@ function _renderMovimientoItem(m) {
         <p class="list-item__subtitle">${subtitulo}</p>
       </div>
       <div class="list-item__meta">
-        <p class="list-item__amount ${claseMonto}">${signo}${f(m.monto)}</p>
+        <p class="list-item__amount ${claseMonto}">${signo}${monto}</p>
       </div>
       ${_renderAccionesMovimiento(m)}
     </article>`;

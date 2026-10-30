@@ -6,6 +6,7 @@
 import { S } from '../../core/state.js';
 import { f, fechaLegible, formateadorFecha, hoy, esc as _esc } from '../../infra/utils.js';
 import { emptyArt } from '../../infra/icons.js';
+import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { ipcObservadoVigente } from '../../core/constants.js';
 import { calcularRegla72 } from '../../infra/financiero.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
@@ -27,6 +28,14 @@ const IPC_VIGENTE = ipcObservadoVigente();
 const IPC_PCT     = IPC_VIGENTE.valor * 100;
 
 /** "marzo de 2027": la etiqueta de vencimiento, sin día, que es lo que importa. */
+/**
+ * Un monto de Inversión, o la máscara si el ojo está cerrado (R20, ADR 106
+ * D3: el ojo del encabezado llega a esta pantalla).
+ * @param {number} valor
+ * @returns {string}
+ */
+const _m = valor => (S.config?.ocultarSaldo === true ? SALDO_MASCARA_CUENTA : f(valor));
+
 const MES_ANIO = formateadorFecha('es-CO', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 
 /** @param {string} iso 'YYYY-MM-DD' @returns {string} 'marzo de 2027'. */
@@ -145,7 +154,7 @@ function _renderMomento(inversiones) {
   const vencimiento = unica ? fechaVencimientoInversion(unica) : null;
 
   const sumaHtml = cols && cols.rendimiento > 0
-    ? `<p class="inversion-momento__suma">y el tiempo le suma <strong>${f(cols.rendimiento)}</strong> más</p>`
+    ? `<p class="inversion-momento__suma">y el tiempo le suma <strong>${_m(cols.rendimiento)}</strong> más</p>`
     : '';
 
   const avisoHtml = momento.aviso
@@ -172,7 +181,7 @@ function _renderMomento(inversiones) {
 
       <div class="inversion-momento__construido">
         <p class="inversion-momento__kicker">Lo que has construido</p>
-        <p class="inversion-momento__monto">${f(total)}</p>
+        <p class="inversion-momento__monto">${_m(total)}</p>
         ${sumaHtml}
       </div>
 
@@ -368,8 +377,8 @@ function _renderItem(inv) {
   const vence = proy ? fechaVencimientoInversion(inv) : null;
   const proyHtml = proy
     ? `<p class="inversion-item__proy">
-        ${vence ? `En ${_esc(_mesAnio(vence))} tendrías` : 'Al vencer tendrías'} <strong>${f(proy.valorFuturo)}</strong>.
-        De eso, <strong>${f(proy.rendimiento)}</strong> los pone el tiempo.
+        ${vence ? `En ${_esc(_mesAnio(vence))} tendrías` : 'Al vencer tendrías'} <strong>${_m(proy.valorFuturo)}</strong>.
+        De eso, <strong>${_m(proy.rendimiento)}</strong> los pone el tiempo.
       </p>`
     : '';
 
@@ -384,7 +393,7 @@ function _renderItem(inv) {
         ${proyHtml}
       </div>
       <div class="list-item__action">
-        <span class="list-item__value">${f(inv.monto)}</span>
+        <span class="list-item__value">${_m(inv.monto)}</span>
         <button class="btn btn-ghost btn-icon"
                 data-action="inversion-editar"
                 data-id="${_esc(inv.id)}"

@@ -1710,7 +1710,8 @@ button.chip:focus-visible {
 .perfil-inicio__nombre[hidden] { display: none; }
 
 .perfil-inicio__ajustes,
-.perfil-inicio__buscar {
+.perfil-inicio__buscar,
+.perfil-inicio__ojo {
   width: var(--fk-space-10);
   height: var(--fk-space-10);
   border-radius: var(--fk-radius-md);
@@ -1726,12 +1727,14 @@ button.chip:focus-visible {
     color var(--fk-transition-fast);
 }
 .perfil-inicio__ajustes:hover,
-.perfil-inicio__buscar:hover {
+.perfil-inicio__buscar:hover,
+.perfil-inicio__ojo:hover {
   background: var(--fk-bg-elevated);
   color: var(--fk-text-primary);
 }
 .perfil-inicio__ajustes .icon,
-.perfil-inicio__buscar .icon { --fk-icon-size: var(--fk-icon-md); }
+.perfil-inicio__buscar .icon,
+.perfil-inicio__ojo .icon { --fk-icon-size: var(--fk-icon-md); }
 
 /* ════════════════════════════════════════════════════════════
    HERO-INICIO (IN.8b, ADR 034 D2/D3) - saldo centrado protagonista.

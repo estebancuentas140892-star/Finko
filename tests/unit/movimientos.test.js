@@ -588,6 +588,15 @@ describe('renderMovimientosCompletos()', () => {
     expect(elLista().querySelectorAll('.movimientos-mes')[1].textContent).toContain('2024');
   });
 
+  it('con el ojo cerrado la fila enmascara el monto (ADR 106 D3)', () => {
+    S.gastos = [gasto()];
+    S.config = { ...(S.config ?? {}), ocultarSaldo: true };
+    renderMovimientosCompletos();
+    expect(elLista().querySelector('.list-item__amount').textContent).toBe('-••••');
+    expect(elLista().innerHTML).not.toContain('50.000');
+    S.config.ocultarSaldo = false;
+  });
+
   it('la teja del ícono lleva el dominio correcto (colores por sección)', () => {
     S.gastos = [gasto({ categoria: 'Deudas' })];
     renderMovimientosCompletos();

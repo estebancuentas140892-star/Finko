@@ -334,11 +334,12 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await expect(page.locator('#saldo-detalle')).toContainText('$1.450.000');
     await expect(page.locator('#saldo-desc')).toBeHidden();
 
-    // El ojo enmascara total Y detalle juntos (extensión IN.2).
-    await page.click('#saldo-ojo');
+    // El ojo enmascara total Y detalle juntos (extensión IN.2). En el
+    // teléfono vive en el encabezado, junto a la lupa (ADR 106 D3).
+    await page.click('.perfil-inicio__ojo');
     await expect(page.locator('#saldo-total')).toHaveText('$••••••');
     await expect(page.locator('#saldo-detalle')).not.toContainText('1.450.000');
-    await page.click('#saldo-ojo');
+    await page.click('.perfil-inicio__ojo');
     await expect(page.locator('#saldo-detalle')).toContainText('$1.450.000');
 
     // Estado solo de UI: tras recargar vuelve colapsado (no se persiste).
@@ -458,7 +459,7 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await expect(panel).toContainText('$1.450.000');
   });
 
-  test('móvil: la banda de escritorio no existe y el hero conserva gradiente, blob y ojo en la esquina (DSK.1b, ADR 070 D4/D5/D6)', async ({ page }) => {
+  test('móvil: la banda de escritorio no existe y el hero conserva gradiente y blob; el ojo va en el encabezado (DSK.1b, ADR 070 D4/D5/D6, ADR 106 D3)', async ({ page }) => {
     // Contracara del test anterior, y la compuerta que protege a MOV.1: el
     // envoltorio `.banda-inicio` es `display: contents` bajo 1024px, así que
     // sus dos hijos vuelven a ser celdas sueltas del bento y nada del hero
@@ -492,11 +493,14 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     expect(hero.borde).toBe('1px');
     expect(hero.fondo.startsWith('linear-gradient')).toBe(true);
 
-    // El ojo no se movió del DOM ni de su sitio: sigue siendo hermano de la
-    // etiqueta, no un hijo suyo, así que no le suma alto a la fila del rótulo.
+    // El ojo no se movió del DOM: sigue siendo hermano de la etiqueta, no un
+    // hijo suyo. En el teléfono se calla y manda el del encabezado, junto a
+    // la lupa (ADR 106 D3): un solo lugar para el ojo en toda la app.
     const ojoEsHijoDelLabel = await page.locator('#saldo-ojo')
       .evaluate(el => el.parentElement.id === 'hero-saldo-label');
     expect(ojoEsHijoDelLabel).toBe(false);
+    await expect(page.locator('#saldo-ojo')).toBeHidden();
+    await expect(page.locator('.perfil-inicio__ojo')).toBeVisible();
     const altoLabel = await page.locator('#hero-saldo-label')
       .evaluate(el => Math.round(el.getBoundingClientRect().height));
     expect(altoLabel).toBeLessThan(32);

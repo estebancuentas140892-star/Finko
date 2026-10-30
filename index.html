@@ -587,6 +587,13 @@
                   data-action="bloque-buscar" aria-label="Buscar en tus movimientos">
             <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
           </button>
+          <!-- ADR 106 D3: el ojo de Inicio deja el hero y va junto a la lupa,
+               solo bajo 1024px. El del hero sigue mandando en escritorio. -->
+          <button class="perfil-inicio__ojo" type="button"
+                  data-action="bloque-saldo-visibilidad" aria-pressed="false"
+                  aria-label="Ocultar tus saldos">
+            <svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>
+          </button>
         </header>
 
         <!-- BENTO GRID del dashboard (orden IN.8a, ADR 034 D1): hero →
@@ -868,6 +875,12 @@
             <span class="cat-teja section__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-saldo"/></svg></span>
             <h1 class="section__title" id="title-movimientos">Movimientos</h1>
           </div>
+          <!-- ADR 106 D3: el ojo de la pantalla, solo bajo 1024px. Misma acción
+               y misma sincronización que el del bloque Gastos. -->
+          <button class="section__ojo" type="button" data-action="bloque-saldo-visibilidad"
+                  aria-pressed="false" aria-label="Ocultar tus saldos">
+            <svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>
+          </button>
         </header>
         <div id="movimientos-filtros" class="movimientos-filtros">
           <!-- movimientos/view.js: renderFiltrosMovimientos() (MOV.2) -->
@@ -965,6 +978,12 @@
               <p class="section__linea">Cuándo entra y cuándo sale</p>
             </div>
           </div>
+          <!-- ADR 106 D3: el ojo de la pantalla, solo bajo 1024px. Misma acción
+               y misma sincronización que el del bloque Gastos. -->
+          <button class="section__ojo" type="button" data-action="bloque-saldo-visibilidad"
+                  aria-pressed="false" aria-label="Ocultar tus saldos">
+            <svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>
+          </button>
         </header>
         <div id="proposito-agenda">
           <!-- proposito.js inyecta el banner de propósito de sección (ADR 016) -->
@@ -983,6 +1002,12 @@
           </div>
           <!-- DSK.5b (ADR 074 D5): fuera el "+" del texto, lo aporta el ícono, y
                el aria-label dice lo mismo que la pantalla. -->
+          <!-- ADR 106 D3: el ojo de la pantalla, solo bajo 1024px. Misma acción
+               y misma sincronización que el del bloque Gastos. -->
+          <button class="section__ojo" type="button" data-action="bloque-saldo-visibilidad"
+                  aria-pressed="false" aria-label="Ocultar tus saldos">
+            <svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>
+          </button>
           <!-- ADR 106 D4: este botón solo se ve en móvil y lleva el nombre
                corto; la barra superior de escritorio copia `data-barra`. -->
           <button class="btn btn-primary" data-action="nuevo-personal"
@@ -1014,6 +1039,12 @@
               <p class="section__linea">Dónde está tu dinero y de dónde viene</p>
             </div>
           </div>
+          <!-- ADR 106 D3: el ojo de la pantalla, solo bajo 1024px. Misma acción
+               y misma sincronización que el del bloque Gastos. -->
+          <button class="section__ojo" type="button" data-action="bloque-saldo-visibilidad"
+                  aria-pressed="false" aria-label="Ocultar tus saldos">
+            <svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>
+          </button>
           <button class="btn btn-primary" data-action="nueva-cuenta"
                   aria-label="Nueva cuenta" data-barra="Nueva cuenta">
             <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg><span class="btn__texto">Cuenta</span>
@@ -1152,6 +1183,12 @@
             <span class="cat-teja section__icon" data-dom="ahorro" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-ahorro"/></svg></span>
             <h1 class="section__title" id="title-ahorro">Ahorro</h1>
           </div>
+          <!-- ADR 106 D3: el ojo de la pantalla, solo bajo 1024px. Misma acción
+               y misma sincronización que el del bloque Gastos. -->
+          <button class="section__ojo" type="button" data-action="bloque-saldo-visibilidad"
+                  aria-pressed="false" aria-label="Ocultar tus saldos">
+            <svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>
+          </button>
         </header>
         <div id="panel-casa-ahorro">
           <!-- DIS.18: ahorro/view.js renderiza aquí (renderCasaAhorro) -->
@@ -1175,6 +1212,12 @@
             <span class="cat-teja section__icon" data-dom="ahorro" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-ahorro"/></svg></span>
             <h1 class="section__title" id="title-fondo">Fondo de emergencia</h1>
           </div>
+          <!-- ADR 106 D3: el ojo de la pantalla, solo bajo 1024px. Misma acción
+               y misma sincronización que el del bloque Gastos. -->
+          <button class="section__ojo" type="button" data-action="bloque-saldo-visibilidad"
+                  aria-pressed="false" aria-label="Ocultar tus saldos">
+            <svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>
+          </button>
         </header>
         <!-- Fila de chips del bloque Ahorro (ADR 069 D7). ui/bloque-ahorro.js
              inyecta la misma fila en las cuatro hijas; solo se ve bajo
@@ -1207,6 +1250,12 @@
             <span class="cat-teja section__icon" data-dom="inversion" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-inversion"/></svg></span>
             <h1 class="section__title" id="title-inversion">Inversión</h1>
           </div>
+          <!-- ADR 106 D3: el ojo de la pantalla, solo bajo 1024px. Misma acción
+               y misma sincronización que el del bloque Gastos. -->
+          <button class="section__ojo" type="button" data-action="bloque-saldo-visibilidad"
+                  aria-pressed="false" aria-label="Ocultar tus saldos">
+            <svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>
+          </button>
         </header>
         <!-- Fila de chips del bloque Ahorro (ADR 069 D7). -->
         <div id="chips-inversion"></div>
@@ -1230,6 +1279,12 @@
             <span class="cat-teja section__icon" data-dom="metas" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-metas"/></svg></span>
             <h1 class="section__title" id="title-metas">Metas</h1>
           </div>
+          <!-- ADR 106 D3: el ojo de la pantalla, solo bajo 1024px. Misma acción
+               y misma sincronización que el del bloque Gastos. -->
+          <button class="section__ojo" type="button" data-action="bloque-saldo-visibilidad"
+                  aria-pressed="false" aria-label="Ocultar tus saldos">
+            <svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>
+          </button>
           <button class="btn btn-primary" data-action="nueva-meta"
                   aria-label="Nueva meta de ahorro" data-barra="Nueva meta">
             <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg><span class="btn__texto">Meta</span>
@@ -1258,6 +1313,12 @@
             <span class="cat-teja section__icon" data-dom="ahorro" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-apartados"/></svg></span>
             <h1 class="section__title" id="title-apartados">Reservas</h1>
           </div>
+          <!-- ADR 106 D3: el ojo de la pantalla, solo bajo 1024px. Misma acción
+               y misma sincronización que el del bloque Gastos. -->
+          <button class="section__ojo" type="button" data-action="bloque-saldo-visibilidad"
+                  aria-pressed="false" aria-label="Ocultar tus saldos">
+            <svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>
+          </button>
           <button class="btn btn-primary" data-action="nuevo-apartado"
                   aria-label="Nueva reserva" data-barra="Nueva reserva">
             <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg><span class="btn__texto">Reserva</span>
@@ -1289,6 +1350,12 @@
                acá se movió al rótulo del grupo "A dónde va tu dinero" (el
                único bloque de la página que mide ese mes; los otros cuatro
                declaran su propio alcance junto a su título). -->
+          <!-- ADR 106 D3: el ojo de la pantalla, solo bajo 1024px. Misma acción
+               y misma sincronización que el del bloque Gastos. -->
+          <button class="section__ojo" type="button" data-action="bloque-saldo-visibilidad"
+                  aria-pressed="false" aria-label="Ocultar tus saldos">
+            <svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>
+          </button>
         </header>
         <div id="proposito-analisis">
           <!-- proposito.js inyecta el banner de propósito de sección (ADR 016) -->

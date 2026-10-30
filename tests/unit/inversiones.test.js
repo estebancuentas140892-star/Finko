@@ -993,6 +993,30 @@ describe('renderFormInversion() - modo edición (EDIT.1)', () => {
 // consejo pasaba a ser el primario. En la misma tarjeta el boton y el tip
 // decian cosas opuestas.
 
+describe('renderInversion() - el ojo enmascara los montos (ADR 106 D3)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-inversion"></div>';
+    S.cuentas = [];
+    S.ahorro = { fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 0 }, aportes: [] };
+    S.inversiones = [{ id: 'i1', nombre: 'CDT', tipo: 'CDT', monto: 2_000_000, tasaEA: 10, plazoMeses: 12, fechaInicio: '2026-01-15' }];
+  });
+  afterEach(() => { S.config.ocultarSaldo = false; });
+
+  it('con el ojo abierto se leen los montos', () => {
+    S.config.ocultarSaldo = false;
+    renderInversion();
+    expect(document.getElementById('panel-inversion').textContent).toContain('$2.000.000');
+  });
+
+  it('con el ojo cerrado ningún monto queda a la vista', () => {
+    S.config.ocultarSaldo = true;
+    renderInversion();
+    const panel = document.getElementById('panel-inversion');
+    expect(panel.textContent).not.toMatch(/\$\s?\d/);
+    expect(panel.querySelector('.list-item__value').textContent).toBe('••••');
+  });
+});
+
 describe('renderInversion() - estado vacio', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="panel-inversion"></div>';

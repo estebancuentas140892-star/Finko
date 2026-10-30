@@ -13,6 +13,8 @@
  *   misma fila; nada se desliza a 320.
  * - ADR 106 (MV2.8a): la fila del título lleva teja, título y crear tonal y
  *   corto; la frase va debajo; a 320 crear queda en "+" y el título no se parte.
+ * - ADR 106 D3 (MV2.8b): el ojo va en el encabezado de toda pantalla con
+ *   montos, el de los heroes se calla, y Movimientos también enmascara.
  * - Escritorio no cambia: las piezas nuevas no se ven a 1280.
  * - D13: el camino de Aprender del niño no desborda a lo ancho.
  */
@@ -205,6 +207,28 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     expect(Math.round(bP.width)).toBe(44);
     const tP = await hdP.locator('.section__title').boundingBox();
     expect(tP.height).toBeLessThan(32);
+  });
+
+  test('el ojo va en el encabezado de toda pantalla con montos (ADR 106 D3)', async ({ page }) => {
+    await seedConTipos(page);
+    await page.goto('/#movimientos');
+    for (const sec of ['movimientos', 'ahorro', 'fondo', 'metas', 'apartados', 'inversion', 'tesoreria', 'personales', 'agenda', 'analisis']) {
+      await page.goto(`/#${sec}`);
+      await expect(page.locator(`#sec-${sec} > .section__header .section__ojo`), sec).toBeVisible({ timeout: 10_000 });
+    }
+    // Ajustes no tiene montos: no lleva ojo.
+    await expect(page.locator('#sec-config .section__ojo')).toHaveCount(0);
+    // El del hero de Mis cuentas se calla en el teléfono.
+    await page.goto('/#tesoreria');
+    await expect(page.locator('.hero-tesoreria__ojo')).toBeHidden();
+
+    // En Movimientos, que antes no tenía ojo, la fila se enmascara.
+    await page.goto('/#movimientos');
+    const monto = page.locator('#lista-movimientos .list-item__amount').first();
+    await expect(monto).toContainText('$');
+    await page.locator('#sec-movimientos .section__ojo').click();
+    await expect(monto).toHaveText(/^[-+]?••••$/);
+    await expect(page.locator('#sec-movimientos .section__ojo')).toHaveAttribute('aria-pressed', 'true');
   });
 
   test('Movimientos pliega sus tipos y lleva "Fechas" en la misma fila (ADR 105)', async ({ page }) => {

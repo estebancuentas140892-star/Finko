@@ -1933,6 +1933,7 @@
    del bloque `< 1024px`, así escritorio no cambia. */
 
 /* Piezas que solo existen en móvil. */
+.section__ojo,
 .section__volver--contexto,
 .list-item__detalle,
 .filtros-bar__mas,
@@ -1940,6 +1941,7 @@
 .movimientos-filtros__resumen,
 .lista-ingresos__ver-todos,
 .perfil-inicio__buscar,
+.perfil-inicio__ojo,
 .bloque-gastos__herramientas .bloque-gastos__lupa,
 .bloque-gastos__primario { display: none; }
 
@@ -2200,12 +2202,14 @@
   .bloque-gastos__sub { grid-column: 1 / -1; grid-row: 2; }
 
   /* La lupa de Inicio, junto al engranaje y con su mismo dibujo. */
-  .perfil-inicio > .perfil-inicio__buscar { display: flex; position: relative; }
+  .perfil-inicio > .perfil-inicio__buscar,
+  .perfil-inicio > .perfil-inicio__ojo { display: flex; position: relative; }
 
   /* R4: los botones de mes medían 32x32 (hallazgo N9). El dibujo se queda;
      la zona sensible crece a 44, como el resto de los controles chicos. */
   .bloque-gastos__mes-btn { position: relative; }
   .perfil-inicio__buscar::after,
+  .perfil-inicio__ojo::after,
   .bloque-gastos__mes-btn::after {
     content: '';
     position: absolute;
@@ -2348,7 +2352,7 @@
      `display: contents`, así el marcado de escritorio no cambia. */
   .section > .section__header:not(.perfil-inicio) {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr) repeat(2, auto);
     align-items: center;
     column-gap: var(--fk-space-3);
     row-gap: var(--fk-space-1);
@@ -2358,7 +2362,8 @@
   .section > .section__header .section__titulo { display: contents; }
   .section > .section__header .section__icon { grid-column: 1; grid-row: 1; }
   .section > .section__header .section__title { grid-column: 2; grid-row: 1; }
-  .section > .section__header > .btn-primary { grid-column: 3; grid-row: 1; }
+  .section > .section__header > .section__ojo { grid-column: 3; grid-row: 1; }
+  .section > .section__header > .btn-primary { grid-column: 4; grid-row: 1; }
   .section > .section__header .section__linea { grid-column: 1 / -1; grid-row: 2; }
 
   /* ── ADR 106 D2: un tamaño de título y el hero a la izquierda ─────────
@@ -2369,6 +2374,32 @@
   .section .section__title,
   .bloque-gastos__titulo { font-size: 1.375rem; }
   #sec-gast .hero-gastos { text-align: left; }
+
+  /* ── ADR 106 D3: el ojo va en el encabezado de toda pantalla con montos ─
+     Un solo control (R20) en el mismo lugar: a la derecha de la fila del
+     título, antes de crear. Usa la acción y la sincronización del ojo del
+     bloque Gastos. Los ojos de los heroes y el del medio de Análisis se
+     callan en el teléfono; en escritorio siguen mandando. Inicio pasa a la
+     izquierda ahora que su hero ya no lleva el ojo en la esquina. */
+  .section__ojo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: none;
+    background: none;
+    border-radius: var(--fk-radius-md);
+    color: var(--fk-text-muted);
+    cursor: pointer;
+  }
+  .section__ojo:hover { color: var(--fk-text-primary); }
+  .hero-inicio__ojo,
+  .hero-tesoreria__ojo,
+  .hero-agenda__ojo,
+  .patri-card__ojo { display: none; }
+  .hero-inicio { text-align: left; }
+  .hero-inicio__pill { align-self: flex-start; }
 
   /* ── ADR 106 D4: crear es tonal, de 44px y con el nombre corto ────────
      Crear una ficha pesa menos que mover dinero (R38): tinte y texto de
@@ -2395,8 +2426,7 @@
 
 @media (max-width: 359px) {
   .section .section__title,
-  .bloque-gastos__titulo { font-size: var(--fk-text-xl); }
-  .section > .section__header:has(.section__icon) > .btn-primary {
+  .bloque-gastos__titulo { font-size: var(--fk-text-xl); }  .section > .section__header:has(.section__icon) > .btn-primary {
     width: 44px;
     padding-inline: 0;
     justify-content: center;
