@@ -393,9 +393,9 @@ function _renderHistorialAbonos(prestamo, conInteres, m) {
 }
 
 /**
- * V-7 (reglas R11 y R18): un solo primario por pantalla. El botón del encabezado
- * (`index.html`) es el que crea, así que el CTA del vacío baja a secundario y
- * ambos dicen lo mismo: misma acción, mismo nombre.
+ * V-7 (reglas R11 y R18): un solo primario por pantalla, y ambos dicen lo mismo:
+ * misma acción, mismo nombre. Desde el ADR 107 D3 y D5 el del vacío es el
+ * primario: mientras se ve, el "+ Préstamo" del encabezado se oculta (R51).
  */
 function _renderEmptyState() {
   return `
@@ -403,7 +403,7 @@ function _renderEmptyState() {
       <div class="empty-state__icon">${emptyArt('personales')}</div>
       <p class="empty-state__title">Nadie te debe nada (o no lo registraste)</p>
       <p class="empty-state__desc">Registra tu primer préstamo a familia o amigos.</p>
-      <button class="btn btn-secondary" data-action="nuevo-personal">${icon('plus')} Nuevo préstamo</button>
+      <button class="btn btn-primary" data-action="nuevo-personal">${icon('plus')} Nuevo préstamo</button>
     </div>`;
 }
 

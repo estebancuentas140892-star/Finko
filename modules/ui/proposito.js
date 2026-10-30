@@ -7,6 +7,10 @@
  *   solo se muestra mientras la sección no tiene datos (`tieneDatos === false`).
  * - renderBannerProposito() inyecta en el DOM; cada dominio decide su propio
  *   `tieneDatos` reusando el predicado de su empty state.
+ * - ADR 107 D5 (MV2.13): el banner es el título y el cuerpo del vacío. La
+ *   pregunta con que abre cada texto pasa a título y el resto a cuerpo, sin
+ *   cambiar una palabra del copy aprobado; el vacío de la misma sección calla
+ *   su propio mensaje por CSS y deja solo su botón y su línea hermana.
  */
 
 import { esc as _esc } from '../infra/utils.js';
@@ -65,6 +69,20 @@ export const PROPOSITOS_SECCION = {
 // ── RENDER ───────────────────────────────────────────────────────
 
 /**
+ * Parte el copy en la pregunta con que abre y el resto. Si el texto no abre
+ * con una pregunta, todo va al cuerpo. `pregunta + ' ' + cuerpo` reconstruye
+ * el texto original.
+ *
+ * @param {string} texto
+ * @returns {{pregunta: string, cuerpo: string}}
+ */
+export function partirProposito(texto) {
+  const fin = texto.indexOf('?');
+  if (!texto.startsWith('¿') || fin < 0) return { pregunta: '', cuerpo: texto };
+  return { pregunta: texto.slice(0, fin + 1), cuerpo: texto.slice(fin + 1).trim() };
+}
+
+/**
  * Devuelve el HTML del banner de propósito para `seccion`, o '' si la sección
  * no tiene copy o ya tiene datos (divulgación progresiva).
  * Pura: no lee S, no toca el DOM.
@@ -76,9 +94,12 @@ export const PROPOSITOS_SECCION = {
 export function htmlBannerProposito(seccion, tieneDatos = false) {
   const info = PROPOSITOS_SECCION[seccion];
   if (!info || tieneDatos) return '';
+  const { pregunta, cuerpo } = partirProposito(info.texto);
+  const tituloHtml = pregunta ? `<h2 class="banner-proposito__titulo">${pregunta}</h2>` : '';
   return `
     <div class="banner-proposito" data-seccion="${_esc(seccion)}">
-      <p class="banner-proposito__texto">${info.texto}</p>
+      ${tituloHtml}
+      <p class="banner-proposito__texto">${cuerpo}</p>
     </div>`;
 }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { htmlBannerProposito, PROPOSITOS_SECCION } from '../../modules/ui/proposito.js';
+import { htmlBannerProposito, partirProposito, PROPOSITOS_SECCION } from '../../modules/ui/proposito.js';
 
 describe('PROPOSITOS_SECCION', () => {
   it('tiene la sección apartados con titulo y texto', () => {
@@ -46,6 +46,28 @@ describe('htmlBannerProposito', () => {
     expect(texto).toContain('Necesidades');
     expect(texto).toContain('Estilo de vida');
     expect(texto).toContain('Ahorro');
+  });
+
+  // ADR 107 D5: la pregunta pasa a título y el resto a cuerpo, sin perder ni
+  // cambiar una palabra del copy aprobado (ADR 016).
+  it('cada propósito se parte en pregunta y cuerpo sin perder una palabra', () => {
+    for (const [seccion, { texto }] of Object.entries(PROPOSITOS_SECCION)) {
+      const { pregunta, cuerpo } = partirProposito(texto);
+      expect(pregunta.startsWith('¿'), seccion).toBe(true);
+      expect(pregunta.endsWith('?'), seccion).toBe(true);
+      expect(`${pregunta} ${cuerpo}`, seccion).toBe(texto);
+    }
+  });
+
+  it('el banner lleva la pregunta como título y el resto como cuerpo', () => {
+    document.body.innerHTML = htmlBannerProposito('personales', false);
+    expect(document.querySelector('.banner-proposito__titulo').textContent)
+      .toBe('¿Le prestaste dinero a alguien y ya no recuerdas cuánto ni a quién?');
+    expect(document.querySelector('.banner-proposito__texto').textContent.startsWith('Los préstamos')).toBe(true);
+  });
+
+  it('un texto que no abre con pregunta va entero al cuerpo', () => {
+    expect(partirProposito('Sin pregunta.')).toEqual({ pregunta: '', cuerpo: 'Sin pregunta.' });
   });
 
   it('EP.7d: el propósito de Me deben ya no dice "Personales"', () => {

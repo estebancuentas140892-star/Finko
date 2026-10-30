@@ -1282,11 +1282,12 @@ describe('vacío y formulario de Me deben (DIS.3)', () => {
 
   // ── V-7 / reglas R11 y R18: un solo primario por pantalla ──────
 
-  it('V-7: el CTA del vacío es secundario y usa el mismo verbo del encabezado', () => {
+  it('V-7: el CTA del vacío es el único botón (ADR 107 D5) y usa el mismo verbo del encabezado', () => {
     renderListaPersonales();
     const btn = document.querySelector('.empty-state [data-action="nuevo-personal"]');
-    expect(btn.className).toContain('btn-secondary');
-    expect(btn.className).not.toContain('btn-primary');
+    // ADR 107 D3: verde lleno para el único botón de un vacío; el del
+    // encabezado se oculta mientras el vacío se ve (R51, responsive.css).
+    expect(btn.className).toContain('btn-primary');
     // DSK.5b (ADR 074 D5): fuera el "+" del texto y el verbo pasa a "Nuevo",
     // porque un préstamo es una entidad persistente. La regla de V-7 (misma
     // acción, mismo nombre) se conserva: el encabezado dice lo mismo.

@@ -4303,35 +4303,36 @@ button.chip:focus-visible {
    de lista, es `.apartado-card--listo`. */
 
 /* ════════════════════════════════════════════════════════════
-   BANNER-PROPOSITO - mensaje de propósito de sección.
-   Patrón disclosure colapsable (ADR 016, épica EP).
+   BANNER-PROPOSITO - mensaje de propósito de sección (ADR 016).
+   ADR 107 D5 (MV2.13): un vacío, un mensaje. El banner deja de ser una caja
+   con filete encima del vacío y pasa a ser su título (la pregunta del copy)
+   y su cuerpo. El vacío de la misma sección calla su ícono, su título y su
+   descripción, y quedan su botón y su línea a la sección hermana.
    ════════════════════════════════════════════════════════════ */
 
 .banner-proposito {
-  background: var(--fk-bg-surface);
-  border: 1px solid var(--fk-border-default);
-  border-left: 3px solid var(--fk-accent);
-  border-radius: var(--fk-radius-lg);
-  padding: var(--fk-space-3) var(--fk-space-4);
   margin-bottom: var(--fk-space-4);
 }
 
-/* Color de acento por sección. */
-/* DIS.11 C9: Calendario era la única sección con banner sin su propia regla,
-   así que caía al --fk-accent del bloque base: el verde que el sistema
-   reserva para dinero disponible y logro, en la sección que estrenó el índigo
-   (IV.2c). */
-.banner-proposito[data-seccion="agenda"]      { border-left-color: var(--fk-dom-agenda); }
-.banner-proposito[data-seccion="apartados"]   { border-left-color: var(--fk-dom-ahorro); }
-.banner-proposito[data-seccion="gast"]        { border-left-color: var(--fk-dom-gastos); }
-.banner-proposito[data-seccion="compromisos"] { border-left-color: var(--fk-dom-compromisos); }
-.banner-proposito[data-seccion="presupuesto"] { border-left-color: var(--fk-dom-presupuesto); }
-.banner-proposito[data-seccion="metas"]       { border-left-color: var(--fk-dom-metas); }
-.banner-proposito[data-seccion="ahorro"]      { border-left-color: var(--fk-dom-ahorro); }
-.banner-proposito[data-seccion="inversion"]   { border-left-color: var(--fk-dom-inversion); }
-.banner-proposito[data-seccion="tesoreria"]   { border-left-color: var(--fk-dom-tesoreria); }
-.banner-proposito[data-seccion="analisis"]    { border-left-color: var(--fk-dom-analisis); }
-.banner-proposito[data-seccion="personales"]  { border-left-color: var(--fk-dom-personales); }
+.banner-proposito__titulo {
+  margin: 0 0 var(--fk-space-2);
+  font-size: var(--fk-text-xl);
+  font-weight: var(--fk-font-extrabold);
+  letter-spacing: -0.01em;
+  line-height: var(--fk-leading-tight);
+  color: var(--fk-text-primary);
+}
+
+.section:has(.banner-proposito) .empty-state {
+  align-items: stretch;
+  gap: var(--fk-space-3);
+  padding: 0;
+  text-align: left;
+  background: none;
+}
+.section:has(.banner-proposito) .empty-state__icon,
+.section:has(.banner-proposito) .empty-state__title,
+.section:has(.banner-proposito) .empty-state__desc { display: none; }
 
 .banner-proposito__texto {
   font-size: var(--fk-text-sm);

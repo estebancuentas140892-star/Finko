@@ -276,17 +276,19 @@ test.describe('DIS.18 - la casa de Ahorro (móvil)', () => {
   // AH1: tres textos mandaban al usuario móvil a "la pestaña Fondo (arriba)",
   // que solo existe en la subnav de escritorio, y dos de ellos son estados
   // vacíos: el texto roto se le aparecía justo al usuario nuevo.
-  test('el estado vacío de Metas señala el fondo con un enlace, no con una posición (R85)', async ({ page }) => {
+  // ADR 107 D5: la línea hermana de Metas lleva a Reservas; el Fondo ya está
+  // en la barra de modalidades, justo arriba. Sigue siendo un enlace (R85).
+  test('el estado vacío de Metas señala la sección hermana con un enlace, no con una posición (R85)', async ({ page }) => {
     await seedVacio(page);
     await page.goto('/#metas');
     await page.waitForSelector('#sec-metas.active', { timeout: 10_000 });
 
     const tip = page.locator('#sec-metas .empty-state__tip');
     await expect(tip).not.toContainText('pestaña');
-    await expect(tip.locator('a')).toHaveAttribute('href', '#fondo');
+    await expect(tip.locator('a')).toHaveAttribute('href', '#apartados');
 
     await tip.locator('a').click();
-    await expect(page.locator('#sec-fondo.active')).toBeVisible();
+    await expect(page.locator('#sec-apartados.active')).toBeVisible();
   });
 
   // Ficha 03 (ADR 069 D6): R83, "Más" no scrollea. El techo son 444 px (60%

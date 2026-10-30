@@ -16,6 +16,7 @@
  * - ADR 106 D3 (MV2.8b): el ojo va en el encabezado de toda pantalla con
  *   montos, el de los heroes se calla, y Movimientos también enmascara.
  * - ADR 106 D6 (MV2.8c): Movimientos desde "Más" no dice "‹ Inicio".
+ * - ADR 107 D5 (MV2.13): un vacío, un mensaje y un botón.
  * - Escritorio no cambia: las piezas nuevas no se ven a 1280.
  * - D13: el camino de Aprender del niño no desborda a lo ancho.
  */
@@ -230,6 +231,18 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await page.locator('#sec-movimientos .section__ojo').click();
     await expect(monto).toHaveText(/^[-+]?••••$/);
     await expect(page.locator('#sec-movimientos .section__ojo')).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  test('un vacío, un mensaje: el propósito es su título y queda un solo botón (ADR 107 D5)', async ({ page }) => {
+    await sembrar(page, estadoBase({ cuentas: CUENTAS }));
+    await page.goto('/#personales');
+    const sec = page.locator('#sec-personales');
+    await expect(sec.locator('.banner-proposito__titulo')).toHaveText(
+      '¿Le prestaste dinero a alguien y ya no recuerdas cuánto ni a quién?', { timeout: 10_000 });
+    // El vacío calla su propio mensaje y queda un solo "Nuevo préstamo".
+    await expect(sec.locator('.empty-state__title')).toBeHidden();
+    await expect(sec.locator('[data-action="nuevo-personal"]:visible')).toHaveCount(1);
+    await expect(sec.locator('.empty-state [data-action="nuevo-personal"]')).toBeVisible();
   });
 
   test('Movimientos desde "Más" no tiene volver: es nivel raíz (ADR 106 D6)', async ({ page }) => {
