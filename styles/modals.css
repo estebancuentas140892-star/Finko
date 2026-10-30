@@ -314,12 +314,45 @@ body:has(#quien-usa[data-open]) .logro-toast { display: none; }
   color: var(--fk-text-muted);
   margin: 0 2px var(--fk-space-2);
 }
+/* ADR 108 (MV2.21): lista en vez de rejilla. A 320 la rejilla partía "Mis
+   cuentas" en dos líneas y no dejaba lugar para la línea de estado (R74).
+   Una fila por destino: teja, nombre y, a la derecha, cómo está. */
 .mas-sheet__grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--fk-space-2);
+  grid-template-columns: 1fr;
+  gap: 0;
   margin-bottom: var(--fk-space-4);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  background: var(--fk-bg-elevated);
+  overflow: hidden;
 }
+.mas-sheet__grid > .mas-tile {
+  min-height: 48px;
+  border: 0;
+  border-bottom: 1px solid var(--fk-border-subtle);
+  border-radius: 0;
+  background: none;
+}
+.mas-sheet__grid > .mas-tile:last-child { border-bottom: 0; }
+.mas-sheet__grid .mas-tile__label {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-primary);
+  white-space: nowrap;
+}
+.mas-tile__estado {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+.mas-tile__estado[hidden] { display: none; }
+.mas-tile__estado--aviso { color: var(--fk-warning-text); }
 .mas-sheet__footer {
   display: flex;
   gap: var(--fk-space-2);

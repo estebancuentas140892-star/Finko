@@ -2076,7 +2076,9 @@
              encima del pie y "Consultar" arriba.
 
              R83: la hoja no scrollea. Techo de 444 px, un solo número para
-             los cuatro anchos; hoy mide 361 px. Lo vigila un E2E. -->
+             los cuatro anchos. Lo vigila un E2E.
+             ADR 108 (MV2.21): lista en vez de rejilla, con una línea por
+             destino que escribe ui/menu-mas.js al abrir la hoja (R74). -->
         <span class="mas-sheet__group-label" id="mas-label-consultar">Consultar</span>
         <div class="mas-sheet__grid" role="group" aria-labelledby="mas-label-consultar">
           <!-- Calendario baja de la barra inferior a este grupo (AH.7a, ADR
@@ -2084,6 +2086,7 @@
           <a class="mas-tile" href="#agenda" data-section="agenda">
             <span class="mas-tile__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-agenda"/></svg></span>
             <span class="mas-tile__label">Calendario</span>
+            <span class="mas-tile__estado" hidden></span>
           </a>
           <!-- Movimientos (DIS.6/C6, hallazgo H6, regla R32): era la única
                sección sin entrada de navegación. Se llegaba solo con "Ver
@@ -2095,10 +2098,12 @@
           <a class="mas-tile" href="#movimientos" data-section="movimientos">
             <span class="mas-tile__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-saldo"/></svg></span>
             <span class="mas-tile__label">Movimientos</span>
+            <span class="mas-tile__estado" hidden></span>
           </a>
           <a class="mas-tile" href="#analisis" data-section="analisis">
             <span class="mas-tile__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-analisis"/></svg></span>
             <span class="mas-tile__label">Análisis</span>
+            <span class="mas-tile__estado" hidden></span>
           </a>
         </div>
 
@@ -2112,10 +2117,12 @@
           <a class="mas-tile" href="#tesoreria" data-section="tesoreria">
             <span class="mas-tile__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-cuentas"/></svg></span>
             <span class="mas-tile__label">Mis cuentas</span>
+            <span class="mas-tile__estado" hidden></span>
           </a>
           <a class="mas-tile" href="#personales" data-section="personales">
             <span class="mas-tile__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-personales"/></svg></span>
             <span class="mas-tile__label">Me deben</span>
+            <span class="mas-tile__estado" hidden></span>
           </a>
         </div>
 
