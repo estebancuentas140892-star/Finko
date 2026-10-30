@@ -1066,10 +1066,9 @@
 }
 .fondo-card__nivel-fila--actual .fondo-card__nivel-estado { color: var(--fk-text-secondary); }
 
+/* ADR 107 D4: explica la cifra de arriba, no avisa. Texto corrido, sin filete. */
 .fondo-card__veredicto {
   margin: 0;
-  padding-left: var(--fk-space-3);
-  border-left: 2px solid var(--fk-dom-ahorro);
   font-size: var(--fk-text-sm);
   line-height: 1.45;
   color: var(--fk-text-primary);
@@ -1501,10 +1500,9 @@
   border-radius: 2px;
 }
 
+/* ADR 107 D4: explica la cifra de arriba, no avisa. Texto corrido, sin filete. */
 .inversion-momento__nota {
   margin: 0;
-  padding-left: var(--fk-space-3);
-  border-left: 2px solid var(--fk-dom-inversion);
   font-size: var(--fk-text-sm);
   line-height: 1.45;
   color: var(--fk-text-secondary);

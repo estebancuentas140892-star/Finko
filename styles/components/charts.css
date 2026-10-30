@@ -750,12 +750,9 @@ button.cmp__col {
   flex-direction: column;
   gap: var(--fk-space-1);
 }
+/* ADR 107 D4: la razón de la estrategia explica, no avisa: sin caja ni filete. */
 .estrategia-card__palancas-razon {
   margin: 0;
-  padding: var(--fk-space-3);
-  background: var(--fk-bg-base);
-  border-left: 3px solid color-mix(in srgb, var(--fk-dom-compromisos) 60%, transparent);
-  border-radius: var(--fk-radius-md);
   font-size: var(--fk-text-sm);
   color: var(--fk-text-primary);
   line-height: 1.4;

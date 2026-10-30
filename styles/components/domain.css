@@ -550,18 +550,30 @@ button.chip:focus-visible {
   line-height: var(--fk-leading-relaxed);
 }
 
-/* Advertencia (ej. "fondo aún no está completo"): callout con tinte de
-   warning para que no se confunda con una fila de dato ni con la razón. */
-.distribucion-alerta {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--fk-space-2);
-  margin: var(--fk-space-2) 0 0;
-  padding: var(--fk-space-2) var(--fk-space-3);
-  background: var(--fk-warning-bg);
-  border-radius: var(--fk-radius-md);
+/* "Por qué esta propuesta" (ADR 107 D4): las razones de la propuesta en una
+   lista corrida bajo su título. Explican; no piden atención, así que van sin
+   caja ni color de advertencia (R41). */
+.distribucion-razones {
+  margin: var(--fk-space-3) 0 0;
+}
+.distribucion-razones__titulo {
+  margin: 0 0 var(--fk-space-2);
   font-size: var(--fk-text-xs);
-  color: var(--fk-warning-text);
+  font-weight: var(--fk-font-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fk-text-muted);
+}
+.distribucion-razones__lista {
+  margin: 0;
+  padding-left: var(--fk-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+}
+.distribucion-alerta {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
   line-height: var(--fk-leading-snug);
 }
 
@@ -1262,8 +1274,6 @@ button.chip:focus-visible {
    algo que decir. */
 .apartado-card__veredicto {
   margin: 0;
-  padding-left: var(--fk-space-3);
-  border-left: 2px solid var(--fk-dom-ahorro);
   font-size: var(--fk-text-sm);
   line-height: 1.45;
   color: var(--fk-text-primary);
@@ -1420,7 +1430,6 @@ button.chip:focus-visible {
 }
 .apartado-card--listo .apartado-card__barra-fill,
 .apartado-card--listo .apartado-card__casilla--on { background: var(--fk-success); }
-.apartado-card--listo .apartado-card__veredicto { border-left-color: var(--fk-success); }
 .apartado-card--listo .apartado-card__principal {
   border-color: color-mix(in srgb, var(--fk-success) 45%, transparent);
   background: transparent;

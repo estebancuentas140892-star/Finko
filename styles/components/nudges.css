@@ -33,16 +33,6 @@
 
 .nudge:last-child { margin-bottom: 0; }
 
-.nudge__icon {
-  font-size: 1.375rem;
-  line-height: 1;
-  padding-top: 2px;
-}
-/* Cuando el nudge trae icono SVG en vez de emoji: 24px iguala la masa
-   visual del trazo con la del emoji de 22px (el emoji es más denso). */
-.nudge__icon .icon {
-  --fk-icon-size: var(--fk-icon-lg);
-}
 
 .nudge__body {
   min-width: 0;
@@ -50,7 +40,7 @@
 
 .nudge__title {
   font-size: var(--fk-text-sm);
-  font-weight: var(--fk-font-semibold);
+  font-weight: var(--fk-font-bold);
   color: var(--fk-text-primary);
   margin: 0 0 2px;
   line-height: var(--fk-leading-snug);
@@ -81,45 +71,60 @@
   flex-shrink: 0;
 }
 
+/* ADR 107 D4 (MV2.18): un aviso tiene forma, título y una línea. El ícono de
+   su nivel va en una caja tintada; el título, en el color del texto: el color
+   acompaña, la forma y el texto deciden (R49). Ningún nivel lleva filete
+   lateral, y solo riesgo y atención llevan fondo de color (R41): información
+   y logro van sobre la superficie normal. */
+.nudge__icon {
+  --nudge-tono: var(--fk-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: var(--fk-radius-md);
+  background: color-mix(in srgb, var(--nudge-tono) 18%, transparent);
+  color: var(--nudge-tono);
+  font-size: var(--fk-text-lg);
+}
+.nudge__icon .icon { --fk-icon-size: var(--fk-icon-md); }
+
 /* ── Nivel 1: Crítico (datos inválidos, errores que rompen indicadores) */
 .nudge-critical {
   background: var(--fk-nudge-critical-bg);
   border-color: var(--fk-nudge-critical-border);
-  border-left: 3px solid var(--fk-nudge-critical-accent);
 }
-.nudge-critical .nudge__title { color: var(--fk-danger-text); }
+.nudge-critical .nudge__icon { --nudge-tono: var(--fk-danger-text); }
 
 /* ── Nivel 2: Alto (atrasos, recargos inminentes, mora, vencimientos) */
 .nudge-high {
   background: var(--fk-nudge-high-bg);
   border-color: var(--fk-nudge-high-border);
-  border-left: 3px solid var(--fk-nudge-high-accent);
 }
-.nudge-high .nudge__title { color: var(--fk-dom-gastos-text); }
+.nudge-high .nudge__icon { --nudge-tono: var(--fk-dom-gastos-text); }
 
 /* ── Nivel 3: Medio (hormigas, predicciones, bolsillos olvidados) */
 .nudge-medium {
   background: var(--fk-nudge-medium-bg);
   border-color: var(--fk-nudge-medium-border);
-  border-left: 3px solid var(--fk-nudge-medium-accent);
 }
-.nudge-medium .nudge__title { color: var(--fk-warning-text); }
+.nudge-medium .nudge__icon { --nudge-tono: var(--fk-warning-text); }
 
 /* ── Nivel 4: Info (comparativas, tendencias, retroalimentación) */
 .nudge-info {
-  background: var(--fk-nudge-info-bg);
-  border-color: var(--fk-nudge-info-border);
-  border-left: 3px solid var(--fk-nudge-info-accent);
+  background: var(--fk-bg-surface);
+  border-color: var(--fk-border-subtle);
 }
-.nudge-info .nudge__title { color: var(--fk-info-text); }
+.nudge-info .nudge__icon { --nudge-tono: var(--fk-info-text); }
 
 /* ── Nivel 5: Logro (salud financiera, rachas, metas cumplidas) */
 .nudge-success {
-  background: var(--fk-nudge-success-bg);
-  border-color: var(--fk-nudge-success-border);
-  border-left: 3px solid var(--fk-nudge-success-accent);
+  background: var(--fk-bg-surface);
+  border-color: var(--fk-border-subtle);
 }
-.nudge-success .nudge__title { color: var(--fk-success-text); }
+.nudge-success .nudge__icon { --nudge-tono: var(--fk-success-text); }
 
 /* Hover sutil - solo desktop */
 @media (hover: hover) {

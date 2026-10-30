@@ -866,11 +866,15 @@ function _renderTarjetaDistribuir({ dist, estado, hayDestinos, distribuir }) {
           </button>`
         : '';
 
-  // MC-DIS.9 C6: ⚠ pasa a i-alert. `.distribucion-alerta` ya es flex con gap,
-  // así que el ícono se alinea sin CSS nuevo.
-  const alertasHtml = alertas.map(a =>
-    `<p class="distribucion-alerta">${icon('alert', 'icon icon--sm')}<span>${_esc(a)}</span></p>`
-  ).join('');
+  // ADR 107 D4: estas líneas explican la propuesta, no avisan de nada (R41).
+  // Eran tres cajas ámbar con ícono de alerta; ahora una lista bajo su título.
+  const alertasHtml = alertas.length > 0 ? `
+      <div class="distribucion-razones">
+        <p class="distribucion-razones__titulo">Por qué esta propuesta</p>
+        <ul class="distribucion-razones__lista">
+          ${alertas.map(a => `<li class="distribucion-alerta">${_esc(a)}</li>`).join('')}
+        </ul>
+      </div>` : '';
 
   const filaLeyenda = (tono, s) => `
       <div class="distribuir-card__item">

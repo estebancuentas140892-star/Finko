@@ -37,6 +37,8 @@ export function renderAlertaDeudasDurmiendo() {
   const hayAlta = deudas.some(d => d.severidad === 'alta');
   const nivel   = hayAlta ? 'nudge-high' : 'nudge-medium';
   const icono   = hayAlta ? icon('alert') : icon('moon');
+  // ADR 107 D4 (R55): `alert` solo para riesgo; la atención se anuncia como estado.
+  const rol     = hayAlta ? 'alert' : 'status';
   const n       = deudas.length;
   const titulo  = n === 1
     ? '1 deuda lleva tiempo sin actividad'
@@ -57,7 +59,7 @@ export function renderAlertaDeudasDurmiendo() {
     : '';
 
   el.innerHTML = `
-    <div class="nudge ${nivel}" role="alert" aria-live="polite">
+    <div class="nudge ${nivel}" role="${rol}" aria-live="polite">
       <span class="nudge__icon" aria-hidden="true">${icono}</span>
       <div class="nudge__body">
         <p class="nudge__title">${titulo}</p>

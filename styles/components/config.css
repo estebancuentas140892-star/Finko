@@ -125,7 +125,6 @@
 .config-section__desc--warn {
   background: var(--fk-warning-bg);
   border: 1px solid color-mix(in srgb, var(--fk-warning) 30%, transparent);
-  border-left: 3px solid var(--fk-warning);
   border-radius: var(--fk-radius-md);
   padding: var(--fk-space-3) var(--fk-space-4);
   color: var(--fk-warning-text);
@@ -310,10 +309,11 @@
 }
 
 /* Zona de peligro: reset app */
+/* ADR 107 D4: borrar todo no es algo que atender (R41): tarjeta sobre la
+   superficie, con el borde de peligro y sin filete. */
 .config-danger {
-  background: var(--fk-danger-bg);
-  border: 1px solid color-mix(in srgb, var(--fk-danger) 30%, transparent);
-  border-left: 3px solid var(--fk-danger);
+  background: var(--fk-bg-surface);
+  border: 1px solid color-mix(in srgb, var(--fk-danger) 35%, transparent);
   border-radius: var(--fk-radius-lg);
   padding: var(--fk-space-4);
   display: flex;

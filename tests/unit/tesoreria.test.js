@@ -2914,7 +2914,7 @@ describe('renderDistribucionIngreso() - tarjeta sin accesos cruzados (punto 11)'
 
   // MC-DIS.9 C6: ⚠ pasa a i-alert del sprite. La alerta de fondo incompleto
   // aparece cuando el fondo está activo y aún no llega a su meta.
-  it('las alertas de la tarjeta usan el ícono del sprite, no el emoji', () => {
+  it('las razones de la propuesta van en una lista, sin ícono de alerta (ADR 107 D4)', () => {
     S.ahorro = {
       fondoEmergencia: { activo: true, montoActual: 0, mesesObjetivo: 3 },
     };
@@ -2923,10 +2923,13 @@ describe('renderDistribucionIngreso() - tarjeta sin accesos cruzados (punto 11)'
       tipo: 'fijo', frecuencia: 'Mensual', diaPago: 5, activo: true,
     }];
     renderDistribucionIngreso();
-    const alertas = elCard().querySelectorAll('.distribucion-alerta');
+    // ADR 107 D4: explican la propuesta, no avisan. Van en una lista bajo
+    // "Por qué esta propuesta", sin ícono de alerta ni emoji.
+    const alertas = elCard().querySelectorAll('.distribucion-razones__lista > .distribucion-alerta');
     expect(alertas.length).toBeGreaterThan(0);
+    expect(elCard().querySelector('.distribucion-razones__titulo').textContent).toBe('Por qué esta propuesta');
     alertas.forEach(a => {
-      expect(a.innerHTML).toContain('#i-alert');
+      expect(a.innerHTML).not.toContain('#i-alert');
       expect(a.textContent).not.toContain('⚠');
     });
   });

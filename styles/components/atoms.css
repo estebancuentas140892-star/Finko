@@ -431,10 +431,6 @@
   font-size: var(--fk-text-xs);
   color: var(--fk-text-muted);
   max-width: 280px;
-  padding: var(--fk-space-2) var(--fk-space-3);
-  background: var(--fk-bg-elevated);
-  border-radius: var(--fk-radius-md);
-  border-left: 2px solid var(--fk-accent-border);
   text-align: left;
   line-height: var(--fk-leading-relaxed);
 }
