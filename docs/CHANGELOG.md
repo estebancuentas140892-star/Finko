@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-10)
 
+### feat(movil): MV2.8b, el ojo en el encabezado · 2026-10-29
+
+[ADR 106](DECISIONS/106-un-encabezado-tres-niveles.md) D3 (segunda de tres rebanadas; cambia en el teléfono el ADR 034 D2 y D3). Solo bajo 1024 px. SW v634.
+
+- **Un solo lugar para el ojo (R20)**: a la derecha de la fila del título, antes de crear, en Inicio (junto a la lupa), Ahorro, Fondo, Reservas, Metas, Inversión, Mis cuentas, Me deben, Calendario, Movimientos y Análisis. Ajustes no lleva: no tiene montos. Usa la acción y la sincronización del ojo del bloque Gastos (`bloque-saldo-visibilidad` + `renderAll`).
+- **Los ojos de los heroes se callan en el teléfono** (Inicio, Mis cuentas, Calendario y el del medio de Análisis); en escritorio siguen mandando. El hero de Inicio pasa a la izquierda, ahora que el ojo no ocupa su esquina.
+- **Movimientos e Inversión enmascaran**: no respetaban `S.config.ocultarSaldo`; ahora el monto de cada fila, el 4x1000 y el nombre accesible de la fila, y los montos del momento y de cada inversión.
+- Pruebas: dos unitarias de máscara (Movimientos, Inversión); un E2E móvil con el ojo en las diez pantallas; dos E2E de Inicio en el teléfono pasan del ojo del hero al del encabezado.
+
 ### feat(movil): MV2.8a, la fila del título y crear tonal · 2026-10-29
 
 [ADR 106](DECISIONS/106-un-encabezado-tres-niveles.md) D1, D2 y D4 (primera de tres rebanadas de MV2.8); ficha [`contexto/sistema-visual.md`](contexto/sistema-visual.md). Solo bajo 1024 px. SW v633.
