@@ -19,7 +19,8 @@
  * - ADR 107 D5 (MV2.13): un vacío, un mensaje y un botón.
  * - ADR 109 (MV2.9): Mis cuentas en filas con hoja, sin papeleras a la vista.
  * - ADR 110 (MV2.19): Distribuir se abre sobre Inicio, con el pie a la vista y
- *   el motivo de un "Distribuir" apagado; en escritorio sigue navegando.
+ *   el motivo de un "Distribuir" apagado; arriba, qué se reparte y desde qué
+ *   cuenta; al confirmar, la hoja dice qué quedó. En escritorio sigue navegando.
  * - Escritorio no cambia: las piezas nuevas no se ven a 1280.
  * - D13: el camino de Aprender del niño no desborda a lo ancho.
  */
@@ -79,11 +80,14 @@ async function seedMisCuentas(page) {
   }));
 }
 
-/** Un ingreso que se cobra hoy: Inicio ofrece distribuirlo. */
-async function seedDistribuir(page) {
+/**
+ * Un ingreso que se cobra hoy: Inicio ofrece distribuirlo. Con `cuentas`, varias
+ * cuentas y el ingreso sin la suya guardada (la cuenta se pregunta al empezar).
+ */
+async function seedDistribuir(page, cuentas = null) {
   await sembrar(page, estadoBase({
-    cuentas: CUENTAS,
-    ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', diaPago: new Date().getDate(), activo: true, cuentaId: 'c1' }],
+    cuentas: cuentas ?? CUENTAS,
+    ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', diaPago: new Date().getDate(), activo: true, cuentaId: cuentas ? null : 'c1' }],
     ahorro: { fondoEmergencia: { activo: true, completado: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 },
     config: { presetDistribucion: '50-30-20' },
   }));
@@ -364,6 +368,41 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     // Cerrar deja donde estabas.
     await page.locator('#modal-distribuir [data-action="modal-close"]').click();
     await expect(page.locator('#sec-dash.active')).toBeVisible();
+  });
+
+  test('Distribuir: qué se reparte arriba, la cuenta al empezar y la hoja dice qué quedó (ADR 110 D4-D6)', async ({ page }) => {
+    await seedDistribuir(page, [...CUENTAS,
+      { id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 500_000, activa: true, fechaCreacion: '2026-07-01T00:00:00.000Z' }]);
+    await page.goto('/#dash');
+    await page.locator('[data-action="distribuir-desde-inicio"]:visible').first().click({ timeout: 10_000 });
+    const hoja = page.locator('#modal-distribuir');
+
+    // D4: el monto arriba; sin cuenta guardada, la pregunta abre desplegada.
+    await expect(hoja.locator('[data-dist-que-monto]')).toHaveText('$3.000.000');
+    await expect(hoja.locator('#distribuir-cuenta')).toBeVisible();
+    // D5: la comparación compacta, dentro del paso 1.
+    await expect(hoja.locator('[data-dist-paso="0"] .distribuir-edu--compacto')).toBeVisible();
+
+    const siguiente = hoja.locator('[data-action="distribuir-paso-siguiente"]');
+    while (await siguiente.isVisible()) await siguiente.click();
+    await page.check('[data-dist-remanente][value="cuenta"]');
+    const confirmar = hoja.locator('[data-action="confirmar-distribucion"]');
+    await expect(confirmar).toBeDisabled();
+    await expect(page.locator('#distribuir-resumen')).toHaveText('Elige arriba desde qué cuenta sale el dinero.');
+
+    await hoja.locator('#distribuir-cuenta').selectOption('c2');
+    await expect(hoja.locator('[data-dist-que-sub]')).toHaveText('Salario · desde Bancolombia');
+    await expect(confirmar).toBeEnabled();
+    await confirmar.click();
+
+    // D6: la hoja sigue abierta y dice qué quedó; el dinero entró a Bancolombia.
+    await expect(page.locator('#distribuir-listo-titulo')).toContainText('Distribuiste');
+    await expect(hoja.locator('.distribuir-listo__lista').last()).toContainText('Bancolombia');
+    await expect(page).toHaveURL(/#dash$/);
+    await expect(page.locator('#snackbar-distribucion')).toHaveCount(0);
+    await hoja.locator('.distribuir__pie [data-action="modal-close"]').click();
+    await expect(page.locator('#modal-distribuir[data-open]')).toHaveCount(0);
+    await expect(page.locator('#snackbar-distribucion')).toBeVisible();
   });
 });
 

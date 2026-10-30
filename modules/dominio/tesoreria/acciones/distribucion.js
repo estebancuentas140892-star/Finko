@@ -29,8 +29,9 @@ import {
   ocurrenciasPorDistribuir,
   resolverCobroDistribuido,
   motivoSinDistribuir,
+  unirNombres,
 } from '../logic/distribucion.js';
-import { renderDistribucionIngreso, renderAsistenteDistribucion } from '../view.js';
+import { renderDistribucionIngreso, renderAsistenteDistribucion, htmlResultadoDistribucion } from '../view.js';
 
 /**
  * Refresca la tarjeta de entrada compacta y, si el asistente está abierto en
@@ -40,7 +41,56 @@ import { renderDistribucionIngreso, renderAsistenteDistribucion } from '../view.
 function _refrescarDistribucion() {
   renderDistribucionIngreso();
   const overlay = document.getElementById('modal-distribuir');
-  if (overlay && 'open' in overlay.dataset) renderAsistenteDistribucion();
+  if (!overlay || !('open' in overlay.dataset)) return;
+  // ADR 110 D5: en el teléfono los métodos viven en "Cómo lo calculamos".
+  // Elegir uno repinta el asistente; lo desplegado sigue desplegado.
+  const metodoAbierto = overlay.querySelector('.distribuir-metodo')?.open === true;
+  const cuentaElegida = document.getElementById('distribuir-cuenta')?.value ?? '';
+  renderAsistenteDistribucion();
+  const metodo = overlay.querySelector('.distribuir-metodo');
+  if (metodo) metodo.open = metodoAbierto;
+  const select = document.getElementById('distribuir-cuenta');
+  if (select && cuentaElegida) select.value = cuentaElegida;
+  const panel = document.getElementById('distribuir-ingreso-panel');
+  if (panel) _irAPasoDistribucion(panel, 0, { moverFoco: false });
+}
+
+/**
+ * "Cambiar" de la fila de arriba (ADR 110 D4): despliega el monto, los
+ * ingresos recibidos y la cuenta de origen.
+ *
+ * @param {HTMLElement} el
+ */
+function _alternarCambiar(el) {
+  const zona = document.getElementById('distribuir-cambiar');
+  if (!zona) return;
+  zona.hidden = !zona.hidden;
+  el.setAttribute('aria-expanded', String(!zona.hidden));
+  if (!zona.hidden) zona.querySelector('input, select')?.focus({ preventScroll: true });
+}
+
+/**
+ * Mantiene al día la fila "qué se reparte y desde dónde" (ADR 110 D4): el
+ * monto escrito, los ingresos marcados como recibidos y la cuenta elegida.
+ * No-op fuera del teléfono, donde la fila no existe.
+ *
+ * @param {Element} panel
+ * @param {number} monto
+ */
+function _actualizarQueSeReparte(panel, monto) {
+  const fila = panel.querySelector('.distribuir__que');
+  if (!fila) return;
+  const montoEl = fila.querySelector('[data-dist-que-monto]');
+  if (montoEl) montoEl.textContent = f(monto);
+  const checks = [...panel.querySelectorAll('[data-dist-recibido]')];
+  const ingresos = checks.length > 0
+    ? unirNombres([...new Set(checks.filter(c => c.checked).map(c => c.dataset.distRecibidoNombre))])
+    : fila.dataset.distQueIngresos ?? '';
+  const select = document.getElementById('distribuir-cuenta');
+  const cuentaId = select ? select.value : _cuentaOrigenDistribucion();
+  const nombre = cuentaId ? _nombreCuenta(cuentaId) : '';
+  const sub = fila.querySelector('[data-dist-que-sub]');
+  if (sub) sub.textContent = [ingresos, nombre ? `desde ${nombre}` : ''].filter(Boolean).join(' · ');
 }
 
 /** @param {HTMLElement} el */
@@ -178,6 +228,9 @@ function _distribuirDesdeInicio() {
 export function abrirAsistenteDistribucion() {
   const overlay = document.getElementById('modal-distribuir');
   if (!overlay) return;
+  // ADR 110 D6: la cara final cambia el título; cada apertura vuelve al de siempre.
+  const titulo = document.getElementById('modal-distribuir-title');
+  if (titulo) titulo.textContent = 'Distribuir mi ingreso';
 
   if (!renderAsistenteDistribucion()) return;
 
@@ -300,7 +353,7 @@ function _leerItemsDistribucion(panel, necesidades = []) {
           .reduce((s, n) => s + n.monto, 0);
         monto = topeAbonoExtraDeuda(_saldoDeuda(id), cuotaMarcada, monto);
       }
-      return { tipo, id, monto };
+      return { tipo, id, monto, nombre: inp?.dataset.distNombre ?? '' };
     })
     .filter(it => it.tipo !== 'cuenta' && it.monto > 0);
 }
@@ -345,6 +398,7 @@ function _leerNecesidadesMarcadas(panel) {
       tipo:  chk.dataset.necTipo === 'deuda' ? 'necesidad-deuda' : 'necesidad-fijo',
       id:    chk.dataset.necId || null,
       monto: Number(chk.dataset.necMonto) || 0,
+      nombre: chk.dataset.necNombre ?? '',
     }))
     .filter(it => it.monto > 0);
 }
@@ -403,6 +457,9 @@ function _actualizarSugerenciasRemanente(panel, monto, necesidades) {
  * @returns {string|null}
  */
 function _cuentaOrigenDistribucion() {
+  // ADR 110 D4: en el teléfono la cuenta se elige al empezar; manda lo elegido.
+  const elegida = document.getElementById('distribuir-cuenta')?.value;
+  if (elegida) return elegida;
   const activas   = (S.cuentas ?? []).filter(c => c.activa !== false);
   const preferida = cuentaIngresoPrincipal(S.ingresos ?? []);
   if (preferida && activas.some(c => c.id === preferida)) return preferida;
@@ -733,9 +790,13 @@ function _recalcularDistribucion() {
   // "Distribuir" se habilita si hay algo real que registrar: Necesidades/Ahorro/
   // Deudas/Inversiones (asignado) o, con MC.7e, una transferencia entre cuentas
   // (transferido), aunque no haya nada más marcado en los otros pasos.
+  // ADR 110 D4: con la pregunta de la cuenta a la vista (teléfono), sin
+  // respuesta no hay de dónde sacar el dinero.
+  const faltaCuenta = document.getElementById('distribuir-cuenta')?.value === '';
   const valido    = monto > 0 && (asignado > 0 || transferido > 0)
     && (!excede || deficitCubierto) && !excedeTransferencia && !faltaDecidirRemanente
-    && recibido.resuelto;
+    && recibido.resuelto && !faltaCuenta;
+  _actualizarQueSeReparte(panel, monto);
 
   if (resumenEl) {
     // Con déficit, el "qué hacer" vive en el bloque de arriba (completar con
@@ -745,7 +806,7 @@ function _recalcularDistribucion() {
     // por qué en el pie, en vez de apagarse en silencio.
     const enUltimo = _pasoActualDistribucion(panel) === _pasosDistribucion(panel).length - 1;
     const motivo = !excede && enUltimo && !valido
-      ? motivoSinDistribuir({ monto, asignado, transferido, sinAsignar, recibido, excedeTransferencia, faltaDecidirRemanente })
+      ? motivoSinDistribuir({ monto, asignado, transferido, sinAsignar, recibido, excedeTransferencia, faltaDecidirRemanente, faltaCuenta })
       : '';
     resumenEl.textContent = excede
       ? `Asignaste ${f(asignado)}, ${f(deficit)} más que tu ingreso de ${f(monto)}.`
@@ -961,6 +1022,7 @@ async function _confirmarDistribucion() {
   // un ingreso único que llegó por otro monto.
   const acreditar = recibido.acreditar;
   const cuenta = (S.cuentas ?? []).find(c => c.id === cuentaId);
+  const saldoAntes = cuenta?.saldo ?? 0;
 
   // Sello por ocurrencia (BUG-032 HF.0h, HF.0i): lo que esta distribución
   // reparte queda en `cobrosDistribuidos` para que ni la hoja ni la próxima
@@ -990,12 +1052,59 @@ async function _confirmarDistribucion() {
     ? `Distribuiste ${f(asignado)}: ${f(monto)} de tu ingreso y ${f(totalComplemento)} del saldo de tus otras cuentas.`
     : `Distribuiste ${f(asignado)} de tu ingreso.`);
 
+  // ADR 110 D6 (MV2.19c): en el teléfono la hoja dice qué quedó, con
+  // "Deshacer" ahí mismo; el aviso con "Deshacer" aparece al cerrarla. Se
+  // reconoce por la fila de arriba, que solo se pinta en el teléfono.
+  const overlay = document.getElementById('modal-distribuir');
+  if (overlay && panel.querySelector('.distribuir__que')) {
+    _mostrarResultado(overlay, {
+      distribuido: asignado,
+      ingreso: monto,
+      // Un abono extra a una deuda también es un pago; lo demás, aportes.
+      pagos: [...necesidades, ...items.filter(i => i.tipo === 'deuda')],
+      aportes: items.filter(i => i.tipo !== 'deuda'),
+      movido: totalTransferido,
+      diaADia: Math.max(0, sinAsignar - totalTransferido),
+      cuenta: cuenta ? { nombre: cuenta.nombre, antes: saldoAntes, despues: S.cuentas.find(c => c.id === cuentaId)?.saldo ?? saldoAntes } : null,
+    });
+    return;
+  }
+
   // Confirmar cierra el modal (ADR 035 D6): ya no queda nada por hacer en el
   // asistente. El snackbar "Deshacer" vive en <body>, sobrevive el cierre.
-  const overlay = document.getElementById('modal-distribuir');
   if (overlay) cerrarModal(overlay);
 
   _mostrarSnackbarDeshacer();
+}
+
+/** Vigila el cierre de la cara final para dejar el aviso con "Deshacer". */
+let _observadorResultado = null;
+
+/**
+ * Pinta la cara final en la hoja (ADR 110 D6) y, al cerrarla por donde sea
+ * (Listo, la X, el fondo, Escape o "Ver Mis cuentas"), deja el mismo aviso con
+ * "Deshacer" de siempre, salvo que ya se haya deshecho.
+ *
+ * @param {HTMLElement} overlay
+ * @param {Parameters<typeof htmlResultadoDistribucion>[0]} resultado
+ */
+function _mostrarResultado(overlay, resultado) {
+  const body = document.getElementById('modal-distribuir-body');
+  if (!body) return;
+  body.innerHTML = htmlResultadoDistribucion(resultado);
+  body.scrollTop = 0;
+  const titulo = document.getElementById('modal-distribuir-title');
+  if (titulo) titulo.textContent = 'Listo';
+  document.getElementById('distribuir-listo-titulo')?.focus({ preventScroll: true });
+
+  _observadorResultado?.disconnect();
+  _observadorResultado = new MutationObserver(() => {
+    if ('open' in overlay.dataset) return;
+    _observadorResultado.disconnect();
+    _observadorResultado = null;
+    if (_snapshotDistribucion) _mostrarSnackbarDeshacer();
+  });
+  _observadorResultado.observe(overlay, { attributes: true, attributeFilter: ['data-open'] });
 }
 
 /** Revierte la última distribución restaurando el snapshot. */
@@ -1004,6 +1113,11 @@ function _deshacerDistribucion() {
   _restaurarSlices(_snapshotDistribucion);
   _snapshotDistribucion = null;
   _quitarSnackbarDeshacer();
+  // ADR 110 D6: deshecho desde la cara final, la hoja ya no tiene qué decir.
+  const overlay = document.getElementById('modal-distribuir');
+  if (overlay && 'open' in overlay.dataset && document.getElementById('distribuir-listo-titulo')) {
+    cerrarModal(overlay);
+  }
   save();
   _SLICES_DISTRIBUCION.forEach(s => EventBus.emit('state:change', { section: s }));
   updSaldo();
@@ -1050,6 +1164,7 @@ export function initAccionesDistribucion() {
   registrarAccion('deshacer-distribucion',     _deshacerDistribucion);
   registrarAccion('distribuir-desde-inicio',   _distribuirDesdeInicio);
   registrarAccion('confirmar-cobro-recibido',  _confirmarCobroRecibido);
+  registrarAccion('distribuir-cambiar',        _alternarCambiar);
 
   // Recalculo en vivo (sin re-render completo, igual que el extra mensual de
   // deudas en ADR 011 S1): el editor personalizado y el panel "Distribuir mi
@@ -1070,6 +1185,11 @@ export function initAccionesDistribucion() {
   // Los toggles de cada destino del panel disparan `change`, no `input`.
   document.addEventListener('change', (e) => {
     const t = e.target;
+    // ADR 110 D4: la cuenta de origen elegida al empezar.
+    if (t instanceof HTMLSelectElement && t.hasAttribute('data-dist-cuenta')) {
+      _recalcularDistribucion();
+      return;
+    }
     if (!(t instanceof HTMLInputElement)) return;
     if (t.hasAttribute('data-dist-destino-toggle')) {
       _onToggleDestinoDistribucion(t);

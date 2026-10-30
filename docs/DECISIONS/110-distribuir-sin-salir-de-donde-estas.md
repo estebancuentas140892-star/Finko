@@ -59,7 +59,7 @@ Mover a otras cuentas, desmarcar un ingreso, cambiar el monto, los métodos y lo
 
 ### Positivas
 
-- El reparto se hace sin perder el lugar, y el botón para seguir nunca queda fuera de la vista.
+- El reparto se hace sin perder el lugar, y el botón para seguir nunca queda fuera de la vista. Medido a 390 con el mismo escenario: el paso 1 empieza a 357 px en vez de 789; a 320 × 568 el pie sigue al fondo de la hoja y nada desborda.
 - Un "Distribuir" apagado siempre dice por qué.
 
 ### Negativas / Restricciones

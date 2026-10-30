@@ -1305,15 +1305,33 @@ export function construirFilasTransferenciaCuentas(cuentas = []) {
  * a otras cuentas, que haya algo marcado y, al final, qué hacer con lo que
  * queda. '' si no hay nada que decir.
  *
+ * `faltaCuenta` (ADR 110 D4): en el teléfono la cuenta de origen se elige al
+ * empezar, y sin ella no hay de dónde sacar el dinero.
+ *
  * @param {{monto:number, asignado:number, transferido:number, sinAsignar:number,
- *   recibido:{resuelto:boolean}, excedeTransferencia:boolean, faltaDecidirRemanente:boolean}} e
+ *   recibido:{resuelto:boolean}, excedeTransferencia:boolean, faltaDecidirRemanente:boolean,
+ *   faltaCuenta?:boolean}} e
  * @returns {string}
  */
 export function motivoSinDistribuir(e) {
   if (e.monto <= 0) return 'Escribe cuánto vas a distribuir.';
+  if (e.faltaCuenta) return 'Elige arriba desde qué cuenta sale el dinero.';
   if (!e.recibido.resuelto) return 'Revisa qué ingresos te llegaron.';
   if (e.excedeTransferencia) return 'Lo que mueves a otras cuentas pasa de lo que queda para tu estilo de vida.';
   if (e.asignado <= 0 && e.transferido <= 0) return 'Marca al menos un pago o un aporte.';
   if (e.faltaDecidirRemanente) return `Elige arriba qué hacer con los ${f(e.sinAsignar)} que quedan.`;
   return '';
+}
+
+/**
+ * Une nombres como se dicen (ADR 110 D4): "Salario", "Salario y Prima",
+ * "Salario, Prima y Clases". Sin nombres, ''.
+ *
+ * @param {string[]} nombres
+ * @returns {string}
+ */
+export function unirNombres(nombres) {
+  const lista = (nombres ?? []).filter(Boolean);
+  if (lista.length <= 1) return lista[0] ?? '';
+  return `${lista.slice(0, -1).join(', ')} y ${lista.at(-1)}`;
 }

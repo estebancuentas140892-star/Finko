@@ -31,6 +31,8 @@ import {
   estadoDistribucion,
   ocurrenciasPorDistribuir,
   claveOcurrencia,
+  cuentaIngresoPrincipal,
+  unirNombres,
 } from '../logic/distribucion.js';
 import { frecuenciaPrincipalIngresos, montoCobroPrincipal } from '../../../infra/vencimientos.js';
 
@@ -267,7 +269,7 @@ export function renderAsistenteDistribucion() {
   const datos = _construirDatosDistribucion();
   if (!datos) { body.innerHTML = ''; return false; }
 
-  body.innerHTML = _renderContenidoAsistente(datos.dist, datos.presetId, datos.distribucionPersonalizada, datos.distribuir);
+  body.innerHTML = _renderContenidoAsistente(datos.dist, datos.presetId, datos.distribucionPersonalizada, datos.distribuir, _enMovil());
 
   // Ancho de los 3 segmentos de la barra de referencia (MC.13e-2g) como
   // propiedad JS tras el innerHTML, mismo patrón que la barra de la tarjeta de
@@ -276,6 +278,78 @@ export function renderAsistenteDistribucion() {
     seg.style.width = `${_REFERENCIA_EXPERTOS[i].pct}%`;
   });
   return true;
+}
+
+/**
+ * Bajo el corte de escritorio de la app (1024px). El asistente se arma de nuevo
+ * cada vez que se abre, así que basta con leer el ancho al pintarlo.
+ */
+function _enMovil() {
+  return window.matchMedia?.('(max-width: 1023.98px)').matches === true;
+}
+
+/**
+ * Nombra lo hecho sin una lista larga: hasta tres nombres completos; con más,
+ * los dos primeros y cuántos faltan ("Arriendo, Gimnasio y 3 más").
+ *
+ * @param {string[]} nombres
+ * @returns {string}
+ */
+function _resumirNombres(nombres) {
+  const lista = (nombres ?? []).filter(Boolean);
+  return lista.length <= 3
+    ? unirNombres(lista)
+    : `${lista.slice(0, 2).join(', ')} y ${lista.length - 2} más`;
+}
+
+/**
+ * La cara final del asistente en el teléfono (ADR 110 D6, MV2.19c): al
+ * confirmar, la hoja dice qué quedó en vez de cerrarse. Pura: recibe lo que
+ * las acciones acaban de aplicar.
+ *
+ * @param {{
+ *   distribuido: number, ingreso: number,
+ *   pagos: {nombre:string, monto:number}[], aportes: {nombre:string, monto:number}[],
+ *   movido: number, diaADia: number,
+ *   cuenta: {nombre:string, antes:number, despues:number}|null,
+ * }} r
+ * @returns {string}
+ */
+export function htmlResultadoDistribucion(r) {
+  const total = (lista) => lista.reduce((s, x) => s + x.monto, 0);
+  const fila = (titulo, detalle, monto) => `
+        <li class="distribuir-listo__fila">
+          <span class="distribuir-listo__que">${_esc(titulo)}${detalle ? `<span class="distribuir-listo__detalle">${_esc(detalle)}</span>` : ''}</span>
+          <span class="distribuir-listo__monto">${f(monto)}</span>
+        </li>`;
+  const filas = [
+    r.pagos.length > 0
+      ? fila(r.pagos.length === 1 ? '1 pago registrado' : `${r.pagos.length} pagos registrados`,
+        _resumirNombres(r.pagos.map(p => p.nombre)), total(r.pagos))
+      : '',
+    r.aportes.length > 0
+      ? fila(r.aportes.length === 1 ? '1 aporte' : `${r.aportes.length} aportes`,
+        _resumirNombres(r.aportes.map(a => a.nombre)), total(r.aportes))
+      : '',
+    r.movido > 0 ? fila('Movido a otras cuentas', '', r.movido) : '',
+    r.diaADia > 0 ? fila('Para tu día a día', r.cuenta ? `Se queda en ${r.cuenta.nombre}` : '', r.diaADia) : '',
+  ].join('');
+
+  return `
+    <section class="distribuir-listo" aria-labelledby="distribuir-listo-titulo">
+      <span class="distribuir-listo__ok" aria-hidden="true">${icon('check-circle', 'icon')}</span>
+      <h3 id="distribuir-listo-titulo" class="distribuir-listo__titulo" tabindex="-1">Distribuiste ${f(r.distribuido)}</h3>
+      <p class="form-hint">Así quedó tu ingreso de ${f(r.ingreso)}.</p>
+      ${filas ? `<ul class="distribuir-listo__lista">${filas}</ul>` : ''}
+      ${r.cuenta ? `<ul class="distribuir-listo__lista">${fila(r.cuenta.nombre, `Antes ${f(r.cuenta.antes)}`, r.cuenta.despues)}</ul>` : ''}
+      <a href="#tesoreria" class="distribuir-listo__ver" data-action="ir-a-seccion">Ver Mis cuentas</a>
+    </section>
+    <div class="distribuir__pie">
+      <div class="distribuir__nav">
+        <button type="button" class="btn btn-ghost" data-action="deshacer-distribucion">Deshacer</button>
+        <button type="button" class="btn btn-primary" data-action="modal-close">Listo</button>
+      </div>
+    </div>`;
 }
 
 /** Sección a la que enlaza el hint de "sin fecha", según el tipo de objetivo. */
@@ -329,7 +403,7 @@ function _filaDistribuir(d) {
           </label>
           <input type="number" class="input distribuir__monto"
                  min="0" step="10000" inputmode="numeric" value="${d.monto}"
-                 aria-label="Monto para ${_esc(d.nombre)}"
+                 aria-label="Monto para ${_esc(d.nombre)}" data-dist-nombre="${_esc(d.nombre)}"
                  data-dist-tipo="${_esc(d.tipo)}" data-dist-id="${_esc(d.id ?? '')}"${d.autoExcedente ? ' data-dist-auto="1"' : ''}
                  ${marcada ? '' : 'disabled'}
                  data-action="recalcular-distribucion" />
@@ -408,7 +482,7 @@ function _filaNecesidad(it) {
         <div class="distribuir__fila${it.pagado ? ' distribuir__fila--pagado' : ''}">
           <label class="checkbox-row distribuir__toggle">
             <input type="checkbox" data-nec-toggle data-nec-tipo="${_esc(it.tipo)}"
-                   data-nec-id="${_esc(it.id)}" data-nec-monto="${it.monto}" ${checkedAttr} />
+                   data-nec-id="${_esc(it.id)}" data-nec-monto="${it.monto}" data-nec-nombre="${_esc(it.nombre)}" ${checkedAttr} />
             <span>${_iconoNecesidad(it)} ${_esc(it.nombre)}${catSub}${diaSub}${notaSub}</span>
           </label>
           <span class="distribuir__nec-monto">${it.pagado ? 'Ya pagado' : f(it.monto)}</span>
@@ -504,11 +578,17 @@ const _REFERENCIA_EXPERTOS = [
  * (`aria-hidden`): la lista de abajo da la misma información en texto (SC
  * 1.4.11, mismo trato que la barra de la tarjeta de entrada).
  *
+ * ADR 110 D5 (MV2.19b): `compacto` es la versión del teléfono, dentro del
+ * paso 1: las tres filas con la referencia y el porcentaje del usuario, sin la
+ * barra, sin qué entra en cada grupo y sin el porqué, que pasan a "Cómo lo
+ * calculamos".
+ *
  * @param {{necesidades:{pct:number}, estiloVida:{pct:number}, ahorro:{pct:number}}} split
  * @param {string} razon Por qué el reparto del usuario quedó así (`sugerirDistribucionIngreso`).
+ * @param {{compacto?: boolean}} [opts]
  * @returns {string}
  */
-function _renderBloqueEducativo(split, razon) {
+function _renderBloqueEducativo(split, razon, { compacto = false } = {}) {
   const filas = _REFERENCIA_EXPERTOS.map(r => `
         <li class="distribuir-edu__item">
           <p class="distribuir-edu__fila">
@@ -517,19 +597,19 @@ function _renderBloqueEducativo(split, razon) {
             <span class="distribuir-edu__ref">${r.pct}%</span>
             <span class="distribuir-edu__tuyo">tú ${split[r.clave].pct}%</span>
           </p>
-          <p class="distribuir-edu__que">${r.que}</p>
+          ${compacto ? '' : `<p class="distribuir-edu__que">${r.que}</p>`}
         </li>`).join('');
 
   return `
-    <section class="distribuir-edu" aria-labelledby="distribuir-edu-titulo">
+    <section class="distribuir-edu${compacto ? ' distribuir-edu--compacto' : ''}" aria-labelledby="distribuir-edu-titulo">
       <h3 id="distribuir-edu-titulo" class="distribuir-edu__titulo">
         ${icon('lightbulb', 'icon icon--sm')} Así reparten los expertos
       </h3>
-      <div class="distribuir-edu__barra" aria-hidden="true">
+      ${compacto ? '' : `<div class="distribuir-edu__barra" aria-hidden="true">
         ${_REFERENCIA_EXPERTOS.map(r => `<div class="distribuir-edu__seg dist-color-${r.tono}"></div>`).join('')}
-      </div>
+      </div>`}
       <ul class="distribuir-edu__lista">${filas}</ul>
-      <p class="distribuir-edu__razon">${_esc(razon)}</p>
+      ${compacto ? '' : `<p class="distribuir-edu__razon">${_esc(razon)}</p>`}
     </section>`;
 }
 
@@ -627,7 +707,7 @@ function _ctasDelPaso(ctas, paso) {
  * @param {{montoIngreso:number, ahorroPct:number, estiloVidaPct:number, ahorroBudget:number, evBudget:number, destinosAhorro:Array, destinosInversiones:Array, destinosCuentas?:Array, itemsNecesidades?:Array, ctas?:Array<{label:string, seccion:string}>, estado:{estado:string, periodoISO:string|null, esHoy:boolean}}} d
  * @returns {string}
  */
-function _renderPanelDistribuir(d) {
+function _renderPanelDistribuir(d, { educacion = '', movil = false } = {}) {
   const { montoIngreso, ahorroPct, estiloVidaPct, ahorroBudget, evBudget } = d;
   const necesidades = d.itemsNecesidades ?? [];
   const ahorro      = d.destinosAhorro ?? [];
@@ -755,6 +835,9 @@ function _renderPanelDistribuir(d) {
     pasos.push({ titulo: 'Ahorro, deudas e inversiones', html: seccionAsignaciones });
   }
   pasos.push({ titulo: 'Estilo de vida', html: seccionInfo });
+  // ADR 110 D5: en el teléfono la comparación con los expertos se lee primero,
+  // pero dentro del paso 1 y solo ahí.
+  if (educacion) pasos[0].html = educacion + pasos[0].html;
 
   // `tabindex="-1"` (MC.7f, a11y): cada paso es un destino de foco programático
   // (no forma parte del tab order normal). Al avanzar/retroceder, acciones/distribucion.js
@@ -776,13 +859,14 @@ function _renderPanelDistribuir(d) {
         <fieldset id="distribuir-ingreso-panel" class="distribuir-ingreso"
                   data-ahorro-pct="${ahorroPct}" data-estilo-vida-pct="${estiloVidaPct}">
           <legend>Reparte tu ingreso entre tus necesidades, ahorro, deudas e inversiones. Lo que no distribuyas queda disponible en tu cuenta.</legend>
+          ${movil ? _renderQueSeReparte(d) : `
           <div class="form-group">
             <label for="distribuir-monto" class="label">Monto a distribuir (COP)</label>
             <input id="distribuir-monto" type="number" class="input"
                    min="0" step="10000" inputmode="numeric" value="${montoIngreso}"
                    data-action="recalcular-distribucion" />
           </div>
-          ${_seccionRecibido(d.cobroPendiente)}
+          ${_seccionRecibido(d.cobroPendiente)}`}
           ${indicadorPaso}
           ${pasosHtml}
           <div id="distribuir-deficit" class="distribuir__deficit" hidden>
@@ -942,7 +1026,8 @@ function _seccionRecibido(cobro) {
             <div role="group" aria-labelledby="distribuir-recibido-titulo">
               ${abiertas.map(o => `
               <label class="checkbox-row">
-                <input type="checkbox" checked data-dist-recibido value="${_esc(claveOcurrencia(o))}" />
+                <input type="checkbox" checked data-dist-recibido value="${_esc(claveOcurrencia(o))}"
+                       data-dist-recibido-nombre="${_esc(o.descripcion || 'Ingreso')}" />
                 <span>${_esc(o.descripcion || 'Ingreso')} · ${fechaLegible(o.fecha)} · ${f(o.monto)}</span>
               </label>`).join('')}
             </div>` : '';
@@ -983,7 +1068,7 @@ function _seccionRecibido(cobro) {
  * @param {{n:number, e:number, a:number}|null} distribucionPersonalizada
  * @param {{montoIngreso:number, ahorroPct:number, estiloVidaPct:number, ahorroBudget:number, evBudget:number, destinosAhorro:Array}} distribuir
  */
-function _renderContenidoAsistente({ razon, split }, presetActivo, distribucionPersonalizada, distribuir) {
+function _renderContenidoAsistente({ razon, split }, presetActivo, distribucionPersonalizada, distribuir, movil = false) {
   const { necesidades, estiloVida, ahorro } = split;
 
   const autoActivo = presetActivo === 'auto';
@@ -1061,8 +1146,7 @@ function _renderContenidoAsistente({ razon, split }, presetActivo, distribucionP
       </button>
     </fieldset>`;
 
-  return `
-    ${_renderBloqueEducativo(split, razon)}
+  const metodos = `
     <div class="filtros-bar" role="group" aria-label="Preset de distribución">
       ${autoChip}
       ${personalizadaChip}
@@ -1074,6 +1158,91 @@ function _renderContenidoAsistente({ razon, split }, presetActivo, distribucionP
       </div>
       <p class="form-hint form-hint--muted">Porcentajes fijos. No consideran tus gastos reales.</p>
     </details>
-    ${editorPersonalizada}
+    ${editorPersonalizada}`;
+
+  if (!movil) {
+    return `
+    ${_renderBloqueEducativo(split, razon)}
+    ${metodos}
     ${_renderPanelDistribuir(distribuir)}`;
+  }
+
+  // ADR 110 D5 (MV2.19b): en el teléfono la comparación va compacta dentro
+  // del paso 1, y el porqué, los métodos y "Personalizar", a un toque.
+  const educacion = `
+          ${_renderBloqueEducativo(split, razon, { compacto: true })}
+          <details class="distribuir-metodo">
+            <summary class="distribuir-metodo__toggle">Cómo lo calculamos y otros métodos</summary>
+            <p class="distribuir-edu__razon">${_esc(razon)}</p>
+            ${metodos}
+          </details>`;
+  return _renderPanelDistribuir(distribuir, { educacion, movil: true });
+}
+
+/**
+ * Cuenta de origen que el asistente puede dar por sabida (MC.13e-2f-1): la que
+ * el ingreso principal tiene guardada, si sigue activa, o la única activa.
+ * Misma regla que `_cuentaOrigenDistribucion()` de las acciones.
+ *
+ * @returns {string|null}
+ */
+function _cuentaOrigenGuardada() {
+  const activas = cuentasActivas(S.cuentas ?? []);
+  const preferida = cuentaIngresoPrincipal(S.ingresos ?? []);
+  if (preferida && activas.some(c => c.id === preferida)) return preferida;
+  return activas.length === 1 ? activas[0].id : null;
+}
+
+/**
+ * Qué se reparte y desde dónde, una vez y arriba (ADR 110 D4, MV2.19b): el
+ * monto, los ingresos y la cuenta de origen en una fila, con un solo "Cambiar"
+ * que despliega el monto, los ingresos recibidos y la cuenta. Si la cuenta no
+ * está guardada y hay varias, la pregunta abre desplegada: se responde al
+ * empezar y no al confirmar. `acciones/distribucion.js` mantiene la fila al día.
+ *
+ * @param {{montoIngreso:number, cobroPendiente?:ReturnType<typeof ocurrenciasPorDistribuir>}} d
+ * @returns {string}
+ */
+function _renderQueSeReparte(d) {
+  const activas = cuentasActivas(S.cuentas ?? []);
+  const origen  = _cuentaOrigenGuardada();
+  const cobro   = d.cobroPendiente;
+  const nombres = cobro?.identificable
+    ? cobro.ocurrencias.map(o => o.descripcion || 'Ingreso')
+    : (S.ingresos ?? []).filter(i => i.activo !== false).map(i => i.descripcion || 'Ingreso');
+  const ingresos = unirNombres([...new Set(nombres)]);
+  const nombreOrigen = activas.find(c => c.id === origen)?.nombre ?? '';
+  const sub = [ingresos, nombreOrigen ? `desde ${nombreOrigen}` : ''].filter(Boolean).join(' · ');
+  const preguntaCuenta = activas.length > 1;
+  const abierto = preguntaCuenta && !origen;
+
+  const cuenta = preguntaCuenta ? `
+            <div class="form-group">
+              <label for="distribuir-cuenta" class="label">¿Desde qué cuenta sale el dinero?</label>
+              <select id="distribuir-cuenta" class="input" data-dist-cuenta>
+                ${origen ? '' : '<option value="" selected disabled>Elige una cuenta</option>'}
+                ${activas.map(c => `<option value="${_esc(c.id)}"${c.id === origen ? ' selected' : ''}>${_esc(c.nombre)}</option>`).join('')}
+              </select>
+            </div>` : '';
+
+  return `
+          <div class="distribuir__que" data-dist-que-ingresos="${_esc(ingresos)}">
+            <p class="distribuir__que-textos">
+              <span class="distribuir__que-monto" data-dist-que-monto>${f(d.montoIngreso)}</span>
+              <span class="distribuir__que-sub" data-dist-que-sub>${_esc(sub)}</span>
+            </p>
+            <button type="button" class="btn btn-ghost distribuir__que-cambiar" data-action="distribuir-cambiar"
+                    aria-expanded="${abierto}" aria-controls="distribuir-cambiar"
+                    aria-label="Cambiar el monto, los ingresos o la cuenta de origen">Cambiar</button>
+          </div>
+          <div id="distribuir-cambiar" class="distribuir__cambiar"${abierto ? '' : ' hidden'}>
+            <div class="form-group">
+              <label for="distribuir-monto" class="label">Monto a distribuir (COP)</label>
+              <input id="distribuir-monto" type="number" class="input"
+                     min="0" step="10000" inputmode="numeric" value="${d.montoIngreso}"
+                     data-action="recalcular-distribucion" />
+            </div>
+            ${cuenta}
+            ${_seccionRecibido(cobro)}
+          </div>`;
 }

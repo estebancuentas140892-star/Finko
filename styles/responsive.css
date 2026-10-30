@@ -2437,6 +2437,146 @@
   #modal-distribuir .distribuir__nav .btn { min-height: 48px; }
   #modal-distribuir .distribuir__nav .btn-primary { flex: 1; justify-content: center; }
 
+  /* ── ADR 110 D4-D5 (MV2.19b): qué se reparte, arriba; cada paso, lo suyo ──
+     El paso 1 empezaba a 789px: la explicación de los expertos, los métodos,
+     el monto y los ingresos se repetían arriba de los tres pasos. Ahora el
+     monto, los ingresos y la cuenta son una fila con "Cambiar", y la
+     comparación va compacta dentro del paso 1. */
+  /* La leyenda del panel decía con 54px lo que la fila de abajo ya dice: se
+     queda como nombre del grupo para el lector de pantalla. */
+  #modal-distribuir .distribuir-ingreso > legend {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .distribuir__que {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    padding: var(--fk-space-2) var(--fk-space-2) var(--fk-space-2) var(--fk-space-4);
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-lg);
+    background: var(--fk-bg-elevated);
+  }
+  .distribuir__que-textos {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    margin: 0;
+  }
+  .distribuir__que-monto {
+    font-size: var(--fk-text-xl);
+    font-weight: var(--fk-font-extrabold);
+    font-variant-numeric: tabular-nums;
+    color: var(--fk-text-primary);
+  }
+  .distribuir__que-sub {
+    font-size: var(--fk-text-xs);
+    color: var(--fk-text-secondary);
+  }
+  .distribuir__que-cambiar { flex-shrink: 0; min-height: 44px; }
+  .distribuir__cambiar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fk-space-3);
+    margin-top: var(--fk-space-3);
+  }
+  .distribuir__cambiar[hidden] { display: none; }
+  .distribuir-edu--compacto {
+    margin-bottom: var(--fk-space-3);
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+  .distribuir-edu--compacto .distribuir-edu__lista { margin-top: var(--fk-space-2); }
+  .distribuir-metodo { margin-bottom: var(--fk-space-3); }
+  .distribuir-metodo > summary {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-dom-tesoreria-text);
+    cursor: pointer;
+  }
+  .distribuir-metodo[open] > summary { margin-bottom: var(--fk-space-2); }
+  .distribuir-metodo .filtros-bar { margin-top: var(--fk-space-3); }
+  .distribuir-metodo .distribucion-clasicos__toggle {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  /* ── ADR 110 D6 (MV2.19c): la hoja dice qué quedó ─────────────────────
+     Confirmar cerraba la hoja y dejaba Mis cuentas con un aviso que se iba
+     solo. Ahora la hoja muestra los pagos, los aportes, lo que se queda y el
+     saldo de la cuenta, con "Deshacer" a la mano. */
+  .distribuir-listo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fk-space-3);
+  }
+  .distribuir-listo__ok {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-dom-tesoreria-bg);
+    color: var(--fk-dom-tesoreria-text);
+  }
+  .distribuir-listo__titulo {
+    margin: 0;
+    font-size: var(--fk-text-2xl);
+    font-weight: var(--fk-font-extrabold);
+    color: var(--fk-text-primary);
+  }
+  .distribuir-listo__titulo:focus { outline: none; }
+  .distribuir-listo > .form-hint { margin: calc(-1 * var(--fk-space-2)) 0 0; }
+  .distribuir-listo__lista {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-lg);
+  }
+  .distribuir-listo__fila {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--fk-space-3);
+    min-height: 52px;
+    padding: var(--fk-space-2) var(--fk-space-4);
+    border-bottom: 1px solid var(--fk-border-subtle);
+    font-size: var(--fk-text-sm);
+    color: var(--fk-text-primary);
+  }
+  .distribuir-listo__fila:last-child { border-bottom: 0; }
+  .distribuir-listo__que { min-width: 0; }
+  .distribuir-listo__detalle {
+    display: block;
+    font-size: var(--fk-text-xs);
+    color: var(--fk-text-secondary);
+  }
+  .distribuir-listo__monto {
+    flex-shrink: 0;
+    font-weight: var(--fk-font-semibold);
+    font-variant-numeric: tabular-nums;
+  }
+  .distribuir-listo__ver {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    min-height: 44px;
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-dom-tesoreria-text);
+  }
+
   /* ── D9: chips de filtro con piso táctil ──────────────────────────────
      Por pagar, Movimientos y el asistente de distribución usaban chips de
      28px (R4). En el asistente, además, la barra se encogía (domain.css). */

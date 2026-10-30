@@ -35,6 +35,7 @@ import {
   renderDistribucionIngreso,
   renderNudgeDistribucionInicio,
   renderAsistenteDistribucion,
+  htmlResultadoDistribucion,
 } from './views/distribucion.js';
 import {
   renderBotonTransferir,
@@ -58,6 +59,7 @@ export {
   renderDistribucionIngreso,
   renderNudgeDistribucionInicio,
   renderAsistenteDistribucion,
+  htmlResultadoDistribucion,
   renderBotonTransferir,
   renderFormTransferencia,
   renderParTransferencia,
