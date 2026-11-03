@@ -26,6 +26,8 @@
  *   su mensaje.
  * - ADR 112 (CFG.6): Ajustes es un índice de filas que se abren en su sitio, y
  *   lo abierto sobrevive al repintado.
+ * - ADR 113 (MV2.20): al bajar, la barra de lentes queda arriba, en Gastos y en
+ *   las hijas de Ahorro.
  * - Escritorio no cambia: las piezas nuevas no se ven a 1280.
  * - D13: el camino de Aprender del niño no desborda a lo ancho.
  */
@@ -521,6 +523,39 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await page.locator('label[for="toggle-tema"]').click();
     await expect(page.locator('[data-fila="tema"]')).toHaveAttribute('aria-expanded', 'true');
     await expect(page.locator('#form-bloqueo-crear')).toBeVisible();
+  });
+  test('al bajar, la barra de lentes queda arriba y sigue llevando a su lente (ADR 113)', async ({ page }) => {
+    await seedConGastos(page);
+    await page.goto('/#gast');
+    const barra = page.locator('#sec-gast .bloque-tabs');
+    await expect(barra).toBeVisible({ timeout: 10_000 });
+    const alCargar = await barra.boundingBox();
+    expect(alCargar.y).toBeGreaterThan(100);
+
+    // Se desplaza dentro del sondeo: volver.js deja arriba la sección recién
+    // abierta y puede pisar un desplazamiento hecho antes de asentarse.
+    await expect.poll(async () => {
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      return (await barra.boundingBox()).y;
+    }).toBeLessThanOrEqual(1);
+    await expect(barra).toBeInViewport();
+    await barra.locator('[data-section="compromisos"]').click();
+    await expect(page.locator('#sec-compromisos.active')).toBeVisible();
+  });
+
+  test('las hijas de Ahorro dibujan la misma barra y también queda arriba (ADR 113, ADR 104)', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 568 });
+    await sembrar(page, estadoBase({ cuentas: CUENTAS, metas: Array.from({ length: 12 }, (_, i) => `Meta ${i + 1}`).map((nombre, i) => ({
+      id: `m${i}`, nombre, montoObjetivo: 4_000_000, montoActual: 500_000, fechaCreacion: '2026-01-01' })) }));
+    await page.goto('/#metas');
+    const barraMetas = page.locator('#sec-metas .bloque-tabs');
+    await expect(barraMetas).toBeVisible({ timeout: 10_000 });
+    // Se desplaza dentro del sondeo: volver.js deja arriba la sección recién
+    // abierta y puede pisar un desplazamiento hecho antes de asentarse.
+    await expect.poll(async () => {
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      return (await barraMetas.boundingBox()).y;
+    }).toBeLessThanOrEqual(1);
   });
 });
 

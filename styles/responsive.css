@@ -2047,6 +2047,38 @@
     .hub .chips .chip { font-size: 0.8125rem; }
   }
 
+  /* ── ADR 113 (MV2.20): las lentes quedan a la vista ────────────────────
+     Con 40 gastos, Gastos mide 4.076px y la barra se iba a los 192px: para
+     cambiar de lente había que subir 3.900px. Al bajar, la barra queda pegada
+     arriba (D1); es la única excepción a R31 (D2).
+
+     D3: la barra vive dentro del envoltorio de la cabecera (192px en Gastos,
+     53 en las hijas de Ahorro), y `sticky` solo pega dentro de su padre. Los
+     envoltorios pasan a `display: contents`, así el padre de la barra es la
+     sección entera; el DOM que leen bloque-gastos.js y bloque-ahorro.js no
+     cambia. Los márgenes reponen el `gap` y el margen del envoltorio. */
+  #tabs-gast, #tabs-compromisos, #tabs-presupuesto,
+  #chips-fondo, #chips-apartados, #chips-metas, #chips-inversion,
+  .bloque-gastos {
+    display: contents;
+  }
+  .bloque-gastos__cabecera,
+  .bloque-gastos__mes {
+    margin-bottom: var(--fk-space-3);
+  }
+  .bloque-gastos > .bloque-tabs {
+    margin-bottom: var(--fk-space-8);
+  }
+  .bloque-tabs {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    z-index: calc(var(--fk-z-dropdown) - 1);
+  }
+  /* D4: un salto a una fila con `block: 'start'` la deja debajo de la barra. */
+  html:has(.section.active .bloque-tabs) {
+    scroll-padding-top: calc(var(--fk-space-16) + env(safe-area-inset-top, 0px));
+  }
+
   /* ── D4: filas de una línea con hoja de detalle ────────────────────────
      Las acciones de cada gasto (y de cada movimiento) bajaban a un segundo
      renglón: la fila medía 128px y la primera pantalla de Gastos mostraba
