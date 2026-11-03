@@ -71,7 +71,7 @@ Las tarjetas del tablero (la iniciativa HF se lista por fase), para elegir la pr
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
 | DEC.1 | Finko explica el porqué dentro de cada decisión ([ADR 101](DECISIONS/101-finko-del-adulto-decide-no-ensena.md) D5) | Transversal | media | nada |
-| MV2.3 | Lo que faltaba del canvas móvil: quedan cuatro tandas ([ADR 116](DECISIONS/116-lo-que-faltaba-del-canvas-primera-tanda.md), [ADR 117](DECISIONS/117-por-pagar-por-urgencia-y-en-filas.md)) | Transversal | media | nada |
+| MV2.3 | Lo que faltaba del canvas móvil: quedan tres tandas ([ADR 116](DECISIONS/116-lo-que-faltaba-del-canvas-primera-tanda.md) a [118](DECISIONS/118-el-dia-en-hoja-y-las-hojas-se-cierran-de-tres-formas.md)) | Transversal | media | nada |
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | cola de diseño de Esteban |
 | PERF.13 | Arranque: 616 ms de hilo bloqueado | Transversal | baja | nada |
 | PERF.14 | Pasar de una hoja a otra sin soltar el fondo | Transversal | baja | nada |

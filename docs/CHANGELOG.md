@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(movil): MV2.3 tanda 3, el día en hoja y las hojas se cierran de tres formas · 2026-11-03
+
+[ADR 118](DECISIONS/118-el-dia-en-hoja-y-las-hojas-se-cierran-de-tres-formas.md) (acota el ADR 111 y CAL.3 bajo 1024 px; aplica RN3, RN8 y R46). Escritorio sin cambios. SW v650.
+
+- **El día en su hoja**: tocar un día abre `#modal-dia-calendario` sobre el mes, sin mover la página. Al llegar ya no se abre hoy solo. Al cerrar, el día se desmarca y el foco vuelve a su celda. "Aportar" y "Distribuir" cierran antes la hoja del día.
+- **Al volver de "Por pagar"**: "Ver en Por pagar" guarda el día y la entrada del historial; volver a esa entrada reabre la hoja en el mismo día y mes.
+- **Toda hoja se cierra de tres formas** (`ui/hojas.js`): la ✕ de siempre, el atrás del sistema (un `CloseWatcher` por hoja; sin la API no hace nada) y deslizar hacia abajo (120 px, un cuarto de la hoja o un tirón rápido). Las dos nuevas cierran como Escape, así que cada diálogo usa su propio cierre. `infra/a11y.js` gana `observarTrap`.
+- **Escape cierra la hoja de arriba**, no la primera del documento, y `cerrarModal` deja el fondo inerte mientras quede otra abierta.
+- Pruebas: 10 unitarias en `hojas.test.js` y 5 en `agenda.test.js`; 4 E2E en `movil-mv2.test.js` (el día en hoja, la vuelta desde Por pagar, el atrás con `CloseWatcher`, deslizar con toques reales).
+
 ### feat(movil): MV2.3 tanda 2, Por pagar por urgencia y en filas · 2026-11-03
 
 [ADR 117](DECISIONS/117-por-pagar-por-urgencia-y-en-filas.md) (acota la ficha 05 del ADR 069, el ADR 036 D5, el ADR 074 D2 y el ADR 104; aplica R89a, R19, R50 y la hoja del ADR 098 D4). Bajo 1024 px salvo Me deben; escritorio sin cambios (ADR 073). SW v649.
