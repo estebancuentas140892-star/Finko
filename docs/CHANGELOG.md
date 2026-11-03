@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(movil): MV2.20, las lentes quedan a la vista · 2026-11-03
+
+[ADR 113](DECISIONS/113-las-lentes-quedan-a-la-vista.md) (acota R31; respeta los ADR 104, 106 y 098 D12); ficha [`contexto/sistema-visual.md`](contexto/sistema-visual.md). Solo bajo 1024px. SW v645.
+
+- **Medido a 390 con 40 gastos**: Gastos mide 4.076 px y la barra de lentes se iba a los 192; para cambiar de lente había que subir 3.900 px, y tocar "Gastos" en la barra inferior no sube.
+- **La barra queda pegada arriba al bajar** (`position: sticky` sobre `env(safe-area-inset-top)`), en el bloque Gastos y en las cuatro hijas de Ahorro. El título, el mes y el hero se van con la lista: Esteban eligió solo las lentes, no el título compacto del canvas.
+- **R31 se acota, no se deroga**: la barra de lentes de un bloque es la única excepción (`DESIGN_SYSTEM.md`).
+- **El DOM no cambia**: `sticky` solo pega dentro de su padre, y la barra vivía en el envoltorio de la cabecera (192 px). `#tabs-*`, `#chips-*` y `.bloque-gastos` pasan a `display: contents` y unos márgenes reponen el `gap`; las posiciones a la carga quedan iguales (±1 px de redondeo).
+- **Lo que se lleva a la vista no queda tapado**: `scroll-padding-top` mientras la sección activa tiene barra.
+- Pruebas: 2 E2E en `movil-mv2.test.js` (Gastos y Metas). El desplazamiento va dentro del sondeo porque `volver.js` deja arriba la sección recién abierta.
+
 ### feat(config): CFG.6, Ajustes como índice en el teléfono · 2026-11-03
 
 [ADR 112](DECISIONS/112-ajustes-como-indice-en-el-telefono.md) (cierra CFG.6 y absorbe MV2.26; cumple R13 y R14; respeta los ADR 050, 063, 043, 096, 066 y 099 D6); ficha [`contexto/configuracion.md`](contexto/configuracion.md). Escritorio sin cambios. SW v644.

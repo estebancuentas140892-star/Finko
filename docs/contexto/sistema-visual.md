@@ -1,6 +1,6 @@
 # Ficha de contexto: Sistema visual
 
-> Revisado: 2026-10-30.
+> Revisado: 2026-11-03.
 
 > Identidad visual transversal: color por sección, tejas de marca y biblioteca gráfica, y navegación. Partida de `transversal.md` el 2026-07-24. Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -111,11 +111,12 @@
 
 **Cambios realizados**:
 
+- 2026-11-03 (**MV2.20**, [ADR 113](../DECISIONS/113-las-lentes-quedan-a-la-vista.md)): al bajar, la barra de lentes queda pegada arriba; única excepción a R31.
 - 2026-10-29 (**MV2.21**, [ADR 108](../DECISIONS/108-mas-dice-como-esta-cada-destino.md)): una línea de estado por destino y lista en vez de rejilla.
 - 2026-10-29 (**MV2.12**, [ADR 104](../DECISIONS/104-una-sola-barra-para-ir-de-lado.md)): una sola barra para ir de lado en Gastos y Ahorro; columnas iguales, nunca se desliza, el estado en la esquina. El punto medía 20px porque `.badge` le ganaba a la capa layout.
 - 2026-10-29 (**MARCA.1**, [ADR 103](../DECISIONS/103-el-isotipo-de-finko.md)): el isotipo de tres piezas reemplaza a la "F" en su teja de fondo fijo (`--fk-marca-fondo`); íconos, favicon y splash salen de `assets/svg/identidad/isotipo.svg`.
-- 2026-08-15 (**ficha 03 de la auditoría móvil**, [ADR 069](../DECISIONS/069-bloque-gastos-en-la-barra-movil.md) D6): la hoja queda como la dejó la ficha 01 y gana lo que le faltaba, que no era orden sino resistencia. **R83** (techo de 444 px, un solo número para los cuatro anchos, con compuerta E2E) y **R84** (cuatro condiciones de admisión). Se verificó que las seis entradas heredadas pasan la puerta y que Logros la falla: se queda en Ajustes, y H9 se resuelve haciendo que el aviso de desbloqueo lleve al panel (ficha 17). H8 se cierra sin cambio: el engranaje de Inicio y la teja de Ajustes no son puertas equivalentes, una es atajo y la otra es el mapa.
-- 2026-08-15 (ficha 01 de la auditoría móvil, [ADR 069](../DECISIONS/069-bloque-gastos-en-la-barra-movil.md)): "Gastos" pasa de sección a bloque con tres lentes (Lo que gastaste, Por pagar, Límites), servidas por la franja `.bloque-tabs` que inyecta `ui/bloque-gastos.js`. La hoja "Más" cambia "Gestión del dinero" por dos rótulos que sí excluyen (Consultar / Tu dinero) y pierde las tejas de Deudas y Límites. El botón "Más" deja de nombrar la sección donde estás: se van `SECCION_NAV`, `_rotularMas()` y `.nav-item--mas-ubicado`.
+- 2026-08-15 (**ficha 03 de la auditoría móvil**, [ADR 069](../DECISIONS/069-bloque-gastos-en-la-barra-movil.md) D6): la hoja queda como la dejó la ficha 01 y gana lo que le faltaba, que no era orden sino resistencia. Detalle en el CHANGELOG.
+- 2026-08-15 (ficha 01 de la auditoría móvil, [ADR 069](../DECISIONS/069-bloque-gastos-en-la-barra-movil.md)): "Gastos" pasa de sección a bloque con tres lentes (Lo que gastaste, Por pagar, Límites), servidas por la franja `.bloque-tabs` que inyecta `ui/bloque-gastos.js`. Detalle en el CHANGELOG.
 - 2026-07-26 (DIS.6): auditoría de diseño de la capa global de navegación, 7 correcciones (C1 a C7). Reglas R29 a R33 en DESIGN_SYSTEM.md.
 - 2026-07-14 (NAV2.1c): `.nav-item__fab` pasa a pastilla 50x38 con degradado de acento y sombra tokenizada; indicador activo del bottom nav a 22px fijos.
 - 2026-07-14 (NAV2.1b): marca `.sidebar__logo-mark` nueva en `layout.css`; rotulo "Diario" retirado.
@@ -131,7 +132,7 @@
 
 - **Objetivo**          : que volver no reinicie la pantalla y que la primera pantalla de cada lista muestre contenido. Solo bajo 1024px.
 - **Estado actual**     : primera entrega cerrada (2026-10-29). Volver contextual y memoria de altura por fila (`ui/volver.js`); hoja de detalle de fila en Gastos, Movimientos y Mis cuentas (`ui/detalle-fila.js`, `#modal-detalle-fila`; Mis cuentas desde MV2.9, [ADR 109](../DECISIONS/109-mis-cuentas-en-filas-con-hoja.md)); cabecera del bloque Gastos con lupa y primario espejo; Ahorro en cuatro columnas sin la casa; pie pegado en formularios y en Distribuir ([ADR 110](../DECISIONS/110-distribuir-sin-salir-de-donde-estas.md), que además se abre donde estás); zona segura y `theme-color`. Segunda entrega en **MV2.2** (`board/transversal.md`).
-- **Verificado contra** : commit de MV2.1 (2026-10-29).
+- **Verificado contra** : MV2.20, commit `778e684` (2026-11-03). Antes: MV2.1 (2026-10-29).
 
 **Dónde vive**
 
@@ -144,9 +145,10 @@
 | Botón que mueve dinero ([ADR 107](../DECISIONS/107-el-peso-de-cada-cosa.md) D1, todos los anchos) | `styles/components/buttons.css` | `.btn-dominio` + `data-dom` |
 | Avisos sin filete, ícono en caja tintada (ADR 107 D4) | `styles/components/nudges.css` | `.nudge__icon` + `--nudge-tono` por nivel |
 | Un vacío, un mensaje (ADR 107 D5) | `ui/proposito.js`, `styles/components/domain.css` | `partirProposito()`, `.section:has(.banner-proposito) .empty-state` |
+| Barra de lentes fija al bajar ([ADR 113](../DECISIONS/113-las-lentes-quedan-a-la-vista.md)) | `styles/responsive.css` (bloque MV2) | `.bloque-tabs` en `sticky`; `#tabs-*`, `#chips-*` y `.bloque-gastos` en `display: contents` |
 | Estilos | `styles/responsive.css` | bloque "MV2 · FINKO MÓVIL 2" al final |
 
-**Riesgos**: un encabezado nuevo debe seguir la fila del ADR 106 (teja, título, lupa, ojo, crear) y, si su primario lleva nombre corto, `data-barra` con el completo para la barra de escritorio. `volver.js` escucha `click` en captura sobre `document` (anota el origen, no despacha). La navegación principal se reconoce por `RAIZ_NAVEGACION`: una barra nueva que no esté ahí dejará un "‹ origen" donde no corresponde. El espejo depende de `.section__header > .btn-primary`: si una lente cambia ese markup, el espejo queda oculto.
+**Riesgos**: un encabezado nuevo debe seguir la fila del ADR 106 (teja, título, lupa, ojo, crear) y, si su primario lleva nombre corto, `data-barra` con el completo para la barra de escritorio. `volver.js` escucha `click` en captura sobre `document` (anota el origen, no despacha). La navegación principal se reconoce por `RAIZ_NAVEGACION`: una barra nueva que no esté ahí dejará un "‹ origen" donde no corresponde. El espejo depende de `.section__header > .btn-primary`: si una lente cambia ese markup, el espejo queda oculto. Un envoltorio nuevo alrededor de `.bloque-tabs` la suelta: `sticky` solo pega dentro de su padre (ADR 113).
 
 ---
 
