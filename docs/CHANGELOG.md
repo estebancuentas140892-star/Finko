@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(marca): MARCA.2, el isotipo flota donde se puede · 2026-11-03
+
+[ADR 114](DECISIONS/114-el-isotipo-flota-donde-se-puede.md) (acota el ADR 103 D3; respeta D1 y D2); ficha [`contexto/sistema-visual.md`](contexto/sistema-visual.md). Sin cambios en `modules/` ni en estilos. SW v646.
+
+- **Pedido**: el isotipo con fondo transparente "como los logos modernos". Antes de decidir, una vista previa con el isotipo real mostró lo que hace cada sistema: iOS pinta de negro lo transparente y Android lo encoge en un plato blanco; el diálogo de instalar, el computador y el arranque lo muestran tal cual.
+- **Flota donde se puede**: `icon-192.png` e `icon-512.png` (`any`) y el favicon van sin fondo; las pantallas de arranque de iOS llevan el isotipo sin teja sobre el fondo oscuro, más grande que antes (160 en vez de 102 px a 750).
+- **En la pantalla de inicio, sobre blanco a sangre**: `apple-touch-icon.png` y dos `maskable` nuevos (`icon-maskable-192/512.png`), sin teja ni filete, con el isotipo al 62 % dentro de la zona segura. El manifest deja de usar `"any maskable"` en un mismo archivo.
+- **Todo sale del SVG**: `gen-icons.py` produce cinco PNG y el favicon; `gen-splash.py` dibuja el isotipo sin la teja.
+- Pruebas: 2 unitarias en `sw-precache.test.js` (any y maskable por separado; cada ícono existe y está precacheado).
+
 ### feat(movil): MV2.20, las lentes quedan a la vista · 2026-11-03
 
 [ADR 113](DECISIONS/113-las-lentes-quedan-a-la-vista.md) (acota R31; respeta los ADR 104, 106 y 098 D12); ficha [`contexto/sistema-visual.md`](contexto/sistema-visual.md). Solo bajo 1024px. SW v645.

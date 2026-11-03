@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-03. Última tarea cerrada: MV2.20, las lentes quedan a la vista (ADR 113). MOV.1 en pausa. HF.0f en curso: banco listo sin commitear, BUG-035, BUG-036 y BUG-038 abiertos.
+> Revisado: 2026-11-03. Última tarea cerrada: MARCA.2, el isotipo flota donde se puede (ADR 114). MOV.1 en pausa. HF.0f en curso: banco listo sin commitear, BUG-035, BUG-036 y BUG-038 abiertos.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5209/5209 (2026-11-03, MV2.20, árbol limpio) |
-| Tests E2E | 389/389 verdes (2026-11-03, MV2.20, `--workers=2`). **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5211/5211 (2026-11-03, MARCA.2, árbol limpio) |
+| Tests E2E | 389/389 verdes (2026-11-03, MARCA.2, `--workers=2`). **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v48 (`perfiles`, APR.3a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -25,6 +25,9 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**MARCA.2 - el isotipo flota donde se puede, 2026-11-03**
+Íconos `any`, favicon y arranque sin teja; en la pantalla de inicio, sobre blanco a sangre ([ADR 114](DECISIONS/114-el-isotipo-flota-donde-se-puede.md)). SW v646.
+
 **MV2.20 - las lentes quedan a la vista, 2026-11-03**
 Al bajar, la barra de lentes de Gastos y de Ahorro queda pegada arriba; única excepción a R31 ([ADR 113](DECISIONS/113-las-lentes-quedan-a-la-vista.md)). SW v645.
 
@@ -33,9 +36,6 @@ Cada bloque es una fila con su estado que se abre en su sitio, lo tuyo primero; 
 
 **MV2.27 - Calendario: el mes entero en el teléfono, 2026-11-03**
 El mes cabe de 320 a 430 px con el día en un círculo; Distribuir y Aportar visten su sección y el vacío dice un mensaje ([ADR 111](DECISIONS/111-calendario-el-mes-entero-en-el-telefono.md)). SW v643.
-
-**MV2.19 - Distribuir sin salir de donde estás, 2026-10-30**
-En el teléfono el asistente se abre sobre la pantalla en que estás, con pie pegado, la cuenta al empezar, cada paso con lo suyo y la hoja final con "Deshacer" ([ADR 110](DECISIONS/110-distribuir-sin-salir-de-donde-estas.md)). SW v642.
 
 **MV2.9 - Mis cuentas en filas con hoja, 2026-10-30**
 Cuentas, tarjetas y fuentes en filas de 64px que abren la hoja de Gastos; ninguna papelera a la vista y 2.207 a 1.616 px a 390 ([ADR 109](DECISIONS/109-mis-cuentas-en-filas-con-hoja.md)). SW v640.
