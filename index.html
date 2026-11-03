@@ -2035,6 +2035,22 @@
     </div>
   </div>
 
+  <!-- Hoja del día del Calendario (ADR 118): en el teléfono el día se abre
+       sobre la rejilla, sin bajar a buscarlo. agenda/view.js pinta su cuerpo
+       y agenda/index.js la abre al tocar un día. -->
+  <div class="modal-overlay modal-overlay--sheet" id="modal-dia-calendario"
+       role="dialog" aria-modal="true"
+       aria-labelledby="cal-detail-titulo" aria-hidden="true">
+    <div class="modal modal--sheet dia-calendario">
+      <span class="mas-sheet__handle" aria-hidden="true"></span>
+      <button class="modal__close mas-sheet__close" type="button"
+              data-action="modal-close" aria-label="Cerrar">
+        <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
+      </button>
+      <div class="dia-calendario__body" id="dia-calendario-body"></div>
+    </div>
+  </div>
+
   <!-- Hoja "Tu perfil" (MV2.15c, ADR 099 D6): la abre el avatar de Inicio
        en móvil. ui/hoja-perfil.js la arma al abrirla. -->
   <div class="modal-overlay modal-overlay--sheet" id="modal-perfil"

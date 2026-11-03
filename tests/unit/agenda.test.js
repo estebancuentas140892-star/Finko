@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { eventosDelMes, eventosIngresosDelMes, eventosMetasDelMes, totalEventosDelMes, totalDia, eventosDeHoy, eventosEnProximos, tiposPresentesEnMes, totalesDelMes, pendientesDePagoDelMes, debitosAutomaticosVencidos, pendientesDeCreditoDelMes, creditosAutomaticosVencidos } from '../../modules/dominio/agenda/logic.js';
-import { renderFormAutomaticos, renderAgenda, mostrarDia, navegarMes, resetearVistaAlMesActual, marcarEntradaSeccion, resumenMesVisible, diaSeleccionado } from '../../modules/dominio/agenda/view.js';
+import { renderFormAutomaticos, renderAgenda, mostrarDia, abrirDia, soltarDia, navegarMes, resetearVistaAlMesActual, marcarEntradaSeccion, resumenMesVisible, diaSeleccionado } from '../../modules/dominio/agenda/view.js';
 import { S } from '../../modules/core/state.js';
 // Solo para el espejo de BUG-032: los tests sí cruzan dominios, el código no (ADN 10).
 import { cobrosQueAcreditaLaDistribucion } from '../../modules/dominio/tesoreria/logic.js';
@@ -2941,5 +2941,75 @@ describe('DSK.2c - al entrar sin eventos hoy, el panel abre el próximo día', (
     marcarEntradaSeccion();
     renderAgenda();
     expect(document.querySelector('.cal-detail')).toBeNull();
+  });
+});
+
+// ── ADR 118 - en el teléfono el día se abre en una hoja ──────────
+
+describe('ADR 118 - el día del Calendario en su hoja', () => {
+  const matchMediaReal = window.matchMedia;
+  const anchoDe = esMovil => { window.matchMedia = () => ({ matches: esMovil }); };
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-agenda"></div><div id="dia-calendario-body"></div>';
+    S.compromisos = [compromisoBase({ id: 'c1', descripcion: 'Arriendo', diaPago: 15, frecuencia: 'Mensual' })];
+    S.gastos = [];
+    S.ingresos = [];
+    S.metas = [];
+    S.config = { ocultarSaldo: false };
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15)); // 15 jun 2026, con un pago hoy
+    resetearVistaAlMesActual();
+    anchoDe(true);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    window.matchMedia = matchMediaReal;
+    soltarDia();
+    S.config = {};
+  });
+
+  const panel = () => document.getElementById('panel-agenda');
+  const hoja = () => document.getElementById('dia-calendario-body');
+
+  it('al entrar no abre "hoy" solo: la hoja taparía el mes', () => {
+    marcarEntradaSeccion();
+    renderAgenda();
+    expect(diaSeleccionado()).toBeNull();
+    expect(document.querySelector('.cal-detail')).toBeNull();
+  });
+
+  it('el día abierto se pinta en la hoja y no bajo el mes', () => {
+    abrirDia(15);
+    renderAgenda();
+    expect(panel().querySelector('.cal-detail')).toBeNull();
+    expect(hoja().querySelector('.cal-detail__title').id).toBe('cal-detail-titulo');
+    expect(hoja().textContent).toContain('Arriendo');
+    // La celda del día queda marcada mientras la hoja está abierta.
+    expect(panel().querySelector('.cal-day[data-day="15"]').className).toContain('cal-day--selected');
+  });
+
+  it('tocar el mismo día otra vez lo deja abierto (sin toggle)', () => {
+    abrirDia(15);
+    abrirDia(15);
+    expect(diaSeleccionado()).toBe(15);
+  });
+
+  it('al soltar el día la hoja queda vacía', () => {
+    abrirDia(15);
+    renderAgenda();
+    soltarDia();
+    renderAgenda();
+    expect(hoja().innerHTML).toBe('');
+    expect(diaSeleccionado()).toBeNull();
+  });
+
+  it('en escritorio el día sigue bajo el mes y la hoja no se usa (ADR 071)', () => {
+    anchoDe(false);
+    abrirDia(15);
+    renderAgenda();
+    expect(panel().querySelector('.cal-detail')).not.toBeNull();
+    expect(hoja().innerHTML).toBe('');
   });
 });

@@ -92,12 +92,30 @@ export function mostrarDia(dia) {
 }
 
 /**
+ * ADR 118: en el teléfono el día vive en una hoja, así que tocarlo otra vez
+ * la vuelve a abrir en vez de cerrarlo (sin toggle). El caller repinta.
+ * @param {number} dia
+ */
+export function abrirDia(dia) {
+  if (!Number.isInteger(dia)) return;
+  _diaSeleccionado = dia;
+  _autoProximo = false;
+}
+
+/** ADR 118: la hoja del día se cerró; el día deja de estar marcado. */
+export function soltarDia() {
+  _diaSeleccionado = null;
+  _autoProximo = false;
+}
+
+/**
  * Corte de escritorio de la app, el mismo de `render.js`, `movimientos/view.js`
  * y `logros/index.js`: 1024px.
  *
- * Se lee una sola vez por render y solo decide el auto-abierto de entrada
- * (ADR 071 D7), no la composición: esa la reparte CSS, así que un cambio de
- * ancho sin cambio de estado no deja la pantalla a medias.
+ * Se lee una sola vez por render y decide el auto-abierto de entrada (ADR 071
+ * D7) y, desde el ADR 118, dónde va el detalle del día: bajo el mes en
+ * escritorio, en su hoja en el teléfono. `agenda/index.js` repinta al cruzar
+ * el corte, así que un cambio de ancho no deja la pantalla a medias.
  *
  * @returns {boolean}
  */
@@ -187,15 +205,18 @@ export function renderAgenda() {
   // vencimiento contesta la pregunta antes de que el usuario haga clic.
   // Acotado a escritorio: en móvil el panel nace bajo la grilla y abrirlo sin
   // que el usuario lo pida lo obligaría a desplazarse.
+  // ADR 118: en el teléfono tampoco se abre "hoy" solo. El día es una hoja
+  // sobre la rejilla, y abrirla al entrar taparía el mes que se vino a ver.
+  const enEscritorio = _enEscritorio();
   if (_entradaInicialPendiente) {
     _entradaInicialPendiente = false;
     _autoProximo = false;
     const hoy = new Date();
     const esMesVisibleHoy = _viewYear === hoy.getFullYear() && _viewMonth === hoy.getMonth();
-    if (esMesVisibleHoy && _diaSeleccionado === null) {
+    if (enEscritorio && esMesVisibleHoy && _diaSeleccionado === null) {
       if (eventos[hoy.getDate()]?.length > 0) {
         _diaSeleccionado = hoy.getDate();
-      } else if (_enEscritorio()) {
+      } else {
         const proximo = _proximoDiaConEventos(eventos, hoy.getDate());
         if (proximo !== null) {
           _diaSeleccionado = proximo;
@@ -212,6 +233,9 @@ export function renderAgenda() {
   const detalleHtml = _diaSeleccionado !== null
     ? _renderDetalleDia(eventos[_diaSeleccionado] ?? [], _viewYear, _viewMonth, _diaSeleccionado)
     : '';
+  // ADR 118: en el teléfono el detalle va en la hoja del día, no bajo el mes.
+  const hojaDia = document.getElementById('dia-calendario-body');
+  if (hojaDia) hojaDia.innerHTML = enEscritorio ? '' : detalleHtml;
 
   // DIS.11 C1/V-3 (revisa AG.6): la leyenda pasa a pie de la tarjeta del
   // calendario (dentro de .cal-card, sin sticky) y el detalle del día queda
@@ -272,7 +296,7 @@ export function renderAgenda() {
         ${_renderGrid(_viewYear, _viewMonth, eventos, vencidosPorDia)}
         ${_renderLeyenda(eventos)}
       </article>
-      ${detalleHtml}
+      ${enEscritorio ? detalleHtml : ''}
     </div>
     ${emptyMesHtml}`;
 }
@@ -895,7 +919,7 @@ function _renderDetalleDia(evs, year, month, dia) {
       <section class="cal-detail" aria-label="Compromisos del ${titulo}">
         <header class="cal-detail__header">
           <div class="cal-detail__title-wrap">
-            <h3 class="cal-detail__title" tabindex="-1">${titulo}</h3>
+            <h3 class="cal-detail__title" id="cal-detail-titulo" tabindex="-1">${titulo}</h3>
             <p class="cal-detail__subtitle">Sin compromisos ni ingresos este día</p>
           </div>
           <button type="button" class="cal-detail__close"
@@ -976,7 +1000,7 @@ function _renderDetalleDia(evs, year, month, dia) {
     <section class="cal-detail" aria-label="Compromisos del ${titulo}">
       <header class="cal-detail__header">
         <div class="cal-detail__title-wrap">
-          <h3 class="cal-detail__title" tabindex="-1">${titulo}</h3>
+          <h3 class="cal-detail__title" id="cal-detail-titulo" tabindex="-1">${titulo}</h3>
           <p class="cal-detail__subtitle">${resumen}</p>
           ${totalPagarHtml}
         </div>

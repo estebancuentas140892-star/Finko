@@ -33,6 +33,8 @@
  *   la pregunta de cada modalidad).
  * - ADR 117: Por pagar por urgencia y en filas con hoja; con el texto al
  *   200 % los montos bajan y las lentes van en dos líneas.
+ * - ADR 118: el día del Calendario en su hoja (y reabierto al volver de "Por
+ *   pagar"); toda hoja se cierra deslizándola y con el atrás del sistema.
  * - Escritorio no cambia: las piezas nuevas no se ven a 1280.
  * - D13: el camino de Aprender del niño no desborda a lo ancho.
  */
@@ -665,6 +667,67 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(hoja.locator('.detalle-fila__notas')).toContainText('28% EA');
   });
 
+  test('Calendario: el día se abre en una hoja sobre el mes y al cerrarla vuelve a su celda (ADR 118 D1)', async ({ page }) => {
+    await seedCalendario(page);
+    await page.goto('/#agenda');
+    const celda = page.locator('.cal-day[data-day="18"]');
+    await expect(celda).toBeVisible({ timeout: 10_000 });
+    // Al entrar no se abre nada solo: la hoja taparía el mes.
+    await expect(page.locator('#modal-dia-calendario[data-open]')).toHaveCount(0);
+    const y0 = await scrollY(page);
+
+    await celda.click();
+    const hoja = page.locator('#modal-dia-calendario[data-open]');
+    await expect(hoja.locator('.cal-detail__title')).toHaveText(/ 18 de [a-z]+$/);
+    // La respuesta se ve sin bajar a buscarla (R46): la página no se movió.
+    expect(await scrollY(page)).toBe(y0);
+    await expect(hoja.locator('.cal-detail__close')).toBeHidden();
+
+    await hoja.locator('.mas-sheet__close').click();
+    await expect(page.locator('#modal-dia-calendario[data-open]')).toHaveCount(0);
+    await expect(page.locator('.cal-day--selected')).toHaveCount(0);
+    await expect(page.locator('.cal-day[data-day="18"]')).toBeFocused();
+  });
+
+  test('Calendario: a "Por pagar" desde la hoja y de vuelta, el día sigue abierto (ADR 118 D2)', async ({ page }) => {
+    await seedCalendario(page);
+    await page.goto('/#agenda');
+    await page.locator('.cal-day[data-day="18"]').click();
+    await page.locator('#modal-dia-calendario [data-action="agenda-ver-en-por-pagar"]').first().click();
+    await expect(page.locator('#sec-compromisos.active')).toBeVisible();
+    await expect(page.locator('#modal-dia-calendario[data-open]')).toHaveCount(0);
+
+    const volver = page.locator('#sec-compromisos .section__volver--contexto');
+    await expect(volver).toContainText('Calendario');
+    await volver.click();
+    await expect(page.locator('#sec-agenda.active')).toBeVisible();
+    await expect(page.locator('#modal-dia-calendario[data-open] .cal-detail__title')).toHaveText(/ 18 de /);
+  });
+
+  test('el atrás del sistema cierra la hoja de arriba y no cambia de pantalla (ADR 118 D3)', async ({ page }) => {
+    // El atrás de Android llega a la página como el "close" del vigía de la
+    // hoja (CloseWatcher); acá se dispara a mano.
+    await page.addInitScript(() => {
+      const Real = window.CloseWatcher;
+      if (typeof Real !== 'function') return;
+      window.__vigias = [];
+      window.CloseWatcher = class extends Real {
+        constructor(...args) { super(...args); window.__vigias.push(this); }
+      };
+    });
+    await seedConGastos(page);
+    await page.goto('/#gast');
+    test.skip(!(await page.evaluate(() => Array.isArray(window.__vigias))), 'este Chromium no trae CloseWatcher');
+    const fila = page.locator('#lista-gastos .list-item--detalle').first();
+    await expect(fila).toBeVisible({ timeout: 10_000 });
+    await fila.locator('.list-item__detalle').click();
+    await expect(page.locator('#modal-detalle-fila[data-open]')).toHaveCount(1);
+
+    await page.evaluate(() => window.__vigias.at(-1).close());
+    await expect(page.locator('#modal-detalle-fila[data-open]')).toHaveCount(0);
+    await expect(page).toHaveURL(/#gast$/);
+  });
+
   test('con el texto al 200 %, los montos bajan y las lentes van en dos líneas (ADR 117 D4)', async ({ page }) => {
     await seedPorPagar(page);
     await page.goto('/#compromisos');
@@ -682,6 +745,41 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     const lente = page.locator('#sec-compromisos .bloque-tabs__tab.active .bloque-tabs__label');
     expect(await renglones(lente)).toBe(2);
     expect(await lente.evaluate(el => getComputedStyle(el).textOverflow)).not.toBe('ellipsis');
+  });
+});
+
+test.describe('MV2 - hojas con el dedo (ADR 118)', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+
+  test('deslizar la hoja hacia abajo la cierra; un tirón corto la deja en su sitio', async ({ page }) => {
+    await seedConGastos(page);
+    await page.goto('/#gast');
+    const fila = page.locator('#lista-gastos .list-item--detalle').first();
+    await expect(fila).toBeVisible({ timeout: 10_000 });
+    await fila.locator('.list-item__detalle').tap();
+    const hoja = page.locator('#modal-detalle-fila[data-open] > .modal');
+    await expect(hoja).toBeVisible();
+    // La hoja termina de entrar antes de medirla.
+    await expect.poll(async () => (await hoja.boundingBox()).y + (await hoja.boundingBox()).height).toBeGreaterThan(830);
+
+    const caja = await hoja.boundingBox();
+    const x = caja.x + caja.width / 2;
+    const y = caja.y + 12;
+    const cdp = await page.context().newCDPSession(page);
+    const arrastrar = async (dy, pasos) => {
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+      for (let i = 1; i <= pasos; i++) {
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: y + (dy * i) / pasos }] });
+      }
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    };
+
+    await arrastrar(30, 6);
+    await expect(page.locator('#modal-detalle-fila[data-open]')).toHaveCount(1);
+    await expect(hoja).not.toHaveAttribute('data-arrastre');
+
+    await arrastrar(220, 10);
+    await expect(page.locator('#modal-detalle-fila[data-open]')).toHaveCount(0);
   });
 });
 

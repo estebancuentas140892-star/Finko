@@ -3,7 +3,25 @@
  *
  * - `announce`: notifica a screen readers sin interrumpir la UI.
  * - `trapFocus` / `releaseFocus`: ciclo de foco para modales (WCAG 2.4.3).
+ * - `observarTrap`: avisa cuando se abre o se cierra un diálogo (todos pasan
+ *   por el trap, también los que no usan `abrirModal`).
  */
+
+/** Suscriptores de `observarTrap`. */
+const _observadores = new Set();
+
+/**
+ * Avisa a `fn` cada vez que un diálogo atrapa el foco (`fn(panel)`) o lo
+ * suelta (`fn(null)`). Lo usa `ui/hojas.js` para que el atrás del sistema
+ * cierre la hoja abierta (ADR 118).
+ *
+ * @param {(panel: HTMLElement | null) => void} fn
+ * @returns {() => void} Cancela la suscripción.
+ */
+export function observarTrap(fn) {
+  _observadores.add(fn);
+  return () => _observadores.delete(fn);
+}
 
 /** Selector de todos los elementos interactivos dentro de un contenedor. */
 const FOCUSABLE_SELECTOR = [
@@ -76,6 +94,7 @@ export function trapFocus(el) {
 
   const focusable = el.querySelectorAll(FOCUSABLE_SELECTOR);
   focusable[0]?.focus();
+  _observadores.forEach(fn => fn(el));
 }
 
 /**
@@ -88,6 +107,7 @@ export function releaseFocus() {
   }
   _prevFocus?.focus();
   _prevFocus = null;
+  _observadores.forEach(fn => fn(null));
 }
 
 /**

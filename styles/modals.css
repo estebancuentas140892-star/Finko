@@ -773,6 +773,14 @@ body:has(#quien-usa[data-open]) .logro-toast { display: none; }
   }
 }
 
+/* ADR 118 (RN8): la hoja sigue al dedo mientras se arrastra hacia abajo
+   (ui/hojas.js). Sin transición mientras dura el gesto; al soltar, la del
+   modal la devuelve a su sitio o la acompaña al cerrarse. */
+.modal-overlay[data-open] > .modal[data-arrastre] {
+  transform: translateY(var(--fk-hoja-arrastre, 0px));
+  transition: none;
+}
+
 /* ── LECCIÓN A PANTALLA COMPLETA (APR.1a, ADR 092 D7) ──────────
    La lección no es un diálogo sobre la app: la reemplaza mientras dura, sin
    barra ni fondo a la vista, una idea por pantalla. Va al final de la capa

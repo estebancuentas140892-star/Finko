@@ -95,7 +95,10 @@ function _atajoBloqueado(e) {
 /** @param {KeyboardEvent} e */
 function _handleKeydown(e) {
   if (e.key === 'Escape') {
-    const open = document.querySelector('.modal-overlay[data-open]');
+    // La de arriba: con una hoja sobre otra, la última abierta en el
+    // documento es la que se ve (ADR 118, el atrás y el deslizar pasan por acá).
+    const abiertas = document.querySelectorAll('.modal-overlay[data-open]');
+    const open = abiertas[abiertas.length - 1];
     // data-bloqueante (LEG.2): gate de aceptación legal, sin salida hasta aceptar.
     if (open && !('bloqueante' in open.dataset)) cerrarModal(open);
     return;

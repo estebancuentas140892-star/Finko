@@ -36,7 +36,7 @@ import { confirmar } from '../../ui/confirm.js';
 import { resolverPagoConSelector } from '../../infra/cuenta-helper.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { debitosAutomaticosVencidos, creditosAutomaticosVencidos, MESES_CATCHUP_AUTOMATICOS } from './logic.js';
-import { renderAgenda, renderFormAutomaticos, navegarMes, mostrarDia, marcarEntradaSeccion, resumenMesVisible, diaSeleccionado } from './view.js';
+import { renderAgenda, renderFormAutomaticos, navegarMes, mostrarDia, abrirDia, soltarDia, marcarEntradaSeccion, resumenMesVisible, diaSeleccionado } from './view.js';
 
 // ── HANDLERS DE NAVEGACIÓN ───────────────────────────────────────
 
@@ -66,9 +66,64 @@ function _nextMes() {
   announce(resumenMesVisible());
 }
 
+// ── EL DÍA EN SU HOJA (ADR 118) ──────────────────────────────────
+
+const _MQ_MOVIL = '(max-width: 1023.98px)';
+const _enMovil = () => window.matchMedia?.(_MQ_MOVIL).matches === true;
+const _hojaDia = () => document.getElementById('modal-dia-calendario');
+
+/**
+ * La hoja se cierra por un camino que no suelta el día: "Ver en Por pagar"
+ * (al volver se reabre) o el paso a escritorio (el día sigue bajo el mes).
+ */
+let _conservarDia = false;
+
+/**
+ * El día que se dejó abierto al ir a "Por pagar" y la entrada del historial
+ * de la que se salió. Al volver a esa misma entrada, la hoja se reabre
+ * (RN3 del canvas: "el Calendario sigue en octubre con el 25 abierto").
+ * @type {{ dia: number, entrada: string | null } | null}
+ */
+let _volverAlDia = null;
+
+function _abrirHojaDia() {
+  const hoja = _hojaDia();
+  if (!hoja) return;
+  if (!('open' in hoja.dataset)) abrirModal(hoja);
+  // El título trae el día al lector; el foco vuelve a la celda al cerrar.
+  hoja.querySelector('.cal-detail__title')?.focus();
+}
+
+/**
+ * La hoja se cerró (la ✕, deslizar, el atrás, Escape o el fondo): el día deja
+ * de estar marcado y el foco vuelve a su celda, que el repintado reemplazó.
+ */
+function _alCerrarHojaDia() {
+  if (_conservarDia) { _conservarDia = false; return; }
+  const dia = diaSeleccionado();
+  soltarDia();
+  renderSmart(renderAgenda, 'agenda');
+  // La celda que la abrió ya no existe (abrir el día repinta la rejilla), así
+  // que el trap no tiene a quién devolver el foco: se queda en la hoja cerrada
+  // o en el body. Se lleva a la celda nueva del mismo día.
+  const activo = document.activeElement;
+  if (dia !== null && (!activo || activo === document.body || _hojaDia()?.contains(activo))) {
+    _devolverFoco(`[data-action="agenda-mostrar-dia"][data-day="${dia}"]`);
+  }
+}
+
 function _mostrarDia(el) {
   const dia = parseInt(el?.dataset?.day, 10);
   if (!Number.isInteger(dia)) return;
+  // La ✕ del detalle, dentro de la hoja, la cierra (la hoja trae la suya).
+  const hoja = el.closest('#modal-dia-calendario');
+  if (hoja) { cerrarModal(hoja); return; }
+  if (_enMovil()) {
+    abrirDia(dia);
+    renderAgenda();
+    _abrirHojaDia();
+    return;
+  }
   mostrarDia(dia);
   renderAgenda();
   // Día abierto: el foco va al título del panel (lo trae a pantalla y lo
@@ -430,7 +485,38 @@ export function initAgenda() {
   registrarAccion('agenda-ver-en-por-pagar', (el) => {
     const id = el?.dataset?.id;
     if (!id) return;
+    // ADR 118: desde la hoja, el día queda guardado para reabrirlo al volver.
+    const hoja = el.closest('#modal-dia-calendario');
+    if (hoja) {
+      _volverAlDia = { dia: diaSeleccionado(), entrada: history.state?.fkEntrada ?? null };
+      _conservarDia = true;
+      cerrarModal(hoja);
+    }
     EventBus.emit('porPagar:ver-compromiso', { id });
+  });
+
+  // ADR 118: la hoja del día se cierra por muchos caminos (la ✕ genérica,
+  // Escape, deslizar, el atrás). Se mira el atributo y no cada camino.
+  const hojaDia = _hojaDia();
+  if (hojaDia) {
+    new MutationObserver(() => {
+      if (!('open' in hojaDia.dataset)) _alCerrarHojaDia();
+    }).observe(hojaDia, { attributes: true, attributeFilter: ['data-open'] });
+    // Lo que abre otra hoja (aportar a una meta, distribuir) cierra antes la
+    // del día: dos hojas no se apilan, y esta, última en el documento,
+    // taparía a la nueva. Va en captura, antes de que la acción corra.
+    hojaDia.addEventListener('click', (e) => {
+      const accion = e.target.closest?.('[data-action]')?.dataset.action;
+      if (accion === 'abonar-meta' || accion === 'agenda-distribuir-ingreso') cerrarModal(hojaDia);
+    }, true);
+  }
+
+  // Al cruzar 1024px el detalle cambia de lugar: la hoja se cierra sin soltar
+  // el día (en escritorio queda bajo el mes) y se repinta.
+  window.matchMedia?.(_MQ_MOVIL).addEventListener?.('change', () => {
+    const hoja = _hojaDia();
+    if (hoja && 'open' in hoja.dataset) { _conservarDia = true; cerrarModal(hoja); }
+    renderSmart(renderAgenda, 'agenda');
   });
   registrarAccion('agenda-confirmar-automaticos', _confirmarAutomaticos);
 
@@ -475,9 +561,16 @@ export function initAgenda() {
   // extraño de auto-abrir el detalle en el primer pintado de la página.
   window.addEventListener('hashchange', () => {
     if ((location.hash.slice(1) || 'dash') === 'agenda') {
-      marcarEntradaSeccion();
+      // ADR 118 (RN3): de vuelta desde "Ver en Por pagar" a la misma entrada,
+      // el día que estaba abierto se reabre en su hoja.
+      const volver = _volverAlDia;
+      _volverAlDia = null;
+      const reabrir = volver && _enMovil() && history.state?.fkEntrada === volver.entrada;
+      if (reabrir) abrirDia(volver.dia);
+      else marcarEntradaSeccion();
       renderBannerProposito('agenda', S.compromisos.length > 0);
       renderSmart(renderAgenda, 'agenda');
+      if (reabrir) _abrirHojaDia();
     }
   });
 

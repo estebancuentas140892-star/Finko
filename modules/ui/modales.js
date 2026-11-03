@@ -56,8 +56,10 @@ export function cerrarModal(overlay) {
   delete overlay.dataset.open;
   overlay.setAttribute('aria-hidden', 'true');
   // Liberar el fondo ANTES de restaurar el foco: el botón que abrió el modal
-  // vive dentro del fondo y no puede recibir foco mientras siga inerte.
-  _fondo()?.removeAttribute('inert');
+  // vive dentro del fondo y no puede recibir foco mientras siga inerte. Si
+  // queda otra hoja abierta debajo (Escape cierra solo la de arriba, ADR
+  // 118), el fondo sigue inerte.
+  if (!document.querySelector('.modal-overlay[data-open]')) _fondo()?.removeAttribute('inert');
   releaseFocus();
 }
 

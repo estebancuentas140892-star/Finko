@@ -69,6 +69,7 @@ import { initDetalleFila } from './detalle-fila.js';
 import { initAtencionHoy } from './atencion-hoy.js';
 import { initHojaPerfil } from './hoja-perfil.js';
 import { initTeclado } from './teclado.js';
+import { initHojas } from './hojas.js';
 import { initTelefonoAdulto } from './telefono-adulto.js';
 import { initRegistrar } from './registrar.js';
 import { initInstallPrompt } from './install-prompt.js';
@@ -116,6 +117,9 @@ initDetalleFila();
 // ADR 115 (MV2.5): con el teclado abierto, la hoja se apoya encima y su pie
 // con "Guardar" queda a la vista.
 initTeclado();
+// ADR 118 (RN8): toda hoja se cierra también deslizándola y con el atrás del
+// sistema en Android.
+initHojas();
 // ADR 099 D1: "Atención hoy" de móvil en una lista, con su hoja.
 initAtencionHoy();
 // ADR 099 D6: el avatar de Inicio en móvil abre la hoja de perfil.

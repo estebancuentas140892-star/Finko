@@ -1371,6 +1371,26 @@
   outline-offset: 2px;
 }
 
+/* ADR 118: en el teléfono el día se abre en una hoja sobre la rejilla. El
+   detalle pierde su tarjeta (la hoja ya es la superficie) y su ✕, porque la
+   hoja trae la suya arriba a la derecha; la lista se desplaza dentro. */
+.dia-calendario__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.dia-calendario .cal-detail {
+  margin: 0;
+  padding: var(--fk-space-1) var(--fk-space-5) var(--fk-space-5);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  animation: none;
+}
+.dia-calendario .cal-detail__header { padding-right: var(--fk-space-10); }
+.dia-calendario .cal-detail__close { display: none; }
+
 .cal-detail__list {
   list-style: none;
   margin: 0;
