@@ -1,6 +1,6 @@
 # ADR 115 - El pie se apoya sobre el teclado
 
-**Estado:** Aceptada (2026-11-03). Pedido en chat: "vamos con el siguiente cambio de diseño", sobre la pieza MV2.5 del plan del canvas "Finko móvil: rediseño integral" (hallazgo C1 de la auditoría y "Hojas y formularios" del sistema visual). El canvas pedía elegir entre `visualViewport` e `interactive-widget`; se elige el primero. **Falta la prueba en un iPhone real**, que el canvas exigía: se hace sobre la vista previa de Vercel antes de publicar en `main`.
+**Estado:** Aceptada (2026-11-03). Pedido en chat: "vamos con el siguiente cambio de diseño", sobre la pieza MV2.5 del plan del canvas "Finko móvil: rediseño integral" (hallazgo C1 de la auditoría y "Hojas y formularios" del sistema visual). El canvas pedía elegir entre `visualViewport` e `interactive-widget`; se elige el primero. El canvas exigía la prueba en un iPhone real: Esteban la hizo sobre la vista previa de Vercel el mismo día ("Se ve bien") antes de publicar en `main`.
 **Fecha:** 2026-11-03
 **Autores:** Esteban (pedido), Claude Opus 5.5 (implementación y redacción)
 **Relación:** pieza MV2.5 de la tarjeta MV2.2 ([ADR 098](098-finko-movil-2-primera-entrega.md)); **completa** su D8 (el pie pegado a la hoja), que dejó fuera el teclado. **Respeta** el ADR 098 D12 (zona segura) y la lección a pantalla completa del [ADR 092](092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D7. Solo bajo 1024 px; escritorio no tiene teclado en pantalla.
@@ -44,5 +44,5 @@ La barra del navegador que aparece al desplazar (menos de 120 px) y la página a
 
 ### Negativas / Restricciones
 
-- Lo que se probó es el comportamiento con un `visualViewport` simulado. El de un iPhone real se confirma en la vista previa antes de publicar.
+- La prueba automática simula `visualViewport`; el iPhone real se probó a mano una vez. Un cambio en la hoja o en `ui/teclado.js` se vuelve a probar en un teléfono.
 - Una hoja nueva con un alto propio fijo (como la lección a pantalla completa) tiene que quedar fuera de la regla o tomar el área visible.

@@ -14,7 +14,7 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ### feat(movil): MV2.5, el pie se apoya sobre el teclado · 2026-11-03
 
-[ADR 115](DECISIONS/115-el-pie-se-apoya-sobre-el-teclado.md) (completa el ADR 098 D8; respeta D12 y el ADR 092 D7); ficha [`contexto/sistema-visual.md`](contexto/sistema-visual.md). Solo bajo 1024px. SW v647. **Sin probar todavía en un iPhone real**: se prueba en la vista previa de Vercel antes de `main`.
+[ADR 115](DECISIONS/115-el-pie-se-apoya-sobre-el-teclado.md) (completa el ADR 098 D8; respeta D12 y el ADR 092 D7); ficha [`contexto/sistema-visual.md`](contexto/sistema-visual.md). Solo bajo 1024px. SW v647. Probado por Esteban en su iPhone sobre la vista previa de Vercel antes de `main`. **Cierra la tarjeta MV2.2**: el plan del canvas "Finko móvil: rediseño integral" queda aplicado entero.
 
 - **El problema (C1)**: en iOS el teclado tapa la página sin achicarla y la hoja es fija a toda la pantalla; con el teclado abierto en "Nuevo gasto" solo se veía el monto. Chrome en Android hace lo mismo desde que dejó de achicar la página por defecto.
 - **`ui/teclado.js`**: lee `visualViewport` y, mientras el teclado tapa más de 120 px, deja `html[data-teclado]` y el área visible en `--fk-vv-alto` y `--fk-vv-arriba`. La hoja abierta toma ese alto y ese tope. La barra del navegador al desplazar y el zoom con los dedos no cuentan.
