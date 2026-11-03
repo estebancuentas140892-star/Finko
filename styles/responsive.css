@@ -2439,6 +2439,26 @@
     padding: var(--fk-space-2) var(--fk-space-1);
   }
 
+  /* ── ADR 115 (MV2.5): el pie se apoya sobre el teclado ─────────────────
+     En iOS el teclado tapa la página sin achicarla, y la hoja, fija a toda la
+     pantalla, dejaba el pie de arriba debajo del teclado: solo se veía el
+     monto. ui/teclado.js deja en <html> el área que se ve mientras hay
+     teclado y la hoja abierta se pega a esa área. La lección a pantalla
+     completa no tiene campos y conserva su alto. */
+  html[data-teclado] .modal-overlay[data-open]:not(.leccion-overlay) {
+    top: var(--fk-vv-arriba);
+    bottom: auto;
+    height: var(--fk-vv-alto);
+  }
+  html[data-teclado] .modal-overlay[data-open]:not(.leccion-overlay) .modal {
+    max-height: calc(var(--fk-vv-alto) - 2 * var(--fk-space-4));
+  }
+  @media (max-width: 480px) {
+    html[data-teclado] .modal-overlay[data-open]:not(.leccion-overlay) .modal {
+      max-height: var(--fk-vv-alto);
+    }
+  }
+
   /* ── ADR 110 D2 (MV2.19a): el pie del asistente de distribución ────────
      "Siguiente" quedaba a 976px en una hoja de 699: en cada paso había que
      bajar hasta el final para seguir. El resumen y los botones se pegan al

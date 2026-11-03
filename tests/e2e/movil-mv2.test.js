@@ -28,6 +28,7 @@
  *   lo abierto sobrevive al repintado.
  * - ADR 113 (MV2.20): al bajar, la barra de lentes queda arriba, en Gastos y en
  *   las hijas de Ahorro.
+ * - ADR 115 (MV2.5): con el teclado abierto, "Guardar" queda encima.
  * - Escritorio no cambia: las piezas nuevas no se ven a 1280.
  * - D13: el camino de Aprender del niño no desborda a lo ancho.
  */
@@ -226,6 +227,41 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     // Ninguna categoría se esconde detrás de un "ver más" (ADR 042 D2).
     const radios = await page.locator('#form-gasto input[name="categoria"]').count();
     await expect(page.locator('#form-gasto .chip-cat:visible')).toHaveCount(radios);
+  });
+
+  test('con el teclado abierto, "Guardar" queda encima del teclado (ADR 115)', async ({ page }) => {
+    // El teclado de verdad no existe en Chromium sin pantalla: se reemplaza
+    // visualViewport antes de que arranque la app y se le cambia el alto.
+    await page.addInitScript(() => {
+      const vv = new window.EventTarget();
+      Object.assign(vv, { height: window.innerHeight, offsetTop: 0, scale: 1 });
+      Object.defineProperty(window, 'visualViewport', { value: vv, configurable: true });
+    });
+    await page.setViewportSize({ width: 375, height: 667 });
+    await seedConGastos(page);
+    await page.goto('/#gast');
+    await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
+    await page.click('#sec-gast .bloque-gastos__primario');
+    await expect(page.locator('#modal-gasto[data-open]')).toHaveCount(1);
+
+    // El teclado de iOS deja visible algo menos de la mitad de arriba.
+    await page.evaluate(() => {
+      window.visualViewport.height = 380;
+      window.visualViewport.dispatchEvent(new Event('resize'));
+    });
+    await expect(page.locator('html')).toHaveAttribute('data-teclado', 'abierto');
+    const guardar = page.locator('#modal-gasto .modal__footer--principal .btn-primary');
+    await expect.poll(async () => {
+      const b = await guardar.boundingBox();
+      return b ? b.y + b.height : Infinity;
+    }).toBeLessThanOrEqual(380);
+
+    // Al cerrarse el teclado, la hoja vuelve a su alto de siempre.
+    await page.evaluate(() => {
+      window.visualViewport.height = window.innerHeight;
+      window.visualViewport.dispatchEvent(new Event('resize'));
+    });
+    await expect(page.locator('html')).not.toHaveAttribute('data-teclado', /.*/);
   });
 
   test('las categorías plegadas dicen cuántas faltan y se abren (D6)', async ({ page }) => {

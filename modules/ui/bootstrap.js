@@ -68,6 +68,7 @@ import { initVolver } from './volver.js';
 import { initDetalleFila } from './detalle-fila.js';
 import { initAtencionHoy } from './atencion-hoy.js';
 import { initHojaPerfil } from './hoja-perfil.js';
+import { initTeclado } from './teclado.js';
 import { initTelefonoAdulto } from './telefono-adulto.js';
 import { initRegistrar } from './registrar.js';
 import { initInstallPrompt } from './install-prompt.js';
@@ -112,6 +113,9 @@ initRouter(markActiveNav);
 // detrás del router para que su `hashchange` corra con la sección ya visible.
 initVolver();
 initDetalleFila();
+// ADR 115 (MV2.5): con el teclado abierto, la hoja se apoya encima y su pie
+// con "Guardar" queda a la vista.
+initTeclado();
 // ADR 099 D1: "Atención hoy" de móvil en una lista, con su hoja.
 initAtencionHoy();
 // ADR 099 D6: el avatar de Inicio en móvil abre la hoja de perfil.
