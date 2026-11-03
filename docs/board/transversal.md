@@ -29,9 +29,9 @@
 
 #### MV2.2 - Finko móvil 2, segunda entrega
 - Prioridad  : media
-- Estado     : en proceso; lo que queda espera decisión de Esteban (MV2.26 la absorbió CFG.6, ADR 112; MV2.20 cerró con el ADR 113)
+- Estado     : en proceso; solo falta la prueba de MV2.5 en un iPhone (MV2.26 la absorbió CFG.6, ADR 112; MV2.20 cerró con el ADR 113)
 - Área       : ambos
-- Objetivo   : lo que la primera entrega ([ADR 098](../DECISIONS/098-finko-movil-2-primera-entrega.md)) dejó del plan MV2 por riesgo de composición. Queda, esperando decisión: el pie con el teclado de iOS (MV2.5, se mide en un iPhone real)
+- Objetivo   : lo que la primera entrega ([ADR 098](../DECISIONS/098-finko-movil-2-primera-entrega.md)) dejó del plan MV2 por riesgo de composición. Queda: probar en un iPhone real el pie sobre el teclado (MV2.5, [ADR 115](../DECISIONS/115-el-pie-se-apoya-sobre-el-teclado.md), commit `783e1e5`, en la rama y sin publicar) sobre la vista previa de Vercel; con eso la tarjeta cierra
 - Riesgo     : el asistente de distribución tiene ADR propio (080): cada pieza se acota con uno nuevo, nunca en silencio
 - Secciones  : lentes de los bloques, bloque Gastos, Mis cuentas, menú Más, Movimientos
 - Archivos   : `ui/bloque-gastos.js`, `ui/bloque-inicio.js`, `dominio/tesoreria/views/distribucion.js`, `index.html` (`#modal-mas`), `styles/responsive.css` (bloque MV2)

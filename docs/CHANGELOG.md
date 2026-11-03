@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(movil): MV2.5, el pie se apoya sobre el teclado · 2026-11-03
+
+[ADR 115](DECISIONS/115-el-pie-se-apoya-sobre-el-teclado.md) (completa el ADR 098 D8; respeta D12 y el ADR 092 D7); ficha [`contexto/sistema-visual.md`](contexto/sistema-visual.md). Solo bajo 1024px. SW v647. **Sin probar todavía en un iPhone real**: se prueba en la vista previa de Vercel antes de `main`.
+
+- **El problema (C1)**: en iOS el teclado tapa la página sin achicarla y la hoja es fija a toda la pantalla; con el teclado abierto en "Nuevo gasto" solo se veía el monto. Chrome en Android hace lo mismo desde que dejó de achicar la página por defecto.
+- **`ui/teclado.js`**: lee `visualViewport` y, mientras el teclado tapa más de 120 px, deja `html[data-teclado]` y el área visible en `--fk-vv-alto` y `--fk-vv-arriba`. La hoja abierta toma ese alto y ese tope. La barra del navegador al desplazar y el zoom con los dedos no cuentan.
+- **`visualViewport` y no `interactive-widget`**: el atributo del viewport solo lo entiende Chrome en Android, e iOS necesita esto igual.
+- **La lección a pantalla completa queda fuera**: no tiene campos y conserva su alto.
+- Pruebas: 7 unitarias en `teclado.test.js`; 1 E2E en `movil-mv2.test.js` que reemplaza `visualViewport` (no hay teclado en Chromium sin pantalla): con 380 px visibles en 667, "Guardar" queda encima.
+
 ### feat(marca): MARCA.2, el isotipo flota donde se puede · 2026-11-03
 
 [ADR 114](DECISIONS/114-el-isotipo-flota-donde-se-puede.md) (acota el ADR 103 D3; respeta D1 y D2); ficha [`contexto/sistema-visual.md`](contexto/sistema-visual.md). Sin cambios en `modules/` ni en estilos. SW v646.

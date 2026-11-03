@@ -111,6 +111,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-03 (**MV2.5**, [ADR 115](../DECISIONS/115-el-pie-se-apoya-sobre-el-teclado.md)): con el teclado abierto, la hoja se pega al área visible (`ui/teclado.js`, `html[data-teclado]`) y su pie queda encima.
 - 2026-11-03 (**MV2.20**, [ADR 113](../DECISIONS/113-las-lentes-quedan-a-la-vista.md)): al bajar, la barra de lentes queda pegada arriba; única excepción a R31.
 - 2026-10-29 (**MV2.21**, [ADR 108](../DECISIONS/108-mas-dice-como-esta-cada-destino.md)): una línea de estado por destino y lista en vez de rejilla.
 - 2026-10-29 (**MV2.12**, [ADR 104](../DECISIONS/104-una-sola-barra-para-ir-de-lado.md)): una sola barra para ir de lado en Gastos y Ahorro; columnas iguales, nunca se desliza, el estado en la esquina. El punto medía 20px porque `.badge` le ganaba a la capa layout.
@@ -147,6 +148,7 @@
 | Avisos sin filete, ícono en caja tintada (ADR 107 D4) | `styles/components/nudges.css` | `.nudge__icon` + `--nudge-tono` por nivel |
 | Un vacío, un mensaje (ADR 107 D5) | `ui/proposito.js`, `styles/components/domain.css` | `partirProposito()`, `.section:has(.banner-proposito) .empty-state` |
 | Barra de lentes fija al bajar ([ADR 113](../DECISIONS/113-las-lentes-quedan-a-la-vista.md)) | `styles/responsive.css` (bloque MV2) | `.bloque-tabs` en `sticky`; `#tabs-*`, `#chips-*` y `.bloque-gastos` en `display: contents` |
+| La hoja sobre el teclado ([ADR 115](../DECISIONS/115-el-pie-se-apoya-sobre-el-teclado.md)) | `modules/ui/teclado.js`, `styles/responsive.css` (D8) | `areaConTeclado()`, `initTeclado()`, `html[data-teclado]`, `--fk-vv-alto` |
 | Estilos | `styles/responsive.css` | bloque "MV2 · FINKO MÓVIL 2" al final |
 
 **Riesgos**: un encabezado nuevo debe seguir la fila del ADR 106 (teja, título, lupa, ojo, crear) y, si su primario lleva nombre corto, `data-barra` con el completo para la barra de escritorio. `volver.js` escucha `click` en captura sobre `document` (anota el origen, no despacha). La navegación principal se reconoce por `RAIZ_NAVEGACION`: una barra nueva que no esté ahí dejará un "‹ origen" donde no corresponde. El espejo depende de `.section__header > .btn-primary`: si una lente cambia ese markup, el espejo queda oculto. Un envoltorio nuevo alrededor de `.bloque-tabs` la suelta: `sticky` solo pega dentro de su padre (ADR 113).
@@ -215,8 +217,8 @@
 
 **Cambios realizados**:
 
-- 2026-08-14 (DV.2d, cableado de consumidor): `emptyArt()` en `modules/infra/icons.js` ahora busca el symbol `il-<id>` en el sprite antes de componer la ilustración geométrica; mientras el placeholder siga fuera del sprite (sin arte final), sigue cayendo al dibujo actual. Cero cambio de consumidor en las 8 vistas: la vista sigue llamando `emptyArt('dominio')` igual, el switch es interno. Sin cambio de sprite (los 8 siguen `data-placeholder`).
-- 2026-08-12 (DV.2d, ADR 033 D3, riel técnico + lote completo): pipeline de sprite extendido a `ilustraciones/` (`il-*`, viewBox 120x120, color por rol). P4 resuelto: lote = las 8 superficies con `emptyArt()` (Ahorro, Apartados, Cuentas, Deudas, Inversión, Metas, Personales, Movimientos), no las "6 más visitadas" originales (Inicio/Gastos/Calendario no tienen empty state, sería UX nueva). 8 plantillas draft. Sin consumidor todavía: `emptyArt()` sin cambios, falta el arte final de Esteban.
+- 2026-08-14 (DV.2d, cableado de consumidor): `emptyArt()` en `modules/infra/icons.js` ahora busca el symbol `il-<id>` en el sprite antes de componer la ilustración geométrica; mientras el placeholder siga fuera del sprite (sin arte final), sigue cayendo al dibujo actual. Detalle en el CHANGELOG.
+- 2026-08-12 (DV.2d, ADR 033 D3, riel técnico + lote completo): pipeline de sprite extendido a `ilustraciones/` (`il-*`, viewBox 120x120, color por rol). Detalle en el CHANGELOG.
 - 2026-08-01 (DV.2c, ADR 033 D4): cascada acotada de listas, resaltado de fila nueva (`.list-item--nuevo`), retiro de `empty-orbit`/`empty-float` y catálogo cerrado de animación en DESIGN_SYSTEM.md.
 - 2026-08-01 (DV.2b, ADR 033 D3): pipeline de sprite extendido a `decoracion/` (`d-*`), clase `.decor` + `.pattern-dots`, piloto en 2 heroes y 2 empty states.
 - 2026-07-31 (DV.2a, ADR 033 D1+D2): escala de elevación de 4 niveles (`--fk-shadow-sm` en reposo para `.card`/`.bento__cell`/`.list-item`, doble capa en `themes.css` claro) y `--fk-grad-identity` consolidado en los 6 heroes que lo copiaban a mano.
