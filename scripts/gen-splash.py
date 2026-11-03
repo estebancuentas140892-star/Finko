@@ -2,7 +2,7 @@
 gen-splash.py - Genera splash screens PWA para iOS (apple-touch-startup-image)
 
 Tamaños: 5 variantes para iPhones modernos (2020-2025)
-Diseño:  fondo #0f1117, el isotipo en su teja (ADR 103) centrado, nombre + tagline.
+Diseño:  fondo #0f1117, el isotipo sin teja (ADR 114 D1) centrado, nombre + tagline.
          El isotipo sale de assets/svg/identidad/isotipo.svg (scripts/isotipo.py).
 
 Uso:
@@ -14,7 +14,7 @@ Requisito: Pillow  →  pip install Pillow
 from PIL import Image, ImageDraw, ImageFont
 import os
 
-from isotipo import FONDO_MARCA, dibujar_isotipo
+from isotipo import dibujar_isotipo
 
 OUT = os.path.join(os.path.dirname(__file__), '..', 'assets', 'splash')
 os.makedirs(OUT, exist_ok=True)
@@ -44,20 +44,18 @@ def get_font(size, bold=False):
 
 def draw_marca(draw, cx, cy, lado):
     """
-    Dibuja la teja de marca (fondo fijo, esquinas al 22 %) con el isotipo
-    centrado en (cx, cy). lado: ancho y alto de la teja en píxeles.
+    Dibuja el isotipo centrado en (cx, cy), sin teja ni fondo (ADR 114 D1):
+    en el arranque flota sobre el fondo de la app. lado: alto del isotipo.
     """
-    x0, y0 = cx - lado // 2, cy - lado // 2
-    draw.rounded_rectangle([x0, y0, x0 + lado, y0 + lado], radius=round(lado * 0.22),
-                           fill=hex_to_rgb(FONDO_MARCA))
-    dibujar_isotipo(draw, (cx, cy), lado * 0.64)
+    dibujar_isotipo(draw, (cx, cy), lado)
+
 
 def make_splash(w, h, label):
     img  = Image.new('RGB', (w, h), hex_to_rgb(BG))
     draw = ImageDraw.Draw(img)
 
     scale   = w / 750            # escala relativa al tamaño base
-    unit    = round(160 * scale) # lado de la teja de marca
+    unit    = round(160 * scale) # alto del isotipo
     cy_logo = round(h * 0.44)    # centro vertical ligeramente arriba del centro
 
     draw_marca(draw, w // 2, cy_logo, unit)

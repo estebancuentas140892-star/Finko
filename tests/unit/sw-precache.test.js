@@ -92,6 +92,28 @@ describe('service-worker.js - cobertura del precache', () => {
   });
 });
 
+// ADR 114: el ícono `any` flota (diálogo de instalar, computador, arranque de
+// Android) y el `maskable` lleva fondo, porque el lanzador lo recorta. Un solo
+// archivo con "any maskable" haría que uno de los dos se vea mal.
+describe('manifest.json - íconos (ADR 114)', () => {
+  const MANIFEST = JSON.parse(readFileSync(join(RAIZ, 'manifest.json'), 'utf-8'));
+  const iconos = MANIFEST.icons ?? [];
+
+  it('declara íconos any y maskable por separado, nunca los dos en el mismo archivo', () => {
+    const propositos = iconos.map(i => i.purpose);
+    expect(propositos).toContain('any');
+    expect(propositos).toContain('maskable');
+    expect(propositos.filter(p => p.split(' ').length > 1)).toEqual([]);
+  });
+
+  it('cada ícono existe y el SW lo precachea', () => {
+    for (const { src } of iconos) {
+      expect(() => readFileSync(join(RAIZ, src)), `${src} no existe`).not.toThrow();
+      expect(declaradas.has(src), `${src} no está en el precache`).toBe(true);
+    }
+  });
+});
+
 describe('service-worker.js - ciclo de actualización', () => {
   it('el SW nuevo no espera a que se cierren las pestañas', () => {
     expect(SW).toContain('self.skipWaiting()');
