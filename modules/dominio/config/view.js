@@ -19,6 +19,7 @@ import { ninos, hayNinos } from '../../infra/perfiles.js';
 import { htmlFamilia } from './familia-view.js';
 import { htmlNube } from './nube-view.js';
 import { estadoNube } from './nube.js';
+import { textoFamilia } from '../../ui/hoja-perfil.js';
 
 // ── FORMATO DE MONTOS EN CAPTURA (B4/R16) ────────────────────────
 //
@@ -65,15 +66,137 @@ export function renderPanelConfig() {
   const el = document.getElementById('panel-config');
   if (!el) return;
 
+  if (!_enMovil()) {
+    el.innerHTML = `
+      ${_renderAvisoVigencia()}
+      ${_grupo('La app',      [_renderTema(), _renderAtajos(), _renderNotificaciones(), _renderInstalarApp(), _renderActualizar()])}
+      ${_grupo('Tu cuenta',   [_renderPerfil(), _renderBloqueo()])}
+      ${_grupo('Familia',     [htmlFamilia(ninos(), hoy())])}
+      ${_grupo('Tus datos',   [htmlNube(estadoNube()), _renderDatos()])}
+      ${_grupo('Impuestos',   [_renderImpuestos()])}
+      ${_grupo('Información', [_renderLegal(), _renderAcercaDe()])}
+    `;
+    return;
+  }
+
+  // ADR 112 (CFG.6): bajo 1024px los 15 bloques medían 5.376px y lo tuyo
+  // empezaba en la segunda pantalla. Cada bloque pasa a ser una fila con su
+  // estado, lo tuyo va primero (D3) y se abre sola la nube que pide algo (D5).
+  const nube = estadoNube();
+  if (nube.eleccion || nube.sesion?.porDecidir || nube.paso === 'codigo' || nube.error) {
+    _filasAbiertas.add('nube');
+  }
+  const light = document.body.classList.contains('light-theme');
   el.innerHTML = `
     ${_renderAvisoVigencia()}
-    ${_grupo('La app',      [_renderTema(), _renderAtajos(), _renderNotificaciones(), _renderInstalarApp(), _renderActualizar()])}
-    ${_grupo('Tu cuenta',   [_renderPerfil(), _renderBloqueo()])}
-    ${_grupo('Familia',     [htmlFamilia(ninos(), hoy())])}
-    ${_grupo('Tus datos',   [htmlNube(estadoNube()), _renderDatos()])}
-    ${_grupo('Impuestos',   [_renderImpuestos()])}
-    ${_grupo('Información', [_renderLegal(), _renderAcercaDe()])}
+    ${_grupo('Tu cuenta', [
+      _fila('perfil', _renderPerfil(), S.perfil.nombre || 'Sin nombre'),
+      _fila('bloqueo', _renderBloqueo(), !cryptoDisponible() ? 'No disponible' : candadoActivo(S.config?.bloqueo) ? 'Activo' : 'Apagado'),
+    ])}
+    ${_grupo('Familia', [_fila('familia', htmlFamilia(ninos(), hoy()), textoFamilia(ninos()))])}
+    ${_grupo('Tus datos', [
+      _fila('nube', htmlNube(nube), _estadoNube(nube)),
+      _fila('datos', _renderDatos(), textoUltimoRespaldo(S.config?.ultimoRespaldoISO)),
+    ])}
+    ${_grupo('La app', [
+      _fila('tema', _renderTema(), light ? 'Tema claro' : 'Tema oscuro'),
+      _fila('atajos', _renderAtajos(), S.config?.atajosTeclado !== false ? 'Activados' : 'Desactivados'),
+      _fila('recordatorios', _renderNotificaciones(), _estadoRecordatorios()),
+      _fila('instalar', _renderInstalarApp(), estaInstalada() ? 'Ya está instalada' : ''),
+      _fila('actualizar', _renderActualizar()),
+    ])}
+    ${_grupo('Impuestos', [_fila('impuestos', _renderImpuestos(), 'Opcional')])}
+    ${_grupo('Información', [
+      _fila('legal', _renderLegal(), `${DOCUMENTOS_LEGALES.length} documentos`),
+      _fila('acerca', _renderAcercaDe(), `Versión ${APP_VERSION}`),
+    ])}
   `;
+}
+
+/**
+ * Bajo el corte de escritorio de la app (1024px). `config/index.js` repinta
+ * el panel al cruzar el corte, así que basta con leer el ancho al pintarlo.
+ */
+function _enMovil() {
+  return window.matchMedia?.('(max-width: 1023.98px)').matches === true;
+}
+
+/**
+ * Filas abiertas por la persona (ADR 112 D2). Vive en el módulo y no en el
+ * DOM porque el panel se repinta entero al guardar o al cambiar un
+ * interruptor, y cambiar el tema no debe cerrar la fila de Apariencia.
+ * @type {Set<string>}
+ */
+const _filasAbiertas = new Set();
+
+/**
+ * Convierte el HTML de un bloque en una fila que se despliega en su sitio
+ * (ADR 112 D1-D2): el título pasa a ser un botón con `aria-expanded` (patrón
+ * acordeón de WAI-ARIA) y lo demás, su cuerpo. Todo bloque de Ajustes abre
+ * con su `<h2 class="config-section__title">` y cierra con `</section>`, así
+ * que el contenido y los ids que cablea `config/index.js` no se tocan.
+ *
+ * @param {string} id - nombre de la fila (`data-fila`)
+ * @param {string} html - el bloque tal como lo pinta su `_render*()`
+ * @param {string} [estado] - una línea con lo que el bloque ya sabe
+ * @returns {string}
+ */
+function _fila(id, html, estado = '') {
+  const iH2     = html.indexOf('<h2');
+  const iAbre   = html.indexOf('>', iH2) + 1;
+  const iCierra = html.indexOf('</h2>', iAbre);
+  const iFin    = html.lastIndexOf('</section>');
+  if (iH2 < 0 || iCierra < 0 || iFin < iCierra) return html;
+
+  const abierta = _filasAbiertas.has(id);
+  const titulo  = html.slice(iAbre, iCierra).trim();
+  const cabeza  = html.slice(0, iAbre).replace('class="config-section', 'class="config-section config-section--fila');
+  return `${cabeza}
+        <button type="button" class="config-fila__boton" data-action="config-fila" data-fila="${id}"
+                aria-expanded="${abierta}" aria-controls="config-fila-${id}">
+          <span class="config-fila__textos">
+            <span class="config-fila__nombre">${titulo}</span>
+            ${estado ? `<span class="config-fila__estado">${_esc(estado)}</span>` : ''}
+          </span>
+          ${icon('chevron-down', 'icon icon--sm config-fila__flecha')}
+        </button>
+      </h2>
+      <div class="config-fila__cuerpo" id="config-fila-${id}"${abierta ? '' : ' hidden'}>
+        ${html.slice(iCierra + '</h2>'.length, iFin)}
+      </div>
+    ${html.slice(iFin)}`;
+}
+
+/**
+ * Abre o cierra una fila sin repintar el panel (lo que la persona escribió
+ * en otra fila se queda). Lo llama la acción `config-fila`.
+ * @param {HTMLElement} boton
+ */
+export function alternarFila(boton) {
+  const id = boton?.dataset?.fila;
+  const cuerpo = id ? document.getElementById(`config-fila-${id}`) : null;
+  if (!cuerpo) return;
+  const abrir = boton.getAttribute('aria-expanded') !== 'true';
+  boton.setAttribute('aria-expanded', String(abrir));
+  cuerpo.hidden = !abrir;
+  if (abrir) _filasAbiertas.add(id);
+  else _filasAbiertas.delete(id);
+}
+
+/** La línea de la fila de la nube: lo que falta, o si hay cuenta. */
+function _estadoNube(e) {
+  if (e.eleccion || e.sesion?.porDecidir) return 'Falta decidir qué hacer con tus datos';
+  if (e.sesion) return 'Conectada';
+  if (e.paso === 'codigo') return 'Falta el código del correo';
+  return 'Sin cuenta';
+}
+
+/** La línea de Recordatorios: las mismas cuatro ramas de su bloque. */
+function _estadoRecordatorios() {
+  const permiso = estadoPermiso();
+  if (permiso === 'unsupported') return 'No disponibles en este navegador';
+  if (permiso === 'denied') return 'Bloqueados en este dispositivo';
+  return permiso === 'granted' && S.config?.notificaciones === true ? 'Activos' : 'Apagados';
 }
 
 /**
@@ -156,11 +279,13 @@ function _renderTema() {
 /**
  * Interruptor de los atajos de teclado de escritorio (INT.1h). WCAG 2.1.4
  * exige poder apagar un atajo de una sola tecla: este es el apagador.
+ * ADR 112 D4: sin un puntero fino no hay atajos (`ui/actions.js`) y el bloque
+ * se esconde por CSS con la misma condición.
  */
 function _renderAtajos() {
   const activo = S.config?.atajosTeclado !== false;
   return `
-    <section class="config-section" aria-labelledby="config-atajos-title">
+    <section class="config-section config-section--atajos" aria-labelledby="config-atajos-title">
       <h2 class="config-section__title" id="config-atajos-title">Atajos de teclado</h2>
       <label class="config-toggle" for="toggle-atajos">
         <span class="toggle">

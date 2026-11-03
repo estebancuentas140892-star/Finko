@@ -73,6 +73,18 @@ describe('atajos de teclado de escritorio (INT.1h)', () => {
     expect(abrir).not.toHaveBeenCalled();
   });
 
+  // ADR 112 D4: sin mouse ni trackpad no hay atajos (y su interruptor de
+  // Ajustes se esconde con la misma condición).
+  it('sin un puntero fino, N no dispara nada', () => {
+    const original = window.matchMedia;
+    window.matchMedia = (q) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {} });
+    const abrir = vi.fn();
+    registrarAccion('registrar-abrir-hoja', abrir);
+    disparar('n');
+    window.matchMedia = original;
+    expect(abrir).not.toHaveBeenCalled();
+  });
+
   it('Escape sigue cerrando el modal abierto sin data-bloqueante', () => {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';

@@ -27,7 +27,7 @@ import {
 } from '../../infra/cripto-respaldo.js';
 import { pedirContrasenaRespaldo } from '../../ui/contrasena-respaldo.js';
 import { abrirModal } from '../../ui/modales.js';
-import { renderPanelConfig, renderModalFiscal, miles, desdeMiles, textoUltimoRespaldo } from './view.js';
+import { renderPanelConfig, renderModalFiscal, miles, desdeMiles, textoUltimoRespaldo, alternarFila } from './view.js';
 import { gastosACSV } from '../export/logic.js';
 import { documentoLegalPorId, cargarDocumentoLegal, VERSION_LEGAL } from './legal.js';
 import { validarPin, crearBloqueo, verificarPin, limpiarFallos } from './bloqueo.js';
@@ -736,12 +736,19 @@ export function initConfig() {
   registrarAccion('abrir-perfil-fiscal', _abrirPerfilFiscal);
   registrarAccion('buscar-actualizacion', _buscarActualizacion);
   registrarAccion('reparar-app',          _repararApp);
+  registrarAccion('config-fila',          alternarFila);
   _wireLegalLinks();
 
   // El panel se inyecta la primera vez que la sección está activa.
   renderSmart(_inyectarPanel, 'config');
 
   window.addEventListener('hashchange', () => {
+    renderSmart(_inyectarPanel, 'config');
+  });
+
+  // ADR 112 D6: bajo 1024px el panel es un índice de filas y desde 1024px es
+  // el de siempre. La vista lee el ancho al pintar; acá se repinta al cruzar.
+  window.matchMedia?.('(min-width: 1024px)').addEventListener?.('change', () => {
     renderSmart(_inyectarPanel, 'config');
   });
 

@@ -102,6 +102,10 @@ function _handleKeydown(e) {
   }
 
   if (S.config?.atajosTeclado === false) return;
+  // ADR 112 D4: los atajos son de escritorio, como dice su texto en Ajustes.
+  // Sin mouse ni trackpad no existen, y así un teléfono con teclado bluetooth
+  // no queda con atajos que no tiene dónde apagar (WCAG 2.1.4).
+  if (window.matchMedia?.('(any-pointer: fine)').matches === false) return;
   if (_atajoBloqueado(e)) { _desarmarG(); return; }
 
   if (_gArmado) {

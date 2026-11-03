@@ -193,6 +193,112 @@
   min-width: 160px;
 }
 
+/* ── ADR 112 (CFG.6): Ajustes como índice en el teléfono ──────────────
+   Bajo 1024px los 15 bloques abiertos medían 5.376px. La vista solo emite
+   esta forma bajo 1024px (`_enMovil()` en config/view.js), así que estas
+   reglas no tienen nada que deshacer en escritorio.
+
+   D1: cada bloque es una fila (título, estado y flecha) y las filas de un
+   grupo forman una sola lista: la tarjeta pasa del bloque al grupo, con un
+   filete entre filas. */
+.config-grupo:has(> .config-section--fila) {
+  gap: 0;
+}
+.config-grupo:has(> .config-section--fila) > .config-grupo__label {
+  margin-block-end: var(--fk-space-2);
+}
+.config-section--fila {
+  padding: 0;
+  gap: 0;
+  border-radius: 0;
+  border-block-start-width: 0;
+}
+.config-grupo__label + .config-section--fila {
+  border-block-start-width: 1px;
+  border-start-start-radius: var(--fk-radius-lg);
+  border-start-end-radius: var(--fk-radius-lg);
+}
+.config-section--fila:last-child {
+  border-end-start-radius: var(--fk-radius-lg);
+  border-end-end-radius: var(--fk-radius-lg);
+}
+.config-section--fila > .config-section__title {
+  display: block;
+}
+
+/* D2: el botón ocupa la fila entera; la flecha gira al abrir. */
+.config-fila__boton {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  width: 100%;
+  min-height: var(--fk-space-12);
+  padding: var(--fk-space-3) var(--fk-space-4);
+  border: 0;
+  border-radius: inherit;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.config-fila__boton:focus-visible {
+  outline: 2px solid var(--fk-border-focus);
+  outline-offset: -2px;
+}
+.config-fila__textos {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.config-fila__nombre {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
+.config-fila__estado {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-regular);
+  color: var(--fk-text-secondary);
+}
+.config-fila__flecha {
+  flex: none;
+  color: var(--fk-text-muted);
+  transition: transform var(--fk-transition-fast);
+}
+.config-fila__boton[aria-expanded="true"] .config-fila__flecha {
+  transform: rotate(180deg);
+}
+
+/* El cuerpo repite la columna de `.config-section`, incluida la regla de los
+   botones sueltos, porque sus hijos dejaron de ser hijos directos del bloque. */
+.config-fila__cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-4);
+  padding: 0 var(--fk-space-4) var(--fk-space-5);
+}
+.config-fila__cuerpo[hidden] {
+  display: none;
+}
+.config-fila__cuerpo > .btn {
+  align-self: flex-start;
+  min-width: 160px;
+}
+
+/* D4: los atajos solo existen con mouse o trackpad (ui/actions.js), y su
+   interruptor se ve con la misma condición, en todos los anchos. */
+@media not all and (any-pointer: fine) {
+  .config-section--atajos {
+    display: none;
+  }
+}
+
 /* Fila del botón de guardar + la confirmación visible (B12/R14). El chip
    verde es el mismo `.chip-success` de atoms.css; nace apagado y
    `config/index.js` lo enciende unos segundos tras persistir. `.chip`

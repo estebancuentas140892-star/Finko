@@ -24,6 +24,8 @@
  * - ADR 111 (MV2.27): el mes del Calendario cabe de 320 a 430, el día se marca
  *   en un círculo, los textos no se parten y un mes vacío con datos conserva
  *   su mensaje.
+ * - ADR 112 (CFG.6): Ajustes es un índice de filas que se abren en su sitio, y
+ *   lo abierto sobrevive al repintado.
  * - Escritorio no cambia: las piezas nuevas no se ven a 1280.
  * - D13: el camino de Aprender del niño no desborda a lo ancho.
  */
@@ -499,6 +501,27 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     const fondo = await vacio.locator('.btn-primary').evaluate((el) => getComputedStyle(el).backgroundColor);
     expect(fondo).not.toBe('rgba(0, 0, 0, 0)');
   });
+  test('Ajustes: un índice de filas que se abren en su sitio (ADR 112)', async ({ page }) => {
+    await sembrar(page, estadoBase({ cuentas: CUENTAS, perfil: { nombre: 'Laura', smmlv: 1750905 } }));
+    await page.goto('/#config');
+    const filas = page.locator('#sec-config .config-fila__boton');
+    await expect(filas.first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#sec-config .config-grupo__label').first()).toHaveText('Tu cuenta');
+    await expect(filas.first()).toContainText('Laura');
+    const alto = await page.evaluate(() => document.querySelector('#sec-config').getBoundingClientRect().height);
+    expect(alto).toBeLessThan(1500);
+
+    // El candado se abre en su sitio, con su formulario.
+    await expect(page.locator('#form-bloqueo-crear')).toBeHidden();
+    await page.locator('[data-fila="bloqueo"]').click();
+    await expect(page.locator('#form-bloqueo-crear')).toBeVisible();
+
+    // Cambiar el tema repinta el panel: lo abierto sigue abierto.
+    await page.locator('[data-fila="tema"]').click();
+    await page.locator('label[for="toggle-tema"]').click();
+    await expect(page.locator('[data-fila="tema"]')).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('#form-bloqueo-crear')).toBeVisible();
+  });
 });
 
 test.describe('MV2 - escritorio sin cambios', () => {
@@ -547,6 +570,15 @@ test.describe('MV2 - escritorio sin cambios', () => {
     expect(m.celda).not.toBe('rgba(0, 0, 0, 0)');
     expect(m.alto).toBeGreaterThanOrEqual(80);
     await expect(page.locator('.cal-card__sub-mes')).toBeVisible();
+  });
+
+  test('Ajustes conserva sus bloques abiertos y su orden (ADR 112)', async ({ page }) => {
+    await sembrar(page, estadoBase({ cuentas: CUENTAS }));
+    await page.goto('/#config');
+    await expect(page.locator('#form-perfil')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#sec-config .config-fila__boton')).toHaveCount(0);
+    await expect(page.locator('#sec-config .config-grupo__label').first()).toHaveText('La app');
+    await expect(page.locator('#toggle-atajos')).toBeAttached();
   });
 
   test('Distribuir desde Inicio sigue llevando a Mis cuentas (ADR 110 D1)', async ({ page }) => {

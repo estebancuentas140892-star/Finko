@@ -145,9 +145,13 @@ function _irABloque(bloque) {
   requestAnimationFrame(() => {
     const titulo = document.getElementById(id);
     if (!titulo) return;
+    // ADR 112 D5: bajo 1024px el bloque es una fila de Ajustes; se abre y el
+    // foco va a su botón, que ya es enfocable.
+    const fila = titulo.querySelector('.config-fila__boton');
+    if (fila?.getAttribute('aria-expanded') === 'false') fila.click();
     (titulo.closest('.config-section') ?? titulo).scrollIntoView({ block: 'start', behavior: 'instant' });
-    titulo.setAttribute('tabindex', '-1');
-    titulo.focus({ preventScroll: true });
+    if (!fila) titulo.setAttribute('tabindex', '-1');
+    (fila ?? titulo).focus({ preventScroll: true });
   });
 }
 

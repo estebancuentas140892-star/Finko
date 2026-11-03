@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { renderPanelConfig, renderModalFiscal, miles, desdeMiles, textoUltimoRespaldo } from '../../modules/dominio/config/view.js';
+import { renderPanelConfig, renderModalFiscal, miles, desdeMiles, textoUltimoRespaldo, alternarFila } from '../../modules/dominio/config/view.js';
 import { S, createInitialState } from '../../modules/core/state.js';
 import { DOCUMENTOS_LEGALES, documentoLegalPorId } from '../../modules/dominio/config/legal.js';
 
@@ -553,5 +553,67 @@ describe('renderPanelConfig() - candado de acceso (CFG.5a)', () => {
     renderPanelConfig();
     const grupo = document.getElementById('form-bloqueo-crear').closest('.config-grupo');
     expect(grupo.querySelector('.config-grupo__label').textContent.trim()).toBe('Tu cuenta');
+  });
+});
+
+// ── ADR 112 (CFG.6): Ajustes como índice en el teléfono ─────────
+// happy-dom mide 1024px: los demás tests ven el panel de escritorio. Acá se
+// finge el ancho del teléfono con `matchMedia`.
+
+describe('renderPanelConfig() - índice de filas bajo 1024px (ADR 112)', () => {
+  let original;
+  const anchoTelefono = (telefono) => {
+    window.matchMedia = (q) => ({ matches: q.includes('max-width') ? telefono : !telefono, media: q, addEventListener() {}, removeEventListener() {} });
+  };
+
+  beforeEach(() => {
+    original = window.matchMedia;
+    Object.assign(S, createInitialState());
+    S.perfil.nombre = 'Laura';
+    document.body.innerHTML = '<div id="panel-config"></div>';
+  });
+
+  afterEach(() => {
+    // Las filas abiertas viven en el módulo: se cierran para el test siguiente.
+    document.querySelectorAll('.config-fila__boton[aria-expanded="true"]').forEach(b => alternarFila(b));
+    window.matchMedia = original;
+  });
+
+  it('cada bloque es una fila con su estado, cerrada, y lo tuyo va primero (D1, D3)', () => {
+    anchoTelefono(true);
+    renderPanelConfig();
+    const rotulos = [...document.querySelectorAll('.config-grupo__label')].map(e => e.textContent.trim());
+    expect(rotulos).toEqual(['Tu cuenta', 'Familia', 'Tus datos', 'La app', 'Impuestos', 'Información']);
+    const perfil = document.querySelector('.config-fila__boton[data-fila="perfil"]');
+    expect(perfil.closest('h2').id).toBe('config-perfil-title');
+    expect(perfil.getAttribute('aria-expanded')).toBe('false');
+    expect(perfil.querySelector('.config-fila__estado').textContent).toBe('Laura');
+    expect(document.getElementById('config-fila-perfil').hidden).toBe(true);
+    // El formulario sigue dentro del panel, con su id: config/index.js lo cablea igual.
+    expect(document.querySelector('#panel-config #form-perfil')).not.toBeNull();
+    expect(document.querySelector('.config-fila__boton[data-fila="bloqueo"] .config-fila__estado').textContent).toBe('Apagado');
+  });
+
+  it('una fila abierta sigue abierta después de repintar el panel (D2)', () => {
+    anchoTelefono(true);
+    renderPanelConfig();
+    alternarFila(document.querySelector('.config-fila__boton[data-fila="tema"]'));
+    expect(document.getElementById('config-fila-tema').hidden).toBe(false);
+    renderPanelConfig();
+    expect(document.querySelector('.config-fila__boton[data-fila="tema"]').getAttribute('aria-expanded')).toBe('true');
+    expect(document.getElementById('config-fila-tema').hidden).toBe(false);
+  });
+
+  it('desde 1024px el panel es el de siempre: sin filas y con "La app" primero (D6)', () => {
+    anchoTelefono(false);
+    renderPanelConfig();
+    expect(document.querySelector('.config-fila__boton')).toBeNull();
+    expect(document.querySelector('.config-grupo__label').textContent.trim()).toBe('La app');
+  });
+
+  it('el bloque de atajos lleva la clase que lo esconde sin puntero fino (D4)', () => {
+    anchoTelefono(false);
+    renderPanelConfig();
+    expect(document.getElementById('toggle-atajos').closest('.config-section').classList.contains('config-section--atajos')).toBe(true);
   });
 });

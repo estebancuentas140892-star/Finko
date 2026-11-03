@@ -176,7 +176,12 @@ test.describe('MV2.15c - el avatar abre tu perfil (ADR 099)', () => {
     await expect(page.locator('#sec-config.active')).toBeVisible();
     await expect(hoja).not.toHaveAttribute('data-open', '');
     await expect(page.locator('#config-familia-title')).toBeInViewport();
-    await expect(page.locator('#config-familia-title')).toBeFocused();
+    // ADR 112 D5: bajo 1024px el bloque es una fila de Ajustes; llega abierta y
+    // con el foco en su botón.
+    const fila = page.locator('#config-familia-title .config-fila__boton');
+    await expect(fila).toBeFocused();
+    await expect(fila).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('#config-fila-familia')).toBeVisible();
   });
 
   test('pasarle el teléfono a la niña abre su app; volver pide el PIN (D6, ADR 093 D1)', async ({ page }) => {
