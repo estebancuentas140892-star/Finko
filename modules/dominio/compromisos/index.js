@@ -15,6 +15,7 @@ import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal } from '../../ui/modales.js';
 import { renderSmart, updSaldo, registrarRender, programarRender } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
+import { resaltarFilaNueva } from '../../infra/animate.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { f, hoy } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
@@ -149,7 +150,14 @@ function _verCompromisoEnPorPagar({ id } = {}) {
     renderSmart(_renderTodo, 'compromisos');
     if (!id) return;
     const destino = document.querySelector(`#lista-compromisos .deuda-card[data-id="${CSS.escape(id)}"]`);
-    destino?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (!destino) return;
+    destino.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // N7 (ADR 116 D1): con 20 filas a la vista nada decía cuál era la pedida.
+    // El destello va cuando la tarjeta ya llegó: antes se gastaba en camino.
+    let marcada = false;
+    const marcar = () => { if (!marcada) { marcada = true; resaltarFilaNueva(destino, 'compromisos'); } };
+    window.addEventListener('scrollend', marcar, { once: true });
+    setTimeout(marcar, 450);
   }, 0);
 }
 

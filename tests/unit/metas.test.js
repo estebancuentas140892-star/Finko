@@ -980,6 +980,16 @@ describe('renderListaMetas() - tarjeta de meta (DIS.14)', () => {
     expect(document.querySelector('.meta-card__secundarias [data-action="abonar-meta"]')).toBeNull();
   });
 
+  it('con plan, "Aportar" dice cuánto (ADR 107 D2); con el ojo, solo "Aportar"', () => {
+    S.metas = [metaBase({ id: 'm1', montoActual: 1_200_000, montoObjetivo: 3_500_000, fechaLimite: isoEnDias(120) })];
+    renderListaMetas();
+    expect(document.querySelector('.meta-card__aportar').textContent).toMatch(/^Aportar \$[\d.]+$/);
+    S.config = { ocultarSaldo: true };
+    renderListaMetas();
+    expect(document.querySelector('.meta-card__aportar').textContent).toBe('Aportar');
+    S.config = { ocultarSaldo: false };
+  });
+
   it('los datos dicen el faltante y la fecha, sin "días restantes" ni "X / Y"', () => {
     S.metas = [metaBase({ id: 'm1', montoActual: 1_200_000, montoObjetivo: 3_500_000, fechaLimite: isoEnDias(120) })];
     renderListaMetas();
@@ -1165,7 +1175,40 @@ describe('renderListaMetas() - franja de la sección', () => {
     S.metas = [metaBase({ id: 'm1' })];
     renderListaMetas();
     const hijos = [...document.getElementById('lista-metas').children];
-    expect(hijos[0].classList.contains('hero-metas')).toBe(true);
+    const franja = hijos.findIndex(h => h.classList.contains('hero-metas'));
+    const tarjeta = hijos.findIndex(h => h.classList.contains('meta-card'));
+    expect(franja).toBeGreaterThanOrEqual(0);
+    expect(franja).toBeLessThan(tarjeta);
+  });
+
+  // ADR 116 D5 (AH4): el fondo incompleto se dice en media línea, sobre la franja.
+  describe('la media línea del fondo', () => {
+    const fijo = { id: 'f1', tipo: 'fijo', monto: 1_000_000, frecuencia: 'Mensual', activo: true };
+
+    it('sin fondo, invita a empezar por él y enlaza al fondo', () => {
+      S.metas = [metaBase({ id: 'm1' })];
+      S.ahorro = { fondoEmergencia: { activo: false }, aportes: [] };
+      renderListaMetas();
+      const linea = document.querySelector('#lista-metas > .metas-fondo');
+      expect(linea.textContent).toContain('Todavía no tienes fondo de emergencia');
+      expect(linea.querySelector('a[href="#fondo"]').textContent).toBe('Ir al fondo');
+    });
+
+    it('con el fondo a medias, dice cuánto cubre y de cuánto', () => {
+      S.metas = [metaBase({ id: 'm1' })];
+      S.compromisos = [fijo];
+      S.ahorro = { fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 1_000_000 }, aportes: [{ monto: 500_000 }] };
+      renderListaMetas();
+      expect(document.querySelector('.metas-fondo').textContent).toContain('va en 1 mes y 2 semanas de 3');
+    });
+
+    it('con el fondo completo, no hay línea', () => {
+      S.metas = [metaBase({ id: 'm1' })];
+      S.compromisos = [fijo];
+      S.ahorro = { fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 3_000_000 }, aportes: [] };
+      renderListaMetas();
+      expect(document.querySelector('.metas-fondo')).toBeNull();
+    });
   });
 
   it('el ojo enmascara las cifras de la franja pero no el conteo', () => {

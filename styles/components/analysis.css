@@ -2014,8 +2014,9 @@
   border-radius: var(--fk-radius-md);
   font-size: var(--fk-text-sm);
 }
-.patron__item--alta   { background: var(--fk-nudge-high-bg);   border-left: 3px solid var(--fk-nudge-high-accent);   }
-.patron__item--media  { background: var(--fk-nudge-medium-bg); border-left: 3px solid var(--fk-nudge-medium-accent); }
+/* ADR 116 D6 (V1): el tinte dice el nivel; sin filete lateral (ADR 107 D4). */
+.patron__item--alta   { background: var(--fk-nudge-high-bg);   }
+.patron__item--media  { background: var(--fk-nudge-medium-bg); }
 .patron__dia {
   font-weight: var(--fk-font-bold);
   min-width: 6rem;

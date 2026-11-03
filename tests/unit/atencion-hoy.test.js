@@ -155,6 +155,21 @@ describe('contenidoGrupo()', () => {
   });
 });
 
+describe('contenidoGrupo() con el ojo puesto (ADR 116 D2)', () => {
+  it('los montos de la fila y de la hoja salen enmascarados; los conteos no', async () => {
+    const { S } = await import('../../modules/core/state.js');
+    const antes = S.config;
+    S.config = { ...(antes ?? {}), ocultarSaldo: true };
+    const c = contenidoGrupo({ seccion: 'compromisos', severidad: 'alta', avisos: [pago('Gimnasio', 27, 89_900), deHoy('Plan Claro', 65_000)] });
+    const fila = c.item(deHoy('Plan Claro', 65_000));
+    S.config = antes;
+    expect(c.detalle).not.toContain('154.900');
+    expect(c.detalle).toContain('1 ya vencido');
+    expect(c.grupo.cta).not.toContain('154.900');
+    expect(fila.v).not.toContain('65.000');
+  });
+});
+
 // ── HTML: LISTA Y HOJA ───────────────────────────────────────────
 
 describe('htmlAtencionHoy()', () => {

@@ -185,7 +185,6 @@
   gap: var(--fk-space-3);
   background: var(--fk-bg-elevated);
   border: 1px solid var(--fk-nudge-success-border);
-  border-left: 3px solid var(--fk-success);
   border-radius: var(--fk-radius-xl);
   padding: var(--fk-space-3) var(--fk-space-5);
   box-shadow: var(--fk-shadow-lg);
@@ -313,7 +312,6 @@
 
 .fk-toast--ok {
   border: 1px solid var(--fk-nudge-success-border);
-  border-left: 3px solid var(--fk-success);
 }
 .fk-toast--ok .fk-toast__icono {
   color: var(--fk-success);
@@ -321,7 +319,6 @@
 
 .fk-toast--alerta {
   border: 1px solid var(--fk-nudge-medium-border);
-  border-left: 3px solid var(--fk-warning);
 }
 .fk-toast--alerta .fk-toast__icono {
   color: var(--fk-warning);
@@ -329,7 +326,6 @@
 
 .fk-toast--peligro {
   border: 1px solid var(--fk-nudge-critical-border);
-  border-left: 3px solid var(--fk-danger);
 }
 .fk-toast--peligro .fk-toast__icono {
   color: var(--fk-danger);
@@ -422,7 +418,6 @@
   gap: var(--fk-space-3);
   background: var(--fk-bg-elevated);
   border: 1px solid var(--fk-nudge-info-border);
-  border-left: 3px solid var(--fk-info);
   border-radius: var(--fk-radius-xl);
   padding: var(--fk-space-3) var(--fk-space-4);
   box-shadow: var(--fk-shadow-lg);

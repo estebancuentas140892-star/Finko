@@ -731,7 +731,7 @@ function _renderPanelDistribuir(d, { educacion = '', movil = false } = {}) {
   // pagadas este periodo (checkbox deshabilitado, "Ya pagado"). Al confirmar,
   // cada marca registra el mismo pago que su flujo individual (ver acciones/distribucion.js).
   const seccionNecesidades = `
-          <p class="form-hint distribuir__subtitulo">📦 Necesidades · marca las que cubres con este ingreso:</p>
+          <p class="form-hint distribuir__subtitulo">Necesidades · marca las que cubres con este ingreso:</p>
           <div class="distribuir-ingreso__destinos">
             ${necesidades.map(_filaNecesidad).join('')}
           </div>
@@ -744,7 +744,7 @@ function _renderPanelDistribuir(d, { educacion = '', movil = false } = {}) {
   // ponerla (fondo, meta o apartado): sin ninguna, mostrarlo sería un estado
   // vacío confuso ("sugerencia: $X a ahorro" sin ningún destino de ahorro
   // debajo, MC.7f).
-  const tituloAsignaciones = `<p class="form-hint distribuir__subtitulo">💰 Ahorro, deudas e inversiones · ajusta cuánto destinar a cada una:</p>`;
+  const tituloAsignaciones = `<p class="form-hint distribuir__subtitulo">Ahorro, deudas e inversiones · ajusta cuánto destinar a cada una:</p>`;
   const seccionAhorro = ahorro.length > 0
     ? `
           <p class="form-hint">Sugerencia: <span data-dist-sugerencia-ahorro>${f(ahorroBudget)}</span> a ahorro${necesidades.length > 0 ? ', calculada sobre lo que queda tras tus Necesidades marcadas' : ''}.</p>
@@ -820,7 +820,7 @@ function _renderPanelDistribuir(d, { educacion = '', movil = false } = {}) {
           <p class="form-hint distribuir__subtitulo">Esto queda en tu cuenta (no se mueve):</p>
           <div class="distribuir__info">
             <p class="distribuir__info-fila">
-              <span>🎯 Estilo de vida</span>
+              <span>Estilo de vida</span>
               <span data-dist-info="estiloVida">${f(evBudget)}</span>
             </p>
           </div>
@@ -1122,19 +1122,19 @@ function _renderContenidoAsistente({ razon, split }, presetActivo, distribucionP
       <legend>Crea tu distribución: los 3 porcentajes deben sumar 100%.</legend>
       <div class="distribucion-personalizada__inputs">
         <div class="form-group">
-          <label for="dist-pct-n" class="label">📦 Necesidades</label>
+          <label for="dist-pct-n" class="label">Necesidades</label>
           <input id="dist-pct-n" type="number" class="input" min="0" max="100" step="1"
                  inputmode="numeric" value="${prefillN}"
                  data-action="ajustar-distribucion-personalizada" data-dist-pct="n" />
         </div>
         <div class="form-group">
-          <label for="dist-pct-e" class="label">🎯 Estilo de vida</label>
+          <label for="dist-pct-e" class="label">Estilo de vida</label>
           <input id="dist-pct-e" type="number" class="input" min="0" max="100" step="1"
                  inputmode="numeric" value="${prefillE}"
                  data-action="ajustar-distribucion-personalizada" data-dist-pct="e" />
         </div>
         <div class="form-group">
-          <label for="dist-pct-a" class="label">💰 Ahorro</label>
+          <label for="dist-pct-a" class="label">Ahorro</label>
           <input id="dist-pct-a" type="number" class="input" min="0" max="100" step="1"
                  inputmode="numeric" value="${prefillA}"
                  data-action="ajustar-distribucion-personalizada" data-dist-pct="a" />

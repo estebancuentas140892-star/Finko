@@ -965,6 +965,25 @@ button.chip:focus-visible {
    `.metas-cumplidas__label` se retira: su parrafo suelto lo sustituye el
    divisor con contador, que es el mismo componente de Por pagar. */
 
+/* ADR 116 D5 (AH4): el fondo incompleto en media línea sobre la franja, con
+   su enlace. Texto secundario y el ícono del Fondo: es una sugerencia, no un
+   aviso, así que no lleva caja ni filete (ADR 107 D4). */
+.metas-fondo {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fk-space-2);
+  margin: 0 0 var(--fk-space-3);
+  font-size: var(--fk-text-sm);
+  line-height: var(--fk-leading-snug);
+  color: var(--fk-text-secondary);
+}
+.metas-fondo .icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--fk-dom-ahorro-text);
+}
+.metas-fondo .link { font-weight: var(--fk-font-semibold); }
+
 /* Franja de la seccion (ADR 082 D1). Anatomia del hero de Por pagar: rotulo,
    cifra grande, barra y linea de contexto. Identidad de Metas por token, sin
    parada nueva: se reusa la del hero de Agenda, ya medida. */

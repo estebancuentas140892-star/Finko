@@ -16,6 +16,7 @@ import { save }                     from '../../core/storage.js';
 import { registrarAccion }          from '../../ui/actions.js';
 import { abrirModal, cerrarModal }  from '../../ui/modales.js';
 import { renderSmart, registrarRender, programarRender } from '../../infra/render.js';
+import { gastosFijosMensuales }     from '../../infra/bolsas.js';
 import { announce }                 from '../../infra/a11y.js';
 import { mostrarErroresForm }       from '../../infra/form-errors.js';
 import { confirmar }                from '../../ui/confirm.js';
@@ -68,15 +69,8 @@ const FACTOR_MENSUAL = {
  * @returns {number} COP/mes.
  */
 function _gastosFijosMensuales() {
-  const compromisos = Array.isArray(S.compromisos) ? S.compromisos : [];
-  let total = 0;
-  for (const c of compromisos) {
-    if (!c || c.activo === false) continue;
-    if (c.tipo !== 'fijo') continue;
-    const factor = FACTOR_MENSUAL[c.frecuencia] ?? 0;
-    total += (Number(c.monto) || 0) * factor;
-  }
-  return total;
+  // ADR 116 D5: el cálculo vive en infra/bolsas.js, que también leen Metas y Aprende.
+  return gastosFijosMensuales(S.compromisos);
 }
 
 // ── APORTE SUGERIDO (AH.2) ───────────────────────────────────────

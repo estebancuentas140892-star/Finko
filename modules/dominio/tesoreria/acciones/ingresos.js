@@ -12,7 +12,8 @@ import { guardar, editar, eliminar } from '../../../infra/crud.js';
 import { registrarAccion } from '../../../ui/actions.js';
 import { abrirModal, cerrarModal } from '../../../ui/modales.js';
 import { confirmar } from '../../../ui/confirm.js';
-import { updSaldo } from '../../../infra/render.js';
+import { mostrarToast } from '../../../ui/toast.js';
+import { updSaldo, SALDO_MASCARA_CUENTA } from '../../../infra/render.js';
 import { announce } from '../../../infra/a11y.js';
 import { mostrarErroresForm } from '../../../infra/form-errors.js';
 import { f, hoy } from '../../../infra/utils.js';
@@ -290,7 +291,16 @@ function _guardarIngresoPuntual() {
 
   updSaldo();
   renderListaIngresosPuntuales();
-  announce(`Ingreso de ${f(ingreso.monto)} registrado.`);
+  // ADR 116 D8 (recorrido 1): el aviso dice a qué cuenta entró y cuánto tiene
+  // ahora, como el de un gasto (ADR 062). Antes solo lo oía el lector.
+  const cuenta = (S.cuentas ?? []).find(c => c.id === ingreso.cuentaId);
+  const oculto = S.config?.ocultarSaldo === true;
+  mostrarToast({
+    titulo:  `Ingreso de ${oculto ? SALDO_MASCARA_CUENTA : f(ingreso.monto)}`,
+    detalle: cuenta
+      ? `Entró a ${cuenta.nombre}${oculto ? '' : `: ahora tiene ${f(cuenta.saldo ?? 0)}`}`
+      : '',
+  });
 }
 
 /** @param {HTMLElement} el */

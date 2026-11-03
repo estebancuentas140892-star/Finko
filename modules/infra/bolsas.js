@@ -30,6 +30,66 @@
 import { diasPorPeriodo, normalizarFrecuenciaAporte } from './vencimientos.js';
 import { fechaLocalISO } from './utils.js';
 
+// ── EL FONDO, LEÍDO DESDE FUERA DE AHORRO (ADR 116 D5) ─────────────
+//
+// Ahorro mide el fondo en meses de gastos fijos. Aprende lo cita en su
+// "Aplícalo" y Metas lo nombra en media línea cuando el fondo no está
+// completo: con tres lectores, el cálculo sube a infra (ADR 060, regla 3).
+
+/** Cada cuántas veces al mes ocurre una frecuencia de compromiso. */
+const _FACTOR_MENSUAL_COMPROMISO = {
+  'Diario': 30, 'Semanal': 4.33, 'Quincenal': 2, 'Mensual': 1,
+  'Bimestral': 1 / 2, 'Trimestral': 1 / 3, 'Semestral': 1 / 6, 'Anual': 1 / 12, 'Única vez': 0,
+};
+
+/**
+ * Gastos fijos del mes: compromisos activos de tipo fijo, proyectados a mes.
+ * Las deudas no cuentan: son obligaciones a saldar, no costos a cubrir.
+ * @param {Array<{tipo?:string, activo?:boolean, monto?:number, frecuencia?:string}>} compromisos
+ * @returns {number} COP/mes
+ */
+export function gastosFijosMensuales(compromisos) {
+  return (Array.isArray(compromisos) ? compromisos : [])
+    .filter(c => c && c.activo !== false && c.tipo === 'fijo')
+    .reduce((s, c) => s + (Number(c.monto) || 0) * (_FACTOR_MENSUAL_COMPROMISO[c.frecuencia] ?? 0), 0);
+}
+
+/**
+ * Cuánto tiempo cubre el fondo, dicho como lo diría una persona. "1,8 meses"
+ * es lenguaje de hoja de cálculo; un mes se cuenta como cuatro semanas.
+ * @param {number|null} meses
+ * @returns {string} ej. "1 mes y 3 semanas", "3 semanas", "0 meses".
+ */
+export function mesesEnPalabras(meses) {
+  const n = Number(meses);
+  if (!Number.isFinite(n) || n <= 0) return '0 meses';
+  let enteros = Math.floor(n);
+  let semanas = Math.round((n - enteros) * 4);
+  if (semanas === 4) { enteros += 1; semanas = 0; }
+  const partes = [];
+  if (enteros > 0) partes.push(`${enteros} ${enteros === 1 ? 'mes' : 'meses'}`);
+  if (semanas > 0) partes.push(`${semanas} ${semanas === 1 ? 'semana' : 'semanas'}`);
+  return partes.length ? partes.join(' y ') : 'menos de una semana';
+}
+
+/**
+ * Cuántos meses cubre el fondo hoy y cuántos se propuso, o `null` si no se
+ * puede medir (fondo apagado o sin gastos fijos).
+ * @param {{ fondoEmergencia?: {activo?:boolean, metaMeses?:number, montoActual?:number}, aportes?: Array<{monto?:number}> } | undefined} ahorro
+ * @param {Array} compromisos
+ * @returns {{ meses: number, metaMeses: number } | null}
+ */
+export function coberturaFondo(ahorro, compromisos) {
+  const fondo = ahorro?.fondoEmergencia;
+  if (!fondo?.activo) return null;
+  const fijos = gastosFijosMensuales(compromisos);
+  if (fijos <= 0) return null;
+  const aportes = (Array.isArray(ahorro?.aportes) ? ahorro.aportes : [])
+    .reduce((s, a) => s + Math.max(0, Number(a?.monto) || 0), 0);
+  const total = Math.max(0, Number(fondo.montoActual) || 0) + aportes;
+  return { meses: Math.round((total / fijos) * 10) / 10, metaMeses: Number(fondo.metaMeses) || 3 };
+}
+
 // ── PROGRESO ─────────────────────────────────────────────────────
 
 /**

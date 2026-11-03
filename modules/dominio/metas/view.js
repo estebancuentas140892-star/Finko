@@ -5,7 +5,8 @@
 
 import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
-import { emptyArt, iconoCategoria } from '../../infra/icons.js';
+import { emptyArt, iconoCategoria, icon } from '../../infra/icons.js';
+import { coberturaFondo, mesesEnPalabras } from '../../infra/bolsas.js';
 import { arcoProgreso, siluetaMeta } from '../../infra/svg.js';
 import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
@@ -90,10 +91,32 @@ export function renderListaMetas() {
     : '';
 
   el.innerHTML = `
+    ${hayActivas ? _lineaFondo() : ''}
     ${hayActivas ? _renderFranjaMetas(oculto) : ''}
     ${conPlazoHtml}
     ${sinPlazoHtml}
     ${cumplidasHtml}`;
+}
+
+/**
+ * Media línea sobre la lista cuando el fondo de emergencia no está completo
+ * (ADR 116 D5, AH4 del ADR 069 D7): conviene completarlo antes que una meta,
+ * y la portada de Ahorro lo decía, pero aquí no. Sin montos a la vista: son
+ * meses, no montos (R20). Fondo completo o sin gastos fijos que medir: nada.
+ * @returns {string}
+ */
+function _lineaFondo() {
+  const fondo = S.ahorro?.fondoEmergencia;
+  const ir = '<a class="link" href="#fondo">Ir al fondo</a>';
+  let frase = '';
+  if (!fondo?.activo) {
+    frase = 'Todavía no tienes fondo de emergencia. Conviene empezar por él.';
+  } else {
+    const c = coberturaFondo(S.ahorro, S.compromisos);
+    if (!c || c.meses >= c.metaMeses) return '';
+    frase = `Tu fondo de emergencia va en ${mesesEnPalabras(c.meses)} de ${c.metaMeses}. Conviene completarlo primero.`;
+  }
+  return `<p class="metas-fondo">${icon('ahorro')}<span>${frase} ${ir}</span></p>`;
 }
 
 /**
@@ -294,12 +317,17 @@ function _renderMetaCard(meta, frecuenciaIngresos, oculto = false) {
                  aria-label="Ponerle fecha límite a ${nombre}">Elegir fecha</button></p>`
     : '';
 
+  // ADR 107 D2 (cerrado por el ADR 116 D3): con plan, el botón dice cuánto
+  // aportar, como en Reservas. Con el ojo puesto, solo "Aportar".
+  const etiquetaAportar = enCero
+    ? 'Hacer el primer aporte'
+    : (ahorro && !oculto ? `Aportar ${f(ahorro.montoPorPeriodo)}` : 'Aportar');
   const aportarHtml = !cumplida
     ? `<button class="meta-card__aportar"
                 type="button"
                 data-action="abonar-meta"
                 data-id="${id}"
-                aria-label="Aportar a ${nombre}">${enCero ? 'Hacer el primer aporte' : 'Aportar'}</button>`
+                aria-label="Aportar a ${nombre}">${etiquetaAportar}</button>`
     : '';
 
   return `

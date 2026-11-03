@@ -573,7 +573,6 @@ form:not(.config-form) .form-group:not(:first-child) {
   margin-bottom: var(--fk-space-4);
   background: color-mix(in srgb, var(--fk-danger) 8%, var(--fk-bg-elevated));
   border: 1px solid color-mix(in srgb, var(--fk-danger) 30%, transparent);
-  border-left: 3px solid var(--fk-danger);
   border-radius: var(--fk-radius-md);
   color: var(--fk-text-primary);
   font-size: var(--fk-text-sm);

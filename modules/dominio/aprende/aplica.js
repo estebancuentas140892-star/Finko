@@ -13,6 +13,7 @@
  */
 
 import { f } from '../../infra/utils.js';
+import { mesesEnPalabras, gastosFijosMensuales } from '../../infra/bolsas.js';
 import { resumenHormigaMes, UMBRAL_GASTO_HORMIGA } from '../../infra/hormiga.js';
 import { estimarSalarioMensual, estimarIngresoAnual, calcularRegla72 } from '../../infra/financiero.js';
 import { iconoDeCategoriaGasto, UVT, GMF, TOPES_RENTA_UVT, ANIO_VIGENTE } from '../../core/constants.js';
@@ -42,33 +43,12 @@ import { iconoDeCategoriaGasto, UVT, GMF, TOPES_RENTA_UVT, ANIO_VIGENTE } from '
 const _MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
   'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
-/** Cada cuántas veces al mes ocurre una frecuencia (misma tabla que Fondo, ADN 10). */
-const _FACTOR_MENSUAL = {
-  'Diario': 30, 'Semanal': 4.33, 'Quincenal': 2, 'Mensual': 1,
-  'Bimestral': 1 / 2, 'Trimestral': 1 / 3, 'Semestral': 1 / 6, 'Anual': 1 / 12, 'Única vez': 0,
-};
+
 
 const _ir = (texto, target, estilo = 'primario') => ({ texto, estilo, action: 'ir-a-seccion', datos: { target } });
 
-/** "1 mes y 3 semanas" (R69): misma regla que la franja del Fondo. */
-export function mesesEnPalabras(meses) {
-  const n = Number(meses);
-  if (!Number.isFinite(n) || n <= 0) return '0 meses';
-  let enteros = Math.floor(n);
-  let semanas = Math.round((n - enteros) * 4);
-  if (semanas === 4) { enteros += 1; semanas = 0; }
-  const partes = [];
-  if (enteros > 0) partes.push(`${enteros} ${enteros === 1 ? 'mes' : 'meses'}`);
-  if (semanas > 0) partes.push(`${semanas} ${semanas === 1 ? 'semana' : 'semanas'}`);
-  return partes.length ? partes.join(' y ') : 'menos de una semana';
-}
-
-/** Gastos fijos del mes: compromisos activos de tipo fijo, proyectados a mes. */
-export function gastosFijosMensuales(compromisos) {
-  return (compromisos ?? [])
-    .filter(c => c && c.activo !== false && c.tipo === 'fijo')
-    .reduce((s, c) => s + (Number(c.monto) || 0) * (_FACTOR_MENSUAL[c.frecuencia] ?? 0), 0);
-}
+// ADR 116 D5: las dos piezas del fondo viven en infra/bolsas.js.
+export { mesesEnPalabras, gastosFijosMensuales };
 
 /** Deudas activas (entidad o personal). */
 function _deudas(compromisos) {

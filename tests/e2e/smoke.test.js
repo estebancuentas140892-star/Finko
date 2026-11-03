@@ -4187,7 +4187,7 @@ test.describe('Mis cuentas - Distribuir mi ingreso: asistente paginado (MC.7d)',
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
     await page.click('[data-action="toggle-distribuir-ingreso"]');
 
-    await expect(page.locator('text=💰 Ahorro, deudas e inversiones · ajusta cuánto destinar a cada una:')).toBeVisible();
+    await expect(page.locator('text=Ahorro, deudas e inversiones · ajusta cuánto destinar a cada una:')).toBeVisible();
     await expect(page.locator('[data-dist-sugerencia-ahorro]')).toHaveCount(0);
     await expect(page.locator('.distribuir__monto[data-dist-tipo="inversion"]')).toBeVisible();
   });

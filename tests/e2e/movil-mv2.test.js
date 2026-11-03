@@ -29,6 +29,8 @@
  * - ADR 113 (MV2.20): al bajar, la barra de lentes queda arriba, en Gastos y en
  *   las hijas de Ahorro.
  * - ADR 115 (MV2.5): con el teclado abierto, "Guardar" queda encima.
+ * - ADR 116: lo que faltaba del canvas (resaltado al llegar, enlaces de 44,
+ *   la pregunta de cada modalidad).
  * - Escritorio no cambia: las piezas nuevas no se ven a 1280.
  * - D13: el camino de Aprender del niño no desborda a lo ancho.
  */
@@ -592,6 +594,31 @@ test.describe('MV2 - móvil (ADR 098)', () => {
       await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
       return (await barraMetas.boundingBox()).y;
     }).toBeLessThanOrEqual(1);
+  });
+  test('lo que faltaba del canvas: resaltado al llegar, enlaces de 44 y la pregunta de cada modalidad (ADR 116)', async ({ page }) => {
+    await seedCalendario(page);
+    await page.goto('/#agenda');
+    await page.locator('.cal-day[data-day="18"]').click();
+    await page.locator('.cal-detail [data-action="agenda-ver-en-por-pagar"]').first().click();
+    await expect(page.locator('#sec-compromisos.active')).toBeVisible();
+    // D1 (N7): la tarjeta pedida se marca al llegar.
+    await expect(page.locator('#lista-compromisos .deuda-card.list-item--nuevo')).toHaveCount(1, { timeout: 3_000 });
+
+    // D7 (A2): un enlace de texto tiene zona táctil de 44.
+    const zona = await page.evaluate(() => {
+      const a = document.createElement('a');
+      a.className = 'link'; a.href = '#'; a.textContent = 'Ir';
+      document.querySelector('.section.active').appendChild(a);
+      const cs = getComputedStyle(a, '::after');
+      const r = { alto: cs.minHeight, ancho: cs.minWidth };
+      a.remove();
+      return r;
+    });
+    expect(zona).toEqual({ alto: '44px', ancho: '44px' });
+
+    // D4 (R73): cada hija de Ahorro dice su pregunta bajo el título.
+    await page.goto('/#metas');
+    await expect(page.locator('#sec-metas .section__linea')).toHaveText('Algún día, cuando quieras');
   });
 });
 

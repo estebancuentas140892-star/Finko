@@ -57,7 +57,7 @@ export function renderAltasIngreso() {
   if (!el) return;
 
   el.innerHTML = `
-    <button class="btn btn-sm btn-secondary" data-action="nuevo-ingreso"
+    <button class="btn btn-sm btn-secondary ingresos-altas__fuente" data-action="nuevo-ingreso"
             aria-label="Nueva fuente fija de ingreso">
       ${icon('plus')} Fuente fija
     </button>

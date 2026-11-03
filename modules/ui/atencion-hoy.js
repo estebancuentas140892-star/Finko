@@ -28,9 +28,17 @@ import { S, EventBus } from '../core/state.js';
 import { f, esc, hoy, fechaLegible } from '../infra/utils.js';
 import { icon } from '../infra/icons.js';
 import { avisosDeHoy } from '../infra/avisos.js';
-import { registrarRender, programarRender } from '../infra/render.js';
+import { registrarRender, programarRender, SALDO_MASCARA_CUENTA } from '../infra/render.js';
 import { registrarAccion } from './actions.js';
 import { abrirModal } from './modales.js';
+
+/**
+ * Los montos de la lista y de su hoja obedecen al ojo de la pantalla (ADR 106
+ * D3). El ADR 099 los dejó sin máscara hasta que el ojo subiera al
+ * encabezado; el ADR 116 D2 cierra ese pendiente.
+ * @param {number} n
+ */
+const _m = (n) => (S.config?.ocultarSaldo === true ? SALDO_MASCARA_CUENTA : f(n));
 
 /** Filas a la vista antes de mandar el resto a la hoja (D1). */
 export const MAX_FILAS_ATENCION = 3;
@@ -131,17 +139,17 @@ function _contenidoPagos(avisos) {
     titulo: n === 1
       ? (primero.sentido === 'atraso' ? `${primero.nombre}: venció ${_hace(primero.dias)}` : `${primero.nombre} vence hoy`)
       : `${n} pagos para hoy`,
-    detalle: n === 1 ? f(total) : `${f(total)} · ${enLote}`,
+    detalle: n === 1 ? _m(total) : `${_m(total)} · ${enLote}`,
     cta: { texto: 'Pagar', largo: n === 1 ? `Pagar ${primero.nombre}` : `Pagar los ${n}`, accion: 'inicio-pagar-lote' },
     grupo: {
       titulo: 'Pagos para hoy',
-      cta: n === 1 ? `Pagar · ${f(total)}` : `Pagar los ${n} · ${f(total)}`,
+      cta: n === 1 ? `Pagar · ${_m(total)}` : `Pagar los ${n} · ${_m(total)}`,
     },
     item: (a) => ({
       t: a.nombre,
       s: a.sentido === 'atraso' ? `Venció ${_hace(a.dias)}` : 'Vence hoy',
       tono: a.sentido === 'atraso' ? 'danger' : 'warning',
-      v: f(Number(a.monto) || 0),
+      v: _m(Number(a.monto) || 0),
     }),
   };
 }
@@ -156,8 +164,8 @@ function _contenidoLimites(avisos) {
   let detalle;
   if (n === 1) {
     detalle = excedido(a)
-      ? `Gastaste ${f(Number(a.monto) || 0)} de ${f(Number(a.extra?.asignado) || 0)}`
-      : `Te quedan ${f(queda(a))}`;
+      ? `Gastaste ${_m(Number(a.monto) || 0)} de ${_m(Number(a.extra?.asignado) || 0)}`
+      : `Te quedan ${_m(queda(a))}`;
   } else if (n === 2) {
     detalle = excedido(b) ? `Y ${b.nombre} también pasó su límite` : `Y ${b.nombre} va al ${pct(b)}%`;
   } else {
@@ -171,9 +179,9 @@ function _contenidoLimites(avisos) {
     grupo: { titulo: 'Límites de gasto', cta: 'Ver los límites de gasto' },
     item: (x) => ({
       t: x.nombre,
-      s: excedido(x) ? `Pasó su límite · ${pct(x)}%` : `Al ${pct(x)}% · quedan ${f(queda(x))}`,
+      s: excedido(x) ? `Pasó su límite · ${pct(x)}%` : `Al ${pct(x)}% · quedan ${_m(queda(x))}`,
       tono: excedido(x) ? 'danger' : 'warning',
-      v: f(Number(x.monto) || 0),
+      v: _m(Number(x.monto) || 0),
     }),
   };
 }
@@ -184,7 +192,7 @@ function _contenidoIngreso(avisos) {
   const pagos = avisos.filter(a => a.tipo === 'dia-de-pago');
   const item = (a) => (a.tipo === 'ingreso-por-distribuir'
     ? { t: _tituloReparto(a), s: 'Distribúyelo antes de empezar a gastarlo', tono: '', v: '' }
-    : { t: a.nombre, s: 'Te llega hoy', tono: '', v: f(Number(a.monto) || 0) });
+    : { t: a.nombre, s: 'Te llega hoy', tono: '', v: _m(Number(a.monto) || 0) });
 
   if (reparto) {
     return {
@@ -199,7 +207,7 @@ function _contenidoIngreso(avisos) {
   return {
     icono: 'saldo',
     titulo: pagos.length === 1 ? `${pagos[0].nombre} te llega hoy` : `${pagos.length} ingresos te llegan hoy`,
-    detalle: f(_suma(pagos)),
+    detalle: _m(_suma(pagos)),
     cta: { texto: 'Ver', largo: 'Ver tus ingresos', href: '#tesoreria' },
     grupo: { titulo: 'Tu ingreso', cta: 'Ver tus ingresos' },
     item,
@@ -214,14 +222,14 @@ function _contenidoApartados(avisos) {
   return {
     icono: 'apartados',
     titulo: listo(a) ? `${a.nombre}: ya reuniste el dinero` : `${a.nombre} es para hoy`,
-    detalle: (listo(a) ? f(Number(a.monto) || 0) : (Number(a.monto) > 0 ? `Te faltan ${f(a.monto)}` : 'Ya está completo')) + resto,
+    detalle: (listo(a) ? _m(Number(a.monto) || 0) : (Number(a.monto) > 0 ? `Te faltan ${_m(a.monto)}` : 'Ya está completo')) + resto,
     cta: { texto: 'Ver', largo: n === 1 ? `Ver ${a.nombre}` : 'Ver tus apartados', href: '#apartados' },
     grupo: { titulo: 'Apartados', cta: 'Ver tus apartados' },
     item: (x) => ({
       t: x.nombre,
       s: listo(x) ? 'Ya reuniste el dinero' : 'Su fecha es hoy',
       tono: '',
-      v: f(Number(x.monto) || 0),
+      v: _m(Number(x.monto) || 0),
     }),
   };
 }
@@ -233,11 +241,11 @@ function _contenidoPersonales(avisos) {
   const cuando = (x) => (x.sentido === 'atraso' ? `Acordaron esta fecha ${_hace(x.dias)}` : 'Acordaron esta fecha para hoy');
   return {
     icono: 'personales',
-    titulo: `${a.nombre} te debe ${f(Number(a.monto) || 0)}`,
+    titulo: `${a.nombre} te debe ${_m(Number(a.monto) || 0)}`,
     detalle: cuando(a) + (n > 1 ? ` · y ${n - 1} más` : ''),
     cta: { texto: 'Ver', largo: n === 1 ? `Ver lo que te debe ${a.nombre}` : 'Ver lo que te deben', href: '#personales' },
     grupo: { titulo: 'Me deben', cta: 'Ver lo que te deben' },
-    item: (x) => ({ t: x.nombre, s: cuando(x), tono: '', v: f(Number(x.monto) || 0) }),
+    item: (x) => ({ t: x.nombre, s: cuando(x), tono: '', v: _m(Number(x.monto) || 0) }),
   };
 }
 

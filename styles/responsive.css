@@ -2047,6 +2047,27 @@
     .hub .chips .chip { font-size: 0.8125rem; }
   }
 
+  /* ── ADR 116 D7 (A2, R4): los enlaces de texto con zona de 44px ─────────
+     "Ver en Me deben", "Ajustes, Datos de renta" o "Ajustar" medían de 15 a
+     21px de alto. El texto no cambia: un pseudo-elemento centrado agranda la
+     zona sensible, con la misma receta de los controles de Inicio (arriba). */
+  .link,
+  .plan-franja__link {
+    position: relative;
+  }
+  .link::after,
+  .plan-franja__link::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    translate: -50% -50%;
+    min-width: 44px;
+    min-height: 44px;
+    width: 100%;
+    height: 100%;
+  }
+
   /* ── ADR 113 (MV2.20): las lentes quedan a la vista ────────────────────
      Con 40 gastos, Gastos mide 4.076px y la barra se iba a los 192px: para
      cambiar de lente había que subir 3.900px. Al bajar, la barra queda pegada
@@ -2726,9 +2747,11 @@
      Crear una ficha pesa menos que mover dinero (R38): tinte y texto de
      acento, no verde lleno. Vale para el primario de cada encabezado y para
      el espejo del bloque Gastos. Bajo 360px, en una fila con teja, queda
-     solo el "+" y el lector oye el nombre por el aria-label. */
+     solo el "+" y el lector oye el nombre por el aria-label. "+ Fuente fija"
+     de Mis cuentas crea una regla y entra en la misma receta (ADR 116 D9). */
   .section > .section__header > .btn-primary,
-  .bloque-gastos__primario {
+  .bloque-gastos__primario,
+  .ingresos-altas__fuente {
     min-height: 44px;
     padding-inline: var(--fk-space-3);
     gap: var(--fk-space-1);
@@ -2739,7 +2762,8 @@
     white-space: nowrap;
   }
   .section > .section__header > .btn-primary:hover,
-  .bloque-gastos__primario:hover {
+  .bloque-gastos__primario:hover,
+  .ingresos-altas__fuente:hover {
     background: color-mix(in srgb, var(--fk-accent) 20%, transparent);
     color: var(--fk-text-accent);
   }

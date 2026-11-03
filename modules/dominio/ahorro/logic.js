@@ -9,7 +9,7 @@
  * respetamos la regla ADN #10: ahorro no importa de otro dominio.
  */
 
-import { progresoDeBolsa } from '../../infra/bolsas.js';
+import { progresoDeBolsa, mesesEnPalabras } from '../../infra/bolsas.js';
 import { f } from '../../infra/utils.js';
 import {
   frecuenciaPrincipalIngresos,
@@ -388,30 +388,8 @@ export function nivelesFondo(mesesCubiertos) {
   });
 }
 
-/**
- * Cuánto tiempo cubre el fondo, dicho como lo diría una persona.
- *
- * "1,8 meses" es lenguaje de hoja de cálculo: nadie piensa en decimales de mes,
- * y era la cifra más importante de la sección. Un mes se cuenta acá como cuatro
- * semanas: no es exacto, pero es la cuenta que hace cualquiera.
- *
- * @param {number|null} meses
- * @returns {string} ej. "1 mes y 3 semanas", "3 semanas", "0 meses".
- */
-export function mesesEnPalabras(meses) {
-  const n = Number(meses);
-  if (!Number.isFinite(n) || n <= 0) return '0 meses';
-
-  let enteros  = Math.floor(n);
-  let semanas  = Math.round((n - enteros) * 4);
-  if (semanas === 4) { enteros += 1; semanas = 0; }
-
-  const partes = [];
-  if (enteros > 0) partes.push(`${enteros} ${enteros === 1 ? 'mes' : 'meses'}`);
-  if (semanas > 0) partes.push(`${semanas} ${semanas === 1 ? 'semana' : 'semanas'}`);
-  if (partes.length === 0) return 'menos de una semana';
-  return partes.join(' y ');
-}
+// ADR 116 D5: `mesesEnPalabras` subió a infra/bolsas.js (tres lectores).
+export { mesesEnPalabras };
 
 /** Días que dura un mes, promediados: el fondo se mide en meses, no en fechas exactas. */
 const _DIAS_POR_MES = 30.44;

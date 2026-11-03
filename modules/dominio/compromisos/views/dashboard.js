@@ -12,6 +12,7 @@ import { S } from '../../../core/state.js';
 import { f, esc as _esc, formateadorFecha } from '../../../infra/utils.js';
 import { ocurrenciasEnMes } from '../../../infra/vencimientos.js';
 import { icon, iconoCategoria } from '../../../infra/icons.js';
+import { SALDO_MASCARA_CUENTA } from '../../../infra/render.js';
 import {
   compromisosActivos,
   compromisosProximos,
@@ -21,6 +22,12 @@ import {
   ICONO_TIPO,
   LABEL_TIPO,
 } from '../logic.js';
+
+/**
+ * Los montos de Inicio obedecen al ojo de la pantalla (ADR 106 D3, ADR 116 D2).
+ * @param {number} n
+ */
+const _m = (n) => (S.config?.ocultarSaldo === true ? SALDO_MASCARA_CUENTA : f(n));
 
 // IV.2c (ADR 031): "el color nunca viaja solo" (D1) - cada ítem de
 // "Pendientes del mes" y "Próximas prioridades" lleva, además del icono y
@@ -128,7 +135,7 @@ function _filaObligacion(it, estadoHtml, badgeHtml) {
     : icon(ICONO_TIPO[tipo] ?? 'recurring');
   const desc  = _esc(it.descripcion ?? '(sin descripción)');
   const valor = Number(it.monto ?? it.cuotaMensual);
-  const monto = Number.isFinite(valor) ? f(valor) : '';
+  const monto = Number.isFinite(valor) ? _m(valor) : '';
   const { flecha, signo } = _direccionFila(tipo);
   return `
     <li class="prioridades-card__item">
@@ -229,12 +236,12 @@ function _renderObligaciones(el) {
   // pantalla y decía "Pagar los 2" sin decir cuánto.
   const pagar = nVencidos >= 2
     ? `<button type="button" class="vencidos-card__pagar" data-action="inicio-pagar-lote"
-               aria-label="Pagar juntos los ${nVencidos} pagos vencidos">Pagar lo vencido · ${f(sumarMontos(vencidos))}</button>`
+               aria-label="Pagar juntos los ${nVencidos} pagos vencidos">Pagar lo vencido · ${_m(sumarMontos(vencidos))}</button>`
     : '';
 
   const nTodos = nVencidos + proximos.length;
   const resto = nTodos === 0 ? '' : `
-    <span class="obligaciones-card__resto">${nTodos === 1 ? '1 pago' : `${nTodos} pagos`} · en total debes ${f(sumarMontos([...vencidos, ...proximos]))}</span>`;
+    <span class="obligaciones-card__resto">${nTodos === 1 ? '1 pago' : `${nTodos} pagos`} · en total debes ${_m(sumarMontos([...vencidos, ...proximos]))}</span>`;
 
   const pie = (pagar || resto)
     ? `<div class="obligaciones-card__pie">${pagar}${resto}</div>`
@@ -312,7 +319,7 @@ export function renderPanelVencidos() {
     const tipo  = v.tipo ?? 'fijo';
     const icono = icon(ICONO_TIPO[tipo] ?? 'recurring');
     const desc  = _esc(v.descripcion);
-    const monto = f(v.monto);
+    const monto = _m(v.monto);
     const dias  = v.diasAtraso;
     // Sin línea roja lateral (D5): la urgencia vive SOLO en este texto,
     // nunca en el borde/fondo de la tarjeta (ADR 019, "gastar no es
@@ -336,7 +343,7 @@ export function renderPanelVencidos() {
       </li>`;
   }).join('');
 
-  const total = f(sumarMontos(vencidos));
+  const total = _m(sumarMontos(vencidos));
 
   // Los que no caben no desaparecen en silencio: fila tactil hacia la lente
   // "Por pagar", que es donde estan todos desde el ADR 069. Antes iba al
@@ -416,7 +423,7 @@ function _filaSemana(c) {
   // Las deudas guardan su cuota en `cuotaMensual` (v6); el resto, `monto`.
   const valor = Number(c.monto ?? c.cuotaMensual);
   const { flecha, signo } = _direccionFila(tipo);
-  const monto = Number.isFinite(valor) ? `${signo}${f(valor)}` : '';
+  const monto = Number.isFinite(valor) ? `${signo}${_m(valor)}` : '';
   return `
         <li class="esta-semana__fila">
           <span class="esta-semana__cuando" aria-hidden="true">${_diaCorto(fecha)}<b>${fecha.getDate()}</b>${flecha}</span>
@@ -487,8 +494,8 @@ export function renderPanelPrioridades() {
     const entran = todos.filter(c => lado(c) === '+');
     const salen  = todos.filter(c => lado(c) === '-');
     const resto  = todos.length - MAX_FILAS_SEMANA;
-    const entraTxt = entran.length ? `${entran.length === 1 ? 'Entra' : 'Entran'} ${f(sumarMontos(entran))}` : '';
-    const saleTxt  = salen.length ? `${salen.length === 1 ? 'Sale' : 'Salen'} ${f(sumarMontos(salen))}` : 'Sin pagos esta semana';
+    const entraTxt = entran.length ? `${entran.length === 1 ? 'Entra' : 'Entran'} ${_m(sumarMontos(entran))}` : '';
+    const saleTxt  = salen.length ? `${salen.length === 1 ? 'Sale' : 'Salen'} ${_m(sumarMontos(salen))}` : 'Sin pagos esta semana';
     const restoHtml = resto > 0 ? `<a href="#agenda" class="esta-semana__resto">Y ${resto} más en el Calendario</a>` : '';
     const izq = restoHtml || entraTxt;
     const der = restoHtml && entraTxt ? `${entraTxt} · ${saleTxt}` : saleTxt;

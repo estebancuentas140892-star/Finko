@@ -26,6 +26,7 @@ import * as bolsas     from '../../modules/infra/bolsas.js';
 import * as portafolio from '../../modules/infra/portafolio.js';
 import * as apartados  from '../../modules/dominio/apartados/logic.js';
 import * as inversiones from '../../modules/dominio/inversiones/logic.js';
+import * as ahorroLogic from '../../modules/dominio/ahorro/logic.js';
 import * as metas      from '../../modules/dominio/metas/logic.js';
 import * as ahorro     from '../../modules/dominio/ahorro/logic.js';
 
@@ -259,5 +260,31 @@ describe('etapaDePortafolio - el corte que Ahorro e Inversión comparten (ARQ.1c
     // con una sola llamada, sin importar el dominio Inversión.
     expect(etapa.abiertas).toBe(etapa.activas.length);
     expect(inversiones.momentoInversion(lista).numero).toBe(etapa.numero);
+  });
+});
+
+// ADR 116 D5: Ahorro, Aprende y Metas leen el fondo desde infra (ADR 060, regla 3).
+describe('coberturaFondo - el fondo, leído desde fuera de Ahorro', () => {
+  const fijo = (monto, frecuencia = 'Mensual') => ({ tipo: 'fijo', monto, frecuencia, activo: true });
+
+  it('cuenta lo que tiene el fondo más sus aportes, en meses de gastos fijos', () => {
+    const ahorro = { fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 1_000_000 }, aportes: [{ monto: 500_000 }] };
+    expect(bolsas.coberturaFondo(ahorro, [fijo(1_000_000)])).toEqual({ meses: 1.5, metaMeses: 3 });
+  });
+
+  it('sin fondo activo o sin gastos fijos no se puede medir', () => {
+    expect(bolsas.coberturaFondo({ fondoEmergencia: { activo: false } }, [fijo(1_000_000)])).toBeNull();
+    expect(bolsas.coberturaFondo({ fondoEmergencia: { activo: true, montoActual: 1 } }, [])).toBeNull();
+  });
+
+  it('los gastos fijos no cuentan deudas ni compromisos dados de baja', () => {
+    expect(bolsas.gastosFijosMensuales([
+      fijo(100_000), fijo(60_000, 'Quincenal'), { tipo: 'deuda-entidad', monto: 999, activo: true }, { ...fijo(5), activo: false },
+    ])).toBe(220_000);
+  });
+
+  it('los dominios exportan la misma función, no una copia', () => {
+    expect(ahorroLogic.mesesEnPalabras).toBe(bolsas.mesesEnPalabras);
+    expect(bolsas.mesesEnPalabras(1.8)).toBe('1 mes y 3 semanas');
   });
 });
