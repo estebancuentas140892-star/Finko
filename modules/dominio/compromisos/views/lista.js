@@ -23,9 +23,11 @@ import {
   tasaEADe,
   estadoPagoMes,
   vencidosSinPagar,
+  calcularAbonosDelMes,
   LABEL_TIPO,
   ICONO_TIPO,
 } from '../logic.js';
+import { eventosDelMes, pendientesDePagoDelMes } from '../../agenda/logic.js';
 import { getEstrategiaUI } from './estrategia.js';
 import { prefijoMesBloque } from '../../../infra/mes-bloque.js';
 import { CATEGORIA_DEUDA_ICONO, CATEGORIA_DEUDA_PERSONAL_ICONO, iconoDeCategoriaGasto } from '../../../core/constants.js';
@@ -229,9 +231,13 @@ export function renderListaCompromisos() {
   // Un solo cálculo del conjunto de vencidos para todas las tarjetas del render.
   const atrasos = _atrasoPorId();
 
+  // ADR 117 D1-D2: bajo 1024px la lista va por urgencia y en filas; desde
+  // 1024px sigue por tipo y en tarjetas (ADR 073).
   const cuerpo = (fijos.length === 0 && deudas.length === 0)
     ? _renderFiltroSinResultados()
-    : _renderGrupoFijos(fijos, oculto, atrasos) + _renderGrupoDeudas(deudas, oculto, atrasos);
+    : _enMovil()
+      ? _renderPorUrgencia([...fijos, ...deudas], oculto, atrasos, prefijoMes)
+      : _renderGrupoFijos(fijos, oculto, atrasos) + _renderGrupoDeudas(deudas, oculto, atrasos);
 
   el.innerHTML = _renderChips() + cuerpo;
 }
@@ -549,6 +555,212 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null, oculto = fals
       <div class="deuda-card__acciones">
         ${accionesHtml}
       </div>
+    </article>`;
+}
+
+// ── EN EL TELÉFONO: POR URGENCIA Y EN FILAS (ADR 117) ─────────────
+
+/**
+ * Bajo el corte de escritorio de la app (1024px). `compromisos/index.js`
+ * repinta la lista al cruzar el corte, así que basta con leer el ancho al pintar.
+ */
+function _enMovil() {
+  return window.matchMedia?.('(max-width: 1023.98px)').matches === true;
+}
+
+const _TIPO_TXT = { 'fijo': 'gasto fijo', 'deuda-entidad': 'deuda con entidad', 'deuda-personal': 'deuda personal' };
+const _DIAS_CORTOS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+const _MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
+  'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+/**
+ * Lo vencido con lo que falta de cada uno: el mismo conjunto y los mismos
+ * montos que paga el lote (`_pendientesDelMes` en `compromisos/index.js`), así
+ * que "Pagar los N · $X" nunca promete otra cifra que la del modal.
+ *
+ * @param {string} prefijoMes
+ * @returns {Map<string, number>} id → monto pendiente.
+ */
+function _montosVencidos(prefijoMes) {
+  const m = /^(\d{4})-(\d{2})$/.exec(prefijoMes ?? '');
+  if (!m) return new Map();
+  const eventos = eventosDelMes(S.compromisos ?? [], +m[1], +m[2] - 1);
+  const ids = new Set(vencidosSinPagar(S.compromisos ?? [], S.gastos ?? [], hoy()).map(v => v.id));
+  return new Map(pendientesDePagoDelMes(eventos, S.gastos ?? [], prefijoMes, hoy())
+    .filter(p => ids.has(p.id))
+    .map(p => [p.id, Number(p.monto) || 0]));
+}
+
+/**
+ * Lo que falta pagar de un compromiso en el mes: el fijo entero; de una deuda,
+ * la cuota menos lo abonado, topada al saldo (el mismo criterio del lote).
+ */
+function _faltaDelMes(c, prefijoMes) {
+  if (c.tipo === 'fijo') return Number(c.monto) || 0;
+  const cuota = Number(c.cuotaMensual) || 0;
+  const saldo = Number(c.saldoTotal) || 0;
+  if (cuota <= 0) return saldo;
+  return Math.min(Math.max(cuota - calcularAbonosDelMes(S.gastos ?? [], c.id, prefijoMes), 0), saldo);
+}
+
+/** "Mañana", "Vie 30" o "12 de noviembre": la fecha del próximo pago contada desde hoy. */
+function _cuandoVence(dias, esteMes) {
+  if (dias === 0) return 'Hoy';
+  if (dias === 1) return 'Mañana';
+  const d = new Date();
+  d.setDate(d.getDate() + dias);
+  return esteMes ? `${_DIAS_CORTOS[d.getDay()]} ${d.getDate()}` : `${d.getDate()} de ${_MESES[d.getMonth()]}`;
+}
+
+/**
+ * "Por pagar" en el teléfono (ADR 117 D1): lo vencido primero, del más antiguo
+ * al más reciente, con lo que suma y "Pagar los N"; después lo que falta este
+ * mes, lo que vence más adelante, lo pagado y lo saldado. Cada grupo declara
+ * su orden (R89a). Sobre un mes que no es el actual no hay "vencido ni
+ * próximo": va lo que quedó sin pagar y lo pagado.
+ */
+function _renderPorUrgencia(items, oculto, atrasos, prefijoMes) {
+  const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
+  const ahora = new Date();
+  const esActual = prefijoMes === `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}`;
+  const restanMes = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0).getDate() - ahora.getDate();
+  const montosVencidos = esActual ? _montosVencidos(prefijoMes) : new Map();
+
+  const g = { vencidos: [], mes: [], adelante: [], pagado: [], saldadas: [] };
+  for (const c of items) {
+    if (esDeuda(c.tipo) && (Number(c.saldoTotal) || 0) <= 0) g.saldadas.push(c);
+    else if (estadoPagoMes(S.gastos ?? [], c, prefijoMes) === 'completo') g.pagado.push(c);
+    else if (!esActual) g.mes.push(c);
+    else if (Number.isInteger(atrasos.get(c.id))) g.vencidos.push(c);
+    else if (_diasAlProximo(c) <= restanMes) g.mes.push(c);
+    else g.adelante.push(c);
+  }
+  g.vencidos.sort((a, b) => atrasos.get(b.id) - atrasos.get(a.id));
+  const porFecha = (a, b) => _diasAlProximo(a) - _diasAlProximo(b);
+  g.mes.sort(porFecha);
+  g.adelante.sort(porFecha);
+
+  const falta = (c) => montosVencidos.get(c.id) ?? _faltaDelMes(c, prefijoMes);
+  const suma = (lista) => lista.reduce((acc, c) => acc + falta(c), 0);
+  const fila = (c, estado, tono, monto = falta(c), accion = true) =>
+    _renderFila(c, { estado, tono, monto, accion, oculto, prefijoMes });
+
+  const vencidos = g.vencidos.map((c) => {
+    const at = atrasos.get(c.id);
+    return fila(c, at === 0 ? 'Vence hoy' : at === 1 ? 'Venció ayer' : `Venció hace ${at} días`, 'danger');
+  });
+  // El pie es la puerta del lote y paga TODO lo vencido: con un chip que
+  // esconde parte, el botón prometería algo que la lista no muestra.
+  const nLote = montosVencidos.size;
+  const totalLote = [...montosVencidos.values()].reduce((a, b) => a + b, 0);
+  const pieLote = (_filtro === 'todo' && nLote >= 2) ? `
+        <div class="porpagar-grupo__pie">
+          <button type="button" class="btn-dominio btn-dominio--bloque" data-dom="compromisos"
+                  data-action="compromisos-pagar-lote" data-mes="${_esc(prefijoMes)}"
+                  aria-label="Pagar juntos los ${nLote} pagos vencidos">Pagar los ${nLote} · ${f(totalLote)}</button>
+        </div>` : '';
+
+  const delMes = g.mes.map((c) => {
+    if (!esActual) return fila(c, 'Sin pagar', 'danger');
+    const dias = _diasAlProximo(c);
+    return fila(c, _cuandoVence(dias, true), dias <= 1 ? 'warning' : '');
+  });
+  const adelante = g.adelante.map(c => fila(c, _cuandoVence(_diasAlProximo(c), false), ''));
+  const pagado = g.pagado.map(c =>
+    fila(c, 'Pagado', 'ok', calcularAbonosDelMes(S.gastos ?? [], c.id, prefijoMes), false));
+  const saldadas = g.saldadas.map(c =>
+    fila(c, _subtituloSaldada(fechaUltimoAbono(S.gastos ?? [], c.id)), 'ok', 0, false));
+
+  const mes = _MESES[Number(prefijoMes.slice(5, 7)) - 1] ?? '';
+  return [
+    _grupoPorPagar('vencidos', 'Vencidos · del más antiguo al más reciente', vencidos, m(suma(g.vencidos)), 'danger', pieLote),
+    _grupoPorPagar('mes', esActual ? 'Lo que falta este mes' : `Sin pagar en ${mes}`, delMes, m(suma(g.mes))),
+    _grupoPorPagar('adelante', 'Más adelante · el más cercano primero', adelante),
+    _grupoPorPagar('pagado', esActual ? 'Pagado este mes' : `Pagado en ${mes}`, pagado),
+    _grupoPorPagar('saldadas', 'Saldadas', saldadas),
+  ].join('');
+}
+
+/** Un grupo: rótulo con su suma, las filas en una sola superficie y su pie. */
+function _grupoPorPagar(id, titulo, filas, suma = '', tono = '', pie = '') {
+  if (filas.length === 0) return '';
+  return `
+    <section class="porpagar-grupo" aria-labelledby="porpagar-${id}">
+      <div class="porpagar-grupo__head${tono ? ` porpagar-grupo__head--${tono}` : ''}">
+        <span id="porpagar-${id}">${_esc(titulo)}</span>
+        ${suma ? `<span>${suma}</span>` : ''}
+      </div>
+      <div class="porpagar-grupo__lista">${filas.join('')}${pie}</div>
+    </section>`;
+}
+
+/**
+ * Fila de obligación (ADR 117 D2): teja, nombre, una sola línea de estado, el
+ * monto y la acción a la vista (R19, R8, R50). Tocar la fila abre la hoja de
+ * detalle (ADR 098 D4) con editar y eliminar, que la fila lleva sin mostrar,
+ * y con lo que antes eran pastillas (cuota, categoría, tasa, cupo) como notas.
+ */
+function _renderFila(c, { estado, tono, monto, accion, oculto, prefijoMes }) {
+  const desc = _esc(c.descripcion);
+  const id = _esc(c.id);
+  const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
+  const esFijo = c.tipo === 'fijo';
+  const saldo = Number(c.saldoTotal) || 0;
+  const marca = resolverMarca(c.descripcion);
+  const iconoCat = esFijo
+    ? (c.icono || (c.categoria ? iconoDeCategoriaGasto(c.categoria, S.categoriasPersonalizadas) : null))
+    : (c.icono || _ICONO_DEUDA[c.categoria]);
+  const dominio = esFijo ? 'agenda' : c.tipo === 'deuda-personal' ? 'personales' : 'compromisos';
+  const teja = marca ? tejaMarca(marca)
+    : tejaCategoria(iconoCat ?? (esFijo ? 'i-recurring' : `i-${ICONO_TIPO[c.tipo] ?? 'recurring'}`), dominio);
+
+  const estadoHtml = [
+    `<span class="deuda-card__urgencia${tono ? ` deuda-card__urgencia--${tono}` : ''}">${_esc(estado)}</span>`,
+    _TIPO_TXT[c.tipo],
+    !esFijo && saldo > 0 && accion ? `faltan ${m(saldo)}` : '',
+  ].filter(Boolean).join(' · ');
+
+  const accionHtml = !accion ? '' : esFijo
+    ? `<button type="button" class="btn-dominio" data-dom="compromisos" data-action="agenda-marcar-pagado-fijo"
+               data-id="${id}" data-mes="${_esc(prefijoMes)}"
+               aria-label="Marcar como pagado este mes: ${desc}">Marcar pagado</button>`
+    : `<button type="button" class="btn-dominio" data-dom="compromisos" data-action="abrir-abono"
+               data-id="${id}" aria-label="Abonar a ${desc}">${oculto || monto <= 0 ? 'Abonar' : `Abonar ${f(monto)}`}</button>`;
+
+  // Solo para la hoja: editar y eliminar (archivar, si la deuda quedó en cero).
+  const boton = (accionHoja, etiqueta, icono) =>
+    `<button type="button" data-action="${accionHoja}" data-id="${id}" aria-label="${etiqueta}: ${desc}"><svg class="icon" aria-hidden="true"><use href="#${icono}"/></svg></button>`;
+  const hoja = esFijo
+    ? boton('agenda-editar-fijo', 'Editar', 'i-edit') + boton('agenda-eliminar-fijo', 'Eliminar', 'i-trash')
+    : boton('editar-compromiso', 'Editar', 'i-edit') + (saldo <= 0
+      ? boton('archivar-compromiso', 'Archivar', 'i-check-circle')
+      : boton('eliminar-compromiso', 'Eliminar', 'i-trash'));
+
+  const notas = [esFijo
+    ? `${_esc(c.frecuencia)} · día ${c.diaPago}`
+    : `Cuota ${m(Number(c.cuotaMensual) || 0)} al mes · día ${c.diaPago}`];
+  if (c.categoria) notas.push(_esc(c.categoria));
+  if (!esFijo) {
+    const sinTasa = (c.tasa === null || c.tasa === undefined) && c.tipo === 'deuda-entidad';
+    notas.push(sinTasa ? 'Tasa por confirmar: la calculamos como 0%'
+      : c.tasa > 0 ? (c.tasaUnidad === 'mensual' ? `${Math.round(c.tasa * 100)}% mensual` : `${Math.round(tasaEADe(c) * 100)}% EA`)
+      : 'Sin interés');
+    if (Number(c.cupoTotal) > 0) notas.push(`Disponible ${m(Math.max(Number(c.cupoTotal) - saldo, 0))}`);
+  }
+
+  return `
+    <article class="deuda-card deuda-card--fila list-item--detalle" data-id="${id}">
+      <button type="button" class="list-item__detalle" data-action="fila-detalle"
+              aria-label="Ver el detalle de ${desc}"></button>
+      <div class="deuda-card__icon" aria-hidden="true">${teja}</div>
+      <div class="deuda-card__info">
+        <p class="deuda-card__nombre">${desc}</p>
+        <p class="deuda-card__estado">${estadoHtml}</p>
+      </div>
+      <p class="deuda-card__saldo">${monto > 0 ? m(monto) : ''}</p>
+      ${accionHtml ? `<div class="deuda-card__acciones">${accionHtml}</div>` : ''}
+      <div class="list-item__action">${hoja}</div>
+      ${notas.map(n => `<p class="list-item__hint">${n}</p>`).join('')}
     </article>`;
 }
 

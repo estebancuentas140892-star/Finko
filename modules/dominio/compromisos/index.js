@@ -1463,6 +1463,10 @@ export function initCompromisos() {
   // con renderAll(): sin esto la lente se queda en el mes anterior.
   registrarRender(() => renderSmart(_renderTodo, 'compromisos'));
 
+  // ADR 117 D1: la lista cambia de anatomía en 1024px (filas por urgencia en
+  // el teléfono, tarjetas por tipo en escritorio). Al cruzar el corte se repinta.
+  window.matchMedia?.('(max-width: 1023.98px)').addEventListener?.('change', () => renderSmart(_renderTodo, 'compromisos'));
+
   // `gastos` entra por dos motivos distintos, y los dos vienen de que pagar un
   // fijo o abonar una deuda escribe en `gastos` y no en `compromisos`:
   //

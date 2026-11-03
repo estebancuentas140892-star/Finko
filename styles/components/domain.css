@@ -3607,14 +3607,19 @@ button.chip:focus-visible {
    píxel vale 0,1 %, precisión que el dato no tiene, y además convertía a la
    barra en el elemento más ancho de la fila, o sea en el que la mirada toma
    como principal cuando es el más secundario. */
+/* ADR 117 D3: una sola pastilla por fila, la del estado. Las notas pasan a
+   una línea de texto que parte donde haga falta: a 320px "Solo seguimiento:
+   no salió de ninguna cuenta" no cabía en una pastilla y se cortaba. */
 .personal-item__notas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--fk-space-2);
-  margin-top: var(--fk-space-2);
+  margin: var(--fk-space-1) 0 0;
+  font-size: var(--fk-text-xs);
+  line-height: var(--fk-leading-snug);
+  color: var(--fk-text-secondary);
 }
-.personal-item__notas:empty { display: none; }
-.personal-item__notas .chip .icon { --fk-icon-size: 0.75rem; }
+.personal-item__nota--aviso {
+  color: var(--fk-warning-text);
+  font-weight: var(--fk-font-semibold);
+}
 
 .personal-item__motivo {
   margin: var(--fk-space-2) 0 0;

@@ -98,16 +98,16 @@ export function htmlDetalleFila(d) {
  * Lee de la fila lo que la hoja necesita. El ícono se copia tal cual (es un
  * SVG del proyecto); el resto viaja como texto y se vuelve a escapar.
  *
- * Cada selector nombra la pieza en las dos anatomías: `.list-item` (Gastos,
- * Movimientos, fuentes de ingreso) y `.cuenta-card` (Mis cuentas, ADR 109).
- * Una fila trae solo una de las dos.
+ * Cada selector nombra la pieza en las tres anatomías: `.list-item` (Gastos,
+ * Movimientos, fuentes de ingreso), `.cuenta-card` (Mis cuentas, ADR 109) y
+ * `.deuda-card` (Por pagar, ADR 117). Una fila trae solo una de ellas.
  *
  * @param {HTMLElement} fila `.list-item--detalle`
  */
 export function datosDeFila(fila) {
   const limpio = (el) => el?.textContent.replace(/\s+/g, ' ').trim() ?? '';
   const txt = (sel) => limpio(fila.querySelector(sel));
-  const monto = fila.querySelector('.list-item__amount, .list-item__value, .cuenta-card__saldo');
+  const monto = fila.querySelector('.list-item__amount, .list-item__value, .cuenta-card__saldo, .deuda-card__saldo');
   const acciones = [...fila.querySelectorAll('.list-item__action [data-action], .cuenta-card__actions [data-action]')].map(b => ({
     accion: b.dataset.action,
     id: b.dataset.id ?? '',
@@ -118,9 +118,9 @@ export function datosDeFila(fila) {
   }));
   const ingreso = monto?.matches('.list-item__amount--ingreso, .list-item__value--in') === true;
   return {
-    iconoHtml: fila.querySelector('.list-item__icon, .cuenta-card__icon')?.innerHTML ?? '',
-    titulo: txt('.list-item__title, .cuenta-card__nombre'),
-    subtitulo: txt('.list-item__subtitle, .cuenta-card__tipo'),
+    iconoHtml: fila.querySelector('.list-item__icon, .cuenta-card__icon, .deuda-card__icon')?.innerHTML ?? '',
+    titulo: txt('.list-item__title, .cuenta-card__nombre, .deuda-card__nombre'),
+    subtitulo: txt('.list-item__subtitle, .cuenta-card__tipo, .deuda-card__estado'),
     monto: limpio(monto),
     montoClase: ingreso ? 'detalle-fila__monto--ingreso' : '',
     cuando: fila.closest('.gastos-dia')?.querySelector('.gastos-dia__label')?.textContent.trim() ?? '',

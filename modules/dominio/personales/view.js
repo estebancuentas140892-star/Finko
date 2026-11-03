@@ -229,14 +229,12 @@ function _renderPersonalItem(prestamo, hoy, oculto = false) {
 
   const chipLabel = labelEstado(estado);
 
-  // DSK.5b (ADR 074 D2): las notas dejan de ser párrafos apilados y pasan a
-  // chips, que es lo que son: datos cortos de contexto. Es la anatomía que
-  // `.deuda-card` ya estrenó en la sección espejo, cuyo propio comentario dice
-  // que "reemplaza al .list-item con hints apilados". A 1376 cada uno de estos
-  // párrafos medía 970px para un texto de 30 a 60 caracteres, y eran hasta
-  // tres seguidos bajo el nombre.
+  // DSK.5b (ADR 074 D2) las sacó de los párrafos apilados de 970px. ADR 117
+  // D3: tampoco son pastillas, porque la fila lleva una sola (la del estado) y
+  // a 320 o 360px "Solo seguimiento: no salió de ninguna cuenta" no cabía en
+  // una. Van en una línea de texto que parte donde haga falta.
   const fechaLim = prestamo.fechaLimite
-    ? `<span class="chip">Pactó devolver: ${fechaLegible(prestamo.fechaLimite)}</span>`
+    ? `<span class="personal-item__nota">Pactó devolver: ${fechaLegible(prestamo.fechaLimite)}</span>`
     : '';
 
   // MOV.1 ficha 14 (C2): `calcularTotalPorCobrar()` filtra por `cuentaId` antes
@@ -247,13 +245,13 @@ function _renderPersonalItem(prestamo, hoy, oculto = false) {
   // válida que tiene una consecuencia fuera de esta lista. La redacción final
   // depende de cómo Análisis presente "Por cobrar" y se verifica en la ficha 16.
   const soloSeguimiento = (!prestamo.cuentaId && !liquidado)
-    ? '<span class="chip chip-warning">Solo seguimiento: no salió de ninguna cuenta</span>'
+    ? '<span class="personal-item__nota personal-item__nota--aviso">Solo seguimiento: no salió de ninguna cuenta</span>'
     : '';
 
-  // Cuando hay un abono, la antigüedad cuenta desde ahí: el chip explica
+  // Cuando hay un abono, la antigüedad cuenta desde ahí: la nota explica
   // por qué el de días puede ser bajo aunque el préstamo sea viejo.
   const ultimoPagoHtml = (prestamo.ultimoPago && !liquidado)
-    ? `<span class="chip">Último abono: ${fechaLegible(prestamo.ultimoPago)}</span>`
+    ? `<span class="personal-item__nota">Último abono: ${fechaLegible(prestamo.ultimoPago)}</span>`
     : '';
 
   // El motivo NO es un chip: es una cita del usuario, no un dato. Se queda
@@ -271,11 +269,14 @@ function _renderPersonalItem(prestamo, hoy, oculto = false) {
   const rend = conInteres ? calcularRendimiento(prestamo, hoy) : null;
   const interesHtml = conInteres
     ? (liquidado
-        ? `<span class="chip">Te dejó ${m(rend.interesGanado)} en intereses, el ${_pct(rend.rentabilidad)}% de lo que prestaste.</span>`
-        : `<span class="chip">Interés: ${prestamo.tasa}% mensual${
+        ? `<span class="personal-item__nota">Te dejó ${m(rend.interesGanado)} en intereses, el ${_pct(rend.rentabilidad)}% de lo que prestaste</span>`
+        : `<span class="personal-item__nota">Interés: ${prestamo.tasa}% mensual${
             rend.interesGanado > 0 ? ` · Ya ganaste ${m(rend.interesGanado)}, el ${_pct(rend.rentabilidad)}% de lo prestado` : ''
           }</span>`)
     : '';
+
+  const notas = [interesHtml, ultimoPagoHtml, fechaLim, soloSeguimiento].filter(Boolean);
+  const notasHtml = notas.length ? `<p class="personal-item__notas">${notas.join(' · ')}</p>` : '';
 
   // V-10 (regla R8): "Me pagaron" pierde `btn-sm` y queda en el piso táctil de
   // 44px, igual que el botón de eliminar. Con la fila de C2 las acciones tienen
@@ -311,12 +312,7 @@ function _renderPersonalItem(prestamo, hoy, oculto = false) {
         <p class="personal-item__estado"><span class="${chipClase}">${chipLabel}</span></p>
         ${subtituloHtml}
         ${motivoHtml}
-        <div class="personal-item__notas">
-          ${interesHtml}
-          ${ultimoPagoHtml}
-          ${fechaLim}
-          ${soloSeguimiento}
-        </div>
+        ${notasHtml}
         <div class="personal-item__avance">
           <div class="progress" role="progressbar" data-dom="personales"
                aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"

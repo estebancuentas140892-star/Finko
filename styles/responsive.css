@@ -2004,10 +2004,20 @@
       background-color var(--fk-transition-fast),
       color var(--fk-transition-fast);
   }
+  /* ADR 117 D4: con la fuente del sistema grande el rótulo pasa a dos líneas
+     en lugar de cortarse con puntos suspensivos; la celda crece en alto y
+     sigue sin deslizarse. Con texto normal todo cabe en una. */
+  .bloque-tabs__tab,
+  .hub .chips .chip {
+    flex-wrap: wrap;
+    white-space: normal;
+    text-align: center;
+    line-height: var(--fk-leading-tight);
+  }
   .bloque-tabs__label {
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow-wrap: anywhere;
+    hyphens: auto;
   }
   .hub .chips .chip__cola { display: none; }
   .bloque-tabs__tab.active {
@@ -2130,6 +2140,15 @@
     padding: var(--fk-space-3);
   }
   .list-item--detalle .list-item__body { flex: 1; min-width: 0; }
+  /* ADR 117 D4: con la fuente del sistema al 200 % el monto no cabe al lado
+     del título y baja a su propio renglón en lugar de cortarse. Con texto
+     normal el cuerpo (5rem como mínimo) y el monto caben juntos desde 320px. */
+  .gastos-dia .list-item--detalle:has(.list-item__meta),
+  #lista-movimientos .list-item--detalle,
+  #lista-ingresos .list-item--detalle,
+  #lista-ingresos-puntuales .list-item--detalle { flex-wrap: wrap; }
+  .list-item--detalle .list-item__body { flex-basis: 5rem; }
+  .list-item--detalle .list-item__meta { margin-left: auto; }
   .list-item--detalle .list-item__title,
   .list-item--detalle .list-item__subtitle {
     white-space: nowrap;
@@ -2307,6 +2326,101 @@
   }
   #lista-ingresos .list-item--detalle:hover,
   #lista-ingresos-puntuales .list-item--detalle:hover { transform: none; }
+
+  /* ── ADR 117 (MV2.3): Por pagar por urgencia y en filas ────────────────
+     Cada obligación medía de 150 a 190px (tarjeta con chips y tres botones)
+     y la lista iba por tipo. Ahora va por urgencia, cada grupo con su suma,
+     y cada obligación es una fila de 64px con una línea de estado, el monto y
+     su acción debajo; editar y eliminar viven en la hoja de detalle. El lote
+     baja al pie de "Vencidos", así que su tarjeta suelta sobra. */
+  #lote-compromisos { display: none; }
+  .porpagar-grupo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fk-space-2);
+  }
+  .porpagar-grupo + .porpagar-grupo { margin-top: var(--fk-space-5); }
+  .porpagar-grupo__head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    column-gap: var(--fk-space-3);
+    min-height: 28px;
+    padding: 0 var(--fk-space-1);
+    font-size: var(--fk-text-xs);
+    font-weight: var(--fk-font-bold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--fk-text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+  .porpagar-grupo__head > span + span { margin-left: auto; }
+  .porpagar-grupo__head--danger { color: var(--fk-danger-text); }
+  .porpagar-grupo__lista {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-lg);
+    background: var(--fk-bg-surface);
+  }
+  .porpagar-grupo__pie {
+    padding: var(--fk-space-3);
+    border-top: 1px solid var(--fk-border-subtle);
+  }
+  .deuda-card--fila {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--fk-space-2) var(--fk-space-3);
+    min-height: 64px;
+    margin: 0;
+    padding: var(--fk-space-2) var(--fk-space-3);
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+  .deuda-card--fila + .deuda-card--fila {
+    margin-top: 0;
+    border-top: 1px solid var(--fk-border-subtle);
+  }
+  .deuda-card--fila .deuda-card__icon .cat-teja,
+  .deuda-card--fila .deuda-card__icon .bank-avatar {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+  /* El cuerpo pide 5rem: a 320px con texto normal el monto cabe al lado, y
+     con la fuente del sistema al 200 % (5rem crece con ella) el monto ya no
+     cabe y baja bajo el título en lugar de cortarse (D4). */
+  .deuda-card--fila .deuda-card__info { flex: 1 1 5rem; }
+  .deuda-card--fila .deuda-card__nombre {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .deuda-card__estado {
+    margin: 2px 0 0;
+    font-size: var(--fk-text-xs);
+    line-height: var(--fk-leading-snug);
+    color: var(--fk-text-secondary);
+  }
+  .deuda-card__urgencia { font-weight: var(--fk-font-semibold); }
+  .deuda-card__urgencia--danger  { color: var(--fk-danger-text); }
+  .deuda-card__urgencia--warning { color: var(--fk-warning-text); }
+  .deuda-card__urgencia--ok      { color: var(--fk-success-text); }
+  .deuda-card--fila .deuda-card__saldo { margin-left: auto; }
+  /* La acción baja a su renglón, alineada con el texto (teja 36 + hueco 12),
+     y queda por encima del botón que abre la hoja. */
+  .deuda-card--fila > .deuda-card__acciones {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    margin: 0;
+    padding-left: calc(2.25rem + var(--fk-space-3));
+  }
+  .deuda-card--fila .list-item__hint { display: none; }
 
   /* ── D5: cabecera del bloque Gastos con lupa y primario ───────────────
      El primario de cada lente tenía su propia fila encima del bloque (96px

@@ -1060,17 +1060,17 @@ describe('renderListaPersonales() - fila de préstamo (DIS.3)', () => {
 
   it('C2: el prestamo sin cuenta vinculada declara que es solo seguimiento', () => {
     const el = render([prestamo({ cuentaId: null })]);
-    const chip = [...el.querySelectorAll('.personal-item__notas .chip')]
+    const nota = [...el.querySelectorAll('.personal-item__notas .personal-item__nota')]
       .find(c => c.textContent.includes('Solo seguimiento'));
-    expect(chip).not.toBeUndefined();
-    expect(chip.textContent.trim()).toBe('Solo seguimiento: no salió de ninguna cuenta');
+    expect(nota).not.toBeUndefined();
+    expect(nota.textContent.trim()).toBe('Solo seguimiento: no salió de ninguna cuenta');
   });
 
   it('C2: es aviso en ambar y no error: sin chip-danger ni text-danger', () => {
     const el = render([prestamo({ cuentaId: null })]);
-    const chip = [...el.querySelectorAll('.chip')]
+    const nota = [...el.querySelectorAll('.personal-item__nota')]
       .find(c => c.textContent.includes('Solo seguimiento'));
-    expect(chip.className).toBe('chip chip-warning');
+    expect(nota.className).toBe('personal-item__nota personal-item__nota--aviso');
     expect(el.innerHTML).not.toContain('chip-danger');
   });
 
@@ -1964,13 +1964,18 @@ describe('renderListaPersonales() - anatomía de la tarjeta (DSK.5b)', () => {
 
   // El propio código de Deudas dice que `.deuda-card` "reemplaza al .list-item
   // con hints apilados". Acá se aplica esa corrección a la sección espejo.
-  it('las notas son chips en su propia fila, no párrafos apilados', () => {
+  // ADR 117 D3: una sola pastilla por fila (la del estado); las notas van en
+  // una línea de texto.
+  it('las notas van en una sola línea de texto, sin pastillas', () => {
     const el = render([prestamo({
       fechaLimite: '2026-09-30', ultimoPago: '2026-08-01', pagado: 100_000,
     })]);
     const notas = el.querySelector('.personal-item__notas');
     expect(notas).not.toBeNull();
-    const textos = [...notas.querySelectorAll('.chip')].map(c => c.textContent.trim());
+    expect(notas.tagName).toBe('P');
+    expect(notas.querySelectorAll('.chip').length).toBe(0);
+    expect(el.querySelectorAll('.list-item .chip').length).toBe(1);
+    const textos = [...notas.querySelectorAll('.personal-item__nota')].map(c => c.textContent.trim());
     expect(textos.some(t => t.startsWith('Pactó devolver'))).toBe(true);
     expect(textos.some(t => t.startsWith('Último abono'))).toBe(true);
     expect(el.querySelector('.list-item__hint')).toBeNull();
@@ -1984,10 +1989,9 @@ describe('renderListaPersonales() - anatomía de la tarjeta (DSK.5b)', () => {
     expect(motivo.tagName).toBe('P');
   });
 
-  it('un préstamo sin notas no deja la fila de chips ocupando espacio', () => {
+  it('un préstamo sin notas no deja la línea de notas ocupando espacio', () => {
     const el = render([prestamo()]);
-    const notas = el.querySelector('.personal-item__notas');
-    expect(notas.querySelectorAll('.chip').length).toBe(0);
+    expect(el.querySelector('.personal-item__notas')).toBeNull();
   });
 
   // D3: la barra se topa y el porcentaje va en texto al lado. A 970px de ancho

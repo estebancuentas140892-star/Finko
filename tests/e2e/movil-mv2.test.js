@@ -31,6 +31,8 @@
  * - ADR 115 (MV2.5): con el teclado abierto, "Guardar" queda encima.
  * - ADR 116: lo que faltaba del canvas (resaltado al llegar, enlaces de 44,
  *   la pregunta de cada modalidad).
+ * - ADR 117: Por pagar por urgencia y en filas con hoja; con el texto al
+ *   200 % los montos bajan y las lentes van en dos líneas.
  * - Escritorio no cambia: las piezas nuevas no se ven a 1280.
  * - D13: el camino de Aprender del niño no desborda a lo ancho.
  */
@@ -121,6 +123,23 @@ async function seedCalendario(page, { inactivo = false } = {}) {
       { id: 'd2', tipo: 'deuda-entidad', descripcion: 'Crédito libre inversión', saldoTotal: 9_000_000, cuotaMensual: 510_000, frecuencia: 'Mensual', diaPago: 10, activo: true },
     ],
     gastos: inactivo ? [] : [{ id: 'g1', compromisoId: 'd1', descripcion: 'Abono', monto: 100_000, categoria: 'Otro', fecha: fechaDelMes(1), cuentaId: 'c1' }],
+  }));
+}
+
+/**
+ * Por pagar con dos vencidos (días 1 y 2), un fijo pagado y una deuda que
+ * vence a fin de mes (ADR 117).
+ */
+async function seedPorPagar(page) {
+  await sembrar(page, estadoBase({
+    cuentas: CUENTAS,
+    compromisos: [
+      { id: 'f1', tipo: 'fijo', descripcion: 'Arriendo', monto: 1_200_000, frecuencia: 'Mensual', diaPago: 1, activo: true },
+      { id: 'd1', tipo: 'deuda-entidad', descripcion: 'Tarjeta Visa Bancolombia', saldoTotal: 3_200_000, cuotaMensual: 420_000,
+        frecuencia: 'Mensual', diaPago: 2, activo: true, tasa: 0.28, tasaUnidad: 'EA', categoria: 'Tarjeta de crédito' },
+      { id: 'f3', tipo: 'fijo', descripcion: 'Netflix', monto: 40_000, frecuencia: 'Mensual', diaPago: 1, activo: true },
+    ],
+    gastos: [{ id: 'g1', compromisoId: 'f3', descripcion: 'Netflix', monto: 40_000, categoria: 'Otro', fecha: fechaDelMes(1), cuentaId: 'c1' }],
   }));
 }
 
@@ -620,6 +639,50 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await page.goto('/#metas');
     await expect(page.locator('#sec-metas .section__linea')).toHaveText('Algún día, cuando quieras');
   });
+
+  test('Por pagar va por urgencia, en filas, y la fila abre su hoja (ADR 117 D1, D2)', async ({ page }) => {
+    test.skip(new Date().getDate() < 3, 'hace falta que los días 1 y 2 del mes ya hayan pasado');
+    await seedPorPagar(page);
+    await page.goto('/#compromisos');
+    const grupos = page.locator('#lista-compromisos .porpagar-grupo__head span[id]');
+    await expect(grupos.first()).toHaveText('Vencidos · del más antiguo al más reciente', { timeout: 10_000 });
+    // El lote baja al pie de lo vencido; su tarjeta suelta se oculta.
+    await expect(page.locator('.porpagar-grupo__pie [data-action="compromisos-pagar-lote"]')).toHaveText(/^Pagar los 2 · \$1\.620\.000$/);
+    await expect(page.locator('#lote-compromisos')).toBeHidden();
+
+    const fila = page.locator('.deuda-card--fila[data-id="d1"]');
+    await expect(fila.locator('.deuda-card__estado')).toContainText('deuda con entidad');
+    await expect(fila.locator('.deuda-card__acciones button')).toHaveText('Abonar $420.000');
+    await expect(fila.locator('.deuda-card__acciones button')).toBeVisible();
+    expect((await fila.locator('.deuda-card__acciones button').boundingBox()).height).toBeGreaterThanOrEqual(44);
+    await expect(fila.locator('.list-item__action')).toBeHidden();
+
+    // La fila entera es el botón de la hoja: lo que se toca encima del nombre.
+    await fila.locator('.list-item__detalle').click();
+    const hoja = page.locator('#modal-detalle-fila[data-open]');
+    await expect(hoja.locator('.detalle-fila__titulo')).toHaveText('Tarjeta Visa Bancolombia');
+    await expect(hoja.locator('.detalle-fila__accion')).toHaveText(['Editar', 'Eliminar']);
+    await expect(hoja.locator('.detalle-fila__notas')).toContainText('28% EA');
+  });
+
+  test('con el texto al 200 %, los montos bajan y las lentes van en dos líneas (ADR 117 D4)', async ({ page }) => {
+    await seedPorPagar(page);
+    await page.goto('/#compromisos');
+    await expect(page.locator('.deuda-card--fila').first()).toBeVisible({ timeout: 10_000 });
+    await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
+
+    const fila = page.locator('.deuda-card--fila[data-id="d1"]');
+    const nombre = await fila.locator('.deuda-card__nombre').boundingBox();
+    const monto = await fila.locator('.deuda-card__saldo').boundingBox();
+    expect(monto.y).toBeGreaterThanOrEqual(nombre.y + nombre.height);
+    // El monto entero, sin cortes, y nada se desliza a lo ancho.
+    expect(await fila.locator('.deuda-card__saldo').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+    const lente = page.locator('#sec-compromisos .bloque-tabs__tab.active .bloque-tabs__label');
+    expect(await renglones(lente)).toBe(2);
+    expect(await lente.evaluate(el => getComputedStyle(el).textOverflow)).not.toBe('ellipsis');
+  });
 });
 
 test.describe('MV2 - escritorio sin cambios', () => {
@@ -643,6 +706,15 @@ test.describe('MV2 - escritorio sin cambios', () => {
     await expect(page.locator('#movimientos-filtros .filtros-bar__mas')).toBeHidden();
     await expect(page.locator('#movimientos-filtros .movimientos-filtros__fechas-chip')).toBeHidden();
     await expect(page.locator('#movimientos-filtros .movimientos-filtros__rango > summary')).toBeVisible();
+  });
+
+  test('Por pagar conserva sus tarjetas por tipo y la tarjeta de lote (ADR 117, ADR 073)', async ({ page }) => {
+    await seedPorPagar(page);
+    await page.goto('/#compromisos');
+    await expect(page.locator('#lista-compromisos .deuda-card').first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#lista-compromisos .porpagar-grupo')).toHaveCount(0);
+    await expect(page.locator('#lista-compromisos .deuda-card__chips').first()).toBeVisible();
+    if (new Date().getDate() >= 3) await expect(page.locator('#lote-compromisos .cal-lote')).toBeVisible();
   });
 
   test('Mis cuentas conserva sus tarjetas con botones (ADR 109)', async ({ page }) => {
