@@ -1991,6 +1991,83 @@ describe('renderAgenda() - detalle del día accionable (CAL.4c)', () => {
   });
 });
 
+// ── MV2.27 (ADR 111): el mes entero en el teléfono ───────────────
+// El ancho de la celda y el círculo los mide el E2E; acá, lo que la vista
+// emite para que el CSS pueda partir sin cambiar el texto que se lee.
+
+describe('renderAgenda() - el mes entero en el teléfono (MV2.27, ADR 111)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-agenda"></div>';
+    S.compromisos = [];
+    S.gastos = [];
+    S.ingresos = [];
+    S.metas = [];
+    S.config.ocultarSaldo = false;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15)); // 15 jun 2026
+    resetearVistaAlMesActual();
+  });
+
+  afterEach(() => {
+    S.metas = [];
+    vi.useRealTimers();
+  });
+
+  const abrir = (dia) => {
+    renderAgenda();
+    mostrarDia(dia);
+    renderAgenda();
+  };
+
+  it('"este mes" va en su span y el subtítulo se lee igual (D4)', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', diaPago: 5 }), compromisoBase({ id: 'f2', diaPago: 20 })];
+    renderAgenda();
+    const sub = document.querySelector('.cal-card__subtitle');
+    expect(sub.querySelector('.cal-card__sub-mes').textContent).toBe(' este mes');
+    expect(sub.textContent).toBe('2 compromisos este mes');
+  });
+
+  it('cada lado del día va en su span, con el separador pegado al primero (D4)', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', diaPago: 15, monto: 100_000 })];
+    S.ingresos = [ingresoAutoBase({ diaPago: 15, monto: 4_200_000 })];
+    abrir(15);
+    const lados = [...document.querySelectorAll('.cal-detail__total .cal-detail__lado')].map(e => e.textContent);
+    expect(lados).toEqual(['Entra $4.200.000 ·', 'sale $100.000']);
+    expect(document.querySelector('.cal-detail__total').textContent).toBe('Entra $4.200.000 · sale $100.000');
+  });
+
+  it('el título del día escribe el mes en minúscula (D5)', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', diaPago: 15 })];
+    abrir(15);
+    expect(document.querySelector('.cal-detail__title').textContent).toBe('Lunes 15 de junio');
+  });
+
+  it('el estado de pago es hijo de la fila, no del cuerpo (D5)', () => {
+    S.compromisos = [compromisoBase({
+      id: 'd1', tipo: 'deuda-entidad', diaPago: 15,
+      cuotaMensual: 300_000, saldoTotal: 2_000_000, monto: undefined,
+    })];
+    S.gastos = [{ id: 'g1', compromisoId: 'd1', fecha: '2026-06-10', monto: 100_000 }];
+    abrir(15);
+    const badge = document.querySelector('.cal-detail__badge-abono--parcial');
+    expect(badge.parentElement.classList.contains('cal-detail__item')).toBe(true);
+    expect(document.querySelector('.cal-detail__body .cal-detail__badge-abono')).toBeNull();
+  });
+
+  it('Distribuir viste el azul de Mis cuentas y Aportar el morado de Metas (D5)', () => {
+    S.ingresos = [ingresoAutoBase({ diaPago: 15 })];
+    S.metas = [metaBase({ planAportes: [{ fecha: '2026-06-15', monto: 250_000 }] })];
+    abrir(15);
+    const distribuir = document.querySelector('[data-action="agenda-distribuir-ingreso"]');
+    const aportar = document.querySelector('[data-action="abonar-meta"]');
+    expect(distribuir.classList.contains('btn-dominio')).toBe(true);
+    expect(distribuir.dataset.dom).toBe('tesoreria');
+    expect(aportar.classList.contains('btn-dominio')).toBe(true);
+    expect(aportar.dataset.dom).toBe('metas');
+    expect(document.querySelector('.cal-detail .btn-primary')).toBeNull();
+  });
+});
+
 // ── CAL.5a: PENDIENTES DE PAGO DEL MES (LOTE) ────────────────────
 
 describe('pendientesDePagoDelMes (CAL.5a)', () => {

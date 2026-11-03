@@ -110,6 +110,22 @@ async function abrirFormGastoFijo(page) {
 }
 
 /**
+ * Abre el día `dia` del Calendario al llegar desde otra sección. Esa llegada
+ * puede haberlo abierto sola (CAL.3; DSK.2c: sin eventos hoy, en escritorio se
+ * abre el próximo día con eventos), y un clic sobre el día abierto lo cierra:
+ * el test fallaba los días del mes anteriores a `dia` sin eventos propios.
+ * El render de la llegada es síncrono, así que con la sección activa ya pasó.
+ * @param {import('@playwright/test').Page} page
+ * @param {number} dia
+ */
+async function abrirDiaAgenda(page, dia) {
+  await expect(page.locator('#sec-agenda.active')).toBeVisible({ timeout: 10_000 });
+  const celda = page.locator(`.cal-day[data-day="${dia}"]`);
+  if (!(await celda.evaluate(el => el.classList.contains('cal-day--selected')))) await celda.click();
+  await expect(page.locator('.cal-day--selected')).toHaveAttribute('data-day', String(dia));
+}
+
+/**
  * Avanza el asistente "Distribuir mi ingreso" (MC.7d, shell paginado) hasta
  * que `selector` sea visible, o hasta el último paso si no se pasa selector
  * (donde vive el botón "Distribuir"). El panel debe estar ya abierto.
@@ -2219,7 +2235,7 @@ test.describe('Agenda - hero del mes (CAL.4a)', () => {
     await expect(hero.locator('.hero-agenda__titulo')).toHaveCount(0);
   });
 
-  test('DIS.11 C8: con el mes vacío el único mensaje es la card, con un solo primario', async ({ page }) => {
+  test('ADR 111 D5: con el mes vacío el único mensaje es el propósito, con un solo primario lleno', async ({ page }) => {
     await sembrar(page, {
       version:   1,
       perfil:    { nombre: 'TestUser', smmlv: 1750905 },
@@ -2237,12 +2253,24 @@ test.describe('Agenda - hero del mes (CAL.4a)', () => {
     await expect(page.locator('.hero-agenda')).toHaveCount(0);
     await expect(page.locator('.cal-empty')).toBeVisible();
 
-    // El CTA de la card baja a secundario: fondo transparente, no el verde
-    // del primario del encabezado.
-    const fondo = await page.evaluate(
-      () => window.getComputedStyle(document.querySelector('.cal-empty .btn-primary')).backgroundColor,
-    );
-    expect(fondo).toBe('rgba(0, 0, 0, 0)');
+    // ADR 111 D5 (revisa C8): el propósito es el mensaje y la card calla el
+    // suyo; "Programar en Por pagar" es el único botón y va en verde lleno,
+    // porque el encabezado ya no tiene uno que le compita.
+    await expect(page.locator('#sec-agenda .banner-proposito__titulo')).toBeVisible();
+    await expect(page.locator('.cal-empty__title')).toBeHidden();
+    const [fondo, esperado] = await page.evaluate(() => {
+      const ref = document.createElement('button');
+      ref.className = 'btn btn-primary';
+      document.body.appendChild(ref);
+      const valores = [
+        window.getComputedStyle(document.querySelector('.cal-empty .btn-primary')).backgroundColor,
+        window.getComputedStyle(ref).backgroundColor,
+      ];
+      ref.remove();
+      return valores;
+    });
+    expect(fondo).toBe(esperado);
+    expect(fondo).not.toBe('rgba(0, 0, 0, 0)');
   });
 });
 
@@ -3109,7 +3137,7 @@ test.describe('Por pagar - nombre automático según la categoría del fijo', ()
     // siendo la vista de fechas del mismo dato.
     await page.goto('/#agenda');
     await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
-    await page.click(`[data-action="agenda-mostrar-dia"][data-day="10"]`);
+    await abrirDiaAgenda(page, 10);
 
     const item = page.locator('.cal-detail__item').first();
     await expect(item.locator('.cal-detail__name')).toHaveText('Mercado');
@@ -3126,7 +3154,7 @@ test.describe('Por pagar - nombre automático según la categoría del fijo', ()
     await expect(page.locator('#modal-gasto-fijo')).not.toHaveAttribute('data-open');
     await page.goto('/#agenda');
     await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
-    await page.click(`[data-action="agenda-mostrar-dia"][data-day="11"]`);
+    await abrirDiaAgenda(page, 11);
 
     const item = page.locator('.cal-detail__item').first();
     await expect(item.locator('.cal-detail__name')).toHaveText('Mercado');
@@ -3181,7 +3209,7 @@ test.describe('Por pagar - picker de ícono del fijo para "Otro" (CAT.2f)', () =
     await expect(page.locator('#modal-gasto-fijo')).not.toHaveAttribute('data-open');
     await page.goto('/#agenda');
     await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
-    await page.click('[data-action="agenda-mostrar-dia"][data-day="12"]');
+    await abrirDiaAgenda(page, 12);
 
     const item = page.locator('.cal-detail__item').first();
     await expect(item.locator('.cal-detail__icon .cat-teja use[href="#c-cohete"]')).toHaveCount(1);

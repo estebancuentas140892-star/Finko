@@ -21,6 +21,9 @@
  * - ADR 110 (MV2.19): Distribuir se abre sobre Inicio, con el pie a la vista y
  *   el motivo de un "Distribuir" apagado; arriba, qué se reparte y desde qué
  *   cuenta; al confirmar, la hoja dice qué quedó. En escritorio sigue navegando.
+ * - ADR 111 (MV2.27): el mes del Calendario cabe de 320 a 430, el día se marca
+ *   en un círculo, los textos no se parten y un mes vacío con datos conserva
+ *   su mensaje.
  * - Escritorio no cambia: las piezas nuevas no se ven a 1280.
  * - D13: el camino de Aprender del niño no desborda a lo ancho.
  */
@@ -93,7 +96,36 @@ async function seedDistribuir(page, cuentas = null) {
   }));
 }
 
+/**
+ * Calendario con un mes cargado (MV2.27): ocho pagos con nombres largos, un
+ * ingreso y un abono parcial. `inactivo` deja un compromiso que no cae en
+ * ningún mes: el usuario tiene datos (el propósito no se ve) y el mes está
+ * vacío.
+ */
+async function seedCalendario(page, { inactivo = false } = {}) {
+  const fijo = (id, descripcion, diaPago, monto) => ({ id, tipo: 'fijo', descripcion, monto, frecuencia: 'Mensual', diaPago, activo: !inactivo });
+  await sembrar(page, estadoBase({
+    cuentas: CUENTAS,
+    ingresos: inactivo ? [] : [{ id: 'i1', descripcion: 'Salario', monto: 4_200_000, frecuencia: 'Mensual', diaPago: 18, activo: true }],
+    compromisos: inactivo ? [fijo('f1', 'Arriendo', 5, 1_350_000)] : [
+      fijo('f1', 'Arriendo', 5, 1_350_000), fijo('f2', 'Gimnasio', 2, 89_900), fijo('f3', 'EPM servicios', 18, 236_000),
+      fijo('f4', 'Plan Claro', 29, 65_000), fijo('f5', 'Internet', 7, 98_000), fijo('f6', 'Seguro', 21, 120_000),
+      { id: 'd1', tipo: 'deuda-personal', descripcion: 'Préstamo de mi hermano', saldoTotal: 1_200_000, cuotaMensual: 300_000, tasa: 0, frecuencia: 'Mensual', diaPago: 18, activo: true },
+      { id: 'd2', tipo: 'deuda-entidad', descripcion: 'Crédito libre inversión', saldoTotal: 9_000_000, cuotaMensual: 510_000, frecuencia: 'Mensual', diaPago: 10, activo: true },
+    ],
+    gastos: inactivo ? [] : [{ id: 'g1', compromisoId: 'd1', descripcion: 'Abono', monto: 100_000, categoria: 'Otro', fecha: fechaDelMes(1), cuentaId: 'c1' }],
+  }));
+}
+
 const scrollY = (page) => page.evaluate(() => window.scrollY);
+
+/** Renglones que ocupa el texto de un elemento. */
+const renglones = (loc) => loc.evaluate((el) => {
+  const r = document.createRange();
+  r.selectNodeContents(el);
+  const tops = [...r.getClientRects()].filter(x => x.width > 0).map(x => x.top).sort((a, b) => a - b);
+  return tops.filter((t, i) => i === 0 || t - tops[i - 1] > 4).length;
+});
 
 test.describe('MV2 - móvil (ADR 098)', () => {
   test.use({ viewport: { width: 390, height: 844 } });
@@ -404,6 +436,69 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(page.locator('#modal-distribuir[data-open]')).toHaveCount(0);
     await expect(page.locator('#snackbar-distribucion')).toBeVisible();
   });
+
+  test('Calendario: el mes cabe de 320 a 430 y desde 358 la celda mide 44 (ADR 111 D1, D2)', async ({ page }) => {
+    await seedCalendario(page);
+    await page.goto('/#agenda');
+    await expect(page.locator('.cal-card')).toBeVisible({ timeout: 10_000 });
+    for (const ancho of [320, 360, 375, 390, 412, 430]) {
+      await page.setViewportSize({ width: ancho, height: 844 });
+      const m = await page.evaluate(() => {
+        const card = document.querySelector('.cal-card').getBoundingClientRect();
+        const dias = [...document.querySelectorAll('.cal-card .cal-day:not(.cal-day--empty)')].map(d => d.getBoundingClientRect());
+        return {
+          fuera: dias.filter(d => d.left < card.left || d.right > card.right).length,
+          ancho: Math.min(...dias.map(d => d.width)),
+          alto: Math.min(...dias.map(d => d.height)),
+        };
+      });
+      expect(m.fuera, `${ancho}px: días fuera de la tarjeta`).toBe(0);
+      expect(m.alto, `${ancho}px: alto de la celda`).toBeGreaterThanOrEqual(44);
+      if (ancho >= 358) expect(m.ancho, `${ancho}px: ancho de la celda`).toBeGreaterThanOrEqual(44);
+    }
+  });
+
+  test('Calendario: el día se marca en un círculo y los textos no se parten (ADR 111 D3, D4)', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 844 });
+    await seedCalendario(page);
+    await page.goto('/#agenda');
+    const hoy = page.locator('.cal-day--today');
+    await expect(hoy).toBeVisible({ timeout: 10_000 });
+    const estilo = await hoy.evaluate((el) => ({
+      celda: getComputedStyle(el).backgroundColor,
+      circulo: getComputedStyle(el.querySelector('.cal-day__num')).backgroundColor,
+      radio: getComputedStyle(el.querySelector('.cal-day__num')).borderTopLeftRadius,
+    }));
+    expect(estilo.celda).toBe('rgba(0, 0, 0, 0)');
+    expect(estilo.circulo).not.toBe('rgba(0, 0, 0, 0)');
+    expect(parseFloat(estilo.radio)).toBeGreaterThanOrEqual(16);
+
+    // "este mes" calla y el subtítulo cabe en un renglón.
+    await expect(page.locator('.cal-card__sub-mes')).toBeHidden();
+    expect(await renglones(page.locator('.cal-card__subtitle'))).toBe(1);
+
+    // El 18 trae el ingreso y el abono parcial: cada lado del día va entero y
+    // el estado de pago ocupa un solo renglón.
+    await page.locator('.cal-day[data-day="18"]').click();
+    const lados = page.locator('.cal-detail__total .cal-detail__lado');
+    await expect(lados).toHaveCount(2);
+    for (const lado of await lados.all()) expect(await renglones(lado)).toBe(1);
+    const pill = page.locator('.cal-detail__badge-abono--parcial');
+    await expect(pill).toBeVisible();
+    expect(await renglones(pill)).toBe(1);
+    await expect(page.locator('.cal-detail__title')).toHaveText(/ de [a-z]+$/);
+  });
+
+  test('Calendario: un mes vacío de alguien con datos conserva su mensaje y su botón es verde lleno (ADR 111 D5)', async ({ page }) => {
+    await seedCalendario(page, { inactivo: true });
+    await page.goto('/#agenda');
+    const vacio = page.locator('.cal-empty');
+    await expect(vacio).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#sec-agenda .banner-proposito')).toHaveCount(0);
+    await expect(vacio.locator('.cal-empty__title')).toBeVisible();
+    const fondo = await vacio.locator('.btn-primary').evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(fondo).not.toBe('rgba(0, 0, 0, 0)');
+  });
 });
 
 test.describe('MV2 - escritorio sin cambios', () => {
@@ -438,6 +533,20 @@ test.describe('MV2 - escritorio sin cambios', () => {
     await expect(card.locator('[data-action="eliminar-cuenta"]')).toBeVisible();
     await expect(page.locator('#lista-ingresos-puntuales [data-action="eliminar-ingreso-puntual"]')).toBeVisible();
     await expect(page.locator('#sec-tesoreria .list-item__solo-hoja:visible')).toHaveCount(0);
+  });
+
+  test('Calendario conserva la celda pintada y "este mes" (ADR 111)', async ({ page }) => {
+    await seedCalendario(page);
+    await page.goto('/#agenda');
+    const hoy = page.locator('.cal-day--today');
+    await expect(hoy).toBeVisible({ timeout: 10_000 });
+    const m = await hoy.evaluate((el) => ({
+      celda: getComputedStyle(el).backgroundColor,
+      alto: el.getBoundingClientRect().height,
+    }));
+    expect(m.celda).not.toBe('rgba(0, 0, 0, 0)');
+    expect(m.alto).toBeGreaterThanOrEqual(80);
+    await expect(page.locator('.cal-card__sub-mes')).toBeVisible();
   });
 
   test('Distribuir desde Inicio sigue llevando a Mis cuentas (ADR 110 D1)', async ({ page }) => {

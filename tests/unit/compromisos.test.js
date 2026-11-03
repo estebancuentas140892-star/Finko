@@ -5126,7 +5126,7 @@ describe('renderListaCompromisos() - tarjeta de deuda D.16d', () => {
   // ── FD1 / FD2 / FD3: una pasada por _renderCompromisoItem ─────────
 
   it('FD3: el chip de vencimiento vive en la fila de chips, no dentro del nombre', () => {
-    S.compromisos = [deudaCard()];
+    S.compromisos = [deudaCard({ diaPago: DIA_PASADO })];
     renderListaCompromisos();
     const card = document.querySelector('.deuda-card');
     expect(card.querySelector('.deuda-card__nombre .chip')).toBeNull();

@@ -116,6 +116,7 @@
 .btn-dominio[data-dom="compromisos"] { --btn-dom: var(--fk-dom-compromisos); --btn-dom-text: var(--fk-dom-compromisos-text); }
 .btn-dominio[data-dom="personales"]  { --btn-dom: var(--fk-dom-personales);  --btn-dom-text: var(--fk-dom-personales-text); }
 .btn-dominio[data-dom="tesoreria"]   { --btn-dom: var(--fk-dom-tesoreria);   --btn-dom-text: var(--fk-dom-tesoreria-text); }
+.btn-dominio[data-dom="metas"]       { --btn-dom: var(--fk-dom-metas);       --btn-dom-text: var(--fk-dom-metas-text); }
 
 /* Danger */
 .btn-danger {

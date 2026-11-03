@@ -1398,12 +1398,17 @@
    con ícono; parcial como pill neutra con montos tabulares (preservado,
    mandato del doc de diseño). Antes vivían en domain.css como línea de
    texto suelta. Pop de confirmación al marcar pagado (keyframes en
-   forms.css). */
+   forms.css).
+   MV2.27c (ADR 111 D5): la pill es hija de la fila, no del cuerpo, y ocupa
+   su renglón a lo ancho del día; dentro del cuerpo el abono parcial tomaba
+   tres renglones (69px) a 360. */
 .cal-detail__badge-abono {
+  grid-column: 1 / -1;
+  justify-self: start;
   display: inline-flex;
   align-items: center;
   gap: var(--fk-space-1);
-  margin-top: var(--fk-space-2);
+  margin-top: 0;
   padding: var(--fk-space-1) var(--fk-space-3);
   border-radius: var(--fk-radius-md);
   background: var(--fk-success-bg);
@@ -1566,19 +1571,21 @@
   max-width: 34ch;
 }
 
-/* DIS.11 C8: con la app en cero, el CTA del encabezado y el de esta card
-   decían lo mismo en dos .btn-primary a la vez. El primario de la sección es
-   uno solo, el del encabezado; acá el mismo destino baja a secundario. */
-.cal-empty .btn-primary {
-  background: transparent;
-  border: 1px solid var(--fk-border-strong);
-  color: var(--fk-text-primary);
+/* MV2.27c (ADR 111 D5, ADR 107 D3 y D5): "Programar en Por pagar" es el único
+   botón de la sección y va en verde lleno. DIS.11 C8 lo había bajado a borde
+   porque el encabezado tenía "+ Agregar gasto fijo"; la ficha 05 mudó ese
+   botón a Por pagar. Mientras se ve el propósito, el vacío calla su mensaje
+   como `.empty-state` (domain.css) y queda solo el botón; un mes vacío de
+   alguien con datos conserva "Diciembre está despejado". */
+.section:has(.banner-proposito) .cal-empty {
+  align-items: stretch;
+  padding: 0;
+  border: 0;
+  background: none;
 }
-
-.cal-empty .btn-primary:hover {
-  background: var(--fk-bg-hover);
-  border-color: var(--fk-dom-agenda);
-}
+.section:has(.banner-proposito) .cal-empty__teja,
+.section:has(.banner-proposito) .cal-empty__title,
+.section:has(.banner-proposito) .cal-empty__desc { display: none; }
 
 /* ── CAL.5a: pago en lote de lo vencido ──────────────────────── */
 
@@ -1818,6 +1825,118 @@
     font-weight: var(--fk-font-bold);
     color: var(--fk-text-primary);
     font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ── MV2.27a-b (ADR 111): el mes entero en el teléfono ──────────────────
+   `aspect-ratio: 1` con piso de 44px se volvía un ancho mínimo de 44 y
+   `repeat(7, 1fr)` no encoge por debajo: la grilla pedía 332px y a 360 el
+   domingo quedaba fuera de la tarjeta. Ahora las columnas pueden encogerse,
+   sin hueco, y la grilla toma 8px del relleno de la tarjeta a cada lado.
+   Desde 358px la celda mide 44 o más; a 320, 40,9, contigua a sus vecinas
+   (D2, única excepción a R4).
+
+   D3: el estado deja la celda y pasa a un círculo detrás del número. Con años
+   de uso, trece cajas a 4px una de otra se leían como un bloque de avisos.
+   Mismos colores y mismo ORDEN que la celda de escritorio (ingreso, vencido,
+   hoy, seleccionado): el orden decide quién gana, igual que arriba.
+
+   Escritorio no cambia: todo vive bajo 1024px. */
+@media (max-width: 1023px) {
+  .cal-grid {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0;
+    margin-inline: calc(var(--fk-space-2) * -1);
+  }
+  /* 3rem = los 44 de antes más los 4 de hueco: la tarjeta mide lo mismo. */
+  .cal-day {
+    aspect-ratio: auto;
+    min-width: 0;
+    height: var(--fk-space-12);
+    min-height: 0;
+    max-height: none;
+    font-size: var(--fk-text-sm);
+  }
+  .cal-day:focus-visible {
+    outline-offset: -2px;
+  }
+  .cal-day--ingreso,
+  .cal-day--vencido,
+  .cal-day--today,
+  .cal-day--selected,
+  .cal-day--selected.cal-day--today {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+  }
+  /* 2rem crece con el texto del sistema; el tope deja 2px a cada lado a 320. */
+  .cal-day__num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--fk-space-8);
+    height: var(--fk-space-8);
+    max-width: calc(100% - var(--fk-space-1));
+    border: 1px solid transparent;
+    border-radius: var(--fk-radius-full);
+    font-variant-numeric: tabular-nums;
+  }
+  .cal-day--ingreso .cal-day__num {
+    border-color: color-mix(in srgb, var(--fk-dom-ingresos-text) 45%, transparent);
+    background: color-mix(in srgb, var(--fk-dom-ingresos-text) 10%, transparent);
+  }
+  .cal-day--vencido .cal-day__num {
+    border-color: color-mix(in srgb, var(--fk-warning) 55%, transparent);
+    background: var(--fk-warning-bg);
+  }
+  .cal-day--today .cal-day__num {
+    border-color: var(--fk-accent);
+    background: var(--fk-accent-subtle);
+  }
+  .cal-day--selected .cal-day__num {
+    border-color: var(--fk-dom-agenda-text);
+    background: color-mix(in srgb, var(--fk-dom-agenda) 16%, transparent);
+    box-shadow: 0 0 0 1px var(--fk-dom-agenda-text);
+  }
+  .cal-day--selected.cal-day--today .cal-day__num {
+    border-color: var(--fk-accent);
+    box-shadow: 0 0 0 2px var(--fk-accent);
+  }
+
+  /* D3: dos columnas alineadas; "Deuda personal" ya no queda sola abajo. */
+  .cal-legend {
+    display: grid;
+    grid-template-columns: repeat(2, max-content);
+    justify-content: center;
+    gap: var(--fk-space-2) var(--fk-space-6);
+  }
+  .cal-legend:has(> :only-child) {
+    grid-template-columns: max-content;
+  }
+  .cal-legend__item {
+    white-space: nowrap;
+  }
+
+  /* D4 (MV2.27b): bajo "Octubre 2026", "este mes" sobra. El span existe en
+     todos los anchos para que el texto que se lee no cambie. */
+  .cal-card__subtitle {
+    text-wrap: balance;
+  }
+  .cal-card__sub-mes {
+    display: none;
+  }
+  /* "Entra $4.200.000 ·" y "sale $100.000": si no caben, baja la pieza
+     entera, nunca el monto solo. */
+  .cal-detail__lado {
+    white-space: nowrap;
+  }
+  /* "Préstamo de mi hermano" se lee entero: dos renglones antes de cortar. */
+  .cal-detail__name {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 1.3;
   }
 }
 

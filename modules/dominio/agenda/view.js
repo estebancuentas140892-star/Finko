@@ -564,12 +564,16 @@ function _renderCabecera(year, month, eventos, eventosIng = {}, eventosMeta = {}
   // MT.6d: los aportes de meta se cuentan aparte, mismo criterio.
   const nIng  = totalEventosDelMes(eventosIng);
   const nMeta = totalEventosDelMes(eventosMeta);
+  // MV2.27b (ADR 111 D4): bajo "Octubre 2026" el "este mes" sobra y en el
+  // teléfono partía la línea; va en su span para que el CSS lo calle bajo
+  // 1024px sin cambiar el texto que se lee.
+  const esteMes = '<span class="cal-card__sub-mes"> este mes</span>';
   const partes = [
     total === 0
-      ? 'Sin compromisos este mes'
+      ? `Sin compromisos${esteMes}`
       : total === 1
-      ? '1 compromiso este mes'
-      : `${total} compromisos este mes`,
+      ? `1 compromiso${esteMes}`
+      : `${total} compromisos${esteMes}`,
   ];
   if (nIng > 0)  partes.push(nIng === 1 ? '1 ingreso' : `${nIng} ingresos`);
   if (nMeta > 0) partes.push(nMeta === 1 ? '1 aporte a meta' : `${nMeta} aportes a metas`);
@@ -880,7 +884,8 @@ function _renderEmptyMes(month) {
 function _renderDetalleDia(evs, year, month, dia) {
   const fecha   = new Date(year, month, dia);
   const dow     = DOW_LARGO[fecha.getDay()];
-  const titulo  = `${dow} ${dia} de ${MONTHS[month]}`;
+  // MV2.27c (ADR 111 D5): el mes en minúscula, como en el resto de la app.
+  const titulo  = `${dow} ${dia} de ${MONTHS[month].toLowerCase()}`;
 
   // CAL.3: día seleccionado sin compromisos ni ingresos (a propósito, o
   // porque se eliminó el compromiso desde otra sección). En vez de no
@@ -949,9 +954,13 @@ function _renderDetalleDia(evs, year, month, dia) {
   // usuario sin saber si ese día además entraba algo.
   if (lados.length === 1) lados.push(entraDia > 0 ? 'no sale nada' : 'no entra nada');
 
-  const resumenDia = lados.length
-    ? lados.join(' · ').replace(/^./, c => c.toUpperCase())
-    : '';
+  // MV2.27b (ADR 111 D4): cada lado en un span que no se parte, con el
+  // separador pegado al primero ("Entra $X ·" / "sale $Y"): si no cabe, baja
+  // la pieza entera y no el monto solo. El texto que se lee es el mismo.
+  if (lados.length) lados[0] = lados[0].replace(/^./, c => c.toUpperCase());
+  const resumenDia = lados
+    .map((l, i) => `<span class="cal-detail__lado">${l}${i < lados.length - 1 ? ' ·' : ''}</span>`)
+    .join(' ');
 
   const totalPagarHtml = resumenDia
     ? `<p class="cal-detail__total${todoPagado ? ' cal-detail__total--pagado' : ''}">${resumenDia}</p>`
@@ -1015,7 +1024,7 @@ function _renderDetalleItemIngreso(ing) {
         <p>Hoy llega tu dinero: recuerda apartar para tus objetivos antes de gastarlo.</p>
       </div>
       <div class="cal-detail__actions">
-        <button type="button" class="btn btn-sm btn-primary"
+        <button type="button" class="btn btn-sm btn-dominio" data-dom="tesoreria"
                 data-action="agenda-distribuir-ingreso"
                 aria-label="Distribuir el ingreso ${desc} entre tus objetivos">
           Distribuir →
@@ -1050,7 +1059,7 @@ function _renderDetalleItemMeta(m) {
       </div>
       ${monto > 0 ? `<p class="cal-detail__amount">${montoTxt}</p>` : ''}
       <div class="cal-detail__actions">
-        <button type="button" class="btn btn-sm btn-primary"
+        <button type="button" class="btn btn-sm btn-dominio" data-dom="metas"
                 data-action="abonar-meta" data-id="${_esc(m.id)}"
                 aria-label="Aportar a ${desc}">
           Aportar →
@@ -1106,6 +1115,8 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
   // basta con que exista cualquier gasto vinculado ese mes.
   // CAL.4c (ADR 037 D5): pagado como pill verde con ícono; el estado parcial
   // se preserva como pill neutra (mandato explícito del doc de diseño).
+  // MV2.27c (ADR 111 D5): la pill sale del cuerpo y ocupa su renglón, a lo
+  // ancho del día: dentro del cuerpo el abono parcial tomaba tres renglones.
   const prefijo    = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`;
   const gastos     = Array.isArray(S.gastos) ? S.gastos : [];
   const estadoPago = estadoPagoMes(gastos, c, prefijo);
@@ -1141,9 +1152,9 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
       <div class="cal-detail__body">
         <p class="cal-detail__name">${desc}</p>
         <p class="cal-detail__sub">${label}${frec ? ` · ${frec}` : ''}${catLabel}${notaLabel}</p>
-        ${badgeHtml}
       </div>
       ${monto ? `<p class="cal-detail__amount">${monto}</p>` : ''}
+      ${badgeHtml}
       ${accionesHtml}
     </li>`;
 }
