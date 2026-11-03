@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(movil): MV2.3 tanda 2, Por pagar por urgencia y en filas · 2026-11-03
+
+[ADR 117](DECISIONS/117-por-pagar-por-urgencia-y-en-filas.md) (acota la ficha 05 del ADR 069, el ADR 036 D5, el ADR 074 D2 y el ADR 104; aplica R89a, R19, R50 y la hoja del ADR 098 D4). Bajo 1024 px salvo Me deben; escritorio sin cambios (ADR 073). SW v649.
+
+- **Por urgencia**: "Vencidos · del más antiguo al más reciente", "Lo que falta este mes", "Más adelante", "Pagado este mes" y "Saldadas", con la suma de los dos primeros. El lote baja al pie de lo vencido ("Pagar los N · $X", mismo conjunto y montos que el modal) y su tarjeta suelta se oculta; con un chip puesto el pie no sale.
+- **En filas**: teja de 36, una línea de estado, el monto y la acción debajo ("Marcar pagado", "Abonar $X"). Tocar la fila abre la hoja con editar y eliminar y con cuota, categoría, tasa y cupo como notas; `ui/detalle-fila.js` lee la anatomía `.deuda-card`. `compromisos/index.js` repinta al cruzar 1024 px.
+- **Me deben, una pastilla por fila**: la del estado; las notas van en una línea de texto que parte donde haga falta.
+- **Texto al 200 %**: las lentes parten su rótulo en dos líneas (el número baja bajo el rótulo) y en las filas de Por pagar, Gastos, Movimientos e Ingresos el monto baja a su renglón en lugar de cortarse.
+- Pruebas: 9 unitarias en `compromisos.test.js` y 4 ajustadas en `personales.test.js`; 3 E2E en `movil-mv2.test.js` (filas y hoja, 200 %, escritorio).
+
 ### feat(movil): MV2.3 tanda 1, lo que faltaba del canvas · 2026-11-03
 
 [ADR 116](DECISIONS/116-lo-que-faltaba-del-canvas-primera-tanda.md) (cierra pendientes de los ADR 099 y 107 D2; aplica el ADR 023, R4, R73 y la regla 3 del ADR 060); tarjeta MV2.3 con las cinco tandas que siguen. SW v648.
