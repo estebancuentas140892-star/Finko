@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(movil): MV2.3 tanda 1, lo que faltaba del canvas · 2026-11-03
+
+[ADR 116](DECISIONS/116-lo-que-faltaba-del-canvas-primera-tanda.md) (cierra pendientes de los ADR 099 y 107 D2; aplica el ADR 023, R4, R73 y la regla 3 del ADR 060); tarjeta MV2.3 con las cinco tandas que siguen. SW v648.
+
+- **Por qué**: los registros daban el plan MV2 por cerrado, pero una auditoría independiente de los 13 tableros contra el código encontró 22 propuestas sin hacer o a medias, casi todas hallazgos o detalles de prototipo que nunca tuvieron un ID MV2. Esteban decidió aplicarlas todas "tal cual como propone el HTML".
+- **Esta tanda** (las once sin conflicto): la tarjeta pedida destella al llegar desde Calendario (N7); el ojo tapa los montos de "Atención hoy" y de los paneles de Inicio (pendiente del ADR 099); "Aportar $X" en Metas (ADR 107 D2); la pregunta de cada modalidad bajo su título (R73); la media línea del fondo incompleto en Metas (AH4); sin filetes laterales (V1); enlaces de texto con 44 px de zona táctil (A2); el aviso del ingreso puntual dice a qué cuenta entró; "+ Fuente fija" tonal; Distribuir sin emoji (C2).
+- **El fondo, en infra**: `gastosFijosMensuales`, `mesesEnPalabras` y `coberturaFondo` pasan a `infra/bolsas.js`. Ahorro y Aprende exportan las mismas funciones con sus nombres; un test comprueba que son la misma, no una copia.
+- Pruebas: 3 unitarias de la línea del fondo y 1 de "Aportar $X" en `metas.test.js`, 1 de la máscara en `atencion-hoy.test.js`, 4 de `coberturaFondo` en `bolsas.test.js`; 1 E2E en `movil-mv2.test.js`. Unitarios 5227/5227 (árbol limpio), E2E 391/391.
+
 ### feat(movil): MV2.5, el pie se apoya sobre el teclado · 2026-11-03
 
 [ADR 115](DECISIONS/115-el-pie-se-apoya-sobre-el-teclado.md) (completa el ADR 098 D8; respeta D12 y el ADR 092 D7); ficha [`contexto/sistema-visual.md`](contexto/sistema-visual.md). Solo bajo 1024px. SW v647. Probado por Esteban en su iPhone sobre la vista previa de Vercel antes de `main`. **Cierra la tarjeta MV2.2**: el plan del canvas "Finko móvil: rediseño integral" queda aplicado entero.

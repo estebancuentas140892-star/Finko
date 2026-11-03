@@ -27,6 +27,17 @@
 - Depende de : nada
 - Aceptación : en cada lugar, la razón se lee sin salir de la decisión y con las cifras del usuario
 
+#### MV2.3 - Lo que faltaba del canvas "Finko móvil: rediseño integral"
+- Prioridad  : media
+- Estado     : en proceso (2026-11-03). Tanda 1 cerrada ([ADR 116](../DECISIONS/116-lo-que-faltaba-del-canvas-primera-tanda.md)). Esteban decidió en chat aplicar todo "tal cual como propone el HTML", también lo que acota decisiones aprobadas, y las lentes en dos renglones con texto al 200 %
+- Área       : ambos
+- Objetivo   : las 22 propuestas que una auditoría independiente encontró sin hacer. Quedan: (2) Por pagar por urgencia, que decide R89a, una pastilla por fila (acota ADR 036 y 074) y lentes a dos renglones (acota ADR 104); (3) el día del Calendario en hoja (acota ADR 111) y cerrar hojas deslizando y con atrás; (4) "Ver plan de salida" en hoja y la hoja de detalle con el límite, "Los N gastos de X" y qué pasa al borrar (acota ADR 098 D4); (5) separador de miles al escribir en los 43 campos de dinero; (6) búsqueda con recientes y totales, estado de la nube en la hoja del avatar, filas de espera y E2E de seis anchos y de zonas táctiles
+- Riesgo     : cada tanda que acota una decisión lleva su ADR; ninguna se hace en silencio
+- Secciones  : Por pagar, Me deben, lentes, Calendario, hojas, formularios, Movimientos
+- Archivos   : según la tanda
+- Depende de : nada. La auditoría y el detalle de cada pieza: los 13 tableros del canvas
+- Aceptación : cada tanda con sus pruebas, E2E verde y vista en el teléfono; escritorio sin cambios salvo lo que el ADR diga
+
 #### PERF.13 - Arranque: 616 ms de hilo bloqueado
 - Prioridad  : baja
 - Estado     : pendiente

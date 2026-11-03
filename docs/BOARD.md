@@ -71,6 +71,7 @@ Las tarjetas del tablero (la iniciativa HF se lista por fase), para elegir la pr
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
 | DEC.1 | Finko explica el porqué dentro de cada decisión ([ADR 101](DECISIONS/101-finko-del-adulto-decide-no-ensena.md) D5) | Transversal | media | nada |
+| MV2.3 | Lo que faltaba del canvas móvil: cinco tandas ([ADR 116](DECISIONS/116-lo-que-faltaba-del-canvas-primera-tanda.md)) | Transversal | media | nada |
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | cola de diseño de Esteban |
 | PERF.13 | Arranque: 616 ms de hilo bloqueado | Transversal | baja | nada |
 | PERF.14 | Pasar de una hoja a otra sin soltar el fondo | Transversal | baja | nada |
@@ -116,7 +117,7 @@ _(CFG.1 a CFG.6 cerraron completas. CFG.6, la auditoría móvil de Ajustes, cerr
 
 ## Transversal (afecta varias secciones)
 
-DV.2d, PERF.13 a PERF.15, HF.0f a HF.5a → [`board/transversal.md`](board/transversal.md) (HF: iniciativa "un hecho financiero se informa una sola vez", [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), P1 a P7 resueltas; APR: iniciativa "Aprende y aplícalo", [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) y [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md), en Propuesta)
+MV2.3, DV.2d, PERF.13 a PERF.15, HF.0f a HF.5a → [`board/transversal.md`](board/transversal.md) (HF: iniciativa "un hecho financiero se informa una sola vez", [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), P1 a P7 resueltas; APR: iniciativa "Aprende y aplícalo", [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) y [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md), en Propuesta)
 
 ---
 
