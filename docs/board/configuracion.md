@@ -1,6 +1,6 @@
 # Tablero - Configuración
 
-> Revisado: 2026-08-20.
+> Revisado: 2026-11-03.
 
 > Satélite de [`BOARD.md`](../BOARD.md) (dominio `config`). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
 
@@ -18,15 +18,4 @@
 
 ---
 
-#### CFG.6 - auditoría UX/UI móvil de Ajustes, la sección que el handoff no cubrió
-- Prioridad  : media
-- Estado     : no iniciar (hasta que cierren las fichas 17, 18 y 19 de MOV.1)
-- Área       : ambos (primero design, porque la pantalla no tiene ficha de auditoría; después el código que decida su ADR)
-- Objetivo   : Ajustes es la única de las 15 secciones de la app sin ficha en el handoff móvil, y es donde la ficha 03 metió Logros. Cinco iniciativas CFG cerraron dentro de ella (perfil fiscal, avisos, durabilidad, candado) y nadie las midió juntas en una pantalla de 390px
-- Riesgo     : cuatro de sus bloques tienen ADR propio ([050](../DECISIONS/050-perfil-fiscal-ubicacion-y-framing.md), [063](../DECISIONS/063-candado-de-acceso-local.md)/[067](../DECISIONS/067-biometria-descartada-como-desbloqueo.md), [043](../DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md), [066](../DECISIONS/066-motor-unico-de-avisos.md)). Moverlos o replegarlos exige un ADR que acote, nunca en silencio
-- Secciones  : Ajustes (`sec-config`); roza Inicio y Logros
-- Archivos   : `modules/dominio/config/**`, `styles/components/config.css`, `docs/contexto/configuracion.md`
-- Depende de : MOV.1 fichas 17 y 19 (contenido y vitrina de Logros, que viven dentro de Ajustes) y 18 (consolida R86 a R89, que la ficha nueva debe obedecer)
-- Absorbe    : la dependencia que DSK.1 dejó abierta, "Personalizar accesos" sin entrada en escritorio y necesitando sitio en Ajustes
-- Aceptación : design -> ficha de auditoría con hallazgos medidos a 390px y su ADR aceptado; code -> lo que el ADR decida, con tests y verificación en la app
-- Modelo     : capacidad alta con esfuerzo alto para la ficha. No hay bloque vigente de la pantalla completa: el primer paso es el análisis profundo
+> **CFG.6** ("Auditoría móvil de Ajustes"), **cerrada** el 2026-11-03: Ajustes como índice en el teléfono, [ADR 112](../DECISIONS/112-ajustes-como-indice-en-el-telefono.md), que absorbió MV2.26. Ficha: [`contexto/configuracion.md`](../contexto/configuracion.md).

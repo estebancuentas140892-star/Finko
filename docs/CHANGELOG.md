@@ -12,6 +12,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(config): CFG.6, Ajustes como índice en el teléfono · 2026-11-03
+
+[ADR 112](DECISIONS/112-ajustes-como-indice-en-el-telefono.md) (cierra CFG.6 y absorbe MV2.26; cumple R13 y R14; respeta los ADR 050, 063, 043, 096, 066 y 099 D6); ficha [`contexto/configuracion.md`](contexto/configuracion.md). Escritorio sin cambios. SW v644.
+
+- **Medido a 390**: 15 bloques abiertos en 5.376 px, "Tu perfil" a 1.355 y la nube a 2.543. Con el índice cerrado, 1.261 px.
+- **Cada bloque es una fila** bajo 1024px: `_fila()` toma el HTML que ya pinta cada `_render*()` y convierte su título en un botón con `aria-expanded` y su estado en una línea (el nombre, "Activo", la frase de Familia de la hoja del avatar, "Sin cuenta", el último respaldo, el permiso de recordatorios, la versión). Los formularios y su cableado no cambian.
+- **Lo abierto sobrevive al repintado**: `_filasAbiertas` vive en el módulo, así que cambiar el tema o guardar no cierra la fila. La nube a mitad de entrar abre sola, y la hoja del avatar abre la fila del bloque al que lleva y le pasa el foco.
+- **Lo tuyo primero**: Tu cuenta, Familia, Tus datos, La app, Impuestos, Información. En escritorio la vista pinta el panel de siempre y `config/index.js` lo repinta al cruzar 1024px.
+- **Atajos solo con puntero fino** (todos los anchos): `_handleKeydown()` no corre sin `any-pointer: fine`, y el bloque se esconde con la misma condición, así que un teléfono con teclado bluetooth no queda con atajos que no puede apagar (WCAG 2.1.4).
+- **Anotado sin decidir**: "Acerca de" y el Centro Legal dicen que nada sale del teléfono en la misma pantalla que "Guardar en la nube"; va a NUBE.
+- **Ficha podada**: `contexto/configuracion.md` estaba en su techo (40,8 KB); "Cambios realizados" pasa a una línea por hito (33 KB antes de esta entrada).
+- Pruebas: 4 unitarias en `config.test.js` y 1 en `atajos-teclado.test.js`; 2 E2E en `movil-mv2.test.js` (móvil y escritorio); el E2E de la hoja del avatar espera el foco en la fila abierta.
+
 ### feat(movil): MV2.27, Calendario: el mes entero en el teléfono · 2026-11-03
 
 [ADR 111](DECISIONS/111-calendario-el-mes-entero-en-el-telefono.md) (cambia bajo 1024px el ADR 037 D2; acota R4 entre 320 y 357px; aplica en Calendario el ADR 107 D1, D3 y D5; respeta el ADR 037 D3, el 081 K4 y el 071); ficha [`contexto/calendario.md`](contexto/calendario.md). Ningún cálculo cambia. SW v643.

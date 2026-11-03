@@ -101,7 +101,7 @@ Cada sección con tarjetas vivas tiene su satélite en `docs/board/`, mismo nomb
 
 > **Iniciativa "IN.9 - Inicio en escritorio", cerrada** (sus cinco rebanadas, 2026-08-02). Detalle e historia: [`contexto/inicio.md`](contexto/inicio.md) y CHANGELOG. **PI8 sigue abierto** (contraste de los tokens `--fk-dom-*`, bajo el mínimo WCAG 1.4.11) y no viaja con INT.1: merece tarjeta de accesibilidad propia. Móvil no cambia salvo lo que IN.9a decidió.
 >
-> **DSK.1 acota IN.9 y está en proceso** (arriba, "En proceso"). El [ADR 070](DECISIONS/070-inicio-centro-de-atencion-en-escritorio.md) reemplaza el reparto de escritorio que fijaron D3 y D4 del [ADR 057](DECISIONS/057-inicio-en-escritorio.md). Dependencia abierta que deja: **"Personalizar accesos" se queda sin entrada en escritorio** y necesita sitio en Ajustes, que ya tiene dueño en **CFG.6** (`board/configuracion.md`). Candidato anotado, sin tarjeta: auditar si **"Tu progreso"** pertenece a Inicio, que el [ADR 087](DECISIONS/087-inicio-en-movil-tambien-avisa-y-no-resume.md) dejo explicitamente sin decidir (no es uno de los tres modulos del ADR 070 D2 y su universalidad es decision propia del ADR 032 D6). Ese mismo ADR 087 saca de Inicio movil el resumen semanal y la actividad reciente, y deja **dos modulos de logica sin consumidor** con destino escrito en la ficha 16: `resumen/logic.js` y `movimientosRecientes()`.
+> **DSK.1 acota IN.9 y está en proceso** (arriba, "En proceso"). El [ADR 070](DECISIONS/070-inicio-centro-de-atencion-en-escritorio.md) reemplaza el reparto de escritorio que fijaron D3 y D4 del [ADR 057](DECISIONS/057-inicio-en-escritorio.md). Dependencia abierta que deja: **"Personalizar accesos" se queda sin entrada en escritorio** y necesitaba sitio en Ajustes; el [ADR 101](DECISIONS/101-finko-del-adulto-decide-no-ensena.md) sacó Accesos rápidos de Inicio y CFG.6 cerró sin esa entrada. Candidato anotado, sin tarjeta: auditar si **"Tu progreso"** pertenece a Inicio, que el [ADR 087](DECISIONS/087-inicio-en-movil-tambien-avisa-y-no-resume.md) dejo explicitamente sin decidir (no es uno de los tres modulos del ADR 070 D2 y su universalidad es decision propia del ADR 032 D6). Ese mismo ADR 087 saca de Inicio movil el resumen semanal y la actividad reciente, y deja **dos modulos de logica sin consumidor** con destino escrito en la ficha 16: `resumen/logic.js` y `movimientosRecientes()`.
 
 ### Calendario (dominio `agenda`)
 
@@ -109,9 +109,9 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 
 ### Configuración (dominio `config`)
 
-CFG.6 → [`board/configuracion.md`](board/configuracion.md)
+Sin tarjetas abiertas: [`board/configuracion.md`](board/configuracion.md)
 
-_(CFG.1 a CFG.5 cerraron completas. **CFG.6** es la auditoría UX/UI móvil de la pantalla: Ajustes es la única de las 15 secciones sin ficha en el handoff, y no se inicia hasta que cierren las fichas 17, 18 y 19 de MOV.1, que deciden el Logros que vive dentro.)_
+_(CFG.1 a CFG.6 cerraron completas. CFG.6, la auditoría móvil de Ajustes, cerró el 2026-11-03 con el [ADR 112](DECISIONS/112-ajustes-como-indice-en-el-telefono.md) sin esperar las fichas 17 a 19 de MOV.1: el [ADR 101](DECISIONS/101-finko-del-adulto-decide-no-ensena.md) ya había sacado Logros del adulto.)_
 
 ---
 
