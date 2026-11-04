@@ -23,9 +23,15 @@ import { generarResumen, calcularScoreSalud, clasificarScore } from '../dominio/
 import { calcularTotalCuentas, cuentasActivas } from '../dominio/tesoreria/logic/cuentas.js';
 import { calcularResumen } from '../dominio/personales/logic.js';
 
+/** La linea de Ajustes en "Mas": que guarda, no como esta (ADR 108 D4). */
+const LINEA_AJUSTES = Object.freeze({ texto: 'Perfil, Familia, nube y datos' });
+
 /**
  * La linea de estado de cada destino de "Mas". Sin datos no hay linea
  * (`null`). Pura respecto al DOM: recibe el estado y la fecha.
+ *
+ * Ajustes no tiene cifra que contar: su linea es fija y dice que guarda
+ * (ADR 108 D4, el prototipo del tablero 4 del canvas movil).
  *
  * @param {typeof S} [state=S]
  * @param {string} [hoyISO=hoy()] YYYY-MM-DD
@@ -84,7 +90,7 @@ export function estadosMas(state = S, hoyISO = hoy()) {
   const porCobrar = calcularResumen(state.personales ?? [], fecha).totalPendiente ?? 0;
   const personales = porCobrar > 0 ? { texto: `${m(porCobrar)} por cobrar` } : null;
 
-  return { agenda, movimientos, analisis, tesoreria, personales };
+  return { agenda, movimientos, analisis, tesoreria, personales, config: LINEA_AJUSTES };
 }
 
 /**

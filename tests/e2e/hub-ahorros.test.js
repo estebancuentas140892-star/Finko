@@ -315,6 +315,28 @@ test.describe('DIS.18 - la casa de Ahorro (móvil)', () => {
     expect(medida.scrollH).toBeLessThanOrEqual(medida.clientH + 1);
   });
 
+  // ADR 108 D4: Ajustes dice qué guarda, debajo de su nombre. A la derecha la
+  // línea empujaba el botón del tema fuera de la pantalla a 320.
+  test('a 320 Ajustes muestra su línea y el botón del tema sigue a la vista (ADR 108 D4)', async ({ page }) => {
+    await seedVacio(page);
+    await page.setViewportSize({ width: 320, height: 640 });
+    await page.goto('/#dash');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+
+    await page.click('.nav-item[data-modal="modal-mas"]');
+    const ajustes = page.locator('#modal-mas .mas-tile[data-section="config"]');
+    await expect(ajustes.locator('.mas-tile__estado')).toHaveText('Perfil, Familia, nube y datos');
+    await expect(ajustes).toHaveAttribute('aria-label', 'Ajustes, Perfil, Familia, nube y datos');
+
+    const medida = await page.evaluate(() => {
+      const tema = document.querySelector('#modal-mas .mas-sheet__theme').getBoundingClientRect();
+      const linea = document.querySelector('#modal-mas .mas-tile[data-section="config"] .mas-tile__estado');
+      return { temaDerecha: tema.right, ancho: window.innerWidth, cortada: linea.scrollWidth > linea.clientWidth + 1 };
+    });
+    expect(medida.temaDerecha).toBeLessThanOrEqual(medida.ancho);
+    expect(medida.cortada).toBe(false);
+  });
+
   test('el bloque Gastos enseña sus tres lentes y su estado (ADR 069)', async ({ page }) => {
     // Un fijo vencido y un límite excedido: las dos pastillas con dato.
     await sembrar(page, {

@@ -6,6 +6,7 @@
  *   calcula, sin línea cuando no hay datos y con la máscara del ojo (R20).
  * - sincronizarEstadosMas(): escribe la línea, la oculta sin datos y arma el
  *   nombre accesible de la fila.
+ * - Ajustes: su línea es fija y dice qué guarda (ADR 108 D4).
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -19,10 +20,16 @@ const vacio = () => ({
 });
 
 describe('estadosMas()', () => {
-  it('sin datos no hay ninguna línea', () => {
+  it('sin datos no hay ninguna línea, salvo la de Ajustes, que es fija', () => {
     expect(estadosMas(vacio(), HOY)).toEqual({
       agenda: null, movimientos: null, analisis: null, tesoreria: null, personales: null,
+      config: { texto: 'Perfil, Familia, nube y datos' },
     });
+  });
+
+  it('Ajustes dice qué guarda, sin cifra y sin depender del ojo (ADR 108 D4)', () => {
+    const s = { ...vacio(), config: { ocultarSaldo: true } };
+    expect(estadosMas(s, HOY).config).toEqual({ texto: 'Perfil, Familia, nube y datos' });
   });
 
   it('Mis cuentas: el total y cuántas cuentas activas', () => {
@@ -116,5 +123,13 @@ describe('sincronizarEstadosMas()', () => {
       </a>`);
     sincronizarEstadosMas({ analisis: { texto: 'Salud 37 de 100', aviso: true } });
     expect(linea('analisis').classList.contains('mas-tile__estado--aviso')).toBe(true);
+  });
+
+  it('la fila de Ajustes muestra su línea y la incluye en su nombre (ADR 108 D4)', () => {
+    fila('config').insertAdjacentHTML('beforeend', '<span class="mas-tile__estado" hidden></span>');
+    sincronizarEstadosMas(estadosMas(vacio(), HOY));
+    expect(linea('config').textContent).toBe('Perfil, Familia, nube y datos');
+    expect(linea('config').hidden).toBe(false);
+    expect(fila('config').getAttribute('aria-label')).toBe('Ajustes, Perfil, Familia, nube y datos');
   });
 });

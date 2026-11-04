@@ -357,7 +357,23 @@ body:has(#quien-usa[data-open]) .logro-toast { display: none; }
   display: flex;
   gap: var(--fk-space-2);
 }
-.mas-sheet__footer .mas-tile--full { flex: 1; }
+/* ADR 108 D4: la línea de Ajustes va debajo del nombre, como en el
+   prototipo del tablero 4. A la derecha no cabía a 320 y empujaba el botón
+   del tema fuera de la pantalla. La teja ocupa las dos filas; el alto de la
+   fila no cambia (las dos líneas miden menos que la teja con su relleno). */
+.mas-sheet__footer .mas-tile--full {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--fk-space-3);
+  /* El `gap` de `.mas-tile` también separaría las dos líneas: 12 px que
+     subían la hoja a 446, sobre el techo de R83. */
+  row-gap: var(--fk-space-1);
+  align-content: center;
+}
+.mas-sheet__footer .mas-tile--full .mas-tile__teja { grid-row: 1 / span 2; align-self: center; }
+.mas-sheet__footer .mas-tile--full .mas-tile__estado { text-align: left; }
 
 /* Tile horizontal: teja de icono teñida por dominio + nombre. El mapeo
    global [data-section] (layout.css, IV.2a) ya declara --fk-nav-text

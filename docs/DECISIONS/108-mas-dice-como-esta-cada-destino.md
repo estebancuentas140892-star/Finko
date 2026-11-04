@@ -37,6 +37,10 @@ Una fila por destino: teja, nombre y, a la derecha, la línea. Los rótulos, el 
 
 Las líneas se escriben al abrir la hoja, no en cada repintado de la app: el cálculo de la salud no es barato y la hoja casi siempre está cerrada. Viven en `ui/menu-mas.js`, que lee la lógica pura de cada dominio, como ya hace el bloque Gastos; ningún dominio importa a otro (ADN 10).
 
+### D4. Ajustes dice qué guarda (adenda del 2026-11-04, MV2.28 b)
+
+Ajustes no tiene una cifra que contar: su línea es fija, "Perfil, Familia, nube y datos", la que dibuja el prototipo del tablero 4 del canvas móvil. Esteban la pidió en chat ("Sí, llévala"). Sale de `estadosMas()` como las demás, así que el nombre accesible de la fila la incluye. Va debajo del nombre, como en el prototipo: a la derecha no cabía a 320 y empujaba el botón del tema fuera de la pantalla. La fila sigue en 54 px y la hoja en 438 (R83).
+
 ## Alternativas descartadas
 
 - **Que cada sección publique su línea por el EventBus.** Obliga a cinco dominios a emitir algo que hoy no emiten para un solo consumidor.
