@@ -300,7 +300,7 @@ export function renderFormIngreso(ingreso = null) {
         <p class="form-hint form-hint--muted">Opcional. ¿Qué día sueles recibir este pago?</p>
       </div>
       ${_renderGrupoCuentaIngreso(ingreso)}
-      <div class="modal__footer">
+      <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">${ingreso ? 'Actualizar' : 'Guardar'}</button>
       </div>
@@ -448,7 +448,7 @@ export function renderFormIngresoPuntual() {
         <input id="ingreso-p-fecha" name="fecha" class="input" type="date"
                required aria-required="true" />
       </div>
-      <div class="modal__footer">
+      <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">Guardar ingreso</button>
       </div>

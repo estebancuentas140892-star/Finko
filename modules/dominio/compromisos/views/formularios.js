@@ -246,7 +246,7 @@ export function renderFormAbono(deuda) {
         Cada abono, grande o pequeño, es un paso real hacia quedar libre de esta deuda.
       </p>
 
-      <div class="modal__footer">
+      <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">Registrar abono</button>
       </div>

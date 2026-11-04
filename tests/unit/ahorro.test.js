@@ -1033,7 +1033,7 @@ describe('DIS.12 - formulario del fondo (A3)', () => {
 
   it('al editar, Cancelar vuelve a su sitio en el pie del formulario', () => {
     const html = renderFormFondo({ editando: true, ...opts });
-    expect(html).toMatch(/<div class="modal__footer">[\s\S]*data-action="modal-close"[\s\S]*Cancelar/);
+    expect(html).toMatch(/<div class="modal__footer[^"]*">[\s\S]*data-action="modal-close"[\s\S]*Cancelar/);
   });
 
   it('al editar, desactivar baja a su propia fila y viste btn-danger', () => {

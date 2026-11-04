@@ -273,7 +273,7 @@ body:has(#quien-usa[data-open]) .logro-toast { display: none; }
 .mas-sheet__handle {
   display: block;
   flex-shrink: 0;
-  width: 38px;
+  width: 40px;
   height: 4px;
   border-radius: var(--fk-radius-full);
   background: var(--fk-border-default);

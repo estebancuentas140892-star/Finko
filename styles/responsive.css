@@ -2686,6 +2686,9 @@
     padding: var(--fk-space-3) var(--fk-space-6) calc(var(--fk-space-3) + env(safe-area-inset-bottom, 0px));
     background: var(--fk-bg-surface);
   }
+  /* ADR 123 D1: un pie con una fila debajo ("Desactivar fondo", DIS.12) no
+     se come el margen inferior del cuerpo: esa fila le quedaría debajo. */
+  .modal__body .modal__footer--principal:not(:last-child) { margin-bottom: 0; }
   #form-gasto .chip-cat {
     min-height: 56px;
     gap: var(--fk-space-1);
@@ -2709,6 +2712,36 @@
   @media (max-width: 480px) {
     html[data-teclado] .modal-overlay[data-open]:not(.leccion-overlay) .modal {
       max-height: var(--fk-vv-alto);
+    }
+  }
+
+  /* ── ADR 123 D1: la hoja de formulario completa (tablero 3) ────────────
+     Donde el modal es hoja (bajo 481 px): agarradera arriba de toda hoja que
+     se cierra, cabecera de 60 px con la teja, el título y la ✕ de 44, y alto
+     máximo del 94 % sin meterse bajo la barra de estado. La agarradera usa el
+     `::before` que en tableta y escritorio es la franja del dominio (ADR 031
+     IV.2b): en la hoja, el dominio lo dice la teja. Las hojas que ya traen su
+     `.mas-sheet__handle` no reciben otra; las bloqueantes (bienvenida, PIN) y
+     la lección no se arrastran y no la llevan. Con el teclado abierto manda
+     el alto del bloque de arriba (ADR 115). */
+  @media (max-width: 480px) {
+    .modal-overlay:not(.leccion-overlay) > .modal {
+      max-height: calc(94dvh - env(safe-area-inset-top, 0px));
+    }
+    .modal-overlay:not(.leccion-overlay) > .modal:not(.modal--onboarding):not(:has(> .mas-sheet__handle))::before {
+      content: '';
+      position: static;
+      display: block;
+      flex: none;
+      width: 40px;
+      height: 4px;
+      border-radius: var(--fk-radius-full);
+      background: var(--fk-border-default);
+      margin: var(--fk-space-2) auto 0;
+    }
+    .modal__header {
+      min-height: 60px;
+      padding: var(--fk-space-2) var(--fk-space-2) var(--fk-space-2) var(--fk-space-5);
     }
   }
 

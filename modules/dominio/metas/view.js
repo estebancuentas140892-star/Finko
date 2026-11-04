@@ -429,7 +429,7 @@ export function renderFormAbonoMeta(meta) {
         ${hintPrefill}
       </div>
       ${cuentaHtml}
-      <div class="modal__footer">
+      <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">Registrar aporte</button>
       </div>
@@ -497,7 +497,7 @@ export function renderFormMeta(meta = null) {
                value="${_esc(meta?.nota ?? '')}" />
         <p class="form-hint">Se muestra junto a la meta en el asistente de "Distribuir mi ingreso".</p>
       </div>
-      <div class="modal__footer">
+      <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">${botonTexto}</button>
       </div>

@@ -734,7 +734,7 @@ export function renderFormAporteApartado(apartado, sugerencia = null) {
         ${hintPrefill}
       </div>
       ${cuentaHtml}
-      <div class="modal__footer">
+      <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">Registrar aporte</button>
       </div>

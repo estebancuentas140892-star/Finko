@@ -484,7 +484,7 @@ export function renderFormInversion({ fechaInicio, inversion = null }) {
 
       ${inversion ? _renderOrigenEditable(inversion) : _renderOrigen(fechaInicio)}
 
-      <div class="modal__footer">
+      <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">${botonTexto}</button>
       </div>

@@ -36,7 +36,9 @@
 .chip-success { background: var(--fk-success-bg); color: var(--fk-success-text); border-color: color-mix(in srgb, var(--fk-success) 20%, transparent); }
 .chip-warning { background: var(--fk-warning-bg); color: var(--fk-warning-text); border-color: color-mix(in srgb, var(--fk-warning) 20%, transparent); }
 .chip-danger  { background: var(--fk-danger-bg);  color: var(--fk-danger-text);  border-color: color-mix(in srgb, var(--fk-danger)  20%, transparent); }
-.chip-info    { background: var(--fk-info-bg);    color: var(--fk-info-text);    border-color: color-mix(in srgb, var(--fk-info)    20%, transparent); }
+/* ADR 123 D3: el azul sobre su tinte medía 4,42:1 en oscuro; la receta de
+   `.btn-dominio` (20 % del texto principal) lo sube sobre AA en los dos temas. */
+.chip-info    { background: var(--fk-info-bg);    color: color-mix(in srgb, var(--fk-info-text) 80%, var(--fk-text-primary)); border-color: color-mix(in srgb, var(--fk-info)    20%, transparent); }
 .chip-accent  { background: var(--fk-accent-subtle); color: var(--fk-text-accent); border-color: var(--fk-accent-border); }
 
 /* Badge (número) */

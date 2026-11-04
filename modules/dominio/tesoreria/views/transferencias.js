@@ -165,7 +165,7 @@ export function renderFormTransferencia() {
         <input id="transferencia-nota" name="nota" type="text" class="input"
                placeholder="Ej. arriendo, ahorro del mes" />
       </div>
-      <div class="modal__footer">
+      <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">Transferir</button>
       </div>

@@ -24,9 +24,13 @@ export function observarTrap(fn) {
 }
 
 /** Selector de todos los elementos interactivos dentro de un contenedor. */
+// `a[href]` y no `[href]`: el `<use href>` de cada ícono SVG también tiene
+// href, y el de la teja del título (ADR 123) quedaba primero; el foco de
+// apertura caía en un dibujo que no lo recibe y se perdía en <body>.
 const FOCUSABLE_SELECTOR = [
   'button:not([disabled])',
-  '[href]',
+  'a[href]',
+  'area[href]',
   'input:not([disabled])',
   'select:not([disabled])',
   'textarea:not([disabled])',

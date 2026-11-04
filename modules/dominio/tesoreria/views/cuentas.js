@@ -527,7 +527,7 @@ export function renderFormCuenta() {
         </p>
       </fieldset>
 
-      <div class="modal__footer">
+      <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">
           Cancelar
         </button>

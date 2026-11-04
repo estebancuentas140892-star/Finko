@@ -1012,7 +1012,7 @@ export function renderFormFondo({ editando, metaMeses, montoActual, gastosFijosM
 
       ${previewHtml}
 
-      <div class="modal__footer">
+      <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">${editando ? 'Guardar cambios' : 'Activar fondo'}</button>
       </div>
@@ -1062,7 +1062,7 @@ export function renderFormAporte({ fecha, sugerencia = null }) {
                autocomplete="off" />
       </div>
 
-      <div class="modal__footer">
+      <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">Guardar aporte</button>
       </div>
@@ -1113,7 +1113,7 @@ export function renderFormCompromisoMensual(compromisoMensual, sugerencia = null
       ${inputIngresoHtml}
       ${cajaHtml}
 
-      <div class="modal__footer">
+      <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">Guardar</button>
       </div>

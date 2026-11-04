@@ -351,12 +351,13 @@ button.chip:hover:not(.chip--active) {
   border-color: var(--fk-border-strong);
 }
 
-/* Mismo patrón que .btn-primary: texto oscuro sobre acento (AA);
-   antes usaba blanco sobre esmeralda, que no alcanzaba contraste. */
+/* Mismo patrón que .btn-primary, con sus mismos colores: en oscuro, texto
+   oscuro sobre el acento; en claro, blanco sobre el verde profundo del botón.
+   ADR 123 D3: con el acento crudo, el blanco del tema claro medía 2,71:1. */
 .chip--active {
-  background: var(--fk-accent);
-  border-color: var(--fk-accent);
-  color: var(--fk-text-on-accent);
+  background: var(--fk-btn-primary-bg);
+  border-color: var(--fk-btn-primary-bg);
+  color: var(--fk-btn-primary-text);
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -915,7 +916,8 @@ button.chip:focus-visible {
   border-radius: var(--fk-radius-md);
   border: 1.5px solid color-mix(in srgb, var(--fk-dom-metas) 40%, transparent);
   background: var(--fk-dom-metas-bg);
-  color: var(--fk-dom-metas-text);
+  /* ADR 123 D3: misma receta que `.btn-dominio` (4,25:1 con el -text solo). */
+  color: color-mix(in srgb, var(--fk-dom-metas-text) 80%, var(--fk-text-primary));
   font-size: var(--fk-text-sm);
   font-weight: var(--fk-font-semibold);
   font-family: inherit;

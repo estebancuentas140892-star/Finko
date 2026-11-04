@@ -101,15 +101,20 @@
     background-color var(--fk-transition-fast),
     border-color var(--fk-transition-fast);
 }
+/* ADR 123 D3: el `-text` del dominio está calibrado contra la superficie, no
+   contra su propio tinte; sobre el 12 % la frambuesa medía 4,2:1 en claro y
+   4,33:1 en oscuro. Un 20 % del texto principal lo lleva sobre AA en los dos
+   temas sin que deje de leerse como su sección. */
 .btn-dominio[data-dom] {
+  --btn-dom-tinta: color-mix(in srgb, var(--btn-dom-text) 80%, var(--fk-text-primary));
   border: 1.5px solid color-mix(in srgb, var(--btn-dom) 40%, transparent);
   background: color-mix(in srgb, var(--btn-dom) 12%, transparent);
-  color: var(--btn-dom-text);
+  color: var(--btn-dom-tinta);
 }
 .btn-dominio[data-dom]:hover:not(:disabled) {
   border-color: color-mix(in srgb, var(--btn-dom) 60%, transparent);
   background: color-mix(in srgb, var(--btn-dom) 20%, transparent);
-  color: var(--btn-dom-text);
+  color: var(--btn-dom-tinta);
 }
 .btn-dominio--bloque { width: 100%; }
 .btn-dominio[data-dom="ahorro"]      { --btn-dom: var(--fk-dom-ahorro);      --btn-dom-text: var(--fk-dom-ahorro-text); }

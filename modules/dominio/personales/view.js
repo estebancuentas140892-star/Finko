@@ -479,7 +479,7 @@ export function renderFormPersonal({ prestamo = null } = {}) {
         <p class="form-hint">Si pasa esta fecha, el préstamo se marca como vencido.</p>
       </div>
 
-      <div class="modal__footer">
+      <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">${botonTexto}</button>
       </div>
@@ -559,7 +559,7 @@ export function renderFormPagoPersonal(prestamo) {
         <p class="form-hint">El valor que aparece es todo lo que falta por cobrar. Si solo te pagaron una parte, puedes cambiarlo.${hintInteres}</p>
       </div>
       ${cuentaHtml}
-      <div class="modal__footer">
+      <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">Registrar pago</button>
       </div>

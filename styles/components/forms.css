@@ -552,7 +552,8 @@ form:not(.config-form) .form-group:not(:first-child) {
 }
 
 /* Campo con error de validacion: borde rojo + tinte sutil. Aplicado por
-   form-errors.js al input cuyo nombre matchea el primer mensaje de error. */
+   form-errors.js a cada campo cuyo nombre reconoce en un mensaje de error
+   (ADR 123 D2). */
 .field-invalid,
 .input.field-invalid {
   border-color: var(--fk-danger) !important;
@@ -580,10 +581,11 @@ form:not(.config-form) .form-group:not(:first-child) {
   animation: form-errors-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 .form-errors__icon {
-  font-size: 1.2rem;
-  line-height: 1.2;
+  display: flex;
   flex-shrink: 0;
+  color: var(--fk-danger-text);
 }
+.form-errors__icon .icon { --fk-icon-size: var(--fk-icon-md); }
 .form-errors__content {
   flex: 1;
   min-width: 0;
@@ -593,6 +595,7 @@ form:not(.config-form) .form-group:not(:first-child) {
   font-weight: var(--fk-font-semibold);
   color: var(--fk-text-primary);
 }
+.form-errors__title:last-child { margin-bottom: 0; }
 .form-errors__list {
   margin: 0;
   padding: 0 0 0 var(--fk-space-4);
@@ -605,6 +608,22 @@ form:not(.config-form) .form-group:not(:first-child) {
 .form-errors__list li + li {
   margin-top: var(--fk-space-1);
 }
+/* ADR 123 D2 (tablero 3, C3): el error de cada campo va debajo del campo,
+   con el ícono de alerta y texto visible. form-errors.js lo agrega al final
+   del grupo del campo y lo quita al volver a escribir. */
+.form-error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fk-space-1);
+  margin: var(--fk-space-2) 0 0;
+  color: var(--fk-danger-text);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-medium);
+  line-height: var(--fk-leading-snug);
+}
+.form-group > .form-error { margin-top: 0; }
+.monto-hero > .form-error { justify-content: center; }
+.form-error > .icon { --fk-icon-size: var(--fk-icon-sm); flex: none; }
 @keyframes form-errors-in {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }

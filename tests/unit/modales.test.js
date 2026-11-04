@@ -138,3 +138,22 @@ describe('resetModal', () => {
     expect(check.checked).toBe(false);
   });
 });
+
+describe('abrirModal() - el foco no cae en el ícono de la teja (ADR 123)', () => {
+  it('el <use href> de un SVG no cuenta como enfocable: el foco va a la ✕', () => {
+    document.body.innerHTML = `
+      <div class="app-shell"><button id="abridor">Abrir</button></div>
+      <div class="modal-overlay" id="modal-teja" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="modal">
+          <header class="modal__header">
+            <span class="modal__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-metas"/></svg></span>
+            <h2 class="modal__title">Nueva meta</h2>
+            <button class="modal__close" data-action="modal-close" aria-label="Cerrar">x</button>
+          </header>
+          <div class="modal__body"><input id="campo" type="text" /></div>
+        </div>
+      </div>`;
+    abrirModal(document.getElementById('modal-teja'));
+    expect(document.activeElement?.classList.contains('modal__close')).toBe(true);
+  });
+});
