@@ -2743,6 +2743,14 @@
       min-height: 60px;
       padding: var(--fk-space-2) var(--fk-space-2) var(--fk-space-2) var(--fk-space-5);
     }
+    /* MV2.28 (d): el pie que va fuera del cuerpo (los diálogos cortos:
+       confirmar, "¿Desde qué cuenta?", novedades, la contraseña del respaldo,
+       instalar en el iPhone) queda contra el borde inferior: suma el margen
+       seguro, como ya lo hacen los pies fijos. Las hojas `--sheet` lo llevan
+       en su propio padding y no lo duplican. */
+    .modal:not(.modal--sheet) > .modal__footer {
+      padding-bottom: calc(var(--fk-space-4) + env(safe-area-inset-bottom, 0px));
+    }
   }
 
   /* ── ADR 110 D2 (MV2.19a): el pie del asistente de distribución ────────

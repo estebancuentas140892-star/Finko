@@ -29,6 +29,8 @@ Bajo 481 px, donde el modal es hoja:
 
 Los dieciséis formularios de dominio sin teja la reciben, con el ícono de su sección. Los catorce pies que no eran fijos pasan a `modal__footer--principal`: fijos al borde de la hoja y con el margen seguro inferior.
 
+**Adenda (2026-11-04, MV2.28 d):** los diálogos cortos con el pie fuera del cuerpo (confirmar, "¿Desde qué cuenta?", novedades, la contraseña del respaldo, instalar en el iPhone) también suman `env(safe-area-inset-bottom)` a su pie. Se había quedado fuera: a 390 px, con el margen de 34 px de un iPhone sin botón de inicio, el botón terminaba sobre la barra de inicio.
+
 ### D2. Los errores, debajo de su campo
 
 `mostrarErroresForm()` escribe cada error que reconoce bajo su campo, con el ícono de alerta y el texto en el rojo de texto del tema, y marca el campo con `aria-invalid` y `aria-describedby`. Arriba queda una línea que cuenta: "Revisa el campo marcado." o "Revisa los 3 campos marcados.". Un error que no se puede atar a un campo sigue en la lista de arriba, como antes. El foco va al primer campo marcado y `announce()` sigue diciendo el primer error. Todo se limpia al volver a escribir.

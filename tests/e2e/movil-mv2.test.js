@@ -381,6 +381,30 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     expect(altas, altas.join(', ')).toEqual([]);
   });
 
+  test('el pie de un diálogo corto deja el margen seguro del iPhone (tablero 3, MV2.28 d)', async ({ page }) => {
+    // El margen inferior de un iPhone sin botón de inicio, simulado por CDP.
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Emulation.setSafeAreaInsetsOverride', { insets: { bottom: 34 } });
+    await sembrar(page, estadoBase({ cuentas: CUENTAS }));
+    await page.goto('/#dash');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+    // Confirmar es el diálogo corto más usado: su pie va fuera del cuerpo.
+    await page.evaluate(() => import('/modules/ui/confirm.js').then((m) => {
+      m.confirmar({ titulo: '¿Borrar este gasto?', mensaje: 'Vuelve a la cuenta.', confirmarTexto: 'Borrar', peligroso: true });
+    }));
+    const dialogo = page.locator('body > .modal-overlay[data-open]:not([id])');
+    const pie = dialogo.locator('.modal > .modal__footer');
+    await expect(pie).toBeVisible();
+    // Los 16 px del pie más los 34 del margen.
+    expect(await pie.evaluate(el => getComputedStyle(el).paddingBottom)).toBe('50px');
+    // Con la hoja ya quieta, el botón termina por encima de la barra de inicio.
+    const boton = dialogo.locator('[data-role="confirmar"]');
+    await expect.poll(async () => {
+      const b = await boton.boundingBox();
+      return b ? Math.round(b.y + b.height) : Infinity;
+    }).toBeLessThanOrEqual(844 - 34);
+  });
+
   test('el ojo va en el encabezado de toda pantalla con montos (ADR 106 D3)', async ({ page }) => {
     await seedConTipos(page);
     await page.goto('/#movimientos');
