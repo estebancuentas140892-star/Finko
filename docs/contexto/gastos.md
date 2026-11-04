@@ -53,6 +53,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-04 (**MV2.3 segunda pasada**, [ADR 122](../DECISIONS/122-lo-que-faltaba-del-canvas-segunda-pasada.md) D5): con una categoría filtrada, `_lecturaFiltro()` escribe bajo el total "N gastos · tu límite es $X" (el límite sale de `presupuestosActivos()`; sin límite, solo la cuenta). El ojo tapa el monto.
 - 2026-11-04 (**MV2.3 tanda 4**, [ADR 119](../DECISIONS/119-plan-de-salida-en-hoja-y-el-detalle-del-gasto.md) D2, acota el ADR 098 D4): la fila abre `gasto-detalle` y la hoja la arma `gastos/detalle.js` (`htmlDetalleGasto`, `cuandoGasto`): cuenta, nota, categoría, la línea del límite del mes del gasto (`calcularProgreso` de Límites, ADR 060), "Repetir hoy" y "Editar", "Los N gastos de X en {mes}" (`gasto-ver-categoria` → `movimientos:ver` con categoría y mes) y "Borrar este gasto" con lo que vuelve a la cuenta (`deltasPorEdicionDeGasto`). Movimientos conserva la hoja genérica.
 - 2026-10-29 (MV2.1, [ADR 098](../DECISIONS/098-finko-movil-2-primera-entrega.md)): en móvil la fila es una línea con hoja de detalle (`ui/detalle-fila.js`), las categorías se pliegan con "+N" (cambia DIS.4/G3; `alternarFiltrosGastos()`), y la cabecera del bloque trae lupa y primario espejo. Escritorio igual.
 - 2026-10-25 (APR.3e): categoría nativa **Familia** (`c-familia`, sale del selector de íconos personalizados) y `gasto:registrar`, el gasto que otro dominio ya decidió (mesada, premio del niño): se guarda con `origen` y descuenta su cuenta sin preguntar. Ver [`nino.md`](nino.md).

@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-11-03.
+> Revisado: 2026-11-04.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,29 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-11)
+
+### feat(movil): MV2.3 segunda pasada, la hoja de formulario completa · 2026-11-04
+
+[ADR 123](DECISIONS/123-la-hoja-de-formulario-completa.md) (tablero 3, "Hojas y formularios"; tablero 12, contraste). Cierra la segunda pasada: las 12 propuestas que la segunda auditoría encontró quedan aplicadas. **Acota** el ADR 031: en la hoja del teléfono la franja de color cede su lugar a la agarradera. SW v655.
+
+- **La hoja completa** (bajo 481 px): agarradera arriba de toda hoja que se cierra, cabecera de 60 px con la teja, el título y la ✕ de 44, y alto del 94 % sin meterse bajo la barra de estado. Los 16 formularios de dominio sin teja la reciben con el ícono de su sección y los 14 pies que no eran fijos pasan a `modal__footer--principal` (fijos y con el margen seguro inferior).
+- **Errores bajo su campo**: cada error se escribe debajo del campo que nombra, con el ícono de alerta, y el campo queda con `aria-invalid` y `aria-describedby`; arriba, "Revisa los 2 campos marcados.". Una tabla (`_CAMPOS`) reconoce el campo aunque cada formulario lo llame distinto ("monto objetivo", "fecha pactada", "nombre de la persona"). El ⚠️ se retira.
+- **Contraste AA en los dos temas**: la prueba nueva encontró cinco piezas bajo AA y se corrigen: el filtro activo en claro (2,71:1) toma los colores del botón primario; "Abonar", "Marcar pagado", "Aportar" y el chip informativo suben con un 20 % del texto principal.
+- **El foco de apertura**: `trapFocus()` tomaba el `<use href>` de la teja como enfocable y el foco se perdía en `<body>` (ya pasaba en los cinco formularios con teja); el selector pasa a `a[href]`. Un pie fijo con "Desactivar fondo" debajo conserva su margen para no taparla.
+- Pruebas: 9 unitarias nuevas en `form-errors.test.js`, 1 en `modales.test.js` y 1 ajustada en `ahorro.test.js`; E2E nueva `contraste.test.js` (4: secciones y un formulario con errores, en oscuro y claro). Unitarios 5297/5297, E2E 438/438.
+
+### feat(movil): MV2.3 segunda pasada, lo que faltaba del canvas · 2026-11-04
+
+[ADR 122](DECISIONS/122-lo-que-faltaba-del-canvas-segunda-pasada.md). Una segunda auditoría de los 13 tableros encontró 12 propuestas sin hacer o a medias; esta tanda cubre las puntuales. Bajo 1024 px salvo donde se dice. SW v654.
+
+- **Metas**: el divisor dice "Con plazo · la más cercana primero".
+- **Inicio**: a 320 se corta el saludo, no el nombre, que baja de línea.
+- **Por pagar**: los cuatro filtros son botones de igual ancho.
+- **Ningún filete lateral ni emoji de nivel**: la importación de CSV pasa a borde completo con el ícono de alerta, el reparto de Familia lleva el color del frasco en todo el borde y los avisos de Reservas y Ajustes usan el ícono del sistema (en todos los anchos).
+- **Gastos con filtro**: bajo el total, "2 gastos · tu límite es $250.000", o solo "2 gastos" si la categoría no tiene límite. El ojo tapa el monto.
+- **El conflicto de la nube, en Atención hoy**: tipo `nube-por-decidir` en el motor de avisos, severidad media y sin interruptor, con "Decidir" que lleva a Ajustes.
+- **Notificaciones bloqueadas**: aviso de atención con ícono, título y cómo volver a activarlas.
+- Pruebas: 5 unitarias nuevas (gastos, avisos, Atención hoy) y 1 ajustada en metas; E2E nuevas: la fila del título no pasa de 52 px a 320 en diez secciones, el saludo y los filtros a 320, y ninguna pieza visible con filete lateral en las 15 secciones. Unitarios 5287/5287, E2E 434/434, en árbol limpio.
 
 ### feat(movil): MV2.3 tanda 6, buscar, la nube en el avatar y las pruebas del canvas · 2026-11-04
 

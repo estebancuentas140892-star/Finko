@@ -55,6 +55,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-04 (MV2.3 segunda pasada, [ADR 122](../DECISIONS/122-lo-que-faltaba-del-canvas-segunda-pasada.md) D6): con `porDecidir` en la sesión, el motor de avisos emite `nube-por-decidir` (severidad media, sin interruptor) y Atención hoy lo muestra una vez con "Decidir", que lleva a Ajustes.
 - 2026-11-04 (MV2.3 tanda 6, [ADR 121](../DECISIONS/121-buscar-la-nube-en-el-avatar-y-las-pruebas-del-canvas.md) D2): `config/nube.js` anota el estado de la sincronización en `infra/nube.js` (`anotarEstadoSync`, `estadoSync`) y la fila "Copia en la nube" de la hoja del avatar lo dice (`textoNube`): sin conexión, cambios por subir o "En la nube hace 2 min". Ajustes pasa de "Sincronizado hace..." a "En la nube hace...". `haceCuanto` sube a infra.
 - 2026-10-28 (PERF.11): la pasada sin guardados de por medio ya no huella el estado entero (27,4 → 6,5 ms con 3.000 gastos, en Node).
 - 2026-10-28 (NUBE.3): el teléfono del niño se vincula con un código de un solo uso del padre, sincroniza solo su perfil, y el perfil viaja partido por dueño.

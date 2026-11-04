@@ -63,6 +63,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-04 (**MV2.3 segunda pasada**, [ADR 122](../DECISIONS/122-lo-que-faltaba-del-canvas-segunda-pasada.md) D1): el divisor dice "Con plazo · la más cercana primero" (R89a). "Aportar" sube a AA con un 20 % del texto principal ([ADR 123](../DECISIONS/123-la-hoja-de-formulario-completa.md) D3).
 - 2026-08-21 (**MOV.1 ficha 09**, [ADR 082](../DECISIONS/082-metas-cabeza-orden-y-un-final-que-pesa-poco.md)): `ordenarMetasPorPlazo()` y `resumenMetas()` nuevas en `logic.js` (la primera envuelve `ordenarBolsasPorFecha()` de `infra/bolsas.js`, que también consume `destinosAporte()` de `ui/registrar.js`); `renderListaMetas()` emite franja, divisores y `_renderFilaCumplida()`; `.hero-metas` y `.meta-fila` nuevas en `domain.css` y `.metas-cumplidas__label` se retira. Commit `c88ad32`.
 
 - 2026-08-12 (MT.6d): el plan de aportes se ve en Calendario. `eventosMetasDelMes()` (`agenda/logic.js`) filtra `Meta.planAportes` a los días del mes visible; tipo `'meta'` nuevo en la grilla, leyenda y detalle del día, excluido de `totalDia`/`totalesDelMes` (recordatorio, no obligación con un tercero). El CTA "Aportar" del detalle reutiliza `data-action="abonar-meta"`. Color propio `--fk-dom-metas` en dot/ícono/item. Cierra la iniciativa MT.6 completa. Commit `3e75151`.
