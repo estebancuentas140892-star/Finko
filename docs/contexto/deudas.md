@@ -44,10 +44,11 @@
 
 **Cambios realizados**:
 
+- 2026-11-04 (**MV2.3 tanda 4**, ADR 119 D1): en el teléfono el simulador vive en `#modal-plan-salida` (`_ubicarEstrategia()` lo muda y lo devuelve a `#estrategia-pago-sitio` desde 1024px); al pie, `renderEntradaPlanSalida()`.
 - 2026-11-03 (**MV2.3 tanda 2**, ADR 117): bajo 1024px la lista va por urgencia y en filas; editar y eliminar pasan a la hoja de detalle.
 - 2026-10-17 (**HF.0d**, BUG-031): el chip fecha por frecuencia.
 - 2026-08-21 (**MOV.1 ficha 08**, [ADR 081](../DECISIONS/081-calendario-la-forma-del-mes-entradas-incluidas.md) D3): la lista, sus dos grupos y la tarjeta del lote toman su mes de `prefijoMesBloque()`. La sección registra su render en `renderAll()` y en `state:change` de `gastos`: el "Marcar pagado" del fijo vive acá desde ahora y pagarlo no toca `compromisos`. Commit `ace1a45`.
-- 2026-08-20 (ADR 080 D6, dentro de la ficha 06): los cuatro chips de la lente, que eran deuda de la ficha 05. Siguen pendientes de la 05 la fila de altas por grupo visible y el pie de saldo con "Ver plan de salida".
+- 2026-08-20 (ADR 080 D6, dentro de la ficha 06): los cuatro chips de la lente, que eran deuda de la ficha 05. Sigue pendiente de la 05 la fila de altas por grupo visible; "Ver plan de salida" lo hizo el ADR 119.
 - 2026-08-18 (**ficha 05 de la auditoría móvil**): ver arriba.
 
 ---

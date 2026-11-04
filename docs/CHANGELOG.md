@@ -12,6 +12,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(movil): MV2.3 tanda 4, el plan de salida en hoja y el detalle del gasto · 2026-11-04
+
+[ADR 119](DECISIONS/119-plan-de-salida-en-hoja-y-el-detalle-del-gasto.md) (cierra la deuda de la ficha 05 y MV2.14; acota el ADR 098 D4 para los gastos). Bajo 1024 px; escritorio sin cambios. SW v651.
+
+- **"¿Cómo salir más rápido?" al pie de Por pagar**: con dos o más deudas, una tarjeta dice qué compara y que nada cambia hasta confirmar; "Ver plan" abre `#modal-plan-salida` con el simulador de siempre. `#estrategia-pago` se muda a la hoja en el teléfono y vuelve a su sitio desde 1024 px: una sola copia, porque sus campos guardan el estado de la simulación.
+- **La hoja del gasto con datos propios** (`gastos/detalle.js`): de qué cuenta salió, la nota y la categoría en filas; cómo va el límite de la categoría en el mes del gasto, con "Ver límite"; "Repetir hoy" y "Editar"; "Los N gastos de X en {mes}", que abre Movimientos con la categoría y el mes puestos; y "Borrar este gasto" con lo que vuelve a la cuenta. El ojo tapa los montos. Movimientos y Mis cuentas conservan la hoja que copia la fila.
+- Pruebas: 11 unitarias en `gastos-detalle.test.js`, 2 en `compromisos.test.js` y 1 ajustada en `detalle-fila.test.js`; 2 E2E nuevas y 2 ajustadas en `movil-mv2.test.js`.
+
 ### feat(movil): MV2.3 tanda 3, el día en hoja y las hojas se cierran de tres formas · 2026-11-03
 
 [ADR 118](DECISIONS/118-el-dia-en-hoja-y-las-hojas-se-cierran-de-tres-formas.md) (acota el ADR 111 y CAL.3 bajo 1024 px; aplica RN3, RN8 y R46). Escritorio sin cambios. SW v650.

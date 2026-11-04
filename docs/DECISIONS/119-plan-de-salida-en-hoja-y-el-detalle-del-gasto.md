@@ -1,7 +1,7 @@
 # ADR 119 - El plan de salida en hoja y el detalle del gasto
 
-**Estado:** Aceptada (2026-11-03). Cuarta tanda de la tarjeta **MV2.3**. Esteban decidió aplicar el canvas "tal cual como propone el HTML", también donde acota decisiones aprobadas.
-**Fecha:** 2026-11-03
+**Estado:** Aceptada (2026-11-04). Cuarta tanda de la tarjeta **MV2.3**. Esteban decidió aplicar el canvas "tal cual como propone el HTML", también donde acota decisiones aprobadas.
+**Fecha:** 2026-11-04
 **Autores:** Esteban (diseño y decisión), Claude Opus 5.5 (implementación y redacción)
 **Relación:** sigue al [ADR 118](118-el-dia-en-hoja-y-las-hojas-se-cierran-de-tres-formas.md). **Cierra** la deuda de la ficha 05 ("Ver plan de salida" al pie de Por pagar) y la pieza MV2.14 del canvas. **Acota** el [ADR 098](098-finko-movil-2-primera-entrega.md) D4 para los gastos: su hoja deja de copiar la fila y trae datos propios. Solo bajo 1024 px; escritorio no cambia ([ADR 073](073-deudas-inventario-con-su-herramienta-al-lado.md)). **Aplica** la regla 1 del [ADR 060](060-lectura-cross-domain-de-solo-lectura.md): Gastos lee el cálculo del límite de `presupuesto/logic.js`.
 
