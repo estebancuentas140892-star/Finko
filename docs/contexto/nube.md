@@ -1,6 +1,6 @@
 # Ficha de contexto: Nube (cuenta, sincronización y familia)
 
-> Revisado: 2026-10-28.
+> Revisado: 2026-11-04.
 
 > La cuenta opcional y el respaldo en Supabase. Decisiones: [ADR 096](../DECISIONS/096-finko-en-la-nube-con-supabase.md). Tarjetas: iniciativa NUBE en [`board/transversal.md`](../board/transversal.md). Reglas de seguridad: [SECURITY.md](../SECURITY.md) sección 8. Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -55,6 +55,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-04 (MV2.3 tanda 6, [ADR 121](../DECISIONS/121-buscar-la-nube-en-el-avatar-y-las-pruebas-del-canvas.md) D2): `config/nube.js` anota el estado de la sincronización en `infra/nube.js` (`anotarEstadoSync`, `estadoSync`) y la fila "Copia en la nube" de la hoja del avatar lo dice (`textoNube`): sin conexión, cambios por subir o "En la nube hace 2 min". Ajustes pasa de "Sincronizado hace..." a "En la nube hace...". `haceCuanto` sube a infra.
 - 2026-10-28 (PERF.11): la pasada sin guardados de por medio ya no huella el estado entero (27,4 → 6,5 ms con 3.000 gastos, en Node).
 - 2026-10-28 (NUBE.3): el teléfono del niño se vincula con un código de un solo uso del padre, sincroniza solo su perfil, y el perfil viaja partido por dueño.
 - 2026-10-28 (NUBE.2b): borrar la cuenta completa con `borrar_mi_cuenta()`, función de base sin clave secreta; en el dispositivo quedan los datos y se olvida la autorización.

@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(movil): MV2.3 tanda 6, buscar, la nube en el avatar y las pruebas del canvas · 2026-11-04
+
+[ADR 121](DECISIONS/121-buscar-la-nube-en-el-avatar-y-las-pruebas-del-canvas.md) (recorrido 7 del canvas; reglas de carga, conexión y sincronización del tablero 3; verificaciones del tablero 6). **Cierra la tarjeta MV2.3**: las 22 propuestas del canvas que la auditoría encontró sin hacer quedan aplicadas en seis tandas (ADR 116 a 121). SW v653.
+
+- **Buscar en Movimientos**: con el campo vacío y con el foco, "Buscaste antes" (las cinco últimas búsquedas confirmadas con resultados, en `S.config.busquedasRecientes`), "Por categoría" (las cuatro más usadas y "Todas…") y "Por tipo y cuenta". Con texto, "N resultados · $X en todo tu historial". Cada mes con su total neto, y el año solo si no es el actual; la fila dice "Mar 27 · Restaurantes · Nequi".
+- **La nube en la hoja del avatar**: "Sin conexión · tus cambios quedan en este teléfono y se envían al volver", "Hay cambios por subir" o "En la nube hace 2 min"; sin cuenta, la invitación de siempre. Ajustes dice "En la nube hace..." en vez de "Sincronizado hace...".
+- **Filas de espera**: con 1.500 movimientos o más, al llegar a Movimientos se ven filas del alto de las reales mientras se arma la lista. Quietas: el catálogo de animación prohíbe los bucles.
+- **Las pruebas del plan**: `reflow-320.test.js` recorre las 15 secciones en seis anchos (320 × 568 a 430) con cuatro semillas (`helpers/semillas.js`: vacía, poca, normal y la de PERF.0), y `zonas-tactiles.test.js` mide a 390 que ningún control quede bajo 44 px y ninguna barra esconda opciones. La prueba encontró seis controles chicos: los botones `.btn-sm` suben a 44 en el teléfono, y el atajo de la franja de Límites, "Elegir fecha" de una meta y el historial de abonos de Me deben ganan la zona de los enlaces (ADR 116 D7).
+- Pruebas: 6 unitarias en `movimientos-buscar.test.js`, 5 en `hoja-perfil.test.js` y 5 ajustadas en `movimientos.test.js`; E2E nuevas en `buscar.test.js` (4), `zonas-tactiles.test.js` (1) y 24 de reflujo. Unitarios 5282/5282, E2E 431/431.
+
 ### feat(movil): MV2.3 tanda 5, separador de miles en todos los campos de dinero · 2026-11-04
 
 [ADR 120](DECISIONS/120-separador-de-miles-en-todos-los-campos-de-dinero.md) (completa R16; aplica la regla 3 del ADR 060). En todos los anchos. SW v652.
