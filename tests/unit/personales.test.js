@@ -1331,7 +1331,7 @@ describe('renderFormPersonal({ prestamo }) - modo edición (EDIT.1)', () => {
   it('prellena persona, monto, fecha, motivo, fechaLimite y tasa', () => {
     document.body.innerHTML = `<div id="host">${renderFormPersonal({ prestamo })}</div>`;
     expect(document.getElementById('pers-persona').value).toBe('Tía Marta');
-    expect(document.getElementById('pers-monto').value).toBe('500000');
+    expect(document.getElementById('pers-monto').value).toBe('500.000'); // ADR 120: con separador de miles
     expect(document.getElementById('pers-fecha').value).toBe('2026-03-10');
     expect(document.getElementById('pers-motivo').value).toBe('mercado');
     expect(document.getElementById('pers-limite').value).toBe('2026-08-01');

@@ -79,7 +79,7 @@ test.describe('MC.13e-2f-2 - decision explicita del remanente', () => {
     // Reusa el Paso 2: la fila queda prellenada y a la vista para ajustarla,
     // sin ruta de apply nueva.
     await expect(fondo).toBeVisible();
-    await expect(fondo).toHaveValue('3000000'); // 600.000 del split + 2.400.000 del remanente
+    await expect(fondo).toHaveValue('3.000.000'); // 600.000 del split + 2.400.000 del remanente
     await expect(page.locator('#distribuir-resumen')).toContainText('Queda disponible en tu cuenta: $0');
 
     // Ya no queda nada sin asignar: la pregunta desaparece.

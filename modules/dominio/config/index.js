@@ -27,7 +27,7 @@ import {
 } from '../../infra/cripto-respaldo.js';
 import { pedirContrasenaRespaldo } from '../../ui/contrasena-respaldo.js';
 import { abrirModal } from '../../ui/modales.js';
-import { renderPanelConfig, renderModalFiscal, miles, desdeMiles, textoUltimoRespaldo, alternarFila } from './view.js';
+import { renderPanelConfig, renderModalFiscal, desdeMiles, textoUltimoRespaldo, alternarFila } from './view.js';
 import { gastosACSV } from '../export/logic.js';
 import { documentoLegalPorId, cargarDocumentoLegal, VERSION_LEGAL } from './legal.js';
 import { validarPin, crearBloqueo, verificarPin, limpiarFallos } from './bloqueo.js';
@@ -458,16 +458,7 @@ function _wireFormularioFiscal(root) {
     announce('Datos de renta guardados.');
   });
 
-  // Separador de miles mientras se escribe (B4/R16). El cursor queda al final:
-  // son campos que se teclean de izquierda a derecha una vez al año.
-  for (const campo of root.querySelectorAll('[data-miles]')) {
-    campo.addEventListener('input', () => {
-      const formateado = miles(campo.value);
-      if (formateado === campo.value) return;
-      campo.value = formateado;
-      campo.setSelectionRange(formateado.length, formateado.length);
-    });
-  }
+  // El separador de miles mientras se escribe lo pone `ui/miles.js` (ADR 120).
 }
 
 /**

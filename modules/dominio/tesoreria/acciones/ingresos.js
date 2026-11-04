@@ -7,6 +7,7 @@
  * - Coordina logic/ + views/ sin hacer calculos ni generar HTML aqui.
  */
 
+import { miles } from '../../../infra/miles.js';
 import { S, EventBus } from '../../../core/state.js';
 import { guardar, editar, eliminar } from '../../../infra/crud.js';
 import { registrarAccion } from '../../../ui/actions.js';
@@ -98,7 +99,7 @@ function _attachCategoriaToggle(form) {
   function _prellenarMonto() {
     if (!inputMonto) return;
     const frec = selFrec?.value || 'Mensual';
-    inputMonto.value = montoSalarioMinimoPorPeriodo(cbSubsidio.checked, frec);
+    inputMonto.value = miles(montoSalarioMinimoPorPeriodo(cbSubsidio.checked, frec));
   }
 
   function _syncCategoria() {

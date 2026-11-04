@@ -8,6 +8,7 @@
  * - Sin logica de negocio: delegar a logic/.
  */
 
+import { miles } from '../../../infra/miles.js';
 import { S } from '../../../core/state.js';
 import { f, esc as _esc, fechaLegible } from '../../../infra/utils.js';
 import { icon, iconoCategoria } from '../../../infra/icons.js';
@@ -401,8 +402,7 @@ function _filaDistribuir(d) {
             <input type="checkbox" data-dist-destino-toggle ${marcada ? 'checked' : ''} />
             <span>${_iconoDestino(d)} ${_esc(d.nombre)}${sub}${notaSub}</span>
           </label>
-          <input type="number" class="input distribuir__monto"
-                 min="0" step="10000" inputmode="numeric" value="${d.monto}"
+          <input type="text" class="input distribuir__monto" inputmode="numeric" data-miles autocomplete="off" value="${miles(d.monto)}"
                  aria-label="Monto para ${_esc(d.nombre)}" data-dist-nombre="${_esc(d.nombre)}"
                  data-dist-tipo="${_esc(d.tipo)}" data-dist-id="${_esc(d.id ?? '')}"${d.autoExcedente ? ' data-dist-auto="1"' : ''}
                  ${marcada ? '' : 'disabled'}
@@ -862,8 +862,7 @@ function _renderPanelDistribuir(d, { educacion = '', movil = false } = {}) {
           ${movil ? _renderQueSeReparte(d) : `
           <div class="form-group">
             <label for="distribuir-monto" class="label">Monto a distribuir (COP)</label>
-            <input id="distribuir-monto" type="number" class="input"
-                   min="0" step="10000" inputmode="numeric" value="${montoIngreso}"
+            <input id="distribuir-monto" type="text" class="input" inputmode="numeric" data-miles autocomplete="off" value="${miles(montoIngreso)}"
                    data-action="recalcular-distribucion" />
           </div>
           ${_seccionRecibido(d.cobroPendiente)}`}
@@ -1238,8 +1237,7 @@ function _renderQueSeReparte(d) {
           <div id="distribuir-cambiar" class="distribuir__cambiar"${abierto ? '' : ' hidden'}>
             <div class="form-group">
               <label for="distribuir-monto" class="label">Monto a distribuir (COP)</label>
-              <input id="distribuir-monto" type="number" class="input"
-                     min="0" step="10000" inputmode="numeric" value="${d.montoIngreso}"
+              <input id="distribuir-monto" type="text" class="input" inputmode="numeric" data-miles autocomplete="off" value="${miles(d.montoIngreso)}"
                      data-action="recalcular-distribucion" />
             </div>
             ${cuenta}

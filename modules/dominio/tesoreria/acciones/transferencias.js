@@ -10,6 +10,7 @@
  * - Coordina logic/ + views/ sin hacer calculos ni generar HTML aqui.
  */
 
+import { desdeMiles } from '../../../infra/miles.js';
 import { S } from '../../../core/state.js';
 import { guardar, editar, eliminar } from '../../../infra/crud.js';
 import { registrarAccion } from '../../../ui/actions.js';
@@ -70,7 +71,7 @@ function _actualizarHintGMF() {
   const hint = document.getElementById('transferencia-gmf-hint');
   if (!hint) return;
   const form = document.getElementById('form-transferencia');
-  const monto   = Number(form?.querySelector('[name="monto"]')?.value) || 0;
+  const monto   = desdeMiles(form?.querySelector('[name="monto"]')?.value) ?? 0;
   const aplicar = form?.querySelector('[name="aplicarGMF"]')?.checked;
 
   if (!aplicar) {

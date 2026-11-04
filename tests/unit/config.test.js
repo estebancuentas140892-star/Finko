@@ -304,7 +304,8 @@ describe('miles() y desdeMiles()', () => {
   it('descarta lo que no sea dígito y los ceros a la izquierda', () => {
     expect(miles('72.000.000')).toBe('72.000.000');
     expect(miles('$72,000,000')).toBe('72.000.000');
-    expect(miles('-500')).toBe('500');
+    // ADR 120: el signo se conserva (el saldo de una cuenta puede ser negativo).
+    expect(miles('-500')).toBe('-500');
     expect(miles('007')).toBe('7');
   });
 

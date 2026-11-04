@@ -153,8 +153,7 @@ export function renderFormTransferencia() {
       ${seccionCuentas}
       <div class="form-group">
         <label for="transferencia-monto" class="label">Monto a transferir (COP)</label>
-        <input id="transferencia-monto" name="monto" type="number" class="input"
-               min="0" step="10000" inputmode="numeric" required />
+        <input id="transferencia-monto" name="monto" type="text" class="input" inputmode="numeric" data-miles autocomplete="off" required />
       </div>
       <div id="transferencia-gmf-slot">${renderSeccionGMF(origenInicial)}</div>
       <div class="form-group">

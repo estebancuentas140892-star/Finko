@@ -11,6 +11,7 @@
  *   cambian compromisos (porque el objetivo del fondo depende de los gastos fijos).
  */
 
+import { miles, desdeMiles } from '../../infra/miles.js';
 import { S, EventBus }              from '../../core/state.js';
 import { save }                     from '../../core/storage.js';
 import { registrarAccion }          from '../../ui/actions.js';
@@ -435,7 +436,7 @@ function _editarCompromisoMensual() {
     inputIngreso.addEventListener('input', () => {
       const caja = document.getElementById('caja-sugerencia');
       if (!caja) return;
-      const val = Number(inputIngreso.value);
+      const val = desdeMiles(inputIngreso.value) ?? 0;
       const override = Number.isFinite(val) && val > 0 ? val : null;
       caja.innerHTML = renderCajaSugerencia(_construirSugerenciaAporte(override), frecuencia);
     });
@@ -452,7 +453,7 @@ function _usarAporteSugerido(el) {
   const monto = Number(el.dataset.monto);
   const input = document.getElementById('compromiso-monto');
   if (!input || !Number.isFinite(monto) || monto <= 0) return;
-  input.value = monto;
+  input.value = miles(monto);
   input.focus();
 }
 

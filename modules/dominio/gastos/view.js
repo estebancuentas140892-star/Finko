@@ -731,9 +731,8 @@ export function renderFormGasto({ sugerencias = true } = {}) {
         <label class="monto-hero__label" for="gasto-monto">Monto del gasto</label>
         <div class="monto-hero__box">
           <span class="monto-hero__prefijo" aria-hidden="true">$</span>
-          <input id="gasto-monto" name="monto" class="input input--big-amount" type="number"
-                 min="1" step="1000" placeholder="0" required aria-required="true"
-                 autocomplete="off" inputmode="numeric" />
+          <input id="gasto-monto" name="monto" class="input input--big-amount" type="text" placeholder="0" required aria-required="true"
+                 autocomplete="off" inputmode="numeric" data-miles />
         </div>
         <span class="monto-hero__hint">COP</span>
       </div>

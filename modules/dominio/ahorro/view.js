@@ -3,6 +3,7 @@
  * Puede leer S. No puede mutarlo. Sin lógica de negocio.
  */
 
+import { miles } from '../../infra/miles.js';
 import { S } from '../../core/state.js';
 import { f, fechaLegible, formateadorFecha, hoy, esc as _esc } from '../../infra/utils.js';
 import { icon, iconoCategoria, emptyArt, tejaCategoria } from '../../infra/icons.js';
@@ -1003,10 +1004,9 @@ export function renderFormFondo({ editando, metaMeses, montoActual, gastosFijosM
 
       <div class="form-group">
         <label for="fondo-monto-actual" class="label">¿Cuánto ya tienes apartado? (COP)</label>
-        <input id="fondo-monto-actual" name="montoActual" class="input" type="number"
-               min="0" step="10000" value="${montoActual}"
+        <input id="fondo-monto-actual" name="montoActual" class="input" type="text" value="${miles(montoActual)}"
                placeholder="0" required aria-required="true"
-               inputmode="numeric" />
+               inputmode="numeric" data-miles autocomplete="off" />
         <p class="form-hint">Si todavía no tienes nada, déjalo en 0. Lo vas a ir sumando con cada aporte.</p>
       </div>
 
@@ -1044,9 +1044,8 @@ export function renderFormAporte({ fecha, sugerencia = null }) {
     <form id="form-aporte" novalidate>
       <div class="form-group">
         <label for="aporte-monto" class="label">Monto del aporte (COP)</label>
-        <input id="aporte-monto" name="monto" class="input" type="number"
-               min="1" step="10000" placeholder="100000"${valorHtml}
-               required aria-required="true" inputmode="numeric" autofocus />
+        <input id="aporte-monto" name="monto" class="input" type="text" placeholder="100000"${valorHtml}
+               required aria-required="true" inputmode="numeric" data-miles autocomplete="off" autofocus />
         <p class="form-hint">${hintPrefill}</p>
       </div>
 
@@ -1093,8 +1092,7 @@ export function renderFormCompromisoMensual(compromisoMensual, sugerencia = null
     ? `
       <div class="form-group">
         <label for="sugerencia-ingreso" class="label">¿Cuánto recibes al mes, aproximadamente? (COP) <span class="form-optional">opcional</span></label>
-        <input id="sugerencia-ingreso" class="input" type="number"
-               min="0" step="10000" placeholder="Ej. 1500000" inputmode="numeric" />
+        <input id="sugerencia-ingreso" class="input" type="text" placeholder="Ej. 1500000" inputmode="numeric" data-miles autocomplete="off" />
         <p class="form-hint">Solo se usa para afinar la sugerencia de abajo. No se guarda.</p>
       </div>`
     : '';
@@ -1107,9 +1105,8 @@ export function renderFormCompromisoMensual(compromisoMensual, sugerencia = null
     <form id="form-compromiso" novalidate>
       <div class="form-group">
         <label for="compromiso-monto" class="label">¿Cuánto quieres apartar ${etiquetaCadaPeriodo(frecuencia)}? (COP)</label>
-        <input id="compromiso-monto" name="compromisoMensual" class="input" type="number"
-               min="0" step="10000" value="${Number(compromisoMensual) || 0}"
-               placeholder="0" inputmode="numeric" autofocus />
+        <input id="compromiso-monto" name="compromisoMensual" class="input" type="text" value="${miles(Number(compromisoMensual) || 0)}"
+               placeholder="0" inputmode="numeric" data-miles autocomplete="off" autofocus />
         <p class="form-hint">Pon 0 para quitar el compromiso. Es un recordatorio personal: no afecta tu saldo hasta que registres el aporte.</p>
       </div>
 

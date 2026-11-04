@@ -946,7 +946,7 @@ describe('renderFormInversion() - modo edición (EDIT.1)', () => {
     const inv = inversionBase();
     const html = renderFormInversion({ fechaInicio: inv.fechaInicio, inversion: inv });
     expect(html).toMatch(/id="inv-nombre"[^>]*value="CDT Bancolombia"/);
-    expect(html).toMatch(/id="inv-monto"[^>]*value="5000000"/);
+    expect(html).toMatch(/id="inv-monto"[^>]*value="5.000.000"/);
     expect(html).toMatch(/id="inv-tasa"[^>]*value="10"/);
     expect(html).toMatch(/id="inv-plazo"[^>]*value="12"/);
     expect(html).toMatch(/id="inv-fecha"[^>]*value="2026-06-01"/);

@@ -7,6 +7,7 @@
  * - Coordina logic/ + views/ sin hacer calculos ni generar HTML aqui.
  */
 
+import { miles } from '../../../infra/miles.js';
 import { S, EventBus } from '../../../core/state.js';
 import { guardar, editar, eliminar } from '../../../infra/crud.js';
 import { registrarAccion } from '../../../ui/actions.js';
@@ -185,7 +186,7 @@ function _editarCuenta(el) {
   }
 
   // 3. Pre-rellenar saldo y tipo DESPUÉS del toggle (el select ya tiene las opciones).
-  form.querySelector('[name="saldo"]').value = cuenta.saldo ?? 0;
+  form.querySelector('[name="saldo"]').value = miles(cuenta.saldo ?? 0);
   form.querySelector('[name="tipo"]').value  = cuenta.tipo  ?? '';
 
   // 4. Pre-rellenar el flag 4x1000 (GMF).
@@ -198,7 +199,7 @@ function _editarCuenta(el) {
   const cuotaDia    = form.querySelector('[name="cuotaManejoDia"]');
   const tieneCuota  = !!cuenta.cuotaManejo;
   if (cuotaToggle) cuotaToggle.checked = tieneCuota;
-  if (cuotaMonto)  cuotaMonto.value    = tieneCuota ? cuenta.cuotaManejo.monto    : '';
+  if (cuotaMonto)  cuotaMonto.value    = tieneCuota ? miles(cuenta.cuotaManejo.monto) : '';
   if (cuotaDia)    cuotaDia.value      = tieneCuota ? cuenta.cuotaManejo.diaCobro : '';
   _toggleCuotaFieldset();
 

@@ -3,6 +3,7 @@
  * Puede leer S. No puede mutarlo. Sin lógica de negocio.
  */
 
+import { miles, desdeMiles } from '../../infra/miles.js';
 import { S } from '../../core/state.js';
 import { f, fechaLegible, hoy, esc as _esc } from '../../infra/utils.js';
 import { iconoCategoria, emptyArt, icon } from '../../infra/icons.js';
@@ -40,36 +41,9 @@ const MAX_CASILLAS = 24;
 
 // ── FORMATO DE MONTOS EN CAPTURA (T9, hallazgo A6, regla R16) ────
 //
-// `f()` no sirve dentro de un `value`: antepone "$". Mismo par que Ajustes
-// escribió para los datos de renta (B4). Va duplicado a propósito: ADN #10
-// impide que un dominio importe a otro, y promover el par a `infra/` toca
-// Ajustes, que no está en el alcance de esta auditoría. Si se hace el barrido
-// de R16 que pide el informe, las dos copias se unifican en infra.
-
-/**
- * Agrupa miles con punto para mostrar dentro de un campo de texto.
- * Devuelve '' si no hay dígitos.
- *
- * @param {string | number | null | undefined} valor
- * @returns {string} - ej. `980.000`
- */
-export function miles(valor) {
-  const digitos = String(valor ?? '').replace(/\D/g, '').replace(/^0+(?=\d)/, '');
-  if (digitos === '') return '';
-  return digitos.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-}
-
-/**
- * Inversa de `miles()`: lee lo escrito en el campo y devuelve el número.
- * `null` si no quedó ningún dígito (campo vacío, distinto de cero).
- *
- * @param {string | number | null | undefined} texto
- * @returns {number | null}
- */
-export function desdeMiles(texto) {
-  const digitos = String(texto ?? '').replace(/\D/g, '');
-  return digitos === '' ? null : Number(digitos);
-}
+// El par formatear / leer vive en infra desde el ADR 120: lo usan todos los
+// campos de dinero. Se reexporta con el nombre de siempre.
+export { miles, desdeMiles };
 
 // ── LISTA DE APARTADOS ───────────────────────────────────────────
 

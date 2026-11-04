@@ -9,6 +9,7 @@
  *   (los gastos afectan el progreso visual de los envelopes).
  */
 
+import { miles } from '../../infra/miles.js';
 import { S, EventBus }                from '../../core/state.js';
 import { save }                       from '../../core/storage.js';
 import { guardar, editar, eliminar } from '../../infra/crud.js';
@@ -69,7 +70,7 @@ function _wireForm() {
       if (monto.dataset.sugerido !== '1' && monto.value !== '') return;
 
       if (datos.sugerido) {
-        monto.value = datos.sugerido;
+        monto.value = miles(datos.sugerido);
         monto.dataset.sugerido = '1';
       } else {
         monto.value = '';

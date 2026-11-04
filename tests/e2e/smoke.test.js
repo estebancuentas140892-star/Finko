@@ -2651,7 +2651,7 @@ test.describe('Movimientos - ledger accionable (MOV.1)', () => {
   test('editar desde el ledger abre el formulario de Gastos con el dato cargado', async ({ page }) => {
     await page.locator('#lista-movimientos [data-action="editar-gasto"]').click();
     await expect(page.locator('#modal-gasto[data-open]')).toHaveCount(1);
-    await expect(page.locator('#form-gasto [name="monto"]')).toHaveValue('80000');
+    await expect(page.locator('#form-gasto [name="monto"]')).toHaveValue('80.000');
   });
 
   test('borrar un ingreso puntual desde el ledger revierte su crédito', async ({ page }) => {
@@ -3803,8 +3803,8 @@ test.describe('Mis cuentas - Distribuir mi ingreso: aporte por objetivo', () => 
     const inputFondo = page.locator('input.distribuir__monto[data-dist-tipo="fondo"]');
     await expect(inputMeta).toBeVisible({ timeout: 3_000 });
 
-    const montoMeta  = Number(await inputMeta.inputValue());
-    const montoFondo = Number(await inputFondo.inputValue());
+    const montoMeta  = Number((await inputMeta.inputValue()).replace(/\D/g, ''));
+    const montoFondo = Number((await inputFondo.inputValue()).replace(/\D/g, ''));
     expect(montoMeta).toBeGreaterThan(0);
     expect(montoMeta).toBeLessThanOrEqual(1_200_000);
     expect(montoFondo).toBe(600_000 - montoMeta); // el fondo recibe el excedente, no el budget completo
@@ -4219,14 +4219,14 @@ test.describe('Mis cuentas - Distribuir mi ingreso: asistente paginado (MC.7d)',
     const ev    = page.locator('[data-dist-info="estiloVida"]');
 
     // Con el arriendo marcado, la sugerencia sale del remanente (no del 20% teórico).
-    await expect(fondo).toHaveValue('120000');
+    await expect(fondo).toHaveValue('120.000');
     await expect(hint).toHaveText('$120.000');
     await expect(ev).toHaveText('$180.000');
 
     // Desmarcar el arriendo libera remanente: la sugerencia sube en vivo,
     // topada al teórico del split (600.000, no el 40% del remanente).
     await page.locator('[data-nec-id="cf1"]').uncheck();
-    await expect(fondo).toHaveValue('600000');
+    await expect(fondo).toHaveValue('600.000');
     await expect(hint).toHaveText('$600.000');
     await expect(ev).toHaveText('$900.000');
 
@@ -4237,7 +4237,7 @@ test.describe('Mis cuentas - Distribuir mi ingreso: asistente paginado (MC.7d)',
     await page.locator('[data-action="distribuir-paso-atras"]').click();
     await page.locator('[data-nec-id="cf1"]').check();
     await expect(hint).toHaveText('$120.000');
-    await expect(fondo).toHaveValue('50000');
+    await expect(fondo).toHaveValue('50.000');
   });
 });
 
@@ -5335,7 +5335,7 @@ test.describe('Gastos - gastos frecuentes y Repetir (TX.12)', () => {
 
     await chip.click();
 
-    await expect(form.locator('[name="monto"]')).toHaveValue('15000');
+    await expect(form.locator('[name="monto"]')).toHaveValue('15.000');
     await expect(form.locator('input[name="categoria"][value="Mercado"]')).toBeChecked();
     await expect(form.locator('input[name="cuentaId"][value="cta-tx12-e2e"]')).toBeChecked();
 
@@ -5365,7 +5365,7 @@ test.describe('Gastos - gastos frecuentes y Repetir (TX.12)', () => {
     // el historial sí tenga un patrón frecuente ("Mercado").
     await expect(form.locator('.gastos-frecuentes__chip')).toHaveCount(0);
 
-    await expect(form.locator('[name="monto"]')).toHaveValue('20000');
+    await expect(form.locator('[name="monto"]')).toHaveValue('20.000');
     await expect(form.locator('input[name="categoria"][value="Transporte"]')).toBeChecked();
     await expect(form.locator('[name="nota"]')).toHaveValue('Uber al trabajo');
     // Fecha HOY, no la del gasto original (es un registro nuevo).
@@ -5412,7 +5412,7 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
 
     const formEdit = page.locator('#modal-meta-body form');
     await expect(formEdit.locator('#meta-nombre')).toHaveValue('Viaje a la costa');
-    await expect(formEdit.locator('#meta-objetivo')).toHaveValue('2000000');
+    await expect(formEdit.locator('#meta-objetivo')).toHaveValue('2.000.000');
     await expect(formEdit.locator('button[type="submit"]')).toHaveText('Actualizar meta');
 
     await formEdit.locator('#meta-nombre').fill('Viaje a Cartagena');
@@ -5455,7 +5455,7 @@ test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
     await page.click('.meta-card__secundaria[data-action="editar-meta"]');
     await page.waitForSelector('#modal-meta[data-open]');
     const formEdit = page.locator('#modal-meta-body form');
-    await expect(formEdit.locator('#meta-objetivo')).toHaveValue('3000000');
+    await expect(formEdit.locator('#meta-objetivo')).toHaveValue('3.000.000');
     await formEdit.locator('#meta-nombre').fill('Laptop nueva (corregido)');
     await formEdit.locator('button[type="submit"]').click();
     await page.waitForSelector(modalCerrado('modal-meta'), { state: 'attached', timeout: 5_000 });

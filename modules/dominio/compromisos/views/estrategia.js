@@ -15,6 +15,7 @@
  * en `estrategia-impacto.js` para mantener este archivo bajo 400 líneas.
  */
 
+import { miles } from '../../../infra/miles.js';
 import { S } from '../../../core/state.js';
 import { esc as _esc, f } from '../../../infra/utils.js';
 import { icon } from '../../../infra/icons.js';
@@ -347,9 +348,8 @@ function _renderRemedioExtra(extraMensual, resumenExtraHtml) {
       <p class="estrategia-card__bloque-titulo">${icon('trending-up', 'icon icon--sm')} Aumenta tu cuota</p>
       <div class="form-group">
         <label for="estrategia-extra" class="label">Pago extra mensual</label>
-        <input id="estrategia-extra" class="input" type="number"
-               min="0" step="10000" value="${extraMensual || ''}"
-               placeholder="Ej. 50000" autocomplete="off" inputmode="numeric"
+        <input id="estrategia-extra" class="input" type="text" value="${miles(extraMensual || '')}"
+               placeholder="Ej. 50000" autocomplete="off" inputmode="numeric" data-miles
                data-action="cambiar-extra-remedio" />
         <p class="form-hint">Escribe cuánto extra puedes pagar al mes y mira el impacto en tu plan. Es una simulación libre: nada cambia hasta que confirmes.</p>
       </div>

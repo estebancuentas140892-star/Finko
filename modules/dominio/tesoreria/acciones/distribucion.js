@@ -7,6 +7,7 @@
  * - Coordina logic/ + views/ sin hacer calculos ni generar HTML aqui.
  */
 
+import { miles, desdeMiles } from '../../../infra/miles.js';
 import { S, EventBus } from '../../../core/state.js';
 import { save } from '../../../core/storage.js';
 import { editar } from '../../../infra/crud.js';
@@ -346,7 +347,7 @@ function _leerItemsDistribucion(panel, necesidades = []) {
       const inp = fila.querySelector('.distribuir__monto');
       const tipo = inp?.dataset.distTipo;
       const id   = inp?.dataset.distId || null;
-      let monto  = Number(inp?.value) || 0;
+      let monto  = desdeMiles(inp?.value) ?? 0;
       if (tipo === 'deuda') {
         const cuotaMarcada = necesidades
           .filter(n => n.tipo === 'necesidad-deuda' && n.id === id)
@@ -375,7 +376,7 @@ function _leerTransferenciasCuentas(panel) {
     .map(fila => {
       const inp = fila.querySelector('.distribuir__monto');
       if (inp?.dataset.distTipo !== 'cuenta') return null;
-      return { cuentaId: inp.dataset.distId || null, monto: Number(inp.value) || 0 };
+      return { cuentaId: inp.dataset.distId || null, monto: desdeMiles(inp.value) ?? 0 };
     })
     .filter(it => it && it.monto > 0);
 }
@@ -437,8 +438,8 @@ function _actualizarSugerenciasRemanente(panel, monto, necesidades) {
     const aportesMarcados = [...panel.querySelectorAll('.distribuir__monto')]
       .filter(inp => inp.dataset.distTipo === 'meta' || inp.dataset.distTipo === 'apartado')
       .filter(inp => inp.closest('.distribuir__fila')?.querySelector('[data-dist-destino-toggle]')?.checked)
-      .reduce((s, inp) => s + (Number(inp.value) || 0), 0);
-    fondoInp.value = Math.max(0, ahorro - aportesMarcados);
+      .reduce((s, inp) => s + (desdeMiles(inp.value) ?? 0), 0);
+    fondoInp.value = miles(Math.max(0, ahorro - aportesMarcados));
   }
 
   const evEl = panel.querySelector('[data-dist-info="estiloVida"]');
@@ -595,7 +596,7 @@ function _elegirDestinoRemanente(radio) {
   if (!panel) return;
   if (radio.value === 'cuenta') { _recalcularDistribucion(); return; }
 
-  const monto       = Number(document.getElementById('distribuir-monto')?.value) || 0;
+  const monto       = desdeMiles(document.getElementById('distribuir-monto')?.value) ?? 0;
   const necesidades = _leerNecesidadesMarcadas(panel);
   const items       = [...necesidades, ..._leerItemsDistribucion(panel, necesidades)];
   const { sinAsignar } = resumirPlanDistribucion(monto, items);
@@ -606,7 +607,7 @@ function _elegirDestinoRemanente(radio) {
   const fila   = inp.closest('.distribuir__fila');
   const toggle = fila?.querySelector('[data-dist-destino-toggle]');
   if (toggle && !toggle.checked) { toggle.checked = true; inp.disabled = false; }
-  inp.value = (Number(inp.value) || 0) + sinAsignar;
+  inp.value = miles((desdeMiles(inp.value) ?? 0) + sinAsignar);
 
   // R3: la fila del fondo sigue la sugerencia automática hasta que alguien la
   // toca. Elegir un destino cuenta como tocarla, tanto si es la que recibe el
@@ -746,7 +747,7 @@ function _onCambioRecibidos() {
   const input = document.getElementById('distribuir-monto');
   if (!panel || !input) return;
   panel.querySelectorAll('[data-dist-diferencia]').forEach(r => { r.checked = false; });
-  input.value = String(_resolverRecibido(panel, 0).esperado);
+  input.value = miles(_resolverRecibido(panel, 0).esperado);
   _recalcularDistribucion();
 }
 
@@ -754,7 +755,7 @@ function _onCambioRecibidos() {
 function _recalcularDistribucion() {
   const panel = document.getElementById('distribuir-ingreso-panel');
   if (!panel) return;
-  const monto       = Number(document.getElementById('distribuir-monto')?.value) || 0;
+  const monto       = desdeMiles(document.getElementById('distribuir-monto')?.value) ?? 0;
   const necesidades = _leerNecesidadesMarcadas(panel);
   // R3: primero refrescar las sugerencias sobre el remanente, para que el
   // resumen de abajo sume los montos ya actualizados.
@@ -923,7 +924,7 @@ async function _confirmarDistribucion() {
   const panel = document.getElementById('distribuir-ingreso-panel');
   if (!panel) return;
 
-  const monto       = Number(document.getElementById('distribuir-monto')?.value) || 0;
+  const monto       = desdeMiles(document.getElementById('distribuir-monto')?.value) ?? 0;
   const necesidades = _leerNecesidadesMarcadas(panel);
   const items       = _leerItemsDistribucion(panel, necesidades);
   const todos       = [...necesidades, ...items];

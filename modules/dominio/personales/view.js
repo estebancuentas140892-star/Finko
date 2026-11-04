@@ -3,6 +3,7 @@
  * Puede leer S. No puede mutarlo. Sin lógica de negocio.
  */
 
+import { miles } from '../../infra/miles.js';
 import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc, hoy as hoyISO } from '../../infra/utils.js';
 import { icon, emptyArt } from '../../infra/icons.js';
@@ -445,9 +446,8 @@ export function renderFormPersonal({ prestamo = null } = {}) {
       </div>
       <div class="form-group">
         <label for="pers-monto" class="label">Monto prestado (COP)</label>
-        <input id="pers-monto" name="monto" class="input" type="number"
-               min="1" step="1000" placeholder="0" required aria-required="true"
-               value="${prestamo ? Number(prestamo.monto) || '' : ''}" />
+        <input id="pers-monto" name="monto" class="input" type="text" inputmode="numeric" data-miles autocomplete="off" placeholder="0" required aria-required="true"
+               value="${miles(prestamo ? Number(prestamo.monto) || '' : '')}" />
       </div>
       <div class="form-group">
         <label for="pers-fecha" class="label">Fecha del préstamo</label>
@@ -554,9 +554,8 @@ export function renderFormPagoPersonal(prestamo) {
       </p>
       <div class="form-group">
         <label for="pago-monto" class="label">Monto recibido (COP)</label>
-        <input id="pago-monto" name="monto" class="input" type="number"
-               min="1" max="${pendiente}" step="1000"
-               value="${pendiente}" required aria-required="true" />
+        <input id="pago-monto" name="monto" class="input" type="text" inputmode="numeric" data-miles autocomplete="off"
+               value="${miles(pendiente)}" required aria-required="true" />
         <p class="form-hint">El valor que aparece es todo lo que falta por cobrar. Si solo te pagaron una parte, puedes cambiarlo.${hintInteres}</p>
       </div>
       ${cuentaHtml}

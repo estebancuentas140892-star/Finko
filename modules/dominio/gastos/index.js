@@ -8,6 +8,7 @@
  * - Coordinar logic.js + view.js sin hacer cálculos ni generar HTML aquí.
  */
 
+import { miles, desdeMiles } from '../../infra/miles.js';
 import { S, EventBus } from '../../core/state.js';
 import { save } from '../../core/storage.js';
 import { TARJETA_PREFIJO } from '../../core/constants.js';
@@ -239,7 +240,7 @@ function _editarGasto(el) {
   if (!form) return;
 
   form.dataset.id = id;
-  form.querySelector('[name="monto"]').value = gasto.monto ?? 0;
+  form.querySelector('[name="monto"]').value = miles(gasto.monto ?? 0);
 
   // FORM.1a: la categoría son radios-chip; se marca el chip del gasto. Si la
   // categoría ya no está en el catálogo (legacy, ej. 'Vivienda' tras CAT.1a),
@@ -323,7 +324,7 @@ function _origenDeGasto(gasto) {
  */
 function _prellenarCamposGasto(form, datos) {
   const montoEl = form.querySelector('[name="monto"]');
-  if (montoEl) montoEl.value = datos.monto || '';
+  if (montoEl) montoEl.value = miles(datos.monto);
 
   const radioCat = form.querySelector(`input[name="categoria"][value="${CSS.escape(datos.categoria ?? '')}"]`);
   if (radioCat) {
@@ -710,7 +711,7 @@ function _actualizarNudgeSobrecupo() {
   const apagar = () => { el.textContent = ''; el.hidden = true; };
 
   const origen = form.querySelector('input[name="cuentaId"]:checked')?.value ?? '';
-  const monto  = Number(form.querySelector('[name="monto"]')?.value);
+  const monto  = desdeMiles(form.querySelector('[name="monto"]')?.value) ?? 0;
   if (!origen.startsWith(TARJETA_PREFIJO) || !(monto > 0)) return apagar();
 
   const tarjetaId = origen.slice(TARJETA_PREFIJO.length);

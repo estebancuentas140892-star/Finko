@@ -419,8 +419,7 @@ export function renderFormCuenta() {
       </div>
       <div class="form-group">
         <label for="cuenta-saldo" class="label">Saldo actual (COP)</label>
-        <input id="cuenta-saldo" name="saldo" class="input" type="number"
-               min="0" step="1000" placeholder="0" value="0" />
+        <input id="cuenta-saldo" name="saldo" class="input" type="text" inputmode="numeric" data-miles autocomplete="off" placeholder="0" value="0" />
       </div>
 
       <div class="form-group form-group--checkbox" id="form-group-4x1000">
@@ -453,9 +452,7 @@ export function renderFormCuenta() {
           <input id="cuenta-cuota-monto"
                  name="cuotaManejoMonto"
                  class="input"
-                 type="number"
-                 min="1"
-                 step="100"
+                 type="text" inputmode="numeric" data-miles autocomplete="off"
                  placeholder="Ej. 15000" />
         </div>
         <div class="form-group">

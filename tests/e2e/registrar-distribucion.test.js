@@ -81,6 +81,6 @@ test.describe('MC.13e-1 - un ingreso esporádico ya no ofrece distribuirlo', () 
     // con el monto estimado del ingreso recurrente (no el del ingreso puntual).
     await page.click('[data-action="toggle-distribuir-ingreso"]');
     await expect(page.locator('#distribuir-ingreso-panel')).toBeVisible({ timeout: 3_000 });
-    await expect(page.locator('#distribuir-monto')).toHaveValue('3000000');
+    await expect(page.locator('#distribuir-monto')).toHaveValue('3.000.000');
   });
 });

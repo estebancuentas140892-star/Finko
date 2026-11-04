@@ -8,6 +8,7 @@
  * - Sin logica de negocio: delegar a logic/.
  */
 
+import { miles } from '../../../infra/miles.js';
 import { S } from '../../../core/state.js';
 import { f, esc as _esc, fechaLegible } from '../../../infra/utils.js';
 import { icon, tejaCategoria } from '../../../infra/icons.js';
@@ -278,10 +279,9 @@ export function renderFormIngreso(ingreso = null) {
       </div>
       <div class="form-group">
         <label for="ingreso-monto" class="label">Monto (COP)</label>
-        <input id="ingreso-monto" name="monto" class="input" type="number"
-               min="1" step="10000" placeholder="0"
-               value="${ingreso ? ingreso.monto : ''}"
-               required aria-required="true" inputmode="numeric" />
+        <input id="ingreso-monto" name="monto" class="input" type="text" placeholder="0"
+               value="${miles(ingreso ? ingreso.monto : '')}"
+               required aria-required="true" inputmode="numeric" data-miles autocomplete="off" />
       </div>
       <div class="form-group">
         <label for="ingreso-frec" class="label">Frecuencia</label>
@@ -427,7 +427,7 @@ export function renderFormIngresoPuntual() {
       <div class="form-group">
         <label for="ingreso-p-monto" class="label">¿Cuánto recibiste? (COP)</label>
         <input id="ingreso-p-monto" name="monto" class="input input--big-amount"
-               type="number" inputmode="numeric" min="1" step="10000" placeholder="0"
+               type="text" inputmode="numeric" data-miles placeholder="0"
                required aria-required="true" autocomplete="off" />
       </div>
       ${renderSelectorCuenta(cuentas, { label: '¿En qué cuenta entró el dinero?' })}

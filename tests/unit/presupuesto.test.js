@@ -1466,7 +1466,7 @@ describe('renderFormPresupuesto() - monto propuesto (LIM.1c, ADR 044)', () => {
       gasto({ id: 'g2', categoria: 'Transporte', monto: 200_000, fecha: mesISO(2) }),
     ];
     const html = renderFormPresupuesto(null, 'Transporte');
-    expect(html).toContain('value="200000" data-sugerido="1"');
+    expect(html).toContain('value="200.000" data-sugerido="1"');
     expect(html).toContain('Tu promedio de los últimos meses acá');
   });
 
@@ -1484,7 +1484,7 @@ describe('renderFormPresupuesto() - monto propuesto (LIM.1c, ADR 044)', () => {
   it('al editar manda el monto guardado, no una propuesta', () => {
     S.gastos = [gasto({ id: 'g1', categoria: 'Salud', monto: 900_000, fecha: mesISO(1) })];
     const html = renderFormPresupuesto(presupuesto({ categoria: 'Salud', montoMensual: 120_000 }));
-    expect(html).toContain('value="120000"');
+    expect(html).toContain('value="120.000"');
     expect(html).not.toContain('data-sugerido');
   });
 });
@@ -1710,7 +1710,7 @@ describe('Límites: la tarjeta de gastos pequeños', () => {
   it('el formulario trae el límite propuesto y el tope vigente', () => {
     S.config = { ...S.config, hormiga: { tope: 15_000, limite: null } };
     const html = renderFormHormiga(150_000);
-    expect(html).toContain('value="150000"');
-    expect(html).toContain('value="15000"');
+    expect(html).toContain('value="150.000"');
+    expect(html).toContain('value="15.000"');
   });
 });

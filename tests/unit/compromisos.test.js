@@ -4505,7 +4505,7 @@ describe('renderEstrategiaPago BUG-011: el extra simulado no reestructura la car
 
     const input = document.querySelector('#estrategia-extra');
     expect(input).not.toBeNull();
-    expect(input.value).toBe('500000');
+    expect(input.value).toBe('500.000'); // ADR 120: con separador de miles
     expect(document.querySelector('.estrategia-card__resumen-extra--activo')).not.toBeNull();
     expect(document.querySelector('[data-action="aplicar-aumento-cuota"]').disabled).toBe(false);
   });

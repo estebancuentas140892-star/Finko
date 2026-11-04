@@ -8,6 +8,7 @@
  * Funciones puras: reciben todo lo necesario por parámetro, no leen S.
  */
 
+import { miles } from '../../../infra/miles.js';
 import { f, esc as _esc } from '../../../infra/utils.js';
 import { icon } from '../../../infra/icons.js';
 import { simularRenegociacion, simularConsolidacion, tasaMensualToEA } from '../logic.js';
@@ -438,9 +439,8 @@ export function renderConsolidar(deudas, ui) {
       </div>
       <div class="form-group">
         <label for="consolidar-cuota" class="label">Cuota mensual del crédito nuevo</label>
-        <input id="consolidar-cuota" class="input" type="number"
-               min="0" step="10000" value="${cuota || ''}"
-               placeholder="Ej. 400000" autocomplete="off" inputmode="numeric"
+        <input id="consolidar-cuota" class="input" type="text" value="${miles(cuota || '')}"
+               placeholder="Ej. 400000" autocomplete="off" inputmode="numeric" data-miles
                data-action="cambiar-consolidar" />
       </div>
       <div class="estrategia-card__consolidar-comparativa">

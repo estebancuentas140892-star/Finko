@@ -3,6 +3,7 @@
  * Puede leer S. No puede mutarlo. Sin lógica de negocio.
  */
 
+import { miles } from '../../infra/miles.js';
 import { S }                  from '../../core/state.js';
 import { f, esc as _esc, hoy } from '../../infra/utils.js';
 import { icon, iconoCategoria } from '../../infra/icons.js';
@@ -635,16 +636,15 @@ export function renderFormHormiga(limitePropuesto) {
         <label class="monto-hero__label" for="hormiga-limite">Máximo al mes para lo pequeño</label>
         <div class="monto-hero__box">
           <span class="monto-hero__prefijo" aria-hidden="true">$</span>
-          <input id="hormiga-limite" name="limite" class="input input--big-amount" type="number"
-                 min="1" step="10000" value="${limite}" placeholder="Sin límite"
-                 autocomplete="off" inputmode="numeric" aria-describedby="hormiga-limite-hint" />
+          <input id="hormiga-limite" name="limite" class="input input--big-amount" type="text" value="${miles(limite)}" placeholder="Sin límite"
+                 autocomplete="off" inputmode="numeric" data-miles aria-describedby="hormiga-limite-hint" />
         </div>
         <span class="monto-hero__hint" id="hormiga-limite-hint">${hint}</span>
       </div>
       <div class="form-group">
         <label for="hormiga-tope" class="label">Una compra es pequeña si cuesta hasta</label>
-        <input id="hormiga-tope" name="tope" class="input" type="number" min="1000" max="100000" step="1000"
-               value="${p.tope}" required aria-required="true" inputmode="numeric" aria-describedby="hormiga-tope-hint" />
+        <input id="hormiga-tope" name="tope" class="input" type="text"
+               value="${miles(p.tope)}" required aria-required="true" inputmode="numeric" data-miles autocomplete="off" aria-describedby="hormiga-tope-hint" />
         <p class="form-hint" id="hormiga-tope-hint">Con este valor se cuentan tus gastos pequeños en Límites, en tus lecciones y en el logro Hormiga a raya.</p>
       </div>
       <div class="modal__footer modal__footer--principal">
@@ -837,10 +837,9 @@ export function renderFormPresupuesto(actual = null, categoriaPrecargada = '') {
         <label class="monto-hero__label" for="presupuesto-monto">Máximo al mes</label>
         <div class="monto-hero__box">
           <span class="monto-hero__prefijo" aria-hidden="true">$</span>
-          <input id="presupuesto-monto" name="montoMensual" class="input input--big-amount" type="number"
-                 min="1" step="10000" required aria-required="true"
-                 value="${montoInicial}"${!editando && montoInicial ? ' data-sugerido="1"' : ''}
-                 placeholder="0" autocomplete="off" inputmode="numeric" />
+          <input id="presupuesto-monto" name="montoMensual" class="input input--big-amount" type="text" required aria-required="true"
+                 value="${miles(montoInicial)}"${!editando && montoInicial ? ' data-sugerido="1"' : ''}
+                 placeholder="0" autocomplete="off" inputmode="numeric" data-miles />
         </div>
         <span class="monto-hero__hint" id="presupuesto-monto-hint">${categoriaInicial ? hintDe(categoriaInicial) : 'COP'}</span>
       </div>

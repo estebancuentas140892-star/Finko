@@ -477,7 +477,7 @@ test.describe('BUG-011: el extra simulado no reestructura la card ni se aplica s
     // impacto visible y el botón "Aplicar este aumento" habilitado.
     const input = page.locator('#estrategia-extra');
     await expect(input).toBeVisible({ timeout: 3_000 });
-    await expect(input).toHaveValue('500000');
+    await expect(input).toHaveValue('500.000');
     await expect(page.locator('.estrategia-card__resumen-extra--activo')).toBeVisible();
     await expect(page.locator('[data-action="aplicar-aumento-cuota"]')).toBeEnabled();
   });

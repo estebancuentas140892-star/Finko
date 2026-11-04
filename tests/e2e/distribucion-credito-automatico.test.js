@@ -332,7 +332,7 @@ test.describe('BUG-034 - Distribuir no propone ni acredita lo que otra distribuc
 
     // Septiembre: llegaron los dos.
     await abrirAsistente(page);
-    expect(await montoPropuesto(page)).toBe('5000000');
+    expect(await montoPropuesto(page)).toBe('5.000.000');
     await repartirConTransferencia(page);
     await expect.poll(() => dineroTotal(page), { timeout: 5_000 }).toBe(5_800_000);
 
@@ -340,7 +340,7 @@ test.describe('BUG-034 - Distribuir no propone ni acredita lo que otra distribuc
     // total terminaba en 10.800.000 con 9.800.000 reales.
     await reabrir(page, new Date('2026-10-16T10:00:00'));
     await abrirAsistente(page);
-    expect(await montoPropuesto(page)).toBe('4000000');
+    expect(await montoPropuesto(page)).toBe('4.000.000');
     await repartirConTransferencia(page);
     await expect.poll(() => dineroTotal(page), { timeout: 5_000 }).toBe(9_800_000);
 
@@ -351,7 +351,7 @@ test.describe('BUG-034 - Distribuir no propone ni acredita lo que otra distribuc
     // 26 de octubre: los honorarios del 25 son una ocurrencia nueva.
     await reabrir(page, new Date('2026-10-26T10:00:00'));
     await abrirAsistente(page);
-    expect(await montoPropuesto(page)).toBe('1000000');
+    expect(await montoPropuesto(page)).toBe('1.000.000');
     await repartirConTransferencia(page);
     await expect.poll(() => dineroTotal(page), { timeout: 5_000 }).toBe(10_800_000);
     expect(await sellados(page)).toEqual([
@@ -363,12 +363,12 @@ test.describe('BUG-034 - Distribuir no propone ni acredita lo que otra distribuc
     const quincena = salario({ frecuencia: 'Quincenal', monto: 2_000_000 });
     await abrirPersistente(page, estado({ ...SIN_GASTOS, ingresos: [quincena], puntuales: [] }), new Date('2026-10-16T10:00:00'));
     await abrirAsistente(page);
-    expect(await montoPropuesto(page)).toBe('2000000');
+    expect(await montoPropuesto(page)).toBe('2.000.000');
     await repartirConTransferencia(page);
 
     await reabrir(page, new Date('2026-10-31T10:00:00'));
     await abrirAsistente(page);
-    expect(await montoPropuesto(page)).toBe('2000000');
+    expect(await montoPropuesto(page)).toBe('2.000.000');
     await repartirConTransferencia(page);
     await expect.poll(() => dineroTotal(page), { timeout: 5_000 }).toBe(4_800_000);
     expect(await sellados(page)).toEqual(['ing-salario 2026-10-15', 'ing-salario 2026-10-30']);
@@ -388,13 +388,13 @@ test.describe('BUG-033 - con el monto editado, el usuario dice qué ingreso lleg
     await posponerHojaAutomaticos(page);
 
     await abrirAsistente(page);
-    expect(await montoPropuesto(page)).toBe('5000000');
+    expect(await montoPropuesto(page)).toBe('5.000.000');
     await page.fill('#distribuir-monto', '4000000');
     // Con el bug no había a quién preguntar: se sellaban los dos.
     const recibidos = page.locator('#distribuir-recibido [data-dist-recibido]');
     await expect(recibidos).toHaveCount(2);
     await page.locator('#distribuir-recibido label').filter({ hasText: 'Honorarios de prueba' }).locator('[data-dist-recibido]').uncheck();
-    expect(await montoPropuesto(page)).toBe('4000000');
+    expect(await montoPropuesto(page)).toBe('4.000.000');
     await repartirConTransferencia(page);
 
     await expect.poll(() => dineroTotal(page), { timeout: 5_000 }).toBe(4_800_000);

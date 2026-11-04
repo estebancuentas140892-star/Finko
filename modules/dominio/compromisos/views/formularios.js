@@ -9,6 +9,7 @@
  * Puede leer S. No puede mutarlo. Sin lógica de negocio.
  */
 
+import { miles } from '../../../infra/miles.js';
 import { S } from '../../../core/state.js';
 import { f, esc as _esc, hoy } from '../../../infra/utils.js';
 import {
@@ -138,9 +139,8 @@ export function renderFormGastoFijo() {
         <label class="monto-hero__label" for="gfijo-monto">Monto (COP)</label>
         <div class="monto-hero__box">
           <span class="monto-hero__prefijo" aria-hidden="true">$</span>
-          <input id="gfijo-monto" name="monto" class="input input--big-amount" type="number"
-                 min="1" step="1000" placeholder="0" required aria-required="true"
-                 autocomplete="off" inputmode="numeric" />
+          <input id="gfijo-monto" name="monto" class="input input--big-amount" type="text" placeholder="0" required aria-required="true"
+                 autocomplete="off" inputmode="numeric" data-miles />
         </div>
         <span class="monto-hero__hint">COP</span>
       </div>
@@ -220,11 +220,10 @@ export function renderFormAbono(deuda) {
 
       <div class="form-group">
         <label for="abono-monto" class="label">Monto del abono (COP)</label>
-        <input id="abono-monto" name="monto" class="input" type="number"
-               min="1" step="10000" placeholder="0"
-               value="${cuota > 0 ? Math.min(cuota, saldo) : ''}"
+        <input id="abono-monto" name="monto" class="input" type="text" placeholder="0"
+               value="${cuota > 0 ? miles(Math.min(cuota, saldo)) : ''}"
                required aria-required="true"
-               autocomplete="off" inputmode="numeric" />
+               autocomplete="off" inputmode="numeric" data-miles />
         <p class="form-hint form-hint--muted">${cuota > 0 ? `Pre-llenado con tu cuota mensual. ` : ''}Máximo ${f(saldo)}.</p>
         <p id="abono-tip-proyeccion" class="form-hint form-hint--muted" aria-live="polite"></p>
       </div>
@@ -393,9 +392,8 @@ export function renderFormDeuda(tipo, deuda = null) {
         <label class="monto-hero__label" for="comp-saldo">¿Cuánto debes en total?</label>
         <div class="monto-hero__box">
           <span class="monto-hero__prefijo" aria-hidden="true">$</span>
-          <input id="comp-saldo" name="saldoTotal" class="input input--big-amount" type="number"
-                 min="1" step="10000" placeholder="0" required aria-required="true"
-                 autocomplete="off" value="${vSaldo}" />
+          <input id="comp-saldo" name="saldoTotal" class="input input--big-amount" type="text" inputmode="numeric" data-miles placeholder="0" required aria-required="true"
+                 autocomplete="off" value="${miles(vSaldo)}" />
         </div>
         <span class="monto-hero__hint">COP</span>
       </div>
@@ -404,9 +402,8 @@ export function renderFormDeuda(tipo, deuda = null) {
         <label for="comp-cupo" class="label">Cupo aprobado de la tarjeta <span class="form-optional">opcional</span></label>
         <div class="input-group">
           <span class="input-prefix" aria-hidden="true">$</span>
-          <input id="comp-cupo" name="cupoTotal" class="input input--has-prefix" type="number"
-                 min="1" step="10000" placeholder="0"
-                 autocomplete="off" value="${vCupo}" />
+          <input id="comp-cupo" name="cupoTotal" class="input input--has-prefix" type="text" inputmode="numeric" data-miles placeholder="0"
+                 autocomplete="off" value="${miles(vCupo)}" />
         </div>
         <p class="form-hint">Con el cupo, Finko calcula tu disponible y habilita pagar con esta tarjeta desde Gastos.</p>
       </div>
@@ -415,9 +412,8 @@ export function renderFormDeuda(tipo, deuda = null) {
         <label for="comp-cuota" class="label">¿Cuánto pagas cada mes?${esEntidad ? '' : ' <span class="form-optional">opcional</span>'}</label>
         <div class="input-group">
           <span class="input-prefix" aria-hidden="true">$</span>
-          <input id="comp-cuota" name="cuotaMensual" class="input input--has-prefix" type="number"
-                 min="1" step="10000" placeholder="0"${esEntidad ? ' required aria-required="true"' : ''}
-                 autocomplete="off" value="${vCuota}" />
+          <input id="comp-cuota" name="cuotaMensual" class="input input--has-prefix" type="text" inputmode="numeric" data-miles placeholder="0"${esEntidad ? ' required aria-required="true"' : ''}
+                 autocomplete="off" value="${miles(vCuota)}" />
         </div>
         ${esEntidad ? '' : '<p class="form-hint">Si no acordaron una cuota fija, déjalo en blanco: registras abonos cuando pagues.</p>'}
       </div>

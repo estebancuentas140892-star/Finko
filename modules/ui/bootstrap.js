@@ -70,6 +70,7 @@ import { initAtencionHoy } from './atencion-hoy.js';
 import { initHojaPerfil } from './hoja-perfil.js';
 import { initTeclado } from './teclado.js';
 import { initHojas } from './hojas.js';
+import { initMiles } from './miles.js';
 import { initTelefonoAdulto } from './telefono-adulto.js';
 import { initRegistrar } from './registrar.js';
 import { initInstallPrompt } from './install-prompt.js';
@@ -120,6 +121,9 @@ initTeclado();
 // ADR 118 (RN8): toda hoja se cierra también deslizándola y con el atrás del
 // sistema en Android.
 initHojas();
+// ADR 120 (R16): los campos de dinero muestran el separador de miles
+// mientras se escribe y llegan como dígitos a su formulario.
+initMiles();
 // ADR 099 D1: "Atención hoy" de móvil en una lista, con su hoja.
 initAtencionHoy();
 // ADR 099 D6: el avatar de Inicio en móvil abre la hoja de perfil.

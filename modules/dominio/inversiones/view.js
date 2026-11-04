@@ -3,6 +3,7 @@
  * Puede leer S. No puede mutarlo. Sin lógica de negocio.
  */
 
+import { miles } from '../../infra/miles.js';
 import { S } from '../../core/state.js';
 import { f, fechaLegible, formateadorFecha, hoy, esc as _esc } from '../../infra/utils.js';
 import { emptyArt } from '../../infra/icons.js';
@@ -453,10 +454,9 @@ export function renderFormInversion({ fechaInicio, inversion = null }) {
 
       <div class="form-group">
         <label for="inv-monto" class="label">Monto invertido (COP)</label>
-        <input id="inv-monto" name="monto" class="input" type="number"
-               min="1" step="10000" placeholder="1000000"
-               required aria-required="true" inputmode="numeric"
-               value="${inversion ? Number(inversion.monto) || '' : ''}" />
+        <input id="inv-monto" name="monto" class="input" type="text" placeholder="1000000"
+               required aria-required="true" inputmode="numeric" data-miles autocomplete="off"
+               value="${miles(inversion ? Number(inversion.monto) || '' : '')}" />
       </div>
 
       <div class="form-group">

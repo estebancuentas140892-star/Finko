@@ -8,6 +8,7 @@
  * - Coordinar logic.js + view.js sin hacer cálculos ni generar HTML aquí.
  */
 
+import { miles, desdeMiles } from '../../infra/miles.js';
 import { S, EventBus } from '../../core/state.js';
 import { save } from '../../core/storage.js';
 import { guardar, editar, eliminar } from '../../infra/crud.js';
@@ -605,7 +606,7 @@ function _inyectarFormGastoFijo(compromiso = null) {
     // AG.4: con categoría de nombre automático, el campo de texto muestra la
     // nota (no la descripción, que ya es la categoría); si no, la descripción.
     if (f_desc) f_desc.value = nombreAuto ? (compromiso.nota ?? '') : (compromiso.descripcion ?? '');
-    if (f_monto) f_monto.value = compromiso.monto ?? '';
+    if (f_monto) f_monto.value = miles(compromiso.monto);
     if (f_frec) f_frec.value = compromiso.frecuencia ?? 'Mensual';
     if (f_dia) f_dia.value = compromiso.diaPago ?? '';
     if (f_btn) f_btn.textContent = 'Actualizar gasto fijo';
@@ -920,7 +921,7 @@ function _actualizarTipProyeccion() {
   const form       = document.getElementById('form-abono');
   if (!montoInput || !tipEl || !form) return;
 
-  const monto = Number(montoInput.value);
+  const monto = desdeMiles(montoInput.value) ?? 0;
   const cuota = Number(form.dataset.cuota);
   const saldo = Number(form.dataset.saldo);
 
@@ -977,7 +978,7 @@ function _elegirEstrategia(el) {
 }
 
 function _actualizarResumenEnVivo(el) {
-  const extra = Number(el.value) || 0;
+  const extra = desdeMiles(el.value) ?? 0;
   const resumen = document.querySelector('.estrategia-card__resumen-extra');
   if (!resumen) return;
 
@@ -1024,7 +1025,7 @@ function _elegirAlternativa(el) {
  * disparar el re-render que sí hace el acelerador del plan viable al blur.
  */
 function _actualizarRemedioExtraEnVivo(el) {
-  setEstrategiaUI({ extraMensual: el.value });
+  setEstrategiaUI({ extraMensual: desdeMiles(el.value) ?? 0 });
   _actualizarResumenEnVivo(el);
 }
 
@@ -1037,7 +1038,7 @@ function _actualizarRemedioExtraEnVivo(el) {
  */
 async function _aplicarAumentoCuota() {
   const input = document.getElementById('estrategia-extra');
-  const extra = Number(input ? input.value : getEstrategiaUI().extraMensual);
+  const extra = input ? (desdeMiles(input.value) ?? 0) : getEstrategiaUI().extraMensual;
   if (!Number.isFinite(extra) || extra <= 0) return;
 
   const deudas = filtrarDeudasPagables(S.compromisos);
@@ -1150,7 +1151,7 @@ function _actualizarConsolidacionEnVivo() {
   if (!cont) return;
 
   const tasaPct = Number(document.getElementById('consolidar-tasa')?.value) || 0;
-  const cuota   = Number(document.getElementById('consolidar-cuota')?.value) || 0;
+  const cuota   = desdeMiles(document.getElementById('consolidar-cuota')?.value) ?? 0;
   setEstrategiaUI({ consolidarTasaPct: tasaPct, consolidarCuota: cuota });
 
   const deudas = filtrarDeudasPagables(S.compromisos);
@@ -1170,7 +1171,7 @@ function _actualizarConsolidacionEnVivo() {
  */
 async function _aplicarConsolidacion() {
   const tasaPct = Number(document.getElementById('consolidar-tasa')?.value);
-  const cuota   = Number(document.getElementById('consolidar-cuota')?.value);
+  const cuota   = desdeMiles(document.getElementById('consolidar-cuota')?.value) ?? 0;
   if (!(tasaPct >= 0) || !(cuota > 0)) return;
 
   const deudas = filtrarDeudasPagables(S.compromisos);

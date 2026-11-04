@@ -3,6 +3,7 @@
  * Puede leer S. No puede mutarlo. Sin lógica de negocio.
  */
 
+import { miles } from '../../infra/miles.js';
 import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
 import { emptyArt, iconoCategoria, icon } from '../../infra/icons.js';
@@ -421,10 +422,9 @@ export function renderFormAbonoMeta(meta) {
       </p>
       <div class="form-group">
         <label for="abono-meta-monto" class="label">Monto del aporte (COP)</label>
-        <input id="abono-meta-monto" name="monto" class="input" type="number"
-               min="1" step="10000" placeholder="0"${valorHtml}
+        <input id="abono-meta-monto" name="monto" class="input" type="text" placeholder="0"${valorHtml}
                required aria-required="true"
-               autocomplete="off" inputmode="numeric" />
+               autocomplete="off" inputmode="numeric" data-miles />
         ${hintPrefill}
       </div>
       ${cuentaHtml}
@@ -466,9 +466,8 @@ export function renderFormMeta(meta = null) {
       </div>
       <div class="form-group">
         <label for="meta-objetivo" class="label">Monto objetivo (COP)</label>
-        <input id="meta-objetivo" name="montoObjetivo" class="input" type="number"
-               min="1" step="10000" placeholder="0" required aria-required="true"
-               value="${meta ? Number(meta.montoObjetivo) || '' : ''}" />
+        <input id="meta-objetivo" name="montoObjetivo" class="input" type="text" inputmode="numeric" data-miles autocomplete="off" placeholder="0" required aria-required="true"
+               value="${miles(meta ? Number(meta.montoObjetivo) || '' : '')}" />
       </div>
       <div class="form-group">
         <label for="meta-fecha" class="label">Fecha límite (opcional)</label>

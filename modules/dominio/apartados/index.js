@@ -26,7 +26,7 @@ import {
 } from './logic.js';
 import {
   renderListaApartados, renderFormApartado, renderFormAporteApartado,
-  renderNudgeApartadosProximos, miles, desdeMiles,
+  renderNudgeApartadosProximos, desdeMiles,
 } from './view.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 
@@ -286,7 +286,6 @@ function _abrirAporte(el) {
       e.preventDefault();
       _guardarAporte();
     });
-    _wireMiles(body);
     body.querySelector('#aporte-apartado-monto')?.focus();
   }
 
@@ -375,23 +374,6 @@ function _ajustarSaldoCuenta(cuentaId, delta) {
   editar('cuentas', cuentaId, { saldo: (cuenta.saldo ?? 0) + delta });
 }
 
-/**
- * Separador de miles mientras se escribe (T9, hallazgo A6, regla R16). El
- * cursor queda al final: son montos que se teclean de izquierda a derecha.
- * Mismo cableado que Ajustes montó para los datos de renta (B4).
- * @param {ParentNode|null|undefined} root
- */
-function _wireMiles(root) {
-  for (const campo of root?.querySelectorAll('[data-miles]') ?? []) {
-    campo.addEventListener('input', () => {
-      const formateado = miles(campo.value);
-      if (formateado === campo.value) return;
-      campo.value = formateado;
-      campo.setSelectionRange(formateado.length, formateado.length);
-    });
-  }
-}
-
 // ── INICIALIZACIÓN ───────────────────────────────────────────────
 
 /**
@@ -416,8 +398,6 @@ function _inyectarFormApartado(apartado = null) {
     e.preventDefault();
     _guardarApartado();
   });
-
-  _wireMiles(form);
 
   // Recalcular el aporte sugerido cada vez que cambian monto, fecha o frecuencia.
   form.addEventListener('input', _actualizarSugerenciaLive);

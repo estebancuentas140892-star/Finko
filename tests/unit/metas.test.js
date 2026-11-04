@@ -1461,7 +1461,7 @@ describe('renderFormMeta() - modo edición (EDIT.1)', () => {
     const meta = metaBase({ nombre: 'Viaje a Cartagena', montoObjetivo: 3_000_000, fechaLimite: '2026-12-01' });
     const html = renderFormMeta(meta);
     expect(html).toMatch(/id="meta-nombre"[^>]*value="Viaje a Cartagena"/);
-    expect(html).toMatch(/id="meta-objetivo"[^>]*value="3000000"/);
+    expect(html).toMatch(/id="meta-objetivo"[^>]*value="3.000.000"/);
     expect(html).toMatch(/id="meta-fecha"[^>]*value="2026-12-01"/);
   });
 

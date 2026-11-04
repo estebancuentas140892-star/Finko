@@ -3,6 +3,7 @@
  * Puede leer S. No puede mutarlo. Sin lógica de negocio.
  */
 
+import { miles, desdeMiles } from '../../infra/miles.js';
 import { S } from '../../core/state.js';
 import { f, hoy, esc as _esc } from '../../infra/utils.js';
 import { icon } from '../../infra/icons.js';
@@ -23,35 +24,9 @@ import { textoFamilia } from '../../ui/hoja-perfil.js';
 
 // ── FORMATO DE MONTOS EN CAPTURA (B4/R16) ────────────────────────
 //
-// Los tres campos de renta son los únicos de la app donde el usuario
-// escribe cifras de ocho dígitos. `f()` no sirve acá: antepone "$" y eso
-// no puede vivir dentro de un `value`. Este par (formatear / leer) es la
-// única fuente de verdad del separador de miles en Ajustes.
-
-/**
- * Agrupa miles con punto para mostrar dentro de un campo de texto.
- * Devuelve '' si no hay dígitos: los tres campos son opcionales.
- *
- * @param {string | number | null | undefined} valor
- * @returns {string} - ej. `72.000.000`
- */
-export function miles(valor) {
-  const digitos = String(valor ?? '').replace(/\D/g, '').replace(/^0+(?=\d)/, '');
-  if (digitos === '') return '';
-  return digitos.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-}
-
-/**
- * Inversa de `miles()`: lee lo que hay escrito en el campo y devuelve el
- * número. `null` si el campo está vacío (no provisto, distinto de cero).
- *
- * @param {string | number | null | undefined} texto
- * @returns {number | null}
- */
-export function desdeMiles(texto) {
-  const digitos = String(texto ?? '').replace(/\D/g, '');
-  return digitos === '' ? null : Number(digitos);
-}
+// El par formatear / leer vive en infra desde el ADR 120: lo usan todos los
+// campos de dinero. Se reexporta con el nombre de siempre.
+export { miles, desdeMiles };
 
 /**
  * Renderiza el panel de configuración completo en `#panel-config`.
