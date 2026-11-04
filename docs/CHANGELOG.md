@@ -12,6 +12,13 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### fix(movil): MV2.28 (d), el margen seguro en el pie de los diálogos cortos · 2026-11-04
+
+Adenda al [ADR 123](DECISIONS/123-la-hoja-de-formulario-completa.md) D1 (tablero 3: "`env(safe-area-inset-bottom)` en el pie"). Bajo 481 px. SW v657.
+
+- **Los diálogos cortos** con el pie fuera del cuerpo (confirmar, "¿Desde qué cuenta?", novedades, la contraseña del respaldo, la confirmación del PIN e instalar en el iPhone) suman el margen seguro inferior a su pie. Con los 34 px de un iPhone sin botón de inicio, el botón terminaba sobre la barra de inicio; ahora queda por encima. Las hojas `--sheet` ya lo llevaban en su padding y no lo duplican.
+- Pruebas: 1 E2E nueva en `movil-mv2.test.js`, que simula el margen con `Emulation.setSafeAreaInsetsOverride` (CDP). Unitarios 5312/5312 y E2E 440/441 sin reintentos, en árbol limpio: la que falla ("dos dispositivos abiertos" en `nube.test.js`) es intermitente y falla igual sin este cambio (3 de 5); con la configuración del proyecto pasa.
+
 ### fix(distribucion): BUG-035, BUG-036 y BUG-038, los pagos de compromisos · 2026-11-04
 
 Corrige los tres defectos que dejó abiertos el banco de HF.0f ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)), sin schema nuevo. El código entró en `5c97b98` bajo el mensaje de MV2.28 por un cruce entre dos sesiones que trabajaban en el mismo árbol; esta entrada es su registro. Fichas: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md) (Distribución) y [`contexto/gastos.md`](contexto/gastos.md) (Formulario de gasto).
