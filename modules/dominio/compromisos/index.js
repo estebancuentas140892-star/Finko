@@ -40,6 +40,7 @@ import {
   textoBannerGastoFijo,
   CATEGORIA_NUEVA_VALUE_FIJO,
   renderEstrategiaPago,
+  renderEntradaPlanSalida,
   setEstrategiaUI,
   getEstrategiaUI,
   renderAlertaDeudasDurmiendo,
@@ -101,6 +102,38 @@ function _renderTodo() {
   renderEstrategiaPago();
   renderAlertaDeudasDurmiendo();
   renderListaCompromisos();
+  renderEntradaPlanSalida();
+}
+
+// ── EL PLAN DE SALIDA EN SU HOJA (ADR 119 D1) ──────────────────────
+
+const _MQ_MOVIL = '(max-width: 1023.98px)';
+
+/**
+ * Bajo 1024px el simulador (`#estrategia-pago`) se muda a su hoja; desde
+ * 1024px vuelve a su sitio en la sección, donde lo ubica la rejilla de
+ * escritorio (ADR 073). Una sola copia: sus campos guardan el estado de la
+ * simulación (BUG-011), y dos dirían cosas distintas.
+ */
+function _ubicarEstrategia() {
+  const est = document.getElementById('estrategia-pago');
+  const sitio = document.getElementById('estrategia-pago-sitio');
+  const hoja = document.getElementById('plan-salida-body');
+  if (!est || !sitio || !hoja) return;
+  if (window.matchMedia?.(_MQ_MOVIL).matches === true) {
+    if (est.parentElement !== hoja) hoja.appendChild(est);
+    return;
+  }
+  const overlay = document.getElementById('modal-plan-salida');
+  if (overlay && 'open' in overlay.dataset) cerrarModal(overlay);
+  if (est.previousElementSibling !== sitio) sitio.after(est);
+}
+
+function _verPlanSalida() {
+  const overlay = document.getElementById('modal-plan-salida');
+  if (!overlay) return;
+  _ubicarEstrategia();
+  abrirModal(overlay);
 }
 
 /**
@@ -1407,6 +1440,7 @@ export function initCompromisos() {
   // mismo handler directo: mismo dominio, ya no hace falta EventBus.
   registrarAccion('inicio-pagar-lote',        () => _abrirLote(hoy().slice(0, 7)));
   registrarAccion('compromisos-pagar-lote',   _pagarLote);
+  registrarAccion('compromisos-ver-plan',     _verPlanSalida);
   registrarAccion('compromisos-confirmar-lote', _confirmarLote);
 
   // El cuerpo del modal del lote se re-inyecta en cada apertura, pero el
@@ -1464,8 +1498,13 @@ export function initCompromisos() {
   registrarRender(() => renderSmart(_renderTodo, 'compromisos'));
 
   // ADR 117 D1: la lista cambia de anatomía en 1024px (filas por urgencia en
-  // el teléfono, tarjetas por tipo en escritorio). Al cruzar el corte se repinta.
-  window.matchMedia?.('(max-width: 1023.98px)').addEventListener?.('change', () => renderSmart(_renderTodo, 'compromisos'));
+  // el teléfono, tarjetas por tipo en escritorio). Al cruzar el corte se
+  // repinta, y el simulador cambia de casa (ADR 119 D1).
+  _ubicarEstrategia();
+  window.matchMedia?.(_MQ_MOVIL).addEventListener?.('change', () => {
+    _ubicarEstrategia();
+    renderSmart(_renderTodo, 'compromisos');
+  });
 
   // `gastos` entra por dos motivos distintos, y los dos vienen de que pagar un
   // fijo o abonar una deuda escribe en `gastos` y no en `compromisos`:

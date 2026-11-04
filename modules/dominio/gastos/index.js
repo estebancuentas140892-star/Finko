@@ -32,6 +32,7 @@ import {
 // gastosMes de gastos/logic.js).
 import { calcularProgreso } from '../presupuesto/logic.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
+import { htmlDetalleGasto } from './detalle.js';
 import { renderListaGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, alternarFiltrosGastos, navegarMesGastos, irAMesActual, ayerIso, CATEGORIA_NUEVA_VALUE } from './view.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
@@ -759,6 +760,25 @@ export function initGastos() {
     EventBus.emit('movimientos:ver', { dominio: 'gastos' });
   });
   registrarAccion('repetir-gasto', _repetirGasto);
+
+  // ADR 119 D2: la hoja del gasto trae datos propios (cuenta, límite de la
+  // categoría, cuántos van en el mes, qué pasa al borrar). Es la hoja de la
+  // fila (`#modal-detalle-fila`) con el cuerpo armado acá.
+  registrarAccion('gasto-detalle', (el) => {
+    const gasto = S.gastos.find(g => g.id === el.dataset.id);
+    const hoja = document.getElementById('modal-detalle-fila');
+    const cuerpo = document.getElementById('detalle-fila-body');
+    if (!gasto || !hoja || !cuerpo) return;
+    cuerpo.innerHTML = htmlDetalleGasto(gasto);
+    abrirModal(hoja);
+  });
+  // "Los N gastos de X en octubre": Movimientos con la categoría y el mes.
+  registrarAccion('gasto-ver-categoria', (el) => {
+    const overlay = el.closest('.modal-overlay');
+    if (overlay) cerrarModal(overlay);
+    const { categoria, desde, hasta } = el.dataset;
+    EventBus.emit('movimientos:ver', { categoria, desde, hasta });
+  });
   registrarAccion('gastos-repetir-frecuente', _repetirFrecuente);
   registrarAccion('gastos-prev-mes',    _prevMes);
   registrarAccion('gastos-next-mes',    _nextMes);

@@ -35,6 +35,7 @@
  *   200 % los montos bajan y las lentes van en dos líneas.
  * - ADR 118: el día del Calendario en su hoja (y reabierto al volver de "Por
  *   pagar"); toda hoja se cierra deslizándola y con el atrás del sistema.
+ * - ADR 119: el plan de salida en su hoja y la hoja del gasto con sus datos.
  * - Escritorio no cambia: las piezas nuevas no se ven a 1280.
  * - D13: el camino de Aprender del niño no desborda a lo ancho.
  */
@@ -225,8 +226,9 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await fila.locator('.list-item__detalle').click();
     const hoja = page.locator('#modal-detalle-fila[data-open]');
     await expect(hoja).toHaveCount(1);
+    // ADR 119 D2: la hoja del gasto nombra sus acciones como el canvas.
     await expect(hoja.locator('.detalle-fila__accion')).toHaveText([
-      'Repetir este gasto', 'Editar gasto', 'Eliminar gasto',
+      'Repetir hoy', 'Editar', 'Borrar este gasto',
     ]);
 
     await hoja.locator('[data-target-action="editar-gasto"]').click();
@@ -728,6 +730,54 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(page).toHaveURL(/#gast$/);
   });
 
+  test('Por pagar termina en "¿Cómo salir más rápido?" y el plan se abre en su hoja (ADR 119 D1)', async ({ page }) => {
+    await sembrar(page, estadoBase({
+      cuentas: CUENTAS,
+      compromisos: [
+        { id: 'd1', tipo: 'deuda-entidad', descripcion: 'Tarjeta Visa', saldoTotal: 3_200_000, cuotaMensual: 420_000,
+          frecuencia: 'Mensual', diaPago: 25, activo: true, tasa: 0.28, tasaUnidad: 'EA' },
+        { id: 'd2', tipo: 'deuda-personal', descripcion: 'Préstamo de mi hermano', saldoTotal: 700_000,
+          cuotaMensual: 100_000, frecuencia: 'Mensual', diaPago: 28, activo: true, tasa: 0 },
+      ],
+    }));
+    await page.goto('/#compromisos');
+    const entrada = page.locator('#plan-salida-entrada .plan-salida');
+    await expect(entrada).toBeVisible({ timeout: 10_000 });
+    await expect(entrada).toContainText('Compara Avalancha y Bola de nieve con tus 2 deudas');
+    // El simulador ya no ocupa la sección: vive en la hoja.
+    await expect(page.locator('#sec-compromisos > #estrategia-pago')).toHaveCount(0);
+
+    await entrada.click();
+    const hoja = page.locator('#modal-plan-salida[data-open]');
+    await expect(hoja.locator('#estrategia-pago .estrategia-card__title')).toHaveText('¿Cómo salir más rápido?');
+    await hoja.locator('.mas-sheet__close').click();
+    await expect(page.locator('#modal-plan-salida[data-open]')).toHaveCount(0);
+  });
+
+  test('la hoja del gasto dice de qué cuenta salió, cómo va su límite y lleva a sus gastos del mes (ADR 119 D2)', async ({ page }) => {
+    await sembrar(page, estadoBase({
+      cuentas: CUENTAS,
+      presupuestos: [{ id: 'p1', categoria: 'Mercado', montoMensual: 25_000, activo: true }],
+      gastos: gastos(),
+    }));
+    await page.goto('/#gast');
+    const fila = page.locator('#lista-gastos .list-item--detalle[data-id="g0"]');
+    await expect(fila).toBeVisible({ timeout: 10_000 });
+    await fila.locator('.list-item__detalle').click();
+    const hoja = page.locator('#modal-detalle-fila[data-open]');
+    await expect(hoja.locator('#detalle-fila-titulo')).toHaveText('Mercado');
+    await expect(hoja.locator('.detalle-gasto__dato').first()).toContainText('Nequi');
+    await expect(hoja.locator('.detalle-gasto__limite')).toContainText('de su límite de $25.000');
+    await expect(hoja.locator('.detalle-gasto__al-borrar')).toHaveText('Te pediremos confirmar. Los $10.000 vuelven a Nequi.');
+
+    const ver = hoja.locator('[data-action="gasto-ver-categoria"]');
+    await expect(ver).toContainText('Los 4 gastos de Mercado en');
+    await ver.click();
+    await expect(page.locator('#sec-movimientos.active')).toBeVisible();
+    await expect(page.locator('#modal-detalle-fila[data-open]')).toHaveCount(0);
+    await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(4);
+  });
+
   test('con el texto al 200 %, los montos bajan y las lentes van en dos líneas (ADR 117 D4)', async ({ page }) => {
     await seedPorPagar(page);
     await page.goto('/#compromisos');
@@ -759,8 +809,18 @@ test.describe('MV2 - hojas con el dedo (ADR 118)', () => {
     await fila.locator('.list-item__detalle').tap();
     const hoja = page.locator('#modal-detalle-fila[data-open] > .modal');
     await expect(hoja).toBeVisible();
-    // La hoja termina de entrar antes de medirla.
-    await expect.poll(async () => (await hoja.boundingBox()).y + (await hoja.boundingBox()).height).toBeGreaterThan(830);
+    // La hoja entra y vuelve con una transición: se mide quieta, cuando dos
+    // lecturas seguidas dan la misma altura.
+    const quieta = async () => {
+      let previa = NaN;
+      await expect.poll(async () => {
+        const y = (await hoja.boundingBox()).y;
+        const igual = Math.abs(y - previa) < 0.5;
+        previa = y;
+        return igual;
+      }).toBe(true);
+    };
+    await quieta();
 
     const caja = await hoja.boundingBox();
     const x = caja.x + caja.width / 2;
@@ -777,6 +837,9 @@ test.describe('MV2 - hojas con el dedo (ADR 118)', () => {
     await arrastrar(30, 6);
     await expect(page.locator('#modal-detalle-fila[data-open]')).toHaveCount(1);
     await expect(hoja).not.toHaveAttribute('data-arrastre');
+    // Vuelve a su sitio: el siguiente dedo tiene que caer sobre ella.
+    await quieta();
+    expect(Math.round((await hoja.boundingBox()).y)).toBe(Math.round(caja.y));
 
     await arrastrar(220, 10);
     await expect(page.locator('#modal-detalle-fila[data-open]')).toHaveCount(0);
@@ -811,6 +874,9 @@ test.describe('MV2 - escritorio sin cambios', () => {
     await page.goto('/#compromisos');
     await expect(page.locator('#lista-compromisos .deuda-card').first()).toBeVisible({ timeout: 10_000 });
     await expect(page.locator('#lista-compromisos .porpagar-grupo')).toHaveCount(0);
+    // ADR 119 D1: el simulador sigue en su columna y la entrada del teléfono no se ve.
+    await expect(page.locator('#sec-compromisos > #estrategia-pago .estrategia-card')).toBeVisible();
+    await expect(page.locator('#plan-salida-entrada')).toBeHidden();
     await expect(page.locator('#lista-compromisos .deuda-card__chips').first()).toBeVisible();
     if (new Date().getDate() >= 3) await expect(page.locator('#lote-compromisos .cal-lote')).toBeVisible();
   });

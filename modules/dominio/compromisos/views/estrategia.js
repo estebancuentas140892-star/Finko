@@ -94,6 +94,27 @@ export function getEstrategiaUI() {
 }
 
 /**
+ * ADR 119 D1: al pie de "Por pagar", en el teléfono, la entrada al plan de
+ * salida. El simulador entero vive en su hoja; acá queda una tarjeta que dice
+ * qué compara y que no cambia nada hasta confirmar. Con menos de dos deudas no
+ * hay nada que comparar y no se pinta. La visibilidad por ancho la da CSS.
+ */
+export function renderEntradaPlanSalida() {
+  const el = document.getElementById('plan-salida-entrada');
+  if (!el) return;
+  const n = filtrarDeudasPagables(S.compromisos).length;
+  el.innerHTML = n < 2 ? '' : `
+    <button type="button" class="plan-salida" data-action="compromisos-ver-plan" aria-haspopup="dialog">
+      <span class="plan-salida__teja" aria-hidden="true">${icon('lightbulb')}</span>
+      <span class="plan-salida__textos">
+        <span class="plan-salida__titulo">¿Cómo salir más rápido?</span>
+        <span class="plan-salida__texto">Compara Avalancha y Bola de nieve con tus ${n} deudas. Es una simulación: nada cambia hasta que confirmes.</span>
+      </span>
+      <span class="plan-salida__ver">Ver plan${icon('chevron-right')}</span>
+    </button>`;
+}
+
+/**
  * Renderiza la card de estrategia de pago en `#estrategia-pago`.
  *
  * v6: ahora vive arriba de la lista de deudas y aparece con cualquier cantidad

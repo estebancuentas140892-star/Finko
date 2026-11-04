@@ -952,7 +952,10 @@
         <div id="lote-compromisos">
           <!-- Ficha 05: tarjeta de pago en lote, mudada del Calendario. -->
         </div>
-        <!-- Estrategia arriba: define el orden de pago aplicado en la lista. -->
+        <!-- Estrategia arriba: define el orden de pago aplicado en la lista.
+             ADR 119 D1: bajo 1024px el simulador se muda a su hoja
+             (#modal-plan-salida) y vuelve a este sitio en escritorio. -->
+        <span id="estrategia-pago-sitio" hidden></span>
         <div id="estrategia-pago">
           <!-- F.4 / v6: card Avalancha vs Bola de Nieve. -->
         </div>
@@ -961,6 +964,9 @@
         </div>
         <div id="lista-compromisos">
           <!-- Ficha 05: fijos y deudas, cada grupo con su propio orden. -->
+        </div>
+        <div id="plan-salida-entrada">
+          <!-- ADR 119 D1: "¿Cómo salir más rápido?" al pie, solo bajo 1024px. -->
         </div>
       </section>
 
@@ -1418,6 +1424,21 @@
        MODALES - scaffolding (Fases 6-12 completan el contenido)
        Contrato: [data-open] activa; Escape cierra; data-action="modal-close" cierra
        ══════════════════════════════════════════════════════════ -->
+
+  <!-- Hoja del plan de salida (ADR 119 D1): bajo 1024px el simulador de
+       estrategia vive acá. Va primera entre los modales para que lo que se
+       abra desde el simulador (las confirmaciones) quede encima. -->
+  <div class="modal-overlay modal-overlay--sheet" id="modal-plan-salida"
+       role="dialog" aria-modal="true" aria-label="Plan de salida" aria-hidden="true">
+    <div class="modal modal--sheet plan-salida-hoja">
+      <span class="mas-sheet__handle" aria-hidden="true"></span>
+      <button class="modal__close mas-sheet__close" type="button"
+              data-action="modal-close" aria-label="Cerrar">
+        <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
+      </button>
+      <div class="plan-salida-hoja__body" id="plan-salida-body"></div>
+    </div>
+  </div>
 
   <!-- Modal: Nuevo gasto -->
   <div class="modal-overlay" id="modal-gasto" data-dom="gastos"

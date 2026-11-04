@@ -1936,6 +1936,7 @@
 .section__ojo,
 .section__volver--contexto,
 .list-item__detalle,
+#plan-salida-entrada,
 .filtros-bar__mas,
 .movimientos-filtros__fechas-chip,
 .movimientos-filtros__resumen,
@@ -2182,6 +2183,10 @@
   /* La hoja: cabeza con lo que la fila ya decía, el monto grande, las
      acciones a lo ancho y eliminar aparte (R53). */
   .detalle-fila__body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     display: flex;
     flex-direction: column;
     gap: var(--fk-space-4);
@@ -2250,6 +2255,95 @@
     list-style: none;
     font-size: var(--fk-text-sm);
     color: var(--fk-text-secondary);
+  }
+
+  /* ── ADR 119 D2: la hoja del gasto ─────────────────────────────────────
+     Monto y cuándo juntos; de qué cuenta salió, la nota y la categoría en
+     filas; la línea del límite; repetir y editar lado a lado; la salida a
+     Movimientos como fila; y borrar aparte con lo que pasa al borrar. */
+  .detalle-gasto__monto {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .detalle-gasto__monto .detalle-fila__cuando {
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-regular);
+    text-transform: none;
+    letter-spacing: normal;
+  }
+  .detalle-gasto__datos {
+    margin: 0;
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-lg);
+    background: var(--fk-bg-surface);
+  }
+  .detalle-gasto__dato {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    column-gap: var(--fk-space-3);
+    min-height: 52px;
+    padding: var(--fk-space-2) var(--fk-space-4);
+  }
+  .detalle-gasto__dato + .detalle-gasto__dato { border-top: 1px solid var(--fk-border-subtle); }
+  .detalle-gasto__dato dt {
+    font-size: var(--fk-text-sm);
+    color: var(--fk-text-secondary);
+  }
+  .detalle-gasto__dato dd {
+    margin: 0 0 0 auto;
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-primary);
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+  .detalle-gasto__limite {
+    margin: 0;
+    font-size: var(--fk-text-sm);
+    color: var(--fk-text-secondary);
+  }
+  .detalle-gasto__limite strong { color: var(--fk-text-primary); }
+  .detalle-gasto__acciones {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .detalle-gasto__ver {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    width: 100%;
+    min-height: 64px;
+    padding: var(--fk-space-2) var(--fk-space-4);
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-lg);
+    background: var(--fk-bg-surface);
+    color: var(--fk-text-primary);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .detalle-gasto__ver-textos {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .detalle-gasto__ver-titulo {
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-semibold);
+  }
+  .detalle-gasto__ver-sub {
+    font-size: var(--fk-text-xs);
+    color: var(--fk-text-secondary);
+  }
+  .detalle-gasto__al-borrar {
+    margin: 0;
+    font-size: var(--fk-text-xs);
+    color: var(--fk-text-muted);
+    text-align: center;
   }
 
   /* ── ADR 109 (MV2.9): Mis cuentas en filas con hoja ────────────────────
@@ -2771,13 +2865,80 @@
 
   /* ── Por pagar: la lista antes que la estrategia ──────────────────────
      El comparador de estrategia ocupaba la primera pantalla y lo que hay
-     que pagar quedaba debajo. En móvil la lista sube; el orden de pago que
-     la estrategia aplica sigue rigiendo la lista igual. */
+     que pagar quedaba debajo. En móvil la lista sube, y desde el ADR 119 D1
+     el simulador vive en su hoja: al pie queda "¿Cómo salir más rápido?". */
   #sec-compromisos.active {
     display: flex;
     flex-direction: column;
   }
   #sec-compromisos > #estrategia-pago { order: 1; }
+  #plan-salida-entrada { display: block; margin-top: var(--fk-space-5); }
+  #plan-salida-entrada:empty { display: none; }
+  .plan-salida {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    width: 100%;
+    padding: var(--fk-space-4);
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-lg);
+    background: var(--fk-bg-surface);
+    box-shadow: var(--fk-shadow-sm);
+    color: var(--fk-text-primary);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .plan-salida__teja {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: var(--fk-radius-md);
+    background: var(--fk-dom-compromisos-bg);
+    color: var(--fk-dom-compromisos-text);
+  }
+  .plan-salida__textos {
+    display: flex;
+    flex: 1 1 8rem;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .plan-salida__titulo { font-weight: var(--fk-font-semibold); }
+  .plan-salida__texto {
+    font-size: var(--fk-text-sm);
+    color: var(--fk-text-secondary);
+  }
+  .plan-salida__ver {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    min-height: 44px;
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-accent);
+  }
+  /* La hoja: el simulador entero, desplazable, sin su tarjeta (la hoja ya es
+     la superficie) ni su rótulo (la hoja se abre desde él). */
+  .plan-salida-hoja__body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: var(--fk-space-1) var(--fk-space-4) var(--fk-space-5);
+  }
+  .plan-salida-hoja #estrategia-pago > .grupo-eyebrow { display: none; }
+  .plan-salida-hoja .estrategia-card {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .plan-salida-hoja .estrategia-card__header { padding-right: var(--fk-space-10); }
 
   /* ── R51: un solo primario cuando la sección está vacía ───────────────
      El estado vacío ya trae el primario de la sección ("+ Agregar cuenta",

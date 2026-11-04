@@ -536,11 +536,12 @@ function _renderGastoItem(gasto, oculto) {
   const simbolo = iconoPorOrigen(gasto, S.compromisos, S.categoriasPersonalizadas) ?? iconoDeCategoriaGasto(catKey, S.categoriasPersonalizadas);
 
   // ADR 098 D4: en móvil la fila entera abre la hoja de detalle y las tres
-  // acciones viven ahí (ui/detalle-fila.js). En escritorio el botón no se ve.
+  // acciones viven ahí. En escritorio el botón no se ve. ADR 119 D2: la hoja
+  // del gasto la arma `detalle.js` con sus datos, no la copia de la fila.
   return `
     <article class="list-item list-item--detalle" data-id="${_esc(gasto.id)}">
-      <button class="list-item__detalle" type="button" data-action="fila-detalle"
-              aria-label="Ver detalle: ${cat}, ${montoTxt}"></button>
+      <button class="list-item__detalle" type="button" data-action="gasto-detalle"
+              data-id="${_esc(gasto.id)}" aria-label="Ver detalle: ${cat}, ${montoTxt}"></button>
       <div class="list-item__icon" aria-hidden="true">${tejaCategoria(simbolo, 'gastos')}</div>
       <div class="list-item__body">
         <p class="list-item__title">${cat}</p>

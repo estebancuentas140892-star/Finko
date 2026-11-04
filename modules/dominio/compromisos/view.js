@@ -22,6 +22,6 @@ export { renderHeroCompromisos } from './views/hero.js';
 export { renderAlertaDeudasDurmiendo } from './views/alertas.js';
 export { renderListaCompromisos, setFiltroPorPagar, getFiltroPorPagar } from './views/lista.js';
 export { renderFormAbono, renderFormDeuda, renderFormGastoFijo, textoBannerGastoFijo, CATEGORIA_NUEVA_VALUE_FIJO } from './views/formularios.js';
-export { setEstrategiaUI, getEstrategiaUI, renderEstrategiaPago } from './views/estrategia.js';
+export { setEstrategiaUI, getEstrategiaUI, renderEstrategiaPago, renderEntradaPlanSalida } from './views/estrategia.js';
 export { renderPanelVencidos, renderPanelPrioridades } from './views/dashboard.js';
 export { renderLoteCard, renderFormPagoLote } from './views/lote.js';

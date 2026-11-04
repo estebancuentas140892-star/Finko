@@ -47,7 +47,7 @@ import { navegarMesBloque, irAMesActualBloque, prefijoMesBloque } from '../../mo
 import { renderAlertaDeudasDurmiendo } from '../../modules/dominio/compromisos/views/alertas.js';
 import { renderPanelPrioridades, renderPanelVencidos } from '../../modules/dominio/compromisos/views/dashboard.js';
 import { renderResumenExtra, renderImpactoAvalancha, renderComparativaRenegociacion, renderComparativaConsolidacion } from '../../modules/dominio/compromisos/views/estrategia-impacto.js';
-import { renderEstrategiaPago, setEstrategiaUI } from '../../modules/dominio/compromisos/views/estrategia.js';
+import { renderEstrategiaPago, setEstrategiaUI, renderEntradaPlanSalida } from '../../modules/dominio/compromisos/views/estrategia.js';
 import { renderHeroCompromisos } from '../../modules/dominio/compromisos/views/hero.js';
 import { S } from '../../modules/core/state.js';
 import { f } from '../../modules/infra/utils.js';
@@ -5821,5 +5821,35 @@ describe('renderListaCompromisos() - el chip no inventa vencidos (ficha 05)', ()
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+// ── ADR 119 D1: la entrada al plan de salida ─────────────────────
+
+describe('renderEntradaPlanSalida() - "¿Cómo salir más rápido?" al pie (ADR 119)', () => {
+  const deuda = (id, o = {}) => ({
+    id, descripcion: `Deuda ${id}`, tipo: 'deuda-entidad', saldoTotal: 1_000_000,
+    cuotaMensual: 100_000, frecuencia: 'Mensual', diaPago: 5, tasa: 0.2, tasaUnidad: 'EA', activo: true, ...o,
+  });
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="plan-salida-entrada"></div>';
+  });
+
+  it('con dos o más deudas dice qué compara y que nada cambia hasta confirmar', () => {
+    S.compromisos = [deuda('a'), deuda('b'), deuda('c')];
+    renderEntradaPlanSalida();
+    const btn = document.querySelector('#plan-salida-entrada .plan-salida');
+    expect(btn.dataset.action).toBe('compromisos-ver-plan');
+    expect(btn.textContent).toContain('¿Cómo salir más rápido?');
+    expect(btn.textContent).toContain('Compara Avalancha y Bola de nieve con tus 3 deudas');
+    expect(btn.textContent).toContain('nada cambia hasta que confirmes');
+    expect(btn.textContent).toContain('Ver plan');
+  });
+
+  it('con una sola deuda no hay nada que comparar: no se pinta', () => {
+    S.compromisos = [deuda('a')];
+    renderEntradaPlanSalida();
+    expect(document.getElementById('plan-salida-entrada').innerHTML).toBe('');
   });
 });

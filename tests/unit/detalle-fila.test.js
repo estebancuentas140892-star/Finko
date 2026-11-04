@@ -106,13 +106,16 @@ describe('las filas traen la hoja', () => {
     S.config = { ...(S.config ?? {}), ocultarSaldo: false };
   });
 
-  it('una fila de Gastos abre la hoja y la hoja lee su día, título y acciones', () => {
+  // ADR 119 D2: el gasto abre su propia hoja (gastos/detalle.js, con sus
+  // pruebas); la fila sigue trayendo lo que la hoja genérica sabe leer.
+  it('una fila de Gastos abre la hoja del gasto y la fila sigue legible para la genérica', () => {
     document.body.innerHTML = '<div id="panel-filtros-gastos"></div><div id="lista-gastos"></div>';
     renderListaGastos();
     const fila = document.querySelector('#lista-gastos .list-item');
     expect(fila.classList.contains('list-item--detalle')).toBe(true);
     const abrir = fila.querySelector('.list-item__detalle');
-    expect(abrir.dataset.action).toBe('fila-detalle');
+    expect(abrir.dataset.action).toBe('gasto-detalle');
+    expect(abrir.dataset.id).toBe('g1');
     expect(abrir.getAttribute('aria-label')).toBe('Ver detalle: Cuidado personal, $42.000');
 
     const d = datosDeFila(fila);
