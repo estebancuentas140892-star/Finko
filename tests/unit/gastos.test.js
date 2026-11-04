@@ -1461,6 +1461,27 @@ describe('renderFiltrosGastos() - hero del mes (GAS.1a)', () => {
     expect(el.querySelector('.hero-gastos__valor').textContent.trim()).toBe('$85.000');
   });
 
+  // ADR 122 D5: bajo el total, cuántos gastos y el límite de la categoría.
+  it('con filtro activo dice cuántos gastos son y, si hay, el límite de la categoría', () => {
+    S.gastos = [
+      gastoBase({ id: 'g1', categoria: 'Mercado', monto: 85_000, fecha: fechaEnMes(0) }),
+      gastoBase({ id: 'g2', categoria: 'Mercado', monto: 40_000, fecha: fechaEnMes(0) }),
+      gastoBase({ id: 'g3', categoria: 'Transporte', monto: 15_000, fecha: fechaEnMes(0) }),
+    ];
+    S.presupuestos = [{ id: 'p1', categoria: 'Mercado', montoMensual: 250_000, activo: true }];
+    setFiltroCategoria('Mercado');
+    renderFiltrosGastos();
+    expect(document.querySelector('.hero-gastos__lectura').textContent.trim()).toBe('2 gastos · tu límite es $250.000');
+
+    S.presupuestos = [];
+    renderFiltrosGastos();
+    expect(document.querySelector('.hero-gastos__lectura').textContent.trim()).toBe('2 gastos');
+
+    setFiltroCategoria(null);
+    renderFiltrosGastos();
+    expect(document.querySelector('.hero-gastos__lectura')).toBeNull();
+  });
+
   it('comparativo verde con ícono al gastar menos que el mes anterior', () => {
     S.gastos = [
       gastoBase({ id: 'g1', monto: 92_000, fecha: fechaEnMes(0) }),

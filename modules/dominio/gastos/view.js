@@ -9,6 +9,7 @@ import { icon, tejaCategoria } from '../../infra/icons.js';
 import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA, iconoDeCategoriaGasto } from '../../core/constants.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
+import { presupuestosActivos } from '../presupuesto/logic.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
 import { topeHormiga } from '../../infra/hormiga.js';
 import { mesBloque, navegarMesBloque, irAMesActualBloque } from '../../infra/mes-bloque.js';
@@ -268,9 +269,27 @@ function _renderHeroGastos(delMes) {
       </div>
       <p class="hero-gastos__label">${label}</p>
       <p class="hero-gastos__valor">${totalTxt}</p>
+      ${_filtroCategoria ? _lecturaFiltro(visibles.length, _filtroCategoria, oculto) : ''}
       ${_renderComparativo(delMes)}
       ${_renderAlcanceInternas()}
     </div>`;
+}
+
+/**
+ * ADR 122 D5: con una categoría filtrada, bajo el total, cuántos gastos son y,
+ * si la categoría tiene límite, cuál es: "8 gastos · tu límite es $250.000".
+ * Es la lectura que el canvas pone en lugar del comparativo, que con filtro se
+ * oculta.
+ *
+ * @param {number} n Gastos de la categoría en el mes.
+ * @param {string} categoria
+ * @param {boolean} oculto
+ */
+function _lecturaFiltro(n, categoria, oculto) {
+  const tope = presupuestosActivos(S.presupuestos).find(p => p.categoria === categoria);
+  const cuantos = n === 1 ? '1 gasto' : `${n} gastos`;
+  const limite = tope ? ` · tu límite es ${oculto ? SALDO_MASCARA : f(Number(tope.montoMensual) || 0)}` : '';
+  return `<p class="hero-gastos__lectura">${cuantos}${limite}</p>`;
 }
 
 /**

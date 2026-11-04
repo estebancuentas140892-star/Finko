@@ -708,7 +708,8 @@ body.kid .leccion-clasificar__boton { min-height: var(--fk-kid-target); font-siz
   gap: var(--fk-space-3);
   padding: var(--fk-space-2) var(--fk-space-3);
   border-radius: var(--fk-radius-lg);
-  border-left: 4px solid var(--d);
+  /* ADR 122 D4: el color del frasco va en el borde completo, no en un filete. */
+  border: 1px solid color-mix(in srgb, var(--d) 45%, transparent);
   background: var(--fk-bg-elevated);
 }
 .familia-reparto__fila[data-frasco="ahorrar"]   { --d: var(--fk-dom-ahorro); }

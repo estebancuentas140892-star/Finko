@@ -220,7 +220,7 @@ function _renderAvisoVigencia() {
 
   return `
     <div class="nudge nudge-medium" role="status">
-      <span class="nudge__icon" aria-hidden="true">📅</span>
+      <span class="nudge__icon" aria-hidden="true">${icon('agenda')}</span>
       <div class="nudge__body">
         <p class="nudge__title">Valores legales de ${vig.anioActual} pendientes</p>
         <p class="nudge__desc">Finko todavía usa los valores oficiales de ${vig.anioVigente} (SMMLV, UVT y topes de renta) porque los de ${vig.anioActual} aún no se han cargado. Se muestran como referencia provisional hasta que se actualicen.</p>
@@ -518,9 +518,13 @@ function _renderNotificaciones() {
     return `
       <section class="config-section" aria-labelledby="config-notif-title">
         <h2 class="config-section__title" id="config-notif-title">Recordatorios</h2>
-        <p class="config-section__desc config-section__desc--warn">
-          Bloqueaste las notificaciones de Finko en este dispositivo. ${comoDesbloquear}
-        </p>
+        <div class="nudge nudge-medium" role="status">
+          <span class="nudge__icon" aria-hidden="true">${icon('alert')}</span>
+          <div class="nudge__body">
+            <p class="nudge__title">Las notificaciones están bloqueadas</p>
+            <p class="nudge__desc">Bloqueaste las notificaciones de Finko en este dispositivo. ${comoDesbloquear}</p>
+          </div>
+        </div>
         <p class="form-hint">
           Mientras tanto, los compromisos que vencen pronto siguen visibles en
           <a href="#agenda" class="link">Calendario</a> y en Inicio.
@@ -756,7 +760,7 @@ function _renderAvisoAlmacenamiento() {
 
   return `
     <div class="nudge ${clase}" role="${critico ? 'alert' : 'status'}">
-      <span class="nudge__icon" aria-hidden="true">⚠️</span>
+      <span class="nudge__icon" aria-hidden="true">${icon('alert')}</span>
       <div class="nudge__body">
         <p class="nudge__title">${titulo}</p>
         <p class="nudge__desc">${desc}</p>

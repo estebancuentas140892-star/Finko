@@ -25,7 +25,7 @@ import { avisosDeHoy } from '../../infra/avisos.js';
  * lógica de siempre (no pasan por el motor). Mostrarlos también acá sería el
  * mismo aviso dos veces en la misma pantalla.
  */
-const _TIPOS_SIN_PANEL_PROPIO = ['apartado-listo', 'dia-de-pago', 'prestamo-vencido', 'respaldo-atrasado'];
+const _TIPOS_SIN_PANEL_PROPIO = ['apartado-listo', 'dia-de-pago', 'prestamo-vencido', 'respaldo-atrasado', 'nube-por-decidir'];
 
 /** Filas visibles antes de resumir el resto en un texto, mismo tope que "Pendientes del mes". */
 const MAX_VISIBLES_AVISOS = 4;
@@ -35,6 +35,7 @@ const _ICONO_POR_TIPO_AVISO = {
   'dia-de-pago':       () => icon('saldo'),
   'prestamo-vencido':  () => icon('personales'),
   'respaldo-atrasado': () => icon('ajustes'),
+  'nube-por-decidir':  () => icon('alert'),
 };
 
 /**
@@ -59,6 +60,8 @@ function _filaAviso(a) {
       const dias = Number(a.dias) || 0;
       return { sub: `Hace ${dias} días que no lo respaldas`, badge: 'Respaldo', clase: 'info' };
     }
+    case 'nube-por-decidir':
+      return { sub: 'Falta decidir qué hacer con tus datos', badge: 'Por decidir', clase: 'info' };
     default:
       return { sub: monto, badge: '', clase: 'info' };
   }

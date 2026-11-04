@@ -231,3 +231,14 @@ describe('htmlHojaAvisosHoy()', () => {
     expect(d.querySelector('.avisos-hoy__item-t').textContent).toBe('<b>x</b>');
   });
 });
+
+// ── ADR 122 D6: el conflicto de la nube en Atención hoy ───────────
+
+describe('contenidoGrupo() - la nube', () => {
+  it('dice qué falta decidir y lleva a decidirlo', () => {
+    const avisos = recolectarAvisos({ nubePorDecidir: true, hoyISO: '2026-11-04' });
+    const c = contenidoGrupo({ seccion: 'nube', severidad: 'media', avisos });
+    expect(c.titulo).toBe('Falta decidir qué hacer con tus datos');
+    expect(c.cta).toMatchObject({ texto: 'Decidir', href: '#config' });
+  });
+});

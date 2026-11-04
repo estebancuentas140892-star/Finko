@@ -66,7 +66,6 @@
 .calc-result {
   background: var(--fk-bg-elevated);
   border: 1px solid var(--fk-border-subtle);
-  border-left: 3px solid var(--fk-accent);
   border-radius: var(--fk-radius-lg);
   padding: var(--fk-space-4) var(--fk-space-5);
   animation: fadeInUp 0.25s ease-out;
@@ -180,7 +179,6 @@
 .calc-result__errors li {
   padding: var(--fk-space-2) var(--fk-space-3);
   background: var(--fk-danger-bg);
-  border-left: 3px solid var(--fk-danger);
   border-radius: var(--fk-radius-sm);
 }
 
@@ -1725,15 +1723,17 @@ button.chip:focus-visible {
 .perfil-inicio__franja {
   font-size: var(--fk-text-sm);
   color: var(--fk-text-secondary);
+  /* ADR 122 D2: si falta espacio se corta el saludo, nunca el nombre. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .perfil-inicio__nombre {
   font-size: var(--fk-text-xl);
   font-weight: var(--fk-font-bold);
   color: var(--fk-text-primary);
   line-height: var(--fk-leading-tight);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 .perfil-inicio__nombre[hidden] { display: none; }
 
@@ -4464,7 +4464,6 @@ button.chip:focus-visible {
 .banner-proposito--colapsado {
   background: transparent;
   border: none;
-  border-left: 3px solid var(--fk-border-default);
   border-radius: 0;
   padding: 0 var(--fk-space-3);
   margin-bottom: var(--fk-space-3);
@@ -4617,6 +4616,13 @@ button.chip:focus-visible {
   line-height: 1;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
+}
+
+/* ADR 122 D5: con una categoría filtrada, cuántos gastos y su límite. */
+.hero-gastos__lectura {
+  margin: var(--fk-space-2) 0 0;
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
 }
 
 /* Chip comparativo (D2): reusa la base .chip/.chip-success de atoms;

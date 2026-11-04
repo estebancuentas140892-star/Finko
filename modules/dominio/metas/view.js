@@ -78,8 +78,9 @@ export function renderListaMetas() {
   // el que contrastar: si todas las metas tienen fecha, el rótulo nombraría
   // lo único que hay. R89 pide decir el criterio del orden, no rotular por
   // rotular.
+  // ADR 122 D1 (R89a): el divisor dice también el orden, como el canvas.
   const conPlazoHtml = conPlazo.length > 0
-    ? (sinPlazo.length > 0 ? _divisorGrupo('Con plazo') : '') + conPlazo.map(tarjeta).join('')
+    ? (sinPlazo.length > 0 ? _divisorGrupo('Con plazo · la más cercana primero') : '') + conPlazo.map(tarjeta).join('')
     : '';
 
   const sinPlazoHtml = sinPlazo.length > 0

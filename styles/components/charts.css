@@ -261,7 +261,8 @@ button.cmp__col {
   color: var(--fk-danger);
   padding: var(--fk-space-3);
   border-radius: var(--fk-radius-md);
-  border-left: 3px solid var(--fk-danger);
+  /* ADR 122 D4 (V1): borde completo e ícono, sin filete lateral. */
+  border: 1px solid color-mix(in srgb, var(--fk-danger) 40%, transparent);
   line-height: var(--fk-leading-relaxed);
 }
 .import-warn {
@@ -269,9 +270,17 @@ button.cmp__col {
   color: var(--fk-text-primary);
   padding: var(--fk-space-2) var(--fk-space-3);
   border-radius: var(--fk-radius-md);
-  border-left: 3px solid var(--fk-amber);
+  border: 1px solid color-mix(in srgb, var(--fk-amber) 40%, transparent);
   font-size: var(--fk-text-sm);
 }
+.import-error,
+.import-warn {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fk-space-2);
+}
+.import-error > .icon,
+.import-warn > .icon { flex: none; margin-top: 2px; }
 .import-warn code {
   background: var(--fk-bg-surface);
   padding: 0 var(--fk-space-1);
@@ -342,20 +351,13 @@ button.cmp__col {
   border-bottom: 1px solid var(--fk-border-subtle);
   vertical-align: top;
 }
-.import-row--ok td:first-child {
-  border-left: 3px solid var(--fk-text-accent);
-}
+/* ADR 122 D4: el estado de la fila lo dice su columna (✓, ↻, ❌), no un
+   filete lateral. */
 .import-row--dup {
   opacity: 0.7;
 }
-.import-row--dup td:first-child {
-  border-left: 3px solid var(--fk-amber);
-}
 .import-row--error {
   background: color-mix(in srgb, var(--fk-danger) 4%, transparent);
-}
-.import-row--error td:first-child {
-  border-left: 3px solid var(--fk-danger);
 }
 .import-row__monto {
   font-family: var(--fk-font-mono);
@@ -768,7 +770,6 @@ button.cmp__col {
   margin: 0;
   padding: var(--fk-space-3);
   background: color-mix(in srgb, var(--fk-success) 10%, transparent);
-  border-left: 3px solid var(--fk-success);
   border-radius: var(--fk-radius-md);
   font-size: var(--fk-text-sm);
   line-height: 1.4;

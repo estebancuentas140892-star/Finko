@@ -1253,7 +1253,7 @@ describe('renderListaMetas() - orden de la lista', () => {
     expect([...document.querySelectorAll('.meta-card')].map(a => a.dataset.id))
       .toEqual(['laptop', 'curso']);
     expect([...document.querySelectorAll('.grupo-eyebrow')].map(p => p.textContent))
-      .toEqual(['Con plazo', 'Sin plazo']);
+      .toEqual(['Con plazo · la más cercana primero', 'Sin plazo']);
   });
 
   it('con todas las metas fechadas no se pinta un divisor que no separa nada', () => {

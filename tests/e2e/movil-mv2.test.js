@@ -335,6 +335,52 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     expect(tP.height).toBeLessThan(32);
   });
 
+  test('a 320 el saludo se corta antes que el nombre y los filtros de Por pagar miden lo mismo (ADR 122 D2, D3)', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 640 });
+    await sembrar(page, estadoBase({
+      perfil: { nombre: 'María Fernanda Restrepo Villegas', smmlv: 1750905 },
+      cuentas: CUENTAS,
+      compromisos: [{ id: 'f1', tipo: 'fijo', descripcion: 'Arriendo', monto: 900_000, frecuencia: 'Mensual', diaPago: 28, activo: true }],
+    }));
+    await page.goto('/#dash');
+    const nombre = page.locator('#saludo-inicio');
+    await expect(nombre).toBeVisible({ timeout: 10_000 });
+    // El nombre entero: puede bajar de línea, nunca se corta.
+    expect(await nombre.evaluate(el => getComputedStyle(el).textOverflow)).not.toBe('ellipsis');
+    expect(await nombre.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+    expect(await page.locator('#saludo-franja').evaluate(el => getComputedStyle(el).textOverflow)).toBe('ellipsis');
+
+    await page.goto('/#compromisos');
+    const chips = page.locator('#lista-compromisos > .filtros-bar > .chip');
+    await expect(chips).toHaveCount(4, { timeout: 10_000 });
+    const cajas = await chips.evaluateAll(els => els.map(el => el.getBoundingClientRect()));
+    expect(new Set(cajas.map(c => Math.round(c.top))).size).toBe(1);
+    expect(Math.max(...cajas.map(c => c.width)) - Math.min(...cajas.map(c => c.width))).toBeLessThan(1);
+  });
+
+  test('a 320 ninguna fila del título pasa de 52 px (tablero 10, ADR 122 D7)', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 640 });
+    await seedConTipos(page);
+    await page.goto('/#dash');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+    const altas = [];
+    for (const sec of ['movimientos', 'agenda', 'personales', 'tesoreria', 'fondo', 'metas', 'apartados', 'inversion', 'analisis', 'config']) {
+      await page.evaluate(s => { window.location.hash = '#' + s; }, sec);
+      await page.waitForSelector(`#sec-${sec}.active`, { timeout: 5_000 });
+      // La fila: teja, título y acciones del encabezado; la frase va debajo.
+      const alto = await page.evaluate((s) => {
+        const hd = document.querySelector(`#sec-${s} > .section__header`);
+        if (!hd || hd.getBoundingClientRect().height === 0) return null;
+        const piezas = [...hd.querySelectorAll('.section__icon, .section__title, :scope > button, :scope > a.btn')]
+          .map(el => el.getBoundingClientRect()).filter(r => r.height > 0);
+        if (piezas.length === 0) return null;
+        return Math.max(...piezas.map(r => r.bottom)) - Math.min(...piezas.map(r => r.top));
+      }, sec);
+      if (alto !== null && alto > 52.5) altas.push(`#${sec}: ${Math.round(alto)} px`);
+    }
+    expect(altas, altas.join(', ')).toEqual([]);
+  });
+
   test('el ojo va en el encabezado de toda pantalla con montos (ADR 106 D3)', async ({ page }) => {
     await seedConTipos(page);
     await page.goto('/#movimientos');

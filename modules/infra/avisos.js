@@ -34,12 +34,14 @@ import { estadoPrestamo, calcularPendiente } from '../dominio/personales/logic.j
 import { estadoDistribucion } from '../dominio/tesoreria/logic.js';
 import { diasHastaFecha } from './bolsas.js';
 import { ocurrenciasEnMes } from './vencimientos.js';
+import { leerSesion } from './nube.js';
 
 // ── VOCABULARIO DEL MOTOR ────────────────────────────────────────
 
 /**
- * Los tipos de aviso, en el orden de la tabla del ADR 066 D3; los dos últimos
- * llegaron después (CFG.4b y MV2.15a, ADR 099 D4).
+ * Los tipos de aviso, en el orden de la tabla del ADR 066 D3; los últimos
+ * llegaron después (CFG.4b, MV2.15a con el ADR 099 D4, y el conflicto de la
+ * nube con el ADR 122 D6).
  */
 export const TIPOS_AVISO = Object.freeze([
   'compromiso-vencido',
@@ -53,6 +55,7 @@ export const TIPOS_AVISO = Object.freeze([
   'dia-de-pago',
   'respaldo-atrasado',
   'ingreso-por-distribuir',
+  'nube-por-decidir',
 ]);
 
 /** Severidades de mayor a menor. El orden del array ES el ranking. */
@@ -316,6 +319,26 @@ function _deDiaDePago(ingresos, anio, mes, dia) {
  * las superficies que no lo piden ven el motor de siempre. `media` no
  * interrumpe (ADR 066 D5).
  */
+/**
+ * ADR 122 D6 (tablero 3, sincronización): un conflicto entre este teléfono y
+ * la nube se avisa una vez en "Atención hoy", con su acción. Mientras está por
+ * decidir, la nube no sincroniza (`config/nube.js`). Severidad media: no
+ * despierta el teléfono. No tiene interruptor propio en Ajustes: un conflicto
+ * no es algo que se pueda dejar de decidir.
+ *
+ * @param {boolean} porDecidir
+ */
+function _deNube(porDecidir) {
+  if (!porDecidir) return [];
+  return [_aviso({
+    tipo:      'nube-por-decidir',
+    severidad: 'media',
+    id:        'nube',
+    nombre:    'Tu copia en la nube',
+    seccion:   'nube',
+  })];
+}
+
 function _deIngresoPorDistribuir(ingresos, distribucion, hoyISO) {
   if (!distribucion) return [];
   const estado = estadoDistribucion(
@@ -436,6 +459,7 @@ export function recolectarAvisos({
   primerUsoISO = null,
   hayDatosParaRespaldar: hayDatos = false,
   distribucion = null,
+  nubePorDecidir = false,
   hoyISO,
 } = {}) {
   const m = _RX_HOY.exec(String(hoyISO ?? ''));
@@ -454,6 +478,7 @@ export function recolectarAvisos({
     ..._deDiaDePago(ingresos, anio, mes, dia),
     ..._deRespaldo(ultimoRespaldoISO, primerUsoISO, hoyISO, hayDatos),
     ..._deIngresoPorDistribuir(ingresos, distribucion, hoyISO),
+    ..._deNube(nubePorDecidir),
   ];
 
   return avisos.sort((a, b) => {
@@ -536,6 +561,7 @@ export function avisosDeHoy(state, hoyISO) {
         ultimaPeriodo:          state.config?.ultimaDistribucionPeriodo ?? null,
         cobroConfirmadoPeriodo: state.config?.cobroConfirmadoPeriodo ?? null,
       },
+      nubePorDecidir: leerSesion()?.porDecidir === true,
       hoyISO,
     }),
     state.config?.avisosPorSeccion,

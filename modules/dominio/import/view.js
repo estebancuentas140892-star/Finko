@@ -9,6 +9,7 @@
  */
 
 import { f, esc as _esc } from '../../infra/utils.js';
+import { icon } from '../../infra/icons.js';
 
 // ── PICKER (paso 1) ───────────────────────────────────────────────
 
@@ -65,8 +66,9 @@ export function renderImportPreview(resultado) {
     return `
       <div class="import-preview import-preview--error">
         <p class="import-error">
-          <strong>No se pudo procesar el archivo:</strong>
-          <br>${_esc(resultado.error)}
+          ${icon('alert')}
+          <span><strong>No se pudo procesar el archivo:</strong>
+          <br>${_esc(resultado.error)}</span>
         </p>
         <button class="btn btn-secondary" data-action="reiniciar-import">
           ← Volver
@@ -79,7 +81,8 @@ export function renderImportPreview(resultado) {
 
   const headersDesconocidosBloque = headersDesconocidos.length > 0
     ? `<p class="import-warn">
-         ⚠️ Columnas ignoradas (no reconocidas): ${headersDesconocidos.map(h => `<code>${_esc(h)}</code>`).join(', ')}
+         ${icon('alert')}
+         <span>Columnas ignoradas (no reconocidas): ${headersDesconocidos.map(h => `<code>${_esc(h)}</code>`).join(', ')}</span>
        </p>`
     : '';
 

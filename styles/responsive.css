@@ -2440,6 +2440,18 @@
      su acción debajo; editar y eliminar viven en la hoja de detalle. El lote
      baja al pie de "Vencidos", así que su tarjeta suelta sobra. */
   #lote-compromisos { display: none; }
+  /* ADR 122 D3 (A1): los cuatro filtros son botones de igual ancho y caben
+     en una fila desde 320. */
+  #lista-compromisos > .filtros-bar {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--fk-space-2);
+  }
+  #lista-compromisos > .filtros-bar > .chip {
+    justify-content: center;
+    min-width: 0;
+    padding-inline: var(--fk-space-1);
+  }
   .porpagar-grupo {
     display: flex;
     flex-direction: column;

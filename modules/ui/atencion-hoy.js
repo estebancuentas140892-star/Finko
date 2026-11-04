@@ -262,6 +262,18 @@ function _contenidoRespaldo(avisos) {
   };
 }
 
+/** ADR 122 D6: este teléfono y la nube tienen datos distintos. */
+function _contenidoNube() {
+  return {
+    icono: 'alert',
+    titulo: 'Falta decidir qué hacer con tus datos',
+    detalle: 'Este teléfono y la nube tienen datos distintos',
+    cta: { texto: 'Decidir', largo: 'Decidir qué hacer con tus datos en la nube', href: '#config' },
+    grupo: { titulo: 'Tu copia en la nube', cta: 'Ir a decidir' },
+    item: () => ({ t: 'Tu copia en la nube', s: 'Falta decidir qué hacer con tus datos', tono: 'warning', v: '' }),
+  };
+}
+
 const _CONTENIDO_POR_SECCION = {
   compromisos: _contenidoPagos,
   presupuesto: _contenidoLimites,
@@ -269,6 +281,7 @@ const _CONTENIDO_POR_SECCION = {
   apartados:   _contenidoApartados,
   personales:  _contenidoPersonales,
   respaldo:    _contenidoRespaldo,
+  nube:        _contenidoNube,
 };
 
 /**

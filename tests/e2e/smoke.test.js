@@ -5694,7 +5694,7 @@ test.describe('Metas - la lista gana cabeza y orden (ADR 082)', () => {
     await expect(nombres).toHaveText(['Laptop nueva', 'Viaje a Cartagena', 'Curso de inglés']);
 
     // La meta sin plazo va al final, bajo su divisor.
-    await expect(page.locator('#lista-metas .grupo-eyebrow')).toHaveText(['Con plazo', 'Sin plazo', 'Cumplidas']);
+    await expect(page.locator('#lista-metas .grupo-eyebrow')).toHaveText(['Con plazo · la más cercana primero', 'Sin plazo', 'Cumplidas']);
   });
 
   test('la meta cumplida pesa una fila, no una tarjeta, y su fila abre el editar', async ({ page }) => {

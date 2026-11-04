@@ -62,7 +62,42 @@ function desbordadas() {
     .map(el => `${el.className} ${el.scrollWidth}/${el.clientWidth}`);
 }
 
+/**
+ * Piezas visibles con filete lateral: un borde izquierdo más grueso que el
+ * derecho (tablero 11: "ninguna pieza lleva filete lateral"). La cita de los
+ * documentos legales lo conserva a propósito (ADR 116 D6).
+ */
+function conFilete() {
+  const sec = document.querySelector('.section.active');
+  if (!sec) return [];
+  return [...sec.querySelectorAll('*')]
+    .filter((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0 || el.closest('.legal-doc')) return false;
+      const cs = getComputedStyle(el);
+      const izq = parseFloat(cs.borderLeftWidth) || 0;
+      const der = parseFloat(cs.borderRightWidth) || 0;
+      return cs.borderLeftStyle !== 'none' && izq >= 2 && izq > der;
+    })
+    .map(el => `${el.tagName.toLowerCase()}.${[...el.classList].join('.')}`);
+}
+
 test.describe('Zonas táctiles a 390 (R4, R9, ADR 121 D4)', () => {
+  test('ninguna pieza visible lleva filete lateral (tablero 11, ADR 122 D4)', async ({ page }) => {
+    test.setTimeout(90_000);
+    await sembrar(page, semillaNormal());
+    await page.goto('/#dash');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+    const problemas = [];
+    for (const sec of SECCIONES) {
+      await page.evaluate(s => { window.location.hash = '#' + s; }, sec);
+      await page.waitForSelector(`#sec-${sec}.active`, { timeout: 5_000 });
+      await page.waitForTimeout(120);
+      for (const p of await page.evaluate(conFilete)) problemas.push(`#${sec}: ${p}`);
+    }
+    expect(problemas, problemas.join('\n')).toEqual([]);
+  });
+
   test('ningún control queda bajo 44 px y ninguna barra esconde opciones', async ({ page }) => {
     test.setTimeout(90_000);
     await sembrar(page, semillaNormal());

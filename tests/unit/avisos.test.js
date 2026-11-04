@@ -676,3 +676,24 @@ describe('SECCIONES_AVISO / LABEL_SECCION_AVISO', () => {
     }
   });
 });
+
+// ── ADR 122 D6: el conflicto de la nube ──────────────────────────
+
+describe('recolectarAvisos() - conflicto de la nube', () => {
+  it('con datos por decidir avisa una vez, en severidad media y sin interrumpir', () => {
+    const avisos = recolectarAvisos({ nubePorDecidir: true, hoyISO: HOY });
+    const nube = avisos.filter(a => a.tipo === 'nube-por-decidir');
+    expect(nube).toHaveLength(1);
+    expect(nube[0]).toMatchObject({ severidad: 'media', seccion: 'nube', nombre: 'Tu copia en la nube' });
+    expect(avisosQueInterrumpen(avisos).some(a => a.tipo === 'nube-por-decidir')).toBe(false);
+    expect(TIPOS_AVISO).toContain('nube-por-decidir');
+  });
+
+  it('sin conflicto no hay aviso', () => {
+    expect(recolectarAvisos({ hoyISO: HOY }).some(a => a.tipo === 'nube-por-decidir')).toBe(false);
+  });
+
+  it('no tiene interruptor en Ajustes: un conflicto no se puede dejar de decidir', () => {
+    expect(SECCIONES_AVISO).not.toContain('nube');
+  });
+});

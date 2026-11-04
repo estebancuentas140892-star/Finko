@@ -550,7 +550,7 @@ function _renderNudgeProximos(proximos, oculto = false) {
 
   return `
     <div class="nudge nudge-info">
-      <span class="nudge__icon" aria-hidden="true">📅</span>
+      <span class="nudge__icon" aria-hidden="true">${icon('agenda')}</span>
       <div class="nudge__body">
         <p class="nudge__title">${tituloStr}</p>
         <p class="nudge__desc">${descStr}</p>
