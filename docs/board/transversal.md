@@ -20,12 +20,12 @@
 - Prioridad  : media
 - Estado     : pendiente. Las 12 propuestas de la segunda auditoría ya están ([ADR 122](../DECISIONS/122-lo-que-faltaba-del-canvas-segunda-pasada.md) y [123](../DECISIONS/123-la-hoja-de-formulario-completa.md)) en la rama `mv2/finko-movil-2`, sin publicar en `main`
 - Área       : ambos
-- Objetivo   : (a) **medir** lo que pide el tablero 6: `pnpm perf:fluidez` contra las cifras de PERF.11 y PERF.12 en `scripts/perf/BASELINE.md` (el INP de abrir una hoja y de cambiar de sección no empeora) y `pnpm lighthouse` en 100; (b) **decidir con Esteban** si Ajustes lleva línea de estado en "Más": el prototipo del tablero 4 la dibuja, el texto no la nombra, y hoy `estadosMas()` no la da; (c) **anotar** el descarte del formulario corto (MV2.17), que el tablero 12 descartó sin ADR. **No va**: "N gastos · $X en {mes}" sobre la lista filtrada de Gastos (descartado en el ADR 122)
+- Objetivo   : (a) **medir** lo que pide el tablero 6: `pnpm perf:fluidez` contra las cifras de PERF.11 y PERF.12 en `scripts/perf/BASELINE.md` (el INP de abrir una hoja y de cambiar de sección no empeora) y `pnpm lighthouse` en 100; (b) **decidir con Esteban** si Ajustes lleva línea de estado en "Más": el prototipo del tablero 4 la dibuja, el texto no la nombra, y hoy `estadosMas()` no la da; (c) **anotar** el descarte del formulario corto (MV2.17), que el tablero 12 descartó sin ADR; (d) **margen seguro en el pie de los diálogos cortos**: bajo 481 px, el `.modal__footer` que va fuera de `.modal__body` (confirmar, "¿Desde qué cuenta?" de `infra/cuenta-helper.js`, novedades, contraseña del respaldo) no suma `env(safe-area-inset-bottom)` (tablero 3; los pies fijos ya lo tienen). **No va**: "N gastos · $X en {mes}" sobre la lista filtrada de Gastos (descartado en el ADR 122)
 - Riesgo     : (a) una hoja más lenta tras la agarradera o los pies fijos; se corrige antes de publicar
 - Secciones  : todas las hojas, "Más", Ajustes
-- Archivos   : `scripts/perf/fluidez.js`, `scripts/lighthouse.js`, `scripts/perf/BASELINE.md`, `modules/ui/menu-mas.js`, `tests/unit/menu-mas.test.js`, `docs/DECISIONS/`
+- Archivos   : `scripts/perf/fluidez.js`, `scripts/lighthouse.js`, `scripts/perf/BASELINE.md`, `modules/ui/menu-mas.js`, `tests/unit/menu-mas.test.js`, `styles/responsive.css` (bloque "ADR 123 D1"), `docs/DECISIONS/`
 - Depende de : nada; (a) va antes de publicar la rama en `main`
-- Aceptación : (a) cifras antes y después en BASELINE.md; (b) la decisión escrita y, si es sí, la línea con su prueba en `menu-mas.test.js`; (c) el descarte en un ADR
+- Aceptación : (a) cifras antes y después en BASELINE.md; (b) la decisión escrita y, si es sí, la línea con su prueba en `menu-mas.test.js`; (c) el descarte en un ADR; (d) E2E a 390 con `env(safe-area-inset-bottom)` simulado, o medición del padding del pie
 - Modelo     : (a) y (c) capacidad estándar, esfuerzo bajo; (b) es decisión de Esteban
 
 #### DEC.1 - Finko explica el porqué dentro de cada decisión
