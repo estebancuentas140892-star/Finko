@@ -12,6 +12,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(movil): MV2.28 (b), Ajustes dice qué guarda en "Más" · 2026-11-04
+
+Adenda al [ADR 108](DECISIONS/108-mas-dice-como-esta-cada-destino.md) (D4), del prototipo del tablero 4 del canvas móvil. Esteban la pidió en chat ("Sí, llévala"). SW v658.
+
+- **La fila de Ajustes** en la hoja "Más" lleva "Perfil, Familia, nube y datos" debajo de su nombre. Es fija: Ajustes no tiene una cifra que contar. Sale de `estadosMas()` como las demás líneas, así que el nombre accesible la incluye ("Ajustes, Perfil, Familia, nube y datos").
+- **Debajo y no a la derecha**: a la derecha no cabía a 320 y empujaba el botón del tema fuera de la pantalla. La fila sigue en 54 px y la hoja en 438, bajo el techo de 444 de R83.
+- Pruebas: 2 unitarias nuevas y 1 ajustada en `menu-mas.test.js`; 1 E2E nueva en `hub-ahorros.test.js` (a 320, la línea entera y el botón del tema a la vista). Unitarios 5314/5314, E2E 442/442, en árbol limpio.
+
 ### fix(movil): MV2.28 (d), el margen seguro en el pie de los diálogos cortos · 2026-11-04
 
 Adenda al [ADR 123](DECISIONS/123-la-hoja-de-formulario-completa.md) D1 (tablero 3: "`env(safe-area-inset-bottom)` en el pie"). Bajo 481 px. SW v657.
