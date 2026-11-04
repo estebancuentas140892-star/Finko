@@ -76,7 +76,7 @@ Las tarjetas del tablero (la iniciativa HF se lista por fase), para elegir la pr
 | PERF.13 | Arranque: 616 ms de hilo bloqueado | Transversal | baja | nada |
 | PERF.14 | Pasar de una hoja a otra sin soltar el fondo | Transversal | baja | nada |
 | PERF.15 | Anotar solo lo que cambió antes de sincronizar | Transversal | baja | nada |
-| HF.0f | Perfiles de regresión: constructores e invariantes (en curso, bloqueada por BUG-035, BUG-036 y BUG-038) | Transversal (tests) | alta | nada |
+| HF.0f | Perfiles de regresión: constructores e invariantes (en curso; sus tres errores corregidos, el banco no está en esta copia) | Transversal (tests) | alta | nada |
 | HF.0g | Perfiles de regresión en E2E | Transversal (tests) | media | HF.0f |
 | HF.1a a HF.5a | Fases 1 a 5 de la iniciativa HF (24 rebanadas) | Transversal | media | ficha 18 de MOV.1, cierre de MOV.1 |
 | APR.3f | Iniciativa "Aprende y aplícalo", solo del niño desde el [ADR 101](DECISIONS/101-finko-del-adulto-decide-no-ensena.md): la revisión pedagógica de sus lecciones | Transversal | media | nada |

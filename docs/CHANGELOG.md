@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### fix(distribucion): BUG-035, BUG-036 y BUG-038, los pagos de compromisos · 2026-11-04
+
+Corrige los tres defectos que dejó abiertos el banco de HF.0f ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)), sin schema nuevo. El código entró en `5c97b98` bajo el mensaje de MV2.28 por un cruce entre dos sesiones que trabajaban en el mismo árbol; esta entrada es su registro. Fichas: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md) (Distribución) y [`contexto/gastos.md`](contexto/gastos.md) (Formulario de gasto).
+
+- **BUG-036 (alta):** Distribuir fechaba con hoy todo lo marcado, también lo que vence el mes siguiente (salario el 25, arriendo el 3). `pagosDeNecesidadPorMes` (`tesoreria/logic/distribucion.js`) parte cada fila en un pago por mes cubierto: el del mes en curso con hoy, el del siguiente con su vencimiento más antiguo, mismo criterio que la hoja de automáticos ([ADR 052](DECISIONS/052-pagos-automaticos.md) D2). El monto se reparte por ocurrencias y la suma no cambia; la cuenta y el saldo de la deuda bajan hoy, una vez. `construirDesgloseNecesidades` gana `fechas`.
+- **Consecuencia aceptada:** el pago adelantado sale en Movimientos con su fecha futura y cuenta en el Análisis de ese mes, aunque el dinero salió hoy (flujo de caja frente a significado, HF.1a).
+- **BUG-035 (baja):** `deltasPorEdicionEnDeuda` recibe los compromisos y descarta los fijos, y `_ajustarSaldoDeuda` tampoco escribe en uno. Borrar el pago del arriendo ya no le escribe `saldoTotal` ni anuncia "sube de nuevo el saldo".
+- **BUG-038 (media):** editar un pago o un abono abre el formulario con `categoriaFija`: su categoría interna sola y marcada, un aviso de que no cambia, y sin tarjetas en el origen (elegir una lo volvía compra). Cubre Movimientos, la lista y la hoja del gasto, que comparten `_editarGasto`.
+- **También:** `ARCHITECTURE.md` decía "no hay cuentas de usuario"; queda alineado con la ADN 3 (nube opcional, [ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md)).
+- **Tests:** `pago-vinculado.test.js` (9, rutas reales de editar y borrar), 6 nuevos y 1 ajustado en `tesoreria.test.js`, y E2E `distribucion-mes-siguiente.test.js` (2, rojos sin el arreglo: en noviembre la hoja volvía a ofrecer el arriendo). Unitarios 5312/5312 en árbol limpio, lint verde, E2E 440/440 (`--workers=2`). SW v655 a v656.
+
 ### feat(movil): MV2.3 segunda pasada, la hoja de formulario completa · 2026-11-04
 
 [ADR 123](DECISIONS/123-la-hoja-de-formulario-completa.md) (tablero 3, "Hojas y formularios"; tablero 12, contraste). Cierra la segunda pasada: las 12 propuestas que la segunda auditoría encontró quedan aplicadas. **Acota** el ADR 031: en la hoja del teléfono la franja de color cede su lugar a la agarradera. SW v655.

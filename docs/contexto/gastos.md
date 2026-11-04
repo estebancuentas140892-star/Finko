@@ -69,7 +69,7 @@
 
 - **Objetivo**          : rediseñar el formulario de registrar gasto para que la categoría sea el dato principal (no la descripción), soporte categorías creadas por el usuario, y no pida una descripción redundante cuando la categoría ya representa el concepto. Desde FORM.1a ([ADR 042](../DECISIONS/042-formularios-v2-visual.md)) es además el flagship del lenguaje de formularios v2: monto hero al frente, categoría con chips de ícono (sin select), fecha con atajos Hoy/Ayer/Otra fecha.
 - **Estado actual**     : **TX.9 completa** (TX.9a: categoría primero, descripción ya no obligatoria; TX.9b: categorías personalizadas). **IN.5 cerrada** (2026-07-06). **FORM.1a cerrada** (2026-07-15): form v2 completo; **el orden de TX.9a quedó revisado por el ADR 042 D2** (monto primero; la categoría sigue antes de cuenta/fecha/nota). **GAS.2 cerrada** (GAS.2a y GAS.2b, 2026-08-10): el formulario no cambió; ver bloque "Confirmación tras guardar" más abajo. **GAS.2c diferida** (Abono, Aporte).
-- **Verificado contra** : HF.0c (2026-10-17), solo el efecto de editar y borrar sobre el saldo. Antes: GAS.2b (2026-08-10).
+- **Verificado contra** : BUG-035 y BUG-038 (2026-11-04, 5c97b98). Antes: HF.0c (2026-10-17), solo el efecto de editar y borrar sobre el saldo; GAS.2b (2026-08-10).
 
 **Dónde vive (FORM.1a)**
 
@@ -132,6 +132,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-04 (**BUG-038** y **BUG-035**, 5c97b98): editar un pago o abono abre con su categoría fija y sin tarjetas; editar o borrar el pago de un fijo no toca `saldoTotal`. Ver CHANGELOG.
 - 2026-10-17 (**HF.0c**, BUG-029): el gasto importado no toca el saldo al importarlo, editarlo o borrarlo (`sinEfectoSaldo`, schema v44). Ver CHANGELOG.
 - 2026-08-10 (GAS.2a): ver bloque "Confirmación tras guardar" más abajo.
 - 2026-07-15 (FORM.1a): form v2 completo (monto hero, chips de categoría, atajos de fecha, teja del header, footer principal) + fix del hueco preexistente de `responsive.css` que achicaba `.input--big-amount` en móvil. Ver [CHANGELOG](../CHANGELOG.md) y [ADR 042](../DECISIONS/042-formularios-v2-visual.md).

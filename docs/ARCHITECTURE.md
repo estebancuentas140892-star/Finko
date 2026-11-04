@@ -1,8 +1,8 @@
 # Arquitectura - Finko Claude
 
-> Revisado: 2026-10-28.
+> Revisado: 2026-11-04.
 
-> Documento vivo: se actualiza cuando cambia una capa, entra un dominio o se introduce un patrón nuevo. Historial: `git log -- docs/ARCHITECTURE.md` (la cadena de "última revisión" se podó el 2026-08-13 al tocar el techo de 32 KB).
+> Documento vivo: se actualiza cuando cambia una capa, entra un dominio o se introduce un patrón nuevo. Historial: `git log -- docs/ARCHITECTURE.md`.
 >
 > **Dos mitades:** las secciones 1 a 12 responden **cómo está construido** el sistema. La 13 responde **dónde está cada cosa**: si vienes a arreglar algo y no sabes por dónde empezar, ve directo a la 13.
 
@@ -28,7 +28,7 @@
 
 ## 1. Visión general
 
-Finko es una **PWA offline-first de página única (SPA)**. No hay servidor, no hay backend, no hay cuentas de usuario. Todo vive en el dispositivo del usuario.
+Finko es una **PWA offline-first de página única (SPA)**. No hay servidor propio: todo vive en el dispositivo, que es la copia que manda; con la cuenta opcional, Supabase sincroniza una copia (ADR 096).
 
 ```
 Navegador
@@ -356,7 +356,7 @@ Una sola fuente: **Inter Variable**, self-hosted (`assets/fonts/inter-variable.w
 
 Ver [`/CLAUDE.md`](../CLAUDE.md) sección 4, fuente única de las reglas ADN. Resumen:
 
-1. Vanilla JS sin build step. 2. Offline-first. 3. Sin servidor (`localStorage`, clave `fk_v1`). 4. Singleton `S` mutable. 5. `save()` debounced. 6. Migraciones idempotentes. 7. Cero `onclick=""`. 8. Cero `window.X`. 9. `logic.js` sin DOM. 10. Ningún dominio importa a otro. 11. Lenguaje humano, neutral y profesional. 12. Constantes legales con fecha de revisión.
+1. Vanilla JS sin build step. 2. Offline-first. 3. Sin servidor propio; nube opcional (`localStorage`, clave `fk_v1`). 4. Singleton `S` mutable. 5. `save()` debounced. 6. Migraciones idempotentes. 7. Cero `onclick=""`. 8. Cero `window.X`. 9. `logic.js` sin DOM. 10. Ningún dominio importa a otro. 11. Lenguaje humano, neutral y profesional. 12. Constantes legales con fecha de revisión.
 
 Cambiar cualquiera de estas reglas requiere crear un ADR en `docs/DECISIONS/`.
 
