@@ -1,6 +1,6 @@
 # Ficha de contexto: Captura (formularios y selector de ícono)
 
-> Revisado: 2026-08-14.
+> Revisado: 2026-11-04.
 
 > Cómo se capturan datos en un formulario de la app: el lenguaje visual compartido de los formularios y el selector de ícono que varios de ellos incrustan. Partida de `transversal.md` el 2026-07-24. Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -28,6 +28,7 @@
 
 **Riesgos**:
 
+- **Montos con separador de miles (ADR 120)**: todo campo de dinero es `type="text" inputmode="numeric" data-miles`. `ui/miles.js` lo reformatea al escribir y lo entrega como dígitos al armar `FormData` (evento `formdata`). Quien lee `.value` directo usa `desdeMiles()` y quien escribe un monto usa `miles()` (`infra/miles.js`). En unitarios, `tests/setup.js` hace que happy-dom dispare `formdata`. En E2E, `fill('50000')` deja "50.000" en el campo.
 - **Radios ocultos**: los chips son labels; `element.value` sobre `[name="categoria"]` devuelve el primer radio. Leer siempre vía FormData o iterando radios. En E2E se clickea el label, no `check()` del input.
 - **Transiciones vs lecturas síncronas**: `.chip-cat` transiciona background/border; una lectura de `getComputedStyle` inmediata tras cambiar `checked` (o en un tab en segundo plano) devuelve el valor inicial. Verificar estados con E2E o con `transition: none` temporal.
 
@@ -35,6 +36,7 @@
 
 **Cambios realizados**:
 
+- **MV2.3 tanda 5 (2026-11-04, [ADR 120](../DECISIONS/120-separador-de-miles-en-todos-los-campos-de-dinero.md))**: separador de miles en los 33 campos de dinero; el par `miles` / `desdeMiles` sube a infra y Reservas y Ajustes lo reexportan.
 - **FORM.1a (2026-07-15)**: fundación CSS + Registrar gasto v2 + fix del hueco preexistente de `responsive.css` (el 16px anti-zoom achicaba `.input--big-amount` en móvil, también en el ingreso puntual). Ver [CHANGELOG](../CHANGELOG.md).
 
 ---

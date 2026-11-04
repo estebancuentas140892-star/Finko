@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(movil): MV2.3 tanda 5, separador de miles en todos los campos de dinero · 2026-11-04
+
+[ADR 120](DECISIONS/120-separador-de-miles-en-todos-los-campos-de-dinero.md) (completa R16; aplica la regla 3 del ADR 060). En todos los anchos. SW v652.
+
+- **28 campos más**: gasto, fijo, abono, deuda (saldo, cupo, cuota), meta, aporte, fondo, inversión, préstamo y cobro, límite y gastos pequeños, cuenta y cuota de manejo, ingresos, transferencia, el extra y la cuota de la estrategia, y Distribuir. Pasan a texto con teclado numérico y `data-miles`; pierden `min`, `max` y `step` (los validadores ya dicen qué falta). Con renta y Reservas son 33.
+- **Un solo cableado** (`ui/miles.js`): reformatea al escribir sin mover el cursor de entre los dígitos, y entrega dígitos al armar `FormData` (evento `formdata`), así que los validadores no cambian. Quien lee `.value` usa `desdeMiles()` y quien escribe usa `miles()`.
+- **El par sube a `infra/miles.js`** y conserva el signo: una cuenta en sobregiro no se vuelve positiva al editarla. Reservas y Ajustes lo reexportan y retiran su cableado.
+- **De paso**: el extra de "Aumentar la cuota" se leía con `Number()` y, con puntos, daba 100 en vez de 100.000.
+- Pruebas: 7 unitarias en `miles.test.js`, 9 ajustadas; 2 E2E nuevas en `miles.test.js` (escribir en medio, guardar como número, saldo negativo) y 20 aserciones E2E ajustadas al valor con puntos. `tests/setup.js` hace que happy-dom dispare `formdata`.
+
 ### feat(movil): MV2.3 tanda 4, el plan de salida en hoja y el detalle del gasto · 2026-11-04
 
 [ADR 119](DECISIONS/119-plan-de-salida-en-hoja-y-el-detalle-del-gasto.md) (cierra la deuda de la ficha 05 y MV2.14; acota el ADR 098 D4 para los gastos). Bajo 1024 px; escritorio sin cambios. SW v651.
