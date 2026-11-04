@@ -1,6 +1,6 @@
 # Tablero - Transversal
 
-> Revisado: 2026-10-30.
+> Revisado: 2026-11-04.
 
 > Satélite de [`BOARD.md`](../BOARD.md) (afecta varias secciones). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
 
@@ -15,6 +15,18 @@
 > **Diferida del [ADR 068](../DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md): la migración a IndexedDB (antes PERF.5) ya no es tarjeta.** Su decisión, su alcance fijado (blob-en-IDB, no store por colección) y sus **dos** disparadores verificables viven en ese ADR, que reemplaza los tres del ADR 030 D4. **No re-auditar el código ante un pedido de ejecución:** la verificación está hecha y fechada allí; basta mirar si T1 o T2 cambiaron de estado. Al reabrirse nace como tarjeta nueva. Lo que salió a la luz con ese ADR ya cerró completo: **PERF.9** (2026-08-14, columna de caracteres en el harness) y **PERF.10** (2026-08-14, dos rebanadas). T1 ya tiene instrumento: detalle en [`scripts/perf/BASELINE.md`](../../scripts/perf/BASELINE.md).
 
 > **Iniciativa Dirección Visual premium** ([ADR 033](../DECISIONS/033-direccion-visual-premium.md)). DV.2a/b/c cerradas. DV.2d: infraestructura, 8 plantillas y cableado de `emptyArt()` listos (2026-08-14), falta solo el arte final de Esteban.
+
+#### MV2.28 - Lo que queda del canvas móvil (los 13 HTML de `Diseño Finko/`)
+- Prioridad  : media
+- Estado     : pendiente. Las 12 propuestas de la segunda auditoría ya están ([ADR 122](../DECISIONS/122-lo-que-faltaba-del-canvas-segunda-pasada.md) y [123](../DECISIONS/123-la-hoja-de-formulario-completa.md)) en la rama `mv2/finko-movil-2`, sin publicar en `main`
+- Área       : ambos
+- Objetivo   : (a) **medir** lo que pide el tablero 6: `pnpm perf:fluidez` contra las cifras de PERF.11 y PERF.12 en `scripts/perf/BASELINE.md` (el INP de abrir una hoja y de cambiar de sección no empeora) y `pnpm lighthouse` en 100; (b) **decidir con Esteban** si Ajustes lleva línea de estado en "Más": el prototipo del tablero 4 la dibuja, el texto no la nombra, y hoy `estadosMas()` no la da; (c) **anotar** el descarte del formulario corto (MV2.17), que el tablero 12 descartó sin ADR. **No va**: "N gastos · $X en {mes}" sobre la lista filtrada de Gastos (descartado en el ADR 122)
+- Riesgo     : (a) una hoja más lenta tras la agarradera o los pies fijos; se corrige antes de publicar
+- Secciones  : todas las hojas, "Más", Ajustes
+- Archivos   : `scripts/perf/fluidez.js`, `scripts/lighthouse.js`, `scripts/perf/BASELINE.md`, `modules/ui/menu-mas.js`, `tests/unit/menu-mas.test.js`, `docs/DECISIONS/`
+- Depende de : nada; (a) va antes de publicar la rama en `main`
+- Aceptación : (a) cifras antes y después en BASELINE.md; (b) la decisión escrita y, si es sí, la línea con su prueba en `menu-mas.test.js`; (c) el descarte en un ADR
+- Modelo     : (a) y (c) capacidad estándar, esfuerzo bajo; (b) es decisión de Esteban
 
 #### DEC.1 - Finko explica el porqué dentro de cada decisión
 - Prioridad  : media

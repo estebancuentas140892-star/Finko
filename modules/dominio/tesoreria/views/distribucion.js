@@ -482,7 +482,8 @@ function _filaNecesidad(it) {
         <div class="distribuir__fila${it.pagado ? ' distribuir__fila--pagado' : ''}">
           <label class="checkbox-row distribuir__toggle">
             <input type="checkbox" data-nec-toggle data-nec-tipo="${_esc(it.tipo)}"
-                   data-nec-id="${_esc(it.id)}" data-nec-monto="${it.monto}" data-nec-nombre="${_esc(it.nombre)}" ${checkedAttr} />
+                   data-nec-id="${_esc(it.id)}" data-nec-monto="${it.monto}" data-nec-nombre="${_esc(it.nombre)}"
+                   data-nec-fechas="${_esc((it.fechas ?? []).join(','))}" ${checkedAttr} />
             <span>${_iconoNecesidad(it)} ${_esc(it.nombre)}${catSub}${diaSub}${notaSub}</span>
           </label>
           <span class="distribuir__nec-monto">${it.pagado ? 'Ya pagado' : f(it.monto)}</span>

@@ -56,6 +56,7 @@ export {
   calcularGastosFijosMensuales,
   calcularFijosNoEsencialesMensuales,
   construirDesgloseNecesidades,
+  pagosDeNecesidadPorMes,
   estadoDistribucion,
   PRESETS_DISTRIBUCION,
   esDistribucionPersonalizadaValida,

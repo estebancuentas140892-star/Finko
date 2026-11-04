@@ -31,6 +31,7 @@ import {
   resolverCobroDistribuido,
   motivoSinDistribuir,
   unirNombres,
+  pagosDeNecesidadPorMes,
 } from '../logic/distribucion.js';
 import { renderDistribucionIngreso, renderAsistenteDistribucion, htmlResultadoDistribucion } from '../view.js';
 
@@ -400,6 +401,8 @@ function _leerNecesidadesMarcadas(panel) {
       id:    chk.dataset.necId || null,
       monto: Number(chk.dataset.necMonto) || 0,
       nombre: chk.dataset.necNombre ?? '',
+      // BUG-036: los vencimientos que cubre, para fechar cada pago en su mes.
+      fechas: (chk.dataset.necFechas ?? '').split(',').filter(Boolean),
     }))
     .filter(it => it.monto > 0);
 }
@@ -853,14 +856,21 @@ function _restaurarSlices(snap) {
  * - Deuda: mismo gasto que el formulario de abono individual (categoría
  *   "Deudas") más el descuento de `saldoTotal`, topado en 0.
  *
- * @param {{tipo:'necesidad-fijo'|'necesidad-deuda', id:string, monto:number}} item
+ * Cada pago va fechado en el mes que cubre (BUG-036, `pagosDeNecesidadPorMes`):
+ * lo que vence el mes siguiente no se fecha hoy, o ese mes quedaría sin pagar
+ * y la hoja de automáticos lo volvería a ofrecer. El saldo de la deuda baja una
+ * sola vez con el total, igual que en `aplicarPagosCompromisos`.
+ *
+ * @param {{tipo:'necesidad-fijo'|'necesidad-deuda', id:string, monto:number, fechas?:string[]}} item
  * @param {string} cuentaId
  */
 function _aplicarNecesidad(item, cuentaId) {
   const comp = (S.compromisos ?? []).find(c => c.id === item.id);
   if (!comp) return;
 
-  gastoDePagoCompromiso(comp, { monto: item.monto, fecha: hoy(), cuentaId });
+  for (const p of pagosDeNecesidadPorMes(item.monto, item.fechas, hoy())) {
+    if (p.monto > 0) gastoDePagoCompromiso(comp, { monto: p.monto, fecha: p.fecha, cuentaId });
+  }
   if (item.tipo === 'necesidad-deuda') bajarSaldoDeuda(comp, item.monto);
 }
 

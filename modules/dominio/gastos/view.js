@@ -692,11 +692,19 @@ function _renderChipsFrecuentes() {
  * MC.16d: con una tarjeta elegida, revela "¿A cuántas cuotas?" (index.js la
  * oculta/muestra por delegación de `change`, mismo patrón que "Otra categoría").
  *
- * @param {{ sugerencias?: boolean }} [opciones] `sugerencias: false` omite los
- *   chips de gastos frecuentes (TX.12): el caller la pasa en modo edición.
+ * BUG-038: el pago de un fijo ("Gastos fijos") o el abono a una deuda
+ * ("Deudas") llega con `categoriaFija`. Esas categorías no son chips del
+ * catálogo, así que sin ella el formulario no tenía ninguna marcada y no
+ * guardaba. Con ella la categoría se muestra sola y marcada (no se cambia: es
+ * la que lo vincula a su compromiso) y el origen no ofrece tarjetas, porque
+ * elegir una lo convertiría en una compra con la tarjeta.
+ *
+ * @param {{ sugerencias?: boolean, categoriaFija?: string|null }} [opciones]
+ *   `sugerencias: false` omite los chips de gastos frecuentes (TX.12): el
+ *   caller la pasa en modo edición.
  * @returns {string}
  */
-export function renderFormGasto({ sugerencias = true } = {}) {
+export function renderFormGasto({ sugerencias = true, categoriaFija = null } = {}) {
   const cuentas = (S.cuentas ?? []).filter(c => c.activa !== false);
 
   // Si no hay cuentas activas, mostramos un estado vacío en lugar del form.
@@ -714,7 +722,7 @@ export function renderFormGasto({ sugerencias = true } = {}) {
   // MC.16b: las tarjetas operables las pasa el caller, el helper nunca lee
   // S.compromisos (ADR 051 D4). Leer el singleton de otro dominio sí es la
   // norma (ADN 10 prohíbe importar el módulo, no leer S).
-  const tarjetas    = tarjetasDeCredito(S.compromisos);
+  const tarjetas    = categoriaFija ? [] : tarjetasDeCredito(S.compromisos);
   const labelOrigen = tarjetas.length > 0 ? '¿Con qué pagaste?' : '¿De qué cuenta sale el dinero?';
 
   // FORM.1a (ADR 042 D2/D3): la categoría se elige con chips de ícono, no
@@ -723,17 +731,22 @@ export function renderFormGasto({ sugerencias = true } = {}) {
   // visible (nativas + personalizadas TX.9b) y "Otra categoría" al final
   // revela los campos de categoría nueva, igual que antes.
   const personalizadas = S.categoriasPersonalizadas ?? [];
-  const chipCat = (valor, etiqueta, simbolo) => `
+  const chipCat = (valor, etiqueta, simbolo, checked = false) => `
         <label class="chip-cat">
-          <input type="radio" name="categoria" class="chip-cat__radio" value="${_esc(valor)}" />
+          <input type="radio" name="categoria" class="chip-cat__radio" value="${_esc(valor)}"${checked ? ' checked' : ''} />
           <svg class="icon" aria-hidden="true"><use href="#${_esc(simbolo)}"/></svg>
           <span class="chip-cat__label">${_esc(etiqueta)}</span>
         </label>`;
-  const chipsCategoria = [
-    ...CATEGORIAS_GASTO_USUARIO.map(c => chipCat(c, c, iconoDeCategoriaGasto(c, personalizadas))),
-    ...personalizadas.map(c => chipCat(c.nombre, c.nombre, iconoDeCategoriaGasto(c.nombre, personalizadas))),
-    chipCat(CATEGORIA_NUEVA_VALUE, 'Otra categoría', 'i-plus'),
-  ].join('');
+  const chipsCategoria = categoriaFija
+    ? chipCat(categoriaFija, categoriaFija, iconoDeCategoriaGasto(categoriaFija, personalizadas), true)
+    : [
+      ...CATEGORIAS_GASTO_USUARIO.map(c => chipCat(c, c, iconoDeCategoriaGasto(c, personalizadas))),
+      ...personalizadas.map(c => chipCat(c.nombre, c.nombre, iconoDeCategoriaGasto(c.nombre, personalizadas))),
+      chipCat(CATEGORIA_NUEVA_VALUE, 'Otra categoría', 'i-plus'),
+    ].join('');
+  const hintCategoriaFija = categoriaFija
+    ? '<p class="form-hint form-hint--muted">Es el pago de un compromiso de Por pagar: su categoría no cambia.</p>'
+    : '';
 
   // ADR 042 D1: atajos de fecha. Radios de presentación (name="fechaOpcion");
   // el input date real (name="fecha") queda oculto y sincronizado por
@@ -761,6 +774,7 @@ export function renderFormGasto({ sugerencias = true } = {}) {
         <div class="chips-cat" role="radiogroup" aria-labelledby="gasto-categoria-label">
           ${chipsCategoria}
         </div>
+        ${hintCategoriaFija}
       </div>
       <div class="form-group" id="categoria-nueva-fields" hidden>
         <label for="categoria-nueva-nombre" class="label">Nombre de tu categoría</label>

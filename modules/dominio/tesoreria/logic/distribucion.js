@@ -94,7 +94,11 @@ export function calcularFijosNoEsencialesMensuales(compromisos) {
  *   está distribuyendo. Sin fecha datable (`estadoDistribucion` sólo data
  *   Mensual/Quincenal) se asume que el cobro es hoy: la ventana arranca hoy,
  *   que es exactamente lo que el usuario está repartiendo.
- * @returns {Array<{id:string, nombre:string, categoria:string|null, icono:string|null, tipo:'fijo'|'deuda', monto:number, diaPago:number|null, pagado:boolean, ocurrencias:number, nota:string}>}
+ * `fechas` son los vencimientos que la fila cubre ('YYYY-MM-DD', del más
+ * antiguo al más reciente): con ellos `pagosDeNecesidadPorMes` fecha cada pago
+ * en el mes que cubre (BUG-036).
+ *
+ * @returns {Array<{id:string, nombre:string, categoria:string|null, icono:string|null, tipo:'fijo'|'deuda', monto:number, diaPago:number|null, pagado:boolean, ocurrencias:number, fechas:string[], nota:string}>}
  *   Los no pagados primero (de mayor a menor monto), luego los ya pagados.
  */
 export function construirDesgloseNecesidades(compromisos = [], gastos = [], hoy = new Date(), cobro = null) {
@@ -126,11 +130,63 @@ export function construirDesgloseNecesidades(compromisos = [], gastos = [], hoy 
       diaPago:     Number.isInteger(diaPagoNum) ? diaPagoNum : null,
       pagado:      o.pagado,
       ocurrencias: o.ocurrencias.length,
+      fechas:      [...o.ocurrencias],
       // MC.13e-2c: nota de texto libre. Para 'fijo' con categoría predefinida
       // viene del doble uso del campo de texto (modelo.js, "AG.4"); para
       // deudas, de su propio campo del form. Ausente = ''.
       nota:        typeof compromiso?.nota === 'string' ? compromiso.nota : '',
     };
+  });
+}
+
+/**
+ * Fecha y monto de cada pago que registra una Necesidad marcada en Distribuir
+ * (BUG-036). Calendario, avisos y la hoja de automáticos leen un pago por el
+ * mes de su fecha (`estadoPagoMes`, `debitosAutomaticosVencidos`): si el
+ * arriendo del 3 del mes siguiente se registra con la fecha de hoy, ese mes
+ * queda sin pagar y se puede pagar dos veces.
+ *
+ * Un pago por cada mes que la fila cubre:
+ *   - Mes en curso: se fecha con hoy, el pago acaba de ocurrir (mismo criterio
+ *     que `fechaPagoDelMes`).
+ *   - Mes siguiente: se fecha con su vencimiento más antiguo de ese mes, el
+ *     mismo criterio de la hoja de automáticos (ADR 052 D2). El saldo de la
+ *     cuenta baja hoy: es un valor de hoy, no un histórico.
+ *
+ * El monto se reparte en proporción a las ocurrencias de cada mes y el último
+ * absorbe el redondeo, así que la suma es siempre `monto`. Sin fechas (fila
+ * vieja o sin vencimiento datable) sale un solo pago con la fecha de hoy, el
+ * comportamiento anterior.
+ *
+ * @param {number} monto Total de la fila (ya topado al saldo si es deuda).
+ * @param {string[]} fechas Vencimientos que cubre, 'YYYY-MM-DD'.
+ * @param {string} hoyISO 'YYYY-MM-DD'.
+ * @returns {Array<{fecha:string, monto:number}>}
+ */
+export function pagosDeNecesidadPorMes(monto, fechas, hoyISO) {
+  const total = Number(monto) || 0;
+  const validas = (Array.isArray(fechas) ? fechas : [])
+    .filter(fe => typeof fe === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fe))
+    .sort();
+  if (validas.length === 0) return [{ fecha: hoyISO, monto: total }];
+
+  /** @type {Map<string, string[]>} Vencimientos por mes 'YYYY-MM'. */
+  const porMes = new Map();
+  for (const fe of validas) {
+    const mes = fe.slice(0, 7);
+    if (!porMes.has(mes)) porMes.set(mes, []);
+    porMes.get(mes).push(fe);
+  }
+
+  const mesHoy = hoyISO.slice(0, 7);
+  const grupos = [...porMes.entries()];
+  let asignado = 0;
+  return grupos.map(([mes, dias], i) => {
+    const parte = i === grupos.length - 1
+      ? total - asignado
+      : Math.round(total * dias.length / validas.length);
+    asignado += parte;
+    return { fecha: mes <= mesHoy ? hoyISO : dias[0], monto: parte };
   });
 }
 

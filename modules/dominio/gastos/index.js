@@ -130,7 +130,7 @@ async function _guardarGasto() {
       }
 
       // Sincronizar saldoTotal si el gasto tocaba una deuda (abono o consumo).
-      _aplicarDeltasADeudas(deltasPorEdicionEnDeuda(anterior, gasto));
+      _aplicarDeltasADeudas(deltasPorEdicionEnDeuda(anterior, gasto, S.compromisos));
       // MC.16d: sincronizar cuotaMensual si el consumo cambió de monto o de cuotas.
       _aplicarDeltasACuotaMensual(deltasPorEdicionEnCuotaMensual(anterior, gasto));
     }
@@ -147,7 +147,7 @@ async function _guardarGasto() {
       // saldo de la tarjeta y nada más; lo demás (categoría, límites, análisis)
       // lo recibe como cualquier gasto.
       guardar('gastos', base);
-      _aplicarDeltasADeudas(deltasPorEdicionEnDeuda(null, base));
+      _aplicarDeltasADeudas(deltasPorEdicionEnDeuda(null, base, S.compromisos));
       // MC.16d: el consumo sube cuotaMensual en monto/cuotas (1 = pago único).
       _aplicarDeltasACuotaMensual(deltasPorEdicionEnCuotaMensual(null, base));
     } else {
@@ -234,7 +234,14 @@ function _editarGasto(el) {
   resetModal(overlay);
   // TX.12: sin sugerencias en modo edición, repetir un patrón no tiene
   // sentido mientras se edita un registro puntual ya existente.
-  _montarFormGasto({ sugerencias: false });
+  // BUG-038: el pago de un fijo o el abono a una deuda (vinculado y no una
+  // compra con tarjeta) conserva su categoría interna, que no es un chip del
+  // catálogo; sin esto el formulario no guardaba.
+  const esPagoDeCompromiso = Boolean(gasto.compromisoId) && !gasto.consumoTC;
+  _montarFormGasto({
+    sugerencias:   false,
+    categoriaFija: esPagoDeCompromiso ? (gasto.categoria || null) : null,
+  });
 
   const form = document.getElementById('form-gasto');
   if (!form) return;
@@ -502,7 +509,7 @@ async function _eliminarGasto(el) {
   // borra desde el ledger de Movimientos ni siquiera está viendo esa sección.
   // Se nombra el efecto en el dominio dueño, mismo criterio que el aviso de
   // Me deben al borrar un préstamo y que el de deshacer una transferencia.
-  const deltasDeuda  = deltasPorEdicionEnDeuda(gasto, null);
+  const deltasDeuda  = deltasPorEdicionEnDeuda(gasto, null, S.compromisos);
   // Borrar es editar hacia nada: un gasto manual devuelve su monto, uno
   // importado (`sinEfectoSaldo`, HF.0c) no devuelve nada (BUG-029).
   const deltasCuenta = deltasPorEdicionDeGasto(gasto, null);
@@ -568,7 +575,8 @@ function _aplicarDeltasASaldos(deltas) {
 function _ajustarSaldoDeuda(compromisoId, delta) {
   if (!compromisoId || !Number.isFinite(delta) || delta === 0) return;
   const comp = S.compromisos.find(c => c.id === compromisoId);
-  if (!comp) return;
+  // Un fijo no tiene saldo de deuda (BUG-035): su pago nunca escribe saldoTotal.
+  if (!comp || comp.tipo === 'fijo') return;
   const nuevoSaldo = Math.max(0, (Number(comp.saldoTotal) || 0) + delta);
   editar('compromisos', compromisoId, { saldoTotal: nuevoSaldo });
 }

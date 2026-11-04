@@ -490,14 +490,21 @@ export function deltasPorEdicionEnCuotaMensual(antes, despues) {
  * en cero al escribirlo, y una reversa intermedia que toque el piso perdería el
  * remanente en silencio (el descuadre que MC.16b tiene que evitar).
  *
+ * El pago de un gasto fijo también lleva `compromisoId`, pero un fijo no tiene
+ * saldo que subir ni bajar (BUG-035): con `compromisos` se descartan los ids
+ * que son de un fijo. Sin la lista (o si el compromiso ya no existe) se
+ * conserva el comportamiento anterior.
+ *
  * @param {import('../../core/state.js').Gasto|null} antes
  * @param {import('../../core/state.js').Gasto|null} despues
+ * @param {import('../../core/state.js').Compromiso[]} [compromisos]
  * @returns {Record<string, number>}
  */
-export function deltasPorEdicionEnDeuda(antes, despues) {
+export function deltasPorEdicionEnDeuda(antes, despues, compromisos = []) {
   const deltas = {};
+  const esFijo = (id) => (compromisos ?? []).some(c => c?.id === id && c.tipo === 'fijo');
   const acumular = (id, valor) => {
-    if (!id) return;
+    if (!id || esFijo(id)) return;
     deltas[id] = (deltas[id] ?? 0) + valor;
   };
 

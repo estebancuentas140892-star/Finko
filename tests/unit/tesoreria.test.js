@@ -28,6 +28,7 @@ import {
   calcularAporteMensualObjetivos,
   construirDesgloseAhorroPorObjetivo,
   construirDesgloseNecesidades,
+  pagosDeNecesidadPorMes,
   presupuestosSobreRemanente,
   calcularGastosFijosMensuales,
   calcularFijosNoEsencialesMensuales,
@@ -541,6 +542,34 @@ const gastoEnVentana = (overrides = {}) => ({
   fecha: '2026-06-20', ...overrides,
 });
 
+describe('pagosDeNecesidadPorMes() (BUG-036)', () => {
+  it('lo que vence el mes siguiente se fecha en su vencimiento, no hoy', () => {
+    expect(pagosDeNecesidadPorMes(1_200_000, ['2026-11-03'], '2026-10-25'))
+      .toEqual([{ fecha: '2026-11-03', monto: 1_200_000 }]);
+  });
+
+  it('lo que vence este mes se fecha hoy, como antes', () => {
+    expect(pagosDeNecesidadPorMes(800_000, ['2026-10-28'], '2026-10-25'))
+      .toEqual([{ fecha: '2026-10-25', monto: 800_000 }]);
+  });
+
+  it('una fila que cruza de mes sale en un pago por mes, en proporción a sus ocurrencias', () => {
+    // Semanal: 28 oct, 4, 11 y 18 nov.
+    expect(pagosDeNecesidadPorMes(400_000, ['2026-11-11', '2026-10-28', '2026-11-04', '2026-11-18'], '2026-10-25'))
+      .toEqual([{ fecha: '2026-10-25', monto: 100_000 }, { fecha: '2026-11-04', monto: 300_000 }]);
+  });
+
+  it('el último pago absorbe el redondeo: la suma es siempre el monto de la fila', () => {
+    const pagos = pagosDeNecesidadPorMes(100_001, ['2026-10-28', '2026-11-04', '2026-11-11'], '2026-10-25');
+    expect(pagos.reduce((s, p) => s + p.monto, 0)).toBe(100_001);
+  });
+
+  it('sin fechas (fila sin vencimiento datable) sale un solo pago con la fecha de hoy', () => {
+    expect(pagosDeNecesidadPorMes(500_000, [], '2026-10-25')).toEqual([{ fecha: '2026-10-25', monto: 500_000 }]);
+    expect(pagosDeNecesidadPorMes(500_000, undefined, '2026-10-25')).toEqual([{ fecha: '2026-10-25', monto: 500_000 }]);
+  });
+});
+
 describe('construirDesgloseNecesidades()', () => {
   it('sin compromisos devuelve array vacío', () => {
     expect(construirDesgloseNecesidades([])).toEqual([]);
@@ -550,8 +579,14 @@ describe('construirDesgloseNecesidades()', () => {
   it('un fijo mensual aparece con su monto tal cual, tipo "fijo", con día de pago y sin pagar', () => {
     const comps = [fijoNec({ id: 'cf1', descripcion: 'Arriendo', categoria: 'Arriendo', monto: 800_000 })];
     expect(construirDesgloseNecesidades(comps, [], HOY_TEST)).toEqual([
-      { id: 'cf1', nombre: 'Arriendo', categoria: 'Arriendo', icono: null, tipo: 'fijo', monto: 800_000, diaPago: 20, pagado: false, ocurrencias: 1, nota: '' },
+      { id: 'cf1', nombre: 'Arriendo', categoria: 'Arriendo', icono: null, tipo: 'fijo', monto: 800_000, diaPago: 20, pagado: false, ocurrencias: 1, fechas: ['2026-06-20'], nota: '' },
     ]);
+  });
+
+  it('BUG-036: con el cobro el 25, el arriendo del 3 trae el vencimiento del mes siguiente', () => {
+    const comps = [fijoNec({ id: 'cf1', diaPago: 3, monto: 800_000 })];
+    const [fila] = construirDesgloseNecesidades(comps, [], new Date(2026, 9, 25), { frecuencia: 'Mensual', fechaISO: '2026-10-25' });
+    expect(fila.fechas).toEqual(['2026-11-03']);
   });
 
   // MC.7g, cerrado por MC.13c-2: antes estos NO aparecían porque una fila no
