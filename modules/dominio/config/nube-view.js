@@ -6,6 +6,7 @@
  */
 
 import { esc } from '../../infra/utils.js';
+import { haceCuanto } from '../../infra/nube.js';
 import { icon, isotipo } from '../../infra/icons.js';
 
 /**
@@ -41,22 +42,9 @@ export const MENSAJES_NUBE = {
   'codigo-vacio':        'Escribe el código de 8 letras.',
 };
 
-/**
- * "hace un momento", "hace 5 min", "hace 2 h" o la fecha.
- * @param {string} iso
- * @param {Date} [ahora]
- */
-export function haceCuanto(iso, ahora = new Date()) {
-  const t = Date.parse(iso);
-  if (!Number.isFinite(t)) return '';
-  const min = Math.floor((ahora.getTime() - t) / 60000);
-  if (min < 1) return 'hace un momento';
-  if (min < 60) return `hace ${min} min`;
-  const h = Math.floor(min / 60);
-  if (h < 24) return `hace ${h} h`;
-  const d = new Date(t);
-  return `el ${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-}
+// "Hace cuánto" vive en infra desde el ADR 121 (también lo usa la hoja del
+// avatar); se reexporta con su nombre de siempre.
+export { haceCuanto };
 
 function _error(codigo) {
   if (!codigo) return '';
@@ -136,7 +124,7 @@ function _eleccion(e) {
 function _conectado(e) {
   const estado = e.ocupado ? 'Sincronizando…'
     : e.pendiente ? 'Hay cambios por sincronizar: se suben solos cuando haya conexión.'
-    : e.ultimaSubida ? `Sincronizado ${haceCuanto(e.ultimaSubida)}.`
+    : e.ultimaSubida ? `En la nube ${haceCuanto(e.ultimaSubida)}.`
     : 'Todavía no se ha sincronizado.';
   // "Sincronizar ahora" nunca va deshabilitado: la sincronización corre sola y
   // no repinta el panel, así que un botón deshabilitado al pintar quedaría así.

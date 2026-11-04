@@ -297,3 +297,65 @@ export function movimientosRecientes({ gastos, ingresosPuntuales, aportes, trans
 export function movimientosCompletos(fuentes = {}) {
   return movimientosRecientes(fuentes, Infinity);
 }
+
+// ── BUSCAR (ADR 121 D1) ──────────────────────────────────────────
+
+/** Cuántas búsquedas recientes se recuerdan. */
+export const BUSQUEDAS_RECIENTES_MAX = 5;
+
+/**
+ * Lo que suman unos movimientos: lo que sale, lo que entra y el neto. Una
+ * transferencia (`neutro`) mueve dinero entre cuentas propias y no suma a
+ * ningún lado.
+ *
+ * @param {Movimiento[]} movimientos
+ * @returns {{ sale: number, entra: number, neto: number }}
+ */
+export function sumaDeMovimientos(movimientos) {
+  let sale = 0;
+  let entra = 0;
+  for (const m of movimientos ?? []) {
+    const monto = Number(m.monto) || 0;
+    if (m.direccion === 'egreso') sale += monto;
+    else if (m.direccion === 'ingreso') entra += monto;
+  }
+  return { sale, entra, neto: entra - sale };
+}
+
+/**
+ * Las categorías más usadas, para los atajos de la búsqueda. A igual uso, en
+ * orden alfabético, para que el orden no salte entre visitas.
+ *
+ * @param {Movimiento[]} movimientos
+ * @param {number} [tope=Infinity]
+ * @returns {string[]}
+ */
+export function categoriasFrecuentes(movimientos, tope = Infinity) {
+  const conteo = new Map();
+  for (const m of movimientos ?? []) {
+    if (!m.categoria) continue;
+    conteo.set(m.categoria, (conteo.get(m.categoria) ?? 0) + 1);
+  }
+  return [...conteo.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'es'))
+    .slice(0, tope)
+    .map(([categoria]) => categoria);
+}
+
+/**
+ * La lista de búsquedas recientes con `texto` primero, sin repetir (sin
+ * importar mayúsculas) y topada en `BUSQUEDAS_RECIENTES_MAX`. Un texto vacío
+ * no se anota.
+ *
+ * @param {string[] | undefined} lista
+ * @param {string} texto
+ * @returns {string[]}
+ */
+export function anotarBusquedaReciente(lista, texto) {
+  const previas = Array.isArray(lista) ? lista : [];
+  const t = String(texto ?? '').trim();
+  if (!t) return previas;
+  const clave = t.toLocaleLowerCase('es');
+  return [t, ...previas.filter(b => String(b).toLocaleLowerCase('es') !== clave)]
+    .slice(0, BUSQUEDAS_RECIENTES_MAX);
+}

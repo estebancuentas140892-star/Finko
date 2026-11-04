@@ -2062,12 +2062,21 @@
      "Ver en Me deben", "Ajustes, Datos de renta" o "Ajustar" medían de 15 a
      21px de alto. El texto no cambia: un pseudo-elemento centrado agranda la
      zona sensible, con la misma receta de los controles de Inicio (arriba). */
+  /* ADR 121 D4: la prueba de zonas táctiles encontró cuatro más del mismo
+     tipo (el atajo de la franja de Límites, "Elegir fecha" de una meta y el
+     historial de abonos de Me deben). Misma receta. */
   .link,
-  .plan-franja__link {
+  .plan-franja__link,
+  .plan-franja__salida,
+  .meta-card__nudge-cta,
+  .personal-item__abonos-summary {
     position: relative;
   }
   .link::after,
-  .plan-franja__link::after {
+  .plan-franja__link::after,
+  .plan-franja__salida::after,
+  .meta-card__nudge-cta::after,
+  .personal-item__abonos-summary::after {
     content: '';
     position: absolute;
     left: 50%;
@@ -2078,6 +2087,9 @@
     width: 100%;
     height: 100%;
   }
+  /* Y los botones chicos ("Ver historial completo", "Ver movimientos",
+     "Definir"): en el teléfono también llegan a 44 de alto (R4). */
+  .btn-sm { min-height: 44px; }
 
   /* ── ADR 113 (MV2.20): las lentes quedan a la vista ────────────────────
      Con 40 gastos, Gastos mide 4.076px y la barra se iba a los 192px: para

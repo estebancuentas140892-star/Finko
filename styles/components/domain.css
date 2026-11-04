@@ -3219,6 +3219,77 @@ button.chip:focus-visible {
 .movimientos-mes:first-child {
   padding-top: 0;
 }
+/* ADR 121 D1: cada mes con su total neto a la derecha, y el resumen de la
+   búsqueda arriba de la lista. */
+.movimientos-mes {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+}
+.movimientos-mes__total { font-variant-numeric: tabular-nums; }
+.movimientos-resumen {
+  margin: 0 0 var(--fk-space-2);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+}
+.movimientos-resumen + .movimientos-mes { padding-top: var(--fk-space-2); }
+
+/* ADR 121 D1: los atajos de la búsqueda, con el campo vacío y con el foco. */
+.movimientos-atajos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-3) 0 var(--fk-space-2);
+}
+.movimientos-atajos[hidden] { display: none; }
+.movimientos-atajos__titulo {
+  margin: 0 0 var(--fk-space-2);
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fk-text-muted);
+}
+.movimientos-atajos__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fk-space-2);
+}
+.movimientos-atajos__chips .chip { min-height: 44px; }
+
+/* ADR 121 D3: filas de espera del alto de una fila real mientras se arma un
+   historial grande. Quietas: el catálogo de animación prohíbe los bucles
+   (DESIGN_SYSTEM, DV.2c) y duran lo que tarda en armarse la lista. */
+.list-item--fantasma {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  min-height: 64px;
+  padding: var(--fk-space-2) var(--fk-space-3);
+}
+.list-item--fantasma__teja,
+.list-item--fantasma__lineas > span {
+  display: block;
+  border-radius: var(--fk-radius-sm);
+  background: var(--fk-bg-elevated);
+}
+.list-item--fantasma__teja {
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--fk-radius-md);
+}
+.list-item--fantasma__lineas {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+}
+.list-item--fantasma__lineas > span { height: 0.75rem; width: 60%; }
+.list-item--fantasma__lineas > span + span { width: 40%; }
+
+.movimientos-atajos__chips .chip .icon { --fk-icon-size: 0.875rem; }
 /* PERF.1: control de paginación de la vista completa (carga por lotes). */
 .movimientos-cargar-mas {
   display: flex;

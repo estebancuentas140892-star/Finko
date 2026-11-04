@@ -43,7 +43,7 @@ import {
   ErrorNube, leerSesion, guardarSesion, resultadoEnlace, pedirAcceso, entrarConCodigo, cerrarSesion,
   leerLibro, guardarLibro, olvidarLibro, hayRegistros, ultimoCambioNube, bajarRegistros, subirRegistros,
   borrarRegistros, borrarCuenta, decidirAlEntrar, nombreDispositivo, leerVinculo, guardarVinculo, olvidarVinculo,
-  crearCodigoNino, canjearCodigoNino, ninoBajar, ninoSubir, vinculosNino, desvincularNino,
+  crearCodigoNino, canjearCodigoNino, ninoBajar, ninoSubir, vinculosNino, desvincularNino, anotarEstadoSync,
 } from '../../infra/nube.js';
 import {
   libroVacio, marcarCambios, aplicarRemotas, filasPendientes, confirmarSubidas, estadoDesdeNube,
@@ -108,12 +108,13 @@ function _set(cambios) {
  */
 function _setSync(cambios) {
   Object.assign(_estado, cambios);
+  anotarEstadoSync({ ultimaSubida: _estado.ultimaSubida, pendiente: _estado.pendiente });
   const linea = document.getElementById('nube-estado');
   if (!linea) return;
   linea.textContent = _estado.ocupado ? 'Sincronizando…'
     : _estado.error ? (MENSAJES_NUBE[_estado.error] ?? MENSAJES_NUBE.servidor)
     : _estado.pendiente ? 'Hay cambios por sincronizar: se suben solos cuando haya conexión.'
-    : _estado.ultimaSubida ? `Sincronizado ${haceCuanto(_estado.ultimaSubida)}.`
+    : _estado.ultimaSubida ? `En la nube ${haceCuanto(_estado.ultimaSubida)}.`
     : 'Todavía no se ha sincronizado.';
 }
 

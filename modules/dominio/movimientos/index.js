@@ -7,15 +7,18 @@
  * navegar de vuelta a Inicio.
  */
 
-import { EventBus } from '../../core/state.js';
+import { S, EventBus } from '../../core/state.js';
+import { save } from '../../core/storage.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { renderSmart, registrarRender, programarRender } from '../../infra/render.js';
 import {
   renderMovimientosCompletos, cargarMasMovimientos,
   renderFiltrosMovimientos, setFiltroTexto, setFiltroDominio, setFiltroCategoria, setFiltroCuenta,
   setFiltroFechaDesde, setFiltroFechaHasta, limpiarFiltrosMovimientos,
-  actualizarBotonLimpiarFiltros, alternarTiposMovimientos,
+  actualizarBotonLimpiarFiltros, alternarTiposMovimientos, alternarAtajosTodas,
+  historialGrande, pintarFilasDeEspera,
 } from './view.js';
+import { anotarBusquedaReciente } from './logic.js';
 
 /** Secciones cuyos cambios pueden alterar el historial de movimientos. */
 const _SECCIONES_FUENTE = ['gastos', 'ingresosPuntuales', 'ahorro', 'transferencias', 'personales'];
@@ -36,11 +39,18 @@ function _wireFiltrosMovimientos() {
   const el = document.getElementById('movimientos-filtros');
   if (!el) return;
 
-  el.querySelector('#movimientos-buscar')?.addEventListener('input', (e) => {
+  const buscar = el.querySelector('#movimientos-buscar');
+  buscar?.addEventListener('input', (e) => {
     setFiltroTexto(e.target.value);
     renderMovimientosCompletos();
     actualizarBotonLimpiarFiltros();
+    _mostrarAtajos(true);
   });
+  // ADR 121 D1: los atajos se ofrecen con el campo vacío y con el foco.
+  buscar?.addEventListener('focus', () => _mostrarAtajos(true));
+  // Una búsqueda confirmada (al salir del campo o con Enter) que dejó
+  // resultados se recuerda.
+  buscar?.addEventListener('change', (e) => _anotarBusqueda(e.target.value));
   el.querySelector('#movimientos-desde')?.addEventListener('change', (e) => {
     setFiltroFechaDesde(e.target.value);
     renderMovimientosCompletos();
@@ -53,6 +63,33 @@ function _wireFiltrosMovimientos() {
   });
 }
 
+/**
+ * Muestra (con el campo vacío) u oculta el panel de atajos (ADR 121 D1).
+ * @param {boolean} quiere
+ */
+function _mostrarAtajos(quiere) {
+  const atajos = document.getElementById('movimientos-atajos');
+  const buscar = document.getElementById('movimientos-buscar');
+  if (!atajos || !buscar) return;
+  atajos.hidden = !(quiere && buscar.value.trim() === '');
+  buscar.setAttribute('aria-expanded', String(!atajos.hidden));
+}
+
+/** Anota la búsqueda si dejó resultados. */
+function _anotarBusqueda(texto) {
+  if (!String(texto ?? '').trim()) return;
+  if (!document.querySelector('#lista-movimientos .list-item')) return;
+  S.config.busquedasRecientes = anotarBusquedaReciente(S.config.busquedasRecientes, texto);
+  save();
+}
+
+/** Un atajo pone su filtro y deja la lista a la vista. */
+function _aplicarAtajo(poner) {
+  poner();
+  _renderVistaCompleta();
+  _mostrarAtajos(false);
+}
+
 /** Pinta filtros + lista de la vista completa y cablea sus inputs. */
 function _renderVistaCompleta() {
   renderFiltrosMovimientos();
@@ -62,6 +99,20 @@ function _renderVistaCompleta() {
 
 function _renderTodo() {
   renderSmart(_renderVistaCompleta, 'movimientos');
+}
+
+/**
+ * ADR 121 D3: con un historial grande, al llegar se pintan primero las filas
+ * de espera y la lista se arma en el cuadro siguiente, ya con ellas a la
+ * vista. Con uno chico se arma de una vez: ahí las filas solo parpadearían.
+ */
+function _alLlegar() {
+  if ((location.hash.slice(1) || 'dash') !== 'movimientos' || !historialGrande()) {
+    _renderTodo();
+    return;
+  }
+  pintarFilasDeEspera();
+  requestAnimationFrame(() => setTimeout(_renderTodo, 0));
 }
 
 /** Chip de dominio (MOV.2): cambia el filtro y repinta filtros + lista. */
@@ -163,6 +214,26 @@ export function initMovimientos() {
   registrarAccion('movimientos-quitar-categoria', _quitarCategoria);
   registrarAccion('movimientos-quitar-cuenta', _quitarCuenta);
 
+  // ADR 121 D1: los atajos de la búsqueda.
+  registrarAccion('movimientos-buscar-reciente', (el) => _aplicarAtajo(() => setFiltroTexto(el.dataset.texto)));
+  registrarAccion('movimientos-atajo-categoria', (el) => _aplicarAtajo(() => setFiltroCategoria(el.dataset.categoria)));
+  registrarAccion('movimientos-atajo-cuenta', (el) => _aplicarAtajo(() => setFiltroCuenta(el.dataset.cuenta)));
+  registrarAccion('movimientos-atajo-dominio', (el) => _aplicarAtajo(() => setFiltroDominio(el.dataset.tipo)));
+  registrarAccion('movimientos-atajos-todas', () => {
+    alternarAtajosTodas();
+    renderFiltrosMovimientos();
+    _wireFiltrosMovimientos();
+    _mostrarAtajos(true);
+    document.querySelector('[data-action="movimientos-atajos-todas"]')?.focus({ preventScroll: true });
+  });
+  // Tocar fuera del campo y de sus atajos los cierra; Escape también.
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest?.('#movimientos-buscar, #movimientos-atajos')) _mostrarAtajos(false);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && e.target?.id === 'movimientos-buscar') _mostrarAtajos(false);
+  });
+
   // G5 y ficha 15 (M3): de un número, de una lente o de una cuenta a los
   // movimientos que la explican, con el filtro puesto.
   EventBus.on('movimientos:ver', _verPrefiltrado);
@@ -178,7 +249,7 @@ export function initMovimientos() {
 
   // Re-render al navegar a #dash o #movimientos - sin esto el panel/vista
   // aparece vacío si el usuario llega navegando desde otra sección.
-  window.addEventListener('hashchange', _renderTodo);
+  window.addEventListener('hashchange', _alLlegar);
 
   // Para que renderAll() (bootstrap) también pinte ambos.
   registrarRender(_renderTodo);

@@ -21,7 +21,7 @@ import { icon, iconoCategoria } from '../infra/icons.js';
 import { inicialesDe } from '../infra/render.js';
 import { navigate } from '../infra/router.js';
 import { ninos, entrarComo } from '../infra/perfiles.js';
-import { leerSesion, leerToken } from '../infra/nube.js';
+import { leerSesion, leerToken, estadoSync, haceCuanto } from '../infra/nube.js';
 import { registrarAccion } from './actions.js';
 import { abrirModal, cerrarModal } from './modales.js';
 
@@ -48,6 +48,24 @@ export function textoFamilia(hijos) {
 }
 
 /**
+ * ADR 121 D2: lo que dice la fila "Copia en la nube". Sin cuenta, la
+ * invitación; con cuenta, el estado de la sincronización, y sin un estado que
+ * decir, el correo.
+ *
+ * @param {{ correo: string, nube?: { enLinea: boolean, pendiente: boolean, ultimaSubida: string } | null }} d
+ * @param {Date} [ahora]
+ * @returns {string}
+ */
+export function textoNube(d, ahora = new Date()) {
+  if (!d.correo) return 'Úsala también en otro teléfono';
+  const n = d.nube;
+  if (n && !n.enLinea) return 'Sin conexión · tus cambios quedan en este teléfono y se envían al volver';
+  if (n?.pendiente) return 'Hay cambios por subir: se suben solos en un momento';
+  if (n?.ultimaSubida) return `En la nube ${haceCuanto(n.ultimaSubida, ahora)}`;
+  return d.correo;
+}
+
+/**
  * Lo que la hoja necesita, leído del estado. Sin DOM.
  *
  * @param {typeof S} [state=S]
@@ -56,10 +74,14 @@ export function textoFamilia(hijos) {
 export function datosHojaPerfil(state = S, sesion = leerSesion()) {
   const nombre = typeof state.perfil?.nombre === 'string' ? state.perfil.nombre.trim() : '';
   const correo = sesion?.access_token ? (leerToken(sesion.access_token).email ?? '') : '';
+  const nube = correo
+    ? { ...estadoSync(), enLinea: typeof navigator === 'undefined' || navigator.onLine !== false }
+    : null;
   return {
     nombre,
     hijos: ninos(state).map(p => ({ id: p.id, nombre: p.nombre, edad: p.edad })),
     correo,
+    nube,
   };
 }
 
@@ -100,7 +122,7 @@ export function htmlHojaPerfil(d) {
     _fila({ icono: icon('personales'), dom: 'personales', titulo: 'Familia', sub: textoFamilia(d.hijos),
       datos: 'data-action="perfil-ir" data-bloque="familia"' }),
     _fila({ icono: iconoCategoria('c-escudo'), dom: 'ahorro', titulo: 'Copia en la nube',
-      sub: d.correo || 'Úsala también en otro teléfono',
+      sub: textoNube(d),
       datos: 'data-action="perfil-ir" data-bloque="nube"' }),
     _fila({ icono: icon('ajustes'), dom: 'analisis', titulo: 'Ajustes', sub: 'PIN, avisos, respaldo y la app',
       datos: 'data-action="perfil-ir" data-bloque=""' }),

@@ -2546,7 +2546,8 @@ test.describe('Movimientos - ficha 15: quinta fuente, plegable y entradas', () =
   });
 
   test('el chip "Me deben" filtra el ledger a los abonos', async ({ page }) => {
-    await page.locator('#movimientos-filtros .chip', { hasText: 'Me deben' }).click();
+    // La fila de tipos: los atajos de la búsqueda (ADR 121) tienen un chip igual, oculto.
+    await page.locator('#movimientos-filtros .filtros-bar .chip', { hasText: 'Me deben' }).click();
     await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(1);
     await expect(page.locator('#lista-movimientos .list-item')).toContainText('Abono de Camila');
   });

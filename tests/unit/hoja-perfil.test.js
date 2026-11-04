@@ -11,7 +11,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { textoFamilia, datosHojaPerfil, htmlHojaPerfil } from '../../modules/ui/hoja-perfil.js';
+import { textoFamilia, datosHojaPerfil, htmlHojaPerfil, textoNube } from '../../modules/ui/hoja-perfil.js';
 
 const SOFIA = { id: 'n-sofi', nombre: 'Sofía', edad: 8, dibujo: 'cometa', teNombra: 'Mamá', creado: '2026-10-25' };
 const TOMAS = { id: 'n-tomi', nombre: 'Tomás', edad: 6, dibujo: 'balon', teNombra: 'Mamá', creado: '2026-10-25' };
@@ -94,5 +94,36 @@ describe('htmlHojaPerfil()', () => {
     expect(d.querySelector('#perfil-hoja-titulo').textContent).toBe('<b>x</b>');
     expect(d.querySelector('[data-action="perfil-pasar"]').dataset.id).toBe('n"1');
     expect(d.querySelector('[data-action="perfil-pasar"]').textContent).toContain('<i>y</i>');
+  });
+});
+
+// ── ADR 121 D2: la fila de la nube dice el estado ────────────────
+
+describe('textoNube()', () => {
+  const ahora = new Date('2026-11-04T12:00:00Z');
+  const con = (nube) => ({ correo: 'laura@correo.co', nube });
+
+  it('sin cuenta, la invitación de siempre', () => {
+    expect(textoNube({ correo: '', nube: null }, ahora)).toBe('Úsala también en otro teléfono');
+  });
+
+  it('sin conexión, que los cambios quedan en el teléfono', () => {
+    expect(textoNube(con({ enLinea: false, pendiente: true, ultimaSubida: '' }), ahora))
+      .toBe('Sin conexión · tus cambios quedan en este teléfono y se envían al volver');
+  });
+
+  it('con cambios por subir, que se suben solos', () => {
+    expect(textoNube(con({ enLinea: true, pendiente: true, ultimaSubida: '' }), ahora))
+      .toBe('Hay cambios por subir: se suben solos en un momento');
+  });
+
+  it('al día, hace cuánto está en la nube', () => {
+    expect(textoNube(con({ enLinea: true, pendiente: false, ultimaSubida: '2026-11-04T11:58:00Z' }), ahora))
+      .toBe('En la nube hace 2 min');
+  });
+
+  it('sin un estado que decir, el correo', () => {
+    expect(textoNube(con({ enLinea: true, pendiente: false, ultimaSubida: '' }), ahora)).toBe('laura@correo.co');
+    expect(textoNube({ correo: 'laura@correo.co' }, ahora)).toBe('laura@correo.co');
   });
 });

@@ -15,7 +15,7 @@ import { f, esc as _esc, fechaDiaMes, formateadorFecha } from '../../infra/utils
 import { emptyArt, tejaCategoria } from '../../infra/icons.js';
 import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { memoizar } from '../../infra/memo.js';
-import { movimientosCompletos, descripcionMovimiento, filtrarMovimientos } from './logic.js';
+import { movimientosCompletos, descripcionMovimiento, filtrarMovimientos, sumaDeMovimientos, categoriasFrecuentes } from './logic.js';
 
 /**
  * PERF.2: ambas derivaciones concatenan y ordenan las 3 fuentes completas
@@ -238,7 +238,8 @@ export function renderFiltrosMovimientos() {
   el.innerHTML = `
     <input type="search" id="movimientos-buscar" class="input movimientos-filtros__busqueda"
            placeholder="Buscar por descripción..." value="${_esc(_filtroTexto)}"
-           aria-label="Buscar movimientos por descripción" />
+           aria-label="Buscar movimientos por descripción" aria-controls="movimientos-atajos" />
+    ${_atajosHtml(todos, dominios)}
     ${_categoriaHtml()}
     <div class="filtros-bar${_tiposAbiertos ? ' filtros-bar--abierta' : ''}" role="group" aria-label="Filtrar movimientos por tipo">
       <button type="button" class="chip${todosActivo ? ' chip--active' : ''}"
@@ -261,6 +262,54 @@ export function renderFiltrosMovimientos() {
         <input type="date" id="movimientos-hasta" class="input" value="${_esc(_filtroFechaHasta)}" />
       </div>
     </details>`;
+}
+
+/** "Todas…" del panel de atajos: muestra todas las categorías. Estado de UI. */
+let _atajosTodas = false;
+
+/** Alterna "Todas…" / "Menos" en los atajos por categoría. */
+export function alternarAtajosTodas() {
+  _atajosTodas = !_atajosTodas;
+}
+
+/**
+ * ADR 121 D1: lo que se ofrece antes de escribir. Las búsquedas recientes,
+ * las categorías más usadas y los tipos y cuentas con movimientos. Nace oculto;
+ * `index.js` lo muestra mientras el campo está vacío y con el foco.
+ *
+ * @param {import('./logic.js').Movimiento[]} todos
+ * @param {string[]} dominios
+ */
+function _atajosHtml(todos, dominios) {
+  const chip = (accion, dato, valor, texto, icono = '') => `
+          <button type="button" class="chip" data-action="${accion}" data-${dato}="${_esc(valor)}">${icono}${_esc(texto)}</button>`;
+  const recientes = (Array.isArray(S.config?.busquedasRecientes) ? S.config.busquedasRecientes : [])
+    .map(t => chip('movimientos-buscar-reciente', 'texto', t, t, '<svg class="icon" aria-hidden="true"><use href="#i-recurring"/></svg>'))
+    .join('');
+  const todasCat = categoriasFrecuentes(todos);
+  const categorias = (_atajosTodas ? todasCat : todasCat.slice(0, 4))
+    .map(c => chip('movimientos-atajo-categoria', 'categoria', c, c)).join('');
+  const mas = todasCat.length > 4
+    ? `<button type="button" class="chip" data-action="movimientos-atajos-todas">${_atajosTodas ? 'Menos' : 'Todas…'}</button>`
+    : '';
+  const cuentasConMov = new Set(todos.flatMap(m => [m.cuentaId, m.cuentaOrigenId, m.cuentaDestinoId]).filter(Boolean));
+  const tiposYCuentas = [
+    // `data-tipo` y no `data-dominio`: ese atributo nombra los chips de la barra.
+    ...dominios.map(d => chip('movimientos-atajo-dominio', 'tipo', d, _DOMINIO_LABEL[d])),
+    ...(S.cuentas ?? []).filter(c => cuentasConMov.has(c.id)).map(c => chip('movimientos-atajo-cuenta', 'cuenta', c.id, c.nombre)),
+  ].join('');
+  const grupo = (titulo, chips) => chips ? `
+      <div class="movimientos-atajos__grupo">
+        <p class="movimientos-atajos__titulo">${titulo}</p>
+        <div class="movimientos-atajos__chips">${chips}
+        </div>
+      </div>` : '';
+  return `
+    <div class="movimientos-atajos" id="movimientos-atajos" hidden>
+      ${grupo('Buscaste antes', recientes)}
+      ${grupo('Por categoría', categorias + mas)}
+      ${grupo('Por tipo y cuenta', tiposYCuentas)}
+    </div>`;
 }
 
 /**
@@ -348,11 +397,24 @@ function _descripcionMovimiento(m) {
   return descripcionMovimiento(m, S.cuentas);
 }
 
-/** "Julio 2026" a partir de una fecha ISO, para el divisor de mes. */
+/**
+ * "Julio" o "Julio de 2025" a partir de una fecha ISO, para el divisor de
+ * mes: el año solo si no es el actual (ADR 121 D1, como el ADR 102).
+ */
 function _mesAnioLabel(fechaISO) {
   const d = new Date(`${fechaISO}T12:00:00Z`);
-  const label = formateadorFecha('es-CO', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(d);
+  const otroAnio = fechaISO.slice(0, 4) !== String(new Date().getFullYear());
+  const label = formateadorFecha('es-CO', otroAnio
+    ? { month: 'long', year: 'numeric', timeZone: 'UTC' }
+    : { month: 'long', timeZone: 'UTC' }).format(d);
   return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+/** "-$187.600" o "+$300.000": el neto de un grupo, con el signo de las filas; con el ojo puesto, tapado. */
+function _neto(movs) {
+  const { neto } = sumaDeMovimientos(movs);
+  if (S.config?.ocultarSaldo === true) return SALDO_MASCARA_CUENTA;
+  return `${neto < 0 ? '-' : neto > 0 ? '+' : ''}${f(Math.abs(neto))}`;
 }
 
 /**
@@ -372,6 +434,7 @@ function _agruparPorMes(movs) {
     }
     grupos[grupos.length - 1].items.push(m);
   }
+  for (const g of grupos) g.total = _neto(g.items);
   return grupos;
 }
 
@@ -450,8 +513,14 @@ function _renderMovimientoItem(m) {
   // cobrado antes de que existiera el historial. Dice eso en vez de imprimir la
   // fecha aproximada como si fuera la del abono, misma copia que usa el
   // historial por préstamo en Me deben. Sin año: lo dice el grupo (ADR 102 D2).
-  const cuando        = m.agrupado ? 'Antes de este historial' : fechaDiaMes(m.fecha);
-  const subtitulo     = [_TIPO_LABEL[m.tipo] ?? m.tipo, cuando, cuenta, gmfNota]
+  // ADR 121 D1: "Mar 27 · Restaurantes · Nequi". El mes lo dice el grupo; un
+  // gasto se nombra por su categoría cuando el título no la repite.
+  const cuando        = m.agrupado ? 'Antes de este historial' : _diaSemana(m.fecha);
+  const titulo        = _descripcionMovimiento(m);
+  const tipo          = m.tipo === 'gasto' && m.categoria && m.categoria !== titulo
+    ? m.categoria
+    : (_TIPO_LABEL[m.tipo] ?? m.tipo);
+  const subtitulo     = [cuando, tipo, cuenta, gmfNota]
     .filter(Boolean).map(_esc).join(' · ');
 
   // ADR 098 D4: con acciones, en móvil la fila abre la hoja de detalle
@@ -475,6 +544,14 @@ function _renderMovimientoItem(m) {
       </div>
       ${_renderAccionesMovimiento(m)}
     </article>`;
+}
+
+/** "Mar 27": el día de la semana y el número; el mes lo dice el grupo. */
+function _diaSemana(fechaISO) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaISO ?? '')) return fechaDiaMes(fechaISO);
+  const d = new Date(`${fechaISO}T12:00:00Z`);
+  const dia = formateadorFecha('es-CO', { weekday: 'short', timeZone: 'UTC' }).format(d).replace(/\.$/, '');
+  return `${dia.charAt(0).toUpperCase()}${dia.slice(1)} ${d.getUTCDate()}`;
 }
 
 function _renderEmptyMovimientos() {
@@ -501,6 +578,52 @@ function _renderEmptySinResultados() {
     </div>`;
 }
 
+/**
+ * ADR 121 D1: "4 resultados · $187.600 en todo tu historial". Si hay de las
+ * dos direcciones, cada una con su verbo; con un rango puesto, "en esas fechas".
+ *
+ * @param {import('./logic.js').Movimiento[]} movs
+ */
+function _resumenBusqueda(movs) {
+  const { sale, entra } = sumaDeMovimientos(movs);
+  const m = (n) => (S.config?.ocultarSaldo === true ? SALDO_MASCARA_CUENTA : f(n));
+  const cuanto = sale > 0 && entra > 0 ? `sale ${m(sale)} y entra ${m(entra)}` : m(sale || entra);
+  const donde = _filtroFechaDesde || _filtroFechaHasta ? 'en esas fechas' : 'en todo tu historial';
+  const n = movs.length;
+  return `<p class="movimientos-resumen" role="status">${n.toLocaleString('es-CO')} ${n === 1 ? 'resultado' : 'resultados'} · ${cuanto} ${donde}</p>`;
+}
+
+// ── FILAS DE ESPERA (ADR 121 D3) ─────────────────────────────────
+
+/**
+ * Desde este tamaño de historial, armar la lista en un teléfono de gama media
+ * pasa de 300 ms (PERF.1): la pantalla se quedaba en blanco mientras tanto.
+ */
+export const UMBRAL_FILAS_DE_ESPERA = 1500;
+
+/** ¿El historial es de los que tardan en armarse? */
+export function historialGrande() {
+  const n = (S.gastos?.length ?? 0) + (S.ingresosPuntuales?.length ?? 0)
+    + (S.ahorro?.aportes?.length ?? 0) + (S.transferencias?.length ?? 0);
+  return n >= UMBRAL_FILAS_DE_ESPERA;
+}
+
+/**
+ * Pinta filas fantasma del alto de las reales mientras se arma la lista, para
+ * que nada salte al llegar los datos. `renderMovimientosCompletos()` las
+ * reemplaza.
+ */
+export function pintarFilasDeEspera() {
+  const el = document.getElementById('lista-movimientos');
+  if (!el) return;
+  el.setAttribute('aria-busy', 'true');
+  el.innerHTML = Array.from({ length: 8 }, () => `
+    <div class="list-item list-item--fantasma" aria-hidden="true">
+      <span class="list-item--fantasma__teja"></span>
+      <span class="list-item--fantasma__lineas"><span></span><span></span></span>
+    </div>`).join('');
+}
+
 // ── PAGINACIÓN DE LA VISTA COMPLETA (PERF.1) ─────────────────────
 
 /**
@@ -513,8 +636,8 @@ function _renderEmptySinResultados() {
  */
 function _aplanarEntradas(grupos) {
   const entradas = [];
-  for (const { label, items } of grupos) {
-    entradas.push({ tipo: 'divisor', label });
+  for (const { label, items, total } of grupos) {
+    entradas.push({ tipo: 'divisor', label, total });
     for (const mov of items) entradas.push({ tipo: 'item', mov });
   }
   return entradas;
@@ -522,7 +645,7 @@ function _aplanarEntradas(grupos) {
 
 function _renderEntrada(entrada) {
   return entrada.tipo === 'divisor'
-    ? `<div class="movimientos-mes" role="presentation">${_esc(entrada.label)}</div>`
+    ? `<div class="movimientos-mes" role="presentation"><span>${_esc(entrada.label)}</span>${entrada.total ? `<span class="movimientos-mes__total">${entrada.total}</span>` : ''}</div>`
     : _renderMovimientoItem(entrada.mov);
 }
 
@@ -618,6 +741,7 @@ export function cargarMasMovimientos() {
 export function renderMovimientosCompletos() {
   const el = document.getElementById('lista-movimientos');
   if (!el) return;
+  el.removeAttribute('aria-busy');
 
   _detenerCargaAutomatica();
 
@@ -652,6 +776,6 @@ export function renderMovimientosCompletos() {
 
   _entradasPendientes = _aplanarEntradas(_agruparPorMes(movs));
   _cursorLote = 0;
-  el.innerHTML = '';
+  el.innerHTML = _filtroTexto.trim() ? _resumenBusqueda(movs) : '';
   _agregarSiguienteLote(el);
 }

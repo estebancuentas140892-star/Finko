@@ -95,6 +95,42 @@ export function leerToken(token) {
  * @param {number} [ahora] - segundos Unix.
  * @returns {SesionNube}
  */
+// ── ESTADO DE LA SINCRONIZACIÓN (ADR 121 D2) ─────────────────────
+
+/**
+ * Lo último que se sabe de la sincronización, para quien lo muestra fuera de
+ * Ajustes (la hoja del avatar). Lo anota `config/nube.js` cada vez que cambia.
+ */
+const _sync = { ultimaSubida: '', pendiente: false };
+
+/** @param {{ ultimaSubida?: string, pendiente?: boolean }} cambios */
+export function anotarEstadoSync(cambios) {
+  Object.assign(_sync, cambios);
+}
+
+/** @returns {{ ultimaSubida: string, pendiente: boolean }} */
+export function estadoSync() {
+  return { ..._sync };
+}
+
+/**
+ * "hace un momento", "hace 5 min", "hace 2 h" o la fecha. Vivía en la vista
+ * de la nube de Ajustes; sube acá porque también la usa la hoja del avatar.
+ * @param {string} iso
+ * @param {Date} [ahora]
+ */
+export function haceCuanto(iso, ahora = new Date()) {
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return '';
+  const min = Math.floor((ahora.getTime() - t) / 60000);
+  if (min < 1) return 'hace un momento';
+  if (min < 60) return `hace ${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `hace ${h} h`;
+  const d = new Date(t);
+  return `el ${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+}
+
 export function sesionDesdeRespuesta(r, ahora = Math.floor(Date.now() / 1000)) {
   const datos = leerToken(r.access_token);
   return {

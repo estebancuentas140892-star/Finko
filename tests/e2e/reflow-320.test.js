@@ -14,6 +14,7 @@
 
 import { test, expect } from '@playwright/test';
 import { sembrar } from './helpers/estado.js';
+import { SEMILLAS } from './helpers/semillas.js';
 
 test.use({ viewport: { width: 320, height: 568 } });
 
@@ -140,3 +141,35 @@ test.describe('Reflow a 320px (RWD.1, WCAG 1.4.10)', () => {
   });
 
 });
+
+// ── ADR 121 D4: seis anchos y cuatro cantidades de información ─────
+//
+// El canvas móvil se revisó de 320 a 430 px y con cuatro semillas (vacío,
+// poca, normal y años de uso); el tablero 6 pide que la suite vigile lo mismo.
+// Una prueba por semilla y ancho, para que el reporte diga cuál desborda.
+
+const ANCHOS = [
+  { width: 320, height: 568 }, { width: 360, height: 780 }, { width: 375, height: 667 },
+  { width: 390, height: 844 }, { width: 414, height: 896 }, { width: 430, height: 932 },
+];
+const SECCIONES_TODAS = [...SECCIONES, 'fondo', 'movimientos'];
+
+for (const [nombre, semilla] of Object.entries(SEMILLAS)) {
+  test.describe(`Reflow con la semilla "${nombre}" (ADR 121 D4)`, () => {
+    for (const viewport of ANCHOS) {
+      test(`a ${viewport.width} x ${viewport.height} ninguna sección desborda`, async ({ page }) => {
+        test.setTimeout(nombre === 'grande' ? 120_000 : 60_000);
+        await page.setViewportSize(viewport);
+        await sembrar(page, semilla());
+        await page.goto('/#dash');
+        await page.waitForSelector('#sec-dash.active', { timeout: 15_000 });
+        for (const sec of SECCIONES_TODAS) {
+          await page.evaluate(s => { window.location.hash = '#' + s; }, sec);
+          await page.waitForSelector(`#sec-${sec}.active`, { timeout: 10_000 });
+          await page.waitForTimeout(nombre === 'grande' ? 250 : 120);
+          await assertSinScrollHorizontal(page, `${nombre}, ${viewport.width}px, #${sec}`);
+        }
+      });
+    }
+  });
+}

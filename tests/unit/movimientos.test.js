@@ -573,7 +573,10 @@ describe('renderMovimientosCompletos()', () => {
     renderMovimientosCompletos();
     const divisores = elLista().querySelectorAll('.movimientos-mes');
     expect(divisores).toHaveLength(2);
-    expect(divisores[0].textContent).toContain('2026');
+    // ADR 121 D1: el año solo si no es el actual, y cada mes con su total.
+    const anioActual = String(new Date().getFullYear());
+    expect(divisores[0].querySelector('span').textContent).toBe(anioActual === '2026' ? 'Julio' : 'Julio de 2026');
+    expect(divisores[0].querySelector('.movimientos-mes__total').textContent).toMatch(/^-\$/);
   });
 
   it('la fila no repite el año: lo dice el grupo, también en años anteriores (ADR 102 D2)', () => {
@@ -584,7 +587,8 @@ describe('renderMovimientosCompletos()', () => {
     ];
     renderMovimientosCompletos();
     const subtitulos = [...elLista().querySelectorAll('.list-item__subtitle')].map(p => p.textContent);
-    expect(subtitulos).toEqual(['Gasto · 28 de oct · Nequi', 'Gasto · 5 de dic · Nequi']);
+    // ADR 121 D1: el día de la semana y el número; el mes lo dice el grupo.
+    expect(subtitulos).toEqual(['Mié 28 · Gasto · Nequi', 'Jue 5 · Gasto · Nequi']);
     expect(elLista().querySelectorAll('.movimientos-mes')[1].textContent).toContain('2024');
   });
 
@@ -768,7 +772,7 @@ describe('renderFiltrosMovimientos()', () => {
   it('no repite chip por dominio aunque haya varios movimientos del mismo', () => {
     S.gastos = [gasto({ id: 'g1' }), gasto({ id: 'g2', descripcion: 'Otro' })];
     renderFiltrosMovimientos();
-    const chipsGastos = elFiltros().querySelectorAll('[data-dominio="gastos"]');
+    const chipsGastos = elFiltros().querySelectorAll('.filtros-bar [data-dominio="gastos"]');
     expect(chipsGastos).toHaveLength(1);
   });
 
@@ -776,8 +780,8 @@ describe('renderFiltrosMovimientos()', () => {
     S.gastos = [gasto()];
     setFiltroDominio('gastos');
     renderFiltrosMovimientos();
-    expect(elFiltros().querySelector('[data-dominio="gastos"]').classList.contains('chip--active')).toBe(true);
-    expect(elFiltros().querySelector('[data-dominio=""]').classList.contains('chip--active')).toBe(false);
+    expect(elFiltros().querySelector('.filtros-bar [data-dominio="gastos"]').classList.contains('chip--active')).toBe(true);
+    expect(elFiltros().querySelector('.filtros-bar [data-dominio=""]').classList.contains('chip--active')).toBe(false);
   });
 
   it('si el dominio activo ya no existe en los datos, se auto-resetea a "Todos"', () => {
@@ -1269,8 +1273,8 @@ describe('renderMovimientosCompletos() - paginación por lotes', () => {
     ];
     renderMovimientosCompletos();
     cargarMasMovimientos();
-    const divisores = [...elLista().querySelectorAll('.movimientos-mes')].map((el) => el.textContent);
-    expect(divisores.filter((d) => d.includes('2026')).length).toBe(2); // julio + junio, sin repetir julio
+    const divisores = [...elLista().querySelectorAll('.movimientos-mes > span:first-child')].map((el) => el.textContent);
+    expect(divisores.map(d => d.split(' ')[0])).toEqual(['Julio', 'Junio']); // sin repetir julio
   });
 
   it('volver a llamar renderMovimientosCompletos() reinicia la paginación (no acumula lotes viejos)', () => {
