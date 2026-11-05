@@ -83,7 +83,7 @@
    clase: el botón dice su sección con `data-dom` y de ahí salen el tinte, el
    borde y el texto. Los colores van en `[data-dom]` (un punto más de
    especificidad) para ganarle a la clase de maquetación con la que convive
-   (.lane__cta, .transferir-entrada, .btn-ghost), sin depender del orden de
+   (.transferir-entrada, .btn-ghost), sin depender del orden de
    los archivos. */
 .btn-dominio {
   display: inline-flex;

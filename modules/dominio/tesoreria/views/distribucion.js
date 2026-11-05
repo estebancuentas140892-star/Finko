@@ -623,7 +623,7 @@ function _renderBloqueEducativo(split, razon, { compacto = false } = {}) {
  */
 const _PASO_DE_CTA = {
   compromisos: 'necesidades',
-  ahorro:      'asignaciones',
+  fondo:       'asignaciones',
   inversion:   'asignaciones',
   presupuesto: 'estiloVida',
 };

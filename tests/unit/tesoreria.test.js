@@ -3118,7 +3118,7 @@ describe('renderAsistenteDistribucion() - accesos cruzados por paso (punto 10)',
     renderAsistenteDistribucion();
 
     expect(pasoDelCta('compromisos')).toBe('Necesidades');
-    expect(pasoDelCta('ahorro')).toBe('Ahorro, deudas e inversiones');
+    expect(pasoDelCta('fondo')).toBe('Ahorro, deudas e inversiones');
     expect(pasoDelCta('presupuesto')).toBe('Estilo de vida');
 
     // Ninguno vive fuera de la paginación (que es "todos juntos al inicio").
@@ -3419,12 +3419,12 @@ describe('sugerirDistribucionIngreso()', () => {
   it('agrega alerta y CTA a ahorro cuando no hay fondo activo', () => {
     const r = sugerirDistribucionIngreso(3_000_000, { tieneFondoActivo: false });
     expect(r.alertas.some(a => a.includes('fondo'))).toBe(true);
-    expect(r.ctas.some(c => c.seccion === 'ahorro')).toBe(true);
+    expect(r.ctas.some(c => c.seccion === 'fondo')).toBe(true);
   });
 
   it('agrega CTA a ahorro cuando el fondo esta activo pero incompleto', () => {
     const r = sugerirDistribucionIngreso(3_000_000, { tieneFondoActivo: true, fondoCompleto: false });
-    expect(r.ctas.some(c => c.seccion === 'ahorro')).toBe(true);
+    expect(r.ctas.some(c => c.seccion === 'fondo')).toBe(true);
   });
 
   it('agrega CTA a inversion cuando el fondo esta completo y no hay inversiones', () => {

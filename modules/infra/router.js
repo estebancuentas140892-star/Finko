@@ -4,10 +4,6 @@
  * Contract: sections have id="sec-{hash}" and use .active class.
  */
 
-// `ahorro` es la casa de las cuatro modalidades (DIS.18) y `fondo` el fondo de
-// emergencia, que hasta entonces ocupaba `ahorro`. Un bookmark viejo a #ahorro
-// llega a la casa, que enlaza al fondo en su primera fila: no se pierde, sube
-// un nivel. Por eso no hay REDIRECTS para este cambio.
 const SECTIONS = new Map([
   ['dash',        'sec-dash'],
   ['movimientos', 'sec-movimientos'],
@@ -16,7 +12,6 @@ const SECTIONS = new Map([
   ['agenda',      'sec-agenda'],
   ['personales',  'sec-personales'],
   ['tesoreria',   'sec-tesoreria'],
-  ['ahorro',      'sec-ahorro'],
   ['fondo',       'sec-fondo'],
   ['metas',       'sec-metas'],
   ['apartados',   'sec-apartados'],
@@ -29,10 +24,13 @@ const SECTIONS = new Map([
 // Hashes retirados: redirigen al destino indicado (bookmarks viejos, etc.).
 // ADR 101 D2: Aprende y Tu progreso salieron de la app del adulto. Un enlace
 // viejo a cualquiera de los dos llega a Inicio en vez de quedar en blanco.
+// ADR 125: la casa de Ahorro (`#ahorro`, DIS.18) se retiró; Ahorro abre en el
+// fondo, la primera de sus cuatro lentes.
 const REDIRECTS = new Map([
   ['calc', 'dash'],
   ['aprende', 'dash'],
   ['progreso', 'dash'],
+  ['ahorro', 'fondo'],
 ]);
 
 const DEFAULT_HASH = 'dash';

@@ -1,17 +1,13 @@
 /**
- * hub-ahorros.test.js - la casa de Ahorro (DIS.18) y el menú "Más" v2.
+ * hub-ahorros.test.js - la entrada a Ahorro y el menú "Más" v2.
  *
  * Cubre:
  * - Menú "Más" v2 (NAV2.1a, ADR 040): hoja agrupada, tile activo por dominio,
- *   toggle de tema. Desde DIS.18 el grupo "Ahorros" y sus 4 tejas se reducen a
- *   una sola entrada a ancho completo: "Ahorro".
- * - La casa `#ahorro` (DIS.18, ADR 009 restaurado): el total una sola vez y las
- *   cuatro modalidades como filas navegables, cada una con su propósito y su
- *   estado en su propia unidad.
- * - El fondo de emergencia se muda de `#ahorro` a `#fondo`.
- * - Cada sección hija abre con "volver a Ahorro" y sin franja de pestañas ni
- *   card consolidada repetida (las dos se retiraron con DIS.18).
- * - Sidebar desktop: grupo "Ahorro" con una entrada.
+ *   toggle de tema.
+ * - Ahorro abre directo en el fondo (ADR 125): la casa `#ahorro` de DIS.18 se
+ *   retiró, un enlace viejo a `#ahorro` llega a `#fondo` y las cuatro lentes
+ *   se recorren con su barra, sin "volver" a una pantalla de arriba.
+ * - Sidebar desktop: la fila "Ahorro" abre el fondo y despliega las cuatro.
  */
 
 import { test, expect } from '@playwright/test';
@@ -22,7 +18,7 @@ const CUENTAS = [
   { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi', saldo: 100000, activa: true, fechaCreacion: '2026-07-01T00:00:00.000Z' },
 ];
 
-/** Estado mínimo sin ahorros: la casa muestra las cuatro filas en cero. */
+/** Estado mínimo sin ahorros. */
 async function seedVacio(page) {
   await sembrar(page, {
     perfil: { nombre: 'Ana', smmlv: 1750905 },
@@ -47,9 +43,9 @@ async function seedConAhorros(page) {
   });
 }
 
-// ── MÓVIL: menú Más y la casa de Ahorro ─────────────────────────────────────
+// ── MÓVIL: menú Más y la entrada a Ahorro ───────────────────────────────────
 
-test.describe('DIS.18 - la casa de Ahorro (móvil)', () => {
+test.describe('Ahorro en el teléfono (AH.7a, ADR 125)', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test('el menú Más queda en dos rótulos que sí excluyen (ADR 069)', async ({ page }) => {
@@ -78,16 +74,18 @@ test.describe('DIS.18 - la casa de Ahorro (móvil)', () => {
     ]);
   });
 
-  test('la casa (#ahorro) se alcanza desde la barra inferior, sin abrir "Más" (AH.7a)', async ({ page }) => {
+  test('la entrada "Ahorro" de la barra inferior abre directo el fondo, sin abrir "Más" (ADR 125)', async ({ page }) => {
     await seedVacio(page);
     await page.goto('/#dash');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
 
     await expect(page.locator('#modal-mas a[href="#ahorro"]')).toHaveCount(0);
-    await page.click('.nav-item--mobile-only[href="#ahorro"]');
+    await page.click('.nav-item--mobile-only[data-section="ahorro"]');
 
-    await expect(page.locator('#sec-ahorro.active')).toBeVisible();
-    await expect(page.locator('#title-ahorro')).toHaveText('Ahorro');
+    await expect(page.locator('#sec-fondo.active')).toBeVisible();
+    await expect(page.locator('#title-fondo')).toHaveText('Fondo de emergencia');
+    await expect(page.locator('#sec-fondo .bloque-tabs__tab[data-section="fondo"]')).toHaveClass(/active/);
+    await expect(page.locator('#sec-ahorro')).toHaveCount(0);
   });
 
   test('el tile "Calendario" abre la sección y cierra la hoja (AH.7a)', async ({ page }) => {
@@ -124,79 +122,30 @@ test.describe('DIS.18 - la casa de Ahorro (móvil)', () => {
     await expect(page.locator('body')).not.toHaveClass(/light-theme/);
   });
 
-  test('la casa muestra el total una vez y las cuatro modalidades con propósito y estado', async ({ page }) => {
+  // ADR 125: la casa se retiró. Un enlace o marcador viejo a #ahorro no se
+  // pierde: llega al fondo. Y ninguna lente ofrece subir a una pantalla que ya
+  // no existe; ir de lado es la barra.
+  test('un enlace viejo a #ahorro llega al fondo y ninguna lente tiene "volver"', async ({ page }) => {
     await seedConAhorros(page);
     await page.goto('/#ahorro');
-    await page.waitForSelector('#sec-ahorro.active', { timeout: 10_000 });
+    await page.waitForSelector('#sec-fondo.active', { timeout: 10_000 });
+    await expect(page).toHaveURL(/#fondo$/);
 
-    // DIS.19: el total bajó al pie del hub y la fila pasó a ser un carril.
-    await expect(page.locator('#sec-ahorro .hub__total')).toContainText('Todo lo que tienes guardado');
-    await expect(page.locator('#casa-ahorro-total')).toHaveText('$1.500.000');
-
-    const carriles = page.locator('#sec-ahorro .lane');
-    await expect(carriles).toHaveCount(4);
-    // DIS.19 reemplazó el propósito por el momento de uso, que es lo que ahora
-    // ordena los cuatro carriles con una sola pregunta.
-    await expect(carriles.locator('.lane__cuando').first())
-      .toHaveText('Ojalá nunca lo uses');
-    await expect(page.locator('#carril-metas .lane__estado'))
-      .toContainText('1 en curso');
-  });
-
-  test('los carriles son la navegación: cada uno entra a su sección y se puede volver', async ({ page }) => {
-    await seedConAhorros(page);
-    await page.goto('/#ahorro');
-    await page.waitForSelector('#sec-ahorro.active', { timeout: 10_000 });
-
-    // DIS.19: la salida del carril es su enlace "Ver todo", no la fila entera.
-    await page.click('#carril-fondo .lane__ver');
-    await expect(page.locator('#sec-fondo.active')).toBeVisible();
-    await expect(page.locator('#title-fondo')).toHaveText('Fondo de emergencia');
-
-    // Y desde la hija se puede subir, que es lo que antes no existía.
-    await page.click('#sec-fondo .section__volver');
-    await expect(page.locator('#sec-ahorro.active')).toBeVisible();
-
-    await page.click('#carril-apartados .lane__ver');
-    await expect(page.locator('#sec-apartados.active')).toBeVisible();
-    await expect(page.locator('#sec-apartados .section__volver')).toHaveAttribute('href', '#ahorro');
-  });
-
-  test('las cuatro hijas abren sin pestañas y sin la card consolidada repetida', async ({ page }) => {
-    await seedConAhorros(page);
-    await page.goto('/#metas');
-    await page.waitForSelector('#sec-metas.active', { timeout: 10_000 });
-
-    await expect(page.locator('.hub-tabs')).toHaveCount(0);
-    await expect(page.locator('[data-hub-consolidado]')).toHaveCount(0);
-    // El consolidado existe una sola vez, y no es en una hija. DIS.19: el hub
-    // es `.hub` y su total el pie `.hub__total`.
-    await expect(page.locator('#sec-metas .hub')).toHaveCount(0);
-    await expect(page.locator('.hub__total')).toHaveCount(1);
-
-    for (const hash of ['#fondo', '#apartados', '#inversion']) {
+    for (const hash of ['#fondo', '#apartados', '#metas', '#inversion']) {
       await page.evaluate((h) => { window.location.hash = h; }, hash);
-      await expect(page.locator(`${hash.replace('#', '#sec-')}.active .section__volver`)).toHaveCount(1);
+      const sec = page.locator(`${hash.replace('#', '#sec-')}.active`);
+      await expect(sec).toHaveCount(1);
+      await expect(sec.locator('.section__volver')).toHaveCount(0);
+      await expect(sec.locator('.bloque-tabs--ahorro')).toBeVisible();
     }
   });
 
-  test('sin ahorros la casa igual muestra los cuatro carriles: lo que no aparece no se descubre', async ({ page }) => {
+  test('la pestaña "Ahorro" se resalta en las cuatro lentes, y "Más" se queda apagado (AH.7a)', async ({ page }) => {
     await seedVacio(page);
-    await page.goto('/#ahorro');
-    await page.waitForSelector('#sec-ahorro.active', { timeout: 10_000 });
+    await page.goto('/#fondo');
+    await page.waitForSelector('#sec-fondo.active', { timeout: 10_000 });
 
-    await expect(page.locator('#casa-ahorro-total')).toHaveText('$0');
-    await expect(page.locator('#sec-ahorro .lane')).toHaveCount(4);
-    await expect(page.locator('#carril-fondo .lane__estado'))
-      .toContainText('sin empezar');
-  });
-
-  test('la pestaña "Ahorro" se resalta en la casa y en sus hijas, y "Más" se queda apagado (AH.7a)', async ({ page }) => {
-    await seedVacio(page);
-    await page.goto('/#ahorro');
-    await page.waitForSelector('#sec-ahorro.active', { timeout: 10_000 });
-
-    const ahorroBtn = page.locator('.nav-item--mobile-only[href="#ahorro"]');
+    const ahorroBtn = page.locator('.nav-item--mobile-only[data-section="ahorro"]');
     const masBtn = page.locator('.nav-item[data-modal="modal-mas"]');
     await expect(ahorroBtn).toHaveClass(/active/);
     await expect(masBtn).not.toHaveClass(/active/);
@@ -235,19 +184,20 @@ test.describe('DIS.18 - la casa de Ahorro (móvil)', () => {
   // Ficha 04 (ADR 069 D7): dentro de Ahorro no se podía ir de lado. De Metas
   // a Reservas había que subir a la casa y volver a bajar; en el bloque
   // Gastos cambiar de lente cuesta 1 toque. ADR 104: ir de lado es la misma
-  // barra que la de Gastos, no una fila de chips que parece un filtro.
+  // barra que la de Gastos, no una fila de chips que parece un filtro. ADR
+  // 125: sin casa, la barra es la única forma de recorrer el bloque.
   test('las cuatro modalidades se alcanzan entre sí con un toque (ADR 069 D7, ADR 104)', async ({ page }) => {
     await seedConAhorros(page);
     await page.goto('/#metas');
     await page.waitForSelector('#sec-metas.active', { timeout: 10_000 });
 
     const celdas = page.locator('#sec-metas .bloque-tabs--ahorro .bloque-tabs__tab');
-    // ADR 098 D3: cuatro celdas, sin la casa; la subida la da el volver.
+    // ADR 098 D3: cuatro celdas.
     await expect(celdas).toHaveText(['Fondo', 'Reservas', 'Metas', 'Inversión']);
     await expect(celdas.first()).toHaveAttribute('aria-label', 'Fondo de emergencia');
     await expect(celdas.filter({ hasText: 'Metas' })).toHaveClass(/active/);
 
-    // De Metas a Reservas sin pasar por la casa.
+    // De Metas a Reservas con un toque.
     await celdas.nth(1).click();
     await page.waitForSelector('#sec-apartados.active', { timeout: 5_000 });
     await expect(page.locator('#sec-apartados .bloque-tabs__tab[data-section="apartados"]'))
@@ -262,15 +212,6 @@ test.describe('DIS.18 - la casa de Ahorro (móvil)', () => {
         el => el.scrollWidth > el.clientWidth + 1);
       expect(desborda, `la barra de Ahorro se desliza a ${ancho}px`).toBe(false);
     }
-
-    // Y el volver de la hija devuelve a la casa, que no lleva barra inyectada:
-    // su fila de saltos se dibuja como barra, pero sin celda vigente (D4).
-    await page.locator('#sec-apartados .section__volver--ahorro-hija').click();
-    await page.waitForSelector('#sec-ahorro.active', { timeout: 5_000 });
-    await expect(page.locator('#sec-ahorro .bloque-tabs')).toHaveCount(0);
-    const fila = page.locator('#sec-ahorro .hub .chips');
-    await expect(fila).toHaveCSS('display', 'grid');
-    expect(await fila.evaluate(el => el.scrollWidth > el.clientWidth + 1)).toBe(false);
   });
 
   // AH1: tres textos mandaban al usuario móvil a "la pestaña Fondo (arriba)",
@@ -434,13 +375,16 @@ test.describe('DIS.18 - sidebar desktop', () => {
     await expect(compromisos.locator('a[href="#compromisos"] .nav-item__label')).toHaveText('Por pagar');
     await expect(compromisos.locator('a[href="#personales"] .nav-item__label')).toHaveText('Me deben');
 
-    // Mi dinero: las cuentas y la casa del ahorro con sus 4 modalidades
-    // anidadas. "Ahorro" deja de ser rótulo de grupo y se queda de destino.
+    // Mi dinero: las cuentas y Ahorro con sus 4 modalidades anidadas. La fila
+    // "Ahorro" abre el fondo (ADR 125): ya no hay casa a la cual llevar.
     const miDinero = page.locator('.nav-group', { has: page.locator('#nav-label-mi-dinero') });
     await expect(miDinero.locator('a')).toHaveCount(6);
     await expect(miDinero.locator('a').first()).toHaveAttribute('href', '#tesoreria');
-    await expect(miDinero.locator('a[href="#fondo"] .nav-item__label')).toHaveText('Fondo de emergencia');
-    await expect(miDinero.locator('a[href="#ahorro"] .nav-item__label')).toHaveText('Ahorro');
+    await expect(miDinero.locator('.nav-item--sub[href="#fondo"] .nav-item__label')).toHaveText('Fondo de emergencia');
+    const filaAhorro = miDinero.locator('[aria-controls="nav-subnav-ahorro"]');
+    await expect(filaAhorro.locator('.nav-item__label')).toHaveText('Ahorro');
+    await expect(filaAhorro).toHaveAttribute('href', '#fondo');
+    await expect(miDinero.locator('a[href="#ahorro"]')).toHaveCount(0);
 
     // Cómo voy: las que miden. Análisis sigue acá desde que se disolvió
     // "Herramientas" (NAV.B, ADR 024 D6) y Límites llega en este movimiento.
@@ -462,7 +406,7 @@ test.describe('DIS.18 - sidebar desktop', () => {
     await expect(subnav).toBeHidden();
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 
-    for (const hash of ['#ahorro', '#fondo', '#metas', '#apartados', '#inversion']) {
+    for (const hash of ['#fondo', '#metas', '#apartados', '#inversion']) {
       await page.evaluate((h) => { window.location.hash = h; }, hash);
       await page.waitForSelector(`${hash.replace('#', '#sec-')}.active`, { timeout: 5_000 });
       await expect(subnav).toBeVisible();
@@ -484,11 +428,15 @@ test.describe('DIS.18 - sidebar desktop', () => {
     expect(scrollH).toBeLessThanOrEqual(clientH);
   });
 
-  test('el "volver a Ahorro" de las 4 hijas se oculta en desktop: la casa ya está anidada', async ({ page }) => {
+  test('la fila "Ahorro" abre el fondo y marca vigente la fila del fondo (ADR 125)', async ({ page }) => {
     await seedVacio(page);
-    await page.goto('/#fondo');
-    await page.waitForSelector('#sec-fondo.active', { timeout: 10_000 });
-    await expect(page.locator('#sec-fondo .section__volver')).toBeHidden();
+    await page.goto('/#dash');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+
+    await page.click('[aria-controls="nav-subnav-ahorro"]');
+    await page.waitForSelector('#sec-fondo.active', { timeout: 5_000 });
+    await expect(page.locator('.nav-item--sub[data-section="fondo"]')).toHaveClass(/active/);
+    await expect(page.locator('[aria-controls="nav-subnav-ahorro"]')).not.toHaveClass(/active/);
   });
 });
 

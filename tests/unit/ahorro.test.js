@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { S } from '../../modules/core/state.js';
 import { initAhorro } from '../../modules/dominio/ahorro/index.js';
 import { dispatch } from '../../modules/ui/actions.js';
-import { SALDO_MASCARA_CUENTA } from '../../modules/infra/render.js';
 import {
   calcularObjetivoFondo,
   calcularProgresoFondo,
@@ -25,8 +24,6 @@ import {
   validarCompromisoMensual,
   normalizarCompromisoMensual,
   // F6 + DIS.18
-  casaAhorro,
-  diasAlProximoApartado,
   MODALIDADES_AHORRO,
   // AH.2
   calcularAporteSugerido,
@@ -51,7 +48,6 @@ import {
   renderFormAporte,
   renderFormFondo,
   renderAhorro,
-  renderCasaAhorro,
 } from '../../modules/dominio/ahorro/view.js';
 
 // ── calcularObjetivoFondo ────────────────────────────────────────
@@ -430,25 +426,17 @@ describe('normalizarCompromisoMensual', () => {
   });
 });
 
-// ── casaAhorro (F6 + DIS.18) ─────────────────────────────────────
+// ── MODALIDADES_AHORRO (DIS.18, DIS.19; la casa se retiró con el ADR 125) ──
 
-describe('casaAhorro', () => {
-  it('suma las cuatro modalidades', () => {
-    const r = casaAhorro({ montos: { fondo: 500_000, metas: 300_000, apartados: 100_000, inversiones: 100_000 } });
-    expect(r.total).toBe(1_000_000);
-    expect(r.filas.map(fila => fila.monto)).toEqual([500_000, 100_000, 300_000, 100_000]);
-  });
-
+describe('MODALIDADES_AHORRO', () => {
   // DIS.19 (item 2): el orden lo fija una sola pregunta, cuando vas a usar este
-  // dinero. Antes era "del mas urgente al mas lejano", que decia casi lo mismo
-  // sin poder explicarse.
-  it('mantiene el orden del momento de uso, no el de los montos', () => {
-    const r = casaAhorro({ montos: { fondo: 1, metas: 999_999, apartados: 500, inversiones: 700 } });
-    expect(r.filas.map(fila => fila.clave)).toEqual(['fondo', 'apartados', 'metas', 'inversiones']);
+  // dinero. Es el orden de la barra de lentes y la primera es la que abre Ahorro.
+  it('van en el orden del momento de uso y la primera es el fondo', () => {
+    expect(MODALIDADES_AHORRO.map(m => m.clave)).toEqual(['fondo', 'apartados', 'metas', 'inversiones']);
   });
 
   it('cada modalidad dice cuándo se usa su dinero, y las cuatro respuestas difieren', () => {
-    const cuandos = casaAhorro().filas.map(fila => fila.cuando);
+    const cuandos = MODALIDADES_AHORRO.map(m => m.cuando);
     expect(cuandos).toEqual([
       'Ojalá nunca lo uses',
       'En una fecha que no elegiste',
@@ -458,100 +446,8 @@ describe('casaAhorro', () => {
     expect(new Set(cuandos).size).toBe(4);
   });
 
-  it('muestra las cuatro filas también en cero: una modalidad que no aparece no se descubre', () => {
-    const r = casaAhorro();
-    expect(r.total).toBe(0);
-    expect(r.filas).toHaveLength(4);
-    expect(r.filas.map(fila => fila.estado)).toEqual([
-      'sin empezar', 'ninguno todavía', 'ninguna todavía', 'ninguna todavía',
-    ]);
-  });
-
-  it('cada fila lleva su propósito y su destino', () => {
-    const r = casaAhorro();
-    expect(r.filas.every(fila => fila.proposito.length > 0)).toBe(true);
-    expect(r.filas.map(fila => fila.seccion)).toEqual(['fondo', 'apartados', 'metas', 'inversion']);
-  });
-
-  it('trata negativos y no-numéricos como 0', () => {
-    const r = casaAhorro({ montos: { fondo: -100, metas: 'abc', apartados: NaN, inversiones: 80_000 } });
-    expect(r.total).toBe(80_000);
-    expect(r.filas[0].monto).toBe(0);
-  });
-
-  it('el estado del fondo se dice en tiempo cubierto (DIS.16)', () => {
-    const r = casaAhorro({ montos: { fondo: 400_000 }, mesesCubiertos: 1.75 });
-    expect(r.filas[0].estado).toBe('1 mes y 3 semanas cubiertos');
-  });
-
-  it('el estado de Metas cuenta las que están en curso', () => {
-    expect(casaAhorro({ metasEnCurso: 1 }).filas[2].estado).toBe('1 en curso');
-    expect(casaAhorro({ metasEnCurso: 3 }).filas[2].estado).toBe('3 en curso');
-  });
-
-  it('el estado de Apartados es el próximo cobro, y avisa si ya venció', () => {
-    expect(casaAhorro({ diasProximoApartado: 23 }).filas[1].estado).toBe('el más próximo, en 23 días');
-    expect(casaAhorro({ diasProximoApartado: 1 }).filas[1].estado).toBe('el más próximo, mañana');
-    expect(casaAhorro({ diasProximoApartado: 0 }).filas[1].estado).toBe('uno vence hoy');
-    expect(casaAhorro({ diasProximoApartado: -4 }).filas[1].estado).toBe('uno ya venció');
-  });
-
-  it('con dinero apartado pero sin fecha por delante no inventa un plazo', () => {
-    const r = casaAhorro({ montos: { apartados: 300_000 }, diasProximoApartado: null });
-    expect(r.filas[1].estado).toBe('sin fecha próxima');
-  });
-
-  it('el estado de Inversión dice cuántas hay y en qué etapa va (ARQ.1c)', () => {
-    expect(casaAhorro({ inversionesAbiertas: 1, etapaInversion: 1 }).filas[3].estado)
-      .toBe('1 inversión, aprendiendo');
-    expect(casaAhorro({ inversionesAbiertas: 3, etapaInversion: 2 }).filas[3].estado)
-      .toBe('3 inversiones, construyendo');
-  });
-
-  it('sin etapa conocida el carril cae al conteo solo, no a una frase rota', () => {
-    expect(casaAhorro({ inversionesAbiertas: 2 }).filas[3].estado).toBe('2 inversiones');
-    expect(casaAhorro({ inversionesAbiertas: 1, etapaInversion: 3 }).filas[3].estado)
-      .toBe('1 inversión');
-  });
-
-  it('sin inversiones no hay etapa que anunciar', () => {
-    expect(casaAhorro({ inversionesAbiertas: 0, etapaInversion: null }).filas[3].estado)
-      .toBe('ninguna todavía');
-  });
-
-  it('MODALIDADES_AHORRO apunta al fondo en #fondo, no en #ahorro (la casa)', () => {
+  it('el fondo vive en #fondo', () => {
     expect(MODALIDADES_AHORRO.find(m => m.clave === 'fondo').seccion).toBe('fondo');
-  });
-});
-
-// ── diasAlProximoApartado (DIS.18) ───────────────────────────────
-
-describe('diasAlProximoApartado', () => {
-  it('devuelve los días al apartado con la fecha más cercana', () => {
-    const dias = diasAlProximoApartado([
-      { fechaObjetivo: '2026-09-10' },
-      { fechaObjetivo: '2026-08-20' },
-    ], '2026-08-01');
-    expect(dias).toBe(19);
-  });
-
-  it('ignora los apartados sin fecha y los inactivos', () => {
-    const dias = diasAlProximoApartado([
-      { fechaObjetivo: '2026-08-05', activo: false },
-      { montoActual: 100 },
-      { fechaObjetivo: '2026-08-30' },
-    ], '2026-08-01');
-    expect(dias).toBe(29);
-  });
-
-  it('devuelve negativo si el más próximo ya venció', () => {
-    expect(diasAlProximoApartado([{ fechaObjetivo: '2026-07-25' }], '2026-08-01')).toBe(-7);
-  });
-
-  it('devuelve null sin fechas, sin lista o con hoy inválido', () => {
-    expect(diasAlProximoApartado([{ montoActual: 5 }], '2026-08-01')).toBe(null);
-    expect(diasAlProximoApartado(null, '2026-08-01')).toBe(null);
-    expect(diasAlProximoApartado([{ fechaObjetivo: '2026-08-05' }], 'ayer')).toBe(null);
   });
 });
 
@@ -743,185 +639,6 @@ describe('AH.5a: "Registrar aporte" abre el form ya prellenado', () => {
 // ── DIS.12: auditoría de diseño de Fondo de emergencia ───────────
 // Hallazgos A1 a A9 del informe "Auditoría Fondo de emergencia". Todo es
 // markup y CSS: ni logic.js ni el schema cambian.
-
-// DIS.19 (items 1 y 2) reescribe la casa: las cuatro filas de monto y estado en
-// texto pasan a cuatro carriles con su grafico propio. Los hallazgos A2 (nada de
-// emoji del sistema) y A8 (el enlace de 18px) del informe de DIS.12 siguen
-// verificados aca: el simbolo del sprite viaja al encabezado del carril y el
-// enlace "Ver todo" cumple los 44px de la regla R4.
-describe('DIS.19 - el hub de cuatro carriles', () => {
-  beforeEach(() => {
-    document.body.innerHTML = '<div id="panel-casa-ahorro"></div>';
-    S.config       = {};
-    S.ahorro       = { fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 2_000_000 }, aportes: [] };
-    S.metas        = [{ id: 'm1', nombre: 'Viaje', categoria: 'Viajes', montoObjetivo: 4_000_000, montoActual: 1_000_000 }];
-    S.apartados    = [{ id: 'a1', nombre: 'SOAT', icono: 'c-carro', montoObjetivo: 1_200_000, montoActual: 600_000,
-                        fechaObjetivo: '2026-12-31', fechaCreacion: '2026-01-01T00:00:00.000Z', frecuenciaAporte: 'Mensual' }];
-    S.inversiones  = [{ id: 'i1', nombre: 'CDT', tipo: 'CDT', monto: 400_000, tasaEA: 10, plazoMeses: 12 }];
-    renderCasaAhorro(1_000_000);
-  });
-
-  it('dibuja los cuatro carriles, en el orden del momento de uso', () => {
-    const ids = [...document.querySelectorAll('.lane')].map(l => l.id);
-    expect(ids).toEqual(['carril-fondo', 'carril-apartados', 'carril-metas', 'carril-inversiones']);
-  });
-
-  // AH4 (ficha 04, ADR 069 D7): el fondo es precondición en tres sitios de la
-  // app y en la casa se dibuja como un igual. La primacía se dice mientras
-  // hace falta, no se infla la caja.
-  it('con el fondo activo no muestra la media línea de primacía', () => {
-    expect(document.querySelector('.hub__primero')).toBeNull();
-  });
-
-  it('sin fondo activo, la cabecera dice por dónde empezar', () => {
-    S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [] };
-    renderCasaAhorro(1_000_000);
-    const linea = document.querySelector('.hub__primero');
-    expect(linea).not.toBeNull();
-    expect(linea.textContent).toContain('Empieza por el fondo');
-    expect(linea.textContent).toContain('sostiene a los otros tres');
-  });
-
-  it('cada carril encabeza con cuándo se usa ese dinero, encima del nombre', () => {
-    const primero = document.querySelector('.lane');
-    expect(primero.querySelector('.lane__cuando').textContent.trim()).toBe('Ojalá nunca lo uses');
-    expect(primero.querySelector('.lane__nombre').textContent).toContain('Fondo de emergencia');
-  });
-
-  it('cada carril mide en su propia unidad: cuatro gráficos distintos', () => {
-    expect(document.querySelector('#carril-fondo .cov')).not.toBeNull();
-    expect(document.querySelector('#carril-apartados .cmp')).not.toBeNull();
-    expect(document.querySelector('#carril-metas .silrow')).not.toBeNull();
-    expect(document.querySelector('#carril-inversiones .grow')).not.toBeNull();
-  });
-
-  it('el total baja al pie en una línea, ya no es la cifra grande de la pantalla', () => {
-    const total = document.querySelector('.hub__total');
-    expect(total.textContent).toContain('Todo lo que tienes guardado');
-    expect(total.textContent).toContain('$4.000.000');
-    // La vieja cabecera con el total en grande ya no existe.
-    expect(document.querySelector('.casa-ahorro__valor')).toBeNull();
-  });
-
-  it('A2: ninguna modalidad se identifica con un emoji del sistema operativo', () => {
-    expect(document.body.innerHTML).not.toMatch(/\u{1F6E1}|\u{1F3AF}|\u{1F4E6}|\u{1F4C8}/u);
-  });
-
-  it('A2: cada carril usa el símbolo del sprite que le corresponde', () => {
-    const usos = [...document.querySelectorAll('.lane__ico use')].map(u => u.getAttribute('href'));
-    expect(usos).toEqual(['#i-ahorro', '#i-apartados', '#i-metas', '#i-inversion']);
-  });
-
-  it('el carril declara su dominio, que es de donde el CSS toma el acento', () => {
-    const doms = [...document.querySelectorAll('.lane')].map(l => l.dataset.dom);
-    expect(doms).toEqual(['ahorro', 'ahorro', 'metas', 'inversion']);
-  });
-
-  it('A8: "Ver todo" lleva a la sección y ya no es un enlace de 18px', () => {
-    const vers = [...document.querySelectorAll('.lane__ver')];
-    expect(vers.map(a => a.getAttribute('href'))).toEqual(['#fondo', '#apartados', '#metas', '#inversion']);
-    expect(vers[0].getAttribute('aria-label')).toContain('Fondo de emergencia');
-  });
-
-  it('el gráfico va aria-hidden y el estado en palabras vive en el encabezado', () => {
-    expect(document.querySelector('#carril-fondo .cov').getAttribute('aria-hidden')).toBe('true');
-    expect(document.querySelector('#carril-fondo .lane__estado').textContent)
-      .toContain('2 meses cubiertos');
-  });
-
-  it('los chips saltan de carril con acción, no con hash: el router no los conoce', () => {
-    const chips = [...document.querySelectorAll('.hub .chip')];
-    expect(chips).toHaveLength(4);
-    expect(chips.every(c => c.tagName === 'BUTTON')).toBe(true);
-    expect(chips.map(c => c.dataset.action)).toEqual(Array(4).fill('ahorro-ir-a-carril'));
-    expect(chips.map(c => c.dataset.id)).toEqual(['fondo', 'apartados', 'metas', 'inversiones']);
-  });
-
-  it('la columna de un apartado es el aporte a ese apartado: un toque, no dos', () => {
-    const col = document.querySelector('#carril-apartados .cmp__col');
-    expect(col.tagName).toBe('BUTTON');
-    expect(col.dataset.action).toBe('aportar-apartado');
-    expect(col.dataset.id).toBe('a1');
-    expect(col.getAttribute('aria-label')).toContain('Aportar a SOAT');
-  });
-
-  it('la silueta de una meta es el aporte a esa meta, y se llena con su avance', () => {
-    const btn = document.querySelector('#carril-metas .silbtn');
-    expect(btn.dataset.action).toBe('abonar-meta');
-    expect(btn.dataset.id).toBe('m1');
-    expect(btn.querySelector('.silbtn__pct').textContent).toBe('25%');
-    expect(btn.querySelector('.silueta__llena')).not.toBeNull();
-  });
-
-  it('cada silueta del carril recorta con su propio id, aparte del de la sección Metas', () => {
-    const id = document.querySelector('#carril-metas clipPath').getAttribute('id');
-    expect(id).toBe('silueta-carril-m1');
-  });
-
-  it('el carril de Inversión dice cuánto le suma el tiempo', () => {
-    expect(document.querySelector('#carril-inversiones .grow__seg--tiempo')).not.toBeNull();
-    expect(document.querySelector('#carril-inversiones .lane__hint').textContent)
-      .toContain('El tiempo le suma');
-  });
-
-  it('respeta el ojo de privacidad: ni el total ni los montos tocan el DOM', () => {
-    S.config = { ocultarSaldo: true };
-    renderCasaAhorro(1_000_000);
-    expect(document.querySelector('#casa-ahorro-total').textContent).toBe(SALDO_MASCARA_CUENTA);
-    expect(document.body.innerHTML).not.toContain('4.000.000');
-  });
-});
-
-describe('DIS.19 - los carriles en cero nombran el primer paso', () => {
-  beforeEach(() => {
-    document.body.innerHTML = '<div id="panel-casa-ahorro"></div>';
-    S.config      = {};
-    S.ahorro      = { fondoEmergencia: { activo: false }, aportes: [] };
-    S.metas       = [];
-    S.apartados   = [];
-    S.inversiones = [];
-    renderCasaAhorro(1_000_000);
-  });
-
-  it('los cuatro carriles siguen ahí: una modalidad que no aparece no se descubre', () => {
-    expect(document.querySelectorAll('.lane')).toHaveLength(4);
-  });
-
-  it('ningún carril en cero muestra un gráfico vacío: muestra qué hace y cómo empezar', () => {
-    expect(document.querySelectorAll('.cov')).toHaveLength(0);
-    expect(document.querySelectorAll('.cmp')).toHaveLength(0);
-    expect(document.querySelectorAll('.silrow')).toHaveLength(0);
-    expect(document.querySelectorAll('.grow')).toHaveLength(0);
-    expect(document.querySelectorAll('.lane__nota')).toHaveLength(4);
-  });
-
-  it('cada carril en cero ofrece su primer paso con la acción de su dominio', () => {
-    const acciones = [...document.querySelectorAll('.lane__cta')].map(b => b.dataset.action);
-    expect(acciones).toEqual([
-      'ahorro-activar-fondo', 'nuevo-apartado', 'nueva-meta', 'inversion-nueva',
-    ]);
-  });
-
-  it('ninguna cifra grande dice $0: el total al pie es la única cifra', () => {
-    expect(document.querySelector('.hub__total').textContent).toContain('$0');
-    expect(document.querySelectorAll('.hub__total')).toHaveLength(1);
-  });
-});
-
-describe('DIS.19 - el carril del fondo sin gastos fijos registrados', () => {
-  it('no dibuja la franja y pide el dato que falta, en vez de una franja vacía', () => {
-    document.body.innerHTML = '<div id="panel-casa-ahorro"></div>';
-    S.config      = {};
-    S.ahorro      = { fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 500_000 }, aportes: [] };
-    S.metas       = [];
-    S.apartados   = [];
-    S.inversiones = [];
-    renderCasaAhorro(0);
-    expect(document.querySelector('#carril-fondo .cov')).toBeNull();
-    expect(document.querySelector('#carril-fondo .lane__nota').textContent)
-      .toContain('Registra tus gastos fijos');
-  });
-});
 
 // DIS.16: el anillo de progreso se retiró de esta sección. El hallazgo A4 de
 // DIS.12 (el contenedor que ocultaba su propio subárbol) deja de aplicar porque

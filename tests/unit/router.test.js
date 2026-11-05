@@ -18,6 +18,7 @@ function montarDom() {
       <section class="section" id="sec-dash" tabindex="-1"></section>
       <section class="section" id="sec-gast" tabindex="-1"></section>
       <section class="section" id="sec-tesoreria" tabindex="-1"></section>
+      <section class="section" id="sec-fondo" tabindex="-1"></section>
     </div>
     <div class="modal-overlay" id="modal-cuenta">
       <div class="modal"><input id="campo" /></div>
@@ -62,5 +63,15 @@ describe('el foco al navegar', () => {
     await ir('#dash');
     expect(focoEnOnNavigate).not.toBe(document.getElementById('sec-dash'));
     expect(document.activeElement).toBe(document.getElementById('sec-dash'));
+  });
+});
+
+// ADR 125: la casa de Ahorro se retiró. Un enlace o bookmark viejo a #ahorro
+// llega al fondo, la primera lente, y la barra de direcciones lo dice.
+describe('#ahorro lleva al fondo', () => {
+  it('muestra el fondo y reescribe el hash', async () => {
+    await ir('#ahorro');
+    expect(document.getElementById('sec-fondo').classList.contains('active')).toBe(true);
+    expect(location.hash).toBe('#fondo');
   });
 });

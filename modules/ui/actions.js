@@ -62,7 +62,7 @@ const _MAPA_SECCION_ATAJO = {
   d: 'personales',  // Me deben
   l: 'presupuesto', // Límites
   a: 'analisis',    // Análisis
-  h: 'ahorro',      // Ahorro
+  h: 'fondo',       // Ahorro (abre en el fondo, ADR 125)
   j: 'config',      // Ajustes
 };
 

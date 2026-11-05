@@ -307,13 +307,14 @@
             </a>
 
             <!-- Ahorro en el bottom nav (AH.7a, ADR 065 D1): cuarto slot en
-                 móvil. Es una entrada duplicada a propósito: la casa vive en
-                 el grupo "Mi dinero" con sus 4 hijas anidadas (INT.1b), y ese
-                 grupo no se pinta en móvil (.nav-group:not(:first-child) en
+                 móvil. Es una entrada duplicada a propósito: el grupo vive en
+                 "Mi dinero" con sus 4 lentes anidadas (INT.1b), y ese grupo
+                 no se pinta en móvil (.nav-group:not(:first-child) en
                  responsive.css). Sin aria-controls: el sub-nivel del sidebar
-                 lo gobierna solo la entrada de desktop. -->
-            <a class="nav-item nav-item--mobile-only" href="#ahorro" data-section="ahorro"
-               aria-label="Ahorro: fondo, metas, reservas e inversión">
+                 lo gobierna solo la entrada de desktop. ADR 125: abre el
+                 fondo, la primera lente; data-section nombra el grupo. -->
+            <a class="nav-item nav-item--mobile-only" href="#fondo" data-section="ahorro"
+               aria-label="Ahorro: fondo, reservas, metas e inversión">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-ahorro"/></svg>
               <span class="nav-item__label">Ahorro</span>
             </a>
@@ -364,7 +365,7 @@
              dos. Las hijas son atajos SOLO de desktop (nav-item--no-mobile);
              desde 1680 se ven siempre y por debajo shell.js las despliega
              mientras el hash pertenece al grupo, que es lo que recupera
-             BUG-026 (ver layout.css). En móvil la única entrada es la casa. -->
+             BUG-026 (ver layout.css). En móvil la única entrada es la de la barra inferior, que abre el fondo (ADR 125). -->
         <div class="nav-group" role="listitem">
           <span class="nav-group__label" id="nav-label-mi-dinero">Mi dinero</span>
           <div role="group" aria-labelledby="nav-label-mi-dinero">
@@ -376,8 +377,10 @@
               <span class="nav-item__label">Mis cuentas</span>
             </a>
 
-            <a class="nav-item nav-item--no-mobile" href="#ahorro" data-section="ahorro"
-               aria-label="Ahorro: fondo, metas, apartados e inversión"
+            <!-- ADR 125: la fila abre el fondo y despliega las cuatro lentes;
+                 ya no hay casa de Ahorro. -->
+            <a class="nav-item nav-item--no-mobile" href="#fondo" data-section="ahorro"
+               aria-label="Ahorro: fondo, reservas, metas e inversión"
                aria-expanded="false" aria-controls="nav-subnav-ahorro">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-ahorro"/></svg>
               <span class="nav-item__label">Ahorro</span>
@@ -1179,47 +1182,15 @@
         </div>
       </section>
 
-      <!-- AHORRO (DIS.18, ADR 009 restaurado) - la casa de las cuatro
-           modalidades. Hasta DIS.18 este contenido era la card consolidada
-           repetida en Fondo, Metas, Reservas e Inversión, con una barra de
-           pestañas encima: el resumen de un padre que no existía. Ahora el
-           padre tiene dirección propia (#ahorro) y el bloque se muestra una
-           sola vez, donde significa algo. Las cuatro filas son la navegación. -->
-      <section class="section" id="sec-ahorro" tabindex="-1" aria-labelledby="title-ahorro">
-        <header class="section__header">
-          <div class="section__title-group">
-            <span class="cat-teja section__icon" data-dom="ahorro" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-ahorro"/></svg></span>
-            <h1 class="section__title" id="title-ahorro">Ahorro</h1>
-          </div>
-          <!-- ADR 106 D3: el ojo de la pantalla, solo bajo 1024px. Misma acción
-               y misma sincronización que el del bloque Gastos. -->
-          <button class="section__ojo" type="button" data-action="bloque-saldo-visibilidad"
-                  aria-pressed="false" aria-label="Ocultar tus saldos">
-            <svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>
-          </button>
-        </header>
-        <div id="panel-casa-ahorro">
-          <!-- DIS.18: ahorro/view.js renderiza aquí (renderCasaAhorro) -->
-        </div>
-      </section>
-
       <!-- FONDO DE EMERGENCIA (J.1). Su ruta pasó de #ahorro a #fondo en
-           DIS.18: #ahorro es la casa. -->
+           DIS.18; desde el ADR 125, #ahorro redirige acá: es la primera de
+           las cuatro lentes y la que abre la entrada "Ahorro". -->
       <section class="section section--con-carril" id="sec-fondo" tabindex="-1" aria-labelledby="title-fondo">
-        <!-- Volver a la casa (DIS.18): antes desde acá no se podía subir, solo
-             saltar de lado con las pestañas. En la PWA instalada no hay botón
-             "atrás" del navegador. Mismo patrón que #sec-movimientos.
-             --ahorro-hija (INT.1b): en desktop la casa ya está en el sidebar
-             anidado, así que el volver es redundante ahí y se oculta
-             (responsive.css); en móvil sigue siendo la única salida. -->
-        <a class="section__volver section__volver--ahorro-hija" href="#ahorro" aria-label="Volver a Ahorro">
-          <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>Ahorro
-        </a>
         <header class="section__header">
           <div class="section__title-group">
             <span class="cat-teja section__icon" data-dom="ahorro" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-ahorro"/></svg></span>
             <!-- ADR 116 D4 (recorrido 4, R73): la pregunta de la modalidad bajo
-                 el título, la misma de su carril en la casa (ahorro/logic.js). -->
+                 el título: su rótulo `cuando` de MODALIDADES_AHORRO (ahorro/logic.js). -->
             <div class="section__titulo">
               <h1 class="section__title" id="title-fondo">Fondo de emergencia</h1>
               <p class="section__linea">Ojalá nunca lo uses</p>
@@ -1253,16 +1224,11 @@
 
       <!-- INVERSIÓN (J.2) - Portafolio real -->
       <section class="section" id="sec-inversion" tabindex="-1" aria-labelledby="title-inversion">
-        <!-- Volver a la casa (DIS.18): ver nota en #sec-fondo. --ahorro-hija
-             (INT.1b): oculto en desktop, ver nota en #sec-fondo. -->
-        <a class="section__volver section__volver--ahorro-hija" href="#ahorro" aria-label="Volver a Ahorro">
-          <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>Ahorro
-        </a>
         <header class="section__header">
           <div class="section__title-group">
             <span class="cat-teja section__icon" data-dom="inversion" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-inversion"/></svg></span>
             <!-- ADR 116 D4 (recorrido 4, R73): la pregunta de la modalidad bajo
-                 el título, la misma de su carril en la casa (ahorro/logic.js). -->
+                 el título: su rótulo `cuando` de MODALIDADES_AHORRO (ahorro/logic.js). -->
             <div class="section__titulo">
               <h1 class="section__title" id="title-inversion">Inversión</h1>
               <p class="section__linea">Además, creciendo</p>
@@ -1287,16 +1253,11 @@
 
       <!-- METAS -->
       <section class="section" id="sec-metas" tabindex="-1" aria-labelledby="title-metas">
-        <!-- Volver a la casa (DIS.18): ver nota en #sec-fondo. --ahorro-hija
-             (INT.1b): oculto en desktop, ver nota en #sec-fondo. -->
-        <a class="section__volver section__volver--ahorro-hija" href="#ahorro" aria-label="Volver a Ahorro">
-          <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>Ahorro
-        </a>
         <header class="section__header">
           <div class="section__title-group">
             <span class="cat-teja section__icon" data-dom="metas" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-metas"/></svg></span>
             <!-- ADR 116 D4 (recorrido 4, R73): la pregunta de la modalidad bajo
-                 el título, la misma de su carril en la casa (ahorro/logic.js). -->
+                 el título: su rótulo `cuando` de MODALIDADES_AHORRO (ahorro/logic.js). -->
             <div class="section__titulo">
               <h1 class="section__title" id="title-metas">Metas</h1>
               <p class="section__linea">Algún día, cuando quieras</p>
@@ -1326,16 +1287,11 @@
 
       <!-- RESERVAS (dominio interno "apartados") -->
       <section class="section" id="sec-apartados" tabindex="-1" aria-labelledby="title-apartados">
-        <!-- Volver a la casa (DIS.18): ver nota en #sec-fondo. --ahorro-hija
-             (INT.1b): oculto en desktop, ver nota en #sec-fondo. -->
-        <a class="section__volver section__volver--ahorro-hija" href="#ahorro" aria-label="Volver a Ahorro">
-          <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>Ahorro
-        </a>
         <header class="section__header">
           <div class="section__title-group">
             <span class="cat-teja section__icon" data-dom="ahorro" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-apartados"/></svg></span>
             <!-- ADR 116 D4 (recorrido 4, R73): la pregunta de la modalidad bajo
-                 el título, la misma de su carril en la casa (ahorro/logic.js). -->
+                 el título: su rótulo `cuando` de MODALIDADES_AHORRO (ahorro/logic.js). -->
             <div class="section__titulo">
               <h1 class="section__title" id="title-apartados">Reservas</h1>
               <p class="section__linea">En una fecha que no elegiste</p>

@@ -106,41 +106,37 @@ export function calcularTasaAhorro(ingresos, gastos) {
   return Math.round(((ing - gas) / ing) * 100);
 }
 
-// ── CASA DE AHORRO (DIS.18, ADR 009 restaurado) ──────────────────
+// ── LAS CUATRO MODALIDADES DE AHORRO ─────────────────────────────
 
 /**
- * Las cuatro modalidades de ahorro, con su propósito y su unidad.
+ * Las cuatro modalidades de ahorro, en el orden de la barra de lentes.
  *
- * El propósito no es decoración: la casa es **la única pantalla donde los cuatro
- * nombres conviven**, así que es el único lugar donde la diferencia se puede
- * enseñar comparando. Hoy esa explicación vive repartida en los estados vacíos
- * de Metas y Apartados, que se remiten entre sí, o sea en la pantalla a la que
- * el usuario llegó equivocado.
+ * El orden lo fija una sola pregunta, ¿cuándo vas a usar este dinero? (rótulo
+ * `cuando`, DIS.19): ojalá nunca (fondo), en una fecha que no elegiste
+ * (reservas), algún día (metas) y además creciendo (inversión). La casa de
+ * Ahorro que mostraba los cuatro carriles se retiró con el ADR 125: Ahorro abre
+ * en el fondo, la primera de la lista.
  *
  * `seccion` es el hash de destino, no la clave del dominio: el fondo vive en
- * `#fondo` desde DIS.18, porque `#ahorro` pasó a ser esta casa.
+ * `#fondo` desde DIS.18.
  */
 export const MODALIDADES_AHORRO = [
   {
-    clave: 'fondo', seccion: 'fondo', icono: 'ahorro', label: 'Fondo de emergencia',
+    clave: 'fondo', seccion: 'fondo', label: 'Fondo de emergencia',
     corto: 'Fondo',
     cuando: 'Ojalá nunca lo uses',
-    proposito: 'Para cuando algo se dañe o te quedes sin ingresos',
   },
   {
-    clave: 'apartados', seccion: 'apartados', icono: 'apartados', label: 'Reservas',
+    clave: 'apartados', seccion: 'apartados', label: 'Reservas',
     cuando: 'En una fecha que no elegiste',
-    proposito: 'Para pagos que ya sabes que llegan',
   },
   {
-    clave: 'metas', seccion: 'metas', icono: 'metas', label: 'Metas',
+    clave: 'metas', seccion: 'metas', label: 'Metas',
     cuando: 'Algún día, cuando quieras',
-    proposito: 'Para algo que quieres comprar o hacer',
   },
   {
-    clave: 'inversiones', seccion: 'inversion', icono: 'inversion', label: 'Inversión',
+    clave: 'inversiones', seccion: 'inversion', label: 'Inversión',
     cuando: 'Además, creciendo',
-    proposito: 'Dinero que pusiste a crecer',
   },
 ];
 
@@ -158,177 +154,6 @@ export const MODALIDADES_AHORRO = [
 export function partirEtiquetaModalidad(m) {
   const corto = m.corto && m.label.startsWith(m.corto) ? m.corto : m.label;
   return { corto, cola: m.label.slice(corto.length) };
-}
-
-/**
- * Las cuatro filas de la casa de Ahorro: cuánto hay en cada modalidad, para qué
- * sirve y en qué va, cada una en **su propia unidad**.
- *
- * Antes de DIS.18 esto era `consolidarAhorro()`, que ordenaba por monto y
- * escondía las modalidades en cero: servía para un desglose de solo lectura
- * repetido en cuatro pantallas. Acá las filas **son la navegación**, así que el
- * orden es fijo y ninguna se esconde: una modalidad que no aparece no se puede
- * descubrir.
- *
- * DIS.19 (item 2): el orden lo fija **una sola pregunta**, ¿cuándo vas a usar
- * este dinero? Ojalá nunca (fondo), en una fecha que no elegiste (apartados),
- * algún día (metas), y además creciendo (inversión). Antes el orden era "del más
- * urgente al más lejano", que decía casi lo mismo sin poder explicarse: el
- * rótulo `cuando` es lo que vuelve legible la secuencia, y sin él dos personas
- * podían ordenar distinto y las dos tener razón.
- *
- * El estado en la unidad de cada sección (meses cubiertos, metas en curso, días
- * al próximo cobro, inversiones abiertas) es lo que permite decidir a dónde
- * entrar sin entrar. Función pura: recibe totales y conteos ya calculados, así
- * que este dominio no importa a ninguno de los otros tres (regla ADN #10).
- *
- * @param {{
- *   montos?: { fondo?: number, metas?: number, apartados?: number, inversiones?: number },
- *   mesesCubiertos?: number|null,
- *   metasEnCurso?: number,
- *   diasProximoApartado?: number|null,
- *   inversionesAbiertas?: number,
- *   etapaInversion?: number|null,
- * }} [datos]
- * @returns {{
- *   total: number,
- *   filas: Array<{
- *     clave: string, seccion: string, icono: string, label: string,
- *     proposito: string, monto: number, estado: string,
- *   }>,
- * }}
- */
-export function casaAhorro({
-  montos = {}, mesesCubiertos = null, metasEnCurso = 0,
-  diasProximoApartado = null, inversionesAbiertas = 0, etapaInversion = null,
-} = {}) {
-  const limpio = (n) => Math.max(0, Number(n) || 0);
-  const porClave = {
-    fondo:       limpio(montos.fondo),
-    metas:       limpio(montos.metas),
-    apartados:   limpio(montos.apartados),
-    inversiones: limpio(montos.inversiones),
-  };
-
-  const estados = {
-    fondo:       _estadoFondo(mesesCubiertos),
-    metas:       _estadoMetas(metasEnCurso),
-    apartados:   _estadoApartados(diasProximoApartado, porClave.apartados),
-    inversiones: _estadoInversion(inversionesAbiertas, etapaInversion),
-  };
-
-  const filas = MODALIDADES_AHORRO.map(m => ({
-    ...m, monto: porClave[m.clave], estado: estados[m.clave],
-  }));
-
-  return { total: filas.reduce((sum, fila) => sum + fila.monto, 0), filas };
-}
-
-/**
- * Días que faltan para el apartado que se cobra primero.
- *
- * Recibe la lista de apartados como dato (no importa el dominio Apartados,
- * regla ADN #10, igual que `_gastosFijosMensuales()` en index.js replica el
- * factor de frecuencia de compromisos). Solo mira los que tienen fecha: un
- * apartado sin `fechaObjetivo` no tiene próximo cobro que anunciar.
- *
- * @param {Array<{ fechaObjetivo?: string, activo?: boolean }>} apartados
- * @param {string} hoyISO YYYY-MM-DD.
- * @returns {number|null} negativo si el más próximo ya venció; null si ninguno tiene fecha.
- */
-export function diasAlProximoApartado(apartados, hoyISO) {
-  if (!Array.isArray(apartados) || !hoyISO || !/^\d{4}-\d{2}-\d{2}$/.test(hoyISO)) return null;
-  const base = new Date(`${hoyISO}T12:00:00Z`);
-  if (isNaN(base)) return null;
-
-  let minimo = null;
-  for (const a of apartados) {
-    if (!a || a.activo === false) continue;
-    const fecha = a.fechaObjetivo;
-    if (typeof fecha !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) continue;
-    const d = new Date(`${fecha}T12:00:00Z`);
-    if (isNaN(d)) continue;
-    const dias = Math.round((d - base) / 86_400_000);
-    if (minimo === null || dias < minimo) minimo = dias;
-  }
-  return minimo;
-}
-
-/** Estado del fondo, en la unidad de su sección: tiempo cubierto (DIS.16). */
-function _estadoFondo(mesesCubiertos) {
-  const meses = Number(mesesCubiertos);
-  if (!Number.isFinite(meses) || meses <= 0) return 'sin empezar';
-  return `${mesesEnPalabras(meses)} cubiertos`;
-}
-
-/** Estado de Metas: cuántas están en curso (las cumplidas ya no piden nada). */
-function _estadoMetas(metasEnCurso) {
-  const n = Math.max(0, Math.round(Number(metasEnCurso) || 0));
-  if (n === 0) return 'ninguna todavía';
-  return n === 1 ? '1 en curso' : `${n} en curso`;
-}
-
-/**
- * Estado de Apartados: cuándo llega el próximo cobro, que es su unidad (DIS.15).
- * Con dinero apartado pero sin fecha por delante, se dice eso y no un plazo
- * inventado. `dias` negativo significa vencido: eso es lo que hay que ver.
- */
-function _estadoApartados(diasProximoApartado, monto) {
-  // `Number(null)` es 0, y 0 días significa "vence hoy": el chequeo de tipo
-  // tiene que ir antes que la conversión o un apartado sin fecha se anuncia
-  // como si venciera hoy.
-  const dias = typeof diasProximoApartado === 'number' ? diasProximoApartado : NaN;
-  if (!Number.isFinite(dias)) return monto > 0 ? 'sin fecha próxima' : 'ninguno todavía';
-  if (dias < 0)   return 'uno ya venció';
-  if (dias === 0) return 'uno vence hoy';
-  if (dias === 1) return 'el más próximo, mañana';
-  return `el más próximo, en ${dias} días`;
-}
-
-/**
- * Cómo nombra el carril cada etapa del portafolio.
- *
- * **Son las mismas dos palabras que el chip de la sección Inversión**, y eso es
- * deliberado: el carril lleva a esa pantalla, así que el usuario tiene que
- * reconocer ahí lo que leyó acá. Es el único caso del hub donde el vocabulario
- * se comparte a propósito; los otros tres carriles hablan su propio idioma
- * porque miden cosas que su sección no nombra igual. La copia de las palabras
- * es intencional (infra no guarda copy, `infra/portafolio.js` solo devuelve el
- * número) y hay un test que falla si las dos pantallas se separan.
- *
- * El índice es el `numero` de `etapaDePortafolio()`. La etapa 3 no existe
- * todavía: necesita el valor real de cada inversión en el tiempo, que Finko no
- * guarda (ver la ficha de Inversión). Sin entrada acá, el carril cae al conteo
- * solo, que es lo que decía antes.
- */
-const ETAPA_INVERSION = {
-  1: 'aprendiendo',
-  2: 'construyendo',
-};
-
-/**
- * Estado de Inversión: cuántas hay abiertas y en qué etapa va el portafolio.
- *
- * El conteo solo (lo que había hasta ARQ.1c) contestaba "cuántas" y no "en qué
- * vas", que es lo que contestan los otros tres carriles: el fondo dice tiempo
- * cubierto, las metas cuántas siguen vivas y los apartados cuándo llega el
- * cobro. La etapa es la unidad que faltaba, y es la que pedía el mockup de
- * DIS.18 (ADR 056).
- *
- * Se dicen las dos cosas y no solo la etapa: "construyendo" a secas no dice el
- * tamaño de lo que se construyó, y el carril tiene que servir para decidir si
- * vale la pena entrar.
- *
- * @param {number} inversionesAbiertas - las que tienen monto (`etapaDePortafolio().abiertas`).
- * @param {number|null} etapaInversion - `etapaDePortafolio().numero`, o null si no hay ninguna.
- */
-function _estadoInversion(inversionesAbiertas, etapaInversion = null) {
-  const n = Math.max(0, Math.round(Number(inversionesAbiertas) || 0));
-  if (n === 0) return 'ninguna todavía';
-
-  const cuantas = n === 1 ? '1 inversión' : `${n} inversiones`;
-  const etapa   = ETAPA_INVERSION[etapaInversion];
-  return etapa ? `${cuantas}, ${etapa}` : cuantas;
 }
 
 // ── NIVELES DE PROTECCIÓN (DIS.16, arquitectura I+H) ─────────────

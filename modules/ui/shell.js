@@ -43,17 +43,17 @@ const GRUPO_GASTOS = new Set(['gast', 'compromisos', 'presupuesto']);
 const GRUPO_INICIO = new Set(['dash', 'aprende', 'progreso']);
 
 /**
- * Grupo Ahorro: la casa (`ahorro`) y sus 4 hijas. Dos usos, uno por
- * plataforma:
+ * Grupo Ahorro: sus cuatro lentes (la casa `ahorro` se retiró con el ADR 125).
+ * Dos usos, uno por plataforma:
  *
  * - Desktop (INT.1b, ADR 059 D6): `.nav-subnav` solo se despliega mientras el
  *   hash activo pertenece al set; el resto del tiempo el grupo paga 1 fila en
  *   vez de 5.
  * - Móvil (AH.7a, ADR 065 D3): la entrada de la barra inferior se resalta en
- *   toda la casa, hijas incluidas. En móvil es la única puerta al grupo, así
- *   que hereda el "estás aquí" de grupo que antes daba el botón "Más".
+ *   las cuatro. En móvil es la única puerta al grupo, así que hereda el "estás
+ *   aquí" de grupo que antes daba el botón "Más".
  */
-const GRUPO_AHORRO = new Set(['ahorro', 'fondo', 'metas', 'apartados', 'inversion']);
+const GRUPO_AHORRO = new Set(['fondo', 'metas', 'apartados', 'inversion']);
 
 /**
  * Umbral de monitor (DSK.10b, ADR 079 D4/D7). Desde acá la barra no se
@@ -79,7 +79,7 @@ function _enMonitor() {
  *
  * aria-controls, no data-section: la barra inferior también lleva una
  * entrada con data-section="ahorro" desde AH.7a, así que data-section no
- * identifica a la casa del sidebar.
+ * identifica a la fila del grupo en el sidebar.
  *
  * @param {string} hash
  */
@@ -239,9 +239,9 @@ export function markActiveNav(hash) {
     inicioBtn.classList.toggle('nav-item--bloque-activo', GRUPO_INICIO.has(hash) && hash !== 'dash');
   }
 
-  // La entrada de Ahorro en la barra inferior (AH.7a) se resalta en la casa y
-  // en sus 4 hijas: en móvil es la única puerta al grupo, y sin esto navegar
-  // de la casa a Metas apagaba la pestaña y dejaba la barra sin "estás aquí".
+  // La entrada de Ahorro en la barra inferior (AH.7a) se resalta en sus cuatro
+  // lentes: en móvil es la única puerta al grupo. Su data-section ("ahorro")
+  // no es un hash (ADR 125), así que el bucle de arriba nunca la enciende.
   // La entrada de desktop no entra: allá cada hija tiene su propia fila.
   const ahorroBtn = document.querySelector('.nav-item--mobile-only[data-section="ahorro"]');
   if (ahorroBtn) {

@@ -56,14 +56,11 @@ test.describe('Render tras navegación (regresión hashchange)', () => {
     ).toHaveText('Sin metas de ahorro', { timeout: 3_000 });
   });
 
-  test('Fondo de emergencia muestra empty state al entrar desde la casa de Ahorro', async ({ page }) => {
+  test('Fondo de emergencia muestra empty state al entrar por la fila de Ahorro', async ({ page }) => {
     await saltearOnboardingYIrADash(page);
 
-    await page.click('.nav-item--no-mobile[href="#ahorro"]');
-    await expect(page.locator('#sec-ahorro.active')).toBeVisible();
-
-    // DIS.19: la casa es el destino, y la salida de cada carril es "Ver todo".
-    await page.click('#carril-fondo .lane__ver');
+    // ADR 125: la fila "Ahorro" abre directo el fondo.
+    await page.click('[aria-controls="nav-subnav-ahorro"]');
     await expect(page.locator('#sec-fondo.active')).toBeVisible();
 
     await expect(

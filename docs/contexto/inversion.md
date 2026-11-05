@@ -18,7 +18,7 @@
 |---|---|---|---|
 | La tarjeta del momento y sus bloques | `modules/dominio/inversiones/view.js` | `_renderMomento()`, `_renderDuo()`, `_renderNotaMomento()`, `_renderAcciones()` | ~72 |
 | Qué momento es y qué frase le toca | `modules/dominio/inversiones/logic.js` | `momentoInversion(inversiones, contexto)` | |
-| El corte que decide el momento, compartido con la casa de Ahorro | `modules/infra/portafolio.js` | `etapaDePortafolio(inversiones)` | |
+| El corte que decide el momento (bajó a infra para la casa de Ahorro, retirada por el ADR 125) | `modules/infra/portafolio.js` | `etapaDePortafolio(inversiones)` | |
 | Geometría del gráfico de dos columnas | `modules/dominio/inversiones/logic.js` | `columnasPortafolio(inversiones)` | |
 | Explicación y rasgo de cada tipo | `modules/dominio/inversiones/logic.js` | `EXPLICACION_TIPO`, `RASGO_TIPO`, `explicacionTipo()`, `rasgoTipo()` | |
 | Fecha de vencimiento de una inversión | `modules/dominio/inversiones/logic.js` | `fechaVencimientoInversion(inv)` | |

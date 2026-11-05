@@ -1195,7 +1195,7 @@ describe('renderPanelPresupuesto() - correcciones de la auditoría (DIS.7)', () 
     renderPanelPresupuesto();
     const filas = [...panel().querySelectorAll('.plan-franja__fila')];
     expect(filas[0].querySelector('.plan-franja__salida').getAttribute('href')).toBe('#compromisos');
-    expect(filas[1].querySelector('.plan-franja__salida').getAttribute('href')).toBe('#ahorro');
+    expect(filas[1].querySelector('.plan-franja__salida').getAttribute('href')).toBe('#fondo');
     // La tercera es la lente en la que ya estas: se dice, no se enlaza.
     expect(filas[2].querySelector('.plan-franja__salida')).toBeNull();
     expect(filas[2].querySelector('.plan-franja__aqui').textContent).toBe('aquí');

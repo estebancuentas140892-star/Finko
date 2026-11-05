@@ -1171,10 +1171,10 @@ export function sugerirDistribucionIngreso(ingresoMensual, {
 
   if (!tieneFondoActivo) {
     alertas.push('Sin fondo de emergencia activo: destina el porcentaje de ahorro aquí primero.');
-    ctas.push({ label: 'Activar fondo de emergencia', seccion: 'ahorro' });
+    ctas.push({ label: 'Activar fondo de emergencia', seccion: 'fondo' });
   } else if (!fondoCompleto) {
     alertas.push('Tu fondo de emergencia aún no está completo: dale prioridad al ahorro.');
-    ctas.push({ label: 'Ver progreso del fondo', seccion: 'ahorro' });
+    ctas.push({ label: 'Ver progreso del fondo', seccion: 'fondo' });
   } else if (!tieneInversiones) {
     ctas.push({ label: 'Explorar inversiones', seccion: 'inversion' });
   } else {

@@ -164,7 +164,7 @@ describe('el sub-nivel del grupo Ahorro se despliega dentro del grupo (INT.1b)',
     document.body.innerHTML = `
       <a class="nav-item" data-section="gast"></a>
       <button class="nav-item" data-modal="modal-mas"></button>
-      <a class="nav-item" href="#ahorro" data-section="ahorro" aria-expanded="false" aria-controls="nav-subnav-ahorro"></a>
+      <a class="nav-item" href="#fondo" data-section="ahorro" aria-expanded="false" aria-controls="nav-subnav-ahorro"></a>
       <div class="nav-subnav" id="nav-subnav-ahorro" hidden>
         <a class="nav-item" data-section="fondo"></a>
         <a class="nav-item" data-section="metas"></a>
@@ -174,7 +174,7 @@ describe('el sub-nivel del grupo Ahorro se despliega dentro del grupo (INT.1b)',
 
   // aria-controls, no data-section: la barra inferior también lleva una
   // entrada con data-section="ahorro" desde AH.7a, así que data-section no
-  // identifica a la casa del sidebar.
+  // identifica a la fila del grupo en el sidebar.
   const subnav = () => document.getElementById('nav-subnav-ahorro');
   const trigger = () => document.querySelector('[aria-controls="nav-subnav-ahorro"]');
 
@@ -184,12 +184,20 @@ describe('el sub-nivel del grupo Ahorro se despliega dentro del grupo (INT.1b)',
     expect(trigger().getAttribute('aria-expanded')).toBe('false');
   });
 
-  it('se despliega en la casa y en cada una de las 4 hijas', () => {
-    for (const hash of ['ahorro', 'fondo', 'metas', 'apartados', 'inversion']) {
+  it('se despliega en cada una de las 4 lentes', () => {
+    for (const hash of ['fondo', 'metas', 'apartados', 'inversion']) {
       markActiveNav(hash);
       expect(subnav().hidden).toBe(false);
       expect(trigger().getAttribute('aria-expanded')).toBe('true');
     }
+  });
+
+  // ADR 125: la fila del grupo abre el fondo, pero el "estás aquí" lo lleva la
+  // fila del fondo del sub-nivel; encender las dos diría que estás en dos sitios.
+  it('la fila del grupo no se marca vigente: la marca la lente', () => {
+    markActiveNav('fondo');
+    expect(trigger().classList.contains('active')).toBe(false);
+    expect(document.querySelector('#nav-subnav-ahorro [data-section="fondo"]').classList.contains('active')).toBe(true);
   });
 
   it('se repliega al salir del grupo', () => {
@@ -205,17 +213,17 @@ describe('la pestaña Ahorro de la barra inferior se resalta en todo el grupo (A
     document.body.innerHTML = `
       <a class="nav-item" data-section="gast"></a>
       <button class="nav-item" data-modal="modal-mas"></button>
-      <a class="nav-item nav-item--mobile-only" href="#ahorro" data-section="ahorro"></a>
-      <a class="nav-item nav-item--no-mobile" href="#ahorro" data-section="ahorro"
+      <a class="nav-item nav-item--mobile-only" href="#fondo" data-section="ahorro"></a>
+      <a class="nav-item nav-item--no-mobile" href="#fondo" data-section="ahorro"
          aria-expanded="false" aria-controls="nav-subnav-ahorro"></a>
     `;
   });
 
   const pestana = () => document.querySelector('.nav-item--mobile-only[data-section="ahorro"]');
-  const casa    = () => document.querySelector('.nav-item--no-mobile[data-section="ahorro"]');
+  const filaGrupo = () => document.querySelector('.nav-item--no-mobile[data-section="ahorro"]');
 
-  it('se enciende en la casa y en cada una de las 4 hijas', () => {
-    for (const hash of ['ahorro', 'fondo', 'metas', 'apartados', 'inversion']) {
+  it('se enciende en cada una de las 4 lentes', () => {
+    for (const hash of ['fondo', 'metas', 'apartados', 'inversion']) {
       markActiveNav(hash);
       expect(pestana().classList.contains('active')).toBe(true);
       expect(pestana().getAttribute('aria-current')).toBe('page');
@@ -229,11 +237,13 @@ describe('la pestaña Ahorro de la barra inferior se resalta en todo el grupo (A
     expect(pestana().getAttribute('aria-current')).toBe('false');
   });
 
-  it('la entrada de desktop sigue marcándose solo en la casa: allá cada hija tiene su fila', () => {
-    markActiveNav('metas');
-    expect(casa().classList.contains('active')).toBe(false);
-    markActiveNav('ahorro');
-    expect(casa().classList.contains('active')).toBe(true);
+  // ADR 125: sin casa, la fila del grupo en escritorio nunca es "estás aquí":
+  // allá cada lente tiene su fila en el sub-nivel.
+  it('la entrada de desktop no se enciende en ninguna lente', () => {
+    for (const hash of ['fondo', 'metas', 'apartados', 'inversion']) {
+      markActiveNav(hash);
+      expect(filaGrupo().classList.contains('active')).toBe(false);
+    }
   });
 });
 

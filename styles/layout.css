@@ -561,10 +561,10 @@
   flex-shrink: 0;
 }
 
-/* La franja `.hub-tabs` (NAV.B, ADR 024 D4) se retiró en DIS.18: existía para
-   saltar entre las cuatro secciones de ahorro sin poder subir, porque el padre
-   no tenía pantalla. Con la casa `#ahorro` construida, cada hija abre con
-   `.section__volver` y saltar de lado deja de ser necesario. */
+/* La franja `.hub-tabs` (NAV.B, ADR 024 D4) se retiró en DIS.18, y la casa
+   `#ahorro` que la reemplazó, con el ADR 125: hoy las cuatro secciones de
+   ahorro se recorren con `.bloque-tabs` (ADR 104) en móvil y con el
+   sub-nivel del sidebar en escritorio. */
 .section__sub-header .section__subtitle {
   font-size: var(--fk-text-lg);
   font-weight: var(--fk-font-bold);

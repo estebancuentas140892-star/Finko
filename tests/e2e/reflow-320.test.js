@@ -21,7 +21,7 @@ test.use({ viewport: { width: 320, height: 568 } });
 // Hash de cada sección = id sin el prefijo "sec-".
 const SECCIONES = [
   'dash', 'gast', 'compromisos', 'agenda', 'personales', 'tesoreria',
-  'presupuesto', 'ahorro', 'inversion', 'metas', 'apartados', 'analisis',
+  'presupuesto', 'fondo', 'inversion', 'metas', 'apartados', 'analisis',
   'config',
 ];
 

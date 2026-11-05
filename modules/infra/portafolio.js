@@ -15,6 +15,9 @@
  * DIS.17 sin una palabra de copy), que la casa de Ahorro necesita para decir la
  * etapa de su carril en vez de un conteo.
  *
+ * La casa de Ahorro se retiró con el ADR 125. Las dos piezas se quedan acá: la
+ * sección Inversión ya las lee de este módulo y devolverlas no cambia nada.
+ *
  * Lo que NO está aquí sigue siendo del dominio: los tipos soportados, la
  * validación del formulario, los nudges, las frases del momento del usuario y
  * la rentabilidad real. Esto es la aritmética compartida, no la sección.

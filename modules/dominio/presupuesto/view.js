@@ -186,7 +186,7 @@ function _renderResumenGrupos(anio, mes) {
 function _renderFranjaPlan(resumen, mes) {
   const SALIDAS = {
     'necesidades':    { href: '#compromisos', texto: 'Por pagar' },
-    'ahorro':         { href: '#ahorro',      texto: 'Ahorro' },
+    'ahorro':         { href: '#fondo',       texto: 'Ahorro' },
     'estilo-de-vida': null,
   };
 
@@ -679,14 +679,14 @@ const _MOTIVO_SIN_TOPE = {
 
 /**
  * A dónde lleva cada motivo (ficha 12, L4). Las cuatro primeras a la lente
- * hermana del mismo bloque, la quinta al hub de Ahorro.
+ * hermana del mismo bloque, la quinta a Ahorro (su fondo, ADR 125).
  */
 const _DESTINO_SIN_TOPE = {
   'Vivienda':           '#compromisos',
   'Servicios públicos': '#compromisos',
   'Gastos fijos':       '#compromisos',
   'Deudas':             '#compromisos',
-  'Ahorro':             '#ahorro',
+  'Ahorro':             '#fondo',
 };
 
 /**

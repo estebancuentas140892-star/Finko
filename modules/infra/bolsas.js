@@ -13,7 +13,8 @@
  * replicarlo habría duplicado lógica de negocio no trivial: es el mismo
  * movimiento que hizo `infra/vencimientos.js` con el ritmo de aporte (MC.13b,
  * ADR 041). El dominio sigue siendo el dueño del vocabulario; infra guarda la
- * única copia del cálculo.
+ * única copia del cálculo. La casa de Ahorro se retiró con el ADR 125; el
+ * cálculo se queda acá porque Apartados ya lo lee de este módulo.
  *
  * Sin DOM. Sin S directo. Testeable en Node/Vitest sin mocks de navegador.
  *

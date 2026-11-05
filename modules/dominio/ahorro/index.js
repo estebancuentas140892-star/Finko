@@ -36,7 +36,7 @@ import {
 import {
   renderAhorro, renderFormFondo,
   renderFormAporte, renderFormCompromisoMensual,
-  renderCasaAhorro, renderCajaSugerencia,
+  renderCajaSugerencia,
 } from './view.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 
@@ -490,16 +490,15 @@ function _guardarCompromisoMensual(form) {
 function _renderAhorroBound() {
   const gastosFijos = _gastosFijosMensuales();
   renderAhorro(gastosFijos, _calcularTasaAhorro(), _construirSugerenciaAporte(), _frecuenciaCompromiso());
-  renderCasaAhorro(gastosFijos);
   // APR.2a (ADR 092 D6): la tarjeta dejó los huecos de la lección que ofrece
   // el Fondo; Aprende los llena con este dato al oírlo (ADN 10).
   EventBus.emit('seccion:pintada', { seccion: 'fondo', datos: { gastosFijos } });
 }
 
 /**
- * Render condicionado a la sección visible. Este dominio dibuja dos pantallas:
- * la tarjeta del fondo en `#fondo` y la casa de Ahorro en `#ahorro` (DIS.18),
- * que reemplazó al consolidado repetido en las cuatro hijas del hub.
+ * Render condicionado a la sección visible: la tarjeta del fondo en `#fondo`.
+ * La casa de Ahorro que vivía en `#ahorro` (DIS.18) se retiró con el ADR 125:
+ * Ahorro abre directo en el fondo y se recorre con la barra de lentes.
  */
 function _renderSegunSeccion() {
   // El banner de propósito conserva la clave 'ahorro': su copy es el del fondo
@@ -507,31 +506,6 @@ function _renderSegunSeccion() {
   // #proposito-ahorro, que sigue viviendo dentro de la sección del fondo.
   renderBannerProposito('ahorro', _tieneDatosAhorro());
   renderSmart(_renderAhorroBound, 'fondo');
-  renderSmart(() => renderCasaAhorro(_gastosFijosMensuales()), 'ahorro');
-}
-
-/**
- * Salta a un carril de la casa de Ahorro (DIS.19).
- *
- * Los chips mueven el scroll dentro de la misma pantalla, no navegan a otra
- * sección: con cuatro carriles y sus gráficos la pantalla es larga, y el chip es
- * lo que permite ir directo al que interesa sin recorrerla. Por eso son botones
- * con acción y no enlaces con hash, que el router leería como una sección
- * inexistente y llevaría a Inicio.
- *
- * `scrollIntoView` y no un cálculo de offset: el contenedor que hace scroll
- * cambia entre móvil y desktop, y el navegador ya sabe cuál es. La animación la
- * decide `behavior: 'smooth'`, que el navegador anula solo cuando el sistema pide
- * menos movimiento.
- *
- * @param {HTMLElement} el Elemento con `data-id` = clave de la modalidad.
- */
-function _irACarril(el) {
-  const clave = el?.dataset?.id;
-  if (!clave) return;
-  const destino = document.getElementById(`carril-${clave}`);
-  if (!destino) return;
-  destino.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 export function initAhorro() {
@@ -542,24 +516,21 @@ export function initAhorro() {
   registrarAccion('ahorro-eliminar-aporte',   _eliminarAporte);
   registrarAccion('ahorro-editar-compromiso', _editarCompromisoMensual);
   registrarAccion('ahorro-usar-sugerido',     _usarAporteSugerido);
-  registrarAccion('ahorro-ir-a-carril',       _irACarril);
 
   // El objetivo del fondo depende de gastos fijos: re-render ante cambios en
   // ahorro, compromisos, ingresos o gastos (la tasa de ahorro usa los 3 últimos).
-  // metas/apartados/inversiones alimentan las filas de la casa de Ahorro (DIS.18).
+  // Metas, reservas e inversiones ya no se observan: solo alimentaban la casa
+  // de Ahorro, retirada con el ADR 125.
   EventBus.on('state:change', ({ section }) => {
     if (
       section === 'ahorro'      ||
       section === 'compromisos' ||
       section === 'ingresos'    ||
-      section === 'gastos'      ||
-      section === 'metas'       ||
-      section === 'apartados'   ||
-      section === 'inversiones'
+      section === 'gastos'
     ) {
-      // Agendado (PERF.6): son 7 secciones observadas y una distribución del
-      // ingreso toca 5 de ellas en el mismo tick. `_renderSegunSeccion` tiene
-      // identidad estable, así que la cola lo colapsa a un solo pintado.
+      // Agendado (PERF.6): una distribución del ingreso toca varias de estas
+      // secciones en el mismo tick. `_renderSegunSeccion` tiene identidad
+      // estable, así que la cola lo colapsa a un solo pintado.
       programarRender(_renderSegunSeccion);
     }
   });
@@ -584,7 +555,7 @@ export function initAhorro() {
   // Para que renderAll() también dibuje esta sección.
   registrarRender(_renderAhorroBound);
 
-  // Re-render al navegar a cualquier sección del hub (patrón de metas/presupuesto).
+  // Re-render al llegar al fondo (patrón de metas/presupuesto).
   window.addEventListener('hashchange', _renderSegunSeccion);
 
   _renderSegunSeccion();

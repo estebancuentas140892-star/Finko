@@ -408,7 +408,7 @@ test.describe('MV2 - móvil (ADR 098)', () => {
   test('el ojo va en el encabezado de toda pantalla con montos (ADR 106 D3)', async ({ page }) => {
     await seedConTipos(page);
     await page.goto('/#movimientos');
-    for (const sec of ['movimientos', 'ahorro', 'fondo', 'metas', 'apartados', 'inversion', 'tesoreria', 'personales', 'agenda', 'analisis']) {
+    for (const sec of ['movimientos', 'fondo', 'metas', 'apartados', 'inversion', 'tesoreria', 'personales', 'agenda', 'analisis']) {
       await page.goto(`/#${sec}`);
       await expect(page.locator(`#sec-${sec} > .section__header .section__ojo`), sec).toBeVisible({ timeout: 10_000 });
     }

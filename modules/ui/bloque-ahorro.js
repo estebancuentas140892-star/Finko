@@ -8,15 +8,18 @@
  * la misma promesa y dos modelos internos distintos.
  *
  * ADR 098 D3 (cambia ADR 069 D7): la casa salió de la fila. Con cinco
- * destinos desbordaba a 390px y escondía "Inversión" (R9), y la subida a la
- * casa ya la da el "‹ Ahorro" de cada hija.
+ * destinos desbordaba a 390px y escondía "Inversión" (R9).
+ *
+ * ADR 125: la casa se retiró. La entrada "Ahorro" de la barra abre el fondo,
+ * la primera de las cuatro, y desde ahí esta barra es la única forma de
+ * recorrer el bloque: no hay pantalla de arriba a la cual subir.
  *
  * ADR 104 (MV2.12): ir de lado es una barra y filtrar, un chip. Las cuatro
  * hijas pintan la barra del bloque Gastos (`.bloque-tabs`), con la etiqueta
  * corta y el nombre completo para el lector de pantalla. Reservas lleva un
  * punto en la esquina cuando una reserva está lista para reiniciar.
  *
- * El orden es el de la casa (`MODALIDADES_AHORRO`), que es el único que
+ * El orden es el de `MODALIDADES_AHORRO`, que es el único que
  * significa algo: va por certeza de uso, de lo que ojalá no uses a lo que
  * crece solo. Ninguna hija puede reordenarlo por su cuenta (AH3).
  *
@@ -31,7 +34,7 @@ import { apartadosActivos, estaListoParaReiniciar } from '../dominio/apartados/l
 import { pintarEstadoLente } from './bloque-gastos.js';
 
 /**
- * Las cuatro modalidades, en el orden de la casa.
+ * Las cuatro modalidades, en su orden.
  * `seccion` de `MODALIDADES_AHORRO` es el hash de destino, no la clave del
  * dominio (el fondo vive en `#fondo` desde DIS.18).
  */
@@ -39,7 +42,7 @@ export const MODALIDADES_BLOQUE_AHORRO = MODALIDADES_AHORRO.map(m => ({
   hash: m.seccion, etiqueta: m.label, corto: partirEtiquetaModalidad(m).corto,
 }));
 
-/** Las cuatro hijas que reciben la barra. La casa no: ya tiene la suya. */
+/** Las cuatro secciones que reciben la barra. */
 const HIJAS = MODALIDADES_AHORRO.map(m => m.seccion);
 
 /** La única modalidad que avisa desde la barra (ADR 104 D3). */

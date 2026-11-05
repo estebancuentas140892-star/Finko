@@ -298,8 +298,7 @@ const _SILUETA_LADO = 24;
  * @param {boolean}[opts.decorativa=false] - Sin `role="img"` ni etiqueta: el
  *   dibujo no aporta información que el contexto no diga ya. Es lo correcto
  *   cuando la silueta acompaña a un medidor que ya anuncia el porcentaje (el
- *   arco de la tarjeta de meta) o va dentro de un botón con nombre propio (el
- *   carril de la casa de Ahorro). Emitir un `role="img"` dentro de un ancestro
+ *   arco de la tarjeta de meta) o va dentro de un botón con nombre propio. Emitir un `role="img"` dentro de un ancestro
  *   `aria-hidden` sería peor que no emitirlo: parecería el defecto que la regla
  *   R52 vino a corregir, con la etiqueta borrada sin que se note.
  * @returns {string} SVG completo.

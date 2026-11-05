@@ -186,7 +186,7 @@
 |---|---|---|
 | Progreso, plan y estado de una bolsa | `infra/bolsas.js`: `progresoDeBolsa()`, `diasHastaFecha()`, `planDeReferencia()`, `estadoDeBolsa()` | Fondo, Metas, Apartados, Inversión (cada uno conserva su envoltorio y su vocabulario: `completado` vs. `completada`) |
 | Si una bolsa descuenta saldo | `infra/bolsas.js`: `descuentaSaldo()`, tabla del [ADR 053](../DECISIONS/053-invariante-de-patrimonio.md) I2 | Análisis. `calcularActivos()` **no** la llama a propósito (I4: la regla de suma no se toca de forma retroactiva), y un test documenta esa brecha aceptada |
-| Etapa del portafolio | `infra/portafolio.js`: `etapaDePortafolio()` (número de etapa, cero copy) | `momentoInversion()` y el carril de la casa de Ahorro |
+| Etapa del portafolio | `infra/portafolio.js`: `etapaDePortafolio()` (número de etapa, cero copy) | `momentoInversion()` (el carril de la casa de Ahorro lo leía hasta el ADR 125) |
 | "Hoy" en ISO | `infra/utils.js`: `hoy()`, con getters locales de `Date` (correcta en UTC-5) | los 5 sitios que antes usaban `new Date().toISOString().slice(0,10)` y devolvían mañana desde las 7 p.m. (BUG-018) |
 | Día local de una fecha guardada | `infra/utils.js`: `fechaLocalISO()` (HF.0e, BUG-025): instante ISO al día local del entorno, fecha `YYYY-MM-DD` tal cual, lo demás `null` | ciclo y "Única vez" de `infra/vencimientos.js`, inicio del plan de `infra/bolsas.js`, `estadoDistribucion()`, alta y antigüedad en `compromisos/logic/alertas.js` |
 | Fecha escrita ([ADR 102](../DECISIONS/102-fechas-con-el-ano-solo-si-no-es-el-de-hoy.md)) | `infra/utils.js`: `fechaLegible()` (el año solo si no es el de hoy) y `fechaDiaMes()` (sin año, listas agrupadas por mes) | toda fecha en texto, salvo las que nombran el día de la semana |

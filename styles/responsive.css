@@ -18,11 +18,6 @@
 /* Boton "Mas" del bottom nav: oculto en desktop por defecto */
 .nav-item--mobile-only { display: none; }
 
-/* Volver de las 4 hijas de Ahorro (INT.1b): oculto en desktop por defecto,
-   la casa ya está anidada en el sidebar. Se restaura bajo 1024px, donde
-   sigue siendo la única salida vertical. */
-.section__volver--ahorro-hija { display: none; }
-
 /* Primario del encabezado de sección (INT.1e, ADR 059 D3): oculto en
    desktop por defecto, sube a la barra superior (topbar__primario, shell.js).
    Recupera el alto que el botón le costaba a la fila del encabezado. Se
@@ -38,9 +33,6 @@
 
 /* ── TABLET + MÓVIL: SIDEBAR INFERIOR + TOUCH TARGETS (< 1024px) ─ */
 @media (max-width: 1023px) {
-
-  /* Volver de las 4 hijas de Ahorro: vuelve a ser la única salida vertical. */
-  .section__volver--ahorro-hija { display: inline-flex; }
 
   /* Saludo de Inicio (DSK.1a, ADR 070 D10): acá la barra lateral no tiene
      logo visible y no hay barra superior, así que la marca vuelve a nombrar
@@ -592,22 +584,6 @@
   .modal__header {
     padding: var(--fk-space-4) var(--fk-space-5);
   }
-
-  /* ── DIS.18: la fila de la casa de Ahorro en móvil ────────────────────────
-     Las barras de participación se retiraron con `.ahorro-total` (la regla R54
-     que las medía a 390px ya no tiene sujeto). Lo que queda por cuidar es el
-     ancho: nombre + propósito y monto + estado en la misma línea aprietan las
-     dos columnas de texto. El chevron cede su columna (la fila entera ya es el
-     enlace, así que no informa nada que la flecha de vuelta no diga) y el
-     propósito pasa a ocupar el ancho completo bajo el nombre. */
-  /* DIS.19: la fila de la casa se retiro con el hub de carriles. Lo que queda
-     por resolver en movil es el carril de Inversion: dos columnas mas leyenda
-     no caben a 375px, asi que la leyenda se apila debajo del grafico. */
-  .grow {
-    flex-wrap: wrap;
-    gap: var(--fk-space-3);
-  }
-  .grow__leyenda { flex-basis: 100%; }
 }
 
 /* ── MÓVIL PEQUEÑO (< 360px) - iPhone SE 1ª gen, dispositivos legacy ─ */
@@ -1963,15 +1939,12 @@
 
   /* ── ADR 104 (MV2.12): una sola barra para ir de lado ─────────────────
      Lo que cambia de pantalla es una barra; lo que filtra la lista, un chip.
-     Las lentes de Gastos, las cuatro hijas de Ahorro y la portada de Ahorro
-     dibujan la misma barra: celdas iguales a lo ancho, 44px, y nunca se
-     desliza (R9). La portada conserva sus botones, que saltan al carril de
-     cada modalidad, y no marca celda vigente (D4). La cola de "Fondo de
-     emergencia" se calla (ADR 098 D3); el nombre completo sigue en el título
-     de la sección y en el nombre accesible. Va en esta capa porque `.chip`
-     (capa components) le ganaría a la capa layout. */
-  .bloque-tabs,
-  .hub .chips {
+     Las lentes de Gastos y las cuatro de Ahorro dibujan la misma barra:
+     celdas iguales a lo ancho, 44px, y nunca se desliza (R9). La portada de
+     Ahorro, que la usaba para saltar entre carriles, se retiró (ADR 125). La
+     cola de "Fondo de emergencia" se calla (ADR 098 D3); el nombre completo
+     sigue en el título de la sección y en el nombre accesible. */
+  .bloque-tabs {
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: minmax(0, 1fr);
@@ -1983,8 +1956,7 @@
     border: 1px solid var(--fk-border-subtle);
     overflow: visible;
   }
-  .bloque-tabs__tab,
-  .hub .chips .chip {
+  .bloque-tabs__tab {
     position: relative;
     display: inline-flex;
     align-items: center;
@@ -2008,8 +1980,7 @@
   /* ADR 117 D4: con la fuente del sistema grande el rótulo pasa a dos líneas
      en lugar de cortarse con puntos suspensivos; la celda crece en alto y
      sigue sin deslizarse. Con texto normal todo cabe en una. */
-  .bloque-tabs__tab,
-  .hub .chips .chip {
+  .bloque-tabs__tab {
     flex-wrap: wrap;
     white-space: normal;
     text-align: center;
@@ -2020,7 +1991,6 @@
     overflow-wrap: anywhere;
     hyphens: auto;
   }
-  .hub .chips .chip__cola { display: none; }
   .bloque-tabs__tab.active {
     background: var(--fk-bg-surface);
     color: var(--fk-text-primary);
@@ -2054,8 +2024,7 @@
      quepan en un tercio de 320 sin cortarse. Va después de la receta: dentro
      de la misma capa, el orden decide. */
   @media (max-width: 359px) {
-    .bloque-tabs__tab,
-    .hub .chips .chip { font-size: 0.8125rem; }
+    .bloque-tabs__tab { font-size: 0.8125rem; }
   }
 
   /* ── ADR 116 D7 (A2, R4): los enlaces de texto con zona de 44px ─────────

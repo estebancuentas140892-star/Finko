@@ -53,7 +53,7 @@
 
 **Riesgos añadidos por DIS.19**:
 
-- **`planDeReferencia()` y `diasHastaFecha()` ya no viven acá.** Bajaron a `infra/bolsas.js` porque el carril de Apartados en la casa de Ahorro necesita el mismo cálculo y ADN 10 le prohíbe importar este dominio. `logic.js` las re-exporta con el nombre de siempre, así que ninguna vista ni test cambió de importación; una copia local nueva rompe los tests de frontera de `bolsas.test.js`.
+- **`planDeReferencia()` y `diasHastaFecha()` ya no viven acá.** Bajaron a `infra/bolsas.js` porque el carril de Apartados en la casa de Ahorro necesitaba el mismo cálculo y ADN 10 le prohibía importar este dominio; la casa se retiró (ADR 125) y el cálculo se quedó en infra. `logic.js` las re-exporta con el nombre de siempre, así que ninguna vista ni test cambió de importación; una copia local nueva rompe los tests de frontera de `bolsas.test.js`.
 
 - **El comparador de la lista no es interactivo, el del carril sí.** Acá tocar una columna no tendría a dónde llevar (las tarjetas ya están debajo, en el mismo orden), así que el gráfico va `aria-hidden` y su lectura la da el pie en palabras. En el hub cada columna abre el aporte a su apartado. Si se hacen iguales, una de las dos pantallas gana un gesto que no significa nada.
 

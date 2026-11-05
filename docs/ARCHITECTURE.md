@@ -1,6 +1,6 @@
 # Arquitectura - Finko Claude
 
-> Revisado: 2026-11-04.
+> Revisado: 2026-11-05.
 
 > Documento vivo: se actualiza cuando cambia una capa, entra un dominio o se introduce un patrón nuevo. Historial: `git log -- docs/ARCHITECTURE.md`.
 >
@@ -73,8 +73,8 @@ Utilidades transversales sin dependencias de dominio.
 | `distribuir-pago.js` | `distribuirPago()`: reparte un monto entre varias cuentas cuando ninguna alcanza sola |
 | `icons.js` | `icon(id)` y `emptyArt(id)`: helpers que referencian el sprite SVG inline de `index.html` |
 | `svg.js` | Gráficos SVG generados: `sparkline`/`donut` para Análisis, `progressRing`/`arcoProgreso` y `siluetaMeta` (silueta que se llena por altura, DIS.19) |
-| `bolsas.js` | El plan de aportes de una bolsa con fecha: `diasHastaFecha`, `planDeReferencia`, `estadoDeBolsa`. Lo comparten Apartados y la casa de Ahorro (DIS.19), primer paso de ARQ.1 |
-| `portafolio.js` | Lo invertido, su proyección al vencimiento y la geometría del gráfico de dos columnas: de `esProyectable` a `columnasPortafolio`. Lo comparten Inversión y la casa de Ahorro (DIS.19) |
+| `bolsas.js` | El plan de aportes de una bolsa con fecha: `diasHastaFecha`, `planDeReferencia`, `estadoDeBolsa`. Lo lee Apartados (bajó para la casa de Ahorro, DIS.19). Primer paso de ARQ.1 |
+| `portafolio.js` | Lo invertido, su proyección al vencimiento y la geometría del gráfico de dos columnas: de `esProyectable` a `columnasPortafolio`. Lo lee Inversión (bajó para la casa de Ahorro, DIS.19) |
 | `taxonomia.js` | La estructura de dos niveles, una sola vez ([ADR 064](DECISIONS/064-estructura-de-dos-niveles.md)): `hijosDeCategoria`, `hijoPorId`, `categoriasConHijos`. Recibe el catálogo por parámetro, así que sirve a subcategoría de meta, marca por categoría y entidad a producto sin conocer a ninguno |
 | `csv.js` | Parser/serializador CSV para importar/exportar gastos |
 | `notificaciones.js` | Web Notifications API para recordatorios |
@@ -107,11 +107,11 @@ Bootstrap y orquestación de la interfaz.
 | `confirm.js` | Overlay de confirmación (reemplaza `confirm()` nativo) |
 | `onboarding.js` | Wizard de bienvenida para usuario nuevo (`!S.onboarded`) |
 | `proposito.js` | Banner de "propósito de sección" (qué resuelve cada sección), patrón de [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md). Desde la revisión del ADR ya no colapsa: es divulgación progresiva, sin acciones de colapsar/expandir |
-| `comparador.js` | Columnas comparables de varias bolsas contra la marca de su plan: `htmlComparador()` + `pieComparador()`. Puro, sin DOM. Lo comparten la lista de Apartados y la casa de Ahorro (DIS.19) |
+| `comparador.js` | Columnas comparables de varias bolsas contra la marca de su plan: `htmlComparador()` + `pieComparador()`. Puro, sin DOM. Lo usa la lista de Apartados |
 | `menu-mas.js` | Menú "Más" (secciones que no caben en la bottom nav móvil) |
 | `bloque-gastos.js` | Franja de lentes del bloque Gastos en móvil ([ADR 069](DECISIONS/069-bloque-gastos-en-la-barra-movil.md)): inyecta las pestañas "Lo que gastaste" / "Por pagar" / "Límites" en las tres secciones y pinta su estado. Navegación por hash, sin contenedor de estado nuevo |
 | `bloque-inicio.js` | Franja Hoy / Aprende / Tu progreso del bloque Inicio en móvil (APR.1c) |
-| `bloque-ahorro.js` | Fila de chips del bloque Ahorro en móvil (ADR 069 D7): inyecta en las cuatro hijas la misma fila que la casa, con la casa como primer chip. El orden lo deriva de `MODALIDADES_AHORRO`, así que ninguna hija puede reordenarlo |
+| `bloque-ahorro.js` | Barra de lentes de Ahorro en móvil (ADR 104): la de Gastos, en las cuatro secciones; sin casa es la única forma de recorrer el bloque (ADR 125). Orden: `MODALIDADES_AHORRO` |
 | `install-prompt.js` | Prompt de instalación de la PWA (`beforeinstallprompt`) |
 | `bloqueo-acceso.js` | Candado de acceso local: gate de PIN al abrir y `confirmarPin()` para acciones críticas ([ADR 063](DECISIONS/063-candado-de-acceso-local.md)) |
 | `aceptacion-legal.js` | Aceptación obligatoria versionada del paquete legal (LEG.2) |
@@ -152,7 +152,7 @@ Los barrels mantienen la API estable: tests y consumidores siguen importando de 
 |---|---|---|
 | `accesos/` | Accesos rápidos personalizables de Inicio (IN.4a, [ADR 028](DECISIONS/028-inicio-centro-de-control.md) D2) | sin colección propia en `S`: lee y escribe `S.config.accesosInicio` (array de ids) |
 | `agenda/` | Calendario de pagos: la vista de fechas sobre `compromisos` (sección visible "Calendario") | desde la ficha 05 (ADR 069) ya no crea ni edita gastos fijos; conserva "Marcar pagado" (depende del mes visible, BUG-015) y los pagos automáticos de PA.1 |
-| `ahorro/` | Fondo de emergencia + hábito de aportar, **más la casa de Ahorro** (la pantalla `#ahorro` que reúne las cuatro modalidades, DIS.18) | el fondo vive en `#fondo` desde DIS.18: `#ahorro` es la casa ([ADR 056](DECISIONS/056-la-casa-de-ahorro.md)) |
+| `ahorro/` | Fondo de emergencia + hábito de aportar, y `MODALIDADES_AHORRO` (orden y etiquetas de las cuatro lentes) | el fondo vive en `#fondo` desde DIS.18; `#ahorro` redirige ahí desde que se retiró la casa ([ADR 125](DECISIONS/125-ahorro-abre-en-el-fondo.md)) |
 | `aprende/` | Ruta de nueve unidades y lección a pantalla completa ([ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md)) | contenido en `lecciones/*.js`, cargado con `import()` |
 | `analisis/` | Salud financiera, patrimonio neto, gráficos, comparaciones | |
 | `apartados/` | Sobres para gastos previsibles (SOAT, impuestos, etc.) | |
@@ -439,7 +439,7 @@ El dashboard (`#dash`) no tiene carpeta propia en `modules/dominio/`: es una com
 | Por pagar (lente del bloque Gastos) | `compromisos/` | entrar por `logic/` o `views/` según el corte de la 2.4; `index.js` es el wiring. Desde la ficha 05 (ADR 069) también viven acá el alta de gasto fijo y el pago en lote (`views/lote.js`) | `charts.css` (estrategia de pago), `domain.css` (deuda-card, cal-lote, lote-row) | `compromisos.test.js`, `estrategia-pago.test.js` (e2e) |
 | Mis cuentas | `tesoreria/` | entrar por `logic/`, `views/` o `acciones/` según el subsistema (ver 2.4); `index.js` es el coordinador | `domain.css` (ingresos-card, distribuir-card, distribuir-edu, distribucion-clasicos), `forms.css` (bloque `.distribuir__*` del asistente) | `tesoreria.test.js`, `cuenta-helper.test.js`, `distribuir-pago.test.js` |
 | Apartados | `apartados/` | los 3 estándar | `domain.css` (bloques APARTADOS y form de apartados) | `apartados.test.js` |
-| Ahorro (la casa, `#ahorro`) y Fondo de emergencia (`#fondo`) | `ahorro/` | los 3 estándar | `domain.css` (`.casa-ahorro__*`), `analysis.css` (bloque J.1/J.1b) | `ahorro.test.js`, `hub-ahorros.test.js` (e2e), `ahorro-inversion.test.js` (e2e) |
+| Ahorro (abre en `#fondo`; `#ahorro` redirige, ADR 125) | `ahorro/` | los 3 estándar; la barra es `ui/bloque-ahorro.js` | `analysis.css` (J.1/J.1b), `responsive.css` (`.bloque-tabs--ahorro`) | `ahorro.test.js`, `bloque-ahorro.test.js`, `hub-ahorros.test.js` y `ahorro-inversion.test.js` (e2e) |
 | Presupuesto | `presupuesto/` | los 3 estándar | `analysis.css` (D.5 envelope budgeting, MC.8b) | `presupuesto.test.js` |
 | Metas | `metas/` | los 3 estándar | `analysis.css` | `metas.test.js` |
 | Me deben | `personales/` | los 3 estándar | `domain.css` (personales-resumen) | `personales.test.js` |

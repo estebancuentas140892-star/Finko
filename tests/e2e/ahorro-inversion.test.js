@@ -160,10 +160,8 @@ test.describe('Ahorro - fondo de emergencia (J.1)', () => {
   // A.1 - Empty state --------------------------------------------------------
 
   test('muestra el empty state al navegar desde Dashboard', async ({ page }) => {
-    // DIS.18: se entra por la casa de Ahorro, y el fondo es su primera fila.
-    await page.click('.nav-item--no-mobile[href="#ahorro"]');
-    await expect(page.locator('#sec-ahorro.active')).toBeVisible({ timeout: 5_000 });
-    await page.click('#carril-fondo .lane__ver');
+    // ADR 125: la fila "Ahorro" abre directo el fondo.
+    await page.click('[aria-controls="nav-subnav-ahorro"]');
     await expect(page.locator('#sec-fondo.active')).toBeVisible({ timeout: 5_000 });
 
     await expect(
@@ -177,10 +175,8 @@ test.describe('Ahorro - fondo de emergencia (J.1)', () => {
   // A.2 - Activar fondo: modal → form → hero --------------------------------
 
   test('activar fondo: modal abre, form se envía, hero muestra el monto base', async ({ page }) => {
-    // DIS.18: se entra por la casa de Ahorro, y el fondo es su primera fila.
-    await page.click('.nav-item--no-mobile[href="#ahorro"]');
-    await expect(page.locator('#sec-ahorro.active')).toBeVisible({ timeout: 5_000 });
-    await page.click('#carril-fondo .lane__ver');
+    // ADR 125: la fila "Ahorro" abre directo el fondo.
+    await page.click('[aria-controls="nav-subnav-ahorro"]');
     await expect(page.locator('#sec-fondo.active')).toBeVisible({ timeout: 5_000 });
 
     // Abrir modal de activación
@@ -206,10 +202,8 @@ test.describe('Ahorro - fondo de emergencia (J.1)', () => {
 
   test('registrar aporte: aparece en historial y el hero suma el monto', async ({ page }) => {
     // Precondición: activar fondo con $500.000 de base
-    // DIS.18: se entra por la casa de Ahorro, y el fondo es su primera fila.
-    await page.click('.nav-item--no-mobile[href="#ahorro"]');
-    await expect(page.locator('#sec-ahorro.active')).toBeVisible({ timeout: 5_000 });
-    await page.click('#carril-fondo .lane__ver');
+    // ADR 125: la fila "Ahorro" abre directo el fondo.
+    await page.click('[aria-controls="nav-subnav-ahorro"]');
     await expect(page.locator('#sec-fondo.active')).toBeVisible({ timeout: 5_000 });
     await page.click('#sec-fondo [data-action="ahorro-activar-fondo"]');
     await page.waitForSelector('#modal-ahorro[data-open]', { timeout: 5_000 });
@@ -242,10 +236,8 @@ test.describe('Ahorro - fondo de emergencia (J.1)', () => {
 
   test('fondo persiste tras recarga de página', async ({ page }) => {
     // Activar fondo con $300.000
-    // DIS.18: se entra por la casa de Ahorro, y el fondo es su primera fila.
-    await page.click('.nav-item--no-mobile[href="#ahorro"]');
-    await expect(page.locator('#sec-ahorro.active')).toBeVisible({ timeout: 5_000 });
-    await page.click('#carril-fondo .lane__ver');
+    // ADR 125: la fila "Ahorro" abre directo el fondo.
+    await page.click('[aria-controls="nav-subnav-ahorro"]');
     await expect(page.locator('#sec-fondo.active')).toBeVisible({ timeout: 5_000 });
     await page.click('#sec-fondo [data-action="ahorro-activar-fondo"]');
     await page.waitForSelector('#modal-ahorro[data-open]', { timeout: 5_000 });

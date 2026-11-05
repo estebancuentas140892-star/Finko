@@ -1,6 +1,6 @@
 # Tablero - Transversal
 
-> Revisado: 2026-11-04.
+> Revisado: 2026-11-05.
 
 > Satélite de [`BOARD.md`](../BOARD.md) (afecta varias secciones). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
 
@@ -15,6 +15,18 @@
 > **Diferida del [ADR 068](../DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md): la migración a IndexedDB (antes PERF.5) ya no es tarjeta.** Su decisión, su alcance fijado (blob-en-IDB, no store por colección) y sus **dos** disparadores verificables viven en ese ADR, que reemplaza los tres del ADR 030 D4. **No re-auditar el código ante un pedido de ejecución:** la verificación está hecha y fechada allí; basta mirar si T1 o T2 cambiaron de estado. Al reabrirse nace como tarjeta nueva. Lo que salió a la luz con ese ADR ya cerró completo: **PERF.9** (2026-08-14, columna de caracteres en el harness) y **PERF.10** (2026-08-14, dos rebanadas). T1 ya tiene instrumento: detalle en [`scripts/perf/BASELINE.md`](../../scripts/perf/BASELINE.md).
 
 > **Iniciativa Dirección Visual premium** ([ADR 033](../DECISIONS/033-direccion-visual-premium.md)). DV.2a/b/c cerradas. DV.2d: infraestructura, 8 plantillas y cableado de `emptyArt()` listos (2026-08-14), falta solo el arte final de Esteban.
+
+#### MV2.30 - El adulto en el teléfono (los 6 tableros "Finko móvil · rediseño")
+- Prioridad  : alta
+- Estado     : pendiente (2026-11-05). Esteban pidió aplicar los seis HTML de `Diseño Finko/` y borrar cada uno al quedar aplicado. Antes se aplicó, aparte, su pedido de quitar la casa de Ahorro ([ADR 125](../DECISIONS/125-ahorro-abre-en-el-fondo.md))
+- Área       : design
+- Objetivo   : el mismo método del tablero del niño ([ADR 124](../DECISIONS/124-el-nino-en-el-telefono.md)): por tablero, comparar cada pantalla "Hoy" con su propuesta contra el código, escribir su ADR y aplicarlo en tandas con prueba, commit y publicación. Orden: "rediseño" (Inicio y sus hojas), "rediseño1" (Día a día, Por pagar, Límites, Nuevo gasto, Plan de salida), "rediseño2" (Fondo, Reservas, Metas, Inversión y sus hojas; **sin** las tres pantallas de la Casa, ADR 125), "rediseño3" (hoja Más, Calendario, Movimientos, Análisis), "rediseño4" (Mis cuentas, Distribuir, Me deben, Transferir), "rediseño5" (Ajustes)
+- Riesgo     : cada tablero choca con ADR del canvas anterior (098 a 123); el choque se dice y se decide, nunca en silencio
+- Secciones  : todas las del adulto en el teléfono
+- Archivos   : por tablero, en su ADR
+- Depende de : nada
+- Aceptación : por tablero, su ADR aceptado, sus tandas con unitarios y E2E en verde, publicado en `main`, y su HTML borrado de `Diseño Finko/`
+- Modelo     : capacidad alta. Los HTML son paquetes de Claude Design dentro de paquetes: cada pantalla lleva su propio `__bundler/manifest`; desempacar los dos niveles da el marcado estático de cada una
 
 #### MV2.28 - Lo que queda del canvas móvil (los 13 HTML de `Diseño Finko/`)
 - Prioridad  : media

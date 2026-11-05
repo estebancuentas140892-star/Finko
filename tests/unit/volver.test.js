@@ -97,10 +97,7 @@ describe('initVolver() en el DOM', () => {
       <section class="section" id="sec-movimientos">
         <a class="section__volver" href="#dash">Inicio</a>
       </section>
-      <section class="section" id="sec-ahorro"><a class="carril" href="#metas">Ver todo</a></section>
-      <section class="section" id="sec-metas">
-        <a class="section__volver section__volver--ahorro-hija" href="#ahorro">Ahorro</a>
-      </section>
+      <section class="section" id="sec-dash"><a class="ver-mov" href="#movimientos">Ver todo</a></section>
       <section class="section" id="sec-tesoreria"></section>`;
     history.replaceState(null, '', '#gast');
   });
@@ -124,12 +121,12 @@ describe('initVolver() en el DOM', () => {
   });
 
   it('si la sección ya trae un volver al mismo origen, se reusa y vuelve atrás', () => {
-    history.replaceState(null, '', '#ahorro');
-    document.querySelector('#sec-ahorro .carril').dispatchEvent(new Event('click', { bubbles: true, cancelable: true }));
-    llegarA('metas');
+    history.replaceState(null, '', '#dash');
+    document.querySelector('#sec-dash .ver-mov').dispatchEvent(new Event('click', { bubbles: true, cancelable: true }));
+    llegarA('movimientos');
 
-    expect(document.querySelector('#sec-metas .section__volver--contexto')).toBeNull();
-    const propio = document.querySelector('#sec-metas .section__volver--ahorro-hija');
+    expect(document.querySelector('#sec-movimientos .section__volver--contexto')).toBeNull();
+    const propio = document.querySelector('#sec-movimientos .section__volver');
     expect(propio.hasAttribute('data-volver-atras')).toBe(true);
 
     const atras = vi.spyOn(history, 'back').mockImplementation(() => {});

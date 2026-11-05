@@ -3,14 +3,14 @@
  * (ADR 069 D7, ADR 104).
  *
  * Cubre:
- * - htmlBarraBloqueAhorro(): las cuatro celdas, en el orden de la casa, con
- *   el hash de destino de cada modalidad y la misma barra de Gastos. La casa
- *   ya no va en la barra (ADR 098 D3): la subida la da el "‹ Ahorro".
+ * - htmlBarraBloqueAhorro(): las cuatro celdas, en el orden de
+ *   MODALIDADES_AHORRO, con el hash de destino de cada modalidad y la misma
+ *   barra de Gastos. La casa de Ahorro se retiró (ADR 125): la barra es la
+ *   única forma de recorrer el bloque.
  * - estadoBloqueAhorro() y sincronizarBloqueAhorro(): el punto de Reservas
  *   cuando una reserva está lista para reiniciar (ADR 104 D3).
  * - partirEtiquetaModalidad(): la etiqueta corta de móvil y su cola.
- * - initBloqueAhorro(): inyecta la misma barra en las cuatro hijas y no en la
- *   casa, que ya tiene la suya.
+ * - initBloqueAhorro(): inyecta la misma barra en las cuatro secciones.
  * - markActiveNav() marca la celda vigente: la barra es navegación.
  */
 
@@ -57,9 +57,9 @@ describe('htmlBarraBloqueAhorro()', () => {
   });
 
   // AH3: la casa, la subnav de escritorio y el DOM ordenaban las cuatro de
-  // tres formas distintas. El orden de la casa es el único que significa algo
-  // (va por certeza de uso) y es el que se repite en todas las superficies.
-  it('el orden sale de la casa, no de una lista propia', () => {
+  // tres formas distintas. El de MODALIDADES_AHORRO es el único que significa
+  // algo (va por certeza de uso) y es el que se repite en todas las superficies.
+  it('el orden sale de MODALIDADES_AHORRO, no de una lista propia', () => {
     expect(MODALIDADES_BLOQUE_AHORRO.map(c => c.hash))
       .toEqual(MODALIDADES_AHORRO.map(m => m.seccion));
   });
@@ -116,12 +116,6 @@ describe('initBloqueAhorro()', () => {
     expect(document.querySelectorAll('.bloque-tabs__tab')).toHaveLength(16);
   });
 
-  it('la casa no recibe barra: ya tiene la suya', () => {
-    document.body.innerHTML = '<div id="chips-ahorro"></div>';
-    initBloqueAhorro();
-    expect(document.getElementById('chips-ahorro').innerHTML).toBe('');
-  });
-
   it('no revienta si los slots no están en el DOM', () => {
     document.body.innerHTML = '';
     expect(() => initBloqueAhorro()).not.toThrow();
@@ -143,9 +137,12 @@ describe('la celda vigente la marca markActiveNav()', () => {
     expect(celda('fondo').classList.contains('active')).toBe(false);
   });
 
-  it('en la casa no se marca ninguna: la casa ya no está en la barra', () => {
-    markActiveNav('ahorro');
-    expect(document.querySelectorAll('.bloque-tabs__tab.active')).toHaveLength(0);
+  // ADR 125: la entrada "Ahorro" abre el fondo, así que la primera celda es la
+  // que se ve encendida al llegar.
+  it('al llegar por la entrada de Ahorro, el fondo es la celda vigente', () => {
+    markActiveNav('fondo');
+    expect(celda('fondo').classList.contains('active')).toBe(true);
+    expect(document.querySelectorAll('.bloque-tabs__tab.active')).toHaveLength(1);
   });
 
   it('fuera del bloque no marca ninguna', () => {

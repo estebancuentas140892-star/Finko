@@ -16,7 +16,7 @@ test.use({ viewport: { width: 390, height: 844 } });
 
 const SECCIONES = [
   'dash', 'gast', 'compromisos', 'presupuesto', 'agenda', 'personales', 'tesoreria',
-  'ahorro', 'fondo', 'metas', 'apartados', 'inversion', 'movimientos', 'analisis', 'config',
+  'fondo', 'metas', 'apartados', 'inversion', 'movimientos', 'analisis', 'config',
 ];
 
 /** Controles visibles de la sección activa cuya zona sensible mide menos de 44 px. */

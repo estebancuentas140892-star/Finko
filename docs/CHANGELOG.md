@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(ahorro): Ahorro abre en el fondo, se retira la casa · 2026-11-05
+
+[ADR 125](DECISIONS/125-ahorro-abre-en-el-fondo.md). Ficha: [`contexto/ahorro.md`](contexto/ahorro.md). SW v664. Esteban lo pidió en chat: la casa mostraba demasiado junto y la vista con la barra de lentes ya deja pasar de una a otra.
+
+- **En todos los anchos**: la entrada "Ahorro" de la barra inferior y la fila de la barra lateral apuntan a `#fondo`; `#ahorro` pasa a `REDIRECTS` (marcadores, `g h` y enlaces viejos llegan al fondo). Las dos entradas conservan `data-section="ahorro"` como nombre del grupo, así que ninguna se marca vigente por su cuenta.
+- **Enlaces que iban a la casa**: la franja del plan y el motivo "Ahorro" de Límites, y los dos accesos del fondo en "Distribuir tu ingreso", llevan a `#fondo`.
+- **Se borra** (aprobado en chat): `#sec-ahorro`, `renderCasaAhorro()` y sus gráficos, `casaAhorro()`, `diasAlProximoApartado()`, `ETAPA_INVERSION`, la acción `ahorro-ir-a-carril`, los estilos `.hub`, `.lane`, `.silrow`, `.silbtn` y `.grow`, el "‹ Ahorro" de las cuatro y las pruebas que solo probaban la casa. El dominio deja de repintarse cuando cambian metas, reservas o inversiones.
+- Pruebas: `ahorro.test.js` (las de la casa salen; `MODALIDADES_AHORRO` conserva orden y `cuando`), `router.test.js` (`#ahorro` llega al fondo), `shell-nav.test.js`, `bloque-ahorro.test.js`, `volver.test.js`, `bolsas.test.js`, `tesoreria.test.js` y `presupuesto.test.js`; E2E `hub-ahorros.test.js` (abre en el fondo, `#ahorro` redirige, sin "volver"), `ahorro-inversion.test.js`, `navegacion-render.test.js`, `smoke.test.js` y las listas de `movil-mv2`, `reflow-320` y `zonas-tactiles`. Unitarios 5282/5282, lint y E2E 438/438 en árbol limpio.
+
 ### feat(nino): MV2.29 tanda 5, Familia del adulto y sus hojas; cierra MV2.29 · 2026-11-05
 
 [ADR 124](DECISIONS/124-el-nino-en-el-telefono.md) D10. Ficha: [`contexto/nino.md`](contexto/nino.md). SW v663. Con esta tanda el tablero de niños quedó aplicado completo y su HTML (`Diseño Finko/Finko móvil · rediseño6.html`) se borró: lo que queda manda el ADR 124.

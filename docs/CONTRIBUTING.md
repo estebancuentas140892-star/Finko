@@ -2,7 +2,7 @@
 
 > Este documento es dueño de **dos cosas**: el formato de los commits y qué se exige antes de commitear. Nada más.
 > Lo que se movió de acá porque ya tenía dueño: las reglas de código y los patrones técnicos viven en [`ARCHITECTURE.md`](ARCHITECTURE.md) y en el ADN de [`/CLAUDE.md`](../CLAUDE.md) seccion 4; el workflow, en `/CLAUDE.md` seccion 2; el runbook de constantes legales, en [`OPERACION.md`](OPERACION.md) runbook 2; la secuencia de cierre, en la skill `cerrar-tarea`. Duplicarlas acá era la razón de que este archivo pesara el doble de su techo.
-> Revisado: 2026-07-30.
+> Revisado: 2026-11-05.
 
 > Una tarea bien hecha hoy ahorra cinco mal hechas la semana que viene.
 
@@ -83,7 +83,7 @@ Activarlo en un clon nuevo: `pnpm run hooks:on`. Detalle y motivo: [`OPERACION.m
 
 Dos reglas que costaron una suite caída dos días (BUG-019 y BUG-020):
 
-- **En E2E, un `[data-action="..."]` va acotado a su sección**: `#sec-metas [data-action="nueva-meta"]`, nunca suelto. Las 15 secciones viven siempre en el DOM (solo cambia `display`), y desde DIS.19 cada carril de `#ahorro` repite la `data-action` de su sección: un selector suelto se queda con el botón de una sección oculta.
+- **En E2E, un `[data-action="..."]` va acotado a su sección**: `#sec-metas [data-action="nueva-meta"]`, nunca suelto. Las secciones viven siempre en el DOM (solo cambia `display`), y una misma `data-action` puede repetirse en varias (así nació la regla, con los carriles de la casa de Ahorro de DIS.19, BUG-019): un selector suelto se queda con el botón de una sección oculta.
 - **Un test que afirma una distancia en días fija el reloj** con `vi.setSystemTime` y usa el día explícito. Envolver con `% 28` mantiene el día válido pero le cambia el offset los días 29 a 31, que es justo lo que el test afirmaba. Referencia: `tests/unit/agenda.test.js`.
 
 Comandos: [`README.md`](../README.md), que es la única lista.

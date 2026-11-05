@@ -1088,22 +1088,20 @@ test.describe('Navegación hash', () => {
 
   // #metas (y sus 3 hermanas) ya no son un clic directo desde cualquier
   // sección: INT.1b (ADR 059 D6) las anidó bajo "Ahorro", visibles solo
-  // dentro del grupo. La casa (#ahorro) es el atajo permanente que las
-  // reemplaza en esta lista; el camino de dos clics se prueba abajo.
+  // dentro del grupo. La fila "Ahorro" abre el fondo (ADR 125) y se prueba
+  // abajo junto con el camino de dos clics.
   const secciones = [
     { href: '#gast',        seccion: 'sec-gast' },
     { href: '#compromisos',  seccion: 'sec-compromisos' },
     { href: '#agenda',      seccion: 'sec-agenda' },
     { href: '#tesoreria',   seccion: 'sec-tesoreria' },
-    { href: '#ahorro',      seccion: 'sec-ahorro' },
     { href: '#analisis',    seccion: 'sec-analisis' },
     { href: '#config',      seccion: 'sec-config' },
     { href: '#dash',        seccion: 'sec-dash' },
   ];
 
-  // El viewport por defecto es de escritorio, y desde AH.7a (ADR 065 D1)
-  // "Ahorro" tiene dos entradas de nav: la casa del sidebar y la pestaña
-  // mobile-only de la barra inferior. Se apunta siempre a la de escritorio.
+  // El viewport por defecto es de escritorio: se apunta siempre a las
+  // entradas del sidebar, no a las mobile-only de la barra inferior.
   for (const { href, seccion } of secciones) {
     test(`navega a ${href} y activa #${seccion}`, async ({ page }) => {
       await page.click(`.nav-item:not(.nav-item--mobile-only)[href="${href}"]`);
@@ -1111,8 +1109,9 @@ test.describe('Navegación hash', () => {
     });
   }
 
-  test('una hija de Ahorro (ej. Metas) se alcanza en dos clics: Ahorro despliega el sub-nivel (INT.1b)', async ({ page }) => {
-    await page.click('.nav-item--no-mobile[href="#ahorro"]');
+  test('una hija de Ahorro (ej. Metas) se alcanza en dos clics: Ahorro abre el fondo y despliega el sub-nivel (INT.1b, ADR 125)', async ({ page }) => {
+    await page.click('[aria-controls="nav-subnav-ahorro"]');
+    await expect(page.locator('#sec-fondo')).toHaveClass(/active/);
     await page.click('.nav-item[href="#metas"]');
     await expect(page.locator('#sec-metas')).toHaveClass(/active/);
   });
@@ -3362,7 +3361,7 @@ test.describe('Límites de gasto - resumen por grupo', () => {
     // ninguna parte porque es la lente en la que ya estas.
     const filas = page.locator('.plan-franja__fila');
     await expect(filas.nth(0).locator('a')).toHaveAttribute('href', '#compromisos');
-    await expect(filas.nth(1).locator('a')).toHaveAttribute('href', '#ahorro');
+    await expect(filas.nth(1).locator('a')).toHaveAttribute('href', '#fondo');
     await expect(filas.nth(2).locator('a')).toHaveCount(0);
 
     // Y ya no hay espejos de otras secciones dentro del bloque Gastos.
@@ -3749,7 +3748,7 @@ test.describe('Mis cuentas - Distribuir mi ingreso: educación primero, accesos 
 
   test('cada acceso cruzado aparece en el paso de su categoría', async ({ page }) => {
     const ctaDeudas = page.locator('.distribuir__cta[href="#compromisos"]');
-    const ctaAhorro = page.locator('.distribuir__cta[href="#ahorro"]');
+    const ctaAhorro = page.locator('.distribuir__cta[href="#fondo"]');
     const ctaLimites = page.locator('.distribuir__cta[href="#presupuesto"]');
 
     // Paso 1: solo el de deudas (sus cuotas se pagan acá).
