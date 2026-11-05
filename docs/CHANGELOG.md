@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(nino): MV2.29 tanda 3, las hojas del niño: anotar y la meta · 2026-11-05
+
+[ADR 124](DECISIONS/124-el-nino-en-el-telefono.md) D8. Ficha: [`contexto/nino.md`](contexto/nino.md). SW v661.
+
+- **Anotar** (Guardé, Gasté, Compartí, mover): el título a la par de la ✕, el monto en una caja de 72 px, cuatro billetes en dos columnas y el frasco en tejas con su dibujo. El botón dice cuánto ("Guardar $5.000") y el billete marcado sigue a lo que hay en el campo (`_reflejarMonto()`).
+- **La meta** es una pantalla de paso, sin la barra de abajo en el teléfono. Tres cantidades por semana ($2.000, $5.000, $10.000) reemplazan el paso de $1.000; si la meta ya guardaba otra, entra como cuarta opción marcada. Tino responde la fecha y debajo va con cuánto ya cuenta.
+- **Capas de CSS**: `a11y`, `modals` y `responsive` ganan a `components` sin importar la especificidad. La ✕ de la hoja vive en `modals` y su ajuste del teléfono en `responsive`; el campo desnudo no dibuja el anillo de `a11y` porque su caja ya marca el foco.
+- Pruebas: `nino.test.js` (3 ajustadas con casos nuevos), E2E `perfiles.test.js` (la meta elige $5.000). Unitarios 5319/5319, lint y E2E 442/442 en árbol limpio.
+
 ### feat(nino): MV2.29 tanda 2, Aprender y la lección del niño · 2026-11-05
 
 [ADR 124](DECISIONS/124-el-nino-en-el-telefono.md) D6 y D7. Ficha: [`contexto/nino.md`](contexto/nino.md). SW v660.

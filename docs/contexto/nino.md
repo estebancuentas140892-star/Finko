@@ -11,8 +11,8 @@
 ## Perfiles, "¿Quién usa Finko?" y la piel del niño
 
 - **Objetivo**          : que un tutor y niños de 7 a 12 años compartan el teléfono sin que el niño vea las finanzas del adulto (D1).
-- **Estado actual**     : en evolución (Fase 3 de APR). Cerradas **APR.3b** (sistema visual), **APR.3a** (perfiles, selector, alta paso 1, PIN de niño a adulto, candado obligatorio, P1), **APR.3c** (barra, ruta en orden como camino, lección con Frai, celebración, unidad 1) **APR.3d** (Guardé, Gasté, Compartí, mover, una meta con semanas y fecha) y **APR.3e** (alta en dos pasos con mesada, "Entregada" como un solo hecho, premio por ahorrar, progreso del niño). **APR.3f**: las ocho unidades escritas y la ubicación desde los 10 años; falta su revisión pedagógica. **APR.4b**: riel desde 768 px, Inicio en dos columnas desde 1024 px y "Cambiar de perfil" al pie de la barra lateral del adulto. **APR.5a**: Tino, un guatín, reemplaza a Frai ([ADR 095](../DECISIONS/095-tino-en-el-sprite.md)). **MV2.29** (el tablero de niños, [ADR 124](../DECISIONS/124-el-nino-en-el-telefono.md)): tandas 1 y 2 hechas; quedan las hojas, la primera vez y lo del adulto.
-- **Verificado contra** : MV2.29 tanda 2 (commit `8feadf5`, 2026-11-05, ADR 124). Antes: APR.6b (`f09b213`, 2026-10-29).
+- **Estado actual**     : en evolución (Fase 3 de APR). Cerradas **APR.3b** (sistema visual), **APR.3a** (perfiles, selector, alta paso 1, PIN de niño a adulto, candado obligatorio, P1), **APR.3c** (barra, ruta en orden como camino, lección con Frai, celebración, unidad 1) **APR.3d** (Guardé, Gasté, Compartí, mover, una meta con semanas y fecha) y **APR.3e** (alta en dos pasos con mesada, "Entregada" como un solo hecho, premio por ahorrar, progreso del niño). **APR.3f**: las ocho unidades escritas y la ubicación desde los 10 años; falta su revisión pedagógica. **APR.4b**: riel desde 768 px, Inicio en dos columnas desde 1024 px y "Cambiar de perfil" al pie de la barra lateral del adulto. **APR.5a**: Tino, un guatín, reemplaza a Frai ([ADR 095](../DECISIONS/095-tino-en-el-sprite.md)). **MV2.29** (el tablero de niños, [ADR 124](../DECISIONS/124-el-nino-en-el-telefono.md)): tandas 1 a 3 hechas; quedan la primera vez y lo del adulto.
+- **Verificado contra** : MV2.29 tanda 3 (commit `aef1762`, 2026-11-05, ADR 124). Antes: APR.6b (`f09b213`, 2026-10-29).
 
 **Dónde vive**
 
@@ -37,7 +37,7 @@
 | Catálogo de la ruta del niño | `modules/infra/ruta-aprende.js` | `UNIDADES_NINO` |
 | Saldos de los frascos, avance y cambios del niño | `modules/infra/perfiles.js` | `saldosFrascos()`, `guardarAprendeNino()`, `actualizarNino()`, `FRASCOS` |
 | Alcancía y meta (sin DOM): validar y crear movimientos, plan de la meta, llenado de cada frasco | `modules/dominio/nino/logic.js` | `validarMovimiento()`, `crearMovimientos()`, `metaActiva()`, `planMeta()`, `validarMeta()`, `llenadoFrasco()`, `puedeMover()` |
-| Hoja para anotar y pantalla de la meta ("Cambiar el plan" reusa la pantalla con `borrador.id`) | `modules/dominio/nino/view.js` / `index.js` | `htmlMovimientoNino()`, `htmlMetaNino()`, `htmlTarjetaMeta(perfil, hoy, { acciones })`, `data-action="nino-mov"`, `nino-monto`, `nino-meta-*` (`nino-meta-cambiar`), `#modal-nino` |
+| Hoja para anotar y pantalla de la meta ("Cambiar el plan" reusa la pantalla con `borrador.id`; tres cantidades por semana, ADR 124 D8) | `modules/dominio/nino/view.js` / `index.js` | `htmlMovimientoNino()`, `textoBotonMovimiento()`, `BILLETES`, `htmlMetaNino()`, `SEMANALES`, `htmlTarjetaMeta(perfil, hoy, { acciones })`, `_reflejarMonto()`, `data-action="nino-mov"`, `nino-monto`, `nino-meta-*` (`nino-meta-cambiar`, `nino-meta-semana` con `data-valor`), `#modal-nino` |
 | La lección del niño: mismo motor, su avance y su cierre | `modules/dominio/aprende/index.js` / `view.js` | `_progreso()`, `_guardarProgreso()`, `ctx.nino`, `_cierreNino()`, `data-action="leccion-salir-a"` |
 | Contenido del niño (solo datos) y su ubicación desde los 10 | `modules/dominio/aprende/lecciones/nino/kN.js`, `nino/ubicacion.js` | `'k1-l1'`, `ofreceUbicacionNino()`, `EDAD_UBICACION_NINO` |
 | Dibujos, Tino, frasco y destellos | `modules/infra/ilustraciones.js` | `DIBUJOS`, `htmlDibujo()`, `POSES_TINO`, `htmlTino()`, `htmlFrasco()`, `htmlDestellos()` |
@@ -70,6 +70,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-05 (MV2.29 tanda 3, ADR 124): la hoja para anotar con el monto en grande, billetes y el botón que dice cuánto; la meta como pantalla de paso, sin barra, con tres cantidades por semana y Tino que responde.
 - 2026-11-05 (MV2.29 tanda 2, ADR 124): Aprender como una línea con la unidad actual abierta, "Seguir donde ibas"; la lección con la pista al pie, "¡Casi!" en tarjeta que flota y la unidad terminada con la insignia de su unidad.
 - 2026-11-05 (MV2.29 tanda 1, ADR 124): barra con píldora en el ícono, Inicio con la lección y la alcancía en tejas, la meta alcanzada se celebra, Alcancía con "Lo último que anotaste" y "Cambiar el plan", Yo con datos e insignias por unidad.
 - 2026-10-29 (APR.6b, ADR 100 D5): "Este teléfono es de un adulto" desde "Yo": el adulto se crea con nombre, PIN y documentos, y el niño queda como su perfil.
