@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(inicio): MV2.30 tanda 3, "Esta semana" y el usuario nuevo en el teléfono · 2026-11-05
+
+[ADR 126](DECISIONS/126-inicio-del-adulto-en-el-telefono.md) D4 y D5. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v667.
+
+- **Totales arriba** de la tarjeta (`.esta-semana__totales`) y "Y N más en el Calendario" como fila de pie; `.esta-semana__pie` se retira.
+- **El día una vez y sin flecha**: `_filaSemana(c, i, lista)` deja un hueco si la fila anterior es del mismo día; la flecha se queda en escritorio. El ingreso dice "ingreso".
+- **El vacío** es una tarjeta con la teja del Calendario.
+- **La guía del usuario nuevo** en el teléfono: los tres pasos de escritorio en línea de tiempo (`.hero-guia__linea`), "de abajo" en el paso 2.
+- Pruebas: `compromisos.test.js` (1 nueva, 6 ajustadas; sale la de la flecha en el recuadro) y E2E `inicio-hoy.test.js`. Unitarios 5289/5289, lint y E2E 438/438 en árbol limpio.
+
 ### feat(inicio): MV2.30 tanda 2, "Atención hoy" con un aviso destacado y su hoja · 2026-11-05
 
 [ADR 126](DECISIONS/126-inicio-del-adulto-en-el-telefono.md) D3. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v666.

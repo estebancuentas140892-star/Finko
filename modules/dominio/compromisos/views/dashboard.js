@@ -399,7 +399,7 @@ const _TIPO_SEMANA = {
   'deuda-personal': 'deuda personal',
   'personal':       'préstamo',
   'apartado':       'reserva',
-  'ingreso':        'entra',
+  'ingreso':        'ingreso',
 };
 
 /** "Vie", "Lun": el día de la semana corto, sin punto. */
@@ -410,11 +410,16 @@ function _diaCorto(fecha) {
 
 /**
  * Una fila de "Esta semana": el día a la izquierda (sin encabezado por día),
- * qué es y cuándo, y el monto con su signo. La dirección del dinero sigue
- * dicha con forma (ADR 088 D3): la flecha pasa de la teja al recuadro del
- * día, y el signo va en el monto, igual que en escritorio.
+ * qué es y cuándo, y el monto con su signo. ADR 126 D4: el recuadro del día
+ * ya no lleva la flecha (el signo del monto dice la dirección, ADR 088 D3) y
+ * el día se escribe una sola vez: la fila del mismo día que la anterior deja
+ * un hueco en su lugar.
+ *
+ * @param {object} c - la cosa que vence.
+ * @param {number} i - su posición en la lista.
+ * @param {object[]} lista - la lista visible, para mirar la fila anterior.
  */
-function _filaSemana(c) {
+function _filaSemana(c, i, lista) {
   const tipo  = c.tipo ?? 'fijo';
   const dias  = c.diasRestantes;
   const hoy   = new Date();
@@ -422,11 +427,15 @@ function _filaSemana(c) {
   const cuando = dias === 1 ? 'Mañana' : `En ${dias} días`;
   // Las deudas guardan su cuota en `cuotaMensual` (v6); el resto, `monto`.
   const valor = Number(c.monto ?? c.cuotaMensual);
-  const { flecha, signo } = _direccionFila(tipo);
+  const { signo } = _direccionFila(tipo);
   const monto = Number.isFinite(valor) ? `${signo}${_m(valor)}` : '';
+  const mismoDia = i > 0 && lista[i - 1]?.diasRestantes === dias;
+  const dia = mismoDia
+    ? '<span class="esta-semana__cuando esta-semana__cuando--hueco" aria-hidden="true"></span>'
+    : `<span class="esta-semana__cuando" aria-hidden="true">${_diaCorto(fecha)}<b>${fecha.getDate()}</b></span>`;
   return `
         <li class="esta-semana__fila">
-          <span class="esta-semana__cuando" aria-hidden="true">${_diaCorto(fecha)}<b>${fecha.getDate()}</b>${flecha}</span>
+          ${dia}
           <div class="esta-semana__textos">
             <p class="esta-semana__nombre">${_esc(c.descripcion ?? '(sin descripción)')}</p>
             <p class="esta-semana__tipo">${cuando} · ${_TIPO_SEMANA[tipo] ?? _esc(tipo)}</p>
@@ -486,23 +495,38 @@ export function renderPanelPrioridades() {
   const todos = [...proxIngr, ...proxPers, ...proxComp, ...proxApar]
     .sort((a, b) => a.diasRestantes - b.diasRestantes);
 
+  // ADR 126 D4: los totales van arriba, antes de la tarjeta, y "Y N más"
+  // es la fila de pie de la tarjeta. Sin nada en la semana, una tarjeta con
+  // la teja del Calendario y dos líneas.
+  let totales = '';
   let cuerpo;
   if (todos.length === 0) {
-    cuerpo = `<p class="esta-semana__vacio">Todo al día. Sin vencimientos en los próximos 7 días.</p>`;
+    cuerpo = `
+      <div class="esta-semana__vacio">
+        <span class="cat-teja esta-semana__vacio-teja" data-dom="agenda" aria-hidden="true">${icon('agenda')}</span>
+        <div class="esta-semana__vacio-textos">
+          <p class="esta-semana__vacio-frase">Todo al día</p>
+          <p class="esta-semana__vacio-detalle">Sin vencimientos en los próximos 7 días.</p>
+        </div>
+      </div>`;
   } else {
     const lado   = (c) => _direccionFila(c.tipo ?? 'fijo').signo;
     const entran = todos.filter(c => lado(c) === '+');
     const salen  = todos.filter(c => lado(c) === '-');
     const resto  = todos.length - MAX_FILAS_SEMANA;
-    const entraTxt = entran.length ? `${entran.length === 1 ? 'Entra' : 'Entran'} ${_m(sumarMontos(entran))}` : '';
-    const saleTxt  = salen.length ? `${salen.length === 1 ? 'Sale' : 'Salen'} ${_m(sumarMontos(salen))}` : 'Sin pagos esta semana';
-    const restoHtml = resto > 0 ? `<a href="#agenda" class="esta-semana__resto">Y ${resto} más en el Calendario</a>` : '';
-    const izq = restoHtml || entraTxt;
-    const der = restoHtml && entraTxt ? `${entraTxt} · ${saleTxt}` : saleTxt;
+    const partes = [];
+    if (entran.length) partes.push(`${entran.length === 1 ? 'Entra' : 'Entran'} <b class="esta-semana__total esta-semana__total--entra">${_m(sumarMontos(entran))}</b>`);
+    partes.push(salen.length
+      ? `${salen.length === 1 ? 'Sale' : 'Salen'} <b class="esta-semana__total">${_m(sumarMontos(salen))}</b>`
+      : 'Sin pagos esta semana');
+    totales = `<p class="esta-semana__totales">${partes.join(' · ')}</p>`;
+    const visibles = todos.slice(0, MAX_FILAS_SEMANA);
+    const restoHtml = resto > 0
+      ? `<a href="#agenda" class="esta-semana__resto">Y ${resto} más en el Calendario${icon('chevron-right', 'icon icon--sm')}</a>`
+      : '';
     cuerpo = `
-      <ul class="esta-semana__lista" role="list">${todos.slice(0, MAX_FILAS_SEMANA).map(_filaSemana).join('')}
-      </ul>
-      <p class="esta-semana__pie"><span>${izq}</span><span>${der}</span></p>`;
+      <ul class="esta-semana__lista" role="list">${visibles.map(_filaSemana).join('')}
+      </ul>${restoHtml}`;
   }
 
   el.innerHTML = `
@@ -511,6 +535,7 @@ export function renderPanelPrioridades() {
         <h2 class="esta-semana__titulo" id="esta-semana-titulo">Esta semana</h2>
         <a href="#agenda" class="esta-semana__calendario" aria-label="Ir al calendario">Calendario${icon('chevron-right', 'icon icon--sm')}</a>
       </div>
+      ${totales}
       <div class="esta-semana__cuerpo">${cuerpo}
       </div>
     </section>`;

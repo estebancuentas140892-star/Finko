@@ -3449,39 +3449,56 @@
 
 @media (max-width: 1023px) {
 
+  /* ── ADR 126 D4: "Esta semana" ─────────────────────────────────────
+     Título en 18px como "Atención hoy"; los totales arriba de la tarjeta;
+     el día en un recuadro de 44, una sola vez por día y sin flecha (el
+     signo del monto dice la dirección); "Y N más" como fila de pie. */
   .esta-semana__cabeza {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--fk-space-2);
-    margin-bottom: var(--fk-space-1);
+    gap: var(--fk-space-3);
+    min-height: 44px;
   }
-  /* Mismo rótulo que "Atención hoy" y el resto de grupos de Inicio. */
   .esta-semana__titulo {
     margin: 0;
-    padding-left: 2px;
-    font-size: var(--fk-text-xs);
+    font-size: var(--fk-text-lg);
+    line-height: 24px;
     font-weight: var(--fk-font-bold);
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--fk-text-muted);
+    letter-spacing: -0.01em;
+    color: var(--fk-text-primary);
   }
   .esta-semana__calendario {
     display: inline-flex;
     align-items: center;
-    gap: var(--fk-space-1);
+    gap: 2px;
     min-height: 44px;
-    padding: 0 var(--fk-space-1);
+    padding-left: var(--fk-space-3);
     font-size: var(--fk-text-sm);
     font-weight: var(--fk-font-semibold);
     color: var(--fk-text-accent);
     text-decoration: none;
   }
+  .esta-semana__calendario .icon { --fk-icon-size: var(--fk-icon-sm); }
+  .esta-semana__totales {
+    margin: 0;
+    font-size: var(--fk-text-sm);
+    line-height: 20px;
+    color: var(--fk-text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+  .esta-semana__total {
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-primary);
+  }
+  .esta-semana__total--entra { color: var(--fk-text-accent); }
 
   .esta-semana__cuerpo {
+    margin-top: 10px;
     background: var(--fk-bg-surface);
     border: 1px solid var(--fk-border-subtle);
-    border-radius: var(--fk-radius-lg);
+    border-radius: 20px;
+    box-shadow: var(--fk-shadow-sm);
     overflow: hidden;
   }
   .esta-semana__lista {
@@ -3491,60 +3508,59 @@
   }
   .esta-semana__fila {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
     align-items: center;
     gap: var(--fk-space-3);
-    min-height: 56px;
-    padding: var(--fk-space-2) var(--fk-space-4);
+    min-height: 64px;
+    padding: 10px var(--fk-space-4) 10px var(--fk-space-3);
   }
   .esta-semana__fila + .esta-semana__fila { border-top: 1px solid var(--fk-border-subtle); }
-
-  /* El día ocupa el lugar de la teja; la flecha de dirección (ADR 088 D3)
-     se queda en su esquina, como en la teja de escritorio. */
   .esta-semana__cuando {
-    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: var(--fk-space-12);
-    min-height: var(--fk-space-10);
-    border-radius: var(--fk-radius-md);
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
     background: var(--fk-bg-elevated);
-    font-size: var(--fk-text-xs);
-    font-weight: var(--fk-font-bold);
-    line-height: 1.15;
-    color: var(--fk-text-secondary);
+    font-size: 0.6875rem;
+    line-height: 13px;
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-muted);
   }
   .esta-semana__cuando b {
-    font-size: var(--fk-text-base);
+    font-size: 1.0625rem;
+    line-height: 20px;
+    font-weight: var(--fk-font-bold);
     color: var(--fk-text-primary);
   }
-  .esta-semana__cuando .obligacion-dir {
-    position: absolute;
-    right: -0.125rem;
-    bottom: -0.25rem;
-    font-size: var(--fk-text-xs);
-    line-height: 1;
-    color: var(--fk-text-primary);
-  }
-
+  .esta-semana__cuando--hueco { background: none; }
   .esta-semana__textos { min-width: 0; }
-  .esta-semana__nombre {
+  .esta-semana__nombre,
+  .esta-semana__tipo {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
     margin: 0;
-    font-size: var(--fk-text-sm);
-    font-weight: var(--fk-font-semibold);
+  }
+  .esta-semana__nombre {
+    font-size: 0.9375rem;
+    line-height: 20px;
+    font-weight: 550;
     color: var(--fk-text-primary);
     overflow-wrap: anywhere;
   }
   .esta-semana__tipo {
-    margin: 0;
-    font-size: var(--fk-text-xs);
+    font-size: 0.8125rem;
+    line-height: 18px;
     color: var(--fk-text-secondary);
   }
   .esta-semana__monto {
-    font-size: var(--fk-text-sm);
-    font-weight: var(--fk-font-semibold);
+    font-size: 0.9375rem;
+    line-height: 20px;
+    font-weight: 650;
     font-variant-numeric: tabular-nums;
     color: var(--fk-text-primary);
     white-space: nowrap;
@@ -3552,25 +3568,151 @@
   /* Lo que entra lleva el color de un ingreso en toda la app; el signo ya
      lo dijo (R90): el color no viaja solo. */
   .esta-semana__monto--entra { color: var(--fk-success-text); }
-
-  .esta-semana__pie {
+  .esta-semana__resto {
     display: flex;
-    flex-wrap: wrap;
+    align-items: center;
     justify-content: space-between;
-    gap: var(--fk-space-1) var(--fk-space-3);
-    margin: 0;
-    padding: var(--fk-space-3) var(--fk-space-4);
+    min-height: 48px;
+    padding: 0 10px 0 var(--fk-space-4);
     border-top: 1px solid var(--fk-border-subtle);
-    font-size: var(--fk-text-xs);
-    color: var(--fk-text-secondary);
-    font-variant-numeric: tabular-nums;
-  }
-  .esta-semana__resto { color: var(--fk-text-accent); }
-  .esta-semana__vacio {
-    margin: 0;
-    padding: var(--fk-space-4);
     font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-accent);
+    text-decoration: none;
+  }
+  .esta-semana__resto .icon { --fk-icon-size: var(--fk-icon-sm); }
+
+  /* Todo al día: la misma tarjeta, la teja del Calendario y dos líneas. */
+  .esta-semana__vacio {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    min-height: 72px;
+    padding: 14px var(--fk-space-4);
+  }
+  .esta-semana__vacio-teja {
+    width: var(--fk-teja-lg);
+    height: var(--fk-teja-lg);
+    border-radius: 11px;
+  }
+  .esta-semana__vacio-frase {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 20px;
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-primary);
+  }
+  .esta-semana__vacio-detalle {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 18px;
     color: var(--fk-text-secondary);
+  }
+
+  /* ── ADR 126 D5: la guía del usuario nuevo, con sus tres pasos ─────── */
+  #sec-dash .hero-guia__movil {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 20px;
+    padding: 22px 20px 20px;
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-xl);
+    background: var(--fk-bg-surface);
+    box-shadow: var(--fk-shadow-sm);
+    text-align: left;
+  }
+  #sec-dash .hero-guia__movil .hero-guia__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin: 0;
+    border-radius: 13px;
+    background: var(--fk-dom-tesoreria-bg);
+    color: var(--fk-dom-tesoreria-text);
+  }
+  #sec-dash .hero-guia__movil .hero-guia__icon .icon { --fk-icon-size: var(--fk-icon-lg); }
+  #sec-dash .hero-guia__movil .hero-guia__title {
+    margin: -8px 0 0;
+    font-size: 1.375rem;
+    line-height: 28px;
+    font-weight: 750;
+    text-wrap: balance;
+    color: var(--fk-text-primary);
+  }
+  #sec-dash .hero-guia__movil .hero-guia__desc {
+    margin: -12px 0 0;
+    font-size: 0.9375rem;
+    line-height: 22px;
+    color: var(--fk-text-secondary);
+  }
+  .hero-guia__linea {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .hero-guia__hito {
+    position: relative;
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr);
+    column-gap: var(--fk-space-3);
+    padding-bottom: var(--fk-space-4);
+  }
+  .hero-guia__hito:last-child { padding-bottom: 0; }
+  /* La línea que une los pasos, de un círculo al siguiente. */
+  .hero-guia__hito:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 13px;
+    top: 30px;
+    bottom: 2px;
+    width: 2px;
+    background: var(--fk-border-default);
+  }
+  .hero-guia__hito-n {
+    grid-row: 1 / span 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--fk-radius-full);
+    border: 1.5px solid var(--fk-border-default);
+    font-size: var(--fk-text-sm);
+    font-weight: 650;
+    color: var(--fk-text-secondary);
+  }
+  .hero-guia__hito--ahora .hero-guia__hito-n {
+    border-color: var(--fk-accent);
+    background: var(--fk-accent);
+    color: var(--fk-text-on-accent);
+    font-weight: 750;
+  }
+  .hero-guia__hito-t {
+    margin: 3px 0 0;
+    font-size: 0.9375rem;
+    line-height: 21px;
+    font-weight: 650;
+    color: var(--fk-text-primary);
+  }
+  .hero-guia__hito-d {
+    margin: 2px 0 0;
+    font-size: var(--fk-text-sm);
+    line-height: 20px;
+    color: var(--fk-text-secondary);
+  }
+  #sec-dash .hero-guia__movil .hero-guia__cta {
+    width: 100%;
+    max-width: none;
+    min-height: 52px;
+    border-radius: var(--fk-radius-lg);
+    font-size: var(--fk-text-base);
+    font-weight: var(--fk-font-bold);
+    justify-content: center;
   }
 }
 

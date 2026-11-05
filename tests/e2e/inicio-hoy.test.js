@@ -97,8 +97,9 @@ test.describe('MV2.15a - Atención hoy en móvil (ADR 099)', () => {
     await expect(filas.nth(1)).toContainText('Colegio');
     await expect(filas.nth(1).locator('.esta-semana__tipo')).toHaveText('Mañana · gasto fijo');
     await expect(filas.nth(1).locator('.esta-semana__monto')).toHaveText('-$682.016');
-    await expect(semana.locator('.esta-semana__pie')).toContainText('Entra $100.000');
-    await expect(semana.locator('.esta-semana__pie')).toContainText('Sale $682.016');
+    // ADR 126 D4: los totales van arriba de la tarjeta.
+    await expect(semana.locator('.esta-semana__totales')).toContainText('Entra $100.000');
+    await expect(semana.locator('.esta-semana__totales')).toContainText('Sale $682.016');
   });
 
   test('pagar desde la hoja la cierra y abre el lote con esos mismos pagos (D3)', async ({ page }) => {

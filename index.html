@@ -706,13 +706,29 @@
                  2026-07-31; el copy de los tres pasos queda provisional hasta
                  la revision de UX Writing (PI5). -->
             <div class="hero-guia" id="hero-guia-saldo" hidden>
+              <!-- ADR 126 D5: en el teléfono, la misma guía de tres pasos que
+                   escritorio, en línea de tiempo; el paso 2 dice "de abajo". -->
               <div class="hero-guia__movil">
-                <span class="hero-guia__icon" aria-hidden="true"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-cuentas"/></svg></span>
-                <p class="hero-guia__title">¿Dónde tienes tu dinero?</p>
-                <p class="hero-guia__desc">
-                  Agrega tus cuentas o billeteras y Finko calcula
-                  automáticamente cuánto tienes disponible hoy.
-                </p>
+                <span class="hero-guia__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-cuentas"/></svg></span>
+                <p class="hero-guia__title">Empecemos por saber cuánto tienes</p>
+                <p class="hero-guia__desc">Finko no se conecta a tu banco ni te pide datos. Tú registras, Finko calcula.</p>
+                <ol class="hero-guia__linea">
+                  <li class="hero-guia__hito hero-guia__hito--ahora">
+                    <span class="hero-guia__hito-n" aria-hidden="true">1</span>
+                    <p class="hero-guia__hito-t">Agrega tus cuentas</p>
+                    <p class="hero-guia__hito-d">Efectivo, bancos y billeteras. Con eso Finko ya sabe cuánto tienes disponible hoy.</p>
+                  </li>
+                  <li class="hero-guia__hito">
+                    <span class="hero-guia__hito-n" aria-hidden="true">2</span>
+                    <p class="hero-guia__hito-t">Registra un gasto</p>
+                    <p class="hero-guia__hito-d">Con el botón Registrar de abajo. Dos datos: cuánto y en qué.</p>
+                  </li>
+                  <li class="hero-guia__hito">
+                    <span class="hero-guia__hito-n" aria-hidden="true">3</span>
+                    <p class="hero-guia__hito-t">Anota lo que debes</p>
+                    <p class="hero-guia__hito-d">Deudas y pagos fijos. Esta pantalla te avisa antes de que se venzan.</p>
+                  </li>
+                </ol>
                 <a class="btn btn-primary btn-lg hero-guia__cta" href="#tesoreria">
                   <svg class="icon" aria-hidden="true"><use href="#i-cuentas"/></svg>
                   Agregar mis cuentas

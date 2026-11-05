@@ -2982,7 +2982,7 @@ describe('renderPanelPrioridades() - monto por tipo (regresión: deudas sin cifr
 
   // MV2.15b (ADR 099 D5): el pie dice lo que sale en la semana, no un
   // "total de próximas prioridades".
-  it('al pie, lo que sale en la semana (IN.1, ADR 099 D5)', () => {
+  it('arriba, lo que sale en la semana (IN.1, ADR 099 D5, ADR 126 D4)', () => {
     S.compromisos = [
       compromisoBase({ id: 'c1', descripcion: 'Arriendo', monto: 1_500_000, diaPago: DIA_MANANA }),
       { id: 'd1', descripcion: 'Préstamo moto', tipo: 'deuda-entidad',
@@ -2990,16 +2990,18 @@ describe('renderPanelPrioridades() - monto por tipo (regresión: deudas sin cifr
         diaPago: DIA_MANANA, activo: true, fechaCreacion: '2025-01-15T10:00:00Z' },
     ];
     renderPanelPrioridades();
-    const html = document.getElementById('panel-prioridades').innerHTML;
-    expect(html).toContain('Salen $1.910.000');
+    const totales = document.querySelector('#panel-prioridades .esta-semana__totales').textContent;
+    expect(totales).toContain('Salen $1.910.000');
   });
 
-  it('no muestra el pie en el estado "Todo al día" (hay activos pero ninguno en 7 días)', () => {
+  it('no muestra los totales en el estado "Todo al día" (hay activos pero ninguno en 7 días)', () => {
     S.compromisos = [compromisoBase({ diaPago: DIA_FUTURO })]; // fuera de la ventana de 7 días
     renderPanelPrioridades();
     const html = document.getElementById('panel-prioridades').innerHTML;
     expect(html).toContain('Todo al día');
-    expect(html).not.toContain('esta-semana__pie');
+    expect(html).not.toContain('esta-semana__totales');
+    // ADR 126 D4: el vacío es una tarjeta con la teja del Calendario.
+    expect(document.querySelector('.esta-semana__vacio-teja').dataset.dom).toBe('agenda');
   });
 
   it('no duplica un compromiso que vence hoy: solo vive en Pendientes del mes (IN.7)', () => {
@@ -3053,20 +3055,22 @@ describe('renderPanelPrioridades() - direccion con flecha y signo (ficha 14)', (
 
   const filas = () => [...document.querySelectorAll('.esta-semana__fila')];
 
-  it('lo que te deben entra: flecha hacia dentro y monto con signo mas', () => {
+  // ADR 126 D4: en el teléfono la dirección la dice el signo del monto; la
+  // flecha se queda en escritorio (`_filaObligacion`).
+  it('lo que te deben entra: monto con signo mas', () => {
     S.personales = [{ id: 'p1', persona: 'Juan', monto: 150_000, pagado: 0,
       liquidado: false, fechaLimite: _fechaEnDias(2) }];
     renderPanelPrioridades();
     const fila = filas()[0];
-    expect(fila.querySelector('.obligacion-dir').textContent).toBe('\u2199');
+    expect(fila.querySelector('.obligacion-dir')).toBeNull();
     expect(fila.querySelector('.esta-semana__monto').textContent.trim()).toBe('+$150.000');
   });
 
-  it('lo que debes sale: flecha hacia fuera y monto con signo menos', () => {
+  it('lo que debes sale: monto con signo menos', () => {
     S.compromisos = [compromisoBase({ descripcion: 'Arriendo', monto: 300_000, diaPago: DIA_MANANA })];
     renderPanelPrioridades();
     const fila = filas()[0];
-    expect(fila.querySelector('.obligacion-dir').textContent).toBe('\u2197');
+    expect(fila.querySelector('.obligacion-dir')).toBeNull();
     expect(fila.querySelector('.esta-semana__monto').textContent.trim()).toBe('-$300.000');
   });
 
@@ -3079,26 +3083,19 @@ describe('renderPanelPrioridades() - direccion con flecha y signo (ficha 14)', (
     expect(fila.querySelector('.esta-semana__monto').textContent.trim()).toBe('$120.000');
   });
 
-  // MV2.15b (ADR 099 D5): en móvil la fila ya no tiene teja; la flecha pasa
-  // al recuadro del día, que sigue siendo decorativo (el tipo va en texto).
-  it('la flecha vive en el recuadro del día y es decorativa', () => {
+  // ADR 126 D4: el recuadro del día es decorativo y se escribe una sola vez
+  // por día; la fila siguiente del mismo día deja un hueco.
+  it('el recuadro del día es decorativo y no se repite el mismo día', () => {
     S.personales = [{ id: 'p1', persona: 'Juan', monto: 150_000, pagado: 0,
       liquidado: false, fechaLimite: _fechaEnDias(2) }];
+    S.apartados = [{ id: 'a1', nombre: 'SOAT moto', montoObjetivo: 120_000,
+      montoActual: 0, fechaObjetivo: _fechaEnDias(2), completado: false }];
     renderPanelPrioridades();
-    const dia = document.querySelector('.esta-semana__cuando');
-    expect(dia.querySelector('.obligacion-dir')).not.toBeNull();
-    expect(dia.getAttribute('aria-hidden')).toBe('true');
-  });
-
-  it('la señal no depende del color: la flecha no declara ninguno', () => {
-    S.personales = [{ id: 'p1', persona: 'Juan', monto: 150_000, pagado: 0,
-      liquidado: false, fechaLimite: _fechaEnDias(2) }];
-    S.compromisos = [compromisoBase({ descripcion: 'Arriendo', diaPago: DIA_MANANA })];
-    renderPanelPrioridades();
-    for (const dir of document.querySelectorAll('.obligacion-dir')) {
-      expect(dir.getAttribute('style')).toBeNull();
-      expect(dir.className).toBe('obligacion-dir');
-    }
+    const [primero, segundo] = filas().map(f => f.querySelector('.esta-semana__cuando'));
+    expect(primero.getAttribute('aria-hidden')).toBe('true');
+    expect(primero.querySelector('b')).not.toBeNull();
+    expect(segundo.classList.contains('esta-semana__cuando--hueco')).toBe(true);
+    expect(segundo.textContent).toBe('');
   });
 
   it('en escritorio la tarjeta fusionada usa la misma señal', () => {
@@ -3451,17 +3448,20 @@ describe('renderPanelPrioridades() - Esta semana (MV2.15b, ADR 099 D5)', () => {
     expect(panel().querySelector('.prioridades-card__group-label')).toBeNull();
   });
 
-  it('el día de pago de un ingreso entra: signo más, color de ingreso y "entra"', () => {
+  it('el día de pago de un ingreso entra: signo más, color de ingreso y "ingreso"', () => {
     S.ingresos = [ingreso()];
     renderPanelPrioridades();
     const fila = panel().querySelector('.esta-semana__fila');
     expect(fila.querySelector('.esta-semana__nombre').textContent).toBe('Salario');
-    expect(fila.querySelector('.esta-semana__tipo').textContent).toBe('Mañana · entra');
+    expect(fila.querySelector('.esta-semana__tipo').textContent).toBe('Mañana · ingreso');
     const monto = fila.querySelector('.esta-semana__monto');
     expect(monto.textContent.trim()).toBe('+$4.200.000');
     expect(monto.classList.contains('esta-semana__monto--entra')).toBe(true);
-    expect(panel().querySelector('.esta-semana__pie').textContent).toContain('Entra $4.200.000');
-    expect(panel().querySelector('.esta-semana__pie').textContent).toContain('Sin pagos esta semana');
+    // ADR 126 D4: los totales van arriba de la tarjeta.
+    const totales = panel().querySelector('.esta-semana__totales');
+    expect(totales.textContent).toContain('Entra $4.200.000');
+    expect(totales.textContent).toContain('Sin pagos esta semana');
+    expect(totales.nextElementSibling.classList.contains('esta-semana__cuerpo')).toBe(true);
   });
 
   it('un ingreso que cae hoy no sale: lo dice "Atención hoy"', () => {
@@ -3478,24 +3478,25 @@ describe('renderPanelPrioridades() - Esta semana (MV2.15b, ADR 099 D5)', () => {
     expect(nombres).toEqual(['Salario', 'Arriendo']);
   });
 
-  it('tope de cuatro filas; el resto se declara y el pie cuenta toda la semana', () => {
+  it('tope de cuatro filas; el resto es la fila de pie y los totales cuentan toda la semana', () => {
     S.personales = [1, 2, 3, 4, 5].map(n => ({
       id: `p${n}`, persona: `Persona ${n}`, monto: 10_000, pagado: 0, liquidado: false, fechaLimite: _iso(_enDias(n)),
     }));
     renderPanelPrioridades();
     expect(panel().querySelectorAll('.esta-semana__fila')).toHaveLength(4);
-    const pie = panel().querySelector('.esta-semana__pie').textContent;
-    expect(pie).toContain('Y 1 más en el Calendario');
-    expect(pie).toContain('Entran $50.000');
+    const resto = panel().querySelector('.esta-semana__cuerpo .esta-semana__resto');
+    expect(resto.textContent).toContain('Y 1 más en el Calendario');
+    expect(resto.getAttribute('href')).toBe('#agenda');
+    expect(panel().querySelector('.esta-semana__totales').textContent).toContain('Entran $50.000');
   });
 
-  it('un apartado no cuenta en el pie: no le mueve dinero a nadie', () => {
+  it('un apartado no cuenta en los totales: no le mueve dinero a nadie', () => {
     S.apartados = [{ id: 'a1', nombre: 'SOAT moto', montoObjetivo: 120_000,
       montoActual: 0, fechaObjetivo: _iso(_enDias(3)), completado: false }];
     renderPanelPrioridades();
-    const pie = panel().querySelector('.esta-semana__pie').textContent;
-    expect(pie).not.toContain('$120.000');
-    expect(pie).toContain('Sin pagos esta semana');
+    const totales = panel().querySelector('.esta-semana__totales').textContent;
+    expect(totales).not.toContain('$120.000');
+    expect(totales).toContain('Sin pagos esta semana');
   });
 
   it('sin ninguna fuente activa, el panel no se muestra', () => {

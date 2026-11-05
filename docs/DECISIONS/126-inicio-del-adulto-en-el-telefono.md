@@ -1,6 +1,6 @@
 # ADR 126 - Inicio del adulto en el teléfono
 
-**Estado:** Aceptada (2026-11-05). En aplicación por tandas: el encabezado y el saldo (1), "Atención hoy" y su hoja (2). Quedan "Esta semana", los vacíos y el usuario nuevo (3), las hojas "Pagos para hoy", "Registrar" y "Tu perfil" (4) y la barra de abajo (5).
+**Estado:** Aceptada (2026-11-05). En aplicación por tandas: el encabezado y el saldo (1), "Atención hoy" y su hoja (2), "Esta semana", los vacíos y el usuario nuevo (3). Quedan las hojas "Pagos para hoy", "Registrar" y "Tu perfil" (4) y la barra de abajo (5).
 **Fecha:** 2026-11-05
 **Autores:** Esteban (diseño y decisión), Claude Opus 5.5 (auditoría, implementación y redacción)
 **Relación:** **Aplica** el tablero "Finko móvil · rediseño" de Inicio (Claude Design, `Diseño Finko/Finko móvil · rediseño.html`), que compara cada pantalla de hoy con su propuesta; es la primera pieza de MV2.30. **Supera** el [ADR 122](122-lo-que-faltaba-del-canvas-segunda-pasada.md) D2 (el nombre del saludo ya no baja de línea) y, solo bajo 1024px, el [ADR 034](034-inicio-v2.md) D2 y el piloto del [ADR 033](033-direccion-visual-premium.md) D2 y D3 (el saldo deja de ser tarjeta con degradado y forma). **Conserva** el [ADR 106](106-un-encabezado-tres-niveles.md) D3 (un solo ojo, en el encabezado) y el [ADR 099](099-inicio-movil-hoy-en-una-lista.md) D6 (el avatar abre "Tu perfil"). Escritorio no cambia.
@@ -40,6 +40,19 @@ Esteban aprobó en chat las recomendaciones de la auditoría para los seis punto
 - **El peso del botón:** mover dinero ("Pagar los 2 · $X", "Distribuir ahora") viste su sección con `.btn-dominio`; ir a otro lugar es `btn-secondary`. Vale para el destacado y para la hoja. En la fila, el verbo de lo que mueve dinero va en el color de su sección.
 - **Copys:** el estado del lote va aparte del monto y en su color ("$1.415.000 · 1 ya vencido"); en Me deben la frase es el nombre y el detalle "Te debe $X · fecha acordada hace N días", porque el nombre puede ser largo y el monto no se corta; el respaldo dice "Ir a respaldar tus datos".
 - **La hoja:** el número en pastilla junto al título (el lector sigue oyendo "Avisos de hoy · N"), cada grupo con la teja de su sección, su título sin mayúsculas, la urgencia en pastilla, la lista sobre un fondo apenas más claro y el botón con su peso.
+
+### D4. "Esta semana" (tanda 3)
+
+- **El título** como el de "Atención hoy", con "Calendario" a la derecha.
+- **Los totales van arriba**, entre el título y la tarjeta: "Entra $100.000 · Salen $802.016", cada cifra en negrita (lo que entra en acento). Misma lógica de siempre ("Entra/Entran", "Sale/Salen", "Sin pagos esta semana").
+- **El recuadro del día** mide 44px y **va sin flecha**: el signo del monto dice la dirección (acota el ADR 088 D3 y el ADR 099 D5; escritorio conserva la flecha en `_filaObligacion()`). **El día se escribe una vez:** la fila del mismo día que la anterior deja un hueco.
+- **El tipo del ingreso** dice "ingreso", no "entra".
+- **"Y N más en el Calendario"** es la fila de pie de la tarjeta.
+- **Sin nada en la semana**, una tarjeta con la teja del Calendario y dos líneas: "Todo al día" y "Sin vencimientos en los próximos 7 días.".
+
+### D5. El usuario nuevo (tanda 3)
+
+La guía de tres pasos que ya tenía escritorio pasa también al teléfono, en línea de tiempo: el primer paso lleno de acento y los otros dos con borde, unidos por una línea. En el teléfono el paso 2 dice "Con el botón Registrar de abajo"; escritorio sigue diciendo "de arriba". El botón "Agregar mis cuentas" va a todo el ancho.
 
 ## Lo que ya se decidió para las tandas que siguen
 
