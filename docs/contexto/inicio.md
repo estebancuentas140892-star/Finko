@@ -1,6 +1,6 @@
 # Ficha de contexto: Inicio (dashboard)
 
-> Revisado: 2026-10-29.
+> Revisado: 2026-11-05.
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -10,7 +10,7 @@
 
 - **Objetivo**          : pantalla principal e inamovible de la app; hoy muestra saldo (hero a ancho completo), accesos rápidos personalizables, paneles de vencidos/próximos y un resumen semanal.
 - **Estado actual**     : estable, en evolución. **IN.7**, **IN.6a**, **CAL.1**, **TX.8a**, **TX.8b** e **IN.4a** cerradas; **IN.5** (2026-07-06) eliminó "Gasto rápido" y el panel "Gastos por organizar", dejando el hero a ancho completo. **PERF.1** (2026-07-06) paginó por lotes la vista completa de Movimientos (`#movimientos`). **PERF.2** (2026-07-06) memoizó `resumenSemanal()` y `movimientosRecientes()`/`movimientosCompletos()`; sin cambios de comportamiento visible en ninguno de los dos. **IV.2c** (2026-07-10, ADR 031): "Pendientes del mes" y "Próximas prioridades" ganan una etiqueta de texto con el tipo (`.dom-badge`, "el color nunca viaja solo") junto al icono+color de sección ya existentes; corrige un bug real donde un apartado en "Próximas prioridades" heredaba el color de "fijo" en vez del suyo propio. Rediseño mayor decidido en [ADR 028](../DECISIONS/028-inicio-centro-de-control.md) (**aprobado el 2026-07-05**): un rol por bloque, orden vertical definido. **Nota (2026-07-12):** la revisión formal de ese ADR ya existe y está aceptada: [ADR 034](../DECISIONS/034-inicio-v2.md) "Inicio v2" (diseño hifi de Esteban en `Iteración de specimen/design_handoff_inicio_v2/`), que reordena la pantalla (alertas primero, accesos+actividad fusionados al final), rediseña hero/pendientes/resumen y resuelve IN.6b con teja de iniciales (sin foto). **Actualización (2026-07-12):** las 7 rebanadas IN.8a a IN.8g ya cerraron; esta ficha describe el estado vigente en código con el diseño completo de "Inicio v2" implementado.
-- **Verificado contra** : MV2.15c (commit `642df72`, 2026-10-29, el avatar abre tu perfil). Antes: MV2.15b (`cbe3fc7`) y MV2.15a (`1cb52db`). Antes: HF.0d (2026-10-17, fuentes de vencidos y próximos).
+- **Verificado contra** : MV2.30 tanda 1 ([ADR 126](../DECISIONS/126-inicio-del-adulto-en-el-telefono.md), 2026-11-05, encabezado y saldo en el teléfono). Antes: MV2.15c (commit `642df72`, 2026-10-29, el avatar abre tu perfil). Antes: MV2.15b (`cbe3fc7`) y MV2.15a (`1cb52db`). Antes: HF.0d (2026-10-17, fuentes de vencidos y próximos).
 
 **"Atención hoy" en móvil es una lista (MV2.15a, [ADR 099](../DECISIONS/099-inicio-movil-hoy-en-una-lista.md) D1 a D4).** Bajo 1024px, `#panel-atencion-hoy` (`ui/atencion-hoy.js`) reemplaza a `#panel-distribuir-inicio`, `#panel-limites`, `#panel-avisos`, `#panel-vencidos` y al rótulo del grupo; los cinco siguen en el DOM y pintándose para escritorio, y `responsive.css` (bloque MV2.15a) decide cuál se ve. Lee `avisosDeHoy` y agrupa por `seccion`; el número de la lente sale de la misma función (`contarAvisosDeHoy`).
 - **Trampa de posición:** la celda va fuera de `.atencion-hoy__avisos` y `.atencion-hoy__obligaciones`. El `:has()` de DSK.1c que decide el `span 12` de escritorio cuenta solo lo de adentro del envoltorio de avisos; adentro, una celda oculta por CSS pero sin `[hidden]` lo habría roto.
@@ -73,14 +73,15 @@
 | Resumen semanal (render visual: chip + barras + categoría top, IN.8f) | `modules/dominio/resumen/view.js` | `renderPanelResumen()` | ~51 |
 | Estilos del bloque visual de resumen (namespace propio, no toca `.resumen-card__grid/__stat` que reusa "Me deben") | `styles/components/domain.css` | `.resumen-semana__*` | ~1569 |
 | Hero de saldo (render + ojo/máscara) | `modules/infra/render.js` | `updSaldo()` | ~72 |
-| Hero de saldo (estilos IN.8b: centrado, degradado, ojo absoluto) | `styles/components/domain.css` | `.hero-inicio`, `.hero-inicio__valor`, `.hero-inicio__ojo` | ~790 |
+| Hero de saldo (estilos IN.8b: centrado, degradado, ojo absoluto; bajo 1024px va sin tarjeta, ADR 126 D2) | `styles/components/domain.css`; el teléfono en `styles/responsive.css` (bloque "ADR 126", al final) | `.hero-inicio`, `.hero-inicio__valor`, `.hero-inicio__ojo` | ~790 |
+| Ficha de cuentas del teléfono (ADR 126 D2): tejas, reparto y detalle con "Ir a Mis cuentas" | `modules/infra/render.js` / `index.html` | `etiquetaCuentas()`, `fichasCuentas()`, `updSaldo()`; `#saldo-detalle-fichas`, `#saldo-detalle-caja`, `#saldo-oculto-sr` | |
 | Detalle por cuenta del hero (IN.8c: pill, filas, máscara; acotado a menos de 1024px desde IN.9c) | `modules/infra/render.js` / `index.html` | `alternarDetalleCuentas()`, `#saldo-detalle-toggle`, `#saldo-detalle`, acción `saldo-detalle` | |
 | Detalle por cuenta en columna propia de escritorio (IN.9c, ADR 057 D3) | `modules/infra/render.js` / `index.html` | `updSaldo()`, `_enEscritorio()`, `#panel-cuentas-detalle`, `#cuentas-detalle-lista` | ~171 |
 | Estado vacío del hero: guía móvil intacta + pieza de escritorio de tres pasos (IN.9e, ADR 057 D6/ID6) | `index.html` / `styles/layout.css` / `styles/responsive.css` | `#hero-guia-saldo`, `.hero-guia__movil`, `.hero-guia__escritorio`, `.hero-guia__pasos` | ~490 |
 | Clase de entidad en infra (conteo del hero, espejo de claseEntidad) | `modules/infra/bancos.js` | `bancoClase(bancoId)` | |
 | Excepción de padding móvil del hero | `styles/responsive.css` | `.hero-inicio` en `@media (max-width: 767px)` | |
 | Saludo dinámico según hora, dos líneas + iniciales (IN.6a, IN.8d); llena también el botón de móvil (MV2.15c) | `modules/infra/render.js` | `updSaludo()`, `inicialesDe()` | |
-| Header de perfil en el DOM (IN.8d; MV2.15c: botón de avatar en móvil, sin engranaje) | `index.html` | `.perfil-inicio`, `#perfil-avatar`, `#perfil-boton`, `#saludo-franja`, `#saludo-inicio`, `#title-dash` (sr-only) | |
+| Header de perfil en el DOM (IN.8d; MV2.15c: botón de avatar en móvil, sin engranaje; ADR 126 D1: lupa, ojo y avatar juntos al final) | `index.html` | `.perfil-inicio`, `#perfil-avatar`, `.perfil-inicio__acciones` > `#perfil-boton`, `#saludo-franja`, `#saludo-inicio`, `#title-dash` (sr-only) | |
 | Hoja "Tu perfil" (MV2.15c, ADR 099 D6) | `modules/ui/hoja-perfil.js`, `index.html` | `htmlHojaPerfil()`, acciones `perfil-abrir`, `perfil-ir`, `perfil-pasar`; `#modal-perfil` | |
 | Estilos del header de perfil | `styles/components/domain.css` | `.perfil-inicio*` | ~785 |
 | Tokens del avatar (fijos en ambos temas, criterio ADR 025) | `styles/tokens.css` | `--fk-avatar-grad-a/-grad-b/-ink` | ~144 |
@@ -174,6 +175,7 @@
 
 **Cambios realizados** (una línea por hito; el detalle vive en el [CHANGELOG](../CHANGELOG.md)):
 
+- 2026-11-05 (MV2.30 tanda 1, [ADR 126](../DECISIONS/126-inicio-del-adulto-en-el-telefono.md) D1 y D2): en el teléfono, lupa, ojo y avatar juntos y sin caja, el nombre en una línea, el saldo sin tarjeta y la pastilla pasa a ficha de cuentas con tejas de marca.
 - 2026-10-29 (APR.7, [ADR 101](../DECISIONS/101-finko-del-adulto-decide-no-ensena.md)): Inicio del adulto es una sola pantalla: salen la franja de lentes (`#tabs-dash`), "Tu siguiente paso" (`#panel-siguiente-paso`) y Accesos rápidos (`#accesos-actividad-movil`, `#modal-personalizar-accesos`). Las filas de la tabla "Dónde vive" que los nombran quedan históricas; `_repartoCierreInicio()` ya no encuentra a quién repartir.
 - 2026-10-29 (MV2.15c, ADR 099 D6 y D7): en móvil el avatar es un botón que abre la hoja "Tu perfil"; el engranaje sale del encabezado. Cierra MV2.15.
 - 2026-10-29 (MV2.15b, ADR 099 D5): en móvil, "Próximas prioridades" pasa a "Esta semana": lo que entra y sale de mañana a 7 días, con los días de pago de los ingresos.

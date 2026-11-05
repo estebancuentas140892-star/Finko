@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(inicio): MV2.30 tanda 1, el encabezado y el saldo de Inicio en el teléfono · 2026-11-05
+
+[ADR 126](DECISIONS/126-inicio-del-adulto-en-el-telefono.md) D1 y D2, del tablero de Inicio de Claude Design (`Diseño Finko/Finko móvil · rediseño.html`). Esteban aprobó en chat las seis recomendaciones que tocan decisiones escritas. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v665.
+
+- **Encabezado**: lupa, ojo y avatar juntos a la derecha en `.perfil-inicio__acciones`, sin caja; el avatar es un disco de 36px dentro de su zona de 44. El nombre va en una línea con puntos (supera el ADR 122 D2).
+- **El ojo encendido** lleva un disco de acento en toda la app (`[data-action="bloque-saldo-visibilidad"][aria-pressed="true"]`).
+- **El saldo sin tarjeta** bajo 1024px. Con el ojo puesto, el monto se calla para el lector y una línea `sr-only` dice "Oculto".
+- **La ficha de cuentas** reemplaza la pastilla y el conteo: `etiquetaCuentas()` ("Efectivo y 2 cuentas") y `fichasCuentas()` (hasta tres tejas de marca y "+N"). El detalle abierto lleva "Ir a Mis cuentas". El conteo sigue en escritorio.
+- Pruebas: `render.test.js` (3 nuevas, 2 ajustadas), E2E `smoke.test.js` (la ficha y el saldo sin tarjeta a 390) y `movil-mv2.test.js` (el nombre en una línea a 320). Unitarios 5285/5285, lint y E2E 438/438 en árbol limpio.
+
 ### feat(ahorro): Ahorro abre en el fondo, se retira la casa · 2026-11-05
 
 [ADR 125](DECISIONS/125-ahorro-abre-en-el-fondo.md). Ficha: [`contexto/ahorro.md`](contexto/ahorro.md). SW v664. Esteban lo pidió en chat: la casa mostraba demasiado junto y la vista con la barra de lentes ya deja pasar de una a otra.

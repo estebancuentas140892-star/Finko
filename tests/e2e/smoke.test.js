@@ -339,16 +339,19 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await page.goto('/');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
 
-    // Colapsado por defecto: conteo real visible, sin filas.
+    // Colapsado por defecto: la ficha dice el reparto (ADR 126 D2) y el
+    // conteo de escritorio se calla en el teléfono.
     await expect(page.locator('#saldo-detalle')).toBeHidden();
-    await expect(page.locator('#saldo-desc')).toHaveText('efectivo + 1 cuenta bancaria');
+    await expect(page.locator('#saldo-detalle-label')).toHaveText('Efectivo y 1 cuenta');
+    await expect(page.locator('#saldo-detalle-fichas .bank-avatar')).toHaveCount(2);
+    await expect(page.locator('#saldo-desc')).toBeHidden();
 
-    // Expandir: una fila por cuenta con su saldo; el conteo se oculta.
+    // Expandir: una fila por cuenta con su saldo y la salida a Mis cuentas.
     await page.click('#saldo-detalle-toggle');
     await expect(page.locator('#saldo-detalle .hero-inicio__cuenta')).toHaveCount(2);
     await expect(page.locator('#saldo-detalle')).toContainText('Bancolombia');
     await expect(page.locator('#saldo-detalle')).toContainText('$1.450.000');
-    await expect(page.locator('#saldo-desc')).toBeHidden();
+    await expect(page.locator('#saldo-detalle-caja .hero-inicio__ir-cuentas')).toHaveAttribute('href', '#tesoreria');
 
     // El ojo enmascara total Y detalle juntos (extensión IN.2). En el
     // teléfono vive en el encabezado, junto a la lupa (ADR 106 D3).
@@ -475,11 +478,10 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await expect(panel).toContainText('$1.450.000');
   });
 
-  test('móvil: la banda de escritorio no existe y el hero conserva gradiente y blob; el ojo va en el encabezado (DSK.1b, ADR 070 D4/D5/D6, ADR 106 D3)', async ({ page }) => {
-    // Contracara del test anterior, y la compuerta que protege a MOV.1: el
-    // envoltorio `.banda-inicio` es `display: contents` bajo 1024px, así que
-    // sus dos hijos vuelven a ser celdas sueltas del bento y nada del hero
-    // cambia. Si alguien quita ese `contents`, este test cae.
+  test('móvil: la banda de escritorio no existe, el saldo va sin tarjeta y el ojo va en el encabezado (DSK.1b, ADR 070 D6, ADR 106 D3, ADR 126 D2)', async ({ page }) => {
+    // Contracara del test anterior: el envoltorio `.banda-inicio` es
+    // `display: contents` bajo 1024px, así que sus dos hijos vuelven a ser
+    // celdas sueltas del bento. Si alguien quita ese `contents`, este test cae.
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await sembrarSiVacio(page, {
@@ -501,13 +503,14 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
       .evaluate(el => getComputedStyle(el).display);
     expect(banda).toBe('contents');
 
-    // El hero sigue siendo su propia superficie, con su decoración.
     const hero = await page.locator('.hero-inicio').evaluate(el => {
       const c = getComputedStyle(el);
       return { borde: c.borderTopWidth, fondo: c.backgroundImage };
     });
-    expect(hero.borde).toBe('1px');
-    expect(hero.fondo.startsWith('linear-gradient')).toBe(true);
+    // ADR 126 D2: en el teléfono el saldo va suelto sobre el fondo; el
+    // degradado y la forma decorativa se quedan en escritorio.
+    expect(hero.borde).toBe('0px');
+    expect(hero.fondo).toBe('none');
 
     // El ojo no se movió del DOM: sigue siendo hermano de la etiqueta, no un
     // hijo suyo. En el teléfono se calla y manda el del encabezado, junto a

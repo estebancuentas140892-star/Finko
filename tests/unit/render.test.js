@@ -23,7 +23,7 @@ import { S } from '../../modules/core/state.js';
 import {
   updSaldo, updSaludo, alternarDetalleCuentas, renderAll,
   programarRender, vaciarRendersProgramados,
-  SALDO_MASCARA, SALDO_MASCARA_CUENTA,
+  SALDO_MASCARA, SALDO_MASCARA_CUENTA, etiquetaCuentas, fichasCuentas,
 } from '../../modules/infra/render.js';
 import { initAcciones, dispatch } from '../../modules/ui/actions.js';
 
@@ -42,13 +42,18 @@ function montarHero() {
       </button>
       <p class="hero-inicio__label" id="hero-saldo-label">Tu dinero disponible hoy</p>
       <p class="hero-inicio__valor" id="saldo-total">$0</p>
+      <p class="sr-only" id="saldo-oculto-sr" hidden>Oculto</p>
       <button class="hero-inicio__pill" type="button" id="saldo-detalle-toggle"
               data-action="saldo-detalle" aria-expanded="false"
-              aria-controls="saldo-detalle">
-        <span class="hero-inicio__pill-icon"><svg class="icon"><use href="#i-cuentas"/></svg></span>
-        <span id="saldo-detalle-label">Ver detalle por cuenta</span>
+              aria-controls="saldo-detalle" aria-label="Ver detalle por cuenta">
+        <span class="hero-inicio__fichas" id="saldo-detalle-fichas" aria-hidden="true"></span>
+        <span class="hero-inicio__pill-texto" id="saldo-detalle-label">Ver detalle por cuenta</span>
+        <svg class="icon hero-inicio__pill-flecha" aria-hidden="true"><use href="#i-chevron-down"/></svg>
       </button>
-      <ul class="hero-inicio__detalle" id="saldo-detalle" role="list" hidden></ul>
+      <div class="hero-inicio__detalle-caja" id="saldo-detalle-caja" hidden>
+        <ul class="hero-inicio__detalle" id="saldo-detalle" role="list" hidden></ul>
+        <a class="hero-inicio__ir-cuentas" href="#tesoreria">Ir a Mis cuentas</a>
+      </div>
       <p class="hero-inicio__desc" id="saldo-desc">efectivo + cuentas bancarias</p>
       <div id="hero-guia-saldo" hidden></div>
     </article>
@@ -232,10 +237,17 @@ describe('updSaldo() - detalle por cuenta expandible (móvil)', () => {
     normalizarColapsado();
   });
 
-  it('colapsado por defecto: pill visible, detalle oculto, conteo visible', () => {
+  // ADR 126 D2: la pastilla es una ficha de cuentas. Dice cómo está
+  // repartido el dinero y lleva las tejas de marca, con el efectivo al final.
+  it('colapsado por defecto: la ficha dice el reparto, el detalle está oculto', () => {
     expect(elPill().hidden).toBe(false);
     expect(elPill().getAttribute('aria-expanded')).toBe('false');
-    expect(document.getElementById('saldo-detalle-label').textContent).toBe('Ver detalle por cuenta');
+    expect(document.getElementById('saldo-detalle-label').textContent).toBe('Efectivo y 2 cuentas');
+    expect(elPill().getAttribute('aria-label')).toBe('Ver detalle por cuenta: efectivo y 2 cuentas');
+    const tejas = document.querySelectorAll('#saldo-detalle-fichas .bank-avatar');
+    expect(tejas.length).toBe(3);
+    expect(elPill().querySelector('.hero-inicio__pill-flecha use').getAttribute('href')).toBe('#i-chevron-down');
+    expect(document.getElementById('saldo-detalle-caja').hidden).toBe(true);
     expect(elDetalle().hidden).toBe(true);
     expect(elDetalle().innerHTML).toBe('');
     expect(elDesc().hidden).toBe(false);
@@ -260,7 +272,9 @@ describe('updSaldo() - detalle por cuenta expandible (móvil)', () => {
   it('expandir muestra una fila por cuenta (teja + nombre + saldo) y oculta el conteo', () => {
     alternarDetalleCuentas();
     expect(elPill().getAttribute('aria-expanded')).toBe('true');
-    expect(document.getElementById('saldo-detalle-label').textContent).toBe('Ocultar detalle');
+    expect(elPill().getAttribute('aria-label')).toBe('Ocultar detalle por cuenta');
+    expect(elPill().querySelector('.hero-inicio__pill-flecha use').getAttribute('href')).toBe('#i-chevron-up');
+    expect(document.getElementById('saldo-detalle-caja').hidden).toBe(false);
     expect(elDetalle().hidden).toBe(false);
     expect(elDetalle().querySelectorAll('.hero-inicio__cuenta').length).toBe(3);
     expect(elDetalle().innerHTML).toContain('Bancolombia');
@@ -306,6 +320,44 @@ describe('updSaldo() - detalle por cuenta expandible (móvil)', () => {
     expect(elDetalle().querySelector('img')).toBeNull();
     expect(elDetalle().innerHTML).toContain('&lt;img');
     alternarDetalleCuentas();
+  });
+
+  it('la etiqueta: una cuenta dice su nombre; sin efectivo, cuántas; solo efectivo, "Efectivo"', () => {
+    expect(etiquetaCuentas([])).toBe('');
+    expect(etiquetaCuentas([cuenta(1, { nombre: 'Nequi', banco: 'Nequi' })])).toBe('Nequi');
+    expect(etiquetaCuentas([
+      cuenta(1, { nombre: 'Nequi', banco: 'Nequi' }),
+      cuenta(1, { nombre: 'Efectivo', banco: 'Efectivo' }),
+    ])).toBe('Efectivo y 1 cuenta');
+    expect(etiquetaCuentas([
+      cuenta(1, { nombre: 'Nequi', banco: 'Nequi' }),
+      cuenta(1, { nombre: 'Nu', banco: 'Nu' }),
+    ])).toBe('2 cuentas');
+    expect(etiquetaCuentas([
+      cuenta(1, { nombre: 'Billetera', banco: 'Efectivo' }),
+      cuenta(1, { nombre: 'Alcancía', banco: 'Efectivo' }),
+    ])).toBe('Efectivo');
+  });
+
+  it('con más de tres cuentas, tres tejas y un "+N"', () => {
+    const cinco = ['Nequi', 'Nu', 'Bancolombia', 'Daviplata', 'Efectivo']
+      .map((b, i) => cuenta(1, { id: `c${i}`, nombre: b, banco: b }));
+    const html = fichasCuentas(cinco);
+    const caja = document.createElement('div');
+    caja.innerHTML = html;
+    expect(caja.querySelectorAll('.bank-avatar').length).toBe(3);
+    expect(caja.querySelector('.hero-inicio__fichas-mas').textContent).toBe('+2');
+  });
+
+  it('con el ojo puesto, el monto se calla para el lector y la línea "Oculto" aparece', () => {
+    S.config.ocultarSaldo = true;
+    updSaldo();
+    expect(elSaldo().getAttribute('aria-hidden')).toBe('true');
+    expect(document.getElementById('saldo-oculto-sr').hidden).toBe(false);
+    S.config.ocultarSaldo = false;
+    updSaldo();
+    expect(elSaldo().getAttribute('aria-hidden')).toBe('false');
+    expect(document.getElementById('saldo-oculto-sr').hidden).toBe(true);
   });
 
   it('la acción saldo-detalle alterna sin persistir nada en S.config', () => {

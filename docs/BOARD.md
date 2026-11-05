@@ -70,7 +70,7 @@ Las tarjetas del tablero (la iniciativa HF se lista por fase), para elegir la pr
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
-| MV2.30 | El adulto en el teléfono: los 6 tableros "Finko móvil · rediseño" de `Diseño Finko/` (Inicio, Gastos, Ahorro, Más y listas, Mis cuentas, Ajustes) | Transversal | alta | nada |
+| MV2.30 | El adulto en el teléfono (en proceso, Inicio tanda 1 hecha): los 6 tableros "Finko móvil · rediseño" de `Diseño Finko/` (Inicio, Gastos, Ahorro, Más y listas, Mis cuentas, Ajustes) | Transversal | alta | nada |
 | MV2.28 | Lo que queda del canvas móvil: anotar MV2.17 y medir fluidez y Lighthouse en producción ((b) y (d) hechas) | Transversal | media | nada |
 | DEC.1 | Finko explica el porqué dentro de cada decisión ([ADR 101](DECISIONS/101-finko-del-adulto-decide-no-ensena.md) D5) | Transversal | media | nada |
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | cola de diseño de Esteban |

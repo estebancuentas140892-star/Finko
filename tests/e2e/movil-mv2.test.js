@@ -335,7 +335,7 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     expect(tP.height).toBeLessThan(32);
   });
 
-  test('a 320 el saludo se corta antes que el nombre y los filtros de Por pagar miden lo mismo (ADR 122 D2, D3)', async ({ page }) => {
+  test('a 320 el nombre va en una línea con puntos y los filtros de Por pagar miden lo mismo (ADR 126 D1, ADR 122 D3)', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 640 });
     await sembrar(page, estadoBase({
       perfil: { nombre: 'María Fernanda Restrepo Villegas', smmlv: 1750905 },
@@ -345,10 +345,12 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await page.goto('/#dash');
     const nombre = page.locator('#saludo-inicio');
     await expect(nombre).toBeVisible({ timeout: 10_000 });
-    // El nombre entero: puede bajar de línea, nunca se corta.
-    expect(await nombre.evaluate(el => getComputedStyle(el).textOverflow)).not.toBe('ellipsis');
-    expect(await nombre.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
-    expect(await page.locator('#saludo-franja').evaluate(el => getComputedStyle(el).textOverflow)).toBe('ellipsis');
+    // ADR 126 D1 (supera el 122 D2): el nombre va en una sola línea y se corta
+    // con puntos; el completo sigue en el nombre accesible del avatar.
+    expect(await nombre.evaluate(el => getComputedStyle(el).textOverflow)).toBe('ellipsis');
+    expect(await nombre.evaluate(el => Math.round(el.getBoundingClientRect().height))).toBeLessThanOrEqual(24);
+    await expect(page.locator('#perfil-boton')).toHaveAttribute('aria-label', /María Fernanda Restrepo Villegas/);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 
     await page.goto('/#compromisos');
     const chips = page.locator('#lista-compromisos > .filtros-bar > .chip');

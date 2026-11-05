@@ -333,7 +333,6 @@
      filtro sí crecen de verdad: su recuadro no lo fijó nadie. */
   .hero-inicio__ojo,
   .perfil-inicio__ajustes,
-  .hero-inicio__pill,
   .vencidos-card__link,
   .prioridades-card__link,
   .actividad-reciente__ver-todo,
@@ -344,7 +343,6 @@
   }
   .hero-inicio__ojo::after,
   .perfil-inicio__ajustes::after,
-  .hero-inicio__pill::after,
   .vencidos-card__link::after,
   .prioridades-card__link::after,
   .actividad-reciente__ver-todo::after,
@@ -2546,15 +2544,14 @@
   .bloque-gastos__herramientas { grid-column: 2; grid-row: 1; }
   .bloque-gastos__sub { grid-column: 1 / -1; grid-row: 2; }
 
-  /* La lupa de Inicio, junto al engranaje y con su mismo dibujo. */
-  .perfil-inicio > .perfil-inicio__buscar,
-  .perfil-inicio > .perfil-inicio__ojo { display: flex; position: relative; }
+  /* La lupa y el ojo de Inicio: su forma la fija el ADR 126 D1, al final
+     del archivo. */
+  .perfil-inicio__acciones > .perfil-inicio__buscar,
+  .perfil-inicio__acciones > .perfil-inicio__ojo { display: flex; }
 
   /* R4: los botones de mes medían 32x32 (hallazgo N9). El dibujo se queda;
      la zona sensible crece a 44, como el resto de los controles chicos. */
   .bloque-gastos__mes-btn { position: relative; }
-  .perfil-inicio__buscar::after,
-  .perfil-inicio__ojo::after,
   .bloque-gastos__mes-btn::after {
     content: '';
     position: absolute;
@@ -3448,6 +3445,8 @@
 @media (max-width: 1023px) {
 
   .perfil-inicio > .perfil-inicio__avatar { display: none; }
+  /* ADR 126 D1: la zona sigue midiendo 44; lo que se ve es un disco de 36
+     con borde fino y la letra en 14 (13 con dos letras). */
   .perfil-inicio__avatar-btn {
     display: inline-flex;
     align-items: center;
@@ -3456,15 +3455,27 @@
     width: 44px;
     height: 44px;
     padding: 0;
+    border: none;
     border-radius: var(--fk-radius-full);
-    border: 1.5px solid var(--fk-border-strong);
-    background: var(--fk-bg-elevated);
+    background: none;
     color: var(--fk-text-primary);
     font: inherit;
-    font-size: var(--fk-text-base);
-    font-weight: var(--fk-font-extrabold);
     cursor: pointer;
   }
+  .perfil-inicio__avatar-disco {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--fk-radius-full);
+    border: 1px solid var(--fk-border-default);
+    background: var(--fk-bg-elevated);
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-bold);
+  }
+  .perfil-inicio__avatar-disco--dos { font-size: 0.8125rem; }
+  .perfil-inicio__avatar-disco .icon { --fk-icon-size: var(--fk-icon-sm); color: var(--fk-text-secondary); }
 
   .hoja-perfil__body {
     display: flex;
@@ -3597,3 +3608,208 @@
 /* Familia: el monto de la mesada va en grande, como en el tablero (ADR 124
    D10). La regla de 16 px de los campos en el teléfono vive en esta capa. */
 .familia-monto .input { font-size: 28px; font-weight: 750; }
+
+/* ════════════════════════════════════════════════════════════
+   ADR 126 · INICIO EN EL TELÉFONO (tablero "Finko móvil · rediseño")
+   ════════════════════════════════════════════════════════════
+   Tanda 1: el encabezado (D1) y el saldo sin tarjeta con su ficha de
+   cuentas (D2). Solo bajo 1024px: la banda de escritorio no cambia.
+   Medidas del tablero sin token (13, 15 y 17 px de letra, pesos 650 y
+   750, radio 20): literales, como ya hacen nino.css y modals.css (D7). */
+
+.perfil-inicio__acciones { display: none; }
+
+@media (max-width: 1023px) {
+
+  /* ── D1. El encabezado ─────────────────────────────────────────────
+     Marca, saludo y a la derecha lupa, ojo y avatar, juntos y sin caja. El
+     grupo se come 8px del margen para que el disco quede a 16 del borde. */
+  #sec-dash > .perfil-inicio {
+    align-items: center;
+    gap: 10px;
+    min-height: 64px;
+    margin-bottom: var(--fk-space-6);
+  }
+  .perfil-inicio__acciones {
+    display: flex;
+    align-items: center;
+    flex: none;
+    margin-right: calc(-1 * var(--fk-space-2));
+  }
+  #sec-dash .perfil-inicio__marca {
+    width: 32px;
+    height: 32px;
+  }
+  #sec-dash .perfil-inicio__marca .marca-isotipo { width: 16px; height: 19px; }
+  #sec-dash .perfil-inicio__franja {
+    font-size: 0.8125rem;
+    line-height: 17px;
+  }
+  /* El nombre va en una línea y se corta con puntos: supera el ADR 122 D2.
+     El nombre completo sigue en el avatar y en la hoja "Tu perfil". */
+  #sec-dash .perfil-inicio__nombre {
+    font-size: var(--fk-text-lg);
+    line-height: 24px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    overflow: hidden;
+    overflow-wrap: normal;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .perfil-inicio__acciones > .perfil-inicio__buscar,
+  .perfil-inicio__acciones > .perfil-inicio__ojo {
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: var(--fk-radius-full);
+    background: none;
+    color: var(--fk-text-secondary);
+  }
+  .perfil-inicio__acciones > .perfil-inicio__buscar:hover,
+  .perfil-inicio__acciones > .perfil-inicio__ojo:hover {
+    background: none;
+    color: var(--fk-text-primary);
+  }
+  .perfil-inicio__acciones > .perfil-inicio__buscar .icon,
+  .perfil-inicio__acciones > .perfil-inicio__ojo .icon { --fk-icon-size: 22px; }
+
+  /* El ojo encendido: un disco de acento detrás del dibujo. Vale para todos
+     los ojos de saldo de la app, que son el mismo control (R20, ADR 106 D3). */
+  [data-action="bloque-saldo-visibilidad"][aria-pressed="true"],
+  [data-action="bloque-saldo-visibilidad"][aria-pressed="true"]:hover {
+    background: radial-gradient(circle, var(--fk-accent-subtle) 18px, transparent 18.5px);
+    color: var(--fk-text-accent);
+  }
+  [data-action="bloque-saldo-visibilidad"][aria-pressed="true"] .icon { --fk-icon-size: var(--fk-icon-md); }
+
+  /* ── D2. El saldo, sin tarjeta ─────────────────────────────────────
+     El rótulo y el monto van sueltos sobre el fondo; la forma decorativa y
+     el degradado se quedan en escritorio. */
+  #sec-dash .hero-inicio {
+    gap: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    overflow: visible;
+  }
+  #sec-dash .hero-inicio > .decor,
+  #sec-dash .hero-inicio__desc { display: none; }
+  #sec-dash .hero-inicio__label {
+    font-size: var(--fk-text-sm);
+    line-height: 20px;
+    font-weight: var(--fk-font-medium);
+    letter-spacing: 0;
+  }
+  #sec-dash .hero-inicio__valor {
+    margin-top: 2px;
+    font-size: clamp(2rem, 1.25rem + 3.6vw, 2.5rem);
+    line-height: 1.2;
+    font-weight: 750;
+    letter-spacing: -0.03em;
+  }
+
+  /* La ficha de cuentas: tejas de marca en círculo, el reparto y la flecha. */
+  #sec-dash .hero-inicio__pill {
+    align-self: flex-start;
+    gap: 10px;
+    max-width: 100%;
+    min-height: 44px;
+    margin-top: var(--fk-space-3);
+    padding: 5px var(--fk-space-3) 5px 6px;
+    border: 1px solid var(--fk-border-subtle);
+    background: var(--fk-bg-surface);
+    color: var(--fk-text-secondary);
+    font-size: var(--fk-text-sm);
+    line-height: 20px;
+    font-weight: var(--fk-font-medium);
+    box-shadow: var(--fk-shadow-sm);
+  }
+  #sec-dash .hero-inicio__pill[aria-expanded="true"] {
+    border-color: var(--fk-border-default);
+    color: var(--fk-text-primary);
+  }
+  .hero-inicio__fichas { display: flex; flex: none; }
+  .hero-inicio__fichas:empty { display: none; }
+  .hero-inicio__fichas > .bank-avatar,
+  .hero-inicio__fichas-mas {
+    box-sizing: border-box;
+    width: 28px;
+    height: 28px;
+    border: 2px solid var(--fk-bg-surface);
+    border-radius: var(--fk-radius-full);
+    font-size: 10px;
+  }
+  .hero-inicio__fichas > * + * { margin-left: calc(-1 * var(--fk-space-2)); }
+  .hero-inicio__fichas-mas {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--fk-bg-elevated);
+    color: var(--fk-text-secondary);
+    font-weight: var(--fk-font-bold);
+  }
+  .hero-inicio__pill-texto {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .hero-inicio__pill-flecha { flex: none; --fk-icon-size: var(--fk-icon-sm); }
+
+  /* El detalle abierto: una tarjeta con una fila por cuenta y la salida a
+     Mis cuentas al pie. */
+  .hero-inicio__detalle-caja {
+    margin-top: 10px;
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: 20px;
+    background: var(--fk-bg-surface);
+    box-shadow: var(--fk-shadow-sm);
+    overflow: hidden;
+  }
+  #sec-dash .hero-inicio__detalle {
+    margin: 0;
+    padding: 0;
+    border-top: none;
+    gap: 0;
+  }
+  #sec-dash .hero-inicio__cuenta {
+    min-height: 56px;
+    padding: 10px var(--fk-space-4) 10px var(--fk-space-3);
+    gap: var(--fk-space-3);
+  }
+  #sec-dash .hero-inicio__cuenta + .hero-inicio__cuenta { border-top: 1px solid var(--fk-border-subtle); }
+  #sec-dash .hero-inicio__cuenta-nombre {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 0.9375rem;
+    line-height: 20px;
+    font-weight: var(--fk-font-medium);
+    white-space: normal;
+  }
+  #sec-dash .hero-inicio__cuenta-saldo {
+    flex: none;
+    font-size: 0.9375rem;
+    line-height: 20px;
+    font-weight: 650;
+  }
+  .hero-inicio__ir-cuentas {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 48px;
+    padding: 0 var(--fk-space-3) 0 var(--fk-space-4);
+    border-top: 1px solid var(--fk-border-subtle);
+    color: var(--fk-text-accent);
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-semibold);
+    text-decoration: none;
+  }
+  .hero-inicio__ir-cuentas .icon { --fk-icon-size: var(--fk-icon-sm); }
+
+  /* Entre el saldo, "Atención hoy" y "Esta semana", 28px. */
+  #sec-dash .bento--dash { gap: 28px; }
+}

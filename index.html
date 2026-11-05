@@ -575,30 +575,34 @@
                avatar es la puerta a tu perfil, Familia y Ajustes. render.js
                (updSaludo) llena los dos. -->
           <span class="perfil-inicio__avatar" id="perfil-avatar" aria-hidden="true" hidden></span>
-          <button class="perfil-inicio__avatar-btn" id="perfil-boton" type="button"
-                  data-action="perfil-abrir" aria-haspopup="dialog"
-                  aria-label="Tu perfil, Familia y Ajustes"></button>
           <div class="perfil-inicio__saludo">
             <p class="perfil-inicio__franja" id="saludo-franja"></p>
             <p class="perfil-inicio__nombre" id="saludo-inicio" hidden></p>
           </div>
-          <!-- Lupa (ADR 098 D5): buscar en todo el historial era un toque
-               escondido en Más, Movimientos. Solo existe bajo 1024px
-               (responsive.css). El engranaje que la acompañaba salió del
-               DOM con MV2.15c (ADR 099 D7): desde 1024px ya estaba oculto
-               (DSK.1a) y bajo 1024px Ajustes vive en la hoja del avatar y
-               en "Más". -->
-          <button class="perfil-inicio__buscar" type="button"
-                  data-action="bloque-buscar" aria-label="Buscar en tus movimientos">
-            <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
-          </button>
-          <!-- ADR 106 D3: el ojo de Inicio deja el hero y va junto a la lupa,
-               solo bajo 1024px. El del hero sigue mandando en escritorio. -->
-          <button class="perfil-inicio__ojo" type="button"
-                  data-action="bloque-saldo-visibilidad" aria-pressed="false"
-                  aria-label="Ocultar tus saldos">
-            <svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>
-          </button>
+          <!-- ADR 126 D1: lupa, ojo y avatar van juntos a la derecha, sin
+               espacio entre ellos y sin caja; el avatar cierra la fila. Solo
+               se ven bajo 1024px (responsive.css).
+               Lupa (ADR 098 D5): buscar en todo el historial era un toque
+               escondido en Más, Movimientos. El engranaje que la acompañaba
+               salió del DOM con MV2.15c (ADR 099 D7).
+               Ojo (ADR 106 D3): el de Inicio deja el hero y va junto a la
+               lupa; el del hero sigue mandando en escritorio.
+               Avatar (MV2.15c, ADR 099 D6): un botón neutro que abre la hoja
+               de perfil. render.js (updSaludo) lo llena. -->
+          <div class="perfil-inicio__acciones">
+            <button class="perfil-inicio__buscar" type="button"
+                    data-action="bloque-buscar" aria-label="Buscar en tus movimientos">
+              <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
+            </button>
+            <button class="perfil-inicio__ojo" type="button"
+                    data-action="bloque-saldo-visibilidad" aria-pressed="false"
+                    aria-label="Ocultar tus saldos">
+              <svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>
+            </button>
+            <button class="perfil-inicio__avatar-btn" id="perfil-boton" type="button"
+                    data-action="perfil-abrir" aria-haspopup="dialog"
+                    aria-label="Tu perfil, Familia y Ajustes"></button>
+          </div>
         </header>
 
         <!-- BENTO GRID del dashboard (orden IN.8a, ADR 034 D1): hero →
@@ -661,6 +665,9 @@
             <!-- Estado normal: visible cuando hay cuentas registradas -->
             <p class="hero-inicio__label" id="hero-saldo-label">Tu dinero disponible hoy</p>
             <p class="hero-inicio__valor" id="saldo-total">$0</p>
+            <!-- ADR 126 D2: con el ojo puesto el lector oye "Oculto" en lugar de
+                 seis puntos; updSaldo() calla el monto y muestra esta línea. -->
+            <p class="sr-only" id="saldo-oculto-sr" hidden>Oculto</p>
             <!-- Detalle por cuenta (IN.8c, ADR 034 D4): expande in situ una
                  fila por cuenta. Estado solo de UI en memoria (no persiste);
                  colapsado por defecto. render.js (updSaldo) llena las filas y
@@ -671,15 +678,20 @@
                  la pantalla; desde 1024px hay una columna al lado y el mismo
                  contenido vive en #panel-cuentas-detalle, siempre visible.
                  updSaldo() oculta el pill y vacia esta lista en escritorio. -->
+            <!-- ADR 126 D2: la pastilla es una ficha de cuentas: hasta tres
+                 tejas de marca, cómo está repartido ("Efectivo y 2 cuentas") y
+                 una flecha. updSaldo() llena tejas, rótulo y nombre accesible. -->
             <button class="hero-inicio__pill" type="button" id="saldo-detalle-toggle"
                     data-action="saldo-detalle" aria-expanded="false"
-                    aria-controls="saldo-detalle">
-              <span class="hero-inicio__pill-icon" aria-hidden="true">
-                <svg class="icon" aria-hidden="true"><use href="#i-cuentas"/></svg>
-              </span>
-              <span id="saldo-detalle-label">Ver detalle por cuenta</span>
+                    aria-controls="saldo-detalle" aria-label="Ver detalle por cuenta">
+              <span class="hero-inicio__fichas" id="saldo-detalle-fichas" aria-hidden="true"></span>
+              <span class="hero-inicio__pill-texto" id="saldo-detalle-label">Ver detalle por cuenta</span>
+              <svg class="icon hero-inicio__pill-flecha" aria-hidden="true"><use href="#i-chevron-down"/></svg>
             </button>
-            <ul class="hero-inicio__detalle" id="saldo-detalle" role="list" hidden></ul>
+            <div class="hero-inicio__detalle-caja" id="saldo-detalle-caja" hidden>
+              <ul class="hero-inicio__detalle" id="saldo-detalle" role="list" hidden></ul>
+              <a class="hero-inicio__ir-cuentas" href="#tesoreria">Ir a Mis cuentas<svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+            </div>
             <!-- Conteo visible solo con el detalle colapsado (expandido lo
                  vuelve redundante); updSaldo() calcula el texto real. -->
             <p class="hero-inicio__desc" id="saldo-desc">efectivo + cuentas bancarias</p>

@@ -180,6 +180,12 @@ export function updSaldo() {
       }
     }
     _prevSaldo = totalCuentas;
+    // ADR 126 D2: los seis puntos no se leen; el lector oye "Oculto" en su
+    // línea propia, así el texto del monto sigue siendo la máscara.
+    const enmascarado = oculto && !sinCuentas;
+    elSaldo.setAttribute('aria-hidden', String(enmascarado));
+    const srOculto = document.getElementById('saldo-oculto-sr');
+    if (srOculto) srOculto.hidden = !enmascarado;
   }
 
   // Con cuentas: muestra el saldo normal y oculta la guía de primeros pasos.
@@ -232,9 +238,20 @@ export function updSaldo() {
   if (pill) {
     pill.hidden = sinCuentas || enEscritorio;
     pill.setAttribute('aria-expanded', String(abierto));
+    // ADR 126 D2: la ficha dice cómo está repartido el dinero y lleva las
+    // tejas de marca; el nombre accesible conserva "Ver detalle por cuenta".
+    const etiqueta  = etiquetaCuentas(cuentasActivas);
     const labelPill = document.getElementById('saldo-detalle-label');
-    if (labelPill) labelPill.textContent = abierto ? 'Ocultar detalle' : 'Ver detalle por cuenta';
+    if (labelPill) labelPill.textContent = etiqueta;
+    const fichas = document.getElementById('saldo-detalle-fichas');
+    if (fichas) fichas.innerHTML = sinCuentas || enEscritorio ? '' : fichasCuentas(cuentasActivas);
+    const enFrase = etiqueta.startsWith('Efectivo') ? `e${etiqueta.slice(1)}` : etiqueta;
+    pill.setAttribute('aria-label', abierto ? 'Ocultar detalle por cuenta' : `Ver detalle por cuenta: ${enFrase}`);
+    pill.querySelector('.hero-inicio__pill-flecha use')
+      ?.setAttribute('href', abierto ? '#i-chevron-up' : '#i-chevron-down');
   }
+  const caja = document.getElementById('saldo-detalle-caja');
+  if (caja) caja.hidden = !abierto;
   if (detalle) {
     if (!abierto) {
       detalle.hidden = true;
@@ -339,8 +356,49 @@ function _esEfectivo(c) {
 }
 
 /**
+ * Cómo está repartido el dinero, para la ficha de cuentas del teléfono
+ * (ADR 126 D2): una cuenta dice su nombre; efectivo y otras, "Efectivo y N
+ * cuentas"; sin efectivo, "N cuentas"; solo efectivo, "Efectivo".
+ *
+ * @param {import('../core/state.js').Cuenta[]} cuentas - activas.
+ * @returns {string} '' sin cuentas.
+ */
+export function etiquetaCuentas(cuentas) {
+  if (!cuentas.length) return '';
+  if (cuentas.length === 1) return cuentas[0].nombre?.trim() || 'Tu cuenta';
+  const efectivo = cuentas.filter(_esEfectivo).length;
+  const otras    = cuentas.length - efectivo;
+  const nOtras   = otras === 1 ? '1 cuenta' : `${otras} cuentas`;
+  if (efectivo > 0 && otras > 0) return `Efectivo y ${nOtras}`;
+  if (otras > 0) return nOtras;
+  return 'Efectivo';
+}
+
+/** Tejas que caben en la ficha de cuentas antes del "+N". */
+const FICHAS_MAX = 3;
+
+/**
+ * Tejas de marca de la ficha de cuentas (ADR 126 D2): las cuentas primero y
+ * el efectivo al final, hasta tres; si hay más, un disco "+N". Decorativas:
+ * el rótulo de la ficha ya dice cuántas son.
+ *
+ * @param {import('../core/state.js').Cuenta[]} cuentas - activas.
+ * @returns {string} HTML.
+ */
+export function fichasCuentas(cuentas) {
+  const orden = [...cuentas.filter(c => !_esEfectivo(c)), ...cuentas.filter(_esEfectivo)];
+  const tejas = orden.slice(0, FICHAS_MAX).map(c => {
+    const bancoId = c.banco ?? (_esEfectivo(c) ? 'Efectivo' : undefined);
+    return bancoAvatar(bancoId, c.icono);
+  }).join('');
+  const resto = orden.length - FICHAS_MAX;
+  return resto > 0 ? `${tejas}<span class="hero-inicio__fichas-mas">+${resto}</span>` : tejas;
+}
+
+/**
  * Texto del conteo bajo el saldo (IN.8c): describe la composición real en
- * vez del "efectivo + cuentas bancarias" fijo de antes.
+ * vez del "efectivo + cuentas bancarias" fijo de antes. Desde el ADR 126 solo
+ * se ve en escritorio: en el teléfono lo dice la ficha de cuentas.
  * @param {import('../core/state.js').Cuenta[]} cuentas - activas.
  * @returns {string}
  */
@@ -386,8 +444,13 @@ export function updSaludo() {
   }
   // MV2.15c (ADR 099 D6): el avatar de móvil es la puerta a tu perfil, así
   // que existe aunque falte el nombre; entonces lleva un dibujo de persona.
+  // ADR 126 D1: el dibujo es un disco de 36px dentro de la zona de 44; con
+  // dos letras la letra baja un punto para que quepan.
   if (boton) {
-    boton.innerHTML = nombre ? _esc(inicialesDe(nombre)) : '<svg class="icon" aria-hidden="true"><use href="#i-personales"/></svg>';
+    const iniciales = nombre ? inicialesDe(nombre) : '';
+    const dentro = nombre ? _esc(iniciales) : '<svg class="icon" aria-hidden="true"><use href="#i-personales"/></svg>';
+    const dos = [...iniciales].length > 1 ? ' perfil-inicio__avatar-disco--dos' : '';
+    boton.innerHTML = `<span class="perfil-inicio__avatar-disco${dos}">${dentro}</span>`;
     boton.setAttribute('aria-label', nombre ? `${nombre}: tu perfil, Familia y Ajustes` : 'Tu perfil, Familia y Ajustes');
   }
 }
