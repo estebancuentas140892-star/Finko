@@ -26,7 +26,7 @@
 ## 2. Últimas 5 tareas cerradas
 
 **MV2.29 - el niño en el teléfono, 2026-11-05**
-El tablero de niños aplicado en cinco tandas: barra, Inicio, Alcancía y Yo; Aprender y la lección; las hojas; la primera vez y "¿Quién usa Finko?"; Familia del adulto ([ADR 124](DECISIONS/124-el-nino-en-el-telefono.md)). SW v663.
+El tablero de niños aplicado en cinco tandas: barra, Inicio, Alcancía y Yo; Aprender y la lección; las hojas; la primera vez y "¿Quién usa Finko?"; Familia del adulto ([ADR 124](DECISIONS/124-el-nino-en-el-telefono.md)). SW v663, publicado en `main` y producción el mismo día a pedido de Esteban.
 
 **MV2.28 (b) - Ajustes dice qué guarda en "Más", 2026-11-04**
 La fila de Ajustes lleva "Perfil, Familia, nube y datos" debajo del nombre, como en el prototipo (adenda al [ADR 108](DECISIONS/108-mas-dice-como-esta-cada-destino.md)). SW v658.
