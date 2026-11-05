@@ -1,6 +1,6 @@
 # Ficha de contexto: Perfil niño y Familia
 
-> Revisado: 2026-10-29.
+> Revisado: 2026-11-05.
 
 > Los perfiles de niño en el mismo dispositivo, "¿Quién usa Finko?", lo que ve el niño y lo que administra el tutor desde Ajustes, Familia. Decisiones: [ADR 093](../DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md). Tarjetas: iniciativa APR, Fase 3, en [`board/transversal.md`](../board/transversal.md). Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -11,8 +11,8 @@
 ## Perfiles, "¿Quién usa Finko?" y la piel del niño
 
 - **Objetivo**          : que un tutor y niños de 7 a 12 años compartan el teléfono sin que el niño vea las finanzas del adulto (D1).
-- **Estado actual**     : en evolución (Fase 3 de APR). Cerradas **APR.3b** (sistema visual), **APR.3a** (perfiles, selector, alta paso 1, PIN de niño a adulto, candado obligatorio, P1), **APR.3c** (barra, ruta en orden como camino, lección con Frai, celebración, unidad 1) **APR.3d** (Guardé, Gasté, Compartí, mover, una meta con semanas y fecha) y **APR.3e** (alta en dos pasos con mesada, "Entregada" como un solo hecho, premio por ahorrar, progreso del niño). **APR.3f**: las ocho unidades escritas y la ubicación desde los 10 años; falta su revisión pedagógica. **APR.4b**: riel desde 768 px, Inicio en dos columnas desde 1024 px y "Cambiar de perfil" al pie de la barra lateral del adulto. **APR.5a**: Tino, un guatín, reemplaza a Frai ([ADR 095](../DECISIONS/095-tino-en-el-sprite.md)).
-- **Verificado contra** : APR.6b (commit `f09b213`, 2026-10-29, "Este teléfono es de un adulto"). Antes: APR.6a (2026-10-29).
+- **Estado actual**     : en evolución (Fase 3 de APR). Cerradas **APR.3b** (sistema visual), **APR.3a** (perfiles, selector, alta paso 1, PIN de niño a adulto, candado obligatorio, P1), **APR.3c** (barra, ruta en orden como camino, lección con Frai, celebración, unidad 1) **APR.3d** (Guardé, Gasté, Compartí, mover, una meta con semanas y fecha) y **APR.3e** (alta en dos pasos con mesada, "Entregada" como un solo hecho, premio por ahorrar, progreso del niño). **APR.3f**: las ocho unidades escritas y la ubicación desde los 10 años; falta su revisión pedagógica. **APR.4b**: riel desde 768 px, Inicio en dos columnas desde 1024 px y "Cambiar de perfil" al pie de la barra lateral del adulto. **APR.5a**: Tino, un guatín, reemplaza a Frai ([ADR 095](../DECISIONS/095-tino-en-el-sprite.md)). **MV2.29** (el tablero de niños, [ADR 124](../DECISIONS/124-el-nino-en-el-telefono.md)): tanda 1 hecha (barra, Inicio, Alcancía y Yo); quedan Aprender y la lección, las hojas, la primera vez y lo del adulto.
+- **Verificado contra** : MV2.29 tanda 1 (commit `c7cbd08`, 2026-11-05, ADR 124 D1 a D5). Antes: APR.6b (`f09b213`, 2026-10-29).
 
 **Dónde vive**
 
@@ -31,18 +31,19 @@
 | Calendario de la mesada y premio (sin DOM, lo leen tutor y niño) | `modules/infra/mesada.js` | `repartoPorDefecto()`, `validarMesada()`, `mesadaPendiente()`, `proximaMesada()`, `guardadoTodoElMes()`, `premioPendiente()`, `proximoPremio()` |
 | El gasto Familia del tutor | `modules/dominio/gastos/index.js` | `_registrarGastoExterno()`, evento `gasto:registrar` |
 | Candado obligatorio con niños | `modules/dominio/config/view.js` / `index.js` | `_renderBloqueo()`, `_quitarCandado()` |
-| La app del niño: cuatro pantallas y su barra (riel desde 768 px, con su dibujo y "Cambiar") | `modules/dominio/nino/index.js` / `view.js` | `initNino()`, `_irA()`, `htmlBarraNino(vista, perfil)`, `htmlInicioNino()`, `htmlRutaNino()`, `htmlAlcanciaNino()`, `htmlYoNino()`, `data-action="nino-vista"`, evento `nino:vista` |
+| La app del niño: cuatro pantallas y su barra (riel desde 768 px, con su dibujo y "Cambiar") | `modules/dominio/nino/index.js` / `view.js` | `initNino()`, `_irA(vista, borrador)`, `htmlBarraNino(vista, perfil)`, `htmlInicioNino()`, `htmlRutaNino()`, `htmlAlcanciaNino()`, `htmlYoNino()`, `data-action="nino-vista"`, evento `nino:vista` |
+| "Lo último que anotaste" (sin DOM): una fila por hecho, la mesada y mover agrupados | `modules/dominio/nino/logic.js` | `ultimasAnotaciones(perfil, n)` |
 | La ruta en orden (sin DOM) | `modules/dominio/nino/logic.js` | `estadoRutaNino()`, `siguienteLeccionNino()`, `unidadesHechasNino()`, `sinEmpezarNino()` (Tino se presenta) |
 | Catálogo de la ruta del niño | `modules/infra/ruta-aprende.js` | `UNIDADES_NINO` |
 | Saldos de los frascos, avance y cambios del niño | `modules/infra/perfiles.js` | `saldosFrascos()`, `guardarAprendeNino()`, `actualizarNino()`, `FRASCOS` |
 | Alcancía y meta (sin DOM): validar y crear movimientos, plan de la meta, llenado de cada frasco | `modules/dominio/nino/logic.js` | `validarMovimiento()`, `crearMovimientos()`, `metaActiva()`, `planMeta()`, `validarMeta()`, `llenadoFrasco()`, `puedeMover()` |
-| Hoja para anotar y pantalla de la meta | `modules/dominio/nino/view.js` / `index.js` | `htmlMovimientoNino()`, `htmlMetaNino()`, `htmlTarjetaMeta()`, `data-action="nino-mov"`, `nino-monto`, `nino-meta-*`, `#modal-nino` |
+| Hoja para anotar y pantalla de la meta ("Cambiar el plan" reusa la pantalla con `borrador.id`) | `modules/dominio/nino/view.js` / `index.js` | `htmlMovimientoNino()`, `htmlMetaNino()`, `htmlTarjetaMeta(perfil, hoy, { acciones })`, `data-action="nino-mov"`, `nino-monto`, `nino-meta-*` (`nino-meta-cambiar`), `#modal-nino` |
 | La lección del niño: mismo motor, su avance y su cierre | `modules/dominio/aprende/index.js` / `view.js` | `_progreso()`, `_guardarProgreso()`, `ctx.nino`, `_cierreNino()`, `data-action="leccion-salir-a"` |
 | Contenido del niño (solo datos) y su ubicación desde los 10 | `modules/dominio/aprende/lecciones/nino/kN.js`, `nino/ubicacion.js` | `'k1-l1'`, `ofreceUbicacionNino()`, `EDAD_UBICACION_NINO` |
 | Dibujos, Tino, frasco y destellos | `modules/infra/ilustraciones.js` | `DIBUJOS`, `htmlDibujo()`, `POSES_TINO`, `htmlTino()`, `htmlFrasco()`, `htmlDestellos()` |
 | Markup | `index.html` | `#quien-usa`, `#modal-familia`, `#nino-app`, `#nino-main`, `#nino-nav` |
 
-**Recursos**: símbolos `il-tino-*` (cinco poses, color por rol `--fk-tino-*`), `il-balon` a `il-patineta`, `il-frasco`, `il-frasco-borde` (`assets/svg/ilustraciones/`, ver su README 2.2). CSS: `styles/components/nino.css` (base visual y sección "PERFILES"); tokens del niño en `tokens.css` y `themes.css` (`body.kid`, `body.light-theme.kid`); fondo opaco del selector en `modals.css`.
+**Recursos**: símbolos `il-tino-*` (cinco poses, color por rol `--fk-tino-*`), `il-balon` a `il-patineta`, `il-frasco`, `il-frasco-borde` (`assets/svg/ilustraciones/`, ver su README 2.2); `il-insignia` deja apagar su estrella con `--fk-insignia-estrella` (Yo la cambia por el ícono de la unidad); `i-lock` e `i-clock` (`assets/svg/iconos/simbolos/`). CSS: `styles/components/nino.css` (base visual y sección "PERFILES"); tokens del niño en `tokens.css` y `themes.css` (`body.kid`, `body.light-theme.kid`); fondo opaco del selector en `modals.css`.
 
 **Dependencias y relaciones**: `entrarComo()` emite `perfil:cambio` (`{ id }`), que escuchan `ui/quien-usa.js` (piel) y `dominio/nino` (pinta). Entrar al adulto emite `bloqueo:abierto` (bootstrap.js encadena gate legal, novedades y débitos). "Agregar un niño" desde el selector emite `familia:agregar`, que abre el alta en config. Con niños, `bootstrap.js` llama `initPerfiles()` en vez de `initBloqueoAcceso()`. `modales.js` usa `#nino-app` como fondo inerte en el perfil niño.
 
@@ -58,7 +59,8 @@
 - **El gasto Familia no pregunta por sobregiro**: el dinero ya se entregó. Necesita una cuenta elegida en la mesada; sin ella, el premio se suma al niño sin gasto.
 - **Quitar el candado con niños** no se ofrece y el handler lo rechaza: primero hay que eliminar sus perfiles.
 - **Tino pesa unos 12 KB por pose** en el sprite de `index.html`, también para el adulto (095 D1). Un test pone el tope en 16 KB; la ronda 2 entra por el conversor que vive junto a los dibujos fuente (095 D4), no en el repo.
-- **Inicio trae la alcancía dos veces** (la lista corta y los tres frascos) y el ancho elige cuál se ve (`nino.css`): un test que cuente frascos en Inicio ve los dos. Lo mismo con "Cambiar": en el teléfono va en Inicio y en Yo; desde 768 px, en el riel.
+- **"Cambiar" vive en dos lugares**: en el teléfono va en Inicio y en Yo; desde 768 px, en el riel. La alcancía de Inicio ya va una sola vez (ADR 124 D2).
+- **La Alcancía "vacía"** (Tino explica los frascos) sale solo si el niño nunca anotó nada; si gastó todo, es la de siempre con los frascos en $0.
 
 **El niño empieza solo (APR.6a, [ADR 100](../DECISIONS/100-el-nino-empieza-solo.md))**: la primera pantalla del onboarding pregunta quién va a usar Finko. El camino del niño crea su perfil (`teNombra: 'Tu familia'`), marca el teléfono como suyo (`dispositivoNino`) y guarda el aviso legal con `via: 'nino'`, que no es un contrato aceptado: la aceptación de verdad la da un adulto cuando aparece (APR.6b o el código). No emite `onboarding:completado` (logros e instalar son del adulto). Sin tutor no hay mesada ni premio. La salida es "Este teléfono es de un adulto" (APR.6b, D5): nada se guarda hasta aceptar los documentos, y no se ofrece si el teléfono está unido a la nube (`.kid-vinculado`, que pone `ui/telefono-adulto.js` al arrancar).
 
@@ -68,6 +70,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-05 (MV2.29 tanda 1, ADR 124): barra con píldora en el ícono, Inicio con la lección y la alcancía en tejas, la meta alcanzada se celebra, Alcancía con "Lo último que anotaste" y "Cambiar el plan", Yo con datos e insignias por unidad.
 - 2026-10-29 (APR.6b, ADR 100 D5): "Este teléfono es de un adulto" desde "Yo": el adulto se crea con nombre, PIN y documentos, y el niño queda como su perfil.
 - 2026-10-29 (APR.6a, ADR 100): el niño empieza solo, en tres pantallas, desde "¿Quién va a usar Finko?"; el teléfono queda como suyo. El atajo del avatar de Inicio a Familia lo trajo MV2.15c (ADR 099 D6).
 - 2026-10-29 (MV2.1, ADR 098 D13): el camino de Aprender ya no desborda (alejaba la página a 390); frascos del inicio en filas bajo 400 px; zona segura arriba; la barra del sistema toma el fondo de la piel.

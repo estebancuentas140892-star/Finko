@@ -28,6 +28,18 @@
 - Aceptación : (a) cifras antes y después en BASELINE.md; (b) la decisión escrita y, si es sí, la línea con su prueba en `menu-mas.test.js`; (c) el descarte en un ADR; (d) E2E a 390 con `env(safe-area-inset-bottom)` simulado, o medición del padding del pie
 - Modelo     : (a) y (c) capacidad estándar, esfuerzo bajo
 
+#### MV2.29 - El niño en el teléfono (tablero de niños de `Diseño Finko/`, `rediseño6`)
+- Prioridad  : media
+- Estado     : en proceso (2026-11-05): tanda 1 hecha (barra, Inicio, Alcancía y Yo, [ADR 124](../DECISIONS/124-el-nino-en-el-telefono.md) D1 a D5); siguen las tandas 2 a 5
+- Área       : design
+- Objetivo   : aplicar las 26 propuestas del tablero de niños, en cinco tandas: (2) Aprender como línea con la unidad actual abierta y la lección (idea, pregunta, "¡Casi!", unidad terminada); (3) las hojas Guardé y la meta; (4) la primera vez y "¿Quién usa Finko?"; (5) lo del adulto: Familia en Ajustes, el progreso, la mesada, el premio y agregar un niño
+- Riesgo     : la lección comparte motor con el adulto (`aprende/view.js`); los cambios van bajo `body.kid` o `_nino`
+- Secciones  : perfil niño, Ajustes (Familia), primera vez
+- Archivos   : `modules/dominio/nino/`, `modules/dominio/aprende/view.js`, `modules/ui/quien-usa.js`, `modules/ui/onboarding-nino.js`, `modules/dominio/config/familia*.js`, `styles/components/nino.css`
+- Depende de : nada
+- Aceptación : cada tanda igual a su tablero a 390, sin desborde a 320, en claro y oscuro; al cerrar la 5, se borra el HTML del tablero (lo que queda manda el ADR 124)
+- Modelo     : capacidad estándar, esfuerzo medio
+
 #### DEC.1 - Finko explica el porqué dentro de cada decisión
 - Prioridad  : media
 - Estado     : pendiente

@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-11-04.
+> Revisado: 2026-11-05.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-11)
+
+### feat(nino): MV2.29 tanda 1, el niño en el teléfono: barra, Inicio, Alcancía y Yo · 2026-11-05
+
+[ADR 124](DECISIONS/124-el-nino-en-el-telefono.md) D1 a D5, del tablero de niños de Claude Design (`Diseño Finko/`, "rediseño6"). Esteban lo pidió en chat. Ficha: [`contexto/nino.md`](contexto/nino.md). SW v659.
+
+- **Nada del tablero estaba aplicado**: la app era igual a sus capturas "hoy". Se aplica en cinco tandas; esta es la primera.
+- **"Lo último que anotaste"** sale de `ultimasAnotaciones()` (`nino/logic.js`): la mesada repartida en los tres frascos (mismo `entrega`) y mover entre frascos (mismo `par`) son una sola fila, como el niño las vivió.
+- **"Cambiar el plan"** reusa la pantalla de la meta con `borrador.id`: guardar cambia esa meta, no crea otra.
+- **La alcancía de Inicio va una sola vez**: antes eran una lista en el teléfono y los frascos en escritorio (ADR 098 D13 queda superado en ese punto). Bajo 360 px los nombres de los frascos pierden el ícono para no partirse.
+- **La insignia de Yo lleva el ícono de su unidad**: el sprite expone `--fk-insignia-estrella` y solo Yo la apaga. Dos íconos nuevos: `i-lock` e `i-clock`.
+- **Ajustes al tablero** (ADR 124 D5): "Ya lo compré" y "Cuesta" en vez de concordar con el ejemplo; "Ibas en el paso N" porque la lección guarda el paso; "Cambiar de perfil" sigue oculto en el teléfono propio del niño.
+- Pruebas: `nino.test.js` (4 nuevas y 5 ajustadas), `perfiles.test.js` (E2E, 3 ajustadas). Unitarios 5318/5318, lint y E2E 442/442 en árbol limpio.
 
 ### feat(movil): MV2.28 (b), Ajustes dice qué guarda en "Más" · 2026-11-04
 
