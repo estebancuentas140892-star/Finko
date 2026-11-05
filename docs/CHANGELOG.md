@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(nino): MV2.29 tanda 4, la primera vez y "¿Quién usa Finko?" con la piel del niño · 2026-11-05
+
+[ADR 124](DECISIONS/124-el-nino-en-el-telefono.md) D9. Ficha: [`contexto/nino.md`](contexto/nino.md). SW v662.
+
+- **`.kid-piel`**: un contenedor pide los tokens de `body.kid` sin cambiar la piel de la app. `themes.css` lo declara en el mismo bloque (`.kid-piel, body.kid` y su par claro), así la prueba de contraste del niño mide los dos a la vez.
+- **"¿Quién usa Finko?"** siempre con la piel del niño: Tino pregunta, los niños primero y el adulto al final, "Agregar un niño · pide tu PIN" como fila punteada.
+- **La primera vez**: la primera pantalla y el camino del niño van a toda la pantalla con su piel; "Soy adulto" vuelve al diálogo de siempre. En el camino del niño, Tino hace cada pregunta y arriba van "Volver" y tres puntos de avance.
+- **Capas**: el marco a pantalla completa en `responsive.css` y el contenido en `modals.css`, porque las piezas del onboarding viven ahí y `components` no les gana.
+- Pruebas: `onboarding-nino.test.js` (4 ajustadas), `perfiles.test.js` (1 ajustada) y E2E `onboarding-nino.test.js` (la piel en el camino del niño). Unitarios 5319/5319, lint y E2E 442/442 en árbol limpio.
+
 ### feat(nino): MV2.29 tanda 3, las hojas del niño: anotar y la meta · 2026-11-05
 
 [ADR 124](DECISIONS/124-el-nino-en-el-telefono.md) D8. Ficha: [`contexto/nino.md`](contexto/nino.md). SW v661.

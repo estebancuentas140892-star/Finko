@@ -71,7 +71,7 @@ Las tarjetas del tablero (la iniciativa HF se lista por fase), para elegir la pr
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
 | MV2.28 | Lo que queda del canvas móvil: anotar MV2.17 y medir fluidez y Lighthouse en producción ((b) y (d) hechas) | Transversal | media | nada |
-| MV2.29 | El niño en el teléfono: el tablero de niños en cinco tandas (tandas 1 a 3 hechas, [ADR 124](DECISIONS/124-el-nino-en-el-telefono.md)) | Perfil niño | media | nada |
+| MV2.29 | El niño en el teléfono: el tablero de niños en cinco tandas (tandas 1 a 4 hechas, [ADR 124](DECISIONS/124-el-nino-en-el-telefono.md)) | Perfil niño | media | nada |
 | DEC.1 | Finko explica el porqué dentro de cada decisión ([ADR 101](DECISIONS/101-finko-del-adulto-decide-no-ensena.md) D5) | Transversal | media | nada |
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | cola de diseño de Esteban |
 | PERF.13 | Arranque: 616 ms de hilo bloqueado | Transversal | baja | nada |

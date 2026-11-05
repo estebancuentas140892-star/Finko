@@ -11,8 +11,8 @@
 ## Perfiles, "¿Quién usa Finko?" y la piel del niño
 
 - **Objetivo**          : que un tutor y niños de 7 a 12 años compartan el teléfono sin que el niño vea las finanzas del adulto (D1).
-- **Estado actual**     : en evolución (Fase 3 de APR). Cerradas **APR.3b** (sistema visual), **APR.3a** (perfiles, selector, alta paso 1, PIN de niño a adulto, candado obligatorio, P1), **APR.3c** (barra, ruta en orden como camino, lección con Frai, celebración, unidad 1) **APR.3d** (Guardé, Gasté, Compartí, mover, una meta con semanas y fecha) y **APR.3e** (alta en dos pasos con mesada, "Entregada" como un solo hecho, premio por ahorrar, progreso del niño). **APR.3f**: las ocho unidades escritas y la ubicación desde los 10 años; falta su revisión pedagógica. **APR.4b**: riel desde 768 px, Inicio en dos columnas desde 1024 px y "Cambiar de perfil" al pie de la barra lateral del adulto. **APR.5a**: Tino, un guatín, reemplaza a Frai ([ADR 095](../DECISIONS/095-tino-en-el-sprite.md)). **MV2.29** (el tablero de niños, [ADR 124](../DECISIONS/124-el-nino-en-el-telefono.md)): tandas 1 a 3 hechas; quedan la primera vez y lo del adulto.
-- **Verificado contra** : MV2.29 tanda 3 (commit `aef1762`, 2026-11-05, ADR 124). Antes: APR.6b (`f09b213`, 2026-10-29).
+- **Estado actual**     : en evolución (Fase 3 de APR). Cerradas **APR.3b** (sistema visual), **APR.3a** (perfiles, selector, alta paso 1, PIN de niño a adulto, candado obligatorio, P1), **APR.3c** (barra, ruta en orden como camino, lección con Frai, celebración, unidad 1) **APR.3d** (Guardé, Gasté, Compartí, mover, una meta con semanas y fecha) y **APR.3e** (alta en dos pasos con mesada, "Entregada" como un solo hecho, premio por ahorrar, progreso del niño). **APR.3f**: las ocho unidades escritas y la ubicación desde los 10 años; falta su revisión pedagógica. **APR.4b**: riel desde 768 px, Inicio en dos columnas desde 1024 px y "Cambiar de perfil" al pie de la barra lateral del adulto. **APR.5a**: Tino, un guatín, reemplaza a Frai ([ADR 095](../DECISIONS/095-tino-en-el-sprite.md)). **MV2.29** (el tablero de niños, [ADR 124](../DECISIONS/124-el-nino-en-el-telefono.md)): tandas 1 a 4 hechas; quedan lo del adulto (Familia y sus hojas).
+- **Verificado contra** : MV2.29 tanda 4 (commit `4e24707`, 2026-11-05, ADR 124). Antes: APR.6b (`f09b213`, 2026-10-29).
 
 **Dónde vive**
 
@@ -20,12 +20,12 @@
 |---|---|---|
 | Modelo del niño, validación del alta y quién usa Finko ahora (sesión, no se guarda) | `modules/infra/perfiles.js` | `normalizarPerfil()`, `validarNino()`, `crearNino()`, `ninos()`, `hayNinos()`, `perfilActivo()`, `entrarComo()` |
 | Estado y migración | `modules/core/state.js` / `storage.js` | `perfiles` (schema v48) |
-| "¿Quién usa Finko?", PIN del adulto y cambio de piel con fundido | `modules/ui/quien-usa.js` | `initPerfiles()`, `abrirQuienUsa()`, `htmlQuienUsa()`, `_aplicarPiel()`, `data-action="perfil-cambiar"` |
+| "¿Quién usa Finko?" (con la piel del niño, `.kid-piel`, ADR 124 D9), PIN del adulto y cambio de piel con fundido | `modules/ui/quien-usa.js` / `index.html` | `initPerfiles()`, `abrirQuienUsa()`, `htmlQuienUsa()`, `_aplicarPiel()`, `data-action="perfil-cambiar"`, `#quien-usa.kid-piel` |
 | "Cambiar de perfil" al pie de la barra lateral del adulto, solo con niños | `modules/ui/quien-usa.js` / `index.html` | `_pintarAccesoPerfil()`, `#sidebar-perfil` |
 | Fundido compartido con el cambio de tema (CFG.7) | `modules/ui/shell.js` | `conFundido()` |
 | "Olvidé mi PIN" con y sin niños (P1) | `modules/ui/bloqueo-acceso.js` | `olvideMiPin()`, `PALABRA_BORRAR`, `intentarPin()` |
 | Confirmación con palabra escrita | `modules/ui/confirm.js` | opción `palabra` |
-| El niño empieza solo: "¿Quién va a usar Finko?" y sus tres pantallas (APR.6a, ADR 100) | `modules/ui/onboarding.js`, `modules/ui/onboarding-nino.js`, `modules/ui/aceptacion-legal.js` | `_renderQuien()`, `empezarCaminoNino()`, `manejarFormNino()`, `perfilNinoSolo()`, `registrarAvisoNino()` |
+| El niño empieza solo: "¿Quién va a usar Finko?" y sus tres pantallas (APR.6a, ADR 100; con la piel del niño a toda la pantalla, ADR 124 D9) | `modules/ui/onboarding.js`, `modules/ui/onboarding-nino.js`, `modules/ui/aceptacion-legal.js` | `_renderQuien()`, `_pielNino()`, `empezarCaminoNino()`, `manejarFormNino()`, `perfilNinoSolo()`, `registrarAvisoNino()` |
 | "Este teléfono es de un adulto": confirmación, nombre y PIN, documentos (APR.6b, ADR 100 D5) | `modules/ui/telefono-adulto.js`, `modules/dominio/nino/view.js` | `ofrecerTelefonoAdulto()`, `validarDatosAdulto()`, acción `telefono-adulto`, `.knino-adulto`, `.kid-vinculado` |
 | Bloque Familia, alta en dos pasos, mesada, premio y progreso | `modules/dominio/config/familia.js`, `familia-view.js` | `initFamilia()`, `abrirAlta()`, `_entregada()`, `_pagarPremio()`, `htmlFamilia()`, `htmlMesada()`, `htmlPremio()`, `htmlProgresoNino()`, `data-action="familia-*"` |
 | Calendario de la mesada y premio (sin DOM, lo leen tutor y niño) | `modules/infra/mesada.js` | `repartoPorDefecto()`, `validarMesada()`, `mesadaPendiente()`, `proximaMesada()`, `guardadoTodoElMes()`, `premioPendiente()`, `proximoPremio()` |
@@ -70,6 +70,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-05 (MV2.29 tanda 4, ADR 124): la piel del niño fuera de su app (`.kid-piel`): "¿Quién usa Finko?" con Tino y los niños primero, y la primera vez a toda la pantalla con Tino en cada paso.
 - 2026-11-05 (MV2.29 tanda 3, ADR 124): la hoja para anotar con el monto en grande, billetes y el botón que dice cuánto; la meta como pantalla de paso, sin barra, con tres cantidades por semana y Tino que responde.
 - 2026-11-05 (MV2.29 tanda 2, ADR 124): Aprender como una línea con la unidad actual abierta, "Seguir donde ibas"; la lección con la pista al pie, "¡Casi!" en tarjeta que flota y la unidad terminada con la insignia de su unidad.
 - 2026-11-05 (MV2.29 tanda 1, ADR 124): barra con píldora en el ícono, Inicio con la lección y la alcancía en tejas, la meta alcanzada se celebra, Alcancía con "Lo último que anotaste" y "Cambiar el plan", Yo con datos e insignias por unidad.
