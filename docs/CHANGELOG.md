@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(nino): MV2.29 tanda 5, Familia del adulto y sus hojas; cierra MV2.29 · 2026-11-05
+
+[ADR 124](DECISIONS/124-el-nino-en-el-telefono.md) D10. Ficha: [`contexto/nino.md`](contexto/nino.md). SW v663. Con esta tanda el tablero de niños quedó aplicado completo y su HTML (`Diseño Finko/Finko móvil · rediseño6.html`) se borró: lo que queda manda el ADR 124.
+
+- **Familia en Ajustes**: cada niño es una fila que abre su progreso, con una línea de su mesada. "Se la entregué · $X" va en la fila y no abre nada: anota y avisa con un toast. "Entrar como", "Su teléfono" y quitar al niño pasan a su progreso.
+- **Las hojas del tutor** llevan teja, título y una línea en la cabecera (`_pintar(titulo, html, foco, { sub, teja })`, `#modal-familia-teja` y `#modal-familia-sub`) y el pie fijo del ADR 123. "Su teléfono" (`config/nube.js`) esconde la teja y la línea al pintar en el mismo modal.
+- **La mesada**: los siete días en botones (cada mes sigue la lista del 1 al 28, `htmlDiaMesada()`), el porcentaje de cada frasco y la suma que se rehacen mientras se escribe (`htmlSumaReparto()`), interruptores y la cuenta solo si se anota como gasto.
+- **El progreso** conserva "Esta semana" aunque el tablero no la traía: la pide el ADR 093 D2.
+- Pruebas: `perfiles.test.js` y `mesada.test.js` (6 ajustadas con casos nuevos), E2E `perfiles.test.js` (alta, mesada y premio) y `nube.test.js` ("Su teléfono" desde el progreso). Unitarios 5319/5319, lint y E2E 442/442 en árbol limpio.
+
 ### feat(nino): MV2.29 tanda 4, la primera vez y "¿Quién usa Finko?" con la piel del niño · 2026-11-05
 
 [ADR 124](DECISIONS/124-el-nino-en-el-telefono.md) D9. Ficha: [`contexto/nino.md`](contexto/nino.md). SW v662.
