@@ -130,8 +130,10 @@ describe('contenidoGrupo()', () => {
     ];
     const c = contenidoGrupo({ seccion: 'compromisos', severidad: 'urgente', avisos });
     expect(c.titulo).toBe('6 pagos para hoy');
-    expect(c.detalle).toBe(`${f(2_670_900)} · 5 ya vencidos`);
-    expect(c.cta).toMatchObject({ texto: 'Pagar', largo: 'Pagar los 6', accion: 'inicio-pagar-lote' });
+    // ADR 126 D3: el estado del lote va aparte del monto, con su color.
+    expect(c.detalle).toBe(f(2_670_900));
+    expect(c.estado).toEqual({ texto: '5 ya vencidos', tono: 'danger' });
+    expect(c.cta).toMatchObject({ texto: 'Pagar', largo: 'Pagar los 6', accion: 'inicio-pagar-lote', mueve: true });
     expect(c.grupo.cta).toBe(`Pagar los 6 · ${f(2_670_900)}`);
   });
 
@@ -146,6 +148,20 @@ describe('contenidoGrupo()', () => {
     expect(c.titulo).toBe('Restaurantes pasó su límite');
     expect(c.detalle).toBe('Y Entretenimiento va al 99%');
     expect(c.cta).toMatchObject({ texto: 'Ver', href: '#presupuesto', largo: 'Ver los 2 límites' });
+  });
+
+  // ADR 126 D3: el nombre puede ser largo y el monto nunca se corta, así que
+  // el monto baja al detalle.
+  it('me deben: la frase es el nombre y el detalle dice cuánto y desde cuándo', () => {
+    const debe = aviso({ tipo: 'personal-vencido', severidad: 'media', nombre: 'Juan Sebastián', monto: 1_100_000, dias: 12, sentido: 'atraso', seccion: 'personales' });
+    const c = contenidoGrupo({ seccion: 'personales', severidad: 'media', avisos: [debe] });
+    expect(c.titulo).toBe('Juan Sebastián');
+    expect(c.detalle).toBe(`Te debe ${f(1_100_000)} · fecha acordada hace 12 días`);
+  });
+
+  it('respaldo: el botón dice a qué lleva', () => {
+    const c = contenidoGrupo({ seccion: 'respaldo', severidad: 'media', avisos: [aviso({ tipo: 'respaldo-atrasado', seccion: 'respaldo', dias: 40 })] });
+    expect(c.grupo.cta).toBe('Ir a respaldar tus datos');
   });
 
   it('ingreso: distribuir manda, con la acción del aviso de Inicio', () => {
@@ -164,7 +180,7 @@ describe('contenidoGrupo() con el ojo puesto (ADR 116 D2)', () => {
     const fila = c.item(deHoy('Plan Claro', 65_000));
     S.config = antes;
     expect(c.detalle).not.toContain('154.900');
-    expect(c.detalle).toContain('1 ya vencido');
+    expect(c.estado.texto).toBe('1 ya vencido');
     expect(c.grupo.cta).not.toContain('154.900');
     expect(fila.v).not.toContain('65.000');
   });
@@ -190,9 +206,40 @@ describe('htmlAtencionHoy()', () => {
     expect(d.querySelector('[data-action="atencion-hoy-ver"]')).toBeNull();
   });
 
-  it('la severidad se oye en cada fila, no solo se ve en el color', () => {
-    const d = div(htmlAtencionHoy(gruposAtencionHoy([pago('Arriendo', 3, 1)])));
-    expect(d.querySelector('.atencion-hoy__frase .sr-only').textContent).toBe('Urgente: ');
+  // ADR 126 D3: el primer aviso va destacado y dice su urgencia a la vista;
+  // los demás la dicen al lector junto a su frase.
+  it('la severidad se lee en el destacado y se oye en las demás filas', () => {
+    const d = div(htmlAtencionHoy(gruposAtencionHoy([pago('Arriendo', 3, 1), limite('Café', 120)])));
+    const [destacada, fila] = d.querySelectorAll('.atencion-hoy__fila');
+    expect(destacada.classList.contains('atencion-hoy__fila--destacada')).toBe(true);
+    expect(destacada.querySelector('.atencion-hoy__sev').textContent).toBe('Urgente');
+    expect(fila.querySelector('.atencion-hoy__frase .sr-only').textContent).toBe('Importante: ');
+  });
+
+  it('el botón del destacado tiene el peso de lo que hace: pagar viste su sección', () => {
+    const d = div(htmlAtencionHoy(gruposAtencionHoy([pago('Arriendo', 3, 1), pago('Luz', 2, 1)])));
+    const boton = d.querySelector('.atencion-hoy__fila--destacada .atencion-hoy__accion');
+    expect(boton.classList.contains('btn-dominio')).toBe(true);
+    expect(boton.dataset.dom).toBe('compromisos');
+    expect(boton.dataset.action).toBe('inicio-pagar-lote');
+    expect(boton.textContent).toContain('Pagar los 2');
+    expect(d.querySelector('.atencion-hoy__estado--danger').textContent).toBe('2 ya vencidos');
+  });
+
+  it('ir a otro lugar es neutro, y la fila que no es la primera se toca entera', () => {
+    const d = div(htmlAtencionHoy(gruposAtencionHoy([limite('Café', 120), pago('Arriendo', 3, 1)])));
+    const destacado = d.querySelector('.atencion-hoy__fila--destacada .atencion-hoy__accion');
+    expect(destacado.classList.contains('btn-secondary')).toBe(true);
+    expect(destacado.getAttribute('href')).toBe('#presupuesto');
+    const fila = d.querySelectorAll('.atencion-hoy__fila')[1].querySelector('.atencion-hoy__control');
+    expect(fila.dataset.action).toBe('inicio-pagar-lote');
+    expect(fila.getAttribute('aria-label')).toBe('Pagar Arriendo');
+    expect(d.querySelector(`#${fila.getAttribute('aria-describedby')}`)).not.toBeNull();
+  });
+
+  it('la teja dice la sección con su color, no la urgencia', () => {
+    const d = div(htmlAtencionHoy(gruposAtencionHoy([pago('Arriendo', 3, 1), limite('Café', 120)])));
+    expect([...d.querySelectorAll('.atencion-hoy__icono')].map(t => t.dataset.dom)).toEqual(['compromisos', 'presupuesto']);
   });
 
   it('sin avisos, una línea verde dice qué se revisó', () => {
@@ -208,7 +255,9 @@ describe('htmlHojaAvisosHoy()', () => {
   it('el título dice el mismo número que "Ver los N"', () => {
     const grupos = gruposAtencionHoy([pago('Arriendo', 3, 1), deHoy('Luz', 1), limite('Café', 120)]);
     const d = div(htmlHojaAvisosHoy(grupos));
+    // El número va en pastilla; el lector sigue oyendo "Avisos de hoy · 3".
     expect(d.querySelector('#avisos-hoy-titulo').textContent).toBe('Avisos de hoy · 3');
+    expect(d.querySelector('.avisos-hoy__cuenta').textContent).toBe(' · 3');
     expect(d.querySelectorAll('.avisos-hoy__item')).toHaveLength(3);
   });
 
@@ -222,6 +271,8 @@ describe('htmlHojaAvisosHoy()', () => {
     const [pagar, ver] = d.querySelectorAll('.avisos-hoy__cta');
     expect(pagar.dataset.action).toBe('registrar-abrir');
     expect(pagar.dataset.targetAction).toBe('inicio-pagar-lote');
+    expect(pagar.classList.contains('btn-dominio')).toBe(true);
+    expect(ver.classList.contains('btn-secondary')).toBe(true);
     expect(ver.dataset.action).toBe('ir-a-seccion');
     expect(ver.getAttribute('href')).toBe('#presupuesto');
   });

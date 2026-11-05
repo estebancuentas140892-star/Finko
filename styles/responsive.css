@@ -3116,31 +3116,35 @@
   #panel-avisos,
   #panel-vencidos { display: none; }
 
+  /* ── ADR 126 D3: "Atención hoy" con un aviso destacado ───────────────
+     El título va en 18px, sin mayúsculas, con "Ver los N" en su fila. Una
+     sola tarjeta: el primer aviso destacado (urgencia escrita, frase,
+     detalle y su botón a lo ancho) y los demás como filas que se tocan
+     enteras. La teja dice la sección con su color (.cat-teja) y la urgencia
+     se lee. Medidas sin token (13, 15, 650, radio 20): literales (D7). */
   .atencion-hoy__cabeza {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--fk-space-2);
-    /* La celda ya separa con su gap; "Ver los N" mide 44px de alto por el
-       piso táctil y alejaba el rótulo de su lista. */
-    margin-bottom: calc(-1 * var(--fk-space-2));
+    gap: var(--fk-space-3);
+    min-height: 44px;
+    /* La celda ya separa con su gap; la tarjeta va a 6px del título. */
+    margin-bottom: calc(6px - var(--fk-space-3));
   }
-  /* Mismo rótulo que el resto de grupos de Inicio (`.bento__group-label`). */
   .atencion-hoy__titulo {
     margin: 0;
-    padding-left: 2px;
-    font-size: var(--fk-text-xs);
+    font-size: var(--fk-text-lg);
+    line-height: 24px;
     font-weight: var(--fk-font-bold);
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--fk-text-muted);
+    letter-spacing: -0.01em;
+    color: var(--fk-text-primary);
   }
   .atencion-hoy__ver {
     display: inline-flex;
     align-items: center;
-    gap: var(--fk-space-1);
+    gap: 2px;
     min-height: 44px;
-    padding: 0 var(--fk-space-1);
+    padding: 0 0 0 var(--fk-space-3);
     border: 0;
     background: none;
     font: inherit;
@@ -3149,6 +3153,7 @@
     color: var(--fk-text-accent);
     cursor: pointer;
   }
+  .atencion-hoy__ver .icon { --fk-icon-size: var(--fk-icon-sm); }
 
   .atencion-hoy__lista,
   .atencion-hoy__ok {
@@ -3157,103 +3162,225 @@
     list-style: none;
     background: var(--fk-bg-surface);
     border: 1px solid var(--fk-border-subtle);
-    border-radius: var(--fk-radius-lg);
+    border-radius: 20px;
+    box-shadow: var(--fk-shadow-sm);
     overflow: hidden;
   }
-  .atencion-hoy__fila,
-  .atencion-hoy__ok {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
-    gap: var(--fk-space-3);
-    padding: var(--fk-space-3) var(--fk-space-4);
-  }
-  .atencion-hoy__ok { grid-template-columns: auto minmax(0, 1fr); }
   .atencion-hoy__fila + .atencion-hoy__fila { border-top: 1px solid var(--fk-border-subtle); }
 
-  /* La teja dice la clase con su dibujo; el tono, la severidad. Nunca solo
-     el color: la severidad también va en texto (sr-only en la fila, a la
-     vista en la hoja). */
-  .atencion-hoy__icono {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+  /* El destacado. */
+  .atencion-hoy__fila--destacada {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: var(--fk-space-4);
+  }
+  .atencion-hoy__destacado {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--fk-space-3);
+  }
+  .atencion-hoy__fila--destacada .atencion-hoy__icono {
     width: var(--fk-space-10);
     height: var(--fk-space-10);
-    border-radius: var(--fk-radius-md);
+    border-radius: 12px;
   }
-  .atencion-hoy__icono--danger  { background: var(--fk-danger-bg);  color: var(--fk-danger-text); }
-  .atencion-hoy__icono--warning { background: var(--fk-warning-bg); color: var(--fk-warning-text); }
-  .atencion-hoy__icono--info    { background: var(--fk-info-bg);    color: var(--fk-info-text); }
-  .atencion-hoy__icono--ok      { background: var(--fk-success-bg); color: var(--fk-success-text); }
-
-  .atencion-hoy__textos { min-width: 0; }
-  .atencion-hoy__frase {
+  .atencion-hoy__fila--destacada .atencion-hoy__textos {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .atencion-hoy__sev {
     margin: 0;
+    font-size: var(--fk-text-xs);
+    line-height: 16px;
+    font-weight: 650;
+  }
+  .atencion-hoy__sev--danger  { color: var(--fk-danger-text); }
+  .atencion-hoy__sev--warning { color: var(--fk-warning-text); }
+  .atencion-hoy__sev--info    { color: var(--fk-info-text); }
+  .atencion-hoy__sev--neutro  { color: var(--fk-text-secondary); }
+  .atencion-hoy__fila--destacada .atencion-hoy__frase {
+    font-size: var(--fk-text-base);
+    line-height: 22px;
+    font-weight: 650;
+  }
+  .atencion-hoy__fila--destacada .atencion-hoy__detalle {
     font-size: var(--fk-text-sm);
+    line-height: 20px;
+  }
+  .atencion-hoy__boton {
+    width: 100%;
+    min-height: 48px;
+    padding: 0 var(--fk-space-4);
+    border-radius: 14px;
+    font-size: 0.9375rem;
+    font-weight: 650;
+    text-align: center;
+    justify-content: center;
+    white-space: normal;
+  }
+
+  /* Las filas que siguen: la fila entera es el control. */
+  .atencion-hoy__control {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    width: 100%;
+    min-height: 68px;
+    padding: var(--fk-space-3) 10px var(--fk-space-3) var(--fk-space-4);
+    border: 0;
+    background: none;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .atencion-hoy__control:hover { background: var(--fk-bg-hover); }
+  .atencion-hoy__icono {
+    width: var(--fk-teja-lg);
+    height: var(--fk-teja-lg);
+    border-radius: 11px;
+  }
+  .atencion-hoy__icono .icon { width: var(--fk-icon-md); height: var(--fk-icon-md); }
+  .atencion-hoy__textos {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .atencion-hoy__frase,
+  .atencion-hoy__detalle {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    margin: 0;
+  }
+  .atencion-hoy__frase {
+    font-size: 0.9375rem;
+    line-height: 20px;
     font-weight: var(--fk-font-semibold);
     color: var(--fk-text-primary);
     overflow-wrap: anywhere;
   }
   .atencion-hoy__detalle {
-    margin: 0;
-    font-size: var(--fk-text-xs);
+    font-size: 0.8125rem;
+    line-height: 18px;
     color: var(--fk-text-secondary);
     font-variant-numeric: tabular-nums;
   }
-  .atencion-hoy__accion {
-    min-height: 44px;
-    white-space: nowrap;
+  .atencion-hoy__estado { font-weight: var(--fk-font-medium); }
+  .atencion-hoy__estado--danger  { color: var(--fk-danger-text); }
+  .atencion-hoy__estado--warning { color: var(--fk-warning-text); }
+  .atencion-hoy__verbo {
+    display: inline-flex;
+    align-items: center;
+    flex: none;
+    gap: 2px;
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-secondary);
+  }
+  .atencion-hoy__verbo .icon { --fk-icon-size: var(--fk-icon-sm); }
+  .atencion-hoy__verbo--dom[data-dom="tesoreria"]   { color: var(--fk-dom-tesoreria-text); }
+  .atencion-hoy__verbo--dom[data-dom="compromisos"] { color: var(--fk-dom-compromisos-text); }
+  .atencion-hoy__accion { min-height: 44px; }
+
+  /* Nada que atender: la misma tarjeta, una teja verde y dos líneas. */
+  .atencion-hoy__ok {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    min-height: 72px;
+    padding: 14px var(--fk-space-4);
+  }
+  .atencion-hoy__icono--ok {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    background: var(--fk-success-bg);
+    color: var(--fk-success-text);
   }
 
-  /* La hoja "Avisos de hoy": un grupo por clase, su severidad en texto y la
-     acción completa del grupo a lo ancho. */
+  /* La hoja "Avisos de hoy": el número en pastilla; cada grupo con la teja
+     de su sección, su título, la urgencia en pastilla, la lista y el botón
+     con su peso. */
   .avisos-hoy__body {
     display: flex;
     flex-direction: column;
-    gap: var(--fk-space-5);
-    padding: var(--fk-space-2) var(--fk-space-5) var(--fk-space-5);
+    gap: 22px;
+    padding: var(--fk-space-1) var(--fk-space-4) 28px;
   }
   .avisos-hoy__titulo {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-2);
     margin: 0;
     padding-right: var(--fk-space-10);
-    font-size: var(--fk-text-lg);
+    font-size: var(--fk-text-xl);
+    line-height: 26px;
     font-weight: var(--fk-font-bold);
     color: var(--fk-text-primary);
+  }
+  .avisos-hoy__cuenta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 26px;
+    height: 24px;
+    padding: 0 var(--fk-space-2);
+    border-radius: 12px;
+    background: var(--fk-bg-elevated);
+    font-size: 0.8125rem;
+    font-weight: var(--fk-font-bold);
+    color: var(--fk-text-secondary);
   }
   .avisos-hoy__grupo {
     display: flex;
     flex-direction: column;
-    gap: var(--fk-space-2);
+    gap: 10px;
   }
   .avisos-hoy__grupo-cabeza {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: var(--fk-space-2);
+    gap: 10px;
   }
+  .avisos-hoy__grupo-cabeza .atencion-hoy__icono {
+    width: var(--fk-teja-md);
+    height: var(--fk-teja-md);
+    border-radius: var(--fk-radius-md);
+  }
+  .avisos-hoy__grupo-cabeza .atencion-hoy__icono .icon { width: var(--fk-icon-sm); height: var(--fk-icon-sm); }
   .avisos-hoy__grupo-titulo {
+    flex: 1;
+    min-width: 0;
     margin: 0;
-    font-size: var(--fk-text-xs);
-    font-weight: var(--fk-font-semibold);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--fk-text-secondary);
+    font-size: 0.9375rem;
+    line-height: 20px;
+    font-weight: 650;
+    color: var(--fk-text-primary);
   }
   .avisos-hoy__sev {
-    padding: var(--fk-space-1) var(--fk-space-2);
+    flex: none;
+    padding: var(--fk-space-1) 9px;
     border-radius: var(--fk-radius-full);
     font-size: var(--fk-text-xs);
-    font-weight: var(--fk-font-semibold);
+    line-height: 16px;
+    font-weight: 650;
   }
   .avisos-hoy__sev--danger  { background: var(--fk-danger-bg);  color: var(--fk-danger-text); }
   .avisos-hoy__sev--warning { background: var(--fk-warning-bg); color: var(--fk-warning-text); }
   .avisos-hoy__sev--info    { background: var(--fk-info-bg);    color: var(--fk-info-text); }
+  .avisos-hoy__sev--neutro  { background: var(--fk-bg-active);  color: var(--fk-text-secondary); }
   .avisos-hoy__lista {
     margin: 0;
     padding: 0;
     list-style: none;
-    background: var(--fk-bg-surface);
+    background: var(--fk-bg-hover);
     border: 1px solid var(--fk-border-subtle);
     border-radius: var(--fk-radius-lg);
   }
@@ -3261,41 +3388,55 @@
     display: flex;
     align-items: center;
     gap: var(--fk-space-3);
-    min-height: 56px;
-    padding: var(--fk-space-2) var(--fk-space-4);
+    min-height: 60px;
+    padding: 10px 14px;
   }
   .avisos-hoy__item + .avisos-hoy__item { border-top: 1px solid var(--fk-border-subtle); }
   .avisos-hoy__item-textos { flex: 1; min-width: 0; }
   .avisos-hoy__item-t {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
     margin: 0;
-    font-size: var(--fk-text-sm);
-    font-weight: var(--fk-font-semibold);
+    font-size: 0.9375rem;
+    line-height: 20px;
+    font-weight: 550;
     color: var(--fk-text-primary);
     overflow-wrap: anywhere;
   }
   .avisos-hoy__item-s {
     margin: 0;
-    font-size: var(--fk-text-xs);
+    font-size: 0.8125rem;
+    line-height: 18px;
+    font-weight: var(--fk-font-medium);
     color: var(--fk-text-secondary);
   }
   .avisos-hoy__item-s--danger  { color: var(--fk-danger-text); }
   .avisos-hoy__item-s--warning { color: var(--fk-warning-text); }
   .avisos-hoy__item-v {
     flex-shrink: 0;
-    font-size: var(--fk-text-sm);
-    font-weight: var(--fk-font-semibold);
+    font-size: 0.9375rem;
+    font-weight: 650;
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
     color: var(--fk-text-primary);
   }
   .avisos-hoy__cta {
     width: 100%;
-    min-height: 44px;
+    min-height: 48px;
+    padding: 0 var(--fk-space-4);
+    border-radius: 14px;
+    font-size: 0.9375rem;
+    font-weight: 650;
     justify-content: center;
   }
   .avisos-hoy__nota {
     margin: 0;
-    font-size: var(--fk-text-xs);
-    color: var(--fk-text-secondary);
+    font-size: 0.8125rem;
+    line-height: 18px;
+    text-align: center;
+    color: var(--fk-text-muted);
   }
 }
 

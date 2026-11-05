@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(inicio): MV2.30 tanda 2, "Atención hoy" con un aviso destacado y su hoja · 2026-11-05
+
+[ADR 126](DECISIONS/126-inicio-del-adulto-en-el-telefono.md) D3. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v666.
+
+- **Un aviso destacado** con su urgencia escrita y su botón a lo ancho; las demás filas se tocan enteras (`.atencion-hoy__control`, con la acción completa como nombre y la frase por `aria-describedby`). Las tres siguen siendo `.atencion-hoy__fila`.
+- **La teja dice la sección** (`_DOM_POR_SECCION` sobre `.cat-teja`); la urgencia se lee. "Para tu información" pasa a tono neutro.
+- **El botón pesa lo que hace**: pagar y distribuir visten su sección con `.btn-dominio`; ver es neutro. Igual en la hoja.
+- **Copys**: el estado del lote aparte del monto (`estado` en `contenidoGrupo()`), Me deben con el nombre como frase y "Ir a respaldar tus datos".
+- **La hoja** lleva el número en pastilla, la teja de cada grupo y su urgencia en pastilla.
+- Pruebas: `atencion-hoy.test.js` (6 nuevas, 3 ajustadas). Unitarios 5290/5290, lint y E2E 438/438 en árbol limpio.
+
 ### feat(inicio): MV2.30 tanda 1, el encabezado y el saldo de Inicio en el teléfono · 2026-11-05
 
 [ADR 126](DECISIONS/126-inicio-del-adulto-en-el-telefono.md) D1 y D2, del tablero de Inicio de Claude Design (`Diseño Finko/Finko móvil · rediseño.html`). Esteban aprobó en chat las seis recomendaciones que tocan decisiones escritas. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v665.

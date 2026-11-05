@@ -21,6 +21,12 @@
  * (`distribuir-desde-inicio`) y "Ver" navega. Desde la hoja viajan por
  * `registrar-abrir` e `ir-a-seccion`, que cierran la hoja antes.
  *
+ * ADR 126 D3: el primer aviso va destacado, con su urgencia escrita y su
+ * botón a todo el ancho; los demás son filas que se tocan enteras. La teja
+ * dice la sección (su color de dominio) y la urgencia se lee. El botón que
+ * mueve dinero viste su sección (`.btn-dominio`); el que lleva a otro lugar
+ * es neutro.
+ *
  * Los paneles de escritorio siguen en el DOM; responsive.css decide cuál se ve.
  */
 
@@ -51,8 +57,25 @@ const _SEVERIDAD_TEXTO = {
   baja:    'Para tu información',
 };
 
-/** Tono de la teja y del rótulo de severidad. */
-const _TONO = { urgente: 'danger', alta: 'warning', media: 'info', baja: 'info' };
+/** Tono del rótulo de severidad. La teja ya no lo usa: dice la sección. */
+const _TONO = { urgente: 'danger', alta: 'warning', media: 'info', baja: 'neutro' };
+
+/**
+ * El dominio de cada sección de aviso, para la teja y para el botón que mueve
+ * dinero (ADR 126 D3). Respaldo y nube son de la app entera: tono de Análisis.
+ */
+const _DOM_POR_SECCION = {
+  compromisos: 'compromisos',
+  presupuesto: 'presupuesto',
+  tesoreria:   'tesoreria',
+  apartados:   'ahorro',
+  personales:  'personales',
+  respaldo:    'analisis',
+  nube:        'analisis',
+};
+
+/** @param {string} seccion */
+const _dom = (seccion) => _DOM_POR_SECCION[seccion] ?? 'analisis';
 
 // ── PURAS ────────────────────────────────────────────────────────
 
@@ -139,8 +162,10 @@ function _contenidoPagos(avisos) {
     titulo: n === 1
       ? (primero.sentido === 'atraso' ? `${primero.nombre}: venció ${_hace(primero.dias)}` : `${primero.nombre} vence hoy`)
       : `${n} pagos para hoy`,
-    detalle: n === 1 ? _m(total) : `${_m(total)} · ${enLote}`,
-    cta: { texto: 'Pagar', largo: n === 1 ? `Pagar ${primero.nombre}` : `Pagar los ${n}`, accion: 'inicio-pagar-lote' },
+    detalle: _m(total),
+    // ADR 126 D3: el estado del lote se lee en su color, aparte del monto.
+    estado: n === 1 ? null : { texto: enLote, tono: vencidos === 0 ? 'warning' : 'danger' },
+    cta: { texto: 'Pagar', largo: n === 1 ? `Pagar ${primero.nombre}` : `Pagar los ${n}`, accion: 'inicio-pagar-lote', mueve: true },
     grupo: {
       titulo: 'Pagos para hoy',
       cta: n === 1 ? `Pagar · ${_m(total)}` : `Pagar los ${n} · ${_m(total)}`,
@@ -199,7 +224,7 @@ function _contenidoIngreso(avisos) {
       icono: 'bolt',
       titulo: _tituloReparto(reparto),
       detalle: 'Distribúyelo antes de empezar a gastarlo',
-      cta: { texto: 'Distribuir', largo: 'Distribuir tu ingreso', accion: 'distribuir-desde-inicio' },
+      cta: { texto: 'Distribuir', largo: 'Distribuir tu ingreso', accion: 'distribuir-desde-inicio', mueve: true },
       grupo: { titulo: 'Tu ingreso', cta: 'Distribuir ahora' },
       item,
     };
@@ -239,10 +264,13 @@ function _contenidoPersonales(avisos) {
   const a = avisos[0];
   const n = avisos.length;
   const cuando = (x) => (x.sentido === 'atraso' ? `Acordaron esta fecha ${_hace(x.dias)}` : 'Acordaron esta fecha para hoy');
+  // ADR 126 D3: el nombre puede ser largo; el monto va en el detalle, que
+  // nunca lo corta.
+  const fecha = a.sentido === 'atraso' ? `fecha acordada ${_hace(a.dias)}` : 'fecha acordada para hoy';
   return {
     icono: 'personales',
-    titulo: `${a.nombre} te debe ${_m(Number(a.monto) || 0)}`,
-    detalle: cuando(a) + (n > 1 ? ` · y ${n - 1} más` : ''),
+    titulo: a.nombre,
+    detalle: `Te debe ${_m(Number(a.monto) || 0)} · ${fecha}` + (n > 1 ? ` · y ${n - 1} más` : ''),
     cta: { texto: 'Ver', largo: n === 1 ? `Ver lo que te debe ${a.nombre}` : 'Ver lo que te deben', href: '#personales' },
     grupo: { titulo: 'Me deben', cta: 'Ver lo que te deben' },
     item: (x) => ({ t: x.nombre, s: cuando(x), tono: '', v: _m(Number(x.monto) || 0) }),
@@ -257,7 +285,7 @@ function _contenidoRespaldo(avisos) {
     titulo: 'Respalda tus datos',
     detalle: hace,
     cta: { texto: 'Ver', largo: 'Ir a respaldar tus datos', href: '#config' },
-    grupo: { titulo: 'Respaldo de tus datos', cta: 'Ir a Ajustes' },
+    grupo: { titulo: 'Respaldo de tus datos', cta: 'Ir a respaldar tus datos' },
     item: () => ({ t: 'Respaldo de tus datos', s: hace, tono: '', v: '' }),
   };
 }
@@ -304,25 +332,92 @@ export function contenidoGrupo(grupo) {
   };
 }
 
-/** Botón o enlace de la acción de una fila (fuera de la hoja). */
-function _accionFila(cta) {
-  const clase = 'btn btn-secondary btn-sm atencion-hoy__accion';
+/**
+ * Clases del botón de un grupo según su peso (ADR 126 D3, "Piezas de
+ * Inicio"): mover dinero viste su sección; ir a otro lugar es neutro.
+ * @returns {{ clase: string, dom: string }}
+ */
+function _pesoBoton(cta, dom) {
+  return cta.mueve
+    ? { clase: 'btn-dominio btn-dominio--bloque', dom: ` data-dom="${dom}"` }
+    : { clase: 'btn btn-secondary', dom: '' };
+}
+
+/** El botón a todo el ancho del aviso destacado (fuera de la hoja). */
+function _accionDestacada(cta, texto, dom) {
+  const { clase, dom: attr } = _pesoBoton(cta, dom);
+  const cls = `${clase} atencion-hoy__accion atencion-hoy__boton`;
   if (cta.accion) {
-    return `<button type="button" class="${clase}" data-action="${cta.accion}" aria-label="${esc(cta.largo)}">${esc(cta.texto)}</button>`;
+    return `<button type="button" class="${cls}"${attr} data-action="${cta.accion}">${esc(texto)}</button>`;
   }
-  return `<a class="${clase}" href="${cta.href}" aria-label="${esc(cta.largo)}">${esc(cta.texto)}</a>`;
+  return `<a class="${cls}" href="${cta.href}">${esc(texto)}</a>`;
 }
 
 /**
  * Acción del grupo dentro de la hoja: cierra la hoja antes de abrir el lote o
  * el asistente (`registrar-abrir`) o antes de navegar (`ir-a-seccion`).
  */
-function _accionHoja(cta, texto) {
-  const clase = 'btn btn-secondary avisos-hoy__cta';
+function _accionHoja(cta, texto, dom) {
+  const { clase, dom: attr } = _pesoBoton(cta, dom);
+  const cls = `${clase} avisos-hoy__cta`;
   if (cta.accion) {
-    return `<button type="button" class="${clase}" data-action="registrar-abrir" data-target-action="${cta.accion}">${esc(texto)}</button>`;
+    return `<button type="button" class="${cls}"${attr} data-action="registrar-abrir" data-target-action="${cta.accion}">${esc(texto)}</button>`;
   }
-  return `<a class="${clase}" href="${cta.href}" data-action="ir-a-seccion">${esc(texto)}</a>`;
+  return `<a class="${cls}" href="${cta.href}" data-action="ir-a-seccion">${esc(texto)}</a>`;
+}
+
+/** El detalle de una fila, con el estado del lote en su color si lo hay. */
+function _htmlDetalle(c) {
+  if (!c.detalle && !c.estado) return '';
+  const estado = c.estado
+    ? `${c.detalle ? ' · ' : ''}<span class="atencion-hoy__estado atencion-hoy__estado--${c.estado.tono}">${esc(c.estado.texto)}</span>`
+    : '';
+  return `<span class="atencion-hoy__detalle">${esc(c.detalle ?? '')}${estado}</span>`;
+}
+
+/** La teja de la sección del aviso. */
+function _teja(c, dom) {
+  return `<span class="cat-teja atencion-hoy__icono" data-dom="${dom}" aria-hidden="true">${icon(c.icono)}</span>`;
+}
+
+/** El aviso destacado: urgencia escrita, frase, detalle y su botón. */
+function _htmlDestacado(g) {
+  const c = contenidoGrupo(g);
+  const dom = _dom(g.seccion);
+  const tono = _TONO[g.severidad] ?? 'info';
+  return `
+        <li class="atencion-hoy__fila atencion-hoy__fila--destacada">
+          <div class="atencion-hoy__destacado">
+            ${_teja(c, dom)}
+            <div class="atencion-hoy__textos">
+              <p class="atencion-hoy__sev atencion-hoy__sev--${tono}">${_SEVERIDAD_TEXTO[g.severidad] ?? ''}</p>
+              <p class="atencion-hoy__frase">${esc(c.titulo)}</p>
+              ${_htmlDetalle(c)}
+            </div>
+          </div>
+          ${_accionDestacada(c.cta, c.grupo.cta, dom)}
+        </li>`;
+}
+
+/** Una fila que se toca entera: lleva a su sección o abre su acción. */
+function _htmlFila(g, i) {
+  const c = contenidoGrupo(g);
+  const dom = _dom(g.seccion);
+  const id = `atencion-hoy-frase-${i}`;
+  const verbo = `<span class="atencion-hoy__verbo${c.cta.mueve ? ` atencion-hoy__verbo--dom" data-dom="${dom}` : ''}" aria-hidden="true">${esc(c.cta.texto)}${icon('chevron-right', 'icon icon--sm')}</span>`;
+  const dentro = `
+            ${_teja(c, dom)}
+            <span class="atencion-hoy__textos" id="${id}">
+              <span class="atencion-hoy__frase"><span class="sr-only">${_SEVERIDAD_TEXTO[g.severidad] ?? ''}: </span>${esc(c.titulo)}</span>
+              ${_htmlDetalle(c)}
+            </span>
+            ${verbo}`;
+  const comun = `class="atencion-hoy__accion atencion-hoy__control" aria-label="${esc(c.cta.largo)}" aria-describedby="${id}"`;
+  const control = c.cta.accion
+    ? `<button type="button" ${comun} data-action="${c.cta.accion}">${dentro}</button>`
+    : `<a ${comun} href="${c.cta.href}">${dentro}</a>`;
+  return `
+        <li class="atencion-hoy__fila">${control}</li>`;
 }
 
 /**
@@ -348,19 +443,7 @@ export function htmlAtencionHoy(grupos) {
            <p class="atencion-hoy__detalle">Ningún pago vencido, nada sin repartir y ningún límite pasado.</p>
          </div>
        </div>`
-    : `<ul class="atencion-hoy__lista" role="list">${visibles.map((g) => {
-        const c = contenidoGrupo(g);
-        const tono = _TONO[g.severidad] ?? 'info';
-        return `
-        <li class="atencion-hoy__fila">
-          <span class="atencion-hoy__icono atencion-hoy__icono--${tono}" aria-hidden="true">${icon(c.icono)}</span>
-          <div class="atencion-hoy__textos">
-            <p class="atencion-hoy__frase"><span class="sr-only">${_SEVERIDAD_TEXTO[g.severidad] ?? ''}: </span>${esc(c.titulo)}</p>
-            ${c.detalle ? `<p class="atencion-hoy__detalle">${esc(c.detalle)}</p>` : ''}
-          </div>
-          ${_accionFila(c.cta)}
-        </li>`;
-      }).join('')}</ul>`;
+    : `<ul class="atencion-hoy__lista" role="list">${visibles.map((g, i) => (i === 0 ? _htmlDestacado(g) : _htmlFila(g, i))).join('')}</ul>`;
 
   return `
     <div class="atencion-hoy__cabeza">
@@ -381,6 +464,7 @@ export function htmlHojaAvisosHoy(grupos) {
   const secciones = grupos.map((g) => {
     const c = contenidoGrupo(g);
     const tono = _TONO[g.severidad] ?? 'info';
+    const dom = _dom(g.seccion);
     const items = g.avisos.map((a) => {
       const it = c.item(a);
       return `
@@ -395,16 +479,17 @@ export function htmlHojaAvisosHoy(grupos) {
     return `
       <section class="avisos-hoy__grupo" aria-labelledby="avisos-hoy-${esc(g.seccion)}">
         <div class="avisos-hoy__grupo-cabeza">
+          ${_teja(c, dom)}
           <h3 class="avisos-hoy__grupo-titulo" id="avisos-hoy-${esc(g.seccion)}">${esc(c.grupo.titulo)}</h3>
           <span class="avisos-hoy__sev avisos-hoy__sev--${tono}">${_SEVERIDAD_TEXTO[g.severidad] ?? ''}</span>
         </div>
         <ul class="avisos-hoy__lista" role="list">${items}</ul>
-        ${_accionHoja(c.cta, c.grupo.cta)}
+        ${_accionHoja(c.cta, c.grupo.cta, dom)}
       </section>`;
   }).join('');
 
   return `
-    <h2 class="avisos-hoy__titulo" id="avisos-hoy-titulo">Avisos de hoy · ${total}</h2>
+    <h2 class="avisos-hoy__titulo" id="avisos-hoy-titulo">Avisos de hoy<span class="avisos-hoy__cuenta"><span class="sr-only"> · </span>${total}</span></h2>
     ${secciones}
     <p class="avisos-hoy__nota">Lo que viene después de hoy está en Esta semana.</p>`;
 }

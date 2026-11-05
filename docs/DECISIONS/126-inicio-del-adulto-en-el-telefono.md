@@ -1,6 +1,6 @@
 # ADR 126 - Inicio del adulto en el teléfono
 
-**Estado:** Aceptada (2026-11-05). En aplicación por tandas: el encabezado y el saldo (1). Quedan "Atención hoy" y su hoja (2), "Esta semana", los vacíos y el usuario nuevo (3), las hojas "Pagos para hoy", "Registrar" y "Tu perfil" (4) y la barra de abajo (5).
+**Estado:** Aceptada (2026-11-05). En aplicación por tandas: el encabezado y el saldo (1), "Atención hoy" y su hoja (2). Quedan "Esta semana", los vacíos y el usuario nuevo (3), las hojas "Pagos para hoy", "Registrar" y "Tu perfil" (4) y la barra de abajo (5).
 **Fecha:** 2026-11-05
 **Autores:** Esteban (diseño y decisión), Claude Opus 5.5 (auditoría, implementación y redacción)
 **Relación:** **Aplica** el tablero "Finko móvil · rediseño" de Inicio (Claude Design, `Diseño Finko/Finko móvil · rediseño.html`), que compara cada pantalla de hoy con su propuesta; es la primera pieza de MV2.30. **Supera** el [ADR 122](122-lo-que-faltaba-del-canvas-segunda-pasada.md) D2 (el nombre del saludo ya no baja de línea) y, solo bajo 1024px, el [ADR 034](034-inicio-v2.md) D2 y el piloto del [ADR 033](033-direccion-visual-premium.md) D2 y D3 (el saldo deja de ser tarjeta con degradado y forma). **Conserva** el [ADR 106](106-un-encabezado-tres-niveles.md) D3 (un solo ojo, en el encabezado) y el [ADR 099](099-inicio-movil-hoy-en-una-lista.md) D6 (el avatar abre "Tu perfil"). Escritorio no cambia.
@@ -31,6 +31,15 @@ Esteban aprobó en chat las recomendaciones de la auditoría para los seis punto
 - **El conteo de abajo** ("efectivo + 2 cuentas bancarias") se calla en el teléfono: lo dice la ficha. Sigue en escritorio.
 - **El detalle abierto** va en una tarjeta propia: una fila por cuenta (nombre en dos líneas como máximo, el saldo nunca se corta) y, al pie, "Ir a Mis cuentas".
 - 28px entre el saldo, "Atención hoy" y "Esta semana".
+
+### D3. "Atención hoy" y la hoja "Avisos de hoy" (tanda 2)
+
+- **El título** va en 18px, sin mayúsculas, con "Ver los N" en su fila.
+- **Una sola tarjeta con el primer aviso destacado:** su urgencia escrita en su color (Urgente, Importante, Para revisar, Para tu información), la frase en 16px, el detalle y un botón a todo el ancho. Los demás avisos son filas que se tocan enteras: teja, frase y detalle en dos líneas como máximo, y a la derecha el verbo corto con su flecha. El nombre accesible de la fila es la acción completa ("Ver el límite de Restaurantes") y la frase con su urgencia la describe (`aria-describedby`).
+- **La teja dice la sección, no la urgencia:** `.cat-teja` con el dominio de la sección (`_DOM_POR_SECCION`: Me deben en `personales`, las reservas en `ahorro`, respaldo y nube en `analisis`). La urgencia se lee; "Para tu información" pasa a un tono neutro.
+- **El peso del botón:** mover dinero ("Pagar los 2 · $X", "Distribuir ahora") viste su sección con `.btn-dominio`; ir a otro lugar es `btn-secondary`. Vale para el destacado y para la hoja. En la fila, el verbo de lo que mueve dinero va en el color de su sección.
+- **Copys:** el estado del lote va aparte del monto y en su color ("$1.415.000 · 1 ya vencido"); en Me deben la frase es el nombre y el detalle "Te debe $X · fecha acordada hace N días", porque el nombre puede ser largo y el monto no se corta; el respaldo dice "Ir a respaldar tus datos".
+- **La hoja:** el número en pastilla junto al título (el lector sigue oyendo "Avisos de hoy · N"), cada grupo con la teja de su sección, su título sin mayúsculas, la urgencia en pastilla, la lista sobre un fondo apenas más claro y el botón con su peso.
 
 ## Lo que ya se decidió para las tandas que siguen
 
