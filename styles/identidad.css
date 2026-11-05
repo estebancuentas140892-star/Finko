@@ -1,0 +1,657 @@
+/* ============================================================
+   FINKO - IDENTIDAD v3 "BOSQUE Y SOL" (ADR 127)
+   ============================================================
+   El lenguaje visual de la app, en una capa propia sobre la maquetación
+   (main.css la importa después de responsive). Acá no se decide QUÉ se
+   muestra ni DÓNDE: eso lo siguen diciendo layout, components y
+   responsive. Acá se decide CÓMO se ve: superficies, tipografía, forma,
+   profundidad, la banda de marca de Inicio, la barra de abajo, las
+   tarjetas de identidad de cada sección y Tino.
+
+   Reglas de la capa:
+   - Solo tokens (`var(--fk-*)`); las medidas sin token van literales y
+     comentadas, como en responsive.css (ADR 126 D7).
+   - Una receta por componente, en el orden de este índice:
+       1. Tipografía
+       2. Botones
+       3. Tarjetas y superficies
+       4. Encabezado de sección
+       5. Lentes y chips
+       6. Campos
+       7. Filas de lista
+       8. Tarjetas de identidad (los totales de cada sección)
+       9. Inicio: la banda de marca (bajo 1024px)
+      10. La barra de abajo (bajo 1024px)
+      11. Ajustes de contraste medidos
+      12. Tino (su sol, el vacío, la bienvenida y el aviso que celebra,
+          con su único movimiento propio)
+   ============================================================ */
+
+
+/* ════════════════════════════════════════════════════════════
+   1. TIPOGRAFÍA (D2)
+   Títulos y cifras en Plus Jakarta Sans; el cuerpo sigue en Inter.
+   ════════════════════════════════════════════════════════════ */
+
+.section__title,
+.modal__title,
+.banner-proposito__titulo,
+.atencion-hoy__titulo,
+.bloque-gastos__titulo,
+.config-section__title,
+.empty-state__title {
+  font-family: var(--fk-font-display);
+  letter-spacing: -0.015em;
+  /* La display trae el espacio entre palabras angosto: "Atención hoy" se
+     leía pegado. Un 6 % de aire lo devuelve. */
+  word-spacing: 0.06em;
+}
+
+.section__title { font-weight: var(--fk-font-extrabold); }
+
+/* Entre 360 y 374px el encabezado (teja, título, ojo y crear) dejaba
+   "Me deben", "Mis cuentas" y "Fondo de emergencia" en dos líneas por 4 a
+   7px. A 20px caben en una; bajo 360 ya bajaba a 20 (ADR 106 D2). */
+@media (max-width: 374px) {
+  .section .section__title,
+  .bloque-gastos__titulo { font-size: 1.25rem; }
+}
+
+/* Las cifras grandes: un poco más apretadas, como en un estado de cuenta. */
+.hero-inicio__valor,
+.hero-gastos__valor,
+.hero-compromisos__valor,
+.hero-agenda__valor,
+.hero-tesoreria__valor,
+.hero-metas__valor,
+.list-item__amount,
+.list-item__value {
+  letter-spacing: -0.025em;
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   2. BOTONES (D3)
+   Píldoras. El primario tiene cuerpo: un filo de luz arriba y una sombra
+   de su mismo color; al presionarlo se hunde. Los estados se leen sin
+   depender del color: foco con anillo, deshabilitado con opacidad.
+   ════════════════════════════════════════════════════════════ */
+
+.btn,
+.btn-dominio {
+  border-radius: var(--fk-radius-full);
+  font-weight: var(--fk-font-semibold);
+  letter-spacing: -0.005em;
+}
+.btn-sm { border-radius: var(--fk-radius-full); }
+.btn-icon { border-radius: var(--fk-radius-full); }
+
+.btn-primary {
+  border-color: transparent;
+  box-shadow:
+    var(--fk-luz-filo),
+    0 6px 16px -6px color-mix(in srgb, var(--fk-btn-primary-bg) 70%, transparent);
+}
+.btn-primary:hover:not(:disabled) {
+  border-color: transparent;
+  box-shadow:
+    var(--fk-luz-filo-fuerte),
+    0 10px 22px -8px color-mix(in srgb, var(--fk-btn-primary-bg) 80%, transparent);
+}
+.btn-primary:active:not(:disabled) {
+  box-shadow: var(--fk-shadow-hundida);
+}
+
+/* Crear una ficha pesa menos que mover dinero (ADR 106 D4, R38): el
+   primario del encabezado sigue tonal, sin cuerpo ni sombra. */
+@media (max-width: 1023px) {
+  .section > .section__header > .btn-primary,
+  .bloque-gastos__primario,
+  .ingresos-altas__fuente {
+    border: 1px solid var(--fk-accent-border);
+    box-shadow: none;
+  }
+  .section > .section__header > .btn-primary:hover,
+  .bloque-gastos__primario:hover,
+  .ingresos-altas__fuente:hover { box-shadow: none; border-color: var(--fk-accent-border); }
+}
+
+.btn-secondary {
+  background: var(--fk-bg-elevated);
+  border-color: var(--fk-border-subtle);
+  box-shadow: var(--fk-shadow-filo);
+}
+
+.btn-accent {
+  background: var(--fk-accent-subtle);
+  border-color: transparent;
+}
+
+.btn:focus-visible,
+.btn-dominio:focus-visible {
+  outline: 2px solid var(--fk-border-focus);
+  outline-offset: 3px;
+  border-radius: var(--fk-radius-full);
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   3. TARJETAS Y SUPERFICIES (D4)
+   En oscuro la profundidad la da un filo de luz arriba; en claro, una
+   sombra teñida de bosque. Sin bordes que griten.
+   ════════════════════════════════════════════════════════════ */
+
+/* La celda plana solo reserva lugar (utils.css): su sombra dibujaba un
+   marco oscuro alrededor de "Atención hoy". */
+.bento__cell--flat { box-shadow: none; }
+
+.card,
+.bento__cell:not(.bento__cell--flat):not(.banda-inicio):not(.hero-inicio),
+.list-group,
+.config-section {
+  border-color: var(--fk-border-subtle);
+  box-shadow: var(--fk-shadow-filo), var(--fk-shadow-sm);
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   4. ENCABEZADO DE SECCIÓN
+   La teja de la sección crece y gana un degradado de su color; el título
+   va en la display.
+   ════════════════════════════════════════════════════════════ */
+
+.section__icon.cat-teja {
+  border-radius: var(--fk-radius-md);
+  background:
+    linear-gradient(150deg, color-mix(in srgb, var(--cat-dom) 30%, transparent), color-mix(in srgb, var(--cat-dom) 12%, transparent));
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   5. LENTES Y CHIPS
+   Las lentes son un riel: la activa es una pastilla que flota sobre él.
+   Los chips son píldoras; el activo se viste de primario.
+   ════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1023px) {
+  .bloque-tabs {
+    border-radius: var(--fk-radius-full);
+    border-color: transparent;
+    background: var(--fk-bg-elevated);
+    padding: 4px;
+    box-shadow: var(--fk-shadow-riel);
+  }
+  .bloque-tabs__tab {
+    border-radius: var(--fk-radius-full);
+    min-height: 44px; /* R4: ningún control bajo 44px */
+  }
+  .bloque-tabs__tab.active {
+    background: var(--fk-bg-surface);
+    color: var(--fk-text-primary);
+    font-weight: 650; /* sin token: el peso intermedio del tablero (ADR 126 D7) */
+    box-shadow: var(--fk-shadow-filo), var(--fk-shadow-pastilla);
+  }
+}
+
+.chip { border-radius: var(--fk-radius-full); }
+.chip--active {
+  box-shadow: 0 4px 12px -6px color-mix(in srgb, var(--fk-btn-primary-bg) 80%, transparent);
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   6. CAMPOS
+   Rellenos, sin borde duro, con anillo de foco de marca.
+   ════════════════════════════════════════════════════════════ */
+
+.input,
+.select,
+.textarea,
+.field input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.field select,
+.field textarea {
+  border-radius: var(--fk-radius-md);
+}
+.input:focus,
+.select:focus,
+.textarea:focus,
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--fk-border-focus);
+  box-shadow: 0 0 0 3px var(--fk-accent-subtle);
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   7. FILAS DE LISTA
+   Las tejas de categoría pasan a "squircle" de 12px y el monto va en la
+   display. El resto lo pone la maquetación de cada sección.
+   ════════════════════════════════════════════════════════════ */
+
+.cat-teja { border-radius: var(--fk-radius-md); }
+.list-item__amount,
+.list-item__value { font-weight: var(--fk-font-bold); }
+
+
+/* ════════════════════════════════════════════════════════════
+   8. TARJETAS DE IDENTIDAD (D5)
+   El total de cada sección es una tarjeta en el tono profundo de su
+   color, igual en los dos temas, como una tarjeta bancaria: el color de
+   la sección mezclado con la tinta del bosque (52 % arriba, 30 % abajo) y
+   dos anillos del isotipo en la esquina. Dentro, los tokens de texto,
+   borde y superficie se redefinen para la tarjeta, así cada pieza de
+   adentro (ojo, chips, barras) se adapta sin regla propia.
+   Contraste medido sobre la parada clara (la peor) de las cinco
+   secciones que la usan: blanco de 6,9:1 (Gastos, coral) a 8,5:1;
+   secundario al 86 % de 4,8:1 a 5,8:1 sobre el anillo.
+   ════════════════════════════════════════════════════════════ */
+
+.hero-gastos,
+.hero-compromisos,
+.hero-agenda,
+.hero-tesoreria,
+.hero-metas {
+  --fk-text-primary:   var(--fk-hero-texto);
+  --fk-text-secondary: var(--fk-hero-texto-2);
+  --fk-text-muted:     var(--fk-hero-texto-2);
+  --fk-text-accent:    var(--fk-hero-texto);
+  --fk-border-subtle:  var(--fk-hero-borde);
+  --fk-border-default: var(--fk-hero-borde);
+  --fk-bg-surface:     var(--fk-hero-capa);
+  --fk-bg-elevated:    var(--fk-hero-capa);
+  --fk-bg-hover:       var(--fk-hero-capa);
+  --fk-accent:         var(--fk-hero-texto);
+  --fk-accent-subtle:  var(--fk-hero-capa);
+  --fk-border-focus:   var(--fk-hero-texto);
+  --hero-c:            var(--fk-dom-ingresos);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: var(--fk-hero-texto);
+  border: 0;
+  border-radius: var(--fk-radius-xl);
+  background:
+    radial-gradient(circle at 104% 112%, transparent 31%, var(--fk-hero-anillo) 31.4%, var(--fk-hero-anillo) 43%, transparent 43.4%, transparent 55%, var(--fk-hero-anillo) 55.4%, var(--fk-hero-anillo) 64%, transparent 64.4%),
+    linear-gradient(150deg,
+      color-mix(in srgb, var(--hero-c) 52%, var(--fk-hero-tinta)) 0%,
+      color-mix(in srgb, var(--hero-c) 30%, var(--fk-hero-tinta)) 100%);
+  box-shadow:
+    var(--fk-hero-filo),
+    0 14px 32px -16px color-mix(in srgb, var(--hero-c) 55%, transparent);
+}
+.hero-gastos       { --hero-c: var(--fk-dom-gastos); }
+.hero-compromisos  { --hero-c: var(--fk-dom-compromisos); }
+.hero-agenda       { --hero-c: var(--fk-dom-agenda); }
+.hero-tesoreria    { --hero-c: var(--fk-dom-tesoreria); }
+.hero-metas        { --hero-c: var(--fk-dom-metas); }
+
+/* La forma decorativa vieja (.decor, DV.2b) no va con los anillos. */
+.hero-tesoreria > .decor,
+.hero-compromisos > .decor,
+.hero-agenda > .decor,
+.hero-metas > .decor,
+.hero-gastos > .decor { display: none; }
+
+/* Las barras de adentro: el riel translúcido y el relleno blanco. */
+.hero-tesoreria__compo-seg { background: var(--fk-hero-texto); }
+.hero-metas__barra { background: var(--fk-hero-capa); }
+.hero-metas__barra-fill { background: var(--fk-brand-girasol); }
+
+/* Las pastillas de adentro (el ritmo de la deuda, el flujo del mes). */
+.hero-compromisos__chip {
+  background: var(--fk-hero-capa);
+  border-color: transparent;
+  color: var(--fk-hero-texto);
+}
+
+/* Bajo 1024px Gastos tenía su total suelto (sin tarjeta): vuelve a ser
+   tarjeta de identidad, con el aire que pedía el tablero. */
+@media (max-width: 1023px) {
+  #sec-gast .hero-gastos,
+  #compromisos-hero .hero-compromisos,
+  .hero-tesoreria,
+  .hero-agenda,
+  .hero-metas {
+    padding: var(--fk-space-5);
+    border: 0;
+  }
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   9. INICIO: LA BANDA DE MARCA (D7, bajo 1024px)
+   El encabezado y el saldo viven sobre el bosque del isotipo, a sangre y
+   con las esquinas de abajo redondeadas: es la primera pantalla y la que
+   dice "esto es Finko". El saldo sigue sin tarjeta (ADR 126 D2): lo que
+   cambia es el fondo sobre el que flota. Dos cajas pintan la banda (el
+   encabezado y el saldo) con el mismo bosque en la junta, así no se ve
+   la costura. El detalle de cuentas y la guía del usuario nuevo se
+   apoyan sobre la banda como tarjetas de la superficie de siempre.
+   ════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1023px) {
+  #sec-dash { padding-top: 0; }
+
+  #sec-dash .perfil-inicio {
+    margin: 0 calc(-1 * var(--fk-space-4));
+    padding: calc(var(--fk-space-4) + env(safe-area-inset-top, 0px)) var(--fk-space-4) var(--fk-space-6);
+    background:
+      radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--fk-brand-girasol) 16%, transparent) 0%, transparent 46%),
+      var(--fk-brand-bosque);
+    color: var(--fk-brand-on);
+  }
+  #sec-dash .perfil-inicio__franja { color: var(--fk-brand-on-2); }
+  #sec-dash .perfil-inicio__nombre { color: var(--fk-brand-on); font-family: var(--fk-font-display); }
+  #sec-dash .perfil-inicio__acciones > .perfil-inicio__buscar,
+  #sec-dash .perfil-inicio__acciones > .perfil-inicio__ojo { color: var(--fk-brand-on-2); }
+  #sec-dash .perfil-inicio__acciones > .perfil-inicio__buscar:hover,
+  #sec-dash .perfil-inicio__acciones > .perfil-inicio__ojo:hover { color: var(--fk-brand-on); }
+  #sec-dash .perfil-inicio__ojo[aria-pressed="true"],
+  #sec-dash .perfil-inicio__ojo[aria-pressed="true"]:hover {
+    background: radial-gradient(circle, var(--fk-hero-borde) 18px, transparent 18.5px);
+    color: var(--fk-brand-on);
+  }
+  #sec-dash .perfil-inicio__avatar-disco {
+    border: 0;
+    background: linear-gradient(150deg, var(--fk-avatar-grad-a), var(--fk-avatar-grad-b));
+    color: var(--fk-avatar-ink);
+    box-shadow: 0 0 0 2px var(--fk-hero-borde);
+  }
+  #sec-dash .perfil-inicio__marca { box-shadow: var(--fk-shadow-marca); }
+
+  #sec-dash .hero-inicio {
+    position: relative;
+    isolation: isolate;
+    margin: 0 calc(-1 * var(--fk-space-4));
+    padding: 0 var(--fk-space-4) var(--fk-space-6);
+    border-radius: 0 0 var(--fk-radius-2xl) var(--fk-radius-2xl);
+    background:
+      radial-gradient(circle at 108% 118%, transparent 30%, var(--fk-hero-anillo) 30.4%, var(--fk-hero-anillo) 41%, transparent 41.4%, transparent 52%, var(--fk-hero-anillo) 52.4%, var(--fk-hero-anillo) 61%, transparent 61.4%),
+      linear-gradient(180deg, var(--fk-brand-bosque) 0%, var(--fk-brand-bosque-3) 100%);
+    box-shadow: var(--fk-shadow-banda);
+    overflow: visible;
+  }
+  #sec-dash .hero-inicio__label { color: var(--fk-brand-on-2); }
+  #sec-dash .hero-inicio__valor {
+    color: var(--fk-brand-on);
+    font-family: var(--fk-font-display);
+    font-size: clamp(2.25rem, 1.4rem + 4vw, 2.75rem); /* 36 a 44px: el número de la app */
+    font-weight: 800;
+  }
+  #sec-dash .hero-inicio__pill {
+    border: 1px solid var(--fk-hero-borde);
+    background: var(--fk-hero-capa-suave);
+    color: var(--fk-brand-on);
+    box-shadow: none;
+    backdrop-filter: blur(6px);
+  }
+  #sec-dash .hero-inicio__pill:hover { background: var(--fk-hero-borde); }
+  #sec-dash .hero-inicio__pill[aria-expanded="true"] {
+    border-color: var(--fk-hero-borde-fuerte);
+    color: var(--fk-brand-on);
+  }
+  #sec-dash .hero-inicio__fichas > .bank-avatar,
+  #sec-dash .hero-inicio__fichas-mas { border-color: var(--fk-brand-bosque); }
+  #sec-dash .hero-inicio__detalle-caja,
+  #sec-dash .hero-guia__movil {
+    color: var(--fk-text-primary);
+    background: var(--fk-bg-surface);
+    border-color: transparent;
+    box-shadow: var(--fk-shadow-sobre-banda);
+  }
+
+  /* La guía del usuario nuevo se apoya sobre la banda: Tino la presenta. */
+  #sec-dash .hero-guia {
+    margin-top: var(--fk-space-2);
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+  }
+}
+
+/* En escritorio la banda de contexto (ADR 070 D6: saldo y cuentas en una
+   sola superficie) es la que se viste de bosque. Sus tokens se redefinen
+   como en las tarjetas de identidad: las fichas de cuenta de adentro pasan
+   a capas translúcidas sin regla propia. Sin cuentas, la guía del usuario
+   nuevo no vive en la banda (está [hidden] el resto), así que la banda no
+   se pinta. */
+@media (min-width: 1024px) {
+  .banda-inicio:not(:has(.hero-guia:not([hidden]))) {
+    --fk-text-primary:   var(--fk-hero-texto);
+    --fk-text-secondary: var(--fk-hero-texto-2);
+    --fk-text-muted:     var(--fk-hero-texto-2);
+    --fk-text-accent:    var(--fk-hero-texto);
+    --fk-border-subtle:  var(--fk-hero-borde);
+    --fk-border-default: var(--fk-hero-borde);
+    --fk-bg-surface:     var(--fk-hero-capa);
+    --fk-bg-elevated:    var(--fk-hero-capa);
+    --fk-bg-hover:       var(--fk-hero-capa);
+    --fk-accent-subtle:  var(--fk-hero-capa);
+    --fk-border-focus:   var(--fk-hero-texto);
+    color: var(--fk-hero-texto);
+    border: 0;
+    background:
+      radial-gradient(circle at 104% 120%, transparent 30%, var(--fk-hero-anillo) 30.3%, var(--fk-hero-anillo) 40%, transparent 40.3%, transparent 50%, var(--fk-hero-anillo) 50.3%, var(--fk-hero-anillo) 58%, transparent 58.3%),
+      var(--fk-grad-bosque);
+    box-shadow: var(--fk-hero-filo), var(--fk-shadow-banda);
+  }
+  .banda-inicio .hero-inicio__valor { font-family: var(--fk-font-display); }
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   10. LA BARRA DE ABAJO (D8, bajo 1024px)
+   Cristal sobre el contenido, la píldora del activo (ADR 126 D8) y
+   "Registrar" como el botón que sobresale: un círculo de 56px que sube
+   sobre la barra con un anillo del color del fondo, el único elemento
+   flotante de la app.
+   ════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1023px) {
+  .sidebar {
+    background: color-mix(in srgb, var(--fk-bg-base) 82%, transparent);
+    -webkit-backdrop-filter: saturate(1.4) blur(16px);
+    backdrop-filter: saturate(1.4) blur(16px);
+    border-top: 1px solid var(--fk-border-subtle);
+  }
+  .sidebar .nav-item::before { border-radius: var(--fk-radius-full); }
+
+  .sidebar .nav-item--registrar {
+    justify-content: flex-end;
+    padding-top: 0;
+    padding-bottom: var(--fk-space-2);
+    gap: 2px;
+  }
+  .sidebar .nav-item__fab {
+    width: 56px;
+    height: 56px;
+    margin-top: -26px; /* sube 26px sobre la barra: la mitad del círculo */
+    border-radius: var(--fk-radius-full);
+    background: linear-gradient(150deg, var(--fk-accent-hover), var(--fk-accent) 60%);
+    color: var(--fk-text-on-accent);
+    box-shadow:
+      0 0 0 5px var(--fk-bg-base),
+      var(--fk-luz-filo-fuerte),
+      0 10px 22px -6px color-mix(in srgb, var(--fk-accent) 65%, transparent);
+    transition: transform var(--fk-transition-fast);
+  }
+  body.light-theme .sidebar .nav-item__fab {
+    background: linear-gradient(150deg, var(--fk-brand-bosque-2), var(--fk-brand-bosque) 60%);
+    color: var(--fk-brand-on);
+    box-shadow:
+      0 0 0 5px var(--fk-bg-base),
+      var(--fk-luz-filo),
+      var(--fk-shadow-fab-claro);
+  }
+  .sidebar .nav-item__fab .icon { --fk-icon-size: 26px; stroke-width: 2.6; }
+  .sidebar .nav-item--registrar:active .nav-item__fab { transform: scale(0.92); }
+
+  /* Lo que flota sobre la barra (avisos, versión nueva, instalar) sube lo
+     que sobresale "Registrar", para no tapar el botón. El niño tiene su
+     propia barra y su propia altura (nino.css). */
+  body:not(.kid) .fk-toast,
+  body:not(.kid) .logro-toast,
+  body:not(.kid) .sw-aviso,
+  body:not(.kid) .install-banner {
+    bottom: calc(var(--fk-header-height) + 34px + env(safe-area-inset-bottom, 0px)); /* 26 del círculo + 8 de aire */
+  }
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   11. AJUSTES DE CONTRASTE MEDIDOS (axe, 390 px, los dos temas)
+   ════════════════════════════════════════════════════════════ */
+
+/* La franja de cobertura del Fondo: el mes lleno escribía el rótulo claro
+   sobre el menta crudo (1,9:1 en oscuro). En oscuro el relleno baja al 50 %
+   sobre la superficie elevada: el rótulo pasa a 4,8:1 y el bloque sigue
+   sobre 3:1 como gráfico (3,3:1). En claro el rótulo ya es oscuro. */
+body:not(.light-theme) .cov__fill {
+  background: color-mix(in srgb, var(--fk-dom-ahorro) 50%, var(--fk-bg-elevated));
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   12. TINO (D6)
+   Siempre sobre su sol: un disco crema fijo en los dos temas, como la
+   teja del isotipo (ADR 103 D2). Así el dibujo original se ve con sus
+   colores de siempre, sin aclarar el pelo en el tema oscuro.
+   ════════════════════════════════════════════════════════════ */
+
+.tino-sol {
+  position: relative;
+  display: block;
+  flex-shrink: 0;
+  width: var(--tino-sol, 112px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 38%, var(--fk-brand-crema) 0 56%, color-mix(in srgb, var(--fk-brand-girasol) 34%, var(--fk-brand-crema)) 100%);
+  box-shadow:
+    0 0 0 6px color-mix(in srgb, var(--fk-brand-girasol) 14%, transparent),
+    var(--fk-shadow-sol);
+  overflow: hidden;
+}
+.tino-sol__img {
+  position: absolute;
+  left: 50%;
+  bottom: 6%;
+  translate: -50% 0;
+  display: block;
+  width: auto;
+  max-width: none;
+  height: 86%;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* La bienvenida de Inicio (guía del usuario nuevo, ADR 126 D5): Tino
+   saluda junto al título. */
+.hero-guia__bienvenida {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-4);
+  text-align: left;
+}
+.hero-guia__tino { --tino-sol: 88px; }
+.hero-guia__saludo { min-width: 0; }
+.hero-guia__kicker {
+  margin: 0 0 var(--fk-space-1);
+  font-size: var(--fk-text-sm);
+  line-height: var(--fk-leading-snug);
+  color: var(--fk-text-secondary);
+}
+.hero-guia__bienvenida .hero-guia__title {
+  margin: 0;
+  font-family: var(--fk-font-display);
+  letter-spacing: -0.02em;
+}
+
+/* El aviso que celebra (ADR 127 D9): Tino sobre su sol y un filo de
+   girasol. Entra con un salto corto; sin movimiento si se pidió menos. */
+.fk-toast--tino {
+  align-items: center;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-3) var(--fk-space-4) var(--fk-space-3) var(--fk-space-3);
+  border: 1px solid color-mix(in srgb, var(--fk-brand-girasol) 38%, transparent);
+  background:
+    linear-gradient(120deg, color-mix(in srgb, var(--fk-brand-girasol) 14%, var(--fk-bg-elevated)), var(--fk-bg-elevated) 70%);
+}
+.fk-toast__tino { --tino-sol: 64px; }
+.fk-toast--tino .fk-toast__titulo {
+  font-family: var(--fk-font-display);
+  font-weight: var(--fk-font-bold);
+  letter-spacing: -0.01em;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .fk-toast--tino .tino-sol__img {
+    animation: fk-tino-salta 700ms var(--fk-ease-rebote) 180ms both;
+  }
+}
+@keyframes fk-tino-salta {
+  0%   { translate: -50% 40%; opacity: 0; }
+  60%  { translate: -50% -6%; opacity: 1; }
+  100% { translate: -50% 0; opacity: 1; }
+}
+
+/* El vacío de una sección (ADR 107 D5, banner de propósito): una tarjeta
+   con el tinte de su sección y Tino a la izquierda, mirando el texto. El
+   título rodea a Tino (float): una pregunta larga baja por debajo de él en
+   vez de apretarse en una columna. */
+.banner-proposito {
+  --bp-c: var(--fk-accent);
+  display: flow-root;
+  margin-bottom: var(--fk-space-4);
+  padding: var(--fk-space-5);
+  border-radius: var(--fk-radius-xl);
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--bp-c) 20%, transparent) 0%, transparent 60%),
+    var(--fk-bg-surface);
+  box-shadow: var(--fk-shadow-filo), var(--fk-shadow-sm);
+}
+.banner-proposito[data-seccion="gast"]        { --bp-c: var(--fk-dom-gastos); }
+.banner-proposito[data-seccion="compromisos"] { --bp-c: var(--fk-dom-compromisos); }
+.banner-proposito[data-seccion="agenda"]      { --bp-c: var(--fk-dom-agenda); }
+.banner-proposito[data-seccion="presupuesto"] { --bp-c: var(--fk-dom-presupuesto); }
+.banner-proposito[data-seccion="metas"]       { --bp-c: var(--fk-dom-metas); }
+.banner-proposito[data-seccion="ahorro"],
+.banner-proposito[data-seccion="apartados"]   { --bp-c: var(--fk-dom-ahorro); }
+.banner-proposito[data-seccion="inversion"]   { --bp-c: var(--fk-dom-inversion); }
+.banner-proposito[data-seccion="tesoreria"]   { --bp-c: var(--fk-dom-tesoreria); }
+.banner-proposito[data-seccion="analisis"]    { --bp-c: var(--fk-dom-analisis); }
+.banner-proposito[data-seccion="personales"]  { --bp-c: var(--fk-dom-personales); }
+
+.banner-proposito__tino {
+  float: left;
+  margin: 0 var(--fk-space-4) var(--fk-space-2) 0;
+  shape-outside: circle(50%);
+}
+.banner-proposito__titulo {
+  font-size: 1.25rem; /* 20px: la pregunta pesa sin competir con el total de la sección */
+  line-height: 1.3;
+  margin-top: var(--fk-space-1);
+}
+.banner-proposito__texto {
+  clear: both;
+  margin: var(--fk-space-2) 0 0;
+  font-size: 0.9375rem; /* 15px: el cuerpo de una explicación se lee, no se escanea */
+}
+@media (min-width: 1024px) {
+  .banner-proposito__texto { clear: none; }
+}
+
+/* El vacío propio de Gastos calla su mensaje cuando el banner ya lo dice
+   (la regla del ADR 107 D5, que su `.gastos-empty` no alcanzaba): queda el
+   botón, a todo el ancho. */
+.section:has(.banner-proposito) .gastos-empty {
+  align-items: stretch;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.section:has(.banner-proposito) .gastos-empty__teja,
+.section:has(.banner-proposito) .gastos-empty__title,
+.section:has(.banner-proposito) .gastos-empty__desc { display: none; }

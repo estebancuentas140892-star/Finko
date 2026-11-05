@@ -56,7 +56,11 @@ function esPlantilla(contenido) {
 }
 
 function cuerpoDe(contenido) {
-  const m = contenido.trim().match(/^<svg\b[^>]*>([\s\S]*)<\/svg>$/);
+  // Un bloque <metadata> (Illustrator, o la procedencia C2PA que estampa la
+  // herramienta que copió el archivo) no dibuja nada: el sync lo ignora y
+  // la comparación también (ADR 128 D3).
+  const sinMetadatos = contenido.replace(/<metadata\b[\s\S]*?<\/metadata>/g, '');
+  const m = sinMetadatos.trim().match(/^<svg\b[^>]*>([\s\S]*)<\/svg>$/);
   return m ? m[1] : null;
 }
 

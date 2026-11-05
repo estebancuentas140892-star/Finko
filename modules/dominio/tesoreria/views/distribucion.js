@@ -14,6 +14,7 @@ import { f, esc as _esc, fechaLegible } from '../../../infra/utils.js';
 import { icon, iconoCategoria } from '../../../infra/icons.js';
 import { resolverMarca, tejaMarca } from '../../../infra/marcas.js';
 import { bancoAvatar } from '../../../infra/bancos.js';
+import { htmlTinoSol } from '../../../infra/ilustraciones.js';
 import {
   CATEGORIA_DEUDA_ICONO, CATEGORIA_DEUDA_PERSONAL_ICONO, iconoDeCategoriaGasto,
 } from '../../../core/constants.js';
@@ -980,7 +981,7 @@ function _renderTarjetaDistribuir({ dist, estado, hayDestinos, distribuir }) {
     ${avisoHtml}
     <div class="distribuir-card">
       <div class="distribuir-card__top">
-        <span class="distribuir-card__icon" aria-hidden="true">${icon('lightbulb')}</span>
+        ${htmlTinoSol('explica', { tamano: 60, clase: 'distribuir-card__tino' })}
         <div class="distribuir-card__body">
           <p class="distribuir-card__title">¿Cómo distribuir ${f(montoCobro)}?</p>
           <p class="distribuir-card__sub">Reparte tu ingreso entre necesidades, estilo de vida y ahorro.</p>

@@ -341,7 +341,19 @@ def _validar_fullcolor(id_symbol: str, cuerpo: str, advertencias: list) -> str:
     return cuerpo
 
 
+# Un bloque <metadata> no dibuja nada: lo agregan Illustrator y las
+# herramientas que estampan la procedencia de un archivo (C2PA) al copiarlo.
+# Se ignora al validar y al comparar con el sprite (sprite-sync.test.js); el
+# archivo en disco no se reescribe.
+RE_METADATA = re.compile(r'<metadata\b[\s\S]*?</metadata>')
+
+
+def sin_metadatos(contenido: str) -> str:
+    return RE_METADATA.sub('', contenido)
+
+
 def validar_y_convertir(id_symbol: str, contenido: str, advertencias: list) -> tuple:
+    contenido = sin_metadatos(contenido)
     m = RE_ROOT.match(contenido)
     if not m:
         raise ErrorRecurso(f'{id_symbol}: no tiene la forma <svg ...>...</svg> esperada (revisar export)')
@@ -410,7 +422,11 @@ def validar_y_convertir(id_symbol: str, contenido: str, advertencias: list) -> t
             v = valor.strip().lower()
             if v in ('none', 'currentcolor'):
                 continue
-            if re.match(r'^var\(--fk-[\w-]+(?:,\s*[^)]*)?\)$', valor.strip(), re.IGNORECASE):
+            # El respaldo puede ser otro rol (`var(--fk-a, var(--fk-b))`, como
+            # la estrella de il-insignia): la regla anterior cortaba en el
+            # primer ")" y rechazaba un archivo valido, lo que dejaba el sync
+            # parado para todo el sprite.
+            if re.match(r'^var\(--fk-[\w-]+(?:,\s*(?:var\(--fk-[\w-]+\)|[^()]*))?\)$', valor.strip(), re.IGNORECASE):
                 continue
             raise ErrorRecurso(
                 f'{id_symbol}: fill="{valor}" no es un rol valido; usar currentColor '

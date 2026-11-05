@@ -12,6 +12,27 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(nino): los frascos se llenan con el café de Tino · 2026-11-05
+
+[ADR 128](DECISIONS/128-los-frascos-se-llenan-de-cafe.md). Ficha: [`contexto/nino.md`](contexto/nino.md). Va en la misma versión que el ADR 127 (SW v670).
+
+- **`il-cafe`** entra al sprite por `sync-sprite.py`, con los colores del grano del dibujo original (`--fk-cafe-*`).
+- **`htmlFrasco()`** dibuja el tinte del frasco al 55 % y encima los granos que caben hasta el nivel (`granosFrasco()`, `GRANOS_FRASCO`); el nivel se calcula igual que antes.
+- **`sync-sprite.py`** acepta un respaldo de rol anidado (`il-insignia` lo tenía y dejaba el sync parado) e ignora un bloque `<metadata>` al validar; `sprite-sync.test.js` también lo ignora al comparar.
+- Pruebas: 3 nuevas en `nino-visual.test.js`.
+
+### feat(identidad): identidad v3 "Bosque y sol" y Tino en la app del adulto · 2026-11-05
+
+[ADR 127](DECISIONS/127-identidad-bosque-y-sol.md). Ficha nueva: [`contexto/identidad.md`](contexto/identidad.md). SW v670. Pedido de Esteban en chat; acota los ADR 094, 101 y 126 con su decisión.
+
+- **Paleta del isotipo** en tokens: bosque, girasol, coral y crema como marca fija; lienzo oscuro "tinta de bosque" y claro "papel cálido"; menta como acción en oscuro y bosque en claro; Gastos pasa a coral.
+- **Plus Jakarta Sans** (27 KB, OFL) en títulos y cifras vía `--fk-font-display` y `--fk-font-mono`; Inter sigue en el cuerpo.
+- **`styles/identidad.css`**, capa `identidad` después de `responsive`: botones píldora con cuerpo, lentes en riel, tarjetas de identidad en Gastos, Por pagar, Calendario, Mis cuentas y Metas, banda de bosque en Inicio (móvil y escritorio) y "Registrar" flotante de 56 px.
+- **Tino del adulto con sus dibujos originales** (`assets/tino/`, `htmlTinoSol()`): en el vacío de cada sección, en la bienvenida del usuario nuevo y en "¿Cómo distribuir?". El niño sigue con su sprite.
+- **Celebraciones puntuales** (`ui/celebraciones.js`): ocho hitos desde `S.logros` y dos colecciones; una puesta al día (dos logros o más a la vez) o un 0 a varios no se celebra. Aviso con Tino en `ui/toast.js`.
+- Títulos de sección a 20 px entre 360 y 374 px: "Me deben", "Mis cuentas" y "Fondo de emergencia" caben en una línea.
+- Pruebas: `celebraciones.test.js` (14) y 4 en `nino-visual.test.js`. Sin desbordes a 360, 375, 390 y 430 px con las cinco semillas.
+
 ### feat(inicio): MV2.30 tanda 5, la barra de abajo; cierra el tablero de Inicio · 2026-11-05
 
 [ADR 126](DECISIONS/126-inicio-del-adulto-en-el-telefono.md) D7 y D8. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v669. Con esta tanda el tablero de Inicio quedó aplicado completo y su HTML (`Diseño Finko/Finko móvil · rediseño.html`) se borró: lo que queda manda el ADR 126.

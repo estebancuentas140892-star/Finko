@@ -23,6 +23,10 @@
 @import './themes.css'     layer(themes);
 @import './a11y.css'       layer(a11y);
 @import './responsive.css' layer(responsive);
+/* Identidad v3 "Bosque y sol" (ADR 127): el lenguaje visual de la app sobre
+   la maquetación. Va después de responsive para que su receta gane en los
+   dos anchos sin pelear especificidad; utils sigue siendo la última palabra. */
+@import './identidad.css'  layer(identidad);
 @import './utils.css'      layer(utils);
 
 /* ── FUENTES SELF-HOSTED ─────────────────────────────────────── */
@@ -47,3 +51,16 @@
     U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
+/* Plus Jakarta Sans Variable (ADR 127 D2): títulos y cifras. Solo el
+   subconjunto latino (español completo, 27 KB). OFL-1.1, como Inter. */
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('../assets/fonts/plus-jakarta-sans-variable.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC,
+    U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}

@@ -478,7 +478,7 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await expect(panel).toContainText('$1.450.000');
   });
 
-  test('móvil: la banda de escritorio no existe, el saldo va sin tarjeta y el ojo va en el encabezado (DSK.1b, ADR 070 D6, ADR 106 D3, ADR 126 D2)', async ({ page }) => {
+  test('móvil: la banda de escritorio no existe, el saldo va sin tarjeta sobre la banda de marca y el ojo va en el encabezado (DSK.1b, ADR 070 D6, ADR 106 D3, ADR 126 D2, ADR 127 D7)', async ({ page }) => {
     // Contracara del test anterior: el envoltorio `.banda-inicio` es
     // `display: contents` bajo 1024px, así que sus dos hijos vuelven a ser
     // celdas sueltas del bento. Si alguien quita ese `contents`, este test cae.
@@ -505,12 +505,23 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
 
     const hero = await page.locator('.hero-inicio').evaluate(el => {
       const c = getComputedStyle(el);
-      return { borde: c.borderTopWidth, fondo: c.backgroundImage };
+      return {
+        borde: c.borderTopWidth,
+        fondo: c.backgroundImage,
+        radioArriba: c.borderTopLeftRadius,
+        ancho: Math.round(el.getBoundingClientRect().width),
+        decor: el.querySelector('.decor') ? getComputedStyle(el.querySelector('.decor')).display : 'none',
+      };
     });
-    // ADR 126 D2: en el teléfono el saldo va suelto sobre el fondo; el
-    // degradado y la forma decorativa se quedan en escritorio.
+    // ADR 126 D2: en el teléfono el saldo va suelto, sin tarjeta: sin borde
+    // y sin la forma decorativa de escritorio. ADR 127 D7: lo que tiene
+    // detrás es la banda de marca, a sangre (los 390 px del ancho) y sin
+    // esquinas de arriba, que continúa el bosque del encabezado.
     expect(hero.borde).toBe('0px');
-    expect(hero.fondo).toBe('none');
+    expect(hero.decor).toBe('none');
+    expect(hero.fondo).toContain('linear-gradient');
+    expect(hero.radioArriba).toBe('0px');
+    expect(hero.ancho).toBe(390);
 
     // El ojo no se movió del DOM: sigue siendo hermano de la etiqueta, no un
     // hijo suyo. En el teléfono se calla y manda el del encabezado, junto a
@@ -4903,7 +4914,8 @@ test.describe('Análisis v2 - score hero + chip de mes (ANL.2a)', () => {
     await expect(cuerpo.locator('table')).toHaveCount(0);
     await expect(cuerpo.locator('.comparacion__fila').first()).toBeVisible();
     await expect(cuerpo.locator('#analisis-comparacion-title')).toHaveJSProperty('tagName', 'H3');
-    await expect(cuerpo.locator('.analisis__section').first()).toHaveCSS('border-radius', '24px');
+    // --fk-radius-xl: 26px desde el ADR 127 D3 (antes 24).
+    await expect(cuerpo.locator('.analisis__section').first()).toHaveCSS('border-radius', '26px');
 
     // C11: registrar un gasto SIN salir de Análisis no cierra lo que se abrió.
     // A 390px, que es donde vive el botón Registrar de la barra inferior.

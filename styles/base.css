@@ -16,8 +16,12 @@ body {
 /* ── JERARQUÍA TIPOGRÁFICA ─────────────────────────────────── */
 
 h1, h2, h3, h4, h5, h6 {
+  /* ADR 127 D2: los títulos van en la display; el cuerpo sigue en Inter. */
+  font-family: var(--fk-font-display);
   font-weight: var(--fk-font-bold);
   line-height: var(--fk-leading-tight);
+  letter-spacing: -0.015em;
+  word-spacing: 0.06em;
   color: var(--fk-text-primary);
 }
 

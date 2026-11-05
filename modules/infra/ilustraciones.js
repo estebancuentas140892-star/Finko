@@ -8,7 +8,9 @@
  * como ningún dominio importa a otro (ADN 10), viven acá.
  *
  * Nunca fotos ni emojis (D8): cada meta y cada avatar es un dibujo de este
- * catálogo. Tino nunca aparece en el perfil adulto (D7).
+ * catálogo. Desde el ADR 127 (D6) Tino también acompaña al adulto, con los
+ * dibujos originales del personaje (`htmlTinoSol`), nunca con una versión
+ * redibujada.
  */
 
 import { esc } from './utils.js';
@@ -75,6 +77,39 @@ export function htmlTino(pose, { tamano = 96 } = {}) {
   return `<span class="tino" style="width:${tamano}px;height:${tamano}px" aria-hidden="true"><svg viewBox="0 0 120 120"><use href="#il-tino-${p}"/></svg></span>`;
 }
 
+/**
+ * Las poses del dibujo original de Tino (ADR 127 D6), una por archivo en
+ * `assets/tino/`: los SVG que entregó Esteban, sin cambiar un trazo (solo se
+ * quitó el envoltorio de metadatos de Illustrator). `tino` es la pose base.
+ * Cada una con su lienzo, para reservar el alto sin saltos al cargar.
+ */
+export const TINO_ORIGINAL = Object.freeze({
+  tino:             { ancho: 637, alto: 957 },
+  saluda:           { ancho: 662, alto: 1004 },
+  explica:          { ancho: 651, alto: 987 },
+  celebra:          { ancho: 649, alto: 998 },
+  'celebra-grande': { ancho: 755, alto: 1001 },
+  anima:            { ancho: 693, alto: 1022 },
+});
+
+/**
+ * Tino del adulto (ADR 127 D6): el dibujo original sobre su sol, un disco
+ * crema fijo en los dos temas (como la teja del isotipo, ADR 103 D2), así
+ * el personaje conserva sus colores de siempre también en el tema oscuro.
+ * Decorativo: lo que dice va en el texto de al lado.
+ *
+ * @param {string} pose - clave de TINO_ORIGINAL; otra cae en `saluda`.
+ * @param {{ tamano?: number, clase?: string }} [opciones] - diámetro del sol en px.
+ * @returns {string}
+ */
+export function htmlTinoSol(pose, { tamano = 112, clase = '' } = {}) {
+  const p = Object.hasOwn(TINO_ORIGINAL, pose) ? pose : 'saluda';
+  const { ancho, alto } = TINO_ORIGINAL[p];
+  const archivo = p === 'tino' ? 'tino' : `tino-${p}`;
+  return `<span class="tino-sol${clase ? ` ${esc(clase)}` : ''}" style="--tino-sol:${Number(tamano) || 112}px" data-pose="${p}" aria-hidden="true">`
+    + `<img class="tino-sol__img" src="assets/tino/${archivo}.svg" alt="" width="${ancho}" height="${alto}" decoding="async" draggable="false"></span>`;
+}
+
 /** Altura útil del frasco en su retícula 88x104: del fondo (y 86) a la boca (y 24). */
 const _FONDO = 86;
 const _BOCA = 24;
@@ -103,8 +138,48 @@ const _COLOR_FRASCO = {
 };
 
 /**
- * Un frasco con su relleno. Ningún color va solo (R49): quien lo usa pone al
- * lado el nombre y el monto; la etiqueta es para quien no ve el dibujo.
+ * Los granos de café que llenan el frasco (ADR 128), de abajo hacia arriba:
+ * centro y giro de cada uno en la retícula 88x104. Filas de tres y de dos,
+ * trabadas como granos que caen, dentro del relleno (x 20 a 68, fondo en
+ * y 96). El giro varía para que el montón no se lea como una rejilla.
+ * @type {ReadonlyArray<{ x: number, y: number, giro: number }>}
+ */
+export const GRANOS_FRASCO = Object.freeze([
+  { x: 28, y: 89, giro: -18 }, { x: 44, y: 89, giro: 12 }, { x: 60, y: 89, giro: -8 },
+  { x: 36, y: 80.5, giro: 22 }, { x: 52, y: 80.5, giro: -14 },
+  { x: 28, y: 72, giro: 6 }, { x: 44, y: 72, giro: -20 }, { x: 60, y: 72, giro: 16 },
+  { x: 36, y: 63.5, giro: -10 }, { x: 52, y: 63.5, giro: 18 },
+  { x: 28, y: 55, giro: 14 }, { x: 44, y: 55, giro: -6 }, { x: 60, y: 55, giro: -22 },
+  { x: 36, y: 46.5, giro: -16 }, { x: 52, y: 46.5, giro: 8 },
+  { x: 28, y: 38, giro: 10 }, { x: 44, y: 38, giro: -12 }, { x: 60, y: 38, giro: 20 },
+  { x: 36, y: 29.5, giro: -6 }, { x: 52, y: 29.5, giro: 14 },
+].map(Object.freeze));
+
+/** Medida del grano en la retícula del frasco (el símbolo `il-cafe` es 20x14). */
+const _GRANO_ANCHO = 15;
+const _GRANO_ALTO = 10.5;
+
+/**
+ * Los granos que caben hasta el nivel de una proporción: entra cada grano
+ * cuyo centro queda bajo la superficie (con medio grano de holgura, así el
+ * montón asoma un poco sobre el tinte). Con algo de dinero, aunque sea
+ * poco, se ve la primera fila: el llenado mínimo (5 %) ya la alcanza.
+ *
+ * @param {number} proporcion - 0 a 1 contra la meta del frasco.
+ * @returns {typeof GRANOS_FRASCO[number][]}
+ */
+export function granosFrasco(proporcion) {
+  const p = Math.min(1, Math.max(0, Number(proporcion) || 0));
+  if (p === 0) return [];
+  const nivel = _FONDO - p * (_FONDO - _BOCA);
+  return GRANOS_FRASCO.filter(g => g.y >= nivel + 2.5);
+}
+
+/**
+ * Un frasco lleno de los granos de café de Tino (ADR 128): el tinte de su
+ * color sube hasta el nivel y encima van los granos. Ningún color va solo
+ * (R49): quien lo usa pone al lado el nombre y el monto; la etiqueta es para
+ * quien no ve el dibujo.
  *
  * @param {'ahorrar'|'gastar'|'compartir'} frasco
  * @param {number} proporcion - 0 a 1 contra la meta del frasco.
@@ -116,9 +191,12 @@ export function htmlFrasco(frasco, proporcion, { etiqueta = null, ancho = 76 } =
   const d = rellenoFrasco(proporcion);
   const alto = Math.round(ancho * 104 / 88);
   const a11y = etiqueta ? `role="img" aria-label="${esc(etiqueta)}"` : 'aria-hidden="true"';
+  const granos = granosFrasco(proporcion).map(g =>
+    `<use href="#il-cafe" x="${g.x - _GRANO_ANCHO / 2}" y="${g.y - _GRANO_ALTO / 2}" width="${_GRANO_ANCHO}" height="${_GRANO_ALTO}" transform="rotate(${g.giro} ${g.x} ${g.y})"/>`).join('');
   return `<svg class="frasco" width="${ancho}" height="${alto}" viewBox="0 0 88 104" style="--il-a: ${color}" ${a11y}>`
     + '<use href="#il-frasco"/>'
-    + (d ? `<path d="${d}" fill="currentColor"/>` : '')
+    + (d ? `<path class="frasco__tinte" d="${d}" fill="currentColor"/>` : '')
+    + granos
     + '<use href="#il-frasco-borde"/></svg>';
 }
 

@@ -83,6 +83,10 @@ body.kid,
 /* El frasco se llena contra la meta de ESE frasco, nunca contra los
    otros dos (R60). El relleno lo dibuja infra/ilustraciones.js. */
 .frasco { display: block; overflow: visible; color: var(--il-a, var(--fk-kid-ahorrar, var(--fk-accent))); }
+/* ADR 128: el frasco se llena de granos de café, no de líquido. El color
+   del frasco queda en un tinte detrás de los granos: sigue diciendo cuál es
+   cada frasco sin tapar el café. */
+.frasco__tinte { fill-opacity: 0.55; }
 
 /* ── DESTELLOS DE LA CELEBRACIÓN (D9) ────────────────────────────
    Ocho destellos estáticos alrededor de la insignia: aparecen una vez,

@@ -6,46 +6,105 @@
    ============================================================ */
 
 :root {
+  /* ── IDENTIDAD "BOSQUE Y SOL" (ADR 127 D1) ─────────────────────
+     La paleta sale del isotipo (ADR 103): verde bosque, girasol y coral
+     sobre crema. Son colores de MARCA, fijos en los dos temas, como la
+     teja del isotipo: pintan la banda de Inicio, el sol de Tino y los
+     acentos de celebración. Las acciones siguen en --fk-accent. */
+  --fk-brand-bosque:    #184e40;   /* verde del isotipo: banda de Inicio */
+  --fk-brand-bosque-2:  #22694f;   /* parada clara del degradado bosque */
+  --fk-brand-bosque-3:  #0e3329;   /* parada profunda */
+  --fk-brand-girasol:   #f3c13c;   /* amarillo del isotipo: sol, logros */
+  --fk-brand-coral:     #f8765e;   /* coral del isotipo */
+  --fk-brand-crema:     #fbf6ec;   /* papel del isotipo y del sol de Tino */
+  --fk-brand-on:        #ffffff;   /* texto sobre bosque: 9,5:1 */
+  --fk-brand-on-2:      rgba(255, 255, 255, 0.82);  /* secundario sobre bosque: 5,0:1 contra la parada clara */
+
+  /* Degradado bosque: única superficie de marca a sangre. 140deg y tres
+     paradas fijas; blanco pasa AA contra la parada más clara (6,8:1). */
+  --fk-grad-bosque: linear-gradient(140deg, var(--fk-brand-bosque-2) 0%, var(--fk-brand-bosque) 46%, var(--fk-brand-bosque-3) 100%);
+
+  /* Tarjeta de identidad (ADR 127 D5): el total de cada sección va en el
+     tono profundo de su color, igual en los dos temas. La tinta es el
+     fondo del bosque más oscuro; el texto y las capas de adentro, blanco. */
+  --fk-hero-tinta:   #0a0f0e;
+  --fk-hero-texto:   #ffffff;
+  --fk-hero-texto-2: rgba(255, 255, 255, 0.86);
+  --fk-hero-borde:   rgba(255, 255, 255, 0.16);
+  --fk-hero-capa:    rgba(255, 255, 255, 0.14);
+  --fk-hero-anillo:  rgba(255, 255, 255, 0.07);
+  --fk-hero-capa-suave:  rgba(255, 255, 255, 0.10);
+  --fk-hero-borde-fuerte: rgba(255, 255, 255, 0.28);
+  --fk-hero-filo:    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+
+  /* Relieve de la identidad (ADR 127 D3 y D4): el filo de luz de lo que
+     tiene color propio (primario, "Registrar"), el hundido al presionar y
+     las sombras de lo que flota sobre la banda de Inicio. Iguales en los
+     dos temas salvo las que themes.css tiñe de bosque. */
+  --fk-luz-filo:           inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  --fk-luz-filo-fuerte:    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  --fk-shadow-hundida:     inset 0 2px 4px rgba(0, 0, 0, 0.18);
+  --fk-shadow-riel:        inset 0 1px 2px rgba(0, 0, 0, 0.12);
+  --fk-shadow-pastilla:    0 2px 8px rgba(0, 0, 0, 0.18);
+  --fk-shadow-banda:       0 18px 34px -24px rgba(0, 0, 0, 0.7);
+  --fk-shadow-sobre-banda: 0 10px 28px -14px rgba(0, 0, 0, 0.55);
+  --fk-shadow-marca:       0 4px 12px -4px rgba(0, 0, 0, 0.4);
+  --fk-shadow-sol:         0 10px 24px -12px rgba(0, 0, 0, 0.45);
+  --fk-shadow-fab-claro:   0 10px 22px -6px rgba(24, 78, 64, 0.55);
+
+  /* El café de Tino (ADR 128): el grano que el guatín levanta en
+     "celebra grande", con los colores del dibujo original. Llena los
+     frascos del niño en lugar de un líquido. Fijo en los dos temas: el
+     grano va siempre sobre el tinte del frasco, nunca sobre el lienzo. */
+  --fk-cafe-grano:    #7a3b2a;
+  --fk-cafe-contorno: #3d1a0b;
+  --fk-cafe-brillo:   #a8624a;
+
   /* ── MARCA ──────────────────────────────────────────────────── */
-  /* "Calma confiable": esmeralda menos saturada que el neón previo
-     (#00dc82). Menos vibración en superficies grandes y modo oscuro. */
-  --fk-accent:        #1fd194;
-  --fk-accent-hover:  #38dca6;
-  --fk-accent-subtle: rgba(31, 209, 148, 0.12);
-  --fk-accent-border: rgba(31, 209, 148, 0.32);
-  --fk-accent-glow:   rgba(31, 209, 148, 0.08);
+  /* Menta Finko (ADR 127 D1): la acción en oscuro. Un paso más suave que
+     el esmeralda anterior (#1fd194) para convivir con el bosque. */
+  --fk-accent:        #2bd49a;
+  --fk-accent-hover:  #4ddcaa;
+  --fk-accent-subtle: rgba(43, 212, 154, 0.12);
+  --fk-accent-border: rgba(43, 212, 154, 0.32);
+  --fk-accent-glow:   rgba(43, 212, 154, 0.08);
 
   /* ── FONDOS (modo oscuro - default) ─────────────────────────── */
-  --fk-bg-base:        #101218;
-  --fk-bg-surface:     #181b23;
-  --fk-bg-elevated:    #20242f;
-  --fk-bg-hover:       rgba(255, 255, 255, 0.04);
-  --fk-bg-active:      rgba(255, 255, 255, 0.08);
-  --fk-bg-glass:       rgba(22, 25, 34, 0.7);
-  --fk-bg-overlay:     rgba(0, 0, 0, 0.65);   /* fondo oscuro del modal overlay */
+  /* Tinta de bosque (ADR 127 D1): el gris azulado anterior (#101218) se
+     corre unos grados al verde, sin croma que tiña a los dominios. */
+  --fk-bg-base:        #0d1211;
+  --fk-bg-surface:     #151b1a;
+  --fk-bg-elevated:    #1e2624;
+  --fk-bg-hover:       rgba(255, 255, 255, 0.045);
+  --fk-bg-active:      rgba(255, 255, 255, 0.085);
+  --fk-bg-glass:       rgba(17, 24, 22, 0.78);
+  --fk-bg-overlay:     rgba(2, 6, 5, 0.66);   /* fondo oscuro del modal overlay */
 
   /* ── TEXTO ───────────────────────────────────────────────────── */
-  --fk-text-primary:   #e9ebf3;
-  --fk-text-secondary: #a3a9bd;
-  --fk-text-muted:     #888fa6;   /* sube a contraste AA (>=4.5:1) sobre bg-base */
-  --fk-text-disabled:  #565d72;   /* legible con baja visión sin dejar de verse inactivo */
-  --fk-text-on-accent: #08120d;
-  --fk-text-accent:    #4bd99b;
-  --fk-text-inverse:   #1a1d27;
+  /* Contraste medido contra base, surface y elevated (ADR 127 D1):
+     primario 16,8 / 15,6 / 13,8; secundario 9,0 / 8,3 / 7,3;
+     muted 6,2 / 5,8 / 5,1. */
+  --fk-text-primary:   #eef3f0;
+  --fk-text-secondary: #aab5b0;
+  --fk-text-muted:     #8b9792;
+  --fk-text-disabled:  #5d6863;
+  --fk-text-on-accent: #06140f;
+  --fk-text-accent:    #4fdcaa;
+  --fk-text-inverse:   #17201d;
 
   /* ── BORDES ──────────────────────────────────────────────────── */
   --fk-border-subtle:  rgba(255, 255, 255, 0.06);
-  --fk-border-default: rgba(255, 255, 255, 0.12);
-  --fk-border-strong:  rgba(255, 255, 255, 0.25);
-  --fk-border-accent:  rgba(31, 209, 148, 0.32);
-  --fk-border-focus:   #1fd194;
+  --fk-border-default: rgba(255, 255, 255, 0.11);
+  --fk-border-strong:  rgba(255, 255, 255, 0.22);
+  --fk-border-accent:  rgba(43, 212, 154, 0.32);
+  --fk-border-focus:   #2bd49a;
 
   /* ── SEMÁNTICOS ──────────────────────────────────────────────── */
   /* success desacoplado de la marca: tono propio para que "salió bien"
      no sea idéntico al acento de marca. */
   --fk-success:       #25cf86;
   --fk-success-bg:    rgba(37, 207, 134, 0.12);
-  --fk-success-text:  #4bd99b;
+  --fk-success-text:  #4fdcaa;
 
   --fk-warning:       #ffb82e;
   --fk-warning-bg:    rgba(255, 184, 46, 0.12);
@@ -83,11 +142,11 @@
    *                    fallaba WCAG AA sobre blanco (algunos por debajo de
    *                    2:1). Ver themes.css.
    */
-  --fk-dom-ingresos:      #1fd194;   /* verde   - ingresos (= acento de marca) */
+  --fk-dom-ingresos:      #2bd49a;   /* verde   - ingresos (= acento de marca) */
   --fk-dom-ingresos-bg:   color-mix(in srgb, var(--fk-dom-ingresos) 12%, transparent);
   --fk-dom-ingresos-text: var(--fk-dom-ingresos);
 
-  --fk-dom-gastos:        #ff8a5c;   /* naranja - gastos (suavizado: no es emergencia) */
+  --fk-dom-gastos:        #fb7d5f;   /* coral   - gastos (ADR 127 D1: el coral del isotipo, un paso más vivo) */
   --fk-dom-gastos-bg:     color-mix(in srgb, var(--fk-dom-gastos) 12%, transparent);
   --fk-dom-gastos-text:   var(--fk-dom-gastos);
 
@@ -145,9 +204,10 @@
      en ambos temas (mismo criterio que las tejas de marca del ADR 025:
      una teja no cambia con el tema). Tinta oscura sobre el degradado
      menta: 9.6:1 contra la parada más clara, AA en cualquier fondo. */
-  --fk-avatar-grad-a: #38dca6;
-  --fk-avatar-grad-b: #1fd194;
-  --fk-avatar-ink:    #08120d;
+  /* ADR 127 D1: girasol del isotipo; tinta café a 8,9:1 contra la parada clara. */
+  --fk-avatar-grad-a: #f8d36b;
+  --fk-avatar-grad-b: #f3c13c;
+  --fk-avatar-ink:    #3a2a05;
 
   /* ── MARCA DE FINKO (ADR 103) ────────────────────────────────── */
   /* Fondo de la teja del isotipo. FIJO en ambos temas, como las tejas de
@@ -178,13 +238,18 @@
   --fk-nudge-success-accent:  var(--fk-success);
 
   /* ── BOTÓN PRIMARIO ──────────────────────────────────────────── */
-  --fk-btn-primary-bg:    #1fd194;
-  --fk-btn-primary-text:  #08120d;
-  --fk-btn-primary-hover: #38dca6;
+  --fk-btn-primary-bg:    #2bd49a;
+  --fk-btn-primary-text:  #06140f;
+  --fk-btn-primary-hover: #4ddcaa;
 
   /* ── TIPOGRAFÍA ──────────────────────────────────────────────── */
   --fk-font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --fk-font-mono: var(--fk-font-sans);
+  /* Display (ADR 127 D2): Plus Jakarta Sans para títulos y montos. Inter
+     sigue en el cuerpo. Self-hosted como Inter (assets/fonts/). */
+  --fk-font-display: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  /* Las cifras de dinero usan --fk-font-mono en 41 sitios: apunta a la
+     display, con cifras tabulares (base.css). */
+  --fk-font-mono: var(--fk-font-display);
 
   /* Escala de texto (base 16px) */
   --fk-text-xs:   0.75rem;    /* 12px */
@@ -224,17 +289,22 @@
   --fk-space-20: 5rem;      /* 80px */
 
   /* ── BORDER RADIUS ───────────────────────────────────────────── */
-  --fk-radius-sm:   6px;
-  --fk-radius-md:   10px;
-  --fk-radius-lg:   16px;
-  --fk-radius-xl:   24px;
+  /* ADR 127 D3: un paso más redondo en toda la escala. */
+  --fk-radius-sm:   8px;
+  --fk-radius-md:   12px;
+  --fk-radius-lg:   18px;
+  --fk-radius-xl:   26px;
+  --fk-radius-2xl:  32px;    /* hojas y banda de marca */
   --fk-radius-full: 9999px;
 
   /* ── SOMBRAS ─────────────────────────────────────────────────── */
-  --fk-shadow-sm:   0 1px 3px rgba(4, 6, 12, 0.45);
-  --fk-shadow-md:   0 4px 16px rgba(4, 6, 12, 0.5);
-  --fk-shadow-lg:   0 8px 32px rgba(4, 6, 12, 0.55);
-  --fk-shadow-glow: 0 0 0 1.5px var(--fk-accent-border), 0 4px 20px rgba(4, 6, 12, 0.45);
+  --fk-shadow-sm:   0 1px 2px rgba(0, 4, 3, 0.45);
+  --fk-shadow-md:   0 6px 20px rgba(0, 4, 3, 0.42);
+  --fk-shadow-lg:   0 16px 40px rgba(0, 4, 3, 0.5);
+  --fk-shadow-glow: 0 0 0 1.5px var(--fk-accent-border), 0 6px 22px rgba(0, 4, 3, 0.4);
+  /* Filo de luz arriba (ADR 127 D4): en oscuro la profundidad la da el
+     borde superior apenas más claro, no una sombra que no se ve. */
+  --fk-shadow-filo: inset 0 1px 0 rgba(255, 255, 255, 0.045);
 
   /* ── DEGRADADO DE IDENTIDAD (DV.2a, ADR 033 D2) ─────────────────
      Fórmula canónica, consolidada de las 6 superficies que la copiaban
@@ -278,6 +348,10 @@
   --fk-transition-fast: 120ms cubic-bezier(0.4, 0, 0.2, 1);
   --fk-transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
   --fk-transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* ADR 127 D8: entradas que frenan suave y un rebote corto para lo que
+     celebra. a11y.css anula ambas con prefers-reduced-motion. */
+  --fk-ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
+  --fk-ease-rebote: cubic-bezier(0.34, 1.56, 0.64, 1);
 
   /* ── LAYOUT ──────────────────────────────────────────────────── */
   --fk-sidebar-width:     240px;

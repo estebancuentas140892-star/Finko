@@ -40,10 +40,10 @@
 | Hoja para anotar y pantalla de la meta ("Cambiar el plan" reusa la pantalla con `borrador.id`; tres cantidades por semana, ADR 124 D8) | `modules/dominio/nino/view.js` / `index.js` | `htmlMovimientoNino()`, `textoBotonMovimiento()`, `BILLETES`, `htmlMetaNino()`, `SEMANALES`, `htmlTarjetaMeta(perfil, hoy, { acciones })`, `_reflejarMonto()`, `data-action="nino-mov"`, `nino-monto`, `nino-meta-*` (`nino-meta-cambiar`, `nino-meta-semana` con `data-valor`), `#modal-nino` |
 | La lección del niño: mismo motor, su avance y su cierre | `modules/dominio/aprende/index.js` / `view.js` | `_progreso()`, `_guardarProgreso()`, `ctx.nino`, `_cierreNino()`, `data-action="leccion-salir-a"` |
 | Contenido del niño (solo datos) y su ubicación desde los 10 | `modules/dominio/aprende/lecciones/nino/kN.js`, `nino/ubicacion.js` | `'k1-l1'`, `ofreceUbicacionNino()`, `EDAD_UBICACION_NINO` |
-| Dibujos, Tino, frasco y destellos | `modules/infra/ilustraciones.js` | `DIBUJOS`, `htmlDibujo()`, `POSES_TINO`, `htmlTino()`, `htmlFrasco()`, `htmlDestellos()` |
+| Dibujos, Tino, frasco y destellos | `modules/infra/ilustraciones.js` | `DIBUJOS`, `htmlDibujo()`, `POSES_TINO`, `htmlTino()`, `htmlFrasco()`, `granosFrasco()`, `GRANOS_FRASCO`, `htmlDestellos()` |
 | Markup | `index.html` | `#quien-usa`, `#modal-familia`, `#nino-app`, `#nino-main`, `#nino-nav` |
 
-**Recursos**: símbolos `il-tino-*` (cinco poses, color por rol `--fk-tino-*`), `il-balon` a `il-patineta`, `il-frasco`, `il-frasco-borde` (`assets/svg/ilustraciones/`, ver su README 2.2); `il-insignia` deja apagar su estrella con `--fk-insignia-estrella` (Yo la cambia por el ícono de la unidad); `i-lock` e `i-clock` (`assets/svg/iconos/simbolos/`). CSS: `styles/components/nino.css` (base visual y sección "PERFILES"); tokens del niño en `tokens.css` y `themes.css` (`body.kid`, `body.light-theme.kid`); fondo opaco del selector en `modals.css`.
+**Recursos**: símbolos `il-tino-*` (cinco poses, color por rol `--fk-tino-*`), `il-balon` a `il-patineta`, `il-frasco`, `il-frasco-borde`, `il-cafe` (el grano que llena los frascos, tokens `--fk-cafe-*`; `assets/svg/ilustraciones/`, ver su README 2.2); `il-insignia` deja apagar su estrella con `--fk-insignia-estrella` (Yo la cambia por el ícono de la unidad); `i-lock` e `i-clock` (`assets/svg/iconos/simbolos/`). CSS: `styles/components/nino.css` (base visual y sección "PERFILES"); tokens del niño en `tokens.css` y `themes.css` (`body.kid`, `body.light-theme.kid`); fondo opaco del selector en `modals.css`.
 
 **Dependencias y relaciones**: `entrarComo()` emite `perfil:cambio` (`{ id }`), que escuchan `ui/quien-usa.js` (piel) y `dominio/nino` (pinta). Entrar al adulto emite `bloqueo:abierto` (bootstrap.js encadena gate legal, novedades y débitos). "Agregar un niño" desde el selector emite `familia:agregar`, que abre el alta en config. Con niños, `bootstrap.js` llama `initPerfiles()` en vez de `initBloqueoAcceso()`. `modales.js` usa `#nino-app` como fondo inerte en el perfil niño.
 
@@ -70,6 +70,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-05 (ADR 128): los frascos se llenan con los granos de café de Tino sobre el tinte de su color.
 - 2026-11-05 (MV2.29 tanda 5, ADR 124): Familia en Ajustes como filas que abren el progreso, "Se la entregué" en la fila, y las hojas del tutor (progreso, mesada con días en botones y la suma que se rehace, premio y agregar) con teja, línea y pie fijo.
 - 2026-11-05 (MV2.29 tanda 4, ADR 124): la piel del niño fuera de su app (`.kid-piel`): "¿Quién usa Finko?" con Tino y los niños primero, y la primera vez a toda la pantalla con Tino en cada paso.
 - 2026-11-05 (MV2.29 tanda 3, ADR 124): la hoja para anotar con el monto en grande, billetes y el botón que dice cuánto; la meta como pantalla de paso, sin barra, con tres cantidades por semana y Tino que responde.

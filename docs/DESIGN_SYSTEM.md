@@ -1,9 +1,9 @@
 # Design System - Finko Claude
 
-> Revisado: 2026-11-03.
+> Revisado: 2026-11-05.
 
 > Documento vivo. Se actualiza al agregar nuevos tokens o componentes.
-> Última revisión: 2026-08-12 (R75, la línea que lee el número, [ADR 046](DECISIONS/046-analisis-interpreta-criterio-y-lenguaje.md) D3: va en Principios porque no es de componente, decide qué acompaña a toda cifra protagonista. Es la que faltaba para que la regla rechazada en la revisión anterior, "la explicación va antes del número que empeoró", tenga por fin una forma implementada de la que colgar, aunque su caso concreto sigue sin dato. Antes 2026-07-28: R70 a R74, la casa de Ahorro, [ADR 056](DECISIONS/056-la-casa-de-ahorro.md): las cinco van en Principios porque ninguna es de componente, son reglas de arquitectura de información. Cierran la auditoría por secciones: son las primeras que no nacen de una pantalla sino de la relación entre cinco. Antes R66 a R69, arquitectura I+H del Fondo de emergencia; las cuatro van en Principios. La quinta regla del informe, "la explicación va antes del número que empeoró", **no entra todavía**: su estado (el retroceso por subida de gastos) necesita un dato que Finko no guarda y quedó sin construir, así que la regla no tiene origen implementado que la sostenga. R69 es de lenguaje y aplica a toda la app, no solo al Fondo. Antes R63 a R65, arquitectura O de Inversión, la que cierra las cuatro secciones del hub de ahorro: las tres van en Principios porque ninguna es de componente, son reglas de qué figura usar y cuándo enseñar. R63 nace de una observación de Esteban sobre el conjunto de las cuatro secciones, no de Inversión sola. Antes R60 a R62, arquitectura E de Apartados: las tres nacen de comparar dos series en la misma tarjeta, así que van juntas en Principios. Su cuarta regla, "el estado terminal cambia el dato y no solo el botón", **no entra**: ya la dice R58 desde Metas, y la de "un dato que no existe se ofrece" es la R57 de ese mismo informe, confirmada aquí. Antes R57 a R59, arquitectura A2 de Metas, la segunda pasada de la auditoría por secciones: la que decide estructura y no detalle. R57 y R58 van en Principios; R59 en Barras y anillos de progreso, junto al medidor semicircular que documenta esa misma sección. Antes R56, auditoría de diseño de Metas, que el informe numeraba R15 y se renumera al primer hueco real; va en Componentes, junto a R2 y R19, porque es la anatomía de la fila lo que fija. La R16 del mismo informe **no entra**: ya la dice R20, palabra por palabra, desde la auditoría de Me deben. Antes R52 a R55, auditoría de diseño de Fondo de emergencia, que el informe numeraba R11 a R14 y se renumeran al primer hueco real; entran las cuatro. R52 y R55 van en Principios; R53 en Botones, junto a R26; R54 en Barras y anillos de progreso, junto a R43. Antes R46 a R51, auditoría de diseño de Calendario, que el informe numeraba R13 a R18 y se renumeran al primer hueco real; entran las seis. R46 a R48 van en Principios; R49 en Colores por dominio, junto a R3; R50 y R51 en Botones, junto a la regla del primario único. Antes R41 a R45, auditoría de diseño de Análisis, la que reservaba R25 a R29 y se renumera al primer hueco real; sus cinco reglas entran las cinco, y la mitad de su R25 que pedía "ninguna clase se declara dos veces" queda como corolario de R23, que ya es dueña del tema. R41, R42 y R45 van en Principios; R43 en Barras y anillos de progreso; R44 en Colores por dominio, junto a R6. Antes R38 a R40, auditoría de diseño de Mis cuentas; el informe numeraba seis reglas, R19 a R24, y solo entran tres: su R20 corresponde a una corrección transversal que quedó fuera de alcance, su R22 ya la dice R20 y su R24 ya la dice R24. Antes R36 y R37, auditoría de la Barra de navegación; R34 y R35, auditoría de Límites de gasto, que el informe numeraba R9 y R10 y se renumeraron al primer hueco real. Antes R29 a R33, auditoría de la Interfaz: la capa global de navegación; R23 a R28 de la de Apartados, R9 a R11 de la de Gastos, R19 a R22 de la de Me deben, R7 y R8 de la de Deudas, R1 a R6 de la de Inicio, radio protagonista y [ADR 054](DECISIONS/054-el-acento-no-mide-gasto.md)).
+> Última revisión: 2026-11-05, identidad v3 "Bosque y sol" ([ADR 127](DECISIONS/127-identidad-bosque-y-sol.md)): paleta del isotipo, Plus Jakarta Sans en títulos y cifras, radios un paso más redondos, tarjetas de identidad por sección, banda de marca en Inicio y Tino en el adulto. La capa `styles/identidad.css` es dueña del lenguaje visual; esta guía, de las reglas. La historia de cada regla R está en su "Origen" y en el CHANGELOG.
 > Fuente de verdad: los archivos CSS. Si este doc y `tokens.css` difieren, manda `tokens.css` (y hay que actualizar este doc).
 
 ---
@@ -16,7 +16,7 @@
 4. **WCAG AA mínimo** - Texto principal con contraste >= 4.5:1 en ambos temas. Lighthouse Accessibility 100 es innegociable.
 5. **Responsive real** - Cada componente funciona en 320px y en 1440px.
 6. **Tokens siempre** - Nunca hardcodear colores, espaciados ni tamaños. Solo `var(--fk-*)`.
-7. **"Calma con energía"** (rediseño 2026) - Superficies tranquilas con mucho aire; el acento esmeralda se reserva para dinero disponible, progreso y éxito. Cero glow neón.
+7. **"Bosque y sol"** (identidad v3, ADR 127) - La paleta sale del isotipo: el bosque viste la marca (la banda de Inicio), el girasol celebra, el coral es Gastos. Superficies tranquilas con mucho aire; el acento menta se reserva para la acción, el progreso y el éxito. Cero glow neón.
 
 **R10 · El título nombra el periodo que se está viendo:** una cifra y su periodo se leen juntos. Si la pantalla deja navegar entre periodos, el label dice cuál ("Gastaste en junio"), nunca un "este mes" fijo; con un filtro aplicado, dimensión más periodo ("Café en junio"), nunca la dimensión sola. Origen: el hero de Gastos decía "Gastaste este mes" en cualquier mes navegado, y a 30px de distancia su propia nav decía "Junio 2026" y su chip comparativo, "8% más que mayo".
 
@@ -106,12 +106,14 @@
 
 ## Fuentes
 
-**Una sola fuente: Inter Variable**, self-hosted en `assets/fonts/inter-variable.woff2` (pesos 100-900 en un archivo, `font-display: swap`, cero peticiones externas: compatible con CSP `font-src 'self'` y el modo offline del SW).
+**Dos fuentes, self-hosted** (`font-display: swap`, cero peticiones externas: compatible con CSP `font-src 'self'` y el modo offline del SW):
 
-- Los **montos** usan Inter con `font-variant-numeric: tabular-nums` (cifras tabulares), peso 600-700. No existe fuente monoespaciada: `--fk-font-mono` es un alias de `--fk-font-sans` (DM Mono se eliminó en el rediseño 2026, fase F1).
+- **Inter Variable** (`assets/fonts/inter-variable.woff2`, pesos 100-900): el cuerpo, `--fk-font-sans`.
+- **Plus Jakarta Sans Variable** (`assets/fonts/plus-jakarta-sans-variable.woff2`, pesos 200-800, subconjunto latino de 27 KB): títulos (`h1` a `h6`, títulos de sección, de hoja y de vacío) y **montos**, `--fk-font-display` (ADR 127 D2). `--fk-font-mono`, la fuente de las cifras en 41 sitios, apunta a la display; las cifras van con `font-variant-numeric: tabular-nums`. No existe fuente monoespaciada.
 
 ```css
-font-family: var(--fk-font-sans);  /* Inter + fallbacks system-ui */
+font-family: var(--fk-font-sans);     /* cuerpo: Inter + fallbacks system-ui */
+font-family: var(--fk-font-display);  /* títulos y cifras */
 ```
 
 ---
@@ -122,18 +124,21 @@ font-family: var(--fk-font-sans);  /* Inter + fallbacks system-ui */
 
 | Token | Oscuro (default) | Claro (`body.light-theme`) | Uso |
 |---|---|---|---|
-| `--fk-accent` | `#1fd194` | `#13b377` | CTA principal, valor positivo, dinero disponible |
-| `--fk-accent-hover` | `#38dca6` | (hereda) | Estado hover del acento |
-| `--fk-accent-subtle` | `rgba(31,209,148,0.12)` | `rgba(19,179,119,0.10)` | Fondo de chips y celdas accent |
-| `--fk-accent-border` | `rgba(31,209,148,0.32)` | `rgba(19,179,119,0.28)` | Bordes de elementos accent |
+| `--fk-accent` | `#2bd49a` | `#1a7a58` | CTA principal, valor positivo, dinero disponible |
+| `--fk-accent-hover` | `#4ddcaa` | `#155f45` | Estado hover del acento |
+| `--fk-accent-subtle` | `rgba(43,212,154,0.12)` | `rgba(26,122,88,0.10)` | Fondo de chips y celdas accent |
+| `--fk-accent-border` | `rgba(43,212,154,0.32)` | `rgba(26,122,88,0.28)` | Bordes de elementos accent |
+| `--fk-btn-primary-bg` | `#2bd49a` | `#184e40` | El primario: menta en oscuro, bosque del isotipo en claro |
+| `--fk-brand-*` | fijos en los dos temas | | `bosque` `#184e40`, `girasol` `#f3c13c`, `coral` `#f8765e`, `crema` `#fbf6ec` (ADR 127 D1) |
+| `--fk-hero-*` | fijos en los dos temas | | Tinta y capas de las tarjetas de identidad (ADR 127 D5) |
 
 ### Fondos
 
 | Token | Oscuro | Claro | Uso |
 |---|---|---|---|
-| `--fk-bg-base` | `#101218` | `#f6f7fa` | Fondo principal de la app |
-| `--fk-bg-surface` | `#181b23` | `#ffffff` | Cards, sidebar, modales |
-| `--fk-bg-elevated` | `#20242f` | `#eef1f8` | Cards dentro de cards, inputs |
+| `--fk-bg-base` | `#0d1211` | `#f8f7f3` | Fondo principal de la app (tinta de bosque / papel cálido) |
+| `--fk-bg-surface` | `#151b1a` | `#ffffff` | Cards, sidebar, modales |
+| `--fk-bg-elevated` | `#1e2624` | `#f0eee8` | Cards dentro de cards, inputs |
 | `--fk-bg-hover` | `rgba(255,255,255,0.04)` | `rgba(0,0,0,0.04)` | Hover de filas y botones ghost |
 | `--fk-bg-active` | `rgba(255,255,255,0.08)` | `rgba(0,0,0,0.08)` | Estado presionado |
 | `--fk-bg-glass` | `rgba(22,25,34,0.7)` | `rgba(255,255,255,0.75)` | Superficies translúcidas (topbar) |
@@ -242,13 +247,14 @@ Pesos: `--fk-font-light` (300) a `--fk-font-extrabold` (800). Altura de línea: 
 
 | Token | Valor | Uso |
 |---|---|---|
-| `--fk-radius-sm` | `6px` | Inputs, chips pequeños |
-| `--fk-radius-md` | `10px` | Botones, tags |
-| `--fk-radius-lg` | `16px` | Cards principales |
-| `--fk-radius-xl` | `24px` | Celdas Bento, modales |
-| `--fk-radius-full` | `9999px` | Pills, badges, avatares |
+| `--fk-radius-sm` | `8px` | Inputs, chips pequeños |
+| `--fk-radius-md` | `12px` | Tejas, campos, tags |
+| `--fk-radius-lg` | `18px` | Cards principales |
+| `--fk-radius-xl` | `26px` | Tarjetas de identidad, celdas Bento, modales |
+| `--fk-radius-2xl` | `32px` | Hojas y la banda de marca de Inicio |
+| `--fk-radius-full` | `9999px` | Botones (píldora, ADR 127 D3), pills, badges, avatares |
 
-**Radio protagonista:** el bloque protagonista de una sección usa `--fk-radius-xl`; todo panel secundario, `--fk-radius-lg`. El hero de Inicio (24px) sobre paneles de 16px es intención, no deriva.
+**Radio protagonista:** el bloque protagonista de una sección usa `--fk-radius-xl`; todo panel secundario, `--fk-radius-lg`. La tarjeta de identidad (26px) sobre paneles de 18px es intención, no deriva.
 
 ---
 

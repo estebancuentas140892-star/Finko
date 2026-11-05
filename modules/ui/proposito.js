@@ -14,6 +14,7 @@
  */
 
 import { esc as _esc } from '../infra/utils.js';
+import { htmlTinoSol } from '../infra/ilustraciones.js';
 
 /**
  * Copy por sección (ADR 016). Agregar aquí en EP.2-EP.4 para sumar secciones.
@@ -66,6 +67,27 @@ export const PROPOSITOS_SECCION = {
   },
 };
 
+/**
+ * Tino acompaña el vacío de cada sección (ADR 127 D6): es el momento en que
+ * alguien llega sin datos y necesita saber para qué sirve el lugar. La pose
+ * dice el tono: explica lo que hace la sección, anima donde el objetivo es
+ * un sueño o un colchón, saluda en Mis cuentas, el primer paso de la guía de
+ * Inicio. Con datos el banner no se pinta, y Tino se va con él.
+ */
+export const TINO_POR_SECCION = Object.freeze({
+  gast:        'explica',
+  compromisos: 'explica',
+  agenda:      'explica',
+  presupuesto: 'explica',
+  apartados:   'explica',
+  analisis:    'explica',
+  personales:  'explica',
+  inversion:   'explica',
+  metas:       'anima',
+  ahorro:      'anima',
+  tesoreria:   'saluda',
+});
+
 // ── RENDER ───────────────────────────────────────────────────────
 
 /**
@@ -96,8 +118,10 @@ export function htmlBannerProposito(seccion, tieneDatos = false) {
   if (!info || tieneDatos) return '';
   const { pregunta, cuerpo } = partirProposito(info.texto);
   const tituloHtml = pregunta ? `<h2 class="banner-proposito__titulo">${pregunta}</h2>` : '';
+  const tino = htmlTinoSol(TINO_POR_SECCION[seccion] ?? 'explica', { tamano: 104, clase: 'banner-proposito__tino' });
   return `
     <div class="banner-proposito" data-seccion="${_esc(seccion)}">
+      ${tino}
       ${tituloHtml}
       <p class="banner-proposito__texto">${cuerpo}</p>
     </div>`;

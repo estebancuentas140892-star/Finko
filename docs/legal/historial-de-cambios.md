@@ -12,6 +12,7 @@ Cada vez que un documento legal cambia, aquí queda constancia de qué cambió, 
 
 | Fecha | Documento | Versión | Cambio |
 |---|---|---|---|
+| 2026-11-05 | Licencias de terceros | 0.1 | Cambio menor: se suma la fuente tipográfica Plus Jakarta Sans (OFL-1.1), que la identidad visual de Finko usa en títulos y cifras ([ADR 127](../DECISIONS/127-identidad-bosque-y-sol.md)). |
 | 2026-08-15 | Términos y condiciones, Política de privacidad, Tratamiento de datos personales, Aviso de cookies, README | 0.1 | Cambio menor: la cláusula de cambio de modelo (CFG.4) deja de describir una decisión pendiente y confirma la que se tomó ([ADR 043](../DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md), Aceptado). Finko no incorpora cuentas ni sincronización. El fondo no cambia: el modelo local-only sigue siendo el mismo que describían los borradores desde el día uno. |
 | 2026-07-09 | Todo el paquete (10 documentos) | 0.1 | Redacción inicial de los borradores para el modelo local-only vigente. Pendientes: datos del responsable, correo de contacto, decisión de licencia del código y revisión por abogado colombiano antes de pasar a 1.0. |
 

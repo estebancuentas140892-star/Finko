@@ -10,7 +10,7 @@
  *     o los usuarios seguirán viendo la versión vieja.
  */
 
-const CACHE_NAME = 'finko-v669';
+const CACHE_NAME = 'finko-v670';
 
 // ── Assets críticos - si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [
@@ -46,6 +46,7 @@ const CORE_ASSETS = [
   './styles/a11y.css',
   './styles/utils.css',
   './styles/responsive.css',
+  './styles/identidad.css',
 
   // Core
   './modules/core/state.js',
@@ -97,6 +98,7 @@ const CORE_ASSETS = [
   './modules/ui/actions.js',
   './modules/ui/bootstrap.js',
   './modules/ui/toast.js',
+  './modules/ui/celebraciones.js',
   './modules/ui/modales.js',
   './modules/ui/confirm.js',
   './modules/ui/onboarding.js',
@@ -255,8 +257,18 @@ const OPTIONAL_ASSETS = [
   // para disponibilidad offline inmediata. Ya están en CORE via main.css;
   // aquí se garantiza que el archivo esté en cache aunque main.css ya esté.
   './assets/fonts/inter-variable.woff2',
+  './assets/fonts/plus-jakarta-sans-variable.woff2',
   './assets/fonts/dm-mono-400.woff2',
   './assets/fonts/dm-mono-500.woff2',
+
+  // Tino, los dibujos originales (ADR 127 D6): solo el adulto los pide como
+  // imagen; se precachean para que el vacío de una sección se vea sin red.
+  './assets/tino/tino.svg',
+  './assets/tino/tino-saluda.svg',
+  './assets/tino/tino-explica.svg',
+  './assets/tino/tino-celebra.svg',
+  './assets/tino/tino-celebra-grande.svg',
+  './assets/tino/tino-anima.svg',
 
   './assets/icons/favicon.svg',
   './assets/icons/icon-192.png',

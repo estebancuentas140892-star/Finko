@@ -17,8 +17,11 @@
 
 import { esc as _esc } from '../infra/utils.js';
 import { icon } from '../infra/icons.js';
+import { htmlTinoSol } from '../infra/ilustraciones.js';
 
 const DURACION_MS = 5000;
+/** Un aviso con Tino celebra algo y se lee con calma (ADR 127 D9). */
+const DURACION_TINO_MS = 7000;
 
 /** Icono por tono cuando el caller no elige uno explicito. */
 const _ICONO_POR_TONO = {
@@ -41,10 +44,11 @@ let _activo = false;
  *   detalle?: string,
  *   tono?:    'ok' | 'alerta' | 'peligro',
  *   icono?:   string,
- * }} opciones
+ *   tino?:    string,
+ * }} opciones - `tino`: una pose de Tino (ADR 127 D9) en lugar del ícono.
  */
-export function mostrarToast({ titulo, detalle = '', tono = 'ok', icono }) {
-  _cola.push({ titulo, detalle, tono, icono: icono ?? _ICONO_POR_TONO[tono] });
+export function mostrarToast({ titulo, detalle = '', tono = 'ok', icono, tino }) {
+  _cola.push({ titulo, detalle, tono, icono: icono ?? _ICONO_POR_TONO[tono], tino });
   if (!_activo) _siguiente();
 }
 
@@ -55,13 +59,16 @@ function _siguiente() {
   _crear(sig);
 }
 
-function _crear({ titulo, detalle, tono, icono }) {
+function _crear({ titulo, detalle, tono, icono, tino }) {
   const toast = document.createElement('div');
-  toast.className = `fk-toast fk-toast--${tono}`;
+  toast.className = `fk-toast fk-toast--${tono}${tino ? ' fk-toast--tino' : ''}`;
   toast.setAttribute('role', 'status');
   toast.setAttribute('aria-live', 'polite');
+  const figura = tino
+    ? htmlTinoSol(tino, { tamano: 64, clase: 'fk-toast__tino' })
+    : `<span class="fk-toast__icono" aria-hidden="true">${icon(icono)}</span>`;
   toast.innerHTML = `
-    <span class="fk-toast__icono" aria-hidden="true">${icon(icono)}</span>
+    ${figura}
     <div class="fk-toast__body">
       <p class="fk-toast__titulo">${_esc(titulo)}</p>
       ${detalle ? `<p class="fk-toast__detalle">${_esc(detalle)}</p>` : ''}
@@ -93,7 +100,7 @@ function _crear({ titulo, detalle, tono, icono }) {
 
   // Autocierre pausable: al entrar el cursor se congela el tiempo restante,
   // al salir se retoma (con un minimo para que no muera apenas salga).
-  let restante = DURACION_MS;
+  let restante = tino ? DURACION_TINO_MS : DURACION_MS;
   let inicio   = Date.now();
   let timer    = setTimeout(cerrar, restante);
 

@@ -76,6 +76,7 @@ import { initRegistrar } from './registrar.js';
 import { initInstallPrompt } from './install-prompt.js';
 import { initSwAviso } from './sw-aviso.js';
 import { mostrarNovedadesSiHay } from './novedades.js';
+import { initCelebraciones } from './celebraciones.js';
 
 loadData();
 initFlushOnHide();
@@ -138,6 +139,9 @@ initMenuMas();
 initRegistrar();
 initInstallPrompt();
 renderAll();
+// ADR 127 D9: la foto de los logros se toma antes de que initLogros evalúe,
+// para que el logro que se gana al abrir la app también se celebre.
+initCelebraciones();
 initLogros();
 initSwAviso();
 // Gates que van DETRÁS del candado (CFG.5a): dos overlays bloqueantes a la vez

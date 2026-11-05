@@ -11,6 +11,7 @@ import { readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
   DIBUJOS, POSES_TINO, dibujoPorId, htmlDibujo, htmlTino, rellenoFrasco, htmlFrasco, htmlDestellos,
+  granosFrasco, GRANOS_FRASCO,
 } from '../../modules/infra/ilustraciones.js';
 
 const ROOT = resolve(import.meta.dirname, '../..');
@@ -39,7 +40,7 @@ function contraste(a, b) {
 describe('catálogo de dibujos y Tino contra el sprite (093 D8, 094, 095)', () => {
   it('los ocho dibujos, las cinco poses de Tino y el frasco están en el sprite', () => {
     expect(DIBUJOS.map(d => d.id)).toEqual(['balon', 'libro', 'bici', 'tenis', 'cometa', 'colores', 'audifonos', 'patineta']);
-    const ids = [...DIBUJOS.map(d => `il-${d.id}`), ...POSES_TINO.map(p => `il-tino-${p}`), 'il-frasco', 'il-frasco-borde'];
+    const ids = [...DIBUJOS.map(d => `il-${d.id}`), ...POSES_TINO.map(p => `il-tino-${p}`), 'il-frasco', 'il-frasco-borde', 'il-cafe'];
     for (const id of ids) expect(INDEX, id).toContain(`<symbol id="${id}"`);
     // Frai se retiró con su dibujo (094 D6).
     expect(INDEX).not.toContain('il-frai-');
@@ -115,6 +116,44 @@ describe('el frasco se llena contra su propia meta (R60)', () => {
     expect(htmlFrasco('ahorrar', 0)).not.toContain('<path');
   });
 
+  // ADR 128: el frasco se llena con los granos de café de Tino, no con líquido.
+  it('vacío no tiene granos; con lo mínimo se ve la primera fila y lleno, todos', () => {
+    expect(granosFrasco(0)).toEqual([]);
+    expect(granosFrasco(-1)).toEqual([]);
+    expect(granosFrasco(0.05)).toHaveLength(3);
+    expect(granosFrasco(1)).toHaveLength(GRANOS_FRASCO.length);
+    expect(granosFrasco(3)).toEqual(granosFrasco(1));
+    // Más dinero, nunca menos granos.
+    let antes = 0;
+    for (let p = 0.05; p <= 1; p += 0.05) {
+      const n = granosFrasco(p).length;
+      expect(n).toBeGreaterThanOrEqual(antes);
+      antes = n;
+    }
+  });
+
+  it('cada grano cae dentro del vidrio (x 16 a 72, de la boca al fondo)', () => {
+    for (const g of GRANOS_FRASCO) {
+      expect(g.x - 7.5, `${g.x},${g.y}`).toBeGreaterThanOrEqual(19);
+      expect(g.x + 7.5, `${g.x},${g.y}`).toBeLessThanOrEqual(69);
+      expect(g.y - 5.25, `${g.x},${g.y}`).toBeGreaterThanOrEqual(22);
+      expect(g.y + 5.25, `${g.x},${g.y}`).toBeLessThanOrEqual(96);
+    }
+  });
+
+  it('los granos van entre el tinte del frasco y su borde, del color del café de Tino', () => {
+    const html = htmlFrasco('compartir', 0.5);
+    const tinte = html.indexOf('frasco__tinte');
+    const grano = html.indexOf('href="#il-cafe"');
+    const borde = html.indexOf('href="#il-frasco-borde"');
+    expect(tinte).toBeGreaterThan(-1);
+    expect(grano).toBeGreaterThan(tinte);
+    expect(borde).toBeGreaterThan(grano);
+    const cafe = readFileSync(resolve(ROOT, 'assets/svg/ilustraciones/cafe.svg'), 'utf-8');
+    expect(cafe).toContain('var(--fk-cafe-grano)');
+    expect(cafe).not.toMatch(/fill="#/);
+  });
+
   it('los destellos son ocho y escalonados', () => {
     const html = htmlDestellos();
     expect(html.match(/destellos__punto/g)).toHaveLength(8);
@@ -148,5 +187,41 @@ describe('contraste AA del modo niño en los dos temas (D5)', () => {
   it('el modo niño suma tokens sin tocar los del adulto', () => {
     const adulto = THEMES.slice(THEMES.indexOf('body.light-theme {'), THEMES.indexOf('/* ── MODO NIÑO'));
     expect(adulto).not.toContain('--fk-kid-');
+  });
+});
+
+// ADR 127 D6: Tino del adulto usa los dibujos originales, sobre su sol.
+import { htmlTinoSol, TINO_ORIGINAL } from '../../modules/infra/ilustraciones.js';
+import { existsSync as _existe } from 'node:fs';
+
+describe('htmlTinoSol (ADR 127 D6)', () => {
+  it('cada pose del dibujo original existe en assets/tino', () => {
+    for (const pose of Object.keys(TINO_ORIGINAL)) {
+      const archivo = pose === 'tino' ? 'tino' : `tino-${pose}`;
+      expect(_existe(resolve(ROOT, `assets/tino/${archivo}.svg`)), pose).toBe(true);
+    }
+  });
+
+  it('pinta el dibujo original como imagen decorativa, con su lienzo reservado', () => {
+    const html = htmlTinoSol('explica', { tamano: 80 });
+    expect(html).toContain('src="assets/tino/tino-explica.svg"');
+    expect(html).toContain('alt=""');
+    expect(html).toContain('aria-hidden="true"');
+    expect(html).toContain('width="651" height="987"');
+    expect(html).toContain('--tino-sol:80px');
+  });
+
+  it('una pose desconocida cae en saluda (nunca triste)', () => {
+    expect(htmlTinoSol('triste')).toContain('tino-saluda.svg');
+  });
+
+  // El envoltorio de metadatos (Illustrator, o la procedencia que agregue la
+  // herramienta que copió el archivo) no dibuja nada: no se mide.
+  it('los SVG originales no traen texto ni scripts', () => {
+    for (const pose of Object.keys(TINO_ORIGINAL)) {
+      const archivo = pose === 'tino' ? 'tino' : `tino-${pose}`;
+      const svg = readFileSync(resolve(ROOT, `assets/tino/${archivo}.svg`), 'utf-8');
+      expect(svg).not.toMatch(/<script|<text\b|<foreignObject/);
+    }
   });
 });

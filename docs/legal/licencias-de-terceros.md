@@ -8,7 +8,7 @@
 ## En pocas palabras
 
 - Finko funciona sin librerías externas: el código de la app es propio, escrito en JavaScript estándar.
-- Lo que sí viene de terceros son las **fuentes tipográficas** (Inter y DM Mono) y parte de los **trazados de logotipos** (Simple Icons). Todos son proyectos abiertos y sus licencias se respetan y se listan aquí.
+- Lo que sí viene de terceros son las **fuentes tipográficas** (Inter, Plus Jakarta Sans y DM Mono) y parte de los **trazados de logotipos** (Simple Icons). Todos son proyectos abiertos y sus licencias se respetan y se listan aquí.
 - Las herramientas que usamos para desarrollar y probar la app no se distribuyen contigo: no forman parte de lo que descargas.
 
 ---
@@ -24,7 +24,14 @@ Estos son los únicos recursos de terceros que llegan a tu dispositivo al instal
 - **Uso en Finko:** tipografía principal de toda la interfaz, distribuida como archivo de fuente empaquetado con la app.
 - **Texto de la licencia:** [openfontlicense.org](https://openfontlicense.org) (enlace directo desde el Centro Legal de la app; no se transcribe aquí para no bifurcar la fuente oficial del texto).
 
-### 1.2. Fuente tipográfica DM Mono
+### 1.2. Fuente tipográfica Plus Jakarta Sans
+
+- **Autor:** The Plus Jakarta Sans Project Authors (Tokotype).
+- **Licencia:** SIL Open Font License 1.1 (OFL-1.1).
+- **Uso en Finko:** tipografía de títulos y cifras de dinero, distribuida como archivo de fuente empaquetado con la app.
+- **Texto de la licencia:** [openfontlicense.org](https://openfontlicense.org) (enlace directo desde el Centro Legal de la app; no se transcribe aquí para no bifurcar la fuente oficial del texto).
+
+### 1.3. Fuente tipográfica DM Mono
 
 - **Autor:** Colophon Foundry (encargo de Google Fonts).
 - **Licencia:** SIL Open Font License 1.1 (OFL-1.1).
@@ -33,7 +40,7 @@ Estos son los únicos recursos de terceros que llegan a tu dispositivo al instal
 
 La OFL permite usar, empaquetar y redistribuir las fuentes con el software, prohíbe venderlas por separado y exige conservar sus avisos de autoría y licencia.
 
-### 1.3. Simple Icons (glifos de marca)
+### 1.4. Simple Icons (glifos de marca)
 
 - **Proyecto:** Simple Icons (`https://simpleicons.org`).
 - **Licencia:** CC0 1.0 Universal (dedicación al dominio público).
