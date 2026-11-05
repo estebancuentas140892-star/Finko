@@ -9,7 +9,8 @@
    ============================================================ */
 
 /* ── TIPOGRAFÍA: Inter, más grande y más pesada ──────────────── */
-body.kid { font-size: var(--fk-kid-text-base); line-height: var(--fk-kid-leading); }
+body.kid,
+.kid-piel { font-size: var(--fk-kid-text-base); line-height: var(--fk-kid-leading); }
 .k-h1 { margin: 0; font-size: var(--fk-kid-text-2xl); font-weight: 800; line-height: 1.15; letter-spacing: -0.01em; color: var(--fk-text-primary); text-wrap: balance; }
 .k-h2 { margin: 0; font-size: var(--fk-kid-text-xl); font-weight: 800; line-height: 1.2; color: var(--fk-text-primary); text-wrap: balance; }
 .k-h3 { margin: 0; font-size: var(--fk-kid-text-lg); font-weight: 700; line-height: 1.25; color: var(--fk-text-primary); }
@@ -53,6 +54,7 @@ body.kid { font-size: var(--fk-kid-text-base); line-height: var(--fk-kid-leading
   font-size: 18px;
   font-weight: 800;
   line-height: 1.1;
+  text-align: center;
   text-decoration: none;
   cursor: pointer;
   transition: transform 120ms cubic-bezier(0.2, 0.8, 0.2, 1);

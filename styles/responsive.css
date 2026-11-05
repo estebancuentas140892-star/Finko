@@ -3596,3 +3596,31 @@
   .hoja-perfil__teja--metas      { background: var(--fk-dom-metas-bg);      color: var(--fk-dom-metas-text); }
   .hoja-perfil__seguir { color: var(--fk-text-muted); }
 }
+
+
+/* ── LA PIEL DEL NIÑO FUERA DE SU APP (ADR 124 D9) ───────────────
+   "¿Quién usa Finko?" y la primera vez llevan los tokens de `.kid` en su
+   overlay (`.kid-piel`, themes.css) y ocupan toda la pantalla. El camino
+   del adulto en la primera vez vuelve al diálogo de siempre. */
+.modal-overlay.kid-piel { padding: 0; align-items: stretch; justify-content: center; background: var(--fk-bg-base); backdrop-filter: none; -webkit-backdrop-filter: none; color: var(--fk-text-primary); }
+.modal-overlay.kid-piel > .modal {
+  width: 100%;
+  max-width: 34rem;
+  min-height: 100dvh;
+  max-height: none;
+  margin: 0 auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: left;
+}
+.modal-overlay.kid-piel > .modal::before { display: none; }
+.modal-overlay.kid-piel .modal__body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  max-height: none;
+  padding: calc(var(--fk-space-3) + env(safe-area-inset-top, 0px)) var(--fk-space-4) calc(var(--fk-space-6) + env(safe-area-inset-bottom, 0px));
+  overflow: visible;
+}

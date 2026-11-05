@@ -23,7 +23,7 @@ import { intentarPin, olvideMiPin } from './bloqueo-acceso.js';
 import { announce } from '../infra/a11y.js';
 import { esc } from '../infra/utils.js';
 import { icon, iconoCategoria } from '../infra/icons.js';
-import { htmlDibujo, dibujoPorId } from '../infra/ilustraciones.js';
+import { htmlDibujo, dibujoPorId, htmlTino } from '../infra/ilustraciones.js';
 import { ninos, hayNinos, perfilActivo, esPerfilNino, entrarComo } from '../infra/perfiles.js';
 import { candadoActivo, PIN_LARGO_MAX } from '../dominio/config/bloqueo.js';
 
@@ -60,36 +60,37 @@ function _pintarAccesoPerfil() {
   boton.setAttribute('aria-label', `${nombre}. Cambiar de perfil`);
 }
 
-/** HTML de la elección de perfil. */
+/**
+ * HTML de la elección de perfil, con la piel del niño (ADR 124 D9): Tino
+ * pregunta, los niños van primero y el adulto al final; agregar un niño es
+ * una fila punteada que avisa que pide el PIN.
+ */
 export function htmlQuienUsa() {
   const adulto = _nombreAdulto();
   const filas = ninos().map(p => {
     const d = dibujoPorId(p.dibujo);
     return `
-      <button class="quien-usa__perfil" type="button" data-role="nino" data-id="${esc(p.id)}">
-        <span class="kidav" style="--d: var(--fk-dom-${d?.dominio ?? 'ahorro'})">${htmlDibujo(p.dibujo, { tamano: 48 })}</span>
-        <span class="quien-usa__nombre">${esc(p.nombre)}</span>
-        <span class="quien-usa__meta">${p.edad} años</span>
-      </button>`;
+        <button class="quien-usa__perfil" type="button" data-role="nino" data-id="${esc(p.id)}">
+          <span class="kidav kidav--quien" style="--d: var(--fk-dom-${d?.dominio ?? 'ahorro'})">${htmlDibujo(p.dibujo, { tamano: 48 })}</span>
+          <span class="quien-usa__nombre">${esc(p.nombre)}</span>
+          <span class="quien-usa__meta">${p.edad} años</span>
+        </button>`;
   }).join('');
   return `
     <div class="quien-usa">
-      <h2 class="onboarding__title" id="quien-usa-titulo" tabindex="-1">¿Quién usa Finko?</h2>
-      <p class="onboarding__desc">Elige tu perfil para entrar.</p>
-      <div class="quien-usa__perfiles">
+      <div class="knino-fila knino-tino quien-usa__saludo">
+        ${htmlTino('saluda', { tamano: 80 })}
+        <h2 class="bubble quien-usa__titulo" id="quien-usa-titulo" tabindex="-1">¡Hola! ¿Quién va a usar Finko?</h2>
+      </div>
+      <div class="quien-usa__perfiles">${filas}
         <button class="quien-usa__perfil" type="button" data-role="adulto">
           <span class="quien-usa__iniciales" aria-hidden="true">${esc(_iniciales(adulto))}</span>
           <span class="quien-usa__nombre">${esc(adulto)}</span>
-          <span class="quien-usa__meta">${icon('key')}Adulto · con PIN</span>
-        </button>
-        ${filas}
-        <button class="quien-usa__perfil quien-usa__perfil--agregar" type="button" data-role="agregar">
-          <span class="kidav kidav--agregar" aria-hidden="true">${icon('plus')}</span>
-          <span class="quien-usa__nombre">Agregar un niño</span>
-          <span class="quien-usa__meta">${icon('key')}Pide tu PIN</span>
+          <span class="quien-usa__meta">${icon('key')}Adulto, con PIN</span>
         </button>
       </div>
-      <p class="quien-usa__nota">${iconoCategoria('c-escudo')}<span>Todo se queda en este teléfono. Finko no usa cuentas ni internet, y cada niño solo ve su alcancía y sus lecciones.</span></p>
+      <button class="quien-usa__agregar" type="button" data-role="agregar">${icon('plus')}Agregar un niño <span>· pide tu PIN</span></button>
+      <p class="quien-usa__nota quien-usa__pie">Todo se queda en este teléfono. Cada niño solo ve su alcancía y sus lecciones.</p>
     </div>`;
 }
 

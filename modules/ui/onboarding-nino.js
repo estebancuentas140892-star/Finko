@@ -21,8 +21,8 @@ import { save } from '../core/storage.js';
 import { cerrarModal } from './modales.js';
 import { announce } from '../infra/a11y.js';
 import { esc, hoy } from '../infra/utils.js';
-import { icon } from '../infra/icons.js';
-import { DIBUJOS, htmlDibujo } from '../infra/ilustraciones.js';
+import { icon, iconoCategoria } from '../infra/icons.js';
+import { DIBUJOS, htmlDibujo, htmlTino } from '../infra/ilustraciones.js';
 import { crearNino, entrarComo, EDAD_MIN, EDAD_MAX, NOMBRE_MAX } from '../infra/perfiles.js';
 import { mostrarErroresForm } from '../infra/form-errors.js';
 import { registrarAvisoNino } from './aceptacion-legal.js';
@@ -66,7 +66,24 @@ export function perfilNinoSolo(d, hoyISO, id) {
   return crearNino({ nombre: d.nombre, edad: d.edad, dibujo: d.dibujo, teNombra: TE_NOMBRA_SIN_TUTOR }, hoyISO, id);
 }
 
-const _volver = `<button type="button" class="btn btn-ghost btn-sm onboarding__volver" data-action="onboarding-volver">${icon('arrow-left')}Volver</button>`;
+/** Arriba de cada pantalla: "Volver" y en qué paso va, con puntos (ADR 124 D9). */
+function _arriba(paso) {
+  const puntos = [1, 2, 3].map(n => `<i${n === paso ? ' class="is-ahora"' : n < paso ? ' class="is-on"' : ''}></i>`).join('');
+  return `
+      <div class="kprimera__arriba">
+        <button type="button" class="knino-cambiar kprimera__volver onboarding__volver" data-action="onboarding-volver">${icon('arrow-left')}<span>Volver</span></button>
+        <span class="kpasos" role="img" aria-label="Paso ${paso} de 3">${puntos}</span>
+      </div>`;
+}
+
+/** Tino y lo que dice, que es el título de la pantalla. */
+function _tino(pose, texto) {
+  return `
+      <div class="knino-fila knino-tino kprimera__tino">
+        ${htmlTino(pose, { tamano: 96 })}
+        <h2 class="bubble kprimera__globo" id="onboarding-nino-titulo" tabindex="-1">${texto}</h2>
+      </div>`;
+}
 
 /** Pantalla 1: nombre y edad. */
 export function htmlNinoNombre(d = _datos) {
@@ -76,24 +93,22 @@ export function htmlNinoNombre(d = _datos) {
           <label class="onboarding-edad"><input class="sr-only" type="radio" name="edad" value="${e}"${Number(d.edad) === e ? ' checked' : ''} /><span>${e}</span></label>`);
   }
   return `
-    <form id="form-onboarding-nino-nombre" novalidate>
-      ${_volver}
-      <h2 class="onboarding__title" id="onboarding-nino-titulo" tabindex="-1">¡Hola! ¿Cómo te llamas?</h2>
-      <div class="form-group">
-        <label for="onboarding-nino-nombre" class="label">Tu nombre</label>
-        <input id="onboarding-nino-nombre" name="nombre" class="input" type="text"
+    <form class="kform kprimera" id="form-onboarding-nino-nombre" novalidate>
+      ${_arriba(1)}
+      ${_tino('saluda', '¡Hola! Soy Tino. ¿Cómo te llamas?')}
+      <div class="kfield">
+        <label for="onboarding-nino-nombre" class="kfield__etiqueta">Tu nombre</label>
+        <input id="onboarding-nino-nombre" name="nombre" class="kin-texto" type="text"
                value="${esc(d.nombre)}" maxlength="${NOMBRE_MAX}" autocomplete="given-name" />
       </div>
-      <fieldset class="form-group onboarding-edades">
-        <legend class="label">¿Cuántos años tienes?</legend>
-        <div class="onboarding-edades__fila">${edades.join('')}
+      <fieldset class="kfield onboarding-edades">
+        <legend class="kfield__etiqueta">¿Cuántos años tienes?</legend>
+        <div class="kedades">${edades.join('')}
         </div>
+        <button type="button" class="kprimera__enlace" data-action="onboarding-adulto">Tengo 13 años o más</button>
       </fieldset>
-      <p class="onboarding__note">
-        <button type="button" class="btn btn-ghost btn-sm" data-action="onboarding-adulto">Tengo 13 años o más</button>
-      </p>
-      <div class="onboarding__footer">
-        <button type="submit" class="btn btn-primary btn-lg">Siguiente</button>
+      <div class="kprimera__pie">
+        <button type="submit" class="kbtn kbtn--block">Siguiente</button>
       </div>
     </form>`;
 }
@@ -101,40 +116,43 @@ export function htmlNinoNombre(d = _datos) {
 /** Pantalla 2: su dibujo, del catálogo de Familia (ADR 093 D8). */
 export function htmlNinoDibujo(d = _datos) {
   const opciones = DIBUJOS.map((x, i) => `
-          <label class="familia-dibujo"><input class="sr-only" type="radio" name="dibujo" value="${x.id}"${(d.dibujo ? d.dibujo === x.id : i === 0) ? ' checked' : ''} />${htmlDibujo(x.id, { tamano: 48 })}<span>${esc(x.nombre)}</span></label>`).join('');
+          <label class="familia-dibujo kdibujo kdibujo--propio" style="--d: var(--fk-dom-${x.dominio})"><input class="sr-only" type="radio" name="dibujo" value="${x.id}"${(d.dibujo ? d.dibujo === x.id : i === 0) ? ' checked' : ''} />${htmlDibujo(x.id, { tamano: 48 })}<span class="sr-only">${esc(x.nombre)}</span></label>`).join('');
   return `
-    <form id="form-onboarding-nino-dibujo" novalidate>
-      ${_volver}
-      <h2 class="onboarding__title" id="onboarding-nino-titulo" tabindex="-1">Elige tu dibujo, ${esc(d.nombre)}</h2>
-      <fieldset class="form-group">
+    <form class="kform kprimera" id="form-onboarding-nino-dibujo" novalidate>
+      ${_arriba(2)}
+      ${_tino('explica', `Elige tu dibujo, ${esc(d.nombre)}. Así te reconoces.`)}
+      <fieldset class="kfield">
         <legend class="sr-only">Tu dibujo</legend>
-        <div class="familia-dibujos">${opciones}
+        <div class="kdibujos">${opciones}
         </div>
+        <p class="kfield__ayuda">Aquí no usamos fotos tuyas. Así te cuidas.</p>
       </fieldset>
-      <div class="onboarding__footer">
-        <button type="submit" class="btn btn-primary btn-lg">Siguiente</button>
+      <div class="kprimera__pie">
+        <button type="submit" class="kbtn kbtn--block">Siguiente</button>
       </div>
     </form>`;
 }
 
 /** Pantalla 3: antes de empezar (D3). El botón es el aviso. */
-export function htmlNinoAntes(d = _datos) {
+export function htmlNinoAntes(_d = _datos) {
   return `
-    <form id="form-onboarding-nino-antes" novalidate>
-      ${_volver}
-      <div class="onboarding-nino__dibujo" aria-hidden="true">${htmlDibujo(d.dibujo, { tamano: 72 })}</div>
-      <h2 class="onboarding__title" id="onboarding-nino-titulo" tabindex="-1">Antes de empezar, ${esc(d.nombre)}</h2>
-      <p class="onboarding__desc">Finko es para aprender a cuidar tu dinero. Úsalo con alguien de tu familia.</p>
-      <div class="onboarding__footer">
-        <button type="submit" class="btn btn-primary btn-lg">Un adulto de mi familia sabe que uso Finko</button>
+    <form class="kform kprimera" id="form-onboarding-nino-antes" novalidate>
+      ${_arriba(3)}
+      <div class="kprimera__antes">
+        ${htmlTino('saluda', { tamano: 120 })}
+        <h2 class="k-h1" id="onboarding-nino-titulo" tabindex="-1">Antes de empezar</h2>
+        <p class="kprimera__linea">Finko es para aprender a cuidar tu dinero.</p>
+        <p class="kprimera__linea kprimera__linea--fuerte">Úsalo con alguien de tu familia.</p>
       </div>
-      <p class="onboarding__note">
-        Para el adulto:
-        <button type="button" class="onboarding__link" data-action="abrir-legal" data-doc="terminos-y-condiciones">Términos y condiciones</button>
-        y
-        <button type="button" class="onboarding__link" data-action="abrir-legal" data-doc="politica-de-privacidad">Política de privacidad</button>.
-        Todo se guarda en este teléfono.
-      </p>
+      <p class="kprimera__nota">${iconoCategoria('c-escudo')}<span>Todo se queda en este teléfono. No necesitas correo ni internet.</span></p>
+      <div class="kprimera__pie">
+        <button type="submit" class="kbtn kbtn--block">Un adulto de mi familia sabe que uso Finko</button>
+        <p class="kprimera__legal">Para el adulto:
+          <button type="button" class="kprimera__enlace kprimera__enlace--acento" data-action="abrir-legal" data-doc="terminos-y-condiciones">términos</button>
+          y
+          <button type="button" class="kprimera__enlace kprimera__enlace--acento" data-action="abrir-legal" data-doc="politica-de-privacidad">privacidad</button>
+        </p>
+      </div>
     </form>`;
 }
 
@@ -143,6 +161,8 @@ export function htmlNinoAntes(d = _datos) {
 function _pintar(html) {
   const body = document.querySelector('#onboarding #onboarding-body');
   if (!body) return;
+  // El camino del niño va con su piel (ADR 124 D9), como la primera pantalla.
+  document.getElementById('onboarding')?.classList.add('kid-piel');
   body.innerHTML = html;
   body.querySelector('#onboarding-nino-titulo')?.focus({ preventScroll: true });
 }

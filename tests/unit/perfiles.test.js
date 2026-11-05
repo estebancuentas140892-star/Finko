@@ -84,14 +84,18 @@ describe('"¿Quién usa Finko?" (D1)', () => {
     S.perfil.nombre = 'Esteban Cardona';
     S.perfiles = [SOFIA];
     const html = htmlQuienUsa();
-    expect(html).toContain('¿Quién usa Finko?');
+    // Con la piel del niño, Tino pregunta y el adulto va al final (ADR 124 D9).
+    expect(html).toContain('¡Hola! ¿Quién va a usar Finko?');
+    expect(html).toContain('href="#il-tino-saluda"');
     expect(html).toContain('>EC<');
-    expect(html).toContain('Adulto · con PIN');
+    expect(html).toContain('Adulto, con PIN');
+    expect(html.indexOf('data-role="nino"')).toBeLessThan(html.indexOf('data-role="adulto"'));
+    expect(html).toContain('· pide tu PIN');
     expect(html).toContain('data-role="nino" data-id="n-sofi"');
     expect(html).toContain('href="#il-cometa"');
     expect(html).toContain('8 años');
     expect(html).toContain('Agregar un niño');
-    expect(html).toContain('cada niño solo ve su alcancía y sus lecciones');
+    expect(html).toContain('Cada niño solo ve su alcancía y sus lecciones.');
   });
 
   it('el PIN del adulto dice para qué es y recuerda que el candado no cifra', () => {

@@ -100,6 +100,7 @@ body.light-theme {
    perfil niño. Los tres frascos reutilizan hues de dominio (ahorro,
    gastos, me deben) y nunca van solos: ícono y nombre (R49). El AA de
    cada par lo mide tests/unit/nino-visual.test.js. */
+.kid-piel,
 body.kid {
   --fk-bg-base:        #121729;   /* noche azul: más color que el lienzo adulto */
   --fk-bg-surface:     #1b2239;
@@ -142,6 +143,7 @@ body.kid {
   --fk-tino-blanco:   #fefefe;
 }
 
+body.light-theme .kid-piel,
 body.light-theme.kid {
   --fk-bg-base:        #f2f5fc;   /* cielo */
   --fk-bg-surface:     #ffffff;

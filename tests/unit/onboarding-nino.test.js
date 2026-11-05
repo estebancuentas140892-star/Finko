@@ -56,6 +56,9 @@ describe('las tres pantallas', () => {
     expect([...d.querySelectorAll('input[name="edad"]')].map(i => i.value)).toEqual(['7', '8', '9', '10', '11', '12']);
     expect(d.querySelector('[data-action="onboarding-adulto"]').textContent).toBe('Tengo 13 años o más');
     expect(d.querySelector('[data-action="onboarding-volver"]')).not.toBeNull();
+    // Tino pregunta y los puntos dicen en qué paso va (ADR 124 D9).
+    expect(d.querySelector('#onboarding-nino-titulo').textContent).toBe('¡Hola! Soy Tino. ¿Cómo te llamas?');
+    expect(d.querySelector('.kpasos').getAttribute('aria-label')).toBe('Paso 1 de 3');
   });
 
   it('nombre y edad: recuerda lo elegido al volver', () => {
@@ -67,7 +70,8 @@ describe('las tres pantallas', () => {
   it('dibujo: todo el catálogo, sin fotos, con el nombre del niño en el título', () => {
     const d = div(htmlNinoDibujo({ nombre: 'Sofía', edad: 8, dibujo: '' }));
     expect(d.querySelectorAll('input[name="dibujo"]')).toHaveLength(DIBUJOS.length);
-    expect(d.querySelector('#onboarding-nino-titulo').textContent).toBe('Elige tu dibujo, Sofía');
+    expect(d.querySelector('#onboarding-nino-titulo').textContent).toBe('Elige tu dibujo, Sofía. Así te reconoces.');
+    expect(d.textContent).toContain('Aquí no usamos fotos tuyas.');
   });
 
   it('antes de empezar: el botón es el aviso y los documentos quedan para el adulto (D3)', () => {
@@ -76,10 +80,12 @@ describe('las tres pantallas', () => {
     expect(d.querySelector('input[type="checkbox"]')).toBeNull();
     expect([...d.querySelectorAll('[data-action="abrir-legal"]')].map(b => b.dataset.doc))
       .toEqual(['terminos-y-condiciones', 'politica-de-privacidad']);
+    expect(d.querySelector('#onboarding-nino-titulo').textContent).toBe('Antes de empezar');
+    expect(d.textContent).toContain('Todo se queda en este teléfono. No necesitas correo ni internet.');
   });
 
   it('los nombres se escapan', () => {
-    const d = div(htmlNinoAntes({ nombre: '<b>x</b>', edad: 8, dibujo: DIBUJOS[0].id }));
-    expect(d.querySelector('#onboarding-nino-titulo').textContent).toBe('Antes de empezar, <b>x</b>');
+    const d = div(htmlNinoDibujo({ nombre: '<b>x</b>', edad: 8, dibujo: DIBUJOS[0].id }));
+    expect(d.querySelector('#onboarding-nino-titulo').textContent).toBe('Elige tu dibujo, <b>x</b>. Así te reconoces.');
   });
 });

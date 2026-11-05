@@ -39,7 +39,9 @@ test.describe('APR.6a - el niño empieza solo (ADR 100)', () => {
     await onb.locator('#form-onboarding-nino-nombre [type="submit"]').click();
 
     // 2. Su dibujo.
-    await expect(onb.locator('#onboarding-nino-titulo')).toHaveText('Elige tu dibujo, Sofía');
+    await expect(onb.locator('#onboarding-nino-titulo')).toHaveText('Elige tu dibujo, Sofía. Así te reconoces.');
+    // El camino del niño va con su piel, a toda la pantalla (ADR 124 D9).
+    await expect(onb).toHaveClass(/\bkid-piel\b/);
     await onb.locator('.familia-dibujo').nth(2).click();
     await onb.locator('#form-onboarding-nino-dibujo [type="submit"]').click();
 

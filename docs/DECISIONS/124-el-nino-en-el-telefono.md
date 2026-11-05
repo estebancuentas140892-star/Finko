@@ -1,6 +1,6 @@
 # ADR 124 - El niño en el teléfono
 
-**Estado:** Aceptada (2026-11-05). Tandas 1 (la barra, Inicio, la Alcancía y Yo), 2 (Aprender y la lección) y 3 (las hojas) aplicadas; las otras dos se suman como adendas.
+**Estado:** Aceptada (2026-11-05). Tandas 1 (la barra, Inicio, la Alcancía y Yo), 2 (Aprender y la lección), 3 (las hojas) y 4 (la primera vez y "¿Quién usa Finko?") aplicadas; la quinta se suma como adenda.
 **Fecha:** 2026-11-05
 **Autores:** Esteban (diseño y decisión), Claude Opus 5.5 (auditoría, implementación y redacción)
 **Relación:** **Aplica** el tablero "Finko móvil · rediseño" del perfil niño (Claude Design, 2026-11-05), que compara cada pantalla de hoy con su propuesta. **Conserva** el [ADR 093](093-perfiles-en-el-dispositivo-y-modo-nino.md) (cuatro destinos, la alcancía solo anota, la voz del niño) y el [ADR 094](094-tino-el-guatin.md) (Tino). **Supera** el [ADR 098](098-finko-movil-2-primera-entrega.md) D13 en un punto: los frascos de Inicio ya no van en filas bajo 400 px, van en tejas a todo ancho (D2).
@@ -77,6 +77,14 @@ Bajo 360 px los nombres de los frascos pierden su ícono y se achican para no pa
 - **La meta** es una pantalla de paso: sin la barra de abajo en el teléfono, con su flecha para volver. "Tu nueva meta" (o "Cambiar tu meta"), los dibujos en cuadros, "¿Cómo se llama?", el precio en grande y **tres cantidades por semana** ($2.000, $5.000 y $10.000) en vez de subir y bajar de a $1.000. Si la meta ya guardaba otra cantidad, esa cantidad entra como cuarta opción, marcada. Tino responde "Lo tendrás en 19 semanas. ¡Para el 26 de marzo!" y debajo, "Ya cuentas con los $26.200 que tienes en Ahorrar.".
 - **Capas de CSS:** la ✕ de la hoja vive en la capa `modals` y su ajuste del teléfono en `responsive`, y el campo desnudo no dibuja el anillo de foco de `a11y` porque su caja ya lo marca: desde `components` no se les gana.
 
+### D9. La primera vez y "¿Quién usa Finko?" (tanda 4)
+
+- **La piel del niño sale de su app:** `.kid-piel` en un contenedor pide los mismos tokens de `body.kid` (themes.css declara los dos selectores en el mismo bloque, oscuro y claro). La llevan el overlay de "¿Quién usa Finko?" siempre y el del onboarding mientras está en la primera pantalla o en el camino del niño; el camino del adulto vuelve al diálogo de siempre. Con la piel, el overlay ocupa toda la pantalla, sin agarradera ni bordes.
+- **"¿Quién usa Finko?":** Tino pregunta "¡Hola! ¿Quién va a usar Finko?", los niños van primero y el adulto al final ("Adulto, con PIN"); "Agregar un niño · pide tu PIN" es una fila punteada de todo el ancho y el pie dice que todo se queda en el teléfono.
+- **La primera pantalla:** el isotipo, "Te damos la bienvenida a Finko", dos tarjetas grandes (la del niño con Tino) y "Tengo un código de mi familia" en el color primario.
+- **El camino del niño:** "Volver" y tres puntos de avance arriba; Tino hace la pregunta de cada pantalla ("¡Hola! Soy Tino. ¿Cómo te llamas?", "Elige tu dibujo, Juanita. Así te reconoces."); las edades en una grilla de tres por dos; los dibujos en cuadros de su color; "Antes de empezar" con Tino grande, "Úsalo con alguien de tu familia." y una nota: "Todo se queda en este teléfono. No necesitas correo ni internet.". El botón principal va al pie.
+- **Capas:** el marco a pantalla completa vive en `responsive.css` y el contenido en `modals.css`, donde están las piezas del onboarding.
+
 ## Alternativas descartadas
 
 - **Dejar la lista de frascos bajo 400 px (ADR 098 D13).** Era la salida a que los frascos no cabían a 320; con las tejas del tablero y la letra que se achica bajo 360, caben, y se evita pintar la alcancía dos veces.
@@ -85,7 +93,6 @@ Bajo 360 px los nombres de los frascos pierden su ícono y se achican para no pa
 
 ## Tandas que siguen
 
-4. La primera vez y "¿Quién usa Finko?".
 5. Lo del adulto: Familia en Ajustes, el progreso del niño, la mesada, el premio y agregar un niño.
 
 ## Consecuencias

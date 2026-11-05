@@ -23,7 +23,7 @@ import { announce } from '../infra/a11y.js';
 import { mostrarErroresForm } from '../infra/form-errors.js';
 import { esc, hoy } from '../infra/utils.js';
 import { icon, isotipo } from '../infra/icons.js';
-import { htmlDibujo } from '../infra/ilustraciones.js';
+import { htmlTino } from '../infra/ilustraciones.js';
 import { registrarAccion } from './actions.js';
 import { renderBloqueAceptacion, registrarAceptacion } from './aceptacion-legal.js';
 import { empezarCaminoNino, manejarFormNino, volverEnCaminoNino } from './onboarding-nino.js';
@@ -45,9 +45,20 @@ export function initOnboarding() {
   _mostrarWizard();
 }
 
+/**
+ * La primera pantalla y el camino del niño llevan la piel del niño a toda la
+ * pantalla; el camino del adulto vuelve al diálogo de siempre (ADR 124 D9).
+ *
+ * @param {boolean} si
+ */
+function _pielNino(si) {
+  document.getElementById('onboarding')?.classList.toggle('kid-piel', si);
+}
+
 function _pintarPaso1() {
   const body = document.querySelector('#onboarding #onboarding-body');
   if (!body) return;
+  _pielNino(false);
   body.innerHTML = _renderPaso1();
   body.querySelector('input')?.focus();
 }
@@ -64,6 +75,7 @@ function _mostrarWizard() {
   // va a usar Finko (ADR 100 D1).
   const body = overlay.querySelector('#onboarding-body');
   if (body) body.innerHTML = _renderQuien();
+  _pielNino(true);
 
   abrirModal(overlay);
 
@@ -159,7 +171,7 @@ function _renderQuien() {
           </span>
         </button>
         <button type="button" class="onboarding-quien__opcion" data-action="onboarding-nino">
-          <span class="onboarding-quien__icono" aria-hidden="true">${htmlDibujo('cometa', { tamano: 32 })}</span>
+          <span class="onboarding-quien__icono onboarding-quien__icono--nino" aria-hidden="true">${htmlTino('saluda', { tamano: 64 })}</span>
           <span class="onboarding-quien__textos">
             <span class="onboarding-quien__t">Soy niño o niña</span>
             <span class="onboarding-quien__s">De 7 a 12 años: aprende y cuida tu alcancía</span>
@@ -167,9 +179,9 @@ function _renderQuien() {
         </button>
       </div>
       <p class="onboarding__note">
-        <button type="button" class="btn btn-ghost btn-sm" data-action="nube-codigo-nino">Tengo un código de mi familia</button>
+        <button type="button" class="btn btn-ghost btn-sm onboarding-quien__codigo" data-action="nube-codigo-nino">Tengo un código de mi familia</button>
       </p>
-      <p class="onboarding__note">Todo se guarda en este teléfono. La cuenta en la nube es opcional.</p>
+      <p class="onboarding__note onboarding-quien__pie">Todo se guarda en este teléfono. La cuenta en la nube es opcional.</p>
     </div>`;
 }
 
@@ -207,6 +219,7 @@ export function volverAlInicio() {
   const body = document.querySelector('#onboarding #onboarding-body');
   if (!body) return;
   body.innerHTML = _renderQuien();
+  _pielNino(true);
   body.querySelector('#onboarding-quien-titulo')?.focus({ preventScroll: true });
 }
 
