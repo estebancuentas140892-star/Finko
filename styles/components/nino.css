@@ -779,13 +779,17 @@ body.kid .leccion-fb--nino.leccion-fb--bien { background: color-mix(in srgb, var
 .kprog { height: 14px; border-radius: var(--fk-radius-full); background: var(--fk-bg-elevated); overflow: hidden; }
 .kprog > span { display: block; height: 100%; border-radius: inherit; background: var(--d, var(--fk-kid-primary)); }
 
-/* La hoja y los formularios del niño. */
-.kmodal { color: var(--fk-text-primary); }
-.kform { display: flex; flex-direction: column; gap: var(--fk-space-4); }
+/* La hoja y los formularios del niño (ADR 124 D8): el título a la par de
+   la X, el monto en grande, los billetes y el frasco en tejas. */
+.kmodal { position: relative; color: var(--fk-text-primary); }
+.kform { display: flex; flex-direction: column; gap: 18px; }
 .kform h2:focus { outline: none; }
-.kfield { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; border: 0; }
-.kfield__etiqueta { display: flex; align-items: center; gap: 8px; margin: 0; padding: 0; font-size: var(--fk-kid-text-base); font-weight: 700; color: var(--fk-text-primary); }
+.kform__titulo { display: flex; align-items: center; min-height: 48px; padding-right: 56px; font-size: var(--fk-kid-text-xl); line-height: 1.23; }
+.kfield { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; border: 0; }
+.kfield__etiqueta { display: flex; align-items: center; gap: 8px; margin: 0; padding: 0; font-size: var(--fk-kid-text-base); line-height: 1.33; font-weight: 750; color: var(--fk-text-primary); }
 .kfield__etiqueta .icon { width: 24px; height: 24px; color: var(--fk-text-secondary); }
+.kfield__opcional { font-weight: 500; color: var(--fk-text-secondary); }
+.kfield__ayuda { margin: -2px 0 0; font-size: var(--fk-kid-text-sm); line-height: 1.25; color: var(--fk-text-secondary); }
 .kin {
   display: flex;
   align-items: center;
@@ -799,68 +803,119 @@ body.kid .leccion-fb--nino.leccion-fb--bien { background: color-mix(in srgb, var
   font-weight: 700;
 }
 .kin:focus-within { border-color: var(--fk-kid-primary); }
-.kin input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--fk-text-primary); font: inherit; outline: none; }
-.kchips { display: flex; flex-wrap: wrap; gap: 8px; }
-.kchip--boton { min-height: var(--fk-kid-target-min); padding: 0 14px; border: 0; font: inherit; font-size: 16px; font-weight: 800; color: var(--fk-text-primary); cursor: pointer; }
-.kfrascos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.kin input { flex: 1; min-width: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; color: var(--fk-text-primary); font: inherit; outline: none; }
+.kin input:focus { border: 0; box-shadow: none; outline: none; }
+.kin--grande { min-height: 72px; padding: 0 20px; border-width: 3px; border-radius: 20px; }
+.kin--grande > span { font-size: 30px; font-weight: 800; color: var(--fk-text-secondary); }
+.kin--grande input { min-height: 56px; font-size: 36px; line-height: 1.17; font-weight: 800; font-variant-numeric: tabular-nums; }
+.kin-texto {
+  width: 100%;
+  min-height: var(--fk-kid-target);
+  padding: 0 18px;
+  border-radius: var(--fk-kid-radius-md);
+  border: 2px solid var(--fk-border-default);
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-primary);
+  font: inherit;
+  font-size: var(--fk-kid-text-base);
+  outline: none;
+}
+.kin-texto:focus { border-color: var(--fk-kid-primary); box-shadow: inset 0 0 0 1px var(--fk-kid-primary); }
+.kin-texto::placeholder { color: var(--fk-text-muted); }
+.kbilletes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.kbillete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--fk-kid-target);
+  border-radius: 14px;
+  border: 2px solid var(--fk-border-default);
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-primary);
+  font: inherit;
+  font-size: 20px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.kbillete .icon { width: 24px; height: 24px; color: var(--fk-kid-ahorrar-text); }
+.kbillete[aria-pressed="true"],
+.ksemanal__op[aria-pressed="true"] { border: 3px solid var(--fk-kid-primary); background: color-mix(in srgb, var(--fk-kid-primary) 16%, var(--fk-bg-elevated)); }
+.kfrascos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .kfrasco {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  min-height: var(--fk-kid-target);
-  padding: 10px 6px;
-  border-radius: var(--fk-kid-radius-md);
+  justify-content: center;
+  gap: 6px;
+  min-height: 6rem;
+  padding: 8px 4px;
+  border-radius: 20px;
   border: 2px solid var(--fk-border-default);
-  background: var(--fk-bg-surface);
+  background: var(--fk-bg-elevated);
   color: var(--dt);
-  font-size: 15px;
-  font-weight: 800;
+  font-size: 17px;
+  font-weight: 750;
   cursor: pointer;
 }
 .kfrasco[data-frasco="ahorrar"]   { --d: var(--fk-kid-ahorrar);   --dt: var(--fk-kid-ahorrar-text); }
 .kfrasco[data-frasco="gastar"]    { --d: var(--fk-kid-gastar);    --dt: var(--fk-kid-gastar-text); }
 .kfrasco[data-frasco="compartir"] { --d: var(--fk-kid-compartir); --dt: var(--fk-kid-compartir-text); }
-.kfrasco .icon { width: 24px; height: 24px; }
-.kfrasco:has(input:checked) { border-color: var(--d); background: color-mix(in srgb, var(--d) 16%, var(--fk-bg-surface)); }
+.kfrasco:has(input:checked) { border: 3px solid var(--d); background: color-mix(in srgb, var(--d) 14%, var(--fk-bg-elevated)); }
 .kfrasco:has(input:focus-visible) { outline: 3px solid var(--fk-border-focus); outline-offset: 2px; }
-.kdibujos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+/* La meta: una pantalla de paso, con sus dibujos en cuadros y tres
+   cantidades por semana (ADR 124 D8). */
+.knino-cabeza--sub { justify-content: flex-start; gap: var(--fk-space-2); min-height: 3.5rem; }
+.knino-volver { display: grid; place-items: center; flex-shrink: 0; width: 48px; height: 48px; margin-left: -12px; border: 0; border-radius: var(--fk-radius-lg); background: none; color: var(--fk-text-primary); cursor: pointer; }
+.knino-volver .icon { width: 26px; height: 26px; }
+.kform--meta { gap: 22px; }
+.kdibujos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
 .kdibujo {
   position: relative;
   display: grid;
   place-items: center;
-  min-height: 72px;
-  border-radius: var(--fk-kid-radius-md);
+  aspect-ratio: 1;
+  min-height: var(--fk-kid-target);
+  border-radius: 18px;
   border: 2px solid var(--fk-border-default);
-  background: var(--fk-bg-surface);
+  background: var(--fk-bg-elevated);
   cursor: pointer;
 }
-.kdibujo:has(input:checked) { border: 3px solid var(--fk-kid-primary); background: color-mix(in srgb, var(--fk-kid-primary) 12%, var(--fk-bg-surface)); }
+.kdibujo:has(input:checked) { border: 3px solid var(--fk-kid-ahorrar); background: color-mix(in srgb, var(--fk-kid-ahorrar) 14%, var(--fk-bg-elevated)); }
 .kdibujo:has(input:focus-visible) { outline: 3px solid var(--fk-border-focus); outline-offset: 2px; }
-.kstep { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.kstep button {
-  display: grid;
-  place-items: center;
-  width: var(--fk-kid-target);
-  height: var(--fk-kid-target);
-  border: 0;
-  border-radius: var(--fk-kid-radius-md);
+.ksemanal { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 10px; }
+.ksemanal__op {
+  min-height: var(--fk-kid-target);
+  text-align: center;
+  border-radius: 16px;
+  border: 2px solid var(--fk-border-default);
   background: var(--fk-bg-elevated);
   color: var(--fk-text-primary);
+  font: inherit;
+  font-size: 19px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
   cursor: pointer;
 }
-.kstep button .icon { width: 28px; height: 28px; }
-.kstep output { font-size: var(--fk-kid-text-xl); font-weight: 800; font-variant-numeric: tabular-nums; }
 .knino-plan {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
+  gap: 8px;
+  padding: 12px 14px 12px 6px;
   border-radius: var(--fk-kid-radius-lg);
-  border: 2px solid color-mix(in srgb, var(--fk-kid-sun) 45%, transparent);
-  background: color-mix(in srgb, var(--fk-kid-sun) 16%, var(--fk-bg-surface));
+  border: 2px solid color-mix(in srgb, var(--fk-kid-primary) 40%, transparent);
+  background: color-mix(in srgb, var(--fk-kid-primary) 10%, var(--fk-bg-surface));
 }
+.knino-plan p { flex: 1; min-width: 0; margin: 0; font-size: 20px; line-height: 1.3; font-weight: 750; color: var(--fk-text-primary); text-wrap: pretty; }
+.knino-plan--espera { gap: 12px; padding: 14px 16px; border-color: color-mix(in srgb, var(--fk-kid-sun) 45%, transparent); background: color-mix(in srgb, var(--fk-kid-sun) 16%, var(--fk-bg-surface)); }
+.knino-plan--espera p { font-size: var(--fk-kid-text-base); font-weight: 700; }
 .knino-plan > .icon { flex-shrink: 0; width: 28px; height: 28px; color: var(--fk-kid-sun-text); }
+.knino-plan__nota { margin: 8px 0 0; font-size: var(--fk-kid-text-sm); line-height: 1.375; color: var(--fk-text-secondary); text-wrap: pretty; }
+@media (max-width: 767px) {
+  .knav[data-vista="meta"] { display: none; }
+  .nino-main:has(#form-nino-meta) { padding-bottom: calc(var(--fk-space-6) + env(safe-area-inset-bottom, 0px)); }
+}
 .kform__error { margin: 0; color: var(--fk-kid-hint); font-weight: 700; }
 .kform__error:empty { display: none; }
 .knino-fuerte { color: var(--fk-text-primary); font-weight: 700; }
@@ -1010,6 +1065,7 @@ body.kid .leccion-fb--nino.leccion-fb--bien { background: color-mix(in srgb, var
   .jar__nombre { font-size: 15px; }
   .kteja { padding-inline: 2px; }
   .kteja__nombre { font-size: 13px; }
+  .kfrasco { font-size: 15px; }
 }
 @media (max-width: 767px) {
   .nino-main { padding-top: calc(var(--fk-space-3) + env(safe-area-inset-top, 0px)); }

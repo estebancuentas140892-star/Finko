@@ -551,26 +551,36 @@ function _tarjetaPremio(perfil, hoyISO) {
 
 /** Qué pregunta cada acción de la alcancía (D6: frases cortas). */
 const _HOJA = {
-  guarde:   { titulo: '¿Cuánto guardaste?', nota: '¿De dónde salió?', ejemplo: 'Un regalo', boton: 'Guardar' },
+  guarde:   { titulo: '¿Cuánto guardaste?', nota: '¿De dónde salió?', ejemplo: 'Un regalo de mi tía', boton: 'Guardar' },
   gaste:    { titulo: '¿Cuánto gastaste?', nota: '¿En qué?', ejemplo: 'Un helado', boton: 'Anotar' },
   comparti: { titulo: '¿Cuánto compartiste?', nota: '¿Con quién o para qué?', ejemplo: 'Un regalo para mi abuela', boton: 'Anotar' },
   mover:    { titulo: 'Mover dinero entre frascos', nota: '¿Para qué?', ejemplo: 'Para mi meta', boton: 'Mover' },
 };
 
-/** Radios de frasco con su nombre e ícono. */
-function _elegirFrasco(nombre, leyenda, marcado) {
+/** Los billetes que el niño toca en vez de escribir. */
+export const BILLETES = Object.freeze([1_000, 2_000, 5_000, 10_000]);
+
+/** Radios de frasco: su dibujo y su nombre, en una teja de su color. */
+function _elegirFrasco(nombre, leyenda, marcado, perfil) {
   return `
     <fieldset class="kfield">
       <legend class="kfield__etiqueta">${leyenda}</legend>
       <div class="kfrascos">${FRASCOS.map(fr => `
         <label class="kfrasco" data-frasco="${fr}"><input class="sr-only" type="radio" name="${nombre}" value="${fr}"${fr === marcado ? ' checked' : ''} />
-          ${iconoCategoria(FRASCO_INFO[fr].icono)}<span>${FRASCO_INFO[fr].nombre}</span></label>`).join('')}
+          ${htmlFrasco(fr, llenadoFrasco(fr, perfil), { ancho: 32 })}<span>${FRASCO_INFO[fr].nombre}</span></label>`).join('')}
       </div>
     </fieldset>`;
 }
 
+/** "Guardar $5.000": el botón dice cuánto, si ya hay un monto (ADR 124 D8). */
+export function textoBotonMovimiento(tipo, monto) {
+  const h = _HOJA[tipo] ?? _HOJA.guarde;
+  return monto > 0 ? `${h.boton} ${f(monto)}` : h.boton;
+}
+
 /**
- * La hoja para anotar dinero que entra, sale o se mueve entre frascos.
+ * La hoja para anotar dinero que entra, sale o se mueve entre frascos (ADR
+ * 124 D8): el monto grande, los billetes, el frasco y una nota si quiere.
  *
  * @param {'guarde'|'gaste'|'comparti'|'mover'} tipo
  * @param {import('../../infra/perfiles.js').PerfilNino} perfil
@@ -580,86 +590,92 @@ export function htmlMovimientoNino(tipo, perfil) {
   const s = saldosFrascos(perfil);
   const saldo = tipo === 'gaste' ? `En Gastar tienes ${f(s.gastar)}.`
     : tipo === 'comparti' ? `En Compartir tienes ${f(s.compartir)}.` : '';
-  const frascos = tipo === 'guarde' ? _elegirFrasco('frasco', '¿En qué frasco?', 'ahorrar')
-    : tipo === 'mover' ? `${_elegirFrasco('desde', '¿De qué frasco sale?', 'gastar')}${_elegirFrasco('hacia', '¿A cuál entra?', 'ahorrar')}`
+  const frascos = tipo === 'guarde' ? _elegirFrasco('frasco', '¿En qué frasco?', 'ahorrar', perfil)
+    : tipo === 'mover' ? `${_elegirFrasco('desde', '¿De qué frasco sale?', 'gastar', perfil)}${_elegirFrasco('hacia', '¿A cuál entra?', 'ahorrar', perfil)}`
     : '';
   return `
     <form class="kform" id="form-nino-mov" data-tipo="${tipo}" novalidate>
-      <h2 class="k-h2" id="modal-nino-titulo" tabindex="-1">${h.titulo}</h2>
+      <h2 class="k-h2 kform__titulo" id="modal-nino-titulo" tabindex="-1">${h.titulo}</h2>
       ${saldo ? `<p class="k-sm">${saldo}</p>` : ''}
       <div class="kfield">
-        <label class="kfield__etiqueta" for="nino-monto">¿Cuánto dinero?</label>
-        <div class="kin"><span aria-hidden="true">$</span><input id="nino-monto" name="monto" type="text" inputmode="numeric" autocomplete="off" /></div>
-        <div class="kchips">${[1_000, 2_000, 5_000, 10_000].map(m => `
-          <button class="kchip kchip--boton" type="button" data-action="nino-monto" data-monto="${m}">${f(m)}</button>`).join('')}
+        <div class="kin kin--grande"><span aria-hidden="true">$</span><input id="nino-monto" name="monto" type="text" inputmode="numeric" autocomplete="off"
+             aria-label="¿Cuánto dinero?" aria-describedby="nino-monto-ayuda" /></div>
+        <p class="kfield__ayuda" id="nino-monto-ayuda">Escríbelo o toca un billete.</p>
+        <div class="kbilletes">${BILLETES.map(m => `
+          <button class="kbillete" type="button" data-action="nino-monto" data-monto="${m}" aria-pressed="false">${iconoCategoria('c-billete')}<span>${f(m)}</span></button>`).join('')}
         </div>
       </div>
       ${frascos}
       <div class="kfield">
-        <label class="kfield__etiqueta" for="nino-nota">${h.nota}</label>
-        <div class="kin"><input id="nino-nota" name="nota" type="text" maxlength="40" autocomplete="off" placeholder="${esc(h.ejemplo)}" /></div>
+        <label class="kfield__etiqueta" for="nino-nota">${h.nota} <span class="kfield__opcional">(si quieres)</span></label>
+        <input class="kin-texto" id="nino-nota" name="nota" type="text" maxlength="40" autocomplete="off" placeholder="${esc(h.ejemplo)}" />
       </div>
       <p class="kform__error" id="nino-mov-error" role="alert"></p>
-      <button class="kbtn kbtn--block" type="submit">${icon('check')}${h.boton}</button>
+      <button class="kbtn kbtn--block" type="submit">${icon('check')}<span id="nino-mov-boton">${h.boton}</span></button>
     </form>`;
 }
+
+/** Cuánto puede guardar cada semana, en tres botones (ADR 124 D8). */
+export const SEMANALES = Object.freeze([2_000, 5_000, 10_000]);
 
 /**
  * Crear una meta (D9): dibujo, nombre, precio y cuánto guarda cada semana.
  * La pantalla responde en semanas y en fecha mientras el niño elige. Con
- * `borrador.id` cambia el plan de la meta que ya tiene (ADR 124 D2).
+ * `borrador.id` cambia el plan de la meta que ya tiene (ADR 124 D2). Si ya
+ * guardaba otra cantidad por semana, esa cantidad se suma como cuarta opción.
  *
  * @param {import('../../infra/perfiles.js').PerfilNino} perfil
- * @param {{ dibujo?: string, nombre?: string, precio?: number, semanal?: number }} borrador
+ * @param {{ id?: string, dibujo?: string, nombre?: string, precio?: number, semanal?: number }} borrador
  * @param {string} hoyISO
  */
 export function htmlMetaNino(perfil, borrador, hoyISO) {
-  const semanal = borrador.semanal ?? 2_000;
+  const semanal = borrador.semanal ?? SEMANALES[0];
+  const opciones = SEMANALES.includes(semanal) ? SEMANALES : [...SEMANALES, semanal].sort((x, y) => x - y);
   return `
-    <header class="knino-cabeza">
-      <button class="knino-cambiar" type="button" data-action="nino-vista" data-vista="alcancia" aria-label="Volver a mi alcancía">${icon('arrow-left')}</button>
-      <h1 class="k-h2 knino-titulo" tabindex="-1">${iconoCategoria('i-metas')}${borrador.id ? 'Cambiar tu meta' : 'Nueva meta'}</h1>
+    <header class="knino-cabeza knino-cabeza--sub">
+      <button class="knino-volver" type="button" data-action="nino-vista" data-vista="alcancia" aria-label="Volver a mi alcancía">${icon('arrow-left')}</button>
+      <h1 class="k-h1 knino-titulo" tabindex="-1">${borrador.id ? 'Cambiar tu meta' : 'Tu nueva meta'}</h1>
     </header>
-    <form class="kform" id="form-nino-meta" novalidate>
+    <form class="kform kform--meta" id="form-nino-meta" novalidate>
       <fieldset class="kfield">
-        <legend class="kfield__etiqueta">¿Para qué quieres ahorrar?</legend>
+        <legend class="kfield__etiqueta">¿Qué quieres tener?</legend>
         <div class="kdibujos">${DIBUJOS.map(d => `
           <label class="kdibujo"><input class="sr-only" type="radio" name="dibujo" value="${d.id}"${borrador.dibujo === d.id ? ' checked' : ''} />
-            ${htmlDibujo(d.id, { tamano: 52 })}<span class="sr-only">${esc(d.nombre)}</span></label>`).join('')}
+            ${htmlDibujo(d.id, { tamano: 44 })}<span class="sr-only">${esc(d.nombre)}</span></label>`).join('')}
         </div>
       </fieldset>
       <div class="kfield">
-        <label class="kfield__etiqueta" for="nino-meta-nombre">${icon('edit')}Ponle nombre</label>
-        <div class="kin"><input id="nino-meta-nombre" name="nombre" type="text" maxlength="40" autocomplete="off" value="${esc(borrador.nombre ?? '')}" /></div>
+        <label class="kfield__etiqueta" for="nino-meta-nombre">¿Cómo se llama?</label>
+        <input class="kin-texto" id="nino-meta-nombre" name="nombre" type="text" maxlength="40" autocomplete="off" placeholder="Una patineta" value="${esc(borrador.nombre ?? '')}" />
       </div>
       <div class="kfield">
-        <label class="kfield__etiqueta" for="nino-meta-precio">${iconoCategoria('c-etiqueta')}¿Cuánto cuesta?</label>
-        <div class="kin"><span aria-hidden="true">$</span><input id="nino-meta-precio" name="precio" type="text" inputmode="numeric" autocomplete="off" value="${borrador.precio ? f(borrador.precio).replace('$', '') : ''}" /></div>
+        <label class="kfield__etiqueta" for="nino-meta-precio">¿Cuánto cuesta?</label>
+        <div class="kin kin--grande"><span aria-hidden="true">$</span><input id="nino-meta-precio" name="precio" type="text" inputmode="numeric" autocomplete="off" value="${borrador.precio ? f(borrador.precio).replace('$', '') : ''}" /></div>
       </div>
       <div class="kfield">
-        <p class="kfield__etiqueta" id="nino-meta-semana">${iconoCategoria('i-ahorro')}¿Cuánto guardas cada semana?</p>
-        <div class="kstep" role="group" aria-labelledby="nino-meta-semana">
-          <button type="button" data-action="nino-meta-semana" data-paso="-1000" aria-label="Guardar $1.000 menos">${icon('chevron-down')}</button>
-          <output id="nino-meta-semanal" data-valor="${semanal}">${f(semanal)}</output>
-          <button type="button" data-action="nino-meta-semana" data-paso="1000" aria-label="Guardar $1.000 más">${icon('chevron-up')}</button>
+        <p class="kfield__etiqueta" id="nino-meta-semana">¿Cuánto guardas cada semana?</p>
+        <div class="ksemanal" role="group" aria-labelledby="nino-meta-semana">${opciones.map(v => `
+          <button class="ksemanal__op" type="button" data-action="nino-meta-semana" data-valor="${v}" aria-pressed="${v === semanal}">${f(v)}</button>`).join('')}
         </div>
       </div>
-      <div class="knino-plan" id="nino-meta-plan" role="status">${htmlPlanMeta(perfil, borrador.precio, semanal, hoyISO)}</div>
+      <div id="nino-meta-plan" role="status">${htmlPlanMeta(perfil, borrador.precio, semanal, hoyISO)}</div>
       <p class="kform__error" id="nino-meta-error" role="alert"></p>
       <button class="kbtn kbtn--block" type="submit">${icon('check')}${borrador.id ? 'Guardar mi meta' : 'Crear mi meta'}</button>
     </form>`;
 }
 
-/** "Lo tendrás en 8 semanas. Para el 19 de diciembre." */
+/** "Lo tendrás en 8 semanas. ¡Para el 19 de diciembre!", con Tino, y lo que ya tiene. */
 export function htmlPlanMeta(perfil, precio, semanal, hoyISO) {
-  if (!(Number(precio) > 0)) return `${iconoCategoria('i-agenda')}<p class="k-sm">Escribe el precio y te digo cuándo.</p>`;
-  const plan = planMeta({ precio, semanal, ahorrado: saldosFrascos(perfil).ahorrar, hoyISO });
-  if (plan.falta === 0) return `${iconoCategoria('i-agenda')}<p class="k-h3">¡Ya tienes para eso!</p>`;
-  return `${iconoCategoria('i-agenda')}
-    <div class="knino-pila">
-      <p class="k-h3">Lo tendrás en ${plan.semanas === 1 ? '1 semana' : `${plan.semanas} semanas`}.</p>
-      <p class="k-sm">Para el ${_DIA_MES(plan.fechaISO)}.</p>
-    </div>`;
+  if (!(Number(precio) > 0)) {
+    return `<div class="knino-plan knino-plan--espera">${iconoCategoria('i-agenda')}<p>Escribe el precio y te digo cuándo.</p></div>`;
+  }
+  const ahorrado = saldosFrascos(perfil).ahorrar;
+  const plan = planMeta({ precio, semanal, ahorrado, hoyISO });
+  const frase = plan.falta === 0 ? '¡Ya tienes para eso!'
+    : `Lo tendrás en ${plan.semanas === 1 ? '1 semana' : `${plan.semanas} semanas`}. ¡Para el ${_DIA_MES(plan.fechaISO)}!`;
+  return `
+    <div class="knino-plan">${htmlTino('celebra', { tamano: 64 })}<p>${frase}</p></div>
+    ${ahorrado > 0 && plan.falta > 0 ? `<p class="knino-plan__nota">Ya cuentas con los ${f(ahorrado)} que tienes en Ahorrar.</p>` : ''}`;
 }
 
 /**

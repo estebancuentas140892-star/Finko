@@ -192,8 +192,8 @@ test.describe('APR.3d - la alcancía y la meta del niño', () => {
     await page.fill('#nino-meta-nombre', 'balón');
     await page.fill('#nino-meta-precio', '30.000');
     await expect(page.locator('#nino-meta-plan')).toContainText('Lo tendrás en 10 semanas.');
-    await page.click('[data-action="nino-meta-semana"][data-paso="1000"]');
-    await expect(page.locator('#nino-meta-plan')).toContainText('Lo tendrás en 7 semanas.');
+    await page.click('[data-action="nino-meta-semana"][data-valor="5000"]');
+    await expect(page.locator('#nino-meta-plan')).toContainText('Lo tendrás en 4 semanas.');
     await page.click('#form-nino-meta [type="submit"]');
     await expect(page.locator('#nino-main .knino-meta')).toContainText('Tu meta');
     await expect(page.locator('#nino-main .knino-meta')).toContainText('$10.000 de $30.000');

@@ -1,6 +1,6 @@
 # ADR 124 - El niño en el teléfono
 
-**Estado:** Aceptada (2026-11-05). Tanda 1 (la barra, Inicio, la Alcancía y Yo) y tanda 2 (Aprender y la lección) aplicadas; las otras tres se suman como adendas.
+**Estado:** Aceptada (2026-11-05). Tandas 1 (la barra, Inicio, la Alcancía y Yo), 2 (Aprender y la lección) y 3 (las hojas) aplicadas; las otras dos se suman como adendas.
 **Fecha:** 2026-11-05
 **Autores:** Esteban (diseño y decisión), Claude Opus 5.5 (auditoría, implementación y redacción)
 **Relación:** **Aplica** el tablero "Finko móvil · rediseño" del perfil niño (Claude Design, 2026-11-05), que compara cada pantalla de hoy con su propuesta. **Conserva** el [ADR 093](093-perfiles-en-el-dispositivo-y-modo-nino.md) (cuatro destinos, la alcancía solo anota, la voz del niño) y el [ADR 094](094-tino-el-guatin.md) (Tino). **Supera** el [ADR 098](098-finko-movil-2-primera-entrega.md) D13 en un punto: los frascos de Inicio ya no van en filas bajo 400 px, van en tejas a todo ancho (D2).
@@ -71,6 +71,12 @@ Bajo 360 px los nombres de los frascos pierden su ícono y se achican para no pa
 - **La unidad terminada:** Tino grande junto a la insignia con el ícono de la unidad, "¡Nueva insignia!" en el color del sol, "Terminaste la unidad 3" y lo que aprendió. "Úsalo de verdad" va en una tarjeta con el borde del sol y en una sola frase ("En Gastar tienes $6.500. ¿Es para algo que necesitas o que quieres?").
 - **El pie:** "Ver mi alcancía" y "Volver al inicio" (antes, "Volver a la ruta").
 
+### D8. Las hojas: anotar y la meta (tanda 3)
+
+- **Anotar** (Guardé, Gasté, Compartí, mover): el título a la par de la ✕, sin filete; el monto en una caja de 72 px con letra de 36; "Escríbelo o toca un billete." y cuatro billetes en dos columnas, con el elegido marcado; el frasco en tejas con su dibujo; la nota dice "(si quieres)"; el botón dice cuánto: "Guardar $5.000". El billete marcado y el botón siguen a lo que hay en el campo, se escriba o se toque.
+- **La meta** es una pantalla de paso: sin la barra de abajo en el teléfono, con su flecha para volver. "Tu nueva meta" (o "Cambiar tu meta"), los dibujos en cuadros, "¿Cómo se llama?", el precio en grande y **tres cantidades por semana** ($2.000, $5.000 y $10.000) en vez de subir y bajar de a $1.000. Si la meta ya guardaba otra cantidad, esa cantidad entra como cuarta opción, marcada. Tino responde "Lo tendrás en 19 semanas. ¡Para el 26 de marzo!" y debajo, "Ya cuentas con los $26.200 que tienes en Ahorrar.".
+- **Capas de CSS:** la ✕ de la hoja vive en la capa `modals` y su ajuste del teléfono en `responsive`, y el campo desnudo no dibuja el anillo de foco de `a11y` porque su caja ya lo marca: desde `components` no se les gana.
+
 ## Alternativas descartadas
 
 - **Dejar la lista de frascos bajo 400 px (ADR 098 D13).** Era la salida a que los frascos no cabían a 320; con las tejas del tablero y la letra que se achica bajo 360, caben, y se evita pintar la alcancía dos veces.
@@ -79,7 +85,6 @@ Bajo 360 px los nombres de los frascos pierden su ícono y se achican para no pa
 
 ## Tandas que siguen
 
-3. Las hojas: Guardé y la meta.
 4. La primera vez y "¿Quién usa Finko?".
 5. Lo del adulto: Familia en Ajustes, el progreso del niño, la mesada, el premio y agregar un niño.
 
@@ -88,3 +93,4 @@ Bajo 360 px los nombres de los frascos pierden su ícono y se achican para no pa
 - El tablero de diseño deja de mandar cuando sus cinco tandas estén aplicadas: desde ahí la fuente es este ADR.
 - `nino.css` pierde `.knino-mini`, `.knino-acciones`, `.knino-quitar` y el camino en zigzag (`.kcamino`, `.knode`, `.kunit`); gana las tejas, las filas, el botón de línea y la ruta en línea (`.kruta__*`, `.kleccion*`).
 - Dos íconos nuevos en el sprite: `i-lock` e `i-clock`, con su archivo en `assets/svg/iconos/simbolos/`.
+- La pantalla de la meta pierde el paso de $1.000 por semana: quien quiera otra cantidad cambia el precio o la meta (D8).

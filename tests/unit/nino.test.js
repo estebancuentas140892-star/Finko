@@ -14,7 +14,7 @@ import {
 } from '../../modules/dominio/nino/logic.js';
 import {
   htmlBarraNino, htmlInicioNino, htmlRutaNino, htmlAlcanciaNino, htmlYoNino,
-  htmlMovimientoNino, htmlMetaNino, htmlPlanMeta, htmlTarjetaMeta,
+  htmlMovimientoNino, htmlMetaNino, htmlPlanMeta, htmlTarjetaMeta, textoBotonMovimiento, SEMANALES,
 } from '../../modules/dominio/nino/view.js';
 import { crearSesion, avanzar, responderElegir, unidadDeLeccion } from '../../modules/dominio/aprende/logic.js';
 import { htmlLeccion } from '../../modules/dominio/aprende/view.js';
@@ -384,6 +384,14 @@ describe('la alcancía anota, no mueve dinero (APR.3d, D3 y D9)', () => {
     expect(gaste).toContain('data-monto="5000"');
     expect(htmlMovimientoNino('guarde', perfil())).toContain('¿En qué frasco?');
     expect(htmlMovimientoNino('mover', conDinero())).toContain('¿De qué frasco sale?');
+    // El monto en grande, los billetes y una nota opcional (ADR 124 D8).
+    const guarde = htmlMovimientoNino('guarde', perfil());
+    expect(guarde).toContain('Escríbelo o toca un billete.');
+    expect(guarde.match(/class="kbillete"/g)).toHaveLength(4);
+    expect(guarde).toContain('(si quieres)');
+    expect(guarde).toContain('href="#il-frasco"');
+    expect(textoBotonMovimiento('guarde', 5_000)).toBe('Guardar $5.000');
+    expect(textoBotonMovimiento('gaste', 0)).toBe('Anotar');
   });
 
   it('la alcancía ofrece Guardé, Gasté y Compartí, y mover solo si hay dinero y está permitido', () => {
@@ -445,7 +453,12 @@ describe('la meta del niño responde en semanas y en fecha (APR.3d, D9)', () => 
       .toMatchObject({ falta: 0, semanas: 0 });
     const html = htmlPlanMeta(perfil(), 32_000, 4_000, '2026-10-24');
     expect(html).toContain('Lo tendrás en 8 semanas.');
-    expect(html).toContain('Para el 19 de diciembre.');
+    expect(html).toContain('¡Para el 19 de diciembre!');
+    expect(html).toContain('href="#il-tino-celebra"');
+    // Con algo en Ahorrar, dice con cuánto ya cuenta.
+    const conAhorro = perfil({}, { movimientos: [{ frasco: 'ahorrar', monto: 8_000 }] });
+    expect(htmlPlanMeta(conAhorro, 32_000, 4_000, '2026-10-24')).toContain('Ya cuentas con los $8.000 que tienes en Ahorrar.');
+    expect(htmlPlanMeta(perfil(), 0, 4_000, '2026-10-24')).toContain('Escribe el precio y te digo cuándo.');
   });
 
   it('una meta pide dibujo, nombre, precio y cuánto guarda cada semana', () => {
@@ -471,12 +484,21 @@ describe('la meta del niño responde en semanas y en fecha (APR.3d, D9)', () => 
     const lista = perfil({}, { metas: [meta], movimientos: [{ frasco: 'ahorrar', monto: 45_000 }] });
     expect(htmlTarjetaMeta(lista, '2026-10-24', { acciones: true })).toContain('Ya lo compré');
     expect(htmlTarjetaMeta(perfil(), '2026-10-24')).toContain('Crear una meta');
-    expect(htmlMetaNino(perfil(), {}, '2026-10-24')).toContain('¿Para qué quieres ahorrar?');
+    const nueva = htmlMetaNino(perfil(), {}, '2026-10-24');
+    expect(nueva).toContain('Tu nueva meta');
+    expect(nueva).toContain('¿Qué quieres tener?');
+    // Tres cantidades por semana (ADR 124 D8); la primera, marcada.
+    expect(SEMANALES).toEqual([2_000, 5_000, 10_000]);
+    expect(nueva.match(/data-action="nino-meta-semana"/g)).toHaveLength(3);
+    expect(nueva).toMatch(/data-valor="2000" aria-pressed="true"/);
     // "Cambiar el plan" abre la misma pantalla con la meta que ya tiene.
     const cambiar = htmlMetaNino(p, { ...meta }, '2026-10-24');
     expect(cambiar).toContain('Cambiar tu meta');
     expect(cambiar).toContain('Guardar mi meta');
     expect(cambiar).toMatch(/value="balon" checked/);
+    // Si guardaba otra cantidad, esa entra como cuarta opción y queda marcada.
+    expect(cambiar.match(/data-action="nino-meta-semana"/g)).toHaveLength(4);
+    expect(cambiar).toMatch(/data-valor="4000" aria-pressed="true"/);
   });
 
   it('cada frasco se llena contra lo suyo, nunca contra los otros dos (R60)', () => {

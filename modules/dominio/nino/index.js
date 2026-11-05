@@ -30,7 +30,7 @@ import {
 } from './logic.js';
 import {
   htmlBarraNino, htmlInicioNino, htmlRutaNino, htmlAlcanciaNino, htmlYoNino,
-  htmlMovimientoNino, htmlMetaNino, htmlPlanMeta, FRASCO_INFO,
+  htmlMovimientoNino, htmlMetaNino, htmlPlanMeta, FRASCO_INFO, textoBotonMovimiento,
 } from './view.js';
 
 /** Pantallas: las cuatro de la barra y crear una meta. */
@@ -69,7 +69,11 @@ function _render() {
   // le borraría al niño lo que va escribiendo.
   if (perfil && _vista === 'meta' && main.querySelector('#form-nino-meta')) return;
   const html = perfil ? _VISTA_HTML[_vista](perfil) : '';
-  if (nav) nav.innerHTML = perfil ? htmlBarraNino(_vista, perfil) : '';
+  if (nav) {
+    nav.innerHTML = perfil ? htmlBarraNino(_vista, perfil) : '';
+    // En el teléfono, la meta es una pantalla de paso, sin barra (ADR 124 D8).
+    nav.dataset.vista = _vista;
+  }
   if (html === _ultimo) return;
   _ultimo = html;
   main.innerHTML = html;
@@ -110,10 +114,27 @@ function _abrirMovimiento(el) {
   document.getElementById('nino-monto')?.focus({ preventScroll: true });
 }
 
+/**
+ * El billete marcado y el botón que dice cuánto ("Guardar $5.000") siguen a
+ * lo que hay en el campo, se escriba o se toque un billete (ADR 124 D8).
+ */
+function _reflejarMonto() {
+  const form = /** @type {HTMLFormElement|null} */ (document.getElementById('form-nino-mov'));
+  const campo = /** @type {HTMLInputElement|null} */ (document.getElementById('nino-monto'));
+  if (!form || !campo) return;
+  const monto = leerMonto(campo.value);
+  form.querySelectorAll('[data-action="nino-monto"]').forEach(b => {
+    b.setAttribute('aria-pressed', String(Number(b.getAttribute('data-monto')) === monto));
+  });
+  const boton = document.getElementById('nino-mov-boton');
+  if (boton) boton.textContent = textoBotonMovimiento(form.dataset.tipo, monto);
+}
+
 function _ponerMonto(el) {
   const campo = /** @type {HTMLInputElement|null} */ (document.getElementById('nino-monto'));
   if (!campo) return;
   campo.value = f(Number(el?.dataset?.monto) || 0).replace('$', '');
+  _reflejarMonto();
   campo.focus();
 }
 
@@ -170,11 +191,14 @@ function _onInputMeta(e) {
   _actualizarPlan();
 }
 
+/** Cuánto guarda cada semana: uno de los botones (ADR 124 D8). */
 function _cambiarSemanal(el) {
-  const actual = _borrador.semanal ?? 2_000;
-  _borrador.semanal = Math.max(1_000, actual + (Number(el?.dataset?.paso) || 0));
-  const salida = document.getElementById('nino-meta-semanal');
-  if (salida) salida.textContent = f(_borrador.semanal);
+  const valor = Number(el?.dataset?.valor) || 0;
+  if (valor <= 0) return;
+  _borrador.semanal = valor;
+  document.querySelectorAll('#form-nino-meta [data-action="nino-meta-semana"]').forEach(b => {
+    b.setAttribute('aria-pressed', String(Number(b.getAttribute('data-valor')) === valor));
+  });
   _actualizarPlan();
 }
 
@@ -271,6 +295,9 @@ export function initNino() {
   registrarAccion('nino-meta-cambiar', _cambiarPlan);
   registrarAccion('nino-meta-quitar', _quitarMeta);
   _modal()?.addEventListener('submit', _onSubmit);
+  _modal()?.addEventListener('input', (e) => {
+    if (/** @type {HTMLElement} */ (e.target).id === 'nino-monto') _reflejarMonto();
+  });
   const main = document.getElementById('nino-main');
   main?.addEventListener('submit', _onSubmit);
   main?.addEventListener('input', _onInputMeta);

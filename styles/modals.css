@@ -720,6 +720,11 @@ body:has(#quien-usa[data-open]) .logro-toast { display: none; }
   background: var(--fk-bg-elevated);
   color: var(--fk-text-primary);
 }
+/* La hoja del niño (ADR 124 D8): su título va en el cuerpo, a la par de la
+   ✕; la cabecera solo trae la ✕, sin filete. Vive en esta capa porque la de
+   componentes no le gana a `.modal__header`. */
+.kmodal > .modal__header { position: absolute; top: var(--fk-space-5); right: var(--fk-space-3); z-index: 1; padding: 0; border: 0; background: transparent; }
+.kmodal .modal__close { width: 48px; height: 48px; border-radius: var(--fk-radius-lg); color: var(--fk-text-secondary); }
 
 .modal__body {
   flex: 1;

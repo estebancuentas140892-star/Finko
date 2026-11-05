@@ -97,6 +97,10 @@ textarea:focus-visible,
   outline-offset: 3px;
   border-radius: var(--fk-radius-sm);
 }
+/* El campo del niño vive desnudo dentro de su caja, que ya marca el foco
+   con su borde (`.kin:focus-within`): no dibuja un segundo anillo adentro
+   (ADR 124 D8). */
+.kin input:focus-visible { outline: none; }
 
 /* ── IMAGEN SIN ALT ─────────────────────────────────────────── */
 /* Alerta visual en desarrollo cuando falta alt */
