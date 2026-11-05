@@ -1,9 +1,9 @@
 # ADR 126 - Inicio del adulto en el teléfono
 
-**Estado:** Aceptada (2026-11-05). En aplicación por tandas: el encabezado y el saldo (1), "Atención hoy" y su hoja (2), "Esta semana", los vacíos y el usuario nuevo (3), las hojas "Pagos para hoy", "Registrar" y "Tu perfil" (4). Queda la barra de abajo (5).
+**Estado:** Aceptada (2026-11-05). Aplicada completa en cinco tandas: el encabezado y el saldo (1), "Atención hoy" y su hoja (2), "Esta semana", los vacíos y el usuario nuevo (3), las hojas "Pagos para hoy", "Registrar" y "Tu perfil" (4) y la barra de abajo (5). El tablero se borró de `Diseño Finko/` al cerrar la quinta: desde ahí la fuente es este ADR.
 **Fecha:** 2026-11-05
 **Autores:** Esteban (diseño y decisión), Claude Opus 5.5 (auditoría, implementación y redacción)
-**Relación:** **Aplica** el tablero "Finko móvil · rediseño" de Inicio (Claude Design, `Diseño Finko/Finko móvil · rediseño.html`), que compara cada pantalla de hoy con su propuesta; es la primera pieza de MV2.30. **Supera** el [ADR 122](122-lo-que-faltaba-del-canvas-segunda-pasada.md) D2 (el nombre del saludo ya no baja de línea) y, solo bajo 1024px, el [ADR 034](034-inicio-v2.md) D2 y el piloto del [ADR 033](033-direccion-visual-premium.md) D2 y D3 (el saldo deja de ser tarjeta con degradado y forma). **Conserva** el [ADR 106](106-un-encabezado-tres-niveles.md) D3 (un solo ojo, en el encabezado) y el [ADR 099](099-inicio-movil-hoy-en-una-lista.md) D6 (el avatar abre "Tu perfil"). Escritorio no cambia.
+**Relación:** **Aplica** el tablero "Finko móvil · rediseño" de Inicio (Claude Design, `Diseño Finko/Finko móvil · rediseño.html`), que compara cada pantalla de hoy con su propuesta; es la primera pieza de MV2.30. **Supera** el [ADR 122](122-lo-que-faltaba-del-canvas-segunda-pasada.md) D2 (el nombre del saludo ya no baja de línea) y, solo bajo 1024px, el [ADR 034](034-inicio-v2.md) D2 y el piloto del [ADR 033](033-direccion-visual-premium.md) D2 y D3 (el saldo deja de ser tarjeta con degradado y forma). **Acota** el [ADR 088](088-me-deben-urgencia-de-cobro-y-direccion-con-forma.md) D3 y el ADR 099 D5 en el teléfono (el recuadro del día va sin flecha, D4) y **cambia** el [ADR 040](040-navegacion-v2-visual.md) D5 y el activo del [ADR 031](031-identidad-de-color-por-seccion.md) (la barra de abajo, D8). **Conserva** el [ADR 106](106-un-encabezado-tres-niveles.md) D3 (un solo ojo, en el encabezado) y el [ADR 099](099-inicio-movil-hoy-en-una-lista.md) D6 (el avatar abre "Tu perfil"). Escritorio no cambia.
 
 ---
 
@@ -61,18 +61,16 @@ La guía de tres pasos que ya tenía escritorio pasa también al teléfono, en l
 - **"Registrar"**: Gasto e Ingreso arriba en dos columnas, con su teja y su tinte; lo que depende de tus datos (abono, transferir, aporte) va en una lista debajo, una fila por destino con la teja de su sección y una flecha. La lista se oculta si queda vacía. La hoja es la misma en los dos anchos.
 - **"Tu perfil"** solo cambia de medidas: el avatar con borde fino, el nombre en 20px y dos líneas, filas de 64px y la lista sobre un fondo apenas más claro.
 
-## Lo que ya se decidió para las tandas que siguen
+### D7. Medidas sin token y el signo menos
 
-Aprobado en chat el 2026-11-05 junto con la tanda 1; cada tanda lo escribe en detalle al aplicarse.
+Las medidas del tablero que no tienen token (letras de 13, 15 y 17px, pesos 550, 650 y 750, radios 20, 18, 14, 12 y 11) van literales y con comentario, como ya hacen `nino.css` y `modals.css`; no nacen tokens nuevos. El signo menos sigue siendo "-", no el "−" del tablero: cambiarlo es de toda la app.
 
-1. El saldo deja de ser tarjeta solo en el teléfono (aplicado en D2).
-2. El nombre se corta en una línea (aplicado en D1).
-3. "Esta semana" deja la flecha de entrada o salida en el recuadro del día en el teléfono; el signo + o - se queda. Escritorio conserva la flecha (acota el ADR 088 D3 y el ADR 099 D5).
-4. La hoja de pagar varios a la vez se llama "Pagos para hoy" desde Inicio y desde Por pagar.
-5. El ojo encendido es el mismo en toda la app (aplicado en D1).
-6. La barra de abajo nueva (activo con píldora detrás del ícono y "Registrar" plano) va en su propia tanda y cambia el ADR 040 D5 y el activo del ADR 031.
+### D8. La barra de abajo (tanda 5)
 
-Además, sin preguntar: las medidas del tablero sin token (letras de 13, 15 y 17px, pesos 650 y 750, radio 20) van literales con comentario, como ya hacen `nino.css` y `modals.css`; y el signo menos sigue siendo "-", no el "−" del tablero, porque cambiarlo es de toda la app.
+- **La sección activa** ya no tiñe la celda entera ni lleva la barrita de arriba: una píldora de 56 × 32 detrás del ícono, en el color de su sección (acento en Inicio), y el rótulo en su color con peso 650. Las inactivas van en el gris tenue con peso 500; la chispa sigue en acento. Gastos mientras se está en otra de sus lentes lleva la misma píldora.
+- **"Registrar"** es una píldora de acento plana del mismo tamaño, sin degradado, sombra ni salto, con el rótulo en el color del texto.
+- **La barra** es un tono más oscuro que la tarjeta, con la receta de la barra del niño. Cambia el ADR 040 D5 (la pastilla con relieve) y el activo del ADR 031 (celda teñida y barrita).
+- La píldora es el `::before` que antes dibujaba la barrita: no cambia el marcado.
 
 ## Lo que se ajusta al pasar del tablero a la app
 
@@ -83,6 +81,8 @@ Además, sin preguntar: las medidas del tablero sin token (letras de 13, 15 y 17
 | El saludo dentro de un `h1` | el `h1` sigue siendo "Tu resumen" (`sr-only`) | nombra la región para el lector desde IN.8d |
 
 ## Alternativas descartadas
+
+- **Aplicar las tandas sin preguntar las seis que tocaban decisiones escritas.** Esteban las aprobó en chat antes de la tanda 1; ninguna se revirtió en silencio.
 
 - **Aplicar el saldo sin tarjeta también en escritorio.** La banda de escritorio (ADR 070 D6) une saldo y cuentas en una superficie y el tablero no la dibuja.
 - **Un ojo encendido solo en Inicio.** Sería un control con dos caras; R20 pide el mismo en todas partes.

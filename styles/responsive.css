@@ -219,7 +219,8 @@
   }
   /* Pastilla con degradado de acento (NAV2.1c, ADR 040 D5): reemplaza el
      círculo; más área táctil horizontal y sombra teñida de marca (mismo
-     degradado que la marca "F" del sidebar). */
+     degradado que la marca "F" del sidebar). El ADR 126 D8 la deja plana,
+     al final de este archivo. */
   .nav-item__fab {
     display: inline-flex;
     align-items: center;
@@ -4166,4 +4167,89 @@
   }
   #modal-registrar .modal__title,
   .hoja-perfil__titulo { font-size: var(--fk-text-xl); }
+}
+
+/* ════════════════════════════════════════════════════════════
+   ADR 126 D8 · LA BARRA DE ABAJO (tanda 5)
+   ════════════════════════════════════════════════════════════
+   La sección activa ya no tiñe la celda entera ni lleva barrita arriba: una
+   píldora de 56x32 detrás del ícono, en el color de su sección (acento en
+   Inicio). "Registrar" es una píldora de acento plana, sin degradado,
+   sombra ni salto. La barra es un tono más oscuro que la tarjeta, la misma
+   receta de la barra del niño (nino.css, .knav). Cambia el ADR 040 D5 y el
+   activo del ADR 031 (IV.2a). */
+@media (max-width: 1023px) {
+  .sidebar {
+    background: color-mix(in srgb, var(--fk-bg-base) 55%, var(--fk-bg-surface));
+  }
+  .sidebar .nav-item {
+    isolation: isolate;
+    gap: 3px;
+    color: var(--fk-text-muted);
+    font-size: var(--fk-text-xs);
+  }
+  .sidebar .nav-item:hover { background: none; }
+  .sidebar .nav-item__label {
+    line-height: 16px;
+    font-weight: var(--fk-font-medium);
+  }
+  .sidebar .nav-item__icon { position: relative; z-index: 1; }
+
+  /* La píldora: el ::before que antes era la barrita de arriba. Va centrada
+     en el ícono (24px) de una columna ícono + 3 + rótulo (16) centrada en
+     la celda: su borde de arriba queda a 25,5px sobre el centro. */
+  .sidebar .nav-item::before {
+    top: calc(50% - 25.5px);
+    left: 50%;
+    translate: -50% 0;
+    z-index: 0;
+    width: 56px;
+    height: 32px;
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--fk-nav-text, var(--fk-accent)) 16%, transparent);
+    opacity: 0;
+    transform: scale(0.7);
+    transition:
+      opacity var(--fk-transition-fast),
+      transform var(--fk-transition-base);
+  }
+  .sidebar .nav-item.active,
+  .sidebar .nav-item[aria-current="page"],
+  .sidebar .nav-item--bloque-activo {
+    background: none;
+    color: var(--fk-nav-text, var(--fk-text-accent));
+  }
+  .sidebar .nav-item.active .nav-item__label,
+  .sidebar .nav-item[aria-current="page"] .nav-item__label,
+  .sidebar .nav-item--bloque-activo .nav-item__label { font-weight: 650; }
+  .sidebar .nav-item.active::before,
+  .sidebar .nav-item[aria-current="page"]::before,
+  .sidebar .nav-item--bloque-activo::before {
+    opacity: 1;
+    transform: scale(1);
+  }
+  /* Gastos mientras se está en otra de sus lentes también lleva su color. */
+  .sidebar .nav-item--bloque-activo[data-section="gast"] .nav-item__icon.icon { --fk-icon-dot: var(--fk-nav-text); }
+  @media (prefers-reduced-motion: reduce) {
+    .sidebar .nav-item::before { transition: none; }
+  }
+
+  /* "Registrar": píldora de acento plana, en la misma línea que las demás. */
+  .sidebar .nav-item--registrar {
+    justify-content: center;
+    padding-top: var(--fk-space-2);
+    padding-bottom: var(--fk-space-2);
+    gap: 3px;
+    color: var(--fk-text-primary);
+  }
+  .sidebar .nav-item--registrar .nav-item__label { font-weight: var(--fk-font-semibold); }
+  .sidebar .nav-item__fab {
+    width: 56px;
+    height: 32px;
+    margin-top: 0;
+    border-radius: 16px;
+    background: var(--fk-accent);
+    box-shadow: none;
+  }
+  .sidebar .nav-item__fab .icon { --fk-icon-size: 22px; stroke-width: 2.4; }
 }

@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-05. Última tarea cerrada: MV2.30 tanda 4, las hojas de Inicio (ADR 126). Sigue la tanda 5. MOV.1 en pausa. HF.0f en curso: banco sin commitear y fuera de esta copia.
+> Revisado: 2026-11-05. Última tarea cerrada: MV2.30, el tablero de Inicio completo (ADR 126). Sigue el de Gastos. MOV.1 en pausa. HF.0f en curso: banco sin commitear y fuera de esta copia.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5291/5291 (2026-11-05, MV2.30 t4, árbol limpio) |
-| Tests E2E | 438/438 (2026-11-05, MV2.30 t4, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5291/5291 (2026-11-05, MV2.30 Inicio, árbol limpio) |
+| Tests E2E | 438/438 (2026-11-05, MV2.30 Inicio, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v48 (`perfiles`, APR.3a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**MV2.30 tanda 5 - la barra de abajo; cierra Inicio, 2026-11-05**
+Píldora detrás del ícono activo y "Registrar" plano; el tablero de Inicio quedó completo y su HTML se borró ([ADR 126](DECISIONS/126-inicio-del-adulto-en-el-telefono.md)). SW v669.
 
 **MV2.30 tanda 4 - las hojas de Inicio, 2026-11-05**
 "Pagos para hoy" con el estado de cada pago en su color y el total en el pie; "Registrar" con Gasto e Ingreso arriba y una lista debajo; "Tu perfil" con medidas nuevas ([ADR 126](DECISIONS/126-inicio-del-adulto-en-el-telefono.md)). SW v668.
@@ -37,9 +40,6 @@ El primer aviso destacado con su urgencia escrita, filas que se tocan enteras, l
 **MV2.30 tanda 1 - Inicio en el teléfono: encabezado y saldo, 2026-11-05**
 Lupa, ojo y avatar sin caja, el nombre en una línea, el saldo sin tarjeta y la ficha de cuentas ([ADR 126](DECISIONS/126-inicio-del-adulto-en-el-telefono.md)). SW v665.
 
-**ADR 125 - Ahorro abre en el fondo, 2026-11-05**
-"Ahorro" (barra inferior y lateral) abre el fondo con la barra de las cuatro lentes; `#ahorro` redirige y la casa se borra con su código y sus pruebas ([ADR 125](DECISIONS/125-ahorro-abre-en-el-fondo.md)). SW v664.
-
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 
 ---
@@ -50,7 +50,7 @@ Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelo
 - **Iniciativa HF** ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), Propuesta): su Fase 0 corre en paralelo a MOV.1 porque no comparte archivos ni decisiones; HF.0a, HF.0b, HF.0h, HF.0c, HF.0i, HF.0d, HF.0e y HF.0j cerradas; P1 a P8 resueltas. Pendientes de la Fase 0: HF.0f (sus tres errores ya están corregidos; el banco sigue sin commitear y no está en esta copia) y HF.0g; DOC.5 en Mantenimiento.
 - **Iniciativa NUBE** ([ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md), Aceptada): Finko en la nube con Supabase, cuenta opcional. NUBE.0 a NUBE.3 cerradas: cuenta por correo para invitados, sincronización por registro, borrar la cuenta y el teléfono del niño en `finko-prueba`. Sigue NUBE.4 (bancos), que pide su propio ADR; invitar probadores pide SMTP propio en Supabase.
 - **Iniciativa APR, "Aprende y aplícalo"** ([ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) y [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md), Propuesta; **solo del niño desde el [ADR 101](DECISIONS/101-finko-del-adulto-decide-no-ensena.md)**, que deja para el adulto la ayuda para decidir, DEC.1): Fases 1 a 4 hechas (salvo la revisión pedagógica de APR.2c); el niño ya puede empezar solo ([ADR 100](DECISIONS/100-el-nino-empieza-solo.md)); quedan la revisión pedagógica de las lecciones del niño (APR.3f) y la ronda 2 de Tino ([ADR 094](DECISIONS/094-tino-el-guatin.md) y [095](DECISIONS/095-tino-en-el-sprite.md), APR.5b), que espera sus dibujos. Cada rebanada se sube a `main` al cerrar. El 093 acota el ADR 003 (ADN 11) solo dentro del perfil niño.
-- **El adulto en el teléfono (MV2.30)**: los 6 tableros "Finko móvil · rediseño" de `Diseño Finko/`, uno por ADR y en tandas. Inicio ([ADR 126](DECISIONS/126-inicio-del-adulto-en-el-telefono.md)) va por la tanda 5 de 5; el orden está en la tarjeta.
+- **El adulto en el teléfono (MV2.30)**: los 6 tableros "Finko móvil · rediseño" de `Diseño Finko/`, uno por ADR y en tandas. Inicio cerrado ([ADR 126](DECISIONS/126-inicio-del-adulto-en-el-telefono.md)); sigue Gastos ("rediseño1"). El orden está en la tarjeta.
 - **Canvas móvil (MV2.3)**: aplicado completo ([ADR 116](DECISIONS/116-lo-que-faltaba-del-canvas-primera-tanda.md) a [123](DECISIONS/123-la-hoja-de-formulario-completa.md)) y publicado en `main` y producción (v658, 2026-11-04, a pedido y sin medir antes). **Lo que queda: MV2.28** en el tablero (anotar MV2.17 y medir fluidez y Lighthouse en producción).
 - **Fase actual:** post-v1.0, mantenimiento y mejoras por sección.
 - **Decisiones de fondo abiertas** que bloquean sus tarjetas: ninguna de ADN. La última era sincronización multidispositivo, cerrada el 2026-08-15 ([ADR 043](DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md), con su condición de reapertura escrita). Para el resto, ver la columna Estado de cada tarjeta del tablero.

@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(inicio): MV2.30 tanda 5, la barra de abajo; cierra el tablero de Inicio · 2026-11-05
+
+[ADR 126](DECISIONS/126-inicio-del-adulto-en-el-telefono.md) D7 y D8. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v669. Con esta tanda el tablero de Inicio quedó aplicado completo y su HTML (`Diseño Finko/Finko móvil · rediseño.html`) se borró: lo que queda manda el ADR 126.
+
+- **La sección activa** lleva una píldora de 56 × 32 detrás del ícono, en su color (el `::before` que era la barrita); la celda ya no se tiñe. Cambia el ADR 040 D5 y el activo del ADR 031.
+- **"Registrar"** es una píldora de acento plana, sin degradado, sombra ni salto.
+- **La barra** un tono más oscuro que la tarjeta, la receta de la barra del niño.
+- Solo CSS (`responsive.css`, bloque "ADR 126 D8"). Unitarios 5291/5291, lint y E2E 438/438 en árbol limpio.
+
 ### feat(inicio): MV2.30 tanda 4, las hojas "Pagos para hoy", "Registrar" y "Tu perfil" · 2026-11-05
 
 [ADR 126](DECISIONS/126-inicio-del-adulto-en-el-telefono.md) D6. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v668.
