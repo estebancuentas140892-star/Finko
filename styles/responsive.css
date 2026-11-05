@@ -3624,3 +3624,7 @@
   padding: calc(var(--fk-space-3) + env(safe-area-inset-top, 0px)) var(--fk-space-4) calc(var(--fk-space-6) + env(safe-area-inset-bottom, 0px));
   overflow: visible;
 }
+
+/* Familia: el monto de la mesada va en grande, como en el tablero (ADR 124
+   D10). La regla de 16 px de los campos en el teléfono vive en esta capa. */
+.familia-monto .input { font-size: 28px; font-weight: 750; }

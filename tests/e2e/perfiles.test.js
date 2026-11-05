@@ -92,10 +92,11 @@ test.describe('APR.3a - perfiles en el dispositivo', () => {
     await page.fill('#familia-pin2', '1234');
     await page.click('#form-familia-pin [type="submit"]');
     // Paso 2: la mesada (APR.3e). Se puede dejar para después.
-    await expect(modal).toContainText('Familia · paso 2 de 2');
+    await expect(modal).toContainText('Paso 2 de 2');
     await page.click('[data-action="familia-sin-mesada"]');
     await expect(modal).toHaveCount(0);
-    await expect(page.locator('#config-familia')).toContainText('Entrar como Sofía');
+    // ADR 124 D10: cada niño es una fila que abre su progreso.
+    await expect(page.locator('#config-familia')).toContainText('Sin mesada todavía');
     await expect.poll(async () => (await leerEstado(page)).perfiles?.map(p => p.nombre)).toEqual(['Sofía']);
     expect((await leerEstado(page)).config.bloqueo?.hash).toBeTruthy();
 
@@ -103,8 +104,9 @@ test.describe('APR.3a - perfiles en el dispositivo', () => {
     await expect(page.locator('#form-bloqueo-quitar')).toHaveCount(0);
     await expect(page.locator('#config-bloqueo-obligatorio')).toContainText('el candado es obligatorio');
 
-    // Entrar como Sofía desde Ajustes, sin PIN.
-    await page.click('[data-action="familia-entrar"]');
+    // Entrar como Sofía desde su progreso, sin PIN.
+    await page.click('#config-familia [data-action="familia-progreso"]');
+    await page.click('#modal-familia [data-action="familia-entrar"]');
     await expect(page.locator('#nino-main h1')).toHaveText('¡Hola, Sofía!');
   });
 
@@ -221,14 +223,16 @@ test.describe('APR.3e - el tutor en Ajustes, Familia', () => {
 
     await page.click('#config-familia [data-action="familia-progreso"]');
     const modal = page.locator('#modal-familia[data-open]');
-    await expect(modal).toContainText('Aún no tiene mesada.');
+    await expect(modal).toContainText('Aún no tiene mesada');
     await page.click('#modal-familia [data-action="familia-mesada"]');
-    await page.selectOption('#familia-dia', String(hoy.getDay()));
+    // El día va en botones (ADR 124 D10).
+    await modal.locator(`.familia-dias .familia-opcion:has(input[value="${hoy.getDay()}"])`).click();
+    await expect(modal).toContainText('Suma $20.000, igual que la mesada.');
     await page.click('#form-familia-mesada [type="submit"]');
-    await expect(modal).toContainText('Toca entregar la mesada');
+    await expect(modal.locator('[data-action="familia-entregada"]')).toContainText('Se la entregué');
 
     await page.click('#modal-familia [data-action="familia-entregada"]');
-    await expect(modal).toContainText('Al día.');
+    await expect(modal.locator('[data-action="familia-entregada"]')).toHaveCount(0);
     await expect.poll(async () => (await leerEstado(page)).gastos?.filter(g => g.categoria === 'Familia').length).toBe(1);
     const estado = await leerEstado(page);
     const gasto = estado.gastos.find(g => g.categoria === 'Familia');
@@ -239,7 +243,7 @@ test.describe('APR.3e - el tutor en Ajustes, Familia', () => {
     // El premio se activa con su tasa y el niño lo ve en su alcancía.
     await page.click('#modal-familia [data-action="familia-premio"]');
     await page.click('#form-familia-premio [type="submit"]');
-    await expect(modal).toContainText('Activo: le sumas $1 por cada $10');
+    await expect(modal.locator('.familia-datos')).toContainText('$1 por cada $10 ·');
     await page.click('#modal-familia [data-action="familia-entrar"]');
     await page.click('#nino-nav [data-vista="alcancia"]');
     await expect(page.locator('#nino-main')).toContainText('Tu mesada');

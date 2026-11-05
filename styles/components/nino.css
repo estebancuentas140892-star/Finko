@@ -221,13 +221,6 @@ body.kid .fk-toast { bottom: calc(var(--fk-kid-target) + var(--fk-space-8) + env
 }
 .quien-usa__nota .icon { flex-shrink: 0; color: var(--fk-text-accent); }
 
-/* Familia en Ajustes */
-.familia-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--fk-space-3); }
-.familia-nino { display: flex; align-items: center; gap: var(--fk-space-3); flex-wrap: wrap; }
-.familia-nino__datos { flex: 1; min-width: 8rem; }
-.familia-nino__nombre { margin: 0; font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
-.familia-nino__meta { margin: 0; font-size: var(--fk-text-sm); color: var(--fk-text-muted); }
-.familia-nino__acciones { display: flex; align-items: center; gap: var(--fk-space-2); }
 
 /* Alta del niño */
 .familia-alta { display: flex; flex-direction: column; gap: var(--fk-space-4); }
@@ -274,15 +267,6 @@ body.kid .fk-toast { bottom: calc(var(--fk-kid-target) + var(--fk-space-8) + env
 .familia-dibujo:has(input:checked) { border-color: var(--fk-accent); background: var(--fk-accent-subtle); color: var(--fk-text-accent); }
 .familia-dibujo:has(input:focus-visible) { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
 .familia-alta__otro { margin-top: var(--fk-space-2); }
-.familia-alta__ve {
-  padding: var(--fk-space-3) var(--fk-space-4);
-  border-radius: var(--fk-radius-lg);
-  background: var(--fk-bg-elevated);
-  font-size: var(--fk-text-sm);
-  color: var(--fk-text-secondary);
-}
-.familia-alta__ve p { margin: 0 0 var(--fk-space-1); }
-.familia-alta__ve-titulo { display: flex; align-items: center; gap: var(--fk-space-2); font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
 .familia-alta__candado { display: flex; align-items: flex-start; gap: var(--fk-space-2); }
 
 /* ── APP DEL NIÑO (APR.3c, ADR 093 D9) ───────────────────────────
@@ -926,59 +910,7 @@ body.kid .leccion-fb--nino.leccion-fb--bien { background: color-mix(in srgb, var
    Pantallas del tutor, en su tema adulto. */
 .familia-alta__titulo { margin: 0; font-size: var(--fk-text-lg); font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
 .familia-alta__titulo:focus { outline: none; }
-.familia-nino__aviso { color: var(--fk-warning-text); font-weight: var(--fk-font-semibold); }
-.familia-reparto { display: flex; flex-direction: column; gap: var(--fk-space-2); }
-.familia-reparto__fila {
-  display: grid;
-  grid-template-columns: 1fr 8rem;
-  align-items: center;
-  gap: var(--fk-space-3);
-  padding: var(--fk-space-2) var(--fk-space-3);
-  border-radius: var(--fk-radius-lg);
-  /* ADR 122 D4: el color del frasco va en el borde completo, no en un filete. */
-  border: 1px solid color-mix(in srgb, var(--d) 45%, transparent);
-  background: var(--fk-bg-elevated);
-}
-.familia-reparto__fila[data-frasco="ahorrar"]   { --d: var(--fk-dom-ahorro); }
-.familia-reparto__fila[data-frasco="gastar"]    { --d: var(--fk-dom-gastos); }
-.familia-reparto__fila[data-frasco="compartir"] { --d: var(--fk-dom-personales); }
-.familia-reparto__fila label { display: flex; flex-direction: column; gap: 2px; }
-.familia-reparto__fila label span { font-size: var(--fk-text-sm); color: var(--fk-text-muted); }
-.familia-interruptor { display: flex; align-items: flex-start; gap: var(--fk-space-3); cursor: pointer; }
-.familia-interruptor input { width: 1.25rem; height: 1.25rem; margin-top: 2px; accent-color: var(--fk-accent); flex-shrink: 0; }
-.familia-interruptor > span { display: flex; flex-direction: column; gap: 2px; }
-.familia-interruptor > span > span { font-size: var(--fk-text-sm); color: var(--fk-text-muted); }
-.familia-tasas { display: flex; flex-direction: column; gap: var(--fk-space-2); }
-.familia-tasa span {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--fk-space-3);
-  min-height: 2.75rem;
-  align-items: center;
-  padding: 0 var(--fk-space-4);
-  border-radius: var(--fk-radius-lg);
-  border: 1.5px solid var(--fk-border-default);
-  background: var(--fk-bg-surface);
-  color: var(--fk-text-secondary);
-  cursor: pointer;
-}
-.familia-tasa input:checked + span { border-color: var(--fk-accent); background: var(--fk-accent-subtle); color: var(--fk-text-accent); }
-.familia-tasa input:focus-visible + span { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
 .familia-premio__resumen { margin: 0; padding: var(--fk-space-3) var(--fk-space-4); border-radius: var(--fk-radius-lg); background: var(--fk-bg-elevated); color: var(--fk-text-primary); }
-.familia-progreso { display: flex; flex-direction: column; gap: var(--fk-space-3); }
-.familia-progreso__bloque {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--fk-space-2);
-  padding: var(--fk-space-3) var(--fk-space-4);
-  border-radius: var(--fk-radius-lg);
-  border: 1px solid var(--fk-border-subtle);
-  background: var(--fk-bg-surface);
-}
-.familia-progreso__bloque h4 { margin: 0; font-size: var(--fk-text-base); color: var(--fk-text-primary); }
-.familia-progreso__bloque p { margin: 0; color: var(--fk-text-secondary); }
-.familia-progreso__bloque .familia-progreso__aviso { color: var(--fk-text-primary); font-weight: var(--fk-font-semibold); }
 .familia-progreso__lista { list-style: none; margin: 0; padding: 0; width: 100%; display: flex; flex-direction: column; gap: var(--fk-space-2); }
 .familia-progreso__lista li { display: flex; justify-content: space-between; gap: var(--fk-space-3); color: var(--fk-text-secondary); }
 .familia-progreso__fecha { flex-shrink: 0; font-size: var(--fk-text-sm); color: var(--fk-text-muted); }
@@ -1071,4 +1003,174 @@ body.kid .leccion-fb--nino.leccion-fb--bien { background: color-mix(in srgb, var
 }
 @media (max-width: 767px) {
   .nino-main { padding-top: calc(var(--fk-space-3) + env(safe-area-inset-top, 0px)); }
+}
+
+/* ── FAMILIA EN AJUSTES Y SUS HOJAS (ADR 124 D10) ────────────────
+   Pantallas del tutor, en su tema adulto: cada niño es una fila que abre
+   su progreso, y las hojas siguen la anatomía del ADR 123 (teja, título,
+   línea, pie fijo). */
+.familia-intro { margin: 0; padding: var(--fk-space-3) 4px 10px; font-size: var(--fk-text-sm); line-height: 1.43; color: var(--fk-text-secondary); text-wrap: pretty; }
+.familia-lista { list-style: none; margin: 0; padding: 0; border-radius: var(--fk-radius-lg); border: 1px solid var(--fk-border-subtle); background: color-mix(in srgb, var(--fk-text-primary) 3%, transparent); overflow: hidden; }
+.familia-nino { display: flex; flex-direction: column; padding: 6px 8px 6px 12px; }
+.familia-nino + .familia-nino { border-top: 1px solid var(--fk-border-subtle); }
+.familia-nino__abrir { display: flex; align-items: center; gap: var(--fk-space-3); width: 100%; min-height: 64px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.kidav--familia { width: 44px; height: 44px; border-radius: 14px; border-color: var(--d); background: var(--fk-bg-elevated); }
+.familia-nino__datos { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.familia-nino__nombre { font-size: 15px; line-height: 1.33; font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
+.familia-nino__meta,
+.familia-nino__estado { font-size: 13px; line-height: 1.38; color: var(--fk-text-secondary); }
+.familia-nino__estado--aviso { color: var(--fk-warning-text); font-weight: var(--fk-font-medium); }
+.familia-nino__entregar { padding: 0 0 var(--fk-space-2) 56px; }
+.familia-pildora,
+.familia-boton-acento,
+.familia-agregar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid color-mix(in srgb, var(--fk-accent) 40%, transparent);
+  background: color-mix(in srgb, var(--fk-accent) 12%, transparent);
+  color: var(--fk-text-accent);
+  font: inherit;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.familia-pildora { min-height: 44px; padding: 0 14px; border-radius: 22px; font-size: var(--fk-text-sm); }
+.familia-pildora .icon { width: 16px; height: 16px; }
+.familia-boton-acento,
+.familia-agregar { width: 100%; min-height: 48px; padding: 0 var(--fk-space-4); border-radius: 14px; font-size: 15px; }
+.familia-agregar { margin-top: var(--fk-space-3); }
+.familia-boton-acento { margin-top: var(--fk-space-3); }
+.familia-boton-acento:disabled { opacity: 0.5; cursor: default; }
+
+/* La cabecera de las hojas: teja (el dibujo del niño o un ícono), título y
+   una línea debajo. */
+.familia-cabeza { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.familia-cabeza__sub { margin: 0; font-size: 13px; line-height: 1.38; color: var(--fk-text-secondary); }
+.modal__teja.familia-cabeza__teja { width: auto; height: auto; padding: 0; background: none; }
+.familia-cabeza__teja .kidav--familia { width: 40px; height: 40px; border-radius: 12px; }
+.familia-teja-icono { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: color-mix(in srgb, var(--fk-dom-inversion) 16%, transparent); color: var(--fk-dom-inversion-text); }
+.familia-pie { display: flex; align-items: center; gap: var(--fk-space-3); }
+.familia-pie .btn-primary { flex: 1; justify-content: center; }
+.familia-alta__texto { margin: 0; font-size: var(--fk-text-sm); line-height: 1.43; color: var(--fk-text-secondary); text-wrap: pretty; }
+
+/* Agregar un niño: edades en cuadros, dibujos en su color, qué verá. */
+.familia-edades { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.familia-dias { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.familia-opcion--cuadro span { width: 100%; min-width: 0; padding: 0 4px; border-radius: 12px; font-size: var(--fk-text-sm); }
+.familia-dibujo { aspect-ratio: 1; justify-content: center; border-radius: 14px; }
+.familia-dibujo:has(input:checked) { border-color: var(--d, var(--fk-accent)); background: color-mix(in srgb, var(--d, var(--fk-accent)) 14%, var(--fk-bg-surface)); }
+.familia-alta__ve { margin: 0; display: flex; align-items: flex-start; gap: 10px; padding: var(--fk-space-3) 14px; border-radius: 14px; border: 1px solid var(--fk-border-subtle); background: color-mix(in srgb, var(--fk-text-primary) 3%, transparent); font-size: 13px; line-height: 1.45; color: var(--fk-text-secondary); }
+.familia-alta__ve strong { color: var(--fk-text-primary); }
+.familia-alta__ve .icon { flex-shrink: 0; width: 18px; height: 18px; color: var(--fk-text-accent); }
+
+/* La mesada: el monto en grande, la frecuencia en un segmento, el reparto
+   con su barra de color y la suma que se rehace, y dos interruptores. */
+.familia-monto { display: flex; align-items: center; gap: 6px; min-height: 64px; padding: 0 var(--fk-space-4); border-radius: var(--fk-radius-lg); border: 2px solid var(--fk-border-default); background: var(--fk-bg-elevated); }
+.familia-monto:focus-within { border-color: var(--fk-accent); }
+.familia-monto > span { font-size: 24px; font-weight: var(--fk-font-bold); color: var(--fk-text-secondary); }
+.familia-monto .input,
+.familia-reparto__campo .input { flex: 1; min-width: 0; min-height: 0; padding: 0; border: 0; background: transparent; box-shadow: none; }
+.familia-monto .input { min-height: 56px; font-size: 28px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.familia-segmento { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: var(--fk-radius-lg); border: 1px solid var(--fk-border-subtle); background: color-mix(in srgb, var(--fk-text-primary) 3%, transparent); }
+.familia-segmento__op span { display: grid; place-items: center; min-height: 44px; padding: 0 4px; border-radius: 12px; font-size: var(--fk-text-sm); font-weight: var(--fk-font-medium); color: var(--fk-text-secondary); text-align: center; cursor: pointer; }
+.familia-segmento__op input:checked + span { background: var(--fk-bg-elevated); color: var(--fk-text-primary); font-weight: 650; }
+.familia-segmento__op input:focus-visible + span { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
+.familia-reparto { list-style: none; display: flex; flex-direction: column; border-radius: var(--fk-radius-lg); border: 1px solid var(--fk-border-subtle); background: color-mix(in srgb, var(--fk-text-primary) 3%, transparent); overflow: hidden; }
+.familia-reparto__fila { display: flex; align-items: center; gap: var(--fk-space-3); padding: var(--fk-space-2) var(--fk-space-2) var(--fk-space-2) var(--fk-space-3); }
+.familia-reparto__fila + .familia-reparto__fila { border-top: 1px solid var(--fk-border-subtle); }
+.familia-reparto__fila[data-frasco="ahorrar"]   { --d: var(--fk-dom-ahorro); }
+.familia-reparto__fila[data-frasco="gastar"]    { --d: var(--fk-dom-gastos); }
+.familia-reparto__fila[data-frasco="compartir"] { --d: var(--fk-dom-personales); }
+.familia-reparto__barra { flex: none; width: 10px; height: 36px; border-radius: 5px; background: var(--d); }
+.familia-reparto__fila label { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.familia-reparto__fila strong { font-size: 15px; font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
+.familia-reparto__pct { font-size: 13px; color: var(--fk-text-secondary); font-variant-numeric: tabular-nums; }
+.familia-reparto__campo { display: flex; align-items: center; gap: 4px; width: 7.5rem; min-height: 44px; padding: 0 var(--fk-space-3); border-radius: 12px; border: 1px solid var(--fk-border-default); background: var(--fk-bg-elevated); color: var(--fk-text-secondary); }
+.familia-reparto__campo:focus-within { border-color: var(--fk-accent); }
+.familia-reparto__campo .input { font-size: var(--fk-text-base); font-weight: 650; text-align: right; font-variant-numeric: tabular-nums; }
+.familia-suma { margin: 0; display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.familia-suma .icon { width: 16px; height: 16px; flex-shrink: 0; }
+.familia-suma--ok { display: contents; color: var(--fk-success-text); }
+.familia-suma--mal { display: contents; color: var(--fk-warning-text); }
+.familia-suma:has(.familia-suma--ok) { color: var(--fk-success-text); }
+.familia-suma:has(.familia-suma--mal) { color: var(--fk-warning-text); }
+.familia-interruptor { display: flex; align-items: center; justify-content: space-between; gap: var(--fk-space-3); padding-top: var(--fk-space-3); border-top: 1px solid var(--fk-border-subtle); cursor: pointer; }
+.familia-interruptor + .familia-interruptor { border-top: 0; padding-top: 0; }
+.familia-interruptor > span { display: flex; flex-direction: column; gap: 2px; }
+.familia-interruptor > span > span { font-size: 13px; color: var(--fk-text-secondary); }
+.familia-interruptor input[role="switch"] {
+  flex-shrink: 0;
+  position: relative;
+  width: 44px;
+  height: 26px;
+  margin: 0;
+  border-radius: 13px;
+  border: 1px solid var(--fk-border-default);
+  background: var(--fk-bg-elevated);
+  appearance: none;
+  cursor: pointer;
+  transition: background-color var(--fk-transition-fast);
+}
+.familia-interruptor input[role="switch"]::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--fk-text-secondary);
+  transition: transform var(--fk-transition-fast);
+}
+.familia-interruptor input[role="switch"]:checked { border-color: var(--fk-accent); background: var(--fk-accent); }
+.familia-interruptor input[role="switch"]:checked::before { background: var(--fk-bg-base); transform: translateX(18px); }
+.familia-cuenta[hidden] { display: none; }
+
+/* El premio: tres tasas con lo que hoy serían y la verdad sobre el interés. */
+.familia-tasas { display: flex; flex-direction: column; gap: var(--fk-space-2); }
+.familia-tasa span { display: flex; align-items: center; gap: var(--fk-space-3); min-height: 56px; padding: 0 var(--fk-space-4); border-radius: var(--fk-radius-lg); border: 1.5px solid var(--fk-border-default); background: var(--fk-bg-surface); cursor: pointer; }
+.familia-tasa strong { flex: 1; font-size: 15px; font-weight: 650; color: var(--fk-text-primary); }
+.familia-tasa em { font-style: normal; font-size: 13px; color: var(--fk-text-secondary); }
+.familia-tasa b { font-weight: 650; color: var(--fk-text-primary); font-variant-numeric: tabular-nums; }
+.familia-tasa__radio { flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--fk-border-default); }
+.familia-tasa input:checked + span { border-color: var(--fk-accent); background: color-mix(in srgb, var(--fk-accent) 10%, var(--fk-bg-surface)); }
+.familia-tasa input:checked + span .familia-tasa__radio { border-color: var(--fk-accent); box-shadow: inset 0 0 0 4px var(--fk-bg-surface), inset 0 0 0 10px var(--fk-accent); }
+.familia-tasa input:focus-visible + span { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
+.familia-nota { margin: 0; display: flex; align-items: flex-start; gap: 10px; padding: var(--fk-space-3) 14px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--fk-info) 30%, transparent); background: color-mix(in srgb, var(--fk-info) 8%, transparent); font-size: 13px; line-height: 1.45; color: var(--fk-text-secondary); }
+.familia-nota .icon { flex-shrink: 0; width: 18px; height: 18px; color: var(--fk-info-text); }
+
+/* El progreso del niño: avisos arriba, sus datos en filas, qué cambiar y,
+   al pie, entrar como él o quitarlo. */
+.familia-progreso { display: flex; flex-direction: column; gap: var(--fk-space-4); }
+.familia-aviso { padding: 14px; border-radius: var(--fk-radius-lg); border: 1px solid color-mix(in srgb, var(--fk-warning) 30%, transparent); background: color-mix(in srgb, var(--fk-warning) 8%, transparent); }
+.familia-aviso__titulo { margin: 0; font-size: 15px; line-height: 1.45; font-weight: 650; color: var(--fk-text-primary); font-variant-numeric: tabular-nums; }
+.familia-aviso__texto { margin: 2px 0 0; font-size: 13px; line-height: 1.38; color: var(--fk-text-secondary); text-wrap: pretty; }
+.familia-datos,
+.familia-acciones { list-style: none; margin: 0; padding: 0; border-radius: var(--fk-radius-lg); border: 1px solid var(--fk-border-subtle); background: color-mix(in srgb, var(--fk-text-primary) 3%, transparent); overflow: hidden; }
+.familia-datos li { display: flex; align-items: baseline; justify-content: space-between; gap: var(--fk-space-4); padding: var(--fk-space-3) var(--fk-space-4); }
+.familia-datos li + li,
+.familia-acciones li + li { border-top: 1px solid var(--fk-border-subtle); }
+.familia-datos span { flex: none; font-size: var(--fk-text-sm); color: var(--fk-text-secondary); }
+.familia-datos strong { min-width: 0; text-align: right; font-size: var(--fk-text-sm); font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); font-variant-numeric: tabular-nums; }
+.familia-semana h4 { margin: 0 0 var(--fk-space-2); font-size: var(--fk-text-sm); font-weight: var(--fk-font-semibold); color: var(--fk-text-secondary); }
+.familia-accion { display: flex; align-items: center; gap: var(--fk-space-3); width: 100%; min-height: 56px; padding: var(--fk-space-2) var(--fk-space-3); border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.familia-accion__teja { display: grid; place-items: center; flex-shrink: 0; width: 32px; height: 32px; border-radius: 11px; background: color-mix(in srgb, var(--fk-text-primary) 6%, transparent); color: var(--fk-text-secondary); }
+.familia-accion__teja .icon { width: 18px; height: 18px; }
+.familia-accion__textos { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.familia-accion__titulo { font-size: 15px; font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
+.familia-accion__sub { font-size: 13px; color: var(--fk-text-secondary); }
+.familia-accion > .icon { flex-shrink: 0; width: 18px; height: 18px; color: var(--fk-text-muted); }
+.familia-quitar { display: flex; flex-direction: column; align-items: center; padding-top: var(--fk-space-2); border-top: 1px solid var(--fk-border-subtle); text-align: center; }
+.familia-quitar__boton { display: flex; align-items: center; gap: var(--fk-space-2); min-height: 44px; padding: 0 var(--fk-space-4); border: 0; background: none; color: var(--fk-danger-text); font: inherit; font-size: 15px; font-weight: var(--fk-font-semibold); cursor: pointer; }
+.familia-quitar__boton .icon { width: 18px; height: 18px; }
+.familia-quitar p { margin: 0; font-size: 13px; color: var(--fk-text-muted); }
+.familia-progreso__lista { font-size: var(--fk-text-sm); }
+/* A 320 una fila de datos que no cabe baja su cifra a la línea siguiente, y
+   los días van de a tres para que "Miércoles" no se salga de su botón. */
+.familia-datos li { flex-wrap: wrap; }
+.familia-datos strong { margin-left: auto; }
+@media (max-width: 359px) {
+  .familia-dias { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }

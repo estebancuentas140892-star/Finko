@@ -9,7 +9,7 @@ import {
   repartoPorDefecto, validarMesada, ultimaMesadaDebida, proximaMesada, mesadaPendiente,
   guardadoTodoElMes, montoPremio, premioPendiente, proximoPremio, mesAnterior, textoFrecuencia,
 } from '../../modules/infra/mesada.js';
-import { htmlMesada, htmlPremio, htmlProgresoNino, opcionesDia } from '../../modules/dominio/config/familia-view.js';
+import { htmlMesada, htmlPremio, htmlProgresoNino, opcionesDia, htmlDiaMesada, htmlSumaReparto } from '../../modules/dominio/config/familia-view.js';
 import { normalizarPerfil } from '../../modules/infra/perfiles.js';
 
 // 2026-10-24 es sábado (6); 2026-10-25, domingo.
@@ -57,9 +57,16 @@ describe('la mesada (D2, D3)', () => {
   it('el formulario cambia los días según la frecuencia', () => {
     expect(opcionesDia('mensual', 5).match(/<option/g)).toHaveLength(28);
     expect(opcionesDia('semanal', 6)).toContain('<option value="6" selected>Sábado</option>');
+    // Cada semana o cada 15 días, los siete días en botones; cada mes, la lista (ADR 124 D10).
+    expect(htmlDiaMesada('semanal', 6).match(/name="dia"/g)).toHaveLength(7);
+    expect(htmlDiaMesada('semanal', 6)).toMatch(/value="6" checked/);
+    expect(htmlDiaMesada('mensual', 5)).toContain('<select id="familia-dia"');
     const html = htmlMesada({ nombre: 'Sofía', cuentas: [{ id: 'c1', nombre: 'Nequi' }] });
-    expect(html).toContain('Familia · paso 2 de 2');
-    expect(html).toContain('Sofía puede mover dinero entre frascos');
+    expect(html).toContain('Paso 2 de 2');
+    expect(html).toContain('Puede mover dinero entre sus frascos');
+    expect(html).toContain('50% de la mesada');
+    expect(html).toContain('Suma $20.000, igual que la mesada.');
+    expect(htmlSumaReparto({ ahorrar: 5_000, gastar: 4_000, compartir: 0 }, 10_000)).toContain('Suma $9.000 y la mesada es $10.000');
     expect(html).toContain('Finko no mueve dinero: tú se la entregas y aquí queda anotada.');
     expect(html).toContain('value="10.000"');
   });
@@ -100,9 +107,9 @@ describe('el premio por ahorrar (D4)', () => {
     const p = nino([{ frasco: 'ahorrar', monto: 27_000, fecha: '2026-10-01' }], null);
     expect(proximoPremio(p, '2026-10-25', '1x10')).toEqual({ fechaISO: '2026-11-01', monto: 2_700, ahorrado: 27_000 });
     const html = htmlPremio(p, '2026-10-25');
-    expect(html).toContain('hoy: $2.700');
+    expect(html).toContain('hoy serían <b>$2.700</b>');
     expect(html).toContain('le sumas <strong>$2.700</strong>');
-    expect(html).toContain('Solo sobre lo que guardó todo el mes.');
+    expect(html).toContain('Solo cuenta lo que guardó todo el mes.');
     expect(html).toContain('Activar el premio');
   });
 });
@@ -114,8 +121,11 @@ describe('el progreso del niño para el tutor (D2)', () => {
       movimientos: [{ frasco: 'gastar', monto: -3_000, tipo: 'gaste', nota: 'un helado', fecha: '2026-10-23' }],
     });
     const html = htmlProgresoNino(p, '2026-10-25');
-    expect(html).toContain('Toca entregar la mesada del sábado, 24 de octubre: $20.000.');
+    expect(html).toContain('Mesada del sábado 24 de oct: $20.000');
     expect(html).toContain('data-action="familia-entregada"');
+    expect(html).toContain('Ahorrar · Gastar · Compartir');
+    expect(html).toContain('Quitar a Sofía de Finko');
+    expect(html).toContain('data-action="nube-vincular-nino"');
     expect(html).toContain('Gastó $3.000 en un helado');
     expect(html).toContain('Entrar como Sofía');
   });

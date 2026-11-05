@@ -147,20 +147,26 @@ describe('"Olvidé mi PIN" con y sin niños (P1)', () => {
 });
 
 describe('Familia en Ajustes (D2)', () => {
-  it('sin niños invita a agregar uno; con niños los lista con "Entrar como"', () => {
+  it('sin niños invita a agregar uno; con niños, cada uno es una fila que abre su progreso (ADR 124 D10)', () => {
     expect(htmlFamilia([])).toContain('Agregar un niño');
     const html = htmlFamilia([normalizarPerfil(SOFIA)]);
-    expect(html).toContain('Entrar como Sofía');
+    expect(html).toContain('aria-label="Ver el progreso de Sofía"');
     expect(html).toContain('8 años · te dice Papá');
-    expect(html).toContain('aria-label="Eliminar el perfil de Sofía"');
+    expect(html).toContain('Sin mesada todavía');
     expect(html).toContain('Agregar otro niño');
+    // Con la mesada por entregar, "Se la entregué" va en la fila.
+    const conMesada = normalizarPerfil({ ...SOFIA, mesada: { monto: 10_000, frecuencia: 'semanal', dia: 6, desde: '2026-10-01', reparto: { ahorrar: 5_000, gastar: 4_000, compartir: 1_000 }, entregas: [] } });
+    const pendiente = htmlFamilia([conMesada], '2026-11-07');
+    expect(pendiente).toContain('Mesada del sábado por entregar');
+    expect(pendiente).toContain('Se la entregué · $10.000');
   });
 
   it('el alta ofrece edades de 7 a 12, los ocho dibujos y dice qué verá el niño', () => {
     const html = htmlAltaNino({ candado: true });
     expect(html.match(/name="edad"/g)).toHaveLength(6);
     expect(html.match(/name="dibujo"/g)).toHaveLength(8);
-    expect(html).toContain('Nada tuyo: ni cuentas, ni deudas, ni tarjetas, ni impuestos.');
+    expect(html).toContain('No verá tus cuentas, deudas, tarjetas ni impuestos.');
+    expect(html).toContain('Siguiente: su mesada');
     expect(html).not.toContain('Aún no tienes candado');
   });
 

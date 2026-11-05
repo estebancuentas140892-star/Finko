@@ -314,7 +314,8 @@ test.describe('NUBE - cuenta y sincronización entre dispositivos', () => {
     await entrar(padre, { navegar: false });
     await expect.poll(() => nube.fila('perfiles', 'n-sofi')?.datos?.nombre).toBe('Sofía');
 
-    // "Su teléfono": autoriza y recibe el código.
+    // "Su teléfono": vive en el progreso del niño (ADR 124 D10); autoriza y recibe el código.
+    await padre.click('[data-action="familia-progreso"][data-id="n-sofi"]');
     await padre.click('[data-action="nube-vincular-nino"][data-id="n-sofi"]');
     await padre.click('#form-nube-vincular [type="submit"]');
     await expect(padre.locator('#modal-familia [role="alert"]')).toContainText('Marca las dos casillas');
@@ -362,6 +363,7 @@ test.describe('NUBE - cuenta y sincronización entre dispositivos', () => {
     expect((await leerEstado(nino)).perfiles[0].movimientos.map(m => m.id)).toEqual(['m-tel']);
 
     // El padre desvincula: el teléfono deja de sincronizar y lo dice.
+    await padre.click('[data-action="familia-progreso"][data-id="n-sofi"]');
     await padre.click('[data-action="nube-vincular-nino"][data-id="n-sofi"]');
     await padre.click('[data-action="nube-desvincular-nino"]');
     await padre.locator('[data-role="confirmar"]').first().click();

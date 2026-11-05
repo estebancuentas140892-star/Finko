@@ -440,6 +440,10 @@ function _pintarVinculo() {
   if (!nino || !modal || !cuerpo) return;
   const titulo = document.getElementById('modal-familia-title');
   if (titulo) titulo.textContent = `Su teléfono: ${nino.nombre}`;
+  for (const id of ['modal-familia-sub', 'modal-familia-teja']) {
+    const el = document.getElementById(id);
+    if (el) el.hidden = true;
+  }
   cuerpo.innerHTML = htmlVincularNino({
     nino, sesion: Boolean(leerSesion()), paso: _vinc.paso, codigo: _vinc.codigo,
     vinculos: _vinc.vinculos.filter(v => v.nino_id === nino.id), error: _vinc.error, ocupado: _vinc.ocupado,

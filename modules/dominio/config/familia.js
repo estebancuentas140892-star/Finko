@@ -32,8 +32,10 @@ import {
 } from '../../infra/mesada.js';
 import { candadoActivo, validarPin, crearBloqueo, limpiarFallos } from './bloqueo.js';
 import {
-  htmlAltaNino, htmlAltaPin, htmlMesada, htmlPremio, htmlProgresoNino, opcionesDia, fechaCorta,
+  htmlAltaNino, htmlAltaPin, htmlMesada, htmlPremio, htmlProgresoNino, avatarFamilia,
+  htmlDiaMesada, htmlSumaReparto, porcentajesReparto, htmlResumenPremio,
 } from './familia-view.js';
+import { icon } from '../../infra/icons.js';
 
 const _modal = () => document.getElementById('modal-familia');
 const _cuerpo = () => document.getElementById('modal-familia-body');
@@ -60,14 +62,29 @@ const _nino = (id = _idActual) => ninos().find(p => p.id === id) ?? null;
 /** Monto en pesos a partir de lo que escribe el tutor ("20.000" → 20000). */
 const _monto = (texto) => Number(String(texto ?? '').replace(/\D/g, '')) || 0;
 
-/** Pinta una pantalla del modal Familia con su título y abre el modal. */
-function _pintar(titulo, html, foco) {
+/**
+ * Pinta una pantalla del modal Familia y lo abre. La cabecera lleva el
+ * título, una línea debajo y la teja (el dibujo del niño o un ícono), como
+ * las demás hojas (ADR 123 D1, ADR 124 D10).
+ *
+ * @param {string} titulo
+ * @param {string} html
+ * @param {string} foco
+ * @param {{ sub?: string, teja?: string }} [cabeza]
+ */
+function _pintar(titulo, html, foco, { sub = '', teja = '' } = {}) {
   const modal = _modal();
   const cuerpo = _cuerpo();
   if (!modal || !cuerpo) return;
   const t = document.getElementById('modal-familia-title');
   if (t) t.textContent = titulo;
+  const s = document.getElementById('modal-familia-sub');
+  if (s) { s.textContent = sub; s.hidden = !sub; }
+  const tj = document.getElementById('modal-familia-teja');
+  if (tj) { tj.innerHTML = teja; tj.hidden = !teja; }
   cuerpo.innerHTML = html;
+  // Cada pantalla empieza arriba: la anterior pudo quedar desplazada.
+  cuerpo.scrollTop = 0;
   if (!('open' in modal.dataset)) abrirModal(modal);
   cuerpo.querySelector(foco)?.focus({ preventScroll: true });
 }
@@ -90,7 +107,8 @@ function _guardarNino(id, cambio) {
 /** Abre el alta del niño en su paso 1. */
 export function abrirAlta() {
   _pendiente = null;
-  _pintar('Agregar un niño', htmlAltaNino({ candado: candadoActivo(S.config?.bloqueo) }), '#familia-nombre');
+  _pintar('Agregar un niño', htmlAltaNino({ candado: candadoActivo(S.config?.bloqueo) }), '#familia-nombre',
+    { sub: 'Paso 1 de 2 · después, su mesada' });
 }
 
 /** Guarda el niño ya validado y sigue con su mesada (paso 2). */
@@ -104,7 +122,8 @@ function _guardarAlta(datos) {
   announce(`Perfil de ${perfil.nombre} creado.`);
   _idActual = perfil.id;
   _esAlta = true;
-  _pintar(`Mesada de ${perfil.nombre}`, htmlMesada({ nombre: perfil.nombre, cuentas: S.cuentas, paso2: true }), '.familia-alta__titulo');
+  _pintar(`Mesada de ${perfil.nombre}`, htmlMesada({ nombre: perfil.nombre, cuentas: S.cuentas, paso2: true }), '.familia-alta__titulo',
+    { sub: 'Paso 2 de 2', teja: avatarFamilia(perfil) });
 }
 
 /** Paso 1: quién es el niño. Sin candado, el siguiente paso es crear el PIN. */
@@ -126,7 +145,7 @@ function _enviarDatos(form) {
     return;
   }
   _pendiente = datos;
-  _pintar('Agregar un niño', htmlAltaPin(datos.nombre), '#familia-pin');
+  _pintar('Agregar un niño', htmlAltaPin(datos.nombre), '#familia-pin', { sub: 'Tu candado' });
 }
 
 /** Paso del PIN: lo crea y recién ahí guarda al niño. */
@@ -156,7 +175,8 @@ function _abrirMesada(el) {
   if (!p) return;
   _idActual = p.id;
   _esAlta = false;
-  _pintar(`Mesada de ${p.nombre}`, htmlMesada({ nombre: p.nombre, mesada: p.mesada, cuentas: S.cuentas, paso2: false }), '.familia-alta__titulo');
+  _pintar(`Mesada de ${p.nombre}`, htmlMesada({ nombre: p.nombre, mesada: p.mesada, cuentas: S.cuentas, paso2: false }), '.familia-alta__titulo',
+    { sub: 'Familia', teja: avatarFamilia(p) });
 }
 
 function _enviarMesada(form) {
@@ -194,11 +214,37 @@ function _enviarMesada(form) {
   _abrirProgreso({ dataset: { id: p.id } });
 }
 
-/** Al cambiar el monto, el reparto por defecto lo sigue mientras nadie lo toque. */
+/** Lo que dicen los porcentajes y la suma del reparto, con lo escrito ahora. */
+function _reflejarReparto(form) {
+  const monto = _monto(/** @type {HTMLInputElement|null} */ (form.querySelector('[name="monto"]'))?.value);
+  const reparto = Object.fromEntries(['ahorrar', 'gastar', 'compartir'].map(k =>
+    [k, _monto(/** @type {HTMLInputElement|null} */ (form.querySelector(`[name="reparto-${k}"]`))?.value)]));
+  const pct = porcentajesReparto(reparto, monto);
+  for (const k of Object.keys(pct)) {
+    const el = form.querySelector(`[data-pct="${k}"]`);
+    if (el) el.textContent = pct[k];
+  }
+  const suma = document.getElementById('familia-suma');
+  if (suma) suma.innerHTML = htmlSumaReparto(reparto, monto);
+}
+
+/**
+ * Mientras el tutor escribe la mesada: el reparto por defecto sigue al monto
+ * hasta que alguien lo toque, los porcentajes y la suma se rehacen, el día
+ * cambia de forma con la frecuencia y la cuenta aparece solo si se anota
+ * como gasto (ADR 124 D10).
+ */
 function _onInputMesada(e) {
   const t = /** @type {HTMLInputElement} */ (e.target);
   const form = t.closest?.('#form-familia-mesada');
-  if (!form) return;
+  if (!form) {
+    if (t.name === 'tasa') {
+      const p = _nino();
+      const r = document.getElementById('familia-premio-resumen');
+      if (p && r) r.innerHTML = htmlResumenPremio(proximoPremio(p, hoy(), t.value));
+    }
+    return;
+  }
   if (t.name?.startsWith('reparto-')) {
     form.dataset.repartoEditado = '1';
   } else if (t.name === 'monto' && !form.dataset.repartoEditado) {
@@ -207,17 +253,14 @@ function _onInputMesada(e) {
       const campo = /** @type {HTMLInputElement|null} */ (form.querySelector(`[name="reparto-${k}"]`));
       if (campo) campo.value = r[k].toLocaleString('es-CO');
     }
-  } else if (t.name === 'frecuencia') {
-    const sel = form.querySelector('[name="dia"]');
-    if (sel) sel.innerHTML = opcionesDia(t.value, t.value === 'mensual' ? 1 : 6);
-  } else if (t.name === 'tasa') {
-    const p = _nino();
-    const r = document.getElementById('familia-premio-resumen');
-    if (p && r) {
-      const prox = proximoPremio(p, hoy(), t.value);
-      r.innerHTML = `Con lo que tiene en Ahorrar (${f(prox.ahorrado)}), el ${fechaCorta(prox.fechaISO)} le sumas <strong>${f(prox.monto)}</strong>.`;
-    }
+  } else if (t.name === 'frecuencia' && e.type === 'change') {
+    const caja = document.getElementById('familia-dia-opciones');
+    if (caja) caja.innerHTML = htmlDiaMesada(t.value, t.value === 'mensual' ? 1 : 6);
+  } else if (t.name === 'anotarGasto') {
+    const cuenta = /** @type {HTMLElement|null} */ (form.querySelector('.familia-cuenta'));
+    if (cuenta) cuenta.hidden = !t.checked;
   }
+  if (t.name === 'monto' || t.name?.startsWith('reparto-')) _reflejarReparto(form);
 }
 
 /**
@@ -248,7 +291,10 @@ function _entregada(el) {
     });
   }
   announce(`Mesada anotada: ${f(p.mesada.monto)} en los frascos de ${p.nombre}.`);
-  _abrirProgreso({ dataset: { id: p.id } });
+  // Desde la fila de Ajustes no se abre nada: el aviso basta (ADR 124 D10).
+  const modal = _modal();
+  if (modal && 'open' in modal.dataset) _abrirProgreso({ dataset: { id: p.id } });
+  else mostrarToast({ titulo: 'Mesada anotada', detalle: `${f(p.mesada.monto)} en los frascos de ${p.nombre}.` });
 }
 
 // ── PREMIO POR AHORRAR (D4) ──────────────────────────────────────
@@ -257,7 +303,8 @@ function _abrirPremio(el) {
   const p = _nino(el?.dataset?.id ?? _idActual);
   if (!p) return;
   _idActual = p.id;
-  _pintar('Premio por ahorrar', htmlPremio(p, hoy()), '.familia-alta__titulo');
+  _pintar('Premio por ahorrar', htmlPremio(p, hoy()), '.familia-alta__titulo',
+    { sub: p.nombre, teja: `<span class="familia-teja-icono">${icon('trending-up')}</span>` });
 }
 
 function _enviarPremio(form) {
@@ -316,7 +363,8 @@ function _abrirProgreso(el) {
   const p = _nino(el?.dataset?.id);
   if (!p) return;
   _idActual = p.id;
-  _pintar(`Progreso de ${p.nombre}`, htmlProgresoNino(p, hoy()), '.familia-alta__titulo');
+  _pintar(p.nombre, htmlProgresoNino(p, hoy()), '.familia-alta__titulo',
+    { sub: `${p.edad} años · te dice ${p.teNombra}`, teja: avatarFamilia(p) });
 }
 
 // ── ENTRAR Y ELIMINAR ────────────────────────────────────────────

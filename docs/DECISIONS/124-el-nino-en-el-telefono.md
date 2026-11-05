@@ -1,6 +1,6 @@
 # ADR 124 - El niño en el teléfono
 
-**Estado:** Aceptada (2026-11-05). Tandas 1 (la barra, Inicio, la Alcancía y Yo), 2 (Aprender y la lección), 3 (las hojas) y 4 (la primera vez y "¿Quién usa Finko?") aplicadas; la quinta se suma como adenda.
+**Estado:** Aceptada (2026-11-05). Aplicada completa en cinco tandas: la barra, Inicio, la Alcancía y Yo (1); Aprender y la lección (2); las hojas (3); la primera vez y "¿Quién usa Finko?" (4); Familia del adulto y sus hojas (5). El tablero de diseño se borró al cerrar la quinta: desde ahí la fuente es este ADR.
 **Fecha:** 2026-11-05
 **Autores:** Esteban (diseño y decisión), Claude Opus 5.5 (auditoría, implementación y redacción)
 **Relación:** **Aplica** el tablero "Finko móvil · rediseño" del perfil niño (Claude Design, 2026-11-05), que compara cada pantalla de hoy con su propuesta. **Conserva** el [ADR 093](093-perfiles-en-el-dispositivo-y-modo-nino.md) (cuatro destinos, la alcancía solo anota, la voz del niño) y el [ADR 094](094-tino-el-guatin.md) (Tino). **Supera** el [ADR 098](098-finko-movil-2-primera-entrega.md) D13 en un punto: los frascos de Inicio ya no van en filas bajo 400 px, van en tejas a todo ancho (D2).
@@ -52,6 +52,7 @@ El dibujo grande y centrado, el nombre y la edad; dos datos ("2 de 8 unidades li
 | "Ibas en la pregunta 2" | "Ibas en el paso 2" | la lección guarda el paso, no la pregunta |
 | "Cambiar de perfil" en el teléfono propio del niño | no se muestra | ese teléfono no tiene adulto (NUBE.3, `.kid-propio`) |
 | "¡Tu patineta es una meta!" junto a la lección | "¡Vamos con la lección N!" o "¡Te falta una para la insignia!" | la primera dependía del ejemplo; la regla sirve para las 24 lecciones |
+| La hoja del progreso sin "Esta semana" | la conserva, debajo de sus datos | el ADR 093 D2 la pide; quitarla es otra decisión |
 | "Úsalo de verdad" con "Lo necesito" y "Lo quiero" | la pregunta sola, y "Ver mi alcancía" | las preguntas de "Úsalo" son abiertas ("¿Para qué quieres ahorrar?") y no traen opciones; dárselas es contenido y espera la revisión pedagógica (APR.3f) |
 
 Bajo 360 px los nombres de los frascos pierden su ícono y se achican para no partirse.
@@ -85,19 +86,24 @@ Bajo 360 px los nombres de los frascos pierden su ícono y se achican para no pa
 - **El camino del niño:** "Volver" y tres puntos de avance arriba; Tino hace la pregunta de cada pantalla ("¡Hola! Soy Tino. ¿Cómo te llamas?", "Elige tu dibujo, Juanita. Así te reconoces."); las edades en una grilla de tres por dos; los dibujos en cuadros de su color; "Antes de empezar" con Tino grande, "Úsalo con alguien de tu familia." y una nota: "Todo se queda en este teléfono. No necesitas correo ni internet.". El botón principal va al pie.
 - **Capas:** el marco a pantalla completa vive en `responsive.css` y el contenido en `modals.css`, donde están las piezas del onboarding.
 
+### D10. Familia en Ajustes y sus hojas (tanda 5)
+
+- **La lista:** "Toca a un niño para ver cómo va, cambiar su mesada o entrar como él." y cada niño es una fila que abre su progreso: su dibujo con el borde de su color, nombre, edad y cómo te dice, y una línea de la mesada ("Mesada del sábado por entregar" en el color de aviso, "Sin mesada todavía" o la próxima). Si toca entregarla, "Se la entregué · $10.000" va debajo y no abre nada: anota y avisa. "Agregar otro niño" es un botón de acento a todo el ancho. Entrar como él, su teléfono y quitarlo salen de la fila y viven en su progreso.
+- **Las hojas** llevan en la cabecera la teja (el dibujo del niño, o el ícono del premio), el título y una línea debajo ("9 años · te dice Mamá", "Paso 1 de 2 · después, su mesada"), y el pie fijo con la salida y la acción (ADR 123 D1).
+- **El progreso:** arriba los avisos que piden algo (la mesada que toca, el premio que se debe), sus datos en filas (aprende, alcancía, los tres frascos, su meta, el premio), lo que hizo esta semana, qué cambiar (la mesada, el premio, pasar a su teléfono) y al pie "Entrar como Sofía" y "Quitar a Sofía de Finko".
+- **La mesada:** el monto en grande, la frecuencia en un segmento, los siete días en botones (cada mes, del 1 al 28 en una lista), el reparto con su barra de color, el porcentaje de cada frasco y la suma que se rehace mientras se escribe, y dos interruptores. La cuenta solo aparece si se anota como gasto.
+- **El premio:** las tres tasas con lo que hoy serían, la verdad sobre el interés en una nota y el resumen con la fecha corta.
+- **Agregar un niño:** las edades en cuadros, los dibujos en su color, "¿Cómo te dice?" y "Qué verá" en una nota con el escudo.
+
 ## Alternativas descartadas
 
 - **Dejar la lista de frascos bajo 400 px (ADR 098 D13).** Era la salida a que los frascos no cabían a 320; con las tejas del tablero y la letra que se achica bajo 360, caben, y se evita pintar la alcancía dos veces.
 - **Mostrar los botones de la meta también en Inicio.** El tablero los deja solo en la Alcancía: Inicio dice qué sigue, la Alcancía es donde se decide.
 - **Guardar cada movimiento de la mesada como su propia fila en "Lo último".** Para el niño es una sola entrega; tres filas de la misma mesada empujarían fuera lo que él anotó.
 
-## Tandas que siguen
-
-5. Lo del adulto: Familia en Ajustes, el progreso del niño, la mesada, el premio y agregar un niño.
-
 ## Consecuencias
 
-- El tablero de diseño deja de mandar cuando sus cinco tandas estén aplicadas: desde ahí la fuente es este ADR.
+- El tablero de diseño dejó de mandar al aplicarse sus cinco tandas, y su HTML se borró de `Diseño Finko/`: la fuente es este ADR.
 - `nino.css` pierde `.knino-mini`, `.knino-acciones`, `.knino-quitar` y el camino en zigzag (`.kcamino`, `.knode`, `.kunit`); gana las tejas, las filas, el botón de línea y la ruta en línea (`.kruta__*`, `.kleccion*`).
 - Dos íconos nuevos en el sprite: `i-lock` e `i-clock`, con su archivo en `assets/svg/iconos/simbolos/`.
 - La pantalla de la meta pierde el paso de $1.000 por semana: quien quiera otra cantidad cambia el precio o la meta (D8).
