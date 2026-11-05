@@ -30,7 +30,7 @@
 
 #### MV2.29 - El niño en el teléfono (tablero de niños de `Diseño Finko/`, `rediseño6`)
 - Prioridad  : media
-- Estado     : en proceso (2026-11-05): tanda 1 hecha (barra, Inicio, Alcancía y Yo, [ADR 124](../DECISIONS/124-el-nino-en-el-telefono.md) D1 a D5); siguen las tandas 2 a 5
+- Estado     : en proceso (2026-11-05): tandas 1 y 2 hechas ([ADR 124](../DECISIONS/124-el-nino-en-el-telefono.md)); quedan las hojas, la primera vez y lo del adulto
 - Área       : design
 - Objetivo   : aplicar las 26 propuestas del tablero de niños, en cinco tandas: (2) Aprender como línea con la unidad actual abierta y la lección (idea, pregunta, "¡Casi!", unidad terminada); (3) las hojas Guardé y la meta; (4) la primera vez y "¿Quién usa Finko?"; (5) lo del adulto: Familia en Ajustes, el progreso, la mesada, el premio y agregar un niño
 - Riesgo     : la lección comparte motor con el adulto (`aprende/view.js`); los cambios van bajo `body.kid` o `_nino`

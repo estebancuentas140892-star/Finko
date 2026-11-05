@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(nino): MV2.29 tanda 2, Aprender y la lección del niño · 2026-11-05
+
+[ADR 124](DECISIONS/124-el-nino-en-el-telefono.md) D6 y D7. Ficha: [`contexto/nino.md`](contexto/nino.md). SW v660.
+
+- **Aprender deja el camino en zigzag**: la ruta es una línea punteada; cada unidad lista o sabida se repasa desde su primera lección y la actual va abierta con sus lecciones, Tino y un solo botón ("Seguir donde ibas" si la dejó a medias). Con la línea se va el arreglo de desborde del ADR 098 D13 para el zigzag.
+- **Lo que dice Tino** junto a la lección sigue una regla para las 24 lecciones: "¡Te falta una para la insignia!" o "¡Vamos con la lección N!".
+- **La lección** (mismo motor del adulto, bajo `body.kid` y `_nino`): pregunta de 28 px, opciones de 68 px, pista al pie mientras no responde, y la respuesta en una tarjeta que flota con el color de lo que dice.
+- **La unidad terminada** lleva la insignia con el ícono de su unidad, "¡Nueva insignia!" y "Úsalo de verdad" en una frase. **No va**: "Lo necesito" y "Lo quiero" del tablero; las preguntas de "Úsalo" son abiertas y darles opciones es contenido (APR.3f). El pie pasa a "Ver mi alcancía" y "Volver al inicio".
+- Pruebas: `nino.test.js` (1 nueva y 2 ajustadas), E2E `perfiles.test.js` y `movil-mv2.test.js` (2 ajustadas). Unitarios 5319/5319, lint y E2E 442/442 en árbol limpio.
+
 ### feat(nino): MV2.29 tanda 1, el niño en el teléfono: barra, Inicio, Alcancía y Yo · 2026-11-05
 
 [ADR 124](DECISIONS/124-el-nino-en-el-telefono.md) D1 a D5, del tablero de niños de Claude Design (`Diseño Finko/`, "rediseño6"). Esteban lo pidió en chat. Ficha: [`contexto/nino.md`](contexto/nino.md). SW v659.

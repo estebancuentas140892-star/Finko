@@ -11,8 +11,8 @@
 ## Perfiles, "¿Quién usa Finko?" y la piel del niño
 
 - **Objetivo**          : que un tutor y niños de 7 a 12 años compartan el teléfono sin que el niño vea las finanzas del adulto (D1).
-- **Estado actual**     : en evolución (Fase 3 de APR). Cerradas **APR.3b** (sistema visual), **APR.3a** (perfiles, selector, alta paso 1, PIN de niño a adulto, candado obligatorio, P1), **APR.3c** (barra, ruta en orden como camino, lección con Frai, celebración, unidad 1) **APR.3d** (Guardé, Gasté, Compartí, mover, una meta con semanas y fecha) y **APR.3e** (alta en dos pasos con mesada, "Entregada" como un solo hecho, premio por ahorrar, progreso del niño). **APR.3f**: las ocho unidades escritas y la ubicación desde los 10 años; falta su revisión pedagógica. **APR.4b**: riel desde 768 px, Inicio en dos columnas desde 1024 px y "Cambiar de perfil" al pie de la barra lateral del adulto. **APR.5a**: Tino, un guatín, reemplaza a Frai ([ADR 095](../DECISIONS/095-tino-en-el-sprite.md)). **MV2.29** (el tablero de niños, [ADR 124](../DECISIONS/124-el-nino-en-el-telefono.md)): tanda 1 hecha (barra, Inicio, Alcancía y Yo); quedan Aprender y la lección, las hojas, la primera vez y lo del adulto.
-- **Verificado contra** : MV2.29 tanda 1 (commit `c7cbd08`, 2026-11-05, ADR 124 D1 a D5). Antes: APR.6b (`f09b213`, 2026-10-29).
+- **Estado actual**     : en evolución (Fase 3 de APR). Cerradas **APR.3b** (sistema visual), **APR.3a** (perfiles, selector, alta paso 1, PIN de niño a adulto, candado obligatorio, P1), **APR.3c** (barra, ruta en orden como camino, lección con Frai, celebración, unidad 1) **APR.3d** (Guardé, Gasté, Compartí, mover, una meta con semanas y fecha) y **APR.3e** (alta en dos pasos con mesada, "Entregada" como un solo hecho, premio por ahorrar, progreso del niño). **APR.3f**: las ocho unidades escritas y la ubicación desde los 10 años; falta su revisión pedagógica. **APR.4b**: riel desde 768 px, Inicio en dos columnas desde 1024 px y "Cambiar de perfil" al pie de la barra lateral del adulto. **APR.5a**: Tino, un guatín, reemplaza a Frai ([ADR 095](../DECISIONS/095-tino-en-el-sprite.md)). **MV2.29** (el tablero de niños, [ADR 124](../DECISIONS/124-el-nino-en-el-telefono.md)): tandas 1 y 2 hechas; quedan las hojas, la primera vez y lo del adulto.
+- **Verificado contra** : MV2.29 tanda 2 (commit `8feadf5`, 2026-11-05, ADR 124). Antes: APR.6b (`f09b213`, 2026-10-29).
 
 **Dónde vive**
 
@@ -33,7 +33,7 @@
 | Candado obligatorio con niños | `modules/dominio/config/view.js` / `index.js` | `_renderBloqueo()`, `_quitarCandado()` |
 | La app del niño: cuatro pantallas y su barra (riel desde 768 px, con su dibujo y "Cambiar") | `modules/dominio/nino/index.js` / `view.js` | `initNino()`, `_irA(vista, borrador)`, `htmlBarraNino(vista, perfil)`, `htmlInicioNino()`, `htmlRutaNino()`, `htmlAlcanciaNino()`, `htmlYoNino()`, `data-action="nino-vista"`, evento `nino:vista` |
 | "Lo último que anotaste" (sin DOM): una fila por hecho, la mesada y mover agrupados | `modules/dominio/nino/logic.js` | `ultimasAnotaciones(perfil, n)` |
-| La ruta en orden (sin DOM) | `modules/dominio/nino/logic.js` | `estadoRutaNino()`, `siguienteLeccionNino()`, `unidadesHechasNino()`, `sinEmpezarNino()` (Tino se presenta) |
+| La ruta en orden (sin DOM) y su línea en Aprender (la unidad actual abierta, ADR 124 D6) | `modules/dominio/nino/logic.js` / `view.js` | `estadoRutaNino()`, `siguienteLeccionNino()`, `unidadesHechasNino()`, `sinEmpezarNino()` (Tino se presenta), `_unidadActual()` |
 | Catálogo de la ruta del niño | `modules/infra/ruta-aprende.js` | `UNIDADES_NINO` |
 | Saldos de los frascos, avance y cambios del niño | `modules/infra/perfiles.js` | `saldosFrascos()`, `guardarAprendeNino()`, `actualizarNino()`, `FRASCOS` |
 | Alcancía y meta (sin DOM): validar y crear movimientos, plan de la meta, llenado de cada frasco | `modules/dominio/nino/logic.js` | `validarMovimiento()`, `crearMovimientos()`, `metaActiva()`, `planMeta()`, `validarMeta()`, `llenadoFrasco()`, `puedeMover()` |
@@ -70,6 +70,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-05 (MV2.29 tanda 2, ADR 124): Aprender como una línea con la unidad actual abierta, "Seguir donde ibas"; la lección con la pista al pie, "¡Casi!" en tarjeta que flota y la unidad terminada con la insignia de su unidad.
 - 2026-11-05 (MV2.29 tanda 1, ADR 124): barra con píldora en el ícono, Inicio con la lección y la alcancía en tejas, la meta alcanzada se celebra, Alcancía con "Lo último que anotaste" y "Cambiar el plan", Yo con datos e insignias por unidad.
 - 2026-10-29 (APR.6b, ADR 100 D5): "Este teléfono es de un adulto" desde "Yo": el adulto se crea con nombre, PIN y documentos, y el niño queda como su perfil.
 - 2026-10-29 (APR.6a, ADR 100): el niño empieza solo, en tres pantallas, desde "¿Quién va a usar Finko?"; el teléfono queda como suyo. El atajo del avatar de Inicio a Familia lo trajo MV2.15c (ADR 099 D6).
