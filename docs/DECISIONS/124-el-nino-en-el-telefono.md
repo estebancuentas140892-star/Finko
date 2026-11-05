@@ -1,6 +1,6 @@
 # ADR 124 - El niño en el teléfono
 
-**Estado:** Aceptada (2026-11-05), tanda 1 de 5: la barra, Inicio, la Alcancía y Yo. Las otras cuatro tandas se suman como adendas.
+**Estado:** Aceptada (2026-11-05). Tanda 1 (la barra, Inicio, la Alcancía y Yo) y tanda 2 (Aprender y la lección) aplicadas; las otras tres se suman como adendas.
 **Fecha:** 2026-11-05
 **Autores:** Esteban (diseño y decisión), Claude Opus 5.5 (auditoría, implementación y redacción)
 **Relación:** **Aplica** el tablero "Finko móvil · rediseño" del perfil niño (Claude Design, 2026-11-05), que compara cada pantalla de hoy con su propuesta. **Conserva** el [ADR 093](093-perfiles-en-el-dispositivo-y-modo-nino.md) (cuatro destinos, la alcancía solo anota, la voz del niño) y el [ADR 094](094-tino-el-guatin.md) (Tino). **Supera** el [ADR 098](098-finko-movil-2-primera-entrega.md) D13 en un punto: los frascos de Inicio ya no van en filas bajo 400 px, van en tejas a todo ancho (D2).
@@ -51,8 +51,25 @@ El dibujo grande y centrado, el nombre y la edad; dos datos ("2 de 8 unidades li
 | "¡Vas muy bien! Hoy sigue tu meta." | "¡Vas muy bien! Sigue tu lección de hoy." | la frase del tablero dependía de la lección del ejemplo |
 | "Ibas en la pregunta 2" | "Ibas en el paso 2" | la lección guarda el paso, no la pregunta |
 | "Cambiar de perfil" en el teléfono propio del niño | no se muestra | ese teléfono no tiene adulto (NUBE.3, `.kid-propio`) |
+| "¡Tu patineta es una meta!" junto a la lección | "¡Vamos con la lección N!" o "¡Te falta una para la insignia!" | la primera dependía del ejemplo; la regla sirve para las 24 lecciones |
+| "Úsalo de verdad" con "Lo necesito" y "Lo quiero" | la pregunta sola, y "Ver mi alcancía" | las preguntas de "Úsalo" son abiertas ("¿Para qué quieres ahorrar?") y no traen opciones; dárselas es contenido y espera la revisión pedagógica (APR.3f) |
 
 Bajo 360 px los nombres de los frascos pierden su ícono y se achican para no partirse.
+
+### D6. Aprender (tanda 2)
+
+- **Cabecera:** "Aprender", "Llevas 2 de 8 unidades" y una barra de avance.
+- **La ruta es una línea punteada**, no un camino en zigzag. Cada unidad terminada (o sabida por la ubicación) es un círculo verde con su chulo y se repasa desde su primera lección. Las que vienen llevan su ícono en un círculo gris.
+- **La unidad actual va abierta** en una tarjeta con el borde de su color: sus lecciones en filas (la lista se repasa, la de ahora lleva su número y "Ahora · 3 minutos", las que vienen un candado y "Después"), Tino con un globo corto y un solo botón: "Empezar la lección", o "Seguir donde ibas" si la dejó a medias (la fila lo dice: "· ibas aquí").
+- **Lo que dice Tino:** "¡Te falta una para la insignia!" cuando queda una; si no, "¡Vamos con la lección N!".
+
+### D7. La lección (tanda 2)
+
+- Barra de avance de 10 px, la pregunta en 28 px y "Elige una" en minúscula. Las opciones miden 68 px y su letra va en una teja; la correcta se marca con borde de 3 px y "Esta era" en verde lleno; la elegida, en el azul de la pista.
+- Mientras no responde, el pie dice "Toca la que creas. No hay apuro.".
+- **"¡Casi!" y "¡Así es!"** dejan de ser un panel pegado abajo: son una tarjeta que flota, con el color de lo que dicen y Tino al lado.
+- **La unidad terminada:** Tino grande junto a la insignia con el ícono de la unidad, "¡Nueva insignia!" en el color del sol, "Terminaste la unidad 3" y lo que aprendió. "Úsalo de verdad" va en una tarjeta con el borde del sol y en una sola frase ("En Gastar tienes $6.500. ¿Es para algo que necesitas o que quieres?").
+- **El pie:** "Ver mi alcancía" y "Volver al inicio" (antes, "Volver a la ruta").
 
 ## Alternativas descartadas
 
@@ -62,7 +79,6 @@ Bajo 360 px los nombres de los frascos pierden su ícono y se achican para no pa
 
 ## Tandas que siguen
 
-2. Aprender (la ruta como lista con línea, la unidad actual abierta con sus lecciones) y la lección (idea, pregunta, "¡Casi!", unidad terminada).
 3. Las hojas: Guardé y la meta.
 4. La primera vez y "¿Quién usa Finko?".
 5. Lo del adulto: Familia en Ajustes, el progreso del niño, la mesada, el premio y agregar un niño.
@@ -70,5 +86,5 @@ Bajo 360 px los nombres de los frascos pierden su ícono y se achican para no pa
 ## Consecuencias
 
 - El tablero de diseño deja de mandar cuando sus cinco tandas estén aplicadas: desde ahí la fuente es este ADR.
-- `nino.css` pierde `.knino-mini`, `.knino-acciones` y `.knino-quitar`; gana las tejas, las filas y el botón de línea.
+- `nino.css` pierde `.knino-mini`, `.knino-acciones`, `.knino-quitar` y el camino en zigzag (`.kcamino`, `.knode`, `.kunit`); gana las tejas, las filas, el botón de línea y la ruta en línea (`.kruta__*`, `.kleccion*`).
 - Dos íconos nuevos en el sprite: `i-lock` e `i-clock`, con su archivo en `assets/svg/iconos/simbolos/`.

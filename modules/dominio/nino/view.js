@@ -276,63 +276,103 @@ export function htmlInicioNino(perfil, hoyISO) {
     </div>`;
 }
 
-/** Un nodo del camino: hecha (se repasa), la que sigue (Empezar) o después. */
-function _nodo(l, unidad) {
-  const titulo = esc(l.leccion.titulo);
-  if (l.estado === 'hecha') {
-    return `<button class="knode knode--hecha" type="button" data-action="leccion-abrir" data-id="${esc(l.leccion.id)}"
-              aria-label="Lección ${l.numero}, ${titulo}, terminada. Repasar">${icon('check')}</button>`;
-  }
-  if (l.estado === 'actual') {
-    return `<button class="knode knode--ahora" type="button" data-action="leccion-abrir" data-id="${esc(l.leccion.id)}"
-              aria-label="Lección ${l.numero}: ${titulo}. Empezar">${iconoCategoria(unidad.icono)}<span class="knode__rotulo">Empezar</span></button>`;
-  }
-  return `<span class="knode knode--despues" role="img" aria-label="Lección ${l.numero}, ${titulo}, después">${iconoCategoria('c-birrete')}</span>`;
+/** Lo que dice Tino junto a la lección que sigue. */
+function _diceTino(faltan, numero) {
+  return faltan === 1 ? '¡Te falta una para la insignia!' : `¡Vamos con la lección ${numero}!`;
 }
 
 /**
- * Aprender: la ruta como camino, en orden (D9).
+ * La unidad actual, abierta: sus lecciones (las listas se repasan, la de
+ * ahora lleva su número, las que vienen un candado), Tino y un solo botón
+ * (ADR 124 D6).
+ */
+function _unidadActual(e, enCurso) {
+  const u = e.unidad;
+  const actual = e.lecciones.find(l => l.estado === 'actual');
+  const faltan = e.lecciones.filter(l => l.estado !== 'hecha').length;
+  const seguir = !!actual && enCurso?.id === actual.leccion.id && Number(enCurso.paso) > 0;
+  const lecciones = e.lecciones.map(l => {
+    const titulo = esc(l.leccion.titulo);
+    if (l.estado === 'hecha') {
+      return `
+            <li class="kleccion">
+              <button class="kleccion__fila" type="button" data-action="leccion-abrir" data-id="${esc(l.leccion.id)}"
+                      aria-label="Lección ${l.numero}, ${titulo}: lista. Repasar">
+                <span class="kleccion__nodo kleccion__nodo--hecha">${icon('check')}</span>
+                <span class="knino-pila"><span class="kleccion__titulo">${titulo}</span><span class="kleccion__estado">Lista</span></span>
+              </button>
+            </li>`;
+    }
+    if (l.estado === 'actual') {
+      return `
+            <li class="kleccion kleccion--actual" aria-current="step">
+              <span class="kleccion__nodo kleccion__nodo--actual" aria-hidden="true">${l.numero}</span>
+              <span class="knino-pila"><span class="kleccion__titulo">${titulo}${seguir ? ' · ibas aquí' : ''}</span><span class="kleccion__estado">Ahora · ${l.leccion.minutos} minutos</span></span>
+            </li>`;
+    }
+    return `
+            <li class="kleccion kleccion--despues">
+              <span class="kleccion__nodo" aria-hidden="true">${icon('lock')}</span>
+              <span class="knino-pila"><span class="kleccion__titulo">${titulo}</span><span class="kleccion__estado">Después</span></span>
+            </li>`;
+  }).join('');
+  return `
+        <li class="kruta__actual" data-dom="${u.dominio}">
+          <div class="knino-fila">
+            <span class="kruta__teja" aria-hidden="true">${iconoCategoria(u.icono)}</span>
+            <span class="knino-pila"><span class="kruta__rotulo">Unidad ${u.numero} · vas aquí</span><span class="k-h3">${esc(u.nombre)}</span></span>
+          </div>
+          <ol class="klecciones" aria-label="Lecciones de la unidad ${u.numero}">${lecciones}
+          </ol>${actual ? `
+          <div class="knino-fila knino-tino">
+            ${htmlTino('explica', { tamano: 64 })}
+            <p class="bubble bubble--sm">${_diceTino(faltan, actual.numero)}</p>
+          </div>
+          <button class="kbtn kbtn--block" type="button" data-action="leccion-abrir" data-id="${esc(actual.leccion.id)}">${iconoCategoria('c-birrete')}${seguir ? 'Seguir donde ibas' : 'Empezar la lección'}</button>` : ''}
+        </li>`;
+}
+
+/**
+ * Aprender: la ruta en orden como una línea (D9, ADR 124 D6). Las unidades
+ * hechas o sabidas se repasan desde su primera lección; la actual va
+ * abierta; las que vienen esperan con su ícono.
  * @param {import('../../infra/perfiles.js').PerfilNino} perfil
  */
 export function htmlRutaNino(perfil) {
   const ruta = estadoRutaNino(perfil.aprende);
   const hechas = unidadesHechasNino(perfil.aprende);
+  const total = UNIDADES_NINO.length;
   const filas = ruta.map(e => {
     const u = e.unidad;
-    const cabeza = (rotulo, extra = '') => `
-      <div class="kunit kunit--${e.estado}" data-dom="${u.dominio}">
-        <span class="knino-teja">${iconoCategoria(u.icono)}</span>
-        <span class="knino-pila"><span class="k-sm">${rotulo}</span><span class="k-h3">${esc(u.nombre)}</span></span>
-        ${extra}
-      </div>`;
-    if (e.estado === 'hecha') {
-      return `<li>${cabeza(`Unidad ${u.numero}`, `<span class="kchip kchip--hecha">${icon('check')}Lista</span>`)}</li>`;
+    if (e.estado === 'hecha' || e.estado === 'sabida') {
+      const rotulo = e.estado === 'hecha' ? 'Lista' : 'Ya lo sabes';
+      return `
+        <li>
+          <button class="kruta__unidad" type="button" data-action="leccion-abrir" data-id="${esc(u.lecciones[0].id)}"
+                  aria-label="Unidad ${u.numero}, ${esc(u.nombre)}: ${rotulo.toLowerCase()}. Repasar">
+            <span class="kruta__nodo kruta__nodo--hecha">${icon('check')}</span>
+            <span class="knino-pila"><span class="kruta__rotulo">Unidad ${u.numero} · ${rotulo}</span><span class="kruta__nombre">${esc(u.nombre)}</span></span>
+          </button>
+        </li>`;
     }
-    if (e.estado === 'sabida') {
-      return `<li>${cabeza(`Unidad ${u.numero}`, `<span class="kchip kchip--hecha">${icon('check')}Ya lo sabes</span>`)}</li>`;
-    }
-    if (e.estado === 'actual') {
-      return `<li>${cabeza(`Unidad ${u.numero} · vas aquí`)}
-        <ol class="kcamino" data-dom="${u.dominio}" aria-label="Lecciones de la unidad ${u.numero}">
-          ${e.lecciones.map(l => `
-            <li class="kcamino__paso kcamino__paso--${l.estado}">
-              ${l.estado === 'actual' ? htmlTino('explica', { tamano: 72 }) : ''}
-              ${_nodo(l, u)}
-            </li>`).join('')}
-        </ol></li>`;
-    }
-    if (e.estado === 'preparacion') {
-      return `<li>${cabeza(`Unidad ${u.numero} · muy pronto`)}</li>`;
-    }
-    return `<li>${cabeza(`Unidad ${u.numero} · después`)}</li>`;
+    if (e.estado === 'actual') return _unidadActual(e, perfil.aprende?.enCurso);
+    const rotulo = e.estado === 'preparacion' ? 'muy pronto' : 'después';
+    return `
+        <li class="kruta__unidad kruta__unidad--despues">
+          <span class="kruta__nodo" aria-hidden="true">${iconoCategoria(u.icono)}</span>
+          <span class="knino-pila"><span class="kruta__rotulo">Unidad ${u.numero} · ${rotulo}</span><span class="kruta__nombre">${esc(u.nombre)}</span></span>
+        </li>`;
   }).join('');
   return `
-    <header class="knino-cabeza">
-      <h1 class="k-h1 knino-titulo" tabindex="-1">${iconoCategoria('c-birrete')}Aprender</h1>
-      <span class="kchip">${hechas} de ${UNIDADES_NINO.length} unidades</span>
+    <header class="knino-ruta-cabeza">
+      <h1 class="k-h1 knino-titulo" tabindex="-1">Aprender</h1>
+      <p class="knino-ruta-cabeza__cuenta">Llevas ${hechas} de ${total} unidades</p>
+      <div class="kprog kprog--ruta" role="progressbar" aria-valuenow="${hechas}" aria-valuemin="0" aria-valuemax="${total}"
+           aria-label="${hechas} de ${total} unidades listas"><span style="width:${Math.round(hechas / total * 100)}%"></span></div>
     </header>
     ${ofreceUbicacionNino(perfil) ? _ofertaUbicacion() : ''}
-    <ol class="kruta">${filas}</ol>`;
+    <ol class="kruta">${filas}
+    </ol>`;
 }
 
 /** Qué anota cada botón de su frasco en la Alcancía. */

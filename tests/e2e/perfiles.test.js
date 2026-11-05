@@ -144,13 +144,14 @@ test.describe('APR.3c - la app del niño', () => {
     await page.click('.leccion-fb [data-action="leccion-continuar"]');
 
     // Cierre: insignia con destellos y "Úsalo de verdad".
-    await expect(page.locator('#leccion-titulo')).toHaveText('¡Terminaste la unidad 1!');
+    await expect(page.locator('#leccion-titulo')).toHaveText('Terminaste la unidad 1');
     await expect(page.locator('#leccion-panel .destellos__punto')).toHaveCount(8);
     await expect(page.locator('#leccion-panel')).toContainText('Úsalo de verdad');
-    await page.click('[data-action="leccion-salir-a"][data-vista="aprender"]');
+    await page.click('[data-action="leccion-salir-a"][data-vista="inicio"]');
     await expect(leccion).toHaveCount(0);
-    await expect(page.locator('#nino-main')).toContainText('1 de 8 unidades');
-    await expect(page.locator('#nino-nav [aria-current="page"]')).toContainText('Aprender');
+    await expect(page.locator('#nino-nav [aria-current="page"]')).toContainText('Inicio');
+    await page.click('#nino-nav [data-vista="aprender"]');
+    await expect(page.locator('#nino-main')).toContainText('Llevas 1 de 8 unidades');
 
     await page.click('#nino-nav [data-vista="yo"]');
     await expect(page.locator('#nino-main .kinsignia:not(.kinsignia--pendiente)')).toHaveCount(1);

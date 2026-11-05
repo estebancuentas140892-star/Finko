@@ -1008,7 +1008,7 @@ test.describe('MV2 - perfil niño', () => {
     await expect(page.locator('body.kid')).toHaveCount(1);
 
     await page.click('#nino-nav [data-vista="aprender"]');
-    await expect(page.locator('#nino-main .kcamino')).toBeVisible();
+    await expect(page.locator('#nino-main .kruta__actual')).toBeVisible();
     const desborde = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(desborde).toBeLessThanOrEqual(0);
 

@@ -377,6 +377,8 @@ function _pasoElegir(paso, sesion, ctx) {
       <p class="leccion__eyebrow">${esc(sesion.repaso ? 'Otra vez' : paso.etiqueta ?? 'Elige una')}</p>
       <h2 class="leccion__titulo" id="leccion-titulo" tabindex="-1">${_texto(paso.pregunta, ctx)}</h2>
       <div class="leccion-opciones" role="radiogroup" aria-labelledby="leccion-titulo">${opciones}${noSe}</div>`,
+    // El niño ve una pista al pie mientras no responde (ADR 124 D7).
+    pie: _nino && !rev ? '<p class="leccion-nino__pista">Toca la que creas. No hay apuro.</p>' : '',
     fb,
   };
 }
@@ -708,12 +710,11 @@ function _resultadoUbicacion({ sabidas, empieza }, catalogo = UNIDADES) {
 // ── CIERRE DEL NIÑO (APR.3c, ADR 093 D9) ─────────────────────────
 
 const _NOMBRE_FRASCO = { ahorrar: 'Ahorrar', gastar: 'Gastar', compartir: 'Compartir' };
-const _ICONO_FRASCO = { ahorrar: 'i-ahorro', gastar: 'c-tienda', compartir: 'c-regalo' };
 
 /**
- * Cierre de la lección del niño: Tino celebra (en grande, con insignia de
- * 88 px y destellos si terminó la unidad) y "Úsalo de verdad", una
- * pregunta sobre un frasco de su alcancía con lo que tiene ahí.
+ * Cierre de la lección del niño (ADR 124 D7): Tino celebra (en grande, con
+ * la insignia de la unidad y destellos si la terminó) y "Úsalo de verdad",
+ * una pregunta sobre un frasco de su alcancía con lo que tiene ahí.
  */
 function _cierreNino(ctx) {
   const u = ctx.unidad;
@@ -721,11 +722,11 @@ function _cierreNino(ctx) {
     ? `
       <div class="leccion-nino__celebra" role="img" aria-label="Celebramos tu nueva insignia de la unidad ${u.numero}">
         ${htmlTino('celebra-grande', { tamano: 128 })}
-        <div class="destellos leccion-nino__insignia">${htmlDestellos()}<svg class="leccion-insignia--nino" viewBox="0 0 120 120" aria-hidden="true"><use href="#il-insignia"/></svg></div>
+        <div class="destellos leccion-nino__insignia">${htmlDestellos()}<svg class="leccion-insignia--nino" viewBox="0 0 120 120" aria-hidden="true"><use href="#il-insignia"/></svg><span class="leccion-nino__insignia-icono">${iconoCategoria(u.icono ?? 'i-star')}</span></div>
       </div>
-      <h2 class="k-h1 leccion-nino__titulo" id="leccion-titulo" tabindex="-1">¡Terminaste la unidad ${u.numero}!</h2>
-      <p class="k-body leccion-nino__linea">${esc(u.aprendiste ?? u.nombre)}</p>
-      <span class="kchip leccion-nino__chip">${icon('star')}Nueva insignia en Yo</span>`
+      <p class="leccion-nino__nueva">¡Nueva insignia!</p>
+      <h2 class="k-h1 leccion-nino__titulo" id="leccion-titulo" tabindex="-1">Terminaste la unidad ${u.numero}</h2>
+      <p class="k-body leccion-nino__linea">${esc(u.aprendiste ?? u.nombre)}</p>`
     : `
       <div class="leccion-nino__celebra">${htmlTino('celebra', { tamano: 112 })}</div>
       <h2 class="k-h1 leccion-nino__titulo" id="leccion-titulo" tabindex="-1">¡Lección lista!</h2>
@@ -734,20 +735,19 @@ function _cierreNino(ctx) {
   if (ctx.usalo) {
     const nombre = _NOMBRE_FRASCO[ctx.usalo.frasco] ?? _NOMBRE_FRASCO.ahorrar;
     const linea = ctx.usalo.saldo > 0
-      ? `En tu frasco ${nombre} tienes ${f(ctx.usalo.saldo)}.`
+      ? `En ${nombre} tienes ${f(ctx.usalo.saldo)}.`
       : `Tu frasco ${nombre} está vacío por ahora.`;
     usalo = `
       <section class="kcard leccion-nino__usalo" data-frasco="${esc(ctx.usalo.frasco)}" aria-labelledby="leccion-usalo-titulo">
-        <h3 class="k-h3 leccion-nino__usalo-titulo" id="leccion-usalo-titulo">${iconoCategoria(_ICONO_FRASCO[ctx.usalo.frasco] ?? 'i-ahorro')}Úsalo de verdad</h3>
-        <p class="k-body leccion-nino__usalo-linea">${linea}</p>
-        <p class="k-body">${esc(ctx.usalo.pregunta)}</p>
+        <h3 class="leccion-nino__usalo-titulo" id="leccion-usalo-titulo">Úsalo de verdad</h3>
+        <p class="leccion-nino__usalo-linea">${linea} ${esc(ctx.usalo.pregunta)}</p>
       </section>`;
   }
   return {
     cuerpo: `${cabeza}${usalo}`,
     pie: `
       <button class="kbtn kbtn--block" type="button" data-action="leccion-salir-a" data-vista="alcancia">${icon('ahorro')}Ver mi alcancía</button>
-      <button class="kbtn kbtn--soft kbtn--block" type="button" data-action="leccion-salir-a" data-vista="aprender">Volver a la ruta</button>`,
+      <button class="kbtn kbtn--linea kbtn--block" type="button" data-action="leccion-salir-a" data-vista="inicio">Volver al inicio</button>`,
   };
 }
 

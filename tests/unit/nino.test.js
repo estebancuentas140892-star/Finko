@@ -141,14 +141,29 @@ describe('las cuatro pantallas del niño (D9)', () => {
     expect(sinEmpezarNino(undefined)).toBe(true);
   });
 
-  it('Aprender muestra el camino de la unidad actual: hecha para repasar, la de hoy y las que vienen', () => {
+  it('Aprender muestra la unidad actual abierta: la lista para repasar, la de hoy y las que vienen (ADR 124 D6)', () => {
     const html = htmlRutaNino(perfil({ hechas: hechas('k1-l1') }));
-    expect(html).toContain('0 de 8 unidades');
+    expect(html).toContain('Llevas 0 de 8 unidades');
     expect(html).toContain('Unidad 1 · vas aquí');
-    expect(html).toContain('knode--hecha');
-    expect(html).toMatch(/knode--ahora" type="button" data-action="leccion-abrir" data-id="k1-l2"/);
-    expect(html).toContain('knode--despues');
+    expect(html).toMatch(/kleccion__fila" type="button" data-action="leccion-abrir" data-id="k1-l1"/);
+    expect(html).toContain('Ahora · 3 minutos');
+    expect(html).toMatch(/data-action="leccion-abrir" data-id="k1-l2">.*Empezar la lección/);
+    expect(html).toContain('kleccion--despues');
+    expect(html).toContain('href="#i-lock"');
     expect(html).toContain('Unidad 2 · después');
+    // Con dos por hacer, Tino anima; con una, recuerda la insignia.
+    expect(html).toContain('¡Vamos con la lección 2!');
+    expect(htmlRutaNino(perfil({ hechas: hechas('k1-l1', 'k1-l2') }))).toContain('¡Te falta una para la insignia!');
+  });
+
+  it('una unidad terminada se repasa desde su primera lección, y la de hoy se retoma (ADR 124 D6)', () => {
+    const html = htmlRutaNino(perfil({ hechas: hechas('k1-l1', 'k1-l2', 'k1-l3'), enCurso: { id: 'k2-l1', paso: 2 } }));
+    expect(html).toContain('Llevas 1 de 8 unidades');
+    expect(html).toMatch(/aria-label="Unidad 1, ¿Qué es el dinero\?: lista. Repasar"/);
+    expect(html).toMatch(/kruta__unidad" type="button" data-action="leccion-abrir" data-id="k1-l1"/);
+    expect(html).toContain('· ibas aquí');
+    expect(html).toContain('Seguir donde ibas');
+    expect(htmlRutaNino(perfil({ sabidas: ['k1'] }))).toContain('Unidad 1 · Ya lo sabes');
   });
 
   it('Alcancía suma los frascos y ninguno muestra menos de cero', () => {
@@ -228,14 +243,15 @@ describe('la lección con la piel del niño (D7, D9)', () => {
       ...ctx, terminada: true, unidad, celebrarUnidad: true,
       usalo: { frasco: 'gastar', saldo: 6_000, pregunta: '¿Es para algo que necesitas o que quieres?' },
     });
-    expect(html).toContain('¡Terminaste la unidad 1!');
-    // La unidad terminada trae a Tino en grande; la lección suelta, el de siempre.
+    expect(html).toContain('Terminaste la unidad 1');
+    expect(html).toContain('¡Nueva insignia!');
+    // La unidad terminada trae a Tino en grande y la insignia con el ícono de su unidad.
     expect(html).toContain('href="#il-tino-celebra-grande"');
     expect(html).toContain('destellos__punto');
-    expect(html).toContain('Nueva insignia en Yo');
-    expect(html).toContain('En tu frasco Gastar tienes $6.000.');
+    expect(html).toContain('href="#c-billete"');
+    expect(html).toContain('En Gastar tienes $6.000. ¿Es para algo que necesitas o que quieres?');
     expect(html).toMatch(/data-action="leccion-salir-a" data-vista="alcancia"/);
-    expect(html).toContain('Volver a la ruta');
+    expect(html).toMatch(/data-action="leccion-salir-a" data-vista="inicio">Volver al inicio/);
     const vacio = htmlLeccion(s, leccion, { ...ctx, terminada: true, unidad, celebrarUnidad: false, avance: { hechas: 1, total: 3 }, usalo: { frasco: 'ahorrar', saldo: 0, pregunta: '¿Cuánto?' } });
     expect(vacio).toContain('¡Lección lista!');
     expect(vacio).toContain('href="#il-tino-celebra"');

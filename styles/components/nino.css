@@ -433,81 +433,83 @@ body.kid .fk-toast { bottom: calc(var(--fk-kid-target) + var(--fk-space-8) + env
 .knav__it[aria-current="page"] { color: var(--fk-kid-primary); font-weight: 750; }
 .knav__it[aria-current="page"] .knav__ico { background: color-mix(in srgb, var(--fk-kid-primary) 16%, transparent); }
 
-/* Ruta del niño: unidades en orden y el camino de la unidad actual. */
-.kruta { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--fk-space-4); }
-.kunit {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  border-radius: var(--fk-kid-radius-lg);
-  background: color-mix(in srgb, var(--d) 16%, var(--fk-bg-surface));
-  border: 2px solid color-mix(in srgb, var(--d) 40%, transparent);
-}
-.kunit--despues,
-.kunit--preparacion { background: var(--fk-bg-surface); border-color: var(--fk-border-subtle); }
-.kunit--despues .knino-teja,
-.kunit--preparacion .knino-teja { background: var(--fk-bg-elevated); color: var(--fk-text-muted); }
-.kcamino {
-  position: relative;
-  list-style: none;
-  margin: var(--fk-space-4) 0 var(--fk-space-8);
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--fk-space-8);
-}
-/* El tramo que une los nodos, punteado como el camino que falta. */
-.kcamino::before {
+/* Ruta del niño: una línea punteada de unidades; la actual va abierta,
+   con sus lecciones, Tino y un solo botón (ADR 124 D6). */
+.knino-ruta-cabeza { display: flex; flex-direction: column; gap: var(--fk-space-1); }
+.knino-ruta-cabeza__cuenta { margin: 0; font-size: var(--fk-kid-text-base); line-height: 1.33; font-weight: 600; color: var(--fk-text-secondary); font-variant-numeric: tabular-nums; }
+.kprog--ruta { height: 12px; margin-top: 6px; }
+.kprog--ruta > span { background: var(--fk-kid-primary); }
+.kruta { position: relative; list-style: none; margin: var(--fk-space-1) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--fk-space-3); }
+.kruta::before {
   content: "";
   position: absolute;
-  top: 36px;
-  bottom: 36px;
-  left: 50%;
-  border-left: 8px dotted var(--fk-border-default);
-  transform: translateX(-50%);
+  left: 27px;
+  top: 28px;
+  bottom: 28px;
+  border-left: 3px dotted var(--fk-border-default);
 }
-.kcamino__paso { position: relative; display: flex; align-items: center; justify-content: center; }
-.kcamino__paso:nth-child(even) { transform: translateX(-3.5rem); }
-.kcamino__paso:nth-child(odd):not(:first-child) { transform: translateX(3.5rem); }
-.kcamino__paso .tino { position: absolute; right: calc(50% + 3.5rem); }
-.knode {
+.kruta__unidad {
   position: relative;
-  display: grid;
-  place-items: center;
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 4rem;
+  padding: 4px 0;
   border: 0;
+  background: none;
+  color: inherit;
   font: inherit;
+  text-align: left;
 }
-.knode .icon { width: 32px; height: 32px; stroke-width: 2.4; }
-.knode--hecha { background: var(--d); color: var(--fk-bg-base); box-shadow: 0 5px 0 color-mix(in srgb, var(--d) 60%, var(--fk-bg-base)); cursor: pointer; }
-.knode--ahora {
-  width: 84px;
-  height: 84px;
-  background: var(--fk-bg-surface);
-  color: var(--dt);
-  border: 4px solid var(--d);
-  box-shadow: 0 6px 0 color-mix(in srgb, var(--d) 60%, var(--fk-bg-base)), 0 0 0 8px color-mix(in srgb, var(--d) 18%, transparent);
-  cursor: pointer;
-}
-.knode--despues { background: var(--fk-bg-elevated); color: var(--fk-text-muted); border: 3px dashed var(--fk-border-default); }
-.knode__rotulo {
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  margin-top: 12px;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  padding: 6px 12px;
-  border-radius: var(--fk-radius-full);
+button.kruta__unidad { cursor: pointer; }
+.kruta__nodo { display: grid; place-items: center; flex-shrink: 0; width: 56px; height: 56px; border-radius: 50%; background: var(--fk-bg-elevated); color: var(--fk-text-secondary); }
+.kruta__nodo .icon { width: 26px; height: 26px; }
+.kruta__nodo--hecha { background: var(--fk-kid-primary); color: var(--fk-kid-on-primary); box-shadow: 0 var(--fk-kid-depth) 0 var(--fk-kid-primary-depth); }
+.kruta__nodo--hecha .icon { stroke-width: 3; }
+.kruta__rotulo { font-size: var(--fk-kid-text-sm); line-height: 1.25; font-weight: 650; color: var(--fk-text-secondary); }
+.kruta__nombre { font-size: var(--fk-kid-text-base); line-height: 1.33; font-weight: 700; color: var(--fk-text-primary); }
+.kruta__unidad--despues .kruta__nombre { font-weight: 650; color: color-mix(in srgb, var(--fk-text-primary) 80%, var(--fk-text-secondary)); }
+.kruta__actual {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-4);
+  border-radius: var(--fk-kid-radius-lg);
   border: 2px solid var(--d);
   background: var(--fk-bg-surface);
-  color: var(--fk-text-primary);
-  font-size: 15px;
-  font-weight: 800;
 }
+.kruta__actual .kruta__rotulo { font-weight: 700; color: var(--dt); }
+.kruta__teja { display: grid; place-items: center; flex-shrink: 0; width: 56px; height: 56px; border-radius: 20px; background: var(--fk-bg-elevated); color: var(--dt); }
+.kruta__teja .icon { width: var(--fk-kid-icon); height: var(--fk-kid-icon); stroke-width: 2.4; }
+.kruta__actual .knino-tino { gap: var(--fk-space-2); margin-left: 0; }
+.klecciones { list-style: none; margin: 0; padding: 0; }
+.kleccion { display: flex; align-items: center; gap: var(--fk-space-3); min-height: 52px; }
+.kleccion + .kleccion { border-top: 1px solid var(--fk-border-subtle); }
+.kleccion__fila {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  width: 100%;
+  min-height: 52px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.kleccion__nodo { display: grid; place-items: center; flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; background: var(--fk-bg-elevated); color: var(--fk-text-secondary); font-size: var(--fk-kid-text-base); font-weight: 800; }
+.kleccion__nodo .icon { width: 20px; height: 20px; }
+.kleccion__nodo--hecha { background: color-mix(in srgb, var(--fk-kid-primary) 18%, transparent); color: var(--fk-kid-primary); }
+.kleccion__nodo--actual { background: var(--fk-kid-primary); color: var(--fk-kid-on-primary); }
+.kleccion__titulo { font-size: var(--fk-kid-text-base); line-height: 1.33; font-weight: 600; color: var(--fk-text-primary); }
+.kleccion--actual .kleccion__titulo { font-weight: 750; }
+.kleccion--despues .kleccion__titulo { color: var(--fk-text-secondary); }
+.kleccion__estado { font-size: var(--fk-kid-text-sm); line-height: 1.25; color: var(--fk-text-secondary); }
+.bubble--sm { font-size: var(--fk-kid-text-sm); line-height: 1.375; }
 
 /* Alcancía: tres frascos, cada uno con su botón debajo (ADR 124 D3). */
 .jars { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--fk-space-2); }
@@ -559,47 +561,107 @@ body.kid .fk-toast { bottom: calc(var(--fk-kid-target) + var(--fk-space-8) + env
 }
 .kinsignia--pendiente .kinsignia__nombre { font-weight: 600; color: var(--fk-text-secondary); }
 
-/* La lección del niño: el mismo motor con piel `.kid`. */
-body.kid .leccion__titulo { font-size: var(--fk-kid-text-lg); }
-body.kid .leccion-opcion { min-height: var(--fk-kid-target); font-size: var(--fk-kid-text-base); border-radius: var(--fk-kid-radius-md); }
-body.kid .leccion-clasificar__boton { min-height: var(--fk-kid-target); font-size: var(--fk-kid-text-base); }
-.leccion-nino__idea { display: flex; align-items: flex-end; gap: var(--fk-space-3); }
-.leccion-nino__globo {
-  flex: 1;
-  margin: 0 0 18px;
-  padding: 14px 16px;
-  border-radius: var(--fk-kid-radius-lg);
+/* La lección del niño: el mismo motor con piel `.kid` y la forma del
+   tablero (ADR 124 D7): barra de 10 px, pregunta de 28 px, opciones de
+   68 px con su letra en teja y la respuesta en una tarjeta que flota. */
+body.kid .leccion__top { gap: 10px; padding: var(--fk-space-3) var(--fk-space-4) 0 6px; }
+body.kid .leccion__salir { width: 48px; height: 48px; border-radius: var(--fk-radius-lg); color: var(--fk-text-secondary); }
+body.kid .leccion__prog { gap: 6px; }
+body.kid .leccion__prog i { height: 10px; }
+body.kid .leccion__prog i.is-on { background: var(--fk-kid-primary); }
+body.kid .leccion__cuenta { font-size: var(--fk-kid-text-sm); font-weight: 700; color: var(--fk-text-secondary); }
+body.kid .leccion__cuerpo { gap: var(--fk-space-4); padding: var(--fk-space-4) var(--fk-space-5) 0; }
+body.kid .leccion__pie { padding: var(--fk-space-4) var(--fk-space-5) calc(28px + env(safe-area-inset-bottom, 0px)); }
+body.kid .leccion__eyebrow { font-size: var(--fk-kid-text-sm); line-height: 1.25; font-weight: 750; letter-spacing: 0; text-transform: none; color: var(--fk-text-secondary); }
+body.kid .leccion__eyebrow--dom { color: var(--apr-dom-text); }
+body.kid .leccion__titulo { font-size: 28px; line-height: 1.21; font-weight: 800; }
+body.kid .leccion__texto { font-size: 20px; line-height: 1.4; }
+body.kid .leccion-opciones { gap: var(--fk-space-3); }
+body.kid .leccion-opcion {
+  min-height: 68px;
+  padding: 10px 14px;
+  border-radius: 20px;
   border: 2px solid var(--fk-border-default);
   background: var(--fk-bg-surface);
-  color: var(--fk-text-primary);
   font-size: 20px;
-  font-weight: 700;
   line-height: 1.3;
+  font-weight: 650;
+}
+body.kid .leccion-opcion__letra,
+body.kid .leccion-opcion--correcta .leccion-opcion__letra,
+body.kid .leccion-opcion--elegida .leccion-opcion__letra { width: 40px; height: 40px; border-radius: 12px; background: var(--fk-bg-elevated); color: var(--fk-text-primary); font-size: var(--fk-kid-text-base); font-weight: 800; }
+body.kid .leccion-opcion--correcta { border: 3px solid var(--fk-kid-primary); background: color-mix(in srgb, var(--fk-kid-primary) 14%, var(--fk-bg-surface)); }
+body.kid .leccion-opcion--elegida { border: 3px solid var(--fk-kid-hint); background: color-mix(in srgb, var(--fk-kid-hint) 12%, var(--fk-bg-surface)); }
+body.kid .leccion-opcion__tag { padding: 4px 10px; border: 0; border-radius: 12px; font-size: var(--fk-kid-text-sm); font-weight: 750; }
+body.kid .leccion-opcion--correcta .leccion-opcion__tag { background: var(--fk-kid-primary); color: var(--fk-kid-on-primary); }
+body.kid .leccion-opcion--elegida .leccion-opcion__tag { background: color-mix(in srgb, var(--fk-kid-hint) 20%, transparent); color: var(--fk-kid-hint); }
+body.kid .leccion-clasificar__boton { min-height: var(--fk-kid-target); font-size: var(--fk-kid-text-base); }
+.leccion-nino__pista { margin: 0; text-align: center; font-size: var(--fk-kid-text-sm); line-height: 1.375; color: var(--fk-text-secondary); text-wrap: pretty; }
+.leccion-nino__idea { display: flex; align-items: flex-start; gap: 6px; }
+.leccion-nino__globo {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 20px;
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-primary);
+  font-size: var(--fk-kid-text-lg);
+  font-weight: 650;
+  line-height: 1.27;
+  text-wrap: pretty;
+}
+.leccion-nino__globo::before {
+  content: "";
+  position: absolute;
+  left: -7px;
+  top: 22px;
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  background: inherit;
+  transform: rotate(45deg);
 }
 .leccion-nino__globo:focus { outline: none; }
-.leccion-fb--nino .leccion-fb__fila { display: flex; align-items: flex-start; gap: var(--fk-space-3); }
+/* La respuesta flota sobre la pregunta, con el color de lo que dice. */
+body.kid .leccion-fb--nino {
+  bottom: var(--fk-space-3);
+  margin: 0 var(--fk-space-3) calc(var(--fk-space-3) + env(safe-area-inset-bottom, 0px));
+  padding: var(--fk-space-4);
+  gap: 14px;
+  border: 2px solid;
+  border-radius: 28px;
+  box-shadow: none;
+}
+body.kid .leccion-fb--nino.leccion-fb--casi { background: color-mix(in srgb, var(--fk-kid-hint) 14%, var(--fk-bg-surface)); border-color: color-mix(in srgb, var(--fk-kid-hint) 55%, transparent); }
+body.kid .leccion-fb--nino.leccion-fb--bien { background: color-mix(in srgb, var(--fk-kid-primary) 12%, var(--fk-bg-surface)); border-color: color-mix(in srgb, var(--fk-kid-primary) 55%, transparent); }
+.leccion-fb--nino .leccion-fb__fila { display: flex; align-items: center; gap: 10px; }
 .leccion-fb--nino .leccion-fb__cuerpo { display: flex; flex-direction: column; gap: var(--fk-space-1); }
-.leccion-fb--nino.leccion-fb--casi .leccion-fb__titulo { color: var(--fk-kid-hint); font-size: 24px; }
-.leccion-fb--nino.leccion-fb--bien .leccion-fb__titulo { color: var(--fk-kid-ahorrar-text); font-size: 24px; }
+.leccion-fb--nino .leccion-fb__titulo { font-size: var(--fk-kid-text-xl); line-height: 1.23; font-weight: 800; }
+.leccion-fb--nino.leccion-fb--casi .leccion-fb__titulo { color: var(--fk-kid-hint); }
+.leccion-fb--nino.leccion-fb--bien .leccion-fb__titulo { color: var(--fk-kid-ahorrar-text); }
+.leccion-fb--nino .leccion-fb__texto { font-size: var(--fk-kid-text-base); line-height: 1.33; font-weight: 600; }
+.leccion-fb--nino .leccion-fb__nota { font-size: var(--fk-kid-text-sm); line-height: 1.375; color: var(--fk-text-secondary); }
 .leccion-nino__celebra { display: flex; align-items: center; justify-content: center; gap: var(--fk-space-2); }
-.leccion-nino__insignia { width: 120px; height: 120px; }
+.leccion-nino__insignia { width: 112px; height: 112px; }
 .leccion-insignia--nino {
-  width: 88px;
-  height: 88px;
+  width: 96px;
+  height: 96px;
   color: var(--apr-dom);
+  --fk-insignia-estrella: transparent;
   animation: badgeIn 250ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
 }
-.leccion-nino__titulo { text-align: center; }
+/* La insignia lleva el ícono de su unidad, como en Yo (ADR 124 D4). */
+.leccion-nino__insignia-icono { position: absolute; inset: 0; display: grid; place-items: center; padding-bottom: 14px; color: var(--fk-bg-base); }
+.leccion-nino__insignia-icono .icon { width: 34px; height: 34px; stroke-width: 2.8; }
+.leccion-nino__nueva { margin: 0; text-align: center; font-size: var(--fk-kid-text-sm); font-weight: 750; color: var(--fk-kid-sun-text); }
+.leccion-nino__titulo { text-align: center; font-size: 28px; line-height: 1.21; }
 .leccion-nino__titulo:focus { outline: none; }
 .leccion-nino__linea { text-align: center; }
-.leccion-nino__chip { align-self: center; background: color-mix(in srgb, var(--fk-kid-sun) 16%, transparent); color: var(--fk-kid-sun-text); }
-.leccion-nino__usalo[data-frasco="ahorrar"]   { --d: var(--fk-kid-ahorrar);   --dt: var(--fk-kid-ahorrar-text); }
-.leccion-nino__usalo[data-frasco="gastar"]    { --d: var(--fk-kid-gastar);    --dt: var(--fk-kid-gastar-text); }
-.leccion-nino__usalo[data-frasco="compartir"] { --d: var(--fk-kid-compartir); --dt: var(--fk-kid-compartir-text); }
-.leccion-nino__usalo { gap: 8px; border-color: color-mix(in srgb, var(--d) 40%, transparent); }
-.leccion-nino__usalo-titulo { display: flex; align-items: center; gap: var(--fk-space-2); }
-.leccion-nino__usalo-titulo .icon { width: var(--fk-kid-icon); height: var(--fk-kid-icon); color: var(--dt); }
-.leccion-nino__usalo-linea { color: var(--fk-text-primary); }
+.leccion-nino__usalo { gap: 6px; padding: var(--fk-space-4); border: 2px solid color-mix(in srgb, var(--fk-kid-sun) 50%, transparent); }
+.leccion-nino__usalo-titulo { margin: 0; font-size: var(--fk-kid-text-sm); line-height: 1.25; font-weight: 750; color: var(--fk-kid-sun-text); }
+.leccion-nino__usalo-linea { margin: 0; font-size: 20px; line-height: 1.3; font-weight: 700; color: var(--fk-text-primary); text-wrap: pretty; font-variant-numeric: tabular-nums; }
 
 /* ── ALCANCÍA Y METAS DEL NIÑO (APR.3d, ADR 093 D9) ──────────────
    "Guardé", "Gasté" y "Compartí" en el color de su frasco, la meta con su
@@ -937,19 +999,12 @@ body.kid .leccion-clasificar__boton { min-height: var(--fk-kid-target); font-siz
 /* ── MV2 en el perfil niño (ADR 098 D13) ─────────────────────────────────
    Lo que la auditoría móvil encontró en la app del niño, sin tocar su
    identidad (Tino, frascos, barra propia) ni mezclarla con la del adulto:
-   - El camino de Aprender desbordaba 36px a 390 (cada paso se corre ±3.5rem
-     a todo el ancho): el teléfono alejaba la página y la barra inferior se
-     salía del borde. El camino recorta su desborde horizontal y, en
-     pantallas angostas, el zigzag se cierra para que Tino no quede afuera.
+   - El camino en zigzag de Aprender desbordaba a 390; desde el ADR 124 D6
+     la ruta es una línea y ya no se corre a los lados.
    - Los tres frascos no caben con su ícono a 320: bajo 360 px el nombre
      se queda sin él (ADR 124 D3; antes, ADR 098 D13 los ponía en filas).
    - La pantalla nace debajo de la barra de estado en el iPhone instalado. */
-.kcamino { overflow-x: clip; }
-@media (max-width: 399px) {
-  .kcamino__paso:nth-child(even) { transform: translateX(-2.5rem); }
-  .kcamino__paso:nth-child(odd):not(:first-child) { transform: translateX(2.5rem); }
-  .kcamino__paso .tino { right: calc(50% + 2.75rem); }
-}
+
 @media (max-width: 359px) {
   .jar__nombre .icon { display: none; }
   .jar__nombre { font-size: 15px; }
