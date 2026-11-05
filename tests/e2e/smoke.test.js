@@ -5079,7 +5079,8 @@ test.describe('Lote con deudas y entrada desde Inicio (CAL.5b)', () => {
     const modal = page.locator('#modal-pago-lote');
     await expect(modal).toBeVisible({ timeout: 3_000 });
     await expect(modal.locator('.lote-row')).toHaveCount(2);
-    await expect(modal.locator('.lote-row__sub')).toContainText(['Vencía el 1', 'Cuota de la deuda, vencía el 1']);
+    // ADR 126 D6: el día 1 dice "vence hoy" si hoy es 1; si no, "venció el 1".
+    await expect(modal.locator('.lote-row__sub')).toContainText([/^(Venció el 1|Vence hoy)$/, /^Cuota de la deuda · (venció el 1|vence hoy)$/]);
     await expect(modal.locator('.lote-intro')).toContainText('baja su saldo');
 
     await modal.locator('[data-action="compromisos-confirmar-lote"]').click();

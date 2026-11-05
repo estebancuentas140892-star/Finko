@@ -1270,7 +1270,9 @@ function _abrirLote(prefijoMes) {
   const body    = document.getElementById('modal-pago-lote-body');
   if (!overlay || !body) return;
 
-  body.innerHTML   = renderFormPagoLote(pendientes);
+  // ADR 126 D6: en el mes en curso, lo del día dice "vence hoy".
+  const diaHoy = prefijo === _prefijoMesActual() ? new Date().getDate() : Infinity;
+  body.innerHTML   = renderFormPagoLote(pendientes, diaHoy);
   body.dataset.mes = prefijo;
   _actualizarTotalLote();
   abrirModal(overlay);
@@ -1296,13 +1298,16 @@ function _actualizarTotalLote() {
   const marcados = [...body.querySelectorAll('.lote-row__check:checked')];
   const total    = marcados.reduce((acc, ch) => acc + (Number(ch.dataset.loteMonto) || 0), 0);
 
+  // ADR 126 D6: el pie dice "Total a registrar" y la cifra; sin nada
+  // marcado, la fila entera pide marcar uno.
+  const vacio   = marcados.length === 0;
   const totalEl = body.querySelector('[data-role="lote-total"]');
   if (totalEl) {
-    totalEl.textContent = marcados.length === 0
-      ? 'Selecciona al menos un pago.'
-      : `Total a registrar: ${f(total)}`;
-    totalEl.classList.toggle('lote-total--vacio', marcados.length === 0);
+    totalEl.textContent = vacio ? 'Selecciona al menos un pago.' : f(total);
+    totalEl.classList.toggle('lote-pie__total--vacio', vacio);
   }
+  const rotulo = body.querySelector('[data-role="lote-rotulo"]');
+  if (rotulo) rotulo.hidden = vacio;
 
   const textoEl = body.querySelector('[data-role="lote-cta-texto"]');
   if (textoEl) {

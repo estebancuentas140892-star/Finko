@@ -1,6 +1,6 @@
 # ADR 126 - Inicio del adulto en el teléfono
 
-**Estado:** Aceptada (2026-11-05). En aplicación por tandas: el encabezado y el saldo (1), "Atención hoy" y su hoja (2), "Esta semana", los vacíos y el usuario nuevo (3). Quedan las hojas "Pagos para hoy", "Registrar" y "Tu perfil" (4) y la barra de abajo (5).
+**Estado:** Aceptada (2026-11-05). En aplicación por tandas: el encabezado y el saldo (1), "Atención hoy" y su hoja (2), "Esta semana", los vacíos y el usuario nuevo (3), las hojas "Pagos para hoy", "Registrar" y "Tu perfil" (4). Queda la barra de abajo (5).
 **Fecha:** 2026-11-05
 **Autores:** Esteban (diseño y decisión), Claude Opus 5.5 (auditoría, implementación y redacción)
 **Relación:** **Aplica** el tablero "Finko móvil · rediseño" de Inicio (Claude Design, `Diseño Finko/Finko móvil · rediseño.html`), que compara cada pantalla de hoy con su propuesta; es la primera pieza de MV2.30. **Supera** el [ADR 122](122-lo-que-faltaba-del-canvas-segunda-pasada.md) D2 (el nombre del saludo ya no baja de línea) y, solo bajo 1024px, el [ADR 034](034-inicio-v2.md) D2 y el piloto del [ADR 033](033-direccion-visual-premium.md) D2 y D3 (el saldo deja de ser tarjeta con degradado y forma). **Conserva** el [ADR 106](106-un-encabezado-tres-niveles.md) D3 (un solo ojo, en el encabezado) y el [ADR 099](099-inicio-movil-hoy-en-una-lista.md) D6 (el avatar abre "Tu perfil"). Escritorio no cambia.
@@ -53,6 +53,13 @@ Esteban aprobó en chat las recomendaciones de la auditoría para los seis punto
 ### D5. El usuario nuevo (tanda 3)
 
 La guía de tres pasos que ya tenía escritorio pasa también al teléfono, en línea de tiempo: el primer paso lleno de acento y los otros dos con borde, unidos por una línea. En el teléfono el paso 2 dice "Con el botón Registrar de abajo"; escritorio sigue diciendo "de arriba". El botón "Agregar mis cuentas" va a todo el ancho.
+
+### D6. Las hojas "Pagos para hoy", "Registrar" y "Tu perfil" (tanda 4)
+
+- **"Pagos para hoy"** es el título del lote desde Inicio y desde Por pagar (antes "Pagar lo vencido"): el conjunto ya incluía lo que vence hoy. La introducción dice "Vencen hoy o ya vencieron y no están registrados." Cada fila dice su estado en su color: "Venció el 5" en rojo, "Vence hoy" en ámbar; en una deuda, "Cuota de la deuda · venció el 5" o "Resto de la cuota · vence hoy". `renderFormPagoLote(pendientes, diaHoy)` recibe el día de hoy solo si el lote es del mes en curso.
+- **El pie del lote** lleva "Total a registrar" y la cifra en una fila sobre el botón, que pasa a 52px con el dibujo de chulo; sin nada marcado, la fila pide marcar uno. En el teléfono la lista va unida en una sola tarjeta (acotado a `#modal-pago-lote`: "Movimientos automáticos" comparte `.lote-row`).
+- **"Registrar"**: Gasto e Ingreso arriba en dos columnas, con su teja y su tinte; lo que depende de tus datos (abono, transferir, aporte) va en una lista debajo, una fila por destino con la teja de su sección y una flecha. La lista se oculta si queda vacía. La hoja es la misma en los dos anchos.
+- **"Tu perfil"** solo cambia de medidas: el avatar con borde fino, el nombre en 20px y dos líneas, filas de 64px y la lista sobre un fondo apenas más claro.
 
 ## Lo que ya se decidió para las tandas que siguen
 

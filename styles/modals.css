@@ -453,36 +453,118 @@ body:has(#quien-usa[data-open]) .logro-toast { display: none; }
 
 /* ── HOJA REGISTRAR (NAV.A2/A2b): tejas de registro + selector destino ── */
 
-/* Dos columnas: tejas grandes (Gasto/Ingreso y, si hay datos, Abono/Aporte). */
-.registrar__grid { grid-template-columns: repeat(2, 1fr); }
-
-.registrar__tile {
-  gap: var(--fk-space-1);
-  padding: var(--fk-space-5) var(--fk-space-3);
+/* ADR 126 D6: Gasto e Ingreso arriba, dos columnas de 128px con su teja; lo
+   que depende de tus datos (abono, transferir, aporte) en una lista debajo.
+   La hoja es la misma en los dos anchos. Medidas sin token (radios 18, 13 y
+   12; letra de 15, 13 y 17): literales (ADR 126 D7). */
+.registrar__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--fk-space-3);
+}
+.registrar__tile--grande {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--fk-space-3);
   min-height: 128px;
+  padding: var(--fk-space-4);
+  border-radius: 18px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.registrar__tile--grande[data-kind="gasto"] {
+  border: 1px solid color-mix(in srgb, var(--fk-dom-gastos) 28%, transparent);
+  background: color-mix(in srgb, var(--fk-dom-gastos) 8%, var(--fk-bg-surface));
+}
+.registrar__tile--grande[data-kind="ingreso"] {
+  border: 1px solid color-mix(in srgb, var(--fk-accent) 26%, transparent);
+  background: color-mix(in srgb, var(--fk-accent) 7%, var(--fk-bg-surface));
+}
+.registrar__teja {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+}
+.registrar__teja .icon { --fk-icon-size: var(--fk-icon-lg); }
+.registrar__tile--grande[data-kind="gasto"] .registrar__teja {
+  background: color-mix(in srgb, var(--fk-dom-gastos) 16%, transparent);
+  color: var(--fk-dom-gastos-text);
+}
+.registrar__tile--grande[data-kind="ingreso"] .registrar__teja {
+  background: color-mix(in srgb, var(--fk-accent) 16%, transparent);
+  color: var(--fk-text-accent);
 }
 .registrar__tile .menu-mas__label {
-  font-size: var(--fk-text-base);
+  font-size: 1.0625rem;
+  line-height: 22px;
+  font-weight: var(--fk-font-bold);
   color: var(--fk-text-primary);
 }
 .registrar__tile-desc {
-  font-size: var(--fk-text-xs);
-  color: var(--fk-text-muted);
-  line-height: 1.3;
-  /* El nombre del destino (o "Elige a cuál") no debe romper el alto de la teja. */
+  font-size: 0.8125rem;
+  line-height: 18px;
+  color: var(--fk-text-secondary);
+  /* El nombre del destino (o "Elige a cuál") no debe romper el alto. */
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
-.registrar__tile .menu-mas__icon.icon { --fk-icon-size: var(--fk-icon-2xl); }
-/* Color con propósito: gasto sale (naranja), ingreso entra (verde);
-   abono a deuda y aporte a ahorro heredan el color de su sección. */
-.registrar__tile[data-kind="gasto"]   .icon { color: var(--fk-dom-gastos-text); }
-.registrar__tile[data-kind="ingreso"] .icon { color: var(--fk-success); }
-.registrar__tile[data-kind="abono"]   .icon { color: var(--fk-dom-compromisos-text); }
-.registrar__tile[data-kind="aporte"]  .icon { color: var(--fk-dom-ahorro-text); }
+.registrar__tile--grande .menu-mas__label { margin-top: auto; }
+
+.registrar__lista {
+  margin: var(--fk-space-3) 0 0;
+  padding: 0;
+  list-style: none;
+  background: var(--fk-bg-hover);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: 18px;
+  overflow: hidden;
+}
+.registrar__lista[hidden] { display: none; }
+.registrar__lista > li + li { border-top: 1px solid var(--fk-border-subtle); }
+.registrar__fila {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  width: 100%;
+  min-height: 64px;
+  padding: 10px 10px 10px 14px;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.registrar__fila:hover { background: var(--fk-bg-active); }
+.registrar__fila-teja {
+  width: var(--fk-space-10);
+  height: var(--fk-space-10);
+  border-radius: 12px;
+}
+.registrar__fila-textos {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.registrar__fila .menu-mas__label {
+  font-size: 0.9375rem;
+  line-height: 20px;
+  font-weight: var(--fk-font-semibold);
+}
+.registrar__fila .registrar__tile-desc {
+  -webkit-line-clamp: 1;
+  word-break: break-all;
+}
+.registrar__fila-flecha { flex: none; --fk-icon-size: var(--fk-icon-sm); color: var(--fk-text-muted); }
 
 /* Selector "¿a cuál?" (2+ destinos): lista vertical dentro de la misma hoja. */
 .registrar__destino-head {

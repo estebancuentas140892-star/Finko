@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(inicio): MV2.30 tanda 4, las hojas "Pagos para hoy", "Registrar" y "Tu perfil" · 2026-11-05
+
+[ADR 126](DECISIONS/126-inicio-del-adulto-en-el-telefono.md) D6. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v668.
+
+- **El lote** se llama "Pagos para hoy" en sus dos entradas; cada fila dice "Venció el 5" o "Vence hoy" en su color (`renderFormPagoLote(pendientes, diaHoy)`); el total va en el pie con su rótulo (`.lote-pie`) y el botón lleva el chulo. La columna del pie vive en `responsive.css` porque `.modal__footer` (modals) le gana a components.
+- **"Registrar"**: Gasto e Ingreso en dos tejas teñidas; abono, transferir y aporte en `#registrar-lista`, con la teja de su sección. Las filas conservan `.registrar__tile`, `data-kind` y `data-registrar-dyn`.
+- **"Tu perfil"**: solo medidas.
+- Pruebas: `compromisos.test.js` (2 nuevas, 3 ajustadas) y E2E `smoke.test.js` (el lote de deuda, con el día de hoy) y `registrar-destinos.test.js`. Unitarios 5291/5291, lint y E2E 438/438 en árbol limpio.
+
 ### feat(inicio): MV2.30 tanda 3, "Esta semana" y el usuario nuevo en el teléfono · 2026-11-05
 
 [ADR 126](DECISIONS/126-inicio-del-adulto-en-el-telefono.md) D4 y D5. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v667.

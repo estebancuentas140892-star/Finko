@@ -5633,7 +5633,27 @@ describe('renderFormPagoLote', () => {
     expect(filas[0].querySelector('.lote-row__check').dataset.loteId).toBe('a');
     expect(filas[0].querySelector('.lote-row__check').dataset.loteMonto).toBe('900000');
     expect(filas[0].querySelector('.lote-row__amount').textContent).toContain('900.000');
-    expect(filas[1].querySelector('.lote-row__sub').textContent).toBe('Vencía el 12');
+    // ADR 126 D6: sin el día de hoy, todo se lee como vencido y en rojo.
+    expect(filas[1].querySelector('.lote-row__sub').textContent).toBe('Venció el 12');
+    expect(filas[1].querySelector('.lote-row__sub').classList.contains('lote-row__sub--danger')).toBe(true);
+  });
+
+  it('lo del día de hoy dice "Vence hoy" en ámbar', () => {
+    document.body.innerHTML = renderFormPagoLote([
+      { id: 'a', descripcion: 'Plan', monto: 65_000, dia: 13 },
+      { id: 'd', descripcion: 'Visa', monto: 300_000, dia: 13, tipo: 'deuda-entidad', parcial: true },
+    ], 13);
+    const subs = [...document.querySelectorAll('.lote-row__sub')];
+    expect(subs.map(s => s.textContent)).toEqual(['Vence hoy', 'Resto de la cuota · vence hoy']);
+    expect(subs.every(s => s.classList.contains('lote-row__sub--warning'))).toBe(true);
+  });
+
+  it('el total va en el pie, sobre el botón, con su rótulo', () => {
+    document.body.innerHTML = renderFormPagoLote([{ id: 'a', descripcion: 'X', monto: 1, dia: 1 }]);
+    const pie = document.querySelector('.lote-pie-caja');
+    expect(pie.querySelector('[data-role="lote-total"]')).not.toBeNull();
+    expect(pie.querySelector('.lote-pie__rotulo').textContent).toBe('Total a registrar');
+    expect(pie.querySelector('[data-action="compromisos-confirmar-lote"] use').getAttribute('href')).toBe('#i-check');
   });
 
   it('el botón de confirmar lleva la acción del lote y los slots vivos', () => {
@@ -5648,7 +5668,7 @@ describe('renderFormPagoLote', () => {
     document.body.innerHTML = renderFormPagoLote([
       { id: 'd1', descripcion: 'Visa', monto: 300_000, dia: 5, tipo: 'deuda-entidad', parcial: false },
     ]);
-    expect(document.querySelector('.lote-row__sub').textContent).toBe('Cuota de la deuda, vencía el 5');
+    expect(document.querySelector('.lote-row__sub').textContent).toBe('Cuota de la deuda · venció el 5');
     expect(document.querySelector('.lote-intro').textContent).toContain('baja su saldo');
   });
 
@@ -5656,7 +5676,7 @@ describe('renderFormPagoLote', () => {
     document.body.innerHTML = renderFormPagoLote([
       { id: 'd1', descripcion: 'Visa', monto: 200_000, dia: 5, tipo: 'deuda-personal', parcial: true },
     ]);
-    expect(document.querySelector('.lote-row__sub').textContent).toBe('Resto de la cuota, vencía el 5');
+    expect(document.querySelector('.lote-row__sub').textContent).toBe('Resto de la cuota · venció el 5');
   });
 
   it('sin deudas el intro no menciona saldos', () => {

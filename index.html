@@ -1542,7 +1542,9 @@
     <div class="modal">
       <header class="modal__header">
         <span class="modal__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-deudas"/></svg></span>
-        <h2 class="modal__title" id="modal-pago-lote-title">Pagar lo vencido</h2>
+        <!-- ADR 126 D6: el mismo título desde Inicio y desde Por pagar; el
+             conjunto incluye lo que vence hoy (vencidosSinPagar, umbral 0). -->
+        <h2 class="modal__title" id="modal-pago-lote-title">Pagos para hoy</h2>
         <button class="modal__close btn btn-icon btn-ghost"
                 data-action="modal-close" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
       </header>
@@ -1971,23 +1973,27 @@
       <div class="modal__body">
         <!-- Vista raíz: tejas de registro. registrar.js inserta Abono/Aporte
              tras Ingreso según S; Gasto e Ingreso quedan fijas aquí. -->
+        <!-- ADR 126 D6: Gasto e Ingreso arriba, en dos columnas; lo que
+             depende de tus datos (abono, transferir, aporte) va en una lista
+             debajo, que registrar.js llena y oculta si queda vacía. -->
         <div id="registrar-vista-raiz">
-          <div class="menu-mas__grid registrar__grid" id="registrar-grid">
-            <button class="menu-mas__item registrar__tile" type="button"
+          <div class="registrar__grid" id="registrar-grid">
+            <button class="registrar__tile registrar__tile--grande" type="button"
                     data-action="registrar-abrir" data-target-action="nuevo-gasto"
                     data-kind="gasto">
-              <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-gastos"/></svg>
+              <span class="registrar__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-gastos"/></svg></span>
               <span class="menu-mas__label">Gasto</span>
               <span class="registrar__tile-desc">Una compra o pago que hiciste</span>
             </button>
-            <button class="menu-mas__item registrar__tile" type="button"
+            <button class="registrar__tile registrar__tile--grande" type="button"
                     data-action="registrar-abrir" data-target-action="nuevo-ingreso-puntual"
                     data-kind="ingreso">
-              <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-saldo"/></svg>
+              <span class="registrar__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-saldo"/></svg></span>
               <span class="menu-mas__label">Ingreso</span>
               <span class="registrar__tile-desc">Dinero que recibiste</span>
             </button>
           </div>
+          <ul class="registrar__lista" id="registrar-lista" role="list" hidden></ul>
         </div>
         <!-- Vista destino: selector "¿a cuál?" (registrar.js la llena y muestra). -->
         <div id="registrar-vista-destino" hidden></div>

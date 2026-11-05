@@ -1842,6 +1842,37 @@
   font-size: var(--fk-text-xs);
   color: var(--fk-text-secondary);
 }
+/* ADR 126 D6: el estado de cada pago en su color. */
+.lote-row__sub--danger  { color: var(--fk-danger-text); }
+.lote-row__sub--warning { color: var(--fk-warning-text); }
+
+/* ADR 126 D6: el pie del lote lleva el total en una fila sobre el botón. La
+   columna del pie vive en responsive.css: `.modal__footer` (capa modals) le
+   gana a esta capa. */
+.lote-pie {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+  margin: 0;
+}
+.lote-pie__rotulo {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+}
+.lote-pie__rotulo[hidden] { display: none; }
+.lote-pie__total {
+  font-size: var(--fk-text-xl);
+  line-height: 26px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  color: var(--fk-text-primary);
+}
+.lote-pie__total--vacio {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-regular);
+  color: var(--fk-text-secondary);
+}
 
 .lote-row__amount {
   flex: 0 0 auto;

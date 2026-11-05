@@ -47,7 +47,7 @@ test.describe('NAV.A2b - destinos de la hoja Registrar', () => {
   test('sin deudas ni ahorro solo aparecen Gasto e Ingreso', async ({ page }) => {
     await seed(page, {});
     await abrirHoja(page);
-    const labels = await page.$$eval('#registrar-grid .registrar__tile .menu-mas__label',
+    const labels = await page.$$eval('#registrar-vista-raiz .registrar__tile .menu-mas__label',
       els => els.map(e => e.textContent.trim()));
     expect(labels).toEqual(['Gasto', 'Ingreso']);
   });
@@ -56,7 +56,7 @@ test.describe('NAV.A2b - destinos de la hoja Registrar', () => {
     await seed(page, { compromisos: DOS_DEUDAS, ...AHORRO_TRES });
     await abrirHoja(page);
 
-    const labels = await page.$$eval('#registrar-grid .registrar__tile .menu-mas__label',
+    const labels = await page.$$eval('#registrar-vista-raiz .registrar__tile .menu-mas__label',
       els => els.map(e => e.textContent.trim()));
     expect(labels).toEqual(['Gasto', 'Ingreso', 'Abono a deuda', 'Aporte a ahorro']);
 

@@ -107,32 +107,39 @@ export function cuentasActivasParaTransferir(cuentas) {
 
 const _raizEl    = () => document.getElementById('registrar-vista-raiz');
 const _destinoEl = () => document.getElementById('registrar-vista-destino');
-const _gridEl    = () => document.getElementById('registrar-grid');
+const _listaEl   = () => document.getElementById('registrar-lista');
 const _tituloEl  = () => document.getElementById('modal-registrar-title');
 
 /**
  * HTML de una teja de la hoja (mismo molde que las estáticas Gasto/Ingreso).
  * `attrs` son atributos crudos del <button> (data-action y demás).
  */
+/** El dominio de la teja de cada fila (ADR 126 D6). */
+const _DOM_FILA = { abono: 'compromisos', transferir: 'tesoreria', aporte: 'ahorro' };
+
 function _teja(attrs, iconId, label, desc, kind) {
   return `
-    <button class="menu-mas__item registrar__tile" type="button" data-registrar-dyn
-            data-kind="${esc(kind)}" ${attrs}>
-      <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#${esc(iconId)}"/></svg>
-      <span class="menu-mas__label">${esc(label)}</span>
-      <span class="registrar__tile-desc">${esc(desc)}</span>
-    </button>`;
+    <li>
+      <button class="registrar__tile registrar__fila" type="button" data-registrar-dyn
+              data-kind="${esc(kind)}" ${attrs}>
+        <span class="cat-teja registrar__fila-teja" data-dom="${_DOM_FILA[kind] ?? 'analisis'}" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#${esc(iconId)}"/></svg></span>
+        <span class="registrar__fila-textos">
+          <span class="menu-mas__label">${esc(label)}</span>
+          <span class="registrar__tile-desc">${esc(desc)}</span>
+        </span>
+        <svg class="icon registrar__fila-flecha" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+      </button>
+    </li>`;
 }
 
 /**
- * Reconstruye las tejas dinámicas (Abono, Aporte) según S. Las estáticas
- * (Gasto, Ingreso) no se tocan; las dinámicas anteriores se retiran primero.
+ * Reconstruye las filas que dependen de tus datos (Abono, Transferir,
+ * Aporte) en la lista de la hoja (ADR 126 D6). Gasto e Ingreso no se tocan.
+ * La lista se oculta si queda vacía.
  */
 function _construirTejasDinamicas() {
-  const grid = _gridEl();
-  if (!grid) return;
-
-  grid.querySelectorAll('[data-registrar-dyn]').forEach(el => el.remove());
+  const lista = _listaEl();
+  if (!lista) return;
 
   const abono  = destinosAbono(S.compromisos);
   const aporte = destinosAporte(S.ahorro, S.metas, S.apartados);
@@ -173,7 +180,8 @@ function _construirTejasDinamicas() {
     );
   }
 
-  grid.insertAdjacentHTML('beforeend', html);
+  lista.innerHTML = html;
+  lista.hidden = html === '';
 }
 
 /**

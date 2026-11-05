@@ -52,19 +52,23 @@ export function renderLoteCard(pendientes, prefijoMes) {
 }
 
 /**
- * Subtítulo de una fila del lote: qué es lo que se va a registrar, no solo
- * cuándo vencía. Un fijo se paga entero; una deuda puede traer el resto de la
- * cuota (ya tenía un abono este mes) o el resto del saldo (última cuota).
+ * Subtítulo de una fila del lote: qué es lo que se va a registrar y cuándo
+ * vence, en su color (ADR 126 D6). Un fijo se paga entero; una deuda puede
+ * traer el resto de la cuota (ya tenía un abono este mes) o la cuota.
  *
  * @param {{dia:number, tipo:string, parcial:boolean}} p
- * @returns {string}
+ * @param {number} diaHoy - el día de hoy si el lote es del mes en curso;
+ *   `Infinity` si es de un mes pasado (todo venció).
+ * @returns {{ texto: string, tono: 'danger'|'warning' }}
  */
-function _subFilaLote(p) {
-  const cuando = `vencía el ${p.dia}`;
+function _subFilaLote(p, diaHoy) {
+  const esHoy = p.dia === diaHoy;
+  const cuando = esHoy ? 'vence hoy' : `venció el ${p.dia}`;
+  const tono = esHoy ? 'warning' : 'danger';
   if (p.tipo !== 'deuda-entidad' && p.tipo !== 'deuda-personal') {
-    return `Vencía el ${p.dia}`;
+    return { texto: esHoy ? 'Vence hoy' : `Venció el ${p.dia}`, tono };
   }
-  return p.parcial ? `Resto de la cuota, ${cuando}` : `Cuota de la deuda, ${cuando}`;
+  return { texto: `${p.parcial ? 'Resto de la cuota' : 'Cuota de la deuda'} · ${cuando}`, tono };
 }
 
 /**
@@ -81,36 +85,47 @@ function _subFilaLote(p) {
  * el intro avisa que un abono baja el saldo de la deuda: es un movimiento con
  * más consecuencias que pagar un fijo.
  *
+ * ADR 126 D6: el total va en el pie, sobre el botón, en una fila con su
+ * rótulo; el estado de cada fila en su color.
+ *
  * @param {Array<{id:string, descripcion:string, monto:number, dia:number,
  *   tipo:string, parcial:boolean}>} pendientes
+ * @param {number} [diaHoy=Infinity] - el día de hoy si el lote es del mes en
+ *   curso; sin él, todo se lee como vencido.
  * @returns {string}
  */
-export function renderFormPagoLote(pendientes) {
+export function renderFormPagoLote(pendientes, diaHoy = Infinity) {
   const lista = pendientes ?? [];
 
-  const items = lista.map(p => `
+  const items = lista.map(p => {
+    const sub = _subFilaLote(p, diaHoy);
+    return `
     <label class="lote-row">
       <input type="checkbox" class="lote-row__check" checked
              data-lote-id="${_esc(p.id)}" data-lote-monto="${Number(p.monto) || 0}" />
       <span class="lote-row__body">
         <span class="lote-row__name">${_esc(p.descripcion || 'Sin nombre')}</span>
-        <span class="lote-row__sub">${_subFilaLote(p)}</span>
+        <span class="lote-row__sub lote-row__sub--${sub.tono}">${sub.texto}</span>
       </span>
       <span class="lote-row__amount">${f(Number(p.monto) || 0)}</span>
-    </label>`).join('');
+    </label>`;
+  }).join('');
 
   const hayDeudas = lista.some(p => p.tipo === 'deuda-entidad' || p.tipo === 'deuda-personal');
   const intro = hayDeudas
-    ? 'Estos pagos ya vencieron y no están registrados. Lo que abones a una deuda baja su saldo. Desmarca los que aún no hayas pagado.'
-    : 'Estos pagos ya vencieron y no están registrados. Desmarca los que aún no hayas pagado.';
+    ? 'Vencen hoy o ya vencieron y no están registrados. Lo que abones a una deuda baja su saldo. Desmarca los que aún no hayas pagado.'
+    : 'Vencen hoy o ya vencieron y no están registrados. Desmarca los que aún no hayas pagado.';
 
   return `
     <p class="lote-intro">${intro}</p>
     <div class="lote-lista">${items}</div>
-    <p class="lote-total" data-role="lote-total" aria-live="polite"></p>
-    <div class="modal__footer modal__footer--principal">
+    <div class="modal__footer modal__footer--principal lote-pie-caja">
+      <p class="lote-pie" aria-live="polite">
+        <span class="lote-pie__rotulo" data-role="lote-rotulo">Total a registrar</span>
+        <span class="lote-pie__total" data-role="lote-total"></span>
+      </p>
       <button type="button" class="btn btn-primary" data-action="compromisos-confirmar-lote">
-        <svg class="icon" aria-hidden="true"><use href="#i-check-circle"/></svg>
+        <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>
         <span data-role="lote-cta-texto">Registrar pagos</span>
       </button>
     </div>`;
