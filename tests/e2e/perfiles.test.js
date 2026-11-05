@@ -194,7 +194,8 @@ test.describe('APR.3d - la alcancía y la meta del niño', () => {
     await page.click('[data-action="nino-meta-semana"][data-paso="1000"]');
     await expect(page.locator('#nino-meta-plan')).toContainText('Lo tendrás en 7 semanas.');
     await page.click('#form-nino-meta [type="submit"]');
-    await expect(page.locator('#nino-main')).toContainText('Mi balón · $30.000');
+    await expect(page.locator('#nino-main .knino-meta')).toContainText('Tu meta');
+    await expect(page.locator('#nino-main .knino-meta')).toContainText('$10.000 de $30.000');
     await expect(page.locator('#nino-main')).toContainText('Te faltan $20.000.');
 
     await expect.poll(async () => (await leerEstado(page)).perfiles?.[0]?.metas?.length).toBe(1);
@@ -240,8 +241,8 @@ test.describe('APR.3e - el tutor en Ajustes, Familia', () => {
     await expect(modal).toContainText('Activo: le sumas $1 por cada $10');
     await page.click('#modal-familia [data-action="familia-entrar"]');
     await page.click('#nino-nav [data-vista="alcancia"]');
-    await expect(page.locator('#nino-main')).toContainText('Mi mesada');
-    await expect(page.locator('#nino-main')).toContainText('Papá te suma $1 por cada $10.');
+    await expect(page.locator('#nino-main')).toContainText('Tu mesada');
+    await expect(page.locator('#nino-main')).toContainText('Papá te suma $1 por cada $10 que guardas.');
   });
 });
 
@@ -267,7 +268,7 @@ test.describe('APR.3f - la ruta completa del niño', () => {
 });
 
 test.describe('APR.4b - el niño en escritorio y el acceso del adulto', () => {
-  test('la barra es un riel a la izquierda e Inicio va en dos columnas, con los frascos', async ({ page }) => {
+  test('la barra es un riel a la izquierda e Inicio va en dos columnas, con la alcancía', async ({ page }) => {
     await sembrarSiVacio(page, estadoBase({ perfil: { nombre: 'Esteban', smmlv: 1750905 }, config: conCandado(), perfiles: [SOFIA] }));
     await page.goto('/#dash');
     await page.locator('#quien-usa[data-open] [data-role="nino"]').click();
@@ -281,8 +282,8 @@ test.describe('APR.4b - el niño en escritorio y el acceso del adulto', () => {
     const [izq, der] = await Promise.all([0, 1].map(i => page.locator('.nino-inicio__grupo').nth(i).boundingBox()));
     expect(der.x).toBeGreaterThan(izq.x + izq.width - 1);
     expect(Math.abs(der.y - izq.y)).toBeLessThan(2);
-    await expect(page.locator('#nino-main .jars')).toBeVisible();
-    await expect(page.locator('#nino-main .knino-mini')).toBeHidden();
+    // ADR 124 D2: la alcancía va una sola vez, igual en todos los anchos.
+    await expect(page.locator('.nino-inicio__grupo').nth(1)).toContainText('Cuando te den dinero, guárdalo aquí.');
 
     // El dibujo y "Cambiar" viven en el riel, no se repiten en Inicio.
     await expect(page.locator('#nino-main [data-action="perfil-cambiar"]')).toBeHidden();
@@ -330,7 +331,7 @@ test.describe('APR.4b - el niño en tableta', () => {
     expect(riel.height).toBeGreaterThan(riel.width);
     const [arriba, abajo] = await Promise.all([0, 1].map(i => page.locator('.nino-inicio__grupo').nth(i).boundingBox()));
     expect(abajo.y).toBeGreaterThan(arriba.y + arriba.height - 1);
-    await expect(page.locator('#nino-main .knino-mini')).toBeVisible();
+    await expect(page.locator('.nino-inicio__grupo').nth(1)).toContainText('Tu alcancía');
   });
 });
 

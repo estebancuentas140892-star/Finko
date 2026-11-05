@@ -23,9 +23,13 @@ body.kid { font-size: var(--fk-kid-text-base); line-height: var(--fk-kid-leading
   gap: 14px;
   padding: 18px;
   border-radius: var(--fk-kid-radius-lg);
-  border: 2px solid var(--fk-border-subtle);
+  border: 1px solid var(--fk-border-subtle);
   background: var(--fk-bg-surface);
 }
+/* La tarjeta que pide atención lleva el borde doble y de color (ADR 124 D2). */
+.knino-leccion,
+.knino-premio,
+.knino-logro { border-width: 2px; }
 
 /* ── BOTÓN CON CANTO (kidPress) ──────────────────────────────────
    El canto sólido de `--fk-kid-depth` dice "esto se toca" sin sombra
@@ -121,16 +125,16 @@ body.kid .fk-toast { bottom: calc(var(--fk-kid-target) + var(--fk-space-8) + env
 .nino-main {
   display: flex;
   flex-direction: column;
-  gap: var(--fk-space-5);
+  gap: var(--fk-space-4);
   max-width: 34rem;
   margin: 0 auto;
-  padding: var(--fk-space-8) var(--fk-space-5) var(--fk-space-6);
+  padding: var(--fk-space-4) var(--fk-space-4) var(--fk-space-6);
 }
 .nino-main:focus { outline: none; }
 /* Inicio en dos grupos: en el teléfono van uno debajo del otro, con el
    mismo espacio que el resto de la pantalla; en escritorio, dos columnas. */
 .nino-inicio,
-.nino-inicio__grupo { display: flex; flex-direction: column; gap: var(--fk-space-5); min-width: 0; }
+.nino-inicio__grupo { display: flex; flex-direction: column; gap: var(--fk-space-4); min-width: 0; }
 .nino-inicio h1:focus { outline: none; }
 
 /* La teja del dibujo del niño, en el color de su dibujo (--d). */
@@ -298,9 +302,9 @@ body.kid .fk-toast { bottom: calc(var(--fk-kid-target) + var(--fk-space-8) + env
 .nino-main { padding-bottom: calc(var(--fk-kid-target) + var(--fk-space-12) + env(safe-area-inset-bottom, 0px)); }
 .nino-main h1:focus { outline: none; }
 
-.knino-cabeza { display: flex; align-items: center; justify-content: space-between; gap: var(--fk-space-3); }
-.knino-cabeza__hola { flex: 1; min-width: 0; font-size: 28px; }
-.knino-titulo { display: flex; align-items: center; gap: var(--fk-space-2); font-size: 28px; }
+.knino-cabeza { display: flex; align-items: center; justify-content: space-between; gap: var(--fk-space-3); min-height: 4.5rem; }
+.knino-cabeza__hola { flex: 1; min-width: 0; font-size: var(--fk-kid-text-xl); line-height: 1.23; }
+.knino-titulo { display: flex; align-items: center; gap: var(--fk-space-2); font-size: var(--fk-kid-text-xl); line-height: 1.23; }
 .knino-titulo .icon { width: 32px; height: 32px; color: var(--fk-kid-primary); }
 .knino-total { font-variant-numeric: tabular-nums; }
 .knino-fila { display: flex; align-items: center; gap: var(--fk-space-3); }
@@ -316,20 +320,32 @@ body.kid .fk-toast { bottom: calc(var(--fk-kid-target) + var(--fk-space-8) + env
   color: var(--dt, var(--fk-text-primary));
 }
 .knino-teja .icon { width: var(--fk-kid-icon); height: var(--fk-kid-icon); stroke-width: 2.4; }
-.kidav--nino { width: 3.5rem; height: 3.5rem; border-radius: var(--fk-kid-radius-md); }
+.kidav--nino,
+.kidav--yo { background: var(--fk-bg-elevated); border-color: var(--d, var(--fk-accent)); }
+.kidav--nino { width: 3.25rem; height: 3.25rem; border-radius: var(--fk-kid-radius-md); }
+/* ADR 124 D4: en Yo el dibujo manda, centrado y grande. */
+.kidav--yo { width: 6rem; height: 6rem; border-radius: var(--fk-kid-radius-xl); }
+/* "Cambiar" lleva su nombre al lado del ícono (ADR 124 D1); el volver de la
+   meta usa la misma pieza con el ícono solo. */
 .knino-cambiar {
-  display: grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   flex-shrink: 0;
-  width: var(--fk-kid-target-min);
-  height: var(--fk-kid-target-min);
+  min-width: var(--fk-kid-target-min);
+  min-height: var(--fk-kid-target-min);
+  padding: 0 var(--fk-space-3);
   border: 0;
-  border-radius: var(--fk-kid-radius-sm);
+  border-radius: var(--fk-radius-lg);
   background: var(--fk-bg-elevated);
-  color: var(--fk-text-primary);
+  color: var(--fk-text-secondary);
+  font: inherit;
+  font-size: var(--fk-kid-text-sm);
+  font-weight: 650;
   cursor: pointer;
 }
-.knino-cambiar .icon { width: 24px; height: 24px; }
+.knino-cambiar .icon { width: 22px; height: 22px; }
 
 .kcard--dom {
   border-color: color-mix(in srgb, var(--d) 40%, transparent);
@@ -352,19 +368,33 @@ body.kid .fk-toast { bottom: calc(var(--fk-kid-target) + var(--fk-space-8) + env
 .kchip--dom { background: color-mix(in srgb, var(--d) 14%, transparent); color: var(--dt, var(--fk-text-primary)); }
 .kchip--hecha { background: color-mix(in srgb, var(--fk-kid-ahorrar) 16%, transparent); color: var(--fk-kid-ahorrar-text); }
 
-/* Globo de lo que dice Tino. */
+/* Globo de lo que dice Tino: sin borde, con su piquito hacia él (ADR 124 D1). */
 .bubble {
+  position: relative;
   flex: 1;
+  min-width: 0;
   margin: 0;
   padding: 14px 16px;
-  border-radius: var(--fk-kid-radius-lg);
-  border: 2px solid var(--fk-border-default);
-  background: var(--fk-bg-surface);
+  border-radius: 20px;
+  background: var(--fk-bg-elevated);
   color: var(--fk-text-primary);
   font-size: var(--fk-kid-text-base);
-  font-weight: 700;
-  line-height: 1.3;
+  font-weight: 650;
+  line-height: 1.33;
+  text-wrap: pretty;
 }
+.bubble::before {
+  content: "";
+  position: absolute;
+  left: -7px;
+  top: 22px;
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  background: inherit;
+  transform: rotate(45deg);
+}
+.knino-tino { gap: 10px; margin-left: calc(-1 * var(--fk-space-2)); }
 
 /* Barra del niño: cuatro destinos con ícono y nombre, 56 px de toque. */
 .knav {
@@ -373,15 +403,15 @@ body.kid .fk-toast { bottom: calc(var(--fk-kid-target) + var(--fk-space-8) + env
   z-index: var(--fk-z-sidebar);
   display: flex;
   gap: 4px;
-  padding: 8px 10px calc(10px + env(safe-area-inset-bottom, 0px));
-  background: var(--fk-bg-surface);
+  padding: 8px 6px calc(10px + env(safe-area-inset-bottom, 0px));
+  background: color-mix(in srgb, var(--fk-bg-base) 55%, var(--fk-bg-surface));
   border-top: 1px solid var(--fk-border-subtle);
 }
 .knav:empty { display: none; }
 .knav__it {
   flex: 1;
   min-width: 0;
-  min-height: var(--fk-kid-target);
+  min-height: 4rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -392,13 +422,16 @@ body.kid .fk-toast { bottom: calc(var(--fk-kid-target) + var(--fk-space-8) + env
   background: transparent;
   color: var(--fk-text-secondary);
   font: inherit;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: var(--fk-kid-text-sm);
+  line-height: 1.25;
+  font-weight: 600;
   cursor: pointer;
 }
-.knav__it .icon { width: var(--fk-kid-icon); height: var(--fk-kid-icon); }
-.knav__it[aria-current="page"] { background: color-mix(in srgb, var(--fk-kid-primary) 14%, transparent); color: var(--fk-text-primary); }
-.knav__it[aria-current="page"] .icon { color: var(--fk-kid-primary); }
+.knav__it .icon { width: 26px; height: 26px; }
+/* ADR 124 D1: la píldora va detrás del ícono, no de todo el destino. */
+.knav__ico { display: grid; place-items: center; width: 4rem; height: 2.25rem; border-radius: 18px; }
+.knav__it[aria-current="page"] { color: var(--fk-kid-primary); font-weight: 750; }
+.knav__it[aria-current="page"] .knav__ico { background: color-mix(in srgb, var(--fk-kid-primary) 16%, transparent); }
 
 /* Ruta del niño: unidades en orden y el camino de la unidad actual. */
 .kruta { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--fk-space-4); }
@@ -476,37 +509,55 @@ body.kid .fk-toast { bottom: calc(var(--fk-kid-target) + var(--fk-space-8) + env
   font-weight: 800;
 }
 
-/* Alcancía: tres frascos. */
-.jars { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+/* Alcancía: tres frascos, cada uno con su botón debajo (ADR 124 D3). */
+.jars { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--fk-space-2); }
+.jars__col { display: flex; flex-direction: column; gap: var(--fk-space-2); min-width: 0; }
 .jar {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  padding: 14px 6px 12px;
-  border-radius: var(--fk-kid-radius-lg);
-  border: 2px solid color-mix(in srgb, var(--d) 35%, transparent);
+  padding: 14px 4px 12px;
+  border-radius: 22px;
+  border: 1px solid var(--fk-border-subtle);
   background: var(--fk-bg-surface);
   text-align: center;
 }
-.jar__nombre { margin: 0; display: flex; align-items: center; gap: 4px; font-size: 15px; font-weight: 800; color: var(--dt); }
-.jar__nombre .icon { width: 18px; height: 18px; }
-.jar__monto { margin: 0; font-size: 19px; font-weight: 800; color: var(--fk-text-primary); font-variant-numeric: tabular-nums; }
+.jar__nombre { margin: 0; display: flex; align-items: center; gap: 4px; max-width: 100%; font-size: var(--fk-kid-text-sm); line-height: 1.25; font-weight: 700; color: var(--dt); }
+.jar__nombre .icon { flex-shrink: 0; width: 16px; height: 16px; }
+.jar__monto { margin: 0; font-size: 20px; line-height: 1.2; font-weight: 800; color: var(--fk-text-primary); font-variant-numeric: tabular-nums; }
+.jars .kbtn--dom { width: 100%; padding: 0 6px; font-size: 17px; }
 
-/* Yo: insignias de las unidades terminadas. */
-.kinsignias { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--fk-space-3); }
+/* Yo: una insignia por unidad, en dos columnas (ADR 124 D4). La ganada
+   lleva el ícono de su unidad en vez de la estrella; la que falta, un
+   candado y el nombre de la unidad. */
+.kinsignias { list-style: none; margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px var(--fk-space-3); }
 .kinsignia { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
-.kinsignia__dibujo { width: 56px; height: 56px; color: var(--d); }
+.kinsignia__dibujo { position: relative; width: 72px; height: 72px; color: var(--d); --fk-insignia-estrella: transparent; }
+.kinsignia__dibujo svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.kinsignia__icono { position: absolute; inset: 0; display: grid; place-items: center; padding-bottom: 10px; color: var(--fk-bg-base); }
+.kinsignia__icono .icon { width: 26px; height: 26px; stroke-width: 2.8; }
 .kinsignia__vacia {
   display: grid;
   place-items: center;
-  width: 56px;
-  height: 56px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
   border: 3px dashed var(--fk-border-default);
-  color: var(--fk-text-muted);
-  font-weight: 800;
+  color: var(--fk-text-secondary);
 }
+.kinsignia__vacia .icon { width: 24px; height: 24px; }
+.kinsignia__nombre {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: var(--fk-kid-text-sm);
+  line-height: 1.25;
+  font-weight: 650;
+  color: var(--fk-text-primary);
+}
+.kinsignia--pendiente .kinsignia__nombre { font-weight: 600; color: var(--fk-text-secondary); }
 
 /* La lección del niño: el mismo motor con piel `.kid`. */
 body.kid .leccion__titulo { font-size: var(--fk-kid-text-lg); }
@@ -553,22 +604,93 @@ body.kid .leccion-clasificar__boton { min-height: var(--fk-kid-target); font-siz
 /* ── ALCANCÍA Y METAS DEL NIÑO (APR.3d, ADR 093 D9) ──────────────
    "Guardé", "Gasté" y "Compartí" en el color de su frasco, la meta con su
    barra y la hoja para anotar. Todo control mide al menos 48 px. */
-.knino-titulo-sm { display: flex; align-items: center; gap: var(--fk-space-2); }
-.knino-titulo-sm .icon { width: var(--fk-kid-icon); height: var(--fk-kid-icon); color: var(--fk-kid-ahorrar-text); }
-.knino-mini { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.knino-mini li {
+/* El total junto al título: Inicio, Alcancía (ADR 124 D2 y D3). */
+.knino-suma { display: flex; align-items: baseline; justify-content: space-between; gap: var(--fk-space-3); }
+.knino-suma__total { margin: 0; font-size: var(--fk-kid-text-xl); line-height: 1.23; font-weight: 800; color: var(--fk-text-primary); font-variant-numeric: tabular-nums; }
+
+/* Los tres frascos en tejas de su color (Inicio y la mesada). */
+.ktejas { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--fk-space-2); }
+.kteja {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 10px;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 10px 4px;
   border-radius: var(--fk-kid-radius-md);
-  background: color-mix(in srgb, var(--d) 12%, var(--fk-bg-surface));
+  background: color-mix(in srgb, var(--d) 14%, transparent);
+  text-align: center;
 }
-.knino-mini span { display: flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 800; color: var(--dt); }
-.knino-mini .icon { width: 18px; height: 18px; }
-.knino-mini strong { font-size: 18px; color: var(--fk-text-primary); font-variant-numeric: tabular-nums; }
+.kteja__nombre { max-width: 100%; font-size: var(--fk-kid-text-sm); line-height: 1.25; font-weight: 700; color: var(--dt); }
+.kteja__monto { font-size: var(--fk-kid-text-base); line-height: 1.2; font-weight: 800; color: var(--fk-text-primary); font-variant-numeric: tabular-nums; }
+.ktejas--sm .kteja { gap: 2px; border-radius: var(--fk-radius-lg); }
 
-.knino-acciones { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+/* La lección que sigue: borde de acento y un solo botón (ADR 124 D2). */
+.knino-leccion { gap: var(--fk-space-1); border-color: color-mix(in srgb, var(--fk-kid-primary) 45%, transparent); }
+.knino-leccion .k-h3 { margin-top: 6px; }
+.knino-leccion .kbtn { margin-top: var(--fk-space-3); }
+.kchip--acento { min-height: 30px; padding: 0 12px; background: color-mix(in srgb, var(--fk-kid-primary) 14%, transparent); color: var(--fk-kid-primary); font-size: var(--fk-kid-text-sm); }
+.knino-dato { margin: 0; display: flex; align-items: center; gap: 6px; font-size: var(--fk-kid-text-sm); line-height: 1.375; font-weight: 600; color: var(--fk-text-secondary); }
+.knino-dato .icon { flex-shrink: 0; width: 18px; height: 18px; }
+
+/* Botón de línea: la acción que acompaña sin pesar (ADR 124 D3). */
+.kbtn--linea { background: transparent; border: 2px solid var(--fk-border-default); color: var(--fk-text-secondary); box-shadow: none; }
+.kbtn--linea:active { box-shadow: none; }
+.kbtn--linea .icon { width: 22px; height: 22px; }
+
+/* Secciones con su título fuera de la tarjeta. */
+.knino-seccion { display: flex; flex-direction: column; gap: 10px; margin-top: var(--fk-space-2); }
+.knino-seccion > .k-h3,
+.knino-seccion__cabeza { padding: 0 4px; }
+.knino-seccion__cabeza { display: flex; align-items: baseline; justify-content: space-between; gap: var(--fk-space-3); }
+.knino-seccion__cuenta { font-size: var(--fk-kid-text-base); font-weight: 700; color: var(--fk-text-secondary); font-variant-numeric: tabular-nums; }
+
+/* Filas dentro de una tarjeta: lo último que anotó y los frascos vacíos. */
+.klista { list-style: none; gap: 0; padding: 4px var(--fk-space-4); }
+.klista__fila { display: flex; align-items: center; gap: var(--fk-space-3); min-height: 4rem; padding: var(--fk-space-2) 0; }
+.klista__fila + .klista__fila { border-top: 1px solid var(--fk-border-subtle); }
+.klista__fila--frasco { gap: 14px; min-height: 4.75rem; }
+.klista__titulo {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: var(--fk-kid-text-base);
+  line-height: 1.33;
+  font-weight: 650;
+  color: var(--fk-text-primary);
+}
+.klista__linea { display: flex; align-items: baseline; gap: var(--fk-space-2); }
+.klista__cuando { flex: 1; min-width: 0; font-size: var(--fk-kid-text-sm); line-height: 1.25; color: var(--fk-text-secondary); }
+.klista__monto { flex: none; font-size: var(--fk-kid-text-base); line-height: 1.33; font-weight: 800; color: var(--fk-text-primary); font-variant-numeric: tabular-nums; }
+.klista__monto--entra { color: var(--fk-kid-ahorrar-text); }
+.klista__frasco { font-size: 20px; line-height: 1.3; font-weight: 750; color: var(--dt); }
+.klista__para { font-size: var(--fk-kid-text-sm); line-height: 1.25; color: var(--fk-text-secondary); }
+.klista__fila--frasco .klista__monto { font-size: 20px; }
+.knino-teja--sm { width: 2.75rem; height: 2.75rem; border-radius: 14px; }
+.knino-teja--sm .icon { width: 24px; height: 24px; }
+.knino-nota { margin: 0; padding: 0 var(--fk-space-2); text-align: center; font-size: var(--fk-kid-text-sm); line-height: 1.375; color: var(--fk-text-secondary); text-wrap: pretty; }
+
+/* La mesada y el premio, en la voz del niño. */
+.knino-mesada__monto { margin: 0; font-size: 20px; line-height: 1.3; font-weight: 750; color: var(--fk-text-primary); font-variant-numeric: tabular-nums; }
+.knino-premio { border-color: color-mix(in srgb, var(--fk-kid-sun) 45%, transparent); }
+.knino-fila--arriba { align-items: flex-start; }
+/* La meta alcanzada se celebra en Inicio, con el sol de la celebración. */
+.knino-logro {
+  border-color: color-mix(in srgb, var(--fk-kid-sun) 55%, transparent);
+  background: linear-gradient(color-mix(in srgb, var(--fk-kid-sun) 10%, transparent), color-mix(in srgb, var(--fk-kid-sun) 10%, transparent)), var(--fk-bg-surface);
+}
+.knino-logro .knino-fila { gap: 10px; }
+.knino-logro__rotulo { margin: 0; font-size: var(--fk-kid-text-sm); font-weight: 700; color: var(--fk-kid-sun-text); }
+
+/* Yo: el dibujo arriba y dos datos de lo que lleva (ADR 124 D4). */
+.knino-yo { display: flex; flex-direction: column; align-items: center; gap: var(--fk-space-2); padding-top: var(--fk-space-2); text-align: center; }
+.knino-yo .k-h1 { line-height: 1.19; }
+.knino-datos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--fk-space-2); }
+.knino-datos__teja { margin: 0; display: flex; flex-direction: column; padding: 14px; border-radius: 20px; border: 1px solid var(--fk-border-subtle); background: var(--fk-bg-surface); }
+.knino-datos__teja strong { font-size: var(--fk-kid-text-xl); line-height: 1.23; font-weight: 800; color: var(--fk-text-primary); font-variant-numeric: tabular-nums; }
+.knino-datos__teja span { font-size: var(--fk-kid-text-sm); line-height: 1.25; color: var(--fk-text-secondary); }
+
 .kbtn--dom {
   padding: 0 10px;
   border: 2px solid color-mix(in srgb, var(--d) 55%, transparent);
@@ -577,35 +699,21 @@ body.kid .leccion-clasificar__boton { min-height: var(--fk-kid-target); font-siz
   box-shadow: 0 var(--fk-kid-depth) 0 color-mix(in srgb, var(--d) 55%, transparent);
 }
 .kbtn--dom:active { box-shadow: 0 calc(var(--fk-kid-depth) - 2px) 0 color-mix(in srgb, var(--d) 55%, transparent); }
+.kbtn--dom { color: var(--dt); }
 .kbtn--dom .icon { color: var(--dt); width: 24px; height: 24px; }
-/* Tres botones en fila: el ícono va arriba del nombre para que quepa
-   "Compartí" a 320 px sin cortarse. */
-.knino-acciones .kbtn { flex-direction: column; gap: 4px; min-height: 68px; padding: 8px 4px; font-size: 16px; }
-
-.knino-quitar {
-  align-self: center;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--fk-space-2);
-  min-height: var(--fk-kid-target-min);
-  padding: 0 var(--fk-space-3);
-  border: 0;
-  background: transparent;
-  color: var(--fk-text-secondary);
-  font: inherit;
-  font-size: var(--fk-kid-text-sm);
-  font-weight: 700;
-  text-decoration: underline;
-  cursor: pointer;
-}
-.knino-mover { text-decoration: none; }
-.knino-mover .icon { width: 22px; height: 22px; }
 
 .knino-meta { text-align: left; color: inherit; font: inherit; }
+.knino-meta__cabeza { display: flex; align-items: flex-start; gap: 14px; }
+.knino-meta__dibujo { display: grid; place-items: center; flex-shrink: 0; width: 4.5rem; height: 4.5rem; border-radius: 20px; background: var(--fk-bg-elevated); }
+.knino-meta__cifras { margin: 0; font-size: var(--fk-kid-text-base); line-height: 1.33; font-weight: 600; font-variant-numeric: tabular-nums; }
+.knino-meta__cifras strong { font-weight: 800; color: var(--fk-text-primary); }
+.knino-meta__cifras span { color: var(--fk-text-secondary); }
+.knino-meta__linea { margin: 0; font-size: var(--fk-kid-text-base); line-height: 1.33; font-weight: 600; color: var(--fk-text-primary); text-wrap: pretty; font-variant-numeric: tabular-nums; }
+.knino-meta__linea strong { font-weight: 800; }
 .knino-meta--nueva { flex-direction: row; align-items: center; gap: 14px; cursor: pointer; }
 .knino-meta--nueva > .icon { width: 24px; height: 24px; color: var(--fk-text-muted); }
-.knino-meta__lista { color: var(--fk-kid-ahorrar-text); font-weight: 800; }
-.knino-meta__acciones { margin-top: var(--fk-space-2); }
+.knino-meta__acciones { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--fk-space-2); }
+.knino-meta__acciones .kbtn { padding: 0 10px; font-size: var(--fk-kid-text-sm); }
 .kprog { height: 14px; border-radius: var(--fk-radius-full); background: var(--fk-bg-elevated); overflow: hidden; }
 .kprog > span { display: block; height: 100%; border-radius: inherit; background: var(--d, var(--fk-kid-primary)); }
 
@@ -763,8 +871,7 @@ body.kid .leccion-clasificar__boton { min-height: var(--fk-kid-target); font-siz
    que sigue a la izquierda; la alcancía, ahora con sus tres frascos, y la
    meta a la derecha. */
 .knav__yo,
-.knav__it--cambiar,
-.nino-inicio .jars { display: none; }
+.knav__it--cambiar { display: none; }
 @media (min-width: 768px) {
   .knav {
     inset: 0 auto 0 0;
@@ -804,8 +911,6 @@ body.kid .leccion-clasificar__boton { min-height: var(--fk-kid-target); font-siz
   }
   .nino-inicio .knino-cabeza__hola { font-size: 40px; }
   .nino-inicio .bubble { font-size: var(--fk-kid-text-lg); }
-  .nino-inicio .jars { display: grid; }
-  .nino-inicio .knino-mini { display: none; }
 }
 
 /* El teléfono propio del niño (NUBE.3) no tiene adulto: sin "Cambiar de perfil". */
@@ -836,25 +941,21 @@ body.kid .leccion-clasificar__boton { min-height: var(--fk-kid-target); font-siz
      a todo el ancho): el teléfono alejaba la página y la barra inferior se
      salía del borde. El camino recorta su desborde horizontal y, en
      pantallas angostas, el zigzag se cierra para que Tino no quede afuera.
-   - Los tres frascos del inicio no cabían a 320: "Ahorrar" y "Compartir"
-     se cortaban y los montos se pisaban. Bajo 400px van uno por fila,
-     nombre a la izquierda y monto a la derecha.
+   - Los tres frascos no caben con su ícono a 320: bajo 360 px el nombre
+     se queda sin él (ADR 124 D3; antes, ADR 098 D13 los ponía en filas).
    - La pantalla nace debajo de la barra de estado en el iPhone instalado. */
 .kcamino { overflow-x: clip; }
 @media (max-width: 399px) {
   .kcamino__paso:nth-child(even) { transform: translateX(-2.5rem); }
   .kcamino__paso:nth-child(odd):not(:first-child) { transform: translateX(2.5rem); }
   .kcamino__paso .tino { right: calc(50% + 2.75rem); }
-
-  .knino-mini { grid-template-columns: minmax(0, 1fr); gap: 6px; }
-  .knino-mini li {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--fk-space-2);
-    padding: 10px 14px;
-  }
+}
+@media (max-width: 359px) {
+  .jar__nombre .icon { display: none; }
+  .jar__nombre { font-size: 15px; }
+  .kteja { padding-inline: 2px; }
+  .kteja__nombre { font-size: 13px; }
 }
 @media (max-width: 767px) {
-  .nino-main { padding-top: calc(var(--fk-space-8) + env(safe-area-inset-top, 0px)); }
+  .nino-main { padding-top: calc(var(--fk-space-3) + env(safe-area-inset-top, 0px)); }
 }

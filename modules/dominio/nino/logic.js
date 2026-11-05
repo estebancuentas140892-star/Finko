@@ -251,3 +251,53 @@ export function llenadoFrasco(frasco, perfil) {
   return Math.min(1, Math.max(0.05, saldo / referencia));
 }
 
+
+// ── LO ÚLTIMO QUE ANOTASTE (ADR 124 D3) ──────────────────────────
+
+/**
+ * Las últimas anotaciones de la alcancía, una por hecho y la más nueva
+ * primero. La mesada que se reparte en los tres frascos es una sola
+ * (comparten `entrega`) y mover entre frascos también (comparten `par`):
+ * el niño anotó una cosa, no dos ni tres.
+ *
+ * @param {any} perfil
+ * @param {number} [n] - cuántas devolver.
+ * @returns {{ tipo: string, fecha: string, monto: number, frasco: string, nota: string, frascos: number, desde?: string, hacia?: string }[]}
+ */
+export function ultimasAnotaciones(perfil, n = 4) {
+  const movs = Array.isArray(perfil?.movimientos) ? perfil.movimientos : [];
+  /** @type {any[]} */
+  const hechos = [];
+  const porClave = new Map();
+  movs.forEach((m, orden) => {
+    if (!m || !FRASCOS.includes(m.frasco)) return;
+    const monto = Number(m.monto) || 0;
+    const clave = m.tipo === 'mesada' && m.entrega ? `e:${m.entrega}`
+      : m.tipo === 'mover' && m.par ? `p:${m.par}` : null;
+    const previo = clave ? porClave.get(clave) : null;
+    if (previo) {
+      previo.orden = orden;
+      if (m.tipo === 'mesada') {
+        previo.monto += monto;
+        if (monto > 0) previo.frascos += 1;
+      } else if (monto < 0) previo.desde = m.frasco;
+      else previo.hacia = m.frasco;
+      return;
+    }
+    const hecho = {
+      tipo: m.tipo, fecha: typeof m.fecha === 'string' ? m.fecha : '', monto, frasco: m.frasco,
+      nota: typeof m.nota === 'string' ? m.nota.trim() : '', frascos: monto > 0 ? 1 : 0, orden,
+    };
+    if (m.tipo === 'mover') {
+      hecho.monto = Math.abs(monto);
+      if (monto < 0) hecho.desde = m.frasco;
+      else hecho.hacia = m.frasco;
+    }
+    if (clave) porClave.set(clave, hecho);
+    hechos.push(hecho);
+  });
+  return hechos
+    .sort((a, b) => (a.fecha === b.fecha ? b.orden - a.orden : a.fecha < b.fecha ? 1 : -1))
+    .slice(0, n)
+    .map(({ orden: _orden, ...h }) => h);
+}

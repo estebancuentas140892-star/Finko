@@ -75,10 +75,13 @@ function _render() {
   main.innerHTML = html;
 }
 
-/** Cambia de pantalla y lleva el foco a su título. */
-function _irA(vista) {
+/**
+ * Cambia de pantalla y lleva el foco a su título. A la meta se entra con un
+ * borrador vacío, o con la meta actual para cambiar su plan.
+ */
+function _irA(vista, borrador = {}) {
   if (!_VISTAS.includes(vista) || !perfilActivo()) return;
-  if (vista === 'meta') _borrador = {};
+  if (vista === 'meta') _borrador = { ...borrador };
   _vista = vista;
   _ultimo = null;
   _render();
@@ -190,10 +193,23 @@ function _crearMeta(form) {
     announce(errores.join(' '), 'assertive');
     return;
   }
-  _guardar(p => ({ ...p, metas: [...p.metas.filter(m => m?.lograda), { id: _idNuevo(), ...meta, creada: hoy() }] }));
+  const id = _borrador.id;
+  if (id) {
+    _guardar(p => ({ ...p, metas: p.metas.map(m => (m?.id === id ? { ...m, ...meta } : m)) }));
+    mostrarToast({ titulo: '¡Listo!', detalle: `Cambiaste el plan de tu ${meta.nombre}.` });
+  } else {
+    _guardar(p => ({ ...p, metas: [...p.metas.filter(m => m?.lograda), { id: _idNuevo(), ...meta, creada: hoy() }] }));
+    mostrarToast({ titulo: '¡Meta creada!', detalle: `Vas por tu ${meta.nombre}.` });
+  }
   _borrador = {};
-  mostrarToast({ titulo: '¡Meta creada!', detalle: `Vas por tu ${meta.nombre}.` });
   _irA('alcancia');
+}
+
+/** "Cambiar el plan": la pantalla de la meta con lo que ya tiene (ADR 124 D2). */
+function _cambiarPlan() {
+  const meta = metaActiva(perfilActivo());
+  if (!meta) return;
+  _irA('meta', { id: meta.id, dibujo: meta.dibujo, nombre: meta.nombre, precio: meta.precio, semanal: meta.semanal });
 }
 
 /** "Lo compré": sale de Ahorrar y la meta queda lograda. */
@@ -252,6 +268,7 @@ export function initNino() {
   registrarAccion('nino-monto', _ponerMonto);
   registrarAccion('nino-meta-semana', _cambiarSemanal);
   registrarAccion('nino-meta-compre', _compre);
+  registrarAccion('nino-meta-cambiar', _cambiarPlan);
   registrarAccion('nino-meta-quitar', _quitarMeta);
   _modal()?.addEventListener('submit', _onSubmit);
   const main = document.getElementById('nino-main');

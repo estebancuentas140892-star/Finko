@@ -10,7 +10,7 @@ import { normalizarPerfil, saldosFrascos } from '../../modules/infra/perfiles.js
 import {
   estadoRutaNino, siguienteLeccionNino, unidadesHechasNino, VISTAS_NINO,
   leerMonto, validarMovimiento, crearMovimientos, metaActiva, planMeta, validarMeta, llenadoFrasco, puedeMover,
-  ofreceUbicacionNino, sinEmpezarNino,
+  ofreceUbicacionNino, sinEmpezarNino, ultimasAnotaciones,
 } from '../../modules/dominio/nino/logic.js';
 import {
   htmlBarraNino, htmlInicioNino, htmlRutaNino, htmlAlcanciaNino, htmlYoNino,
@@ -89,25 +89,51 @@ describe('las cuatro pantallas del niño (D9)', () => {
     expect(htmlBarraNino('inicio')).not.toContain('perfil-cambiar');
   });
 
-  it('Inicio va en dos grupos y trae los tres frascos para el escritorio (APR.4b)', () => {
-    const html = htmlInicioNino(perfil(), '2026-10-25');
+  it('Inicio va en dos grupos; con dinero, los tres frascos en tejas una sola vez (APR.4b, ADR 124 D2)', () => {
+    const conDinero = perfil({}, { movimientos: [{ frasco: 'ahorrar', monto: 5_000 }] });
+    const html = htmlInicioNino(conDinero, '2026-10-25');
     expect(html.match(/class="nino-inicio__grupo"/g)).toHaveLength(2);
-    expect(html).toContain('class="knino-mini"');
-    expect(html.match(/class="jar" data-frasco=/g)).toHaveLength(3);
+    expect(html.match(/class="kteja" data-frasco=/g)).toHaveLength(3);
+    expect(html).toContain('Ver mi alcancía');
+    // Sin dinero, la alcancía invita al primer "Guardé".
+    const vacia = htmlInicioNino(perfil(), '2026-10-25');
+    expect(vacia).toContain('Cuando te den dinero, guárdalo aquí.');
+    expect(vacia).toMatch(/data-action="nino-mov" data-tipo="guarde">.*Guardé dinero/);
   });
 
-  it('Inicio saluda con Tino y ofrece la lección que sigue con su duración', () => {
-    const html = htmlInicioNino(perfil());
+  it('Inicio saluda con Tino y ofrece la lección que sigue con su duración (ADR 124 D2)', () => {
+    const html = htmlInicioNino(perfil({ hechas: hechas('k1-l1') }));
     expect(html).toContain('¡Hola, Sofía!');
     expect(html).toContain('href="#il-tino-saluda"');
-    expect(html).toContain('¿Aprendemos algo hoy? Son 3 minutos.');
-    expect(html).toContain('Unidad 1 · lección 1');
-    expect(html).toMatch(/data-action="leccion-abrir" data-id="k1-l1"/);
-    expect(html).toContain('aria-label="Cambiar de perfil"');
+    expect(html).toContain('¡Vas muy bien! Sigue tu lección de hoy.');
+    expect(html).toContain('Unidad 1 · lección 2 de 3');
+    expect(html).toContain('3 minutos');
+    expect(html).toMatch(/data-action="leccion-abrir" data-id="k1-l2"/);
+    expect(html).toMatch(/aria-label="Cambiar de perfil">.*<span>Cambiar<\/span>/);
+    // La primera de todas se presenta como tal.
+    expect(htmlInicioNino(perfil())).toContain('Tu primera lección');
+  });
+
+  it('una lección a medias se retoma: "Seguir donde ibas" (ADR 124 D2)', () => {
+    const html = htmlInicioNino(perfil({ hechas: hechas('k1-l1'), enCurso: { id: 'k1-l2', paso: 1 } }));
+    expect(html).toContain('Ibas en el paso 2');
+    expect(html).toContain('Seguir donde ibas');
+    expect(html).not.toContain('3 minutos');
+  });
+
+  it('con la meta alcanzada, Tino celebra en Inicio y ofrece "Ya lo compré" (ADR 124 D2)', () => {
+    const meta = { id: 'm1', dibujo: 'audifonos', nombre: 'Audífonos', precio: 40_000, semanal: 5_000 };
+    const html = htmlInicioNino(perfil({ hechas: hechas('k1-l1') }, { metas: [meta], movimientos: [{ frasco: 'ahorrar', monto: 45_000 }] }), '2026-10-25');
+    expect(html).toContain('href="#il-tino-celebra"');
+    expect(html).toContain('¡Lo lograste!');
+    expect(html).toContain('Cuesta $40.000 y tienes $45.000 en Ahorrar.');
+    expect(html).toContain('data-action="nino-meta-compre"');
+    expect(html).not.toContain('href="#il-tino-saluda"');
+    expect(html).not.toContain('Tu meta');
   });
 
   it('Tino se presenta mientras el niño no empieza la ruta (094 D1)', () => {
-    expect(htmlInicioNino(perfil())).toContain('Soy Tino, un guatín. ¿Aprendemos algo hoy?');
+    expect(htmlInicioNino(perfil())).toContain('Soy Tino, un guatín. ¡Aprendamos juntos!');
     expect(htmlInicioNino(perfil({}, { edad: 10 }))).toContain('Soy Tino, un guatín. Primero, tres preguntas cortas.');
     // Con la primera lección hecha, o algo sabido por la ubicación, ya no.
     expect(htmlInicioNino(perfil({ hechas: hechas('k1-l1') }))).not.toContain('Soy Tino');
@@ -135,13 +161,22 @@ describe('las cuatro pantallas del niño (D9)', () => {
     expect(html).toContain('$15.000');
     expect(html).toContain('Ahorrar');
     expect(html).toContain('href="#il-frasco"');
-    expect(htmlAlcanciaNino(perfil(), '2026-10-25')).toContain('Cuando recibas dinero, toca Guardé.');
+    // Sin nada anotado, explica los tres frascos y ofrece el primer "Guardé" (ADR 124 D3).
+    const vacia = htmlAlcanciaNino(perfil(), '2026-10-25');
+    expect(vacia).toContain('Tu dinero va en tres frascos.');
+    expect(vacia).toContain('Para lo que compras ya');
+    expect(vacia).toContain('Primero guarda, después creas tu meta.');
   });
 
-  it('Yo muestra una insignia por unidad terminada y "Cambiar de perfil"', () => {
-    const html = htmlYoNino(perfil({ hechas: hechas('k1-l1', 'k1-l2', 'k1-l3') }));
+  it('Yo muestra lo que lleva, una insignia por unidad terminada y "Cambiar de perfil" (ADR 124 D4)', () => {
+    const html = htmlYoNino(perfil({ hechas: hechas('k1-l1', 'k1-l2', 'k1-l3'), semanas: ['2026-W43'] }));
     expect(html.match(/href="#il-insignia"/g)).toHaveLength(1);
+    expect(html).toContain('href="#c-billete"');
     expect(html.match(/kinsignia--pendiente/g)).toHaveLength(7);
+    expect(html.match(/href="#i-lock"/g)).toHaveLength(7);
+    expect(html).toContain('Lo que necesito y lo que quiero');
+    expect(html).toContain('<strong>1 de 8</strong><span>unidades listas</span>');
+    expect(html).toContain('<strong>1</strong><span>semana aprendiendo</span>');
     expect(html).toContain('Cambiar de perfil');
   });
 
@@ -343,6 +378,45 @@ describe('la alcancía anota, no mueve dinero (APR.3d, D3 y D9)', () => {
     expect(html).toContain('Mover dinero entre frascos');
     expect(htmlAlcanciaNino(perfil(), '2026-10-25')).not.toContain('Mover dinero entre frascos');
   });
+
+  it('lo último que anotó va una vez por hecho: la mesada y mover son una fila (ADR 124 D3)', () => {
+    const p = perfil({}, { teNombra: 'Mamá', movimientos: [
+      { id: 'a', fecha: '2026-11-01', frasco: 'ahorrar', monto: 1_200, tipo: 'premio', nota: 'Premio de 2026-10' },
+      { id: 'b', fecha: '2026-11-07', frasco: 'ahorrar', monto: 5_000, tipo: 'mesada', entrega: 'e1', nota: 'Mesada' },
+      { id: 'c', fecha: '2026-11-07', frasco: 'gastar', monto: 4_000, tipo: 'mesada', entrega: 'e1', nota: 'Mesada' },
+      { id: 'd', fecha: '2026-11-07', frasco: 'compartir', monto: 1_000, tipo: 'mesada', entrega: 'e1', nota: 'Mesada' },
+      { id: 'e', fecha: '2026-11-09', frasco: 'gastar', monto: -2_000, tipo: 'gaste', nota: 'Colombina' },
+      { id: 'f', fecha: '2026-11-10', frasco: 'gastar', monto: -1_000, tipo: 'mover', par: 'p1', nota: '' },
+      { id: 'g', fecha: '2026-11-10', frasco: 'ahorrar', monto: 1_000, tipo: 'mover', par: 'p1', nota: '' },
+    ] });
+    const lista = ultimasAnotaciones(p, 4);
+    expect(lista.map(a => a.tipo)).toEqual(['mover', 'gaste', 'mesada', 'premio']);
+    expect(lista[0]).toMatchObject({ monto: 1_000, desde: 'gastar', hacia: 'ahorrar' });
+    expect(lista[2]).toMatchObject({ monto: 10_000, frascos: 3 });
+    const html = htmlAlcanciaNino(p, '2026-11-12');
+    expect(html).toContain('Lo último que anotaste');
+    expect(html).toContain('Moviste dinero');
+    expect(html).toContain('De Gastar a Ahorrar · martes 10');
+    expect(html).toContain('Gasté · lunes 9');
+    expect(html).toContain('\u2212$2.000');
+    expect(html).toContain('Mesada del sábado');
+    expect(html).toContain('En tus 3 frascos · sábado 7');
+    expect(html).toContain('+$10.000');
+    expect(html).toContain('Mamá te lo sumó · domingo 1');
+    // De otro mes, la fecha lleva el mes.
+    expect(htmlAlcanciaNino(p, '2026-12-02')).toContain('lunes 9 de noviembre');
+  });
+
+  it('la mesada dice cuánto, cada cuánto y cuándo llega la próxima (ADR 124 D3)', () => {
+    const reparto = { ahorrar: 5_000, gastar: 4_000, compartir: 1_000 };
+    const semanal = perfil({}, { mesada: { monto: 10_000, frecuencia: 'semanal', dia: 6, reparto, desde: '2026-10-01', entregas: [] } });
+    const html = htmlAlcanciaNino(semanal, '2026-11-12');
+    expect(html).toContain('Tu mesada');
+    expect(html).toContain('$10.000 cada sábado');
+    expect(html).toContain('La próxima llega el sábado 14 de noviembre.');
+    const quincenal = perfil({}, { mesada: { monto: 50_000, frecuencia: 'quincenal', dia: 5, reparto, desde: '2026-10-30', entregas: [] } });
+    expect(htmlAlcanciaNino(quincenal, '2026-11-12')).toContain('Llega los viernes. La próxima: viernes 13 de noviembre.');
+  });
 });
 
 describe('la meta del niño responde en semanas y en fecha (APR.3d, D9)', () => {
@@ -368,13 +442,25 @@ describe('la meta del niño responde en semanas y en fecha (APR.3d, D9)', () => 
     const p = perfil({}, { metas: [meta], movimientos: [{ frasco: 'ahorrar', monto: 27_000 }] });
     expect(metaActiva(p).id).toBe('m1');
     const html = htmlTarjetaMeta(p, '2026-10-24');
-    expect(html).toContain('Mi balón · $45.000');
-    expect(html).toContain('Te faltan $18.000. Unas 5 semanas.');
+    expect(html).toContain('Tu meta');
+    expect(html).toContain('<strong>$27.000</strong> <span>de $45.000</span>');
+    expect(html).toContain('Te faltan <strong>$18.000</strong>. Unas 5 semanas.');
     expect(html).toContain('aria-valuenow="60"');
+    expect(html).not.toContain('nino-meta-cambiar');
+    // En la Alcancía trae la fecha y sus dos botones (ADR 124 D2).
+    const conAcciones = htmlTarjetaMeta(p, '2026-10-24', { acciones: true });
+    expect(conAcciones).toContain('Unas 5 semanas, para el 28 de noviembre.');
+    expect(conAcciones).toContain('data-action="nino-meta-cambiar"');
+    expect(conAcciones).toContain('data-action="nino-meta-quitar"');
     const lista = perfil({}, { metas: [meta], movimientos: [{ frasco: 'ahorrar', monto: 45_000 }] });
-    expect(htmlTarjetaMeta(lista, '2026-10-24')).toContain('Lo compré');
+    expect(htmlTarjetaMeta(lista, '2026-10-24', { acciones: true })).toContain('Ya lo compré');
     expect(htmlTarjetaMeta(perfil(), '2026-10-24')).toContain('Crear una meta');
     expect(htmlMetaNino(perfil(), {}, '2026-10-24')).toContain('¿Para qué quieres ahorrar?');
+    // "Cambiar el plan" abre la misma pantalla con la meta que ya tiene.
+    const cambiar = htmlMetaNino(p, { ...meta }, '2026-10-24');
+    expect(cambiar).toContain('Cambiar tu meta');
+    expect(cambiar).toContain('Guardar mi meta');
+    expect(cambiar).toMatch(/value="balon" checked/);
   });
 
   it('cada frasco se llena contra lo suyo, nunca contra los otros dos (R60)', () => {
