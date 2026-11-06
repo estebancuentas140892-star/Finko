@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): MV2.30 Gastos tanda 1, el mes, Día a día y los vacíos · 2026-11-05
+
+[ADR 132](DECISIONS/132-gastos-del-adulto-en-el-telefono.md). Fichas: [`contexto/gastos.md`](contexto/gastos.md), [`contexto/limites.md`](contexto/limites.md). SW v675. Tablero "rediseño1".
+
+- **Fila de un gasto**: la nota o descripción es el título y debajo "Categoría · Cuenta" (`textosFilaGasto()`); supera TX.9a y el orden del ADR 072 D2, también en escritorio.
+- **Barra plegada**: "Todos" más las tres categorías de más gasto del mes (`categoriasTopGastos()`) y "+N categorías" punteado. Arreglado de paso: con todas visibles, la barra abierta perdía "Menos".
+- **Encabezado del día**: "Martes 10" (`labelDiaGastos()`), sin mayúsculas sostenidas. El mes va sin cajas en las flechas; "Ver historial completo" es un enlace.
+- **Vacíos**: el botón vive dentro de la tarjeta del banner y es el primario (el "+" del encabezado se esconde); Por pagar ofrece sus tres caminos en filas y Límites estrena "Crear límite".
+- Pruebas: 9 ajustadas a la decisión nueva y 4 nuevas en `gastos`, `compromisos` y `detalle-fila`; en E2E, los caminos del vacío de Por pagar se tocan directo y la hoja de tipo se busca por su id (detrás queda el vacío con los mismos caminos), los chips plegados son cuatro y "miles" entra por el botón del vacío.
+
 ### feat(nino): frascos sin líquido, Gastar y Compartir se vacían · 2026-11-05
 
 [ADR 131](DECISIONS/131-frascos-sin-liquido.md). Ficha: [`contexto/nino.md`](contexto/nino.md). SW v673. Es la página "Frascos sin líquido" del diseño "Identidad Bosque y sol", la última que faltaba.

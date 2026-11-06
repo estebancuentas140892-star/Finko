@@ -21,7 +21,8 @@ test.describe('Separador de miles en los montos (ADR 120)', () => {
     await sembrar(page, estadoBase({ cuentas: CUENTAS }));
     await page.goto('/#gast');
     await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
-    await page.click('#sec-gast .bloque-gastos__primario');
+    // ADR 132 D6: con la lente vacía, el primario es el del vacío.
+    await page.click('#lista-gastos .gastos-empty [data-action="nuevo-gasto"]');
     const form = page.locator('#form-gasto');
     const monto = form.locator('#gasto-monto');
 

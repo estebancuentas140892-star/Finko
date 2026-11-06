@@ -293,8 +293,9 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await seedConGastos(page);
     await page.goto('/#gast');
     const mas = page.locator('#panel-filtros-gastos .filtros-bar__mas');
-    await expect(mas).toHaveText(`+${CATEGORIAS.length} categorías`, { timeout: 10_000 });
-    await expect(page.locator('#panel-filtros-gastos button.chip[data-cat]:visible')).toHaveCount(1);
+    // ADR 132 D2: plegada, "Todos" y las tres categorías con más gasto.
+    await expect(mas).toHaveText(`${CATEGORIAS.length - 3} categorías`, { timeout: 10_000 });
+    await expect(page.locator('#panel-filtros-gastos button.chip[data-cat]:visible')).toHaveCount(4);
 
     await mas.click();
     await expect(page.locator('#panel-filtros-gastos button.chip[data-cat]:visible')).toHaveCount(CATEGORIAS.length + 1);

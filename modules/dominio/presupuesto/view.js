@@ -364,12 +364,18 @@ function _renderDetalleEstiloVida(anio, mes, presupuestoEV, notasCategoria = new
   // Sin topes y con una sugerencia real, el ejemplo inventado del estado vacío
   // sobra: dos consejos seguidos, uno genérico y otro con la cifra de la
   // persona, compiten entre sí.
-  const vacio = sugerencia
-    ? 'Aún no le has puesto tope a ninguna categoría.'
-    : 'Aún no le has puesto tope a ninguna categoría. Empieza por donde más gastas: por ejemplo, un máximo de $300.000 para Restaurantes.';
+  // ADR 132 D6: con el banner de propósito arriba, el hecho sobra (el banner
+  // ya lo dice) y queda el ejemplo; `identidad.css` calla el hecho ahí.
+  const vacio = '<span class="estilo-limites__vacio-hecho">Aún no le has puesto tope a ninguna categoría.</span>'
+    + (sugerencia ? '' : ' Empieza por donde más gastas: por ejemplo, un máximo de $300.000 para Restaurantes.');
 
+  // ADR 132 D6: el vacío trae su propio "Crear límite"; con él, el "+" del
+  // encabezado se esconde en el teléfono (un botón siempre, ADR 077 D4).
   const lista = activos.length === 0
-    ? `<p class="estilo-limites__vacio">${vacio}</p>`
+    ? `<div class="empty-state estilo-limites__vacio-caja">
+        <p class="estilo-limites__vacio">${vacio}</p>
+        <button type="button" class="btn btn-primary" data-action="nuevo-presupuesto">${icon('plus')}Crear límite</button>
+      </div>`
     : `<div class="envelope-list">${activos.map(p => _renderEnvelope(p, gastos, anio, mes, notasCategoria.get(p.categoria))).join('')}</div>`;
 
   return `

@@ -5361,13 +5361,14 @@ describe('renderListaCompromisos() - tarjeta de deuda D.16d', () => {
 
   // ── Ficha 05 (ADR 069): un solo CTA para crear cualquiera de los tres tipos ──
 
-  it('ficha 05: el estado vacío abre el mismo chooser que el encabezado', () => {
+  // ADR 132 D6: el vacío ya no pasa por la hoja "¿Qué quieres agregar?": trae
+  // los tres caminos y cada uno abre su formulario con la acción de esa hoja.
+  it('ficha 05: el estado vacío ofrece los tres caminos de la hoja del encabezado', () => {
     renderListaCompromisos();
-    const cta = document.querySelector('.empty-state [data-action="comp-elegir-tipo-nuevo"]');
-    // DSK.4b (ADR 073 D5): el "+" sale del texto y lo aporta el ícono, que es
-    // la regla D3 del lenguaje de acciones. El destino no cambia.
-    expect(cta.textContent.trim()).toBe('Agregar');
-    expect(cta.innerHTML).toContain('#i-plus');
+    const caminos = [...document.querySelectorAll('.empty-state [data-action="comp-elegir-tipo-nuevo-ir"]')];
+    expect(caminos.map(c => c.dataset.tipo)).toEqual(['fijo', 'deuda-entidad', 'deuda-personal']);
+    expect(caminos[0].textContent).toContain('Arriendo, servicios, suscripciones');
+    expect(document.querySelector('.empty-state').textContent).toContain('¿Qué quieres agregar primero?');
   });
 });
 

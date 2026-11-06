@@ -776,12 +776,34 @@ function _subtituloSaldada(iso) {
   return fecha ? `Saldada el ${fecha}` : 'Sin saldo pendiente';
 }
 
+/**
+ * Los tres caminos del vacío de Por pagar (ADR 132 D6): abren su formulario de
+ * una vez, con la misma acción que la hoja "¿Qué quieres agregar?".
+ */
+const _CAMINOS_POR_PAGAR = [
+  { tipo: 'fijo',           icono: 'i-recurring',  titulo: 'Gasto fijo',         ejemplo: 'Arriendo, servicios, suscripciones' },
+  { tipo: 'deuda-entidad',  icono: 'i-deudas',     titulo: 'Deuda con entidad',  ejemplo: 'Tarjeta de crédito, crédito de vivienda o de carro' },
+  { tipo: 'deuda-personal', icono: 'i-personales', titulo: 'Deuda personal',     ejemplo: 'Lo que le debes a alguien conocido' },
+];
+
 function _renderEmptyState() {
+  const caminos = _CAMINOS_POR_PAGAR.map(c => `
+        <li>
+          <button type="button" class="vacio-caminos__fila" data-action="comp-elegir-tipo-nuevo-ir" data-tipo="${c.tipo}">
+            ${tejaCategoria(c.icono, 'compromisos')}
+            <span class="vacio-caminos__textos">
+              <span class="vacio-caminos__titulo">${c.titulo}</span>
+              <span class="vacio-caminos__ejemplo">${c.ejemplo}</span>
+            </span>
+            ${icon('chevron-right')}
+          </button>
+        </li>`).join('');
   return `
-    <div class="empty-state pattern-dots">
+    <div class="empty-state pattern-dots empty-state--caminos">
       <div class="empty-state__icon" aria-hidden="true">${emptyArt('deudas')}</div>
       <p class="empty-state__title">Nada por pagar todavía</p>
       <p class="empty-state__desc">Agrega tu arriendo, un servicio, una tarjeta o un préstamo y Finko te avisa cuándo vence cada uno.</p>
-      <button class="btn btn-primary" data-action="comp-elegir-tipo-nuevo">${icon('plus')} Agregar</button>
+      <p class="vacio-caminos__pregunta" id="vacio-caminos-por-pagar">¿Qué quieres agregar primero?</p>
+      <ul class="vacio-caminos" aria-labelledby="vacio-caminos-por-pagar">${caminos}</ul>
     </div>`;
 }

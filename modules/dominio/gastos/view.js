@@ -164,27 +164,32 @@ export function renderFiltrosGastos() {
     // (modificador chip--gastos, patrón tinte+ink de D.16b); los chips de
     // otras secciones no cambian.
     const todosActivo = _filtroCategoria === null;
+    const top = categoriasTopGastos(delMes);
     const chips = cats.map(cat => {
       const activo = _filtroCategoria === cat;
+      const puesto = top.indexOf(cat) + 1;
       return `
         <button type="button"
-                class="chip chip--gastos${activo ? ' chip--active' : ''}"
+                class="chip chip--gastos${activo ? ' chip--active' : ''}${puesto ? ' chip--top' : ''}"
                 data-action="gastos-filtrar-cat"
-                data-cat="${_esc(cat)}"
+                data-cat="${_esc(cat)}"${puesto ? ` data-top="${puesto}"` : ''}
                 aria-pressed="${activo}"
                 aria-label="Filtrar por ${_esc(cat)}">
           ${_esc(cat)}
         </button>`;
     }).join('');
 
-    // ADR 098 D6: en móvil la barra plegada muestra solo "Todos", la activa
-    // y este botón; en escritorio el botón no se ve y la barra sigue entera.
-    const ocultas = cats.length - (todosActivo ? 0 : 1);
+    // ADR 098 D6 y 132 D2: en móvil la barra plegada muestra "Todos", las
+    // tres categorías con más gasto, la activa y este botón; en escritorio
+    // el botón no se ve y la barra sigue entera.
+    const visibles = new Set(top);
+    if (!todosActivo) visibles.add(_filtroCategoria);
+    const ocultas = cats.length - visibles.size;
     const toggle = `
         <button type="button" class="chip filtros-bar__mas"
                 data-action="gastos-filtros-alternar"
                 aria-expanded="${_filtrosAbiertos}">
-          ${_filtrosAbiertos ? 'Menos' : `+${ocultas} ${ocultas === 1 ? 'categoría' : 'categorías'}`}
+          ${_filtrosAbiertos ? 'Menos' : `<svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>${ocultas} ${ocultas === 1 ? 'categoría' : 'categorías'}`}
         </button>`;
 
     chipsHtml = `
@@ -197,7 +202,7 @@ export function renderFiltrosGastos() {
                 aria-label="Ver todos los gastos">
           Todos
         </button>
-        ${chips}${ocultas > 0 ? toggle : ''}
+        ${chips}${ocultas > 0 || _filtrosAbiertos ? toggle : ''}
       </div>`;
   } else {
     _filtroCategoria = null;
@@ -210,6 +215,26 @@ export function renderFiltrosGastos() {
   const sinHistorial = (S.gastos ?? []).length === 0;
 
   el.innerHTML = (sinHistorial ? '' : _renderHeroGastos(delMes)) + chipsHtml;
+}
+
+/**
+ * Las categorías con más gasto en el mes, de mayor a menor (ADR 132 D2): las
+ * que la barra plegada muestra en el teléfono. A igual monto, por nombre.
+ *
+ * @param {ReadonlyArray<{ categoria?: string, monto: number }>} delMes
+ * @param {number} [cuantas=3]
+ * @returns {string[]}
+ */
+export function categoriasTopGastos(delMes, cuantas = 3) {
+  const totales = new Map();
+  for (const g of delMes) {
+    const cat = g.categoria ?? 'Otros';
+    totales.set(cat, (totales.get(cat) ?? 0) + (Number(g.monto) || 0));
+  }
+  return [...totales]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'es'))
+    .slice(0, cuantas)
+    .map(([cat]) => cat);
 }
 
 /**
@@ -422,9 +447,9 @@ export function renderListaGastos() {
 function _renderSalidaHistorial() {
   return `
     <p class="lista-gastos__salida">
-      <button class="btn btn-ghost btn-sm"
+      <button class="btn btn-ghost btn-sm lista-gastos__historial"
               data-action="gastos-ver-historial"
-              aria-label="Ver el historial completo de movimientos">Ver historial completo</button>
+              aria-label="Ver el historial completo de movimientos">Ver historial completo<svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
     </p>`;
 }
 
@@ -469,7 +494,7 @@ function _renderInsightHormigas(delMes, oculto) {
  * @returns {string}
  */
 function _renderGrupoDia(grupo, oculto) {
-  const label    = _labelDia(grupo.fecha);
+  const label    = labelDiaGastos(grupo.fecha);
   const totalTxt = oculto ? SALDO_MASCARA_CUENTA : f(grupo.total);
 
   return `
@@ -497,54 +522,61 @@ export function ayerIso() {
 }
 
 /**
- * Label humano del encabezado de día (GAS.1b, ADR 039 D3): "Hoy", "Ayer",
- * o "Vie 11 jul" (+ año solo si no es el año en curso). Formateador
+ * Label humano del encabezado de día (GAS.1b, ADR 039 D3): "Hoy", "Ayer"
+ * o el día de la semana completo con su número, "Martes 10" (ADR 132 D3): la
+ * lista es siempre la del mes del selector, así que el mes sobra. Formateador
  * cacheado (PERF.7a); UTC mediodía para evitar off-by-one en GMT-N (mismo
  * criterio que fechaLegible).
  *
  * @param {string} iso 'YYYY-MM-DD'
  * @returns {string}
  */
-function _labelDia(iso) {
+export function labelDiaGastos(iso) {
   const hoyIso = hoy();
   if (iso === hoyIso) return 'Hoy';
   if (iso === ayerIso()) return 'Ayer';
 
-  const opciones = { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' };
-  if (iso?.slice(0, 4) !== hoyIso.slice(0, 4)) opciones.year = 'numeric';
-
   const d   = new Date(`${iso}T12:00:00Z`);
-  const txt = formateadorFecha('es-CO', opciones).format(d).replace(/[.,]/g, '');
+  const txt = formateadorFecha('es-CO', { weekday: 'long', day: 'numeric', timeZone: 'UTC' })
+    .format(d).replace(/[.,]/g, '').replace(/\s+/g, ' ').trim();
   return txt.charAt(0).toUpperCase() + txt.slice(1);
 }
 
 /**
- * TX.9a: la categoría es el concepto principal del gasto (título del ítem),
- * no la descripción libre (el formulario ya no la pide). Desde GAS.1b la
- * fecha vive en el encabezado del grupo del día, no en el subtítulo: ahí
- * quedan solo la descripción legacy y la nota (línea omitida si no hay
- * ninguna).
+ * Título y subtítulo de la fila de un gasto (ADR 132 D4). Lo que la persona
+ * escribió (la descripción de antes de TX.9a o la nota) es lo que distingue
+ * dos gastos de la misma categoría el mismo día, así que va arriba; debajo,
+ * "Categoría · Cuenta". Sin texto propio, el título es la categoría y debajo
+ * queda solo la cuenta (ADR 072 D2: la fila nunca esconde de dónde salió).
+ * Un gasto viejo con descripción y nota pone la nota al final del subtítulo.
+ *
+ * @param {import('../../core/state.js').Gasto} gasto
+ * @param {ReadonlyArray<{ id: string, nombre: string }>} [cuentas]
+ * @returns {{ titulo: string, subtitulo: string }} texto plano, sin escapar.
+ */
+export function textosFilaGasto(gasto, cuentas = []) {
+  const categoria = gasto?.categoria ?? 'Otros';
+  const cuenta = gasto?.cuentaId ? cuentas.find(c => c.id === gasto.cuentaId)?.nombre : null;
+  const propios = [gasto?.descripcion, gasto?.nota].map(t => String(t ?? '').trim()).filter(Boolean);
+  const titulo = propios[0] ?? categoria;
+  const subtitulo = [propios.length ? categoria : null, cuenta, ...propios.slice(1)]
+    .filter(Boolean)
+    .join(' · ');
+  return { titulo, subtitulo };
+}
+
+/**
+ * La fila de un gasto (ADR 132 D4, ver `textosFilaGasto`). Desde GAS.1b la
+ * fecha vive en el encabezado del grupo del día, no en el subtítulo.
  *
  * @param {import('../../core/state.js').Gasto} gasto
  * @param {boolean} oculto flag de privacidad ya leído por el caller (D9).
  */
 function _renderGastoItem(gasto, oculto) {
   const catKey = gasto.categoria ?? 'Otros';
-  const cat    = _esc(catKey);
-  // Descripción legacy (gastos de antes de TX.9a que ya la tenían) + nota:
-  // ambas son detalle opcional del subtítulo.
-  // D2 del ADR 072 (DSK.3b): la cuenta abre el subtítulo. Es el único dato que
-  // distingue dos gastos de la misma categoría el mismo día, y el gasto ya lo
-  // guarda (`cuentaId`, que el formulario pide): la fila lo tenía y no lo
-  // mostraba nunca. Sin cuenta asignada, el subtítulo se comporta como antes.
-  const nombreCuenta = gasto.cuentaId
-    ? (Array.isArray(S.cuentas) ? S.cuentas : []).find(c => c.id === gasto.cuentaId)?.nombre
-    : null;
-  const detalle = [nombreCuenta, gasto.descripcion?.trim(), gasto.nota]
-    .filter(Boolean)
-    .map(_esc)
-    .join(' · ');
-  const subtitulo = detalle ? `<p class="list-item__subtitle">${detalle}</p>` : '';
+  const { titulo, subtitulo: detalle } = textosFilaGasto(gasto, Array.isArray(S.cuentas) ? S.cuentas : []);
+  const cat = _esc(titulo);
+  const subtitulo = detalle ? `<p class="list-item__subtitle">${_esc(detalle)}</p>` : '';
   const montoTxt  = oculto ? SALDO_MASCARA_CUENTA : f(gasto.monto);
 
   // TX.6/TX.7: un gasto nacido de un fijo o de un abono a deuda hereda el
@@ -619,7 +651,7 @@ function _renderEmptyState() {
       <span class="gastos-empty__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-gastos"/></svg></span>
       <p class="gastos-empty__title">Sin gastos este mes</p>
       <p class="gastos-empty__desc">Anota tu primera compra o pago y verás aquí a dónde se va tu dinero.</p>
-      <button type="button" class="btn btn-secondary" data-action="nuevo-gasto">Registrar gasto</button>
+      <button type="button" class="btn btn-primary" data-action="nuevo-gasto"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Registrar gasto</button>
     </div>`;
 }
 

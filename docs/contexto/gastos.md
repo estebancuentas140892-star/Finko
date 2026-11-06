@@ -10,7 +10,7 @@
 
 - **Objetivo**          : rediseño visual de `#sec-gast` a la familia v2 ([ADR 039](../DECISIONS/039-gastos-v2-visual.md)): hero del mes con total protagonista + comparativo + ojo (GAS.1a), lista agrupada por día + chips con identidad + máscara (GAS.1b), insight de gastos hormiga + empty states v2 (GAS.1c).
 - **Estado actual**     : **INICIATIVA COMPLETA** (GAS.1a, GAS.1b y GAS.1c cerradas el 2026-07-14). Sexta pantalla de la familia visual v2. **DSK.3 (2026-08-18, [ADR 072](../DECISIONS/072-gastos-cabecera-de-banda-y-fila-con-cuenta.md)) le da composición de escritorio desde 1680px**: el hero pasa a banda (total a la izquierda; nav de mes, enlace "En qué gastaste" a Análisis y ojo a la derecha, tras un filete), el total del día cae sobre la columna de montos que suma, la fila deja de levantarse al apuntar y la lista deja de entrar en cascada. Dos de sus decisiones son de contenido y **valen en todos los anchos**: la fila abre su subtítulo con la cuenta de origen, y los chevrons de mes pasan al glifo del sistema. **DIS.4 cerrada** (2026-07-26): las 10 correcciones aplicables de la auditoría de diseño de la sección. **Ficha 07 (2026-08-20, [ADR 069](../DECISIONS/069-bloque-gastos-en-la-barra-movil.md) D8): la sección es la portada del bloque Gastos y deja de ser dueña de su reloj.** Bajo 1024px el encabezado del bloque (`ui/bloque-gastos.js`) pone el nombre, el selector de mes y el ojo para las tres lentes, y `.hero-gastos__top` se oculta: dos relojes en la misma pantalla eran el defecto G4. El mes visible vive en `infra/mes-bloque.js`, no acá. Y el hero gana una línea que **declara lo que el total no cuenta** ("+ $X en fijos y deudas", con salida a la lente donde viven): `_sinInternas()` no cambia, lo que cambia es que la pantalla lo dice (G1, regla candidata R82).
-- **Verificado contra** : MV2.3 tanda 4 (2026-11-04, la hoja del gasto). Antes: ficha 07 de la auditoría móvil (2026-08-20, ADR 069 D8). Antes: DSK.3 (2026-08-18, sus dos rebanadas), DIS.4 (2026-07-26).
+- **Verificado contra** : ADR 132 tanda 1 (2026-11-05). Antes: MV2.3 tanda 4 (2026-11-04, la hoja del gasto).
 
 **Dónde vive**
 
@@ -26,7 +26,8 @@
 | Grupo del día + label humano | `modules/dominio/gastos/view.js` | `_renderGrupoDia()`, `_labelDia()` | "Hoy"/"Ayer"/"Vie 11 jul" (+ año si no es el corriente); `formateadorFecha` cacheado |
 | Ítem de la lista (máscara D9, subtítulo sin fecha) | `modules/dominio/gastos/view.js` | `_renderGastoItem(gasto, oculto)` | firma con `oculto` explícito: NO pasarla directa a `.map()` (el índice caería en `oculto`) |
 | Banda de escritorio: enlace a Análisis y bloque derecho (DSK.3a, ADR 072 D1) | `styles/responsive.css` | bloque "GASTOS EN ESCRITORIO" + `.hero-gastos__link` | desde 1680px; el enlace lo emite `_renderHeroGastos()` y `domain.css` lo apaga bajo ese ancho |
-| Cuenta de origen en el subtítulo de la fila (DSK.3b, ADR 072 D2) | `modules/dominio/gastos/view.js` | `_renderGastoItem()`, `nombreCuenta` | lee `S.cuentas` por `cuentaId` con el mismo `find` de otras cinco vistas; sin cuenta el subtítulo se comporta como antes |
+| Título y subtítulo de la fila (ADR 132 D4): la nota o descripción arriba, "Categoría · Cuenta" debajo; sin texto, la categoría y la cuenta | `modules/dominio/gastos/view.js` | `textosFilaGasto()` | pura, recibe las cuentas |
+| Encabezado del día ("Martes 10") y chips de la barra plegada (las tres de más gasto) | `modules/dominio/gastos/view.js` | `labelDiaGastos()`, `categoriasTopGastos()` | ADR 132 D2 y D3 |
 | Alineación del total del día, fila sin levantar y lista sin cascada (DSK.3b, ADR 072 D4/D5/D7) | `styles/responsive.css` | bloque "LISTA DE GASTOS EN ESCRITORIO" | desde 1680px; la reserva del encabezado se calcula con los tokens de la columna de acciones, no con un número fijo |
 | Chips con identidad de sección | `styles/components/domain.css` | `button.chip--gastos.chip--active` | patrón D.16b: tinte 12% + borde 50% + anillo, texto primario (medición en ADR 039 D5) |
 | Estilos de grupos por día | `styles/components/domain.css` | `.gastos-dia*` | `.list-item` gana radio lg + sombra por contenedor (criterio MC.18d) |
@@ -53,6 +54,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-05 (ADR 132 tanda 1): mes sin cajas, chips con las tres categorías de más gasto, días "Martes 10", fila con la nota arriba, historial como enlace y vacío con su botón dentro del banner.
 - 2026-11-04 (**MV2.3 segunda pasada**, [ADR 122](../DECISIONS/122-lo-que-faltaba-del-canvas-segunda-pasada.md) D5): con una categoría filtrada, `_lecturaFiltro()` escribe bajo el total "N gastos · tu límite es $X" (el límite sale de `presupuestosActivos()`; sin límite, solo la cuenta). El ojo tapa el monto.
 - 2026-11-04 (**MV2.3 tanda 4**, [ADR 119](../DECISIONS/119-plan-de-salida-en-hoja-y-el-detalle-del-gasto.md) D2, acota el ADR 098 D4): la fila abre `gasto-detalle` y la hoja la arma `gastos/detalle.js` (`htmlDetalleGasto`, `cuandoGasto`): cuenta, nota, categoría, la línea del límite del mes del gasto (`calcularProgreso` de Límites, ADR 060), "Repetir hoy" y "Editar", "Los N gastos de X en {mes}" (`gasto-ver-categoria` → `movimientos:ver` con categoría y mes) y "Borrar este gasto" con lo que vuelve a la cuenta (`deltasPorEdicionDeGasto`). Movimientos conserva la hoja genérica.
 - 2026-10-29 (MV2.1, [ADR 098](../DECISIONS/098-finko-movil-2-primera-entrega.md)): en móvil la fila es una línea con hoja de detalle (`ui/detalle-fila.js`), las categorías se pliegan con "+N" (cambia DIS.4/G3; `alternarFiltrosGastos()`), y la cabecera del bloque trae lupa y primario espejo. Escritorio igual.
@@ -101,7 +103,7 @@
 | Opción "+ Otra categoría" + selector de ícono inline en el form | `modules/dominio/gastos/view.js` | `renderFormGasto()`, `CATEGORIA_NUEVA_VALUE` | ~364 |
 | Reveal/hide de los campos nuevos + click del selector de ícono | `modules/dominio/gastos/index.js` | `_montarFormGasto()` | ~438 |
 | Creación y persistencia de la categoría al enviar el formulario | `modules/dominio/gastos/index.js` | `_guardarGasto()` | ~51 |
-| Título del ítem en la lista = categoría (TX.9a); descripción legacy y nota pasan al subtítulo | `modules/dominio/gastos/view.js` | `_renderGastoItem()` | ~195 |
+| Título del ítem en la lista: la nota o descripción si hay, si no la categoría (ADR 132 D4, supera TX.9a) | `modules/dominio/gastos/view.js` | `textosFilaGasto()` | ~560 |
 | Nombre del gasto en confirmación de borrado / anuncio a11y (fallback a categoría, TX.9a) | `modules/dominio/gastos/index.js` | `_eliminarGasto()` | ~334 |
 | Descripción del Movimiento cuando el gasto no tiene descripción (fallback a categoría, TX.9a) | `modules/dominio/movimientos/logic.js` | `movimientosDesdeGastos()` | ~48 |
 | Gasto importado sin efecto en el saldo (HF.0c, ADR 091 P4): editar y borrar ("editar hacia nada") no mueven cuentas | `modules/dominio/gastos/logic.js`, `gastos/index.js`, `import/logic.js` | `deltasPorEdicionDeGasto()`, `_guardarGasto()`, `_eliminarGasto()`, `normalizarFila()` | |

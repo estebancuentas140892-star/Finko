@@ -25,6 +25,7 @@
       11. Ajustes de contraste medidos
       12. Tino (su sol, el vacío, la bienvenida y el aviso que celebra,
           con su único movimiento propio)
+     13. Gastos en el teléfono (ADR 132)
    ============================================================ */
 
 
@@ -675,3 +676,137 @@ body:not(.light-theme) .cov__fill {
 .section:has(.banner-proposito) .gastos-empty__teja,
 .section:has(.banner-proposito) .gastos-empty__title,
 .section:has(.banner-proposito) .gastos-empty__desc { display: none; }
+
+
+/* ════════════════════════════════════════════════════════════
+   13. GASTOS EN EL TELÉFONO (ADR 132, tablero "rediseño1")
+   ════════════════════════════════════════════════════════════ */
+
+/* D3: el encabezado del día se lee como un título corto ("Martes 10"),
+   sin mayúsculas sostenidas; el total queda en el color secundario. */
+.gastos-dia__label {
+  font-size: var(--fk-text-sm);
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--fk-text-primary);
+}
+.gastos-dia__total { font-size: var(--fk-text-sm); }
+
+/* D5: la salida al historial es un enlace del color de la acción. */
+.lista-gastos__historial {
+  gap: var(--fk-space-1);
+  color: var(--fk-text-accent);
+  font-weight: var(--fk-font-semibold);
+}
+.lista-gastos__historial .icon { width: 16px; height: 16px; } /* el tamaño de la flecha de "Ver plan" */
+
+/* D6: los tres caminos del vacío de Por pagar, una fila cada uno. */
+.vacio-caminos__pregunta {
+  margin: 0;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+}
+.vacio-caminos {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  overflow: hidden;
+}
+.vacio-caminos li + li { border-top: 1px solid var(--fk-border-subtle); }
+.vacio-caminos__fila {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  width: 100%;
+  min-height: 44px;
+  padding: var(--fk-space-3) var(--fk-space-4);
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.vacio-caminos__fila:hover { background: var(--fk-bg-elevated); }
+.vacio-caminos__textos { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+.vacio-caminos__titulo {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
+.vacio-caminos__ejemplo {
+  font-size: var(--fk-text-xs);
+  line-height: var(--fk-leading-snug);
+  color: var(--fk-text-secondary);
+}
+.vacio-caminos__fila > .icon { flex-shrink: 0; color: var(--fk-text-muted); }
+
+/* D6: en el vacío de Límites el banner ya dice el hecho; queda el ejemplo. */
+#sec-presupuesto:has(.banner-proposito) .estilo-limites__vacio-hecho,
+#sec-presupuesto:has(.banner-proposito) .estilo-limites__intro,
+#sec-presupuesto:has(.banner-proposito) .estilo-limites-standalone__title { display: none; }
+#sec-presupuesto:has(.banner-proposito) .estilo-limites__vacio {
+  margin: 0;
+  color: var(--fk-text-primary);
+}
+/* Sin el título ni la introducción, sus contenedores no dejan hueco ni raya
+   entre el banner y el vacío. */
+#sec-presupuesto:has(.banner-proposito) .estilo-limites-standalone { margin-top: 0; }
+#sec-presupuesto:has(.banner-proposito) .estilo-limites {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+@media (max-width: 1023px) {
+  /* D1: las flechas del mes sueltas, sin caja; el mes en negrita. */
+  .bloque-gastos__mes-btn {
+    border: 0;
+    background: none;
+    color: var(--fk-text-secondary);
+    font-size: var(--fk-text-xl);
+  }
+  .bloque-gastos__mes-label {
+    font-size: var(--fk-text-base);
+    font-weight: var(--fk-font-bold);
+  }
+
+  /* D2: plegada, la barra muestra "Todos", las tres categorías con más
+     gasto (en ese orden), la activa y "+N categorías" punteado. */
+  #panel-filtros-gastos .filtros-bar:not(.filtros-bar--abierta) button.chip--top { display: inline-flex; }
+  #panel-filtros-gastos .filtros-bar:not(.filtros-bar--abierta) [data-top="1"] { order: 1; }
+  #panel-filtros-gastos .filtros-bar:not(.filtros-bar--abierta) [data-top="2"] { order: 2; }
+  #panel-filtros-gastos .filtros-bar:not(.filtros-bar--abierta) [data-top="3"] { order: 3; }
+  #panel-filtros-gastos .filtros-bar:not(.filtros-bar--abierta) .chip--active:not(.chip--top, [data-cat=""]) { order: 4; }
+  #panel-filtros-gastos .filtros-bar:not(.filtros-bar--abierta) .filtros-bar__mas { order: 5; }
+  #panel-filtros-gastos .filtros-bar__mas {
+    gap: var(--fk-space-1);
+    border-style: dashed;
+  }
+  #panel-filtros-gastos .filtros-bar__mas .icon { width: 14px; height: 14px; } /* del alto del texto del chip */
+
+  /* D6: el botón del vacío vive dentro de la tarjeta del banner. El banner
+     pierde las esquinas de abajo y el vacío las toma, sin hueco entre los
+     dos. Solo en las tres lentes de Gastos, y en Límites solo si nada se
+     mete entre ellos (la franja del plan). */
+  :is(#sec-gast, #sec-compromisos, #sec-presupuesto:not(:has(.plan-franja))):has(.banner-proposito) .banner-proposito {
+    margin-bottom: 0;
+    padding-bottom: var(--fk-space-4);
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+    box-shadow: var(--fk-shadow-filo);
+  }
+  :is(#sec-gast, #sec-compromisos, #sec-presupuesto:not(:has(.plan-franja))):has(.banner-proposito) :is(.gastos-empty, .empty-state) {
+    padding: 0 var(--fk-space-5) var(--fk-space-5);
+    border-radius: 0 0 var(--fk-radius-xl) var(--fk-radius-xl);
+    background: var(--fk-bg-surface);
+    box-shadow: var(--fk-shadow-sm);
+  }
+
+  /* Un botón siempre (ADR 077 D4): con el del vacío, el "+" del
+     encabezado se va, como ya pasaba en Por pagar. */
+  .section:has(.gastos-empty .btn-primary, .empty-state--caminos, .estilo-limites__vacio-caja .btn-primary) .bloque-gastos__primario { display: none; }
+}

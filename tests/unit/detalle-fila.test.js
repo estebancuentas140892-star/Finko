@@ -116,11 +116,12 @@ describe('las filas traen la hoja', () => {
     const abrir = fila.querySelector('.list-item__detalle');
     expect(abrir.dataset.action).toBe('gasto-detalle');
     expect(abrir.dataset.id).toBe('g1');
-    expect(abrir.getAttribute('aria-label')).toBe('Ver detalle: Cuidado personal, $42.000');
+    // ADR 132 D4: la descripción del gasto es el título de su fila.
+    expect(abrir.getAttribute('aria-label')).toBe('Ver detalle: Peluquería, $42.000');
 
     const d = datosDeFila(fila);
     expect(d.cuando).toBe('Hoy');
-    expect(d.titulo).toBe('Cuidado personal');
+    expect(d.titulo).toBe('Peluquería');
     expect(d.monto).toBe('$42.000');
     expect(d.acciones.map(a => a.accion)).toEqual(['repetir-gasto', 'editar-gasto', 'eliminar-gasto']);
   });

@@ -25,7 +25,7 @@ import {
   excesoDeCupo,
   consecuenciaDeGasto,
 } from '../../modules/dominio/gastos/logic.js';
-import { renderFormGasto, renderListaGastos, renderFiltrosGastos, setFiltroCategoria, alternarFiltrosGastos, navegarMesGastos, irAMesActual, CATEGORIA_NUEVA_VALUE } from '../../modules/dominio/gastos/view.js';
+import { renderFormGasto, renderListaGastos, renderFiltrosGastos, setFiltroCategoria, alternarFiltrosGastos, navegarMesGastos, irAMesActual, CATEGORIA_NUEVA_VALUE, categoriasTopGastos, labelDiaGastos, textosFilaGasto } from '../../modules/dominio/gastos/view.js';
 import { CATEGORIAS_GASTO, CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA } from '../../modules/core/constants.js';
 import { S } from '../../modules/core/state.js';
 
@@ -1296,7 +1296,9 @@ describe('Gastos deja de listar categorías internas (TX.8b)', () => {
 
 // ── renderListaGastos() - categoría como título del ítem (TX.9a) ──
 
-describe('renderListaGastos() - categoría como título del ítem (TX.9a)', () => {
+// ADR 132 D4 supera TX.9a: lo que la persona escribió va de título y la
+// categoría pasa al subtítulo; sin texto propio, el título es la categoría.
+describe('renderListaGastos() - título y subtítulo de la fila (ADR 132 D4)', () => {
   const mesActual = () => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-15`;
@@ -1307,11 +1309,11 @@ describe('renderListaGastos() - categoría como título del ítem (TX.9a)', () =
     S.gastos = [];
   });
 
-  it('el título del ítem es la categoría, no la descripción', () => {
+  it('con descripción, la descripción es el título y la categoría baja al subtítulo', () => {
     S.gastos = [gastoBase({ categoria: 'Transporte', descripcion: 'Uber al trabajo', fecha: mesActual() })];
     renderListaGastos();
-    const titulo = document.querySelector('#lista-gastos .list-item__title').textContent;
-    expect(titulo).toContain('Transporte');
+    expect(document.querySelector('#lista-gastos .list-item__title').textContent).toContain('Uber al trabajo');
+    expect(document.querySelector('#lista-gastos .list-item__subtitle').textContent).toContain('Transporte');
   });
 
   it('sin descripción (formulario nuevo, TX.9a), el título sigue siendo la categoría', () => {
@@ -1322,11 +1324,10 @@ describe('renderListaGastos() - categoría como título del ítem (TX.9a)', () =
     expect(item.innerHTML).not.toContain('undefined');
   });
 
-  it('una descripción legacy (gastos de antes de TX.9a) se preserva en el subtítulo', () => {
+  it('una descripción legacy (gastos de antes de TX.9a) se preserva, ahora de título', () => {
     S.gastos = [gastoBase({ categoria: 'Mercado', descripcion: 'Mercado de fin de mes', fecha: mesActual() })];
     renderListaGastos();
-    const subtitulo = document.querySelector('#lista-gastos .list-item__subtitle').textContent;
-    expect(subtitulo).toContain('Mercado de fin de mes');
+    expect(document.querySelector('#lista-gastos .list-item__title').textContent).toContain('Mercado de fin de mes');
   });
 
   it('la nota sigue apareciendo en el subtítulo', () => {
@@ -1386,17 +1387,29 @@ describe('renderFiltrosGastos() - barra plegable (ADR 098 D6)', () => {
     setFiltroCategoria(null);
   });
 
+  // ADR 132 D2: plegada, la barra ya muestra las tres con más gasto; con tres
+  // categorías en el mes no queda ninguna escondida.
   it('dice cuántas categorías quedan plegadas', () => {
+    S.gastos = ['Mercado', 'Café', 'Ropa', 'Salud', 'Hogar'].map((c, i) => gastoBase({ id: `g${i}`, categoria: c, monto: (i + 1) * 1_000, fecha: fechaHoy() }));
     renderFiltrosGastos();
-    expect(toggle().textContent.trim()).toBe('+3 categorías');
+    expect(toggle().textContent.trim()).toBe('2 categorías');
     expect(toggle().getAttribute('aria-expanded')).toBe('false');
     expect(barra().classList.contains('filtros-bar--abierta')).toBe(false);
   });
 
-  it('con una elegida, esa se ve y cuenta una menos', () => {
-    setFiltroCategoria('Café');
+  it('con una elegida fuera de las tres primeras, esa se ve y cuenta una menos', () => {
+    S.gastos = ['Mercado', 'Café', 'Ropa', 'Salud', 'Hogar'].map((c, i) => gastoBase({ id: `g${i}`, categoria: c, monto: (i + 1) * 1_000, fecha: fechaHoy() }));
+    setFiltroCategoria('Mercado');
     renderFiltrosGastos();
-    expect(toggle().textContent.trim()).toBe('+2 categorías');
+    expect(toggle().textContent.trim()).toBe('1 categoría');
+  });
+
+  it('marca las tres categorías con más gasto, de mayor a menor', () => {
+    S.gastos = ['Mercado', 'Café', 'Ropa', 'Salud', 'Hogar'].map((c, i) => gastoBase({ id: `g${i}`, categoria: c, monto: (i + 1) * 1_000, fecha: fechaHoy() }));
+    renderFiltrosGastos();
+    const top = [...barra().querySelectorAll('.chip--top')].sort((a, b) => a.dataset.top - b.dataset.top).map(b => b.dataset.cat);
+    expect(top).toEqual(['Hogar', 'Salud', 'Ropa']);
+    expect(categoriasTopGastos([{ categoria: 'A', monto: 5 }, { categoria: 'B', monto: 5 }, { categoria: 'C', monto: 9 }], 2)).toEqual(['C', 'A']);
   });
 
   it('abierta, la barra conserva el índice alfabético completo', () => {
@@ -1714,8 +1727,9 @@ describe('renderListaGastos() - lista agrupada por día (GAS.1b)', () => {
   it('el subtítulo del ítem ya no repite la fecha (vive en el encabezado del día)', () => {
     S.gastos = [gastoBase({ id: 'g1', descripcion: undefined, nota: 'Con receta médica', fecha: hoyIso() })];
     renderListaGastos();
+    // ADR 132 D4: la nota es el título; debajo, la categoría.
     const sub = document.querySelector('#lista-gastos .list-item__subtitle').textContent;
-    expect(sub).toBe('Con receta médica');
+    expect(sub).toBe('Alimentación');
   });
 
   it('sin nota ni descripción, el ítem no pinta subtítulo vacío', () => {
@@ -1848,11 +1862,13 @@ describe('renderListaGastos() - empty states v2 (GAS.1c)', () => {
   // DIS.4/G5 (hallazgo H6): un solo primario visible por sección. El del
   // encabezado manda; el CTA del vacío acompaña en secundario, con el mismo
   // verbo que dicen el encabezado y el botón central de la barra.
-  it('G5: el CTA del vacío es secundario y dice "Registrar gasto"', () => {
+  // ADR 132 D6: el CTA del vacío pasa a primario y el "+" del encabezado se
+  // esconde mientras la lente está vacía (identidad.css): sigue habiendo un
+  // solo primario visible (G5, ADR 077 D4).
+  it('G5: el CTA del vacío es el primario y dice "Registrar gasto"', () => {
     renderListaGastos();
     const cta = document.querySelector('#lista-gastos [data-action="nuevo-gasto"]');
-    expect(cta.className).toContain('btn-secondary');
-    expect(cta.className).not.toContain('btn-primary');
+    expect(cta.className).toContain('btn-primary');
     expect(cta.textContent.trim()).toBe('Registrar gasto');
   });
 
@@ -2277,18 +2293,21 @@ describe('renderListaGastos() - la cuenta en el subtítulo de la fila (DSK.3b)',
     expect(subs.sort()).toEqual(['Bancolombia Ahorros', 'Nequi']);
   });
 
-  it('la cuenta abre el subtítulo y la nota la sigue, con el separador de siempre', () => {
+  // ADR 132 D4: con nota, la nota es el título y abajo va "Categoría · Cuenta".
+  it('con nota, el subtítulo dice la categoría y la cuenta, con el separador de siempre', () => {
     S.gastos = [gastoBase({
       id: 'g1', categoria: 'Mercado', descripcion: '', fecha: hoyIso(), cuentaId: 'c1', nota: 'Mercado quincenal',
     })];
     renderListaGastos();
-    expect(sub().textContent.trim()).toBe('Bancolombia Ahorros · Mercado quincenal');
+    expect(document.querySelector('.list-item__title').textContent.trim()).toBe('Mercado quincenal');
+    expect(sub().textContent.trim()).toBe('Mercado · Bancolombia Ahorros');
   });
 
-  it('sin cuenta asignada el subtítulo se comporta como antes', () => {
+  it('sin cuenta asignada, la nota es el título y abajo queda solo la categoría', () => {
     S.gastos = [gastoBase({ id: 'g1', categoria: 'Mercado', descripcion: '', fecha: hoyIso(), nota: 'Solo la nota' })];
     renderListaGastos();
-    expect(sub().textContent.trim()).toBe('Solo la nota');
+    expect(document.querySelector('.list-item__title').textContent.trim()).toBe('Solo la nota');
+    expect(sub().textContent.trim()).toBe('Mercado');
   });
 
   it('sin cuenta y sin nota, la fila sigue sin subtítulo', () => {
@@ -2302,5 +2321,31 @@ describe('renderListaGastos() - la cuenta en el subtítulo de la fila (DSK.3b)',
     renderListaGastos();
     expect(sub()).toBeNull();
     S.cuentas = [];
+  });
+});
+
+// ── ADR 132 D3 y D4: el encabezado del día y los textos de la fila ──
+
+describe('labelDiaGastos() y textosFilaGasto() (ADR 132)', () => {
+  it('el encabezado del día es "Hoy", "Ayer" o el día de la semana completo con su número', () => {
+    const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const hoyD = new Date();
+    const ayer = new Date(hoyD); ayer.setDate(hoyD.getDate() - 1);
+    expect(labelDiaGastos(iso(hoyD))).toBe('Hoy');
+    expect(labelDiaGastos(iso(ayer))).toBe('Ayer');
+    // 2026-11-10 fue martes: sin mes, que ya está en el selector.
+    expect(labelDiaGastos('2026-11-10')).toBe('Martes 10');
+    expect(labelDiaGastos('2026-11-08')).toBe('Domingo 8');
+  });
+
+  it('lo escrito va de título y debajo "Categoría · Cuenta"; sin texto, la categoría y la cuenta', () => {
+    const cuentas = [{ id: 'c1', nombre: 'Bancolombia' }];
+    expect(textosFilaGasto({ categoria: 'Mercado', descripcion: 'Éxito', cuentaId: 'c1' }, cuentas))
+      .toEqual({ titulo: 'Éxito', subtitulo: 'Mercado · Bancolombia' });
+    expect(textosFilaGasto({ categoria: 'Café', cuentaId: 'c1', nota: '' }, cuentas))
+      .toEqual({ titulo: 'Café', subtitulo: 'Bancolombia' });
+    expect(textosFilaGasto({ categoria: 'Salud', descripcion: 'Droguería', nota: 'Con receta' }, cuentas))
+      .toEqual({ titulo: 'Droguería', subtitulo: 'Salud · Con receta' });
+    expect(textosFilaGasto({ categoria: 'Hogar' }, cuentas)).toEqual({ titulo: 'Hogar', subtitulo: '' });
   });
 });

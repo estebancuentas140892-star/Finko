@@ -105,7 +105,7 @@ async function elegirCategoriaGasto(form, value) {
 async function abrirFormGastoFijo(page) {
   await page.click('[data-action="comp-elegir-tipo-nuevo"]');
   await page.waitForSelector('#modal-compromiso-tipo[data-open]', { timeout: 3_000 });
-  await page.click('[data-action="comp-elegir-tipo-nuevo-ir"][data-tipo="fijo"]');
+  await page.click('#modal-compromiso-tipo [data-action="comp-elegir-tipo-nuevo-ir"][data-tipo="fijo"]');
   await expect(page.locator('#form-gasto-fijo')).toBeVisible({ timeout: 3_000 });
 }
 
@@ -4681,9 +4681,8 @@ test.describe('Deudas - picker de ícono en categoría "Otra"/"Otro" (CAT.2d)', 
     await page.waitForSelector('#sec-compromisos.active', { timeout: 10_000 });
     // Ficha 05 (ADR 069): el estado vacío abre el chooser de tipo, igual que el
     // "+ Agregar" del encabezado; el chip lleva al form de deuda.
-    await page.click('.empty-state [data-action="comp-elegir-tipo-nuevo"]');
-    await page.waitForSelector('#modal-compromiso-tipo[data-open]');
-    await page.click('[data-action="comp-elegir-tipo-nuevo-ir"][data-tipo="deuda-entidad"]');
+    // ADR 132 D6: el vacío de Por pagar trae los tres caminos; cada uno abre su formulario.
+    await page.click('.empty-state [data-action="comp-elegir-tipo-nuevo-ir"][data-tipo="deuda-entidad"]');
     await page.waitForSelector('#modal-compromiso[data-open]');
 
     // FORM.1b (ADR 042): el form arranca directo en Entidad (segmented
@@ -4712,9 +4711,8 @@ test.describe('Deudas - picker de ícono en categoría "Otra"/"Otro" (CAT.2d)', 
     await page.goto('/#compromisos');
     await page.waitForSelector('#sec-compromisos.active', { timeout: 10_000 });
     // Ficha 05: chooser de tipo desde el estado vacío.
-    await page.click('.empty-state [data-action="comp-elegir-tipo-nuevo"]');
-    await page.waitForSelector('#modal-compromiso-tipo[data-open]');
-    await page.click('[data-action="comp-elegir-tipo-nuevo-ir"][data-tipo="deuda-entidad"]');
+    // ADR 132 D6: el vacío de Por pagar trae los tres caminos; cada uno abre su formulario.
+    await page.click('.empty-state [data-action="comp-elegir-tipo-nuevo-ir"][data-tipo="deuda-entidad"]');
     await page.waitForSelector('#modal-compromiso[data-open]');
 
     // El segmented arranca en Entidad; se toca "Personal" para este flujo.

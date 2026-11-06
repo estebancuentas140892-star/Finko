@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-05. Última tarea cerrada: frascos sin líquido (ADR 131). El diseño "Identidad Bosque y sol" queda aplicado completo (ADR 127 a 131). Sigue MV2.30 Gastos. MOV.1 en pausa. HF.0f en curso: banco sin commitear y fuera de esta copia.
+> Revisado: 2026-11-05. Última tarea cerrada: MV2.30 Gastos tanda 1 (ADR 132); siguen sus tandas 2 a 5. MOV.1 en pausa. HF.0f en curso: banco sin commitear y fuera de esta copia.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,7 +13,7 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5329/5329 (2026-11-05, ADR 131 y el borrado de `rellenoFrasco`) |
+| Tests unitarios + integración | 5332/5332 (2026-11-05, ADR 132 tanda 1) |
 | Tests E2E | 438/438 (2026-11-05, ADR 131, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v48 (`perfiles`, APR.3a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**MV2.30 Gastos tanda 1 - el mes, Día a día y los vacíos, 2026-11-05**
+La nota arriba en cada gasto, las tres categorías de más gasto en la barra, "Martes 10" y el botón de cada vacío dentro de su tarjeta ([ADR 132](DECISIONS/132-gastos-del-adulto-en-el-telefono.md)). SW v675.
 
 **Frascos sin líquido, 2026-11-05**
 Tapa de color y vidrio sin tinte; Gastar y Compartir muestran el hueco de cada grano usado contra la mesada ([ADR 131](DECISIONS/131-frascos-sin-liquido.md)). SW v673.
@@ -36,9 +39,6 @@ Ocho dibujos originales más, cada uno en su vacío o aviso; los anchos caben en
 
 **Identidad v3 "Bosque y sol", 2026-11-05**
 Paleta del isotipo, Plus Jakarta Sans, tarjetas por sección, banda en Inicio y Tino en el adulto ([ADR 127](DECISIONS/127-identidad-bosque-y-sol.md)); frascos con café ([128](DECISIONS/128-los-frascos-se-llenan-de-cafe.md)). SW v670.
-
-**MV2.30 tanda 5 - la barra de abajo; cierra Inicio, 2026-11-05**
-Píldora detrás del ícono activo y "Registrar" plano; el tablero de Inicio quedó completo y su HTML se borró ([ADR 126](DECISIONS/126-inicio-del-adulto-en-el-telefono.md)). SW v669.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 
