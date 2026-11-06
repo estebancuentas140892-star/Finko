@@ -717,29 +717,37 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(page.locator('#sec-metas .section__linea')).toHaveText('Algún día, cuando quieras');
   });
 
-  test('Por pagar va por urgencia, en filas, y la fila abre su hoja (ADR 117 D1, D2)', async ({ page }) => {
+  test('Por pagar va por urgencia, marca con un círculo y la fila abre su hoja (ADR 117 D1, ADR 132 D7)', async ({ page }) => {
     test.skip(new Date().getDate() < 3, 'hace falta que los días 1 y 2 del mes ya hayan pasado');
     await seedPorPagar(page);
     await page.goto('/#compromisos');
     const grupos = page.locator('#lista-compromisos .porpagar-grupo__head span[id]');
-    await expect(grupos.first()).toHaveText('Vencidos · del más antiguo al más reciente', { timeout: 10_000 });
+    await expect(grupos.first()).toHaveText('Vencidos', { timeout: 10_000 });
+    await expect(page.locator('.porpagar-grupo__orden').first()).toHaveText('Del más antiguo al más reciente');
+    await expect(page.locator('.porpagar-ayuda')).toContainText('Toca el círculo cuando pagues algo');
     // El lote baja al pie de lo vencido; su tarjeta suelta se oculta.
     await expect(page.locator('.porpagar-grupo__pie [data-action="compromisos-pagar-lote"]')).toHaveText(/^Pagar los 2 · \$1\.620\.000$/);
     await expect(page.locator('#lote-compromisos')).toBeHidden();
 
+    // El círculo es el pago: 44 de blanco táctil y por encima del botón de la fila.
     const fila = page.locator('.deuda-card--fila[data-id="d1"]');
-    await expect(fila.locator('.deuda-card__estado')).toContainText('deuda con entidad');
-    await expect(fila.locator('.deuda-card__acciones button')).toHaveText('Abonar $420.000');
-    await expect(fila.locator('.deuda-card__acciones button')).toBeVisible();
-    expect((await fila.locator('.deuda-card__acciones button').boundingBox()).height).toBeGreaterThanOrEqual(44);
-    await expect(fila.locator('.list-item__action')).toBeHidden();
+    await expect(fila.locator('.deuda-card__estado')).toContainText('deuda');
+    const marca = fila.locator('button.porpagar-marca');
+    await expect(marca).toHaveAttribute('aria-label', 'Abonar a Tarjeta Visa Bancolombia');
+    const caja = await marca.boundingBox();
+    expect(Math.min(caja.width, caja.height)).toBeGreaterThanOrEqual(44);
+    await marca.click();
+    await expect(page.locator('#modal-abono[data-open]')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#modal-abono[data-open]')).toHaveCount(0);
 
-    // La fila entera es el botón de la hoja: lo que se toca encima del nombre.
+    // La fila entera abre la hoja de la deuda, armada con sus datos.
     await fila.locator('.list-item__detalle').click();
     const hoja = page.locator('#modal-detalle-fila[data-open]');
     await expect(hoja.locator('.detalle-fila__titulo')).toHaveText('Tarjeta Visa Bancolombia');
-    await expect(hoja.locator('.detalle-fila__accion')).toHaveText(['Editar', 'Eliminar']);
-    await expect(hoja.locator('.detalle-fila__notas')).toContainText('28% EA');
+    await expect(hoja.locator('.detalle-compromiso__rotulo')).toHaveText(/^Cuota de /);
+    await expect(hoja.locator('.detalle-gasto__dato dt')).toHaveText(['Te falta pagar', 'Tasa', 'Se paga']);
+    await expect(hoja.locator('.detalle-fila__accion')).toHaveText(['Abonar $420.000', 'Editar', 'Eliminar esta deuda']);
   });
 
   test('Calendario: el día se abre en una hoja sobre el mes y al cerrarla vuelve a su celda (ADR 118 D1)', async ({ page }) => {

@@ -53,6 +53,7 @@ import {
   getFiltroPorPagar,
 } from './view.js';
 import { renderResumenExtra, renderComparativaRenegociacion, renderComparativaConsolidacion } from './views/estrategia-impacto.js';
+import { htmlDetalleCompromiso } from './views/detalle.js';
 
 /** Personalizadas de sección 'fijo' (CAT.3c): mismo criterio de oferta por sección del ADR 058 D2. */
 function _personalizadasFijo() {
@@ -1448,6 +1449,21 @@ export function initCompromisos() {
   registrarAccion('compromisos-pagar-lote',   _pagarLote);
   registrarAccion('compromisos-ver-plan',     _verPlanSalida);
   registrarAccion('compromisos-confirmar-lote', _confirmarLote);
+
+  // ADR 132 D7: la fila de Por pagar abre su hoja, armada con los datos del
+  // compromiso (la cuota del mes, cuánto falta, la tasa y el día de pago). Es
+  // la hoja de la fila (`#modal-detalle-fila`), como la del gasto (ADR 119 D2).
+  registrarAccion('compromiso-detalle', (el) => {
+    const c = S.compromisos.find(x => x.id === el.dataset.id);
+    const hoja = document.getElementById('modal-detalle-fila');
+    const cuerpo = document.getElementById('detalle-fila-body');
+    if (!c || !hoja || !cuerpo) return;
+    cuerpo.innerHTML = htmlDetalleCompromiso(c, {
+      prefijoMes: el.dataset.mes || prefijoMesBloque(),
+      monto: Number(el.dataset.monto) || 0,
+    });
+    abrirModal(hoja);
+  });
 
   // El cuerpo del modal del lote se re-inyecta en cada apertura, pero el
   // contenedor persiste; por eso el listener del total cuelga de él una sola

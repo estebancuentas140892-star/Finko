@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-05. Última tarea cerrada: MV2.30 Gastos tanda 1 (ADR 132); siguen sus tandas 2 a 5. MOV.1 en pausa. HF.0f en curso: banco sin commitear y fuera de esta copia.
+> Revisado: 2026-11-06. Última tarea cerrada: MV2.30 Gastos tanda 2 (ADR 132); siguen sus tandas 3 a 5. MOV.1 en pausa. HF.0f en curso: banco sin commitear y fuera de esta copia.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -25,6 +25,9 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**MV2.30 Gastos tanda 2 - Por pagar y la hoja de una deuda, 2026-11-06**
+El círculo del pago en cada fila, los grupos en frase y una hoja propia con la cuota, lo que falta, la tasa y el día de pago ([ADR 132](DECISIONS/132-gastos-del-adulto-en-el-telefono.md) D7). SW v676.
+
 **MV2.30 Gastos tanda 1 - el mes, Día a día y los vacíos, 2026-11-05**
 La nota arriba en cada gasto, las tres categorías de más gasto en la barra, "Martes 10" y el botón de cada vacío dentro de su tarjeta ([ADR 132](DECISIONS/132-gastos-del-adulto-en-el-telefono.md)). SW v675.
 
@@ -36,9 +39,6 @@ Tino saluda en el paso del nombre y explica en las novedades, que estrenan su pr
 
 **Tino, ronda 2 en el adulto, 2026-11-05**
 Ocho dibujos originales más, cada uno en su vacío o aviso; los anchos caben en el sol ([ADR 129](DECISIONS/129-tino-ronda-2-en-el-adulto.md)). SW v671.
-
-**Identidad v3 "Bosque y sol", 2026-11-05**
-Paleta del isotipo, Plus Jakarta Sans, tarjetas por sección, banda en Inicio y Tino en el adulto ([ADR 127](DECISIONS/127-identidad-bosque-y-sol.md)); frascos con café ([128](DECISIONS/128-los-frascos-se-llenan-de-cafe.md)). SW v670.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

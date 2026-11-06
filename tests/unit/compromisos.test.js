@@ -51,7 +51,7 @@ import { renderEstrategiaPago, setEstrategiaUI, renderEntradaPlanSalida } from '
 import { renderHeroCompromisos } from '../../modules/dominio/compromisos/views/hero.js';
 import { S } from '../../modules/core/state.js';
 import { f } from '../../modules/infra/utils.js';
-import { datosDeFila } from '../../modules/ui/detalle-fila.js';
+import { htmlDetalleCompromiso, cuandoCompromiso, textoTasa } from '../../modules/dominio/compromisos/views/detalle.js';
 import {
   CATEGORIAS_AGENDA, CATEGORIA_AGENDA_ICONO,
   CATEGORIAS_DEUDA, CATEGORIA_DEUDA_ICONO,
@@ -2650,15 +2650,12 @@ describe('renderListaCompromisos() - en el teléfono, por urgencia y en filas (A
     irAMesActualBloque();
   });
 
-  it('los grupos declaran su orden: vencidos, lo que falta este mes, lo pagado y lo saldado', () => {
+  it('los grupos se titulan en frase y declaran su orden debajo (ADR 132 D7)', () => {
     renderListaCompromisos();
     const rotulos = [...document.querySelectorAll('.porpagar-grupo__head span[id]')].map(s => s.textContent.trim());
-    expect(rotulos).toEqual([
-      'Vencidos · del más antiguo al más reciente',
-      'Lo que falta este mes',
-      'Pagado este mes',
-      'Saldadas',
-    ]);
+    expect(rotulos).toEqual(['Vencidos', 'Lo que falta este mes', 'Pagado este mes', 'Saldadas']);
+    const orden = document.querySelector('[aria-labelledby="porpagar-vencidos"] .porpagar-grupo__orden');
+    expect(orden.textContent).toBe('Del más antiguo al más reciente');
     expect(ids('vencidos')).toEqual(['f1', 'd1']);
     expect(ids('mes')).toEqual(['f2', 'f3']);
     expect(ids('pagado')).toEqual(['f4']);
@@ -2669,24 +2666,33 @@ describe('renderListaCompromisos() - en el teléfono, por urgencia y en filas (A
     renderListaCompromisos();
     const estado = (id) => fila(id).querySelector('.deuda-card__estado').textContent.replace(/\s+/g, ' ').trim();
     expect(estado('f1')).toBe('Venció hace 10 días · gasto fijo');
-    expect(estado('d1')).toBe(`Venció hace 5 días · deuda con entidad · faltan ${f(2_000_000)}`);
+    expect(estado('d1')).toBe(`Venció hace 5 días · deuda · faltan ${f(2_000_000)}`);
     expect(estado('f2')).toBe('Mañana · gasto fijo');
     expect(estado('f3')).toBe('Jue 25 · gasto fijo');
+    expect(estado('f4')).toBe('Pagado el 2 · gasto fijo');
     expect(fila('f1').querySelector('.deuda-card__urgencia--danger')).not.toBeNull();
     expect(fila('f2').querySelector('.deuda-card__urgencia--warning')).not.toBeNull();
     // Ninguna pastilla: el estado es texto (R89a, "una pastilla por fila").
     expect(document.querySelectorAll('.deuda-card--fila .chip')).toHaveLength(0);
   });
 
+  it('lo que vence hoy va en ámbar, no en rojo: todavía no está vencido', () => {
+    vi.setSystemTime(new Date(2026, 5, 10, 10));
+    renderListaCompromisos();
+    expect(fila('d1').querySelector('.deuda-card__urgencia').textContent).toBe('Vence hoy');
+    expect(fila('d1').querySelector('.deuda-card__urgencia--warning')).not.toBeNull();
+    expect(fila('d1').querySelector('.porpagar-marca--warning')).not.toBeNull();
+  });
+
   it('el grupo suma lo que falta y su pie paga lo vencido con el mismo monto del lote', () => {
     renderListaCompromisos();
     const vencidos = document.querySelector('[aria-labelledby="porpagar-vencidos"]');
-    expect(vencidos.querySelector('.porpagar-grupo__head').textContent).toContain(f(1_400_000));
+    expect(vencidos.querySelector('.porpagar-grupo__suma').textContent).toBe(f(1_400_000));
     const pie = vencidos.querySelector('[data-action="compromisos-pagar-lote"]');
     expect(pie.textContent.trim()).toBe(`Pagar los 2 · ${f(1_400_000)}`);
     expect(pie.dataset.mes).toBe('2026-06');
-    expect(document.querySelector('[aria-labelledby="porpagar-mes"] .porpagar-grupo__head').textContent)
-      .toContain(f(190_000));
+    expect(document.querySelector('[aria-labelledby="porpagar-mes"] .porpagar-grupo__suma').textContent)
+      .toBe(f(190_000));
   });
 
   it('con un chip puesto no hay pie: pagaría también lo que el chip esconde', () => {
@@ -2695,45 +2701,47 @@ describe('renderListaCompromisos() - en el teléfono, por urgencia y en filas (A
     expect(document.querySelector('[data-action="compromisos-pagar-lote"]')).toBeNull();
   });
 
-  it('la acción va a la vista con su monto; editar y eliminar quedan para la hoja', () => {
+  it('el pago se marca con un círculo del color de su urgencia; tocar la fila abre su hoja', () => {
     renderListaCompromisos();
     const visa = fila('d1');
-    const accion = visa.querySelector('.deuda-card__acciones [data-action]');
-    expect(accion.dataset.action).toBe('abrir-abono');
-    expect(accion.textContent.trim()).toBe(`Abonar ${f(200_000)}`);
-    expect(fila('f1').querySelector('.deuda-card__acciones [data-action]').dataset.action).toBe('agenda-marcar-pagado-fijo');
-    const hoja = [...visa.querySelectorAll('.list-item__action [data-action]')].map(b => b.dataset.action);
-    expect(hoja).toEqual(['editar-compromiso', 'eliminar-compromiso']);
-    expect(visa.classList.contains('list-item--detalle')).toBe(true);
-    expect(visa.querySelector('.list-item__detalle').dataset.action).toBe('fila-detalle');
+    const marca = visa.querySelector('button.porpagar-marca');
+    expect(marca.dataset.action).toBe('abrir-abono');
+    expect(marca.getAttribute('aria-label')).toBe('Abonar a Visa');
+    expect(marca.classList.contains('porpagar-marca--danger')).toBe(true);
+    const arriendo = fila('f1').querySelector('button.porpagar-marca');
+    expect(arriendo.dataset.action).toBe('agenda-marcar-pagado-fijo');
+    expect(arriendo.dataset.mes).toBe('2026-06');
+    expect(fila('f3').querySelector('button.porpagar-marca').className).toBe('porpagar-marca');
+    // Ni botón de texto ni acciones escondidas: editar y eliminar son de la hoja.
+    expect(visa.querySelector('.deuda-card__acciones, .list-item__action, .list-item__hint')).toBeNull();
+    const abrir = visa.querySelector('.list-item__detalle');
+    expect(abrir.dataset.action).toBe('compromiso-detalle');
+    expect(abrir.dataset.monto).toBe('200000');
+    expect(abrir.dataset.mes).toBe('2026-06');
   });
 
-  it('lo pagado y lo saldado no ofrecen acción; la saldada se archiva desde la hoja', () => {
+  it('una línea de ayuda dice qué hace el círculo, solo si hay algo por marcar', () => {
     renderListaCompromisos();
-    expect(fila('f4').querySelector('.deuda-card__acciones')).toBeNull();
-    expect(fila('d2').querySelector('.deuda-card__acciones')).toBeNull();
-    const hoja = [...fila('d2').querySelectorAll('.list-item__action [data-action]')].map(b => b.dataset.action);
-    expect(hoja).toEqual(['editar-compromiso', 'archivar-compromiso']);
+    expect(document.querySelector('.porpagar-ayuda').textContent).toContain('Toca el círculo cuando pagues algo');
+    setFiltroPorPagar('pagado');
+    renderListaCompromisos();
+    expect(document.querySelector('.porpagar-ayuda')).toBeNull();
   });
 
-  it('con el ojo puesto se tapan los montos y el botón dice solo "Abonar"', () => {
+  it('lo pagado y lo saldado muestran el círculo lleno, sin botón', () => {
+    renderListaCompromisos();
+    for (const id of ['f4', 'd2']) {
+      expect(fila(id).querySelector('button.porpagar-marca')).toBeNull();
+      expect(fila(id).querySelector('.porpagar-marca--ok').getAttribute('aria-hidden')).toBe('true');
+      expect(fila(id).classList.contains('deuda-card--hecha')).toBe(true);
+    }
+  });
+
+  it('con el ojo puesto se tapan los montos', () => {
     S.config = { ocultarSaldo: true };
     renderListaCompromisos();
-    expect(fila('d1').querySelector('.deuda-card__acciones button').textContent.trim()).toBe('Abonar');
     expect(fila('d1').querySelector('.deuda-card__saldo').textContent).not.toContain('200.000');
     expect(fila('d1').querySelector('.deuda-card__estado').textContent).not.toContain('2.000.000');
-  });
-
-  it('la hoja de detalle lee la fila: nombre, estado, monto, notas y acciones', () => {
-    renderListaCompromisos();
-    const d = datosDeFila(fila('d1'));
-    expect(d.titulo).toBe('Visa');
-    expect(d.subtitulo).toContain('Venció hace 5 días');
-    expect(d.monto).toBe(f(200_000));
-    expect(d.notas).toContain('Tarjeta de crédito');
-    expect(d.notas).toContain('28% EA');
-    expect(d.acciones.map(a => a.accion)).toEqual(['editar-compromiso', 'eliminar-compromiso']);
-    expect(d.iconoHtml).not.toBe('');
   });
 
   it('desde 1024px la lista sigue por tipo y en tarjetas (ADR 073)', () => {
@@ -2742,6 +2750,80 @@ describe('renderListaCompromisos() - en el teléfono, por urgencia y en filas (A
     expect(document.querySelector('.porpagar-grupo')).toBeNull();
     expect(document.querySelector('.deuda-card--fila')).toBeNull();
     expect(document.querySelectorAll('.deuda-card__chips').length).toBeGreaterThan(0);
+  });
+});
+
+// ── ADR 132 D7: la hoja de un pago de Por pagar ─────────────────────
+
+describe('htmlDetalleCompromiso() - la hoja de un pago (ADR 132 D7)', () => {
+  const visa = {
+    id: 'd1', descripcion: 'Tarjeta Bancolombia', tipo: 'deuda-entidad', categoria: 'Tarjeta de crédito',
+    saldoTotal: 4_850_000, cuotaMensual: 385_000, diaPago: 25, tasa: 0.021, tasaUnidad: 'mensual',
+    frecuencia: 'Mensual', activo: true,
+  };
+  const arriendo = { id: 'f1', descripcion: 'Arriendo', tipo: 'fijo', monto: 1_350_000, diaPago: 5, frecuencia: 'Mensual', activo: true };
+  const hoja = (c, monto) => {
+    document.body.innerHTML = `<div id="h">${htmlDetalleCompromiso(c, { prefijoMes: '2026-11', monto })}</div>`;
+    return document.getElementById('h');
+  };
+  const datos = (el) => Object.fromEntries([...el.querySelectorAll('.detalle-gasto__dato')]
+    .map(d => [d.querySelector('dt').textContent, d.querySelector('dd').textContent]));
+  const acciones = (el) => [...el.querySelectorAll('[data-action="registrar-abrir"]')].map(b => b.dataset.targetAction);
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 10, 6, 10));
+    S.compromisos = [visa, arriendo];
+    S.gastos = [];
+    S.config = {};
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it('una deuda: la cuota del mes, cuándo vence, cuánto falta, la tasa y el día de pago', () => {
+    const el = hoja(visa, 385_000);
+    expect(el.querySelector('#detalle-fila-titulo').textContent).toBe('Tarjeta Bancolombia');
+    expect(el.querySelector('.detalle-fila__sub').textContent).toBe('Deuda con entidad · Tarjeta de crédito');
+    expect(el.querySelector('.detalle-compromiso__rotulo').textContent).toBe('Cuota de noviembre');
+    expect(el.querySelector('.detalle-fila__monto').textContent).toBe(f(385_000));
+    expect(el.querySelector('.detalle-fila__cuando').textContent).toBe('Vence el miércoles 25');
+    expect(datos(el)).toEqual({ 'Te falta pagar': f(4_850_000), 'Tasa': '2,1 % mensual', 'Se paga': 'El 25 de cada mes' });
+    expect(acciones(el)).toEqual(['abrir-abono', 'editar-compromiso', 'eliminar-compromiso']);
+    expect(el.querySelector('[data-target-action="abrir-abono"]').textContent.trim()).toBe(`Abonar ${f(385_000)}`);
+    expect(el.querySelector('.detalle-fila__accion--peligro').textContent.trim()).toBe('Eliminar esta deuda');
+  });
+
+  it('un gasto fijo vencido: "Venció el", se marca pagado en el mes de la hoja', () => {
+    const el = hoja(arriendo, 1_350_000);
+    expect(el.querySelector('.detalle-compromiso__rotulo').textContent).toBe('Pago de noviembre');
+    expect(el.querySelector('.detalle-fila__cuando').textContent).toBe('Venció el jueves 5');
+    expect(acciones(el)).toEqual(['agenda-marcar-pagado-fijo', 'agenda-editar-fijo', 'agenda-eliminar-fijo']);
+    expect(el.querySelector('[data-target-action="agenda-marcar-pagado-fijo"]').dataset.mes).toBe('2026-11');
+  });
+
+  it('pagado este mes: no ofrece pagar otra vez', () => {
+    S.gastos = [{ id: 'g1', compromisoId: 'f1', fecha: '2026-11-03', monto: 1_350_000 }];
+    expect(cuandoCompromiso(arriendo, '2026-11')).toBe('Pagado este mes');
+    expect(acciones(hoja(arriendo, 0))).toEqual(['agenda-editar-fijo', 'agenda-eliminar-fijo']);
+  });
+
+  it('una deuda saldada se archiva en vez de eliminarse', () => {
+    const el = hoja({ ...visa, saldoTotal: 0 }, 0);
+    expect(el.querySelector('.detalle-fila__cuando').textContent).toBe('Sin saldo pendiente');
+    expect(acciones(el)).toEqual(['editar-compromiso', 'archivar-compromiso']);
+  });
+
+  it('con el ojo puesto se tapan los montos y el botón dice solo "Abonar"', () => {
+    S.config = { ocultarSaldo: true };
+    const el = hoja(visa, 385_000);
+    expect(el.textContent).not.toContain('385.000');
+    expect(el.textContent).not.toContain('4.850.000');
+    expect(el.querySelector('[data-target-action="abrir-abono"]').textContent.trim()).toBe('Abonar');
+  });
+
+  it('la tasa se lee como en el formulario', () => {
+    expect(textoTasa({ tipo: 'deuda-entidad', tasa: null })).toBe('Por confirmar');
+    expect(textoTasa({ tipo: 'deuda-personal', tasa: 0 })).toBe('Sin interés');
+    expect(textoTasa({ tipo: 'deuda-entidad', tasa: 0.26, tasaUnidad: 'EA' })).toBe('26 % EA');
   });
 });
 

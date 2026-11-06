@@ -810,3 +810,139 @@ body:not(.light-theme) .cov__fill {
      encabezado se va, como ya pasaba en Por pagar. */
   .section:has(.gastos-empty .btn-primary, .empty-state--caminos, .estilo-limites__vacio-caja .btn-primary) .bloque-gastos__primario { display: none; }
 }
+
+/* D7 (tanda 2): Por pagar. Los grupos se titulan en frase con su orden
+   debajo; cada fila marca el pago con un círculo a la derecha y la acción
+   de texto se va; los filtros toman el color de la sección. */
+@media (max-width: 1023px) {
+  .porpagar-ayuda {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--fk-space-2);
+    margin: 0 0 var(--fk-space-4);
+    font-size: var(--fk-text-xs);
+    line-height: var(--fk-leading-snug);
+    color: var(--fk-text-secondary);
+  }
+  .porpagar-ayuda .icon { flex-shrink: 0; width: 18px; height: 18px; color: var(--fk-text-muted); } /* el alto de dos renglones de ayuda */
+
+  .porpagar-grupo__head {
+    align-items: flex-start;
+    font-size: var(--fk-text-base);
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--fk-text-primary);
+  }
+  .porpagar-grupo__titulo { display: flex; flex-direction: column; }
+  .porpagar-grupo__orden {
+    font-size: var(--fk-text-xs);
+    font-weight: var(--fk-font-regular);
+    color: var(--fk-text-secondary);
+  }
+  .porpagar-grupo__suma {
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-regular);
+    color: var(--fk-text-secondary);
+  }
+  .porpagar-grupo__head--danger #porpagar-vencidos,
+  .porpagar-grupo__head--danger .porpagar-grupo__suma {
+    color: var(--fk-danger-text);
+    font-weight: var(--fk-font-bold);
+  }
+
+  .deuda-card--fila { flex-wrap: nowrap; padding-block: var(--fk-space-3); }
+  .deuda-card--fila .deuda-card__info { flex: 1 1 auto; min-width: 0; }
+  /* El nombre pide 6rem: a 320 el monto cabe al lado y con el texto al
+     200 % (6rem crece con él) el monto baja en vez de cortarse (ADR 117 D4). */
+  .deuda-card__linea {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0 var(--fk-space-2);
+    margin: 0;
+  }
+  .deuda-card--fila .deuda-card__nombre {
+    flex: 1 1 6rem;
+    min-width: 0;
+    font-weight: var(--fk-font-bold);
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+  .deuda-card--fila .deuda-card__saldo {
+    flex: none;
+    margin: 0 0 0 auto;
+    font-weight: var(--fk-font-bold);
+    font-variant-numeric: tabular-nums;
+    color: var(--fk-text-primary);
+  }
+  .deuda-card--hecha :is(.deuda-card__nombre, .deuda-card__saldo) {
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-secondary);
+  }
+
+  /* El círculo del pago: 28px a la vista dentro de un blanco de 44px, por
+     encima del botón que abre la hoja. */
+  .porpagar-marca {
+    position: relative;
+    z-index: 2;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin: calc(-1 * var(--fk-space-2)) calc(-1 * var(--fk-space-2)) calc(-1 * var(--fk-space-2)) 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--fk-text-muted);
+    cursor: pointer;
+  }
+  .porpagar-marca::before {
+    content: "";
+    position: absolute;
+    inset: 8px;
+    border: 2px solid currentColor;
+    border-radius: var(--fk-radius-full);
+  }
+  .porpagar-marca .icon { width: 14px; height: 14px; } /* el check dentro del círculo de 28 */
+  .porpagar-marca--danger  { color: var(--fk-danger-text); }
+  .porpagar-marca--warning { color: var(--fk-warning-text); }
+  .porpagar-marca--ok { color: var(--fk-text-on-accent); cursor: default; }
+  .porpagar-marca--ok::before { border-color: var(--fk-success); background: var(--fk-success); }
+  .porpagar-marca--ok .icon { position: relative; }
+  .porpagar-marca:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: -4px; border-radius: var(--fk-radius-full); }
+
+  /* Los filtros de la lente, en el color de la sección: tinte y borde
+     frambuesa con el texto primario (receta D.16b de los chips de Gastos);
+     el texto frambuesa sobre su tinte no pasa AA en el tema claro. */
+  #lista-compromisos > .filtros-bar > .chip--active {
+    background: var(--fk-dom-compromisos-bg);
+    border-color: color-mix(in srgb, var(--fk-dom-compromisos) 50%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--fk-dom-compromisos) 50%, transparent) inset;
+    color: var(--fk-text-primary);
+    font-weight: var(--fk-font-semibold);
+  }
+
+  /* "¿Cómo salir más rápido?": Tino y el texto arriba, "Ver plan" a lo ancho. */
+  .plan-salida { flex-wrap: wrap; }
+  .plan-salida__ver {
+    justify-content: center;
+    width: 100%;
+    border: 1px solid var(--fk-border-default);
+    border-radius: var(--fk-radius-md);
+    background: var(--fk-bg-elevated);
+    color: var(--fk-text-primary);
+  }
+  .plan-salida__ver .icon { display: none; }
+
+  /* La hoja de un pago: "Cuota de noviembre" sobre el monto. */
+  .detalle-compromiso__rotulo {
+    margin: 0;
+    font-size: var(--fk-text-sm);
+    color: var(--fk-text-secondary);
+  }
+}

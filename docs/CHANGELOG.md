@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(compromisos): MV2.30 Gastos tanda 2, Por pagar y la hoja de una deuda · 2026-11-06
+
+[ADR 132](DECISIONS/132-gastos-del-adulto-en-el-telefono.md) D7. Ficha: [`contexto/deudas.md`](contexto/deudas.md). SW v676. Tablero "rediseño1".
+
+- **Fila**: el nombre con su monto al lado y, a la derecha, un círculo que marca el pago (rojo vencido, ámbar hoy o mañana, neutro el resto; lleno y verde si ya se pagó). Se van el botón de texto por fila, las acciones escondidas y las notas que leía la hoja genérica.
+- **Grupos**: "Vencidos" en rojo con "Del más antiguo al más reciente" debajo, sin mayúsculas sostenidas. "Vence hoy" pasa a ámbar: todavía no venció. Arriba, "Toca el círculo cuando pagues algo" solo si hay algo por marcar.
+- **Hoja de un pago** (`views/detalle.js`, acción `compromiso-detalle`): la cuota del mes y cuándo vence, cuánto falta, la tasa y el día de pago; "Abonar" o "Marcar pagado", "Editar" y "Eliminar" (o "Archivar" si quedó en cero). Se arma con el compromiso, no copiando la fila.
+- Filtros en el color de la sección y "Ver plan" a todo el ancho. Pruebas: 8 de la fila reescritas y 6 nuevas de la hoja en `compromisos`; el E2E de Por pagar toca el círculo y abre la hoja.
+
 ### feat(gastos): MV2.30 Gastos tanda 1, el mes, Día a día y los vacíos · 2026-11-05
 
 [ADR 132](DECISIONS/132-gastos-del-adulto-en-el-telefono.md). Fichas: [`contexto/gastos.md`](contexto/gastos.md), [`contexto/limites.md`](contexto/limites.md). SW v675. Tablero "rediseño1".

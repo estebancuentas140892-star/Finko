@@ -1,6 +1,6 @@
 # ADR 132 - Gastos del adulto en el teléfono
 
-**Estado:** Aceptada (2026-11-05). Tanda 1 aplicada (SW v675). En aplicación por tandas: (1) el selector de mes, Día a día y los vacíos de las tres lentes; (2) Por pagar y la hoja de una deuda; (3) Límites y las hojas de un límite y de un límite nuevo; (4) la hoja "Nuevo gasto"; (5) la hoja del plan de salida. El tablero se borra de `Diseño Finko/` al cerrar la quinta.
+**Estado:** Aceptada (2026-11-05). Tandas 1 (SW v675) y 2 (SW v676) aplicadas. En aplicación por tandas: (1) el selector de mes, Día a día y los vacíos de las tres lentes; (2) Por pagar y la hoja de una deuda; (3) Límites y las hojas de un límite y de un límite nuevo; (4) la hoja "Nuevo gasto"; (5) la hoja del plan de salida. El tablero se borra de `Diseño Finko/` al cerrar la quinta.
 **Fecha:** 2026-11-05
 **Autores:** Esteban (diseño y decisión: "vamos con el siguiente cambio de diseño"), Claude Opus 5.5 (auditoría, implementación y redacción)
 **Relación:** **Aplica** el tablero "Finko móvil · rediseño1" (Claude Design, `Diseño Finko/`), la segunda pieza de MV2.30, sobre la identidad del [ADR 127](127-identidad-bosque-y-sol.md). **Supera** en la fila de un gasto el TX.9a (la categoría como título siempre) y el orden del [ADR 072](072-gastos-cabecera-de-banda-y-fila-con-cuenta.md) D2 (la cuenta abre el subtítulo), D4. **Acota** el [ADR 098](098-finko-movil-2-primera-entrega.md) D6 (la barra plegada de categorías, D2) y el [ADR 039](039-gastos-v2-visual.md) D3 (el encabezado del día, D3). **Conserva** el [ADR 127](127-identidad-bosque-y-sol.md) D5 (el total sigue en su tarjeta de identidad, aunque el tablero lo dibuja suelto), el [ADR 077](077-limites-de-gasto-tres-grupos-a-la-vista.md) D4 (un botón siempre, nunca dos) y a Tino en los vacíos ([ADR 129](129-tino-ronda-2-en-el-adulto.md)).
@@ -66,6 +66,9 @@ El resultado primero ("sales de deudas en 15 meses y pagas $X en intereses"), Bo
 | El total del mes suelto, sin tarjeta | la tarjeta de identidad de Gastos y de Por pagar | ADR 127 D5, posterior al tablero |
 | Una teja con el ícono de la sección en los vacíos | Tino sobre su sol | ADR 127 D6 y 129 D3 |
 | "Ahorro" en la barra de abajo lleva a la casa | `#fondo` | la casa se retiró (ADR 125) |
+| La teja del bombillo en "¿Cómo salir más rápido?" | Tino pensando, con "Ver plan" a todo el ancho debajo | ADR 129 |
+| "Vence hoy" en ámbar dentro de "Vencidos" | lo mismo, y su círculo también ámbar | el tablero lo dibuja así: hoy todavía no venció; el rojo queda para lo que ya pasó |
+| La deuda con entidad dice "deuda" en la fila | lo mismo; la hoja dice el tipo completo | el renglón de estado no alcanza a 360 con "deuda con entidad" y el monto |
 
 ## Alternativas descartadas
 
