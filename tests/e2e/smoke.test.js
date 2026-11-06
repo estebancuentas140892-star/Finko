@@ -1051,7 +1051,11 @@ test.describe.serial('Onboarding', () => {
     // APR.6a (ADR 100 D1): primero, quién va a usar Finko.
     await page.locator('#onboarding [data-action="onboarding-adulto"]').click();
 
-    // Paso 1: nombre.
+    // Paso 1: nombre. Tino saluda en el lugar del isotipo (ADR 130 D1), y su
+    // dibujo carga de verdad (un 404 dejaría el sol vacío).
+    const tino = page.locator('#form-onboarding .onboarding__tino[data-pose="saluda"] img');
+    await expect(tino).toBeVisible();
+    await expect.poll(() => tino.evaluate((img) => img.complete && img.naturalWidth > 0)).toBe(true);
     await page.locator('#onboarding input[name="nombre"]').fill('María Camila');
     await page.locator('#onboarding button[type="submit"]').click();
 

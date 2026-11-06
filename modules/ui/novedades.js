@@ -12,6 +12,7 @@ import { S } from '../core/state.js';
 import { save } from '../core/storage.js';
 import { trapFocus, releaseFocus } from '../infra/a11y.js';
 import { esc as _esc } from '../infra/utils.js';
+import { htmlTinoSol } from '../infra/ilustraciones.js';
 import { NOVEDADES_POR_VERSION, ultimaVersionNovedadesConocida } from '../core/constants.js';
 
 /** Muestra el modal de novedades si hay entradas mas nuevas que las ya vistas. */
@@ -39,9 +40,12 @@ export function mostrarNovedadesSiHay() {
     })
     .join('');
 
+  // ADR 130 D2: Tino explica lo nuevo, una vez por versión. Decorativo: lo
+  // que cambió va en la lista.
   overlay.innerHTML = `
-    <div class="modal modal--sm" role="document">
+    <div class="modal modal--sm modal--novedades" role="document">
       <header class="modal__header">
+        ${htmlTinoSol('explica', { tamano: 88, clase: 'novedades__tino' })}
         <h2 id="novedades-title" class="modal__title">Novedades de esta actualización</h2>
       </header>
       <div class="modal__body">${bloques}</div>

@@ -47,7 +47,7 @@
 
 - **Objetivo**          : que Tino acompañe donde suma (vacíos, bienvenida, explicación, celebración) con su dibujo original, nunca redibujado.
 - **Estado actual**     : estable.
-- **Verificado contra** : copia de trabajo sobre `261a494` (2026-11-05), con el ADR 129.
+- **Verificado contra** : `67ba9df` más el ADR 130 (2026-11-05).
 
 **Dónde vive**
 
@@ -61,6 +61,8 @@
 | Movimientos vacío y sin resultados | `modules/dominio/movimientos/view.js` | `empty-state__tino` | ~560 |
 | "Nada que atender hoy" | `modules/ui/atencion-hoy.js` | `atencion-hoy__tino` | ~441 |
 | Bienvenida del usuario nuevo | `index.html` | `.hero-guia__bienvenida` | ~710 |
+| Paso del nombre del onboarding (ADR 130) | `modules/ui/onboarding.js` | `htmlPasoNombre()`, `.onboarding__tino` | ~188 |
+| Novedades tras actualizar y su catálogo (ADR 130) | `modules/ui/novedades.js`, `modules/core/constants.js` | `.modal--novedades`, `NOVEDADES_POR_VERSION` | ~44, ~991 |
 | Explicación de la distribución | `modules/dominio/tesoreria/views/distribucion.js` | `distribuir-card__tino` | ~985 |
 | Hitos, foto y comparación | `modules/ui/celebraciones.js` | `HITOS`, `fotoHitos()`, `hitosNuevos()` | ~40 |
 | Aviso con Tino | `modules/ui/toast.js` | `mostrarToast({ tino })` | ~45 |
@@ -74,11 +76,13 @@
 
 - Un aviso con Tino vive 7 s sobre la barra: una prueba E2E que toque algo en esa franja justo después de crear el primer ingreso, la primera reserva, el primer límite o la primera meta puede chocar con él.
 - Una descarga de la nube que traiga un solo ingreso a un teléfono sin ingresos se celebra como primer ingreso: es el único caso que la regla "de 0 a exactamente 1" no distingue.
+- Desde que el catálogo de novedades tiene entradas (ADR 130 D3), un estado guardado con `_version` 32 o más y un `config` sin `ultimaVersionVista` abre el modal al arrancar: la migración v32 solo rellena ese campo por debajo de la 32. Una semilla E2E así taparía los clics; las de hoy van por debajo o sin `_version`.
 
 **Cambios realizados**
 
 - 2026-11-05 ADR 127 D6 y D9: Tino en vacíos, bienvenida, distribución y celebraciones.
 - 2026-11-05 ADR 129: las ocho poses de la ronda 2, cada una en su vacío o aviso; los dibujos anchos caben en el sol con `encajeTinoSol()`.
+- 2026-11-05 ADR 130: Tino en el paso del nombre del onboarding y en las novedades; primera entrada del catálogo (672).
 
 **Cambios pendientes**
 

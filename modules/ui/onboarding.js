@@ -23,7 +23,7 @@ import { announce } from '../infra/a11y.js';
 import { mostrarErroresForm } from '../infra/form-errors.js';
 import { esc, hoy } from '../infra/utils.js';
 import { icon, isotipo } from '../infra/icons.js';
-import { htmlTino } from '../infra/ilustraciones.js';
+import { htmlTino, htmlTinoSol } from '../infra/ilustraciones.js';
 import { registrarAccion } from './actions.js';
 import { renderBloqueAceptacion, registrarAceptacion } from './aceptacion-legal.js';
 import { empezarCaminoNino, manejarFormNino, volverEnCaminoNino } from './onboarding-nino.js';
@@ -59,7 +59,7 @@ function _pintarPaso1() {
   const body = document.querySelector('#onboarding #onboarding-body');
   if (!body) return;
   _pielNino(false);
-  body.innerHTML = _renderPaso1();
+  body.innerHTML = htmlPasoNombre();
   body.querySelector('input')?.focus();
 }
 
@@ -185,11 +185,17 @@ function _renderQuien() {
     </div>`;
 }
 
-function _renderPaso1() {
+/**
+ * El paso del nombre del adulto. Tino saluda en el lugar del isotipo
+ * (ADR 130 D1): es la primera vez que la persona ve la app por dentro. El
+ * isotipo sigue en "¿Quién va a usar Finko?", la pantalla de la marca.
+ * @returns {string}
+ */
+export function htmlPasoNombre() {
   return `
     <form id="form-onboarding" novalidate>
       <button type="button" class="btn btn-ghost btn-sm onboarding__volver" data-action="onboarding-volver">${icon('arrow-left')}Volver</button>
-      <div class="onboarding__hero" aria-hidden="true">${isotipo()}</div>
+      ${htmlTinoSol('saluda', { tamano: 96, clase: 'onboarding__tino' })}
       <h2 class="onboarding__title">¡Bienvenido a Finko!</h2>
       <p class="onboarding__desc">
         Tu gestión financiera personal, en tu idioma y sin complicaciones.

@@ -578,6 +578,18 @@ body:not(.light-theme) .cov__fill {
   letter-spacing: -0.02em;
 }
 
+/* El paso del nombre del adulto (ADR 130 D1): Tino saluda centrado sobre
+   el título, en el lugar del isotipo. */
+.onboarding__tino { margin: 0 auto var(--fk-space-4); }
+
+/* Las novedades tras actualizar (ADR 130 D2): Tino explica arriba del
+   título, los dos centrados. */
+.modal--novedades .modal__header {
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
+
 /* El aviso que celebra (ADR 127 D9): Tino sobre su sol y un filo de
    girasol. Entra con un salto corto; sin movimiento si se pidió menos. */
 .fk-toast--tino {

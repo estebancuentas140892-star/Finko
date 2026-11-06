@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(identidad): Tino en la bienvenida del adulto y en las novedades · 2026-11-05
+
+[ADR 130](DECISIONS/130-tino-en-la-bienvenida-y-las-novedades.md). Ficha: [`contexto/identidad.md`](contexto/identidad.md). SW v672. Lo que proponía el diseño "Identidad Bosque y sol" ya estaba aplicado (ADR 127 y 129); estos son dos lugares nuevos que eligió Esteban.
+
+- **Paso del nombre**: Tino saluda en el lugar de la teja del isotipo; `_renderPaso1()` pasa a `htmlPasoNombre()`, exportada para probarla.
+- **Novedades**: Tino explica arriba del título (`.modal--novedades`).
+- **Primera entrada del catálogo** (`NOVEDADES_POR_VERSION[672]`, "Finko estrena imagen"): sin ella el modal no salía nunca. Quien ya usaba Finko la ve una vez.
+- Pruebas: `tino-bienvenida.test.js` (6 nuevas), dos de `constants.test.js` ya no suponen el catálogo vacío, y el smoke del onboarding comprueba que el dibujo carga.
+
 ### feat(identidad): Tino, las poses de la ronda 2 en el adulto · 2026-11-05
 
 [ADR 129](DECISIONS/129-tino-ronda-2-en-el-adulto.md). Ficha: [`contexto/identidad.md`](contexto/identidad.md). SW v671. Dibujos de Esteban en la carpeta "Personaje Tino".

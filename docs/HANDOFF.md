@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-05. Última tarea cerrada: Tino, ronda 2 en el adulto (ADR 129). Sigue MV2.30 Gastos. MOV.1 en pausa. HF.0f en curso: banco sin commitear y fuera de esta copia.
+> Revisado: 2026-11-05. Última tarea cerrada: Tino en la bienvenida y en las novedades (ADR 130), en el PR de `rediseno/identidad-v3`, sin fusionar. Sigue MV2.30 Gastos. MOV.1 en pausa. HF.0f en curso: banco sin commitear y fuera de esta copia.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5320/5320 (2026-11-05, ADR 129) |
-| Tests E2E | 438/438 (2026-11-05, ADR 127, `--workers=3`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5326/5326 (2026-11-05, ADR 130) |
+| Tests E2E | 438/438 (2026-11-05, ADR 130, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v48 (`perfiles`, APR.3a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**Tino en la bienvenida y en las novedades, 2026-11-05**
+Tino saluda en el paso del nombre y explica en las novedades, que estrenan su primera entrada ([ADR 130](DECISIONS/130-tino-en-la-bienvenida-y-las-novedades.md)). SW v672.
 
 **Tino, ronda 2 en el adulto, 2026-11-05**
 Ocho dibujos originales más, cada uno en su vacío o aviso; los anchos caben en el sol ([ADR 129](DECISIONS/129-tino-ronda-2-en-el-adulto.md)). SW v671.
@@ -36,9 +39,6 @@ Píldora detrás del ícono activo y "Registrar" plano; el tablero de Inicio que
 
 **MV2.30 tanda 4 - las hojas de Inicio, 2026-11-05**
 "Pagos para hoy" con el estado de cada pago en su color y el total en el pie; "Registrar" con Gasto e Ingreso arriba y una lista debajo; "Tu perfil" con medidas nuevas ([ADR 126](DECISIONS/126-inicio-del-adulto-en-el-telefono.md)). SW v668.
-
-**MV2.30 tanda 3 - "Esta semana" y el usuario nuevo, 2026-11-05**
-Totales arriba, el día una vez y sin flecha, el vacío con su teja y la guía de tres pasos en el teléfono ([ADR 126](DECISIONS/126-inicio-del-adulto-en-el-telefono.md)). SW v667.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

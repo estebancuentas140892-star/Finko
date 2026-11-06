@@ -988,7 +988,17 @@ export const ACCESOS_INICIO_DEFAULT = ['tesoreria', 'compromisos', 'personales']
  *
  * @type {Record<number, { titulo: string, items: string[] }>}
  */
-export const NOVEDADES_POR_VERSION = {};
+export const NOVEDADES_POR_VERSION = {
+  // ADR 130 D3: la primera entrada anuncia la identidad v3 (ADR 127 a 129).
+  672: {
+    titulo: 'Finko estrena imagen',
+    items: [
+      'Colores nuevos que salen del logo de Finko, en el tema oscuro y en el claro.',
+      'El total de cada sección se lee en una tarjeta con su color.',
+      'Tino, el guatín de Finko, te acompaña cuando una sección está vacía y celebra contigo tus logros.',
+    ],
+  },
+};
 
 /**
  * Última versión del catálogo de novedades conocida en este build. Un
