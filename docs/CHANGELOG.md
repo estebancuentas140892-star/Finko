@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(nino): frascos sin líquido, Gastar y Compartir se vacían · 2026-11-05
+
+[ADR 131](DECISIONS/131-frascos-sin-liquido.md). Ficha: [`contexto/nino.md`](contexto/nino.md). SW v673. Es la página "Frascos sin líquido" del diseño "Identidad Bosque y sol", la última que faltaba.
+
+- **La tapa lleva el color** del frasco (`il-frasco`, `currentColor`); se van el tinte y `.frasco__tinte`.
+- **Huecos**: `il-cafe-hueco` (nuevo en el sprite) marca cada grano usado en Gastar y Compartir contra su parte de la mesada; `htmlFrasco(..., { huecos })` y `frascoConHuecos()` deciden cuándo. Ahorrar sigue llenándose sin huecos.
+- `--fk-cafe-hueco` por tema en `body.kid` y `body.light-theme.kid`.
+- `rellenoFrasco()` queda sin uso en la app (sigue con su prueba).
+- Pruebas: 4 nuevas en `nino-visual` (tapa, huecos con los números del diseño, el símbolo del hueco) y 1 en `nino`; la del tinte pasa a comprobar que no hay tinte.
+
 ### feat(identidad): Tino en la bienvenida del adulto y en las novedades · 2026-11-05
 
 [ADR 130](DECISIONS/130-tino-en-la-bienvenida-y-las-novedades.md). Ficha: [`contexto/identidad.md`](contexto/identidad.md). SW v672. Lo que proponía el diseño "Identidad Bosque y sol" ya estaba aplicado (ADR 127 y 129); estos son dos lugares nuevos que eligió Esteban.

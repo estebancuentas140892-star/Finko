@@ -55,10 +55,13 @@
   /* El café de Tino (ADR 128): el grano que el guatín levanta en
      "celebra grande", con los colores del dibujo original. Llena los
      frascos del niño en lugar de un líquido. Fijo en los dos temas: el
-     grano va siempre sobre el tinte del frasco, nunca sobre el lienzo. */
+     grano va siempre dentro del vidrio, nunca sobre el lienzo. */
   --fk-cafe-grano:    #7a3b2a;
   --fk-cafe-contorno: #3d1a0b;
   --fk-cafe-brillo:   #a8624a;
+  /* El hueco que deja un grano usado (ADR 131): el contorno de la
+     ilustración, apagado. El niño lo redefine por tema en themes.css. */
+  --fk-cafe-hueco:    rgba(233, 235, 243, 0.38);
 
   /* ── MARCA ──────────────────────────────────────────────────── */
   /* Menta Finko (ADR 127 D1): la acción en oscuro. Un paso más suave que

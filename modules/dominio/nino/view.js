@@ -16,7 +16,7 @@ import { UNIDADES_NINO } from '../../infra/ruta-aprende.js';
 import { proximaMesada, DIAS_SEMANA, TASAS_PREMIO, proximoPremio } from '../../infra/mesada.js';
 import {
   estadoRutaNino, siguienteLeccionNino, unidadesHechasNino, ofreceUbicacionNino, sinEmpezarNino,
-  metaActiva, planMeta, llenadoFrasco, puedeMover, ultimasAnotaciones,
+  metaActiva, planMeta, llenadoFrasco, frascoConHuecos, puedeMover, ultimasAnotaciones,
 } from './logic.js';
 
 /** Desde los 10 años, antes de empezar: tres preguntas para saber dónde empieza. */
@@ -196,7 +196,7 @@ function _tejasFrascos(perfil) {
   return `
     <ul class="ktejas">${FRASCOS.map(fr => `
       <li class="kteja" data-frasco="${fr}">
-        ${htmlFrasco(fr, llenadoFrasco(fr, perfil), { ancho: 44 })}
+        ${htmlFrasco(fr, llenadoFrasco(fr, perfil), { ancho: 44, huecos: frascoConHuecos(fr, perfil) })}
         <span class="kteja__nombre">${FRASCO_INFO[fr].nombre}</span>
         <strong class="kteja__monto">${f(s[fr])}</strong>
       </li>`).join('')}
@@ -400,7 +400,7 @@ export function htmlAlcanciaNino(perfil, hoyISO) {
     <ul class="jars" aria-label="Tus tres frascos">${FRASCOS.map(fr => `
       <li class="jars__col" data-frasco="${fr}">
         <div class="jar" data-frasco="${fr}">
-          ${htmlFrasco(fr, llenadoFrasco(fr, perfil), { ancho: 64, etiqueta: `Frasco ${FRASCO_INFO[fr].nombre}: ${f(s[fr])}` })}
+          ${htmlFrasco(fr, llenadoFrasco(fr, perfil), { ancho: 64, etiqueta: `Frasco ${FRASCO_INFO[fr].nombre}: ${f(s[fr])}`, huecos: frascoConHuecos(fr, perfil) })}
           <p class="jar__nombre">${iconoCategoria(FRASCO_INFO[fr].icono)}${FRASCO_INFO[fr].nombre}</p>
           <p class="jar__monto">${f(s[fr])}</p>
         </div>
@@ -567,7 +567,7 @@ function _elegirFrasco(nombre, leyenda, marcado, perfil) {
       <legend class="kfield__etiqueta">${leyenda}</legend>
       <div class="kfrascos">${FRASCOS.map(fr => `
         <label class="kfrasco" data-frasco="${fr}"><input class="sr-only" type="radio" name="${nombre}" value="${fr}"${fr === marcado ? ' checked' : ''} />
-          ${htmlFrasco(fr, llenadoFrasco(fr, perfil), { ancho: 32 })}<span>${FRASCO_INFO[fr].nombre}</span></label>`).join('')}
+          ${htmlFrasco(fr, llenadoFrasco(fr, perfil), { ancho: 32, huecos: frascoConHuecos(fr, perfil) })}<span>${FRASCO_INFO[fr].nombre}</span></label>`).join('')}
       </div>
     </fieldset>`;
 }

@@ -136,6 +136,7 @@ body.kid {
   --fk-il-line:  #f1f3fb;
   --fk-il-paper: #3a4466;   /* un paso más oscuro que el contorno, ver tokens.css */
   --fk-il-shade: rgba(255, 255, 255, 0.10);
+  --fk-cafe-hueco: rgba(241, 243, 251, 0.38); /* el contorno al 38 % (ADR 131) */
 
   /* Tino, un rol por color (ADR 095 D2). En oscuro el pelo y su sombra
      se aclaran: el pelo dibuja la silueta y pasa 3:1 (D3). */
@@ -179,6 +180,7 @@ body.light-theme.kid {
   --fk-il-line:  #172038;
   --fk-il-paper: #ffffff;
   --fk-il-shade: rgba(20, 30, 60, 0.10);
+  --fk-cafe-hueco: rgba(23, 32, 56, 0.32); /* el contorno al 32 % (ADR 131) */
 
   /* Tino en claro: el pelo y su sombra como en el dibujo (ADR 095 D3). */
   --fk-tino-pelo:   #924e24;

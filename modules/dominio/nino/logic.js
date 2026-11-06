@@ -251,6 +251,22 @@ export function llenadoFrasco(frasco, perfil) {
   return Math.min(1, Math.max(0.05, saldo / referencia));
 }
 
+/**
+ * Si el frasco muestra los huecos de los granos usados (ADR 131): Gastar y
+ * Compartir se vacían contra lo que les toca de la mesada, así que lleno es
+ * la mesada y cada grano que falta es algo que el niño usó. Ahorrar se llena
+ * hacia la meta: no tiene huecos. Sin mesada repartida no hay contra qué
+ * medir lo usado, y tampoco.
+ *
+ * @param {'ahorrar'|'gastar'|'compartir'} frasco
+ * @param {any} perfil
+ * @returns {boolean}
+ */
+export function frascoConHuecos(frasco, perfil) {
+  if (frasco === 'ahorrar') return false;
+  return (Number(perfil?.mesada?.reparto?.[frasco]) || 0) > 0;
+}
+
 
 // ── LO ÚLTIMO QUE ANOTASTE (ADR 124 D3) ──────────────────────────
 

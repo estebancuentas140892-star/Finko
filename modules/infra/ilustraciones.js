@@ -149,7 +149,8 @@ const _BOCA = 24;
 
 /**
  * El relleno del frasco para una proporción de 0 a 1 contra la meta de ESE
- * frasco (R60). Vacío no dibuja nada; lleno redondea los hombros.
+ * frasco (R60). Vacío no dibuja nada; lleno redondea los hombros. Sin uso en
+ * la app desde el ADR 131 (el vidrio ya no lleva tinte).
  *
  * @param {number} proporcion
  * @returns {string} el atributo `d` del relleno, o `''` si está vacío.
@@ -208,27 +209,36 @@ export function granosFrasco(proporcion) {
   return GRANOS_FRASCO.filter(g => g.y >= nivel + 2.5);
 }
 
+/** Un grano (o su hueco) en su sitio del frasco. */
+function _usoGrano(simbolo, g) {
+  return `<use href="#${simbolo}" x="${g.x - _GRANO_ANCHO / 2}" y="${g.y - _GRANO_ALTO / 2}" width="${_GRANO_ANCHO}" height="${_GRANO_ALTO}" transform="rotate(${g.giro} ${g.x} ${g.y})"/>`;
+}
+
 /**
- * Un frasco lleno de los granos de café de Tino (ADR 128): el tinte de su
- * color sube hasta el nivel y encima van los granos. Ningún color va solo
- * (R49): quien lo usa pone al lado el nombre y el monto; la etiqueta es para
- * quien no ve el dibujo.
+ * Un frasco de vidrio con los granos de café de Tino (ADR 128 y 131): el
+ * vidrio es transparente, sin líquido ni tinte, y el color del frasco va en
+ * su tapa. Con `huecos`, el frasco lleno es la referencia (la mesada de
+ * Gastar o Compartir) y cada grano que falta deja su hueco punteado: el
+ * niño ve lo que usó. Sin `huecos` (Ahorrar), arriba queda vidrio libre para
+ * seguir guardando. Ningún color va solo (R49): quien lo usa pone al lado el
+ * nombre y el monto; la etiqueta es para quien no ve el dibujo.
  *
  * @param {'ahorrar'|'gastar'|'compartir'} frasco
- * @param {number} proporcion - 0 a 1 contra la meta del frasco.
- * @param {{ etiqueta?: string | null, ancho?: number }} [opciones]
+ * @param {number} proporcion - 0 a 1 contra la referencia del frasco.
+ * @param {{ etiqueta?: string | null, ancho?: number, huecos?: boolean }} [opciones]
  * @returns {string}
  */
-export function htmlFrasco(frasco, proporcion, { etiqueta = null, ancho = 76 } = {}) {
+export function htmlFrasco(frasco, proporcion, { etiqueta = null, ancho = 76, huecos = false } = {}) {
   const color = _COLOR_FRASCO[frasco] ?? _COLOR_FRASCO.ahorrar;
-  const d = rellenoFrasco(proporcion);
   const alto = Math.round(ancho * 104 / 88);
   const a11y = etiqueta ? `role="img" aria-label="${esc(etiqueta)}"` : 'aria-hidden="true"';
-  const granos = granosFrasco(proporcion).map(g =>
-    `<use href="#il-cafe" x="${g.x - _GRANO_ANCHO / 2}" y="${g.y - _GRANO_ALTO / 2}" width="${_GRANO_ANCHO}" height="${_GRANO_ALTO}" transform="rotate(${g.giro} ${g.x} ${g.y})"/>`).join('');
+  const llenos = new Set(granosFrasco(proporcion));
+  const granos = GRANOS_FRASCO.map(g => {
+    if (llenos.has(g)) return _usoGrano('il-cafe', g);
+    return huecos ? _usoGrano('il-cafe-hueco', g) : '';
+  }).join('');
   return `<svg class="frasco" width="${ancho}" height="${alto}" viewBox="0 0 88 104" style="--il-a: ${color}" ${a11y}>`
     + '<use href="#il-frasco"/>'
-    + (d ? `<path class="frasco__tinte" d="${d}" fill="currentColor"/>` : '')
     + granos
     + '<use href="#il-frasco-borde"/></svg>';
 }

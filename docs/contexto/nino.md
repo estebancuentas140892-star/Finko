@@ -12,7 +12,7 @@
 
 - **Objetivo**          : que un tutor y niños de 7 a 12 años compartan el teléfono sin que el niño vea las finanzas del adulto (D1).
 - **Estado actual**     : en evolución (Fase 3 de APR). Cerradas **APR.3b** (sistema visual), **APR.3a** (perfiles, selector, alta paso 1, PIN de niño a adulto, candado obligatorio, P1), **APR.3c** (barra, ruta en orden como camino, lección con Frai, celebración, unidad 1) **APR.3d** (Guardé, Gasté, Compartí, mover, una meta con semanas y fecha) y **APR.3e** (alta en dos pasos con mesada, "Entregada" como un solo hecho, premio por ahorrar, progreso del niño). **APR.3f**: las ocho unidades escritas y la ubicación desde los 10 años; falta su revisión pedagógica. **APR.4b**: riel desde 768 px, Inicio en dos columnas desde 1024 px y "Cambiar de perfil" al pie de la barra lateral del adulto. **APR.5a**: Tino, un guatín, reemplaza a Frai ([ADR 095](../DECISIONS/095-tino-en-el-sprite.md)). **MV2.29** (el tablero de niños, [ADR 124](../DECISIONS/124-el-nino-en-el-telefono.md)): aplicado completo en cinco tandas; el HTML del tablero se borró y manda el ADR.
-- **Verificado contra** : MV2.29 tanda 5, cierre (commit `efb8e85`, 2026-11-05, ADR 124). Antes: APR.6b (`f09b213`, 2026-10-29).
+- **Verificado contra** : ADR 131, frascos sin líquido (2026-11-05, sobre `b1a7ef6`). Antes: MV2.29 tanda 5 (`efb8e85`, ADR 124). Antes: APR.6b (`f09b213`, 2026-10-29).
 
 **Dónde vive**
 
@@ -36,14 +36,14 @@
 | La ruta en orden (sin DOM) y su línea en Aprender (la unidad actual abierta, ADR 124 D6) | `modules/dominio/nino/logic.js` / `view.js` | `estadoRutaNino()`, `siguienteLeccionNino()`, `unidadesHechasNino()`, `sinEmpezarNino()` (Tino se presenta), `_unidadActual()` |
 | Catálogo de la ruta del niño | `modules/infra/ruta-aprende.js` | `UNIDADES_NINO` |
 | Saldos de los frascos, avance y cambios del niño | `modules/infra/perfiles.js` | `saldosFrascos()`, `guardarAprendeNino()`, `actualizarNino()`, `FRASCOS` |
-| Alcancía y meta (sin DOM): validar y crear movimientos, plan de la meta, llenado de cada frasco | `modules/dominio/nino/logic.js` | `validarMovimiento()`, `crearMovimientos()`, `metaActiva()`, `planMeta()`, `validarMeta()`, `llenadoFrasco()`, `puedeMover()` |
+| Alcancía y meta (sin DOM): validar y crear movimientos, plan de la meta, llenado de cada frasco | `modules/dominio/nino/logic.js` | `validarMovimiento()`, `crearMovimientos()`, `metaActiva()`, `planMeta()`, `validarMeta()`, `llenadoFrasco()`, `frascoConHuecos()`, `puedeMover()` |
 | Hoja para anotar y pantalla de la meta ("Cambiar el plan" reusa la pantalla con `borrador.id`; tres cantidades por semana, ADR 124 D8) | `modules/dominio/nino/view.js` / `index.js` | `htmlMovimientoNino()`, `textoBotonMovimiento()`, `BILLETES`, `htmlMetaNino()`, `SEMANALES`, `htmlTarjetaMeta(perfil, hoy, { acciones })`, `_reflejarMonto()`, `data-action="nino-mov"`, `nino-monto`, `nino-meta-*` (`nino-meta-cambiar`, `nino-meta-semana` con `data-valor`), `#modal-nino` |
 | La lección del niño: mismo motor, su avance y su cierre | `modules/dominio/aprende/index.js` / `view.js` | `_progreso()`, `_guardarProgreso()`, `ctx.nino`, `_cierreNino()`, `data-action="leccion-salir-a"` |
 | Contenido del niño (solo datos) y su ubicación desde los 10 | `modules/dominio/aprende/lecciones/nino/kN.js`, `nino/ubicacion.js` | `'k1-l1'`, `ofreceUbicacionNino()`, `EDAD_UBICACION_NINO` |
 | Dibujos, Tino, frasco y destellos | `modules/infra/ilustraciones.js` | `DIBUJOS`, `htmlDibujo()`, `POSES_TINO`, `htmlTino()`, `htmlFrasco()`, `granosFrasco()`, `GRANOS_FRASCO`, `htmlDestellos()` |
 | Markup | `index.html` | `#quien-usa`, `#modal-familia`, `#nino-app`, `#nino-main`, `#nino-nav` |
 
-**Recursos**: símbolos `il-tino-*` (cinco poses, color por rol `--fk-tino-*`), `il-balon` a `il-patineta`, `il-frasco`, `il-frasco-borde`, `il-cafe` (el grano que llena los frascos, tokens `--fk-cafe-*`; `assets/svg/ilustraciones/`, ver su README 2.2); `il-insignia` deja apagar su estrella con `--fk-insignia-estrella` (Yo la cambia por el ícono de la unidad); `i-lock` e `i-clock` (`assets/svg/iconos/simbolos/`). CSS: `styles/components/nino.css` (base visual y sección "PERFILES"); tokens del niño en `tokens.css` y `themes.css` (`body.kid`, `body.light-theme.kid`); fondo opaco del selector en `modals.css`.
+**Recursos**: símbolos `il-tino-*` (cinco poses, color por rol `--fk-tino-*`), `il-balon` a `il-patineta`, `il-frasco`, `il-frasco-borde`, `il-cafe` (el grano que llena los frascos, tokens `--fk-cafe-*`), `il-cafe-hueco` (el hueco punteado de un grano usado, `--fk-cafe-hueco` por tema, ADR 131; `assets/svg/ilustraciones/`, ver su README 2.2); `il-insignia` deja apagar su estrella con `--fk-insignia-estrella` (Yo la cambia por el ícono de la unidad); `i-lock` e `i-clock` (`assets/svg/iconos/simbolos/`). CSS: `styles/components/nino.css` (base visual y sección "PERFILES"); tokens del niño en `tokens.css` y `themes.css` (`body.kid`, `body.light-theme.kid`); fondo opaco del selector en `modals.css`.
 
 **Dependencias y relaciones**: `entrarComo()` emite `perfil:cambio` (`{ id }`), que escuchan `ui/quien-usa.js` (piel) y `dominio/nino` (pinta). Entrar al adulto emite `bloqueo:abierto` (bootstrap.js encadena gate legal, novedades y débitos). "Agregar un niño" desde el selector emite `familia:agregar`, que abre el alta en config. Con niños, `bootstrap.js` llama `initPerfiles()` en vez de `initBloqueoAcceso()`. `modales.js` usa `#nino-app` como fondo inerte en el perfil niño.
 
@@ -55,6 +55,7 @@
 - **El aviso de logro del adulto** se oculta mientras el candado o el selector están abiertos y en el perfil niño (`modals.css`, `nino.css`): es un dato del adulto.
 - **La alcancía solo anota** (D3): cada acción es un movimiento del perfil; el saldo de un frasco es la suma de los suyos y nunca baja de cero. "Lo compré" es una salida de Ahorrar con `tipo: 'meta'`.
 - **La pantalla de la meta no se repinta** con `state:change` mientras está abierta: borraría lo que el niño escribe.
+- **Los huecos miden contra la mesada vigente** (ADR 131): si el tutor la cambia, lo que se ve usado en Gastar y Compartir cambia con ella, aunque el dinero haya entrado con la mesada anterior. Un saldo mayor que su parte de la mesada se ve lleno, sin huecos.
 - **"Entregada" nace una vez**: `mesadaPendiente()` solo devuelve la última fecha que tocaba si no está en `entregas`. Si el tutor borra el gasto Familia, los frascos del niño no se tocan (cada lado se corrige en su lugar).
 - **El gasto Familia no pregunta por sobregiro**: el dinero ya se entregó. Necesita una cuenta elegida en la mesada; sin ella, el premio se suma al niño sin gasto.
 - **Quitar el candado con niños** no se ofrece y el handler lo rechaza: primero hay que eliminar sus perfiles.
@@ -70,6 +71,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-05 (ADR 131): frascos sin líquido: vidrio sin tinte, el color en la tapa, y Gastar y Compartir con el hueco de cada grano usado contra la mesada.
 - 2026-11-05 (ADR 128): los frascos se llenan con los granos de café de Tino sobre el tinte de su color.
 - 2026-11-05 (MV2.29 tanda 5, ADR 124): Familia en Ajustes como filas que abren el progreso, "Se la entregué" en la fila, y las hojas del tutor (progreso, mesada con días en botones y la suma que se rehace, premio y agregar) con teja, línea y pie fijo.
 - 2026-11-05 (MV2.29 tanda 4, ADR 124): la piel del niño fuera de su app (`.kid-piel`): "¿Quién usa Finko?" con Tino y los niños primero, y la primera vez a toda la pantalla con Tino en cada paso.

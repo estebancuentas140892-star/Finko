@@ -141,17 +141,50 @@ describe('el frasco se llena contra su propia meta (R60)', () => {
     }
   });
 
-  it('los granos van entre el tinte del frasco y su borde, del color del café de Tino', () => {
+  // ADR 131: el vidrio va sin líquido ni tinte; los granos van entre el
+  // vidrio y su borde.
+  it('los granos van entre el vidrio y su borde, sin tinte, del color del café de Tino', () => {
     const html = htmlFrasco('compartir', 0.5);
-    const tinte = html.indexOf('frasco__tinte');
+    expect(html).not.toContain('frasco__tinte');
+    expect(html).not.toContain('<path');
+    const vidrio = html.indexOf('href="#il-frasco"');
     const grano = html.indexOf('href="#il-cafe"');
     const borde = html.indexOf('href="#il-frasco-borde"');
-    expect(tinte).toBeGreaterThan(-1);
-    expect(grano).toBeGreaterThan(tinte);
+    expect(grano).toBeGreaterThan(vidrio);
     expect(borde).toBeGreaterThan(grano);
     const cafe = readFileSync(resolve(ROOT, 'assets/svg/ilustraciones/cafe.svg'), 'utf-8');
     expect(cafe).toContain('var(--fk-cafe-grano)');
     expect(cafe).not.toMatch(/fill="#/);
+  });
+
+  it('el color del frasco va en su tapa (ADR 131)', () => {
+    const simbolo = INDEX.match(/<symbol id="il-frasco"[\s\S]*?<\/symbol>/)[0];
+    expect(simbolo).toContain('<rect x="22" y="8" width="44" height="12" rx="4" fill="currentColor"/>');
+    expect(htmlFrasco('gastar', 0)).toContain('--il-a: var(--fk-kid-gastar');
+  });
+
+  // Los números son los del diseño "Frascos sin líquido".
+  it('Ahorrar se llena sin huecos; Gastar y Compartir dejan el hueco de cada grano usado', () => {
+    const cuenta = (html, simbolo) => (html.match(new RegExp(`href="#${simbolo}"`, 'g')) ?? []).length;
+    // Ahorrar hacia una meta de $40.000: $4.000, $16.000, $30.000 y $40.000.
+    expect([0.1, 0.4, 0.75, 1].map(p => cuenta(htmlFrasco('ahorrar', p), 'il-cafe'))).toEqual([3, 8, 15, 20]);
+    expect(cuenta(htmlFrasco('ahorrar', 0.4), 'il-cafe-hueco')).toBe(0);
+    // Gastar con una mesada de $10.000: $10.000, $6.500, $2.500 y $0.
+    const gastar = [1, 0.65, 0.25, 0].map(p => htmlFrasco('gastar', p, { huecos: true }));
+    expect(gastar.map(h => cuenta(h, 'il-cafe'))).toEqual([20, 13, 5, 0]);
+    expect(gastar.map(h => cuenta(h, 'il-cafe-hueco'))).toEqual([0, 7, 15, 20]);
+    // El hueco queda arriba: lo primero que se usa es lo último que entró.
+    const medio = gastar[1];
+    expect(medio.lastIndexOf('href="#il-cafe"')).toBeLessThan(medio.indexOf('href="#il-cafe-hueco"'));
+  });
+
+  it('el hueco es el contorno del grano, punteado y del color del tema', () => {
+    const simbolo = INDEX.match(/<symbol id="il-cafe-hueco"[\s\S]*?<\/symbol>/)[0];
+    expect(simbolo).toContain('fill="none"');
+    expect(simbolo).toContain('stroke="var(--fk-cafe-hueco)"');
+    expect(simbolo).toContain('stroke-dasharray');
+    const temas = readFileSync(resolve(ROOT, 'styles/themes.css'), 'utf-8');
+    expect(temas.match(/--fk-cafe-hueco:/g)).toHaveLength(2);
   });
 
   it('los destellos son ocho y escalonados', () => {

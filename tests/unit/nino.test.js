@@ -9,7 +9,7 @@ import { UNIDADES_NINO } from '../../modules/infra/ruta-aprende.js';
 import { normalizarPerfil, saldosFrascos } from '../../modules/infra/perfiles.js';
 import {
   estadoRutaNino, siguienteLeccionNino, unidadesHechasNino, VISTAS_NINO,
-  leerMonto, validarMovimiento, crearMovimientos, metaActiva, planMeta, validarMeta, llenadoFrasco, puedeMover,
+  leerMonto, validarMovimiento, crearMovimientos, metaActiva, planMeta, validarMeta, llenadoFrasco, frascoConHuecos, puedeMover,
   ofreceUbicacionNino, sinEmpezarNino, ultimasAnotaciones,
 } from '../../modules/dominio/nino/logic.js';
 import {
@@ -513,6 +513,17 @@ describe('la meta del niño responde en semanas y en fecha (APR.3d, D9)', () => 
     // Sin con qué medir: un fondo visible si hay dinero, nada si no.
     expect(llenadoFrasco('gastar', perfil({}, { movimientos: [{ frasco: 'gastar', monto: 1_000 }] }))).toBe(0.15);
     expect(llenadoFrasco('gastar', perfil())).toBe(0);
+  });
+
+  // ADR 131: Gastar y Compartir se vacían contra la mesada; Ahorrar se llena.
+  it('solo Gastar y Compartir con mesada repartida muestran los huecos de lo usado', () => {
+    const conMesada = perfil({}, { mesada: { reparto: { ahorrar: 2_000, gastar: 8_000, compartir: 2_000 } } });
+    expect(frascoConHuecos('ahorrar', conMesada)).toBe(false);
+    expect(frascoConHuecos('gastar', conMesada)).toBe(true);
+    expect(frascoConHuecos('compartir', conMesada)).toBe(true);
+    // Sin mesada, o con un frasco que no recibe nada, no hay contra qué medir lo usado.
+    expect(frascoConHuecos('gastar', perfil())).toBe(false);
+    expect(frascoConHuecos('compartir', perfil({}, { mesada: { reparto: { gastar: 8_000, compartir: 0 } } }))).toBe(false);
   });
 });
 
