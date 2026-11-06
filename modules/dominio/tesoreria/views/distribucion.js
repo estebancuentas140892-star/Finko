@@ -981,7 +981,7 @@ function _renderTarjetaDistribuir({ dist, estado, hayDestinos, distribuir }) {
     ${avisoHtml}
     <div class="distribuir-card">
       <div class="distribuir-card__top">
-        ${htmlTinoSol('explica', { tamano: 60, clase: 'distribuir-card__tino' })}
+        ${htmlTinoSol('pensando', { tamano: 60, clase: 'distribuir-card__tino' })}
         <div class="distribuir-card__body">
           <p class="distribuir-card__title">¿Cómo distribuir ${f(montoCobro)}?</p>
           <p class="distribuir-card__sub">Reparte tu ingreso entre necesidades, estilo de vida y ahorro.</p>

@@ -408,18 +408,8 @@ button.cmp__col {
   gap: var(--fk-space-3);
   margin-bottom: var(--fk-space-3);
 }
-.estrategia-card__header-teja {
-  flex-shrink: 0;
-  width: 2.125rem;   /* 34px, mockup aprobado */
-  height: 2.125rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--fk-radius-md);
-  background: var(--fk-dom-compromisos-bg);
-  color: var(--fk-dom-compromisos-text);
-}
-.estrategia-card__header-teja .icon { --fk-icon-size: var(--fk-icon-md); }
+/* ADR 129: la teja del bombillo pasó a Tino pensando, sobre su sol
+   (htmlTinoSol, styles/identidad.css). */
 .estrategia-card__header-texto {
   flex: 1;
   min-width: 0;

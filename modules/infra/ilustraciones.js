@@ -90,6 +90,15 @@ export const TINO_ORIGINAL = Object.freeze({
   celebra:          { ancho: 649, alto: 998 },
   'celebra-grande': { ancho: 755, alto: 1001 },
   anima:            { ancho: 693, alto: 1022 },
+  // ADR 129: las poses de la ronda 2, para los vacíos y avisos que no tenían la suya.
+  pensando:         { ancho: 499, alto: 747 },
+  reserva:          { ancho: 518, alto: 799 },
+  sembrar:          { ancho: 881, alto: 713 },
+  compartir:        { ancho: 1103, alto: 748 },
+  'con-lupa':       { ancho: 479, alto: 717 },
+  'con-calendario': { ancho: 619, alto: 738 },
+  'meta-cumplida':  { ancho: 978, alto: 781 },
+  tranquilo:        { ancho: 1240, alto: 727 },
 });
 
 /**
@@ -106,8 +115,32 @@ export function htmlTinoSol(pose, { tamano = 112, clase = '' } = {}) {
   const p = Object.hasOwn(TINO_ORIGINAL, pose) ? pose : 'saluda';
   const { ancho, alto } = TINO_ORIGINAL[p];
   const archivo = p === 'tino' ? 'tino' : `tino-${p}`;
-  return `<span class="tino-sol${clase ? ` ${esc(clase)}` : ''}" style="--tino-sol:${Number(tamano) || 112}px" data-pose="${p}" aria-hidden="true">`
+  const encaje = encajeTinoSol(ancho, alto);
+  const forma = encaje ? ' tino-sol--ancho' : '';
+  const medidas = encaje ? `;--tino-ancho:${encaje.ancho}%;--tino-base:${encaje.base}%` : '';
+  return `<span class="tino-sol${forma}${clase ? ` ${esc(clase)}` : ''}" style="--tino-sol:${Number(tamano) || 112}px${medidas}" data-pose="${p}" aria-hidden="true">`
     + `<img class="tino-sol__img" src="assets/tino/${archivo}.svg" alt="" width="${ancho}" height="${alto}" decoding="async" draggable="false"></span>`;
+}
+
+/**
+ * Cómo cabe en el sol un dibujo más ancho que alto (ADR 129 D2): Tino
+ * acostado, sembrando o con otro animal al lado. De pie, el dibujo va al 86 %
+ * del alto y apoyado abajo (CSS); a lo ancho, eso lo sacaría del disco. Acá
+ * la caja del dibujo se mide para que sus esquinas casi toquen el borde del
+ * círculo (las esquinas de estos dibujos son vacías, por eso el 6 % de más) y
+ * se centra un poco por debajo de la mitad, donde el sol es más ancho.
+ *
+ * @param {number} ancho - del lienzo original.
+ * @param {number} alto
+ * @returns {{ ancho: number, base: number } | null} en % del diámetro; `null`
+ *   si el dibujo es de pie.
+ */
+export function encajeTinoSol(ancho, alto) {
+  const r = Number(ancho) / Number(alto);
+  if (!(r > 1)) return null;
+  const w = Math.min(0.92, 1.06 / Math.sqrt(1 + 1 / (r * r)));
+  const base = (1 - w / r) / 2 - 0.02;
+  return { ancho: Math.round(w * 1000) / 10, base: Math.round(base * 1000) / 10 };
 }
 
 /** Altura útil del frasco en su retícula 88x104: del fondo (y 86) a la boca (y 24). */

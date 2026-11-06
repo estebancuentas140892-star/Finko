@@ -33,6 +33,7 @@
 import { S, EventBus } from '../core/state.js';
 import { f, esc, hoy, fechaLegible } from '../infra/utils.js';
 import { icon } from '../infra/icons.js';
+import { htmlTinoSol } from '../infra/ilustraciones.js';
 import { avisosDeHoy } from '../infra/avisos.js';
 import { registrarRender, programarRender, SALDO_MASCARA_CUENTA } from '../infra/render.js';
 import { registrarAccion } from './actions.js';
@@ -437,7 +438,7 @@ export function htmlAtencionHoy(grupos) {
 
   const cuerpo = visibles.length === 0
     ? `<div class="atencion-hoy__ok">
-         <span class="atencion-hoy__icono atencion-hoy__icono--ok" aria-hidden="true">${icon('check')}</span>
+         ${htmlTinoSol('tranquilo', { tamano: 56, clase: 'atencion-hoy__tino' })}
          <div class="atencion-hoy__textos">
            <p class="atencion-hoy__frase">Nada que atender hoy</p>
            <p class="atencion-hoy__detalle">Ningún pago vencido, nada sin repartir y ningún límite pasado.</p>

@@ -40,7 +40,7 @@ describe('hitosNuevos', () => {
   it('un logro nuevo, solo, se celebra con su pose', () => {
     const [h] = hitosNuevos(foto({ logros: ['primer-gasto'] }), foto({ logros: ['primer-gasto', 'meta-lograda'] }));
     expect(h.id).toBe('meta-lograda');
-    expect(h.pose).toBe('celebra-grande');
+    expect(h.pose).toBe('meta-cumplida'); // ADR 129
   });
 
   it('el límite y la meta salen de sus logros de siempre', () => {
@@ -67,7 +67,7 @@ describe('hitosNuevos', () => {
   it('lo grande va antes que lo pequeño', () => {
     const ids = HITOS.map(h => h.id);
     expect(ids.indexOf('meta-lograda')).toBeLessThan(ids.indexOf('primer-ingreso'));
-    expect(HITOS.every(h => ['celebra', 'celebra-grande'].includes(h.pose))).toBe(true);
+    expect(HITOS.every(h => ['celebra', 'celebra-grande', 'meta-cumplida'].includes(h.pose))).toBe(true);
   });
 
   it('los textos siguen el estilo de escritura (sin guion largo ni medio)', () => {

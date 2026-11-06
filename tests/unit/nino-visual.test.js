@@ -191,7 +191,7 @@ describe('contraste AA del modo niño en los dos temas (D5)', () => {
 });
 
 // ADR 127 D6: Tino del adulto usa los dibujos originales, sobre su sol.
-import { htmlTinoSol, TINO_ORIGINAL } from '../../modules/infra/ilustraciones.js';
+import { htmlTinoSol, TINO_ORIGINAL, encajeTinoSol } from '../../modules/infra/ilustraciones.js';
 import { existsSync as _existe } from 'node:fs';
 
 describe('htmlTinoSol (ADR 127 D6)', () => {
@@ -213,6 +213,44 @@ describe('htmlTinoSol (ADR 127 D6)', () => {
 
   it('una pose desconocida cae en saluda (nunca triste)', () => {
     expect(htmlTinoSol('triste')).toContain('tino-saluda.svg');
+  });
+
+  // ADR 129: el lienzo de cada archivo es el que dice TINO_ORIGINAL.
+  it('el lienzo de cada pose coincide con su viewBox', () => {
+    for (const [pose, { ancho, alto }] of Object.entries(TINO_ORIGINAL)) {
+      const archivo = pose === 'tino' ? 'tino' : `tino-${pose}`;
+      const svg = readFileSync(resolve(ROOT, `assets/tino/${archivo}.svg`), 'utf-8');
+      const [, , w, h] = svg.match(/viewBox="([^"]+)"/)[1].split(/\s+/).map(Number);
+      expect(Math.abs(w - ancho), pose).toBeLessThanOrEqual(1);
+      expect(Math.abs(h - alto), pose).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('un dibujo de pie va como siempre: sin encaje a lo ancho', () => {
+    expect(encajeTinoSol(651, 987)).toBeNull();
+    const html = htmlTinoSol('pensando');
+    expect(html).not.toContain('tino-sol--ancho');
+    expect(html).not.toContain('--tino-ancho');
+  });
+
+  it('un dibujo a lo ancho se mide por su ancho y no se sale del sol', () => {
+    for (const [pose, { ancho, alto }] of Object.entries(TINO_ORIGINAL)) {
+      const e = encajeTinoSol(ancho, alto);
+      if (!e) continue;
+      const w = e.ancho / 100;
+      const h = w * alto / ancho;
+      // El centro de la caja queda un poco bajo la mitad y dentro del disco.
+      const centro = 1 - (e.base / 100 + h / 2);
+      expect(centro, pose).toBeGreaterThan(0.5);
+      expect(centro, pose).toBeLessThan(0.56);
+      expect(w, pose).toBeLessThanOrEqual(0.92);
+      // Las esquinas pasan del círculo a lo sumo un 6 % (más el redondeo a
+      // una décima): ahí el dibujo es vacío.
+      expect(Math.hypot(w, h), pose).toBeLessThanOrEqual(1.061);
+    }
+    const html = htmlTinoSol('tranquilo', { tamano: 56 });
+    expect(html).toContain('class="tino-sol tino-sol--ancho"');
+    expect(html).toMatch(/--tino-sol:56px;--tino-ancho:\d+(\.\d)?%;--tino-base:\d+(\.\d)?%/);
   });
 
   // El envoltorio de metadatos (Illustrator, o la procedencia que agregue la

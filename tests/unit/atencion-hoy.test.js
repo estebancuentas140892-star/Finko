@@ -242,10 +242,16 @@ describe('htmlAtencionHoy()', () => {
     expect([...d.querySelectorAll('.atencion-hoy__icono')].map(t => t.dataset.dom)).toEqual(['compromisos', 'presupuesto']);
   });
 
-  it('sin avisos, una línea verde dice qué se revisó', () => {
+  it('sin avisos, Tino tranquilo y una línea dicen qué se revisó (ADR 129)', () => {
     const d = div(htmlAtencionHoy([]));
     expect(d.textContent).toContain('Nada que atender hoy');
     expect(d.querySelector('.atencion-hoy__lista')).toBeNull();
+    expect(d.querySelector('.atencion-hoy__tino[data-pose="tranquilo"]')).not.toBeNull();
+  });
+
+  it('con avisos, Tino no aparece: la lista es lo que importa', () => {
+    const d = div(htmlAtencionHoy(gruposAtencionHoy([pago('Arriendo', 3, 1)])));
+    expect(d.querySelector('.tino-sol')).toBeNull();
   });
 });
 

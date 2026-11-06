@@ -19,6 +19,7 @@ import { miles } from '../../../infra/miles.js';
 import { S } from '../../../core/state.js';
 import { esc as _esc, f } from '../../../infra/utils.js';
 import { icon } from '../../../infra/icons.js';
+import { htmlTinoSol } from '../../../infra/ilustraciones.js';
 import { estimarSalarioMensual } from '../../../infra/financiero.js';
 import {
   filtrarDeudasPagables,
@@ -106,7 +107,7 @@ export function renderEntradaPlanSalida() {
   const n = filtrarDeudasPagables(S.compromisos).length;
   el.innerHTML = n < 2 ? '' : `
     <button type="button" class="plan-salida" data-action="compromisos-ver-plan" aria-haspopup="dialog">
-      <span class="plan-salida__teja" aria-hidden="true">${icon('lightbulb')}</span>
+      ${htmlTinoSol('pensando', { tamano: 52, clase: 'plan-salida__tino' })}
       <span class="plan-salida__textos">
         <span class="plan-salida__titulo">¿Cómo salir más rápido?</span>
         <span class="plan-salida__texto">Compara Avalancha y Bola de nieve con tus ${n} deudas. Es una simulación: nada cambia hasta que confirmes.</span>
@@ -145,7 +146,7 @@ export function renderEstrategiaPago() {
       <p class="grupo-eyebrow">Estrategia de pago</p>
       <article class="estrategia-card">
         <header class="estrategia-card__header">
-          <span class="estrategia-card__header-teja" aria-hidden="true">${icon('lightbulb')}</span>
+          ${htmlTinoSol('pensando', { tamano: 52, clase: 'estrategia-card__tino' })}
           <div class="estrategia-card__header-texto">
             <h2 class="estrategia-card__title">¿Cómo salir más rápido?</h2>
           </div>
@@ -192,7 +193,7 @@ export function renderEstrategiaPago() {
     <p class="grupo-eyebrow">Estrategia de pago</p>
     <article class="estrategia-card">
       <header class="estrategia-card__header">
-        <span class="estrategia-card__header-teja" aria-hidden="true">${icon('lightbulb')}</span>
+        ${htmlTinoSol('pensando', { tamano: 52, clase: 'estrategia-card__tino' })}
         <div class="estrategia-card__header-texto">
           <h2 class="estrategia-card__title">¿Cómo salir más rápido?</h2>
           <p class="estrategia-card__subtitle">

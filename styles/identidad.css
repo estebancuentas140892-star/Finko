@@ -547,6 +547,14 @@ body:not(.light-theme) .cov__fill {
   user-select: none;
   -webkit-user-drag: none;
 }
+/* Un dibujo más ancho que alto (ADR 129 D2) se mide por su ancho: el
+   encaje lo calcula infra/ilustraciones.js (encajeTinoSol) para que no se
+   salga del disco. */
+.tino-sol--ancho .tino-sol__img {
+  width: var(--tino-ancho);
+  height: auto;
+  bottom: var(--tino-base);
+}
 
 /* La bienvenida de Inicio (guía del usuario nuevo, ADR 126 D5): Tino
    saluda junto al título. */

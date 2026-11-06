@@ -12,7 +12,8 @@
 
 import { S } from '../../core/state.js';
 import { f, esc as _esc, fechaDiaMes, formateadorFecha } from '../../infra/utils.js';
-import { emptyArt, tejaCategoria } from '../../infra/icons.js';
+import { tejaCategoria } from '../../infra/icons.js';
+import { htmlTinoSol } from '../../infra/ilustraciones.js';
 import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { memoizar } from '../../infra/memo.js';
 import { movimientosCompletos, descripcionMovimiento, filtrarMovimientos, sumaDeMovimientos, categoriasFrecuentes } from './logic.js';
@@ -557,7 +558,7 @@ function _diaSemana(fechaISO) {
 function _renderEmptyMovimientos() {
   return `
     <div class="empty-state">
-      <div class="empty-state__icon">${emptyArt('recurring')}</div>
+      ${htmlTinoSol('con-lupa', { tamano: 112, clase: 'empty-state__tino' })}
       <p class="empty-state__title">Todavía no hay movimientos</p>
       <p class="empty-state__desc">Tus gastos, ingresos y aportes al fondo aparecerán aquí, ordenados por fecha.</p>
     </div>`;
@@ -571,7 +572,7 @@ function _renderEmptyMovimientos() {
 function _renderEmptySinResultados() {
   return `
     <div class="empty-state">
-      <div class="empty-state__icon">${emptyArt('recurring')}</div>
+      ${htmlTinoSol('con-lupa', { tamano: 96, clase: 'empty-state__tino' })}
       <p class="empty-state__title">Nada coincide con esos filtros</p>
       <p class="empty-state__desc">Prueba con otra búsqueda o quita algún filtro.</p>
       <button type="button" class="btn btn-ghost" data-action="movimientos-limpiar-filtros">Limpiar filtros</button>

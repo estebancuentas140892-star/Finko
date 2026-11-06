@@ -1174,6 +1174,8 @@ describe('renderMovimientosCompletos() - filtros aplicados (MOV.2)', () => {
     renderMovimientosCompletos();
     expect(elLista().querySelector('.empty-state__title').textContent).toBe('Nada coincide con esos filtros');
     expect(elLista().querySelector('.empty-state__title').textContent).not.toBe('Todavía no hay movimientos');
+    // ADR 129: Tino con lupa también acompaña la búsqueda sin resultados.
+    expect(elLista().querySelector('.empty-state__tino[data-pose="con-lupa"]')).not.toBeNull();
   });
 
   it('el empty "sin resultados" trae un botón para limpiar los filtros', () => {
@@ -1197,6 +1199,7 @@ describe('renderMovimientosCompletos() - filtros aplicados (MOV.2)', () => {
     setFiltroTexto('mercado');
     renderMovimientosCompletos();
     expect(elLista().querySelector('.empty-state__title').textContent).toBe('Todavía no hay movimientos');
+    expect(elLista().querySelector('.empty-state__tino[data-pose="con-lupa"]')).not.toBeNull();
   });
 });
 

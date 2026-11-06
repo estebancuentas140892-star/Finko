@@ -10,7 +10,7 @@
  *     o los usuarios seguirán viendo la versión vieja.
  */
 
-const CACHE_NAME = 'finko-v670';
+const CACHE_NAME = 'finko-v671';
 
 // ── Assets críticos - si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [
@@ -269,6 +269,15 @@ const OPTIONAL_ASSETS = [
   './assets/tino/tino-celebra.svg',
   './assets/tino/tino-celebra-grande.svg',
   './assets/tino/tino-anima.svg',
+  // ADR 129: la ronda 2.
+  './assets/tino/tino-pensando.svg',
+  './assets/tino/tino-reserva.svg',
+  './assets/tino/tino-sembrar.svg',
+  './assets/tino/tino-compartir.svg',
+  './assets/tino/tino-con-lupa.svg',
+  './assets/tino/tino-con-calendario.svg',
+  './assets/tino/tino-meta-cumplida.svg',
+  './assets/tino/tino-tranquilo.svg',
 
   './assets/icons/favicon.svg',
   './assets/icons/icon-192.png',

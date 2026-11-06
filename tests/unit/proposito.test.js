@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { htmlBannerProposito, partirProposito, PROPOSITOS_SECCION } from '../../modules/ui/proposito.js';
+import { htmlBannerProposito, partirProposito, PROPOSITOS_SECCION, TINO_POR_SECCION } from '../../modules/ui/proposito.js';
+import { TINO_ORIGINAL } from '../../modules/infra/ilustraciones.js';
 
 describe('PROPOSITOS_SECCION', () => {
   it('tiene la sección apartados con titulo y texto', () => {
@@ -73,5 +74,34 @@ describe('htmlBannerProposito', () => {
   it('EP.7d: el propósito de Me deben ya no dice "Personales"', () => {
     const { texto } = PROPOSITOS_SECCION.personales;
     expect(texto).toContain('Me deben');
+  });
+});
+
+// ADR 129: la pose de cada vacío cuenta la sección cuando hay una que lo hace.
+describe('TINO_POR_SECCION (ADR 129)', () => {
+  it('cada sección usa una pose que existe como dibujo original', () => {
+    for (const [seccion, pose] of Object.entries(TINO_POR_SECCION)) {
+      expect(Object.hasOwn(TINO_ORIGINAL, pose), seccion).toBe(true);
+    }
+  });
+
+  it('cada sección con propósito tiene su pose', () => {
+    for (const seccion of Object.keys(PROPOSITOS_SECCION)) {
+      expect(TINO_POR_SECCION[seccion], seccion).toBeTruthy();
+    }
+  });
+
+  it('las poses de la ronda 2 van donde cuentan la sección', () => {
+    expect(TINO_POR_SECCION).toMatchObject({
+      compromisos: 'con-calendario', agenda: 'con-calendario', analisis: 'pensando',
+      personales: 'compartir', inversion: 'sembrar', ahorro: 'reserva',
+    });
+  });
+
+  it('el banner de Me deben lleva a Tino compartiendo', () => {
+    const div = document.createElement('div');
+    div.innerHTML = htmlBannerProposito('personales', false);
+    expect(div.querySelector('.banner-proposito__tino').dataset.pose).toBe('compartir');
+    expect(div.querySelector('img').getAttribute('src')).toBe('assets/tino/tino-compartir.svg');
   });
 });

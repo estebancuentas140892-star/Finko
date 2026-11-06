@@ -2923,17 +2923,6 @@
     text-align: left;
     cursor: pointer;
   }
-  .plan-salida__teja {
-    display: inline-flex;
-    flex: none;
-    align-items: center;
-    justify-content: center;
-    width: 2.75rem;
-    height: 2.75rem;
-    border-radius: var(--fk-radius-md);
-    background: var(--fk-dom-compromisos-bg);
-    color: var(--fk-dom-compromisos-text);
-  }
   .plan-salida__textos {
     display: flex;
     flex: 1 1 8rem;
@@ -3290,21 +3279,14 @@
   .atencion-hoy__verbo--dom[data-dom="compromisos"] { color: var(--fk-dom-compromisos-text); }
   .atencion-hoy__accion { min-height: 44px; }
 
-  /* Nada que atender: la misma tarjeta, una teja verde y dos líneas. */
+  /* Nada que atender: la misma tarjeta, Tino tranquilo y dos líneas
+     (ADR 129; antes, una teja verde con un visto). */
   .atencion-hoy__ok {
     display: flex;
     align-items: center;
     gap: var(--fk-space-3);
     min-height: 72px;
     padding: 14px var(--fk-space-4);
-  }
-  .atencion-hoy__icono--ok {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex: none;
-    background: var(--fk-success-bg);
-    color: var(--fk-success-text);
   }
 
   /* La hoja "Avisos de hoy": el número en pastilla; cada grupo con la teja

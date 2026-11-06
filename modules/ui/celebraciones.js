@@ -41,7 +41,7 @@ export const HITOS = Object.freeze([
   {
     id: 'meta-lograda',
     logro: 'meta-lograda',
-    pose: 'celebra-grande',
+    pose: 'meta-cumplida', // ADR 129: junto a su frasco lleno de café
     titulo: 'Lograste tu meta',
     detalle: 'Reuniste todo el dinero que te propusiste.',
   },

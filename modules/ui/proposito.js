@@ -71,20 +71,23 @@ export const PROPOSITOS_SECCION = {
  * Tino acompaña el vacío de cada sección (ADR 127 D6): es el momento en que
  * alguien llega sin datos y necesita saber para qué sirve el lugar. La pose
  * dice el tono: explica lo que hace la sección, anima donde el objetivo es
- * un sueño o un colchón, saluda en Mis cuentas, el primer paso de la guía de
- * Inicio. Con datos el banner no se pinta, y Tino se va con él.
+ * un sueño, saluda en Mis cuentas, el primer paso de la guía de Inicio. Desde
+ * el ADR 129, donde hay una pose que cuenta la sección, va esa: el calendario
+ * en Por pagar y Calendario, la hoja bajo la lluvia en el Fondo, la semilla
+ * en Inversión, el regalo en Me deben, la mano en el mentón en Análisis. Con
+ * datos el banner no se pinta, y Tino se va con él.
  */
 export const TINO_POR_SECCION = Object.freeze({
   gast:        'explica',
-  compromisos: 'explica',
-  agenda:      'explica',
   presupuesto: 'explica',
   apartados:   'explica',
-  analisis:    'explica',
-  personales:  'explica',
-  inversion:   'explica',
+  compromisos: 'con-calendario', // Por pagar (ADR 129)
+  agenda:      'con-calendario', // Calendario (ADR 129)
+  analisis:    'pensando',       // ADR 129
+  personales:  'compartir',      // Me deben (ADR 129)
+  inversion:   'sembrar',        // ADR 129
+  ahorro:      'reserva',        // el Fondo de emergencia (ADR 129)
   metas:       'anima',
-  ahorro:      'anima',
   tesoreria:   'saluda',
 });
 

@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(identidad): Tino, las poses de la ronda 2 en el adulto · 2026-11-05
+
+[ADR 129](DECISIONS/129-tino-ronda-2-en-el-adulto.md). Ficha: [`contexto/identidad.md`](contexto/identidad.md). SW v671. Dibujos de Esteban en la carpeta "Personaje Tino".
+
+- **Ocho dibujos originales** en `assets/tino/` (pensando, reserva, sembrar, compartir, con lupa, con calendario, meta cumplida, tranquilo), sin metadatos de Illustrator, con su lienzo en `TINO_ORIGINAL`.
+- **`encajeTinoSol()`**: los dibujos a lo ancho se miden por su ancho para caber en el sol (`.tino-sol--ancho`).
+- **Lugares**: pensando en Análisis, "¿Cómo salir más rápido?" y "¿Cómo distribuir?"; reserva en el Fondo; sembrar en Inversión; compartir en Me deben; con lupa en Movimientos (vacío y sin resultados); con calendario en Calendario y Por pagar; meta cumplida en "Lograste tu meta"; tranquilo en "Nada que atender hoy".
+- Se van el bombillo de la estrategia de pago, la teja verde de "Nada que atender" y la ilustración genérica de Movimientos, con su CSS.
+- Pruebas: 10 nuevas o ajustadas en `nino-visual`, `proposito`, `atencion-hoy`, `movimientos`, `compromisos` y `celebraciones`.
+
 ### feat(nino): los frascos se llenan con el café de Tino · 2026-11-05
 
 [ADR 128](DECISIONS/128-los-frascos-se-llenan-de-cafe.md). Ficha: [`contexto/nino.md`](contexto/nino.md). Va en la misma versión que el ADR 127 (SW v670).

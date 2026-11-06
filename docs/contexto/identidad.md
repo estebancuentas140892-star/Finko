@@ -47,22 +47,26 @@
 
 - **Objetivo**          : que Tino acompañe donde suma (vacíos, bienvenida, explicación, celebración) con su dibujo original, nunca redibujado.
 - **Estado actual**     : estable.
-- **Verificado contra** : copia de trabajo sobre `c87cc03` (2026-11-05), sin commit todavía.
+- **Verificado contra** : copia de trabajo sobre `261a494` (2026-11-05), con el ADR 129.
 
 **Dónde vive**
 
 | Pieza | Archivo | Ancla | Línea |
 |---|---|---|---|
-| Los seis dibujos originales | `assets/tino/` | `tino-<pose>.svg` | - |
-| Tino sobre su sol (HTML) | `modules/infra/ilustraciones.js` | `htmlTinoSol()`, `TINO_ORIGINAL` | ~85 |
-| Pose por sección del vacío | `modules/ui/proposito.js` | `TINO_POR_SECCION` | ~75 |
+| Los catorce dibujos originales | `assets/tino/` | `tino-<pose>.svg` | - |
+| Tino sobre su sol (HTML) | `modules/infra/ilustraciones.js` | `htmlTinoSol()`, `TINO_ORIGINAL` | ~86 |
+| Encaje de los dibujos anchos | `modules/infra/ilustraciones.js` | `encajeTinoSol()` | ~138 |
+| Pose por sección del vacío | `modules/ui/proposito.js` | `TINO_POR_SECCION` | ~80 |
+| "¿Cómo salir más rápido?" | `modules/dominio/compromisos/views/estrategia.js` | `plan-salida__tino`, `estrategia-card__tino` | ~110 |
+| Movimientos vacío y sin resultados | `modules/dominio/movimientos/view.js` | `empty-state__tino` | ~560 |
+| "Nada que atender hoy" | `modules/ui/atencion-hoy.js` | `atencion-hoy__tino` | ~441 |
 | Bienvenida del usuario nuevo | `index.html` | `.hero-guia__bienvenida` | ~710 |
 | Explicación de la distribución | `modules/dominio/tesoreria/views/distribucion.js` | `distribuir-card__tino` | ~985 |
 | Hitos, foto y comparación | `modules/ui/celebraciones.js` | `HITOS`, `fotoHitos()`, `hitosNuevos()` | ~40 |
 | Aviso con Tino | `modules/ui/toast.js` | `mostrarToast({ tino })` | ~45 |
 | Arranque | `modules/ui/bootstrap.js` | `initCelebraciones()` antes de `initLogros()` | ~145 |
 
-**Recursos**: clases `.tino-sol`, `.tino-sol__img`, `.banner-proposito__tino`, `.fk-toast--tino` (`styles/identidad.css`); tokens `--fk-brand-crema` y `--fk-brand-girasol` (el sol).
+**Recursos**: clases `.tino-sol`, `.tino-sol--ancho`, `.tino-sol__img`, `.banner-proposito__tino`, `.fk-toast--tino` (`styles/identidad.css`); tokens `--fk-brand-crema` y `--fk-brand-girasol` (el sol).
 
 **Dependencias y relaciones**: `celebraciones.js` escucha `state:change` y `perfil:cambio`; lee `S.logros`, que llena `dominio/logros` en silencio (ADR 101 D3). Revisa un cuadro después del cambio para que `initLogros` ya haya guardado el logro. Nunca corre con el perfil del niño activo (`esPerfilNino()`).
 
@@ -74,7 +78,8 @@
 **Cambios realizados**
 
 - 2026-11-05 ADR 127 D6 y D9: Tino en vacíos, bienvenida, distribución y celebraciones.
+- 2026-11-05 ADR 129: las ocho poses de la ronda 2, cada una en su vacío o aviso; los dibujos anchos caben en el sol con `encajeTinoSol()`.
 
 **Cambios pendientes**
 
-- Ninguno técnico. Si llegan las poses de la ronda 2 (APR.5b), el adulto las recibe como archivo en `assets/tino/` y una entrada en `TINO_ORIGINAL`.
+- Ninguno técnico. Una pose nueva entra como archivo en `assets/tino/`, una entrada en `TINO_ORIGINAL` (el test compara su `viewBox`) y su línea en el Service Worker. La ronda 2 del niño (APR.5b) es aparte: va por el conversor del sprite.

@@ -4255,11 +4255,12 @@ describe('renderEstrategiaPago D.16b: header, picker e íconos', () => {
     ];
   });
 
-  it('eyebrow "Estrategia de pago" arriba de la card + header con teja y título nuevo', () => {
+  it('eyebrow "Estrategia de pago" arriba de la card + header con Tino pensando y título nuevo', () => {
     renderEstrategiaPago();
     const el = document.getElementById('estrategia-pago');
     expect(el.querySelector('.grupo-eyebrow').textContent.trim()).toBe('Estrategia de pago');
-    expect(el.querySelector('.estrategia-card__header-teja')).not.toBeNull();
+    // ADR 129: la teja del bombillo pasó a Tino pensando.
+    expect(el.querySelector('.estrategia-card__tino[data-pose="pensando"]')).not.toBeNull();
     expect(el.querySelector('.estrategia-card__title').textContent.trim()).toBe('¿Cómo salir más rápido?');
   });
 
