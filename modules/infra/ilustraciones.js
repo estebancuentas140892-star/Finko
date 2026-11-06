@@ -147,23 +147,6 @@ export function encajeTinoSol(ancho, alto) {
 const _FONDO = 86;
 const _BOCA = 24;
 
-/**
- * El relleno del frasco para una proporción de 0 a 1 contra la meta de ESE
- * frasco (R60). Vacío no dibuja nada; lleno redondea los hombros. Sin uso en
- * la app desde el ADR 131 (el vidrio ya no lleva tinte).
- *
- * @param {number} proporcion
- * @returns {string} el atributo `d` del relleno, o `''` si está vacío.
- */
-export function rellenoFrasco(proporcion) {
-  const p = Math.min(1, Math.max(0, Number(proporcion) || 0));
-  if (p === 0) return '';
-  const base = 'V86 Q68 96 58 96 H30 Q20 96 20 86 Z';
-  if (p === 1) return `M20 30 Q20 24 26 24 H62 Q68 24 68 30 ${base}`;
-  const y = Math.round((_FONDO - p * (_FONDO - _BOCA)) * 10) / 10;
-  return `M20 ${y} H68 ${base}`;
-}
-
 /** Color de cada frasco (D5): hues de dominio que ya existen. */
 const _COLOR_FRASCO = {
   ahorrar: 'var(--fk-kid-ahorrar, var(--fk-dom-ahorro))',

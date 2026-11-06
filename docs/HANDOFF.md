@@ -13,7 +13,7 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5330/5330 (2026-11-05, ADR 131) |
+| Tests unitarios + integración | 5329/5329 (2026-11-05, ADR 131 y el borrado de `rellenoFrasco`) |
 | Tests E2E | 438/438 (2026-11-05, ADR 131, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v48 (`perfiles`, APR.3a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |

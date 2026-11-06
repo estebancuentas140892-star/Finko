@@ -10,7 +10,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
-  DIBUJOS, POSES_TINO, dibujoPorId, htmlDibujo, htmlTino, rellenoFrasco, htmlFrasco, htmlDestellos,
+  DIBUJOS, POSES_TINO, dibujoPorId, htmlDibujo, htmlTino, htmlFrasco, htmlDestellos,
   granosFrasco, GRANOS_FRASCO,
 } from '../../modules/infra/ilustraciones.js';
 
@@ -99,15 +99,6 @@ describe('catálogo de dibujos y Tino contra el sprite (093 D8, 094, 095)', () =
 });
 
 describe('el frasco se llena contra su propia meta (R60)', () => {
-  it('vacío no dibuja relleno, lleno redondea los hombros y la mitad queda a media altura', () => {
-    expect(rellenoFrasco(0)).toBe('');
-    expect(rellenoFrasco(1)).toMatch(/^M20 30 Q20 24 26 24/);
-    expect(rellenoFrasco(0.5)).toMatch(/^M20 55 H68/);
-    // Fuera de rango se acota, nunca desborda el frasco.
-    expect(rellenoFrasco(3)).toBe(rellenoFrasco(1));
-    expect(rellenoFrasco(-1)).toBe('');
-  });
-
   it('cada frasco toma su color y, con etiqueta, se nombra', () => {
     const html = htmlFrasco('gastar', 0.25, { etiqueta: 'Gastar: $6.000' });
     expect(html).toContain('var(--fk-kid-gastar');

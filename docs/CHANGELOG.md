@@ -19,7 +19,7 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **La tapa lleva el color** del frasco (`il-frasco`, `currentColor`); se van el tinte y `.frasco__tinte`.
 - **Huecos**: `il-cafe-hueco` (nuevo en el sprite) marca cada grano usado en Gastar y Compartir contra su parte de la mesada; `htmlFrasco(..., { huecos })` y `frascoConHuecos()` deciden cuándo. Ahorrar sigue llenándose sin huecos.
 - `--fk-cafe-hueco` por tema en `body.kid` y `body.light-theme.kid`.
-- `rellenoFrasco()` queda sin uso en la app (sigue con su prueba).
+- `rellenoFrasco()` quedó sin uso y se borró con su prueba (confirmado por Esteban).
 - Pruebas: 4 nuevas en `nino-visual` (tapa, huecos con los números del diseño, el símbolo del hueco) y 1 en `nino`; la del tinte pasa a comprobar que no hay tinte.
 
 ### feat(identidad): Tino en la bienvenida del adulto y en las novedades · 2026-11-05
