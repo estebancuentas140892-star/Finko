@@ -10,7 +10,7 @@
  *     o los usuarios seguirán viendo la versión vieja.
  */
 
-const CACHE_NAME = 'finko-v681';
+const CACHE_NAME = 'finko-v682';
 
 // ── Assets críticos - si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [
@@ -181,6 +181,7 @@ const CORE_ASSETS = [
   './modules/dominio/tesoreria/index.js',
   './modules/dominio/metas/logic.js',
   './modules/dominio/metas/view.js',
+  './modules/dominio/metas/detalle.js',
   './modules/dominio/metas/index.js',
   './modules/dominio/apartados/logic.js',
   './modules/dominio/apartados/view.js',

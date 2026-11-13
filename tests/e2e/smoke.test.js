@@ -5705,26 +5705,29 @@ test.describe('Metas - la lista gana cabeza y orden (ADR 082)', () => {
     await expect(franja.locator('.hero-metas__meta')).toContainText('$4.520.000');
 
     // D2: urgencia primero. "Laptop" vence en septiembre y "Viaje" en
-    // diciembre, aunque "Viaje" se creó antes.
-    const nombres = page.locator('#lista-metas .meta-card__nombre');
+    // diciembre, aunque "Viaje" se creó antes. ADR 133 D5: en el telefono
+    // cada meta es una fila y los grupos se titulan en frase.
+    const nombres = page.locator('#lista-metas .meta-linea:not(.meta-linea--cumplida) .meta-linea__nombre');
     await expect(nombres).toHaveText(['Laptop nueva', 'Viaje a Cartagena', 'Curso de inglés']);
 
-    // La meta sin plazo va al final, bajo su divisor.
-    await expect(page.locator('#lista-metas .grupo-eyebrow')).toHaveText(['Con plazo · la más cercana primero', 'Sin plazo', 'Cumplidas']);
+    // La meta sin plazo va al final, bajo su grupo.
+    await expect(page.locator('#lista-metas .bolsa-grupo__titulo')).toHaveText(['Con plazo', 'Sin plazo', 'Cumplidas · 1']);
   });
 
   test('la meta cumplida pesa una fila, no una tarjeta, y su fila abre el editar', async ({ page }) => {
-    // D3: 52px en vez de 290. La tarjeta desaparece; la meta, no.
-    const fila = page.locator('#lista-metas .meta-fila');
+    // D3: una fila en vez de 290px. La tarjeta desaparece; la meta, no.
+    // ADR 133 D5: la fila abre su hoja y el editar vive ahi.
+    const fila = page.locator('#lista-metas .meta-linea--cumplida');
     await expect(fila).toHaveCount(1);
     await expect(fila).toContainText('Moto');
-    await expect(fila.locator('.meta-fila__monto')).toHaveText('$1.400.000');
+    await expect(fila.locator('.meta-linea__dato')).toContainText('Cumplida · $1.400.000');
     await expect(page.locator('#lista-metas .meta-card--cumplida')).toHaveCount(0);
 
     const alto = await fila.evaluate(el => Math.round(el.getBoundingClientRect().height));
     expect(alto).toBeLessThan(90);
 
-    await fila.locator('.meta-fila__btn').click();
+    await fila.locator('.list-item__detalle').click();
+    await page.locator('#modal-detalle-fila [data-target-action="editar-meta"]').click();
     await page.waitForSelector('#modal-meta[data-open]');
     await expect(page.locator('#modal-meta-body form #meta-nombre')).toHaveValue('Moto');
   });

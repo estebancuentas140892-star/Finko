@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(metas): MV2.30 Ahorro tanda 3, Metas y la hoja de una meta · 2026-11-13
+
+[ADR 133](DECISIONS/133-ahorro-del-adulto-en-el-telefono.md) D5. Ficha: [`contexto/metas.md`](contexto/metas.md). SW v682. Tablero "rediseño2".
+
+- **La lista en el teléfono**: la tarjeta de identidad primero (ADR 127 D5), ahora con el porcentaje junto a lo que falta ("42% · te faltan $X", los dos anchos); el aviso del fondo incompleto como tarjeta con "Ir al fondo" a la derecha; la pista "Toca + para aportar" y los grupos en frase ("Con plazo" con su orden debajo, "Sin plazo" con la invitación a ponerle fecha, "Cumplidas · N"), cada uno una tarjeta.
+- **Cada meta es una fila** (`htmlFilaMeta()`): su silueta llena con lo reunido, lo reunido de su objetivo y la fecha, la barra y el plan ("Faltan 2 aportes de $945.000, uno al mes"), con un círculo "+" que abre el aporte. La cumplida dice "Cumplida" y no tiene círculo.
+- **La hoja de una meta** (`htmlDetalleMeta()`, acción `meta-detalle`): la silueta grande, lo reunido con su porcentaje, la fecha, el plan y lo que falta, "Aportar", "Editar la meta" y "Eliminar esta meta". `formaSilueta()` e `iconoMeta()` pasan de privadas de `view.js` a `detalle.js`, que las comparte con la tarjeta.
+- Pruebas: 10 nuevas en `metas`; un E2E a 390px abre la hoja, pasa a editar y aporta desde el círculo, y los dos de ADR 082 miden ahora las filas.
+
 ### feat(apartados): MV2.30 Ahorro tanda 2, Reservas y sus hojas · 2026-11-13
 
 [ADR 133](DECISIONS/133-ahorro-del-adulto-en-el-telefono.md) D4. Ficha: [`contexto/apartados.md`](contexto/apartados.md). SW v681. Tablero "rediseño2".

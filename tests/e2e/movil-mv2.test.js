@@ -1172,3 +1172,33 @@ test.describe('MV2.30 - Ahorro en el teléfono (ADR 133)', () => {
     await expect(page.locator('.reservas-vacio__pie a')).toHaveAttribute('href', '#presupuesto');
   });
 });
+
+test.describe('MV2.30 - Metas en el teléfono (ADR 133 D5)', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('la fila abre su hoja y el círculo abre el aporte', async ({ page }) => {
+    await sembrar(page, estadoBase({
+      cuentas: CUENTAS,
+      metas: [
+        { id: 'm1', nombre: 'Viaje a San Andrés', categoria: 'Viajes', montoObjetivo: 4_500_000, montoActual: 2_610_000, fechaLimite: enDias(60), completada: false },
+        { id: 'm2', nombre: 'Carro', montoObjetivo: 85_000_000, montoActual: 4_200_000, fechaLimite: null, completada: false },
+      ],
+    }));
+    await page.goto('/#metas');
+    await expect(page.locator('#sec-metas.active')).toBeVisible({ timeout: 10_000 });
+
+    await expect(page.locator('#lista-metas > .hero-metas')).toBeVisible();
+    await expect(page.locator('.bolsa-grupo__titulo')).toHaveText(['Con plazo', 'Sin plazo']);
+
+    await page.locator('.meta-linea[data-id="m1"] .list-item__detalle').click();
+    const hoja = page.locator('#modal-detalle-fila');
+    await expect(hoja.locator('.detalle-fila__titulo')).toHaveText('Viaje a San Andrés');
+    await expect(hoja.locator('.detalle-meta__de')).toHaveText('de $4.500.000 · 58%');
+    await hoja.locator('[data-target-action="editar-meta"]').click();
+    await expect(page.locator('#modal-meta[data-open]')).toHaveCount(1);
+    await page.keyboard.press('Escape');
+
+    await page.locator('.meta-linea[data-id="m2"] .bolsa-circulo').click();
+    await expect(page.locator('#modal-abono-meta[data-open], #modal-aporte-meta[data-open]')).toHaveCount(1);
+  });
+});

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   metasActivas,
   metasCumplidas,
@@ -15,6 +15,7 @@ import {
   generarPlanAportes,
 } from '../../modules/dominio/metas/logic.js';
 import { renderFormAbonoMeta, renderFormMeta, renderListaMetas } from '../../modules/dominio/metas/view.js';
+import { planMeta, htmlDetalleMeta } from '../../modules/dominio/metas/detalle.js';
 import { CATEGORIAS_META_USUARIO } from '../../modules/core/constants.js';
 import { SILUETAS } from '../../modules/infra/svg.js';
 import { S } from '../../modules/core/state.js';
@@ -1528,5 +1529,111 @@ describe('renderListaMetas() - botón Editar (EDIT.1)', () => {
     renderListaMetas();
     const ids = [...document.querySelectorAll('.meta-card__secundaria[data-action="editar-meta"]')].map(b => b.dataset.id);
     expect(ids).toEqual(['m1', 'm2']);
+  });
+});
+
+// ════════════════════════════════════════════════════════════════
+// ADR 133 D5 - Metas en el teléfono: filas y la hoja de una meta
+// ════════════════════════════════════════════════════════════════
+
+describe('planMeta() (ADR 133 D5)', () => {
+  const m = (n) => `$${n}`;
+  it('dice cuántos aportes faltan y cada cuánto', () => {
+    expect(planMeta({ numPeriodos: 2, montoPorPeriodo: 945, etiqueta: 'al mes' }, false, m)).toBe('Faltan 2 aportes de $945, uno al mes');
+    expect(planMeta({ numPeriodos: 1, montoPorPeriodo: 300, etiqueta: 'al mes' }, false, m)).toBe('Falta 1 aporte de $300');
+  });
+  it('en cero nombra el primer paso', () => {
+    expect(planMeta({ numPeriodos: 4, montoPorPeriodo: 700, etiqueta: 'al mes' }, true, m)).toBe('Tu primer aporte arranca el camino: $700');
+  });
+  it('sin plan no dice nada', () => {
+    expect(planMeta(null, false, m)).toBe('');
+  });
+});
+
+describe('renderListaMetas() en el teléfono (ADR 133 D5)', () => {
+  const matchMediaReal = window.matchMedia;
+  beforeEach(() => {
+    window.matchMedia = () => ({ matches: true, addEventListener() {} });
+    document.body.innerHTML = '<div id="lista-metas" class="lista-metas"></div>';
+    S.config = {};
+    S.ingresos = [];
+    S.ahorro = { fondoEmergencia: { activo: false } };
+    S.metas = [
+      metaBase({ id: 'viaje', nombre: 'Viaje', categoria: 'Viajes', montoActual: 2_610_000, montoObjetivo: 4_500_000, fechaLimite: isoEnDias(60) }),
+      metaBase({ id: 'carro', nombre: 'Carro', montoActual: 4_200_000, montoObjetivo: 85_000_000 }),
+      metaBase({ id: 'maestria', nombre: 'Maestría', montoActual: 36_500_000, montoObjetivo: 36_500_000, completada: true }),
+    ];
+  });
+  afterEach(() => { window.matchMedia = matchMediaReal; });
+
+  it('la tarjeta de identidad va primero y dice el porcentaje con lo que falta', () => {
+    renderListaMetas();
+    const lista = document.getElementById('lista-metas');
+    expect(lista.firstElementChild.classList.contains('hero-metas')).toBe(true);
+    expect(lista.querySelector('.hero-metas__meta').textContent).toMatch(/^\d+% · te faltan \$/);
+    expect(lista.querySelector('.metas-fondo .metas-fondo__ir').getAttribute('href')).toBe('#fondo');
+  });
+
+  it('los grupos se titulan en frase con su criterio debajo', () => {
+    renderListaMetas();
+    const titulos = [...document.querySelectorAll('.bolsa-grupo__titulo')].map(e => e.textContent);
+    expect(titulos).toEqual(['Con plazo', 'Sin plazo', 'Cumplidas · 1']);
+    const subs = [...document.querySelectorAll('.bolsa-grupo__sub')].map(e => e.textContent);
+    expect(subs).toEqual(['La más cercana primero', 'Ponles fecha y Finko calcula cuánto guardar al mes']);
+    expect(document.querySelector('.meta-card')).toBeNull();
+  });
+
+  it('cada fila abre su hoja; el círculo aporta y la cumplida no lo tiene', () => {
+    renderListaMetas();
+    const viaje = document.querySelector('.meta-linea[data-id="viaje"]');
+    expect(viaje.querySelector('.list-item__detalle').dataset.action).toBe('meta-detalle');
+    expect(viaje.querySelector('.meta-linea__dato').textContent).toContain('$2.610.000 de $4.500.000');
+    expect(viaje.querySelector('.meta-linea__plan').textContent).toMatch(/^Falta/);
+    expect(viaje.querySelector('.bolsa-circulo').dataset.action).toBe('abonar-meta');
+    expect(viaje.querySelector('.meta-linea__teja svg')).not.toBeNull();
+    const carro = document.querySelector('.meta-linea[data-id="carro"]');
+    expect(carro.querySelector('.meta-linea__dato').textContent).toContain('sin fecha');
+    expect(carro.querySelector('.meta-linea__plan').textContent).toBe('Te faltan $80.800.000');
+    const maestria = document.querySelector('.meta-linea[data-id="maestria"]');
+    expect(maestria.querySelector('.meta-linea__cumplida').textContent).toBe('Cumplida');
+    expect(maestria.querySelector('.bolsa-circulo')).toBeNull();
+  });
+
+  it('con el saldo oculto ninguna cifra en pesos queda a la vista (R20)', () => {
+    S.config = { ocultarSaldo: true };
+    renderListaMetas();
+    expect(document.querySelector('.bolsa-lista').textContent).not.toMatch(/\$\d/);
+  });
+});
+
+describe('htmlDetalleMeta() (ADR 133 D5)', () => {
+  beforeEach(() => { S.config = {}; S.ingresos = []; });
+
+  it('dice lo reunido con su porcentaje, la fecha, el plan y lo que falta', () => {
+    const div = document.createElement('div');
+    div.innerHTML = htmlDetalleMeta(metaBase({ nombre: 'Viaje', categoria: 'Viajes', montoActual: 2_610_000, montoObjetivo: 4_500_000, fechaLimite: isoEnDias(32) }));
+    expect(div.querySelector('.detalle-fila__titulo').id).toBe('detalle-fila-titulo');
+    expect(div.querySelector('.detalle-fila__sub').textContent).toBe('Meta · Viajes');
+    expect(div.querySelector('.detalle-fila__monto').textContent).toBe('$2.610.000');
+    expect(div.querySelector('.detalle-meta__de').textContent).toBe('de $4.500.000 · 58%');
+    const datos = [...div.querySelectorAll('.detalle-gasto__dato dt')].map(e => e.textContent);
+    expect(datos).toEqual(['Fecha de la meta', 'Para llegar', 'Te faltan']);
+    expect(div.textContent).toContain('en 32 días');
+  });
+
+  it('las acciones cierran la hoja antes de abrir la suya; eliminar va aparte', () => {
+    const div = document.createElement('div');
+    div.innerHTML = htmlDetalleMeta(metaBase());
+    const destinos = [...div.querySelectorAll('button[data-action="registrar-abrir"]')].map(b => b.dataset.targetAction);
+    expect(destinos).toEqual(['abonar-meta', 'editar-meta', 'eliminar-meta']);
+    expect(div.querySelector('.detalle-fila__peligro').textContent).toContain('Eliminar esta meta');
+  });
+
+  it('una meta cumplida no ofrece aportar', () => {
+    const div = document.createElement('div');
+    div.innerHTML = htmlDetalleMeta(metaBase({ montoActual: 5_000_000, completada: true }));
+    const destinos = [...div.querySelectorAll('button[data-action="registrar-abrir"]')].map(b => b.dataset.targetAction);
+    expect(destinos).toEqual(['editar-meta', 'eliminar-meta']);
+    expect(div.querySelector('.detalle-meta__de').textContent).toBe('Meta cumplida');
   });
 });

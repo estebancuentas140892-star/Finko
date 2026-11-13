@@ -23,6 +23,7 @@ import { wireIconoPicker, resetIconoPicker } from '../../infra/icon-picker.js';
 import { validarMeta, normalizarMeta, validarAbono, calcularProgreso, consecuenciaDeAporte, generarPlanAportes } from './logic.js';
 import { renderListaMetas, renderFormMeta, renderFormAbonoMeta } from './view.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
+import { htmlDetalleMeta } from './detalle.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
@@ -314,6 +315,20 @@ export function initMetas() {
   registrarAccion('editar-meta',   _editarMeta);
   registrarAccion('eliminar-meta', _eliminarMeta);
   registrarAccion('abonar-meta',   _abrirAbonoMeta);
+
+  // ADR 133 D5: en el teléfono cada meta es una fila que abre su hoja
+  // (`#modal-detalle-fila`), armada con los datos de la meta.
+  registrarAccion('meta-detalle', (el) => {
+    const meta = (S.metas ?? []).find(m => m.id === el.dataset.id);
+    const hoja = document.getElementById('modal-detalle-fila');
+    const cuerpo = document.getElementById('detalle-fila-body');
+    if (!meta || !hoja || !cuerpo) return;
+    cuerpo.innerHTML = htmlDetalleMeta(meta);
+    abrirModal(hoja);
+  });
+  window.matchMedia?.('(max-width: 1023.98px)').addEventListener?.('change', () => {
+    renderSmart(renderListaMetas, 'metas');
+  });
 
   EventBus.on('state:change', ({ section }) => {
     if (section === 'metas') {

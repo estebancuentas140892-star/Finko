@@ -1746,3 +1746,107 @@ body:not(.light-theme) .cov__fill {
   }
   #sec-apartados:has(.reservas-vacio__crear) .section__header > .btn-primary { display: none; }
 }
+
+/* D5 (tanda 3): Metas. La tarjeta de identidad dice el porcentaje junto a lo
+   que falta (los dos anchos); el enlace al fondo va aparte. */
+.hero-metas__meta strong { font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
+.metas-fondo__ir { flex-shrink: 0; white-space: nowrap; }
+
+@media (max-width: 1023px) {
+  /* El aviso del fondo incompleto es una tarjeta: teja, frase y "Ir al fondo". */
+  #lista-metas .metas-fondo {
+    align-items: center;
+    gap: var(--fk-space-3);
+    margin: 0 0 var(--fk-space-1);
+    padding: var(--fk-space-3) var(--fk-space-2) var(--fk-space-3) var(--fk-space-3);
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-xl);
+    background: var(--fk-bg-surface);
+    font-size: var(--fk-text-xs);
+  }
+  #lista-metas .metas-fondo > .icon {
+    width: 2rem;
+    height: 2rem;
+    margin: 0;
+    padding: 6px;
+    border-radius: var(--fk-radius-md);
+    background: var(--fk-dom-ahorro-bg);
+  }
+  .metas-fondo__texto { flex: 1; min-width: 0; }
+  #lista-metas .metas-fondo__ir {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 var(--fk-space-2);
+    font-size: var(--fk-text-sm);
+    color: var(--fk-text-accent);
+    text-decoration: none;
+  }
+  .bolsa-pista--metas .icon { color: var(--fk-dom-metas-text); }
+
+  /* La fila de una meta: la silueta en su teja, la barra en el color de Metas. */
+  .meta-linea {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    padding: var(--fk-space-3) var(--fk-space-3) var(--fk-space-3) var(--fk-space-4);
+  }
+  .meta-linea + .meta-linea { border-top: 1px solid var(--fk-border-subtle); }
+  .meta-linea__teja {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 6px;
+    border-radius: var(--fk-radius-md);
+    background: var(--fk-dom-metas-bg);
+    color: var(--fk-dom-metas-text);
+    font-size: 1.25rem; /* un emoji heredado del tamaño de la teja */
+  }
+  .meta-linea__teja svg { width: 100%; height: 100%; }
+  .meta-linea__info { display: flex; flex: 1; flex-direction: column; gap: var(--fk-space-1); min-width: 0; }
+  .meta-linea__nombre {
+    margin: 0;
+    font-weight: var(--fk-font-bold);
+    color: var(--fk-text-primary);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+  }
+  .meta-linea__dato,
+  .meta-linea__plan { margin: 0; font-size: var(--fk-text-xs); line-height: var(--fk-leading-snug); color: var(--fk-text-secondary); font-variant-numeric: tabular-nums; }
+  .meta-linea__dato strong { font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
+  .meta-linea__cumplida { font-weight: var(--fk-font-semibold); color: var(--fk-success-text); }
+  .meta-linea__barra {
+    display: block;
+    height: 6px;
+    margin-block: var(--fk-space-1);
+    overflow: hidden;
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-border-default);
+  }
+  .meta-linea__barra > span { display: block; height: 100%; border-radius: inherit; background: var(--fk-dom-metas); }
+  .bolsa-circulo--metas { color: var(--fk-dom-metas-text); }
+  .bolsa-circulo--metas::before { background: color-mix(in srgb, var(--fk-dom-metas) 12%, transparent); }
+
+  /* La hoja de una meta: la silueta grande al lado de lo reunido. */
+  .detalle-meta__cifra { display: flex; align-items: center; gap: var(--fk-space-4); }
+  .detalle-meta__silueta {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 4.5rem;
+    height: 4.5rem;
+    padding: var(--fk-space-3);
+    border-radius: var(--fk-radius-lg);
+    background: var(--fk-dom-metas-bg);
+    color: var(--fk-dom-metas-text);
+  }
+  .detalle-meta__silueta svg { width: 100%; height: 100%; }
+  .detalle-meta__de { margin: 0; font-size: var(--fk-text-sm); color: var(--fk-text-secondary); font-variant-numeric: tabular-nums; }
+  .detalle-meta__de strong { color: var(--fk-dom-metas-text); }
+  .detalle-meta__barra { height: 8px; margin: 0; }
+}

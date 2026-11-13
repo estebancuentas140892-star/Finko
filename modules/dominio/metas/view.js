@@ -13,7 +13,7 @@ import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
 import {
-  CATEGORIAS_META_USUARIO, CATEGORIA_META_ICONO, CATEGORIA_META_SILUETA,
+  CATEGORIAS_META_USUARIO, CATEGORIA_META_ICONO,
   ICONOS_CATEGORIA_PERSONALIZADA, SUBCATEGORIAS_META,
 } from '../../core/constants.js';
 import { categoriasConHijos, hijosDeCategoria } from '../../infra/taxonomia.js';
@@ -22,6 +22,7 @@ import {
   etiquetaPeriodoAhorro, frecuenciaPrincipalIngresos,
   ordenarMetasPorPlazo, resumenMetas,
 } from './logic.js';
+import { htmlFilaMeta, formaSilueta as _formaSilueta, iconoMeta as _iconoMeta } from './detalle.js';
 
 // ── LISTA DE METAS ───────────────────────────────────────────────
 
@@ -72,6 +73,11 @@ export function renderListaMetas() {
   const frecuenciaIngresos = frecuenciaPrincipalIngresos(S.ingresos);
   const oculto = S.config?.ocultarSaldo === true;
 
+  if (metasEnTelefono()) {
+    el.innerHTML = _listaTelefono({ conPlazo, sinPlazo, cumplidas, hayActivas, frecuenciaIngresos, oculto });
+    return;
+  }
+
   const tarjeta = meta => _renderMetaCard(meta, frecuenciaIngresos, oculto);
 
   // El divisor del grupo con plazo solo sale cuando hay un segundo grupo con
@@ -100,6 +106,44 @@ export function renderListaMetas() {
     ${cumplidasHtml}`;
 }
 
+/** Bajo 1024px la lista se pinta en filas con su hoja (ADR 133 D5). */
+export function metasEnTelefono() {
+  return window.matchMedia?.('(max-width: 1023.98px)').matches === true;
+}
+
+/**
+ * La lista en el teléfono (ADR 133 D5): la tarjeta de identidad (ADR 127 D5),
+ * el aviso del fondo en tarjeta, la pista de cómo se lee cada fila y los
+ * grupos en frase ("Con plazo", "Sin plazo", "Cumplidas"), cada uno una
+ * tarjeta con una fila por meta. Las cumplidas abren su hoja como las demás.
+ */
+function _listaTelefono({ conPlazo, sinPlazo, cumplidas, hayActivas, frecuenciaIngresos, oculto }) {
+  const grupos = [
+    ['Con plazo', conPlazo, 'La más cercana primero'],
+    ['Sin plazo', sinPlazo, `Ponles fecha y Finko calcula cuánto guardar ${etiquetaPeriodoAhorro(frecuenciaIngresos)}`],
+    [`Cumplidas · ${cumplidas.length}`, cumplidas, ''],
+  ].filter(([, items]) => items.length > 0);
+  const conTitulo = grupos.length > 1;
+
+  const gruposHtml = grupos.map(([titulo, items, sub]) => `
+    <section class="bolsa-grupo"${conTitulo ? ` aria-label="${_esc(titulo)}"` : ''}>
+      ${conTitulo ? `
+      <div class="bolsa-grupo__head"><h2 class="bolsa-grupo__titulo">${_esc(titulo)}</h2></div>
+      ${sub ? `<p class="bolsa-grupo__sub">${_esc(sub)}</p>` : ''}` : ''}
+      <div class="bolsa-lista">${items.map(meta => htmlFilaMeta(meta, frecuenciaIngresos, oculto)).join('')}</div>
+    </section>`).join('');
+
+  const pista = hayActivas
+    ? `<p class="bolsa-pista bolsa-pista--metas"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Toca + para aportar. La silueta se llena con lo que ya reuniste.</p>`
+    : '';
+
+  return `
+    ${hayActivas ? _renderFranjaMetas(oculto) : ''}
+    ${hayActivas ? _lineaFondo() : ''}
+    ${pista}
+    ${gruposHtml}`;
+}
+
 /**
  * Media línea sobre la lista cuando el fondo de emergencia no está completo
  * (ADR 116 D5, AH4 del ADR 069 D7): conviene completarlo antes que una meta,
@@ -109,7 +153,9 @@ export function renderListaMetas() {
  */
 function _lineaFondo() {
   const fondo = S.ahorro?.fondoEmergencia;
-  const ir = '<a class="link" href="#fondo">Ir al fondo</a>';
+  // ADR 133 D5: el enlace va aparte, a la derecha; en el teléfono la línea
+  // es una tarjeta con su teja.
+  const ir = '<a class="link metas-fondo__ir" href="#fondo">Ir al fondo</a>';
   let frase = '';
   if (!fondo?.activo) {
     frase = 'Todavía no tienes fondo de emergencia. Conviene empezar por él.';
@@ -118,7 +164,7 @@ function _lineaFondo() {
     if (!c || c.meses >= c.metaMeses) return '';
     frase = `Tu fondo de emergencia va en ${mesesEnPalabras(c.meses)} de ${c.metaMeses}. Conviene completarlo primero.`;
   }
-  return `<p class="metas-fondo">${icon('ahorro')}<span>${frase} ${ir}</span></p>`;
+  return `<p class="metas-fondo">${icon('ahorro')}<span class="metas-fondo__texto">${frase}</span> ${ir}</p>`;
 }
 
 /**
@@ -150,7 +196,7 @@ function _renderFranjaMetas(oculto) {
       <div class="hero-metas__barra" role="img" aria-label="${porcentaje}% de lo que suman tus objetivos">
         <div class="hero-metas__barra-fill" style="width:${porcentaje}%"></div>
       </div>
-      <p class="hero-metas__meta">Faltan ${m(faltante)}</p>
+      <p class="hero-metas__meta"><strong>${porcentaje}%</strong> · te faltan ${m(faltante)}</p>
     </div>`;
 }
 
@@ -632,48 +678,3 @@ function _glifoMeta(meta, porcentaje, cumplida) {
   };
 }
 
-/**
- * Forma de la silueta de una meta, o `null` si le toca conservar su ícono.
- * Las reglas y su motivo están en `_glifoMeta()`.
- * @param {import('../../core/state.js').Meta} meta
- * @returns {string|null} clave de `SILUETAS`.
- */
-function _formaSilueta(meta) {
-  if (!meta?.categoria) return null;
-  if (meta.categoria === 'Otra' && meta.icono) return null;
-  return CATEGORIA_META_SILUETA[meta.categoria] ?? null;
-}
-
-/**
- * Ícono de una meta (ID.3). Con categoría predefinida (cualquiera salvo
- * 'Otra'), el glifo del sprite; las metas viejas guardaban el emoji de su
- * categoría en `icono`, y como aquí la categoría manda, migran solas al
- * sprite al re-renderizar. Con 'Otra' o sin categoría gana lo que haya en
- * `meta.icono`; sin nada, la caja c-otros o la diana i-metas.
- *
- * DIS.14: el ícono dejó de ir en línea con el nombre y pasó al centro del
- * arco, así que la clase del glifo la decide quien llama (el tamaño ya no es
- * el mismo en los dos sitios).
- *
- * `meta.icono` puede tener dos formatos (CAT.2b, sin bump de schema): un id
- * de símbolo del sprite ('c-pesa', elegido con el picker compartido desde
- * esta rebanada) o un emoji crudo (dato de metas viejas, creadas antes de
- * CAT.2b con el campo de texto libre de MT.3). Se distingue por el patrón
- * `letra-` que ningún emoji real produce.
- *
- * @param {import('../../core/state.js').Meta} meta
- * @param {string} [cls='icon icon--sm'] clase del `<svg>` del sprite.
- * @returns {string}
- */
-function _iconoMeta(meta, cls = 'icon icon--sm') {
-  if (meta.categoria && meta.categoria !== 'Otra') {
-    const simbolo = CATEGORIA_META_ICONO[meta.categoria];
-    if (simbolo) return iconoCategoria(simbolo, cls);
-  }
-  if (meta.icono) {
-    return /^[a-z]-/.test(meta.icono)
-      ? iconoCategoria(meta.icono, cls)
-      : _esc(meta.icono);
-  }
-  return iconoCategoria(meta.categoria === 'Otra' ? 'c-otros' : 'i-metas', cls);
-}
