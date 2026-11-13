@@ -10,7 +10,7 @@
  *     o los usuarios seguirán viendo la versión vieja.
  */
 
-const CACHE_NAME = 'finko-v676';
+const CACHE_NAME = 'finko-v679';
 
 // ── Assets críticos - si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [
@@ -141,6 +141,7 @@ const CORE_ASSETS = [
   './modules/dominio/compromisos/views/alertas.js',
   './modules/dominio/compromisos/views/lista.js',
   './modules/dominio/compromisos/views/detalle.js',
+  './modules/dominio/compromisos/views/plan-salida.js',
   './modules/dominio/compromisos/views/formularios.js',
   './modules/dominio/compromisos/views/estrategia.js',
   './modules/dominio/compromisos/views/estrategia-impacto.js',
@@ -214,6 +215,7 @@ const CORE_ASSETS = [
   './modules/dominio/export/logic.js',
   './modules/dominio/presupuesto/logic.js',
   './modules/dominio/presupuesto/view.js',
+  './modules/dominio/presupuesto/detalle.js',
   './modules/dominio/presupuesto/index.js',
   './modules/dominio/logros/logic.js',
   './modules/dominio/logros/view.js',

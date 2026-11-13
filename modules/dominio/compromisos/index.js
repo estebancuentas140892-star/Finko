@@ -54,6 +54,7 @@ import {
 } from './view.js';
 import { renderResumenExtra, renderComparativaRenegociacion, renderComparativaConsolidacion } from './views/estrategia-impacto.js';
 import { htmlDetalleCompromiso } from './views/detalle.js';
+import { refrescarExtraPlan } from './views/plan-salida.js';
 
 /** Personalizadas de sección 'fijo' (CAT.3c): mismo criterio de oferta por sección del ADR 058 D2. */
 function _personalizadasFijo() {
@@ -980,6 +981,8 @@ function _elegirEstrategia(el) {
 
 function _actualizarResumenEnVivo(el) {
   const extra = desdeMiles(el.value) ?? 0;
+  // ADR 132 D10: la hoja del teléfono tiene su propio recuadro y su botón.
+  if (refrescarExtraPlan(extra, getEstrategiaUI().estrategia)) return;
   const resumen = document.querySelector('.estrategia-card__resumen-extra');
   if (!resumen) return;
 
@@ -1013,7 +1016,10 @@ function _abrirPanelAlternativas() {
 function _elegirAlternativa(el) {
   const alternativa = el.dataset.alternativa;
   if (alternativa !== 'aumentar' && alternativa !== 'renegociar' && alternativa !== 'consolidar') return;
-  setEstrategiaUI({ alternativaActiva: alternativa });
+  // ADR 132 D10: en la hoja del teléfono cada opción es una fila que se abre
+  // y se cierra; en la tarjeta de escritorio siempre hay una activa.
+  const cerrar = el.dataset.plegable === '1' && getEstrategiaUI().alternativaActiva === alternativa;
+  setEstrategiaUI({ alternativaActiva: cerrar ? null : alternativa });
   renderEstrategiaPago();
 }
 

@@ -194,6 +194,24 @@ export function initAcciones() {
     if (fn) fn(el, e);
   });
 
+  // ADR 132 D9: el selector de cuenta plegado se abre con "Cambiar" y se
+  // vuelve a plegar en cuanto se elige otra cuenta. Es de infra
+  // (`renderSelectorCuenta`) y lo usan formularios de varios dominios, así
+  // que su acción es de las built-in.
+  registrarAccion('cuenta-sel-cambiar', (el) => {
+    const caja = el.closest('.cuenta-sel');
+    const abierta = caja?.classList.toggle('cuenta-sel--abierta') === true;
+    el.setAttribute('aria-expanded', String(abierta));
+  });
+  document.addEventListener('change', (e) => {
+    const radio = e.target;
+    if (!(radio instanceof HTMLInputElement) || !radio.classList.contains('cuenta-sel__radio')) return;
+    const caja = radio.closest('.cuenta-sel--abierta');
+    if (!caja) return;
+    caja.classList.remove('cuenta-sel--abierta');
+    caja.querySelector('.cuenta-sel__cambiar')?.setAttribute('aria-expanded', 'false');
+  });
+
   // Ojo del hero (IN.2): alterna entre monto visible y enmascarado, estilo
   // app bancaria, para usar Finko en lugares públicos. El flip con `!== true`
   // es defensivo: cualquier valor raro heredado en S.config cae en "ocultar".

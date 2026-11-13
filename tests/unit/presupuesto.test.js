@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   presupuestosActivos,
   ordenarPresupuestosPorUrgencia,
@@ -22,6 +22,7 @@ import {
   validarHormiga,
 } from '../../modules/dominio/presupuesto/logic.js';
 import { renderPanelPresupuesto, renderFormPresupuesto, renderPanelLimites, renderFormHormiga } from '../../modules/dominio/presupuesto/view.js';
+import { htmlDetalleLimite, htmlDetalleHormiga } from '../../modules/dominio/presupuesto/detalle.js';
 import { S } from '../../modules/core/state.js';
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -1089,11 +1090,14 @@ describe('renderFormPresupuesto() - patrón de captura FORM.1b (DIS.7, hallazgo 
     const hoy = new Date();
     const iso = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-05`;
     S.gastos = [gasto({ id: 'g1', categoria: 'Transporte', monto: 145_000, fecha: iso })];
-    expect(renderFormPresupuesto(null, 'Transporte')).toContain('Es lo que llevas gastado acá este mes');
+    // ADR 132 D8: lo que lleva la categoría en el mes; la cifra propuesta es
+    // eso mismo, así que no hace falta decir de dónde sale.
+    const mes = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'][hoy.getMonth()];
+    expect(renderFormPresupuesto(null, 'Transporte')).toContain(`En ${mes} llevas $145.000 en Transporte.<`);
   });
 
-  it('sin ningún gasto en la categoría, la pista sigue siendo la de FORM.1b', () => {
-    expect(renderFormPresupuesto(null, 'Transporte')).toContain('Aún no registras gastos acá este mes');
+  it('sin ningún gasto en la categoría, la pista lo dice', () => {
+    expect(renderFormPresupuesto(null, 'Transporte')).toMatch(/aún no tienes gastos en Transporte\./);
   });
 
   it('una categoría que ya tiene tope no se ofrece de nuevo', () => {
@@ -1144,7 +1148,8 @@ describe('renderPanelPresupuesto() - correcciones de la auditoría (DIS.7)', () 
     ];
     renderPanelPresupuesto();
     expect(panel().innerHTML).not.toMatch(/[⚠⏰✅ℹ]/);
-    expect(panel().querySelector('.nudge__icon use').getAttribute('href')).toBe('#i-alert');
+    // ADR 132 D8: el aviso del grupo va dentro de la tarjeta del plan.
+    expect(panel().querySelector('.plan-franja__aviso use').getAttribute('href')).toBe('#i-alert');
   });
 
   // L2: la barra de Necesidades caía al acento, que en el sistema significa logro.
@@ -1161,7 +1166,7 @@ describe('renderPanelPresupuesto() - correcciones de la auditoría (DIS.7)', () 
       categoria: 'Vivienda', diaPago: 3, activo: true, frecuencia: 'Mensual',
     }];
     renderPanelPresupuesto();
-    const pct = panel().querySelectorAll('.plan-franja__pct')[0];
+    const pct = panel().querySelectorAll('.plan-franja__pct')[1];
     expect(pct.classList.contains('plan-franja__pct--monitor')).toBe(true);
     expect(pct.classList.contains('plan-franja__pct--excedido')).toBe(false);
   });
@@ -1173,7 +1178,8 @@ describe('renderPanelPresupuesto() - correcciones de la auditoría (DIS.7)', () 
   it('los tres grupos se nombran, en orden, bajo un solo encabezado', () => {
     renderPanelPresupuesto();
     const nombres = [...panel().querySelectorAll('.plan-franja__grupo')].map(e => e.textContent);
-    expect(nombres).toEqual(['Necesidades', 'Ahorro', 'Estilo de vida']);
+    // ADR 132 D8: Estilo de vida primero, es la lente en la que estás.
+    expect(nombres).toEqual(['Estilo de vida', 'Necesidades', 'Ahorro']);
     expect(panel().querySelectorAll('.plan-franja h2')).toHaveLength(1);
   });
 
@@ -1194,11 +1200,12 @@ describe('renderPanelPresupuesto() - correcciones de la auditoría (DIS.7)', () 
   it('cada grupo lleva a donde si se lo puede administrar, y Estilo de vida no lleva a ninguna parte', () => {
     renderPanelPresupuesto();
     const filas = [...panel().querySelectorAll('.plan-franja__fila')];
-    expect(filas[0].querySelector('.plan-franja__salida').getAttribute('href')).toBe('#compromisos');
-    expect(filas[1].querySelector('.plan-franja__salida').getAttribute('href')).toBe('#fondo');
-    // La tercera es la lente en la que ya estas: se dice, no se enlaza.
-    expect(filas[2].querySelector('.plan-franja__salida')).toBeNull();
-    expect(filas[2].querySelector('.plan-franja__aqui').textContent).toBe('aquí');
+    // La primera es la lente en la que ya estas: se dice, no se enlaza.
+    expect(filas[0].querySelector('.plan-franja__salida')).toBeNull();
+    expect(filas[0].querySelector('.plan-franja__aqui').textContent).toBe('Se mide aquí, con tus límites');
+    expect(filas[1].querySelector('.plan-franja__salida').getAttribute('href')).toBe('#compromisos');
+    expect(filas[1].querySelector('.plan-franja__salida').textContent).toBe('Se mide en Por pagar');
+    expect(filas[2].querySelector('.plan-franja__salida').getAttribute('href')).toBe('#fondo');
   });
 
   // L8: el mensaje de cada categoría se repetía arriba y describía un sobre
@@ -1216,7 +1223,9 @@ describe('renderPanelPresupuesto() - correcciones de la auditoría (DIS.7)', () 
   it('el nudge de exceso del grupo se anuncia como alerta', () => {
     S.gastos = [gasto({ categoria: 'Ropa', monto: 3_000_000, fecha: dia(5) })];
     renderPanelPresupuesto();
-    expect(panel().querySelector('.nudge-high').getAttribute('role')).toBe('alert');
+    const aviso = panel().querySelector('.plan-franja .plan-franja__aviso--excedido');
+    expect(aviso.getAttribute('role')).toBe('alert');
+    expect(panel().querySelector('.plan-franja + .nudge, .nudge-high')).toBeNull();
   });
 
   // L4: el consejo apuntaba a un formulario que no ofrecía esa categoría.
@@ -1467,7 +1476,7 @@ describe('renderFormPresupuesto() - monto propuesto (LIM.1c, ADR 044)', () => {
     ];
     const html = renderFormPresupuesto(null, 'Transporte');
     expect(html).toContain('value="200.000" data-sugerido="1"');
-    expect(html).toContain('Tu promedio de los últimos meses acá');
+    expect(html).toContain('Te proponemos tu promedio de los últimos meses.');
   });
 
   it('cada chip trae su propio monto para cuando cambias de categoría', () => {
@@ -1712,5 +1721,97 @@ describe('Límites: la tarjeta de gastos pequeños', () => {
     const html = renderFormHormiga(150_000);
     expect(html).toContain('value="150.000"');
     expect(html).toContain('value="15.000"');
+  });
+});
+
+// ── ADR 132 D8: Límites en el teléfono, filas con hoja ──────────────────────
+
+describe('Límites en el teléfono (ADR 132 D8)', () => {
+  const matchMediaReal = window.matchMedia;
+  const hoy  = new Date();
+  const anio = hoy.getFullYear();
+  const mesN = hoy.getMonth() + 1;
+  const dia  = (n) => `${anio}-${String(mesN).padStart(2, '0')}-${String(n).padStart(2, '0')}`;
+  const panel = () => document.getElementById('panel-presupuesto');
+
+  beforeEach(() => {
+    window.matchMedia = () => ({ matches: true, addEventListener() {} });
+    document.body.innerHTML = '<button id="btn-nuevo-presupuesto"></button><div id="panel-presupuesto"></div>';
+    S.presupuestos = [
+      presupuesto({ id: 'p1', categoria: 'Restaurantes', montoMensual: 200_000 }),
+      presupuesto({ id: 'p2', categoria: 'Mercado', montoMensual: 600_000 }),
+    ];
+    S.gastos = [
+      gasto({ id: 'g1', categoria: 'Restaurantes', monto: 215_900, fecha: dia(1) }),
+      gasto({ id: 'g2', categoria: 'Mercado', monto: 300_700, fecha: dia(1) }),
+    ];
+    S.categoriasPersonalizadas = [];
+    S.compromisos = [];
+    S.ingresos = [];
+    S.ingresosPuntuales = [];
+    S.config = {};
+  });
+  afterEach(() => { window.matchMedia = matchMediaReal; });
+
+  it('cada tope es una fila sin botones que abre su hoja', () => {
+    renderPanelPresupuesto();
+    const filas = [...panel().querySelectorAll('.limites-lista .limite-fila')];
+    expect(filas.map(f => f.dataset.id)).toEqual(['p1', 'p2']);
+    expect(panel().querySelector('.envelope')).toBeNull();
+    const abrir = filas[0].querySelector('.list-item__detalle');
+    expect(abrir.dataset.action).toBe('limite-detalle');
+    expect(abrir.dataset.id).toBe('p1');
+    expect(filas[0].querySelectorAll('button')).toHaveLength(1);
+  });
+
+  it('la fila dice en cuánto se pasó o cuánto queda, con el porcentaje de su tope', () => {
+    renderPanelPresupuesto();
+    const meta = (id) => panel().querySelector(`.limite-fila[data-id="${id}"] .limite-fila__meta`).textContent.replace(/\s+/g, ' ').trim();
+    expect(meta('p1')).toBe('Pasó por $15.900 108% de $200.000');
+    expect(meta('p2')).toBe('Quedan $299.300 50% de $600.000');
+    expect(panel().querySelector('.limite-fila[data-id="p1"] .limite-fila__estado--danger')).not.toBeNull();
+  });
+
+  it('el resumen cuenta cuántos topes se pasaron', () => {
+    renderPanelPresupuesto();
+    expect(panel().querySelector('.estilo-olla').textContent).toBe('Tus límites suman $800.000. Se pasó 1 de 2.');
+    expect(panel().querySelector('.estilo-limites__intro')).toBeNull();
+  });
+
+  it('desde 1024px siguen los sobres con sus acciones', () => {
+    window.matchMedia = () => ({ matches: false, addEventListener() {} });
+    renderPanelPresupuesto();
+    expect(panel().querySelector('.limite-fila')).toBeNull();
+    expect(panel().querySelectorAll('.envelope')).toHaveLength(2);
+  });
+
+  it('el límite de gastos pequeños es la última fila y abre su propia hoja', () => {
+    S.config = { hormiga: { tope: 20_000, limite: 150_000 } };
+    S.gastos.push(gasto({ id: 'g3', categoria: 'Café', monto: 9_500, fecha: dia(1) }));
+    renderPanelPresupuesto();
+    const filas = panel().querySelectorAll('.limites-lista .limite-fila');
+    expect(filas[filas.length - 1].querySelector('.list-item__detalle').dataset.action).toBe('hormiga-detalle');
+    expect(panel().querySelector('.envelope--hormiga, .hormiga-oferta')).toBeNull();
+  });
+
+  it('la hoja de un tope: lo gastado de su tope, en cuánto se pasó, su aviso y sus acciones', () => {
+    document.body.innerHTML = `<div id="h">${htmlDetalleLimite(S.presupuestos[0], { anio, mes: mesN })}</div>`;
+    const h = document.getElementById('h');
+    expect(h.querySelector('#detalle-fila-titulo').textContent).toBe('Restaurantes');
+    expect(h.querySelector('.detalle-fila__monto').textContent).toBe('$215.900');
+    expect(h.querySelector('.detalle-limite__tope').textContent).toBe('de $200.000');
+    expect(h.querySelector('.detalle-limite__estado').textContent).toBe('Pasó su límite por $15.900 · 108%');
+    expect(h.querySelector('.detalle-limite__aviso').textContent).toMatch(/^Superaste tu límite para Restaurantes/);
+    expect(h.querySelector('.detalle-gasto__ver-titulo').textContent).toMatch(/^El único gasto de Restaurantes en /);
+    const destinos = [...h.querySelectorAll('[data-action="registrar-abrir"]')].map(b => b.dataset.targetAction);
+    expect(destinos).toEqual(['presupuesto-ver-movimientos', 'editar-presupuesto', 'eliminar-presupuesto']);
+    expect(h.querySelector('[data-target-action="presupuesto-ver-movimientos"]').dataset.categoria).toBe('Restaurantes');
+  });
+
+  it('la hoja de gastos pequeños cambia y quita su límite, sin salida a una categoría', () => {
+    S.config = { hormiga: { tope: 20_000, limite: 150_000 } };
+    document.body.innerHTML = `<div id="h">${htmlDetalleHormiga({ anio, mes: mesN })}</div>`;
+    const destinos = [...document.querySelectorAll('[data-action="registrar-abrir"]')].map(b => b.dataset.targetAction);
+    expect(destinos).toEqual(['hormiga-editar', 'hormiga-quitar']);
   });
 });

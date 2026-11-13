@@ -6,7 +6,7 @@
 import { miles } from '../../infra/miles.js';
 import { S }                  from '../../core/state.js';
 import { f, esc as _esc, hoy } from '../../infra/utils.js';
-import { icon, iconoCategoria } from '../../infra/icons.js';
+import { icon, iconoCategoria, tejaCategoria } from '../../infra/icons.js';
 import {
   CATEGORIAS_GASTO_USUARIO,
   LABEL_GRUPO_FINANCIERO,
@@ -154,10 +154,12 @@ function _renderResumenGrupos(anio, mes) {
       .map(m => [m.id.slice(_PREFIJO_MENSAJE_CATEGORIA.length), m.mensaje]),
   );
 
+  // ADR 132 D8: con plan, los avisos de cada grupo van dentro de su tarjeta;
+  // sin plan (no hay tarjeta) siguen sueltos arriba.
+  const avisosPlan = mensajes.filter(m => m.grupo && !_esMensajeDeCategoria(m));
   return `
     ${_renderRefuerzoCombinado(mensajes)}
-    ${_renderNudgesPlan(mensajes)}
-    ${dist ? _renderFranjaPlan(resumen, mes) : ''}
+    ${dist ? _renderFranjaPlan(resumen, mes, avisosPlan) : avisosPlan.map(_renderNudge).join('')}
     <section class="estilo-limites-standalone" aria-labelledby="estilo-limites-standalone-title">
       <h2 class="estilo-limites-standalone__title" id="estilo-limites-standalone-title">Límites por categoría</h2>
       ${_renderDetalleEstiloVida(anio, mes, asignadoPorGrupo['estilo-de-vida'] ?? 0, notasCategoria)}
@@ -183,14 +185,16 @@ function _renderResumenGrupos(anio, mes) {
  * @param {number} mes - 1-12, para nombrar el mes del plan.
  * @returns {string} HTML.
  */
-function _renderFranjaPlan(resumen, mes) {
+function _renderFranjaPlan(resumen, mes, avisos = []) {
+  // ADR 132 D8: Estilo de vida primero (es la lente en la que estás) y cada
+  // grupo dice dónde se mide; la salida de los otros dos es esa misma línea.
   const SALIDAS = {
-    'necesidades':    { href: '#compromisos', texto: 'Por pagar' },
-    'ahorro':         { href: '#fondo',       texto: 'Ahorro' },
-    'estilo-de-vida': null,
+    'estilo-de-vida': { texto: 'Se mide aquí, con tus límites' },
+    'necesidades':    { href: '#compromisos', texto: 'Se mide en Por pagar' },
+    'ahorro':         { href: '#fondo',       texto: 'Se mide en Ahorro' },
   };
 
-  const lineas = ['necesidades', 'ahorro', 'estilo-de-vida'].map((grupo) => {
+  const lineas = ['estilo-de-vida', 'necesidades', 'ahorro'].map((grupo) => {
     const r = resumen[grupo] ?? { pct: 0, estado: 'ok' };
     // Necesidades nunca se pinta en rojo (ADR 019: se monitorea, no se alarma)
     // y Ahorro por encima de su meta es un logro, no un exceso.
@@ -201,12 +205,20 @@ function _renderFranjaPlan(resumen, mes) {
 
     return `
         <li class="plan-franja__fila">
-          <span class="plan-franja__grupo">${_esc(LABEL_GRUPO_FINANCIERO[grupo] ?? grupo)}</span>
-          <span class="plan-franja__pct plan-franja__pct--${tono}">${r.pct}%</span>
-          ${salida
+          <span class="plan-franja__textos">
+            <span class="plan-franja__grupo">${_esc(LABEL_GRUPO_FINANCIERO[grupo] ?? grupo)}</span>
+            ${salida.href
     ? `<a class="plan-franja__salida" href="${salida.href}">${salida.texto}</a>`
-    : '<span class="plan-franja__aqui">aquí</span>'}
+    : `<span class="plan-franja__aqui">${salida.texto}</span>`}
+          </span>
+          <span class="plan-franja__pct plan-franja__pct--${tono}">${r.pct}%</span>
         </li>`;
+  }).join('');
+
+  const avisosHtml = avisos.map((m) => {
+    const nivel = _nivelNudge(m);
+    return `
+      <p class="plan-franja__aviso plan-franja__aviso--${nivel}" role="${nivel === 'excedido' ? 'alert' : 'status'}">${iconoCategoria(_NUDGE_ICONO[nivel])}<span>${_esc(m.mensaje)}</span></p>`;
   }).join('');
 
   return `
@@ -215,8 +227,8 @@ function _renderFranjaPlan(resumen, mes) {
         <h2 class="plan-franja__title">Tu plan de ${_esc(_MESES_CORTOS[mes - 1] ?? '')}</h2>
         <!-- ADR 080 D4: abre el asistente, no navega a la entrada de la
              sección, y la etiqueta nombra la acción y no la sección (R85). -->
-        <a href="#tesoreria" class="plan-franja__link" data-action="presupuesto-abrir-distribucion" aria-label="Ajustar tu distribución del ingreso">Ajustar</a>
-      </header>
+        <a href="#tesoreria" class="plan-franja__link" data-action="presupuesto-abrir-distribucion" aria-label="Ajustar tu distribución del ingreso">Ajustar${icon('chevron-right')}</a>
+      </header>${avisosHtml}
       <ul class="plan-franja__lista" role="list">${lineas}</ul>
     </section>`;
 }
@@ -276,24 +288,6 @@ function _renderNudge(m) {
         <p class="nudge__title">${_esc(m.mensaje)}</p>
       </div>
     </div>`;
-}
-
-/**
- * Los mensajes de los tres grupos, ahora encima de la franja (ficha 12).
- *
- * Antes cada uno vivía dentro de la tarjeta de su grupo. Con las tarjetas de
- * Necesidades y Ahorro retiradas, sus mensajes se quedaban sin sitio, y el de
- * un fijo vencido es información que la lente no debe perder solo porque su
- * tarjeta se fue. Los de categoría siguen bajando a su sobre (ADR 019 D3).
- *
- * @param {ReturnType<typeof generarMensajesLimites>} mensajes
- * @returns {string} HTML.
- */
-function _renderNudgesPlan(mensajes) {
-  return mensajes
-    .filter(m => m.grupo && !_esMensajeDeCategoria(m))
-    .map(_renderNudge)
-    .join('');
 }
 
 /** Refuerzo combinado (no pertenece a ningún grupo específico). */
@@ -371,20 +365,33 @@ function _renderDetalleEstiloVida(anio, mes, presupuestoEV, notasCategoria = new
 
   // ADR 132 D6: el vacío trae su propio "Crear límite"; con él, el "+" del
   // encabezado se esconde en el teléfono (un botón siempre, ADR 077 D4).
+  // ADR 132 D8: en el teléfono los topes son filas en una sola tarjeta y cada
+  // una abre su hoja; desde 1024px siguen los sobres con sus acciones. El
+  // límite de gastos pequeños, si lo hay, es la última fila.
+  const movil = _enMovil();
+  const filaHormiga = movil && activos.length > 0 ? _renderFilaHormiga(anio, mes) : '';
   const lista = activos.length === 0
     ? `<div class="empty-state estilo-limites__vacio-caja">
         <p class="estilo-limites__vacio">${vacio}</p>
         <button type="button" class="btn btn-primary" data-action="nuevo-presupuesto">${icon('plus')}Crear límite</button>
       </div>`
-    : `<div class="envelope-list">${activos.map(p => _renderEnvelope(p, gastos, anio, mes, notasCategoria.get(p.categoria))).join('')}</div>`;
+    : movil
+      ? `<div class="limites-lista">${activos.map(p => _renderFilaLimite(p, gastos, anio, mes)).join('')}${filaHormiga}</div>`
+      : `<div class="envelope-list">${activos.map(p => _renderEnvelope(p, gastos, anio, mes, notasCategoria.get(p.categoria))).join('')}</div>`;
+
+  // El resumen cuenta cuántos topes se pasaron: es lo primero que se busca.
+  const excedidos = activos.filter(p => calcularProgreso(p, gastos, anio, mes).estado === 'excedido').length;
+  const intro = activos.length === 0
+    ? '<p class="estilo-limites__intro">Ponle un máximo mensual a las categorías donde más gastas y te aviso antes de pasarte. Es un tope a lo que gastas, no un ahorro.</p>'
+    : '';
 
   return `
     <div class="estilo-limites">
-      <p class="estilo-limites__intro">Ponle un máximo mensual a las categorías donde más gastas y te aviso antes de pasarte. Es un tope a lo que gastas, no un ahorro.</p>
-      ${_renderOllaFinita(cobertura)}
+      ${intro}
+      ${_renderOllaFinita(cobertura, excedidos, activos.length)}
       ${_renderExtraordinario(extraordinarioDelMes(S.ingresosPuntuales, anio, mes), presupuestoEV)}
       ${lista}
-      ${_renderHormiga(anio, mes)}
+      ${filaHormiga ? '' : _renderHormiga(anio, mes)}
       ${_renderSugerenciaTope(sugerencia)}
       ${_renderSinPresupuesto(activos)}
       ${_renderSuscripcionLarga(suscripcion)}
@@ -468,22 +475,23 @@ function _renderSuscripcionLarga(s) {
  * @param {ReturnType<typeof coberturaLimitesEstiloVida>} cobertura
  * @returns {string} HTML. `''` cuando no hay presupuesto ni topes que mostrar.
  */
-function _renderOllaFinita({ limites, presupuesto, sinTope, excede }) {
-  if (presupuesto <= 0) {
-    return limites > 0
-      ? `<p class="estilo-olla">Tus límites suman ${f(limites)} este mes.</p>`
-      : '';
-  }
+function _renderOllaFinita({ limites, presupuesto, sinTope, excede }, excedidos = 0, total = 0) {
+  // ADR 132 D8: la suma dice cuántos topes se pasaron, y el aviso de que el
+  // plan no alcanza va aparte, en su color.
+  const pasaron = excedidos > 0 ? ` Se ${excedidos === 1 ? 'pasó' : 'pasaron'} ${excedidos} de ${total}.` : '';
+  const suma = `<p class="estilo-olla">Tus límites suman ${f(limites)}.${pasaron}</p>`;
+  if (presupuesto <= 0) return limites > 0 ? suma : '';
   if (excede) {
-    return `<p class="estilo-olla estilo-olla--excede">Tus límites suman ${f(limites)}, más que los ${f(presupuesto)} que tu plan asigna a Estilo de vida. Revisa si alguno quedó muy alto.</p>`;
+    return `${suma}
+      <p class="estilo-olla estilo-olla--excede">${icon('alert')}<span>Es más que los ${f(presupuesto)} que tu plan asigna a Estilo de vida. Revisa si alguno quedó muy alto.</span></p>`;
   }
   if (limites === 0) {
     return `<p class="estilo-olla">Tu plan asigna ${f(presupuesto)} a Estilo de vida este mes. Aún no le has puesto un límite a ninguna categoría.</p>`;
   }
   if (sinTope === 0) {
-    return `<p class="estilo-olla">Tus límites cubren todo tu Estilo de vida (${f(presupuesto)}). No te queda dinero sin tope.</p>`;
+    return `<p class="estilo-olla">Tus límites cubren todo tu Estilo de vida (${f(presupuesto)}). No te queda dinero sin tope.${pasaron}</p>`;
   }
-  return `<p class="estilo-olla">Tus límites cubren ${f(limites)} de los ${f(presupuesto)} de tu Estilo de vida. Te quedan ${f(sinTope)} sin tope.</p>`;
+  return `<p class="estilo-olla">Tus límites cubren ${f(limites)} de los ${f(presupuesto)} de tu Estilo de vida. Te quedan ${f(sinTope)} sin tope.${pasaron}</p>`;
 }
 
 /**
@@ -566,6 +574,80 @@ function _renderEnvelope(presupuesto, gastos, anio, mes, nota = '') {
     </article>`;
 }
 
+// ── EN EL TELÉFONO: FILAS CON HOJA (ADR 132 D8) ──────────────────
+
+/** Bajo el corte de escritorio de la app (1024px), como Por pagar (ADR 117). */
+function _enMovil() {
+  return window.matchMedia?.('(max-width: 1023.98px)').matches === true;
+}
+
+/**
+ * Lo que dice un tope bajo su barra: "Pasó por $X" en rojo, "Quedan $X" en
+ * ámbar desde el 75 % y neutro antes. Lo comparten la fila y su hoja.
+ *
+ * @param {{ restante: number, estado: string }} progreso
+ * @returns {{ texto: string, tono: string }}
+ */
+export function estadoDeLimite({ restante, estado }) {
+  if (restante < 0) return { texto: `Pasó por ${f(-restante)}`, tono: 'danger' };
+  return { texto: `Quedan ${f(restante)}`, tono: estado === 'alerta' ? 'warning' : '' };
+}
+
+/**
+ * Una fila de tope: teja, categoría con lo gastado al lado, la barra y debajo
+ * lo que queda (o en cuánto se pasó) con el porcentaje de su tope. Sin botones:
+ * la fila entera abre su hoja, con cambiar y quitar.
+ *
+ * @param {string} cat - nombre ya escapado.
+ * @param {string} icono - id del símbolo.
+ * @param {string} accion - `limite-detalle` u `hormiga-detalle`.
+ * @param {string} id - id del tope ('' para gastos pequeños).
+ * @param {{ gastado: number, asignado: number, restante: number, porcentaje: number, estado: string }} progreso
+ */
+function _renderFila(cat, icono, accion, id, { gastado, asignado, restante, porcentaje, estado }) {
+  const { texto, tono } = estadoDeLimite({ restante, estado });
+  const idAttr = id ? ` data-id="${_esc(id)}"` : '';
+  return `
+    <article class="limite-fila list-item--detalle" data-estado="${estado}"${idAttr}>
+      <button type="button" class="list-item__detalle" data-action="${accion}"${idAttr}
+              aria-label="Ver el límite de ${cat}"></button>
+      <span class="limite-fila__teja" aria-hidden="true">${tejaCategoria(icono, 'presupuesto')}</span>
+      <div class="limite-fila__info">
+        <p class="limite-fila__linea">
+          <span class="limite-fila__nombre">${cat}</span>
+          <span class="limite-fila__gastado">${f(gastado)}</span>
+        </p>
+        <div class="progress" role="progressbar" aria-valuenow="${porcentaje}" aria-valuemin="0" aria-valuemax="100"
+             aria-label="Progreso de ${cat}: ${porcentaje}%">
+          <div class="progress-bar ${_claseProgreso(porcentaje)}" style="width:${Math.min(porcentaje, 100)}%"></div>
+        </div>
+        <p class="limite-fila__meta">
+          <span class="limite-fila__estado${tono ? ` limite-fila__estado--${tono}` : ''}">${texto}</span>
+          <span>${porcentaje}% de ${f(asignado)}</span>
+        </p>
+      </div>
+    </article>`;
+}
+
+function _renderFilaLimite(presupuesto, gastos, anio, mes) {
+  return _renderFila(
+    _esc(presupuesto.categoria),
+    iconoDeCategoriaGasto(presupuesto.categoria, S.categoriasPersonalizadas),
+    'limite-detalle',
+    presupuesto.id,
+    calcularProgreso(presupuesto, gastos, anio, mes),
+  );
+}
+
+/** El límite de gastos pequeños, si tiene uno, como una fila más. */
+function _renderFilaHormiga(anio, mes) {
+  const p = progresoHormiga(S.gastos ?? [], S.config, anio, mes);
+  if (!p.limite) return '';
+  return _renderFila('Gastos pequeños', 'c-hormiga', 'hormiga-detalle', '', {
+    gastado: p.gastado, asignado: p.limite, restante: p.restante, porcentaje: p.porcentaje, estado: p.estado,
+  });
+}
+
 // ── GASTOS PEQUEÑOS (APR.1b, ADR 092) ────────────────────────────
 
 /**
@@ -588,7 +670,8 @@ function _renderHormiga(anio, mes) {
     if (p.gastado <= 0) return '';
     return `
       <div class="hormiga-oferta">
-        <p class="hormiga-oferta__texto">${icono} Tus gastos pequeños de este mes suman <strong>${f(p.gastado)}</strong>: ${compras}.</p>
+        <span class="hormiga-oferta__teja" aria-hidden="true">${tejaCategoria('c-hormiga', 'presupuesto')}</span>
+        <p class="hormiga-oferta__texto">Tus gastos pequeños de este mes suman <strong>${f(p.gastado)}</strong>: ${compras}.</p>
         <button class="btn btn-secondary btn-sm" type="button" data-action="hormiga-editar">Ponerles un límite</button>
       </div>`;
   }
@@ -715,9 +798,10 @@ function _renderSinPresupuesto(presupuestos) {
   const personalizadas = S.categoriasPersonalizadas ?? [];
   const filas = huerfanas.map(h => {
     const cat   = _esc(h.categoria);
-    const icono = iconoCategoria(iconoDeCategoriaGasto(h.categoria, personalizadas), 'icon icon--sm');
+    // ADR 132 D8: la teja de la categoría en vez del ícono suelto.
+    const teja = tejaCategoria(iconoDeCategoriaGasto(h.categoria, personalizadas), 'presupuesto');
     const cuerpo = `
-        <span class="envelope-huerfanas__cat">${icono} ${cat}</span>
+        <span class="envelope-huerfanas__cat">${teja}<span>${cat}</span></span>
         <span class="envelope-huerfanas__monto">${f(h.gastado)}</span>`;
 
     if (!_puedeTenerTope(h.categoria, personalizadas)) {
@@ -745,7 +829,7 @@ function _renderSinPresupuesto(presupuestos) {
                 data-categoria="${cat}"
                 aria-label="Ponerle un límite a ${cat}">
           ${cuerpo}
-          <span class="envelope-huerfanas__accion">Nuevo límite</span>
+          <span class="envelope-huerfanas__accion">${icon('plus')}Límite</span>
         </button>
       </li>`;
   }).join('');
@@ -803,19 +887,20 @@ export function renderFormPresupuesto(actual = null, categoriaPrecargada = '') {
   const sugeridoDe = (categoria) => sugerirMontoTope(gastos, categoria, hoyISO, { sinTope });
 
   /**
-   * Pista del monto: de dónde sale la cifra propuesta y, si no hay ninguna,
-   * cuánto se lleva gastado este mes (la pista de FORM.1b, que sigue vigente).
+   * Pista del monto (ADR 132 D8): cuánto lleva la categoría en el mes, que es
+   * el dato con el que se decide el número, y de dónde sale la cifra propuesta
+   * cuando no es eso mismo (LIM.1c: la pista dice de dónde sale).
    */
+  const nombreMes = _MESES_CORTOS[mes - 1] ?? '';
   const hintDe = (categoria) => {
-    const s = sugeridoDe(categoria);
-    if (s?.acotado)               return `Es lo que tu plan deja sin asignar este mes`;
-    if (s?.base === 'promedio')   return `Tu promedio de los últimos meses acá`;
-    if (s?.base === 'mes-actual') return `Es lo que llevas gastado acá este mes`;
-
     const gastado = calcularGastadoCategoria(gastos, categoria, anio, mes);
-    return gastado > 0
-      ? `Gastaste ${f(gastado)} acá este mes`
-      : 'Aún no registras gastos acá este mes';
+    const llevas = gastado > 0
+      ? `En ${nombreMes} llevas ${f(gastado)} en ${categoria}.`
+      : `En ${nombreMes} aún no tienes gastos en ${categoria}.`;
+    const s = sugeridoDe(categoria);
+    if (s?.acotado)             return `${llevas} Te proponemos lo que tu plan deja sin asignar.`;
+    if (s?.base === 'promedio') return `${llevas} Te proponemos tu promedio de los últimos meses.`;
+    return llevas;
   };
 
   const campoCategoria = editando
@@ -847,7 +932,7 @@ export function renderFormPresupuesto(actual = null, categoriaPrecargada = '') {
                  value="${miles(montoInicial)}"${!editando && montoInicial ? ' data-sugerido="1"' : ''}
                  placeholder="0" autocomplete="off" inputmode="numeric" data-miles />
         </div>
-        <span class="monto-hero__hint" id="presupuesto-monto-hint">${categoriaInicial ? hintDe(categoriaInicial) : 'COP'}</span>
+        <span class="monto-hero__hint" id="presupuesto-monto-hint">${categoriaInicial ? _esc(hintDe(categoriaInicial)) : 'COP'}</span>
       </div>
       <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
@@ -895,7 +980,7 @@ function _renderChipsCategoria(precargada, personalizadas, hintDe, sugeridoDe) {
   return `
       <div class="form-group">
         <span class="label" id="presupuesto-categoria-label">¿A qué categoría le pones tope?</span>
-        <div class="chips-cat chips-cat--2col" role="radiogroup" aria-labelledby="presupuesto-categoria-label">
+        <div class="chips-cat" role="radiogroup" aria-labelledby="presupuesto-categoria-label">
           ${disponibles.map(chip).join('')}
         </div>
       </div>`;

@@ -946,3 +946,356 @@ body:not(.light-theme) .cov__fill {
     color: var(--fk-text-secondary);
   }
 }
+
+/* D8 (tanda 3): Límites. La tarjeta del plan dice dónde se mide cada grupo
+   y lleva sus avisos dentro; vale en los dos anchos porque es contenido. */
+.plan-franja__fila { grid-template-columns: minmax(0, 1fr) auto; }
+.plan-franja__textos { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
+.plan-franja__textos .plan-franja__salida { min-height: 0; color: var(--fk-text-secondary); }
+.plan-franja__textos .plan-franja__aqui { color: var(--fk-text-secondary); }
+.plan-franja__link { display: inline-flex; align-items: center; gap: 2px; font-weight: var(--fk-font-semibold); }
+.plan-franja__link .icon { width: 14px; height: 14px; } /* la flecha del alto del texto del enlace */
+.plan-franja__aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fk-space-2);
+  margin: 0;
+  font-size: var(--fk-text-sm);
+  line-height: var(--fk-leading-snug);
+  color: var(--fk-text-secondary);
+}
+.plan-franja__aviso .icon { flex-shrink: 0; width: 18px; height: 18px; } /* del alto de un renglón del aviso */
+.plan-franja__aviso--excedido { color: var(--fk-danger-text); }
+.plan-franja__aviso--alerta { color: var(--fk-warning-text); }
+.plan-franja__aviso--refuerzo { color: var(--fk-success-text); }
+.estilo-olla--excede { display: flex; align-items: flex-start; gap: var(--fk-space-2); color: var(--fk-warning-text); }
+.estilo-olla--excede .icon { flex-shrink: 0; width: 16px; height: 16px; } /* del alto de un renglón */
+
+@media (max-width: 1023px) {
+  .plan-franja {
+    gap: 0;
+    padding: var(--fk-space-4) 0 0;
+    border-radius: var(--fk-radius-xl);
+  }
+  .plan-franja__header,
+  .plan-franja__aviso { padding: 0 var(--fk-space-4); }
+  .plan-franja__header { margin-bottom: var(--fk-space-2); }
+  .plan-franja__title { font-size: var(--fk-text-base); font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
+  .plan-franja__link { font-size: var(--fk-text-sm); color: var(--fk-text-accent); }
+  .plan-franja__aviso { padding-bottom: var(--fk-space-3); }
+  .plan-franja__lista { gap: 0; }
+  .plan-franja__fila {
+    min-height: 56px;
+    padding: var(--fk-space-2) var(--fk-space-4);
+    border-top: 1px solid var(--fk-border-subtle);
+  }
+  .plan-franja__grupo { font-weight: var(--fk-font-semibold); }
+  .plan-franja__textos :is(.plan-franja__salida, .plan-franja__aqui) { font-size: var(--fk-text-xs); }
+  .plan-franja__pct { font-size: var(--fk-text-base); font-weight: var(--fk-font-bold); }
+
+  #sec-presupuesto .estilo-limites-standalone__title { margin-bottom: 0; }
+  #panel-presupuesto .estilo-olla { padding: 0; background: none; font-size: var(--fk-text-sm); }
+  #panel-presupuesto .estilo-olla:not(.estilo-olla--excede) { color: var(--fk-text-secondary); }
+
+  /* Los topes: una sola tarjeta, una fila por tope, sin botones. */
+  .limites-lista {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-xl);
+    background: var(--fk-bg-surface);
+    box-shadow: var(--fk-shadow-sm);
+  }
+  .limite-fila {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--fk-space-3);
+    padding: var(--fk-space-3) var(--fk-space-4);
+  }
+  .limite-fila + .limite-fila { border-top: 1px solid var(--fk-border-subtle); }
+  .limite-fila__teja .cat-teja { width: 2.5rem; height: 2.5rem; }
+  .limite-fila__info { display: flex; flex: 1; flex-direction: column; gap: var(--fk-space-2); min-width: 0; }
+  .limite-fila__linea,
+  .limite-fila__meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0 var(--fk-space-2);
+    margin: 0;
+  }
+  .limite-fila__nombre { font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
+  .limite-fila__gastado { font-weight: var(--fk-font-bold); font-variant-numeric: tabular-nums; color: var(--fk-text-primary); }
+  .limite-fila .progress { height: 6px; }
+  .limite-fila__meta { font-size: var(--fk-text-xs); color: var(--fk-text-secondary); font-variant-numeric: tabular-nums; }
+  .limite-fila__estado { font-weight: var(--fk-font-semibold); }
+  .limite-fila__estado--danger { color: var(--fk-danger-text); }
+  .limite-fila__estado--warning { color: var(--fk-warning-text); }
+
+  /* Gastos pequeños sin límite: una tarjeta con su teja y el botón a lo ancho. */
+  .hormiga-oferta {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    padding: var(--fk-space-4);
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-xl);
+    background: var(--fk-bg-surface);
+  }
+  .hormiga-oferta > .btn { grid-column: 1 / -1; justify-content: center; min-height: 48px; font-size: var(--fk-text-sm); }
+
+  /* "Gastas acá y no tiene tope": una tarjeta con filas, como los topes. */
+  #panel-presupuesto .envelope-huerfanas { padding: 0; border: 0; background: none; }
+  .envelope-huerfanas__title { font-size: var(--fk-text-base); font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
+  #panel-presupuesto .envelope-huerfanas__list {
+    gap: 0;
+    overflow: hidden;
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-xl);
+    background: var(--fk-bg-surface);
+  }
+  .envelope-huerfanas__list > li + li { border-top: 1px solid var(--fk-border-subtle); }
+  .envelope-huerfanas__btn,
+  .envelope-huerfanas__fija {
+    min-height: 60px;
+    padding: var(--fk-space-2) var(--fk-space-4);
+    border: 0;
+    border-radius: 0;
+    background: none;
+  }
+  .envelope-huerfanas__cat { display: inline-flex; flex: 1; align-items: center; gap: var(--fk-space-3); min-width: 0; color: var(--fk-text-primary); font-weight: var(--fk-font-semibold); }
+  .envelope-huerfanas__cat .cat-teja { width: 2.25rem; height: 2.25rem; }
+  /* La que no admite tope dice dónde se controla, bajo su nombre. */
+  .envelope-huerfanas__fija { row-gap: 0; padding-bottom: var(--fk-space-1); }
+  .envelope-huerfanas__fija .envelope-huerfanas__motivo--link {
+    min-height: 32px;
+    padding-left: calc(2.25rem + var(--fk-space-3));
+  }
+  .envelope-huerfanas__accion { display: inline-flex; align-items: center; gap: 2px; font-size: var(--fk-text-sm); color: var(--fk-text-accent); }
+  .envelope-huerfanas__accion .icon { width: 16px; height: 16px; } /* del alto del texto */
+
+  /* La hoja de un tope: lo gastado "de" el tope en un renglón. */
+  .detalle-limite__cifra { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--fk-space-2); }
+  .detalle-limite__tope { color: var(--fk-text-secondary); }
+  .detalle-limite__estado { margin: 0; font-weight: var(--fk-font-semibold); color: var(--fk-text-secondary); }
+  .detalle-limite__estado--danger { color: var(--fk-danger-text); }
+  .detalle-limite__estado--warning { color: var(--fk-warning-text); }
+  .detalle-limite__aviso { margin: 0; font-size: var(--fk-text-sm); color: var(--fk-text-secondary); }
+  #detalle-fila-body > .progress { height: 8px; margin-top: calc(-1 * var(--fk-space-2)); }
+}
+
+/* D9 (tanda 4): las hojas de captura. El monto se pregunta en frase y se
+   escribe a la izquierda, como en todas las hojas del tablero (Nuevo gasto,
+   Nuevo límite, Aportar, Me pagaron); el selector de cuenta se pliega a la
+   elegida con "Cambiar". Solo en el teléfono. */
+.cuenta-sel__cambiar,
+.cuenta-picker__antes { display: none; }
+
+@media (max-width: 1023px) {
+  .monto-hero { text-align: left; }
+  .monto-hero__label {
+    font-size: var(--fk-text-sm);
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--fk-text-primary);
+  }
+  .monto-hero__box { padding: var(--fk-space-2) var(--fk-space-4); }
+  .monto-hero__box .input.input--big-amount { text-align: left; }
+  .monto-hero > .form-error { justify-content: flex-start; }
+
+  .cuenta-sel { position: relative; }
+  .cuenta-sel--plegable:not(.cuenta-sel--abierta) :is(.cuenta-sel__row:not(:has(.cuenta-sel__radio:checked)), .cuenta-sel__grupo) { display: none; }
+  .cuenta-sel--plegable:not(.cuenta-sel--abierta) .cuenta-sel__row {
+    min-height: 64px;
+    padding-right: 7rem; /* el sitio de "Cambiar" */
+    border-color: var(--fk-border-subtle);
+    background: var(--fk-bg-elevated);
+  }
+  .cuenta-sel--plegable:not(.cuenta-sel--abierta) .cuenta-sel__radio {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .cuenta-sel--plegable:not(.cuenta-sel--abierta) .cuenta-picker__main { flex-wrap: wrap; }
+  .cuenta-sel--plegable:not(.cuenta-sel--abierta) .cuenta-sel__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cuenta-sel--plegable:not(.cuenta-sel--abierta) .cuenta-picker__saldo {
+    padding-left: calc(2rem + var(--fk-space-2)); /* el avatar de 32 y su hueco */
+    margin-top: calc(-1 * var(--fk-space-3));
+    font-size: var(--fk-text-xs);
+    font-weight: var(--fk-font-regular);
+    color: var(--fk-text-secondary);
+  }
+  .cuenta-sel--plegable:not(.cuenta-sel--abierta) .cuenta-picker__antes { display: inline; }
+  .cuenta-sel__cambiar {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    min-height: 44px;
+    padding: 0 var(--fk-space-1);
+    border: 0;
+    background: none;
+    font: inherit;
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-accent);
+    cursor: pointer;
+  }
+  .cuenta-sel__cambiar .icon { width: 16px; height: 16px; transition: transform var(--fk-transition-fast); } /* del alto del texto */
+  .cuenta-sel--plegable:not(.cuenta-sel--abierta) .cuenta-sel__cambiar {
+    position: absolute;
+    right: var(--fk-space-3);
+    bottom: 10px; /* centrado en la fila de 64 */
+  }
+  .cuenta-sel--abierta .cuenta-sel__cambiar { margin-top: var(--fk-space-1); }
+  .cuenta-sel--abierta .cuenta-sel__cambiar .icon { transform: rotate(180deg); }
+  .cuenta-sel__cambiar:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; border-radius: var(--fk-radius-sm); }
+}
+
+/* D10 (tanda 5): la hoja del plan de salida en el teléfono, ordenada por el
+   resultado. Solo existe bajo 1024px (`plan-salida.js`). */
+@media (max-width: 1023px) {
+  #estrategia-pago:has(.plan-movil__cabeza) { display: flex; flex-direction: column; gap: var(--fk-space-5); }
+  .plan-movil__cabeza { display: flex; align-items: center; gap: var(--fk-space-3); padding-right: var(--fk-space-10); }
+  .plan-movil__tino { --tino-sol: 44px; flex-shrink: 0; }
+  .plan-movil__cabeza-textos { min-width: 0; }
+  .plan-movil__titulo { margin: 0; font-size: var(--fk-text-lg); font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
+  .plan-movil__sub { margin: 0; font-size: var(--fk-text-sm); color: var(--fk-text-secondary); }
+
+  .plan-movil__resultado-base > p { margin: 0; }
+  .plan-movil__lead { font-size: var(--fk-text-sm); color: var(--fk-text-secondary); }
+  .plan-movil__lead strong { color: var(--fk-text-primary); }
+  .plan-movil__cifra {
+    font-family: var(--fk-font-display, inherit);
+    font-size: var(--fk-text-3xl);
+    font-weight: var(--fk-font-extrabold);
+    letter-spacing: -0.02em;
+    color: var(--fk-text-primary);
+  }
+
+  .plan-movil__bloque { display: flex; flex-direction: column; gap: var(--fk-space-3); }
+  .plan-movil__h { margin: 0; font-size: var(--fk-text-base); font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
+  .plan-movil__ayuda { margin: calc(-1 * var(--fk-space-2)) 0 0; font-size: var(--fk-text-xs); line-height: var(--fk-leading-snug); color: var(--fk-text-secondary); }
+  .plan-movil__explica { margin: 0; font-size: var(--fk-text-sm); line-height: var(--fk-leading-snug); color: var(--fk-text-secondary); }
+
+  .plan-movil__pestanas {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--fk-space-1);
+    padding: var(--fk-space-1);
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-lg);
+    background: var(--fk-bg-base);
+  }
+  .plan-movil__pestana {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-height: 52px;
+    padding: var(--fk-space-2);
+    border: 0;
+    border-radius: var(--fk-radius-md);
+    background: none;
+    font: inherit;
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-secondary);
+    cursor: pointer;
+  }
+  .plan-movil__pestana--activa { background: var(--fk-bg-elevated); color: var(--fk-text-primary); box-shadow: var(--fk-shadow-filo); }
+  .plan-movil__recomendada { font-size: var(--fk-text-xs); font-weight: var(--fk-font-semibold); color: var(--fk-success-text); }
+
+  .plan-movil__orden,
+  .plan-movil__opciones {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    overflow: hidden;
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-lg);
+    background: var(--fk-bg-surface);
+  }
+  .plan-movil__orden > li { display: flex; align-items: center; gap: var(--fk-space-3); min-height: 56px; padding: var(--fk-space-2) var(--fk-space-4); }
+  .plan-movil__orden > li + li,
+  .plan-movil__opciones > li + li { border-top: 1px solid var(--fk-border-subtle); }
+  .plan-movil__num {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-dom-compromisos-bg);
+    color: var(--fk-dom-compromisos-text);
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-bold);
+  }
+  .plan-movil__orden-textos,
+  .plan-movil__opcion-textos { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+  .plan-movil__orden-nombre,
+  .plan-movil__opcion-titulo { font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
+  .plan-movil__orden-sub,
+  .plan-movil__opcion-sub { font-size: var(--fk-text-xs); color: var(--fk-text-secondary); }
+
+  .plan-movil__monto .monto-hero__label { margin-bottom: var(--fk-space-2); }
+  .plan-movil__resultado {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--fk-space-2);
+    padding: var(--fk-space-3) var(--fk-space-4);
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-lg);
+    background: var(--fk-bg-surface);
+    font-size: var(--fk-text-sm);
+    line-height: var(--fk-leading-snug);
+    color: var(--fk-text-secondary);
+  }
+  .plan-movil__resultado > p { margin: 0; }
+  .plan-movil__resultado strong { color: var(--fk-text-primary); }
+  .plan-movil__resultado--ok {
+    border-color: color-mix(in srgb, var(--fk-success) 35%, transparent);
+    background: color-mix(in srgb, var(--fk-success) 8%, var(--fk-bg-surface));
+    color: var(--fk-text-primary);
+  }
+  .plan-movil__resultado .icon { flex-shrink: 0; width: 18px; height: 18px; margin-top: 1px; color: var(--fk-success-text); } /* del alto de un renglón */
+  .plan-movil__aplicar { min-height: 52px; }
+
+  .plan-movil__alerta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fk-space-2);
+    padding: var(--fk-space-4);
+    border: 1px solid color-mix(in srgb, var(--fk-danger) 45%, transparent);
+    border-radius: var(--fk-radius-lg);
+    background: var(--fk-danger-bg);
+  }
+  .plan-movil__alerta > p { margin: 0; }
+  .plan-movil__alerta-titulo { display: flex; align-items: center; gap: var(--fk-space-2); font-weight: var(--fk-font-bold); color: var(--fk-danger-text); }
+  .plan-movil__alerta-titulo .icon { width: 20px; height: 20px; } /* del alto del título */
+  .plan-movil__alerta-texto { font-size: var(--fk-text-sm); color: var(--fk-text-secondary); }
+  .plan-movil__crecen { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--fk-space-1); }
+  .plan-movil__crecen > li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0 var(--fk-space-2); font-size: var(--fk-text-sm); color: var(--fk-text-primary); }
+
+  .plan-movil__opcion {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    width: 100%;
+    min-height: 64px;
+    padding: var(--fk-space-2) var(--fk-space-4);
+    border: 0;
+    background: none;
+    font: inherit;
+    text-align: left;
+    color: inherit;
+    cursor: pointer;
+  }
+  .plan-movil__opcion > .icon { flex-shrink: 0; color: var(--fk-text-muted); }
+  .plan-movil__opcion .cat-teja { width: 2.25rem; height: 2.25rem; }
+  .plan-movil__herramienta { padding: 0 var(--fk-space-4) var(--fk-space-4); }
+  .plan-movil__nota { margin: 0; font-size: var(--fk-text-xs); line-height: var(--fk-leading-snug); color: var(--fk-text-muted); }
+}

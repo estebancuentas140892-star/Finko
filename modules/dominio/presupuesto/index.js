@@ -24,7 +24,8 @@ import { renderPanelPresupuesto, renderFormPresupuesto, renderPanelLimites, rend
 import { topeHormiga } from '../../infra/hormiga.js';
 import { f } from '../../infra/utils.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
-import { rangoMesBloque } from '../../infra/mes-bloque.js';
+import { rangoMesBloque, mesBloque } from '../../infra/mes-bloque.js';
+import { htmlDetalleLimite, htmlDetalleHormiga } from './detalle.js';
 
 // ── HELPERS DE MODAL ─────────────────────────────────────────────
 
@@ -228,6 +229,26 @@ export function initPresupuesto() {
   registrarAccion('eliminar-presupuesto', _eliminarPresupuesto);
   registrarAccion('hormiga-editar',       () => _editarHormiga());
   registrarAccion('hormiga-quitar',       _quitarLimiteHormiga);
+
+  // ADR 132 D8: en el teléfono cada tope es una fila que abre su hoja (la de
+  // la fila, `#modal-detalle-fila`), armada con los datos del tope en el mes
+  // del bloque. Al cruzar los 1024px la lente cambia de anatomía y se repinta.
+  const abrirHoja = (html) => {
+    const hoja = document.getElementById('modal-detalle-fila');
+    const cuerpo = document.getElementById('detalle-fila-body');
+    if (!hoja || !cuerpo) return;
+    cuerpo.innerHTML = html;
+    abrirModal(hoja);
+  };
+  const mesVisible = () => { const { anio, mes } = mesBloque(); return { anio, mes: mes + 1 }; };
+  registrarAccion('limite-detalle', (el) => {
+    const p = (S.presupuestos ?? []).find(x => x.id === el.dataset.id);
+    if (p) abrirHoja(htmlDetalleLimite(p, mesVisible()));
+  });
+  registrarAccion('hormiga-detalle', () => abrirHoja(htmlDetalleHormiga(mesVisible())));
+  window.matchMedia?.('(max-width: 1023.98px)').addEventListener?.('change', () => {
+    renderSmart(renderPanelPresupuesto, 'presupuesto');
+  });
 
   // El Aplícalo de la unidad 3 (APR.1b, ADR 092 D7) propone un límite con su
   // monto ya escrito en el botón (R50): lo pone acá, que es su dueño, sin que

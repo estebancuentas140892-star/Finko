@@ -12,6 +12,35 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(compromisos): MV2.30 Gastos tanda 5, la hoja del plan de salida; cierra Gastos · 2026-11-06
+
+[ADR 132](DECISIONS/132-gastos-del-adulto-en-el-telefono.md) D10. Ficha: [`contexto/deudas.md`](contexto/deudas.md). SW v679. El tablero "rediseño1" queda aplicado completo y su HTML se borró.
+
+- **El resultado primero**: "Con tus cuotas de hoy, sales de deudas en 15 meses y pagas $X en intereses", con Tino pensando en la cabeza.
+- **¿Por cuál empiezas?**: Bola de nieve y Avalancha como dos pestañas, la recomendada primero y marcada; qué hace cada una, qué cuesta frente a la otra y el orden en que se terminan las deudas.
+- **Pago extra**: "Si pagas un poco más cada mes" con el efecto al escribir (`resultadoExtra()`, repintado sin perder el foco) y "Aplicar $X más al mes". Si las cuotas no alcanzan para los intereses, el aviso va primero con lo que crece cada deuda y "Lo mínimo para salir" trae el monto escrito.
+- **Otras opciones** (renegociar, juntar) como filas que abren su herramienta en su sitio. Solo en el teléfono: desde 1024px sigue la tarjeta del simulador.
+- Pruebas: 7 nuevas en `compromisos`; el E2E de la hoja cambia de pestaña, escribe el extra y abre una opción.
+
+### feat(gastos): MV2.30 Gastos tanda 4, la hoja "Nuevo gasto" · 2026-11-06
+
+[ADR 132](DECISIONS/132-gastos-del-adulto-en-el-telefono.md) D9. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v678. Tablero "rediseño1".
+
+- **Preguntas en frase**: "¿Cuánto gastaste?", "¿En qué?", "¿De qué cuenta sale?" y "¿Cuándo?"; se va el "COP" bajo el monto y la nota sugiere "Ej.: almuerzo con el equipo".
+- **Monto a la izquierda** en todas las hojas con monto del teléfono (acota el `.monto-hero` del ADR 042 a escritorio): el tablero lo dibuja igual en "Nuevo límite", "Aportar" y "Me pagaron".
+- **Cuenta plegada**: con una ya elegida y otra para elegir, el selector compartido muestra solo la elegida ("Tienes $X") y "Cambiar"; elegir otra lo vuelve a plegar. La acción `cuenta-sel-cambiar` es built-in porque el selector es de infra.
+- Pruebas: 1 ajustada y 3 nuevas en `gastos`; un E2E en el teléfono abre la hoja, cambia de cuenta y la ve plegarse.
+
+### feat(presupuesto): MV2.30 Gastos tanda 3, Límites y las hojas de un límite · 2026-11-06
+
+[ADR 132](DECISIONS/132-gastos-del-adulto-en-el-telefono.md) D8. Ficha: [`contexto/limites.md`](contexto/limites.md). SW v677. Tablero "rediseño1".
+
+- **Tarjeta del plan** (los dos anchos): Estilo de vida primero, cada grupo dice dónde se mide ("Se mide en Por pagar" es la salida) y el aviso del grupo va dentro, no suelto arriba.
+- **Topes en el teléfono**: una tarjeta con una fila por tope (lo gastado, la barra, "Pasó por" o "Quedan" y el porcentaje de su tope), sin botones. La fila abre su hoja (`presupuesto/detalle.js`): lo gastado de su tope, el aviso, sus gastos del mes, "Cambiar el límite" y "Quitar este límite". El de gastos pequeños es una fila más con su hoja. Desde 1024px siguen los sobres.
+- **Resumen**: "Tus límites suman $X. Se pasaron N de M."; el aviso de que el plan no alcanza va aparte. La introducción queda solo en el vacío.
+- **Nuevo límite**: la grilla de tres columnas y la pista "En noviembre llevas $X en Ropa.", con el origen de la cifra propuesta cuando no es esa.
+- Pruebas: 8 ajustadas y 7 nuevas en `presupuesto`; en E2E, el orden del plan y un recorrido de la lente en el teléfono.
+
 ### feat(compromisos): MV2.30 Gastos tanda 2, Por pagar y la hoja de una deuda · 2026-11-06
 
 [ADR 132](DECISIONS/132-gastos-del-adulto-en-el-telefono.md) D7. Ficha: [`contexto/deudas.md`](contexto/deudas.md). SW v676. Tablero "rediseño1".

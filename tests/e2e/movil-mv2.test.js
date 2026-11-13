@@ -750,6 +750,66 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(hoja.locator('.detalle-fila__accion')).toHaveText(['Abonar $420.000', 'Editar', 'Eliminar esta deuda']);
   });
 
+  test('Límites: los topes son filas en una tarjeta y cada una abre su hoja (ADR 132 D8)', async ({ page }) => {
+    await sembrar(page, estadoBase({
+      cuentas: CUENTAS,
+      presupuestos: [
+        { id: 'p1', categoria: 'Restaurantes', montoMensual: 200_000, activo: true, fechaCreacion: '2026-01-01T00:00:00.000Z' },
+        { id: 'p2', categoria: 'Mercado', montoMensual: 600_000, activo: true, fechaCreacion: '2026-01-01T00:00:00.000Z' },
+      ],
+      gastos: [
+        { id: 'g1', categoria: 'Restaurantes', monto: 215_900, fecha: fechaDelMes(1), cuentaId: 'c1' },
+        { id: 'g2', categoria: 'Mercado', monto: 300_700, fecha: fechaDelMes(1), cuentaId: 'c1' },
+        { id: 'g3', categoria: 'Ropa', monto: 159_900, fecha: fechaDelMes(1), cuentaId: 'c1' },
+      ],
+    }));
+    await page.goto('/#presupuesto');
+    const filas = page.locator('.limites-lista .limite-fila');
+    await expect(filas).toHaveCount(2, { timeout: 10_000 });
+    await expect(page.locator('.envelope')).toHaveCount(0);
+    await expect(page.locator('.estilo-olla').first()).toHaveText('Tus límites suman $800.000. Se pasó 1 de 2.');
+    await expect(filas.first().locator('.limite-fila__meta')).toContainText('Pasó por $15.900');
+    await expect(page.locator('.envelope-huerfanas__btn').first()).toContainText('Límite');
+
+    await filas.first().locator('.list-item__detalle').click();
+    const hoja = page.locator('#modal-detalle-fila[data-open]');
+    await expect(hoja.locator('.detalle-fila__titulo')).toHaveText('Restaurantes');
+    await expect(hoja.locator('.detalle-limite__estado')).toHaveText('Pasó su límite por $15.900 · 108%');
+    await expect(hoja.locator('.detalle-fila__accion')).toHaveText(['Cambiar el límite', 'Quitar este límite']);
+    await hoja.locator('[data-target-action="editar-presupuesto"]').click();
+    await expect(page.locator('#modal-presupuesto[data-open]')).toBeVisible();
+    await expect(page.locator('#modal-detalle-fila[data-open]')).toHaveCount(0);
+  });
+
+  test('Nuevo gasto: pregunta en frase y la cuenta se pliega con "Cambiar" (ADR 132 D9)', async ({ page }) => {
+    await sembrar(page, estadoBase({
+      cuentas: [
+        { id: 'c1', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 3_000_000, activa: true, fechaCreacion: '2026-07-01T00:00:00.000Z' },
+        { id: 'c2', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi', saldo: 450_000, activa: true, fechaCreacion: '2026-07-01T00:00:00.000Z' },
+      ],
+    }));
+    await page.goto('/#gast');
+    await page.locator('[data-action="nuevo-gasto"]:visible').first().click();
+    const form = page.locator('#form-gasto');
+    await expect(form.locator('.monto-hero__label')).toHaveText('¿Cuánto gastaste?', { timeout: 10_000 });
+    expect(await form.locator('.monto-hero__label').evaluate(el => getComputedStyle(el).textTransform)).toBe('none');
+    await expect(form.locator('#gasto-categoria-label')).toHaveText('¿En qué?');
+
+    // Plegado se ve solo la elegida (la de más saldo) y "Cambiar".
+    const filas = form.locator('.cuenta-sel__row');
+    await expect(filas.filter({ hasText: 'Bancolombia' })).toBeVisible();
+    await expect(filas.filter({ hasText: 'Nequi' })).toBeHidden();
+    await expect(form.locator('.cuenta-picker__antes').first()).toBeVisible();
+    const cambiar = form.locator('.cuenta-sel__cambiar');
+    await cambiar.click();
+    await expect(cambiar).toHaveAttribute('aria-expanded', 'true');
+    await filas.filter({ hasText: 'Nequi' }).click();
+    // Elegir otra la deja elegida y vuelve a plegar.
+    await expect(form.locator('input[name="cuentaId"][value="c2"]')).toBeChecked();
+    await expect(cambiar).toHaveAttribute('aria-expanded', 'false');
+    await expect(filas.filter({ hasText: 'Bancolombia' })).toBeHidden();
+  });
+
   test('Calendario: el día se abre en una hoja sobre el mes y al cerrarla vuelve a su celda (ADR 118 D1)', async ({ page }) => {
     await seedCalendario(page);
     await page.goto('/#agenda');
@@ -811,7 +871,7 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(page).toHaveURL(/#gast$/);
   });
 
-  test('Por pagar termina en "¿Cómo salir más rápido?" y el plan se abre en su hoja (ADR 119 D1)', async ({ page }) => {
+  test('Por pagar termina en "¿Cómo salir más rápido?" y el plan se abre en su hoja (ADR 119 D1, ADR 132 D10)', async ({ page }) => {
     await sembrar(page, estadoBase({
       cuentas: CUENTAS,
       compromisos: [
@@ -830,7 +890,26 @@ test.describe('MV2 - móvil (ADR 098)', () => {
 
     await entrada.click();
     const hoja = page.locator('#modal-plan-salida[data-open]');
-    await expect(hoja.locator('#estrategia-pago .estrategia-card__title')).toHaveText('¿Cómo salir más rápido?');
+    // ADR 132 D10: la hoja abre con el resultado y las dos formas en pestañas.
+    await expect(hoja.locator('.plan-movil__titulo')).toHaveText('¿Cómo salir más rápido?');
+    await expect(hoja.locator('.plan-movil__sub')).toHaveText('2 deudas · debes $3.900.000');
+    await expect(hoja.locator('.plan-movil__cifra')).toHaveText(/mes|año/);
+    const pestanas = hoja.locator('.plan-movil__pestana');
+    await expect(pestanas).toHaveCount(2);
+    await pestanas.nth(1).click();
+    await expect(hoja.locator('.plan-movil__pestana').nth(1)).toHaveAttribute('aria-pressed', 'true');
+
+    // El extra se lee al escribir y el botón lleva el monto.
+    await hoja.locator('#estrategia-extra').fill('200000');
+    await expect(hoja.locator('.plan-movil__resultado--ok')).toContainText('Sales en');
+    await expect(hoja.locator('.plan-movil__aplicar')).toHaveText('Aplicar $200.000 más al mes');
+    await expect(hoja.locator('.plan-movil__aplicar')).toBeEnabled();
+
+    // Las otras opciones se abren en su sitio.
+    await hoja.locator('[data-alternativa="consolidar"]').click();
+    await expect(hoja.locator('[data-alternativa="consolidar"]')).toHaveAttribute('aria-expanded', 'true');
+    await expect(hoja.locator('.plan-movil__herramienta')).toBeVisible();
+
     await hoja.locator('.mas-sheet__close').click();
     await expect(page.locator('#modal-plan-salida[data-open]')).toHaveCount(0);
   });

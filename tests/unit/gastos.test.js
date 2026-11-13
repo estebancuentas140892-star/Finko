@@ -976,7 +976,7 @@ describe('renderFormGasto() - selector de cuenta', () => {
     S.compromisos = [tarjetaTC({ cupoTotal: null })];
     const html = renderFormGasto();
     expect(html).not.toContain('value="tc:d1"');
-    expect(html).toContain('¿De qué cuenta sale el dinero?');
+    expect(html).toContain('¿De qué cuenta sale?');
   });
 
   // MC.16d: "¿A cuántas cuotas?" vive en el form (radios, no <select>), oculto
@@ -2347,5 +2347,46 @@ describe('labelDiaGastos() y textosFilaGasto() (ADR 132)', () => {
     expect(textosFilaGasto({ categoria: 'Salud', descripcion: 'Droguería', nota: 'Con receta' }, cuentas))
       .toEqual({ titulo: 'Droguería', subtitulo: 'Salud · Con receta' });
     expect(textosFilaGasto({ categoria: 'Hogar' }, cuentas)).toEqual({ titulo: 'Hogar', subtitulo: '' });
+  });
+});
+
+// ── ADR 132 D9: la hoja "Nuevo gasto" ───────────────────────────────
+
+describe('renderFormGasto() - la hoja del tablero (ADR 132 D9)', () => {
+  beforeEach(() => {
+    S.cuentas = [
+      { id: 'c1', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 3_000_000, activa: true },
+      { id: 'c2', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 450_000, activa: true },
+    ];
+    S.compromisos = [];
+    S.categoriasPersonalizadas = [];
+  });
+
+  it('pregunta en frase: cuánto, en qué, de qué cuenta y cuándo', () => {
+    document.body.innerHTML = renderFormGasto();
+    expect(document.querySelector('.monto-hero__label').textContent).toBe('¿Cuánto gastaste?');
+    expect(document.querySelector('.monto-hero__hint')).toBeNull();
+    expect(document.getElementById('gasto-categoria-label').textContent).toBe('¿En qué?');
+    expect(document.querySelector('.cuenta-sel .label').textContent).toBe('¿De qué cuenta sale?');
+    expect(document.getElementById('gasto-fecha-label').textContent).toBe('¿Cuándo?');
+    expect(document.getElementById('gasto-nota').getAttribute('placeholder')).toBe('Ej.: almuerzo con el equipo');
+  });
+
+  it('con una cuenta elegida y otra para elegir, el selector se pliega con "Cambiar"', () => {
+    document.body.innerHTML = renderFormGasto();
+    const caja = document.querySelector('.cuenta-sel');
+    expect(caja.classList.contains('cuenta-sel--plegable')).toBe(true);
+    const cambiar = caja.querySelector('.cuenta-sel__cambiar');
+    expect(cambiar.dataset.action).toBe('cuenta-sel-cambiar');
+    expect(cambiar.getAttribute('aria-expanded')).toBe('false');
+    expect(caja.querySelector('.cuenta-sel__radio:checked').value).toBe('c1');
+    expect(caja.querySelector('.cuenta-picker__antes').textContent.trim()).toBe('Tienes');
+  });
+
+  it('con una sola cuenta no hay nada que cambiar', () => {
+    S.cuentas = S.cuentas.slice(0, 1);
+    document.body.innerHTML = renderFormGasto();
+    expect(document.querySelector('.cuenta-sel--plegable')).toBeNull();
+    expect(document.querySelector('.cuenta-sel__cambiar')).toBeNull();
   });
 });

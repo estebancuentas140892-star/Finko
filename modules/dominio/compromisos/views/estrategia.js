@@ -35,6 +35,7 @@ import {
   renderRenegociar,
   renderConsolidar,
 } from './estrategia-impacto.js';
+import { htmlPlanSalida } from './plan-salida.js';
 
 // Estado UI local: extra mensual, estrategia activa, herramienta de renegociación.
 // Persiste mientras la pestaña está abierta; al recargar vuelve a defaults.
@@ -132,6 +133,12 @@ export function renderEstrategiaPago() {
   const deudas = filtrarDeudasPagables(S.compromisos);
   if (deudas.length === 0) {
     el.innerHTML = '';
+    return;
+  }
+  // ADR 132 D10: en el teléfono el simulador es la hoja del plan de salida,
+  // ordenada por el resultado. Su entrada solo aparece con dos deudas o más.
+  if (deudas.length >= 2 && window.matchMedia?.('(max-width: 1023.98px)').matches === true) {
+    el.innerHTML = htmlPlanSalida(deudas, _uiEstrategia);
     return;
   }
   // v7.6: con 1 sola deuda no hay nada que comparar entre estrategias.

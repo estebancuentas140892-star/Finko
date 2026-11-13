@@ -52,7 +52,7 @@ import { distribuirPago } from './distribuir-pago.js';
  * @param {{ selectedId?: string|null, label?: string, name?: string, preseleccionar?: boolean, tarjetas?: import('../core/state.js').Compromiso[] }} [opts]
  * @returns {string}
  */
-export function renderSelectorCuenta(cuentas, { selectedId = null, label = '¿De qué cuenta sale el dinero?', name = 'cuentaId', preseleccionar = true, tarjetas = [] } = {}) {
+export function renderSelectorCuenta(cuentas, { selectedId = null, label = '¿De qué cuenta sale?', name = 'cuentaId', preseleccionar = true, tarjetas = [] } = {}) {
   const activas = (cuentas ?? []).filter(c => c.activa !== false);
   const tjs     = tarjetas ?? [];
   if (activas.length === 0 && tjs.length === 0) return '';
@@ -62,7 +62,14 @@ export function renderSelectorCuenta(cuentas, { selectedId = null, label = '¿De
   const sel = elegida
     ?? ((preseleccionar && activas.length > 0) ? [...activas].sort((a, b) => (b.saldo ?? 0) - (a.saldo ?? 0))[0].id : null);
 
-  const fila = (valor, avatar, nombre, cifra) => `
+  // ADR 132 D9: con una opción ya elegida y más de una para elegir, el
+  // selector se pliega en el teléfono a la elegida con "Cambiar" (CSS). Sin
+  // elegida (`preseleccionar: false`) no hay nada que mostrar plegado.
+  const plegable = sel !== null && activas.length + tjs.length > 1;
+
+  // "Tienes" solo se ve con el selector plegado: en la lista abierta el saldo
+  // se lee al lado del nombre, como siempre.
+  const fila = (valor, avatar, nombre, cifra, antes = '') => `
       <label class="cuenta-sel__row">
         <input type="radio" name="${_esc(name)}" class="cuenta-sel__radio"
                value="${_esc(valor)}" ${valor === sel ? 'checked' : ''} />
@@ -70,10 +77,10 @@ export function renderSelectorCuenta(cuentas, { selectedId = null, label = '¿De
           ${avatar}
           <span class="cuenta-picker__nombre">${_esc(nombre)}</span>
         </span>
-        <span class="cuenta-picker__saldo">${cifra}</span>
+        <span class="cuenta-picker__saldo">${antes ? `<span class="cuenta-picker__antes">${antes} </span>` : ''}${cifra}</span>
       </label>`;
 
-  const filas = activas.map(c => fila(c.id, bancoAvatar(c.banco, c.icono), c.nombre, f(c.saldo ?? 0))).join('');
+  const filas = activas.map(c => fila(c.id, bancoAvatar(c.banco, c.icono), c.nombre, f(c.saldo ?? 0), 'Tienes')).join('');
 
   // El cupo disponible se deriva (cupoTotal - saldoTotal, acotado a cero) y se
   // rotula como cupo: es capacidad de endeudamiento, no dinero (ADR 051 D5).
@@ -86,12 +93,15 @@ export function renderSelectorCuenta(cuentas, { selectedId = null, label = '¿De
           `Cupo ${f(Math.max((Number(t.cupoTotal) || 0) - (Number(t.saldoTotal) || 0), 0))}`,
         )).join('')}`;
 
+  const cambiar = plegable ? `
+      <button type="button" class="cuenta-sel__cambiar" data-action="cuenta-sel-cambiar" aria-expanded="false">Cambiar<svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></button>` : '';
+
   return `
-    <div class="form-group">
+    <div class="form-group cuenta-sel${plegable ? ' cuenta-sel--plegable' : ''}">
       <span class="label">${_esc(label)}</span>
       <div class="cuenta-sel__lista" role="radiogroup" aria-label="${_esc(label)}">
         ${filas}${filasTarjetas}
-      </div>
+      </div>${cambiar}
     </div>`;
 }
 

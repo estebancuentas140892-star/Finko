@@ -3372,15 +3372,16 @@ test.describe('Límites de gasto - resumen por grupo', () => {
     await page.goto('/#presupuesto');
     await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
 
+    // ADR 132 D8: Estilo de vida primero, la lente en la que estás.
     await expect(page.locator('.plan-franja__grupo'))
-      .toHaveText(['Necesidades', 'Ahorro', 'Estilo de vida']);
+      .toHaveText(['Estilo de vida', 'Necesidades', 'Ahorro']);
 
     // Cada grupo lleva a donde si se lo administra, y Estilo de vida no lleva a
     // ninguna parte porque es la lente en la que ya estas.
     const filas = page.locator('.plan-franja__fila');
-    await expect(filas.nth(0).locator('a')).toHaveAttribute('href', '#compromisos');
-    await expect(filas.nth(1).locator('a')).toHaveAttribute('href', '#fondo');
-    await expect(filas.nth(2).locator('a')).toHaveCount(0);
+    await expect(filas.nth(0).locator('a')).toHaveCount(0);
+    await expect(filas.nth(1).locator('a')).toHaveAttribute('href', '#compromisos');
+    await expect(filas.nth(2).locator('a')).toHaveAttribute('href', '#fondo');
 
     // Y ya no hay espejos de otras secciones dentro del bloque Gastos.
     await expect(page.locator('.grupo-card')).toHaveCount(0);
@@ -3433,8 +3434,9 @@ test.describe('Límites de gasto - resumen por grupo', () => {
     await page.goto('/#presupuesto');
     await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
 
-    // Ficha 12: el mensaje del grupo sobrevive a su tarjeta, encima de la franja.
-    const nudge = page.locator('#panel-presupuesto .nudge-success .nudge__title');
+    // Ficha 12: el mensaje del grupo sobrevive a su tarjeta; desde el ADR 132
+    // D8 va dentro de la tarjeta del plan.
+    const nudge = page.locator('#panel-presupuesto .plan-franja__aviso--refuerzo');
     await expect(nudge).toBeVisible({ timeout: 3_000 });
     await expect(nudge).toHaveText('Vas por buen camino. Cumpliste con el ahorro que planeaste este mes.');
   });
@@ -3456,8 +3458,9 @@ test.describe('Límites de gasto - resumen por grupo', () => {
     await page.goto('/#presupuesto');
     await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
 
-    // Ficha 12: el mensaje del grupo sobrevive a su tarjeta, encima de la franja.
-    const nudge = page.locator('#panel-presupuesto .nudge-success .nudge__title');
+    // Ficha 12: el mensaje del grupo sobrevive a su tarjeta; desde el ADR 132
+    // D8 va dentro de la tarjeta del plan.
+    const nudge = page.locator('#panel-presupuesto .plan-franja__aviso--refuerzo');
     await expect(nudge).toBeVisible({ timeout: 3_000 });
     await expect(nudge).toHaveText('¡Excelente! Este mes estás ahorrando más de lo planeado. Cada peso que ahorras hoy es tranquilidad mañana.');
   });
@@ -3481,7 +3484,7 @@ test.describe('Límites de gasto - resumen por grupo', () => {
     // Ficha 12 (ADR 085 D2): el trato asimetrico del ADR 019 se conserva
     // reducido a una linea. Superar la meta de Ahorro es un logro, y se dice en
     // el tono de su porcentaje, no en el borde de una tarjeta que ya no existe.
-    const pctAhorro = page.locator('.plan-franja__fila').nth(1).locator('.plan-franja__pct');
+    const pctAhorro = page.locator('.plan-franja__fila').nth(2).locator('.plan-franja__pct');
     await expect(pctAhorro).toHaveClass(/plan-franja__pct--logro/);
     await expect(pctAhorro).not.toHaveClass(/plan-franja__pct--excedido/);
     // Y en toda la franja no hay un solo rojo.
@@ -3566,7 +3569,7 @@ test.describe('Límites de gasto - resumen por grupo', () => {
 
     // Necesidades se monitorea y nunca se alarma (ADR 019), y desde la ficha 12
     // eso vive en el tono de su linea: neutro incluso por encima del plan.
-    const pctNec = page.locator('.plan-franja__fila').nth(0).locator('.plan-franja__pct');
+    const pctNec = page.locator('.plan-franja__fila').nth(1).locator('.plan-franja__pct');
     await expect(pctNec).toHaveClass(/plan-franja__pct--monitor/);
     await expect(pctNec).not.toHaveClass(/plan-franja__pct--excedido/);
     await expect(pctNec).not.toHaveClass(/plan-franja__pct--alerta/);

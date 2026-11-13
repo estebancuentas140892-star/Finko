@@ -755,7 +755,7 @@ export function renderFormGasto({ sugerencias = true, categoriaFija = null } = {
   // S.compromisos (ADR 051 D4). Leer el singleton de otro dominio sí es la
   // norma (ADN 10 prohíbe importar el módulo, no leer S).
   const tarjetas    = categoriaFija ? [] : tarjetasDeCredito(S.compromisos);
-  const labelOrigen = tarjetas.length > 0 ? '¿Con qué pagaste?' : '¿De qué cuenta sale el dinero?';
+  const labelOrigen = tarjetas.length > 0 ? '¿Con qué pagaste?' : '¿De qué cuenta sale?';
 
   // FORM.1a (ADR 042 D2/D3): la categoría se elige con chips de ícono, no
   // con un desplegable. Radios reales name="categoria" dentro del label:
@@ -792,17 +792,16 @@ export function renderFormGasto({ sugerencias = true, categoriaFija = null } = {
   return `
     <form id="form-gasto" novalidate>
       <div class="monto-hero">
-        <label class="monto-hero__label" for="gasto-monto">Monto del gasto</label>
+        <label class="monto-hero__label" for="gasto-monto">¿Cuánto gastaste?</label>
         <div class="monto-hero__box">
           <span class="monto-hero__prefijo" aria-hidden="true">$</span>
           <input id="gasto-monto" name="monto" class="input input--big-amount" type="text" placeholder="0" required aria-required="true"
                  autocomplete="off" inputmode="numeric" data-miles />
         </div>
-        <span class="monto-hero__hint">COP</span>
       </div>
       ${sugerencias ? _renderChipsFrecuentes() : ''}
       <div class="form-group">
-        <span class="label" id="gasto-categoria-label">Categoría</span>
+        <span class="label" id="gasto-categoria-label">¿En qué?</span>
         <div class="chips-cat" role="radiogroup" aria-labelledby="gasto-categoria-label">
           ${chipsCategoria}
         </div>
@@ -836,7 +835,7 @@ export function renderFormGasto({ sugerencias = true, categoriaFija = null } = {
       </div>
       <p class="form-hint form-hint--info" id="gasto-sobrecupo-nudge" aria-live="polite" hidden></p>
       <div class="form-group">
-        <span class="label" id="gasto-fecha-label">Fecha</span>
+        <span class="label" id="gasto-fecha-label">¿Cuándo?</span>
         <div class="fecha-chips" role="radiogroup" aria-labelledby="gasto-fecha-label">
           ${chipFecha('hoy', 'Hoy', true)}
           ${chipFecha('ayer', 'Ayer', false)}
@@ -851,7 +850,7 @@ export function renderFormGasto({ sugerencias = true, categoriaFija = null } = {
       <div class="form-group">
         <label for="gasto-nota" class="label">Nota <span class="form-optional">opcional</span></label>
         <input id="gasto-nota" name="nota" class="input" type="text"
-               placeholder="Detalle adicional, ej. con quién fue" autocomplete="off" />
+               placeholder="Ej.: almuerzo con el equipo" autocomplete="off" />
       </div>
       <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>

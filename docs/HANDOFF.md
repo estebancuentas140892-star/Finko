@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-06. Última tarea cerrada: MV2.30 Gastos tanda 2 (ADR 132); siguen sus tandas 3 a 5. MOV.1 en pausa. HF.0f en curso: banco sin commitear y fuera de esta copia.
+> Revisado: 2026-11-06. Última tarea cerrada: MV2.30 Gastos tanda 5 (ADR 132); el tablero de Gastos queda completo. Sigue Ahorro ("rediseño2"). MOV.1 en pausa. HF.0f en curso: banco sin commitear y fuera de esta copia.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5332/5332 (2026-11-05, ADR 132 tanda 1) |
-| Tests E2E | 438/438 (2026-11-05, ADR 131, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5356/5356 (2026-11-13, ADR 132 tanda 5) |
+| Tests E2E | 440/440 (2026-11-13, ADR 132 tanda 5, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v48 (`perfiles`, APR.3a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -25,20 +25,20 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**MV2.30 Gastos tanda 5 - la hoja del plan de salida; cierra Gastos, 2026-11-06**
+El resultado primero, las dos formas en pestañas, el pago extra con su efecto y las otras opciones como filas; el HTML "rediseño1" se borró ([ADR 132](DECISIONS/132-gastos-del-adulto-en-el-telefono.md) D10). SW v679.
+
+**MV2.30 Gastos tanda 4 - la hoja "Nuevo gasto", 2026-11-06**
+Preguntas en frase, el monto a la izquierda en las hojas del teléfono y la cuenta plegada con "Cambiar" ([ADR 132](DECISIONS/132-gastos-del-adulto-en-el-telefono.md) D9). SW v678.
+
+**MV2.30 Gastos tanda 3 - Límites y las hojas de un límite, 2026-11-06**
+La tarjeta del plan con sus avisos, los topes en filas que abren su hoja y la grilla de tres en "Nuevo límite" ([ADR 132](DECISIONS/132-gastos-del-adulto-en-el-telefono.md) D8). SW v677.
+
 **MV2.30 Gastos tanda 2 - Por pagar y la hoja de una deuda, 2026-11-06**
 El círculo del pago en cada fila, los grupos en frase y una hoja propia con la cuota, lo que falta, la tasa y el día de pago ([ADR 132](DECISIONS/132-gastos-del-adulto-en-el-telefono.md) D7). SW v676.
 
 **MV2.30 Gastos tanda 1 - el mes, Día a día y los vacíos, 2026-11-05**
 La nota arriba en cada gasto, las tres categorías de más gasto en la barra, "Martes 10" y el botón de cada vacío dentro de su tarjeta ([ADR 132](DECISIONS/132-gastos-del-adulto-en-el-telefono.md)). SW v675.
-
-**Frascos sin líquido, 2026-11-05**
-Tapa de color y vidrio sin tinte; Gastar y Compartir muestran el hueco de cada grano usado contra la mesada ([ADR 131](DECISIONS/131-frascos-sin-liquido.md)). SW v673.
-
-**Tino en la bienvenida y en las novedades, 2026-11-05**
-Tino saluda en el paso del nombre y explica en las novedades, que estrenan su primera entrada ([ADR 130](DECISIONS/130-tino-en-la-bienvenida-y-las-novedades.md)). SW v672.
-
-**Tino, ronda 2 en el adulto, 2026-11-05**
-Ocho dibujos originales más, cada uno en su vacío o aviso; los anchos caben en el sol ([ADR 129](DECISIONS/129-tino-ronda-2-en-el-adulto.md)). SW v671.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 
@@ -50,7 +50,7 @@ Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelo
 - **Iniciativa HF** ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), Propuesta): su Fase 0 corre en paralelo a MOV.1 porque no comparte archivos ni decisiones; HF.0a, HF.0b, HF.0h, HF.0c, HF.0i, HF.0d, HF.0e y HF.0j cerradas; P1 a P8 resueltas. Pendientes de la Fase 0: HF.0f (sus tres errores ya están corregidos; el banco sigue sin commitear y no está en esta copia) y HF.0g; DOC.5 en Mantenimiento.
 - **Iniciativa NUBE** ([ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md), Aceptada): Finko en la nube con Supabase, cuenta opcional. NUBE.0 a NUBE.3 cerradas: cuenta por correo para invitados, sincronización por registro, borrar la cuenta y el teléfono del niño en `finko-prueba`. Sigue NUBE.4 (bancos), que pide su propio ADR; invitar probadores pide SMTP propio en Supabase.
 - **Iniciativa APR, "Aprende y aplícalo"** ([ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) y [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md), Propuesta; **solo del niño desde el [ADR 101](DECISIONS/101-finko-del-adulto-decide-no-ensena.md)**, que deja para el adulto la ayuda para decidir, DEC.1): Fases 1 a 4 hechas (salvo la revisión pedagógica de APR.2c); el niño ya puede empezar solo ([ADR 100](DECISIONS/100-el-nino-empieza-solo.md)); quedan la revisión pedagógica de las lecciones del niño (APR.3f) y la ronda 2 de Tino en el niño (APR.5b): los dibujos llegaron ([ADR 129](DECISIONS/129-tino-ronda-2-en-el-adulto.md)), falta el conversor del [095](DECISIONS/095-tino-en-el-sprite.md). Cada rebanada se sube a `main` al cerrar. El 093 acota el ADR 003 (ADN 11) solo dentro del perfil niño.
-- **El adulto en el teléfono (MV2.30)**: los 6 tableros "Finko móvil · rediseño" de `Diseño Finko/`, uno por ADR y en tandas. Inicio cerrado ([ADR 126](DECISIONS/126-inicio-del-adulto-en-el-telefono.md)); sigue Gastos ("rediseño1"). Los que faltan van sobre la identidad del [ADR 127](DECISIONS/127-identidad-bosque-y-sol.md).
+- **El adulto en el teléfono (MV2.30)**: los 6 tableros "Finko móvil · rediseño" de `Diseño Finko/`, uno por ADR y en tandas. Inicio ([ADR 126](DECISIONS/126-inicio-del-adulto-en-el-telefono.md)) y Gastos ([ADR 132](DECISIONS/132-gastos-del-adulto-en-el-telefono.md)) cerrados; sigue Ahorro ("rediseño2"). Los que faltan van sobre la identidad del [ADR 127](DECISIONS/127-identidad-bosque-y-sol.md).
 - **Canvas móvil (MV2.3)**: aplicado completo ([ADR 116](DECISIONS/116-lo-que-faltaba-del-canvas-primera-tanda.md) a [123](DECISIONS/123-la-hoja-de-formulario-completa.md)) y publicado en `main` y producción (v658, 2026-11-04, a pedido y sin medir antes). **Lo que queda: MV2.28** en el tablero (anotar MV2.17 y medir fluidez y Lighthouse en producción).
 - **Fase actual:** post-v1.0, mantenimiento y mejoras por sección.
 - **Decisiones de fondo abiertas** que bloquean sus tarjetas: ninguna de ADN. La última era sincronización multidispositivo, cerrada el 2026-08-15 ([ADR 043](DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md), con su condición de reapertura escrita). Para el resto, ver la columna Estado de cada tarjeta del tablero.

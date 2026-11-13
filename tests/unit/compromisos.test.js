@@ -52,6 +52,7 @@ import { renderHeroCompromisos } from '../../modules/dominio/compromisos/views/h
 import { S } from '../../modules/core/state.js';
 import { f } from '../../modules/infra/utils.js';
 import { htmlDetalleCompromiso, cuandoCompromiso, textoTasa } from '../../modules/dominio/compromisos/views/detalle.js';
+import { htmlPlanSalida, resultadoExtra } from '../../modules/dominio/compromisos/views/plan-salida.js';
 import {
   CATEGORIAS_AGENDA, CATEGORIA_AGENDA_ICONO,
   CATEGORIAS_DEUDA, CATEGORIA_DEUDA_ICONO,
@@ -5956,5 +5957,94 @@ describe('renderEntradaPlanSalida() - "¿Cómo salir más rápido?" al pie (ADR 
     S.compromisos = [deuda('a')];
     renderEntradaPlanSalida();
     expect(document.getElementById('plan-salida-entrada').innerHTML).toBe('');
+  });
+});
+
+// ── ADR 132 D10: la hoja del plan de salida en el teléfono ──────────────
+
+describe('htmlPlanSalida() - la hoja del plan de salida (ADR 132 D10)', () => {
+  const ui = (extra = {}) => ({ extraMensual: 0, estrategia: null, alternativaActiva: null, ...extra });
+  const visa = { id: 'd1', descripcion: 'Tarjeta Bancolombia', tipo: 'deuda-entidad', saldoTotal: 4_850_000,
+    cuotaMensual: 385_000, diaPago: 25, tasa: 0.021, tasaUnidad: 'mensual', frecuencia: 'Mensual', activo: true };
+  const marta = { id: 'd2', descripcion: 'Préstamo de la tía Marta', tipo: 'deuda-personal', saldoTotal: 1_200_000,
+    cuotaMensual: 100_000, diaPago: 28, tasa: 0, frecuencia: 'Mensual', activo: true };
+  const pinta = (u = ui()) => {
+    document.body.innerHTML = `<div id="h">${htmlPlanSalida(filtrarDeudasPagables(S.compromisos), u)}</div>`;
+    return document.getElementById('h');
+  };
+
+  beforeEach(() => {
+    S.compromisos = [visa, marta];
+    S.gastos = [];
+    S.ingresos = [];
+    S.config = {};
+  });
+
+  it('el resultado va primero: en cuánto sales y cuánto pagas en intereses', () => {
+    const h = pinta();
+    expect(h.querySelector('.plan-movil__sub').textContent).toBe(`2 deudas · debes ${f(6_050_000)}`);
+    expect(h.querySelector('.plan-movil__cifra').textContent).toMatch(/mes|año/);
+    expect(h.querySelector('.plan-movil__resultado-base').textContent).toMatch(/Y pagas \$[\d.]+ en intereses\./);
+    expect(h.querySelector('.plan-movil__alerta')).toBeNull();
+  });
+
+  it('las dos formas son pestañas con la recomendada primero y marcada; debajo, el orden en que se terminan', () => {
+    const h = pinta();
+    const pestanas = [...h.querySelectorAll('.plan-movil__pestana')];
+    expect(pestanas).toHaveLength(2);
+    expect(pestanas[0].querySelector('.plan-movil__recomendada').textContent).toBe('Recomendada para ti');
+    expect(pestanas[0].getAttribute('aria-pressed')).toBe('true');
+    expect(pestanas.map(b => b.dataset.action)).toEqual(['elegir-estrategia', 'elegir-estrategia']);
+    const orden = [...h.querySelectorAll('.plan-movil__orden-nombre')].map(e => e.textContent);
+    expect(orden).toHaveLength(2);
+    expect(h.querySelector('.plan-movil__orden-sub').textContent).toMatch(/^La terminas en /);
+  });
+
+  it('el pago extra dice cuánto antes sales y el botón lleva el monto', () => {
+    const h = pinta(ui({ extraMensual: 200_000 }));
+    expect(h.querySelector('#estrategia-extra').value).toBe('200.000');
+    expect(h.querySelector('.plan-movil__resultado--ok').textContent).toMatch(/^Sales en .+ en vez de /);
+    expect(h.querySelector('.plan-movil__aplicar').textContent.trim()).toBe(`Aplicar ${f(200_000)} más al mes`);
+    expect(h.querySelector('.plan-movil__aplicar').disabled).toBe(false);
+  });
+
+  it('sin monto el botón espera y el recuadro invita a escribir', () => {
+    const h = pinta();
+    expect(h.querySelector('.plan-movil__aplicar').disabled).toBe(true);
+    expect(h.querySelector('.plan-movil__resultado').textContent).toMatch(/^Escribe un monto/);
+  });
+
+  it('las otras opciones son filas que se abren en su sitio', () => {
+    let h = pinta();
+    const filas = [...h.querySelectorAll('.plan-movil__opcion')];
+    expect(filas.map(b => b.dataset.alternativa)).toEqual(['renegociar', 'consolidar']);
+    expect(filas.every(b => b.dataset.plegable === '1' && b.getAttribute('aria-expanded') === 'false')).toBe(true);
+    h = pinta(ui({ alternativaActiva: 'consolidar' }));
+    expect(h.querySelector('[data-alternativa="consolidar"]').getAttribute('aria-expanded')).toBe('true');
+    expect(h.querySelector('.plan-movil__herramienta')).not.toBeNull();
+  });
+
+  it('si las cuotas no alcanzan, el aviso va primero con lo que crece cada deuda y "Lo mínimo para salir"', () => {
+    S.compromisos = [
+      { ...visa, saldoTotal: 7_000_000, cuotaMensual: 100_000, tasa: 0.03 },
+      { ...marta, id: 'd3', descripcion: 'Crédito libre', tipo: 'deuda-entidad', saldoTotal: 850_000, cuotaMensual: 10_000, tasa: 0.025, tasaUnidad: 'mensual' },
+    ];
+    const h = pinta();
+    expect(h.querySelector('.plan-movil__alerta-titulo').textContent).toBe('Con estas cuotas, tus deudas crecen');
+    expect(h.querySelectorAll('.plan-movil__crecen li').length).toBeGreaterThan(0);
+    expect(h.querySelector('.plan-movil__pestanas')).toBeNull();
+    expect(h.querySelector('#plan-movil-extra').textContent).toBe('Lo mínimo para salir');
+    // El monto mínimo ya viene escrito: es lo que el aviso propone.
+    expect(h.querySelector('#estrategia-extra').value).not.toBe('');
+  });
+
+  it('resultadoExtra: con un extra que no alcanza lo dice en vez de prometer', () => {
+    S.compromisos = [
+      { ...visa, saldoTotal: 7_000_000, cuotaMensual: 100_000, tasa: 0.03 },
+      { ...marta, id: 'd3', descripcion: 'Crédito libre', tipo: 'deuda-entidad', saldoTotal: 850_000, cuotaMensual: 10_000, tasa: 0.025, tasaUnidad: 'mensual' },
+    ];
+    const r = resultadoExtra(filtrarDeudasPagables(S.compromisos), 1_000, 'avalancha');
+    expect(r.ok).toBe(false);
+    expect(r.html).toMatch(/todavía no alcanzas a terminar/);
   });
 });
