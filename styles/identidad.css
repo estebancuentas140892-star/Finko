@@ -1850,3 +1850,152 @@ body:not(.light-theme) .cov__fill {
   .detalle-meta__de strong { color: var(--fk-dom-metas-text); }
   .detalle-meta__barra { height: 8px; margin: 0; }
 }
+
+/* D6 (tanda 4): Inversión. El botón del vacío con su "+"; con el fondo sin
+   completar, el consejo va en tarjeta aparte, debajo (los dos anchos). */
+.inversion-vacio__registrar { gap: var(--fk-space-2); }
+.inversion-vacio__registrar .icon { width: 18px; height: 18px; } /* del alto del texto del botón */
+.inversion-vacio__fondo { margin-top: var(--fk-space-4); }
+
+@media (max-width: 1023px) {
+  /* El aviso del fondo como tarjeta, en Metas y en Inversión. */
+  #panel-inversion .metas-fondo {
+    align-items: center;
+    gap: var(--fk-space-3);
+    margin: var(--fk-space-4) 0 0;
+    padding: var(--fk-space-3) var(--fk-space-2) var(--fk-space-3) var(--fk-space-3);
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-xl);
+    background: var(--fk-bg-surface);
+    font-size: var(--fk-text-xs);
+  }
+  #panel-inversion .metas-fondo > .icon {
+    width: 2rem;
+    height: 2rem;
+    margin: 0;
+    padding: 6px;
+    border-radius: var(--fk-radius-md);
+    background: var(--fk-dom-ahorro-bg);
+  }
+  #panel-inversion .metas-fondo__ir {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 var(--fk-space-2);
+    font-size: var(--fk-text-sm);
+    color: var(--fk-text-accent);
+    text-decoration: none;
+  }
+
+  /* La pastilla de lo que suma el tiempo, en el color de Inversión. */
+  .inv-tiempo { color: var(--fk-dom-inversion-text); }
+
+  /* La etapa: kicker, título, frase, la barra partida y su leyenda. */
+  .inv-etapa {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fk-space-2);
+    margin-top: var(--fk-space-4);
+    padding: var(--fk-space-4);
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-xl);
+    background: var(--fk-bg-surface);
+  }
+  .inv-etapa__kicker { margin: 0; font-size: var(--fk-text-xs); font-weight: var(--fk-font-semibold); color: var(--fk-dom-inversion-text); }
+  .inv-etapa__titulo { margin: 0; font-size: var(--fk-text-lg); font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
+  .inv-etapa__frase { margin: 0; font-size: var(--fk-text-sm); line-height: var(--fk-leading-snug); color: var(--fk-text-secondary); }
+  .inv-etapa__nota {
+    padding-top: var(--fk-space-3);
+    border-top: 1px solid var(--fk-border-subtle);
+    font-size: var(--fk-text-sm);
+    line-height: var(--fk-leading-snug);
+    color: var(--fk-text-primary);
+  }
+  .inv-etapa__nota p { margin: 0; }
+  .inv-etapa__sigue { margin: 0; font-size: var(--fk-text-xs); line-height: var(--fk-leading-snug); color: var(--fk-text-secondary); }
+  .inv-etapa__sigue strong { color: var(--fk-text-primary); }
+
+  .inv-barra {
+    display: flex;
+    gap: 2px;
+    height: 12px;
+    margin-top: var(--fk-space-2);
+    overflow: hidden;
+    border-radius: var(--fk-radius-full);
+  }
+  .inv-barra > span { display: block; height: 100%; }
+  .inv-barra > [data-seg="0"], .inv-leyenda i[data-seg="0"] { background: var(--fk-dom-inversion); }
+  .inv-barra > [data-seg="1"], .inv-leyenda i[data-seg="1"] { background: color-mix(in srgb, var(--fk-dom-inversion) 70%, var(--fk-bg-surface)); }
+  .inv-barra > [data-seg="2"], .inv-leyenda i[data-seg="2"] { background: color-mix(in srgb, var(--fk-dom-inversion) 50%, var(--fk-bg-surface)); }
+  .inv-barra > [data-seg="3"], .inv-leyenda i[data-seg="3"] { background: color-mix(in srgb, var(--fk-dom-inversion) 35%, var(--fk-bg-surface)); }
+  .inv-barra > [data-seg="4"], .inv-leyenda i[data-seg="4"] { background: color-mix(in srgb, var(--fk-dom-inversion) 22%, var(--fk-bg-surface)); }
+  .inv-barra > [data-seg="tiempo"], .inv-leyenda i[data-seg="tiempo"] {
+    background: repeating-linear-gradient(135deg, var(--fk-dom-inversion) 0 3px, transparent 3px 6px);
+    box-shadow: inset 0 0 0 1px var(--fk-dom-inversion);
+  }
+  .inv-leyenda { display: flex; flex-direction: column; gap: var(--fk-space-1); margin: var(--fk-space-1) 0 0; padding: 0; list-style: none; }
+  .inv-leyenda > li { display: flex; align-items: center; gap: var(--fk-space-2); font-size: var(--fk-text-sm); color: var(--fk-text-secondary); }
+  .inv-leyenda > li > span { flex: 1; min-width: 0; }
+  .inv-leyenda > li > strong { font-variant-numeric: tabular-nums; color: var(--fk-text-primary); }
+  .inv-leyenda > li > strong.inv-tiempo { color: var(--fk-dom-inversion-text); }
+  .inv-leyenda i { flex: none; width: 10px; height: 10px; border-radius: 2px; }
+
+  /* Las inversiones en filas: el nombre arriba y en una línea lo demás. */
+  .inv-lista__titulo { font-size: var(--fk-text-lg); }
+  .inv-fila {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    min-height: 72px;
+    padding: var(--fk-space-3) var(--fk-space-4);
+  }
+  .inv-fila + .inv-fila { border-top: 1px solid var(--fk-border-subtle); }
+  .inv-fila__teja {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--fk-radius-md);
+    background: var(--fk-dom-inversion-bg);
+    color: var(--fk-dom-inversion-text);
+  }
+  .inv-fila__teja .icon { width: 20px; height: 20px; }
+  .inv-fila__info { display: flex; flex: 1; flex-direction: column; gap: 2px; min-width: 0; }
+  .inv-fila__nombre {
+    margin: 0;
+    font-weight: var(--fk-font-bold);
+    color: var(--fk-text-primary);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+  }
+  .inv-fila__dato { margin: 0; font-size: var(--fk-text-xs); line-height: var(--fk-leading-snug); color: var(--fk-text-secondary); font-variant-numeric: tabular-nums; }
+  .inv-fila__dato strong { color: var(--fk-text-primary); }
+  .inv-pie { margin: var(--fk-space-3) var(--fk-space-1) 0; font-size: var(--fk-text-xs); line-height: var(--fk-leading-snug); color: var(--fk-text-secondary); }
+
+  /* La hoja de una inversión. */
+  .detalle-inv__rotulo { margin: 0; font-size: var(--fk-text-sm); color: var(--fk-text-secondary); }
+  #detalle-fila-body > .detalle-inv__rotulo + .detalle-fila__monto { margin-top: calc(-1 * var(--fk-space-3)); }
+  .detalle-inv__nota { margin: 0; font-size: var(--fk-text-xs); line-height: var(--fk-leading-snug); color: var(--fk-text-secondary); }
+
+  /* El vacío: el banner y su botón en una sola tarjeta (como Reservas). */
+  #sec-inversion:has(.banner-proposito) .banner-proposito {
+    margin-bottom: 0;
+    padding-bottom: var(--fk-space-4);
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+    box-shadow: var(--fk-shadow-filo);
+  }
+  #sec-inversion:has(.banner-proposito) #panel-inversion > .empty-state {
+    padding: 0 var(--fk-space-5) var(--fk-space-5);
+    border: 0;
+    border-radius: 0 0 var(--fk-radius-xl) var(--fk-radius-xl);
+    background: var(--fk-bg-surface);
+    box-shadow: var(--fk-shadow-sm);
+  }
+  #sec-inversion:has(.banner-proposito) #panel-inversion > .empty-state :is(.empty-state__icon, .empty-state__title, .empty-state__desc) { display: none; }
+  #panel-inversion > .empty-state .btn-primary { width: 100%; min-height: 52px; font-size: var(--fk-text-base); }
+}

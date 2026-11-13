@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(inversiones): MV2.30 Ahorro tanda 4, Inversión y la hoja de una inversión · 2026-11-13
+
+[ADR 133](DECISIONS/133-ahorro-del-adulto-en-el-telefono.md) D6. Ficha: [`contexto/inversion.md`](contexto/inversion.md). SW v683. Tablero "rediseño2".
+
+- **Arriba, en el teléfono**: "Lo que pusiste a crecer" y el total, con la pastilla "Al vencer, el tiempo le suma $X".
+- **La etapa** dice lo mismo que la tarjeta del momento (DIS.17) con una barra partida en vez de las dos columnas: con una inversión, lo que pusiste y lo que pone el tiempo (rayado) con sus montos; con varias, un tramo por tipo con su rasgo y su porcentaje. La inflación y "Lo que sigue" van al pie de la tarjeta.
+- **El aviso del fondo** es una tarjeta con "Ir al fondo"; **cada inversión** es una fila (monto, tipo, tasa y vencimiento) que abre su hoja: lo que tendrías al vencer con su barra, tasa, plazo, de dónde salió el dinero, "Editar" y "Eliminar".
+- **Registrar** va a un "+ Inversión" en el encabezado que solo existe en el teléfono: `shell.js` no sube a la barra de escritorio un primario con `data-solo-movil`, donde la acción sigue en la tarjeta del momento.
+- **El vacío**: el botón vive dentro de la tarjeta del banner; con el fondo empezado y sin completar, "Antes de invertir, conviene tener tu fondo de emergencia completo" va en tarjeta aparte con "Ver mi fondo". Sin fondo, el primario sigue llevando al Fondo (ADR 086 D2).
+- Pruebas: 1 ajustada y 9 nuevas en `inversiones`; dos E2E (390px y escritorio) recorren la fila, la hoja y el "+ Inversión" que no sube a la barra.
+
 ### feat(metas): MV2.30 Ahorro tanda 3, Metas y la hoja de una meta · 2026-11-13
 
 [ADR 133](DECISIONS/133-ahorro-del-adulto-en-el-telefono.md) D5. Ficha: [`contexto/metas.md`](contexto/metas.md). SW v682. Tablero "rediseño2".

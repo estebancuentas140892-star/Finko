@@ -1283,6 +1283,13 @@
                   aria-pressed="false" aria-label="Ocultar tus saldos">
             <svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>
           </button>
+          <!-- ADR 133 D6: registrar va al encabezado, solo en el teléfono. En
+               escritorio la acción sigue en la tarjeta del momento (DIS.17) y
+               la barra de arriba no lo copia (data-solo-movil, shell.js). -->
+          <button class="btn btn-primary" data-action="inversion-nueva" data-solo-movil
+                  aria-label="Nueva inversión">
+            <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg><span class="btn__texto">Inversión</span>
+          </button>
         </header>
         <!-- Fila de chips del bloque Ahorro (ADR 069 D7). -->
         <div id="chips-inversion"></div>

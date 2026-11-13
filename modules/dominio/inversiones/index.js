@@ -25,6 +25,7 @@ import { confirmar }                 from '../../ui/confirm.js';
 import { f, hoy }                    from '../../infra/utils.js';
 import { validarInversion, normalizarInversion, origenSugerido } from './logic.js';
 import { renderInversion, renderFormInversion }  from './view.js';
+import { htmlDetalleInversion }        from './detalle.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 
 // ── HELPERS DE MODAL ─────────────────────────────────────────────
@@ -307,6 +308,20 @@ export function initInversiones() {
   registrarAccion('inversion-nueva',     _nuevaInversion);
   registrarAccion('inversion-editar',    _editarInversion);
   registrarAccion('inversion-eliminar',  _eliminarInversion);
+
+  // ADR 133 D6: en el teléfono cada inversión es una fila que abre su hoja
+  // (`#modal-detalle-fila`), armada con los datos de la inversión.
+  registrarAccion('inversion-detalle', (el) => {
+    const inv = (S.inversiones ?? []).find(i => i.id === el.dataset.id);
+    const hoja = document.getElementById('modal-detalle-fila');
+    const cuerpo = document.getElementById('detalle-fila-body');
+    if (!inv || !hoja || !cuerpo) return;
+    cuerpo.innerHTML = htmlDetalleInversion(inv);
+    abrirModal(hoja);
+  });
+  window.matchMedia?.('(max-width: 1023.98px)').addEventListener?.('change', () => {
+    renderSmart(renderInversion, 'inversion');
+  });
 
   // Re-render ante cambios en la colección de inversiones.
   EventBus.on('state:change', ({ section }) => {

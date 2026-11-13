@@ -313,7 +313,8 @@ function _syncPrimarioTopbar(activo) {
   const btnTop = document.getElementById('topbar-primario');
   if (!btnTop) return;
 
-  const origen = activo?.querySelector('.section__header > .btn-primary');
+  // ADR 133 D6: un primario que solo existe en el teléfono no sube a la barra.
+  const origen = activo?.querySelector('.section__header > .btn-primary:not([data-solo-movil])');
   if (!origen || origen.hidden) {
     btnTop.hidden = true;
     _syncJerarquiaPrimarios(false);

@@ -1202,3 +1202,40 @@ test.describe('MV2.30 - Metas en el teléfono (ADR 133 D5)', () => {
     await expect(page.locator('#modal-abono-meta[data-open], #modal-aporte-meta[data-open]')).toHaveCount(1);
   });
 });
+
+test.describe('MV2.30 - Inversión en el teléfono (ADR 133 D6)', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('la etapa con su barra, la fila abre su hoja y registrar está en el encabezado', async ({ page }) => {
+    await sembrar(page, estadoBase({
+      cuentas: CUENTAS,
+      inversiones: [{ id: 'v1', tipo: 'CDT', nombre: 'CDT Bancolombia 360 días', monto: 5_000_000, tasaEA: 10.2, plazoMeses: 12, fechaInicio: enDias(-150), fechaCreacion: '2026-06-10T00:00:00.000Z' }],
+      ahorro: { fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 500_000 }, aportes: [], compromisoMensual: 0 },
+    }));
+    await page.goto('/#inversion');
+    await expect(page.locator('#sec-inversion.active')).toBeVisible({ timeout: 10_000 });
+
+    await expect(page.locator('#panel-inversion .reservas-resumen__total')).toHaveText('$5.000.000');
+    await expect(page.locator('.inv-etapa__kicker')).toHaveText('Aprendiendo · 1 inversión');
+    await expect(page.locator('#sec-inversion .section__header [data-action="inversion-nueva"]')).toBeVisible();
+
+    await page.locator('.inv-fila[data-id="v1"] .list-item__detalle').click();
+    const hoja = page.locator('#modal-detalle-fila');
+    await expect(hoja.locator('.detalle-fila__titulo')).toHaveText('CDT Bancolombia 360 días');
+    await expect(hoja.locator('.detalle-gasto__dato').first()).toContainText('10,2% efectivo anual');
+    await hoja.locator('[data-target-action="inversion-editar"]').click();
+    await expect(page.locator('#modal-inversion[data-open]')).toHaveCount(1);
+  });
+
+  test('en escritorio la barra de arriba no copia el "+ Inversión" del teléfono', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await sembrar(page, estadoBase({
+      inversiones: [{ id: 'v1', tipo: 'CDT', nombre: 'CDT', monto: 5_000_000, tasaEA: 10.2, plazoMeses: 12, fechaInicio: enDias(-150) }],
+      ahorro: { fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 500_000 }, aportes: [], compromisoMensual: 0 },
+    }));
+    await page.goto('/#inversion');
+    await expect(page.locator('#sec-inversion.active')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#topbar-primario')).toBeHidden();
+    await expect(page.locator('.inversion-momento')).toBeVisible();
+  });
+});

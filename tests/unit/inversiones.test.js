@@ -13,6 +13,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { S } from '../../modules/core/state.js';
 import { renderFormInversion, renderInversion } from '../../modules/dominio/inversiones/view.js';
+import { datoInversion, htmlDetalleInversion } from '../../modules/dominio/inversiones/detalle.js';
 import {
   TIPOS_INVERSION, TASA_EA_MAX, PLAZO_MESES_MAX,
   calcularTotalInvertido, calcularPorTipo, ordenarInversionesPorMonto,
@@ -1059,7 +1060,7 @@ describe('renderInversion() - estado vacio', () => {
     S.ahorro.fondoEmergencia.activo = true;
     renderInversion();
     expect(document.querySelector('.empty-state__desc').textContent)
-      .toContain('CDT, fondo, acciones o cripto');
+      .toContain('CDT, fondos, acciones o cripto');
   });
 });
 
@@ -1078,5 +1079,103 @@ describe('renderInversion() - botón Editar en la tarjeta (EDIT.1)', () => {
     expect(btn).not.toBeNull();
     expect(btn.dataset.id).toBe('i1');
     expect(btn.getAttribute('aria-label')).toBe('Editar inversión CDT Bancolombia');
+  });
+});
+
+// ════════════════════════════════════════════════════════════════
+// ADR 133 D6 - Inversión en el teléfono: la etapa, las filas y la hoja
+// ════════════════════════════════════════════════════════════════
+
+describe('renderInversion() en el teléfono (ADR 133 D6)', () => {
+  const matchMediaReal = window.matchMedia;
+  const cdt = { id: 'v1', tipo: 'CDT', nombre: 'CDT Bancolombia 360 días', monto: 5_000_000, tasaEA: 10.2, plazoMeses: 12, fechaInicio: '2026-06-10' };
+
+  beforeEach(() => {
+    window.matchMedia = () => ({ matches: true, addEventListener() {} });
+    document.body.innerHTML = '<div id="panel-inversion"></div>';
+    S.config = {};
+    S.cuentas = [];
+    S.inversiones = [cdt];
+    S.ahorro = { fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 1_000_000, completado: false }, aportes: [] };
+  });
+  afterEach(() => { window.matchMedia = matchMediaReal; });
+
+  it('arriba lo que pusiste a crecer, con lo que suma el tiempo en una pastilla', () => {
+    renderInversion();
+    expect(document.querySelector('.reservas-resumen__rotulo').textContent).toBe('Lo que pusiste a crecer');
+    expect(document.querySelector('.reservas-resumen__total').textContent).toBe('$5.000.000');
+    expect(document.querySelector('.reservas-resumen__pastilla').textContent).toContain('Al vencer, el tiempo le suma $');
+    expect(document.querySelector('.inversion-momento')).toBeNull();
+  });
+
+  it('la etapa con su barra partida y la leyenda de una sola inversión', () => {
+    renderInversion();
+    const etapa = document.querySelector('.inv-etapa');
+    expect(etapa.querySelector('.inv-etapa__kicker').textContent).toBe('Aprendiendo · 1 inversión');
+    expect(etapa.querySelector('.inv-etapa__titulo').textContent).toBe('Diste tu primer paso');
+    expect(etapa.querySelectorAll('.inv-barra > span')).toHaveLength(2);
+    const leyenda = [...etapa.querySelectorAll('.inv-leyenda > li > span')].map(e => e.textContent);
+    expect(leyenda[0]).toBe('Lo pusiste tú');
+    expect(leyenda[1]).toMatch(/^Lo pone el tiempo, a [a-z]{3} de 2027$/);
+    expect(etapa.querySelector('.inv-etapa__sigue').textContent).toMatch(/^Siguiente momento: cuando tengas/);
+  });
+
+  it('con varias, la leyenda va por tipo con su porcentaje', () => {
+    S.inversiones = [cdt, { id: 'v2', tipo: 'Acciones', nombre: 'Ecopetrol', monto: 1_000_000, tasaEA: 0, plazoMeses: 0, fechaInicio: '2024-04-01' }];
+    renderInversion();
+    const leyenda = [...document.querySelectorAll('.inv-leyenda > li')].map(e => [...e.children].map(c => c.textContent).filter(Boolean).join(' '));
+    expect(leyenda).toEqual(['CDT · plazo fijo 83%', 'Acciones · sube o baja 17%']);
+  });
+
+  it('el aviso del fondo es una tarjeta con "Ir al fondo"', () => {
+    renderInversion();
+    const aviso = document.querySelector('#panel-inversion > .metas-fondo');
+    expect(aviso.textContent).toContain('fondo de emergencia');
+    expect(aviso.querySelector('a').getAttribute('href')).toBe('#fondo');
+  });
+
+  it('cada inversión es una fila que abre su hoja; sin botones de editar ni borrar a la vista', () => {
+    renderInversion();
+    const fila = document.querySelector('.inv-fila[data-id="v1"]');
+    expect(fila.querySelector('.list-item__detalle').dataset.action).toBe('inversion-detalle');
+    expect(fila.querySelector('.inv-fila__dato').textContent).toMatch(/^\$5\.000\.000 · CDT · 10,2% al año · vence en [a-z]{3} de 2027$/);
+    expect(fila.querySelector('[data-action="inversion-editar"], [data-action="inversion-eliminar"]')).toBeNull();
+    expect(document.querySelector('.inv-pie').textContent).toContain('no una promesa');
+  });
+
+  it('con el saldo oculto ninguna cifra en pesos queda a la vista (R20)', () => {
+    S.config = { ocultarSaldo: true };
+    renderInversion();
+    expect(document.getElementById('panel-inversion').textContent).not.toMatch(/\$\s?\d/);
+  });
+});
+
+describe('datoInversion() y htmlDetalleInversion() (ADR 133 D6)', () => {
+  beforeEach(() => { S.config = {}; S.cuentas = [{ id: 'c1', nombre: 'Nequi' }]; });
+
+  it('una de las que suben o bajan dice su rasgo y desde cuándo', () => {
+    expect(datoInversion({ tipo: 'Cripto', monto: 2_480_000, tasaEA: 0, plazoMeses: 0, fechaInicio: '2025-01-15' }))
+      .toMatch(/^<strong>\$2\.480\.000<\/strong> · Cripto · sube o baja · desde ene de 2025$/);
+  });
+
+  it('la hoja dice lo que tendrías al vencer, la tasa, el plazo y el origen', () => {
+    const div = document.createElement('div');
+    div.innerHTML = htmlDetalleInversion({ id: 'v1', tipo: 'CDT', nombre: 'CDT', monto: 5_000_000, tasaEA: 10.2, plazoMeses: 12, fechaInicio: '2026-06-10' });
+    expect(div.querySelector('.detalle-fila__titulo').id).toBe('detalle-fila-titulo');
+    expect(div.querySelector('.detalle-inv__rotulo').textContent).toMatch(/^Al vencer, en [a-z]{3} de 2027, tendrías$/);
+    const datos = [...div.querySelectorAll('.detalle-gasto__dato')].map(e => [...e.children].map(c => c.textContent).join(' '));
+    expect(datos[0]).toBe('Tasa 10,2% efectivo anual');
+    expect(datos[1]).toMatch(/^Plazo 12 meses · vence el /);
+    expect(datos[2]).toBe('Origen del dinero Ya existía, no salió de tus cuentas');
+    const destinos = [...div.querySelectorAll('button[data-action="registrar-abrir"]')].map(b => b.dataset.targetAction);
+    expect(destinos).toEqual(['inversion-editar', 'inversion-eliminar']);
+  });
+
+  it('con cuenta de origen la nombra; sin ganancia fija no inventa una', () => {
+    const div = document.createElement('div');
+    div.innerHTML = htmlDetalleInversion({ id: 'v2', tipo: 'Acciones', nombre: 'Ecopetrol', monto: 3_120_000, tasaEA: 0, plazoMeses: 0, cuentaId: 'c1' });
+    expect(div.querySelector('.detalle-inv__rotulo').textContent).toBe('Lo que pusiste');
+    expect(div.textContent).toContain('Salió de Nequi');
+    expect(div.textContent).toContain('no tiene una ganancia fija');
   });
 });

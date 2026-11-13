@@ -292,7 +292,7 @@ test.describe('Inversión - portafolio real (J.2)', () => {
     ).toHaveText('Registra tus inversiones', { timeout: 3_000 });
 
     // El CTA de alta está presente
-    await expect(page.locator('#sec-inversion [data-action="inversion-nueva"]').first()).toBeVisible();
+    await expect(page.locator('#sec-inversion [data-action="inversion-nueva"]:visible').first()).toBeVisible();
   });
 
   // B.2 - Alta inversión: lista + tarjeta del momento ------------------------
@@ -304,7 +304,7 @@ test.describe('Inversión - portafolio real (J.2)', () => {
     await page.goto('/#inversion');
     await expect(page.locator('#sec-inversion.active')).toBeVisible({ timeout: 5_000 });
 
-    await page.click('#sec-inversion [data-action="inversion-nueva"]');
+    await page.click('#sec-inversion [data-action="inversion-nueva"]:visible');
     await page.waitForSelector('#modal-inversion[data-open]', { timeout: 5_000 });
 
     const form = page.locator('#modal-inversion-body form#form-inversion');
@@ -340,7 +340,7 @@ test.describe('Inversión - portafolio real (J.2)', () => {
     await page.goto('/#inversion');
     await expect(page.locator('#sec-inversion.active')).toBeVisible({ timeout: 5_000 });
 
-    await page.click('#sec-inversion [data-action="inversion-nueva"]');
+    await page.click('#sec-inversion [data-action="inversion-nueva"]:visible');
     await page.waitForSelector('#modal-inversion[data-open]', { timeout: 5_000 });
 
     const form = page.locator('#modal-inversion-body form#form-inversion');
@@ -377,7 +377,7 @@ test.describe('Inversión - portafolio real (J.2)', () => {
     await expect(page.locator('#sec-inversion.active')).toBeVisible({ timeout: 5_000 });
 
     // Registrar para poder eliminar
-    await page.click('#sec-inversion [data-action="inversion-nueva"]');
+    await page.click('#sec-inversion [data-action="inversion-nueva"]:visible');
     await page.waitForSelector('#modal-inversion[data-open]', { timeout: 5_000 });
     const form = page.locator('#modal-inversion-body form#form-inversion');
     await form.locator('select[name="tipo"]').selectOption('Fondo');
@@ -419,7 +419,7 @@ test.describe('Inversión - portafolio real (J.2)', () => {
     await expect(page.locator('#sec-inversion.active')).toBeVisible({ timeout: 5_000 });
 
     // Registrar inversión
-    await page.click('#sec-inversion [data-action="inversion-nueva"]');
+    await page.click('#sec-inversion [data-action="inversion-nueva"]:visible');
     await page.waitForSelector('#modal-inversion[data-open]', { timeout: 5_000 });
     const form = page.locator('#modal-inversion-body form#form-inversion');
     await form.locator('select[name="tipo"]').selectOption('Acciones');
@@ -477,7 +477,7 @@ async function saldoCuenta(page) {
 
 /** Abre el formulario de inversión y devuelve su locator. */
 async function abrirFormInversion(page) {
-  await page.click('#sec-inversion [data-action="inversion-nueva"]');
+  await page.click('#sec-inversion [data-action="inversion-nueva"]:visible');
   await page.waitForSelector('#modal-inversion[data-open]', { timeout: 5_000 });
   return page.locator('#modal-inversion-body form#form-inversion');
 }

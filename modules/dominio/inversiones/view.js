@@ -23,6 +23,7 @@ import {
   rasgoTipo,
   TIPOS_INVERSION,
 } from './logic.js';
+import { htmlInversionTelefono } from './detalle.js';
 
 /** IPC observado más reciente (E.5): el descuento real de poder adquisitivo. */
 const IPC_VIGENTE = ipcObservadoVigente();
@@ -61,9 +62,27 @@ export function renderInversion() {
     return;
   }
 
+  // ADR 133 D6: bajo 1024px, lo que pusiste a crecer arriba, la etapa con su
+  // barra partida y las inversiones en filas con su hoja (detalle.js).
+  if (inversionEnTelefono()) {
+    const fondo = S.ahorro?.fondoEmergencia;
+    const momento = momentoInversion(inversiones, {
+      fondoActivo:     fondo?.activo === true,
+      fondoCompletado: fondo?.completado === true,
+    });
+    const nota = momento ? _renderNotaMomento(inversiones, columnasPortafolio(inversiones), momento) : '';
+    el.innerHTML = htmlInversionTelefono(inversiones, { nota });
+    return;
+  }
+
   el.innerHTML = `
     ${_renderMomento(inversiones)}
     ${_renderLista(inversiones)}`;
+}
+
+/** Bajo 1024px Inversión se pinta con la anatomía del tablero (ADR 133 D6). */
+export function inversionEnTelefono() {
+  return window.matchMedia?.('(max-width: 1023.98px)').matches === true;
 }
 
 // ── EMPTY STATE ──────────────────────────────────────────────────
@@ -96,19 +115,27 @@ function _renderEmptyState() {
   const acciones = faltaFondo
     ? `<a class="btn btn-primary" href="#fondo">Ir al Fondo de emergencia</a>
       <button class="btn btn-ghost btn-sm" type="button" data-action="inversion-nueva">Registrar inversión</button>`
-    : '<button class="btn btn-primary" data-action="inversion-nueva">+ Registrar inversión</button>';
+    : '<button class="btn btn-primary inversion-vacio__registrar" data-action="inversion-nueva"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Registrar una inversión</button>';
 
   const desc = faltaFondo
     ? 'Primero asegura tu fondo de emergencia: invierte el dinero que no vas a necesitar a corto plazo.'
-    : 'Registra tu primera inversión: CDT, fondo, acciones o cripto.';
+    : 'CDT, fondos, acciones o cripto. Anótalos y ves cuánto le suma el tiempo a lo que pusiste.';
+
+  // ADR 133 D6: con el fondo empezado pero sin completar, el consejo va en
+  // una tarjeta aparte, debajo; sin fondo, el consejo sigue siendo el botón
+  // (ADR 086 D2).
+  const avisoFondo = !faltaFondo && fondo?.completado !== true
+    ? `
+    <p class="metas-fondo inversion-vacio__fondo"><svg class="icon" aria-hidden="true"><use href="#i-ahorro"/></svg><span class="metas-fondo__texto">Antes de invertir, conviene tener tu fondo de emergencia completo.</span> <a class="link metas-fondo__ir" href="#fondo">Ver mi fondo</a></p>`
+    : '';
 
   return `
     <div class="empty-state">
       <div class="empty-state__icon">${emptyArt('inversion')}</div>
-      <p class="empty-state__title">Registra tus inversiones</p>
+      <p class="empty-state__title">${faltaFondo ? 'Registra tus inversiones' : 'Lleva el registro de lo que inviertes'}</p>
       <p class="empty-state__desc">${desc}</p>
       ${acciones}
-    </div>`;
+    </div>${avisoFondo}`;
 }
 
 // ── LA TARJETA DEL MOMENTO (DIS.17) ──────────────────────────────
