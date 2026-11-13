@@ -4567,35 +4567,31 @@ test.describe('Reservas - la lista se ordena por urgencia (ADR 083)', () => {
     await expect(page.locator('#sec-apartados.active')).toBeVisible();
   });
 
-  test('cuatro grupos por lo que pide cada reserva, y el comparador se reordena con la lista', async ({ page }) => {
-    await expect(page.locator('#lista-apartados .grupo-eyebrow'))
+  // ADR 133 D4: en el telefono los grupos son tarjetas con una fila por
+  // reserva; el comparador queda para escritorio (cada barra trae su rayita).
+  test('cuatro grupos por lo que pide cada reserva, y la urgencia ordena las filas', async ({ page }) => {
+    await expect(page.locator('#lista-apartados .bolsa-grupo__titulo'))
       .toHaveText(['Listas para usar', 'Vencen en 30 días', 'Más adelante', 'Sin fecha']);
 
-    // El Predial (24 días) sube por encima del SOAT (47), que era el primero
+    // El Predial (24 dias) sube por encima del SOAT (47), que era el primero
     // solo por haberse creado antes.
-    const tarjetas = page.locator('#lista-apartados .apartado-card');
-    await expect(tarjetas.nth(0)).toHaveAttribute('data-id', 'predial');
-    await expect(tarjetas.nth(1)).toHaveAttribute('data-id', 'soat');
-
-    // V3: el comparador no se toca y sigue al orden nuevo, porque comparte el
-    // mismo array que la lista.
-    const columnas = page.locator('#lista-apartados .apartados-comparador [class*="__lb"]');
-    await expect(columnas.nth(0)).toContainText('Matricula');
-    await expect(columnas.nth(1)).toContainText('Impuesto predial');
+    const orden = await page.locator('#lista-apartados .reserva-fila').evaluateAll(
+      els => els.map(e => e.dataset.id));
+    expect(orden).toEqual(['matricula', 'predial', 'soat', 'llantas']);
+    await expect(page.locator('#lista-apartados .apartados-comparador')).toHaveCount(0);
   });
 
   test('la reserva ya reunida es una fila con su botón, y va arriba', async ({ page }) => {
-    const fila = page.locator('#lista-apartados .apartado-fila');
-    await expect(fila).toHaveCount(1);
-    await expect(fila).toContainText('$2.400.000 listos');
-    await expect(fila.locator('[data-action="reiniciar-apartado"]')).toHaveText('Ya lo usé');
+    const fila = page.locator('#lista-apartados .reserva-fila[data-id="matricula"]');
+    await expect(fila.locator('.reserva-fila__dato')).toContainText('Lista · $2.400.000');
+    await expect(fila.locator('[data-action="reiniciar-apartado"]')).toHaveAttribute('aria-label', 'Ya usé Matricula');
 
-    // 62px contra los 307 de la tarjeta, y sin perder la acción.
+    // Una fila, no la tarjeta de 307px, y sin perder la accion.
     const alto = await fila.evaluate(el => Math.round(el.getBoundingClientRect().height));
     expect(alto).toBeLessThan(90);
 
-    // Arriba, no al final: es lo único que se puede cerrar hoy.
-    const orden = await page.locator('#lista-apartados [data-id]').evaluateAll(
+    // Arriba, no al final: es lo unico que se puede cerrar hoy.
+    const orden = await page.locator('#lista-apartados .reserva-fila').evaluateAll(
       els => els.map(e => e.dataset.id));
     expect(orden.indexOf('matricula')).toBe(0);
   });

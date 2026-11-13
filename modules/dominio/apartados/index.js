@@ -29,6 +29,7 @@ import {
   renderNudgeApartadosProximos, desdeMiles,
 } from './view.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
+import { htmlDetalleApartado } from './detalle.js';
 
 // ── HANDLERS: CREAR / ELIMINAR ───────────────────────────────────
 
@@ -198,6 +199,16 @@ async function _toggleRecurrenteApartado(el) {
   editar('apartados', id, patch);
 
   renderListaApartados();
+  // ADR 133 D4: el interruptor de la hoja cambia sin cerrarla; la hoja se
+  // vuelve a armar con el dato nuevo y el foco vuelve al interruptor.
+  const cuerpo = document.getElementById('detalle-fila-body');
+  if (cuerpo?.querySelector('[data-reserva-id]')?.dataset.reservaId === id) {
+    const actual = S.apartados.find(a => a.id === id);
+    if (actual) {
+      cuerpo.innerHTML = htmlDetalleApartado(actual);
+      document.getElementById(`reserva-repite-${id}`)?.focus();
+    }
+  }
   announce(patch.recurrente
     ? `Recurrencia activada para "${apartado.nombre}".`
     : `Recurrencia desactivada para "${apartado.nombre}".`);
@@ -272,7 +283,7 @@ function _abrirAporte(el) {
   if (!overlay) return;
 
   const titulo = overlay.querySelector('.modal__title');
-  if (titulo) titulo.textContent = `Aportar: ${apartado.nombre}`;
+  if (titulo) titulo.textContent = `Aportar a ${apartado.nombre}`;
 
   // AP.5a: mismo cálculo que el hint en vivo del formulario de creación
   // (`_actualizarSugerenciaLive`), aplicado aquí al apartado ya guardado para
@@ -286,7 +297,14 @@ function _abrirAporte(el) {
       e.preventDefault();
       _guardarAporte();
     });
-    body.querySelector('#aporte-apartado-monto')?.focus();
+    // ADR 133 D4: el botón dice el monto que se va a aportar.
+    const monto  = body.querySelector('#aporte-apartado-monto');
+    const enviar = body.querySelector('#aporte-apartado-enviar span');
+    monto?.addEventListener('input', () => {
+      const n = Number(desdeMiles(monto.value)) || 0;
+      if (enviar) enviar.textContent = n > 0 ? `Aportar ${f(n)}` : 'Aportar';
+    });
+    monto?.focus();
   }
 
   abrirModal(overlay);
@@ -418,6 +436,20 @@ export function initApartados() {
   registrarAccion('reiniciar-apartado',        _reiniciarApartado);
   registrarAccion('apartado-plantilla',        _aplicarPlantilla);
   registrarAccion('toggle-recurrente-apartado', _toggleRecurrenteApartado);
+
+  // ADR 133 D4: en el teléfono cada reserva es una fila que abre su hoja
+  // (`#modal-detalle-fila`), armada con los datos de la reserva.
+  registrarAccion('reserva-detalle', (el) => {
+    const apartado = S.apartados.find(a => a.id === el.dataset.id);
+    const hoja = document.getElementById('modal-detalle-fila');
+    const cuerpo = document.getElementById('detalle-fila-body');
+    if (!apartado || !hoja || !cuerpo) return;
+    cuerpo.innerHTML = htmlDetalleApartado(apartado);
+    abrirModal(hoja);
+  });
+  window.matchMedia?.('(max-width: 1023.98px)').addEventListener?.('change', () => {
+    renderSmart(renderListaApartados, 'apartados');
+  });
 
   _inyectarFormApartado();
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   apartadosActivos,
   estaListoParaReiniciar,
@@ -30,6 +30,8 @@ import {
   renderNudgeApartadosProximos, miles, desdeMiles,
 } from '../../modules/dominio/apartados/view.js';
 import { S } from '../../modules/core/state.js';
+import { htmlDetalleApartado, cuandoReserva, ritmoReserva } from '../../modules/dominio/apartados/detalle.js';
+import { fechaLegible } from '../../modules/infra/utils.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
 
@@ -1129,8 +1131,10 @@ describe('renderFormAporteApartado() - contexto del progreso (T10)', () => {
     const html = renderFormAporteApartado(apartadoBase({
       montoActual: 320_000, montoObjetivo: 980_000, fechaObjetivo: '2026-09-08',
     }));
-    expect(html).toContain('Llevas <strong>$320.000 de $980.000</strong>.');
-    expect(html).toContain('Te faltan <strong>$660.000</strong> para el');
+    // ADR 133 D4: lo reunido con su barra, y debajo lo que falta y la fecha.
+    expect(html).toContain('Llevas <strong>$320.000</strong> de $980.000');
+    expect(html).toContain('Te faltan $660.000 para el');
+    expect(html).toContain('detalle-reserva__barra');
   });
 
   it('deja de atenuar el contexto y no repite el porcentaje entre paréntesis', () => {
@@ -1142,7 +1146,7 @@ describe('renderFormAporteApartado() - contexto del progreso (T10)', () => {
 
   it('sin fecha objetivo dice el faltante sin inventar plazo', () => {
     const html = renderFormAporteApartado(apartadoBase({ montoActual: 320_000, montoObjetivo: 980_000, fechaObjetivo: null }));
-    expect(html).toContain('Te faltan <strong>$660.000</strong>.');
+    expect(html).toContain('Te faltan $660.000</p>');
     expect(html).not.toContain('para el ');
   });
 
@@ -1369,10 +1373,11 @@ describe('renderListaApartados() - estado vacío (T11, T12)', () => {
     expect(cta.classList.contains('btn-primary')).toBe(false);
   });
 
-  it('de cinco bloques de texto a tres, con la desambiguación conservada', () => {
+  // ADR 133 D4: la desambiguación sale de la tarjeta y va al pie.
+  it('de cinco bloques de texto a tres, con la desambiguación conservada al pie', () => {
     renderListaApartados();
-    expect(document.querySelectorAll('.empty-state__tip')).toHaveLength(1);
-    expect(document.body.textContent).toContain('ponerle un tope a lo que gastas');
+    expect(document.querySelectorAll('.reservas-vacio__pie')).toHaveLength(1);
+    expect(document.body.textContent).toContain('ponerle tope a lo que gastas');
   });
 
   // Ficha 10 (V4, cuarta aparición de R86): la ficha 07 convirtió "Límites de
@@ -1381,10 +1386,10 @@ describe('renderListaApartados() - estado vacío (T11, T12)', () => {
   // dónde buscarla.
   it('la desambiguación señala Límites con un enlace, no con un nombre suelto', () => {
     renderListaApartados();
-    const enlace = document.querySelector('.empty-state__tip a');
+    const enlace = document.querySelector('.reservas-vacio__pie a');
     expect(enlace).not.toBeNull();
     expect(enlace.getAttribute('href')).toBe('#presupuesto');
-    expect(enlace.textContent).toBe('Límites');
+    expect(enlace.textContent).toBe('Ir a Límites');
   });
 });
 
@@ -1737,5 +1742,146 @@ describe('renderListaApartados() - tarjeta E (DIS.15)', () => {
     S.apartados = [apartadoBase({ fechaObjetivo: enDias(10), montoObjetivo: 360_000, montoActual: 60_000 })];
     renderNudgeApartadosProximos();
     expect(document.body.textContent).not.toContain('300.000');
+  });
+});
+
+// ════════════════════════════════════════════════════════════════
+// ADR 133 D4 - Reservas en el teléfono: filas, hoja y "Aportar"
+// ════════════════════════════════════════════════════════════════
+
+/** Fecha ISO local a N días de hoy. */
+const enDiasLocal = (n) => {
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+describe('cuandoReserva() y ritmoReserva() (ADR 133 D4)', () => {
+  it('cerca dice la fecha y en cuántos días; lejos, solo la fecha', () => {
+    expect(cuandoReserva('2026-12-10', 27)).toBe(`${fechaLegible('2026-12-10')}, en 27 días`);
+    expect(cuandoReserva('2027-06-15', 214)).toBe(fechaLegible('2027-06-15'));
+  });
+
+  it('hoy, vencida y sin fecha se dicen con palabras', () => {
+    expect(cuandoReserva('2026-12-10', 0)).toBe(`${fechaLegible('2026-12-10')}, vence hoy`);
+    expect(cuandoReserva('2026-12-10', -3)).toBe(`${fechaLegible('2026-12-10')}, venció hace 3 días`);
+    expect(cuandoReserva(null, null)).toBe('sin fecha');
+  });
+
+  it('el ritmo calla por debajo de un aporte de diferencia', () => {
+    expect(ritmoReserva({ delta: -1 })).toEqual({ texto: 'Vas un aporte atrás', tono: 'warning' });
+    expect(ritmoReserva({ delta: -6 })).toEqual({ texto: 'Vas 6 aportes atrás', tono: 'warning' });
+    expect(ritmoReserva({ delta: 2 })).toEqual({ texto: 'Vas 2 aportes adelante', tono: 'ok' });
+    expect(ritmoReserva({ delta: 0 })).toBeNull();
+    expect(ritmoReserva(null)).toBeNull();
+  });
+});
+
+describe('renderListaApartados() en el teléfono (ADR 133 D4)', () => {
+  const matchMediaReal = window.matchMedia;
+  beforeEach(() => {
+    window.matchMedia = () => ({ matches: true, addEventListener() {} });
+    document.body.innerHTML = '<div id="lista-apartados"></div>';
+    S.config = {};
+    S.apartados = [
+      apartadoBase({ id: 'lista', nombre: 'Predial', montoActual: 900_000, montoObjetivo: 900_000, recurrente: true, periodoMeses: 12, completado: true, fechaObjetivo: enDiasLocal(120) }),
+      apartadoBase({ id: 'soat', nombre: 'SOAT', montoActual: 390_000, montoObjetivo: 520_000, recurrente: true, periodoMeses: 12, fechaObjetivo: enDiasLocal(20) }),
+      apartadoBase({ id: 'regalos', nombre: 'Regalos', montoActual: 150_000, montoObjetivo: 600_000, fechaObjetivo: enDiasLocal(90) }),
+      apartadoBase({ id: 'carro', nombre: 'Carro', montoActual: 200_000, montoObjetivo: 900_000, fechaObjetivo: null }),
+    ];
+  });
+  afterEach(() => { window.matchMedia = matchMediaReal; });
+
+  it('arriba lo reservado y la pastilla de lo que vence en 30 días; sin comparador', () => {
+    renderListaApartados();
+    expect(document.querySelector('.reservas-resumen__total').textContent).toBe('$1.640.000');
+    expect(document.querySelector('.reservas-resumen__pastilla').textContent).toContain(`1 vence en ${DIAS_PROXIMO} días · te faltan $130.000`);
+    expect(document.querySelector('.apartados-comparador')).toBeNull();
+    expect(document.querySelector('.apartado-card')).toBeNull();
+  });
+
+  it('los grupos se titulan en frase y "Vencen" suma lo que falta', () => {
+    renderListaApartados();
+    const titulos = [...document.querySelectorAll('.bolsa-grupo__titulo')].map(e => e.textContent);
+    expect(titulos).toEqual(['Listas para usar', `Vencen en ${DIAS_PROXIMO} días`, 'Más adelante', 'Sin fecha']);
+    expect(document.querySelector('.bolsa-grupo__suma').textContent).toBe('faltan $130.000');
+    expect(document.querySelector('.bolsa-grupo__sub').textContent).toBe('Ponles fecha y Finko calcula cuánto separar');
+  });
+
+  it('cada fila abre su hoja; el círculo aporta o, si está lista, la marca como usada', () => {
+    renderListaApartados();
+    const soat = document.querySelector('.reserva-fila[data-id="soat"]');
+    expect(soat.querySelector('.list-item__detalle').dataset.action).toBe('reserva-detalle');
+    expect(soat.querySelector('.reserva-fila__dato').textContent).toContain('$390.000 de $520.000');
+    expect(soat.querySelector('.reserva-fila__dato').textContent).toContain('en 20 días · cada año');
+    expect(soat.querySelector('.bolsa-circulo').dataset.action).toBe('aportar-apartado');
+    expect(soat.querySelector('.reserva-fila__barra')).not.toBeNull();
+    const lista = document.querySelector('.reserva-fila[data-id="lista"]');
+    expect(lista.querySelector('.reserva-fila__lista').textContent).toBe('Lista');
+    expect(lista.querySelector('.bolsa-circulo').dataset.action).toBe('reiniciar-apartado');
+    expect(lista.querySelector('.bolsa-circulo').getAttribute('aria-label')).toBe('Ya usé Predial');
+  });
+
+  it('con un solo grupo no hay títulos que nombren lo único que hay', () => {
+    S.apartados = [S.apartados[3]];
+    renderListaApartados();
+    expect(document.querySelector('.bolsa-grupo__titulo')).toBeNull();
+    expect(document.querySelectorAll('.reserva-fila')).toHaveLength(1);
+  });
+
+  it('con el saldo oculto ninguna cifra en pesos queda a la vista (R20)', () => {
+    S.config = { ocultarSaldo: true };
+    renderListaApartados();
+    expect(document.getElementById('lista-apartados').textContent).not.toMatch(/\$\d/);
+  });
+});
+
+describe('htmlDetalleApartado() (ADR 133 D4)', () => {
+  beforeEach(() => { S.config = {}; });
+
+  it('dice lo reunido de lo que necesita, vence, el plan y lo que falta', () => {
+    const div = document.createElement('div');
+    div.innerHTML = htmlDetalleApartado(apartadoBase({ montoActual: 390_000, montoObjetivo: 520_000, fechaObjetivo: enDiasLocal(27), frecuenciaAporte: 'Mensual' }));
+    expect(div.querySelector('.detalle-fila__titulo').id).toBe('detalle-fila-titulo');
+    expect(div.querySelector('.detalle-fila__monto').textContent).toBe('$390.000');
+    expect(div.querySelector('.detalle-limite__tope').textContent).toBe('de $520.000');
+    const datos = [...div.querySelectorAll('.detalle-gasto__dato dt')].map(e => e.textContent);
+    expect(datos).toEqual(['Vence', 'Tu plan', 'Te faltan']);
+    expect(div.textContent).toContain('en 27 días');
+  });
+
+  it('la recurrencia es un interruptor que actúa sin cerrar la hoja', () => {
+    const div = document.createElement('div');
+    div.innerHTML = htmlDetalleApartado(apartadoBase({ recurrente: true, periodoMeses: 12 }));
+    const input = div.querySelector('.detalle-reserva__repite input[role="switch"]');
+    expect(input.checked).toBe(true);
+    expect(input.dataset.action).toBe('toggle-recurrente-apartado');
+    expect(div.querySelector('.detalle-reserva__repite-titulo').textContent).toBe('Se repite cada año');
+  });
+
+  it('las acciones cierran la hoja antes de abrir la suya; eliminar va aparte', () => {
+    const div = document.createElement('div');
+    div.innerHTML = htmlDetalleApartado(apartadoBase({ montoActual: 100_000, montoObjetivo: 360_000 }));
+    const destinos = [...div.querySelectorAll('button[data-action="registrar-abrir"]')].map(b => b.dataset.targetAction);
+    expect(destinos).toEqual(['aportar-apartado', 'editar-apartado', 'eliminar-apartado']);
+    expect(div.querySelector('.detalle-fila__peligro').textContent).toContain('Eliminar esta reserva');
+  });
+
+  it('lista para usar ofrece "Ya la usé" en vez de aportar', () => {
+    const div = document.createElement('div');
+    div.innerHTML = htmlDetalleApartado(apartadoBase({ montoActual: 360_000, montoObjetivo: 360_000, recurrente: true, completado: true }));
+    const destinos = [...div.querySelectorAll('button[data-action="registrar-abrir"]')].map(b => b.dataset.targetAction);
+    expect(destinos[0]).toBe('reiniciar-apartado');
+    expect(destinos).not.toContain('aportar-apartado');
+  });
+});
+
+describe('renderFormAporteApartado() - la hoja "Aportar" (ADR 133 D4)', () => {
+  it('pregunta en frase, con el monto grande y el botón que dice cuánto', () => {
+    const html = renderFormAporteApartado(apartadoBase({ montoActual: 100_000, montoObjetivo: 360_000 }), { aportePorPeriodo: 130_000, etiquetaPeriodo: 'al mes' });
+    expect(html).toContain('¿Cuánto vas a aportar?');
+    expect(html).toContain('¿De qué cuenta sale?');
+    expect(html).toMatch(/class="monto-hero__box"[\s\S]*id="aporte-apartado-monto"/);
+    expect(html).toMatch(/id="aporte-apartado-enviar"[\s\S]*Aportar \$130\.000/);
   });
 });

@@ -13,6 +13,7 @@ import { renderIconoPicker } from '../../infra/icon-picker.js';
 import { htmlComparador, pieComparador } from '../../ui/comparador.js';
 import { estadoDeBolsa } from '../../infra/bolsas.js';
 import { ICONOS_CATEGORIA_PERSONALIZADA } from '../../core/constants.js';
+import { htmlFilaReserva } from './detalle.js';
 import {
   agruparApartadosPorUrgencia,
   estaListoParaReiniciar,
@@ -64,6 +65,11 @@ export function renderListaApartados() {
     return;
   }
 
+  if (reservasEnTelefono()) {
+    el.innerHTML = _renderListaTelefono({ listas, proximas, adelante, sinFecha }, activos, oculto);
+    return;
+  }
+
   // Los divisores solo se pintan cuando hay más de un grupo que separar: con
   // todas las reservas en el mismo cajón el rótulo nombraría lo único que hay.
   // Mismo criterio que la lista de Metas (ficha 09).
@@ -80,6 +86,60 @@ export function renderListaApartados() {
     .map(([rotulo, items, render]) =>
       (conDivisor ? _divisorGrupo(rotulo) : '') + items.map(render).join(''))
     .join('');
+}
+
+/** Bajo 1024px la lista se pinta en filas con su hoja (ADR 133 D4). */
+export function reservasEnTelefono() {
+  return window.matchMedia?.('(max-width: 1023.98px)').matches === true;
+}
+
+/**
+ * La lista en el teléfono (ADR 133 D4): arriba lo reservado con la pastilla
+ * de lo que vence en 30 días y la pista de cómo se lee cada fila; debajo los
+ * grupos en frase, cada uno una tarjeta con una fila por reserva. El aviso de
+ * proximidad y el comparador quedan para escritorio: la pastilla dice lo mismo
+ * que el aviso y cada barra ya trae su rayita.
+ */
+function _renderListaTelefono({ listas, proximas, adelante, sinFecha }, activos, oculto) {
+  const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
+  const total = activos.reduce((s, a) => s + (Number(a.montoActual) || 0), 0);
+  const faltaProximas = proximas.reduce((s, a) => s + calcularProgreso(a).faltante, 0);
+  const vencen = apartadosProximos(S.apartados, hoy()).length;
+
+  const pastilla = vencen > 0
+    ? `<p class="reservas-resumen__pastilla"><svg class="icon" aria-hidden="true"><use href="#i-agenda"/></svg>${vencen} ${vencen === 1 ? 'vence' : 'vencen'} en ${DIAS_PROXIMO} días · te faltan <strong>${m(faltaProximas)}</strong></p>`
+    : '';
+  const pista = activos.some(a => !estaListoParaReiniciar(a))
+    ? `<p class="bolsa-pista"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Toca + para aportar lo que te toca. La rayita de cada barra marca dónde deberías ir hoy.</p>`
+    : '';
+
+  const grupos = [
+    ['Listas para usar', listas, ''],
+    [`Vencen en ${DIAS_PROXIMO} días`, proximas, faltaProximas > 0 ? `faltan ${m(faltaProximas)}` : ''],
+    ['Más adelante', adelante, ''],
+    ['Sin fecha', sinFecha, '', 'Ponles fecha y Finko calcula cuánto separar'],
+  ].filter(([, items]) => items.length > 0);
+  const conTitulo = grupos.length > 1;
+
+  const gruposHtml = grupos.map(([titulo, items, suma, sub]) => `
+    <section class="bolsa-grupo"${conTitulo ? ` aria-label="${_esc(titulo)}"` : ''}>
+      ${conTitulo ? `
+      <div class="bolsa-grupo__head">
+        <h2 class="bolsa-grupo__titulo">${_esc(titulo)}</h2>
+        ${suma ? `<p class="bolsa-grupo__suma">${suma}</p>` : ''}
+      </div>
+      ${sub ? `<p class="bolsa-grupo__sub">${_esc(sub)}</p>` : ''}` : ''}
+      <div class="bolsa-lista">${items.map(a => htmlFilaReserva(a, oculto)).join('')}</div>
+    </section>`).join('');
+
+  return `
+    <section class="reservas-resumen" aria-labelledby="reservas-resumen-titulo">
+      <h2 class="reservas-resumen__rotulo" id="reservas-resumen-titulo">Tienes reservado</h2>
+      <p class="reservas-resumen__total">${m(total)}</p>
+      ${pastilla}
+    </section>
+    ${pista}
+    ${gruposHtml}`;
 }
 
 /**
@@ -492,13 +552,19 @@ function _renderAccionPrincipal({ nombre, id, listo, completado, enCero, sugerid
  * secundario porque "+ Apartado" del encabezado ya es el primario (regla R1).
  */
 function _renderEmptyState() {
+  // ADR 133 D4: en el teléfono el botón vive dentro de la tarjeta del banner y
+  // es el primario (el "+ Reserva" del encabezado se esconde mientras está
+  // vacía); la salida a Límites va al pie, fuera de la tarjeta.
   return `
     <div class="empty-state">
       <div class="empty-state__icon">${emptyArt('apartados')}</div>
       <p class="empty-state__title">Sin reservas todavía</p>
       <p class="empty-state__desc">Ponle nombre, monto y fecha a un gasto que viene, y Finko te dice cuánto separar en cada pago. El dinero se aparta cuando registras el primer aporte.</p>
-      <button class="btn btn-secondary" data-action="nuevo-apartado">+ Crear reserva</button>
-      <p class="empty-state__tip empty-state__tip--muted">¿Buscabas ponerle un tope a lo que gastas al mes? Eso va en <a class="link" href="#presupuesto">Límites</a>.</p>
+      <button class="btn btn-secondary reservas-vacio__crear" data-action="nuevo-apartado"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Crear mi primera reserva</button>
+    </div>
+    <div class="reservas-vacio__pie">
+      <p>¿Buscabas ponerle tope a lo que gastas? Eso va en Límites, dentro de Gastos.</p>
+      <a class="fondo-vacio__salida" href="#presupuesto">Ir a Límites<svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
     </div>`;
 }
 
@@ -706,12 +772,20 @@ export function renderFormAporteApartado(apartado, sugerencia = null) {
   // "faltan" por tercera vez, después de la fila que el usuario acaba de tocar
   // y del anillo; el porcentaje entre paréntesis tampoco agregaba. La fecha,
   // que es el dato que faltaba en esta hoja, entra en su lugar.
-  const faltanteStr = faltante > 0
-    ? ` Te faltan <strong>${f(faltante)}</strong>${apartado.fechaObjetivo ? ` para el ${fechaLegible(apartado.fechaObjetivo)}` : ''}.`
+  // ADR 133 D4: antes del monto, cuánto llevas con la barra y su rayita, y si
+  // vas atrás; las preguntas en frase, como "Nuevo gasto" (ADR 132 D9).
+  const { pct, planPct } = estadoDeBolsa(apartado, hoy());
+  const plan = planDeReferencia(apartado, hoy());
+  const atras = plan && plan.delta <= -1
+    ? ` · <span class="aporte-reserva__atras">vas ${Math.abs(plan.delta) === 1 ? 'un aporte' : `${Math.abs(plan.delta)} aportes`} atrás</span>`
     : '';
+  const faltanteStr = faltante > 0
+    ? `<p class="aporte-reserva__falta">Te faltan ${f(faltante)}${apartado.fechaObjetivo ? ` para el ${fechaLegible(apartado.fechaObjetivo)}` : ''}${atras}</p>`
+    : '';
+  const rayita = planPct === null || planPct >= 100 ? '' : `<i style="left:${planPct}%"></i>`;
 
   const cuentasActivas = (S.cuentas ?? []).filter(c => c.activa !== false);
-  const cuentaHtml     = renderSelectorCuenta(cuentasActivas, { label: '¿De qué cuenta sale el aporte?' });
+  const cuentaHtml     = renderSelectorCuenta(cuentasActivas, { label: '¿De qué cuenta sale?' });
 
   const montoSugerido = sugerencia?.aportePorPeriodo > 0 ? sugerencia.aportePorPeriodo : null;
   const valorHtml   = montoSugerido ? ` value="${miles(montoSugerido)}"` : '';
@@ -722,21 +796,26 @@ export function renderFormAporteApartado(apartado, sugerencia = null) {
   return `
     <form id="form-aporte-apartado" novalidate>
       <input type="hidden" name="apartadoId" value="${_esc(apartado.id)}" />
-      <p class="form-hint">
-        Llevas <strong>${f(apartado.montoActual ?? 0)} de ${f(apartado.montoObjetivo ?? 0)}</strong>.${faltanteStr}
-      </p>
-      <div class="form-group">
-        <label for="aporte-apartado-monto" class="label">Monto del aporte</label>
-        <input id="aporte-apartado-monto" name="monto" class="input" type="text"
-               placeholder="0"${valorHtml}
-               required aria-required="true"
-               autocomplete="off" inputmode="numeric" data-miles />
+      <div class="aporte-reserva__contexto">
+        <p class="aporte-reserva__llevas">Llevas <strong>${f(apartado.montoActual ?? 0)}</strong> de ${f(apartado.montoObjetivo ?? 0)}</p>
+        <span class="detalle-reserva__barra" aria-hidden="true"><span style="width:${pct}%"></span>${rayita}</span>
+        ${faltanteStr}
+      </div>
+      <div class="monto-hero">
+        <label for="aporte-apartado-monto" class="monto-hero__label">¿Cuánto vas a aportar?</label>
+        <div class="monto-hero__box">
+          <span class="monto-hero__prefijo" aria-hidden="true">$</span>
+          <input id="aporte-apartado-monto" name="monto" class="input input--big-amount" type="text"
+                 placeholder="0"${valorHtml}
+                 required aria-required="true"
+                 autocomplete="off" inputmode="numeric" data-miles />
+        </div>
         ${hintPrefill}
       </div>
       ${cuentaHtml}
       <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Registrar aporte</button>
+        <button type="submit" class="btn btn-primary" id="aporte-apartado-enviar"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg><span>${montoSugerido ? `Aportar ${f(montoSugerido)}` : 'Aportar'}</span></button>
       </div>
     </form>`;
 }

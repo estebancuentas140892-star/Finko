@@ -1108,3 +1108,67 @@ test.describe('MV2 - perfil niño', () => {
     await expect(page.locator('#nino-main h1')).toContainText('alcancía');
   });
 });
+
+// ── ADR 133: Ahorro en el teléfono ──────────────────────────────────────────
+
+/** Fecha ISO local a N días de hoy. */
+function enDias(n) {
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+test.describe('MV2.30 - Ahorro en el teléfono (ADR 133)', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('Reservas: la fila abre su hoja, el interruptor cambia sin cerrarla y el círculo abre "Aportar" (D4)', async ({ page }) => {
+    const reserva = (id, nombre, montoActual, montoObjetivo, dias, extra = {}) => ({
+      id, nombre, icono: '🛵', montoActual, montoObjetivo, fechaObjetivo: dias === null ? null : enDias(dias),
+      frecuenciaAporte: 'Mensual', recurrente: false, periodoMeses: null, completado: false,
+      fechaCreacion: '2026-03-01T00:00:00.000Z', ...extra,
+    });
+    await sembrar(page, estadoBase({
+      cuentas: CUENTAS,
+      apartados: [
+        reserva('r1', 'SOAT de la moto', 390_000, 520_000, 20),
+        reserva('r2', 'Regalos', 150_000, 600_000, 90),
+      ],
+    }));
+    await page.goto('/#apartados');
+    await expect(page.locator('#sec-apartados.active')).toBeVisible({ timeout: 10_000 });
+
+    await expect(page.locator('.reservas-resumen__total')).toHaveText('$540.000');
+    await expect(page.locator('#apartados-nudge-proximos')).toBeHidden();
+    await expect(page.locator('.bolsa-grupo__titulo')).toHaveText(['Vencen en 30 días', 'Más adelante']);
+
+    // La fila abre su hoja; el interruptor de la recurrencia cambia ahí mismo.
+    await page.locator('.reserva-fila[data-id="r1"] .list-item__detalle').click();
+    const hoja = page.locator('#modal-detalle-fila');
+    await expect(hoja.locator('.detalle-fila__titulo')).toHaveText('SOAT de la moto');
+    const repite = hoja.locator('.detalle-reserva__repite input');
+    await expect(repite).not.toBeChecked();
+    await hoja.locator('.detalle-reserva__repite').click();
+    await expect(hoja).toBeVisible();
+    await expect(hoja.locator('.detalle-reserva__repite input')).toBeChecked();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.reserva-fila[data-id="r1"] .reserva-fila__dato')).toContainText('cada año');
+
+    // El círculo abre "Aportar": la pregunta en frase y el botón con el monto.
+    await page.locator('.reserva-fila[data-id="r1"] .bolsa-circulo').click();
+    const aporte = page.locator('#modal-aporte-apartado');
+    await expect(aporte.locator('.modal__title')).toHaveText('Aportar a SOAT de la moto');
+    await aporte.locator('#aporte-apartado-monto').fill('90.000');
+    await expect(aporte.locator('#aporte-apartado-enviar')).toHaveText('Aportar $90.000');
+    await aporte.locator('#aporte-apartado-enviar').click();
+    await expect(page.locator('.reserva-fila[data-id="r1"] .reserva-fila__dato')).toContainText('$480.000 de $520.000');
+  });
+
+  test('Reservas vacía: el botón vive dentro de la tarjeta y el "+" del encabezado se va (D4)', async ({ page }) => {
+    await sembrar(page, estadoBase({ cuentas: CUENTAS, apartados: [] }));
+    await page.goto('/#apartados');
+    await expect(page.locator('#sec-apartados.active')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('.reservas-vacio__crear')).toBeVisible();
+    await expect(page.locator('#sec-apartados .section__header > .btn-primary')).toBeHidden();
+    await expect(page.locator('.reservas-vacio__pie a')).toHaveAttribute('href', '#presupuesto');
+  });
+});

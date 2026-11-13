@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(apartados): MV2.30 Ahorro tanda 2, Reservas y sus hojas · 2026-11-13
+
+[ADR 133](DECISIONS/133-ahorro-del-adulto-en-el-telefono.md) D4. Ficha: [`contexto/apartados.md`](contexto/apartados.md). SW v681. Tablero "rediseño2".
+
+- **La lista en el teléfono**: "Tienes reservado" y el total, una pastilla con cuántas vencen en 30 días y cuánto falta (dice lo del aviso de proximidad, que se calla bajo 1024px) y la pista de cómo se lee cada fila. Los grupos en frase, cada uno una tarjeta; "Vencen en 30 días" suma lo que falta. Sin el comparador: cada barra trae su rayita.
+- **Cada reserva es una fila** (`htmlFilaReserva()`): su emoji, lo reunido de lo que necesita, la fecha ("10 de dic, en 27 días" hasta 60 días), la barra con la rayita de hoy y "Vas un aporte atrás"; el círculo de la derecha abre "Aportar" o, si está lista, la marca como usada.
+- **La hoja de una reserva** (`htmlDetalleApartado()`, acción `reserva-detalle`): lo reunido contra lo que necesita, dónde deberías ir hoy, cuánto reponer, vence, el plan y lo que falta; "Se repite cada año" es un interruptor que cambia sin cerrar la hoja (apagarlo en una reserva ya reunida cierra la hoja antes de confirmar).
+- **"Aportar"** (los dos anchos): lo reunido con su barra antes del monto, "¿Cuánto vas a aportar?" con el campo grande (`monto-hero`), "¿De qué cuenta sale?" y el botón con el monto escrito ("Aportar $90.000").
+- **El vacío**: el botón vive dentro de la tarjeta del banner ("Crear mi primera reserva") y el "+ Reserva" del encabezado se va; la salida a Límites va al pie.
+- Pruebas: 4 ajustadas y 14 nuevas en `apartados`; dos E2E a 390px recorren la fila, la hoja, el interruptor, "Aportar" y el vacío, y los dos de ADR 083 miden ahora las filas.
+
 ### feat(ahorro): MV2.30 Ahorro tanda 1, el encabezado de las cuatro lentes y el Fondo · 2026-11-13
 
 [ADR 133](DECISIONS/133-ahorro-del-adulto-en-el-telefono.md) D1 a D3. Ficha: [`contexto/ahorro.md`](contexto/ahorro.md). SW v680. Tablero "rediseño2".
