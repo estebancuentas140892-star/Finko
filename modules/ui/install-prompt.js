@@ -14,6 +14,8 @@
 import { S, EventBus } from '../core/state.js';
 import { registrarAccion } from './actions.js';
 import { abrirModal } from './modales.js';
+import { mostrarToast } from './toast.js';
+import { announce } from '../infra/a11y.js';
 
 const INSTALL_KEY     = 'fk_install';
 const DISMISS_DAYS    = 14;
@@ -33,13 +35,19 @@ export function initInstallPrompt() {
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     _deferredPrompt = e;
+    // Si el navegador vuelve a ofrecer instalar, la app ya no está instalada
+    // (se desinstaló): lo que recordábamos deja de valer.
+    if (instaladaDesdeEsteNavegador()) _setEstado('dismissed', 0);
     _mostrarSiCorresponde();
   });
 
-  // 2) Detectar instalacion completada (limpia el banner).
+  // 2) Detectar instalacion completada (limpia el banner). ADR 137 D3: y lo
+  //    dice, porque en Android el navegador instala sin avisar en la página.
   window.addEventListener('appinstalled', () => {
     _setEstado('installed');
     _ocultarBanner();
+    mostrarToast({ titulo: 'Finko quedó instalada', detalle: 'Ábrela desde la pantalla de inicio de tu teléfono.' });
+    announce('Finko quedó instalada.');
   });
 
   // 3) Registrar handlers de los botones.
@@ -65,6 +73,21 @@ export function estaInstalada() {
   if (window.matchMedia?.('(display-mode: standalone)').matches) return true;
   if (navigator.standalone === true) return true;
   return false;
+}
+
+/**
+ * ADR 137 D3: true si la instalación se aceptó desde esta pestaña del
+ * navegador. `estaInstalada()` mira si la página corre como app, y en la
+ * pestaña desde la que se instaló sigue siendo falso: sin esto, Ajustes
+ * seguía ofreciendo "Instalar Finko" después de instalarla.
+ * @returns {boolean}
+ */
+export function instaladaDesdeEsteNavegador() {
+  try {
+    return JSON.parse(localStorage.getItem(INSTALL_KEY) ?? 'null')?.estado === 'installed';
+  } catch {
+    return false;
+  }
 }
 
 // ── DECISION DE MOSTRAR ──────────────────────────────────────────
@@ -104,9 +127,9 @@ function _puedeMostrar() {
   return true;
 }
 
-function _setEstado(estado) {
+function _setEstado(estado, ts = Date.now()) {
   try {
-    localStorage.setItem(INSTALL_KEY, JSON.stringify({ estado, ts: Date.now() }));
+    localStorage.setItem(INSTALL_KEY, JSON.stringify({ estado, ts }));
   } catch {
     // Privado o quota llena: aceptable, solo perderemos la decision al recargar.
   }
@@ -140,7 +163,8 @@ function _descartar() {
 
 // ── DISPARAR INSTALACION ─────────────────────────────────────────
 
-async function _disparoInstall() {
+/** @param {HTMLElement} [boton] - el botón tocado (banner o Ajustes). */
+async function _disparoInstall(boton) {
   if (_esIOS()) {
     const modal = document.getElementById('modal-install-ios');
     if (modal) abrirModal(modal);
@@ -148,11 +172,16 @@ async function _disparoInstall() {
   }
 
   if (_deferredPrompt) {
+    // ADR 137 D3: mientras el navegador pregunta, el botón no responde a un
+    // segundo toque, y al aceptar Finko dice que está instalando.
+    if (boton) boton.disabled = true;
     _deferredPrompt.prompt();
     try {
       const choice = await _deferredPrompt.userChoice;
       if (choice.outcome === 'accepted') {
         _setEstado('installed');
+        mostrarToast({ titulo: 'Instalando Finko…', detalle: 'En unos segundos la encuentras en tu pantalla de inicio.' });
+        announce('Instalando Finko.');
       } else {
         _setEstado('dismissed');
       }
@@ -161,13 +190,16 @@ async function _disparoInstall() {
       _setEstado('dismissed');
     } finally {
       _deferredPrompt = null;
+      if (boton) boton.disabled = false;
       _ocultarBanner();
     }
     return;
   }
 
-  // Sin beforeinstallprompt y no es iOS: mostrar las instrucciones igual,
-  // funcionan para la mayoria de navegadores que dejan "Instalar" en el menu.
-  const modal = document.getElementById('modal-install-ios');
-  if (modal) abrirModal(modal);
+  // Sin beforeinstallprompt y no es iOS. ADR 137 D3: antes abría las
+  // instrucciones del iPhone; ahora dice dónde está en el menú del navegador.
+  mostrarToast({
+    titulo: 'Instálala desde el menú del navegador',
+    detalle: 'Toca el menú (los tres puntos) y elige "Instalar app" o "Agregar a la pantalla principal".',
+  });
 }

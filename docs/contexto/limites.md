@@ -1,6 +1,6 @@
 # Ficha de contexto: Límites de gasto
 
-> Revisado: 2026-11-06 (ADR 132 tanda 3; antes, APR.1b y la ficha 12, ADR 085).
+> Revisado: 2026-11-13 (REV.1, ADR 137).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 > El dominio se llama `presupuesto` en el código; "Límites de gasto" es el nombre de cara al usuario (para no confundirlo con Apartados: guardar dinero vs. vigilar cuánto sale).
@@ -76,6 +76,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-13 (**REV.1**, [ADR 137](../DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md) D6): el banner de propósito habla del problema ("¿Gastas más de lo que pensabas…?") y no del plan de Mis cuentas, que quien lo lee no tiene.
 - 2026-11-06 (ADR 132 tanda 3): la tarjeta del plan con sus avisos y dónde se mide cada grupo; en el teléfono los topes en filas con su hoja, la suma con cuántos se pasaron, la oferta de gastos pequeños y "Gastas acá" en tarjetas, y el formulario en la grilla de tres.
 - 2026-11-05 (ADR 132 tanda 1): sin topes y con el banner arriba, el vacío trae el ejemplo y su propio "Crear límite" dentro de la tarjeta; el "+" del encabezado se esconde en el teléfono.
 - 2026-10-24 (**APR.1b**, [ADR 092](../DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md)): sobre de **gastos pequeños** (`_renderHormiga()` en `view.js`, `progresoHormiga()` y `validarHormiga()` en `logic.js`): cruza categorías y mide las compras de hasta el tope contra `S.config.hormiga.limite` (schema v46). Sin límite, una línea con el total del mes ofrece ponerlo. El formulario `renderFormHormiga()` comparte `#modal-presupuesto` y fija también el tope, que leen Aprende, Gastos, Análisis y el logro `hormiga-a-raya`. Escucha `hormiga:limite` (lo emite el Aplícalo de Aprende) y repinta con `state:change` de `config`.

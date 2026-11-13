@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### fix(movil): REV.1, la revisión del 13 de noviembre, tanda 1 · 2026-11-13
+
+[ADR 137](DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md). Fichas: [`contexto/deudas.md`](contexto/deudas.md), [`contexto/movimientos.md`](contexto/movimientos.md), [`contexto/limites.md`](contexto/limites.md), [`contexto/sistema-visual.md`](contexto/sistema-visual.md). SW v694. Lo demás de la revisión quedó en las tarjetas REV.2a a REV.4.
+
+- **Por pagar**: "Agregar" con el chip "Fijos" abre de una vez el gasto fijo y con "Deudas" el formulario de deuda. Esos dos chips vacíos traen su botón ("Agregar gasto fijo"; entidad y personal) y ya no dicen "este mes".
+- **Registro**: el logo de la primera pantalla, centrado en su teja. Al instalar, "Instalando Finko…" y "Finko quedó instalada"; Ajustes deja de ofrecer instalar en la pestaña desde la que se instaló; fuera de iPhone ya no abre las instrucciones del iPhone.
+- **Botones redondos**: sin el rectángulo del navegador al tocar y con el anillo de foco que sigue su forma (`a11y.css` le cambiaba el radio a todo lo enfocado). El foco por teclado sigue visible.
+- **Movimientos**: tocar la búsqueda ofrece solo "Buscaste antes", y nada si no hay búsquedas.
+- **Límites**: el banner pregunta "¿Gastas más de lo que pensabas y no sabes en qué se fue el dinero?" en vez de nombrar un plan.
+- Pruebas: `compromisos` (3, una reescrita), `install-prompt` (4 nuevas), `proposito` (1 reescrita); E2E: los chips de Por pagar en `smoke` y la búsqueda en `buscar`.
+
 ### feat(config): MV2.30 Ajustes en el teléfono; cierra rediseño5 y MV2.30 · 2026-11-13
 
 [ADR 136](DECISIONS/136-ajustes-del-adulto-en-el-telefono.md). Ficha: [`contexto/configuracion.md`](contexto/configuracion.md). SW v693. Tablero "rediseño5", borrado al cerrar: era el último de `Diseño Finko/`.

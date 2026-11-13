@@ -93,14 +93,36 @@ function _renderChips() {
 
 /**
  * El filtro no dejó nada. No es el estado vacío de la sección (ahí no hay nada
- * registrado): acá hay datos y el filtro los esconde, así que lo que se dice es
- * distinto y la salida es cambiar de chip, no crear algo.
+ * registrado): acá hay datos y el filtro los esconde.
+ *
+ * REV.1 (ADR 137 D2): con "Fijos" o "Deudas" vacíos, lo que falta es crear
+ * uno de ese tipo, así que el vacío trae su botón a la vista (y el "+" del
+ * encabezado se esconde, `empty-state--caminos`). Esos dos chips no dependen
+ * del mes; "Pagado" sí, y su salida sigue siendo cambiar de chip.
  */
 function _renderFiltroSinResultados() {
-  const label = _FILTROS.find(x => x.id === _filtro)?.label ?? '';
+  if (_filtro === 'fijo') {
+    return `
+    <div class="empty-state empty-state--small empty-state--caminos porpagar-vacio-filtro">
+      <p class="empty-state__title">Aún no tienes gastos fijos</p>
+      <p class="empty-state__desc">El arriendo, los servicios o una suscripción: lo que pagas cada mes.</p>
+      <button type="button" class="btn btn-primary porpagar-vacio-filtro__crear" data-action="comp-elegir-tipo-nuevo-ir" data-tipo="fijo">
+        ${icon('plus')}Agregar gasto fijo
+      </button>
+    </div>`;
+  }
+  if (_filtro === 'deuda') {
+    const caminos = _CAMINOS_POR_PAGAR.filter(c => c.tipo !== 'fijo').map(_caminoPorPagar).join('');
+    return `
+    <div class="empty-state empty-state--small empty-state--caminos porpagar-vacio-filtro">
+      <p class="empty-state__title">Aún no tienes deudas registradas</p>
+      <p class="vacio-caminos__pregunta" id="vacio-caminos-deudas">¿Qué quieres agregar?</p>
+      <ul class="vacio-caminos" aria-labelledby="vacio-caminos-deudas">${caminos}</ul>
+    </div>`;
+  }
   return `
     <div class="empty-state empty-state--small">
-      <p class="empty-state__desc">Nada en "${_esc(label)}" este mes. Toca "Todo" para ver lo demás.</p>
+      <p class="empty-state__desc">Nada pagado este mes. Toca "Todo" para ver lo demás.</p>
     </div>`;
 }
 
@@ -240,6 +262,11 @@ export function renderListaCompromisos() {
       : _renderGrupoFijos(fijos, oculto, atrasos) + _renderGrupoDeudas(deudas, oculto, atrasos);
 
   el.innerHTML = _renderChips() + cuerpo;
+
+  // ADR 137 D1: el "Agregar" del encabezado dice qué abre con el chip activo.
+  const agregar = document.querySelector('#sec-compromisos [data-action="comp-elegir-tipo-nuevo"]');
+  agregar?.setAttribute('aria-label', _filtro === 'fijo' ? 'Agregar un gasto fijo'
+    : _filtro === 'deuda' ? 'Agregar una deuda' : 'Agregar un gasto fijo o una deuda');
 }
 
 /**
@@ -809,8 +836,9 @@ const _CAMINOS_POR_PAGAR = [
   { tipo: 'deuda-personal', icono: 'i-personales', titulo: 'Deuda personal',     ejemplo: 'Lo que le debes a alguien conocido' },
 ];
 
-function _renderEmptyState() {
-  const caminos = _CAMINOS_POR_PAGAR.map(c => `
+/** Una fila de camino: abre su formulario de una vez. */
+function _caminoPorPagar(c) {
+  return `
         <li>
           <button type="button" class="vacio-caminos__fila" data-action="comp-elegir-tipo-nuevo-ir" data-tipo="${c.tipo}">
             ${tejaCategoria(c.icono, 'compromisos')}
@@ -820,7 +848,11 @@ function _renderEmptyState() {
             </span>
             ${icon('chevron-right')}
           </button>
-        </li>`).join('');
+        </li>`;
+}
+
+function _renderEmptyState() {
+  const caminos = _CAMINOS_POR_PAGAR.map(_caminoPorPagar).join('');
   return `
     <div class="empty-state pattern-dots empty-state--caminos">
       <div class="empty-state__icon" aria-hidden="true">${emptyArt('deudas')}</div>

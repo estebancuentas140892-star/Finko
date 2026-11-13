@@ -239,6 +239,10 @@
   }
   .nav-item__fab .icon { --fk-icon-size: var(--fk-icon-lg); stroke-width: 2.6; }
   .nav-item--registrar:active .nav-item__fab { transform: scale(0.94); }
+  /* ADR 137 D4: el foco de "Registrar" se marca en su pastilla, no en la
+     caja del botón con su etiqueta. */
+  .nav-item--registrar:focus-visible { outline: none; }
+  .nav-item--registrar:focus-visible .nav-item__fab { outline: 2px solid var(--fk-border-focus); outline-offset: 3px; }
 
   /* Entrada de Gastos mientras el usuario está en otra lente del bloque
      (ADR 069). No usa `.active` porque en escritorio esa misma fila convive
@@ -3021,7 +3025,7 @@
     height: 44px;
     border: none;
     background: none;
-    border-radius: var(--fk-radius-md);
+    border-radius: var(--fk-radius-full); /* ADR 137 D4: el foco, redondo como el ícono */
     color: var(--fk-text-muted);
     cursor: pointer;
   }

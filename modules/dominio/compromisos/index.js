@@ -515,8 +515,15 @@ function _elegirTipoDeuda(el) {
  * de forzarlos dentro de `renderFormDeuda`, un solo botón de encabezado abre
  * esta hoja de tres chips y cada uno lleva a su propio modal ya existente
  * (FD6: un solo verbo, un solo botón de entrada).
+ *
+ * REV.1 (ADR 137 D1): el botón sabe dónde estás. Con el chip "Fijos" abre de
+ * una vez el gasto fijo; con "Deudas", el formulario de deuda, que ya pregunta
+ * entidad o personal. Con "Todo" o "Pagado" no hay pista: la hoja de siempre.
  */
 function _elegirTipoNuevo() {
+  const filtro = getFiltroPorPagar();
+  if (filtro === 'fijo')  { _nuevoGastoFijo(); return; }
+  if (filtro === 'deuda') { _nuevoCompromiso(); return; }
   const overlay = document.getElementById('modal-compromiso-tipo');
   if (overlay) abrirModal(overlay);
 }

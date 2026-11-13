@@ -23,6 +23,10 @@ html {
   /* Mejor renderizado en HiDPI */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* ADR 137 D4: sin el rectángulo que el navegador pinta al tocar. Rompía la
+     forma de los botones redondos; la respuesta al toque la da cada botón
+     (`:active` en buttons.css), con su propia forma. */
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {

@@ -16,7 +16,7 @@ import { tejaCategoria } from '../../infra/icons.js';
 import { htmlTinoSol } from '../../infra/ilustraciones.js';
 import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { memoizar } from '../../infra/memo.js';
-import { movimientosCompletos, descripcionMovimiento, filtrarMovimientos, sumaDeMovimientos, categoriasFrecuentes } from './logic.js';
+import { movimientosCompletos, descripcionMovimiento, filtrarMovimientos, sumaDeMovimientos } from './logic.js';
 
 /**
  * PERF.2: ambas derivaciones concatenan y ordenan las 3 fuentes completas
@@ -242,7 +242,7 @@ export function renderFiltrosMovimientos() {
     <input type="search" id="movimientos-buscar" class="input movimientos-filtros__busqueda"
            placeholder="Buscar por descripción..." value="${_esc(_filtroTexto)}"
            aria-label="Buscar movimientos por descripción" aria-controls="movimientos-atajos" />
-    ${_atajosHtml(todos, dominios)}
+    ${_atajosHtml()}
     ${_categoriaHtml()}
     <div class="filtros-bar${_tiposAbiertos || caben ? ' filtros-bar--abierta' : ''}" role="group" aria-label="Filtrar movimientos por tipo">
       <button type="button" class="chip${todosActivo ? ' chip--active' : ''}"
@@ -267,51 +267,26 @@ export function renderFiltrosMovimientos() {
     </details>`;
 }
 
-/** "Todas…" del panel de atajos: muestra todas las categorías. Estado de UI. */
-let _atajosTodas = false;
-
-/** Alterna "Todas…" / "Menos" en los atajos por categoría. */
-export function alternarAtajosTodas() {
-  _atajosTodas = !_atajosTodas;
-}
-
 /**
- * ADR 121 D1: lo que se ofrece antes de escribir. Las búsquedas recientes,
- * las categorías más usadas y los tipos y cuentas con movimientos. Nace oculto;
- * `index.js` lo muestra mientras el campo está vacío y con el foco.
- *
- * @param {import('./logic.js').Movimiento[]} todos
- * @param {string[]} dominios
+ * ADR 121 D1, acotado por el ADR 137 D5: antes de escribir solo se ofrece lo
+ * que buscaste antes. "Por categoría" y "Por tipo y cuenta" repetían la fila
+ * de filtros y empujaban la lista fuera de la pantalla con el teclado abierto;
+ * la categoría y la cuenta siguen llegando como filtro desde Límites y Mis
+ * cuentas (ADR 089 D3). Sin búsquedas recientes el panel no tiene nada que
+ * ofrecer y no se abre (`index.js`).
  */
-function _atajosHtml(todos, dominios) {
-  const chip = (accion, dato, valor, texto, icono = '') => `
-          <button type="button" class="chip" data-action="${accion}" data-${dato}="${_esc(valor)}">${icono}${_esc(texto)}</button>`;
+function _atajosHtml() {
   const recientes = (Array.isArray(S.config?.busquedasRecientes) ? S.config.busquedasRecientes : [])
-    .map(t => chip('movimientos-buscar-reciente', 'texto', t, t, '<svg class="icon" aria-hidden="true"><use href="#i-recurring"/></svg>'))
+    .map(t => `
+          <button type="button" class="chip" data-action="movimientos-buscar-reciente" data-texto="${_esc(t)}"><svg class="icon" aria-hidden="true"><use href="#i-recurring"/></svg>${_esc(t)}</button>`)
     .join('');
-  const todasCat = categoriasFrecuentes(todos);
-  const categorias = (_atajosTodas ? todasCat : todasCat.slice(0, 4))
-    .map(c => chip('movimientos-atajo-categoria', 'categoria', c, c)).join('');
-  const mas = todasCat.length > 4
-    ? `<button type="button" class="chip" data-action="movimientos-atajos-todas">${_atajosTodas ? 'Menos' : 'Todas…'}</button>`
-    : '';
-  const cuentasConMov = new Set(todos.flatMap(m => [m.cuentaId, m.cuentaOrigenId, m.cuentaDestinoId]).filter(Boolean));
-  const tiposYCuentas = [
-    // `data-tipo` y no `data-dominio`: ese atributo nombra los chips de la barra.
-    ...dominios.map(d => chip('movimientos-atajo-dominio', 'tipo', d, _DOMINIO_LABEL[d])),
-    ...(S.cuentas ?? []).filter(c => cuentasConMov.has(c.id)).map(c => chip('movimientos-atajo-cuenta', 'cuenta', c.id, c.nombre)),
-  ].join('');
-  const grupo = (titulo, chips) => chips ? `
-      <div class="movimientos-atajos__grupo">
-        <p class="movimientos-atajos__titulo">${titulo}</p>
-        <div class="movimientos-atajos__chips">${chips}
-        </div>
-      </div>` : '';
   return `
-    <div class="movimientos-atajos" id="movimientos-atajos" hidden>
-      ${grupo('Buscaste antes', recientes)}
-      ${grupo('Por categoría', categorias + mas)}
-      ${grupo('Por tipo y cuenta', tiposYCuentas)}
+    <div class="movimientos-atajos" id="movimientos-atajos" hidden>${recientes ? `
+      <div class="movimientos-atajos__grupo">
+        <p class="movimientos-atajos__titulo">Buscaste antes</p>
+        <div class="movimientos-atajos__chips">${recientes}
+        </div>
+      </div>` : ''}
     </div>`;
 }
 

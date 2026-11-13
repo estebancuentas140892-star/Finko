@@ -2594,16 +2594,36 @@ describe('renderListaCompromisos() - los cuatro chips de la lente', () => {
     expect(activo.getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('cuando el filtro no deja nada, lo dice y ofrece volver a "Todo"', () => {
+  it('"Deudas" sin deudas ofrece las dos a la vista: entidad y personal (ADR 137 D2)', () => {
     S.compromisos = [fijo()];
     setFiltroPorPagar('deuda');
     renderListaCompromisos();
     expect(document.querySelectorAll('.deuda-card')).toHaveLength(0);
-    const aviso = document.querySelector('.empty-state__desc');
-    expect(aviso.textContent).toContain('Nada en "Deudas"');
-    expect(aviso.textContent).toContain('Todo');
-    // Y sigue habiendo chips: la salida es cambiar de filtro, no crear algo.
+    const vacio = document.querySelector('.porpagar-vacio-filtro');
+    expect(vacio.classList.contains('empty-state--caminos')).toBe(true);
+    expect(vacio.querySelector('.empty-state__title').textContent).toBe('Aún no tienes deudas registradas');
+    expect([...vacio.querySelectorAll('[data-action="comp-elegir-tipo-nuevo-ir"]')].map(b => b.dataset.tipo))
+      .toEqual(['deuda-entidad', 'deuda-personal']);
+    // Y sigue habiendo chips: se puede volver a "Todo".
     expect(document.querySelectorAll('.filtros-bar .chip')).toHaveLength(4);
+  });
+
+  it('"Fijos" sin gastos fijos trae "Agregar gasto fijo" (ADR 137 D2)', () => {
+    S.compromisos = [{ ...fijo(), id: 'd1', tipo: 'deuda-entidad', saldoTotal: 1_000_000, cuotaMensual: 100_000 }];
+    setFiltroPorPagar('fijo');
+    renderListaCompromisos();
+    const boton = document.querySelector('.porpagar-vacio-filtro [data-tipo="fijo"]');
+    expect(boton.textContent.trim()).toBe('Agregar gasto fijo');
+    expect(boton.classList.contains('btn-primary')).toBe(true);
+    setFiltroPorPagar('todo');
+  });
+
+  it('"Pagado" sin pagos dice que no hay nada pagado este mes', () => {
+    S.compromisos = [fijo()];
+    setFiltroPorPagar('pagado');
+    renderListaCompromisos();
+    expect(document.querySelector('.empty-state__desc').textContent).toContain('Nada pagado este mes');
+    setFiltroPorPagar('todo');
   });
 });
 

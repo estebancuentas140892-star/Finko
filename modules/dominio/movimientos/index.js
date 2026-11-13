@@ -15,7 +15,7 @@ import {
   renderMovimientosCompletos, cargarMasMovimientos,
   renderFiltrosMovimientos, setFiltroTexto, setFiltroDominio, setFiltroCategoria, setFiltroCuenta,
   setFiltroFechaDesde, setFiltroFechaHasta, limpiarFiltrosMovimientos,
-  actualizarBotonLimpiarFiltros, alternarTiposMovimientos, alternarAtajosTodas,
+  actualizarBotonLimpiarFiltros, alternarTiposMovimientos,
   historialGrande, pintarFilasDeEspera,
 } from './view.js';
 import { anotarBusquedaReciente } from './logic.js';
@@ -71,7 +71,8 @@ function _mostrarAtajos(quiere) {
   const atajos = document.getElementById('movimientos-atajos');
   const buscar = document.getElementById('movimientos-buscar');
   if (!atajos || !buscar) return;
-  atajos.hidden = !(quiere && buscar.value.trim() === '');
+  // ADR 137 D5: sin búsquedas recientes el panel está vacío y no se abre.
+  atajos.hidden = !(quiere && buscar.value.trim() === '' && atajos.childElementCount > 0);
   buscar.setAttribute('aria-expanded', String(!atajos.hidden));
 }
 
@@ -216,16 +217,6 @@ export function initMovimientos() {
 
   // ADR 121 D1: los atajos de la búsqueda.
   registrarAccion('movimientos-buscar-reciente', (el) => _aplicarAtajo(() => setFiltroTexto(el.dataset.texto)));
-  registrarAccion('movimientos-atajo-categoria', (el) => _aplicarAtajo(() => setFiltroCategoria(el.dataset.categoria)));
-  registrarAccion('movimientos-atajo-cuenta', (el) => _aplicarAtajo(() => setFiltroCuenta(el.dataset.cuenta)));
-  registrarAccion('movimientos-atajo-dominio', (el) => _aplicarAtajo(() => setFiltroDominio(el.dataset.tipo)));
-  registrarAccion('movimientos-atajos-todas', () => {
-    alternarAtajosTodas();
-    renderFiltrosMovimientos();
-    _wireFiltrosMovimientos();
-    _mostrarAtajos(true);
-    document.querySelector('[data-action="movimientos-atajos-todas"]')?.focus({ preventScroll: true });
-  });
   // Tocar fuera del campo y de sus atajos los cierra; Escape también.
   document.addEventListener('click', (e) => {
     if (!e.target.closest?.('#movimientos-buscar, #movimientos-atajos')) _mostrarAtajos(false);

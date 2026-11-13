@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-13. Última tarea cerrada: MV2.30 Ajustes (ADR 136); MV2.30 completa. MOV.1 en pausa. HF.0f en curso: banco sin commitear y fuera de esta copia.
+> Revisado: 2026-11-13. Última tarea cerrada: REV.1 (ADR 137), tanda 1 de la revisión del 13 de noviembre. MOV.1 en pausa. HF.0f en curso: banco sin commitear y fuera de esta copia.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -25,6 +25,9 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**REV.1 - la revisión del 13 de noviembre, tanda 1, 2026-11-13**
+"Agregar" según el chip de Por pagar, vacíos con botón, el logo, el aviso al instalar, botones redondos, Movimientos y Límites ([ADR 137](DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md)). SW v694.
+
 **MV2.30 Ajustes - el índice, las filas y la hoja de borrar; cierra MV2.30, 2026-11-13**
 Grupos con tejas, el tema en la fila y "Guardar respaldo primero"; "rediseño5" borrado ([ADR 136](DECISIONS/136-ajustes-del-adulto-en-el-telefono.md)). SW v693.
 
@@ -37,9 +40,6 @@ Paso 1 en pregunta con lo recomendado, filas de necesidades y "Siguiente: ahorro
 **MV2.30 Mis cuentas tanda 2 - la hoja de una cuenta y Transferir, 2026-11-13**
 Hoja propia de la cuenta; Transferir con "Sale de", "Entra a" y el monto en el botón ([ADR 135](DECISIONS/135-mis-cuentas-y-me-deben-en-el-telefono.md) D4 y D5). SW v690.
 
-**MV2.30 Mis cuentas tanda 1 - el total, tu ingreso y "Reparte", 2026-11-13**
-Pastilla de cuentas, "Tu ingreso" y "Reparte tus $X" ([ADR 135](DECISIONS/135-mis-cuentas-y-me-deben-en-el-telefono.md) D1 a D3). SW v689.
-
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 
 ---
@@ -50,6 +50,7 @@ Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelo
 - **Iniciativa HF** ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), Propuesta): su Fase 0 corre en paralelo a MOV.1; cerradas de la HF.0a a la HF.0j salvo la f y la g; P1 a P8 resueltas. Pendientes: HF.0f (errores corregidos; el banco sin commitear, fuera de esta copia) y HF.0g; DOC.5 en Mantenimiento.
 - **Iniciativa NUBE** ([ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md), Aceptada): Finko en la nube con Supabase, cuenta opcional. NUBE.0 a NUBE.3 cerradas: cuenta por correo para invitados, sincronización por registro, borrar la cuenta y el teléfono del niño en `finko-prueba`. Sigue NUBE.4 (bancos), que pide su propio ADR; invitar probadores pide SMTP propio en Supabase.
 - **Iniciativa APR, "Aprende y aplícalo"** ([ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) y [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md), Propuesta; **solo del niño desde el [ADR 101](DECISIONS/101-finko-del-adulto-decide-no-ensena.md)**, que deja para el adulto la ayuda para decidir, DEC.1): Fases 1 a 4 hechas (salvo la revisión pedagógica de APR.2c); el niño ya puede empezar solo ([ADR 100](DECISIONS/100-el-nino-empieza-solo.md)); quedan la revisión pedagógica de las lecciones del niño (APR.3f) y la ronda 2 de Tino en el niño (APR.5b): los dibujos llegaron ([ADR 129](DECISIONS/129-tino-ronda-2-en-el-adulto.md)), falta el conversor del [095](DECISIONS/095-tino-en-el-sprite.md). Cada rebanada se sube a `main` al cerrar. El 093 acota el ADR 003 (ADN 11) solo dentro del perfil niño.
+- **Revisión del 13 de noviembre (REV)**: tanda 1 hecha ([ADR 137](DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md)). Siguen REV.2a a REV.3b; REV.4 (los ojos) espera la decisión de Esteban. Detalle en [`board/transversal.md`](board/transversal.md).
 - **El adulto en el teléfono (MV2.30)**: hecho. Los 6 tableros "Finko móvil · rediseño" quedaron aplicados ([ADR 126](DECISIONS/126-inicio-del-adulto-en-el-telefono.md) y [132](DECISIONS/132-gastos-del-adulto-en-el-telefono.md) a [136](DECISIONS/136-ajustes-del-adulto-en-el-telefono.md)) y sus HTML borrados; `Diseño Finko/` quedó vacía.
 - **Canvas móvil (MV2.3)**: aplicado completo ([ADR 116](DECISIONS/116-lo-que-faltaba-del-canvas-primera-tanda.md) a [123](DECISIONS/123-la-hoja-de-formulario-completa.md)) y publicado en `main` y producción (v658, 2026-11-04, a pedido y sin medir antes). **Lo que queda: MV2.28** en el tablero (anotar MV2.17 y medir fluidez y Lighthouse en producción).
 - **Fase actual:** post-v1.0, mantenimiento y mejoras por sección.

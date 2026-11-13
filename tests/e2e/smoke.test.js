@@ -3351,12 +3351,17 @@ test.describe('Por pagar - chips de la lente', () => {
     await expect(chips).toHaveText(['Todo', 'Fijos', 'Deudas', 'Pagado']);
     await expect(page.locator('#lista-compromisos .deuda-card')).toHaveCount(1);
 
-    // "Deudas" no deja nada: hay datos, pero el filtro los esconde, así que el
-    // mensaje es otro y la salida es cambiar de chip, no crear algo.
+    // "Deudas" no deja nada: el vacío ofrece las dos deudas a la vista, y
+    // "Agregar" con ese chip abre de una vez el formulario de deuda (ADR 137).
     await chips.filter({ hasText: 'Deudas' }).click();
     await expect(page.locator('#lista-compromisos .deuda-card')).toHaveCount(0);
-    await expect(page.locator('#lista-compromisos .empty-state__desc')).toContainText('Nada en "Deudas"');
+    await expect(page.locator('#lista-compromisos .porpagar-vacio-filtro .empty-state__title')).toHaveText('Aún no tienes deudas registradas');
+    await expect(page.locator('#lista-compromisos .porpagar-vacio-filtro [data-tipo]')).toHaveCount(2);
     await expect(chips).toHaveCount(4);
+    await page.locator('[data-action="comp-elegir-tipo-nuevo"]:visible').first().click();
+    await expect(page.locator('#modal-compromiso[data-open] #form-compromiso')).toBeVisible();
+    await expect(page.locator('#modal-compromiso-tipo[data-open]')).toHaveCount(0);
+    await page.keyboard.press('Escape');
 
     await chips.filter({ hasText: 'Todo' }).click();
     await expect(page.locator('#lista-compromisos .deuda-card')).toHaveCount(1);

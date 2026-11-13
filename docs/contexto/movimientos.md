@@ -1,6 +1,6 @@
 # Ficha de contexto: Movimientos
 
-> Revisado: 2026-11-13 (MV2.30, ADR 134 D6).
+> Revisado: 2026-11-13 (REV.1, ADR 137).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -64,6 +64,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-13 (**REV.1**, [ADR 137](../DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md) D5): el panel de la búsqueda ofrece solo "Buscaste antes", y no se abre sin búsquedas recientes; salen "Por categoría" y "Por tipo y cuenta".
 - 2026-11-13 (**MV2.30 Consultar tanda 3**, [ADR 134](../DECISIONS/134-consultar-del-adulto-en-el-telefono.md) D6): los días con su encabezado y su total, la fila sin el día, los chips a la vista con dos tipos, la hoja del gasto y, en el teléfono, el mes grande, los días en tarjeta y la búsqueda con "Limpiar".
 
 - 2026-11-04 (**MV2.3 tanda 6**, [ADR 121](../DECISIONS/121-buscar-la-nube-en-el-avatar-y-las-pruebas-del-canvas.md) D1 y D3): con el campo vacío y con el foco, `#movimientos-atajos` ofrece "Buscaste antes" (`S.config.busquedasRecientes`, cinco, se anota al confirmar con resultados), "Por categoría" (`categoriasFrecuentes`, cuatro y "Todas…") y "Por tipo y cuenta"; con texto, `.movimientos-resumen` dice "N resultados · $X en todo tu historial" (`sumaDeMovimientos`); cada mes lleva su neto y el año solo si no es el actual; la fila dice "Mar 27 · categoría · cuenta". Con 1.500 movimientos o más, al llegar se pintan filas de espera y la lista se arma en el cuadro siguiente (`historialGrande`, `pintarFilasDeEspera`).

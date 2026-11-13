@@ -15,7 +15,7 @@ const conRecientes = (recientes) => {
 };
 
 test.describe('Buscar en Movimientos (ADR 121 D1)', () => {
-  test('con el campo vacío ofrece lo buscado antes, categorías y cuentas; un atajo pone su filtro', async ({ page }) => {
+  test('con el campo vacío ofrece solo lo buscado antes, y un atajo lo vuelve a buscar (ADR 137 D5)', async ({ page }) => {
     await sembrar(page, conRecientes(['Mercado quincenal']));
     await page.goto('/#movimientos');
     await expect(page.locator('#lista-movimientos .list-item').first()).toBeVisible({ timeout: 10_000 });
@@ -24,8 +24,8 @@ test.describe('Buscar en Movimientos (ADR 121 D1)', () => {
     await expect(atajos).toBeHidden();
     await page.locator('#movimientos-buscar').focus();
     await expect(atajos).toBeVisible();
-    await expect(atajos.locator('.movimientos-atajos__titulo')).toHaveText(['Buscaste antes', 'Por categoría', 'Por tipo y cuenta']);
-    await expect(atajos.locator('[data-action="movimientos-atajo-cuenta"]')).toHaveText(['Bancolombia Ahorros', 'Efectivo']);
+    await expect(atajos.locator('.movimientos-atajos__titulo')).toHaveText(['Buscaste antes']);
+    await expect(atajos.locator('.chip')).toHaveCount(1);
 
     await atajos.locator('[data-action="movimientos-buscar-reciente"]').click();
     await expect(page.locator('#movimientos-buscar')).toHaveValue('Mercado quincenal');
@@ -43,6 +43,11 @@ test.describe('Buscar en Movimientos (ADR 121 D1)', () => {
     await expect(mes).toBeVisible({ timeout: 10_000 });
     await expect(mes).not.toContainText(String(new Date().getFullYear()));
     await expect(mes.locator('.movimientos-mes__total')).toHaveText(/^[-+]\$[\d.]+$/);
+
+    // ADR 137 D5: sin búsquedas recientes no hay nada que ofrecer y el panel
+    // no se abre encima de la lista.
+    await page.locator('#movimientos-buscar').focus();
+    await expect(page.locator('#movimientos-atajos')).toBeHidden();
 
     await page.locator('#movimientos-buscar').fill('Restaurantes');
     await page.locator('#movimientos-buscar').press('Enter');

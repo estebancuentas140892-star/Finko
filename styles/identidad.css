@@ -2736,9 +2736,11 @@ body:not(.light-theme) .cov__fill {
     width: 44px;
     height: 44px;
     border: 0;
+    border-radius: var(--fk-radius-full); /* ADR 137 D4: el foco, redondo como su círculo */
     background: none;
     cursor: pointer;
   }
+  .medeben-fila__pago:focus-visible { outline-offset: -4px; }
   .medeben-fila__circulo {
     display: grid;
     flex: none;

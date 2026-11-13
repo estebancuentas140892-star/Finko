@@ -95,8 +95,12 @@ textarea:focus-visible,
 [role="menuitem"]:focus-visible {
   outline: 2px solid var(--fk-border-focus);
   outline-offset: 3px;
-  border-radius: var(--fk-radius-sm);
 }
+/* ADR 137 D4: el anillo sigue la forma de cada control (el contorno copia su
+   `border-radius`). Antes esta regla le ponía un radio chico a todo lo que
+   recibía foco: un botón redondo se volvía cuadrado justo al tocarlo. Solo
+   el enlace de texto, que no tiene radio propio, lo conserva. */
+a:focus-visible { border-radius: var(--fk-radius-sm); }
 /* El campo del niño vive desnudo dentro de su caja, que ya marca el foco
    con su borde (`.kin:focus-within`): no dibuja un segundo anillo adentro
    (ADR 124 D8). */

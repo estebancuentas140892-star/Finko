@@ -13,7 +13,7 @@ import { estadoCuota } from '../../core/storage.js';
 import { diasHastaFecha } from '../../infra/bolsas.js';
 import { cifradoDisponible } from '../../infra/cripto-respaldo.js';
 import { legalVigente, estadoVigenciaLegal, APP_VERSION, SITUACIONES_LABORALES } from '../../core/constants.js';
-import { estaInstalada } from '../../ui/install-prompt.js';
+import { estaInstalada, instaladaDesdeEsteNavegador } from '../../ui/install-prompt.js';
 import { DOCUMENTOS_LEGALES } from './legal.js';
 import { candadoActivo, cryptoDisponible, PIN_LARGO_MIN, PIN_LARGO_MAX } from './bloqueo.js';
 import { ninos, hayNinos } from '../../infra/perfiles.js';
@@ -82,7 +82,7 @@ export function renderPanelConfig() {
       _filaTema(),
       _fila('atajos', _renderAtajos(), S.config?.atajosTeclado !== false ? 'Activados' : 'Desactivados', { icono: 'key' }),
       _fila('recordatorios', _renderNotificaciones(), recordatorios, { icono: 'bell', aviso: recordatorios === 'Bloqueados en este dispositivo' }),
-      _fila('instalar', _renderInstalarApp(), estaInstalada() ? 'Ya está instalada' : 'Abre Finko como una app', { icono: 'download' }),
+      _fila('instalar', _renderInstalarApp(), estaInstalada() || instaladaDesdeEsteNavegador() ? 'Ya está instalada' : 'Abre Finko como una app', { icono: 'download' }),
       _fila('actualizar', _renderActualizar(), 'Busca si hay una versión nueva', { icono: 'refresh' }),
     ])}
     ${_grupo('Información', [
@@ -330,7 +330,8 @@ function _renderAtajos() {
 // ── SECCIONES ────────────────────────────────────────────────────
 
 function _renderInstalarApp() {
-  if (estaInstalada()) {
+  // ADR 137 D3: también en la pestaña desde la que se instaló.
+  if (estaInstalada() || instaladaDesdeEsteNavegador()) {
     return `
       <section class="config-section" aria-labelledby="config-install-title">
         <h2 class="config-section__title" id="config-install-title">Instalar app</h2>

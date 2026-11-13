@@ -1,6 +1,6 @@
 # Ficha de contexto: Sistema visual
 
-> Revisado: 2026-11-03.
+> Revisado: 2026-11-13 (REV.1, ADR 137).
 
 > Identidad visual transversal: color por sección, tejas de marca y biblioteca gráfica, y navegación. Partida de `transversal.md` el 2026-07-24. Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -50,6 +50,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-13 (**REV.1**, [ADR 137](../DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md) D4): sin el resaltado del navegador al tocar (`reset.css`), `:active` con opacidad para los botones que no son `.btn` (`buttons.css`) y el anillo de foco que ya no cambia el radio del control (`a11y.css`).
 - 2026-08-14 (DOC.3, sin código): sello re-verificado contra el código. Las anclas siguen vivas y el pipeline no cambió; se corrigieron las líneas orientativas, la posición de `MARCAS` (está después de `BANCOS_CO`, no antes) y el conteo de entidades con glifo, que era 11 y hoy es 12 sobre 14 entradas.
 - 2026-07-05 (BR.4, [ADR 027](../DECISIONS/027-logos-de-marca-a-color-excepcion-monocromo.md)): formaliza la excepcion de logo a color (`data-fullcolor`), su archivo autonomo y el color de teja.
 - 2026-07-05 (BR.3, completa): 9 bancos y billeteras mas a color de un tiron, todos con la misma imagen de calco incrustada.

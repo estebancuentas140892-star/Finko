@@ -37,6 +37,14 @@
   transform: scale(0.97);
 }
 
+/* ADR 137 D4: sin el resaltado del navegador (reset.css), el resto de los
+   botones responde al toque bajando su opacidad, que respeta la forma de
+   cada uno. `:where` deja la especificidad en lo mínimo: cualquier `:active`
+   propio (la barra, "Registrar", el niño) manda sobre este. */
+:where(button:not(.btn), [role="button"]):active:not(:disabled) {
+  opacity: 0.72;
+}
+
 .btn:disabled,
 .btn[aria-disabled="true"] {
   opacity: 0.4;

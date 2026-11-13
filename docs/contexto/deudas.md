@@ -1,6 +1,6 @@
 # Ficha de contexto: Por pagar (antes Deudas)
 
-> Revisado: 2026-11-03.
+> Revisado: 2026-11-13 (REV.1, ADR 137).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -46,6 +46,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-13 (**REV.1**, [ADR 137](../DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md) D1 y D2): "Agregar" según el chip (Fijos abre el gasto fijo, Deudas el formulario de deuda); los vacíos de esos chips con su botón (`_renderFiltroSinResultados()`, `_caminoPorPagar()`).
 - 2026-11-06 (ADR 132 tanda 5): en el teléfono la hoja del plan de salida abre con el resultado, las dos formas en pestañas con el orden en que se terminan, el pago extra con su efecto y "Aplicar", y las otras opciones como filas; si las cuotas no alcanzan, el aviso va primero con "Lo mínimo para salir".
 - 2026-11-06 (ADR 132 tanda 2): grupos en frase con su orden debajo, el círculo del pago en vez del botón por fila, la línea de ayuda, los filtros en frambuesa y la hoja propia de cada pago.
 - 2026-11-04 (**MV2.3 tanda 4**, ADR 119 D1): en el teléfono el simulador vive en `#modal-plan-salida` (`_ubicarEstrategia()` lo muda y lo devuelve a `#estrategia-pago-sitio` desde 1024px); al pie, `renderEntradaPlanSalida()`.

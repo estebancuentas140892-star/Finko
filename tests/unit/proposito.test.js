@@ -41,12 +41,11 @@ describe('htmlBannerProposito', () => {
     expect(html).toContain('Reservas te ayuda');
   });
 
-  it('MC.5e (ADR 017 decisión 7): el propósito de Límites de gasto se alinea con "Mis cuentas planifica, Límites vigila"', () => {
+  it('ADR 137 D6 (acota el ADR 017 D7): el propósito de Límites no pide un plan que quien lo lee no tiene', () => {
     const { texto } = PROPOSITOS_SECCION.presupuesto;
-    expect(texto).toContain('Mis cuentas');
-    expect(texto).toContain('Necesidades');
-    expect(texto).toContain('Estilo de vida');
-    expect(texto).toContain('Ahorro');
+    expect(texto.startsWith('¿Gastas más de lo que pensabas')).toBe(true);
+    expect(texto).toContain('decidir cuánto quieres gastar en cada cosa');
+    expect(texto).not.toContain('plan que armaste');
   });
 
   // ADR 107 D5: la pregunta pasa a título y el resto a cuerpo, sin perder ni

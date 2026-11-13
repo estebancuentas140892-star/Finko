@@ -39,7 +39,10 @@ export const PROPOSITOS_SECCION = {
   },
   presupuesto: {
     titulo: '¿Para qué sirve Límites de gasto?',
-    texto: '¿Llegas a fin de mes sin saber por qué no te alcanzó? Sin un tope claro, es fácil gastar de más sin darte cuenta. Límites de gasto vigila el plan que armaste en Mis cuentas (Necesidades, Estilo de vida y Ahorro) y te avisa antes de pasarte, no después.',
+    // ADR 137 D6: acota el ADR 017 D7 solo en este banner. Quien lo lee no
+    // tiene ingresos ni límites, así que tampoco tiene un plan: el texto habla
+    // del problema y de lo que hace un límite, sin pedir el plan primero.
+    texto: '¿Gastas más de lo que pensabas y no sabes en qué se fue el dinero? Es común: las compras del día a día se suman sin que lo notes. Límites de gasto te deja decidir cuánto quieres gastar en cada cosa, como restaurantes o transporte, y te avisa antes de pasarte, no después.',
   },
   metas: {
     titulo: '¿Para qué sirve Metas?',

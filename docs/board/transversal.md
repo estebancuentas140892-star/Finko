@@ -16,6 +16,64 @@
 
 > **Iniciativa Dirección Visual premium** ([ADR 033](../DECISIONS/033-direccion-visual-premium.md)). DV.2a/b/c cerradas. DV.2d: infraestructura, 8 plantillas y cableado de `emptyArt()` listos (2026-08-14), falta solo el arte final de Esteban.
 
+> **Iniciativa REV, la revisión de Esteban del 2026-11-13** (14 puntos en Registro, Inicio, Deudas, Movimientos y General). La tanda 1 cerró con el [ADR 137](../DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md). "Pagar desde varias cuentas" no genera tarjeta: ya existe y se deja así (registra lo que pasa en el banco, un débito por cuenta).
+
+#### REV.2a - Por pagar dice cuánto te falta pagar este mes, con los fijos
+- Prioridad  : alta
+- Estado     : requiere ADR (ajusta el [ADR 036](../DECISIONS/036-deudas-v2-visual.md) D1)
+- Área       : ambos
+- Objetivo   : la tarjeta de arriba suma solo deudas (`resumenDeudas()`); con solo gastos fijos dice "No tienes deudas registradas" y $0. Que diga "Te falta pagar este mes" (lo vencido y lo que falta del mes, fijos y cuotas, el mismo cálculo de la lista) y "Lo que debes en total" debajo solo si hay deudas
+- Riesgo     : Inicio de escritorio ya suma fijos en "en total debes": las dos cifras deben quedar con nombres distintos
+- Archivos   : `modules/dominio/compromisos/views/hero.js`, `logic/modelo.js`, `views/lista.js`
+- Depende de : nada
+- Aceptación : con solo un arriendo, la tarjeta dice cuánto falta pagar este mes y coincide con la suma de la lista
+
+#### REV.2b - El formulario de gasto fijo, más corto y con el campo a la vista
+- Prioridad  : alta
+- Estado     : requiere ADR (ajusta el ADR 042 D5)
+- Área       : design
+- Objetivo   : hoy abre con 15 categorías antes del monto. Orden: "¿Cuánto pagas?", "¿Qué es?" (6 frecuentes y "N más"), "¿Cada cuánto?" (Mensual, Quincenal, Anual, Otra), "¿Qué día?", y nota y débito automático en "Más opciones". En todos los formularios, el campo enfocado sube a la vista cuando se abre el teclado (`ui/teclado.js`)
+- Archivos   : `modules/dominio/compromisos/views/formularios.js`, `compromisos/index.js`, `modules/ui/teclado.js`
+- Depende de : nada
+- Aceptación : a 390 px, el formulario cabe sin bajar y el campo que se escribe no queda tapado por el teclado
+
+#### REV.2c - Al transferir, la consignación ante la DIAN en una frase
+- Prioridad  : media
+- Estado     : pendiente (cambia el texto de la nota del [ADR 135](../DECISIONS/135-mis-cuentas-y-me-deben-en-el-telefono.md) D5)
+- Área       : design
+- Objetivo   : segunda frase de la nota de Transferir: "No es un ingreso, pero tu banco puede reportarlo a la DIAN como una consignación. Finko la guarda en Movimientos por si la necesitas al declarar renta." Texto corrido, sin caja ni color de alerta (ADR 107 D4); no se dice si el destino es efectivo
+- Archivos   : `modules/dominio/tesoreria/views/transferencias.js`
+- Depende de : nada
+- Aceptación : la nota dice las dos frases al transferir a una cuenta y solo la primera al pasar a efectivo
+
+#### REV.3a - Extracto del mes
+- Prioridad  : media
+- Estado     : requiere ADR propio
+- Área       : ambos
+- Objetivo   : una hoja "Extracto de noviembre": entró, salió y la diferencia; en qué se fue por categoría; por cuenta; el detalle por día. "Guardar PDF" (`window.print()` con estilos de impresión) y "Descargar para Excel" (CSV del mes con `;`, BOM y columnas Entrada y Salida). Sin saldo inicial y final por cuenta: los aportes a metas no guardan fecha (ficha 18 de MOV.1). Se abre desde el mes de Movimientos y desde Ajustes, donde reemplaza "Exportar gastos a Excel"
+- Riesgo     : sin librerías nuevas (`docs/SECURITY.md`); un .xlsx de verdad queda para después si el CSV no alcanza
+- Archivos   : `modules/dominio/movimientos/logic.js` (`extractoDelMes()`), su vista, `modules/infra/csv.js`, estilos de impresión
+- Depende de : nada. Rebanadas: (1) la función pura con pruebas, (2) la hoja y sus entradas, (3) el CSV y la impresión
+- Aceptación : el extracto de un mes cuadra con la lista de Movimientos de ese mes y el CSV abre en columnas en Excel
+
+#### REV.3b - Instalar en iPhone sin perder lo registrado
+- Prioridad  : alta
+- Estado     : pendiente (confirmar primero en un iPhone real)
+- Área       : ambos
+- Objetivo   : en iOS la app instalada no comparte `localStorage` con Safari: quien se registra en Safari e instala abre una app vacía. Ofrecer instalar antes del registro en iOS, o avisarlo en el modal. Además: el iPad no se detecta (`_esIOS()`), los pasos suponen Safari con Compartir abajo y no se detecta el navegador de otra app
+- Archivos   : `modules/ui/install-prompt.js`, `index.html` (`#modal-install-ios`), `modules/ui/onboarding.js`
+- Depende de : una prueba en un iPhone real
+- Aceptación : en un iPhone, quien instala Finko encuentra sus datos (o fue avisado antes de registrarse)
+
+#### REV.4 - Un ojo por sección
+- Prioridad  : media
+- Estado     : requiere decisión de Esteban (revierte el [ADR 106](../DECISIONS/106-un-encabezado-tres-niveles.md) D3 y la regla R20)
+- Área       : ambos
+- Objetivo   : el ojo nunca fue por sección: siempre fue un solo interruptor (`S.config.ocultarSaldo`); antes algunas secciones no lo respetaban. Recomendación: mantenerlo único, porque con uno por sección los montos quedan a la vista al cambiar de pantalla. Si se decide por sección: un indicador por sección con migración, y decidir qué hacen el aviso al registrar, Atención hoy y las notificaciones
+- Archivos   : `modules/ui/bloque-gastos.js` y los 39 archivos que leen el indicador
+- Depende de : la decisión
+- Aceptación : la que fije el ADR nuevo, si lo hay
+
 #### MV2.28 - Lo que queda del canvas móvil (los 13 HTML de `Diseño Finko/`)
 - Prioridad  : media
 - Estado     : en proceso (2026-11-04): (b) y (d) hechas, quedan (c) y (a). Las 12 propuestas de la segunda auditoría ya están ([ADR 122](../DECISIONS/122-lo-que-faltaba-del-canvas-segunda-pasada.md) y [123](../DECISIONS/123-la-hoja-de-formulario-completa.md)) y publicadas en `main` (v658)
