@@ -2771,6 +2771,8 @@ test.describe('Movimientos - búsqueda y filtros (MOV.2)', () => {
 // dueña del alta: el Calendario ya no crea nada.
 
 test.describe('Agenda - empty state del mes (CAL.4b)', () => {
+  // ADR 134 D5: "está despejado" es para quien ya tiene datos (acá, un fijo
+  // inactivo); quien no tiene nada ve el camino directo, en su propio test.
   test('mes vacío muestra "está despejado" y su salida lleva a Por pagar', async ({ page }) => {
     await sembrar(page, {
       version:   1,
@@ -2779,7 +2781,7 @@ test.describe('Agenda - empty state del mes (CAL.4b)', () => {
       cuentas:   [],
       ingresos:  [],
       gastos:    [],
-      compromisos: [],
+      compromisos: [{ id: 'x1', tipo: 'fijo', descripcion: 'Arriendo', monto: 500000, frecuencia: 'Mensual', diaPago: 5, activo: false }],
       metas:     [],
     });
 
@@ -2794,6 +2796,19 @@ test.describe('Agenda - empty state del mes (CAL.4b)', () => {
     await empty.locator('a[href="#compromisos"]').click();
     await expect(page.locator('#sec-compromisos')).toBeVisible({ timeout: 3_000 });
     await expect(page.locator('#title-compromisos')).toHaveText('Por pagar');
+  });
+
+  test('sin nada con fecha, el vacío abre de una vez el gasto fijo (ADR 134 D5)', async ({ page }) => {
+    await sembrar(page, {
+      version: 1, perfil: { nombre: 'TestUser', smmlv: 1750905 }, onboarded: true,
+      cuentas: [], ingresos: [], gastos: [], compromisos: [], metas: [],
+    });
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+    const empty = page.locator('.cal-empty--inicio');
+    await expect(empty).toBeVisible();
+    await empty.locator('[data-action="comp-elegir-tipo-nuevo-ir"]').click();
+    await expect(page.locator('#modal-gasto-fijo[data-open]')).toHaveCount(1);
   });
 });
 

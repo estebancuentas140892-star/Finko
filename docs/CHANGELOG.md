@@ -12,6 +12,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(agenda): MV2.30 Consultar tanda 2, la hoja de un día y el Calendario vacío · 2026-11-13
+
+[ADR 134](DECISIONS/134-consultar-del-adulto-en-el-telefono.md) D5. Ficha: [`contexto/calendario.md`](contexto/calendario.md). SW v686. Tablero "rediseño3".
+
+- **La hoja de un día**: "Mañana, sábado 14 de noviembre" (también hoy y ayer), "1 pago" en vez de "1 compromiso", la frecuencia en palabras ("Gasto fijo · cada mes") y, al pie, "Desde Por pagar lo marcas como pagado. Al volver, el día sigue abierto." En el teléfono "Ver en Por pagar" es un botón a lo ancho bajo su pago.
+- **Sin nada con fecha** (ni pagos ni ingresos): el vacío ya no es "Noviembre está despejado" sobre un mes en blanco. En el teléfono el banner con Tino lleva dentro "Agregar un pago fijo", que abre el formulario de Por pagar de una vez (`comp-elegir-tipo-nuevo-ir`), y el mes no se dibuja. Con datos y un mes vacío sigue "está despejado" (ADR 111 D5).
+- Pruebas: 6 ajustadas y 1 nueva en `agenda`; en `smoke`, el vacío de "está despejado" siembra un fijo inactivo y uno nuevo abre el gasto fijo desde el vacío.
+
 ### feat(agenda): MV2.30 Consultar tanda 1, la hoja Más y Calendario · 2026-11-13
 
 [ADR 134](DECISIONS/134-consultar-del-adulto-en-el-telefono.md) D1 a D4. Fichas: [`contexto/calendario.md`](contexto/calendario.md). SW v685. Tablero "rediseño3".

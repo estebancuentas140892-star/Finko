@@ -866,6 +866,9 @@ function _filaCelda({ tipo, nombre, monto, clase }) {
 }
 
 /** Etiqueta de leyenda por tipo de evento (color e ícono ya los da `cal-dot--*`, CSS). */
+/** Cada cuánto se repite un pago, en palabras (ADR 134 D5). */
+const _CADA = { Mensual: 'cada mes', Quincenal: 'cada quincena', Semanal: 'cada semana', Diario: 'cada día', Anual: 'cada año', Bimestral: 'cada dos meses', Trimestral: 'cada tres meses', Semestral: 'cada seis meses' };
+
 const _LABEL_LEYENDA = {
   'ingreso':        'Día de ingreso',
   'meta':           'Aporte a meta',
@@ -918,6 +921,20 @@ function _renderLeyenda(eventos, { vencidos = false, esMesEnCurso = false } = {}
  * @returns {string}
  */
 function _renderEmptyMes(month) {
+  // ADR 134 D5: quien todavía no tiene ni pagos ni ingresos no viene a ver un
+  // mes despejado: viene a empezar. El botón abre el gasto fijo de una vez.
+  const sinNada = (S.compromisos ?? []).length === 0 && (S.ingresos ?? []).length === 0;
+  if (sinNada) {
+    return `
+    <div class="cal-empty cal-empty--inicio">
+      <span class="cal-empty__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-agenda"/></svg></span>
+      <p class="cal-empty__title">Tus pagos del mes, en un solo lugar</p>
+      <p class="cal-empty__desc">Agrega en Por pagar tu arriendo, tus servicios o tus deudas. Aquí vas a ver qué día sale cada uno y qué día entra tu ingreso, para que no se te pase ninguno.</p>
+      <button type="button" class="btn btn-primary cal-empty__agregar" data-action="comp-elegir-tipo-nuevo-ir" data-tipo="fijo">
+        <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Agregar un pago fijo
+      </button>
+    </div>`;
+  }
   return `
     <div class="cal-empty">
       <span class="cal-empty__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-agenda"/></svg></span>
@@ -941,7 +958,13 @@ function _renderDetalleDia(evs, year, month, dia) {
   const fecha   = new Date(year, month, dia);
   const dow     = DOW_LARGO[fecha.getDay()];
   // MV2.27c (ADR 111 D5): el mes en minúscula, como en el resto de la app.
-  const titulo  = `${dow} ${dia} de ${MONTHS[month].toLowerCase()}`;
+  // ADR 134 D5: hoy, mañana y ayer se nombran antes del día.
+  const ahora   = new Date();
+  const dif     = Math.round((fecha - new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate())) / 86_400_000);
+  const relativo = { 0: 'Hoy', 1: 'Mañana', [-1]: 'Ayer' }[dif];
+  const titulo  = relativo
+    ? `${relativo}, ${dow.toLowerCase()} ${dia} de ${MONTHS[month].toLowerCase()}`
+    : `${dow} ${dia} de ${MONTHS[month].toLowerCase()}`;
 
   // CAL.3: día seleccionado sin compromisos ni ingresos (a propósito, o
   // porque se eliminó el compromiso desde otra sección). En vez de no
@@ -970,7 +993,7 @@ function _renderDetalleDia(evs, year, month, dia) {
   const partes  = [];
   if (nIng > 0)  partes.push('día de ingreso');
   if (nMeta > 0) partes.push(nMeta === 1 ? '1 aporte a meta' : `${nMeta} aportes a metas`);
-  if (nComp > 0) partes.push(nComp === 1 ? '1 compromiso' : `${nComp} compromisos`);
+  if (nComp > 0) partes.push(nComp === 1 ? '1 pago' : `${nComp} pagos`);
   // DSK.2c (ADR 071 D7): cuando el panel lo abrió la app (hoy no tenía nada),
   // el subtítulo lo dice. Sin eso, el usuario podría leer ese día como si
   // fuera hoy.
@@ -1044,6 +1067,7 @@ function _renderDetalleDia(evs, year, month, dia) {
       <ul class="cal-detail__list">
         ${items}
       </ul>
+      ${comps.length > 0 ? '<p class="cal-detail__nota">Desde Por pagar lo marcas como pagado. Al volver, el día sigue abierto.</p>' : ''}
     </section>`;
 }
 
@@ -1128,7 +1152,8 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
   const tipo  = c.tipo ?? 'fijo';
   const label = _esc(LABEL_TIPO[tipo] ?? tipo);
   const desc  = _esc(c.descripcion ?? '(sin descripción)');
-  const frec  = _esc(c.frecuencia ?? '');
+  // ADR 134 D5: "cada mes", no "Mensual".
+  const frec  = _esc(_CADA[c.frecuencia] ?? c.frecuencia ?? '');
   // MK.2 (ADR 025): si el nombre menciona una marca conocida (Netflix, Claro,
   // Bancolombia...), la teja de marca es el ícono principal. Con categoría
   // predefinida el nombre que escribió el usuario vive en `nota` (AG.4), por

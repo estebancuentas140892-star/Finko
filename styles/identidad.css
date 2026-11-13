@@ -2147,3 +2147,45 @@ body:not(.light-theme) .cov__fill {
   .cal-lista__cuando--warning { font-weight: var(--fk-font-semibold); color: var(--fk-warning-text); }
   .cal-lista__dato .cal-lista__entra { color: var(--fk-success-text); }
 }
+
+/* D5 (tanda 2): la hoja de un día y el vacío de quien no tiene nada con
+   fecha. La nota de Por pagar va al pie del día (los dos anchos). */
+.cal-detail__nota { margin: var(--fk-space-3) 0 0; font-size: var(--fk-text-xs); line-height: var(--fk-leading-snug); text-align: center; color: var(--fk-text-secondary); }
+.cal-empty__agregar { gap: var(--fk-space-2); }
+.cal-empty__agregar .icon { width: 18px; height: 18px; } /* del alto del texto del botón */
+
+@media (max-width: 1023px) {
+  /* "Ver en Por pagar" a lo ancho, debajo de su pago. */
+  #dia-calendario-body .cal-detail__actions { padding: 0; border: 0; }
+  #dia-calendario-body .cal-detail__actions .btn {
+    width: 100%;
+    min-height: 48px;
+    border: 1px solid var(--fk-border-default);
+    background: var(--fk-bg-elevated);
+    color: var(--fk-text-primary);
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-semibold);
+  }
+
+  /* Sin nada con fecha: el banner y su botón en una tarjeta; el mes vacío
+     no se dibuja (no hay qué mirar todavía). */
+  #sec-agenda:has(.cal-empty--inicio) .cal-fila,
+  #sec-agenda:has(.cal-empty--inicio) .banda-agenda { display: none; }
+  #sec-agenda:has(.banner-proposito):has(.cal-empty--inicio) .banner-proposito {
+    margin-bottom: 0;
+    padding-bottom: var(--fk-space-4);
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+    box-shadow: var(--fk-shadow-filo);
+  }
+  #sec-agenda:has(.banner-proposito) .cal-empty--inicio {
+    margin-top: 0;
+    padding: 0 var(--fk-space-5) var(--fk-space-5);
+    border: 0;
+    border-radius: 0 0 var(--fk-radius-xl) var(--fk-radius-xl);
+    background: var(--fk-bg-surface);
+    box-shadow: var(--fk-shadow-sm);
+  }
+  #sec-agenda:has(.banner-proposito) .cal-empty--inicio :is(.cal-empty__teja, .cal-empty__title, .cal-empty__desc) { display: none; }
+  .cal-empty--inicio .cal-empty__agregar { width: 100%; min-height: 52px; font-size: var(--fk-text-base); }
+}

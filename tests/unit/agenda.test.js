@@ -534,7 +534,7 @@ describe('renderAgenda() - categoría en el detalle del día', () => {
     mostrarDia(15);
     renderAgenda();
     const html = document.getElementById('panel-agenda').innerHTML;
-    expect(html).toContain('Gasto fijo · Mensual</p>');
+    expect(html).toContain('Gasto fijo · cada mes</p>');
   });
 
   it('las deudas no muestran categoría (campo exclusivo de tipo=fijo)', () => {
@@ -750,7 +750,7 @@ describe('renderAgenda() - nombre automático por categoría', () => {
     mostrarDia(15);
     renderAgenda();
     const item = document.querySelector('.cal-detail__item');
-    expect(item.querySelector('.cal-detail__sub').textContent).toBe('Gasto fijo · Mensual');
+    expect(item.querySelector('.cal-detail__sub').textContent).toBe('Gasto fijo · cada mes');
   });
 });
 
@@ -1187,7 +1187,7 @@ describe('renderAgenda() - día de ingreso (ADR 021)', () => {
     renderAgenda();
     const sub = document.querySelector('.cal-detail__subtitle');
     expect(sub.textContent).toContain('día de ingreso');
-    expect(sub.textContent).toContain('1 compromiso');
+    expect(sub.textContent).toContain('1 pago');
   });
 });
 
@@ -1661,7 +1661,19 @@ describe('renderAgenda() - subtítulo y empty state del mes (CAL.4b)', () => {
 
   // Ficha 05 (ADR 069): el alta ya no vive acá, así que el empty state enlaza
   // a "Por pagar" en vez de abrir el modal de gasto fijo.
+  // ADR 134 D5: quien no tiene nada con fecha ve el camino directo; el mes
+  // "despejado" queda para quien ya tiene datos (abajo).
+  it('sin nada con fecha, el vacío ofrece agregar un pago fijo de una vez', () => {
+    renderAgenda();
+    const inicio = document.querySelector('.cal-empty--inicio');
+    expect(inicio.querySelector('.cal-empty__title').textContent).toBe('Tus pagos del mes, en un solo lugar');
+    const btn = inicio.querySelector('[data-action="comp-elegir-tipo-nuevo-ir"]');
+    expect(btn.dataset.tipo).toBe('fijo');
+    expect(btn.textContent.trim()).toBe('Agregar un pago fijo');
+  });
+
   it('mes sin ningún evento muestra la card de empty state con la salida a Por pagar', () => {
+    S.compromisos = [compromisoBase({ id: 'x', activo: false })];
     renderAgenda();
     const empty = document.querySelector('.cal-empty');
     expect(empty).not.toBeNull();
@@ -2050,7 +2062,7 @@ describe('renderAgenda() - el mes entero en el teléfono (MV2.27, ADR 111)', () 
   it('el título del día escribe el mes en minúscula (D5)', () => {
     S.compromisos = [compromisoBase({ id: 'f1', diaPago: 15 })];
     abrir(15);
-    expect(document.querySelector('.cal-detail__title').textContent).toBe('Lunes 15 de junio');
+    expect(document.querySelector('.cal-detail__title').textContent).toBe('Hoy, lunes 15 de junio');
   });
 
   it('el estado de pago es hijo de la fila, no del cuerpo (D5)', () => {
@@ -2893,7 +2905,7 @@ describe('DSK.2c - al entrar sin eventos hoy, el panel abre el próximo día', (
     marcarEntradaSeccion();
     renderAgenda();
     expect(document.querySelector('.cal-detail__subtitle').textContent)
-      .toBe('Lo próximo con fecha · 1 compromiso');
+      .toBe('Lo próximo con fecha · 1 pago');
   });
 
   it('hoy con eventos gana: no se salta al próximo (CAL.3 intacta)', () => {
