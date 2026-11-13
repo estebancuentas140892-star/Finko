@@ -124,7 +124,7 @@ describe('en el teléfono: qué se reparte arriba y cada paso lo suyo (ADR 110 D
     renderAsistenteDistribucion();
     const que = body().querySelector('.distribuir__que');
     expect(que.querySelector('[data-dist-que-monto]').textContent).toBe('$3.000.000');
-    expect(que.querySelector('[data-dist-que-sub]').textContent).toBe('Salario · desde Nequi');
+    expect(que.querySelector('[data-dist-que-sub]').textContent).toBe('Salario · entró a Nequi');
     const cambiar = que.querySelector('[data-action="distribuir-cambiar"]');
     expect(cambiar.getAttribute('aria-expanded')).toBe('false');
     // El monto vive plegado bajo "Cambiar"; con una sola cuenta no hay pregunta.
@@ -149,19 +149,18 @@ describe('en el teléfono: qué se reparte arriba y cada paso lo suyo (ADR 110 D
     renderAsistenteDistribucion();
     expect(body().querySelector('#distribuir-cuenta').value).toBe('c2');
     expect(body().querySelector('#distribuir-cambiar').hidden).toBe(true);
-    expect(body().querySelector('[data-dist-que-sub]').textContent).toBe('Salario · desde Bancolombia');
+    expect(body().querySelector('[data-dist-que-sub]').textContent).toBe('Salario · entró a Bancolombia');
   });
 
-  it('la comparación va compacta dentro del paso 1, con el porqué y los métodos a un toque', () => {
+  it('el paso 1 es una pregunta con lo recomendado, y el porqué y los métodos a un toque (ADR 135 D6)', () => {
     renderAsistenteDistribucion();
     const paso1 = body().querySelector('[data-dist-paso="0"]');
-    const edu = paso1.querySelector('.distribuir-edu--compacto');
-    expect(edu).not.toBeNull();
-    expect(edu.querySelectorAll('.distribuir-edu__tuyo')).toHaveLength(3);
-    expect(edu.querySelector('.distribuir-edu__que')).toBeNull();
-    expect(edu.querySelector('.distribuir-edu__barra')).toBeNull();
-    // Nada de la educación fuera de los pasos.
-    expect(body().querySelectorAll('.distribuir-edu')).toHaveLength(1);
+    expect(paso1.querySelector('.distribuir__pregunta').textContent).toBe('¿Qué necesidades pagas con este ingreso?');
+    expect(paso1.querySelector('.distribuir__recomendado').textContent).toMatch(/^Lo recomendado es dejarles el 50%\. Hoy van en \d+%\.$/);
+    // La comparación compacta se fue: la frase del paso dice lo mismo.
+    expect(body().querySelectorAll('.distribuir-edu')).toHaveLength(0);
+    expect(body().querySelector('[data-dist-paso-indicador]').textContent).toMatch(/^Paso 1 de \d$/);
+    expect(body().querySelectorAll('[data-dist-punto]').length).toBeGreaterThan(1);
 
     const metodo = paso1.querySelector('details.distribuir-metodo');
     expect(metodo.open).toBe(false);

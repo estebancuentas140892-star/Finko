@@ -80,7 +80,7 @@ test.describe('MC.13e-2f-2 - decision explicita del remanente', () => {
     // sin ruta de apply nueva.
     await expect(fondo).toBeVisible();
     await expect(fondo).toHaveValue('3.000.000'); // 600.000 del split + 2.400.000 del remanente
-    await expect(page.locator('#distribuir-resumen')).toContainText('Queda disponible en tu cuenta: $0');
+    await expect(page.locator('#distribuir-resumen')).toContainText('Queda $0');
 
     // Ya no queda nada sin asignar: la pregunta desaparece.
     await expect(page.locator('#distribuir-remanente')).toBeHidden();
@@ -103,7 +103,7 @@ test.describe('MC.13e-2f-2 - decision explicita del remanente', () => {
 
     await page.check('[data-dist-remanente][value="meta"]');
     await expect(page.locator('.distribuir__monto[data-dist-tipo="meta"][data-dist-id="m1"]')).toBeFocused();
-    await expect(page.locator('#distribuir-resumen')).toContainText('Queda disponible en tu cuenta: $0');
+    await expect(page.locator('#distribuir-resumen')).toContainText('Queda $0');
   });
 
   test('sin ningun destino de ahorro ni meta, no hay pregunta que hacer', async ({ page }) => {

@@ -92,7 +92,7 @@ function _actualizarQueSeReparte(panel, monto) {
   const cuentaId = select ? select.value : _cuentaOrigenDistribucion();
   const nombre = cuentaId ? _nombreCuenta(cuentaId) : '';
   const sub = fila.querySelector('[data-dist-que-sub]');
-  if (sub) sub.textContent = [ingresos, nombre ? `desde ${nombre}` : ''].filter(Boolean).join(' · ');
+  if (sub) sub.textContent = [ingresos, nombre ? `entró a ${nombre}` : ''].filter(Boolean).join(' · ');
 }
 
 /** @param {HTMLElement} el */
@@ -291,9 +291,15 @@ function _irAPasoDistribucion(panel, idx, { moverFoco = true } = {}) {
   if (siguiente) siguiente.hidden = esUltimo;
   if (confirmar) confirmar.hidden = !esUltimo;
 
+  // ADR 135 D6: "Paso 2 de 3" con sus puntos, y "Siguiente" dice a dónde va.
   const indicador = panel.querySelector('[data-dist-paso-indicador]');
-  if (indicador) {
-    indicador.textContent = `Paso ${idx + 1} de ${pasos.length}: ${pasos[idx].dataset.distPasoTitulo ?? ''}`;
+  if (indicador) indicador.textContent = `Paso ${idx + 1} de ${pasos.length}`;
+  panel.querySelectorAll('[data-dist-punto]').forEach((punto, i) => {
+    punto.classList.toggle('distribuir__punto--hecho', i <= idx);
+  });
+  const textoSiguiente = siguiente?.querySelector('[data-dist-siguiente-texto]');
+  if (textoSiguiente && !esUltimo) {
+    textoSiguiente.textContent = `Siguiente: ${pasos[idx + 1].dataset.distPasoCorto ?? ''}`.trim();
   }
 
   if (moverFoco) {
@@ -814,7 +820,7 @@ function _recalcularDistribucion() {
       : '';
     resumenEl.textContent = excede
       ? `Asignaste ${f(asignado)}, ${f(deficit)} más que tu ingreso de ${f(monto)}.`
-      : motivo || `Asignado: ${f(asignado)}. Queda disponible en tu cuenta: ${f(sinAsignar)}.`;
+      : motivo || `Asignado ${f(asignado)} · Queda ${f(sinAsignar)}`;
     resumenEl.classList.toggle('form-hint--danger', excede && !deficitCubierto);
     resumenEl.classList.toggle('form-hint--aviso', motivo !== '');
   }

@@ -1,6 +1,6 @@
 # ADR 135 - Mis cuentas, Distribuir y Me deben del adulto en el teléfono
 
-**Estado:** Aceptada (2026-11-13). Se aplica en cuatro tandas: (1) Mis cuentas: el total, las cuentas, tu ingreso y "Reparte" (SW v689, aplicada); (2) la hoja de una cuenta y Transferir (SW v690, aplicada); (3) Distribuir, paso 1; (4) Me deben y sus hojas.
+**Estado:** Aceptada (2026-11-13). Se aplica en cuatro tandas: (1) Mis cuentas: el total, las cuentas, tu ingreso y "Reparte" (SW v689, aplicada); (2) la hoja de una cuenta y Transferir (SW v690, aplicada); (3) Distribuir, paso 1 (SW v691, aplicada); (4) Me deben y sus hojas.
 **Fecha:** 2026-11-13
 **Autores:** Esteban (diseño y decisión: "vamos a seguir aplicando los cambios de diseño propuestos en esta carpeta"), Claude Opus 5.5 (auditoría, implementación y redacción)
 **Relación:** **Aplica** el tablero "Finko móvil · rediseño4" (Claude Design, `Diseño Finko/`), la quinta pieza de MV2.30, sobre la identidad del [ADR 127](127-identidad-bosque-y-sol.md). **Cambia** el encabezado de ingresos del [ADR 080](080-mis-cuentas-un-primario-y-lo-informativo-al-pie.md) D2 en los dos anchos ("Fuentes de ingreso" con su frase y el atajo "Ingreso" pasan a "Tu ingreso" con "Ingreso fijo" y "De una vez", sin la marca "Atajo", que también sale de "Transferir entre cuentas"; **acota** así la R72 para este par: los dos nombres dicen la diferencia que la marca no decía) y, solo en el teléfono, la barra de composición del total ([ADR 035](035-mis-cuentas-v2.md) D3: la pastilla con cuántas cuentas) y el rótulo oculto "Tus cuentas" ([ADR 075](075-mis-cuentas-dos-trabajos-a-la-vista.md) D4: a la vista). **Conserva** la tarjeta de identidad de Mis cuentas ([ADR 127](127-identidad-bosque-y-sol.md) D5), las filas con hoja de Mis cuentas ([ADR 109](109-mis-cuentas-en-filas-con-hoja.md)), Distribuir sobre Inicio ([ADR 110](110-distribuir-sin-salir-de-donde-estas.md)) y a Tino en los vacíos ([ADR 129](129-tino-ronda-2-en-el-adulto.md)).
@@ -61,6 +61,10 @@ La hoja dice cuánto falta, cuánto devolvió y su parte, cuándo le prestaste y
 | "Cambiar" en las dos cuentas de Transferir, que abre una lista | con dos cuentas, "Cambiar" invierte el par; con tres o más, las dos listas a la vista | con dos solo hay una respuesta posible (MC.17b); con más, la lista abierta ahorra un toque |
 | Transferir sin fecha ni nota | "Cambiar la fecha o agregar una nota", plegado | la fecha (hoy por defecto) y la nota siguen existiendo; el tablero no las muestra |
 | "Transferir entre cuentas · Pasa dinero de una cuenta a otra" en la cabeza | el título en la cabeza y la frase al empezar el formulario | la cabeza de los modales tiene un solo renglón |
+| "Siguiente: estilo de vida" desde el paso 1 | "Siguiente: ahorro" | en la app el paso 2 es ahorro, deudas e inversiones, y estilo de vida va al final (MC.7d) |
+| Sin "Cómo lo calculamos y otros métodos" | plegado al final del paso 1 | los métodos y "Personalizar" siguen siendo la forma de cambiar la propuesta (ADR 110 D5) |
+| La comparación con los expertos fuera del paso | en el teléfono, solo la frase del paso ("Lo recomendado es dejarles el 50%. Hoy van en 65%."); en escritorio sigue el bloque | la frase dice lo mismo en un renglón |
+| "Asignado $X" y "Queda $Y" en dos columnas | "Asignado $X · Queda $Y" en la línea del pie | el pie ya cambia de texto cuando falta algo para distribuir (ADR 110 D3) |
 
 ## Alternativas descartadas
 

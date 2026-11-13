@@ -538,7 +538,7 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(page.locator('#distribuir-remanente')).toBeInViewport();
     await page.check('[data-dist-remanente][value="cuenta"]');
     await expect(confirmar).toBeEnabled();
-    await expect(page.locator('#distribuir-resumen')).toContainText('Queda disponible en tu cuenta');
+    await expect(page.locator('#distribuir-resumen')).toContainText('Queda $');
 
     // Cerrar deja donde estabas.
     await page.locator('#modal-distribuir [data-action="modal-close"]').click();
@@ -555,8 +555,12 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     // D4: el monto arriba; sin cuenta guardada, la pregunta abre desplegada.
     await expect(hoja.locator('[data-dist-que-monto]')).toHaveText('$3.000.000');
     await expect(hoja.locator('#distribuir-cuenta')).toBeVisible();
-    // D5: la comparación compacta, dentro del paso 1.
-    await expect(hoja.locator('[data-dist-paso="0"] .distribuir-edu--compacto')).toBeVisible();
+    // ADR 135 D6: cada paso es una pregunta, con "Paso 1 de 2" y sus puntos;
+    // sin necesidades, el primero es el ahorro y "Siguiente" dice a dónde va.
+    await expect(hoja.locator('[data-dist-paso="0"] .distribuir__pregunta')).toHaveText('¿Cuánto separas para ahorro, deudas e inversiones?');
+    await expect(hoja.locator('[data-dist-paso-indicador]')).toHaveText('Paso 1 de 2');
+    await expect(hoja.locator('[data-dist-punto]')).toHaveCount(2);
+    await expect(hoja.locator('[data-dist-siguiente-texto]')).toHaveText('Siguiente: estilo de vida');
 
     const siguiente = hoja.locator('[data-action="distribuir-paso-siguiente"]');
     while (await siguiente.isVisible()) await siguiente.click();
@@ -566,7 +570,7 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(page.locator('#distribuir-resumen')).toHaveText('Elige arriba desde qué cuenta sale el dinero.');
 
     await hoja.locator('#distribuir-cuenta').selectOption('c2');
-    await expect(hoja.locator('[data-dist-que-sub]')).toHaveText('Salario · desde Bancolombia');
+    await expect(hoja.locator('[data-dist-que-sub]')).toHaveText('Salario · entró a Bancolombia');
     await expect(confirmar).toBeEnabled();
     await confirmar.click();
 

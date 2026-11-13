@@ -475,20 +475,25 @@ function _iconoNecesidad(it) {
  * @returns {string}
  */
 function _filaNecesidad(it) {
-  const catSub = it.categoria ? ` <span class="distribuir__nec-item-cat">· ${_esc(it.categoria)}</span>` : '';
-  const diaSub = it.diaPago ? ` <span class="distribuir__saldo">día ${it.diaPago}</span>` : '';
+  // ADR 135 D6: la fila es nombre y monto arriba, "Día 14 · educación"
+  // debajo y la marca a la derecha. El checkbox sigue siendo el control.
+  const sub = [it.diaPago ? `Día ${it.diaPago}` : '', it.categoria ? _esc(String(it.categoria).toLowerCase()) : '']
+    .filter(Boolean).join(' · ');
   const notaSub = it.nota ? ` <span class="distribuir__nota">${_esc(it.nota)}</span>` : '';
   const checkedAttr = it.pagado ? 'checked disabled' : 'checked';
 
   return `
-        <div class="distribuir__fila${it.pagado ? ' distribuir__fila--pagado' : ''}">
+        <div class="distribuir__fila distribuir__fila--necesidad${it.pagado ? ' distribuir__fila--pagado' : ''}">
           <label class="checkbox-row distribuir__toggle">
+            <span class="distribuir__nec-teja" aria-hidden="true">${_iconoNecesidad(it)}</span>
+            <span class="distribuir__nec-textos">
+              <span class="distribuir__nec-linea"><span class="distribuir__nec-nombre">${_esc(it.nombre)}</span><span class="distribuir__nec-monto">${it.pagado ? 'Ya pagado' : f(it.monto)}</span></span>
+              ${sub || notaSub ? `<span class="distribuir__nec-sub">${sub}${notaSub}</span>` : ''}
+            </span>
             <input type="checkbox" data-nec-toggle data-nec-tipo="${_esc(it.tipo)}"
                    data-nec-id="${_esc(it.id)}" data-nec-monto="${it.monto}" data-nec-nombre="${_esc(it.nombre)}"
                    data-nec-fechas="${_esc((it.fechas ?? []).join(','))}" ${checkedAttr} />
-            <span>${_iconoNecesidad(it)} ${_esc(it.nombre)}${catSub}${diaSub}${notaSub}</span>
           </label>
-          <span class="distribuir__nec-monto">${it.pagado ? 'Ya pagado' : f(it.monto)}</span>
         </div>`;
 }
 
@@ -733,8 +738,12 @@ function _renderPanelDistribuir(d, { educacion = '', movil = false } = {}) {
   // Paso 1 (R1): checklist de Necesidades, marcadas por defecto salvo las ya
   // pagadas este periodo (checkbox deshabilitado, "Ya pagado"). Al confirmar,
   // cada marca registra el mismo pago que su flujo individual (ver acciones/distribucion.js).
+  // ADR 135 D6: el paso es una pregunta, con lo recomendado y lo de hoy.
+  const pctNecesidades = Math.max(0, 100 - (Number(ahorroPct) || 0) - (Number(estiloVidaPct) || 0));
+  const recomendadoNec = _REFERENCIA_EXPERTOS.find(r => r.clave === 'necesidades')?.pct ?? 50;
   const seccionNecesidades = `
-          <p class="form-hint distribuir__subtitulo">Necesidades · marca las que cubres con este ingreso:</p>
+          <h3 class="distribuir__pregunta">¿Qué necesidades pagas con este ingreso?</h3>
+          <p class="distribuir__recomendado">Lo recomendado es dejarles el ${recomendadoNec}%. Hoy van en ${pctNecesidades}%.</p>
           <div class="distribuir-ingreso__destinos">
             ${necesidades.map(_filaNecesidad).join('')}
           </div>
@@ -747,7 +756,7 @@ function _renderPanelDistribuir(d, { educacion = '', movil = false } = {}) {
   // ponerla (fondo, meta o apartado): sin ninguna, mostrarlo sería un estado
   // vacío confuso ("sugerencia: $X a ahorro" sin ningún destino de ahorro
   // debajo, MC.7f).
-  const tituloAsignaciones = `<p class="form-hint distribuir__subtitulo">Ahorro, deudas e inversiones · ajusta cuánto destinar a cada una:</p>`;
+  const tituloAsignaciones = `<h3 class="distribuir__pregunta">¿Cuánto separas para ahorro, deudas e inversiones?</h3>`;
   const seccionAhorro = ahorro.length > 0
     ? `
           <p class="form-hint">Sugerencia: <span data-dist-sugerencia-ahorro>${f(ahorroBudget)}</span> a ahorro${necesidades.length > 0 ? ', calculada sobre lo que queda tras tus Necesidades marcadas' : ''}.</p>
@@ -820,6 +829,7 @@ function _renderPanelDistribuir(d, { educacion = '', movil = false } = {}) {
   // botón se apagaba por ella.
   const seccionInfo = `
           ${seccionRemanente}
+          <h3 class="distribuir__pregunta">Lo que queda para tu estilo de vida</h3>
           <p class="form-hint distribuir__subtitulo">Esto queda en tu cuenta (no se mueve):</p>
           <div class="distribuir__info">
             <p class="distribuir__info-fila">
@@ -832,15 +842,16 @@ function _renderPanelDistribuir(d, { educacion = '', movil = false } = {}) {
           <p class="form-hint form-hint--muted">Revisa el resumen y confirma: se registrarán los pagos y aportes que marcaste.</p>`;
 
   // Shell paginado (MC.7d): un paso visible a la vez, avanzar/atrás inline.
+  // `corto` es lo que dice el "Siguiente: ..." que lleva a ese paso.
   const pasos = [];
-  if (necesidades.length > 0) pasos.push({ titulo: 'Necesidades', html: seccionNecesidades });
+  if (necesidades.length > 0) pasos.push({ titulo: 'Necesidades', corto: 'necesidades', html: seccionNecesidades });
   if (ahorro.length > 0 || inversiones.length > 0) {
-    pasos.push({ titulo: 'Ahorro, deudas e inversiones', html: seccionAsignaciones });
+    pasos.push({ titulo: 'Ahorro, deudas e inversiones', corto: 'ahorro', html: seccionAsignaciones });
   }
-  pasos.push({ titulo: 'Estilo de vida', html: seccionInfo });
-  // ADR 110 D5: en el teléfono la comparación con los expertos se lee primero,
-  // pero dentro del paso 1 y solo ahí.
-  if (educacion) pasos[0].html = educacion + pasos[0].html;
+  pasos.push({ titulo: 'Estilo de vida', corto: 'estilo de vida', html: seccionInfo });
+  // ADR 110 D5: en el teléfono el porqué y los métodos viven en el paso 1 y
+  // solo ahí; ADR 135 D6 los baja al final del paso, después de la pregunta.
+  if (educacion) pasos[0].html = pasos[0].html + educacion;
 
   // `tabindex="-1"` (MC.7f, a11y): cada paso es un destino de foco programático
   // (no forma parte del tab order normal). Al avanzar/retroceder, acciones/distribucion.js
@@ -848,7 +859,7 @@ function _renderPanelDistribuir(d, { educacion = '', movil = false } = {}) {
   // así que el foco por sí solo anuncia el cambio a lectores de pantalla, sin
   // depender de que el usuario llegue justo al indicador con `role="status"`.
   const pasosHtml = pasos.map((p, i) => `
-          <div class="distribuir__paso" data-dist-paso="${i}" data-dist-paso-titulo="${p.titulo}"
+          <div class="distribuir__paso" data-dist-paso="${i}" data-dist-paso-titulo="${p.titulo}" data-dist-paso-corto="${p.corto}"
                role="group" aria-label="Paso ${i + 1} de ${pasos.length}: ${p.titulo}" tabindex="-1"${i > 0 ? ' hidden' : ''}>
             ${p.html}
           </div>`).join('');
@@ -856,8 +867,12 @@ function _renderPanelDistribuir(d, { educacion = '', movil = false } = {}) {
   const esUnicoPaso = pasos.length === 1;
   // El indicador "Paso X de N" solo aporta con 2+ pasos: con uno solo no hay
   // progresión que comunicar (MC.7f, estado vacío más limpio).
+  // ADR 135 D6: "Paso 1 de 3" con un punto por paso.
   const indicadorPaso = esUnicoPaso ? '' : `
-          <p class="form-hint distribuir__paso-indicador" data-dist-paso-indicador role="status">Paso 1 de ${pasos.length}: ${pasos[0].titulo}</p>`;
+          <div class="distribuir__progreso">
+            <span class="distribuir__puntos" aria-hidden="true">${pasos.map((_, i) => `<span class="distribuir__punto${i === 0 ? ' distribuir__punto--hecho' : ''}" data-dist-punto></span>`).join('')}</span>
+            <p class="form-hint distribuir__paso-indicador" data-dist-paso-indicador role="status">Paso 1 de ${pasos.length}</p>
+          </div>`;
   return `
         <fieldset id="distribuir-ingreso-panel" class="distribuir-ingreso"
                   data-ahorro-pct="${ahorroPct}" data-estilo-vida-pct="${estiloVidaPct}">
@@ -890,7 +905,7 @@ function _renderPanelDistribuir(d, { educacion = '', movil = false } = {}) {
               </button>
               <button type="button" class="btn btn-primary btn-sm"
                       data-action="distribuir-paso-siguiente"${esUnicoPaso ? ' hidden' : ''}>
-                Siguiente ${icon('chevron-right', 'icon icon--sm')}
+                <span data-dist-siguiente-texto>Siguiente${pasos[1] ? `: ${pasos[1].corto}` : ''}</span> ${icon('chevron-right', 'icon icon--sm')}
               </button>
               <button type="button" class="btn btn-primary btn-sm" data-action="confirmar-distribucion"${esUnicoPaso ? '' : ' hidden'}>
                 ${icon('check-circle', 'icon icon--sm')} Distribuir
@@ -1174,8 +1189,9 @@ function _renderContenidoAsistente({ razon, split }, presetActivo, distribucionP
 
   // ADR 110 D5 (MV2.19b): en el teléfono la comparación va compacta dentro
   // del paso 1, y el porqué, los métodos y "Personalizar", a un toque.
+  // ADR 135 D6: la comparación ya la dice la frase del paso ("Lo recomendado
+  // es dejarles el 50%"); el bloque compacto se va y queda el plegable.
   const educacion = `
-          ${_renderBloqueEducativo(split, razon, { compacto: true })}
           <details class="distribuir-metodo">
             <summary class="distribuir-metodo__toggle">Cómo lo calculamos y otros métodos</summary>
             <p class="distribuir-edu__razon">${_esc(razon)}</p>
@@ -1217,7 +1233,8 @@ function _renderQueSeReparte(d) {
     : (S.ingresos ?? []).filter(i => i.activo !== false).map(i => i.descripcion || 'Ingreso');
   const ingresos = unirNombres([...new Set(nombres)]);
   const nombreOrigen = activas.find(c => c.id === origen)?.nombre ?? '';
-  const sub = [ingresos, nombreOrigen ? `desde ${nombreOrigen}` : ''].filter(Boolean).join(' · ');
+  // ADR 135 D6: "Salario · entró a Bancolombia": la cuenta donde cayó el ingreso.
+  const sub = [ingresos, nombreOrigen ? `entró a ${nombreOrigen}` : ''].filter(Boolean).join(' · ');
   const preguntaCuenta = activas.length > 1;
   const abierto = preguntaCuenta && !origen;
 

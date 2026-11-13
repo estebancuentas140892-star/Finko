@@ -3782,7 +3782,7 @@ test.describe('Mis cuentas - Distribuir mi ingreso: educación primero, accesos 
 
     // La educación no cobra un paso: el checklist del Paso 1 ya está a la vista
     // y marcado, como antes de MC.13e-2g.
-    await expect(page.locator('[data-dist-paso-indicador]')).toContainText('Paso 1 de 3: Necesidades');
+    await expect(page.locator('[data-dist-paso-indicador]')).toHaveText('Paso 1 de 3');
     await expect(page.locator('[data-nec-id="cf1"]')).toBeChecked();
   });
 
@@ -3903,7 +3903,11 @@ test.describe('Mis cuentas - Distribuir mi ingreso: checklist de Necesidades', (
 
     const panel = page.locator('#distribuir-ingreso-panel');
     await expect(panel).toContainText('Arriendo');
-    await expect(panel).toContainText('día 5');
+    // ADR 135 D6: el paso es una pregunta con lo recomendado, y debajo de cada
+    // necesidad, su día y su categoría.
+    await expect(panel.locator('[data-dist-paso="0"] .distribuir__pregunta')).toHaveText('¿Qué necesidades pagas con este ingreso?');
+    await expect(panel.locator('[data-dist-paso="0"] .distribuir__recomendado')).toContainText('Lo recomendado es dejarles el 50%');
+    await expect(panel).toContainText('Día 5 · arriendo');
     await expect(panel).toContainText('Tarjeta Bancolombia');
     await expect(panel).toContainText('Mercado');
     // 2 × $150.000: el quincenal cobra por sus dos vencimientos de la ventana.
@@ -4127,7 +4131,9 @@ test.describe('Mis cuentas - Distribuir mi ingreso: asistente paginado (MC.7d)',
     const confirmar = page.locator('[data-action="confirmar-distribucion"]');
 
     // Paso 1: Necesidades visible, los demás ocultos; sin Atrás ni Distribuir.
-    await expect(indicador).toHaveText('Paso 1 de 3: Necesidades');
+    // ADR 135 D6: "Paso 1 de 3" y "Siguiente" dice a dónde va.
+    await expect(indicador).toHaveText('Paso 1 de 3');
+    await expect(siguiente).toHaveText('Siguiente: ahorro');
     await expect(page.locator('[data-dist-paso="0"]')).toBeVisible();
     await expect(page.locator('[data-dist-paso="1"]')).toBeHidden();
     await expect(page.locator('[data-nec-id="cf1"]')).toBeVisible();
@@ -4137,21 +4143,22 @@ test.describe('Mis cuentas - Distribuir mi ingreso: asistente paginado (MC.7d)',
 
     // Paso 2: asignaciones (fondo) visible, checklist oculta, aparece Atrás.
     await siguiente.click();
-    await expect(indicador).toHaveText('Paso 2 de 3: Ahorro, deudas e inversiones');
+    await expect(indicador).toHaveText('Paso 2 de 3');
+    await expect(siguiente).toHaveText('Siguiente: estilo de vida');
     await expect(page.locator('.distribuir__monto[data-dist-tipo="fondo"]')).toBeVisible();
     await expect(page.locator('[data-nec-id="cf1"]')).toBeHidden();
     await expect(atras).toBeVisible();
 
     // Paso 3 (último): Estilo de vida + Distribuir; Siguiente desaparece.
     await siguiente.click();
-    await expect(indicador).toHaveText('Paso 3 de 3: Estilo de vida');
+    await expect(indicador).toHaveText('Paso 3 de 3');
     await expect(page.locator('[data-dist-info="estiloVida"]')).toBeVisible();
     await expect(confirmar).toBeVisible();
     await expect(siguiente).toBeHidden();
 
     // Atrás regresa al paso 2 y Distribuir vuelve a ocultarse.
     await atras.click();
-    await expect(indicador).toHaveText('Paso 2 de 3: Ahorro, deudas e inversiones');
+    await expect(indicador).toHaveText('Paso 2 de 3');
     await expect(confirmar).toBeHidden();
   });
 
@@ -4227,7 +4234,7 @@ test.describe('Mis cuentas - Distribuir mi ingreso: asistente paginado (MC.7d)',
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
     await page.click('[data-action="toggle-distribuir-ingreso"]');
 
-    await expect(page.locator('text=Ahorro, deudas e inversiones · ajusta cuánto destinar a cada una:')).toBeVisible();
+    await expect(page.locator('[data-dist-paso="0"] .distribuir__pregunta')).toHaveText('¿Cuánto separas para ahorro, deudas e inversiones?');
     await expect(page.locator('[data-dist-sugerencia-ahorro]')).toHaveCount(0);
     await expect(page.locator('.distribuir__monto[data-dist-tipo="inversion"]')).toBeVisible();
   });

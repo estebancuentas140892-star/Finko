@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(tesoreria): MV2.30 Mis cuentas tanda 3, Distribuir paso 1 · 2026-11-13
+
+[ADR 135](DECISIONS/135-mis-cuentas-y-me-deben-en-el-telefono.md) D6. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). SW v691. Tablero "rediseño4".
+
+- **Arriba**, lo que se reparte dice dónde entró: "Salario · entró a Bancolombia".
+- **Cada paso** con "Paso 1 de 3" y un punto por paso; el primero es una pregunta ("¿Qué necesidades pagas con este ingreso?") con "Lo recomendado es dejarles el 50%. Hoy van en 65%."; en el teléfono la comparación compacta se va y "Cómo lo calculamos y otros métodos" baja al final del paso.
+- **Cada necesidad** es una fila: teja, nombre y monto, "Día 14 · educación" debajo y la marca a la derecha (el mismo checkbox).
+- **El pie** dice "Asignado $X · Queda $Y" y "Siguiente: ahorro" o "Siguiente: estilo de vida".
+- Pruebas: 1 reescrita y 2 ajustadas en `distribuir-movil`; E2E: el indicador y el pie de `smoke`, `movil-mv2` y `distribucion-remanente`.
+
 ### feat(tesoreria): MV2.30 Mis cuentas tanda 2, la hoja de una cuenta y Transferir · 2026-11-13
 
 [ADR 135](DECISIONS/135-mis-cuentas-y-me-deben-en-el-telefono.md) D4 y D5. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). SW v690. Tablero "rediseño4".
