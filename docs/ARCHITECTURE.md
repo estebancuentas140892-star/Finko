@@ -1,6 +1,6 @@
 # Arquitectura - Finko Claude
 
-> Revisado: 2026-11-05.
+> Revisado: 2026-11-13.
 
 > Documento vivo: se actualiza cuando cambia una capa, entra un dominio o se introduce un patrón nuevo. Historial: `git log -- docs/ARCHITECTURE.md`.
 >
@@ -73,9 +73,9 @@ Utilidades transversales sin dependencias de dominio.
 | `distribuir-pago.js` | `distribuirPago()`: reparte un monto entre varias cuentas cuando ninguna alcanza sola |
 | `icons.js` | `icon(id)` y `emptyArt(id)`: helpers que referencian el sprite SVG inline de `index.html` |
 | `svg.js` | Gráficos SVG generados: `sparkline`/`donut` para Análisis, `progressRing`/`arcoProgreso` y `siluetaMeta` (silueta que se llena por altura, DIS.19) |
-| `bolsas.js` | El plan de aportes de una bolsa con fecha: `diasHastaFecha`, `planDeReferencia`, `estadoDeBolsa`. Lo lee Apartados (bajó para la casa de Ahorro, DIS.19). Primer paso de ARQ.1 |
-| `portafolio.js` | Lo invertido, su proyección al vencimiento y la geometría del gráfico de dos columnas: de `esProyectable` a `columnasPortafolio`. Lo lee Inversión (bajó para la casa de Ahorro, DIS.19) |
-| `taxonomia.js` | La estructura de dos niveles, una sola vez ([ADR 064](DECISIONS/064-estructura-de-dos-niveles.md)): `hijosDeCategoria`, `hijoPorId`, `categoriasConHijos`. Recibe el catálogo por parámetro, así que sirve a subcategoría de meta, marca por categoría y entidad a producto sin conocer a ninguno |
+| `bolsas.js` | El plan de aportes de una bolsa con fecha: `diasHastaFecha`, `planDeReferencia`, `estadoDeBolsa`. Lo lee Apartados (ARQ.1) |
+| `portafolio.js` | Lo invertido, su proyección al vencimiento y la geometría del gráfico de dos columnas: de `esProyectable` a `columnasPortafolio`. Lo lee Inversión |
+| `taxonomia.js` | La estructura de dos niveles, una sola vez ([ADR 064](DECISIONS/064-estructura-de-dos-niveles.md)): `hijosDeCategoria`, `hijoPorId`, `categoriasConHijos`. Recibe el catálogo por parámetro |
 | `csv.js` | Parser/serializador CSV para importar/exportar gastos |
 | `notificaciones.js` | Web Notifications API para recordatorios |
 | `form-errors.js` | Mensajes de error en formularios |
@@ -84,6 +84,7 @@ Utilidades transversales sin dependencias de dominio.
 | `sw-register.js` | Registro del Service Worker; avisa de versión nueva, no recarga (ADR 097) |
 | `avisos.js` | Motor único de avisos: arma la lista y la filtra por preferencia de sección ([ADR 066](DECISIONS/066-motor-unico-de-avisos.md)) |
 | `vencimientos.js` | Motor compartido de vencimientos: ocurrencias de una obligación o ingreso según su periodicidad ([ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md)) |
+| `naturaleza.js` | Qué es cada gasto (consumo, con tarjeta, pago de fijo, pago de deuda) y sus dos lentes: consumo y lo que sale del ingreso ([ADR 139](DECISIONS/139-la-naturaleza-de-un-gasto.md)). Toda suma de gastos elige una |
 | `pago-compromiso.js` | Registrar el pago o abono de un compromiso, un solo camino para todas las superficies (ARQ.2) |
 | `credito-ingreso.js` | Registrar el cobro de un crédito automático de ingreso fijo, espejo de `pago-compromiso.js` desde el otro lado (PA.1b, ADR 052) |
 | `sugerencias-categoria.js` | Motor único de sugerencia por categoría ([ADR 044](DECISIONS/044-motor-unico-de-sugerencia-por-categoria.md)) |

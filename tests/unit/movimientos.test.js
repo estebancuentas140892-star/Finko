@@ -155,10 +155,10 @@ describe('movimientosDesdeIngresosPuntuales()', () => {
 // ── movimientosDesdeAportes() ─────────────────────────────────────
 
 describe('movimientosDesdeAportes()', () => {
-  it('normaliza un aporte a movimiento de egreso sin cuenta, ícono i-ahorro', () => {
+  it('normaliza un aporte a movimiento neutro sin cuenta, ícono i-ahorro (ADR 139 D3)', () => {
     const [m] = movimientosDesdeAportes([aporte()]);
     expect(m).toMatchObject({
-      id: 'a1', tipo: 'aporte', monto: 100_000, direccion: 'egreso',
+      id: 'a1', tipo: 'aporte', monto: 100_000, direccion: 'neutro',
       icono: 'i-ahorro', cuentaId: null, fecha: '2026-07-02',
     });
   });

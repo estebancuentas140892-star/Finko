@@ -22,7 +22,8 @@ import { CATEGORIA_INGRESO_ICONO, iconoDeCategoriaGasto } from '../../core/const
  * @property {string} descripcion
  * @property {number} monto
  * @property {'ingreso'|'egreso'|'neutro'} direccion  'neutro' (MC.17c) es un
- *   traslado interno: no suma ni resta, se pinta sin signo ni color.
+ *   traslado interno o un aporte al fondo (ADR 139 D3): no suma ni resta, se
+ *   pinta sin signo ni color.
  * @property {string} icono        Id de símbolo del sprite.
  * @property {string|null} cuentaId
  * @property {string} [cuentaOrigenId]   Solo en tipo 'transferencia' (MC.17c).
@@ -104,6 +105,10 @@ export function movimientosDesdeIngresosPuntuales(ingresosPuntuales) {
  * cuenta (Aporte solo guarda id/monto/fecha/nota); la nota, si existe, sirve
  * de descripción.
  *
+ * Dirección `neutro` (ADR 139 D3): el aporte al fondo no saca dinero de ninguna
+ * cuenta, se queda donde estaba (ADR 020). Como egreso restaba del neto del
+ * día un dinero que nunca salió.
+ *
  * @param {import('../../core/state.js').Aporte[]} aportes
  * @returns {Movimiento[]}
  */
@@ -115,7 +120,7 @@ export function movimientosDesdeAportes(aportes) {
     tipo:        'aporte',
     descripcion: a.nota?.trim() || 'Aporte al fondo de emergencia',
     monto:       a.monto,
-    direccion:   'egreso',
+    direccion:   'neutro',
     icono:       'i-ahorro',
     cuentaId:    null,
     dominio:     'ahorro',

@@ -1,6 +1,6 @@
 # Ficha de contexto: Límites de gasto
 
-> Revisado: 2026-11-13 (REV.1, ADR 137).
+> Revisado: 2026-11-13 (HF.1b, ADR 139).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 > El dominio se llama `presupuesto` en el código; "Límites de gasto" es el nombre de cara al usuario (para no confundirlo con Apartados: guardar dinero vs. vigilar cuánto sale).
@@ -76,6 +76,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-13 (**HF.1b**, [ADR 139](../DECISIONS/139-la-naturaleza-de-un-gasto.md) D2): los tres grupos son el plan del ingreso: `ejecutadoPorGrupoDelMes()` y `desgloseNecesidadesDelMes()` dejan fuera la compra con tarjeta (`gastosQueSalenDelIngreso()`), que contaba como Necesidad por llevar el `compromisoId` de la tarjeta; la tarjeta cuenta cuando se paga, como cuota. Los topes por categoría no cambian.
 - 2026-11-13 (**REV.1**, [ADR 137](../DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md) D6): el banner de propósito habla del problema ("¿Gastas más de lo que pensabas…?") y no del plan de Mis cuentas, que quien lo lee no tiene.
 - 2026-11-06 (ADR 132 tanda 3): la tarjeta del plan con sus avisos y dónde se mide cada grupo; en el teléfono los topes en filas con su hoja, la suma con cuántos se pasaron, la oferta de gastos pequeños y "Gastas acá" en tarjetas, y el formulario en la grilla de tres.
 - 2026-11-05 (ADR 132 tanda 1): sin topes y con el banner arriba, el vacío trae el ejemplo y su propio "Crear límite" dentro de la tarjeta; el "+" del encabezado se esconde en el teléfono.

@@ -11,6 +11,7 @@
 
 import { progresoDeBolsa, mesesEnPalabras } from '../../infra/bolsas.js';
 import { f } from '../../infra/utils.js';
+import { saleDelIngreso } from '../../infra/naturaleza.js';
 import {
   frecuenciaPrincipalIngresos,
   diasPorPeriodo,
@@ -84,6 +85,26 @@ export function mesesDeColchon(montoActual, gastosFijosMensuales) {
   const fijos  = Number(gastosFijosMensuales);
   if (!Number.isFinite(fijos) || fijos <= 0) return null;
   return Math.round((actual / fijos) * 10) / 10;
+}
+
+/**
+ * Lo que salió del ingreso en un mes: el denominador de la tasa de ahorro.
+ *
+ * Lente del ingreso (ADR 139 D2): todo gasto del mes menos la compra con
+ * tarjeta de crédito, que todavía no sacó dinero y sale cuando se paga la
+ * tarjeta. Antes se sumaba todo y quien pagaba con tarjeta veía restar dos
+ * veces lo mismo: la compra y su pago. El abono a una deuda sí cuenta: es
+ * dinero del ingreso que ya no te queda.
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {string} prefijoMes 'YYYY-MM'
+ * @returns {number} COP
+ */
+export function gastoDelMesQueSaleDelIngreso(gastos, prefijoMes) {
+  if (!Array.isArray(gastos) || typeof prefijoMes !== 'string') return 0;
+  return gastos
+    .filter(g => g && typeof g.fecha === 'string' && g.fecha.startsWith(prefijoMes) && saleDelIngreso(g))
+    .reduce((sum, g) => sum + (Number(g.monto) || 0), 0);
 }
 
 /**

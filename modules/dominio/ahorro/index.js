@@ -30,6 +30,7 @@ import {
   validarMontoAporte, validarFechaAporte, normalizarMontoAporte,
   validarCompromisoMensual, normalizarCompromisoMensual,
   calcularTasaAhorro,
+  gastoDelMesQueSaleDelIngreso,
   calcularObjetivoFondo, calcularProgresoFondo, calcularMontoTotalFondo,
   calcularAporteSugerido,
 } from './logic.js';
@@ -177,16 +178,13 @@ function _frecuenciaCompromiso() {
 }
 
 /**
- * Suma los gastos registrados en el mes calendario actual.
+ * Lo que salió del ingreso en el mes calendario actual (ADR 139 D2).
  * @returns {number} COP
  */
 function _calcularGastosEsteMes() {
   const ahora = new Date();
   const mesStr = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}`;
-  const gastos = Array.isArray(S.gastos) ? S.gastos : [];
-  return gastos
-    .filter(g => g && typeof g.fecha === 'string' && g.fecha.startsWith(mesStr))
-    .reduce((sum, g) => sum + (Number(g.monto) || 0), 0);
+  return gastoDelMesQueSaleDelIngreso(S.gastos, mesStr);
 }
 
 /**

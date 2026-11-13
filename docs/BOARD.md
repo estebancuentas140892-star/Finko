@@ -47,16 +47,15 @@ Las tarjetas del tablero, **en orden de valor** desde la poda del 2026-11-13 ([A
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
-| HF.1b | Nada se cuenta dos veces: la tarjeta y los abonos dejan de sumar como gasto | Transversal | alta | su ADR (acota el 051 D3 y el 002) |
 | REV.2a | Por pagar dice cuánto te falta pagar este mes, con los fijos | Transversal | alta | ADR que ajusta el 036 D1 |
 | REV.3b | La app instalada tiene tus datos y la versión publicada (absorbe REV.5) | Transversal | alta | una prueba en un iPhone real y los datos del teléfono de Esteban |
 | REV.2b | El formulario de gasto fijo empieza por el monto y el campo queda a la vista | Transversal | alta | ADR que ajusta el 042 D5 |
 | REV.2c | Al transferir, la consignación ante la DIAN en una frase | Transversal | media | nada |
-| HF.1d | Todo cambio de saldo deja registro (absorbe HF.1g) | Transversal | media | HF.1b |
+| HF.1d | Todo cambio de saldo deja registro (absorbe HF.1g) | Transversal | media | su ADR |
 | HF.3e | Lo que la app instalada muestra fuera de ella: notificación sin montos, número en el ícono, accesos directos | Transversal | media | ADR corto |
 | REV.3a | Descargar el mes para Excel | Transversal | media | nada |
 | MV2.28 | Medir lo publicado: fluidez y Lighthouse en producción (absorbe PERF.13) | Transversal | media | nada |
-| HF.1c | La fecha de cada aporte a metas y reservas | Transversal | baja | HF.1b |
+| HF.1c | La fecha de cada aporte a metas y reservas | Transversal | baja | su ADR |
 | HF.2a | La cuenta habitual de cada pago | Transversal | baja | nada |
 | HF.2b | El débito automático sin saldo se avisa antes de vencer | Transversal | baja | nada |
 | APR.5b | La ronda 2 de Tino en el niño ([ADR 094](DECISIONS/094-tino-el-guatin.md) y [095](DECISIONS/095-tino-en-el-sprite.md)) y los hitos del niño. Los dibujos ya están y el adulto los usa ([ADR 129](DECISIONS/129-tino-ronda-2-en-el-adulto.md)) | Transversal | baja | correr el conversor (095 D4) |
@@ -94,7 +93,7 @@ _(CFG.1 a CFG.6 cerraron completas. CFG.6, la auditoría móvil de Ajustes, cerr
 
 ## Transversal (afecta varias secciones)
 
-REV.2a a REV.3b, MV2.28, HF.1b a HF.3e, APR.5b y NUBE.4 → [`board/transversal.md`](board/transversal.md) (HF: iniciativa "un hecho financiero se informa una sola vez", [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), seis tarjetas desde el [ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md); APR: iniciativa "Aprende y aplícalo", [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) y [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md), en Propuesta)
+REV.2a a REV.3b, MV2.28, HF.1c a HF.3e, APR.5b y NUBE.4 → [`board/transversal.md`](board/transversal.md) (HF: iniciativa "un hecho financiero se informa una sola vez", [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), seis tarjetas desde el [ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md); APR: iniciativa "Aprende y aplícalo", [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) y [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md), en Propuesta)
 
 ---
 

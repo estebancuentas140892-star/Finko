@@ -1,6 +1,6 @@
 # Ficha de contexto: Movimientos
 
-> Revisado: 2026-11-13 (REV.1, ADR 137).
+> Revisado: 2026-11-13 (HF.1b, ADR 139).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -64,6 +64,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-13 (**HF.1b**, [ADR 139](../DECISIONS/139-la-naturaleza-de-un-gasto.md) D3): el aporte al fondo de emergencia pasa a dirección `neutro` (sin signo, fuera del neto del día): no sale de ninguna cuenta (ADR 020). Pendiente anotado en el ADR: el neto todavía suma la compra con tarjeta y el pago de la tarjeta.
 - 2026-11-13 (**REV.1**, [ADR 137](../DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md) D5): el panel de la búsqueda ofrece solo "Buscaste antes", y no se abre sin búsquedas recientes; salen "Por categoría" y "Por tipo y cuenta".
 - 2026-11-13 (**MV2.30 Consultar tanda 3**, [ADR 134](../DECISIONS/134-consultar-del-adulto-en-el-telefono.md) D6): los días con su encabezado y su total, la fila sin el día, los chips a la vista con dos tipos, la hoja del gasto y, en el teléfono, el mes grande, los días en tarjeta y la búsqueda con "Limpiar".
 

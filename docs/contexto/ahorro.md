@@ -1,6 +1,6 @@
 # Ficha de contexto: Ahorro
 
-> Revisado: 2026-11-13.
+> Revisado: 2026-11-13 (HF.1b, ADR 139).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -62,6 +62,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-13 (**HF.1b**, [ADR 139](../DECISIONS/139-la-naturaleza-de-un-gasto.md) D2): la tasa de ahorro resta lo que salió del ingreso (`gastoDelMesQueSaleDelIngreso()` en `logic.js`): la compra con tarjeta no, su pago sí. Antes restaba las dos.
 - 2026-11-13 (**MV2.30 Ahorro tanda 1**, [ADR 133](../DECISIONS/133-ahorro-del-adulto-en-el-telefono.md) D1 a D3): el Fondo en el teléfono (`_renderFondoTelefono()`, `tramosCobertura()`, `cifraCobertura()`, `inicioPeriodoSiguiente()`), el vacío con una pregunta, la fila del aporte con la nota arriba y su hoja, y la tasa dicha como lo que queda de lo que recibes. `MODALIDADES_AHORRO.cuando` pasa a `para`.
 - 2026-10-24 (**APR.2a**, [ADR 092](../DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D6): `_renderFondoCard()` deja dos huecos ocultos, `#fondo-leccion` bajo la tarjeta y `#fondo-leccion-pie` tras el hábito, y `_renderAhorroBound()` emite `seccion:pintada` con `{ gastosFijos }`. Los llena `aprende` (la lección que ofrece el Fondo, o "Repasar" al pie si ya la hiciste); la tarjeta y sus acciones no cambian (084, 049 D2).
 - 2026-08-21 (**MOV.1 ficha 11**, [ADR 084](../DECISIONS/084-fondo-el-compromiso-del-periodo-en-la-primera-pantalla.md)): `_renderCompromisoDelPeriodo()` nueva emite el medidor (o su pregunta) dentro de `.fondo-card`; `_renderHabitoSection()` baja a dos argumentos y queda como consulta; `cov__pie` suelta `m(montoTotal)`; el `colchon === null` pasa a `.fondo-card__bloqueo` con enlace a `#compromisos`; el selector de `responsive.css` que evita la copia doble desde 1680px se extiende a la tarjeta. Commit `86c72f7`.

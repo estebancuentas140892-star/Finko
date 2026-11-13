@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### fix(analisis): HF.1b, nada se cuenta dos veces · 2026-11-13
+
+[ADR 139](DECISIONS/139-la-naturaleza-de-un-gasto.md), que escribe la HF.1a del [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md) (P2). Fichas: [`contexto/analisis.md`](contexto/analisis.md), [`contexto/limites.md`](contexto/limites.md), [`contexto/ahorro.md`](contexto/ahorro.md), [`contexto/movimientos.md`](contexto/movimientos.md). SW v695.
+
+- **El error**: comprar 100 con la tarjeta y pagarla 100 daba 200 en Análisis, en la renta, en Límites y en la tasa de ahorro. En Límites, además, la cena con tarjeta contaba como Necesidad porque lleva el `compromisoId` de la tarjeta.
+- **`infra/naturaleza.js`** (nuevo, sin schema): consumo, consumo con tarjeta (`consumoTC`), pago de fijo y pago de deuda (categoría "Deudas"), y dos lentes. **Consumo** deja fuera los abonos: Análisis entero y las compras y consumos de la renta. **Lo que sale del ingreso** deja fuera la compra con tarjeta, que cuenta cuando se paga la tarjeta como cuota: Límites por grupo y la tasa de ahorro. Con una sola lente, quien paga un préstamo leería "guardas el 40 %" o vería Necesidades siempre por debajo del plan.
+- **Movimientos**: el aporte al Fondo pasa a neutro (no sale de ninguna cuenta). Queda anotado en el ADR que el neto todavía suma la compra con tarjeta y su pago: arreglarlo pide que la fila diga con qué tarjeta se pagó.
+- Gastos y Por pagar no cambian: "Gastaste" ya dejaba los abonos aparte, en "+ $X en fijos y deudas".
+- Pruebas: `naturaleza` (17 nuevas: una por naturaleza y por lente, y la invariante 100 + 100 = 100 en las cuatro vistas, la que iba a dar HF.0f); `movimientos` (1 reescrita).
+
 ### docs(board): la poda del tablero del 13 de noviembre · 2026-11-13
 
 [ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md). Tablero: [`BOARD.md`](BOARD.md) y [`board/transversal.md`](board/transversal.md). Solo documentación, sin bump del SW.

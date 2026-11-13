@@ -19,6 +19,7 @@ import { tejaCategoria } from '../../infra/icons.js';
 import { iconoDeCategoriaGasto } from '../../core/constants.js';
 import { coberturaFondo, mesesEnPalabras } from '../../infra/bolsas.js';
 import { gastosMes } from '../gastos/logic.js';
+import { gastosDeConsumo } from '../../infra/naturaleza.js';
 import { calcularScoreSalud, clasificarScore, repartirPorcentajes } from './logic.js';
 
 const _MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
@@ -261,7 +262,7 @@ export function htmlAnalisisTelefono({ resumen, serieGastos, lecturas, anio, mes
 
   // En qué gastas: una fila por categoría; la cola, en una.
   const porCat = {};
-  for (const g of gastosMes(S.gastos ?? [], anio, mes)) {
+  for (const g of gastosMes(gastosDeConsumo(S.gastos), anio, mes)) { // ADR 139 D2
     const c = g.categoria || 'Otro';
     porCat[c] = (porCat[c] ?? 0) + (Number(g.monto) || 0);
   }

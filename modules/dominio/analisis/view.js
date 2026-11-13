@@ -12,6 +12,7 @@ import { icon } from '../../infra/icons.js';
 import { memoizar } from '../../infra/memo.js';
 import { topeHormiga } from '../../infra/hormiga.js';
 import { gastosMes } from '../gastos/logic.js';
+import { gastosDeConsumo } from '../../infra/naturaleza.js';
 import {
   generarResumen, serieGastosMensual, seriePorCategoria,
   calcularScoreSalud, clasificarScore,
@@ -70,7 +71,7 @@ function _calcularDatosAnalisis(gastos, compromisos, cuentas, metas, apartados, 
 
   // Series para gráficos (D.3). Se calculan aquí para no inflar generarResumen.
   const serieGastos  = serieGastosMensual(gastos, anio, mes, 12);
-  const gastosDelMes = gastosMes(gastos, anio, mes);
+  const gastosDelMes = gastosMes(gastosDeConsumo(gastos), anio, mes); // ADR 139 D2
   const catSerie     = seriePorCategoria(gastosDelMes, 6);
   const segmentosCat = colorearSegmentos(catSerie);
 

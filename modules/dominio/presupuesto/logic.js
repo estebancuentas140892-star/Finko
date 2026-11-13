@@ -11,6 +11,7 @@
 
 import { CATEGORIAS_GASTO, GRUPOS_FINANCIEROS, CATEGORIAS_AGENDA_NO_ESENCIALES } from '../../core/constants.js';
 import { gastosMes }        from '../gastos/logic.js';
+import { gastosQueSalenDelIngreso } from '../../infra/naturaleza.js';
 import { f } from '../../infra/utils.js';
 import { resumenHormigaMes, topeHormiga, limiteHormiga, TOPE_HORMIGA_MIN, TOPE_HORMIGA_MAX } from '../../infra/hormiga.js';
 
@@ -250,6 +251,11 @@ export function idsFijosNoEsenciales(compromisos) {
  *     justo donde el usuario decide. Su asignado se mueve en la misma rebanada
  *     (`calcularFijosNoEsencialesMensuales` en tesorería), o Estilo de vida
  *     aparecería excedido contra un plan que no lo incluye.
+ *   - **Fuera de los dos:** la compra con tarjeta de crédito (ADR 139 D2). Este
+ *     es el plan del ingreso, y la compra todavía no sacó dinero: sale cuando
+ *     se paga la tarjeta, como cuota de deuda en Necesidades (ADR 013). Antes
+ *     contaba dos veces, y como Necesidad, porque lleva el `compromisoId` de
+ *     la tarjeta.
  *
  * El pago de un fijo se registra con categoría 'Gastos fijos' (no la del
  * compromiso), así que la clasificación va por `compromisoId` y necesita la
@@ -271,7 +277,7 @@ export function idsFijosNoEsenciales(compromisos) {
  * @returns {Record<'necesidades'|'estilo-de-vida'|'ahorro', number>}
  */
 export function ejecutadoPorGrupoDelMes(gastos, aportesFondo, anio, mes, compromisos = []) {
-  const delMes = gastosMes(gastos ?? [], anio, mes);
+  const delMes = gastosMes(gastosQueSalenDelIngreso(gastos), anio, mes);
   const noEsenciales = idsFijosNoEsenciales(compromisos);
 
   const esNecesidad = g => !!g.compromisoId && !noEsenciales.has(g.compromisoId);
@@ -323,7 +329,9 @@ export function ejecutadoPorGrupoDelMes(gastos, aportesFondo, anio, mes, comprom
  * }>} Ordenado: pendientes primero, luego por monto de referencia descendente.
  */
 export function desgloseNecesidadesDelMes(compromisos, gastos, anio, mes) {
-  const delMes = gastosMes(gastos ?? [], anio, mes);
+  // ADR 139 D2: una compra con la tarjeta lleva su `compromisoId`, pero no es
+  // un pago: no puede marcar la cuota de la tarjeta como pagada.
+  const delMes = gastosMes(gastosQueSalenDelIngreso(gastos), anio, mes);
   const noEsenciales = idsFijosNoEsenciales(compromisos);
 
   const items = (compromisos ?? [])

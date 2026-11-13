@@ -18,6 +18,7 @@ import { calcularTotalInvertido }                       from '../inversiones/log
 import { calcularTotalPorCobrar, calcularPrestamosSinCuenta } from '../personales/logic.js';
 import { UVT, TOPES_RENTA_UVT, UMBRAL_ALERTA_RENTA }    from '../../core/constants.js';
 import { estimarIngresoAnual }                          from '../../infra/financiero.js';
+import { gastosDeConsumo, esConsumo }                  from '../../infra/naturaleza.js';
 
 // Regex reutilizada en funciones de deteccion.
 const _RX_FECHA_ANA = /^(\d{4})-(\d{2})-(\d{2})/;
@@ -235,11 +236,15 @@ export function proyeccionMultiHorizonte(patrimonioActual, ahorroMensual) {
  * }}
  */
 export function generarResumen(gastos, compromisos, cuentas, anio, mes, metas = [], apartados = [], inversiones = [], personales = [], topeHormiga = undefined) {
-  const gastoMes          = totalGastosMes(gastos, anio, mes);
+  // ADR 139 D2: Análisis mira el consumo. El abono a una deuda sigue en
+  // `S.gastos` (mueve la cuenta y baja la deuda), pero no es en qué se fue el
+  // dinero: con la tarjeta, la compra ya se contó.
+  const consumo           = gastosDeConsumo(gastos);
+  const gastoMes          = totalGastosMes(consumo, anio, mes);
   const compromisoMensual = calcularTotalCompromisos(compromisos);
   const saldoCuentas      = calcularTotalCuentas(cuentas);
   const egresos           = gastoMes + compromisoMensual;
-  const gastosMesActual   = gastosMes(gastos, anio, mes);
+  const gastosMesActual   = gastosMes(consumo, anio, mes);
   const porCategoria      = gastosPorCategoria(gastosMesActual);
   const hormigas          = detectarHormigas(gastosMesActual, topeHormiga);
 
@@ -248,7 +253,7 @@ export function generarResumen(gastos, compromisos, cuentas, anio, mes, metas = 
   const patrimonioNeto = calcularPatrimonioNeto(activos.total, pasivos.total);
 
   // Volatilidad: std dev de gastos últimos 12 meses (para score de salud)
-  const serieMeses = serieGastosMensual(gastos, anio, mes, 12);
+  const serieMeses = serieGastosMensual(consumo, anio, mes, 12);
   const gastosMontos = serieMeses.map(s => s.total);
   const volatilidad = calcularVolatilidad(gastosMontos);
 
@@ -418,6 +423,7 @@ const _MESES_CORTO = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct
  */
 export function serieGastosMensual(gastos, anio, mes, mesesAtras = 12) {
   const n = Math.max(1, Math.floor(mesesAtras));
+  const consumo = gastosDeConsumo(gastos); // ADR 139 D2
   const serie = [];
   for (let i = n - 1; i >= 0; i--) {
     let y = anio;
@@ -426,7 +432,7 @@ export function serieGastosMensual(gastos, anio, mes, mesesAtras = 12) {
     serie.push({
       anio:  y,
       mes:   m,
-      total: totalGastosMes(gastos, y, m),
+      total: totalGastosMes(consumo, y, m),
       label: _MESES_CORTO[m - 1] ?? '',
     });
   }
@@ -633,8 +639,9 @@ export function calcularComparacionCategorias(gastos, anio, mes, config = {}) {
   const anioAnt = mes === 1 ? anio - 1 : anio;
   const mesAnt  = mes === 1 ? 12 : mes - 1;
 
-  const cmActual   = gastosPorCategoria(gastosMes(gastos, anio,    mes));
-  const cmAnterior = gastosPorCategoria(gastosMes(gastos, anioAnt, mesAnt));
+  const consumo    = gastosDeConsumo(gastos); // ADR 139 D2
+  const cmActual   = gastosPorCategoria(gastosMes(consumo, anio,    mes));
+  const cmAnterior = gastosPorCategoria(gastosMes(consumo, anioAnt, mesAnt));
 
   // Union de todas las categorias presentes en cualquiera de los dos períodos.
   const cats = new Set([...Object.keys(cmActual), ...Object.keys(cmAnterior)]);
@@ -741,6 +748,7 @@ export function detectarPatronGastoSemanal(gastos, hoyISO, config = {}) {
   for (const g of gastos) {
     if (!g || typeof g !== 'object')     continue;
     if (typeof g.fecha !== 'string')     continue;
+    if (!esConsumo(g))                   continue; // ADR 139 D2
     const mg = _RX_FECHA_ANA.exec(g.fecha);
     if (!mg) continue;
     const tG = Date.UTC(+mg[1], +mg[2] - 1, +mg[3]);
@@ -839,6 +847,7 @@ export function totalGastosAnio(gastos, anio) {
   for (const g of gastos) {
     if (!g || typeof g.fecha !== 'string') continue;
     if (!g.fecha.startsWith(pref))         continue;
+    if (!esConsumo(g))                     continue; // ADR 139 D2: abonar no es consumir
     const m = Number(g.monto);
     if (Number.isFinite(m) && m > 0) total += m;
   }
