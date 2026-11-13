@@ -20,6 +20,7 @@ import {
   repartirPorcentajes,
   lecturaPatrimonio, lecturaTendencia, lecturaCategorias, lecturaComparacion,
 } from './logic.js';
+import { htmlAnalisisTelefono, htmlMasAnalisis, SUB_DETALLE, subRenta } from './telefono.js';
 
 /**
  * DIS.10 (C8): chevron real del sprite para los dos colapsables del panel.
@@ -244,6 +245,16 @@ export function renderAnalisis() {
   // DIS.10 (C9, regla R29): el rótulo del grupo es un encabezado, no un
   // párrafo: agrupa dos bloques que sí lo tenían. El tamaño lo sigue dando la
   // clase, así que el cambio de etiqueta no se ve.
+  // ADR 134 D7: bajo 1024px, el mismo contenido en filas (telefono.js); el
+  // detalle de gastos y la renta son dos filas que abren su hoja.
+  const enTelefono = window.matchMedia?.('(max-width: 1023.98px)').matches === true;
+  if (enTelefono) {
+    el.innerHTML = `
+    ${htmlAnalisisTelefono({ resumen, serieGastos, lecturas, anio, mes })}
+    ${htmlMasAnalisis({ conDetalle: mostrarDetalle, anio, criterios: _calcularEstadoRentaMemo(S, anio).criterios })}
+  `;
+    return;
+  }
   el.innerHTML = `
     ${_renderScoreSalud(resumen)}
     ${_renderPatrimonio(resumen, lecturas.patrimonio)}
@@ -307,7 +318,7 @@ function _renderGrupoDetalle(cuerpo) {
         <span class="analisis-grupo__teja" aria-hidden="true">${icon('bar-chart')}</span>
         <span class="analisis-grupo__texto">
           <h2 class="analisis-grupo__title">Más detalle de tus gastos</h2>
-          <span class="analisis-grupo__sub">Vs mes anterior · patrón semanal · hormigas</span>
+          <span class="analisis-grupo__sub">${SUB_DETALLE}</span>
         </span>
         ${_CHEVRON_GRUPO}
       </summary>
@@ -323,15 +334,58 @@ function _renderGrupoDetalle(cuerpo) {
  * @returns {string}
  */
 function _renderEmptyAnalisis() {
+  // ADR 134 D7: lo que se verá, dicho en las palabras de la sección. Es
+  // contenido: los dos anchos. Tino ya está arriba, en el banner de propósito
+  // (ADR 129 D3), así que el vacío conserva su teja, como el de Calendario.
   return `
     <div class="analisis-empty">
       <span class="analisis-empty__teja" aria-hidden="true">${icon('analisis')}</span>
-      <p class="analisis-empty__title">Aún no hay suficientes datos</p>
-      <p class="analisis-empty__desc">Registra gastos y agrega tus cuentas: tu score de salud, patrimonio y tendencias aparecen automáticamente.</p>
+      <p class="analisis-empty__title">Todavía no hay suficientes datos</p>
+      <p class="analisis-empty__desc">Con unas semanas de gastos registrados y tus cuentas al día, aquí ves la salud de tu dinero, lo que realmente tienes y hacia dónde va.</p>
       <button type="button" class="btn btn-primary" data-action="nuevo-gasto">
         + Registrar un gasto
       </button>
     </div>`;
+}
+
+/**
+ * ADR 134 D7: la hoja de una de las dos filas de "Más análisis" en el
+ * teléfono, con el mismo cuerpo que el grupo de escritorio. El detalle de
+ * gastos se calcula al abrirla (PERF.3: no se paga si no se mira).
+ *
+ * @param {'detalle' | 'renta'} cual
+ * @returns {string} HTML del cuerpo de `#modal-detalle-fila`.
+ */
+export function htmlHojaAnalisis(cual) {
+  const fechaHoy = hoy();
+  const anio = Number(fechaHoy.slice(0, 4));
+  const mes  = Number(fechaHoy.slice(5, 7));
+  let titulo, sub, iconoId, cuerpo;
+  if (cual === 'renta') {
+    const datos = _datosRenta(anio);
+    titulo = `Estado de tu renta (${anio})`;
+    sub = subRenta(datos.estado.criterios.length);
+    iconoId = 'percent';
+    cuerpo = datos.cuerpo;
+  } else {
+    const { resumen } = _calcularDatosAnalisisMemo(
+      S.gastos, S.compromisos, S.cuentas, S.metas, S.apartados, S.inversiones, S.personales, anio, mes,
+      topeHormiga(S.config),
+    );
+    titulo = 'Más detalle de tus gastos';
+    sub = SUB_DETALLE;
+    iconoId = 'bar-chart';
+    cuerpo = _renderDetalleGastos(resumen.hormigas, anio, mes, fechaHoy);
+  }
+  return `
+    <div class="detalle-fila__cabeza">
+      <span class="analisis-grupo__teja detalle-fila__icono" aria-hidden="true">${icon(iconoId)}</span>
+      <div class="detalle-fila__textos">
+        <h2 class="detalle-fila__titulo" id="detalle-fila-titulo">${titulo}</h2>
+        <p class="detalle-fila__sub">${sub}</p>
+      </div>
+    </div>
+    <div class="analisis-hoja analisis-grupo--fila"><div class="analisis-grupo__body">${cuerpo}</div></div>`;
 }
 
 /**
@@ -418,7 +472,7 @@ function _renderRecomendacionFiscal() {
  * barra gris) para que el usuario conozca el límite y sepa dónde consultar el
  * dato real.
  */
-function _renderEstadoRenta(anio) {
+function _datosRenta(anio) {
   const estado = _calcularEstadoRentaMemo(S, anio);
   const pf     = (typeof S.config?.perfilFiscal === 'object' && S.config.perfilFiscal !== null)
     ? S.config.perfilFiscal : null;
@@ -469,18 +523,7 @@ function _renderEstadoRenta(anio) {
     ? `<span class="analisis-grupo__badge">${criteriosAlerta}<span class="sr-only"> ${criteriosAlerta === 1 ? 'criterio' : 'criterios'} cerca o sobre un tope</span></span>`
     : '';
 
-  return `
-    <details class="analisis-grupo analisis-grupo--fila analisis-grupo--renta"${abierto ? ' open' : ''}>
-      <summary class="analisis-grupo__summary">
-        <span class="analisis-grupo__teja" aria-hidden="true">${icon('percent')}</span>
-        <span class="analisis-grupo__texto">
-          <h2 class="analisis-grupo__title">Estado de tu renta (${anio})</h2>
-          <span class="analisis-grupo__sub">${estado.criterios.length} criterios DIAN · topes por UVT</span>
-        </span>
-        ${badgeAlerta}
-        ${_CHEVRON_GRUPO}
-      </summary>
-      <div class="analisis-grupo__body">
+  const cuerpo = `
         ${_renderVeredictoRenta(veredicto)}
         ${recomFiscal}
         <p class="analisis__hint">
@@ -491,7 +534,25 @@ function _renderEstadoRenta(anio) {
         ${bannerNudges}
         ${filas !== '' ? `<div class="renta-criterios">${filas}</div>` : ''}
         ${_renderCriteriosSinDato(sinDato)}
-      </div>
+`;
+
+  return { estado, abierto, badgeAlerta, cuerpo };
+}
+
+function _renderEstadoRenta(anio) {
+  const { estado, abierto, badgeAlerta, cuerpo } = _datosRenta(anio);
+  return `
+    <details class="analisis-grupo analisis-grupo--fila analisis-grupo--renta"${abierto ? ' open' : ''}>
+      <summary class="analisis-grupo__summary">
+        <span class="analisis-grupo__teja" aria-hidden="true">${icon('percent')}</span>
+        <span class="analisis-grupo__texto">
+          <h2 class="analisis-grupo__title">Estado de tu renta (${anio})</h2>
+          <span class="analisis-grupo__sub">${subRenta(estado.criterios.length)}</span>
+        </span>
+        ${badgeAlerta}
+        ${_CHEVRON_GRUPO}
+      </summary>
+      <div class="analisis-grupo__body">${cuerpo}</div>
     </details>`;
 }
 

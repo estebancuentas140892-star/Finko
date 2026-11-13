@@ -1288,3 +1288,34 @@ test.describe('MV2.30 - Calendario en el teléfono (ADR 134)', () => {
     await expect(page.locator('#modal-dia-calendario[data-open]')).toHaveCount(1);
   });
 });
+
+test.describe('MV2.30 - Análisis en el teléfono (ADR 134 D7)', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('la salud va suelta, lo demás en filas, y el detalle y la renta abren su hoja', async ({ page }) => {
+    await sembrar(page, estadoBase({
+      cuentas: CUENTAS,
+      gastos: [
+        { id: 'g1', descripcion: '', monto: 300_000, categoria: 'Mercado', fecha: fechaDelMes(1), cuentaId: 'c1' },
+        { id: 'g2', descripcion: '', monto: 150_000, categoria: 'Ropa', fecha: fechaDelMes(1), cuentaId: 'c1' },
+      ],
+    }));
+    await page.goto('/#analisis');
+    await expect(page.locator('#sec-analisis.active')).toBeVisible({ timeout: 10_000 });
+
+    await expect(page.locator('#sec-analisis .section__linea')).toHaveText('Cómo está tu dinero y hacia dónde va');
+    await expect(page.locator('.ana-salud__num')).toBeVisible();
+    await expect(page.locator('#panel-analisis details.analisis-grupo')).toHaveCount(0);
+    await expect(page.locator('.ana-barra--gastos > span').first()).toHaveAttribute('style', /width:100%/);
+
+    await page.locator('.ana-fila[data-hoja="renta"]').click();
+    const hoja = page.locator('#modal-detalle-fila[data-open]');
+    await expect(hoja).toHaveCount(1);
+    await expect(hoja.locator('#detalle-fila-titulo')).toContainText('Estado de tu renta');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#modal-detalle-fila[data-open]')).toHaveCount(0);
+
+    await page.locator('.ana-fila[data-hoja="detalle"]').click();
+    await expect(page.locator('#modal-detalle-fila[data-open] #detalle-fila-titulo')).toHaveText('Más detalle de tus gastos');
+  });
+});

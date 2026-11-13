@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(analisis): MV2.30 Consultar tanda 4, Análisis en filas; cierra Consultar · 2026-11-13
+
+[ADR 134](DECISIONS/134-consultar-del-adulto-en-el-telefono.md) D7. Ficha: [`contexto/analisis.md`](contexto/analisis.md). SW v688. El tablero "rediseño3" queda aplicado completo y su HTML se borró.
+
+- **Bajo el título**, "Cómo está tu dinero y hacia dónde va", en los dos anchos.
+- **En el teléfono** (`analisis/telefono.js`), las tarjetas de escritorio dicen lo mismo en filas: la salud suelta con su banda en pastilla con ícono, su barra y lo que más la frena con su salida ("Tienes una base saludable. Lo que más puede mejorar es..." en la banda buena); "De dónde sale el 59", un factor por fila; "Lo que realmente tienes" con lo que tienes y lo que debes en filas con su parte; "A dónde va tu dinero" en barras por mes con la comparación en frase (y, si el mes anterior no tuvo gastos, "todavía no hay con qué comparar"); "En qué gastas", una fila por categoría con la barra medida contra la mayor.
+- **"Más detalle de tus gastos" y "Estado de tu renta"** son dos filas de una tarjeta que abren su hoja (`analisis-hoja`, `#modal-detalle-fila`) con el mismo cuerpo del plegable de escritorio; la de la renta avisa "Estás cerca de un tope para declarar" o, en rojo, "Pasas un tope para declarar". Un enlace dentro de la hoja la cierra. Desde 1024 px siguen los plegables, con los subtítulos nuevos.
+- **El vacío** dice "Todavía no hay suficientes datos" y qué se verá; conserva su teja porque Tino ya está en el banner de propósito.
+- Pruebas: `analisis-telefono` nuevo (13), 4 ajustadas en `analisis` (el simulacro de `matchMedia` ya distingue el teléfono de la tarjeta a 1440); E2E: uno nuevo a 390 px abre las dos hojas, `smoke` mide el vacío nuevo y el de DIS.10 (C11) registra el gasto desde el "Registrar" de la barra de arriba, porque a 390 px ya no hay plegable que siga abierto.
+
 ### feat(movimientos): MV2.30 Consultar tanda 3, Movimientos por día · 2026-11-13
 
 [ADR 134](DECISIONS/134-consultar-del-adulto-en-el-telefono.md) D6. Ficha: [`contexto/movimientos.md`](contexto/movimientos.md). SW v687. Tablero "rediseño3".

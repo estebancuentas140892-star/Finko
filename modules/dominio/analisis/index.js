@@ -12,7 +12,8 @@ import { S, EventBus } from '../../core/state.js';
 import { save } from '../../core/storage.js';
 import { renderSmart, registrarRender, updSaldo, programarRender } from '../../infra/render.js';
 import { registrarAccion } from '../../ui/actions.js';
-import { renderAnalisis } from './view.js';
+import { abrirModal, cerrarModal } from '../../ui/modales.js';
+import { renderAnalisis, htmlHojaAnalisis } from './view.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 
 // Secciones cuyos cambios requieren re-analisis.
@@ -38,6 +39,28 @@ function _renderReactivo() {
 export function initAnalisis() {
   // Registrar en renderAll para que se actualice con cualquier render global.
   registrarRender(() => renderSmart(renderAnalisis, 'analisis'));
+
+  // ADR 134 D7: bajo 1024px la sección tiene otra anatomía; al cruzar el
+  // ancho se vuelve a pintar (patrón de Límites, ADR 132 D8).
+  window.matchMedia?.('(max-width: 1023.98px)').addEventListener?.('change', () => {
+    renderSmart(renderAnalisis, 'analisis');
+  });
+
+  // ADR 134 D7: en el teléfono, "Más detalle de tus gastos" y "Estado de tu
+  // renta" son filas que abren su hoja (`#modal-detalle-fila`).
+  registrarAccion('analisis-hoja', (el) => {
+    const hoja = document.getElementById('modal-detalle-fila');
+    const cuerpo = document.getElementById('detalle-fila-body');
+    if (!hoja || !cuerpo) return;
+    cuerpo.innerHTML = htmlHojaAnalisis(el?.dataset?.hoja === 'renta' ? 'renta' : 'detalle');
+    abrirModal(hoja);
+  });
+  // Un enlace de esas hojas (Ajustes, el fondo) lleva a otra sección: la
+  // hoja se cierra para no quedar encima, como la hoja Más (NAV2.1a).
+  const hojaFila = document.getElementById('modal-detalle-fila');
+  hojaFila?.addEventListener('click', (e) => {
+    if (e.target.closest?.('.analisis-hoja a[href]')) cerrarModal(hojaFila);
+  });
 
   // ANL.2b (ADR 038 D2): el ojo del patrimonio comparte el flag
   // S.config.ocultarSaldo con Inicio (IN.2), Mis cuentas (MC.18a), Deudas

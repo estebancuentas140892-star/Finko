@@ -4935,9 +4935,9 @@ test.describe('Análisis v2 - score hero + chip de mes (ANL.2a)', () => {
     await expect(cuerpo.locator('.analisis__section').first()).toHaveCSS('border-radius', '26px');
 
     // C11: registrar un gasto SIN salir de Análisis no cierra lo que se abrió.
-    // A 390px, que es donde vive el botón Registrar de la barra inferior.
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.click('[data-action="registrar-abrir-hoja"]');
+    // Desde el "Registrar" de la barra de arriba: bajo 1024px Análisis ya no
+    // tiene plegables, el detalle se abre en su hoja (ADR 134 D7).
+    await page.click('.topbar__registrar');
     await page.waitForSelector('#modal-registrar[data-open]');
     await page.click('[data-action="registrar-abrir"][data-target-action="nuevo-gasto"]');
     await page.waitForSelector('#modal-gasto[data-open]');
@@ -4960,7 +4960,7 @@ test.describe('Análisis v2 - score hero + chip de mes (ANL.2a)', () => {
     // Un solo empty state: sin hero de score, sin patrimonio, sin colapsables.
     const empty = page.locator('.analisis-empty');
     await expect(empty).toBeVisible();
-    await expect(empty.locator('.analisis-empty__title')).toHaveText('Aún no hay suficientes datos');
+    await expect(empty.locator('.analisis-empty__title')).toHaveText('Todavía no hay suficientes datos');
     await expect(page.locator('.score-hero')).toHaveCount(0);
     await expect(page.locator('.patri-card')).toHaveCount(0);
     await expect(page.locator('#panel-analisis .analisis-grupo')).toHaveCount(0);

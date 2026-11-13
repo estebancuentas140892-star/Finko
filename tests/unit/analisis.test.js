@@ -2460,7 +2460,7 @@ describe('renderAnalisis() - ANL.2d filas colapsables limpias + empty state úni
     const panel = document.getElementById('panel-analisis');
     const empty = panel.querySelector('.analisis-empty');
     expect(empty).not.toBeNull();
-    expect(empty.querySelector('.analisis-empty__title').textContent).toBe('Aún no hay suficientes datos');
+    expect(empty.querySelector('.analisis-empty__title').textContent).toBe('Todavía no hay suficientes datos');
     expect(empty.querySelector('[data-action="nuevo-gasto"]')).not.toBeNull();
     expect(empty.querySelector('use').getAttribute('href')).toBe('#i-analisis');
     // Nada más se dibuja: ni hero, ni patrimonio, ni colapsables.
@@ -2490,7 +2490,7 @@ describe('renderAnalisis() - ANL.2d filas colapsables limpias + empty state úni
     const summary = document.querySelector('.analisis-grupo--detalle .analisis-grupo__summary');
     expect(summary.querySelector('.analisis-grupo__teja use').getAttribute('href')).toBe('#i-bar-chart');
     expect(summary.querySelector('.analisis-grupo__title').textContent).toBe('Más detalle de tus gastos');
-    expect(summary.querySelector('.analisis-grupo__sub').textContent).toBe('Vs mes anterior · patrón semanal · hormigas');
+    expect(summary.querySelector('.analisis-grupo__sub').textContent).toBe('Contra el mes anterior, por día de la semana y gastos hormiga');
   });
 
   it('el summary de renta lleva teja y conteo de criterios, sin badge cuando no hay alertas', () => {
@@ -2500,7 +2500,7 @@ describe('renderAnalisis() - ANL.2d filas colapsables limpias + empty state úni
     const renta = grupos.find(g => g.querySelector('.analisis-grupo__title')?.textContent.startsWith('Estado de tu renta'));
     expect(renta).not.toBeUndefined();
     expect(renta.querySelector('.analisis-grupo__teja use').getAttribute('href')).toBe('#i-percent');
-    expect(renta.querySelector('.analisis-grupo__sub').textContent).toBe('5 criterios DIAN · topes por UVT');
+    expect(renta.querySelector('.analisis-grupo__sub').textContent).toBe('5 criterios de la DIAN y sus topes');
     expect(renta.querySelector('.analisis-grupo__badge')).toBeNull();
   });
 
@@ -2884,7 +2884,9 @@ describe('renderAnalisis() - viewBox de la sparkline (DSK.9b)', () => {
   // happy-dom no tiene viewport real: se falsea `matchMedia`, mismo apaño que
   // render.test.js. La consulta del helper es `(min-width: 1440px)`.
   const matchMediaReal = window.matchMedia;
-  const anchoDe = esEscritorio => { window.matchMedia = () => ({ matches: esEscritorio }); };
+  // ADR 134 D7: la consulta del teléfono (max-width) queda en falso: estas
+  // pruebas miden la tarjeta de escritorio a uno y otro lado de 1440.
+  const anchoDe = esEscritorio => { window.matchMedia = q => ({ matches: /min-width/.test(q) ? esEscritorio : false }); };
 
   const gastosDeDosMeses = () => {
     const hoy = new Date();

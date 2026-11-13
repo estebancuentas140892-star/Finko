@@ -1,6 +1,6 @@
 # ADR 134 - Consultar del adulto en el teléfono: la hoja Más, Calendario, Movimientos y Análisis
 
-**Estado:** Aceptada (2026-11-13). Se aplica en cuatro tandas: (1) la hoja Más y Calendario (SW v685, aplicada); (2) la hoja de un día y el Calendario vacío (SW v686, aplicada); (3) Movimientos, su búsqueda y la hoja de un movimiento (SW v687, aplicada); (4) Análisis.
+**Estado:** Aceptada (2026-11-13). Se aplica en cuatro tandas: (1) la hoja Más y Calendario (SW v685, aplicada); (2) la hoja de un día y el Calendario vacío (SW v686, aplicada); (3) Movimientos, su búsqueda y la hoja de un movimiento (SW v687, aplicada); (4) Análisis (SW v688, aplicada). El tablero queda aplicado completo y su HTML se borró.
 **Fecha:** 2026-11-13
 **Autores:** Esteban (diseño y decisión: "vamos a seguir aplicando los cambios de diseño propuestos en esta carpeta"), Claude Opus 5.5 (auditoría, implementación y redacción)
 **Relación:** **Aplica** el tablero "Finko móvil · rediseño3" (Claude Design, `Diseño Finko/`), la cuarta pieza de MV2.30, sobre la identidad del [ADR 127](127-identidad-bosque-y-sol.md). **Cambia** en la hoja Más el lugar de la línea de estado de cada destino ([ADR 108](108-mas-dice-como-esta-cada-destino.md) D2: de la derecha a debajo del nombre, como ya iba la de Ajustes, D4) y la leyenda del Calendario (de tipos de pago a lo que sale y lo que entra, D3). **Conserva** la tarjeta de identidad de Calendario ([ADR 127](127-identidad-bosque-y-sol.md) D5), el techo de la hoja Más (R83), la hoja del día en el teléfono ([ADR 118](118-el-dia-en-hoja-y-las-hojas-se-cierran-de-tres-formas.md)) y a Tino en los vacíos ([ADR 129](129-tino-ronda-2-en-el-adulto.md)).
@@ -54,6 +54,11 @@ Bajo el título, "Todo lo que entró y salió, por fecha". Los filtros "Todos", 
 | El vacío sin el mes | sin el mes solo para quien no tiene nada con fecha; con datos y un mes vacío sigue "está despejado" con el mes | ADR 111 D5: quien ya tiene datos navega meses |
 | "Agregar un pago fijo" | abre el formulario de gasto fijo de Por pagar, sin pasar por la sección | es el mismo camino del vacío de Por pagar (ADR 132 D6) |
 | La flecha también en Ajustes | se calla bajo 360 px | a 320 la línea de Ajustes no cabe al lado del botón del tema (ADR 108 D4) |
+| "Más detalle de tus gastos" y "Estado de tu renta" abren una hoja | en el teléfono abren `#modal-detalle-fila` con el mismo cuerpo del grupo de escritorio; desde 1024 px siguen plegables | dos cuerpos para el mismo detalle dirían cosas distintas; en escritorio hay sitio para abrirlos en su lugar (ADR 078) |
+| La fila de la renta solo avisa "Estás cerca de un tope" | también "Pasas un tope para declarar", en rojo, y pesa más que estar cerca | el contador ámbar de escritorio (ADR 038 D5) cuenta los dos estados; callar el más grave lo escondería |
+| El vacío de Análisis con su teja | conserva la teja | Tino ya está arriba, en el banner de propósito (ADR 129 D3); dos Tinos en la misma pose se repetían. Mismo criterio que el vacío de Calendario |
+| "cubre 1 de los 3 meses" | "cubre 1 mes de los 3 meses" (o "1 mes y 2 semanas") | la cobertura se dice en meses y semanas en todo Finko (`mesesEnPalabras`) |
+| "préstamo de la tía Marta" en minúscula | el nombre como lo escribió la persona | es un dato suyo, no texto de Finko |
 
 ## Alternativas descartadas
 
@@ -63,5 +68,5 @@ Bajo el título, "Todo lo que entró y salió, por fecha". Los filtros "Todos", 
 
 ## Consecuencias
 
-- La hoja Más y la leyenda del Calendario cambian también en escritorio: son contenido.
+- La hoja Más, la leyenda del Calendario, los subtítulos de los dos plegables de Análisis ("Contra el mes anterior, por día de la semana y gastos hormiga"; "5 criterios de la DIAN y sus topes") y su vacío ("Todavía no hay suficientes datos") cambian también en escritorio: son contenido.
 - Cada tanda se publica sola, con su prueba y su versión del Service Worker.
