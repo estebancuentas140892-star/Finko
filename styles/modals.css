@@ -142,6 +142,9 @@
   line-height: var(--fk-leading-relaxed);
   color: var(--fk-text-primary);
 }
+/* ADR 136 D3: el aviso con su salida antes de confirmar. */
+.confirm__aviso { margin-top: var(--fk-space-4); }
+.confirm__aviso-accion { gap: var(--fk-space-2); margin-top: var(--fk-space-3); }
 .modal--full {
   max-width: 100%;
   max-height: 100dvh;

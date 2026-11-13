@@ -27,6 +27,7 @@ import {
 } from '../../infra/cripto-respaldo.js';
 import { pedirContrasenaRespaldo } from '../../ui/contrasena-respaldo.js';
 import { abrirModal } from '../../ui/modales.js';
+import { toggleTheme } from '../../ui/shell.js';
 import { renderPanelConfig, renderModalFiscal, desdeMiles, textoUltimoRespaldo, alternarFila } from './view.js';
 import { gastosACSV } from '../export/logic.js';
 import { documentoLegalPorId, cargarDocumentoLegal, VERSION_LEGAL } from './legal.js';
@@ -102,7 +103,7 @@ async function _exportarDatos() {
     S.config.ultimoRespaldoISO = fecha;
     save();
     const sello = document.getElementById('config-ultimo-respaldo');
-    if (sello) sello.textContent = textoUltimoRespaldo(fecha);
+    if (sello) sello.textContent = textoUltimoRespaldo(fecha).replace(/\.$/, '');
 
     announce('Datos exportados correctamente.');
   } catch (err) {
@@ -486,13 +487,23 @@ function _wireLegalLinks() {
 }
 
 async function _resetearApp() {
+  // ADR 136 D3: qué se borra, en frase; sin respaldo, el aviso con su
+  // salida: "Guardar respaldo primero" cierra la hoja y guarda el respaldo.
+  const sinRespaldo = !S.config?.ultimoRespaldoISO;
+  const aqui = window.matchMedia?.('(max-width: 1023.98px)').matches === true ? 'este teléfono' : 'este dispositivo';
   const ok = await confirmar({
-    titulo:         'Borrar todos mis datos',
-    mensaje:        '¿Borrar TODO lo que tienes en Finko? Perderás gastos, cuentas, metas y compromisos de este dispositivo. No se puede deshacer.',
-    confirmarTexto: 'Borrar todo',
+    titulo:         '¿Borrar todos tus datos?',
+    mensaje:        `Se borran tus gastos, cuentas, metas, reservas, compromisos y préstamos de ${aqui}. No se puede deshacer.`,
+    confirmarTexto: 'Sí, borrar todo',
     peligroso:      true,
+    aviso:          sinRespaldo ? {
+      titulo: 'Nunca has guardado un respaldo',
+      texto:  'Si cambias de opinión después, no habrá cómo recuperarlos.',
+      accion: 'Guardar respaldo primero',
+    } : null,
   });
-  if (!ok) return;
+  if (ok === 'aviso') { await _exportarDatos(); return; }
+  if (ok !== true) return;
   const okPin = await confirmarPin();
   if (!okPin) return;
   borrarTodo();
@@ -770,10 +781,27 @@ export function initConfig() {
   // y el texto del label dentro del panel de config.
   // setTimeout(0): el browser revierte `checked` asíncronamente después de
   // e.preventDefault() en el click del checkbox; hay que esperar ese tick.
+  // ADR 136 D1: el interruptor de la fila del tema (teléfono) alterna el
+  // tema con su propio `change`; marcado es "tema oscuro encendido".
+  document.addEventListener('change', (e) => {
+    if (e.target?.matches?.('[data-tema-fila]')) toggleTheme();
+  });
+
   EventBus.on('theme:change', ({ light }) => {
     setTimeout(() => {
       const toggle = document.getElementById('toggle-tema');
       if (!toggle) return;
+      // ADR 136 D1: en la fila del teléfono, marcado es "tema oscuro
+      // encendido", que es lo que dice la fila; la línea y la teja siguen.
+      const fila = toggle.closest('.config-tema-fila');
+      if (fila) {
+        toggle.checked = !light;
+        const estado = fila.querySelector('.config-fila__estado');
+        if (estado) estado.textContent = light ? 'Apagado' : 'Encendido';
+        const teja = fila.querySelector('.config-fila__teja use');
+        if (teja) teja.setAttribute('href', light ? '#i-sun' : '#i-moon');
+        return;
+      }
       toggle.checked = light;
       // TX.11: el input vive dentro de un `.toggle` anidado (atoms.css), un
       // nivel más profundo que antes; `closest('.config-toggle')` sube hasta

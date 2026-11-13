@@ -283,7 +283,7 @@ describe('al entrar nunca se pisa un lado sin preguntar', () => {
   });
 });
 
-describe('el bloque "Guardar en la nube" de Ajustes', () => {
+describe('el bloque "Copia en la nube" de Ajustes', () => {
   const base = { sesion: null, paso: 'correo', correo: '', ocupado: false, error: '', ultimaSubida: '', pendiente: false, eleccion: null };
 
   it('sin sesión pide el correo y la autorización, y dice que es solo para invitados', () => {
@@ -390,7 +390,7 @@ describe('el teléfono del niño (NUBE.3)', () => {
 
   it('"Su teléfono": sin cuenta explica, con cuenta pide la autorización y luego muestra el código', () => {
     const nino = { id: 'n-sofi', nombre: 'Sofía' };
-    expect(htmlVincularNino({ nino, sesion: false, paso: 'autorizar', vinculos: [] })).toContain('Guardar en la nube');
+    expect(htmlVincularNino({ nino, sesion: false, paso: 'autorizar', vinculos: [] })).toContain('Copia en la nube');
     const autorizar = htmlVincularNino({ nino, sesion: true, paso: 'autorizar', vinculos: [], error: 'autorizacion-nino' });
     expect(autorizar).toContain('id="form-nube-vincular"');
     expect(autorizar).toContain('id="nube-representante"');

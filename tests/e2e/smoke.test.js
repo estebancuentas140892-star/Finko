@@ -1823,14 +1823,15 @@ test.describe('Perfil - situación laboral', () => {
   });
 
   test('guarda la situación laboral, confirma en pantalla y la persiste', async ({ page }) => {
-    await page.locator('#config-situacion').selectOption('independiente');
+    // ADR 136 D2: la situación en botones.
+    await page.locator('#config-situacion label', { hasText: 'Independiente' }).click();
     await page.locator('#form-perfil button[type="submit"]').click();
 
     // B12/R14: la confirmación es visible, no solo para lectores de pantalla, y
     // el panel ya no se re-renderiza entero, así que el campo conserva su valor
     // sin perder foco ni posición de scroll.
     await expect(page.locator('#config-perfil-ok')).toBeVisible();
-    await expect(page.locator('#config-situacion')).toHaveValue('independiente');
+    await expect(page.locator('#config-situacion input[value="independiente"]')).toBeChecked();
 
     // Persistencia real: el dato queda en localStorage (save debounced 200 ms).
     // No se recarga porque el addInitScript de saltearOnboarding resembraría

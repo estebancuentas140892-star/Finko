@@ -8,7 +8,7 @@ import { S } from '../../core/state.js';
 import { f, hoy, esc as _esc } from '../../infra/utils.js';
 import { icon } from '../../infra/icons.js';
 import { estadoPermiso } from '../../infra/notificaciones.js';
-import { SECCIONES_AVISO, LABEL_SECCION_AVISO } from '../../infra/avisos.js';
+import { SECCIONES_AVISO, LABEL_SECCION_AVISO, DIAS_RESPALDO_ATRASADO } from '../../infra/avisos.js';
 import { estadoCuota } from '../../core/storage.js';
 import { diasHastaFecha } from '../../infra/bolsas.js';
 import { cifradoDisponible } from '../../infra/cripto-respaldo.js';
@@ -61,29 +61,33 @@ export function renderPanelConfig() {
   if (nube.eleccion || nube.sesion?.porDecidir || nube.paso === 'codigo' || nube.error) {
     _filasAbiertas.add('nube');
   }
-  const light = document.body.classList.contains('light-theme');
+  // ADR 136 D1: cuatro grupos en frase, cada fila con su teja y su estado;
+  // lo que pide atención lleva el ícono de aviso y el tema es un interruptor
+  // en la fila misma.
+  const respaldo = textoUltimoRespaldo(S.config?.ultimoRespaldoISO).replace(/\.$/, '');
+  const recordatorios = _estadoRecordatorios();
   el.innerHTML = `
     ${_renderAvisoVigencia()}
-    ${_grupo('Tu cuenta', [
-      _fila('perfil', _renderPerfil(), S.perfil.nombre || 'Sin nombre'),
-      _fila('bloqueo', _renderBloqueo(), !cryptoDisponible() ? 'No disponible' : candadoActivo(S.config?.bloqueo) ? 'Activo' : 'Apagado'),
+    ${_grupo('Tú y tu familia', [
+      _fila('perfil', _renderPerfil(), S.perfil.nombre || 'Sin nombre', { inicial: (S.perfil.nombre || '?').trim().charAt(0).toUpperCase() || '?' }),
+      _fila('bloqueo', _renderBloqueo(), !cryptoDisponible() ? 'No disponible' : candadoActivo(S.config?.bloqueo) ? 'Activo' : 'Apagado', { icono: 'lock' }),
+      _fila('familia', htmlFamilia(ninos(), hoy()), textoFamilia(ninos()), { icono: 'users' }),
     ])}
-    ${_grupo('Familia', [_fila('familia', htmlFamilia(ninos(), hoy()), textoFamilia(ninos()))])}
     ${_grupo('Tus datos', [
-      _fila('nube', htmlNube(nube), _estadoNube(nube)),
-      _fila('datos', _renderDatos(), textoUltimoRespaldo(S.config?.ultimoRespaldoISO)),
+      _fila('nube', htmlNube(nube), _estadoNube(nube), { icono: 'cloud', aviso: nube.eleccion || nube.sesion?.porDecidir === true }),
+      _fila('datos', _renderDatos(), respaldo, { icono: 'archive', aviso: _respaldoPideAtencion(S.config?.ultimoRespaldoISO) }),
+      _fila('impuestos', _renderImpuestos(), 'Opcional', { icono: 'percent' }),
     ])}
-    ${_grupo('La app', [
-      _fila('tema', _renderTema(), light ? 'Tema claro' : 'Tema oscuro'),
-      _fila('atajos', _renderAtajos(), S.config?.atajosTeclado !== false ? 'Activados' : 'Desactivados'),
-      _fila('recordatorios', _renderNotificaciones(), _estadoRecordatorios()),
-      _fila('instalar', _renderInstalarApp(), estaInstalada() ? 'Ya está instalada' : ''),
-      _fila('actualizar', _renderActualizar()),
+    ${_grupo('La app en este teléfono', [
+      _filaTema(),
+      _fila('atajos', _renderAtajos(), S.config?.atajosTeclado !== false ? 'Activados' : 'Desactivados', { icono: 'key' }),
+      _fila('recordatorios', _renderNotificaciones(), recordatorios, { icono: 'bell', aviso: recordatorios === 'Bloqueados en este dispositivo' }),
+      _fila('instalar', _renderInstalarApp(), estaInstalada() ? 'Ya está instalada' : 'Abre Finko como una app', { icono: 'download' }),
+      _fila('actualizar', _renderActualizar(), 'Busca si hay una versión nueva', { icono: 'refresh' }),
     ])}
-    ${_grupo('Impuestos', [_fila('impuestos', _renderImpuestos(), 'Opcional')])}
     ${_grupo('Información', [
-      _fila('legal', _renderLegal(), `${DOCUMENTOS_LEGALES.length} documentos`),
-      _fila('acerca', _renderAcercaDe(), `Versión ${APP_VERSION}`),
+      _fila('legal', _renderLegal(), `${DOCUMENTOS_LEGALES.length} documentos`, { icono: 'doc' }),
+      _fila('acerca', _renderAcercaDe(), `Versión ${APP_VERSION}`, { icono: 'info' }),
     ])}
   `;
 }
@@ -116,7 +120,7 @@ const _filasAbiertas = new Set();
  * @param {string} [estado] - una línea con lo que el bloque ya sabe
  * @returns {string}
  */
-function _fila(id, html, estado = '') {
+function _fila(id, html, estado = '', { icono = '', inicial = '', aviso = false } = {}) {
   const iH2     = html.indexOf('<h2');
   const iAbre   = html.indexOf('>', iH2) + 1;
   const iCierra = html.indexOf('</h2>', iAbre);
@@ -129,9 +133,11 @@ function _fila(id, html, estado = '') {
   return `${cabeza}
         <button type="button" class="config-fila__boton" data-action="config-fila" data-fila="${id}"
                 aria-expanded="${abierta}" aria-controls="config-fila-${id}">
+          ${inicial ? `<span class="config-fila__teja config-fila__teja--inicial" aria-hidden="true">${_esc(inicial)}</span>`
+            : icono ? `<span class="config-fila__teja" aria-hidden="true">${icon(icono)}</span>` : ''}
           <span class="config-fila__textos">
             <span class="config-fila__nombre">${titulo}</span>
-            ${estado ? `<span class="config-fila__estado">${_esc(estado)}</span>` : ''}
+            ${estado ? `<span class="config-fila__estado${aviso ? ' config-fila__estado--aviso' : ''}">${aviso ? icon('alert', 'icon icon--sm') : ''}${_esc(estado)}</span>` : ''}
           </span>
           ${icon('chevron-down', 'icon icon--sm config-fila__flecha')}
         </button>
@@ -156,6 +162,43 @@ export function alternarFila(boton) {
   cuerpo.hidden = !abrir;
   if (abrir) _filasAbiertas.add(id);
   else _filasAbiertas.delete(id);
+}
+
+/**
+ * ADR 136 D1: el tema es un interruptor en la fila, sin abrir nada. Marcado
+ * quiere decir "tema oscuro encendido", que es lo que dice la fila, así que no
+ * lleva `data-action="theme-toggle"` (ese control entiende "marcado = claro" y
+ * se resincroniza así): su `change` lo atiende `config/index.js`.
+ */
+function _filaTema() {
+  const oscuro = !document.body.classList.contains('light-theme');
+  return `
+    <section class="config-section config-section--fila config-tema-fila" aria-labelledby="config-tema-title">
+      <label class="config-fila__boton config-tema-fila__label" for="toggle-tema">
+        <span class="config-fila__teja" aria-hidden="true">${icon(oscuro ? 'moon' : 'sun')}</span>
+        <span class="config-fila__textos">
+          <span class="config-fila__nombre" id="config-tema-title">Tema oscuro</span>
+          <span class="config-fila__estado">${oscuro ? 'Encendido' : 'Apagado'}</span>
+        </span>
+        <span class="toggle">
+          <input id="toggle-tema" type="checkbox" role="switch" data-tema-fila${oscuro ? ' checked' : ''} />
+          <span class="toggle__track" aria-hidden="true"></span>
+        </span>
+      </label>
+    </section>`;
+}
+
+/**
+ * Si la línea de Respaldo pide atención: nunca guardaste uno, o el último
+ * pasó el umbral del aviso de respaldo de Inicio (`DIAS_RESPALDO_ATRASADO`).
+ *
+ * @param {string|null|undefined} ultimoISO
+ * @returns {boolean}
+ */
+function _respaldoPideAtencion(ultimoISO) {
+  if (!ultimoISO) return true;
+  const dias = diasHastaFecha(ultimoISO, hoy());
+  return dias === null || -dias >= DIAS_RESPALDO_ATRASADO;
 }
 
 /** La línea de la fila de la nube: lo que falta, o si hay cuenta. */
@@ -350,12 +393,25 @@ function _renderActualizar() {
     </section>`;
 }
 
+/** Los nombres cortos de cada situación laboral, para los botones del perfil. */
+const _SITUACION_CORTA = {
+  empleado:      'Empleado con contrato',
+  independiente: 'Independiente',
+  pensionado:    'Pensionado',
+  mixto:         'Mixto',
+  otro:          'Otro',
+};
+
 function _renderPerfil() {
   const nombre = _esc(S.perfil.nombre || 'Sin nombre');
   const sitId  = typeof S.perfil.situacionLaboral === 'string' ? S.perfil.situacionLaboral : '';
 
-  const opciones = SITUACIONES_LABORALES
-    .map(s => `<option value="${s.id}"${s.id === sitId ? ' selected' : ''}>${_esc(s.label)}</option>`)
+  // ADR 136 D2: la situación en botones a la vista, con nombres cortos, y
+  // "Prefiero no decir" como la respuesta vacía. Un id desconocido no marca
+  // ninguno.
+  const opciones = [...SITUACIONES_LABORALES.map(s => [s.id, _SITUACION_CORTA[s.id] ?? s.label]), ['', 'Prefiero no decir']]
+    .map(([id, label]) => `
+            <label class="familia-segmento__op"><input class="sr-only" type="radio" name="situacionLaboral" value="${id}"${id === sitId ? ' checked' : ''} /><span>${_esc(label)}</span></label>`)
     .join('');
 
   // B3: el resumen `<dl>` decía los mismos dos datos que los campos de
@@ -370,14 +426,12 @@ function _renderPerfil() {
                  value="${nombre !== 'Sin nombre' ? nombre : ''}"
                  placeholder="Tu nombre" autocomplete="given-name" />
         </div>
-        <div class="form-group">
-          <label for="config-situacion" class="label">Situación laboral</label>
-          <select id="config-situacion" name="situacionLaboral" class="input">
-            <option value="">Sin especificar</option>
-            ${opciones}
-          </select>
-          <p class="form-hint">Ayuda a Finko a interpretar tus ingresos. Opcional.</p>
-        </div>
+        <fieldset class="form-group config-situacion">
+          <legend class="label">¿Cómo recibes tus ingresos? <span class="label__opcional">(opcional)</span></legend>
+          <div class="familia-segmento" id="config-situacion">${opciones}
+          </div>
+          <p class="form-hint">Ayuda a Finko a entender tus ingresos y tus impuestos.</p>
+        </fieldset>
         ${_botonGuardar('config-perfil-ok', 'Guardar perfil')}
       </form>
     </section>`;
@@ -512,8 +566,8 @@ function _renderNotificaciones() {
     // tocar, y la sección de arriba justamente invita a instalarla. El texto
     // se ramifica con la misma señal que decide si se ofrece la instalación.
     const comoDesbloquear = estaInstalada()
-      ? 'Para volver a activarlas: ajustes del teléfono → Notificaciones → Finko → Permitir.'
-      : 'Para volver a activarlas, haz clic en el candado de la barra de direcciones → Notificaciones → Permitir.';
+      ? 'Para activarlos, abre los ajustes de tu teléfono, busca Finko o tu navegador y permite las notificaciones.'
+      : 'Para activarlos, toca el candado de la barra de direcciones, entra a Notificaciones y elige Permitir.';
 
     return `
       <section class="config-section" aria-labelledby="config-notif-title">
@@ -521,13 +575,13 @@ function _renderNotificaciones() {
         <div class="nudge nudge-medium" role="status">
           <span class="nudge__icon" aria-hidden="true">${icon('alert')}</span>
           <div class="nudge__body">
-            <p class="nudge__title">Las notificaciones están bloqueadas</p>
-            <p class="nudge__desc">Bloqueaste las notificaciones de Finko en este dispositivo. ${comoDesbloquear}</p>
+            <p class="nudge__title">Están bloqueados en este ${_enMovil() ? 'teléfono' : 'dispositivo'}</p>
+            <p class="nudge__desc">Finko no puede volver a pedir el permiso. ${comoDesbloquear}</p>
           </div>
         </div>
         <p class="form-hint">
-          Mientras tanto, los compromisos que vencen pronto siguen visibles en
-          <a href="#agenda" class="link">Calendario</a> y en Inicio.
+          Mientras tanto, lo que vence pronto sigue en Inicio y en
+          <a href="#agenda" class="link">Calendario</a>.
         </p>
       </section>`;
   }
@@ -853,59 +907,66 @@ function _renderCifradoRespaldo() {
         />
         <span class="toggle__track" aria-hidden="true"></span>
       </span>
-      <span class="config-toggle__label">Proteger el respaldo con contraseña</span>
+      <span class="config-toggle__label">Protegerlo con contraseña</span>
     </label>
     <p class="config-section__desc">
       ${activo
         ? 'Al guardar el respaldo te vamos a pedir una contraseña. Si la olvidas, el archivo no se puede abrir: nadie puede recuperarlo, ni Finko.'
-        : 'El archivo de respaldo se guarda en texto plano: quien lo abra ve todo tu historial.'}
+        : 'Sin contraseña, quien abra el archivo ve todo tu historial: va en texto plano.'}
     </p>`;
 }
 
 function _renderDatos() {
+  // ADR 136 D3: arriba, qué pasa sin la nube y cuándo fue el último respaldo
+  // (con aviso si pide atención); "Guardar respaldo ahora" como primario y la
+  // contraseña debajo; restaurar, exportar, importar y el borrado automático
+  // bajo "Más opciones", a la vista; borrar todo aparte, con lo que borra.
+  const ultimo = S.config?.ultimoRespaldoISO;
+  const aviso  = _respaldoPideAtencion(ultimo);
+  // El tablero mira el teléfono; en el computador se dice "dispositivo".
+  const aqui   = _enMovil() ? 'este teléfono' : 'este dispositivo';
+  const fila = (accion, titulo, sub, extra = '') => `
+          <button class="respaldo-fila" type="button" data-action="${accion}"${extra}>
+            <span class="respaldo-fila__textos">
+              <span class="respaldo-fila__titulo">${titulo}</span>
+              <span class="respaldo-fila__sub">${sub}</span>
+            </span>
+            ${icon('chevron-right', 'icon icon--sm')}
+          </button>`;
   return `
     <section class="config-section" aria-labelledby="config-datos-title">
-      <h2 class="config-section__title" id="config-datos-title">Tus datos</h2>
+      <h2 class="config-section__title" id="config-datos-title">Respaldo y exportación</h2>
       ${_renderAvisoAlmacenamiento()}
       <p class="config-section__desc">
         ${estadoNube().sesion
           ? 'Además de la nube, puedes guardar un respaldo en un archivo.'
-          : 'Sin la nube, todo vive solo en este dispositivo. Si lo pierdes o borras la app, se va contigo: guarda un respaldo de vez en cuando.'}
+          : `Sin la nube, todo vive solo en ${aqui}. Si lo pierdes o borras la app, tus datos se van con él.`}
       </p>
-      ${_renderPersistencia()}
-      <p class="config-section__desc" id="config-ultimo-respaldo">${textoUltimoRespaldo(S.config?.ultimoRespaldoISO)}</p>
-      <p class="form-hint">Toda la app</p>
-      <div class="config-actions config-actions--ambito">
-        <button class="btn btn-secondary" data-action="exportar-datos">
-          Guardar respaldo (JSON)
-        </button>
-        <button class="btn btn-secondary" type="button" data-action="importar-datos"
-                aria-label="Restaurar todos tus datos desde un archivo de respaldo JSON">
-          Restaurar desde un respaldo
-        </button>
+      <div class="respaldo-estado${aviso ? ' respaldo-estado--aviso' : ''}">
+        <p class="respaldo-estado__titulo">${aviso ? icon('alert', 'icon icon--sm') : icon('check-circle', 'icon icon--sm')}<span id="config-ultimo-respaldo">${textoUltimoRespaldo(ultimo).replace(/\.$/, '')}</span></p>
+        <p class="respaldo-estado__desc">Es un archivo con todo lo tuyo. Guárdalo en tu correo o en tu nube personal.</p>
+      </div>
+      <!-- R11: en escritorio el único primario de Ajustes sigue siendo "Guardar
+           perfil"; en el teléfono, con la fila abierta, este se ve lleno (CSS). -->
+      <button class="btn btn-secondary respaldo-guardar" data-action="exportar-datos">
+        ${icon('download')} Guardar respaldo ahora
+      </button>
+      ${_renderCifradoRespaldo()}
+      <div class="respaldo-mas">
+        <p class="respaldo-mas__resumen">Más opciones</p>
+        <div class="respaldo-mas__filas">
+          ${fila('importar-datos', 'Restaurar desde un respaldo', `Reemplaza lo de ${aqui}`, ' aria-label="Restaurar todos tus datos desde un archivo de respaldo JSON"')}
+          ${fila('exportar-gastos-csv', 'Exportar gastos a Excel', 'Solo tus gastos, en CSV', ' aria-label="Exportar todos los gastos a archivo CSV"')}
+          ${fila('abrir-import', 'Importar gastos desde un CSV', 'Desde tu banco u otra app', ' aria-label="Importar gastos desde archivo CSV"')}
+        </div>
+        ${_renderPersistencia()}
       </div>
       <input type="file" accept=".json" id="config-importar-json" hidden />
-      ${_renderCifradoRespaldo()}
-      <p class="form-hint">Solo tus gastos</p>
-      <div class="config-actions config-actions--ambito">
-        <button class="btn btn-secondary" data-action="exportar-gastos-csv"
-                aria-label="Exportar todos los gastos a archivo CSV">
-          Exportar gastos a Excel (CSV)
-        </button>
-        <button class="btn btn-secondary" data-action="abrir-import"
-                aria-label="Importar gastos desde archivo CSV">
-          Importar gastos desde CSV
-        </button>
-      </div>
       <div class="config-danger">
-        <h3 class="config-danger__title">${icon('alert')} Borrar todo</h3>
-        <p class="config-danger__desc">
-          Borra tus gastos, cuentas, metas y compromisos de este dispositivo.
-          No se puede deshacer.
-        </p>
         <button class="btn btn-danger" data-action="resetear-app">
-          Borrar todos mis datos
+          ${icon('trash')} Borrar todos mis datos
         </button>
+        <p class="config-danger__desc">Gastos, cuentas, metas y compromisos de ${aqui}. No se puede deshacer.</p>
       </div>
     </section>`;
 }

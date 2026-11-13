@@ -1,5 +1,5 @@
 /**
- * nube-view.js - el bloque "Guardar en la nube" de Ajustes (NUBE.1, NUBE.2
+ * nube-view.js - el bloque "Copia en la nube" de Ajustes (NUBE.1, NUBE.2
  * y NUBE.2b, ADR 096), el modal "Su teléfono" de Familia y la pantalla del
  * código del niño (NUBE.3). Solo HTML, sin estado propio: lo pinta
  * `config/nube.js` con su estado.
@@ -52,18 +52,19 @@ function _error(codigo) {
 }
 
 function _accesoCorreo(e) {
+  // ADR 136 D2: el tablero mira el teléfono; en el computador, "dispositivo".
+  const aqui = window.matchMedia?.('(max-width: 1023.98px)').matches === true ? 'Este teléfono' : 'Este dispositivo';
   return `
       <p class="config-section__desc">
-        Con una cuenta, Finko guarda una copia de tus datos en la nube: la ves igual en el
-        celular y en el computador, y no la pierdes si cambias de teléfono. Este dispositivo
-        sigue teniendo todo.
+        Con una cuenta, ves tus datos igual en el celular y en el computador, y no los
+        pierdes si cambias de teléfono.
       </p>
       <form id="form-nube-correo" class="config-form" novalidate>
         <div class="form-group">
           <label for="nube-correo" class="label">Tu correo</label>
           <input id="nube-correo" name="correo" class="input" type="email" inputmode="email"
-                 autocomplete="email" value="${esc(e.correo)}" required />
-          <p class="form-hint">Solo entran los correos invitados a la prueba.</p>
+                 autocomplete="email" placeholder="tucorreo@ejemplo.com" value="${esc(e.correo)}" required />
+          <p class="form-hint">Por ahora solo entran los correos invitados a la prueba.</p>
         </div>
         <div class="form-group form-group--checkbox">
           <label class="checkbox-row">
@@ -80,6 +81,7 @@ function _accesoCorreo(e) {
             ${e.ocupado ? 'Enviando…' : 'Enviarme el acceso'}
           </button>
         </div>
+        <p class="form-hint">${aqui} sigue teniendo todo.</p>
       </form>`;
 }
 
@@ -164,7 +166,7 @@ export function htmlNube(e) {
   return `
     <section class="config-section" aria-labelledby="config-nube-title" id="config-nube">
       <h2 class="config-section__title" id="config-nube-title">
-        Guardar en la nube <span class="chip chip-info">Prueba</span>
+        Copia en la nube <span class="chip chip-info">Prueba</span>
       </h2>
       ${cuerpo}
     </section>`;
@@ -191,7 +193,7 @@ export function htmlVincularNino(e) {
     return `
       <p class="config-section__desc">
         Para que ${nombre} use Finko en su propio teléfono, primero guarda tus datos en la nube:
-        aquí mismo en Ajustes, en <strong>Tus datos, Guardar en la nube</strong>.
+        aquí mismo en Ajustes, en <strong>Tus datos, Copia en la nube</strong>.
       </p>
       <div class="config-actions">
         <button type="button" class="btn btn-secondary" data-action="nube-cerrar-modal">Entendido</button>

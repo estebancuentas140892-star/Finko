@@ -2782,3 +2782,82 @@ body:not(.light-theme) .cov__fill {
   }
   #sec-personales:has(.medeben-vacio__crear) .section__header > .btn-primary { display: none; }
 }
+
+/* ════════════════════════════════════════════════════════════
+   ADR 136 (rediseño5), tanda 1: el índice de Ajustes en el teléfono.
+   ════════════════════════════════════════════════════════════ */
+@media (max-width: 1023px) {
+  /* Los grupos en frase, como los rótulos del resto de la app. */
+  #panel-config .config-grupo__label {
+    margin: 0 var(--fk-space-1);
+    font-size: var(--fk-text-base);
+    font-weight: var(--fk-font-bold);
+    letter-spacing: normal;
+    text-transform: none;
+    color: var(--fk-text-primary);
+  }
+  .config-fila__teja {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--fk-radius-md);
+    background: var(--fk-bg-elevated);
+    color: var(--fk-text-secondary);
+  }
+  .config-fila__teja .icon { width: 18px; height: 18px; } /* el glifo de la teja de 36 */
+  .config-fila__teja--inicial { background: var(--fk-accent-subtle); color: var(--fk-text-accent); font-weight: var(--fk-font-bold); }
+  .config-fila__estado { font-size: var(--fk-text-sm); }
+  .config-fila__estado--aviso { display: flex; align-items: center; gap: var(--fk-space-1); color: var(--fk-warning-text); }
+  .config-fila__estado--aviso .icon { flex: none; width: 14px; height: 14px; } /* del alto del texto */
+  .config-tema-fila .toggle { flex: none; }
+}
+
+/* D3: Respaldo y exportación, en los dos anchos. */
+.respaldo-estado {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+  padding: var(--fk-space-3) var(--fk-space-4);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  background: var(--fk-bg-elevated);
+}
+.respaldo-estado--aviso { border-color: color-mix(in srgb, var(--fk-warning) 40%, transparent); background: var(--fk-warning-bg); }
+.respaldo-estado__titulo { display: flex; align-items: center; gap: var(--fk-space-2); margin: 0; font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
+.respaldo-estado--aviso .respaldo-estado__titulo { color: var(--fk-warning-text); }
+.respaldo-estado__titulo .icon { flex: none; }
+.respaldo-estado__desc { margin: 0; font-size: var(--fk-text-sm); line-height: var(--fk-leading-snug); color: var(--fk-text-secondary); }
+.config-section .respaldo-guardar,
+.config-fila__cuerpo > .respaldo-guardar { align-self: stretch; justify-content: center; gap: var(--fk-space-2); min-height: 52px; }
+.respaldo-mas__resumen { margin: var(--fk-space-2) 0; font-weight: var(--fk-font-semibold); color: var(--fk-text-secondary); }
+.respaldo-mas__filas { display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--fk-border-subtle); border-radius: var(--fk-radius-lg); }
+.respaldo-fila {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  width: 100%;
+  min-height: 56px;
+  padding: var(--fk-space-2) var(--fk-space-4);
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.respaldo-fila + .respaldo-fila { border-top: 1px solid var(--fk-border-subtle); }
+.respaldo-fila__textos { display: flex; flex: 1; flex-direction: column; gap: 1px; min-width: 0; }
+.respaldo-fila__titulo { font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
+.respaldo-fila__sub { font-size: var(--fk-text-sm); color: var(--fk-text-secondary); }
+.respaldo-fila > .icon { flex: none; color: var(--fk-text-muted); }
+.respaldo-mas #config-persistencia { margin-top: var(--fk-space-3); }
+.config-danger .btn-danger { gap: var(--fk-space-2); }
+@media (max-width: 1023px) {
+  .config-fila__cuerpo .respaldo-guardar {
+    background: var(--fk-btn-primary-bg);
+    border-color: var(--fk-btn-primary-bg);
+    color: var(--fk-btn-primary-text);
+  }
+}

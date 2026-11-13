@@ -16,18 +16,6 @@
 
 > **Iniciativa Dirección Visual premium** ([ADR 033](../DECISIONS/033-direccion-visual-premium.md)). DV.2a/b/c cerradas. DV.2d: infraestructura, 8 plantillas y cableado de `emptyArt()` listos (2026-08-14), falta solo el arte final de Esteban.
 
-#### MV2.30 - El adulto en el teléfono (los 6 tableros "Finko móvil · rediseño")
-- Prioridad  : alta
-- Estado     : en proceso (2026-11-05). **Inicio hecho** ([ADR 126](../DECISIONS/126-inicio-del-adulto-en-el-telefono.md), cinco tandas, su HTML borrado). **Gastos hecho** ([ADR 132](../DECISIONS/132-gastos-del-adulto-en-el-telefono.md), cinco tandas, su HTML borrado). **Ahorro hecho** ([ADR 133](../DECISIONS/133-ahorro-del-adulto-en-el-telefono.md), cinco tandas, su HTML borrado). **Consultar hecho** ([ADR 134](../DECISIONS/134-consultar-del-adulto-en-el-telefono.md), cuatro tandas, su HTML borrado). **Mis cuentas y Me deben hecho** ([ADR 135](../DECISIONS/135-mis-cuentas-y-me-deben-en-el-telefono.md), cuatro tandas, su HTML borrado). Sigue "rediseño5" (Ajustes). Esteban pidió aplicar los seis HTML de `Diseño Finko/` y borrar cada uno al quedar aplicado; aparte, quitó la casa de Ahorro ([ADR 125](../DECISIONS/125-ahorro-abre-en-el-fondo.md))
-- Área       : design
-- Objetivo   : el mismo método del tablero del niño ([ADR 124](../DECISIONS/124-el-nino-en-el-telefono.md)): por tablero, comparar cada pantalla "Hoy" con su propuesta contra el código, escribir su ADR y aplicarlo en tandas con prueba, commit y publicación. Orden: ~~"rediseño" (Inicio y sus hojas)~~ hecho, ~~"rediseño1" (Día a día, Por pagar, Límites, Nuevo gasto, Plan de salida)~~ hecho, ~~"rediseño2" (Fondo, Reservas, Metas, Inversión y sus hojas; sin la Casa)~~ hecho, ~~"rediseño3" (hoja Más, Calendario, Movimientos, Análisis)~~ hecho, ~~"rediseño4" (Mis cuentas, Distribuir, Me deben, Transferir)~~ hecho, "rediseño5" (Ajustes)
-- Riesgo     : cada tablero choca con ADR del canvas anterior (098 a 123); el choque se dice y se decide, nunca en silencio
-- Secciones  : todas las del adulto en el teléfono
-- Archivos   : por tablero, en su ADR
-- Depende de : nada
-- Aceptación : por tablero, su ADR aceptado, sus tandas con unitarios y E2E en verde, publicado en `main`, y su HTML borrado de `Diseño Finko/`
-- Modelo     : capacidad alta. Los HTML son paquetes de Claude Design dentro de paquetes: cada pantalla lleva su propio `__bundler/manifest`; desempacar los dos niveles da el marcado estático de cada una
-
 #### MV2.28 - Lo que queda del canvas móvil (los 13 HTML de `Diseño Finko/`)
 - Prioridad  : media
 - Estado     : en proceso (2026-11-04): (b) y (d) hechas, quedan (c) y (a). Las 12 propuestas de la segunda auditoría ya están ([ADR 122](../DECISIONS/122-lo-que-faltaba-del-canvas-segunda-pasada.md) y [123](../DECISIONS/123-la-hoja-de-formulario-completa.md)) y publicadas en `main` (v658)

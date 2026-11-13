@@ -20,6 +20,7 @@
 
 import { trapFocus, releaseFocus } from '../infra/a11y.js';
 import { esc as _esc } from '../infra/utils.js';
+import { icon } from '../infra/icons.js';
 
 /**
  * @typedef {{
@@ -29,17 +30,23 @@ import { esc as _esc } from '../infra/utils.js';
  *   cancelarTexto?:   string,
  *   peligroso?:       boolean,
  *   palabra?:         string,
+ *   aviso?:           { titulo: string, texto: string, accion: string },
  * }} OpcionesConfirmar
  *
  * `palabra` (APR.3a, ADR 093 P1): el botón de confirmar queda apagado hasta
  * que se escriba esa palabra. Es para lo que un niño podría aceptar sin leer,
  * como borrar todo desde la pantalla del PIN.
+ *
+ * `aviso` (ADR 136 D3): un aviso dentro de la hoja con una salida antes de
+ * confirmar ("Guardar respaldo primero"). Tocarla cierra la hoja y resuelve
+ * `'aviso'`, que no es `true`: quien lo pide decide qué hacer con ella.
  */
 
 /**
  * Muestra el modal de confirmacion y resuelve cuando el usuario toma decision.
  * @param {OpcionesConfirmar} opciones
- * @returns {Promise<boolean>} true si confirma, false si cancela.
+ * @returns {Promise<boolean|'aviso'>} true si confirma, false si cancela,
+ *   `'aviso'` si tocó la salida del aviso.
  */
 export function confirmar(opciones) {
   const {
@@ -49,6 +56,7 @@ export function confirmar(opciones) {
     cancelarTexto  = 'Cancelar',
     peligroso      = false,
     palabra        = '',
+    aviso          = null,
   } = opciones;
   const _coincide = (texto) => String(texto ?? '').trim().toLocaleUpperCase('es') === palabra.toLocaleUpperCase('es');
 
@@ -66,6 +74,15 @@ export function confirmar(opciones) {
         </header>
         <div class="modal__body">
           <p class="confirm__mensaje">${_esc(mensaje)}</p>
+          ${aviso ? `
+          <div class="nudge nudge-medium confirm__aviso" role="note">
+            <span class="nudge__icon" aria-hidden="true">${icon('alert')}</span>
+            <div class="nudge__body">
+              <p class="nudge__title">${_esc(aviso.titulo)}</p>
+              <p class="nudge__desc">${_esc(aviso.texto)}</p>
+              <button type="button" class="btn btn-secondary confirm__aviso-accion" data-role="aviso">${icon('download')}${_esc(aviso.accion)}</button>
+            </div>
+          </div>` : ''}
           ${palabra ? `
           <div class="form-group">
             <label for="confirm-palabra" class="label">Escribe ${_esc(palabra)} para confirmar</label>
@@ -118,6 +135,7 @@ export function confirmar(opciones) {
       const target = e.target.closest('[data-role]');
       if (target?.dataset.role === 'confirmar') { if (_puedeConfirmar()) _cerrar(true); }
       else if (target?.dataset.role === 'cancelar') _cerrar(false);
+      else if (target?.dataset.role === 'aviso') _cerrar('aviso');
       // Click en backdrop (fuera del panel) cancela.
       else if (e.target === overlay) _cerrar(false);
     });

@@ -653,7 +653,8 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await page.goto('/#config');
     const filas = page.locator('#sec-config .config-fila__boton');
     await expect(filas.first()).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator('#sec-config .config-grupo__label').first()).toHaveText('Tu cuenta');
+    // ADR 136 D1: "Tú y tu familia" primero, con la inicial en la teja.
+    await expect(page.locator('#sec-config .config-grupo__label').first()).toHaveText('Tú y tu familia');
     await expect(filas.first()).toContainText('Laura');
     const alto = await page.evaluate(() => document.querySelector('#sec-config').getBoundingClientRect().height);
     expect(alto).toBeLessThan(1500);
@@ -663,10 +664,10 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await page.locator('[data-fila="bloqueo"]').click();
     await expect(page.locator('#form-bloqueo-crear')).toBeVisible();
 
-    // Cambiar el tema repinta el panel: lo abierto sigue abierto.
-    await page.locator('[data-fila="tema"]').click();
+    // Cambiar el tema, con el interruptor de su fila (ADR 136 D1), repinta el
+    // panel: lo abierto sigue abierto.
     await page.locator('label[for="toggle-tema"]').click();
-    await expect(page.locator('[data-fila="tema"]')).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('.config-tema-fila .config-fila__estado')).toHaveText('Apagado');
     await expect(page.locator('#form-bloqueo-crear')).toBeVisible();
   });
   test('al bajar, la barra de lentes queda arriba y sigue llevando a su lente (ADR 113)', async ({ page }) => {

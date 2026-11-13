@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderPanelConfig, renderModalFiscal, miles, desdeMiles, textoUltimoRespaldo, alternarFila } from '../../modules/dominio/config/view.js';
 import { S, createInitialState } from '../../modules/core/state.js';
 import { DOCUMENTOS_LEGALES, documentoLegalPorId } from '../../modules/dominio/config/legal.js';
+import { confirmar } from '../../modules/ui/confirm.js';
 
 // ── PERFIL: situación laboral (CFG.1) ────────────────────────────
 
@@ -19,17 +20,18 @@ describe('renderPanelConfig() - perfil con situación laboral (CFG.1)', () => {
     expect(html()).not.toContain('id="config-smmlv"');
   });
 
-  it('muestra el selector de situación laboral con la opción "Sin especificar"', () => {
+  it('la situación laboral va en botones, con "Prefiero no decir" como respuesta vacía (ADR 136 D2)', () => {
     renderPanelConfig();
-    const select = document.getElementById('config-situacion');
-    expect(select).not.toBeNull();
-    expect(select.querySelector('option[value=""]')?.textContent).toBe('Sin especificar');
+    const opciones = [...document.querySelectorAll('#config-situacion input[name="situacionLaboral"]')];
+    expect(opciones.map(o => o.value)).toEqual(['empleado', 'independiente', 'pensionado', 'mixto', 'otro', '']);
+    expect(document.querySelector('#config-situacion input[value=""]').closest('label').textContent.trim()).toBe('Prefiero no decir');
+    expect(document.querySelector('.config-situacion legend').textContent).toContain('¿Cómo recibes tus ingresos?');
   });
 
-  it('sin situación laboral registrada, ninguna opción queda preseleccionada', () => {
+  it('sin situación laboral registrada, queda marcado "Prefiero no decir"', () => {
     S.perfil.situacionLaboral = '';
     renderPanelConfig();
-    expect(document.querySelector('#config-situacion option[selected]')).toBeNull();
+    expect([...document.querySelectorAll('#config-situacion input[checked]')].map(o => o.value)).toEqual(['']);
   });
 
   it('con una situación laboral registrada, la preselecciona', () => {
@@ -39,15 +41,15 @@ describe('renderPanelConfig() - perfil con situación laboral (CFG.1)', () => {
     // La opción correcta lleva el atributo `selected` (el comportamiento real de
     // `select.value` lo verifica el E2E en Chromium: happy-dom no lo sincroniza
     // desde el atributo puesto vía innerHTML).
-    const opcion = document.querySelector('#config-situacion option[value="independiente"]');
+    const opcion = document.querySelector('#config-situacion input[value="independiente"]');
     expect(opcion).not.toBeNull();
-    expect(opcion.hasAttribute('selected')).toBe(true);
+    expect(opcion.hasAttribute('checked')).toBe(true);
   });
 
   it('una situación laboral corrupta (id desconocido) no preselecciona nada', () => {
     S.perfil.situacionLaboral = 'valor-invalido';
     renderPanelConfig();
-    expect(document.querySelector('#config-situacion option[selected]')).toBeNull();
+    expect(document.querySelector('#config-situacion input[checked]')).toBeNull();
   });
 
   // B3: el `<dl class="config-info">` del perfil repetía los mismos dos datos
@@ -138,15 +140,16 @@ describe('renderPanelConfig() - gestión de datos (B5, B6)', () => {
     expect(input.classList.contains('sr-only')).toBe(false);
   });
 
-  it('separa los dos ámbitos: lo que mueve toda la app y lo que solo toca los gastos', () => {
+  it('guardar va primero; restaurar, exportar e importar en "Más opciones", y borrar aparte (ADR 136 D3)', () => {
     const datos = document.querySelector('section[aria-labelledby="config-datos-title"]');
-    const rotulos = [...datos.querySelectorAll('.form-hint')].map(e => e.textContent.trim());
-    expect(rotulos).toEqual(['Toda la app', 'Solo tus gastos']);
-
-    const pares = datos.querySelectorAll('.config-actions--ambito');
-    expect(pares).toHaveLength(2);
-    expect(pares[0].querySelectorAll('.btn')).toHaveLength(2);
-    expect(pares[1].querySelectorAll('.btn')).toHaveLength(2);
+    expect(datos.querySelector('.respaldo-guardar').dataset.action).toBe('exportar-datos');
+    expect(datos.querySelector('.respaldo-guardar').textContent.trim()).toBe('Guardar respaldo ahora');
+    const filas = [...datos.querySelectorAll('.respaldo-mas .respaldo-fila')];
+    expect(filas.map(f => f.dataset.action)).toEqual(['importar-datos', 'exportar-gastos-csv', 'abrir-import']);
+    expect(filas.map(f => f.querySelector('.respaldo-fila__sub').textContent))
+      // En escritorio (el ancho de este entorno) se dice "dispositivo".
+      .toEqual(['Reemplaza lo de este dispositivo', 'Solo tus gastos, en CSV', 'Desde tu banco u otra app']);
+    expect(datos.querySelector('.config-danger [data-action="resetear-app"]')).not.toBeNull();
   });
 });
 
@@ -176,10 +179,8 @@ describe('renderPanelConfig() - bloque de borrado automático (CFG.4a)', () => {
     expect(boton.dataset.action).toBe('proteger-datos');
   });
 
-  it('no agrega un tercer rótulo de ámbito a la sección', () => {
-    const datos = document.querySelector('section[aria-labelledby="config-datos-title"]');
-    const rotulos = [...datos.querySelectorAll('.form-hint')].map(e => e.textContent.trim());
-    expect(rotulos).toEqual(['Toda la app', 'Solo tus gastos']);
+  it('vive en "Más opciones", con las otras salidas de los datos (ADR 136 D3)', () => {
+    expect(document.querySelector('.respaldo-mas #config-persistencia')).not.toBeNull();
   });
 });
 
@@ -222,7 +223,9 @@ describe('renderPanelConfig() - sello del último respaldo (CFG.4b)', () => {
     renderPanelConfig();
     const sello = document.getElementById('config-ultimo-respaldo');
     expect(sello).not.toBeNull();
-    expect(sello.textContent).toBe('Nunca has guardado un respaldo.');
+    expect(sello.textContent).toBe('Nunca has guardado un respaldo');
+    // ADR 136 D3: sin respaldo, el estado lleva el aviso.
+    expect(sello.closest('.respaldo-estado').classList.contains('respaldo-estado--aviso')).toBe(true);
   });
 
   it('con un sello guardado, lo muestra en la misma sección de "Tus datos"', () => {
@@ -234,11 +237,10 @@ describe('renderPanelConfig() - sello del último respaldo (CFG.4b)', () => {
     expect(sello.textContent).toContain('Guardaste tu último respaldo hace');
   });
 
-  it('el sello no es un .form-hint: no rompe el conteo de rótulos de ámbito', () => {
+  it('el sello vive en la tarjeta del estado del respaldo, con para qué sirve', () => {
     renderPanelConfig();
-    const datos = document.querySelector('section[aria-labelledby="config-datos-title"]');
-    const rotulos = [...datos.querySelectorAll('.form-hint')].map(e => e.textContent.trim());
-    expect(rotulos).toEqual(['Toda la app', 'Solo tus gastos']);
+    const estado = document.getElementById('config-ultimo-respaldo').closest('.respaldo-estado');
+    expect(estado.querySelector('.respaldo-estado__desc').textContent).toBe('Es un archivo con todo lo tuyo. Guárdalo en tu correo o en tu nube personal.');
   });
 });
 
@@ -285,10 +287,11 @@ describe('renderPanelConfig() - interruptor de respaldo cifrado (CFG.4c)', () =>
     expect(label.querySelector('.toggle .toggle__track')).not.toBeNull();
   });
 
-  it('no agrega un tercer rótulo de ámbito a la sección', () => {
+  it('va justo debajo de "Guardar respaldo ahora", fuera de "Más opciones" (ADR 136 D3)', () => {
     renderPanelConfig();
-    const rotulos = [...datos().querySelectorAll('.form-hint')].map(e => e.textContent.trim());
-    expect(rotulos).toEqual(['Toda la app', 'Solo tus gastos']);
+    const input = document.getElementById('toggle-respaldo-cifrado');
+    expect(input.closest('details')).toBeNull();
+    expect(input.closest('label').textContent.trim()).toBe('Protegerlo con contraseña');
   });
 });
 
@@ -584,8 +587,10 @@ describe('renderPanelConfig() - índice de filas bajo 1024px (ADR 112)', () => {
     anchoTelefono(true);
     renderPanelConfig();
     const rotulos = [...document.querySelectorAll('.config-grupo__label')].map(e => e.textContent.trim());
-    expect(rotulos).toEqual(['Tu cuenta', 'Familia', 'Tus datos', 'La app', 'Impuestos', 'Información']);
+    // ADR 136 D1: cuatro grupos en frase.
+    expect(rotulos).toEqual(['Tú y tu familia', 'Tus datos', 'La app en este teléfono', 'Información']);
     const perfil = document.querySelector('.config-fila__boton[data-fila="perfil"]');
+    expect(perfil.querySelector('.config-fila__teja--inicial').textContent).toBe('L');
     expect(perfil.closest('h2').id).toBe('config-perfil-title');
     expect(perfil.getAttribute('aria-expanded')).toBe('false');
     expect(perfil.querySelector('.config-fila__estado').textContent).toBe('Laura');
@@ -593,16 +598,34 @@ describe('renderPanelConfig() - índice de filas bajo 1024px (ADR 112)', () => {
     // El formulario sigue dentro del panel, con su id: config/index.js lo cablea igual.
     expect(document.querySelector('#panel-config #form-perfil')).not.toBeNull();
     expect(document.querySelector('.config-fila__boton[data-fila="bloqueo"] .config-fila__estado').textContent).toBe('Apagado');
+    // ADR 136 D1: cada fila con la teja del tablero.
+    const teja = (fila) => document.querySelector(`.config-fila__boton[data-fila="${fila}"] .config-fila__teja use`)?.getAttribute('href');
+    expect(['familia', 'nube', 'datos', 'recordatorios', 'instalar', 'actualizar', 'legal'].map(teja))
+      .toEqual(['#i-users', '#i-cloud', '#i-archive', '#i-bell', '#i-download', '#i-refresh', '#i-doc']);
   });
 
   it('una fila abierta sigue abierta después de repintar el panel (D2)', () => {
     anchoTelefono(true);
     renderPanelConfig();
-    alternarFila(document.querySelector('.config-fila__boton[data-fila="tema"]'));
-    expect(document.getElementById('config-fila-tema').hidden).toBe(false);
+    alternarFila(document.querySelector('.config-fila__boton[data-fila="impuestos"]'));
+    expect(document.getElementById('config-fila-impuestos').hidden).toBe(false);
     renderPanelConfig();
-    expect(document.querySelector('.config-fila__boton[data-fila="tema"]').getAttribute('aria-expanded')).toBe('true');
-    expect(document.getElementById('config-fila-tema').hidden).toBe(false);
+    expect(document.querySelector('.config-fila__boton[data-fila="impuestos"]').getAttribute('aria-expanded')).toBe('true');
+    expect(document.getElementById('config-fila-impuestos').hidden).toBe(false);
+  });
+
+  it('el tema es un interruptor en la fila; lo que pide atención lleva su aviso (ADR 136 D1)', () => {
+    anchoTelefono(true);
+    renderPanelConfig();
+    const tema = document.querySelector('.config-tema-fila #toggle-tema');
+    expect(tema.getAttribute('role')).toBe('switch');
+    expect(tema.hasAttribute('data-tema-fila')).toBe(true);
+    expect(tema.checked).toBe(true);
+    expect(document.querySelector('.config-fila__boton[data-fila="tema"]')).toBeNull();
+    const respaldo = document.querySelector('.config-fila__boton[data-fila="datos"]');
+    expect(respaldo.querySelector('.config-fila__nombre').textContent).toBe('Respaldo y exportación');
+    expect(respaldo.querySelector('.config-fila__estado--aviso').textContent).toBe('Nunca has guardado un respaldo');
+    expect(document.querySelector('.config-fila__boton[data-fila="nube"] .config-fila__nombre').textContent).toContain('Copia en la nube');
   });
 
   it('desde 1024px el panel es el de siempre: sin filas y con "La app" primero (D6)', () => {
@@ -616,5 +639,31 @@ describe('renderPanelConfig() - índice de filas bajo 1024px (ADR 112)', () => {
     anchoTelefono(false);
     renderPanelConfig();
     expect(document.getElementById('toggle-atajos').closest('.config-section').classList.contains('config-section--atajos')).toBe(true);
+  });
+});
+
+// ── LA HOJA DE BORRAR TODO (ADR 136 D3) ──────────────────────────
+
+describe('confirmar() con aviso (ADR 136 D3)', () => {
+  afterEach(() => { document.body.innerHTML = ''; });
+
+  it('pinta el aviso con su salida, y tocarla resuelve "aviso", que no es confirmar', async () => {
+    const promesa = confirmar({
+      mensaje: 'Se borran tus gastos.',
+      aviso: { titulo: 'Nunca has guardado un respaldo', texto: 'No habrá cómo recuperarlos.', accion: 'Guardar respaldo primero' },
+    });
+    expect(document.querySelector('.confirm__aviso .nudge__title').textContent).toBe('Nunca has guardado un respaldo');
+    const salida = document.querySelector('[data-role="aviso"]');
+    expect(salida.textContent.trim()).toBe('Guardar respaldo primero');
+    salida.click();
+    expect(await promesa).toBe('aviso');
+    expect(document.querySelector('.confirm__aviso')).toBeNull();
+  });
+
+  it('sin aviso, la hoja es la de siempre', async () => {
+    const promesa = confirmar({ mensaje: 'Borrar' });
+    expect(document.querySelector('.confirm__aviso')).toBeNull();
+    document.querySelector('[data-role="cancelar"]').click();
+    expect(await promesa).toBe(false);
   });
 });

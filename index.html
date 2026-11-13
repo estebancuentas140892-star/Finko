@@ -228,6 +228,13 @@
     <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5" fill="currentColor" fill-opacity=".22"/><path d="M8 10.5V7.8a4 4 0 0 1 8 0v2.7"/><circle cx="12" cy="15.5" r="1.5" fill="currentColor" stroke="none"/></symbol>
     <symbol id="il-cafe" viewBox="0 0 20 14"><path d="M10 1C15.4 1 19 3.6 19 7S15.4 13 10 13 1 10.4 1 7 4.6 1 10 1Z" fill="var(--fk-cafe-grano)" stroke="var(--fk-cafe-contorno)" stroke-width="1.2" stroke-linejoin="round"/><path d="M2.6 7.6C5.4 5.2 7.6 9.4 10.2 7 12.8 4.6 14.9 8.8 17.4 6.4" fill="none" stroke="var(--fk-cafe-contorno)" stroke-width="1.3" stroke-linecap="round"/><path d="M5.2 3.6C7.2 2.6 10 2.4 12.4 2.8" fill="none" stroke="var(--fk-cafe-brillo)" stroke-width="1.1" stroke-linecap="round"/></symbol>
     <symbol id="il-cafe-hueco" viewBox="0 0 20 14"><path d="M10 1C15.4 1 19 3.6 19 7S15.4 13 10 13 1 10.4 1 7 4.6 1 10 1Z" fill="none" stroke="var(--fk-cafe-hueco)" stroke-width="1.3" stroke-dasharray="2 2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-archive" viewBox="0 0 24 24"><rect x="3.5" y="4" width="17" height="5" rx="1.5"/><path d="M5 9v9.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V9" fill="currentColor" fill-opacity=".22"/><path d="M10 13h4"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 1.5h-15z" fill="currentColor" fill-opacity=".22"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18.5a4.5 4.5 0 0 1-.6-9 6 6 0 0 1 11.5 1.6A3.8 3.8 0 0 1 17.5 18.5z" fill="currentColor" fill-opacity=".22"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6.5 3h7.5l4.5 4.5v12a1.5 1.5 0 0 1-1.5 1.5h-10.5A1.5 1.5 0 0 1 5 19.5v-15A1.5 1.5 0 0 1 6.5 3z" fill="currentColor" fill-opacity=".22"/><path d="M14 3v4.5h4.5M8.5 12.5h7M8.5 16h5"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3.5v11M7.5 10.5 12 15l4.5-4.5"/><path d="M4.5 16.5v1.5a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-1.5"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11.5A8 8 0 0 0 5.6 7M4 12.5A8 8 0 0 0 18.4 17"/><path d="M5 3.5V7.5H9M19 20.5v-4h-4"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.4"/><path d="M2.8 19.8v-.6a6.2 6.2 0 0 1 12.4 0v.6z" fill="currentColor" fill-opacity=".22"/><circle cx="17.3" cy="9.6" r="2.5"/><path d="M16.9 14.2a4.7 4.7 0 0 1 4.6 4.7v.9h-3.6"/></symbol>
     <!-- FIN bloque generado por scripts/sync-sprite.py -->
   </svg>
 
@@ -1418,7 +1425,11 @@
         <header class="section__header">
           <div class="section__title-group">
             <span class="cat-teja section__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-ajustes"/></svg></span>
-            <h1 class="section__title" id="title-config">Ajustes</h1>
+            <!-- ADR 136 D1: qué hay en Ajustes, bajo el título. -->
+            <div class="section__titulo">
+              <h1 class="section__title" id="title-config">Ajustes</h1>
+              <p class="section__linea">Tu perfil, tus datos y cómo funciona Finko</p>
+            </div>
           </div>
         </header>
         <div id="panel-config">

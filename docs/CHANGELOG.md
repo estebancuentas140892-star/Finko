@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(config): MV2.30 Ajustes en el teléfono; cierra rediseño5 y MV2.30 · 2026-11-13
+
+[ADR 136](DECISIONS/136-ajustes-del-adulto-en-el-telefono.md). Ficha: [`contexto/configuracion.md`](contexto/configuracion.md). SW v693. Tablero "rediseño5", borrado al cerrar: era el último de `Diseño Finko/`.
+
+- **Bajo el título**, "Tu perfil, tus datos y cómo funciona Finko" (en los dos anchos).
+- **El índice** (bajo 1024px): "Tú y tu familia", "Tus datos", "La app en este teléfono" e "Información"; cada fila con su teja (la inicial en Tu perfil) y lo que pide atención con su aviso ("Nunca has guardado un respaldo", "Bloqueados en este dispositivo"). El tema oscuro es un interruptor en la fila. Siete íconos nuevos en la biblioteca y el sprite: `users`, `cloud`, `archive`, `bell`, `download`, `refresh` y `doc`.
+- **Tu perfil**: "¿Cómo recibes tus ingresos? (opcional)" en botones, con "Prefiero no decir".
+- **Copia en la nube** (antes "Guardar en la nube") y **Recordatorios bloqueados**, con el texto del tablero.
+- **Respaldo y exportación**: qué pasa sin la nube, el estado del último respaldo en una tarjeta, "Guardar respaldo ahora", la contraseña, "Más opciones" en filas a la vista y "Borrar todos mis datos" aparte. "Teléfono" bajo 1024px, "dispositivo" en escritorio.
+- **La hoja de borrar**: "¿Borrar todos tus datos?", qué se borra y, sin respaldo, el aviso con "Guardar respaldo primero" (`confirmar()` gana la opción `aviso`).
+- Pruebas: `config` (tejas, botones, respaldo y la hoja con aviso), `nube`; E2E: el índice y el tema en `movil-mv2`, el perfil en `smoke`.
+
 ### feat(personales): MV2.30 Mis cuentas tanda 4, Me deben y sus hojas; cierra rediseño4 · 2026-11-13
 
 [ADR 135](DECISIONS/135-mis-cuentas-y-me-deben-en-el-telefono.md) D7 y D8. Ficha: [`contexto/me-deben.md`](contexto/me-deben.md). SW v692. Tablero "rediseño4", borrado al cerrar.
