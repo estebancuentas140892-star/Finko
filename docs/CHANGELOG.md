@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(personales): MV2.30 Mis cuentas tanda 4, Me deben y sus hojas; cierra rediseño4 · 2026-11-13
+
+[ADR 135](DECISIONS/135-mis-cuentas-y-me-deben-en-el-telefono.md) D7 y D8. Ficha: [`contexto/me-deben.md`](contexto/me-deben.md). SW v692. Tablero "rediseño4", borrado al cerrar.
+
+- **Bajo el título**, "Dinero que prestaste y te van a devolver" (en los dos anchos).
+- **En el teléfono** (`personales/telefono.js`), "Te deben" suelto con la pastilla "Te han devuelto $X de $Y" y su barra; la nota del círculo; los grupos en frase con su suma; cada préstamo una fila (cuánto falta y de cuánto, la barra si hubo abonos, "Pactó devolver en 17 días" en ámbar o rojo según la urgencia, el motivo y "solo seguimiento") con el círculo de "Me pagó" a la derecha. Desde 1024px sigue la lista de siempre; al cruzar el ancho se repinta.
+- **La hoja de un préstamo** (`htmlDetallePrestamo()`, acción `personal-detalle`): cuánto falta, "Te devolvió $X de $Y · 40%", cuándo y de qué cuenta, lo pactado, el motivo y los abonos; "Me pagó", "Editar el préstamo" y, aparte, "Eliminar el préstamo".
+- **"Me pagaron"** se titula "Te pagó Andrés", dice lo prestado, lo devuelto y lo que falta, pregunta "¿Cuánto te pagó Andrés?" en grande y el botón lleva el monto ("Registrar $150.000").
+- **El vacío**: "Registrar un préstamo" dentro de la tarjeta del banner y sin el "+" del encabezado.
+- Pruebas: `personales-telefono` (9 nuevas), V-7 de `personales` ajustada; E2E: Me deben en `movil-mv2`.
+
 ### feat(tesoreria): MV2.30 Mis cuentas tanda 3, Distribuir paso 1 · 2026-11-13
 
 [ADR 135](DECISIONS/135-mis-cuentas-y-me-deben-en-el-telefono.md) D6. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). SW v691. Tablero "rediseño4".

@@ -23,6 +23,7 @@ import {
   calcularRendimiento,
   estadisticasPorPersona,
 } from './logic.js';
+import { htmlPersonalesTelefono } from './telefono.js';
 
 /**
  * Porcentaje con un decimal como máximo y coma decimal (es-CO). `2` sale "2",
@@ -73,6 +74,12 @@ export function renderListaPersonales() {
 
   const hoy    = new Date();
   const oculto = S.config?.ocultarSaldo === true;
+
+  // ADR 135 D7: bajo 1024px, el mismo contenido en filas (telefono.js).
+  if (window.matchMedia?.('(max-width: 1023.98px)').matches === true) {
+    el.innerHTML = htmlPersonalesTelefono({ lista, hoy, oculto, porPersona: _renderPorPersona(lista, hoy, oculto) });
+    return;
+  }
 
   const { vencidos, vencenHoy, sinFecha, adelante, liquidados } =
     agruparPersonalesPorUrgencia(lista, hoy);
@@ -393,6 +400,8 @@ function _renderHistorialAbonos(prestamo, conInteres, m) {
  * V-7 (reglas R11 y R18): un solo primario por pantalla, y ambos dicen lo mismo:
  * misma acción, mismo nombre. Desde el ADR 107 D3 y D5 el del vacío es el
  * primario: mientras se ve, el "+ Préstamo" del encabezado se oculta (R51).
+ * ADR 135 D7: el botón dice "Registrar un préstamo" y, en el teléfono, vive
+ * dentro de la tarjeta del banner (como el vacío de Reservas, ADR 133 D4).
  */
 function _renderEmptyState() {
   return `
@@ -400,7 +409,7 @@ function _renderEmptyState() {
       <div class="empty-state__icon">${emptyArt('personales')}</div>
       <p class="empty-state__title">Nadie te debe nada (o no lo registraste)</p>
       <p class="empty-state__desc">Registra tu primer préstamo a familia o amigos.</p>
-      <button class="btn btn-primary" data-action="nuevo-personal">${icon('plus')} Nuevo préstamo</button>
+      <button class="btn btn-primary medeben-vacio__crear" data-action="nuevo-personal">${icon('plus')} Registrar un préstamo</button>
     </div>`;
 }
 
@@ -542,26 +551,34 @@ export function renderFormPagoPersonal(prestamo) {
   // (o si el préstamo no tenía cuenta), cae al criterio normal del selector.
   const cuentasActivas = (S.cuentas ?? []).filter(c => c.activa !== false);
   const cuentaHtml = renderSelectorCuenta(cuentasActivas, {
-    label:      '¿En qué cuenta entró el dinero?',
+    label:      '¿A qué cuenta entró?',
     selectedId: prestamo.cuentaId ?? null,
   });
 
+  // ADR 135 D8: arriba, lo prestado y lo devuelto, y cuánto falta con lo
+  // pactado; el monto viene con todo lo que falta y el botón lo dice.
+  const devuelto = Number(prestamo.pagado) || 0;
+  const pacto = prestamo.fechaLimite ? ` · pactó devolver el ${fechaLegible(prestamo.fechaLimite)}` : '';
   return `
     <form id="form-pago-personal" novalidate data-id="${_esc(prestamo.id)}">
-      <p class="modal__intro">
-        ¿Cuánto te pagó <strong>${persona}</strong>?<br />
-        Pendiente actual: <strong>${f(pendiente)}</strong>${desgloseHtml}
-      </p>
-      <div class="form-group">
-        <label for="pago-monto" class="label">Monto recibido (COP)</label>
-        <input id="pago-monto" name="monto" class="input" type="text" inputmode="numeric" data-miles autocomplete="off"
-               value="${miles(pendiente)}" required aria-required="true" />
-        <p class="form-hint">El valor que aparece es todo lo que falta por cobrar. Si solo te pagaron una parte, puedes cambiarlo.${hintInteres}</p>
+      <div class="modal__intro pago-prestamo__resumen">
+        <p>Le prestaste ${f(prestamo.monto)}${devuelto > 0 ? ` · ya te devolvió ${f(devuelto)}` : ''}</p>
+        <span class="medeben-barra" aria-hidden="true"><span style="width:${porcentajePagado(prestamo)}%"></span></span>
+        <p>Faltan <strong>${f(pendiente)}</strong>${pacto}${desgloseHtml}</p>
       </div>
+      <div class="monto-hero">
+        <label for="pago-monto" class="monto-hero__label">¿Cuánto te pagó ${persona}?</label>
+        <div class="monto-hero__box">
+          <span class="monto-hero__prefijo" aria-hidden="true">$</span>
+          <input id="pago-monto" name="monto" class="input input--big-amount" type="text" inputmode="numeric" data-miles autocomplete="off"
+                 value="${miles(pendiente)}" required aria-required="true" />
+        </div>
+      </div>
+      <p class="form-hint">Es todo lo que falta. Si solo te pagó una parte, cámbialo.${hintInteres}</p>
       ${cuentaHtml}
       <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Registrar pago</button>
+        <button type="submit" class="btn btn-primary">${icon('check')}<span data-pago-texto>Registrar ${f(pendiente)}</span></button>
       </div>
     </form>`;
 }

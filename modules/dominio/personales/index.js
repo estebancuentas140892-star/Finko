@@ -25,8 +25,10 @@ import {
   tieneInteres,
 } from './logic.js';
 import { f } from '../../infra/utils.js';
+import { desdeMiles } from '../../infra/miles.js';
 import { updSaldo } from '../../infra/render.js';
 import { renderListaPersonales, renderFormPersonal, renderFormPagoPersonal } from './view.js';
+import { htmlDetallePrestamo } from './telefono.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 
 /**
@@ -214,9 +216,19 @@ function _abrirPagoPersonal(el) {
   if (!overlay || !body) return;
 
   body.innerHTML = renderFormPagoPersonal(prestamo);
-  body.querySelector('#form-pago-personal')?.addEventListener('submit', (e) => {
+  const form = body.querySelector('#form-pago-personal');
+  form?.addEventListener('submit', (e) => {
     e.preventDefault();
     _confirmarPagoPersonal();
+  });
+  // ADR 135 D8: el título dice quién pagó y el botón, cuánto se registra.
+  const titulo = document.getElementById('modal-pago-personal-title');
+  if (titulo) titulo.textContent = `Te pagó ${prestamo.persona}`;
+  form?.addEventListener('input', (e) => {
+    if (e.target.name !== 'monto') return;
+    const texto = form.querySelector('[data-pago-texto]');
+    const monto = desdeMiles(e.target.value) ?? 0;
+    if (texto) texto.textContent = monto > 0 ? `Registrar ${f(monto)}` : 'Registrar el pago';
   });
 
   abrirModal(overlay);
@@ -326,6 +338,21 @@ async function _eliminarPersonal(el) {
 export function initPersonales() {
   registrarAccion('nuevo-personal',    _nuevoPersonal);
   registrarAccion('pagar-personal',    _abrirPagoPersonal);
+  // ADR 135 D8: en el teléfono cada préstamo es una fila que abre su hoja
+  // (`#modal-detalle-fila`).
+  registrarAccion('personal-detalle', (el) => {
+    const prestamo = (S.personales ?? []).find(p => p.id === el?.dataset?.id);
+    const hoja   = document.getElementById('modal-detalle-fila');
+    const cuerpo = document.getElementById('detalle-fila-body');
+    if (!prestamo || !hoja || !cuerpo) return;
+    cuerpo.innerHTML = htmlDetallePrestamo(prestamo);
+    abrirModal(hoja);
+  });
+  // ADR 135 D7: bajo 1024px la sección tiene otra anatomía; al cruzar el
+  // ancho se vuelve a pintar (patrón de Análisis, ADR 134 D7).
+  window.matchMedia?.('(max-width: 1023.98px)').addEventListener?.('change', () => {
+    renderSmart(renderListaPersonales, 'personales');
+  });
   registrarAccion('editar-personal',   _editarPersonal);
   registrarAccion('eliminar-personal', _eliminarPersonal);
 

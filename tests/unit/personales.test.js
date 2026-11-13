@@ -1288,10 +1288,10 @@ describe('vacío y formulario de Me deben (DIS.3)', () => {
     // ADR 107 D3: verde lleno para el único botón de un vacío; el del
     // encabezado se oculta mientras el vacío se ve (R51, responsive.css).
     expect(btn.className).toContain('btn-primary');
-    // DSK.5b (ADR 074 D5): fuera el "+" del texto y el verbo pasa a "Nuevo",
-    // porque un préstamo es una entidad persistente. La regla de V-7 (misma
-    // acción, mismo nombre) se conserva: el encabezado dice lo mismo.
-    expect(btn.textContent.trim()).toBe('Nuevo préstamo');
+    // ADR 135 D7: "Registrar un préstamo", el mismo nombre accesible del
+    // "+ Préstamo" del encabezado en el teléfono (V-7: misma acción, mismo
+    // nombre). La barra de escritorio sigue diciendo "Nuevo préstamo".
+    expect(btn.textContent.trim()).toBe('Registrar un préstamo');
     expect(btn.innerHTML).toContain('#i-plus');
   });
 

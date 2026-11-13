@@ -1056,7 +1056,11 @@
         <header class="section__header">
           <div class="section__title-group">
             <span class="cat-teja section__icon" data-dom="personales" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-personales"/></svg></span>
-            <h1 class="section__title" id="title-personales">Me deben</h1>
+            <!-- ADR 135 D7: qué es la sección, bajo el título. -->
+            <div class="section__titulo">
+              <h1 class="section__title" id="title-personales">Me deben</h1>
+              <p class="section__linea">Dinero que prestaste y te van a devolver</p>
+            </div>
           </div>
           <!-- DSK.5b (ADR 074 D5): fuera el "+" del texto, lo aporta el ícono, y
                el aria-label dice lo mismo que la pantalla. -->
@@ -1069,7 +1073,7 @@
           <!-- ADR 106 D4: este botón solo se ve en móvil y lleva el nombre
                corto; la barra superior de escritorio copia `data-barra`. -->
           <button class="btn btn-primary" data-action="nuevo-personal"
-                  aria-label="Nuevo préstamo" data-barra="Nuevo préstamo">
+                  aria-label="Registrar un préstamo" data-barra="Nuevo préstamo">
             <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg><span class="btn__texto">Préstamo</span>
           </button>
         </header>

@@ -436,10 +436,12 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     const sec = page.locator('#sec-personales');
     await expect(sec.locator('.banner-proposito__titulo')).toHaveText(
       '¿Le prestaste dinero a alguien y ya no recuerdas cuánto ni a quién?', { timeout: 10_000 });
-    // El vacío calla su propio mensaje y queda un solo "Nuevo préstamo".
+    // El vacío calla su propio mensaje y queda un solo "Registrar un préstamo"
+    // (ADR 135 D7), dentro de la tarjeta del banner.
     await expect(sec.locator('.empty-state__title')).toBeHidden();
     await expect(sec.locator('[data-action="nuevo-personal"]:visible')).toHaveCount(1);
     await expect(sec.locator('.empty-state [data-action="nuevo-personal"]')).toBeVisible();
+    await expect(sec.locator('.empty-state [data-action="nuevo-personal"]')).toHaveText('Registrar un préstamo');
   });
 
   test('Movimientos desde "Más" no tiene volver: es nivel raíz (ADR 106 D6)', async ({ page }) => {
@@ -1378,5 +1380,38 @@ test.describe('MV2.30 - Transferir en el teléfono (ADR 135 D5)', () => {
     await expect(hoja.locator('.transferir-cuenta__nombre').first()).toHaveText('Nequi');
     await hoja.locator('#transferencia-monto').fill('200000');
     await expect(hoja.locator('#transferencia-enviar')).toHaveText('Transferir $200.000');
+  });
+});
+
+test.describe('MV2.30 - Me deben en el teléfono (ADR 135 D7 y D8)', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('los grupos con su suma, la hoja de un préstamo y "Me pagó" desde el círculo', async ({ page }) => {
+    const hace = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); };
+    await sembrar(page, estadoBase({
+      cuentas: CUENTAS,
+      personales: [
+        { id: 'p1', persona: 'Mamá', monto: 120_000, pagado: 0, fecha: hace(30), motivo: 'mercado', liquidado: false },
+        { id: 'p2', persona: 'Andrés', monto: 250_000, pagado: 100_000, fecha: hace(42), motivo: 'arreglo del carro', cuentaId: 'c1', liquidado: false },
+      ],
+    }));
+    await page.goto('/#personales');
+    await expect(page.locator('#sec-personales.active')).toBeVisible({ timeout: 10_000 });
+
+    await expect(page.locator('#sec-personales .section__linea')).toHaveText('Dinero que prestaste y te van a devolver');
+    await expect(page.locator('.medeben-total__cifra')).toHaveText('$270.000');
+    await expect(page.locator('.medeben-grupo__titulo')).toHaveText(['Sin fecha pactada']);
+    await expect(page.locator('.medeben-grupo__suma')).toHaveText(['$270.000']);
+
+    await page.locator('.medeben-fila__abrir[data-id="p2"]').click();
+    const hoja = page.locator('#modal-detalle-fila[data-open]');
+    await expect(hoja.locator('#detalle-fila-titulo')).toHaveText('Andrés');
+    await expect(hoja.locator('.detalle-prestamo__devuelto')).toHaveText('Te devolvió $100.000 de $250.000 · 40%');
+    await page.keyboard.press('Escape');
+
+    await page.locator('.medeben-fila__pago[data-id="p2"]').click();
+    const pago = page.locator('#modal-pago-personal[data-open]');
+    await expect(pago.locator('#modal-pago-personal-title')).toHaveText('Te pagó Andrés');
+    await expect(pago.locator('[data-pago-texto]')).toHaveText('Registrar $150.000');
   });
 });
