@@ -105,7 +105,14 @@ export function htmlDetalleFila(d) {
  * @param {HTMLElement} fila `.list-item--detalle`
  */
 export function datosDeFila(fila) {
-  const limpio = (el) => el?.textContent.replace(/\s+/g, ' ').trim() ?? '';
+  // Lo marcado `data-solo-fila` vive en la fila y no viaja a la hoja (ADR 135
+  // D1: el "aplica 4x1000" de la línea de una cuenta, que la hoja ya dice).
+  const limpio = (el) => {
+    if (!el) return '';
+    const copia = el.cloneNode(true);
+    copia.querySelectorAll('[data-solo-fila]').forEach(n => n.remove());
+    return copia.textContent.replace(/\s+/g, ' ').trim();
+  };
   const txt = (sel) => limpio(fila.querySelector(sel));
   const monto = fila.querySelector('.list-item__amount, .list-item__value, .cuenta-card__saldo, .deuda-card__saldo');
   const acciones = [...fila.querySelectorAll('.list-item__action [data-action], .cuenta-card__actions [data-action]')].map(b => ({

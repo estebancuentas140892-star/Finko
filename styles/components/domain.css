@@ -563,6 +563,24 @@ button.chip:focus-visible {
   text-transform: uppercase;
   color: var(--fk-text-muted);
 }
+/* ADR 135 D3: en la tarjeta "Reparte", las razones se pliegan bajo un
+   enlace en frase, al pie. */
+.distribuir-card .distribucion-razones__titulo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  margin: 0;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--fk-text-secondary);
+  cursor: pointer;
+  list-style: none;
+}
+.distribuir-card .distribucion-razones__titulo::-webkit-details-marker { display: none; }
+.distribuir-card .distribucion-razones { margin-top: var(--fk-space-1); }
 .distribucion-razones__lista {
   margin: 0;
   padding-left: var(--fk-space-4);
@@ -586,11 +604,9 @@ button.chip:focus-visible {
    tokens de dominio ya existentes, coinciden con la paleta del handoff.
    ════════════════════════════════════════════════════════════ */
 
-/* Aviso "recibiste tu ingreso" (MC.13e-2a, punto 12): bloque propio antes
-   de la tarjeta, no un subtítulo mezclado con el resto de su contenido. */
-.distribuir-aviso {
-  margin: 0 0 var(--fk-space-2);
-  font-size: var(--fk-text-sm);
+/* Aviso "recibiste tu ingreso": desde el ADR 135 D3 es el subtítulo de la
+   tarjeta, en el color de la sección. */
+.distribuir-card__sub.distribuir-aviso {
   font-weight: var(--fk-font-medium);
   color: var(--fk-dom-tesoreria-text);
 }
@@ -626,70 +642,86 @@ button.chip:focus-visible {
 
 .distribuir-card__title {
   margin: 0;
-  font-size: var(--fk-text-sm);
+  font-size: var(--fk-text-lg);
   font-weight: var(--fk-font-bold);
   color: var(--fk-text-primary);
 }
 
 .distribuir-card__sub {
   margin: 3px 0 0;
-  font-size: var(--fk-text-xs);
+  font-size: var(--fk-text-sm);
   color: var(--fk-text-secondary);
   line-height: var(--fk-leading-snug);
 }
 
-/* Barra 50/30/20: decorativa (aria-hidden), la leyenda de abajo da la
-   información real en texto (SC 1.4.11, mismo patrón que .hero-tesoreria__compo).
-   Ancho de cada segmento va como propiedad JS tras el innerHTML. */
-.distribuir-card__barra {
-  display: flex;
-  gap: 3px;
-  height: 10px;
-  border-radius: var(--fk-radius-sm);
-  overflow: hidden;
-  margin: var(--fk-space-4) 0 var(--fk-space-3);
-}
-.distribuir-card__seg {
-  height: 100%;
-  border-radius: 2px;
-}
-
+/* ADR 135 D3: un grupo por fila (monto, "Hoy 65% · lo recomendado es 50%"
+   y una barra con una rayita en lo recomendado). La barra es decorativa: la
+   línea de texto dice lo mismo (SC 1.4.11). Relleno y rayita se ubican por
+   JS tras el innerHTML. */
 .distribuir-card__leyenda {
   display: flex;
   flex-direction: column;
-  gap: var(--fk-space-2);
+  margin: var(--fk-space-2) 0 0;
+  padding: 0;
+  list-style: none;
 }
 .distribuir-card__item {
   display: flex;
-  align-items: center;
-  gap: var(--fk-space-2);
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--fk-space-2) 0;
 }
-.distribuir-card__dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 3px;
-  flex-shrink: 0;
+.distribuir-card__item + .distribuir-card__item { border-top: 1px solid var(--fk-border-subtle); }
+.distribuir-card__linea {
+  display: flex;
+  align-items: baseline;
+  gap: var(--fk-space-2);
 }
 .distribuir-card__label {
   flex: 1;
   min-width: 0;
-  font-size: var(--fk-text-sm);
-  color: var(--fk-text-secondary);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
 }
 .distribuir-card__pct {
-  font-size: var(--fk-text-xs);
-  font-weight: var(--fk-font-semibold);
-  color: var(--fk-text-muted);
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
   font-variant-numeric: tabular-nums;
 }
 .distribuir-card__monto {
-  font-size: var(--fk-text-sm);
   font-weight: var(--fk-font-bold);
   color: var(--fk-text-primary);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  min-width: 4.875rem;
-  text-align: right;
+}
+.distribuir-card__barra {
+  position: relative;
+  display: block;
+  height: 6px;
+  margin-top: var(--fk-space-1);
+  border-radius: var(--fk-radius-full);
+  background: var(--fk-border-default);
+}
+.distribuir-card__relleno {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--fk-dom-tesoreria);
+}
+.distribuir-card__rayita {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 12px;
+  margin-inline-start: -1px;
+  border-radius: 1px;
+  background: var(--fk-text-primary);
+}
+.distribuir-card__nota {
+  margin: var(--fk-space-1) 0 0;
+  font-size: var(--fk-text-xs);
+  line-height: var(--fk-leading-snug);
+  color: var(--fk-text-muted);
 }
 
 /* Necesidades = tesorería (azul), Estilo de vida = presupuesto (ámbar),

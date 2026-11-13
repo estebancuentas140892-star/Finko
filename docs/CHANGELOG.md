@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(tesoreria): MV2.30 Mis cuentas tanda 1, el total, tu ingreso y "Reparte" · 2026-11-13
+
+[ADR 135](DECISIONS/135-mis-cuentas-y-me-deben-en-el-telefono.md) D1 a D3. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). SW v689. Tablero "rediseño4".
+
+- **Arriba, en el teléfono**: la tarjeta de identidad dice cuántas cuentas hay en una pastilla en vez de la barra de composición; "Tus cuentas" se ve y "Transferir entre cuentas" es un botón neutro, sin "Atajo" (en los dos anchos).
+- **Cada cuenta** dice qué es: "Lo que llevas encima" para el efectivo, "Ahorros · Bancolombia" con nombre propio y, en el teléfono, "aplica 4x1000" (la hoja no lo repite: `data-solo-fila`).
+- **Tu ingreso** (antes "Fuentes de ingreso", sin la frase): cada fijo en verde con cuándo llega ("Cada mes, el día 1 · el próximo llega en 18 días", `cuandoLlegaIngreso()`), que absorbe el día de pago y, en el teléfono, el aviso del próximo cobro. "Ingreso fijo" y "De una vez" con la nota de la diferencia; sin ingresos, una tarjeta con "Agregar mi ingreso fijo" y "¿Te entró dinero una sola vez? Regístralo". Sin puntuales ya no hay aviso de que faltan.
+- **"Reparte tus $X"**: lo recibido como subtítulo, cada grupo en una fila con "Hoy 65% · lo recomendado es 50%" y una rayita en lo recomendado; la nota con la primera razón y "Por qué esta propuesta" plegado al pie.
+- Pruebas: 21 ajustadas o nuevas en `tesoreria` y 2 en `detalle-fila`; E2E: uno nuevo a 390 px, y en `smoke` el alta de ingresos parte del vacío nuevo y la línea de la cuenta se mide visible.
+
 ### feat(analisis): MV2.30 Consultar tanda 4, Análisis en filas; cierra Consultar · 2026-11-13
 
 [ADR 134](DECISIONS/134-consultar-del-adulto-en-el-telefono.md) D7. Ficha: [`contexto/analisis.md`](contexto/analisis.md). SW v688. El tablero "rediseño3" queda aplicado completo y su HTML se borró.

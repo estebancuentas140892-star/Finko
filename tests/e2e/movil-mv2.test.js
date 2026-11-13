@@ -493,8 +493,11 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     const sec = page.locator('#sec-tesoreria');
     const filas = sec.locator('#lista-tesoreria .cuenta-card, #lista-ingresos .list-item, #lista-ingresos-puntuales .list-item');
     await expect(filas).toHaveCount(4, { timeout: 10_000 });
-    for (const alto of await filas.evaluateAll(els => els.map(e => e.getBoundingClientRect().height))) {
-      expect(alto).toBeLessThan(70);
+    // ADR 135 D2: la fila de un ingreso fijo dice cuándo llega y puede ir en
+    // dos líneas; las demás siguen en una.
+    const altos = await filas.evaluateAll(els => els.map(e => [e.closest('#lista-ingresos') !== null, e.getBoundingClientRect().height]));
+    for (const [esFijo, alto] of altos) {
+      expect(alto).toBeLessThan(esFijo ? 90 : 70);
     }
     await expect(sec.locator('[data-action^="eliminar"]:visible')).toHaveCount(0);
 
@@ -1317,5 +1320,35 @@ test.describe('MV2.30 - Análisis en el teléfono (ADR 134 D7)', () => {
 
     await page.locator('.ana-fila[data-hoja="detalle"]').click();
     await expect(page.locator('#modal-detalle-fila[data-open] #detalle-fila-titulo')).toHaveText('Más detalle de tus gastos');
+  });
+});
+
+test.describe('MV2.30 - Mis cuentas en el teléfono (ADR 135 D1 a D3)', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('la pastilla con las cuentas, "Tus cuentas", cuándo llega el ingreso y "Reparte"', async ({ page }) => {
+    await sembrar(page, estadoBase({
+      cuentas: [
+        ...CUENTAS,
+        { id: 'c2', nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo', saldo: 96_000, activa: true, fechaCreacion: '2026-07-01T00:00:00.000Z' },
+      ],
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 4_200_000, frecuencia: 'Mensual', diaPago: 1, activo: true, fechaCreacion: '2026-01-01' }],
+    }));
+    await page.goto('/#tesoreria');
+    await expect(page.locator('#sec-tesoreria.active')).toBeVisible({ timeout: 10_000 });
+
+    await expect(page.locator('.hero-tesoreria__cuantas')).toHaveText('2 cuentas activas');
+    await expect(page.locator('.hero-tesoreria__compo')).toBeHidden();
+    await expect(page.locator('.tesoreria-col--cuentas > .tesoreria-lb')).toBeVisible();
+    await expect(page.locator('.cuenta-card', { hasText: 'Efectivo' }).locator('.cuenta-card__tipo')).toHaveText('Lo que llevas encima');
+
+    await expect(page.locator('#lista-ingresos .list-item__subtitle')).toHaveText(/^Cada mes, el día 1/);
+    await expect(page.locator('#ingresos-nudge-proximo')).toBeHidden();
+    await expect(page.locator('#ingresos-altas [data-action="nuevo-ingreso-puntual"]')).toHaveText('De una vez');
+
+    const reparte = page.locator('.distribuir-card');
+    await expect(reparte.locator('.distribuir-card__title')).toHaveText('Reparte tus $4.200.000');
+    await expect(reparte.locator('.distribuir-card__item')).toHaveCount(3);
+    await expect(reparte.locator('.distribuir-card__pct').first()).toHaveText(/lo recomendado es 50%$/);
   });
 });

@@ -1403,7 +1403,9 @@ test.describe('Tesorería - cuenta y saldo', () => {
 
     const card = page.locator('.cuenta-card').first();
     await expect(card.locator('.cuenta-card__nombre')).toHaveText('Bancolombia');
-    await expect(card.locator('.cuenta-card__tipo')).toHaveText('Ahorros');
+    // ADR 135 D1: en escritorio el "aplica 4x1000" de la línea no se ve (lo
+    // dice su chip); se mide el texto visible.
+    await expect(card.locator('.cuenta-card__tipo')).toHaveText('Ahorros', { useInnerText: true });
     await expect(card.locator('.cuenta-card__saldo')).toHaveText('$1.450.000');
     await expect(card).toContainText('Cuota $15.000 · día 15');
     await expect(card).toContainText('4x1000');
@@ -1458,20 +1460,18 @@ test.describe('Tesorería - cuenta y saldo', () => {
   test('MC.18d: fuentes de ingreso fijas y puntuales agrupadas bajo un solo encabezado', async ({ page }) => {
     await crearCuentaEfectivo(page, 500000);
 
-    // Un solo encabezado, y sus dos altas al pie de las listas. ADR 080 D2:
-    // los botones salieron del sub-encabezado, que ahora solo nombra el grupo.
-    const subHeader = page.locator('.section__sub-header', { hasText: 'Fuentes de ingreso' });
+    // Un solo encabezado, sin botones (ADR 080 D2). ADR 135 D2: se llama "Tu
+    // ingreso" y, sin ningún ingreso, el vacío lleva las dos salidas adentro.
+    const subHeader = page.locator('.section__sub-header', { hasText: 'Tu ingreso' });
     await expect(subHeader).toBeVisible();
     await expect(subHeader.locator('button')).toHaveCount(0);
 
-    const altas = page.locator('#ingresos-altas');
-    await expect(altas.locator('[data-action="nuevo-ingreso"]')).toBeVisible();
-    await expect(altas.locator('[data-action="nuevo-ingreso-puntual"]')).toBeVisible();
-    // El puntual es un atajo declarado a la teja "Ingreso" de Registrar (R72).
-    await expect(altas.locator('[data-action="nuevo-ingreso-puntual"]')).toContainText('Atajo');
+    const vacio = page.locator('#lista-ingresos .ingresos-vacio');
+    await expect(vacio.locator('[data-action="nuevo-ingreso"]')).toHaveText('Agregar mi ingreso fijo');
+    await expect(vacio.locator('[data-action="nuevo-ingreso-puntual"]')).toBeVisible();
 
     // Crear un ingreso fijo.
-    await altas.locator('[data-action="nuevo-ingreso"]').click();
+    await vacio.locator('[data-action="nuevo-ingreso"]').click();
     await page.waitForSelector('#modal-ingreso[data-open]');
     const formFijo = page.locator('#modal-ingreso-body form');
     await formFijo.locator('#ingreso-cat').selectOption({ index: 1 });
@@ -1481,6 +1481,11 @@ test.describe('Tesorería - cuenta y saldo', () => {
     await formFijo.locator('button[type="submit"]').click();
     await page.waitForSelector(modalCerrado('modal-ingreso'), { state: 'attached', timeout: 5_000 });
     await expect(page.locator('#lista-ingresos')).toContainText('Salario empresa');
+
+    // Con un ingreso, "Ingreso fijo" y "De una vez" al pie de la lista.
+    const altas = page.locator('#ingresos-altas');
+    await expect(altas.locator('[data-action="nuevo-ingreso"]')).toHaveText('Ingreso fijo');
+    await expect(altas.locator('[data-action="nuevo-ingreso-puntual"]')).toHaveText('De una vez');
 
     // Crear un ingreso puntual.
     await altas.locator('[data-action="nuevo-ingreso-puntual"]').click();
@@ -1500,10 +1505,8 @@ test.describe('Tesorería - cuenta y saldo', () => {
     }
 
     // Ambas listas viven una tras otra bajo el mismo encabezado, sin
-    // sub-header propio entre ellas (solo el de "Fuentes de ingreso"; la
-    // tarjeta "Distribuir mi ingreso" de MC.18e agrega un segundo sub-header
-    // legítimo y distinto al final de la sección, fuera del alcance de este check).
-    await expect(page.locator('.section__sub-header', { hasText: 'Fuentes de ingreso' })).toHaveCount(1);
+    // sub-header propio entre ellas.
+    await expect(page.locator('.section__sub-header', { hasText: 'Tu ingreso' })).toHaveCount(1);
 
     // El ojo del hero también enmascara los montos de ambas listas (D5).
     await expect(page.locator('#lista-ingresos .list-item__value')).toHaveText('$1.850.000');

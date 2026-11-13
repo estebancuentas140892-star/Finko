@@ -90,6 +90,11 @@ export function renderHeroTesoreria() {
     ? `<p class="hero-tesoreria__resumen">${_esc(resumen)}</p>`
     : '';
 
+  // ADR 135 D1: en el teléfono la composición cede su lugar a una pastilla
+  // con cuántas cuentas hay; desde 1024px sigue la barra (CSS).
+  const cuantasHtml = sinCuentas ? '' : `
+      <p class="hero-tesoreria__cuantas">${icon('cuentas', 'icon icon--sm')}<span>${activas.length} ${activas.length === 1 ? 'cuenta activa' : 'cuentas activas'}</span></p>`;
+
   el.innerHTML = `
     <div class="hero-tesoreria">
       <svg class="decor decor--bottom-right" aria-hidden="true"><use href="#d-onda"/></svg>
@@ -98,6 +103,7 @@ export function renderHeroTesoreria() {
       <p class="hero-tesoreria__valor">${totalTxt}</p>
       ${compoHtml}
       ${resumenHtml}
+      ${cuantasHtml}
     </div>`;
 
   // Ancho y opacidad por peso van como propiedad JS tras el innerHTML
@@ -146,7 +152,8 @@ export function renderListaCuentas() {
 function _tipoLabel(cuenta) {
   const clase = bancoClase(cuenta.banco);
   if (clase === 'billetera') return 'Billetera digital';
-  if (clase === 'efectivo')  return '';
+  // ADR 135 D1: el efectivo vuelve a tener línea, pero una que dice algo.
+  if (clase === 'efectivo')  return 'Lo que llevas encima';
   return cuenta.tipo || 'Cuenta';
 }
 
@@ -172,7 +179,9 @@ function _renderCuentaItem(cuenta, oculto) {
   const combinado = banco === tipo ? banco : `${banco} ${tipo}`;
   const esAutoNombre = (cuenta.nombre ?? '').trim().toLowerCase() === combinado.trim().toLowerCase();
   const nombre    = _esc(esAutoNombre ? banco : cuenta.nombre);
-  const subtitulo = esAutoNombre ? _tipoLabel(cuenta) : `${banco} · ${tipo}`;
+  // ADR 135 D1: con nombre propio, qué es y de qué banco ("Ahorros ·
+  // Bancolombia"), en ese orden.
+  const subtitulo = esAutoNombre ? _tipoLabel(cuenta) : `${tipo} · ${banco}`;
 
   const saldoTxt = oculto ? SALDO_MASCARA_CUENTA : f(cuenta.saldo);
 
@@ -197,8 +206,11 @@ function _renderCuentaItem(cuenta, oculto) {
           </span>`).join('');
 
   // MC-DIS.9 C11: sin subtítulo (clase efectivo) el párrafo no se emite.
+  // ADR 135 D1: en el teléfono los chips se callan y el 4x1000 viaja en la
+  // línea; desde 1024px lo dice su chip y esta parte se oculta (CSS).
+  const gmfHtml = cuenta.aplica4x1000 ? '<span class="cuenta-card__gmf" data-solo-fila> · aplica 4x1000</span>' : '';
   const subtituloHtml = subtitulo
-    ? `<p class="cuenta-card__tipo">${_esc(subtitulo)}</p>`
+    ? `<p class="cuenta-card__tipo">${_esc(subtitulo)}${gmfHtml}</p>`
     : '';
 
   // ADR 109 (MV2.9): en móvil la tarjeta es una fila de una línea que abre la

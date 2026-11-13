@@ -2415,3 +2415,104 @@ body:not(.light-theme) .cov__fill {
   /* La hoja de esas filas: el cuerpo del grupo de escritorio, sin su margen. */
   .analisis-hoja > .analisis-grupo__body { padding: 0; }
 }
+
+/* ════════════════════════════════════════════════════════════
+   ADR 135 (rediseño4), tanda 1: Mis cuentas, tu ingreso y "Reparte".
+   ════════════════════════════════════════════════════════════ */
+
+/* D1: la pastilla con cuántas cuentas hay vive solo en el teléfono, y la
+   parte del 4x1000 de la línea de la cuenta también (en escritorio lo dice
+   su chip). */
+.hero-tesoreria__cuantas,
+.cuenta-card__gmf { display: none; }
+
+/* D2: el monto de un ingreso fijo va en el verde de lo que entra, la nota
+   bajo "Ingreso fijo" y "De una vez", y el vacío como tarjeta. */
+.ingreso-fijo__monto { color: var(--fk-dom-ingresos-text); }
+.ingresos-altas__nota {
+  flex-basis: 100%;
+  margin: 0;
+  padding: 0 var(--fk-space-1);
+  font-size: var(--fk-text-sm);
+  line-height: var(--fk-leading-snug);
+  color: var(--fk-text-muted);
+}
+.ingresos-vacio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+  padding: var(--fk-space-4);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-xl);
+  background: var(--fk-bg-surface);
+}
+.ingresos-vacio__titulo { margin: 0; font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
+.ingresos-vacio__desc { margin: 0; font-size: var(--fk-text-sm); line-height: var(--fk-leading-snug); color: var(--fk-text-secondary); }
+.ingresos-vacio__fijo { width: 100%; min-height: 52px; margin-top: var(--fk-space-3); justify-content: center; }
+.ingresos-vacio__puntual { width: 100%; min-height: 44px; justify-content: center; color: var(--fk-text-accent); }
+
+@media (max-width: 1023px) {
+  /* D1: dentro de la tarjeta de identidad, la pastilla en vez de la barra. */
+  .hero-tesoreria__compo,
+  .hero-tesoreria__resumen { display: none; }
+  .hero-tesoreria__cuantas {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fk-space-1);
+    min-height: 32px;
+    margin: var(--fk-space-3) 0 0;
+    padding: var(--fk-space-1) var(--fk-space-3);
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-hero-capa);
+    font-size: var(--fk-text-sm);
+    color: var(--fk-hero-texto);
+    font-variant-numeric: tabular-nums;
+  }
+  .cuenta-card__gmf { display: inline; }
+
+  /* "Tus cuentas" a la vista (ADR 075 D4 lo dejaba solo para lectores). */
+  .tesoreria-col--cuentas > .tesoreria-lb {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0 0 var(--fk-space-2);
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+    font-size: var(--fk-text-lg);
+    font-weight: var(--fk-font-bold);
+    color: var(--fk-text-primary);
+  }
+
+  /* Transferir: un botón neutro a lo ancho, el verbo y nada más. */
+  #tesoreria-transferir .transferir-entrada {
+    min-height: 48px;
+    background: var(--fk-bg-elevated);
+    border-color: var(--fk-border-default);
+    color: var(--fk-text-primary);
+  }
+
+  /* D2: lo que llega ya lo dice cada fila; el aviso suelto se calla. */
+  #ingresos-nudge-proximo { display: none; }
+  #ingresos-altas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--fk-space-2);
+  }
+  #ingresos-altas .ingresos-altas__fuente { min-height: 48px; }
+  .ingresos-altas__nota { grid-column: 1 / -1; }
+
+  /* D3: la tarjeta de reparto, con el aire de las demás. */
+  #ingresos-distribucion { margin-top: var(--fk-space-6); }
+  .distribuir-card { padding: var(--fk-space-4); border-radius: var(--fk-radius-xl); }
+}
+
+@media (max-width: 1023px) {
+  /* D2: cuándo llega un ingreso se lee entero, en dos líneas si hace falta. */
+  #lista-ingresos .list-item--detalle .list-item__subtitle {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  #ingresos-altas { margin-top: var(--fk-space-3); }
+}

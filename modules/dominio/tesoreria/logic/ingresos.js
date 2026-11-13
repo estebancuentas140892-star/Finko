@@ -160,6 +160,34 @@ export function diasParaProximoPago(frecuencia, diaPago, hoy = new Date()) {
   return { dias, fechaISO };
 }
 
+/** Cada frecuencia dicha como la diría una persona (copia local, ADN 10). */
+const _CADA_INGRESO = {
+  Diario: 'Cada día', Semanal: 'Cada semana', Quincenal: 'Cada quincena', Mensual: 'Cada mes',
+  Bimestral: 'Cada dos meses', Trimestral: 'Cada tres meses', Semestral: 'Cada seis meses', Anual: 'Cada año',
+};
+
+/**
+ * Cuándo llega un ingreso fijo, en una línea (ADR 135 D2): "Cada mes, el día 1
+ * · el próximo llega en 18 días". Sin día de pago, solo la frecuencia; sin
+ * fecha calculable (frecuencias largas), sin la segunda parte.
+ *
+ * @param {{frecuencia?: string, diaPago?: number}} ingreso
+ * @param {Date} [hoy]
+ * @returns {string}
+ */
+export function cuandoLlegaIngreso(ingreso, hoy = new Date()) {
+  const frecuencia = ingreso?.frecuencia ?? '';
+  const dia = Number(ingreso?.diaPago) || 0;
+  const cada = _CADA_INGRESO[frecuencia] ?? frecuencia;
+  const cuando = dia && frecuencia === 'Mensual' ? `${cada}, el día ${dia}`
+    : dia && frecuencia === 'Quincenal' ? `${cada}, los días ${dia} y ${dia + 15}`
+    : cada;
+  const prox = diasParaProximoPago(frecuencia, dia, hoy);
+  if (!prox) return cuando;
+  const llega = prox.dias === 0 ? 'llega hoy' : prox.dias === 1 ? 'llega mañana' : `llega en ${prox.dias} días`;
+  return `${cuando} · el próximo ${llega}`;
+}
+
 /**
  * Detecta el nudge de próximo ingreso a cobrar.
  * Devuelve el ingreso más próximo con su urgencia y cuántos más llegan esa semana.

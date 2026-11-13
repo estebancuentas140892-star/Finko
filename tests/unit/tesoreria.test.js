@@ -1251,21 +1251,29 @@ describe('renderListaCuentas() - MC.18b: tarjeta de cuenta con nombre + tipo + c
   });
 
   // MC-DIS.9 C11: antes decía "Efectivo" y debajo "Dinero en efectivo".
-  it('con clase efectivo, la tarjeta no emite subtítulo', () => {
+  it('con clase efectivo, la línea dice "Lo que llevas encima" (ADR 135 D1)', () => {
     S.cuentas = [cuentaBase({ nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo' })];
     renderListaCuentas();
     const el = document.getElementById('lista-tesoreria');
     expect(el.querySelector('.cuenta-card__nombre').textContent).toBe('Efectivo');
-    expect(el.querySelector('.cuenta-card__tipo')).toBeNull();
+    expect(el.querySelector('.cuenta-card__tipo').textContent).toBe('Lo que llevas encima');
     expect(el.innerHTML).not.toContain('Dinero en efectivo');
   });
 
-  it('con un nombre explícito que difiere de "banco tipo", el subtítulo vuelve a ser "banco · tipo"', () => {
+  it('con un nombre explícito que difiere de "banco tipo", el subtítulo dice "tipo · banco" (ADR 135 D1)', () => {
     S.cuentas = [cuentaBase({ nombre: 'Nequi principal', banco: 'Nequi', tipo: 'Ahorros' })];
     renderListaCuentas();
     const el = document.getElementById('lista-tesoreria');
     expect(el.querySelector('.cuenta-card__nombre').textContent).toBe('Nequi principal');
-    expect(el.querySelector('.cuenta-card__tipo').textContent).toBe('Nequi · Ahorros');
+    expect(el.querySelector('.cuenta-card__tipo').textContent).toBe('Ahorros · Nequi');
+  });
+
+  it('con 4x1000, la línea lo dice en una parte que solo vive en la fila (ADR 135 D1)', () => {
+    S.cuentas = [cuentaBase({ nombre: 'Nequi principal', banco: 'Nequi', tipo: 'Ahorros', aplica4x1000: true })];
+    renderListaCuentas();
+    const gmf = document.querySelector('.cuenta-card__tipo .cuenta-card__gmf');
+    expect(gmf.textContent).toBe(' · aplica 4x1000');
+    expect(gmf.hasAttribute('data-solo-fila')).toBe(true);
   });
 });
 
@@ -2249,7 +2257,8 @@ describe('renderListaIngresos() - iconografía de categorías (MC.9, teja en ID.
     expect(teja).not.toBeNull();
     expect(teja.getAttribute('data-dom')).toBe('ingresos');
     expect(teja.innerHTML).toContain(`#${CATEGORIA_INGRESO_ICONO['Arriendo']}`);
-    expect(document.querySelector('.list-item__subtitle').textContent).toContain('· Arriendo');
+    // ADR 135 D2: la categoría la dice la teja; la línea, cuándo llega.
+    expect(document.querySelector('.list-item__subtitle').textContent).toBe('Cada mes');
   });
 
   it('sin categoría no muestra separador y la teja cae a la moneda i-saldo', () => {
@@ -2264,39 +2273,37 @@ describe('renderListaIngresos() - iconografía de categorías (MC.9, teja en ID.
   });
 });
 
-describe('renderListaIngresos() - MC.15 (20): sin subtítulo redundante', () => {
+describe('renderListaIngresos() - ADR 135 D2: la línea dice cuándo llega', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="lista-ingresos"></div>';
     S.ingresos = [];
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 10, 13)); // viernes 13 nov 2026
+  });
+  afterEach(() => { vi.useRealTimers(); });
+
+  it('sin día de pago, solo la frecuencia', () => {
+    S.ingresos = [{ id: 'i3', descripcion: 'Salario mínimo', monto: 1_300_000, frecuencia: 'Quincenal', categoria: 'Salario mínimo', activo: true }];
+    renderListaIngresos();
+    expect(document.querySelector('.list-item__subtitle').textContent).toBe('Cada quincena');
   });
 
-  it('descripción igual a la categoría (mismo texto): el subtítulo omite la categoría', () => {
-    S.ingresos = [{
-      id: 'i3', descripcion: 'Salario mínimo', monto: 1_300_000,
-      frecuencia: 'Quincenal', categoria: 'Salario mínimo', activo: true,
-    }];
+  it('mensual con día: el día y en cuánto llega el próximo', () => {
+    S.ingresos = [{ id: 'i4', descripcion: 'Salario', monto: 4_200_000, frecuencia: 'Mensual', diaPago: 1, activo: true }];
     renderListaIngresos();
-    const el = document.getElementById('lista-ingresos');
-    expect(el.querySelector('.list-item__title').textContent).toBe('Salario mínimo');
-    expect(el.querySelector('.list-item__subtitle').textContent).toBe('Quincenal');
+    expect(document.querySelector('.list-item__subtitle').textContent).toBe('Cada mes, el día 1 · el próximo llega en 18 días');
   });
 
-  it('coincide ignorando mayúsculas/espacios: igual se omite', () => {
-    S.ingresos = [{
-      id: 'i4', descripcion: '  salario mínimo  ', monto: 1_300_000,
-      frecuencia: 'Mensual', categoria: 'Salario mínimo', activo: true,
-    }];
+  it('quincenal con día: los dos días del mes', () => {
+    S.ingresos = [{ id: 'i5', descripcion: 'Sueldo', monto: 1_300_000, frecuencia: 'Quincenal', diaPago: 15, activo: true }];
     renderListaIngresos();
-    expect(document.querySelector('.list-item__subtitle').textContent).toBe('Mensual');
+    expect(document.querySelector('.list-item__subtitle').textContent).toBe('Cada quincena, los días 15 y 30 · el próximo llega en 2 días');
   });
 
-  it('descripción distinta de la categoría: el subtítulo conserva ambas', () => {
-    S.ingresos = [{
-      id: 'i5', descripcion: 'Sueldo Claro', monto: 1_300_000,
-      frecuencia: 'Quincenal', categoria: 'Salario mínimo', activo: true,
-    }];
+  it('el monto va en el verde de lo que entra', () => {
+    S.ingresos = [{ id: 'i6', descripcion: 'Arriendo', monto: 900_000, frecuencia: 'Mensual', activo: true }];
     renderListaIngresos();
-    expect(document.querySelector('.list-item__subtitle').textContent).toBe('Quincenal · Salario mínimo');
+    expect(document.querySelector('.list-item__value').classList.contains('ingreso-fijo__monto')).toBe(true);
   });
 });
 
@@ -2393,6 +2400,8 @@ describe('renderListaIngresos() / renderListaIngresosPuntuales() - máscara del 
 describe('renderAltasIngreso()', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="ingresos-altas"></div>';
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 4_200_000, frecuencia: 'Mensual', activo: true }];
+    S.ingresosPuntuales = [];
   });
 
   it('emite dos altas y ninguna es primaria: el único primario es "Nueva cuenta"', () => {
@@ -2402,23 +2411,21 @@ describe('renderAltasIngreso()', () => {
     expect(document.querySelectorAll('#ingresos-altas .btn-primary')).toHaveLength(0);
   });
 
-  it('la fuente fija es un alta de regla y vive en esta sección', () => {
+  it('"Ingreso fijo" y "De una vez", sin marca de atajo, y la nota que los distingue (ADR 135 D2)', () => {
     renderAltasIngreso();
-    const boton = document.querySelector('[data-action="nuevo-ingreso"]');
-    expect(boton).not.toBeNull();
-    expect(boton.textContent).toContain('Fuente fija');
-    // No es un atajo: la regla pertenece a la lista que la administra.
-    expect(boton.querySelector('.chip')).toBeNull();
+    const fijo = document.querySelector('[data-action="nuevo-ingreso"]');
+    const puntual = document.querySelector('[data-action="nuevo-ingreso-puntual"]');
+    expect(fijo.textContent.trim()).toBe('Ingreso fijo');
+    expect(puntual.textContent.trim()).toBe('De una vez');
+    expect(document.querySelector('#ingresos-altas .chip')).toBeNull();
+    expect(document.querySelector('.ingresos-altas__nota').textContent)
+      .toBe('Fijo: tu salario o un arriendo que recibes. De una vez: una venta, un trabajo suelto o un regalo.');
   });
 
-  it('el ingreso puntual se declara atajo con la etiqueta de la teja de Registrar (R72)', () => {
+  it('sin ningún ingreso no pinta nada: las salidas viven en el vacío', () => {
+    S.ingresos = [];
     renderAltasIngreso();
-    const boton = document.querySelector('[data-action="nuevo-ingreso-puntual"]');
-    expect(boton).not.toBeNull();
-    expect(boton.textContent).toContain('Ingreso');
-    expect(boton.querySelector('.chip')?.textContent.trim()).toBe('Atajo');
-    // Mismo ícono que la teja "Ingreso" de la hoja Registrar.
-    expect(boton.innerHTML).toContain('#i-saldo');
+    expect(document.getElementById('ingresos-altas').innerHTML).toBe('');
   });
 
   it('no-op si el contenedor no existe', () => {
@@ -2434,18 +2441,20 @@ describe('renderListaIngresos() / renderListaIngresosPuntuales() - un solo estad
     S.ingresosPuntuales = [];
   });
 
-  it('con las dos listas vacías, emite un mensaje único que nombra las dos entradas', () => {
+  it('con las dos listas vacías, una tarjeta con para qué sirve y sus dos salidas (ADR 135 D2)', () => {
     renderListaIngresos();
     renderListaIngresosPuntuales();
     const fijos     = document.getElementById('lista-ingresos');
     const puntuales = document.getElementById('lista-ingresos-puntuales');
-    expect(fijos.querySelectorAll('.empty-state')).toHaveLength(1);
-    expect(fijos.querySelector('.empty-state__desc').textContent)
-      .toBe('Aún no registras de dónde entra tu dinero. Agrega un ingreso fijo para tu salario o arriendo, o uno puntual para una venta o un trabajo suelto.');
+    expect(fijos.querySelector('.ingresos-vacio__titulo').textContent).toBe('Aún no registras de dónde entra tu dinero');
+    expect(fijos.querySelector('.ingresos-vacio__desc').textContent)
+      .toBe('Con tu ingreso, Finko te dice cuánto te queda en el mes y te ayuda a repartirlo.');
+    expect(fijos.querySelector('.btn-primary[data-action="nuevo-ingreso"]').textContent.trim()).toBe('Agregar mi ingreso fijo');
+    expect(fijos.querySelector('[data-action="nuevo-ingreso-puntual"]').textContent.trim()).toBe('¿Te entró dinero una sola vez? Regístralo');
     expect(puntuales.innerHTML).toBe('');
   });
 
-  it('con ingresos fijos y ningún puntual, cada lista conserva su propio vacío', () => {
+  it('con ingresos fijos y ningún puntual, ninguna lista dice que falta algo', () => {
     S.ingresos = [{
       id: 'i1', descripcion: 'Salario empresa', monto: 1_850_000,
       frecuencia: 'Mensual', categoria: null, activo: true,
@@ -2453,11 +2462,10 @@ describe('renderListaIngresos() / renderListaIngresosPuntuales() - un solo estad
     renderListaIngresos();
     renderListaIngresosPuntuales();
     expect(document.querySelectorAll('#lista-ingresos .empty-state')).toHaveLength(0);
-    expect(document.querySelector('#lista-ingresos-puntuales .empty-state__desc').textContent)
-      .toContain('Sin ingresos puntuales registrados');
+    expect(document.getElementById('lista-ingresos-puntuales').innerHTML).toBe('');
   });
 
-  it('con puntuales y ningún fijo, el vacío de fijos vuelve a su copy propio', () => {
+  it('con puntuales y ningún fijo, el vacío de fijos dice que falta el fijo', () => {
     S.ingresosPuntuales = [{
       id: 'p1', descripcion: 'Venta de la bici', monto: 450_000,
       fecha: '2026-07-05', categoria: null, cuentaId: null,
@@ -2465,22 +2473,20 @@ describe('renderListaIngresos() / renderListaIngresosPuntuales() - un solo estad
     renderListaIngresos();
     renderListaIngresosPuntuales();
     expect(document.querySelector('#lista-ingresos .empty-state__desc').textContent)
-      .toContain('Sin fuentes de ingreso registradas');
+      .toContain('Sin ingresos fijos registrados');
   });
 
-  // MC-DIS.9 C6: el 📅 pasa a i-agenda del sprite (MC.18b lo hizo en la
-  // tarjeta de cuenta y dejó intacta esta lista, en la misma pantalla).
-  it('el hint del día de pago usa el ícono del sprite, no el emoji', () => {
+  // ADR 135 D2: el día de pago va en la línea; ya no hay segunda línea con
+  // el calendario (MC-DIS.9 C6 la había pasado del emoji al sprite).
+  it('el día de pago va en la línea, sin segunda línea ni emoji', () => {
     S.ingresos = [{
       id: 'i1', descripcion: 'Salario empresa', monto: 1_850_000,
       frecuencia: 'Mensual', diaPago: 30, categoria: null, activo: true,
     }];
     renderListaIngresos();
-    const hint = document.querySelector('#lista-ingresos .list-item__hint');
-    expect(hint.classList.contains('list-item__hint--icono')).toBe(true);
-    expect(hint.innerHTML).toContain('#i-agenda');
-    expect(hint.textContent).not.toContain('📅');
-    expect(hint.textContent.trim()).toBe('día 30 de cada período');
+    expect(document.querySelector('#lista-ingresos .list-item__hint')).toBeNull();
+    expect(document.querySelector('#lista-ingresos .list-item__subtitle').textContent).toMatch(/^Cada mes, el día 30/);
+    expect(document.getElementById('lista-ingresos').textContent).not.toContain('📅');
   });
 });
 
@@ -2915,21 +2921,27 @@ describe('renderDistribucionIngreso() - tarjeta sin accesos cruzados (punto 11)'
     expect(elCard().innerHTML).not.toContain('href="#presupuesto"');
   });
 
-  it('el aviso "recibiste tu ingreso" es un bloque aparte de la tarjeta (punto 12)', () => {
+  it('"Reparte tus $X" y, debajo, "Recibiste tu ingreso el ..." en el lugar de la invitación (ADR 135 D3)', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 6, 10));
     S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true, diaPago: 5, fechaCreacion: '2026-01-01T00:00:00.000Z' }];
     renderDistribucionIngreso();
 
-    const aviso = elCard().querySelector('.distribuir-aviso');
-    expect(aviso).not.toBeNull();
+    expect(elCard().querySelector('h2.distribuir-card__title').textContent).toBe('Reparte tus $3.000.000');
+    const aviso = elCard().querySelector('.distribuir-card__sub.distribuir-aviso');
     expect(aviso.textContent).toContain('Recibiste tu ingreso el');
-    // El aviso no vive dentro de .distribuir-card: son dos bloques separados.
-    expect(elCard().querySelector('.distribuir-card .distribuir-aviso')).toBeNull();
-    // La tarjeta mantiene su invitación genérica, no la duplica.
-    expect(elCard().querySelector('.distribuir-card__sub').textContent)
-      .toBe('Reparte tu ingreso entre necesidades, estilo de vida y ahorro.');
     vi.useRealTimers();
+  });
+
+  it('cada grupo dice su parte frente a lo recomendado, con la rayita en su lugar (ADR 135 D3)', () => {
+    renderDistribucionIngreso();
+    const filas = [...elCard().querySelectorAll('.distribuir-card__item')];
+    expect(filas).toHaveLength(3);
+    expect(filas[0].querySelector('.distribuir-card__pct').textContent).toMatch(/^Hoy \d+% · lo recomendado es 50%$/);
+    expect(filas[1].querySelector('.distribuir-card__pct').textContent).toMatch(/lo recomendado es 30%$/);
+    expect(filas[2].querySelector('.distribuir-card__pct').textContent).toMatch(/lo recomendado es 20%$/);
+    expect(filas[0].querySelector('.distribuir-card__rayita').style.insetInlineStart).toBe('50%');
+    expect(elCard().querySelector('.distribuir-card__nota').textContent).toMatch(/^La rayita marca lo recomendado\./);
   });
 
   it('sin fecha datable, no hay aviso pero la tarjeta sigue mostrándose', () => {
@@ -2965,6 +2977,9 @@ describe('renderDistribucionIngreso() - tarjeta sin accesos cruzados (punto 11)'
     const alertas = elCard().querySelectorAll('.distribucion-razones__lista > .distribucion-alerta');
     expect(alertas.length).toBeGreaterThan(0);
     expect(elCard().querySelector('.distribucion-razones__titulo').textContent).toBe('Por qué esta propuesta');
+    // ADR 135 D3: plegadas al pie; la primera también va en la nota.
+    expect(elCard().querySelector('details.distribucion-razones')).not.toBeNull();
+    expect(elCard().querySelector('.distribuir-card__nota').textContent).toContain(alertas[0].textContent);
     alertas.forEach(a => {
       expect(a.innerHTML).not.toContain('#i-alert');
       expect(a.textContent).not.toContain('⚠');
@@ -4933,10 +4948,9 @@ describe('renderBotonTransferir()', () => {
     renderBotonTransferir();
     const boton = document.querySelector('[data-action="abrir-transferencia"]');
     expect(boton).not.toBeNull();
-    // ADR 080 D2: conserva su etiqueta y gana la marca de atajo, porque el
-    // verbo es un movimiento y su casa canónica es la teja de Registrar.
-    expect(boton.textContent).toContain('Transferir entre cuentas');
-    expect(boton.querySelector('.chip')?.textContent.trim()).toBe('Atajo');
+    // ADR 135 D1: el verbo completo y nada más, sin la marca de atajo.
+    expect(boton.textContent.trim()).toBe('Transferir entre cuentas');
+    expect(boton.querySelector('.chip')).toBeNull();
   });
 
   // MC-DIS.9 C3 (regla R21): era btn-ghost btn-sm sin ícono, el control más

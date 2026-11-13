@@ -246,13 +246,14 @@ export function renderDistribucionIngreso() {
 
   el.innerHTML = _renderTarjetaDistribuir(datos);
 
-  // Ancho de los 3 segmentos de la barra como propiedad JS tras el innerHTML
+  // El relleno de cada barra y su rayita como propiedad JS tras el innerHTML
   // (cero style="" en el HTML generado, regla del proyecto, mismo patrón que
   // la barra de composición del hero, MC.18a).
-  const { necesidades, estiloVida, ahorro } = datos.dist.split;
-  const pcts = [necesidades.pct, estiloVida.pct, ahorro.pct];
-  el.querySelectorAll('.distribuir-card__seg').forEach((seg, i) => {
-    seg.style.width = `${pcts[i]}%`;
+  el.querySelectorAll('.distribuir-card__relleno').forEach((r) => {
+    r.style.width = `${r.dataset.pct}%`;
+  });
+  el.querySelectorAll('.distribuir-card__rayita').forEach((r) => {
+    r.style.insetInlineStart = `${r.dataset.pct}%`;
   });
 }
 
@@ -939,9 +940,10 @@ function _renderTarjetaDistribuir({ dist, estado, hayDestinos, distribuir }) {
 
   // MC-DIS.9 C10 (regla R24): sin `role="status"`. El aviso es informativo y
   // estable, no la respuesta a una acción, y la tarjeta se repinta en cada
-  // `state:change` de la sección.
-  const avisoHtml = est === 'listo'
-    ? `<p class="distribuir-aviso">${estado.esHoy ? 'Hoy recibes tu ingreso.' : `Recibiste tu ingreso el ${fechaLegible(estado.periodoISO)}.`}</p>`
+  // `state:change` de la sección. ADR 135 D3: va dentro de la tarjeta, bajo
+  // el título, en el lugar de la invitación genérica.
+  const avisoTxt = est === 'listo'
+    ? (estado.esHoy ? 'Hoy recibes tu ingreso.' : `Recibiste tu ingreso el ${fechaLegible(estado.periodoISO)}.`)
     : '';
 
   // MC-DIS.9 C6: ✓ y 💸 pasan a i-check-circle e i-saldo del sprite (el emoji
@@ -959,46 +961,48 @@ function _renderTarjetaDistribuir({ dist, estado, hayDestinos, distribuir }) {
         : '';
 
   // ADR 107 D4: estas líneas explican la propuesta, no avisan de nada (R41).
-  // Eran tres cajas ámbar con ícono de alerta; ahora una lista bajo su título.
+  // ADR 135 D3: la primera va al pie, junto a qué marca la rayita; todas,
+  // plegadas bajo "Por qué esta propuesta", al final de la tarjeta.
   const alertasHtml = alertas.length > 0 ? `
-      <div class="distribucion-razones">
-        <p class="distribucion-razones__titulo">Por qué esta propuesta</p>
+      <details class="distribucion-razones">
+        <summary class="distribucion-razones__titulo">Por qué esta propuesta</summary>
         <ul class="distribucion-razones__lista">
           ${alertas.map(a => `<li class="distribucion-alerta">${_esc(a)}</li>`).join('')}
         </ul>
-      </div>` : '';
+      </details>` : '';
 
-  const filaLeyenda = (tono, s) => `
-      <div class="distribuir-card__item">
-        <span class="distribuir-card__dot dist-color-${tono}" aria-hidden="true"></span>
-        <span class="distribuir-card__label">${_esc(s.label)}</span>
-        <span class="distribuir-card__pct">${s.pct}%</span>
-        <span class="distribuir-card__monto">${f(Math.round(montoCobro * s.pct / 100))}</span>
-      </div>`;
+  // ADR 135 D3: cada grupo en una fila con su monto, su parte frente a lo
+  // recomendado (la referencia de los expertos, la misma del asistente) y una
+  // barra con una rayita en lo recomendado.
+  const filaGrupo = (s, recomendado) => `
+      <li class="distribuir-card__item">
+        <span class="distribuir-card__linea">
+          <span class="distribuir-card__label">${_esc(s.label)}</span>
+          <span class="distribuir-card__monto">${f(Math.round(montoCobro * s.pct / 100))}</span>
+        </span>
+        <span class="distribuir-card__pct">Hoy ${s.pct}% · lo recomendado es ${recomendado}%</span>
+        <span class="distribuir-card__barra" aria-hidden="true"><span class="distribuir-card__relleno" data-pct="${Math.min(100, Math.max(0, s.pct))}"></span><span class="distribuir-card__rayita" data-pct="${recomendado}"></span></span>
+      </li>`;
+  const recomendado = Object.fromEntries(_REFERENCIA_EXPERTOS.map(r => [r.clave, r.pct]));
+  const notaHtml = `<p class="distribuir-card__nota">La rayita marca lo recomendado.${alertas[0] ? ` ${_esc(alertas[0])}` : ''}</p>`;
 
   return `
-    <div class="section__sub-header"><h2 class="section__subtitle">Distribuir mi ingreso</h2></div>
-    ${avisoHtml}
     <div class="distribuir-card">
       <div class="distribuir-card__top">
         ${htmlTinoSol('pensando', { tamano: 60, clase: 'distribuir-card__tino' })}
         <div class="distribuir-card__body">
-          <p class="distribuir-card__title">¿Cómo distribuir ${f(montoCobro)}?</p>
-          <p class="distribuir-card__sub">Reparte tu ingreso entre necesidades, estilo de vida y ahorro.</p>
+          <h2 class="distribuir-card__title">Reparte tus ${f(montoCobro)}</h2>
+          <p class="distribuir-card__sub${avisoTxt ? ' distribuir-aviso' : ''}">${avisoTxt || 'Entre necesidades, estilo de vida y ahorro.'}</p>
         </div>
       </div>
-      <div class="distribuir-card__barra" aria-hidden="true">
-        <div class="distribuir-card__seg dist-color-necesidades"></div>
-        <div class="distribuir-card__seg dist-color-estilo-vida"></div>
-        <div class="distribuir-card__seg dist-color-ahorro"></div>
-      </div>
-      <div class="distribuir-card__leyenda">
-        ${filaLeyenda('necesidades', necesidades)}
-        ${filaLeyenda('estilo-vida', estiloVida)}
-        ${filaLeyenda('ahorro', ahorro)}
-      </div>
-      ${alertasHtml}
+      <ul class="distribuir-card__leyenda">
+        ${filaGrupo(necesidades, recomendado.necesidades)}
+        ${filaGrupo(estiloVida, recomendado.estiloVida)}
+        ${filaGrupo(ahorro, recomendado.ahorro)}
+      </ul>
+      ${notaHtml}
       ${pie}
+      ${alertasHtml}
     </div>`;
 }
 

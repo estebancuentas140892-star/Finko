@@ -176,6 +176,8 @@ describe('Mis cuentas trae la hoja (ADR 109)', () => {
     const d = datosDeFila(fila);
     expect([d.titulo, d.subtitulo, d.monto]).toEqual(['Bancolombia', 'Ahorros', '$3.412.800']);
     expect(d.notas).toEqual(['Cuota $15.900 · día 5', '4x1000']);
+    // ADR 135 D1: el "aplica 4x1000" de la línea es solo de la fila.
+    expect(fila.querySelector('.cuenta-card__tipo').textContent).toBe('Ahorros · aplica 4x1000');
     expect(d.acciones.map(a => [a.accion, textoAccion(a.etiqueta)])).toEqual([
       ['cuenta-ver-movimientos', 'Ver sus movimientos'],
       ['editar-cuenta', 'Editar cuenta'],
@@ -210,11 +212,12 @@ describe('Mis cuentas trae la hoja (ADR 109)', () => {
     expect(d.acciones.map(a => [a.accion, textoAccion(a.etiqueta), a.id])).toEqual([['tc-ver-en-por-pagar', 'Ver en Por pagar', 'tc1']]);
   });
 
-  it('una fuente fija: el día de pago va como nota', () => {
+  it('una fuente fija: cuándo llega va en la línea, sin nota aparte (ADR 135 D2)', () => {
     renderListaIngresos();
     const d = datosDeFila(document.querySelector('#lista-ingresos .list-item'));
     expect([d.titulo, d.monto]).toEqual(['Salario', '$4.200.000']);
-    expect(d.notas).toEqual(['día 30 de cada período']);
+    expect(d.subtitulo).toMatch(/^Cada mes, el día 30/);
+    expect(d.notas).toEqual([]);
     expect(d.acciones.map(a => textoAccion(a.etiqueta))).toEqual(['Editar fuente de ingreso', 'Eliminar fuente']);
   });
 

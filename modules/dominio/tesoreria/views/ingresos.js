@@ -15,7 +15,7 @@ import { icon, tejaCategoria } from '../../../infra/icons.js';
 import { renderSelectorCuenta } from '../../../infra/cuenta-helper.js';
 import { SALDO_MASCARA_CUENTA } from '../../../infra/render.js';
 import { FRECUENCIAS, CATEGORIAS_INGRESO, CATEGORIA_INGRESO_ICONO } from '../../../core/constants.js';
-import { FRECUENCIAS_CON_DIA, calcularSalarioMinimo, detectarNudgeProximoIngreso } from '../logic/ingresos.js';
+import { FRECUENCIAS_CON_DIA, calcularSalarioMinimo, detectarNudgeProximoIngreso, cuandoLlegaIngreso } from '../logic/ingresos.js';
 
 // ── INGRESOS RECURRENTES ─────────────────────────────────────────
 
@@ -57,15 +57,20 @@ export function renderAltasIngreso() {
   const el = document.getElementById('ingresos-altas');
   if (!el) return;
 
+  // ADR 135 D2: sin ningún ingreso, el vacío lleva sus dos salidas adentro.
+  // Con alguno, "Ingreso fijo" y "De una vez" lado a lado y la diferencia en
+  // una nota: el nombre de cada botón dice qué clase de ingreso crea.
+  if (_sinNingunIngreso()) { el.innerHTML = ''; return; }
   el.innerHTML = `
     <button class="btn btn-sm btn-secondary ingresos-altas__fuente" data-action="nuevo-ingreso"
-            aria-label="Nueva fuente fija de ingreso">
-      ${icon('plus')} Fuente fija
+            aria-label="Agregar un ingreso fijo">
+      ${icon('plus')} Ingreso fijo
     </button>
-    <button class="btn btn-sm btn-secondary" data-action="nuevo-ingreso-puntual"
-            aria-label="Registrar un ingreso: atajo a la hoja Registrar">
-      ${icon('saldo')} Ingreso <span class="chip">Atajo</span>
-    </button>`;
+    <button class="btn btn-sm btn-secondary ingresos-altas__fuente" data-action="nuevo-ingreso-puntual"
+            aria-label="Registrar un ingreso de una vez">
+      ${icon('plus')} De una vez
+    </button>
+    <p class="ingresos-altas__nota">Fijo: tu salario o un arriendo que recibes. De una vez: una venta, un trabajo suelto o un regalo.</p>`;
 }
 
 /** Ingresos fijos que la lista muestra (los dados de baja no cuentan). */
@@ -97,12 +102,22 @@ function _sinNingunIngreso() {
  * de las dos con datos, cada lista se comporta como antes.
  */
 function _renderEmptyStateIngresos() {
-  const desc = _sinNingunIngreso()
-    ? 'Aún no registras de dónde entra tu dinero. Agrega un ingreso fijo para tu salario o arriendo, o uno puntual para una venta o un trabajo suelto.'
-    : 'Sin fuentes de ingreso registradas. Agrega tu salario u otras fuentes para ver tu tasa de ahorro.';
+  // ADR 135 D2: sin ningún ingreso, una tarjeta con para qué sirve y sus dos
+  // salidas: el fijo como primario y el de una vez como enlace.
+  if (_sinNingunIngreso()) {
+    return `
+    <div class="ingresos-vacio">
+      <p class="ingresos-vacio__titulo">Aún no registras de dónde entra tu dinero</p>
+      <p class="ingresos-vacio__desc">Con tu ingreso, Finko te dice cuánto te queda en el mes y te ayuda a repartirlo.</p>
+      <button type="button" class="btn btn-primary ingresos-vacio__fijo" data-action="nuevo-ingreso">
+        ${icon('plus')} Agregar mi ingreso fijo
+      </button>
+      <button type="button" class="btn btn-ghost ingresos-vacio__puntual" data-action="nuevo-ingreso-puntual">¿Te entró dinero una sola vez? Regístralo</button>
+    </div>`;
+  }
   return `
     <div class="empty-state empty-state--small">
-      <p class="empty-state__desc">${desc}</p>
+      <p class="empty-state__desc">Sin ingresos fijos registrados. Agrega tu salario u otro ingreso que se repita para ver tu tasa de ahorro.</p>
     </div>`;
 }
 
@@ -113,33 +128,19 @@ function _renderEmptyStateIngresos() {
  */
 function _renderIngresoItem(ing, oculto) {
   const desc = _esc(ing.descripcion);
-  const frec = _esc(ing.frecuencia);
-  // MC.15 (20): con "Salario mínimo" de categoría, es común que el usuario
-  // escriba la misma frase en la descripción ("Salario mínimo" + "Quincenal
-  // · Salario mínimo" se ve duplicado). Solo se omite cuando de verdad
-  // coinciden (a diferencia de cuentas, aquí sí pueden divergir: la
-  // descripción es texto libre real).
-  const mismoTexto = (ing.descripcion ?? '').trim().toLowerCase() === (ing.categoria ?? '').trim().toLowerCase();
-  const catLabel = (ing.categoria && !mismoTexto) ? ` · ${_esc(ing.categoria)}` : '';
-
-  let diaHint = '';
-  if (ing.diaPago) {
-    const diaStr = ing.frecuencia === 'Quincenal'
-      ? `días ${ing.diaPago} y ${ing.diaPago + 15} de cada mes`
-      : `día ${ing.diaPago} de cada período`;
-    // MC-DIS.9 C6: el 📅 pasa al símbolo i-agenda del sprite. MC.18b sacó los
-    // emoji de la tarjeta de cuenta ("chips en vez de emoji") y dejó intacta
-    // esta lista, tres bloques más abajo en la misma pantalla.
-    diaHint = `<p class="list-item__hint list-item__hint--icono">${icon('agenda', 'icon icon--sm')}<span>${_esc(diaStr)}</span></p>`;
-  }
+  // ADR 135 D2: la línea dice cuándo llega ("Cada mes, el día 1 · el próximo
+  // llega en 18 días"). Absorbe la frecuencia, el día de pago (antes una
+  // segunda línea con el calendario) y el aviso del próximo cobro, que en el
+  // teléfono se calla. La categoría ya la dice la teja.
+  const cuando = _esc(cuandoLlegaIngreso(ing));
 
   // ID.3: teja de categoría de ingreso como ícono de la fila (verde del
   // dominio ingresos); sin categoría, la moneda genérica i-saldo.
   const teja = tejaCategoria(CATEGORIA_INGRESO_ICONO[ing.categoria] ?? 'i-saldo', 'ingresos');
   const montoTxt = oculto ? SALDO_MASCARA_CUENTA : f(ing.monto);
 
-  // ADR 109 (MV2.9): en móvil la fila abre la hoja de detalle; el día de pago
-  // (el hint) viaja ahí como nota. En escritorio el botón no se ve.
+  // ADR 109 (MV2.9): en móvil la fila abre la hoja de detalle, que copia la
+  // línea de cuándo llega. En escritorio el botón no se ve.
   return `
     <article class="list-item list-item--detalle" data-id="${_esc(ing.id)}">
       <button class="list-item__detalle" type="button" data-action="fila-detalle"
@@ -147,11 +148,10 @@ function _renderIngresoItem(ing, oculto) {
       <div class="list-item__icon" aria-hidden="true">${teja}</div>
       <div class="list-item__body">
         <p class="list-item__title">${desc}</p>
-        <p class="list-item__subtitle">${frec}${catLabel}</p>
-        ${diaHint}
+        <p class="list-item__subtitle">${cuando}</p>
       </div>
       <div class="list-item__meta">
-        <p class="list-item__value">${montoTxt}</p>
+        <p class="list-item__value ingreso-fijo__monto">${montoTxt}</p>
       </div>
       <div class="list-item__action">
         <button class="btn btn-ghost btn-icon"
@@ -340,15 +340,11 @@ export function renderListaIngresosPuntuales() {
 
 /**
  * MC-DIS.9 C5: cuando las dos listas están vacías el mensaje único lo emite
- * `renderListaIngresos()` y esta no emite nada. Con ingresos fijos registrados
- * conserva su propio vacío, que ahí sí informa de algo que falta.
+ * `renderListaIngresos()`. ADR 135 D2: con ingresos fijos tampoco emite nada;
+ * "De una vez" y su nota, al pie, ya dicen qué falta y cómo agregarlo.
  */
 function _renderEmptyStateIngresosPuntuales() {
-  if (_sinNingunIngreso()) return '';
-  return `
-    <div class="empty-state empty-state--small">
-      <p class="empty-state__desc">Sin ingresos puntuales registrados. Cuando recibas dinero por un trabajo, una venta o un regalo, regístralo aquí y se suma a tu cuenta.</p>
-    </div>`;
+  return '';
 }
 
 /** Nombre legible de la cuenta destino, o '' si ya no existe. */
