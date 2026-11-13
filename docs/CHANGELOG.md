@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### docs(board): la poda del tablero del 13 de noviembre · 2026-11-13
+
+[ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md). Tablero: [`BOARD.md`](BOARD.md) y [`board/transversal.md`](board/transversal.md). Solo documentación, sin bump del SW.
+
+- **Criterio de Esteban**: quedarse con lo que aporta y no seguir cambiando la app. Cada tarjeta se revisó contra el código y los ADR: de 47 entradas quedan 17, y el índice va en orden de valor.
+- **MOV.1 cierra con 17 de 25 fichas**: las ocho restantes auditaban pantallas que MV2.30 volvió a dibujar. Sus pendientes ya estaban hechos (la fila de altas, el plan de salida, el vencido en rojo), pasan a HF o se descartan; la tabla vive en el ADR.
+- **HF, de 24 rebanadas a seis tarjetas**, ninguna atada a la ficha 18. HF.0f y HF.0g salen: el banco de perfiles no está en esta copia ni en el stash, y sus tres errores ya tienen pruebas propias.
+- **Se unen**: REV.5 en REV.3b, HF.1a en HF.1b, HF.1g en HF.1d, HF.3f y HF.3g en HF.3e, PERF.13 en MV2.28, HF.4 y HF.5a en NUBE.4.
+- **Se recortan**: REV.2b sin "6 frecuentes y N más" (el ADR 042 D2 lo había rechazado) y REV.3a a solo "Descargar el mes para Excel".
+- **Salen**: REV.4 (el ojo sigue único), DEC.1 (la razón ya está en Distribuir y en Por pagar), DV.2d (Tino explica los vacíos), PERF.14, PERF.15, DOC.5 y APR.3f.
+- **BUG-039 entra**: la renta suma la proyección del salario más cada crédito automático del mismo salario (`estimarIngresosBrutosAnio()`).
+
 ### fix(movil): REV.1, la revisión del 13 de noviembre, tanda 1 · 2026-11-13
 
 [ADR 137](DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md). Fichas: [`contexto/deudas.md`](contexto/deudas.md), [`contexto/movimientos.md`](contexto/movimientos.md), [`contexto/limites.md`](contexto/limites.md), [`contexto/sistema-visual.md`](contexto/sistema-visual.md). SW v694. Lo demás de la revisión quedó en las tarjetas REV.2a a REV.4.

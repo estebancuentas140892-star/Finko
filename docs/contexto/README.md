@@ -32,7 +32,8 @@ La ficha no duplica esos documentos: enlaza a ellos. Su valor es el detalle quir
    git log --oneline <commit>.. -- <archivos listados en el bloque>
    ```
    Si hubo commits que tocaron esos archivos, actualizar solo lo que cambió antes de usar la ficha.
-3. Si el bloque no existe: hacer el análisis profundo una sola vez (archivos, funciones, estilos, recursos gráficos, dependencias, relaciones, riesgos) y escribir el bloque **antes** de codificar. Este análisis inicial admite un modelo de mayor capacidad si la complejidad lo justifica; las iteraciones posteriores, con ficha vigente, usan la capacidad más eficiente que mantenga la calidad (ver la skill `elegir-modelo`).
+3. Si la ficha manda un pendiente "a la ficha 18" de MOV.1: esa ficha no se va a escribir (MOV.1 cerró con 17 de 25). El destino de cada pendiente está en la tabla del [ADR 138](../DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md) D1.
+4. Si el bloque no existe: hacer el análisis profundo una sola vez (archivos, funciones, estilos, recursos gráficos, dependencias, relaciones, riesgos) y escribir el bloque **antes** de codificar. Este análisis inicial admite un modelo de mayor capacidad si la complejidad lo justifica; las iteraciones posteriores, con ficha vigente, usan la capacidad más eficiente que mantenga la calidad (ver la skill `elegir-modelo`).
 
 ### 2.2 Al cerrar una tarea
 

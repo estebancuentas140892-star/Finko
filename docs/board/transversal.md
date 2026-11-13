@@ -4,19 +4,21 @@
 
 > Satélite de [`BOARD.md`](../BOARD.md) (afecta varias secciones). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
 
+> **Poda del 2026-11-13 ([ADR 138](../DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md)).** Quedó lo que corrige una cifra que el usuario lee o algo que le estorba. Lo que salió (REV.4, REV.5 absorbida, DEC.1, DV.2d, PERF.13 a PERF.15, 18 rebanadas de HF, APR.3f) y por qué vive en ese ADR, no acá: **una idea que coincida con una de ellas se contrasta primero con el 138.**
+
 ---
 
 ## Transversal (afecta varias secciones)
 
-> **Auditoría de rendimiento 2026-07 completa** (PERF.0 a PERF.4 cerradas, ver [`scripts/perf/BASELINE.md`](../../scripts/perf/BASELINE.md)). Los dos hallazgos que siguen mandando: `renderSmart()` ya evita el recálculo cruzado, y guardar cuesta ~5 ms debounced, así que la persistencia NO se reescribió ([ADR 030](../DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md); sus disparadores del D4 quedaron acotados a dos, T1 y T2, por el [ADR 068](../DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md)). **Disciplina obligatoria de toda tarjeta PERF: correr `pnpm perf` antes y después y comparar contra BASELINE.md**, y `pnpm perf:fluidez` si la tarjeta toca CSS, modales, navegación o animaciones (PERF.11, 2026-10-28: lo que happy-dom no ve). PERF.13 a PERF.15 son lo que PERF.11 y PERF.12 midieron y no corrigieron; sus cifras son de ese instrumento (CPU 4x, 3.000 gastos).
+> **Auditoría de rendimiento 2026-07 completa** (PERF.0 a PERF.4 cerradas, ver [`scripts/perf/BASELINE.md`](../../scripts/perf/BASELINE.md)). Los dos hallazgos que siguen mandando: `renderSmart()` ya evita el recálculo cruzado, y guardar cuesta ~5 ms debounced, así que la persistencia NO se reescribió ([ADR 030](../DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md); sus disparadores del D4 quedaron acotados a dos, T1 y T2, por el [ADR 068](../DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md)). **Disciplina obligatoria de toda tarjeta PERF: correr `pnpm perf` antes y después y comparar contra BASELINE.md**, y `pnpm perf:fluidez` si la tarjeta toca CSS, modales, navegación o animaciones (PERF.11, 2026-10-28: lo que happy-dom no ve). Lo que PERF.11 y PERF.12 midieron y no corrigieron (PERF.13 a PERF.15) salió con el ADR 138 D4: el arranque quedó como umbral de MV2.28, y lo demás ya estaba bajo lo que se nota. Sus cifras son de ese instrumento (CPU 4x, 3.000 gastos).
 
 > **Iniciativa "INT.1 - Interfaz de escritorio", completa** (ADR 059, aceptado 2026-08-02). Fuente única del chrome de escritorio, 8 decisiones en 8 rebanadas. Móvil no cambia. **Las ocho rebanadas cerradas** (INT.1a a INT.1h); detalle e historia en el CHANGELOG y [`contexto/escritorio.md`](../contexto/escritorio.md). **INT.1g cerró el 2026-08-12 sin tarjeta propia** (dentro de una sesión sobre MT.6a) y quedó sin documentar hasta la auditoría del 2026-08-17: su único caso real es el compromiso mensual de Fondo, en [`ahorro.md`](../contexto/ahorro.md). **Coordinar con AH.7a** (mismo marcado de nav, otra plataforma).
 
 > **Diferida del [ADR 068](../DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md): la migración a IndexedDB (antes PERF.5) ya no es tarjeta.** Su decisión, su alcance fijado (blob-en-IDB, no store por colección) y sus **dos** disparadores verificables viven en ese ADR, que reemplaza los tres del ADR 030 D4. **No re-auditar el código ante un pedido de ejecución:** la verificación está hecha y fechada allí; basta mirar si T1 o T2 cambiaron de estado. Al reabrirse nace como tarjeta nueva. Lo que salió a la luz con ese ADR ya cerró completo: **PERF.9** (2026-08-14, columna de caracteres en el harness) y **PERF.10** (2026-08-14, dos rebanadas). T1 ya tiene instrumento: detalle en [`scripts/perf/BASELINE.md`](../../scripts/perf/BASELINE.md).
 
-> **Iniciativa Dirección Visual premium** ([ADR 033](../DECISIONS/033-direccion-visual-premium.md)). DV.2a/b/c cerradas. DV.2d: infraestructura, 8 plantillas y cableado de `emptyArt()` listos (2026-08-14), falta solo el arte final de Esteban.
+> **Iniciativa Dirección Visual premium** ([ADR 033](../DECISIONS/033-direccion-visual-premium.md)), cerrada. DV.2d salió con el ADR 138 D4: Tino explica los vacíos. Los ocho dibujos de muestra de `assets/svg/ilustraciones/` y la rama `il-` de `emptyArt()` se pueden borrar como limpieza de paso.
 
-> **Iniciativa REV, la revisión de Esteban del 2026-11-13** (14 puntos en Registro, Inicio, Deudas, Movimientos y General). La tanda 1 cerró con el [ADR 137](../DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md). "Pagar desde varias cuentas" no genera tarjeta: ya existe y se deja así (registra lo que pasa en el banco, un débito por cuenta).
+> **Iniciativa REV, la revisión de Esteban del 2026-11-13** (14 puntos en Registro, Inicio, Deudas, Movimientos y General). La tanda 1 cerró con el [ADR 137](../DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md); el ADR 138 D3 recortó lo que quedaba. "Pagar desde varias cuentas" no genera tarjeta: ya existe y se deja así (registra lo que pasa en el banco, un débito por cuenta). **El ojo sigue siendo uno solo** (REV.4 descartada, ADR 106 D3).
 
 #### REV.2a - Por pagar dice cuánto te falta pagar este mes, con los fijos
 - Prioridad  : alta
@@ -28,14 +30,14 @@
 - Depende de : nada
 - Aceptación : con solo un arriendo, la tarjeta dice cuánto falta pagar este mes y coincide con la suma de la lista
 
-#### REV.2b - El formulario de gasto fijo, más corto y con el campo a la vista
+#### REV.2b - El formulario de gasto fijo empieza por el monto y el campo queda a la vista
 - Prioridad  : alta
-- Estado     : requiere ADR (ajusta el ADR 042 D5)
+- Estado     : requiere ADR (ajusta el ADR 042 D5; recortada por el ADR 138 D3)
 - Área       : design
-- Objetivo   : hoy abre con 15 categorías antes del monto. Orden: "¿Cuánto pagas?", "¿Qué es?" (6 frecuentes y "N más"), "¿Cada cuánto?" (Mensual, Quincenal, Anual, Otra), "¿Qué día?", y nota y débito automático en "Más opciones". En todos los formularios, el campo enfocado sube a la vista cuando se abre el teclado (`ui/teclado.js`)
+- Objetivo   : hoy abre con 15 categorías antes del monto. Orden: "¿Cuánto pagas?", "¿Qué es?" (todas las categorías, ADR 042 D2), "¿Cada cuánto?" (Mensual, Quincenal, Anual, Otra), "¿Qué día?", y nota y débito automático en "Más opciones". En todos los formularios, el campo enfocado sube a la vista cuando se abre el teclado (`ui/teclado.js`). **No va** "6 frecuentes y N más". El ADR anota además el descarte del formulario corto (MV2.17): esta tarjeta es su única copia, los HTML se borraron el 2026-11-05
 - Archivos   : `modules/dominio/compromisos/views/formularios.js`, `compromisos/index.js`, `modules/ui/teclado.js`
 - Depende de : nada
-- Aceptación : a 390 px, el formulario cabe sin bajar y el campo que se escribe no queda tapado por el teclado
+- Aceptación : a 390 px, el monto es lo primero que se ve y el campo que se escribe no queda tapado por el teclado
 
 #### REV.2c - Al transferir, la consignación ante la DIAN en una frase
 - Prioridad  : media
@@ -46,107 +48,36 @@
 - Depende de : nada
 - Aceptación : la nota dice las dos frases al transferir a una cuenta y solo la primera al pasar a efectivo
 
-#### REV.3a - Extracto del mes
+#### REV.3a - Descargar el mes para Excel
 - Prioridad  : media
-- Estado     : requiere ADR propio
-- Área       : ambos
-- Objetivo   : una hoja "Extracto de noviembre": entró, salió y la diferencia; en qué se fue por categoría; por cuenta; el detalle por día. "Guardar PDF" (`window.print()` con estilos de impresión) y "Descargar para Excel" (CSV del mes con `;`, BOM y columnas Entrada y Salida). Sin saldo inicial y final por cuenta: los aportes a metas no guardan fecha (ficha 18 de MOV.1). Se abre desde el mes de Movimientos y desde Ajustes, donde reemplaza "Exportar gastos a Excel"
-- Riesgo     : sin librerías nuevas (`docs/SECURITY.md`); un .xlsx de verdad queda para después si el CSV no alcanza
-- Archivos   : `modules/dominio/movimientos/logic.js` (`extractoDelMes()`), su vista, `modules/infra/csv.js`, estilos de impresión
-- Depende de : nada. Rebanadas: (1) la función pura con pruebas, (2) la hoja y sus entradas, (3) el CSV y la impresión
-- Aceptación : el extracto de un mes cuadra con la lista de Movimientos de ese mes y el CSV abre en columnas en Excel
+- Estado     : pendiente (reducida por el ADR 138 D3: sin hoja de extracto ni PDF)
+- Área       : code
+- Objetivo   : "Descargar el mes para Excel" desde el mes de Movimientos: CSV con `;`, BOM y columnas Fecha, Descripción, Categoría, Cuenta, Entrada y Salida, con todo lo que la lista de ese mes muestra. Reemplaza "Exportar gastos a Excel" de Ajustes, que hoy lleva solo gastos
+- Riesgo     : sin librerías nuevas (`docs/SECURITY.md`); el CSV de gastos que alimenta "Importar gastos" no puede romperse: si el formato nuevo no sirve para reimportar, Ajustes conserva el viejo
+- Archivos   : `modules/dominio/movimientos/logic.js`, su vista, `modules/infra/csv.js`, `modules/dominio/config/index.js` y `view.js`
+- Depende de : nada
+- Aceptación : el CSV de un mes suma lo mismo que la lista de Movimientos de ese mes y abre en columnas en Excel
 
-#### REV.3b - Instalar en iPhone sin perder lo registrado
+#### REV.3b - La app instalada tiene tus datos y la versión publicada
 - Prioridad  : alta
-- Estado     : pendiente (confirmar primero en un iPhone real)
+- Estado     : pendiente (absorbe REV.5, ADR 138 D3): primero una prueba en un iPhone real y los datos del teléfono de Esteban
 - Área       : ambos
-- Objetivo   : en iOS la app instalada no comparte `localStorage` con Safari: quien se registra en Safari e instala abre una app vacía. Ofrecer instalar antes del registro en iOS, o avisarlo en el modal. Además: el iPad no se detecta (`_esIOS()`), los pasos suponen Safari con Compartir abajo y no se detecta el navegador de otra app
-- Archivos   : `modules/ui/install-prompt.js`, `index.html` (`#modal-install-ios`), `modules/ui/onboarding.js`
-- Depende de : una prueba en un iPhone real
-- Aceptación : en un iPhone, quien instala Finko encuentra sus datos (o fue avisado antes de registrarse)
+- Objetivo   : (1) en iOS la app instalada no comparte `localStorage` con Safari: quien se registra en Safari e instala abre una app vacía. Ofrecer instalar antes del registro en iOS, o avisarlo en el modal; además el iPad no se detecta (`_esIOS()`), los pasos suponen Safari con Compartir abajo y no se detecta el navegador de otra app. (2) El 2026-11-13 producción servía la v693 completa y el aviso "Hay una versión nueva" se pinta bien, pero el teléfono de Esteban seguía en la vieja. Faltan: el número de Acerca de Finko (`1.0.0 (NNN)`), el mensaje de "Buscar actualización", iPhone o Android y desde qué dirección está instalada (si no es finko-brown.vercel.app, no recibe lo que se publica)
+- Archivos   : `modules/ui/install-prompt.js`, `index.html` (`#modal-install-ios`), `modules/ui/onboarding.js`, `modules/infra/sw-register.js`, `modules/infra/actualizacion.js`, `modules/ui/sw-aviso.js`, `service-worker.js`
+- Depende de : la prueba en el iPhone y esos datos
+- Aceptación : en un iPhone, quien instala Finko encuentra sus datos (o fue avisado antes de registrarse), y en el teléfono de Esteban Acerca de Finko muestra la versión publicada
 
-#### REV.4 - Un ojo por sección
+#### MV2.28 - Medir lo publicado: fluidez y Lighthouse en producción
 - Prioridad  : media
-- Estado     : requiere decisión de Esteban (revierte el [ADR 106](../DECISIONS/106-un-encabezado-tres-niveles.md) D3 y la regla R20)
-- Área       : ambos
-- Objetivo   : el ojo nunca fue por sección: siempre fue un solo interruptor (`S.config.ocultarSaldo`); antes algunas secciones no lo respetaban. Recomendación: mantenerlo único, porque con uno por sección los montos quedan a la vista al cambiar de pantalla. Si se decide por sección: un indicador por sección con migración, y decidir qué hacen el aviso al registrar, Atención hoy y las notificaciones
-- Archivos   : `modules/ui/bloque-gastos.js` y los 39 archivos que leen el indicador
-- Depende de : la decisión
-- Aceptación : la que fije el ADR nuevo, si lo hay
-
-#### REV.5 - El teléfono de Esteban no recibe la versión nueva
-- Prioridad  : alta
-- Estado     : esperando datos de Esteban
+- Estado     : pendiente. (b) y (d) hechas; (c) pasó a REV.2b; absorbe PERF.13 como umbral (ADR 138 D4)
 - Área       : code
-- Objetivo   : el 2026-11-13 producción servía la v693 completa (226 archivos, unos 5 MB, sin duplicados ni redirecciones) y el aviso "Hay una versión nueva" se pinta bien, pero su teléfono seguía en la versión vieja. Faltan: el número de Ajustes, Acerca de Finko (`1.0.0 (NNN)`), el mensaje de "Buscar actualización", si es iPhone o Android y desde qué dirección está instalada (si no es finko-brown.vercel.app, no recibe lo que se publica). Puede estar ligado a REV.3b
-- Archivos   : `modules/infra/sw-register.js`, `modules/infra/actualizacion.js`, `modules/ui/sw-aviso.js`, `service-worker.js`
-- Depende de : esos datos
-- Aceptación : en su teléfono, Acerca de Finko muestra la versión publicada
-
-#### MV2.28 - Lo que queda del canvas móvil (los 13 HTML de `Diseño Finko/`)
-- Prioridad  : media
-- Estado     : en proceso (2026-11-04): (b) y (d) hechas, quedan (c) y (a). Las 12 propuestas de la segunda auditoría ya están ([ADR 122](../DECISIONS/122-lo-que-faltaba-del-canvas-segunda-pasada.md) y [123](../DECISIONS/123-la-hoja-de-formulario-completa.md)) y publicadas en `main` (v658)
-- Área       : ambos
-- Objetivo   : (a) **medir** lo que pide el tablero 6: `pnpm perf:fluidez` contra las cifras de PERF.11 y PERF.12 en `scripts/perf/BASELINE.md` (el INP de abrir una hoja y de cambiar de sección no empeora) y `pnpm lighthouse` en 100; (b) **hecha** (ADR 108 D4, SW v658): Esteban dijo que sí y Ajustes lleva "Perfil, Familia, nube y datos" debajo del nombre, como en el prototipo; (c) **anotar** el descarte del formulario corto (MV2.17), que el tablero 12 descartó sin ADR ("descartado en parte": el ADR 042 D2 rechazó esconder categorías y la primera entrega lo respetó; lo demás no tiene un problema medido después del pie fijo; los 13 HTML se borraron el 2026-11-05 y esta es su única copia); (d) **hecha** (adenda al ADR 123, SW v657): bajo 481 px, el `.modal__footer` que va fuera de `.modal__body` (confirmar, "¿Desde qué cuenta?" de `infra/cuenta-helper.js`, novedades, contraseña del respaldo) ya suma `env(safe-area-inset-bottom)`. **No va**: "N gastos · $X en {mes}" sobre la lista filtrada de Gastos (descartado en el ADR 122)
-- Riesgo     : (a) una hoja más lenta tras la agarradera o los pies fijos; ya está en producción, así que si empeoró se corrige de inmediato
-- Secciones  : todas las hojas, "Más", Ajustes
-- Archivos   : `scripts/perf/fluidez.js`, `scripts/lighthouse.js`, `scripts/perf/BASELINE.md`, `modules/ui/menu-mas.js`, `tests/unit/menu-mas.test.js`, `styles/responsive.css` (bloque "ADR 123 D1"), `docs/DECISIONS/`
-- Depende de : nada. La rama se publicó en `main` el 2026-11-04 (v658) a pedido de Esteban, antes de medir: (a) mide lo publicado
-- Aceptación : (a) cifras antes y después en BASELINE.md; (b) la decisión escrita y, si es sí, la línea con su prueba en `menu-mas.test.js`; (c) el descarte en un ADR; (d) E2E a 390 con `env(safe-area-inset-bottom)` simulado, o medición del padding del pie
-- Modelo     : (a) y (c) capacidad estándar, esfuerzo bajo
-
-#### DEC.1 - Finko explica el porqué dentro de cada decisión
-- Prioridad  : media
-- Estado     : pendiente
-- Área       : ambos
-- Objetivo   : el conocimiento útil vuelve donde se decide, sin preguntas ni lecciones ([ADR 101](../DECISIONS/101-finko-del-adulto-decide-no-ensena.md) D5). Primeros lugares: repartir el ingreso, qué deuda pagar primero y un límite pasado; cada uno con su diseño y su ADR
-- Riesgo     : volver a parecer un curso; la regla es una frase con el dato del usuario, nunca un cuestionario
-- Secciones  : Mis cuentas (distribuir), Por pagar (estrategia), Límites
-- Archivos   : `dominio/tesoreria/views/distribucion.js`, `dominio/compromisos/views/estrategia.js`, `dominio/presupuesto/view.js`
+- Objetivo   : `pnpm perf:fluidez` contra las cifras de PERF.11 y PERF.12 en `scripts/perf/BASELINE.md` (el INP de abrir una hoja y de cambiar de sección no empeora; el arranque, hoy 616 ms bloqueados con CPU 4x, baja de 400) y `pnpm lighthouse` en 100. Se abre un arreglo solo para lo que pase de su umbral. **No va**: "N gastos · $X en {mes}" sobre la lista filtrada de Gastos (descartado en el ADR 122)
+- Riesgo     : una hoja más lenta tras la agarradera o los pies fijos; ya está en producción, así que si empeoró se corrige de inmediato
+- Secciones  : todas las hojas, arranque
+- Archivos   : `scripts/perf/fluidez.js`, `scripts/lighthouse.js`, `scripts/perf/BASELINE.md`
 - Depende de : nada
-- Aceptación : en cada lugar, la razón se lee sin salir de la decisión y con las cifras del usuario
-
-#### PERF.13 - Arranque: 616 ms de hilo bloqueado
-- Prioridad  : baja
-- Estado     : pendiente
-- Área       : code
-- Objetivo   : el arranque bloquea 616 ms (cuadro más largo 547) y lo domina el layout del contenido (~410 ms), no el JS (~50 ms sin freno). PERF.11 descartó con medición los modales cerrados y la fuente Inter; falta saber qué se maqueta (ver si el `<use>` del sprite o las secciones pintadas al arrancar)
-- Riesgo     : -
-- Secciones  : arranque
-- Archivos   : `ui/bootstrap.js`, `index.html`, `styles/`
-- Depende de : nada
-- Aceptación : `pnpm perf:fluidez`, bloqueo del arranque bajo 400 ms
-
-#### PERF.14 - Pasar de una hoja a otra sin soltar el fondo
-- Prioridad  : baja
-- Estado     : pendiente
-- Área       : code
-- Objetivo   : Registrar → formulario de gasto (INP 136 tras PERF.12) cierra la hoja, quita `inert` y devuelve el foco antes de abrir el formulario: un recálculo de todo el fondo visible en el camino del toque. Pasar el trap y el `inert` de una hoja a la siguiente lo evita; hoy `a11y.js` guarda un solo trap (`_trapEl`)
-- Riesgo     : foco que vuelve a un elemento oculto al cerrar el segundo modal
-- Secciones  : hoja Registrar y sus destinos, `ir-a-crear-cuenta`
-- Archivos   : `ui/modales.js`, `infra/a11y.js`, `ui/actions.js`
-- Depende de : nada
-- Aceptación : "form Gasto" bajo 120 ms de INP; test del foco de vuelta al botón Registrar
-
-#### PERF.15 - Anotar solo lo que cambió antes de sincronizar
-- Prioridad  : baja
-- Estado     : pendiente
-- Área       : code
-- Objetivo   : la pasada que sigue a un guardado sigue huellando el estado entero: 27 ms con 3.000 gastos y 91 con 10.000 en Node (unas 4 veces más en un teléfono). `state:change` ya dice qué colección cambió
-- Riesgo     : un cambio que no emite su sección no llega a la nube
-- Secciones  : nube (solo con cuenta)
-- Archivos   : `dominio/config/nube.js`, `infra/nube-sync.js`
-- Depende de : nada
-- Aceptación : test de que un cambio en una colección solo huella esa colección; pasada tras guardar bajo 10 ms a 3.000 gastos
-
-#### DV.2d - Ilustraciones como clase nueva de asset (D3 del ADR 033)
-- Prioridad  : media
-- Área       : design
-- Estado     : **solo falta el arte final de Esteban (2026-08-14).** `scripts/sync-sprite.py` extendido a `assets/svg/ilustraciones/` (prefijo `il-`, viewBox 120x120, color solo por rol). **P4 del ADR 033 resuelto**: el lote son las 8 superficies que hoy usan `emptyArt()` geométrico (Ahorro, Apartados, Cuentas, Deudas, Inversión, Metas, Personales, Movimientos), no las "6 más visitadas" de la pregunta original del ADR (Inicio, Gastos y Calendario no tienen empty state propio: agregárselo es UX nueva, tarjeta aparte si se quiere). Las 8 tienen plantilla draft (`data-placeholder="true"`, mismo principio ADR 026 de DV.2b). **Cableado del consumidor cerrado**: `emptyArt()` (`modules/infra/icons.js`) ya busca el symbol `il-<id>` y cae a la geometría mientras el placeholder siga fuera del sprite; ningún consumidor necesita tocarse pieza por pieza. `pnpm test` y `python scripts/sync-sprite.py` verificados sin regresión.
-- Objetivo   : único trabajo restante es que Esteban dibuje el arte final en Illustrator y sobrescriba cada placeholder (assets/svg/README.md 2.2); al correr el sync, `emptyArt()` la usa sola. Presupuesto de sprite ≤ ~25 KB fuente por lote; Lighthouse 100 como gate.
-- Secciones  : Transversal (sprite, empty states de las 8 vistas del lote)
-- Depende de : arte final de Esteban en Illustrator (único bloqueo restante, fuera del alcance de Code)
-- Modelo     : sin código pendiente; cola de diseño de Esteban
+- Aceptación : cifras antes y después en BASELINE.md
+- Modelo     : capacidad estándar, esfuerzo bajo
 
 > **IV.4 - Iconografía dirigida post-color, cerrada 2026-08-15.** Metáfora de movimiento en los dos iconos que el triaje del 2026-07-08 señaló como ilegibles: Avalancha (`i-mountain`) cambia el punto estático del pico por un trazo desnudo de dos golpes cortos + la chispa al final del recorrido (cae por la ladera, no se queda arriba); Bola de nieve (`i-snowball`) suma un arco de rastro (trazo desnudo, mismo patrón que la puerta de `i-home`) detrás del círculo chico. Se descartó el boceto de 3 chispas en cascada del 2026-08-14 por violar la regla 3 del ADR 023 (un solo punto de valor); la solución final conserva un único `circle` de chispa. Esteban delegó la decisión final ("toma tú las decisiones") en vez de esperar el dibujo en Illustrator: geometría verificada por bbox (sin composición visual real en esta sesión, mismo límite que el 2026-08-14). `assets/svg/iconos/simbolos/mountain.svg` + `snowball.svg`, sprite de `index.html`.
 
@@ -166,131 +97,78 @@
 
 ## Iniciativa HF - Un hecho financiero se informa una sola vez
 
-> Brief, triaje, choques con ADR vigentes, riesgos y preguntas P1 a P7 (**resueltas el 2026-10-16**): **[ADR 091](../DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)**. Fuente única de la iniciativa. Orden por dependencia técnica. **Convive con MOV.1 solo la Fase 0**: la Fase 1 espera a la ficha 18 y HF.3a a HF.3c al cierre de MOV.1. Todos los datos de prueba son inventados.
+> Brief, triaje, riesgos y preguntas P1 a P8 (resueltas): **[ADR 091](../DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)**. El [ADR 138](../DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md) D2 dejó el plan en seis tarjetas: **ninguna espera ya a la ficha 18 ni al cierre de MOV.1**. La Fase 0 cerró (HF.0a a HF.0j; la f y la g salieron sin código). Lo que se conectaba con el banco (HF.4 y HF.5a) vive en NUBE.4. Todos los datos de prueba son inventados.
 
-### Fase 0 - Base confiable (sin ADR, puede empezar ya)
-
-#### HF.0f - Perfiles de regresión: constructores e invariantes
+#### HF.1b - Nada se cuenta dos veces (absorbe HF.1a)
 - Prioridad  : alta
-- Estado     : en curso (2026-10-18). Banco construido y verificado en el árbol de trabajo, **sin commitear**: `tests/fixtures/{rutas,perfiles,invariantes}.js` y `tests/integration/perfiles{,-anual,-reversas}.test.js`, 165 de 173 verdes desde BUG-037. Las ocho rojas reproducían BUG-035, BUG-036 y BUG-038, corregidos el 2026-11-04 (5c97b98) con sus propias pruebas. **El banco no está en esta copia del repositorio**: falta recuperarlo de donde se construyó, volver a correrlo y commitearlo
-- Área       : code (solo tests)
-- Objetivo   : `tests/fixtures/perfiles.js` con tres perfiles deterministas (ligero: 1 cuenta; común: 2-3 cuentas, tarjeta, ahorro, transferencias; intensivo: 4-5 cuentas, metas, reservas, fondo, inversiones, préstamos, categorías, un año) construidos por las rutas reales de escritura, y una suite de invariantes: I1 a I5, R-HF1, R-HF2, reversas exactas, guardar y cargar, Movimientos sin duplicados, peso serializado
-- Riesgo     : congelar como esperado un doble conteo vigente; por eso va después de HF.0d
-- Secciones  : todas (sin runtime)
-- Archivos   : `tests/fixtures/perfiles.js`, `tests/integration/perfiles.test.js`
+- Estado     : requiere ADR (acota el ADR 051 D3 y el 002, dirección fijada por P2: el pago de una obligación conserva su registro y deja de sumar como consumo)
+- Área       : code
+- Objetivo   : la naturaleza del movimiento (consumo, pago de obligación, transferencia propia, aporte a bolsa, inversión, préstamo y su cobro, ingreso, devolución, ajuste) derivada de los registros actuales, sin schema. Con ella, el pago de la tarjeta y los abonos a deuda dejan de sumar como gasto en Análisis, Límites, tasa de ahorro y renta, y el Fondo deja de salir como egreso en Movimientos (riesgos 3, 4 y 6 del 091)
+- Riesgo     : una cifra de Inicio o de Límites que hoy coincide con otra deja de coincidir; el ADR nombra cada total y lo que suma
+- Archivos   : `analisis/logic.js`, `presupuesto/logic.js`, `ahorro/index.js`, `movimientos/logic.js`, `infra/pago-compromiso.js`
 - Depende de : nada
-- Aceptación : la suite corre en `pnpm test` y falla si se reintroduce cualquiera de los bugs de doble conteo de la Fase 0
-- Modelo     : Alta capacidad, Extra
+- Aceptación : tabla de clasificación con una prueba por tipo; comprar 100 con tarjeta y pagar la tarjeta 100 da gasto del mes 100 en las cuatro vistas (la prueba de invariante que iba a dar HF.0f)
+- Modelo     : Alta capacidad, Alto
 
-#### HF.0g - Perfiles de regresión en E2E: navegación y destinos
+#### HF.1d - Todo cambio de saldo deja registro (absorbe HF.1g)
 - Prioridad  : media
-- Estado     : pendiente
-- Área       : code (solo tests)
-- Objetivo   : sembrar cada perfil con `tests/e2e/helpers/estado.js`, recorrer las quince secciones, seguir los enlaces prefiltrados y comparar cifras clave contra la lógica, sin errores de consola
-- Riesgo     : tiempo de la compuerta 5 (hoy ~3,5 min); medirlo
-- Secciones  : todas
-- Archivos   : `tests/e2e/perfiles.test.js`, `tests/e2e/helpers/estado.js`
-- Depende de : HF.0f
-- Aceptación : `pnpm run test:e2e` verde con la suite nueva
-- Modelo     : Equilibrado, Alto
+- Estado     : requiere ADR (acota el ADR 012)
+- Área       : code
+- Objetivo   : Distribuir crea el ingreso y las transferencias que hoy aplica sin registro; el desembolso de un préstamo, el crédito D.14 y el ajuste manual de saldo dejan su fila; en Me deben cada abono lleva id y borrarlo revierte la cuenta exacta. Retira la guarda de HF.0h y HF.0i (`config.cobrosDistribuidos`): el `IngresoPuntual` de Distribuir la reemplaza solo para lo confirmado como recibido, descartado por ocurrencia y no por mes, o la segunda quincena distribuida deja de salir
+- Riesgo     : un saldo igualado a mano tras un aporte se cuenta dos veces (riesgo 10 del 091): es lo que esta tarjeta cierra
+- Archivos   : `tesoreria/acciones/distribucion.js`, `tesoreria/logic/cuentas.js`, `personales/`, `compromisos/index.js`
+- Depende de : HF.1b (su ADR clasifica las filas nuevas)
+- Aceptación : R-HF2 (saldo final igual a apertura más registros) con una prueba por ruta; borrar un abono de Me deben revierte la cuenta exacta
 
-### Fase 1 - Modelo (no iniciar antes de cerrar la ficha 18 de MOV.1)
+#### HF.1c - La fecha de cada aporte a metas y reservas
+- Prioridad  : baja
+- Estado     : requiere ADR
+- Área       : code
+- Objetivo   : `aportes[]` con id, fecha, monto y cuenta en metas y reservas (schema nuevo, sin backfill: lo previo queda como saldo de apertura, I4). Movimientos gana sus fuentes 6 y 7, y "Ya lo usé" registra el gasto (V5)
+- Archivos   : `core/state.js`, `core/storage.js`, `metas/`, `apartados/`, `movimientos/logic.js`
+- Depende de : HF.1b
+- Aceptación : migración idempotente con prueba; un aporte a una meta sale en Movimientos en su fecha
 
-#### HF.1a - ADR: naturaleza del movimiento
-- Estado : requiere ADR (dirección fijada por P2: el pago de obligación conserva su registro y deja de sumar como consumo). **Objetivo**: separar flujo de caja de significado (consumo, pago de obligación, transferencia propia, aporte a bolsa, inversión, préstamo y su cobro, ingreso, devolución, retiro de efectivo, ajuste, apunte de seguimiento), derivado de los registros actuales sin schema. Acota ADR 002 y 051 D3. **Dominios**: movimientos, analisis, presupuesto, ahorro. **Depende de**: ficha 18 (redacción final de R90). **Aceptación**: tabla de clasificación con un test por tipo.
+#### HF.2a - La cuenta habitual de cada pago
+- Prioridad  : baja
+- Estado     : pendiente, sin ADR
+- Área       : code
+- Objetivo   : "Marcar pagado" y el abono preseleccionan la última cuenta usada para ese compromiso, derivada de sus gastos (R-HF5, sin campo nuevo)
+- Archivos   : `infra/cuenta-helper.js`, `compromisos/index.js`, `agenda/index.js`
+- Depende de : nada
+- Aceptación : prueba de la derivación; el segundo pago de un compromiso abre con la cuenta del primero
 
-#### HF.1b - Aplicar la naturaleza: nada se cuenta dos veces
-- Estado : pendiente. **Objetivo**: tarjeta y abonos dejan de sumar como consumo en Análisis, Límites, tasa de ahorro y renta; el Fondo deja de salir como egreso en Movimientos. **Archivos**: `analisis/logic.js`, `presupuesto/logic.js`, `ahorro/index.js`, `movimientos/logic.js`. **Depende de**: HF.1a. **Aceptación**: perfil común, comprar 100 y pagar la tarjeta 100 da gasto del mes 100.
+#### HF.2b - El débito automático sin saldo se avisa antes de vencer
+- Prioridad  : baja
+- Estado     : pendiente (PA.1c ampliada, nota al ADR 052)
+- Área       : code
+- Objetivo   : aviso `debito-sin-saldo` para débitos próximos, no solo vencidos; estados derivados de solo lectura (esperado, sin saldo, registrado)
+- Archivos   : `infra/avisos.js`, `agenda/logic.js`
+- Depende de : nada
+- Aceptación : prueba del motor: un débito a tres días con la cuenta por debajo del monto genera el aviso
 
-#### HF.1c - Historial fechado de aportes en Metas y Reservas
-- Estado : requiere ADR, dueño ficha 18. **Objetivo**: `aportes[]` con id, fecha, monto y cuenta (schema v45: la v44 la tomó HF.0c; sin backfill: lo previo queda como saldo de apertura, I4); Movimientos gana sus fuentes 6 y 7; "Ya lo usé" registra el gasto (V5). **Archivos**: `core/state.js`, `core/storage.js`, `metas/`, `apartados/`, `movimientos/logic.js`. **Depende de**: ficha 18, HF.1a. **Aceptación**: migración idempotente con test y perfil intensivo.
-
-#### HF.1d - Todo cambio de saldo deja registro
-- Estado : requiere ADR (acota ADR 012). **Objetivo**: Distribuir crea el ingreso y las transferencias que hoy aplica sin registro; desembolso de préstamo, crédito D.14 y ajuste manual dejan su fila. Retira la guarda de HF.0h y HF.0i (`config.cobrosDistribuidos`): el `IngresoPuntual` de Distribuir la reemplaza solo para lo que el usuario confirmó como recibido, y la hoja tiene que descartarlo por ocurrencia, no por mes, o la segunda quincena distribuida deja de salir. **Archivos**: `tesoreria/acciones/distribucion.js`, `personales/index.js`, `compromisos/index.js`, `tesoreria/logic/cuentas.js`. **Depende de**: HF.1a. **Aceptación**: invariante R-HF2 verde en los tres perfiles.
-
-#### HF.1e - Inversión: valor actual y cierre de posición
-- Estado : requiere ADR, dueño ficha 18 (ADR 086). **Objetivo**: valor actual con fecha, liquidar devuelve a una cuenta elegida con su rendimiento, patrimonio usa el valor actual si existe (I4 para lo previo). **Archivos**: `inversiones/`, `infra/portafolio.js`, `analisis/logic.js`. **Depende de**: ficha 18. **Aceptación**: liquidar no cambia el patrimonio salvo el rendimiento.
-
-#### HF.1g - Me deben: abono con id, borrar un abono, cobro de lo que era solo seguimiento
-- Estado : pendiente. **Archivos**: `personales/`. **Depende de**: HF.1a. **Aceptación**: borrar un abono revierte la cuenta exacta.
-
-### Fase 2 - Captura sin repetir (Finko Local)
-
-#### HF.2a - Cuenta habitual derivada
-- Estado : pendiente, sin ADR. **Objetivo**: "Marcar pagado" y el abono preseleccionan la última cuenta usada para ese compromiso, derivada de sus gastos (R-HF5, sin campo nuevo). **Archivos**: `infra/cuenta-helper.js`, `compromisos/index.js`, `agenda/index.js`. **Depende de**: nada.
-
-#### HF.2b - Débito automático en riesgo
-- Estado : pendiente (PA.1c ampliada, nota al ADR 052). **Objetivo**: aviso `debito-sin-saldo` para débitos próximos, no solo vencidos; estados derivados de solo lectura (esperado, sin saldo, registrado). **Archivos**: `infra/avisos.js`, `agenda/logic.js`. **Depende de**: nada.
-
-#### HF.2c - Gasto recurrente sugiere un pago fijo
-- Estado : requiere ADR corto. **Objetivo**: misma marca o categoría, monto parecido y cadencia mensual en tres meses o más, sin `compromisoId`: Por pagar ofrece convertirlo. **Archivos**: `gastos/logic.js`, `infra/marcas.js`, `compromisos/views/`. **Depende de**: HF.1a.
-
-#### HF.2d - Completitud de datos sin juicio
-- Estado : requiere ADR. **Objetivo**: distinguir "no gastaste" de "no tenemos datos" (vigencia por cuenta y por periodo), sin puntaje. **Depende de**: HF.1d, ficha 18 (R88).
-
-### Fase 3 - Calendario planificador y avisos (Finko Local)
-
-#### HF.3a - ADR: Calendario planificador (Hoy, Próximos, Mes)
-- Estado : requiere ADR (acota ADR 081 D2; P5 fijó que vuelven solo "Marcar pagado" y "Registrar abono"). **Objetivo**: tres vistas, prioridad derivada (urgente, importante, próximo, informativo) mapeada a las severidades del ADR 066, acciones directas solo por `pago-compromiso`. **Depende de**: cierre de MOV.1 (K5 en ficha 18).
-
-#### HF.3b - "Antes de tu próximo ingreso" (lógica pura)
-- Estado : pendiente (dentro de HF.3a). **Objetivo**: disponible (sin cupo de tarjeta, I5) menos pagos en ventana menos aportes planeados; reusa `obligacionesYAportesDelCobro().enVentana`. **Archivos**: `infra/vencimientos.js`, `agenda/logic.js`. **Depende de**: HF.3a.
-
-#### HF.3c - Vista Próximos con su bloque de suficiencia
-- Estado : pendiente. **Archivos**: `agenda/view.js`, `styles/components/config.css`. **Depende de**: HF.3a, HF.3b. **Aceptación**: evidencia visual a 375px y escritorio.
-
-#### HF.3d - Posponer un aviso sin mover la fecha real
-- Estado : pendiente (nota al ADR 066). **Objetivo**: `config.avisosPospuestos` (schema), filtro en el motor. **Depende de**: nada.
-
-#### HF.3e - Badge de la PWA y del nav
-- Estado : pendiente (nota al ADR 066; absorbe el diferido del ADR 040). **Objetivo**: `navigator.setAppBadge(n)` con los avisos `urgente` y `alta` tras preferencias, al abrir, en `state:change` y `visibilitychange`; se limpia en cero. **Depende de**: nada.
-
-#### HF.3f - Rutas profundas, shortcuts y notificación que abre el elemento
-- Estado : requiere ADR corto (convención de ruta). **Objetivo**: el router acepta un destino de elemento; `manifest.json` gana shortcuts (Hoy, Por pagar, Registrar gasto, Registrar ingreso); el SW gana `notificationclick`. **Archivos**: `infra/router.js`, `manifest.json`, `service-worker.js`, `infra/notificaciones.js`.
-
-#### HF.3g - Privacidad de la notificación del sistema
-- Estado : requiere ADR corto (acota 063 y 066). **Objetivo**: con candado activo, la notificación no nombra ni muestra montos; respeta `ocultarSaldo`; niveles privado, normal, detallado. **Archivos**: `infra/notificaciones.js`, `ui/bootstrap.js`, `config/`. **Depende de**: nada (elegible en cualquier momento).
-
-### Fase 4 - Movimientos externos (Finko Local, modelo antes que fuentes)
-
-#### HF.4a - ADR: movimiento externo y conciliación
-- Estado : requiere ADR. **Objetivo**: entidad (id, fuente, producto, id externo, fecha, monto, dirección, descripción original, estado bancario, estado de conciliación pendiente, vinculado o ignorado, sugerencia, confianza, vínculo), clave de deduplicación, R-HF4, retención y compactación, presupuesto de cupo (T1). **Depende de**: HF.1a, HF.1d, HF.0f.
-
-#### HF.4b - Colección y motor de conciliación puro
-- Estado : pendiente. **Objetivo**: migración, motor sin UI, columna nueva en el harness de perf. **Depende de**: HF.4a.
-
-#### HF.4c - Bandeja "Finko necesita tu ayuda"
-- Estado : pendiente. **Objetivo**: confirmar aplica las consecuencias una vez por las rutas de dominio existentes. No mezcla con el Calendario. **Depende de**: HF.4b.
-
-#### HF.4d - Fuente local: extracto CSV del banco
-- Estado : pendiente. **Objetivo**: importador nuevo hacia movimientos externos, separado del de gastos; comparte `infra/csv.js`. **Depende de**: HF.4b.
-
-#### HF.4e - Aprender categoría por descripción
-- Estado : requiere ADR (R-HF6). **Objetivo**: reglas confirmadas, sugerencia, y tras confirmaciones repetidas la oferta de automatizar, revocable en Ajustes. **Depende de**: HF.4b.
-
-#### HF.4f - Fuente local: compartir texto
-- Estado : requiere ADR. **Objetivo**: Web Share Target hacia movimiento externo pendiente. El PDF quedó diferido por P7 y vuelve con su propio ADR si se retoma. **Depende de**: HF.4d.
-
-### Fase 5 - Finko Conectado
-
-#### HF.5a - ADR: Finko Conectado
-- Estado : no iniciar (P6: hasta cerrar la Fase 4 con uso real). **Objetivo**: decidir Open Finance, correo y push. Exige derogar ADN 3, ADR 043 D1 y D4 y ADR 066 D1. **Depende de**: Fase 4 cerrada con uso real.
+#### HF.3e - Lo que la app instalada muestra fuera de ella (absorbe HF.3f y HF.3g)
+- Prioridad  : media
+- Estado     : requiere ADR corto (convención de ruta; acota los ADR 063 y 066; absorbe el diferido del ADR 040)
+- Área       : ambos
+- Objetivo   : (1) con el candado activo, la notificación del sistema no nombra ni muestra montos, y respeta `ocultarSaldo` (hoy `verificarYNotificar()` corre fuera del candado y muestra el monto); (2) `navigator.setAppBadge(n)` con los avisos `urgente` y `alta`, al abrir, en `state:change` y `visibilitychange`, y se limpia en cero; (3) la notificación abre su elemento (`notificationclick`) y `manifest.json` gana accesos directos (Hoy, Por pagar, Registrar gasto, Registrar ingreso). Hoy no existe ninguna de las tres
+- Riesgo     : el router no acepta parámetros: la ruta de un elemento es convención nueva
+- Archivos   : `infra/notificaciones.js`, `ui/bootstrap.js`, `infra/router.js`, `manifest.json`, `service-worker.js`
+- Depende de : nada. Rebanadas en ese orden: la (1) es la de más valor
+- Aceptación : prueba de que con candado la notificación no lleva montos; en Android instalado, el número del ícono coincide con los avisos que piden atención
 
 ---
 
 ## Iniciativa APR - Aprende y aplícalo
 
-> Handoff de Claude Design "Finko · Aprende y aplícalo" (35 tableros, octubre 2026), triado el 2026-10-24. Fuente única: **[ADR 092](../DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md)**. **Desde el [ADR 101](../DECISIONS/101-finko-del-adulto-decide-no-ensena.md) la capa es solo del niño**: el adulto no ve Aprende ni Tu progreso (capa de aprendizaje del adulto) y **[ADR 093](../DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md)** (perfiles, modo niño y tutor), los dos en Propuesta. **La Fase 1 (APR.1a a APR.1d) cerró el 2026-10-24** sin esperar a las fichas 17 y 19 de MOV.1 (decisión en chat, resolución al final del ADR 092); cada rebanada se sube a `main` al cerrar. Las catorce dudas del handoff quedaron resueltas por defecto con la propuesta del diseño; **P1 del ADR 093** ("Olvidé mi PIN" con niños) se resolvió el 2026-10-24 con su recomendación. La GU.1 (guía por navegación) sigue dueña de banners y hints: esta iniciativa no los toca. DV.2d conserva su lote; el catálogo de ilustraciones del niño entra por su mismo pipeline.
+> Handoff de Claude Design "Finko · Aprende y aplícalo" (35 tableros, octubre 2026), triado el 2026-10-24. Fuente única: **[ADR 092](../DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md)**. **Desde el [ADR 101](../DECISIONS/101-finko-del-adulto-decide-no-ensena.md) la capa es solo del niño**: el adulto no ve Aprende ni Tu progreso (capa de aprendizaje del adulto) y **[ADR 093](../DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md)** (perfiles, modo niño y tutor), los dos en Propuesta. **La Fase 1 (APR.1a a APR.1d) cerró el 2026-10-24** sin esperar a las fichas 17 y 19 de MOV.1 (decisión en chat, resolución al final del ADR 092); cada rebanada se sube a `main` al cerrar. Las catorce dudas del handoff quedaron resueltas por defecto con la propuesta del diseño; **P1 del ADR 093** ("Olvidé mi PIN" con niños) se resolvió el 2026-10-24 con su recomendación. La GU.1 (guía por navegación) sigue dueña de banners y hints: esta iniciativa no los toca. El catálogo de ilustraciones del niño entra por `scripts/sync-sprite.py` (el pipeline que dejó DV.2d).
 
-### Fase 3 - Perfiles, niño y tutor (ADR 093)
-
-#### APR.3f - Contenido del niño
-- Estado : escritas las ocho unidades y la ubicación desde los 10 años (2026-10-25), con un test que mide la voz del ADR 093 D6. **Falta la revisión pedagógica registrada**, que es la aceptación. **Modelo**: Equilibrado, Alto.
+> **APR.3f salió del tablero (ADR 138 D4).** Las ocho unidades y la ubicación desde los 10 años están escritas (2026-10-25) y una prueba mide la voz del ADR 093 D6. Lo que faltaba, la revisión pedagógica registrada, es trabajo de una persona, como la del abogado en LEG: cuando exista, sus correcciones entran como tarjeta.
 
 ### Fase 5 - Tino, el guatín ([ADR 094](../DECISIONS/094-tino-el-guatin.md) y [ADR 095](../DECISIONS/095-tino-en-el-sprite.md))
 
 #### APR.5b - La ronda 2 de Tino y los hitos del niño
-- Estado : espera los dibujos de la ronda 2; entran por el conversor que vive junto a los dibujos fuente (095 D4), con el tope de 16 KB por pose. **Objetivo**: sembrar, compartir, reserva y pensando en sus pantallas; hitos del niño (meta cumplida y ruta terminada, con el confeti que ya existe). **Modelo**: Equilibrado, Medio.
+- Estado : pendiente. Los dibujos de la ronda 2 llegaron y el adulto ya los usa ([ADR 129](../DECISIONS/129-tino-ronda-2-en-el-adulto.md)); en el niño entran por el conversor que vive junto a los dibujos fuente (095 D4), con el tope de 16 KB por pose. **Objetivo**: sembrar, compartir, reserva y pensando en sus pantallas; hitos del niño (meta cumplida y ruta terminada, con el confeti que ya existe). **Modelo**: Equilibrado, Medio.
 
 ---
 
@@ -298,6 +176,6 @@
 
 > Decisión, las cuatro razones del ADR 043 revisadas, seguridad y Ley 1581: **[ADR 096](../DECISIONS/096-finko-en-la-nube-con-supabase.md)**, fuente única, con su resolución en implementación. Cuenta opcional, copia local que manda (offline-first intacto). **NUBE.0 a NUBE.2 cerradas el 2026-10-27; NUBE.2b y NUBE.3 el 2026-10-28** (MOV.1 en pausa por decisión en chat): proyecto `finko-prueba` en São Paulo, cuenta por correo solo para invitados, sincronización por registro entre dispositivos, borrar la cuenta completa y el teléfono del niño vinculado con un código del padre; detalle en [`contexto/nube.md`](../contexto/nube.md). **Pendiente del dueño de la cuenta**: SMTP propio en Supabase para que el correo de acceso llegue a los probadores. Plan gratis mientras Finko es de prueba; plan pago antes de abrir cuentas a personas fuera del grupo de prueba.
 
-#### NUBE.4 - Bancos
-- Estado : no iniciar; pide su propio ADR (finanzas abiertas en Colombia).
+#### NUBE.4 - Bancos (absorbe HF.4a a HF.4f y HF.5a)
+- Estado : no iniciar; pide su propio ADR (finanzas abiertas en Colombia). **Absorbe** la Fase 4 del ADR 091 (movimiento externo, conciliación, bandeja, aprender la categoría por descripción, compartir texto) y la Fase 5 (Finko Conectado, que exige derogar el ADN 3, el ADR 043 D1 y D4 y el ADR 066 D1): las tres son traer movimientos del banco (ADR 138 D2). Si se retoma, empieza por importar el extracto CSV del banco (antes HF.4d), que no toca el ADN; el diseño de cada pieza sigue escrito en el 091.
 

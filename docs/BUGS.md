@@ -1,11 +1,11 @@
 # Registro de errores - Finko Claude
 
-> Revisado: 2026-11-04.
+> Revisado: 2026-11-13.
 
 > Errores detectados durante el desarrollo, con toda la información necesaria para resolverlos sin tener que volver a buscar dónde están.
 > Al solucionarse, el error se **elimina** de este archivo y el fix queda documentado en [`CHANGELOG.md`](CHANGELOG.md) con referencia al ID.
 > Solo entra lo **verificado** contra el código (archivo, función, línea). Una sospecha no es un error: es una tarjeta de investigación en [`BOARD.md`](BOARD.md).
-> Última actualización: 2026-10-17 (iniciativa HF, [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)): entran BUG-029 a BUG-031; HF.0a cierra BUG-028, HF.0b cierra BUG-030 y abre BUG-032, HF.0h cierra BUG-032; entran BUG-033 y BUG-034 (Distribuir no identifica qué ocurrencias acredita); HF.0c cierra BUG-029; HF.0i cierra BUG-033 y BUG-034; HF.0d cierra BUG-031; HF.0e cierra BUG-025. 2026-10-18: el banco de perfiles de HF.0f encuentra BUG-035 a BUG-038, cada uno con su caso mínimo en `tests/integration/perfiles-reversas.test.js`; se cierra BUG-037. 2026-11-04: se cierran BUG-035, BUG-036 y BUG-038 (5c97b98). **1 abierto.**
+> Última actualización: 2026-10-17 (iniciativa HF, [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)): entran BUG-029 a BUG-031; HF.0a cierra BUG-028, HF.0b cierra BUG-030 y abre BUG-032, HF.0h cierra BUG-032; entran BUG-033 y BUG-034 (Distribuir no identifica qué ocurrencias acredita); HF.0c cierra BUG-029; HF.0i cierra BUG-033 y BUG-034; HF.0d cierra BUG-031; HF.0e cierra BUG-025. 2026-10-18: el banco de perfiles de HF.0f encuentra BUG-035 a BUG-038, cada uno con su caso mínimo en `tests/integration/perfiles-reversas.test.js`; se cierra BUG-037. 2026-11-04: se cierran BUG-035, BUG-036 y BUG-038 (5c97b98). 2026-11-13: entra BUG-039 (poda del tablero, [ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md)). **2 abiertos.**
 >
 > **Patrón recurrente que conviene vigilar (cerrado 3 veces el 2026-08-01 y 2 el 2026-10-16, BUG-028 y un test de Inversión):** tests con **fechas fijas** o con un día derivado a módulo 28 se ponen rojos según el día en que se corran, casi siempre los primeros días del mes. La regla es derivar las fechas del reloj, y **fijar el reloj** (`vi.setSystemTime`) cuando el test afirma una distancia exacta o necesita un día ya pasado dentro del mes.
 
@@ -30,6 +30,16 @@ Numerar `BUG-001`, `BUG-002`... de forma consecutiva y sin reutilizar números a
 ---
 
 ## Pendientes
+
+### BUG-039 - El monitor de renta suma el salario dos veces cuando hay crédito automático
+- Estado    : pendiente
+- Prioridad : media (infla "Ingresos brutos" en "Estado de tu renta" y puede marcar que superas el tope sin superarlo)
+- Problema  : con un ingreso fijo con crédito automático (PA.1b), Análisis, "Estado de tu renta", suma la proyección anual del ingreso más cada crédito que ese mismo ingreso ya generó en el año. Ejemplo: salario de $3.000.000 con crédito automático desde enero, en noviembre: $36.000.000 proyectados más $33.000.000 de créditos, $69.000.000. No pasa si el usuario escribió sus ingresos brutos a mano en Ajustes (K.4), que mandan
+- Causa     : `estimarIngresosBrutosAnio()` suma `estimarIngresoAnual(ingresos)` y todo `IngresoPuntual` del año, sin excluir los que traen `ingresoId`: esos son ocurrencias del ingreso fijo ya proyectado (`infra/credito-ingreso.js` los crea con ese campo). Riesgo 5 del [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), verificado contra el código el 2026-11-13
+- Archivo   : `modules/dominio/analisis/logic.js`
+- Función   : `estimarIngresosBrutosAnio()`, que usa `calcularEstadoRenta()`
+- Líneas    : 869-885
+- Secciones : Análisis (Estado de tu renta)
 
 ### BUG-027 - ADR 059 no existe en el repositorio pese a estar citado como "aceptado" en 5 documentos vivos
 - Estado    : pendiente
