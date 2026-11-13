@@ -74,6 +74,15 @@
 - Depende de : la decisión
 - Aceptación : la que fije el ADR nuevo, si lo hay
 
+#### REV.5 - El teléfono de Esteban no recibe la versión nueva
+- Prioridad  : alta
+- Estado     : esperando datos de Esteban
+- Área       : code
+- Objetivo   : el 2026-11-13 producción servía la v693 completa (226 archivos, unos 5 MB, sin duplicados ni redirecciones) y el aviso "Hay una versión nueva" se pinta bien, pero su teléfono seguía en la versión vieja. Faltan: el número de Ajustes, Acerca de Finko (`1.0.0 (NNN)`), el mensaje de "Buscar actualización", si es iPhone o Android y desde qué dirección está instalada (si no es finko-brown.vercel.app, no recibe lo que se publica). Puede estar ligado a REV.3b
+- Archivos   : `modules/infra/sw-register.js`, `modules/infra/actualizacion.js`, `modules/ui/sw-aviso.js`, `service-worker.js`
+- Depende de : esos datos
+- Aceptación : en su teléfono, Acerca de Finko muestra la versión publicada
+
 #### MV2.28 - Lo que queda del canvas móvil (los 13 HTML de `Diseño Finko/`)
 - Prioridad  : media
 - Estado     : en proceso (2026-11-04): (b) y (d) hechas, quedan (c) y (a). Las 12 propuestas de la segunda auditoría ya están ([ADR 122](../DECISIONS/122-lo-que-faltaba-del-canvas-segunda-pasada.md) y [123](../DECISIONS/123-la-hoja-de-formulario-completa.md)) y publicadas en `main` (v658)

@@ -76,6 +76,7 @@ Las tarjetas del tablero (la iniciativa HF se lista por fase), para elegir la pr
 | REV.3a | Extracto del mes | Transversal | media | su propio ADR |
 | REV.3b | Instalar en iPhone sin perder lo registrado | Transversal | alta | una prueba en un iPhone real |
 | REV.4 | Un ojo por sección | Transversal | media | decisión de Esteban (revierte el ADR 106 D3) |
+| REV.5 | El teléfono de Esteban no recibe la versión nueva | Transversal | alta | datos de su teléfono |
 | MV2.28 | Lo que queda del canvas móvil: anotar MV2.17 y medir fluidez y Lighthouse en producción ((b) y (d) hechas) | Transversal | media | nada |
 | DEC.1 | Finko explica el porqué dentro de cada decisión ([ADR 101](DECISIONS/101-finko-del-adulto-decide-no-ensena.md) D5) | Transversal | media | nada |
 | DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | cola de diseño de Esteban |
@@ -123,7 +124,7 @@ _(CFG.1 a CFG.6 cerraron completas. CFG.6, la auditoría móvil de Ajustes, cerr
 
 ## Transversal (afecta varias secciones)
 
-REV.2a a REV.4, MV2.28, DV.2d, PERF.13 a PERF.15, HF.0f a HF.5a → [`board/transversal.md`](board/transversal.md) (HF: iniciativa "un hecho financiero se informa una sola vez", [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), P1 a P7 resueltas; APR: iniciativa "Aprende y aplícalo", [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) y [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md), en Propuesta)
+REV.2a a REV.5, MV2.28, DV.2d, PERF.13 a PERF.15, HF.0f a HF.5a → [`board/transversal.md`](board/transversal.md) (HF: iniciativa "un hecho financiero se informa una sola vez", [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), P1 a P7 resueltas; APR: iniciativa "Aprende y aplícalo", [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) y [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md), en Propuesta)
 
 ---
 
