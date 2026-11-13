@@ -218,7 +218,7 @@ function _renderCuentaItem(cuenta, oculto) {
   // escritorio el botón no se ve y la tarjeta sigue como siempre.
   return `
     <article class="cuenta-card list-item--detalle" data-id="${_esc(cuenta.id)}">
-      <button class="list-item__detalle" type="button" data-action="fila-detalle"
+      <button class="list-item__detalle" type="button" data-action="cuenta-detalle" data-id="${_esc(cuenta.id)}"
               aria-label="Ver detalle: ${nombre}, ${saldoTxt}"></button>
       <div class="cuenta-card__top">
         <div class="cuenta-card__icon" aria-hidden="true">${_bankAvatarHtml(cuenta.banco, cuenta.icono)}</div>
@@ -251,6 +251,68 @@ function _renderCuentaItem(cuenta, oculto) {
         </div>
       </div>
     </article>`;
+}
+
+/**
+ * La hoja de una cuenta (ADR 135 D4): la cuenta con su saldo; tipo, 4x1000,
+ * cuota de manejo y el dato para recibir en filas; "Ver sus movimientos" como
+ * fila; "Editar la cuenta" y, aparte, "Eliminar la cuenta". Las acciones pasan
+ * por `registrar-abrir`, que cierra la hoja antes de abrir su formulario o su
+ * confirmación (mismo puente que la hoja de una reserva, ADR 133 D4).
+ *
+ * @param {import('../../../core/state.js').Cuenta} cuenta
+ * @returns {string}
+ */
+export function htmlDetalleCuenta(cuenta) {
+  const oculto = S.config?.ocultarSaldo === true;
+  const id     = _esc(cuenta.id);
+  const banco  = cuenta.banco;
+  const tipo   = cuenta.tipo;
+  const combinado   = banco === tipo ? banco : `${banco} ${tipo}`;
+  const esAutoNombre = (cuenta.nombre ?? '').trim().toLowerCase() === combinado.trim().toLowerCase();
+  const nombre = _esc(esAutoNombre ? banco : cuenta.nombre);
+  const sub    = _esc(esAutoNombre ? _tipoLabel(cuenta) : `${tipo} · ${banco}`);
+  const clase  = bancoClase(banco);
+  const saldo  = oculto ? SALDO_MASCARA_CUENTA : f(cuenta.saldo);
+
+  const cuota = cuenta.cuotaManejo
+    ? `${oculto ? SALDO_MASCARA_CUENTA : f(cuenta.cuotaManejo.monto)}, el día ${_esc(String(cuenta.cuotaManejo.diaCobro))}`
+    : 'No tiene';
+  const recibir = _labelDatosTransferencia(cuenta.datosTransferencia);
+  const datos = [
+    ['Tipo', clase === 'billetera' ? 'Billetera digital' : clase === 'efectivo' ? 'Efectivo' : _esc(tipo || 'Cuenta')],
+    clase !== 'efectivo' && ['4x1000', cuenta.aplica4x1000 ? 'Aplica' : 'No aplica'],
+    clase !== 'efectivo' && ['Cuota de manejo', cuota],
+    recibir && ['Para recibir', recibir],
+  ].filter(Boolean).map(([k, v]) => `
+      <div class="detalle-gasto__dato"><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+
+  const puente = (accion) => `data-action="registrar-abrir" data-target-action="${accion}" data-id="${id}"`;
+  return `
+    <div class="detalle-fila__cabeza" data-cuenta-id="${id}">
+      <div class="detalle-fila__icono" aria-hidden="true">${_bankAvatarHtml(banco, cuenta.icono)}</div>
+      <div class="detalle-fila__textos">
+        <h2 class="detalle-fila__titulo" id="detalle-fila-titulo">${nombre}</h2>
+        <p class="detalle-fila__sub">${sub}</p>
+      </div>
+    </div>
+    <p class="detalle-fila__monto">${saldo}</p>
+    <dl class="detalle-gasto__datos">${datos}
+    </dl>
+    <button type="button" class="detalle-gasto__ver" ${puente('cuenta-ver-movimientos')}>
+      <span class="detalle-gasto__ver-textos">
+        <span class="detalle-gasto__ver-titulo">Ver sus movimientos</span>
+        <span class="detalle-gasto__ver-sub">Se abre Movimientos solo con esta cuenta</span>
+      </span>
+      ${icon('chevron-right')}
+    </button>
+    <div class="detalle-fila__acciones">
+      <button type="button" class="btn btn-secondary detalle-fila__accion" ${puente('editar-cuenta')}>${icon('edit')}Editar la cuenta</button>
+    </div>
+    <div class="detalle-fila__peligro">
+      <button type="button" class="btn btn-ghost detalle-fila__accion detalle-fila__accion--peligro" ${puente('eliminar-cuenta')}>${icon('trash')}Eliminar la cuenta</button>
+      <p class="detalle-gasto__al-borrar">Te pediremos confirmar.</p>
+    </div>`;
 }
 
 /**

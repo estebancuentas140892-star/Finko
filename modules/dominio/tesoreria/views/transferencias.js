@@ -44,21 +44,28 @@ export function renderBotonTransferir() {
     </button>`;
 }
 
-/** Una cuenta del par en el widget de 2 cuentas: avatar + nombre + saldo. */
-function _filaParCuenta(cuenta) {
+/**
+ * Una cuenta del par (ADR 135 D5): logo, nombre y "Tienes $X". La de origen
+ * lleva "Cambiar", que invierte el par.
+ *
+ * @param {import('../../../core/state.js').Cuenta} cuenta
+ * @param {string} [cambiar] HTML del botón "Cambiar", solo en la de origen.
+ */
+function _filaParCuenta(cuenta, cambiar = '') {
   return `
-      <div class="transferir-par__cuenta">
+      <div class="transferir-cuenta">
         ${bancoAvatar(cuenta.banco, cuenta.icono)}
-        <div class="transferir-par__info">
-          <span class="transferir-par__nombre">${_esc(cuenta.nombre)}</span>
-          <span class="transferir-par__saldo">${f(cuenta.saldo ?? 0)}</span>
-        </div>
+        <span class="transferir-cuenta__textos">
+          <span class="transferir-cuenta__nombre">${_esc(cuenta.nombre)}</span>
+          <span class="transferir-cuenta__saldo">Tienes ${f(cuenta.saldo ?? 0)}</span>
+        </span>${cambiar}
       </div>`;
 }
 
 /**
- * Widget "De A a B" para exactamente 2 cuentas activas: par fijo + botón para
- * invertir la dirección (MC.17b). Los inputs hidden llevan los ids que lee
+ * "Sale de" y "Entra a" para exactamente 2 cuentas activas (MC.17b; ADR 135
+ * D5 lo dice con esas palabras): el par fijo, y "Cambiar" en la de origen
+ * invierte la dirección. Los inputs hidden llevan los ids que lee
  * `validarTransferencia`/`normalizarTransferencia`. `acciones/transferencias.js`
  * reemplaza `#transferencia-par-wrap` por una nueva llamada a esta función con
  * origen/destino invertidos, sin re-renderizar el resto del formulario.
@@ -68,17 +75,15 @@ function _filaParCuenta(cuenta) {
  * @returns {string}
  */
 export function renderParTransferencia(origen, destino) {
+  const cambiar = `
+        <button type="button" class="transferir-cuenta__cambiar" data-action="invertir-transferencia"
+                aria-label="Cambiar: que salga de ${_esc(destino.nombre)}">Cambiar</button>`;
   return `
-    <div class="form-group" id="transferencia-par-wrap">
-      <span class="label">¿Entre qué cuentas?</span>
-      <div class="transferir-par">
-        ${_filaParCuenta(origen)}
-        <button type="button" class="transferir-par__swap" data-action="invertir-transferencia"
-                aria-label="Invertir origen y destino">
-          ${icon('transferencia')}
-        </button>
-        ${_filaParCuenta(destino)}
-      </div>
+    <div class="form-group transferir-de-a" id="transferencia-par-wrap">
+      <p class="transferir-de-a__rotulo">Sale de</p>
+      ${_filaParCuenta(origen, cambiar)}
+      <p class="transferir-de-a__rotulo">Entra a</p>
+      ${_filaParCuenta(destino)}
       <input type="hidden" name="cuentaOrigenId" value="${_esc(origen.id)}" />
       <input type="hidden" name="cuentaDestinoId" value="${_esc(destino.id)}" />
     </div>`;
@@ -143,29 +148,39 @@ export function renderFormTransferencia() {
   const seccionCuentas = activas.length === 2
     ? renderParTransferencia(...ordenadas)
     : `
-      ${renderSelectorCuenta(activas, { label: '¿De qué cuenta sale el dinero?', name: 'cuentaOrigenId' })}
-      ${renderSelectorCuenta(activas, { label: '¿A qué cuenta entra el dinero?', name: 'cuentaDestinoId' })}`;
+      ${renderSelectorCuenta(activas, { label: 'Sale de', name: 'cuentaOrigenId' })}
+      ${renderSelectorCuenta(activas, { label: 'Entra a', name: 'cuentaDestinoId' })}`;
 
   return `
     <form id="form-transferencia" novalidate>
+      <p class="modal__intro">Pasa dinero de una cuenta a otra.</p>
       ${seccionCuentas}
-      <div class="form-group">
-        <label for="transferencia-monto" class="label">Monto a transferir (COP)</label>
-        <input id="transferencia-monto" name="monto" type="text" class="input" inputmode="numeric" data-miles autocomplete="off" required />
+      <div class="monto-hero">
+        <label for="transferencia-monto" class="monto-hero__label">¿Cuánto vas a pasar?</label>
+        <div class="monto-hero__box">
+          <span class="monto-hero__prefijo" aria-hidden="true">$</span>
+          <input id="transferencia-monto" name="monto" type="text" class="input input--big-amount" placeholder="0"
+                 inputmode="numeric" data-miles autocomplete="off" required />
+        </div>
       </div>
+      <p class="transferir-nota">Es un movimiento entre tus cuentas: tu total no cambia.</p>
       <div id="transferencia-gmf-slot">${renderSeccionGMF(origenInicial)}</div>
-      <div class="form-group">
-        <label for="transferencia-fecha" class="label">Fecha</label>
-        <input id="transferencia-fecha" name="fecha" type="date" class="input" required />
-      </div>
-      <div class="form-group">
-        <label for="transferencia-nota" class="label">Nota (opcional)</label>
-        <input id="transferencia-nota" name="nota" type="text" class="input"
-               placeholder="Ej. arriendo, ahorro del mes" />
-      </div>
+      <!-- ADR 135 D5: la fecha (hoy por defecto) y la nota se pliegan. -->
+      <details class="transferir-mas">
+        <summary class="transferir-mas__resumen">Cambiar la fecha o agregar una nota</summary>
+        <div class="form-group">
+          <label for="transferencia-fecha" class="label">Fecha</label>
+          <input id="transferencia-fecha" name="fecha" type="date" class="input" required />
+        </div>
+        <div class="form-group">
+          <label for="transferencia-nota" class="label">Nota (opcional)</label>
+          <input id="transferencia-nota" name="nota" type="text" class="input"
+                 placeholder="Ej. arriendo, ahorro del mes" />
+        </div>
+      </details>
       <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Transferir</button>
+        <button type="submit" class="btn btn-primary" id="transferencia-enviar">${icon('check')}<span data-transferir-texto>Transferir</span></button>
       </div>
     </form>`;
 }

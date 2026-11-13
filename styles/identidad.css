@@ -2516,3 +2516,51 @@ body:not(.light-theme) .cov__fill {
   }
   #ingresos-altas { margin-top: var(--fk-space-3); }
 }
+
+/* ════════════════════════════════════════════════════════════
+   ADR 135 (rediseño4), tanda 2: la hoja de una cuenta y Transferir.
+   La hoja de la cuenta usa las piezas de la hoja del gasto (ADR 119 D2);
+   Transferir se ve igual en los dos anchos.
+   ════════════════════════════════════════════════════════════ */
+.transferir-de-a { display: flex; flex-direction: column; gap: var(--fk-space-2); }
+.transferir-de-a__rotulo { margin: var(--fk-space-2) 0 0; font-size: var(--fk-text-sm); font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
+.transferir-de-a__rotulo:first-child { margin-top: 0; }
+.transferir-cuenta {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  min-height: 64px;
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border: 1px solid var(--fk-border-default);
+  border-radius: var(--fk-radius-lg);
+  background: var(--fk-bg-surface);
+}
+.transferir-cuenta .bank-avatar { flex: none; width: 2.25rem; height: 2.25rem; }
+.transferir-cuenta__textos { display: flex; flex: 1; flex-direction: column; gap: 1px; min-width: 0; }
+.transferir-cuenta__nombre { overflow: hidden; font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); text-overflow: ellipsis; white-space: nowrap; }
+.transferir-cuenta__saldo { font-size: var(--fk-text-sm); color: var(--fk-text-secondary); font-variant-numeric: tabular-nums; }
+.transferir-cuenta__cambiar {
+  flex: none;
+  min-height: 44px;
+  padding: 0 var(--fk-space-2);
+  border: 0;
+  background: none;
+  color: var(--fk-text-accent);
+  font: inherit;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  cursor: pointer;
+}
+.transferir-nota { margin: 0; padding: 0 var(--fk-space-1); font-size: var(--fk-text-sm); line-height: var(--fk-leading-snug); color: var(--fk-text-muted); }
+.transferir-mas { margin-top: var(--fk-space-1); }
+.transferir-mas__resumen {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+  cursor: pointer;
+}
+#transferencia-enviar { gap: var(--fk-space-2); }
+#form-transferencia > .monto-hero { margin-top: var(--fk-space-4); }

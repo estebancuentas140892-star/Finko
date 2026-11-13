@@ -84,6 +84,18 @@ function _actualizarHintGMF() {
   }
 }
 
+/**
+ * ADR 135 D5: el botón dice lo que va a pasar, "Transferir $200.000", en
+ * cuanto hay un monto.
+ */
+function _actualizarBotonTransferir() {
+  const form  = document.getElementById('form-transferencia');
+  const texto = form?.querySelector('[data-transferir-texto]');
+  if (!texto) return;
+  const monto = desdeMiles(form.querySelector('[name="monto"]')?.value) ?? 0;
+  texto.textContent = monto > 0 ? `Transferir ${f(monto)}` : 'Transferir';
+}
+
 /** Abre el modal de transferencia en modo creación. */
 function _abrirTransferencia() {
   const overlay = document.getElementById('modal-transferencia');
@@ -105,7 +117,10 @@ function _abrirTransferencia() {
       // los selectores de 3+ decide si la sección aparece; el checkbox actualiza
       // el hint. El botón invertir del widget de 2 lo maneja _invertirTransferencia.
       form.addEventListener('input', (e) => {
-        if (e.target.name === 'monto') _actualizarHintGMF();
+        if (e.target.name === 'monto') {
+          _actualizarHintGMF();
+          _actualizarBotonTransferir();
+        }
       });
       form.addEventListener('change', (e) => {
         if (e.target.name === 'cuentaOrigenId') _refrescarSeccionGMF();

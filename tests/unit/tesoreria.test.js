@@ -59,7 +59,7 @@ import {
 import { aportePorPeriodo } from '../../modules/infra/vencimientos.js';
 import { save, loadData, _flushNow } from '../../modules/core/storage.js';
 import { CATEGORIAS_INGRESO, CATEGORIA_INGRESO_ICONO, SMMLV, AUXILIO_TRANSPORTE, TIPOS_LLAVE } from '../../modules/core/constants.js';
-import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderListaIngresosPuntuales, renderAltasIngreso, renderNudgeDistribucionInicio, renderDistribucionIngreso, renderAsistenteDistribucion, renderFormCuenta, renderListaCuentas, renderTarjetasTC, renderHeroTesoreria, renderGMFIndicador, renderBotonTransferir, renderFormTransferencia, renderParTransferencia, renderSeccionGMF } from '../../modules/dominio/tesoreria/view.js';
+import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderListaIngresosPuntuales, renderAltasIngreso, renderNudgeDistribucionInicio, renderDistribucionIngreso, renderAsistenteDistribucion, renderFormCuenta, renderListaCuentas, renderTarjetasTC, renderHeroTesoreria, renderGMFIndicador, renderBotonTransferir, renderFormTransferencia, renderParTransferencia, renderSeccionGMF, htmlDetalleCuenta } from '../../modules/dominio/tesoreria/view.js';
 import { initAccionesDistribucion } from '../../modules/dominio/tesoreria/acciones/distribucion.js';
 import { initAccionesCuentas, inyectarFormCuenta } from '../../modules/dominio/tesoreria/acciones/cuentas.js';
 import { initAccionesTransferencias } from '../../modules/dominio/tesoreria/acciones/transferencias.js';
@@ -4981,13 +4981,15 @@ describe('renderFormTransferencia()', () => {
     expect(renderFormTransferencia()).toBe('');
   });
 
-  it('con exactamente 2 cuentas: usa el widget de par (botón invertir, sin radiogroup)', () => {
+  it('con exactamente 2 cuentas: "Sale de" y "Entra a" con "Cambiar", sin radiogroup (ADR 135 D5)', () => {
     S.cuentas = [
       cuentaBase({ id: 'c1', saldo: 300_000 }),
       cuentaBase({ id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', saldo: 900_000 }),
     ];
     const html = renderFormTransferencia();
-    expect(html).toContain('transferir-par');
+    expect(html).toContain('transferir-de-a');
+    expect(html).toContain('Sale de');
+    expect(html).toContain('Entra a');
     expect(html).toContain('data-action="invertir-transferencia"');
     expect(html).not.toContain('role="radiogroup"');
     // Origen por defecto = cuenta de mayor saldo (c2).
@@ -5002,7 +5004,7 @@ describe('renderFormTransferencia()', () => {
       cuentaBase({ id: 'c3', nombre: 'Nu', banco: 'Nu' }),
     ];
     const html = renderFormTransferencia();
-    expect(html).not.toContain('transferir-par');
+    expect(html).not.toContain('transferir-de-a');
     expect(html).toContain('name="cuentaOrigenId"');
     expect(html).toContain('name="cuentaDestinoId"');
     expect((html.match(/role="radiogroup"/g) ?? []).length).toBe(2);
@@ -5071,14 +5073,27 @@ describe('renderParTransferencia()', () => {
     expect(html).toContain('name="cuentaDestinoId" value="c2"');
   });
 
-  // MC-DIS.9 C6: el glifo ⇄ pasa al símbolo i-transferencia del sprite.
-  it('el botón de invertir usa el ícono del sprite, no el carácter ⇄', () => {
-    const html = renderParTransferencia(
-      cuentaBase({ id: 'c1' }),
-      cuentaBase({ id: 'c2', banco: 'Bancolombia' }),
+  // ADR 135 D5: invertir es "Cambiar" en la cuenta de origen, con lo que
+  // tiene cada cuenta ("Tienes $X").
+  it('invertir es "Cambiar" en la de origen y cada cuenta dice lo que tiene', () => {
+    document.body.innerHTML = renderParTransferencia(
+      cuentaBase({ id: 'c1', nombre: 'Nequi', saldo: 300_000 }),
+      cuentaBase({ id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', saldo: 900_000 }),
     );
-    expect(html).toContain('#i-transferencia');
-    expect(html).not.toContain('⇄');
+    const cambiar = document.querySelector('[data-action="invertir-transferencia"]');
+    expect(cambiar.textContent.trim()).toBe('Cambiar');
+    expect(cambiar.getAttribute('aria-label')).toBe('Cambiar: que salga de Bancolombia');
+    expect([...document.querySelectorAll('.transferir-cuenta__saldo')].map(e => e.textContent)).toEqual(['Tienes $300.000', 'Tienes $900.000']);
+    expect(document.body.innerHTML).not.toContain('⇄');
+  });
+
+  it('el formulario dice que el total no cambia, pliega fecha y nota, y el botón lleva el monto', () => {
+    S.cuentas = [cuentaBase({ id: 'c1' }), cuentaBase({ id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia' })];
+    document.body.innerHTML = renderFormTransferencia();
+    expect(document.querySelector('.transferir-nota').textContent).toBe('Es un movimiento entre tus cuentas: tu total no cambia.');
+    expect(document.querySelector('details.transferir-mas #transferencia-fecha')).not.toBeNull();
+    expect(document.querySelector('label[for="transferencia-monto"]').textContent).toBe('¿Cuánto vas a pasar?');
+    expect(document.querySelector('#transferencia-enviar [data-transferir-texto]').textContent).toBe('Transferir');
   });
 });
 
@@ -5363,5 +5378,43 @@ describe('renderFormIngreso() - bloque de cuenta (MC.13d)', () => {
       { id: 'c2', nombre: 'Nequi', saldo: 100_000, activa: true },
     ];
     expect(renderFormIngreso()).toContain('Opcional.');
+  });
+});
+
+// ── htmlDetalleCuenta() - ADR 135 D4: la hoja de una cuenta ──────────
+
+describe('htmlDetalleCuenta() (ADR 135 D4)', () => {
+  beforeEach(() => { S.config = { ...(S.config ?? {}), ocultarSaldo: false }; });
+
+  it('la cuenta con su saldo; tipo, 4x1000 y cuota en filas; tres acciones por el puente', () => {
+    document.body.innerHTML = htmlDetalleCuenta(cuentaBase({
+      id: 'c1', nombre: 'Bancolombia Ahorros', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 3_000_000,
+      aplica4x1000: true, cuotaManejo: { monto: 15_900, diaCobro: 5 },
+    }));
+    expect(document.getElementById('detalle-fila-titulo').textContent).toBe('Bancolombia');
+    expect(document.querySelector('.detalle-fila__monto').textContent).toBe('$3.000.000');
+    const datos = Object.fromEntries([...document.querySelectorAll('.detalle-gasto__dato')]
+      .map(d => [d.querySelector('dt').textContent, d.querySelector('dd').textContent]));
+    expect(datos).toEqual({ Tipo: 'Ahorros', '4x1000': 'Aplica', 'Cuota de manejo': '$15.900, el día 5' });
+    expect(document.querySelector('.detalle-gasto__ver-sub').textContent).toBe('Se abre Movimientos solo con esta cuenta');
+    const acciones = [...document.querySelectorAll('[data-action="registrar-abrir"]')].map(b => [b.dataset.targetAction, b.dataset.id]);
+    expect(acciones).toEqual([['cuenta-ver-movimientos', 'c1'], ['editar-cuenta', 'c1'], ['eliminar-cuenta', 'c1']]);
+    expect(document.querySelector('.detalle-gasto__al-borrar').textContent).toBe('Te pediremos confirmar.');
+  });
+
+  it('el efectivo no habla de 4x1000 ni de cuota; sin cuota dice "No tiene"', () => {
+    document.body.innerHTML = htmlDetalleCuenta(cuentaBase({ id: 'c9', nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo' }));
+    const claves = [...document.querySelectorAll('.detalle-gasto__dato dt')].map(d => d.textContent);
+    expect(claves).toEqual(['Tipo']);
+    document.body.innerHTML = htmlDetalleCuenta(cuentaBase({ id: 'c2', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi' }));
+    expect(document.body.textContent).toContain('No tiene');
+    expect(document.body.textContent).toContain('No aplica');
+  });
+
+  it('con el saldo oculto no dice el saldo', () => {
+    S.config.ocultarSaldo = true;
+    document.body.innerHTML = htmlDetalleCuenta(cuentaBase({ id: 'c1', saldo: 3_000_000 }));
+    expect(document.body.textContent).not.toContain('3.000.000');
+    S.config.ocultarSaldo = false;
   });
 });

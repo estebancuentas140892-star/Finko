@@ -1,6 +1,6 @@
 # ADR 135 - Mis cuentas, Distribuir y Me deben del adulto en el teléfono
 
-**Estado:** Aceptada (2026-11-13). Se aplica en cuatro tandas: (1) Mis cuentas: el total, las cuentas, tu ingreso y "Reparte" (SW v689, aplicada); (2) la hoja de una cuenta y Transferir; (3) Distribuir, paso 1; (4) Me deben y sus hojas.
+**Estado:** Aceptada (2026-11-13). Se aplica en cuatro tandas: (1) Mis cuentas: el total, las cuentas, tu ingreso y "Reparte" (SW v689, aplicada); (2) la hoja de una cuenta y Transferir (SW v690, aplicada); (3) Distribuir, paso 1; (4) Me deben y sus hojas.
 **Fecha:** 2026-11-13
 **Autores:** Esteban (diseño y decisión: "vamos a seguir aplicando los cambios de diseño propuestos en esta carpeta"), Claude Opus 5.5 (auditoría, implementación y redacción)
 **Relación:** **Aplica** el tablero "Finko móvil · rediseño4" (Claude Design, `Diseño Finko/`), la quinta pieza de MV2.30, sobre la identidad del [ADR 127](127-identidad-bosque-y-sol.md). **Cambia** el encabezado de ingresos del [ADR 080](080-mis-cuentas-un-primario-y-lo-informativo-al-pie.md) D2 en los dos anchos ("Fuentes de ingreso" con su frase y el atajo "Ingreso" pasan a "Tu ingreso" con "Ingreso fijo" y "De una vez", sin la marca "Atajo", que también sale de "Transferir entre cuentas"; **acota** así la R72 para este par: los dos nombres dicen la diferencia que la marca no decía) y, solo en el teléfono, la barra de composición del total ([ADR 035](035-mis-cuentas-v2.md) D3: la pastilla con cuántas cuentas) y el rótulo oculto "Tus cuentas" ([ADR 075](075-mis-cuentas-dos-trabajos-a-la-vista.md) D4: a la vista). **Conserva** la tarjeta de identidad de Mis cuentas ([ADR 127](127-identidad-bosque-y-sol.md) D5), las filas con hoja de Mis cuentas ([ADR 109](109-mis-cuentas-en-filas-con-hoja.md)), Distribuir sobre Inicio ([ADR 110](110-distribuir-sin-salir-de-donde-estas.md)) y a Tino en los vacíos ([ADR 129](129-tino-ronda-2-en-el-adulto.md)).
@@ -57,6 +57,10 @@ La hoja dice cuánto falta, cuánto devolvió y su parte, cuándo le prestaste y
 | Un bombillo en la tarjeta de reparto | Tino pensando | ADR 127 D6 y 129: Tino va ahí, en lugar del bombillo |
 | "Por qué esta propuesta" como enlace | un plegable con las razones, al pie | la primera razón ya va en la nota; el resto se abre en su lugar, sin otra hoja |
 | Sin los ingresos de una vez en la lista | siguen en la lista, debajo de los fijos | son movimientos de la persona; el tablero no los muestra, no los quita |
+| La hoja de la cuenta sin el dato para recibir | "Para recibir" con la llave o el número, si la cuenta lo tiene | MC.14: es lo que se consulta para que a uno le consignen; antes iba como nota de la hoja |
+| "Cambiar" en las dos cuentas de Transferir, que abre una lista | con dos cuentas, "Cambiar" invierte el par; con tres o más, las dos listas a la vista | con dos solo hay una respuesta posible (MC.17b); con más, la lista abierta ahorra un toque |
+| Transferir sin fecha ni nota | "Cambiar la fecha o agregar una nota", plegado | la fecha (hoy por defecto) y la nota siguen existiendo; el tablero no las muestra |
+| "Transferir entre cuentas · Pasa dinero de una cuenta a otra" en la cabeza | el título en la cabeza y la frase al empezar el formulario | la cabeza de los modales tiene un solo renglón |
 
 ## Alternativas descartadas
 

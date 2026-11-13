@@ -501,12 +501,14 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     }
     await expect(sec.locator('[data-action^="eliminar"]:visible')).toHaveCount(0);
 
-    // La cuenta: sus acciones en la hoja, eliminar aparte, y el 4x1000 como nota.
+    // La cuenta: su hoja propia (ADR 135 D4) con el 4x1000 en sus filas, sus
+    // movimientos como fila, editar y, aparte, eliminar.
     await sec.locator('.cuenta-card[data-id="c2"] .list-item__detalle').click();
     const hoja = page.locator('#modal-detalle-fila[data-open]');
-    await expect(hoja.locator('.detalle-fila__acciones .detalle-fila__accion')).toHaveText(['Ver sus movimientos', 'Editar cuenta']);
-    await expect(hoja.locator('.detalle-fila__peligro .detalle-fila__accion')).toHaveText('Eliminar cuenta');
-    await expect(hoja.locator('.detalle-fila__notas')).toContainText('4x1000');
+    await expect(hoja.locator('.detalle-gasto__datos')).toContainText('4x1000');
+    await expect(hoja.locator('.detalle-gasto__ver')).toContainText('Ver sus movimientos');
+    await expect(hoja.locator('.detalle-fila__acciones .detalle-fila__accion')).toHaveText(['Editar la cuenta']);
+    await expect(hoja.locator('.detalle-fila__peligro .detalle-fila__accion')).toHaveText('Eliminar la cuenta');
 
     // Editar desde la hoja abre el formulario de esa cuenta, sin apilar modales.
     await hoja.locator('[data-target-action="editar-cuenta"]').click();
@@ -1350,5 +1352,27 @@ test.describe('MV2.30 - Mis cuentas en el teléfono (ADR 135 D1 a D3)', () => {
     await expect(reparte.locator('.distribuir-card__title')).toHaveText('Reparte tus $4.200.000');
     await expect(reparte.locator('.distribuir-card__item')).toHaveCount(3);
     await expect(reparte.locator('.distribuir-card__pct').first()).toHaveText(/lo recomendado es 50%$/);
+  });
+});
+
+test.describe('MV2.30 - Transferir en el teléfono (ADR 135 D5)', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('"Sale de" y "Entra a", "Cambiar" invierte y el botón lleva el monto', async ({ page }) => {
+    await sembrar(page, estadoBase({
+      cuentas: [
+        ...CUENTAS,
+        { id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 3_000_000, activa: true, fechaCreacion: '2026-07-01T00:00:00.000Z' },
+      ],
+    }));
+    await page.goto('/#tesoreria');
+    await page.locator('[data-action="abrir-transferencia"]:visible').click({ timeout: 10_000 });
+    const hoja = page.locator('#modal-transferencia[data-open]');
+    await expect(hoja.locator('.transferir-de-a__rotulo')).toHaveText(['Sale de', 'Entra a']);
+    await expect(hoja.locator('.transferir-cuenta__nombre').first()).toHaveText('Bancolombia');
+    await hoja.locator('[data-action="invertir-transferencia"]').click();
+    await expect(hoja.locator('.transferir-cuenta__nombre').first()).toHaveText('Nequi');
+    await hoja.locator('#transferencia-monto').fill('200000');
+    await expect(hoja.locator('#transferencia-enviar')).toHaveText('Transferir $200.000');
   });
 });

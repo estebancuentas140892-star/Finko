@@ -27,7 +27,7 @@ import {
   compromisoDesdeCuotaManejo,
   compromisoCuotaManejoDeCuenta,
 } from '../logic/cuentas.js';
-import { renderFormCuenta, renderTesoreria } from '../view.js';
+import { renderFormCuenta, renderTesoreria, htmlDetalleCuenta } from '../view.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
@@ -583,6 +583,16 @@ export function initAccionesCuentas() {
   registrarAccion('nueva-cuenta', _nuevaCuenta);
   registrarAccion('tc-ver-en-por-pagar', _verEnPorPagar);
   registrarAccion('cuenta-ver-movimientos', _verMovimientosDeCuenta);
+  // ADR 135 D4: la fila de una cuenta abre su hoja propia (tipo, 4x1000,
+  // cuota de manejo, sus movimientos), en `#modal-detalle-fila`.
+  registrarAccion('cuenta-detalle', (el) => {
+    const cuenta = (S.cuentas ?? []).find(c => c.id === el?.dataset?.id);
+    const hoja   = document.getElementById('modal-detalle-fila');
+    const cuerpo = document.getElementById('detalle-fila-body');
+    if (!cuenta || !hoja || !cuerpo) return;
+    cuerpo.innerHTML = htmlDetalleCuenta(cuenta);
+    abrirModal(hoja);
+  });
   registrarAccion('editar-cuenta', _editarCuenta);
   registrarAccion('eliminar-cuenta', _eliminarCuenta);
 

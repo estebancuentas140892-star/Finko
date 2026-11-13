@@ -170,7 +170,9 @@ describe('Mis cuentas trae la hoja (ADR 109)', () => {
     const fila = document.querySelector('.cuenta-card[data-id="c1"]');
     expect(fila.classList.contains('list-item--detalle')).toBe(true);
     const abrir = fila.querySelector('.list-item__detalle');
-    expect(abrir.dataset.action).toBe('fila-detalle');
+    // ADR 135 D4: la cuenta abre su hoja propia (`htmlDetalleCuenta`).
+    expect(abrir.dataset.action).toBe('cuenta-detalle');
+    expect(abrir.dataset.id).toBe('c1');
     expect(abrir.getAttribute('aria-label')).toBe('Ver detalle: Bancolombia, $3.412.800');
 
     const d = datosDeFila(fila);

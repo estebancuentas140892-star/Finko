@@ -1,6 +1,6 @@
 # Ficha de contexto: Mis cuentas
 
-> Revisado: 2026-11-13 (MV2.30, ADR 135 tanda 1).
+> Revisado: 2026-11-13 (MV2.30, ADR 135 tanda 2).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -80,6 +80,7 @@ Además: rediseño visual ADR 035 completo. Ver "Transferencias" y "Distribució
 
 **Cambios realizados**:
 
+- 2026-11-13 (**MV2.30 Mis cuentas tanda 2**, [ADR 135](../DECISIONS/135-mis-cuentas-y-me-deben-en-el-telefono.md) D4 y D5): la hoja propia de la cuenta (`htmlDetalleCuenta()`, `cuenta-detalle`) y Transferir con "Sale de", "Entra a", "Cambiar" y el monto en el botón.
 - 2026-11-13 (**MV2.30 Mis cuentas tanda 1**, [ADR 135](../DECISIONS/135-mis-cuentas-y-me-deben-en-el-telefono.md) D1 a D3): la pastilla de cuentas, "Tus cuentas" a la vista, la línea de cada cuenta, "Tu ingreso" con cuándo llega, "Ingreso fijo" y "De una vez", el vacío en tarjeta y "Reparte tus $X".
 
 - 2026-10-30 (**MV2.9**, [ADR 109](../DECISIONS/109-mis-cuentas-en-filas-con-hoja.md)): bajo 1024px cuentas, tarjetas y fuentes son filas de 64px con la hoja de detalle; chips y día de pago van a la hoja.

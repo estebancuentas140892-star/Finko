@@ -12,6 +12,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(tesoreria): MV2.30 Mis cuentas tanda 2, la hoja de una cuenta y Transferir · 2026-11-13
+
+[ADR 135](DECISIONS/135-mis-cuentas-y-me-deben-en-el-telefono.md) D4 y D5. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). SW v690. Tablero "rediseño4".
+
+- **La hoja de una cuenta** es propia (`htmlDetalleCuenta()`, acción `cuenta-detalle`) en vez de la genérica: la cuenta con su saldo; tipo, 4x1000 ("Aplica" o "No aplica"), cuota de manejo ("No tiene" o "$15.900, el día 5") y el dato para recibir en filas; "Ver sus movimientos" como fila; "Editar la cuenta" y, aparte, "Eliminar la cuenta" con "Te pediremos confirmar". Las acciones pasan por `registrar-abrir`, que cierra la hoja primero.
+- **Transferir entre cuentas**: "Sale de" y "Entra a" con lo que tiene cada cuenta; con dos cuentas, "Cambiar" en la de origen invierte el par. "¿Cuánto vas a pasar?" en grande, "Es un movimiento entre tus cuentas: tu total no cambia.", la fecha y la nota plegadas y el botón con el monto ("Transferir $200.000"). En los dos anchos.
+- Pruebas: 5 ajustadas o nuevas en `tesoreria` y 1 en `detalle-fila`; E2E: la hoja de la cuenta de `movil-mv2` mide la hoja nueva y uno nuevo a 390 px invierte el par y lee el botón.
+
 ### feat(tesoreria): MV2.30 Mis cuentas tanda 1, el total, tu ingreso y "Reparte" · 2026-11-13
 
 [ADR 135](DECISIONS/135-mis-cuentas-y-me-deben-en-el-telefono.md) D1 a D3. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). SW v689. Tablero "rediseño4".

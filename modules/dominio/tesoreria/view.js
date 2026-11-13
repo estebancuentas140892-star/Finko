@@ -22,6 +22,7 @@ import {
   renderFormCuenta,
   renderGMFIndicador,
   renderTarjetasTC,
+  htmlDetalleCuenta,
 } from './views/cuentas.js';
 import {
   renderListaIngresos,
@@ -50,6 +51,7 @@ export {
   renderFormCuenta,
   renderGMFIndicador,
   renderTarjetasTC,
+  htmlDetalleCuenta,
   renderListaIngresos,
   renderFormIngreso,
   renderListaIngresosPuntuales,
