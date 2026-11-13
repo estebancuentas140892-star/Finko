@@ -63,6 +63,8 @@
 
 **Cambios realizados**:
 
+- 2026-11-13 (**MV2.30 Ahorro tanda 5**, [ADR 133](../DECISIONS/133-ahorro-del-adulto-en-el-telefono.md) D7): la hoja "Nueva reserva" pregunta en frase, abre las otras plantillas desde un chip "N más", pide la frecuencia en cuatro botones (`familia-segmento`, radios `frecuenciaAporte`) y lleva la pista del aporte bajo la fecha (`SUGERENCIA_INICIAL`); en el teléfono las plantillas son píldoras en fila.
+
 - 2026-11-13 (**MV2.30 Ahorro tanda 2**, [ADR 133](../DECISIONS/133-ahorro-del-adulto-en-el-telefono.md) D4): la lista del teléfono en filas con su hoja (`apartados/detalle.js`, acción `reserva-detalle`), la hoja "Aportar" con su contexto y el monto en el botón, y el vacío con el botón dentro de la tarjeta y la salida a Límites al pie.
 
 - 2026-10-17 (**HF.0e**, BUG-025): sin `fechaInicioPlan`, el plan de referencia arranca el día local de creación (antes, un día tarde para lo creado de noche). `fechaInicioPlan` es fecha de calendario y no se desplaza.

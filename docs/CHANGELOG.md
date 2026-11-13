@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(apartados): MV2.30 Ahorro tanda 5, la hoja "Nueva reserva"; cierra Ahorro · 2026-11-13
+
+[ADR 133](DECISIONS/133-ahorro-del-adulto-en-el-telefono.md) D7. Ficha: [`contexto/apartados.md`](contexto/apartados.md). SW v684. El tablero "rediseño2" queda aplicado completo y su HTML se borró.
+
+- **Preguntas en frase**: "¿Para qué pago te quieres preparar?" con "Toca uno para llenar el nombre, o escribe el tuyo."; "Nombre"; "(opcional)" en gris en la fecha y la nota.
+- **Las otras plantillas** se abren desde un chip punteado "14 más" al final de la fila, en vez del enlace "Ver las otras 14 plantillas" (queda como su nombre accesible). En el teléfono las plantillas son píldoras en fila y el "COP" bajo el monto se va.
+- **La frecuencia** son cuatro botones a la vista (el segmento de Familia, radios `frecuenciaAporte`), no una lista desplegable. La pista del aporte en vivo baja a la fecha ("Con fecha, Finko calcula cuánto separar en cada aporte.") y la nota sugiere "Ej.: la moto de Andrés".
+- Pruebas: 4 ajustadas y 5 nuevas en `apartados`; un E2E a 390px llena el nombre con una plantilla, abre "14 más", elige "Quincenal" y crea la reserva.
+
 ### feat(inversiones): MV2.30 Ahorro tanda 4, Inversión y la hoja de una inversión · 2026-11-13
 
 [ADR 133](DECISIONS/133-ahorro-del-adulto-en-el-telefono.md) D6. Ficha: [`contexto/inversion.md`](contexto/inversion.md). SW v683. Tablero "rediseño2".

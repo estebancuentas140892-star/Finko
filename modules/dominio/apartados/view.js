@@ -626,6 +626,9 @@ function _renderNudgeProximos(proximos, oculto = false) {
 
 // ── FORMULARIO: NUEVO APARTADO ───────────────────────────────────
 
+/** Lo que dice la pista bajo la fecha antes de que haya monto y fecha. */
+export const SUGERENCIA_INICIAL = 'Con fecha, Finko calcula cuánto separar en cada aporte.';
+
 /**
  * Devuelve el HTML del formulario de apartado, con plantillas rápidas y un
  * hint en vivo del aporte sugerido (lo actualiza el listener en index.js).
@@ -658,35 +661,37 @@ export function renderFormApartado(apartado = null, frecuenciaPreferida = 'Mensu
   const frecuentes = PLANTILLAS_APARTADO.filter(p => PLANTILLAS_APARTADO_FRECUENTES.includes(p.nombre));
   const resto      = PLANTILLAS_APARTADO.filter(p => !PLANTILLAS_APARTADO_FRECUENTES.includes(p.nombre));
 
+  // ADR 133 D7: las otras plantillas se abren desde un chip más ("14 más"),
+  // al final de la fila, en vez de un enlace aparte.
   const plantillasHtml = frecuentes.map(chip).join('');
   const restoHtml      = resto.length === 0 ? '' : `
-      <details class="form-details">
-        <summary class="form-details__summary">Ver las otras ${resto.length} plantillas</summary>
-        <div class="form-details__body">
+        <details class="chips-mas">
+          <summary class="chip-cat chip-cat--mas" aria-label="Ver las otras ${resto.length} plantillas">${resto.length} más</summary>
           <div class="chips-cat" role="group" aria-label="Más plantillas de reserva">
             ${resto.map(chip).join('')}
           </div>
-        </div>
-      </details>`;
+        </details>`;
 
+  // ADR 133 D7: la frecuencia en cuatro botones a la vista, no en una lista.
   const frecuenciaActual = apartado?.frecuenciaAporte ?? frecuenciaPreferida;
   const frecOpts = FRECUENCIAS_APORTE
-    .map(fr => `<option value="${_esc(fr)}"${fr === frecuenciaActual ? ' selected' : ''}>${_esc(fr)}</option>`)
+    .map(fr => `
+          <label class="familia-segmento__op"><input class="sr-only" type="radio" name="frecuenciaAporte" value="${_esc(fr)}"${fr === frecuenciaActual ? ' checked' : ''} /><span>${_esc(fr)}</span></label>`)
     .join('');
 
-  const botonTexto = apartado ? `${icon('check-circle')} Actualizar reserva` : `${icon('check-circle')} Crear reserva`;
+  const botonTexto = apartado ? `${icon('check')} Actualizar reserva` : `${icon('check')} Crear reserva`;
 
   return `
     <form id="form-apartado" novalidate>
       ${apartado ? '' : `
-      <p class="form-hint form-hint--muted">¿Para qué gasto quieres prepararte? Toca uno o escribe el tuyo.</p>
+      <p class="reserva-form__pregunta">¿Para qué pago te quieres preparar?</p>
+      <p class="form-hint reserva-form__sub">Toca uno para llenar el nombre, o escribe el tuyo.</p>
       <div class="chips-cat" role="group" aria-label="Plantillas de reserva">
-        ${plantillasHtml}
-      </div>
-      ${restoHtml}`}
+        ${plantillasHtml}${restoHtml}
+      </div>`}
 
       <div class="form-group">
-        <label for="apartado-nombre" class="label">Nombre de la reserva</label>
+        <label for="apartado-nombre" class="label">Nombre</label>
         <div class="apartado-nombre-row">
           ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'apartado-icono', nombreCampo: 'icono', label: '', valorActual: _valorIconoEditable(apartado) })}
           <input id="apartado-nombre" name="nombre" class="input apartado-nombre-row__nombre" type="text"
@@ -706,27 +711,21 @@ export function renderFormApartado(apartado = null, frecuenciaPreferida = 'Mensu
         <span class="monto-hero__hint">COP</span>
       </div>
       <div class="form-group">
-        <label for="apartado-fecha" class="label">¿Para cuándo lo necesitas? (opcional)</label>
+        <label for="apartado-fecha" class="label">¿Para cuándo lo necesitas? <span class="label__opcional">(opcional)</span></label>
         <input id="apartado-fecha" name="fechaObjetivo" class="input" type="date" value="${_esc(apartado?.fechaObjetivo ?? '')}" />
+        <p id="apartado-sugerencia-live" class="form-hint" aria-live="polite">${SUGERENCIA_INICIAL}</p>
       </div>
-      <div class="form-group">
-        <label for="apartado-frecuencia" class="label">¿Cada cuánto puedes aportar?</label>
-        <select id="apartado-frecuencia" name="frecuenciaAporte" class="input">
-          ${frecOpts}
-        </select>
-        <p class="form-hint">Elige según la frecuencia con que recibes tu pago. Finko calcula cuánto separar en cada cobro.</p>
-      </div>
-
-      <p id="apartado-sugerencia-live" class="form-hint form-hint--muted" aria-live="polite">
-        Ponle un monto y una fecha para ver cuánto separar en cada pago.
-      </p>
+      <fieldset class="form-group reserva-form__frecuencia">
+        <legend class="label">¿Cada cuánto puedes aportar?</legend>
+        <div class="familia-segmento bolsa-frecuencia">${frecOpts}
+        </div>
+      </fieldset>
 
       <div class="form-group">
-        <label for="apartado-nota" class="label">Nota (opcional)</label>
+        <label for="apartado-nota" class="label">Nota <span class="label__opcional">(opcional)</span></label>
         <input id="apartado-nota" name="nota" class="input" type="text" maxlength="80"
-               placeholder="Ej. Póliza vence en marzo, aseguradora Sura"
+               placeholder="Ej.: la moto de Andrés"
                value="${_esc(apartado?.nota ?? '')}" />
-        <p class="form-hint">Se muestra junto al apartado en el asistente de "Distribuir mi ingreso".</p>
       </div>
 
       <div class="modal__footer modal__footer--principal">

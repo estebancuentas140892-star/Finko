@@ -27,7 +27,7 @@ import {
 } from '../../modules/dominio/apartados/logic.js';
 import {
   renderFormAporteApartado, renderFormApartado, renderListaApartados,
-  renderNudgeApartadosProximos, miles, desdeMiles,
+  renderNudgeApartadosProximos, miles, desdeMiles, SUGERENCIA_INICIAL,
 } from '../../modules/dominio/apartados/view.js';
 import { S } from '../../modules/core/state.js';
 import { htmlDetalleApartado, cuandoReserva, ritmoReserva } from '../../modules/dominio/apartados/detalle.js';
@@ -1020,10 +1020,11 @@ describe('renderFormApartado() - lenguaje v2 (AP.5)', () => {
     expect(html.slice(i, j)).toContain('id="apartado-objetivo"');
   });
 
-  it('el footer es modal__footer--principal con check-circle', () => {
+  // ADR 133 D7: el visto del tablero (i-check) en vez del círculo.
+  it('el footer es modal__footer--principal con su visto', () => {
     const html = renderFormApartado();
     expect(html).toContain('modal__footer modal__footer--principal');
-    expect(html).toMatch(/#i-check-circle[\s\S]{0,40}Crear reserva/);
+    expect(html).toMatch(/#i-check"[\s\S]{0,40}Crear reserva/);
   });
 
   it('ya no trae el checkbox ni el select de recurrencia (AP.5): sale del registro inicial', () => {
@@ -1039,7 +1040,7 @@ describe('renderFormApartado() - lenguaje v2 (AP.5)', () => {
 describe('renderFormApartado() - modo edición (EDIT.1)', () => {
   it('sin apartado, arranca en modo creación: botón "Crear reserva", campos vacíos', () => {
     const html = renderFormApartado();
-    expect(html).toMatch(/#i-check-circle[\s\S]{0,40}Crear reserva/);
+    expect(html).toMatch(/#i-check"[\s\S]{0,40}Crear reserva/);
     expect(html).not.toContain('Actualizar reserva');
     expect(html).toMatch(/id="apartado-nombre"[^>]*value=""/);
   });
@@ -1057,13 +1058,14 @@ describe('renderFormApartado() - modo edición (EDIT.1)', () => {
 
   it('con un apartado, el botón dice "Actualizar reserva"', () => {
     const html = renderFormApartado(apartadoBase());
-    expect(html).toMatch(/#i-check-circle[\s\S]{0,40}Actualizar reserva/);
+    expect(html).toMatch(/#i-check"[\s\S]{0,40}Actualizar reserva/);
     expect(html).not.toContain('>Crear reserva<');
   });
 
   it('marca la frecuencia del apartado como seleccionada, ignorando frecuenciaPreferida', () => {
     const html = renderFormApartado(apartadoBase({ frecuenciaAporte: 'Semanal' }), 'Mensual');
-    expect(html).toContain('<option value="Semanal" selected>Semanal</option>');
+    // ADR 133 D7: la frecuencia son cuatro botones (radios), no una lista.
+    expect(html).toMatch(/name="frecuenciaAporte" value="Semanal" checked/);
   });
 
   it('oculta las plantillas rápidas al editar (ya no hace falta elegir de cero)', () => {
@@ -1883,5 +1885,51 @@ describe('renderFormAporteApartado() - la hoja "Aportar" (ADR 133 D4)', () => {
     expect(html).toContain('¿De qué cuenta sale?');
     expect(html).toMatch(/class="monto-hero__box"[\s\S]*id="aporte-apartado-monto"/);
     expect(html).toMatch(/id="aporte-apartado-enviar"[\s\S]*Aportar \$130\.000/);
+  });
+});
+
+// ════════════════════════════════════════════════════════════════
+// ADR 133 D7 - la hoja "Nueva reserva"
+// ════════════════════════════════════════════════════════════════
+
+describe('renderFormApartado() - la hoja "Nueva reserva" (ADR 133 D7)', () => {
+  const armar = (html) => { const d = document.createElement('div'); d.innerHTML = html; return d; };
+
+  it('pregunta en frase arriba de las plantillas', () => {
+    const d = armar(renderFormApartado());
+    expect(d.querySelector('.reserva-form__pregunta').textContent).toBe('¿Para qué pago te quieres preparar?');
+    expect(d.querySelector('.reserva-form__sub').textContent).toBe('Toca uno para llenar el nombre, o escribe el tuyo.');
+  });
+
+  it('las otras plantillas se abren desde un chip "N más" al final de la fila', () => {
+    const d = armar(renderFormApartado());
+    const grupo = d.querySelector('[aria-label="Plantillas de reserva"]');
+    const mas = grupo.lastElementChild;
+    expect(mas.matches('details.chips-mas')).toBe(true);
+    expect(mas.querySelector('summary').textContent).toBe(`${PLANTILLAS_APARTADO.length - 6} más`);
+    expect(mas.querySelectorAll('[data-action="apartado-plantilla"]')).toHaveLength(PLANTILLAS_APARTADO.length - 6);
+  });
+
+  it('la frecuencia son cuatro botones a la vista, con la preferida marcada', () => {
+    const d = armar(renderFormApartado(null, 'Quincenal'));
+    expect(d.querySelector('select')).toBeNull();
+    const radios = [...d.querySelectorAll('input[type="radio"][name="frecuenciaAporte"]')];
+    expect(radios.map(r => r.value)).toEqual(['Diario', 'Semanal', 'Quincenal', 'Mensual']);
+    expect(radios.find(r => r.checked).value).toBe('Quincenal');
+    expect(d.querySelector('.reserva-form__frecuencia legend').textContent).toBe('¿Cada cuánto puedes aportar?');
+  });
+
+  it('la pista del aporte va bajo la fecha y la nota sugiere un ejemplo', () => {
+    const d = armar(renderFormApartado());
+    const fecha = d.querySelector('#apartado-fecha').closest('.form-group');
+    expect(fecha.querySelector('#apartado-sugerencia-live').textContent).toBe(SUGERENCIA_INICIAL);
+    expect(d.querySelector('#apartado-nota').getAttribute('placeholder')).toBe('Ej.: la moto de Andrés');
+    expect(d.querySelector('label[for="apartado-nombre"]').textContent).toBe('Nombre');
+  });
+
+  it('al editar se conserva la frecuencia guardada y no hay plantillas', () => {
+    const d = armar(renderFormApartado(apartadoBase({ frecuenciaAporte: 'Semanal' })));
+    expect(d.querySelector('input[name="frecuenciaAporte"]:checked').value).toBe('Semanal');
+    expect(d.querySelector('.reserva-form__pregunta')).toBeNull();
   });
 });

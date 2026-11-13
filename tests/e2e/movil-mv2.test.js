@@ -1239,3 +1239,34 @@ test.describe('MV2.30 - Inversión en el teléfono (ADR 133 D6)', () => {
     await expect(page.locator('.inversion-momento')).toBeVisible();
   });
 });
+
+test.describe('MV2.30 - la hoja "Nueva reserva" (ADR 133 D7)', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('las plantillas llenan el nombre, "N más" abre las otras y la frecuencia se elige a la vista', async ({ page }) => {
+    await sembrar(page, estadoBase({ cuentas: CUENTAS, apartados: [{
+      id: 'r0', nombre: 'Predial', icono: '🏠', montoActual: 0, montoObjetivo: 900_000, fechaObjetivo: null,
+      frecuenciaAporte: 'Mensual', recurrente: false, periodoMeses: null, completado: false, fechaCreacion: '2026-03-01T00:00:00.000Z',
+    }] }));
+    await page.goto('/#apartados');
+    await expect(page.locator('#sec-apartados.active')).toBeVisible({ timeout: 10_000 });
+    await page.locator('#sec-apartados .section__header [data-action="nuevo-apartado"]').click();
+    const form = page.locator('#modal-apartado[data-open] form');
+    await expect(form.locator('.reserva-form__pregunta')).toHaveText('¿Para qué pago te quieres preparar?');
+
+    await form.locator('[data-action="apartado-plantilla"][data-nombre="SOAT"]').click();
+    await expect(form.locator('#apartado-nombre')).toHaveValue('SOAT');
+
+    await form.locator('.chip-cat--mas').click();
+    await expect(form.locator('.chips-mas [data-action="apartado-plantilla"]').first()).toBeVisible();
+
+    await form.locator('#apartado-objetivo').fill('520.000');
+    await form.locator('#apartado-fecha').fill(enDias(120));
+    await form.locator('.familia-segmento__op', { hasText: 'Quincenal' }).click();
+    await expect(form.locator('#apartado-sugerencia-live')).toContainText('por quincena');
+
+    await form.locator('button[type="submit"]').click();
+    await expect(page.locator('#modal-apartado[data-open]')).toHaveCount(0);
+    await expect(page.locator('.reserva-fila .reserva-fila__nombre', { hasText: 'SOAT' })).toBeVisible();
+  });
+});

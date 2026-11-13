@@ -26,7 +26,7 @@ import {
 } from './logic.js';
 import {
   renderListaApartados, renderFormApartado, renderFormAporteApartado,
-  renderNudgeApartadosProximos, desdeMiles,
+  renderNudgeApartadosProximos, desdeMiles, SUGERENCIA_INICIAL,
 } from './view.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { htmlDetalleApartado } from './detalle.js';
@@ -248,7 +248,7 @@ function _actualizarSugerenciaLive() {
   const objetivo = Number(desdeMiles(datos.montoObjetivo));
 
   if (!Number.isFinite(objetivo) || objetivo <= 0 || !datos.fechaObjetivo) {
-    hint.textContent = 'Ponle un monto y una fecha para ver cuánto separar en cada pago.';
+    hint.textContent = SUGERENCIA_INICIAL;
     return;
   }
 
@@ -260,13 +260,13 @@ function _actualizarSugerenciaLive() {
   }, hoy());
 
   hint.textContent = sugerido
-    ? `💡 Aparta ${f(sugerido.aportePorPeriodo)} ${sugerido.etiquetaPeriodo} (${sugerido.numPeriodos} ${sugerido.numPeriodos === 1 ? 'aporte' : 'aportes'}) para llegar a tiempo.`
+    ? `Aparta ${f(sugerido.aportePorPeriodo)} ${sugerido.etiquetaPeriodo} (${sugerido.numPeriodos} ${sugerido.numPeriodos === 1 ? 'aporte' : 'aportes'}) para llegar a tiempo.`
     : 'Revisa la fecha: debe ser futura para calcular el aporte.';
 }
 
 function _resetSugerenciaLive() {
   const hint = document.getElementById('apartado-sugerencia-live');
-  if (hint) hint.textContent = 'Ponle un monto y una fecha para ver cuánto separar en cada pago.';
+  if (hint) hint.textContent = SUGERENCIA_INICIAL;
 }
 
 // ── HANDLERS: APORTAR ────────────────────────────────────────────
