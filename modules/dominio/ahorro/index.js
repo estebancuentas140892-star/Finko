@@ -558,6 +558,12 @@ export function initAhorro() {
   // Re-render al llegar al fondo (patrón de metas/presupuesto).
   window.addEventListener('hashchange', _renderSegunSeccion);
 
+  // ADR 133 D2: bajo 1024px el Fondo tiene otra anatomía; al cruzar el ancho
+  // se vuelve a pintar (patrón de Límites, ADR 132 D8).
+  window.matchMedia?.('(max-width: 1023.98px)').addEventListener?.('change', () => {
+    renderSmart(_renderAhorroBound, 'fondo');
+  });
+
   _renderSegunSeccion();
 }
 

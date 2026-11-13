@@ -112,15 +112,25 @@ test.describe('Fondo - el compromiso del periodo vive en la tarjeta (ADR 084)', 
     await page.goto('/#fondo');
     await expect(page.locator('#sec-fondo.active')).toBeVisible({ timeout: 10_000 });
 
-    const medidor = page.locator('.fondo-card .ahorro-habito__compromiso');
-    await expect(medidor).toBeVisible();
-    await expect(medidor).toContainText('de $350.000');
+    // ADR 133 D2: en el telefono el compromiso es una tarjeta propia, justo
+    // despues del bloque de arriba y su nota; se ve sin desplazar.
+    const compromiso = page.locator('.fondo-compromiso');
+    await expect(compromiso).toBeInViewport();
+    await expect(compromiso.locator('.fondo-compromiso__monto')).toHaveText('$150.000 de $350.000');
+    await expect(compromiso.locator('.fondo-compromiso__estado')).toContainText('con $200.000 lo completas');
 
-    // Ya no hay copia bajo el pliegue: la seccion de habito queda como consulta.
-    await expect(page.locator('.ahorro-habito:not(.ahorro-habito--carril) .ahorro-habito__compromiso')).toHaveCount(0);
+    // Arriba, el tiempo en grande con un tramo por mes de la meta; la franja
+    // mes a mes y la gota quedan para escritorio.
+    await expect(page.locator('.fondo-movil__tiempo')).toHaveText('1 mes');
+    await expect(page.locator('.fondo-movil__tramo')).toHaveCount(3);
+    await expect(page.locator('#panel-ahorro .cov, #panel-ahorro .liq')).toHaveCount(0);
 
-    // El pie de la franja suelta el monto repetido (E4): el dinero vive una vez.
-    await expect(page.locator('.fondo-card .cov__pie')).not.toContainText('$2.180.000');
+    // La fila de un aporte abre su hoja con la accion de borrarlo.
+    await page.locator('.fondo-aportes__lista .list-item__detalle').first().click();
+    const hoja = page.locator('#modal-detalle-fila');
+    await expect(hoja).toBeVisible();
+    await expect(hoja.locator('.detalle-fila__titulo')).toHaveText('Aporte al fondo');
+    await expect(hoja.locator('[data-target-action="ahorro-eliminar-aporte"]')).toContainText('Eliminar este aporte');
   });
 
   test('sin gastos fijos el bloqueo se dice como bloqueo y enlaza la salida', async ({ page }) => {
@@ -136,15 +146,14 @@ test.describe('Fondo - el compromiso del periodo vive en la tarjeta (ADR 084)', 
     await page.goto('/#fondo');
     await expect(page.locator('#sec-fondo.active')).toBeVisible({ timeout: 10_000 });
 
-    const bloqueo = page.locator('.fondo-card__bloqueo');
+    const bloqueo = page.locator('.fondo-movil .fondo-card__bloqueo');
     await expect(bloqueo.locator('.fondo-card__bloqueo-titulo'))
       .toHaveText('Falta un dato para calcular tu colchón');
-    await expect(page.locator('.fondo-card .cov')).toHaveCount(0);
+    await expect(page.locator('.fondo-movil__tramos')).toHaveCount(0);
 
-    // El bloqueo no apaga la seccion: sigue ofreciendo el aporte. El selector
-    // va acotado a la tarjeta: el carril del hub tiene su propio CTA con el
-    // mismo `data-action`.
-    await expect(page.locator('.fondo-card [data-action="ahorro-nuevo-aporte"]')).toBeVisible();
+    // El bloqueo no apaga la seccion: sigue ofreciendo el aporte (ADR 133 D2:
+    // en el telefono el bloque de arriba es .fondo-movil, no la tarjeta).
+    await expect(page.locator('.fondo-movil [data-action="ahorro-nuevo-aporte"]')).toBeVisible();
 
     await bloqueo.locator('.fondo-card__bloqueo-salida').click();
     await expect(page.locator('#sec-compromisos.active')).toBeVisible({ timeout: 5_000 });

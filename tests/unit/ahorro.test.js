@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { S } from '../../modules/core/state.js';
 import { initAhorro } from '../../modules/dominio/ahorro/index.js';
 import { dispatch } from '../../modules/ui/actions.js';
@@ -43,6 +43,10 @@ import {
   // AH.5 (ADR 049 D4)
   montoPorPeriodo,
   etiquetaCadaPeriodo,
+  // ADR 133 D2
+  cifraCobertura,
+  tramosCobertura,
+  inicioPeriodoSiguiente,
 } from '../../modules/dominio/ahorro/logic.js';
 import {
   renderFormAporte,
@@ -435,15 +439,16 @@ describe('MODALIDADES_AHORRO', () => {
     expect(MODALIDADES_AHORRO.map(m => m.clave)).toEqual(['fondo', 'apartados', 'metas', 'inversiones']);
   });
 
-  it('cada modalidad dice cuándo se usa su dinero, y las cuatro respuestas difieren', () => {
-    const cuandos = MODALIDADES_AHORRO.map(m => m.cuando);
-    expect(cuandos).toEqual([
-      'Ojalá nunca lo uses',
-      'En una fecha que no elegiste',
-      'Algún día, cuando quieras',
-      'Además, creciendo',
+  // ADR 133 D1: sin casa, cada lente dice sola para qué sirve su dinero.
+  it('cada modalidad dice para qué sirve su dinero, y las cuatro respuestas difieren', () => {
+    const paras = MODALIDADES_AHORRO.map(m => m.para);
+    expect(paras).toEqual([
+      'Para cuando algo se dañe o te quedes sin ingresos',
+      'Para pagos que ya sabes que llegan',
+      'Para algo que quieres comprar o hacer',
+      'Dinero que pusiste a crecer',
     ]);
-    expect(new Set(cuandos).size).toBe(4);
+    expect(new Set(paras).size).toBe(4);
   });
 
   it('el fondo vive en #fondo', () => {
@@ -691,9 +696,11 @@ describe('DIS.12 - lista de aportes y compromiso (A5, A6)', () => {
     renderAhorro(1_000_000, null, null);
   });
 
-  it('A5: el título de la fila es la fecha, no el monto', () => {
+  // ADR 133 D2: la nota arriba y la fecha debajo, como la fila de un gasto.
+  it('A5: el título de la fila es la nota, la fecha baja a subtítulo y el monto no es título', () => {
     const primera = document.querySelector('.ahorro-habito__lista .list-item');
-    expect(primera.querySelector('.list-item__title').textContent.toLowerCase())
+    expect(primera.querySelector('.list-item__title').textContent).toBe('Aporte al fondo');
+    expect(primera.querySelector('.list-item__subtitle').textContent.toLowerCase())
       .toContain(_etiquetaDiaUno.toLowerCase());
     expect(primera.querySelector('.list-item__title').textContent).not.toContain('$');
   });
@@ -704,11 +711,14 @@ describe('DIS.12 - lista de aportes y compromiso (A5, A6)', () => {
     expect(montos).toEqual(['+$250.000', '+$184.000']);
   });
 
-  it('A5: la fila tiene teja de identidad y la nota baja a subtítulo', () => {
+  it('A5: la fila tiene teja de identidad y abre su hoja con "Eliminar este aporte"', () => {
     const filas = [...document.querySelectorAll('.ahorro-habito__lista .list-item')];
     expect(filas[0].querySelector('.list-item__icon .cat-teja')).not.toBeNull();
-    expect(filas[0].querySelector('.list-item__subtitle').textContent).toBe('Aporte al fondo');
-    expect(filas[1].querySelector('.list-item__subtitle').textContent).toBe('Distribución de ingreso');
+    expect(filas[1].querySelector('.list-item__title').textContent).toBe('Distribución de ingreso');
+    expect(filas[0].classList.contains('list-item--detalle')).toBe(true);
+    expect(filas[0].querySelector('.list-item__detalle').dataset.action).toBe('fila-detalle');
+    expect(filas[0].querySelector('[data-action="ahorro-eliminar-aporte"]').getAttribute('aria-label'))
+      .toBe('Eliminar este aporte: $250.000');
   });
 
   // DIS.19 (item 7): la fila de texto pasa a medidor, asi que el simbolo de
@@ -1148,13 +1158,12 @@ describe('renderAhorro() - tarjeta del fondo (DIS.16)', () => {
 
   // AH.5 (ADR 049 D3): la sección comunica protección antes que la primera
   // cifra, no solo en el estado vacío.
-  it('la tarjeta activa explica qué protege antes del primer número', () => {
+  // ADR 133 D1: lo que protege lo dice el subtítulo de la sección, encima de
+  // la tarjeta; adentro se repetía.
+  it('la tarjeta activa no repite el propósito que ya dice el subtítulo', () => {
     renderAhorro(1_000_000, null, null);
-    const article = document.querySelector('.fondo-card');
-    const hijos = [...article.children];
-    const proposito = article.querySelector('.fondo-card__explica');
-    expect(proposito.textContent).toContain('protección');
-    expect(hijos.indexOf(proposito)).toBe(0);
+    expect(document.querySelector('.fondo-card .fondo-card__explica')).toBeNull();
+    expect(document.querySelector('.fondo-card').firstElementChild.classList.contains('fondo-card__nivel')).toBe(true);
   });
 });
 
@@ -1177,9 +1186,19 @@ describe('renderAhorro() - sin fondo activo (DIS.16, estado 1)', () => {
     expect(document.querySelector('.fondo-card__veredicto').textContent).toContain('$1.000.000');
   });
 
+  // ADR 133 D3: la pista va al pie, fuera de la tarjeta, con su salida.
   it('sin gastos fijos dice cómo conseguir el dato en vez de un monto inventado', () => {
     renderAhorro(0, null, null);
-    expect(document.querySelector('.fondo-card__veredicto').textContent).toContain('Registra tus gastos fijos');
+    expect(document.querySelector('.fondo-card__veredicto')).toBeNull();
+    const pie = document.querySelector('.fondo-card + .fondo-vacio__pie');
+    expect(pie.textContent).toContain('Los meses se miden con tus gastos fijos');
+    expect(pie.querySelector('a').getAttribute('href')).toBe('#compromisos');
+  });
+
+  it('con gastos fijos no hay pie: la pista dice cuánto sería el primer nivel', () => {
+    renderAhorro(1_000_000, null, null);
+    expect(document.querySelector('.fondo-vacio__pie')).toBeNull();
+    expect(document.querySelector('.fondo-card__veredicto').textContent).toContain('$1.000.000');
   });
 
   it('la acción de arranque conserva su data-action', () => {
@@ -1395,5 +1414,153 @@ describe('etiquetaCadaPeriodo()', () => {
   it('una frecuencia desconocida cae a "cada mes"', () => {
     expect(etiquetaCadaPeriodo('Bimestral')).toBe('cada mes');
     expect(etiquetaCadaPeriodo(undefined)).toBe('cada mes');
+  });
+});
+
+// ── El Fondo en el teléfono (ADR 133 D2) ─────────────────────────
+
+describe('cifraCobertura()', () => {
+  it('desde el primer mes dice meses enteros: la fracción la dice la barra', () => {
+    expect(cifraCobertura(1.06)).toBe('1 mes');
+    expect(cifraCobertura(4.9)).toBe('4 meses');
+  });
+
+  it('antes del primer mes dice semanas o días, nunca "0 meses"', () => {
+    expect(cifraCobertura(0.5)).toBe('2 semanas');
+    expect(cifraCobertura(0.26)).toBe('1 semana');
+    expect(cifraCobertura(0.1)).toBe('3 días');
+    expect(cifraCobertura(0)).toBe('0 días');
+  });
+});
+
+describe('tramosCobertura()', () => {
+  it('un tramo por mes de la meta, cada uno con lo que cubre de su mes', () => {
+    expect(tramosCobertura(1.06, 3)).toEqual([100, 6, 0]);
+    expect(tramosCobertura(3.5, 3)).toEqual([100, 100, 100]);
+    expect(tramosCobertura(0, 6)).toEqual([0, 0, 0, 0, 0, 0]);
+  });
+
+  it('pasados 12 meses de meta es una sola barra', () => {
+    expect(tramosCobertura(6, 24)).toEqual([25]);
+  });
+});
+
+describe('inicioPeriodoSiguiente()', () => {
+  it('dice cuándo vuelve a empezar el compromiso en cada frecuencia', () => {
+    expect(inicioPeriodoSiguiente('Mensual', '2026-11-13')).toBe('2026-12-01');
+    expect(inicioPeriodoSiguiente('Mensual', '2026-12-31')).toBe('2027-01-01');
+    expect(inicioPeriodoSiguiente('Quincenal', '2026-11-13')).toBe('2026-11-16');
+    expect(inicioPeriodoSiguiente('Quincenal', '2026-11-20')).toBe('2026-12-01');
+    expect(inicioPeriodoSiguiente('Semanal', '2026-11-13')).toBe('2026-11-16');
+    expect(inicioPeriodoSiguiente('Diario', '2026-11-13')).toBe('2026-11-14');
+  });
+
+  it('con una fecha inválida no inventa nada', () => {
+    expect(inicioPeriodoSiguiente('Mensual', 'ayer')).toBeNull();
+  });
+});
+
+describe('renderAhorro() en el teléfono (ADR 133 D2)', () => {
+  const matchMediaReal = window.matchMedia;
+  const mesActual = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  };
+
+  beforeEach(() => {
+    window.matchMedia = () => ({ matches: true, addEventListener() {} });
+    document.body.innerHTML = '<div id="panel-ahorro"></div>';
+    S.config = {};
+    S.ahorro = {
+      fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 1_000_000 },
+      compromisoMensual: 300_000,
+      aportes: [{ id: 'a1', monto: 300_000, fecha: `${mesActual()}-01`, nota: 'Aporte al fondo' }],
+    };
+  });
+  afterEach(() => { window.matchMedia = matchMediaReal; });
+
+  it('dice cuánto tiempo cubre en grande, con la meta al lado y un tramo por mes', () => {
+    renderAhorro(1_000_000, null, null);
+    expect(document.querySelector('.fondo-card')).toBeNull();
+    expect(document.querySelector('.fondo-movil__rotulo').textContent).toBe('Tu fondo te cubre');
+    expect(document.querySelector('.fondo-movil__tiempo').textContent).toBe('1 mes');
+    expect(document.querySelector('.fondo-movil__de').textContent).toBe('de 3');
+    expect(document.querySelectorAll('.fondo-movil__tramo')).toHaveLength(3);
+    expect(document.querySelector('.fondo-movil__frase').textContent).toContain('Si hoy dejaras de recibir ingresos');
+    expect(document.querySelector('.fondo-movil__dato').textContent).toBe('Tienes $1.300.000 de $3.000.000 · te faltan $1.700.000');
+  });
+
+  it('aportar no es un primario sólido (ADR 049 D2) y "Ajustar" abre el fondo', () => {
+    renderAhorro(1_000_000, null, null);
+    const aportar = document.querySelector('.fondo-movil [data-action="ahorro-nuevo-aporte"]');
+    expect(aportar.classList.contains('btn-dominio')).toBe(true);
+    expect(aportar.classList.contains('btn-primary')).toBe(false);
+    expect(document.querySelector('.fondo-movil [data-action="ahorro-editar"]').textContent.trim()).toBe('Ajustar');
+  });
+
+  it('con la meta cumplida "Ajustar" ofrece el nivel siguiente (R67)', () => {
+    S.ahorro.fondoEmergencia.montoActual = 3_000_000;
+    renderAhorro(1_000_000, null, null);
+    expect(document.querySelector('.fondo-movil [data-action="ahorro-editar"]').textContent.trim()).toBe('Subir a 6 meses');
+    expect(document.querySelector('.fondo-movil__dato').textContent).toContain('cumpliste tu meta');
+  });
+
+  it('en cero la cifra grande es la meta, no "0 meses"', () => {
+    S.ahorro.fondoEmergencia.montoActual = 0;
+    S.ahorro.aportes = [];
+    renderAhorro(1_000_000, null, null);
+    expect(document.querySelector('.fondo-movil__rotulo').textContent).toBe('Tu meta es cubrir');
+    expect(document.querySelector('.fondo-movil__tiempo').textContent).toBe('3 meses');
+    expect(document.querySelector('[data-action="ahorro-nuevo-aporte"]').textContent).toContain('Hacer mi primer aporte');
+  });
+
+  it('sin gastos fijos va el bloqueo, con lo que ya tienes', () => {
+    renderAhorro(0, null, null);
+    expect(document.querySelector('.fondo-movil .fondo-card__bloqueo')).not.toBeNull();
+    expect(document.querySelector('.fondo-movil__dato').textContent).toBe('Tienes $1.300.000');
+  });
+
+  it('la nota del dinero que no se mueve va aparte, fuera del bloque de arriba', () => {
+    renderAhorro(1_000_000, null, null);
+    const nota = document.querySelector('.fondo-movil + .fondo-movil__nota');
+    expect(nota.textContent).toContain('Aportar al fondo no descuenta saldo');
+  });
+
+  it('el compromiso cumplido dice cuándo vuelve a empezar y ofrece "Cambiar"', () => {
+    renderAhorro(1_000_000, null, null);
+    const tarjeta = document.querySelector('.fondo-compromiso');
+    expect(tarjeta.querySelector('h2').textContent).toMatch(/^Tu compromiso de [a-z]+$/);
+    expect(tarjeta.querySelector('.fondo-compromiso__monto').textContent).toBe('$300.000 de $300.000');
+    expect(tarjeta.querySelector('.fondo-compromiso__estado').textContent).toMatch(/^Cumplido · el 1 de [a-z]+ vuelve a empezar$/);
+    expect(tarjeta.querySelector('[data-action="ahorro-editar-compromiso"]').textContent).toBe('Cambiar');
+  });
+
+  it('sin compromiso la tarjeta pregunta cuánto y ofrece "Definir"', () => {
+    S.ahorro.compromisoMensual = 0;
+    renderAhorro(1_000_000, null, { monto: 200_000 });
+    const tarjeta = document.querySelector('.fondo-compromiso');
+    expect(tarjeta.querySelector('.fondo-compromiso__monto').textContent).toBe('¿Cuánto quieres apartar cada mes?');
+    expect(tarjeta.querySelector('.fondo-compromiso__estado').textContent).toContain('$200.000');
+    expect(tarjeta.querySelector('[data-action="ahorro-editar-compromiso"]').textContent).toBe('Definir');
+  });
+
+  it('los aportes dicen cuántos van este año y cada fila abre su hoja', () => {
+    renderAhorro(1_000_000, null, null);
+    expect(document.querySelector('.fondo-aportes__cuenta').textContent).toBe('1 este año');
+    expect(document.querySelectorAll('.fondo-aportes__lista .list-item--detalle')).toHaveLength(1);
+  });
+
+  it('la tasa del mes se dice como lo que queda de lo que recibes', () => {
+    renderAhorro(1_000_000, 79, null);
+    const nudge = document.querySelector('#panel-ahorro > .nudge');
+    expect(nudge.querySelector('.nudge__title').textContent).toBe('Este mes te queda el 79% de lo que recibes');
+    expect(nudge.querySelector('.nudge__desc').textContent).toContain('Lo recomendado es guardar al menos el 20%');
+  });
+
+  it('con el saldo oculto ninguna cifra en pesos queda a la vista (R20)', () => {
+    S.config = { ocultarSaldo: true };
+    renderAhorro(1_000_000, null, null);
+    const texto = ['.fondo-movil', '.fondo-compromiso'].map(sel => document.querySelector(sel).textContent).join(' ');
+    expect(texto).not.toMatch(/\$\d/);
   });
 });

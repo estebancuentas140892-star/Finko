@@ -26,7 +26,18 @@ import {
   NIVELES_FONDO,
   META_MESES_MIN,
   META_MESES_MAX,
+  cifraCobertura,
+  tramosCobertura,
+  inicioPeriodoSiguiente,
 } from './logic.js';
+
+const _MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
+  'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+/** Bajo 1024px el Fondo se pinta con la anatomía del tablero (ADR 133 D2). */
+export function fondoEnTelefono() {
+  return window.matchMedia?.('(max-width: 1023.98px)').matches === true;
+}
 
 // ── RENDER PRINCIPAL ─────────────────────────────────────────────
 
@@ -60,7 +71,9 @@ export function renderAhorro(gastosFijosMensuales, tasaAhorro = null, sugerencia
     return;
   }
 
-  el.innerHTML = _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia, frecuencia);
+  el.innerHTML = fondoEnTelefono()
+    ? _renderFondoTelefono(fondo, gastosFijosMensuales, tasaAhorro, sugerencia, frecuencia)
+    : _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia, frecuencia);
 
   // INT.1g (ADR 059 D7, P1): el compromiso del mes es lo unico de esta
   // pagina que hoy exige bajar un pliegue para saber si el mes va cumplido.
@@ -108,12 +121,19 @@ function _renderEmptyState(gastosFijosMensuales) {
   const nivelesHtml = NIVELES_FONDO.map(n => `
         <li class="fondo-card__nivel-fila fondo-card__nivel-fila--lejano">
           <span class="fondo-card__punto" aria-hidden="true"></span>
-          <span class="fondo-card__nivel-tx">${_esc(n.titulo)} · ${_esc(n.consecuencia)}</span>
+          <span class="fondo-card__nivel-tx"><span class="fondo-card__nivel-titulo">${_esc(n.titulo)}</span><span class="fondo-card__nivel-sep"> · </span>${_esc(n.consecuencia)}</span>
         </li>`).join('');
 
+  // ADR 133 D3: sin gastos fijos la pista sale de la tarjeta y lleva a Por
+  // pagar; con ellos dice cuánto sería el primer nivel.
   const pistaHtml = primerNivel > 0
     ? `<p class="fondo-card__veredicto">Con lo que pagas cada mes, tu primer nivel serían <strong>${f(primerNivel)}</strong>.</p>`
-    : `<p class="fondo-card__veredicto">Registra tus gastos fijos desde Por pagar (arriendo, servicios, suscripciones) y Finko calcula cuánto necesitas.</p>`;
+    : '';
+  const pieHtml = primerNivel > 0 ? '' : `
+    <div class="fondo-vacio__pie">
+      <p>Los meses se miden con tus gastos fijos. Si aún no los tienes, agrégalos primero.</p>
+      <a class="fondo-vacio__salida" href="#compromisos">Ir a Por pagar<svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+    </div>`;
 
   return `
     <article class="fondo-card fondo-card--vacio" data-dom="ahorro" aria-label="Fondo de emergencia">
@@ -128,7 +148,7 @@ function _renderEmptyState(gastosFijosMensuales) {
       <div class="fondo-card__acciones">
         <button class="fondo-card__principal" type="button" data-action="ahorro-activar-fondo">Empezar mi fondo</button>
       </div>
-    </article>`;
+    </article>${pieHtml}`;
 }
 
 // ── HERO DEL FONDO (estado activo) ───────────────────────────────
@@ -155,10 +175,9 @@ function _renderEmptyState(gastosFijosMensuales) {
  * pie de los bloques, que es todo el peso que merece aquí.
  *
  * AH.5 (ADR 049 D3): antes del primer número va una línea que dice qué es esto
- * y por qué importa, la misma pregunta que ya respondía el estado vacío pero
- * dicha corto, porque acá compite con datos y no puede volver a ocupar un
- * párrafo. El registro emocional (protección, no solo progreso) tiene que
- * leerse antes de llegar a la primera cifra.
+ * y por qué importa. Desde el ADR 133 D1 esa línea es el subtítulo de la
+ * sección ("Para cuando algo se dañe o te quedes sin ingresos"), justo encima
+ * de la tarjeta: repetirla adentro decía lo mismo dos veces.
  */
 function _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia = null, frecuencia = 'Mensual') {
   const { metaMeses, montoActual: montoBase } = fondo;
@@ -184,7 +203,6 @@ function _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia = 
 
   return `
     <article class="fondo-card" data-dom="ahorro" aria-label="Fondo de emergencia">
-      <p class="fondo-card__explica">Tu protección para cuando algo se dañe o dejes de recibir ingresos.</p>
       ${_renderNivelActual({ enCero, completado, ultimoLogrado, actual })}
       ${_renderCobertura({ colchon, metaMeses, enCero })}
       ${_renderVeredictoFondo({ completado, faltante, objetivo, montoTotal, metaMeses, actual, sugerencia, enCero, m })}
@@ -203,6 +221,157 @@ function _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia = 
     </article>
 
     ${_renderHabitoSection(aportes, tasaAhorro)}`;
+}
+
+// ── EL FONDO EN EL TELÉFONO (ADR 133 D2) ─────────────────────────
+
+/**
+ * El Fondo bajo 1024px, en el orden del tablero "rediseño2": arriba y suelto,
+ * cuánto tiempo te cubre con una barra partida en los meses de tu meta; los dos
+ * botones (aportar con el tinte de la sección, no sólido: ADR 049 D2); la nota
+ * de que el dinero no se mueve (ADR 009); el compromiso del período como
+ * tarjeta; los aportes en filas que abren su hoja; y la tasa del mes. La franja
+ * mes a mes y el medidor de gota siguen en escritorio (DIS.19), donde hay ancho
+ * para la prueba y el carril repite el medidor (INT.1g).
+ */
+function _renderFondoTelefono(fondo, gastosFijosMensuales, tasaAhorro, sugerencia, frecuencia) {
+  const aportes    = Array.isArray(S.ahorro?.aportes) ? S.ahorro.aportes : [];
+  const montoTotal = calcularMontoTotalFondo(fondo.montoActual, aportes);
+  const metaMeses  = fondo.metaMeses;
+  const objetivo   = calcularObjetivoFondo(gastosFijosMensuales, metaMeses);
+  const colchon    = mesesDeColchon(montoTotal, gastosFijosMensuales);
+  const { faltante, completado } = calcularProgresoFondo(montoTotal, objetivo);
+
+  const oculto = S.config?.ocultarSaldo === true;
+  const m      = (n) => oculto ? SALDO_MASCARA_CUENTA : f(n);
+  const enCero = montoTotal <= 0;
+
+  // La oferta de seguir nombra su destino (R67), como en escritorio.
+  const siguienteNivel = NIVELES_FONDO.find(n => n.meses > metaMeses) ?? null;
+  const ajustar = completado && siguienteNivel ? `Subir a ${siguienteNivel.meses} meses` : 'Ajustar';
+  const compromisoMensual = Number(S.ahorro?.compromisoMensual) || 0;
+
+  return `
+    <section class="fondo-movil" data-dom="ahorro" aria-labelledby="fondo-movil-titulo">
+      ${_cabezaFondoTelefono({ colchon, metaMeses, enCero, completado, montoTotal, objetivo, faltante, m })}
+      <div class="fondo-movil__acciones">
+        <button class="btn-dominio fondo-movil__aportar" type="button" data-dom="ahorro" data-action="ahorro-nuevo-aporte">
+          <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>${enCero ? 'Hacer mi primer aporte' : 'Aportar al fondo'}
+        </button>
+        <button class="btn btn-secondary fondo-movil__ajustar" type="button" data-action="ahorro-editar">
+          <svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg>${ajustar}
+        </button>
+      </div>
+    </section>
+    <p class="fondo-movil__nota">
+      <svg class="icon" aria-hidden="true"><use href="#i-info"/></svg>
+      <span>Este dinero sigue en tus cuentas: solo queda apartado. Aportar al fondo no descuenta saldo.</span>
+    </p>
+    ${_compromisoTelefono(compromisoMensual, aportes, sugerencia, frecuencia, m)}
+    ${_aportesTelefono(aportes)}
+    ${tasaAhorro !== null ? _renderNudgeTasa(tasaAhorro) : ''}`;
+}
+
+/**
+ * Lo de arriba del Fondo en el teléfono. En cero la cifra grande es la meta,
+ * no "0 meses" (la lectura que más desanima, DIS.16); sin gastos fijos no hay
+ * meses que contar y va el bloqueo de siempre (ficha 11, E3).
+ */
+function _cabezaFondoTelefono({ colchon, metaMeses, enCero, completado, montoTotal, objetivo, faltante, m }) {
+  if (colchon === null) {
+    return `
+      <h2 class="fondo-movil__rotulo" id="fondo-movil-titulo">Tu fondo</h2>
+      ${_renderCobertura({ colchon, metaMeses, enCero })}
+      <p class="fondo-movil__dato">Tienes ${m(montoTotal)}</p>`;
+  }
+
+  const tramos = tramosCobertura(colchon, metaMeses).map(pct => `
+        <span class="fondo-movil__tramo"><span style="width:${pct}%"></span></span>`).join('');
+  const hasta = fechaCobertura(colchon, hoy());
+  const frase = enCero || !hasta
+    ? 'Todavía no tienes días cubiertos. El primer aporte ya te compra tiempo.'
+    : `Si hoy dejaras de recibir ingresos, cubres tus gastos fijos hasta el <strong>${fechaLegible(hasta)}</strong>.`;
+  const dato = enCero
+    ? `Tu meta hoy son ${m(objetivo)}`
+    : completado
+      ? `Tienes ${m(montoTotal)} · cumpliste tu meta de ${m(objetivo)}`
+      : `Tienes ${m(montoTotal)} de ${m(objetivo)} · te faltan ${m(faltante)}`;
+
+  return `
+      <h2 class="fondo-movil__rotulo" id="fondo-movil-titulo">${enCero ? 'Tu meta es cubrir' : 'Tu fondo te cubre'}</h2>
+      <p class="fondo-movil__cifra">
+        <span class="fondo-movil__tiempo">${enCero ? `${metaMeses} ${metaMeses === 1 ? 'mes' : 'meses'}` : cifraCobertura(colchon)}</span>
+        ${enCero ? '' : `<span class="fondo-movil__de">de ${metaMeses}</span>`}
+      </p>
+      <span class="fondo-movil__tramos" aria-hidden="true">${tramos}</span>
+      <p class="fondo-movil__frase">${frase}</p>
+      <p class="fondo-movil__dato">${dato}</p>`;
+}
+
+/**
+ * "Tu compromiso de noviembre" como tarjeta: lo aportado de lo prometido, si
+ * se cumplió y cuándo vuelve a empezar (o lo que falta), una barra delgada y
+ * "Cambiar". Sin compromiso, la misma tarjeta pregunta cuánto.
+ */
+function _compromisoTelefono(compromisoMensual, aportes, sugerencia, frecuencia, m) {
+  const hoyISO = hoy();
+  const titulo = { Diario: 'Tu compromiso de hoy', Semanal: 'Tu compromiso de esta semana', Quincenal: 'Tu compromiso de esta quincena' }[frecuencia]
+    ?? `Tu compromiso de ${_MESES[Number(hoyISO.slice(5, 7)) - 1]}`;
+  const p = compromisoMensual > 0
+    ? progresoCompromiso(compromisoMensual, aportadoEnPeriodo(aportes, hoyISO, frecuencia), hoyISO, frecuencia)
+    : null;
+
+  let cuerpo;
+  if (p) {
+    const estado = p.completo
+      ? `<span class="fondo-compromiso__ok">Cumplido</span> · el ${fechaLegible(inicioPeriodoSiguiente(frecuencia, hoyISO))} vuelve a empezar`
+      : `${p.diasRestantes <= 1 ? 'Hoy cierra' : `Quedan ${p.diasRestantes} días`} · con ${m(p.faltante)} lo completas`;
+    cuerpo = `
+        <div class="fondo-compromiso__textos">
+          <p class="fondo-compromiso__monto">${m(p.aportado)} de ${m(p.objetivo)}</p>
+          <p class="fondo-compromiso__estado">${estado}</p>
+          <span class="fondo-compromiso__barra" aria-hidden="true"><span style="width:${p.pct}%"></span></span>
+        </div>
+        <button class="fondo-compromiso__accion" type="button" data-action="ahorro-editar-compromiso"
+                aria-label="Cambiar tu compromiso de ahorro">Cambiar</button>`;
+  } else {
+    const pista = sugerencia?.monto > 0
+      ? `Según tus números, ${m(montoPorPeriodo(sugerencia.monto, frecuencia))} es un buen punto de partida.`
+      : 'Un monto fijo hace que el fondo crezca sin pensarlo.';
+    cuerpo = `
+        <div class="fondo-compromiso__textos">
+          <p class="fondo-compromiso__monto">¿Cuánto quieres apartar ${etiquetaCadaPeriodo(frecuencia)}?</p>
+          <p class="fondo-compromiso__estado">${pista}</p>
+        </div>
+        <button class="fondo-compromiso__accion" type="button" data-action="ahorro-editar-compromiso">Definir</button>`;
+  }
+
+  return `
+    <section class="fondo-compromiso" aria-labelledby="fondo-compromiso-titulo">
+      <h2 class="fondo-movil__seccion" id="fondo-compromiso-titulo">${titulo}</h2>
+      <div class="fondo-compromiso__tarjeta">
+        <span class="fondo-compromiso__teja" aria-hidden="true">${tejaCategoria('i-recurring', 'ahorro')}</span>
+        ${cuerpo}
+      </div>
+    </section>`;
+}
+
+/** "Aportes" con cuántos van este año; cada fila abre su hoja (ADR 098 D4). */
+function _aportesTelefono(aportes) {
+  const ordenados = ordenarAportesPorFecha(aportes);
+  const anio = hoy().slice(0, 4);
+  const esteAnio = ordenados.filter(a => String(a.fecha ?? '').startsWith(anio)).length;
+  const lista = ordenados.length === 0
+    ? `<p class="ahorro-habito__empty">Aún no has registrado aportes. Cada vez que apartes dinero para el fondo, regístralo aquí.</p>`
+    : `<ul class="ahorro-habito__lista fondo-aportes__lista" role="list">${ordenados.map(_renderAporteItem).join('')}</ul>`;
+  return `
+    <section class="fondo-aportes" aria-labelledby="fondo-aportes-titulo">
+      <div class="fondo-aportes__head">
+        <h2 class="fondo-movil__seccion" id="fondo-aportes-titulo">Aportes</h2>
+        ${esteAnio > 0 ? `<p class="fondo-aportes__cuenta">${esteAnio} este año</p>` : ''}
+      </div>
+      ${lista}
+    </section>`;
 }
 
 /**
@@ -530,12 +699,18 @@ function _renderMedidorCompromiso(compromisoMensual, aportes, frecuencia = 'Mens
  */
 function _renderAporteItem(aporte) {
   const nota = aporte.nota ? _esc(aporte.nota) : 'Aporte al fondo';
+  const fecha = fechaLegible(aporte.fecha);
+  // ADR 133 D2: la nota arriba y la fecha debajo, como la fila de un gasto
+  // (ADR 132 D4). En el teléfono la fila entera abre su hoja (ADR 098 D4),
+  // que copia "Eliminar este aporte"; en escritorio el botón sigue a la vista.
   return `
-    <li class="list-item" data-id="${_esc(aporte.id)}">
+    <li class="list-item list-item--detalle" data-id="${_esc(aporte.id)}">
+      <button type="button" class="list-item__detalle" data-action="fila-detalle"
+              aria-label="Ver aporte del ${fecha}"></button>
       <div class="list-item__icon" aria-hidden="true">${tejaCategoria('i-ahorro', 'ahorro')}</div>
       <div class="list-item__body">
-        <p class="list-item__title">${fechaLegible(aporte.fecha)}</p>
-        <p class="list-item__subtitle">${nota}</p>
+        <p class="list-item__title">${nota}</p>
+        <p class="list-item__subtitle">${fecha}</p>
       </div>
       <div class="list-item__meta">
         <p class="list-item__amount">+${f(aporte.monto)}</p>
@@ -544,7 +719,7 @@ function _renderAporteItem(aporte) {
         <button class="btn btn-ghost btn-icon"
                 data-action="ahorro-eliminar-aporte"
                 data-id="${_esc(aporte.id)}"
-                aria-label="Eliminar aporte de ${f(aporte.monto)}">
+                aria-label="Eliminar este aporte: ${f(aporte.monto)}">
           <svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg>
         </button>
       </div>
@@ -554,18 +729,21 @@ function _renderAporteItem(aporte) {
 function _renderNudgeTasa(tasaAhorro) {
   let icono, titulo, desc, nivel;
 
+  // ADR 133 D2: la tasa es lo que queda de lo que recibes según los gastos
+  // registrados hasta hoy, no lo que ya se ahorró: se dice como lo que es.
+  const queda = `Este mes te queda el ${tasaAhorro}% de lo que recibes`;
   if (tasaAhorro >= 20) {
-    icono = icon('trophy'); nivel = 'nudge-success';
-    titulo = `Excelente: ahorras el ${tasaAhorro}% de tus ingresos este mes.`;
-    desc   = 'Superas el umbral recomendado del 20%. ¡Sigue así!';
+    icono = icon('lightbulb'); nivel = 'nudge-success';
+    titulo = queda;
+    desc   = 'Según los gastos que registraste hasta hoy. Lo recomendado es guardar al menos el 20%.';
   } else if (tasaAhorro >= 10) {
     icono = icon('inversion'); nivel = 'nudge-info';
-    titulo = `Ahorras el ${tasaAhorro}% de tus ingresos este mes.`;
-    desc   = 'Vas bien. La meta recomendada es el 20%. Un poco más y llegas.';
+    titulo = queda;
+    desc   = 'Según los gastos que registraste hasta hoy. Lo recomendado es guardar al menos el 20%: un poco más y llegas.';
   } else if (tasaAhorro > 0) {
     icono = icon('lightbulb'); nivel = 'nudge-medium';
-    titulo = `Ahorras el ${tasaAhorro}% de tus ingresos este mes.`;
-    desc   = 'Antes de recortar el ahorro, revisa tus gastos de estilo de vida (entretenimiento, salidas, suscripciones). Son los más fáciles de ajustar.';
+    titulo = queda;
+    desc   = 'Según los gastos que registraste hasta hoy. Antes de recortar el ahorro, revisa los gastos de estilo de vida (salidas, suscripciones): son los más fáciles de ajustar.';
   } else if (tasaAhorro === 0) {
     icono = icon('alert'); nivel = 'nudge-medium';
     titulo = 'Este mes tus gastos igualan tus ingresos.';

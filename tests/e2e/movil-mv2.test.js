@@ -712,9 +712,10 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     });
     expect(zona).toEqual({ alto: '44px', ancho: '44px' });
 
-    // D4 (R73): cada hija de Ahorro dice su pregunta bajo el título.
+    // ADR 133 D1 (supera el 116 D4): cada hija de Ahorro dice para qué sirve
+    // su dinero bajo el título.
     await page.goto('/#metas');
-    await expect(page.locator('#sec-metas .section__linea')).toHaveText('Algún día, cuando quieras');
+    await expect(page.locator('#sec-metas .section__linea')).toHaveText('Para algo que quieres comprar o hacer');
   });
 
   test('Por pagar va por urgencia, marca con un círculo y la fila abre su hoja (ADR 117 D1, ADR 132 D7)', async ({ page }) => {

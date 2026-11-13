@@ -111,11 +111,15 @@ export function calcularTasaAhorro(ingresos, gastos) {
 /**
  * Las cuatro modalidades de ahorro, en el orden de la barra de lentes.
  *
- * El orden lo fija una sola pregunta, ¿cuándo vas a usar este dinero? (rótulo
- * `cuando`, DIS.19): ojalá nunca (fondo), en una fecha que no elegiste
- * (reservas), algún día (metas) y además creciendo (inversión). La casa de
- * Ahorro que mostraba los cuatro carriles se retiró con el ADR 125: Ahorro abre
- * en el fondo, la primera de la lista.
+ * El orden lo fija una sola pregunta, ¿cuándo vas a usar este dinero? (DIS.19):
+ * ojalá nunca (fondo), en una fecha que no elegiste (reservas), algún día
+ * (metas) y además creciendo (inversión). La casa de Ahorro que mostraba los
+ * cuatro carriles se retiró con el ADR 125: Ahorro abre en el fondo, la
+ * primera de la lista.
+ *
+ * `para` es la línea bajo el título de cada lente (ADR 133 D1, supera la
+ * pregunta `cuando` del ADR 116 D4): sin casa, cada lente dice sola para qué
+ * sirve su dinero.
  *
  * `seccion` es el hash de destino, no la clave del dominio: el fondo vive en
  * `#fondo` desde DIS.18.
@@ -124,19 +128,19 @@ export const MODALIDADES_AHORRO = [
   {
     clave: 'fondo', seccion: 'fondo', label: 'Fondo de emergencia',
     corto: 'Fondo',
-    cuando: 'Ojalá nunca lo uses',
+    para: 'Para cuando algo se dañe o te quedes sin ingresos',
   },
   {
     clave: 'apartados', seccion: 'apartados', label: 'Reservas',
-    cuando: 'En una fecha que no elegiste',
+    para: 'Para pagos que ya sabes que llegan',
   },
   {
     clave: 'metas', seccion: 'metas', label: 'Metas',
-    cuando: 'Algún día, cuando quieras',
+    para: 'Para algo que quieres comprar o hacer',
   },
   {
     clave: 'inversiones', seccion: 'inversion', label: 'Inversión',
-    cuando: 'Además, creciendo',
+    para: 'Dinero que pusiste a crecer',
   },
 ];
 
@@ -459,6 +463,59 @@ export function aportadoEnPeriodo(aportes, hoyISO, frecuencia = 'Mensual') {
  * @param {string} hoyISO YYYY-MM-DD.
  * @returns {number}
  */
+/**
+ * El primer día del período siguiente: cuándo "vuelve a empezar" el
+ * compromiso (ADR 133 D2). Mensual, el 1 del mes que viene; Quincenal, el 16 o
+ * el 1; Semanal, el lunes; Diario, mañana.
+ *
+ * @param {string} frecuencia una de FRECUENCIAS_APORTE.
+ * @param {string} hoyISO YYYY-MM-DD.
+ * @returns {string|null} YYYY-MM-DD, o null con una fecha inválida.
+ */
+export function inicioPeriodoSiguiente(frecuencia, hoyISO) {
+  if (!hoyISO || !/^\d{4}-\d{2}-\d{2}$/.test(hoyISO)) return null;
+  const { finISO } = _rangoPeriodo(frecuencia, hoyISO);
+  const [a, m, d] = finISO.split('-').map(Number);
+  return _isoUTC(new Date(Date.UTC(a, m - 1, d + 1)));
+}
+
+/**
+ * El tiempo cubierto dicho en grande (ADR 133 D2): meses enteros desde el
+ * primero ("1 mes", "4 meses"); antes, semanas o días. Las fracciones las dice
+ * la barra partida y la fecha de la frase, no la cifra.
+ *
+ * @param {number} meses meses cubiertos (mesesDeColchon).
+ * @returns {string}
+ */
+export function cifraCobertura(meses) {
+  const n = Number(meses);
+  if (!Number.isFinite(n) || n <= 0) return '0 días';
+  if (n >= 1) {
+    const enteros = Math.floor(n);
+    return `${enteros} ${enteros === 1 ? 'mes' : 'meses'}`;
+  }
+  const semanas = Math.floor(n * 4);
+  if (semanas >= 1) return `${semanas} ${semanas === 1 ? 'semana' : 'semanas'}`;
+  const dias = Math.max(1, Math.floor(n * _DIAS_POR_MES));
+  return `${dias} ${dias === 1 ? 'día' : 'días'}`;
+}
+
+/**
+ * Los tramos de la barra del Fondo en el teléfono (ADR 133 D2): uno por mes de
+ * la meta, cada uno lleno con lo que cubre de su mes, en porcentaje entero. Más
+ * de 12 tramos dejarían de leerse como meses: pasado ese tope, una sola barra.
+ *
+ * @param {number|null} meses meses cubiertos.
+ * @param {number} metaMeses
+ * @returns {number[]} porcentaje de cada tramo (0 a 100).
+ */
+export function tramosCobertura(meses, metaMeses) {
+  const meta = Math.max(1, Math.round(Number(metaMeses) || 0));
+  const n = Math.max(0, Number(meses) || 0);
+  if (meta > 12) return [Math.min(100, Math.round((n / meta) * 100))];
+  return Array.from({ length: meta }, (_, i) => Math.round(Math.min(1, Math.max(0, n - i)) * 100));
+}
+
 function _diasRestantesPeriodo(frecuencia, hoyISO) {
   if (frecuencia === 'Mensual' || !FRECUENCIAS_APORTE.includes(frecuencia)) {
     return _diasRestantesDelMes(hoyISO);

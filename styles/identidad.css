@@ -1299,3 +1299,215 @@ body:not(.light-theme) .cov__fill {
   .plan-movil__herramienta { padding: 0 var(--fk-space-4) var(--fk-space-4); }
   .plan-movil__nota { margin: 0; font-size: var(--fk-text-xs); line-height: var(--fk-leading-snug); color: var(--fk-text-muted); }
 }
+
+/* ════════════════════════════════════════════════════════════
+   ADR 133: Ahorro del adulto en el teléfono (tablero "rediseño2")
+   ════════════════════════════════════════════════════════════ */
+
+/* D3: sin gastos fijos, la pista del Fondo vacío va al pie, fuera de la
+   tarjeta, con su salida a Por pagar. */
+.fondo-vacio__pie {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--fk-space-1);
+  margin-top: var(--fk-space-4);
+  padding: 0 var(--fk-space-2);
+  font-size: var(--fk-text-sm);
+  line-height: var(--fk-leading-snug);
+  color: var(--fk-text-secondary);
+}
+.fondo-vacio__pie > p { margin: 0; }
+.fondo-vacio__salida {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 44px;
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-accent);
+  text-decoration: none;
+}
+.fondo-vacio__salida .icon { width: 16px; height: 16px; } /* del alto del texto */
+
+@media (max-width: 1023px) {
+  /* D3: una sola pregunta, la del banner con Tino. La tarjeta del vacío se
+     pega debajo (como los vacíos de Gastos, ADR 132 D6) con los niveles en
+     tabla y "Empezar mi fondo" como primario. */
+  #sec-fondo:has(.banner-proposito) .banner-proposito {
+    margin-bottom: 0;
+    padding-bottom: var(--fk-space-4);
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+    box-shadow: var(--fk-shadow-filo);
+  }
+  #sec-fondo:has(.banner-proposito) .fondo-card--vacio {
+    padding: 0 var(--fk-space-5) var(--fk-space-5);
+    border: 0;
+    border-radius: 0 0 var(--fk-radius-xl) var(--fk-radius-xl);
+    background: var(--fk-bg-surface);
+    box-shadow: var(--fk-shadow-sm);
+  }
+  #sec-fondo:has(.banner-proposito) .fondo-card--vacio :is(.empty-state__icon, .fondo-card__pregunta, .fondo-card__explica, .fondo-card__kicker) { display: none; }
+  .fondo-card--vacio .fondo-card__escalera {
+    padding: var(--fk-space-2) var(--fk-space-4);
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-lg);
+    background: var(--fk-bg-base);
+  }
+  .fondo-card--vacio .fondo-card__nivel-fila { padding-block: var(--fk-space-1); }
+  .fondo-card--vacio .fondo-card__punto,
+  .fondo-card--vacio .fondo-card__nivel-sep { display: none; }
+  .fondo-card--vacio .fondo-card__nivel-tx {
+    display: grid;
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    gap: var(--fk-space-3);
+    font-size: var(--fk-text-sm);
+    color: var(--fk-text-secondary);
+  }
+  .fondo-card--vacio .fondo-card__nivel-titulo { font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
+  .fondo-card--vacio .fondo-card__principal {
+    min-height: 52px;
+    border-color: var(--fk-btn-primary-bg);
+    background: var(--fk-btn-primary-bg);
+    color: var(--fk-btn-primary-text);
+    font-size: var(--fk-text-base);
+  }
+
+  /* D2: el Fondo suelto arriba, con su tiempo en grande y la barra partida
+     en los meses de la meta. */
+  .fondo-movil { display: flex; flex-direction: column; padding-top: var(--fk-space-2); }
+  .fondo-movil__rotulo,
+  .fondo-movil__dato {
+    margin: 0;
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-regular);
+    color: var(--fk-text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+  .fondo-movil__cifra { display: flex; align-items: baseline; gap: var(--fk-space-2); margin: 0; }
+  .fondo-movil__tiempo {
+    font-family: var(--fk-font-display);
+    font-size: 2.5rem; /* 40px: la cifra de la pantalla, como el total de Gastos */
+    line-height: 1.2;
+    font-weight: var(--fk-font-extrabold);
+    letter-spacing: -0.03em;
+    color: var(--fk-text-primary);
+  }
+  .fondo-movil__de { font-size: var(--fk-text-lg); font-weight: var(--fk-font-semibold); color: var(--fk-text-secondary); }
+  .fondo-movil__tramos { display: flex; gap: var(--fk-space-1); margin-top: var(--fk-space-2); }
+  .fondo-movil__tramo {
+    flex: 1;
+    height: 10px;
+    overflow: hidden;
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-border-default);
+  }
+  .fondo-movil__tramo > span { display: block; height: 100%; background: var(--fk-dom-ahorro); }
+  .fondo-movil__frase {
+    margin: var(--fk-space-3) 0 var(--fk-space-1);
+    font-size: 0.9375rem; /* 15px: la frase que se lee entera */
+    line-height: var(--fk-leading-snug);
+    color: var(--fk-text-primary);
+    text-wrap: pretty;
+  }
+  .fondo-movil__frase strong { font-weight: var(--fk-font-semibold); }
+  .fondo-movil .fondo-card__bloqueo { margin-top: var(--fk-space-2); }
+  .fondo-movil__acciones { display: flex; gap: var(--fk-space-2); margin-top: var(--fk-space-4); }
+  .fondo-movil__acciones .icon { width: 18px; height: 18px; } /* del alto del texto del botón */
+  .fondo-movil__aportar { flex: 1; gap: var(--fk-space-2); min-height: 48px; font-size: var(--fk-text-base); }
+  .fondo-movil__ajustar { flex: none; gap: var(--fk-space-2); min-height: 48px; }
+
+  .fondo-movil__nota {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-2);
+    margin: var(--fk-space-4) 0 0;
+    padding: var(--fk-space-2) var(--fk-space-3);
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-lg);
+    font-size: var(--fk-text-xs);
+    line-height: var(--fk-leading-snug);
+    color: var(--fk-text-secondary);
+  }
+  .fondo-movil__nota .icon { flex-shrink: 0; width: 20px; height: 20px; color: var(--fk-dom-ahorro-text); } /* del alto de dos renglones */
+
+  .fondo-movil__seccion {
+    margin: var(--fk-space-6) 0 var(--fk-space-2);
+    font-size: var(--fk-text-lg);
+    font-weight: var(--fk-font-bold);
+    color: var(--fk-text-primary);
+  }
+
+  /* El compromiso del período como tarjeta. */
+  .fondo-compromiso__tarjeta {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    padding: var(--fk-space-3) var(--fk-space-2) var(--fk-space-3) var(--fk-space-4);
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-xl);
+    background: var(--fk-bg-surface);
+  }
+  .fondo-compromiso__teja .cat-teja { width: 2.5rem; height: 2.5rem; }
+  .fondo-compromiso__textos { display: flex; flex: 1; flex-direction: column; gap: 2px; min-width: 0; }
+  .fondo-compromiso__monto { margin: 0; font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); font-variant-numeric: tabular-nums; }
+  .fondo-compromiso__estado { margin: 0; font-size: var(--fk-text-xs); line-height: var(--fk-leading-snug); color: var(--fk-text-secondary); }
+  .fondo-compromiso__ok { font-weight: var(--fk-font-semibold); color: var(--fk-success-text); }
+  .fondo-compromiso__barra {
+    display: block;
+    height: 6px;
+    margin-top: var(--fk-space-1);
+    overflow: hidden;
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-border-default);
+  }
+  .fondo-compromiso__barra > span { display: block; height: 100%; background: var(--fk-dom-ahorro); }
+  .fondo-compromiso__accion {
+    flex: none;
+    min-height: 44px;
+    padding: 0 var(--fk-space-2);
+    border: 0;
+    background: none;
+    font: inherit;
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-accent);
+    cursor: pointer;
+  }
+
+  /* Los aportes: una tarjeta con una fila por aporte que abre su hoja. */
+  .fondo-aportes__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--fk-space-3); }
+  .fondo-aportes__cuenta { margin: 0; font-size: var(--fk-text-sm); color: var(--fk-text-secondary); }
+  .fondo-aportes__lista {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow: hidden;
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-xl);
+    background: var(--fk-bg-surface);
+  }
+  .fondo-aportes__lista > .list-item {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    margin: 0;
+    padding: var(--fk-space-3) var(--fk-space-4);
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .fondo-aportes__lista > .list-item + .list-item { border-top: 1px solid var(--fk-border-subtle); }
+  .fondo-aportes__lista .list-item__title { font-weight: var(--fk-font-semibold); }
+  .fondo-aportes__lista .list-item__amount { font-weight: var(--fk-font-bold); color: var(--fk-success-text); }
+
+  /* La tasa del mes, en tarjeta como el resto (D2). */
+  #panel-ahorro > .nudge {
+    margin: var(--fk-space-6) 0 0;
+    padding: var(--fk-space-4);
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-xl);
+    background: var(--fk-bg-surface);
+  }
+}

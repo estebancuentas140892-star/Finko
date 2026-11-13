@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-11-05.
+> Revisado: 2026-11-13.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-11)
+
+### feat(ahorro): MV2.30 Ahorro tanda 1, el encabezado de las cuatro lentes y el Fondo · 2026-11-13
+
+[ADR 133](DECISIONS/133-ahorro-del-adulto-en-el-telefono.md) D1 a D3. Ficha: [`contexto/ahorro.md`](contexto/ahorro.md). SW v680. Tablero "rediseño2".
+
+- **Para qué sirve cada lente** bajo su título ("Para pagos que ya sabes que llegan"), en los dos anchos: sin casa, la frase de cuándo se usa el dinero no decía para qué. El campo `cuando` de `MODALIDADES_AHORRO` pasa a `para`; la línea de propósito que abría la tarjeta del Fondo en escritorio sale, porque el subtítulo ya la dice.
+- **El Fondo en el teléfono** (`_renderFondoTelefono()`): "Tu fondo te cubre 1 mes de 3" con una barra partida en los meses de la meta (`tramosCobertura()`, `cifraCobertura()`), la fecha hasta la que cubre, "Aportar al fondo" con el tinte (no sólido, ADR 049 D2) y "Ajustar", la nota del dinero que no se mueve en su caja, el compromiso como tarjeta con cuándo vuelve a empezar (`inicioPeriodoSiguiente()`) y los aportes en filas que abren su hoja con "Eliminar este aporte". Desde 1024px siguen la franja y la gota.
+- **El Fondo vacío**: una sola pregunta (la del banner, con Tino) y la tarjeta pegada debajo con los tres niveles en tabla y "Empezar mi fondo" como primario; sin gastos fijos, la pista va al pie con "Ir a Por pagar". Cierra el hallazgo de GU.1a.
+- **La tasa del mes** se dice como lo que es: "Este mes te queda el 79% de lo que recibes", según los gastos registrados hasta hoy.
+- Pruebas: 5 ajustadas y 18 nuevas en `ahorro`; los dos E2E del Fondo a 390px miden la tarjeta del compromiso y abren la hoja de un aporte.
 
 ### feat(compromisos): MV2.30 Gastos tanda 5, la hoja del plan de salida; cierra Gastos · 2026-11-06
 
