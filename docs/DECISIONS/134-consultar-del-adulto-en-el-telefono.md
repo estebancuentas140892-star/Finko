@@ -1,6 +1,6 @@
 # ADR 134 - Consultar del adulto en el teléfono: la hoja Más, Calendario, Movimientos y Análisis
 
-**Estado:** Aceptada (2026-11-13). Se aplica en cuatro tandas: (1) la hoja Más y Calendario (SW v685, aplicada); (2) la hoja de un día y el Calendario vacío (SW v686, aplicada); (3) Movimientos, su búsqueda y la hoja de un movimiento; (4) Análisis.
+**Estado:** Aceptada (2026-11-13). Se aplica en cuatro tandas: (1) la hoja Más y Calendario (SW v685, aplicada); (2) la hoja de un día y el Calendario vacío (SW v686, aplicada); (3) Movimientos, su búsqueda y la hoja de un movimiento (SW v687, aplicada); (4) Análisis.
 **Fecha:** 2026-11-13
 **Autores:** Esteban (diseño y decisión: "vamos a seguir aplicando los cambios de diseño propuestos en esta carpeta"), Claude Opus 5.5 (auditoría, implementación y redacción)
 **Relación:** **Aplica** el tablero "Finko móvil · rediseño3" (Claude Design, `Diseño Finko/`), la cuarta pieza de MV2.30, sobre la identidad del [ADR 127](127-identidad-bosque-y-sol.md). **Cambia** en la hoja Más el lugar de la línea de estado de cada destino ([ADR 108](108-mas-dice-como-esta-cada-destino.md) D2: de la derecha a debajo del nombre, como ya iba la de Ajustes, D4) y la leyenda del Calendario (de tipos de pago a lo que sale y lo que entra, D3). **Conserva** la tarjeta de identidad de Calendario ([ADR 127](127-identidad-bosque-y-sol.md) D5), el techo de la hoja Más (R83), la hoja del día en el teléfono ([ADR 118](118-el-dia-en-hoja-y-las-hojas-se-cierran-de-tres-formas.md)) y a Tino en los vacíos ([ADR 129](129-tino-ronda-2-en-el-adulto.md)).
@@ -49,6 +49,8 @@ Bajo el título, "Todo lo que entró y salió, por fecha". Los filtros "Todos", 
 | Una teja con el ícono de la sección en los vacíos | Tino sobre su sol | ADR 127 D6 y 129 D3 |
 | "Lo próximo: Colegio, mañana" con "Plan Claro" venciendo hoy | lo próximo desde hoy, incluido hoy | lo que vence hoy es lo más próximo; callarlo dejaría de avisar justo ese día |
 | El día de hoy con un pago sin pagar | se marca como hoy, no como vencido, en los dos anchos | ADR 132: el rojo es para lo que ya pasó; "Vence hoy" va en ámbar |
+| La hoja de un movimiento con fecha, categoría y "Salió de" | un gasto abre la hoja del gasto que ya existe (ADR 119 D2), con nota, "Repetir hoy" y los gastos de su categoría en el mes | es la misma hoja que se abre desde Gastos; dos hojas para el mismo gasto dirían cosas distintas |
+| "−$1.197.000" con el día en cada fila | el día en su encabezado y la fila sin él, en los dos anchos | **supera** esa parte del ADR 121 D1 ("Mar 27 · Restaurantes · Nequi"): con el día arriba se leía dos veces |
 | El vacío sin el mes | sin el mes solo para quien no tiene nada con fecha; con datos y un mes vacío sigue "está despejado" con el mes | ADR 111 D5: quien ya tiene datos navega meses |
 | "Agregar un pago fijo" | abre el formulario de gasto fijo de Por pagar, sin pasar por la sección | es el mismo camino del vacío de Por pagar (ADR 132 D6) |
 | La flecha también en Ajustes | se calla bajo 360 px | a 320 la línea de Ajustes no cabe al lado del botón del tema (ADR 108 D4) |

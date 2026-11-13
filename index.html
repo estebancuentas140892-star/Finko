@@ -921,7 +921,11 @@
         <header class="section__header">
           <div class="section__title-group">
             <span class="cat-teja section__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-saldo"/></svg></span>
-            <h1 class="section__title" id="title-movimientos">Movimientos</h1>
+            <!-- ADR 134 D6: qué guarda la sección, bajo el título. -->
+            <div class="section__titulo">
+              <h1 class="section__title" id="title-movimientos">Movimientos</h1>
+              <p class="section__linea">Todo lo que entró y salió, por fecha</p>
+            </div>
           </div>
           <!-- ADR 106 D3: el ojo de la pantalla, solo bajo 1024px. Misma acción
                y misma sincronización que el del bloque Gastos. -->

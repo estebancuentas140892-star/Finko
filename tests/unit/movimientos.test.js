@@ -587,9 +587,25 @@ describe('renderMovimientosCompletos()', () => {
     ];
     renderMovimientosCompletos();
     const subtitulos = [...elLista().querySelectorAll('.list-item__subtitle')].map(p => p.textContent);
-    // ADR 121 D1: el día de la semana y el número; el mes lo dice el grupo.
-    expect(subtitulos).toEqual(['Mié 28 · Gasto · Nequi', 'Jue 5 · Gasto · Nequi']);
+    // ADR 134 D6: el día lo dice su encabezado y el mes, su grupo; la fila
+    // dice qué y de dónde.
+    expect(subtitulos).toEqual(['Gasto · Nequi', 'Gasto · Nequi']);
+    const dias = [...elLista().querySelectorAll('.movimientos-dia > span:first-child')].map(e => e.textContent);
+    expect(dias).toEqual(['Miércoles 28', 'Jueves 5']);
     expect(elLista().querySelectorAll('.movimientos-mes')[1].textContent).toContain('2024');
+  });
+
+  it('cada día lleva su total y un gasto abre la hoja del gasto (ADR 134 D6)', () => {
+    S.cuentas = [cuenta('c1', 'Nequi')];
+    S.gastos = [
+      gasto({ id: 'g1', fecha: '2026-10-28', cuentaId: 'c1', monto: 10_000 }),
+      gasto({ id: 'g2', fecha: '2026-10-28', cuentaId: 'c1', monto: 5_000 }),
+    ];
+    renderMovimientosCompletos();
+    expect(elLista().querySelector('.movimientos-dia__total').textContent).toBe('-$15.000');
+    const detalle = elLista().querySelector('.list-item__detalle');
+    expect(detalle.dataset.action).toBe('gasto-detalle');
+    expect(detalle.dataset.id).toBe('g1');
   });
 
   it('con el ojo cerrado la fila enmascara el monto (ADR 106 D3)', () => {

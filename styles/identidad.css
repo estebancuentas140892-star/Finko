@@ -2189,3 +2189,64 @@ body:not(.light-theme) .cov__fill {
   #sec-agenda:has(.banner-proposito) .cal-empty--inicio :is(.cal-empty__teja, .cal-empty__title, .cal-empty__desc) { display: none; }
   .cal-empty--inicio .cal-empty__agregar { width: 100%; min-height: 52px; font-size: var(--fk-text-base); }
 }
+
+/* D6 (tanda 3): Movimientos. Cada día con su encabezado y su total; el
+   resumen de la búsqueda con "Limpiar" al lado. Los dos anchos. */
+.movimientos-dia {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-3) var(--fk-space-1) var(--fk-space-1);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+}
+.movimientos-dia__total { font-weight: var(--fk-font-regular); font-variant-numeric: tabular-nums; }
+.movimientos-resumen-fila { display: flex; align-items: baseline; justify-content: space-between; gap: var(--fk-space-3); }
+.movimientos-resumen-fila .movimientos-resumen { font-weight: var(--fk-font-regular); }
+.movimientos-resumen__limpiar {
+  flex: none;
+  min-height: 44px;
+  padding: 0 var(--fk-space-1);
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-accent);
+  cursor: pointer;
+}
+
+@media (max-width: 1023px) {
+
+  /* Con el resumen a la vista, "Limpiar" vive en él. */
+  .movimientos-filtros:has(~ #lista-movimientos .movimientos-resumen__limpiar) #movimientos-limpiar-slot .btn { display: none; }
+
+  /* El mes en frase y grande, con su total; los días de cada mes, cada uno una
+     tarjeta: la primera fila redondea arriba y la última abajo. */
+  #lista-movimientos .movimientos-mes {
+    padding: var(--fk-space-4) var(--fk-space-1) var(--fk-space-1);
+    font-size: var(--fk-text-lg);
+    font-weight: var(--fk-font-bold);
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--fk-text-primary);
+  }
+  #lista-movimientos .movimientos-mes__total { font-size: var(--fk-text-sm); font-weight: var(--fk-font-regular); color: var(--fk-text-secondary); }
+  #lista-movimientos > .list-item {
+    margin: 0;
+    border-radius: 0;
+    border-top-width: 0;
+    box-shadow: none;
+  }
+  #lista-movimientos > .movimientos-dia + .list-item {
+    border-top-width: 1px;
+    border-start-start-radius: var(--fk-radius-xl);
+    border-start-end-radius: var(--fk-radius-xl);
+  }
+  #lista-movimientos > .list-item:has(+ :is(.movimientos-dia, .movimientos-mes, .movimientos-cargar-mas)),
+  #lista-movimientos > .list-item:last-child {
+    border-end-start-radius: var(--fk-radius-xl);
+    border-end-end-radius: var(--fk-radius-xl);
+  }
+}

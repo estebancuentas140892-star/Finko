@@ -30,7 +30,10 @@ test.describe('Buscar en Movimientos (ADR 121 D1)', () => {
     await atajos.locator('[data-action="movimientos-buscar-reciente"]').click();
     await expect(page.locator('#movimientos-buscar')).toHaveValue('Mercado quincenal');
     await expect(page.locator('#movimientos-atajos')).toBeHidden();
-    await expect(page.locator('.movimientos-resumen')).toHaveText('1 resultado · $385.500 en todo tu historial');
+    // ADR 134 D6: en el teléfono el resumen dice el neto con su signo y
+    // lleva "Limpiar" al lado.
+    await expect(page.locator('.movimientos-resumen')).toHaveText('1 resultado · -$385.500');
+    await expect(page.locator('.movimientos-resumen__limpiar')).toBeVisible();
   });
 
   test('cada mes dice su total, sin año si es el actual, y la búsqueda confirmada se recuerda', async ({ page }) => {

@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(movimientos): MV2.30 Consultar tanda 3, Movimientos por día · 2026-11-13
+
+[ADR 134](DECISIONS/134-consultar-del-adulto-en-el-telefono.md) D6. Ficha: [`contexto/movimientos.md`](contexto/movimientos.md). SW v687. Tablero "rediseño3".
+
+- **Por día**: bajo el título, "Todo lo que entró y salió, por fecha"; dentro de cada mes, cada día con su encabezado ("Hoy, viernes 13", "Ayer, jueves 12", "Martes 10") y su total, en los dos anchos. La fila deja de repetir el día y dice qué y de dónde ("Mercado · Bancolombia"): supera esa parte del ADR 121 D1.
+- **Filtros**: con dos tipos o menos ("Gastos", "Aportes") van a la vista, sin "+N tipos".
+- **Un gasto abre la hoja del gasto** (la de Gastos, ADR 119 D2: de dónde salió, categoría, "Editar" y "Borrar este gasto" con a dónde vuelve el dinero) en vez de la hoja genérica de la fila.
+- **En el teléfono**: el mes en frase y grande con su total, cada día una tarjeta (las filas se redondean por adyacencia: la lista se pinta en lotes y no admite envoltorio) y la búsqueda dice "2 resultados · -$404.300" con "Limpiar" al lado. En escritorio la frase de la búsqueda sigue completa.
+- Pruebas: 1 ajustada y 1 nueva en `movimientos`; el E2E de la búsqueda a 390px mide el resumen nuevo.
+
 ### feat(agenda): MV2.30 Consultar tanda 2, la hoja de un día y el Calendario vacío · 2026-11-13
 
 [ADR 134](DECISIONS/134-consultar-del-adulto-en-el-telefono.md) D5. Ficha: [`contexto/calendario.md`](contexto/calendario.md). SW v686. Tablero "rediseño3".

@@ -11,7 +11,7 @@
  */
 
 import { S } from '../../core/state.js';
-import { f, esc as _esc, fechaDiaMes, formateadorFecha } from '../../infra/utils.js';
+import { f, esc as _esc, formateadorFecha, hoy } from '../../infra/utils.js';
 import { tejaCategoria } from '../../infra/icons.js';
 import { htmlTinoSol } from '../../infra/ilustraciones.js';
 import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
@@ -221,8 +221,10 @@ export function renderFiltrosMovimientos() {
   // "+N tipos" y "Fechas", que reemplaza a la fila propia del rango. En
   // escritorio estos dos botones no se ven y la columna de filtros sigue
   // igual (ADR 076).
-  const ocultos = dominios.length - (todosActivo ? 0 : 1);
-  const toggleTipos = ocultos > 0 || _tiposAbiertos ? `
+  // ADR 134 D6: con dos tipos o menos caben a la vista, sin "+N tipos".
+  const caben   = dominios.length <= 2;
+  const ocultos = caben ? 0 : dominios.length - (todosActivo ? 0 : 1);
+  const toggleTipos = !caben && (ocultos > 0 || _tiposAbiertos) ? `
       <button type="button" class="chip filtros-bar__mas"
               data-action="movimientos-tipos-alternar"
               aria-expanded="${_tiposAbiertos}">
@@ -242,7 +244,7 @@ export function renderFiltrosMovimientos() {
            aria-label="Buscar movimientos por descripción" aria-controls="movimientos-atajos" />
     ${_atajosHtml(todos, dominios)}
     ${_categoriaHtml()}
-    <div class="filtros-bar${_tiposAbiertos ? ' filtros-bar--abierta' : ''}" role="group" aria-label="Filtrar movimientos por tipo">
+    <div class="filtros-bar${_tiposAbiertos || caben ? ' filtros-bar--abierta' : ''}" role="group" aria-label="Filtrar movimientos por tipo">
       <button type="button" class="chip${todosActivo ? ' chip--active' : ''}"
               data-action="movimientos-filtrar-dominio" data-dominio=""
               aria-pressed="${todosActivo}" aria-label="Ver todos los movimientos">
@@ -516,7 +518,8 @@ function _renderMovimientoItem(m) {
   // historial por préstamo en Me deben. Sin año: lo dice el grupo (ADR 102 D2).
   // ADR 121 D1: "Mar 27 · Restaurantes · Nequi". El mes lo dice el grupo; un
   // gasto se nombra por su categoría cuando el título no la repite.
-  const cuando        = m.agrupado ? 'Antes de este historial' : _diaSemana(m.fecha);
+  // ADR 134 D6: el día lo dice su encabezado; la fila dice qué y de dónde.
+  const cuando        = m.agrupado ? 'Antes de este historial' : null;
   const titulo        = _descripcionMovimiento(m);
   const tipo          = m.tipo === 'gasto' && m.categoria && m.categoria !== titulo
     ? m.categoria
@@ -527,8 +530,11 @@ function _renderMovimientoItem(m) {
   // ADR 098 D4: con acciones, en móvil la fila abre la hoja de detalle
   // (ui/detalle-fila.js) y los botones salen de la fila. En escritorio no.
   const conAcciones   = Boolean(_ACCIONES_POR_TIPO[m.tipo]);
+  // ADR 134 D6: un gasto abre la hoja del gasto (fecha, categoría, de dónde
+  // salió y a dónde vuelve al borrar, ADR 119 D2); el resto, la de la fila.
+  const accionHoja    = m.tipo === 'gasto' ? 'gasto-detalle' : 'fila-detalle';
   const detalle       = conAcciones
-    ? `<button class="list-item__detalle" type="button" data-action="fila-detalle"
+    ? `<button class="list-item__detalle" type="button" data-action="${accionHoja}" data-id="${_esc(m.id)}"
               aria-label="Ver detalle: ${_esc(_descripcionMovimiento(m))}, ${signo}${monto}"></button>`
     : '';
 
@@ -547,13 +553,6 @@ function _renderMovimientoItem(m) {
     </article>`;
 }
 
-/** "Mar 27": el día de la semana y el número; el mes lo dice el grupo. */
-function _diaSemana(fechaISO) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaISO ?? '')) return fechaDiaMes(fechaISO);
-  const d = new Date(`${fechaISO}T12:00:00Z`);
-  const dia = formateadorFecha('es-CO', { weekday: 'short', timeZone: 'UTC' }).format(d).replace(/\.$/, '');
-  return `${dia.charAt(0).toUpperCase()}${dia.slice(1)} ${d.getUTCDate()}`;
-}
 
 function _renderEmptyMovimientos() {
   return `
@@ -591,7 +590,16 @@ function _resumenBusqueda(movs) {
   const cuanto = sale > 0 && entra > 0 ? `sale ${m(sale)} y entra ${m(entra)}` : m(sale || entra);
   const donde = _filtroFechaDesde || _filtroFechaHasta ? 'en esas fechas' : 'en todo tu historial';
   const n = movs.length;
-  return `<p class="movimientos-resumen" role="status">${n.toLocaleString('es-CO')} ${n === 1 ? 'resultado' : 'resultados'} · ${cuanto} ${donde}</p>`;
+  const cuantos = `${n.toLocaleString('es-CO')} ${n === 1 ? 'resultado' : 'resultados'}`;
+  // ADR 134 D6: en el teléfono el resumen dice el neto con su signo y lleva
+  // "Limpiar" al lado; en escritorio sigue la frase completa.
+  if (window.matchMedia?.('(max-width: 1023.98px)').matches === true) {
+    return `<div class="movimientos-resumen-fila">
+      <p class="movimientos-resumen" role="status">${cuantos} · ${_neto(movs)}</p>
+      <button type="button" class="movimientos-resumen__limpiar" data-action="movimientos-limpiar-filtros">Limpiar</button>
+    </div>`;
+  }
+  return `<p class="movimientos-resumen" role="status">${cuantos} · ${cuanto} ${donde}</p>`;
 }
 
 // ── FILAS DE ESPERA (ADR 121 D3) ─────────────────────────────────
@@ -639,12 +647,42 @@ function _aplanarEntradas(grupos) {
   const entradas = [];
   for (const { label, items, total } of grupos) {
     entradas.push({ tipo: 'divisor', label, total });
-    for (const mov of items) entradas.push({ tipo: 'item', mov });
+    // ADR 134 D6: dentro del mes, cada día con su encabezado y su total.
+    let diaActual = null;
+    let delDia = [];
+    const cerrarDia = () => {
+      if (delDia.length === 0) return;
+      entradas.push({ tipo: 'dia', label: _etiquetaDia(diaActual), total: _neto(delDia) });
+      for (const mov of delDia) entradas.push({ tipo: 'item', mov });
+      delDia = [];
+    };
+    for (const mov of items) {
+      if (mov.fecha !== diaActual) { cerrarDia(); diaActual = mov.fecha; }
+      delDia.push(mov);
+    }
+    cerrarDia();
   }
   return entradas;
 }
 
+/** "Hoy, viernes 13", "Ayer, jueves 12" o "Martes 10" (ADR 134 D6). */
+function _etiquetaDia(fechaISO) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaISO ?? '')) return '';
+  const d = new Date(`${fechaISO}T12:00:00Z`);
+  const dow = formateadorFecha('es-CO', { weekday: 'long', timeZone: 'UTC' }).format(d);
+  const dia = `${dow} ${d.getUTCDate()}`;
+  const hoyISO = hoy();
+  const ayer = new Date(`${hoyISO}T12:00:00Z`);
+  ayer.setUTCDate(ayer.getUTCDate() - 1);
+  if (fechaISO === hoyISO) return `Hoy, ${dia}`;
+  if (fechaISO === ayer.toISOString().slice(0, 10)) return `Ayer, ${dia}`;
+  return dia.charAt(0).toUpperCase() + dia.slice(1);
+}
+
 function _renderEntrada(entrada) {
+  if (entrada.tipo === 'dia') {
+    return `<div class="movimientos-dia" role="presentation"><span>${_esc(entrada.label)}</span>${entrada.total ? `<span class="movimientos-dia__total">${entrada.total}</span>` : ''}</div>`;
+  }
   return entrada.tipo === 'divisor'
     ? `<div class="movimientos-mes" role="presentation"><span>${_esc(entrada.label)}</span>${entrada.total ? `<span class="movimientos-mes__total">${entrada.total}</span>` : ''}</div>`
     : _renderMovimientoItem(entrada.mov);
