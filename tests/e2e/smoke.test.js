@@ -2032,10 +2032,11 @@ test.describe('Agenda - leyenda dinámica con los tres tipos de compromiso', () 
     await page.goto('/#agenda');
     await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
 
+    // ADR 134 D3: la leyenda dice lo que sale (los tres tipos son pagos) y
+    // cada pago dice su tipo en su fila.
     await expect(page.locator('.cal-legend')).toBeVisible();
-    await expect(page.locator('.cal-legend')).toContainText('Gasto fijo');
-    await expect(page.locator('.cal-legend')).toContainText('Deuda entidad');
-    await expect(page.locator('.cal-legend')).toContainText('Deuda personal');
+    await expect(page.locator('.cal-legend')).toContainText('Sale un pago');
+    await expect(page.locator('.cal-legend .cal-dot--sale')).toHaveCount(1);
   });
 });
 
@@ -2182,7 +2183,7 @@ test.describe('Agenda - hero del mes (CAL.4a)', () => {
     // y se dice como lo que falta.
     await expect(hero.locator('.hero-agenda__label')).toContainText('Te falta en');
     await expect(hero.locator('.hero-agenda__valor')).toHaveText('$1.050.000');
-    await expect(hero.locator('.hero-agenda__flujo-item').nth(1)).toHaveText('Sale $1.050.000');
+    await expect(hero.locator('.hero-agenda__flujo-item').nth(1)).toHaveText('sale $1.050.000');
     await expect(hero.locator('.hero-agenda__barra')).toHaveCount(0);
   });
 
@@ -2208,7 +2209,7 @@ test.describe('Agenda - hero del mes (CAL.4a)', () => {
 
     const hero = page.locator('.hero-agenda');
     await expect(hero.locator('.hero-agenda__valor')).toHaveText('$••••••');
-    await expect(hero.locator('.hero-agenda__flujo-item').nth(1)).toHaveText('Sale ••••');
+    await expect(hero.locator('.hero-agenda__flujo-item').nth(1)).toHaveText('sale ••••');
     await expect(hero.locator('[data-action="agenda-saldo-visibilidad"]'))
       .toHaveAttribute('aria-pressed', 'true');
 

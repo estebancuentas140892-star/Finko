@@ -1270,3 +1270,21 @@ test.describe('MV2.30 - la hoja "Nueva reserva" (ADR 133 D7)', () => {
     await expect(page.locator('.reserva-fila .reserva-fila__nombre', { hasText: 'SOAT' })).toBeVisible();
   });
 });
+
+test.describe('MV2.30 - Calendario en el teléfono (ADR 134)', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('lo del mes va en listas bajo el mes y cada fila abre su día (D4)', async ({ page }) => {
+    await seedCalendario(page);
+    await page.goto('/#agenda');
+    await expect(page.locator('#sec-agenda.active')).toBeVisible({ timeout: 10_000 });
+
+    await expect(page.locator('.cal-card__subtitle')).toContainText('8 pagos');
+    await expect(page.locator('.cal-legend')).toContainText('Sale un pago');
+    const listas = page.locator('#panel-agenda .cal-listas .cal-lista');
+    expect(await listas.count()).toBeGreaterThan(0);
+
+    await page.locator('.cal-listas .cal-lista__fila').first().click();
+    await expect(page.locator('#modal-dia-calendario[data-open]')).toHaveCount(1);
+  });
+});

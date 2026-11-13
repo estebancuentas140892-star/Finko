@@ -19,6 +19,7 @@ import { CATEGORIA_INGRESO_ICONO, iconoDeCategoriaGasto } from '../../core/const
 import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { LABEL_TIPO, ICONO_TIPO, calcularAbonosDelMes, estadoPagoMes, vencidosSinPagar } from '../compromisos/logic.js';
 import { eventosDelMes, eventosIngresosDelMes, eventosMetasDelMes, totalEventosDelMes, totalDia, tiposPresentesEnMes, flujoDelMes, pendientesDePagoDelMes } from './logic.js';
+import { htmlListasMes, fraseLoProximo } from './listas.js';
 
 // ── ESTADO LOCAL ─────────────────────────────────────────────────
 
@@ -262,7 +263,11 @@ export function renderAgenda() {
 
   /** @type {Record<number, number>} */
   const vencidosPorDia = {};
+  // ADR 134 D3 (con el ADR 132): lo que vence hoy todavía no venció; el
+  // día de hoy se marca como hoy, no como vencido.
+  const diaHoyMes = esMesDeHoy(_viewYear, _viewMonth) ? new Date().getDate() : null;
   for (const p of pendientes) {
+    if (p.dia === diaHoyMes) continue;
     vencidosPorDia[p.dia] = (vencidosPorDia[p.dia] ?? 0) + 1;
   }
 
@@ -294,11 +299,20 @@ export function renderAgenda() {
         ${_renderCabecera(_viewYear, _viewMonth, eventosComp, eventosIng, eventosMeta)}
         ${_renderDiasSemana()}
         ${_renderGrid(_viewYear, _viewMonth, eventos, vencidosPorDia)}
-        ${_renderLeyenda(eventos)}
+        ${_renderLeyenda(eventos, { vencidos: Object.keys(vencidosPorDia).length > 0, esMesEnCurso })}
       </article>
       ${enEscritorio ? detalleHtml : ''}
     </div>
-    ${emptyMesHtml}`;
+    ${emptyMesHtml}
+    ${!enEscritorio && esMesEnCurso && totalEventosDelMes(eventos) > 0
+      ? htmlListasMes({ eventos, year: _viewYear, month: _viewMonth, hoyISO: hoy(), idsVencidos })
+      : ''}`;
+}
+
+/** true si el mes visible es el de hoy. */
+function esMesDeHoy(year, month) {
+  const d = new Date();
+  return year === d.getFullYear() && month === d.getMonth();
 }
 
 /**
@@ -400,9 +414,16 @@ function _renderHeroMes(eventos, year, month) {
   const partes = [];
   if (diaPrimeraSalida !== null) partes.push(`lo primero vence el ${diaPrimeraSalida}`);
   if (diaPrimerIngreso !== null) partes.push(`tu primer ingreso llega el ${diaPrimerIngreso}`);
-  const lineaHtml = partes.length
-    ? `<p class="hero-agenda__linea">${partes.join('; ').replace(/^./, c => c.toUpperCase())}.</p>`
-    : '';
+  // ADR 134 D2: en el mes en curso la frase dice lo próximo desde hoy, con su
+  // nombre, y el ingreso que sigue aunque caiga el mes que viene.
+  const hoyD = new Date();
+  const esMesEnCurso = year === hoyD.getFullYear() && month === hoyD.getMonth();
+  const proximo = esMesEnCurso ? fraseLoProximo({ eventos, year, month, hoyISO: hoy() }) : '';
+  const lineaHtml = proximo
+    ? `<p class="hero-agenda__linea">${proximo}</p>`
+    : partes.length
+      ? `<p class="hero-agenda__linea">${partes.join('; ').replace(/^./, c => c.toUpperCase())}.</p>`
+      : '';
 
   return `
     <div class="hero-agenda">
@@ -414,10 +435,12 @@ function _renderHeroMes(eventos, year, month) {
       </button>
       <p class="hero-agenda__label">${label}</p>
       <p class="hero-agenda__valor">${cifra}</p>
-      <div class="hero-agenda__flujo">
+      <p class="hero-agenda__flujo">
+        <svg class="icon" aria-hidden="true"><use href="#i-agenda"/></svg>
         <span class="hero-agenda__flujo-item">Entra <strong>${entraTxt}</strong></span>
-        <span class="hero-agenda__flujo-item">Sale <strong>${saleTxt}</strong></span>
-      </div>
+        <span class="hero-agenda__flujo-sep" aria-hidden="true">·</span>
+        <span class="hero-agenda__flujo-item">sale <strong>${saleTxt}</strong></span>
+      </p>
       ${lineaHtml}
     </div>`;
 }
@@ -594,10 +617,10 @@ function _renderCabecera(year, month, eventos, eventosIng = {}, eventosMeta = {}
   const esteMes = '<span class="cal-card__sub-mes"> este mes</span>';
   const partes = [
     total === 0
-      ? `Sin compromisos${esteMes}`
+      ? `Sin pagos${esteMes}`
       : total === 1
-      ? `1 compromiso${esteMes}`
-      : `${total} compromisos${esteMes}`,
+      ? `1 pago${esteMes}`
+      : `${total} pagos${esteMes}`,
   ];
   if (nIng > 0)  partes.push(nIng === 1 ? '1 ingreso' : `${nIng} ingresos`);
   if (nMeta > 0) partes.push(nMeta === 1 ? '1 aporte a meta' : `${nMeta} aportes a metas`);
@@ -864,16 +887,25 @@ const _LABEL_LEYENDA = {
  *
  * @param {ReturnType<import('./logic.js').eventosDelMes>} eventos
  */
-function _renderLeyenda(eventos) {
+function _renderLeyenda(eventos, { vencidos = false, esMesEnCurso = false } = {}) {
   const tipos = tiposPresentesEnMes(eventos);
   if (tipos.length === 0) return '';
 
-  const items = tipos.map(t => `
+  // ADR 134 D3: la leyenda dice lo que sale y lo que entra, no los tipos de
+  // pago (cada pago dice su tipo en su fila); el día vencido y hoy también.
+  const sale = tipos.some(t => t !== 'ingreso' && t !== 'meta');
+  const items = [
+    sale && ['cal-dot cal-dot--sale', 'Sale un pago'],
+    tipos.includes('ingreso') && ['cal-dot cal-dot--ingreso', 'Entra un ingreso'],
+    tipos.includes('meta') && ['cal-dot cal-dot--meta', _LABEL_LEYENDA.meta],
+    vencidos && ['cal-legend__dia cal-legend__dia--vencido', 'Vencido'],
+    esMesEnCurso && ['cal-legend__dia cal-legend__dia--hoy', 'Hoy'],
+  ].filter(Boolean).map(([cls, txt]) => `
       <span class="cal-legend__item">
-        <span class="cal-dot cal-dot--${t}" aria-hidden="true"></span> ${_LABEL_LEYENDA[t]}
+        <span class="${cls}" aria-hidden="true"></span> ${txt}
       </span>`).join('');
 
-  return `<div class="cal-legend" aria-label="Leyenda de tipos">${items}</div>`;
+  return `<div class="cal-legend" aria-label="Leyenda del calendario">${items}</div>`;
 }
 
 /**

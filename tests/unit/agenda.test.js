@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { eventosDelMes, eventosIngresosDelMes, eventosMetasDelMes, totalEventosDelMes, totalDia, eventosDeHoy, eventosEnProximos, tiposPresentesEnMes, totalesDelMes, pendientesDePagoDelMes, debitosAutomaticosVencidos, pendientesDeCreditoDelMes, creditosAutomaticosVencidos } from '../../modules/dominio/agenda/logic.js';
 import { renderFormAutomaticos, renderAgenda, mostrarDia, abrirDia, soltarDia, navegarMes, resetearVistaAlMesActual, marcarEntradaSeccion, resumenMesVisible, diaSeleccionado } from '../../modules/dominio/agenda/view.js';
+import { htmlListasMes, fraseLoProximo } from '../../modules/dominio/agenda/listas.js';
 import { S } from '../../modules/core/state.js';
 // Solo para el espejo de BUG-032: los tests sí cruzan dominios, el código no (ADN 10).
 import { cobrosQueAcreditaLaDistribucion } from '../../modules/dominio/tesoreria/logic.js';
@@ -855,7 +856,9 @@ describe('renderAgenda() - leyenda bajo el calendario', () => {
     vi.useRealTimers();
   });
 
-  it('con los tres tipos presentes en el mes, la leyenda los muestra a todos con su dot de color', () => {
+  // ADR 134 D3: la leyenda dice lo que sale y lo que entra; cada pago dice
+  // su tipo en su fila.
+  it('con los tres tipos de pago en el mes, la leyenda los dice como lo que sale', () => {
     S.compromisos = [
       compromisoBase({ id: 'f1', tipo: 'fijo',           diaPago: 5 }),
       compromisoBase({ id: 'd1', tipo: 'deuda-entidad',  diaPago: 10, cuotaMensual: 200_000 }),
@@ -864,9 +867,9 @@ describe('renderAgenda() - leyenda bajo el calendario', () => {
     renderAgenda();
     const leyenda = document.querySelector('.cal-legend');
     expect(leyenda).not.toBeNull();
-    expect(leyenda.querySelector('.cal-dot--fijo')).not.toBeNull();
-    expect(leyenda.querySelector('.cal-dot--deuda-entidad')).not.toBeNull();
-    expect(leyenda.querySelector('.cal-dot--deuda-personal')).not.toBeNull();
+    expect(leyenda.querySelectorAll('.cal-dot--sale')).toHaveLength(1);
+    expect(leyenda.textContent).toContain('Sale un pago');
+    expect(leyenda.querySelector('.cal-dot--fijo, .cal-dot--deuda-entidad, .cal-dot--deuda-personal')).toBeNull();
   });
 
   // DIS.11 C6/V-3 (revisa AG.6): la leyenda es el pie de la tarjeta que
@@ -904,28 +907,31 @@ describe('renderAgenda() - leyenda bajo el calendario', () => {
     expect(document.querySelector('.cal-legend')).toBeNull();
   });
 
-  it('CAL.2: con un solo tipo presente, la leyenda muestra solo esa entrada', () => {
+  it('CAL.2: la leyenda nombra solo lo que hay en el mes', () => {
     S.compromisos = [compromisoBase({ id: 'f1', tipo: 'fijo', diaPago: 5 })];
     renderAgenda();
     const leyenda = document.querySelector('.cal-legend');
     expect(leyenda).not.toBeNull();
-    expect(leyenda.querySelectorAll('.cal-legend__item').length).toBe(1);
-    expect(leyenda.querySelector('.cal-dot--fijo')).not.toBeNull();
-    expect(leyenda.querySelector('.cal-dot--deuda-entidad')).toBeNull();
-    expect(leyenda.querySelector('.cal-dot--deuda-personal')).toBeNull();
+    expect(leyenda.querySelector('.cal-dot--sale')).not.toBeNull();
     expect(leyenda.querySelector('.cal-dot--ingreso')).toBeNull();
+    expect(leyenda.textContent).not.toContain('Entra un ingreso');
   });
 
   it('CAL.2: si el usuario registra un tipo nuevo, la leyenda lo suma solo', () => {
     S.compromisos = [compromisoBase({ id: 'f1', tipo: 'fijo', diaPago: 5 })];
     renderAgenda();
-    expect(document.querySelector('.cal-legend').querySelectorAll('.cal-legend__item').length).toBe(1);
+    const antes = document.querySelector('.cal-legend').querySelectorAll('.cal-legend__item').length;
 
     S.compromisos.push(compromisoBase({ id: 'd1', tipo: 'deuda-entidad', diaPago: 10, cuotaMensual: 200_000 }));
     renderAgenda();
+    expect(document.querySelector('.cal-legend').querySelectorAll('.cal-legend__item').length).toBe(antes);
+
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 1_000_000, frecuencia: 'Mensual', diaPago: 15, activo: true }];
+    renderAgenda();
     const leyenda = document.querySelector('.cal-legend');
-    expect(leyenda.querySelectorAll('.cal-legend__item').length).toBe(2);
-    expect(leyenda.querySelector('.cal-dot--deuda-entidad')).not.toBeNull();
+    expect(leyenda.querySelectorAll('.cal-legend__item').length).toBe(antes + 1);
+    expect(leyenda.querySelector('.cal-dot--ingreso')).not.toBeNull();
+    S.ingresos = [];
   });
 });
 
@@ -1164,13 +1170,13 @@ describe('renderAgenda() - día de ingreso (ADR 021)', () => {
   it('la leyenda incluye la entrada de día de ingreso cuando hay un ingreso este mes', () => {
     S.ingresos = [ingresoBase({ diaPago: 15 })];
     renderAgenda();
-    expect(document.querySelector('.cal-legend').textContent).toContain('Día de ingreso');
+    expect(document.querySelector('.cal-legend').textContent).toContain('Entra un ingreso');
   });
 
   it('la cabecera sigue contando solo compromisos (el ingreso no es uno)', () => {
     S.ingresos = [ingresoBase({ diaPago: 15 })];
     renderAgenda();
-    expect(document.querySelector('.cal-card__subtitle').textContent).toContain('Sin compromisos');
+    expect(document.querySelector('.cal-card__subtitle').textContent).toContain('Sin pagos');
   });
 
   it('el resumen del día distingue ingreso de compromisos', () => {
@@ -1241,7 +1247,7 @@ describe('renderAgenda() - plan de aportes de meta (MT.6d)', () => {
     S.metas = [metaBase({ planAportes: [{ fecha: '2026-06-20', monto: 250_000 }] })];
     renderAgenda();
     const sub = document.querySelector('.cal-card__subtitle').textContent;
-    expect(sub).toContain('Sin compromisos');
+    expect(sub).toContain('Sin pagos');
     expect(sub).toContain('1 aporte a meta');
   });
 
@@ -1486,7 +1492,7 @@ describe('renderAgenda() - hero del mes (CAL.4a)', () => {
     expect(hero.querySelector('.hero-agenda__label').textContent).toBe('Te queda en junio');
     expect(hero.querySelector('.hero-agenda__valor').textContent).toBe('$1.500.000');
     const flujo = [...hero.querySelectorAll('.hero-agenda__flujo-item')].map(e => e.textContent);
-    expect(flujo).toEqual(['Entra $2.000.000', 'Sale $500.000']);
+    expect(flujo).toEqual(['Entra $2.000.000', 'sale $500.000']);
     // El progreso pagado/falta ya no vive acá.
     expect(hero.querySelector('.hero-agenda__barra')).toBeNull();
   });
@@ -1501,12 +1507,17 @@ describe('renderAgenda() - hero del mes (CAL.4a)', () => {
   });
 
   // K4: la frase que ninguna otra sección puede escribir.
-  it('la línea dice cuándo cae lo primero que sale y lo primero que entra', () => {
-    S.compromisos = [compromisoBase({ id: 'f1', tipo: 'fijo', monto: 300_000, diaPago: 5 })];
+  // ADR 134 D2: en el mes en curso la línea dice lo próximo desde hoy (el 15)
+  // y el ingreso que sigue, aunque caiga el mes que viene.
+  it('la línea dice lo próximo desde hoy y cuándo llega el siguiente ingreso', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'f1', tipo: 'fijo', monto: 300_000, diaPago: 5 }),
+      compromisoBase({ id: 'f2', tipo: 'fijo', descripcion: 'Colegio', monto: 600_000, diaPago: 16 }),
+    ];
     S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 2_000_000, frecuencia: 'Mensual', diaPago: 15, activo: true }];
     renderAgenda();
     expect(document.querySelector('.hero-agenda__linea').textContent)
-      .toBe('Lo primero vence el 5; tu primer ingreso llega el 15.');
+      .toBe('Lo próximo: Colegio, mañana. Tu siguiente ingreso llega el 15 de jul.');
   });
 
   it('con un solo lado, la línea nombra solo ese', () => {
@@ -1566,7 +1577,7 @@ describe('renderAgenda() - hero del mes (CAL.4a)', () => {
     const hero = document.querySelector('.hero-agenda');
     expect(hero.querySelector('.hero-agenda__valor').textContent).toBe('$••••••');
     const flujo = [...hero.querySelectorAll('.hero-agenda__flujo-item')].map(e => e.textContent);
-    expect(flujo).toEqual(['Entra ••••', 'Sale ••••']);
+    expect(flujo).toEqual(['Entra ••••', 'sale ••••']);
     expect(hero.textContent).not.toContain('300.000');
     // La línea de fechas no es un monto: el ojo no la toca.
     expect(hero.querySelector('.hero-agenda__linea').textContent).toBe('Lo primero vence el 5.');
@@ -1638,14 +1649,14 @@ describe('renderAgenda() - subtítulo y empty state del mes (CAL.4b)', () => {
     S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 1_000_000, frecuencia: 'Mensual', diaPago: 15, activo: true }];
     renderAgenda();
     expect(document.querySelector('.cal-card__subtitle').textContent)
-      .toBe('2 compromisos este mes · 1 ingreso');
+      .toBe('2 pagos este mes · 1 ingreso');
   });
 
   it('sin ingresos el subtítulo no agrega la parte de ingresos', () => {
     S.compromisos = [compromisoBase({ id: 'f1', diaPago: 5 })];
     renderAgenda();
     expect(document.querySelector('.cal-card__subtitle').textContent)
-      .toBe('1 compromiso este mes');
+      .toBe('1 pago este mes');
   });
 
   // Ficha 05 (ADR 069): el alta ya no vive acá, así que el empty state enlaza
@@ -2024,7 +2035,7 @@ describe('renderAgenda() - el mes entero en el teléfono (MV2.27, ADR 111)', () 
     renderAgenda();
     const sub = document.querySelector('.cal-card__subtitle');
     expect(sub.querySelector('.cal-card__sub-mes').textContent).toBe(' este mes');
-    expect(sub.textContent).toBe('2 compromisos este mes');
+    expect(sub.textContent).toBe('2 pagos este mes');
   });
 
   it('cada lado del día va en su span, con el separador pegado al primero (D4)', () => {
@@ -3011,5 +3022,79 @@ describe('ADR 118 - el día del Calendario en su hoja', () => {
     renderAgenda();
     expect(panel().querySelector('.cal-detail')).not.toBeNull();
     expect(hoja().innerHTML).toBe('');
+  });
+});
+
+// ════════════════════════════════════════════════════════════════
+// ADR 134 D4 - lo del mes en listas, bajo el calendario del teléfono
+// ════════════════════════════════════════════════════════════════
+
+describe('htmlListasMes() (ADR 134 D4)', () => {
+  const armar = (html) => { const d = document.createElement('div'); d.innerHTML = html; return d; };
+  const eventosDe = (lista) => {
+    const ev = {};
+    for (const c of lista) (ev[c.dia] ??= []).push(c);
+    return ev;
+  };
+
+  beforeEach(() => {
+    S.config = {};
+    S.gastos = [];
+    S.cuentas = [{ id: 'c1', nombre: 'Bancolombia' }];
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 4_200_000, frecuencia: 'Mensual', diaPago: 1, activo: true, cuentaId: 'c1' }];
+    S.compromisos = [
+      { id: 'f1', tipo: 'fijo', descripcion: 'Arriendo', monto: 1_350_000, frecuencia: 'Mensual', diaPago: 5, activo: true },
+      { id: 'f2', tipo: 'fijo', descripcion: 'Plan Claro', monto: 65_000, frecuencia: 'Mensual', diaPago: 13, activo: true },
+      { id: 'f3', tipo: 'fijo', descripcion: 'Colegio', monto: 682_016, frecuencia: 'Mensual', diaPago: 14, activo: true },
+      { id: 'd1', tipo: 'deuda-entidad', descripcion: 'Tarjeta', saldoTotal: 3_000_000, cuotaMensual: 385_000, frecuencia: 'Mensual', diaPago: 25, activo: true },
+    ];
+  });
+
+  it('separa lo vencido, lo que falta y lo que entró, cada uno con su suma', () => {
+    const eventos = eventosDe(S.compromisos.map(c => ({ ...c, dia: c.diaPago })));
+    const d = armar(htmlListasMes({ eventos, year: 2026, month: 10, hoyISO: '2026-11-13', idsVencidos: new Set(['f1']) }));
+    const titulos = [...d.querySelectorAll('.cal-lista__titulo')].map(e => e.textContent);
+    expect(titulos).toEqual(['Vencido', 'Lo que falta este mes', 'Lo que entró']);
+    const sumas = [...d.querySelectorAll('.cal-lista__suma')].map(e => e.textContent);
+    expect(sumas).toEqual(['$1.350.000', '$1.132.016', '+$4.200.000']);
+  });
+
+  it('cada fila dice el monto, cuándo y qué es, y abre su día', () => {
+    const eventos = eventosDe(S.compromisos.map(c => ({ ...c, dia: c.diaPago })));
+    const d = armar(htmlListasMes({ eventos, year: 2026, month: 10, hoyISO: '2026-11-13', idsVencidos: new Set(['f1']) }));
+    const datos = [...d.querySelectorAll('.cal-lista__dato')].map(e => e.textContent);
+    expect(datos[0]).toBe('$1.350.000 · Venció el 5 de nov · gasto fijo');
+    expect(datos[1]).toBe('$65.000 · Hoy · gasto fijo');
+    expect(datos[2]).toMatch(/^\$682\.016 · Mañana, sáb 14 · gasto fijo$/);
+    expect(datos[3]).toMatch(/^\$385\.000 · Mié 25 · cuota de deuda$/);
+    expect(datos[4]).toBe('+$4.200.000 · Dom 1 · llegó a Bancolombia');
+    const fila = d.querySelector('.cal-lista__fila');
+    expect(fila.dataset.action).toBe('agenda-mostrar-dia');
+    expect(fila.dataset.day).toBe('5');
+  });
+
+  it('lo ya pagado no aparece en lo que falta', () => {
+    S.gastos = [{ id: 'g1', compromisoId: 'f2', monto: 65_000, fecha: '2026-11-13', categoria: 'Otro' }];
+    const eventos = eventosDe(S.compromisos.map(c => ({ ...c, dia: c.diaPago })));
+    const d = armar(htmlListasMes({ eventos, year: 2026, month: 10, hoyISO: '2026-11-13', idsVencidos: new Set(['f1']) }));
+    expect(d.textContent).not.toContain('Plan Claro');
+  });
+});
+
+describe('fraseLoProximo() (ADR 134 D2)', () => {
+  beforeEach(() => {
+    S.gastos = [];
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 4_200_000, frecuencia: 'Mensual', diaPago: 1, activo: true }];
+  });
+
+  it('nombra el pago sin pagar más cercano desde hoy y el ingreso que sigue', () => {
+    const eventos = { 5: [{ id: 'f1', tipo: 'fijo', descripcion: 'Arriendo', monto: 1_000, dia: 5 }], 14: [{ id: 'f3', tipo: 'fijo', descripcion: 'Colegio', monto: 1_000, dia: 14 }] };
+    expect(fraseLoProximo({ eventos, year: 2026, month: 10, hoyISO: '2026-11-13' }))
+      .toBe('Lo próximo: <strong>Colegio, mañana</strong>. Tu siguiente ingreso llega el 1 de dic.');
+  });
+
+  it('sin pagos por delante dice solo el ingreso', () => {
+    expect(fraseLoProximo({ eventos: {}, year: 2026, month: 10, hoyISO: '2026-11-13' }))
+      .toBe('Tu siguiente ingreso llega el 1 de dic.');
   });
 });

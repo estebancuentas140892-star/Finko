@@ -2029,3 +2029,121 @@ body:not(.light-theme) .cov__fill {
   #form-apartado .chip-cat__label { font-size: var(--fk-text-sm); }
   #form-apartado .monto-hero__hint { display: none; }
 }
+
+/* ════════════════════════════════════════════════════════════
+   ADR 134: Consultar del adulto en el teléfono (tablero "rediseño3")
+   ════════════════════════════════════════════════════════════ */
+
+/* D1: la hoja Más. Rótulos en frase; cada destino con su estado debajo del
+   nombre y una flecha a la derecha. La teja ocupa las dos líneas. */
+.mas-sheet__group-label {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--fk-text-secondary);
+}
+.mas-sheet__grid > .mas-tile,
+.mas-sheet__footer .mas-tile--full {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  column-gap: var(--fk-space-3);
+  row-gap: 0;
+  align-content: center;
+  padding-block: 6px; /* dos líneas sin pasar el techo de la hoja (R83) */
+}
+.mas-sheet__grid > .mas-tile .mas-tile__teja,
+.mas-sheet__footer .mas-tile--full .mas-tile__teja { grid-column: 1; grid-row: 1 / span 2; align-self: center; }
+.mas-sheet__grid > .mas-tile .mas-tile__label,
+.mas-sheet__footer .mas-tile--full .mas-tile__label { grid-column: 2; font-size: var(--fk-text-base); line-height: 1.25; font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
+.mas-sheet__grid > .mas-tile .mas-tile__estado,
+.mas-sheet__footer .mas-tile--full .mas-tile__estado { grid-column: 2; text-align: left; font-size: var(--fk-text-xs); color: var(--fk-text-secondary); }
+.mas-sheet__grid > .mas-tile:has(.mas-tile__estado[hidden]) .mas-tile__label,
+.mas-sheet__footer .mas-tile--full:has(.mas-tile__estado[hidden]) .mas-tile__label { grid-row: 1 / span 2; align-self: center; }
+.mas-tile__ir { grid-column: 3; grid-row: 1 / span 2; align-self: center; width: 18px; height: 18px; color: var(--fk-text-muted); }
+/* A 320 la línea de Ajustes necesita el ancho de la flecha (ADR 108 D4): al
+   lado está el botón del tema. */
+@media (max-width: 359px) {
+  .mas-sheet__footer .mas-tile__ir { display: none; }
+  .mas-sheet__footer .mas-tile--full { grid-template-columns: auto minmax(0, 1fr); }
+}
+
+/* D3: lo que sale es un punto en el color de Por pagar, lo que entra un aro
+   (DIS.11 C6); la leyenda lo dice así, con el día vencido y hoy. */
+.cal-dot--fijo,
+.cal-dot--deuda-entidad,
+.cal-dot--deuda-personal,
+.cal-dot--sale { background: var(--fk-dom-compromisos-text); color: var(--fk-dom-compromisos-text); }
+.cal-dot--sale { display: inline-block; width: 6px; height: 6px; border-radius: var(--fk-radius-full); }
+.cal-legend__dia { display: inline-block; width: 14px; height: 14px; border-radius: var(--fk-radius-full); }
+.cal-legend__dia--vencido { background: var(--fk-danger-bg); border: 1px solid color-mix(in srgb, var(--fk-danger) 55%, transparent); }
+.cal-legend__dia--hoy { border: 2px solid var(--fk-accent); }
+
+/* D2: entra y sale en una pastilla dentro de la tarjeta del mes. */
+.hero-agenda__flujo {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--fk-space-1);
+  margin-top: var(--fk-space-2);
+  padding: var(--fk-space-1) var(--fk-space-3);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-full);
+  background: color-mix(in srgb, var(--fk-bg-base) 30%, transparent);
+}
+.hero-agenda__flujo .icon { width: 16px; height: 16px; color: var(--fk-text-secondary); } /* del alto del texto */
+.hero-agenda__flujo-sep { color: var(--fk-text-secondary); }
+.hero-agenda__linea strong { font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
+
+@media (max-width: 1023px) {
+  /* D3: las flechas del mes sueltas, sin caja; el vencido en rojo. */
+  .cal-card__nav { border: 0; background: none; }
+  #panel-agenda .cal-day--vencido .cal-day__num {
+    border-color: color-mix(in srgb, var(--fk-danger) 55%, transparent);
+    background: var(--fk-danger-bg);
+    color: var(--fk-danger-text);
+  }
+  #panel-agenda .cal-legend { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: var(--fk-space-2) var(--fk-space-4); }
+
+  /* D4: lo del mes, en listas bajo el calendario. */
+  .cal-listas { display: flex; flex-direction: column; gap: var(--fk-space-5); margin-top: var(--fk-space-5); }
+  .cal-lista__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--fk-space-3); padding: 0 var(--fk-space-1); }
+  .cal-lista__titulo { margin: 0; font-size: var(--fk-text-base); font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
+  .cal-lista__suma { margin: 0; font-weight: var(--fk-font-bold); font-variant-numeric: tabular-nums; color: var(--fk-text-primary); }
+  .cal-lista__head--danger :is(.cal-lista__titulo, .cal-lista__suma) { color: var(--fk-danger-text); }
+  .cal-lista__tarjeta {
+    display: flex;
+    flex-direction: column;
+    margin-top: var(--fk-space-2);
+    overflow: hidden;
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-xl);
+    background: var(--fk-bg-surface);
+  }
+  .cal-lista__fila {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    width: 100%;
+    min-height: 64px;
+    padding: var(--fk-space-3) var(--fk-space-4);
+    border: 0;
+    background: none;
+    font: inherit;
+    text-align: left;
+    color: inherit;
+    cursor: pointer;
+  }
+  .cal-lista__fila + .cal-lista__fila { border-top: 1px solid var(--fk-border-subtle); }
+  .cal-lista__fila:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: -2px; }
+  .cal-lista__teja { flex: none; }
+  .cal-lista__teja .cat-teja,
+  .cal-lista__teja .bank-avatar { width: 2.5rem; height: 2.5rem; }
+  .cal-lista__info { display: flex; flex: 1; flex-direction: column; gap: 2px; min-width: 0; }
+  .cal-lista__nombre { font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
+  .cal-lista__dato { font-size: var(--fk-text-xs); line-height: var(--fk-leading-snug); color: var(--fk-text-secondary); font-variant-numeric: tabular-nums; }
+  .cal-lista__dato strong { color: var(--fk-text-primary); }
+  .cal-lista__cuando--danger { font-weight: var(--fk-font-semibold); color: var(--fk-danger-text); }
+  .cal-lista__cuando--warning { font-weight: var(--fk-font-semibold); color: var(--fk-warning-text); }
+  .cal-lista__dato .cal-lista__entra { color: var(--fk-success-text); }
+}
