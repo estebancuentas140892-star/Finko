@@ -1,6 +1,6 @@
 # Ficha de contexto: Por pagar (antes Deudas)
 
-> Revisado: 2026-11-13 (REV.1, ADR 137).
+> Revisado: 2026-11-13 (REV.2a, ADR 140).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -39,13 +39,14 @@
 
 **Riesgos**:
 
-- **Tres superficies cuentan vencidos en la misma pantalla y tienen que coincidir**: la pastilla de la pestaña "Por pagar", el chip de cada tarjeta y la tarjeta de pago en lote (en el teléfono, el grupo "Vencidos" y su pie; `_montosVencidos()` de `lista.js` repite el filtro de `_pendientesDelMes()` y los dos tienen que cambiar juntos). Las tres salen de `vencidosSinPagar`. **El motor del lote (`pendientesDePagoDelMes`) cuenta más**: no descarta un compromiso registrado este mes después de su día de pago, así que `_pendientesDelMes()` lo filtra por los ids de `vencidosSinPagar` y usa el motor solo para el MONTO de cada fila (que es lo que sabe resolver: resta el abono parcial y topa la cuota al saldo). Sin ese filtro la tarjeta decía "2 pagos ya vencieron" con la pastilla marcando 1 (encontrado verificando en la app, no por un test).
+- **Tres superficies cuentan vencidos en la misma pantalla y tienen que coincidir** (cuatro con el hero, ADR 140, que suma con `_agruparPorUrgencia()` de `lista.js`): la pastilla de la pestaña "Por pagar", el chip de cada tarjeta y la tarjeta de pago en lote (en el teléfono, el grupo "Vencidos" y su pie; `_montosVencidos()` de `lista.js` repite el filtro de `_pendientesDelMes()` y los dos tienen que cambiar juntos). Las tres salen de `vencidosSinPagar`. **El motor del lote (`pendientesDePagoDelMes`) cuenta más**: no descarta un compromiso registrado este mes después de su día de pago, así que `_pendientesDelMes()` lo filtra por los ids de `vencidosSinPagar` y usa el motor solo para el MONTO de cada fila (que es lo que sabe resolver: resta el abono parcial y topa la cuota al saldo). Sin ese filtro la tarjeta decía "2 pagos ya vencieron" con la pastilla marcando 1 (encontrado verificando en la app, no por un test).
 - **El chip de vencimiento cambió de criterio para las deudas también, no solo para los fijos**: antes `_renderCompromisoItem` afirmaba "Vence en 21 días" sobre una cuota que venció el 8 y seguía impaga. Es una revisión del chip de urgencia de D.16d ([ADR 036](../DECISIONS/036-deudas-v2-visual.md) D5) que conserva su anatomía y sus clases: cambia lo que dice, no cómo se ve.
 - **`_atrasoPorId()` se calcula una vez por render y baja por parámetro a cada tarjeta.** `_renderCompromisoItem` tiene un default que lo recalcula para no romper a un caller suelto; si alguien renderiza tarjetas en un bucle sin pasarlo, paga un `vencidosSinPagar` por tarjeta.
 - **El botón `#compromisos-nueva-deuda` del encabezado ya no existe** (lo reemplaza el del chooser, sin id) y con él se fue `_toggleBotonNuevaDeuda()`: la regla FD6 de ocultarlo con la lista vacía dejó de aplicar porque el botón nuevo sirve para los tres tipos y siempre tiene algo que ofrecer. Un selector `#compromisos-nueva-deuda` devuelve `null`.
 
 **Cambios realizados**:
 
+- 2026-11-13 (**REV.2a**, [ADR 140](../DECISIONS/140-por-pagar-dice-cuanto-te-falta-este-mes.md)): el hero dice "Te falta pagar este mes" (lo vencido y lo que falta del mes, fijos y cuotas, con el reparto de la lista) y "Lo que debes en total" debajo solo con deudas; sale la pastilla de cuota/mes.
 - 2026-11-13 (**REV.1**, [ADR 137](../DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md) D1 y D2): "Agregar" según el chip (Fijos abre el gasto fijo, Deudas el formulario de deuda); los vacíos de esos chips con su botón (`_renderFiltroSinResultados()`, `_caminoPorPagar()`).
 - 2026-11-06 (ADR 132 tanda 5): en el teléfono la hoja del plan de salida abre con el resultado, las dos formas en pestañas con el orden en que se terminan, el pago extra con su efecto y "Aplicar", y las otras opciones como filas; si las cuotas no alcanzan, el aviso va primero con "Lo mínimo para salir".
 - 2026-11-06 (ADR 132 tanda 2): grupos en frase con su orden debajo, el círculo del pago en vez del botón por fila, la línea de ayuda, los filtros en frambuesa y la hoja propia de cada pago.
@@ -88,7 +89,7 @@
 | Form de abono | `modules/dominio/compromisos/views/formularios.js` | `renderFormAbono()` | |
 | Composición de escritorio: rejilla de la sección, estrategia pegajosa, banda del total y estado sin deudas (DSK.4a, ADR 073 D1/D2/D4) | `styles/responsive.css` | bloque "POR PAGAR EN ESCRITORIO" | desde 1440px; coloca por id los bloques que la sección ya tiene, sin envoltorios ni cambios de DOM |
 | Tarjeta de deuda a dos renglones y botón dimensionado (DSK.4b, ADR 073 D3) | `styles/responsive.css` | bloque "TARJETA DE DEUDA EN ESCRITORIO" | desde 1440px; rejilla con filas declaradas a mano porque el aviso de tasa se emite entre chips y acciones |
-| Hero con el total de deuda (D.16a, ADR 036) | `modules/dominio/compromisos/views/hero.js` | `renderHeroCompromisos()`, agregado puro `resumenDeudas()` en `logic/modelo.js` | |
+| Hero "Te falta pagar este mes" (ADR 140, que ajusta el 036 D1) | `modules/dominio/compromisos/views/hero.js` | `renderHeroCompromisos()`; la cifra sale de `faltaPorPagarDelMes()` en `views/lista.js`, el saldo de abajo de `resumenDeudas()` | |
 | Lista de deudas activas + trigger de editar (D.15b) | `modules/dominio/compromisos/views/lista.js` | `renderListaCompromisos()`, `_renderCompromisoItem()` | |
 | Panel de estrategia de pago (arriba, define orden de pago) | `modules/dominio/compromisos/views/estrategia.js` | `renderEstrategiaPago()` | |
 | Paneles de dashboard (vencidos, prioridades, Inicio) | `modules/dominio/compromisos/views/dashboard.js` | `renderPanelVencidos()`, `renderPanelPrioridades()` | |

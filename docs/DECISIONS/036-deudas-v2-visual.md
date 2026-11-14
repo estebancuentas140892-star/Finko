@@ -25,6 +25,8 @@ Orden vertical nuevo (mobile): header + hero total de deuda + card de estrategia
 
 ### D1. Total de deuda como hero (nuevo)
 
+> **Ajustada por el [ADR 140](140-por-pagar-dice-cuanto-te-falta-este-mes.md) (2026-11-13):** desde que la sección es "Por pagar", la cifra grande es lo que falta pagar del mes (fijos y cuotas); el saldo total baja a la fila de debajo como "Lo que debes en total" y la pastilla de cuota/mes sale.
+
 Hero al tope: label "Lo que debes en total" + total de saldo protagonista (tabular, extrabold) + chip "$X/mes · en N deudas" + ojo de privacidad. Superficie: degradado de identidad compromisos (`color-mix` de `--fk-dom-compromisos` al 16% sobre `--fk-bg-surface`, 2 paradas), borde compromisos al 30%, sombra en reposo. La cifra protagonista es el **saldo total** (suma de `saldoTotal` de deudas activas); la cuota mensual va como chip (recomendación del doc de diseño). Sin deudas: label "No tienes deudas registradas" + "$0", sin ojo ni chip (un control que no enmascara nada confunde, disciplina ADR 034/035).
 
 ### D2. Estrategia como card protagonista, rediseñada

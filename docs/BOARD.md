@@ -6,7 +6,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-11-13 (la poda, ADR 138). Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
+> Última actualización: 2026-11-13 (REV.2a cerrada, ADR 140; antes, la poda, ADR 138). Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
 
 ---
 
@@ -47,7 +47,6 @@ Las tarjetas del tablero, **en orden de valor** desde la poda del 2026-11-13 ([A
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
-| REV.2a | Por pagar dice cuánto te falta pagar este mes, con los fijos | Transversal | alta | ADR que ajusta el 036 D1 |
 | REV.3b | La app instalada tiene tus datos y la versión publicada (absorbe REV.5) | Transversal | alta | una prueba en un iPhone real y los datos del teléfono de Esteban |
 | REV.2b | El formulario de gasto fijo empieza por el monto y el campo queda a la vista | Transversal | alta | ADR que ajusta el 042 D5 |
 | REV.2c | Al transferir, la consignación ante la DIAN en una frase | Transversal | media | nada |
@@ -93,7 +92,7 @@ _(CFG.1 a CFG.6 cerraron completas. CFG.6, la auditoría móvil de Ajustes, cerr
 
 ## Transversal (afecta varias secciones)
 
-REV.2a a REV.3b, MV2.28, HF.1c a HF.3e, APR.5b y NUBE.4 → [`board/transversal.md`](board/transversal.md) (HF: iniciativa "un hecho financiero se informa una sola vez", [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), seis tarjetas desde el [ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md); APR: iniciativa "Aprende y aplícalo", [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) y [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md), en Propuesta)
+REV.2b a REV.3b, MV2.28, HF.1c a HF.3e, APR.5b y NUBE.4 → [`board/transversal.md`](board/transversal.md) (HF: iniciativa "un hecho financiero se informa una sola vez", [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), seis tarjetas desde el [ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md); APR: iniciativa "Aprende y aplícalo", [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) y [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md), en Propuesta)
 
 ---
 

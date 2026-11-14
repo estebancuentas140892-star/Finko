@@ -648,26 +648,7 @@ function _cuandoVence(dias, esteMes) {
  */
 function _renderPorUrgencia(items, oculto, atrasos, prefijoMes) {
   const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
-  const ahora = new Date();
-  const esActual = prefijoMes === `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}`;
-  const restanMes = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0).getDate() - ahora.getDate();
-  const montosVencidos = esActual ? _montosVencidos(prefijoMes) : new Map();
-
-  const g = { vencidos: [], mes: [], adelante: [], pagado: [], saldadas: [] };
-  for (const c of items) {
-    if (esDeuda(c.tipo) && (Number(c.saldoTotal) || 0) <= 0) g.saldadas.push(c);
-    else if (estadoPagoMes(S.gastos ?? [], c, prefijoMes) === 'completo') g.pagado.push(c);
-    else if (!esActual) g.mes.push(c);
-    else if (Number.isInteger(atrasos.get(c.id))) g.vencidos.push(c);
-    else if (_diasAlProximo(c) <= restanMes) g.mes.push(c);
-    else g.adelante.push(c);
-  }
-  g.vencidos.sort((a, b) => atrasos.get(b.id) - atrasos.get(a.id));
-  const porFecha = (a, b) => _diasAlProximo(a) - _diasAlProximo(b);
-  g.mes.sort(porFecha);
-  g.adelante.sort(porFecha);
-
-  const falta = (c) => montosVencidos.get(c.id) ?? _faltaDelMes(c, prefijoMes);
+  const { g, esActual, montosVencidos, falta } = _agruparPorUrgencia(items, atrasos, prefijoMes);
   const suma = (lista) => lista.reduce((acc, c) => acc + falta(c), 0);
   const fila = (c, estado, tono, monto = falta(c), accion = true) =>
     _renderFila(c, { estado, tono, monto, accion, oculto, prefijoMes });
@@ -705,7 +686,7 @@ function _renderPorUrgencia(items, oculto, atrasos, prefijoMes) {
   const ayuda = vencidos.length + delMes.length + adelante.length === 0 ? '' : `
     <p class="porpagar-ayuda">${icon('check-circle')}<span>Toca el círculo cuando pagues algo. Finko te pregunta de qué cuenta salió.</span></p>`;
 
-  const mes = _MESES[Number(prefijoMes.slice(5, 7)) - 1] ?? '';
+  const mes = _nombreMes(prefijoMes);
   return ayuda + [
     _grupoPorPagar('vencidos', 'Vencidos', vencidos, { suma: m(suma(g.vencidos)), tono: 'danger', pie: pieLote, orden: 'Del más antiguo al más reciente' }),
     _grupoPorPagar('mes', esActual ? 'Lo que falta este mes' : `Sin pagar en ${mes}`, delMes, { suma: m(suma(g.mes)) }),
@@ -713,6 +694,67 @@ function _renderPorUrgencia(items, oculto, atrasos, prefijoMes) {
     _grupoPorPagar('pagado', esActual ? 'Pagado este mes' : `Pagado en ${mes}`, pagado),
     _grupoPorPagar('saldadas', 'Saldadas', saldadas),
   ].join('');
+}
+
+/** "noviembre" a partir de 'YYYY-MM'. */
+function _nombreMes(prefijoMes) {
+  return _MESES[Number(String(prefijoMes).slice(5, 7)) - 1] ?? '';
+}
+
+/**
+ * Reparte los compromisos en los grupos de "Por pagar" (ADR 117 D1) y dice
+ * cuánto falta de cada uno. Es la única regla del reparto: la pintan las filas
+ * del teléfono y la suma el hero (ADR 140), así que la cifra de arriba y las
+ * sumas de "Vencidos" y "Lo que falta este mes" no pueden discrepar.
+ *
+ * @param {import('../../../core/state.js').Compromiso[]} items
+ * @param {Map<string, number>} atrasos Salida de `_atrasoPorId()`.
+ * @param {string} prefijoMes 'YYYY-MM' del mes que muestra el bloque.
+ */
+function _agruparPorUrgencia(items, atrasos, prefijoMes) {
+  const ahora = new Date();
+  const esActual = prefijoMes === `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}`;
+  const restanMes = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0).getDate() - ahora.getDate();
+  const montosVencidos = esActual ? _montosVencidos(prefijoMes) : new Map();
+
+  const g = { vencidos: [], mes: [], adelante: [], pagado: [], saldadas: [] };
+  for (const c of items) {
+    if (esDeuda(c.tipo) && (Number(c.saldoTotal) || 0) <= 0) g.saldadas.push(c);
+    else if (estadoPagoMes(S.gastos ?? [], c, prefijoMes) === 'completo') g.pagado.push(c);
+    else if (!esActual) g.mes.push(c);
+    else if (Number.isInteger(atrasos.get(c.id))) g.vencidos.push(c);
+    else if (_diasAlProximo(c) <= restanMes) g.mes.push(c);
+    else g.adelante.push(c);
+  }
+  g.vencidos.sort((a, b) => atrasos.get(b.id) - atrasos.get(a.id));
+  const porFecha = (a, b) => _diasAlProximo(a) - _diasAlProximo(b);
+  g.mes.sort(porFecha);
+  g.adelante.sort(porFecha);
+
+  const falta = (c) => montosVencidos.get(c.id) ?? _faltaDelMes(c, prefijoMes);
+  return { g, esActual, montosVencidos, falta };
+}
+
+/**
+ * Lo que falta pagar en el mes que muestra el bloque (REV.2a, ADR 140): lo
+ * vencido más lo que falta del mes, fijos y cuotas, con los montos de las
+ * filas. Sobre otro mes, lo que quedó sin pagar. No mira el chip activo: el
+ * hero dice el mes entero, y con "Todo" coincide con la suma de la lista.
+ *
+ * @returns {{total:number, cantidad:number, hayPagos:boolean, esActual:boolean, mes:string}}
+ */
+export function faltaPorPagarDelMes() {
+  const prefijoMes = prefijoMesBloque();
+  const activos = compromisosActivos(S.compromisos).filter(c => c.tipo === 'fijo' || esDeuda(c.tipo));
+  const { g, esActual, falta } = _agruparPorUrgencia(activos, _atrasoPorId(), prefijoMes);
+  const pendientes = [...g.vencidos, ...g.mes];
+  return {
+    total:    pendientes.reduce((acc, c) => acc + falta(c), 0),
+    cantidad: pendientes.length,
+    hayPagos: activos.length > 0,
+    esActual,
+    mes:      _nombreMes(prefijoMes),
+  };
 }
 
 /**

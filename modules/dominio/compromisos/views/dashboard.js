@@ -239,9 +239,12 @@ function _renderObligaciones(el) {
                aria-label="Pagar juntos los ${nVencidos} pagos vencidos">Pagar lo vencido · ${_m(sumarMontos(vencidos))}</button>`
     : '';
 
+  // ADR 140 D2: "suman", no "en total debes". Es la suma de las filas de
+  // arriba (lo vencido y los próximos 7 días); "Lo que debes en total" es el
+  // saldo de las deudas, en el hero de Por pagar, y no puede llevar su nombre.
   const nTodos = nVencidos + proximos.length;
   const resto = nTodos === 0 ? '' : `
-    <span class="obligaciones-card__resto">${nTodos === 1 ? '1 pago' : `${nTodos} pagos`} · en total debes ${_m(sumarMontos([...vencidos, ...proximos]))}</span>`;
+    <span class="obligaciones-card__resto">${nTodos === 1 ? '1 pago' : `${nTodos} pagos`} · suman ${_m(sumarMontos([...vencidos, ...proximos]))}</span>`;
 
   const pie = (pagar || resto)
     ? `<div class="obligaciones-card__pie">${pagar}${resto}</div>`

@@ -20,16 +20,6 @@
 
 > **Iniciativa REV, la revisión de Esteban del 2026-11-13** (14 puntos en Registro, Inicio, Deudas, Movimientos y General). La tanda 1 cerró con el [ADR 137](../DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md); el ADR 138 D3 recortó lo que quedaba. "Pagar desde varias cuentas" no genera tarjeta: ya existe y se deja así (registra lo que pasa en el banco, un débito por cuenta). **El ojo sigue siendo uno solo** (REV.4 descartada, ADR 106 D3).
 
-#### REV.2a - Por pagar dice cuánto te falta pagar este mes, con los fijos
-- Prioridad  : alta
-- Estado     : requiere ADR (ajusta el [ADR 036](../DECISIONS/036-deudas-v2-visual.md) D1)
-- Área       : ambos
-- Objetivo   : la tarjeta de arriba suma solo deudas (`resumenDeudas()`); con solo gastos fijos dice "No tienes deudas registradas" y $0. Que diga "Te falta pagar este mes" (lo vencido y lo que falta del mes, fijos y cuotas, el mismo cálculo de la lista) y "Lo que debes en total" debajo solo si hay deudas
-- Riesgo     : Inicio de escritorio ya suma fijos en "en total debes": las dos cifras deben quedar con nombres distintos
-- Archivos   : `modules/dominio/compromisos/views/hero.js`, `logic/modelo.js`, `views/lista.js`
-- Depende de : nada
-- Aceptación : con solo un arriendo, la tarjeta dice cuánto falta pagar este mes y coincide con la suma de la lista
-
 #### REV.2b - El formulario de gasto fijo empieza por el monto y el campo queda a la vista
 - Prioridad  : alta
 - Estado     : requiere ADR (ajusta el ADR 042 D5; recortada por el ADR 138 D3)

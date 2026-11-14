@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(compromisos): REV.2a, Por pagar dice cuánto te falta pagar este mes · 2026-11-13
+
+[ADR 140](DECISIONS/140-por-pagar-dice-cuanto-te-falta-este-mes.md), que ajusta el [ADR 036](DECISIONS/036-deudas-v2-visual.md) D1 y cambia el texto del pie del [ADR 070](DECISIONS/070-inicio-centro-de-atencion-en-escritorio.md) D8. Fichas: [`contexto/deudas.md`](contexto/deudas.md), [`contexto/inicio.md`](contexto/inicio.md). SW v697.
+
+- **El error**: con solo un arriendo, la tarjeta de arriba de Por pagar decía "No tienes deudas registradas" y $0 sobre una lista con $1.500.000 por pagar. Sumaba solo el saldo de las deudas.
+- **El hero**: "Te falta pagar este mes" con lo vencido y lo que falta del mes, fijos y cuotas. La cifra sale de `_agruparPorUrgencia()` de `views/lista.js`, la misma regla que reparte y suma los grupos del teléfono (`faltaPorPagarDelMes()`), así que coincide con "Vencidos" más "Lo que falta este mes". Sobre otro mes dice "Sin pagar en octubre"; sin pagos, "No tienes pagos registrados".
+- **Debajo, solo con deudas**: "Lo que debes en total: $X" y el conteo de siempre. Sale la pastilla de cuota/mes: la cuota ya está en la cifra grande.
+- **Inicio de escritorio**: el pie de "Lo que tienes que pagar" pasa de "en total debes" a "suman", porque es la suma de sus filas y no el saldo.
+- Pruebas: `compromisos` (las del hero reescritas, 12, con la del arriendo solo y la que compara la cifra con las sumas de la lista; 2 del pie de Inicio ajustadas); `smoke` (1 ajustada).
+
 ### fix(analisis): BUG-039, la renta ya no suma el salario dos veces · 2026-11-13
 
 Ficha: [`contexto/analisis.md`](contexto/analisis.md). SW v696. Cierra el riesgo 5 del [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md).

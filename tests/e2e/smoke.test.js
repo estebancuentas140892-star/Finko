@@ -5951,7 +5951,7 @@ test.describe('DSK.1d - "Lo que tienes que pagar" (ADR 070 D8/D9)', () => {
 
     // Un solo total, y va en el pie con la acción al lado.
     await expect(panel.locator('.vencidos-card__pagar')).toHaveText('Pagar lo vencido · $1.474.400');
-    await expect(panel.locator('.obligaciones-card__resto')).toHaveText('3 pagos · en total debes $1.614.300');
+    await expect(panel.locator('.obligaciones-card__resto')).toHaveText('3 pagos · suman $1.614.300');
   });
 
   // D9: la tarjeta ES la celda. El defecto medido era su borde 24px por dentro

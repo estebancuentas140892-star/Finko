@@ -3685,7 +3685,7 @@ describe('renderPanelVencidos() - "Lo que tienes que pagar" en escritorio (DSK.1
     expect(boton.textContent.trim()).toBe('Pagar lo vencido · $1.474.400');
     expect(boton.getAttribute('data-action')).toBe('inicio-pagar-lote');
     expect(panel().querySelector('.obligaciones-card__resto').textContent.trim())
-      .toBe('3 pagos · en total debes $1.614.300');
+      .toBe('3 pagos · suman $1.614.300');
   });
 
   // El grupo "Ya se venció" lista exactamente lo que paga el botón: si no, la
@@ -3716,7 +3716,7 @@ describe('renderPanelVencidos() - "Lo que tienes que pagar" en escritorio (DSK.1
 
     expect(panel().querySelector('.vencidos-card__pagar')).toBeNull();
     expect(panel().querySelector('.obligaciones-card__resto').textContent.trim())
-      .toBe('1 pago · en total debes $900.000');
+      .toBe('1 pago · suman $900.000');
   });
 
   it('sin nada con fecha, la tarjeta se queda y cambia lo que dice dentro', () => {
@@ -5128,81 +5128,132 @@ describe('resumenDeudas()', () => {
   });
 });
 
-// ── renderHeroCompromisos() (D.16a, ADR 036 D1/D7) ────────────────
+// ── renderHeroCompromisos() (D.16a, ADR 036 D1/D7; REV.2a, ADR 140) ──
 
 describe('renderHeroCompromisos()', () => {
+  // 15 de junio de 2026: sin pagos ni abonos, una deuda que vence el 20 cae
+  // en "Lo que falta este mes" con su cuota entera.
   const deudaHero = (overrides = {}) => ({
     id: 'd1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad',
     saldoTotal: 2_400_000, cuotaMensual: 220_000, frecuencia: 'Mensual',
-    diaPago: 5, tasa: 0.28, tasaUnidad: 'EA', activo: true,
+    diaPago: 20, tasa: 0.28, tasaUnidad: 'EA', activo: true,
     ...overrides,
   });
+  const arriendo = (overrides = {}) => ({
+    id: 'f1', descripcion: 'Arriendo', tipo: 'fijo', monto: 1_500_000,
+    frecuencia: 'Mensual', diaPago: 25, activo: true, ...overrides,
+  });
+  const txt = (sel) => document.querySelector(sel)?.textContent.replace(/\s+/g, ' ').trim();
 
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15, 10));
+    irAMesActualBloque();
     document.body.innerHTML = '<div id="compromisos-hero"></div>';
     S.compromisos = [];
+    S.gastos = [];
     S.config = { ...(S.config ?? {}), ocultarSaldo: false };
   });
 
   afterEach(() => {
     S.config.ocultarSaldo = false;
+    vi.useRealTimers();
+    irAMesActualBloque();
   });
 
-  it('con deudas: label, total, chip de cuota, "en N deudas" y ojo con aria-pressed=false', () => {
+  it('REV.2a: con solo un arriendo dice cuánto falta pagar este mes, sin la fila de deudas', () => {
+    S.compromisos = [arriendo()];
+    renderHeroCompromisos();
+    expect(txt('.hero-compromisos__label')).toBe('Te falta pagar este mes');
+    expect(txt('.hero-compromisos__valor')).toBe(f(1_500_000));
+    expect(document.querySelector('.hero-compromisos__meta')).toBeNull();
+    expect(document.querySelector('#compromisos-saldo-ojo')).not.toBeNull();
+  });
+
+  it('con deudas: lo que falta del mes arriba y "Lo que debes en total" con el conteo abajo', () => {
     S.compromisos = [
       deudaHero({ id: 'd1' }),
       deudaHero({ id: 'd2', tipo: 'deuda-personal', saldoTotal: 400_000, cuotaMensual: 200_000, tasa: 0 }),
     ];
     renderHeroCompromisos();
-    const el = document.getElementById('compromisos-hero');
-    expect(el.querySelector('.hero-compromisos__label').textContent).toBe('Lo que debes en total');
-    expect(el.querySelector('.hero-compromisos__valor').textContent).toBe('$2.800.000');
-    expect(el.querySelector('.hero-compromisos__chip').textContent).toContain('$420.000/mes');
-    expect(el.querySelector('.hero-compromisos__meta-txt').textContent).toBe('en 2 deudas');
-    const ojo = el.querySelector('#compromisos-saldo-ojo');
+    expect(txt('.hero-compromisos__label')).toBe('Te falta pagar este mes');
+    expect(txt('.hero-compromisos__valor')).toBe(f(420_000));
+    expect(txt('.hero-compromisos__chip')).toBe(`Lo que debes en total: ${f(2_800_000)}`);
+    expect(txt('.hero-compromisos__meta-txt')).toBe('en 2 deudas');
+    const ojo = document.querySelector('#compromisos-saldo-ojo');
     expect(ojo.getAttribute('aria-pressed')).toBe('false');
     expect(ojo.innerHTML).toContain('#i-eye');
     expect(ojo.innerHTML).not.toContain('#i-eye-off');
   });
 
-  it('con el saldo oculto: máscara en total y en el chip, ojo tachado', () => {
-    S.compromisos = [deudaHero()];
+  it('REV.2a: la cifra coincide con lo que suman "Vencidos" y "Lo que falta este mes" en la lista', () => {
+    const matchMediaReal = window.matchMedia;
+    window.matchMedia = () => ({ matches: true });
+    document.body.innerHTML = '<div id="compromisos-hero"></div><div id="lista-compromisos"></div>';
+    setFiltroPorPagar('todo');
+    S.compromisos = [
+      arriendo({ diaPago: 5 }),                    // vencido
+      deudaHero({ diaPago: 10 }),                  // vencida
+      arriendo({ id: 'f2', descripcion: 'Internet', monto: 90_000, diaPago: 16 }),
+      arriendo({ id: 'f3', descripcion: 'Netflix', monto: 40_000, diaPago: 2 }),
+      deudaHero({ id: 'd2', saldoTotal: 0, cuotaMensual: 0 }),
+    ];
+    S.gastos = [{ id: 'g1', compromisoId: 'f3', fecha: '2026-06-02', monto: 40_000 }];
+    try {
+      renderHeroCompromisos();
+      renderListaCompromisos();
+      const suma = (g) => txt(`[aria-labelledby="porpagar-${g}"] .porpagar-grupo__suma`);
+      expect(suma('vencidos')).toBe(f(1_720_000));
+      expect(suma('mes')).toBe(f(90_000));
+      expect(txt('.hero-compromisos__valor')).toBe(f(1_810_000));
+    } finally {
+      window.matchMedia = matchMediaReal;
+    }
+  });
+
+  it('lo ya pagado este mes no cuenta: todo pagado da $0', () => {
+    S.compromisos = [arriendo()];
+    S.gastos = [{ id: 'g1', compromisoId: 'f1', fecha: '2026-06-03', monto: 1_500_000 }];
+    renderHeroCompromisos();
+    expect(txt('.hero-compromisos__label')).toBe('Te falta pagar este mes');
+    expect(txt('.hero-compromisos__valor')).toBe(f(0));
+  });
+
+  it('sobre otro mes del bloque dice lo que quedó sin pagar en ese mes', () => {
+    S.compromisos = [arriendo()];
+    navegarMesBloque(-1);
+    renderHeroCompromisos();
+    expect(txt('.hero-compromisos__label')).toBe('Sin pagar en mayo');
+    expect(txt('.hero-compromisos__valor')).toBe(f(1_500_000));
+  });
+
+  it('con el saldo oculto: máscara en las dos cifras, ojo tachado', () => {
+    S.compromisos = [deudaHero(), arriendo()];
     S.config.ocultarSaldo = true;
     renderHeroCompromisos();
     const el = document.getElementById('compromisos-hero');
-    expect(el.querySelector('.hero-compromisos__valor').textContent).toBe('$••••••');
+    expect(txt('.hero-compromisos__valor')).toBe('$••••••');
+    expect(txt('.hero-compromisos__chip')).toBe('Lo que debes en total: $••••••');
     expect(el.innerHTML).not.toContain('2.400.000');
-    expect(el.innerHTML).not.toContain('220.000');
+    expect(el.innerHTML).not.toContain('1.720.000');
     const ojo = el.querySelector('#compromisos-saldo-ojo');
     expect(ojo.getAttribute('aria-pressed')).toBe('true');
     expect(ojo.innerHTML).toContain('#i-eye-off');
   });
 
-  it('sin deudas: "$0" con label de vacío, sin ojo ni fila de metadatos', () => {
+  it('sin pagos registrados: "$0" con label de vacío, sin ojo ni fila de metadatos', () => {
     renderHeroCompromisos();
-    const el = document.getElementById('compromisos-hero');
-    expect(el.querySelector('.hero-compromisos__label').textContent).toBe('No tienes deudas registradas');
-    expect(el.querySelector('.hero-compromisos__valor').textContent).toBe('$0');
-    expect(el.querySelector('#compromisos-saldo-ojo')).toBeNull();
-    expect(el.querySelector('.hero-compromisos__meta')).toBeNull();
+    expect(txt('.hero-compromisos__label')).toBe('No tienes pagos registrados');
+    expect(txt('.hero-compromisos__valor')).toBe('$0');
+    expect(document.querySelector('#compromisos-saldo-ojo')).toBeNull();
+    expect(document.querySelector('.hero-compromisos__meta')).toBeNull();
   });
 
-  it('los gastos fijos no cuentan para el hero', () => {
-    S.compromisos = [
-      { id: 'f1', descripcion: 'Arriendo', tipo: 'fijo', monto: 1_500_000, frecuencia: 'Mensual', diaPago: 1, activo: true },
-    ];
+  it('una sola deuda: "en 1 deuda" en singular; la cuota/mes ya no va en pastilla', () => {
+    S.compromisos = [deudaHero()];
     renderHeroCompromisos();
-    const el = document.getElementById('compromisos-hero');
-    expect(el.querySelector('.hero-compromisos__label').textContent).toBe('No tienes deudas registradas');
-    expect(el.querySelector('.hero-compromisos__valor').textContent).toBe('$0');
-  });
-
-  it('una sola deuda: "en 1 deuda" en singular y sin chip si no tiene cuota', () => {
-    S.compromisos = [deudaHero({ cuotaMensual: 0 })];
-    renderHeroCompromisos();
-    const el = document.getElementById('compromisos-hero');
-    expect(el.querySelector('.hero-compromisos__meta-txt').textContent).toBe('en 1 deuda');
-    expect(el.querySelector('.hero-compromisos__chip')).toBeNull();
+    expect(txt('.hero-compromisos__meta-txt')).toBe('en 1 deuda');
+    expect(document.getElementById('compromisos-hero').textContent).not.toContain('/mes');
   });
 
   // ── FD7: el conteo explica las saldadas ──────────────────────────
@@ -5214,8 +5265,7 @@ describe('renderHeroCompromisos()', () => {
       deudaHero({ id: 'd3', saldoTotal: 0, cuotaMensual: 0 }),
     ];
     renderHeroCompromisos();
-    const txt = document.querySelector('.hero-compromisos__meta-txt').textContent.trim();
-    expect(txt).toBe('en 2 deudas por pagar · 1 saldada');
+    expect(txt('.hero-compromisos__meta-txt')).toBe('en 2 deudas por pagar · 1 saldada');
   });
 
   it('FD7: varias saldadas van en plural y una sola por pagar en singular', () => {
@@ -5225,26 +5275,25 @@ describe('renderHeroCompromisos()', () => {
       deudaHero({ id: 'd3', saldoTotal: 0, cuotaMensual: 0 }),
     ];
     renderHeroCompromisos();
-    const txt = document.querySelector('.hero-compromisos__meta-txt').textContent.trim();
-    expect(txt).toBe('en 1 deuda por pagar · 2 saldadas');
+    expect(txt('.hero-compromisos__meta-txt')).toBe('en 1 deuda por pagar · 2 saldadas');
   });
 
-  it('FD7: con todas saldadas dice "sin deudas por pagar", no "en 0 deudas"', () => {
+  it('FD7: con todas saldadas dice "sin deudas por pagar" y no muestra "Lo que debes en total"', () => {
     S.compromisos = [
       deudaHero({ id: 'd1', saldoTotal: 0, cuotaMensual: 0 }),
       deudaHero({ id: 'd2', saldoTotal: 0, cuotaMensual: 0 }),
     ];
     renderHeroCompromisos();
-    const txt = document.querySelector('.hero-compromisos__meta-txt').textContent.trim();
-    expect(txt).toBe('sin deudas por pagar · 2 saldadas');
-    expect(txt).not.toContain('en 0');
+    const meta = txt('.hero-compromisos__meta-txt');
+    expect(meta).toBe('sin deudas por pagar · 2 saldadas');
+    expect(meta).not.toContain('en 0');
+    expect(document.querySelector('.hero-compromisos__chip')).toBeNull();
   });
 
   it('FD7: sin saldadas el texto de siempre no cambia', () => {
     S.compromisos = [deudaHero({ id: 'd1' }), deudaHero({ id: 'd2' })];
     renderHeroCompromisos();
-    const txt = document.querySelector('.hero-compromisos__meta-txt').textContent.trim();
-    expect(txt).toBe('en 2 deudas');
+    expect(txt('.hero-compromisos__meta-txt')).toBe('en 2 deudas');
   });
 });
 

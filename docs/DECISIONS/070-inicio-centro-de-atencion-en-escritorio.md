@@ -73,7 +73,7 @@ Misma pregunta partida en dos: mismo archivo de origen (`compromisos/views/dashb
 
 Queda una sola tarjeta, **"Lo que tienes que pagar"**, con una línea de tiempo continua: el grupo **"Ya se venció"** al frente en rojo, y después los grupos por día con etiqueta relativa ("mañana", "en 4 días"). Se conservan el agrupado por día, los `.dom-badge` de dominio y el pago en lote.
 
-El pie lleva la cifra dentro del botón (**"Pagar lo vencido - $1.474.400"**) y el resto al lado ("4 pagos - en total debes $5.964.300"). La suma ya está hecha.
+El pie lleva la cifra dentro del botón (**"Pagar lo vencido - $1.474.400"**) y el resto al lado ("4 pagos - en total debes $5.964.300"). La suma ya está hecha. **Texto cambiado por el [ADR 140](140-por-pagar-dice-cuanto-te-falta-este-mes.md) D2 (2026-11-13):** "4 pagos · suman $5.964.300", porque "Lo que debes en total" es el saldo de las deudas en Por pagar.
 
 ### D9. El pie respira y la tarjeta es la celda
 

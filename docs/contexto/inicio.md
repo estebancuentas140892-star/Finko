@@ -1,6 +1,6 @@
 # Ficha de contexto: Inicio (dashboard)
 
-> Revisado: 2026-11-05.
+> Revisado: 2026-11-13 (REV.2a, ADR 140).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -175,6 +175,7 @@
 
 **Cambios realizados** (una línea por hito; el detalle vive en el [CHANGELOG](../CHANGELOG.md)):
 
+- 2026-11-13 (REV.2a, [ADR 140](../DECISIONS/140-por-pagar-dice-cuanto-te-falta-este-mes.md) D2): el pie de "Lo que tienes que pagar" dice "N pagos · suman $X" en vez de "en total debes", que es el nombre del saldo de las deudas en Por pagar.
 - 2026-11-05 (MV2.30 tanda 5, ADR 126 D8): la barra de abajo con píldora detrás del ícono activo y "Registrar" plano. Cierra el tablero de Inicio.
 - 2026-11-05 (MV2.30 tanda 4, ADR 126 D6): "Pagos para hoy" en las dos entradas, con el estado en color y el total en el pie; "Registrar" con Gasto e Ingreso arriba y la lista de destinos; medidas de "Tu perfil".
 - 2026-11-05 (MV2.30 tanda 3, ADR 126 D4 y D5): "Esta semana" con los totales arriba, el día una vez y sin flecha y "Y N más" de pie; la guía de tres pasos también en el teléfono.
