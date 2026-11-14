@@ -5,6 +5,8 @@
 **Autores:** Esteban (pedido), Claude Opus 5.5 (implementación y redacción)
 **Relación:** pieza MV2.5 de la tarjeta MV2.2 ([ADR 098](098-finko-movil-2-primera-entrega.md)); **completa** su D8 (el pie pegado a la hoja), que dejó fuera el teclado. **Respeta** el ADR 098 D12 (zona segura) y la lección a pantalla completa del [ADR 092](092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D7. Solo bajo 1024 px; escritorio no tiene teclado en pantalla.
 
+**Extendida por el [ADR 141](141-el-gasto-fijo-empieza-por-el-monto.md) D4 (2026-11-13):** además del pie, el campo enfocado de la hoja sube a la vista si el teclado lo tapa.
+
 ---
 
 ## Contexto

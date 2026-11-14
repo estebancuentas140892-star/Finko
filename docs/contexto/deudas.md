@@ -1,6 +1,6 @@
 # Ficha de contexto: Por pagar (antes Deudas)
 
-> Revisado: 2026-11-13 (REV.2a, ADR 140).
+> Revisado: 2026-11-13 (REV.2b, ADR 141).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -24,7 +24,7 @@
 | Chip de vencimiento (lo vencido de este mes antes que el próximo pago) | `modules/dominio/compromisos/views/lista.js` | `_chipVencimiento()`, `_atrasoPorId()` | lo usan las DOS tarjetas; el conjunto sale de `vencidosSinPagar` |
 | Chooser de tipo ("¿Qué quieres agregar?") | `index.html` + `modules/dominio/compromisos/index.js` | `#modal-compromiso-tipo`, `_elegirTipoNuevo()`, `_elegirTipoNuevoIr()` | un solo "+ Agregar" en el encabezado; cada chip abre su modal |
 | Alta/edición de gasto fijo (mudado de Agenda) | `modules/dominio/compromisos/index.js` | `_nuevoGastoFijo()`, `_editarGastoFijo()`, `_inyectarFormGastoFijo()`, `_guardarGastoFijo()` | acciones `nuevo-gasto-fijo` y `agenda-editar-fijo`; eliminar reusa `_eliminarCompromiso` |
-| Formulario de gasto fijo (FORM.1c, lenguaje v2) | `modules/dominio/compromisos/views/formularios.js` | `renderFormGastoFijo()`, `textoBannerGastoFijo()`, `CATEGORIA_NUEVA_VALUE_FIJO` | mismo HTML que tenía en Agenda, byte a byte salvo el hogar |
+| Formulario de gasto fijo (FORM.1c; orden de [ADR 141](../DECISIONS/141-el-gasto-fijo-empieza-por-el-monto.md)) | `modules/dominio/compromisos/views/formularios.js` + `compromisos/index.js` | `renderFormGastoFijo()`, `FRECUENCIAS_CHIP_FIJO`, `_syncFrecuenciaGastoFijo()`, `_syncCategoriaGastoFijo()` (muda el campo de texto) | monto, qué es, cada cuánto, qué día y "Más opciones" |
 | Pago en lote: tarjeta y modal | `modules/dominio/compromisos/views/lote.js` | `renderLoteCard()`, `renderFormPagoLote()` | acciones `compromisos-pagar-lote` / `compromisos-confirmar-lote` |
 | Pago en lote: handlers | `modules/dominio/compromisos/index.js` | `_abrirLote()`, `_pagarLote()`, `_actualizarTotalLote()`, `_confirmarLote()`, `_pendientesDelMes()` | siempre el mes en curso: esta sección no navega meses |
 | Escritura de los pagos (compartida con "Marcar pagado" de Agenda) | `modules/infra/pago-compromiso.js` | `aplicarPagosCompromisos()`, `fechaPagoDelMes()` | subieron a infra en esta ficha; antes eran privadas de `agenda/index.js` |
@@ -46,6 +46,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-13 (**REV.2b**, [ADR 141](../DECISIONS/141-el-gasto-fijo-empieza-por-el-monto.md)): el gasto fijo empieza por "¿Cuánto pagas?", la frecuencia va en chips (Mensual, Quincenal, Anual u Otra) y la nota y el débito automático en "Más opciones".
 - 2026-11-13 (**REV.2a**, [ADR 140](../DECISIONS/140-por-pagar-dice-cuanto-te-falta-este-mes.md)): el hero dice "Te falta pagar este mes" (lo vencido y lo que falta del mes, fijos y cuotas, con el reparto de la lista) y "Lo que debes en total" debajo solo con deudas; sale la pastilla de cuota/mes.
 - 2026-11-13 (**REV.1**, [ADR 137](../DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md) D1 y D2): "Agregar" según el chip (Fijos abre el gasto fijo, Deudas el formulario de deuda); los vacíos de esos chips con su botón (`_renderFiltroSinResultados()`, `_caminoPorPagar()`).
 - 2026-11-06 (ADR 132 tanda 5): en el teléfono la hoja del plan de salida abre con el resultado, las dos formas en pestañas con el orden en que se terminan, el pago extra con su efecto y "Aplicar", y las otras opciones como filas; si las cuotas no alcanzan, el aviso va primero con "Lo mínimo para salir".

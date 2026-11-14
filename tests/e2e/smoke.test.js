@@ -3184,6 +3184,10 @@ test.describe('Por pagar - nombre automático según la categoría del fijo', ()
   test('guardar con categoría predefinida y una nota: la nota queda en el subtítulo, el nombre es la categoría', async ({ page }) => {
     const form = page.locator('#form-gasto-fijo');
     await elegirChip(form, 'Mercado');
+    // REV.2b (ADR 141 D3): con la categoría como nombre, la nota vive en
+    // "Más opciones", plegado.
+    await expect(page.locator('#gfijo-descripcion')).toBeHidden();
+    await form.locator('#gfijo-mas .form-disclosure__trigger').click();
     await page.fill('#gfijo-descripcion', 'Éxito de la esquina');
     await page.fill('#gfijo-monto', '150000');
     await page.fill('#gfijo-dia', '11');
@@ -3207,8 +3211,42 @@ test.describe('Por pagar - nombre automático según la categoría del fijo', ()
     await page.fill('#gfijo-dia', '20');
     await expect(banner).toHaveText('Aparecerá cada mes en tu calendario el día 20.');
 
-    await form.locator('#gfijo-frecuencia').selectOption('Quincenal');
+    // REV.2b (ADR 141 D2): las frecuencias de siempre son chips; "Otra"
+    // deja a la vista el desplegable con las nueve.
+    await form.locator('.chip-fecha:has(input[value="Quincenal"])').click();
     await expect(banner).toHaveText('Aparecerá cada quincena en tu calendario el día 20.');
+    await expect(form.locator('#gfijo-frecuencia')).toBeHidden();
+
+    await form.locator('.chip-fecha:has(input[value="otra"])').click();
+    await expect(form.locator('#gfijo-frecuencia')).toBeVisible();
+    await form.locator('#gfijo-frecuencia').selectOption('Semanal');
+    await expect(banner).toHaveText('Aparecerá cada semana en tu calendario el día 20.');
+  });
+
+  test('REV.2b: a 390 px el monto es lo primero que se ve, y la nota guardada abre "Más opciones" al editar', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const form = page.locator('#form-gasto-fijo');
+    const monto = form.locator('#gfijo-monto');
+    await expect(monto).toBeInViewport();
+    const primerCampo = await form.locator('input:not([type="hidden"]), select').first().getAttribute('id');
+    expect(primerCampo).toBe('gfijo-monto');
+
+    await monto.fill('90000');
+    await elegirChip(form, 'Mercado');
+    await form.locator('#gfijo-mas .form-disclosure__trigger').click();
+    await form.locator('#gfijo-descripcion').fill('Tienda del barrio');
+    await form.locator('#gfijo-dia').fill('9');
+    await form.locator('button[type="submit"]').click();
+    await expect(page.locator('#modal-gasto-fijo')).not.toHaveAttribute('data-open');
+
+    // Al editar, lo que se guardó no se esconde: "Más opciones" llega abierto
+    // con la nota. La tarjeta con su lápiz es la de escritorio (ADR 117 D2).
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.locator('#lista-compromisos [data-action="agenda-editar-fijo"]').first().click();
+    await expect(page.locator('#modal-gasto-fijo')).toHaveAttribute('data-open', '');
+    await expect(form.locator('#gfijo-mas-panel')).toBeVisible();
+    await expect(form.locator('#gfijo-descripcion')).toHaveValue('Tienda del barrio');
+    await expect(form.locator('.chip-fecha:has(input[value="Mensual"]) input')).toBeChecked();
   });
 });
 

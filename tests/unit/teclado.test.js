@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { areaConTeclado, initTeclado, UMBRAL_TECLADO_PX } from '../../modules/ui/teclado.js';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { areaConTeclado, initTeclado, llevarCampoALaVista, UMBRAL_TECLADO_PX } from '../../modules/ui/teclado.js';
 
 // ADR 115 (MV2.5): con el teclado abierto, la hoja se pega al área visible.
 
@@ -64,5 +64,72 @@ describe('initTeclado()', () => {
   it('sin visualViewport no hace nada', () => {
     expect(() => initTeclado(null)).not.toThrow();
     expect('teclado' in document.documentElement.dataset).toBe(false);
+  });
+});
+
+// REV.2b (ADR 141 D4): el campo que se escribe no queda tapado por el teclado.
+
+describe('llevarCampoALaVista()', () => {
+  /** Una hoja abierta con un campo cuyo rectángulo fija el test. */
+  function hojaCon(html, rect = { top: 700, bottom: 744 }) {
+    document.body.innerHTML = `<div class="modal-overlay" data-open><div class="modal">${html}</div></div>`;
+    const campo = document.body.querySelector('input, textarea, select, button');
+    campo.getBoundingClientRect = () => rect;
+    campo.scrollIntoView = vi.fn();
+    return campo;
+  }
+  const vv = { height: 500, offsetTop: 0 };
+
+  it('un campo de texto bajo el teclado sube al centro', () => {
+    const campo = hojaCon('<input type="text" />');
+    expect(llevarCampoALaVista(campo, vv)).toBe(true);
+    expect(campo.scrollIntoView).toHaveBeenCalledWith({ block: 'center', inline: 'nearest' });
+  });
+
+  it('un campo tapado por el pie de la hoja también sube', () => {
+    const campo = hojaCon('<input type="text" />', { top: 380, bottom: 424 });
+    expect(llevarCampoALaVista(campo, vv)).toBe(true);
+  });
+
+  it('lo que ya se ve no se mueve', () => {
+    const campo = hojaCon('<input type="text" />', { top: 120, bottom: 164 });
+    expect(llevarCampoALaVista(campo, vv)).toBe(false);
+    expect(campo.scrollIntoView).not.toHaveBeenCalled();
+  });
+
+  it('casillas, radios, botones y desplegables no abren teclado: no se mueven', () => {
+    for (const html of ['<input type="checkbox" />', '<input type="radio" />', '<button>Ok</button>', '<select><option>1</option></select>']) {
+      const campo = hojaCon(html);
+      expect(llevarCampoALaVista(campo, vv)).toBe(false);
+    }
+  });
+
+  it('fuera de una hoja abierta lo desplaza el navegador: no se toca', () => {
+    document.body.innerHTML = '<input type="text" />';
+    const campo = document.body.querySelector('input');
+    campo.scrollIntoView = vi.fn();
+    expect(llevarCampoALaVista(campo, vv)).toBe(false);
+    expect(campo.scrollIntoView).not.toHaveBeenCalled();
+  });
+
+  it('al abrirse el teclado, el campo enfocado de la hoja sube; al desplazar, no', () => {
+    Object.defineProperty(window, 'innerHeight', { value: 844, configurable: true });
+    const raf = globalThis.requestAnimationFrame;
+    globalThis.requestAnimationFrame = (fn) => { fn(); return 0; };
+    try {
+      const campo = hojaCon('<input type="text" />');
+      campo.focus();
+      const vvF = new globalThis.EventTarget();
+      Object.assign(vvF, { height: 844, offsetTop: 0, scale: 1 });
+      initTeclado(vvF);
+      vvF.height = 500;
+      vvF.dispatchEvent(new Event('resize'));
+      expect(campo.scrollIntoView).toHaveBeenCalledTimes(1);
+      vvF.dispatchEvent(new Event('scroll'));
+      expect(campo.scrollIntoView).toHaveBeenCalledTimes(1);
+    } finally {
+      globalThis.requestAnimationFrame = raf;
+      delete document.documentElement.dataset.teclado;
+    }
   });
 });

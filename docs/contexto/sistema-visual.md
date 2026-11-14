@@ -1,6 +1,6 @@
 # Ficha de contexto: Sistema visual
 
-> Revisado: 2026-11-13 (REV.1, ADR 137).
+> Revisado: 2026-11-13 (REV.2b, ADR 141).
 
 > Identidad visual transversal: color por sección, tejas de marca y biblioteca gráfica, y navegación. Partida de `transversal.md` el 2026-07-24. Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -112,6 +112,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-13 (**REV.2b**, [ADR 141](../DECISIONS/141-el-gasto-fijo-empieza-por-el-monto.md) D4): con el teclado abierto, el campo enfocado de una hoja sube al centro del área visible si quedó tapado (al abrirse el teclado y al pasar de campo, no al desplazar).
 - 2026-11-03 (**MV2.3 tanda 3**, ADR 118): toda hoja se cierra también deslizándola y con el atrás de Android, por el mismo camino que Escape.
 - 2026-11-03 (**MV2.5**, [ADR 115](../DECISIONS/115-el-pie-se-apoya-sobre-el-teclado.md)): con el teclado abierto, la hoja se pega al área visible (`ui/teclado.js`, `html[data-teclado]`) y su pie queda encima.
 - 2026-11-03 (**MV2.20**, [ADR 113](../DECISIONS/113-las-lentes-quedan-a-la-vista.md)): al bajar, la barra de lentes queda pegada arriba; única excepción a R31.
@@ -150,7 +151,7 @@
 | Avisos sin filete, ícono en caja tintada (ADR 107 D4) | `styles/components/nudges.css` | `.nudge__icon` + `--nudge-tono` por nivel |
 | Un vacío, un mensaje (ADR 107 D5) | `ui/proposito.js`, `styles/components/domain.css` | `partirProposito()`, `.section:has(.banner-proposito) .empty-state` |
 | Barra de lentes fija al bajar ([ADR 113](../DECISIONS/113-las-lentes-quedan-a-la-vista.md)) | `styles/responsive.css` (bloque MV2) | `.bloque-tabs` en `sticky`; `#tabs-*`, `#chips-*` y `.bloque-gastos` en `display: contents` |
-| La hoja sobre el teclado ([ADR 115](../DECISIONS/115-el-pie-se-apoya-sobre-el-teclado.md)) | `modules/ui/teclado.js`, `styles/responsive.css` (D8) | `areaConTeclado()`, `initTeclado()`, `html[data-teclado]`, `--fk-vv-alto` |
+| La hoja sobre el teclado ([ADR 115](../DECISIONS/115-el-pie-se-apoya-sobre-el-teclado.md)) y el campo enfocado a la vista ([ADR 141](../DECISIONS/141-el-gasto-fijo-empieza-por-el-monto.md) D4) | `modules/ui/teclado.js`, `styles/responsive.css` (D8) | `areaConTeclado()`, `initTeclado()`, `llevarCampoALaVista()`, `html[data-teclado]`, `--fk-vv-alto` |
 | Toda hoja se cierra deslizando y con el atrás ([ADR 118](../DECISIONS/118-el-dia-en-hoja-y-las-hojas-se-cierran-de-tres-formas.md)) | `modules/ui/hojas.js`, `infra/a11y.js` (`observarTrap`), `styles/modals.css` | `CloseWatcher` por hoja, `arrastreCierra()`, `cerrarComoEscape()`; Escape cierra la de arriba |
 | Estilos | `styles/responsive.css` | bloque "MV2 · FINKO MÓVIL 2" al final |
 

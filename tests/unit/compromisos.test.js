@@ -54,7 +54,7 @@ import { f } from '../../modules/infra/utils.js';
 import { htmlDetalleCompromiso, cuandoCompromiso, textoTasa } from '../../modules/dominio/compromisos/views/detalle.js';
 import { htmlPlanSalida, resultadoExtra } from '../../modules/dominio/compromisos/views/plan-salida.js';
 import {
-  CATEGORIAS_AGENDA, CATEGORIA_AGENDA_ICONO,
+  CATEGORIAS_AGENDA, CATEGORIA_AGENDA_ICONO, FRECUENCIAS,
   CATEGORIAS_DEUDA, CATEGORIA_DEUDA_ICONO,
   CATEGORIAS_DEUDA_PERSONAL, CATEGORIA_DEUDA_PERSONAL_ICONO,
 } from '../../modules/core/constants.js';
@@ -5664,14 +5664,60 @@ describe('renderFormGastoFijo() - lenguaje de formularios v2', () => {
     expect(html).toContain('input--big-amount');
   });
 
-  it('frecuencia y día de pago comparten una fila', () => {
-    const html = renderFormGastoFijo();
+  // REV.2b (ADR 141): el orden es la conversación del gasto fijo.
+  const formFijo = () => {
     const div = document.createElement('div');
-    div.innerHTML = html;
-    const fila = div.querySelector('.form-row');
-    expect(fila).not.toBeNull();
-    expect(fila.querySelector('[name="frecuencia"]')).not.toBeNull();
-    expect(fila.querySelector('[name="diaPago"]')).not.toBeNull();
+    div.innerHTML = renderFormGastoFijo();
+    return div;
+  };
+
+  it('REV.2b: el monto va primero, con "¿Cuánto pagas?", y después qué es, cada cuánto y qué día', () => {
+    const div = formFijo();
+    const campos = [...div.querySelectorAll('[name="monto"], [name="categoria"], [name="frecuenciaOpcion"], [name="diaPago"]')]
+      .map(el => el.name)
+      .filter((n, i, a) => a.indexOf(n) === i);
+    expect(campos).toEqual(['monto', 'categoria', 'frecuenciaOpcion', 'diaPago']);
+    expect(div.querySelector('.monto-hero__label').textContent).toBe('¿Cuánto pagas?');
+    expect(div.querySelector('#gfijo-categoria-label').textContent).toBe('¿Qué es?');
+    expect(div.querySelector('#gfijo-frecuencia-label').textContent).toBe('¿Cada cuánto?');
+    expect(div.querySelector('label[for="gfijo-dia"]').textContent).toBe('¿Qué día?');
+  });
+
+  it('REV.2b: "¿Cada cuánto?" ofrece Mensual, Quincenal, Anual y Otra; Mensual nace marcada', () => {
+    const div = formFijo();
+    const chips = [...div.querySelectorAll('[name="frecuenciaOpcion"]')].map(r => r.value);
+    expect(chips).toEqual(['Mensual', 'Quincenal', 'Anual', 'otra']);
+    expect(div.querySelector('[name="frecuenciaOpcion"]:checked').value).toBe('Mensual');
+  });
+
+  it('REV.2b: el desplegable con las nueve frecuencias es el dato, y nace oculto detrás de "Otra"', () => {
+    const div = formFijo();
+    const select = div.querySelector('select[name="frecuencia"]');
+    expect(select.options).toHaveLength(FRECUENCIAS.length);
+    // happy-dom no resuelve `selected` en un div suelto: se mira el atributo.
+    expect(select.querySelector('option[selected]').value).toBe('Mensual');
+    expect(div.querySelector('#gfijo-frecuencia-otra').hidden).toBe(true);
+  });
+
+  it('REV.2b: el débito automático vive en "Más opciones", plegado', () => {
+    S.cuentas = [{ id: 'c1', nombre: 'Ahorros', banco: 'X', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
+    try {
+      const div = formFijo();
+      const mas = div.querySelector('#gfijo-mas');
+      expect(mas.hidden).toBe(false);
+      expect(mas.querySelector('.form-disclosure__trigger').getAttribute('aria-expanded')).toBe('false');
+      expect(div.querySelector('#gfijo-mas-panel').hidden).toBe(true);
+      expect(div.querySelector('#gfijo-mas-panel #gfijo-debito-check')).not.toBeNull();
+    } finally {
+      S.cuentas = [];
+    }
+  });
+
+  it('REV.2b: sin cuentas no hay débito, y "Más opciones" nace oculto hasta que haya una nota', () => {
+    S.cuentas = [];
+    const div = formFijo();
+    expect(div.querySelector('#gfijo-mas').hidden).toBe(true);
+    expect(div.querySelector('#gfijo-debito-check')).toBeNull();
   });
 
   it('el pie usa el botón primario a lo ancho con el glifo de confirmación', () => {

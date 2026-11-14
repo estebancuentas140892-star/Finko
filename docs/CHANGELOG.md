@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(compromisos): REV.2b, el gasto fijo empieza por el monto · 2026-11-13
+
+[ADR 141](DECISIONS/141-el-gasto-fijo-empieza-por-el-monto.md), que ajusta el [ADR 042](DECISIONS/042-formularios-v2-visual.md) D5 y extiende el [ADR 115](DECISIONS/115-el-pie-se-apoya-sobre-el-teclado.md). Fichas: [`contexto/deudas.md`](contexto/deudas.md), [`contexto/sistema-visual.md`](contexto/sistema-visual.md). SW v698.
+
+- **El error**: el formulario abría con 16 chips de categoría (seis filas a 390 px) antes del monto, y con el teclado abierto el campo que se escribía podía quedar tapado.
+- **El orden**: "¿Cuánto pagas?", "¿Qué es?" (todas las categorías), "¿Cada cuánto?" y "¿Qué día?" con el banner. La frecuencia va en chips (Mensual, Quincenal, Anual u Otra); "Otra" deja a la vista el desplegable de las nueve, que sigue siendo el dato.
+- **"Más opciones"**, plegado: la nota (cuando la categoría ya da el nombre, el mismo campo se muda ahí) y el débito automático. Al editar se abre si guarda algo.
+- **El teclado, en todos los formularios** (`ui/teclado.js`): al abrirse o al pasar de campo, el campo enfocado de una hoja sube al centro si quedó fuera de la vista o bajo el pie. No se hace al desplazar.
+- **El formulario corto de MV2.17** queda anotado como descartado en el ADR, con lo que se sabe de él: los HTML del canvas se borraron el 2026-11-05.
+- Pruebas: `compromisos` (5 nuevas, 1 retirada: frecuencia y día ya no comparten fila), `teclado` (6 nuevas), `smoke` (2 ajustadas y 1 nueva a 390 px con la edición). El efecto del teclado se verifica en el teléfono con REV.3b.
+
 ### feat(compromisos): REV.2a, Por pagar dice cuánto te falta pagar este mes · 2026-11-13
 
 [ADR 140](DECISIONS/140-por-pagar-dice-cuanto-te-falta-este-mes.md), que ajusta el [ADR 036](DECISIONS/036-deudas-v2-visual.md) D1 y cambia el texto del pie del [ADR 070](DECISIONS/070-inicio-centro-de-atencion-en-escritorio.md) D8. Fichas: [`contexto/deudas.md`](contexto/deudas.md), [`contexto/inicio.md`](contexto/inicio.md). SW v697.

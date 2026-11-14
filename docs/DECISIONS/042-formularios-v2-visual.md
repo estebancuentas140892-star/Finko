@@ -47,6 +47,8 @@ Segmented Entidad/Personal **inline** al tope del form (reemplaza el chooser de 
 
 ### D5. Nuevo gasto fijo (FORM.1c)
 
+> **Ajustada por el [ADR 141](141-el-gasto-fijo-empieza-por-el-monto.md) (2026-11-13):** el orden pasa a monto, categoría, frecuencia en chips (Mensual, Quincenal, Anual u Otra), día con el banner, y nota y débito automático en "Más opciones". Frecuencia y día dejan de compartir fila.
+
 Categoría en chips 3col (las 15 de `CATEGORIAS_AGENDA`), descripción, monto hero (tinte índigo agenda), frecuencia + día de pago en fila, y el banner informativo "Aparecerá cada mes en tu calendario el día N" **dinámico** (lee frecuencia + día elegidos). Cierra la iniciativa.
 
 ### D6. Alcance de "lenguaje": los demás formularios NO migran aquí

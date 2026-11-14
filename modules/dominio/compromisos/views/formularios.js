@@ -66,9 +66,25 @@ export function textoBannerGastoFijo(frecuencia, diaPago) {
 export const CATEGORIA_NUEVA_VALUE_FIJO = '__nueva__';
 
 /**
- * Devuelve el HTML del formulario simplificado de gasto fijo.
+ * Las tres frecuencias que van en chip en "¿Cada cuánto?" (REV.2b, ADR 141
+ * D2). El resto de `FRECUENCIAS` vive detrás de "Otra", en el desplegable de
+ * siempre: un arriendo, una quincena o un seguro anual son casi todos los
+ * fijos, y los otros seis no se esconden, se piden con un toque más.
+ */
+export const FRECUENCIAS_CHIP_FIJO = Object.freeze(['Mensual', 'Quincenal', 'Anual']);
+
+/** Valor del chip "Otra" en "¿Cada cuánto?": no es una frecuencia. */
+export const FRECUENCIA_OTRA_FIJO = 'otra';
+
+/**
+ * Devuelve el HTML del formulario de gasto fijo.
  *
- * Campos visibles: categoria (opcional), descripcion/nota, monto, frecuencia, diaPago.
+ * Orden (REV.2b, ADR 141, que ajusta el ADR 042 D5): "¿Cuánto pagas?" (el
+ * monto, primero, como en Registrar gasto, ADR 042 D2), "¿Qué es?" (todas las
+ * categorías en chips), "¿Cada cuánto?" (Mensual, Quincenal, Anual u Otra),
+ * "¿Qué día?" con el banner, y "Más opciones" plegado con la nota y el débito
+ * automático.
+ *
  * `tipo` va como input hidden con valor 'fijo' para que `normalizarCompromiso`
  * lo guarde como un compromiso de tipo fijo en S.compromisos.
  *
@@ -76,8 +92,14 @@ export const CATEGORIA_NUEVA_VALUE_FIJO = '__nueva__';
  * del registro es la propia categoría, así que pedirlo aparte es redundante;
  * el campo de texto pasa a ser una nota opcional. `_syncCategoriaGastoFijo`
  * (en index.js) alterna el label/placeholder/`required` de este campo según
- * la categoría elegida; el HTML nace en el estado por defecto (sin categoría,
- * nombre obligatorio) y ese handler ajusta el resto en cada apertura.
+ * la categoría elegida y lo muda: obligatorio, va bajo "¿Qué es?"; nota, va
+ * dentro de "Más opciones". El HTML nace en el estado por defecto (sin
+ * categoría, nombre obligatorio) y ese handler ajusta el resto en cada apertura.
+ *
+ * `frecuenciaOpcion` es un radio de presentación (mismo patrón que
+ * `fechaOpcion` de Registrar gasto, ADR 042 D1): el dato real es el
+ * `<select name="frecuencia">`, que los chips mantienen al día y que "Otra"
+ * deja a la vista. `normalizarCompromiso` no lee `frecuenciaOpcion`.
  *
  * @returns {string}
  */
@@ -106,12 +128,35 @@ export function renderFormGastoFijo() {
     chipCat(CATEGORIA_NUEVA_VALUE_FIJO, 'Categoría nueva', 'i-plus'),
   ].join('');
 
+  const chipFrecuencia = (valor, etiqueta, checked) => `
+          <label class="chip-fecha">
+            <input type="radio" name="frecuenciaOpcion" class="chip-cat__radio" value="${_esc(valor)}"${checked ? ' checked' : ''} />
+            ${_esc(etiqueta)}
+          </label>`;
+  const chipsFrecuencia = [
+    ...FRECUENCIAS_CHIP_FIJO.map(fr => chipFrecuencia(fr, fr, fr === 'Mensual')),
+    chipFrecuencia(FRECUENCIA_OTRA_FIJO, 'Otra', false),
+  ].join('');
+
+  // Sin cuentas activas no hay débito automático que ofrecer, y "Más
+  // opciones" solo guarda la nota (cuando la hay).
+  const debito = renderBloqueDebitoAutomatico(S.cuentas ?? [], { id: 'gfijo-debito' });
+
   return `
     <form id="form-gasto-fijo" novalidate>
       <input type="hidden" name="tipo" value="fijo" />
 
+      <div class="monto-hero">
+        <label class="monto-hero__label" for="gfijo-monto">¿Cuánto pagas?</label>
+        <div class="monto-hero__box">
+          <span class="monto-hero__prefijo" aria-hidden="true">$</span>
+          <input id="gfijo-monto" name="monto" class="input input--big-amount" type="text" placeholder="0" required aria-required="true"
+                 autocomplete="off" inputmode="numeric" data-miles />
+        </div>
+      </div>
+
       <div class="form-group">
-        <span class="label" id="gfijo-categoria-label">Categoría</span>
+        <span class="label" id="gfijo-categoria-label">¿Qué es?</span>
         <div class="chips-cat" role="radiogroup" aria-labelledby="gfijo-categoria-label">
           ${chipsCategoria}
         </div>
@@ -128,40 +173,50 @@ export function renderFormGastoFijo() {
         ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'gfijo-categoria-nueva-icono', nombreCampo: 'categoriaNuevaIcono' })}
       </div>
 
-      <div class="form-group">
-        <label for="gfijo-descripcion" class="label" id="gfijo-descripcion-label">Descripción</label>
-        <input id="gfijo-descripcion" name="descripcion" class="input" type="text"
-               placeholder="Ej. Arriendo, Netflix, agua" required aria-required="true"
-               autocomplete="off" />
-      </div>
-
-      <div class="monto-hero">
-        <label class="monto-hero__label" for="gfijo-monto">Monto (COP)</label>
-        <div class="monto-hero__box">
-          <span class="monto-hero__prefijo" aria-hidden="true">$</span>
-          <input id="gfijo-monto" name="monto" class="input input--big-amount" type="text" placeholder="0" required aria-required="true"
-                 autocomplete="off" inputmode="numeric" data-miles />
+      <div id="gfijo-ranura-nombre">
+        <div class="form-group" id="gfijo-grupo-descripcion">
+          <label for="gfijo-descripcion" class="label" id="gfijo-descripcion-label">Descripción</label>
+          <input id="gfijo-descripcion" name="descripcion" class="input" type="text"
+                 placeholder="Ej. Arriendo, Netflix, agua" required aria-required="true"
+                 autocomplete="off" />
         </div>
-        <span class="monto-hero__hint">COP</span>
       </div>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label for="gfijo-frecuencia" class="label">Frecuencia</label>
+      <div class="form-group">
+        <span class="label" id="gfijo-frecuencia-label">¿Cada cuánto?</span>
+        <div class="fecha-chips" role="radiogroup" aria-labelledby="gfijo-frecuencia-label">
+          ${chipsFrecuencia}
+        </div>
+        <div class="fecha-otra" id="gfijo-frecuencia-otra" hidden>
+          <label for="gfijo-frecuencia" class="sr-only">Frecuencia</label>
           <select id="gfijo-frecuencia" name="frecuencia" class="input" required aria-required="true">
             ${frecOpts}
           </select>
         </div>
-        <div class="form-group">
-          <label for="gfijo-dia" class="label">Día de pago (1-31)</label>
-          <input id="gfijo-dia" name="diaPago" class="input" type="number"
-                 min="1" max="31" step="1" placeholder="1" required aria-required="true" />
-        </div>
       </div>
 
-      <p class="form-hint form-hint--info" id="gfijo-banner" aria-live="polite">${textoBannerGastoFijo('Mensual', '')}</p>
+      <div class="form-group">
+        <label for="gfijo-dia" class="label">¿Qué día?</label>
+        <input id="gfijo-dia" name="diaPago" class="input" type="number" inputmode="numeric"
+               min="1" max="31" step="1" placeholder="Del 1 al 31" required aria-required="true"
+               aria-describedby="gfijo-banner" />
+        <p class="form-hint form-hint--info" id="gfijo-banner" aria-live="polite">${textoBannerGastoFijo('Mensual', '')}</p>
+      </div>
 
-      ${renderBloqueDebitoAutomatico(S.cuentas ?? [], { id: 'gfijo-debito' })}
+      <div class="form-disclosure" id="gfijo-mas"${debito ? '' : ' hidden'}>
+        <button type="button" class="form-disclosure__trigger" aria-expanded="false" aria-controls="gfijo-mas-panel">
+          <svg class="icon" aria-hidden="true"><use href="#i-mas"/></svg>
+          <span class="form-disclosure__text">
+            <span class="form-disclosure__title">Más opciones</span>
+            <span class="form-disclosure__desc" id="gfijo-mas-desc">${debito ? 'Débito automático' : 'Nota'} &middot; opcional</span>
+          </span>
+          <svg class="icon form-disclosure__chevron" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+        </button>
+        <div class="form-disclosure__panel" id="gfijo-mas-panel" hidden>
+          <div id="gfijo-ranura-nota"></div>
+          ${debito}
+        </div>
+      </div>
 
       <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>

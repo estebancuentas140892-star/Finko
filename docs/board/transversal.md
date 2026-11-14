@@ -20,15 +20,6 @@
 
 > **Iniciativa REV, la revisión de Esteban del 2026-11-13** (14 puntos en Registro, Inicio, Deudas, Movimientos y General). La tanda 1 cerró con el [ADR 137](../DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md); el ADR 138 D3 recortó lo que quedaba. "Pagar desde varias cuentas" no genera tarjeta: ya existe y se deja así (registra lo que pasa en el banco, un débito por cuenta). **El ojo sigue siendo uno solo** (REV.4 descartada, ADR 106 D3).
 
-#### REV.2b - El formulario de gasto fijo empieza por el monto y el campo queda a la vista
-- Prioridad  : alta
-- Estado     : requiere ADR (ajusta el ADR 042 D5; recortada por el ADR 138 D3)
-- Área       : design
-- Objetivo   : hoy abre con 15 categorías antes del monto. Orden: "¿Cuánto pagas?", "¿Qué es?" (todas las categorías, ADR 042 D2), "¿Cada cuánto?" (Mensual, Quincenal, Anual, Otra), "¿Qué día?", y nota y débito automático en "Más opciones". En todos los formularios, el campo enfocado sube a la vista cuando se abre el teclado (`ui/teclado.js`). **No va** "6 frecuentes y N más". El ADR anota además el descarte del formulario corto (MV2.17): esta tarjeta es su única copia, los HTML se borraron el 2026-11-05
-- Archivos   : `modules/dominio/compromisos/views/formularios.js`, `compromisos/index.js`, `modules/ui/teclado.js`
-- Depende de : nada
-- Aceptación : a 390 px, el monto es lo primero que se ve y el campo que se escribe no queda tapado por el teclado
-
 #### REV.2c - Al transferir, la consignación ante la DIAN en una frase
 - Prioridad  : media
 - Estado     : pendiente (cambia el texto de la nota del [ADR 135](../DECISIONS/135-mis-cuentas-y-me-deben-en-el-telefono.md) D5)

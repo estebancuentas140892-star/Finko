@@ -40,6 +40,8 @@ import {
   renderFormGastoFijo,
   textoBannerGastoFijo,
   CATEGORIA_NUEVA_VALUE_FIJO,
+  FRECUENCIAS_CHIP_FIJO,
+  FRECUENCIA_OTRA_FIJO,
   renderEstrategiaPago,
   renderEntradaPlanSalida,
   setEstrategiaUI,
@@ -617,6 +619,12 @@ function _inyectarFormGastoFijo(compromiso = null) {
     if (f_desc) f_desc.value = nombreAuto ? (compromiso.nota ?? '') : (compromiso.descripcion ?? '');
     if (f_monto) f_monto.value = miles(compromiso.monto);
     if (f_frec) f_frec.value = compromiso.frecuencia ?? 'Mensual';
+    // REV.2b (ADR 141 D2): el chip de la frecuencia guardada, u "Otra" con
+    // el desplegable a la vista si no es una de las tres de chip.
+    const frecuencia = f_frec?.value ?? 'Mensual';
+    const opcion = FRECUENCIAS_CHIP_FIJO.includes(frecuencia) ? frecuencia : FRECUENCIA_OTRA_FIJO;
+    const f_opcion = form.querySelector(`[name="frecuenciaOpcion"][value="${CSS.escape(opcion)}"]`);
+    if (f_opcion) f_opcion.checked = true;
     if (f_dia) f_dia.value = compromiso.diaPago ?? '';
     if (f_btn) f_btn.textContent = 'Actualizar gasto fijo';
 
@@ -645,8 +653,16 @@ function _inyectarFormGastoFijo(compromiso = null) {
   }
 
   wireToggleDebitoAutomatico(form, 'gfijo-debito');
+  _wireMasOpcionesGastoFijo(form);
 
   _syncCategoriaGastoFijo(form);
+  _syncFrecuenciaGastoFijo(form);
+  // Al editar, "Más opciones" se abre si guarda algo: una nota escrita o el
+  // débito automático. Lo que se guardó no se esconde.
+  if (compromiso && (form.querySelector('#gfijo-ranura-nota [name="descripcion"]')?.value
+      || compromiso.debitoAutomatico === true)) {
+    _abrirMasOpcionesGastoFijo(form, true);
+  }
   _actualizarBannerGastoFijo(form);
   // FORM.1c: la categoría son chips-radio; un listener delegado de `change`
   // en el form cubre cualquiera de ellos (mismo patrón de Gastos/Deuda,
@@ -654,6 +670,11 @@ function _inyectarFormGastoFijo(compromiso = null) {
   // del día, cambio de frecuencia): más barato que filtrar por campo.
   form.addEventListener('change', (e) => {
     if (e.target.name === 'categoria') _syncCategoriaGastoFijo(form);
+    if (e.target.name === 'frecuenciaOpcion') {
+      _syncFrecuenciaGastoFijo(form);
+      // `input` corre antes que `change`: el banner se rehace con el valor nuevo.
+      _actualizarBannerGastoFijo(form);
+    }
   });
   form.addEventListener('input', () => _actualizarBannerGastoFijo(form));
   wireIconoPicker(form.querySelector('[data-icono-picker="gfijo-icono"]'));
@@ -715,6 +736,72 @@ function _syncCategoriaGastoFijo(form) {
   // CAT.3c: nombre + ícono de la categoría nueva solo con el chip sentinela.
   const camposNueva = form.querySelector('#gfijo-categoria-nueva-fields');
   if (camposNueva) camposNueva.hidden = categoria !== CATEGORIA_NUEVA_VALUE_FIJO;
+
+  // REV.2b (ADR 141 D3): obligatorio, el campo va bajo "¿Qué es?"; nota, va
+  // dentro de "Más opciones". Se muda el mismo nodo: lo escrito no se pierde,
+  // y si ya tenía texto el plegable se abre para que no desaparezca de la vista.
+  const grupo = form.querySelector('#gfijo-grupo-descripcion');
+  const destino = form.querySelector(nombreAuto ? '#gfijo-ranura-nota' : '#gfijo-ranura-nombre');
+  if (grupo && destino && grupo.parentElement !== destino) {
+    destino.appendChild(grupo);
+    if (nombreAuto && nombre.value.trim()) _abrirMasOpcionesGastoFijo(form, true);
+  }
+  _rotularMasOpcionesGastoFijo(form);
+}
+
+/**
+ * REV.2b (ADR 141 D2): los chips de "¿Cada cuánto?" escriben en el
+ * `<select name="frecuencia">`, que es el dato; "Otra" lo deja a la vista con
+ * la frecuencia que ya tenía, para elegir entre las nueve.
+ * @param {HTMLFormElement} form
+ */
+function _syncFrecuenciaGastoFijo(form) {
+  const opcion = form.querySelector('[name="frecuenciaOpcion"]:checked')?.value ?? 'Mensual';
+  const select = form.querySelector('[name="frecuencia"]');
+  const otra   = form.querySelector('#gfijo-frecuencia-otra');
+  if (!select || !otra) return;
+  const esOtra = opcion === FRECUENCIA_OTRA_FIJO;
+  if (!esOtra) select.value = opcion;
+  otra.hidden = !esOtra;
+}
+
+/**
+ * REV.2b (ADR 141 D3): "Más opciones" se pliega y despliega con el mismo
+ * patrón de "Condiciones del crédito" (`_wireCondicionesColapsable`).
+ * @param {HTMLFormElement} form
+ */
+function _wireMasOpcionesGastoFijo(form) {
+  const trigger = form.querySelector('#gfijo-mas .form-disclosure__trigger');
+  if (!trigger) return;
+  trigger.addEventListener('click', () => {
+    _abrirMasOpcionesGastoFijo(form, trigger.getAttribute('aria-expanded') !== 'true');
+  });
+}
+
+/** Abre o cierra "Más opciones" del gasto fijo. */
+function _abrirMasOpcionesGastoFijo(form, abrir) {
+  const trigger = form.querySelector('#gfijo-mas .form-disclosure__trigger');
+  const panel   = form.querySelector('#gfijo-mas-panel');
+  if (!trigger || !panel) return;
+  trigger.setAttribute('aria-expanded', String(abrir));
+  panel.hidden = !abrir;
+}
+
+/**
+ * El rótulo de "Más opciones" dice lo que guarda adentro: la nota (cuando la
+ * categoría ya da el nombre) y el débito automático (cuando hay cuentas). Sin
+ * ninguna de las dos, el plegable no se pinta.
+ * @param {HTMLFormElement} form
+ */
+function _rotularMasOpcionesGastoFijo(form) {
+  const mas  = form.querySelector('#gfijo-mas');
+  const desc = form.querySelector('#gfijo-mas-desc');
+  if (!mas || !desc) return;
+  const conNota   = !!form.querySelector('#gfijo-ranura-nota #gfijo-grupo-descripcion');
+  const conDebito = !!form.querySelector('#gfijo-debito-check');
+  const partes = [conNota && 'Nota', conDebito && (conNota ? 'débito automático' : 'Débito automático')].filter(Boolean);
+  mas.hidden = partes.length === 0;
+  desc.textContent = `${partes.join(' y ')} · opcional`;
 }
 
 function _guardarGastoFijo() {

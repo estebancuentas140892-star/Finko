@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-13. Última tarea cerrada: REV.2a, Por pagar dice cuánto te falta pagar este mes (ADR 140). Nada en proceso.
+> Revisado: 2026-11-13. Última tarea cerrada: REV.2b, el gasto fijo empieza por el monto (ADR 141). Nada en proceso.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5481/5481 (2026-11-13, REV.2a) |
-| Tests E2E | 452/452 (2026-11-13, REV.2a, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5491/5491 (2026-11-13, REV.2b) |
+| Tests E2E | 453/453 (2026-11-13, REV.2b, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v48 (`perfiles`, APR.3a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**REV.2b - el gasto fijo empieza por el monto, 2026-11-13**
+"¿Cuánto pagas?", "¿Qué es?", "¿Cada cuánto?" en chips y "¿Qué día?"; nota y débito en "Más opciones"; con el teclado abierto, el campo enfocado de una hoja sube a la vista ([ADR 141](DECISIONS/141-el-gasto-fijo-empieza-por-el-monto.md), ajusta el 042 D5). SW v698.
 
 **REV.2a - Por pagar dice cuánto te falta pagar este mes, 2026-11-13**
 El hero suma lo vencido y lo que falta del mes, fijos y cuotas, con el reparto de la lista; "Lo que debes en total" queda debajo solo con deudas, y el pie de Inicio dice "suman" ([ADR 140](DECISIONS/140-por-pagar-dice-cuanto-te-falta-este-mes.md), ajusta el 036 D1). SW v697.
@@ -37,16 +40,13 @@ Cada gasto tiene su naturaleza (`infra/naturaleza.js`): Análisis y la renta mir
 **La poda del tablero, 2026-11-13**
 De 47 entradas a 17, en orden de valor; MOV.1 cierra con 17 de 25 fichas y HF queda en seis tarjetas ([ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md)). Solo documentación.
 
-**REV.1 - la revisión del 13 de noviembre, tanda 1, 2026-11-13**
-"Agregar" según el chip de Por pagar, vacíos con botón, el logo, el aviso al instalar, botones redondos, Movimientos y Límites ([ADR 137](DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md)). SW v694.
-
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 
 ---
 
 ## 3. Qué sigue
 
-- **El tablero quedó en orden de valor** ([`BOARD.md`](BOARD.md), índice). Arriba: REV.3b (la app instalada con tus datos y la versión publicada, espera una prueba en un iPhone real), REV.2b y REV.2c. Lo que salió y por qué: [ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md).
+- **El tablero quedó en orden de valor** ([`BOARD.md`](BOARD.md), índice). Arriba: REV.3b (la app instalada con tus datos y la versión publicada, espera una prueba en un iPhone real; ahí se verifica también el campo sobre el teclado de REV.2b), REV.2c y HF.1d. Lo que salió y por qué: [ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md).
 - **MOV.1 cerrada** con 17 de 25 fichas: las fichas de `contexto/` que mandan algo "a la ficha 18" se leen con la tabla del ADR 138 D1.
 - **Iniciativa HF** ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)): Fase 0 cerrada; HF.1b cerrada (ADR 139); quedan cinco tarjetas, ninguna bloqueada. Conectar el banco vive en NUBE.4, "no iniciar".
 - **Iniciativa NUBE** ([ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md), Aceptada): NUBE.0 a NUBE.3 cerradas en `finko-prueba`. Invitar probadores pide SMTP propio en Supabase.
