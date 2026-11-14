@@ -17,7 +17,7 @@ import { apartadosActivos }                             from '../apartados/logic
 import { calcularTotalInvertido }                       from '../inversiones/logic.js';
 import { calcularTotalPorCobrar, calcularPrestamosSinCuenta } from '../personales/logic.js';
 import { UVT, TOPES_RENTA_UVT, UMBRAL_ALERTA_RENTA }    from '../../core/constants.js';
-import { estimarIngresoAnual }                          from '../../infra/financiero.js';
+import { estimarIngresoAnual, FACTOR_ANUAL_INGRESO }    from '../../infra/financiero.js';
 import { gastosDeConsumo, esConsumo }                  from '../../infra/naturaleza.js';
 
 // Regex reutilizada en funciones de deteccion.
@@ -878,13 +878,23 @@ export function totalGastosAnio(gastos, anio) {
 export function estimarIngresosBrutosAnio(ingresos, ingresosPuntuales, anio) {
   if (!Number.isFinite(anio)) return 0;
 
-  const recurrente = estimarIngresoAnual(Array.isArray(ingresos) ? ingresos : []);
+  const lista = Array.isArray(ingresos) ? ingresos : [];
+  const recurrente = estimarIngresoAnual(lista);
+
+  // BUG-039: un puntual con `ingresoId` es una ocurrencia de ese ingreso fijo
+  // (crédito automático, `infra/credito-ingreso.js`). Si el fijo ya entra en
+  // la proyección, sumarlo otra vez cuenta el salario dos veces. Si el fijo se
+  // borró o se desactivó, la proyección ya no lo cubre y su crédito sí cuenta.
+  const proyectados = new Set(lista
+    .filter(i => i && i.activo !== false && (FACTOR_ANUAL_INGRESO[i.frecuencia] ?? 0) > 0)
+    .map(i => i.id));
 
   const pref = `${anio}-`;
   let puntual = 0;
   for (const p of (Array.isArray(ingresosPuntuales) ? ingresosPuntuales : [])) {
     if (!p || typeof p.fecha !== 'string') continue;
     if (!p.fecha.startsWith(pref))         continue;
+    if (p.ingresoId && proyectados.has(p.ingresoId)) continue;
     const m = Number(p.monto);
     if (Number.isFinite(m) && m > 0) puntual += m;
   }

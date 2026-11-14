@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-13. Última tarea cerrada: HF.1b, nada se cuenta dos veces (ADR 139). Nada en proceso.
+> Revisado: 2026-11-13. Última tarea cerrada: BUG-039, la renta ya no suma el salario dos veces. Nada en proceso.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,17 +13,20 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5473/5473 (2026-11-13, HF.1b) |
-| Tests E2E | 452/452 (2026-11-13, HF.1b, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5478/5478 (2026-11-13, BUG-039) |
+| Tests E2E | 452/452 (2026-11-13, BUG-039, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v48 (`perfiles`, APR.3a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
 | `onclick` / `window.X` en módulos | 0 / 0. `style=""` es 0 en HTML estático, no en el HTML que generan los módulos (29 usos) |
-| Errores abiertos | **2**: BUG-027 (documental) y BUG-039 (renta suma el salario dos veces). Detalle: [`BUGS.md`](BUGS.md) |
+| Errores abiertos | **1**: BUG-027 (documental). Detalle: [`BUGS.md`](BUGS.md) |
 
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**BUG-039 - la renta ya no suma el salario dos veces, 2026-11-13**
+El crédito automático de un fijo que ya se proyecta no se suma otra vez en "Ingresos brutos"; cierra el riesgo 5 del [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md). SW v696.
 
 **HF.1b - nada se cuenta dos veces, 2026-11-13**
 Cada gasto tiene su naturaleza (`infra/naturaleza.js`): Análisis y la renta miran el consumo; Límites por grupo y la tasa de ahorro, lo que sale del ingreso; el aporte al Fondo es neutro en Movimientos ([ADR 139](DECISIONS/139-la-naturaleza-de-un-gasto.md)). SW v695.
@@ -36,9 +39,6 @@ De 47 entradas a 17, en orden de valor; MOV.1 cierra con 17 de 25 fichas y HF qu
 
 **MV2.30 Ajustes - el índice, las filas y la hoja de borrar; cierra MV2.30, 2026-11-13**
 Grupos con tejas, el tema en la fila y "Guardar respaldo primero"; "rediseño5" borrado ([ADR 136](DECISIONS/136-ajustes-del-adulto-en-el-telefono.md)). SW v693.
-
-**MV2.30 Mis cuentas tanda 4 - Me deben y sus hojas; cierra rediseño4, 2026-11-13**
-Me deben en filas, la hoja del préstamo y "Me pagaron"; "rediseño4" borrado ([ADR 135](DECISIONS/135-mis-cuentas-y-me-deben-en-el-telefono.md) D7 y D8). SW v692.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

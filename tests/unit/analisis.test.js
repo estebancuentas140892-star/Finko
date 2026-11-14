@@ -1701,6 +1701,33 @@ describe('estimarIngresosBrutosAnio()', () => {
   it('un monto corrupto no propaga NaN al resultado', () => {
     expect(estimarIngresosBrutosAnio([ingreso({ monto: NaN })], [], 2026)).toBe(0);
   });
+
+  // BUG-039: los créditos automáticos de un ingreso fijo son ocurrencias de la
+  // proyección, no ingreso aparte.
+  const creditosDelSalario = (meses) => Array.from({ length: meses }, (_, k) => ingresoPuntual({
+    id: `cr${k}`, descripcion: 'Salario', categoria: 'Salario', monto: 3_000_000,
+    fecha: `2026-${String(k + 1).padStart(2, '0')}-15`, ingresoId: 'in1',
+  }));
+
+  it('BUG-039: el salario con crédito automático cuenta una sola vez', () => {
+    const fijo = ingreso({ creditoAutomatico: true });
+    expect(estimarIngresosBrutosAnio([fijo], creditosDelSalario(11), 2026)).toBe(36_000_000);
+  });
+
+  it('BUG-039: el crédito automático no tapa un puntual suelto del mismo año', () => {
+    const fijo = ingreso({ creditoAutomatico: true });
+    const freelance = ingresoPuntual({ id: 'fl', monto: 2_000_000 });
+    expect(estimarIngresosBrutosAnio([fijo], [...creditosDelSalario(3), freelance], 2026)).toBe(38_000_000);
+  });
+
+  it('BUG-039: si el fijo se desactivó, lo que ya se acreditó sí cuenta', () => {
+    const pausado = ingreso({ activo: false, creditoAutomatico: true });
+    expect(estimarIngresosBrutosAnio([pausado], creditosDelSalario(4), 2026)).toBe(12_000_000);
+  });
+
+  it('BUG-039: si el fijo se borró, lo que ya se acreditó sí cuenta', () => {
+    expect(estimarIngresosBrutosAnio([], creditosDelSalario(2), 2026)).toBe(6_000_000);
+  });
 });
 
 describe('calcularEstadoRenta() con ingresos derivados (CFG.2a)', () => {
@@ -1745,6 +1772,18 @@ describe('calcularEstadoRenta() con ingresos derivados (CFG.2a)', () => {
     const suelo = Math.ceil((tope * 1.2) / 12);
     const c = crit(conIngresos([ingreso({ monto: suelo })]));
     expect(c.estado).toBe('supera');
+  });
+
+  it('BUG-039: los créditos automáticos del sueldo no lo empujan sobre el tope', () => {
+    const tope  = TOPES_RENTA_UVT.ingresosBrutos * UVT;
+    const suelo = Math.floor((tope * 0.7) / 12);
+    const fijo  = ingreso({ monto: suelo, creditoAutomatico: true });
+    const creditos = Array.from({ length: 11 }, (_, k) => ingresoPuntual({
+      id: `cr${k}`, monto: suelo, fecha: `2026-${String(k + 1).padStart(2, '0')}-15`, ingresoId: 'in1',
+    }));
+    const c = crit(conIngresos([fijo], creditos));
+    expect(c.valor).toBe(suelo * 12);
+    expect(c.estado).toBe('ok');
   });
 
   it('la estimación alcanza para que el veredicto deje de ser sin-conclusión', () => {

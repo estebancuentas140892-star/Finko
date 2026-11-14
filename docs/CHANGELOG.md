@@ -12,6 +12,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### fix(analisis): BUG-039, la renta ya no suma el salario dos veces · 2026-11-13
+
+Ficha: [`contexto/analisis.md`](contexto/analisis.md). SW v696. Cierra el riesgo 5 del [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md).
+
+- **El error**: con un salario de $3.000.000 con crédito automático, en noviembre "Ingresos brutos" mostraba $66.000.000: los $36.000.000 proyectados más los diez créditos que ese salario ya había dejado. Podía marcar que superabas el tope sin superarlo.
+- **`estimarIngresosBrutosAnio()`**: un ingreso puntual con `ingresoId` es una ocurrencia de su fijo; si ese fijo ya entra en la proyección (activo y con frecuencia anual), no se suma otra vez. Si el fijo se borró o se desactivó, sus créditos del año sí cuentan, porque la proyección ya no los cubre. El valor manual de Ajustes sigue mandando.
+- Pruebas: `analisis` (5 nuevas: el salario una vez, un puntual suelto junto a los créditos, el fijo desactivado, el fijo borrado, y el criterio que no pasa a "cerca" ni a "supera" por los créditos).
+
 ### fix(analisis): HF.1b, nada se cuenta dos veces · 2026-11-13
 
 [ADR 139](DECISIONS/139-la-naturaleza-de-un-gasto.md), que escribe la HF.1a del [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md) (P2). Fichas: [`contexto/analisis.md`](contexto/analisis.md), [`contexto/limites.md`](contexto/limites.md), [`contexto/ahorro.md`](contexto/ahorro.md), [`contexto/movimientos.md`](contexto/movimientos.md). SW v695.

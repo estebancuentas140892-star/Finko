@@ -52,10 +52,10 @@ Son más de treinta rebanadas en seis capas (modelo, captura, calendario, avisos
 
 1. **Distribuir reacredita un salario ya acreditado** (BUG-030). `estadoDistribucion()` mira plantillas y `config`, nunca `ingresosPuntuales` con `ingresoId`; el asistente suma `monto` a la cuenta (`tesoreria/acciones/distribucion.js`, bloque "El ingreso se acredita").
 2. **Importar gastos y borrarlos crea dinero** (BUG-029). Importar guarda `cuentaId` sin descontar; borrar reembolsa.
-3. **Tarjeta contada dos veces como gasto**: consumo + pago "Abono" en `totalGastosMes`, tasa de ahorro, Necesidades de Límites y el monitor de renta. Es diseño del ADR 051 D3, por eso es **P2** y no bug.
-4. **Capital de deuda contado como consumo**: todo abono es gasto "Deudas" (`pago-compromiso.js`).
-5. **Renta suma el salario dos veces**: el proyectado más los créditos automáticos del mismo salario (`analisis/logic.js`, ingresos brutos). Monitor sin auditar: ficha 18.
-6. **El Fondo sale como egreso en Movimientos** sin mover ninguna cuenta (`movimientos/logic.js`, `movimientosDesdeAportes`).
+3. **Tarjeta contada dos veces como gasto**: consumo + pago "Abono" en `totalGastosMes`, tasa de ahorro, Necesidades de Límites y el monitor de renta. Es diseño del ADR 051 D3, por eso es **P2** y no bug. **Resuelto por el [ADR 139](139-la-naturaleza-de-un-gasto.md) (HF.1b)**, salvo el neto de Movimientos.
+4. **Capital de deuda contado como consumo**: todo abono es gasto "Deudas" (`pago-compromiso.js`). **Resuelto por el [ADR 139](139-la-naturaleza-de-un-gasto.md)**: Análisis y la renta miran el consumo.
+5. **Renta suma el salario dos veces**: el proyectado más los créditos automáticos del mismo salario (`analisis/logic.js`, ingresos brutos). **Cerrado el 2026-11-13 (BUG-039)**: el crédito de un fijo que ya se proyecta no se suma otra vez.
+6. **El Fondo sale como egreso en Movimientos** sin mover ninguna cuenta (`movimientos/logic.js`, `movimientosDesdeAportes`). **Resuelto por el [ADR 139](139-la-naturaleza-de-un-gasto.md) D3**: neutro.
 7. **Dinero que desaparece sin registro**: meta o reserva borrada o cumplida, "Ya lo usé" sin gasto (V5, ficha 18), inversión borrada sin `cuentaId`, y devolución a la cuenta original aunque parte entró por Distribuir desde otra.
 8. **Subregistro**: un fijo semanal o quincenal se marca pagado una vez por mes; un crédito automático, una vez por ingreso y mes.
 9. **"Compromiso próximo" avisa lo ya pagado** y fecha por `diaPago` ignorando la frecuencia (BUG-031): Inicio y la notificación contradicen al Calendario.

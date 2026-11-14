@@ -1,6 +1,6 @@
 # Ficha de contexto: Análisis
 
-> Revisado: 2026-11-13 (HF.1b, ADR 139).
+> Revisado: 2026-11-13 (BUG-039).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -81,6 +81,7 @@
 - **Casos no ejercitados:** el score en bandas excelente, buena y crítica (se revisó ajustada); un criterio de renta en estado "supera"; el aviso de vigencia de la UVT; el panel con 10+ categorías; `proyectarPatrimonio` existe en `logic.js` y no aparece en el panel, y nadie averiguó si está desconectada a propósito.
 
 **Cambios realizados**:
+- 2026-11-13 (**BUG-039**): "Ingresos brutos" de la renta ya no cuenta el salario dos veces. `estimarIngresosBrutosAnio()` deja fuera los puntuales con `ingresoId` cuyo fijo ya entra en la proyección (activo y con frecuencia anual); si el fijo se borró o se desactivó, sus créditos del año sí cuentan. 5 pruebas nuevas en `analisis.test.js`.
 - 2026-11-13 (**HF.1b**, [ADR 139](../DECISIONS/139-la-naturaleza-de-un-gasto.md) D2): Análisis mira el consumo. `generarResumen()`, `serieGastosMensual()`, `calcularComparacionCategorias()`, `detectarPatronGastoSemanal()`, `totalGastosAnio()` (compras y consumos de la renta) y las categorías de las dos vistas dejan fuera el abono a una deuda (`gastosDeConsumo()`, `infra/naturaleza.js`): con la tarjeta, comprar 100 y pagarla 100 daba 200.
 - 2026-11-13 (**MV2.30 Consultar tanda 4**, [ADR 134](../DECISIONS/134-consultar-del-adulto-en-el-telefono.md) D7): la línea bajo el título; en el teléfono, la sección en filas y los dos plegables como filas con hoja; en los dos anchos, los subtítulos de los plegables y el vacío ("Todavía no hay suficientes datos") en frase.
 - 2026-10-24 (APR.1d, [ADR 092](../DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D4): sale el sexto bloque "Tu progreso" (`#panel-analisis-progreso`), que pasa a lente propia; Análisis vuelve a cinco bloques. `generarResumen()` recibe el tope de gasto pequeño (APR.1b).
