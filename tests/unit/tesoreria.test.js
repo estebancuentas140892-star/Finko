@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   cuentasActivas,
+  notaTransferencia,
+  NOTA_TRANSFERENCIA,
+  NOTA_TRANSFERENCIA_DIAN,
   calcularTotalCuentas,
   tarjetasCredito,
   composicionCuentas,
@@ -5090,10 +5093,36 @@ describe('renderParTransferencia()', () => {
   it('el formulario dice que el total no cambia, pliega fecha y nota, y el botón lleva el monto', () => {
     S.cuentas = [cuentaBase({ id: 'c1' }), cuentaBase({ id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia' })];
     document.body.innerHTML = renderFormTransferencia();
-    expect(document.querySelector('.transferir-nota').textContent).toBe('Es un movimiento entre tus cuentas: tu total no cambia.');
+    // REV.2c: entre dos cuentas, la nota suma la frase de la DIAN.
+    expect(document.querySelector('.transferir-nota').textContent).toBe(
+      'Es un movimiento entre tus cuentas: tu total no cambia. No es un ingreso, pero tu banco puede reportarlo a la DIAN como una consignación. Finko la guarda en Movimientos por si la necesitas al declarar renta.');
     expect(document.querySelector('details.transferir-mas #transferencia-fecha')).not.toBeNull();
     expect(document.querySelector('label[for="transferencia-monto"]').textContent).toBe('¿Cuánto vas a pasar?');
     expect(document.querySelector('#transferencia-enviar [data-transferir-texto]').textContent).toBe('Transferir');
+  });
+});
+
+// ── REV.2c: la nota de Transferir y la DIAN ───────────────────────
+
+describe('notaTransferencia() (REV.2c)', () => {
+  it('a una cuenta de banco o billetera: el total y la DIAN', () => {
+    expect(notaTransferencia(cuentaBase({ banco: 'Bancolombia' }))).toBe(`${NOTA_TRANSFERENCIA} ${NOTA_TRANSFERENCIA_DIAN}`);
+    expect(notaTransferencia(cuentaBase({ banco: 'Nequi' }))).toBe(`${NOTA_TRANSFERENCIA} ${NOTA_TRANSFERENCIA_DIAN}`);
+  });
+
+  it('al efectivo: solo el total, sin decir que es efectivo', () => {
+    const nota = notaTransferencia(cuentaBase({ banco: 'Efectivo', tipo: 'Efectivo' }));
+    expect(nota).toBe(NOTA_TRANSFERENCIA);
+    expect(nota).not.toMatch(/DIAN|efectivo/i);
+  });
+
+  it('una cuenta vieja sin banco se reconoce por su tipo', () => {
+    expect(notaTransferencia({ id: 'x', nombre: 'Billetera', tipo: 'Efectivo' })).toBe(NOTA_TRANSFERENCIA);
+    expect(notaTransferencia({ id: 'y', nombre: 'Ahorros', tipo: 'Ahorros' })).toContain('DIAN');
+  });
+
+  it('la segunda frase es texto corrido: sin marcado ni color de alerta (ADR 107 D4)', () => {
+    expect(NOTA_TRANSFERENCIA_DIAN).not.toMatch(/[<>⚠]/);
   });
 });
 
@@ -5137,6 +5166,36 @@ describe('acciones de transferencias (MC.17b)', () => {
     const wrapDespues = document.getElementById('transferencia-par-wrap');
     expect(wrapDespues.querySelector('input[name="cuentaOrigenId"]').value).toBe(destinoAntes);
     expect(wrapDespues.querySelector('input[name="cuentaDestinoId"]').value).toBe(origenAntes);
+  });
+
+  it('REV.2c: al invertir hacia el efectivo, la nota calla la DIAN; de vuelta, la dice', () => {
+    S.cuentas = [
+      cuentaBase({ id: 'c1', nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo', saldo: 100_000 }),
+      cuentaBase({ id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', saldo: 900_000 }),
+    ];
+    dispatch(document.querySelector('[data-action="abrir-transferencia"]'), new Event('click'));
+    const nota = () => document.getElementById('transferencia-nota-total').textContent;
+    // Sale de Bancolombia (mayor saldo) y entra al efectivo.
+    expect(nota()).toBe(NOTA_TRANSFERENCIA);
+
+    dispatch(document.querySelector('[data-action="invertir-transferencia"]'), new Event('click'));
+    expect(nota()).toBe(`${NOTA_TRANSFERENCIA} ${NOTA_TRANSFERENCIA_DIAN}`);
+  });
+
+  it('REV.2c: con 3 cuentas, elegir el efectivo en "Entra a" cambia la nota', () => {
+    S.cuentas = [
+      cuentaBase({ id: 'c1', nombre: 'Nequi', saldo: 300_000 }),
+      cuentaBase({ id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', saldo: 900_000 }),
+      cuentaBase({ id: 'c3', nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo', saldo: 50_000 }),
+    ];
+    dispatch(document.querySelector('[data-action="abrir-transferencia"]'), new Event('click'));
+    const nota = () => document.getElementById('transferencia-nota-total').textContent;
+    expect(nota()).toContain('DIAN');
+
+    const radio = document.querySelector('input[type="radio"][name="cuentaDestinoId"][value="c3"]');
+    radio.checked = true;
+    radio.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(nota()).toBe(NOTA_TRANSFERENCIA);
   });
 
   it('confirmar con saldo suficiente: descuenta origen, acredita destino, guarda historial y cierra el modal', () => {

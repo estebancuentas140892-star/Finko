@@ -17,6 +17,34 @@
  */
 
 import { GMF } from '../../../core/constants.js';
+import { bancoClase } from '../../../infra/bancos.js';
+
+// ── LA NOTA DEL FORMULARIO (ADR 135 D5, REV.2c) ─────────────────
+
+/** Primera frase de la nota de Transferir: lo que pasa con tu total. */
+export const NOTA_TRANSFERENCIA = 'Es un movimiento entre tus cuentas: tu total no cambia.';
+
+/**
+ * Segunda frase (REV.2c): lo que puede ver la DIAN. Un traslado a una cuenta
+ * de banco o billetera llega como consignación, y el monitor de renta tiene un
+ * tope de consignaciones; al efectivo no llega ninguna.
+ */
+export const NOTA_TRANSFERENCIA_DIAN = 'No es un ingreso, pero tu banco puede reportarlo a la DIAN como una consignación. Finko la guarda en Movimientos por si la necesitas al declarar renta.';
+
+/**
+ * La nota de Transferir según el destino: las dos frases cuando entra a una
+ * cuenta, solo la primera cuando se pasa a efectivo. La nota no dice que el
+ * destino es efectivo (el formulario ya lo muestra): solo calla la segunda.
+ *
+ * @param {import('../../../core/state.js').Cuenta | null | undefined} destino
+ * @returns {string}
+ */
+export function notaTransferencia(destino) {
+  const efectivo = destino?.banco
+    ? bancoClase(destino.banco) === 'efectivo'
+    : /^efectivo$/i.test(destino?.tipo ?? '');
+  return efectivo ? NOTA_TRANSFERENCIA : `${NOTA_TRANSFERENCIA} ${NOTA_TRANSFERENCIA_DIAN}`;
+}
 
 // ── VALIDACIÓN ───────────────────────────────────────────────────
 

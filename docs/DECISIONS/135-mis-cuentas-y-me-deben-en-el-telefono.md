@@ -33,6 +33,8 @@ La cuenta con su saldo; tipo, 4x1000 y cuota de manejo en filas; "Ver sus movimi
 
 "Transferir entre cuentas · Pasa dinero de una cuenta a otra"; "Sale de" y "Entra a" como filas con lo que tiene cada cuenta y "Cambiar"; "¿Cuánto vas a pasar?"; "Es un movimiento entre tus cuentas: tu total no cambia."; el botón dice el monto: "Transferir $200.000".
 
+> **Texto ampliado el 2026-11-13 (REV.2c):** al transferir a una cuenta, la nota suma "No es un ingreso, pero tu banco puede reportarlo a la DIAN como una consignación. Finko la guarda en Movimientos por si la necesitas al declarar renta." Al pasar a efectivo queda solo la primera frase. Texto corrido, sin caja ni color de alerta ([ADR 107](107-el-peso-de-cada-cosa.md) D4).
+
 ### D6. Distribuir, paso 1 (tanda 3)
 
 Arriba el monto y de dónde vino ("Salario · entró a Bancolombia", con "Cambiar"); "Paso 1 de 3" con tres puntos; "¿Qué necesidades pagas con este ingreso?" y "Lo recomendado es dejarles el 50%. Hoy van en 65%."; cada necesidad una fila marcable con su teja, monto y "Día 14 · educación"; al pie "Asignado" y "Queda" y "Siguiente: estilo de vida".

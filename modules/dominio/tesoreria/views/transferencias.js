@@ -14,6 +14,7 @@ import { icon } from '../../../infra/icons.js';
 import { bancoAvatar } from '../../../infra/bancos.js';
 import { renderSelectorCuenta } from '../../../infra/cuenta-helper.js';
 import { cuentasActivas } from '../logic/cuentas.js';
+import { notaTransferencia } from '../logic/transferencias.js';
 
 /**
  * Renderiza el botón de entrada en `#tesoreria-transferir`. Patrón 0/1/2/varias
@@ -144,6 +145,9 @@ export function renderFormTransferencia() {
   // si la sección de GMF aparece de entrada.
   const ordenadas     = [...activas].sort((a, b) => (b.saldo ?? 0) - (a.saldo ?? 0));
   const origenInicial = ordenadas[0];
+  // REV.2c: la nota depende del destino. Con dos cuentas es la otra; con 3+,
+  // el selector "Entra a" también nace en la de mayor saldo.
+  const destinoInicial = activas.length === 2 ? ordenadas[1] : ordenadas[0];
 
   const seccionCuentas = activas.length === 2
     ? renderParTransferencia(...ordenadas)
@@ -163,7 +167,7 @@ export function renderFormTransferencia() {
                  inputmode="numeric" data-miles autocomplete="off" required />
         </div>
       </div>
-      <p class="transferir-nota">Es un movimiento entre tus cuentas: tu total no cambia.</p>
+      <p class="transferir-nota" id="transferencia-nota-total">${_esc(notaTransferencia(destinoInicial))}</p>
       <div id="transferencia-gmf-slot">${renderSeccionGMF(origenInicial)}</div>
       <!-- ADR 135 D5: la fecha (hoy por defecto) y la nota se pliegan. -->
       <details class="transferir-mas">

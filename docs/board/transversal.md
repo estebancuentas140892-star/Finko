@@ -20,15 +20,6 @@
 
 > **Iniciativa REV, la revisión de Esteban del 2026-11-13** (14 puntos en Registro, Inicio, Deudas, Movimientos y General). La tanda 1 cerró con el [ADR 137](../DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md); el ADR 138 D3 recortó lo que quedaba. "Pagar desde varias cuentas" no genera tarjeta: ya existe y se deja así (registra lo que pasa en el banco, un débito por cuenta). **El ojo sigue siendo uno solo** (REV.4 descartada, ADR 106 D3).
 
-#### REV.2c - Al transferir, la consignación ante la DIAN en una frase
-- Prioridad  : media
-- Estado     : pendiente (cambia el texto de la nota del [ADR 135](../DECISIONS/135-mis-cuentas-y-me-deben-en-el-telefono.md) D5)
-- Área       : design
-- Objetivo   : segunda frase de la nota de Transferir: "No es un ingreso, pero tu banco puede reportarlo a la DIAN como una consignación. Finko la guarda en Movimientos por si la necesitas al declarar renta." Texto corrido, sin caja ni color de alerta (ADR 107 D4); no se dice si el destino es efectivo
-- Archivos   : `modules/dominio/tesoreria/views/transferencias.js`
-- Depende de : nada
-- Aceptación : la nota dice las dos frases al transferir a una cuenta y solo la primera al pasar a efectivo
-
 #### REV.3a - Descargar el mes para Excel
 - Prioridad  : media
 - Estado     : pendiente (reducida por el ADR 138 D3: sin hoja de extracto ni PDF)

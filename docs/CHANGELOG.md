@@ -12,6 +12,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(tesoreria): REV.2c, al transferir la consignación ante la DIAN en una frase · 2026-11-13
+
+Texto del [ADR 135](DECISIONS/135-mis-cuentas-y-me-deben-en-el-telefono.md) D5. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). SW v699.
+
+- **La nota de Transferir** suma, cuando el dinero entra a una cuenta: "No es un ingreso, pero tu banco puede reportarlo a la DIAN como una consignación. Finko la guarda en Movimientos por si la necesitas al declarar renta." Al pasar a efectivo queda solo "Es un movimiento entre tus cuentas: tu total no cambia." Texto corrido, sin caja ni color de alerta (ADR 107 D4).
+- `notaTransferencia()` en `tesoreria/logic/transferencias.js` decide por el destino (efectivo por su banco, o por el tipo en cuentas viejas); la acción la rehace al invertir el par o al cambiar "Entra a".
+- Pruebas: `tesoreria` (6 nuevas: la frase por destino, la cuenta vieja, el texto sin marcado, invertir hacia el efectivo y "Entra a" con 3 cuentas; 1 ajustada).
+
 ### feat(compromisos): REV.2b, el gasto fijo empieza por el monto · 2026-11-13
 
 [ADR 141](DECISIONS/141-el-gasto-fijo-empieza-por-el-monto.md), que ajusta el [ADR 042](DECISIONS/042-formularios-v2-visual.md) D5 y extiende el [ADR 115](DECISIONS/115-el-pie-se-apoya-sobre-el-teclado.md). Fichas: [`contexto/deudas.md`](contexto/deudas.md), [`contexto/sistema-visual.md`](contexto/sistema-visual.md). SW v698.

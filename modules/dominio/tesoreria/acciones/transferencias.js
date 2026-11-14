@@ -27,6 +27,7 @@ import {
   origenSujetoAGMF,
   normalizarTransferencia,
   calcularTransferencia,
+  notaTransferencia,
 } from '../logic/transferencias.js';
 import { renderFormTransferencia, renderParTransferencia, renderSeccionGMF } from '../view.js';
 
@@ -47,6 +48,24 @@ function _origenActualId() {
   const radio = form.querySelector('input[type="radio"][name="cuentaOrigenId"]:checked');
   if (radio) return radio.value || null;
   return form.querySelector('input[type="hidden"][name="cuentaOrigenId"]')?.value || null;
+}
+
+/** Id de la cuenta de destino elegida ahora mismo (mismo criterio que el origen). */
+function _destinoActualId() {
+  const form = document.getElementById('form-transferencia');
+  if (!form) return null;
+  const radio = form.querySelector('input[type="radio"][name="cuentaDestinoId"]:checked');
+  if (radio) return radio.value || null;
+  return form.querySelector('input[type="hidden"][name="cuentaDestinoId"]')?.value || null;
+}
+
+/**
+ * REV.2c: la nota bajo el monto sigue al destino. A una cuenta, las dos
+ * frases (el total y la DIAN); al efectivo, solo la del total.
+ */
+function _refrescarNotaTransferencia() {
+  const nota = document.getElementById('transferencia-nota-total');
+  if (nota) nota.textContent = notaTransferencia(_cuenta(_destinoActualId()));
 }
 
 /**
@@ -124,6 +143,7 @@ function _abrirTransferencia() {
       });
       form.addEventListener('change', (e) => {
         if (e.target.name === 'cuentaOrigenId') _refrescarSeccionGMF();
+        else if (e.target.name === 'cuentaDestinoId') _refrescarNotaTransferencia();
         else if (e.target.name === 'aplicarGMF') _actualizarHintGMF();
       });
     }
@@ -146,8 +166,10 @@ function _invertirTransferencia() {
   const destino = _cuenta(destinoId);
   if (!origen || !destino) return;
   wrap.outerHTML = renderParTransferencia(destino, origen);
-  // El origen cambió: la sección del 4x1000 puede aparecer o desaparecer.
+  // El origen cambió: la sección del 4x1000 puede aparecer o desaparecer. Y
+  // el destino también: la nota de la DIAN sale o entra (REV.2c).
   _refrescarSeccionGMF();
+  _refrescarNotaTransferencia();
 }
 
 /**

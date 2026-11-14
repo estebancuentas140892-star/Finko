@@ -87,4 +87,7 @@ export {
   origenSujetoAGMF,
   normalizarTransferencia,
   calcularTransferencia,
+  notaTransferencia,
+  NOTA_TRANSFERENCIA,
+  NOTA_TRANSFERENCIA_DIAN,
 } from './logic/transferencias.js';
