@@ -278,6 +278,34 @@ export function nivelAlertaMora(proximos) {
 // ── VALIDACIÓN ───────────────────────────────────────────────────
 
 /**
+ * Desde qué tasa una deuda ya no puede ser real (ADR 142 D9): por encima, el
+ * formulario no deja guardar. Entre lo "muy alto" y esto, guarda con aviso.
+ */
+export const TASA_IMPOSIBLE = Object.freeze({ EA: 1000, mensual: 500 });
+
+/** Desde qué tasa conviene revisar antes de guardar (el aviso ámbar). */
+export const TASA_MUY_ALTA = Object.freeze({ EA: 200, mensual: 100 });
+
+/**
+ * El aviso ámbar de una tasa muy alta (ADR 142 D9): se puede guardar, pero
+ * conviene revisarla. Pura.
+ *
+ * @param {{ tipo?: string, tasa?: string|number }} datos
+ * @returns {string|null} El aviso, o null si no hay nada que revisar.
+ */
+export function avisoTasaAlta({ tipo, tasa } = {}) {
+  const n = Number(String(tasa ?? '').replace(',', '.'));
+  if (tasa === '' || tasa === undefined || tasa === null || !Number.isFinite(n)) return null;
+  const t = String(n).replace('.', ',');
+  if (tipo === 'deuda-entidad') {
+    if (n > TASA_MUY_ALTA.EA && n <= TASA_IMPOSIBLE.EA) return `${t} % al año es muy alto para una deuda con un banco. Revisa tu extracto: quizá esa es la tasa de otro periodo. Puedes guardarla igual.`;
+    return null;
+  }
+  if (n > TASA_MUY_ALTA.mensual && n <= TASA_IMPOSIBLE.mensual) return `${t} % al mes es muy alto. Revisa tu extracto: quizá es la tasa de un año.`;
+  return null;
+}
+
+/**
  * Valida los datos del formulario de compromiso.
  *
  * Reglas v6:
@@ -352,16 +380,18 @@ export function validarCompromiso(datos, personalizadasFijo = []) {
       if (tieneTasa) {
         if (isNaN(tasa) || tasa < 0) {
           errores.push('Escribe la tasa con números. Por ejemplo: 28,5');
-        } else if (tasa > 200) {
-          errores.push(`${String(tasa).replace('.', ',')} % al año es muy alto. ¿Tu extracto la da por mes?`);
+        } else if (tasa > TASA_IMPOSIBLE.EA) {
+          // ADR 142 D9: lo alto se guarda con un aviso (avisoTasaAlta); solo
+          // lo que no puede ser una tasa real no se deja guardar.
+          errores.push(`${String(tasa).replace('.', ',')} % al año no parece una tasa real. Revisa tu extracto.`);
         }
       }
     } else if (tieneTasa) {
       // Personal: opcional pero si la ponen, validar rango razonable (mensual).
       if (isNaN(tasa) || tasa < 0) {
         errores.push('Escribe la tasa con números. Por ejemplo: 2,1');
-      } else if (tasa > 100) {
-        errores.push(`${String(tasa).replace('.', ',')} % al mes es muy alto. Revisa tu extracto: quizá es la tasa de un año.`);
+      } else if (tasa > TASA_IMPOSIBLE.mensual) {
+        errores.push(`${String(tasa).replace('.', ',')} % al mes no parece una tasa real. Revisa tu extracto.`);
       }
     }
     if (tieneTasa) {

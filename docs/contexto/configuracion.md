@@ -120,6 +120,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-15 FORM.2h: en el teléfono, "Tu perfil" es una lista con su valor y una mini-hoja por dato que guarda sola (`data-ajustes`, ADR 142 D7).
 - 2026-11-13 (**MV2.30**, [ADR 136](../DECISIONS/136-ajustes-del-adulto-en-el-telefono.md)): Ajustes según el tablero "rediseño5": cuatro grupos con tejas, el tema en la fila, el perfil en botones, Respaldo y exportación, Copia en la nube, Recordatorios bloqueados y la hoja de borrar con "Guardar respaldo primero".
 - 2026-11-03 (**CFG.6**, [ADR 112](../DECISIONS/112-ajustes-como-indice-en-el-telefono.md), absorbe MV2.26): Ajustes como índice en el teléfono, filas que se despliegan en su sitio, lo tuyo primero y atajos solo con puntero fino. Detalle en el CHANGELOG.
 - 2026-10-25 (**APR.3a**): grupo Familia y candado obligatorio con niños; detalle en [`nino.md`](nino.md).

@@ -37,18 +37,9 @@
 - Objetivo   : (1) en iOS la app instalada no comparte `localStorage` con Safari: quien se registra en Safari e instala abre una app vacía. Ofrecer instalar antes del registro en iOS, o avisarlo en el modal; además el iPad no se detecta (`_esIOS()`), los pasos suponen Safari con Compartir abajo y no se detecta el navegador de otra app. (2) El 2026-11-13 producción servía la v693 completa y el aviso "Hay una versión nueva" se pinta bien, pero el teléfono de Esteban seguía en la vieja. Faltan: el número de Acerca de Finko (`1.0.0 (NNN)`), el mensaje de "Buscar actualización", iPhone o Android y desde qué dirección está instalada (si no es finko-brown.vercel.app, no recibe lo que se publica)
 - Archivos   : `modules/ui/install-prompt.js`, `index.html` (`#modal-install-ios`), `modules/ui/onboarding.js`, `modules/infra/sw-register.js`, `modules/infra/actualizacion.js`, `modules/ui/sw-aviso.js`, `service-worker.js`
 - Depende de : la prueba en el iPhone y esos datos
-- Aceptación : en un iPhone, quien instala Finko encuentra sus datos (o fue avisado antes de registrarse), y en el teléfono de Esteban Acerca de Finko muestra la versión publicada. En la misma prueba: el modo escritura de FORM.2a (con el teclado abierto en Nueva deuda se ven la pregunta, el campo, su ayuda y el botón; la ✕ no queda bajo la hora en la app instalada) y el campo sobre el teclado de REV.2b
+- Aceptación : en un iPhone, quien instala Finko encuentra sus datos (o fue avisado antes de registrarse), y en el teléfono de Esteban Acerca de Finko muestra la versión publicada. En la misma prueba: el modo escritura de FORM.2a (con el teclado abierto en Nueva deuda se ven la pregunta, el campo, su ayuda y el botón; la ✕ no queda bajo la hora en la app instalada) y el campo sobre el teclado de REV.2b, y toda la iniciativa FORM.2 (ADR 142): Registrar gasto con el teclado de Finko, las mini-hojas, las preguntas de crear y la ficha del gasto
 
-> **Iniciativa FORM.2 - Formularios por tarea** ([ADR 142](../DECISIONS/142-formularios-por-tarea.md), aceptada 2026-11-14). Fuente única de todo cambio de forma en los formularios del teléfono: cuatro tareas (mover dinero, crear, corregir, ajustes), la regla para elegir cada control y el teclado de Finko. Diseño en el canvas "Finko · Rediseño de formularios móviles", página "Propuesta por tarea"; manda el ADR. Escritorio no cambia. **Una idea sobre cualquier formulario se integra acá, no abre tarjeta suelta.**
 
-#### FORM.2h - Ajustes con mini-hojas y lo que quedó de D9 y D10
-- Prioridad  : baja
-- Estado     : pendiente
-- Área       : ambos
-- Objetivo   : ADR 142 D7 (Tu nombre, Tu perfil y el candado como lista con su valor y una mini-hoja), D10 (la ayuda de la tasa en una mini-hoja con Tino, "Primero necesitas una cuenta" con Tino pensando) y D9 (la tasa muy alta deja de bloquear y pasa a aviso ámbar con su salida; cambia `validarCompromiso`). El banco de Nueva cuenta con buscador (142 D2). Cierra la iniciativa
-- Archivos   : `config/view.js`, `ui/mini-hoja.js`, `compromisos/logic/modelo.js` y su vista, `tesoreria/views/cuentas.js`
-- Depende de : nada
-- Aceptación : E2E a 390 px de cambiar el nombre en Ajustes desde su mini-hoja, y de guardar una deuda con tasa alta después del aviso
 
 #### MV2.28 - Medir lo publicado: fluidez y Lighthouse en producción
 - Prioridad  : media

@@ -46,6 +46,20 @@ export function htmlMiniHoja({ id, titulo, cuerpo, pie = '' }) {
     </div>`;
 }
 
+/**
+ * Una ⓘ con `data-mini-ayuda="id"` abre la mini-hoja de ayuda de su
+ * formulario (ADR 142 D10: la ayuda la explica Tino). Se llama una vez desde
+ * bootstrap.js.
+ */
+export function initMiniHojas() {
+  document.addEventListener('click', (e) => {
+    const boton = e.target.closest?.('[data-mini-ayuda]');
+    if (!boton) return;
+    const mini = document.getElementById(boton.dataset.miniAyuda);
+    if (mini) abrirMiniHoja(mini, { origen: boton });
+  });
+}
+
 /** Lo que cada mini-hoja abierta necesita para cerrarse. */
 const _abiertas = new WeakMap();
 

@@ -420,7 +420,7 @@ function _renderPerfil() {
   return `
     <section class="config-section" aria-labelledby="config-perfil-title">
       <h2 class="config-section__title" id="config-perfil-title">Tu perfil</h2>
-      <form id="form-perfil" class="config-form" novalidate>
+      <form id="form-perfil" class="config-form" novalidate data-ajustes>
         <div class="form-group">
           <label for="config-nombre" class="label">Tu nombre</label>
           <input id="config-nombre" name="nombre" class="input" type="text"

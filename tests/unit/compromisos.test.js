@@ -8,7 +8,7 @@ import {
   urgencia,
   compromisosProximos,
   nivelAlertaMora,
-  validarCompromiso,
+  validarCompromiso, avisoTasaAlta,
   normalizarCompromiso,
   esDebitoAutomatico,
   filtrarDeudasPagables,
@@ -865,15 +865,26 @@ describe('validarCompromiso() - reglas de deuda (v6)', () => {
     expect(errores.some(e => /cada mes/i.test(e))).toBe(true);
   });
 
-  it('reporta error si tasa EA supera 200%', () => {
+  // ADR 142 D9 (FORM.2h): lo muy alto se guarda con aviso ámbar; solo lo
+  // imposible bloquea.
+  it('una tasa EA muy alta se deja guardar y avisa', () => {
     const errores = validarCompromiso({ ...datosEntidad, tasa: '250' });
-    expect(errores.some(e => /al año es muy alto/i.test(e))).toBe(true);
+    expect(errores.some(e => /tasa|al año/i.test(e))).toBe(false);
+    expect(avisoTasaAlta({ tipo: 'deuda-entidad', tasa: '250' })).toMatch(/al año es muy alto/);
+    expect(avisoTasaAlta({ tipo: 'deuda-entidad', tasa: '28,5' })).toBeNull();
   });
 
-  it('reporta error si tasa mensual supera 100%', () => {
+  it('una tasa EA imposible no se deja guardar', () => {
+    const errores = validarCompromiso({ ...datosEntidad, tasa: '1500' });
+    expect(errores.some(e => /no parece una tasa real/i.test(e))).toBe(true);
+    expect(avisoTasaAlta({ tipo: 'deuda-entidad', tasa: '1500' })).toBeNull();
+  });
+
+  it('una tasa mensual muy alta avisa; la imposible no se deja guardar', () => {
     const datos = { ...datosPersonal, tasa: '150', tasaUnidad: 'mensual' };
-    const errores = validarCompromiso(datos);
-    expect(errores.some(e => /tasa/i.test(e))).toBe(true);
+    expect(validarCompromiso(datos).some(e => /tasa/i.test(e))).toBe(false);
+    expect(avisoTasaAlta({ tipo: 'deuda-personal', tasa: '150' })).toMatch(/al mes es muy alto/);
+    expect(validarCompromiso({ ...datos, tasa: '600' }).some(e => /no parece una tasa real/i.test(e))).toBe(true);
   });
 
   it('NO valida campos de deuda para tipo=fijo aunque vengan negativos', () => {

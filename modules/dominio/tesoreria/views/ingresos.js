@@ -8,6 +8,7 @@
  * - Sin logica de negocio: delegar a logic/.
  */
 
+import { htmlTinoSol } from '../../../infra/ilustraciones.js';
 import { miles } from '../../../infra/miles.js';
 import { S } from '../../../core/state.js';
 import { f, esc as _esc, fechaLegible } from '../../../infra/utils.js';
@@ -415,7 +416,7 @@ export function renderFormIngresoPuntual() {
   if (cuentas.length === 0) {
     return `
       <div class="form-empty">
-        <p class="form-empty__icon" aria-hidden="true">${icon('cuentas', 'icon icon--lg')}</p>
+        ${htmlTinoSol('pensando', { tamano: 104, clase: 'form-empty__tino' })}
         <p class="form-empty__title">Primero necesitas una cuenta</p>
         <p class="form-empty__desc">Un ingreso necesita una cuenta donde entre el dinero. Créala aquí y sigues sin perder el hilo.</p>
         <a class="btn btn-primary btn-lg" href="#tesoreria" data-action="ir-a-crear-cuenta">${icon('cuentas')} Crear una cuenta</a>

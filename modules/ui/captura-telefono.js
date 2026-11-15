@@ -29,7 +29,7 @@ import { marcarCambios } from './hojas.js';
 import { htmlTecladoFinko, montarTecladoFinko, montoEnPalabras } from './teclado-finko.js';
 import { htmlMiniHoja, abrirMiniHoja, cerrarMiniHoja, miniHojaAbierta } from './mini-hoja.js';
 import { htmlCalendario, montarCalendario } from './calendario-finko.js';
-import { montarPreguntas } from './preguntas.js';
+import { montarPreguntas, valorDeBloque } from './preguntas.js';
 
 const MQ_MOVIL = '(max-width: 1023.98px)';
 const _esMovil = () => window.matchMedia?.(MQ_MOVIL).matches === true;
@@ -422,6 +422,71 @@ export function montarEtapasMonto(form) {
   _etapas.set(form, { irA, pintarMonto });
 }
 
+// ── Ajustes: lista con su valor y una mini-hoja (ADR 142 D7) ──────
+
+/**
+ * Un formulario de Ajustes `[data-ajustes]` se lee como una lista: cada dato
+ * es una fila con su valor a la derecha, y cambiarlo abre una mini-hoja con
+ * ese campo y "Listo". Al cerrarla, si algo cambió, el formulario se envía
+ * como siempre (su `submit` de Ajustes guarda y avisa "Guardado").
+ *
+ * @param {HTMLFormElement} form
+ */
+export function montarAjustes(form) {
+  if ('ajustesMontados' in form.dataset) return;
+  form.dataset.ajustesMontados = '';
+  const grupos = [...form.children].filter(el => el.matches('.form-group, fieldset'));
+  if (grupos.length === 0) return;
+  const lista = document.createElement('div');
+  lista.className = 'recibo ajustes-lista';
+  form.prepend(lista);
+  const firma = () => JSON.stringify([...new FormData(form)]);
+  let antes = firma();
+
+  grupos.forEach((grupo, i) => {
+    const id = `${form.id || 'ajustes'}-dato-${i}`;
+    const rotulo = _rotulo(grupo.querySelector(':scope > .label, :scope > legend') ?? grupo.querySelector('.label, legend')) || 'Dato';
+    const fila = document.createElement('button');
+    fila.type = 'button';
+    fila.className = 'recibo__fila';
+    fila.innerHTML = `<span class="recibo__txt"><span class="recibo__k">${_esc(rotulo)}</span><span class="recibo__v" data-ajuste-valor></span></span><svg class="icon recibo__chev" aria-hidden="true"><use href="#i-chevron-right"/></svg>`;
+    lista.appendChild(fila);
+    form.insertAdjacentHTML('beforeend', htmlMiniHoja({
+      id: `${id}-mini`,
+      titulo: rotulo,
+      cuerpo: '',
+      pie: '<button type="button" class="btn btn-primary" data-mini-cerrar>Listo</button>',
+    }));
+    const mini = form.querySelector(`#${CSS.escape(id)}-mini`);
+    mini.querySelector('.mini-hoja__cuerpo').appendChild(grupo);
+    const pintar = () => {
+      const v = valorDeBloque(grupo);
+      fila.querySelector('[data-ajuste-valor]').textContent = v || 'Sin escribir';
+      fila.classList.toggle('recibo__fila--vacia', !v);
+    };
+    pintar();
+    fila.addEventListener('click', () => {
+      abrirMiniHoja(mini, {
+        origen: fila,
+        alCerrar: () => {
+          pintar();
+          const ahora = firma();
+          if (ahora === antes) return;
+          antes = ahora;
+          form.requestSubmit();
+        },
+      });
+    });
+    // Enter en el campo de texto es "Listo".
+    grupo.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && e.target.matches('input:not([type="radio"]):not([type="checkbox"])')) {
+        e.preventDefault();
+        cerrarMiniHoja(mini);
+      }
+    });
+  });
+}
+
 // ── En cada apertura ─────────────────────────────────────────────
 
 /**
@@ -431,7 +496,7 @@ export function montarEtapasMonto(form) {
  *
  * @param {HTMLElement} overlay
  */
-const SELECTOR_FORMS = 'form[data-captura], form[data-etapas-monto], form[data-preguntas]';
+const SELECTOR_FORMS = 'form[data-captura], form[data-etapas-monto], form[data-preguntas], form[data-ajustes]';
 
 /** Formularios ya preparados: con la hoja abierta no se vuelven a tocar. */
 const _preparados = new WeakSet();
@@ -451,6 +516,7 @@ function _prepararForm(form, overlay, reabierta) {
     montarEtapasMonto(form);
     _etapas.get(form)?.irA('monto', { foco: false });
   }
+  if ('ajustes' in form.dataset) montarAjustes(form);
   for (const b of form.querySelectorAll('.campo-finko')) _refrescos.get(b)?.();
 }
 
@@ -490,4 +556,10 @@ function _alAparecer(cambios) {
 export function initCapturaTelefono() {
   registrarAlAbrir(prepararHojaTelefono);
   new MutationObserver(_alAparecer).observe(document.body, { childList: true, subtree: true });
+  // Los que ya están en la página (Ajustes se pinta antes de este init).
+  if (_esMovil()) {
+    for (const form of document.querySelectorAll(SELECTOR_FORMS)) {
+      if (!form.closest('.modal-overlay') && !_preparados.has(form)) _prepararForm(form, null, true);
+    }
+  }
 }

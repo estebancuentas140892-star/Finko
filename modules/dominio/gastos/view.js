@@ -11,6 +11,7 @@ import { CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA, iconoDeCatego
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { presupuestosActivos } from '../presupuesto/logic.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
+import { htmlTinoSol } from '../../infra/ilustraciones.js';
 import { topeHormiga } from '../../infra/hormiga.js';
 import { mesBloque, navegarMesBloque, irAMesActualBloque } from '../../infra/mes-bloque.js';
 import { gastosMes, filtrarGastos, ordenarRecientesPrimero, agruparPorDia, totalGastos, variacionMensualGasto, detectarHormigas, iconoPorOrigen, gastosFrecuentes, tarjetasDeCredito } from './logic.js';
@@ -744,7 +745,7 @@ export function renderFormGasto({ sugerencias = true, categoriaFija = null } = {
   if (cuentas.length === 0) {
     return `
       <div class="form-empty">
-        <span class="form-empty__teja" aria-hidden="true">${icon('cuentas')}</span>
+        ${htmlTinoSol('pensando', { tamano: 104, clase: 'form-empty__tino' })}
         <p class="form-empty__title">Primero necesitas una cuenta</p>
         <p class="form-empty__desc">Un gasto necesita una cuenta de donde salga el dinero. Créala aquí y sigues sin perder el hilo.</p>
         <a class="btn btn-primary btn-lg" href="#tesoreria" data-action="ir-a-crear-cuenta">${icon('cuentas')} Crear una cuenta</a>

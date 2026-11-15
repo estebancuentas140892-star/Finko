@@ -24,6 +24,8 @@ import {
 } from '../../../core/constants.js';
 import { renderSelectorCuenta, renderBloqueDebitoAutomatico } from '../../../infra/cuenta-helper.js';
 import { renderIconoPicker } from '../../../infra/icon-picker.js';
+import { htmlTinoSol } from '../../../infra/ilustraciones.js';
+import { htmlMiniHoja } from '../../../ui/mini-hoja.js';
 
 // ── FORMULARIO MODAL: NUEVO GASTO FIJO (ficha 05, mudado desde Agenda) ──
 
@@ -525,7 +527,9 @@ export function renderFormDeuda(tipo, deuda = null) {
                      autocomplete="off" value="${vTasa}" />
               <input type="hidden" name="tasaUnidad" value="${esEntidad ? 'EA' : 'mensual'}" />
             </div>
-            <p id="comp-tasa-hint" class="form-hint">${_esc(tasaHint)}</p>
+            <p id="comp-tasa-hint" class="form-hint">${esEntidad ? 'Está en tu extracto o en la app del banco.' : 'Si no cobra interés, déjala en blanco.'}
+              <button type="button" class="ayuda-tino__btn" data-mini-ayuda="comp-tasa-ayuda" aria-label="¿Dónde encuentro la tasa?">${'<svg class="icon" aria-hidden="true"><use href="#i-info"/></svg>'}</button></p>
+            <p class="aviso-ambar" id="comp-tasa-aviso" role="status" hidden></p>
           </div>
         </div>
       </div>
@@ -562,5 +566,11 @@ export function renderFormDeuda(tipo, deuda = null) {
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-check-circle"/></svg>${modoEdit ? 'Actualizar deuda' : 'Guardar deuda'}</button>
       </div>
+      ${htmlMiniHoja({
+        id: 'comp-tasa-ayuda',
+        titulo: '¿Dónde está la tasa?',
+        cuerpo: `<div class="ayuda-tino">${htmlTinoSol('explica', { tamano: 96 })}<p class="ayuda-tino__txt">${_esc(tasaHint)}</p></div>`,
+        pie: '<button type="button" class="btn btn-primary" data-mini-cerrar>Entendido</button>',
+      })}
     </form>`;
 }

@@ -1501,7 +1501,8 @@ test.describe('FORM.2f - Gasto fijo y cuenta por preguntas (ADR 142 D5)', () => 
     await form.locator('[data-preguntas-seguir]').click();
     await expect(form.locator('.form-error, .form-errors').first()).toContainText('Elige el banco');
     await form.locator('.bank-picker__trigger').click();
-    await page.locator('.bank-picker__list [role="option"]', { hasText: 'Davivienda' }).first().click();
+    // FORM.2h (ADR 142 D2): el banco se elige en el desplegable de Finko.
+    await form.locator('#cuenta-banco-mini [data-valor="Davivienda"]').click();
     await form.locator('[data-preguntas-seguir]').click();
     await expect(titulo).toHaveText('¿Qué tipo de cuenta es?');
     await form.locator('#cuenta-tipo-finko').click();

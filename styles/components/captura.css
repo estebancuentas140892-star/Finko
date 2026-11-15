@@ -735,6 +735,35 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
 }
 .boton-peligro:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
 
+/* ── Ajustes: lista con su valor y una mini-hoja (ADR 142 D7) ── */
+@media (max-width: 1023.98px) {
+  form[data-ajustes-montados] > .config-form__guardar > .btn { display: none; }
+  form[data-ajustes-montados] .mini-hoja { position: fixed; z-index: var(--fk-z-modal); }
+}
+.ajustes-lista { margin-bottom: var(--fk-space-2); }
+
+/* ── Tino en los formularios (ADR 142 D10) ───────────────── */
+.ayuda-tino__btn {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin: -6px 0 -6px 2px;
+  vertical-align: middle;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--fk-text-accent);
+  cursor: pointer;
+}
+.ayuda-tino__btn::after { content: ''; position: absolute; inset: -6px; }
+.ayuda-tino__btn { position: relative; }
+.ayuda-tino__btn .icon { width: var(--fk-icon-sm); height: var(--fk-icon-sm); }
+.ayuda-tino__btn:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 1px; }
+.ayuda-tino { display: flex; flex-direction: column; align-items: center; gap: var(--fk-space-3); text-align: center; }
+.ayuda-tino__txt { margin: 0; font-size: var(--fk-text-base); line-height: var(--fk-leading-relaxed); color: var(--fk-text-secondary); }
+.form-empty__tino { margin-inline: auto; }
+
 /* ── El calendario de Finko ("Otra fecha") ───────────────── */
 #gasto-fecha-otra[hidden] { display: none; }
 .calf { display: flex; flex-direction: column; gap: var(--fk-space-2); }

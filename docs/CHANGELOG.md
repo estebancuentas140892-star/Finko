@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(formularios): FORM.2h, Ajustes con mini-hojas, Tino, la tasa alta en ámbar y el banco con buscador · 2026-11-15
+
+[ADR 142](DECISIONS/142-formularios-por-tarea.md) D2, D7, D9 y D10. **Cierra la iniciativa FORM.2.** Fichas: [`contexto/captura.md`](contexto/captura.md), [`contexto/deudas.md`](contexto/deudas.md), [`contexto/configuracion.md`](contexto/configuracion.md). SW v708.
+
+- **D7, Ajustes como lista** (`data-ajustes`, `montarAjustes`): en el teléfono, "Tu perfil" se lee como filas con su valor a la derecha ("Tu nombre", "¿Cómo recibes tus ingresos?"); tocar una abre su mini-hoja con el campo y "Listo", y al cerrarla, si cambió, el formulario se envía solo (el `submit` de siempre guarda y dice "Guardado"). El botón "Guardar perfil" sale en el teléfono. El candado (PIN) conserva sus pasos: es un flujo de seguridad, no un dato que se edita.
+- **D9, la tasa muy alta deja de bloquear**: `validarCompromiso` solo rechaza lo que no puede ser una tasa (más de 1.000 % al año o 500 % al mes, `TASA_IMPOSIBLE`); entre lo muy alto (`TASA_MUY_ALTA`, 200 % y 100 %) y eso, `avisoTasaAlta` muestra un aviso ámbar mientras se escribe y la deuda se guarda igual.
+- **D10, Tino en los formularios**: la ⓘ de la tasa abre una mini-hoja con Tino que explica dónde está (`data-mini-ayuda`, `initMiniHojas`, también en escritorio), y "Primero necesitas una cuenta" (Registrar gasto y Me llegó dinero) lleva a Tino pensando en vez de la teja.
+- **D2, el banco con buscador**: en el teléfono, "Banco o billetera" de Nueva cuenta abre el desplegable de Finko con buscador en vez de la lista flotante.
+- `captura-telefono.js` prepara al iniciar los formularios que ya están en la página (Ajustes se pinta antes).
+- Pruebas: `compromisos` (2 reescritas y 1 nueva: muy alta avisa, imposible bloquea); E2E `formularios-telefono` (3 nuevas: el nombre en su mini-hoja, la deuda con tasa alta y Tino, el banco con buscador); `movil-mv2` (1 ajustada: la cuenta elige el banco en el desplegable). Unitarias 5582/5582, E2E 472/472. Falta la prueba de toda la iniciativa en un iPhone real (REV.3b).
+
 ### feat(gastos): FORM.2d, la ficha del gasto es su formulario · 2026-11-14
 
 [ADR 142](DECISIONS/142-formularios-por-tarea.md) D6 (en el teléfono reemplaza la hoja del gasto del [ADR 119](DECISIONS/119-plan-de-salida-en-hoja-y-el-detalle-del-gasto.md) D2). Fichas: [`contexto/gastos.md`](contexto/gastos.md), [`contexto/captura.md`](contexto/captura.md). Solo bajo 1024 px. SW v706.

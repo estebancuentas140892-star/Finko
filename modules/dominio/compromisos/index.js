@@ -32,7 +32,7 @@ import { prefijoMesBloque } from '../../infra/mes-bloque.js';
 import { CATEGORIAS_AGENDA } from '../../core/constants.js';
 import { validarCategoriaPersonalizada } from '../gastos/logic.js';
 import { eventosDelMes, pendientesDePagoDelMes } from '../agenda/logic.js';
-import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono, consecuenciaDeAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, repartirExtraEnCuotas, tasaMensualToEA, tasaMensualDecimal, vencidosSinPagar } from './logic.js';
+import { validarCompromiso, avisoTasaAlta, normalizarCompromiso, validarAbono, ajustarMontoAbono, consecuenciaDeAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, repartirExtraEnCuotas, tasaMensualToEA, tasaMensualDecimal, vencidosSinPagar } from './logic.js';
 import {
   renderHeroCompromisos,
   renderListaCompromisos,
@@ -445,6 +445,18 @@ function _wireCupoTarjeta(body) {
  * @param {HTMLElement} body - contenedor del form ya inyectado.
  */
 function _wireCondicionesColapsable(body) {
+  // ADR 142 D9: una tasa muy alta avisa en ámbar mientras se escribe; se
+  // puede guardar igual.
+  const tasa  = body.querySelector('#comp-tasa');
+  const aviso = body.querySelector('#comp-tasa-aviso');
+  const tipo  = body.querySelector('[name="tipo"]')?.value;
+  if (tasa && aviso) {
+    tasa.addEventListener('input', () => {
+      const texto = avisoTasaAlta({ tipo, tasa: tasa.value });
+      aviso.textContent = texto ?? '';
+      aviso.hidden = !texto;
+    });
+  }
   const trigger = body.querySelector('.form-disclosure__trigger');
   const panel   = body.querySelector('.form-disclosure__panel');
   if (!trigger || !panel) return;

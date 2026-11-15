@@ -46,6 +46,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-15 FORM.2h: la tasa muy alta avisa en ámbar y se guarda (`avisoTasaAlta`, `TASA_MUY_ALTA`, `TASA_IMPOSIBLE`); la ⓘ de la tasa abre a Tino (ADR 142 D9 y D10).
 - 2026-11-14 FORM.2e: Nueva deuda por preguntas en el teléfono (`data-preguntas` en `renderFormDeuda`, ADR 142 D5); escritorio igual.
 - 2026-11-13 (**REV.2b**, [ADR 141](../DECISIONS/141-el-gasto-fijo-empieza-por-el-monto.md)): el gasto fijo empieza por "¿Cuánto pagas?", la frecuencia va en chips (Mensual, Quincenal, Anual u Otra) y la nota y el débito automático en "Más opciones".
 - 2026-11-13 (**REV.2a**, [ADR 140](../DECISIONS/140-por-pagar-dice-cuanto-te-falta-este-mes.md)): el hero dice "Te falta pagar este mes" (lo vencido y lo que falta del mes, fijos y cuotas, con el reparto de la lista) y "Lo que debes en total" debajo solo con deudas; sale la pastilla de cuota/mes.

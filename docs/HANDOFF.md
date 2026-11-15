@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-14. Última tarea cerrada: FORM.2d, la ficha del gasto es su formulario. Nada en proceso.
+> Revisado: 2026-11-15. Última tarea cerrada: FORM.2h, cierra la iniciativa FORM.2 (formularios por tarea). Nada en proceso.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5581/5581 (2026-11-14, FORM.2d) |
-| Tests E2E | 469/469 (2026-11-14, FORM.2d, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5582/5582 (2026-11-15, FORM.2h) |
+| Tests E2E | 472/472 (2026-11-15, FORM.2h, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v48 (`perfiles`, APR.3a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**FORM.2h - Ajustes con mini-hojas, Tino, la tasa alta en ámbar y el banco con buscador, 2026-11-15**
+Cierra FORM.2 ([ADR 142](DECISIONS/142-formularios-por-tarea.md)): "Tu perfil" como lista con mini-hojas, la tasa muy alta avisa sin bloquear, Tino explica la tasa y piensa en "Primero necesitas una cuenta", y el banco se busca. SW v708.
 
 **FORM.2d - la ficha del gasto es su formulario, 2026-11-14**
 En el teléfono, tocar un gasto abre su recibo: cada dato se cambia en su mini-hoja, se guarda solo y se deshace; eliminar al pie ([ADR 142](DECISIONS/142-formularios-por-tarea.md) D6). SW v706.
@@ -37,16 +40,13 @@ Los cuatro van de a una pregunta con su resumen y "Agrega si quieres"; editar ab
 **FORM.2e - crear por preguntas y Nueva deuda, 2026-11-14**
 Una pregunta por pantalla con progreso, resumen editable y "Agrega si quieres" (`ui/preguntas.js`); Nueva deuda en seis preguntas ([ADR 142](DECISIONS/142-formularios-por-tarea.md) D5). SW v703.
 
-**FORM.2c - mover dinero en dos etapas y los controles de Finko, 2026-11-14**
-Abonar, aportar (meta, reserva, fondo), Me llegó dinero, Transferir y Me pagaron van en Monto · Revisar con el teclado de Finko y atajos; sus listas y fechas son el desplegable y el calendario de Finko (`ui/captura-telefono.js`, [ADR 142](DECISIONS/142-formularios-por-tarea.md) D2 y D4). SW v702.
-
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 
 ---
 
 ## 3. Qué sigue
 
-- **Iniciativa FORM.2** ([ADR 142](DECISIONS/142-formularios-por-tarea.md), formularios por tarea): FORM.2a a 2g cerradas; queda FORM.2h (Ajustes con mini-hojas y lo que quedó de D9 y D10), que cierra la iniciativa.
+- **Iniciativa FORM.2** ([ADR 142](DECISIONS/142-formularios-por-tarea.md), formularios por tarea): **completa** (FORM.2a a 2h). Queda probarla en un iPhone real con REV.3b.
 - **El tablero quedó en orden de valor** ([`BOARD.md`](BOARD.md), índice). Arriba: REV.3b (la app instalada con tus datos y la versión publicada, espera una prueba en un iPhone real; ahí se verifica también el campo sobre el teclado de REV.2b), HF.1d y HF.3e. Lo que salió y por qué: [ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md).
 - **MOV.1 cerrada** con 17 de 25 fichas: las fichas de `contexto/` que mandan algo "a la ficha 18" se leen con la tabla del ADR 138 D1.
 - **Iniciativa HF** ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)): Fase 0 cerrada; HF.1b cerrada (ADR 139); quedan cinco tarjetas, ninguna bloqueada. Conectar el banco vive en NUBE.4, "no iniciar".

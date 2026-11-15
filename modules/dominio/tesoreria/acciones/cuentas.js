@@ -7,6 +7,7 @@
  * - Coordina logic/ + views/ sin hacer calculos ni generar HTML aqui.
  */
 
+import { htmlMiniHoja, abrirMiniHoja, cerrarMiniHoja } from '../../../ui/mini-hoja.js';
 import { miles } from '../../../infra/miles.js';
 import { S, EventBus } from '../../../core/state.js';
 import { guardar, editar, eliminar } from '../../../infra/crud.js';
@@ -501,8 +502,49 @@ function _initBankPicker(picker) {
     });
   }
 
+  // ADR 142 D2 (FORM.2h): en el teléfono, el banco se busca en el
+  // desplegable de Finko, una mini-hoja con buscador, no en la lista flotante.
+  const _esMovil = () => window.matchMedia?.('(max-width: 1023.98px)').matches === true;
+  function _abrirHojaBancos() {
+    const form = picker.closest('form');
+    if (!form) return;
+    let mini = form.querySelector('#cuenta-banco-mini');
+    if (!mini) {
+      form.insertAdjacentHTML('beforeend', htmlMiniHoja({
+        id: 'cuenta-banco-mini',
+        titulo: 'Banco o billetera',
+        cuerpo: `
+          <label class="buscar-finko"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><span class="sr-only">Buscar banco o billetera</span><input type="search" class="buscar-finko__in" placeholder="Buscar" autocomplete="off" data-banco-buscar /></label>
+          <div class="desplegable" role="listbox" aria-label="Banco o billetera" data-banco-lista></div>`,
+      }));
+      mini = form.querySelector('#cuenta-banco-mini');
+      const listaMini = mini.querySelector('[data-banco-lista]');
+      const buscar = mini.querySelector('[data-banco-buscar]');
+      const norm = (t) => t.toLocaleLowerCase('es').normalize('NFD').replace(/\p{Diacritic}/gu, '');
+      buscar.addEventListener('input', () => {
+        const q = norm(buscar.value.trim());
+        listaMini.querySelectorAll('[data-valor]').forEach((b) => { b.hidden = q !== '' && !norm(b.textContent).includes(q); });
+      });
+      listaMini.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-valor]');
+        if (!b) return;
+        const item = [...list.querySelectorAll('[role="option"]')].find(i => i.dataset.value === b.dataset.valor);
+        if (item) _selectItem(item);
+        cerrarMiniHoja(mini);
+      });
+    }
+    const listaMini = mini.querySelector('[data-banco-lista]');
+    listaMini.innerHTML = [...list.querySelectorAll('[role="option"]')].map(i => `
+          <button type="button" class="desplegable__f" role="option" aria-selected="${i.dataset.value === hidden.value}" data-valor="${i.dataset.value}">
+            <span class="desplegable__txt">${i.innerHTML}</span><span class="desplegable__ok" aria-hidden="true"></span>
+          </button>`).join('');
+    mini.querySelector('[data-banco-buscar]').value = '';
+    abrirMiniHoja(mini, { origen: trigger });
+  }
+
   // Toggle al click en el trigger.
   trigger.addEventListener('click', () => {
+    if (_esMovil()) { _abrirHojaBancos(); return; }
     if (list.hidden) _open(); else _close();
   });
 
