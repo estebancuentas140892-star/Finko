@@ -35,7 +35,7 @@
 - Prioridad  : media
 - Estado     : pendiente. Es lo que MV2.28 midió sobre su umbral (2026-11-15); el diagnóstico está en `scripts/perf/BASELINE.md`, sección MV2.28
 - Área       : code
-- Objetivo   : (a) el arranque baja de 400 ms bloqueados con CPU 4x (hoy 675 en local y 918 en producción): quedan tres tareas largas, el layout del HTML estático antes del JS (~230 ms), el script de arranque (~250) y el layout tras `renderAll` (~240); (b) el tab Ahorro, que hoy abre Fondo con todo el historial de aportes (359 ms de respuesta, 2.986 elementos estilizados), baja de 200; (c) el Speed Index de Lighthouse (Performance 91 en producción) vuelve a 100
+- Objetivo   : (a) el arranque baja de 400 ms bloqueados con CPU 4x (hoy 675 en local y 918 en producción): quedan tres tareas largas, el layout del HTML estático antes del JS (~230 ms), el script de arranque (~250) y el layout tras `renderAll` (~240); (b) el tab Ahorro, que hoy abre Fondo con todo el historial de aportes (359 ms de respuesta, 2.986 elementos estilizados), baja de 200; (c) el Speed Index de Lighthouse (Performance 91 en producción) vuelve a 100; (d) el INP de abrir el formulario de gasto (200 ms en producción, en el borde) no sube
 - Riesgo     : partir el arranque en turnos cambia el orden en que los `init` ven el DOM; `content-visibility` en la lista de aportes contiene layout y paint (mismo riesgo que los días de Gastos en PERF.12)
 - Secciones  : arranque, Fondo
 - Archivos   : `modules/ui/bootstrap.js`, `modules/infra/render.js`, `modules/dominio/ahorro/view.js`, `styles/components/domain.css`, `scripts/perf/BASELINE.md`

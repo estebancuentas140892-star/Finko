@@ -323,30 +323,30 @@ Verificado: `pnpm perf` sin regresión en las demás columnas (Inicio/Análisis/
 
 **Interacciones** (INP / respuesta, ms, medianas de 5 rondas, CPU 4x):
 
-| Interacción | PERF.12 hoy, local | antes, local | después, local | producción antes |
-|---|---|---|---|---|
-| tab Gastos (primera vez) | 32 / 189 | 32 / 274 | 32 / 189 | 32 / 320 |
-| tab Ahorro | 40 / 193 | 32 / 295 | 40 / 359 | 32 / 343 |
-| tab Inicio | 32 / 93 | 48 / 193 | 48 / 109 | 48 / 209 |
-| tab Gastos (otra vez) | 32 / 126 | 32 / 161 | 32 / 111 | 32 / 177 |
-| abrir Registrar | 64 / 59 | 56 / 44 | 64 / 43 | 64 / 44 |
-| Registrar → form Gasto | 144 / 143 | 168 / 161 | 192 / 177 | 184 / 161 |
-| cerrar form | 96 / 77 | 64 / 60 | 72 / 60 | 64 / 60 |
-| abrir Más | 64 / 43 | 104 / 93 | 72 / 59 | 128 / 126 |
-| Más → Análisis | 80 / 243 | 64 / 244 | 80 / 210 | 80 / 309 |
-| tab Inicio (otra vez) | 32 / 110 | 32 / 77 | 40 / 97 | 40 / 92 |
+| Interacción | PERF.12 hoy, local | antes, local | después, local | producción antes | producción después |
+|---|---|---|---|---|---|
+| tab Gastos (primera vez) | 32 / 189 | 32 / 274 | 32 / 189 | 32 / 320 | 32 / 174 |
+| tab Ahorro | 40 / 193 | 32 / 295 | 40 / 359 | 32 / 343 | 32 / 344 |
+| tab Inicio | 32 / 93 | 48 / 193 | 48 / 109 | 48 / 209 | 48 / 109 |
+| tab Gastos (otra vez) | 32 / 126 | 32 / 161 | 32 / 111 | 32 / 177 | 32 / 111 |
+| abrir Registrar | 64 / 59 | 56 / 44 | 64 / 43 | 64 / 44 | 64 / 43 |
+| Registrar → form Gasto | 144 / 143 | 168 / 161 | 192 / 177 | 184 / 161 | 200 / 177 |
+| cerrar form | 96 / 77 | 64 / 60 | 72 / 60 | 64 / 60 | 64 / 60 |
+| abrir Más | 64 / 43 | 104 / 93 | 72 / 59 | 128 / 126 | 64 / 60 |
+| Más → Análisis | 80 / 243 | 64 / 244 | 80 / 210 | 80 / 309 | 80 / 210 |
+| tab Inicio (otra vez) | 32 / 110 | 32 / 77 | 40 / 97 | 40 / 92 | 32 / 95 |
 
-**Arranque** (ms bloqueados / cuadro más largo): PERF.12 hoy 787 / 672; antes, local 672 / 518; después, local 675 / 521; producción antes 918 / 806.
+**Arranque** (ms bloqueados / cuadro más largo): PERF.12 hoy 787 / 672; antes, local 672 / 518; después, local 675 / 521; producción antes 918 / 806; producción después (SW v713) 852 / 819.
 
 **Lighthouse** (escritorio, sin freno): producción 91 en Performance y 100 en Accessibility, Best Practices y SEO. Lo único bajo es el Speed Index (4,7 s; FCP 0,1 s, LCP 0,2 s, TBT 10 ms, CLS 0). En local da 66, y el commit de PERF.12 da 67 en la misma máquina: no es una regresión de estos commits. El LCP es el texto de la guía del Inicio vacío.
 
 **Lectura:**
 
-1. **Cambiar de sección vuelve a PERF.12**: Gastos 274 → 189 ms de respuesta, Inicio 193 → 109, Gastos otra vez 161 → 111. El INP de cambiar de sección nunca se movió (32 a 48): la regresión estaba en el render, que el INP no ve.
-2. **Abrir "Más" vuelve a su cifra**: 104 / 93 → 72 / 59 (PERF.12: 64 / 43). Abrir Registrar no empeoró.
+1. **Cambiar de sección vuelve a PERF.12**: Gastos 274 → 189 ms de respuesta, Inicio 193 → 109, Gastos otra vez 161 → 111. En producción, 320 → 174, 209 → 109 y 177 → 111. El INP de cambiar de sección nunca se movió (32 a 48): la regresión estaba en el render, que el INP no ve.
+2. **Abrir "Más" vuelve a su cifra**: 104 / 93 → 72 / 59 (PERF.12: 64 / 43); en producción, 128 / 126 → 64 / 60. Abrir Registrar no empeoró.
 3. **El arranque no baja de 400.** Sacar las lecturas forzadas no movió el bloqueo (672 → 675): el layout que se evitó dentro del script lo hace igual el primer cuadro, en su propia tarea. Quedan tres tareas largas: el layout del HTML estático antes del JS (~230 ms), el script de arranque (~250) y el layout tras `renderAll` (~240). Producción suma la red (DCL 2.249 ms contra 1.187). Va a la tarjeta **PERF.16**.
 4. **El tab Ahorro no es comparable**: en PERF.12 abría una pantalla liviana y hoy abre Fondo con tres años de aportes (2.986 elementos estilizados, 262 ms de paint). Va a PERF.16.
-5. **El formulario de gasto pesa más** (INP 144 → 192): es el de FORM.2b, con el teclado de Finko y el recibo. Queda bajo los 200 ms que cuentan como buenos (criterio del ADR 138 D4) y no se toca.
+5. **El formulario de gasto pesa más** (INP 144 → 192 en local, 200 en producción): es el de FORM.2b, con el teclado de Finko y el recibo. Está en el borde de los 200 ms que cuentan como buenos (criterio del ADR 138 D4): no se tocó acá y se vuelve a mirar en PERF.16.
 6. Scroll: 2 render passes por cuadro (PERF.12: 1), con menos quads (10 contra 15) y los mismos cuadros entregados. Inicio ya no desplaza 2.400 px en móvil: entrega 11 cuadros porque cabe casi entero.
 7. Consola: el único error es `[SW] Error al registrar`, del propio instrumento, que bloquea el service worker.
 
