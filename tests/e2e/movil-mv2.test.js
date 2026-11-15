@@ -1439,6 +1439,69 @@ test.describe('FORM.2e - Nueva deuda por preguntas (ADR 142 D5)', () => {
   });
 });
 
+test.describe('FORM.2f - Gasto fijo y cuenta por preguntas (ADR 142 D5)', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  const abrir = async (page, accion) => page.evaluate((a) => {
+    const b = document.createElement('button');
+    b.dataset.action = a;
+    document.body.appendChild(b);
+    b.click();
+    b.remove();
+  }, accion);
+
+  test('el gasto fijo pregunta cuánto, qué es, cada cuánto y qué día', async ({ page }) => {
+    await sembrar(page, estadoBase({ cuentas: CUENTAS }));
+    await page.goto('/#compromisos');
+    await page.waitForSelector('#sec-compromisos.active', { timeout: 10_000 });
+    await abrir(page, 'nuevo-gasto-fijo');
+    const form = page.locator('#form-gasto-fijo');
+    const titulo = form.locator('[data-preguntas-t]');
+    await expect(titulo).toHaveText('¿Cuánto pagas?');
+    for (const t of ['1', '2', '0', '0', '000']) await form.locator(`[data-pregunta-on] [data-tecla="${t}"]`).click();
+    await form.locator('[data-preguntas-seguir]').click();
+    await expect(titulo).toHaveText('¿Qué es?');
+    await form.locator('.chip-cat', { hasText: 'Arriendo' }).click();
+    await form.locator('[data-preguntas-seguir]').click();
+    await expect(titulo).toHaveText('¿Cada cuánto?');
+    await form.locator('.chip-fecha', { hasText: 'Mensual' }).click();
+    await expect(titulo).toHaveText('¿Qué día?');
+    await form.locator('[data-dia="5"]').click();
+    await expect(titulo).toHaveText('Así queda tu gasto fijo');
+    await expect(form.locator('[data-resumen-filas]')).toContainText('El 5 de cada mes');
+    await form.locator('button[type="submit"]').click();
+    await expect(page.locator('#modal-gasto-fijo[data-open]')).toHaveCount(0);
+    await expect.poll(async () => (await leerEstado(page)).compromisos?.at(-1)?.monto).toBe(1_200_000);
+    expect((await leerEstado(page)).compromisos.at(-1)).toMatchObject({ categoria: 'Arriendo', frecuencia: 'Mensual', diaPago: 5 });
+  });
+
+  test('la cuenta pregunta dónde, qué tipo y cuánto, y editar abre en el resumen', async ({ page }) => {
+    await sembrar(page, estadoBase({ cuentas: CUENTAS }));
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await abrir(page, 'nueva-cuenta');
+    const form = page.locator('#form-cuenta');
+    const titulo = form.locator('[data-preguntas-t]');
+    await expect(titulo).toHaveText('¿Dónde tienes este dinero?');
+    await form.locator('[data-preguntas-seguir]').click();
+    await expect(form.locator('.form-error, .form-errors').first()).toContainText('Elige el banco');
+    await form.locator('.bank-picker__trigger').click();
+    await page.locator('.bank-picker__list [role="option"]', { hasText: 'Davivienda' }).first().click();
+    await form.locator('[data-preguntas-seguir]').click();
+    await expect(titulo).toHaveText('¿Qué tipo de cuenta es?');
+    await form.locator('#cuenta-tipo-finko').click();
+    await form.locator('#cuenta-tipo-mini [data-valor="Ahorros"]').click();
+    await form.locator('[data-preguntas-seguir]').click();
+    await expect(titulo).toHaveText('¿Cuánto tienes hoy en esta cuenta?');
+    for (const t of ['5', '0', '0', '000']) await form.locator(`[data-pregunta-on] [data-tecla="${t}"]`).click();
+    await form.locator('[data-preguntas-seguir]').click();
+    await expect(titulo).toHaveText('Así queda tu cuenta');
+    await form.locator('button[type="submit"]').click();
+    await expect.poll(async () => (await leerEstado(page)).cuentas?.length).toBe(CUENTAS.length + 1);
+    expect((await leerEstado(page)).cuentas.at(-1)).toMatchObject({ banco: 'Davivienda', tipo: 'Ahorros', saldo: 500_000 });
+  });
+});
+
 test.describe('MV2.30 - Transferir en el teléfono (ADR 135 D5)', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 

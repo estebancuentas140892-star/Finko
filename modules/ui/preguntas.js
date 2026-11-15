@@ -53,6 +53,11 @@ export function valorDeBloque(bloque) {
     if (!n) return '';
     return n >= 31 ? 'El último día de cada mes' : `El ${n} de cada mes`;
   }
+  // Un desplegable o una fecha de Finko ya dicen su valor en su botón; la
+  // lista que aparece con "Otra" manda sobre la opción "Otra".
+  const finko = [...bloque.querySelectorAll('.campo-finko:not(.campo-finko--vacio)')]
+    .find(b => !b.parentElement.closest('[hidden]'));
+  if (finko) return finko.querySelector('.campo-finko__v').textContent.trim();
   const pulsado = bloque.querySelector('[aria-pressed="true"]');
   if (pulsado && !bloque.querySelector('input:not([type="hidden"]), select')) return _rotulo(pulsado);
   // Un interruptor con su cuenta ("Se debita sola", "Recibí este dinero").
@@ -309,6 +314,7 @@ const _controles = new WeakMap();
 
 /** ¿La pregunta se responde eligiendo (y avanza al tocar)? */
 function _esEleccion(bloque) {
+  if ('noAvanza' in bloque.dataset) return false;
   return Boolean(bloque.querySelector('input[type="radio"], [data-pregunta-avanza]')) || bloque.dataset.control === 'dia';
 }
 

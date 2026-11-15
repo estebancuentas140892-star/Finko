@@ -504,24 +504,28 @@ export function renderFormMeta(meta = null) {
   const botonTexto      = meta ? 'Actualizar meta' : 'Guardar meta';
 
   return `
-    <form id="form-meta" novalidate>
+    <form id="form-meta" novalidate data-preguntas="${meta ? 'Tu meta' : 'Nueva meta'}"
+          data-resumen-titulo="Así queda tu meta" data-preguntas-inicio="${meta ? 'resumen' : ''}">
       <p class="modal__intro">Escribe lo que quieres lograr. Con una fecha límite, Finko calcula cuánto guardar cada día para llegar a tiempo.</p>
-      <div class="form-group">
+      <div class="form-group" data-pregunta="¿Qué quieres lograr?" data-pregunta-id="nombre" data-resumen="Meta"
+           data-ayuda="Un viaje, un computador, la cuota inicial de algo." data-falta="Ponle un nombre a tu meta.">
         <label for="meta-nombre" class="label">Nombre de la meta</label>
         <input id="meta-nombre" name="nombre" class="input" type="text"
                placeholder="Ej. Viaje a la playa, laptop nueva, boda" required aria-required="true" autocomplete="off"
                value="${_esc(meta?.nombre ?? '')}" />
       </div>
-      <div class="form-group">
+      <div class="form-group" data-pregunta="¿Cuánto necesitas reunir?" data-pregunta-id="objetivo" data-resumen="Necesitas"
+           data-falta="Escribe cuánto necesitas. Por ejemplo: 2.000.000">
         <label for="meta-objetivo" class="label">Monto objetivo</label>
         <input id="meta-objetivo" name="montoObjetivo" class="input" type="text" inputmode="numeric" data-miles autocomplete="off" placeholder="0" required aria-required="true"
                value="${miles(meta ? Number(meta.montoObjetivo) || '' : '')}" />
       </div>
-      <div class="form-group">
+      <div class="form-group" data-opcional="Fecha límite">
         <label for="meta-fecha" class="label">Fecha límite <span class="form-optional">Opcional</span></label>
         <input id="meta-fecha" name="fechaLimite" class="input" type="date" value="${_esc(meta?.fechaLimite ?? '')}" />
         <p class="form-hint">Sin fecha, la meta queda abierta. Con fecha, Finko muestra cuánto guardar por día para llegar a tiempo.</p>
       </div>
+      <div data-opcional="Categoría">
       <div class="form-group">
         <span class="label" id="meta-categoria-label">Categoría <span class="form-optional">Opcional</span></span>
         <div class="chips-cat" id="meta-categoria-chips" role="radiogroup" aria-labelledby="meta-categoria-label">
@@ -537,7 +541,8 @@ export function renderFormMeta(meta = null) {
       <div class="form-group" id="form-group-meta-icono" ${esOtra ? '' : 'hidden'}>
         ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'meta-icono', nombreCampo: 'icono', label: 'Elige un ícono para tu meta', valorActual: _valorIconoEditable(meta) })}
       </div>
-      <div class="form-group">
+      </div>
+      <div class="form-group" data-opcional="Nota">
         <label for="meta-nota" class="label">Nota <span class="form-optional">Opcional</span></label>
         <input id="meta-nota" name="nota" class="input" type="text" maxlength="80"
                placeholder="Ej. Cotización en Despegar, código de la reserva"

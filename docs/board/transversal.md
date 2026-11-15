@@ -52,16 +52,6 @@
 - Aceptación : E2E: cambiar la fecha de un gasto en dos toques y deshacerlo
 - Modelo     : capacidad alta, esfuerzo medio
 
-#### FORM.2f - Crear: cuenta, ingreso fijo, gasto fijo y meta
-- Prioridad  : media
-- Estado     : pendiente
-- Área       : ambos
-- Objetivo   : ADR 142 D5 en Nueva cuenta (banco con buscador; número, llave y cuota de manejo al resumen), Ingreso fijo (sin desplegables), Nuevo gasto fijo (orden del 141 D1) y Nueva meta (el aporte por mes se calcula mientras se elige el plazo)
-- Archivos   : `tesoreria/views/cuentas.js` e `ingresos.js`, `compromisos/views/formularios.js`, `metas/view.js` y sus `index.js`
-- Depende de : nada (FORM.2e cerrada: `ui/preguntas.js`)
-- Aceptación : E2E de los cuatro a 390 px
-- Modelo     : capacidad estándar, esfuerzo medio
-
 #### FORM.2g - Crear y ajustar: el resto
 - Además   : de FORM.2e quedan la ayuda de la tasa en una mini-hoja con Tino y la tasa muy alta como aviso ámbar con su salida (142 D9, cambia `validarCompromiso`)
 - Prioridad  : baja
@@ -69,7 +59,7 @@
 - Área       : ambos
 - Objetivo   : ADR 142 D5 en Nueva reserva, Le presté a alguien, Nueva inversión, Nuevo límite, Compras pequeñas, Configurar el fondo, Cuánto apartar, Perfil fiscal, Perfil del niño y Mesada; D7 en Tu nombre, Tu perfil y el candado. Cierra la iniciativa
 - Archivos   : `apartados`, `personales`, `inversiones`, `presupuesto`, `ahorro`, `config` (`view.js`, `familia-view.js`) y `modules/ui/onboarding.js`
-- Depende de : FORM.2f
+- Depende de : nada
 - Aceptación : una prueba vigila que no quede ningún `<select>`, `type="date"` ni `type="number"` en los formularios del teléfono
 - Modelo     : capacidad estándar, esfuerzo medio
 

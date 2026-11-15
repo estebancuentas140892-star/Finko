@@ -447,7 +447,9 @@ export function renderFormCuenta() {
     </li>`).join('');
 
   return `
-    <form id="form-cuenta" novalidate>
+    <form id="form-cuenta" novalidate data-preguntas="Nueva cuenta" data-resumen-titulo="Así queda tu cuenta">
+      <div data-pregunta="¿Dónde tienes este dinero?" data-pregunta-id="banco" data-resumen="Banco o billetera"
+           data-ayuda="Tu banco, tu billetera o el efectivo." data-falta="Elige el banco o la billetera.">
       <div class="form-group">
         <label id="label-banco" class="label">Banco o billetera</label>
         <div class="bank-picker"
@@ -459,7 +461,7 @@ export function renderFormCuenta() {
                   class="bank-picker__trigger"
                   aria-controls="banco-list"
                   aria-expanded="false">
-            <span class="bank-picker__display">
+            <span class="bank-picker__display" data-resumen-valor>
               <span class="bank-picker__placeholder">Seleccionar…</span>
             </span>
             <span class="bank-picker__chevron" aria-hidden="true">
@@ -469,7 +471,7 @@ export function renderFormCuenta() {
               </svg>
             </span>
           </button>
-          <input type="hidden" name="banco" value="" />
+          <input type="hidden" name="banco" value="" required />
           <ul class="bank-picker__list"
               id="banco-list"
               role="listbox"
@@ -485,18 +487,22 @@ export function renderFormCuenta() {
         ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'cuenta-icono', label: 'Ícono' })}
       </div>
 
-      <div class="form-group" id="form-group-tipo" hidden>
+      </div>
+
+      <div class="form-group" id="form-group-tipo" data-pregunta="¿Qué tipo de cuenta es?" data-pregunta-id="tipo"
+           data-resumen="Tipo" data-falta="Elige el tipo de cuenta." hidden>
         <label for="cuenta-tipo" class="label">Tipo de cuenta</label>
         <select id="cuenta-tipo" name="tipo" class="input" required aria-required="true">
           <option value="">Seleccionar…</option>
         </select>
       </div>
-      <div class="form-group">
+      <div class="form-group" data-pregunta="¿Cuánto tienes hoy en esta cuenta?" data-pregunta-id="saldo" data-resumen="Saldo"
+           data-ayuda="Míralo en la app de tu banco. Si está en cero, sigue.">
         <label for="cuenta-saldo" class="label">Saldo actual</label>
         <input id="cuenta-saldo" name="saldo" class="input" type="text" inputmode="numeric" data-miles autocomplete="off" placeholder="0" value="0" />
       </div>
 
-      <div class="form-group form-group--checkbox" id="form-group-4x1000">
+      <div class="form-group form-group--checkbox" id="form-group-4x1000" data-opcional="4x1000">
         <label class="checkbox-row">
           <input type="checkbox"
                  id="cuenta-4x1000"
@@ -505,6 +511,7 @@ export function renderFormCuenta() {
         </label>
       </div>
 
+      <div data-opcional="Cuota de manejo">
       <div class="form-group form-group--checkbox">
         <label class="checkbox-row">
           <input type="checkbox"
@@ -542,7 +549,9 @@ export function renderFormCuenta() {
           Finko crea un gasto fijo mensual con este monto y día. Lo verás en Por pagar y en tu Calendario.
         </p>
       </fieldset>
+      </div>
 
+      <div data-opcional="Datos para que te consignen">
       <div class="form-group form-group--checkbox" id="form-group-transferencia">
         <label class="checkbox-row">
           <input type="checkbox"
@@ -600,6 +609,7 @@ export function renderFormCuenta() {
           Finko solo guarda estos datos como referencia para que los consultes rápido. No ejecuta transferencias ni pide contraseñas o claves.
         </p>
       </fieldset>
+      </div>
 
       <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">

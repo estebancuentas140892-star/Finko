@@ -603,9 +603,12 @@ function _inyectarFormGastoFijo(compromiso = null) {
   const form = body.querySelector('#form-gasto-fijo');
   if (!form) return;
 
-  // Modo edición: pre-rellenar campos y guardar id.
+  // Modo edición: pre-rellenar campos y guardar id. En el teléfono abre en
+  // el resumen de las preguntas (ADR 142 D5).
   if (compromiso) {
     form.dataset.id = compromiso.id;
+    form.dataset.preguntas = 'Tu gasto fijo';
+    form.dataset.preguntasInicio = 'resumen';
     const f_desc = form.querySelector('[name="descripcion"]');
     const f_monto = form.querySelector('[name="monto"]');
     const f_frec = form.querySelector('[name="frecuencia"]');

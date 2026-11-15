@@ -43,7 +43,12 @@ function _nuevaCuenta() {
 
   // Limpiar marcador de edicion si quedo de una sesion anterior.
   const form = document.getElementById('form-cuenta');
-  if (form) delete form.dataset.id;
+  if (form) {
+    delete form.dataset.id;
+    // ADR 142 D5: en el teléfono, de a una pregunta desde la primera.
+    form.dataset.preguntas = 'Nueva cuenta';
+    form.dataset.preguntasInicio = '';
+  }
   // resetModal desmarca checkboxes pero no dispara `change`, así que
   // sincronizamos manualmente el estado de los campos según la clase del banco
   // (ninguno seleccionado tras resetModal → tipo oculto, resto visible).
@@ -221,6 +226,12 @@ function _editarCuenta(el) {
   // Cambiar titulo del modal para que la persona sepa que esta editando.
   const titulo = overlay.querySelector('.modal__title');
   if (titulo) titulo.textContent = 'Editar cuenta';
+  // ADR 142 D5: editar abre en el resumen de las preguntas.
+  const formCuenta = document.getElementById('form-cuenta');
+  if (formCuenta) {
+    formCuenta.dataset.preguntas = 'Tu cuenta';
+    formCuenta.dataset.preguntasInicio = 'resumen';
+  }
 
   abrirModal(overlay);
 }

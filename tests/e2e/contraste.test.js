@@ -72,8 +72,10 @@ test.describe('Contraste AA en oscuro y claro (tablero 12, ADR 123 D3)', () => {
       await page.waitForSelector('#sec-metas.active', { timeout: 10_000 });
       await page.locator('#sec-metas [data-action="nueva-meta"]:visible').first().click();
       await page.waitForSelector('#modal-meta[data-open]');
-      await page.locator('#modal-meta .modal__footer .btn-primary').click();
-      await expect(page.locator('#modal-meta .form-error')).toHaveCount(2);
+      // ADR 142 D5 (FORM.2f): en el teléfono la meta va de a una pregunta;
+      // seguir sin responder deja el error de esa pregunta.
+      await page.locator('#modal-meta [data-preguntas-seguir]').click();
+      await expect(page.locator('#modal-meta .form-error')).toHaveCount(1);
       await page.waitForFunction(() => getComputedStyle(document.querySelector('#modal-meta')).opacity === '1');
       await quieta(page);
       const faltas = await faltasDeContraste(page, '#modal-meta');

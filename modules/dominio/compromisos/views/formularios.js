@@ -129,7 +129,7 @@ export function renderFormGastoFijo() {
   ].join('');
 
   const chipFrecuencia = (valor, etiqueta, checked) => `
-          <label class="chip-fecha">
+          <label class="chip-fecha"${valor === FRECUENCIA_OTRA_FIJO ? ' data-no-avanza' : ''}>
             <input type="radio" name="frecuenciaOpcion" class="chip-cat__radio" value="${_esc(valor)}"${checked ? ' checked' : ''} />
             ${_esc(etiqueta)}
           </label>`;
@@ -143,10 +143,11 @@ export function renderFormGastoFijo() {
   const debito = renderBloqueDebitoAutomatico(S.cuentas ?? [], { id: 'gfijo-debito' });
 
   return `
-    <form id="form-gasto-fijo" novalidate>
+    <form id="form-gasto-fijo" novalidate data-preguntas="Nuevo gasto fijo" data-resumen-titulo="Así queda tu gasto fijo">
       <input type="hidden" name="tipo" value="fijo" />
 
-      <div class="monto-hero">
+      <div class="monto-hero" data-pregunta="¿Cuánto pagas?" data-pregunta-id="monto" data-resumen="Monto"
+           data-falta="Escribe cuánto pagas. Por ejemplo: 1.200.000">
         <label class="monto-hero__label" for="gfijo-monto">¿Cuánto pagas?</label>
         <div class="monto-hero__box">
           <span class="monto-hero__prefijo" aria-hidden="true">$</span>
@@ -155,6 +156,8 @@ export function renderFormGastoFijo() {
         </div>
       </div>
 
+      <div data-pregunta="¿Qué es?" data-pregunta-id="que" data-resumen="Qué es" data-no-avanza
+           data-falta="Elige qué es y, si hace falta, escribe cómo se llama.">
       <div class="form-group">
         <span class="label" id="gfijo-categoria-label">¿Qué es?</span>
         <div class="chips-cat" role="radiogroup" aria-labelledby="gfijo-categoria-label">
@@ -181,8 +184,9 @@ export function renderFormGastoFijo() {
                  autocomplete="off" />
         </div>
       </div>
+      </div>
 
-      <div class="form-group">
+      <div class="form-group" data-pregunta="¿Cada cuánto?" data-pregunta-id="frecuencia" data-resumen="Cada cuánto">
         <span class="label" id="gfijo-frecuencia-label">¿Cada cuánto?</span>
         <div class="fecha-chips" role="radiogroup" aria-labelledby="gfijo-frecuencia-label">
           ${chipsFrecuencia}
@@ -195,7 +199,8 @@ export function renderFormGastoFijo() {
         </div>
       </div>
 
-      <div class="form-group">
+      <div class="form-group" data-pregunta="¿Qué día?" data-pregunta-id="dia" data-control="dia" data-resumen="Día"
+           data-falta="Elige el día en que pagas.">
         <label for="gfijo-dia" class="label">¿Qué día?</label>
         <input id="gfijo-dia" name="diaPago" class="input" type="number" inputmode="numeric"
                min="1" max="31" step="1" placeholder="Del 1 al 31" required aria-required="true"
@@ -203,7 +208,7 @@ export function renderFormGastoFijo() {
         <p class="form-hint form-hint--info" id="gfijo-banner" aria-live="polite">${textoBannerGastoFijo('Mensual', '')}</p>
       </div>
 
-      <div class="form-disclosure" id="gfijo-mas"${debito ? '' : ' hidden'}>
+      <div class="form-disclosure" id="gfijo-mas" data-opcional="Nota o débito automático"${debito ? '' : ' hidden'}>
         <button type="button" class="form-disclosure__trigger" aria-expanded="false" aria-controls="gfijo-mas-panel">
           <svg class="icon" aria-hidden="true"><use href="#i-mas"/></svg>
           <span class="form-disclosure__text">

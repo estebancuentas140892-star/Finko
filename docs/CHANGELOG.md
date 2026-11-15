@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(formularios): FORM.2f, cuenta, ingreso fijo, gasto fijo y meta por preguntas · 2026-11-14
+
+[ADR 142](DECISIONS/142-formularios-por-tarea.md) D5 con el armazón de FORM.2e; el gasto fijo conserva el orden del [ADR 141](DECISIONS/141-el-gasto-fijo-empieza-por-el-monto.md) D1. Ficha: [`contexto/captura.md`](contexto/captura.md). Solo bajo 1024 px. SW v704.
+
+- **Nuevo gasto fijo**: ¿Cuánto pagas? · ¿Qué es? (con el nombre cuando la categoría lo pide; no avanza al tocar) · ¿Cada cuánto? ("Otra" muestra la lista de Finko) · ¿Qué día?. "Nota o débito automático" en el resumen. Editar abre en el resumen.
+- **Nueva meta**: ¿Qué quieres lograr? · ¿Cuánto necesitas reunir?; fecha límite (con el calendario de Finko), categoría y nota en "Agrega si quieres".
+- **Ingreso fijo**: ¿Qué tipo de ingreso es? (desplegable de Finko) · ¿Cómo lo llamas? · ¿Cuánto recibes? · ¿Cada cuánto?; día de pago (31 botones) y la cuenta donde llega en el resumen.
+- **Nueva cuenta**: ¿Dónde tienes este dinero? · ¿Qué tipo de cuenta es? (aparece al elegir el banco) · ¿Cuánto tienes hoy?; 4x1000, cuota de manejo y los datos para que te consignen en el resumen. Es el formulario que se reutiliza: Nueva y Editar fijan `data-preguntas-inicio`.
+- `preguntas.js`: un bloque `data-no-avanza` lleva "Siguiente" a la vista; el resumen lee el valor de un desplegable o una fecha de Finko de su botón.
+- Pruebas: E2E `movil-mv2` (2 nuevas: el gasto fijo y la cuenta de punta a punta a 390 px) y `contraste` (1 ajustada: el error de la primera pregunta de la meta). Unitarias 5580, E2E 456/456.
+
 ### feat(compromisos): FORM.2e, crear por preguntas y Nueva deuda · 2026-11-14
 
 [ADR 142](DECISIONS/142-formularios-por-tarea.md) D5 (cambia el [ADR 042](DECISIONS/042-formularios-v2-visual.md) D4 en el teléfono). Fichas: [`contexto/captura.md`](contexto/captura.md), [`contexto/deudas.md`](contexto/deudas.md). Solo bajo 1024 px. SW v703.

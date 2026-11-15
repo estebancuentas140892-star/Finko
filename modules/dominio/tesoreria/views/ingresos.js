@@ -250,10 +250,13 @@ export function renderFormIngreso(ingreso = null) {
     .join('');
 
   const esSalarioMin = ingreso?.categoria === 'Salario mínimo';
+  const cuentaIngreso = _renderGrupoCuentaIngreso(ingreso);
   const { smmlv, auxilio } = calcularSalarioMinimo(true);
 
   return `
-    <form id="form-ingreso" novalidate>
+    <form id="form-ingreso" novalidate data-preguntas="${ingreso ? 'Tu ingreso fijo' : 'Ingreso fijo'}"
+          data-resumen-titulo="Así queda tu ingreso" data-preguntas-inicio="${ingreso ? 'resumen' : ''}">
+      <div data-pregunta="¿Qué tipo de ingreso es?" data-pregunta-id="tipo" data-resumen="Tipo">
       <div class="form-group">
         <label for="ingreso-cat" class="label">Categoría</label>
         <select id="ingreso-cat" name="categoria" class="input">
@@ -261,7 +264,9 @@ export function renderFormIngreso(ingreso = null) {
           ${catOpts}
         </select>
       </div>
-      <div class="form-group">
+      </div>
+      <div class="form-group" data-pregunta="¿Cómo lo llamas?" data-pregunta-id="nombre" data-resumen="Nombre"
+           data-falta="Ponle un nombre para reconocerlo.">
         <label for="ingreso-desc" class="label">Descripción</label>
         <input id="ingreso-desc" name="descripcion" class="input" type="text"
                value="${ingreso ? _esc(ingreso.descripcion) : ''}"
@@ -278,20 +283,22 @@ export function renderFormIngreso(ingreso = null) {
           Si marcas esta opción, Finko ajusta el monto automáticamente.
         </p>
       </div>
-      <div class="form-group">
+      <div class="form-group" data-pregunta="¿Cuánto recibes?" data-pregunta-id="monto" data-resumen="Monto"
+           data-falta="Escribe cuánto recibes. Por ejemplo: 2.500.000">
         <label for="ingreso-monto" class="label">Monto</label>
         <input id="ingreso-monto" name="monto" class="input" type="text" placeholder="0"
                value="${miles(ingreso ? ingreso.monto : '')}"
                required aria-required="true" inputmode="numeric" data-miles autocomplete="off" />
       </div>
-      <div class="form-group">
+      <div class="form-group" data-pregunta="¿Cada cuánto?" data-pregunta-id="frecuencia" data-resumen="Cada cuánto"
+           data-falta="Elige cada cuánto lo recibes.">
         <label for="ingreso-frec" class="label">Frecuencia</label>
         <select id="ingreso-frec" name="frecuencia" class="input" required aria-required="true">
           <option value="">Seleccionar…</option>
           ${frecOpts}
         </select>
       </div>
-      <div class="form-group" id="form-group-dia-pago"${ingreso && FRECUENCIAS_CON_DIA.includes(ingreso.frecuencia) ? '' : ' hidden'}>
+      <div class="form-group" id="form-group-dia-pago" data-opcional="Día de pago" data-control="dia" data-resumen="Día de pago"${ingreso && FRECUENCIAS_CON_DIA.includes(ingreso.frecuencia) ? '' : ' hidden'}>
         <label for="ingreso-dia-pago" class="label" id="label-dia-pago">${ingreso?.frecuencia === 'Quincenal' ? 'Día de la primera quincena' : 'Día de pago'} <span class="form-optional">Opcional</span></label>
         <input id="ingreso-dia-pago" name="diaPago" class="input" type="number"
                min="1" max="${ingreso?.frecuencia === 'Quincenal' ? '15' : '31'}" step="1"
@@ -300,7 +307,7 @@ export function renderFormIngreso(ingreso = null) {
                inputmode="numeric" />
         <p class="form-hint form-hint--muted" id="hint-dia-pago">¿Qué día sueles recibir este pago? Del 1 al 31.</p>
       </div>
-      ${_renderGrupoCuentaIngreso(ingreso)}
+      ${cuentaIngreso ? `<div data-opcional="Cuenta donde llega">${cuentaIngreso}</div>` : ''}
       <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">${ingreso ? 'Actualizar ingreso fijo' : 'Guardar ingreso fijo'}</button>
