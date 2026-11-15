@@ -31,17 +31,7 @@
 
 
 
-> **Iniciativa SUS: Finko reconoce el tipo de gasto** ([ADR 146](../DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md)). Hormiga, fantasma y vampiro sin preguntarle al usuario qué son. SUS.1a cerró el 2026-11-15 (la plataforma de cada suscripción, `marcaId`). Los vectores de las seis plataformas nuevas son cola de diseño de Esteban, sin tarjeta: entran a `assets/svg/logos/streaming/` y se suman con su `simbolo`.
-
-#### SUS.1b - El chip "Gastos hormiga" sale del formulario de gasto
-- Prioridad  : media
-- Estado     : pendiente
-- Área       : code
-- Objetivo   : hormiga es lo que Finko reconoce por monto, no algo que el usuario declara (ADR 146 D5). Sale de `CATEGORIAS_GASTO_USUARIO`; sigue en `CATEGORIAS_GASTO` para los gastos ya guardados
-- Riesgo     : límites o filtros guardados con "Gastos hormiga" deben seguir leyéndose
-- Archivos   : `modules/core/constants.js`, `tests/unit/constants.test.js`, `tests/unit/gastos.test.js`
-- Depende de : nada
-- Aceptación : el formulario de gasto no ofrece el chip; un gasto viejo con esa categoría conserva su ícono
+> **Iniciativa SUS: Finko reconoce el tipo de gasto** ([ADR 146](../DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md)). Hormiga, fantasma y vampiro sin preguntarle al usuario qué son. SUS.1a (la plataforma de cada suscripción, `marcaId`) y SUS.1b (el chip de hormiga sale del formulario) cerraron el 2026-11-15. Los vectores de las seis plataformas nuevas son cola de diseño de Esteban, sin tarjeta: entran a `assets/svg/logos/streaming/` y se suman con su `simbolo`.
 
 #### SUS.1c - Pagas varias plataformas: ¿las usas todas?
 - Prioridad  : media

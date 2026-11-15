@@ -309,11 +309,13 @@ describe('E.5 - IPC observado como constante anual', () => {
 });
 
 describe('TX.3 - Café y Gastos hormiga en el catálogo de gastos', () => {
-  it('las dos categorías nuevas existen y son visibles para el usuario', () => {
+  it('las dos categorías existen; Café se ofrece y Gastos hormiga ya no (SUS.1b, ADR 146 D5)', () => {
     expect(CATEGORIAS_GASTO).toContain('Café');
     expect(CATEGORIAS_GASTO).toContain('Gastos hormiga');
     expect(CATEGORIAS_GASTO_USUARIO).toContain('Café');
-    expect(CATEGORIAS_GASTO_USUARIO).toContain('Gastos hormiga');
+    // Hormiga la reconoce Finko por monto; los gastos viejos con esa
+    // categoría se siguen leyendo porque sigue en CATEGORIAS_GASTO.
+    expect(CATEGORIAS_GASTO_USUARIO).not.toContain('Gastos hormiga');
   });
 
   it('cada una tiene su ícono propio', () => {

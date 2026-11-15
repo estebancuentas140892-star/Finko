@@ -1261,6 +1261,24 @@ describe('renderPanelPresupuesto() - correcciones de la auditoría (DIS.7)', () 
     expect(fila.textContent).not.toContain('Calendario');
   });
 
+  // SUS.1b (ADR 146 D5): "Gastos hormiga" ya no se ofrece; lo pequeño tiene
+  // su propio límite en esta pantalla.
+  it('un gasto viejo en "Gastos hormiga" no pide tope: remite a Gastos pequeños', () => {
+    S.gastos = [gasto({ categoria: 'Gastos hormiga', monto: 8_000, fecha: dia(4) })];
+    renderPanelPresupuesto();
+    const fila = panel().querySelector('.envelope-huerfanas__fija');
+    expect(fila.querySelector('button')).toBeNull();
+    expect(fila.textContent).toContain('Se controla en Gastos pequeños');
+  });
+
+  it('un tope viejo de "Gastos hormiga" se sigue mostrando', () => {
+    S.presupuestos = [presupuesto({ categoria: 'Gastos hormiga', montoMensual: 50_000 })];
+    S.gastos = [gasto({ categoria: 'Gastos hormiga', monto: 8_000, fecha: dia(4) })];
+    renderPanelPresupuesto();
+    expect(panel().textContent).toContain('Gastos hormiga');
+    expect(panel().querySelector('.envelope-huerfanas__fija')).toBeNull();
+  });
+
   // L6: dos verbos para la misma acción, y tres botones en el estado vacío.
   // DSK.8b (ADR 077 D4) lo lleva un paso más: con plan del mes el pie ya no
   // repite el botón, porque el primario de la sección está visible y los dos

@@ -1,6 +1,6 @@
 # Ficha de contexto: Límites de gasto
 
-> Revisado: 2026-11-13 (HF.1b, ADR 139).
+> Revisado: 2026-11-15 (SUS.1b).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 > El dominio se llama `presupuesto` en el código; "Límites de gasto" es el nombre de cara al usuario (para no confundirlo con Apartados: guardar dinero vs. vigilar cuánto sale).
@@ -75,6 +75,8 @@
 - **LIM.1a no toca el panel de Inicio**: el dinero extraordinario solo se informa en la sección. Si alguna vez debe salir en Inicio, es decisión de producto, no un olvido.
 
 **Cambios realizados**:
+
+- 2026-11-15 SUS.1b ([ADR 146](../DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md) D5): "Gastos hormiga" deja de ofrecerse como categoría con tope; un gasto viejo en ella aparece en "Gastas acá y no tiene tope" con "Se controla en Gastos pequeños" (`_MOTIVO_SIN_TOPE`). Los topes ya creados se siguen mostrando y editando.
 
 - 2026-11-13 (**HF.1b**, [ADR 139](../DECISIONS/139-la-naturaleza-de-un-gasto.md) D2): los tres grupos son el plan del ingreso: `ejecutadoPorGrupoDelMes()` y `desgloseNecesidadesDelMes()` dejan fuera la compra con tarjeta (`gastosQueSalenDelIngreso()`), que contaba como Necesidad por llevar el `compromisoId` de la tarjeta; la tarjeta cuenta cuando se paga, como cuota. Los topes por categoría no cambian.
 - 2026-11-13 (**REV.1**, [ADR 137](../DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md) D6): el banner de propósito habla del problema ("¿Gastas más de lo que pensabas…?") y no del plan de Mis cuentas, que quien lo lee no tiene.

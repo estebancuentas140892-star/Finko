@@ -1060,6 +1060,14 @@ describe('renderFormGasto() - selector de cuenta', () => {
     expect(radios).toHaveLength(CATEGORIAS_GASTO_USUARIO.length + 1);
   });
 
+  it('SUS.1b: no hay chip "Gastos hormiga" (Finko lo reconoce por monto, ADR 146 D5)', () => {
+    S.cuentas = [cuenta('c1', 'Nequi', 500_000)];
+    S.categoriasPersonalizadas = [];
+    const html = renderFormGasto();
+    expect(html).not.toContain('value="Gastos hormiga"');
+    expect(html).toContain('value="Café"');
+  });
+
   it('FORM.1a: el monto vive en el hero con el input grande centrado', () => {
     S.cuentas = [cuenta('c1', 'Nequi', 500_000)];
     const html = renderFormGasto();

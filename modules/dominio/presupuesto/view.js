@@ -764,6 +764,9 @@ const _MOTIVO_SIN_TOPE = {
   'Gastos fijos':       'Se controla en Por pagar',
   'Deudas':             'Se controla en Por pagar',
   'Ahorro':             'Se controla en Ahorro',
+  // SUS.1b (ADR 146 D5): ya no se ofrece como categoría; lo pequeño tiene su
+  // propio límite en esta misma pantalla, por eso sin destino.
+  'Gastos hormiga':     'Se controla en Gastos pequeños',
 };
 
 /**

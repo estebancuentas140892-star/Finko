@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): SUS.1b, el chip "Gastos hormiga" sale del formulario · 2026-11-15
+
+[ADR 146](DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md) D5. Fichas: [`contexto/gastos.md`](contexto/gastos.md), [`contexto/limites.md`](contexto/limites.md). SW v720.
+
+- **Hormiga ya no se declara**: el formulario de gasto (escritorio y teléfono) deja de ofrecer la categoría. Un café de $6.500 cuenta como gasto pequeño en su propia categoría, por monto (`infra/hormiga.js`).
+- **Lo guardado no se pierde**: la categoría sigue en `CATEGORIAS_GASTO`, así que los gastos viejos conservan su ícono y sus topes se siguen mostrando. Mismo tratamiento que Vivienda en CAT.1a.
+- **Límites explica en vez de pedir un tope imposible**: un gasto viejo en "Gastos hormiga" sale en "Gastas acá y no tiene tope" con "Se controla en Gastos pequeños".
+- Pruebas: `constants` (1 ajustada), `gastos` (1 nueva), `presupuesto` (2 nuevas). Unitarias 5737/5737, E2E 477/477.
+
 ### feat(compromisos): SUS.1a, la plataforma de cada suscripción · 2026-11-15
 
 [ADR 146](DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md) (ejecuta las fases 0 y 1 del [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md) con la forma del [ADR 064](DECISIONS/064-estructura-de-dos-niveles.md)). Ficha: [`contexto/deudas.md`](contexto/deudas.md). Schema v51, SW v719.

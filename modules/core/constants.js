@@ -468,10 +468,16 @@ export const CATEGORIAS_GASTO = [
  * en Agenda). Se mantienen en `CATEGORIAS_GASTO` (no aquí) para que
  * `CATEGORIA_ICONO` y la validación de gastos/límites existentes sigan
  * resolviendo bien los registros ya guardados con esas categorías.
+ *
+ * SUS.1b ([ADR 146](../../docs/DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md)
+ * D5): "Gastos hormiga" tampoco se ofrece. Hormiga es lo que Finko reconoce
+ * por monto (`infra/hormiga.js`), no algo que el usuario declara; un café de
+ * $6.000 cuenta como hormiga en su propia categoría. Mismo tratamiento que
+ * Vivienda: los gastos y topes ya guardados con ella se siguen leyendo.
  */
 export const CATEGORIAS_GASTO_USUARIO = CATEGORIAS_GASTO.filter(
   c => c !== 'Deudas' && c !== 'Ahorro' && c !== 'Alimentación'
-    && c !== 'Vivienda' && c !== 'Servicios públicos',
+    && c !== 'Vivienda' && c !== 'Servicios públicos' && c !== 'Gastos hormiga',
 );
 
 /**
