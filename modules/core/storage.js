@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 48;
+const SCHEMA_VERSION = 49;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -702,6 +702,16 @@ function _migrate(raw) {
     data.perfiles = Array.isArray(data.perfiles)
       ? data.perfiles.filter(p => p && typeof p === 'object' && typeof p.id === 'string' && p.id
           && typeof p.nombre === 'string' && p.nombre.trim())
+      : [];
+  }
+
+  // v48 → v49: `ajustesSaldo` (HF.1d-1, ADR 143 D3). Editar el saldo de una
+  // cuenta deja su registro. Un estado viejo arranca sin ajustes: los saldos
+  // que ya se igualaron a mano no se reconstruyen (I4 del ADR 091).
+  if ((typeof data._version === 'number' ? data._version : 1) < 49) {
+    data.ajustesSaldo = Array.isArray(data.ajustesSaldo)
+      ? data.ajustesSaldo.filter(a => a && typeof a === 'object' && typeof a.id === 'string' && a.id
+          && typeof a.cuentaId === 'string' && Number.isFinite(Number(a.monto)))
       : [];
   }
 

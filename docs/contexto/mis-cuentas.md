@@ -80,6 +80,7 @@ Además: rediseño visual ADR 035 completo. Ver "Transferencias" y "Distribució
 
 **Cambios realizados**:
 
+- 2026-11-15 HF.1d-1: editar el saldo de una cuenta guarda un ajuste en `ajustesSaldo` (schema v49), que Movimientos muestra (ADR 143 D3).
 - 2026-11-13 (**REV.2c**, texto del [ADR 135](../DECISIONS/135-mis-cuentas-y-me-deben-en-el-telefono.md) D5): la nota de Transferir suma la frase de la DIAN cuando el destino es una cuenta y la calla al pasar a efectivo (`notaTransferencia()` en `logic/transferencias.js`; la acción la rehace al cambiar el destino o invertir).
 - 2026-11-13 (**MV2.30 Mis cuentas tanda 3**, [ADR 135](../DECISIONS/135-mis-cuentas-y-me-deben-en-el-telefono.md) D6): Distribuir con "entró a", el paso en pregunta con lo recomendado, puntos de progreso, filas de necesidades y "Siguiente: ...".
 - 2026-11-13 (**MV2.30 Mis cuentas tanda 2**, [ADR 135](../DECISIONS/135-mis-cuentas-y-me-deben-en-el-telefono.md) D4 y D5): la hoja propia de la cuenta (`htmlDetalleCuenta()`, `cuenta-detalle`) y Transferir con "Sale de", "Entra a", "Cambiar" y el monto en el botón.

@@ -28,6 +28,7 @@
 export const COLECCIONES = Object.freeze([
   'cuentas', 'ingresos', 'ingresosPuntuales', 'transferencias', 'gastos', 'categoriasPersonalizadas',
   'compromisos', 'metas', 'apartados', 'presupuestos', 'personales', 'perfiles', 'inversiones',
+  'ajustesSaldo',
 ]);
 
 /** Colección de las claves de primer nivel que viajan enteras. */

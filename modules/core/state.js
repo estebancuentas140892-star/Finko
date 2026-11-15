@@ -540,6 +540,8 @@ export function createInitialState() {
 
     /** Transferencias entre cuentas propias: traslado interno, no ingreso ni gasto (MC.17, v26). */
     transferencias: [],
+    /** Ajustes a mano del saldo de una cuenta (HF.1d-1, ADR 143 D3, schema v49). */
+    ajustesSaldo: [],
 
     /** Gastos variables. */
     gastos: [],

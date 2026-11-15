@@ -18,7 +18,7 @@ import { updSaldo, renderSmart } from '../../../infra/render.js';
 import { save } from '../../../core/storage.js';
 import { announce } from '../../../infra/a11y.js';
 import { mostrarErroresForm } from '../../../infra/form-errors.js';
-import { esc as _esc } from '../../../infra/utils.js';
+import { esc as _esc, hoy } from '../../../infra/utils.js';
 import { BANCOS_CO, TIPOS_POR_CLASE } from '../../../core/constants.js';
 import { wireIconoPicker, resetIconoPicker, setIconoPickerValor } from '../../../infra/icon-picker.js';
 import { iconoCategoria } from '../../../infra/icons.js';
@@ -101,7 +101,16 @@ function _guardarCuenta() {
   let persistida;
   if (idEdit) {
     // Modo edicion: preservar campos no editables (fechaCreacion, activa).
+    const saldoAntes = Number(S.cuentas.find(c => c.id === idEdit)?.saldo) || 0;
     persistida = editar('cuentas', idEdit, cuenta);
+    // HF.1d-1 (ADR 143 D3): igualar el saldo a mano deja su registro, así el
+    // historial de la cuenta sigue cuadrando con su saldo (R-HF2).
+    const saldoDespues = Number(persistida?.saldo) || 0;
+    if (persistida && saldoDespues !== saldoAntes) {
+      guardar('ajustesSaldo', {
+        cuentaId: idEdit, fecha: hoy(), monto: saldoDespues - saldoAntes, saldoAntes, saldoDespues,
+      });
+    }
     // editar() devuelve el item actualizado de S, asi tenemos el id real
     // para sincronizar el compromiso vinculado.
     if (persistida) _sincronizarCuotaManejo(persistida);

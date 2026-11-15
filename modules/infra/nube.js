@@ -515,7 +515,7 @@ export async function desvincularNino(ninoId) {
 /** Colecciones que cuentan como "datos" del usuario. */
 const _COLECCIONES = [
   'cuentas', 'ingresos', 'ingresosPuntuales', 'transferencias', 'gastos', 'compromisos',
-  'metas', 'apartados', 'presupuestos', 'personales', 'inversiones', 'perfiles',
+  'metas', 'apartados', 'presupuestos', 'personales', 'inversiones', 'perfiles', 'ajustesSaldo',
 ];
 
 /**

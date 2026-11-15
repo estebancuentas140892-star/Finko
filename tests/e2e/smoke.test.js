@@ -2570,8 +2570,10 @@ test.describe('Movimientos - ficha 15: quinta fuente, plegable y entradas', () =
   test('el chip "Me deben" filtra el ledger a los abonos', async ({ page }) => {
     // La fila de tipos: los atajos de la búsqueda (ADR 121) tienen un chip igual, oculto.
     await page.locator('#movimientos-filtros .filtros-bar .chip', { hasText: 'Me deben' }).click();
-    await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(1);
-    await expect(page.locator('#lista-movimientos .list-item')).toContainText('Abono de Camila');
+    // HF.1d-1 (ADR 143 D2): lo prestado con cuenta también tiene su fila.
+    await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(2);
+    await expect(page.locator('#lista-movimientos')).toContainText('Abono de Camila');
+    await expect(page.locator('#lista-movimientos')).toContainText('Le prestaste a Camila');
   });
 
   test('el rango de fechas llega plegado y se abre con un toque', async ({ page }) => {
@@ -2612,7 +2614,8 @@ test.describe('Movimientos - ficha 15: quinta fuente, plegable y entradas', () =
 
     // Y la pastilla se puede quitar sin perder el resto de la vista.
     await pastilla.click();
-    await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(2);
+    // El gasto, el abono y lo prestado (HF.1d-1).
+    await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(3);
   });
 });
 

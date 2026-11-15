@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(movimientos): HF.1d-1, todo cambio de saldo deja registro (ADR 143) · 2026-11-15
+
+[ADR 143](DECISIONS/143-todo-cambio-de-saldo-deja-registro.md), que aplica la R-HF2 del [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md) y cierra su riesgo 10. Fichas: [`contexto/movimientos.md`](contexto/movimientos.md), [`contexto/me-deben.md`](contexto/me-deben.md), [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). Schema v49. SW v709.
+
+- **La regla que se prueba**: el saldo de hoy de una cuenta es su saldo de apertura más sus filas de Movimientos. `efectoEnCuenta(movimientos, cuentaId)` las suma (la transferencia resta lo enviado más su 4x1000 del origen; el gasto importado no cuenta) y `registro-saldo.test.js` lo prueba ruta por ruta con los manejadores reales.
+- **Filas derivadas, sin dato nuevo**: lo prestado con cuenta ("Le prestaste a Mamá", sale) y el dinero recibido de una deuda D.14 ("Recibiste: ...", entra por `montoAcreditado`, en su día local).
+- **El ajuste a mano**: editar el saldo de una cuenta guarda un registro en la colección nueva `ajustesSaldo` (migración v48 a v49, viaja a la nube), que Movimientos muestra como "Ajuste de saldo". No es ingreso ni gasto: Análisis, la renta y la tasa de ahorro no lo leen.
+- **Borrar un préstamo devuelve su dinero** (cambia lo que decidió PE.7): el desembolso vuelve a su cuenta y cada abono sale de donde entró (`reversionAlBorrar`); la confirmación dice qué vuelve a dónde. Un abono sin cuenta no se toca.
+- **Cada abono nuevo trae su id**, que usa su fila de Movimientos.
+- Pendiente, HF.1d-2: Distribuir sigue acreditando sin fila y la guarda `cobrosDistribuidos` sigue en pie.
+- Pruebas: `registro-saldo` (11 nuevas: las filas, `efectoEnCuenta`, la reversión, la migración y R-HF2 en el ajuste, el préstamo de punta a punta y la deuda D.14); E2E `smoke` (2 ajustadas: el ledger de Me deben y el de una cuenta suman la fila de lo prestado). Unitarias 5593/5593, E2E 472/472.
+
 ### feat(formularios): FORM.2h, Ajustes con mini-hojas, Tino, la tasa alta en ámbar y el banco con buscador · 2026-11-15
 
 [ADR 142](DECISIONS/142-formularios-por-tarea.md) D2, D7, D9 y D10. **Cierra la iniciativa FORM.2.** Fichas: [`contexto/captura.md`](contexto/captura.md), [`contexto/deudas.md`](contexto/deudas.md), [`contexto/configuracion.md`](contexto/configuracion.md). SW v708.

@@ -73,15 +73,15 @@
 
 > Brief, triaje, riesgos y preguntas P1 a P8 (resueltas): **[ADR 091](../DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)**. El [ADR 138](../DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md) D2 dejó el plan en seis tarjetas: **ninguna espera ya a la ficha 18 ni al cierre de MOV.1**. **HF.1b cerró el 2026-11-13** con el [ADR 139](../DECISIONS/139-la-naturaleza-de-un-gasto.md): cada gasto tiene su naturaleza (`infra/naturaleza.js`) y cada vista su lente; las filas nuevas de HF.1c y HF.1d se clasifican con esa tabla. La Fase 0 cerró (HF.0a a HF.0j; la f y la g salieron sin código). Lo que se conectaba con el banco (HF.4 y HF.5a) vive en NUBE.4. Todos los datos de prueba son inventados.
 
-#### HF.1d - Todo cambio de saldo deja registro (absorbe HF.1g)
+#### HF.1d-2 - Distribuir deja su ingreso y sus transferencias
 - Prioridad  : media
-- Estado     : requiere ADR (acota el ADR 012)
+- Estado     : pendiente ([ADR 143](../DECISIONS/143-todo-cambio-de-saldo-deja-registro.md) D6; HF.1d-1 cerró el resto de HF.1d)
 - Área       : code
-- Objetivo   : Distribuir crea el ingreso y las transferencias que hoy aplica sin registro; el desembolso de un préstamo, el crédito D.14 y el ajuste manual de saldo dejan su fila; en Me deben cada abono lleva id y borrarlo revierte la cuenta exacta. Retira la guarda de HF.0h y HF.0i (`config.cobrosDistribuidos`): el `IngresoPuntual` de Distribuir la reemplaza solo para lo confirmado como recibido, descartado por ocurrencia y no por mes, o la segunda quincena distribuida deja de salir
-- Riesgo     : un saldo igualado a mano tras un aporte se cuenta dos veces (riesgo 10 del 091): es lo que esta tarjeta cierra
-- Archivos   : `tesoreria/acciones/distribucion.js`, `tesoreria/logic/cuentas.js`, `personales/`, `compromisos/index.js`
-- Depende de : nada (sus filas se clasifican con el ADR 139)
-- Aceptación : R-HF2 (saldo final igual a apertura más registros) con una prueba por ruta; borrar un abono de Me deben revierte la cuenta exacta
+- Objetivo   : Distribuir guarda el cobro que acredita como `IngresoPuntual` (con `ingresoId` y la fecha de la ocurrencia) y el dinero que mueve entre cuentas como `transferencias`. Retira la guarda de HF.0h y HF.0i (`config.cobrosDistribuidos`): el `IngresoPuntual` de Distribuir la reemplaza solo para lo confirmado como recibido, descartado por ocurrencia y no por mes, o la segunda quincena distribuida deja de salir
+- Riesgo     : el crédito automático (`credito-ingreso`) y Distribuir reconocen el mismo cobro por `ingresoId` + fecha exacta; un cambio de un lado sin el otro acredita dos veces
+- Archivos   : `tesoreria/acciones/distribucion.js`, `tesoreria/logic/distribucion.js`, `agenda/index.js` (`_creditosPendientes`), `infra/credito-ingreso.js`
+- Depende de : nada
+- Aceptación : la prueba R-HF2 de `registro-saldo.test.js` suma la ruta de Distribuir; la segunda quincena distribuida sigue saliendo en la hoja de automáticos
 
 #### HF.1c - La fecha de cada aporte a metas y reservas
 - Prioridad  : baja

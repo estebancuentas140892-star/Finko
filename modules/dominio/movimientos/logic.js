@@ -13,12 +13,15 @@
  */
 
 import { CATEGORIA_INGRESO_ICONO, iconoDeCategoriaGasto } from '../../core/constants.js';
+import { fechaLocalISO } from '../../infra/utils.js';
 
 /**
  * @typedef {Object} Movimiento
  * @property {string} id
  * @property {string} fecha        ISO 8601 (YYYY-MM-DD).
- * @property {'gasto'|'ingreso'|'aporte'|'transferencia'} tipo
+ * @property {'gasto'|'ingreso'|'aporte'|'transferencia'|'abono'|'prestamo'|'recibido'|'ajuste'} tipo
+ *   `prestamo`, `recibido` y `ajuste` (HF.1d-1, ADR 143): lo prestado, el
+ *   dinero recibido de una deuda (D.14) y el ajuste a mano del saldo.
  * @property {string} descripcion
  * @property {number} monto
  * @property {'ingreso'|'egreso'|'neutro'} direccion  'neutro' (MC.17c) es un
@@ -71,6 +74,7 @@ export function movimientosDesdeGastos(gastos, categoriasPersonalizadas = []) {
     icono:       iconoDeCategoriaGasto(g.categoria, categoriasPersonalizadas),
     cuentaId:    g.cuentaId ?? null,
     dominio:     _CATEGORIAS_COMPROMISOS.has(g.categoria) ? 'compromisos' : 'gastos',
+      ...(g.sinEfectoSaldo ? { sinEfectoSaldo: true } : {}),
     // G5 (ficha 07, ADR 069 D8): el único filtro que faltaba para llegar
     // prefiltrado desde un tope de Límites. Solo los gastos la llevan: un
     // aporte, un ingreso puntual o una transferencia no tienen categoría de
@@ -187,7 +191,8 @@ export function movimientosDesdeAbonos(personales) {
     if (!p || !Array.isArray(p.abonos)) continue;
     p.abonos.forEach((a, i) => {
       lista.push({
-        id:          `${p.id}:abono-${i}`,
+        // ADR 143 D5: un abono nuevo trae su id; los viejos, el sintético.
+        id:          a?.id ?? `${p.id}:abono-${i}`,
         fecha:       a?.fecha,
         tipo:        'abono',
         descripcion: `Abono de ${p.persona || 'un préstamo'}`,
@@ -201,6 +206,108 @@ export function movimientosDesdeAbonos(personales) {
     });
   }
   return lista;
+}
+
+/**
+ * Lo que prestaste (HF.1d-1, ADR 143 D2): un préstamo con cuenta salió de
+ * ella al crearse, por su monto vigente (editarlo ya ajusta la cuenta por la
+ * diferencia). Sin cuenta no movió ningún saldo y no da fila.
+ *
+ * @param {import('../../core/state.js').Personal[]} personales
+ * @returns {Movimiento[]}
+ */
+export function movimientosDesdePrestamos(personales) {
+  if (!Array.isArray(personales)) return [];
+  return personales
+    .filter(p => p && p.cuentaId && Number(p.monto) > 0)
+    .map(p => ({
+      id:          `${p.id}:prestamo`,
+      fecha:       p.fecha,
+      tipo:        'prestamo',
+      descripcion: `Le prestaste a ${p.persona || 'alguien'}`,
+      monto:       Number(p.monto),
+      direccion:   'egreso',
+      icono:       'i-personales',
+      cuentaId:    p.cuentaId,
+      dominio:     'personales',
+    }));
+}
+
+/**
+ * El dinero recibido de una deuda (D.14, HF.1d-1, ADR 143 D2): entró a su
+ * cuenta por `montoAcreditado` el día que se creó la deuda. Borrar la deuda
+ * ya lo revierte, así que la fila se va con ella.
+ *
+ * @param {import('../../core/state.js').Compromiso[]} compromisos
+ * @returns {Movimiento[]}
+ */
+export function movimientosDesdeDeudasRecibidas(compromisos) {
+  if (!Array.isArray(compromisos)) return [];
+  return compromisos
+    .filter(c => c && c.cuentaOrigenId && Number(c.montoAcreditado) > 0)
+    .map(c => ({
+      id:          `${c.id}:recibido`,
+      fecha:       fechaLocalISO(c.fechaCreacion) ?? '',
+      tipo:        'recibido',
+      descripcion: `Recibiste: ${c.descripcion || 'una deuda'}`,
+      monto:       Number(c.montoAcreditado),
+      direccion:   'ingreso',
+      icono:       'i-deudas',
+      cuentaId:    c.cuentaOrigenId,
+      dominio:     'compromisos',
+    }));
+}
+
+/**
+ * Los ajustes a mano del saldo (HF.1d-1, ADR 143 D3): entran o salen según su
+ * signo. No son ingreso ni gasto.
+ *
+ * @param {{ id: string, cuentaId: string, fecha: string, monto: number }[]} ajustes
+ * @returns {Movimiento[]}
+ */
+export function movimientosDesdeAjustes(ajustes) {
+  if (!Array.isArray(ajustes)) return [];
+  return ajustes
+    .filter(a => a && a.cuentaId && Number(a.monto) !== 0 && Number.isFinite(Number(a.monto)))
+    .map(a => ({
+      id:          a.id,
+      fecha:       a.fecha,
+      tipo:        'ajuste',
+      descripcion: 'Ajuste de saldo',
+      monto:       Math.abs(Number(a.monto)),
+      direccion:   Number(a.monto) > 0 ? 'ingreso' : 'egreso',
+      icono:       'i-saldo',
+      cuentaId:    a.cuentaId,
+      dominio:     'tesoreria',
+    }));
+}
+
+/**
+ * Lo que las filas dicen que le pasó a una cuenta (R-HF2, ADR 143 D1): entra
+ * suma, sale resta; una transferencia resta del origen lo enviado más su
+ * 4x1000 y suma al destino lo que llegó. Un gasto importado (`sinEfectoSaldo`,
+ * HF.0c) no movió la cuenta y no cuenta. Pura.
+ *
+ * El saldo de hoy de una cuenta es su saldo de apertura más este número.
+ *
+ * @param {Movimiento[]} movimientos
+ * @param {string} cuentaId
+ * @returns {number}
+ */
+export function efectoEnCuenta(movimientos, cuentaId) {
+  let total = 0;
+  for (const m of movimientos ?? []) {
+    const monto = Number(m?.monto) || 0;
+    if (m?.tipo === 'transferencia') {
+      if (m.cuentaOrigenId === cuentaId) total -= monto + (Number(m.costoGMF) || 0);
+      if (m.cuentaDestinoId === cuentaId) total += monto;
+      continue;
+    }
+    if (m?.cuentaId !== cuentaId || m.sinEfectoSaldo) continue;
+    if (m.direccion === 'ingreso') total += monto;
+    else if (m.direccion === 'egreso') total -= monto;
+  }
+  return total;
 }
 
 /**
@@ -278,13 +385,17 @@ export function filtrarMovimientos(movimientos, { texto, dominio, categoria, cue
  * @param {number} [limite=5]
  * @returns {Movimiento[]}
  */
-export function movimientosRecientes({ gastos, ingresosPuntuales, aportes, transferencias, personales, categoriasPersonalizadas } = {}, limite = 5) {
+export function movimientosRecientes({ gastos, ingresosPuntuales, aportes, transferencias, personales, categoriasPersonalizadas, compromisos, ajustesSaldo } = {}, limite = 5) {
   const todos = [
     ...movimientosDesdeGastos(gastos, categoriasPersonalizadas),
     ...movimientosDesdeIngresosPuntuales(ingresosPuntuales),
     ...movimientosDesdeAportes(aportes),
     ...movimientosDesdeTransferencias(transferencias),
     ...movimientosDesdeAbonos(personales),
+    // HF.1d-1 (ADR 143): todo cambio de saldo con su fila.
+    ...movimientosDesdePrestamos(personales),
+    ...movimientosDesdeDeudasRecibidas(compromisos),
+    ...movimientosDesdeAjustes(ajustesSaldo),
   ];
   return todos
     .filter(m => typeof m.fecha === 'string' && m.fecha)

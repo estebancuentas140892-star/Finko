@@ -9,7 +9,7 @@
  */
 
 import { S, EventBus } from '../../core/state.js';
-import { guardar, editar, eliminar } from '../../infra/crud.js';
+import { guardar, editar, eliminar, genId } from '../../infra/crud.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal } from '../../ui/modales.js';
 import { renderSmart, registrarRender } from '../../infra/render.js';
@@ -23,6 +23,7 @@ import {
   desglosarPago,
   calcularPendiente,
   tieneInteres,
+  reversionAlBorrar,
 } from './logic.js';
 import { f } from '../../infra/utils.js';
 import { desdeMiles } from '../../infra/miles.js';
@@ -261,6 +262,9 @@ function _confirmarPagoPersonal() {
   // PE.6b: la cuenta destino entra al abono del historial, no solo al saldo. Es
   // lo que permite saber después por dónde volvió el dinero de cada cobro.
   const actualizado = aplicarPago(prestamo, monto, undefined, cuentaDestinoId);
+  // ADR 143 D5: el abono nuevo trae su id (su fila en Movimientos lo usa).
+  const abonoNuevo = actualizado.abonos?.at(-1);
+  if (abonoNuevo && !abonoNuevo.id && abonoNuevo !== prestamo.abonos?.at(-1)) abonoNuevo.id = genId();
   const patch = {
     pagado:     actualizado.pagado,
     liquidado:  actualizado.liquidado,
@@ -308,24 +312,28 @@ async function _eliminarPersonal(el) {
   const prestamo = S.personales.find(p => p.id === id);
   if (!prestamo) return;
 
-  // PE.7: borrar NO revierte los movimientos de cuenta, a diferencia de una
-  // deuda (D.14, que acredita una sola vez al crearse y por eso puede revertir
-  // exacto). Un préstamo es un flujo: desembolso más N abonos, posiblemente a
-  // cuentas distintas; revertir solo el desembolso sobre-acreditaría en cuanto
-  // hubiera un abono, y revertir el neto con fiabilidad necesita el historial
-  // de abonos que planea PE.6b (hoy solo existe el acumulador `pagado`).
-  // El copy lo dice explícitamente para que no sorprenda.
-  const avisoSaldo = prestamo.cuentaId
-    ? ' Los movimientos que ya hiciste en tus cuentas se quedan como están.'
-    : '';
+  // HF.1d-1 (ADR 143 D4, cambia PE.7): borrar deja las cuentas como si el
+  // préstamo no hubiera existido. Desde PE.6b cada abono guarda su cuenta, así
+  // que el desembolso vuelve a la suya y cada abono sale de donde entró; uno
+  // sin cuenta no movió ninguna. La confirmación lo dice antes.
+  const { deltas, abonosSinCuenta } = reversionAlBorrar(prestamo);
+  const nombreDe = (cid) => S.cuentas.find(c => c.id === cid)?.nombre ?? 'una cuenta';
+  const efectos = Object.entries(deltas).map(([cid, d]) => d > 0
+    ? `${f(d)} vuelven a ${nombreDe(cid)}`
+    : `${f(-d)} salen de ${nombreDe(cid)}`);
+  const avisoSaldo = efectos.length > 0
+    ? ` En tus cuentas: ${efectos.join(' y ')}.${abonosSinCuenta > 0 ? ' Los cobros que no anotaste en una cuenta no se tocan.' : ''}`
+    : ' No mueve ninguna cuenta.';
   const ok = await confirmar({
     titulo:         'Borrar préstamo',
-    mensaje:        `¿Borrar el préstamo a ${prestamo.persona}? Esto no devuelve el dinero, solo limpia el registro.${avisoSaldo}`,
+    mensaje:        `¿Borrar el préstamo a ${prestamo.persona}? Queda como si no hubiera existido.${avisoSaldo}`,
     confirmarTexto: 'Borrar',
     peligroso:      true,
   });
   if (!ok) return;
 
+  for (const [cid, d] of Object.entries(deltas)) _ajustarSaldoCuenta(cid, d);
+  if (Object.keys(deltas).length > 0) updSaldo();
   eliminar('personales', id);
   renderListaPersonales();
   // La tarjeta ya no existe: el ancla es la sección (V-6).

@@ -6,7 +6,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-11-15 (la iniciativa FORM.2, formularios por tarea, [ADR 142](DECISIONS/142-formularios-por-tarea.md), queda completa: FORM.2a a 2h cerradas; el canvas de diseño ya se aplicó y se borró). Antes, 2026-11-13 (REV.2c cerrada; REV.2b, ADR 141; REV.2a, ADR 140; antes, la poda, ADR 138). Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
+> Última actualización: 2026-11-15 (HF.1d-1 cerrada, [ADR 143](DECISIONS/143-todo-cambio-de-saldo-deja-registro.md); antes, la iniciativa FORM.2, formularios por tarea, [ADR 142](DECISIONS/142-formularios-por-tarea.md), queda completa: FORM.2a a 2h cerradas; el canvas de diseño ya se aplicó y se borró). Antes, 2026-11-13 (REV.2c cerrada; REV.2b, ADR 141; REV.2a, ADR 140; antes, la poda, ADR 138). Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
 
 ---
 
@@ -48,7 +48,7 @@ Las tarjetas del tablero, **en orden de valor** desde la poda del 2026-11-13 ([A
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
 | REV.3b | La app instalada tiene tus datos y la versión publicada (absorbe REV.5) | Transversal | alta | una prueba en un iPhone real y los datos del teléfono de Esteban |
-| HF.1d | Todo cambio de saldo deja registro (absorbe HF.1g) | Transversal | media | su ADR |
+| HF.1d-2 | Distribuir deja su ingreso y sus transferencias; se retira `cobrosDistribuidos` | Transversal | media | nada ([ADR 143](DECISIONS/143-todo-cambio-de-saldo-deja-registro.md) D6) |
 | HF.3e | Lo que la app instalada muestra fuera de ella: notificación sin montos, número en el ícono, accesos directos | Transversal | media | ADR corto |
 | REV.3a | Descargar el mes para Excel | Transversal | media | nada |
 | MV2.28 | Medir lo publicado: fluidez y Lighthouse en producción (absorbe PERF.13) | Transversal | media | nada |

@@ -61,6 +61,8 @@ export function estadosMas(state = S, hoyISO = hoy()) {
     transferencias:    state.transferencias,
     personales:        state.personales,
     categoriasPersonalizadas: state.categoriasPersonalizadas,
+    compromisos:       state.compromisos,
+    ajustesSaldo:      state.ajustesSaldo,
   }, 1);
   const cuando = ultimo && (ultimo.fecha === hoyISO ? 'Hoy' : ultimo.fecha === ayerISO ? 'Ayer' : fechaLegible(ultimo.fecha));
   const movimientos = ultimo

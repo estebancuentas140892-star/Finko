@@ -27,9 +27,9 @@ import { movimientosCompletos, descripcionMovimiento, filtrarMovimientos, sumaDe
  */
 const _extraerFuentes = (fuentes, limite) => [
   fuentes?.gastos, fuentes?.ingresosPuntuales, fuentes?.aportes, fuentes?.transferencias,
-  fuentes?.personales, fuentes?.categoriasPersonalizadas, limite,
+  fuentes?.personales, fuentes?.categoriasPersonalizadas, fuentes?.compromisos, fuentes?.ajustesSaldo, limite,
 ];
-const _SECCIONES_MOVIMIENTOS = ['gastos', 'ingresosPuntuales', 'ahorro', 'transferencias', 'personales', 'categoriasPersonalizadas'];
+const _SECCIONES_MOVIMIENTOS = ['gastos', 'ingresosPuntuales', 'ahorro', 'transferencias', 'personales', 'categoriasPersonalizadas', 'compromisos', 'ajustesSaldo'];
 
 const _movimientosCompletosMemo = memoizar(movimientosCompletos, _SECCIONES_MOVIMIENTOS, _extraerFuentes);
 
@@ -43,7 +43,10 @@ const _movimientosCompletosMemo = memoizar(movimientosCompletos, _SECCIONES_MOVI
 const TAMANO_LOTE = 50;
 
 /** Etiqueta legible por tipo de movimiento, usada en el subtítulo de la vista completa. */
-const _TIPO_LABEL = { gasto: 'Gasto', ingreso: 'Ingreso', aporte: 'Aporte', transferencia: 'Transferencia', abono: 'Abono' };
+const _TIPO_LABEL = {
+  gasto: 'Gasto', ingreso: 'Ingreso', aporte: 'Aporte', transferencia: 'Transferencia', abono: 'Abono',
+  prestamo: 'Préstamo', recibido: 'Préstamo recibido', ajuste: 'Ajuste',
+};
 
 // ── FILTROS DE LA VISTA COMPLETA (MOV.2) ─────────────────────────
 
@@ -160,6 +163,8 @@ function _todosLosMovimientos() {
     transferencias:           S.transferencias,
     personales:               S.personales,
     categoriasPersonalizadas: S.categoriasPersonalizadas,
+    compromisos:              S.compromisos,
+    ajustesSaldo:             S.ajustesSaldo,
   });
 }
 

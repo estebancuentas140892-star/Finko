@@ -840,6 +840,27 @@ function _diasDesde(iso, ref) {
  * @param {{ fecha: string, monto: number, aCapital: number, aInteres: number, cuentaId?: string|null }} abono
  * @returns {Abono[]}
  */
+/**
+ * Lo que vuelve a cada cuenta al borrar un préstamo (HF.1d-1, ADR 143 D4):
+ * el desembolso vuelve a su cuenta y cada abono sale de la cuenta donde
+ * entró. Un abono sin cuenta no movió ninguna y no se revierte. Pura.
+ *
+ * @param {Personal} prestamo
+ * @returns {{ deltas: Record<string, number>, abonosSinCuenta: number }}
+ */
+export function reversionAlBorrar(prestamo) {
+  const deltas = {};
+  const sumar = (id, d) => { if (id && d) deltas[id] = (deltas[id] ?? 0) + d; };
+  if (prestamo?.cuentaId) sumar(prestamo.cuentaId, Number(prestamo.monto) || 0);
+  let abonosSinCuenta = 0;
+  for (const a of Array.isArray(prestamo?.abonos) ? prestamo.abonos : []) {
+    if (a?.cuentaId) sumar(a.cuentaId, -(Number(a.monto) || 0));
+    else if (Number(a?.monto) > 0) abonosSinCuenta += 1;
+  }
+  for (const k of Object.keys(deltas)) if (deltas[k] === 0) delete deltas[k];
+  return { deltas, abonosSinCuenta };
+}
+
 function _conAbono(prestamo, abono) {
   const previos = Array.isArray(prestamo?.abonos) ? prestamo.abonos : [];
   const item = {
