@@ -358,13 +358,35 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(form.querySelector('#gasto-fila-fecha [data-fila-v]').textContent).toBe('Ayer');
   });
 
-  it('editar abre el recibo con todo puesto y "Guardar cambios"', () => {
+  it('FORM.2d: editar abre la ficha del gasto, sin "Guardar", con eliminar al pie', () => {
     accion('editar-gasto', { id: 'g1' });
     const form = document.getElementById('form-gasto');
+    expect('ficha' in form.dataset).toBe(true);
     expect(form.dataset.etapaActual).toBe('revisar');
     expect(form.querySelector('[data-recibo-monto]').textContent).toBe('$10.000');
-    expect(form.querySelector('button[type="submit"]').textContent).toContain('Guardar cambios');
+    expect(form.querySelector('button[type="submit"]').hidden).toBe(true);
     expect(form.querySelector('[data-gasto-otro]')).toBeNull();
-    expect(document.getElementById('modal-gasto-title').textContent).toBe('Editar gasto');
+    expect(form.querySelector('[data-action="eliminar-gasto"]').dataset.id).toBe('g1');
+    expect(document.getElementById('modal-gasto-title').textContent).toBe('Gasto');
+  });
+
+  it('FORM.2d: un cambio en la ficha se guarda solo y "Deshacer" lo devuelve', async () => {
+    document.querySelectorAll('.fk-toast__cerrar').forEach(b => b.click());
+    await new Promise(r => setTimeout(r, 450));
+    accion('editar-gasto', { id: 'g1' });
+    const form = document.getElementById('form-gasto');
+    form.querySelector('#gasto-fila-fecha').click();
+    const ayer = form.querySelector('input[name="fechaOpcion"][value="ayer"]');
+    ayer.checked = true;
+    ayer.dispatchEvent(new Event('change', { bubbles: true }));
+    await esperar();
+    expect(S.gastos.find(g => g.id === 'g1').fecha).toBe('2026-11-13');
+    // La ficha sigue abierta.
+    expect(document.querySelector('#modal-gasto[data-open]')).not.toBeNull();
+    const deshacer = [...document.querySelectorAll('.fk-toast__accion')].at(-1);
+    expect(deshacer.textContent).toBe('Deshacer');
+    deshacer.click();
+    await esperar();
+    expect(S.gastos.find(g => g.id === 'g1').fecha).toBe('2026-11-10');
   });
 });

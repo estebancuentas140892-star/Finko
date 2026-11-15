@@ -37,7 +37,7 @@ import { htmlDetalleGasto } from './detalle.js';
 import { renderListaGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, alternarFiltrosGastos, navegarMesGastos, irAMesActual, ayerIso, CATEGORIA_NUEVA_VALUE } from './view.js';
 import {
   gastoPorEtapas, renderFormGastoTelefono, montarFormGastoTelefono, irAEtapaGasto,
-  limpiarCabeceraGasto, repartoDelRecibo,
+  limpiarCabeceraGasto, repartoDelRecibo, pintarReciboGasto,
 } from './telefono.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
@@ -71,6 +71,10 @@ async function _guardarGasto() {
   // FORM.2b: "Guardar y registrar otro" (recibo del teléfono).
   const otro      = form.dataset.otro === '1';
   delete form.dataset.otro;
+  // FORM.2d: la ficha del teléfono guarda cada cambio sin cerrarse.
+  const quedarse  = form.dataset.quedarse === '1';
+  delete form.dataset.quedarse;
+  const previo    = idEdit ? { ...S.gastos.find(g => g.id === idEdit) } : null;
   const porEtapas = 'etapas' in form.dataset;
 
   // La cuenta de origen viene del selector de tarjetas (radio name="cuentaId").
@@ -208,7 +212,12 @@ async function _guardarGasto() {
   }
 
   const overlay = document.getElementById('modal-gasto');
-  if (overlay) cerrarModal(overlay);
+  if (overlay && !quedarse) cerrarModal(overlay);
+  if (quedarse) {
+    pintarReciboGasto(form);
+    // Ya quedó guardado: cerrar la ficha no tiene por qué preguntar.
+    if (overlay) delete overlay.dataset.cambios;
+  }
 
   renderListaGastos();
   updSaldo();
@@ -239,10 +248,37 @@ async function _guardarGasto() {
     titulo:  idEdit ? 'Gasto actualizado' : `${categoriaGasto} ${f(montoGasto)}`,
     detalle: detalle?.texto,
     tono:    detalle?.tono ?? 'ok',
-    accion:  guardados.length > 0 ? { texto: 'Deshacer', alTocar: () => _deshacerGastos(guardados) } : null,
+    accion:  guardados.length > 0
+      ? { texto: 'Deshacer', alTocar: () => _deshacerGastos(guardados) }
+      : (quedarse && previo ? { texto: 'Deshacer', alTocar: () => _restaurarGasto(previo) } : null),
   });
 
   if (otro) _nuevoGasto();
+}
+
+/**
+ * "Deshacer" de un cambio en la ficha (FORM.2d, ADR 142 D6): el gasto vuelve
+ * a como estaba, con sus efectos en cuentas, deuda y cuota de la tarjeta. Si
+ * la ficha sigue abierta, se vuelve a pintar con lo de antes.
+ * @param {import('../../core/state.js').Gasto} previo
+ */
+function _restaurarGasto(previo) {
+  const actual = S.gastos.find(g => g.id === previo.id);
+  if (!actual) return;
+  _aplicarDeltasASaldos(deltasPorEdicionDeGasto(
+    { cuentaId: actual.cuentaId, monto: actual.monto, sinEfectoSaldo: actual.sinEfectoSaldo },
+    { cuentaId: previo.cuentaId, monto: previo.monto },
+  ));
+  _aplicarDeltasADeudas(deltasPorEdicionEnDeuda(actual, previo, S.compromisos));
+  _aplicarDeltasACuotaMensual(deltasPorEdicionEnCuotaMensual(actual, previo));
+  editar('gastos', previo.id, previo);
+  renderListaGastos();
+  updSaldo();
+  const overlay = document.getElementById('modal-gasto');
+  if (overlay && 'open' in overlay.dataset && document.getElementById('form-gasto')?.dataset.id === previo.id) {
+    _editarGasto({ dataset: { id: previo.id } });
+  }
+  announce('Listo: el gasto quedó como estaba.');
 }
 
 /**
@@ -287,6 +323,8 @@ function _editarGasto(el) {
     categoriaFija: esPagoDeCompromiso ? (gasto.categoria || null) : null,
     edicion:       true,
     titulo:        'Editar gasto',
+    // FORM.2d (ADR 142 D6): en el teléfono, editar es la ficha del gasto.
+    ficha:         gasto,
   });
 
   const form = document.getElementById('form-gasto');
@@ -346,7 +384,7 @@ function _editarGasto(el) {
   const titulo = overlay.querySelector('.modal__title');
   if (titulo) titulo.textContent = 'Editar gasto';
 
-  // FORM.2b: en el teléfono, editar abre el recibo con todo puesto.
+  // FORM.2b: en el teléfono, editar abre el recibo con todo puesto (la ficha, FORM.2d).
   form.querySelector('[name="monto"]').dispatchEvent(new Event('input', { bubbles: true }));
   irAEtapaGasto(form, 'revisar');
 
@@ -587,6 +625,9 @@ async function _eliminarGasto(el) {
   _aplicarDeltasACuotaMensual(deltasPorEdicionEnCuotaMensual(gasto, null));
 
   eliminar('gastos', id);
+  // Borrado desde su ficha (FORM.2d): la ficha se cierra.
+  const hojaGasto = document.getElementById('modal-gasto');
+  if (hojaGasto && 'open' in hojaGasto.dataset && document.getElementById('form-gasto')?.dataset.id === id) cerrarModal(hojaGasto);
   renderListaGastos();
   updSaldo();
   announce(`Gasto "${nombre}" eliminado.`);
@@ -840,6 +881,8 @@ export function initGastos() {
   // categoría, cuántos van en el mes, qué pasa al borrar). Es la hoja de la
   // fila (`#modal-detalle-fila`) con el cuerpo armado acá.
   registrarAccion('gasto-detalle', (el) => {
+    // FORM.2d (ADR 142 D6): en el teléfono la ficha del gasto es su formulario.
+    if (gastoPorEtapas() && (S.cuentas ?? []).some(c => c.activa !== false)) { _editarGasto(el); return; }
     const gasto = S.gastos.find(g => g.id === el.dataset.id);
     const hoja = document.getElementById('modal-detalle-fila');
     const cuerpo = document.getElementById('detalle-fila-body');

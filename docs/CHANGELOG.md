@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): FORM.2d, la ficha del gasto es su formulario · 2026-11-14
+
+[ADR 142](DECISIONS/142-formularios-por-tarea.md) D6 (en el teléfono reemplaza la hoja del gasto del [ADR 119](DECISIONS/119-plan-de-salida-en-hoja-y-el-detalle-del-gasto.md) D2). Fichas: [`contexto/gastos.md`](contexto/gastos.md), [`contexto/captura.md`](contexto/captura.md). Solo bajo 1024 px. SW v706.
+
+- **Tocar un gasto abre su ficha**: el mismo recibo de FORM.2b, titulado "Gasto", sin barra de etapas ni "Guardar". Cada dato abre su mini-hoja (cuenta, fecha, nota; monto y categoría desde arriba) y al volver al recibo el cambio **se guarda solo** (`_guardarGasto` con `quedarse`), con "Deshacer" en el aviso (`_restaurarGasto`: el gasto y sus efectos en cuentas, deuda y cuota de la tarjeta vuelven a como estaban).
+- Debajo, lo que decía la hoja (`htmlExtrasDetalleGasto`: cómo va el límite de su categoría y "Los N gastos de X", que abre Movimientos), "Repetir hoy" y, al pie, "Eliminar este gasto"; borrar desde la ficha la cierra. Editar desde cualquier lado (Movimientos incluido) abre la ficha: ya no reabre el formulario de crear.
+- Cerrar la ficha después de un cambio no pregunta "¿Salir sin guardar?": ya quedó guardado.
+- Pruebas: `gastos-telefono` (1 reescrita y 1 nueva: un cambio se guarda solo y "Deshacer" lo devuelve); E2E `movil-mv2` (2 reescritas: la ficha con sus acciones y un dato en dos toques; la ficha con el límite y "Los N gastos"; 2 ajustadas: el atrás del sistema y el deslizar se prueban sobre la ficha). Unitarias 5581/5581, E2E 469/469. Las fichas de los otros registros (deudas, metas, cuentas) siguen con su hoja y "Editar", que ahora abre el resumen de sus preguntas.
+
 ### feat(formularios): FORM.2g, el resto de crear y los controles de Finko en todos los formularios · 2026-11-14
 
 [ADR 142](DECISIONS/142-formularios-por-tarea.md) D2 y D5. Ficha: [`contexto/captura.md`](contexto/captura.md). Solo bajo 1024 px. SW v705.

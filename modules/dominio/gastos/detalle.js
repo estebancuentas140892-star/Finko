@@ -49,6 +49,44 @@ export function cuandoGasto(iso) {
 }
 
 /**
+ * Lo que la ficha editable del teléfono conserva de la hoja (FORM.2d, ADR
+ * 142 D6): cómo va el límite de su categoría ese mes y "Los N gastos de X",
+ * que abre Movimientos con el filtro puesto.
+ *
+ * @param {import('../../core/state.js').Gasto} gasto
+ * @returns {string}
+ */
+export function htmlExtrasDetalleGasto(gasto) {
+  const oculto = S.config?.ocultarSaldo === true;
+  const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
+  const catKey = gasto.categoria ?? 'Otros';
+  const cat = _esc(catKey);
+  const anio = Number(String(gasto.fecha).slice(0, 4));
+  const mesNum = Number(String(gasto.fecha).slice(5, 7));
+  const mes = _MESES[mesNum - 1] ?? '';
+  const prefijo = String(gasto.fecha).slice(0, 7);
+  const ultimo = new Date(anio, mesNum, 0).getDate();
+  const tope = presupuestosActivos(S.presupuestos).find(p => p.categoria === catKey);
+  const limite = tope
+    ? (() => {
+        const { gastado, asignado } = calcularProgreso(tope, S.gastos ?? [], anio, mesNum);
+        return `<p class="detalle-gasto__limite">${cat} lleva <strong>${m(gastado)}</strong> de su límite de ${m(asignado)} en ${mes}.</p>`;
+      })()
+    : '';
+  const delMes = (S.gastos ?? []).filter(g => g.fecha?.startsWith(prefijo) && (g.categoria ?? 'Otros') === catKey).length;
+  const cuantos = delMes === 1 ? `El único gasto de ${cat} en ${mes}` : `Los ${delMes} gastos de ${cat} en ${mes}`;
+  return `${limite}
+    <button type="button" class="detalle-gasto__ver" data-action="gasto-ver-categoria"
+            data-categoria="${cat}" data-desde="${prefijo}-01" data-hasta="${prefijo}-${String(ultimo).padStart(2, '0')}">
+      <span class="detalle-gasto__ver-textos">
+        <span class="detalle-gasto__ver-titulo">${cuantos}</span>
+        <span class="detalle-gasto__ver-sub">Se abre Movimientos con el filtro puesto</span>
+      </span>
+      ${icon('chevron-right')}
+    </button>`;
+}
+
+/**
  * HTML de la hoja de un gasto. El título lleva el id que nombra a la hoja
  * (`#modal-detalle-fila`, `aria-labelledby`).
  *

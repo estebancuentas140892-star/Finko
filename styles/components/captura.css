@@ -712,6 +712,29 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
 .add .icon { width: var(--fk-icon-sm); height: var(--fk-icon-sm); color: var(--fk-text-accent); }
 .add:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
 
+/* ── La ficha es el formulario (FORM.2d, ADR 142 D6) ────────── */
+.form-etapas[data-ficha] > .etapas { display: none; }
+.ficha__extras { display: flex; flex-direction: column; gap: var(--fk-space-2); }
+.ficha__extras:empty { display: none; }
+.ficha__acciones { display: flex; flex-direction: column; gap: var(--fk-space-2); margin-top: auto; }
+.ficha__acciones .btn { min-height: 48px; justify-content: center; }
+.boton-peligro {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 52px;
+  border: 0;
+  border-radius: var(--fk-radius-full);
+  background: color-mix(in srgb, var(--fk-danger) 12%, transparent);
+  color: var(--fk-danger-text);
+  font-family: var(--fk-font-display);
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-bold);
+  cursor: pointer;
+}
+.boton-peligro:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
+
 /* ── El calendario de Finko ("Otra fecha") ───────────────── */
 #gasto-fecha-otra[hidden] { display: none; }
 .calf { display: flex; flex-direction: column; gap: var(--fk-space-2); }

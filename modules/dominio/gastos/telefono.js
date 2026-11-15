@@ -42,6 +42,7 @@ import {
   planSiNoAlcanza, validarCategoriaPersonalizada,
 } from './logic.js';
 import { CATEGORIA_NUEVA_VALUE, ayerIso } from './view.js';
+import { htmlExtrasDetalleGasto } from './detalle.js';
 
 const MQ_MOVIL = '(max-width: 1023.98px)';
 
@@ -162,7 +163,8 @@ function _fila({ id, mini, figura, k, v = '', s = '', vacia = false, oculta = fa
 }
 
 /** Etapa 3: el recibo, que es también el formulario. */
-function _htmlRevisar({ edicion }) {
+function _htmlRevisar({ edicion, ficha }) {
+  if (ficha) return _htmlFicha(ficha);
   return `
     <section class="etapa-gasto" data-etapa="revisar" aria-labelledby="gasto-recibo-t" hidden>
       <h3 class="sr-only" id="gasto-recibo-t" tabindex="-1" data-etapa-foco>Revisa el gasto antes de guardarlo</h3>
@@ -192,6 +194,46 @@ function _htmlRevisar({ edicion }) {
         <button type="submit" class="btn btn-primary">${icon('check-circle')} ${edicion ? 'Guardar cambios' : 'Guardar gasto'}</button>
         ${edicion ? '' : '<button type="button" class="btn btn-ghost recibo__otro" data-gasto-otro>Guardar y registrar otro</button>'}
       </div>
+    </section>`;
+}
+
+/**
+ * La ficha editable (FORM.2d, ADR 142 D6): el mismo recibo, sin "Guardar".
+ * Cada dato abre su mini-hoja y se guarda al volver, con "Deshacer" en el
+ * aviso. Debajo, lo que decía la hoja del gasto y, al pie, eliminar.
+ * @param {import('../../core/state.js').Gasto} gasto
+ */
+function _htmlFicha(gasto) {
+  return `
+    <section class="etapa-gasto" data-etapa="revisar" aria-labelledby="gasto-recibo-t" hidden>
+      <h3 class="sr-only" id="gasto-recibo-t" tabindex="-1" data-etapa-foco>Tu gasto: toca un dato para cambiarlo</h3>
+      <div class="recibo">
+        <button type="button" class="recibo__cab" data-gasto-ir="monto" aria-label="Cambiar el monto o la categoría">
+          <span class="recibo__teja" aria-hidden="true" data-recibo-teja></span>
+          <span class="recibo__monto" data-recibo-monto></span>
+          <span class="recibo__cat" data-recibo-cat></span>
+          <span class="recibo__lee" data-recibo-lee></span>
+        </button>
+        ${_fila({ id: 'gasto-fila-cuenta', mini: 'gasto-mini-cuenta', figura: '', k: 'Sale de' })}
+        ${_fila({ id: 'grupo-gasto-cuotas', mini: 'gasto-mini-cuotas', figura: `<span class="recibo__icono">${icon('deudas')}</span>`, k: 'Cuotas', oculta: true })}
+        ${_fila({ id: 'gasto-fila-fecha', mini: 'gasto-mini-fecha', figura: `<span class="recibo__icono">${icon('agenda')}</span>`, k: 'Fecha' })}
+        ${_fila({ id: 'gasto-fila-nota', mini: 'gasto-mini-nota', figura: `<span class="recibo__icono">${icon('edit')}</span>`, k: 'Nota <span class="form-optional">Opcional</span>', vacia: true })}
+      </div>
+      <div class="recibo-extra" id="grupo-gasto-avance" hidden>
+        <label class="recibo-interruptor">
+          <span class="recibo-interruptor__t">Fue un avance en efectivo</span>
+          <span class="toggle"><input type="checkbox" name="avanceTC" value="1" role="switch" /><span class="toggle__track" aria-hidden="true"></span></span>
+        </label>
+        <p class="aviso-ambar" id="gasto-avance-nudge" hidden>${icon('alert')}<span>Un avance cobra intereses desde el mismo día que lo retiras.</span></p>
+      </div>
+      <p class="aviso-ambar" id="gasto-sobrecupo-nudge" aria-live="polite" hidden></p>
+      <p class="recibo__ayuda">Toca un dato para cambiarlo. Cada cambio se guarda solo y lo puedes deshacer.</p>
+      <div class="ficha__extras">${htmlExtrasDetalleGasto(gasto)}</div>
+      <div class="ficha__acciones">
+        <button type="button" class="btn btn-secondary" data-action="repetir-gasto" data-id="${_esc(gasto.id)}">${icon('recurring')} Repetir hoy</button>
+        <button type="button" class="boton-peligro" data-action="eliminar-gasto" data-id="${_esc(gasto.id)}">Eliminar este gasto</button>
+      </div>
+      <button type="submit" hidden>Guardar cambios</button>
     </section>`;
 }
 
@@ -269,10 +311,11 @@ function _htmlMiniNota() {
  * El formulario de gasto del teléfono. Mismo contrato que `renderFormGasto`
  * (sin cuentas lo resuelve el caller con el vacío de siempre).
  *
- * @param {{ sugerencias?: boolean, categoriaFija?: string|null, edicion?: boolean }} [opciones]
+ * @param {{ sugerencias?: boolean, categoriaFija?: string|null, edicion?: boolean, ficha?: object|null }} [opciones]
+ *   `ficha`: el gasto que se corrige (FORM.2d); el formulario es su ficha.
  * @returns {string}
  */
-export function renderFormGastoTelefono({ sugerencias = true, categoriaFija = null, edicion = false } = {}) {
+export function renderFormGastoTelefono({ sugerencias = true, categoriaFija = null, edicion = false, ficha = null } = {}) {
   const cuentas = (S.cuentas ?? []).filter(c => c.activa !== false);
   const tarjetas = categoriaFija ? [] : tarjetasDeCredito(S.compromisos);
   const sel = cuentaHabitual(cuentas, S.gastos ?? []);
@@ -282,14 +325,14 @@ export function renderFormGastoTelefono({ sugerencias = true, categoriaFija = nu
     ? `<input type="radio" name="categoria" value="${_esc(categoriaFija)}" checked hidden />`
     : '';
   return `
-    <form id="form-gasto" class="form-etapas" novalidate data-etapas>
+    <form id="form-gasto" class="form-etapas" novalidate data-etapas${ficha ? ' data-ficha' : ''}>
       ${fija}
       <ol class="etapas" aria-label="Etapas">
         ${etapas.map(([id, t]) => `<li class="etapa" data-etapa-de="${id}">${t}</li>`).join('')}
       </ol>
       ${_htmlMonto({ sugerencias })}
       ${_htmlCategoria({ categoriaFija })}
-      ${_htmlRevisar({ edicion })}
+      ${_htmlRevisar({ edicion, ficha })}
       ${_htmlMiniCuenta({ cuentas, tarjetas, sel })}
       ${_htmlMiniCuotas()}
       ${_htmlMiniFecha()}
@@ -364,8 +407,15 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
     pmonto.classList.toggle('pmonto--largo', monto.value.length > 9);
   };
 
+  const esFicha = 'ficha' in form.dataset;
   const pintarCabecera = () => {
     if (!tituloEl) return;
+    if (esFicha && actual === 'revisar') {
+      tituloEl.textContent = 'Gasto';
+      if (atras) atras.hidden = true;
+      cab?.setAttribute('data-etapa-cab', actual);
+      return;
+    }
     const sub = actual === 'categoria' && valorMonto() > 0
       ? `<span class="modal__titulo-sub">${f(valorMonto())}</span>` : '';
     const texto = actual === 'revisar' && titulo === 'Nuevo gasto' ? 'Revisa tu gasto' : titulo;
@@ -377,9 +427,19 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
     cab?.setAttribute('data-etapa-cab', actual);
   };
 
+  // La ficha guarda sola: al volver al recibo, si algo cambió (FORM.2d).
+  let firma = null;
+  const firmaActual = () => JSON.stringify([...new FormData(form)].filter(([k]) => k !== 'reparto'));
   const pintar = () => {
     pintarMonto();
     _pintarRecibo(form);
+    if (!esFicha || actual !== 'revisar') return;
+    const ahora = firmaActual();
+    if (firma === null) { firma = ahora; return; }
+    if (ahora === firma) return;
+    firma = ahora;
+    form.dataset.quedarse = '1';
+    form.requestSubmit();
   };
 
   const irA = (etapa, { foco = true } = {}) => {

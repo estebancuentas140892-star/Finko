@@ -213,7 +213,7 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(page.locator('.section__volver--contexto')).toHaveCount(0);
   });
 
-  test('la fila mide una línea y abre la hoja; editar desde la hoja abre el gasto (D4)', async ({ page }) => {
+  test('la fila mide una línea y abre la ficha del gasto, que es su formulario (D4, ADR 142 D6)', async ({ page }) => {
     await seedConGastos(page);
     await page.goto('/#gast');
     const fila = page.locator('#lista-gastos .list-item').first();
@@ -224,17 +224,21 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(fila.locator('.list-item__action')).toBeHidden();
 
     await fila.locator('.list-item__detalle').click();
-    const hoja = page.locator('#modal-detalle-fila[data-open]');
+    // FORM.2d (ADR 142 D6): la ficha es el formulario; editar ya no reabre el de crear.
+    const hoja = page.locator('#modal-gasto[data-open]');
     await expect(hoja).toHaveCount(1);
-    // ADR 119 D2: la hoja del gasto nombra sus acciones como el canvas.
-    await expect(hoja.locator('.detalle-fila__accion')).toHaveText([
-      'Repetir hoy', 'Editar', 'Borrar este gasto',
+    await expect(hoja.locator('.modal__title')).toHaveText('Gasto');
+    await expect(hoja.locator('.ficha__acciones .btn, .ficha__acciones .boton-peligro')).toHaveText([
+      'Repetir hoy', 'Eliminar este gasto',
     ]);
-
-    await hoja.locator('[data-target-action="editar-gasto"]').click();
-    await expect(page.locator('#modal-gasto[data-open]')).toHaveCount(1);
-    await expect(page.locator('#modal-detalle-fila[data-open]')).toHaveCount(0);
     await expect(page.locator('#gasto-monto')).not.toHaveValue('');
+
+    // Un dato se cambia en dos toques y se puede deshacer.
+    await hoja.locator('#gasto-fila-fecha').click();
+    await hoja.locator('#gasto-mini-fecha .chip-fecha', { hasText: 'Ayer' }).click();
+    await expect(hoja.locator('#gasto-fila-fecha [data-fila-v]')).toHaveText('Ayer');
+    await expect(page.locator('.fk-toast__accion')).toHaveText('Deshacer');
+    await expect(page.locator('#modal-gasto[data-open]')).toHaveCount(1);
   });
 
   test('el primario del bloque abre el gasto por etapas y cada paso tiene su botón a la vista (D5, ADR 142 D4)', async ({ page }) => {
@@ -899,10 +903,10 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     const fila = page.locator('#lista-gastos .list-item--detalle').first();
     await expect(fila).toBeVisible({ timeout: 10_000 });
     await fila.locator('.list-item__detalle').click();
-    await expect(page.locator('#modal-detalle-fila[data-open]')).toHaveCount(1);
+    await expect(page.locator('#modal-gasto[data-open]')).toHaveCount(1);
 
     await page.evaluate(() => window.__vigias.at(-1).close());
-    await expect(page.locator('#modal-detalle-fila[data-open]')).toHaveCount(0);
+    await expect(page.locator('#modal-gasto[data-open]')).toHaveCount(0);
     await expect(page).toHaveURL(/#gast$/);
   });
 
@@ -949,7 +953,7 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(page.locator('#modal-plan-salida[data-open]')).toHaveCount(0);
   });
 
-  test('la hoja del gasto dice de qué cuenta salió, cómo va su límite y lleva a sus gastos del mes (ADR 119 D2)', async ({ page }) => {
+  test('la ficha del gasto dice de qué cuenta salió, cómo va su límite y lleva a sus gastos del mes (ADR 119 D2, 142 D6)', async ({ page }) => {
     await sembrar(page, estadoBase({
       cuentas: CUENTAS,
       presupuestos: [{ id: 'p1', categoria: 'Mercado', montoMensual: 25_000, activo: true }],
@@ -959,17 +963,16 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     const fila = page.locator('#lista-gastos .list-item--detalle[data-id="g0"]');
     await expect(fila).toBeVisible({ timeout: 10_000 });
     await fila.locator('.list-item__detalle').click();
-    const hoja = page.locator('#modal-detalle-fila[data-open]');
-    await expect(hoja.locator('#detalle-fila-titulo')).toHaveText('Mercado');
-    await expect(hoja.locator('.detalle-gasto__dato').first()).toContainText('Nequi');
+    const hoja = page.locator('#modal-gasto[data-open]');
+    await expect(hoja.locator('[data-recibo-cat]')).toHaveText('Mercado');
+    await expect(hoja.locator('#gasto-fila-cuenta')).toContainText('Nequi');
     await expect(hoja.locator('.detalle-gasto__limite')).toContainText('de su límite de $25.000');
-    await expect(hoja.locator('.detalle-gasto__al-borrar')).toHaveText('Te pediremos confirmar. Los $10.000 vuelven a Nequi.');
 
     const ver = hoja.locator('[data-action="gasto-ver-categoria"]');
     await expect(ver).toContainText('Los 4 gastos de Mercado en');
     await ver.click();
     await expect(page.locator('#sec-movimientos.active')).toBeVisible();
-    await expect(page.locator('#modal-detalle-fila[data-open]')).toHaveCount(0);
+    await expect(page.locator('#modal-gasto[data-open]')).toHaveCount(0);
     await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(4);
   });
 
@@ -1002,7 +1005,7 @@ test.describe('MV2 - hojas con el dedo (ADR 118)', () => {
     const fila = page.locator('#lista-gastos .list-item--detalle').first();
     await expect(fila).toBeVisible({ timeout: 10_000 });
     await fila.locator('.list-item__detalle').tap();
-    const hoja = page.locator('#modal-detalle-fila[data-open] > .modal');
+    const hoja = page.locator('#modal-gasto[data-open] > .modal');
     await expect(hoja).toBeVisible();
     // La hoja entra y vuelve con una transición: se mide quieta, cuando dos
     // lecturas seguidas dan la misma altura.
@@ -1030,14 +1033,14 @@ test.describe('MV2 - hojas con el dedo (ADR 118)', () => {
     };
 
     await arrastrar(30, 6);
-    await expect(page.locator('#modal-detalle-fila[data-open]')).toHaveCount(1);
+    await expect(page.locator('#modal-gasto[data-open]')).toHaveCount(1);
     await expect(hoja).not.toHaveAttribute('data-arrastre');
     // Vuelve a su sitio: el siguiente dedo tiene que caer sobre ella.
     await quieta();
     expect(Math.round((await hoja.boundingBox()).y)).toBe(Math.round(caja.y));
 
     await arrastrar(220, 10);
-    await expect(page.locator('#modal-detalle-fila[data-open]')).toHaveCount(0);
+    await expect(page.locator('#modal-gasto[data-open]')).toHaveCount(0);
   });
 });
 
