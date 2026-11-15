@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(movimientos): REV.3a, descargar el mes para Excel · 2026-11-15
+
+[ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md) D3 y su resolución en implementación. Fichas: [`contexto/movimientos.md`](contexto/movimientos.md), [`contexto/configuracion.md`](contexto/configuracion.md). SW v711.
+
+- **Cada divisor de mes trae su botón de descarga**: `finko-movimientos-YYYY-MM.csv` con Fecha, Descripción, Categoría, Cuenta, Entrada y Salida, de la más vieja a la más reciente. Separador `;` y BOM UTF-8: así Excel en español lo abre en columnas y con tildes.
+- **Baja lo que la lista muestra de ese mes, filtros incluidos** (`movimientosVisibles()`, que ahora usa también el render). Entrada menos Salida da el neto del divisor: lo `neutro` (transferencia, aporte al fondo) va con su monto en la descripción, no en las columnas.
+- **Ajustes conserva su CSV, renombrado** a "Exportar gastos en CSV · Para volver a importarlos": el formato del mes no se reimporta. La descarga de los dos vive en `infra/csv.js` `descargarCSV()`.
+- El botón mide 40 px en escritorio y 44 en el teléfono: `.btn-icon.btn-sm` lo bajaba a 32 de ancho, y la regla lleva `.btn-icon` en el selector.
+- Pruebas: `movimientos-excel` (10 nuevas: columnas, orden, mes, transferencia, el neto contra `sumaDeMovimientos`, BOM y comillas, relectura con `parsearCSV`, el botón por mes y la descarga con un filtro puesto); `config` (1 ajustada: el texto de la fila). Unitarias 5616/5616, E2E 472/472 (en el puerto 8091: el 8081 de esta máquina quedó con sockets que escuchan sin proceso y cuelgan peticiones al azar).
+
 ### feat(movimientos): HF.1d-2, Distribuir deja su ingreso y sus transferencias (ADR 143 D6) · 2026-11-15
 
 [ADR 143](DECISIONS/143-todo-cambio-de-saldo-deja-registro.md) D6 y su resolución en implementación; cierra HF.1d. Fichas: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md), [`contexto/calendario.md`](contexto/calendario.md). SW v710.

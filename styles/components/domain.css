@@ -3261,6 +3261,16 @@ button.chip:focus-visible {
   gap: var(--fk-space-3);
 }
 .movimientos-mes__total { font-variant-numeric: tabular-nums; }
+/* REV.3a: descargar el mes para Excel, después de su total. */
+.movimientos-mes { align-items: center; }
+.movimientos-mes__nombre { flex: 1; }
+/* Con `.btn-icon` en el selector: `.btn-icon.btn-sm` bajaba el ancho a 32px. */
+.movimientos-mes .movimientos-mes__descargar.btn-icon {
+  min-inline-size: var(--fk-space-10);
+  min-block-size: var(--fk-space-10);
+  margin-block: calc(-1 * var(--fk-space-2));
+  color: var(--fk-text-muted);
+}
 .movimientos-resumen {
   margin: 0 0 var(--fk-space-2);
   font-size: var(--fk-text-sm);

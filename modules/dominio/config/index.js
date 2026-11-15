@@ -7,6 +7,7 @@
  * - No usa EventBus (las mutaciones se manejan directamente aquí).
  */
 
+import { descargarCSV } from '../../infra/csv.js';
 import { S, EventBus } from '../../core/state.js';
 import { save, restaurarBlob, borrarTodo } from '../../core/storage.js';
 import { registrarAccion } from '../../ui/actions.js';
@@ -359,14 +360,7 @@ function _exportarGastosCSV() {
     return;
   }
   try {
-    const blob  = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    const url   = URL.createObjectURL(blob);
-    const fecha = hoy();
-    const a     = document.createElement('a');
-    a.href     = url;
-    a.download = `finko-gastos-${fecha}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    descargarCSV(`finko-gastos-${hoy()}.csv`, csv);
     const n = S.gastos?.length ?? 0;
     announce(`${n} gasto${n === 1 ? '' : 's'} exportado${n === 1 ? '' : 's'} a CSV.`);
   } catch (err) {

@@ -957,7 +957,7 @@ function _renderDatos() {
         <p class="respaldo-mas__resumen">Más opciones</p>
         <div class="respaldo-mas__filas">
           ${fila('importar-datos', 'Restaurar desde un respaldo', `Reemplaza lo de ${aqui}`, ' aria-label="Restaurar todos tus datos desde un archivo de respaldo JSON"')}
-          ${fila('exportar-gastos-csv', 'Exportar gastos a Excel', 'Solo tus gastos, en CSV', ' aria-label="Exportar todos los gastos a archivo CSV"')}
+          ${fila('exportar-gastos-csv', 'Exportar gastos en CSV', 'Para volver a importarlos', ' aria-label="Exportar todos los gastos a archivo CSV para volver a importarlos"')}
           ${fila('abrir-import', 'Importar gastos desde un CSV', 'Desde tu banco u otra app', ' aria-label="Importar gastos desde archivo CSV"')}
         </div>
         ${_renderPersistencia()}

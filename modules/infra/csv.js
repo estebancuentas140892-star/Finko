@@ -10,6 +10,8 @@
  *
  * NO maneja: codificaciones distintas a UTF-8 (eso lo resuelve FileReader),
  * cuotes raras de Excel viejas (`'` simple), múltiples encabezados.
+ *
+ * `descargarCSV()` es la única pieza con DOM: entrega el texto como archivo.
  */
 
 const QUOTE = '"';
@@ -106,6 +108,24 @@ export function serializarCSV(filas, opts = {}) {
     ),
   ];
   return lineas.join('\n');
+}
+
+/**
+ * Entrega un CSV como archivo descargado (REV.3a): un `Blob` con su enlace
+ * temporal. Lo comparten "Exportar gastos" de Ajustes y "Descargar el mes" de
+ * Movimientos. Lanza si el navegador no deja crear el archivo: el caller avisa.
+ *
+ * @param {string} nombre Nombre del archivo, con su `.csv`.
+ * @param {string} texto  Contenido ya serializado.
+ */
+export function descargarCSV(nombre, texto) {
+  const blob = new Blob([texto], { type: 'text/csv;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = nombre;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ── INTERNAS ─────────────────────────────────────────────────────

@@ -16,9 +16,11 @@ import {
   renderFiltrosMovimientos, setFiltroTexto, setFiltroDominio, setFiltroCategoria, setFiltroCuenta,
   setFiltroFechaDesde, setFiltroFechaHasta, limpiarFiltrosMovimientos,
   actualizarBotonLimpiarFiltros, alternarTiposMovimientos,
-  historialGrande, pintarFilasDeEspera,
+  historialGrande, pintarFilasDeEspera, movimientosVisibles,
 } from './view.js';
-import { anotarBusquedaReciente } from './logic.js';
+import { anotarBusquedaReciente, filasDelMesParaExcel, csvDelMesParaExcel } from './logic.js';
+import { descargarCSV } from '../../infra/csv.js';
+import { announce } from '../../infra/a11y.js';
 
 /** Secciones cuyos cambios pueden alterar el historial de movimientos. */
 const _SECCIONES_FUENTE = ['gastos', 'ingresosPuntuales', 'ahorro', 'transferencias', 'personales'];
@@ -206,8 +208,32 @@ function _verPrefiltrado({ categoria = null, dominio = null, cuentaId = null, de
   setTimeout(() => _renderVistaCompleta(), 0);
 }
 
+/**
+ * REV.3a: baja el mes del divisor tocado como CSV para Excel, con lo mismo que
+ * la lista muestra de ese mes (filtros incluidos).
+ * @param {HTMLElement} el
+ */
+function _descargarMes(el) {
+  const mes = el?.dataset?.mes;
+  if (!/^\d{4}-\d{2}$/.test(mes ?? '')) return;
+  const filas = filasDelMesParaExcel(movimientosVisibles(), mes, S.cuentas ?? []);
+  const csv = csvDelMesParaExcel(filas);
+  if (!csv) {
+    announce('Este mes no tiene movimientos para descargar.', 'assertive');
+    return;
+  }
+  try {
+    descargarCSV(`finko-movimientos-${mes}.csv`, csv);
+    announce(`${filas.length} movimiento${filas.length === 1 ? '' : 's'} descargado${filas.length === 1 ? '' : 's'} para Excel.`);
+  } catch (err) {
+    console.error('[movimientos] descargar el mes falló:', err);
+    announce('No se pudo descargar. Intenta de nuevo.', 'assertive');
+  }
+}
+
 export function initMovimientos() {
   registrarAccion('movimientos-cargar-mas', cargarMasMovimientos);
+  registrarAccion('movimientos-descargar-mes', _descargarMes);
   registrarAccion('movimientos-filtrar-dominio', _filtrarDominio);
   registrarAccion('movimientos-tipos-alternar', _alternarTipos);
   registrarAccion('movimientos-fechas-alternar', _alternarFechas);

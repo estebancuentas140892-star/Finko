@@ -412,7 +412,7 @@ function _agruparPorMes(movs) {
   for (const m of movs) {
     const clave = m.fecha.slice(0, 7); // YYYY-MM
     if (clave !== claveActual) {
-      grupos.push({ label: _mesAnioLabel(m.fecha), items: [] });
+      grupos.push({ label: _mesAnioLabel(m.fecha), clave, items: [] });
       claveActual = clave;
     }
     grupos[grupos.length - 1].items.push(m);
@@ -625,8 +625,8 @@ export function pintarFilasDeEspera() {
  */
 function _aplanarEntradas(grupos) {
   const entradas = [];
-  for (const { label, items, total } of grupos) {
-    entradas.push({ tipo: 'divisor', label, total });
+  for (const { label, clave, items, total } of grupos) {
+    entradas.push({ tipo: 'divisor', label, clave, total });
     // ADR 134 D6: dentro del mes, cada día con su encabezado y su total.
     let diaActual = null;
     let delDia = [];
@@ -664,8 +664,31 @@ function _renderEntrada(entrada) {
     return `<div class="movimientos-dia" role="presentation"><span>${_esc(entrada.label)}</span>${entrada.total ? `<span class="movimientos-dia__total">${entrada.total}</span>` : ''}</div>`;
   }
   return entrada.tipo === 'divisor'
-    ? `<div class="movimientos-mes" role="presentation"><span>${_esc(entrada.label)}</span>${entrada.total ? `<span class="movimientos-mes__total">${entrada.total}</span>` : ''}</div>`
+    ? `<div class="movimientos-mes"><span class="movimientos-mes__nombre">${_esc(entrada.label)}</span>${entrada.total ? `<span class="movimientos-mes__total">${entrada.total}</span>` : ''}${_botonDescargarMes(entrada)}</div>`
     : _renderMovimientoItem(entrada.mov);
+}
+
+/** REV.3a: descargar el mes para Excel, junto a su total. */
+function _botonDescargarMes({ label, clave }) {
+  if (!clave) return '';
+  return `<button type="button" class="btn btn-ghost btn-icon btn-sm movimientos-mes__descargar" data-action="movimientos-descargar-mes" data-mes="${_esc(clave)}" aria-label="Descargar ${_esc(label)} para Excel" title="Descargar para Excel"><svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg></button>`;
+}
+
+/**
+ * Lo que la lista muestra ahora: el historial con los filtros puestos
+ * (REV.3a: "Descargar el mes" baja exactamente eso).
+ * @returns {import('./logic.js').Movimiento[]}
+ */
+export function movimientosVisibles() {
+  return filtrarMovimientos(_todosLosMovimientos(), {
+    texto:     _filtroTexto,
+    dominio:   _filtroDominio,
+    categoria: _filtroCategoria,
+    cuentaId:  _filtroCuenta,
+    desde:     _filtroFechaDesde,
+    hasta:     _filtroFechaHasta,
+    cuentas:   S.cuentas,
+  });
 }
 
 function _renderControlCargarMas() {
@@ -776,15 +799,7 @@ export function renderMovimientosCompletos() {
   // MOV.2: filtrar sobre la fuente ya derivada, ANTES de agrupar/paginar.
   // Nunca sobre el DOM ya pintado: con años de historial PERF.1 ni siquiera
   // llegó a pintar todos los nodos.
-  const movs = filtrarMovimientos(todos, {
-    texto:     _filtroTexto,
-    dominio:   _filtroDominio,
-    categoria: _filtroCategoria,
-    cuentaId:  _filtroCuenta,
-    desde:     _filtroFechaDesde,
-    hasta:     _filtroFechaHasta,
-    cuentas:   S.cuentas,
-  });
+  const movs = movimientosVisibles();
 
   if (movs.length === 0) {
     el.innerHTML = _renderEmptySinResultados();

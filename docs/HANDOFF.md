@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-15. Última tarea cerrada: HF.1d-2, Distribuir deja su ingreso y sus transferencias. Nada en proceso.
+> Revisado: 2026-11-15. Última tarea cerrada: REV.3a, descargar el mes para Excel. Nada en proceso.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5606/5606 (2026-11-15, HF.1d-2) |
-| Tests E2E | 472/472 (2026-11-15, HF.1d-2, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5616/5616 (2026-11-15, REV.3a) |
+| Tests E2E | 472/472 (2026-11-15, REV.3a, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v49 (`ajustesSaldo`, HF.1d-1) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**REV.3a - descargar el mes para Excel, 2026-11-15**
+Cada mes de Movimientos baja su CSV (`;`, BOM, Entrada y Salida) con lo que la lista muestra; Ajustes conserva el CSV de gastos que se reimporta ([ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md) D3 y su resolución). SW v711.
 
 **HF.1d-2 - Distribuir deja su ingreso y sus transferencias, 2026-11-15**
 El cobro que acredita sale en Movimientos como `IngresoPuntual` por ocurrencia y lo que mueve entre cuentas como `transferencias`; esa fila reemplaza a `cobrosDistribuidos` como sello ([ADR 143](DECISIONS/143-todo-cambio-de-saldo-deja-registro.md) D6). SW v710.
@@ -36,9 +39,6 @@ Cierra FORM.2 ([ADR 142](DECISIONS/142-formularios-por-tarea.md)): "Tu perfil" c
 
 **FORM.2d - la ficha del gasto es su formulario, 2026-11-14**
 En el teléfono, tocar un gasto abre su recibo: cada dato se cambia en su mini-hoja, se guarda solo y se deshace; eliminar al pie ([ADR 142](DECISIONS/142-formularios-por-tarea.md) D6). SW v706.
-
-**FORM.2g - el resto de crear y los controles de Finko en todos los formularios, 2026-11-14**
-Reserva, préstamo, inversión y límite por preguntas; ningún formulario del teléfono muestra un selector del sistema, y una prueba lo vigila ([ADR 142](DECISIONS/142-formularios-por-tarea.md) D2 y D5). SW v705.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

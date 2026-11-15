@@ -148,7 +148,7 @@ describe('renderPanelConfig() - gestión de datos (B5, B6)', () => {
     expect(filas.map(f => f.dataset.action)).toEqual(['importar-datos', 'exportar-gastos-csv', 'abrir-import']);
     expect(filas.map(f => f.querySelector('.respaldo-fila__sub').textContent))
       // En escritorio (el ancho de este entorno) se dice "dispositivo".
-      .toEqual(['Reemplaza lo de este dispositivo', 'Solo tus gastos, en CSV', 'Desde tu banco u otra app']);
+      .toEqual(['Reemplaza lo de este dispositivo', 'Para volver a importarlos', 'Desde tu banco u otra app']);
     expect(datos.querySelector('.config-danger [data-action="resetear-app"]')).not.toBeNull();
   });
 });

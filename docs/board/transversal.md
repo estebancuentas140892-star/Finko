@@ -20,16 +20,6 @@
 
 > **Iniciativa REV, la revisión de Esteban del 2026-11-13** (14 puntos en Registro, Inicio, Deudas, Movimientos y General). La tanda 1 cerró con el [ADR 137](../DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md); el ADR 138 D3 recortó lo que quedaba. "Pagar desde varias cuentas" no genera tarjeta: ya existe y se deja así (registra lo que pasa en el banco, un débito por cuenta). **El ojo sigue siendo uno solo** (REV.4 descartada, ADR 106 D3).
 
-#### REV.3a - Descargar el mes para Excel
-- Prioridad  : media
-- Estado     : pendiente (reducida por el ADR 138 D3: sin hoja de extracto ni PDF)
-- Área       : code
-- Objetivo   : "Descargar el mes para Excel" desde el mes de Movimientos: CSV con `;`, BOM y columnas Fecha, Descripción, Categoría, Cuenta, Entrada y Salida, con todo lo que la lista de ese mes muestra. Reemplaza "Exportar gastos a Excel" de Ajustes, que hoy lleva solo gastos
-- Riesgo     : sin librerías nuevas (`docs/SECURITY.md`); el CSV de gastos que alimenta "Importar gastos" no puede romperse: si el formato nuevo no sirve para reimportar, Ajustes conserva el viejo
-- Archivos   : `modules/dominio/movimientos/logic.js`, su vista, `modules/infra/csv.js`, `modules/dominio/config/index.js` y `view.js`
-- Depende de : nada
-- Aceptación : el CSV de un mes suma lo mismo que la lista de Movimientos de ese mes y abre en columnas en Excel
-
 #### REV.3b - La app instalada tiene tus datos y la versión publicada
 - Prioridad  : alta
 - Estado     : pendiente (absorbe REV.5, ADR 138 D3): primero una prueba en un iPhone real y los datos del teléfono de Esteban

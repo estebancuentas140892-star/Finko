@@ -82,3 +82,7 @@ Las fichas 18 a 25 auditaban, con el handoff de agosto, pantallas que MV2.30 vol
 - El tablero pasa de 47 entradas a 17: 13 de trabajo, NUBE.4 quieta y tres de mantenimiento.
 - Las fichas de `contexto/` que mandan un pendiente "a la ficha 18" se leen con la tabla de D1; `contexto/README.md` lo dice.
 - BUG-039 entra a [`BUGS.md`](../BUGS.md): el monitor de renta suma el salario dos veces cuando hay crédito automático.
+
+## Resolución en implementación
+
+- **REV.3a (2026-11-15) no reemplaza la fila de Ajustes, la renombra.** El CSV del mes (Entrada y Salida, con ingresos y transferencias) no se vuelve a importar como gastos, y "Importar gastos" lee el formato de Ajustes. Se aplica la salvedad que la tarjeta ya traía: Ajustes conserva su CSV como "Exportar gastos en CSV · Para volver a importarlos", y "Excel" queda solo en Movimientos. D3 cambia en eso y en nada más.

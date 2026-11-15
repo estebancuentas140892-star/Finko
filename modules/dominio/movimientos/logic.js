@@ -13,7 +13,8 @@
  */
 
 import { CATEGORIA_INGRESO_ICONO, iconoDeCategoriaGasto } from '../../core/constants.js';
-import { fechaLocalISO } from '../../infra/utils.js';
+import { fechaLocalISO, f } from '../../infra/utils.js';
+import { serializarCSV } from '../../infra/csv.js';
 
 /**
  * @typedef {Object} Movimiento
@@ -415,6 +416,69 @@ export function movimientosCompletos(fuentes = {}) {
 }
 
 // ── BUSCAR (ADR 121 D1) ──────────────────────────────────────────
+
+/** Las columnas del mes para Excel, en su orden (REV.3a). */
+export const COLUMNAS_EXCEL = ['Fecha', 'Descripción', 'Categoría', 'Cuenta', 'Entrada', 'Salida'];
+
+/** Qué es la fila cuando no es un gasto con categoría: la columna Categoría no queda vacía. */
+const _CATEGORIA_POR_TIPO = {
+  gasto:         'Gasto',
+  ingreso:       'Ingreso',
+  aporte:        'Ahorro',
+  transferencia: 'Transferencia',
+  abono:         'Abono recibido',
+  prestamo:      'Préstamo',
+  recibido:      'Préstamo recibido',
+  ajuste:        'Ajuste de saldo',
+};
+
+/**
+ * Las filas de un mes para Excel (REV.3a), de la más vieja a la más reciente,
+ * con las columnas de `COLUMNAS_EXCEL`. Recibe lo que la lista muestra (ya
+ * filtrado) y se queda con el mes pedido. Entrada y Salida van como números
+ * sin formato, para que Excel los sume: Entrada menos Salida da el total que
+ * la lista pone junto al mes. Una transferencia o un aporte al fondo no suman
+ * a ningún lado (`neutro`): su monto va en la descripción, no en las columnas.
+ *
+ * Pura: no lee `S` ni el DOM.
+ *
+ * @param {Movimiento[]} movimientos
+ * @param {string} prefijoMes 'YYYY-MM'.
+ * @param {Array<{id:string, nombre:string}>} [cuentas]
+ * @returns {Array<Record<string, string|number>>}
+ */
+export function filasDelMesParaExcel(movimientos, prefijoMes, cuentas = []) {
+  const nombreCuenta = (id) => (cuentas ?? []).find(c => c.id === id)?.nombre ?? '';
+  return (movimientos ?? [])
+    .filter(m => typeof m?.fecha === 'string' && m.fecha.startsWith(`${prefijoMes}-`))
+    .reverse()
+    .sort((a, b) => a.fecha.localeCompare(b.fecha))
+    .map(m => {
+      const monto = Number(m.monto) || 0;
+      const desc  = descripcionMovimiento(m, cuentas);
+      return {
+        Fecha:         m.fecha,
+        'Descripción': m.direccion === 'neutro' ? `${desc}: ${f(monto)}` : desc,
+        'Categoría':   m.categoria || _CATEGORIA_POR_TIPO[m.tipo] || '',
+        Cuenta:        m.tipo === 'transferencia' ? '' : nombreCuenta(m.cuentaId),
+        Entrada:       m.direccion === 'ingreso' ? monto : '',
+        Salida:        m.direccion === 'egreso' ? monto : '',
+      };
+    });
+}
+
+/**
+ * El CSV del mes para Excel (REV.3a): separador `;` (el que Excel en español
+ * abre en columnas) y BOM UTF-8 al inicio, sin el cual Excel muestra mal las
+ * tildes. Vacío si el mes no tiene filas.
+ *
+ * @param {ReturnType<typeof filasDelMesParaExcel>} filas
+ * @returns {string}
+ */
+export function csvDelMesParaExcel(filas) {
+  if (!Array.isArray(filas) || filas.length === 0) return '';
+  return `\uFEFF${serializarCSV(filas, { separador: ';', headers: COLUMNAS_EXCEL })}`;
+}
 
 /** Cuántas búsquedas recientes se recuerdan. */
 export const BUSQUEDAS_RECIENTES_MAX = 5;
