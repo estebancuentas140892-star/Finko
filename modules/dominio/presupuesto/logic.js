@@ -165,12 +165,12 @@ export function validarHormiga(datos) {
   const errores = [];
   const tope = Number(datos?.tope);
   if (!Number.isFinite(tope) || tope < TOPE_HORMIGA_MIN || tope > TOPE_HORMIGA_MAX) {
-    errores.push(`Una compra pequeña puede ir de ${f(TOPE_HORMIGA_MIN)} a ${f(TOPE_HORMIGA_MAX)}.`);
+    errores.push(`Una compra pequeña va de ${f(TOPE_HORMIGA_MIN)} a ${f(TOPE_HORMIGA_MAX)}: escribe un valor en ese rango.`);
   }
   const crudo = String(datos?.limite ?? '').trim();
   if (crudo !== '') {
     const limite = Number(crudo);
-    if (!Number.isFinite(limite) || limite <= 0) errores.push('El límite del mes debe ser un número mayor a 0.');
+    if (!Number.isFinite(limite) || limite <= 0) errores.push('Escribe el límite del mes. Por ejemplo: 300.000');
   }
   return errores;
 }
@@ -716,14 +716,14 @@ export function validarPresupuesto(
 
   const esPersonalizada = categoriasPersonalizadas.some(c => c.nombre === datos.categoria);
   if (!datos.categoria?.trim()) {
-    errores.push('Debes elegir una categoría.');
+    errores.push('Elige una categoría.');
   } else if (!CATEGORIAS_GASTO.includes(datos.categoria) && !esPersonalizada) {
-    errores.push(`Categoría inválida. Usa una de: ${CATEGORIAS_GASTO.join(', ')}.`);
+    errores.push('Elige una categoría de la lista.');
   }
 
   const monto = Number(datos.montoMensual);
   if (isNaN(monto) || monto <= 0) {
-    errores.push('El monto mensual debe ser un número mayor a 0.');
+    errores.push('Escribe cuánto quieres gastar al mes. Por ejemplo: 600.000');
   }
 
   // Duplicado: solo si NO estamos editando el mismo envelope.
@@ -731,7 +731,7 @@ export function validarPresupuesto(
     const duplicado = presupuestosActivos(presupuestosExistentes)
       .some(p => p.categoria === datos.categoria && p.id !== presupuestoIdActual);
     if (duplicado) {
-      errores.push(`Ya existe un límite para "${datos.categoria}". Edita el existente.`);
+      errores.push(`Ya tienes un límite para "${datos.categoria}": cámbialo desde la lista.`);
     }
   }
 

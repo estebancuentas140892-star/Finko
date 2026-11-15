@@ -160,7 +160,7 @@ async function _guardarInversion(form) {
   const errores = validarInversion(datos);
 
   if (errores.length > 0) {
-    mostrarErroresForm(form, errores);
+    mostrarErroresForm(form, errores, undefined, () => validarInversion(Object.fromEntries(new FormData(form))));
     return;
   }
 

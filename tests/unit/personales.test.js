@@ -480,18 +480,18 @@ describe('validarPersonal()', () => {
   it('rechaza nombre vacío', () => {
     const errores = validarPersonal({ persona: '', monto: '50000' });
     expect(errores.length).toBeGreaterThan(0);
-    expect(errores[0]).toMatch(/nombre/i);
+    expect(errores[0]).toMatch(/a quién/i);
   });
 
   it('rechaza monto inválido', () => {
     expect(validarPersonal({ persona: 'X', monto: '0' })).toContainEqual(
-      expect.stringMatching(/monto/i),
+      expect.stringMatching(/cuánto prestaste/i),
     );
     expect(validarPersonal({ persona: 'X', monto: '-5' })).toContainEqual(
-      expect.stringMatching(/monto/i),
+      expect.stringMatching(/cuánto prestaste/i),
     );
     expect(validarPersonal({ persona: 'X', monto: 'abc' })).toContainEqual(
-      expect.stringMatching(/monto/i),
+      expect.stringMatching(/cuánto prestaste/i),
     );
   });
 

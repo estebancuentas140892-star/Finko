@@ -492,7 +492,7 @@ export function renderFormCuenta() {
         </select>
       </div>
       <div class="form-group">
-        <label for="cuenta-saldo" class="label">Saldo actual (COP)</label>
+        <label for="cuenta-saldo" class="label">Saldo actual</label>
         <input id="cuenta-saldo" name="saldo" class="input" type="text" inputmode="numeric" data-miles autocomplete="off" placeholder="0" value="0" />
       </div>
 
@@ -521,7 +521,7 @@ export function renderFormCuenta() {
       <fieldset id="cuenta-cuota-fieldset" class="cuota-fieldset" hidden>
         <div class="form-group">
           <label for="cuenta-cuota-monto" class="label">
-            Monto de la cuota (COP)
+            Monto de la cuota
           </label>
           <input id="cuenta-cuota-monto"
                  name="cuotaManejoMonto"
@@ -530,7 +530,7 @@ export function renderFormCuenta() {
                  placeholder="Ej. 15000" />
         </div>
         <div class="form-group">
-          <label for="cuenta-cuota-dia" class="label">Día de cobro (1-31)</label>
+          <label for="cuenta-cuota-dia" class="label">Día de cobro</label>
           <input id="cuenta-cuota-dia"
                  name="cuotaManejoDia"
                  class="input"
@@ -556,7 +556,7 @@ export function renderFormCuenta() {
       <fieldset id="cuenta-transferencia-fieldset" class="cuota-fieldset" hidden>
         <div class="form-group">
           <label for="cuenta-numero" class="label">
-            Número de cuenta <span class="form-optional">opcional</span>
+            Número de cuenta <span class="form-optional">Opcional</span>
           </label>
           <input id="cuenta-numero"
                  name="numeroCuenta"
@@ -567,7 +567,7 @@ export function renderFormCuenta() {
         </div>
         <div class="form-group">
           <label for="cuenta-tipo-llave" class="label">
-            Tipo de llave <span class="form-optional">opcional</span>
+            Tipo de llave <span class="form-optional">Opcional</span>
           </label>
           <select id="cuenta-tipo-llave" name="tipoLlave" class="input">
             <option value="">Seleccionar…</option>
@@ -576,7 +576,7 @@ export function renderFormCuenta() {
         </div>
         <div class="form-group">
           <label for="cuenta-llave" class="label">
-            Llave de transferencia <span class="form-optional">opcional</span>
+            Llave de transferencia <span class="form-optional">Opcional</span>
           </label>
           <input id="cuenta-llave"
                  name="llave"
@@ -587,7 +587,7 @@ export function renderFormCuenta() {
         </div>
         <div class="form-group">
           <label for="cuenta-alias" class="label">
-            Alias <span class="form-optional">opcional</span>
+            Alias <span class="form-optional">Opcional</span>
           </label>
           <input id="cuenta-alias"
                  name="alias"

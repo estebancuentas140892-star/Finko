@@ -1,6 +1,6 @@
 # Ficha de contexto: Captura (formularios y selector de ícono)
 
-> Revisado: 2026-11-04.
+> Revisado: 2026-11-14.
 
 > Cómo se capturan datos en un formulario de la app: el lenguaje visual compartido de los formularios y el selector de ícono que varios de ellos incrustan. Partida de `transversal.md` el 2026-07-24. Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -11,8 +11,8 @@
 ## Lenguaje de formularios v2 (FORM.1, [ADR 042](../DECISIONS/042-formularios-v2-visual.md))
 
 - **Objetivo**          : un mismo lenguaje de captura para los formularios de la app (handoff "Formularios v2" de Claude Design): monto hero protagonista, categoría con chips de ícono (nunca un select nuevo), fecha con atajos Hoy/Ayer/Otra fecha, teja de dominio junto al título del modal y footer con el primario a lo ancho.
-- **Estado actual**     : **FORM.1a CERRADA** (2026-07-15): fundación CSS + Registrar gasto (flagship). Pendientes **FORM.1b** (Nueva deuda) y **FORM.1c** (Nuevo gasto fijo), tarjetas en el BOARD. Los demás formularios migran cuando su iniciativa los toque (ADR 042 D6); regla vigente: ningún formulario nuevo introduce un select de categoría.
-- **Verificado contra** : ADR 123 (2026-11-04): los 21 formularios de dominio llevan teja y pie fijo; los errores van bajo su campo.
+- **Estado actual**     : FORM.1a cerrada (2026-07-15): fundación CSS + Registrar gasto (flagship). Desde el 2026-11-14 manda la iniciativa **FORM.2** ([ADR 142](../DECISIONS/142-formularios-por-tarea.md), formularios por tarea): **FORM.2a cerrada** (lo que vale para todas las hojas); las 27 hojas migran todas bajo 1024 px (cambia el 042 D6). Regla vigente: ningún `<select>`, `type="date"` ni `type="number"` nuevo en el teléfono (142 D2), ninguna categoría en un desplegable (042 D6).
+- **Verificado contra** : FORM.2a (2026-11-14, [ADR 142](../DECISIONS/142-formularios-por-tarea.md) D8 y D9): modo escritura, Enter que avanza, un solo botón en el teléfono, "¿Salir sin guardar?", la pastilla "Opcional" y errores por campo con mensajes que dicen qué hacer. La forma de cada formulario (teclado de Finko, preguntas, ficha editable) llega con FORM.2b a FORM.2g.
 
 **Dónde vive**
 
@@ -22,7 +22,10 @@
 | Excepción móvil del input gigante | `styles/responsive.css` | `.input.input--big-amount` dentro de la media query de inputs | la capa `responsive` le gana por ORDEN a `components`: toda excepción móvil de inputs vive ahí, no en `forms.css` |
 | Primer consumidor (flagship) | `modules/dominio/gastos/view.js` | `renderFormGasto()` | detalle en la ficha [`gastos.md`](gastos.md), bloque "Formulario de gasto" |
 | Estado seleccionado de chips | `styles/components/forms.css` | `.chip-cat:has(.chip-cat__radio:checked)` | patrón calibrado D.16b (tinte 12% + borde 50% + texto primario); radio oculto DENTRO del label, foco vía `:has(:focus-visible)` |
-| Errores bajo el campo (ADR 123 D2) | `modules/infra/form-errors.js` | `mostrarErroresForm()`, tabla `_CAMPOS` | cada error que nombra un campo va en `.form-error` al final de su `.form-group` (o `fieldset`, `.monto-hero`), con `#i-alert`, `aria-invalid` y `aria-describedby`; arriba solo "Revisa los N campos marcados." y, en lista, los que no nombran campo. La grilla de chips se marca vía `.chips-cat:has(.field-invalid)` |
+| Errores bajo el campo (ADR 123 D2, ADR 142 D9) | `modules/infra/form-errors.js` | `mostrarErroresForm(form, errores, titulo, revalidar)`, tabla `_CAMPOS` | cada error que nombra un campo va en `.form-error[data-campo]` al final de su `.form-group` (o `fieldset`, `.monto-hero`), con `#i-alert`, `aria-invalid` y `aria-describedby`. Corregir un campo limpia solo ese campo. Arriba, "Revisa N datos para guardar." con "Ir al primero" solo con dos errores o más; los que no nombran campo van en lista bajo "Antes de guardar:". Con `revalidar`, tras el primer intento cada campo se vuelve a validar al dejarlo. La grilla de chips se marca vía `.chips-cat:has(.field-invalid)` |
+| Teclado: ancla y Enter (ADR 142 D8) | `modules/ui/teclado.js` | `llevarCampoALaVista()` (`block: 'start'`), `campoSiguiente()`, `marcarTeclaEnter()`, `alPulsarEnter()` | bajo 1024 px, en el formulario de una hoja abierta, Enter pasa al siguiente campo que abre teclado o, en el último, cierra el teclado; nunca envía. `enterkeyhint` "next"/"done" se pone al tocar y al enfocar, salvo que el campo ya traiga el suyo |
+| Cerrar con cambios (ADR 142 D8) | `modules/ui/hojas.js` | `pedirCierre(overlay)`; `actions.js` lo usa en la ✕ y en Escape | un `input`/`change` de confianza dentro del `<form>` de la hoja la marca `data-cambios` (`abrirModal`/`cerrarModal` lo borran). En el teléfono, la ✕, Escape, el atrás y el deslizar preguntan "¿Salir sin guardar?"; guardar no pregunta porque el dominio cierra con `cerrarModal`. Seguir editando vuelve a armar el `CloseWatcher` |
+| Modo escritura, un botón y "Opcional" (ADR 142 D8) | `styles/responsive.css`, `styles/components/forms.css` | bloque "ADR 142 D8 (FORM.2a)"; `.form-optional` | con `html[data-teclado]`: sin agarradera ni teja, cabecera de 52, pie sin margen seguro y alto menos `safe-area-inset-top`. Bajo 1024 px, "Cancelar" (`.btn-ghost[data-action="modal-close"]` del pie del formulario) se oculta; escritorio lo conserva. `.form-optional` es la única marca de opcional |
 | Anatomía de la hoja en el teléfono (ADR 123 D1) | `styles/responsive.css` | bloque "ADR 123 D1" | bajo 481 px: agarradera en el `::before` (la franja IV.2b en tableta y escritorio), cabecera de 60, alto `94dvh` menos el margen seguro superior |
 
 **Dependencias y relaciones**: consume `--fk-section-accent` (IV.2b/ADR 031) y el patrón de selección D.16b; convive con el selector de cuenta (`renderSelectorCuenta`, conservado a propósito, ADR 042 D3) y el picker de ícono CAT.2. **Conflicto de ADR 042 D9 resuelto (AP.5, 2026-08-01):** el brief de Apartados pedía dropdown de categoría; ganaron los chips por ser la convención ya escrita del lenguaje v2 (`renderFormApartado()`, ver [`apartados.md`](apartados.md)).
@@ -30,14 +33,16 @@
 **Riesgos**:
 
 - **Montos con separador de miles (ADR 120)**: todo campo de dinero es `type="text" inputmode="numeric" data-miles`. `ui/miles.js` lo reformatea al escribir y lo entrega como dígitos al armar `FormData` (evento `formdata`). Quien lee `.value` directo usa `desdeMiles()` y quien escribe un monto usa `miles()` (`infra/miles.js`). En unitarios, `tests/setup.js` hace que happy-dom dispare `formdata`. En E2E, `fill('50000')` deja "50.000" en el campo.
-- **Un mensaje de error nuevo**: si no contiene ninguna frase de `_CAMPOS` (form-errors.js), cae en la lista de arriba y no se marca ningún campo. Al escribir un validador, nombrar el campo ("El monto...", "La fecha...") o agregar la frase a la tabla.
+- **Un mensaje de error nuevo**: si no contiene ninguna frase de `_CAMPOS` (form-errors.js), cae en la lista de arriba y no se marca ningún campo. Los mensajes dicen qué hacer ("Escribe cuánto fue. Por ejemplo: 45.000", ADR 142 D9): la frase que los ata suele ser la pregunta ("cuánto", "cada cuánto", "de qué cuenta sale", "a quién"). Al escribir uno, reutilizar una frase de la tabla o agregar la suya, con lo específico antes que lo general.
+- **Probar "cerrar con cambios" en unitarios**: happy-dom despacha eventos sin `isTrusted`, que `hojas.js` ignora a propósito (lo que el dominio llena al abrir no es un cambio). La prueba marca `data-cambios` a mano; el camino real lo cubre el E2E.
 - **Radios ocultos**: los chips son labels; `element.value` sobre `[name="categoria"]` devuelve el primer radio. Leer siempre vía FormData o iterando radios. En E2E se clickea el label, no `check()` del input.
 - **Transiciones vs lecturas síncronas**: `.chip-cat` transiciona background/border; una lectura de `getComputedStyle` inmediata tras cambiar `checked` (o en un tab en segundo plano) devuelve el valor inicial. Verificar estados con E2E o con `transition: none` temporal.
 
-**Cambios pendientes**: FORM.1b (deuda), FORM.1c (gasto fijo).
+**Cambios pendientes**: FORM.2b a FORM.2g ([ADR 142](../DECISIONS/142-formularios-por-tarea.md), tarjetas en [`board/transversal.md`](../board/transversal.md)). La prueba de FORM.2a en un iPhone real va con REV.3b.
 
 **Cambios realizados**:
 
+- 2026-11-14 FORM.2a: lo que vale para todas las hojas (ADR 142 D8 y D9).
 - **MV2.3 segunda pasada (2026-11-04, [ADR 123](../DECISIONS/123-la-hoja-de-formulario-completa.md))**: teja en los 16 formularios que no la tenían, pie fijo en 14 más, agarradera y alto del 94 % en la hoja del teléfono, errores bajo su campo con ícono y la prueba de contraste en los dos temas.
 - **MV2.3 tanda 5 (2026-11-04, [ADR 120](../DECISIONS/120-separador-de-miles-en-todos-los-campos-de-dinero.md))**: separador de miles en los 33 campos de dinero; el par `miles` / `desdeMiles` sube a infra y Reservas y Ajustes lo reexportan.
 - **FORM.1a (2026-07-15)**: fundación CSS + Registrar gasto v2 + fix del hueco preexistente de `responsive.css` (el 16px anti-zoom achicaba `.input--big-amount` en móvil, también en el ingreso puntual). Ver [CHANGELOG](../CHANGELOG.md).

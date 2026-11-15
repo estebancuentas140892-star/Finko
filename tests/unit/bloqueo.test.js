@@ -21,14 +21,14 @@ describe('validarPin() (CFG.5a)', () => {
   });
 
   it('rechaza cualquier caracter que no sea número', () => {
-    expect(validarPin('12a4')).toContain('numeros');
-    expect(validarPin('12 4')).toContain('numeros');
-    expect(validarPin('-123')).toContain('numeros');
+    expect(validarPin('12a4')).toBe('Usa solo números en el PIN.');
+    expect(validarPin('12 4')).toBe('Usa solo números en el PIN.');
+    expect(validarPin('-123')).toBe('Usa solo números en el PIN.');
   });
 
   it('rechaza los largos fuera de rango', () => {
-    expect(validarPin('1'.repeat(PIN_LARGO_MIN - 1))).toContain('entre');
-    expect(validarPin('1'.repeat(PIN_LARGO_MAX + 1))).toContain('entre');
+    expect(validarPin('1'.repeat(PIN_LARGO_MIN - 1))).toBe(`Escribe un PIN de ${PIN_LARGO_MIN} a ${PIN_LARGO_MAX} números.`);
+    expect(validarPin('1'.repeat(PIN_LARGO_MAX + 1))).toBe(`Escribe un PIN de ${PIN_LARGO_MIN} a ${PIN_LARGO_MAX} números.`);
   });
 });
 

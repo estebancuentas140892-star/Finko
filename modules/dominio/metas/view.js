@@ -468,7 +468,7 @@ export function renderFormAbonoMeta(meta) {
         <strong>${f(meta.montoActual ?? 0)} de ${f(meta.montoObjetivo ?? 0)}</strong> (${porcentaje}%)${faltanteHtml}
       </p>
       <div class="form-group">
-        <label for="abono-meta-monto" class="label">Monto del aporte (COP)</label>
+        <label for="abono-meta-monto" class="label">Monto del aporte</label>
         <input id="abono-meta-monto" name="monto" class="input" type="text" placeholder="0"${valorHtml}
                required aria-required="true"
                autocomplete="off" inputmode="numeric" data-miles />
@@ -512,17 +512,17 @@ export function renderFormMeta(meta = null) {
                value="${_esc(meta?.nombre ?? '')}" />
       </div>
       <div class="form-group">
-        <label for="meta-objetivo" class="label">Monto objetivo (COP)</label>
+        <label for="meta-objetivo" class="label">Monto objetivo</label>
         <input id="meta-objetivo" name="montoObjetivo" class="input" type="text" inputmode="numeric" data-miles autocomplete="off" placeholder="0" required aria-required="true"
                value="${miles(meta ? Number(meta.montoObjetivo) || '' : '')}" />
       </div>
       <div class="form-group">
-        <label for="meta-fecha" class="label">Fecha límite (opcional)</label>
+        <label for="meta-fecha" class="label">Fecha límite <span class="form-optional">Opcional</span></label>
         <input id="meta-fecha" name="fechaLimite" class="input" type="date" value="${_esc(meta?.fechaLimite ?? '')}" />
         <p class="form-hint">Sin fecha, la meta queda abierta. Con fecha, Finko muestra cuánto guardar por día para llegar a tiempo.</p>
       </div>
       <div class="form-group">
-        <span class="label" id="meta-categoria-label">Categoría <span class="form-optional">opcional</span></span>
+        <span class="label" id="meta-categoria-label">Categoría <span class="form-optional">Opcional</span></span>
         <div class="chips-cat" id="meta-categoria-chips" role="radiogroup" aria-labelledby="meta-categoria-label">
           ${_chipsCategoria(categoriaActual)}
         </div>
@@ -537,7 +537,7 @@ export function renderFormMeta(meta = null) {
         ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'meta-icono', nombreCampo: 'icono', label: 'Elige un ícono para tu meta', valorActual: _valorIconoEditable(meta) })}
       </div>
       <div class="form-group">
-        <label for="meta-nota" class="label">Nota (opcional)</label>
+        <label for="meta-nota" class="label">Nota <span class="form-optional">Opcional</span></label>
         <input id="meta-nota" name="nota" class="input" type="text" maxlength="80"
                placeholder="Ej. Cotización en Despegar, código de la reserva"
                value="${_esc(meta?.nota ?? '')}" />
@@ -615,7 +615,7 @@ function _gruposSubcategoria(categoriaActual, subcategoriaActual) {
 
     return `
       <fieldset class="subcategoria-fieldset" data-subcategoria-grupo="${_esc(cat)}"${visible ? '' : ' hidden disabled'}>
-        <legend>Sé más específico <span class="form-optional">opcional</span></legend>
+        <legend>Sé más específico <span class="form-optional">Opcional</span></legend>
         <div class="chips-cat">${chips}</div>
       </fieldset>`;
   }).join('');

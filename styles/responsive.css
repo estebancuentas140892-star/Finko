@@ -2660,6 +2660,12 @@
   /* ADR 123 D1: un pie con una fila debajo ("Desactivar fondo", DIS.12) no
      se come el margen inferior del cuerpo: esa fila le quedaría debajo. */
   .modal__body .modal__footer--principal:not(:last-child) { margin-bottom: 0; }
+  /* ADR 142 D8 (cambia el 042 D1): un solo botón a lo ancho, con verbo y
+     objeto. "Cancelar" sale del pie del formulario: la ✕, el deslizar y el
+     atrás ya cierran, y con cambios preguntan (ui/hojas.js). En escritorio
+     el pie conserva sus dos botones. */
+  form .modal__footer--principal > .btn-ghost[data-action="modal-close"] { display: none; }
+  form .modal__footer--principal > .btn-primary { flex: 1; }
   #form-gasto .chip-cat {
     min-height: 56px;
     gap: var(--fk-space-1);
@@ -2682,8 +2688,33 @@
   }
   @media (max-width: 480px) {
     html[data-teclado] .modal-overlay[data-open]:not(.leccion-overlay) .modal {
-      max-height: var(--fk-vv-alto);
+      max-height: calc(var(--fk-vv-alto) - env(safe-area-inset-top, 0px));
     }
+  }
+
+  /* ── ADR 142 D8 (FORM.2a): el modo escritura ───────────────────────────
+     Con el teclado de texto en un iPhone SE quedan ≈ 363 px y la hoja gastaba
+     ≈ 170 en marco. Mientras hay teclado: sin agarradera ni teja, cabecera de
+     52 px y pie de 72 sin el margen seguro (el teclado ya lo cubre). Arriba,
+     la hoja no pasa de la barra de estado (regla de arriba): en la app
+     instalada la ✕ no queda debajo de la hora. El campo que sube a la vista
+     se ancla arriba del cuerpo (ui/teclado.js) y el `scroll-padding` deja
+     ver su rótulo. */
+  .modal-overlay[data-open] .modal__body { scroll-padding-top: var(--fk-space-10); }
+  /* La agarradera del 123 D1 pesa (0,5,1): esta la supera. */
+  html[data-teclado] .modal-overlay[data-open]:not(.leccion-overlay) > .modal:not(.kmodal)::before,
+  html[data-teclado] .modal-overlay[data-open] .mas-sheet__handle,
+  html[data-teclado] .modal-overlay[data-open] .modal__teja { display: none; }
+  html[data-teclado] .modal-overlay[data-open] .modal:not(.kmodal) > .modal__header {
+    min-height: 52px;
+    padding-block: var(--fk-space-1);
+  }
+  html[data-teclado] .modal-overlay[data-open] .modal__body .modal__footer--principal,
+  html[data-teclado] #modal-distribuir .distribuir__pie {
+    padding-bottom: var(--fk-space-3);
+  }
+  html[data-teclado] .modal-overlay[data-open] .modal:not(.modal--sheet) > .modal__footer {
+    padding-bottom: var(--fk-space-4);
   }
 
   /* ── ADR 123 D1: la hoja de formulario completa (tablero 3) ────────────

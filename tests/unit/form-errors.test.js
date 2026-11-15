@@ -11,14 +11,17 @@ describe('mostrarErroresForm() - encabezado del bloque', () => {
 
   const titulo = () => form.querySelector('.form-errors__title')?.textContent.trim();
 
-  it('sin título explícito habla de campos que faltan (comportamiento previo)', () => {
-    mostrarErroresForm(form, ['La descripción es obligatoria.']);
-    expect(titulo()).toBe('Falta información para guardar:');
+  it('un error sin campo al que atarse va arriba, en la lista (ADR 142 D9)', () => {
+    mostrarErroresForm(form, ['Elige dos cuentas distintas.']);
+    expect(titulo()).toBe('Antes de guardar:');
+    expect(form.querySelector('.form-errors__list').textContent).toContain('Elige dos cuentas distintas.');
+    expect(form.querySelector('.form-errors__ir')).toBeNull();
   });
 
-  it('con dos o más errores cuenta los campos, como siempre', () => {
+  it('con dos o más sin campo, la lista los trae todos', () => {
     mostrarErroresForm(form, ['Uno.', 'Dos.']);
-    expect(titulo()).toBe('Faltan 2 campos por completar:');
+    expect(titulo()).toBe('Antes de guardar:');
+    expect(form.querySelectorAll('.form-errors__list li')).toHaveLength(2);
   });
 
   it('acepta un título propio para errores que no son "falta algo" (CFG.5a)', () => {
@@ -73,12 +76,18 @@ describe('mostrarErroresForm() - el error va debajo de su campo (ADR 123 D2)', (
     expect(d.classList.contains('field-invalid')).toBe(true);
   });
 
-  it('arriba solo cuenta los campos marcados y no repite la lista', () => {
+  it('con dos errores o más, el aviso de arriba los cuenta, no repite la lista y lleva al primero', () => {
     mostrarErroresForm(form, ['La descripción es obligatoria.', 'El monto debe ser mayor a 0.']);
-    expect(form.querySelector('.form-errors__title').textContent).toBe('Revisa los 2 campos marcados.');
+    expect(form.querySelector('.form-errors__title').textContent).toBe('Revisa 2 datos para guardar.');
     expect(form.querySelector('.form-errors__list')).toBeNull();
+    form.querySelector('.form-errors__ir').click();
+    expect(document.activeElement.name).toBe('descripcion');
+  });
+
+  it('con un solo error de campo no hay aviso arriba: basta el de su campo (ADR 142 D9)', () => {
     mostrarErroresForm(form, ['El monto debe ser mayor a 0.']);
-    expect(form.querySelector('.form-errors__title').textContent).toBe('Revisa el campo marcado.');
+    expect(form.querySelector('.form-errors')).toBeNull();
+    expect(form.querySelectorAll('.form-error')).toHaveLength(1);
   });
 
   it('un error sin campo sigue en la lista de arriba', () => {
@@ -87,13 +96,46 @@ describe('mostrarErroresForm() - el error va debajo de su campo (ADR 123 D2)', (
     expect(form.querySelectorAll('.form-error')).toHaveLength(1);
   });
 
-  it('volver a escribir limpia los errores, las marcas y deja la pista del campo', () => {
+  it('corregir un campo limpia solo ese campo; el otro sigue marcado (ADR 142 D9)', () => {
     mostrarErroresForm(form, ['La descripción es obligatoria.', 'El monto debe ser mayor a 0.']);
     form.querySelector('[name="monto"]').dispatchEvent(new Event('input', { bubbles: true }));
+    // Queda uno: el aviso de arriba ya no hace falta.
     expect(form.querySelector('.form-errors')).toBeNull();
+    expect(form.querySelector('[name="monto"]').hasAttribute('aria-invalid')).toBe(false);
+    expect(form.querySelector('[name="monto"]').hasAttribute('aria-describedby')).toBe(false);
+    expect(form.querySelector('[name="descripcion"]').getAttribute('aria-invalid')).toBe('true');
+    expect(form.querySelectorAll('.form-error')).toHaveLength(1);
+    form.querySelector('[name="descripcion"]').dispatchEvent(new Event('input', { bubbles: true }));
     expect(form.querySelectorAll('.form-error, .field-invalid, [aria-invalid]')).toHaveLength(0);
     expect(form.querySelector('[name="descripcion"]').getAttribute('aria-describedby')).toBe('d-hint');
-    expect(form.querySelector('[name="monto"]').hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('escribir en un campo sin error no toca el aviso de arriba', () => {
+    form.insertAdjacentHTML('beforeend', '<div class="form-group"><input name="nota" /></div>');
+    mostrarErroresForm(form, ['La descripción es obligatoria.', 'El monto debe ser mayor a 0.']);
+    const aviso = form.querySelector('.form-errors');
+    form.querySelector('[name="nota"]').dispatchEvent(new Event('input', { bubbles: true }));
+    expect(form.querySelector('.form-errors')).toBe(aviso);
+    expect(form.querySelectorAll('.form-error')).toHaveLength(2);
+  });
+
+  it('después de intentar guardar, salir de un campo lo vuelve a validar, y solo a él', () => {
+    const monto = form.querySelector('[name="monto"]');
+    const revalidar = () => {
+      const e = ['La descripción es obligatoria.'];
+      if (!(Number(monto.value) > 0)) e.push('Escribe cuánto fue. Por ejemplo: 45.000');
+      return e;
+    };
+    mostrarErroresForm(form, revalidar(), undefined, revalidar);
+    monto.value = 'abc';
+    monto.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(form.querySelector('[data-campo="monto"]')).toBeNull();
+    monto.dispatchEvent(new Event('focusout', { bubbles: true }));
+    expect(form.querySelector('[data-campo="monto"]').textContent).toBe('Escribe cuánto fue. Por ejemplo: 45.000');
+    monto.value = '45000';
+    monto.dispatchEvent(new Event('focusout', { bubbles: true }));
+    expect(form.querySelector('[data-campo="monto"]')).toBeNull();
+    expect(form.querySelector('[data-campo="descripcion"]')).not.toBeNull();
   });
 
   it('mostrar dos veces no duplica los errores', () => {
@@ -134,7 +176,8 @@ describe('mostrarErroresForm() - cada formulario llama distinto a su campo (ADR 
     document.body.innerHTML = '<form id="x"><div class="form-group"><input name="monto" /></div></form>';
     const form = document.getElementById('x');
     mostrarErroresForm(form, ['El monto debe ser un número mayor a 0.', 'El origen y el destino deben ser cuentas distintas.']);
-    expect(form.querySelector('.form-errors__title').textContent).toBe('Falta información para guardar:');
+    expect(form.querySelector('.form-errors__title').textContent).toBe('Antes de guardar:');
+    expect(form.querySelector('.form-errors__ir')).not.toBeNull();
     expect([...form.querySelectorAll('.form-errors__list li')].map(li => li.textContent)).toEqual(['El origen y el destino deben ser cuentas distintas.']);
   });
 });

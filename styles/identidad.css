@@ -2005,7 +2005,6 @@ body:not(.light-theme) .cov__fill {
    frecuencia en cuatro botones (el segmento de Familia). Los dos anchos. */
 .reserva-form__pregunta { margin: 0; font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
 .reserva-form__sub { margin: 2px 0 var(--fk-space-2); }
-.label__opcional { font-weight: var(--fk-font-regular); color: var(--fk-text-muted); }
 .chips-mas[open] { flex-basis: 100%; }
 .chips-mas > .chips-cat { margin-top: var(--fk-space-2); }
 .chip-cat--mas { border-style: dashed; list-style: none; cursor: pointer; }

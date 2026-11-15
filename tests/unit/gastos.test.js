@@ -277,13 +277,13 @@ describe('validarGasto()', () => {
   it('reporta error si monto no es número', () => {
     const errores = validarGasto({ ...datosFormValidos, monto: 'texto' });
     expect(errores).toHaveLength(1);
-    expect(errores[0]).toMatch(/monto/i);
+    expect(errores[0]).toMatch(/cuánto fue/i);
   });
 
   it('reporta error si categoría está vacía', () => {
     const errores = validarGasto({ ...datosFormValidos, categoria: '' });
     expect(errores).toHaveLength(1);
-    expect(errores[0]).toMatch(/categor/i);
+    expect(errores[0]).toMatch(/en qué fue/i);
   });
 
   it('reporta error si fecha está vacía', () => {
@@ -333,23 +333,23 @@ describe('validarCategoriaPersonalizada()', () => {
 
   it('reporta error si el nombre duplica una categoría nativa de Gastos', () => {
     const errores = validarCategoriaPersonalizada({ nombre: 'Mercado', icono: 'c-pesa' }, []);
-    expect(errores.some(e => /existe/i.test(e))).toBe(true);
+    expect(errores.some(e => /ya tienes una categoría/i.test(e))).toBe(true);
   });
 
   it('reporta error si el nombre duplica una categoría nativa de Gastos fijos (D4, ADR 058)', () => {
     const errores = validarCategoriaPersonalizada({ nombre: 'Gimnasio', icono: 'c-pesa' }, []);
-    expect(errores.some(e => /existe/i.test(e))).toBe(true);
+    expect(errores.some(e => /ya tienes una categoría/i.test(e))).toBe(true);
   });
 
   it('la duplicación de nativa no distingue mayúsculas ni tildes', () => {
     const errores = validarCategoriaPersonalizada({ nombre: 'mercadó', icono: 'c-pesa' }, []);
-    expect(errores.some(e => /existe/i.test(e))).toBe(true);
+    expect(errores.some(e => /ya tienes una categoría/i.test(e))).toBe(true);
   });
 
   it('reporta error si el nombre duplica una categoría personalizada ya creada', () => {
     const existentes = [{ nombre: 'Suplementos', icono: 'c-pesa' }];
     const errores = validarCategoriaPersonalizada({ nombre: 'Suplementos', icono: 'c-carro' }, existentes);
-    expect(errores.some(e => /existe/i.test(e))).toBe(true);
+    expect(errores.some(e => /ya tienes una categoría/i.test(e))).toBe(true);
   });
 
   it('puede tener múltiples errores a la vez', () => {

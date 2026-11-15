@@ -66,20 +66,23 @@ async function _guardarGasto() {
   const idEdit = form.dataset.id || null;
 
   // La cuenta de origen viene del selector de tarjetas (radio name="cuentaId").
-  const errores = validarGasto(datos);
-
   // TX.9b: "+ Otra categoría" pide nombre + ícono en el mismo formulario;
   // se valida junto con el resto para un solo paso de errores.
+  const validar = (d) => {
+    const e = validarGasto(d);
+    if (d.categoria === CATEGORIA_NUEVA_VALUE) {
+      e.push(...validarCategoriaPersonalizada(
+        { nombre: d.categoriaNuevaNombre, icono: d.categoriaNuevaIcono },
+        S.categoriasPersonalizadas,
+      ));
+    }
+    return e;
+  };
+  const errores = validar(datos);
   const esCategoriaNueva = datos.categoria === CATEGORIA_NUEVA_VALUE;
-  if (esCategoriaNueva) {
-    errores.push(...validarCategoriaPersonalizada(
-      { nombre: datos.categoriaNuevaNombre, icono: datos.categoriaNuevaIcono },
-      S.categoriasPersonalizadas,
-    ));
-  }
 
   if (errores.length > 0) {
-    mostrarErroresForm(form, errores);
+    mostrarErroresForm(form, errores, undefined, () => validar(Object.fromEntries(new FormData(form))));
     return;
   }
 

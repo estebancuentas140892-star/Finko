@@ -255,11 +255,11 @@ export function validarMeta(datos) {
   const errores = [];
 
   if (!datos.nombre?.trim()) {
-    errores.push('El nombre de la meta es obligatorio.');
+    errores.push('Ponle un nombre para reconocerla.');
   }
   const objetivo = Number(datos.montoObjetivo);
   if (isNaN(objetivo) || objetivo <= 0) {
-    errores.push('El monto objetivo debe ser un número mayor a 0.');
+    errores.push('Escribe cuánto necesitas reunir. Por ejemplo: 2.000.000');
   }
 
   return errores;
@@ -273,7 +273,7 @@ export function validarMeta(datos) {
 export function validarAbono(monto) {
   const n = Number(monto);
   if (isNaN(n) || n <= 0) {
-    return ['El abono debe ser un número mayor a 0.'];
+    return ['Escribe cuánto aportas. Por ejemplo: 100.000'];
   }
   return [];
 }

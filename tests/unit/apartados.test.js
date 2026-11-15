@@ -272,12 +272,12 @@ describe('validarApartado()', () => {
 
   it('reporta fecha con formato inválido', () => {
     const errs = validarApartado({ ...datosFormValidos, fechaObjetivo: '10-12-2026' });
-    expect(errs.some(e => /fecha/i.test(e))).toBe(true);
+    expect(errs.some(e => /para cuándo/i.test(e))).toBe(true);
   });
 
   it('reporta frecuencia inválida', () => {
     const errs = validarApartado({ ...datosFormValidos, frecuenciaAporte: 'Trimestral' });
-    expect(errs.some(e => /frecuencia/i.test(e))).toBe(true);
+    expect(errs.some(e => /cada cuánto/i.test(e))).toBe(true);
   });
 
   it('recurrente sin periodo válido reporta error', () => {

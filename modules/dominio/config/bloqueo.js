@@ -99,9 +99,9 @@ export function candadoActivo(bloqueo) {
 export function validarPin(pin) {
   const texto = String(pin ?? '');
   if (texto.length === 0) return 'Escribe un PIN.';
-  if (!/^\d+$/.test(texto)) return 'El PIN solo puede tener numeros.';
+  if (!/^\d+$/.test(texto)) return 'Usa solo números en el PIN.';
   if (texto.length < PIN_LARGO_MIN || texto.length > PIN_LARGO_MAX) {
-    return `El PIN debe tener entre ${PIN_LARGO_MIN} y ${PIN_LARGO_MAX} numeros.`;
+    return `Escribe un PIN de ${PIN_LARGO_MIN} a ${PIN_LARGO_MAX} números.`;
   }
   return null;
 }

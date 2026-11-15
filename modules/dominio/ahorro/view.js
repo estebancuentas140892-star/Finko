@@ -809,7 +809,7 @@ export function renderFormFondo({ editando, metaMeses, montoActual, gastosFijosM
       </div>
 
       <div class="form-group">
-        <label for="fondo-monto-actual" class="label">¿Cuánto ya tienes apartado? (COP)</label>
+        <label for="fondo-monto-actual" class="label">¿Cuánto ya tienes apartado?</label>
         <input id="fondo-monto-actual" name="montoActual" class="input" type="text" value="${miles(montoActual)}"
                placeholder="0" required aria-required="true"
                inputmode="numeric" data-miles autocomplete="off" />
@@ -820,7 +820,7 @@ export function renderFormFondo({ editando, metaMeses, montoActual, gastosFijosM
 
       <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
-        <button type="submit" class="btn btn-primary">${editando ? 'Guardar cambios' : 'Activar fondo'}</button>
+        <button type="submit" class="btn btn-primary">${editando ? 'Guardar fondo' : 'Activar fondo'}</button>
       </div>
 
       ${editando ? desactivarHtml : ''}
@@ -849,7 +849,7 @@ export function renderFormAporte({ fecha, sugerencia = null }) {
   return `
     <form id="form-aporte" novalidate>
       <div class="form-group">
-        <label for="aporte-monto" class="label">Monto del aporte (COP)</label>
+        <label for="aporte-monto" class="label">Monto del aporte</label>
         <input id="aporte-monto" name="monto" class="input" type="text" placeholder="100000"${valorHtml}
                required aria-required="true" inputmode="numeric" data-miles autocomplete="off" autofocus />
         <p class="form-hint">${hintPrefill}</p>
@@ -862,7 +862,7 @@ export function renderFormAporte({ fecha, sugerencia = null }) {
       </div>
 
       <div class="form-group">
-        <label for="aporte-nota" class="label">Nota (opcional)</label>
+        <label for="aporte-nota" class="label">Nota <span class="form-optional">Opcional</span></label>
         <input id="aporte-nota" name="nota" class="input" type="text"
                maxlength="80" placeholder="Ej. Parte de la quincena de mayo"
                autocomplete="off" />
@@ -897,7 +897,7 @@ export function renderFormCompromisoMensual(compromisoMensual, sugerencia = null
   const inputIngresoHtml = sugerencia?.base === 'sin-ingreso'
     ? `
       <div class="form-group">
-        <label for="sugerencia-ingreso" class="label">¿Cuánto recibes al mes, aproximadamente? (COP) <span class="form-optional">opcional</span></label>
+        <label for="sugerencia-ingreso" class="label">¿Cuánto recibes al mes, aproximadamente? <span class="form-optional">Opcional</span></label>
         <input id="sugerencia-ingreso" class="input" type="text" placeholder="Ej. 1500000" inputmode="numeric" data-miles autocomplete="off" />
         <p class="form-hint">Solo se usa para afinar la sugerencia de abajo. No se guarda.</p>
       </div>`
@@ -910,7 +910,7 @@ export function renderFormCompromisoMensual(compromisoMensual, sugerencia = null
   return `
     <form id="form-compromiso" novalidate>
       <div class="form-group">
-        <label for="compromiso-monto" class="label">¿Cuánto quieres apartar ${etiquetaCadaPeriodo(frecuencia)}? (COP)</label>
+        <label for="compromiso-monto" class="label">¿Cuánto quieres apartar ${etiquetaCadaPeriodo(frecuencia)}?</label>
         <input id="compromiso-monto" name="compromisoMensual" class="input" type="text" value="${miles(Number(compromisoMensual) || 0)}"
                placeholder="0" inputmode="numeric" data-miles autocomplete="off" autofocus />
         <p class="form-hint">Pon 0 para quitar el compromiso. Es un recordatorio personal: no afecta tu saldo hasta que registres el aporte.</p>
@@ -921,7 +921,7 @@ export function renderFormCompromisoMensual(compromisoMensual, sugerencia = null
 
       <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar</button>
+        <button type="submit" class="btn btn-primary">Guardar compromiso</button>
       </div>
     </form>`;
 }

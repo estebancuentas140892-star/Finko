@@ -70,30 +70,30 @@ export function validarTransferencia(datos, cuentas) {
   const destinoId = datos?.cuentaDestinoId?.trim();
 
   if (!origenId) {
-    errores.push('Debes elegir la cuenta de origen.');
+    errores.push('Elige de qué cuenta sale el dinero.');
   } else if (!activas.some(c => c.id === origenId)) {
-    errores.push('La cuenta de origen no existe o no está activa.');
+    errores.push('La cuenta de origen ya no está activa: elige otra.');
   }
 
   if (!destinoId) {
-    errores.push('Debes elegir la cuenta de destino.');
+    errores.push('Elige a qué cuenta entra el dinero.');
   } else if (!activas.some(c => c.id === destinoId)) {
-    errores.push('La cuenta de destino no existe o no está activa.');
+    errores.push('La cuenta de destino ya no está activa: elige otra.');
   }
 
   // Solo tiene sentido comparar cuando ambas se indicaron: si falta una, el
   // error de arriba ya lo cubre y este sería ruido.
   if (origenId && destinoId && origenId === destinoId) {
-    errores.push('El origen y el destino deben ser cuentas distintas.');
+    errores.push('Elige dos cuentas distintas: el dinero no puede salir y entrar a la misma.');
   }
 
   const monto = Number(datos?.monto);
   if (!Number.isFinite(monto) || monto <= 0) {
-    errores.push('El monto debe ser un número mayor a 0.');
+    errores.push('Escribe cuánto pasas. Por ejemplo: 100.000');
   }
 
   if (!datos?.fecha?.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(datos.fecha)) {
-    errores.push('La fecha es obligatoria.');
+    errores.push('Elige la fecha.');
   }
 
   return errores;

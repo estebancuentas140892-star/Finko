@@ -177,7 +177,7 @@ export function renderFormTransferencia() {
           <input id="transferencia-fecha" name="fecha" type="date" class="input" required />
         </div>
         <div class="form-group">
-          <label for="transferencia-nota" class="label">Nota (opcional)</label>
+          <label for="transferencia-nota" class="label">Nota <span class="form-optional">Opcional</span></label>
           <input id="transferencia-nota" name="nota" type="text" class="input"
                  placeholder="Ej. arriendo, ahorro del mes" />
         </div>

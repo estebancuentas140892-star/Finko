@@ -480,14 +480,14 @@ export function renderFormInversion({ fechaInicio, inversion = null }) {
       </div>
 
       <div class="form-group">
-        <label for="inv-monto" class="label">Monto invertido (COP)</label>
+        <label for="inv-monto" class="label">Monto invertido</label>
         <input id="inv-monto" name="monto" class="input" type="text" placeholder="1000000"
                required aria-required="true" inputmode="numeric" data-miles autocomplete="off"
                value="${miles(inversion ? Number(inversion.monto) || '' : '')}" />
       </div>
 
       <div class="form-group">
-        <label for="inv-tasa" class="label">Tasa EA estimada (%) <span class="label__opt">opcional</span></label>
+        <label for="inv-tasa" class="label">Tasa EA estimada (%) <span class="form-optional">Opcional</span></label>
         <input id="inv-tasa" name="tasaEA" class="input" type="number"
                min="0" max="100" step="0.1" placeholder="0"
                inputmode="decimal"
@@ -496,7 +496,7 @@ export function renderFormInversion({ fechaInicio, inversion = null }) {
       </div>
 
       <div class="form-group">
-        <label for="inv-plazo" class="label">Plazo (meses) <span class="label__opt">opcional</span></label>
+        <label for="inv-plazo" class="label">Plazo (meses) <span class="form-optional">Opcional</span></label>
         <input id="inv-plazo" name="plazoMeses" class="input" type="number"
                min="0" step="1" placeholder="0" inputmode="numeric"
                value="${inversion && Number(inversion.plazoMeses) > 0 ? inversion.plazoMeses : ''}" />

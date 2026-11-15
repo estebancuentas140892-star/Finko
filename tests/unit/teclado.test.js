@@ -1,5 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { areaConTeclado, initTeclado, llevarCampoALaVista, UMBRAL_TECLADO_PX } from '../../modules/ui/teclado.js';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import {
+  alPulsarEnter, areaConTeclado, campoSiguiente, initTeclado, llevarCampoALaVista, marcarTeclaEnter, UMBRAL_TECLADO_PX,
+} from '../../modules/ui/teclado.js';
 
 // ADR 115 (MV2.5): con el teclado abierto, la hoja se pega al área visible.
 
@@ -80,10 +82,10 @@ describe('llevarCampoALaVista()', () => {
   }
   const vv = { height: 500, offsetTop: 0 };
 
-  it('un campo de texto bajo el teclado sube al centro', () => {
+  it('un campo de texto bajo el teclado sube al tope, no al centro (ADR 142 D8)', () => {
     const campo = hojaCon('<input type="text" />');
     expect(llevarCampoALaVista(campo, vv)).toBe(true);
-    expect(campo.scrollIntoView).toHaveBeenCalledWith({ block: 'center', inline: 'nearest' });
+    expect(campo.scrollIntoView).toHaveBeenCalledWith({ block: 'start', inline: 'nearest' });
   });
 
   it('un campo tapado por el pie de la hoja también sube', () => {
@@ -131,5 +133,93 @@ describe('llevarCampoALaVista()', () => {
       globalThis.requestAnimationFrame = raf;
       delete document.documentElement.dataset.teclado;
     }
+  });
+});
+
+// FORM.2a (ADR 142 D8): Enter avanza, no envía.
+
+describe('Enter en una hoja del teléfono', () => {
+  const matchMediaReal = window.matchMedia;
+  /** Una hoja abierta con un formulario: dos campos, una casilla y uno plegado. */
+  function hoja(extra = '') {
+    document.body.innerHTML = `
+      <div class="modal-overlay" data-open><div class="modal"><form id="f">
+        <input name="nombre" type="text" />
+        <input name="acepta" type="checkbox" />
+        <div hidden><input name="plegado" type="text" /></div>
+        <input name="monto" type="text" inputmode="numeric" />
+        ${extra}
+        <textarea name="nota"></textarea>
+        <button type="submit">Guardar deuda</button>
+      </form></div></div>`;
+    const f = document.getElementById('f');
+    return (n) => f.querySelector(`[name="${n}"]`);
+  }
+  const enter = (el) => {
+    const e = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+    el.dispatchEvent(e);
+    return e;
+  };
+
+  beforeEach(() => { window.matchMedia = () => ({ matches: true, addEventListener() {} }); });
+  afterEach(() => {
+    window.matchMedia = matchMediaReal;
+    document.removeEventListener('keydown', alPulsarEnter);
+  });
+
+  it('el siguiente es el próximo campo que abre teclado y se ve: no la casilla ni lo plegado', () => {
+    const $ = hoja();
+    expect(campoSiguiente($('nombre'))).toBe($('monto'));
+    expect(campoSiguiente($('monto'))).toBe($('nota'));
+    expect(campoSiguiente($('nota'))).toBeNull();
+  });
+
+  it('la tecla dice "Siguiente" o "Listo"; lo que el formulario ya trae escrito manda', () => {
+    let $ = hoja('<input name="pin" type="text" enterkeyhint="go" />');
+    marcarTeclaEnter($('nombre'));
+    expect($('nombre').getAttribute('enterkeyhint')).toBe('next');
+    marcarTeclaEnter($('pin'));
+    expect($('pin').getAttribute('enterkeyhint')).toBe('go');
+    $ = hoja();
+    marcarTeclaEnter($('monto'));
+    expect($('monto').getAttribute('enterkeyhint')).toBe('next');
+    // El último de una línea, sin área de texto detrás: "Listo".
+    document.body.innerHTML = '<div class="modal-overlay" data-open><form><input name="solo" type="text" /></form></div>';
+    const solo = document.querySelector('[name="solo"]');
+    marcarTeclaEnter(solo);
+    expect(solo.getAttribute('enterkeyhint')).toBe('done');
+  });
+
+  it('Enter pasa al campo siguiente y no envía el formulario', () => {
+    const $ = hoja();
+    document.addEventListener('keydown', alPulsarEnter);
+    let enviado = false;
+    document.getElementById('f').addEventListener('submit', (e) => { enviado = true; e.preventDefault(); });
+    $('nombre').focus();
+    const e = enter($('nombre'));
+    expect(e.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe($('monto'));
+    expect(enviado).toBe(false);
+  });
+
+  it('en el último campo de una línea Enter cierra el teclado; el área de texto conserva su salto', () => {
+    const $ = hoja();
+    document.addEventListener('keydown', alPulsarEnter);
+    expect(enter($('nota')).defaultPrevented).toBe(false);
+    document.body.innerHTML = '<div class="modal-overlay" data-open><form><input name="solo" type="text" /></form></div>';
+    const solo = document.querySelector('[name="solo"]');
+    solo.focus();
+    expect(enter(solo).defaultPrevented).toBe(true);
+    expect(document.activeElement).not.toBe(solo);
+  });
+
+  it('en escritorio, o fuera de una hoja, Enter sigue siendo del navegador', () => {
+    const $ = hoja();
+    document.addEventListener('keydown', alPulsarEnter);
+    window.matchMedia = () => ({ matches: false, addEventListener() {} });
+    expect(enter($('nombre')).defaultPrevented).toBe(false);
+    window.matchMedia = () => ({ matches: true, addEventListener() {} });
+    document.body.innerHTML = '<form><input name="nombre" type="text" /><input name="b" type="text" /></form>';
+    expect(enter(document.querySelector('[name="nombre"]')).defaultPrevented).toBe(false);
   });
 });

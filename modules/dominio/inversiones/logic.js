@@ -131,7 +131,7 @@ export function ordenarInversionesPorMonto(inversiones) {
  */
 export function validarTipoInversion(raw) {
   if (typeof raw !== 'string' || !TIPOS_INVERSION.includes(raw)) {
-    return ['Selecciona un tipo de inversión válido.'];
+    return ['Elige qué tipo de inversión es.'];
   }
   return [];
 }
@@ -143,10 +143,10 @@ export function validarTipoInversion(raw) {
  */
 export function validarNombreInversion(raw) {
   if (typeof raw !== 'string' || raw.trim() === '') {
-    return ['El nombre es requerido.'];
+    return ['Ponle un nombre para reconocerla.'];
   }
   if (raw.trim().length > 60) {
-    return ['El nombre no puede superar los 60 caracteres.'];
+    return ['Usa un nombre de hasta 60 letras.'];
   }
   return [];
 }
@@ -158,8 +158,8 @@ export function validarNombreInversion(raw) {
  */
 export function validarMontoInversion(raw) {
   const n = Number(raw);
-  if (!Number.isFinite(n)) return ['El monto debe ser un número.'];
-  if (n <= 0)              return ['El monto invertido debe ser mayor que cero.'];
+  if (!Number.isFinite(n)) return ['Escribe cuánto invertiste. Por ejemplo: 1.000.000'];
+  if (n <= 0)              return ['Escribe cuánto invertiste. Por ejemplo: 1.000.000'];
   return [];
 }
 
@@ -172,9 +172,9 @@ export function validarMontoInversion(raw) {
 export function validarTasaEAInversion(raw) {
   if (raw === '' || raw == null) return []; // opcional: vacío = 0
   const n = Number(raw);
-  if (!Number.isFinite(n))       return ['La tasa debe ser un número.'];
-  if (n < 0)                     return ['La tasa no puede ser negativa.'];
-  if (n > TASA_EA_MAX)           return [`La tasa no puede superar ${TASA_EA_MAX}%.`];
+  if (!Number.isFinite(n))       return ['Escribe la tasa con números. Por ejemplo: 9,5'];
+  if (n < 0)                     return ['Escribe una tasa de 0 o más.'];
+  if (n > TASA_EA_MAX)           return [`Escribe una tasa de 0 a ${TASA_EA_MAX} %.`];
   return [];
 }
 
@@ -187,10 +187,10 @@ export function validarTasaEAInversion(raw) {
 export function validarPlazoMeses(raw) {
   if (raw === '' || raw == null) return []; // opcional: vacío = 0
   const n = Number(raw);
-  if (!Number.isFinite(n))         return ['El plazo debe ser un número.'];
-  if (!Number.isInteger(n))        return ['El plazo debe ser un número entero de meses.'];
-  if (n < 0)                       return ['El plazo no puede ser negativo.'];
-  if (n > PLAZO_MESES_MAX)         return [`El plazo no puede superar ${PLAZO_MESES_MAX} meses.`];
+  if (!Number.isFinite(n))         return ['Escribe el plazo en meses. Por ejemplo: 12'];
+  if (!Number.isInteger(n))        return ['Escribe el plazo en meses enteros. Por ejemplo: 12'];
+  if (n < 0)                       return ['Escribe un plazo de 0 meses o más.'];
+  if (n > PLAZO_MESES_MAX)         return [`Escribe un plazo de hasta ${PLAZO_MESES_MAX} meses.`];
   return [];
 }
 
@@ -201,10 +201,10 @@ export function validarPlazoMeses(raw) {
  */
 export function validarFechaInicio(raw) {
   if (!raw || typeof raw !== 'string' || raw.trim() === '') {
-    return ['La fecha de inicio es requerida.'];
+    return ['Elige la fecha en que empezó.'];
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(raw.trim())) {
-    return ['El formato de fecha no es válido (se esperaba YYYY-MM-DD).'];
+    return ['Elige la fecha en que empezó con el calendario.'];
   }
   return [];
 }

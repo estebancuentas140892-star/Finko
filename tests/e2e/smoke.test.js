@@ -3138,7 +3138,7 @@ test.describe('Por pagar - nombre automático según la categoría del fijo', ()
     await abrirFormGastoFijo(page);
   });
 
-  test('al elegir una categoría predefinida, el campo pasa a "Nota (opcional)" y deja de ser obligatorio', async ({ page }) => {
+  test('al elegir una categoría predefinida, el campo pasa a "Nota" con la pastilla Opcional y deja de ser obligatorio', async ({ page }) => {
     const form = page.locator('#form-gasto-fijo');
     const label = page.locator('#gfijo-descripcion-label');
     const input = page.locator('#gfijo-descripcion');
@@ -3146,7 +3146,8 @@ test.describe('Por pagar - nombre automático según la categoría del fijo', ()
 
     await elegirChip(form, 'Mercado');
 
-    await expect(label).toHaveText('Nota (opcional)');
+    await expect(label).toHaveText('Nota Opcional');
+    await expect(label.locator('.form-optional')).toHaveText('Opcional');
     await expect(input).not.toHaveAttribute('aria-required', 'true');
   });
 
@@ -3156,7 +3157,8 @@ test.describe('Por pagar - nombre automático según la categoría del fijo', ()
     const input = page.locator('#gfijo-descripcion');
 
     await elegirChip(form, 'Mercado');
-    await expect(label).toHaveText('Nota (opcional)');
+    await expect(label).toHaveText('Nota Opcional');
+    await expect(label.locator('.form-optional')).toHaveText('Opcional');
 
     await elegirChip(form, 'Otro');
     await expect(label).toHaveText('Descripción');

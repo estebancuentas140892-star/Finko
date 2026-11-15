@@ -660,7 +660,7 @@ async function _crearCandado(e) {
   if (cambio) {
     const ok = await verificarPin(String(datos.pinActual ?? ''), S.config?.bloqueo);
     if (!ok) {
-      mostrarErroresForm(form, ['El PIN actual no coincide.'], _TITULO_ERROR_PIN);
+      mostrarErroresForm(form, ['Ese no es tu PIN actual: escríbelo de nuevo.'], _TITULO_ERROR_PIN);
       return;
     }
   }
@@ -671,7 +671,7 @@ async function _crearCandado(e) {
     return;
   }
   if (pin !== pin2) {
-    mostrarErroresForm(form, ['Los dos PIN no coinciden.'], _TITULO_ERROR_PIN);
+    mostrarErroresForm(form, ['Escribe el mismo PIN las dos veces.'], _TITULO_ERROR_PIN);
     return;
   }
 
@@ -707,7 +707,7 @@ async function _quitarCandado(e) {
 
   const ok = await verificarPin(String(datos.pinActual ?? ''), S.config?.bloqueo);
   if (!ok) {
-    mostrarErroresForm(form, ['El PIN actual no coincide.'], _TITULO_ERROR_PIN);
+    mostrarErroresForm(form, ['Ese no es tu PIN actual: escríbelo de nuevo.'], _TITULO_ERROR_PIN);
     return;
   }
 

@@ -24,6 +24,12 @@
  * enfocado sube al centro del área visible. Vale para todos los formularios.
  * No se hace al desplazar: el usuario que mueve la hoja con el teclado
  * abierto decide qué mira.
+ *
+ * FORM.2a (ADR 142 D8): el campo se ancla arriba del cuerpo, no al centro
+ * (`scroll-padding` del cuerpo deja ver su rótulo), y Enter avanza en vez de
+ * enviar: en una hoja del teléfono la tecla dice "Siguiente" y pasa al campo
+ * que sigue, o "Listo" en el último y cierra el teclado. Solo el botón
+ * guarda: se acaba el envío implícito con el formulario a medias.
  */
 
 /**
@@ -52,13 +58,14 @@ const CAMPO_CON_TECLADO =
   'input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="hidden"]), textarea, [contenteditable="true"]';
 
 /**
- * Lo que tapa el pie de la hoja ("Cancelar" y "Guardar", pegado abajo): un
+ * Lo que tapa el pie de la hoja (el botón de guardar, pegado abajo): un
  * campo que termina dentro de esta franja tampoco se ve.
  */
 export const PIE_HOJA_PX = 96;
 
 /**
- * Sube el campo enfocado al centro del área visible (REV.2b, ADR 141 D4).
+ * Sube el campo enfocado al tope del área visible (REV.2b, ADR 141 D4; arriba
+ * y no al centro desde el ADR 142 D8).
  * Solo un campo que abre el teclado y vive en una hoja abierta (las páginas
  * las desplaza el navegador solo); y solo si quedó fuera de la vista o bajo
  * el pie: lo que ya se ve no se mueve.
@@ -75,8 +82,66 @@ export function llevarCampoALaVista(campo = document.activeElement, vv = window.
     const arriba = vv.offsetTop ?? 0;
     if (r.top >= arriba && r.bottom <= arriba + vv.height - PIE_HOJA_PX) return false;
   }
-  campo.scrollIntoView({ block: 'center', inline: 'nearest' });
+  campo.scrollIntoView({ block: 'start', inline: 'nearest' });
   return true;
+}
+
+const MQ_MOVIL = '(max-width: 1023.98px)';
+const _esMovil = () => window.matchMedia?.(MQ_MOVIL).matches === true;
+
+/** ¿Se ve? Un campo de un bloque plegado o escondido no recibe el foco. */
+function _seVe(el) {
+  if (el.disabled || el.readOnly || el.closest('[hidden], [inert]')) return false;
+  return typeof el.checkVisibility === 'function' ? el.checkVisibility() : el.getClientRects().length > 0;
+}
+
+/**
+ * El campo que sigue en el mismo formulario y abre el teclado, o `null` si
+ * es el último (ADR 142 D8). Una casilla, un botón o un grupo de pastillas
+ * no cuentan: Enter no los elige.
+ *
+ * @param {Element} campo
+ * @returns {HTMLElement | null}
+ */
+export function campoSiguiente(campo) {
+  const form = campo?.closest?.('form');
+  if (!form) return null;
+  const campos = [...form.querySelectorAll(CAMPO_CON_TECLADO)].filter(c => c === campo || _seVe(c));
+  const i = campos.indexOf(campo);
+  return i >= 0 ? campos[i + 1] ?? null : null;
+}
+
+/** Un campo de una línea en el formulario de una hoja abierta del teléfono. */
+const _campoDeHoja = (el) =>
+  el?.matches?.('input') && el.matches(CAMPO_CON_TECLADO) && el.closest('.modal-overlay[data-open] form') != null && _esMovil();
+
+/**
+ * La tecla Enter dice lo que hace: "Siguiente" o "Listo". Lo que el
+ * formulario ya trae escrito manda; lo que pone este módulo se recalcula
+ * cada vez, porque un campo puede aparecer o plegarse entre un foco y otro.
+ *
+ * @param {Element} campo
+ */
+export function marcarTeclaEnter(campo) {
+  if (!_campoDeHoja(campo)) return;
+  if (campo.hasAttribute('enterkeyhint') && !('enterAuto' in campo.dataset)) return;
+  campo.setAttribute('enterkeyhint', campoSiguiente(campo) ? 'next' : 'done');
+  campo.dataset.enterAuto = '';
+}
+
+/**
+ * Enter en un campo de una hoja avanza al siguiente o, en el último, cierra
+ * el teclado. Nunca envía: el envío implícito del navegador queda apagado.
+ * Un área de texto conserva su salto de línea.
+ *
+ * @param {KeyboardEvent} e
+ */
+export function alPulsarEnter(e) {
+  if (e.key !== 'Enter' || e.defaultPrevented || e.isComposing || !_campoDeHoja(e.target)) return;
+  e.preventDefault();
+  const siguiente = campoSiguiente(e.target);
+  if (siguiente) siguiente.focus();
+  else e.target.blur();
 }
 
 /**
@@ -86,6 +151,11 @@ export function llevarCampoALaVista(campo = document.activeElement, vv = window.
  * @param {VisualViewport | null} [vv]
  */
 export function initTeclado(vv = window.visualViewport ?? null) {
+  // Enter y su tecla valen también sin visualViewport. La marca se pone al
+  // tocar el campo, antes de que el teclado se abra, y otra vez al enfocarlo.
+  document.addEventListener('keydown', alPulsarEnter);
+  document.addEventListener('pointerdown', (e) => marcarTeclaEnter(e.target), { capture: true, passive: true });
+  document.addEventListener('focusin', (e) => marcarTeclaEnter(e.target));
   if (!vv) return;
   const raiz = document.documentElement;
   let altoAnterior = null;

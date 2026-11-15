@@ -52,7 +52,7 @@ import { distribuirPago } from './distribuir-pago.js';
  * @param {{ selectedId?: string|null, label?: string, name?: string, preseleccionar?: boolean, tarjetas?: import('../core/state.js').Compromiso[] }} [opts]
  * @returns {string}
  */
-export function renderSelectorCuenta(cuentas, { selectedId = null, label = '¿De qué cuenta sale?', name = 'cuentaId', preseleccionar = true, tarjetas = [] } = {}) {
+export function renderSelectorCuenta(cuentas, { selectedId = null, label = '¿De qué cuenta sale?', name = 'cuentaId', preseleccionar = true, tarjetas = [], opcional = false } = {}) {
   const activas = (cuentas ?? []).filter(c => c.activa !== false);
   const tjs     = tarjetas ?? [];
   if (activas.length === 0 && tjs.length === 0) return '';
@@ -98,7 +98,7 @@ export function renderSelectorCuenta(cuentas, { selectedId = null, label = '¿De
 
   return `
     <div class="form-group cuenta-sel${plegable ? ' cuenta-sel--plegable' : ''}">
-      <span class="label">${_esc(label)}</span>
+      <span class="label">${_esc(label)}${opcional ? ' <span class="form-optional">Opcional</span>' : ''}</span>
       <div class="cuenta-sel__lista" role="radiogroup" aria-label="${_esc(label)}">
         ${filas}${filasTarjetas}
       </div>${cambiar}

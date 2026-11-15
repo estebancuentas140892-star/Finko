@@ -60,7 +60,7 @@ export function validarDatosAdulto(d) {
   if (!String(d.nombre ?? '').trim()) errores.push('Escribe tu nombre.');
   const errorPin = validarPin(d.pin);
   if (errorPin) errores.push(errorPin);
-  else if (String(d.pin) !== String(d.pin2 ?? '')) errores.push('Los dos PIN no coinciden.');
+  else if (String(d.pin) !== String(d.pin2 ?? '')) errores.push('Escribe el mismo PIN las dos veces.');
   return errores;
 }
 

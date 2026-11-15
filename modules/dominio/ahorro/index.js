@@ -271,10 +271,11 @@ function _editarFondo() {
 /** @param {HTMLFormElement} form */
 function _guardarFondo(form) {
   const datos   = Object.fromEntries(new FormData(form));
-  const errores = [...validarMetaMeses(datos.metaMeses), ...validarMontoActual(datos.montoActual)];
+  const validar = (d) => [...validarMetaMeses(d.metaMeses), ...validarMontoActual(d.montoActual)];
+  const errores = validar(datos);
 
   if (errores.length > 0) {
-    mostrarErroresForm(form, errores);
+    mostrarErroresForm(form, errores, undefined, () => validar(Object.fromEntries(new FormData(form))));
     return;
   }
 
@@ -346,13 +347,11 @@ function _nuevoAporte() {
 /** @param {HTMLFormElement} form */
 function _guardarAporte(form) {
   const datos   = Object.fromEntries(new FormData(form));
-  const errores = [
-    ...validarMontoAporte(datos.monto),
-    ...validarFechaAporte(datos.fecha),
-  ];
+  const validar = (d) => [...validarMontoAporte(d.monto), ...validarFechaAporte(d.fecha)];
+  const errores = validar(datos);
 
   if (errores.length > 0) {
-    mostrarErroresForm(form, errores);
+    mostrarErroresForm(form, errores, undefined, () => validar(Object.fromEntries(new FormData(form))));
     return;
   }
 
@@ -461,7 +460,7 @@ function _guardarCompromisoMensual(form) {
   const errores = validarCompromisoMensual(datos.compromisoMensual);
 
   if (errores.length > 0) {
-    mostrarErroresForm(form, errores);
+    mostrarErroresForm(form, errores, undefined, () => validarCompromisoMensual(Object.fromEntries(new FormData(form)).compromisoMensual));
     return;
   }
 

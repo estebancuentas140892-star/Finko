@@ -274,7 +274,7 @@ export function renderFormAbono(deuda) {
       </p>
 
       <div class="form-group">
-        <label for="abono-monto" class="label">Monto del abono (COP)</label>
+        <label for="abono-monto" class="label">Monto del abono</label>
         <input id="abono-monto" name="monto" class="input" type="text" placeholder="0"
                value="${cuota > 0 ? miles(Math.min(cuota, saldo)) : ''}"
                required aria-required="true"
@@ -292,7 +292,7 @@ export function renderFormAbono(deuda) {
       </div>
 
       <div class="form-group">
-        <label for="abono-nota" class="label">Nota (opcional)</label>
+        <label for="abono-nota" class="label">Nota <span class="form-optional">Opcional</span></label>
         <input id="abono-nota" name="nota" class="input" type="text"
                placeholder="Ej. Cuota extra de mayo" autocomplete="off" />
       </div>
@@ -338,8 +338,8 @@ export function renderFormDeuda(tipo, deuda = null) {
     .join('');
 
   const tasaLabel = esEntidad
-    ? 'Tasa de interés anual % EA (opcional)'
-    : 'Tasa de interés mensual % (opcional)';
+    ? 'Tasa de interés anual (% EA)'
+    : 'Tasa de interés mensual (%)';
 
   const tasaPlaceholder = esEntidad ? '28.5' : '10';
 
@@ -454,7 +454,7 @@ export function renderFormDeuda(tipo, deuda = null) {
       </div>
 
       <div class="form-group" id="grupo-comp-cupo"${esEntidad && catSel === 'Tarjeta de crédito' ? '' : ' hidden'}>
-        <label for="comp-cupo" class="label">Cupo aprobado de la tarjeta <span class="form-optional">opcional</span></label>
+        <label for="comp-cupo" class="label">Cupo aprobado de la tarjeta <span class="form-optional">Opcional</span></label>
         <div class="input-group">
           <span class="input-prefix" aria-hidden="true">$</span>
           <input id="comp-cupo" name="cupoTotal" class="input input--has-prefix" type="text" inputmode="numeric" data-miles placeholder="0"
@@ -464,7 +464,7 @@ export function renderFormDeuda(tipo, deuda = null) {
       </div>
 
       <div class="form-group" id="grupo-comp-cuota">
-        <label for="comp-cuota" class="label">¿Cuánto pagas cada mes?${esEntidad ? '' : ' <span class="form-optional">opcional</span>'}</label>
+        <label for="comp-cuota" class="label">¿Cuánto pagas cada mes?${esEntidad ? '' : ' <span class="form-optional">Opcional</span>'}</label>
         <div class="input-group">
           <span class="input-prefix" aria-hidden="true">$</span>
           <input id="comp-cuota" name="cuotaMensual" class="input input--has-prefix" type="text" inputmode="numeric" data-miles placeholder="0"${esEntidad ? ' required aria-required="true"' : ''}
@@ -484,7 +484,7 @@ export function renderFormDeuda(tipo, deuda = null) {
         </button>
         <div class="form-disclosure__panel" id="comp-tasa-panel"${condicionesAbiertas ? '' : ' hidden'}>
           <div class="form-group">
-            <label for="comp-tasa" class="label">${_esc(tasaLabel)}</label>
+            <label for="comp-tasa" class="label">${_esc(tasaLabel)} <span class="form-optional">Opcional</span></label>
             <div class="tasa-input-group">
               <input id="comp-tasa" name="tasa" class="input" type="number"
                      min="0" max="${esEntidad ? '200' : '100'}" step="0.01"
@@ -506,15 +506,15 @@ export function renderFormDeuda(tipo, deuda = null) {
       </div>
 
       <div class="form-group">
-        <label for="comp-dia" class="label">Día de pago del mes (1-31)</label>
+        <label for="comp-dia" class="label">Día de pago del mes</label>
         <input id="comp-dia" name="diaPago" class="input" type="number"
-               min="1" max="31" step="1" placeholder="1" required aria-required="true"
+               min="1" max="31" step="1" placeholder="Del 1 al 31" required aria-required="true"
                value="${vDia}" />
         ${esEntidad ? '' : '<p class="form-hint">Si acordaron una fecha, usa ese día; si no, uno que te sirva de recordatorio.</p>'}
       </div>
 
       <div class="form-group">
-        <label for="comp-nota" class="label">Nota (opcional)</label>
+        <label for="comp-nota" class="label">Nota <span class="form-optional">Opcional</span></label>
         <input id="comp-nota" name="nota" class="input" type="text" maxlength="80"
                placeholder="Ej. Número de cuenta, referencia de pago"
                value="${vNota}" />

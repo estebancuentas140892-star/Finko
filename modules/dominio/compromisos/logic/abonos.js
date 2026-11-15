@@ -109,28 +109,28 @@ export function validarAbono(datos, deuda) {
   const errores = [];
   const monto = Number(datos?.monto);
   if (!Number.isFinite(monto) || monto <= 0) {
-    errores.push('El monto del abono debe ser mayor a 0.');
+    errores.push('Escribe cuánto abonas. Por ejemplo: 350.000');
   }
   if (!datos?.cuentaId?.trim?.()) {
-    errores.push('Debes elegir de qué cuenta sale el abono.');
+    errores.push('Elige de qué cuenta sale el abono.');
   }
   if (!datos?.fecha?.trim?.()) {
-    errores.push('La fecha es obligatoria.');
+    errores.push('Elige la fecha del abono.');
   } else if (!/^\d{4}-\d{2}-\d{2}$/.test(datos.fecha)) {
-    errores.push('La fecha debe estar en formato YYYY-MM-DD.');
+    errores.push('Elige la fecha del abono con el calendario.');
   }
   if (!deuda) {
-    errores.push('No se encontró la deuda a abonar.');
+    errores.push('No se encontró esa deuda: cierra y vuelve a intentarlo.');
   } else {
     if (!esDeuda(deuda.tipo)) {
-      errores.push('Solo se puede abonar a deudas (entidad o personal).');
+      errores.push('Solo puedes abonar a una deuda.');
     }
     if (deuda.activo === false) {
-      errores.push('No puedes abonar a una deuda archivada.');
+      errores.push('Esta deuda está archivada: ya no recibe abonos.');
     }
     const saldo = Number(deuda.saldoTotal);
     if (!Number.isFinite(saldo) || saldo <= 0) {
-      errores.push('Esta deuda ya está saldada.');
+      errores.push('Esta deuda ya está saldada: no queda nada por abonar.');
     }
   }
   return errores;

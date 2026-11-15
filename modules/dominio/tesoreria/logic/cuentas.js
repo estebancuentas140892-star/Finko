@@ -139,29 +139,29 @@ export function validarCuenta(datos) {
 
   // Nombre es opcional: si esta vacio, normalizarCuenta() lo autogenera.
   if (!datos.banco?.trim() || datos.banco === '') {
-    errores.push('Debes elegir un banco o billetera.');
+    errores.push('Elige tu banco o billetera.');
   }
   // Las billeteras y el efectivo no tienen un "tipo de cuenta" bancario:
   // el selector se oculta en el form y el tipo se normaliza automáticamente.
   const clase = _claseBanco(datos.banco ?? '');
   if (clase !== 'efectivo' && clase !== 'billetera'
       && (!datos.tipo?.trim() || datos.tipo === '')) {
-    errores.push('Debes elegir el tipo de cuenta.');
+    errores.push('Elige qué tipo de cuenta es.');
   }
   const saldo = Number(datos.saldo);
   if (!Number.isFinite(saldo) || saldo < 0) {
-    errores.push('El saldo debe ser un número igual o mayor a 0.');
+    errores.push('Escribe el saldo de hoy con números. Por ejemplo: 1.500.000');
   }
 
   // Validar cuota de manejo solo si el toggle está activo.
   if (_cuotaActiva(datos)) {
     const monto = Number(datos.cuotaManejoMonto);
     if (!Number.isFinite(monto) || monto <= 0) {
-      errores.push('El monto de la cuota de manejo debe ser mayor a 0.');
+      errores.push('Escribe cuánto cobra la cuota de manejo. Por ejemplo: 18.000');
     }
     const dia = Number(datos.cuotaManejoDia);
     if (!Number.isInteger(dia) || dia < 1 || dia > 31) {
-      errores.push('El día de cobro debe ser un número entre 1 y 31.');
+      errores.push('Elige el día de cobro, del 1 al 31.');
     }
   }
 
@@ -173,10 +173,10 @@ export function validarCuenta(datos) {
     const llave     = datos.llave?.trim();
     const tipoLlave = datos.tipoLlave?.trim();
     if (llave && !tipoLlave) {
-      errores.push('Debes indicar el tipo de llave.');
+      errores.push('Elige el tipo de llave.');
     }
     if (tipoLlave && !TIPOS_LLAVE.includes(tipoLlave)) {
-      errores.push('El tipo de llave seleccionado no es válido.');
+      errores.push('Elige un tipo de llave de la lista.');
     }
   }
 

@@ -924,7 +924,7 @@ describe('validarCuenta() con cuota de manejo', () => {
 
   it('toggle encendido sin monto: error', () => {
     const errs = validarCuenta({ ...validBase, cuotaManejoActiva: 'on', cuotaManejoMonto: '0', cuotaManejoDia: '15' });
-    expect(errs.some(e => /monto.*cuota/i.test(e))).toBe(true);
+    expect(errs.some(e => /cuota de manejo/i.test(e))).toBe(true);
   });
 
   it('toggle encendido con día inválido: error', () => {
@@ -939,7 +939,7 @@ describe('validarCuenta() con cuota de manejo', () => {
 
   it('BUG-008: toggle encendido con monto Infinity ("1e999"): error', () => {
     const errs = validarCuenta({ ...validBase, cuotaManejoActiva: 'on', cuotaManejoMonto: '1e999', cuotaManejoDia: '20' });
-    expect(errs.some(e => /monto.*cuota/i.test(e))).toBe(true);
+    expect(errs.some(e => /cuota de manejo/i.test(e))).toBe(true);
   });
 });
 
@@ -1855,7 +1855,7 @@ describe('validarIngreso()', () => {
   it('error si descripcion está vacía', () => {
     const errs = validarIngreso({ ...valid, descripcion: '' });
     expect(errs).toHaveLength(1);
-    expect(errs[0]).toMatch(/descripción/i);
+    expect(errs[0]).toMatch(/ponle un nombre/i);
   });
 
   it('error si descripcion es solo espacios', () => {
@@ -1865,7 +1865,7 @@ describe('validarIngreso()', () => {
   it('error si monto es 0', () => {
     const errs = validarIngreso({ ...valid, monto: '0' });
     expect(errs).toHaveLength(1);
-    expect(errs[0]).toMatch(/monto/i);
+    expect(errs[0]).toMatch(/cuánto recibes/i);
   });
 
   it('error si monto es negativo', () => {
@@ -1879,13 +1879,13 @@ describe('validarIngreso()', () => {
   it('BUG-008: error si monto es Infinity (ej. "1e999")', () => {
     const errs = validarIngreso({ ...valid, monto: '1e999' });
     expect(errs).toHaveLength(1);
-    expect(errs[0]).toMatch(/monto/i);
+    expect(errs[0]).toMatch(/cuánto recibes/i);
   });
 
   it('error si frecuencia no está en la lista de FRECUENCIAS', () => {
     const errs = validarIngreso({ ...valid, frecuencia: 'Cada-dos-meses' });
     expect(errs).toHaveLength(1);
-    expect(errs[0]).toMatch(/frecuencia/i);
+    expect(errs[0]).toMatch(/cada cuánto/i);
   });
 
   it('error si frecuencia está vacía', () => {
@@ -1923,7 +1923,7 @@ describe('validarIngreso() - diaPago', () => {
   it('diaPago 0 en Mensual → error de rango', () => {
     const errs = validarIngreso({ ...base, diaPago: '0' });
     expect(errs).toHaveLength(1);
-    expect(errs[0]).toMatch(/día de pago/i);
+    expect(errs[0]).toMatch(/un día del 1 al 31/i);
   });
 
   it('diaPago 32 en Mensual → error de rango', () => {
@@ -2029,7 +2029,7 @@ describe('validarIngreso() categoria', () => {
 
   it('categoria inválida → error', () => {
     const errores = validarIngreso({ descripcion: 'x', monto: '100', frecuencia: 'Mensual', categoria: 'Inventada' });
-    expect(errores).toContain('La categoría seleccionada no es válida.');
+    expect(errores).toContain('Elige una categoría de la lista.');
   });
 });
 
@@ -2084,25 +2084,25 @@ describe('validarIngresoPuntual()', () => {
   });
 
   it('monto 0 o negativo → error', () => {
-    expect(validarIngresoPuntual({ ...base, monto: '0' })).toContain('El monto debe ser un número mayor a 0.');
-    expect(validarIngresoPuntual({ ...base, monto: '-5' })).toContain('El monto debe ser un número mayor a 0.');
+    expect(validarIngresoPuntual({ ...base, monto: '0' })).toContain('Escribe cuánto recibiste. Por ejemplo: 150.000');
+    expect(validarIngresoPuntual({ ...base, monto: '-5' })).toContain('Escribe cuánto recibiste. Por ejemplo: 150.000');
   });
 
   it('monto no numérico → error', () => {
-    expect(validarIngresoPuntual({ ...base, monto: 'abc' })).toContain('El monto debe ser un número mayor a 0.');
+    expect(validarIngresoPuntual({ ...base, monto: 'abc' })).toContain('Escribe cuánto recibiste. Por ejemplo: 150.000');
   });
 
   it('sin cuentaId → error', () => {
-    expect(validarIngresoPuntual({ ...base, cuentaId: '' })).toContain('Debes elegir la cuenta donde recibiste el dinero.');
+    expect(validarIngresoPuntual({ ...base, cuentaId: '' })).toContain('Elige la cuenta donde recibiste el dinero.');
   });
 
   it('fecha ausente o con formato inválido → error', () => {
-    expect(validarIngresoPuntual({ ...base, fecha: '' })).toContain('La fecha es obligatoria.');
-    expect(validarIngresoPuntual({ ...base, fecha: '04/07/2026' })).toContain('La fecha es obligatoria.');
+    expect(validarIngresoPuntual({ ...base, fecha: '' })).toContain('Elige la fecha en que lo recibiste.');
+    expect(validarIngresoPuntual({ ...base, fecha: '04/07/2026' })).toContain('Elige la fecha en que lo recibiste.');
   });
 
   it('categoría inválida → error', () => {
-    expect(validarIngresoPuntual({ ...base, categoria: 'Inventada' })).toContain('La categoría seleccionada no es válida.');
+    expect(validarIngresoPuntual({ ...base, categoria: 'Inventada' })).toContain('Elige una categoría de la lista.');
   });
 });
 
@@ -4692,43 +4692,43 @@ describe('validarTransferencia', () => {
 
   it('exige cuenta de origen', () => {
     const errores = validarTransferencia({ ...datosValidos(), cuentaOrigenId: '' }, cuentas);
-    expect(errores).toContain('Debes elegir la cuenta de origen.');
+    expect(errores).toContain('Elige de qué cuenta sale el dinero.');
   });
 
   it('exige cuenta de destino', () => {
     const errores = validarTransferencia({ ...datosValidos(), cuentaDestinoId: '  ' }, cuentas);
-    expect(errores).toContain('Debes elegir la cuenta de destino.');
+    expect(errores).toContain('Elige a qué cuenta entra el dinero.');
   });
 
   it('rechaza origen y destino iguales', () => {
     const errores = validarTransferencia({ ...datosValidos(), cuentaDestinoId: 'c1' }, cuentas);
-    expect(errores).toContain('El origen y el destino deben ser cuentas distintas.');
+    expect(errores).toContain('Elige dos cuentas distintas: el dinero no puede salir y entrar a la misma.');
   });
 
   it('rechaza una cuenta inactiva como origen', () => {
     const errores = validarTransferencia({ ...datosValidos(), cuentaOrigenId: 'c3' }, cuentas);
-    expect(errores).toContain('La cuenta de origen no existe o no está activa.');
+    expect(errores).toContain('La cuenta de origen ya no está activa: elige otra.');
   });
 
   it('rechaza una cuenta inexistente como destino', () => {
     const errores = validarTransferencia({ ...datosValidos(), cuentaDestinoId: 'zzz' }, cuentas);
-    expect(errores).toContain('La cuenta de destino no existe o no está activa.');
+    expect(errores).toContain('La cuenta de destino ya no está activa: elige otra.');
   });
 
   it('rechaza monto no positivo o no numérico', () => {
     expect(validarTransferencia({ ...datosValidos(), monto: '0' }, cuentas))
-      .toContain('El monto debe ser un número mayor a 0.');
+      .toContain('Escribe cuánto pasas. Por ejemplo: 100.000');
     expect(validarTransferencia({ ...datosValidos(), monto: '-5' }, cuentas))
-      .toContain('El monto debe ser un número mayor a 0.');
+      .toContain('Escribe cuánto pasas. Por ejemplo: 100.000');
     expect(validarTransferencia({ ...datosValidos(), monto: 'abc' }, cuentas))
-      .toContain('El monto debe ser un número mayor a 0.');
+      .toContain('Escribe cuánto pasas. Por ejemplo: 100.000');
   });
 
   it('exige una fecha con formato ISO', () => {
     expect(validarTransferencia({ ...datosValidos(), fecha: '' }, cuentas))
-      .toContain('La fecha es obligatoria.');
+      .toContain('Elige la fecha.');
     expect(validarTransferencia({ ...datosValidos(), fecha: '12/07/2026' }, cuentas))
-      .toContain('La fecha es obligatoria.');
+      .toContain('Elige la fecha.');
   });
 
   it('el saldo insuficiente NO es un error de validación (lo resuelve la confirmación de la UI)', () => {
@@ -4743,7 +4743,7 @@ describe('validarTransferencia', () => {
     const errores = validarTransferencia({
       cuentaOrigenId: 'c1', cuentaDestinoId: '', monto: '100000', fecha: '2026-07-12',
     }, cuentas);
-    expect(errores).not.toContain('El origen y el destino deben ser cuentas distintas.');
+    expect(errores).not.toContain('Elige dos cuentas distintas: el dinero no puede salir y entrar a la misma.');
   });
 });
 
@@ -5236,7 +5236,8 @@ describe('acciones de transferencias (MC.17b)', () => {
     expect(S.transferencias).toHaveLength(0);
     expect(S.cuentas.find(c => c.id === 'c1').saldo).toBe(300_000);
     expect(S.cuentas.find(c => c.id === 'c2').saldo).toBe(900_000);
-    expect(document.querySelector('.form-errors')).not.toBeNull();
+    // Un solo error de campo va debajo del campo, sin aviso arriba (ADR 142 D9).
+    expect(form.querySelector('.form-error')).not.toBeNull();
   });
 });
 
@@ -5436,7 +5437,7 @@ describe('renderFormIngreso() - bloque de cuenta (MC.13d)', () => {
       { id: 'c1', nombre: 'Bancolombia', saldo: 900_000, activa: true },
       { id: 'c2', nombre: 'Nequi', saldo: 100_000, activa: true },
     ];
-    expect(renderFormIngreso()).toContain('Opcional.');
+    expect(renderFormIngreso()).toContain('<span class="form-optional">Opcional</span>');
   });
 });
 

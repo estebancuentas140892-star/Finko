@@ -879,7 +879,7 @@ function _renderPanelDistribuir(d, { educacion = '', movil = false } = {}) {
           <legend>Reparte tu ingreso entre tus necesidades, ahorro, deudas e inversiones. Lo que no distribuyas queda disponible en tu cuenta.</legend>
           ${movil ? _renderQueSeReparte(d) : `
           <div class="form-group">
-            <label for="distribuir-monto" class="label">Monto a distribuir (COP)</label>
+            <label for="distribuir-monto" class="label">Monto a distribuir</label>
             <input id="distribuir-monto" type="text" class="input" inputmode="numeric" data-miles autocomplete="off" value="${miles(montoIngreso)}"
                    data-action="recalcular-distribucion" />
           </div>
@@ -1259,7 +1259,7 @@ function _renderQueSeReparte(d) {
           </div>
           <div id="distribuir-cambiar" class="distribuir__cambiar"${abierto ? '' : ' hidden'}>
             <div class="form-group">
-              <label for="distribuir-monto" class="label">Monto a distribuir (COP)</label>
+              <label for="distribuir-monto" class="label">Monto a distribuir</label>
               <input id="distribuir-monto" type="text" class="input" inputmode="numeric" data-miles autocomplete="off" value="${miles(d.montoIngreso)}"
                      data-action="recalcular-distribucion" />
             </div>

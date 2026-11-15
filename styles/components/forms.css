@@ -108,14 +108,22 @@ form:not(.config-form) .form-group:not(:first-child) {
   font-weight: var(--fk-font-medium);
   color: var(--fk-text-secondary);
 }
-.label-required::after {
-  content: ' *';
-  color: var(--fk-danger);
-}
+/* ADR 142 D8: una sola marca de opcional, la pastilla "Opcional". Lo
+   obligatorio no se marca (se retiró `.label-required`, sin usos). */
 .form-optional {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-start: var(--fk-space-1);
+  padding: 0 var(--fk-space-2);
+  border-radius: var(--fk-radius-full);
+  background: var(--fk-bg-hover);
   font-size: var(--fk-text-xs);
-  font-weight: var(--fk-font-regular);
+  font-weight: var(--fk-font-medium);
+  line-height: 1.5;
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--fk-text-muted);
+  vertical-align: middle;
 }
 .form-hint {
   font-size: var(--fk-text-xs);
@@ -607,6 +615,17 @@ form:not(.config-form) .form-group:not(:first-child) {
 }
 .form-errors__list li + li {
   margin-top: var(--fk-space-1);
+}
+/* ADR 142 D9: el aviso de arriba lleva al primer campo marcado. */
+.form-errors__ir {
+  flex: none;
+  align-self: center;
+  min-height: 44px;
+  /* El rojo del texto sobre el fondo teñido del aviso no llega a 4,5:1 en
+     oscuro (4,26:1): el botón va en el color del título. */
+  color: var(--fk-text-primary);
+  font-weight: var(--fk-font-semibold);
+  text-decoration: underline;
 }
 /* ADR 123 D2 (tablero 3, C3): el error de cada campo va debajo del campo,
    con el ícono de alerta y texto visible. form-errors.js lo agrega al final

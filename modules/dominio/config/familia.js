@@ -159,7 +159,7 @@ async function _enviarPin(form) {
     return;
   }
   if (pin !== String(crudo.pin2 ?? '')) {
-    mostrarErroresForm(form, ['Los dos PIN no coinciden.'], 'Revisa lo que escribiste:');
+    mostrarErroresForm(form, ['Escribe el mismo PIN las dos veces.'], 'Revisa lo que escribiste:');
     return;
   }
   if (!S.config || typeof S.config !== 'object') S.config = {};

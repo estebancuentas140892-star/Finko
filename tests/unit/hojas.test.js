@@ -131,4 +131,68 @@ describe('el atrás del sistema y Escape (ADR 118)', () => {
     delete window.CloseWatcher;
     expect(() => abrirModal(hoja('hoja-a'))).not.toThrow();
   });
+
+  // FORM.2a (ADR 142 D8): cerrar con cambios pregunta.
+
+  /** La hoja de confirmar que abre `confirmar()`: la última del documento. */
+  const preguntaAbierta = () => [...document.querySelectorAll('.modal-overlay[data-open]')]
+    .find(o => o.querySelector('.modal--confirm'));
+  const elegir = (rol) => preguntaAbierta().querySelector(`[data-role="${rol}"]`).click();
+
+  it('con cambios, la ✕ pregunta; "Seguir editando" la deja abierta con lo escrito', async () => {
+    abrirModal(hoja('hoja-a'));
+    hoja('hoja-a').dataset.cambios = '';
+    hoja('hoja-a').querySelector('[data-action="modal-close"]').click();
+    expect(preguntaAbierta()?.textContent).toContain('¿Salir sin guardar?');
+    elegir('cancelar');
+    await tick();
+    expect('open' in hoja('hoja-a').dataset).toBe(true);
+    expect('cambios' in hoja('hoja-a').dataset).toBe(true);
+  });
+
+  it('"Salir sin guardar" la cierra; al volver a abrirla ya no tiene cambios', async () => {
+    abrirModal(hoja('hoja-a'));
+    hoja('hoja-a').dataset.cambios = '';
+    cerrarComoEscape(hoja('hoja-a').querySelector('.modal'));
+    elegir('confirmar');
+    await tick();
+    expect('open' in hoja('hoja-a').dataset).toBe(false);
+    abrirModal(hoja('hoja-a'));
+    expect('cambios' in hoja('hoja-a').dataset).toBe(false);
+  });
+
+  it('el atrás con cambios pregunta y, si sigue editando, el atrás siguiente vuelve a servir', async () => {
+    abrirModal(hoja('hoja-a'));
+    hoja('hoja-a').dataset.cambios = '';
+    vigias[0].disparar();
+    expect('open' in hoja('hoja-a').dataset).toBe(true);
+    elegir('cancelar');
+    await tick();
+    const vivos = vigias.filter(v => !v.destruido);
+    expect(vivos).toHaveLength(1);
+    vivos[0].disparar();
+    expect(preguntaAbierta()).toBeTruthy();
+    elegir('confirmar');
+    await tick();
+    expect('open' in hoja('hoja-a').dataset).toBe(false);
+  });
+
+  it('sin cambios, o en escritorio, cierra sin preguntar', () => {
+    abrirModal(hoja('hoja-a'));
+    hoja('hoja-a').querySelector('[data-action="modal-close"]').click();
+    expect('open' in hoja('hoja-a').dataset).toBe(false);
+    window.matchMedia = () => ({ matches: false, addEventListener() {} });
+    abrirModal(hoja('hoja-b'));
+    hoja('hoja-b').dataset.cambios = '';
+    hoja('hoja-b').querySelector('[data-action="modal-close"]').click();
+    expect('open' in hoja('hoja-b').dataset).toBe(false);
+    expect(preguntaAbierta()).toBeUndefined();
+  });
+
+  it('lo que el dominio llena al abrir no cuenta como cambio: solo lo que hace la persona', () => {
+    hoja('hoja-a').querySelector('.modal').insertAdjacentHTML('beforeend', '<form><input name="monto" /></form>');
+    abrirModal(hoja('hoja-a'));
+    hoja('hoja-a').querySelector('[name="monto"]').dispatchEvent(new Event('input', { bubbles: true }));
+    expect('cambios' in hoja('hoja-a').dataset).toBe(false);
+  });
 });

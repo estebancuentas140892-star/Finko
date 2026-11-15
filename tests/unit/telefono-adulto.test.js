@@ -36,11 +36,11 @@ describe('ofrecerTelefonoAdulto()', () => {
 describe('validarDatosAdulto()', () => {
   it('pide el nombre y un PIN válido', () => {
     expect(validarDatosAdulto({ nombre: '', pin: '', pin2: '' })).toEqual(['Escribe tu nombre.', 'Escribe un PIN.']);
-    expect(validarDatosAdulto({ nombre: 'Laura', pin: '12', pin2: '12' })).toEqual(['El PIN debe tener entre 4 y 8 numeros.']);
+    expect(validarDatosAdulto({ nombre: 'Laura', pin: '12', pin2: '12' })).toEqual(['Escribe un PIN de 4 a 8 números.']);
   });
 
   it('los dos PIN tienen que coincidir', () => {
-    expect(validarDatosAdulto({ nombre: 'Laura', pin: '1234', pin2: '4321' })).toEqual(['Los dos PIN no coinciden.']);
+    expect(validarDatosAdulto({ nombre: 'Laura', pin: '1234', pin2: '4321' })).toEqual(['Escribe el mismo PIN las dos veces.']);
     expect(validarDatosAdulto({ nombre: 'Laura', pin: '1234', pin2: '1234' })).toEqual([]);
   });
 });

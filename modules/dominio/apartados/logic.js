@@ -387,22 +387,22 @@ export function validarApartado(datos) {
   const errores = [];
 
   if (!datos?.nombre?.trim()) {
-    errores.push('El nombre de la reserva es obligatorio.');
+    errores.push('Ponle un nombre para reconocerla.');
   }
 
   const objetivo = Number(datos?.montoObjetivo);
   if (!Number.isFinite(objetivo) || objetivo <= 0) {
-    errores.push('El monto objetivo debe ser un número mayor a 0.');
+    errores.push('Escribe cuánto necesitas reunir. Por ejemplo: 1.200.000');
   }
 
   // Fecha objetivo es opcional. Si viene, debe tener formato válido.
   if (datos?.fechaObjetivo?.trim() && !/^\d{4}-\d{2}-\d{2}$/.test(datos.fechaObjetivo.trim())) {
-    errores.push('La fecha objetivo debe estar en formato YYYY-MM-DD.');
+    errores.push('Elige para cuándo lo necesitas con el calendario.');
   }
 
   // Frecuencia es opcional (default Mensual); si viene, debe ser válida.
   if (datos?.frecuenciaAporte && !FRECUENCIAS_APORTE.includes(datos.frecuenciaAporte)) {
-    errores.push('La frecuencia de aporte no es válida.');
+    errores.push('Elige cada cuánto vas a aportar.');
   }
 
   // Recurrencia: si el apartado se repite, el periodo debe ser un entero > 0.
@@ -435,7 +435,7 @@ function _esRecurrente(valor) {
 export function validarAbonoApartado(monto) {
   const n = Number(monto);
   if (!Number.isFinite(n) || n <= 0) {
-    return ['El aporte debe ser un número mayor a 0.'];
+    return ['Escribe cuánto aportas. Por ejemplo: 100.000'];
   }
   return [];
 }

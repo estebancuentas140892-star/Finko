@@ -130,7 +130,7 @@ async function _guardarPersonal() {
   const errores = validarPersonal(datos);
 
   if (errores.length > 0) {
-    mostrarErroresForm(form, errores);
+    mostrarErroresForm(form, errores, undefined, () => validarPersonal(Object.fromEntries(new FormData(form))));
     return;
   }
 

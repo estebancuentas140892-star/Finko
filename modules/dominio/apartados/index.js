@@ -82,7 +82,10 @@ function _guardarApartado() {
   const errores = validarApartado(datos);
 
   if (errores.length > 0) {
-    mostrarErroresForm(form, errores);
+    mostrarErroresForm(form, errores, undefined, () => {
+      const d = Object.fromEntries(new FormData(form));
+      return validarApartado({ ...d, montoObjetivo: desdeMiles(d.montoObjetivo) ?? '' });
+    });
     return;
   }
 
@@ -302,7 +305,7 @@ function _abrirAporte(el) {
     const enviar = body.querySelector('#aporte-apartado-enviar span');
     monto?.addEventListener('input', () => {
       const n = Number(desdeMiles(monto.value)) || 0;
-      if (enviar) enviar.textContent = n > 0 ? `Aportar ${f(n)}` : 'Aportar';
+      if (enviar) enviar.textContent = n > 0 ? `Aportar ${f(n)}` : 'Aportar a la reserva';
     });
     monto?.focus();
   }
@@ -319,7 +322,7 @@ async function _guardarAporte() {
   const monto   = desdeMiles(datos.monto) ?? '';
   const errores = validarAbonoApartado(monto);
   if (errores.length > 0) {
-    mostrarErroresForm(form, errores);
+    mostrarErroresForm(form, errores, undefined, () => validarAbonoApartado(desdeMiles(form.elements.monto?.value) ?? ''));
     return;
   }
 

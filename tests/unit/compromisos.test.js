@@ -350,7 +350,7 @@ describe('validarCompromiso()', () => {
   it('reporta error si descripción está vacía', () => {
     const errores = validarCompromiso({ ...datosFormValidos, descripcion: '' });
     expect(errores).toHaveLength(1);
-    expect(errores[0]).toMatch(/descripci/i);
+    expect(errores[0]).toMatch(/qué es/i);
   });
 
   it('reporta error si monto es 0', () => {
@@ -359,12 +359,12 @@ describe('validarCompromiso()', () => {
 
   it('reporta error si monto no es número', () => {
     const errores = validarCompromiso({ ...datosFormValidos, monto: 'mucho' });
-    expect(errores[0]).toMatch(/monto/i);
+    expect(errores[0]).toMatch(/cuánto pagas/i);
   });
 
   it('reporta error si frecuencia no está en la lista', () => {
     const errores = validarCompromiso({ ...datosFormValidos, frecuencia: 'Rarísimo' });
-    expect(errores[0]).toMatch(/frecuencia/i);
+    expect(errores[0]).toMatch(/cada cuánto/i);
   });
 
   it('reporta error si diaPago es 0', () => {
@@ -447,13 +447,13 @@ describe('validarCompromiso()', () => {
       ...datosFormValidos, tipo: 'fijo', categoria: 'Otro', descripcion: '',
     });
     expect(errores.length).toBeGreaterThan(0);
-    expect(errores[0]).toMatch(/descripci/i);
+    expect(errores[0]).toMatch(/qué es/i);
   });
 
   it('AG.4: sin categoría, la descripción sigue siendo obligatoria', () => {
     const errores = validarCompromiso({ ...datosFormValidos, tipo: 'fijo', descripcion: '' });
     expect(errores.length).toBeGreaterThan(0);
-    expect(errores[0]).toMatch(/descripci/i);
+    expect(errores[0]).toMatch(/qué es/i);
   });
 
   it('CAT.3c: con una personalizada de sección fijo, la descripción puede ir vacía (mismo criterio AG.4)', () => {
@@ -857,17 +857,17 @@ describe('validarCompromiso() - reglas de deuda (v6)', () => {
 
   it('reporta error si saldoTotal es 0 o menor', () => {
     const errores = validarCompromiso({ ...datosEntidad, saldoTotal: '0' });
-    expect(errores.some(e => /saldo/i.test(e))).toBe(true);
+    expect(errores.some(e => /cuánto debes/i.test(e))).toBe(true);
   });
 
   it('reporta error si cuotaMensual es 0 o menor', () => {
     const errores = validarCompromiso({ ...datosEntidad, cuotaMensual: '0' });
-    expect(errores.some(e => /cuota/i.test(e))).toBe(true);
+    expect(errores.some(e => /cada mes/i.test(e))).toBe(true);
   });
 
   it('reporta error si tasa EA supera 200%', () => {
     const errores = validarCompromiso({ ...datosEntidad, tasa: '250' });
-    expect(errores.some(e => /tasa/i.test(e))).toBe(true);
+    expect(errores.some(e => /al año es muy alto/i.test(e))).toBe(true);
   });
 
   it('reporta error si tasa mensual supera 100%', () => {
@@ -2065,17 +2065,17 @@ describe('validarAbono()', () => {
 
   it('monto faltante: error', () => {
     const errs = validarAbono(abonoValido({ monto: '' }), deudaValida());
-    expect(errs.some(e => /monto/i.test(e))).toBe(true);
+    expect(errs.some(e => /cuánto abonas/i.test(e))).toBe(true);
   });
 
   it('monto 0: error', () => {
     const errs = validarAbono(abonoValido({ monto: '0' }), deudaValida());
-    expect(errs.some(e => /monto/i.test(e))).toBe(true);
+    expect(errs.some(e => /cuánto abonas/i.test(e))).toBe(true);
   });
 
   it('monto negativo: error', () => {
     const errs = validarAbono(abonoValido({ monto: '-100' }), deudaValida());
-    expect(errs.some(e => /monto/i.test(e))).toBe(true);
+    expect(errs.some(e => /cuánto abonas/i.test(e))).toBe(true);
   });
 
   it('cuentaId vacío: error (selector de tarjetas restaurado en el form)', () => {
@@ -2085,23 +2085,23 @@ describe('validarAbono()', () => {
 
   it('fecha vacía: error', () => {
     const errs = validarAbono(abonoValido({ fecha: '' }), deudaValida());
-    expect(errs.some(e => /fecha.*obligatoria/i.test(e))).toBe(true);
+    expect(errs.some(e => /elige la fecha/i.test(e))).toBe(true);
   });
 
   it('fecha mal formateada: error de formato', () => {
     const errs = validarAbono(abonoValido({ fecha: '27/05/2026' }), deudaValida());
-    expect(errs.some(e => /formato/i.test(e))).toBe(true);
+    expect(errs.some(e => /calendario/i.test(e))).toBe(true);
   });
 
   it('deuda null: error', () => {
     const errs = validarAbono(abonoValido(), null);
-    expect(errs.some(e => /no se encontró la deuda/i.test(e))).toBe(true);
+    expect(errs.some(e => /no se encontró esa deuda/i.test(e))).toBe(true);
   });
 
   it('compromiso tipo "fijo" no es deuda: error', () => {
     const fijo = deudaValida({ tipo: 'fijo' });
     const errs = validarAbono(abonoValido(), fijo);
-    expect(errs.some(e => /deudas/i.test(e))).toBe(true);
+    expect(errs.some(e => /solo puedes abonar a una deuda/i.test(e))).toBe(true);
   });
 
   it('deuda inactiva (archivada): error', () => {
@@ -2460,14 +2460,14 @@ describe('D.10/D.13 - validación y normalización de deuda personal', () => {
 
   it('si la cuota viene diligenciada debe ser mayor a 0', () => {
     expect(validarCompromiso({ ...fiado, cuotaMensual: '0' }))
-      .toContainEqual(expect.stringMatching(/cuota/i));
+      .toContainEqual(expect.stringMatching(/cada mes/i));
     expect(validarCompromiso({ ...fiado, cuotaMensual: '-5' }))
-      .toContainEqual(expect.stringMatching(/cuota/i));
+      .toContainEqual(expect.stringMatching(/cada mes/i));
   });
 
   it('la cuota sigue siendo obligatoria en deuda con entidad', () => {
     const ent = { ...fiado, tipo: 'deuda-entidad', categoria: 'Tarjeta de crédito', tasaUnidad: 'EA' };
-    expect(validarCompromiso(ent)).toContainEqual(expect.stringMatching(/cuota/i));
+    expect(validarCompromiso(ent)).toContainEqual(expect.stringMatching(/cada mes/i));
   });
 
   it('valida la categoría contra el catálogo del tipo (relación vs producto)', () => {

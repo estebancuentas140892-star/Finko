@@ -642,13 +642,13 @@ function _diasRestantesDelMes(hoyISO) {
 export function validarMetaMeses(raw) {
   const n = Number(raw);
   if (!Number.isFinite(n)) {
-    return ['La meta debe ser un número de meses.'];
+    return [`Escribe cuántos meses quieres cubrir, de ${META_MESES_MIN} a ${META_MESES_MAX}.`];
   }
   if (!Number.isInteger(n)) {
-    return ['La meta debe ser un número entero de meses.'];
+    return [`Escribe cuántos meses quieres cubrir, en número entero de ${META_MESES_MIN} a ${META_MESES_MAX}.`];
   }
   if (n < META_MESES_MIN || n > META_MESES_MAX) {
-    return [`La meta debe estar entre ${META_MESES_MIN} y ${META_MESES_MAX} meses.`];
+    return [`Escribe cuántos meses quieres cubrir, de ${META_MESES_MIN} a ${META_MESES_MAX}.`];
   }
   return [];
 }
@@ -661,10 +661,10 @@ export function validarMetaMeses(raw) {
 export function validarMontoActual(raw) {
   const n = Number(raw);
   if (!Number.isFinite(n)) {
-    return ['El monto debe ser un número.'];
+    return ['Escribe cuánto ya tienes apartado. Por ejemplo: 500.000'];
   }
   if (n < 0) {
-    return ['El monto no puede ser negativo.'];
+    return ['Escribe cuánto ya tienes apartado: puede ser 0, no menos.'];
   }
   return [];
 }
@@ -749,8 +749,8 @@ export function ordenarAportesPorFecha(aportes) {
  */
 export function validarMontoAporte(raw) {
   const n = Number(raw);
-  if (!Number.isFinite(n)) return ['El monto debe ser un número.'];
-  if (n <= 0)              return ['El monto del aporte debe ser mayor que cero.'];
+  if (!Number.isFinite(n)) return ['Escribe cuánto aportas. Por ejemplo: 100.000'];
+  if (n <= 0)              return ['Escribe cuánto aportas. Por ejemplo: 100.000'];
   return [];
 }
 
@@ -762,10 +762,10 @@ export function validarMontoAporte(raw) {
  */
 export function validarFechaAporte(raw) {
   if (!raw || typeof raw !== 'string' || raw.trim() === '') {
-    return ['La fecha es requerida.'];
+    return ['Elige la fecha del aporte.'];
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(raw.trim())) {
-    return ['El formato de fecha no es válido (se esperaba YYYY-MM-DD).'];
+    return ['Elige la fecha del aporte con el calendario.'];
   }
   return [];
 }
@@ -949,8 +949,8 @@ function _fraseRitmo(meses) {
  */
 export function validarCompromisoMensual(raw) {
   const n = Number(raw);
-  if (!Number.isFinite(n)) return ['El monto debe ser un número.'];
-  if (n < 0)               return ['El monto no puede ser negativo.'];
+  if (!Number.isFinite(n)) return ['Escribe cuánto quieres apartar. Por ejemplo: 200.000'];
+  if (n < 0)               return ['Escribe cuánto quieres apartar: puede ser 0, no menos.'];
   return [];
 }
 

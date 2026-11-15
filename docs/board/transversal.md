@@ -37,21 +37,9 @@
 - Objetivo   : (1) en iOS la app instalada no comparte `localStorage` con Safari: quien se registra en Safari e instala abre una app vacía. Ofrecer instalar antes del registro en iOS, o avisarlo en el modal; además el iPad no se detecta (`_esIOS()`), los pasos suponen Safari con Compartir abajo y no se detecta el navegador de otra app. (2) El 2026-11-13 producción servía la v693 completa y el aviso "Hay una versión nueva" se pinta bien, pero el teléfono de Esteban seguía en la vieja. Faltan: el número de Acerca de Finko (`1.0.0 (NNN)`), el mensaje de "Buscar actualización", iPhone o Android y desde qué dirección está instalada (si no es finko-brown.vercel.app, no recibe lo que se publica)
 - Archivos   : `modules/ui/install-prompt.js`, `index.html` (`#modal-install-ios`), `modules/ui/onboarding.js`, `modules/infra/sw-register.js`, `modules/infra/actualizacion.js`, `modules/ui/sw-aviso.js`, `service-worker.js`
 - Depende de : la prueba en el iPhone y esos datos
-- Aceptación : en un iPhone, quien instala Finko encuentra sus datos (o fue avisado antes de registrarse), y en el teléfono de Esteban Acerca de Finko muestra la versión publicada
+- Aceptación : en un iPhone, quien instala Finko encuentra sus datos (o fue avisado antes de registrarse), y en el teléfono de Esteban Acerca de Finko muestra la versión publicada. En la misma prueba: el modo escritura de FORM.2a (con el teclado abierto en Nueva deuda se ven la pregunta, el campo, su ayuda y el botón; la ✕ no queda bajo la hora en la app instalada) y el campo sobre el teclado de REV.2b
 
 > **Iniciativa FORM.2 - Formularios por tarea** ([ADR 142](../DECISIONS/142-formularios-por-tarea.md), aceptada 2026-11-14). Fuente única de todo cambio de forma en los formularios del teléfono: cuatro tareas (mover dinero, crear, corregir, ajustes), la regla para elegir cada control y el teclado de Finko. Diseño en el canvas "Finko · Rediseño de formularios móviles", página "Propuesta por tarea"; manda el ADR. Escritorio no cambia. **Una idea sobre cualquier formulario se integra acá, no abre tarjeta suelta.**
-
-#### FORM.2a - Lo que vale para todas las hojas
-- Prioridad  : alta
-- Estado     : pendiente
-- Área       : ambos
-- Objetivo   : ADR 142 D8 y D9 en las 27 hojas de hoy: modo escritura (sin agarradera ni teja, cabecera 52, pie 72 sin margen seguro, arranque en `safe-area-inset-top`), campo anclado arriba, `enterkeyhint` sin envío implícito, un solo botón, "¿Salir sin guardar?" al cerrar con cambios, la pastilla "Opcional" y errores que se limpian por campo con mensajes que dicen qué hacer
-- Riesgo     : `form-errors.js` ata cada error a su campo por palabras del mensaje: un mensaje reescrito puede soltarse de su campo; revisar `_CAMPOS` con cada uno
-- Secciones  : todas las hojas del teléfono
-- Archivos   : `styles/responsive.css`, `styles/components/forms.css`, `modules/ui/teclado.js`, `modules/ui/hojas.js`, `modules/infra/form-errors.js`, los `logic.js` (mensajes) y las vistas con formulario
-- Depende de : nada
-- Aceptación : casos nuevos en `teclado.test.js` y en las pruebas de `form-errors`; en un iPhone, con el teclado abierto en Nueva deuda se ven la pregunta, el campo, su ayuda y el botón
-- Modelo     : capacidad alta, esfuerzo medio
 
 #### FORM.2b - Registrar gasto: monto, un toque, recibo
 - Prioridad  : alta
@@ -61,7 +49,7 @@
 - Riesgo     : el contrato de `#form-gasto` y `validarGasto` no cambian; el reparto entre cuentas debe dar lo mismo que hoy
 - Secciones  : Gastos y Registrar
 - Archivos   : `modules/dominio/gastos/view.js` e `index.js`, un módulo nuevo en `modules/ui/` para el teclado, `modules/infra/cuenta-helper.js`, `styles/components/forms.css`, `styles/identidad.css`
-- Depende de : FORM.2a
+- Depende de : nada
 - Aceptación : unitarias del teclado; E2E a 390 px: monto, categoría y guardar en tres toques, y la cuenta que no alcanza
 - Modelo     : capacidad alta, esfuerzo alto
 
@@ -91,10 +79,10 @@
 - Prioridad  : media
 - Estado     : pendiente
 - Área       : ambos
-- Objetivo   : ADR 142 D5: una pregunta por pantalla con progreso y atrás que conserva (precedente: el asistente paginado de Distribuir) y Nueva deuda en seis preguntas con resumen y "Agrega si quieres"; la ayuda de la tasa pasa a una mini-hoja con Tino
+- Objetivo   : ADR 142 D5: una pregunta por pantalla con progreso y atrás que conserva (precedente: el asistente paginado de Distribuir) y Nueva deuda en seis preguntas con resumen y "Agrega si quieres"; la ayuda de la tasa pasa a una mini-hoja con Tino, y la tasa muy alta deja de bloquear y pasa a aviso ámbar con su salida (142 D9)
 - Riesgo     : `normalizarCompromiso` y "Recibí este dinero" (D.14) no cambian
 - Archivos   : `compromisos/views/formularios.js`, `compromisos/index.js`, un módulo nuevo en `modules/ui/` para el armazón
-- Depende de : FORM.2a
+- Depende de : nada
 - Aceptación : E2E de una deuda de entidad y una personal; volver atrás no borra respuestas
 - Modelo     : capacidad alta, esfuerzo alto
 

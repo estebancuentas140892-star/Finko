@@ -60,14 +60,14 @@ function _attachDiaPagoToggle(form) {
     } else if (frec === 'Quincenal') {
       inputDia.max         = '15';
       inputDia.placeholder = 'Ej. 15';
-      if (labelDia) labelDia.textContent = 'Día de la primera quincena (1-15)';
+      if (labelDia) labelDia.innerHTML = 'Día de la primera quincena <span class="form-optional">Opcional</span>';
       if (Number(inputDia.value) > 15) inputDia.value = '';
       if (hintDia) hintDia.textContent = 'Ingresa el primer día (1 a 15). Finko calcula el segundo sumando 15. Ejemplo: ingresa 15 y verás los días 15 y 30.';
     } else {
       inputDia.max         = '31';
       inputDia.placeholder = 'Ej. 30';
-      if (labelDia) labelDia.textContent = 'Día de pago (1-31)';
-      if (hintDia) hintDia.textContent = 'Opcional. ¿Qué día sueles recibir este pago?';
+      if (labelDia) labelDia.innerHTML = 'Día de pago <span class="form-optional">Opcional</span>';
+      if (hintDia) hintDia.textContent = '¿Qué día sueles recibir este pago? Del 1 al 31.';
     }
   }
 
@@ -152,7 +152,7 @@ function _guardarIngreso() {
   const datos = Object.fromEntries(new FormData(form));
   const errores = validarIngreso(datos);
   if (errores.length > 0) {
-    mostrarErroresForm(form, errores);
+    mostrarErroresForm(form, errores, undefined, () => validarIngreso(Object.fromEntries(new FormData(form))));
     return;
   }
 
@@ -277,7 +277,7 @@ function _guardarIngresoPuntual() {
   const datos = Object.fromEntries(new FormData(form));
   const errores = validarIngresoPuntual(datos);
   if (errores.length > 0) {
-    mostrarErroresForm(form, errores);
+    mostrarErroresForm(form, errores, undefined, () => validarIngresoPuntual(Object.fromEntries(new FormData(form))));
     return;
   }
 

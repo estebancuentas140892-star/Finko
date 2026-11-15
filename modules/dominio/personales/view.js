@@ -454,7 +454,7 @@ export function renderFormPersonal({ prestamo = null } = {}) {
                value="${_esc(prestamo?.persona ?? '')}" />
       </div>
       <div class="form-group">
-        <label for="pers-monto" class="label">Monto prestado (COP)</label>
+        <label for="pers-monto" class="label">Monto prestado</label>
         <input id="pers-monto" name="monto" class="input" type="text" inputmode="numeric" data-miles autocomplete="off" placeholder="0" required aria-required="true"
                value="${miles(prestamo ? Number(prestamo.monto) || '' : '')}" />
       </div>
@@ -467,7 +467,7 @@ export function renderFormPersonal({ prestamo = null } = {}) {
       ${cuentaHtml}
 
       <div class="form-group">
-        <label for="pers-tasa" class="label">Interés mensual (%) <span class="form-optional">opcional</span></label>
+        <label for="pers-tasa" class="label">Interés mensual (%) <span class="form-optional">Opcional</span></label>
         <input id="pers-tasa" name="tasa" class="input" type="number"
                min="0" max="100" step="0.1" placeholder="Ej. 2"
                inputmode="decimal"
@@ -475,14 +475,14 @@ export function renderFormPersonal({ prestamo = null } = {}) {
         <p class="form-hint">Se calcula sobre el capital pendiente; cada pago cubre primero el interés.</p>
       </div>
       <div class="form-group">
-        <label for="pers-motivo" class="label">Motivo <span class="form-optional">opcional</span></label>
+        <label for="pers-motivo" class="label">Motivo <span class="form-optional">Opcional</span></label>
         <input id="pers-motivo" name="motivo" class="input" type="text"
                placeholder="Ej. mercado, favor" maxlength="80"
                autocomplete="off"
                value="${_esc(prestamo?.motivo ?? '')}" />
       </div>
       <div class="form-group">
-        <label for="pers-limite" class="label">Fecha pactada de devolución <span class="form-optional">opcional</span></label>
+        <label for="pers-limite" class="label">Fecha pactada de devolución <span class="form-optional">Opcional</span></label>
         <input id="pers-limite" name="fechaLimite" class="input" type="date"
                value="${_esc(prestamo?.fechaLimite ?? '')}" />
         <p class="form-hint">Si pasa esta fecha, el préstamo se marca como vencido.</p>

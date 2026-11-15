@@ -203,8 +203,9 @@ function _renderGrupoCuentaIngreso(ingreso) {
       label:          '¿En qué cuenta recibes este ingreso?',
       selectedId:     ingreso?.cuentaId ?? null,
       preseleccionar: false,
+      opcional:       true,
     })}
-    <p class="form-hint form-hint--muted">Opcional. Si lo indicas, al distribuir tu ingreso Finko parte de esa cuenta.</p>
+    <p class="form-hint form-hint--muted">Si lo indicas, al distribuir tu ingreso Finko parte de esa cuenta.</p>
     ${_renderToggleCreditoAutomatico(ingreso)}`;
 }
 
@@ -278,7 +279,7 @@ export function renderFormIngreso(ingreso = null) {
         </p>
       </div>
       <div class="form-group">
-        <label for="ingreso-monto" class="label">Monto (COP)</label>
+        <label for="ingreso-monto" class="label">Monto</label>
         <input id="ingreso-monto" name="monto" class="input" type="text" placeholder="0"
                value="${miles(ingreso ? ingreso.monto : '')}"
                required aria-required="true" inputmode="numeric" data-miles autocomplete="off" />
@@ -291,18 +292,18 @@ export function renderFormIngreso(ingreso = null) {
         </select>
       </div>
       <div class="form-group" id="form-group-dia-pago"${ingreso && FRECUENCIAS_CON_DIA.includes(ingreso.frecuencia) ? '' : ' hidden'}>
-        <label for="ingreso-dia-pago" class="label" id="label-dia-pago">${ingreso?.frecuencia === 'Quincenal' ? 'Día de la primera quincena (1-15)' : 'Día de pago (1-31)'}</label>
+        <label for="ingreso-dia-pago" class="label" id="label-dia-pago">${ingreso?.frecuencia === 'Quincenal' ? 'Día de la primera quincena' : 'Día de pago'} <span class="form-optional">Opcional</span></label>
         <input id="ingreso-dia-pago" name="diaPago" class="input" type="number"
                min="1" max="${ingreso?.frecuencia === 'Quincenal' ? '15' : '31'}" step="1"
                placeholder="${ingreso?.frecuencia === 'Quincenal' ? 'Ej. 15' : 'Ej. 30'}"
                value="${ingreso?.diaPago ?? ''}"
                inputmode="numeric" />
-        <p class="form-hint form-hint--muted">Opcional. ¿Qué día sueles recibir este pago?</p>
+        <p class="form-hint form-hint--muted" id="hint-dia-pago">¿Qué día sueles recibir este pago? Del 1 al 31.</p>
       </div>
       ${_renderGrupoCuentaIngreso(ingreso)}
       <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
-        <button type="submit" class="btn btn-primary">${ingreso ? 'Actualizar' : 'Guardar'}</button>
+        <button type="submit" class="btn btn-primary">${ingreso ? 'Actualizar ingreso fijo' : 'Guardar ingreso fijo'}</button>
       </div>
     </form>`;
 }
@@ -421,21 +422,21 @@ export function renderFormIngresoPuntual() {
   return `
     <form id="form-ingreso-puntual" novalidate>
       <div class="form-group">
-        <label for="ingreso-p-monto" class="label">¿Cuánto recibiste? (COP)</label>
+        <label for="ingreso-p-monto" class="label">¿Cuánto recibiste?</label>
         <input id="ingreso-p-monto" name="monto" class="input input--big-amount"
                type="text" inputmode="numeric" data-miles placeholder="0"
                required aria-required="true" autocomplete="off" />
       </div>
       ${renderSelectorCuenta(cuentas, { label: '¿En qué cuenta entró el dinero?' })}
       <div class="form-group">
-        <label for="ingreso-p-cat" class="label">Categoría (opcional)</label>
+        <label for="ingreso-p-cat" class="label">Categoría <span class="form-optional">Opcional</span></label>
         <select id="ingreso-p-cat" name="categoria" class="input">
           <option value="">Seleccionar…</option>
           ${catOpts}
         </select>
       </div>
       <div class="form-group">
-        <label for="ingreso-p-desc" class="label">Descripción (opcional)</label>
+        <label for="ingreso-p-desc" class="label">Descripción <span class="form-optional">Opcional</span></label>
         <input id="ingreso-p-desc" name="descripcion" class="input" type="text"
                placeholder="Ej. Venta de la bici, Freelance, Regalo" autocomplete="off" />
       </div>

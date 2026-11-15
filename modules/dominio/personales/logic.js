@@ -566,21 +566,21 @@ export function validarPersonal(datos) {
   const monto   = Number(datos.monto);
 
   if (!persona) {
-    errores.push('Faltó el nombre de la persona.');
+    errores.push('Escribe a quién le prestaste.');
   }
   if (!Number.isFinite(monto) || monto <= 0) {
-    errores.push('El monto debe ser mayor a 0.');
+    errores.push('Escribe cuánto prestaste. Por ejemplo: 200.000');
   }
   if (datos.fecha && !/^\d{4}-\d{2}-\d{2}$/.test(datos.fecha)) {
-    errores.push('La fecha del préstamo no es válida.');
+    errores.push('Elige la fecha del préstamo con el calendario.');
   }
   if (datos.fechaLimite && !/^\d{4}-\d{2}-\d{2}$/.test(datos.fechaLimite)) {
-    errores.push('La fecha pactada no es válida.');
+    errores.push('Elige la fecha pactada con el calendario.');
   }
   if (datos.tasa != null && String(datos.tasa).trim() !== '') {
     const tasa = Number(datos.tasa);
     if (!Number.isFinite(tasa) || tasa < 0 || tasa > 100) {
-      errores.push('La tasa de interés mensual debe ser un número entre 0 y 100.');
+      errores.push('Escribe la tasa del mes, de 0 a 100. Por ejemplo: 2');
     }
   }
   return errores;

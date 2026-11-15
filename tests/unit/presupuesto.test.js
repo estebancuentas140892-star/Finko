@@ -970,25 +970,25 @@ describe('validarPresupuesto()', () => {
 
   it('error si categoría no está en el catálogo', () => {
     const errs = validarPresupuesto({ categoria: 'Inventada', montoMensual: '1000' }, []);
-    expect(errs[0]).toMatch(/inválida/i);
+    expect(errs[0]).toMatch(/de la lista/i);
   });
 
   it('error si monto es 0 o negativo', () => {
     const errs1 = validarPresupuesto({ categoria: 'Alimentación', montoMensual: '0' }, []);
-    expect(errs1[0]).toMatch(/mayor a 0/i);
+    expect(errs1[0]).toMatch(/cuánto quieres gastar/i);
     const errs2 = validarPresupuesto({ categoria: 'Alimentación', montoMensual: '-100' }, []);
-    expect(errs2[0]).toMatch(/mayor a 0/i);
+    expect(errs2[0]).toMatch(/cuánto quieres gastar/i);
   });
 
   it('error si monto no es número', () => {
     const errs = validarPresupuesto({ categoria: 'Alimentación', montoMensual: 'abc' }, []);
-    expect(errs[0]).toMatch(/mayor a 0/i);
+    expect(errs[0]).toMatch(/cuánto quieres gastar/i);
   });
 
   it('error si ya existe envelope para esa categoría', () => {
     const existentes = [presupuesto({ categoria: 'Alimentación' })];
     const errs = validarPresupuesto({ categoria: 'Alimentación', montoMensual: '300000' }, existentes);
-    expect(errs[0]).toMatch(/ya existe/i);
+    expect(errs[0]).toMatch(/ya tienes un límite/i);
   });
 
   it('NO marca duplicado si estamos editando el mismo envelope (id coincide)', () => {
@@ -1011,7 +1011,7 @@ describe('validarPresupuesto()', () => {
       existentes,
       'p2',
     );
-    expect(errs[0]).toMatch(/ya existe/i);
+    expect(errs[0]).toMatch(/ya tienes un límite/i);
   });
 });
 
@@ -1051,7 +1051,7 @@ describe('validarPresupuesto() - categorías personalizadas (DIS.7, hallazgo L4)
       { categoria: 'Inventada', montoMensual: '60000' },
       [], null, [{ nombre: 'Domicilios', icono: 'c-tienda' }],
     );
-    expect(errs[0]).toMatch(/categoría inválida/i);
+    expect(errs[0]).toMatch(/categoría de la lista/i);
   });
 
   it('sin personalizadas se comporta como antes (compatibilidad)', () => {

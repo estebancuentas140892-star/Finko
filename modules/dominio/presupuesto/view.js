@@ -738,7 +738,7 @@ export function renderFormHormiga(limitePropuesto) {
       </div>
       <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
-        <button type="submit" class="btn btn-primary">${icon('check-circle')} Guardar</button>
+        <button type="submit" class="btn btn-primary">${icon('check-circle')} Guardar compras pequeñas</button>
       </div>
     </form>`;
 }
@@ -936,7 +936,7 @@ export function renderFormPresupuesto(actual = null, categoriaPrecargada = '') {
       </div>
       <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
-        <button type="submit" class="btn btn-primary">${icon('check-circle')} ${editando ? 'Guardar cambios' : 'Crear límite'}</button>
+        <button type="submit" class="btn btn-primary">${icon('check-circle')} ${editando ? 'Guardar límite' : 'Crear límite'}</button>
       </div>
     </form>`;
 }

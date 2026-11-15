@@ -268,17 +268,17 @@ export const FRECUENCIAS_CON_DIA = FRECUENCIAS_DATABLES;
 export function validarIngreso(datos) {
   const errores = [];
   if (!datos.descripcion?.trim()) {
-    errores.push('La descripción es obligatoria.');
+    errores.push('Ponle un nombre para reconocerlo.');
   }
   const monto = Number(datos.monto);
   if (!Number.isFinite(monto) || monto <= 0) {
-    errores.push('El monto debe ser un número mayor a 0.');
+    errores.push('Escribe cuánto recibes. Por ejemplo: 2.500.000');
   }
   if (!datos.frecuencia || !FRECUENCIAS.includes(datos.frecuencia)) {
-    errores.push('Debes elegir una frecuencia válida.');
+    errores.push('Elige cada cuánto lo recibes.');
   }
   if (datos.categoria && !CATEGORIAS_INGRESO.includes(datos.categoria)) {
-    errores.push('La categoría seleccionada no es válida.');
+    errores.push('Elige una categoría de la lista.');
   }
   // diaPago es opcional; si se proporcionó y la frecuencia lo soporta, validar rango.
   if (datos.diaPago !== undefined && datos.diaPago !== '' && FRECUENCIAS_CON_DIA.includes(datos.frecuencia)) {
@@ -286,8 +286,8 @@ export function validarIngreso(datos) {
     const maxDia = datos.frecuencia === 'Quincenal' ? 15 : 31;
     if (!Number.isInteger(dia) || dia < 1 || dia > maxDia) {
       errores.push(datos.frecuencia === 'Quincenal'
-        ? 'El día de la primera quincena debe estar entre 1 y 15.'
-        : 'El día de pago debe estar entre 1 y 31.');
+        ? 'Elige un día del 1 al 15 para la primera quincena.'
+        : 'Elige un día del 1 al 31.');
     }
   }
   // PA.1b (ADR 052 D2): sin cuenta no hay a dónde abonar el crédito automático,
@@ -381,16 +381,16 @@ export function validarIngresoPuntual(datos) {
   const errores = [];
   const monto = Number(datos.monto);
   if (!Number.isFinite(monto) || monto <= 0) {
-    errores.push('El monto debe ser un número mayor a 0.');
+    errores.push('Escribe cuánto recibiste. Por ejemplo: 150.000');
   }
   if (!datos.cuentaId?.trim()) {
-    errores.push('Debes elegir la cuenta donde recibiste el dinero.');
+    errores.push('Elige la cuenta donde recibiste el dinero.');
   }
   if (!datos.fecha?.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(datos.fecha)) {
-    errores.push('La fecha es obligatoria.');
+    errores.push('Elige la fecha en que lo recibiste.');
   }
   if (datos.categoria && !CATEGORIAS_INGRESO.includes(datos.categoria)) {
-    errores.push('La categoría seleccionada no es válida.');
+    errores.push('Elige una categoría de la lista.');
   }
   return errores;
 }

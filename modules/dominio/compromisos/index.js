@@ -287,7 +287,7 @@ async function _guardarCompromiso() {
   const errores = validarCompromiso(datos);
 
   if (errores.length > 0) {
-    mostrarErroresForm(form, errores);
+    mostrarErroresForm(form, errores, undefined, () => validarCompromiso(Object.fromEntries(new FormData(form))));
     return;
   }
 
@@ -718,7 +718,7 @@ function _syncCategoriaGastoFijo(form) {
     && (CATEGORIAS_AGENDA.includes(categoria) || _personalizadasFijo().some(c => c.nombre === categoria));
 
   if (nombreAuto) {
-    etiqueta.textContent = 'Nota (opcional)';
+    etiqueta.innerHTML   = 'Nota <span class="form-optional">Opcional</span>';
     nombre.placeholder   = 'Ej. Éxito, unidad 302, Netflix premium…';
     nombre.required      = false;
     nombre.removeAttribute('aria-required');
@@ -815,19 +815,21 @@ function _guardarGastoFijo() {
   // CAT.3c: mismo patrón que "Otra categoría" en Gastos (gastos/index.js). El
   // sentinela no es una categoría real todavía, así que se valida como si no
   // hubiera categoría elegida (categoria: '' no dispara el rechazo del catálogo).
-  const errores = validarCompromiso(
-    esCategoriaNueva ? { ...datos, categoria: '' } : datos,
-    personalizadasFijo,
-  );
-  if (esCategoriaNueva) {
-    errores.push(...validarCategoriaPersonalizada(
-      { nombre: datos.categoriaNuevaNombre, icono: datos.categoriaNuevaIcono },
-      S.categoriasPersonalizadas,
-    ));
-  }
+  const validar = (d) => {
+    const nueva = d.categoria === CATEGORIA_NUEVA_VALUE_FIJO;
+    const e = validarCompromiso(nueva ? { ...d, categoria: '' } : d, personalizadasFijo);
+    if (nueva) {
+      e.push(...validarCategoriaPersonalizada(
+        { nombre: d.categoriaNuevaNombre, icono: d.categoriaNuevaIcono },
+        S.categoriasPersonalizadas,
+      ));
+    }
+    return e;
+  };
+  const errores = validar(datos);
 
   if (errores.length > 0) {
-    mostrarErroresForm(form, errores);
+    mostrarErroresForm(form, errores, undefined, () => validar(Object.fromEntries(new FormData(form))));
     return;
   }
 
@@ -901,7 +903,7 @@ async function _guardarAbono() {
 
   const errores = validarAbono(datos, deuda);
   if (errores.length > 0) {
-    mostrarErroresForm(form, errores);
+    mostrarErroresForm(form, errores, undefined, () => validarAbono(Object.fromEntries(new FormData(form)), deuda));
     return;
   }
 

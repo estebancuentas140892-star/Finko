@@ -188,7 +188,7 @@ async function _guardarTransferencia() {
   const datos = Object.fromEntries(new FormData(form));
   const errores = validarTransferencia(datos, S.cuentas ?? []);
   if (errores.length > 0) {
-    mostrarErroresForm(form, errores);
+    mostrarErroresForm(form, errores, undefined, () => validarTransferencia(Object.fromEntries(new FormData(form)), S.cuentas ?? []));
     return;
   }
 

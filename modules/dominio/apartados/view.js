@@ -711,7 +711,7 @@ export function renderFormApartado(apartado = null, frecuenciaPreferida = 'Mensu
         <span class="monto-hero__hint">COP</span>
       </div>
       <div class="form-group">
-        <label for="apartado-fecha" class="label">¿Para cuándo lo necesitas? <span class="label__opcional">(opcional)</span></label>
+        <label for="apartado-fecha" class="label">¿Para cuándo lo necesitas? <span class="form-optional">Opcional</span></label>
         <input id="apartado-fecha" name="fechaObjetivo" class="input" type="date" value="${_esc(apartado?.fechaObjetivo ?? '')}" />
         <p id="apartado-sugerencia-live" class="form-hint" aria-live="polite">${SUGERENCIA_INICIAL}</p>
       </div>
@@ -722,7 +722,7 @@ export function renderFormApartado(apartado = null, frecuenciaPreferida = 'Mensu
       </fieldset>
 
       <div class="form-group">
-        <label for="apartado-nota" class="label">Nota <span class="label__opcional">(opcional)</span></label>
+        <label for="apartado-nota" class="label">Nota <span class="form-optional">Opcional</span></label>
         <input id="apartado-nota" name="nota" class="input" type="text" maxlength="80"
                placeholder="Ej.: la moto de Andrés"
                value="${_esc(apartado?.nota ?? '')}" />
@@ -814,7 +814,7 @@ export function renderFormAporteApartado(apartado, sugerencia = null) {
       ${cuentaHtml}
       <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
-        <button type="submit" class="btn btn-primary" id="aporte-apartado-enviar"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg><span>${montoSugerido ? `Aportar ${f(montoSugerido)}` : 'Aportar'}</span></button>
+        <button type="submit" class="btn btn-primary" id="aporte-apartado-enviar"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg><span>${montoSugerido ? `Aportar ${f(montoSugerido)}` : 'Aportar a la reserva'}</span></button>
       </div>
     </form>`;
 }

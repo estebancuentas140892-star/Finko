@@ -428,7 +428,7 @@ function _renderPerfil() {
                  placeholder="Tu nombre" autocomplete="given-name" />
         </div>
         <fieldset class="form-group config-situacion">
-          <legend class="label">¿Cómo recibes tus ingresos? <span class="label__opcional">(opcional)</span></legend>
+          <legend class="label">¿Cómo recibes tus ingresos? <span class="form-optional">Opcional</span></legend>
           <div class="familia-segmento" id="config-situacion">${opciones}
           </div>
           <p class="form-hint">Ayuda a Finko a entender tus ingresos y tus impuestos.</p>

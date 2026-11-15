@@ -509,7 +509,7 @@ describe('validarMeta()', () => {
   it('reporta error si montoObjetivo es 0', () => {
     const errores = validarMeta({ ...datosFormValidos, montoObjetivo: '0' });
     expect(errores).toHaveLength(1);
-    expect(errores[0]).toMatch(/monto/i);
+    expect(errores[0]).toMatch(/cuánto necesitas reunir/i);
   });
 
   it('reporta error si montoObjetivo es negativo', () => {

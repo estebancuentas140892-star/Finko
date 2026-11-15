@@ -108,7 +108,7 @@ function _guardarMeta() {
   const errores = validarMeta(datos);
 
   if (errores.length > 0) {
-    mostrarErroresForm(form, errores);
+    mostrarErroresForm(form, errores, undefined, () => validarMeta(Object.fromEntries(new FormData(form))));
     return;
   }
 
@@ -198,7 +198,7 @@ async function _guardarAbonoMeta() {
   const datos = Object.fromEntries(new FormData(form));
   const errores = validarAbono(datos.monto);
   if (errores.length > 0) {
-    mostrarErroresForm(form, errores);
+    mostrarErroresForm(form, errores, undefined, () => validarAbono(Object.fromEntries(new FormData(form)).monto));
     return;
   }
 

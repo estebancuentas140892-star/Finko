@@ -119,10 +119,11 @@ function _editarPresupuesto(el) {
 function _guardarPresupuesto(form) {
   const datos    = Object.fromEntries(new FormData(form));
   const idActual = form.dataset.id || null;
-  const errores  = validarPresupuesto(datos, S.presupuestos, idActual, S.categoriasPersonalizadas ?? []);
+  const validar  = (d) => validarPresupuesto(d, S.presupuestos, idActual, S.categoriasPersonalizadas ?? []);
+  const errores  = validar(datos);
 
   if (errores.length > 0) {
-    mostrarErroresForm(form, errores);
+    mostrarErroresForm(form, errores, undefined, () => validar(Object.fromEntries(new FormData(form))));
     return;
   }
 
@@ -184,7 +185,7 @@ function _editarHormiga(limitePropuesto) {
     const datos = Object.fromEntries(new FormData(form));
     const errores = validarHormiga(datos);
     if (errores.length > 0) {
-      mostrarErroresForm(form, errores);
+      mostrarErroresForm(form, errores, undefined, () => validarHormiga(Object.fromEntries(new FormData(form))));
       return;
     }
     const limite = String(datos.limite ?? '').trim() === '' ? null : Number(datos.limite);

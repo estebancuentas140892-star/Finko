@@ -9,6 +9,7 @@
 
 import { toggleTheme, toggleSidebarCollapse } from './shell.js';
 import { abrirModal, cerrarModal } from './modales.js';
+import { pedirCierre } from './hojas.js';
 import { navigate } from '../infra/router.js';
 import { S, EventBus } from '../core/state.js';
 import { save } from '../core/storage.js';
@@ -100,7 +101,8 @@ function _handleKeydown(e) {
     const abiertas = document.querySelectorAll('.modal-overlay[data-open]');
     const open = abiertas[abiertas.length - 1];
     // data-bloqueante (LEG.2): gate de aceptación legal, sin salida hasta aceptar.
-    if (open && !('bloqueante' in open.dataset)) cerrarModal(open);
+    // Con cambios sin guardar, en el teléfono pregunta antes (ADR 142 D8).
+    if (open && !('bloqueante' in open.dataset)) pedirCierre(open);
     return;
   }
 
@@ -150,7 +152,7 @@ export function initAcciones() {
 
   registrarAccion('modal-close', (el) => {
     const overlay = el.closest('.modal-overlay');
-    if (overlay) cerrarModal(overlay);
+    if (overlay) pedirCierre(overlay);
   });
 
   // Cierra el modal abierto (si lo hay) y navega a una sección. Necesaria

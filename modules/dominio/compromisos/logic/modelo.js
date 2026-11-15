@@ -295,17 +295,19 @@ export function validarCompromiso(datos, personalizadasFijo = []) {
   // AG.4: con categoría predefinida (no 'Otro'), el nombre lo da la propia
   // categoría; el campo de texto queda libre para una nota opcional.
   if (!_categoriaFijoConNombreAuto(datos, personalizadasFijo) && !datos.descripcion?.trim()) {
-    errores.push('La descripción del compromiso es obligatoria.');
+    errores.push(String(datos.tipo ?? '').startsWith('deuda')
+      ? 'Ponle un nombre para reconocerla.'
+      : 'Escribe qué es. Por ejemplo: Arriendo');
   }
   if (!datos.frecuencia || !FRECUENCIAS.includes(datos.frecuencia)) {
-    errores.push('Debes elegir la frecuencia.');
+    errores.push('Elige cada cuánto pagas.');
   }
   const diaPago = Number(datos.diaPago);
   if (!Number.isInteger(diaPago) || diaPago < 1 || diaPago > 31) {
-    errores.push('El día de pago debe ser un número entero entre 1 y 31.');
+    errores.push('Elige un día del 1 al 31.');
   }
   if (!datos.tipo || !TIPOS_COMPROMISO.includes(datos.tipo)) {
-    errores.push('Debes elegir el tipo de compromiso.');
+    errores.push('Elige qué tipo de pago es.');
   }
   // PA.1a (ADR 052 D2): sin cuenta no hay débito automático que preparar, y
   // elegirla por el usuario sería inventar de dónde sale su dinero.
@@ -316,16 +318,16 @@ export function validarCompromiso(datos, personalizadasFijo = []) {
   if (datos.tipo === 'fijo') {
     const monto = Number(datos.monto);
     if (isNaN(monto) || monto <= 0) {
-      errores.push('El monto debe ser un número mayor a 0.');
+      errores.push('Escribe cuánto pagas. Por ejemplo: 85.000');
     }
     if (datos.categoria && !CATEGORIAS_AGENDA.includes(datos.categoria)
       && !personalizadasFijo.some(c => c.nombre === datos.categoria)) {
-      errores.push('La categoría seleccionada no es válida.');
+      errores.push('Elige una categoría de la lista.');
     }
   } else if (esDeuda(datos.tipo)) {
     const saldo = Number(datos.saldoTotal);
     if (isNaN(saldo) || saldo <= 0) {
-      errores.push('El saldo total que aún debes debe ser mayor a 0.');
+      errores.push('Escribe cuánto debes hoy. Por ejemplo: 3.200.000');
     }
     // D.13: en deuda personal la cuota es opcional (fiado, préstamos sin
     // cuota fija se abonan libre). Si viene, debe ser > 0. En entidad sigue
@@ -335,13 +337,13 @@ export function validarCompromiso(datos, personalizadasFijo = []) {
     if (!(esPersonal && cuotaVacia)) {
       const cuota = Number(datos.cuotaMensual);
       if (isNaN(cuota) || cuota <= 0) {
-        errores.push('La cuota mensual debe ser un número mayor a 0.');
+        errores.push('Escribe cuánto pagas cada mes. Por ejemplo: 350.000');
       }
     }
     // D.10: el catálogo del eje "qué/con quién" depende del eje Entidad/Personal.
     const catalogoCat = esPersonal ? CATEGORIAS_DEUDA_PERSONAL : CATEGORIAS_DEUDA;
     if (datos.categoria && !catalogoCat.includes(datos.categoria)) {
-      errores.push('La categoría seleccionada no es válida.');
+      errores.push('Elige una categoría de la lista.');
     }
     const tasa = Number(datos.tasa);
     const tieneTasa = datos.tasa !== '' && datos.tasa !== undefined && datos.tasa !== null;
@@ -349,23 +351,23 @@ export function validarCompromiso(datos, personalizadasFijo = []) {
       // Opcional: muchas personas no conocen su tasa EA. Si la dan, validar rango.
       if (tieneTasa) {
         if (isNaN(tasa) || tasa < 0) {
-          errores.push('La tasa EA debe ser un número mayor o igual a 0.');
+          errores.push('Escribe la tasa con números. Por ejemplo: 28,5');
         } else if (tasa > 200) {
-          errores.push('La tasa EA parece demasiado alta (más de 200%). Verifica el valor.');
+          errores.push(`${String(tasa).replace('.', ',')} % al año es muy alto. ¿Tu extracto la da por mes?`);
         }
       }
     } else if (tieneTasa) {
       // Personal: opcional pero si la ponen, validar rango razonable (mensual).
       if (isNaN(tasa) || tasa < 0) {
-        errores.push('La tasa mensual debe ser un número mayor o igual a 0.');
+        errores.push('Escribe la tasa con números. Por ejemplo: 2,1');
       } else if (tasa > 100) {
-        errores.push('La tasa mensual parece demasiado alta (más de 100% mensual). Verifica el valor.');
+        errores.push(`${String(tasa).replace('.', ',')} % al mes es muy alto. Revisa tu extracto: quizá es la tasa de un año.`);
       }
     }
     if (tieneTasa) {
       const unidad = datos.tasaUnidad;
       if (unidad !== 'EA' && unidad !== 'mensual') {
-        errores.push('La unidad de tasa debe ser EA o mensual.');
+        errores.push('Elige si la tasa es al año (EA) o al mes.');
       }
     }
     // MC.16a (ADR 051 D1): cupoTotal solo aplica a tarjeta de crédito (entidad),
@@ -375,7 +377,7 @@ export function validarCompromiso(datos, personalizadasFijo = []) {
       if (tieneCupo) {
         const cupo = Number(datos.cupoTotal);
         if (isNaN(cupo) || cupo <= 0) {
-          errores.push('El cupo de la tarjeta debe ser un número mayor a 0.');
+          errores.push('Escribe el cupo con números. Por ejemplo: 5.000.000');
         }
       }
     }

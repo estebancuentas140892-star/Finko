@@ -848,7 +848,7 @@ export function renderFormGasto({ sugerencias = true, categoriaFija = null } = {
         </div>
       </div>
       <div class="form-group">
-        <label for="gasto-nota" class="label">Nota <span class="form-optional">opcional</span></label>
+        <label for="gasto-nota" class="label">Nota <span class="form-optional">Opcional</span></label>
         <input id="gasto-nota" name="nota" class="input" type="text"
                placeholder="Ej.: almuerzo con el equipo" autocomplete="off" />
       </div>

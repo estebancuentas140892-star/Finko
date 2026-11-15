@@ -85,7 +85,7 @@ function _guardarCuenta() {
   const errores = validarCuenta(datos);
 
   if (errores.length > 0) {
-    mostrarErroresForm(form, errores);
+    mostrarErroresForm(form, errores, undefined, () => validarCuenta(Object.fromEntries(new FormData(form))));
     return;
   }
 

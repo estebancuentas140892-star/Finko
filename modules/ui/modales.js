@@ -27,6 +27,8 @@ const _fondo = () => (document.body.classList.contains('kid')
  */
 export function abrirModal(overlay) {
   overlay.dataset.open = '';
+  // Una hoja recién abierta no tiene cambios sin guardar (ADR 142 D8, hojas.js).
+  delete overlay.dataset.cambios;
   overlay.removeAttribute('aria-hidden');
   // Atrapar foco en el panel interno del modal (no en el overlay/backdrop).
   const panel = overlay.querySelector('.modal') ?? overlay;
@@ -54,6 +56,7 @@ export function abrirModal(overlay) {
  */
 export function cerrarModal(overlay) {
   delete overlay.dataset.open;
+  delete overlay.dataset.cambios;
   overlay.setAttribute('aria-hidden', 'true');
   // Liberar el fondo ANTES de restaurar el foco: el botón que abrió el modal
   // vive dentro del fondo y no puede recibir foco mientras siga inerte. Si

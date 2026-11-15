@@ -1615,15 +1615,6 @@
   content: '· ';
 }
 
-/* Etiqueta "opcional" junto al label de un campo de formulario. */
-.label__opt {
-  font-weight: var(--fk-fw-regular, 400);
-  color: var(--fk-text-muted);
-  text-transform: none;
-  letter-spacing: 0;
-  font-size: var(--fk-fs-xs);
-}
-
 /* Proyección por holding dentro de cada item de la lista.
    DIS.17: `.inversion-proy` (la card de proyeccion del portafolio),
    `.inversion-nudges` (la pila de recomendaciones) y `.inversion-tip` (el tip

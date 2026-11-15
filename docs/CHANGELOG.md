@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-11-13.
+> Revisado: 2026-11-14.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-11)
+
+### feat(formularios): FORM.2a, lo que vale para todas las hojas · 2026-11-14
+
+[ADR 142](DECISIONS/142-formularios-por-tarea.md) D8 y D9, que cambia el [ADR 042](DECISIONS/042-formularios-v2-visual.md) D1 y el [ADR 123](DECISIONS/123-la-hoja-de-formulario-completa.md) D2. Ficha: [`contexto/captura.md`](contexto/captura.md). Solo bajo 1024 px, salvo los textos. SW v700.
+
+- **Modo escritura** (`responsive.css`): con el teclado abierto la hoja pierde la agarradera y la teja, la cabecera baja a 52 px, el pie deja el margen seguro (el teclado lo cubre) y el alto no pasa de `safe-area-inset-top`. La agarradera del 123 D1 pesaba (0,5,1): la regla nueva la supera a propósito.
+- **El campo se ancla arriba**: `llevarCampoALaVista()` usa `block: 'start'` y el cuerpo de la hoja tiene `scroll-padding-top` para que se vea el rótulo. Lo que ya se ve sigue sin moverse (141 D4).
+- **Enter avanza, no envía** (`ui/teclado.js`): en el formulario de una hoja, Enter pasa al siguiente campo que abre teclado o, en el último, cierra el teclado. `enterkeyhint` "next" o "done" se pone al tocar el campo (antes de que salga el teclado) y al enfocarlo. Un área de texto conserva su salto de línea.
+- **Un solo botón**: "Cancelar" se oculta en el pie de los 19 formularios del teléfono; la ✕, el deslizar y el atrás ya cierran. Los botones genéricos dicen qué guardan ("Guardar compromiso", "Guardar compras pequeñas", "Guardar ingreso fijo", "Guardar límite", "Guardar fondo", "Aportar a la reserva"). Escritorio conserva sus dos botones.
+- **Cerrar con cambios pregunta** (`ui/hojas.js`, `pedirCierre`): un `input` o `change` de confianza en el formulario marca la hoja; la ✕, Escape, el atrás y el deslizar preguntan "¿Salir sin guardar?". Lo que el dominio llena al abrir (repetir un gasto) no cuenta, y guardar no pregunta porque el dominio cierra con `cerrarModal`. "Seguir editando" arma de nuevo el `CloseWatcher`, que sirve una sola vez.
+- **Una sola marca de opcional**: la pastilla `.form-optional` "Opcional" reemplaza "(opcional)" en 17 rótulos, `label__opcional`, `label__opt` y el "Opcional." de las ayudas (`renderSelectorCuenta` gana `opcional`). Sale `.label-required` (sin usos) y "(COP)", "(1-31)" y "(1-15)" de los rótulos.
+- **Errores por campo** (`infra/form-errors.js`): corregir un campo limpia solo ese campo; el aviso de arriba aparece con dos errores o más, dice "Revisa N datos para guardar." y lleva al primero ("Ir al primero" va en el color del título: en rojo daba 4,26:1 en oscuro); un error sin campo va en lista bajo "Antes de guardar:". Con el nuevo `revalidar`, después del primer intento de guardar cada campo se vuelve a validar al dejarlo (19 formularios de mover dinero y crear). Un aviso que dice lo mismo no se rehace, para que el lector de pantalla no lo repita.
+- **Mensajes que dicen qué hacer**: unos 90 mensajes en 13 archivos de validación, con las equivalencias del kit del canvas ("Escribe cuánto fue. Por ejemplo: 45.000", "Ponle un nombre para reconocerla", "Elige un día del 1 al 31", "280 % al año es muy alto. ¿Tu extracto la da por mes?"). `_CAMPOS` suma las frases que los atan a su campo ("cuánto", "cada cuánto", "de qué cuenta sale", "a quién"...) y ata por primera vez los errores del fondo de emergencia, que caían sueltos. La tasa muy alta sigue bloqueando: volverla aviso ámbar cambia `validarCompromiso` y queda en FORM.2e.
+- Pruebas: `teclado` (5 nuevas y 1 ajustada), `hojas` (5 nuevas), `form-errors` (3 nuevas y 6 ajustadas), y los textos nuevos en `apartados`, `bloqueo`, `compromisos`, `gastos`, `metas`, `personales`, `presupuesto`, `telefono-adulto` y `tesoreria`; E2E: `smoke` (2 ajustadas al rótulo con la pastilla). Falta la prueba en un iPhone real: va con REV.3b.
 
 ### feat(tesoreria): REV.2c, al transferir la consignación ante la DIAN en una frase · 2026-11-13
 

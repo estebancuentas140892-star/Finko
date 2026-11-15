@@ -288,16 +288,16 @@ export function validarGasto(datos) {
 
   const monto = Number(datos.monto);
   if (isNaN(monto) || monto <= 0) {
-    errores.push('El monto debe ser un número mayor a 0.');
+    errores.push('Escribe cuánto fue. Por ejemplo: 45.000');
   }
   if (!datos.categoria?.trim()) {
-    errores.push('Debes elegir una categoría.');
+    errores.push('Elige en qué fue el gasto.');
   }
   if (!datos.fecha?.trim()) {
-    errores.push('La fecha es obligatoria.');
+    errores.push('Elige la fecha del gasto.');
   }
   if (!datos.cuentaId?.trim()) {
-    errores.push('Debes elegir de qué cuenta sale el dinero.');
+    errores.push('Elige de qué cuenta sale el dinero.');
   }
 
   return errores;
@@ -328,7 +328,7 @@ export function validarCategoriaPersonalizada(datos, existentes = []) {
     const nativas = [...CATEGORIAS_GASTO, ...CATEGORIAS_AGENDA].map(normalizar);
     const propias = existentes.map(c => normalizar(c.nombre));
     if (nativas.includes(normalizado) || propias.includes(normalizado)) {
-      errores.push('Ya existe una categoría con ese nombre.');
+      errores.push('Ya tienes una categoría con ese nombre: usa otro.');
     }
   }
 

@@ -21,9 +21,17 @@
  *   la hoja vuelve a su sitio.
  *
  * Solo bajo 1024px, como el resto de las hojas del teléfono.
+ *
+ * FORM.2a (ADR 142 D8): **cerrar con cambios pregunta.** Un deslizón corto y
+ * rápido descartaba una deuda a medio llenar. Si la persona escribió o eligió
+ * algo en el formulario de la hoja desde que se abrió, cualquiera de las tres
+ * formas (y la ✕) pregunta "¿Salir sin guardar?" antes de cerrar. Guardar no
+ * pregunta: el dominio cierra con `cerrarModal`, que no pasa por acá.
  */
 
 import { observarTrap } from '../infra/a11y.js';
+import { cerrarModal } from './modales.js';
+import { confirmar } from './confirm.js';
 
 const MQ_MOVIL = '(max-width: 1023.98px)';
 
@@ -100,8 +108,59 @@ function _alCambiarTrap(panel) {
   if (!panel || typeof Vigia !== 'function' || !_esMovil() || _bloqueante(panel)) return;
   if (_vigias.some(v => v.panel === panel)) return;
   const watcher = new Vigia();
-  watcher.onclose = () => { if (_abierta(panel)) cerrarComoEscape(panel); };
-  _vigias.push({ panel, watcher });
+  const vigia = { panel, watcher };
+  watcher.onclose = () => {
+    // Un vigía sirve una sola vez: si la hoja sigue abierta (la persona
+    // eligió seguir editando), `pedirCierre` arma otro.
+    const i = _vigias.indexOf(vigia);
+    if (i >= 0) _vigias.splice(i, 1);
+    watcher.destroy();
+    if (_abierta(panel)) cerrarComoEscape(panel);
+  };
+  _vigias.push(vigia);
+}
+
+// ── Cerrar con cambios pregunta (ADR 142 D8) ─────────────────────
+
+/**
+ * Marca la hoja cuyo formulario la persona tocó. Solo cuenta lo que hace
+ * ella: un formulario que el dominio llena al abrir (repetir un gasto, la
+ * plantilla de un frecuente) despacha eventos que no son de confianza. Un
+ * buscador no es un dato que se pierda.
+ *
+ * @param {Event} e
+ */
+function _alCambiar(e) {
+  if (!e.isTrusted || e.target?.type === 'search') return;
+  const overlay = e.target?.closest?.('.modal-overlay[data-open]');
+  if (overlay && e.target.closest('form')) overlay.dataset.cambios = '';
+}
+
+/**
+ * Cierra la hoja. En el teléfono, si su formulario tiene cambios sin
+ * guardar, antes pregunta; "Seguir editando" la deja tal como estaba.
+ *
+ * @param {HTMLElement} overlay `.modal-overlay` abierto.
+ * @returns {Promise<boolean>} Si se cerró.
+ */
+export async function pedirCierre(overlay) {
+  if ('cambios' in overlay.dataset && _esMovil() && !_bloqueante(overlay)) {
+    const salir = await confirmar({
+      titulo: '¿Salir sin guardar?',
+      mensaje: 'Lo que escribiste se pierde. Si sigues, queda tal como lo dejaste.',
+      confirmarTexto: 'Salir sin guardar',
+      cancelarTexto: 'Seguir editando',
+      peligroso: true,
+    });
+    if (salir !== true) {
+      // El atrás del sistema ya gastó su vigía: se arma otro para esta hoja.
+      const panel = overlay.querySelector('.modal');
+      if (panel && _abierta(panel)) _alCambiarTrap(panel);
+      return false;
+    }
+  }
+  cerrarModal(overlay);
+  return true;
 }
 
 // ── Deslizar hacia abajo ───────────────────────────────────────
@@ -173,4 +232,6 @@ function _alTocar(e) {
 export function initHojas() {
   observarTrap(_alCambiarTrap);
   document.addEventListener('touchstart', _alTocar, { passive: true });
+  document.addEventListener('input', _alCambiar, { capture: true, passive: true });
+  document.addEventListener('change', _alCambiar, { capture: true, passive: true });
 }
