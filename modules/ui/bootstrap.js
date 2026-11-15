@@ -40,7 +40,8 @@ import { initAceptacionLegal, faltaAceptarLegal } from './aceptacion-legal.js';
 import { initBloqueoAcceso, faltaDesbloquear } from './bloqueo-acceso.js';
 import { initPerfiles } from './quien-usa.js';
 import { renderAll } from '../infra/render.js';
-import { verificarYNotificar } from '../infra/notificaciones.js';
+import { verificarYNotificar, initInsignia } from '../infra/notificaciones.js';
+import { tomarAccionDeArranque, ejecutarAccionDeArranque } from './accion-arranque.js';
 import { precalentarAnalisis } from '../dominio/analisis/view.js';
 import { precalentarMovimientos } from '../dominio/movimientos/view.js';
 import { initTesoreria } from '../dominio/tesoreria/index.js';
@@ -85,6 +86,9 @@ initFlushOnHide();
 // El enlace del correo de acceso (NUBE.1) trae la sesión en el hash: se
 // guarda y se limpia antes de que el router lo lea como una ruta.
 capturarEnlaceDeAcceso();
+// ADR 144 D4: el acceso directo del ícono trae `?accion=`. Se lee y se borra de
+// la dirección ya, para que recargar no lo repita; se ejecuta tras los gates.
+const _accionDeArranque = tomarAccionDeArranque();
 initAcciones();
 
 // Dominios: registran sus acciones antes de que el usuario pueda interactuar.
@@ -157,7 +161,25 @@ initSwAviso();
 // vieja), las novedades esperan: aceptacion-legal.js las dispara al aceptar.
 function _gatesTrasCandado() {
   initAceptacionLegal();
-  if (!faltaAceptarLegal()) mostrarNovedadesSiHay();
+  // ADR 144 D4: lo que pidió el acceso directo va antes que las novedades y la
+  // hoja de débitos: es lo que la persona vino a hacer. Esas dos esperan a la
+  // próxima apertura (la hoja de débitos se salta sola con un modal abierto).
+  if (faltaAceptarLegal()) {
+    if (_accionDeArranque) {
+      // `legal:aceptado` sale antes de que el gate se cierre y abra las
+      // novedades: la acción espera un tick y no se apila sobre otro modal.
+      const _alAceptar = () => {
+        EventBus.off('legal:aceptado', _alAceptar);
+        setTimeout(() => {
+          if (document.querySelector('.modal-overlay[data-open]')) return;
+          ejecutarAccionDeArranque(_accionDeArranque);
+        }, 0);
+      };
+      EventBus.on('legal:aceptado', _alAceptar);
+    }
+  } else if (!ejecutarAccionDeArranque(_accionDeArranque)) {
+    mostrarNovedadesSiHay();
+  }
   // PA.1a (ADR 052 D1): el catch-up de pagos automáticos va al final de la
   // cadena y no escribe nada: solo abre la hoja de confirmación si hay débitos
   // vencidos. Si alguno de los gates de arriba dejó su overlay abierto, la hoja
@@ -179,6 +201,8 @@ if (faltaDesbloquear()) {
 // una notificación si el usuario optó-in y hay algo grave. Se ejecuta después
 // del primer render para no bloquear el arranque.
 verificarYNotificar();
+// ADR 144 D2: el número del ícono de la app instalada, al día con los avisos.
+initInsignia();
 
 // PERF.7c: precalienta en idle el bundle memoizado de Análisis y el
 // historial completo de Movimientos, para que la primera navegación a esas

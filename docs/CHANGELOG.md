@@ -12,6 +12,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(avisos): HF.3e, lo que Finko muestra fuera de la app · 2026-11-15
+
+[ADR 144](DECISIONS/144-lo-que-finko-muestra-fuera-de-la-app.md) (acota los ADR 063 y 066, cierra el diferido del ADR 040) y su resolución en implementación. Ficha: [`contexto/transversal.md`](contexto/transversal.md). SW v712.
+
+- **Con candado, la notificación no dice qué ni cuánto**: "Tienes 2 avisos en Finko · Ábrela para verlos", sin nombre, cifra ni emoji. Con el ojo puesto y sin candado nombra el aviso sin la cifra (`formatearAvisoSistema(aviso, total, { candado, oculto })`).
+- **El número del ícono** (`navigator.setAppBadge`) cuenta los avisos `urgente` y `alta` de las secciones encendidas, solo con los recordatorios activados; se limpia en cero. Se recalcula al abrir, en `state:change` y `state:save` (una vez por cuadro) y al volver a la app. Notificación y número leen la misma lista (`avisosQueNotifican()`).
+- **Tocar la notificación abre la sección del aviso** (`data.url` y `notificationclick` en el SW): enfoca la app abierta y cambia el hash, o la abre ahí. No hay ruta por elemento.
+- **Cuatro accesos directos** en `manifest.json`: Hoy, Por pagar, Registrar gasto y Registrar ingreso. `?accion=` es lista cerrada (`ui/accion-arranque.js`), se borra de la dirección al leerla y se ejecuta tras el candado y la aceptación legal, antes de novedades y débitos.
+- **El SW sirve el shell de `/` a una navegación con query**: guardar `/?accion=...` aparte lo habría dejado viejo tras el traspaso de `activate`.
+- El nav no lleva número: dentro de la app Inicio ya abre en "Atención hoy" (nota del ADR 040 en el tablero).
+- Rotación forzada: las entradas del 6 de noviembre pasan a [`changelog/2026-11.md`](changelog/2026-11.md).
+- Pruebas: `fuera-de-la-app` (20 nuevas: el copy con candado y ojo, `verificarYNotificar` con `data.url`, el número con sus casos, la ruta por sección, el SW con su `notificationclick` y la navegación con query, el manifiesto y `?accion=`); E2E `accesos-directos` (4 nuevas, una con el PIN antes del formulario). Unitarias 5636/5636, E2E 476/476.
+
 ### feat(movimientos): REV.3a, descargar el mes para Excel · 2026-11-15
 
 [ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md) D3 y su resolución en implementación. Fichas: [`contexto/movimientos.md`](contexto/movimientos.md), [`contexto/configuracion.md`](contexto/configuracion.md). SW v711.
@@ -344,49 +357,11 @@ Ficha: [`contexto/analisis.md`](contexto/analisis.md). SW v696. Cierra el riesgo
 - **La tasa del mes** se dice como lo que es: "Este mes te queda el 79% de lo que recibes", según los gastos registrados hasta hoy.
 - Pruebas: 5 ajustadas y 18 nuevas en `ahorro`; los dos E2E del Fondo a 390px miden la tarjeta del compromiso y abren la hoja de un aporte.
 
-### feat(compromisos): MV2.30 Gastos tanda 5, la hoja del plan de salida; cierra Gastos · 2026-11-06
-
-[ADR 132](DECISIONS/132-gastos-del-adulto-en-el-telefono.md) D10. Ficha: [`contexto/deudas.md`](contexto/deudas.md). SW v679. El tablero "rediseño1" queda aplicado completo y su HTML se borró.
-
-- **El resultado primero**: "Con tus cuotas de hoy, sales de deudas en 15 meses y pagas $X en intereses", con Tino pensando en la cabeza.
-- **¿Por cuál empiezas?**: Bola de nieve y Avalancha como dos pestañas, la recomendada primero y marcada; qué hace cada una, qué cuesta frente a la otra y el orden en que se terminan las deudas.
-- **Pago extra**: "Si pagas un poco más cada mes" con el efecto al escribir (`resultadoExtra()`, repintado sin perder el foco) y "Aplicar $X más al mes". Si las cuotas no alcanzan para los intereses, el aviso va primero con lo que crece cada deuda y "Lo mínimo para salir" trae el monto escrito.
-- **Otras opciones** (renegociar, juntar) como filas que abren su herramienta en su sitio. Solo en el teléfono: desde 1024px sigue la tarjeta del simulador.
-- Pruebas: 7 nuevas en `compromisos`; el E2E de la hoja cambia de pestaña, escribe el extra y abre una opción.
-
-### feat(gastos): MV2.30 Gastos tanda 4, la hoja "Nuevo gasto" · 2026-11-06
-
-[ADR 132](DECISIONS/132-gastos-del-adulto-en-el-telefono.md) D9. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v678. Tablero "rediseño1".
-
-- **Preguntas en frase**: "¿Cuánto gastaste?", "¿En qué?", "¿De qué cuenta sale?" y "¿Cuándo?"; se va el "COP" bajo el monto y la nota sugiere "Ej.: almuerzo con el equipo".
-- **Monto a la izquierda** en todas las hojas con monto del teléfono (acota el `.monto-hero` del ADR 042 a escritorio): el tablero lo dibuja igual en "Nuevo límite", "Aportar" y "Me pagaron".
-- **Cuenta plegada**: con una ya elegida y otra para elegir, el selector compartido muestra solo la elegida ("Tienes $X") y "Cambiar"; elegir otra lo vuelve a plegar. La acción `cuenta-sel-cambiar` es built-in porque el selector es de infra.
-- Pruebas: 1 ajustada y 3 nuevas en `gastos`; un E2E en el teléfono abre la hoja, cambia de cuenta y la ve plegarse.
-
-### feat(presupuesto): MV2.30 Gastos tanda 3, Límites y las hojas de un límite · 2026-11-06
-
-[ADR 132](DECISIONS/132-gastos-del-adulto-en-el-telefono.md) D8. Ficha: [`contexto/limites.md`](contexto/limites.md). SW v677. Tablero "rediseño1".
-
-- **Tarjeta del plan** (los dos anchos): Estilo de vida primero, cada grupo dice dónde se mide ("Se mide en Por pagar" es la salida) y el aviso del grupo va dentro, no suelto arriba.
-- **Topes en el teléfono**: una tarjeta con una fila por tope (lo gastado, la barra, "Pasó por" o "Quedan" y el porcentaje de su tope), sin botones. La fila abre su hoja (`presupuesto/detalle.js`): lo gastado de su tope, el aviso, sus gastos del mes, "Cambiar el límite" y "Quitar este límite". El de gastos pequeños es una fila más con su hoja. Desde 1024px siguen los sobres.
-- **Resumen**: "Tus límites suman $X. Se pasaron N de M."; el aviso de que el plan no alcanza va aparte. La introducción queda solo en el vacío.
-- **Nuevo límite**: la grilla de tres columnas y la pista "En noviembre llevas $X en Ropa.", con el origen de la cifra propuesta cuando no es esa.
-- Pruebas: 8 ajustadas y 7 nuevas en `presupuesto`; en E2E, el orden del plan y un recorrido de la lente en el teléfono.
-
-### feat(compromisos): MV2.30 Gastos tanda 2, Por pagar y la hoja de una deuda · 2026-11-06
-
-[ADR 132](DECISIONS/132-gastos-del-adulto-en-el-telefono.md) D7. Ficha: [`contexto/deudas.md`](contexto/deudas.md). SW v676. Tablero "rediseño1".
-
-- **Fila**: el nombre con su monto al lado y, a la derecha, un círculo que marca el pago (rojo vencido, ámbar hoy o mañana, neutro el resto; lleno y verde si ya se pagó). Se van el botón de texto por fila, las acciones escondidas y las notas que leía la hoja genérica.
-- **Grupos**: "Vencidos" en rojo con "Del más antiguo al más reciente" debajo, sin mayúsculas sostenidas. "Vence hoy" pasa a ámbar: todavía no venció. Arriba, "Toca el círculo cuando pagues algo" solo si hay algo por marcar.
-- **Hoja de un pago** (`views/detalle.js`, acción `compromiso-detalle`): la cuota del mes y cuándo vence, cuánto falta, la tasa y el día de pago; "Abonar" o "Marcar pagado", "Editar" y "Eliminar" (o "Archivar" si quedó en cero). Se arma con el compromiso, no copiando la fila.
-- Filtros en el color de la sección y "Ver plan" a todo el ancho. Pruebas: 8 de la fila reescritas y 6 nuevas de la hoja en `compromisos`; el E2E de Por pagar toca el círculo y abre la hoja.
-
 ---
 
 ## Meses anteriores
 
-- [2026-11, del 3 al 5](changelog/2026-11.md) (rotación forzada el 2026-11-13: el mes pasó el techo de 60 KB)
+- [2026-11, del 3 al 6](changelog/2026-11.md) (rotación forzada el 2026-11-13 y el 2026-11-15: el mes pasó el techo de 60 KB)
 - [2026-10](changelog/2026-10.md)
 - [2026-08](changelog/2026-08.md)
 - [2026-07](changelog/2026-07.md)

@@ -1,6 +1,6 @@
 # Ficha de contexto: Transversal
 
-> Revisado: 2026-10-29.
+> Revisado: 2026-11-15 (HF.3e, ADR 144).
 
 > Infraestructura que atraviesa varias secciones y no es visual: persistencia y cuota, el pipeline de render, el CTA de cuenta, el motor único de avisos, la infra compartida, el aviso de versión nueva, la guía por navegación y la aceptación legal. Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -11,7 +11,7 @@
 ## Persistencia y salvaguarda de cuota (localStorage)
 
 - **Objetivo**          : todo el estado vive en `localStorage` bajo la clave única `fk_v1` (ADN 3). `save()` está debounced 200 ms; `_flush()` serializa `S` entero y escribe. Una salvaguarda avisa antes de llenar la cuota y evita que un guardado fallido se pierda en silencio (ADR 030).
-- **Estado actual**     : estable. **PERF.4** ([ADR 030](../DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md), 2026-07-06) decidió **no** reescribir la persistencia y en su lugar agregó la salvaguarda de cuota. **IndexedDB** sigue siendo la dirección futura y desde el [ADR 068](../DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md) (2026-08-14) **ya no es tarjeta del tablero**: ese ADR es su fuente única, fija el alcance (el mismo blob JSON en un registro de IndexedDB, **no** un store por colección) y reemplaza los tres disparadores del D4 por dos verificables (**T1** cuota medida, **T2** decisión de producto). Partir `localStorage` por clave sigue **rechazado**. Desde **PERF.8** el harness mide también el arranque: **0,6 / 2,6 / 5,1 ms** de mediana a 1.000 / 5.000 / 10.000 gastos, lineal. **PERF.9 (2026-08-14) cierra**: el harness ya mide el peso serializado real, con la semilla corregida a la forma real de un gasto (`id` UUID, `fechaCreacion` ISO, más los campos que `normalizarGasto()` siempre deja presentes). ~255,9 caracteres por gasto; el 80 % de `LIMITE_LOCALSTORAGE_CHARS` se cruza en ~14.032 gastos reales (no en los ~47.000 que sugería la semilla vieja), el dato que hace verificable a **T1** del ADR 068. Sigue sin medir el `setItem` real: en happy-dom `localStorage` es un Map en memoria. **PERF.10 cierra completa el 2026-08-14** en dos rebanadas: **PERF.10a** (fachada `restaurarBlob()` / `borrarTodo()` en `storage.js`, sus tres call sites en [`configuracion.md`](configuracion.md)) y **PERF.10b** (helper único de los tests). La clave se nombra ahora en **dos** sitios en todo el repo: `storage.js` (runtime) y `tests/e2e/helpers/estado.js` (tests, que la importa de ahí).
+- **Estado actual**     : estable. **PERF.4** ([ADR 030](../DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md)) no reescribió la persistencia: agregó la salvaguarda de cuota. **IndexedDB** es la dirección futura y su fuente única es el [ADR 068](../DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md): el mismo blob JSON en un registro, **no** un store por colección, con dos disparadores verificables (**T1** cuota medida, **T2** decisión de producto). Partir `localStorage` por clave sigue **rechazado**. El harness mide el arranque (0,6 / 2,6 / 5,1 ms a 1.000 / 5.000 / 10.000 gastos, PERF.8) y el peso real (~255,9 caracteres por gasto: el 80 % de `LIMITE_LOCALSTORAGE_CHARS` llega con ~14.032 gastos, PERF.9, el dato de T1); el `setItem` real no se mide (en happy-dom es un Map). La clave se nombra en dos sitios: `storage.js` y `tests/e2e/helpers/estado.js`, que la importa (PERF.10).
 - **Verificado contra** : `153b9f0` (2026-08-14, PERF.9).
 
 **Dónde vive**
@@ -114,8 +114,8 @@
 ## Motor único de avisos (CFG.3, iniciativa transversal)
 
 - **Objetivo**          : responder "de todo lo que le pasa al usuario hoy, qué merece avisarle", mirando todas las secciones a la vez. Los `nudge` de cada sección son la señal en contexto dentro de su pantalla y no se comparan entre sí; este motor es el único que puede decir si va primero un arriendo vencido o un tope excedido.
-- **Estado actual**     : **iniciativa CFG.3 completa (2026-08-13)**, las tres rebanadas del **[ADR 066](../DECISIONS/066-motor-unico-de-avisos.md)**. Existe el motor (`infra/avisos.js`, ocho tipos de aviso de siete fuentes), la notificación del sistema al abrir (CFG.3a), el panel "Avisos" en Inicio con lo que ningún otro panel del dashboard ya cubre (CFG.3b, detalle en [`contexto/inicio.md`](inicio.md)) y el interruptor por sección en Ajustes + el sello persistido de "ya avisó hoy" (CFG.3c, schema v40, detalle en [`contexto/configuracion.md`](configuracion.md)). **Desde HF.0a (2026-10-16) las siete fuentes reciben `hoyISO`**: era falso para `compromiso-proximo`, que leía el reloj (BUG-028). **Desde HF.0d (2026-10-17) los dos avisos de compromisos fechan y leen pagos con la regla del Calendario** (BUG-031): frecuencia real y estado de pago por mes; ver "Una sola regla de vencimiento" en Riesgos.
-- **Verificado contra** : HF.0d (2026-10-17, BUG-031). Antes: HF.0a (2026-10-16, BUG-028) y CFG.3c (2026-08-13).
+- **Estado actual**     : **CFG.3 completa (2026-08-13, [ADR 066](../DECISIONS/066-motor-unico-de-avisos.md))**: el motor (`infra/avisos.js`), la notificación al abrir (CFG.3a), el panel "Avisos" de Inicio (CFG.3b, [`inicio.md`](inicio.md)) y la preferencia por sección con el sello del día (CFG.3c, [`configuracion.md`](configuracion.md)). Las fuentes reciben `hoyISO` (HF.0a) y los compromisos fechan con la regla del Calendario (HF.0d, ver Riesgos). **HF.3e (2026-11-15, [ADR 144](../DECISIONS/144-lo-que-finko-muestra-fuera-de-la-app.md))**: con candado la notificación dice solo "Tienes N avisos en Finko" (con el ojo, sin la cifra), el ícono instalado lleva el número de lo que interrumpe, tocarla abre la sección del aviso y el ícono ofrece cuatro accesos directos.
+- **Verificado contra** : HF.3e (2026-11-15, ADR 144). Antes: HF.0d (2026-10-17, BUG-031). Antes: HF.0a (2026-10-16, BUG-028) y CFG.3c (2026-08-13).
 
 **Dónde vive**
 
@@ -125,9 +125,12 @@
 | Filtro de lo que justifica interrumpir | `modules/infra/avisos.js` | `avisosQueInterrumpen()`, `SEVERIDADES_QUE_INTERRUMPEN` | ~300, ~60 |
 | Umbrales del motor (3 días, 7 días) | `modules/infra/avisos.js` | `DIAS_COMPROMISO_PROXIMO`, `DIAS_APARTADO_PROXIMO`, `DIAS_PRESTAMO_PROXIMO` | ~63 |
 | Recolector por fuente (uno por dominio) | `modules/infra/avisos.js` | `_deCompromisosVencidos()` ... `_deDiaDePago()` | ~110 |
-| Superficie: notificación del sistema | `modules/infra/notificaciones.js` | `verificarYNotificar()` | ~120 |
-| Copy de esa superficie | `modules/infra/notificaciones.js` | `formatearAvisoSistema()`, `_frase()` | ~160, ~190 |
-| Disparo al arrancar (detrás del primer render) | `modules/ui/bootstrap.js` | `verificarYNotificar()` | ~116 |
+| Superficie: notificación del sistema | `modules/infra/notificaciones.js` | `verificarYNotificar()`, `avisosQueNotifican()` | |
+| Copy de esa superficie, con candado y ojo (ADR 144 D1) | `modules/infra/notificaciones.js` | `formatearAvisoSistema(aviso, total, { candado, oculto })`, `_frase()` | |
+| Número del ícono (ADR 144 D2) | `modules/infra/notificaciones.js` | `actualizarInsignia()`, `initInsignia()` | |
+| Sección al tocar la notificación (D3) | `notificaciones.js` `rutaDeAviso()`; `service-worker.js` | listener `notificationclick`, `_rutaDeNotificacion()` | |
+| Accesos directos (D4) | `manifest.json` `shortcuts`; `modules/ui/accion-arranque.js`; `service-worker.js` | `ACCIONES_DE_ARRANQUE`, `tomarAccionDeArranque()`; navegación con query en `fetch` | |
+| Disparo al arrancar (detrás del primer render) | `modules/ui/bootstrap.js` | `verificarYNotificar()`, `initInsignia()`, `_gatesTrasCandado()` | |
 | Superficie: panel "Avisos" en Inicio (CFG.3b) | `modules/dominio/resumen/view.js` | `renderPanelAvisos()`, `_TIPOS_SIN_PANEL_PROPIO` | ~155 |
 | Preferencia por sección + sello del día (CFG.3c) | `modules/infra/avisos.js` | `SECCIONES_AVISO`, `LABEL_SECCION_AVISO`, `filtrarPorPreferencia()` | ~78 |
 | Interruptor en Ajustes (CFG.3c) | `modules/dominio/config/view.js` / `index.js` | `_renderPreferenciasAvisos()`, `_toggleAvisoSeccion()` | |
@@ -160,17 +163,19 @@
 - **El sello de "ya avisó hoy" (CFG.3c) reemplazó el flag de sesión, no lo sumó**: `S.config.ultimoAvisoISO` es lo único que decide si `verificarYNotificar()` avisa; ya no existe un flag en memoria ni su reset de test (`_resetNotificadoEstasSesion` se eliminó de `notificaciones.js`). Cualquier test que necesite reabrir el día siguiente debe mutar `S.config.ultimoAvisoISO` directo, no llamar a una función de reset.
 - **La preferencia por sección (CFG.3c) es por `SECCIONES_AVISO` (cinco), no por los nueve `TIPOS_AVISO`**: decisión y alternativa rechazada en la nota del 2026-08-13 del ADR 066. Un tipo nuevo que se agregue al motor hereda automáticamente la preferencia de su sección; no hace falta tocar el interruptor de Ajustes.
 - **Apagar una sección en Ajustes no repinta el panel de Inicio al instante**: `_toggleAvisoSeccion()` solo re-renderiza `#panel-config` (mismo patrón que el resto de toggles de esa pantalla, ninguno emite `state:change`). El panel de Inicio respeta la preferencia en su próximo render, no en vivo.
+- **La notificación y el número del ícono cuentan con `avisosQueNotifican()`** (ADR 144 D2): sin `distribucion` ni nube, a diferencia de `avisosDeHoy()` de Inicio. Si una lleva otra lista, el número deja de coincidir con lo que interrumpe.
+- **Una navegación con query la sirve el shell de `/`** (`fetch` del SW, ADR 144 D4): guardar `/?accion=...` como entrada propia la haría sobrevivir vieja al traspaso de `activate`. `?accion=` es lista cerrada y se ejecuta tras los gates, antes de novedades y débitos.
 
-**Cambios pendientes**: ninguno propio. Lo consumen después HF.2b (débito automático en riesgo), HF.3d (posponer) y HF.3e (badge), en [`board/transversal.md`](../board/transversal.md).
+**Cambios pendientes**: ninguno propio. Lo consume después HF.2b (débito automático en riesgo), en [`board/transversal.md`](../board/transversal.md).
 
 **Cambios realizados**:
 
+- 2026-11-15 HF.3e: candado y ojo en la notificación, número del ícono, `notificationclick` y cuatro accesos directos (ADR 144).
 - 2026-10-17 (HF.0d, BUG-031): `compromiso-proximo` recibe `gastos` y fecha por frecuencia; `compromiso-vencido` respeta el ciclo. Detalle: CHANGELOG.
 - 2026-10-16 (HF.0a, BUG-028): `_deCompromisosProximos()` recibe `hoyISO` y lo pasa como fecha a `compromisosProximos()`. Detalle: CHANGELOG.
-- 2026-08-13 (CFG.3c, cierra la iniciativa, [ADR 066](../DECISIONS/066-motor-unico-de-avisos.md) nota de la misma fecha): interruptor por sección en Ajustes (`filtrarPorPreferencia()` en el motor, consumido por `notificaciones.js` y por el panel de Inicio) + sello persistido `config.ultimoAvisoISO` que reemplaza el flag de sesión. Schema v39 → v40. Detalle completo: [`contexto/configuracion.md`](configuracion.md).
-
-- **CFG.3b (2026-08-13)**: panel "Avisos" en Inicio (`resumen/view.js`, `renderPanelAvisos()`), quinta celda del grupo "Atención hoy". Filtra el motor a los tres tipos sin superficie propia (`apartado-listo`, `dia-de-pago`, `prestamo-vencido`): los demás ya viven en "Pendientes del mes", "Próximas prioridades" y "Alertas de límites", sin tocar esa lógica. Detalle completo: [`contexto/inicio.md`](inicio.md).
-- **CFG.3a (2026-08-13)**: motor `infra/avisos.js` (ocho tipos, siete fuentes, severidad y orden) y `infra/notificaciones.js` consumiéndolo; `verificarYNotificar()` pasa a leer `S` completo en vez de recibir `S.compromisos`. Riesgo técnico resuelto y escrito en el ADR 066. Sin schema, sin UI nueva.
+- 2026-08-13 CFG.3c: interruptor por sección y sello `config.ultimoAvisoISO` (schema v40). Detalle: [`configuracion.md`](configuracion.md).
+- 2026-08-13 CFG.3b: panel "Avisos" en Inicio con los tres tipos sin superficie propia. Detalle: [`inicio.md`](inicio.md).
+- 2026-08-13 CFG.3a: motor `infra/avisos.js` y `notificaciones.js` consumiéndolo (ADR 066).
 
 ---
 

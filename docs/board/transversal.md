@@ -55,13 +55,13 @@
 
 > **Iniciativa "PA.1 - Pagos y créditos automáticos" completa** ([ADR 052](../DECISIONS/052-pagos-automaticos.md) D1-D4, Aceptada). PA.1a (débito de compromisos) cerró 2026-08-13 y PA.1b (crédito del ingreso fijo, misma hoja `#modal-automaticos`) cerró 2026-08-14. Detalle en [`contexto/calendario.md`](../contexto/calendario.md). Queda **PA.1c**, opcional y sin tarjeta (llevar el aviso de "sin cuenta"/"sin saldo" al motor único de CFG.3, ya cerrado): se re-expande a tarjeta si Esteban la retoma.
 
-> **Diferido del [ADR 040](../DECISIONS/040-navegacion-v2-visual.md), absorbido por HF.3e (2026-10-16):** badges de notificación en el nav. La pregunta que lo bloqueaba ("¿qué cuenta el badge?") la respondió el brief de HF: solo lo que requiere atención (avisos `urgente` y `alta` del motor único). El badge del nav y el del ícono de la PWA se deciden juntos en HF.3e.
+> **Diferido del [ADR 040](../DECISIONS/040-navegacion-v2-visual.md), cerrado por HF.3e (2026-11-15, [ADR 144](../DECISIONS/144-lo-que-finko-muestra-fuera-de-la-app.md) D2):** el número cuenta lo que interrumpe (avisos `urgente` y `alta`). Va en el ícono de la app instalada; el nav no lleva número: dentro de la app, Inicio ya abre en "Atención hoy". Si se pide en el nav, entra por triaje con este mismo conteo (`avisosQueNotifican()`).
 
 ---
 
 ## Iniciativa HF - Un hecho financiero se informa una sola vez
 
-> Brief, triaje, riesgos y preguntas P1 a P8 (resueltas): **[ADR 091](../DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)**. El [ADR 138](../DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md) D2 dejó el plan en seis tarjetas: **ninguna espera ya a la ficha 18 ni al cierre de MOV.1**. **HF.1d cerró el 2026-11-15** con el [ADR 143](../DECISIONS/143-todo-cambio-de-saldo-deja-registro.md). **HF.1b cerró el 2026-11-13** con el [ADR 139](../DECISIONS/139-la-naturaleza-de-un-gasto.md): cada gasto tiene su naturaleza (`infra/naturaleza.js`) y cada vista su lente; las filas nuevas de HF.1c y HF.1d se clasifican con esa tabla. La Fase 0 cerró (HF.0a a HF.0j; la f y la g salieron sin código). Lo que se conectaba con el banco (HF.4 y HF.5a) vive en NUBE.4. Todos los datos de prueba son inventados.
+> Brief, triaje, riesgos y preguntas P1 a P8 (resueltas): **[ADR 091](../DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)**. El [ADR 138](../DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md) D2 dejó el plan en seis tarjetas: **ninguna espera ya a la ficha 18 ni al cierre de MOV.1**. **HF.1d y HF.3e cerraron el 2026-11-15** con los [ADR 143](../DECISIONS/143-todo-cambio-de-saldo-deja-registro.md) y [144](../DECISIONS/144-lo-que-finko-muestra-fuera-de-la-app.md). **HF.1b cerró el 2026-11-13** con el [ADR 139](../DECISIONS/139-la-naturaleza-de-un-gasto.md): cada gasto tiene su naturaleza (`infra/naturaleza.js`) y cada vista su lente; las filas nuevas de HF.1c y HF.1d se clasifican con esa tabla. La Fase 0 cerró (HF.0a a HF.0j; la f y la g salieron sin código). Lo que se conectaba con el banco (HF.4 y HF.5a) vive en NUBE.4. Todos los datos de prueba son inventados.
 
 #### HF.1c - La fecha de cada aporte a metas y reservas
 - Prioridad  : baja
@@ -89,16 +89,6 @@
 - Archivos   : `infra/avisos.js`, `agenda/logic.js`
 - Depende de : nada
 - Aceptación : prueba del motor: un débito a tres días con la cuenta por debajo del monto genera el aviso
-
-#### HF.3e - Lo que la app instalada muestra fuera de ella (absorbe HF.3f y HF.3g)
-- Prioridad  : media
-- Estado     : requiere ADR corto (convención de ruta; acota los ADR 063 y 066; absorbe el diferido del ADR 040)
-- Área       : ambos
-- Objetivo   : (1) con el candado activo, la notificación del sistema no nombra ni muestra montos, y respeta `ocultarSaldo` (hoy `verificarYNotificar()` corre fuera del candado y muestra el monto); (2) `navigator.setAppBadge(n)` con los avisos `urgente` y `alta`, al abrir, en `state:change` y `visibilitychange`, y se limpia en cero; (3) la notificación abre su elemento (`notificationclick`) y `manifest.json` gana accesos directos (Hoy, Por pagar, Registrar gasto, Registrar ingreso). Hoy no existe ninguna de las tres
-- Riesgo     : el router no acepta parámetros: la ruta de un elemento es convención nueva
-- Archivos   : `infra/notificaciones.js`, `ui/bootstrap.js`, `infra/router.js`, `manifest.json`, `service-worker.js`
-- Depende de : nada. Rebanadas en ese orden: la (1) es la de más valor
-- Aceptación : prueba de que con candado la notificación no lleva montos; en Android instalado, el número del ícono coincide con los avisos que piden atención
 
 ---
 

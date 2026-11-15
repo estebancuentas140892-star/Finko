@@ -10,7 +10,7 @@
  *     o los usuarios seguirán viendo la versión vieja.
  */
 
-const CACHE_NAME = 'finko-v711';
+const CACHE_NAME = 'finko-v712';
 
 // ── Assets críticos - si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [
@@ -98,6 +98,7 @@ const CORE_ASSETS = [
 
   // UI
   './modules/ui/actions.js',
+  './modules/ui/accion-arranque.js',
   './modules/ui/bootstrap.js',
   './modules/ui/toast.js',
   './modules/ui/celebraciones.js',
@@ -435,6 +436,40 @@ async function _traspasarYPurgar() {
   await Promise.all(viejos.map((n) => caches.delete(n)));
 }
 
+// ── NOTIFICATIONCLICK ──────────────────────────────────────────────────────
+// ADR 144 D3: tocar la notificación abre la sección de su aviso. Si la app ya
+// está abierta, la enfoca y la lleva ahí (cambia solo el hash: no recarga);
+// si no, la abre en esa sección. Con candado, la app pide el PIN y queda ahí.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const ruta = _rutaDeNotificacion(event.notification.data);
+  const destino = new URL(ruta, self.registration.scope).href;
+
+  event.waitUntil((async () => {
+    const ventanas = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const abierta = ventanas.find((c) => new URL(c.url).origin === self.location.origin);
+    if (!abierta) {
+      await self.clients.openWindow(destino);
+      return;
+    }
+    await abierta.focus();
+    if (abierta.url !== destino) await abierta.navigate(destino).catch(() => {});
+  })());
+});
+
+/**
+ * La ruta que trae la notificación, si tiene la forma que escribe
+ * `infra/notificaciones.js` (`/#seccion`); si no, Inicio. El SW no confía en
+ * lo que no escribió la app.
+ *
+ * @param {{ url?: unknown } | null | undefined} data
+ * @returns {string}
+ */
+function _rutaDeNotificacion(data) {
+  const url = data?.url;
+  return typeof url === 'string' && /^\/#[a-z-]+$/.test(url) ? url : '/';
+}
+
 // ── FETCH ──────────────────────────────────────────────────────────────────
 self.addEventListener('fetch', (event) => {
   // Solo interceptar GETs del mismo origen.
@@ -442,6 +477,18 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
+
+  // ADR 144 D4: un acceso directo del ícono abre `/?accion=...`. Es el mismo
+  // shell que `/`: se sirve ese y no se guarda una copia aparte, que el
+  // traspaso de `activate` arrastraría vieja de una versión a la siguiente.
+  if (event.request.mode === 'navigate' && url.search) {
+    event.respondWith(
+      caches.match(event.request, { ignoreSearch: true })
+        .then((cached) => cached || fetch(event.request))
+        .catch(() => caches.match('./')),
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then((cached) => {

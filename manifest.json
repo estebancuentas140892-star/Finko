@@ -7,6 +7,36 @@
   "background_color": "#0d1211",
   "theme_color": "#0d1211",
   "lang": "es",
+  "shortcuts": [
+    {
+      "name": "Hoy",
+      "short_name": "Hoy",
+      "description": "Lo que pide atención hoy",
+      "url": "/#dash",
+      "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Por pagar",
+      "short_name": "Por pagar",
+      "description": "Tus pagos fijos y deudas",
+      "url": "/#compromisos",
+      "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Registrar gasto",
+      "short_name": "Gasto",
+      "description": "Anota un gasto",
+      "url": "/?accion=nuevo-gasto#gast",
+      "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Registrar ingreso",
+      "short_name": "Ingreso",
+      "description": "Anota un ingreso",
+      "url": "/?accion=nuevo-ingreso-puntual#tesoreria",
+      "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ],
   "screenshots": [
     {
       "src": "assets/screenshots/screenshot-1-dashboard.png",
