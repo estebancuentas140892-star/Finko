@@ -390,11 +390,13 @@ Los 40 overlays cerrados, con sus formularios, eran ~310 ms: `visibility: hidden
 | abrir Más, INP / respuesta | 72 / 59 | 64 / 60 |
 | tab Gastos (primera vez), INP / respuesta | 32 / 189 | 32 / 188 |
 
+**Producción** (SW v714 contra v713, mismas condiciones): arranque 852 → 434 ms bloqueados (cuadro más largo 819 → 512); tab Ahorro 32 / 344 → 32 / 195; abrir Registrar 64 / 43 → 56 / 44; abrir Más 64 / 60 → 64 / 60; form Gasto 200 / 177 → 184 / 177. El arranque publicado queda 34 ms sobre los 400: con la red de por medio (DCL 1.579 ms contra 844 en local) los módulos llegan repartidos y arman más tareas largas que en local.
+
 **Lighthouse** (escritorio, sin freno). Producción, tres corridas seguidas: 91, 100 y 100 en Performance; 100 en las otras tres categorías. La primera paga la conexión en frío desde esta máquina (el documento tardó 7,7 s y bajó el Speed Index a 4,5 s); con la conexión tibia el Speed Index es 0,8 s. El 91 de MV2.28 era eso, no la app. Local, contra `127.0.0.1`: 98 (LCP 1,1 s: el texto de la guía del Inicio vacío llega con el render).
 
 **Lectura:**
 
-1. **El arranque cumple**: 675 → 350 ms bloqueados. Queda una sola tarea larga, el script de arranque (~340 ms de bloqueo a 4x).
+1. **El arranque cumple en local** (675 → 350 ms bloqueados) **y en producción se queda en 434**. Queda una sola tarea larga, el script de arranque (~340 ms de bloqueo a 4x).
 2. **El tab Ahorro cumple por poco**: 359 → 194 ms de respuesta (entre 177 y 210 según la corrida).
 3. **El scroll de Fondo trabaja más el hilo principal** (469 → 1.350 ms durante el gesto de 2.400 px): cada aporte se estiliza al acercarse al viewport. Con LoAF, cero cuadros largos (> 50 ms) a 1.600 y 3.200 px/s en 6.000 px de ida y vuelta, con y sin la regla. Mismo intercambio que Gastos en PERF.12.
 4. **El formulario de gasto sigue en el borde** (INP entre 160 y 192 según la corrida): no se tocó. Lo que pesa es su `_handleClick` (~165 ms a 4x), que arma el teclado de Finko y el recibo.
