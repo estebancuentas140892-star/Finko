@@ -10,7 +10,8 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { estadosMas, sincronizarEstadosMas } from '../../modules/ui/menu-mas.js';
+import { estadosMas, sincronizarEstadosMas, precalentarMas } from '../../modules/ui/menu-mas.js';
+import { EventBus } from '../../modules/core/state.js';
 
 const HOY = '2026-10-15';
 
@@ -131,5 +132,38 @@ describe('sincronizarEstadosMas()', () => {
     expect(linea('config').textContent).toBe('Perfil, Familia, nube y datos');
     expect(linea('config').hidden).toBe(false);
     expect(fila('config').getAttribute('aria-label')).toBe('Ajustes, Perfil, Familia, nube y datos');
+  });
+});
+
+// MV2.28: los dos cálculos que recorren el historial van memoizados y se
+// precalientan en idle; abrir "Más" no los paga en el toque.
+describe('estadosMas() memoizado (MV2.28)', () => {
+  const conGasto = () => ({ ...vacio(), gastos: [{ id: 'g1', fecha: HOY, monto: 20_000, descripcion: 'Mercado', categoria: 'alimentacion' }] });
+
+  it('con los mismos datos devuelve las mismas líneas', () => {
+    const s = conGasto();
+    expect(estadosMas(s, HOY)).toEqual(estadosMas(s, HOY));
+    expect(estadosMas(s, HOY).movimientos.texto).toContain('Hoy');
+  });
+
+  it('un cambio avisado por state:change recalcula, aunque el arreglo sea el mismo', () => {
+    const s = conGasto();
+    expect(estadosMas(s, HOY).movimientos.texto).toContain('Mercado');
+    s.gastos.push({ id: 'g2', fecha: '2026-10-16', monto: 5_000, descripcion: 'Bus', categoria: 'transporte' });
+    EventBus.emit('state:change', { section: 'gastos' });
+    expect(estadosMas(s, '2026-10-16').movimientos.texto).toContain('Bus');
+  });
+
+  it('otro arreglo de gastos recalcula sin evento', () => {
+    const s = conGasto();
+    estadosMas(s, HOY);
+    const otro = { ...s, gastos: [{ id: 'g3', fecha: HOY, monto: 9_000, descripcion: 'Pan', categoria: 'alimentacion' }] };
+    expect(estadosMas(otro, HOY).movimientos.texto).toContain('Pan');
+  });
+
+  it('precalentarMas() no toca el DOM ni lanza', () => {
+    const antes = document.body.innerHTML;
+    expect(() => precalentarMas()).not.toThrow();
+    expect(document.body.innerHTML).toBe(antes);
   });
 });

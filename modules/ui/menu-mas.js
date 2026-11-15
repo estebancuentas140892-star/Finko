@@ -11,11 +11,17 @@
  * ya calcula (R74). Las lineas se escriben al abrir la hoja, no en cada
  * repintado: el calculo de la salud no es barato y la hoja casi siempre esta
  * cerrada. Se lee la logica pura de cada dominio, como el bloque Gastos.
+ *
+ * MV2.28: los dos calculos que recorren todo el historial (el ultimo
+ * movimiento y la salud) van memoizados y se precalientan en idle al
+ * arrancar: abrir la hoja ya no los paga en el toque (INP 104 ms a 4x con
+ * 3.000 gastos). Si los datos cambian, la siguiente apertura recalcula.
  */
 
 import { S } from '../core/state.js';
 import { f, hoy, fechaLegible } from '../infra/utils.js';
 import { SALDO_MASCARA } from '../infra/render.js';
+import { memoizar } from '../infra/memo.js';
 import { cerrarModal } from './modales.js';
 import { compromisosProximos } from '../dominio/compromisos/logic.js';
 import { movimientosRecientes, descripcionMovimiento } from '../dominio/movimientos/logic.js';
@@ -25,6 +31,20 @@ import { calcularResumen } from '../dominio/personales/logic.js';
 
 /** La linea de Ajustes en "Mas": que guarda, no como esta (ADR 108 D4). */
 const LINEA_AJUSTES = Object.freeze({ texto: 'Perfil, Familia, nube y datos' });
+
+// Mismas claves que el memo de Movimientos y el de Analisis en sus vistas.
+const _ultimosMovimientos = memoizar(
+  movimientosRecientes,
+  ['gastos', 'ingresosPuntuales', 'ahorro', 'transferencias', 'personales', 'categoriasPersonalizadas', 'compromisos', 'ajustesSaldo'],
+  (fuentes, limite) => [
+    fuentes?.gastos, fuentes?.ingresosPuntuales, fuentes?.aportes, fuentes?.transferencias,
+    fuentes?.personales, fuentes?.categoriasPersonalizadas, fuentes?.compromisos, fuentes?.ajustesSaldo, limite,
+  ],
+);
+const _resumenDelMes = memoizar(
+  generarResumen,
+  ['gastos', 'compromisos', 'cuentas', 'metas', 'apartados', 'inversiones', 'personales'],
+);
 
 /**
  * La linea de estado de cada destino de "Mas". Sin datos no hay linea
@@ -54,7 +74,7 @@ export function estadosMas(state = S, hoyISO = hoy()) {
     : null;
 
   // Movimientos: el ultimo, con su dia.
-  const [ultimo] = movimientosRecientes({
+  const [ultimo] = _ultimosMovimientos({
     gastos:            state.gastos,
     ingresosPuntuales: state.ingresosPuntuales,
     aportes:           state.ahorro?.aportes,
@@ -72,7 +92,7 @@ export function estadosMas(state = S, hoyISO = hoy()) {
   // Analisis: la misma salud y la misma banda que su anillo.
   let analisis = null;
   if ((state.gastos ?? []).length > 0) {
-    const resumen = generarResumen(state.gastos, state.compromisos ?? [], state.cuentas ?? [], anio, mes,
+    const resumen = _resumenDelMes(state.gastos, state.compromisos ?? [], state.cuentas ?? [], anio, mes,
       state.metas ?? [], state.apartados ?? [], state.inversiones ?? [], state.personales ?? []);
     const fondo = state.ahorro?.fondoEmergencia;
     const { score } = calcularScoreSalud(resumen, { activo: fondo?.activo === true, completado: fondo?.completado === true });
@@ -115,6 +135,11 @@ export function sincronizarEstadosMas(estados = estadosMas()) {
     if (estado) tile.setAttribute('aria-label', `${nombre}, ${estado.largo ?? estado.texto}`);
     else tile.removeAttribute('aria-label');
   });
+}
+
+/** Calcula las lineas en idle para que el primer toque en "Mas" las encuentre hechas. */
+export function precalentarMas() {
+  estadosMas();
 }
 
 /**

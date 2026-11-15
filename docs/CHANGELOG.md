@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### perf(fluidez): MV2.28, medir lo publicado y devolver el cambio de sección · 2026-11-15
+
+Cifras y método en [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md) (sección MV2.28). Ficha: [`contexto/transversal.md`](contexto/transversal.md). SW v713.
+
+- **Se midió producción** contra el commit de PERF.12 en la misma máquina: `fluidez.js --url` y `lighthouse.js` con dirección. El instrumento se colgaba con el tab Ahorro (hoy abre Fondo): ya no, y cada interacción tiene tope.
+- **Cambiar de sección reestilizaba toda la página** (2.295 elementos en vez de 260): `html:has(.section.active .bloque-tabs)` le cambiaba el estilo a la raíz al navegar. El `scroll-padding-top` queda fijo en móvil. Entrar a Gastos baja de 274 a 189 ms de respuesta a 4x; a Inicio, de 193 a 109.
+- **Abrir "Más" ya no recorre el historial en el toque**: el último movimiento y la salud van memoizados y se precalientan en idle (INP 104 a 72 ms).
+- **El arranque no lee layout a mitad del script**: `initTeclado()` y el color de la barra esperan un cuadro.
+- **Lo que sigue sobre su umbral va a PERF.16**: el arranque (675 ms bloqueados en local y 918 en producción, contra 400), entrar a Fondo y el Speed Index de Lighthouse (Performance 91 en producción; las otras tres en 100).
+- Pruebas: `menu-mas` (4 nuevas), `teclado` (1 nueva). Unitarias 5641/5641, E2E 476/476.
+
 ### feat(avisos): HF.3e, lo que Finko muestra fuera de la app · 2026-11-15
 
 [ADR 144](DECISIONS/144-lo-que-finko-muestra-fuera-de-la-app.md) (acota los ADR 063 y 066, cierra el diferido del ADR 040) y su resolución en implementación. Ficha: [`contexto/transversal.md`](contexto/transversal.md). SW v712.

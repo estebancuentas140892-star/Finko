@@ -186,5 +186,8 @@ export function initTeclado(vv = window.visualViewport ?? null) {
   document.addEventListener('focusin', (e) => {
     if ('teclado' in raiz.dataset) alCuadroSiguiente(() => llevarCampoALaVista(e.target, vv));
   });
-  aplicar();
+  // Un cuadro después (MV2.28): leer `visualViewport` obliga a maquetar la
+  // página en el acto, y en pleno arranque eso eran 148 ms a 4x de un layout
+  // que el primer cuadro repetía. Al arrancar no hay teclado que atender.
+  alCuadroSiguiente(() => aplicar());
 }

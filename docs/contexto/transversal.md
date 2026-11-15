@@ -1,6 +1,6 @@
 # Ficha de contexto: Transversal
 
-> Revisado: 2026-11-15 (HF.3e, ADR 144).
+> Revisado: 2026-11-15 (MV2.28).
 
 > Infraestructura que atraviesa varias secciones y no es visual: persistencia y cuota, el pipeline de render, el CTA de cuenta, el motor único de avisos, la infra compartida, el aviso de versión nueva, la guía por navegación y la aceptación legal. Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -59,17 +59,17 @@
 
 ---
 
-## Fluidez medida en el navegador (PERF.11, PERF.12)
+## Fluidez medida en el navegador (PERF.11, PERF.12, MV2.28)
 
 - **Objetivo**          : que el scroll, las hojas y el cambio de sección no den tirones en un teléfono de gama media, medido en un navegador y no en happy-dom.
-- **Estado actual**     : `pnpm perf:fluidez` mide del toque al cuadro pintado, el scroll por render passes y el arranque (cifras en [`BASELINE.md`](../../scripts/perf/BASELINE.md)). Lo sostienen: un overlay cerrado no se pinta (`visibility: hidden`, sin blur); `inert` del fondo llega un cuadro después de abrir; el arranque no abre View Transition; el indicador de la barra anima `transform`; el router enfoca la sección al final del `hashchange`; los días de Gastos desde el segundo llevan `content-visibility: auto`. Falta: PERF.13 a PERF.15.
-- **Verificado contra** : commit de PERF.12 (2026-10-28).
+- **Estado actual**     : `pnpm perf:fluidez` mide del toque al cuadro pintado, el scroll por render passes y el arranque (cifras en [`BASELINE.md`](../../scripts/perf/BASELINE.md)). Lo sostienen: un overlay cerrado no se pinta (`visibility: hidden`, sin blur); `inert` del fondo llega un cuadro después de abrir; el arranque no abre View Transition; el indicador de la barra anima `transform`; el router enfoca la sección al final del `hashchange`; los días de Gastos desde el segundo llevan `content-visibility: auto`; el estilo de `<html>` no cambia al navegar; "Más" lee memos precalentados en idle. `--url` mide lo publicado. Falta: PERF.16.
+- **Verificado contra** : commit de MV2.28 (2026-11-15).
 
 **Dónde vive**: `styles/modals.css` (`.modal-overlay`), `modules/ui/modales.js` (`abrirModal`), `modules/infra/router.js` (`initRouter`, `enfocarSeccion`), `modules/ui/shell.js` (`initShell`, `conFundido`), `styles/responsive.css` (`.nav-item::before`), `styles/components/domain.css` (`.gastos-dia`), `scripts/perf/fluidez.js`.
 
-**Riesgos**: entre abrir un modal y su `inert` hay un cuadro: un `focus()` al fondo en ese tick saca el foco del modal (por eso el router no enfoca con un modal abierto). Un descendiente con `visibility: visible` propio se vería con el modal cerrado. Un día con `content-visibility` contiene layout y paint: sus márgenes no colapsan con los del día y lo que desborde más de 12 px se recorta (un menú en una fila debe salir del día).
+**Riesgos**: entre abrir un modal y su `inert` hay un cuadro: un `focus()` al fondo en ese tick saca el foco del modal (por eso el router no enfoca con un modal abierto). Un descendiente con `visibility: visible` propio se vería con el modal cerrado. Un día con `content-visibility` contiene layout y paint: sus márgenes no colapsan con los del día y lo que desborde más de 12 px se recorta (un menú en una fila debe salir del día). Cambiar el estilo de `<html>` según la sección reestiliza la página entera.
 
-**Cambios realizados**: `2026-10-28 (PERF.11)`: las seis causas y sus cifras, en `BASELINE.md`. `2026-10-28 (PERF.12)`: foco al final del `hashchange` y días de Gastos con `content-visibility`.
+**Cambios realizados**: `2026-10-28 (PERF.11)`: las seis causas y sus cifras, en `BASELINE.md`. `2026-10-28 (PERF.12)`: foco al final del `hashchange` y días de Gastos con `content-visibility`. `2026-11-15 (MV2.28)`: raíz sin `:has()`, memos de "Más", arranque sin lecturas de layout.
 
 ---
 

@@ -115,11 +115,14 @@ function applyTheme(light) {
 }
 
 /** El cambio de tema en sí, sin fundido: lo envuelve `applyTheme`. */
-function _ponerTema(light) {
+function _ponerTema(light, { alArrancar = false } = {}) {
   document.body.classList.toggle(LIGHT_CLASS, light);
   localStorage.setItem(THEME_KEY, light ? 'light' : 'dark');
   _syncThemeButton(light);
-  sincronizarColorBarra();
+  // Al arrancar, un cuadro después (MV2.28): `getComputedStyle` obliga a
+  // estilizar el documento entero en el acto (40 ms a 4x en pleno arranque).
+  if (alArrancar && typeof requestAnimationFrame === 'function') requestAnimationFrame(sincronizarColorBarra);
+  else sincronizarColorBarra();
   EventBus.emit('theme:change', { light });
 }
 
@@ -455,7 +458,7 @@ export function initShell() {
   // abría una View Transition: el tema claro llegaba un cuadro tarde (220 ms
   // de oscuro a claro en cada apertura) y, con la página oculta o el hilo
   // ocupado, la transición se abortaba con error en consola (PERF.11).
-  _ponerTema(saved === 'light');
+  _ponerTema(saved === 'light', { alArrancar: true });
 
   // El primario de la barra (INT.1e) puede quedar desactualizado sin
   // navegar: Deudas oculta "+ Nueva deuda" al saldar la última, Límites

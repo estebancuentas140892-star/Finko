@@ -2090,8 +2090,12 @@
     top: env(safe-area-inset-top, 0px);
     z-index: calc(var(--fk-z-dropdown) - 1);
   }
-  /* D4: un salto a una fila con `block: 'start'` la deja debajo de la barra. */
-  html:has(.section.active .bloque-tabs) {
+  /* D4: un salto a una fila con `block: 'start'` la deja debajo de la barra.
+     Fijo en toda sección, también en las que no llevan barra de lentes
+     (MV2.28): con `html:has(.section.active .bloque-tabs)` el estilo de la
+     raíz cambiaba al navegar y el navegador reestilizaba la página entera en
+     cada cambio de sección (2.300 elementos en vez de 260, con 3.000 gastos). */
+  html {
     scroll-padding-top: calc(var(--fk-space-16) + env(safe-area-inset-top, 0px));
   }
 

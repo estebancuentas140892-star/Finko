@@ -62,7 +62,7 @@ import { initImport } from '../dominio/import/index.js';
 import { initLogros } from '../dominio/logros/index.js';
 import { initAprende } from '../dominio/aprende/index.js';
 import { initNino } from '../dominio/nino/index.js';
-import { initMenuMas } from './menu-mas.js';
+import { initMenuMas, precalentarMas } from './menu-mas.js';
 import { initBloqueGastos } from './bloque-gastos.js';
 import { initBloqueAhorro } from './bloque-ahorro.js';
 import { initVolver } from './volver.js';
@@ -211,7 +211,8 @@ initInsignia();
 const _idleWarmUp = typeof window.requestIdleCallback === 'function'
   ? window.requestIdleCallback
   : (fn) => setTimeout(fn, 1);
-_idleWarmUp(() => {
-  precalentarAnalisis();
-  precalentarMovimientos();
-});
+// MV2.28: cada precalentado en su propio turno de idle, para que entre los
+// tres no armen una sola tarea larga.
+_idleWarmUp(precalentarAnalisis);
+_idleWarmUp(precalentarMovimientos);
+_idleWarmUp(precalentarMas);

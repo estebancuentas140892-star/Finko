@@ -119,7 +119,10 @@ function instalarInstrumentos() {
   // Graba los cuadros (rAF) desde el próximo toque hasta `ms` después.
   // `listo` es el texto de una expresión: la pantalla ya cambió.
   fk.grabar = (listo, ms) => {
-    const cumple = new Function(`return (${listo});`);
+    const expresion = new Function(`return (${listo});`);
+    // Si la expresión lanza (un id que ya no existe), el bucle de rAF moriría
+    // y la grabación no terminaría nunca: cuenta como "todavía no".
+    const cumple = () => { try { return expresion(); } catch { return false; } };
     let t0 = null;
     let listoEn = null;
     const marcas = [];
@@ -225,7 +228,12 @@ async function tocar(page, selector, listo, traza) {
   if (traza) await traza.browser.startTracing(page, { categories: CATEGORIAS });
   const t0 = await page.evaluate(([l]) => { window.__fk.grabar(l, 1000); return performance.now(); }, [listo]);
   await page.locator(selector).filter({ visible: true }).first().tap();
-  const cuadros = await page.evaluate(() => window.__fk.grabacion);
+  // `page.evaluate` no tiene tope: si el toque no llegó, la promesa no se cumple.
+  const cuadros = await Promise.race([
+    page.evaluate(() => window.__fk.grabacion),
+    new Promise((_, falla) => setTimeout(() => falla(new Error(`La grabación de "${selector}" no terminó en 15 s`)), 15000).unref()),
+  ]);
+  if (cuadros.respuesta === null) throw new Error(`La pantalla no cambió tras tocar "${selector}" (${listo})`);
   await quieta(page, 300);
   const desglose = traza ? await cerrarTraza(traza.browser, traza.nombre) : null;
   return { inp: await inpDesde(page, t0), ...cuadros, desglose };
@@ -252,7 +260,9 @@ async function scrollear(page, cdp, browser, nombre) {
 const INTERACCIONES = [
   // [nombre, selector, la pantalla ya cambió]
   ['tab Gastos',       '.sidebar__nav [data-section="gast"]',    'document.getElementById("sec-gast").classList.contains("active")'],
-  ['tab Ahorro',       '.sidebar__nav [data-section="ahorro"]',  'document.getElementById("sec-ahorro").classList.contains("active")'],
+  // El tab Ahorro lleva hoy a Fondo (`router.js`, alias ahorro a fondo); antes
+  // del ADR 125 abría su propia sección. Se aceptan las dos para medir commits viejos.
+  ['tab Ahorro',       '.sidebar__nav [data-section="ahorro"]',  'document.querySelector("#sec-fondo.active, #sec-ahorro.active")'],
   ['tab Inicio',       '.sidebar__nav [data-section="dash"]',    'document.getElementById("sec-dash").classList.contains("active")'],
   ['tab Gastos (otra)', '.sidebar__nav [data-section="gast"]',   'document.getElementById("sec-gast").classList.contains("active")'],
   ['abrir Registrar',  '.sidebar__nav [data-action="registrar-abrir-hoja"]', 'document.getElementById("modal-registrar").hasAttribute("data-open")'],

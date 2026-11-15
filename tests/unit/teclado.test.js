@@ -223,3 +223,28 @@ describe('Enter en una hoja del teléfono', () => {
     expect(enter(document.querySelector('[name="nombre"]')).defaultPrevented).toBe(false);
   });
 });
+
+// MV2.28: leer `visualViewport` obliga a maquetar; al arrancar va un cuadro después.
+describe('initTeclado() no lee el área en el arranque (MV2.28)', () => {
+  it('la primera lectura de visualViewport espera al cuadro siguiente', () => {
+    const raf = globalThis.requestAnimationFrame;
+    const pendientes = [];
+    globalThis.requestAnimationFrame = (fn) => pendientes.push(fn);
+    try {
+      let lecturas = 0;
+      const vv = new globalThis.EventTarget();
+      Object.defineProperty(vv, 'height', { get() { lecturas++; return 500; } });
+      Object.assign(vv, { offsetTop: 0, scale: 1 });
+      Object.defineProperty(window, 'innerHeight', { value: 844, configurable: true });
+      initTeclado(vv);
+      expect(lecturas).toBe(0);
+      expect('teclado' in document.documentElement.dataset).toBe(false);
+      pendientes.splice(0).forEach((fn) => fn());
+      expect(document.documentElement.dataset.teclado).toBe('abierto');
+    } finally {
+      globalThis.requestAnimationFrame = raf;
+      delete document.documentElement.dataset.teclado;
+      document.documentElement.removeAttribute('style');
+    }
+  });
+});
