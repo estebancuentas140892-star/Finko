@@ -694,6 +694,55 @@ describe('normalizarCompromiso()', () => {
     expect(result.nota).toBe('');
   });
 
+  // ── SUS.1a (ADR 146 D4): la plataforma da el nombre y queda guardada ──
+
+  it('SUS.1a: con Streaming y Netflix, el fijo se llama Netflix, guarda marcaId y el texto es nota', () => {
+    const result = normalizarCompromiso({
+      ...datosFormValidos, tipo: 'fijo', categoria: 'Streaming', marcaId: 'netflix', descripcion: 'Plan premium',
+    });
+    expect(result.descripcion).toBe('Netflix');
+    expect(result.marcaId).toBe('netflix');
+    expect(result.categoria).toBe('Streaming');
+    expect(result.nota).toBe('Plan premium');
+  });
+
+  it('SUS.1a: sin plataforma, marcaId queda null explícito y el nombre es la categoría', () => {
+    const result = normalizarCompromiso({ ...datosFormValidos, tipo: 'fijo', categoria: 'Streaming', descripcion: '' });
+    expect(result).toHaveProperty('marcaId', null);
+    expect(result.descripcion).toBe('Streaming');
+  });
+
+  it('SUS.1a: "Otra" (marcaId vacío) es sin plataforma', () => {
+    const result = normalizarCompromiso({ ...datosFormValidos, tipo: 'fijo', categoria: 'Streaming', marcaId: '', descripcion: '' });
+    expect(result.marcaId).toBeNull();
+    expect(result.descripcion).toBe('Streaming');
+  });
+
+  it('SUS.1a: una plataforma de otra categoría no se guarda', () => {
+    const result = normalizarCompromiso({ ...datosFormValidos, tipo: 'fijo', categoria: 'Telefonía', marcaId: 'netflix', descripcion: '' });
+    expect(result.marcaId).toBeNull();
+    expect(result.descripcion).toBe('Telefonía');
+  });
+
+  it('SUS.1a: con categoría "Otro" no hay plataforma aunque llegue una', () => {
+    const result = normalizarCompromiso({ ...datosFormValidos, tipo: 'fijo', categoria: 'Otro', marcaId: 'netflix', descripcion: 'Netflix' });
+    expect(result.marcaId).toBeNull();
+    expect(result.descripcion).toBe('Netflix');
+  });
+
+  it('SUS.1a: un id que ya no está en el catálogo no se guarda', () => {
+    const result = normalizarCompromiso({ ...datosFormValidos, tipo: 'fijo', categoria: 'Streaming', marcaId: 'no-existe', descripcion: '' });
+    expect(result.marcaId).toBeNull();
+  });
+
+  it('SUS.1a: una deuda no lleva marcaId', () => {
+    const result = normalizarCompromiso({
+      descripcion: 'Tarjeta', tipo: 'deuda-entidad', saldoTotal: '1000000', cuotaMensual: '100000',
+      frecuencia: 'Mensual', diaPago: '5', marcaId: 'netflix',
+    });
+    expect(result).not.toHaveProperty('marcaId');
+  });
+
   // ── MC.13e-2c: nota de una deuda (campo propio, no doble uso como en fijo) ──
 
   it('MC.13e-2c: para deuda-entidad guarda la nota recortada', () => {
@@ -5663,6 +5712,54 @@ describe('renderFormGastoFijo() - selector de categoría', () => {
     const inputMatch = html.match(/<input id="gfijo-descripcion"[^>]*>/);
     expect(inputMatch).not.toBeNull();
     expect(inputMatch[0]).toContain('required');
+  });
+});
+
+// ── renderFormGastoFijo() - selector de plataforma (SUS.1a, ADR 146 D2) ──
+
+describe('renderFormGastoFijo() - selector de plataforma (SUS.1a)', () => {
+  const montar = () => {
+    const div = document.createElement('div');
+    div.innerHTML = renderFormGastoFijo();
+    return div;
+  };
+
+  it('un grupo por cada categoría con plataformas, todos ocultos y deshabilitados al nacer', () => {
+    const div = montar();
+    const grupos = [...div.querySelectorAll('[data-plataforma-grupo]')];
+    expect(grupos.map(g => g.dataset.plataformaGrupo)).toEqual(['Streaming', 'Suscripciones', 'Telefonía', 'Internet']);
+    // `disabled` saca su marcaId de FormData en el navegador (happy-dom no lo
+    // aplica, por eso no se prueba acá); si igual llegara uno de otra
+    // categoría, `normalizarCompromiso` lo descarta (test de arriba).
+    for (const g of grupos) {
+      expect(g.hidden).toBe(true);
+      expect(g.disabled).toBe(true);
+    }
+  });
+
+  it('el grupo de Streaming trae la teja de cada plataforma y cierra con "Otra"', () => {
+    const grupo = montar().querySelector('[data-plataforma-grupo="Streaming"]');
+    const chips = [...grupo.querySelectorAll('.chip-cat')];
+    expect(chips[0].querySelector('[name="marcaId"]').value).toBe('netflix');
+    expect(chips[0].querySelector('.bank-avatar use').getAttribute('href')).toBe('#b-netflix');
+    expect(chips[0].textContent).toContain('Netflix');
+    const ultimo = chips.at(-1);
+    expect(ultimo.querySelector('[name="marcaId"]').value).toBe('');
+    expect(ultimo.textContent).toContain('Otra');
+    expect(grupo.querySelector('legend').textContent).toContain('¿Cuál plataforma?');
+    expect(grupo.querySelector('legend .form-optional')).not.toBeNull();
+  });
+
+  it('una plataforma sin glifo muestra sus iniciales', () => {
+    const chip = montar().querySelector('[data-plataforma-grupo="Streaming"] .chip-cat:has([value="paramountplus"])');
+    expect(chip.querySelector('.bank-avatar').textContent.trim()).toBe('P+');
+  });
+
+  it('el selector vive dentro de la pregunta "¿Qué es?" (una sola pantalla en el teléfono)', () => {
+    const div = montar();
+    const bloque = div.querySelector('[data-pregunta-id="que"]');
+    expect(bloque.querySelector('[data-plataforma-grupo="Streaming"]')).not.toBeNull();
+    expect(bloque.querySelector('[data-resumen-valor]')).not.toBeNull();
   });
 });
 

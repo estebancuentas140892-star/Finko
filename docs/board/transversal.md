@@ -31,6 +31,35 @@
 
 
 
+> **Iniciativa SUS: Finko reconoce el tipo de gasto** ([ADR 146](../DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md)). Hormiga, fantasma y vampiro sin preguntarle al usuario qué son. SUS.1a cerró el 2026-11-15 (la plataforma de cada suscripción, `marcaId`). Los vectores de las seis plataformas nuevas son cola de diseño de Esteban, sin tarjeta: entran a `assets/svg/logos/streaming/` y se suman con su `simbolo`.
+
+#### SUS.1b - El chip "Gastos hormiga" sale del formulario de gasto
+- Prioridad  : media
+- Estado     : pendiente
+- Área       : code
+- Objetivo   : hormiga es lo que Finko reconoce por monto, no algo que el usuario declara (ADR 146 D5). Sale de `CATEGORIAS_GASTO_USUARIO`; sigue en `CATEGORIAS_GASTO` para los gastos ya guardados
+- Riesgo     : límites o filtros guardados con "Gastos hormiga" deben seguir leyéndose
+- Archivos   : `modules/core/constants.js`, `tests/unit/constants.test.js`, `tests/unit/gastos.test.js`
+- Depende de : nada
+- Aceptación : el formulario de gasto no ofrece el chip; un gasto viejo con esa categoría conserva su ícono
+
+#### SUS.1c - Pagas varias plataformas: ¿las usas todas?
+- Prioridad  : media
+- Estado     : pendiente
+- Área       : ambos
+- Objetivo   : con tres o más fijos activos de Streaming y Suscripciones, un aviso de severidad baja con cuántos son y cuánto suman al mes y al año (ADR 146 D6). Pregunta, no acusa
+- Archivos   : `modules/infra/avisos.js` (tipo nuevo), `modules/infra/sugerencias-categoria.js`, la superficie de "Atención hoy"
+- Depende de : nada (SUS.1a dejó el `marcaId` para contar plataformas distintas)
+- Aceptación : con 3 suscripciones el aviso aparece con el total; con 2 no; no dispara notificación del sistema
+
+#### SUS.1d - Vampiro: lo que pagas sin comprar nada
+- Prioridad  : baja
+- Estado     : requiere decisión de superficie con Esteban
+- Área       : ambos
+- Objetivo   : cuota de manejo e intereses de deudas como un solo hallazgo (ADR 146 D7). Los seguros atados a un crédito no tienen dato propio
+- Depende de : SUS.1c
+- Aceptación : por definir con la superficie
+
 > **IV.4 - Iconografía dirigida post-color, cerrada 2026-08-15.** Metáfora de movimiento en los dos iconos que el triaje del 2026-07-08 señaló como ilegibles: Avalancha (`i-mountain`) cambia el punto estático del pico por un trazo desnudo de dos golpes cortos + la chispa al final del recorrido (cae por la ladera, no se queda arriba); Bola de nieve (`i-snowball`) suma un arco de rastro (trazo desnudo, mismo patrón que la puerta de `i-home`) detrás del círculo chico. Se descartó el boceto de 3 chispas en cascada del 2026-08-14 por violar la regla 3 del ADR 023 (un solo punto de valor); la solución final conserva un único `circle` de chispa. Esteban delegó la decisión final ("toma tú las decisiones") en vez de esperar el dibujo en Illustrator: geometría verificada por bbox (sin composición visual real en esta sesión, mismo límite que el 2026-08-14). `assets/svg/iconos/simbolos/mountain.svg` + `snowball.svg`, sprite de `index.html`.
 
 > **Iniciativa CAT: taxonomía + picker de ícono compartido, completa.** Fuente única para categorías entre secciones. CAT.1, CAT.2, CAT.3 y CAT.4 cerradas (reglas heredadas en [`contexto/categorias.md`](../contexto/categorias.md), bloque "Categorías personalizadas del usuario").

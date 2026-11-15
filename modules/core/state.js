@@ -229,6 +229,10 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  *                                       (D.10; valores de producto anteriores se conservan
  *                                       tal cual y se reclasifican al editar).
  *                                       null si no se eligió.
+ * @property {string|null} [marcaId]     Solo tipo='fijo' (SUS.1a, v51, ADR 146 D4): id de
+ *                                       `MARCAS` elegido en el selector de plataforma; con
+ *                                       él, `descripcion` es el nombre de la plataforma.
+ *                                       null o ausente: sin plataforma.
  *
  * @property {string}  [cuentaId]        FK a Cuenta.id. Solo se setea cuando
  *                                       el compromiso fue creado automáticamente

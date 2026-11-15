@@ -303,9 +303,18 @@ export const BANCOS_CO = [
  * Marcas globales de suscripciones y servicios (MK.2, ADR 025 D2/D4).
  *
  * Cada entrada tiene:
- *   id        - slug estable de la marca (no se guarda en datos del usuario:
- *               la resolución es siempre por texto libre vía aliases).
- *   nombre    - nombre comercial para mostrar.
+ *   id        - slug estable de la marca. Desde SUS.1a (ADR 146 D4, schema
+ *               v51) un gasto fijo lo guarda como `marcaId`: no se renombra
+ *               nunca. Retirar una fila deja ese `marcaId` sin marca y la teja
+ *               cae a la resolución por texto.
+ *   nombre    - nombre comercial para mostrar. Invariante (ADR 146 D4): el
+ *               nombre resuelve a su propia marca con `resolverMarca`, porque
+ *               el fijo con plataforma se llama así y las superficies pintan
+ *               la teja por texto. `tests/unit/marcas.test.js` lo recorre.
+ *   categorias - tags del ADR 029 D3 a los que pertenece (`streaming`,
+ *               `musica`, `ia`, `nube`...). Se leen por categoría de gasto
+ *               fijo con `TAGS_CATEGORIA_AGENDA` y `marcasDeCategoriaAgenda`
+ *               (infra/marcas.js). Una marca sin tags solo resuelve por texto.
  *   aliases   - palabras o frases normalizadas (minúsculas, sin tildes, sin
  *               signos) con que el usuario suele escribir la marca. El match
  *               es por palabra o frase completa, nunca substring: "clarooscuro"
@@ -326,38 +335,54 @@ export const BANCOS_CO = [
  * aproximaciones documentadas (mismo tratamiento que tuvo Nequi antes de
  * MK.1); Rappi (#FF441F) está verificado contra el theme-color de su sitio.
  * Retirar una marca = borrar su fila: el consumidor cae al ícono de categoría.
+ *
+ * SUS.1a (ADR 146 D3): seis plataformas entran con iniciales hasta tener el
+ * vector de Esteban (Paramount+, Apple TV+, Apple Music, YouTube Music,
+ * Amazon Music, Deezer). Sus colores son los de Simple Icons salvo Amazon
+ * Music, aproximación documentada. Las de nombre compuesto van ANTES de la
+ * genérica que contiene su primera palabra ("YouTube Music" antes que
+ * YouTube, "Apple TV+" antes que Apple, "Amazon Music" antes que el alias
+ * `amazon` de Prime Video): gana la primera que coincide. El orden dentro de
+ * un tag es también el orden del selector de plataforma.
  */
 export const MARCAS = [
-  // Streaming y entretenimiento
-  { id: 'netflix',     nombre: 'Netflix',      aliases: ['netflix'],                                 color: '#E50914', texto: '#ffffff', iniciales: 'N',  simbolo: 'b-netflix' },
-  { id: 'spotify',     nombre: 'Spotify',      aliases: ['spotify'],                                 color: '#1ED760', texto: '#121212', iniciales: 'S',  simbolo: 'b-spotify' },
-  { id: 'youtube',     nombre: 'YouTube',      aliases: ['youtube'],                                 color: '#FF0000', texto: '#ffffff', iniciales: 'YT', simbolo: 'b-youtube' },
-  { id: 'disneyplus',  nombre: 'Disney+',      aliases: ['disney'],                                  color: '#113CCF', texto: '#ffffff', iniciales: 'D+' },
-  { id: 'hbomax',      nombre: 'HBO Max',      aliases: ['hbo'],                                     color: '#000000', texto: '#ffffff', iniciales: 'HB', simbolo: 'b-hbomax' },
-  { id: 'primevideo',  nombre: 'Prime Video',  aliases: ['prime video', 'amazon prime', 'amazon'],   color: '#00A8E1', texto: '#ffffff', iniciales: 'PV' },
-  { id: 'crunchyroll', nombre: 'Crunchyroll',  aliases: ['crunchyroll'],                             color: '#FF5E00', texto: '#ffffff', iniciales: 'CR', simbolo: 'b-crunchyroll' },
+  // Música
+  { id: 'spotify',      nombre: 'Spotify',       aliases: ['spotify'],                               categorias: ['musica'],    color: '#1ED760', texto: '#121212', iniciales: 'S',  simbolo: 'b-spotify' },
+  { id: 'youtubemusic', nombre: 'YouTube Music', aliases: ['youtube music', 'yt music'],             categorias: ['musica'],    color: '#FF0000', texto: '#ffffff', iniciales: 'YM' },
+  { id: 'applemusic',   nombre: 'Apple Music',   aliases: ['apple music'],                           categorias: ['musica'],    color: '#FA243C', texto: '#ffffff', iniciales: 'AM' },
+  { id: 'amazonmusic',  nombre: 'Amazon Music',  aliases: ['amazon music'],                          categorias: ['musica'],    color: '#25D1DA', texto: '#121212', iniciales: 'AZ' },
+  { id: 'deezer',       nombre: 'Deezer',        aliases: ['deezer'],                                categorias: ['musica'],    color: '#A238FF', texto: '#ffffff', iniciales: 'DZ' },
+  // Streaming de video
+  { id: 'netflix',      nombre: 'Netflix',       aliases: ['netflix'],                               categorias: ['streaming'], color: '#E50914', texto: '#ffffff', iniciales: 'N',  simbolo: 'b-netflix' },
+  { id: 'primevideo',   nombre: 'Prime Video',   aliases: ['prime video', 'amazon prime', 'amazon'], categorias: ['streaming'], color: '#00A8E1', texto: '#ffffff', iniciales: 'PV' },
+  { id: 'disneyplus',   nombre: 'Disney+',       aliases: ['disney'],                                categorias: ['streaming'], color: '#113CCF', texto: '#ffffff', iniciales: 'D+' },
+  { id: 'hbomax',       nombre: 'HBO Max',       aliases: ['hbo'],                                   categorias: ['streaming'], color: '#000000', texto: '#ffffff', iniciales: 'HB', simbolo: 'b-hbomax' },
+  { id: 'youtube',      nombre: 'YouTube',       aliases: ['youtube'],                               categorias: ['streaming'], color: '#FF0000', texto: '#ffffff', iniciales: 'YT', simbolo: 'b-youtube' },
+  { id: 'paramountplus', nombre: 'Paramount+',   aliases: ['paramount'],                             categorias: ['streaming'], color: '#0064FF', texto: '#ffffff', iniciales: 'P+' },
+  { id: 'appletv',      nombre: 'Apple TV+',     aliases: ['apple tv', 'appletv'],                   categorias: ['streaming'], color: '#000000', texto: '#ffffff', iniciales: 'TV' },
+  { id: 'crunchyroll',  nombre: 'Crunchyroll',   aliases: ['crunchyroll'],                           categorias: ['streaming'], color: '#FF5E00', texto: '#ffffff', iniciales: 'CR', simbolo: 'b-crunchyroll' },
   // Tecnología e IA
-  { id: 'icloud',      nombre: 'iCloud',       aliases: ['icloud'],                                  color: '#3693F3', texto: '#ffffff', iniciales: 'iC', simbolo: 'b-icloud' },
-  { id: 'apple',       nombre: 'Apple',        aliases: ['apple'],                                   color: '#000000', texto: '#ffffff', iniciales: 'A',  simbolo: 'b-apple' },
-  { id: 'claude',      nombre: 'Claude',       aliases: ['claude', 'anthropic'],                     color: '#D97757', texto: '#ffffff', iniciales: 'C',  simbolo: 'b-claude' },
-  { id: 'chatgpt',     nombre: 'ChatGPT',      aliases: ['chatgpt', 'chat gpt', 'openai'],           color: '#10A37F', texto: '#ffffff', iniciales: 'AI' },
-  { id: 'gemini',      nombre: 'Gemini',       aliases: ['gemini'],                                  color: '#8E75B2', texto: '#ffffff', iniciales: 'G',  simbolo: 'b-gemini' },
-  { id: 'google',      nombre: 'Google',       aliases: ['google'],                                  color: '#4285F4', texto: '#ffffff', iniciales: 'G',  simbolo: 'b-google' },
+  { id: 'icloud',       nombre: 'iCloud',        aliases: ['icloud'],                                categorias: ['nube'],      color: '#3693F3', texto: '#ffffff', iniciales: 'iC', simbolo: 'b-icloud' },
+  { id: 'apple',        nombre: 'Apple',         aliases: ['apple'],                                 categorias: [],            color: '#000000', texto: '#ffffff', iniciales: 'A',  simbolo: 'b-apple' },
+  { id: 'claude',       nombre: 'Claude',        aliases: ['claude', 'anthropic'],                   categorias: ['ia'],        color: '#D97757', texto: '#ffffff', iniciales: 'C',  simbolo: 'b-claude' },
+  { id: 'chatgpt',      nombre: 'ChatGPT',       aliases: ['chatgpt', 'chat gpt', 'openai'],         categorias: ['ia'],        color: '#10A37F', texto: '#ffffff', iniciales: 'AI' },
+  { id: 'gemini',       nombre: 'Gemini',        aliases: ['gemini'],                                categorias: ['ia'],        color: '#8E75B2', texto: '#ffffff', iniciales: 'G',  simbolo: 'b-gemini' },
+  { id: 'google',       nombre: 'Google',        aliases: ['google'],                                categorias: ['nube'],      color: '#4285F4', texto: '#ffffff', iniciales: 'G',  simbolo: 'b-google' },
   // Pagos
-  { id: 'paypal',      nombre: 'PayPal',       aliases: ['paypal', 'pay pal'],                       color: '#002991', texto: '#ffffff', iniciales: 'PP', simbolo: 'b-paypal' },
-  { id: 'mercadopago', nombre: 'Mercado Pago', aliases: ['mercado pago', 'mercadopago'],             color: '#00B1EA', texto: '#ffffff', iniciales: 'MP', simbolo: 'b-mercadopago' },
+  { id: 'paypal',       nombre: 'PayPal',        aliases: ['paypal', 'pay pal'],                     categorias: ['pagos'],     color: '#002991', texto: '#ffffff', iniciales: 'PP', simbolo: 'b-paypal' },
+  { id: 'mercadopago',  nombre: 'Mercado Pago',  aliases: ['mercado pago', 'mercadopago'],           categorias: ['pagos'],     color: '#00B1EA', texto: '#ffffff', iniciales: 'MP', simbolo: 'b-mercadopago' },
   // Telefonía e internet
-  { id: 'movistar',    nombre: 'Movistar',     aliases: ['movistar'],                                color: '#019DF4', texto: '#ffffff', iniciales: 'M',  simbolo: 'b-movistar' },
-  { id: 'claro',       nombre: 'Claro',        aliases: ['claro'],                                   color: '#DA291C', texto: '#ffffff', iniciales: 'CL' },
-  { id: 'tigo',        nombre: 'Tigo',         aliases: ['tigo'],                                    color: '#00377B', texto: '#ffffff', iniciales: 'TG' },
+  { id: 'claro',        nombre: 'Claro',         aliases: ['claro'],                                 categorias: ['telefonia'], color: '#DA291C', texto: '#ffffff', iniciales: 'CL' },
+  { id: 'movistar',     nombre: 'Movistar',      aliases: ['movistar'],                              categorias: ['telefonia'], color: '#019DF4', texto: '#ffffff', iniciales: 'M',  simbolo: 'b-movistar' },
+  { id: 'tigo',         nombre: 'Tigo',          aliases: ['tigo'],                                  categorias: ['telefonia'], color: '#00377B', texto: '#ffffff', iniciales: 'TG' },
   // Transporte y domicilios
-  { id: 'uber',        nombre: 'Uber',         aliases: ['uber'],                                    color: '#000000', texto: '#ffffff', iniciales: 'U',  simbolo: 'b-uber' },
-  { id: 'rappi',       nombre: 'Rappi',        aliases: ['rappi', 'rappipro'],                       color: '#FF441F', texto: '#ffffff', iniciales: 'R'  },
+  { id: 'uber',         nombre: 'Uber',          aliases: ['uber'],                                  categorias: ['transporte'], color: '#000000', texto: '#ffffff', iniciales: 'U',  simbolo: 'b-uber' },
+  { id: 'rappi',        nombre: 'Rappi',         aliases: ['rappi', 'rappipro'],                     categorias: ['domicilios'], color: '#FF441F', texto: '#ffffff', iniciales: 'R'  },
   // Gaming y educación
-  { id: 'playstation', nombre: 'PlayStation',  aliases: ['playstation', 'play station', 'ps plus'],  color: '#0070D1', texto: '#ffffff', iniciales: 'PS', simbolo: 'b-playstation' },
-  { id: 'xbox',        nombre: 'Xbox',         aliases: ['xbox', 'game pass', 'gamepass'],           color: '#107C10', texto: '#ffffff', iniciales: 'XB' },
-  { id: 'duolingo',    nombre: 'Duolingo',     aliases: ['duolingo'],                                color: '#58CC02', texto: '#ffffff', iniciales: 'DU', simbolo: 'b-duolingo' },
-  { id: 'platzi',      nombre: 'Platzi',       aliases: ['platzi'],                                  color: '#121F3D', texto: '#98CA3F', iniciales: 'PL', simbolo: 'b-platzi' },
+  { id: 'playstation',  nombre: 'PlayStation',   aliases: ['playstation', 'play station', 'ps plus'], categorias: ['gaming'],   color: '#0070D1', texto: '#ffffff', iniciales: 'PS', simbolo: 'b-playstation' },
+  { id: 'xbox',         nombre: 'Xbox',          aliases: ['xbox', 'game pass', 'gamepass'],         categorias: ['gaming'],    color: '#107C10', texto: '#ffffff', iniciales: 'XB' },
+  { id: 'duolingo',     nombre: 'Duolingo',      aliases: ['duolingo'],                              categorias: ['educacion'], color: '#58CC02', texto: '#ffffff', iniciales: 'DU', simbolo: 'b-duolingo' },
+  { id: 'platzi',       nombre: 'Platzi',        aliases: ['platzi'],                                categorias: ['educacion'], color: '#121F3D', texto: '#98CA3F', iniciales: 'PL', simbolo: 'b-platzi' },
 ];
 
 /**
@@ -626,6 +651,19 @@ export const CATEGORIAS_AGENDA = [
  * de vida aparece excedido contra un asignado que no lo incluye.
  */
 export const CATEGORIAS_AGENDA_NO_ESENCIALES = ['Streaming', 'Suscripciones'];
+
+/**
+ * Qué tags de `MARCAS` ofrece cada categoría de gasto fijo en el selector de
+ * plataforma (SUS.1a, ADR 146 D3; es la decisión que el ADR 029 D4 dejó para
+ * la UI). Una categoría que no está acá no muestra selector. El orden de los
+ * tags es el orden de los grupos en el selector.
+ */
+export const TAGS_CATEGORIA_AGENDA = Object.freeze({
+  'Streaming':     ['streaming', 'musica'],
+  'Suscripciones': ['ia', 'nube', 'gaming', 'educacion', 'domicilios'],
+  'Telefonía':     ['telefonia'],
+  'Internet':      ['telefonia'],
+});
 
 /** Ícono del sprite por categoría de gasto fijo (Agenda). Solo UI; nunca en el valor almacenado. */
 export const CATEGORIA_AGENDA_ICONO = {

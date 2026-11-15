@@ -3208,6 +3208,40 @@ test.describe('Por pagar - nombre automático según la categoría del fijo', ()
     await expect(item.locator('.cal-detail__sub')).toContainText('Éxito de la esquina');
   });
 
+  test('SUS.1a: Streaming muestra las plataformas; con Netflix el fijo se llama Netflix y vuelve elegido al editar', async ({ page }) => {
+    const form = page.locator('#form-gasto-fijo');
+    const grupo = form.locator('[data-plataforma-grupo="Streaming"]');
+    await expect(grupo).toBeHidden();
+
+    await elegirChip(form, 'Streaming');
+    await expect(grupo).toBeVisible();
+    await expect(form.locator('[data-plataforma-grupo="Telefonía"]')).toBeHidden();
+    await grupo.locator('.chip-cat:has(input[value="netflix"])').click();
+
+    await page.fill('#gfijo-monto', '44900');
+    await page.fill('#gfijo-dia', '12');
+    await page.click('#form-gasto-fijo button[type="submit"]');
+    await expect(page.locator('#modal-gasto-fijo')).not.toHaveAttribute('data-open');
+
+    // save() es debounced (200 ms): se espera a que el dato llegue al disco.
+    await expect.poll(() => page.evaluate(() => (JSON.parse(localStorage.getItem('fk_v1'))?.compromisos ?? [])
+      .find(c => c.categoria === 'Streaming') ?? null)).toMatchObject({ descripcion: 'Netflix', marcaId: 'netflix' });
+
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+    await abrirDiaAgenda(page, 12);
+    const item = page.locator('.cal-detail__item').first();
+    await expect(item.locator('.cal-detail__name')).toHaveText('Netflix');
+    await expect(item.locator('.bank-avatar use')).toHaveAttribute('href', '#b-netflix');
+
+    await page.goto('/#compromisos');
+    await page.waitForSelector('#lista-compromisos', { timeout: 10_000 });
+    await page.locator('#lista-compromisos [data-action="agenda-editar-fijo"]').first().click();
+    const edit = page.locator('#form-gasto-fijo');
+    await expect(edit.locator('[data-plataforma-grupo="Streaming"]')).toBeVisible();
+    await expect(edit.locator('[data-plataforma-grupo="Streaming"] input[value="netflix"]')).toBeChecked();
+  });
+
   test('FORM.1c: el banner informativo refleja la frecuencia y el día elegidos', async ({ page }) => {
     const form = page.locator('#form-gasto-fijo');
     const banner = page.locator('#gfijo-banner');

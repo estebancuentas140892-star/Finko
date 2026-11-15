@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-15. Última tarea cerrada: APR.5b, la ronda 2 de Tino en el niño. Nada en proceso.
+> Revisado: 2026-11-15. Última tarea cerrada: SUS.1a, la plataforma de cada suscripción. Nada en proceso.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,9 +13,9 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5710/5710 (2026-11-15, APR.5b) |
-| Tests E2E | 476/476 (2026-11-15, APR.5b, `--workers=2`, puerto 8091); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
-| Schema version (`localStorage`) | v50 (`aportes[]` en metas y reservas, HF.1c) |
+| Tests unitarios + integración | 5734/5734 (2026-11-15, SUS.1a) |
+| Tests E2E | 477/477 (2026-11-15, SUS.1a, `--workers=2`: 476 en la corrida completa y la nueva repetida con su grupo tras corregir una espera del test); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Schema version (`localStorage`) | v51 (`marcaId` en el gasto fijo, SUS.1a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
 | `onclick` / `window.X` en módulos | 0 / 0. `style=""` es 0 en HTML estático, no en el HTML que generan los módulos (29 usos) |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**SUS.1a - la plataforma de cada suscripción, 2026-11-15**
+Al elegir Streaming, Suscripciones, Telefonía o Internet en un gasto fijo aparecen las plataformas con su logo; con una elegida el fijo se llama como ella y guarda `marcaId` (schema v51). Seis plataformas nuevas con iniciales. Nace la iniciativa SUS ([ADR 146](DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md)). SW v719.
 
 **APR.5b - la ronda 2 de Tino y los hitos del niño, 2026-11-15**
 Cuatro poses nuevas en el sprite (pensando, reserva, sembrar, compartir), cada unidad con la suya, y dos hitos con destellos: la meta lograda y la ruta terminada. "Meta cumplida" no cabe en 16 KB (nota del [ADR 095](DECISIONS/095-tino-en-el-sprite.md)). SW v718.
@@ -37,9 +40,6 @@ Cada aporte deja su fila con fecha, monto y cuenta (schema v50) y sale en Movimi
 **HF.2b - el débito automático sin saldo se avisa antes, 2026-11-15**
 De hoy a tres días antes de un débito automático, si su cuenta no alcanza, "Atención hoy" y la notificación lo dicen con la cuenta y lo que falta; el saldo se consume en cascada como en la hoja (nota del [ADR 052](DECISIONS/052-pagos-automaticos.md)). SW v715.
 
-**PERF.16 - el arranque bajo 400 ms y entrar a Fondo, 2026-11-15**
-Un overlay sin abrir no se maqueta por dentro y los aportes de Fondo fuera de pantalla no se estilizan: el arranque baja de 675 a 350 ms bloqueados a 4x y el tab Ahorro de 359 a 194. Cifras en [`BASELINE.md`](../scripts/perf/BASELINE.md). SW v714.
-
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 
 ---
@@ -50,6 +50,7 @@ Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelo
 - **El tablero quedó en orden de valor** ([`BOARD.md`](BOARD.md), índice). Arriba: REV.3b (la app instalada con tus datos y la versión publicada, espera una prueba en un iPhone real; ahí se verifica también el campo sobre el teclado de REV.2b, y el número del ícono y los accesos directos de HF.3e); lo demás es de prioridad baja o espera algo. Lo que salió y por qué: [ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md).
 - **MOV.1 cerrada** con 17 de 25 fichas: las fichas de `contexto/` que mandan algo "a la ficha 18" se leen con la tabla del ADR 138 D1.
 - **Iniciativa HF** ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)): HF.1b, HF.1d y HF.3e cerradas ([ADR 139](DECISIONS/139-la-naturaleza-de-un-gasto.md), [143](DECISIONS/143-todo-cambio-de-saldo-deja-registro.md), [144](DECISIONS/144-lo-que-finko-muestra-fuera-de-la-app.md)); HF.1c, HF.2a y HF.2b cerradas: la iniciativa queda sin tarjetas. Conectar el banco vive en NUBE.4, "no iniciar".
+- **Iniciativa SUS** ([ADR 146](DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md), hormiga, fantasma y vampiro sin preguntarlos): SUS.1a cerrada; siguen SUS.1b (el chip de hormiga sale), SUS.1c (el aviso de varias plataformas) y SUS.1d (vampiro, espera su superficie).
 - **Iniciativa NUBE** ([ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md), Aceptada): NUBE.0 a NUBE.3 cerradas en `finko-prueba`. Invitar probadores pide SMTP propio en Supabase.
 - **Iniciativa APR** ([ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) y [093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md), solo del niño desde el [ADR 101](DECISIONS/101-finko-del-adulto-decide-no-ensena.md)): APR.5b cerrada el 2026-11-15: Tino tiene su ronda 2 también en el niño ([095](DECISIONS/095-tino-en-el-sprite.md)). La revisión pedagógica de las lecciones es trabajo externo, fuera del tablero.
 - **El adulto en el teléfono (MV2.3 y MV2.30)**: aplicado y publicado ([ADR 116](DECISIONS/116-lo-que-faltaba-del-canvas-primera-tanda.md) a [136](DECISIONS/136-ajustes-del-adulto-en-el-telefono.md)); `Diseño Finko/` vacía. Medido en producción con MV2.28 y PERF.16.

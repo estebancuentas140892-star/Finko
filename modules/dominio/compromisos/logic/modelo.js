@@ -8,6 +8,7 @@
 
 import { FRECUENCIAS, CATEGORIAS_AGENDA, CATEGORIAS_DEUDA, CATEGORIAS_DEUDA_PERSONAL, ICONOS_CATEGORIA_PERSONALIZADA } from '../../../core/constants.js';
 import { ocurrenciasEnRango } from '../../../infra/vencimientos.js';
+import { marcaEnCategoriaAgenda, marcaPorId } from '../../../infra/marcas.js';
 
 // ── CATÁLOGOS LOCALES ────────────────────────────────────────────
 
@@ -476,7 +477,9 @@ export function detectarDeudaCreciente(datos) {
  *                       descripcion es la propia categoría y lo que llega en el campo de texto se
  *                       guarda como nota opcional; sin categoría (o con 'Otro'), descripcion es el
  *                       nombre que escribió el usuario y nota queda ''. `icono` (CAT.2f): mismo
- *                       patrón que la rama de deuda, solo con categoría 'Otro'.
+ *                       patrón que la rama de deuda, solo con categoría 'Otro'. `marcaId`
+ *                       (SUS.1a, v51): id de `MARCAS` si se eligió una plataforma de la
+ *                       categoría; entonces descripcion es el nombre de la plataforma. null si no.
  * - 'deuda-entidad'  → { saldoTotal, cuotaMensual, categoria|null, tasa|null, tasaUnidad='EA', icono|null, nota }
  *                       (tasa null = desconocida; 0 significaría "sin interés",
  *                       que en una entidad casi nunca es cierto; categoria desde v18, CATEGORIAS_DEUDA)
@@ -516,9 +519,17 @@ export function normalizarCompromiso(datos, personalizadasFijo = []) {
     const categoria = categoriaValida ? datos.categoria : null;
     const nombreAuto = _categoriaFijoConNombreAuto(datos, personalizadasFijo);
 
+    // SUS.1a (ADR 146 D4): con una plataforma de la categoría elegida, el
+    // fijo se llama como ella ("Netflix", no "Streaming") y guarda su id.
+    // Siempre explícito, como `icono`: cambiar de categoría al editar lo limpia.
+    const marca = nombreAuto && marcaEnCategoriaAgenda(datos.marcaId, categoria)
+      ? marcaPorId(datos.marcaId)
+      : null;
+
     base.monto = Number(datos.monto);
     base.categoria = categoria;
-    base.descripcion = nombreAuto ? categoria : datos.descripcion.trim();
+    base.marcaId = marca ? marca.id : null;
+    base.descripcion = marca ? marca.nombre : (nombreAuto ? categoria : datos.descripcion.trim());
     base.nota = nombreAuto ? datos.descripcion.trim() : '';
     // CAT.2f: mismo patrón que la rama de deuda, solo con categoría "Otro".
     const iconoValido = ICONOS_CATEGORIA_PERSONALIZADA.some(i => i.icono === datos.icono);

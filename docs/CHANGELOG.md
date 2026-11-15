@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(compromisos): SUS.1a, la plataforma de cada suscripción · 2026-11-15
+
+[ADR 146](DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md) (ejecuta las fases 0 y 1 del [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md) con la forma del [ADR 064](DECISIONS/064-estructura-de-dos-niveles.md)). Ficha: [`contexto/deudas.md`](contexto/deudas.md). Schema v51, SW v719.
+
+- **El catálogo por fin tiene tags** (`MARCAS[].categorias`) y cada categoría de fijo dice cuáles ofrece (`TAGS_CATEGORIA_AGENDA`): Streaming une video y música; Suscripciones, IA, nube, juegos, educación y domicilios; Telefonía e Internet, los operadores. `iCloud` y `Google` estrenan el tag `nube`.
+- **Seis plataformas nuevas con iniciales** hasta tener su vector: Paramount+, Apple TV+, Apple Music, YouTube Music, Amazon Music y Deezer. Las compuestas van antes que su genérica: "YouTube Music" ya no resuelve a YouTube.
+- **El nombre de cada marca resuelve a sí misma** (test que recorre el catálogo): por eso el fijo con plataforma se llama "Netflix" y Calendario, Por pagar y Distribuir pintan su logo sin tocarlos.
+- **Al editar un fijo de antes**, el selector propone la plataforma que su nombre o su nota ya mencionan; se guarda solo si el usuario guarda. La migración v51 no inventa `marcaId`.
+- **En el teléfono**, elegir una categoría con plataformas baja la hoja hasta el selector, y el resumen dice "Streaming · Netflix" (`data-resumen-valor`).
+- **Rotación forzada**: las cuatro tandas de Consultar del 13 pasan a [`changelog/2026-11.md`](changelog/2026-11.md).
+- Pruebas: `marcas` (11 nuevas), `compromisos` (11 nuevas), `storage` (2 nuevas), E2E `smoke` (1 nueva: elegir Netflix, verlo en el Calendario y reabrirlo elegido). Unitarias 5734/5734, E2E 477/477.
+
 ### feat(nino): APR.5b, la ronda 2 de Tino y los hitos del niño · 2026-11-15
 
 Nota del [ADR 095](DECISIONS/095-tino-en-el-sprite.md) (la ronda 2 por el conversor) y [ADR 094](DECISIONS/094-tino-el-guatin.md). Ficha: [`contexto/nino.md`](contexto/nino.md). SW v718.
@@ -348,50 +360,9 @@ Ficha: [`contexto/analisis.md`](contexto/analisis.md). SW v696. Cierra el riesgo
 - **"Reparte tus $X"**: lo recibido como subtítulo, cada grupo en una fila con "Hoy 65% · lo recomendado es 50%" y una rayita en lo recomendado; la nota con la primera razón y "Por qué esta propuesta" plegado al pie.
 - Pruebas: 21 ajustadas o nuevas en `tesoreria` y 2 en `detalle-fila`; E2E: uno nuevo a 390 px, y en `smoke` el alta de ingresos parte del vacío nuevo y la línea de la cuenta se mide visible.
 
-### feat(analisis): MV2.30 Consultar tanda 4, Análisis en filas; cierra Consultar · 2026-11-13
-
-[ADR 134](DECISIONS/134-consultar-del-adulto-en-el-telefono.md) D7. Ficha: [`contexto/analisis.md`](contexto/analisis.md). SW v688. El tablero "rediseño3" queda aplicado completo y su HTML se borró.
-
-- **Bajo el título**, "Cómo está tu dinero y hacia dónde va", en los dos anchos.
-- **En el teléfono** (`analisis/telefono.js`), las tarjetas de escritorio dicen lo mismo en filas: la salud suelta con su banda en pastilla con ícono, su barra y lo que más la frena con su salida ("Tienes una base saludable. Lo que más puede mejorar es..." en la banda buena); "De dónde sale el 59", un factor por fila; "Lo que realmente tienes" con lo que tienes y lo que debes en filas con su parte; "A dónde va tu dinero" en barras por mes con la comparación en frase (y, si el mes anterior no tuvo gastos, "todavía no hay con qué comparar"); "En qué gastas", una fila por categoría con la barra medida contra la mayor.
-- **"Más detalle de tus gastos" y "Estado de tu renta"** son dos filas de una tarjeta que abren su hoja (`analisis-hoja`, `#modal-detalle-fila`) con el mismo cuerpo del plegable de escritorio; la de la renta avisa "Estás cerca de un tope para declarar" o, en rojo, "Pasas un tope para declarar". Un enlace dentro de la hoja la cierra. Desde 1024 px siguen los plegables, con los subtítulos nuevos.
-- **El vacío** dice "Todavía no hay suficientes datos" y qué se verá; conserva su teja porque Tino ya está en el banner de propósito.
-- Pruebas: `analisis-telefono` nuevo (13), 4 ajustadas en `analisis` (el simulacro de `matchMedia` ya distingue el teléfono de la tarjeta a 1440); E2E: uno nuevo a 390 px abre las dos hojas, `smoke` mide el vacío nuevo y el de DIS.10 (C11) registra el gasto desde el "Registrar" de la barra de arriba, porque a 390 px ya no hay plegable que siga abierto.
-
-### feat(movimientos): MV2.30 Consultar tanda 3, Movimientos por día · 2026-11-13
-
-[ADR 134](DECISIONS/134-consultar-del-adulto-en-el-telefono.md) D6. Ficha: [`contexto/movimientos.md`](contexto/movimientos.md). SW v687. Tablero "rediseño3".
-
-- **Por día**: bajo el título, "Todo lo que entró y salió, por fecha"; dentro de cada mes, cada día con su encabezado ("Hoy, viernes 13", "Ayer, jueves 12", "Martes 10") y su total, en los dos anchos. La fila deja de repetir el día y dice qué y de dónde ("Mercado · Bancolombia"): supera esa parte del ADR 121 D1.
-- **Filtros**: con dos tipos o menos ("Gastos", "Aportes") van a la vista, sin "+N tipos".
-- **Un gasto abre la hoja del gasto** (la de Gastos, ADR 119 D2: de dónde salió, categoría, "Editar" y "Borrar este gasto" con a dónde vuelve el dinero) en vez de la hoja genérica de la fila.
-- **En el teléfono**: el mes en frase y grande con su total, cada día una tarjeta (las filas se redondean por adyacencia: la lista se pinta en lotes y no admite envoltorio) y la búsqueda dice "2 resultados · -$404.300" con "Limpiar" al lado. En escritorio la frase de la búsqueda sigue completa.
-- Pruebas: 1 ajustada y 1 nueva en `movimientos`; el E2E de la búsqueda a 390px mide el resumen nuevo.
-
-### feat(agenda): MV2.30 Consultar tanda 2, la hoja de un día y el Calendario vacío · 2026-11-13
-
-[ADR 134](DECISIONS/134-consultar-del-adulto-en-el-telefono.md) D5. Ficha: [`contexto/calendario.md`](contexto/calendario.md). SW v686. Tablero "rediseño3".
-
-- **La hoja de un día**: "Mañana, sábado 14 de noviembre" (también hoy y ayer), "1 pago" en vez de "1 compromiso", la frecuencia en palabras ("Gasto fijo · cada mes") y, al pie, "Desde Por pagar lo marcas como pagado. Al volver, el día sigue abierto." En el teléfono "Ver en Por pagar" es un botón a lo ancho bajo su pago.
-- **Sin nada con fecha** (ni pagos ni ingresos): el vacío ya no es "Noviembre está despejado" sobre un mes en blanco. En el teléfono el banner con Tino lleva dentro "Agregar un pago fijo", que abre el formulario de Por pagar de una vez (`comp-elegir-tipo-nuevo-ir`), y el mes no se dibuja. Con datos y un mes vacío sigue "está despejado" (ADR 111 D5).
-- Pruebas: 6 ajustadas y 1 nueva en `agenda`; en `smoke`, el vacío de "está despejado" siembra un fijo inactivo y uno nuevo abre el gasto fijo desde el vacío.
-
-### feat(agenda): MV2.30 Consultar tanda 1, la hoja Más y Calendario · 2026-11-13
-
-[ADR 134](DECISIONS/134-consultar-del-adulto-en-el-telefono.md) D1 a D4. Fichas: [`contexto/calendario.md`](contexto/calendario.md). SW v685. Tablero "rediseño3".
-
-- **La hoja Más**: cada destino con su estado debajo del nombre ("4 pagos esta semana") y una flecha a la derecha; los rótulos de grupo en frase. Sigue bajo el techo de 444 px (R83) con filas de 6 px de relleno; a 320 la flecha de Ajustes se calla para que su línea entre (ADR 108 D4).
-- **Calendario arriba**: la tarjeta del mes dice entra y sale en una pastilla y, en el mes en curso, lo próximo en frase: "Lo próximo: Colegio, mañana. Tu siguiente ingreso llega el 1 de dic." (`fraseLoProximo()`); en otros meses sigue la frase de antes.
-- **El mes**: la cabecera cuenta pagos ("7 pagos · 1 ingreso"); la leyenda dice "Sale un pago", "Entra un ingreso", "Vencido" y "Hoy", y todos los pagos van en el color de Por pagar. Lo que vence hoy ya no se marca vencido (como "Vence hoy" en Por pagar, ADR 132); en el teléfono el vencido va en rojo y las flechas del mes sueltas.
-- **Lo del mes en listas** (bajo 1024px, mes en curso): "Vencido" en rojo, "Lo que falta este mes" y "Lo que entró", con su suma y una fila por pago (teja, monto, cuándo y qué es) que abre su día (`htmlListasMes()`).
-- **Rotación forzada del CHANGELOG**: las entradas del 3 al 5 de noviembre pasan a [`changelog/2026-11.md`](changelog/2026-11.md).
-- Pruebas: 12 ajustadas y 5 nuevas en `agenda`; E2E: la leyenda y la pastilla de `smoke` cambian de texto y uno nuevo a 390px abre un día desde las listas.
-
----
-
 ## Meses anteriores
 
-- [2026-11, del 3 al 6 y Ahorro del 13](changelog/2026-11.md) (rotación forzada el 2026-11-13 y el 2026-11-15: el mes pasó el techo de 60 KB)
+- [2026-11, del 3 al 6, Ahorro y Consultar del 13](changelog/2026-11.md) (rotación forzada el 2026-11-13 y el 2026-11-15: el mes pasó el techo de 60 KB)
 - [2026-10](changelog/2026-10.md)
 - [2026-08](changelog/2026-08.md)
 - [2026-07](changelog/2026-07.md)

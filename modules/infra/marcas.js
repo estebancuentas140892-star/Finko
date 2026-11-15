@@ -18,10 +18,16 @@
  * sprite o iniciales, sobre el color de la marca. `bancoAvatar()` de
  * bancos.js delega aquí para que exista un solo render de teja.
  *
- * Capa infra: solo importa de core. Sin DOM, sin estado.
+ * `marcasDeCategoriaAgenda(categoria)` y `marcaPorId(id)` (SUS.1a, ADR 146 D3)
+ * son la lectura por selección del ADR 029 D2: qué plataformas ofrece una
+ * categoría de gasto fijo y cuál es la que un registro guardó en `marcaId`.
+ * Leen el catálogo con la forma de dos niveles del ADR 064.
+ *
+ * Capa infra: importa de core y de su hermana `taxonomia.js`. Sin DOM, sin estado.
  */
 
-import { MARCAS, BANCOS_CO } from '../core/constants.js';
+import { MARCAS, BANCOS_CO, TAGS_CATEGORIA_AGENDA } from '../core/constants.js';
+import { hijosDeCategoria, hijoPorId } from './taxonomia.js';
 
 /**
  * Normaliza un texto libre para el match por alias: minúsculas, sin tildes
@@ -73,6 +79,53 @@ export function resolverMarca(texto) {
     }
   }
   return null;
+}
+
+/**
+ * Plataformas que ofrece una categoría de gasto fijo, en el orden de sus tags
+ * (`TAGS_CATEGORIA_AGENDA`) y, dentro de cada tag, en el del catálogo. Una
+ * marca con dos tags de la misma categoría sale una sola vez. Categoría sin
+ * tags: arreglo vacío, el formulario no muestra selector.
+ *
+ * @param {string} categoria - categoría de `CATEGORIAS_AGENDA` ("Streaming").
+ * @returns {typeof MARCAS}
+ */
+export function marcasDeCategoriaAgenda(categoria) {
+  const tags = TAGS_CATEGORIA_AGENDA[categoria] ?? [];
+  const vistas = new Set();
+  const marcas = [];
+  for (const tag of tags) {
+    for (const m of hijosDeCategoria(MARCAS, tag)) {
+      if (vistas.has(m.id)) continue;
+      vistas.add(m.id);
+      marcas.push(m);
+    }
+  }
+  return marcas;
+}
+
+/**
+ * La marca guardada en un `marcaId`, o null si el id ya no está en el
+ * catálogo (el consumidor cae a la resolución por texto).
+ *
+ * @param {string|null|undefined} id
+ * @returns {(typeof MARCAS)[number] | null}
+ */
+export function marcaPorId(id) {
+  return hijoPorId(MARCAS, id);
+}
+
+/**
+ * ¿La marca pertenece a esta categoría de gasto fijo? Es la validación de
+ * `marcaId` al guardar (ADR 146 D4): una plataforma de música no queda
+ * colgada de un fijo de Telefonía si el usuario cambió de categoría.
+ *
+ * @param {string|null|undefined} id
+ * @param {string} categoria
+ * @returns {boolean}
+ */
+export function marcaEnCategoriaAgenda(id, categoria) {
+  return !!id && marcasDeCategoriaAgenda(categoria).some(m => m.id === id);
 }
 
 /**

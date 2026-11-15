@@ -900,6 +900,13 @@ textarea.input {
   color: var(--fk-text-primary);
   font-weight: var(--fk-font-bold);
 }
+/* SUS.1a (ADR 146 D2): el chip de plataforma lleva la teja de la marca. Su
+   glifo es del color de la marca (lo trae la teja en línea), no del gris del
+   chip ni del acento de la selección: las dos reglas de arriba lo pisaban. */
+.chip-cat--marca .bank-avatar .bank-avatar__glifo,
+.chip-cat--marca:has(.chip-cat__radio:checked) .bank-avatar .bank-avatar__glifo {
+  color: inherit;
+}
 .chip-cat:has(.chip-cat__radio:focus-visible) {
   outline: 2px solid var(--fk-border-focus);
   outline-offset: 2px;

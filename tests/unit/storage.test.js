@@ -2075,6 +2075,30 @@ describe('Migración v42 → v43 (respaldoCifrado en config, CFG.4c)', () => {
   });
 });
 
+describe('Migración v50 → v51 (marcaId en el gasto fijo, SUS.1a)', () => {
+  it('un fijo guardado sigue igual: sin plataforma y con su nombre', () => {
+    const v50 = { ...createInitialState(), _version: 50 };
+    v50.compromisos = [{ id: 'c1', tipo: 'fijo', descripcion: 'Streaming', nota: 'Netflix', categoria: 'Streaming', monto: 45_000, frecuencia: 'Mensual', diaPago: 5, activo: true }];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v50));
+
+    loadData();
+
+    expect(S.compromisos[0].marcaId).toBeUndefined();
+    expect(S.compromisos[0].descripcion).toBe('Streaming');
+    expect(S._version).toBe(SCHEMA_VERSION);
+  });
+
+  it('conserva un marcaId ya guardado', () => {
+    const v51 = { ...createInitialState(), _version: 51 };
+    v51.compromisos = [{ id: 'c1', tipo: 'fijo', descripcion: 'Netflix', categoria: 'Streaming', marcaId: 'netflix', monto: 45_000, frecuencia: 'Mensual', diaPago: 5, activo: true }];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v51));
+
+    loadData();
+
+    expect(S.compromisos[0].marcaId).toBe('netflix');
+  });
+});
+
 describe('Migración v37 → v38 (plan de aportes de meta, MT.6c)', () => {
   it('una meta existente arranca sin plan de aportes', () => {
     const v37 = { ...createInitialState(), _version: 37 };

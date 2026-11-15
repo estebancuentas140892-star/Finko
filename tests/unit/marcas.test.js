@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { normalizarAlias, resolverMarca, tejaMarca } from '../../modules/infra/marcas.js';
+import { normalizarAlias, resolverMarca, tejaMarca, marcasDeCategoriaAgenda, marcaPorId, marcaEnCategoriaAgenda } from '../../modules/infra/marcas.js';
 import { MARCAS, BANCOS_CO } from '../../modules/core/constants.js';
 
 /**
@@ -177,5 +177,90 @@ describe('tejaMarca - render de la teja (ADR 025 D1)', () => {
 
   it('la teja se marca como decorativa (aria-hidden)', () => {
     expect(tejaMarca(MARCAS[0])).toContain('aria-hidden="true"');
+  });
+});
+
+// ── SUS.1a (ADR 146 D3 y D4): el catálogo por categoría de gasto fijo ──
+
+describe('MARCAS - tags y nombres (SUS.1a)', () => {
+  const TAGS = new Set(['streaming', 'musica', 'ia', 'nube', 'telefonia', 'pagos', 'transporte', 'domicilios', 'gaming', 'educacion']);
+
+  it('toda marca declara sus tags, todos conocidos', () => {
+    for (const m of MARCAS) {
+      expect(Array.isArray(m.categorias), `${m.id}: categorias`).toBe(true);
+      for (const t of m.categorias) expect(TAGS.has(t), `${m.id}: tag "${t}"`).toBe(true);
+    }
+  });
+
+  it('el nombre de cada marca resuelve a esa misma marca (el fijo con plataforma se llama así)', () => {
+    for (const m of MARCAS) {
+      expect(resolverMarca(m.nombre)?.id, `${m.nombre}`).toBe(m.id);
+    }
+  });
+
+  it('los ids no se repiten', () => {
+    const ids = MARCAS.map(m => m.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('el nombre compuesto gana a la genérica que contiene', () => {
+    expect(resolverMarca('YouTube Music Premium')?.id).toBe('youtubemusic');
+    expect(resolverMarca('YouTube Premium')?.id).toBe('youtube');
+    expect(resolverMarca('Apple TV+')?.id).toBe('appletv');
+    expect(resolverMarca('Apple Music familiar')?.id).toBe('applemusic');
+    expect(resolverMarca('Apple One')?.id).toBe('apple');
+    expect(resolverMarca('Amazon Music Unlimited')?.id).toBe('amazonmusic');
+    expect(resolverMarca('Amazon Prime')?.id).toBe('primevideo');
+  });
+
+  it('las plataformas nuevas entran con iniciales (sin glifo todavía)', () => {
+    for (const id of ['paramountplus', 'appletv', 'applemusic', 'youtubemusic', 'amazonmusic', 'deezer']) {
+      const m = MARCAS.find(x => x.id === id);
+      expect(m, id).toBeDefined();
+      expect(m.simbolo, id).toBeUndefined();
+      expect(tejaMarca(m)).toContain(`>${m.iniciales}</span>`);
+    }
+  });
+});
+
+describe('marcasDeCategoriaAgenda / marcaPorId / marcaEnCategoriaAgenda (SUS.1a)', () => {
+  it('Streaming ofrece primero el video y después la música, sin repetir', () => {
+    const ids = marcasDeCategoriaAgenda('Streaming').map(m => m.id);
+    expect(ids.slice(0, 4)).toEqual(['netflix', 'primevideo', 'disneyplus', 'hbomax']);
+    expect(ids).toContain('spotify');
+    expect(ids.indexOf('spotify')).toBeGreaterThan(ids.indexOf('crunchyroll'));
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('Suscripciones ofrece IA, nube, juegos, educación y domicilios', () => {
+    const ids = marcasDeCategoriaAgenda('Suscripciones').map(m => m.id);
+    for (const id of ['claude', 'chatgpt', 'icloud', 'playstation', 'duolingo', 'rappi']) expect(ids).toContain(id);
+    expect(ids).not.toContain('netflix');
+  });
+
+  it('Telefonía e Internet ofrecen los operadores', () => {
+    expect(marcasDeCategoriaAgenda('Telefonía').map(m => m.id)).toEqual(['claro', 'movistar', 'tigo']);
+    expect(marcasDeCategoriaAgenda('Internet').map(m => m.id)).toEqual(['claro', 'movistar', 'tigo']);
+  });
+
+  it('una categoría sin tags no ofrece nada', () => {
+    expect(marcasDeCategoriaAgenda('Arriendo')).toEqual([]);
+    expect(marcasDeCategoriaAgenda('')).toEqual([]);
+    expect(marcasDeCategoriaAgenda(undefined)).toEqual([]);
+  });
+
+  it('marcaPorId devuelve la fila o null', () => {
+    expect(marcaPorId('netflix')?.nombre).toBe('Netflix');
+    expect(marcaPorId('no-existe')).toBeNull();
+    expect(marcaPorId(null)).toBeNull();
+  });
+
+  it('marcaEnCategoriaAgenda solo acepta marcas de esa categoría', () => {
+    expect(marcaEnCategoriaAgenda('netflix', 'Streaming')).toBe(true);
+    expect(marcaEnCategoriaAgenda('spotify', 'Streaming')).toBe(true);
+    expect(marcaEnCategoriaAgenda('netflix', 'Telefonía')).toBe(false);
+    expect(marcaEnCategoriaAgenda('claro', 'Streaming')).toBe(false);
+    expect(marcaEnCategoriaAgenda('', 'Streaming')).toBe(false);
+    expect(marcaEnCategoriaAgenda(null, 'Streaming')).toBe(false);
   });
 });

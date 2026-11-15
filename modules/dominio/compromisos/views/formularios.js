@@ -20,8 +20,10 @@ import {
   CATEGORIA_DEUDA_ICONO,
   CATEGORIA_DEUDA_PERSONAL_ICONO,
   ICONOS_CATEGORIA_PERSONALIZADA,
+  TAGS_CATEGORIA_AGENDA,
   iconoDeCategoriaGasto,
 } from '../../../core/constants.js';
+import { marcasDeCategoriaAgenda, tejaMarca } from '../../../infra/marcas.js';
 import { renderSelectorCuenta, renderBloqueDebitoAutomatico, cuentaHabitualDe } from '../../../infra/cuenta-helper.js';
 import { renderIconoPicker } from '../../../infra/icon-picker.js';
 import { htmlTinoSol } from '../../../infra/ilustraciones.js';
@@ -77,6 +79,53 @@ export const FRECUENCIAS_CHIP_FIJO = Object.freeze(['Mensual', 'Quincenal', 'Anu
 
 /** Valor del chip "Otra" en "¿Cada cuánto?": no es una frecuencia. */
 export const FRECUENCIA_OTRA_FIJO = 'otra';
+
+/** La pregunta del selector de plataforma, por categoría (SUS.1a). */
+const _PREGUNTA_PLATAFORMA = {
+  'Streaming':     '¿Cuál plataforma?',
+  'Suscripciones': '¿Cuál servicio?',
+  'Telefonía':     '¿Con qué empresa?',
+  'Internet':      '¿Con qué empresa?',
+};
+
+/**
+ * Selector de plataforma del gasto fijo (SUS.1a, ADR 146 D2): un grupo de
+ * chips con la teja de cada marca por cada categoría que tiene tags en
+ * `TAGS_CATEGORIA_AGENDA`. Mismo patrón que la subcategoría de Metas
+ * (`_gruposSubcategoria`, ADR 064): solo el grupo de la categoría elegida se
+ * ve, el resto viaja `hidden` **y** `disabled`, así que `FormData` nunca lleva
+ * un `marcaId` de otra categoría. `_syncCategoriaGastoFijo` (index.js) alterna
+ * cuál queda a la vista.
+ *
+ * "Otra" (valor vacío) es "ninguna de estas": el fijo se llama como la
+ * categoría, como antes de existir el selector.
+ *
+ * @returns {string}
+ */
+function _gruposPlataforma() {
+  return Object.keys(TAGS_CATEGORIA_AGENDA).map(cat => {
+    const marcas = marcasDeCategoriaAgenda(cat);
+    if (marcas.length === 0) return '';
+    const legendId = `gfijo-plataforma-${cat.normalize('NFD').replace(/[^a-zA-Z]/g, '').toLowerCase()}`;
+    const chips = marcas.map(m => `
+          <label class="chip-cat chip-cat--marca">
+            <input type="radio" name="marcaId" class="chip-cat__radio" value="${_esc(m.id)}" />
+            ${tejaMarca(m)}
+            <span class="chip-cat__label">${_esc(m.nombre)}</span>
+          </label>`).join('');
+    return `
+      <fieldset class="subcategoria-fieldset" data-plataforma-grupo="${_esc(cat)}" hidden disabled>
+        <legend id="${legendId}">${_esc(_PREGUNTA_PLATAFORMA[cat] ?? '¿Cuál es?')} <span class="form-optional">Opcional</span></legend>
+        <div class="chips-cat" role="radiogroup" aria-labelledby="${legendId}">${chips}
+          <label class="chip-cat">
+            <input type="radio" name="marcaId" class="chip-cat__radio" value="" />
+            <svg class="icon" aria-hidden="true"><use href="#c-otros"/></svg>
+            <span class="chip-cat__label">Otra</span>
+          </label>
+        </div>
+      </fieldset>`;
+  }).join('');
+}
 
 /**
  * Devuelve el HTML del formulario de gasto fijo.
@@ -165,7 +214,10 @@ export function renderFormGastoFijo() {
         <div class="chips-cat" role="radiogroup" aria-labelledby="gfijo-categoria-label">
           ${chipsCategoria}
         </div>
+        <span hidden data-resumen-valor id="gfijo-resumen-que"></span>
       </div>
+
+      ${_gruposPlataforma()}
 
       <div class="form-group" id="form-group-gfijo-icono" hidden>
         ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'gfijo-icono', label: 'Ícono' })}

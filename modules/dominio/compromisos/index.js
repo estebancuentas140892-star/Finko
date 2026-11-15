@@ -27,6 +27,7 @@ import { asignarSplitsPorItem } from '../../infra/distribuir-pago.js';
 import { gastoDePagoCompromiso, bajarSaldoDeuda, fechaPagoDelMes, aplicarPagosCompromisos } from '../../infra/pago-compromiso.js';
 import { wireIconoPicker, setIconoPickerValor } from '../../infra/icon-picker.js';
 import { iconoCategoria } from '../../infra/icons.js';
+import { resolverMarca, marcaEnCategoriaAgenda, marcaPorId } from '../../infra/marcas.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { prefijoMesBloque } from '../../infra/mes-bloque.js';
 import { CATEGORIAS_AGENDA } from '../../core/constants.js';
@@ -634,6 +635,17 @@ function _inyectarFormGastoFijo(compromiso = null) {
     // marcado, igual que antes con un <select> sin esa opción).
     const f_cat = form.querySelector(`[name="categoria"][value="${CSS.escape(categoria)}"]`);
     if (f_cat) f_cat.checked = true;
+    // SUS.1a (ADR 146 D4): la plataforma guardada; un fijo de antes de v51
+    // propone la que su nombre o su nota ya mencionan (si es de su
+    // categoría), y queda guardada solo si el usuario guarda.
+    if (nombreAuto) {
+      const sugerida = resolverMarca(`${compromiso.nota ?? ''} ${compromiso.descripcion ?? ''}`)?.id;
+      const marcaId = compromiso.marcaId ?? (marcaEnCategoriaAgenda(sugerida, categoria) ? sugerida : null);
+      const f_marca = marcaId
+        ? form.querySelector(`[data-plataforma-grupo="${CSS.escape(categoria)}"] [name="marcaId"][value="${CSS.escape(marcaId)}"]`)
+        : null;
+      if (f_marca) f_marca.checked = true;
+    }
     // AG.4: con categoría de nombre automático, el campo de texto muestra la
     // nota (no la descripción, que ya es la categoría); si no, la descripción.
     if (f_desc) f_desc.value = nombreAuto ? (compromiso.nota ?? '') : (compromiso.descripcion ?? '');
@@ -689,7 +701,15 @@ function _inyectarFormGastoFijo(compromiso = null) {
   // ADR 042). El banner se recalcula con cualquier `input` del form (tipeo
   // del día, cambio de frecuencia): más barato que filtrar por campo.
   form.addEventListener('change', (e) => {
-    if (e.target.name === 'categoria') _syncCategoriaGastoFijo(form);
+    if (e.target.name === 'categoria') {
+      _syncCategoriaGastoFijo(form);
+      // SUS.1a: en el teléfono la grilla de categorías llena la pantalla y el
+      // selector de plataforma aparece debajo, fuera de la vista. Se trae al
+      // elegir la categoría (solo por el usuario, no al abrir para editar).
+      form.querySelector('[data-plataforma-grupo]:not([disabled])')
+        ?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
+    }
+    if (e.target.name === 'marcaId') _rotularQueEsGastoFijo(form);
     if (e.target.name === 'frecuenciaOpcion') {
       _syncFrecuenciaGastoFijo(form);
       // `input` corre antes que `change`: el banner se rehace con el valor nuevo.
@@ -757,6 +777,15 @@ function _syncCategoriaGastoFijo(form) {
   const camposNueva = form.querySelector('#gfijo-categoria-nueva-fields');
   if (camposNueva) camposNueva.hidden = categoria !== CATEGORIA_NUEVA_VALUE_FIJO;
 
+  // SUS.1a (ADR 146 D2): el selector de plataforma de la categoría elegida, y
+  // ninguno más. `disabled` saca de FormData el `marcaId` de los otros grupos.
+  for (const grupo of form.querySelectorAll('[data-plataforma-grupo]')) {
+    const visible = nombreAuto && grupo.dataset.plataformaGrupo === categoria;
+    grupo.hidden = !visible;
+    grupo.disabled = !visible;
+  }
+  _rotularQueEsGastoFijo(form);
+
   // REV.2b (ADR 141 D3): obligatorio, el campo va bajo "¿Qué es?"; nota, va
   // dentro de "Más opciones". Se muda el mismo nodo: lo escrito no se pierde,
   // y si ya tenía texto el plegable se abre para que no desaparezca de la vista.
@@ -767,6 +796,21 @@ function _syncCategoriaGastoFijo(form) {
     if (nombreAuto && nombre.value.trim()) _abrirMasOpcionesGastoFijo(form, true);
   }
   _rotularMasOpcionesGastoFijo(form);
+}
+
+/**
+ * SUS.1a: lo que el resumen del teléfono dice en "Qué es". Sin plataforma, el
+ * rótulo del chip de categoría (lo que `valorDeBloque` leía antes); con
+ * plataforma, los dos: "Streaming · Netflix".
+ * @param {HTMLFormElement} form
+ */
+function _rotularQueEsGastoFijo(form) {
+  const destino = form.querySelector('#gfijo-resumen-que');
+  if (!destino) return;
+  const chip = form.querySelector('[name="categoria"]:checked')?.closest('label')
+    ?.querySelector('.chip-cat__label')?.textContent.trim() ?? '';
+  const marca = marcaPorId(form.querySelector('[data-plataforma-grupo]:not([disabled]) [name="marcaId"]:checked')?.value);
+  destino.textContent = [chip, marca?.nombre].filter(Boolean).join(' · ');
 }
 
 /**

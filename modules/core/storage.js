@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 50;
+const SCHEMA_VERSION = 51;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -731,6 +731,12 @@ function _migrate(raw) {
     if (Array.isArray(data.metas)) data.metas.forEach(conAportes);
     if (Array.isArray(data.apartados)) data.apartados.forEach(conAportes);
   }
+
+  // v50 → v51: `marcaId` en el gasto fijo (SUS.1a, ADR 146 D4). Opcional y
+  // `undefined`-safe: un fijo guardado se sigue leyendo sin plataforma, y su
+  // teja sale por texto como siempre. Sin backfill: el formulario propone la
+  // plataforma que el nombre ya menciona y el usuario la confirma al guardar.
+  // Migración intencionalmente no-op, mismo precedente de v38 → v39.
 
   if (typeof data._version !== 'number' || data._version < SCHEMA_VERSION) {
     data._version = SCHEMA_VERSION;
