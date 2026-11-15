@@ -9,7 +9,7 @@
  */
 
 import { S, EventBus } from '../../core/state.js';
-import { guardar, editar, eliminar } from '../../infra/crud.js';
+import { guardar, editar, eliminar, filasDeAporte } from '../../infra/crud.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal } from '../../ui/modales.js';
 import { renderSmart, updSaldo } from '../../infra/render.js';
@@ -17,7 +17,7 @@ import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { confirmar } from '../../ui/confirm.js';
 import { mostrarToast } from '../../ui/toast.js';
-import { f } from '../../infra/utils.js';
+import { f, hoy } from '../../infra/utils.js';
 import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
 import { wireIconoPicker, resetIconoPicker } from '../../infra/icon-picker.js';
 import { validarMeta, normalizarMeta, validarAbono, calcularProgreso, consecuenciaDeAporte, generarPlanAportes } from './logic.js';
@@ -239,7 +239,9 @@ async function _guardarAbonoMeta() {
   // MT.6c: el aporte cambia el faltante, el plan se regenera completo.
   const planAportes = generarPlanAportes({ ...meta, montoActual: nuevoMonto, completada }, S.ingresos);
 
-  editar('metas', datos.metaId, { montoActual: nuevoMonto, completada, planAportes });
+  // HF.1c (ADR 145 D1): el aporte deja su fila, una por cuenta del reparto.
+  const aportes = [...(Array.isArray(meta.aportes) ? meta.aportes : []), ...filasDeAporte(splits, abono, hoy())];
+  editar('metas', datos.metaId, { montoActual: nuevoMonto, completada, planAportes, aportes });
 
   for (const s of splits) {
     _ajustarSaldoCuenta(s.cuentaId, -s.monto);
@@ -350,7 +352,7 @@ export function initMetas() {
   // "Distribuir mi ingreso" (ADR 012, MC.4a): aplica los abonos a metas del plan.
   // Solo suma a montoActual y recalcula `completada`; el descuento de la cuenta
   // de origen lo hace tesorería de forma centralizada (no aquí).
-  EventBus.on('distribucion:aplicar', ({ items }) => {
+  EventBus.on('distribucion:aplicar', ({ items, cuentaOrigenId = null }) => {
     const abonos = (items ?? []).filter(i => i.tipo === 'meta' && i.monto > 0);
     for (const it of abonos) {
       const meta = S.metas.find(m => m.id === it.id);
@@ -358,7 +360,12 @@ export function initMetas() {
       const nuevoMonto = (meta.montoActual ?? 0) + it.monto;
       const { completada } = calcularProgreso({ ...meta, montoActual: nuevoMonto });
       const planAportes = generarPlanAportes({ ...meta, montoActual: nuevoMonto, completada }, S.ingresos);
-      editar('metas', it.id, { montoActual: nuevoMonto, completada, planAportes });
+      // HF.1c: la fila lleva la cuenta de la que Distribuir descontó.
+      const aportes = [
+        ...(Array.isArray(meta.aportes) ? meta.aportes : []),
+        ...filasDeAporte(cuentaOrigenId ? [{ cuentaId: cuentaOrigenId, monto: it.monto }] : [], it.monto, hoy(), { origen: 'distribucion' }),
+      ];
+      editar('metas', it.id, { montoActual: nuevoMonto, completada, planAportes, aportes });
     }
   });
 

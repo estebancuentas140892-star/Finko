@@ -51,15 +51,6 @@
 
 > Brief, triaje, riesgos y preguntas P1 a P8 (resueltas): **[ADR 091](../DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)**. El [ADR 138](../DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md) D2 dejó el plan en seis tarjetas: **ninguna espera ya a la ficha 18 ni al cierre de MOV.1**. **HF.1d y HF.3e cerraron el 2026-11-15** con los [ADR 143](../DECISIONS/143-todo-cambio-de-saldo-deja-registro.md) y [144](../DECISIONS/144-lo-que-finko-muestra-fuera-de-la-app.md). **HF.1b cerró el 2026-11-13** con el [ADR 139](../DECISIONS/139-la-naturaleza-de-un-gasto.md): cada gasto tiene su naturaleza (`infra/naturaleza.js`) y cada vista su lente; las filas nuevas de HF.1c y HF.1d se clasifican con esa tabla. La Fase 0 cerró (HF.0a a HF.0j; la f y la g salieron sin código). Lo que se conectaba con el banco (HF.4 y HF.5a) vive en NUBE.4. Todos los datos de prueba son inventados.
 
-#### HF.1c - La fecha de cada aporte a metas y reservas
-- Prioridad  : baja
-- Estado     : requiere ADR
-- Área       : code
-- Objetivo   : `aportes[]` con id, fecha, monto y cuenta en metas y reservas (schema nuevo, sin backfill: lo previo queda como saldo de apertura, I4). Movimientos gana sus fuentes 6 y 7, y "Ya lo usé" registra el gasto (V5)
-- Archivos   : `core/state.js`, `core/storage.js`, `metas/`, `apartados/`, `movimientos/logic.js`
-- Depende de : nada
-- Aceptación : migración idempotente con prueba; un aporte a una meta sale en Movimientos en su fecha
-
 ---
 
 ## Iniciativa APR - Aprende y aplícalo

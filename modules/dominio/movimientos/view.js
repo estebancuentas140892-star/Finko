@@ -27,9 +27,10 @@ import { movimientosCompletos, descripcionMovimiento, filtrarMovimientos, sumaDe
  */
 const _extraerFuentes = (fuentes, limite) => [
   fuentes?.gastos, fuentes?.ingresosPuntuales, fuentes?.aportes, fuentes?.transferencias,
-  fuentes?.personales, fuentes?.categoriasPersonalizadas, fuentes?.compromisos, fuentes?.ajustesSaldo, limite,
+  fuentes?.personales, fuentes?.categoriasPersonalizadas, fuentes?.compromisos, fuentes?.ajustesSaldo,
+  fuentes?.metas, fuentes?.apartados, limite,
 ];
-const _SECCIONES_MOVIMIENTOS = ['gastos', 'ingresosPuntuales', 'ahorro', 'transferencias', 'personales', 'categoriasPersonalizadas', 'compromisos', 'ajustesSaldo'];
+const _SECCIONES_MOVIMIENTOS = ['gastos', 'ingresosPuntuales', 'ahorro', 'transferencias', 'personales', 'categoriasPersonalizadas', 'compromisos', 'ajustesSaldo', 'metas', 'apartados'];
 
 const _movimientosCompletosMemo = memoizar(movimientosCompletos, _SECCIONES_MOVIMIENTOS, _extraerFuentes);
 
@@ -46,6 +47,7 @@ const TAMANO_LOTE = 50;
 const _TIPO_LABEL = {
   gasto: 'Gasto', ingreso: 'Ingreso', aporte: 'Aporte', transferencia: 'Transferencia', abono: 'Abono',
   prestamo: 'Préstamo', recibido: 'Préstamo recibido', ajuste: 'Ajuste',
+  'aporte-meta': 'Aporte a meta', 'aporte-reserva': 'Aporte a reserva',
 };
 
 // ── FILTROS DE LA VISTA COMPLETA (MOV.2) ─────────────────────────
@@ -62,6 +64,7 @@ const _DOMINIO_LABEL = {
   compromisos: 'Deudas',
   ingresos:    'Ingresos',
   ahorro:      'Ahorro',
+  metas:       'Metas',
   tesoreria:   'Transferencias',
   personales:  'Me deben',
 };
@@ -165,6 +168,8 @@ function _todosLosMovimientos() {
     categoriasPersonalizadas: S.categoriasPersonalizadas,
     compromisos:              S.compromisos,
     ajustesSaldo:             S.ajustesSaldo,
+    metas:                    S.metas,
+    apartados:                S.apartados,
   });
 }
 

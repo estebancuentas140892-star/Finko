@@ -9,7 +9,7 @@
  */
 
 import { S, EventBus } from '../../core/state.js';
-import { guardar, editar, eliminar } from '../../infra/crud.js';
+import { guardar, editar, eliminar, filasDeAporte, genId } from '../../infra/crud.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal } from '../../ui/modales.js';
 import { renderSmart, updSaldo } from '../../infra/render.js';
@@ -22,7 +22,7 @@ import { f, fechaLegible, hoy, esc as _esc } from '../../infra/utils.js';
 import {
   validarApartado, normalizarApartado, validarAbonoApartado,
   calcularProgreso, calcularAporteSugerido, reiniciarCiclo,
-  frecuenciaPrincipalIngresos, alternarRecurrencia,
+  frecuenciaPrincipalIngresos, alternarRecurrencia, gastoDeReservaUsada,
 } from './logic.js';
 import {
   renderListaApartados, renderFormApartado, renderFormAporteApartado,
@@ -156,10 +156,17 @@ async function _reiniciarApartado(el) {
     titulo:  'Ya usé este dinero',
     mensaje: `"${apartado.nombre}" vuelve a ${f(reiniciado.montoActual ?? 0)}`
       + (reiniciado.fechaObjetivo ? ` y su próxima fecha será el ${fechaLegible(reiniciado.fechaObjetivo)}` : '')
-      + `. Los ${f(liberado)} que reuniste dejan de aparecer en tu ahorro total.`,
+      + (liberado > 0
+        ? `. Los ${f(liberado)} quedan como un gasto en "Otros", sin tocar tus cuentas: ese dinero salió cuando lo apartaste. Puedes cambiarle la categoría en Gastos.`
+        : '.'),
     confirmarTexto: 'Sí, ya lo usé',
   });
   if (!ok) return;
+
+  // V5 (HF.1c, ADR 145 D4): lo que se usó queda como gasto. `sinEfectoSaldo`:
+  // el dinero ya había salido de las cuentas con cada aporte.
+  const gasto = gastoDeReservaUsada(apartado, liberado, hoy());
+  if (gasto) guardar('gastos', { id: genId(), ...gasto });
 
   editar('apartados', id, {
     montoActual:     reiniciado.montoActual,
@@ -364,7 +371,9 @@ async function _guardarAporte() {
   const nuevoMonto = (apartado.montoActual ?? 0) + aporte;
   const { completado } = calcularProgreso({ ...apartado, montoActual: nuevoMonto });
 
-  editar('apartados', datos.apartadoId, { montoActual: nuevoMonto, completado });
+  // HF.1c (ADR 145 D1): el aporte deja su fila, una por cuenta del reparto.
+  const aportes = [...(Array.isArray(apartado.aportes) ? apartado.aportes : []), ...filasDeAporte(splits, aporte, hoy())];
+  editar('apartados', datos.apartadoId, { montoActual: nuevoMonto, completado, aportes });
 
   // Descontar el aporte de cada cuenta del reparto.
   for (const s of splits) {
@@ -467,14 +476,19 @@ export function initApartados() {
   // "Distribuir mi ingreso" (ADR 012, MC.4a): aplica los aportes a apartados del
   // plan. Solo suma a montoActual y recalcula `completado`; el descuento de la
   // cuenta de origen lo hace tesorería de forma centralizada (no aquí).
-  EventBus.on('distribucion:aplicar', ({ items }) => {
-    const aportes = (items ?? []).filter(i => i.tipo === 'apartado' && i.monto > 0);
-    for (const it of aportes) {
+  EventBus.on('distribucion:aplicar', ({ items, cuentaOrigenId = null }) => {
+    const aportesDelPlan = (items ?? []).filter(i => i.tipo === 'apartado' && i.monto > 0);
+    for (const it of aportesDelPlan) {
       const apartado = S.apartados.find(a => a.id === it.id);
       if (!apartado) continue;
       const nuevoMonto = (apartado.montoActual ?? 0) + it.monto;
       const { completado } = calcularProgreso({ ...apartado, montoActual: nuevoMonto });
-      editar('apartados', it.id, { montoActual: nuevoMonto, completado });
+      // HF.1c: la fila lleva la cuenta de la que Distribuir descontó.
+      const aportes = [
+        ...(Array.isArray(apartado.aportes) ? apartado.aportes : []),
+        ...filasDeAporte(cuentaOrigenId ? [{ cuentaId: cuentaOrigenId, monto: it.monto }] : [], it.monto, hoy(), { origen: 'distribucion' }),
+      ];
+      editar('apartados', it.id, { montoActual: nuevoMonto, completado, aportes });
     }
   });
 

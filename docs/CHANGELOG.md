@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(ahorro): HF.1c, la fecha de cada aporte a metas y reservas · 2026-11-15
+
+[ADR 145](DECISIONS/145-los-aportes-de-metas-y-reservas-tienen-fecha.md) (aplica la R-HF2 del 091 a la última ruta sin fila y resuelve V5 del 083). Fichas: [`contexto/metas.md`](contexto/metas.md), [`contexto/apartados.md`](contexto/apartados.md), [`contexto/movimientos.md`](contexto/movimientos.md). Schema v50, SW v717.
+
+- **`aportes[]` en metas y reservas** (`{ id, fecha, monto, cuentaId, origen? }`): una fila por cuenta del reparto; sin cuentas, una sin cuenta; lo de Distribuir lleva la cuenta de origen y `origen: 'distribucion'` (`filasDeAporte()`, `infra/crud.js`).
+- **Migración v49 a v50 idempotente**: pone `aportes: []` y conserva los válidos. No inventa filas: lo que ya había es saldo de apertura (I4 del 091).
+- **Movimientos gana dos fuentes**: "Aporte a {nombre}", neutras como la transferencia, con su cuenta; `efectoEnCuenta()` las resta, así el saldo de cada cuenta vuelve a ser apertura más filas. Chip de filtro "Metas".
+- **"Ya lo usé" registra el gasto** (V5): lo liberado queda en "Otros" con el nombre de la reserva, `apartadoId` y `sinEfectoSaldo` (ese dinero salió al aportarlo). El diálogo lo avisa; la categoría se cambia en Gastos.
+- Fuera: borrar o editar un aporte, el dinero de una meta o reserva borrada, elegir la categoría en el diálogo.
+- Pruebas: `aportes-bolsas` (15 nuevas: filas, fuentes, efecto en cuenta, gasto de la reserva, migración y R-HF2 con los manejadores reales). Unitarias 5705/5705, E2E 476/476 (la intermitente de `nube.test.js` falló bajo carga y pasó aislada dos veces).
+
 ### docs(contexto): cuatro fichas vuelven bajo su techo de 40 KB · 2026-11-15
 
 Regla de la skill `cerrar-tarea` (sección 4): superar el techo obliga a podar o a partir por eje real.

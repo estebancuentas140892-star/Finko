@@ -361,6 +361,30 @@ export function reiniciarCiclo(apartado, hoyISO) {
 }
 
 /**
+ * El gasto que deja "Ya lo usé" (V5, HF.1c, [ADR 145](../../../docs/DECISIONS/145-los-aportes-de-metas-y-reservas-tienen-fecha.md) D4):
+ * lo que la reserva liberó, en "Otros", con su nombre y sin efecto en el
+ * saldo de ninguna cuenta (ese dinero salió con cada aporte). `null` si no
+ * se liberó nada. Sin `id`: lo pone quien lo guarda.
+ *
+ * @param {import('../../core/state.js').Apartado} apartado
+ * @param {number} liberado COP que la reserva deja de tener.
+ * @param {string} hoyISO YYYY-MM-DD.
+ * @returns {Omit<import('../../core/state.js').Gasto, 'id'>|null}
+ */
+export function gastoDeReservaUsada(apartado, liberado, hoyISO) {
+  const monto = Number(liberado) || 0;
+  if (!apartado || monto <= 0) return null;
+  return {
+    monto,
+    categoria:      'Otros',
+    descripcion:    String(apartado.nombre ?? '').trim() || 'Reserva',
+    fecha:          hoyISO,
+    apartadoId:     apartado.id,
+    sinEfectoSaldo: true,
+  };
+}
+
+/**
  * AP.5: la recurrencia se activa/desactiva desde la tarjeta del apartado ya
  * creado, no desde el registro inicial. Activar fija `periodoMeses` en el
  * default anual si el apartado nunca tuvo uno (primera vez); desactivar

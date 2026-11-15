@@ -64,6 +64,26 @@ export function editar(coleccion, id, cambios) {
 }
 
 /**
+ * Las filas de un aporte a una meta o a una reserva (HF.1c, ADR 145 D1): una
+ * por cuenta del reparto, o una sin cuenta si no hubo de dónde descontar.
+ * Pura salvo por los ids.
+ *
+ * @param {Array<{cuentaId: string, monto: number}>} splits
+ * @param {number} monto Total del aporte (vale cuando `splits` está vacío).
+ * @param {string} fecha YYYY-MM-DD.
+ * @param {{origen?: 'distribucion'}} [extra]
+ * @returns {import('../core/state.js').AporteBolsa[]}
+ */
+export function filasDeAporte(splits, monto, fecha, extra = {}) {
+  const partes = Array.isArray(splits) && splits.length > 0
+    ? splits.filter(s => Number(s?.monto) > 0).map(s => ({ cuentaId: s.cuentaId ?? null, monto: Number(s.monto) }))
+    : [{ cuentaId: null, monto: Number(monto) || 0 }];
+  return partes
+    .filter(p => p.monto > 0)
+    .map(p => ({ id: genId(), fecha, monto: p.monto, cuentaId: p.cuentaId, ...(extra.origen ? { origen: extra.origen } : {}) }));
+}
+
+/**
  * Elimina un ítem de `S[coleccion]` por su `id`.
  *
  * @param {string} coleccion

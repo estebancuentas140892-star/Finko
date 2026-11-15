@@ -190,6 +190,11 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  *                                    borrarlo no toca el saldo. Ausente en los gastos
  *                                    manuales y en los importados antes de la v44 (sin
  *                                    backfill: no hay forma de saber cuáles fueron).
+ *                                    Desde HF.1c (ADR 145 D4) también lo lleva el gasto
+ *                                    que deja "Ya lo usé": su dinero salió de las cuentas
+ *                                    cuando se apartó.
+ * @property {string} [apartadoId]    HF.1c (ADR 145 D4): la reserva cuyo "Ya lo usé"
+ *                                    dejó este gasto.
  */
 
 /**
@@ -301,7 +306,21 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  * @property {string|null} [subcategoriaId] Id de `SUBCATEGORIAS_META` (MT.6b, ADR 064).
  * @property {{fecha: string, monto: number}[]} [planAportes] Plan generado y
  *   recalculado (MT.6c, ADR 048 D3); `[]` sin fecha límite o meta cumplida.
+ * @property {AporteBolsa[]} [aportes] Historia de aportes desde la v50 (HF.1c, ADR 145).
+ *   Lo anterior queda como saldo de apertura en `montoActual`.
  * @property {boolean} completada
+ */
+
+/**
+ * Un aporte a una meta o a una reserva (HF.1c, ADR 145 D1). Una fila por cuenta
+ * de donde salió el dinero; `cuentaId: null` si no había cuentas.
+ *
+ * @typedef {Object} AporteBolsa
+ * @property {string}      id
+ * @property {string}      fecha     YYYY-MM-DD.
+ * @property {number}      monto     COP.
+ * @property {string|null} cuentaId  FK a Cuenta.id.
+ * @property {'distribucion'} [origen] Llegó por "Distribuir mi ingreso".
  */
 
 /**
@@ -311,6 +330,7 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  * @property {string}      icono             Emoji.
  * @property {number}      montoObjetivo     COP a reunir para el gasto previsible.
  * @property {number}      montoActual       COP acumulado vía aportes.
+ * @property {AporteBolsa[]} [aportes]       Historia de aportes desde la v50 (HF.1c, ADR 145).
  * @property {string|null} fechaObjetivo     YYYY-MM-DD: cuándo se necesita. null si sin plazo.
  * @property {string}      frecuenciaAporte  Cada cuánto aporta: Diario|Semanal|Quincenal|Mensual.
  * @property {boolean}     recurrente        true si el gasto se repite (SOAT anual, impuestos). v14.

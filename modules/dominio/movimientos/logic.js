@@ -20,7 +20,7 @@ import { serializarCSV } from '../../infra/csv.js';
  * @typedef {Object} Movimiento
  * @property {string} id
  * @property {string} fecha        ISO 8601 (YYYY-MM-DD).
- * @property {'gasto'|'ingreso'|'aporte'|'transferencia'|'abono'|'prestamo'|'recibido'|'ajuste'} tipo
+ * @property {'gasto'|'ingreso'|'aporte'|'transferencia'|'abono'|'prestamo'|'recibido'|'ajuste'|'aporte-meta'|'aporte-reserva'} tipo
  *   `prestamo`, `recibido` y `ajuste` (HF.1d-1, ADR 143): lo prestado, el
  *   dinero recibido de una deuda (D.14) y el ajuste a mano del saldo.
  * @property {string} descripcion
@@ -130,6 +130,51 @@ export function movimientosDesdeAportes(aportes) {
     cuentaId:    null,
     dominio:     'ahorro',
   }));
+}
+
+/**
+ * Los aportes a metas y a reservas (HF.1c, [ADR 145](../../../docs/DECISIONS/145-los-aportes-de-metas-y-reservas-tienen-fecha.md) D3).
+ * Un aporte cambia el dinero de bolsillo, no lo gasta: dirección `neutro`,
+ * como la transferencia y el aporte al Fondo, con la cuenta de donde salió.
+ * `efectoEnCuenta()` lo resta de esa cuenta. Lo anterior a la v50 no tiene
+ * fila: es saldo de apertura (ADR 145 D2).
+ *
+ * @param {Array<{id:string, nombre?:string, aportes?:import('../../core/state.js').AporteBolsa[]}>} bolsas
+ * @param {'aporte-meta'|'aporte-reserva'} tipo
+ * @returns {Movimiento[]}
+ */
+function _movimientosDeBolsas(bolsas, tipo) {
+  if (!Array.isArray(bolsas)) return [];
+  const esMeta = tipo === 'aporte-meta';
+  const out = [];
+  for (const b of bolsas) {
+    if (!b || !Array.isArray(b.aportes)) continue;
+    for (const a of b.aportes) {
+      if (!a || typeof a.fecha !== 'string') continue;
+      out.push({
+        id:          a.id,
+        fecha:       a.fecha,
+        tipo,
+        descripcion: `Aporte a ${String(b.nombre ?? '').trim() || (esMeta ? 'tu meta' : 'tu reserva')}`,
+        monto:       Number(a.monto) || 0,
+        direccion:   'neutro',
+        icono:       esMeta ? 'i-metas' : 'i-apartados',
+        cuentaId:    a.cuentaId ?? null,
+        dominio:     esMeta ? 'metas' : 'ahorro',
+      });
+    }
+  }
+  return out;
+}
+
+/** @param {import('../../core/state.js').Meta[]} metas */
+export function movimientosDesdeAportesMetas(metas) {
+  return _movimientosDeBolsas(metas, 'aporte-meta');
+}
+
+/** @param {import('../../core/state.js').Apartado[]} apartados */
+export function movimientosDesdeAportesReservas(apartados) {
+  return _movimientosDeBolsas(apartados, 'aporte-reserva');
 }
 
 /**
@@ -304,6 +349,11 @@ export function efectoEnCuenta(movimientos, cuentaId) {
       if (m.cuentaDestinoId === cuentaId) total += monto;
       continue;
     }
+    // HF.1c (ADR 145 D3): el aporte es neutro en la lista, pero sale de su cuenta.
+    if (m?.tipo === 'aporte-meta' || m?.tipo === 'aporte-reserva') {
+      if (m.cuentaId === cuentaId) total -= monto;
+      continue;
+    }
     if (m?.cuentaId !== cuentaId || m.sinEfectoSaldo) continue;
     if (m.direccion === 'ingreso') total += monto;
     else if (m.direccion === 'egreso') total -= monto;
@@ -386,7 +436,7 @@ export function filtrarMovimientos(movimientos, { texto, dominio, categoria, cue
  * @param {number} [limite=5]
  * @returns {Movimiento[]}
  */
-export function movimientosRecientes({ gastos, ingresosPuntuales, aportes, transferencias, personales, categoriasPersonalizadas, compromisos, ajustesSaldo } = {}, limite = 5) {
+export function movimientosRecientes({ gastos, ingresosPuntuales, aportes, transferencias, personales, categoriasPersonalizadas, compromisos, ajustesSaldo, metas, apartados } = {}, limite = 5) {
   const todos = [
     ...movimientosDesdeGastos(gastos, categoriasPersonalizadas),
     ...movimientosDesdeIngresosPuntuales(ingresosPuntuales),
@@ -397,6 +447,9 @@ export function movimientosRecientes({ gastos, ingresosPuntuales, aportes, trans
     ...movimientosDesdePrestamos(personales),
     ...movimientosDesdeDeudasRecibidas(compromisos),
     ...movimientosDesdeAjustes(ajustesSaldo),
+    // HF.1c (ADR 145 D3): los aportes a metas y reservas.
+    ...movimientosDesdeAportesMetas(metas),
+    ...movimientosDesdeAportesReservas(apartados),
   ];
   return todos
     .filter(m => typeof m.fecha === 'string' && m.fecha)

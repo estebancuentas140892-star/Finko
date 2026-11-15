@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 49;
+const SCHEMA_VERSION = 50;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -713,6 +713,23 @@ function _migrate(raw) {
       ? data.ajustesSaldo.filter(a => a && typeof a === 'object' && typeof a.id === 'string' && a.id
           && typeof a.cuentaId === 'string' && Number.isFinite(Number(a.monto)))
       : [];
+  }
+
+  // v49 → v50: `aportes[]` en metas y reservas (HF.1c, ADR 145 D1 y D2). Sin
+  // reconstrucción: lo que ya tenían queda como saldo de apertura en
+  // `montoActual` (I4 del ADR 091). Idempotente: un arreglo existente se
+  // conserva, solo se le quitan las filas sin forma.
+  if ((typeof data._version === 'number' ? data._version : 1) < 50) {
+    const conAportes = (x) => {
+      if (!x || typeof x !== 'object') return x;
+      x.aportes = Array.isArray(x.aportes)
+        ? x.aportes.filter(a => a && typeof a === 'object' && typeof a.id === 'string' && a.id
+            && typeof a.fecha === 'string' && Number.isFinite(Number(a.monto)))
+        : [];
+      return x;
+    };
+    if (Array.isArray(data.metas)) data.metas.forEach(conAportes);
+    if (Array.isArray(data.apartados)) data.apartados.forEach(conAportes);
   }
 
   if (typeof data._version !== 'number' || data._version < SCHEMA_VERSION) {

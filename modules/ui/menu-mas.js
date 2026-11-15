@@ -35,10 +35,11 @@ const LINEA_AJUSTES = Object.freeze({ texto: 'Perfil, Familia, nube y datos' });
 // Mismas claves que el memo de Movimientos y el de Analisis en sus vistas.
 const _ultimosMovimientos = memoizar(
   movimientosRecientes,
-  ['gastos', 'ingresosPuntuales', 'ahorro', 'transferencias', 'personales', 'categoriasPersonalizadas', 'compromisos', 'ajustesSaldo'],
+  ['gastos', 'ingresosPuntuales', 'ahorro', 'transferencias', 'personales', 'categoriasPersonalizadas', 'compromisos', 'ajustesSaldo', 'metas', 'apartados'],
   (fuentes, limite) => [
     fuentes?.gastos, fuentes?.ingresosPuntuales, fuentes?.aportes, fuentes?.transferencias,
-    fuentes?.personales, fuentes?.categoriasPersonalizadas, fuentes?.compromisos, fuentes?.ajustesSaldo, limite,
+    fuentes?.personales, fuentes?.categoriasPersonalizadas, fuentes?.compromisos, fuentes?.ajustesSaldo,
+    fuentes?.metas, fuentes?.apartados, limite,
   ],
 );
 const _resumenDelMes = memoizar(
@@ -83,6 +84,8 @@ export function estadosMas(state = S, hoyISO = hoy()) {
     categoriasPersonalizadas: state.categoriasPersonalizadas,
     compromisos:       state.compromisos,
     ajustesSaldo:      state.ajustesSaldo,
+    metas:             state.metas,
+    apartados:         state.apartados,
   }, 1);
   const cuando = ultimo && (ultimo.fecha === hoyISO ? 'Hoy' : ultimo.fecha === ayerISO ? 'Ayer' : fechaLegible(ultimo.fecha));
   const movimientos = ultimo
