@@ -156,7 +156,7 @@ export function renderFormTransferencia() {
       ${renderSelectorCuenta(activas, { label: 'Entra a', name: 'cuentaDestinoId' })}`;
 
   return `
-    <form id="form-transferencia" novalidate>
+    <form id="form-transferencia" novalidate data-etapas-monto="¿Cuánto vas a pasar?">
       <p class="modal__intro">Pasa dinero de una cuenta a otra.</p>
       ${seccionCuentas}
       <div class="monto-hero">

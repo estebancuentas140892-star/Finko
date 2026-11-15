@@ -1191,7 +1191,10 @@ test.describe('MV2.30 - Ahorro en el teléfono (ADR 133)', () => {
     await page.locator('.reserva-fila[data-id="r1"] .bolsa-circulo').click();
     const aporte = page.locator('#modal-aporte-apartado');
     await expect(aporte.locator('.modal__title')).toHaveText('Aportar a SOAT de la moto');
+    // ADR 142 D4 (FORM.2c): primero el monto, con su pregunta; luego "Revisar".
+    await expect(aporte.locator('.pmonto__q')).toHaveText('¿Cuánto vas a aportar?');
     await aporte.locator('#aporte-apartado-monto').fill('90.000');
+    await aporte.locator('[data-etapa-seguir]').click();
     await expect(aporte.locator('#aporte-apartado-enviar')).toHaveText('Aportar $90.000');
     await aporte.locator('#aporte-apartado-enviar').click();
     await expect(page.locator('.reserva-fila[data-id="r1"] .reserva-fila__dato')).toContainText('$480.000 de $520.000');
@@ -1397,11 +1400,14 @@ test.describe('MV2.30 - Transferir en el teléfono (ADR 135 D5)', () => {
     await page.goto('/#tesoreria');
     await page.locator('[data-action="abrir-transferencia"]:visible').click({ timeout: 10_000 });
     const hoja = page.locator('#modal-transferencia[data-open]');
+    // ADR 142 D4 (FORM.2c): el monto con el teclado de Finko, después las cuentas.
+    for (const t of ['2', '0', '0', '000']) await hoja.locator(`[data-tecla="${t}"]`).click();
+    await expect(hoja.locator('#transferencia-monto')).toHaveValue('200.000');
+    await hoja.locator('[data-etapa-seguir]').click();
     await expect(hoja.locator('.transferir-de-a__rotulo')).toHaveText(['Sale de', 'Entra a']);
     await expect(hoja.locator('.transferir-cuenta__nombre').first()).toHaveText('Bancolombia');
     await hoja.locator('[data-action="invertir-transferencia"]').click();
     await expect(hoja.locator('.transferir-cuenta__nombre').first()).toHaveText('Nequi');
-    await hoja.locator('#transferencia-monto').fill('200000');
     await expect(hoja.locator('#transferencia-enviar')).toHaveText('Transferir $200.000');
   });
 });

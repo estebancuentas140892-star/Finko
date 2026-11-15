@@ -461,7 +461,8 @@ export function renderFormAbonoMeta(meta) {
     : '';
 
   return `
-    <form id="form-abono-meta" novalidate>
+    <form id="form-abono-meta" novalidate data-etapas-monto="¿Cuánto aportas?"
+          data-atajos="${_esc(JSON.stringify(faltante > 0 ? [{ t: 'Lo que falta', v: faltante }] : []))}">
       <input type="hidden" name="metaId" value="${_esc(meta.id)}" />
       <p class="form-hint form-hint--muted">
         Progreso de <strong>${_esc(meta.nombre)}</strong>:

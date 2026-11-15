@@ -105,7 +105,7 @@ test.describe('Reflow a 320px (RWD.1, WCAG 1.4.10)', () => {
     expect(box.x + box.width).toBeLessThanOrEqual(320);
   });
 
-  test('el modal de ingreso puntual (.input--big-amount) cabe completo', async ({ page }) => {
+  test('el modal de ingreso puntual (el monto con el teclado de Finko) cabe completo', async ({ page }) => {
     await seedDatos(page);
     await page.goto('/#dash');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
@@ -120,8 +120,11 @@ test.describe('Reflow a 320px (RWD.1, WCAG 1.4.10)', () => {
     expect(box.x).toBeGreaterThanOrEqual(0);
     expect(box.x + box.width).toBeLessThanOrEqual(320);
 
-    const input = page.locator('#modal-ingreso-puntual .input--big-amount');
+    // ADR 142 D4 (FORM.2c): el monto va en su etapa, con el teclado de Finko.
+    const input = page.locator('#modal-ingreso-puntual #ingreso-p-monto');
     await expect(input).toBeVisible();
+    const tecla = await page.locator('#modal-ingreso-puntual .kp__k').last().boundingBox();
+    expect(tecla.x + tecla.width).toBeLessThanOrEqual(320);
     const inputBox = await input.boundingBox();
     expect(inputBox.x + inputBox.width).toBeLessThanOrEqual(320);
 

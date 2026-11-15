@@ -420,7 +420,7 @@ export function renderFormIngresoPuntual() {
     .join('');
 
   return `
-    <form id="form-ingreso-puntual" novalidate>
+    <form id="form-ingreso-puntual" novalidate data-etapas-monto="¿Cuánto te llegó?">
       <div class="form-group">
         <label for="ingreso-p-monto" class="label">¿Cuánto recibiste?</label>
         <input id="ingreso-p-monto" name="monto" class="input input--big-amount"

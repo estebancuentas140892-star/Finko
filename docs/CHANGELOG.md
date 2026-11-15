@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(formularios): FORM.2c, mover dinero en dos etapas y los controles de Finko · 2026-11-14
+
+[ADR 142](DECISIONS/142-formularios-por-tarea.md) D2 y D4. Ficha: [`contexto/captura.md`](contexto/captura.md). Solo bajo 1024 px. SW v702.
+
+- **`ui/captura-telefono.js`**, una pieza para todos: un formulario la pide con atributos y el dominio no aprende nada. `modales.js` gana `registrarAlAbrir`, así corre en cada apertura con lo que el dominio ya llenó, también en los formularios que se reutilizan.
+- **`data-etapas-monto="¿Cuánto abonas?"`**: Monto · Revisar. El primer campo `data-miles` se muda a la etapa del monto con el teclado de Finko y su lectura en palabras; lo demás queda en "Revisar" bajo el monto, que se toca para cambiarlo. Sin monto no se sigue; un error del monto al guardar vuelve a su etapa. `data-atajos` pone atajos sobre el teclado que llevan directo a revisar.
+- **Siete formularios**: Abonar a una deuda ("La cuota", "Toda la deuda"), Aportar a una meta y a una reserva ("Lo que falta"), Aportar al fondo, Me llegó dinero, Transferir y Me pagaron ("Todo lo que falta"). Pagar varios no lleva teclado: no se escribe un monto, se marcan pendientes.
+- **Los controles de Finko** en esos formularios (y en cualquiera con `data-captura`): un `<select>` pasa a ser el desplegable de Finko (con buscador desde 16 opciones) y un `type="date"`, una fila que abre "Hoy", "Ayer" y el calendario de Finko (las fechas futuras, solo el calendario, y "Quitar la fecha" si es opcional). El campo real queda oculto con su `name` y su valor, y avisa `change` como siempre.
+- Pruebas: `captura-telefono` (12 nuevas); E2E `movil-mv2` (2 ajustadas: el monto antes de Revisar en Aportar a una reserva y en Transferir) y `reflow-320` (1 ajustada: el teclado de Finko cabe a 320). Unitarias 5571, E2E 453/453. Falta la prueba en un iPhone real (REV.3b).
+
 ### feat(gastos): FORM.2b, Registrar gasto con el teclado de Finko y un recibo · 2026-11-14
 
 [ADR 142](DECISIONS/142-formularios-por-tarea.md) D3 y D4, que cambia el [ADR 042](DECISIONS/042-formularios-v2-visual.md) D2 en el teléfono. Fichas: [`contexto/captura.md`](contexto/captura.md), [`contexto/gastos.md`](contexto/gastos.md). Solo bajo 1024 px: escritorio conserva la columna. SW v701.

@@ -70,6 +70,7 @@ import { initAtencionHoy } from './atencion-hoy.js';
 import { initHojaPerfil } from './hoja-perfil.js';
 import { initTeclado } from './teclado.js';
 import { initHojas } from './hojas.js';
+import { initCapturaTelefono } from './captura-telefono.js';
 import { initMiles } from './miles.js';
 import { initTelefonoAdulto } from './telefono-adulto.js';
 import { initRegistrar } from './registrar.js';
@@ -122,6 +123,9 @@ initTeclado();
 // ADR 118 (RN8): toda hoja se cierra también deslizándola y con el atrás del
 // sistema en Android.
 initHojas();
+// ADR 142 D2 y D4 (FORM.2c): mover dinero en dos etapas con el teclado de
+// Finko, y los controles de Finko en vez de los del sistema.
+initCapturaTelefono();
 // ADR 120 (R16): los campos de dinero muestran el separador de miles
 // mientras se escribe y llegan como dígitos a su formulario.
 initMiles();

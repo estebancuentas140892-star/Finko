@@ -261,6 +261,11 @@ export function renderFormAbono(deuda) {
 
   return `
     <form id="form-abono" novalidate
+          data-etapas-monto="¿Cuánto abonas?"
+          data-atajos="${_esc(JSON.stringify([
+            ...(cuota > 0 && cuota < saldo ? [{ t: 'La cuota', v: cuota }] : []),
+            ...(saldo > 0 ? [{ t: 'Toda la deuda', v: saldo }] : []),
+          ]))}"
           data-saldo="${saldo}"
           data-cuota="${cuota}"
           data-tarjeta="${(Number(deuda.cupoTotal) || 0) > 0 ? '1' : ''}"

@@ -17,7 +17,8 @@
     height: calc(94dvh - env(safe-area-inset-top, 0px));
   }
 }
-.modal:has(> .modal__body > .form-etapas) { position: relative; }
+.modal:has(> .modal__body > .form-etapas),
+.modal:has(.mini-hoja) { position: relative; }
 .modal__body:has(> .form-etapas) { padding-top: var(--fk-space-2); }
 
 .form-etapas {
@@ -535,6 +536,73 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
 .desplegable__s { font-size: 0.8125rem; color: var(--fk-text-secondary); font-variant-numeric: tabular-nums; }
 .desplegable__ok { flex: none; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--fk-border-strong); }
 .desplegable__f:has(:checked) .desplegable__ok { border: 7px solid var(--fk-section-accent); }
+
+/* El recibo de mover dinero (FORM.2c): solo el monto, arriba de lo de siempre. */
+.recibo__cab--suelta {
+  border: 0;
+  border-radius: var(--fk-radius-xl);
+  background: var(--fk-bg-elevated);
+  padding-block: var(--fk-space-4);
+}
+.pmonto--error .pmonto__v { color: var(--fk-danger-text); }
+.pmonto--error .pmonto__lee { color: var(--fk-danger-text); }
+
+/* Atajos sobre el teclado: "La cuota", "Toda la deuda", "Lo que falta". */
+.atajo-monto {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 52px;
+  padding: var(--fk-space-2) 14px;
+  border-radius: 14px;
+  border: 1.5px solid var(--fk-border-subtle);
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+.atajo-monto:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
+.atajo-monto__k { font-size: var(--fk-text-xs); font-weight: var(--fk-font-semibold); color: var(--fk-text-muted); }
+.atajo-monto__v { font-family: var(--fk-font-display); font-size: 0.9375rem; font-weight: var(--fk-font-bold); font-variant-numeric: tabular-nums; }
+
+/* El control de Finko que reemplaza un <select> o un type="date" (142 D2). */
+.campo-finko {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-2);
+  width: 100%;
+  min-height: 48px;
+  padding: var(--fk-space-2) var(--fk-space-3) var(--fk-space-2) var(--fk-space-4);
+  border: 1.5px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-md);
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-primary);
+  font-size: var(--fk-text-base);
+  text-align: left;
+  cursor: pointer;
+}
+.campo-finko:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
+.campo-finko--vacio .campo-finko__v { color: var(--fk-text-muted); }
+.campo-finko__chev { flex: none; color: var(--fk-text-muted); width: var(--fk-icon-sm); height: var(--fk-icon-sm); }
+.form-group:has(.field-invalid) .campo-finko { border-color: var(--fk-danger); }
+.desplegable__f[role="option"] { width: 100%; border: 0; background: none; color: inherit; text-align: left; font: inherit; }
+.desplegable__f[aria-selected="true"] { background: var(--fk-bg-hover); }
+.desplegable__f[aria-selected="true"] .desplegable__ok { border: 7px solid var(--fk-section-accent, var(--fk-accent)); }
+.desplegable__f[role="option"]:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: -2px; }
+.buscar-finko {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: 14px;
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-muted);
+}
+.buscar-finko__in { flex: 1; min-width: 0; border: 0; background: none; color: var(--fk-text-primary); font-size: var(--fk-text-base); outline: none; }
 
 /* ── El calendario de Finko ("Otra fecha") ───────────────── */
 #gasto-fecha-otra[hidden] { display: none; }

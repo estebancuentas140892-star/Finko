@@ -41,17 +41,6 @@
 
 > **Iniciativa FORM.2 - Formularios por tarea** ([ADR 142](../DECISIONS/142-formularios-por-tarea.md), aceptada 2026-11-14). Fuente única de todo cambio de forma en los formularios del teléfono: cuatro tareas (mover dinero, crear, corregir, ajustes), la regla para elegir cada control y el teclado de Finko. Diseño en el canvas "Finko · Rediseño de formularios móviles", página "Propuesta por tarea"; manda el ADR. Escritorio no cambia. **Una idea sobre cualquier formulario se integra acá, no abre tarjeta suelta.**
 
-#### FORM.2c - Mover dinero: los otros ocho
-- Prioridad  : media
-- Estado     : pendiente
-- Área       : ambos
-- Objetivo   : ADR 142 D4 con dos etapas (Monto · Revisar) y atajos sobre el teclado ("La cuota", "Toda la deuda", "Lo que falta") en Me llegó dinero, Abonar a una deuda, Aportar a una meta, a una reserva y al fondo, Transferir, Me pagaron y Pagar varios
-- Riesgo     : el aviso de consecuencia (062) y el GMF de Transferir se conservan tal cual
-- Archivos   : `tesoreria/views/ingresos.js` y `transferencias.js`, `compromisos/views/formularios.js` (abono) y `lote.js`, `metas/view.js`, `apartados/view.js`, `ahorro/view.js`, `personales/view.js`
-- Depende de : nada (FORM.2b cerrada: `ui/teclado-finko.js`, `ui/mini-hoja.js`, `ui/calendario-finko.js` y `captura.css` ya existen)
-- Aceptación : E2E de cada uno a 390 px, sin el teclado del sistema para el monto
-- Modelo     : capacidad estándar, esfuerzo medio
-
 #### FORM.2d - Corregir: la ficha es el formulario
 - Prioridad  : media
 - Estado     : pendiente

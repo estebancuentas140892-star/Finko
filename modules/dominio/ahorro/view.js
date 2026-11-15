@@ -847,7 +847,7 @@ export function renderFormAporte({ fecha, sugerencia = null }) {
     : '¿Cuánto apartaste para el fondo? Registrarlo no descuenta tus cuentas: el dinero sigue ahí, solo queda marcado como reservado.';
 
   return `
-    <form id="form-aporte" novalidate>
+    <form id="form-aporte" novalidate data-etapas-monto="¿Cuánto apartaste?">
       <div class="form-group">
         <label for="aporte-monto" class="label">Monto del aporte</label>
         <input id="aporte-monto" name="monto" class="input" type="text" placeholder="100000"${valorHtml}

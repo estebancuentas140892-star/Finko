@@ -793,7 +793,8 @@ export function renderFormAporteApartado(apartado, sugerencia = null) {
     : '';
 
   return `
-    <form id="form-aporte-apartado" novalidate>
+    <form id="form-aporte-apartado" novalidate data-etapas-monto="¿Cuánto vas a aportar?"
+          data-atajos="${_esc(JSON.stringify(faltante > 0 ? [{ t: 'Lo que falta', v: faltante }] : []))}">
       <input type="hidden" name="apartadoId" value="${_esc(apartado.id)}" />
       <div class="aporte-reserva__contexto">
         <p class="aporte-reserva__llevas">Llevas <strong>${f(apartado.montoActual ?? 0)}</strong> de ${f(apartado.montoObjetivo ?? 0)}</p>

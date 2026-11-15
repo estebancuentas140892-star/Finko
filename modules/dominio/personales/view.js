@@ -560,7 +560,8 @@ export function renderFormPagoPersonal(prestamo) {
   const devuelto = Number(prestamo.pagado) || 0;
   const pacto = prestamo.fechaLimite ? ` · pactó devolver el ${fechaLegible(prestamo.fechaLimite)}` : '';
   return `
-    <form id="form-pago-personal" novalidate data-id="${_esc(prestamo.id)}">
+    <form id="form-pago-personal" novalidate data-id="${_esc(prestamo.id)}" data-etapas-monto="¿Cuánto te pagó ${persona}?"
+          data-atajos="${_esc(JSON.stringify(pendiente > 0 ? [{ t: 'Todo lo que falta', v: pendiente }] : []))}">
       <div class="modal__intro pago-prestamo__resumen">
         <p>Le prestaste ${f(prestamo.monto)}${devuelto > 0 ? ` · ya te devolvió ${f(devuelto)}` : ''}</p>
         <span class="medeben-barra" aria-hidden="true"><span style="width:${porcentajePagado(prestamo)}%"></span></span>

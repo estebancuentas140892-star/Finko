@@ -25,7 +25,20 @@ const _fondo = () => (document.body.classList.contains('kid')
  *
  * @param {HTMLElement} overlay - elemento `.modal-overlay` a abrir.
  */
+/** Lo que corre en cada apertura, antes de atrapar el foco (FORM.2c). */
+const _alAbrir = [];
+
+/**
+ * Registra algo que prepara una hoja cada vez que se abre, ya con lo que el
+ * dominio llenó (ADR 142: los formularios del teléfono, `captura-telefono.js`).
+ * @param {(overlay: HTMLElement) => void} fn
+ */
+export function registrarAlAbrir(fn) {
+  _alAbrir.push(fn);
+}
+
 export function abrirModal(overlay) {
+  for (const fn of _alAbrir) fn(overlay);
   overlay.dataset.open = '';
   // Una hoja recién abierta no tiene cambios sin guardar (ADR 142 D8, hojas.js).
   delete overlay.dataset.cambios;
