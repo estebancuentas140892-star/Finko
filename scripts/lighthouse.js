@@ -2,10 +2,12 @@
  * lighthouse.js - Corre una auditoría Lighthouse sobre la app en local.
  *
  * Uso:
- *   node scripts/lighthouse.js [port]
+ *   node scripts/lighthouse.js [port | url]
  *
- * Requiere que el servidor ya esté corriendo:
+ * Con un puerto, requiere que el servidor ya esté corriendo:
  *   python -m http.server 8080   (en otra terminal)
+ * Con una dirección completa (`https://finko-brown.vercel.app/`), audita esa:
+ * así se mide lo publicado (MV2.28).
  *
  * Genera:
  *   coverage/lighthouse-report.html  - reporte completo interactivo
@@ -19,8 +21,8 @@ import { chromium } from '@playwright/test';
 import lighthouse from 'lighthouse';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
-const PORT  = process.argv[2] ?? 8080;
-const URL   = `http://localhost:${PORT}/`;
+const DESTINO = process.argv[2] ?? '8080';
+const URL     = /^https?:\/\//.test(DESTINO) ? DESTINO : `http://localhost:${DESTINO}/`;
 const OUT   = join(__dir, '..', 'coverage');
 
 const CATEGORIAS_OBJETIVO = {

@@ -28,10 +28,13 @@
  * Uso:
  *   node scripts/perf/fluidez.js [--cpu 4] [--gastos 3000] [--rondas 5]
  *                                [--json salida.json] [--trazas carpeta]
+ *                                [--url https://finko-brown.vercel.app]
  *
  * `--trazas` guarda las trazas crudas de la primera ronda (se abren en el panel
- * Performance de DevTools). Levanta su propio servidor (python -m http.server)
- * en un puerto libre. No es un test: no afirma nada, mide.
+ * Performance de DevTools). Sin `--url` levanta su propio servidor (python -m
+ * http.server) en un puerto libre; con `--url` mide esa dirección, por ejemplo
+ * lo publicado (MV2.28): la semilla va a un navegador limpio, no a datos de
+ * nadie. No es un test: no afirma nada, mide.
  */
 
 import { spawn } from 'node:child_process';
@@ -57,6 +60,7 @@ const GASTOS      = Number(arg('gastos', 3000));
 const RONDAS      = Number(arg('rondas', 5));
 const JSON_SALIDA = arg('json', null);
 const TRAZAS      = arg('trazas', null);
+const URL_EXTERNA = arg('url', null);
 
 // ── utilidades ──────────────────────────────────────────────────
 
@@ -264,9 +268,9 @@ const SCROLL = ['#dash', '#gast', '#movimientos', '#analisis', '#fondo'];
 // ── principal ───────────────────────────────────────────────────
 
 async function main() {
-  const { url, proc } = await levantarServidor();
+  const { url, proc } = URL_EXTERNA ? { url: URL_EXTERNA.replace(/\/$/, ''), proc: null } : await levantarServidor();
   const browser = await chromium.launch({ headless: true });
-  const res = { cpu: CPU, gastos: GASTOS, rondas: RONDAS, arranque: [], interacciones: {}, scroll: {}, errores: [] };
+  const res = { url, cpu: CPU, gastos: GASTOS, rondas: RONDAS, arranque: [], interacciones: {}, scroll: {}, errores: [] };
   try {
     const estado = JSON.stringify(estadoSembrado());
     for (let ronda = 0; ronda < RONDAS; ronda++) {
@@ -319,7 +323,7 @@ async function main() {
     }
   } finally {
     await browser.close();
-    proc.kill();
+    proc?.kill();
   }
   res.errores = [...new Set(res.errores)];
   reportar(res);
@@ -329,7 +333,7 @@ async function main() {
 function reportar(res) {
   const med = (xs, k) => r1(mediana(xs.map((x) => x[k])));
   const a = res.arranque;
-  console.log(`\nFluidez de Finko: CPU ${res.cpu}x, ${res.gastos} gastos, Pixel 5, ${res.rondas} rondas (medianas, ms)\n`);
+  console.log(`\nFluidez de Finko en ${res.url}: CPU ${res.cpu}x, ${res.gastos} gastos, Pixel 5, ${res.rondas} rondas (medianas, ms)\n`);
   console.log(`Arranque: DCL ${med(a, 'dcl')}, bloqueo ${med(a, 'bloqueo')}, cuadro más largo ${med(a, 'cuadroMasLargo')}, nodos ${med(a, 'nodos')}`);
   if (a[0].traza) console.log('  traza:', JSON.stringify(a[0].traza));
   console.log('\nInteracción              inp  respuesta   peor  largos   (1.ª ronda: principal estilo layout paint script)');
