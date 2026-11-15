@@ -32,7 +32,7 @@ Son más de treinta rebanadas en seis capas (modelo, captura, calendario, avisos
 | Importador CSV | `dominio/import/` es "importar gastos", la mitad de restauración del export | - | Se conserva como función distinta. BUG-029 |
 | Aprender patrones (NETFLIX a Entretenimiento) | `marcas.js` resuelve marca, no categoría; `sugerencias-categoria.js` sugiere **topes** (ADR 044) | - | HF.4e. El formulario de gasto ya no pide descripción: aprender solo aplica donde hay texto (importados, externos) |
 | Recurrentes a compromiso | `gastosFrecuentes` (atajos, 60 días), `detectarSuscripcionesLargas` | - | HF.2c |
-| Forma habitual de pago | `debitoAutomatico` + `cuentaDebitoId` (v39) | ADR 052 | **Duplicado para automáticos.** Para manuales se deriva del último pago (HF.2a), sin campo nuevo |
+| Forma habitual de pago | `debitoAutomatico` + `cuentaDebitoId` (v39) | ADR 052 | **Duplicado para automáticos.** Para manuales se deriva del último pago (HF.2a, cerrada 2026-11-15: `cuentaHabitualDe()`), sin campo nuevo |
 | Ingreso con cuenta y crédito automático | `Ingreso.cuentaId` (v27), `creditoAutomatico` + `ingresoId` (v41) | ADR 052 | **Duplicado.** Falta que Distribuir lo respete: BUG-030 |
 | Semántica de tarjeta | ADR 051 D3: el consumo es gasto sin cuenta y sube la deuda | El **pago** de la tarjeta es un segundo gasto "Abono" | **P2**, HF.1a y HF.1b |
 | Me deben integrado con cuentas | PE.7: prestar con cuenta descuenta; el abono acredita y sale en Movimientos (ADR 089 D1) | ADR 047 | Ya existe con cuenta. "No es ingreso ordinario": HF.1a |

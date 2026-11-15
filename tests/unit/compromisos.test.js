@@ -6174,3 +6174,25 @@ describe('htmlPlanSalida() - la hoja del plan de salida (ADR 132 D10)', () => {
     expect(r.html).toMatch(/todavía no alcanzas a terminar/);
   });
 });
+
+// ── HF.2a: el abono abre en la cuenta del último abono ───────────
+
+describe('renderFormAbono() - la cuenta habitual (HF.2a)', () => {
+  const deuda = { id: 'd1', descripcion: 'Tarjeta', tipo: 'deuda-entidad', saldoTotal: 2_000_000, cuotaMensual: 200_000, activo: true };
+  const cuenta = (id, nombre, saldo) => ({ id, nombre, saldo, banco: 'Nequi', tipo: 'Ahorros', activa: true });
+  const marcada = (html) => /value="([^"]+)"\s*checked/.exec(html)?.[1] ?? null;
+
+  beforeEach(() => {
+    S.cuentas = [cuenta('grande', 'Bancolombia', 5_000_000), cuenta('chica', 'Nequi', 300_000)];
+    S.gastos = [];
+  });
+
+  it('el segundo abono abre con la cuenta del primero, aunque otra tenga más saldo', () => {
+    S.gastos = [{ id: 'g1', compromisoId: 'd1', cuentaId: 'chica', fecha: '2026-10-05', monto: 200_000 }];
+    expect(marcada(renderFormAbono(deuda))).toBe('chica');
+  });
+
+  it('sin abonos previos, la de mayor saldo, como antes', () => {
+    expect(marcada(renderFormAbono(deuda))).toBe('grande');
+  });
+});

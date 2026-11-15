@@ -33,7 +33,7 @@ import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal } from '../../ui/modales.js';
 import { hoy, f } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
-import { resolverPagoConSelector } from '../../infra/cuenta-helper.js';
+import { resolverPagoConSelector, cuentaHabitualDe } from '../../infra/cuenta-helper.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { debitosAutomaticosVencidos, creditosAutomaticosVencidos, resolverDebitosContraCuentas, MESES_CATCHUP_AUTOMATICOS } from './logic.js';
 import { renderAgenda, renderFormAutomaticos, navegarMes, mostrarDia, abrirDia, soltarDia, marcarEntradaSeccion, resumenMesVisible, diaSeleccionado } from './view.js';
@@ -180,10 +180,12 @@ async function _marcarPagadoGastoFijo(el) {
   const monto = Number(comp.monto) || 0;
 
   // Elegir la cuenta preferida (si hay varias) y resolver el reparto-fallback.
+  // HF.2a: el selector abre en la cuenta del último pago de este compromiso.
   const splits = await resolverPagoConSelector(
     S.cuentas,
     monto,
     `registrar el pago de "${comp.descripcion}"`,
+    { preferidaId: cuentaHabitualDe(comp.id, S.gastos, S.cuentas) },
   );
   if (splits === null) return; // canceló o fue redirigido a Mis Cuentas
 

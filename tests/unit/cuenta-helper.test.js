@@ -13,6 +13,7 @@ import {
   renderSelectorCuenta,
   resolverPagoConPreferida,
   resolverPagoConSelector,
+  cuentaHabitualDe,
 } from '../../modules/infra/cuenta-helper.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -357,5 +358,71 @@ describe('resolverPagoConSelector()', () => {
     document.querySelector('[data-role="confirmar"]')?.click();
     const splits = await promesa;
     expect(splits.reduce((s, x) => s + x.monto, 0)).toBe(500_000);
+  });
+});
+
+// ── HF.2a: LA CUENTA HABITUAL DE CADA PAGO ───────────────────────
+
+describe('cuentaHabitualDe() (HF.2a)', () => {
+  const cuentas = [
+    cuentaActiva({ id: 'nequi' }),
+    cuentaActiva({ id: 'banco', nombre: 'Bancolombia' }),
+    cuentaActiva({ id: 'vieja', nombre: 'Vieja', activa: false }),
+  ];
+  const pago = (cuentaId, fecha, monto = 100_000, o = {}) => ({ compromisoId: 'arriendo', cuentaId, fecha, monto, ...o });
+
+  it('es la cuenta del último pago de ese compromiso', () => {
+    const gastos = [pago('nequi', '2026-09-05'), pago('banco', '2026-10-05'), pago('nequi', '2026-08-05')];
+    expect(cuentaHabitualDe('arriendo', gastos, cuentas)).toBe('banco');
+  });
+
+  it('solo mira los pagos de ese compromiso', () => {
+    const gastos = [pago('nequi', '2026-09-05'), { compromisoId: 'otro', cuentaId: 'banco', fecha: '2026-11-01', monto: 1 }];
+    expect(cuentaHabitualDe('arriendo', gastos, cuentas)).toBe('nequi');
+  });
+
+  it('a igual fecha, el pago repartido sale sobre todo de la de mayor monto', () => {
+    const gastos = [pago('nequi', '2026-10-05', 300_000), pago('banco', '2026-10-05', 50_000)];
+    expect(cuentaHabitualDe('arriendo', gastos, cuentas)).toBe('nequi');
+  });
+
+  it('una compra con la tarjeta no es un pago (BUG-037)', () => {
+    const gastos = [pago('nequi', '2026-09-05'), pago('banco', '2026-10-05', 1, { consumoTC: true })];
+    expect(cuentaHabitualDe('arriendo', gastos, cuentas)).toBe('nequi');
+  });
+
+  it('si la cuenta del último pago ya no está activa, no adivina con uno más viejo', () => {
+    const gastos = [pago('nequi', '2026-09-05'), pago('vieja', '2026-10-05')];
+    expect(cuentaHabitualDe('arriendo', gastos, cuentas)).toBeNull();
+  });
+
+  it('sin pagos previos, o sin compromiso, no hay habitual', () => {
+    expect(cuentaHabitualDe('arriendo', [], cuentas)).toBeNull();
+    expect(cuentaHabitualDe('arriendo', null, cuentas)).toBeNull();
+    expect(cuentaHabitualDe('', [pago('nequi', '2026-09-05')], cuentas)).toBeNull();
+    expect(cuentaHabitualDe('arriendo', [pago(undefined, '2026-09-05')], cuentas)).toBeNull();
+  });
+});
+
+describe('resolverPagoConSelector() con la cuenta habitual (HF.2a)', () => {
+  const dos = () => [
+    cuentaActiva({ id: 'c1', nombre: 'Nequi', saldo: 600_000 }),
+    cuentaActiva({ id: 'c2', nombre: 'Bancolombia', saldo: 400_000 }),
+  ];
+
+  it('el selector abre en la preferida aunque no sea la de mayor saldo', async () => {
+    const promesa = resolverPagoConSelector(dos(), 100_000, 'pagar', { preferidaId: 'c2' });
+    await new Promise(r => setTimeout(r, 0));
+    expect(document.querySelector('input[name="cuentaId"]:checked')?.value).toBe('c2');
+    document.querySelector('[data-role="confirmar"]')?.click();
+    expect(await promesa).toEqual([{ cuentaId: 'c2', monto: 100_000 }]);
+  });
+
+  it('sin preferida, la de mayor saldo, como antes', async () => {
+    const promesa = resolverPagoConSelector(dos(), 100_000, 'pagar');
+    await new Promise(r => setTimeout(r, 0));
+    expect(document.querySelector('input[name="cuentaId"]:checked')?.value).toBe('c1');
+    document.querySelector('[data-role="cancelar"]')?.click();
+    expect(await promesa).toBeNull();
   });
 });

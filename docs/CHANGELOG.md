@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(cuentas): HF.2a, la cuenta habitual de cada pago · 2026-11-15
+
+R-HF5 del [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md): se deriva, no se pide. Fichas: [`contexto/calendario.md`](contexto/calendario.md), [`contexto/deudas.md`](contexto/deudas.md). SW v716.
+
+- **`cuentaHabitualDe()`** (`infra/cuenta-helper.js`): la cuenta del último pago del compromiso, sin campo nuevo. A igual fecha, la de mayor monto (un pago repartido); una compra con la tarjeta no cuenta (BUG-037); si esa cuenta ya no está activa, no adivina con un pago más viejo.
+- **"Marcar pagado"** del gasto fijo y **el abono** a una deuda abren en esa cuenta aunque otra tenga más saldo. **El lote** también, si todos sus pagos comparten la misma.
+- Sin pagos previos, todo queda como antes: la cuenta de mayor saldo.
+- Pruebas: `cuenta-helper` (8 nuevas: la derivación y el selector), `compromisos` (2: el segundo abono abre con la cuenta del primero). Unitarias 5690/5690, E2E 476/476 (la intermitente de `nube.test.js` falló una vez y pasó aislada).
+
 ### feat(avisos): HF.2b, el débito automático sin saldo se avisa antes · 2026-11-15
 
 Nota del [ADR 052](DECISIONS/052-pagos-automaticos.md) (resuelve PA.1c) y acotación del D2 del [ADR 099](DECISIONS/099-inicio-movil-hoy-en-una-lista.md). Fichas: [`contexto/calendario.md`](contexto/calendario.md), [`contexto/transversal.md`](contexto/transversal.md). SW v715.

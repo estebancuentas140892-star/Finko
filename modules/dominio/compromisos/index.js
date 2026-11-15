@@ -22,7 +22,7 @@ import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { f, hoy } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
 import { mostrarToast } from '../../ui/toast.js';
-import { resolverPagoConPreferida, resolverPagoConSelector, wireToggleDebitoAutomatico } from '../../infra/cuenta-helper.js';
+import { resolverPagoConPreferida, resolverPagoConSelector, wireToggleDebitoAutomatico, cuentaHabitualDe } from '../../infra/cuenta-helper.js';
 import { asignarSplitsPorItem } from '../../infra/distribuir-pago.js';
 import { gastoDePagoCompromiso, bajarSaldoDeuda, fechaPagoDelMes, aplicarPagosCompromisos } from '../../infra/pago-compromiso.js';
 import { wireIconoPicker, setIconoPickerValor } from '../../infra/icon-picker.js';
@@ -1486,10 +1486,15 @@ async function _confirmarLote() {
   }
 
   const total = pendientes.reduce((acc, p) => acc + p.monto, 0);
+  // HF.2a: si todos los del lote salen de la misma cuenta habitual, el
+  // selector abre en ella; si no coinciden, no hay una que proponer.
+  const habituales = new Set(pendientes.map(p => cuentaHabitualDe(p.id, S.gastos, S.cuentas)));
+  const preferidaId = habituales.size === 1 ? [...habituales][0] : null;
   const splits = await resolverPagoConSelector(
     S.cuentas,
     total,
     `registrar ${pendientes.length} pagos vencidos`,
+    { preferidaId },
   );
   if (splits === null) return; // canceló o fue redirigido a Mis Cuentas
 

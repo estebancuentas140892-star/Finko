@@ -149,6 +149,7 @@ Lo que **DIS.11 dejó abierto**, con su medición: (1) **el alto del formulario 
 
 **Cambios realizados**:
 
+- 2026-11-15 (**HF.2a**, R-HF5 del ADR 091): "Marcar pagado" y el lote abren el selector en la cuenta del último pago (`cuentaHabitualDe()`, `cuenta-helper.js`).
 - 2026-11-15 (**HF.2b**, nota del ADR 052): `debito-sin-saldo` de hoy a tres días; la cascada de saldo de la hoja pasa a `resolverDebitosContraCuentas()`. Ver CHANGELOG.
 - 2026-10-18 (**HF.0j**, ADR 091): la hoja no ofrece cobros ni pagos anteriores al alta del ingreso o del compromiso. Ver CHANGELOG.
 - 2026-10-17 (**HF.0i**, BUG-033): un ingreso que el usuario no marcó como recibido en Distribuir sigue en la hoja. Ver CHANGELOG.

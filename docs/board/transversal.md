@@ -60,15 +60,6 @@
 - Depende de : nada
 - Aceptación : migración idempotente con prueba; un aporte a una meta sale en Movimientos en su fecha
 
-#### HF.2a - La cuenta habitual de cada pago
-- Prioridad  : baja
-- Estado     : pendiente, sin ADR
-- Área       : code
-- Objetivo   : "Marcar pagado" y el abono preseleccionan la última cuenta usada para ese compromiso, derivada de sus gastos (R-HF5, sin campo nuevo)
-- Archivos   : `infra/cuenta-helper.js`, `compromisos/index.js`, `agenda/index.js`
-- Depende de : nada
-- Aceptación : prueba de la derivación; el segundo pago de un compromiso abre con la cuenta del primero
-
 ---
 
 ## Iniciativa APR - Aprende y aplícalo

@@ -22,7 +22,7 @@ import {
   ICONOS_CATEGORIA_PERSONALIZADA,
   iconoDeCategoriaGasto,
 } from '../../../core/constants.js';
-import { renderSelectorCuenta, renderBloqueDebitoAutomatico } from '../../../infra/cuenta-helper.js';
+import { renderSelectorCuenta, renderBloqueDebitoAutomatico, cuentaHabitualDe } from '../../../infra/cuenta-helper.js';
 import { renderIconoPicker } from '../../../infra/icon-picker.js';
 import { htmlTinoSol } from '../../../infra/ilustraciones.js';
 import { htmlMiniHoja } from '../../../ui/mini-hoja.js';
@@ -295,7 +295,11 @@ export function renderFormAbono(deuda) {
         <p id="abono-tip-proyeccion" class="form-hint form-hint--muted" aria-live="polite"></p>
       </div>
 
-      ${renderSelectorCuenta(cuentas, { label: '¿De qué cuenta sale el abono?' })}
+      ${renderSelectorCuenta(cuentas, {
+        label: '¿De qué cuenta sale el abono?',
+        // HF.2a: abre en la cuenta del último abono a esta deuda.
+        selectedId: cuentaHabitualDe(deuda.id, S.gastos, S.cuentas),
+      })}
 
       <div class="form-group">
         <label for="abono-fecha" class="label">Fecha del abono</label>

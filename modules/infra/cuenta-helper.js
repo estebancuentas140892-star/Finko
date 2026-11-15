@@ -286,6 +286,43 @@ export async function resolverPagoConPreferida(cuentas, monto, preferidaId, cont
 }
 
 /**
+ * La cuenta habitual de un compromiso: la de su último pago (HF.2a, R-HF5 del
+ * [ADR 091](../../docs/DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)).
+ * Se deriva de los gastos vinculados, sin campo nuevo: el pago que el usuario
+ * ya registró dice de dónde suele salir.
+ *
+ * - El último es el de fecha más reciente; a igual fecha, el de mayor monto (un
+ *   pago repartido entre dos cuentas sale sobre todo de una) y, si empatan, el
+ *   registrado después.
+ * - Una compra con la tarjeta (`consumoTC`) no es un pago de la deuda (BUG-037).
+ * - Si la cuenta de ese último pago ya no existe o está inactiva, no hay
+ *   habitual: no se adivina con un pago más viejo.
+ *
+ * Pura: no lee `S`.
+ *
+ * @param {string} compromisoId
+ * @param {Array<{compromisoId?:string, cuentaId?:string, fecha?:string, monto?:number, consumoTC?:boolean}>} gastos
+ * @param {import('../core/state.js').Cuenta[]} cuentas
+ * @returns {string|null} `Cuenta.id` o null.
+ */
+export function cuentaHabitualDe(compromisoId, gastos, cuentas) {
+  if (!compromisoId) return null;
+  let ultimo = null;
+  for (const g of Array.isArray(gastos) ? gastos : []) {
+    if (!g || g.compromisoId !== compromisoId || !g.cuentaId || g.consumoTC) continue;
+    if (typeof g.fecha !== 'string' || !g.fecha) continue;
+    if (!ultimo
+      || g.fecha > ultimo.fecha
+      || (g.fecha === ultimo.fecha && (Number(g.monto) || 0) >= (Number(ultimo.monto) || 0))) {
+      ultimo = g;
+    }
+  }
+  if (!ultimo) return null;
+  const activa = (cuentas ?? []).some(c => c?.id === ultimo.cuentaId && c.activa !== false);
+  return activa ? ultimo.cuentaId : null;
+}
+
+/**
  * Resuelve el reparto de un pago cuando NO hay un selector de cuenta en el
  * formulario (flujos de un solo clic, como "Marcar pagado" de Agenda):
  *   - 0 cuentas: diálogo guiado a Mis Cuentas. Devuelve null.
@@ -298,9 +335,12 @@ export async function resolverPagoConPreferida(cuentas, monto, preferidaId, cont
  * @param {import('../core/state.js').Cuenta[]} cuentas
  * @param {number} monto
  * @param {string} [contexto]
+ * @param {{preferidaId?: string|null}} [opciones] `preferidaId`: la cuenta que
+ *   el selector trae marcada (HF.2a, la habitual del compromiso). Sin ella, la
+ *   de mayor saldo, como siempre.
  * @returns {Promise<Array<{cuentaId:string, monto:number}>|null>}
  */
-export async function resolverPagoConSelector(cuentas, monto, contexto = 'completar esta operación') {
+export async function resolverPagoConSelector(cuentas, monto, contexto = 'completar esta operación', { preferidaId = null } = {}) {
   const activas = (cuentas ?? []).filter(c => c.activa !== false);
   if (activas.length === 0) {
     _mostrarGuiadoCero(contexto);
@@ -315,11 +355,11 @@ export async function resolverPagoConSelector(cuentas, monto, contexto = 'comple
   }
 
   // Varias cuentas: primero elegir la preferida con el selector de tarjetas.
-  const preferidaId = await _mostrarSelectorPreferida(activas, m, contexto);
-  if (preferidaId === null) return null; // canceló
+  const elegidaId = await _mostrarSelectorPreferida(activas, m, contexto, preferidaId);
+  if (elegidaId === null) return null; // canceló
 
   // Reparto-fallback: usa la preferida si cubre; si no, abre el picker.
-  return resolverPagoConPreferida(cuentas, m, preferidaId, contexto);
+  return resolverPagoConPreferida(cuentas, m, elegidaId, contexto);
 }
 
 // ── CASO 0 CUENTAS ───────────────────────────────────────────────
@@ -471,7 +511,7 @@ function _mostrarPickerCuenta(activas, contexto) {
  * @param {string} contexto
  * @returns {Promise<string|null>}
  */
-function _mostrarSelectorPreferida(activas, monto, contexto) {
+function _mostrarSelectorPreferida(activas, monto, contexto, preferidaId = null) {
   return new Promise(resolve => {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -488,7 +528,7 @@ function _mostrarSelectorPreferida(activas, monto, contexto) {
         </header>
         <div class="modal__body">
           <p class="confirm__mensaje">Elige la cuenta para ${_esc(contexto)} de <strong>${f(monto)}</strong>. Si no alcanza, podrás repartirlo entre varias.</p>
-          ${renderSelectorCuenta(activas, { label: 'Cuenta de origen' })}
+          ${renderSelectorCuenta(activas, { label: 'Cuenta de origen', selectedId: preferidaId })}
         </div>
         <div class="modal__footer">
           <button type="button" class="btn btn-ghost" data-role="cancelar">Cancelar</button>

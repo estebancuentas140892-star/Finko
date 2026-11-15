@@ -96,7 +96,7 @@
 | Lista de deudas activas + trigger de editar (D.15b) | `modules/dominio/compromisos/views/lista.js` | `renderListaCompromisos()`, `_renderCompromisoItem()` | |
 | Panel de estrategia de pago (arriba, define orden de pago) | `modules/dominio/compromisos/views/estrategia.js` | `renderEstrategiaPago()` | |
 | Paneles de dashboard (vencidos, prioridades, Inicio) | `modules/dominio/compromisos/views/dashboard.js` | `renderPanelVencidos()`, `renderPanelPrioridades()` | |
-| Selector de cuenta embebido en form (reutilizado por D.14) | `modules/infra/cuenta-helper.js` | `renderSelectorCuenta()` | ~37 |
+| Selector de cuenta embebido en form (reutilizado por D.14); abre en la cuenta del último abono (HF.2a) | `modules/infra/cuenta-helper.js` | `renderSelectorCuenta()`, `cuentaHabitualDe()` | |
 | Schema de la deuda | `modules/core/state.js` | `@typedef Compromiso` | ~90 |
 
 **Recursos**: estilos en `styles/components/*.css` (buscar por clase `.comp-*`/`.cuenta-sel__*`); catálogos `CATEGORIAS_DEUDA` (producto, entidad) y `CATEGORIAS_DEUDA_PERSONAL` (relación, D.10) en `core/constants.js`; iconos vía `tejaCategoria`/sprite (`icons.js`).
