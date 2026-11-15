@@ -72,7 +72,7 @@
 
 - **Objetivo**          : rediseñar el formulario de registrar gasto para que la categoría sea el dato principal (no la descripción), soporte categorías creadas por el usuario, y no pida una descripción redundante cuando la categoría ya representa el concepto. Desde FORM.1a ([ADR 042](../DECISIONS/042-formularios-v2-visual.md)) es además el flagship del lenguaje de formularios v2: monto hero al frente, categoría con chips de ícono (sin select), fecha con atajos Hoy/Ayer/Otra fecha.
 - **Estado actual**     : **TX.9 completa** (TX.9a: categoría primero, descripción ya no obligatoria; TX.9b: categorías personalizadas). **IN.5 cerrada** (2026-07-06). **FORM.1a cerrada** (2026-07-15): form v2 completo; **el orden de TX.9a quedó revisado por el ADR 042 D2** (monto primero; la categoría sigue antes de cuenta/fecha/nota). **GAS.2 cerrada** (GAS.2a y GAS.2b, 2026-08-10): el formulario no cambió; ver bloque "Confirmación tras guardar" más abajo. **GAS.2c diferida** (Abono, Aporte).
-- **Verificado contra** : BUG-035 y BUG-038 (2026-11-04, 5c97b98). Antes: HF.0c (2026-10-17), solo el efecto de editar y borrar sobre el saldo; GAS.2b (2026-08-10).
+- **Verificado contra** : FORM.2b (2026-11-14): bajo 1024 px el formulario va por etapas en `gastos/telefono.js` (`renderFormGastoTelefono`, `montarFormGastoTelefono`, `repartoDelRecibo`) y `_montarFormGasto` elige cuál pintar; el contrato `FormData` y `_guardarGasto` son los de siempre, salvo que en el teléfono el reparto sale del recibo (`reparto`) y no del diálogo. Antes, BUG-035 y BUG-038 (2026-11-04, 5c97b98). Antes: HF.0c (2026-10-17), solo el efecto de editar y borrar sobre el saldo; GAS.2b (2026-08-10).
 
 **Dónde vive (FORM.1a)**
 
@@ -81,6 +81,8 @@
 | Form v2 completo (monto hero + chips + fecha con atajos) | `modules/dominio/gastos/view.js` | `renderFormGasto()` | radios reales `name="categoria"` y `name="fechaOpcion"`; el date real `#gasto-fecha` vive oculto en `#gasto-fecha-otra` |
 | Wiring de chips y atajos de fecha | `modules/dominio/gastos/index.js` | `_montarFormGasto()` | listener delegado de `change` en el form (categoría revela `#categoria-nueva-fields`; hoy/ayer escriben el date, "otra" lo revela) |
 | Edición: marcar chip de categoría y de fecha | `modules/dominio/gastos/index.js` | `_editarGasto()` | categoría legacy fuera de catálogo → ningún chip marcado, se re-elige (mismo comportamiento que tenía el select) |
+| Teléfono: etapas, recibo y mini-hojas (FORM.2b, ADR 142 D4) | `modules/dominio/gastos/telefono.js` | `renderFormGastoTelefono()`, `montarFormGastoTelefono()`, `irAEtapaGasto()`, `repartoDelRecibo()` | mismos `name` e ids que la columna (`#gasto-fecha` es `hidden` dentro de la mini-hoja de la fecha; `#grupo-gasto-cuotas` es la fila "Cuotas" del recibo). Editar, "Repetir" y un frecuente llaman `irAEtapaGasto(form, 'revisar')` tras prellenar. "Deshacer" (`_deshacerGastos`) vale también en escritorio |
+| Teléfono: lógica pura | `modules/dominio/gastos/logic.js` | `ordenarCategoriasPorUso()`, `cuentaHabitual()`, `planSiNoAlcanza()` | el plan usa `distribuirPago` con la elegida primero, igual que `resolverPagoConPreferida` |
 | Ayer en ISO local | `modules/dominio/gastos/view.js` | `ayerIso()` | exportada desde FORM.1a (antes `_ayerIso` privada) |
 | Componentes CSS del lenguaje | `styles/components/forms.css` | bloque "FORMULARIOS V2" | ver ficha [`captura.md`](captura.md), sección "Lenguaje de formularios v2" |
 | Teja del header del modal | `index.html` | `#modal-gasto .modal__teja` | tinte por `--fk-section-accent` del `data-dom="gastos"` |

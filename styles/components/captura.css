@@ -1,0 +1,581 @@
+/* ════════════════════════════════════════════════════════════
+   CAPTURA POR TAREA (ADR 142, FORM.2b en adelante)
+   El lenguaje de los formularios del teléfono: etapas con nombre,
+   el teclado de Finko, la grilla de tejas, el recibo que también es
+   formulario, la mini-hoja, el desplegable de Finko, el calendario
+   de Finko y el aviso ámbar. Estas clases solo existen en el HTML
+   que se arma bajo 1024 px (gastos/telefono.js y los que siguen):
+   escritorio conserva sus formularios.
+   Tinte: --fk-section-accent, que declara el [data-dom] de la hoja.
+   Capa propia (`captura`, main.css), sobre modals y responsive.
+   ════════════════════════════════════════════════════════════ */
+
+/* ── La hoja por etapas ─────────────────────────────────────── */
+@media (max-width: 1023.98px) {
+  /* Alto fijo: el monto se centra entre el título y el teclado. */
+  .modal:has(> .modal__body > .form-etapas) {
+    height: calc(94dvh - env(safe-area-inset-top, 0px));
+  }
+}
+.modal:has(> .modal__body > .form-etapas) { position: relative; }
+.modal__body:has(> .form-etapas) { padding-top: var(--fk-space-2); }
+
+.form-etapas {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+}
+.etapa-gasto {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-4);
+}
+.etapa-gasto[hidden] { display: none; }
+
+/* Cabecera: "Volver" en las etapas 2 y 3, en el lugar de la teja. */
+.modal__atras[hidden] { display: none; }
+.modal__header:has(> .modal__atras:not([hidden])) .modal__teja { display: none; }
+.modal__header:has(> .modal__atras:not([hidden])) { padding-left: var(--fk-space-1); }
+.modal__titulo-sub {
+  display: block;
+  font-family: var(--fk-font-sans);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-regular);
+  color: var(--fk-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Orientación: las etapas con nombre (Monto · Categoría · Revisar). */
+.etapas {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.etapas:has(> .etapa:nth-child(2):last-child) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.etapa {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-muted);
+}
+.etapa::before {
+  content: '';
+  height: 4px;
+  border-radius: var(--fk-radius-full);
+  background: var(--fk-border-default);
+}
+.etapa--hecha { color: var(--fk-text-secondary); }
+.etapa--hecha::before { background: color-mix(in srgb, var(--fk-section-accent) 55%, transparent); }
+.etapa--on { color: var(--fk-text-primary); }
+.etapa--on::before { background: var(--fk-section-accent); }
+
+/* ── El monto, sobre el teclado de Finko ───────────────────── */
+.pmonto {
+  flex: 1 1 auto;
+  min-height: 7rem;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.pmonto__q {
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+}
+.pmonto__q:focus { outline: none; }
+.pmonto__v {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  max-width: 100%;
+  font-family: var(--fk-font-display);
+  /* ADR 142 D3: la cifra va grande, 58 px a 390 de ancho. */
+  font-size: 3.625rem;
+  font-weight: var(--fk-font-extrabold);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--fk-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.pmonto--largo .pmonto__v { font-size: 2.75rem; }
+.pmonto__signo {
+  font-size: 0.52em;
+  font-weight: var(--fk-font-semibold);
+  letter-spacing: 0;
+  color: var(--fk-text-muted);
+}
+/* El campo crece con lo escrito: una copia invisible le da el ancho. */
+.pmonto__caja {
+  display: inline-grid;
+  min-width: 0;
+  border-radius: var(--fk-radius-sm);
+}
+.pmonto__caja::after {
+  content: attr(data-valor);
+  grid-area: 1 / 1;
+  visibility: hidden;
+  white-space: pre;
+  padding-inline: 2px;
+}
+.pmonto__in {
+  grid-area: 1 / 1;
+  width: 100%;
+  min-width: 1ch;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  text-align: center;
+  caret-color: var(--fk-section-accent);
+  outline: none;
+}
+.pmonto__in::placeholder { color: var(--fk-text-muted); opacity: 1; }
+.pmonto__caja:has(.pmonto__in:focus-visible) { box-shadow: inset 0 -3px 0 var(--fk-border-focus); }
+.pmonto:has(.field-invalid) .pmonto__v { color: var(--fk-danger-text); }
+.pmonto__lee {
+  min-height: 1.25rem;
+  margin: 0;
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+}
+.pmonto__lee--vacia { color: var(--fk-text-muted); }
+
+/* Atajos sobre el teclado: los gastos frecuentes en una fila deslizable. */
+.riel-chips {
+  display: flex;
+  gap: var(--fk-space-2);
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin-inline: calc(-1 * var(--fk-space-6));
+  padding-inline: var(--fk-space-6);
+}
+.riel-chips::-webkit-scrollbar { display: none; }
+
+/* El teclado de Finko: botones reales de 60 px (ADR 142 D3). */
+.kp-zona {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+}
+.kp {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--fk-space-2);
+}
+.kp-oculto .kp { display: none; }
+.kp__k {
+  min-height: 60px;
+  border: 0;
+  border-radius: var(--fk-radius-lg);
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-primary);
+  font-family: var(--fk-font-display);
+  font-size: 1.625rem;
+  font-weight: var(--fk-font-semibold);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  display: grid;
+  place-items: center;
+  box-shadow: var(--fk-shadow-filo);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--fk-transition-fast), transform var(--fk-transition-fast);
+}
+.kp__k:active { background: var(--fk-bg-active); transform: scale(0.96); }
+.kp__k:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
+.kp__k--suave {
+  background: transparent;
+  box-shadow: none;
+  font-size: var(--fk-text-xl);
+  color: var(--fk-text-secondary);
+}
+.kp__k .icon { --fk-icon-size: var(--fk-icon-lg); width: var(--fk-icon-lg); height: var(--fk-icon-lg); }
+.kp__sistema {
+  align-self: center;
+  min-height: 44px;
+  padding: 0 var(--fk-space-3);
+  border: 0;
+  border-radius: var(--fk-radius-md);
+  background: none;
+  color: var(--fk-text-accent);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  cursor: pointer;
+}
+/* Pantallas bajas (iPhone SE): el teclado y la cifra se compactan. */
+@media (max-height: 700px) {
+  .form-etapas { gap: var(--fk-space-2); }
+  .etapa-gasto { gap: var(--fk-space-3); }
+  .kp { gap: 6px; }
+  .kp__k { min-height: 48px; font-size: var(--fk-text-2xl); }
+  .pmonto { min-height: 4rem; }
+  .pmonto__v { font-size: 3rem; }
+  .pmonto--largo .pmonto__v { font-size: 2.25rem; }
+}
+
+/* ── Una pregunta: la grilla de tejas ──────────────────────── */
+.preg {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+}
+.preg__t {
+  margin: 0;
+  font-family: var(--fk-font-display);
+  font-size: 1.6875rem;
+  font-weight: var(--fk-font-extrabold);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--fk-text-primary);
+  text-wrap: balance;
+}
+.preg__t:focus { outline: none; }
+.preg__s {
+  margin: 0 0 var(--fk-space-2);
+  font-size: var(--fk-text-base);
+  line-height: var(--fk-leading-relaxed);
+  color: var(--fk-text-secondary);
+  text-wrap: pretty;
+}
+.tejas {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.teja-op {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fk-space-2);
+  min-height: 92px;
+  padding: 10px 6px;
+  border-radius: var(--fk-radius-lg);
+  background: var(--fk-bg-elevated);
+  border: 1.5px solid var(--fk-border-subtle);
+  text-align: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.teja-op input { position: absolute; opacity: 0; pointer-events: none; }
+.teja-op__teja {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--fk-section-accent) 14%, transparent);
+  color: var(--fk-section-accent);
+}
+.teja-op__teja .icon { width: var(--fk-icon-lg); height: var(--fk-icon-lg); }
+.teja-op__t {
+  font-size: 0.8125rem;
+  font-weight: var(--fk-font-semibold);
+  line-height: 1.15;
+  color: var(--fk-text-primary);
+  hyphens: auto;
+}
+.teja-op--mas { background: transparent; border-style: dashed; border-color: var(--fk-border-strong); }
+.teja-op--mas .teja-op__teja { background: var(--fk-bg-hover); color: var(--fk-text-secondary); }
+.teja-op:has(:checked) {
+  border-color: color-mix(in srgb, var(--fk-section-accent) 62%, transparent);
+  background: color-mix(in srgb, var(--fk-section-accent) 12%, var(--fk-bg-elevated));
+}
+.teja-op:has(:focus-visible) { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
+.tejas:has(.field-invalid) .teja-op { border-color: color-mix(in srgb, var(--fk-danger) 50%, transparent); }
+
+/* ── El recibo: la confirmación es también el formulario ───── */
+.recibo {
+  border-radius: var(--fk-radius-xl);
+  background: var(--fk-bg-elevated);
+  overflow: hidden;
+}
+.recibo__cab {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--fk-space-2);
+  padding: 22px var(--fk-space-5) var(--fk-space-5);
+  border: 0;
+  border-bottom: 1.5px dashed var(--fk-border-default);
+  background: none;
+  color: inherit;
+  text-align: center;
+  cursor: pointer;
+}
+.recibo__teja {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--fk-section-accent) 14%, transparent);
+  color: var(--fk-section-accent);
+}
+.recibo__teja .icon { width: var(--fk-icon-lg); height: var(--fk-icon-lg); }
+.recibo__monto {
+  font-family: var(--fk-font-display);
+  font-size: 2.75rem;
+  font-weight: var(--fk-font-extrabold);
+  line-height: 1;
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
+  color: var(--fk-text-primary);
+}
+.recibo__cat { font-size: 0.9375rem; font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
+.recibo__lee { font-size: 0.8125rem; color: var(--fk-text-secondary); }
+.recibo__lee:empty { display: none; }
+.recibo__fila {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  width: 100%;
+  min-height: 64px;
+  padding: 10px var(--fk-space-2) 10px var(--fk-space-4);
+  border: 0;
+  background: none;
+  text-align: left;
+  color: var(--fk-text-primary);
+  cursor: pointer;
+}
+.recibo__fila[hidden] { display: none; }
+.recibo__fila + .recibo__fila { border-top: 1px solid var(--fk-border-subtle); }
+.recibo__cab:focus-visible,
+.recibo__fila:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: -2px; }
+.recibo__figura { flex: none; display: grid; place-items: center; min-width: var(--fk-teja-lg); }
+.recibo__icono {
+  width: var(--fk-teja-lg);
+  height: var(--fk-teja-lg);
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: var(--fk-bg-hover);
+  color: var(--fk-text-secondary);
+}
+.recibo__icono .icon { width: var(--fk-icon-md); height: var(--fk-icon-md); }
+.recibo__txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.recibo__k {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  font-size: 0.8125rem;
+  color: var(--fk-text-muted);
+}
+.recibo__v { font-size: var(--fk-text-base); font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); overflow-wrap: anywhere; }
+.recibo__s { font-size: 0.8125rem; color: var(--fk-text-secondary); font-variant-numeric: tabular-nums; }
+.recibo__s:empty { display: none; }
+.recibo__s b { font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
+.recibo__chev { flex: none; color: var(--fk-text-muted); width: var(--fk-icon-sm); height: var(--fk-icon-sm); }
+.recibo__fila--vacia .recibo__v { color: var(--fk-text-accent); }
+.recibo__fila--alerta { background: color-mix(in srgb, var(--fk-warning) 7%, transparent); }
+.recibo__fila--alerta .recibo__s,
+.recibo__fila--alerta .recibo__s b { color: var(--fk-warning-text); }
+.recibo__ayuda {
+  margin: 0;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: var(--fk-text-muted);
+}
+/* El pie del recibo: el primario a lo ancho y "Guardar y registrar otro". */
+.modal__footer.recibo__pie {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--fk-space-1);
+}
+.recibo__otro { min-height: 44px; border: 0; background: none; box-shadow: none; color: var(--fk-text-accent); }
+
+/* "Fue un avance": el sí o no del recibo es un interruptor (142 D2). */
+.recibo-extra { display: flex; flex-direction: column; gap: var(--fk-space-2); }
+.recibo-extra[hidden] { display: none; }
+.recibo-interruptor {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+  min-height: 56px;
+  padding: var(--fk-space-2) var(--fk-space-4);
+  border-radius: var(--fk-radius-lg);
+  background: var(--fk-bg-elevated);
+  cursor: pointer;
+}
+.recibo-interruptor__t { font-size: 0.9375rem; font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
+
+/* ── Aviso ámbar: no es un error, es algo que decidir (142 D9) ── */
+.aviso-ambar {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: var(--fk-space-3) 14px;
+  border-radius: 14px;
+  background: var(--fk-warning-bg);
+  border: 1px solid color-mix(in srgb, var(--fk-warning) 35%, transparent);
+  font-size: var(--fk-text-sm);
+  line-height: 1.45;
+  color: var(--fk-text-primary);
+}
+.aviso-ambar[hidden] { display: none; }
+.aviso-ambar > .icon { flex: none; margin-top: 1px; color: var(--fk-warning); width: var(--fk-icon-md); height: var(--fk-icon-md); }
+.aviso-ambar b { font-weight: var(--fk-font-bold); }
+#gasto-aviso-saldo { display: flex; flex-direction: column; gap: var(--fk-space-2); }
+#gasto-aviso-saldo[hidden] { display: none; }
+.reparto { display: flex; flex-direction: column; gap: var(--fk-space-2); }
+.reparto__op {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  min-height: 56px;
+  padding: 10px 14px;
+  border-radius: var(--fk-radius-lg);
+  background: var(--fk-bg-elevated);
+  border: 1.5px solid var(--fk-border-subtle);
+  cursor: pointer;
+}
+.reparto__op input { position: absolute; opacity: 0; pointer-events: none; }
+.reparto__punto { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--fk-border-strong); }
+.reparto__op:has(:checked) {
+  border-color: color-mix(in srgb, var(--fk-section-accent) 62%, transparent);
+  background: color-mix(in srgb, var(--fk-section-accent) 10%, var(--fk-bg-elevated));
+}
+.reparto__op:has(:checked) .reparto__punto { border: 7px solid var(--fk-section-accent); }
+.reparto__op:has(:focus-visible) { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
+.reparto__txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.reparto__t { font-size: 0.9375rem; font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
+.reparto__s { font-size: 0.8125rem; color: var(--fk-text-secondary); font-variant-numeric: tabular-nums; }
+
+/* ── Mini-hoja: un solo dato, dentro de la hoja ───────────── */
+.mini-hoja {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.mini-hoja[hidden] { display: none; }
+.mini-hoja__velo { position: absolute; inset: 0; background: var(--fk-bg-overlay); }
+.mini-hoja__panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  max-height: 88%;
+  background: var(--fk-bg-surface);
+  border-radius: var(--fk-radius-xl) var(--fk-radius-xl) 0 0;
+  border-top: 1px solid var(--fk-border-default);
+  box-shadow: var(--fk-shadow-lg);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
+.mini-hoja__cab {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  min-height: 56px;
+  padding: var(--fk-space-1) 6px var(--fk-space-1) var(--fk-space-5);
+}
+.mini-hoja__t {
+  flex: 1;
+  margin: 0;
+  font-family: var(--fk-font-display);
+  font-size: var(--fk-text-lg);
+  font-weight: var(--fk-font-bold);
+  letter-spacing: -0.01em;
+  color: var(--fk-text-primary);
+}
+.mini-hoja__cuerpo {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 0 var(--fk-space-5) var(--fk-space-4);
+}
+.mini-hoja__pie { flex: none; padding: 0 var(--fk-space-5) var(--fk-space-4); }
+.mini-hoja__pie .btn { width: 100%; min-height: 52px; justify-content: center; }
+.mini-hoja__ayuda { margin: 0; text-align: center; font-size: 0.8125rem; color: var(--fk-text-muted); }
+
+/* ── El desplegable de Finko: nunca el <select> del sistema ── */
+.desplegable { display: flex; flex-direction: column; gap: 2px; margin-inline: -14px; }
+.desplegable__grupo {
+  margin: 0;
+  padding: 14px var(--fk-space-4) 6px;
+  font-size: 0.8125rem;
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-muted);
+}
+.desplegable__f {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  min-height: 64px;
+  padding: 10px 14px;
+  border-radius: var(--fk-radius-lg);
+  cursor: pointer;
+}
+.desplegable__f input { position: absolute; opacity: 0; pointer-events: none; }
+.desplegable__f:has(:checked) { background: var(--fk-bg-hover); }
+.desplegable__f:has(:focus-visible) { outline: 2px solid var(--fk-border-focus); outline-offset: -2px; }
+.desplegable__txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.desplegable__t { font-size: 0.9375rem; font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
+.desplegable__s { font-size: 0.8125rem; color: var(--fk-text-secondary); font-variant-numeric: tabular-nums; }
+.desplegable__ok { flex: none; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--fk-border-strong); }
+.desplegable__f:has(:checked) .desplegable__ok { border: 7px solid var(--fk-section-accent); }
+
+/* ── El calendario de Finko ("Otra fecha") ───────────────── */
+#gasto-fecha-otra[hidden] { display: none; }
+.calf { display: flex; flex-direction: column; gap: var(--fk-space-2); }
+.calf__cab { display: flex; align-items: center; justify-content: space-between; }
+.calf__mes {
+  margin: 0;
+  font-family: var(--fk-font-display);
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+}
+.calf__rejilla { display: flex; flex-direction: column; gap: 2px; }
+.calf__semana {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  justify-items: center;
+}
+.calf__nombre {
+  padding: var(--fk-space-1) 0;
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-muted);
+}
+.calf__dia {
+  width: 44px;
+  max-width: 100%;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--fk-text-primary);
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.calf__dia:hover { background: var(--fk-bg-hover); }
+.calf__dia:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 1px; }
+.calf__dia--hoy { box-shadow: inset 0 0 0 1.5px var(--fk-section-accent); font-weight: var(--fk-font-bold); }
+.calf__dia[aria-pressed="true"] {
+  background: var(--fk-section-accent);
+  color: var(--fk-bg-surface);
+  font-weight: var(--fk-font-bold);
+}

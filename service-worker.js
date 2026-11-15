@@ -10,7 +10,7 @@
  *     o los usuarios seguirán viendo la versión vieja.
  */
 
-const CACHE_NAME = 'finko-v700';
+const CACHE_NAME = 'finko-v701';
 
 // ── Assets críticos - si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [
@@ -41,6 +41,7 @@ const CORE_ASSETS = [
   './styles/components/config.css',
   './styles/components/aprende.css',
   './styles/components/nino.css',
+  './styles/components/captura.css',
   './styles/modals.css',
   './styles/themes.css',
   './styles/a11y.css',
@@ -116,6 +117,9 @@ const CORE_ASSETS = [
   './modules/ui/bloque-ahorro.js',
   './modules/ui/volver.js',
   './modules/ui/teclado.js',
+  './modules/ui/teclado-finko.js',
+  './modules/ui/mini-hoja.js',
+  './modules/ui/calendario-finko.js',
   './modules/ui/hojas.js',
   './modules/ui/miles.js',
   './modules/ui/detalle-fila.js',
@@ -132,6 +136,7 @@ const CORE_ASSETS = [
   './modules/dominio/gastos/logic.js',
   './modules/dominio/gastos/view.js',
   './modules/dominio/gastos/detalle.js',
+  './modules/dominio/gastos/telefono.js',
   './modules/dominio/gastos/index.js',
   './modules/dominio/compromisos/logic.js',
   './modules/dominio/compromisos/logic/modelo.js',

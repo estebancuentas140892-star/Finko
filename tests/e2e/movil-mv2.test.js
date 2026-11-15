@@ -237,7 +237,7 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(page.locator('#gasto-monto')).not.toHaveValue('');
   });
 
-  test('el primario del bloque abre el formulario y "Guardar" queda a la vista (D5, D8)', async ({ page }) => {
+  test('el primario del bloque abre el gasto por etapas y cada paso tiene su botón a la vista (D5, ADR 142 D4)', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await seedConGastos(page);
     await page.goto('/#gast');
@@ -247,14 +247,24 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await page.click('#sec-gast .bloque-gastos__primario');
     await expect(page.locator('#modal-gasto[data-open]')).toHaveCount(1);
 
-    const guardar = page.locator('#modal-gasto .modal__footer--principal .btn-primary');
-    await expect(guardar).toBeInViewport();
+    // Monto con el teclado de Finko: "Continuar" y el teclado a la vista.
+    const form = page.locator('#form-gasto');
+    const continuar = form.locator('[data-etapa="monto"] .modal__footer--principal .btn-primary');
+    await expect(continuar).toBeInViewport();
+    await expect(form.locator('.kp__k[data-tecla="0"]')).toBeInViewport();
+    for (const t of ['2', '5', '000']) await form.locator(`[data-tecla="${t}"]`).click();
+    await expect(form.locator('#gasto-monto')).toHaveValue('25.000');
+    await continuar.click();
+
     // Ninguna categoría se esconde detrás de un "ver más" (ADR 042 D2).
-    const radios = await page.locator('#form-gasto input[name="categoria"]').count();
-    await expect(page.locator('#form-gasto .chip-cat:visible')).toHaveCount(radios);
+    const radios = await form.locator('input[name="categoria"]').count();
+    await expect(form.locator('.teja-op')).toHaveCount(radios);
+    await form.locator('.teja-op').first().click();
+    await expect(form).toHaveAttribute('data-etapa-actual', 'revisar');
+    await expect(form.locator('[data-etapa="revisar"] button[type="submit"]')).toBeInViewport();
   });
 
-  test('con el teclado abierto, "Guardar" queda encima del teclado (ADR 115)', async ({ page }) => {
+  test('con el teclado abierto, "Listo" de la nota queda encima del teclado (ADR 115, 142 D8)', async ({ page }) => {
     // El teclado de verdad no existe en Chromium sin pantalla: se reemplaza
     // visualViewport antes de que arranque la app y se le cambia el alto.
     await page.addInitScript(() => {
@@ -269,15 +279,23 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await page.click('#sec-gast .bloque-gastos__primario');
     await expect(page.locator('#modal-gasto[data-open]')).toHaveCount(1);
 
+    // El monto no abre el teclado del sistema: la nota sí, en su mini-hoja.
+    const form = page.locator('#form-gasto');
+    await form.locator('[data-tecla="9"]').click();
+    await form.locator('[data-gasto-seguir="monto"]').click();
+    await form.locator('.teja-op').first().click();
+    await form.locator('#gasto-fila-nota').click();
+    await expect(form.locator('#gasto-nota')).toBeFocused();
+
     // El teclado de iOS deja visible algo menos de la mitad de arriba.
     await page.evaluate(() => {
       window.visualViewport.height = 380;
       window.visualViewport.dispatchEvent(new Event('resize'));
     });
     await expect(page.locator('html')).toHaveAttribute('data-teclado', 'abierto');
-    const guardar = page.locator('#modal-gasto .modal__footer--principal .btn-primary');
+    const listo = form.locator('#gasto-mini-nota .mini-hoja__pie .btn-primary');
     await expect.poll(async () => {
-      const b = await guardar.boundingBox();
+      const b = await listo.boundingBox();
       return b ? b.y + b.height : Infinity;
     }).toBeLessThanOrEqual(380);
 
@@ -794,7 +812,7 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(page.locator('#modal-detalle-fila[data-open]')).toHaveCount(0);
   });
 
-  test('Nuevo gasto: pregunta en frase y la cuenta se pliega con "Cambiar" (ADR 132 D9)', async ({ page }) => {
+  test('Nuevo gasto: pregunta en frase y "Sale de" se cambia en el desplegable de Finko (ADR 132 D9, 142 D4)', async ({ page }) => {
     await sembrar(page, estadoBase({
       cuentas: [
         { id: 'c1', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 3_000_000, activa: true, fechaCreacion: '2026-07-01T00:00:00.000Z' },
@@ -804,23 +822,27 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await page.goto('/#gast');
     await page.locator('[data-action="nuevo-gasto"]:visible').first().click();
     const form = page.locator('#form-gasto');
-    await expect(form.locator('.monto-hero__label')).toHaveText('¿Cuánto gastaste?', { timeout: 10_000 });
-    expect(await form.locator('.monto-hero__label').evaluate(el => getComputedStyle(el).textTransform)).toBe('none');
-    await expect(form.locator('#gasto-categoria-label')).toHaveText('¿En qué?');
+    await expect(form.locator('.pmonto__q')).toHaveText('¿Cuánto gastaste?', { timeout: 10_000 });
+    expect(await form.locator('.pmonto__q').evaluate(el => getComputedStyle(el).textTransform)).toBe('none');
+    for (const t of ['4', '5', '000']) await form.locator(`[data-tecla="${t}"]`).click();
+    await expect(form.locator('#gasto-monto-lee')).toHaveText('Cuarenta y cinco mil pesos');
+    await form.locator('[data-gasto-seguir="monto"]').click();
+    await expect(form.locator('#gasto-cat-q')).toHaveText('¿En qué fue?');
+    await form.locator('.teja-op', { hasText: 'Mercado' }).click();
 
-    // Plegado se ve solo la elegida (la de más saldo) y "Cambiar".
-    const filas = form.locator('.cuenta-sel__row');
-    await expect(filas.filter({ hasText: 'Bancolombia' })).toBeVisible();
-    await expect(filas.filter({ hasText: 'Nequi' })).toBeHidden();
-    await expect(form.locator('.cuenta-picker__antes').first()).toBeVisible();
-    const cambiar = form.locator('.cuenta-sel__cambiar');
-    await cambiar.click();
-    await expect(cambiar).toHaveAttribute('aria-expanded', 'true');
-    await filas.filter({ hasText: 'Nequi' }).click();
-    // Elegir otra la deja elegida y vuelve a plegar.
+    // El recibo muestra la cuenta (la de más saldo, sin historial) y lo que le queda.
+    const fila = form.locator('#gasto-fila-cuenta');
+    await expect(fila).toContainText('Bancolombia');
+    await expect(fila).toContainText('Te quedan $2.955.000');
+    await fila.click();
+    const mini = form.locator('#gasto-mini-cuenta');
+    await expect(mini).toBeVisible();
+    await mini.locator('.desplegable__f', { hasText: 'Nequi' }).click();
+    // Elegir otra la deja elegida y vuelve al recibo.
     await expect(form.locator('input[name="cuentaId"][value="c2"]')).toBeChecked();
-    await expect(cambiar).toHaveAttribute('aria-expanded', 'false');
-    await expect(filas.filter({ hasText: 'Bancolombia' })).toBeHidden();
+    await expect(mini).toBeHidden();
+    await expect(fila).toContainText('Nequi');
+    await expect(fila).toBeFocused();
   });
 
   test('Calendario: el día se abre en una hoja sobre el mes y al cerrarla vuelve a su celda (ADR 118 D1)', async ({ page }) => {

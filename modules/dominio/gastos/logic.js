@@ -6,6 +6,7 @@
 import { CATEGORIAS_AGENDA, CATEGORIAS_GASTO, ICONOS_CATEGORIA_PERSONALIZADA, TARJETA_PREFIJO, iconoDeCategoriaGasto } from '../../core/constants.js';
 import { f } from '../../infra/utils.js';
 import { UMBRAL_GASTO_HORMIGA } from '../../infra/hormiga.js';
+import { distribuirPago } from '../../infra/distribuir-pago.js';
 
 // ── FILTROS Y AGRUPACIÓN ─────────────────────────────────────────
 
@@ -685,4 +686,111 @@ export function consecuenciaDeGasto({ progreso, categoria, saldoCuenta = null, n
     };
   }
   return null;
+}
+
+// ── REGISTRAR GASTO EN EL TELÉFONO (FORM.2b, ADR 142 D4) ─────────
+
+/**
+ * Las categorías en el orden en que se ofrecen como tejas: las que más usas
+ * primero (cuántos gastos tiene cada una), y entre las que empatan, el orden
+ * del catálogo. Las que nunca usaste quedan en su orden de siempre.
+ *
+ * @param {string[]} nombres Categorías a ordenar.
+ * @param {{ categoria?: string }[]} gastos
+ * @returns {string[]} Un arreglo nuevo.
+ */
+export function ordenarCategoriasPorUso(nombres, gastos = []) {
+  const usos = new Map();
+  for (const g of gastos ?? []) {
+    if (g?.categoria) usos.set(g.categoria, (usos.get(g.categoria) ?? 0) + 1);
+  }
+  return nombres
+    .map((nombre, i) => ({ nombre, i, n: usos.get(nombre) ?? 0 }))
+    .sort((a, b) => (b.n - a.n) || (a.i - b.i))
+    .map(x => x.nombre);
+}
+
+/**
+ * La cuenta habitual de tus gastos: la que más aparece entre los últimos 20
+ * gastos pagados desde una cuenta que sigue activa (empate: la del más
+ * reciente). Sin historial, la de más saldo, como el selector de siempre.
+ *
+ * @param {{ id: string, saldo?: number, activa?: boolean }[]} cuentas
+ * @param {{ cuentaId?: string|null, fecha?: string, consumoTC?: boolean }[]} gastos
+ * @returns {string|null}
+ */
+export function cuentaHabitual(cuentas = [], gastos = []) {
+  const activas = (cuentas ?? []).filter(c => c.activa !== false);
+  if (activas.length === 0) return null;
+  const ids = new Set(activas.map(c => c.id));
+  const recientes = (gastos ?? [])
+    .filter(g => g?.cuentaId && ids.has(g.cuentaId) && !g.consumoTC)
+    .sort((a, b) => String(b.fecha ?? '').localeCompare(String(a.fecha ?? '')))
+    .slice(0, 20);
+  if (recientes.length > 0) {
+    const usos = new Map();
+    recientes.forEach((g, i) => {
+      const u = usos.get(g.cuentaId) ?? { n: 0, primera: i };
+      u.n += 1;
+      usos.set(g.cuentaId, u);
+    });
+    return [...usos.entries()].sort((a, b) => (b[1].n - a[1].n) || (a[1].primera - b[1].primera))[0][0];
+  }
+  return [...activas].sort((a, b) => (b.saldo ?? 0) - (a.saldo ?? 0))[0].id;
+}
+
+/**
+ * Qué decir en el recibo cuando la cuenta elegida no alcanza (ADR 142 D4 y
+ * D9): el mismo reparto de `resolverPagoConPreferida`, pero visible antes de
+ * guardar en vez de en un diálogo después.
+ *
+ * - `null`: la cuenta alcanza (o el monto todavía no es válido).
+ * - `completar`: lo que tiene la elegida más lo que falta de las demás, por
+ *   mayor saldo (`distribuirPago` con la elegida primero). Solo si entre
+ *   todas alcanza.
+ * - `todo`: otra cuenta que sola cubre el gasto (la de más saldo), con lo que
+ *   le quedaría. `null` si ninguna alcanza sola.
+ * - Sin ninguna de las dos, el gasto deja la elegida en negativo, como
+ *   siempre que no hay con qué repartir: `negativo` dice en cuánto.
+ *
+ * @param {{ id: string, nombre?: string, saldo?: number, activa?: boolean }[]} cuentas
+ * @param {number} monto
+ * @param {string} cuentaId La elegida.
+ * @returns {null | {
+ *   cuenta: { id: string, nombre: string, saldo: number },
+ *   falta: number,
+ *   completar: null | { splits: { cuentaId: string, monto: number }[], otras: string[] },
+ *   todo: null | { cuentaId: string, nombre: string, queda: number },
+ *   negativo: number,
+ * }}
+ */
+export function planSiNoAlcanza(cuentas = [], monto, cuentaId) {
+  const m = Number(monto) || 0;
+  const activas = (cuentas ?? []).filter(c => c.activa !== false);
+  const elegida = activas.find(c => c.id === cuentaId);
+  if (!elegida || !(m > 0)) return null;
+  const saldo = Number(elegida.saldo) || 0;
+  if (saldo >= m) return null;
+
+  const otras = activas.filter(c => c.id !== elegida.id);
+  const reparto = distribuirPago(activas, m, elegida.id);
+  const completar = reparto.ok && reparto.splits.length > 1
+    ? {
+      splits: reparto.splits,
+      otras: reparto.splits.filter(s => s.cuentaId !== elegida.id)
+        .map(s => activas.find(c => c.id === s.cuentaId)?.nombre ?? ''),
+    }
+    : null;
+  const sola = otras
+    .filter(c => (Number(c.saldo) || 0) >= m)
+    .sort((a, b) => (Number(b.saldo) || 0) - (Number(a.saldo) || 0))[0];
+  const todo = sola ? { cuentaId: sola.id, nombre: sola.nombre ?? '', queda: (Number(sola.saldo) || 0) - m } : null;
+
+  return {
+    cuenta: { id: elegida.id, nombre: elegida.nombre ?? '', saldo },
+    falta: m - Math.max(0, saldo),
+    completar,
+    todo,
+    negativo: m - saldo,
+  };
 }

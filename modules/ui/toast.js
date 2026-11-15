@@ -22,6 +22,8 @@ import { htmlTinoSol } from '../infra/ilustraciones.js';
 const DURACION_MS = 5000;
 /** Un aviso con Tino celebra algo y se lee con calma (ADR 127 D9). */
 const DURACION_TINO_MS = 7000;
+/** Un aviso con "Deshacer" da tiempo de leerlo y de tocarlo (ADR 142 D4). */
+const DURACION_ACCION_MS = 8000;
 
 /** Icono por tono cuando el caller no elige uno explicito. */
 const _ICONO_POR_TONO = {
@@ -45,10 +47,13 @@ let _activo = false;
  *   tono?:    'ok' | 'alerta' | 'peligro',
  *   icono?:   string,
  *   tino?:    string,
+ *   accion?:  { texto: string, alTocar: () => void },
  * }} opciones - `tino`: una pose de Tino (ADR 127 D9) en lugar del ícono.
+ *   `accion`: un botón de texto ("Deshacer", ADR 142 D4 y 062) que cierra
+ *   el aviso y llama a `alTocar`.
  */
-export function mostrarToast({ titulo, detalle = '', tono = 'ok', icono, tino }) {
-  _cola.push({ titulo, detalle, tono, icono: icono ?? _ICONO_POR_TONO[tono], tino });
+export function mostrarToast({ titulo, detalle = '', tono = 'ok', icono, tino, accion = null }) {
+  _cola.push({ titulo, detalle, tono, icono: icono ?? _ICONO_POR_TONO[tono], tino, accion });
   if (!_activo) _siguiente();
 }
 
@@ -59,7 +64,7 @@ function _siguiente() {
   _crear(sig);
 }
 
-function _crear({ titulo, detalle, tono, icono, tino }) {
+function _crear({ titulo, detalle, tono, icono, tino, accion }) {
   const toast = document.createElement('div');
   toast.className = `fk-toast fk-toast--${tono}${tino ? ' fk-toast--tino' : ''}`;
   toast.setAttribute('role', 'status');
@@ -73,6 +78,7 @@ function _crear({ titulo, detalle, tono, icono, tino }) {
       <p class="fk-toast__titulo">${_esc(titulo)}</p>
       ${detalle ? `<p class="fk-toast__detalle">${_esc(detalle)}</p>` : ''}
     </div>
+    ${accion ? `<button type="button" class="fk-toast__accion">${_esc(accion.texto)}</button>` : ''}
     <button type="button" class="fk-toast__cerrar" aria-label="Cerrar aviso">&times;</button>`;
 
   document.body.appendChild(toast);
@@ -100,7 +106,7 @@ function _crear({ titulo, detalle, tono, icono, tino }) {
 
   // Autocierre pausable: al entrar el cursor se congela el tiempo restante,
   // al salir se retoma (con un minimo para que no muera apenas salga).
-  let restante = tino ? DURACION_TINO_MS : DURACION_MS;
+  let restante = accion ? DURACION_ACCION_MS : (tino ? DURACION_TINO_MS : DURACION_MS);
   let inicio   = Date.now();
   let timer    = setTimeout(cerrar, restante);
 
@@ -118,5 +124,10 @@ function _crear({ titulo, detalle, tono, icono, tino }) {
   toast.querySelector('.fk-toast__cerrar').addEventListener('click', () => {
     if (timer !== null) clearTimeout(timer);
     cerrar();
+  });
+  toast.querySelector('.fk-toast__accion')?.addEventListener('click', () => {
+    if (timer !== null) clearTimeout(timer);
+    cerrar();
+    accion.alTocar();
   });
 }

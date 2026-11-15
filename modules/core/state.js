@@ -492,6 +492,11 @@ export function createInitialState() {
       /** Atajos de teclado de escritorio (INT.1h, schema v35). WCAG 2.1.4: apagable. */
       atajosTeclado: true,
       /**
+       * Montos con el teclado del teléfono en vez del de Finko (FORM.2b,
+       * ADR 142 D3). Sin bump de schema: ausente se lee como `false`.
+       */
+      tecladoTelefono: false,
+      /**
        * Candado de acceso local (CFG.5a, schema v36, ADR 063). null = sin
        * candado (default). Activo: `{ hash, salt, creado }`. Es pantalla de
        * privacidad, no cifrado: `fk_v1` sigue en texto plano.

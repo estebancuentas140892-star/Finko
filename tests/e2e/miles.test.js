@@ -35,7 +35,10 @@ test.describe('Separador de miles en los montos (ADR 120)', () => {
     await expect(monto).toHaveValue('1.250.000');
     expect(await monto.evaluate(el => el.selectionStart)).toBe(3);
 
-    await form.locator('.chip-cat:has(input[value="Mercado"])').click();
+    // Bajo 1024 px el gasto va por etapas (ADR 142 D4): un teclado físico
+    // sigue escribiendo en el mismo campo.
+    await form.locator('[data-gasto-seguir="monto"]').click();
+    await form.locator('.teja-op:has(input[value="Mercado"])').click();
     await form.locator('button[type="submit"]').click();
     await expect(page.locator('#modal-gasto[data-open]')).toHaveCount(0);
     await expect.poll(async () => (await leerEstado(page)).gastos?.[0]?.monto).toBe(1_250_000);

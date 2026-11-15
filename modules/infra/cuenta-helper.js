@@ -88,7 +88,7 @@ export function renderSelectorCuenta(cuentas, { selectedId = null, label = '¿De
         <p class="cuenta-sel__grupo">Tarjetas de crédito</p>
         ${tjs.map(t => fila(
           TARJETA_PREFIJO + t.id,
-          _tejaTarjeta(t),
+          tejaTarjeta(t),
           t.descripcion,
           `Cupo ${f(Math.max((Number(t.cupoTotal) || 0) - (Number(t.saldoTotal) || 0), 0))}`,
         )).join('')}`;
@@ -179,7 +179,7 @@ export function wireToggleDebitoAutomatico(root, id = 'debito-auto') {
  * @param {import('../core/state.js').Compromiso} tarjeta
  * @returns {string}
  */
-function _tejaTarjeta(tarjeta) {
+export function tejaTarjeta(tarjeta) {
   const marca = resolverMarca(tarjeta.descripcion);
   return marca
     ? tejaMarca(marca)

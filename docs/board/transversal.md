@@ -41,18 +41,6 @@
 
 > **Iniciativa FORM.2 - Formularios por tarea** ([ADR 142](../DECISIONS/142-formularios-por-tarea.md), aceptada 2026-11-14). Fuente única de todo cambio de forma en los formularios del teléfono: cuatro tareas (mover dinero, crear, corregir, ajustes), la regla para elegir cada control y el teclado de Finko. Diseño en el canvas "Finko · Rediseño de formularios móviles", página "Propuesta por tarea"; manda el ADR. Escritorio no cambia. **Una idea sobre cualquier formulario se integra acá, no abre tarjeta suelta.**
 
-#### FORM.2b - Registrar gasto: monto, un toque, recibo
-- Prioridad  : alta
-- Estado     : pendiente
-- Área       : ambos
-- Objetivo   : ADR 142 D3 y D4: teclado de Finko (`inputmode="none"` sobre el mismo campo `data-miles`, teclas en una función pura), categorías en tejas por uso, recibo con "Sale de", "Fecha" y "Nota", desplegable de cuentas con las tarjetas (051 D4) y el aviso de saldo antes de guardar, con el mismo reparto de `resolverPagoConPreferida`
-- Riesgo     : el contrato de `#form-gasto` y `validarGasto` no cambian; el reparto entre cuentas debe dar lo mismo que hoy
-- Secciones  : Gastos y Registrar
-- Archivos   : `modules/dominio/gastos/view.js` e `index.js`, un módulo nuevo en `modules/ui/` para el teclado, `modules/infra/cuenta-helper.js`, `styles/components/forms.css`, `styles/identidad.css`
-- Depende de : nada
-- Aceptación : unitarias del teclado; E2E a 390 px: monto, categoría y guardar en tres toques, y la cuenta que no alcanza
-- Modelo     : capacidad alta, esfuerzo alto
-
 #### FORM.2c - Mover dinero: los otros ocho
 - Prioridad  : media
 - Estado     : pendiente
@@ -60,7 +48,7 @@
 - Objetivo   : ADR 142 D4 con dos etapas (Monto · Revisar) y atajos sobre el teclado ("La cuota", "Toda la deuda", "Lo que falta") en Me llegó dinero, Abonar a una deuda, Aportar a una meta, a una reserva y al fondo, Transferir, Me pagaron y Pagar varios
 - Riesgo     : el aviso de consecuencia (062) y el GMF de Transferir se conservan tal cual
 - Archivos   : `tesoreria/views/ingresos.js` y `transferencias.js`, `compromisos/views/formularios.js` (abono) y `lote.js`, `metas/view.js`, `apartados/view.js`, `ahorro/view.js`, `personales/view.js`
-- Depende de : FORM.2b
+- Depende de : nada (FORM.2b cerrada: `ui/teclado-finko.js`, `ui/mini-hoja.js`, `ui/calendario-finko.js` y `captura.css` ya existen)
 - Aceptación : E2E de cada uno a 390 px, sin el teclado del sistema para el monto
 - Modelo     : capacidad estándar, esfuerzo medio
 
@@ -71,7 +59,7 @@
 - Objetivo   : ADR 142 D6: el detalle (`ui/detalle-fila.js`, ADR 119) se vuelve editable; una mini-hoja por dato con "Listo" y "Deshacer"; eliminar al pie. Editar ya no reabre el formulario de crear
 - Riesgo     : un gasto pagado desde varias cuentas o el pago de un fijo (BUG-038) no puede perder su vínculo al editarse
 - Archivos   : `modules/ui/detalle-fila.js`, `modules/ui/toast.js`, los `index.js` que hoy abren el formulario en modo edición
-- Depende de : FORM.2b
+- Depende de : nada (FORM.2b cerrada: `ui/teclado-finko.js`, `ui/mini-hoja.js`, `ui/calendario-finko.js` y `captura.css` ya existen)
 - Aceptación : E2E: cambiar la fecha de un gasto en dos toques y deshacerlo
 - Modelo     : capacidad alta, esfuerzo medio
 

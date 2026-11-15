@@ -35,6 +35,10 @@ import { calcularProgreso } from '../presupuesto/logic.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { htmlDetalleGasto } from './detalle.js';
 import { renderListaGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, alternarFiltrosGastos, navegarMesGastos, irAMesActual, ayerIso, CATEGORIA_NUEVA_VALUE } from './view.js';
+import {
+  gastoPorEtapas, renderFormGastoTelefono, montarFormGastoTelefono, irAEtapaGasto,
+  limpiarCabeceraGasto, repartoDelRecibo,
+} from './telefono.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
@@ -46,7 +50,7 @@ function _nuevoGasto() {
   // Re-inyectar el form cada vez: las tarjetas del selector de cuenta
   // dependen de S.cuentas, que puede haber cambiado desde la última apertura.
   // Sugerencias (TX.12) sí se muestran: es el caso de uso que las motiva.
-  _montarFormGasto();
+  _montarFormGasto({ titulo: 'Nuevo gasto' });
 
   // Pre-rellenar la fecha con hoy para mejor UX.
   const fechaInput = overlay.querySelector('#gasto-fecha');
@@ -64,6 +68,10 @@ async function _guardarGasto() {
 
   const datos  = Object.fromEntries(new FormData(form));
   const idEdit = form.dataset.id || null;
+  // FORM.2b: "Guardar y registrar otro" (recibo del teléfono).
+  const otro      = form.dataset.otro === '1';
+  delete form.dataset.otro;
+  const porEtapas = 'etapas' in form.dataset;
 
   // La cuenta de origen viene del selector de tarjetas (radio name="cuentaId").
   // TX.9b: "+ Otra categoría" pide nombre + ícono en el mismo formulario;
@@ -83,6 +91,11 @@ async function _guardarGasto() {
 
   if (errores.length > 0) {
     mostrarErroresForm(form, errores, undefined, () => validar(Object.fromEntries(new FormData(form))));
+    // En el teléfono, el primer dato que falta puede estar en otra etapa.
+    if (porEtapas) {
+      const etapa = form.querySelector('[aria-invalid="true"]')?.closest('[data-etapa]')?.dataset.etapa;
+      if (etapa) irAEtapaGasto(form, etapa);
+    }
     return;
   }
 
@@ -110,6 +123,8 @@ async function _guardarGasto() {
   // un consumo con tarjeta no descuenta ninguna, y un gasto repartido entre
   // varias no tiene "la" cuenta que nombrar. Se completa en la rama de abajo.
   let cuentaIdConsecuencia = null;
+  // ADR 142 D4: lo recién guardado, para "Deshacer" desde el aviso.
+  const guardados = [];
 
   if (idEdit) {
     // En edición calculamos los deltas a aplicar a los saldos comparando
@@ -149,18 +164,21 @@ async function _guardarGasto() {
       // así que no pasa por el reparto ni por el aviso de sobregiro. Sube el
       // saldo de la tarjeta y nada más; lo demás (categoría, límites, análisis)
       // lo recibe como cualquier gasto.
-      guardar('gastos', base);
+      guardados.push(guardar('gastos', base).id);
       _aplicarDeltasADeudas(deltasPorEdicionEnDeuda(null, base, S.compromisos));
       // MC.16d: el consumo sube cuotaMensual en monto/cuotas (1 = pago único).
       _aplicarDeltasACuotaMensual(deltasPorEdicionEnCuotaMensual(null, base));
     } else {
-      const splits = await resolverPagoConPreferida(
-        S.cuentas, base.monto, base.cuentaId, 'registrar el gasto',
-      );
+      // FORM.2b (ADR 142 D4): en el teléfono el recibo ya dijo si la cuenta
+      // no alcanza y cómo completar; el reparto es el que eligió ahí, sin el
+      // diálogo de después. En escritorio, el de siempre.
+      const splits = porEtapas
+        ? repartoDelRecibo(form, base.monto, base.cuentaId)
+        : await resolverPagoConPreferida(S.cuentas, base.monto, base.cuentaId, 'registrar el gasto');
       if (splits === null) return; // canceló o fue redirigido a Mis Cuentas
 
       // Una sola cuenta que no alcanza: confirmar el sobregiro (no hay reparto).
-      if (splits.length === 1) {
+      if (splits.length === 1 && !porEtapas) {
         const c = S.cuentas.find(x => x.id === splits[0].cuentaId);
         const saldoCuenta = c?.saldo ?? 0;
         if (saldoCuenta < splits[0].monto) {
@@ -178,12 +196,12 @@ async function _guardarGasto() {
       // GAS.2b: solo una cuenta real involucrada tiene "el" saldo que nombrar.
       cuentaIdConsecuencia = repartido ? null : (splits[0]?.cuentaId || null);
       for (const s of splits) {
-        guardar('gastos', {
+        guardados.push(guardar('gastos', {
           ...base,
           cuentaId: s.cuentaId || null,
           monto:    s.monto,
           nota:     repartido ? [base.nota, 'Gasto repartido entre varias cuentas'].filter(Boolean).join(' · ') : base.nota,
-        });
+        }).id);
         _ajustarSaldoCuenta(s.cuentaId, -s.monto);
       }
     }
@@ -221,7 +239,30 @@ async function _guardarGasto() {
     titulo:  idEdit ? 'Gasto actualizado' : `${categoriaGasto} ${f(montoGasto)}`,
     detalle: detalle?.texto,
     tono:    detalle?.tono ?? 'ok',
+    accion:  guardados.length > 0 ? { texto: 'Deshacer', alTocar: () => _deshacerGastos(guardados) } : null,
   });
+
+  if (otro) _nuevoGasto();
+}
+
+/**
+ * "Deshacer" del aviso (ADR 142 D4, como el 062): borra lo que se acaba de
+ * guardar y devuelve cada efecto, igual que eliminar el gasto pero sin
+ * preguntar (la persona lo pidió segundos después de guardarlo).
+ * @param {string[]} ids
+ */
+function _deshacerGastos(ids) {
+  for (const id of ids) {
+    const gasto = S.gastos.find(g => g.id === id);
+    if (!gasto) continue;
+    _aplicarDeltasASaldos(deltasPorEdicionDeGasto(gasto, null));
+    _aplicarDeltasADeudas(deltasPorEdicionEnDeuda(gasto, null, S.compromisos));
+    _aplicarDeltasACuotaMensual(deltasPorEdicionEnCuotaMensual(gasto, null));
+    eliminar('gastos', id);
+  }
+  renderListaGastos();
+  updSaldo();
+  announce('Listo: el gasto no quedó registrado.');
 }
 
 /** Abre el modal de gasto en modo edicion con datos pre-rellenados. */
@@ -244,6 +285,8 @@ function _editarGasto(el) {
   _montarFormGasto({
     sugerencias:   false,
     categoriaFija: esPagoDeCompromiso ? (gasto.categoria || null) : null,
+    edicion:       true,
+    titulo:        'Editar gasto',
   });
 
   const form = document.getElementById('form-gasto');
@@ -303,6 +346,10 @@ function _editarGasto(el) {
   const titulo = overlay.querySelector('.modal__title');
   if (titulo) titulo.textContent = 'Editar gasto';
 
+  // FORM.2b: en el teléfono, editar abre el recibo con todo puesto.
+  form.querySelector('[name="monto"]').dispatchEvent(new Event('input', { bubbles: true }));
+  irAEtapaGasto(form, 'revisar');
+
   abrirModal(overlay);
 }
 
@@ -360,6 +407,11 @@ function _prellenarCamposGasto(form, datos) {
     if (notaEl) notaEl.value = datos.nota;
   }
 
+  // FORM.2b: en el teléfono, un frecuente o "Repetir" salta al recibo con
+  // todo puesto; el monto avisa para que su lectura en palabras se rehaga.
+  montoEl?.dispatchEvent(new Event('input', { bubbles: true }));
+  irAEtapaGasto(form, 'revisar');
+
   form.querySelector('button[type="submit"]')?.focus();
 }
 
@@ -398,7 +450,7 @@ function _repetirGasto(el) {
   if (!overlay) return;
 
   resetModal(overlay);
-  _montarFormGasto({ sugerencias: false });
+  _montarFormGasto({ sugerencias: false, titulo: 'Repetir gasto' });
 
   const form = document.getElementById('form-gasto');
   if (!form) return;
@@ -629,13 +681,20 @@ function _aplicarDeltasACuotaMensual(deltas) {
  * `_repetirGasto()` cada vez que el modal se abre, porque las tarjetas del
  * selector de cuenta dependen de `S.cuentas`, que puede cambiar entre
  * aperturas.
- * @param {{ sugerencias?: boolean }} [opciones] reenviado a `renderFormGasto`.
+ * FORM.2b (ADR 142 D4): bajo 1024 px, el mismo formulario va por etapas
+ * (`telefono.js`); escritorio conserva la columna.
+ *
+ * @param {{ sugerencias?: boolean, categoriaFija?: string|null, edicion?: boolean, titulo?: string }} [opciones]
+ *   reenviado a `renderFormGasto` / `renderFormGastoTelefono`.
  */
 function _montarFormGasto(opciones = {}) {
   const body = document.getElementById('modal-gasto-body');
   if (!body) return;
 
-  body.innerHTML = renderFormGasto(opciones);
+  const hayCuentas = (S.cuentas ?? []).some(c => c.activa !== false);
+  const porEtapas = gastoPorEtapas() && hayCuentas;
+  if (!porEtapas) limpiarCabeceraGasto(body.closest('.modal-overlay'));
+  body.innerHTML = porEtapas ? renderFormGastoTelefono(opciones) : renderFormGasto(opciones);
 
   const form = body.querySelector('#form-gasto');
   if (!form) return;  // empty state (sin cuentas): no hay form, no hay listeners.
@@ -703,6 +762,10 @@ function _montarFormGasto(opciones = {}) {
 
   // CAT.2: selector compacto de ícono (recuadro + panel colapsable).
   wireIconoPicker(form.querySelector('[data-icono-picker="categoria-nueva-icono"]'));
+
+  // Después de los listeners de arriba: el recibo se pinta con los campos
+  // ya actualizados (la fecha de "Ayer", las cuotas de la tarjeta).
+  if (porEtapas) montarFormGastoTelefono(form, { titulo: opciones.titulo ?? 'Nuevo gasto' });
 }
 
 /**

@@ -384,6 +384,25 @@
   background: var(--fk-bg-hover);
 }
 
+/* ADR 142 D4: "Deshacer" en el aviso de lo que se acaba de guardar. Botón de
+   texto con su zona de 44 px; el aviso lo centra en vez de alinearlo arriba. */
+.fk-toast:has(.fk-toast__accion) { align-items: center; }
+.fk-toast__accion {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 var(--fk-space-3);
+  border: 0;
+  border-radius: var(--fk-radius-md);
+  background: none;
+  color: var(--fk-text-accent);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  cursor: pointer;
+}
+.fk-toast__accion:hover,
+.fk-toast__accion:focus-visible { background: var(--fk-bg-hover); }
+.fk-toast:has(.fk-toast__accion) .fk-toast__cerrar { align-self: center; margin-left: 0; }
+
 @media (max-width: 1023.98px) {
   .fk-toast {
     bottom: calc(

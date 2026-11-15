@@ -132,8 +132,32 @@ function _alCambiarTrap(panel) {
  */
 function _alCambiar(e) {
   if (!e.isTrusted || e.target?.type === 'search') return;
-  const overlay = e.target?.closest?.('.modal-overlay[data-open]');
-  if (overlay && e.target.closest('form')) overlay.dataset.cambios = '';
+  marcarCambios(e.target);
+}
+
+/**
+ * Marca como tocada la hoja abierta que contiene `el`, si está dentro de su
+ * formulario. La usan los controles propios que escriben en un campo por
+ * código (el teclado de Finko, ADR 142 D3): su `input` no es de confianza,
+ * pero lo hizo la persona.
+ *
+ * @param {Element | null} el
+ */
+export function marcarCambios(el) {
+  const overlay = el?.closest?.('.modal-overlay[data-open]');
+  if (overlay && el.closest('form')) overlay.dataset.cambios = '';
+}
+
+/**
+ * Vuelve a armar el atrás del sistema de una hoja abierta. Un vigía sirve
+ * una sola vez: quien atiende el atrás sin cerrar la hoja (una mini-hoja
+ * dentro de ella, ADR 142 D6) lo llama para que el próximo atrás también
+ * llegue.
+ *
+ * @param {HTMLElement | null} panel `.modal` de la hoja.
+ */
+export function vigilarHoja(panel) {
+  if (panel && _abierta(panel)) _alCambiarTrap(panel);
 }
 
 /**

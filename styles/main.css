@@ -27,6 +27,10 @@
    la maquetación. Va después de responsive para que su receta gane en los
    dos anchos sin pelear especificidad; utils sigue siendo la última palabra. */
 @import './identidad.css'  layer(identidad);
+/* Captura por tarea (ADR 142): los formularios del teléfono. Clases propias
+   que solo existen bajo 1024 px; van sobre modals y responsive para que la
+   hoja por etapas no pelee con las reglas genéricas del cuerpo del modal. */
+@import './components/captura.css' layer(captura);
 @import './utils.css'      layer(utils);
 
 /* ── FUENTES SELF-HOSTED ─────────────────────────────────────── */

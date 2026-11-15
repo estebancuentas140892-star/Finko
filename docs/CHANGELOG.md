@@ -12,6 +12,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): FORM.2b, Registrar gasto con el teclado de Finko y un recibo · 2026-11-14
+
+[ADR 142](DECISIONS/142-formularios-por-tarea.md) D3 y D4, que cambia el [ADR 042](DECISIONS/042-formularios-v2-visual.md) D2 en el teléfono. Fichas: [`contexto/captura.md`](contexto/captura.md), [`contexto/gastos.md`](contexto/gastos.md). Solo bajo 1024 px: escritorio conserva la columna. SW v701.
+
+- **Tres etapas en la misma hoja y el mismo `#form-gasto`** (`gastos/telefono.js`): Monto · Categoría · Revisar, con su barra arriba y "Volver" en la cabecera. Los nombres de los campos y los ids que lee `index.js` son los de siempre: `validarGasto`, `normalizarGasto` y el reparto no cambian.
+- **El teclado de Finko** (`ui/teclado-finko.js`): 12 botones de 60 px (48 en pantallas bajas) que escriben en el mismo `<input data-miles>` con `inputmode="none"`; la cifra va a 58 px con su lectura en palabras. "Usar el teclado del teléfono" se recuerda en `config.tecladoTelefono` (sin bump de schema) y el mismo botón lo deshace. Glifo nuevo `i-borrar`, el único de la iniciativa.
+- **¿En qué fue?** Todas las categorías en tejas de 92 px, las que más usas primero (`ordenarCategoriasPorUso`). Tocar una con el dedo avanza, aunque ya estuviera elegida; con el teclado se elige y se sigue con Enter. "Otra categoría" pide nombre e ícono ahí mismo.
+- **El recibo**: tocar monto y categoría vuelve al monto; "Sale de", "Cuotas" (con tarjeta), "Fecha" y "Nota" abren cada una su mini-hoja (`ui/mini-hoja.js`) con los campos reales: el desplegable de Finko con cuentas y tarjetas (051 D4), "Hoy", "Ayer" y el calendario de Finko (`ui/calendario-finko.js`), y la nota con "Listo". La cuenta que se propone es la habitual (`cuentaHabitual`: la más usada en los últimos 20 gastos; sin historial, la de más saldo) con lo que le queda.
+- **Si la cuenta no alcanza, el recibo lo dice antes de guardar** (`planSiNoAlcanza`): aviso ámbar con "Completar con..." (el mismo `distribuirPago` de `resolverPagoConPreferida`, la elegida primero) y "Pagar todo con..." (la que alcanza sola). Guardar usa lo elegido sin el diálogo "¿Desde qué cuentas?" ni la confirmación de sobregiro; sin con qué completar, el aviso dice en cuánto queda la cuenta.
+- **"Deshacer" en el aviso** (`ui/toast.js` gana `accion`, también en escritorio): borra lo recién guardado y devuelve cada efecto (cuentas, deuda, cuota de la tarjeta). "Guardar y registrar otro" vuelve a abrir el formulario vacío.
+- Editar, "Repetir" y un frecuente abren el recibo con todo puesto; editar dice "Guardar cambios" y edita una sola cuenta, como siempre.
+- `styles/components/captura.css` va en una capa propia (`captura`, sobre `responsive` e `identidad`): `.modal__body h3` de la capa `modals` le ganaba al título de la pregunta.
+- Pruebas: `gastos-telefono` (22 nuevas: orden por uso, cuenta habitual, plan sin saldo, semanas del calendario, mini-hoja con Escape y velo, "Deshacer", y las rutas reales por etapas con reparto, desplegable, "Ayer" y editar), `teclado-finko` (17 nuevas); E2E: `movil-mv2` (3 reescritas para las etapas: el botón de cada paso a la vista, "Listo" de la nota sobre el teclado y el desplegable de cuentas) y `miles` (1 ajustada). Unitarias 5559, E2E 453/453. Falta la prueba en un iPhone real (REV.3b).
+
 ### feat(formularios): FORM.2a, lo que vale para todas las hojas · 2026-11-14
 
 [ADR 142](DECISIONS/142-formularios-por-tarea.md) D8 y D9, que cambia el [ADR 042](DECISIONS/042-formularios-v2-visual.md) D1 y el [ADR 123](DECISIONS/123-la-hoja-de-formulario-completa.md) D2. Ficha: [`contexto/captura.md`](contexto/captura.md). Solo bajo 1024 px, salvo los textos. SW v700.

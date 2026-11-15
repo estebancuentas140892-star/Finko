@@ -6,7 +6,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-11-14 (FORM.2a cerrada; antes, entra la iniciativa FORM.2, formularios por tarea, [ADR 142](DECISIONS/142-formularios-por-tarea.md)). Antes, 2026-11-13 (REV.2c cerrada; REV.2b, ADR 141; REV.2a, ADR 140; antes, la poda, ADR 138). Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
+> Última actualización: 2026-11-14 (FORM.2b cerrada; FORM.2a cerrada; antes, entra la iniciativa FORM.2, formularios por tarea, [ADR 142](DECISIONS/142-formularios-por-tarea.md)). Antes, 2026-11-13 (REV.2c cerrada; REV.2b, ADR 141; REV.2a, ADR 140; antes, la poda, ADR 138). Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
 
 ---
 
@@ -48,14 +48,13 @@ Las tarjetas del tablero, **en orden de valor** desde la poda del 2026-11-13 ([A
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
 | REV.3b | La app instalada tiene tus datos y la versión publicada (absorbe REV.5) | Transversal | alta | una prueba en un iPhone real y los datos del teléfono de Esteban |
-| FORM.2b | Registrar gasto: monto, un toque, recibo ([ADR 142](DECISIONS/142-formularios-por-tarea.md)) | Transversal | alta | nada |
 | HF.1d | Todo cambio de saldo deja registro (absorbe HF.1g) | Transversal | media | su ADR |
 | HF.3e | Lo que la app instalada muestra fuera de ella: notificación sin montos, número en el ícono, accesos directos | Transversal | media | ADR corto |
 | REV.3a | Descargar el mes para Excel | Transversal | media | nada |
 | MV2.28 | Medir lo publicado: fluidez y Lighthouse en producción (absorbe PERF.13) | Transversal | media | nada |
 | FORM.2e | Crear: el armazón de preguntas y Nueva deuda | Transversal | media | nada |
-| FORM.2c | Mover dinero: los otros ocho formularios | Transversal | media | FORM.2b |
-| FORM.2d | Corregir: la ficha es el formulario | Transversal | media | FORM.2b |
+| FORM.2c | Mover dinero: los otros ocho formularios | Transversal | media | nada |
+| FORM.2d | Corregir: la ficha es el formulario | Transversal | media | nada |
 | FORM.2f | Crear: cuenta, ingreso fijo, gasto fijo y meta | Transversal | media | FORM.2e |
 | HF.1c | La fecha de cada aporte a metas y reservas | Transversal | baja | su ADR |
 | HF.2a | La cuenta habitual de cada pago | Transversal | baja | nada |
@@ -96,7 +95,7 @@ _(CFG.1 a CFG.6 cerraron completas. CFG.6, la auditoría móvil de Ajustes, cerr
 
 ## Transversal (afecta varias secciones)
 
-REV.3a y REV.3b, FORM.2b a FORM.2g, MV2.28, HF.1c a HF.3e, APR.5b y NUBE.4 → [`board/transversal.md`](board/transversal.md) (FORM: iniciativa "formularios por tarea", [ADR 142](DECISIONS/142-formularios-por-tarea.md); HF: iniciativa "un hecho financiero se informa una sola vez", [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), seis tarjetas desde el [ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md); APR: iniciativa "Aprende y aplícalo", [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) y [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md), en Propuesta)
+REV.3a y REV.3b, FORM.2c a FORM.2g, MV2.28, HF.1c a HF.3e, APR.5b y NUBE.4 → [`board/transversal.md`](board/transversal.md) (FORM: iniciativa "formularios por tarea", [ADR 142](DECISIONS/142-formularios-por-tarea.md); HF: iniciativa "un hecho financiero se informa una sola vez", [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), seis tarjetas desde el [ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md); APR: iniciativa "Aprende y aplícalo", [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) y [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md), en Propuesta)
 
 ---
 
