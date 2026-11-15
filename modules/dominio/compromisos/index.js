@@ -13,6 +13,7 @@ import { S, EventBus } from '../../core/state.js';
 import { save } from '../../core/storage.js';
 import { guardar, editar, eliminar } from '../../infra/crud.js';
 import { registrarAccion } from '../../ui/actions.js';
+import { prepararHojaTelefono } from '../../ui/captura-telefono.js';
 import { abrirModal, cerrarModal } from '../../ui/modales.js';
 import { renderSmart, updSaldo, registrarRender, programarRender } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
@@ -266,6 +267,10 @@ function _mostrarFormDeuda(overlay, tipo, deuda = null) {
     _wireToggleOrigen(body);
     body.querySelector('#comp-descripcion')?.focus();
   }
+
+  // ADR 142 D5: elegir el tipo vuelve a pintar el formulario con la hoja
+  // abierta; el armazón de preguntas sigue en la siguiente.
+  if ('open' in overlay.dataset) prepararHojaTelefono(overlay);
 }
 
 function _nuevoCompromiso() {

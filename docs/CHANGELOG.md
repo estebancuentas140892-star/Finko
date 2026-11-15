@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(compromisos): FORM.2e, crear por preguntas y Nueva deuda · 2026-11-14
+
+[ADR 142](DECISIONS/142-formularios-por-tarea.md) D5 (cambia el [ADR 042](DECISIONS/042-formularios-v2-visual.md) D4 en el teléfono). Fichas: [`contexto/captura.md`](contexto/captura.md), [`contexto/deudas.md`](contexto/deudas.md). Solo bajo 1024 px. SW v703.
+
+- **`ui/preguntas.js`, el armazón de crear**: un formulario con `data-preguntas` va de a una pregunta por pantalla, con progreso ("Nueva deuda · 3 de 6"), la pregunta en grande, su ayuda y un solo control. Elegir avanza al tocar (salvo `data-no-avanza`); escribir lleva "Siguiente" y Enter sigue; sin responder no se sigue y el error dice qué hacer (`data-falta`). Atrás vuelve con la respuesta puesta.
+- **El resumen**: cada respuesta es una fila que vuelve a su pregunta y "Listo" regresa; lo opcional (`data-opcional`) es una ficha de "Agrega si quieres" o, si ya tiene valor, una fila. El botón de guardar del formulario va ahí. Un error al guardar lleva a la pregunta de su campo. Editar abre en el resumen (`data-preguntas-inicio="resumen"`).
+- **Controles nuevos**: el teclado de Finko en cada pregunta de dinero; `data-control="dia"` da 31 botones y "Último día del mes" sobre el campo de siempre; un `type="number"` (la tasa) pasa a texto con el teclado numérico y la coma se escribe como punto.
+- **Nueva deuda en seis preguntas**: ¿A quién le debes? (dos tarjetas grandes; el formulario se vuelve a pintar y el armazón sigue en la siguiente) · ¿Qué tipo de deuda es? · ¿Cómo la reconoces? · ¿Cuánto debes hoy? · ¿Cuánto pagas cada mes? · ¿Qué día pagas la cuota?. En el resumen: cupo, tasa, frecuencia, nota, "Recibí este dinero" y "Se debita sola". `normalizarCompromiso` y `validarCompromiso` no cambian.
+- Pruebas: `preguntas` (9 nuevas); E2E: `movil-mv2` (1 nueva: Nueva deuda de punta a punta a 390 px). Unitarias 5580, E2E 454/454. La ayuda de la tasa con Tino y la tasa alta como aviso ámbar siguen pendientes (FORM.2g).
+
 ### feat(formularios): FORM.2c, mover dinero en dos etapas y los controles de Finko · 2026-11-14
 
 [ADR 142](DECISIONS/142-formularios-por-tarea.md) D2 y D4. Ficha: [`contexto/captura.md`](contexto/captura.md). Solo bajo 1024 px. SW v702.

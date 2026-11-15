@@ -46,6 +46,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-14 FORM.2e: Nueva deuda por preguntas en el teléfono (`data-preguntas` en `renderFormDeuda`, ADR 142 D5); escritorio igual.
 - 2026-11-13 (**REV.2b**, [ADR 141](../DECISIONS/141-el-gasto-fijo-empieza-por-el-monto.md)): el gasto fijo empieza por "¿Cuánto pagas?", la frecuencia va en chips (Mensual, Quincenal, Anual u Otra) y la nota y el débito automático en "Más opciones".
 - 2026-11-13 (**REV.2a**, [ADR 140](../DECISIONS/140-por-pagar-dice-cuanto-te-falta-este-mes.md)): el hero dice "Te falta pagar este mes" (lo vencido y lo que falta del mes, fijos y cuotas, con el reparto de la lista) y "Lo que debes en total" debajo solo con deudas; sale la pastilla de cuota/mes.
 - 2026-11-13 (**REV.1**, [ADR 137](../DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md) D1 y D2): "Agregar" según el chip (Fijos abre el gasto fijo, Deudas el formulario de deuda); los vacíos de esos chips con su botón (`_renderFiltroSinResultados()`, `_caminoPorPagar()`).

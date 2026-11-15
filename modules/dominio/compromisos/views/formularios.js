@@ -371,9 +371,10 @@ export function renderFormDeuda(tipo, deuda = null) {
   const iconoCat  = esEntidad ? CATEGORIA_DEUDA_ICONO : CATEGORIA_DEUDA_PERSONAL_ICONO;
   const catLabel  = esEntidad ? 'Tipo de deuda' : '¿Con quién es la deuda?';
   const catSel    = modoEdit ? deuda.categoria : null;
+  // ADR 142 D5: "Otra" pide un ícono antes de seguir; las demás avanzan al tocarlas.
   const chipsCategoria = catalogo.map(c => `
-        <label class="chip-cat">
-          <input type="radio" name="categoria" class="chip-cat__radio" value="${_esc(c)}"${c === catSel ? ' checked' : ''} />
+        <label class="chip-cat"${c === (esEntidad ? 'Otra' : 'Otro') ? ' data-no-avanza' : ''}>
+          <input type="radio" name="categoria" class="chip-cat__radio" value="${_esc(c)}"${c === catSel ? ' checked' : ''} required />
           <svg class="icon" aria-hidden="true"><use href="#${_esc(iconoCat[c])}"/></svg>
           <span class="chip-cat__label">${_esc(c)}</span>
         </label>`).join('');
@@ -397,6 +398,7 @@ export function renderFormDeuda(tipo, deuda = null) {
   // directo (tarjeta ya consumida, deuda vieja, crédito que paga a un tercero).
   const cuentasActivas = (S.cuentas ?? []).filter(c => c.activa !== false);
   const bloqueOrigen = (modoEdit || cuentasActivas.length === 0) ? '' : `
+      <div data-opcional="Recibí este dinero">
       <div class="form-group">
         <label class="toggle-row">
           <span class="toggle">
@@ -411,25 +413,39 @@ export function renderFormDeuda(tipo, deuda = null) {
       </div>
       <div id="grupo-comp-cuenta-origen" hidden>
         ${renderSelectorCuenta(cuentasActivas, { label: '¿En qué cuenta entró el dinero?' })}
+      </div>
       </div>`;
 
   // El segmented solo aparece al crear: al editar el tipo ya está fijado.
+  // ADR 142 D5: en el teléfono es la primera pregunta, dos tarjetas grandes
+  // que avanzan al tocarlas (el subtítulo solo se ve ahí).
   const segmented = modoEdit ? '' : `
-      <div class="tipo-segmented" role="group" aria-label="Tipo de deuda">
+      <div class="tipo-segmented" role="group" aria-label="Tipo de deuda"
+           data-pregunta="¿A quién le debes?" data-pregunta-id="tipo" data-resumen="Le debes a"
+           data-ayuda="Así te mostramos solo lo que aplica a tu caso.">
         <button type="button" class="tipo-segmented__btn${esEntidad ? ' active' : ''}"
-                data-action="comp-elegir-tipo" data-tipo="deuda-entidad"
-                aria-pressed="${esEntidad}">Entidad</button>
+                data-action="comp-elegir-tipo" data-tipo="deuda-entidad" data-pregunta-avanza
+                aria-pressed="${esEntidad}">Entidad<span class="tipo-segmented__sub">Un banco: tarjetas, créditos, compras a cuotas</span></button>
         <button type="button" class="tipo-segmented__btn${esEntidad ? '' : ' active'}"
-                data-action="comp-elegir-tipo" data-tipo="deuda-personal"
-                aria-pressed="${!esEntidad}">Personal</button>
+                data-action="comp-elegir-tipo" data-tipo="deuda-personal" data-pregunta-avanza
+                aria-pressed="${!esEntidad}">Personal<span class="tipo-segmented__sub">Familia, amigos, natillera, la tienda que fía</span></button>
       </div>`;
+  const debitoHtml = renderBloqueDebitoAutomatico(cuentasActivas, {
+    id:         'comp-debito',
+    activo:     modoEdit && deuda.debitoAutomatico === true,
+    selectedId: modoEdit ? (deuda.cuentaDebitoId ?? null) : null,
+  });
 
   return `
-    <form id="form-compromiso" novalidate>
+    <form id="form-compromiso" novalidate
+          data-preguntas="${modoEdit ? 'Tu deuda' : 'Nueva deuda'}" data-resumen-titulo="Así queda tu deuda"
+          data-preguntas-inicio="${modoEdit ? 'resumen' : ''}">
       <input type="hidden" name="tipo" value="${_esc(tipo)}" />
 
       ${segmented}
 
+      <div data-pregunta="${esEntidad ? '¿Qué tipo de deuda es?' : '¿Con quién es la deuda?'}" data-pregunta-id="categoria"
+           data-resumen="${esEntidad ? 'Tipo' : 'Con quién'}" data-falta="Elige una opción para seguir.">
       <div class="form-group">
         <span class="label" id="comp-categoria-label">${_esc(catLabel)}</span>
         <div class="chips-cat chips-cat--2col" role="radiogroup" aria-labelledby="comp-categoria-label">
@@ -440,15 +456,18 @@ export function renderFormDeuda(tipo, deuda = null) {
       <div class="form-group"${iconoOculto ? ' hidden' : ''} id="grupo-comp-icono">
         ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'comp-icono', valorActual: vIcono, label: 'Ícono' })}
       </div>
+      </div>
 
-      <div class="form-group">
+      <div class="form-group" data-pregunta="¿Cómo la reconoces?" data-pregunta-id="nombre" data-resumen="Nombre"
+           data-ayuda="Un nombre corto, como aparece en tu extracto o como le dices." data-falta="Ponle un nombre para reconocerla.">
         <label for="comp-descripcion" class="label">¿Cuál es la deuda?</label>
         <input id="comp-descripcion" name="descripcion" class="input" type="text"
                placeholder="${_esc(descPlaceholder)}" required aria-required="true"
                autocomplete="off" value="${vDesc}" />
       </div>
 
-      <div class="monto-hero">
+      <div class="monto-hero" data-pregunta="¿Cuánto debes hoy?" data-pregunta-id="saldo" data-resumen="Lo que debes hoy"
+           data-ayuda="Lo que te falta pagar, no lo que te prestaron." data-falta="Escribe cuánto debes hoy. Por ejemplo: 3.200.000">
         <label class="monto-hero__label" for="comp-saldo">¿Cuánto debes en total?</label>
         <div class="monto-hero__box">
           <span class="monto-hero__prefijo" aria-hidden="true">$</span>
@@ -458,7 +477,7 @@ export function renderFormDeuda(tipo, deuda = null) {
         <span class="monto-hero__hint">COP</span>
       </div>
 
-      <div class="form-group" id="grupo-comp-cupo"${esEntidad && catSel === 'Tarjeta de crédito' ? '' : ' hidden'}>
+      <div class="form-group" id="grupo-comp-cupo" data-opcional="Cupo de la tarjeta"${esEntidad && catSel === 'Tarjeta de crédito' ? '' : ' hidden'}>
         <label for="comp-cupo" class="label">Cupo aprobado de la tarjeta <span class="form-optional">Opcional</span></label>
         <div class="input-group">
           <span class="input-prefix" aria-hidden="true">$</span>
@@ -468,7 +487,9 @@ export function renderFormDeuda(tipo, deuda = null) {
         <p class="form-hint">Con el cupo, Finko calcula tu disponible y habilita pagar con esta tarjeta desde Gastos.</p>
       </div>
 
-      <div class="form-group" id="grupo-comp-cuota">
+      <div class="form-group" id="grupo-comp-cuota" data-pregunta="¿Cuánto pagas cada mes?" data-pregunta-id="cuota"
+           data-resumen="Cuota" data-resumen-sufijo=" al mes" data-falta="Escribe la cuota de cada mes. Por ejemplo: 350.000"
+           ${esEntidad ? '' : 'data-ayuda="Si no acordaron una cuota fija, sigue sin escribirla."'}>
         <label for="comp-cuota" class="label">¿Cuánto pagas cada mes?${esEntidad ? '' : ' <span class="form-optional">Opcional</span>'}</label>
         <div class="input-group">
           <span class="input-prefix" aria-hidden="true">$</span>
@@ -478,7 +499,8 @@ export function renderFormDeuda(tipo, deuda = null) {
         ${esEntidad ? '' : '<p class="form-hint">Si no acordaron una cuota fija, déjalo en blanco: registras abonos cuando pagues.</p>'}
       </div>
 
-      <div class="form-disclosure" id="grupo-comp-tasa">
+      <div class="form-disclosure" id="grupo-comp-tasa" data-opcional="Tasa de interés"
+           data-resumen-sufijo="${esEntidad ? ' % al año' : ' % al mes'}">
         <button type="button" class="form-disclosure__trigger" aria-expanded="${condicionesAbiertas}" aria-controls="comp-tasa-panel">
           <svg class="icon" aria-hidden="true"><use href="#i-percent"/></svg>
           <span class="form-disclosure__text">
@@ -503,14 +525,15 @@ export function renderFormDeuda(tipo, deuda = null) {
         </div>
       </div>
 
-      <div class="form-group" id="grupo-comp-frecuencia">
+      <div class="form-group" id="grupo-comp-frecuencia" data-opcional="Frecuencia">
         <label for="comp-frecuencia" class="label">Frecuencia de pago</label>
         <select id="comp-frecuencia" name="frecuencia" class="input" required aria-required="true">
           ${frecOpts}
         </select>
       </div>
 
-      <div class="form-group">
+      <div class="form-group" data-pregunta="¿Qué día pagas la cuota?" data-pregunta-id="dia" data-control="dia"
+           data-resumen="Día de pago" data-ayuda="Ese día te la recordamos en Por pagar." data-falta="Elige el día en que pagas.">
         <label for="comp-dia" class="label">Día de pago del mes</label>
         <input id="comp-dia" name="diaPago" class="input" type="number"
                min="1" max="31" step="1" placeholder="Del 1 al 31" required aria-required="true"
@@ -518,7 +541,7 @@ export function renderFormDeuda(tipo, deuda = null) {
         ${esEntidad ? '' : '<p class="form-hint">Si acordaron una fecha, usa ese día; si no, uno que te sirva de recordatorio.</p>'}
       </div>
 
-      <div class="form-group">
+      <div class="form-group" data-opcional="Nota">
         <label for="comp-nota" class="label">Nota <span class="form-optional">Opcional</span></label>
         <input id="comp-nota" name="nota" class="input" type="text" maxlength="80"
                placeholder="Ej. Número de cuenta, referencia de pago"
@@ -528,11 +551,7 @@ export function renderFormDeuda(tipo, deuda = null) {
 
       ${bloqueOrigen}
 
-      ${renderBloqueDebitoAutomatico(cuentasActivas, {
-        id:         'comp-debito',
-        activo:     modoEdit && deuda.debitoAutomatico === true,
-        selectedId: modoEdit ? (deuda.cuentaDebitoId ?? null) : null,
-      })}
+      ${debitoHtml ? `<div data-opcional="Se debita sola">${debitoHtml}</div>` : ''}
 
       <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>

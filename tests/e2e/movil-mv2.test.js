@@ -41,7 +41,7 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { sembrar, estadoBase } from './helpers/estado.js';
+import { sembrar, estadoBase, leerEstado } from './helpers/estado.js';
 import { createInitialState } from '../../modules/core/state.js';
 
 const CUENTAS = [
@@ -1384,6 +1384,58 @@ test.describe('MV2.30 - Mis cuentas en el teléfono (ADR 135 D1 a D3)', () => {
     await expect(reparte.locator('.distribuir-card__title')).toHaveText('Reparte tus $4.200.000');
     await expect(reparte.locator('.distribuir-card__item')).toHaveCount(3);
     await expect(reparte.locator('.distribuir-card__pct').first()).toHaveText(/lo recomendado es 50%$/);
+  });
+});
+
+test.describe('FORM.2e - Nueva deuda por preguntas (ADR 142 D5)', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('una pregunta por pantalla, el resumen y "Agrega si quieres"', async ({ page }) => {
+    await sembrar(page, estadoBase({ cuentas: CUENTAS }));
+    await page.goto('/#compromisos');
+    await page.waitForSelector('#sec-compromisos.active', { timeout: 10_000 });
+    await page.evaluate(() => {
+      const b = document.createElement('button');
+      b.dataset.action = 'nuevo-compromiso';
+      document.body.appendChild(b);
+      b.click();
+      b.remove();
+    });
+    const form = page.locator('#form-compromiso');
+    const titulo = form.locator('[data-preguntas-t]');
+    await expect(titulo).toHaveText('¿A quién le debes?');
+    await expect(form.locator('[data-preguntas-n]')).toHaveText('Nueva deuda · 1 de 6');
+    await form.locator('[data-tipo="deuda-entidad"]').click();
+    await expect(titulo).toHaveText('¿Qué tipo de deuda es?');
+    await form.locator('.chip-cat', { hasText: 'Tarjeta de crédito' }).click();
+    await expect(titulo).toHaveText('¿Cómo la reconoces?');
+    await form.locator('#comp-descripcion').fill('Visa de prueba');
+    await form.locator('[data-preguntas-seguir]').click();
+    await expect(titulo).toHaveText('¿Cuánto debes hoy?');
+    for (const t of ['3', '2', '0', '0', '000']) await form.locator(`[data-pregunta-on] [data-tecla="${t}"]`).click();
+    await form.locator('[data-preguntas-seguir]').click();
+    await expect(titulo).toHaveText('¿Cuánto pagas cada mes?');
+    for (const t of ['3', '5', '0', '000']) await form.locator(`[data-pregunta-on] [data-tecla="${t}"]`).click();
+    await form.locator('[data-preguntas-seguir]').click();
+    await expect(titulo).toHaveText('¿Qué día pagas la cuota?');
+    await form.locator('[data-dia="28"]').first().click();
+
+    await expect(titulo).toHaveText('Así queda tu deuda');
+    await expect(form.locator('[data-resumen-filas]')).toContainText('$3.200.000');
+    await expect(form.locator('[data-resumen-filas]')).toContainText('El 28 de cada mes');
+    await form.locator('[data-resumen-fichas] .add', { hasText: 'Nota' }).click();
+    await expect(titulo).toHaveText('Nota');
+    await form.locator('#comp-nota').fill('Referencia 123');
+    await form.locator('[data-preguntas-seguir]').click();
+    await expect(form.locator('[data-resumen-filas]')).toContainText('Referencia 123');
+
+    await form.locator('button[type="submit"]').click();
+    const dialogo = page.locator('body > .modal-overlay[data-open]:not([id])');
+    if (await dialogo.count()) await dialogo.locator('[data-role="confirmar"]').click();
+    await expect(page.locator('#modal-compromiso[data-open]')).toHaveCount(0);
+    // save() va con espera de 200 ms: se lee hasta que llegue.
+    await expect.poll(async () => (await leerEstado(page)).compromisos?.at(-1)?.descripcion).toBe('Visa de prueba');
+    expect((await leerEstado(page)).compromisos.at(-1)).toMatchObject({ saldoTotal: 3_200_000, cuotaMensual: 350_000, diaPago: 28, nota: 'Referencia 123' });
   });
 });
 

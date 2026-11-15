@@ -6,7 +6,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-11-14 (FORM.2c cerrada; FORM.2b cerrada; FORM.2a cerrada; antes, entra la iniciativa FORM.2, formularios por tarea, [ADR 142](DECISIONS/142-formularios-por-tarea.md)). Antes, 2026-11-13 (REV.2c cerrada; REV.2b, ADR 141; REV.2a, ADR 140; antes, la poda, ADR 138). Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
+> Última actualización: 2026-11-14 (FORM.2e cerrada; FORM.2c cerrada; FORM.2b cerrada; FORM.2a cerrada; antes, entra la iniciativa FORM.2, formularios por tarea, [ADR 142](DECISIONS/142-formularios-por-tarea.md)). Antes, 2026-11-13 (REV.2c cerrada; REV.2b, ADR 141; REV.2a, ADR 140; antes, la poda, ADR 138). Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
 
 ---
 
@@ -52,9 +52,8 @@ Las tarjetas del tablero, **en orden de valor** desde la poda del 2026-11-13 ([A
 | HF.3e | Lo que la app instalada muestra fuera de ella: notificación sin montos, número en el ícono, accesos directos | Transversal | media | ADR corto |
 | REV.3a | Descargar el mes para Excel | Transversal | media | nada |
 | MV2.28 | Medir lo publicado: fluidez y Lighthouse en producción (absorbe PERF.13) | Transversal | media | nada |
-| FORM.2e | Crear: el armazón de preguntas y Nueva deuda | Transversal | media | nada |
 | FORM.2d | Corregir: la ficha es el formulario | Transversal | media | nada |
-| FORM.2f | Crear: cuenta, ingreso fijo, gasto fijo y meta | Transversal | media | FORM.2e |
+| FORM.2f | Crear: cuenta, ingreso fijo, gasto fijo y meta | Transversal | media | nada |
 | HF.1c | La fecha de cada aporte a metas y reservas | Transversal | baja | su ADR |
 | HF.2a | La cuenta habitual de cada pago | Transversal | baja | nada |
 | HF.2b | El débito automático sin saldo se avisa antes de vencer | Transversal | baja | nada |

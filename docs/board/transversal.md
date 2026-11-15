@@ -52,28 +52,18 @@
 - Aceptación : E2E: cambiar la fecha de un gasto en dos toques y deshacerlo
 - Modelo     : capacidad alta, esfuerzo medio
 
-#### FORM.2e - Crear: el armazón de preguntas y Nueva deuda
-- Prioridad  : media
-- Estado     : pendiente
-- Área       : ambos
-- Objetivo   : ADR 142 D5: una pregunta por pantalla con progreso y atrás que conserva (precedente: el asistente paginado de Distribuir) y Nueva deuda en seis preguntas con resumen y "Agrega si quieres"; la ayuda de la tasa pasa a una mini-hoja con Tino, y la tasa muy alta deja de bloquear y pasa a aviso ámbar con su salida (142 D9)
-- Riesgo     : `normalizarCompromiso` y "Recibí este dinero" (D.14) no cambian
-- Archivos   : `compromisos/views/formularios.js`, `compromisos/index.js`, un módulo nuevo en `modules/ui/` para el armazón
-- Depende de : nada
-- Aceptación : E2E de una deuda de entidad y una personal; volver atrás no borra respuestas
-- Modelo     : capacidad alta, esfuerzo alto
-
 #### FORM.2f - Crear: cuenta, ingreso fijo, gasto fijo y meta
 - Prioridad  : media
 - Estado     : pendiente
 - Área       : ambos
 - Objetivo   : ADR 142 D5 en Nueva cuenta (banco con buscador; número, llave y cuota de manejo al resumen), Ingreso fijo (sin desplegables), Nuevo gasto fijo (orden del 141 D1) y Nueva meta (el aporte por mes se calcula mientras se elige el plazo)
 - Archivos   : `tesoreria/views/cuentas.js` e `ingresos.js`, `compromisos/views/formularios.js`, `metas/view.js` y sus `index.js`
-- Depende de : FORM.2e
+- Depende de : nada (FORM.2e cerrada: `ui/preguntas.js`)
 - Aceptación : E2E de los cuatro a 390 px
 - Modelo     : capacidad estándar, esfuerzo medio
 
 #### FORM.2g - Crear y ajustar: el resto
+- Además   : de FORM.2e quedan la ayuda de la tasa en una mini-hoja con Tino y la tasa muy alta como aviso ámbar con su salida (142 D9, cambia `validarCompromiso`)
 - Prioridad  : baja
 - Estado     : pendiente
 - Área       : ambos

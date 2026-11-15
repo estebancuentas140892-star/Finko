@@ -29,6 +29,7 @@ import { marcarCambios } from './hojas.js';
 import { htmlTecladoFinko, montarTecladoFinko, montoEnPalabras } from './teclado-finko.js';
 import { htmlMiniHoja, abrirMiniHoja, cerrarMiniHoja, miniHojaAbierta } from './mini-hoja.js';
 import { htmlCalendario, montarCalendario } from './calendario-finko.js';
+import { montarPreguntas } from './preguntas.js';
 
 const MQ_MOVIL = '(max-width: 1023.98px)';
 const _esMovil = () => window.matchMedia?.(MQ_MOVIL).matches === true;
@@ -247,6 +248,27 @@ export function mejorarFecha(input, form) {
   refrescar();
 }
 
+// ── Números que no son dinero ───────────────────────────────────
+
+/**
+ * Un `type="number"` (una tasa) pasa a texto con el teclado numérico del
+ * teléfono, sin las flechas del sistema. La coma se escribe como punto, que
+ * es lo que leen `validar*` y `normalizar*`.
+ *
+ * @param {HTMLInputElement} input
+ */
+export function mejorarNumero(input) {
+  if ('finko' in input.dataset) return;
+  input.dataset.finko = '';
+  const decimal = String(input.step || '').includes('.') || input.step === 'any';
+  input.type = 'text';
+  input.inputMode = decimal ? 'decimal' : 'numeric';
+  input.autocomplete = 'off';
+  input.addEventListener('input', () => {
+    if (input.value.includes(',')) input.value = input.value.replace(/,/g, '.');
+  });
+}
+
 // ── Mover dinero en dos etapas ───────────────────────────────────
 
 const _etapas = new WeakMap();
@@ -411,9 +433,13 @@ export function montarEtapasMonto(form) {
  */
 export function prepararHojaTelefono(overlay) {
   if (!_esMovil()) return;
-  for (const form of overlay.querySelectorAll('form[data-captura], form[data-etapas-monto]')) {
+  const reabierta = !('open' in overlay.dataset);
+  for (const form of overlay.querySelectorAll('form[data-captura], form[data-etapas-monto], form[data-preguntas]')) {
+    // Primero el armazón: el día del mes deja de ser un número antes de mejorar los números.
+    if ('preguntas' in form.dataset) montarPreguntas(form, overlay, { reabierta });
     for (const s of form.querySelectorAll('select:not([data-finko])')) mejorarSelect(s, form);
     for (const d of form.querySelectorAll('input[type="date"]:not([data-finko])')) mejorarFecha(d, form);
+    for (const n of form.querySelectorAll('input[type="number"]:not([data-finko])')) mejorarNumero(n);
     if ('etapasMonto' in form.dataset) {
       montarEtapasMonto(form);
       _etapas.get(form)?.irA('monto', { foco: false });
