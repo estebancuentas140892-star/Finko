@@ -78,6 +78,8 @@ export {
   claveOcurrencia,
   ocurrenciasPorDistribuir,
   resolverCobroDistribuido,
+  registrosDelCobroDistribuido,
+  transferenciasDeLaDistribucion,
 } from './logic/distribucion.js';
 
 export {

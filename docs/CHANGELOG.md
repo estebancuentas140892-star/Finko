@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-11-14.
+> Revisado: 2026-11-15.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-11)
+
+### feat(movimientos): HF.1d-2, Distribuir deja su ingreso y sus transferencias (ADR 143 D6) · 2026-11-15
+
+[ADR 143](DECISIONS/143-todo-cambio-de-saldo-deja-registro.md) D6 y su resolución en implementación; cierra HF.1d. Fichas: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md), [`contexto/calendario.md`](contexto/calendario.md). SW v710.
+
+- **El cobro que acredita Distribuir sale en Movimientos**: un `IngresoPuntual` por ocurrencia recibida, en su fecha, con `ingresoId`, `origen: 'distribucion'` y `repartido: true` (`registrosDelCobroDistribuido`). Lo que había acreditado la hoja no se registra otra vez: su fila queda `repartido`.
+- **Lo que mueve entre cuentas también**: Estilo de vida y el complemento del déficit quedan como `transferencias` con la nota "Distribuir mi ingreso" (`transferenciasDeLaDistribucion`). "Deshacer" quita las filas con el saldo.
+- **La fila es el sello**: la hoja de créditos descarta la ocurrencia que escribió Distribuir, no el mes (la segunda quincena sigue saliendo), y el asistente no propone lo `repartido`. `config.cobrosDistribuidos` ya no se escribe; se lee para lo repartido antes (convertirlo inventaría historial, I4).
+- **Sin fecha datable** la fila es de hoy y va ligada al ingreso principal, para que la renta no la cuente encima del ingreso fijo (BUG-039).
+- Pruebas: `registro-saldo` (R-HF2 de Distribuir, con deshacer), `tesoreria` (9: las filas y las transferencias), `agenda` (3: la hoja con la fila de Distribuir); E2E `distribucion-credito-automatico` (2 ajustadas: Distribuir sí deja `IngresoPuntual`, y lo repartido se lee de las filas).
 
 ### feat(movimientos): HF.1d-1, todo cambio de saldo deja registro (ADR 143) · 2026-11-15
 

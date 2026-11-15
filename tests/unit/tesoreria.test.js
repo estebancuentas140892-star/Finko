@@ -45,6 +45,8 @@ import {
   montoYaAcreditadoDelCobro,
   cobrosQueAcreditaLaDistribucion,
   acumularCobrosDistribuidos,
+  registrosDelCobroDistribuido,
+  transferenciasDeLaDistribucion,
   ocurrenciasPorDistribuir,
   resolverCobroDistribuido,
   claveOcurrencia,
@@ -4446,6 +4448,97 @@ describe('resolverCobroDistribuido() - qué se acredita y qué queda recibido (H
   it('el sello de lo repartido conserva la marca yaAcreditado al acumular', () => {
     expect(acumularCobrosDistribuidos([], [{ ingresoId: 'ing-hon', fecha: '2026-10-15', yaAcreditado: true }], new Date(2026, 9, 16, 12)))
       .toEqual([{ ingresoId: 'ing-hon', fecha: '2026-10-15', yaAcreditado: true }]);
+  });
+});
+
+// ── HF.1d-2 (ADR 143 D6): Distribuir deja su ingreso y sus transferencias ─
+// La fila del cobro es el registro del dinero que entró y el sello de que ya
+// se repartió. Datos inventados.
+
+describe('registrosDelCobroDistribuido() - el cobro que acredita Distribuir deja su fila (HF.1d-2)', () => {
+  const ing = (id, monto, diaPago, extra = {}) => ({
+    id, descripcion: `Ingreso ${id}`, monto, frecuencia: 'Mensual', diaPago, activo: true,
+    categoria: 'Salario', cuentaId: 'cta-nomina', fechaCreacion: '2026-01-10T15:00:00.000Z', ...extra,
+  });
+  const salario    = ing('ing-salario', 4_000_000, 15);
+  const honorarios = ing('ing-hon', 1_000_000, 25, { categoria: null });
+  const HOY = new Date(2026, 9, 26, 12);
+  const ctx = (extra = {}) => ({ ingresos: [salario, honorarios], ingresosPuntuales: [], cuentaId: 'cta-nomina', hoyISO: '2026-10-26', ...extra });
+
+  it('una fila por ocurrencia recibida, en su fecha, ligada a su ingreso y marcada como de Distribuir', () => {
+    const cobro = ocurrenciasPorDistribuir([salario, honorarios], [], {}, HOY);
+    const r = registrosDelCobroDistribuido(resolverCobroDistribuido(cobro, { monto: 5_000_000 }), ctx());
+    expect(r.marcar).toEqual([]);
+    expect(r.nuevos).toEqual([
+      { descripcion: 'Ingreso ing-salario', monto: 4_000_000, categoria: 'Salario', cuentaId: 'cta-nomina', fecha: '2026-10-15', ingresoId: 'ing-salario', origen: 'distribucion', repartido: true },
+      { descripcion: 'Ingreso ing-hon', monto: 1_000_000, categoria: null, cuentaId: 'cta-nomina', fecha: '2026-10-25', ingresoId: 'ing-hon', origen: 'distribucion', repartido: true },
+    ]);
+  });
+
+  it('solo lo marcado como recibido deja fila: lo que no llegó sigue sin registro', () => {
+    const cobro = ocurrenciasPorDistribuir([salario, honorarios], [], {}, HOY);
+    const r = resolverCobroDistribuido(cobro, { monto: 4_000_000, seleccion: ['ing-salario|2026-10-15'] });
+    expect(registrosDelCobroDistribuido(r, ctx()).nuevos.map(f => f.ingresoId)).toEqual(['ing-salario']);
+  });
+
+  it('"me pagaron otro valor": la fila lleva lo que llegó', () => {
+    const cobro = ocurrenciasPorDistribuir([salario], [], {}, HOY);
+    const r = resolverCobroDistribuido(cobro, { monto: 3_800_000, diferencia: 'valor' });
+    expect(registrosDelCobroDistribuido(r, ctx()).nuevos[0].monto).toBe(3_800_000);
+  });
+
+  it('"reparto solo una parte": la fila lleva el cobro completo, que fue lo que entró', () => {
+    const cobro = ocurrenciasPorDistribuir([salario], [], {}, HOY);
+    const r = resolverCobroDistribuido(cobro, { monto: 1_000_000, diferencia: 'parte' });
+    expect(registrosDelCobroDistribuido(r, ctx()).nuevos[0].monto).toBe(4_000_000);
+  });
+
+  it('lo que acreditó la hoja no se registra otra vez: su fila queda marcada como repartida', () => {
+    const hoja = { id: 'ip-hoja', monto: 4_000_000, cuentaId: 'cta-nomina', fecha: '2026-10-15', ingresoId: 'ing-salario' };
+    const cobro = ocurrenciasPorDistribuir([salario, honorarios], [hoja], {}, HOY);
+    const r = registrosDelCobroDistribuido(resolverCobroDistribuido(cobro, { monto: 5_000_000 }), ctx({ ingresosPuntuales: [hoja] }));
+    expect(r.marcar).toEqual(['ip-hoja']);
+    expect(r.nuevos.map(f => f.ingresoId)).toEqual(['ing-hon']);
+  });
+
+  it('sin identidad posible acredita en una fila de hoy ligada al ingreso principal; sin ingresos, sin ingresoId', () => {
+    const semanal = ing('ing-sem', 500_000, null, { frecuencia: 'Semanal' });
+    const r = resolverCobroDistribuido({ identificable: false, ocurrencias: [] }, { monto: 500_000 });
+    expect(registrosDelCobroDistribuido(r, ctx({ ingresos: [semanal] })).nuevos)
+      .toEqual([expect.objectContaining({ monto: 500_000, fecha: '2026-10-26', ingresoId: 'ing-sem', origen: 'distribucion' })]);
+    const [suelta] = registrosDelCobroDistribuido(r, ctx({ ingresos: [] })).nuevos;
+    expect(suelta).toMatchObject({ descripcion: 'Ingreso distribuido', monto: 500_000 });
+    expect(suelta).not.toHaveProperty('ingresoId');
+  });
+
+  it('una vez registrado, el cobro no se vuelve a proponer, y el sello de periodo ya no manda', () => {
+    const cobro = ocurrenciasPorDistribuir([salario, honorarios], [], {}, HOY);
+    const r = resolverCobroDistribuido(cobro, { monto: 4_000_000, seleccion: ['ing-salario|2026-10-15'] });
+    const filas = registrosDelCobroDistribuido(r, ctx()).nuevos.map((f, i) => ({ id: `ip-${i}`, ...f }));
+    const despues = ocurrenciasPorDistribuir([salario, honorarios], filas, { ultimaDistribucionPeriodo: '2026-10-25' }, HOY);
+    expect(despues.ocurrencias.map(o => o.ingresoId)).toEqual(['ing-hon']);
+  });
+});
+
+describe('transferenciasDeLaDistribucion() - lo que se mueve entre cuentas deja su fila (HF.1d-2)', () => {
+  const cuentas = [{ id: 'c1' }, { id: 'c2' }, { id: 'c3' }];
+
+  it('Estilo de vida sale de la cuenta de origen; el complemento del déficit entra a ella', () => {
+    expect(transferenciasDeLaDistribucion({
+      transferencias: [{ cuentaId: 'c2', monto: 100_000 }],
+      complemento:    [{ cuentaId: 'c3', monto: 50_000 }],
+      cuentaOrigenId: 'c1', cuentas, fecha: '2026-10-15',
+    })).toEqual([
+      { cuentaOrigenId: 'c3', cuentaDestinoId: 'c1', monto: 50_000, fecha: '2026-10-15', nota: 'Distribuir mi ingreso' },
+      { cuentaOrigenId: 'c1', cuentaDestinoId: 'c2', monto: 100_000, fecha: '2026-10-15', nota: 'Distribuir mi ingreso' },
+    ]);
+  });
+
+  it('sin traslado real no hay fila: hacia la propia cuenta, en cero o a una cuenta que no existe', () => {
+    expect(transferenciasDeLaDistribucion({
+      transferencias: [{ cuentaId: 'c1', monto: 100_000 }, { cuentaId: 'c2', monto: 0 }, { cuentaId: 'cx', monto: 10_000 }],
+      cuentaOrigenId: 'c1', cuentas, fecha: '2026-10-15',
+    })).toEqual([]);
   });
 });
 

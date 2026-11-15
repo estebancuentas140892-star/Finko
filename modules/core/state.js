@@ -115,6 +115,13 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  *                                          un ingreso fijo, mismo criterio que
  *                                          `Gasto.compromisoId` (ADR 002). Ausente = entrada
  *                                          manual, la mayoría hoy.
+ * @property {'distribucion'} [origen]     Opcional (HF.1d-2, ADR 143 D6). Lo escribió
+ *                                          "Distribuir mi ingreso" al acreditar el cobro:
+ *                                          la hoja de créditos automáticos lo descarta por
+ *                                          ocurrencia (`ingresoId` + fecha), no por mes.
+ * @property {true}        [repartido]     Opcional (HF.1d-2). Distribuir ya repartió esta
+ *                                          ocurrencia: el asistente no la vuelve a proponer.
+ *                                          Reemplaza a `config.cobrosDistribuidos`.
  */
 
 /**

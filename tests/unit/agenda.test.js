@@ -2427,6 +2427,30 @@ describe('pendientesDeCreditoDelMes (PA.1b)', () => {
   });
 });
 
+describe('HF.1d-2 - el ingreso que deja Distribuir descarta su ocurrencia, no el mes', () => {
+  // Datos inventados. Desde HF.1d-2 (ADR 143 D6) Distribuir deja un
+  // `IngresoPuntual` con `origen: 'distribucion'` en vez de la guarda.
+  const auto = (overrides = {}) => ingresoAutoBase({ creditoAutomatico: true, cuentaId: 'cta1', ...overrides });
+  const deDistribuir = (fecha) => ({ id: `ip-${fecha}`, ingresoId: 'i1', fecha, monto: 1_500_000, cuentaId: 'cta1', origen: 'distribucion', repartido: true });
+
+  it('la ocurrencia que acreditó Distribuir no vuelve a la hoja', () => {
+    expect(creditosAutomaticosVencidos([auto()], [deDistribuir('2026-08-05')], '2026-08-20', 0)).toEqual([]);
+  });
+
+  it('un quincenal: la fila de la primera quincena no esconde la segunda', () => {
+    const q = auto({ frecuencia: 'Quincenal', diaPago: 15, monto: 1_500_000 });
+    const primera = [deDistribuir('2026-10-15')];
+    expect(creditosAutomaticosVencidos([q], primera, '2026-10-16', 0)).toEqual([]);
+    expect(creditosAutomaticosVencidos([q], primera, '2026-10-31', 0))
+      .toEqual([expect.objectContaining({ id: 'i1', fecha: '2026-10-30' })]);
+  });
+
+  it('la fila de la hoja marcada como repartida sigue valiendo por el mes, como siempre', () => {
+    const hoja = { id: 'ip-h', ingresoId: 'i1', fecha: '2026-08-05', monto: 1_500_000, cuentaId: 'cta1', repartido: true };
+    expect(creditosAutomaticosVencidos([auto()], [hoja], '2026-08-20', 0)).toEqual([]);
+  });
+});
+
 describe('BUG-032 (HF.0h) - lo que Distribuir acreditó no vuelve a la hoja', () => {
   // Datos inventados. `acreditados` es `S.config.cobrosDistribuidos`: pares
   // (ingresoId, fecha exacta) que escribe Distribuir al confirmar.

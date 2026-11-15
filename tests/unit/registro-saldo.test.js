@@ -7,7 +7,8 @@
  *   a mano), `efectoEnCuenta` y lo que vuelve al borrar un préstamo.
  * - La migración v49 (`ajustesSaldo`).
  * - Una prueba de R-HF2 por ruta, con los manejadores reales: ajustar el
- *   saldo a mano, prestar, cobrar un abono y borrar el préstamo.
+ *   saldo a mano, prestar, cobrar un abono y borrar el préstamo, y distribuir
+ *   el ingreso (HF.1d-2, ADR 143 D6).
  *
  * Todos los datos son inventados.
  */
@@ -28,6 +29,7 @@ import { initPersonales } from '../../modules/dominio/personales/index.js';
 import { initAccionesCuentas, inyectarFormCuenta } from '../../modules/dominio/tesoreria/acciones/cuentas.js';
 import { initMiles } from '../../modules/ui/miles.js';
 import { initCompromisos } from '../../modules/dominio/compromisos/index.js';
+import { initAccionesDistribucion, abrirAsistenteDistribucion } from '../../modules/dominio/tesoreria/acciones/distribucion.js';
 
 // ── PURAS ────────────────────────────────────────────────────────
 
@@ -169,12 +171,13 @@ describe('R-HF2: el saldo es su apertura más sus filas, ruta por ruta', () => {
   const APERTURA = { c1: 1_000_000, c2: 500_000 };
 
   beforeAll(() => {
-    montarModales(['modal-cuenta', 'modal-personal', 'modal-pago-personal', 'modal-compromiso']);
+    montarModales(['modal-cuenta', 'modal-personal', 'modal-pago-personal', 'modal-compromiso', 'modal-distribuir']);
     location.hash = '#registro-saldo';
     initMiles();
     initPersonales();
     initAccionesCuentas();
     initCompromisos();
+    initAccionesDistribucion();
   });
 
   beforeEach(() => {
@@ -255,6 +258,43 @@ describe('R-HF2: el saldo es su apertura más sus filas, ruta por ruta', () => {
     accion('eliminar-compromiso', { id: S.compromisos.at(-1).id });
     await aceptarDialogo();
     expect(saldo('c2')).toBe(APERTURA.c2);
+    cuadra();
+  });
+
+  it('distribuir el ingreso deja el cobro y la transferencia; deshacer los quita (HF.1d-2)', async () => {
+    S.ingresos = [{
+      id: 'ing1', descripcion: 'Salario de prueba', monto: 2_000_000, frecuencia: 'Mensual', diaPago: 1,
+      activo: true, cuentaId: 'c1', categoria: 'Salario', fechaCreacion: '2026-01-01T00:00:00.000Z',
+    }];
+    S.config = { ...S.config, presetDistribucion: '50-30-20' };
+    abrirAsistenteDistribucion();
+    const panel = document.getElementById('distribuir-ingreso-panel');
+    const destino = panel.querySelector('.distribuir__monto[data-dist-tipo="cuenta"][data-dist-id="c2"]');
+    const toggle = destino.closest('.distribuir__fila').querySelector('[data-dist-destino-toggle]');
+    toggle.checked = true;
+    toggle.dispatchEvent(new Event('change', { bubbles: true }));
+    destino.value = '100.000';
+    destino.dispatchEvent(new Event('input', { bubbles: true }));
+    const dejar = panel.querySelector('[data-dist-remanente][value="cuenta"]');
+    if (dejar) { dejar.checked = true; dejar.dispatchEvent(new Event('change', { bubbles: true })); }
+
+    accion('confirmar-distribucion');
+    await esperar();
+    expect(saldo('c1')).toBe(APERTURA.c1 + 2_000_000 - 100_000);
+    expect(saldo('c2')).toBe(APERTURA.c2 + 100_000);
+    expect(S.ingresosPuntuales).toEqual([expect.objectContaining({
+      ingresoId: 'ing1', monto: 2_000_000, cuentaId: 'c1', origen: 'distribucion', repartido: true,
+    })]);
+    expect(S.transferencias).toEqual([expect.objectContaining({ cuentaOrigenId: 'c1', cuentaDestinoId: 'c2', monto: 100_000 })]);
+    expect(S.config.cobrosDistribuidos).toBeUndefined();
+    cuadra();
+
+    accion('deshacer-distribucion');
+    await esperar();
+    expect(saldo('c1')).toBe(APERTURA.c1);
+    expect(saldo('c2')).toBe(APERTURA.c2);
+    expect(S.ingresosPuntuales).toHaveLength(0);
+    expect(S.transferencias).toHaveLength(0);
     cuadra();
   });
 });

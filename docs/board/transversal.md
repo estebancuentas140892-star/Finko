@@ -1,6 +1,6 @@
 # Tablero - Transversal
 
-> Revisado: 2026-11-14.
+> Revisado: 2026-11-15.
 
 > Satélite de [`BOARD.md`](../BOARD.md) (afecta varias secciones). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
 
@@ -71,17 +71,7 @@
 
 ## Iniciativa HF - Un hecho financiero se informa una sola vez
 
-> Brief, triaje, riesgos y preguntas P1 a P8 (resueltas): **[ADR 091](../DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)**. El [ADR 138](../DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md) D2 dejó el plan en seis tarjetas: **ninguna espera ya a la ficha 18 ni al cierre de MOV.1**. **HF.1b cerró el 2026-11-13** con el [ADR 139](../DECISIONS/139-la-naturaleza-de-un-gasto.md): cada gasto tiene su naturaleza (`infra/naturaleza.js`) y cada vista su lente; las filas nuevas de HF.1c y HF.1d se clasifican con esa tabla. La Fase 0 cerró (HF.0a a HF.0j; la f y la g salieron sin código). Lo que se conectaba con el banco (HF.4 y HF.5a) vive en NUBE.4. Todos los datos de prueba son inventados.
-
-#### HF.1d-2 - Distribuir deja su ingreso y sus transferencias
-- Prioridad  : media
-- Estado     : pendiente ([ADR 143](../DECISIONS/143-todo-cambio-de-saldo-deja-registro.md) D6; HF.1d-1 cerró el resto de HF.1d)
-- Área       : code
-- Objetivo   : Distribuir guarda el cobro que acredita como `IngresoPuntual` (con `ingresoId` y la fecha de la ocurrencia) y el dinero que mueve entre cuentas como `transferencias`. Retira la guarda de HF.0h y HF.0i (`config.cobrosDistribuidos`): el `IngresoPuntual` de Distribuir la reemplaza solo para lo confirmado como recibido, descartado por ocurrencia y no por mes, o la segunda quincena distribuida deja de salir
-- Riesgo     : el crédito automático (`credito-ingreso`) y Distribuir reconocen el mismo cobro por `ingresoId` + fecha exacta; un cambio de un lado sin el otro acredita dos veces
-- Archivos   : `tesoreria/acciones/distribucion.js`, `tesoreria/logic/distribucion.js`, `agenda/index.js` (`_creditosPendientes`), `infra/credito-ingreso.js`
-- Depende de : nada
-- Aceptación : la prueba R-HF2 de `registro-saldo.test.js` suma la ruta de Distribuir; la segunda quincena distribuida sigue saliendo en la hoja de automáticos
+> Brief, triaje, riesgos y preguntas P1 a P8 (resueltas): **[ADR 091](../DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)**. El [ADR 138](../DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md) D2 dejó el plan en seis tarjetas: **ninguna espera ya a la ficha 18 ni al cierre de MOV.1**. **HF.1d cerró el 2026-11-15** con el [ADR 143](../DECISIONS/143-todo-cambio-de-saldo-deja-registro.md). **HF.1b cerró el 2026-11-13** con el [ADR 139](../DECISIONS/139-la-naturaleza-de-un-gasto.md): cada gasto tiene su naturaleza (`infra/naturaleza.js`) y cada vista su lente; las filas nuevas de HF.1c y HF.1d se clasifican con esa tabla. La Fase 0 cerró (HF.0a a HF.0j; la f y la g salieron sin código). Lo que se conectaba con el banco (HF.4 y HF.5a) vive en NUBE.4. Todos los datos de prueba son inventados.
 
 #### HF.1c - La fecha de cada aporte a metas y reservas
 - Prioridad  : baja

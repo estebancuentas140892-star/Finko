@@ -573,6 +573,17 @@ export function debitosAutomaticosVencidos(compromisos, gastos, hoyISO, mesesAtr
 }
 
 /**
+ * El `IngresoPuntual` que escribió "Distribuir mi ingreso" (HF.1d-2, ADR 143
+ * D6): vale por su ocurrencia exacta, no por el mes.
+ *
+ * @param {{origen?:string}|null|undefined} ip
+ * @returns {boolean}
+ */
+function _esDeDistribuir(ip) {
+  return ip?.origen === 'distribucion';
+}
+
+/**
  * Ocurrencias de ingreso del mes que ya vencieron y siguen sin cobrarse
  * (PA.1b, ADR 052 D2/D3): mismo criterio de `pendientesDePagoDelMes` visto
  * desde el otro lado. No hay concepto de deuda ni de abono parcial: un ingreso
@@ -583,21 +594,21 @@ export function debitosAutomaticosVencidos(compromisos, gastos, hoyISO, mesesAtr
  * quincenal), mismo motivo que un compromiso: el estado de cobro es por mes,
  * no por ocurrencia.
  *
- * `acreditados` (BUG-032, HF.0h) son las ocurrencias que "Distribuir mi
- * ingreso" ya acreditó sin dejar `IngresoPuntual` (`S.config.cobrosDistribuidos`).
- * Las marcadas `yaAcreditado` (HF.0i) se repartieron, pero el dinero lo había
- * acreditado esta misma hoja: las maneja su `IngresoPuntual`, no esta lista.
- * A diferencia del `IngresoPuntual`, descartan **una ocurrencia exacta**
+ Lo que acreditó "Distribuir mi ingreso" descarta **una ocurrencia exacta**
  * (`ingresoId` + fecha), no el mes: distribuir la primera quincena no esconde la
  * segunda, ni el salario de septiembre el de octubre. Mismo monto, descripción
- * o cuenta no cuentan: solo el par.
+ * o cuenta no cuentan: solo el par. Desde HF.1d-2 (ADR 143 D6) eso es su
+ * `IngresoPuntual` con `origen: 'distribucion'`; lo que Distribuir acreditó
+ * antes llega en `acreditados` (`S.config.cobrosDistribuidos`, BUG-032 HF.0h,
+ * solo lectura). Las marcadas `yaAcreditado` (HF.0i) se repartieron, pero el
+ * dinero lo había acreditado esta misma hoja: las maneja su `IngresoPuntual`.
  *
  * @param {ReturnType<typeof eventosIngresosDelMes>} eventos
  * @param {Array<{ingresoId?:string, fecha?:string}>} ingresosPuntuales
  * @param {string} prefijoMes 'YYYY-MM' del mes visible.
  * @param {string} hoyISO 'YYYY-MM-DD'.
  * @param {Array<{ingresoId?:string, fecha?:string}>} [acreditados=[]] Ocurrencias
- *   ya acreditadas por Distribuir.
+ *   que Distribuir acreditó antes de HF.1d-2.
  * @returns {Array<{id:string, descripcion:string, monto:number, dia:number, tipo:'ingreso'}>}
  */
 export function pendientesDeCreditoDelMes(eventos, ingresosPuntuales, prefijoMes, hoyISO, acreditados = []) {
@@ -614,8 +625,9 @@ export function pendientesDeCreditoDelMes(eventos, ingresosPuntuales, prefijoMes
   if (anio > anioHoy || (anio === anioHoy && mes > mesHoy)) return [];
   const esMesEnCurso = anio === anioHoy && mes === mesHoy;
 
+  const puntuales = Array.isArray(ingresosPuntuales) ? ingresosPuntuales : [];
   const yaDistribuidos = new Set(
-    (Array.isArray(acreditados) ? acreditados : [])
+    [...(Array.isArray(acreditados) ? acreditados : []), ...puntuales.filter(_esDeDistribuir)]
       .filter(a => a && typeof a.ingresoId === 'string' && typeof a.fecha === 'string' && a.yaAcreditado !== true)
       .map(a => `${a.ingresoId}|${a.fecha}`),
   );
@@ -649,8 +661,8 @@ export function pendientesDeCreditoDelMes(eventos, ingresosPuntuales, prefijoMes
   if (porId.size === 0) return [];
 
   const yaCobrados = new Set();
-  for (const ip of (Array.isArray(ingresosPuntuales) ? ingresosPuntuales : [])) {
-    if (!ip || typeof ip !== 'object') continue;
+  for (const ip of puntuales) {
+    if (!ip || typeof ip !== 'object' || _esDeDistribuir(ip)) continue;
     if (!ip.ingresoId || !porId.has(ip.ingresoId)) continue;
     if (typeof ip.fecha !== 'string' || !ip.fecha.startsWith(prefijoMes)) continue;
     yaCobrados.add(ip.ingresoId);
@@ -679,7 +691,7 @@ export function pendientesDeCreditoDelMes(eventos, ingresosPuntuales, prefijoMes
  * @param {string} hoyISO 'YYYY-MM-DD'.
  * @param {number} [mesesAtras=MESES_CATCHUP_AUTOMATICOS] Meses previos a revisar.
  * @param {Array<{ingresoId?:string, fecha?:string}>} [acreditados=[]] Ocurrencias
- *   que Distribuir ya acreditó (BUG-032), ver `pendientesDeCreditoDelMes`.
+ *   que Distribuir acreditó antes de HF.1d-2 (BUG-032), ver `pendientesDeCreditoDelMes`.
  * @returns {Array<{id:string, descripcion:string, monto:number, dia:number,
  *   tipo:'ingreso', fecha:string, cuentaId:string|null}>} Del vencimiento más
  *   antiguo al más reciente.

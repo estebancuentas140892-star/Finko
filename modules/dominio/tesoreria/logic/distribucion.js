@@ -394,6 +394,10 @@ export function cobrosQueAcreditaLaDistribucion(ingresos = [], ingresosPuntuales
 const _MESES_COBROS_DISTRIBUIDOS = 12;
 
 /**
+ * Sin uso en la app desde HF.1d-2 (ADR 143 D6): Distribuir ya no escribe la
+ * lista, deja su `IngresoPuntual` (`registrosDelCobroDistribuido`). Queda como
+ * la regla con que se escribió lo que la lista todavía guarda.
+ *
  * Suma a `S.config.cobrosDistribuidos` lo que acaba de repartir Distribuir
  * (BUG-032 HF.0h, HF.0i), sin repetir pares y sin guardar para siempre: lo
  * anterior a la ventana del cobro ya no protege nada. Conserva la marca
@@ -444,13 +448,15 @@ export function claveOcurrencia(o) {
  * créditos automáticos (`yaAcreditado`, su `IngresoPuntual` con `ingresoId`),
  * con el monto que se acreditó: esa se reparte sin volver a sumarse (HF.0b).
  *
- * Qué cuenta como "ya repartido": los pares de `cobrosDistribuidos`, que desde
- * HF.0h escribe cada distribución. Si la lista no existe, la última distribución
- * es anterior a HF.0h y lo único que dejó fue su sello de periodo: entonces todo
+ * Qué cuenta como "ya repartido": el `IngresoPuntual` de la ocurrencia marcado
+ * `repartido` (HF.1d-2, ADR 143 D6: Distribuir escribe el suyo y marca el de la
+ * hoja) y, de lo repartido antes, los pares de `cobrosDistribuidos` (HF.0h a
+ * HF.1d-1, solo lectura). Sin ninguna de las dos, la última distribución es
+ * anterior a HF.0h y lo único que dejó fue su sello de periodo: entonces todo
  * lo que cayó hasta `ultimaDistribucionPeriodo` formó parte de ella (antes de
- * HF.0i el asistente repartía el cobro entero). Con la lista, el sello no manda:
- * un ingreso que el usuario dijo que no llegó sigue pendiente aunque su fecha
- * sea anterior al sello.
+ * HF.0i el asistente repartía el cobro entero). Con marcas por ocurrencia, el
+ * sello no manda: un ingreso que el usuario dijo que no llegó sigue pendiente
+ * aunque su fecha sea anterior al sello.
  *
  * `identificable: false` cuando ningún ingreso del cobro tiene fecha datable
  * (Semanal, Diario, Variable, o sin día): no hay identidad que comparar y el
@@ -471,8 +477,9 @@ export function ocurrenciasPorDistribuir(ingresos = [], ingresosPuntuales = [], 
 
   const puntuales  = Array.isArray(ingresosPuntuales) ? ingresosPuntuales : [];
   const lista      = distribuidos?.cobrosDistribuidos;
-  const conLista   = Array.isArray(lista);
-  const repartidos = new Set((conLista ? lista : [])
+  const marcados   = puntuales.filter(ip => ip?.repartido === true);
+  const conLista   = Array.isArray(lista) || marcados.length > 0;
+  const repartidos = new Set([...(Array.isArray(lista) ? lista : []), ...marcados]
     .filter(c => c && typeof c.ingresoId === 'string' && typeof c.fecha === 'string')
     .map(claveOcurrencia));
   const sello = typeof distribuidos?.ultimaDistribucionPeriodo === 'string'
@@ -552,6 +559,98 @@ export function resolverCobroDistribuido(cobro, { monto, seleccion = null, difer
   ];
 
   return { identificable: true, abiertas, recibidas, yaAcreditado, esperado, opciones, resuelto, acreditar, sellar };
+}
+
+/**
+ * Los registros que deja una distribución por el cobro que acredita (HF.1d-2,
+ * ADR 143 D6, R-HF2): un `IngresoPuntual` por ocurrencia recibida que la hoja
+ * no había acreditado, en la fecha de esa ocurrencia y en la cuenta de origen,
+ * y la marca `repartido` para los que sí había acreditado la hoja. Reemplaza
+ * la guarda `cobrosDistribuidos`: la fila es a la vez el registro del dinero
+ * que entró y la prueba de que ese cobro ya se repartió.
+ *
+ * - Con una sola ocurrencia recibida, su fila lleva lo que se acredita
+ *   (`acreditar`): el valor que el usuario confirmó si llegó por otro monto.
+ * - Sin identidad posible (frecuencia sin día) se acredita el monto en una sola
+ *   fila de hoy, ligada al primer ingreso de la frecuencia principal para que
+ *   la renta no lo cuente dos veces (BUG-039); sin ingresos, sin `ingresoId`.
+ * - `origen: 'distribucion'` hace que la hoja la descarte por ocurrencia y no
+ *   por mes (la segunda quincena sigue saliendo).
+ *
+ * Pura: no lee `S` ni el DOM.
+ *
+ * @param {ReturnType<typeof resolverCobroDistribuido>} recibido
+ * @param {{ingresos?:import('../../../core/state.js').Ingreso[],
+ *   ingresosPuntuales?:Array<{id:string, ingresoId?:string, fecha?:string}>,
+ *   cuentaId:string, hoyISO:string}} contexto
+ * @returns {{nuevos:Array<Object>, marcar:string[]}} Las filas por guardar y
+ *   los ids de los ingresos puntuales de la hoja que quedan repartidos.
+ */
+export function registrosDelCobroDistribuido(recibido, { ingresos = [], ingresosPuntuales = [], cuentaId, hoyISO }) {
+  const lista = Array.isArray(ingresos) ? ingresos : [];
+  const fila = (ing, monto, fecha) => ({
+    descripcion: ing?.descripcion || 'Ingreso distribuido',
+    monto,
+    categoria:   ing?.categoria ?? null,
+    cuentaId,
+    fecha,
+    ...(ing?.id ? { ingresoId: ing.id } : {}),
+    origen:      'distribucion',
+    repartido:   true,
+  });
+
+  if (!recibido?.identificable) {
+    const monto = Number(recibido?.acreditar) || 0;
+    if (monto <= 0) return { nuevos: [], marcar: [] };
+    const activos = lista.filter(i => i && i.activo !== false && i.id);
+    const principal = activos.length > 0 ? frecuenciaPrincipalIngresos(activos) : null;
+    const ing = activos.find(i => normalizarFrecuenciaAporte(i.frecuencia) === principal) ?? null;
+    return { nuevos: [fila(ing, monto, hoyISO)], marcar: [] };
+  }
+
+  const recibidas = recibido.recibidas ?? [];
+  const nuevos = [];
+  for (const o of recibidas) {
+    const monto = recibidas.length === 1 ? Number(recibido.acreditar) || 0 : o.monto;
+    if (monto <= 0) continue;
+    const ing = lista.find(i => i?.id === o.ingresoId) ?? { id: o.ingresoId, descripcion: o.descripcion };
+    nuevos.push(fila(ing, monto, o.fecha));
+  }
+
+  const puntuales = Array.isArray(ingresosPuntuales) ? ingresosPuntuales : [];
+  const marcar = (recibido.sellar ?? [])
+    .filter(c => c.yaAcreditado)
+    .map(c => puntuales.find(ip => ip?.ingresoId === c.ingresoId && ip.fecha === c.fecha)?.id)
+    .filter(Boolean);
+
+  return { nuevos, marcar };
+}
+
+/**
+ * Las transferencias que deja una distribución (HF.1d-2, ADR 143 D6): lo que
+ * Estilo de vida mueve de la cuenta de origen a otras (MC.7e) y lo que el
+ * complemento del déficit trae de otras cuentas a la de origen (MC.13e-2e).
+ * Mismo filtro que aplica el saldo: hacia la propia cuenta de origen, sin
+ * monto o hacia una cuenta que no existe no hay traslado ni fila. Sin 4x1000:
+ * Distribuir no lo descuenta.
+ *
+ * Pura: no lee `S` ni el DOM.
+ *
+ * @param {{transferencias?:Array<{cuentaId:string, monto:number}>,
+ *   complemento?:Array<{cuentaId:string, monto:number}>,
+ *   cuentaOrigenId:string, cuentas?:Array<{id:string}>, fecha:string}} datos
+ * @returns {Array<{cuentaOrigenId:string, cuentaDestinoId:string, monto:number, fecha:string, nota:string}>}
+ */
+export function transferenciasDeLaDistribucion({ transferencias = [], complemento = [], cuentaOrigenId, cuentas = [], fecha }) {
+  const existe = (id) => (cuentas ?? []).some(c => c.id === id);
+  const valida = (t) => t && t.cuentaId && t.cuentaId !== cuentaOrigenId && Number(t.monto) > 0 && existe(t.cuentaId);
+  const nota = 'Distribuir mi ingreso';
+  return [
+    ...(complemento ?? []).filter(valida)
+      .map(t => ({ cuentaOrigenId: t.cuentaId, cuentaDestinoId: cuentaOrigenId, monto: t.monto, fecha, nota })),
+    ...(transferencias ?? []).filter(valida)
+      .map(t => ({ cuentaOrigenId, cuentaDestinoId: t.cuentaId, monto: t.monto, fecha, nota })),
+  ];
 }
 
 /**

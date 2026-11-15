@@ -265,10 +265,10 @@ function _debitosPendientes() {
  * Único motivo de bloqueo: `'cuenta'`, el ingreso no dice a qué cuenta llega,
  * o esa cuenta ya no existe o está inactiva.
  *
- * Lo que "Distribuir mi ingreso" ya acreditó (`S.config.cobrosDistribuidos`,
- * BUG-032) no se ofrece: es el mismo cobro y sumarlo otra vez es un doble
- * abono. Campo opcional de `config` que escribe tesorería, igual que
- * `ultimaDistribucionPeriodo`; acá solo se lee.
+ * Lo que "Distribuir mi ingreso" ya acreditó no se ofrece: es el mismo cobro y
+ * sumarlo otra vez es un doble abono. Desde HF.1d-2 lo dice su `IngresoPuntual`
+ * (`origen: 'distribucion'`); lo de antes, `S.config.cobrosDistribuidos`
+ * (BUG-032), que ya nadie escribe y acá solo se lee.
  *
  * @returns {Array<{id:string, descripcion:string, monto:number, fecha:string,
  *   tipo:'ingreso', cuentaId:string|null, cuentaNombre:string|null,

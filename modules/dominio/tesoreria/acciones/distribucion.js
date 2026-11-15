@@ -10,7 +10,7 @@
 import { miles, desdeMiles } from '../../../infra/miles.js';
 import { S, EventBus } from '../../../core/state.js';
 import { save } from '../../../core/storage.js';
-import { editar } from '../../../infra/crud.js';
+import { editar, guardar } from '../../../infra/crud.js';
 import { registrarAccion } from '../../../ui/actions.js';
 import { updSaldo } from '../../../infra/render.js';
 import { announce } from '../../../infra/a11y.js';
@@ -26,7 +26,8 @@ import {
   topeAbonoExtraDeuda,
   cuentaIngresoPrincipal,
   planComplementoDeficit,
-  acumularCobrosDistribuidos,
+  registrosDelCobroDistribuido,
+  transferenciasDeLaDistribucion,
   ocurrenciasPorDistribuir,
   resolverCobroDistribuido,
   motivoSinDistribuir,
@@ -166,7 +167,9 @@ let _snapshotDistribucion = null;
 let _snackbarTimer = null;
 // 'gastos' (ADR 018 revisión 2026-07-02, R4): el Paso 1 de Necesidades registra
 // pagos reales; sin esta slice en el snapshot, "Deshacer" dejaría esos gastos huérfanos.
-const _SLICES_DISTRIBUCION = ['cuentas', 'gastos', 'ahorro', 'metas', 'apartados', 'compromisos', 'inversiones', 'logros', 'config'];
+// 'ingresosPuntuales' y 'transferencias' (HF.1d-2, ADR 143 D6): el cobro que
+// acredita y el dinero que mueve entre cuentas dejan su fila; deshacer las quita.
+const _SLICES_DISTRIBUCION = ['cuentas', 'gastos', 'ingresosPuntuales', 'transferencias', 'ahorro', 'metas', 'apartados', 'compromisos', 'inversiones', 'logros', 'config'];
 
 /**
  * Respuesta a la pregunta de MC.13f ("¿ya recibiste el pago del [fecha]?"):
@@ -1041,14 +1044,22 @@ async function _confirmarDistribucion() {
   const cuenta = (S.cuentas ?? []).find(c => c.id === cuentaId);
   const saldoAntes = cuenta?.saldo ?? 0;
 
-  // Sello por ocurrencia (BUG-032 HF.0h, HF.0i): lo que esta distribución
-  // reparte queda en `cobrosDistribuidos` para que ni la hoja ni la próxima
-  // distribución lo vuelvan a ofrecer. Lo que había acreditado la hoja va con
-  // `yaAcreditado`. Vive en `config`, así que "Deshacer" lo revierte junto con
-  // el saldo. HF.1d lo reemplaza cuando Distribuir escriba su `IngresoPuntual`.
-  if (cuenta && recibido.identificable) {
-    if (!S.config) S.config = {};
-    S.config.cobrosDistribuidos = acumularCobrosDistribuidos(S.config.cobrosDistribuidos, recibido.sellar, new Date());
+  // HF.1d-2 (ADR 143 D6, R-HF2): el cobro que se acredita queda como
+  // `IngresoPuntual` de cada ocurrencia recibida, y lo que había acreditado la
+  // hoja queda marcado `repartido`. Esa fila es también el sello por ocurrencia
+  // (antes `cobrosDistribuidos`, BUG-032 HF.0h): ni la hoja ni la próxima
+  // distribución vuelven a ofrecer ese cobro. "Deshacer" la quita con el saldo.
+  // Lo que se mueve entre cuentas queda como `transferencias`.
+  if (cuenta) {
+    const fecha = hoy();
+    const { nuevos, marcar } = registrosDelCobroDistribuido(recibido, {
+      ingresos: S.ingresos ?? [], ingresosPuntuales: S.ingresosPuntuales ?? [], cuentaId, hoyISO: fecha,
+    });
+    for (const ip of nuevos) guardar('ingresosPuntuales', ip);
+    for (const id of marcar) editar('ingresosPuntuales', id, { repartido: true });
+    for (const t of transferenciasDeLaDistribucion({
+      transferencias, complemento: complemento.splits, cuentaOrigenId: cuentaId, cuentas: S.cuentas ?? [], fecha,
+    })) guardar('transferencias', t);
   }
 
   if (cuenta) {

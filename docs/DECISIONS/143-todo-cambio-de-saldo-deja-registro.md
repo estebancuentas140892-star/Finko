@@ -84,3 +84,14 @@ Los formularios, la lógica financiera, Análisis, la renta y los saldos que ya 
 - Una colección nueva: migración v49, una clave más en el respaldo y en la nube.
 - Borrar un préstamo cambia el saldo de las cuentas; la confirmación lo dice antes.
 - Hasta HF.1d-2, Distribuir sigue acreditando sin fila.
+
+## Resolución de HF.1d-2 en implementación (2026-11-15)
+
+Pedido en chat: aplicar lo que sigue del tablero sin preguntar. Lo que el código pidió precisar de D6:
+
+- **Dos campos opcionales en `IngresoPuntual`, sin migración.** `origen: 'distribucion'` (la fila la escribió Distribuir) y `repartido: true` (esa ocurrencia ya se repartió). Hacen falta los dos porque son preguntas distintas: la hoja de créditos descarta por ocurrencia solo lo que escribió Distribuir y sigue descartando por mes lo suyo; el asistente no vuelve a proponer nada repartido, venga de donde venga. Distribuir marca `repartido` en la fila de la hoja cuando reparte un cobro que la hoja ya había acreditado.
+- **`config.cobrosDistribuidos` deja de escribirse, no de leerse.** Sus pares sin `yaAcreditado` son cobros que Distribuir acreditó sin fila: convertirlos en `IngresoPuntual` sería completar historial hacia atrás (I4) y con montos que no se guardaron (el caso "me pagaron otro valor"). Soltarlos haría que la hoja los ofreciera otra vez. Se siguen leyendo hasta que salgan de la ventana; la hoja solo mira dos meses y el asistente el último cobro. Borrar la lectura es limpieza de paso cuando ya no proteja nada.
+- **Una fila por ocurrencia recibida**, en la fecha de esa ocurrencia y en la cuenta de origen. Con una sola ocurrencia la fila lleva lo acreditado (el valor que el usuario confirmó si llegó por otro monto); con "reparto solo una parte", el cobro completo, que es lo que entró.
+- **Sin fecha datable** (Semanal, Diario, Variable) se acredita en una fila de hoy ligada al primer ingreso de la frecuencia principal: sin `ingresoId` la renta lo sumaría encima de la proyección del ingreso fijo (BUG-039). Sin ningún ingreso, la fila va sin `ingresoId`, como un ingreso puntual cualquiera.
+- **Las transferencias** son las de Estilo de vida (origen a otra cuenta) y las del complemento del déficit (otra cuenta al origen), con la nota "Distribuir mi ingreso" y sin 4x1000, porque Distribuir no lo descuenta. "Deshacer" las quita junto con el ingreso, porque las dos colecciones entran a su copia.
+- **Lo que sigue sin fila**: los aportes a metas y reservas (HF.1c) y lo que cada dominio aplica por `distribucion:aplicar`. La prueba de R-HF2 de Distribuir cubre el cobro y la transferencia.

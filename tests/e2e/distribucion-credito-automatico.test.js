@@ -232,9 +232,12 @@ test.describe('BUG-032 - Distribuir primero y la hoja después: un solo crédito
     // 7.600.000: el mismo cobro contado dos veces.
     await expect(page.locator('#modal-automaticos[data-open]')).toHaveCount(0);
     expect(await dineroTotal(page)).toBe(3_600_000);
-    // HF.0h no adelanta HF.1d: Distribuir sigue sin escribir `IngresoPuntual`.
+    // HF.1d-2 (ADR 143 D6): el cobro que acreditó Distribuir queda como su
+    // `IngresoPuntual`, y esa fila es la que le dice a la hoja que ya entró.
     const st = await leerEstado(page);
-    expect(st.ingresosPuntuales.filter(ip => ip.fecha.startsWith('2026-10'))).toHaveLength(0);
+    expect(st.ingresosPuntuales.filter(ip => ip.fecha.startsWith('2026-10')))
+      .toEqual([expect.objectContaining({ ingresoId: 'ing-salario', fecha: '2026-10-15', monto: 4_000_000, origen: 'distribucion' })]);
+    expect(st.config?.cobrosDistribuidos).toBeUndefined();
   });
 
   test('"Ahora no" no marca nada: al reabrir, la hoja vuelve a ofrecer el cobro', async ({ page }) => {
@@ -321,8 +324,14 @@ async function repartirConTransferencia(page) {
   await confirmarDistribucion(page);
 }
 
-const sellados = async (page) =>
-  ((await leerEstado(page)).config?.cobrosDistribuidos ?? []).map(c => `${c.ingresoId} ${c.fecha}`).sort();
+// Lo repartido: desde HF.1d-2, los `IngresoPuntual` marcados `repartido` (los
+// que deja Distribuir y los de la hoja que repartió); la lista vieja de config,
+// por si un estado sembrado la trae.
+const sellados = async (page) => {
+  const st = await leerEstado(page);
+  return [...(st.config?.cobrosDistribuidos ?? []), ...(st.ingresosPuntuales ?? []).filter(ip => ip.repartido)]
+    .map(c => `${c.ingresoId} ${c.fecha}`).sort();
+};
 
 test.describe('BUG-034 - Distribuir no propone ni acredita lo que otra distribución ya repartió', () => {
 
