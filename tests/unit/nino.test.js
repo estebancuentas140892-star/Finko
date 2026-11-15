@@ -124,7 +124,9 @@ describe('las cuatro pantallas del niño (D9)', () => {
   it('con la meta alcanzada, Tino celebra en Inicio y ofrece "Ya lo compré" (ADR 124 D2)', () => {
     const meta = { id: 'm1', dibujo: 'audifonos', nombre: 'Audífonos', precio: 40_000, semanal: 5_000 };
     const html = htmlInicioNino(perfil({ hechas: hechas('k1-l1') }, { metas: [meta], movimientos: [{ frasco: 'ahorrar', monto: 45_000 }] }), '2026-10-25');
-    expect(html).toContain('href="#il-tino-celebra"');
+    // APR.5b: la meta lograda es un hito: Tino celebra en grande, con destellos.
+    expect(html).toContain('href="#il-tino-celebra-grande"');
+    expect(html).toContain('destellos__punto');
     expect(html).toContain('¡Lo lograste!');
     expect(html).toContain('Cuesta $40.000 y tienes $45.000 en Ahorrar.');
     expect(html).toContain('data-action="nino-meta-compre"');
@@ -527,3 +529,34 @@ describe('la meta del niño responde en semanas y en fecha (APR.3d, D9)', () => 
   });
 });
 
+// ── APR.5b: la ronda 2 de Tino y los hitos del niño ──────────────
+
+describe('la ronda 2 de Tino en las pantallas del niño (APR.5b)', () => {
+  it('en "Compartir y ayudar" Tino explica con la pose de compartir', () => {
+    const leccion = k6['k6-l1'];
+    const ctx = { eyebrow: 'Unidad 6', tope: 20_000, terminada: false, entrada: false, nino: true, unidad: { id: 'k6' } };
+    const html = htmlLeccion(crearSesion(leccion), leccion, ctx);
+    expect(html).toContain('href="#il-tino-compartir"');
+    expect(html).not.toContain('href="#il-tino-explica"');
+  });
+
+  it('con la ruta terminada, Inicio celebra el hito en vez de saludar', () => {
+    const todas = UNIDADES_NINO.flatMap(u => u.lecciones.map(l => l.id));
+    const html = htmlInicioNino(perfil({ hechas: hechas(...todas) }), '2026-10-25');
+    expect(html).toContain('Terminaste tu ruta');
+    expect(html).toContain('href="#il-tino-celebra-grande"');
+    expect(html).toContain('destellos__punto');
+    expect(html).toContain('data-vista="aprender"');
+    expect(html).not.toContain('Hiciste todo lo que hay por ahora.');
+  });
+
+  it('el premio por ahorrar lo presenta Tino sembrando: lo guardado crece', () => {
+    const html = htmlAlcanciaNino(perfil({}, {
+      teNombra: 'Mamá',
+      premio: { tasa: '1x10', desde: '2026-10-01' },
+      movimientos: [{ frasco: 'ahorrar', monto: 10_000 }],
+    }), '2026-10-25');
+    expect(html).toContain('Premio por ahorrar');
+    expect(html).toContain('href="#il-tino-sembrar"');
+  });
+});

@@ -100,4 +100,4 @@ Ronda 2, para lo que el handoff dejó sin pieza y para las lecciones (APR.5b):
 | Rebanada | Qué entrega | Depende de |
 |---|---|---|
 | APR.5a | Ronda 1 en el sprite (`il-tino-*`), tokens `--fk-tino-*` con su contraste, renombre del código (`htmlTino()`, `POSES_TINO`, `.tino`), "celebra grande" en la unidad terminada y Tino que se presenta | dibujos de la ronda 1 |
-| APR.5b | Ronda 2 y sus usos: sembrar, compartir, reserva y pensando en sus pantallas; los hitos del niño (meta cumplida y ruta terminada, con el confeti que ya existe), que el handoff pedía y no se construyeron | dibujos de la ronda 2, APR.5a |
+| APR.5b (cerrada 2026-11-15, nota del [095](095-tino-en-el-sprite.md)) | Ronda 2 y sus usos: sembrar, compartir, reserva y pensando en sus pantallas; los hitos del niño (meta cumplida y ruta terminada, con el confeti que ya existe), que el handoff pedía y no se construyeron | dibujos de la ronda 2, APR.5a |

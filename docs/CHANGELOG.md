@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(nino): APR.5b, la ronda 2 de Tino y los hitos del niño · 2026-11-15
+
+Nota del [ADR 095](DECISIONS/095-tino-en-el-sprite.md) (la ronda 2 por el conversor) y [ADR 094](DECISIONS/094-tino-el-guatin.md). Ficha: [`contexto/nino.md`](contexto/nino.md). SW v718.
+
+- **Cuatro poses al sprite** (`assets/svg/ilustraciones/`, `scripts/sync-sprite.py`): pensando, reserva, sembrar y compartir, de 7 a 15 KB cada una. El conversor ganó soporte de `polygon`, cuatro roles de color (`--fk-tino-verde`, `-hoja`, `-celeste`, `-gris`, en `themes.css`) y el encaje por ancho de las poses anchas.
+- **Cada unidad explica con su pose** (`poseTinoDeUnidad()`): "Lo que necesito y lo que quiero" piensa, "Compartir y ayudar" comparte, "Guardar para lo que no esperas" se cubre de la lluvia y "¿Por qué crece mi dinero?" siembra. En la lección y en la ruta.
+- **Tino piensa** con las tres preguntas de ubicación y **siembra** en el premio por ahorrar.
+- **Dos hitos con destellos**: la meta lograda y la ruta terminada ("Terminaste tu ruta", con "Ver mi ruta") celebran en grande.
+- **"Meta cumplida" no entra al sprite**: no baja de 18,8 KB sin deformarse y el tope es 16. El adulto la sigue usando como imagen.
+- Pruebas: `nino` (3 nuevas y 1 ajustada: la meta lograda celebra en grande), `nino-visual` (2 nuevas y 1 ajustada: la lista de poses). Unitarias 5710/5710, E2E 476/476 (la intermitente de `nube.test.js` pasó en su reintento).
+
 ### feat(ahorro): HF.1c, la fecha de cada aporte a metas y reservas · 2026-11-15
 
 [ADR 145](DECISIONS/145-los-aportes-de-metas-y-reservas-tienen-fecha.md) (aplica la R-HF2 del 091 a la última ruta sin fila y resuelve V5 del 083). Fichas: [`contexto/metas.md`](contexto/metas.md), [`contexto/apartados.md`](contexto/apartados.md), [`contexto/movimientos.md`](contexto/movimientos.md). Schema v50, SW v717.

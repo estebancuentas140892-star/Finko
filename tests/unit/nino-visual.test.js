@@ -10,7 +10,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
-  DIBUJOS, POSES_TINO, dibujoPorId, htmlDibujo, htmlTino, htmlFrasco, htmlDestellos,
+  DIBUJOS, POSES_TINO, dibujoPorId, htmlDibujo, htmlTino, htmlFrasco, htmlDestellos, poseTinoDeUnidad, POSE_TINO_POR_UNIDAD,
   granosFrasco, GRANOS_FRASCO,
 } from '../../modules/infra/ilustraciones.js';
 
@@ -93,7 +93,8 @@ describe('catálogo de dibujos y Tino contra el sprite (093 D8, 094, 095)', () =
   });
 
   it('Tino no se ve triste: ninguna pose se llama así ni hay símbolo para eso', () => {
-    expect(POSES_TINO).toEqual(['saluda', 'explica', 'celebra', 'celebra-grande', 'anima']);
+    // APR.5b suma la ronda 2: ninguna pose triste entra con ella.
+    expect(POSES_TINO).toEqual(['saluda', 'explica', 'celebra', 'celebra-grande', 'anima', 'pensando', 'reserva', 'sembrar', 'compartir']);
     expect(INDEX).not.toMatch(/il-tino-(triste|decepcion|enojo)/);
   });
 });
@@ -285,5 +286,27 @@ describe('htmlTinoSol (ADR 127 D6)', () => {
       const svg = readFileSync(resolve(ROOT, `assets/tino/${archivo}.svg`), 'utf-8');
       expect(svg).not.toMatch(/<script|<text\b|<foreignObject/);
     }
+  });
+});
+
+// ── APR.5b: la ronda 2 de Tino en el sprite del niño ─────────────
+
+describe('la ronda 2 de Tino en el sprite (APR.5b)', () => {
+  it('cada pose nueva tiene su símbolo en el sprite y sus colores son roles de Tino', () => {
+    for (const p of ['pensando', 'reserva', 'sembrar', 'compartir']) {
+      expect(INDEX, p).toContain(`id="il-tino-${p}"`);
+      expect(htmlTino(p)).toContain(`href="#il-tino-${p}"`);
+    }
+    for (const rol of ['verde', 'hoja', 'celeste', 'gris']) expect(THEMES).toContain(`--fk-tino-${rol}:`);
+  });
+
+  it('cada unidad explica con su pose: reserva, compartir, sembrar y pensando (ADR 094)', () => {
+    expect(poseTinoDeUnidad('k7')).toBe('reserva');
+    expect(poseTinoDeUnidad('k6')).toBe('compartir');
+    expect(poseTinoDeUnidad('k8')).toBe('sembrar');
+    expect(poseTinoDeUnidad('k2')).toBe('pensando');
+    expect(poseTinoDeUnidad('k1')).toBe('explica');
+    expect(poseTinoDeUnidad(undefined)).toBe('explica');
+    for (const pose of Object.values(POSE_TINO_POR_UNIDAD)) expect(POSES_TINO).toContain(pose);
   });
 });

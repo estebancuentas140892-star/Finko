@@ -10,7 +10,7 @@
 
 import { f, esc, formateadorFecha } from '../../infra/utils.js';
 import { icon, iconoCategoria } from '../../infra/icons.js';
-import { htmlTino, htmlDibujo, dibujoPorId, htmlFrasco, DIBUJOS } from '../../infra/ilustraciones.js';
+import { htmlTino, htmlDibujo, dibujoPorId, htmlFrasco, DIBUJOS, htmlDestellos, poseTinoDeUnidad } from '../../infra/ilustraciones.js';
 import { saldosFrascos, FRASCOS } from '../../infra/perfiles.js';
 import { UNIDADES_NINO } from '../../infra/ruta-aprende.js';
 import { proximaMesada, DIAS_SEMANA, TASAS_PREMIO, proximoPremio } from '../../infra/mesada.js';
@@ -154,10 +154,13 @@ export function htmlTarjetaMeta(perfil, hoyISO, { acciones = false } = {}) {
 
 /** Inicio, con la meta ya alcanzada: Tino celebra en vez de saludar (ADR 124 D2). */
 function _metaLograda(perfil, meta) {
+  // APR.5b: es un hito. Tino celebra en grande, con los destellos de la
+  // insignia de unidad. La pose "meta cumplida" no cabe en los 16 KB del
+  // sprite (095 D1): el adulto la usa como imagen (ADR 129).
   return `
     <section class="kcard knino-logro" aria-labelledby="nino-logro">
       <div class="knino-fila">
-        ${htmlTino('celebra', { tamano: 88 })}
+        <div class="destellos knino-hito__tino">${htmlDestellos()}${htmlTino('celebra-grande', { tamano: 88 })}</div>
         <div class="knino-pila">
           <p class="knino-logro__rotulo">¡Lo lograste!</p>
           <h2 class="k-h3" id="nino-logro">Ya tienes para tu meta</h2>
@@ -248,12 +251,16 @@ export function htmlInicioNino(perfil, hoyISO) {
   const saludo = ubicar ? `${presentacion}Primero, tres preguntas cortas.`
     : presentacion ? `${presentacion}¡Aprendamos juntos!`
     : sig ? '¡Vas muy bien! Sigue tu lección de hoy.' : '¡Qué bien vas! Repasa cuando quieras.';
-  const tino = lograda ? _metaLograda(perfil, meta) : `
+  // APR.5b: la ruta terminada es un hito, como la meta lograda.
+  const rutaTerminada = !ubicar && !sig && !presentacion;
+  // Las tres preguntas de ubicación: Tino piensa con el niño.
+  const pose = ubicar && !presentacion ? 'pensando' : 'saluda';
+  const tino = lograda ? _metaLograda(perfil, meta) : rutaTerminada ? _rutaTerminada() : `
         <div class="knino-fila knino-tino">
-          ${htmlTino('saluda', { tamano: 96 })}
+          ${htmlTino(pose, { tamano: 96 })}
           <p class="bubble">${saludo}</p>
         </div>`;
-  const primero = ubicar ? _ofertaUbicacion() : sig ? _tarjetaLeccion(perfil, sig) : `
+  const primero = ubicar ? _ofertaUbicacion() : sig ? _tarjetaLeccion(perfil, sig) : rutaTerminada ? '' : `
     <section class="kcard knino-leccion" aria-labelledby="nino-siguiente">
       <h2 class="k-h3" id="nino-siguiente">Hiciste todo lo que hay por ahora.</h2>
       <p class="knino-dato">Pronto llegan más lecciones.</p>
@@ -274,6 +281,26 @@ export function htmlInicioNino(perfil, hoyISO) {
         ${meta && !lograda ? htmlTarjetaMeta(perfil, hoyISO) : ''}
       </div>
     </div>`;
+}
+
+/**
+ * El hito de la ruta terminada (APR.5b, ADR 094): todas las lecciones que hay
+ * están hechas. Tino celebra en grande con los destellos, y se dice que
+ * vienen más.
+ */
+function _rutaTerminada() {
+  return `
+    <section class="kcard knino-logro" aria-labelledby="nino-ruta">
+      <div class="knino-fila">
+        <div class="destellos knino-hito__tino">${htmlDestellos()}${htmlTino('celebra-grande', { tamano: 88 })}</div>
+        <div class="knino-pila">
+          <p class="knino-logro__rotulo">¡Lo lograste!</p>
+          <h2 class="k-h3" id="nino-ruta">Terminaste tu ruta</h2>
+        </div>
+      </div>
+      <p class="k-body">Hiciste todas las lecciones que hay. Pronto llegan más; mientras, repasa la que quieras.</p>
+      <button class="kbtn kbtn--linea kbtn--block" type="button" data-action="nino-vista" data-vista="aprender">${iconoCategoria('c-birrete')}Ver mi ruta</button>
+    </section>`;
 }
 
 /** Lo que dice Tino junto a la lección que sigue. */
@@ -325,7 +352,7 @@ function _unidadActual(e, enCurso) {
           <ol class="klecciones" aria-label="Lecciones de la unidad ${u.numero}">${lecciones}
           </ol>${actual ? `
           <div class="knino-fila knino-tino">
-            ${htmlTino('explica', { tamano: 64 })}
+            ${htmlTino(poseTinoDeUnidad(u.id), { tamano: 64 })}
             <p class="bubble bubble--sm">${_diceTino(faltan, actual.numero)}</p>
           </div>
           <button class="kbtn kbtn--block" type="button" data-action="leccion-abrir" data-id="${esc(actual.leccion.id)}">${iconoCategoria('c-birrete')}${seguir ? 'Seguir donde ibas' : 'Empezar la lección'}</button>` : ''}
@@ -538,7 +565,7 @@ function _tarjetaPremio(perfil, hoyISO) {
   return `
     <section class="kcard knino-premio" aria-labelledby="nino-premio">
       <div class="knino-fila knino-fila--arriba">
-        ${htmlTino('celebra', { tamano: 72 })}
+        ${htmlTino('sembrar', { tamano: 72 })}
         <div class="knino-pila">
           <h2 class="k-h3" id="nino-premio">Premio por ahorrar</h2>
           <p class="knino-fuerte">${esc(perfil.teNombra)} te suma ${tasa?.texto ?? ''} que guardas.</p>

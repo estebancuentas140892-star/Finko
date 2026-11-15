@@ -730,6 +730,8 @@ body.kid .leccion-fb--nino.leccion-fb--bien { background: color-mix(in srgb, var
   background: linear-gradient(color-mix(in srgb, var(--fk-kid-sun) 10%, transparent), color-mix(in srgb, var(--fk-kid-sun) 10%, transparent)), var(--fk-bg-surface);
 }
 .knino-logro .knino-fila { gap: 10px; }
+/* APR.5b: los hitos (meta lograda, ruta terminada) llevan a Tino con destellos. */
+.knino-hito__tino { flex-shrink: 0; }
 .knino-logro__rotulo { margin: 0; font-size: var(--fk-kid-text-sm); font-weight: 700; color: var(--fk-kid-sun-text); }
 
 /* Yo: el dibujo arriba y dos datos de lo que lleva (ADR 124 D4). */

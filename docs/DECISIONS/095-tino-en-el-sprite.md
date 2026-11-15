@@ -56,3 +56,9 @@ El conversor (Python y Playwright) queda en la carpeta del personaje, junto a lo
 - **`index.html` pesa 52 KB más (19 KB con gzip) también para el adulto**, que nunca ve a Tino.
 - **Trece tokens nuevos**: once roles en el tema oscuro y dos que cambian en el claro.
 - **La ronda 2 depende del conversor**, que no está versionado en el repo.
+
+## Nota (2026-11-15, APR.5b): la ronda 2 en el sprite
+
+El conversor se corrió para la ronda 2 y necesitó tres arreglos, que viven con él en la carpeta del personaje: soporte de `polygon` ("pensando" trae uno), cuatro roles de color para lo que acompaña a Tino (`verde`, `hoja`, `celeste` y `gris`: sin ellos la hoja y la planta salían beige, el ratón negro y el vidrio blanco) y el encaje por ancho de una pose más ancha que alta (compartir y sembrar se recortaban en el lienzo de 120). Los cuatro roles van en `themes.css`, iguales en los dos temas.
+
+Entran cuatro poses: `pensando` (7 KB), `reserva` (15), `sembrar` (13) y `compartir` (8), con tolerancias de simplificación de 1 y 1,5. **"Meta cumplida" no entra**: no baja de 18,8 KB sin deformarse, y el tope de D1 se mantiene. El hito de la meta del niño celebra con `celebra-grande` y los destellos de la insignia; el adulto conserva el dibujo original como imagen ([ADR 129](129-tino-ronda-2-en-el-adulto.md)).

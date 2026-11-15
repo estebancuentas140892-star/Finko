@@ -1,6 +1,6 @@
 # Ficha de contexto: Perfil niño y Familia
 
-> Revisado: 2026-11-05.
+> Revisado: 2026-11-15 (APR.5b).
 
 > Los perfiles de niño en el mismo dispositivo, "¿Quién usa Finko?", lo que ve el niño y lo que administra el tutor desde Ajustes, Familia. Decisiones: [ADR 093](../DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md). Tarjetas: iniciativa APR, Fase 3, en [`board/transversal.md`](../board/transversal.md). Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -12,7 +12,7 @@
 
 - **Objetivo**          : que un tutor y niños de 7 a 12 años compartan el teléfono sin que el niño vea las finanzas del adulto (D1).
 - **Estado actual**     : en evolución (Fase 3 de APR). Cerradas **APR.3b** (sistema visual), **APR.3a** (perfiles, selector, alta paso 1, PIN de niño a adulto, candado obligatorio, P1), **APR.3c** (barra, ruta en orden como camino, lección con Frai, celebración, unidad 1) **APR.3d** (Guardé, Gasté, Compartí, mover, una meta con semanas y fecha) y **APR.3e** (alta en dos pasos con mesada, "Entregada" como un solo hecho, premio por ahorrar, progreso del niño). **APR.3f**: las ocho unidades escritas y la ubicación desde los 10 años; falta su revisión pedagógica. **APR.4b**: riel desde 768 px, Inicio en dos columnas desde 1024 px y "Cambiar de perfil" al pie de la barra lateral del adulto. **APR.5a**: Tino, un guatín, reemplaza a Frai ([ADR 095](../DECISIONS/095-tino-en-el-sprite.md)). **MV2.29** (el tablero de niños, [ADR 124](../DECISIONS/124-el-nino-en-el-telefono.md)): aplicado completo en cinco tandas; el HTML del tablero se borró y manda el ADR.
-- **Verificado contra** : ADR 131, frascos sin líquido (2026-11-05, sobre `b1a7ef6`). Antes: MV2.29 tanda 5 (`efb8e85`, ADR 124). Antes: APR.6b (`f09b213`, 2026-10-29).
+- **Verificado contra** : APR.5b (2026-11-15): la ronda 2 de Tino por unidad (`poseTinoDeUnidad()`) y los dos hitos. Antes: ADR 131, frascos sin líquido (2026-11-05, sobre `b1a7ef6`). Antes: MV2.29 tanda 5 (`efb8e85`, ADR 124). Antes: APR.6b (`f09b213`, 2026-10-29).
 
 **Dónde vive**
 
@@ -67,10 +67,11 @@
 
 **Su propio teléfono (NUBE.3)**: con `S.config.dispositivoNino`, Finko entra directo a ese perfil, sin adulto ni "Cambiar de perfil" (`ui/quien-usa.js`, `.kid-propio`). Cómo se vincula y qué sincroniza: [`nube.md`](nube.md).
 
-**Cambios pendientes**: el selector usa el campo de PIN de siempre, no el teclado numérico del diseño. La ronda 2 de Tino y los hitos del niño (APR.5b) esperan sus dibujos.
+**Cambios pendientes**: el selector usa el campo de PIN de siempre, no el teclado numérico del diseño.
 
 **Cambios realizados**:
 
+- 2026-11-15 (APR.5b, nota del ADR 095): cuatro poses nuevas en el sprite. Tino explica cada unidad con la suya (k2 pensando, k6 compartir, k7 reserva, k8 sembrar; las demás, explica), piensa con las tres preguntas de ubicación y siembra en el premio por ahorrar. Los hitos: la meta lograda y la ruta terminada celebran en grande con destellos.
 - 2026-11-05 (ADR 131): frascos sin líquido: vidrio sin tinte, el color en la tapa, y Gastar y Compartir con el hueco de cada grano usado contra la mesada.
 - 2026-11-05 (ADR 128): los frascos se llenan con los granos de café de Tino sobre el tinte de su color.
 - 2026-11-05 (MV2.29 tanda 5, ADR 124): Familia en Ajustes como filas que abren el progreso, "Se la entregué" en la fila, y las hojas del tutor (progreso, mesada con días en botones y la suma que se rehace, premio y agregar) con teja, línea y pie fijo.

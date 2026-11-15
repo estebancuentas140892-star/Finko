@@ -37,7 +37,32 @@ export const DIBUJOS = [
 ];
 
 /** Las cinco poses de Tino (094 D5): nunca triste. @type {readonly string[]} */
-export const POSES_TINO = Object.freeze(['saluda', 'explica', 'celebra', 'celebra-grande', 'anima']);
+export const POSES_TINO = Object.freeze([
+  'saluda', 'explica', 'celebra', 'celebra-grande', 'anima',
+  // APR.5b (ADR 094 D3, ronda 2 en el sprite por el conversor del 095 D4).
+  'pensando', 'reserva', 'sembrar', 'compartir',
+]);
+
+/**
+ * La pose con que Tino explica cada unidad de la ruta del niño (APR.5b, ADR
+ * 094: guardar para la escasez es reserva, la semilla que crece es el interés
+ * y el bosque que alimenta a otros es compartir). Las demás unidades explican
+ * con `explica`.
+ */
+export const POSE_TINO_POR_UNIDAD = Object.freeze({
+  k2: 'pensando',   // Lo que necesito y lo que quiero: decidir
+  k6: 'compartir',  // Compartir y ayudar
+  k7: 'reserva',    // Guardar para lo que no esperas: el paraguas
+  k8: 'sembrar',    // ¿Por qué crece mi dinero?: el interés
+});
+
+/**
+ * @param {string|undefined|null} unidadId
+ * @returns {string} una de `POSES_TINO`.
+ */
+export function poseTinoDeUnidad(unidadId) {
+  return POSE_TINO_POR_UNIDAD[unidadId] ?? 'explica';
+}
 
 /**
  * @param {string} id

@@ -151,6 +151,12 @@ body.kid {
   --fk-tino-rojo:     #b81c1b;
   --fk-tino-azul:     #1d3979;
   --fk-tino-blanco:   #fefefe;
+  /* Ronda 2 (APR.5b): lo que acompaña a Tino, igual en los dos temas: la
+     hoja y la planta, la lluvia y el vidrio, el ratón de "compartir". */
+  --fk-tino-verde:    #6aa13f;
+  --fk-tino-hoja:     #1e502c;
+  --fk-tino-celeste:  #b0cbe0;
+  --fk-tino-gris:     #9a816a;
 }
 
 body.light-theme .kid-piel,

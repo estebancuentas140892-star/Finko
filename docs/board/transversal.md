@@ -59,10 +59,7 @@
 
 > **APR.3f salió del tablero (ADR 138 D4).** Las ocho unidades y la ubicación desde los 10 años están escritas (2026-10-25) y una prueba mide la voz del ADR 093 D6. Lo que faltaba, la revisión pedagógica registrada, es trabajo de una persona, como la del abogado en LEG: cuando exista, sus correcciones entran como tarjeta.
 
-### Fase 5 - Tino, el guatín ([ADR 094](../DECISIONS/094-tino-el-guatin.md) y [ADR 095](../DECISIONS/095-tino-en-el-sprite.md))
-
-#### APR.5b - La ronda 2 de Tino y los hitos del niño
-- Estado : pendiente. Los dibujos de la ronda 2 llegaron y el adulto ya los usa ([ADR 129](../DECISIONS/129-tino-ronda-2-en-el-adulto.md)); en el niño entran por el conversor que vive junto a los dibujos fuente (095 D4), con el tope de 16 KB por pose. **Objetivo**: sembrar, compartir, reserva y pensando en sus pantallas; hitos del niño (meta cumplida y ruta terminada, con el confeti que ya existe). **Modelo**: Equilibrado, Medio.
+> **Fase 5 - Tino, completa** (APR.5a y APR.5b, [ADR 094](../DECISIONS/094-tino-el-guatin.md) y [ADR 095](../DECISIONS/095-tino-en-el-sprite.md)): la ronda 2 entró al sprite del niño el 2026-11-15, menos "meta cumplida", que no cabe en 16 KB.
 
 ---
 

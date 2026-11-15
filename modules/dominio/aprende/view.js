@@ -9,7 +9,7 @@
 import { S } from '../../core/state.js';
 import { f, esc } from '../../infra/utils.js';
 import { icon, tejaCategoria, iconoCategoria } from '../../infra/icons.js';
-import { htmlTino, htmlDestellos } from '../../infra/ilustraciones.js';
+import { htmlTino, htmlDestellos, poseTinoDeUnidad } from '../../infra/ilustraciones.js';
 import {
   estadoRuta, normalizarAprende, leccionDisponible, numeroDePaso, pasoActual,
   pasoListo, RESULTADOS, UNIDADES, ofrecerUbicacion, metaLeccion, unidadDeLeccion, tiposDeEjercicio,
@@ -334,7 +334,7 @@ function _pasoConcepto(paso, ctx) {
       cuerpo: `
         <p class="leccion__eyebrow leccion__eyebrow--dom">${esc(ctx.eyebrow)}</p>
         <div class="leccion-nino__idea">
-          ${htmlTino('explica', { tamano: 112 })}
+          ${htmlTino(poseTinoDeUnidad(ctx.unidad?.id), { tamano: 112 })}
           <h2 class="leccion-nino__globo" id="leccion-titulo" tabindex="-1">${_texto(paso.titulo, ctx)}</h2>
         </div>
         ${paso.texto ? `<p class="leccion__texto">${_texto(paso.texto, ctx)}</p>` : ''}`,
