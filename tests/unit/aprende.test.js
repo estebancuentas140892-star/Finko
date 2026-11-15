@@ -16,7 +16,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { UMBRAL_GASTO_HORMIGA, esGastoHormiga, resumenHormigaMes, topeHormiga, limiteHormiga } from '../../modules/infra/hormiga.js';
+import { UMBRAL_GASTO_HORMIGA, esGastoPequeno, resumenHormigaMes, topeHormiga, limiteHormiga } from '../../modules/infra/hormiga.js';
 import { UMBRAL_GASTO_HORMIGA as UMBRAL_LOGROS } from '../../modules/dominio/logros/logic.js';
 import {
   UNIDADES, unidadDeLeccion, metaLeccion, leccionDisponible, normalizarAprende,
@@ -70,11 +70,11 @@ describe('infra/hormiga.js', () => {
   });
 
   it('cuenta el tope inclusive y descarta montos inválidos', () => {
-    expect(esGastoHormiga({ monto: 20_000 })).toBe(true);
-    expect(esGastoHormiga({ monto: 20_001 })).toBe(false);
-    expect(esGastoHormiga({ monto: 0 })).toBe(false);
-    expect(esGastoHormiga({ monto: 'abc' })).toBe(false);
-    expect(esGastoHormiga({ monto: 25_000 }, 30_000)).toBe(true);
+    expect(esGastoPequeno({ monto: 20_000 })).toBe(true);
+    expect(esGastoPequeno({ monto: 20_001 })).toBe(false);
+    expect(esGastoPequeno({ monto: 0 })).toBe(false);
+    expect(esGastoPequeno({ monto: 'abc' })).toBe(false);
+    expect(esGastoPequeno({ monto: 25_000 }, 30_000)).toBe(true);
   });
 
   it('resume el mes: total, compras y categorías de mayor a menor', () => {
@@ -82,14 +82,20 @@ describe('infra/hormiga.js', () => {
       { fecha: '2026-10-02', monto: 6_000, categoria: 'Café' },
       { fecha: '2026-10-03', monto: 4_000, categoria: 'Café' },
       { fecha: '2026-10-05', monto: 18_000, categoria: 'Domicilios' },
+      { fecha: '2026-10-10', monto: 12_000, categoria: 'Domicilios' },
+      { fecha: '2026-10-20', monto: 10_000, categoria: 'Domicilios' },
       { fecha: '2026-10-06', monto: 300_000, categoria: 'Mercado' },
+      { fecha: '2026-10-08', monto: 9_000, categoria: 'Salud' },
       { fecha: '2026-09-30', monto: 5_000, categoria: 'Café' },
       { fecha: '2026-10-07', monto: 2_000 },
     ];
+    // SUS.2b (ADR 147 D6): Café es gusto y cuenta; Domicilios (una propia sin
+    // respuesta, "depende") cuenta porque se repite 3 veces en 30 días; Salud
+    // es necesidad y el gasto sin categoría (Otros) va una sola vez: no cuentan.
     const r = resumenHormigaMes(gastos, '2026-10');
-    expect(r.total).toBe(30_000);
-    expect(r.cuantos).toBe(4);
-    expect(r.porCategoria.map(g => g.categoria)).toEqual(['Domicilios', 'Café', 'Otros']);
+    expect(r.total).toBe(50_000);
+    expect(r.cuantos).toBe(5);
+    expect(r.porCategoria.map(g => g.categoria)).toEqual(['Domicilios', 'Café']);
     expect(r.porCategoria[1]).toMatchObject({ total: 10_000, cuantos: 2 });
   });
 
@@ -370,7 +376,7 @@ describe('aplicaHormiga() y limiteSugerido()', () => {
   it('con gastos pequeños en el mes devuelve total, compras, grupos y diferencia', () => {
     const gastos = [
       { fecha: '2026-10-02', monto: 15_000, categoria: 'Café' },
-      { fecha: '2026-10-03', monto: 18_000, categoria: 'Domicilios' },
+      { fecha: '2026-10-03', monto: 18_000, categoria: 'Mecato' },
       { fecha: '2026-10-04', monto: 120_000, categoria: 'Mercado' },
     ];
     expect(aplicaHormiga(gastos, HOY)).toMatchObject({
@@ -540,7 +546,7 @@ describe('contenido de las lecciones', () => {
     const hormiga = todosLosPasos.filter(([, p]) => p.tipo === 'clasificar' && p.criterio === 'hormiga');
     expect(hormiga.length).toBeGreaterThan(0);
     for (const [id, paso] of hormiga) {
-      for (const t of paso.tarjetas) expect(esGastoHormiga(t), `${id} ${t.titulo}`).toBe(Boolean(t.es));
+      for (const t of paso.tarjetas) expect(esGastoPequeno(t), `${id} ${t.titulo}`).toBe(Boolean(t.es));
     }
   });
 

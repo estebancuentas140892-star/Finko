@@ -1,6 +1,6 @@
 # Ficha de contexto: Aprende
 
-> Revisado: 2026-10-29.
+> Revisado: 2026-11-15 (SUS.2b).
 
 > La capa de aprendizaje del adulto: la ruta de nueve unidades (`#aprende`) y la lección a pantalla completa (`#modal-leccion`). Decisiones: [ADR 092](../DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md). Tarjetas: iniciativa APR en [`board/transversal.md`](../board/transversal.md). Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -46,7 +46,7 @@
 | Gesto de deslizar y arrastre de "ordenar" por su asa (pointer events) | `modules/dominio/aprende/index.js` | `_alPresionar()`, `_alArrastrar()`, `_alSoltar()`; `_presionarOrden()`, `_arrastrarOrden()`, `_soltarOrden()` | |
 | Ruta de escritorio (APR.4a): lección elegida, su detalle y el contenido que llega con `import()` | `modules/dominio/aprende/index.js` / `view.js` | `_seleccion`, `_verLeccion()` (`data-action="leccion-ver"`), `_contenidoParaRuta()`, `_detalleLeccion()` | |
 | "Vas a aprender" y los tipos de ejercicio | `lecciones/uN.js` / `logic.js` | `aprendes`, `tiposDeEjercicio()` | |
-| Criterio de gasto hormiga (compartido con `gastos` y `logros`) | `modules/infra/hormiga.js` | `UMBRAL_GASTO_HORMIGA`, `resumenHormigaMes()` | ~15, ~40 |
+| Criterio de gasto hormiga (compartido con `gastos`, `analisis`, `presupuesto` y `logros`; ADR 147 D6) | `modules/infra/hormiga.js` | `gastosHormiga()`, `caracterDeGasto()`, `resumenHormigaMes()`, `esGastoPequeno()` (las tarjetas de las lecciones siguen clasificando por tamaño) | |
 | Sección y overlay | `index.html` | `#sec-aprende`, `#panel-aprende`, `#modal-leccion`, `#leccion-panel` | |
 
 **Recursos**: `c-birrete` (ícono de la sección), `i-check`, `i-arrow-left`, `i-arrow-right`, `i-chevron-up`, `i-chevron-down`, `i-grip` (en `assets/svg/iconos/utilitarios/`). CSS: `styles/components/aprende.css` (`.aprende-*`, `.leccion*`, filas de animación `stepIn`, `feedbackIn`, `cardOutDer`/`cardOutIzq`, `checkIn`); geometría del overlay en `styles/modals.css` (bloque "LECCIÓN A PANTALLA COMPLETA"). Color de unidad por `data-dom` → `--apr-dom`/`--apr-dom-text`. Estado: `S.aprende` (schema v45; `ubicacion` desde v47).
@@ -68,6 +68,8 @@
 **Cambios pendientes**: la ilustración `il-hormiga` del concepto no entró al sprite (usa clases y `ellipse`, fuera del estándar de `sync-sprite.py`); va con APR.3b o se redibuja con el estándar. Del diseño 32 quedaron fuera de APR.4a el chip de nivel del encabezado, la tarjeta punteada "Ya lo sabes: unidades 1 y 2" y la pista "Te sirve ya: tienes N deudas" en "Después"; del 33, la línea "Con tus datos" en la respuesta.
 
 **Cambios realizados**:
+
+- 2026-11-15 SUS.2b ([ADR 147](../DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md) D6): hormiga deja de ser toda compra de hasta el tope: es lo pequeño que es un gusto, o que "depende" y se repite 3 veces en 30 días por concepto (`gastosHormiga()`, sobre todo el historial). Una necesidad (Salud, Hogar, lo que el usuario contestó) nunca cuenta.
 
 - 2026-10-29 (APR.7, ADR 101): Aprende sale de la app del adulto; el motor sigue para el niño.
 - 2026-10-25 (APR.4a): escritorio: detalle de la lección elegida, `aprendes` en el contenido, lección en dos columnas, arrastre en ordenar.

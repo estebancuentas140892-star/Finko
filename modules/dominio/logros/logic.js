@@ -13,7 +13,7 @@
 
 import { hoy } from '../../infra/utils.js';
 import { memoizar } from '../../infra/memo.js';
-import { UMBRAL_GASTO_HORMIGA, topeHormiga } from '../../infra/hormiga.js';
+import { UMBRAL_GASTO_HORMIGA, topeHormiga, gastosHormiga } from '../../infra/hormiga.js';
 import { contarUnidadesSabidas, contarSemanasActivas } from '../../infra/ruta-aprende.js';
 
 // ── TABLA DE LOGROS ──────────────────────────────────────────────
@@ -170,21 +170,20 @@ export { UMBRAL_GASTO_HORMIGA };
 export const UMBRAL_HORMIGA_RELEVANTE = 100_000;
 
 /**
- * Cuánto suma al mes el gasto hormiga (transacciones ≤ UMBRAL_GASTO_HORMIGA).
- * Un solo pase O(gastos), igual que `_semanasPorMes`.
+ * Cuánto suma al mes el gasto hormiga: lo pequeño que es un gusto
+ * (`gastosHormiga`, ADR 147 D6; antes, toda transacción ≤ el tope).
  *
  * @param {import('../../core/state.js').Gasto[]} gastos
  * @param {number} [tope=UMBRAL_GASTO_HORMIGA] - el configurado en Límites (APR.1b).
+ * @param {ReadonlyArray<{ nombre: string, caracter?: string|null }>} [personalizadas]
  * @returns {Map<string, number>} mesISO ('YYYY-MM') → COP en gasto hormiga.
  */
-function _hormigaPorMes(gastos, tope = UMBRAL_GASTO_HORMIGA) {
+function _hormigaPorMes(gastos, tope = UMBRAL_GASTO_HORMIGA, personalizadas = []) {
   const totales = new Map();
-  for (const g of gastos ?? []) {
+  for (const g of gastosHormiga(gastos, { tope, personalizadas })) {
     if (typeof g?.fecha !== 'string' || g.fecha.length < 7) continue;
-    const monto = Number(g.monto);
-    if (!Number.isFinite(monto) || monto <= 0 || monto > tope) continue;
     const mesISO = g.fecha.slice(0, 7);
-    totales.set(mesISO, (totales.get(mesISO) ?? 0) + monto);
+    totales.set(mesISO, (totales.get(mesISO) ?? 0) + Number(g.monto));
   }
   return totales;
 }
@@ -195,11 +194,12 @@ function _hormigaPorMes(gastos, tope = UMBRAL_GASTO_HORMIGA) {
  * @param {import('../../core/state.js').Gasto[]} gastos
  * @param {string} mesISO - `YYYY-MM` (o un ISO completo, se usa el prefijo).
  * @param {number} [tope=UMBRAL_GASTO_HORMIGA]
+ * @param {ReadonlyArray<{ nombre: string, caracter?: string|null }>} [personalizadas]
  * @returns {number} COP.
  */
-export function gastoHormigaMes(gastos, mesISO, tope = UMBRAL_GASTO_HORMIGA) {
+export function gastoHormigaMes(gastos, mesISO, tope = UMBRAL_GASTO_HORMIGA, personalizadas = []) {
   if (typeof mesISO !== 'string' || mesISO.length < 7) return 0;
-  return _hormigaPorMes(gastos, tope).get(mesISO.slice(0, 7)) ?? 0;
+  return _hormigaPorMes(gastos, tope, personalizadas).get(mesISO.slice(0, 7)) ?? 0;
 }
 
 /**
@@ -242,9 +242,10 @@ function _mesesCerradosAtras(hoyISO, cuantos) {
  *
  * @param {string} hoyISO - `YYYY-MM-DD`.
  * @param {number} [tope=UMBRAL_GASTO_HORMIGA]
+ * @param {ReadonlyArray<{ nombre: string, caracter?: string|null }>} [personalizadas]
  * @returns {boolean}
  */
-export function hormigaALaRaya(gastos, hoyISO, tope = UMBRAL_GASTO_HORMIGA) {
+export function hormigaALaRaya(gastos, hoyISO, tope = UMBRAL_GASTO_HORMIGA, personalizadas = []) {
   if (typeof hoyISO !== 'string' || hoyISO.length < 10) return false;
   const meses = _mesesCerradosAtras(hoyISO, 4);
   if (meses.length < 4) return false;
@@ -252,7 +253,7 @@ export function hormigaALaRaya(gastos, hoyISO, tope = UMBRAL_GASTO_HORMIGA) {
   const semanas = _semanasPorMes(gastos);
   if (meses.some(m => (semanas.get(m) ?? 0) < 3)) return false;
 
-  const hormiga = _hormigaPorMes(gastos, tope);
+  const hormiga = _hormigaPorMes(gastos, tope, personalizadas);
   const [cerrado, ...previos] = meses;
   const promedio = previos.reduce((suma, m) => suma + (hormiga.get(m) ?? 0), 0) / previos.length;
   if (promedio < UMBRAL_HORMIGA_RELEVANTE) return false;
@@ -262,7 +263,7 @@ export function hormigaALaRaya(gastos, hoyISO, tope = UMBRAL_GASTO_HORMIGA) {
 
 /** D7: dos pasadas por `S.gastos` por cada `state:change` (evaluarLogros +
  * la vitrina) se sirven de la misma caché. */
-const _hormigaALaRayaMemo = memoizar(hormigaALaRaya, ['gastos']);
+const _hormigaALaRayaMemo = memoizar(hormigaALaRaya, ['gastos', 'categoriasPersonalizadas']);
 
 /** @type {Logro[]} */
 export const LOGROS = [
@@ -439,8 +440,8 @@ export const LOGROS = [
     nombre:  'Hormiga a raya',
     emoji:   '🐜',
     desc:    'Bajaste tus gastos hormiga por debajo del promedio de los 3 meses anteriores.',
-    hint:    'Registra 4 meses seguidos y baja tus gastos pequeños frente al promedio de los 3 anteriores.',
-    eval:    s => _hormigaALaRayaMemo(s.gastos, hoy(), topeHormiga(s.config)),
+    hint:    'Registra 4 meses seguidos y baja tus gustos pequeños frente al promedio de los 3 anteriores.',
+    eval:    s => _hormigaALaRayaMemo(s.gastos, hoy(), topeHormiga(s.config), s.categoriasPersonalizadas ?? []),
   },
   {
     id:     'fondo-emergencia',

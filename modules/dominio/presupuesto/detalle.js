@@ -102,17 +102,17 @@ export function htmlDetalleLimite(presupuesto, { anio, mes }) {
 }
 
 /**
- * HTML de la hoja del límite de gastos pequeños: compras de hasta el tope, de
+ * HTML de la hoja del límite de gustos pequeños: compras de hasta el tope, de
  * cualquier categoría, así que no tiene salida a una categoría de Movimientos.
  *
  * @param {{ anio: number, mes: number }} cuando - mes 1-12.
  * @returns {string}
  */
 export function htmlDetalleHormiga({ anio, mes }) {
-  const p = progresoHormiga(S.gastos ?? [], S.config, anio, mes);
+  const p = progresoHormiga(S.gastos ?? [], S.config, anio, mes, S.categoriasPersonalizadas ?? []);
   const progreso = { gastado: p.gastado, asignado: p.limite ?? 0, restante: p.restante, porcentaje: p.porcentaje, estado: p.estado };
   const compras = `${p.cuantos} ${p.cuantos === 1 ? 'compra' : 'compras'} de ${f(p.tope)} o menos, de cualquier categoría.`;
-  return `${_cuerpo({ titulo: 'Gastos pequeños', icono: 'c-hormiga', mes: _MESES[mes - 1] ?? '', progreso, aviso: compras })}
+  return `${_cuerpo({ titulo: 'Gustos pequeños', icono: 'c-hormiga', mes: _MESES[mes - 1] ?? '', progreso, aviso: compras })}
     <div class="detalle-fila__acciones">${_boton('hormiga-editar', `${_icono('i-edit')}Cambiar el límite`, 'btn-secondary', '')}
     </div>
     <div class="detalle-fila__peligro">${_boton('hormiga-quitar', `${_icono('i-trash')}Quitar este límite`, 'btn-ghost detalle-fila__accion--peligro', '')}

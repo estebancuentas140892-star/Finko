@@ -907,9 +907,9 @@ const mesConHormiga = (mesISO, totalHormiga) => ([
 describe('gastoHormigaMes()', () => {
   test('suma solo las transacciones que no superan el umbral', () => {
     const gastos = [
-      { fecha: '2026-05-03', monto: UMBRAL_GASTO_HORMIGA },      // cuenta
-      { fecha: '2026-05-04', monto: UMBRAL_GASTO_HORMIGA + 1 },  // no cuenta
-      { fecha: '2026-05-05', monto: 5_000 },                     // cuenta
+      { fecha: '2026-05-03', monto: UMBRAL_GASTO_HORMIGA, categoria: 'Mecato' },      // cuenta
+      { fecha: '2026-05-04', monto: UMBRAL_GASTO_HORMIGA + 1, categoria: 'Mecato' },  // no cuenta
+      { fecha: '2026-05-05', monto: 5_000, categoria: 'Mecato' },                     // cuenta
     ];
     expect(gastoHormigaMes(gastos, '2026-05')).toBe(UMBRAL_GASTO_HORMIGA + 5_000);
   });
@@ -920,10 +920,10 @@ describe('gastoHormigaMes()', () => {
 
   test('ignora montos no numéricos, negativos y fechas inválidas', () => {
     const gastos = [
-      { fecha: '2026-05-03', monto: 'abc' },
-      { fecha: '2026-05-03', monto: -5_000 },
-      { fecha: '2026-05', monto: 5_000 },
-      { monto: 5_000 },
+      { fecha: '2026-05-03', monto: 'abc', categoria: 'Mecato' },
+      { fecha: '2026-05-03', monto: -5_000, categoria: 'Mecato' },
+      { fecha: '2026-05', monto: 5_000, categoria: 'Mecato' },
+      { monto: 5_000, categoria: 'Mecato' },
     ];
     expect(gastoHormigaMes(gastos, '2026-05')).toBe(5_000);
   });
@@ -1072,8 +1072,8 @@ describe('hormigaALaRaya() con el tope configurable (APR.1b)', () => {
 
   test('gastoHormigaMes() cuenta con el tope que se le pasa', () => {
     const gastos = [
-      { fecha: '2026-05-03', monto: 25_000 },
-      { fecha: '2026-05-05', monto: 5_000 },
+      { fecha: '2026-05-03', monto: 25_000, categoria: 'Mecato' },
+      { fecha: '2026-05-05', monto: 5_000, categoria: 'Mecato' },
     ];
     expect(gastoHormigaMes(gastos, '2026-05')).toBe(5_000);
     expect(gastoHormigaMes(gastos, '2026-05', 30_000)).toBe(30_000);

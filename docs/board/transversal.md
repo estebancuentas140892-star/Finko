@@ -31,17 +31,7 @@
 
 
 
-> **Iniciativa SUS: Finko reconoce el tipo de gasto** ([ADR 146](../DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md)). Hormiga, fantasma y vampiro sin preguntarle al usuario qué son. SUS.1a (la plataforma de cada suscripción, `marcaId`) SUS.1b (el chip de hormiga sale del formulario) y SUS.2a (Mecato, subcategorías y "¿gusto o necesidad?", [ADR 147](../DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md)) cerraron el 2026-11-15. El ícono de Mecato es cola de diseño de Esteban: hoy usa `c-hormiga`. Los vectores de las seis plataformas nuevas son cola de diseño de Esteban, sin tarjeta: entran a `assets/svg/logos/streaming/` y se suman con su `simbolo`.
-
-#### SUS.2b - Hormiga es lo pequeño que es un gusto
-- Prioridad  : alta
-- Estado     : pendiente
-- Área       : code
-- Objetivo   : `esGastoHormiga` pasa a ser pequeño y (gusto, o depende y repetido 3 veces en 30 días por concepto), con `caracterDeGasto` (ADR 147 D6). Un jarabe o una herramienta dejan de contar
-- Riesgo     : las cinco superficies (Gastos, Análisis, Límites, Aprende, logro "Hormiga a raya") tienen que dar la misma cifra; `detectarHormigas` de `gastos/logic.js` también
-- Archivos   : `modules/infra/hormiga.js` y sus cinco lectores
-- Depende de : nada
-- Aceptación : un Mecato de $3.000 cuenta solo; un Salud de $15.000 no; un Restaurantes pequeño cuenta a la tercera vez en 30 días
+> **Iniciativa SUS: Finko reconoce el tipo de gasto** ([ADR 146](../DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md)). Hormiga, fantasma y vampiro sin preguntarle al usuario qué son. SUS.1a (la plataforma de cada suscripción, `marcaId`) SUS.1b (el chip de hormiga sale del formulario) SUS.2a (Mecato, subcategorías y "¿gusto o necesidad?", [ADR 147](../DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md)) y SUS.2b (hormiga es lo pequeño que es un gusto) cerraron el 2026-11-15. El ícono de Mecato es cola de diseño de Esteban: hoy usa `c-hormiga`. Los vectores de las seis plataformas nuevas son cola de diseño de Esteban, sin tarjeta: entran a `assets/svg/logos/streaming/` y se suman con su `simbolo`.
 
 #### SUS.2c - "¿Es un gusto o algo que necesitas?" al repetirse
 - Prioridad  : media
@@ -49,7 +39,7 @@
 - Área       : ambos
 - Objetivo   : un concepto "depende" que se repite (subcategoría, o la nota normalizada) se pregunta una vez en el aviso de Gastos; la respuesta se guarda por concepto y vale para lo de antes y lo de después (ADR 147 D1)
 - Archivos   : `modules/dominio/gastos/view.js` (`_renderInsightHormigas`), `infra/hormiga.js`, `S.config.hormiga.conceptos` (schema)
-- Depende de : SUS.2b
+- Depende de : nada
 - Aceptación : al tercer helado sale la pregunta; "Lo necesito" lo saca de hormiga y no vuelve a preguntar
 
 #### SUS.2d - Corregir y ver lo aprendido

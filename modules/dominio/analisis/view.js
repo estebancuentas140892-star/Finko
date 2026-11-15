@@ -65,9 +65,11 @@ const _MESES = [
  * @param {number} mes
  * @param {number} tope - tope de gasto pequeño vigente (APR.1b): entra a la
  *   clave de la memoización, así que cambiarlo en Límites recalcula.
+ * @param {ReadonlyArray<{ nombre: string, caracter?: string|null }>} [personalizadas] - SUS.2b:
+ *   el carácter que el usuario dio a sus categorías decide qué es hormiga.
  */
-function _calcularDatosAnalisis(gastos, compromisos, cuentas, metas, apartados, inversiones, personales, anio, mes, tope) {
-  const resumen = generarResumen(gastos, compromisos, cuentas, anio, mes, metas, apartados, inversiones, personales, tope);
+function _calcularDatosAnalisis(gastos, compromisos, cuentas, metas, apartados, inversiones, personales, anio, mes, tope, personalizadas = []) {
+  const resumen = generarResumen(gastos, compromisos, cuentas, anio, mes, metas, apartados, inversiones, personales, tope, personalizadas);
 
   // Series para gráficos (D.3). Se calculan aquí para no inflar generarResumen.
   const serieGastos  = serieGastosMensual(gastos, anio, mes, 12);
@@ -94,7 +96,7 @@ function _calcularDatosAnalisis(gastos, compromisos, cuentas, metas, apartados, 
 // repintaría el patrimonio hasta que cambiara otra slice.
 const _calcularDatosAnalisisMemo = memoizar(
   _calcularDatosAnalisis,
-  ['gastos', 'compromisos', 'cuentas', 'metas', 'apartados', 'inversiones', 'personales'],
+  ['gastos', 'compromisos', 'cuentas', 'metas', 'apartados', 'inversiones', 'personales', 'categoriasPersonalizadas'],
 );
 
 /**
@@ -159,6 +161,7 @@ export function precalentarAnalisis() {
   _calcularDatosAnalisisMemo(
     S.gastos, S.compromisos, S.cuentas, S.metas, S.apartados, S.inversiones, S.personales, anio, mes,
     topeHormiga(S.config),
+    S.categoriasPersonalizadas ?? [],
   );
 }
 
@@ -193,6 +196,7 @@ export function renderAnalisis() {
   const { resumen, serieGastos, segmentosCat, lecturas } = _calcularDatosAnalisisMemo(
     S.gastos, S.compromisos, S.cuentas, S.metas, S.apartados, S.inversiones, S.personales, anio, mes,
     topeHormiga(S.config),
+    S.categoriasPersonalizadas ?? [],
   );
 
   // ANL.2d (ADR 038 D7): sin gastos registrados, sin activos y sin deudas no
@@ -372,6 +376,7 @@ export function htmlHojaAnalisis(cual) {
     const { resumen } = _calcularDatosAnalisisMemo(
       S.gastos, S.compromisos, S.cuentas, S.metas, S.apartados, S.inversiones, S.personales, anio, mes,
       topeHormiga(S.config),
+      S.categoriasPersonalizadas ?? [],
     );
     titulo = 'Más detalle de tus gastos';
     sub = SUB_DETALLE;
@@ -1081,7 +1086,7 @@ function _renderHormigas(hormigas) {
   return `
     <section class="analisis__section" aria-labelledby="analisis-hormiga-title">
       <h3 class="analisis__section-title" id="analisis-hormiga-title">${icon('alert')}Alertas de gasto hormiga</h3>
-      <p class="analisis__desc">Categorías con muchas compras pequeñas que suman montos significativos este mes.</p>
+      <p class="analisis__desc">Gustos pequeños que se repiten y este mes ya suman un monto que se nota.</p>
       <ul class="hormiga-list" aria-label="Alertas de gasto hormiga">${items}</ul>
     </section>`;
 }

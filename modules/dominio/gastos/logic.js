@@ -6,7 +6,7 @@
 import { CATEGORIAS_AGENDA, CATEGORIAS_GASTO, ICONOS_CATEGORIA_PERSONALIZADA, SUBCATEGORIAS_GASTO, TARJETA_PREFIJO, iconoDeCategoriaGasto } from '../../core/constants.js';
 import { hijoPorId } from '../../infra/taxonomia.js';
 import { f } from '../../infra/utils.js';
-import { UMBRAL_GASTO_HORMIGA } from '../../infra/hormiga.js';
+import { UMBRAL_GASTO_HORMIGA, gastosHormiga } from '../../infra/hormiga.js';
 import { distribuirPago } from '../../infra/distribuir-pago.js';
 
 // ── FILTROS Y AGRUPACIÓN ─────────────────────────────────────────
@@ -140,17 +140,22 @@ export function variacionMensualGasto(totalActual, totalAnterior) {
 // ── DETECTOR DE HORMIGAS ─────────────────────────────────────────
 
 /**
- * Identifica categorías con muchos gastos pequeños que suman un monto significativo.
- * "Gasto hormiga": transacciones individuales ≤ umbralMonto que en conjunto
- * superan umbralTotal en el período dado.
+ * Identifica categorías con muchos gastos hormiga que suman un monto significativo.
+ * "Gasto hormiga" es el de `infra/hormiga.js` (ADR 147 D6, SUS.2b): lo
+ * pequeño (≤ umbralMonto) que es un gusto, o que "depende" y se repite.
+ * Las categorías cuya suma supera umbralTotal en el período son alerta.
  *
  * @param {import('../../core/state.js').Gasto[]} gastos - ya filtrados por período.
- * @param {number} [umbralMonto=UMBRAL_GASTO_HORMIGA] - monto máximo por transacción para ser "hormiga" (infra/hormiga.js).
+ * @param {number} [umbralMonto=UMBRAL_GASTO_HORMIGA] - tope de una compra pequeña (infra/hormiga.js).
  * @param {number} [umbralTotal=100_000] - suma mínima para que la categoría sea alerta.
+ * @param {{ historial?: import('../../core/state.js').Gasto[], personalizadas?: ReadonlyArray<{ nombre: string, caracter?: string|null }> }} [opciones]
+ *   `historial`: la lista completa de donde salió `gastos` (la repetición se
+ *   mira sobre ella); sin él, solo sobre el período.
  * @returns {Array<{categoria:string, total:number, cantidad:number, promedio:number}>}
  */
-export function detectarHormigas(gastos, umbralMonto = UMBRAL_GASTO_HORMIGA, umbralTotal = 100_000) {
-  const hormiguitas = gastos.filter(g => (g.monto ?? 0) <= umbralMonto);
+export function detectarHormigas(gastos, umbralMonto = UMBRAL_GASTO_HORMIGA, umbralTotal = 100_000, { historial, personalizadas = [] } = {}) {
+  const hormiga = gastosHormiga(historial ?? gastos, { tope: umbralMonto, personalizadas });
+  const hormiguitas = gastos.filter(g => hormiga.has(g));
 
   const porCategoria = gastosPorCategoria(hormiguitas);
 

@@ -199,11 +199,11 @@ describe('gastosPorCategoria()', () => {
 describe('detectarHormigas()', () => {
   it('detecta categorías con muchos gastos pequeños que suman bastante', () => {
     const gastos = Array.from({ length: 8 }, (_, i) =>
-      gastoBase({ id: `g${i}`, monto: 15_000, categoria: 'Alimentación' })
+      gastoBase({ id: `g${i}`, monto: 15_000, categoria: 'Mecato' })
     );
     const hormigas = detectarHormigas(gastos, 20_000, 100_000);
     expect(hormigas).toHaveLength(1);
-    expect(hormigas[0].categoria).toBe('Alimentación');
+    expect(hormigas[0].categoria).toBe('Mecato');
     expect(hormigas[0].total).toBe(120_000);
     expect(hormigas[0].cantidad).toBe(8);
   });
@@ -229,10 +229,10 @@ describe('detectarHormigas()', () => {
 
   it('ordena por total descendente', () => {
     const gastosAlim = Array.from({ length: 7 }, (_, i) =>
-      gastoBase({ id: `a${i}`, monto: 18_000, categoria: 'Alimentación' })
+      gastoBase({ id: `a${i}`, monto: 18_000, categoria: 'Café' })
     );
     const gastosTransp = Array.from({ length: 10 }, (_, i) =>
-      gastoBase({ id: `t${i}`, monto: 12_000, categoria: 'Transporte' })
+      gastoBase({ id: `t${i}`, monto: 12_000, categoria: 'Mecato' })
     );
     const hormigas = detectarHormigas([...gastosAlim, ...gastosTransp], 20_000, 100_000);
     expect(hormigas[0].total).toBeGreaterThanOrEqual(hormigas[1].total);
@@ -1819,8 +1819,8 @@ describe('renderListaGastos() - insight de gastos hormiga (GAS.1c)', () => {
     renderListaGastos();
     const insight = document.querySelector('#lista-gastos .gastos-insight');
     expect(insight).not.toBeNull();
-    expect(insight.querySelector('.gastos-insight__title').textContent).toBe('Gastos hormiga: Domicilios');
-    expect(insight.querySelector('.gastos-insight__desc').textContent).toContain('6 gastos pequeños suman');
+    expect(insight.querySelector('.gastos-insight__title').textContent).toBe('Gustos pequeños: Domicilios');
+    expect(insight.querySelector('.gastos-insight__desc').textContent).toContain('6 compras pequeñas suman');
     expect(insight.querySelector('.gastos-insight__desc').textContent).toContain('$108.000');
   });
 

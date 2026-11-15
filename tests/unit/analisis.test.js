@@ -135,11 +135,11 @@ describe('generarResumen()', () => {
 
   it('detecta hormigas cuando hay muchos gastos pequeños', () => {
     const gastos = Array.from({ length: 8 }, (_, i) =>
-      gasto({ id: `g${i}`, monto: 15_000, fecha: '2026-05-10' })
+      gasto({ id: `g${i}`, monto: 15_000, fecha: '2026-05-10', categoria: 'Mecato' })
     );
     const resumen = generarResumen(gastos, [], [], ANIO, MES);
     expect(resumen.hormigas.length).toBeGreaterThan(0);
-    expect(resumen.hormigas[0].categoria).toBe('Alimentación');
+    expect(resumen.hormigas[0].categoria).toBe('Mecato');
   });
 
   it('devuelve objeto con todas las claves esperadas', () => {

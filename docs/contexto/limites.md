@@ -1,6 +1,6 @@
 # Ficha de contexto: Límites de gasto
 
-> Revisado: 2026-11-15 (SUS.1b).
+> Revisado: 2026-11-15 (SUS.2b).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 > El dominio se llama `presupuesto` en el código; "Límites de gasto" es el nombre de cara al usuario (para no confundirlo con Apartados: guardar dinero vs. vigilar cuánto sale).
@@ -76,6 +76,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-15 SUS.2b: el sobre se llama "Gustos pequeños" y suma solo lo hormiga ([ADR 147](../DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md) D6). Hormiga deja de ser toda compra de hasta el tope: es lo pequeño que es un gusto, o que "depende" y se repite 3 veces en 30 días por concepto (`gastosHormiga()`, sobre todo el historial). Una necesidad (Salud, Hogar, lo que el usuario contestó) nunca cuenta.
 - 2026-11-15 SUS.1b ([ADR 146](../DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md) D5): "Gastos hormiga" deja de ofrecerse como categoría con tope; un gasto viejo en ella aparece en "Gastas acá y no tiene tope" con "Se controla en Gastos pequeños" (`_MOTIVO_SIN_TOPE`). Los topes ya creados se siguen mostrando y editando.
 
 - 2026-11-13 (**HF.1b**, [ADR 139](../DECISIONS/139-la-naturaleza-de-un-gasto.md) D2): los tres grupos son el plan del ingreso: `ejecutadoPorGrupoDelMes()` y `desgloseNecesidadesDelMes()` dejan fuera la compra con tarjeta (`gastosQueSalenDelIngreso()`), que contaba como Necesidad por llevar el `compromisoId` de la tarjeta; la tarjeta cuenta cuando se paga, como cuota. Los topes por categoría no cambian.

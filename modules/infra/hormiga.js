@@ -7,14 +7,20 @@
  * Con un tercer lector (`aprende`) la duplicación deja de ser barata: el
  * criterio sube a infra y los tres lo leen de aquí.
  *
- * El criterio es el tamaño de la transacción, no la categoría: así funciona
- * para todos y no se desactiva recategorizando (ADR 032 D4). El ADR 147
- * reemplaza ese criterio: lo pequeño solo es hormiga si es un gusto. SUS.2a
- * deja el carácter (`caracterDeGasto`); SUS.2b lo aplica en `esGastoHormiga`.
+ * El criterio (ADR 147 D6, desde SUS.2b; reemplaza el "solo el monto" del
+ * ADR 032 D4) es **lo pequeño que es un gusto**: una compra de hasta el tope
+ * que no sea un pago (de un fijo o de una deuda) y cuyo carácter
+ * (`caracterDeGasto`) sea "gusto", o "depende" y se repita: el mismo
+ * concepto 3 veces en 30 días. Una necesidad nunca cuenta. Así un jarabe o
+ * una herramienta de $15.000 dejan de inflar la cifra.
+ *
+ * Se decide sobre todo el historial (`gastosHormiga`) y cada superficie
+ * filtra su mes de ahí: una repetición que cruza el cambio de mes cuenta.
  */
 
 import { CARACTER_CATEGORIA_GASTO, SUBCATEGORIAS_GASTO } from '../core/constants.js';
 import { hijoPorId } from './taxonomia.js';
+import { naturalezaDeGasto, NATURALEZA_GASTO } from './naturaleza.js';
 
 /** Respuestas válidas a "¿Es un gusto o una necesidad?" (ADR 147 D4). */
 const _RESPUESTAS = new Set(['gusto', 'necesidad']);
@@ -79,27 +85,123 @@ export function limiteHormiga(config) {
 }
 
 /**
- * ¿Este gasto es hormiga? Monto positivo y menor o igual al tope.
+ * ¿Es una compra pequeña? Monto positivo y menor o igual al tope. Es la mitad
+ * del criterio: lo pequeño solo es hormiga si además es un gusto
+ * (`gastosHormiga`).
  *
  * @param {{ monto?: unknown }} gasto
  * @param {number} [tope=UMBRAL_GASTO_HORMIGA]
  * @returns {boolean}
  */
-export function esGastoHormiga(gasto, tope = UMBRAL_GASTO_HORMIGA) {
+export function esGastoPequeno(gasto, tope = UMBRAL_GASTO_HORMIGA) {
   const monto = Number(gasto?.monto);
   return Number.isFinite(monto) && monto > 0 && monto <= tope;
+}
+
+/** Cuántas veces tiene que aparecer un concepto "depende" para contar. */
+export const REPETICIONES_HORMIGA = 3;
+
+/** En cuántos días (inclusive) tienen que caer esas repeticiones. */
+export const VENTANA_HORMIGA_DIAS = 30;
+
+/** 'YYYY-MM-DD' a número de día (UTC), o null. */
+function _dia(fecha) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(fecha ?? ''));
+  return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) / 86_400_000 : null;
+}
+
+/** Primera palabra de 3 o más letras, sin tildes y en singular ("Helados de mora" → "helado"). */
+function _palabraClave(texto) {
+  const palabras = String(texto ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .split(/[^a-z0-9]+/)
+    .filter(p => p.length >= 3);
+  const p = palabras[0] ?? '';
+  return p.length > 3 && p.endsWith('s') ? p.slice(0, -1) : p;
+}
+
+/**
+ * El concepto de un gasto, lo que se cuenta al ver si se repite (ADR 147 D1):
+ * su subcategoría si la tiene; si no, su categoría y la primera palabra de su
+ * nota ("Restaurantes|almuerzo"); sin nota, la categoría sola.
+ *
+ * @param {{ categoria?: string, subcategoriaId?: string|null, nota?: string, descripcion?: string }} gasto
+ * @returns {string}
+ */
+export function conceptoDeGasto(gasto) {
+  const categoria = gasto?.categoria || 'Otros';
+  const sub = hijoPorId(SUBCATEGORIAS_GASTO, gasto?.subcategoriaId);
+  if (sub && sub.categorias.includes(categoria)) return `s:${sub.id}`;
+  return `c:${categoria}|${_palabraClave(gasto?.nota || gasto?.descripcion)}`;
+}
+
+/**
+ * Los gastos hormiga de una lista (ADR 147 D6): lo pequeño que es un gusto,
+ * o que "depende" y se repite (`REPETICIONES_HORMIGA` del mismo concepto en
+ * `VENTANA_HORMIGA_DIAS`). El pago de un fijo o de una deuda nunca cuenta:
+ * no es una compra.
+ *
+ * Devuelve los objetos mismos, así quien filtra un mes de la misma lista los
+ * reconoce por identidad. Pasar el historial completo, no un mes: una
+ * repetición que cruza el cambio de mes cuenta, y también cuentan los dos
+ * primeros de una serie que se completa después.
+ *
+ * @param {import('../core/state.js').Gasto[]} gastos
+ * @param {{ tope?: number, personalizadas?: ReadonlyArray<{ nombre: string, caracter?: string|null }> }} [opciones]
+ * @returns {Set<import('../core/state.js').Gasto>}
+ */
+export function gastosHormiga(gastos, { tope = UMBRAL_GASTO_HORMIGA, personalizadas = [] } = {}) {
+  const hormiga = new Set();
+  /** @type {Map<string, { g: object, dia: number }[]>} */
+  const porConcepto = new Map();
+  for (const g of gastos ?? []) {
+    if (!esGastoPequeno(g, tope)) continue;
+    const naturaleza = naturalezaDeGasto(g);
+    if (naturaleza !== NATURALEZA_GASTO.CONSUMO && naturaleza !== NATURALEZA_GASTO.CONSUMO_TARJETA) continue;
+    const caracter = caracterDeGasto(g, personalizadas);
+    if (caracter === 'necesidad') continue;
+    if (caracter === 'gusto') { hormiga.add(g); continue; }
+    const dia = _dia(g.fecha);
+    if (dia === null) continue;
+    const clave = conceptoDeGasto(g);
+    const lista = porConcepto.get(clave) ?? [];
+    lista.push({ g, dia });
+    porConcepto.set(clave, lista);
+  }
+
+  // Un gasto cuenta si alguna racha de 3 seguidos (en el orden de las fechas)
+  // que lo incluye cabe en la ventana: cualquier ventana con 3 o más que lo
+  // contenga tiene una racha así adentro.
+  const n = REPETICIONES_HORMIGA;
+  for (const lista of porConcepto.values()) {
+    if (lista.length < n) continue;
+    lista.sort((a, b) => a.dia - b.dia);
+    for (let i = 0; i < lista.length; i++) {
+      for (let j = Math.max(0, i - n + 1); j <= i && j + n - 1 < lista.length; j++) {
+        if (lista[j + n - 1].dia - lista[j].dia < VENTANA_HORMIGA_DIAS) {
+          hormiga.add(lista[i].g);
+          break;
+        }
+      }
+    }
+  }
+  return hormiga;
 }
 
 /**
  * Resumen del gasto hormiga de un mes calendario: total, número de compras
  * y desglose por categoría, de mayor a menor.
  *
- * @param {import('../core/state.js').Gasto[]} gastos
+ * @param {import('../core/state.js').Gasto[]} gastos - el historial: la
+ *   repetición se mira sobre todos (`gastosHormiga`), el total solo del mes.
  * @param {string} mesISO - `YYYY-MM` (o un ISO completo, se usa el prefijo).
  * @param {number} [tope=UMBRAL_GASTO_HORMIGA]
+ * @param {ReadonlyArray<{ nombre: string, caracter?: string|null }>} [personalizadas]
  * @returns {{ total: number, cuantos: number, porCategoria: { categoria: string, total: number, cuantos: number }[] }}
  */
-export function resumenHormigaMes(gastos, mesISO, tope = UMBRAL_GASTO_HORMIGA) {
+export function resumenHormigaMes(gastos, mesISO, tope = UMBRAL_GASTO_HORMIGA, personalizadas = []) {
   const vacio = { total: 0, cuantos: 0, porCategoria: [] };
   if (typeof mesISO !== 'string' || mesISO.length < 7) return vacio;
   const mes = mesISO.slice(0, 7);
@@ -108,9 +210,8 @@ export function resumenHormigaMes(gastos, mesISO, tope = UMBRAL_GASTO_HORMIGA) {
   let cuantos = 0;
   /** @type {Map<string, { categoria: string, total: number, cuantos: number }>} */
   const grupos = new Map();
-  for (const g of gastos ?? []) {
+  for (const g of gastosHormiga(gastos, { tope, personalizadas })) {
     if (typeof g?.fecha !== 'string' || g.fecha.slice(0, 7) !== mes) continue;
-    if (!esGastoHormiga(g, tope)) continue;
     const monto = Number(g.monto);
     total += monto;
     cuantos += 1;

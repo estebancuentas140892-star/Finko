@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): SUS.2b, hormiga es lo pequeño que es un gusto · 2026-11-15
+
+[ADR 147](DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md) D6. Fichas: [`contexto/limites.md`](contexto/limites.md), [`contexto/aprende.md`](contexto/aprende.md), [`contexto/logros.md`](contexto/logros.md). SW v722.
+
+- **La regla nueva vive en un solo lugar** (`gastosHormiga()` en `infra/hormiga.js`): pequeño (el tope de siempre) y gusto, o "depende" y repetido 3 veces en 30 días por concepto. Una necesidad nunca cuenta, ni el pago de un fijo o una deuda.
+- **El concepto** es la subcategoría, o la primera palabra de la nota sin tildes ni plural ("Helados de mora" y "helado" son lo mismo), o la categoría sola.
+- **Se mira sobre todo el historial**: una racha que cruza el cambio de mes cuenta en los dos, y los dos primeros de una serie cuentan cuando llega el tercero.
+- **Las cinco superficies leen lo mismo**: el aviso de Gastos ("Gustos pequeños: X"), Análisis, el sobre de Límites (ahora "Gustos pequeños"), Aprende y el logro "Hormiga a raya". Las categorías propias pasan con su carácter.
+- **Lo viejo dice lo que era**: un gasto en "Gastos hormiga" es gusto; Vivienda, Servicios públicos, Alimentación y Ahorro, necesidad.
+- **Las lecciones del niño no cambian**: sus tarjetas siguen clasificando por tamaño (`esGastoPequeno`, antes `esGastoHormiga`).
+- Pruebas: `caracter-gasto` (10 nuevas de la regla), 15 ajustadas en `aprende`, `gastos`, `logros`, `presupuesto` y `analisis` (sus datos usaban categorías que ahora son necesidad). Unitarias 5772/5772, E2E 477/477.
+
 ### feat(gastos): SUS.2a, Mecato, subcategorías y "¿gusto o necesidad?" · 2026-11-15
 
 [ADR 147](DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md) (reemplaza el criterio "hormiga es solo el monto" del ADR 032 D4 y el 092 D11). Fichas: [`contexto/gastos.md`](contexto/gastos.md), [`contexto/categorias.md`](contexto/categorias.md). Schema v52, SW v721.

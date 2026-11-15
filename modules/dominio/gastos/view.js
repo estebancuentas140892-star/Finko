@@ -469,7 +469,12 @@ function _renderSalidaHistorial() {
  * @returns {string}
  */
 function _renderInsightHormigas(delMes, oculto) {
-  const hormigas = detectarHormigas(delMes, topeHormiga(S.config));
+  // SUS.2b (ADR 147 D6): lo pequeño que es un gusto, mirado sobre todo el
+  // historial (una repetición que cruza el cambio de mes cuenta).
+  const hormigas = detectarHormigas(delMes, topeHormiga(S.config), undefined, {
+    historial: S.gastos ?? [],
+    personalizadas: S.categoriasPersonalizadas ?? [],
+  });
   if (hormigas.length === 0) return '';
 
   const top      = hormigas[0];
@@ -481,8 +486,8 @@ function _renderInsightHormigas(delMes, oculto) {
         <svg class="icon" aria-hidden="true"><use href="#i-lightbulb"/></svg>
       </span>
       <div class="gastos-insight__body">
-        <p class="gastos-insight__title">Gastos hormiga: ${_esc(top.categoria)}</p>
-        <p class="gastos-insight__desc">${top.cantidad} gastos pequeños suman <strong>${totalTxt}</strong> este mes. Pequeños, pero se acumulan.</p>
+        <p class="gastos-insight__title">Gustos pequeños: ${_esc(top.categoria)}</p>
+        <p class="gastos-insight__desc">${top.cantidad} compras pequeñas suman <strong>${totalTxt}</strong> este mes. Pequeñas, pero se acumulan.</p>
       </div>
     </div>`;
 }

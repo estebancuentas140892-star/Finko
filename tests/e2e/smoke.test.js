@@ -1268,8 +1268,8 @@ test.describe('Gastos - CRUD', () => {
 
     const insight = page.locator('#lista-gastos .gastos-insight');
     await expect(insight).toBeVisible();
-    await expect(insight.locator('.gastos-insight__title')).toHaveText('Gastos hormiga: Domicilios');
-    await expect(insight.locator('.gastos-insight__desc')).toContainText('6 gastos pequeños suman');
+    await expect(insight.locator('.gastos-insight__title')).toHaveText('Gustos pequeños: Domicilios');
+    await expect(insight.locator('.gastos-insight__desc')).toContainText('6 compras pequeñas suman');
     await expect(insight.locator('.gastos-insight__desc')).toContainText('$108.000');
 
     // Con un filtro de categoría activo el insight se oculta (solo "Todos").

@@ -125,10 +125,10 @@ export function calcularProgreso(presupuesto, gastos, anio, mes) {
 // ── GASTOS PEQUEÑOS (APR.1b, ADR 092) ────────────────────────────
 
 /**
- * El límite de gastos pequeños del mes: la suma de las compras de hasta el
- * tope contra el máximo que el usuario se puso (`S.config.hormiga`). No es un
- * tope por categoría: cruza todas, porque lo pequeño se mide por el valor de
- * cada compra (ADR 032 D4). Mismo criterio de estado que `calcularProgreso()`.
+ * El límite de gustos pequeños del mes: la suma de los gastos hormiga (lo
+ * pequeño que es un gusto, ADR 147 D6) contra el máximo que el usuario se puso
+ * (`S.config.hormiga`). No es un tope por categoría: cruza todas. Mismo
+ * criterio de estado que `calcularProgreso()`.
  *
  * Sin límite puesto devuelve igual el total del mes: la lente lo muestra para
  * ofrecer ponerle uno.
@@ -137,14 +137,16 @@ export function calcularProgreso(presupuesto, gastos, anio, mes) {
  * @param {{ hormiga?: { tope?: number, limite?: number | null } }} config - `S.config`.
  * @param {number} anio
  * @param {number} mes - 1-12
+ * @param {ReadonlyArray<{ nombre: string, caracter?: string|null }>} [personalizadas] - las
+ *   categorías del usuario, por el carácter que dijeron (SUS.2b).
  * @returns {{ tope: number, limite: number | null, gastado: number, cuantos: number,
  *   restante: number, porcentaje: number, estado: 'ok' | 'alerta' | 'excedido' }}
  */
-export function progresoHormiga(gastos, config, anio, mes) {
+export function progresoHormiga(gastos, config, anio, mes, personalizadas = []) {
   const tope   = topeHormiga(config);
   const limite = limiteHormiga(config);
   const mesISO = `${anio}-${String(mes).padStart(2, '0')}`;
-  const { total: gastado, cuantos } = resumenHormigaMes(gastos, mesISO, tope);
+  const { total: gastado, cuantos } = resumenHormigaMes(gastos, mesISO, tope, personalizadas);
   if (!limite) return { tope, limite: null, gastado, cuantos, restante: 0, porcentaje: 0, estado: 'ok' };
 
   const porcentaje = Math.round((gastado / limite) * 100);

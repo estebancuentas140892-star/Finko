@@ -1,6 +1,6 @@
 # Ficha de contexto: Logros
 
-> Revisado: 2026-10-29.
+> Revisado: 2026-11-15 (SUS.2b).
 
 > Gamificación ligera de hábitos: catálogo, evaluación automática, toast con confetti y las dos superficies de "Tu progreso". Partida de [`transversal.md`](transversal.md) el 2026-08-14 (DOC.3). Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -57,6 +57,8 @@
 **Cambios pendientes**: ninguno propio de la iniciativa "Logros v2": las 4 rebanadas (LG.2b/c/d/e) cerraron. **Dos logros del catálogo D4 quedaron diferidos por datos, sin tarjeta**: `ahorro-creciente` espera la derivación canónica de ingreso mensual (el ADR 046 no la entregó; no construir una paralela) y `pagador-puntual` espera historial de vencimientos pagados, que `S.compromisos` no guarda (solo estado actual): la verificación y sus razones quedaron en el ADR 032, sección "Resolución de LG.2e en implementación". Los nombres de `NIVELES_USUARIO` son provisionales: cuando Esteban entregue los definitivos, se cambia la constante (sin tocar datos, nada se persiste). **La ficha 17 cerró el 2026-10-25.** **Pendiente de MOV.1: la ficha 19** (propuesta visual de la vitrina) es un rediseño, no un arreglo puntual: pide dos divisores ("Te falta" arriba, "Ya los tienes" abajo), fuera el chip "Pendiente/Desbloqueado" de cada tarjeta, el enlace del `hint` en su propia línea con el color del dominio destino, y fuera "Tu nivel" del encabezado. Su premisa es la vitrina dentro de Ajustes, que LG.2d ya mudó, así que hay que releerla contra las dos superficies de hoy antes de implementarla.
 
 **Cambios realizados**:
+
+- 2026-11-15 SUS.2b ([ADR 147](../DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md) D6): hormiga deja de ser toda compra de hasta el tope: es lo pequeño que es un gusto, o que "depende" y se repite 3 veces en 30 días por concepto (`gastosHormiga()`, sobre todo el historial). "Hormiga a raya" compara esa cifra. Una necesidad (Salud, Hogar, lo que el usuario contestó) nunca cuenta.
 
 - 2026-10-29 (APR.7, ADR 101): sin vitrina ni avisos; los logros se siguen guardando.
 - 2026-10-25 (MOV.1 ficha 17): los `hint` enlazan su sección (`ir`), la vitrina se parte en "Te falta" y "Ya los tienes" y el aviso de desbloqueo lleva a Tu progreso (H9). G1 y G2 ya los habían cerrado MOV.20a y LG.2e.

@@ -6,7 +6,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-11-15 (SUS.2a cerrada, [ADR 147](DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md); antes, SUS.1b cerrada; antes, SUS.1a cerrada, [ADR 146](DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md): nace la iniciativa SUS con SUS.1b a SUS.1d; antes, HF.3e cerrada, [ADR 144](DECISIONS/144-lo-que-finko-muestra-fuera-de-la-app.md); antes, REV.3a cerrada; antes, HF.1d-2 cerrada, cierra HF.1d; antes, HF.1d-1 cerrada, [ADR 143](DECISIONS/143-todo-cambio-de-saldo-deja-registro.md); antes, la iniciativa FORM.2, formularios por tarea, [ADR 142](DECISIONS/142-formularios-por-tarea.md), queda completa: FORM.2a a 2h cerradas; el canvas de diseño ya se aplicó y se borró). Antes, 2026-11-13 (REV.2c cerrada; REV.2b, ADR 141; REV.2a, ADR 140; antes, la poda, ADR 138). Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
+> Última actualización: 2026-11-15 (SUS.2b cerrada; antes, SUS.2a cerrada, [ADR 147](DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md); antes, SUS.1b cerrada; antes, SUS.1a cerrada, [ADR 146](DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md): nace la iniciativa SUS con SUS.1b a SUS.1d; antes, HF.3e cerrada, [ADR 144](DECISIONS/144-lo-que-finko-muestra-fuera-de-la-app.md); antes, REV.3a cerrada; antes, HF.1d-2 cerrada, cierra HF.1d; antes, HF.1d-1 cerrada, [ADR 143](DECISIONS/143-todo-cambio-de-saldo-deja-registro.md); antes, la iniciativa FORM.2, formularios por tarea, [ADR 142](DECISIONS/142-formularios-por-tarea.md), queda completa: FORM.2a a 2h cerradas; el canvas de diseño ya se aplicó y se borró). Antes, 2026-11-13 (REV.2c cerrada; REV.2b, ADR 141; REV.2a, ADR 140; antes, la poda, ADR 138). Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
 
 ---
 
@@ -48,8 +48,7 @@ Las tarjetas del tablero, **en orden de valor** desde la poda del 2026-11-13 ([A
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
 | REV.3b | La app instalada tiene tus datos y la versión publicada (absorbe REV.5) | Transversal | alta | una prueba en un iPhone real y los datos del teléfono de Esteban |
-| SUS.2b | Hormiga es lo pequeño que es un gusto (la regla nueva en las cinco superficies) | Transversal | alta | nada |
-| SUS.2c | "¿Es un gusto o algo que necesitas?" al repetirse, y lo que Finko aprende | Transversal | media | SUS.2b |
+| SUS.2c | "¿Es un gusto o algo que necesitas?" al repetirse, y lo que Finko aprende | Transversal | media | nada |
 | SUS.2d | Corregir el carácter desde el gasto y ver lo aprendido en Límites | Transversal | baja | SUS.2c |
 | SUS.1c | Pagas varias plataformas: ¿las usas todas? | Transversal | media | nada |
 | SUS.1d | Vampiro: lo que pagas sin comprar nada | Transversal | baja | SUS.1c y la superficie decidida con Esteban |
@@ -87,7 +86,7 @@ _(CFG.1 a CFG.6 cerraron completas. CFG.6, la auditoría móvil de Ajustes, cerr
 
 ## Transversal (afecta varias secciones)
 
-REV.3b, SUS.2b a SUS.2d, SUS.1c, SUS.1d y NUBE.4 → [`board/transversal.md`](board/transversal.md) (SUS: iniciativa "Finko reconoce el tipo de gasto", [ADR 146](DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md); FORM: iniciativa "formularios por tarea", [ADR 142](DECISIONS/142-formularios-por-tarea.md); HF: iniciativa "un hecho financiero se informa una sola vez", [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), seis tarjetas desde el [ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md); APR: iniciativa "Aprende y aplícalo", [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) y [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md), en Propuesta)
+REV.3b, SUS.2c, SUS.2d, SUS.1c, SUS.1d y NUBE.4 → [`board/transversal.md`](board/transversal.md) (SUS: iniciativa "Finko reconoce el tipo de gasto", [ADR 146](DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md); FORM: iniciativa "formularios por tarea", [ADR 142](DECISIONS/142-formularios-por-tarea.md); HF: iniciativa "un hecho financiero se informa una sola vez", [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), seis tarjetas desde el [ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md); APR: iniciativa "Aprende y aplícalo", [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) y [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md), en Propuesta)
 
 ---
 

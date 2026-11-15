@@ -524,8 +524,8 @@ export const CARACTERES_GASTO = Object.freeze(['necesidad', 'gusto', 'depende'])
 
 /**
  * Carácter de cada categoría nativa de gasto (ADR 147 D3). Una subcategoría
- * puede decir otro (`SUBCATEGORIAS_GASTO[].caracter`). Las internas (Deudas,
- * Ahorro, Gastos fijos) y las que ya no se ofrecen no están: caen a "depende".
+ * puede decir otro (`SUBCATEGORIAS_GASTO[].caracter`). Deudas y Gastos fijos
+ * no están: son pagos, y `gastosHormiga` los deja fuera por su naturaleza.
  */
 export const CARACTER_CATEGORIA_GASTO = Object.freeze({
   'Mecato':           'gusto',
@@ -542,6 +542,14 @@ export const CARACTER_CATEGORIA_GASTO = Object.freeze({
   'Entretenimiento':  'depende',
   'Familia':          'necesidad',
   'Otros':            'depende',
+  // SUS.2b: las que ya no se ofrecen pero viven en gastos guardados. Quien
+  // anotó algo en "Gastos hormiga" ya dijo que era un gusto (SUS.1b la
+  // retiró del formulario, no de los datos).
+  'Gastos hormiga':     'gusto',
+  'Vivienda':           'necesidad',
+  'Servicios públicos': 'necesidad',
+  'Alimentación':       'necesidad',
+  'Ahorro':             'necesidad',
 });
 
 /**

@@ -170,7 +170,7 @@ function _guardarConfigHormiga(tope, limite) {
 }
 
 /**
- * Abre el formulario de gastos pequeños en el modal del dominio. Con
+ * Abre el formulario de gustos pequeños en el modal del dominio. Con
  * `limitePropuesto` llega lleno desde otra superficie.
  * @param {number} [limitePropuesto]
  */
@@ -178,7 +178,7 @@ function _editarHormiga(limitePropuesto) {
   const overlay = _getOverlay();
   if (!overlay) return;
   _setBody(renderFormHormiga(limitePropuesto));
-  _setTitulo(overlay, 'Gastos pequeños');
+  _setTitulo(overlay, 'Gustos pequeños');
   const form = document.getElementById('form-hormiga');
   form?.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -192,14 +192,14 @@ function _editarHormiga(limitePropuesto) {
     _guardarConfigHormiga(Number(datos.tope), limite);
     cerrarModal(overlay);
     renderPanelPresupuesto();
-    announce(limite ? `Límite de gastos pequeños: ${f(limite)} al mes.` : 'Gastos pequeños sin límite.');
+    announce(limite ? `Límite de gustos pequeños: ${f(limite)} al mes.` : 'Gustos pequeños sin límite.');
   });
   abrirModal(overlay);
 }
 
 async function _quitarLimiteHormiga() {
   const ok = await confirmar({
-    titulo:         'Quitar el límite de gastos pequeños',
+    titulo:         'Quitar el límite de gustos pequeños',
     mensaje:        '¿Quitar el límite? Tus gastos no se ven afectados y puedes volver a ponerlo cuando quieras.',
     confirmarTexto: 'Quitar',
     peligroso:      true,
@@ -207,7 +207,7 @@ async function _quitarLimiteHormiga() {
   if (!ok) return;
   _guardarConfigHormiga(topeHormiga(S.config), null);
   renderPanelPresupuesto();
-  announce('Límite de gastos pequeños quitado.');
+  announce('Límite de gustos pequeños quitado.');
 }
 
 /**
@@ -257,7 +257,7 @@ export function initPresupuesto() {
   EventBus.on('hormiga:limite', ({ monto } = {}) => {
     if (!(Number(monto) > 0)) return;
     _guardarConfigHormiga(topeHormiga(S.config), Number(monto));
-    announce(`Límite de gastos pequeños: ${f(Number(monto))} al mes.`);
+    announce(`Límite de gustos pequeños: ${f(Number(monto))} al mes.`);
   });
 
   // ADR 080 D4: las dos salidas de esta lente hacia el reparto del ingreso
