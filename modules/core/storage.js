@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 51;
+const SCHEMA_VERSION = 52;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -737,6 +737,12 @@ function _migrate(raw) {
   // teja sale por texto como siempre. Sin backfill: el formulario propone la
   // plataforma que el nombre ya menciona y el usuario la confirma al guardar.
   // Migración intencionalmente no-op, mismo precedente de v38 → v39.
+
+  // v51 → v52: `subcategoriaId` y `caracter` en el gasto, `caracter` en la
+  // categoría personalizada (SUS.2a, ADR 147 D3 y D4). Opcionales y
+  // `undefined`-safe: un gasto guardado se lee con el carácter de su categoría
+  // (`caracterDeGasto`). Sin backfill: nada en un gasto viejo dice si fue un
+  // gusto. Migración intencionalmente no-op, mismo precedente de v38 → v39.
 
   if (typeof data._version !== 'number' || data._version < SCHEMA_VERSION) {
     data._version = SCHEMA_VERSION;

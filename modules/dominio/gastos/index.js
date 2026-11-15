@@ -26,7 +26,7 @@ import { wireIconoPicker } from '../../infra/icon-picker.js';
 import {
   validarGasto, normalizarGasto,
   deltasPorEdicionDeGasto, deltasPorEdicionEnDeuda, deltasPorEdicionEnCuotaMensual,
-  validarCategoriaPersonalizada, excesoDeCupo, consecuenciaDeGasto,
+  validarCategoriaPersonalizada, excesoDeCupo, consecuenciaDeGasto, RESPUESTAS_CARACTER,
 } from './logic.js';
 // ADR 060: lectura cross-domain de solo lectura, desde index.js (no desde
 // logic.js, que cerraría un ciclo: presupuesto/logic.js ya importa
@@ -103,6 +103,16 @@ async function _guardarGasto() {
     return;
   }
 
+  // SUS.2a (ADR 147 D4): "¿Es un gusto o una necesidad?" se lee solo si la
+  // pregunta estaba a la vista para esta categoría (el `disabled` del grupo
+  // ya la saca de FormData en el navegador; esto lo hace explícito). En una
+  // categoría propia la respuesta se guarda en la categoría, una sola vez.
+  const respuesta = preguntaCaracterVisible(datos.categoria) && RESPUESTAS_CARACTER.includes(datos.caracter)
+    ? datos.caracter : null;
+  const propiaSinCaracter = (S.categoriasPersonalizadas ?? [])
+    .find(c => c.nombre === datos.categoria && !RESPUESTAS_CARACTER.includes(c.caracter));
+  if (respuesta && propiaSinCaracter) editar('categoriasPersonalizadas', propiaSinCaracter.id, { caracter: respuesta });
+
   // Crear y persistir la categoría antes de normalizar el gasto: `datos.categoria`
   // pasa a ser su nombre, exactamente como si el usuario hubiera elegido una nativa.
   if (esCategoriaNueva) {
@@ -110,6 +120,7 @@ async function _guardarGasto() {
       nombre:  datos.categoriaNuevaNombre.trim(),
       icono:   datos.categoriaNuevaIcono,
       seccion: 'gasto',
+      ...(respuesta ? { caracter: respuesta } : {}),
     });
     datos.categoria = nueva.nombre;
   }
@@ -340,6 +351,8 @@ function _editarGasto(el) {
   const cat = gasto.categoria ?? 'Otros';
   const radioCat = [...form.querySelectorAll('input[name="categoria"]')].find(r => r.value === cat);
   if (radioCat) radioCat.checked = true;
+  // SUS.2a: su subcategoría y, en Otros, lo que contestó.
+  _marcarDetalleCategoria(form, gasto);
 
   // Chips de fecha: hoy/ayer se marcan como atajo; cualquier otra fecha
   // marca "Otra fecha" y revela el input date con el valor del gasto.
@@ -429,6 +442,8 @@ function _prellenarCamposGasto(form, datos) {
     // mantiene el form coherente si venía abierto en ese estado.
     radioCat.dispatchEvent(new Event('change', { bubbles: true }));
   }
+  // SUS.2a: "Repetir" copia también la subcategoría y lo contestado en Otros.
+  _marcarDetalleCategoria(form, datos);
 
   if (datos.cuentaId) {
     const radioCuenta = form.querySelector(`input[name="cuentaId"][value="${CSS.escape(datos.cuentaId)}"]`);
@@ -451,6 +466,25 @@ function _prellenarCamposGasto(form, datos) {
   irAEtapaGasto(form, 'revisar');
 
   form.querySelector('button[type="submit"]')?.focus();
+}
+
+/**
+ * Marca la subcategoría y la respuesta de carácter de un gasto conocido
+ * (editar, "Repetir") y deja a la vista su grupo (SUS.2a). Un id que no es de
+ * la categoría no encuentra radio en el grupo de ella y no se marca.
+ * @param {HTMLFormElement} form
+ * @param {{ categoria?: string, subcategoriaId?: string|null, caracter?: string|null }} gasto
+ */
+function _marcarDetalleCategoria(form, gasto) {
+  const sub = gasto?.subcategoriaId
+    ? form.querySelector(`[data-sub-grupo="${CSS.escape(gasto.categoria ?? '')}"] input[name="subcategoriaId"][value="${CSS.escape(gasto.subcategoriaId)}"]`)
+    : null;
+  if (sub) sub.checked = true;
+  const caracter = RESPUESTAS_CARACTER.includes(gasto?.caracter)
+    ? form.querySelector(`input[name="caracter"][value="${gasto.caracter}"]`)
+    : null;
+  if (caracter) caracter.checked = true;
+  sincronizarDetalleCategoria(form);
 }
 
 /**
@@ -497,10 +531,12 @@ function _repetirGasto(el) {
   if (fechaInput) fechaInput.value = hoy();
 
   _prellenarCamposGasto(form, {
-    monto:     gasto.monto,
-    categoria: gasto.categoria ?? '',
-    cuentaId:  _origenDeGasto(gasto),
-    nota:      gasto.nota ?? '',
+    monto:          gasto.monto,
+    categoria:      gasto.categoria ?? '',
+    cuentaId:       _origenDeGasto(gasto),
+    nota:           gasto.nota ?? '',
+    subcategoriaId: gasto.subcategoriaId ?? null,
+    caracter:       gasto.caracter ?? null,
   });
 
   const titulo = overlay.querySelector('.modal__title');
@@ -761,6 +797,8 @@ function _montarFormGasto(opciones = {}) {
     if (t.name === 'categoria' && camposNueva) {
       camposNueva.hidden = t.value !== CATEGORIA_NUEVA_VALUE;
     }
+    // SUS.2a: la subcategoría o la pregunta de la categoría elegida.
+    if (t.name === 'categoria') sincronizarDetalleCategoria(form);
     // Atajos de fecha (ADR 042 D1): Hoy/Ayer escriben el input date real y lo
     // mantienen oculto; "Otra fecha" lo revela para elegir el día exacto.
     if (t.name === 'fechaOpcion' && fechaInput && fechaOtra) {
@@ -803,10 +841,53 @@ function _montarFormGasto(opciones = {}) {
 
   // CAT.2: selector compacto de ícono (recuadro + panel colapsable).
   wireIconoPicker(form.querySelector('[data-icono-picker="categoria-nueva-icono"]'));
+  sincronizarDetalleCategoria(form);
 
   // Después de los listeners de arriba: el recibo se pinta con los campos
   // ya actualizados (la fecha de "Ayer", las cuotas de la tarjeta).
   if (porEtapas) montarFormGastoTelefono(form, { titulo: opciones.titulo ?? 'Nuevo gasto' });
+}
+
+/**
+ * ¿Se pregunta "¿Es un gusto o una necesidad?" para esta categoría? (ADR 147
+ * D4): en Otros, al crear una categoría y en una propia que todavía no lo dice.
+ * @param {string} categoria - valor del chip elegido.
+ * @returns {boolean}
+ */
+function preguntaCaracterVisible(categoria) {
+  if (categoria === 'Otros' || categoria === CATEGORIA_NUEVA_VALUE) return true;
+  const propia = (S.categoriasPersonalizadas ?? []).find(c => c.nombre === categoria);
+  return Boolean(propia) && !RESPUESTAS_CARACTER.includes(propia.caracter);
+}
+
+/**
+ * SUS.2a (ADR 147 D5): deja a la vista, y habilitado, solo el grupo que toca
+ * a la categoría elegida: su "Sé más específico" o la pregunta de carácter.
+ * Los demás quedan `hidden` y `disabled` (fuera de FormData). En el teléfono
+ * los grupos viven en una mini-hoja y su fila del recibo la pinta
+ * `telefono.js` leyendo este mismo estado.
+ * @param {HTMLFormElement} form
+ */
+function sincronizarDetalleCategoria(form) {
+  const categoria = form.querySelector('input[name="categoria"]:checked')?.value ?? '';
+  for (const grupo of form.querySelectorAll('[data-sub-grupo]')) {
+    const ver = grupo.dataset.subGrupo === categoria;
+    grupo.hidden = !ver;
+    grupo.disabled = !ver;
+  }
+  const pregunta = form.querySelector('[data-caracter-grupo]');
+  if (pregunta) {
+    const ver = preguntaCaracterVisible(categoria);
+    pregunta.hidden = !ver;
+    pregunta.disabled = !ver;
+    const ayuda = pregunta.querySelector('[data-caracter-ayuda]');
+    if (ayuda) {
+      ayuda.textContent = categoria === 'Otros'
+        ? 'Con esto Finko sabe qué te conviene revisar.'
+        : 'Lo contestas una vez: Finko lo recuerda para esta categoría.';
+    }
+  }
+  pintarReciboGasto(form);
 }
 
 /**

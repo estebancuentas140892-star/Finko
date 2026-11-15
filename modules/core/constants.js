@@ -440,6 +440,8 @@ export const CATEGORIAS_GASTO = [
   'Mercado',
   'Restaurantes',
   'Café',
+  // SUS.2a (ADR 147 D2): toda clase de chucherías; carácter gusto.
+  'Mecato',
   'Transporte',
   'Vivienda',
   'Salud',
@@ -490,6 +492,8 @@ export const CATEGORIA_ICONO = {
   'Mercado':            'c-mercado',
   'Restaurantes':       'c-restaurantes',
   'Café':               'c-cafe',
+  // SUS.2a (ADR 147 D2): la hormiga hasta que Esteban dibuje su glifo.
+  'Mecato':             'c-hormiga',
   'Transporte':         'c-bus',
   'Vivienda':           'i-home',
   'Salud':              'c-salud',
@@ -508,6 +512,116 @@ export const CATEGORIA_ICONO = {
   'Alimentación':       'c-mercado',
   'Otros':              'c-otros',
 };
+
+/**
+ * Los tres caracteres de un gasto (SUS.2a, [ADR 147](../../docs/DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md) D1):
+ * una necesidad nunca es hormiga; un gusto pequeño lo es de inmediato; lo que
+ * "depende" se decide al repetirse. Es lo que el usuario contesta en "¿Es un
+ * gusto o una necesidad?" (solo los dos primeros: "depende" es la ausencia de
+ * respuesta).
+ */
+export const CARACTERES_GASTO = Object.freeze(['necesidad', 'gusto', 'depende']);
+
+/**
+ * Carácter de cada categoría nativa de gasto (ADR 147 D3). Una subcategoría
+ * puede decir otro (`SUBCATEGORIAS_GASTO[].caracter`). Las internas (Deudas,
+ * Ahorro, Gastos fijos) y las que ya no se ofrecen no están: caen a "depende".
+ */
+export const CARACTER_CATEGORIA_GASTO = Object.freeze({
+  'Mecato':           'gusto',
+  'Café':             'gusto',
+  'Restaurantes':     'depende',
+  'Mercado':          'necesidad',
+  'Transporte':       'necesidad',
+  'Salud':            'necesidad',
+  'Educación':        'necesidad',
+  'Hogar':            'necesidad',
+  'Mascotas':         'necesidad',
+  'Cuidado personal': 'depende',
+  'Ropa':             'depende',
+  'Entretenimiento':  'depende',
+  'Familia':          'necesidad',
+  'Otros':            'depende',
+});
+
+/**
+ * Subcategorías de gasto (SUS.2a, ADR 147 D3, validadas con Esteban el
+ * 2026-11-15). Catálogo plano de dos niveles (ADR 064): cada hijo declara su
+ * categoría y, solo si difiere de ella, su carácter. Se lee con
+ * `hijosDeCategoria`/`hijoPorId` de `infra/taxonomia.js`.
+ *
+ * El `id` se guarda en el gasto (`subcategoriaId`, schema v52): no se
+ * renombra nunca. El `nombre` es texto visible y sí puede cambiar. Otros no
+ * tiene subcategorías: ahí se pregunta "¿gusto o necesidad?" (ADR 147 D4).
+ */
+export const SUBCATEGORIAS_GASTO = Object.freeze([
+  { id: 'mecato-dulces',        nombre: 'Dulces y chocolates',        categorias: ['Mecato'] },
+  { id: 'mecato-paquetes',      nombre: 'Paquetes',                   categorias: ['Mecato'] },
+  { id: 'mecato-helado',        nombre: 'Helado',                     categorias: ['Mecato'] },
+  { id: 'mecato-bebidas',       nombre: 'Gaseosas y jugos',           categorias: ['Mecato'] },
+  { id: 'mecato-panaderia',     nombre: 'Panadería y fritos',         categorias: ['Mecato'] },
+
+  { id: 'cafe-tinto',           nombre: 'Tinto',                      categorias: ['Café'] },
+  { id: 'cafe-cafeteria',       nombre: 'Café de cafetería',          categorias: ['Café'] },
+  { id: 'cafe-frias',           nombre: 'Bebidas frías',              categorias: ['Café'] },
+
+  { id: 'rest-almuerzo',        nombre: 'Almuerzo del trabajo',       categorias: ['Restaurantes'], caracter: 'necesidad' },
+  { id: 'rest-rapida',          nombre: 'Comida rápida',              categorias: ['Restaurantes'], caracter: 'gusto' },
+  { id: 'rest-domicilio',       nombre: 'Domicilio',                  categorias: ['Restaurantes'] },
+  { id: 'rest-salida',          nombre: 'Salida a comer',             categorias: ['Restaurantes'] },
+
+  { id: 'mercado-super',        nombre: 'Supermercado',               categorias: ['Mercado'] },
+  { id: 'mercado-tienda',       nombre: 'Tienda de barrio',           categorias: ['Mercado'] },
+  { id: 'mercado-plaza',        nombre: 'Plaza o fruver',             categorias: ['Mercado'] },
+  { id: 'mercado-carne',        nombre: 'Carne y pollo',              categorias: ['Mercado'] },
+
+  { id: 'transp-bus',           nombre: 'Bus o Metro',                categorias: ['Transporte'] },
+  { id: 'transp-gasolina',      nombre: 'Gasolina',                   categorias: ['Transporte'] },
+  { id: 'transp-parqueadero',   nombre: 'Parqueadero',                categorias: ['Transporte'] },
+  { id: 'transp-peajes',        nombre: 'Peajes',                     categorias: ['Transporte'] },
+  { id: 'transp-taxi',          nombre: 'Taxi o app',                 categorias: ['Transporte'], caracter: 'depende' },
+
+  { id: 'salud-medicamentos',   nombre: 'Medicamentos',               categorias: ['Salud'] },
+  { id: 'salud-cita',           nombre: 'Cita o copago',              categorias: ['Salud'] },
+  { id: 'salud-examenes',       nombre: 'Exámenes',                   categorias: ['Salud'] },
+  { id: 'salud-optica',         nombre: 'Óptica',                     categorias: ['Salud'] },
+  { id: 'salud-odontologia',    nombre: 'Odontología',                categorias: ['Salud'] },
+
+  { id: 'edu-utiles',           nombre: 'Útiles y fotocopias',        categorias: ['Educación'] },
+  { id: 'edu-libros',           nombre: 'Libros',                     categorias: ['Educación'] },
+  { id: 'edu-curso',            nombre: 'Curso o taller',             categorias: ['Educación'] },
+  { id: 'edu-matricula',        nombre: 'Matrícula',                  categorias: ['Educación'] },
+
+  { id: 'hogar-aseo',           nombre: 'Aseo y limpieza',            categorias: ['Hogar'] },
+  { id: 'hogar-herramientas',   nombre: 'Herramientas y ferretería',  categorias: ['Hogar'] },
+  { id: 'hogar-arreglos',       nombre: 'Arreglos',                   categorias: ['Hogar'] },
+  { id: 'hogar-muebles',        nombre: 'Muebles y electrodomésticos', categorias: ['Hogar'] },
+  { id: 'hogar-decoracion',     nombre: 'Decoración',                 categorias: ['Hogar'], caracter: 'depende' },
+
+  { id: 'masc-comida',          nombre: 'Comida',                     categorias: ['Mascotas'] },
+  { id: 'masc-veterinario',     nombre: 'Veterinario',                categorias: ['Mascotas'] },
+  { id: 'masc-bano',            nombre: 'Baño y peluquería',          categorias: ['Mascotas'] },
+  { id: 'masc-juguetes',        nombre: 'Juguetes y accesorios',      categorias: ['Mascotas'], caracter: 'depende' },
+
+  { id: 'cuidado-aseo',         nombre: 'Aseo personal',              categorias: ['Cuidado personal'], caracter: 'necesidad' },
+  { id: 'cuidado-peluqueria',   nombre: 'Peluquería o barbería',      categorias: ['Cuidado personal'] },
+  { id: 'cuidado-maquillaje',   nombre: 'Maquillaje',                 categorias: ['Cuidado personal'] },
+  { id: 'cuidado-unas',         nombre: 'Uñas y spa',                 categorias: ['Cuidado personal'] },
+
+  { id: 'ropa-ropa',            nombre: 'Ropa',                       categorias: ['Ropa'] },
+  { id: 'ropa-calzado',         nombre: 'Calzado',                    categorias: ['Ropa'] },
+  { id: 'ropa-accesorios',      nombre: 'Accesorios',                 categorias: ['Ropa'] },
+
+  { id: 'entret-cine',          nombre: 'Cine',                       categorias: ['Entretenimiento'] },
+  { id: 'entret-eventos',       nombre: 'Conciertos y eventos',       categorias: ['Entretenimiento'] },
+  { id: 'entret-rumba',         nombre: 'Rumba y licor',              categorias: ['Entretenimiento'] },
+  { id: 'entret-apuestas',      nombre: 'Chance y apuestas',          categorias: ['Entretenimiento'], caracter: 'gusto' },
+  { id: 'entret-paseos',        nombre: 'Paseos',                     categorias: ['Entretenimiento'] },
+
+  { id: 'familia-mesada',       nombre: 'Mesada',                     categorias: ['Familia'] },
+  { id: 'familia-ayuda',        nombre: 'Ayuda a un familiar',        categorias: ['Familia'] },
+  { id: 'familia-regalos',      nombre: 'Regalos',                    categorias: ['Familia'], caracter: 'depende' },
+]);
 
 /**
  * Íconos elegibles para una categoría de gasto personalizada (TX.9b): los

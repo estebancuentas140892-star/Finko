@@ -8,8 +8,43 @@
  * criterio sube a infra y los tres lo leen de aquí.
  *
  * El criterio es el tamaño de la transacción, no la categoría: así funciona
- * para todos y no se desactiva recategorizando (ADR 032 D4).
+ * para todos y no se desactiva recategorizando (ADR 032 D4). El ADR 147
+ * reemplaza ese criterio: lo pequeño solo es hormiga si es un gusto. SUS.2a
+ * deja el carácter (`caracterDeGasto`); SUS.2b lo aplica en `esGastoHormiga`.
  */
+
+import { CARACTER_CATEGORIA_GASTO, SUBCATEGORIAS_GASTO } from '../core/constants.js';
+import { hijoPorId } from './taxonomia.js';
+
+/** Respuestas válidas a "¿Es un gusto o una necesidad?" (ADR 147 D4). */
+const _RESPUESTAS = new Set(['gusto', 'necesidad']);
+
+/**
+ * El carácter de un gasto (ADR 147 D1): 'necesidad', 'gusto' o 'depende'.
+ * Gana lo más específico que el gasto diga:
+ *
+ *   1. lo que el usuario contestó para ese gasto (`gasto.caracter`, Otros);
+ *   2. su subcategoría, si declara uno propio;
+ *   3. su categoría personalizada, si el usuario lo contestó al crearla;
+ *   4. su categoría nativa (`CARACTER_CATEGORIA_GASTO`);
+ *   5. 'depende'.
+ *
+ * Una subcategoría que no es de la categoría del gasto se ignora: el dato
+ * pudo quedar de una edición vieja y no puede decidir por otra categoría.
+ *
+ * @param {{ categoria?: string, subcategoriaId?: string|null, caracter?: string|null }} gasto
+ * @param {ReadonlyArray<{ nombre: string, caracter?: string|null }>} [personalizadas]
+ * @returns {'necesidad'|'gusto'|'depende'}
+ */
+export function caracterDeGasto(gasto, personalizadas = []) {
+  if (_RESPUESTAS.has(gasto?.caracter)) return gasto.caracter;
+  const categoria = gasto?.categoria ?? '';
+  const sub = hijoPorId(SUBCATEGORIAS_GASTO, gasto?.subcategoriaId);
+  if (sub?.caracter && sub.categorias.includes(categoria)) return sub.caracter;
+  const propia = (personalizadas ?? []).find(c => c?.nombre === categoria);
+  if (_RESPUESTAS.has(propia?.caracter)) return propia.caracter;
+  return CARACTER_CATEGORIA_GASTO[categoria] ?? 'depende';
+}
 
 /** Monto máximo (inclusive) de una transacción para contar como hormiga, por defecto. */
 export const UMBRAL_GASTO_HORMIGA = 20_000;

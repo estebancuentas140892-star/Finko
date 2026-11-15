@@ -3,7 +3,8 @@
  * Sin DOM. Sin S directo. Testeable en Node/Vitest sin mocks de navegador.
  */
 
-import { CATEGORIAS_AGENDA, CATEGORIAS_GASTO, ICONOS_CATEGORIA_PERSONALIZADA, TARJETA_PREFIJO, iconoDeCategoriaGasto } from '../../core/constants.js';
+import { CATEGORIAS_AGENDA, CATEGORIAS_GASTO, ICONOS_CATEGORIA_PERSONALIZADA, SUBCATEGORIAS_GASTO, TARJETA_PREFIJO, iconoDeCategoriaGasto } from '../../core/constants.js';
+import { hijoPorId } from '../../infra/taxonomia.js';
 import { f } from '../../infra/utils.js';
 import { UMBRAL_GASTO_HORMIGA } from '../../infra/hormiga.js';
 import { distribuirPago } from '../../infra/distribuir-pago.js';
@@ -552,9 +553,29 @@ export function normalizarGasto(datos) {
     // de costo; ningún cálculo la lee. Explícita como `cuotas`, para que un gasto
     // que deja de pagarse con tarjeta no conserve la marca al editarlo.
     avanceTC: esConsumoTC ? datos.avanceTC === '1' : false,
+    // SUS.2a (ADR 147 D3 y D4): explícitos como `cuotas`, para que editar
+    // hacia otra categoría limpie lo que ya no le corresponde. La subcategoría
+    // solo vale si es de la categoría; la respuesta "¿gusto o necesidad?" solo
+    // se guarda en el gasto con Otros (en una categoría propia va a la categoría).
+    subcategoriaId: subcategoriaValida(datos.subcategoriaId, datos.categoria),
+    caracter: datos.categoria === 'Otros' && RESPUESTAS_CARACTER.includes(datos.caracter) ? datos.caracter : null,
   };
   if (datos.descripcion?.trim()) base.descripcion = datos.descripcion.trim();
   return base;
+}
+
+/** Respuestas a "¿Es un gusto o una necesidad?" (ADR 147 D4). */
+export const RESPUESTAS_CARACTER = Object.freeze(['gusto', 'necesidad']);
+
+/**
+ * El id de subcategoría si existe y es de esa categoría, o null (ADR 147 D3).
+ * @param {unknown} id
+ * @param {string} categoria
+ * @returns {string|null}
+ */
+export function subcategoriaValida(id, categoria) {
+  const sub = hijoPorId(SUBCATEGORIAS_GASTO, typeof id === 'string' ? id : null);
+  return sub && sub.categorias.includes(categoria) ? sub.id : null;
 }
 
 /**

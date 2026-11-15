@@ -7,7 +7,8 @@ import { S } from '../../core/state.js';
 import { f, hoy, formateadorFecha, esc as _esc } from '../../infra/utils.js';
 import { icon, tejaCategoria } from '../../infra/icons.js';
 import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../infra/render.js';
-import { CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA, iconoDeCategoriaGasto } from '../../core/constants.js';
+import { CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA, SUBCATEGORIAS_GASTO, iconoDeCategoriaGasto } from '../../core/constants.js';
+import { categoriasConHijos, hijosDeCategoria, hijoPorId } from '../../infra/taxonomia.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { presupuestosActivos } from '../presupuesto/logic.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
@@ -551,6 +552,10 @@ export function labelDiaGastos(iso) {
  * queda solo la cuenta (ADR 072 D2: la fila nunca esconde de dónde salió).
  * Un gasto viejo con descripción y nota pone la nota al final del subtítulo.
  *
+ * SUS.2a (ADR 147 D5): sin texto propio, la subcategoría es el título
+ * ("Helado", y debajo "Mecato · Nequi"); con texto propio, la subcategoría
+ * acompaña a la categoría en el subtítulo.
+ *
  * @param {import('../../core/state.js').Gasto} gasto
  * @param {ReadonlyArray<{ id: string, nombre: string }>} [cuentas]
  * @returns {{ titulo: string, subtitulo: string }} texto plano, sin escapar.
@@ -559,11 +564,63 @@ export function textosFilaGasto(gasto, cuentas = []) {
   const categoria = gasto?.categoria ?? 'Otros';
   const cuenta = gasto?.cuentaId ? cuentas.find(c => c.id === gasto.cuentaId)?.nombre : null;
   const propios = [gasto?.descripcion, gasto?.nota].map(t => String(t ?? '').trim()).filter(Boolean);
-  const titulo = propios[0] ?? categoria;
-  const subtitulo = [propios.length ? categoria : null, cuenta, ...propios.slice(1)]
+  const sub = nombreSubcategoriaGasto(gasto);
+  const titulo = propios[0] ?? sub ?? categoria;
+  const subtitulo = [
+    propios.length || sub ? categoria : null,
+    propios.length ? sub : null,
+    cuenta,
+    ...propios.slice(1),
+  ]
     .filter(Boolean)
     .join(' · ');
   return { titulo, subtitulo };
+}
+
+/**
+ * Nombre de la subcategoría de un gasto, o null si no tiene una válida para
+ * su categoría (ADR 147 D3).
+ * @param {{ categoria?: string, subcategoriaId?: string|null }} gasto
+ * @returns {string|null}
+ */
+export function nombreSubcategoriaGasto(gasto) {
+  const sub = hijoPorId(SUBCATEGORIAS_GASTO, gasto?.subcategoriaId);
+  return sub && sub.categorias.includes(gasto?.categoria) ? sub.nombre : null;
+}
+
+/**
+ * Lo que va debajo de las categorías (SUS.2a, ADR 147 D3 a D5): un grupo
+ * "Sé más específico" por cada categoría con subcategorías, y la pregunta
+ * "¿Es un gusto o una necesidad?" para Otros y las categorías propias que
+ * todavía no lo dicen. Todo nace `hidden` **y** `disabled`: un `<fieldset
+ * disabled>` saca sus radios de `FormData`, así que cambiar de categoría no
+ * deja una subcategoría colgada de otra (mismo patrón que Metas, ADR 064).
+ * `sincronizarDetalleCategoria` (index.js) deja a la vista el que toca.
+ *
+ * Lo comparten el formulario de escritorio (en línea) y el del teléfono
+ * (dentro de su mini-hoja), así los dos guardan los mismos campos.
+ *
+ * @returns {string}
+ */
+export function htmlDetalleCategoriaGasto() {
+  const chip = (name, valor, etiqueta) => `
+          <label class="chip-cat">
+            <input type="radio" name="${name}" class="chip-cat__radio" value="${_esc(valor)}" />
+            <span class="chip-cat__label">${_esc(etiqueta)}</span>
+          </label>`;
+  const grupos = categoriasConHijos(SUBCATEGORIAS_GASTO).map((cat, i) => `
+      <fieldset class="subcategoria-fieldset" data-sub-grupo="${_esc(cat)}" hidden disabled>
+        <legend id="gasto-sub-l${i}">Sé más específico <span class="form-optional">Opcional</span></legend>
+        <div class="chips-cat" role="radiogroup" aria-labelledby="gasto-sub-l${i}">${hijosDeCategoria(SUBCATEGORIAS_GASTO, cat).map(h => chip('subcategoriaId', h.id, h.nombre)).join('')}
+        </div>
+      </fieldset>`).join('');
+  return `${grupos}
+      <fieldset class="subcategoria-fieldset" data-caracter-grupo hidden disabled>
+        <legend id="gasto-caracter-l">¿Es un gusto o una necesidad? <span class="form-optional">Opcional</span></legend>
+        <div class="chips-cat chips-cat--2col" role="radiogroup" aria-labelledby="gasto-caracter-l">${chip('caracter', 'gusto', 'Un gusto')}${chip('caracter', 'necesidad', 'Una necesidad')}
+        </div>
+        <p class="form-hint" data-caracter-ayuda>Con esto Finko sabe qué te conviene revisar.</p>
+      </fieldset>`;
 }
 
 /**
@@ -814,6 +871,7 @@ export function renderFormGasto({ sugerencias = true, categoriaFija = null } = {
                placeholder="Ej. Gimnasio" autocomplete="off" />
         ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'categoria-nueva-icono', nombreCampo: 'categoriaNuevaIcono' })}
       </div>
+      ${categoriaFija ? '' : htmlDetalleCategoriaGasto()}
       ${renderSelectorCuenta(cuentas, { tarjetas, label: labelOrigen })}
       <div class="form-group" id="grupo-gasto-cuotas" hidden>
         <span class="label" id="gasto-cuotas-label">¿A cuántas cuotas?</span>

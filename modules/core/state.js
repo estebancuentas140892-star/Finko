@@ -160,6 +160,10 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  * @property {string} fecha           ISO 8601 (YYYY-MM-DD).
  * @property {string} [cuentaId]      FK a Cuenta.id.
  * @property {string} [nota]
+ * @property {string|null} [subcategoriaId] SUS.2a (ADR 147 D3, v52): id de
+ *                                    `SUBCATEGORIAS_GASTO`, solo si es de su categoría.
+ * @property {'gusto'|'necesidad'|null} [caracter] SUS.2a (ADR 147 D4, v52): lo que el
+ *                                    usuario contestó en Otros. Ver `caracterDeGasto`.
  * @property {string} [compromisoId]  FK opcional a Compromiso.id (deuda). Marca este
  *                                    gasto como abono a la deuda y permite que al
  *                                    editar/eliminar el gasto se sincronice el
@@ -584,8 +588,9 @@ export function createInitialState() {
      * guarda en `Gasto.categoria` o `Compromiso.categoria`, igual que una
      * nativa. `seccion` decide en qué formulario se **ofrece** como chip
      * (`'gasto'` o `'fijo'`); resolver su ícono ya guardado ignora la
-     * sección (ADR 058 D2).
-     * @type {{ id: string, nombre: string, icono: string, fechaCreacion: string, seccion: 'gasto' | 'fijo' }[]}
+     * sección (ADR 058 D2). `caracter` (SUS.2a, ADR 147 D4, v52): lo que el
+     * usuario contestó a "¿Es un gusto o una necesidad?" para la categoría.
+     * @type {{ id: string, nombre: string, icono: string, fechaCreacion: string, seccion: 'gasto' | 'fijo', caracter?: 'gusto' | 'necesidad' }[]}
      */
     categoriasPersonalizadas: [],
 

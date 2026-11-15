@@ -41,7 +41,7 @@ import {
   gastosFrecuentes, tarjetasDeCredito, ordenarCategoriasPorUso, cuentaHabitual,
   planSiNoAlcanza, validarCategoriaPersonalizada,
 } from './logic.js';
-import { CATEGORIA_NUEVA_VALUE, ayerIso } from './view.js';
+import { CATEGORIA_NUEVA_VALUE, ayerIso, htmlDetalleCategoriaGasto, nombreSubcategoriaGasto } from './view.js';
 import { htmlExtrasDetalleGasto } from './detalle.js';
 
 const MQ_MOVIL = '(max-width: 1023.98px)';
@@ -175,6 +175,7 @@ function _htmlRevisar({ edicion, ficha }) {
           <span class="recibo__cat" data-recibo-cat></span>
           <span class="recibo__lee" data-recibo-lee></span>
         </button>
+        ${_fila({ id: 'gasto-fila-detalle', mini: 'gasto-mini-detalle', figura: `<span class="recibo__icono">${icon('lightbulb')}</span>`, k: '¿Qué fue?', vacia: true, oculta: true })}
         ${_fila({ id: 'gasto-fila-cuenta', mini: 'gasto-mini-cuenta', figura: '', k: 'Sale de' })}
         ${_fila({ id: 'grupo-gasto-cuotas', mini: 'gasto-mini-cuotas', figura: `<span class="recibo__icono">${icon('deudas')}</span>`, k: 'Cuotas', oculta: true })}
         ${_fila({ id: 'gasto-fila-fecha', mini: 'gasto-mini-fecha', figura: `<span class="recibo__icono">${icon('agenda')}</span>`, k: 'Fecha' })}
@@ -214,6 +215,7 @@ function _htmlFicha(gasto) {
           <span class="recibo__cat" data-recibo-cat></span>
           <span class="recibo__lee" data-recibo-lee></span>
         </button>
+        ${_fila({ id: 'gasto-fila-detalle', mini: 'gasto-mini-detalle', figura: `<span class="recibo__icono">${icon('lightbulb')}</span>`, k: '¿Qué fue?', vacia: true, oculta: true })}
         ${_fila({ id: 'gasto-fila-cuenta', mini: 'gasto-mini-cuenta', figura: '', k: 'Sale de' })}
         ${_fila({ id: 'grupo-gasto-cuotas', mini: 'gasto-mini-cuotas', figura: `<span class="recibo__icono">${icon('deudas')}</span>`, k: 'Cuotas', oculta: true })}
         ${_fila({ id: 'gasto-fila-fecha', mini: 'gasto-mini-fecha', figura: `<span class="recibo__icono">${icon('agenda')}</span>`, k: 'Fecha' })}
@@ -295,6 +297,20 @@ function _htmlMiniFecha() {
   });
 }
 
+/**
+ * SUS.2a (ADR 147 D5): la subcategoría o la pregunta "¿gusto o necesidad?"
+ * viven en una mini-hoja, como la nota: tocar una categoría sigue llevando
+ * directo al recibo (ADR 142 D4) y esto se agrega solo si se quiere. El
+ * título lo ajusta `_pintarRecibo` según lo que toque preguntar.
+ */
+function _htmlMiniDetalle() {
+  return htmlMiniHoja({
+    id: 'gasto-mini-detalle',
+    titulo: '¿Qué fue?',
+    cuerpo: htmlDetalleCategoriaGasto(),
+  });
+}
+
 function _htmlMiniNota() {
   return htmlMiniHoja({
     id: 'gasto-mini-nota',
@@ -337,6 +353,7 @@ export function renderFormGastoTelefono({ sugerencias = true, categoriaFija = nu
       ${_htmlMiniCuotas()}
       ${_htmlMiniFecha()}
       ${_htmlMiniNota()}
+      ${categoriaFija ? '' : _htmlMiniDetalle()}
     </form>`;
 }
 
@@ -556,6 +573,10 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
         cerrarMiniHoja(t.closest('.mini-hoja'));
       }
     }
+    if (t.name === 'subcategoriaId' || t.name === 'caracter') {
+      cerrarMiniHoja(t.closest('.mini-hoja'));
+      _pintarRecibo(form);
+    }
     if (t.name === 'avanceTC' || t.name === 'reparto') _pintarRecibo(form);
   });
 
@@ -610,7 +631,9 @@ function _pintarRecibo(form) {
   const set = (sel, html) => { const el = form.querySelector(sel); if (el) el.innerHTML = html; };
   set('[data-recibo-teja]', iconoCategoria(simbolo));
   set('[data-recibo-monto]', _esc(f(m)));
-  set('[data-recibo-cat]', _esc(nombreCat || 'Elige en qué fue'));
+  const sub = nombreSubcategoriaGasto({ categoria: cat, subcategoriaId: form.querySelector('[data-sub-grupo]:not([disabled]) input[name="subcategoriaId"]:checked')?.value });
+  set('[data-recibo-cat]', _esc(nombreCat ? [nombreCat, sub].filter(Boolean).join(' · ') : 'Elige en qué fue'));
+  _pintarFilaDetalle(form, sub);
   set('[data-recibo-lee]', _esc(montoEnPalabras(m)));
 
   // Sale de.
@@ -663,6 +686,32 @@ function _pintarRecibo(form) {
   }
 
   _pintarAvisoSaldo(form, plan, m);
+}
+
+/**
+ * La fila "¿Qué fue?" o "¿Gusto o necesidad?" del recibo (SUS.2a): se ve si
+ * la categoría elegida tiene subcategorías o lleva la pregunta, que es lo que
+ * `sincronizarDetalleCategoria` (index.js) dejó habilitado.
+ * @param {HTMLFormElement} form
+ * @param {string|null} sub - nombre de la subcategoría elegida.
+ */
+function _pintarFilaDetalle(form, sub) {
+  const fila = form.querySelector('#gasto-fila-detalle');
+  if (!fila) return;
+  const conSub = Boolean(form.querySelector('[data-sub-grupo]:not([disabled])'));
+  const conPregunta = Boolean(form.querySelector('[data-caracter-grupo]:not([disabled])'));
+  fila.hidden = !conSub && !conPregunta;
+  if (fila.hidden) return;
+  const respuesta = form.querySelector('[data-caracter-grupo] input[name="caracter"]:checked')?.value;
+  const k = conSub ? '¿Qué fue?' : '¿Gusto o necesidad?';
+  const v = conSub
+    ? (sub ?? 'Sé más específico')
+    : ({ gusto: 'Un gusto', necesidad: 'Una necesidad' }[respuesta] ?? 'Cuéntale a Finko');
+  fila.querySelector('.recibo__k').innerHTML = `${k} <span class="form-optional">Opcional</span>`;
+  fila.querySelector('[data-fila-v]').textContent = v;
+  fila.classList.toggle('recibo__fila--vacia', conSub ? !sub : !respuesta);
+  const titulo = form.querySelector('#gasto-mini-detalle-t');
+  if (titulo) titulo.textContent = conSub ? '¿Qué fue?' : '¿Es un gusto o una necesidad?';
 }
 
 /**

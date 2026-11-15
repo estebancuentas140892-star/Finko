@@ -2075,6 +2075,25 @@ describe('Migración v42 → v43 (respaldoCifrado en config, CFG.4c)', () => {
   });
 });
 
+describe('Migración v51 → v52 (subcategoría y carácter del gasto, SUS.2a)', () => {
+  it('un gasto viejo sigue igual y uno nuevo conserva lo que guardó', () => {
+    const v51 = { ...createInitialState(), _version: 51 };
+    v51.gastos = [
+      { id: 'g1', monto: 5_000, categoria: 'Café', fecha: '2026-11-01' },
+      { id: 'g2', monto: 4_000, categoria: 'Mecato', subcategoriaId: 'mecato-helado', caracter: null, fecha: '2026-11-02' },
+    ];
+    v51.categoriasPersonalizadas = [{ id: 'p1', nombre: 'Videojuegos', icono: 'c-computador', seccion: 'gasto', caracter: 'gusto', fechaCreacion: '2026-11-01' }];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v51));
+
+    loadData();
+
+    expect(S.gastos[0].subcategoriaId).toBeUndefined();
+    expect(S.gastos[1].subcategoriaId).toBe('mecato-helado');
+    expect(S.categoriasPersonalizadas[0].caracter).toBe('gusto');
+    expect(S._version).toBe(SCHEMA_VERSION);
+  });
+});
+
 describe('Migración v50 → v51 (marcaId en el gasto fijo, SUS.1a)', () => {
   it('un fijo guardado sigue igual: sin plataforma y con su nombre', () => {
     const v50 = { ...createInitialState(), _version: 50 };

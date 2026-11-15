@@ -1,6 +1,6 @@
 # Ficha de contexto: Categorías
 
-> Revisado: 2026-08-14.
+> Revisado: 2026-11-15 (SUS.2a).
 
 > La taxonomía que comparten todas las secciones (CAT.1) y las categorías que crea el usuario (TX.9b, CAT.3). Partida de [`transversal.md`](transversal.md) el 2026-08-14 (DOC.3). Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -36,6 +36,8 @@
 **Cambios pendientes**: ninguno de CAT.1 (iniciativa completa; la tarjeta sale del BOARD). **CAT.3 completa (2026-08-11, [ADR 058](../DECISIONS/058-categorias-personalizadas-globales.md))**, sus cuatro rebanadas cerradas: ver el bloque "Categorías personalizadas del usuario" más abajo. **CAT.4 cerrada (2026-07-31)**: sin hallazgos.
 
 **Cambios realizados**:
+
+- 2026-11-15 SUS.2a ([ADR 147](../DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md)): Gastos suma Mecato y un segundo nivel opcional (`SUBCATEGORIAS_GASTO`, forma del ADR 064) con el carácter de cada categoría y subcategoría (necesidad, gusto o depende). Solo Gastos: Metas conserva el suyo.
 
 - **CAT.4 (2026-07-31)**: auditoría de las dos reglas (categoría/tipo antes que descripción, fecha por defecto = hoy en creación) sobre los ~8 formularios en alcance (Gastos, Ingresos fijos y puntuales, Transferencias, Deuda nueva, Abono a deuda, Gasto fijo, Inversiones, Personales/préstamos, Ahorro/aporte): las dos reglas ya se cumplían en todos. `fechaObjetivo` (Apartados) y `fechaLimite` (Metas) quedan fuera de alcance: son fecha meta futura opcional, no fecha de registro/movimiento. Cierre sin cambios de código.
 

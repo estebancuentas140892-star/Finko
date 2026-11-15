@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): SUS.2a, Mecato, subcategorías y "¿gusto o necesidad?" · 2026-11-15
+
+[ADR 147](DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md) (reemplaza el criterio "hormiga es solo el monto" del ADR 032 D4 y el 092 D11). Fichas: [`contexto/gastos.md`](contexto/gastos.md), [`contexto/categorias.md`](contexto/categorias.md). Schema v52, SW v721.
+
+- **Mecato**, categoría nueva de carácter gusto, con la hormiga como ícono hasta tener su glifo (`c-tienda` ya es de las categorías propias).
+- **Cada categoría y subcategoría dice su carácter** (`CARACTER_CATEGORIA_GASTO`, `SUBCATEGORIAS_GASTO`): 54 subcategorías en 13 categorías, validadas con Esteban. `caracterDeGasto()` resuelve: lo contestado, la subcategoría, la categoría propia, la nativa, "depende". Todavía no lo lee ninguna cifra: eso es SUS.2b.
+- **"Sé más específico"** debajo de las categorías en escritorio; en el teléfono, una fila opcional del recibo con su mini-hoja, así tocar una categoría sigue llevando directo al recibo.
+- **En Otros se pregunta "¿Es un gusto o una necesidad?"** y queda en el gasto; en una categoría propia, en la categoría, una sola vez. Las recargas van en Otros y se contestan así, sin categoría propia.
+- **La fila se titula con la subcategoría** cuando no hay nota ("Helado", debajo "Mecato · Nequi"); "Repetir" y editar la conservan.
+- Pruebas: `caracter-gasto` (20, archivo nuevo), `gastos-telefono` (4 nuevas), `storage` (1 nueva). Unitarias 5762/5762, E2E 477/477.
+
 ### feat(gastos): SUS.1b, el chip "Gastos hormiga" sale del formulario · 2026-11-15
 
 [ADR 146](DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md) D5. Fichas: [`contexto/gastos.md`](contexto/gastos.md), [`contexto/limites.md`](contexto/limites.md). SW v720.

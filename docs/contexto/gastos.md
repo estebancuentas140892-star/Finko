@@ -100,6 +100,7 @@
 | Transformación form → shape de `S.gastos` (descripcion solo si viene, TX.9a) | `modules/dominio/gastos/logic.js` | `normalizarGasto()` | ~244 |
 | Campo `nota` (opcional, ya al final del form) | `modules/core/state.js` / `modules/dominio/gastos/logic.js` | `Gasto.nota` / `normalizarGasto()` | ~214 |
 | Catálogo de categorías nativas (fijo) | `modules/core/constants.js` | `CATEGORIAS_GASTO`, `CATEGORIAS_GASTO_USUARIO` | ~400, ~426 |
+| Subcategoría y "¿gusto o necesidad?" (SUS.2a, [ADR 147](../DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md)) | `constants.js`, `gastos/view.js`, `index.js`, `telefono.js`, `logic.js` | `SUBCATEGORIAS_GASTO`, `CARACTER_CATEGORIA_GASTO`, `htmlDetalleCategoriaGasto()`, `sincronizarDetalleCategoria()`, `_pintarFilaDetalle()`, `normalizarGasto()` | un `<fieldset>` por categoría, oculto y `disabled` salvo el elegido; en el teléfono vive en la mini-hoja `#gasto-mini-detalle` |
 | Mapeo categoría nativa → ícono | `modules/core/constants.js` | `CATEGORIA_ICONO` | ~448 |
 | Catálogo de íconos elegibles para categoría personalizada (29, sin duplicar los nativos) | `modules/core/constants.js` | `ICONOS_CATEGORIA_PERSONALIZADA` | ~470 |
 | Resolver de ícono (nativa → personalizada → genérico, TX.9b) | `modules/core/constants.js` | `iconoDeCategoriaGasto(categoria, personalizadas)` | ~505 |
@@ -139,6 +140,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-15 SUS.2a ([ADR 147](../DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md)): Mecato, "Sé más específico" y, en Otros o una categoría propia, "¿Es un gusto o una necesidad?"; el gasto guarda `subcategoriaId` y `caracter` (v52) y la fila se titula con la subcategoría.
 - 2026-11-04 (**BUG-038** y **BUG-035**, 5c97b98): editar un pago o abono abre con su categoría fija y sin tarjetas; editar o borrar el pago de un fijo no toca `saldoTotal`. Ver CHANGELOG.
 - 2026-10-17 (**HF.0c**, BUG-029): el gasto importado no toca el saldo al importarlo, editarlo o borrarlo (`sinEfectoSaldo`, schema v44). Ver CHANGELOG.
 - 2026-08-10 (GAS.2a): ver bloque "Confirmación tras guardar" más abajo.

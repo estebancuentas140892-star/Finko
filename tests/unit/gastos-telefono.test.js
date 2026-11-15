@@ -389,4 +389,83 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     await esperar();
     expect(S.gastos.find(g => g.id === 'g1').fecha).toBe('2026-11-10');
   });
+
+  // ── SUS.2a (ADR 147 D5): la subcategoría y "¿gusto o necesidad?" ──
+
+  /** Monto de $5.000 (alcanza en Efectivo) y la teja de `categoria`. */
+  const hastaElRecibo = (categoria) => {
+    accion('nuevo-gasto');
+    const form = document.getElementById('form-gasto');
+    tocar(form, '5'); tocar(form, '000');
+    form.querySelector('[data-gasto-seguir="monto"]').click();
+    const teja = form.querySelector(`input[name="categoria"][value="${categoria}"]`);
+    teja.checked = true;
+    teja.dispatchEvent(new Event('change', { bubbles: true }));
+    tocarTeja(form, categoria);
+    return form;
+  };
+  const elegir = (form, name, valor) => {
+    const radio = form.querySelector(`fieldset:not([disabled]) input[name="${name}"][value="${valor}"]`);
+    radio.checked = true;
+    radio.dispatchEvent(new Event('change', { bubbles: true }));
+  };
+
+  it('SUS.2a: Mecato lleva al recibo y la subcategoría es una fila opcional con su mini-hoja', async () => {
+    const form = hastaElRecibo('Mecato');
+    expect(form.dataset.etapaActual).toBe('revisar');
+    const fila = form.querySelector('#gasto-fila-detalle');
+    expect(fila.hidden).toBe(false);
+    expect(fila.textContent).toContain('¿Qué fue?');
+    expect(fila.textContent).toContain('Opcional');
+    fila.click();
+    const mini = form.querySelector('#gasto-mini-detalle');
+    expect(mini.hidden).toBe(false);
+    expect(mini.querySelector('[data-sub-grupo="Mecato"]').disabled).toBe(false);
+    expect(mini.querySelector('[data-sub-grupo="Café"]').disabled).toBe(true);
+    elegir(form, 'subcategoriaId', 'mecato-helado');
+    expect(mini.hidden).toBe(true);
+    expect(form.querySelector('[data-recibo-cat]').textContent).toBe('Mecato · Helado');
+    expect(fila.querySelector('[data-fila-v]').textContent).toBe('Helado');
+
+    form.dispatchEvent(new Event('submit', { cancelable: true }));
+    await esperar();
+    const nuevo = S.gastos.find(g => g.categoria === 'Mecato');
+    expect(nuevo).toMatchObject({ monto: 5_000, subcategoriaId: 'mecato-helado', caracter: null });
+  });
+
+  it('SUS.2a: en Otros la fila pregunta "¿Gusto o necesidad?" y la respuesta queda en el gasto', async () => {
+    const form = hastaElRecibo('Otros');
+    const fila = form.querySelector('#gasto-fila-detalle');
+    expect(fila.hidden).toBe(false);
+    expect(fila.textContent).toContain('¿Gusto o necesidad?');
+    fila.click();
+    elegir(form, 'caracter', 'necesidad');
+    expect(fila.querySelector('[data-fila-v]').textContent).toBe('Una necesidad');
+    form.dispatchEvent(new Event('submit', { cancelable: true }));
+    await esperar();
+    expect(S.gastos.find(g => g.categoria === 'Otros')).toMatchObject({ caracter: 'necesidad', subcategoriaId: null });
+  });
+
+  it('SUS.2a: en una categoría propia sin respuesta, la pregunta se guarda en la categoría y no vuelve', async () => {
+    guardar('categoriasPersonalizadas', { nombre: 'Videojuegos', icono: 'c-computador', seccion: 'gasto' });
+    const form = hastaElRecibo('Videojuegos');
+    form.querySelector('#gasto-fila-detalle').click();
+    elegir(form, 'caracter', 'gusto');
+    form.dispatchEvent(new Event('submit', { cancelable: true }));
+    await esperar();
+    expect(S.categoriasPersonalizadas.find(c => c.nombre === 'Videojuegos').caracter).toBe('gusto');
+    expect(S.gastos.find(g => g.categoria === 'Videojuegos').caracter).toBeNull();
+
+    // La próxima vez ya no pregunta.
+    const otra = hastaElRecibo('Videojuegos');
+    expect(otra.querySelector('#gasto-fila-detalle').hidden).toBe(true);
+  });
+
+  it('SUS.2a: editar un gasto con subcategoría la trae elegida', () => {
+    guardar('gastos', { id: 'g3', monto: 4_000, categoria: 'Café', subcategoriaId: 'cafe-tinto', cuentaId: 'efe', fecha: '2026-11-12' });
+    accion('editar-gasto', { id: 'g3' });
+    const form = document.getElementById('form-gasto');
+    expect(form.querySelector('[data-sub-grupo="Café"] input[value="cafe-tinto"]').checked).toBe(true);
+    expect(form.querySelector('[data-recibo-cat]').textContent).toBe('Café · Tinto');
+  });
 });
