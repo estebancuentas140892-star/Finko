@@ -1,6 +1,6 @@
 # Tablero - Transversal
 
-> Revisado: 2026-11-13.
+> Revisado: 2026-11-14.
 
 > Satélite de [`BOARD.md`](../BOARD.md) (afecta varias secciones). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
 
@@ -38,6 +38,85 @@
 - Archivos   : `modules/ui/install-prompt.js`, `index.html` (`#modal-install-ios`), `modules/ui/onboarding.js`, `modules/infra/sw-register.js`, `modules/infra/actualizacion.js`, `modules/ui/sw-aviso.js`, `service-worker.js`
 - Depende de : la prueba en el iPhone y esos datos
 - Aceptación : en un iPhone, quien instala Finko encuentra sus datos (o fue avisado antes de registrarse), y en el teléfono de Esteban Acerca de Finko muestra la versión publicada
+
+> **Iniciativa FORM.2 - Formularios por tarea** ([ADR 142](../DECISIONS/142-formularios-por-tarea.md), aceptada 2026-11-14). Fuente única de todo cambio de forma en los formularios del teléfono: cuatro tareas (mover dinero, crear, corregir, ajustes), la regla para elegir cada control y el teclado de Finko. Diseño en el canvas "Finko · Rediseño de formularios móviles", página "Propuesta por tarea"; manda el ADR. Escritorio no cambia. **Una idea sobre cualquier formulario se integra acá, no abre tarjeta suelta.**
+
+#### FORM.2a - Lo que vale para todas las hojas
+- Prioridad  : alta
+- Estado     : pendiente
+- Área       : ambos
+- Objetivo   : ADR 142 D8 y D9 en las 27 hojas de hoy: modo escritura (sin agarradera ni teja, cabecera 52, pie 72 sin margen seguro, arranque en `safe-area-inset-top`), campo anclado arriba, `enterkeyhint` sin envío implícito, un solo botón, "¿Salir sin guardar?" al cerrar con cambios, la pastilla "Opcional" y errores que se limpian por campo con mensajes que dicen qué hacer
+- Riesgo     : `form-errors.js` ata cada error a su campo por palabras del mensaje: un mensaje reescrito puede soltarse de su campo; revisar `_CAMPOS` con cada uno
+- Secciones  : todas las hojas del teléfono
+- Archivos   : `styles/responsive.css`, `styles/components/forms.css`, `modules/ui/teclado.js`, `modules/ui/hojas.js`, `modules/infra/form-errors.js`, los `logic.js` (mensajes) y las vistas con formulario
+- Depende de : nada
+- Aceptación : casos nuevos en `teclado.test.js` y en las pruebas de `form-errors`; en un iPhone, con el teclado abierto en Nueva deuda se ven la pregunta, el campo, su ayuda y el botón
+- Modelo     : capacidad alta, esfuerzo medio
+
+#### FORM.2b - Registrar gasto: monto, un toque, recibo
+- Prioridad  : alta
+- Estado     : pendiente
+- Área       : ambos
+- Objetivo   : ADR 142 D3 y D4: teclado de Finko (`inputmode="none"` sobre el mismo campo `data-miles`, teclas en una función pura), categorías en tejas por uso, recibo con "Sale de", "Fecha" y "Nota", desplegable de cuentas con las tarjetas (051 D4) y el aviso de saldo antes de guardar, con el mismo reparto de `resolverPagoConPreferida`
+- Riesgo     : el contrato de `#form-gasto` y `validarGasto` no cambian; el reparto entre cuentas debe dar lo mismo que hoy
+- Secciones  : Gastos y Registrar
+- Archivos   : `modules/dominio/gastos/view.js` e `index.js`, un módulo nuevo en `modules/ui/` para el teclado, `modules/infra/cuenta-helper.js`, `styles/components/forms.css`, `styles/identidad.css`
+- Depende de : FORM.2a
+- Aceptación : unitarias del teclado; E2E a 390 px: monto, categoría y guardar en tres toques, y la cuenta que no alcanza
+- Modelo     : capacidad alta, esfuerzo alto
+
+#### FORM.2c - Mover dinero: los otros ocho
+- Prioridad  : media
+- Estado     : pendiente
+- Área       : ambos
+- Objetivo   : ADR 142 D4 con dos etapas (Monto · Revisar) y atajos sobre el teclado ("La cuota", "Toda la deuda", "Lo que falta") en Me llegó dinero, Abonar a una deuda, Aportar a una meta, a una reserva y al fondo, Transferir, Me pagaron y Pagar varios
+- Riesgo     : el aviso de consecuencia (062) y el GMF de Transferir se conservan tal cual
+- Archivos   : `tesoreria/views/ingresos.js` y `transferencias.js`, `compromisos/views/formularios.js` (abono) y `lote.js`, `metas/view.js`, `apartados/view.js`, `ahorro/view.js`, `personales/view.js`
+- Depende de : FORM.2b
+- Aceptación : E2E de cada uno a 390 px, sin el teclado del sistema para el monto
+- Modelo     : capacidad estándar, esfuerzo medio
+
+#### FORM.2d - Corregir: la ficha es el formulario
+- Prioridad  : media
+- Estado     : pendiente
+- Área       : ambos
+- Objetivo   : ADR 142 D6: el detalle (`ui/detalle-fila.js`, ADR 119) se vuelve editable; una mini-hoja por dato con "Listo" y "Deshacer"; eliminar al pie. Editar ya no reabre el formulario de crear
+- Riesgo     : un gasto pagado desde varias cuentas o el pago de un fijo (BUG-038) no puede perder su vínculo al editarse
+- Archivos   : `modules/ui/detalle-fila.js`, `modules/ui/toast.js`, los `index.js` que hoy abren el formulario en modo edición
+- Depende de : FORM.2b
+- Aceptación : E2E: cambiar la fecha de un gasto en dos toques y deshacerlo
+- Modelo     : capacidad alta, esfuerzo medio
+
+#### FORM.2e - Crear: el armazón de preguntas y Nueva deuda
+- Prioridad  : media
+- Estado     : pendiente
+- Área       : ambos
+- Objetivo   : ADR 142 D5: una pregunta por pantalla con progreso y atrás que conserva (precedente: el asistente paginado de Distribuir) y Nueva deuda en seis preguntas con resumen y "Agrega si quieres"; la ayuda de la tasa pasa a una mini-hoja con Tino
+- Riesgo     : `normalizarCompromiso` y "Recibí este dinero" (D.14) no cambian
+- Archivos   : `compromisos/views/formularios.js`, `compromisos/index.js`, un módulo nuevo en `modules/ui/` para el armazón
+- Depende de : FORM.2a
+- Aceptación : E2E de una deuda de entidad y una personal; volver atrás no borra respuestas
+- Modelo     : capacidad alta, esfuerzo alto
+
+#### FORM.2f - Crear: cuenta, ingreso fijo, gasto fijo y meta
+- Prioridad  : media
+- Estado     : pendiente
+- Área       : ambos
+- Objetivo   : ADR 142 D5 en Nueva cuenta (banco con buscador; número, llave y cuota de manejo al resumen), Ingreso fijo (sin desplegables), Nuevo gasto fijo (orden del 141 D1) y Nueva meta (el aporte por mes se calcula mientras se elige el plazo)
+- Archivos   : `tesoreria/views/cuentas.js` e `ingresos.js`, `compromisos/views/formularios.js`, `metas/view.js` y sus `index.js`
+- Depende de : FORM.2e
+- Aceptación : E2E de los cuatro a 390 px
+- Modelo     : capacidad estándar, esfuerzo medio
+
+#### FORM.2g - Crear y ajustar: el resto
+- Prioridad  : baja
+- Estado     : pendiente
+- Área       : ambos
+- Objetivo   : ADR 142 D5 en Nueva reserva, Le presté a alguien, Nueva inversión, Nuevo límite, Compras pequeñas, Configurar el fondo, Cuánto apartar, Perfil fiscal, Perfil del niño y Mesada; D7 en Tu nombre, Tu perfil y el candado. Cierra la iniciativa
+- Archivos   : `apartados`, `personales`, `inversiones`, `presupuesto`, `ahorro`, `config` (`view.js`, `familia-view.js`) y `modules/ui/onboarding.js`
+- Depende de : FORM.2f
+- Aceptación : una prueba vigila que no quede ningún `<select>`, `type="date"` ni `type="number"` en los formularios del teléfono
+- Modelo     : capacidad estándar, esfuerzo medio
 
 #### MV2.28 - Medir lo publicado: fluidez y Lighthouse en producción
 - Prioridad  : media
