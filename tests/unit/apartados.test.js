@@ -1014,8 +1014,9 @@ describe('formularios de Apartados - monto con separador (T9)', () => {
 describe('renderFormApartado() - lenguaje v2 (AP.5)', () => {
   it('el monto objetivo vive dentro de .monto-hero', () => {
     const html = renderFormApartado();
-    expect(html).toContain('<div class="monto-hero">');
-    const i = html.indexOf('<div class="monto-hero">');
+    // FORM.2g: el bloque lleva además los atributos de su pregunta (ADR 142 D5).
+    expect(html).toContain('<div class="monto-hero"');
+    const i = html.indexOf('<div class="monto-hero"');
     const j = html.indexOf('</div>', html.indexOf('id="apartado-objetivo"'));
     expect(html.slice(i, j)).toContain('id="apartado-objetivo"');
   });

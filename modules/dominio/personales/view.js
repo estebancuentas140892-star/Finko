@@ -445,28 +445,31 @@ export function renderFormPersonal({ prestamo = null } = {}) {
   const botonTexto = prestamo ? 'Actualizar préstamo' : 'Guardar préstamo';
 
   return `
-    <form id="form-personal" novalidate>
-      <div class="form-group">
+    <form id="form-personal" novalidate data-preguntas="${prestamo ? 'Tu préstamo' : 'Le prestaste'}"
+          data-resumen-titulo="Así queda tu préstamo" data-preguntas-inicio="${prestamo ? 'resumen' : ''}">
+      <div class="form-group" data-pregunta="¿A quién le prestaste?" data-pregunta-id="persona" data-resumen="A quién"
+           data-falta="Escribe a quién le prestaste.">
         <label for="pers-persona" class="label">A quién le prestaste</label>
         <input id="pers-persona" name="persona" class="input" type="text"
                placeholder="Ej. Tía Marta" required aria-required="true"
                autocomplete="off" maxlength="60"
                value="${_esc(prestamo?.persona ?? '')}" />
       </div>
-      <div class="form-group">
+      <div class="form-group" data-pregunta="¿Cuánto le prestaste?" data-pregunta-id="monto" data-resumen="Le prestaste"
+           data-falta="Escribe cuánto le prestaste. Por ejemplo: 200.000">
         <label for="pers-monto" class="label">Monto prestado</label>
         <input id="pers-monto" name="monto" class="input" type="text" inputmode="numeric" data-miles autocomplete="off" placeholder="0" required aria-required="true"
                value="${miles(prestamo ? Number(prestamo.monto) || '' : '')}" />
       </div>
-      <div class="form-group">
+      <div class="form-group" data-opcional="Fecha del préstamo">
         <label for="pers-fecha" class="label">Fecha del préstamo</label>
         <input id="pers-fecha" name="fecha" class="input" type="date"
                value="${prestamo ? _esc(prestamo.fecha ?? '') : hoy}" required aria-required="true" />
       </div>
 
-      ${cuentaHtml}
+      ${cuentaHtml ? `<div data-opcional="De qué cuenta salió">${cuentaHtml}</div>` : ''}
 
-      <div class="form-group">
+      <div class="form-group" data-opcional="Interés" data-resumen-sufijo=" % al mes">
         <label for="pers-tasa" class="label">Interés mensual (%) <span class="form-optional">Opcional</span></label>
         <input id="pers-tasa" name="tasa" class="input" type="number"
                min="0" max="100" step="0.1" placeholder="Ej. 2"
@@ -474,14 +477,14 @@ export function renderFormPersonal({ prestamo = null } = {}) {
                value="${prestamo && tieneInteres(prestamo) ? prestamo.tasa : ''}" />
         <p class="form-hint">Se calcula sobre el capital pendiente; cada pago cubre primero el interés.</p>
       </div>
-      <div class="form-group">
+      <div class="form-group" data-opcional="Motivo">
         <label for="pers-motivo" class="label">Motivo <span class="form-optional">Opcional</span></label>
         <input id="pers-motivo" name="motivo" class="input" type="text"
                placeholder="Ej. mercado, favor" maxlength="80"
                autocomplete="off"
                value="${_esc(prestamo?.motivo ?? '')}" />
       </div>
-      <div class="form-group">
+      <div class="form-group" data-opcional="Fecha pactada">
         <label for="pers-limite" class="label">Fecha pactada de devolución <span class="form-optional">Opcional</span></label>
         <input id="pers-limite" name="fechaLimite" class="input" type="date"
                value="${_esc(prestamo?.fechaLimite ?? '')}" />

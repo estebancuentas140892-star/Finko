@@ -111,7 +111,7 @@ export function htmlAltaNino({ candado, datos = {} }) {
   const teNombra = datos.teNombra ?? COMO_TE_NOMBRA[0];
   const esOtro = !COMO_TE_NOMBRA.includes(teNombra);
   return `
-    <form id="form-familia-nino" class="familia-alta" novalidate>
+    <form id="form-familia-nino" class="familia-alta" novalidate data-captura>
       <div class="form-group">
         <label for="familia-nombre" class="label">Su nombre</label>
         <input id="familia-nombre" name="nombre" class="input" type="text" autocomplete="off"
@@ -158,7 +158,7 @@ export function htmlAltaNino({ candado, datos = {} }) {
  */
 export function htmlAltaPin(nombre) {
   return `
-    <form id="form-familia-pin" class="familia-alta" novalidate>
+    <form id="form-familia-pin" class="familia-alta" novalidate data-captura>
       <p class="familia-alta__paso">Familia · tu candado</p>
       <p class="form-hint">
         Con niños en este teléfono, Finko pide un PIN para entrar a tu perfil, así ${esc(nombre)} no
@@ -226,7 +226,7 @@ export function htmlMesada({ nombre, mesada = null, cuentas = [], paso2 = true }
   const dia = Number.isInteger(m.dia) ? m.dia : 6;
   const anotar = m.anotarGasto !== false;
   return `
-    <form id="form-familia-mesada" class="familia-alta" novalidate>
+    <form id="form-familia-mesada" class="familia-alta" novalidate data-captura>
       ${paso2 ? '<p class="familia-alta__paso">Paso 2 de 2</p>' : ''}
       <h3 class="sr-only familia-alta__titulo" tabindex="-1">Mesada de ${esc(nombre)}</h3>
       <div class="form-group">
@@ -318,7 +318,7 @@ export function htmlPremio(perfil, hoyISO) {
   const elegida = perfil.premio?.tasa ?? TASA_POR_DEFECTO;
   const prox = proximoPremio(perfil, hoyISO, elegida);
   return `
-    <form id="form-familia-premio" class="familia-alta" novalidate>
+    <form id="form-familia-premio" class="familia-alta" novalidate data-captura>
       <h3 class="sr-only familia-alta__titulo" tabindex="-1">Premio por ahorrar</h3>
       <p class="familia-alta__texto">Cada mes le sumas a ${esc(perfil.nombre)} un poco de lo que tuvo guardado todo el mes en Ahorrar. Así ve que el dinero quieto crece.</p>
       <fieldset class="form-group familia-alta__grupo">

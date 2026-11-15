@@ -798,7 +798,7 @@ export function renderFormFondo({ editando, metaMeses, montoActual, gastosFijosM
       </div>`;
 
   return `
-    <form id="form-fondo" novalidate>
+    <form id="form-fondo" novalidate data-captura>
       <div class="form-group">
         <label for="fondo-meta-meses" class="label">Meses de gastos fijos que quieres cubrir</label>
         <input id="fondo-meta-meses" name="metaMeses" class="input" type="number"
@@ -908,7 +908,7 @@ export function renderFormCompromisoMensual(compromisoMensual, sugerencia = null
     : '';
 
   return `
-    <form id="form-compromiso" novalidate>
+    <form id="form-compromiso" novalidate data-captura>
       <div class="form-group">
         <label for="compromiso-monto" class="label">¿Cuánto quieres apartar ${etiquetaCadaPeriodo(frecuencia)}?</label>
         <input id="compromiso-monto" name="compromisoMensual" class="input" type="text" value="${miles(Number(compromisoMensual) || 0)}"

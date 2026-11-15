@@ -682,7 +682,10 @@ export function renderFormApartado(apartado = null, frecuenciaPreferida = 'Mensu
   const botonTexto = apartado ? `${icon('check')} Actualizar reserva` : `${icon('check')} Crear reserva`;
 
   return `
-    <form id="form-apartado" novalidate>
+    <form id="form-apartado" novalidate data-preguntas="${apartado ? 'Tu reserva' : 'Nueva reserva'}"
+          data-resumen-titulo="Así queda tu reserva" data-preguntas-inicio="${apartado ? 'resumen' : ''}">
+      <div data-pregunta="¿Para qué pago te quieres preparar?" data-pregunta-id="nombre" data-resumen="Reserva" data-no-avanza
+           data-ayuda="Toca uno para llenar el nombre, o escribe el tuyo." data-falta="Ponle un nombre a la reserva.">
       ${apartado ? '' : `
       <p class="reserva-form__pregunta">¿Para qué pago te quieres preparar?</p>
       <p class="form-hint reserva-form__sub">Toca uno para llenar el nombre, o escribe el tuyo.</p>
@@ -699,7 +702,9 @@ export function renderFormApartado(apartado = null, frecuenciaPreferida = 'Mensu
                  value="${_esc(apartado?.nombre ?? '')}" />
         </div>
       </div>
-      <div class="monto-hero">
+      </div>
+      <div class="monto-hero" data-pregunta="¿Cuánto necesitas reunir?" data-pregunta-id="objetivo" data-resumen="Necesitas"
+           data-falta="Escribe cuánto necesitas. Por ejemplo: 520.000">
         <label class="monto-hero__label" for="apartado-objetivo">¿Cuánto necesitas reunir?</label>
         <div class="monto-hero__box">
           <span class="monto-hero__prefijo" aria-hidden="true">$</span>
@@ -710,18 +715,18 @@ export function renderFormApartado(apartado = null, frecuenciaPreferida = 'Mensu
         </div>
         <span class="monto-hero__hint">COP</span>
       </div>
-      <div class="form-group">
+      <div class="form-group" data-opcional="Para cuándo">
         <label for="apartado-fecha" class="label">¿Para cuándo lo necesitas? <span class="form-optional">Opcional</span></label>
         <input id="apartado-fecha" name="fechaObjetivo" class="input" type="date" value="${_esc(apartado?.fechaObjetivo ?? '')}" />
         <p id="apartado-sugerencia-live" class="form-hint" aria-live="polite">${SUGERENCIA_INICIAL}</p>
       </div>
-      <fieldset class="form-group reserva-form__frecuencia">
+      <fieldset class="form-group reserva-form__frecuencia" data-opcional="Cada cuánto aportas" data-resumen="Cada cuánto aportas">
         <legend class="label">¿Cada cuánto puedes aportar?</legend>
         <div class="familia-segmento bolsa-frecuencia">${frecOpts}
         </div>
       </fieldset>
 
-      <div class="form-group">
+      <div class="form-group" data-opcional="Nota">
         <label for="apartado-nota" class="label">Nota <span class="form-optional">Opcional</span></label>
         <input id="apartado-nota" name="nota" class="input" type="text" maxlength="80"
                placeholder="Ej.: la moto de Andrés"

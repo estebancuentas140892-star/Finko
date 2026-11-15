@@ -720,7 +720,7 @@ export function renderFormHormiga(limitePropuesto) {
     ? `Este mes llevas ${f(p.gastado)} en gastos pequeños`
     : 'Aún no tienes gastos pequeños este mes';
   return `
-    <form id="form-hormiga" novalidate>
+    <form id="form-hormiga" novalidate data-captura>
       <div class="monto-hero">
         <label class="monto-hero__label" for="hormiga-limite">Máximo al mes para lo pequeño</label>
         <div class="monto-hero__box">
@@ -922,9 +922,15 @@ export function renderFormPresupuesto(actual = null, categoriaPrecargada = '') {
     : (categoriaInicial ? (sugeridoDe(categoriaInicial)?.monto ?? '') : '');
 
   return `
-    <form id="form-presupuesto" novalidate ${editando ? `data-id="${_esc(actual.id)}"` : ''}>
+    <form id="form-presupuesto" novalidate ${editando ? `data-id="${_esc(actual.id)}"` : ''}
+          data-preguntas="${editando ? 'Tu límite' : 'Nuevo límite'}" data-resumen-titulo="Así queda tu límite"
+          data-preguntas-inicio="${editando ? 'resumen' : ''}">
+      <div data-pregunta="¿A qué categoría le pones tope?" data-pregunta-id="categoria" data-resumen="Categoría"
+           data-falta="Elige una categoría.">
       ${campoCategoria}
-      <div class="monto-hero">
+      </div>
+      <div class="monto-hero" data-pregunta="¿Cuánto es lo máximo al mes?" data-pregunta-id="monto" data-resumen="Máximo al mes"
+           data-falta="Escribe el máximo del mes. Por ejemplo: 300.000">
         <label class="monto-hero__label" for="presupuesto-monto">Máximo al mes</label>
         <div class="monto-hero__box">
           <span class="monto-hero__prefijo" aria-hidden="true">$</span>

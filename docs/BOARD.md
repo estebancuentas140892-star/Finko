@@ -6,7 +6,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-11-14 (FORM.2f cerrada; FORM.2e cerrada; FORM.2c cerrada; FORM.2b cerrada; FORM.2a cerrada; antes, entra la iniciativa FORM.2, formularios por tarea, [ADR 142](DECISIONS/142-formularios-por-tarea.md)). Antes, 2026-11-13 (REV.2c cerrada; REV.2b, ADR 141; REV.2a, ADR 140; antes, la poda, ADR 138). Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
+> Última actualización: 2026-11-14 (FORM.2g cerrada; FORM.2f cerrada; FORM.2e cerrada; FORM.2c cerrada; FORM.2b cerrada; FORM.2a cerrada; antes, entra la iniciativa FORM.2, formularios por tarea, [ADR 142](DECISIONS/142-formularios-por-tarea.md)). Antes, 2026-11-13 (REV.2c cerrada; REV.2b, ADR 141; REV.2a, ADR 140; antes, la poda, ADR 138). Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
 
 ---
 
@@ -56,7 +56,7 @@ Las tarjetas del tablero, **en orden de valor** desde la poda del 2026-11-13 ([A
 | HF.1c | La fecha de cada aporte a metas y reservas | Transversal | baja | su ADR |
 | HF.2a | La cuenta habitual de cada pago | Transversal | baja | nada |
 | HF.2b | El débito automático sin saldo se avisa antes de vencer | Transversal | baja | nada |
-| FORM.2g | Crear y ajustar: el resto (cierra FORM.2) | Transversal | baja | nada |
+| FORM.2h | Ajustes con mini-hojas, Tino en la tasa, tasa alta en ámbar (cierra FORM.2) | Transversal | baja | nada |
 | APR.5b | La ronda 2 de Tino en el niño ([ADR 094](DECISIONS/094-tino-el-guatin.md) y [095](DECISIONS/095-tino-en-el-sprite.md)) y los hitos del niño. Los dibujos ya están y el adulto los usa ([ADR 129](DECISIONS/129-tino-ronda-2-en-el-adulto.md)) | Transversal | baja | correr el conversor (095 D4) |
 | NUBE.4 | Bancos: extracto, conciliación y Finko Conectado (absorbe HF.4 y HF.5a) | Transversal | no iniciar | su propio ADR (finanzas abiertas) |
 | A.5 | Dominio custom en Vercel | Mantenimiento | baja | que el usuario tenga el dominio registrado |
@@ -92,7 +92,7 @@ _(CFG.1 a CFG.6 cerraron completas. CFG.6, la auditoría móvil de Ajustes, cerr
 
 ## Transversal (afecta varias secciones)
 
-REV.3a y REV.3b, FORM.2d a FORM.2g, MV2.28, HF.1c a HF.3e, APR.5b y NUBE.4 → [`board/transversal.md`](board/transversal.md) (FORM: iniciativa "formularios por tarea", [ADR 142](DECISIONS/142-formularios-por-tarea.md); HF: iniciativa "un hecho financiero se informa una sola vez", [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), seis tarjetas desde el [ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md); APR: iniciativa "Aprende y aplícalo", [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) y [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md), en Propuesta)
+REV.3a y REV.3b, FORM.2d y FORM.2h, MV2.28, HF.1c a HF.3e, APR.5b y NUBE.4 → [`board/transversal.md`](board/transversal.md) (FORM: iniciativa "formularios por tarea", [ADR 142](DECISIONS/142-formularios-por-tarea.md); HF: iniciativa "un hecho financiero se informa una sola vez", [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), seis tarjetas desde el [ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md); APR: iniciativa "Aprende y aplícalo", [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) y [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md), en Propuesta)
 
 ---
 

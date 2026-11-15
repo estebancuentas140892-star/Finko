@@ -463,15 +463,18 @@ export function renderFormInversion({ fechaInicio, inversion = null }) {
   const botonTexto = inversion ? 'Actualizar inversión' : 'Guardar inversión';
 
   return `
-    <form id="form-inversion" novalidate>
-      <div class="form-group">
+    <form id="form-inversion" novalidate data-preguntas="${inversion ? 'Tu inversión' : 'Nueva inversión'}"
+          data-resumen-titulo="Así queda tu inversión" data-preguntas-inicio="${inversion ? 'resumen' : ''}">
+      <div class="form-group" data-pregunta="¿En qué inviertes?" data-pregunta-id="tipo" data-resumen="Tipo"
+           data-falta="Elige el tipo de inversión.">
         <label for="inv-tipo" class="label">Tipo de inversión</label>
         <select id="inv-tipo" name="tipo" class="input" required aria-required="true">
           ${opciones}
         </select>
       </div>
 
-      <div class="form-group">
+      <div class="form-group" data-pregunta="¿Cómo la reconoces?" data-pregunta-id="nombre" data-resumen="Nombre"
+           data-falta="Ponle un nombre para reconocerla.">
         <label for="inv-nombre" class="label">Nombre</label>
         <input id="inv-nombre" name="nombre" class="input" type="text"
                maxlength="60" placeholder="Ej. CDT Bancolombia, ETF S&amp;P 500, Bitcoin"
@@ -479,14 +482,15 @@ export function renderFormInversion({ fechaInicio, inversion = null }) {
                value="${_esc(inversion?.nombre ?? '')}" />
       </div>
 
-      <div class="form-group">
+      <div class="form-group" data-pregunta="¿Cuánto invertiste?" data-pregunta-id="monto" data-resumen="Monto"
+           data-falta="Escribe cuánto invertiste. Por ejemplo: 1.000.000">
         <label for="inv-monto" class="label">Monto invertido</label>
         <input id="inv-monto" name="monto" class="input" type="text" placeholder="1000000"
                required aria-required="true" inputmode="numeric" data-miles autocomplete="off"
                value="${miles(inversion ? Number(inversion.monto) || '' : '')}" />
       </div>
 
-      <div class="form-group">
+      <div class="form-group" data-opcional="Tasa" data-resumen-sufijo=" % al año">
         <label for="inv-tasa" class="label">Tasa EA estimada (%) <span class="form-optional">Opcional</span></label>
         <input id="inv-tasa" name="tasaEA" class="input" type="number"
                min="0" max="100" step="0.1" placeholder="0"
@@ -495,7 +499,7 @@ export function renderFormInversion({ fechaInicio, inversion = null }) {
         <p class="form-hint">Déjalo en 0 si la rentabilidad es variable (acciones, cripto).</p>
       </div>
 
-      <div class="form-group">
+      <div class="form-group" data-opcional="Plazo" data-resumen-sufijo=" meses">
         <label for="inv-plazo" class="label">Plazo (meses) <span class="form-optional">Opcional</span></label>
         <input id="inv-plazo" name="plazoMeses" class="input" type="number"
                min="0" step="1" placeholder="0" inputmode="numeric"
@@ -503,13 +507,16 @@ export function renderFormInversion({ fechaInicio, inversion = null }) {
         <p class="form-hint">Pon 0 si no tiene un plazo fijo.</p>
       </div>
 
-      <div class="form-group">
+      <div class="form-group" data-opcional="Fecha de inicio">
         <label for="inv-fecha" class="label">Fecha de inicio</label>
         <input id="inv-fecha" name="fechaInicio" class="input" type="date"
                value="${_esc(fechaInicio)}" required aria-required="true" />
       </div>
 
-      ${inversion ? _renderOrigenEditable(inversion) : _renderOrigen(fechaInicio)}
+      ${(() => {
+        const origen = inversion ? _renderOrigenEditable(inversion) : _renderOrigen(fechaInicio);
+        return origen ? `<div data-opcional="De qué cuenta salió">${origen}</div>` : '';
+      })()}
 
       <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>

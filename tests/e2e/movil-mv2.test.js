@@ -1297,10 +1297,22 @@ test.describe('MV2.30 - la hoja "Nueva reserva" (ADR 133 D7)', () => {
     await form.locator('.chip-cat--mas').click();
     await expect(form.locator('.chips-mas [data-action="apartado-plantilla"]').first()).toBeVisible();
 
+    // ADR 142 D5 (FORM.2g): de a una pregunta; la fecha y la frecuencia, en el resumen.
+    await form.locator('[data-preguntas-seguir]').click();
+    await expect(form.locator('[data-preguntas-t]')).toHaveText('¿Cuánto necesitas reunir?');
     await form.locator('#apartado-objetivo').fill('520.000');
-    await form.locator('#apartado-fecha').fill(enDias(120));
+    await form.locator('[data-preguntas-seguir]').click();
+    await expect(form.locator('[data-preguntas-t]')).toHaveText('Así queda tu reserva');
+    await form.locator('[data-preguntas-ir]', { hasText: 'Cada cuánto aportas' }).click();
+    // Elegir una opción responde y vuelve solo al resumen.
     await form.locator('.familia-segmento__op', { hasText: 'Quincenal' }).click();
+    await expect(form.locator('[data-preguntas-t]')).toHaveText('Así queda tu reserva');
+    await form.locator('[data-preguntas-ir]', { hasText: 'Para cuándo' }).click();
+    await form.locator('#apartado-fecha-finko').click();
+    for (let i = 0; i < 4; i++) await form.locator('#apartado-fecha-mini [data-calf-mover="1"]').click();
+    await form.locator('#apartado-fecha-mini [data-calf-dia$="-15"]').click();
     await expect(form.locator('#apartado-sugerencia-live')).toContainText('por quincena');
+    await form.locator('[data-preguntas-seguir]').click();
 
     await form.locator('button[type="submit"]').click();
     await expect(page.locator('#modal-apartado[data-open]')).toHaveCount(0);

@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(formularios): FORM.2g, el resto de crear y los controles de Finko en todos los formularios · 2026-11-14
+
+[ADR 142](DECISIONS/142-formularios-por-tarea.md) D2 y D5. Ficha: [`contexto/captura.md`](contexto/captura.md). Solo bajo 1024 px. SW v705.
+
+- **Por preguntas**: Nueva reserva (para qué pago te preparas, con las plantillas en la misma pregunta, y cuánto necesitas reunir), Le prestaste (a quién y cuánto), Nueva inversión (en qué, cómo la reconoces y cuánto) y Nuevo límite (a qué categoría, que avanza al tocarla y deja el monto sugerido, y el máximo del mes). Lo opcional (fechas, frecuencia, interés, motivo, tasa, plazo, la cuenta de donde salió) va en "Agrega si quieres". Editar abre en el resumen.
+- **Los controles de Finko en lo que quedaba** (`data-captura`): Configurar el fondo, Cuánto apartar, Compras pequeñas y los formularios de la familia (perfil del niño, mesada, premio, PIN).
+- `captura-telefono.js`: un formulario se prepara una sola vez mientras su hoja está abierta (el armazón no pierde la pregunta en la que va), y un `MutationObserver` prepara los que aparecen después: el que el dominio vuelve a pintar con la hoja abierta y los que no viven en una hoja.
+- **El vigía de la regla del 142 D2** (`tests/e2e/formularios-telefono.test.js`): trece formularios abiertos a 390 px, ninguno muestra un `<select>`, un `type="date"` ni un `type="number"` del sistema.
+- **Lo que queda fuera, a FORM.2h**: Ajustes como lista con mini-hojas (142 D7), la ayuda de la tasa con Tino (D10), la tasa muy alta como aviso ámbar (D9) y el buscador del banco. Pagar varios no lleva teclado: no se escribe un monto.
+- Pruebas: E2E `formularios-telefono` (13 nuevas); `apartados` (1 ajustada al bloque con atributos); `movil-mv2` (1 reescrita: Nueva reserva por preguntas). Unitarias 5580/5580, E2E 469/469.
+
 ### feat(formularios): FORM.2f, cuenta, ingreso fijo, gasto fijo y meta por preguntas · 2026-11-14
 
 [ADR 142](DECISIONS/142-formularios-por-tarea.md) D5 con el armazón de FORM.2e; el gasto fijo conserva el orden del [ADR 141](DECISIONS/141-el-gasto-fijo-empieza-por-el-monto.md) D1. Ficha: [`contexto/captura.md`](contexto/captura.md). Solo bajo 1024 px. SW v704.

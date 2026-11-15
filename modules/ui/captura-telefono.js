@@ -431,24 +431,63 @@ export function montarEtapasMonto(form) {
  *
  * @param {HTMLElement} overlay
  */
+const SELECTOR_FORMS = 'form[data-captura], form[data-etapas-monto], form[data-preguntas]';
+
+/** Formularios ya preparados: con la hoja abierta no se vuelven a tocar. */
+const _preparados = new WeakSet();
+
+/**
+ * Prepara un formulario: armazón, etapas y controles de Finko. `overlay` es
+ * null para los que no viven en una hoja (Ajustes).
+ */
+function _prepararForm(form, overlay, reabierta) {
+  _preparados.add(form);
+  // Primero el armazón: el día del mes deja de ser un número antes de mejorar los números.
+  if (overlay && 'preguntas' in form.dataset) montarPreguntas(form, overlay, { reabierta });
+  for (const s of form.querySelectorAll('select:not([data-finko])')) mejorarSelect(s, form);
+  for (const d of form.querySelectorAll('input[type="date"]:not([data-finko])')) mejorarFecha(d, form);
+  for (const n of form.querySelectorAll('input[type="number"]:not([data-finko])')) mejorarNumero(n);
+  if ('etapasMonto' in form.dataset) {
+    montarEtapasMonto(form);
+    _etapas.get(form)?.irA('monto', { foco: false });
+  }
+  for (const b of form.querySelectorAll('.campo-finko')) _refrescos.get(b)?.();
+}
+
 export function prepararHojaTelefono(overlay) {
   if (!_esMovil()) return;
   const reabierta = !('open' in overlay.dataset);
-  for (const form of overlay.querySelectorAll('form[data-captura], form[data-etapas-monto], form[data-preguntas]')) {
-    // Primero el armazón: el día del mes deja de ser un número antes de mejorar los números.
-    if ('preguntas' in form.dataset) montarPreguntas(form, overlay, { reabierta });
-    for (const s of form.querySelectorAll('select:not([data-finko])')) mejorarSelect(s, form);
-    for (const d of form.querySelectorAll('input[type="date"]:not([data-finko])')) mejorarFecha(d, form);
-    for (const n of form.querySelectorAll('input[type="number"]:not([data-finko])')) mejorarNumero(n);
-    if ('etapasMonto' in form.dataset) {
-      montarEtapasMonto(form);
-      _etapas.get(form)?.irA('monto', { foco: false });
+  for (const form of overlay.querySelectorAll(SELECTOR_FORMS)) {
+    // Con la hoja abierta, un formulario ya preparado no se toca: el armazón
+    // perdería la pregunta en la que va.
+    if (!reabierta && _preparados.has(form)) continue;
+    _prepararForm(form, overlay, reabierta);
+  }
+}
+
+/**
+ * Un formulario que aparece después (el dominio vuelve a pintar con la hoja
+ * abierta, o uno de Ajustes que no vive en una hoja) se prepara solo.
+ * @param {MutationRecord[]} cambios
+ */
+function _alAparecer(cambios) {
+  if (!_esMovil()) return;
+  for (const c of cambios) {
+    for (const n of c.addedNodes) {
+      if (n.nodeType !== 1) continue;
+      const forms = n.matches(SELECTOR_FORMS) ? [n] : [...n.querySelectorAll(SELECTOR_FORMS)];
+      for (const form of forms) {
+        if (_preparados.has(form) || !form.isConnected) continue;
+        const overlay = form.closest('.modal-overlay');
+        if (!overlay) _prepararForm(form, null, true);
+        else if ('open' in overlay.dataset) prepararHojaTelefono(overlay);
+      }
     }
-    for (const b of form.querySelectorAll('.campo-finko')) _refrescos.get(b)?.();
   }
 }
 
 /** Se llama una vez desde bootstrap.js. */
 export function initCapturaTelefono() {
   registrarAlAbrir(prepararHojaTelefono);
+  new MutationObserver(_alAparecer).observe(document.body, { childList: true, subtree: true });
 }

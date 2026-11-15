@@ -52,16 +52,14 @@
 - Aceptación : E2E: cambiar la fecha de un gasto en dos toques y deshacerlo
 - Modelo     : capacidad alta, esfuerzo medio
 
-#### FORM.2g - Crear y ajustar: el resto
-- Además   : de FORM.2e quedan la ayuda de la tasa en una mini-hoja con Tino y la tasa muy alta como aviso ámbar con su salida (142 D9, cambia `validarCompromiso`)
+#### FORM.2h - Ajustes con mini-hojas y lo que quedó de D9 y D10
 - Prioridad  : baja
 - Estado     : pendiente
 - Área       : ambos
-- Objetivo   : ADR 142 D5 en Nueva reserva, Le presté a alguien, Nueva inversión, Nuevo límite, Compras pequeñas, Configurar el fondo, Cuánto apartar, Perfil fiscal, Perfil del niño y Mesada; D7 en Tu nombre, Tu perfil y el candado. Cierra la iniciativa
-- Archivos   : `apartados`, `personales`, `inversiones`, `presupuesto`, `ahorro`, `config` (`view.js`, `familia-view.js`) y `modules/ui/onboarding.js`
+- Objetivo   : ADR 142 D7 (Tu nombre, Tu perfil y el candado como lista con su valor y una mini-hoja), D10 (la ayuda de la tasa en una mini-hoja con Tino, "Primero necesitas una cuenta" con Tino pensando) y D9 (la tasa muy alta deja de bloquear y pasa a aviso ámbar con su salida; cambia `validarCompromiso`). El banco de Nueva cuenta con buscador (142 D2). Cierra la iniciativa
+- Archivos   : `config/view.js`, `ui/mini-hoja.js`, `compromisos/logic/modelo.js` y su vista, `tesoreria/views/cuentas.js`
 - Depende de : nada
-- Aceptación : una prueba vigila que no quede ningún `<select>`, `type="date"` ni `type="number"` en los formularios del teléfono
-- Modelo     : capacidad estándar, esfuerzo medio
+- Aceptación : E2E a 390 px de cambiar el nombre en Ajustes desde su mini-hoja, y de guardar una deuda con tasa alta después del aviso
 
 #### MV2.28 - Medir lo publicado: fluidez y Lighthouse en producción
 - Prioridad  : media
