@@ -63,6 +63,7 @@ import { initLogros } from '../dominio/logros/index.js';
 import { initAprende } from '../dominio/aprende/index.js';
 import { initNino } from '../dominio/nino/index.js';
 import { initMenuMas, precalentarMas } from './menu-mas.js';
+import { despertarOverlaysEnIdle } from './modales.js';
 import { initBloqueGastos } from './bloque-gastos.js';
 import { initBloqueAhorro } from './bloque-ahorro.js';
 import { initVolver } from './volver.js';
@@ -216,3 +217,6 @@ const _idleWarmUp = typeof window.requestIdleCallback === 'function'
 _idleWarmUp(precalentarAnalisis);
 _idleWarmUp(precalentarMovimientos);
 _idleWarmUp(precalentarMas);
+// PERF.16: los overlays cerrados no se maquetan en el arranque; las hojas más
+// usadas se despiertan después, para que su primera apertura no lo pague.
+_idleWarmUp(() => despertarOverlaysEnIdle(_idleWarmUp));

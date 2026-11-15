@@ -17,7 +17,7 @@
 import { S, EventBus } from '../core/state.js';
 import { borrarTodo } from '../core/storage.js';
 import { abrirModal, cerrarModal } from './modales.js';
-import { announce, trapFocus, releaseFocus } from '../infra/a11y.js';
+import { announce, trapFocus, releaseFocus, despertarOverlay } from '../infra/a11y.js';
 import { esc as _esc } from '../infra/utils.js';
 import { confirmar } from './confirm.js';
 import { hayNinos } from '../infra/perfiles.js';
@@ -195,6 +195,7 @@ export function confirmarPin(opciones = {}) {
   return new Promise(resolve => {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
+    despertarOverlay(overlay);
     overlay.dataset.open = '';
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');

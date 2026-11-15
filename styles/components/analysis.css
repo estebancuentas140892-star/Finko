@@ -1309,6 +1309,20 @@
    la fila y pasa a su columna derecha, tabular y en el menta de ahorro, como
    en Movimientos y Deudas. Un paso por debajo del `--fk-text-base` de la clase
    base: acá el sujeto es la fecha y el aporte es una suma, no un saldo. */
+/* PERF.16: los aportes fuera de pantalla no se estilizan, maquetan ni pintan
+   hasta acercarse al viewport (mismo recurso que los días de Gastos, PERF.12).
+   Con tres años de aportes, entrar a Fondo estilizaba ~3.000 elementos. Los
+   ocho primeros quedan fuera de la regla: están en pantalla al entrar. 46px
+   es el alto del contenido de una fila en el teléfono (71 con su relleno);
+   `auto` recuerda el real una vez pintada.
+   `overflow-clip-margin` deja pasar el anillo de foco, que `contain: paint`
+   recortaría. */
+.ahorro-habito__lista > .list-item:nth-child(n+9) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 46px;
+  overflow-clip-margin: var(--fk-space-3);
+}
+
 .ahorro-habito__lista .list-item__amount {
   font-size: var(--fk-fs-sm);
   font-weight: var(--fk-fw-semibold);

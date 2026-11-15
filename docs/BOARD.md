@@ -48,7 +48,6 @@ Las tarjetas del tablero, **en orden de valor** desde la poda del 2026-11-13 ([A
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
 | REV.3b | La app instalada tiene tus datos y la versión publicada (absorbe REV.5) | Transversal | alta | una prueba en un iPhone real y los datos del teléfono de Esteban |
-| PERF.16 | El arranque bajo 400 ms, entrar a Fondo y el Speed Index (lo que MV2.28 midió sobre su umbral) | Transversal | media | nada |
 | HF.1c | La fecha de cada aporte a metas y reservas | Transversal | baja | su ADR |
 | HF.2a | La cuenta habitual de cada pago | Transversal | baja | nada |
 | HF.2b | El débito automático sin saldo se avisa antes de vencer | Transversal | baja | nada |
@@ -87,7 +86,7 @@ _(CFG.1 a CFG.6 cerraron completas. CFG.6, la auditoría móvil de Ajustes, cerr
 
 ## Transversal (afecta varias secciones)
 
-REV.3b, PERF.16, HF.1c a HF.2b, APR.5b y NUBE.4 → [`board/transversal.md`](board/transversal.md) (FORM: iniciativa "formularios por tarea", [ADR 142](DECISIONS/142-formularios-por-tarea.md); HF: iniciativa "un hecho financiero se informa una sola vez", [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), seis tarjetas desde el [ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md); APR: iniciativa "Aprende y aplícalo", [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) y [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md), en Propuesta)
+REV.3b, HF.1c a HF.2b, APR.5b y NUBE.4 → [`board/transversal.md`](board/transversal.md) (FORM: iniciativa "formularios por tarea", [ADR 142](DECISIONS/142-formularios-por-tarea.md); HF: iniciativa "un hecho financiero se informa una sola vez", [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md), seis tarjetas desde el [ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md); APR: iniciativa "Aprende y aplícalo", [ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) y [ADR 093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md), en Propuesta)
 
 ---
 

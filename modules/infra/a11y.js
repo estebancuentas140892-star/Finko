@@ -115,6 +115,26 @@ export function releaseFocus() {
 }
 
 /**
+ * Despierta un overlay antes de abrirlo (PERF.16). Cerrado y sin abrir nunca,
+ * un `.modal-overlay` lleva `content-visibility: hidden` (`styles/modals.css`):
+ * el navegador no estiliza ni maqueta su contenido, y eso le quitaba al
+ * arranque ~310 ms de bloqueo a 4x. `data-vivo` lo devuelve al render y la
+ * lectura de estilo fija el punto de partida de la animacion de entrada; sin
+ * ella la hoja apareceria ya en su sitio. Queda vivo: reabrirlo no paga nada.
+ *
+ * Va antes de poner `data-open`. Un overlay abierto sin despertar igual se ve
+ * (el CSS tambien mira `data-open`), solo que sin animacion de entrada.
+ *
+ * @param {HTMLElement} overlay
+ */
+export function despertarOverlay(overlay) {
+  if (!overlay || 'vivo' in overlay.dataset) return;
+  overlay.dataset.vivo = '';
+  const panel = overlay.querySelector('.modal');
+  if (panel && typeof getComputedStyle === 'function') void getComputedStyle(panel).transform;
+}
+
+/**
  * Handler interno: cicla el foco con Tab / Shift+Tab dentro del trap.
  *
  * @param {KeyboardEvent} e

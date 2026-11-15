@@ -16,7 +16,7 @@
 
 import { EventBus } from '../core/state.js';
 import { TARJETA_PREFIJO, CATEGORIA_DEUDA_ICONO } from '../core/constants.js';
-import { trapFocus, releaseFocus } from './a11y.js';
+import { trapFocus, releaseFocus, despertarOverlay } from './a11y.js';
 import { esc as _esc, f } from './utils.js';
 import { navigate } from './router.js';
 import { bancoAvatar } from './bancos.js';
@@ -331,6 +331,7 @@ export async function resolverPagoConSelector(cuentas, monto, contexto = 'comple
 function _mostrarGuiadoCero(contexto) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
+  despertarOverlay(overlay);
   overlay.dataset.open = '';
   overlay.setAttribute('role', 'dialog');
   overlay.setAttribute('aria-modal', 'true');
@@ -394,6 +395,7 @@ function _mostrarPickerCuenta(activas, contexto) {
   return new Promise(resolve => {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
+    despertarOverlay(overlay);
     overlay.dataset.open = '';
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
@@ -473,6 +475,7 @@ function _mostrarSelectorPreferida(activas, monto, contexto) {
   return new Promise(resolve => {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
+    despertarOverlay(overlay);
     overlay.dataset.open = '';
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
@@ -583,6 +586,7 @@ function _mostrarPickerMultiCuenta(activas, monto, contexto, preferidaId = null,
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
+    despertarOverlay(overlay);
     overlay.dataset.open = '';
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');

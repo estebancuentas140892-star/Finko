@@ -351,3 +351,53 @@ Verificado: `pnpm perf` sin regresión en las demás columnas (Inicio/Análisis/
 7. Consola: el único error es `[SW] Error al registrar`, del propio instrumento, que bloquea el service worker.
 
 **Validación:** `pnpm test` (`menu-mas.test.js`: memo y precalentado; `teclado.test.js`: la primera lectura espera un cuadro), lint, E2E en Chromium real.
+
+---
+
+## PERF.16 (2026-11-15): el arranque bajo 400 ms y entrar a Fondo
+
+**Por qué.** MV2.28 dejó tres cifras sobre su umbral: el arranque (675 ms bloqueados en local, 852 en producción, contra 400), el tab Ahorro (359 ms de respuesta) y el Performance de Lighthouse (91 en producción).
+
+**Diagnóstico.** Se midió el bloqueo del arranque (LoAF, CPU 4x, 3.000 gastos) inyectando una regla antes de cargar la app:
+
+| Variante | Bloqueo (ms) |
+|---|---|
+| como estaba | 672 |
+| overlays cerrados con `display: none` | 358 |
+| overlays cerrados con `content-visibility: hidden` | 368 |
+| secciones con `display: none` | 524 |
+| las dos primeras juntas | 236 |
+
+Los 40 overlays cerrados, con sus formularios, eran ~310 ms: `visibility: hidden` (PERF.11) los saca de la pintura, no del estilo ni del layout. PERF.11 había descartado los modales; esta medición dice lo contrario.
+
+**Arreglos:**
+
+1. **Un overlay cerrado y sin abrir nunca no se maqueta por dentro**: `.modal-overlay:not([data-vivo]):not([data-open]) { content-visibility: hidden }` (`styles/modals.css`). `despertarOverlay()` (`infra/a11y.js`) pone `data-vivo` y lee el estilo del panel antes de `data-open`; lo llaman `abrirModal()` y los seis lugares que abren un overlay a mano. Queda vivo: reabrir no paga nada y la salida anima como antes. Se probó solo con CSS (`transition-behavior: allow-discrete`) y la hoja perdía la animación de entrada y la de salida: descartado.
+2. **Registrar, "Más" y el formulario de gasto se despiertan en idle** tras el arranque, de a uno y con un cuadro entre cada uno (`despertarOverlaysEnIdle()`). Sin esto la primera apertura pagaba su estilo y su layout en el toque (abrir Registrar: INP 64 → 96). Despertarlos todos metía una tarea de 120 ms en el arranque (la hoja de reservas: 206 elementos con su selector de íconos), así que el resto se despierta al abrirse.
+3. **Los aportes de Fondo desde el noveno llevan `content-visibility: auto`** (`styles/components/analysis.css`), como los días de Gastos en PERF.12. El alto reservado es el del contenido (46 px), no el de la fila (71): con 64 el documento medía 14.073 px en vez de 11.553.
+4. **`lighthouse.js` audita `127.0.0.1`, no `localhost`**: en Windows, `python -m http.server` tardaba 5 s por archivo y el Performance local caía a 66 sin que la app tuviera que ver.
+
+**Cifras** (local, medianas de 5 rondas, CPU 4x; "antes" es el commit de MV2.28 medido en la misma sesión):
+
+| Medida | antes | después |
+|---|---|---|
+| Arranque, ms bloqueados | 675 | 350 |
+| Arranque, cuadro más largo | 521 | 398 |
+| Arranque, layout (traza) | 442 | 218 |
+| tab Ahorro, INP / respuesta | 40 / 359 | 32 / 194 |
+| abrir Registrar, INP / respuesta | 64 / 43 | 56 / 43 |
+| Registrar → form Gasto, INP / respuesta | 192 / 177 | 184 / 176 |
+| abrir Más, INP / respuesta | 72 / 59 | 64 / 60 |
+| tab Gastos (primera vez), INP / respuesta | 32 / 189 | 32 / 188 |
+
+**Lighthouse** (escritorio, sin freno). Producción, tres corridas seguidas: 91, 100 y 100 en Performance; 100 en las otras tres categorías. La primera paga la conexión en frío desde esta máquina (el documento tardó 7,7 s y bajó el Speed Index a 4,5 s); con la conexión tibia el Speed Index es 0,8 s. El 91 de MV2.28 era eso, no la app. Local, contra `127.0.0.1`: 98 (LCP 1,1 s: el texto de la guía del Inicio vacío llega con el render).
+
+**Lectura:**
+
+1. **El arranque cumple**: 675 → 350 ms bloqueados. Queda una sola tarea larga, el script de arranque (~340 ms de bloqueo a 4x).
+2. **El tab Ahorro cumple por poco**: 359 → 194 ms de respuesta (entre 177 y 210 según la corrida).
+3. **El scroll de Fondo trabaja más el hilo principal** (469 → 1.350 ms durante el gesto de 2.400 px): cada aporte se estiliza al acercarse al viewport. Con LoAF, cero cuadros largos (> 50 ms) a 1.600 y 3.200 px/s en 6.000 px de ida y vuelta, con y sin la regla. Mismo intercambio que Gastos en PERF.12.
+4. **El formulario de gasto sigue en el borde** (INP entre 160 y 192 según la corrida): no se tocó. Lo que pesa es su `_handleClick` (~165 ms a 4x), que arma el teclado de Finko y el recibo.
+5. La primera apertura de una hoja que no sea Registrar, "Más" o gasto paga su estilo una vez: entre 4 y 44 ms a 4x, salvo la de reservas (120).
+
+**Validación:** `pnpm test` (`modales.test.js`: despertar antes de preparar y de abrir, idempotente, las tres hojas en idle), lint, E2E en Chromium real (476). La animación de entrada y de salida se muestreó cuadro a cuadro en teléfono y escritorio: igual que antes.

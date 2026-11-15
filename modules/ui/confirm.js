@@ -18,7 +18,7 @@
  *   if (!ok) return;
  */
 
-import { trapFocus, releaseFocus } from '../infra/a11y.js';
+import { trapFocus, releaseFocus, despertarOverlay } from '../infra/a11y.js';
 import { esc as _esc } from '../infra/utils.js';
 import { icon } from '../infra/icons.js';
 
@@ -63,6 +63,7 @@ export function confirmar(opciones) {
   return new Promise(resolve => {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
+    despertarOverlay(overlay);
     overlay.dataset.open = '';
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');

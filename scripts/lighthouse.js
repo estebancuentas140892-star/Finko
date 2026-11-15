@@ -7,7 +7,9 @@
  * Con un puerto, requiere que el servidor ya esté corriendo:
  *   python -m http.server 8080   (en otra terminal)
  * Con una dirección completa (`https://finko-brown.vercel.app/`), audita esa:
- * así se mide lo publicado (MV2.28).
+ * así se mide lo publicado (MV2.28). La primera corrida contra una dirección
+ * remota paga la conexión en frío (el documento puede tardar segundos y bajar
+ * el Speed Index): se repite y vale la segunda.
  *
  * Genera:
  *   coverage/lighthouse-report.html  - reporte completo interactivo
@@ -22,7 +24,10 @@ import lighthouse from 'lighthouse';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const DESTINO = process.argv[2] ?? '8080';
-const URL     = /^https?:\/\//.test(DESTINO) ? DESTINO : `http://localhost:${DESTINO}/`;
+// 127.0.0.1 y no localhost (PERF.16): en Windows, `python -m http.server`
+// tarda segundos por archivo cuando el navegador prueba antes ::1, y el
+// Performance local caía a 66 sin que la app tuviera nada que ver.
+const URL     = /^https?:\/\//.test(DESTINO) ? DESTINO : `http://127.0.0.1:${DESTINO}/`;
 const OUT   = join(__dir, '..', 'coverage');
 
 const CATEGORIAS_OBJETIVO = {

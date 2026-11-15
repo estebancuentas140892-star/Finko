@@ -20,7 +20,7 @@
  * devolver un valor escrito, no un booleano.
  */
 
-import { announce, trapFocus, releaseFocus } from '../infra/a11y.js';
+import { announce, trapFocus, releaseFocus, despertarOverlay } from '../infra/a11y.js';
 import { esc as _esc } from '../infra/utils.js';
 import { validarContrasena, LARGO_MIN_CONTRASENA } from '../infra/cripto-respaldo.js';
 
@@ -51,6 +51,7 @@ export function pedirContrasenaRespaldo({ modo = 'crear', verificar } = {}) {
   return new Promise(resolve => {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
+    despertarOverlay(overlay);
     overlay.dataset.open = '';
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');

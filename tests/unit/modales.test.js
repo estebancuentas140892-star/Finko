@@ -11,7 +11,8 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { abrirModal, cerrarModal, resetModal } from '../../modules/ui/modales.js';
+import { abrirModal, cerrarModal, resetModal, registrarAlAbrir, despertarOverlaysEnIdle } from '../../modules/ui/modales.js';
+import { despertarOverlay } from '../../modules/infra/a11y.js';
 
 // ── SETUP ───────────────────────────────────────────────────────────────────
 
@@ -155,5 +156,69 @@ describe('abrirModal() - el foco no cae en el ícono de la teja (ADR 123)', () =
       </div>`;
     abrirModal(document.getElementById('modal-teja'));
     expect(document.activeElement?.classList.contains('modal__close')).toBe(true);
+  });
+});
+
+// PERF.16: un overlay cerrado y sin abrir nunca no se maqueta por dentro
+// (`content-visibility: hidden` en modals.css); se despierta antes de abrirlo.
+describe('despertarOverlay() (PERF.16)', () => {
+  const overlayNuevo = () => {
+    document.body.innerHTML = '<div class="app-shell"></div><div class="modal-overlay" id="m"><div class="modal"><button>ok</button></div></div>';
+    return document.getElementById('m');
+  };
+
+  it('marca el overlay como vivo y lo deja así al cerrar', () => {
+    const overlay = overlayNuevo();
+    expect('vivo' in overlay.dataset).toBe(false);
+    abrirModal(overlay);
+    expect('vivo' in overlay.dataset).toBe(true);
+    cerrarModal(overlay);
+    expect('vivo' in overlay.dataset).toBe(true);
+  });
+
+  it('despierta antes de preparar la hoja y de poner data-open, para que la entrada anime', () => {
+    const overlay = overlayNuevo();
+    const visto = [];
+    registrarAlAbrir((o) => { if (o === overlay) visto.push({ vivo: 'vivo' in o.dataset, open: 'open' in o.dataset }); });
+    abrirModal(overlay);
+    expect(visto).toEqual([{ vivo: true, open: false }]);
+  });
+
+  it('por sí solo no abre: solo marca', () => {
+    const overlay = overlayNuevo();
+    despertarOverlay(overlay);
+    expect('open' in overlay.dataset).toBe(false);
+    expect('vivo' in overlay.dataset).toBe(true);
+  });
+
+  it('es idempotente y tolera un overlay sin panel o nulo', () => {
+    const overlay = overlayNuevo();
+    despertarOverlay(overlay);
+    expect(() => despertarOverlay(overlay)).not.toThrow();
+    overlay.innerHTML = '';
+    delete overlay.dataset.vivo;
+    expect(() => despertarOverlay(overlay)).not.toThrow();
+    expect(() => despertarOverlay(null)).not.toThrow();
+  });
+});
+
+describe('despertarOverlaysEnIdle() (PERF.16)', () => {
+  it('despierta solo las hojas más usadas, de a una por turno de idle', () => {
+    document.body.innerHTML = ['modal-registrar', 'modal-mas', 'modal-gasto', 'modal-apartado']
+      .map((id) => `<div class="modal-overlay" id="${id}"><div class="modal"></div></div>`).join('');
+    const raf = globalThis.requestAnimationFrame;
+    globalThis.requestAnimationFrame = (fn) => fn();
+    try {
+      const turnos = [];
+      despertarOverlaysEnIdle((fn) => turnos.push(fn));
+      const vivos = () => [...document.querySelectorAll('[data-vivo]')].map((o) => o.id);
+      expect(vivos()).toEqual([]);
+      turnos.shift()();
+      expect(vivos()).toEqual(['modal-registrar']);
+      while (turnos.length) turnos.shift()();
+      expect(vivos()).toEqual(['modal-registrar', 'modal-mas', 'modal-gasto']);
+    } finally {
+      globalThis.requestAnimationFrame = raf;
+    }
   });
 });

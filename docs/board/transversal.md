@@ -31,18 +31,6 @@
 
 
 
-#### PERF.16 - El arranque bajo 400 ms, entrar a Fondo y el Speed Index
-- Prioridad  : media
-- Estado     : pendiente. Es lo que MV2.28 midió sobre su umbral (2026-11-15); el diagnóstico está en `scripts/perf/BASELINE.md`, sección MV2.28
-- Área       : code
-- Objetivo   : (a) el arranque baja de 400 ms bloqueados con CPU 4x (hoy 675 en local y 918 en producción): quedan tres tareas largas, el layout del HTML estático antes del JS (~230 ms), el script de arranque (~250) y el layout tras `renderAll` (~240); (b) el tab Ahorro, que hoy abre Fondo con todo el historial de aportes (359 ms de respuesta, 2.986 elementos estilizados), baja de 200; (c) el Speed Index de Lighthouse (Performance 91 en producción) vuelve a 100; (d) el INP de abrir el formulario de gasto (200 ms en producción, en el borde) no sube
-- Riesgo     : partir el arranque en turnos cambia el orden en que los `init` ven el DOM; `content-visibility` en la lista de aportes contiene layout y paint (mismo riesgo que los días de Gastos en PERF.12)
-- Secciones  : arranque, Fondo
-- Archivos   : `modules/ui/bootstrap.js`, `modules/infra/render.js`, `modules/dominio/ahorro/view.js`, `styles/components/domain.css`, `scripts/perf/BASELINE.md`
-- Depende de : nada
-- Aceptación : `pnpm perf:fluidez` antes y después en BASELINE.md, con el commit anterior medido en la misma sesión; arranque bajo 400 y tab Ahorro bajo 200
-- Modelo     : capacidad alta, esfuerzo medio
-
 > **IV.4 - Iconografía dirigida post-color, cerrada 2026-08-15.** Metáfora de movimiento en los dos iconos que el triaje del 2026-07-08 señaló como ilegibles: Avalancha (`i-mountain`) cambia el punto estático del pico por un trazo desnudo de dos golpes cortos + la chispa al final del recorrido (cae por la ladera, no se queda arriba); Bola de nieve (`i-snowball`) suma un arco de rastro (trazo desnudo, mismo patrón que la puerta de `i-home`) detrás del círculo chico. Se descartó el boceto de 3 chispas en cascada del 2026-08-14 por violar la regla 3 del ADR 023 (un solo punto de valor); la solución final conserva un único `circle` de chispa. Esteban delegó la decisión final ("toma tú las decisiones") en vez de esperar el dibujo en Illustrator: geometría verificada por bbox (sin composición visual real en esta sesión, mismo límite que el 2026-08-14). `assets/svg/iconos/simbolos/mountain.svg` + `snowball.svg`, sprite de `index.html`.
 
 > **Iniciativa CAT: taxonomía + picker de ícono compartido, completa.** Fuente única para categorías entre secciones. CAT.1, CAT.2, CAT.3 y CAT.4 cerradas (reglas heredadas en [`contexto/categorias.md`](../contexto/categorias.md), bloque "Categorías personalizadas del usuario").

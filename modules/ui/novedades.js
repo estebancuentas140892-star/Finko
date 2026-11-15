@@ -10,7 +10,7 @@
 
 import { S } from '../core/state.js';
 import { save } from '../core/storage.js';
-import { trapFocus, releaseFocus } from '../infra/a11y.js';
+import { trapFocus, releaseFocus, despertarOverlay } from '../infra/a11y.js';
 import { esc as _esc } from '../infra/utils.js';
 import { htmlTinoSol } from '../infra/ilustraciones.js';
 import { NOVEDADES_POR_VERSION, ultimaVersionNovedadesConocida } from '../core/constants.js';
@@ -27,6 +27,7 @@ export function mostrarNovedadesSiHay() {
 
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
+  despertarOverlay(overlay);
   overlay.dataset.open = '';
   overlay.setAttribute('role', 'dialog');
   overlay.setAttribute('aria-modal', 'true');

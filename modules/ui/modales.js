@@ -7,7 +7,7 @@
  * - resetModal: limpia campos del formulario interno.
  */
 
-import { trapFocus, releaseFocus } from '../infra/a11y.js';
+import { trapFocus, releaseFocus, despertarOverlay } from '../infra/a11y.js';
 
 /**
  * Fondo de la app (todo menos los modales, que viven como hermanos de este nodo).
@@ -38,6 +38,9 @@ export function registrarAlAbrir(fn) {
 }
 
 export function abrirModal(overlay) {
+  // Primero (PERF.16): lo que prepara la hoja puede medirla, y un overlay sin
+  // despertar no tiene layout por dentro.
+  despertarOverlay(overlay);
   for (const fn of _alAbrir) fn(overlay);
   overlay.dataset.open = '';
   // Una hoja recién abierta no tiene cambios sin guardar (ADR 142 D8, hojas.js).
@@ -60,6 +63,31 @@ export function abrirModal(overlay) {
     // Si se cerró antes de llegar acá, el fondo ya no debe quedar inerte.
     if ('open' in overlay.dataset) _fondo()?.setAttribute('inert', '');
   }, 0));
+}
+
+/** Las hojas que más se abren: se despiertan solas tras el arranque (PERF.16). */
+const _VIVOS_EN_IDLE = ['modal-registrar', 'modal-mas', 'modal-gasto'];
+
+/**
+ * Despierta en idle las hojas más usadas, de a una y con un cuadro entre cada
+ * una (PERF.16). El arranque ya no maqueta los overlays; sin esto, la primera
+ * apertura de Registrar pagaba su estilo y su layout en el toque (INP de 64 a
+ * 96 ms a 4x). Las demás se despiertan al abrirse por primera vez: hacerlo con
+ * todas metía una tarea de 120 ms (la hoja de reservas, con su selector de
+ * íconos) dentro del arranque.
+ *
+ * @param {(fn: () => void) => void} idle - `requestIdleCallback` o su reemplazo.
+ */
+export function despertarOverlaysEnIdle(idle) {
+  const cola = _VIVOS_EN_IDLE.map((id) => document.getElementById(id)).filter(Boolean);
+  const cuadro = typeof requestAnimationFrame === 'function' ? requestAnimationFrame : (fn) => setTimeout(fn, 16);
+  const paso = () => {
+    const overlay = cola.shift();
+    if (!overlay) return;
+    despertarOverlay(overlay);
+    cuadro(() => idle(paso));
+  };
+  idle(paso);
 }
 
 /**

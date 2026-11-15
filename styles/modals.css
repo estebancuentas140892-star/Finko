@@ -13,7 +13,13 @@
    los saca; su transición con retardo deja visible el fundido de salida y
    pasa a oculto al terminar. Sin blur también abierto: el fondo ya se oscurece
    con --fk-bg-overlay, y el blur a pantalla completa es el efecto que peor
-   traduce a una GPU de teléfono (auditoría de jank móvil, G1; ADR 033 D4). */
+   traduce a una GPU de teléfono (auditoría de jank móvil, G1; ADR 033 D4).
+
+   PERF.16: cerrado y sin abrir nunca, tampoco se estiliza ni se maqueta por
+   dentro (regla de abajo). Los 40 overlays con sus formularios eran ~310 ms
+   de los 672 que el arranque bloqueaba a 4x. `despertarOverlay()`
+   (infra/a11y.js) pone `data-vivo` antes de abrir y ahí se queda: la hoja
+   conserva su animación de entrada y de salida, y reabrirla no paga nada. */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -31,6 +37,10 @@
   transition:
     opacity var(--fk-transition-base),
     visibility 0s linear var(--fk-transition-base);
+}
+
+.modal-overlay:not([data-vivo]):not([data-open]) {
+  content-visibility: hidden;
 }
 
 .modal-overlay[data-open] {
