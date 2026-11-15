@@ -12,6 +12,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### docs(decisiones): BUG-027, el ADR 059 se reconstruye · 2026-11-15
+
+Cierra **BUG-027**: el [ADR 059](DECISIONS/059-interfaz-de-escritorio.md) (interfaz de escritorio, iniciativa INT.1) se citaba como aceptado desde el 2026-08-02 y nunca se había commiteado. Ficha: [`contexto/escritorio.md`](contexto/escritorio.md).
+
+- **Reconstruido desde los cierres de INT.1a a INT.1h** (`changelog/2026-08.md`), la ficha de escritorio y las citas "ADR 059 Dn" del código. Conserva número y fecha de aceptación: el código lo cita en siete archivos y un ADR nuevo las dejaría apuntando a nada.
+- **No inventa decisiones**: dice qué no se pudo recuperar. D1, D2 y D5 se citan siempre juntos y no se sabe cómo se repartían entre las piezas de la barra; D4 no lo cita nadie por número y se infiere (los atajos de INT.1h son la única rebanada sin decisión).
+- **Enlaces reparados**: el ADR 084 apuntaba a un archivo que nunca existió; el 065 y el 076 lo citaban sin enlace. `BUGS.md` queda sin errores abiertos.
+
 ### feat(cuentas): HF.2a, la cuenta habitual de cada pago · 2026-11-15
 
 R-HF5 del [ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md): se deriva, no se pide. Fichas: [`contexto/calendario.md`](contexto/calendario.md), [`contexto/deudas.md`](contexto/deudas.md). SW v716.

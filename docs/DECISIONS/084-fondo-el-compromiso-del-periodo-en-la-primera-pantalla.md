@@ -3,7 +3,7 @@
 **Estado:** Aceptada. Implementada en la ficha 11 de la auditoría UX/UI móvil (MOV.1).
 **Fecha:** 2026-08-21
 **Autores:** Esteban (producto), Claude Design (ficha 11 de la auditoría móvil), Claude Opus 5 (implementación)
-**Relación:** **confirma DIS.19 entero** en la franja de cobertura: tercera ficha seguida donde la pieza principal se audita y no se toca. **Da respuesta móvil a INT.1g** ([ADR 059](059-inicio-como-tablero-de-decisiones.md) D7), que había diagnosticado el defecto y lo resolvió solo desde 1680px. **Conserva el [ADR 049](049-fondo-de-emergencia-v2.md) D2 y descarta el cambio de la ficha que lo contradecía**, con su razón escrita abajo (D4). Cuarta vez que esta auditoría convierte un nombre de sección suelto en enlace, tras las fichas 04, 06 y 10.
+**Relación:** **confirma DIS.19 entero** en la franja de cobertura: tercera ficha seguida donde la pieza principal se audita y no se toca. **Da respuesta móvil a INT.1g** ([ADR 059](059-interfaz-de-escritorio.md) D7), que había diagnosticado el defecto y lo resolvió solo desde 1680px. **Conserva el [ADR 049](049-fondo-de-emergencia-v2.md) D2 y descarta el cambio de la ficha que lo contradecía**, con su razón escrita abajo (D4). Cuarta vez que esta auditoría convierte un nombre de sección suelto en enlace, tras las fichas 04, 06 y 10.
 
 ---
 

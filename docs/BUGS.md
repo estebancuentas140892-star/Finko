@@ -1,6 +1,6 @@
 # Registro de errores - Finko Claude
 
-> Revisado: 2026-11-13.
+> Revisado: 2026-11-15 (BUG-027 cerrado: el ADR 059 se reconstruyó).
 
 > Errores detectados durante el desarrollo, con toda la información necesaria para resolverlos sin tener que volver a buscar dónde están.
 > Al solucionarse, el error se **elimina** de este archivo y el fix queda documentado en [`CHANGELOG.md`](CHANGELOG.md) con referencia al ID.
@@ -31,12 +31,4 @@ Numerar `BUG-001`, `BUG-002`... de forma consecutiva y sin reutilizar números a
 
 ## Pendientes
 
-### BUG-027 - ADR 059 no existe en el repositorio pese a estar citado como "aceptado" en 5 documentos vivos
-- Estado    : pendiente
-- Prioridad : media (no afecta el uso de la app; rompe la trazabilidad de la iniciativa INT.1)
-- Problema  : `CHANGELOG.md`, `HANDOFF.md`, `board/transversal.md`, `contexto/transversal.md` y `DECISIONS/056-la-casa-de-ahorro.md` citan el ADR 059 como fuente de INT.1 (interfaz de escritorio), "aceptado 2026-08-02". El archivo no existe en disco ni en `git log --all`: nunca se commiteó, aunque INT.1a-h ya cerraron citándolo. Además lo citan 8 archivos de runtime en comentarios (`index.html`, `modules/ui/shell.js`, `styles/layout.css`, `styles/responsive.css` y otros), que no son enlaces y no se tocan.
-- Causa     : sin investigar. Encontrado de paso al verificar numeración de ADR libre para GAS.2b (ADR 060), no por revisión de INT.1.
-- Archivo   : `docs/DECISIONS/059-interfaz-de-escritorio.md` (inexistente). **Los enlaces rotos se neutralizaron el 2026-08-13** en los documentos vivos: la cita quedó en texto plano, con el patrón que ya usaba el [ADR 065](DECISIONS/065-ahorro-en-la-barra-inferior.md) ("se cita sin enlace porque su archivo no está en el repositorio"). El bug sigue abierto: falta el ADR, no el enlace.
-- Función   : ninguna (documentación)
-- Secciones : ninguna de la app (solo trazabilidad de INT.1, Transversal/escritorio)
-- **Requiere decisión antes de tocarlo**: quien cerró INT.1a-h sabe si el ADR se perdió o nunca se escribió. Reconstruirlo desde los commits de INT.1 es trabajo de esa sesión, no un fix de una línea.
+Ninguno. El último, BUG-027, se cerró el 2026-11-15 reconstruyendo el [ADR 059](DECISIONS/059-interfaz-de-escritorio.md).

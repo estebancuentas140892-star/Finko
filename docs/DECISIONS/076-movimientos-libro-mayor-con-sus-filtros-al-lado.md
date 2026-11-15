@@ -3,7 +3,7 @@
 **Estado:** Aceptada. En implementación (iniciativa DSK.7, dos rebanadas).
 **Fecha:** 2026-08-18
 **Autores:** Esteban (producto), Claude Design (auditoría "Movimientos 1920"), Claude Opus 5 (implementación)
-**Relación:** hereda de los [ADR 071](071-calendario-como-mapa-del-mes-en-escritorio.md) y [ADR 073](073-deudas-inventario-con-su-herramienta-al-lado.md) el reparto "primario a 8, dependiente a 4" y el mecanismo de columna pegajosa. **Extiende a esta sección la regla de INT.1b** que ya oculta el "Volver" en escritorio para las hijas de Ahorro (vive en `responsive.css` con su motivo escrito; el ADR 059 que la citaba no existe en `docs/DECISIONS/`, y eso ya está registrado como **BUG-027**). Conserva entero el enrutado de acciones por `tipo` del ledger y sus dos estados vacíos.
+**Relación:** hereda de los [ADR 071](071-calendario-como-mapa-del-mes-en-escritorio.md) y [ADR 073](073-deudas-inventario-con-su-herramienta-al-lado.md) el reparto "primario a 8, dependiente a 4" y el mecanismo de columna pegajosa. **Extiende a esta sección la regla de INT.1b** que ya oculta el "Volver" en escritorio para las hijas de Ahorro (vive en `responsive.css` con su motivo escrito; el ADR 059 que la citaba no existía en `docs/DECISIONS/`; se reconstruyó el 2026-11-15 como [ADR 059](059-interfaz-de-escritorio.md), BUG-027). Conserva entero el enrutado de acciones por `tipo` del ledger y sus dos estados vacíos.
 
 ---
 

@@ -3,7 +3,7 @@
 **Estado:** Aceptada. Implementada en AH.7a.
 **Fecha:** 2026-08-13
 **Autores:** Esteban (producto), Claude Opus 5 (diseño e implementación)
-**Relación:** **supersede el D1 del [ADR 024](024-reorganizacion-navegacion-movil.md)** en su único punto discutible: qué sección ocupa el cuarto slot de la barra inferior. El botón central "Registrar" (el corazón del D1), la hoja de registro (D2), el ingreso puntual (D3) y el hub de ahorro (D4) siguen vigentes sin cambios. Se apoya en [ADR 056](056-la-casa-de-ahorro.md) (la casa es la única puerta al grupo en móvil) y en [ADR 040](040-navegacion-v2-visual.md) (la hoja "Más" agrupada). No toca el chrome de escritorio del ADR 059 (interfaz de escritorio), que se cita sin enlace porque su archivo no está en el repositorio.
+**Relación:** **supersede el D1 del [ADR 024](024-reorganizacion-navegacion-movil.md)** en su único punto discutible: qué sección ocupa el cuarto slot de la barra inferior. El botón central "Registrar" (el corazón del D1), la hoja de registro (D2), el ingreso puntual (D3) y el hub de ahorro (D4) siguen vigentes sin cambios. Se apoya en [ADR 056](056-la-casa-de-ahorro.md) (la casa es la única puerta al grupo en móvil) y en [ADR 040](040-navegacion-v2-visual.md) (la hoja "Más" agrupada). No toca el chrome de escritorio del [ADR 059](059-interfaz-de-escritorio.md) (interfaz de escritorio; reconstruido el 2026-11-15, BUG-027).
 
 ---
 
