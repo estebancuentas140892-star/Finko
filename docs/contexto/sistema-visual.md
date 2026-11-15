@@ -1,6 +1,6 @@
 # Ficha de contexto: Sistema visual
 
-> Revisado: 2026-11-13 (REV.2b, ADR 141).
+> Revisado: 2026-11-15 (fichas bajo su techo).
 
 > Identidad visual transversal: color por sección, tejas de marca y biblioteca gráfica, y navegación. Partida de `transversal.md` el 2026-07-24. Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -52,14 +52,7 @@
 
 - 2026-11-13 (**REV.1**, [ADR 137](../DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md) D4): sin el resaltado del navegador al tocar (`reset.css`), `:active` con opacidad para los botones que no son `.btn` (`buttons.css`) y el anillo de foco que ya no cambia el radio del control (`a11y.css`).
 - 2026-08-14 (DOC.3, sin código): sello re-verificado contra el código. Las anclas siguen vivas y el pipeline no cambió; se corrigieron las líneas orientativas, la posición de `MARCAS` (está después de `BANCOS_CO`, no antes) y el conteo de entidades con glifo, que era 11 y hoy es 12 sobre 14 entradas.
-- 2026-07-05 (BR.4, [ADR 027](../DECISIONS/027-logos-de-marca-a-color-excepcion-monocromo.md)): formaliza la excepcion de logo a color (`data-fullcolor`), su archivo autonomo y el color de teja.
-- 2026-07-05 (BR.3, completa): 9 bancos y billeteras mas a color de un tiron, todos con la misma imagen de calco incrustada.
-- 2026-07-05 (BR.5): el sync normaliza exports crudos de Illustrator antes de validar y reescribe el archivo.
-- 2026-07-05 `0f143f9`: fix del contorno fantasma (stroke explicito + validador + guardarrail).
-- 2026-07-05 `2b5ae36`: Nequi a color (monograma) y limpieza de exports crudos.
-- 2026-07-05: Bancolombia y Banco de Bogota a color (`data-fullcolor`), sync extendido a degradados.
-- 2026-07-05 (BR.2): `sync-sprite.py` mas guardarrail `sprite-sync.test.js`.
-- 2026-07-05 (BR.1): biblioteca `assets/svg/` (100 simbolos extraidos mas plantillas).
+- 2026-07-05: 8 hitos resumidos el 2026-11-15 para que la ficha quepa en su techo (BR.4, BR.3, BR.5, BR.2, BR.1). Detalle en [2026-07](../changelog/2026-07.md).
 
 **Observaciones**: regla de fidelidad absoluta (2026-07-05, orden directa de Esteban): todo SVG que él entrega es la versión oficial; cero contornos, sombras, efectos o reinterpretaciones agregados; si un logo necesita contraste se ajusta el contenedor, nunca el logo; recrear solo por motivos técnicos y visualmente idéntico. Formato de entrega: SVG siempre (fuente de verdad); PNG 512×512 de referencia opcional para logos a color (vara de comparación en la revisión en pareja). ADRs relacionados: 023 (iconografía), 025 (logos y tejas), 026 (biblioteca).
 
@@ -122,10 +115,7 @@
 - 2026-10-29 (**MARCA.1**, [ADR 103](../DECISIONS/103-el-isotipo-de-finko.md)): el isotipo de tres piezas reemplaza a la "F" en su teja de fondo fijo (`--fk-marca-fondo`); íconos, favicon y splash salen de `assets/svg/identidad/isotipo.svg`.
 - 2026-08-15 (**ficha 03 de la auditoría móvil**, [ADR 069](../DECISIONS/069-bloque-gastos-en-la-barra-movil.md) D6): la hoja queda como la dejó la ficha 01 y gana lo que le faltaba, que no era orden sino resistencia. Detalle en el CHANGELOG.
 - 2026-08-15 (ficha 01 de la auditoría móvil, [ADR 069](../DECISIONS/069-bloque-gastos-en-la-barra-movil.md)): "Gastos" pasa de sección a bloque con tres lentes (Lo que gastaste, Por pagar, Límites), servidas por la franja `.bloque-tabs` que inyecta `ui/bloque-gastos.js`. Detalle en el CHANGELOG.
-- 2026-07-26 (DIS.6): auditoría de diseño de la capa global de navegación, 7 correcciones (C1 a C7). Reglas R29 a R33 en DESIGN_SYSTEM.md.
-- 2026-07-14 (NAV2.1c): `.nav-item__fab` pasa a pastilla 50x38 con degradado de acento y sombra tokenizada; indicador activo del bottom nav a 22px fijos.
-- 2026-07-14 (NAV2.1b): marca `.sidebar__logo-mark` nueva en `layout.css`; rotulo "Diario" retirado.
-- 2026-07-14 (NAV2.1a): hoja agrupada completa.
+- 2026-07-14 a 2026-07-26: 4 hitos resumidos el 2026-11-15 para que la ficha quepa en su techo (DIS.6, NAV2.1c, NAV2.1b, NAV2.1a). Detalle en [2026-07](../changelog/2026-07.md).
 
 **Observaciones**: ADR [040](../DECISIONS/040-navegacion-v2-visual.md); revisa el D5 del [ADR 024](../DECISIONS/024-reorganizacion-navegacion-movil.md), cuyo D4 (pestañas y consolidado repetido) lo supersede el [ADR 056](../DECISIONS/056-la-casa-de-ahorro.md): desde DIS.18 no hay pestañas y el grupo "Ahorros" de la hoja "Más" es una sola teja.
 
@@ -222,16 +212,8 @@
 **Cambios realizados**:
 
 - 2026-08-14 (DV.2d, cableado de consumidor): `emptyArt()` en `modules/infra/icons.js` ahora busca el symbol `il-<id>` en el sprite antes de componer la ilustración geométrica; mientras el placeholder siga fuera del sprite (sin arte final), sigue cayendo al dibujo actual. Detalle en el CHANGELOG.
-- 2026-08-12 (DV.2d, ADR 033 D3, riel técnico + lote completo): pipeline de sprite extendido a `ilustraciones/` (`il-*`, viewBox 120x120, color por rol). Detalle en el CHANGELOG.
-- 2026-08-01 (DV.2c, ADR 033 D4): cascada acotada de listas, resaltado de fila nueva (`.list-item--nuevo`), retiro de `empty-orbit`/`empty-float` y catálogo cerrado de animación en DESIGN_SYSTEM.md.
-- 2026-08-01 (DV.2b, ADR 033 D3): pipeline de sprite extendido a `decoracion/` (`d-*`), clase `.decor` + `.pattern-dots`, piloto en 2 heroes y 2 empty states.
-- 2026-07-31 (DV.2a, ADR 033 D1+D2): escala de elevación de 4 niveles (`--fk-shadow-sm` en reposo para `.card`/`.bento__cell`/`.list-item`, doble capa en `themes.css` claro) y `--fk-grad-identity` consolidado en los 6 heroes que lo copiaban a mano.
+- 2026-07-07 a 2026-08-12: 9 hitos resumidos el 2026-11-15 para que la ficha quepa en su techo (DV.2d, DV.2c, DV.2b, DV.2a, IV.2c, IV.2b, IV.2d, IV.2a, IV.1). Detalle en [2026-07](../changelog/2026-07.md), [2026-08](../changelog/2026-08.md).
 
-- 2026-07-10 (IV.2c): "fijo" pasa del amarillo prestado de Presupuesto al indigo propio de Calendario, resolviendo la ambiguedad que diagnostico el ADR 031; el detalle del dia abandona la franja lateral por fondo tenido.
-- 2026-07-10 (IV.2b): `.progress-bar` y `.progress-ring-wrap` (unica fuente de progreso) tinen su estado por defecto con `--fk-section-accent`.
-- 2026-07-10 (IV.2d): migracion de `color: var(--fk-dom-X)` al token `-text` en los usos restantes fuera de Calendario e Inicio.
-- 2026-07-09 (IV.2a): nav y pestanas del hub tenidas por dominio; teja de icono y acento en los 11 encabezados de seccion.
-- 2026-07-07 (IV.1, ADR 031): tokens `--fk-dom-*` con rampa `-bg`/`-text` para los 11 dominios.
 
 **Observaciones**: ADR relacionado: [031](../DECISIONS/031-identidad-de-color-por-seccion.md). Metodología de verificación de contraste (heredada de IV.1, reforzada aquí): nunca aprobar un color "seguro" solo por inspección visual; calcular luminancia relativa y ratio WCAG real contra el fondo efectivo (incluyendo mezclas `color-mix`), y elegir el umbral correcto según si el contenido es texto (4.5:1) o gráfico (3:1).
 
@@ -247,6 +229,6 @@
 
 **Cambios realizados**:
 
-- 2026-08-05 (CFG.7): `applyTheme()` migra a View Transitions API con fallback progresivo al `theme-transitioning` previo.
+- 2026-08-05: 1 hito resumido el 2026-11-15 para que la ficha quepa en su techo (CFG.7). Detalle en [2026-08](../changelog/2026-08.md).
 
 **Verificado contra**: commit `4a7eda0`.

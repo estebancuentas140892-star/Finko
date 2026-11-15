@@ -1,6 +1,6 @@
 # Ficha de contexto: Por pagar (antes Deudas)
 
-> Revisado: 2026-11-13 (REV.2b, ADR 141).
+> Revisado: 2026-11-15 (fichas bajo su techo).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -57,8 +57,7 @@
 - 2026-11-03 (**MV2.3 tanda 2**, ADR 117): bajo 1024px la lista va por urgencia y en filas; editar y eliminar pasan a la hoja de detalle.
 - 2026-10-17 (**HF.0d**, BUG-031): el chip fecha por frecuencia.
 - 2026-08-21 (**MOV.1 ficha 08**, [ADR 081](../DECISIONS/081-calendario-la-forma-del-mes-entradas-incluidas.md) D3): la lista, sus dos grupos y la tarjeta del lote toman su mes de `prefijoMesBloque()`. La sección registra su render en `renderAll()` y en `state:change` de `gastos`: el "Marcar pagado" del fijo vive acá desde ahora y pagarlo no toca `compromisos`. Commit `ace1a45`.
-- 2026-08-20 (ADR 080 D6, dentro de la ficha 06): los cuatro chips de la lente, que eran deuda de la ficha 05. Sigue pendiente de la 05 la fila de altas por grupo visible; "Ver plan de salida" lo hizo el ADR 119.
-- 2026-08-18 (**ficha 05 de la auditoría móvil**): ver arriba.
+- 2026-08-18 a 2026-08-20: 2 hitos resumidos el 2026-11-15 para que la ficha quepa en su techo. Detalle en [2026-08](../changelog/2026-08.md).
 
 ---
 
@@ -146,9 +145,7 @@ Fuera de esas dos, la iniciativa "Deudas v2: de registro a asesor" (brief 2026-0
 **Cambios realizados**:
 
 - 2026-10-17 (**HF.0e**, BUG-025): "deudas durmiendo" y el descarte de vencimientos anteriores al alta leen `fechaCreacion` en hora local.
-- 2026-08-11 (GAS.2c): `_guardarAbono()` (`compromisos/index.js`) sustituye su `announce()` final por `mostrarToast()`, con segunda linea via `consecuenciaDeAbono()` nueva en `compromisos/logic/abonos.js` (prioridad deuda saldada > saldo restante). Mismo patron de Gastos (GAS.2a/2b), formalizado en [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md). Detalle completo: `contexto/gastos.md`.
-- 2026-08-02 (**BUG-018**): la fecha por defecto del abono sale de `hoy()` (`infra/utils.js`, getters locales) y no de `toISOString()`. Desde las 7 p.m. hora Colombia el abono quedaba fechado al dia siguiente. Mismo cambio en `views/alertas.js` (umbral de deudas durmiendo). Queda abierto **BUG-025**: `fechaCreacion` arrastra el mismo defecto de huso del lado de la lectura.
-- 2026-07-15 (FORM.1b): form v2 completo (segmented, chips, monto hero, disclosure de tasa, toggle D.14, teja del header) + retiro completo del chooser de dos pasos (JS y CSS muertos).
+- 2026-07-15 a 2026-08-11: 3 hitos resumidos el 2026-11-15 para que la ficha quepa en su techo (GAS.2c, BUG-018, FORM.1b, D.14). Detalle en [2026-07](../changelog/2026-07.md), [2026-08](../changelog/2026-08.md).
 
 ---
 
@@ -198,9 +195,7 @@ Fuera de esas dos, la iniciativa "Deudas v2: de registro a asesor" (brief 2026-0
 
 **Cambios realizados** (detalle en el [CHANGELOG](../CHANGELOG.md)):
 
-- 2026-07-30 (MC.16a): `cupoTotal` en el form condicionado a la categoría, validación, normalización, chip de disponible en la card y bump de schema v27 a v28 (migración no-op).
-- 2026-07-30 (MC.16b): el consumo con tarjeta como `Gasto` con `consumoTC`, tarjetas en el selector de origen (solo Gastos) y el signo del saldo en `deltasPorEdicionEnDeuda`, con alta, edición y eliminación juntas.
-- 2026-07-31 (MC.16e): cuatro avisos de costo, campo `avanceTC` con bump v29 a v30 y `tasaMensualDecimal` extraída de `detectarDeudaCreciente`.
+- 2026-07-30 a 2026-07-31: 3 hitos resumidos el 2026-11-15 para que la ficha quepa en su techo (MC.16a, MC.16b, MC.16e). Detalle en [2026-07](../changelog/2026-07.md).
 - 2026-10-18 (BUG-037): una compra con la tarjeta deja de contar como pago de la tarjeta.
 
 ---
@@ -225,24 +220,14 @@ Fuera de esas dos, la iniciativa "Deudas v2: de registro a asesor" (brief 2026-0
 
 **Cambios realizados**:
 
-- 2026-07-25 (DIS.2, auditoría de diseño de la sección, 8 correcciones): la tarjeta de deuda saldada deja de anunciar vencimientos y se fecha con el último abono (`fechaUltimoAbono` nueva en `logic/abonos.js`); archivar usa `#i-check-circle`; el chip de urgencia baja del nombre a `.deuda-card__chips`; `.deuda-card__abonar` sube a 44px; los tres "Aplicar" del simulador pasan a `.estrategia-card__aplicar` (identidad de compromisos, no `.btn-primary`); un solo verbo y un solo botón para crear deuda; `resumenDeudas()` cuenta aparte las saldadas y el hero las explicita; la card de estrategia conserva su encabezado con una sola deuda. Reglas **R7** (estado terminal) y **R8** (una acción principal) escritas en [`DESIGN_SYSTEM.md`](../DESIGN_SYSTEM.md).
+- 2026-07-10 a 2026-07-25: 11 hitos resumidos el 2026-11-15 para que la ficha quepa en su techo (DIS.2, D.15a, D.15b, D.15d-2, D.15e, D.15d-1, D.16d, D.16, D.16c, D.16b, D.16a, BUG-011, D.14). Detalle en [2026-07](../changelog/2026-07.md).
 
-- 2026-07-13 (D.15a, **cierra Deudas v2 completa**): copy motivador en las simulaciones de orden y en las 3 palancas, y refuerzo psicologico en Abonar (linea estatica + tip en vivo que nunca queda vacio). Sin logica nueva.
 
-- 2026-07-13 (D.15b): boton de editar en la tarjeta de deuda (activa y saldada) sobre la accion `editar-compromiso` que ya existia, y la categoria pasa antes de la descripcion en el form.
 
-- 2026-07-13 (D.15d-2, **absorbe D.15e**): la card de estrategia pasa a 2 niveles. Se retira `_renderAceleradorExtra` y el extra vive en la palanca "Aumentar la cuota"; `_renderPalancas` muestra las 3 siempre, con la recomendada marcada. El panel inviable queda como 2 capas puras.
 
-- 2026-07-13 (D.15d-1, logica sin UI): `estimarSalarioMensual` sube de `tesoreria/logic/ingresos.js` a `infra/financiero.js`, y nace `recomendarPalanca()` en `logic/estrategia.js` (con `TASA_ALTA_EA` 0.25 y `UMBRAL_CAPACIDAD_MINIMA` 20.000), aun sin consumidor.
 
-- 2026-07-12 (D.16d, ADR 036 D5/D6/D7, cierra D.16): `_renderCompromisoItem` pasa de `.list-item` a `.deuda-card` (teja 44px con badge de orden superpuesto, saldo enmascarable, chips de categoria y tasa, aviso de tasa como callout). Se retira `.abono-btn`. Flujos de abono/archivar/eliminar sin cambios de wiring.
 
-- 2026-07-12 (D.16c, ADR 036 D3/D4): acelerador como sub-card inset, panel inviable en 2 capas y selector de alternativas como tiles verticales; emojis reemplazados por iconos del sprite. **Fix real**: los "Aplicar" de renegociar/consolidar usaban la clase inexistente `btn--primary`.
 
-- 2026-07-12 (D.16b, ADR 036 D2): card de estrategia a superficie con sombra en reposo, picker activo en frambuesa (antes accent global), eyebrow `.grupo-eyebrow` nueva en `atoms.css`, y la comparativa Avalancha vs Bola como callouts tintados.
 
-- 2026-07-12 (D.16a, ADR 036 D1/D7): hero al tope de la seccion (`renderHeroCompromisos()` en `views/hero.js`) con el total de deuda, chip de cuota/mes y ojo de privacidad. Agregado puro `resumenDeudas()` en `logic/modelo.js`: solo deudas activas, los fijos no entran.
 
-- 2026-07-11 (**BUG-011**): teclear un monto en "Aumenta tu cuota" y provocar un re-render presentaba el plan como saneado sin haber aplicado nada. La mutacion nunca fue real (los `_aplicar*` van tras `confirmar()`): era la variante visual. Fix: la estructura se decide con `recomendarEstrategia(deudas, 0)`.
 
-- 2026-07-10 (**D.14**): al crear una deuda (nunca al editar) se ofrece acreditar su monto a una cuenta; se guardan `cuentaOrigenId` y `montoAcreditado` (copia inmutable) para revertir exacto al eliminar. Sin bump de schema. **Verificacion limitada**: sin navegador real, por trazado contra NAV.A1.

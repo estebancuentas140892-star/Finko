@@ -12,6 +12,13 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### docs(contexto): cuatro fichas vuelven bajo su techo de 40 KB · 2026-11-15
+
+Regla de la skill `cerrar-tarea` (sección 4): superar el techo obliga a podar o a partir por eje real.
+
+- **`inicio.md` (55 KB a 39 KB)**: los bloques de escritorio (IN.9 y DSK.1, con sus trampas y riesgos) se mudan sin cambios a [`contexto/escritorio.md`](contexto/escritorio.md), sección "Inicio en escritorio": ese es su eje. Inicio deja un puntero.
+- **`inicio.md`, `deudas.md`, `sistema-visual.md` y `gastos.md`**: los hitos más viejos de "Cambios realizados" (julio y agosto) se resumen en una línea por bloque, con sus IDs y el enlace al mes de [`changelog/`](changelog/) donde está el detalle. No se borra nada que no esté en el CHANGELOG.
+
 ### docs(decisiones): BUG-027, el ADR 059 se reconstruye · 2026-11-15
 
 Cierra **BUG-027**: el [ADR 059](DECISIONS/059-interfaz-de-escritorio.md) (interfaz de escritorio, iniciativa INT.1) se citaba como aceptado desde el 2026-08-02 y nunca se había commiteado. Ficha: [`contexto/escritorio.md`](contexto/escritorio.md).
